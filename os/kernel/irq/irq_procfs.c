@@ -73,8 +73,10 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/procfs.h>
+#include <tinyara/fs/dirent.h>
 
 #include "irq/irq.h"
+#include <arch/irq.h>
 
 #if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_PROCFS)
 
@@ -87,14 +89,39 @@
 
 #define IRQS_LINELEN 64
 
+#ifdef CONFIG_DEBUG_IRQ_INFO
 #define IRQS_INFO_TITLE_FMT " %8s | %9s | %3s \n"
 #define IRQS_INFO_LINE " ---------|-----------|--------------\n"
 #define IRQS_INFO_TITLE "IRQ_NUM", "INT_COUNT", "ISR_NAME"
 #define IRQS_INFO_FMT " %8d | %9d | %s \n"
+#endif
+
+#define IRQS_LOCK_STATUS "IRQLOCK STATUS:\n"
+#define IRQS_LOCK_ENABLED "ENABLED"
+#define IRQS_LOCK_DISABLED "DISABLED"
+#define IRQS_LOCK_FMT "CPU%d - %8s\n"
+
+#define IRQS          "irqs"
+#define IRQS_STATUS   "status"
+#define IRQS_LIST     "list"
+
+/*
+ * Level 1 : /proc/irqs
+ * Level 2 : /proc/irqs/status or /proc/irqs/list
+ */
+
+#define IRQS_LEVEL_1   1
+#define IRQS_LEVEL_2   2
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+
+struct irqs_dir_s {
+	struct procfs_dir_priv_s base; /* Base directory private data */
+	uint8_t direntry;
+	uint8_t dtype;
+};
 
 /* This structure describes one open "file" */
 
@@ -102,6 +129,7 @@ struct irqs_file_s {
 	struct procfs_file_s base;	/* Base open file structure */
 	unsigned int linesize;		/* Number of valid characters in line[] */
 	char line[IRQS_LINELEN];	/* Pre-allocated buffer for formatted lines */
+	struct irqs_dir_s dir;	       /* Reference to item being accessed */
 };
 
 /****************************************************************************
@@ -115,6 +143,11 @@ static int irqs_close(FAR struct file *filep);
 static ssize_t irqs_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
 
 static int irqs_dup(FAR const struct file *oldp, FAR struct file *newp);
+
+static int irqs_opendir(const char *relpath, FAR struct fs_dirent_s *dir);
+static int irqs_closedir(FAR struct fs_dirent_s *dir);
+static int irqs_readdir(FAR struct fs_dirent_s *dir);
+static int irqs_rewinddir(FAR struct fs_dirent_s *dir);
 
 static int irqs_stat(FAR const char *relpath, FAR struct stat *buf);
 
@@ -139,10 +172,10 @@ const struct procfs_operations irqs_operations = {
 
 	irqs_dup,					/* dup */
 
-	NULL,						/* opendir */
-	NULL,						/* closedir */
-	NULL,						/* readdir */
-	NULL,						/* rewinddir */
+	irqs_opendir,	 /* opendir */
+	irqs_closedir,	 /* closedir */
+	irqs_readdir,	 /* readdir */
+	irqs_rewinddir, /* rewinddir */
 
 	irqs_stat					/* stat */
 };
@@ -150,7 +183,66 @@ const struct procfs_operations irqs_operations = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+/****************************************************************************
+ * Name: irqs_find_dirref
+ *
+ * Description:
+ *   Analyse relpath to find the directory reference entry it represents,
+ *   if any.
+ *
+ ****************************************************************************/
 
+static int irqs_find_dirref(FAR const char *relpath, FAR struct irqs_dir_s *dir)
+{
+	const char *str;
+	/* Function to check path is starting with given name */
+	int checkStart(char *name, bool isDirectory) {
+		uint16_t length = strlen(name);
+		if (strncmp(str, name, length) != 0) {
+			return ERROR;
+		}
+		str += length;
+		if (str[0] == '\0') {
+			return OK;
+		}
+		if (isDirectory && (str[0] == '/')) {
+			str++;
+			return OK;
+		}
+		return ERROR;
+	}
+	str = relpath;
+	/* Check relpath has "irqs" mount point */
+	if (checkStart(IRQS, true) == OK) {
+		if (str[0] == '\0') {
+			dir->base.level = 1;
+			dir->base.index = 0;
+			dir->base.nentries = 2;
+			dir->dtype = DTYPE_DIRECTORY;
+			return OK;
+		}
+		/* Check relpath has "list" mount point */
+#ifdef CONFIG_DEBUG_IRQ_INFO
+		if (checkStart(IRQS_LIST, false) == OK) {
+			dir->base.level = 2;
+			dir->base.index = 0;
+			dir->base.nentries = 0;
+			dir->dtype = DTYPE_FILE;
+			return OK;
+		/* Check relpath has "status" mount point */
+		} else
+#endif
+		if(checkStart(IRQS_STATUS, false) == OK) {
+			dir->base.level = 2;
+			dir->base.index = 1;
+			dir->base.nentries = 0;
+			dir->dtype = DTYPE_FILE;
+			return OK;
+		}
+	}
+	fdbg("Invalid Path : Failed to find path %s \n", relpath);
+	return -ENOENT;
+}
 /****************************************************************************
  * Name: irqs_open
  ****************************************************************************/
@@ -172,13 +264,6 @@ static int irqs_open(FAR struct file *filep, FAR const char *relpath, int oflags
 		return -EACCES;
 	}
 
-	/* "interrupts" is the only acceptable value for the relpath */
-
-	if (strcmp(relpath, "irqs") != 0) {
-		fdbg("ERROR: relpath is '%s'\n", relpath);
-		return -ENOENT;
-	}
-
 	/* Allocate a container to hold the file attributes */
 
 	attr = (FAR struct irqs_file_s *)kmm_zalloc(sizeof(struct irqs_file_s));
@@ -186,7 +271,13 @@ static int irqs_open(FAR struct file *filep, FAR const char *relpath, int oflags
 		fdbg("ERROR: Failed to allocate file attributes\n");
 		return -ENOMEM;
 	}
+	int ret = irqs_find_dirref(relpath, &attr->dir);
+	if (ret == -ENOENT) {
+		/* Entry not found */
 
+		kmm_free(attr);
+		return ret;
+	}
 	/* Save the attributes as the open-specific state in filep->f_priv */
 
 	filep->f_priv = (FAR void *)attr;
@@ -219,7 +310,9 @@ static int irqs_close(FAR struct file *filep)
 static ssize_t irqs_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
 {
 	FAR struct irqs_file_s *attr;
+#ifdef CONFIG_DEBUG_IRQ_INFO
 	uint16_t irq_idx;
+#endif
 	size_t linesize;
 	size_t copysize;
 	size_t totalsize;
@@ -234,29 +327,58 @@ static ssize_t irqs_read(FAR struct file *filep, FAR char *buffer, size_t buflen
 
 	offset = filep->f_pos;
 	totalsize = 0;
+#ifdef CONFIG_DEBUG_IRQ_INFO
+	if ((attr->dir.base.level == IRQS_LEVEL_2) && (attr->dir.base.index == 0)) {
+		linesize = snprintf(attr->line, IRQS_LINELEN, IRQS_INFO_TITLE_FMT, IRQS_INFO_TITLE);
+		copysize = procfs_memcpy(attr->line, linesize, buffer, buflen - totalsize, &offset);
+		totalsize += copysize;
+		buffer += copysize;
 
-	linesize = snprintf(attr->line, IRQS_LINELEN, IRQS_INFO_TITLE_FMT, IRQS_INFO_TITLE);
-	copysize = procfs_memcpy(attr->line, linesize, buffer, buflen - totalsize, &offset);
-	totalsize += copysize;
-	buffer += copysize;
+		if (totalsize >= buflen) {
+			goto end;
+		}
 
-	if (totalsize >= buflen) {
-		goto end;
-	}
+		linesize = snprintf(attr->line, IRQS_LINELEN, IRQS_INFO_LINE);
+		copysize = procfs_memcpy(attr->line, linesize, buffer, buflen - totalsize, &offset);
+		totalsize += copysize;
+		buffer += copysize;
 
-	linesize = snprintf(attr->line, IRQS_LINELEN, IRQS_INFO_LINE);
-	copysize = procfs_memcpy(attr->line, linesize, buffer, buflen - totalsize, &offset);
-	totalsize += copysize;
-	buffer += copysize;
+		if (totalsize >= buflen) {
+			goto end;
+		}
 
-	if (totalsize >= buflen) {
-		goto end;
-	}
+		for (irq_idx = 0; irq_idx < NR_IRQS; irq_idx++) {
+			if (g_irqvector[irq_idx].handler != NULL && g_irqvector[irq_idx].handler != irq_unexpected_isr) {
+				linesize = snprintf(attr->line, IRQS_LINELEN, IRQS_INFO_FMT, irq_idx, g_irqvector[irq_idx].count, g_irqvector[irq_idx].irq_name);
+				copysize = procfs_memcpy(attr->line, linesize, buffer, buflen - totalsize, &offset);	
+				totalsize += copysize;
+				buffer += copysize;
 
-	for (irq_idx = 0; irq_idx < NR_IRQS; irq_idx++) {
-		if (g_irqvector[irq_idx].handler != NULL && g_irqvector[irq_idx].handler != irq_unexpected_isr) {			
-			linesize = snprintf(attr->line, IRQS_LINELEN, IRQS_INFO_FMT, irq_idx, g_irqvector[irq_idx].count, g_irqvector[irq_idx].irq_name);
-			copysize = procfs_memcpy(attr->line, linesize, buffer, buflen - totalsize, &offset);			
+				if (totalsize >= buflen) {
+					goto end;
+				}
+			}
+		}
+	} else
+#endif
+	{
+		linesize = snprintf(attr->line, IRQS_LINELEN, IRQS_LOCK_STATUS);
+		copysize = procfs_memcpy(attr->line, linesize, buffer, buflen - totalsize, &offset);
+		totalsize += copysize;
+		buffer += copysize;
+
+		if (totalsize >= buflen) {
+			goto end;
+		}
+		for (int cpu_idx = 0; cpu_idx < CONFIG_SMP_NCPUS; cpu_idx++) {
+#ifdef CONFIG_SMP
+			linesize = snprintf(attr->line, IRQS_LINELEN, IRQS_LOCK_FMT, cpu_idx, (g_cpu_irqset & (1 << cpu_idx))? IRQS_LOCK_ENABLED : IRQS_LOCK_DISABLED);
+#else
+#if defined(CONFIG_ARCH_ARMV7A_FAMILY) || defined(CONFIG_ARCH_ARMV7R_FAMILY)
+			linesize = snprintf(attr->line, IRQS_LINELEN, IRQS_LOCK_FMT, cpu_idx, (irqstate() & (1 << 7))? IRQS_LOCK_ENABLED : IRQS_LOCK_DISABLED);
+#endif
+#endif
+			copysize = procfs_memcpy(attr->line, linesize, buffer, buflen - totalsize, &offset);
 			totalsize += copysize;
 			buffer += copysize;
 
@@ -314,6 +436,129 @@ static int irqs_dup(FAR const struct file *oldp, FAR struct file *newp)
 }
 
 /****************************************************************************
+ * Name: irqs_opendir
+ *
+ * Description:
+ *   Open a directory for read access
+ *
+ ****************************************************************************/
+
+static int irqs_opendir(FAR const char *relpath, FAR struct fs_dirent_s *dir)
+{
+	FAR struct irqs_dir_s *irqsdir;
+	int ret;
+
+	fvdbg("relpath: \"%s\"\n", relpath ? relpath : "NULL");
+	DEBUGASSERT(relpath && dir && !dir->u.procfs);
+
+	/* The path refers to the 1st level subdirectory.  Allocate the irqsdir
+	 * dirent structure.
+	 */
+	irqsdir = (FAR struct irqs_dir_s *)kmm_malloc(sizeof(struct irqs_dir_s));
+
+	if (!irqsdir) {
+		fdbg("ERROR: Failed to allocate the directory structure\n");
+		return -ENOMEM;
+	}
+
+	/* Initialize base structure components */
+	ret = irqs_find_dirref(relpath, irqsdir);
+
+	if (ret == OK) {
+		dir->u.procfs = (FAR void *)irqsdir;
+	} else {
+		kmm_free(irqsdir);
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: irqs_closedir
+ *
+ * Description: Close the directory listing
+ *
+ ****************************************************************************/
+
+static int irqs_closedir(FAR struct fs_dirent_s *dir)
+{
+	FAR struct irqs_dir_s *priv;
+
+	DEBUGASSERT(dir && dir->u.procfs);
+	priv = dir->u.procfs;
+
+	if (priv) {
+		kmm_free(priv);
+	}
+
+	dir->u.procfs = NULL;
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: irqs_readdir
+ *
+ * Description: Read the next directory entry
+ *
+ ****************************************************************************/
+
+static int irqs_readdir(struct fs_dirent_s *dir)
+{
+	FAR struct irqs_dir_s *irqsdir;
+	int index;
+
+	DEBUGASSERT(dir && dir->u.procfs);
+	irqsdir = dir->u.procfs;
+
+	/* Have we reached the end of the directory */
+	index = irqsdir->base.index;
+	if (index >= irqsdir->base.nentries) {
+		return -ENOENT;
+	}
+	switch (irqsdir->base.level) {
+		/* List the content of "irqs" directory */
+	case IRQS_LEVEL_1:
+		switch (index) {
+		case 0:
+			dir->fd_dir.d_type = DTYPE_FILE;
+			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), IRQS_LIST);
+			irqsdir->base.index++;
+			break;
+		case 1:
+			dir->fd_dir.d_type = DTYPE_FILE;
+			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), IRQS_STATUS);
+			irqsdir->base.index++;
+			break;
+		}
+		break;
+
+	default:
+		fdbg("Invalid directory level\n");
+		return -ENOENT;
+	}
+	return OK;
+}
+
+/****************************************************************************
+ * Name: irqs_rewindir
+ *
+ * Description: Reset directory read to the first entry
+ *
+ ****************************************************************************/
+
+static int irqs_rewinddir(struct fs_dirent_s *dir)
+{
+	FAR struct irqs_dir_s *priv;
+
+	DEBUGASSERT(dir && dir->u.procfs);
+	priv = dir->u.procfs;
+
+	priv->base.index = 0;
+	return OK;
+}
+
+/****************************************************************************
  * Name: irqs_stat
  *
  * Description: Return information about a file or directory
@@ -322,16 +567,24 @@ static int irqs_dup(FAR const struct file *oldp, FAR struct file *newp)
 
 static int irqs_stat(const char *relpath, struct stat *buf)
 {
-	/* "interrupts" is the only acceptable value for the relpath */
+	int ret;
+	struct irqs_dir_s dir;
 
-	if (strcmp(relpath, "interrupts") != 0) {
-		fdbg("ERROR: relpath is '%s'\n", relpath);
-		return -ENOENT;
+	/* Decide if the relpath is valid and if it is a file
+	 *      or a directory and set it's permissions.
+	 */
+
+	ret = irqs_find_dirref(relpath, &dir);
+
+	if (ret == OK) {
+		if (dir.dtype == DTYPE_DIRECTORY) {
+			/* This is a directory */
+			buf->st_mode = S_IFDIR | S_IROTH | S_IRGRP | S_IRUSR;
+		} else {
+			/* This is a file */
+			buf->st_mode = S_IFREG | S_IROTH | S_IRGRP | S_IRUSR;
+		}
 	}
-
-	/* "interrupts" is the name for a read-only file */
-
-	buf->st_mode = S_IFREG | S_IROTH | S_IRGRP | S_IRUSR;
 	buf->st_size = 0;
 	buf->st_blksize = 0;
 	buf->st_blocks = 0;

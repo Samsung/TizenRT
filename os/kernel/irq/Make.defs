@@ -57,9 +57,7 @@ ifeq ($(CONFIG_SMP), y)
 CSRCS += irq_spinlock.c
 endif
 
-ifeq ($(CONFIG_DEBUG_IRQ_INFO),y)
 CSRCS += irq_procfs.c
-endif
 
 ifeq ($(CONFIG_IRQCOUNT),y)
 CSRCS += irq_csection.c
