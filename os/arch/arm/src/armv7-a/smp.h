@@ -83,6 +83,7 @@ typedef enum {
 	CPU_RUNNING = 0, /* CPU is in task scheduer or boot from reset */
 	CPU_HOTPLUG = 1, /* CPU is offline */
 	CPU_WAKE_FROM_SLEEP = 2, /* CPU just wake from sleep but not in task scheduler */
+	CPU_HALTED = 3, /* CPU has lost power and equivalent to cold boot when powered on */
 } cpu_state_t;
 
 /****************************************************************************
