@@ -102,15 +102,14 @@ int pm_resume(int domain_id)
 	if (ret != OK) {
 		goto errout;
 	}
-	if (g_pmglobals.suspend_count[domain_id] <= 0) {
-		ret = ERROR;
-		set_errno(ERANGE);
-		goto errout;
+	if (g_pmglobals.suspend_count[domain_id]) {
+		g_pmglobals.suspend_count[domain_id] = false;
+	} else {
+		pmdbg("Thread with pid (%d) tried to resume domain (%s) again\n", getpid(), pm_domain_map[domain_id]);
 	}
 #ifdef CONFIG_PM_METRICS
 	pm_metrics_update_resume(domain_id);
 #endif
-	g_pmglobals.suspend_count[domain_id]--;
 errout:
 	leave_critical_section(flags);
 	return ret;
