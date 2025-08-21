@@ -491,6 +491,14 @@ void board_initialize(void)
 	board_spi_initialize();
 	board_i2s_initialize();
 
+#ifdef CONFIG_SENSOR
+
+#ifdef CONFIG_SENSOR_AIS25BA
+	rtl8730e_ais25ba_initialize();
+#endif
+
+#endif
+
 #ifdef CONFIG_LCD_ST7789
 	rtl8730_st7789_initialize();
 #endif
