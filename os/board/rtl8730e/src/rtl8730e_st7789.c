@@ -31,7 +31,7 @@
 #define CONFIG_LCD_ST7789_SPI_PORT 1
 #endif
 
-#if CONFIG_RTL8730E_BOARD_REVISION >= 5
+#if defined(CONFIG_RTL8730E_BOARD_AIL) || defined(CONFIG_RTL8730E_BOARD_AILP) || defined(CONFIG_RTL8730E_BOARD_AILPW)
 #error "ERROR, Not supported this revision"
 #else
 #define GPIO_PIN_RESET 		PB_11

@@ -383,12 +383,14 @@ static struct rtl8730e_up_dev_s g_uart1priv = {
 	.baud = CONFIG_UART1_BAUD,
 	.irq = RTL8730E_UART1_IRQ,
 
-#if CONFIG_RTL8730E_BOARD_REVISION >= 5
+#if defined(CONFIG_RTL8730E_BOARD_AID)
 	.tx = PA_10,
 	.rx = PA_9,
-#else
+#elif defined(CONFIG_RTL8730E_BOARD_AIL) || defined(CONFIG_RTL8730E_BOARD_AILP) || defined(CONFIG_RTL8730E_BOARD_AILPW)
 	.tx = PA_5,
 	.rx = PA_4,
+#else
+#error Not Supported, Please check the board type configure
 #endif
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,

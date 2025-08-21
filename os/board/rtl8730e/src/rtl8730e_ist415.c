@@ -39,20 +39,17 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* i2c config */
-#if CONFIG_RTL8730E_BOARD_REVISION >= 6
+#if defined(CONFIG_RTL8730E_BOARD_AIL) || defined(CONFIG_RTL8730E_BOARD_AILP) || defined(CONFIG_RTL8730E_BOARD_AILPW)
+ /* i2c config */
 #define IST415_I2C_PORT		0
-#else
-#define IST415_I2C_PORT		1
-#endif
 
 /* pin config */
 #define IST415_GPIO_RESET_PIN	PA_5
-#if CONFIG_RTL8730E_BOARD_REVISION >= 6
 #define IST415_GPIO_I2C_PIN		PA_4
 #else
-#define IST415_GPIO_I2C_PIN		PA_2
+#error Not Supported, Please check the board type configure
 #endif
+
 
 /****************************************************************************
  * Private Types
