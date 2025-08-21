@@ -240,9 +240,9 @@ static void rtl8730e_control_backlight(uint8_t level)
 		/* TO-DO: Move LCD IC Power ON flow */
 		InterruptEn(lcdc_irq_info.num, lcdc_irq_info.priority);
 	}
-#if defined(CONFIG_LCD_ST7701SN)
+#if defined(CONFIG_LCD_PWM_INVERSION)
 	pwmout_write(&g_rtl8730e_config_dev_s.pwm_led, 1.0-pwm_level);
-#elif defined(CONFIG_LCD_ST7785)
+#else
 	pwmout_write(&g_rtl8730e_config_dev_s.pwm_led, pwm_level);
 #endif
 	g_rtl8730e_config_dev_s.pwm_level = level;

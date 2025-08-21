@@ -116,6 +116,14 @@ config LCD_FLUSH_THREAD
 	---help---
 		Separate thread for LCD which will start processing next frame after previous is sent to lcd driver.
 
+config LCD_PWM_INVERSION
+	bool "LCD PWM backlight inversion mode"
+	default n
+	---help---
+		Use PWM backlight inversion mode
+		Power 0 -> backlight on
+		Power 100 -> backlight off
+
 comment "Graphic LCD Devices"
 
 choice
