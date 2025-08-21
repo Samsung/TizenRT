@@ -23,6 +23,18 @@
 
 int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 {
+	/* Only one config is set in the build configuration. If it's true, use that init code. Otherwise, check vendor id. */
+#if NUM_LCD_VENDERS == 1
+#if defined(CONFIG_LCD_INIT_AVD_2701)
+	return send_init_cmd(priv, lcd_init_cmd_g_avd_2701);
+#elif defined(CONFIG_LCD_INIT_AVD_NB01)
+	return send_init_cmd(priv, lcd_init_cmd_g_avd_nb01);
+#elif defined(CONFIG_LCD_INIT_HLT_A196)
+	return send_init_cmd(priv, lcd_init_cmd_g_hlt_a196);
+#elif defined(CONFIG_LCD_INIT_TEC_181A)
+	return send_init_cmd(priv, lcd_init_cmd_g_tec_181a);
+#endif
+#elif NUM_LCD_VENDERS > 1
 	/* Check Vendor */
 	lcm_setting_table_t read_display_cmd = {0x04, 0, {0x00}};
 	uint8_t rxbuf[3] = {0xFF, 0xFF, 0xFF};
@@ -48,13 +60,16 @@ int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 
 	lcddbg("LCD ID: %6x\n", combined_id);
 
-	for (int i = 0; i < NUM_LCD_VENDORS; i++) {
+	for (int i = 0; i < NUM_LCD_VENDORS_ID; i++) {
 		if (combined_id == g_lcd_vendors[i].id) {
 			return send_init_cmd(priv, g_lcd_vendors[i].init_cmd);
 		}
 	}
 	lcddbg("LCD ST7785 not recognized\n");
 	return ERROR;
+#else
+#error "No LCD init code defined"
+#endif	
 }
 
 int get_lcdinfo(FAR struct lcd_info_s *lcdinfo)
