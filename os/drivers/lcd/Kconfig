@@ -153,23 +153,39 @@ config LCD_ST7785
 	---help---
 		Enable LCD Driver, ST7785 with mipi.
 
-if LCD_ST7785
-config LCD_ST7785_TYPEA
-	bool "ST7785 Type A LCD Driver"
-	---help---
-		Enable LCD Driver, ST7785 with mipi.
-
-config LCD_ST7785_TYPEB
-	bool "ST7785 Type B LCD Driver"
-	---help---
-		Enable LCD Driver, ST7785 with mipi.
-endif
-
 config LCD_ST7789
 	bool "ST7789 LCD Driver"
 	---help---
 		Enable LCD Driver, ST7789 with spi.
 endchoice
+
+config LCD_INIT_AVD_NB01
+	bool "AVD NB01 initialization"
+	depends on LCD_ST7785
+	default n
+	---help---
+		Use AVD NB01 ST7785 initialization sequence
+
+config LCD_INIT_AVD_2701
+	bool "AVD 2701 initialization"
+	depends on LCD_ST7785
+	default n
+	---help---
+		Use AVD 2701 ST7785 initialization sequence
+
+config LCD_INIT_HLT_A196
+	bool "Holitech A196 initialization"
+	depends on LCD_ST7785
+	default y
+	---help---
+		Use Holitech A196 ST7785 initialization sequence
+
+config LCD_INIT_TEC_181A
+	bool "Techshine 181A initialization"
+	depends on LCD_ST7785
+	default n
+	---help---
+		Use Techshine 181A ST7785 initialization sequence
 
 config LCD_XRES
 	int "LCD X Resolution"
