@@ -302,8 +302,13 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c0_config = {
 	//.filtscl = CONFIG_I2C0_FILTSCL,
 	//.filtsda = CONFIG_I2C0_FILTSDA,
 #if CONFIG_RTL8730E_BOARD_REVISION >= 5
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+	.scl_pin = PA_31,
+	.sda_pin = PA_30,
+#else
 	.scl_pin = PB_30,
 	.sda_pin = PB_29,
+#endif
 #else
 	.scl_pin = PA_10,
 	.sda_pin = PA_9,
@@ -375,8 +380,14 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c2_config = {
 	//.busy_idle = CONFIG_I2C2_BUSYIDLE,
 	//.filtscl = CONFIG_I2C2_FILTSCL,
 	//.filtsda = CONFIG_I2C2_FILTSDA,
+#ifdef CONFIG_AMEBASMART_I2S_TDM
+	.scl_pin = PB_11,
+	.sda_pin = PB_10,
+#else
 	.scl_pin = PA_29,
 	.sda_pin = PA_28,
+#endif
+
 #ifndef CONFIG_I2C_SLAVE
 	.mode = AMEBASMART_I2C_MASTER,
 #else
@@ -836,21 +847,23 @@ static int amebasmart_i2c_isr_process(struct amebasmart_i2c_priv_s *priv)
 	int ret = 0;
 
 	struct i2c_msg_s *w_msgv = priv->msgv;
+	uint8_t *reg = w_msgv->buffer;
 #ifdef CONFIG_I2C_WRITEREAD
 	struct i2c_msg_s *r_msgv = ++priv->msgv;
 	uint8_t read_restart;
 	uint8_t write_restart;
-
+	 uint8_t no_read = (r_msgv->flags & I2C_M_READ) == 0;
 	if ((w_msgv->flags & I2C_M_READ) == 0) {
 
-		i2cinfo("i2c writing");
+		if(w_msgv->length == 2)
+		//dbg("i2c writing %d %8x %8x\n", write_restart, reg[0], reg[1]);
 #ifdef CONFIG_I2C_SLAVE
 
 		i2c_slave_read(priv->i2c_object, &read_restart, 1);
 		i2c_slave_set_for_rd_req(priv->i2c_object, 1);
 		ret = i2c_slave_write(priv->i2c_object, w_msgv->buffer, w_msgv->length);
 #else
-		ret = rtk_i2c_write(priv->i2c_object, w_msgv->addr, &write_restart, 1, 0);
+
 		ret = rtk_i2c_write(priv->i2c_object, w_msgv->addr, w_msgv->buffer, w_msgv->length, 1);
 #endif
         }
@@ -861,7 +874,7 @@ static int amebasmart_i2c_isr_process(struct amebasmart_i2c_priv_s *priv)
 
 		ret = i2c_slave_read(priv->i2c_object, r_msgv->buffer, r_msgv->length);
 #else
-		rtk_i2c_write(priv->i2c_object, r_msgv->addr, &write_restart, 1, 0);
+		ret = rtk_i2c_write(priv->i2c_object, w_msgv->addr, w_msgv->buffer, w_msgv->length, 0);
 		ret = rtk_i2c_read(priv->i2c_object, r_msgv->addr, r_msgv->buffer, r_msgv->length, 1);
 #endif
 	}
