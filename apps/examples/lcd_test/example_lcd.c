@@ -82,6 +82,8 @@ static bool g_terminate;
 #else
 #define EXAMPLE_LCD_FPS_TEST 5000
 #endif
+// RGB565 helper macro
+#define RGB565(r, g, b)  (((r & 0x1F) << 11) | ((g & 0x3F) << 5) | (b & 0x1F))
 
 static void putarea(int x1, int x2, int y1, int y2, int color)
 {
@@ -639,6 +641,7 @@ static void show_usage(void)
 	printf("    lcdinfo           : Print LCD basic info like width, height, DPI \n");
 	printf("    power <value>     : Sets the brightness to given value\n");
 	printf("    stress_test <start> <mode> | <stop> : Start or stop stress test, <mode>: 0 = power cycle test only, 1 = frame change test only, 2 = both test simultaneously\n");
+	printf("    verification_test   : Execute LCD verification test\n");
 }
 
 static void stress_test(int num)
@@ -665,7 +668,7 @@ static void stress_test(int num)
 	}
 }
 
-static int power_test(int power)
+int power_test(int power)
 {
 	int count = 0;
 	int fd = 0;
@@ -679,6 +682,46 @@ static int power_test(int power)
 	if (ioctl(fd, LCDDEVIO_SETPOWER, power) < 0) {
 		printf("Fail to call LCD SETPOWER(errno %d)", get_errno());
 	}
+	close(fd);
+	return OK;
+}
+
+static int lcd_verification_test(void)
+{
+	printf("====LCD Verification Test Start====\n");
+	int fd = 0;
+	char port[20] = {'\0'};
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: Failed to open lcd port : %s error:%d\n", port, get_errno());
+		return ERROR;
+	}
+	struct fb_videoinfo_s vinfo;
+	if (ioctl(fd, LCDDEVIO_GETVIDEOINFO, (unsigned long)(uintptr_t)&vinfo) < 0) {
+		printf("Fail to call LCD GETVIDEOINFO(errno %d)", get_errno());
+		close(fd);
+		return ERROR;
+	}
+	xres = vinfo.xres;
+	yres = vinfo.yres;
+	uint16_t red = RGB565(31, 0, 0);   // red
+	uint16_t green = RGB565(0, 63, 0); // green
+	uint16_t blue = RGB565(0, 0, 31);  // blue
+	printf("Sliding frame test\n");
+	sliding_frame_test(xres, yres);
+	sleep(5);
+	printf("Line draw test\n");
+	line_draw_test(xres, yres);
+	sleep(5);
+	printf("Checkerboard Pattern Test for distortion\n");
+	checkerboard_pattern_test(xres, yres);
+	sleep(5);
+	printf("Circle Test for distortion\n");
+	draw_circle_test(xres, yres, blue);
+	sleep(5);
+	printf("Gradual Power Test\n");
+	gradual_power_test();
 	close(fd);
 	return OK;
 }
@@ -749,6 +792,8 @@ int lcd_test_main(int argc, char *argv[])
 			return lcd_get_info();
 		} else if (!strncmp(argv[1], "basic", 6)) {
 			return lcd_basic_test();
+		} else if (!strncmp(argv[1], "verification_test", 18)) {
+			return lcd_verification_test();
 		}
 	}
 	show_usage();
