@@ -141,7 +141,7 @@ int apb_alloc(FAR struct audio_buf_desc_s *bufdesc)
 	/* Perform a user mode allocation */
 
 	bufsize = sizeof(struct ap_buffer_s) + bufdesc->numbytes;
-	apb = lib_umalloc(bufsize);
+	apb = kmm_malloc(bufsize);
 	*bufdesc->u.ppBuffer = apb;
 
 	/* Test if the allocation was successful or not */
