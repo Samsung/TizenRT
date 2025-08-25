@@ -45,7 +45,7 @@
  ****************************************************************************/
 
 #include "section_config.h"
-SRAM_BD_BSS_SECTION
+SRAM_BD_BSS_SECTION;
 volatile uint32_t *g_current_regs[CONFIG_SMP_NCPUS];
 
 #if defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7

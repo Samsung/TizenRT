@@ -87,6 +87,62 @@ config RTL8730E_BOARD_REVISION
 		The pins of the peripherals may differ depending on this
 
 choice
+    prompt "Select target board type"
+    default RTL8730E_BOARD_AID
+    help
+        Select the board type.
+        The pins of the peripherals and supported features differ depending on this
+
+config RTL8730E_BOARD_AID
+    bool "AID Board"
+    select RAM_PSRAM
+    select BOARD_FLASH_16M
+    help
+        AID board supports basic loadable applications
+
+config RTL8730E_BOARD_AIL
+    bool "AIL Board"
+    select RAM_PSRAM
+    select BOARD_FLASH_16M
+    select BOARD_HAVE_SPI0
+    select BOARD_HAVE_SPI1
+    select BOARD_HAVE_I2C2
+    select BOARD_HAVE_I2S2
+    select ARCH_BOARD_HAVE_SECOND_FLASH
+    help
+        AIL board supports audio features
+
+config RTL8730E_BOARD_AILP
+    bool "AILP Board"
+    select RAM_DDR
+    select BOARD_FLASH_32M
+    select BOARD_HAVE_SPI0
+    select BOARD_HAVE_SPI1
+    select BOARD_HAVE_I2C2
+    select BOARD_HAVE_I2S2
+    select BOARD_HAVE_MIPI
+    select ARCH_BOARD_HAVE_SECOND_FLASH
+    help
+        AILP board supports audio and lcd features
+
+config RTL8730E_BOARD_AILPW
+    bool "AILPW Board"
+    select RAM_DDR
+    select BOARD_FLASH_32M
+    select BOARD_HAVE_SPI0
+    select BOARD_HAVE_SPI1
+    select AMEBASMART_I2C
+    select BOARD_HAVE_I2C0
+    select BOARD_HAVE_I2C2
+    select BOARD_HAVE_I2S2
+    select BOARD_HAVE_MIPI
+    select ARCH_BOARD_HAVE_SECOND_FLASH
+    help
+        AILPW board supports extended peripherals
+
+endchoice
+
+choice
     prompt "Board Memory Type"
     default RAM_DDR
 
@@ -195,4 +251,3 @@ config KM4_MAX_LOG_BUFFER_SIZE
 
 endmenu
 endif
-

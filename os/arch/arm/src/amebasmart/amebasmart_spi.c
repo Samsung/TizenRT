@@ -41,6 +41,7 @@
 
 #include "chip.h"
 
+#include "board_pins.h"
 #include "amebasmart_spi.h"
 #include "PinNames.h"
 #include "spi_api.h"
@@ -234,12 +235,12 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.spi_object = {0},
 	.refs = 0,
 	.spi_idx = MBED_SPI0,
-	.spi_mosi = PB_4,
-	.spi_miso = PB_3,
-	.spi_sclk = PB_6,
-	.spi_cs0 = PB_5,
+	.spi_mosi = SPI0_MOSI,
+	.spi_miso = SPI0_MISO,
+	.spi_sclk = SPI0_SCLK,
+	.spi_cs0 = SPI0_CS0,
 #if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
-	.spi_cs1 = PB_31,
+	.spi_cs1 = SPI0_CS1,
 #endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
@@ -293,12 +294,12 @@ static struct amebasmart_spidev_s g_spi1dev = {
 	.spi_object = {0},
 	.refs = 0,
 	.spi_idx = MBED_SPI1,
-	.spi_mosi = PB_28,
-	.spi_miso = PB_27,
-	.spi_sclk = PB_25,
-	.spi_cs0 = PB_26,
+	.spi_mosi = SPI1_MOSI,
+	.spi_miso = SPI1_MISO,
+	.spi_sclk = SPI1_SCLK,
+	.spi_cs0 = SPI1_CS0,
 #if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI1_CS)
-	.spi_cs1 = PB_29,
+	.spi_cs1 = SPI1_CS1,
 #endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
