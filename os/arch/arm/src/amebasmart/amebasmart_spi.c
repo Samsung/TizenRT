@@ -41,6 +41,7 @@
 
 #include "chip.h"
 
+#include "board_pins.h"
 #include "amebasmart_spi.h"
 #include "PinNames.h"
 #include "spi_api.h"
@@ -234,12 +235,12 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.spi_object = {0},
 	.refs = 0,
 	.spi_idx = MBED_SPI0,
-	.spi_mosi = PB_4,
-	.spi_miso = PB_3,
-	.spi_sclk = PB_6,
-	.spi_cs0 = PB_5,
+	.spi_mosi = SPI0_MOSI,
+	.spi_miso = SPI0_MISO,
+	.spi_sclk = SPI0_SCLK,
+	.spi_cs0 = SPI0_CS0,
 #if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
-	.spi_cs1 = PB_31,
+	.spi_cs1 = SPI0_CS1,
 #endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
@@ -293,12 +294,12 @@ static struct amebasmart_spidev_s g_spi1dev = {
 	.spi_object = {0},
 	.refs = 0,
 	.spi_idx = MBED_SPI1,
-	.spi_mosi = PB_28,
-	.spi_miso = PB_27,
-	.spi_sclk = PB_25,
-	.spi_cs0 = PB_26,
+	.spi_mosi = SPI1_MOSI,
+	.spi_miso = SPI1_MISO,
+	.spi_sclk = SPI1_SCLK,
+	.spi_cs0 = SPI1_CS0,
 #if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI1_CS)
-	.spi_cs1 = PB_29,
+	.spi_cs1 = SPI1_CS1,
 #endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
@@ -1596,6 +1597,16 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		leave_critical_section(flags);
 		return NULL;
 	}
+
+#if DEBUG_BOARD_PINS
+	if (port == 0) {
+		lldbg("TLITE [SPI%d] PB_4 = %d, PB_3 = %d, PB_6 = %d, PB_5 = %d\n", port, PB_4, PB_3, PB_6, PB_5);
+	} else {
+		lldbg("TLITE [SPI%d] PB_28 = %d, PB_27 = %d, PB_25 = %d, PB_26 = %d\n", port, PB_28, PB_27, PB_25, PB_26);
+	}
+
+	lldbg("TLITE [SPI%d] priv->spi_mosi = [%d] priv->spi_miso = [%d] priv->spi_sclk = [%d] priv->spi_cs0 = [%d]\n", port, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs0);
+#endif
 
 	priv->refs++;
 	leave_critical_section(flags);

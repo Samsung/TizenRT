@@ -19,6 +19,7 @@
   */
 
 #include "ameba_soc.h"
+#include "board_pins.h"
 
 #ifdef CONFIG_SOC_PS_MODULE
 
