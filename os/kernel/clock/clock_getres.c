@@ -58,6 +58,7 @@
 
 #include <stdint.h>
 #include <time.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -106,6 +107,11 @@
 int clock_getres(clockid_t clock_id, struct timespec *res)
 {
 	int ret = OK;
+
+	DEBUGASSERT(res);
+	if (!res) {
+		return -EINVAL;
+	}
 
 	svdbg("clock_id=%d\n", clock_id);
 

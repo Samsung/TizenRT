@@ -116,6 +116,9 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp)
 
 	svdbg("clock_id=%d\n", clock_id);
 	DEBUGASSERT(tp != NULL);
+	if (!tp) {
+		return -EINVAL;
+	}
 
 #ifdef CONFIG_CLOCK_MONOTONIC
 	/* CLOCK_MONOTONIC is an optional under POSIX: "If the Monotonic Clock
