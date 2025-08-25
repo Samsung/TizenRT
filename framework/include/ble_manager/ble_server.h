@@ -55,7 +55,7 @@ typedef enum {
 	BLE_SERVER_CCCD_NOTIFY_INDICATE	= 0x0003
 } ble_server_cccd_value_e;
 
-typedef void (*ble_server_cb_t)(ble_server_attr_cb_type_e type, ble_conn_handle con_handle, ble_attr_handle handle, void* arg);
+typedef void (*ble_server_cb_t)(ble_server_attr_cb_type_e type, ble_conn_handle con_handle, ble_attr_handle handle, void* arg, uint16_t result, uint16_t pending);
 
 typedef enum  {
 	BLE_ATTR_PROP_NONE          = 0x00,
