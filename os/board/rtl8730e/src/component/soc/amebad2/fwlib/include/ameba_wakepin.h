@@ -1,11 +1,6 @@
 #ifndef _HAL_WAKEPIN_H_
 #define _HAL_WAKEPIN_H_
 
-#define	WAKEPIN_0							((u32)0x00000000)/*!< see aon_wakepin */
-#define	WAKEPIN_1							((u32)0x00000001)/*!< see aon_wakepin */
-#define	WAKEPIN_2							((u32)0x00000002)/*!< see aon_wakepin */
-#define	WAKEPIN_3							((u32)0x00000003)/*!< see aon_wakepin */
-
 enum wakepin_config {
 	LOW_LEVEL_WAKEUP	= 0, /* when GPIO level become high, will wakeup*/
 	HIGH_LEVEL_WAKEUP	= 1, /* when GPIO level become low, will wakeup*/

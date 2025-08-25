@@ -41,6 +41,7 @@
 #include <arch/board/board.h>
 
 #include "PinNames.h"
+#include "board_pins.h"
 
 #include "up_arch.h"
 #include "ameba_i2c.h"
@@ -301,13 +302,8 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c0_config = {
 	//.busy_idle = CONFIG_I2C0_BUSYIDLE,
 	//.filtscl = CONFIG_I2C0_FILTSCL,
 	//.filtsda = CONFIG_I2C0_FILTSDA,
-#if CONFIG_RTL8730E_BOARD_REVISION >= 5
-	.scl_pin = PB_30,
-	.sda_pin = PB_29,
-#else
-	.scl_pin = PA_10,
-	.sda_pin = PA_9,
-#endif
+	.scl_pin = I2C0_SCL,
+	.sda_pin = I2C0_SDA,
 #ifndef CONFIG_I2C_SLAVE
 	.mode = AMEBASMART_I2C_MASTER,
 #else
@@ -338,13 +334,8 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c1_config = {
 	//.busy_idle = CONFIG_I2C1_BUSYIDLE,
 	//.filtscl = CONFIG_I2C1_FILTSCL,
 	//.filtsda = CONFIG_I2C1_FILTSDA,
-#if CONFIG_RTL8730E_BOARD_REVISION >= 5
-	.scl_pin = PA_4,
-	.sda_pin = PA_3,
-#else
-	.scl_pin = PA_21,
-	.sda_pin = PA_20,
-#endif
+	.scl_pin = I2C1_SCL,
+	.sda_pin = I2C1_SDA,
 #ifndef CONFIG_I2C_SLAVE
 	.mode = AMEBASMART_I2C_MASTER,
 #else
@@ -375,8 +366,8 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c2_config = {
 	//.busy_idle = CONFIG_I2C2_BUSYIDLE,
 	//.filtscl = CONFIG_I2C2_FILTSCL,
 	//.filtsda = CONFIG_I2C2_FILTSDA,
-	.scl_pin = PA_29,
-	.sda_pin = PA_28,
+	.scl_pin = I2C2_SCL,
+	.sda_pin = I2C2_SDA,
 #ifndef CONFIG_I2C_SLAVE
 	.mode = AMEBASMART_I2C_MASTER,
 #else
@@ -1184,6 +1175,17 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
 		printf("Please select I2CO, I2C1 or I2C2 bus\n");
 		return NULL;
 	}
+#if DEBUG_BOARD_PINS
+	if (port == 0) {
+		lldbg("TLITE [I2C%d] PB_30 = %d, PB_29 = %d, PA_10 = %d, PA_9 = %d\n", port, PB_30, PB_29, PA_10, PA_9);
+	} else if (port == 1) {
+		lldbg("TLITE [I2C%d] PA_4 = %d, PA_3 = %d, PA_21 = %d, PA_20 = %d\n", port, PA_4, PA_3, PA_21, PA_20);
+	} else {
+		lldbg("TLITE [I2C%d] PA_29 = %d, PA_28 = %d\n", port, PA_29, PA_28);
+	}
+
+	lldbg("TLITE [I2C%d] priv->config->scl_pin = [%d] priv->config->sda_pin = [%d]\n", port, priv->config->scl_pin, priv->config->sda_pin);
+#endif
 
 	/* If I2C has been initialized, return directly */
 	if (priv->i2c_object != NULL) {

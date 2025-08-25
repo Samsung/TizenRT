@@ -79,6 +79,7 @@
 #include "common.h"
 #endif
 
+#include "board_pins.h"
 #include "up_internal.h"
 #include "amebasmart_boot.h"
 #include "ameba_soc.h"
@@ -266,81 +267,85 @@ void board_gpio_initialize(void)
 		u32 pinmode;
 		u32 pinpull;
 	} pins[] = {
-				{PA_23, PIN_INPUT, PullDown},
-				/* PB_20 is gpio pin number for LED */
-				{PB_20, PIN_OUTPUT, PullDown},
-				{PB_22, PIN_INPUT, PullUp},
+		GPIO_0,
+		GPIO_1,
+		GPIO_2,
 		/* NOTE: Do not open pins not for GPIO usage. E.g uart,SPI pins
-		Loguart pins
-		*/
-		/*		{PA_0, PIN_OUTPUT, PullNone},
-				{PA_1, PIN_OUTPUT, PullNone},
-				{PA_2, PIN_OUTPUT, PullNone},
-				{PA_3, PIN_OUTPUT, PullNone},
-				{PA_4, PIN_OUTPUT,  PullNone},
-				{PA_5, PIN_OUTPUT, PullNone},
-				{PA_6, PIN_OUTPUT, PullNone},
-				{PA_7, PIN_OUTPUT, PullNone},
-				{PA_8, PIN_OUTPUT, PullNone},
-				{PA_9, PIN_OUTPUT, PullNone},
-				{PA_10, PIN_OUTPUT, PullNone},
-				{PA_11, PIN_OUTPUT, PullNone},
-				{PA_12, PIN_OUTPUT, PullNone},
-				{PA_13, PIN_OUTPUT, PullNone},
-				{PA_14, PIN_OUTPUT, PullNone},
-				{PA_15, PIN_OUTPUT, PullNone},
-				{PA_16, PIN_OUTPUT, PullNone},
-				{PA_17, PIN_OUTPUT, PullNone},
-				{PA_18, PIN_OUTPUT, PullNone},
-				{PA_19, PIN_OUTPUT, PullNone},
-				{PA_20, PIN_OUTPUT, PullNone},
-				{PA_21, PIN_OUTPUT, PullNone},
-				{PA_22, PIN_OUTPUT, PullNone},
-				{PA_23, PIN_OUTPUT, PullNone},
-				{PA_24, PIN_OUTPUT, PullNone},
-				{PA_25, PIN_OUTPUT, PullNone},
-				{PA_26, PIN_OUTPUT, PullNone},
-				{PB_27, PIN_OUTPUT, PullNone},
-				{PA_28, PIN_OUTPUT, PullNone},
-				{PA_29, PIN_OUTPUT, PullNone},
-				{PA_30, PIN_OUTPUT, PullNone},
-				{PA_31, PIN_OUTPUT, PullNone},
-				{PB_0, PIN_OUTPUT, PullNone},
-				{PB_1, PIN_OUTPUT, PullNone},
-				{PB_2, PIN_OUTPUT, PullNone},
-				{PB_3, PIN_OUTPUT, PullNone},
-				{PB_4, PIN_OUTPUT, PullNone},
-				{PB_5, PIN_OUTPUT, PullNone},
-				{PB_6, PIN_OUTPUT, PullNone},
-				{PB_7, PIN_OUTPUT, PullNone},
-				{PB_8, PIN_OUTPUT, PullNone},
-				{PB_9, PIN_OUTPUT, PullNone},
-				{PB_10, PIN_OUTPUT, PullNone},
-				{PB_11, PIN_OUTPUT, PullNone},
-				{PB_12, PIN_OUTPUT, PullNone},
-				{PB_13, PIN_OUTPUT, PullNone},
-				{PB_14, PIN_OUTPUT, PullNone},
-				{PB_15, PIN_OUTPUT, PullNone},
-				{PB_16, PIN_OUTPUT, PullNone},
-				{PB_17, PIN_OUTPUT, PullNone},
-				{PB_18, PIN_OUTPUT, PullNone},
-				{PB_19, PIN_OUTPUT, PullNone},
-				{PB_20, PIN_OUTPUT, PullNone},
-				{PB_21, PIN_OUTPUT, PullNone},
-				{PB_22, PIN_OUTPUT, PullNone},
-				//PA23,PA_24 LOGUART PINS
-				{PB_25, PIN_OUTPUT, PullNone},
-				{PB_26, PIN_OUTPUT, PullNone},
-				{PB_27, PIN_OUTPUT, PullNone},
-				{PB_28, PIN_OUTPUT, PullNone},
-				{PB_29, PIN_OUTPUT, PullNone},
-				{PB_30, PIN_OUTPUT, PullNone},
-				{PB_31, PIN_OUTPUT, PullNone}, */
+		   Loguart pins
+		 */
+		/*      {PA_0, PIN_OUTPUT, PullNone},
+		   {PA_1, PIN_OUTPUT, PullNone},
+		   {PA_2, PIN_OUTPUT, PullNone},
+		   {PA_3, PIN_OUTPUT, PullNone},
+		   {PA_4, PIN_OUTPUT,  PullNone},
+		   {PA_5, PIN_OUTPUT, PullNone},
+		   {PA_6, PIN_OUTPUT, PullNone},
+		   {PA_7, PIN_OUTPUT, PullNone},
+		   {PA_8, PIN_OUTPUT, PullNone},
+		   {PA_9, PIN_OUTPUT, PullNone},
+		   {PA_10, PIN_OUTPUT, PullNone},
+		   {PA_11, PIN_OUTPUT, PullNone},
+		   {PA_12, PIN_OUTPUT, PullNone},
+		   {PA_13, PIN_OUTPUT, PullNone},
+		   {PA_14, PIN_OUTPUT, PullNone},
+		   {PA_15, PIN_OUTPUT, PullNone},
+		   {PA_16, PIN_OUTPUT, PullNone},
+		   {PA_17, PIN_OUTPUT, PullNone},
+		   {PA_18, PIN_OUTPUT, PullNone},
+		   {PA_19, PIN_OUTPUT, PullNone},
+		   {PA_20, PIN_OUTPUT, PullNone},
+		   {PA_21, PIN_OUTPUT, PullNone},
+		   {PA_22, PIN_OUTPUT, PullNone},
+		   {PA_23, PIN_OUTPUT, PullNone},
+		   {PA_24, PIN_OUTPUT, PullNone},
+		   {PA_25, PIN_OUTPUT, PullNone},
+		   {PA_26, PIN_OUTPUT, PullNone},
+		   {PB_27, PIN_OUTPUT, PullNone},
+		   {PA_28, PIN_OUTPUT, PullNone},
+		   {PA_29, PIN_OUTPUT, PullNone},
+		   {PA_30, PIN_OUTPUT, PullNone},
+		   {PA_31, PIN_OUTPUT, PullNone},
+		   {PB_0, PIN_OUTPUT, PullNone},
+		   {PB_1, PIN_OUTPUT, PullNone},
+		   {PB_2, PIN_OUTPUT, PullNone},
+		   {PB_3, PIN_OUTPUT, PullNone},
+		   {PB_4, PIN_OUTPUT, PullNone},
+		   {PB_5, PIN_OUTPUT, PullNone},
+		   {PB_6, PIN_OUTPUT, PullNone},
+		   {PB_7, PIN_OUTPUT, PullNone},
+		   {PB_8, PIN_OUTPUT, PullNone},
+		   {PB_9, PIN_OUTPUT, PullNone},
+		   {PB_10, PIN_OUTPUT, PullNone},
+		   {PB_11, PIN_OUTPUT, PullNone},
+		   {PB_12, PIN_OUTPUT, PullNone},
+		   {PB_13, PIN_OUTPUT, PullNone},
+		   {PB_14, PIN_OUTPUT, PullNone},
+		   {PB_15, PIN_OUTPUT, PullNone},
+		   {PB_16, PIN_OUTPUT, PullNone},
+		   {PB_17, PIN_OUTPUT, PullNone},
+		   {PB_18, PIN_OUTPUT, PullNone},
+		   {PB_19, PIN_OUTPUT, PullNone},
+		   {PB_20, PIN_OUTPUT, PullNone},
+		   {PB_21, PIN_OUTPUT, PullNone},
+		   {PB_22, PIN_OUTPUT, PullNone},
+		   //PA23,PA_24 LOGUART PINS
+		   {PB_25, PIN_OUTPUT, PullNone},
+		   {PB_26, PIN_OUTPUT, PullNone},
+		   {PB_27, PIN_OUTPUT, PullNone},
+		   {PB_28, PIN_OUTPUT, PullNone},
+		   {PB_29, PIN_OUTPUT, PullNone},
+		   {PB_30, PIN_OUTPUT, PullNone},
+		   {PB_31, PIN_OUTPUT, PullNone}, */
 	};
-
+#if DEBUG_BOARD_PINS
+	lldbg("\nTLITE [GPIO] PA_23= %d, PB_20= %d, PB_22 = %d\n", PA_23, PB_20, PB_22);
+#endif
 	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
 		lower = amebasmart_gpio_lowerhalf(pins[i].pinname, pins[i].pinmode, pins[i].pinpull);
 		gpio_register(pins[i].pinname, lower);
+#if DEBUG_BOARD_PINS
+		lldbg("TLITE [GPIO] pins[i].pinname= %d, pins[i].pinmode=%d, pins[i].pinpull=%d\n", pins[i].pinname, pins[i].pinmode, pins[i].pinpull);
+#endif
 	}
 #ifdef CONFIG_PM
 	gpio_pminitialize();

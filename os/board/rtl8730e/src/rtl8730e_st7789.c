@@ -24,19 +24,12 @@
 #include <debug.h>
 #include "objects.h"
 #include "PinNames.h"
+#include "board_pins.h"
 #include "gpio_api.h"
 #include "pwmout_api.h"
 
 #ifndef CONFIG_LCD_ST7789_SPI_PORT
 #define CONFIG_LCD_ST7789_SPI_PORT 1
-#endif
-
-#if CONFIG_RTL8730E_BOARD_REVISION >= 5
-#error "ERROR, Not supported this revision"
-#else
-#define GPIO_PIN_RESET 		PB_11
-#define GPIO_PIN_BACKLIGHT 	PA_9
-#define GPIO_PIN_CMDDATA 	PA_10
 #endif
 
 /****************************************************************************
@@ -110,6 +103,11 @@ static void gpio_pins_init(void)
 void rtl8730_st7789_initialize(void)
 {
 	gpio_pins_init();
+
+#if DEBUG_BOARD_PINS
+	lldbg("TLITE [ST7789] PB_11 = %d PA_9 = %d PA_10 = %d\n", PB_11, PA_9, PA_10);
+	lldbg("TLITE [ST7789] GPIO_PIN_RESET = %d GPIO_PIN_BACKLIGHT = %d GPIO_PIN_CMDDATA = %d\n", GPIO_PIN_RESET, GPIO_PIN_BACKLIGHT, GPIO_PIN_CMDDATA);
+#endif
 
 	FAR struct spi_dev_s *spi = up_spiinitialize(CONFIG_LCD_ST7789_SPI_PORT);
 	struct lcd_dev_s *dev = st7789_lcdinitialize(spi, &g_rtl8730_config_dev_s.lcd_config);

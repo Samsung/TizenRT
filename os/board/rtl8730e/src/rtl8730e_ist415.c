@@ -32,6 +32,7 @@
 #include "objects.h"
 #include "gpio_irq_api.h"
 #include "PinNames.h"
+#include "board_pins.h"
 #include "gpio_api.h"
 
 #define PIN_LOW		0
@@ -39,19 +40,11 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#if defined(CONFIG_RTL8730E_BOARD_AIL) || defined(CONFIG_RTL8730E_BOARD_AILP) || defined(CONFIG_RTL8730E_BOARD_AILPW)
 /* i2c config */
-#if CONFIG_RTL8730E_BOARD_REVISION >= 6
-#define IST415_I2C_PORT		0
+#define IST415_I2C_PORT         0
 #else
-#define IST415_I2C_PORT		1
-#endif
-
-/* pin config */
-#define IST415_GPIO_RESET_PIN	PA_5
-#if CONFIG_RTL8730E_BOARD_REVISION >= 6
-#define IST415_GPIO_I2C_PIN		PA_4
-#else
-#define IST415_GPIO_I2C_PIN		PA_2
+#error Not Supported, Please check the board type configure
 #endif
 
 /****************************************************************************
@@ -191,4 +184,8 @@ void rtl8730e_ist415_initialize(void)
 	} else {
 		touchdbg("Touch driver register success\n");
 	}
+#if DEBUG_BOARD_PINS
+	lldbg("TLITE [IST415] PA_5 = %d, PA_4 = %d, PA_2 = %d\n", PA_5, PA_4, PA_2);
+	lldbg("TLITE [IST415] IST415_GPIO_RESET_PIN = %d, IST415_GPIO_I2C_PIN = %d\n", IST415_GPIO_RESET_PIN, IST415_GPIO_I2C_PIN);
+#endif
 }
