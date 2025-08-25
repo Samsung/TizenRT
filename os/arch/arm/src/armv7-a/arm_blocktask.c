@@ -77,6 +77,14 @@
  *   task_state: Specifies which waiting task list should hold the blocked
  *     task TCB.
  *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ * - The caller has established a critical section before calling this
+ *   function (calling sched_lock() first is NOT a good idea -- use
+ *   enter_critical_section()).
+ *
  ****************************************************************************/
 
 void up_block_task(struct tcb_s *tcb, tstate_t task_state)
