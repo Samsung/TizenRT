@@ -225,7 +225,7 @@ void general_client_notify_hdl(void *data)
 	gattc_dump(ntf_ind->len, ntf_ind->value, (uint8_t *)"notify event");
 	trble_data read_result;
 	read_result.length = ntf_ind->len;
-	read_result.data = (uint8_t *)malloc(read_result.length);
+	read_result.data = (uint8_t *)kmm_malloc(read_result.length);
 	if (!read_result.data)
 	{
 		dbg("fail to malloc data %s\n", __FUNCTION__);
@@ -255,7 +255,7 @@ void general_client_indicate_hdl(void *data)
 //	}
 	
 	read_result.length = indicate_ind->len;
-	read_result.data = (uint8_t *)malloc(read_result.length);
+	read_result.data = (uint8_t *)kmm_malloc(read_result.length);
 	if (!read_result.data)
 	{
 		dbg("fail to malloc data %s\n", __FUNCTION__);
