@@ -23,6 +23,10 @@
 #include <tinyara/config.h>
 #include <cstdio>
 #include <debug.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
 #include <tinyara/init.h>
 #include <tinyara/pm/pm.h>
 #include <media/MediaPlayer.h>
@@ -39,7 +43,6 @@
 #include <iostream>
 #include <memory>
 #include <functional>
-#include <tinyara/pm/pm.h>
 
 using namespace std;
 using namespace media;
@@ -51,6 +54,32 @@ media::voice::SpeechDetector *sd;
 static const char *filePath = "/tmp/record.pcm";
 uint8_t *gBuffer = NULL;
 uint32_t bufferSize = 0;
+
+static void pm_suspend_idle(void)
+{
+	int fd = open(PM_DRVPATH, O_WRONLY);
+	if (fd < 0) {
+		printf("Fail to open pm(errno %d)", get_errno());
+		return;
+	}
+	if (ioctl(fd, PMIOC_SUSPEND, PM_IDLE_DOMAIN) < 0) {
+		printf("Fail to suspend(errno %d)\n", get_errno());
+	}
+	close(fd);
+}
+
+static void pm_resume_idle(void)
+{
+	int fd = open(PM_DRVPATH, O_WRONLY);
+	if (fd < 0) {
+		printf("Fail to open pm(errno %d)", get_errno());
+		return;
+	}
+	if (ioctl(fd, PMIOC_RESUME, PM_IDLE_DOMAIN) < 0) {
+		printf("Fail to resume(errno %d)\n", get_errno());
+	}
+	close(fd);
+}
 
 class WakeRec : public media::voice::SpeechDetectorListenerInterface,public FocusChangeListener,
 				public media::MediaRecorderObserverInterface, public media::MediaPlayerObserverInterface,
@@ -221,7 +250,7 @@ private:
 		printf("#### onSpeechDetectionListener\n");
 		if (event == SPEECH_DETECT_KD) {
 			/* take wakelock as soon as possible, and we hold it until we play recorded data */
-			pm_suspend(PM_IDLE_DOMAIN);
+			pm_suspend_idle();
 			printf("Event SPEECH_DETECT_KD\n");
 			printf("#### [SD] keyword detected.\n");
 			if (gBuffer) {
@@ -346,7 +375,7 @@ int wakerec_main(int argc, char *argv[])
 		}
 		sd->startKeywordDetect();
 		/* similar to wake lock, we release wake lock as we started our thread */
-		pm_resume(PM_IDLE_DOMAIN);
+		pm_resume_idle();
 	}
 
 	while (1) {
