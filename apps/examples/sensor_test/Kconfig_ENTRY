@@ -1,0 +1,3 @@
+config ENTRY_SENSOR
+	bool "Sensor example"
+	depends on EXAMPLES_SENSOR
