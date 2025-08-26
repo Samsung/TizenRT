@@ -84,3 +84,11 @@ endif
 ifeq ($(CONFIG_AUDIO_NDP120),y)
 CSRCS += rtl8730e_ndp120.c
 endif
+
+ifeq ($(CONFIG_SENSOR),y)
+
+ifeq ($(CONFIG_SENSOR_AIS25BA),y)
+CSRCS += rtl8730e_ais25ba.c
+endif
+
+endif
