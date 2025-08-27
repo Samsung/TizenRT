@@ -29,6 +29,7 @@ CSRCS += syntiant_ndp120_ph.c
 CSRCS += syntiant_ndp_error.c
 CSRCS += syntiant_package.c
 CSRCS += syntiant_portability.c
+CSRCS += ndp120_debug_utils.c
 
 # This should be set to the host processor clock frequency value
 CPU_FREQ ?= 1200000000

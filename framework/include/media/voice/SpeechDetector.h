@@ -136,6 +136,10 @@ public:
 
 	virtual bool getKeywordData(uint8_t *buffer) = 0;
 
+	virtual bool startMultiChStream(int duration, int verbose, uint32_t *dev_extract_size) = 0;
+	virtual bool readMultiChStream(uint8_t *buffer, uint32_t *extracted_len) = 0;
+	virtual bool stopMultiChStream() = 0;
+
 protected:
 	SpeechDetector() = default;
 };

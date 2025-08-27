@@ -914,6 +914,10 @@ audio_manager_result_t get_audio_stream_mute_state(stream_policy_t stream_policy
 void dump_audio_card_info(void);
 #endif
 
+audio_manager_result_t start_audio_multich_stream(int card_id, int device_id, int duration, int verbose, uint32_t *dev_extract_size);
+audio_manager_result_t read_audio_multich_stream(int card_id, int device_id, uint8_t *buffer, uint32_t *extracted_len);
+audio_manager_result_t stop_audio_multich_stream(int card_id, int device_id);
+
 #if defined(__cplusplus)
 }								/* extern "C" */
 #endif

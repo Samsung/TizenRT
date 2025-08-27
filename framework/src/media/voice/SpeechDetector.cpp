@@ -413,6 +413,24 @@ bool SpeechDetectorImpl::getKeywordData(uint8_t *buffer)
 	return true;
 }
 
+bool SpeechDetectorImpl::startMultiChStream(int duration, int verbose, uint32_t *dev_extract_size)
+{
+    mKeywordDetector->startMultiChStream(duration, verbose, dev_extract_size);
+    return true;
+}
+
+bool SpeechDetectorImpl::readMultiChStream(uint8_t *buffer, uint32_t *extracted_len)
+{
+    mKeywordDetector->readMultiChStream(buffer, extracted_len);
+    return true;
+}
+
+bool SpeechDetectorImpl::stopMultiChStream(void)
+{
+    mKeywordDetector->stopMultiChStream();
+    return true;
+}
+
 } // namespace voice
 } // namespace media
 
