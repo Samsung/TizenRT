@@ -247,7 +247,7 @@ int prctl(int option, ...)
 #endif /* CONFIG_MESSAGING_IPC */
 	case PR_GET_STKLOG:
 	{
-#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG)
+#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG) && !defined(CONFIG_STACKMONITOR_DISABLE_DEAD_THREAD)
 		struct stkmon_save_s *dest_buf = va_arg(ap, struct stkmon_save_s *);
 		stkmon_copy_log(dest_buf);
 #else
