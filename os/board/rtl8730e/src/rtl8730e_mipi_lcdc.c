@@ -47,6 +47,10 @@
 #define MIPI_GPIO_RESET_PIN 	PA_14
 #endif
 #include <tinyara/spinlock.h>
+
+#define LCD_XRES CONFIG_LCD_XRES
+#define LCD_YRES CONFIG_LCD_YRES
+
 struct rtl8730e_lcdc_info_s {
 	struct mipi_lcd_config_s lcd_config;
 	pwmout_t pwm_led;
@@ -63,11 +67,13 @@ static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, 
 static void rtl8730e_enable_lcdc(void);
 static void rtl8730e_register_lcdc_isr(void);
 static void rtl8730e_control_backlight(u8 level);
+static void rtl8730e_mipi_driver_reinitialize(void);
 FAR void mipi_mode_switch_to_video(bool do_enable);
 FAR void mipidsi_acpu_reg_clear(void);
 FAR struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *config);
 FAR struct mipi_dsi_device *mipi_dsi_device_register(FAR struct mipi_dsi_host *host, FAR const char *name, int channel);
 FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config);
+FAR void amebasmart_mipi_dsi_host_reinitialize(void);
 
 struct rtl8730e_lcdc_info_s g_rtl8730e_config_dev_s = {
 	.lcd_config = {
@@ -79,7 +85,10 @@ struct rtl8730e_lcdc_info_s g_rtl8730e_config_dev_s = {
 		.lcd_put_area = rtl8730e_lcd_put_area,
 		.backlight = rtl8730e_control_backlight,
 		.power_off = rtl8730e_lcd_power_off,
-		.power_on = rtl8730e_lcd_power_on
+		.power_on = rtl8730e_lcd_power_on,
+
+		/* for resetting host stack */
+		.mipi_drv_reset = rtl8730e_mipi_driver_reinitialize
 	},
 };
 
@@ -145,7 +154,7 @@ static void rtl8730e_lcd_power_off(void)
 static void rtl8730e_lcd_power_on(void)
 {
 	GPIO_WriteBit(MIPI_GPIO_RESET_PIN, PIN_HIGH);
-	DelayMs(120);
+	DelayMs(140);  // additional time needed for the panel to stabilize and accept commands 
 }
 static void rtl8730e_gpio_reset(void)
 {
@@ -231,8 +240,10 @@ static void rtl8730e_control_backlight(uint8_t level)
 		/* TO-DO: Move LCD IC Power ON flow */
 		InterruptEn(lcdc_irq_info.num, lcdc_irq_info.priority);
 	}
-#if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701SN)
+#if defined(CONFIG_LCD_PWM_INVERSION)
 	pwmout_write(&g_rtl8730e_config_dev_s.pwm_led, 1.0-pwm_level);
+#else
+	pwmout_write(&g_rtl8730e_config_dev_s.pwm_led, pwm_level);
 #endif
 	g_rtl8730e_config_dev_s.pwm_level = level;
 }
@@ -300,6 +311,16 @@ u32 rtl8730e_hv_isr(void *Data)
 		}
 	}
 	return 0;
+}
+
+static void rtl8730e_mipi_driver_reinitialize(void)
+{
+	lcddbg("Reinit MIPI DSI Host Driver\n");
+	amebasmart_mipi_dsi_host_reinitialize();
+
+	lcddbg("Reinit LCDC Driver\n");
+	rtl8730e_lcd_init();
+	rtl8730e_enable_lcdc();
 }
 
 static void rtl8730e_register_lcdc_isr(void){

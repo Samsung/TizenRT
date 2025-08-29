@@ -170,17 +170,17 @@ trble_result_e rtw_ble_client_start_scan(void)
 void *scan_filter_tmr_handle = NULL;
 void scan_stop_cb(void *arg)
 {
-    dbg("scan duration exhausted \n");
-    if (RTK_BT_OK != rtk_bt_le_gap_stop_scan())
-    {
- 	   debug_print("stop scan failed! \n");
-       return;
-    }
-    rtk_bt_le_gap_dev_state_t new_state;
-    do {
-        osif_delay(100);
-        rtk_bt_le_gap_get_dev_state(&new_state);
-	} while(new_state.gap_scan_state != GAP_SCAN_STATE_IDLE);
+	rtk_bt_le_gap_dev_state_t new_state;
+	dbg("scan duration exhausted \n");
+
+	rtk_bt_le_gap_get_dev_state(&new_state);
+	if (GAP_SCAN_STATE_SCANNING == new_state.gap_scan_state) {
+		if (RTK_BT_OK != rtk_bt_le_gap_stop_scan()) {
+			dbg("Stop scan failed! \n");
+		}
+	} else {
+		dbg("Scan is in invalid state! \n");
+	}
 }
 
 trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_parm, bool whitelist_enable)

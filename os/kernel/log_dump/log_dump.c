@@ -388,12 +388,17 @@ static int log_dump_tobuffer(char ch, size_t *free_size)
 static int compress_full_bufs(void)
 {
 	int ret = 0;
+	int comp_finish = false;
 	int i = uncomp_idx + 1;
 	if (i == CONFIG_LOG_DUMP_NUMBUFS) {
 		i = 0;
 	}
 
-	while (i != uncomp_idx) {
+	comp_finish = (i == uncomp_idx);
+	while (!comp_finish) {
+		if (i == uncomp_idx) {
+			comp_finish = true;
+		}
 
 		if (!uncomp_buf_full[i]) {
 			i++;
@@ -514,6 +519,16 @@ int log_dump_save(char ch)
 
 			return compress_full_bufs();
 		}
+	}
+	else {
+		// This else statement is entered only when enitre uncompressed buffer is full.
+		// If compression is available, compress the entire uncompressed buffer.
+		// Otherwise, discard the character.
+		if (sched_self()->sched_priority > CONFIG_LOG_DUMP_PRIO || sched_lockcount() || IS_KMM_LOCKED()) {
+			return LOG_DUMP_FAIL;
+		}
+
+		return compress_full_bufs();
 	}
 
 	return LOG_DUMP_OK;

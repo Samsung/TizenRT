@@ -83,6 +83,78 @@ static uint8_t g_adv_resp_2[] = {
 	0x11, 0x09, '2', 'I', 'Z', 'E', 'N', 'R', 'T', ' ', 'T', 'E', 'S', 'T', '(', '0', '2', ')',
 };
 
+uint8_t own_addr_val[BLE_BD_ADDR_MAX_LEN] = {0x11,0x22,0x33,0x44,0x55,0x66};   
+uint8_t own_addr_val_1[BLE_BD_ADDR_MAX_LEN] = {0x22,0x22,0x33,0x44,0x55,0x66};   
+uint8_t own_addr_val_2[BLE_BD_ADDR_MAX_LEN] = {0x33,0x22,0x33,0x44,0x55,0x66};   
+ 
+uint8_t def_ext_adv_data[] = {       
+	// Flags       
+	0x02,       
+	0x01,//RTK_BT_LE_GAP_ADTYPE_FLAGS,       
+	0x01|0x04,//RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,       
+	// Local name       
+	0x12,       
+	0x09,//RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,       
+	'0', 'E', 'K', '_', 'B', 'T', '_', 'P', 'E', 'R', 'I', 'P', 'H', 'E', 'R', 'A', 'L',       
+};       
+     
+uint8_t def_ext_resp_data[] = {       
+	// Flags       
+	0x02,       
+	0x01,//RTK_BT_LE_GAP_ADTYPE_FLAGS,       
+	0x01|0x04,//RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,       
+	// Local name       
+	0x12,       
+	0x09,//RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,       
+	'R', 'E', 'S', 'P', '0', '_', '_', 'P', 'E', 'R', 'I', 'P', 'H', 'E', 'R', 'A', 'L',       
+};       
+     
+uint8_t def_ext_adv_data_1[] = {       
+	// Flags       
+	0x02,       
+	0x01,//RTK_BT_LE_GAP_ADTYPE_FLAGS,       
+	0x01|0x04,//RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,       
+	// Local name       
+	0x12,       
+	0x09,//RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,       
+	'1', 'E', 'K', '_', 'B', 'T', '_', 'P', 'E', 'R', 'I', 'P', 'H', 'E', 'R', 'A', 'L',       
+};     
+     
+uint8_t def_ext_resp_data_1[] = {       
+	// Flags       
+	0x02,       
+	0x01,//RTK_BT_LE_GAP_ADTYPE_FLAGS,       
+	0x01|0x04,//RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,       
+	// Local name       
+	0x12,       
+	0x09,//RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,       
+	'R', 'E', 'S', 'P', '1', '_', '_', 'P', 'E', 'R', 'I', 'P', 'H', 'E', 'R', 'A', 'L',       
+};     
+     
+uint8_t def_ext_adv_data_2[] = {       
+	// Flags       
+	0x02,       
+	0x01,//RTK_BT_LE_GAP_ADTYPE_FLAGS,       
+	0x01|0x04,//RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,       
+	// Local name       
+	0x12,       
+	0x09,//RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,       
+	'2', 'E', 'K', '_', 'B', 'T', '_', 'P', 'E', 'R', 'I', 'P', 'H', 'E', 'R', 'A', 'L',       
+};     
+     
+uint8_t def_ext_resp_data_2[] = {       
+	// Flags       
+	0x02,       
+	0x01,//RTK_BT_LE_GAP_ADTYPE_FLAGS,       
+	0x01|0x04,//RTK_BT_LE_GAP_ADTYPE_FLAGS_LIMITED | RTK_BT_LE_GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,       
+	// Local name       
+	0x12,       
+	0x09,//RTK_BT_LE_GAP_ADTYPE_LOCAL_NAME_COMPLETE,       
+	'R', 'E', 'S', 'P', '2', '_', '_', 'P', 'E', 'R', 'I', 'P', 'H', 'E', 'R', 'A', 'L',       
+};
+
+
+
 static void ble_device_scanned_cb_for_test(ble_scanned_device *scanned_device)
 {
 	RMC_LOG(RMC_CLIENT_TAG, "scanned mac : %02x:%02x:%02x:%02x:%02x:%02x\n", 
@@ -167,6 +239,7 @@ static void ble_device_passkey_display_cb(ble_client_ctx *ctx, uint32_t passkey,
 	return;
 }
 
+
 void restart_server(void) {
 	ble_result_e ret = BLE_MANAGER_FAIL;
 	ble_data data[1] = { 0, };
@@ -233,6 +306,7 @@ static void ble_server_passkey_display_cb(uint32_t passkey, ble_conn_handle conn
 	return;
 }
 
+
 static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
 {
 	char *arg_str = "None";
@@ -286,12 +360,57 @@ static ble_scan_callback_list scan_config = {
 	NULL,
 };
 
+static void ble_coc_reg_psm_cb(uint16_t le_psm, uint16_t err)
+{
+	printf("[######## %s : %d]le_psm %d, err %d\n", __FUNCTION__, __LINE__, le_psm, err);
+	return;
+}
+
+static void ble_coc_set_sec_cb(uint16_t err)
+{
+	printf("[######## %s : %d]err %d\n", __FUNCTION__, __LINE__, err);
+	return;
+}
+
+static void ble_coc_con_cb(uint16_t conn_handle, uint16_t cid, uint16_t err)
+{
+	printf("[######## %s : %d]conn_handle %d, cid %d, err %d\n", __FUNCTION__, __LINE__, conn_handle, cid, err);
+	return;
+}
+
+static void ble_coc_discon_cb(uint16_t conn_handle, uint16_t cid, uint16_t err)
+{
+	printf("[######## %s : %d]conn_handle %d, cid %d, err %d\n", __FUNCTION__, __LINE__, conn_handle, cid, err);
+	return;
+}
+
+static void ble_coc_send_cb(uint16_t conn_handle, uint16_t cid, uint16_t err, uint8_t credit)
+{
+	printf("[######## %s : %d]conn_handle %d, cid %d, err %d, credit %d\n", __FUNCTION__, __LINE__, conn_handle, cid, err, credit);
+	return;
+}
+
+static void ble_coc_recv_cb(uint16_t conn_handle, uint16_t cid, ble_data *read_result)
+{
+	printf("[######## %s : %d]conn_handle %d, cid %d, len %d, data %d\n", __FUNCTION__, __LINE__, conn_handle, cid, read_result->length, read_result->data[0]);
+	return;
+}
+
+static ble_le_coc_callback_list le_coc_config = {
+	ble_coc_reg_psm_cb,
+	ble_coc_set_sec_cb,
+	ble_coc_con_cb,
+	ble_coc_discon_cb,
+	ble_coc_send_cb,
+	ble_coc_recv_cb,
+};
+
 static ble_client_callback_list client_config = {
 	ble_device_disconnected_cb,
 	ble_device_connected_cb,
 	ble_operation_notification_cb,
 	NULL,
-	ble_device_passkey_display_cb
+	ble_device_passkey_display_cb,
 };
 
 static ble_server_init_config server_config = {
@@ -399,6 +518,54 @@ static void set_scan_filter(ble_scan_filter *filter, uint8_t *raw_data, uint8_t 
 /****************************************************************************
  * ble_rmc_main
  ****************************************************************************/
+
+static uint8_t ctoi2(char c)
+{
+	if ((c >= 'A') && (c <= 'F')) {
+		return (c - 'A' + 0x0A);
+	}
+
+	if ((c >= 'a') && (c <= 'f')) {
+		return (c - 'a' + 0x0A);
+	}
+
+	if ((c >= '0') && (c <= '9')) {
+		return (c - '0' + 0x00);
+	}
+  
+	printf("[%s]Error: Hex char is invalid !!!\r\n", __func__);
+	return 0xFF;
+}
+
+bool hexdata_str_to_bd_addr2(char *str, uint8_t *addr_buf, uint8_t buf_len)
+{
+	uint32_t str_len = strlen(str);
+	uint32_t n = 0;
+	uint8_t num = 0;
+
+	if (str_len != 2 * 6 || buf_len < 6) {
+		printf("[%s]Error: Invalid bd addr string\r\n",__func__);
+		return FALSE;
+	}
+
+	addr_buf += str_len / 2 - 1;
+
+	while (n < str_len) {
+		if ((num = ctoi2(str[n++])) == 0xFF) {
+			return FALSE;
+		}
+		*addr_buf = num << 4;
+		if ((num = ctoi2(str[n++])) == 0xFF) {
+			return FALSE;
+		}
+		*addr_buf |= num;
+		addr_buf--;
+	}
+	return TRUE;
+}
+
+uint8_t coc_data[10] = {0x67,1,2,3,4,5,6,7,0x88};
+uint8_t coc_data_2[1] = {0x67};
 int ble_rmc_main(int argc, char *argv[])
 {
 	RMC_LOG(RMC_TAG, "- BLE Remote Test -\n");
@@ -762,56 +929,8 @@ int ble_rmc_main(int argc, char *argv[])
 
 	if (strncmp(argv[1], "connect", 8) == 0) {
 		ble_client_ctx *ctx = NULL;
-
-		/*
-		1. scan
-		2. delete bond
-		3. create ctx
-		4. connect
-		*/
-
-		// 1. scan & delete bond
-		if (g_scan_state == 1) {
-			RMC_LOG(RMC_CLIENT_TAG, "Scan is running\n");
-			goto ble_rmc_done;
-		}
-		g_scan_state = -1;
-
-		if (argc == 3 && strncmp(argv[2], "fail", 5) == 0) {
-			memset(g_target.mac, 1, BLE_BD_ADDR_MAX_LEN);
-			g_target.type = BLE_ADDR_TYPE_PUBLIC;
-		} else {
-			ble_scan_filter filter = { 0, };
-			set_scan_filter(&filter, ble_filter, sizeof(ble_filter), false, 1500);
-			scan_config.device_scanned_cb = ble_device_scanned_cb_for_connect;
-			g_scan_done = 0;
-			ret = ble_client_start_scan(&filter, &scan_config);
-
-			if (ret != BLE_MANAGER_SUCCESS) {
-				RMC_LOG(RMC_CLIENT_TAG, "scan start fail[%d]\n", ret);
-				goto ble_rmc_done;
-			}
-
-			while (1) {
-				if (g_scan_state == 0) {
-					break;
-				}
-				usleep(100 * 1000);
-			}
-			
-			if (g_scan_done == 0) {
-				RMC_LOG(RMC_CLIENT_TAG, "No target device\n");
-				goto ble_rmc_done;
-			}
-			RMC_LOG(RMC_CLIENT_TAG, "Found device!\n");
-
-			ret = ble_manager_delete_bonded_all();
-			if (ret != BLE_MANAGER_SUCCESS) {
-				RMC_LOG(RMC_CLIENT_TAG, "fail to delete bond dev[%d]\n", ret);
-			} else {
-				RMC_LOG(RMC_CLIENT_TAG, "success to delete bond dev\n");
-			}
-		}
+		uint8_t addrr [6] ={0};  
+		hexdata_str_to_bd_addr2(argv[2], addrr, 6); 
 
 		// 3. create ctx
 		ctx = ble_client_create_ctx(&client_config);
@@ -819,6 +938,13 @@ int ble_rmc_main(int argc, char *argv[])
 			RMC_LOG(RMC_CLIENT_TAG, "create ctx fail\n");
 			goto ble_rmc_done;
 		}
+
+		g_target.mac[0] = addrr[5];
+		g_target.mac[1] = addrr[4];
+		g_target.mac[2] = addrr[3];
+		g_target.mac[3] = addrr[2];
+		g_target.mac[4] = addrr[1];
+		g_target.mac[5] = addrr[0];
 
 		RMC_LOG(RMC_CLIENT_TAG, "Try to connect! [%02x:%02x:%02x:%02x:%02x:%02x]\n", 
 			g_target.mac[0],
@@ -958,6 +1084,11 @@ int ble_rmc_main(int argc, char *argv[])
 		}   
 	} 
 
+	if (strncmp(argv[1], "powerset", 9) == 0) {
+		uint8_t power = atoi(argv[2]);
+		ble_server_set_adv_tx_power(power);
+	}
+
 	/* Server Test */
 	if (strncmp(argv[1], "server", 7) == 0) {
 		RMC_LOG(RMC_SERVER_TAG, " [ Server Control ]\n");
@@ -1003,7 +1134,261 @@ int ble_rmc_main(int argc, char *argv[])
 			}
 			RMC_LOG(RMC_SERVER_TAG, "Stop adv ... ok\n");
 		}
+
+		if (argc == 4 && strncmp(argv[2], "cremuladv", 10) == 0) {
+			uint8_t adv_handle = 0;
+			if (argc > 2) {
+				adv_handle = atoi(argv[3]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done;
+			}
+//			uint8_t adv_event_prop = 0x1;//extended adv   
+			uint8_t adv_event_prop = 0x13;//legacy adv   
+			uint32_t adv_interval_int[2] = {32,32};
+			uint8_t own_addr_type = 1;
+ 			int16_t val = 0x7f;
+			if (adv_handle == 0){
+				ret = ble_server_create_multi_adv(adv_event_prop,
+												 adv_interval_int,
+												 own_addr_type,
+												 own_addr_val,
+												 &adv_handle);
+			} else if  (adv_handle == 1) { 
+				ret = ble_server_create_multi_adv(adv_event_prop,
+												 adv_interval_int,
+												 own_addr_type,
+												 own_addr_val_1,
+												 &adv_handle);
+			} else if  (adv_handle == 2) {
+				ret = ble_server_create_multi_adv(adv_event_prop,
+												 adv_interval_int,
+												 own_addr_type,
+												 own_addr_val_2,
+												 &adv_handle);
+			}
+
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to create adv [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "create adv %d... ok\n", adv_handle);
+		}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   
+  
+		if (argc == 4 && strncmp(argv[2], "delmuladv", 10) == 0) {
+			uint8_t adv_handle = 0;
+			if (argc > 2) {
+				adv_handle = atoi(argv[3]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done;
+			}
+			ret = ble_server_delete_multi_adv(adv_handle);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to delete adv [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "Stop delete ... ok\n");
+		}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   
+  
+		if (argc == 4 && strncmp(argv[2], "setmuladv", 10) == 0) {
+			uint8_t adv_data_len = 20;
+			uint8_t adv_handle = 0;
+			if (argc > 2) {
+				adv_handle = atoi(argv[3]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done;
+			}
+			if (adv_handle == 0) {
+				ret = ble_server_set_multi_adv_data(adv_handle, adv_data_len, def_ext_adv_data);
+				ret = ble_server_set_multi_resp_data(adv_handle, adv_data_len, def_ext_resp_data);
+			} else if (adv_handle == 1) {
+				ret = ble_server_set_multi_adv_data(adv_handle, adv_data_len, def_ext_adv_data_1);
+				ret = ble_server_set_multi_resp_data(adv_handle, adv_data_len, def_ext_resp_data_1);
+			} else if (adv_handle == 2) {
+				ret = ble_server_set_multi_adv_data(adv_handle, adv_data_len, def_ext_adv_data_2);
+				ret = ble_server_set_multi_resp_data(adv_handle, adv_data_len, def_ext_resp_data_2);
+			}
+			if (ret != BLE_MANAGER_SUCCESS) {   
+				RMC_LOG(RMC_SERVER_TAG, "Fail to set adv data [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, " set adv data ... ok\n");
+		}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   
+   
+		if (argc == 4 && strncmp(argv[2], "stamuladv", 10) == 0) {
+			uint8_t adv_handle = 0;
+			if (argc > 2) {
+				adv_handle = atoi(argv[3]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done;
+			}
+			ret = ble_server_start_multi_adv(adv_handle);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to start adv [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "start adv ... ok\n");
+		}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   
+		if (argc == 4 && strncmp(argv[2], "stpmuladv", 10) == 0) {
+			uint8_t adv_handle = 0;
+			if (argc > 2) {
+				adv_handle = atoi(argv[3]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done; 
+			}
+			ret = ble_server_stop_multi_adv(adv_handle);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to stop adv [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "Stop adv ... ok\n");
+		}
 	}
+
+	if (strncmp(argv[1], "coc", 4) == 0) {
+		if (strncmp(argv[2], "init", 5) == 0) {
+			printf("[######## %s : %d]\n", __FUNCTION__, __LINE__);
+			ret = ble_manager_le_coc_init(&le_coc_config);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to init coc [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "coc init  ... ok\n");
+		} else if (strncmp(argv[2], "reg_psm", 8) == 0) {
+			uint8_t is_reg = 0;
+			uint16_t psm = 0;
+			if (argc > 4) {
+				is_reg = atoi(argv[3]);
+				psm = atoi(argv[4]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done; 
+			}
+			printf("[######## %s : %d]is_reg %d psm %d\n",
+			 __FUNCTION__, __LINE__, is_reg, psm);
+			ret = ble_coc_register_psm(is_reg, psm);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to register psm [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "register psm  ... ok\n");
+		}
+		else if (strncmp(argv[2], "set_sec", 8) == 0){
+			uint8_t active = 0;
+			uint16_t le_psm = 0;
+			uint8_t sec_mode = 0;
+			uint8_t key_size = 0;
+			if (argc > 6) {
+				active = atoi(argv[3]);
+				le_psm = atoi(argv[4]);
+				sec_mode = atoi(argv[5]);
+				key_size = atoi(argv[6]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done;
+			}
+			printf("[######## %s : %d]le_psm %d active %d sec_mode %d key_size %d\n", __FUNCTION__, __LINE__, le_psm, active, sec_mode, key_size);
+			ret = ble_coc_set_psm_security(le_psm, active, sec_mode, key_size);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to set coc psm security [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "set coc psm security   ... ok\n");
+		} else if (strncmp(argv[2], "set_param", 8) == 0) {
+			uint8_t param_type = 0;
+			uint16_t value = 0;
+			if (argc > 3) {
+				value = atoi(argv[3]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done;
+			}
+			printf("[######## %s : %d]value %d\n", __FUNCTION__, __LINE__, value);
+			ret = ble_coc_set_param(value);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to set coc param [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "set coc param  ... ok\n");
+		} else if (strncmp(argv[2], "get_param", 8) == 0) {
+			uint8_t param_type = 0;
+			uint16_t cid = 0;
+			uint16_t value = 0;
+			if (argc > 4) {
+				param_type = atoi(argv[3]);
+				cid = atoi(argv[4]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done;
+			}
+			ret = ble_coc_get_param(param_type, cid, &value);
+			printf("[######## %s : %d]param_type %d cid %d value %d\n", __FUNCTION__, __LINE__, param_type, cid, value);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to get coc param [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "get coc param  ... ok\n");
+		} else if (strncmp(argv[2], "con", 8) == 0) {
+			uint16_t conn_handle = 0;
+			uint16_t le_psm = 0;
+			if (argc > 4) {
+				conn_handle = atoi(argv[3]);
+				le_psm = atoi(argv[4]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done;
+			}
+			printf("[######## %s : %d]conn_handle %d le_psm %d\n", __FUNCTION__, __LINE__, conn_handle, le_psm);
+			ret = ble_coc_connect(conn_handle, le_psm);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to coc connect [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "coc connect  ... ok\n");
+		} else if (strncmp(argv[2], "discon", 11) == 0) {
+			uint16_t cid = 0;
+			if (argc > 3) {
+				cid = atoi(argv[3]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done;
+			}
+			printf("[######## %s : %d]cid %d\n", __FUNCTION__, __LINE__, cid);
+			ret = ble_coc_disconnect(cid);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to coc disconnect [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			RMC_LOG(RMC_SERVER_TAG, "coc disconnect  ... ok\n");
+		} else if (strncmp(argv[2], "send", 5) == 0) {
+			uint16_t cid = 0;
+
+			uint16_t len = sizeof(coc_data);
+			if (argc > 3) {
+				cid = atoi(argv[3]);
+			} else {
+				RMC_LOG(RMC_SERVER_TAG, "Wrong argument\n");
+				goto ble_rmc_done;
+			}
+			printf("[######## %s : %d]cid %d\n", __FUNCTION__, __LINE__, cid);
+			ret = ble_coc_send_data(cid, len, coc_data);
+			if (ret != BLE_MANAGER_SUCCESS) {
+				RMC_LOG(RMC_SERVER_TAG, "Fail to coc send [%d]\n", ret);
+				goto ble_rmc_done;
+			}
+			coc_data[0]++;
+			RMC_LOG(RMC_SERVER_TAG, "coc send  ... ok\n");
+		}
+	}
+
 
 ble_rmc_done:
 	RMC_LOG(RMC_CLIENT_TAG, "done\n");

@@ -385,6 +385,7 @@ static void i2s_txdma_timeout(int argc, uint32_t arg)
 	/* Then schedule completion of the transfer to occur on the worker thread.
 	 * Set the result with -ETIMEDOUT.
 	 */
+	i2serr("txdma timeout\n");
 	i2s_tx_schedule(priv, -ETIMEDOUT);
 }
 
@@ -1908,13 +1909,11 @@ static void amebasmart_i2s_suspend(uint16_t port)
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 	if (priv->rx.dog) {
 		wd_cancel(priv->rx.dog);
-		priv->rx.dog = NULL;
 	}
 #endif
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 	if (priv->tx.dog) {
 		wd_cancel(priv->tx.dog);
-		priv->tx.dog = NULL;
 	}
 #endif
 

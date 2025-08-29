@@ -232,6 +232,14 @@ config STACKMONITOR_INTERVAL
 		The rate in seconds that the stack monitor will wait before dumping
 		the next set stack usage information.  Default:  2 seconds.
 
+config STACKMONITOR_DISABLE_DEAD_THREAD  
+	bool "Disable dead threads stackinfo"  
+	default n
+	---help---
+		Enable this option if you want the stack monitor to **stop keeping**
+		stack information for threads that have already exited (dead threads).
+		This can reduce memory usage since dead thread stack infos are not stored.
+
 endif #ENABLE_STACKMONITOR
 
 config ENABLE_UPTIME

@@ -190,7 +190,8 @@ void group_free(FAR struct task_group_s *group, FAR void *mem);
 
 void sched_ufree(FAR void *address);
 
-#if defined(CONFIG_MM_KERNEL_HEAP) && defined(__KERNEL__)
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
+	 defined(CONFIG_MM_KERNEL_HEAP) && defined(__KERNEL__)
 void sched_kfree(FAR void *address);
 #else
 #define sched_kfree(a) sched_ufree(a)

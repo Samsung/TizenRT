@@ -259,6 +259,7 @@ static void *stackmonitor_daemon(void *arg)
 		printf("|------------");
 #endif
 		printf("\n");
+#if !defined(CONFIG_STACKMONITOR_DISABLE_DEAD_THREAD)
 		stkmon_print_inactive_list();
 		printf("------|----------|----------");
 #ifdef CONFIG_STACK_COLORATION
@@ -272,6 +273,7 @@ static void *stackmonitor_daemon(void *arg)
 		printf("|------------");
 #endif
 		printf("\n");
+#endif //!CONFIG_STACKMONITOR_DISABLE_DEAD_THREAD
 		utils_proc_pid_foreach(stkmon_read_proc, NULL);
 #ifndef CONFIG_DISABLE_SIGNALS
 		sleep(CONFIG_STACKMONITOR_INTERVAL);

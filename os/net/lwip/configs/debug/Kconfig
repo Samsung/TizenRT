@@ -225,6 +225,12 @@ config NET_ND6_DEBUG
 	---help---
 		Enable debugging for ND6.
 
+config NET_IPNAT_DEBUG
+	bool "IPNAT debug message"
+	default n
+	---help---
+		Enable debugging in IPNAT
+
 endif #LWIP_DEBUG
 
 endmenu #"Debug Options for Network"

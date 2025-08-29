@@ -101,5 +101,9 @@ config DISABLE_EXTERNAL_AUTOCONNECT
 	bool "Disable external autoconnect"
 	default n
 
+config ENABLE_HOMELYNK
+	bool "Enable Homelynk feature"
+	default n
+
 endif #WIFI_MANAGER
 

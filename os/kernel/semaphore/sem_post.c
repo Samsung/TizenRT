@@ -200,8 +200,7 @@ int sem_post(FAR sem_t *sem)
 {
 	irqstate_t saved_state;
 	int ret = ERROR;
-	size_t caller_retaddr = 0;
-	ARCH_GET_RET_ADDRESS(caller_retaddr);
+	size_t caller_retaddr = (size_t)GET_RETURN_ADDRESS();
 
 	/* Make sure we were supplied with a valid semaphore. */
 
@@ -217,6 +216,10 @@ int sem_post(FAR sem_t *sem)
 		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, caller address = 0x%x", sem, caller_retaddr);
 		sem_releaseholder(sem, this_task());
 		sem->semcount++;
+
+		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
+			DEBUGASSERT(sem->semcount < 2);
+		}
 
 		sem_unblock_task(sem, this_task());
 		ret = OK;

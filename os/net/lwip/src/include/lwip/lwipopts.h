@@ -1057,6 +1057,12 @@
 #define ND6_DEBUG	LWIP_DBG_OFF
 #endif
 
+#ifdef CONFIG_NET_IPNAT_DEBUG
+#define IPNAT_DEBUG LWIP_DBG_ON
+#else
+#define IPNAT_DEBUG LWIP_DBG_OFF
+#endif
+
 #endif /* CONFIG_NET_LWIP_DEBUG */
 /* ---------- Debug options ---------- */
 
