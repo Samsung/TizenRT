@@ -108,7 +108,7 @@ void binary_manager_register_kpart(int part_num, int part_size, uint32_t part_ad
 	kernel_info.part_info[kernel_info.part_count].devnum = part_num;
 	kernel_info.part_info[kernel_info.part_count].address = part_addr;
 
-	bmvdbg("[KERNEL %d] part num %d size %d, address 0x%x\n", kernel_info.part_count, part_num, part_size, part_addr);
+	bmdbg("[KERNEL %d] part num %d size %d, address 0x%x\n", kernel_info.part_count, part_num, part_size, part_addr);
 
 	kernel_info.part_count++;
 }
@@ -136,7 +136,7 @@ bool binary_manager_scan_kbin(void)
 		/* Update inuse index and kernel version */
 		kernel_info.inuse_idx = bp_data->active_idx;
 		kernel_info.version = header_data.version;
-		bmvdbg("Kernel version [%u] %u\n", kernel_info.inuse_idx, kernel_info.version);
+		bmdbg("Kernel version [%u] %u\n", kernel_info.inuse_idx, kernel_info.version);
 		return true;
 	}
 #else
@@ -347,7 +347,7 @@ void binary_manager_register_upart(char *name, int part_num, int part_size, uint
 			BIN_PARTNUM(bin_idx, 1) = part_num;
 			BIN_PARTSIZE(bin_idx, 1) = part_size;
 			BIN_PARTADDR(bin_idx, 1) = part_addr;
-			bmvdbg("[USER%d : 2] %s size %d num %d, address 0x%x\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1), BIN_PARTADDR(bin_idx, 1));
+			bmdbg("[USER%d : 2] %s size %d num %d, address 0x%x\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 1), BIN_PARTNUM(bin_idx, 1), BIN_PARTADDR(bin_idx, 1));
 			return;
 		}
 	}
@@ -377,7 +377,7 @@ void binary_manager_register_upart(char *name, int part_num, int part_size, uint
 	strncpy(BIN_NAME(bin_idx), name, BIN_NAME_MAX - 1);
 	BIN_NAME(bin_idx)[BIN_NAME_MAX - 1] = '\0';
 	sq_init(&BIN_CBLIST(bin_idx));
-	bmvdbg("[USER%d : 1] %s size %d num %d, address 0x%x\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 0), BIN_PARTNUM(bin_idx, 0), BIN_PARTADDR(bin_idx, 0));
+	bmdbg("[USER%d : 1] %s size %d num %d, address 0x%x\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 0), BIN_PARTNUM(bin_idx, 0), BIN_PARTADDR(bin_idx, 0));
 }
 
 /****************************************************************************
@@ -418,6 +418,7 @@ bool binary_manager_scan_ubin_all(void)
 		BIN_BPIDX(bin_idx) = bp_app_idx;
 		part_idx = bp_data->app_data[bp_app_idx].useidx;
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
+		bmdbg("Checking user in partition [%d], path %s\n", part_idx, devpath);
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 		if (bin_idx == BM_CMNLIB_IDX) {
 			ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, false);			

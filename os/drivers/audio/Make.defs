@@ -85,7 +85,7 @@ CSRCS += ndp120_voice.c
 endif
 
 ifeq ($(CONFIG_AUDIO_SYU645B),y)
-CSRCS += syu645b.c
+CSRCS += syu645b.c cJSON.c
 endif
 
 # Include Audio driver support

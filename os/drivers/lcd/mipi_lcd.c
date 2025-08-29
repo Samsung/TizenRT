@@ -19,13 +19,7 @@
 #include <tinyara/config.h>
 #include <tinyara/lcd/lcd.h>
 #include <tinyara/lcd/lcd_dev.h>
-#if defined(CONFIG_LCD_ST7785)
-#include <tinyara/lcd/st7785.h>
-#elif defined(CONFIG_LCD_ST7701)
-#include <tinyara/lcd/st7701.h>
-#elif defined(CONFIG_LCD_ST7701SN)
-#include <tinyara/lcd/st7701sn.h>
-#endif
+#include <tinyara/lcd/mipi_lcd.h>
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
 #include "lcd_logo.h"
@@ -33,6 +27,10 @@
 #include <assert.h>
 #include <errno.h>
 #include <semaphore.h>
+#include <math.h>
+
+#define LCD_XRES CONFIG_LCD_XRES
+#define LCD_YRES CONFIG_LCD_YRES
 
 #define REGFLAG_DELAY                       0xFC
 #define REGFLAG_END_OF_TABLE                0xFD	// END OF REGISTERS MARKER
@@ -50,6 +48,10 @@ typedef enum lcd_mode_e lcd_mode_t;
 
 #if !defined(CONFIG_LCD_SEND_CMD_RETRY_COUNT)
 #define CONFIG_LCD_SEND_CMD_RETRY_COUNT 0
+#endif
+
+#if !defined(CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT)
+#define CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT 3
 #endif
 
 extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
@@ -129,6 +131,9 @@ struct mipi_lcd_dev_s {
 
 static struct mipi_lcd_dev_s g_lcdcdev;
 
+extern int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv);
+extern int get_lcdinfo(FAR struct lcd_info_s *lcdinfo);
+
 static int send_to_mipi_dsi(struct mipi_lcd_dev_s *priv, struct mipi_dsi_msg* msg)
 {
 	int transfer_status = ERROR;
@@ -165,13 +170,56 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 	transfer_status = send_to_mipi_dsi(priv, &msg);
 
 	if (transfer_status != OK) {
-		lcddbg("Command %x not sent\n", cmd);
+		lcddbg("Command 0x%x not sent\n", cmd);
 	}
 
 	return transfer_status;
 }
+/* rx_len is the maximum return packet size*/
+int set_return_packet_len(struct mipi_lcd_dev_s *priv, u8 rx_len)
+{
+	int transfer_status = OK;
+	struct mipi_dsi_msg msg;
+	msg.channel = rx_len;
+	msg.type = MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE;
+	msg.tx_len = 0;
+	msg.flags = 0;
+	transfer_status = send_to_mipi_dsi(priv, &msg);
 
-static int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table)
+	if (transfer_status != OK) {
+		lcddbg("Rxlen 0x%x not sent\n", rx_len);
+	}
+	return transfer_status;
+}
+
+int read_response(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command, u8 *rxbuf, u8 rx_len)
+{
+	int transfer_status = OK;
+	u8 cmd = command.cmd;
+	u8 *cmd_addr = command.para_list;
+	u32 payload_len = command.count;
+	struct mipi_dsi_msg msg;
+	msg.channel = cmd;
+	if (payload_len == 0) {
+		msg.type = MIPI_DSI_GENERIC_READ_0_PARAM;
+	} else if (payload_len == 1) {
+		msg.type = MIPI_DSI_GENERIC_READ_1_PARAM;
+	} else if (payload_len == 2) {
+		msg.type = MIPI_DSI_GENERIC_READ_2_PARAM;
+	}
+	msg.tx_buf = cmd_addr;
+	msg.tx_len = payload_len;
+	msg.flags = 0;
+	msg.rx_buf = rxbuf;
+	msg.rx_len = rx_len;
+	transfer_status = send_to_mipi_dsi(priv, &msg);
+
+	if (transfer_status != OK) {
+		lcddbg("Command %x not sent\n", cmd);
+	}
+	return transfer_status;
+}
+int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table)
 {
 	u8 send_cmd_idx_s = 0;
 	u32 payload_len;
@@ -336,6 +384,30 @@ static int lcd_getvideoinfo(FAR struct lcd_dev_s *dev, FAR struct fb_videoinfo_s
 }
 
 /****************************************************************************
+ * Name:  lcd_getlcdinfo
+ *
+ * Description:
+ *   Get information about the Lcd such as size, height, width, etc.
+ *
+ ****************************************************************************/
+
+static int lcd_getlcdinfo(FAR struct lcd_dev_s *dev, FAR struct lcd_info_s *lcdinfo)
+{
+	int ret;
+	DEBUGASSERT(dev);
+	if (!lcdinfo) {
+		return -EINVAL;
+	}
+	ret = get_lcdinfo(lcdinfo);	// Fill lcdinfo with vendor specific values
+	if (ret != OK) {
+		return ret;
+	}
+	lcdinfo->lcd_size_inch = sqrtf(lcdinfo->lcd_height_mm * lcdinfo->lcd_height_mm + lcdinfo->lcd_width_mm * lcdinfo->lcd_width_mm) / 25.4f;
+	lcdinfo->lcd_dpi = sqrtf(LCD_XRES * LCD_XRES + LCD_YRES * LCD_YRES) / lcdinfo->lcd_size_inch;
+	return ret;
+}
+
+/****************************************************************************
  * Name:  lcd_getplaneinfo
  *
  * Description:
@@ -370,6 +442,8 @@ static int lcd_getpower(FAR struct lcd_dev_s *dev)
 
 static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 {
+	int retries = CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT;
+
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	if (power > CONFIG_LCD_MAXPOWER) {
 		lcddbg("Power exceeds CONFIG_LCD_MAXPOWER %d\n", power);
@@ -402,7 +476,20 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 			lcddbg("Powering up the LCD\n");
 			priv->config->power_on();
 			/* We need to send init cmd after LCD IC power on */
-			if (send_init_cmd(priv, lcd_init_cmd_g) != OK) {
+			while (retries) {
+				if (check_lcd_vendor_send_init_cmd(priv) != OK) {
+					/* attempt a full reset of lcd + driver stack */
+					priv->config->reset();
+					priv->config->power_on();
+					priv->config->mipi_drv_reset();
+				} else {
+					/* panel accepted the command, normal operation */
+					break;
+				}
+				retries--;
+			}
+
+			if (retries <= 0) {
 				lcddbg("ERROR: LCD Init sequence failed\n");
 			}
 		}
@@ -427,7 +514,7 @@ static int lcd_init(FAR struct lcd_dev_s *dev)
 {
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	priv->config->reset();
-	if (send_init_cmd(priv, lcd_init_cmd_g) == OK) {
+	if (check_lcd_vendor_send_init_cmd(priv) == OK) {
 		lcdvdbg("LCD Init sequence completed\n");
 	} else {
 		lcddbg("ERROR: LCD Init sequence failed\n");
@@ -530,6 +617,7 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	FAR struct mipi_lcd_dev_s *priv = &g_lcdcdev;
 	priv->dev.getplaneinfo = lcd_getplaneinfo;
 	priv->dev.getvideoinfo = lcd_getvideoinfo;
+	priv->dev.getlcdinfo = lcd_getlcdinfo;
 	priv->dev.getpower = (struct mipi_lcd_dev_s *)lcd_getpower;
 	priv->dev.setpower = lcd_setpower;
 	priv->dev.getcontrast = lcd_getcontrast;

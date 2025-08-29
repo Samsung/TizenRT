@@ -38,6 +38,7 @@ extern TIZENERT_SRV_CNT tizenrt_ble_srv_count;
 extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 extern int attr_counter;
 
+trble_le_coc_init_config le_coc_init_parm;
 rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind = NULL;
 
 static void *bt_service_add_task_hdl = NULL;
@@ -151,3 +152,13 @@ trble_result_e rtw_ble_combo_set_server_config(trble_server_init_config* init_se
 }
 
 #endif /* TRBLE_COMBO_C_ */
+
+trble_result_e rtw_ble_le_coc_init(trble_le_coc_init_config *init_parm){
+    le_coc_init_parm.reg_psm_cb = init_parm->reg_psm_cb;
+    le_coc_init_parm.con_cb = init_parm->con_cb;
+    le_coc_init_parm.discon_cb = init_parm->discon_cb;
+    le_coc_init_parm.recv_cb = init_parm->recv_cb;
+    le_coc_init_parm.send_cb = init_parm->send_cb;
+    le_coc_init_parm.set_sec_cb = init_parm->set_sec_cb;
+    return TRBLE_SUCCESS; 
+}

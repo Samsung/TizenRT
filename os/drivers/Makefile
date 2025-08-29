@@ -175,16 +175,6 @@ $(BIN): $(OBJS)
 depend: .depend
 
 context:
-ifeq ($(CONFIG_NDP120),y)
-	$(eval DEST_DIR_NDP120 = $(TOPDIR)/../tools/fs/contents-smartfs/rtl8730e/base-files/kernel/audio)
-	@if [ -e $(DEST_DIR_NDP120) ]; then \
-		rm -rf $(DEST_DIR_NDP120); \
-		echo "Deleted ndp120 folder from fs"; \
-	fi
-	@mkdir -p $(DEST_DIR_NDP120)
-	@cp $(TOPDIR)/drivers/ai-soc/ndp120/binaries/* $(DEST_DIR_NDP120)
-	@echo "NPD120 f/w files copied for generating fs image"
-endif
 ifeq ($(CONFIG_SENSOR_IWRL6432),y)
 	$(eval DEST_DIR_IWRL6432 = $(TOPDIR)/../tools/fs/contents-smartfs/rtl8730e/base-files/kernel/sensors)
 	@if [ -e $(DEST_DIR_IWRL6432) ]; then \

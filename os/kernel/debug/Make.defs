@@ -30,7 +30,9 @@ CSRCS += memdbg.c
 endif
 
 ifeq ($(CONFIG_ENABLE_STACKMONITOR)$(CONFIG_DEBUG),yy)
+ifneq ($(CONFIG_STACKMONITOR_DISABLE_DEAD_THREAD),y)
 CSRCS += stackinfo_save_terminated.c
+endif
 endif
 
 DEPPATH += --dep-path debug

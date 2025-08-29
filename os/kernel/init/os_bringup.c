@@ -151,6 +151,11 @@
 #endif
 #endif
 
+#if defined(CONFIG_SMP) && !defined(CONFIG_AMP)
+#define CPU_ZERO(s) do { *(s) = 0; } while (0)
+#define CPU_SET(c,s) do { *(s) |= (1 << (c)); } while (0)
+#endif
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -356,6 +361,16 @@ static inline void os_do_appstart(void)
 	if (pid < 0) {
 		sdbg("Failed to start binary manager");
 	}
+
+	/* Set the affininty of binary manager to run on only CPU0, because while application
+	 * recovery, binary_manager's child thread should execute sequentially (not parallely)
+	 */
+#ifdef CONFIG_SMP
+	cpu_set_t cpu_set;
+	CPU_ZERO(&cpu_set);
+	CPU_SET(0, &cpu_set);
+	sched_setaffinity(pid, sizeof(cpu_set_t), &cpu_set);
+#endif
 #endif
 
 #if !defined(CONFIG_APP_BINARY_SEPARATION)

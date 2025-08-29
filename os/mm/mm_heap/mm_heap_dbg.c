@@ -94,6 +94,7 @@ void mm_dump_heap_free_node_list(struct mm_heap_s *heap)
 			heap_dbg(" %08x(%d)", node, node->size);
 		}
 		heap_dbg("\n");
+
 		if (heap->mm_nodelist[ndx].size != 0) {
 			mfdbg("    Corrupted HEAD of free node link %08x\n", &heap->mm_nodelist[ndx]);
 		}

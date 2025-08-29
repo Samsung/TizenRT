@@ -131,6 +131,7 @@ int binary_manager_mount_resource(void)
 	do {
 		/* Read and verify header data */
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum);
+		bmdbg("Checking resource in partition [%d], path %s\n", inuse_idx, devpath);
 		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, &header_data, false);
 		if (ret == BINMGR_OK) {
 			bmvdbg("Resource [%d] Header Checking Success.\n", inuse_idx);

@@ -115,6 +115,32 @@ static _wifimgr_state_handle_s g_manager_info = {
 	NULL,
 	WIFIMGR_SOTFAP_CONFIG};
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+struct _bridge_state {
+	bool is_on;
+	bool is_sta_connected;
+	bool is_softap_after_bridge;
+};
+typedef struct _bridge_state _bridge_state_s;
+
+static _bridge_state_s g_bridge_state = { false, false, false };
+
+static inline void WIFIMGR_SET_BRIDGE_STATE_ON(void)
+{
+	g_bridge_state.is_on = true;
+}
+
+static inline void WIFIMGR_SET_BRIDGE_STA_CONNECTED(bool is_sta_connected)
+{
+	g_bridge_state.is_sta_connected = is_sta_connected;
+}
+
+static inline void WIFIMGR_SET_IS_SOFTAP_AFTER_BRIDGE(bool is_softap_after_bridge)
+{
+	g_bridge_state.is_softap_after_bridge = is_softap_after_bridge;
+}
+#endif
+
 /* Internal functions*/
 static wifi_manager_result_e _wifimgr_deinit(void);
 static wifi_manager_result_e _wifimgr_run_sta(void);
@@ -125,6 +151,9 @@ static wifi_manager_result_e _wifimgr_run_softap(wifi_manager_softap_config_s *c
 static wifi_manager_result_e _wifimgr_stop_softap(void);
 static wifi_manager_result_e _wifimgr_scan(wifi_manager_scan_config_s *config);
 static wifi_manager_result_e _wifimgr_scan_multi_aps(wifi_manager_scan_multi_configs_s *configs);
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+static wifi_manager_result_e _wifimgr_control_bridge(uint8_t isenable);
+#endif
 
 /* functions managing a state machine*/
 #undef WIFIMGR_STATE_TABLE
@@ -190,6 +219,15 @@ static inline void WIFIMGR_RESET_SUBSTATE(void)
 	g_manager_info.disconn_substate = WIFIMGR_DISCONN_NONE;
 	g_manager_info.api_sig = NULL;
 }
+
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+static inline void WIFIMGR_RESET_BRIDGE_STATE(void)
+{
+	g_bridge_state.is_on = false;
+	g_bridge_state.is_sta_connected = false;
+	g_bridge_state.is_softap_after_bridge = false;
+}
+#endif
 
 static inline void WIFIMGR_SEND_API_SIGNAL(sem_t *api_sig)
 {
@@ -370,6 +408,14 @@ static wifi_manager_result_e _wifimgr_scan_multi_aps(wifi_manager_scan_multi_con
 	return WIFI_MANAGER_SUCCESS;
 }
 
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+wifi_manager_result_e _wifimgr_control_bridge(uint8_t isenable)
+{
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_control_bridge(isenable), TAG, "Starting STA failed.");
+	return WIFI_MANAGER_SUCCESS;
+}
+#endif
+
 wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 {
 	wifimgr_evt_e evt = msg->event;
@@ -426,6 +472,24 @@ wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 	} else if (msg->event == WIFIMGR_EVT_SCAN_DONE) {
 		wifimgr_call_cb(CB_SCAN_DONE, msg->param);
 		_free_scan_list((trwifi_scan_list_s *)msg->param);
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	} else if (msg->event == WIFIMGR_CMD_SET_BRIDGE) {
+		wifi_manager_bridge_config_s *config = (wifi_manager_bridge_config_s *)msg->param;
+		uint8_t enable = config->enable;
+		if (!enable) {
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+			return WIFI_MANAGER_FAIL;
+		}
+		
+		WIFIMGR_CHECK_RESULT(_wifimgr_control_bridge(enable), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_CHECK_RESULT(_wifimgr_run_softap((wifi_manager_softap_config_s *)&config->softap_config),
+							(TAG, "run_softap fail\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_BRIDGE_STATE_ON();
+		WIFIMGR_SET_BRIDGE_STA_CONNECTED(false);
+		WIFIMGR_SET_IS_SOFTAP_AFTER_BRIDGE(false);
+		WIFIMGR_SEND_API_SIGNAL(msg->signal);
+		WIFIMGR_SET_STATE(WIFIMGR_BRIDGE);
+#endif
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
@@ -460,9 +524,16 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
 		break;
 	case WIFIMGR_DISCONN_SOFTAP:
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+		if (g_bridge_state.is_on == true) {
+			WIFIMGR_RESET_BRIDGE_STATE();
+			WIFIMGR_CHECK_RESULT(_wifimgr_control_bridge(0), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+		}
+#else
 		WIFIMGR_CHECK_RESULT(_wifimgr_run_softap(
 								 (wifi_manager_softap_config_s *)&g_manager_info.softap_config),
 							 (TAG, "run_softap fail\n"), WIFI_MANAGER_FAIL);
+#endif
 		WIFIMGR_SEND_API_SIGNAL(g_manager_info.api_sig);
 		WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
 		break;
@@ -472,7 +543,17 @@ wifi_manager_result_e _handler_on_disconnecting_state(wifimgr_msg_s *msg)
 		break;
 	case WIFIMGR_DISCONN_NONE:
 		wifimgr_call_cb(CB_STA_DISCONNECTED, msg->param);
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+		if (g_bridge_state.is_on == true) {
+			WIFIMGR_SET_BRIDGE_STA_CONNECTED(false);
+			WIFIMGR_SET_STATE(WIFIMGR_BRIDGE);
+		}
+		else {
+			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		}
+#else 
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+#endif
 		break;
 	default:
 		NET_LOGE(TAG, "invalid argument\n");
@@ -498,12 +579,32 @@ wifi_manager_result_e _handler_on_connecting_state(wifimgr_msg_s *msg)
 		}
 #endif
 		wifimgr_call_cb(CB_STA_CONNECTED, msg->param);
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+		if (g_bridge_state.is_on == true) {
+			WIFIMGR_SET_BRIDGE_STA_CONNECTED(true);
+			WIFIMGR_SET_STATE(WIFIMGR_BRIDGE);
+		}
+		else {
+			WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+		}
+#else
 		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+#endif
 		trwifi_info info_utils;
 		wifi_utils_get_info(&info_utils);
 	} else if (msg->event == WIFIMGR_EVT_STA_CONNECT_FAILED) {
 		wifimgr_call_cb(CB_STA_CONNECT_FAILED, msg->param);
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+		if (g_bridge_state.is_on == true) {
+			WIFIMGR_SET_BRIDGE_STA_CONNECTED(false);
+			WIFIMGR_SET_STATE(WIFIMGR_BRIDGE);
+		}
+		else {
+			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		}
+#else
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+#endif
 	} else if (msg->event == WIFIMGR_CMD_DEINIT) {
 		WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
@@ -547,6 +648,24 @@ wifi_manager_result_e _handler_on_connected_state(wifimgr_msg_s *msg)
 	} else if (msg->event == WIFIMGR_CMD_CONNECT) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_ALREADY_CONNECTED;
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	} else if (msg->event == WIFIMGR_CMD_SET_BRIDGE) {
+		wifi_manager_bridge_config_s *config = (wifi_manager_bridge_config_s *)msg->param;
+		uint8_t enable = config->enable;
+		if (!enable) {
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+			return WIFI_MANAGER_FAIL;
+		}
+
+		WIFIMGR_CHECK_RESULT(_wifimgr_control_bridge(enable), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_CHECK_RESULT(_wifimgr_run_softap((wifi_manager_softap_config_s *)&config->softap_config),
+							(TAG, "run_softap fail\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_BRIDGE_STATE_ON();
+		WIFIMGR_SET_BRIDGE_STA_CONNECTED(true);
+		WIFIMGR_SET_IS_SOFTAP_AFTER_BRIDGE(false);
+		WIFIMGR_SEND_API_SIGNAL(msg->signal);
+		WIFIMGR_SET_STATE(WIFIMGR_BRIDGE);
+#endif
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
@@ -591,6 +710,114 @@ wifi_manager_result_e _handler_on_softap_state(wifimgr_msg_s *msg)
 		WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 		WIFIMGR_SEND_API_SIGNAL(msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	} else if (msg->event == WIFIMGR_CMD_SET_BRIDGE) {
+		wifi_manager_bridge_config_s *config = (wifi_manager_bridge_config_s *)msg->param;
+		uint8_t enable = config->enable;
+		if (!enable) {
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+			return WIFI_MANAGER_FAIL;
+		}
+
+		WIFIMGR_CHECK_RESULT(_wifimgr_control_bridge(enable), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_BRIDGE_STATE_ON();
+		WIFIMGR_SET_BRIDGE_STA_CONNECTED(false);
+		WIFIMGR_SET_IS_SOFTAP_AFTER_BRIDGE(true);
+		WIFIMGR_SEND_API_SIGNAL(msg->signal);
+		WIFIMGR_SET_STATE(WIFIMGR_BRIDGE);
+	} else {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+		return WIFI_MANAGER_FAIL;
+	}
+
+	return WIFI_MANAGER_SUCCESS;
+}
+
+wifi_manager_result_e _handler_on_bridge_state(wifimgr_msg_s *msg)
+{
+	if (msg->event == WIFIMGR_CMD_DEINIT) {
+		WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+
+		if (g_bridge_state.is_sta_connected == true) {
+			dhcpc_close_ipaddr();
+			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+			WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_DEINIT, msg->signal);
+			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
+		} else {
+			WIFIMGR_CHECK_RESULT(_wifimgr_deinit(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+			WIFIMGR_SEND_API_SIGNAL(msg->signal);
+			WIFIMGR_SET_STATE(WIFIMGR_UNINITIALIZED);
+		}
+	} else if (msg->event == WIFIMGR_CMD_CONNECT && g_bridge_state.is_sta_connected == false) {
+		wifi_manager_ap_config_s *apinfo = (wifi_manager_ap_config_s *)msg->param;
+		WIFIMGR_CHECK_RESULT(_wifimgr_connect_ap(apinfo), (TAG, "connect ap fail\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTING);
+	} else if (msg->event == WIFIMGR_CMD_DISCONNECT && g_bridge_state.is_sta_connected == true) {
+		dhcpc_close_ipaddr();
+		WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
+	} else if (msg->event == WIFIMGR_CMD_SCAN) {
+		WIFIMGR_CHECK_RESULT(_wifimgr_scan((wifi_manager_scan_config_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_STORE_PREV_STATE;
+		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
+	} else if (msg->event == WIFIMGR_CMD_SCAN_MULTI_APS) {
+		WIFIMGR_CHECK_RESULT(_wifimgr_scan_multi_aps((wifi_manager_scan_multi_configs_s *)msg->param), (TAG, "fail scan\n"), WIFI_MANAGER_FAIL);
+		WIFIMGR_STORE_PREV_STATE;
+		WIFIMGR_SET_STATE(WIFIMGR_SCANNING);
+	} else if (msg->event == WIFIMGR_CMD_SET_BRIDGE) {
+		wifi_manager_bridge_config_s *config = (wifi_manager_bridge_config_s *)msg->param;
+		uint8_t enable = config->enable;
+		if (enable) {
+			WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
+			return WIFI_MANAGER_FAIL;
+		}
+
+		if (g_bridge_state.is_softap_after_bridge == true && g_bridge_state.is_sta_connected == true) {
+			dhcpc_close_ipaddr();
+			WIFIMGR_CHECK_RESULT(_wifimgr_disconnect_ap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+			WIFIMGR_SET_SUBSTATE(WIFIMGR_DISCONN_SOFTAP, msg->signal);
+			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTING);
+			return WIFI_MANAGER_SUCCESS;
+		} else if (g_bridge_state.is_softap_after_bridge == false) {
+			WIFIMGR_CHECK_RESULT(_wifimgr_stop_softap(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+		}
+		
+		WIFIMGR_CHECK_RESULT(_wifimgr_control_bridge(enable), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
+
+		WIFIMGR_SEND_API_SIGNAL(msg->signal);
+		if (g_bridge_state.is_softap_after_bridge == true) {
+			WIFIMGR_SET_STATE(WIFIMGR_SOFTAP);
+		} else if (g_bridge_state.is_sta_connected == true) {
+			WIFIMGR_SET_STATE(WIFIMGR_STA_CONNECTED);
+		} else {
+			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		}
+		WIFIMGR_RESET_BRIDGE_STATE();
+	} else if (msg->event == WIFIMGR_EVT_STA_DISCONNECTED) {
+		dhcpc_close_ipaddr();
+		wifimgr_call_cb(CB_STA_DISCONNECTED, msg->param);
+		WIFIMGR_SET_BRIDGE_STA_CONNECTED(false);
+#ifdef CONFIG_WIFIMGR_DISABLE_DHCPS
+	} else if (msg->event == WIFIMGR_EVT_JOINED) {
+#else
+		/* wifi manager passes the callback after the dhcp server gives a station an IP address*/
+	} else if (msg->event == WIFIMGR_EVT_DHCPS_ASSIGN_IP) {
+		if (dhcps_add_node((dhcp_node_s *)msg->param) == DHCP_EXIST) {
+			return WIFI_MANAGER_SUCCESS;
+		}
+		dhcps_inc_num();
+#endif
+		wifimgr_call_cb(CB_STA_JOINED, msg->param);
+	} else if (msg->event == WIFIMGR_EVT_LEFT) {
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
+		dhcps_del_node();
+		dhcps_dec_num();
+#endif
+		wifimgr_call_cb(CB_STA_LEFT, msg->param);
+	} else if (msg->event == WIFIMGR_EVT_SCAN_DONE) {
+		wifimgr_call_cb(CB_SCAN_DONE, msg->param);
+		_free_scan_list((trwifi_scan_list_s *)msg->param);
+#endif // #if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
@@ -614,7 +841,36 @@ wifi_manager_result_e _handler_on_scanning_state(wifimgr_msg_s *msg)
 	} else if (msg->event == WIFIMGR_EVT_STA_DISCONNECTED) {
 		dhcpc_close_ipaddr();
 		wifimgr_call_cb(CB_STA_DISCONNECTED, msg->param);
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+		if (g_bridge_state.is_on == true) {
+			WIFIMGR_SET_BRIDGE_STA_CONNECTED(false);
+			WIFIMGR_SET_STATE(WIFIMGR_BRIDGE);
+		}
+		else {
+			WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		}
+#else
 		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+#endif
+		wret = WIFI_MANAGER_SUCCESS;
+#ifdef CONFIG_WIFIMGR_DISABLE_DHCPS
+	} else if (msg->event == WIFIMGR_EVT_JOINED) {
+#else
+		/* wifi manager passes the callback after the dhcp server gives a station an IP address*/
+	} else if (msg->event == WIFIMGR_EVT_DHCPS_ASSIGN_IP) {
+		if (dhcps_add_node((dhcp_node_s *)msg->param) == DHCP_EXIST) {
+			return WIFI_MANAGER_SUCCESS;
+		}
+		dhcps_inc_num();
+#endif
+		wifimgr_call_cb(CB_STA_JOINED, msg->param);
+		wret = WIFI_MANAGER_SUCCESS;
+	} else if (msg->event == WIFIMGR_EVT_LEFT) {
+#ifndef CONFIG_WIFIMGR_DISABLE_DHCPS
+		dhcps_del_node();
+		dhcps_dec_num();
+#endif
+		wifimgr_call_cb(CB_STA_LEFT, msg->param);
 		wret = WIFI_MANAGER_SUCCESS;
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);

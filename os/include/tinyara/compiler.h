@@ -69,6 +69,10 @@
 #define CONFIG_CPP_HAVE_VARARGS 1	/* Supports variable argument macros */
 #define CONFIG_CPP_HAVE_WARNING 1	/* Supports #warning */
 
+/* GCC macro to retrieve current function's return address as mmaddress_t for debugging. */
+
+#define GET_RETURN_ADDRESS()  __builtin_return_address(0)
+
 /* Intriniscs */
 
 #define CONFIG_HAVE_FUNCTIONNAME 1	/* Has __FUNCTION__ */
@@ -240,6 +244,7 @@
 
 /* Pre-processor */
 
+#undef GET_RETURN_ADDRESS
 #define CONFIG_CPP_HAVE_VARARGS 1	/* Supports variable argument macros */
 #define CONFIG_CPP_HAVE_WARNING 1	/* Supports #warning */
 
@@ -457,6 +462,7 @@
 
 #else
 
+#undef  GET_RETURN_ADDRESS
 #undef  CONFIG_CPP_HAVE_VARARGS
 #undef  CONFIG_CPP_HAVE_WARNING
 #undef  CONFIG_HAVE_FUNCTIONNAME

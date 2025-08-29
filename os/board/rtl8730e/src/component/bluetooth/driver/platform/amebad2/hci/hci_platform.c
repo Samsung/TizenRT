@@ -544,56 +544,62 @@ static uint8_t hci_platform_parse_config(void)
 
 static void bt_power_on(void)
 {
-	set_reg_value(0x42008200, BIT9, 1);  		//enable power cut of BTON
+	set_reg_value(0x42008200, BIT9, 1);					//enable power cut of BTON
 	osif_delay(5);
-	set_reg_value(0x42008204, BIT9, 0);  		//disable ISO of BTON
+	set_reg_value(0x42008204, BIT9, 0);					//disable ISO of BTON
 	osif_delay(5);
 	set_reg_value(0x42008250, BIT21 | BIT22, 3);
 	osif_delay(5);
-	set_reg_value(0x42008250, BIT1 | BIT2, 3);  // enable BT AFE & BT S0 RF, BT S1 also enable S0 RF
+	set_reg_value(0x42008250, BIT1 | BIT2, 3);			//enable BT AFE & BT S0 RF, BT S1 also enable S0 RF
 	osif_delay(5);
 	if (bt_ant_switch == ANT_S0) {
-		set_reg_value(0x42008250, BIT0, 0);  		//BT use BT RFAFE
+		set_reg_value(0x42008250, BIT0, 0);				//BT use BT RFAFE
 		osif_delay(5);
 	} else {
-		set_reg_value(0x42008250, BIT0, 1);  		//BT use WL RFAFE
+		set_reg_value(0x42008250, BIT0, 1);				//BT use WL RFAFE
 		osif_delay(5);
-		set_reg_value(0x42008208, BIT24, 1); 		//enable WL RFAFE control circuit
+		set_reg_value(0x42008208, BIT24, 1);			//enable WL RFAFE control circuit
 		osif_delay(5);
-		set_reg_value(0x42008940, BIT5 | BIT6, 3);  //enable WL RFAFE
+		set_reg_value(0x42008940, BIT5 | BIT6, 3);		//enable WL RFAFE
 		osif_delay(5);
 	}
-	set_reg_value(0x42008200, BIT25, 1);  //Release BTON por,BT Memory
+	set_reg_value(0x42008200, BIT25, 1);				//Release BTON por,BT Memory
 	osif_delay(5);
-	set_reg_value(0x42008208, BIT13, 1);  //Release BTON reset
+	set_reg_value(0x42008208, BIT13, 1);				//Release BTON reset
 	osif_delay(5);
+	if (HCI_BT_KEEP_WAKE) {
+		set_reg_value(0x42008250, BIT14, 1);			//enable HOST_WAKE_BT No GPIO
+		osif_delay(5);
+		set_reg_value(0x42008250, BIT13, 1);			//HOST_WAKE_BT
+		osif_delay(5);
+	}
 }
 
 void bt_power_off(void)
 {
-	set_reg_value(0x42008208, BIT13, 0);  		//BTON reset
+	set_reg_value(0x42008208, BIT13, 0);				//BTON reset
 	osif_delay(5);
-	set_reg_value(0x42008200, BIT25, 0);  		//release BTON por, BT memory
+	set_reg_value(0x42008200, BIT25, 0);				//release BTON por, BT memory
 	osif_delay(5);
 	if (bt_ant_switch == ANT_S0) {
-		set_reg_value(0x42008250, BIT1 | BIT2, 0);  //disable BT AFE & BT S0 RF
+		set_reg_value(0x42008250, BIT1 | BIT2, 0);		//disable BT AFE & BT S0 RF
 		osif_delay(5);
 	} else {
 #if defined(CONFIG_WLAN) && CONFIG_WLAN
 		if (!(wifi_is_running(WLAN0_IDX) || wifi_is_running(WLAN1_IDX)))
 #endif
 		{
-			set_reg_value(0x42008940, BIT5 | BIT6, 0);  //disable RFAFE (if WIFI active, keep 2'b11)
+			set_reg_value(0x42008940, BIT5 | BIT6, 0);	//disable RFAFE (if WIFI active, keep 2'b11)
 			osif_delay(5);
-			set_reg_value(0x42008208, BIT24, 0);  //disable WL RFAFE control circuit (if WIFI active, keep 1'b1)
+			set_reg_value(0x42008208, BIT24, 0);		//disable WL RFAFE control circuit (if WIFI active, keep 1'b1)
 			osif_delay(5);
 		}
-		set_reg_value(0x42008250, BIT1 | BIT2, 0);  //disable BT AFE & BT S0 RF
+		set_reg_value(0x42008250, BIT1 | BIT2, 0);		//disable BT AFE & BT S0 RF
 		osif_delay(5);
 	}
-	set_reg_value(0x42008204, BIT9, 1);  		//enable ISO of BTON
+	set_reg_value(0x42008204, BIT9, 1);					//enable ISO of BTON
 	osif_delay(5);
-	set_reg_value(0x42008200, BIT9, 0);  		//disable power cut of BTON
+	set_reg_value(0x42008200, BIT9, 0);					//disable power cut of BTON
 	osif_delay(5);
 }
 
@@ -601,11 +607,6 @@ void hci_platform_controller_reset(void)
 {
 	/* BT Controller Power */
 	bt_power_on();
-	osif_delay(5);
-
-	/* GNT_BT */
-	// set_reg_value(0x40000764, BIT9 | BIT10 | BIT11 | BIT12, 15);
-	// osif_delay(5);
 
 	HCI_DBG("BT Reset OK!");
 }
@@ -614,6 +615,20 @@ bool rtk_bt_pre_enable(void)
 {
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	uint32_t lock_status;
+
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+	if (bt_ant_switch == ANT_S1) {
+		if (!(wifi_is_running(WLAN0_IDX) || wifi_is_running(WLAN1_IDX))) {
+			HCI_ERR("WiFi is OFF! Please Restart BT after Wifi on!");
+			return false;
+		}
+
+		if (!hci_platform_check_mp()) {
+			wifi_set_lps_enable(FALSE);
+			wifi_set_ips_internal(FALSE);
+		}
+	}
+#endif
 
 	lock_status = pmu_get_wakelock_status();
 	if (!(lock_status & ((0x01) << PMU_BT_DEVICE))) {
@@ -633,6 +648,15 @@ bool rtk_bt_post_enable(void)
 	if (lock_status & ((0x01) << PMU_BT_DEVICE)) {
 		printf("Release BT PMU LOCK \r\n");
 		pmu_release_wakelock(PMU_BT_DEVICE);
+	}
+#endif
+
+#if defined(CONFIG_WLAN) && CONFIG_WLAN
+	if (bt_ant_switch == ANT_S1) {
+		if (!hci_platform_check_mp()) {
+			wifi_set_lps_enable(TRUE);
+			wifi_set_ips_internal(TRUE);
+		}
 	}
 #endif
 	return true;
@@ -710,7 +734,11 @@ uint8_t hci_platform_deinit(void)
 
 void hci_platform_record_chipid(uint8_t chipid)
 {
-	hci_chipid_in_fw = chipid;
+	if (chipid == 2 && hci_platform_get_rom_ver() >= 3) {
+		hci_chipid_in_fw = 3;
+	} else {
+		hci_chipid_in_fw = chipid;
+	}
 }
 
 void hci_platform_get_baudrate(uint8_t *baudrate, uint8_t len, uint8_t init_or_work)

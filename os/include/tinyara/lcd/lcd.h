@@ -249,6 +249,8 @@ struct lcd_dev_s {
 
 	int (*setorientation)(struct lcd_dev_s *dev, unsigned int orientation);
 
+	int (*getlcdinfo)(struct lcd_dev_s *dev, struct lcd_info_s *lcdinfo);
+
 };
 
 /****************************************************************************

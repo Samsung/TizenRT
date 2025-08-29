@@ -196,6 +196,14 @@ static void heapinfo_show_taskinfo(void)
 #endif
 }
 
+static void heapinfo_show_binname(bool init_flag, char *heap_name) {
+	if (init_flag != true) {
+		printf("\n****************************************************************\n");
+		printf("     %s HEAP INFORMATION\n", heap_name);
+		printf("****************************************************************\n");
+	}
+}
+
 int utils_heapinfo(int argc, char **args)
 {
 	int ret;
@@ -203,6 +211,7 @@ int utils_heapinfo(int argc, char **args)
 	int heapinfo_fd;
 	int heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
 	bool init_flag = false;
+	bool bin_selected = false;
 	heapinfo_option_t options;
 	options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
 	options.mode = HEAPINFO_SIMPLE;
@@ -225,6 +234,7 @@ int utils_heapinfo(int argc, char **args)
 		/* k, b : select the heap type about kernel, binary. */
 		case 'k':
 			options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
+			bin_selected = true;
 			break;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		case 'b':
@@ -232,10 +242,12 @@ int utils_heapinfo(int argc, char **args)
 			strncpy(options.app_name, optarg, BIN_NAME_MAX - 1);
 			options.app_name[BIN_NAME_MAX - 1] = '\0';
 			heap_name = options.app_name;
+			bin_selected = true;
 			break;
 #endif
 		case 'd':
 			options.mode = HEAPINFO_DUMP_HEAP;
+			bin_selected = true;
 			if (strncmp(optarg, "kernel", 7) == 0) {
 				options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
 			}
@@ -285,11 +297,7 @@ int utils_heapinfo(int argc, char **args)
 	}
 
 #ifdef CONFIG_BUILD_PROTECTED
-	if (init_flag != true) {
-		printf("\n****************************************************************\n");
-		printf("     %s HEAP INFORMATION\n", heap_name);
-		printf("****************************************************************\n");
-	}
+	heapinfo_show_binname(init_flag, heap_name);
 #endif
 	heapinfo_fd = open(MMINFO_DRVPATH, O_RDWR);
 	if (heapinfo_fd < 0) {
@@ -301,6 +309,35 @@ int utils_heapinfo(int argc, char **args)
 		printf("Heapinfo Fail, %d.\n", get_errno());
 		close(heapinfo_fd);
 		return ERROR;		
+	}
+	/* If heapinfo runs without specifying a binary, print both kernel and application heap statistics. */
+	if (!bin_selected) {
+#ifdef CONFIG_APP1_INFO
+		options.heap_type = HEAPINFO_HEAP_TYPE_BINARY;
+		strncpy(options.app_name, CONFIG_APP1_BIN_NAME, BIN_NAME_MAX - 1);
+		options.app_name[BIN_NAME_MAX - 1] = '\0';
+		heap_name = options.app_name;
+		heapinfo_show_binname(init_flag, heap_name);
+		ret = ioctl(heapinfo_fd, MMINFOIOC_PARSE, (int)&options);
+		if (ret == ERROR) {
+			printf("Heapinfo Fail, %d.\n", get_errno());
+			close(heapinfo_fd);
+			return ERROR;		
+		}
+#endif
+#ifdef CONFIG_APP2_INFO
+		options.heap_type = HEAPINFO_HEAP_TYPE_BINARY;
+		strncpy(options.app_name, CONFIG_APP2_BIN_NAME, BIN_NAME_MAX - 1);
+		options.app_name[BIN_NAME_MAX - 1] = '\0';
+		heap_name = options.app_name;
+		heapinfo_show_binname(init_flag, heap_name);
+		ret = ioctl(heapinfo_fd, MMINFOIOC_PARSE, (int)&options);
+		if (ret == ERROR) {
+			printf("Heapinfo Fail, %d.\n", get_errno());
+			close(heapinfo_fd);
+			return ERROR;		
+		}
+#endif
 	}
 	close(heapinfo_fd);
 

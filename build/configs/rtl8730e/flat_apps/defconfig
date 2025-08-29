@@ -908,6 +908,7 @@ CONFIG_WIFIMGR_STA_IFNAME="wlan0"
 # CONFIG_WIFIMGR_DISABLE_DHCPC is not set
 # CONFIG_WIFIMGR_DISABLE_DHCPS is not set
 CONFIG_DISABLE_EXTERNAL_AUTOCONNECT=y
+# CONFIG_ENABLE_HOMELYNK is not set
 
 #
 # Bluetooth
@@ -1158,7 +1159,6 @@ CONFIG_DEBUG_SYMBOLS=y
 #
 # Built-in Libraries
 #
-
 #
 # Standard C Library Options
 #
