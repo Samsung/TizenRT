@@ -45,7 +45,7 @@
 #define LCDDEVIO_GETCONTRAST  _LCDIOC(6)	/* Arg: int* */
 #define LCDDEVIO_SETCONTRAST  _LCDIOC(7)	/* Arg: unsigned int */
 #define LCDDEVIO_GETPLANEINFO _LCDIOC(8)	/* Arg: struct lcd_planeinfo_s* */
-#define LCDDEVIO_GETVIDEOINFO _LCDIOC(9)	/* Arg: struct fb_videoinfo_s* */
+#define LCDDEVIO_GETVIDEOINFO _LCDIOC(9)	/* Arg: struct fb_videoinfo_s* Description: Get the video configuration such as resolution, pixel format, number of color planes and etc. */
 #define LCDDEVIO_SETPLANENO   _LCDIOC(10)	/* Arg: int */
 
 #ifdef CONFIG_FB_CMAP
@@ -64,6 +64,7 @@
 #define LCDDEVIO_GETAREAALIGN _LCDIOC(17)	/* Arg: struct lcddev_area_align_s* */
 #define LCDDEVIO_INIT         _LCDIOC(18)
 #define LCDDEVIO_SETORIENTATION  _LCDIOC(19)    /* Arg: int */
+#define LCDDEVIO_GETLCDINFO    _LCDIOC(20)    /* Arg: struct lcd_info_s* Description: Get the static LCD characteristics such as width, height, size and DPI. */
 
 /****************************************************************************
  * Public Data
@@ -96,6 +97,13 @@ struct lcddev_area_s {
 	fb_coord_t stride;			/* row stride in bytes */
 	int planeno;
 	FAR uint8_t *data;
+};
+
+struct lcd_info_s {
+	uint8_t lcd_height_mm;
+	uint8_t lcd_width_mm;
+	float lcd_size_inch;
+	float lcd_dpi;
 };
 
 /****************************************************************************

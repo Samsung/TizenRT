@@ -60,7 +60,7 @@
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
-#include <math.h>
+#include "math.h"
 
 //***************************************************************************
 // Namespace
@@ -94,6 +94,9 @@ namespace std
   using ::sqrtf;
   using ::tanf;
   using ::tanhf;
+  using ::isinf;
+  using ::isfinite;
+  using ::isnan;
 #endif
 
 #ifdef CONFIG_HAVE_DOUBLE
@@ -124,6 +127,9 @@ namespace std
   using ::tanh;
   using ::gamma;
   using ::lgamma;
+  using ::isinf;
+  using ::isfinite;
+  using ::isnan;
 #endif
 
 #ifdef CONFIG_HAVE_LONG_DOUBLE
@@ -152,6 +158,9 @@ namespace std
   using ::sqrtl;
   using ::tanl;
   using ::tanhl;
+  using ::isinf;
+  using ::isfinite;
+  using ::isnan;
 #endif
 
 }

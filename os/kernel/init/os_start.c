@@ -172,7 +172,9 @@ volatile dq_queue_t g_readytorun;
  * always the CPU's IDLE task.
  */
 
+#ifdef CONFIG_SMP
 volatile dq_queue_t g_assignedtasks[CONFIG_SMP_NCPUS];
+#endif
 
 /* g_running_tasks[] holds a references to the running task for each cpu.
  * It is valid only when up_interrupt_context() returns true.
@@ -238,7 +240,10 @@ volatile dq_queue_t g_inactivetasks;
 
 volatile sq_queue_t g_delayed_kufree;
 
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
+	 defined(CONFIG_MM_KERNEL_HEAP)
 volatile sq_queue_t g_delayed_kfree;
+#endif
 
 /* This gives number of alive tasks at any point of time in the system.
  * If the system is already running CONFIG_MAX_TASKS, Creating new
@@ -317,12 +322,18 @@ const struct tasklist_s g_tasklisttable[NUM_TASK_STATES] =
 		&g_waitingforfin,
 		TLIST_ATTR_PRIORITIZED
 	},
+#ifndef CONFIG_DISABLE_SIGNALS
 	{                                              /* TSTATE_WAIT_SIG */
 		&g_waitingforsignal,
 		0
-	}
+	},
+#else
+	{                                             
+		NULL,
+		0
+	},
+#endif
 #ifndef CONFIG_DISABLE_MQUEUE
-	,
 	{                                              /* TSTATE_WAIT_MQNOTEMPTY */
 		&g_waitingformqnotempty,
 		TLIST_ATTR_PRIORITIZED
@@ -330,20 +341,26 @@ const struct tasklist_s g_tasklisttable[NUM_TASK_STATES] =
 	{                                              /* TSTATE_WAIT_MQNOTFULL */
 		&g_waitingformqnotfull,
 		TLIST_ATTR_PRIORITIZED
-	}
+	},
+#else
+	{                                             
+		NULL,
+		0
+	},
+	{                                             
+		NULL,
+		0
+	},
 #endif
 #ifdef CONFIG_PAGING
-	,
 	{                                              /* TSTATE_WAIT_PAGEFILL */
 		&g_waitingforfill,
 		TLIST_ATTR_PRIORITIZED
-	}
-#endif
-#ifdef CONFIG_SIG_SIGSTOP_ACTION
-	,
-	{                                              /* TSTATE_TASK_STOPPED */
-		&g_stoppedtasks,
-		0                                            /* See tcb->prev_state */
+	},
+#else
+	{                                             
+		NULL,
+		0
 	},
 #endif
 };

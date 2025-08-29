@@ -252,6 +252,12 @@ int binary_manager(int argc, char *argv[])
 	return 0;
 errout_with_nobinary:
 	while (1) {
+		printf("Partition Info : \n");
+		printf("Partition types: %s\n", CONFIG_FLASH_PART_TYPE);
+		printf("Partition sizes: %s\n", CONFIG_FLASH_PART_SIZE);
+#ifdef CONFIG_MTD_PARTITION_NAMES
+		printf("Partition names: %s\n", CONFIG_FLASH_PART_NAME);
+#endif
 		printf("=============== !!ERROR!! ============== \n");
 #ifdef CONFIG_USE_BP
 		if (!is_found_bootparam) {

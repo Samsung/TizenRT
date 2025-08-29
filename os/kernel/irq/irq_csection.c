@@ -601,7 +601,7 @@ void leave_critical_section(irqstate_t flags)
  *   holder of the IRQ lock.
  *
  * Input Parameters:
- *   rtcb - Points to the blocked TCB that is ready-to-run
+ *   cpu - The index of the CPU for check whether it holds the IRQ lock.
  *
  * Returned Value:
  *   true  - IRQs are locked by a different CPU.

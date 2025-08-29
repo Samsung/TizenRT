@@ -68,7 +68,7 @@
 
 #include <tinyara/config.h>
 
-#if defined(CONFIG_TOUCH)
+
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/i2c.h>
 #include <semaphore.h>
@@ -133,6 +133,8 @@
 
 #if defined(CONFIG_TOUCH_IST415)
 #define TOUCH_MAX_POINTS 	15    /* Maximum number of simultaneous touch point supported */
+#else 
+#define TOUCH_MAX_POINTS 	0
 #endif
 /************************************************************************************
  * Public Types
@@ -195,6 +197,8 @@ struct touch_sample_buffer_s {
 	int16_t size;							/* The allocated size of the buffer */
 	struct touch_sample_s *buffer;			/* Pointer to the allocated buffer memory */
 };
+
+#if defined(CONFIG_TOUCH)
 
 /*
  * This structure is upper level driver operations which will use lower level calls internally

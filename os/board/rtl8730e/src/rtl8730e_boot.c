@@ -382,6 +382,14 @@ void amebasmart_mount_partitions(void)
 		lldbg("w25 Init failed\n");
 		return;
 	}
+#elif defined(CONFIG_MTD_W25N)
+	mtd = w25n_initialize(spi);
+	if (mtd == NULL) {
+		lldbg("w25n Init failed\n");
+		return;
+	} else {
+		lldbg("w25n initialized\n");
+	}
 #endif
 	ret = configure_mtd_partitions(mtd, 1, &partinfo);
 	if (ret != OK) {

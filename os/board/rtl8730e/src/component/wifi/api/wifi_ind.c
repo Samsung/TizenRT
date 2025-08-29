@@ -28,6 +28,7 @@ extern write_fast_connect_info_ptr p_store_fast_connect_info;
 extern rtw_joinstatus_callback_t p_wifi_joinstatus_user_callback;
 extern rtw_join_status_t rtw_join_status;
 extern rtw_join_status_t prev_join_status;
+extern rtw_join_status_t last_join_status;
 extern internal_join_block_param_t *join_block_param;
 
 //----------------------------------------------------------------------------//
@@ -168,7 +169,12 @@ void wifi_join_status_indicate(rtw_join_status_t join_status)
 		rtw_mfree((u8 *)deauth_data_pre, 0);
 #endif
 	}
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	if (join_status != RTW_JOINSTATUS_FAIL && join_status != RTW_JOINSTATUS_DISCONNECT) {
+		last_join_status = join_status;
+	}
 	prev_join_status = rtw_join_status;
+#endif //#ifdef CONFIG_PLATFORM_TIZENRT_OS
 	rtw_join_status = join_status;
 
 	/* step 2: execute user callback to process join_status*/

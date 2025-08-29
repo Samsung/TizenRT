@@ -41,6 +41,7 @@ void (*promisc_user_callback_ptr)(void *) = NULL;
 extern void *param_indicator;
 rtw_join_status_t rtw_join_status;
 rtw_join_status_t prev_join_status;
+rtw_join_status_t last_join_status;
 rtw_joinstatus_callback_t p_wifi_joinstatus_user_callback = NULL;
 rtw_joinstatus_callback_t p_wifi_joinstatus_internal_callback = NULL;
 
@@ -56,8 +57,9 @@ extern void wifi_set_user_config(void);
 
 #if CONFIG_WLAN
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
+#include "wifi_intf_drv_to_upper.h"
 #include "rtk_wifi_utils.h"
-unsigned char ap_bssid[ETH_ALEN];
+static unsigned char ap_bssid[ETH_ALEN];
 rtk_network_link_callback_t g_link_up = NULL;
 rtk_network_link_callback_t g_link_down = NULL;
 static int deauth_reason = 0;
@@ -118,6 +120,17 @@ int wifi_set_platform_rom_func(void *(*calloc_func)(size_t, size_t),
 	return (0);
 }
 
+static void wifi_connected_hdl(char *buf, int buf_len, int flags, void *userdata)
+{
+	/* To avoid gcc warnings */
+	( void ) flags;
+	( void ) userdata;
+
+	if (buf) {
+		memcpy(ap_bssid, buf, ETH_ALEN);
+	}
+}
+
 static void wifi_disconn_hdl(char *buf, int buf_len, int flags, void *userdata)
 {
 	/* To avoid gcc warnings */
@@ -131,11 +144,43 @@ static void wifi_disconn_hdl(char *buf, int buf_len, int flags, void *userdata)
 		key_mgmt = *(u32*)(buf+8);
 	}
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
-	rtk_reason_t dummy_reason;
-	memset(&dummy_reason, 0, sizeof(rtk_reason_t));
+	rtw_connect_error_flag_t error_flag = RTW_NO_ERROR;
+	rtw_join_status_t join_status = wifi_get_join_status();
+
+	if (join_status == RTW_JOINSTATUS_FAIL) {
+		if (last_join_status == RTW_JOINSTATUS_SCANNING) {
+			error_flag = RTW_NONE_NETWORK;
+		} else if (last_join_status == RTW_JOINSTATUS_AUTHENTICATING) {
+			if (deauth_reason == WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA) {
+				error_flag = RTW_MAX_STA;
+			} else {
+				error_flag = RTW_AUTH_FAIL;
+			}
+		} else if (last_join_status == RTW_JOINSTATUS_AUTHENTICATED || last_join_status == RTW_JOINSTATUS_ASSOCIATING) {
+			error_flag = RTW_ASSOC_FAIL;
+		} else if (last_join_status == RTW_JOINSTATUS_ASSOCIATED || last_join_status == RTW_JOINSTATUS_4WAY_HANDSHAKING) {
+			if (deauth_reason == WLAN_REASON_DISASSOC_AP_BUSY) {
+				error_flag = RTW_AP_BUSY;
+			} else {
+				error_flag = RTW_4WAY_HANDSHAKE_TIMEOUT;
+			}
+		}
+		printf("Connection failed, deauth_reason=%d\n", deauth_reason);
+	} else if (join_status == RTW_JOINSTATUS_DISCONNECT) {
+		if (deauth_reason == WLAN_REASON_EXPIRATION_CHK) {
+			error_flag = RTW_BCN_LOST;
+		} else {
+			error_flag = RTW_DISCONNECT;
+		}
+		printf("Disconnected, deauth_reason=%d\n", deauth_reason);
+	}
+
+	rtk_reason_t reason;
+	memset(&reason, 0, sizeof(rtk_reason_t));
+	reason.if_id = RTK_WIFI_STATION_IF;
 	if (g_link_down) {
 		nvdbg("RTK_API rtk_handle_disconnect send link_down\n");
-		g_link_down(&dummy_reason);
+		g_link_down(&reason);
 	}
 	wifi_unreg_event_handler(WIFI_EVENT_DISCONNECT, wifi_disconn_hdl);
 #endif
@@ -150,6 +195,7 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 		rtk_reason_t reason;
+		memset(ap_bssid, 0, ETH_ALEN);
 #endif
 
 	/* check if SoftAP is running */
@@ -201,6 +247,8 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 	DCache_Clean((u32)connect_param, sizeof(rtw_network_info_t));
 	param_buf[0] = (u32)connect_param;
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
+	/* Register connect handler before starting join */
+	wifi_reg_event_handler(WIFI_EVENT_CONNECT, wifi_connected_hdl, NULL);
 	/* Register disconnect handler before starting join */
 	wifi_reg_event_handler(WIFI_EVENT_DISCONNECT, wifi_disconn_hdl, NULL);
 #endif
@@ -237,6 +285,7 @@ int wifi_connect(rtw_network_info_t *connect_param, unsigned char block)
 
 #if defined(CONFIG_PLATFORM_TIZENRT_OS)
 			memset(&reason, 0, sizeof(rtk_reason_t));
+			reason.if_id = RTK_WIFI_STATION_IF;
 			reason.reason_code = RTK_STATUS_SUCCESS;
 
 			if (g_link_up) {
@@ -260,6 +309,9 @@ error:
 	}
 
 	if (rtw_join_status == RTW_JOINSTATUS_FAIL) {
+#if defined(CONFIG_PLATFORM_TIZENRT_OS)
+		wifi_unreg_event_handler(WIFI_EVENT_CONNECT, wifi_connected_hdl);
+#endif
 		wifi_join_status_indicate(RTW_JOINSTATUS_FAIL);
 	}
 
@@ -362,6 +414,7 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 	//USER TODO
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
+	reason.if_id = RTK_WIFI_SOFT_AP_IF;
 	if (strlen(buf) >= 17) {			  // bssid is a 17 character string
 		memcpy(&(reason.bssid), buf, 17); // Exclude null-termination
 	}
@@ -388,6 +441,7 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 	}
 
 	memset(&reason, 0, sizeof(rtk_reason_t));
+	reason.if_id = RTK_WIFI_SOFT_AP_IF;
 	if (strlen(buf) >= 17) { // bssid is a 17 character string
 		memcpy(&(reason.bssid), buf, 17);
 	}
@@ -554,6 +608,15 @@ rtw_join_status_t wifi_get_prev_join_status(void)
 unsigned int wifi_get_key_mgmt(void)
 {
 	return key_mgmt;
+}
+
+int wifi_get_ap_bssid(unsigned char *bssid)
+{
+	if (RTW_SUCCESS == wifi_is_connected_to_ap()){
+		memcpy(bssid, ap_bssid, ETH_ALEN);
+		return RTW_SUCCESS;
+	}
+	return RTW_ERROR;
 }
 
 #endif

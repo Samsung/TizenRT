@@ -38,4 +38,7 @@ struct wt_options {
 	char *security;
 	char *path;
 	int repeat;
+	#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	uint8_t enable_bridge;
+	#endif
 };

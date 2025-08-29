@@ -86,6 +86,12 @@ static inline void _convert_state(wifimgr_state_e *state, connect_status_e *conn
 		*conn = STATUS_UNKNOWN;
 		*mode = SOFTAP_MODE;
 		break;
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	case WIFIMGR_BRIDGE:
+		*conn = STATUS_UNKNOWN;
+		*mode = BRIDGE_MODE;
+		break;
+#endif
 	case WIFIMGR_UNINITIALIZED:
 		break;
 	default:
@@ -429,6 +435,36 @@ wifi_manager_result_e wifi_manager_set_hostname_sta(const char *hostname)
 	dhcp_client_sethostname(WIFIMGR_STA_IFNAME, hostname);
 	return WIFI_MANAGER_SUCCESS;
 }
+
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+wifi_manager_result_e wifi_manager_control_bridge(bool enable, wifi_manager_softap_config_s *softap_config)
+{
+	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
+	sem_t signal;
+	sem_init(&signal, 0, 0);
+
+	wifi_manager_bridge_config_s config = { (uint8_t)enable, NULL };
+	if (enable == true && softap_config != NULL) {
+		config.softap_config = *softap_config;
+	}
+
+	wifimgr_msg_s msg = {WIFIMGR_CMD_SET_BRIDGE, WIFI_MANAGER_FAIL, (void *)&config, &signal};
+	int res = wifimgr_post_message(&msg);
+	if (res < 0 || msg.result != WIFI_MANAGER_SUCCESS) {
+		sem_destroy(msg.signal);
+		if (res < 0) {
+			return WIFI_MANAGER_FAIL;
+		}
+		return msg.result;
+	}
+
+	sem_wait(msg.signal);
+	sem_destroy(msg.signal);
+
+	return WIFI_MANAGER_SUCCESS;
+
+}
+#endif
 
 /**
  * Wi-Fi Profile

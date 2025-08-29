@@ -32,7 +32,11 @@
 
 /************************* Default Values of User Configure *****************************/
 /* Upper limit of STAs connected with SoftAP, more STAs connected will cost more heap*/
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#define AP_STA_NUM	3
+#else
 #define AP_STA_NUM	12
+#endif //#ifdef CONFIG_PLATFORM_TIZENRT_OS
 /************************* Default Values of User Configure End***************************/
 
 /* Upper limit of multiple SSID scan */

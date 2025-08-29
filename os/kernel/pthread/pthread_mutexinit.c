@@ -156,6 +156,7 @@ int pthread_mutex_init(FAR pthread_mutex_t *mutex,
 		if (status != OK) {
 			ret = get_errno();
 		}
+		mutex->sem.flags |= FLAGS_SEM_MUTEX;
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 		/* Initialize the semaphore protocol */
