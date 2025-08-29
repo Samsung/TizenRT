@@ -46,6 +46,7 @@ static u8 g_inic_ipc_logging_buf_ctr = 0;
 
 //todo:move to non-cache data section
 inic_ipc_host_request_message g_host_ipc_api_request_info __attribute__((aligned(64)));
+u32	latest_api_id = 0;  /*for debug*/
 #ifdef IPC_DIR_MSG_TX
 IPC_MSG_STRUCT g_host_ipc_api_msg __attribute__((aligned(64)));
 #endif
@@ -410,14 +411,20 @@ NOTIFY_MSG: ;
 int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 {
 	int ret = 0;
+	latest_api_id = id;
 	rtw_down_sema(&g_host_inic_api_message_send_sema);
+	int cnt = 0;
 	/*ensure previous IPC request is handled (_inic_ipc_ip_addr_update_in_wowlan)*/
 	while (1) {
 		DCache_Invalidate((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
 		if (g_host_ipc_api_request_info.API_ID != IPC_WIFI_API_PROCESS_DONE) {
 			rtw_mdelay_os(1);
+			cnt = (cnt + 1) % 12000;
 		} else {
 			break;
+		}
+		if (cnt == 0) {
+			dbg_noarg("\rlast inic ipc not handled\n");
 		}
 	}
 	rtw_memset(&g_host_ipc_api_request_info, 0, sizeof(inic_ipc_host_request_message));
@@ -444,8 +451,12 @@ int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 		if (g_host_ipc_api_request_info.API_ID != IPC_WIFI_API_PROCESS_DONE) {
 			rtw_mdelay_os(1);
 			DCache_Invalidate((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
+			cnt = (cnt + 1) % 12000;
 		} else {
 			break;
+		}
+		if (cnt == 0) {
+			dbg_noarg("HstMsgSend wait inic ipc done 0x%x, 0x%x\n", g_host_ipc_api_request_info.API_ID, latest_api_id);
 		}
 	}
 	ret = g_host_ipc_api_request_info.ret;

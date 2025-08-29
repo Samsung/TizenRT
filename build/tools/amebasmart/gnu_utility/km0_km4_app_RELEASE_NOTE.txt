@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version cbdbebb06b 2025/08/13-15:52:48 ==
+1. Fix code flow issue which can cause KM4 to be stuck
+
 == version e86a275b3d 2025/07/25-11:02:45 ==
 1. Remove whitespace in front of KM4 version info
 
