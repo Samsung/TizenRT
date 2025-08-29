@@ -15,7 +15,6 @@
 static uint8_t ble_tizenrt_read_val[BLE_TIZENRT_READ_MAX_LEN] = {'T', 'i', 'z', 'e', 'n', 'r', 't', '\0'};
 static uint8_t tizenrt_ble_write_value[TIZENRT_MAX_VAL_LEN];
 /* service table contains several services */
-T_ATTRIB_APPL *tizenrt_ble_service_tbl = NULL;
 static uint16_t abs_att_count = 0;
 TIZENERT_SRV_CNT tizenrt_ble_srv_count = 0;
 TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7] = {0};
@@ -449,6 +448,7 @@ void ble_tizenrt_free_srv_info(struct rtk_bt_gatt_service *srv_info)
 extern uint16_t server_profile_count;
 int attr_counter = 0;
 static struct rtk_bt_gatt_service *ble_tizenrt_srv_array_ptr = NULL;
+static rtk_bt_gatt_attr_t *ble_tizenrt_attrs_ptr = NULL;
 trble_result_e tizenrt_add_service(uint8_t index, uint16_t app_id)
 {	
     struct rtk_bt_gatt_service ble_tizenrt_srv;
@@ -461,7 +461,7 @@ trble_result_e tizenrt_add_service(uint8_t index, uint16_t app_id)
 	ble_tizenrt_srv.assgin_handle_flag = true;
 	ble_tizenrt_srv.attr_count = tizenrt_ble_srv_database[index].att_count;
 
-	rtk_bt_gatt_attr_t ble_tizenrt_attrs[ble_tizenrt_srv.attr_count];
+	ble_tizenrt_attrs_ptr = (rtk_bt_gatt_attr_t *)osif_mem_alloc(0, ble_tizenrt_srv.attr_count * sizeof(rtk_bt_gatt_attr_t));
 	int j = 0;
 	int srv_count = 0;
 
@@ -470,17 +470,17 @@ trble_result_e tizenrt_add_service(uint8_t index, uint16_t app_id)
 			srv_count++;
 			if(srv_count > 1)
 				break;
-			setup_ble_srv_dec_add_attr(&ble_tizenrt_attrs[j++], attr_counter);
+			setup_ble_srv_dec_add_attr(&ble_tizenrt_attrs_ptr[j++], attr_counter);
 		}else if(TRBLE_GATT_CHARACT == server_init_parm.profile[attr_counter].type){
-			setup_ble_char_dec_add_attr(&ble_tizenrt_attrs[j++], attr_counter);
-			setup_ble_char_val_desc_add_attr(&ble_tizenrt_attrs[j++], attr_counter);
+			setup_ble_char_dec_add_attr(&ble_tizenrt_attrs_ptr[j++], attr_counter);
+			setup_ble_char_val_desc_add_attr(&ble_tizenrt_attrs_ptr[j++], attr_counter);
 		}else if(TRBLE_GATT_DESC == server_init_parm.profile[attr_counter].type){
-			setup_ble_char_ccc_add_attr(&ble_tizenrt_attrs[j++], attr_counter);
+			setup_ble_char_ccc_add_attr(&ble_tizenrt_attrs_ptr[j++], attr_counter);
 		}
 		attr_counter++;
 	}
 
-	ble_tizenrt_srv.attrs = ble_tizenrt_attrs;
+	ble_tizenrt_srv.attrs = ble_tizenrt_attrs_ptr;
     debug_print("tizenrt_ble_srv_database[%d].abs_handle = %d tizenrt_attr_tbl_size = %d start_handle = 0x%x \n",
                                                 index,
                                                 tizenrt_ble_srv_database[index].abs_handle,
@@ -506,6 +506,8 @@ void tizenrt_remove_service(void)
 {
 	osif_mem_free(ble_tizenrt_srv_array_ptr);
 	ble_tizenrt_srv_array_ptr = NULL;
+	osif_mem_free(ble_tizenrt_attrs_ptr);
+	ble_tizenrt_attrs_ptr = NULL;
 }
 
 bool setup_ble_srv_info(uint8_t service_index, trble_gatt_t *profile)
@@ -654,11 +656,8 @@ bool parse_service_table(trble_gatt_t *profile, uint16_t profile_count)
 {
     debug_print("tizenrt_ble_service_tbl profile %p profile_count %d \n", profile, profile_count);
     abs_att_count = 0;
-    tizenrt_ble_service_tbl = (T_ATTRIB_APPL *)osif_mem_alloc(0, profile_count * sizeof(T_ATTRIB_APPL));
-    memset(tizenrt_ble_service_tbl, 0, profile_count * sizeof(T_ATTRIB_APPL));
     uint8_t srv_index = 0;
     uint8_t char_index = 0;
-    uint16_t j = 0;
     for (int i = 0; i < server_profile_count; i++)
     {
         if(profile[i].type ==  TRBLE_GATT_SERVICE)
@@ -666,17 +665,13 @@ bool parse_service_table(trble_gatt_t *profile, uint16_t profile_count)
             srv_index = tizenrt_ble_srv_count++;    /* add the service counter */
             char_index = 0;     /* clr the char_index when begain parse a new service */
             debug_print("Parse service decleration \n");
-            setup_ble_service_attr(&tizenrt_ble_service_tbl[j++], profile[i].uuid ,profile[i].uuid_length);
             setup_ble_srv_info(srv_index, &profile[i]);
         } else if(profile[i].type ==  TRBLE_GATT_CHARACT) 
         {
-            setup_ble_char_dec_attr(&tizenrt_ble_service_tbl[j++], profile[i].uuid, profile[i].property, profile[i].uuid_length);
-            setup_ble_char_val_attr(&tizenrt_ble_service_tbl[j++], profile[i].uuid, profile[i].permission, profile[i].uuid_length);
             setup_ble_char_info(srv_index, char_index, &profile[i]);
             char_index++;
         } else if(profile[i].type ==  TRBLE_GATT_DESC)
         {
-            setup_ble_char_ccc_attr(&tizenrt_ble_service_tbl[j++], 0, profile[i].uuid_length);
             setup_ble_char_info(srv_index, char_index, &profile[i]);
             char_index++;
         }
