@@ -33,6 +33,7 @@ extern "C"
 #define RTK_BLE_5_1_SUPPORT                 1
 #define RTK_BLE_5_2_SUPPORT                 1
 #define RTK_BLE_SMP_OOB_SUPPORT             1
+#define RTK_BLE_COC_SUPPORT                 1
 #if ((defined(CONFIG_BT_MESH_PROVISIONER_SUPPORT) && CONFIG_BT_MESH_PROVISIONER_SUPPORT) || \
     (defined(CONFIG_BT_MESH_DEVICE_SUPPORT) && CONFIG_BT_MESH_DEVICE_SUPPORT))
 #define RTK_BLE_MESH_SUPPORT                1

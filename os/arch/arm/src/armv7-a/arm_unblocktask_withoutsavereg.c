@@ -121,55 +121,46 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 	 * g_readytorun task list
 	 */
 
-	if (sched_addprioritized(tcb, (FAR dq_queue_t *)&g_readytorun)) {
-		/* The new btcb was added at the head of the ready-to-run list. It
-		 * is now to new active task!
+	if (sched_addreadytorun(tcb)) {
+		/* The currently active task has changed! We need to do
+		 * a context switch to the new task.
 		 */
 
-		ASSERT(tcb->flink != NULL);
-		tcb->task_state = TSTATE_TASK_RUNNING;
-		tcb->flink->task_state = TSTATE_TASK_READYTORUN;
-
-	} else {
-		/* The new btcb was added in the middle of the ready-to-run list */
-
-		tcb->task_state = TSTATE_TASK_READYTORUN;
-	}
-
-	/*
-	 * Are we in an interrupt handler?
-	 */
-	if (CURRENT_REGS) {
-
-		/* Restore the exception context of the rtcb at the (new) head
-		 * of the g_readytorun task list.
+		/*
+		 * Are we in an interrupt handler?
 		 */
+		if (CURRENT_REGS) {
 
-		rtcb = this_task();
+			/* Restore the exception context of the rtcb at the (new) head
+			 * of the g_readytorun task list.
+			 */
 
-		/* Restore rtcb data for context switching */
+			rtcb = this_task();
 
-		up_restoretask(rtcb);
+			/* Restore rtcb data for context switching */
 
-		/* Then switch contexts */
+			up_restoretask(rtcb);
 
-		arm_restorestate(rtcb->xcp.regs);
-	}
+			/* Then switch contexts */
 
-	/* No, then we will need to perform the user context switch */
+			arm_restorestate(rtcb->xcp.regs);
+		}
 
-	else {
-		/* Switch context to the context of the task at the head of the
-		 * ready to run list.
-		 */
+		/* No, then we will need to perform the user context switch */
 
-		struct tcb_s *nexttcb = this_task();
+		else {
+			/* Switch context to the context of the task at the head of the
+			 * ready to run list.
+			 */
+
+			struct tcb_s *nexttcb = this_task();
 #ifdef CONFIG_TASK_SCHED_HISTORY
-		/* Save the task name which will be scheduled */
-		save_task_scheduling_status(nexttcb);
+			/* Save the task name which will be scheduled */
+			save_task_scheduling_status(nexttcb);
 #endif
-		/* Then switch contexts */
+			/* Then switch contexts */
 
-		arm_fullcontextrestore(nexttcb->xcp.regs);
+			arm_fullcontextrestore(nexttcb->xcp.regs);
+		}
 	}
 }

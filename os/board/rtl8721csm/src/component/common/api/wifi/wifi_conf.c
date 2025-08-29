@@ -1179,8 +1179,8 @@ int wifi_get_associated_client_list(void * client_list_buffer, uint16_t buffer_l
 //----------------------------------------------------------------------------//
 int wifi_get_ap_bssid(unsigned char *bssid)
 {
-	if( RTW_SUCCESS == wifi_is_ready_to_transceive(RTW_STA_INTERFACE)){
-		rtw_memcpy(bssid, ap_bssid, ETH_ALEN);
+	if(RTW_SUCCESS == wifi_is_connected_to_ap()) {
+		memcpy(bssid, ap_bssid, ETH_ALEN);
 		return RTW_SUCCESS;
 	}
 	return RTW_ERROR;

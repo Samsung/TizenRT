@@ -266,7 +266,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 			/* Remove the previous node.  There must be a predecessor, but
 			 * there may not be a successor node.
 			 */
-
+			DEBUGASSERT_MM_FREE_NODE(heap, prev);
 			REMOVE_NODE_FROM_LIST(prev);
 
 			/* Extend the node into the previous free chunk */
@@ -320,7 +320,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 			/* Remove the next node.  There must be a predecessor, but there
 			 * may not be a successor node.
 			 */
-
+			DEBUGASSERT_MM_FREE_NODE(heap, next);
 			REMOVE_NODE_FROM_LIST(next);
 
 			/* Extend the node into the next chunk */

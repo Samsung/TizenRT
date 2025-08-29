@@ -24,14 +24,29 @@
  ****************************************************************************/
 
 #include <assert.h>
+#include <debug.h>
+
+#include <tinyara/mm/mm.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define DEBUGASSERT_MM_FREE_NODE(heap, node)		\
+	do {		\
+		DEBUGASSERT(node);		\
+		if (!((node)->blink)) {		\
+			mfdbg("Corrupted free node %08x\n", node);		\
+			mm_dump_heap_free_node_list(heap);		\
+			mm_dump_node((struct mm_allocnode_s *)node, "CORRUPT NODE");		\
+			mm_dump_node((struct mm_allocnode_s *)((char *)node - (node->preceding & ~MM_ALLOC_BIT)), "PREV NODE");		\
+			mm_dump_node((struct mm_allocnode_s *)((char *)node + node->size), "NEXT NODE");		\
+			DEBUGPANIC();		\
+		}		\
+	} while (0)
+
 #define REMOVE_NODE_FROM_LIST(node)				\
 	do {							\
-		DEBUGASSERT((node)->blink);			\
 		(node)->blink->flink = (node)->flink;		\
 		if ((node)->flink) {				\
 			(node)->flink->blink = (node)->blink;	\

@@ -193,7 +193,8 @@ static void tc_comp_decomp_buffer_lesser_output_size(void)
 	
 	// Test decompression method
 	ret_chk = ioctl(fd, COMPIOC_DECOMPRESS, decomp_tc_data);
-	TC_ASSERT_EQ_CLEANUP("decompress block", ret_chk, ENOMEM, uninitialize_tc_data());
+	TC_ASSERT_EQ_CLEANUP("decompress block ret", ret_chk, ERROR, uninitialize_tc_data());
+	TC_ASSERT_EQ_CLEANUP("decompress block errno", get_errno(), ENOMEM, uninitialize_tc_data());
 
 	uninitialize_tc_data();
 	TC_SUCCESS_RESULT();

@@ -104,7 +104,6 @@ LD_ROM = $(CROSSDEV)ld
 CC_SIZE = $(CROSSDEV)size
 FROMELF = $(CROSSDEV)objcopy
 STRIP   = $(CROSSDEV)strip
-NM	= $(ARCROSSDEV)nm
 
 GDB = arm-none-eabi-gdb
 GDBR = arm-none-eabi-gdb

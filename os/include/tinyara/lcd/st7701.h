@@ -28,8 +28,6 @@
  ****************************************************************************/
 /* System Function Command Table 1 */
 
-#define LCD_XRES CONFIG_LCD_XRES
-#define LCD_YRES CONFIG_LCD_YRES
 #define MIPI_DSI_RTNI           2
 #define MIPI_DSI_HSA            4
 #define MIPI_DSI_HBP            30

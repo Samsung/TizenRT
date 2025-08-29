@@ -128,6 +128,7 @@ struct part_procfs_file_s {
 /* MTD driver methods */
 
 static int part_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks);
+static int part_isbad(FAR struct mtd_dev_s *dev, off_t block);
 static ssize_t part_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buf);
 static ssize_t part_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buf);
 static ssize_t part_read(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, FAR uint8_t *buffer);
@@ -251,6 +252,37 @@ static int part_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 	fvdbg("startblock : %d nblocks : %d\n", eoffset + startblock, nblocks);
 	DEBUGASSERT(eoffset * priv->blkpererase == priv->firstblock);
 	return priv->parent->erase(priv->parent, startblock + eoffset, nblocks);
+}
+
+/****************************************************************************
+ * Name: part_isbad
+ *
+ * Description:
+ *   Check if a particular erase block is bad, only used for NAND flash
+ *
+ ****************************************************************************/
+
+static int part_isbad(FAR struct mtd_dev_s *dev, off_t block)
+{
+        FAR struct mtd_partition_s *priv = (FAR struct mtd_partition_s *)dev;
+
+        DEBUGASSERT(priv);
+        /* Make sure that erase block would not extend past the end of the partition */
+
+        if (!part_blockcheck(priv, block * priv->blkpererase)) {
+                fdbg("ERROR: Isbad beyond the end of the partition\n");
+                return -ENXIO;
+        }
+
+        /* Just add the partition offset to the requested block and let the
+         * underlying MTD driver perform the check.
+         *
+         * NOTE: the offset here is in units of erase blocks.
+         */
+
+        off_t eoffset = priv->firstblock / priv->blkpererase;
+        DEBUGASSERT(eoffset * priv->blkpererase == priv->firstblock);
+        return priv->parent->isbad(priv->parent, block + eoffset);
 }
 
 /****************************************************************************
@@ -765,6 +797,7 @@ FAR struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd, off_t firstblock,
 #ifdef CONFIG_MTD_BYTE_WRITE
 	part->child.write = mtd->write ? part_write : NULL;
 #endif
+	part->child.isbad = mtd->isbad ? part_isbad : NULL;
 
 	part->parent = mtd;
 	part->firstblock = erasestart * blkpererase;

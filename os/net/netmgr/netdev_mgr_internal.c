@@ -163,8 +163,22 @@ struct netdev *nm_register(struct netdev_config *config)
 	addr->sin_addr.s_addr = 0;
 	addr = (struct sockaddr_in *)&nconfig.gw;
 	addr->sin_addr.s_addr = inet_addr("255.255.255.0");
-
+#if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
+	/* When wlan0:ST and wlan1:softap, Default interface is wlan0 */
+	if (config->type == NM_WIFI) {
+		if (g_wlan_idx > 1) {
+			nconfig.is_default = 0;
+		}
+		else {
+			nconfig.is_default = config->is_default;
+		}
+	}
+	else {
+		nconfig.is_default = config->is_default;
+	}
+#else
 	nconfig.is_default = config->is_default;
+#endif
 	nconfig.loopback = 0;
 	nconfig.io_ops = *config->ops;
 
