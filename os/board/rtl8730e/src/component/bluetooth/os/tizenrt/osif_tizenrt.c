@@ -115,7 +115,6 @@ bool osif_task_create(void **pp_handle, const char *p_name, void (*p_routine)(vo
 	task_info[0] = itoa((int) p_routine, routine_addr, 16);
 	task_info[1] = itoa((int) p_param, param_addr, 16);
 	task_info[2] = NULL;
-	stack_size = stack_size * sizeof(uint32_t);
 	priority = priority + SCHED_PRIORITY_DEFAULT;
 	if (priority > SCHED_PRIORITY_MAX)
 		priority = SCHED_PRIORITY_DEFAULT;
