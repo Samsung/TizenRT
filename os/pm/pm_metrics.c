@@ -163,7 +163,7 @@ void pm_metrics_update_resume(FAR struct pm_domain_s *domain)
  *
  * Description:
  *   This function is called inside pm_idle. It counts the frequency of domain, which
- *   make board unable to go into sleep during idle cpu time.
+ *   make board unable to go into sleep during low power cpu time.
  *
  * Input parameters:
  *   None
@@ -263,8 +263,6 @@ int pm_metrics(int milliseconds)
 	irqstate_t flags;
 	int index;
 	int n_domains = 0;
-	int pm_suspended = -1;
-	int pm_resumed = -1;
 	FAR struct pm_domain_s *domain;
 	FAR dq_entry_t *entry;
 
@@ -280,9 +278,6 @@ int pm_metrics(int milliseconds)
 	}
 	/* Lock PM so that no two thread can run PM Metrics simultaneously */
 	pm_lock();
-
-	/* Avoid board sleep during PM Metrics initialization */
-	pm_suspended = pm_suspend(PM_IDLE_DOMAIN);
 
 	/* Allocate memory for initializing PM Metrics measurements */
 	g_pm_metrics = (pm_metric_t *)pm_alloc(1, sizeof(pm_metric_t));
@@ -310,24 +305,8 @@ int pm_metrics(int milliseconds)
 	g_pm_metrics_running = true;
 	leave_critical_section(flags);
 
-	/* Resume Board Sleep */
-	if (pm_suspended == OK) {
-		pm_resumed = pm_resume(PM_IDLE_DOMAIN);
-	} else {
-		pm_resumed = -1;
-		pmdbg("Unable to resume IDLE Domain\n");
-	}
-
 	/* Suspend for given time interval */
 	pm_sleep(TICK2MSEC(MSEC2TICK(milliseconds) - (clock_systimer() - start_time)));
-
-	/* Avoid board sleep during PM Metrics post processing */
-	if (pm_resumed == OK) {
-		pm_suspended = pm_suspend(PM_IDLE_DOMAIN);
-	} else {
-		pm_suspended = -1;
-		pmdbg("Unable to suspend IDLE Domain\n");
-	}
 
 	/* PM Metrics post calculations for consistent result */
 	flags = enter_critical_section();
@@ -349,13 +328,6 @@ int pm_metrics(int milliseconds)
 	/* Free allocated memory */
 	free(g_pm_metrics); /* Use pm_free for consistency */
 	g_pm_metrics = NULL;
-	/* Resume Board Sleep */
-	if (pm_suspended == OK) {
-		pm_resumed = pm_resume(PM_IDLE_DOMAIN);
-	} else {
-		pm_resumed = -1;
-		pmdbg("Unable to resume IDLE Domain\n");
-	}
 
 	/* Unlock PM Metrics for other threads */
 	pm_unlock();

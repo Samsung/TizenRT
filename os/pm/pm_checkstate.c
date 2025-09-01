@@ -107,13 +107,13 @@ enum pm_state_e pm_checkstate(void)
 
 	newstate = PM_SLEEP;
 
-	/* If there is power state lock for LCD and IDLE domain, recommended PM_NORMAL State */
+	/* If there is power state lock for any domain, recommended PM_NORMAL State */
 	if (newstate == PM_SLEEP) {
 		/* Iterate through all registered domains to check their suspend status */
 		for (domain = (FAR struct pm_domain_s *)dq_peek(&g_pmglobals.domains); domain; 
 				domain = (FAR struct pm_domain_s *)dq_next((struct dq_entry_s *)domain)) {
 			if (domain->suspend_count > 0) {
-				newstate = PM_STANDBY;
+				newstate = PM_NORMAL;
 				break;
 			}
 		}
