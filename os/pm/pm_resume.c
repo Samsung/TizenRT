@@ -56,9 +56,9 @@
 
 #include <tinyara/config.h>
 
+#include <errno.h>
 #include <tinyara/pm/pm.h>
 #include <tinyara/irq.h>
-#include <errno.h>
 
 #include "pm.h"
 
@@ -77,40 +77,50 @@
  *
  * Description:
  *   This function is called by a device driver to indicate that it is
- *   idle now, could relax the previous requested power level.
+ *   idle now, and the domain can relax its previous power state restriction.
  *
  * Input Parameters:
- *   domain_id - The domain ID of the PM activity
+ *   domain - Pointer to the domain structure
  *
  *     As an example, media player might relax power level after playback.
  *
  * Returned Value:
- *   None.
+ *   OK (0) on success; ERROR (-1) on failure with errno set appropriately.
  *
  * Assumptions:
  *   This function may be called from an interrupt handler.
  *
  ****************************************************************************/
 
-int pm_resume(int domain_id)
+int pm_resume(FAR struct pm_domain_s *domain)
 {
 	irqstate_t flags;
 	int ret = OK;
 
+	if (domain == NULL) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
+
 	flags = enter_critical_section();
-	ret = pm_check_domain(domain_id);
+
+	ret = pm_check_domain(domain);
 	if (ret != OK) {
 		goto errout;
 	}
-	if (g_pmglobals.suspend_count[domain_id] <= 0) {
+
+	if (domain->suspend_count <= 0) {
 		ret = ERROR;
 		set_errno(ERANGE);
 		goto errout;
 	}
+
 #ifdef CONFIG_PM_METRICS
-	pm_metrics_update_resume(domain_id);
+	pm_metrics_update_resume(domain);
 #endif
-	g_pmglobals.suspend_count[domain_id]--;
+
+	domain->suspend_count--;
+
 errout:
 	leave_critical_section(flags);
 	return ret;

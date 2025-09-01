@@ -1266,7 +1266,7 @@ ndp120_app_device_health_check(void)
 
 	while (1) {
 		ndp120_semtake(dev);
-		(void)pm_suspend(dev->pm_id);
+		(void)pm_suspend(dev->pm_domain);
 		/* If KD Change requested, then skip checking */
 		if (!dev->kd_changed) {
 			s = check_firmware_aliveness(dev, wait_period_ms);
@@ -1275,7 +1275,7 @@ ndp120_app_device_health_check(void)
 				printf("Error: %d in check_firmware_aliveness\n", s);
 			}
 		}
-		(void)pm_resume(dev->pm_id);
+		(void)pm_resume(dev->pm_domain);
 		ndp120_semgive(dev);
 		usleep(NDP_ALIVENESS_CHECK_PERIOD_US);
 	}

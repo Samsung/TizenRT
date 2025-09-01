@@ -88,45 +88,37 @@
 #include <queue.h>
 #include <semaphore.h>
 #include <tinyara/clock.h>
+#include <tinyara/wdog.h>
 
 /* This structure is used to send data to pm driver from app side for timedSuspend */
 struct pm_suspend_arg_s {
-	int domain_id;                    /* domain ID to be suspended */
+	struct pm_domain_s *domain_id;                    /* domain ID to be suspended */
 	unsigned int timer_interval;      /* duration to be suspended */
 };
 
 typedef struct pm_suspend_arg_s pm_suspend_arg_t;
 
 struct pm_domain_arg_s {
-	int domain_id;               /* the domain ID after registering domain */
+	struct pm_domain_s *domain_id;               /* the domain ID after registering domain */
 	char *domain_name;           /* the name of domain that need to be register */
 };
 
 typedef struct pm_domain_arg_s pm_domain_arg_t;
 
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Configuration ************************************************************/
-/* CONFIG_PM_NDOMAINS. Defines the number of "domains" that activity may be
- * monitored on.  For example, you may want to separately manage the power
- * from the Network domain, shutting down the network when it is not be used,
- * from the UI domain, shutting down the UI when it is not in use.
- */
+ /* Configuration ************************************************************/
 
-#define PM_DRVPATH "/dev/pm"
+ #define PM_DRVPATH "/dev/pm"
 
-#ifndef CONFIG_PM_NDOMAINS
-#define CONFIG_PM_NDOMAINS 32
+/* CONFIG_PM_DOMAIN_NAME_SIZE: Maximum length of a domain name */
+#ifndef CONFIG_PM_DOMAIN_NAME_SIZE
+#define CONFIG_PM_DOMAIN_NAME_SIZE 32
 #endif
 
 #define PM_IDLE_DOMAIN 0
 #define PM_LCD_DOMAIN  1
-
-#if CONFIG_PM_NDOMAINS < 1
-#error CONFIG_PM_NDOMAINS invalid
-#endif
 
 /* CONFIG_IDLE_CUSTOM. Some architectures support this definition.  This,
  * if defined, will allow you replace the default IDLE loop with your
@@ -294,6 +286,28 @@ struct pm_clock_ops {
 };
 #endif
 
+/* This structure represents a single power management domain */
+struct pm_domain_s {
+	/* Linked list entry */
+	dq_entry_t node;
+
+	/* Domain name */
+	char name[CONFIG_PM_DOMAIN_NAME_SIZE];
+
+	/* The power state lock count for this domain */
+	uint16_t suspend_count;
+
+	/* Watchdog timer for timed suspend operations */
+	WDOG_ID wdog;
+
+#ifdef CONFIG_PM_METRICS
+	/* Domain-specific metrics data */
+	clock_t stime;							/* Last suspended time stamp of domain */
+	uint32_t blocking_board_sleep_ticks;	/* Tick time the suspended domain prevented board sleep during idle */
+	uint32_t suspend_ticks;					/* Total time (in ticks) domain was suspended */
+#endif
+};
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -429,15 +443,30 @@ int pm_unregister(FAR struct pm_callback_s *callbacks);
  *
  * Input parameters:
  *   domain - the string domain need to be registered in PM.
- * 
- * Returned value:
- *    non-negative integer   : ID of domain
- *    ERROR (-1)             : On Error
  *
+ * Returned value:
+ *    Pointer to struct pm_domain_s : On Success
+ *    NULL                         : On Error
  *
  ****************************************************************************/
 
-int pm_domain_register(char *domain);
+FAR struct pm_domain_s *pm_domain_register(FAR const char *domain);
+
+/****************************************************************************
+ * Name: pm_domain_unregister
+ *
+ * Description:
+ *   This function is called to unregister a previously registered PM domain.
+ *
+ * Input parameters:
+ *   domain_name - the string domain name to be unregistered.
+ *
+ * Returned value:
+ *    OK (0)   : On Success
+ *    ERROR (-1): On Error (e.g., domain not found)
+ *
+ ****************************************************************************/
+int pm_domain_unregister(FAR const char *domain_name);
 
 /****************************************************************************
  * Name: pm_idle
@@ -466,7 +495,7 @@ void pm_idle(void);
  *   last the specified level.
  *
  * Input Parameters:
- *   domain_id - The domain ID of the PM activity
+ *   domain - Pointer to the domain structure
  *
  *     As an example, media player might stay in normal state during playback.
  *
@@ -479,7 +508,7 @@ void pm_idle(void);
  *
  ****************************************************************************/
 
-int pm_suspend(int domain_id);
+int pm_suspend(FAR struct pm_domain_s *domain);
 
 /****************************************************************************
  * Name: pm_resume
@@ -489,7 +518,7 @@ int pm_suspend(int domain_id);
  *   idle now, could relax the previous requested power level.
  *
  * Input Parameters:
- *   domain_id - The domain ID of the PM activity
+ *   domain - Pointer to the domain structure
  *
  *     As an example, media player might relax power level after playback.
  *
@@ -502,7 +531,7 @@ int pm_suspend(int domain_id);
  *
  ****************************************************************************/
 
-int pm_resume(int domain_id);
+int pm_resume(FAR struct pm_domain_s *domain);
 
 /************************************************************************
  * Name: pm_sleep
@@ -537,7 +566,7 @@ int pm_sleep(int milliseconds);
  *   This function locks PM transition for a specific duration.  
  * 
  * Parameters:
- *   domain_id - domain ID to be suspended
+ *   domain      - Pointer to the domain structure
  *   milliseconds - expected lock duration in millisecond
  *
  * Return Value:
@@ -546,7 +575,7 @@ int pm_sleep(int milliseconds);
  *
  ************************************************************************/
 
-int pm_timedsuspend(int domain_id, unsigned int milliseconds);
+int pm_timedsuspend(FAR struct pm_domain_s *domain, unsigned int milliseconds);
 
 /****************************************************************************
  * Name: pm_suspendcount
@@ -555,15 +584,15 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds);
  *   This function is called to get current suspend count of domain.
  *
  * Input Parameters:
- *   domain_id - The domain ID of the PM activity
+ *   domain - Pointer to the domain structure
  *
  * Returned Value:
  *   Non-Negative Integer: the suspend count of domain
- *   ERROR: for invalid domain_id
+ *   ERROR: for invalid domain
  *
  ****************************************************************************/
 
-int pm_suspendcount(int domain_id);
+int pm_suspendcount(FAR struct pm_domain_s *domain);
 
 #ifdef CONFIG_PM_DVFS
 /****************************************************************************
@@ -625,13 +654,23 @@ int pm_metrics(int milliseconds);
 #define pm_initialize(sleep_ops)      (0)
 #define pm_register(cb)         (0)
 #define pm_unregister(cb)       (0)
-#define pm_domain_register(domain)	(0)
+#define pm_domain_register(domain)	(NULL)
+#define pm_domain_unregister(domain_name) (ERROR)
 #define pm_idle()
-#define pm_suspend(domain_id)   (0)
-#define pm_resume(domain_id)    (0)
+#define pm_suspend(domain)   (0)
+#define pm_resume(domain)    (0)
 #define pm_sleep(milliseconds)				usleep(milliseconds * USEC_PER_MSEC)
-#define pm_timedsuspend(domain_id, milliseconds)	(0)
-#define pm_suspendcount(domain_id)   (0)
+#define pm_timedsuspend(domain, milliseconds)	(0)
+#define pm_suspendcount(domain)   (0)
+#ifdef CONFIG_PM_METRICS
+#define pm_metrics(milliseconds) (ERROR)
+#define pm_metrics_update_domain(domain)
+#define pm_metrics_update_suspend(domain)
+#define pm_metrics_update_resume(domain)
+#define pm_metrics_update_changestate()
+#define pm_metrics_update_idle()
+#define pm_metrics_update_wakehandler(missing_tick, wakeup_src)
+#endif
 
 #endif							/* CONFIG_PM */
 

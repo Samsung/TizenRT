@@ -103,6 +103,8 @@
  * Public Types
  ****************************************************************************/
 
+/* Forward declaration - struct pm_domain_s is now in the global header */
+
 /* This structure encapsulates all of the global data used by the PM module */
 
 struct pm_global_s {
@@ -119,9 +121,8 @@ struct pm_global_s {
 
 	dq_queue_t registry;
 
-	/* The power state lock count */
-
-	uint16_t suspend_count[CONFIG_PM_NDOMAINS];
+	/* domains is a doubly-linked list of registered power management domains */
+	dq_queue_t domains;
 
 	/* state       - The current state for this PM domain (as determined by an
 	 *               explicit call to pm_changestate())
@@ -163,7 +164,7 @@ extern "C" {
 /* All PM global data: */
 
 EXTERN struct pm_global_s g_pmglobals;
-EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
+
 /************************************************************************************
  * Public Function Prototypes
  ************************************************************************************/
@@ -172,17 +173,17 @@ EXTERN char *pm_domain_map[CONFIG_PM_NDOMAINS];
  *
  * Description:
  *   This function is called inside PM internal APIs to check whether the
- *   domain is valid or not.
+ *   domain pointer is valid.
  * 
  * Input Parameters:
- *   domain_id - ID of domain
+ *   domain - Pointer to the domain structure
  *
  * Returned Value:
- *   0 - If domain is valid
- *  -1 - If domain is not valid
+ *   0 (OK) - If domain is valid
+ *  -1 (ERROR) - If domain is not valid
  *
  ****************************************************************************/
-int pm_check_domain(int domain_id);
+int pm_check_domain(FAR struct pm_domain_s *domain);
 
 /****************************************************************************
  * Name: pm_checkstate
@@ -208,7 +209,7 @@ int pm_check_domain(int domain_id);
  *   is completed.
  *
  * Input Parameters:
- *   domain - The PM domain to check
+ *   None (This function operates on all registered domains or global state)
  *
  * Returned Value:
  *   The recommended power management state.
@@ -278,13 +279,13 @@ void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
  *   domain.
  *
  * Input parameters:
- *   domain_id - the ID of domain registered with PM.
+ *   domain - Pointer to the domain structure
  *
  * Returned value:
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_domain(int domain_id);
+void pm_metrics_update_domain(FAR struct pm_domain_s *domain);
 
 /****************************************************************************
  * Name: pm_metrics_update_suspend
@@ -294,13 +295,13 @@ void pm_metrics_update_domain(int domain_id);
  *   suspended domain.
  *
  * Input parameters:
- *   domain_id - the ID of domain registered with PM.
+ *   domain - Pointer to the domain structure
  *
  * Returned value:
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_suspend(int domain_id);
+void pm_metrics_update_suspend(FAR struct pm_domain_s *domain);
 
 /****************************************************************************
  * Name: pm_metrics_update_resume
@@ -310,13 +311,13 @@ void pm_metrics_update_suspend(int domain_id);
  *   amount of time (in ticks) the given domain was suspended.
  * 
  * Input parameters:
- *   domain_id - the ID of domain registered with PM.
+ *   domain - Pointer to the domain structure
  *
  * Returned value:
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_resume(int domain_id);
+void pm_metrics_update_resume(FAR struct pm_domain_s *domain);
 
 
 /****************************************************************************
