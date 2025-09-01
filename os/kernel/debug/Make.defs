@@ -30,7 +30,7 @@ CSRCS += memdbg.c
 endif
 
 ifeq ($(CONFIG_ENABLE_STACKMONITOR)$(CONFIG_DEBUG),yy)
-ifneq ($(CONFIG_STACKMONITOR_DISABLE_DEAD_THREAD),y)
+ifneq ($(CONFIG_DEBUG_DISABLE_DEAD_THREAD_STACKINFO),y)
 CSRCS += stackinfo_save_terminated.c
 endif
 endif
