@@ -177,7 +177,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
     char le_addr[30] = {0};
     char *role;
 #ifdef CONFIG_PM
-    int domain;
+    struct pm_domain_s *domain;
 #endif
     switch (evt_code) {
     case RTK_BT_LE_GAP_EVT_ADV_START_IND: {

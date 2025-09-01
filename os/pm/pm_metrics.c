@@ -22,15 +22,9 @@
 #include <queue.h>
 #include <debug.h>
 #include <errno.h>
+#include <string.h>
+#include <assert.h>
 #include "pm.h"
-
-struct pm_metric_domain_s {
-	clock_t stime[CONFIG_PM_NDOMAINS];						 /* Last suspended time stamp of domain */
-	uint32_t blocking_board_sleep_ticks[CONFIG_PM_NDOMAINS]; /* Tick time of the suspended domain inside idle thread that prevent board sleep */
-	uint32_t suspend_ticks[CONFIG_PM_NDOMAINS];				 /* Time (in ticks) domain suspended */
-};
-
-typedef struct pm_metric_domain_s pm_metric_domain_t;
 
 struct pm_metric_state_s {
 	clock_t stime;						  /* Last PM change state time stamp */
@@ -40,7 +34,6 @@ struct pm_metric_state_s {
 typedef struct pm_metric_state_s pm_metric_state_t;
 
 struct pm_metric_s {
-	pm_metric_domain_t domain_metrics;				 /* The domain metrics */
 	pm_metric_state_t state_metrics;				 /* The power management state metrics */
 	uint32_t board_sleep_ticks;						 /* The amount of time (in ticks) board was in sleep */
 	uint32_t wakeup_src_counts[PM_WAKEUP_SRC_COUNT]; /* It counts the frequency of wakeup sources */
@@ -55,6 +48,8 @@ static bool g_pm_metrics_running = false;
 static void pm_print_metrics(double total_time, int n_domains)
 {
 	int index;
+	struct pm_domain_s *domain;
+	dq_entry_t *entry;
 	enum pm_state_e pm_state;
 	pmdbg("\n");
 	pmdbg("TOTAL METRICS TIME [1] = %dms\n", TICK2MSEC((int)total_time));
@@ -64,10 +59,11 @@ static void pm_print_metrics(double total_time, int n_domains)
 	pmdbg("\n");
 	pmdbg("              DOMAIN              | TOTAL PM SUSPEND TIME [3] | TOTAL SLEEP BLOCKING TIME [4] \n");
 	pmdbg("----------------------------------|---------------------------|-------------------------------\n");
-	for (index = 0; index < n_domains; index++) {
-		pmdbg(" %32s | %13dms (%6.2f%%) | %17dms (%6.2f%%) \n", pm_domain_map[index], TICK2MSEC(g_pm_metrics->domain_metrics.suspend_ticks[index]),
-			  ((double)g_pm_metrics->domain_metrics.suspend_ticks[index]) * 100.0 / total_time, g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index],
-			  ((double)g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index]) * 100.0 / ((double)g_pm_metrics->total_try_ticks));
+	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
+		domain = (FAR struct pm_domain_s *)entry;
+		pmdbg(" %32s | %13dms (%6.2f%%) | %17dms (%6.2f%%) \n", domain->name, TICK2MSEC(domain->suspend_ticks),
+			  ((double)domain->suspend_ticks) * 100.0 / total_time, domain->blocking_board_sleep_ticks,
+			  ((double)domain->blocking_board_sleep_ticks) * 100.0 / ((double)g_pm_metrics->total_try_ticks));
 	}
 	pmdbg("\n");
 	pmdbg("*[3] = total time pm domain was suspended.\n");
@@ -106,17 +102,17 @@ static void pm_print_metrics(double total_time, int n_domains)
  *   domain.
  *
  * Input parameters:
- *   domain_id - the ID of domain registered with PM.
+ *   domain - Pointer to the domain structure
  *
  * Returned value:
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_domain(int domain_id)
+void pm_metrics_update_domain(FAR struct pm_domain_s *domain)
 {
-	if (g_pm_metrics_running) {
-		g_pm_metrics->domain_metrics.stime[domain_id] = clock_systimer();
-		g_pm_metrics->domain_metrics.suspend_ticks[domain_id] = 0;
+	if (g_pm_metrics_running && domain) {
+		domain->stime = clock_systimer();
+		domain->suspend_ticks = 0;
 	}
 }
 
@@ -128,16 +124,16 @@ void pm_metrics_update_domain(int domain_id)
  *   suspended domain.
  *
  * Input parameters:
- *   domain_id - the ID of domain registered with PM.
+ *   domain - Pointer to the domain structure
  *
  * Returned value:
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_suspend(int domain_id)
+void pm_metrics_update_suspend(FAR struct pm_domain_s *domain)
 {
-	if (g_pm_metrics_running && (g_pmglobals.suspend_count[domain_id] == 0)) {
-		g_pm_metrics->domain_metrics.stime[domain_id] = clock_systimer();
+	if (g_pm_metrics_running && domain && (domain->suspend_count == 0)) {
+		domain->stime = clock_systimer();
 	}
 }
 
@@ -149,16 +145,16 @@ void pm_metrics_update_suspend(int domain_id)
  *   amount of time (in ticks) the given domain was suspended.
  *
  * Input parameters:
- *   domain_id - the ID of domain registered with PM.
+ *   domain - Pointer to the domain structure
  *
  * Returned value:
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_resume(int domain_id)
+void pm_metrics_update_resume(FAR struct pm_domain_s *domain)
 {
-	if (g_pm_metrics_running && (g_pmglobals.suspend_count[domain_id] == 1)) {
-		g_pm_metrics->domain_metrics.suspend_ticks[domain_id] += clock_systimer() - g_pm_metrics->domain_metrics.stime[domain_id];
+	if (g_pm_metrics_running && domain && (domain->suspend_count == 1)) {
+		domain->suspend_ticks += clock_systimer() - domain->stime;
 	}
 }
 
@@ -178,14 +174,20 @@ void pm_metrics_update_resume(int domain_id)
  ****************************************************************************/
 void pm_metrics_update_idle(void)
 {
-	int index;
+	FAR struct pm_domain_s *domain;
+	FAR dq_entry_t *entry;
+	irqstate_t flags;
+
 	if (g_pm_metrics_running) {
 		g_pm_metrics->total_try_ticks++;
-		for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
-			if (g_pmglobals.suspend_count[index] != 0) {
-				g_pm_metrics->domain_metrics.blocking_board_sleep_ticks[index]++;
+		flags = enter_critical_section(); /* Protect domain list access */
+		for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
+			domain = (FAR struct pm_domain_s *)entry;
+			if (domain->suspend_count != 0) {
+				domain->blocking_board_sleep_ticks++;
 			}
 		}
+		leave_critical_section(flags);
 	}
 }
 
@@ -232,7 +234,9 @@ void pm_metrics_update_changestate(void)
 void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
 {
 	if (g_pm_metrics_running) {
-		g_pm_metrics->wakeup_src_counts[wakeup_src]++;
+		if (wakeup_src < PM_WAKEUP_SRC_COUNT) {
+			g_pm_metrics->wakeup_src_counts[wakeup_src]++;
+		}
 		g_pm_metrics->board_sleep_ticks += missing_tick;
 	}
 }
@@ -258,9 +262,12 @@ int pm_metrics(int milliseconds)
 	clock_t start_time, end_time;
 	irqstate_t flags;
 	int index;
-	int n_domains;
+	int n_domains = 0;
 	int pm_suspended = -1;
 	int pm_resumed = -1;
+	FAR struct pm_domain_s *domain;
+	FAR dq_entry_t *entry;
+
 	/* If PM Metrics already running then notify other thread */
 	if (g_pm_metrics) {
 		pmdbg("PM Metrics already running\n");
@@ -273,8 +280,10 @@ int pm_metrics(int milliseconds)
 	}
 	/* Lock PM so that no two thread can run PM Metrics simultaneously */
 	pm_lock();
+
 	/* Avoid board sleep during PM Metrics initialization */
 	pm_suspended = pm_suspend(PM_IDLE_DOMAIN);
+
 	/* Allocate memory for initializing PM Metrics measurements */
 	g_pm_metrics = (pm_metric_t *)pm_alloc(1, sizeof(pm_metric_t));
 	if (g_pm_metrics == NULL) {
@@ -287,15 +296,20 @@ int pm_metrics(int milliseconds)
 	for (index = 0; index < PM_COUNT; index++) {
 		g_pm_metrics->state_metrics.state_accum_ticks[index] = 0;
 	}
+
 	flags = enter_critical_section();
 	start_time = clock_systimer();
 	g_pm_metrics->state_metrics.stime = start_time;
-	for (index = 0; (index < CONFIG_PM_NDOMAINS) && pm_domain_map[index]; index++) {
-		pm_metrics_update_domain(index);
-		g_pm_metrics->domain_metrics.stime[index] = start_time;
+
+	/* Initialize metrics for all registered domains */
+	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
+		domain = (FAR struct pm_domain_s *)entry;
+		pm_metrics_update_domain(domain); /* This will set domain->stime */
+		n_domains++;
 	}
 	g_pm_metrics_running = true;
 	leave_critical_section(flags);
+
 	/* Resume Board Sleep */
 	if (pm_suspended == OK) {
 		pm_resumed = pm_resume(PM_IDLE_DOMAIN);
@@ -303,8 +317,10 @@ int pm_metrics(int milliseconds)
 		pm_resumed = -1;
 		pmdbg("Unable to resume IDLE Domain\n");
 	}
+
 	/* Suspend for given time interval */
 	pm_sleep(TICK2MSEC(MSEC2TICK(milliseconds) - (clock_systimer() - start_time)));
+
 	/* Avoid board sleep during PM Metrics post processing */
 	if (pm_resumed == OK) {
 		pm_suspended = pm_suspend(PM_IDLE_DOMAIN);
@@ -312,22 +328,26 @@ int pm_metrics(int milliseconds)
 		pm_suspended = -1;
 		pmdbg("Unable to suspend IDLE Domain\n");
 	}
+
 	/* PM Metrics post calculations for consistent result */
 	flags = enter_critical_section();
 	g_pm_metrics_running = false;
 	end_time = clock_systimer();
-	for (index = 0; (index < CONFIG_PM_NDOMAINS) && pm_domain_map[index]; index++) {
-		if (g_pmglobals.suspend_count[index]) {
-			g_pm_metrics->domain_metrics.suspend_ticks[index] += end_time - g_pm_metrics->domain_metrics.stime[index];
+
+	/* Finalize suspend ticks for domains that are still suspended */
+	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
+		domain = (FAR struct pm_domain_s *)entry;
+		if (domain->suspend_count > 0) {
+			domain->suspend_ticks += end_time - domain->stime;
 		}
 	}
-	n_domains = index;
+	n_domains = g_pmglobals.ndomains; /* Get final count of domains */
 	g_pm_metrics->state_metrics.state_accum_ticks[g_pmglobals.state] += end_time - g_pm_metrics->state_metrics.stime;
 	leave_critical_section(flags);
 	/* Show PM Metrics Results */
 	pm_print_metrics((double)(end_time - start_time), n_domains);
 	/* Free allocated memory */
-	free(g_pm_metrics);
+	free(g_pm_metrics); /* Use pm_free for consistency */
 	g_pm_metrics = NULL;
 	/* Resume Board Sleep */
 	if (pm_suspended == OK) {
@@ -336,6 +356,7 @@ int pm_metrics(int milliseconds)
 		pm_resumed = -1;
 		pmdbg("Unable to resume IDLE Domain\n");
 	}
+
 	/* Unlock PM Metrics for other threads */
 	pm_unlock();
 	return OK;

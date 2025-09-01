@@ -56,6 +56,9 @@
 #include <tinyara/wdog.h>
 #include <tinyara/sched.h>
 #include <errno.h>
+#include <debug.h>
+#include <assert.h>
+
 #include "pm.h"
 
 /************************************************************************
@@ -70,23 +73,30 @@
  * Private Variables
  ************************************************************************/
 
-/* This array maps the domain to their respective wdog timer */
-static WDOG_ID domain_timer_map[CONFIG_PM_NDOMAINS];
-
 /************************************************************************
  * Private Functions
  ************************************************************************/
 
-static void timer_timeout(int argc, int domain_id)
+static void timer_timeout(int argc, uint32_t domain_ptr)
 {
-	DEBUGASSERT(domain_timer_map[domain_id] != NULL);
+	FAR struct pm_domain_s *domain = (FAR struct pm_domain_s *)((uintptr_t)domain_ptr);
+
+	DEBUGASSERT(domain != NULL && domain->wdog != NULL);
+
+	/* This timeout function is executed within enter_critical_section.
+	 * This protects it from memory release caused by pm_domain_unregister.
+	 */
+
 	/* PM transition will be resume here */
-	if (pm_resume(domain_id) != OK) {
-		pmlldbg("Unable to resume domain: %s\n", pm_domain_map[domain_id]);
+	if (pm_resume(domain) != OK) {
+		pmlldbg("Unable to resume domain: %s\n", domain->name);
 	}
-	(void)wd_delete(domain_timer_map[domain_id]);
-	domain_timer_map[domain_id] = NULL;
+
+	(void)wd_delete(domain->wdog);
+	domain->wdog = NULL;
+
 }
+
 /************************************************************************
  * Public Functions
  ************************************************************************/
@@ -98,37 +108,42 @@ static void timer_timeout(int argc, int domain_id)
  *   This function locks PM state transition for a specific duration.
  *
  * Parameters:
- *   domain_id - ID of domain to be suspended
+ *   domain      - Pointer to the domain structure
  *   milliseconds - expected lock duration in millisecond
  *
  * Return Value:
- *   0 - success
- *  -1 - error
+ *   OK (0) - success
+ *   ERROR (-1) - error
  *
  ************************************************************************/
 
-int pm_timedsuspend(int domain_id, unsigned int milliseconds)
+int pm_timedsuspend(struct pm_domain_s *domain, unsigned int milliseconds)
 {
 	irqstate_t flags;
 	WDOG_ID wdog;
 	int tick_remain;
 	int ret = ERROR;
 	int delay = MSEC2TICK(milliseconds);
-	if ((domain_id < 0) || (domain_id >= CONFIG_PM_NDOMAINS) || (pm_domain_map[domain_id] == NULL)) {
+
+	if (pm_check_domain(domain)) {
 		set_errno(EINVAL);
-		pmdbg("Invalid domain_id: %d\n", domain_id);
+		pmdbg("Invalid domain pointer\n");
 		return ret;
 	}
+
 	flags = enter_critical_section();
-	wdog = domain_timer_map[domain_id];
+	wdog = domain->wdog;
+
 	/* If delay is zero then cancel the timer (PM Policy) */
 	if (delay == 0) {
 		if (wdog) {
-			timer_timeout(0, domain_id);
+			/* Manually trigger timeout to resume and cleanup */
+			timer_timeout(0, (uint32_t)((uintptr_t)domain));
 		}
 		ret = OK;
 		goto exit;
 	}
+
 	/* If timer is not there, then create a timer & suspend domain */
 	if (!wdog) {
 		wdog = wd_create();
@@ -137,30 +152,37 @@ int pm_timedsuspend(int domain_id, unsigned int milliseconds)
 			set_errno(EAGAIN);
 			goto exit;
 		}
+
 		/* Unable to suspend domain, so delete the timer */
-		if (pm_suspend(domain_id) != OK) {
-			pmdbg("Unable to suspend domain: %s\n", pm_domain_map[domain_id]);
+		if (pm_suspend(domain) != OK) {
+			pmdbg("Unable to suspend domain: %s\n", domain->name);
 			(void)wd_delete(wdog);
 			goto exit;
 		}
-		domain_timer_map[domain_id] = wdog;
+		domain->wdog = wdog;
 	}
-	/* New delay is less than running timer ticks left, no need to do anyting */
+
+	/* New delay is less than running timer ticks left, no need to do anything */
 	tick_remain = wd_gettime(wdog);
 	if (delay <= tick_remain) {
-		pmvdbg("Domain: %s is already suspended for %d milliseconds\n", pm_domain_map[domain_id], TICK2MSEC(tick_remain));
+		pmvdbg("Domain: %s is already suspended for %d milliseconds\n", domain->name, TICK2MSEC(tick_remain));
 		ret = OK;
 		goto exit;
 	}
+
 	/* Start the timer */
-	if (wd_start(wdog, delay, (wdentry_t)timer_timeout, 1, domain_id) != OK) {
+	/* Pass domain pointer as argument to timer_timeout */
+	if (wd_start(wdog, delay, (wdentry_t)timer_timeout, 1, (uint32_t)((uintptr_t)domain)) != OK) {
 		pmdbg("Error starting Wdog timer\n");
 		set_errno(EAGAIN);
-		timer_timeout(0, domain_id);
+		/* Manually trigger timeout to resume and cleanup on failure to start */
+		timer_timeout(0, (uint32_t)((uintptr_t)domain));
 		goto exit;
 	}
-	pmvdbg("Domain: %s is suspended for %d milliseconds\n", pm_domain_map[domain_id], milliseconds);
+
+	pmvdbg("Domain: %s is suspended for %d milliseconds\n", domain->name, milliseconds);
 	ret = OK;
+
 exit:
 	leave_critical_section(flags);
 	return ret;
