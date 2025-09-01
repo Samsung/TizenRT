@@ -54,16 +54,6 @@
  * PM logic, we will use the following terminology:
  *
  * NORMAL  - The normal, full power operating mode.
- * IDLE    - This is still basically normal operational mode, the system is,
- *           however, IDLE and some simple simple steps to reduce power
- *           consumption provided that they do not interfere with normal
- *           Operation.  Simply dimming a backlight might be an example
- *           something that would be done when the system is idle.
- * STANDBY - Standby is a lower power consumption mode that may involve more
- *           extensive power management steps such has disabling clocking or
- *           setting the processor into reduced power consumption modes. In
- *           this state, the system should still be able to resume normal
- *           activity almost immediately.
  * SLEEP   - The lowest power consumption mode.  The most drastic power
  *           reduction measures possible should be taken in this state. It
  *           may require some time to get back to normal operation from
@@ -71,10 +61,10 @@
  *
  * State changes always proceed from higher to lower power usage:
  *
- * NORMAL->IDLE->STANDBY->SLEEP
- *   ^       |      |        |
- *   |       V      V        V
- *   +-------+------+--------+
+ * NORMAL->SLEEP
+ *   ^       |
+ *   |       V
+ *   +-------+
  */
 
 #ifndef __INCLUDE_TINYARA_POWER_PM_H
@@ -117,9 +107,6 @@ typedef struct pm_domain_arg_s pm_domain_arg_t;
 #define CONFIG_PM_DOMAIN_NAME_SIZE 32
 #endif
 
-#define PM_IDLE_DOMAIN 0
-#define PM_LCD_DOMAIN  1
-
 /* CONFIG_IDLE_CUSTOM. Some architectures support this definition.  This,
  * if defined, will allow you replace the default IDLE loop with your
  * own, custom idle loop to support board-specific IDLE time power management
@@ -146,24 +133,7 @@ enum pm_state_e {
 								 * a reduced power usage mode, it should immediately re-
 								 * initialize for normal operatin.
 								 *
-								 * PM_NORMAL may be followed by PM_IDLE.
-								 */
-	PM_IDLE,					/* Drivers will receive this state change if it is
-								 * appropriate to enter a simple IDLE power state.  This
-								 * would include simple things such as reducing display back-
-								 * lighting.  The driver should be ready to resume normal
-								 * activity instantly.
-								 *
-								 * PM_IDLE may be followed by PM_STANDBY or PM_NORMAL.
-								 */
-	PM_STANDBY,					/* The system is entering standby mode. Standby is a lower
-								 * power consumption mode that may involve more extensive
-								 * power management steps such has disabling clocking or
-								 * setting the processor into reduced power consumption
-								 * modes. In this state, the system should still be able
-								 * to resume normal activity almost immediately.
-								 *
-								 * PM_STANDBY may be followed PM_SLEEP or by PM_NORMAL
+								 * PM_NORMAL may be followed by PM_SLEEP.
 								 */
 	PM_SLEEP,					/* The system is entering deep sleep mode.  The most drastic
 								 * power reduction measures possible should be taken in this

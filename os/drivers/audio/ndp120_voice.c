@@ -813,9 +813,9 @@ static void ndp120_interrupt_dispatch(int d)
 static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 {
 	/* Currently PM follows the state changes as follows,
-	 * On boot, we are in PM_NORMAL. After that we only use PM_STANDBY and PM_SLEEP
-	 * on boot : PM_NORMAL -> PM_STANDBY -> PM_SLEEP, from there on
-	 * PM_SLEEP -> PM_STANBY -> PM_SLEEP -> PM_STANBY........
+	 * On boot, we are in PM_NORMAL. After that we only use PM_NORMAL and PM_SLEEP
+	 * on boot : PM_NORMAL -> PM_SLEEP, from there on
+	 * PM_SLEEP -> PM_NORMAL -> PM_SLEEP -> PM_NORMAL........
 	 */
 	switch (state) {
 	case(PM_SLEEP): {
