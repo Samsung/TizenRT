@@ -220,9 +220,6 @@ void stm32_disablefsmc(void);
  *
  ****************************************************************************************************/
 
-#ifdef CONFIG_PM
-void stm32_ledpminitialize(void);
-#endif
 
 /****************************************************************************************************
  * Name: stm32_pmbuttons
@@ -233,9 +230,6 @@ void stm32_ledpminitialize(void);
  *
  ****************************************************************************************************/
 
-#if defined(CONFIG_PM) && defined(CONFIG_ARCH_IDLE_CUSTOM) && defined(CONFIG_PM_BUTTONS)
-void stm32_pmbuttons(void);
-#endif
 
 #ifdef CONFIG_STM32F429I_DISCO_ILI9341
 /****************************************************************************

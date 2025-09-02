@@ -61,7 +61,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
 #include <tinyara/board.h>
-#include <tinyara/pm/pm.h>
+
 #include <errno.h>
 
 #include "chip.h"
@@ -76,28 +76,6 @@
  * Public Functions
  ****************************************************************************/
 
-#ifdef CONFIG_PM
-/****************************************************************************
- * Name: up_pm_board_sleep
- *
- * Description:
- *   Perform IDLE state power management.
- *
- * Input Parameters:
- *   wakeuphandler - The wakeuphandler function that must be called after each board wakeup.
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
-{
-
-}
-#else
-#define up_pm_board_sleep(wakeuphandler)
-#endif
 
 /****************************************************************************
  * Name: up_idle
@@ -122,6 +100,3 @@ void up_idle(void)
 
 #endif    
 }
-
-
-

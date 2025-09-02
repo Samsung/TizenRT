@@ -951,14 +951,6 @@ config STM32L4_SRAM3_HEAP
 		NOTE: you must also select an appropriate number of memory regions in the
 		'Memory Management' section.
 
-if PM
-comment "PM Support"
-
-config ARCH_SUPPORT_ENTER_SLEEP
-	bool
-	default n
-endif
-
 comment "STM32L4 Peripherals"
 
 menu "STM32L4 Peripheral Support"
@@ -4134,16 +4126,6 @@ config STM32L4_USART_SWAP
 		Enable RX/TX pin swapping support. The option enables support for the
 		TIOCSSWAP ioctl in the STM32L4 serial driver.
 
-if PM
-
-config STM32L4_PM_SERIAL_ACTIVITY
-	int "PM serial activity"
-	default 10
-	---help---
-		PM activity reported to power management logic on every serial
-		interrupt.
-
-endif
 endif # STM32L4_SERIALDRIVER
 
 endmenu # U[S]ART Configuration

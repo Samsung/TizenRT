@@ -34,7 +34,7 @@
 #include "stm32l4_lptim.h"
 #include "chip/stm32l4xrxx_rcc.h"
 #include "stm32l4xx_hal.h"
-#include <tinyara/pm/pm.h>
+
 #include "nvic.h"
 #include "clock/clock.h"
 #include "up_internal.h"

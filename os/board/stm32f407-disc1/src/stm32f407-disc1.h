@@ -413,31 +413,6 @@ void stm32_enablefsmc(void);
 void stm32_disablefsmc(void);
 #endif
 
-/****************************************************************************
- * Name: stm32_led_pminitialize
- *
- * Description:
- *   Enable logic to use the LEDs on the STM32F4Discovery to support power
- *   management testing
- *
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-void stm32_led_pminitialize(void);
-#endif
-
-/****************************************************************************
- * Name: stm32_pm_buttons
- *
- * Description:
- *   Configure the user button of the STM32f4discovery board as EXTI,
- *   so it is able to wakeup the MCU from the PM_STANDBY mode
- *
- ****************************************************************************/
-
-#if defined(CONFIG_PM) && defined(CONFIG_ARCH_IDLE_CUSTOM) && defined(CONFIG_PM_BUTTONS)
-void stm32_pm_buttons(void);
-#endif
 
 /****************************************************************************
  * Name: stm32_bringup
