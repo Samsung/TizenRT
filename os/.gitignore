@@ -19,3 +19,5 @@
 /.appSpec
 /.bininfo
 /dutils_output_*.txt
+/.download
+/app_size_file
