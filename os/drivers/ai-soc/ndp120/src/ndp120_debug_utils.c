@@ -58,14 +58,19 @@ static int pdm_clk_en(struct syntiant_ndp_device_s *ndp, uint32_t clk)
 	struct syntiant_ndp120_config_pdm_s pdm_config;
 	int s;
 
-	memset(&pdm_config, 0, sizeof(pdm_config));
+	pdm_config.get = 0;
+	pdm_config.set = 0;
 	pdm_config.interface = 0;
+	pdm_config.sample_rate = 0;
+	pdm_config.pdm_rate = 0;
+	pdm_config.clk_mode = 0;
+	pdm_config.mode = 0;
 	pdm_config.clk = clk;
 
 	pdm_config.set = SYNTIANT_NDP120_CONFIG_SET_PDM_CLK;
 	s = syntiant_ndp120_config_pdm(ndp, &pdm_config);
 	if (s) {
-		auddbg("PDM clock set (%d) failed\n", clk);
+		auddbg("ERROR: PDM clock set (%d) failed: %d\n", clk, s);
 	}
 	return s;
 }
@@ -82,25 +87,25 @@ int ndp120_utils_stream_init(struct ndp120_dev_s *dev, unsigned int duration, in
 
 	s = pdm_clk_en(dev->ndp, 0);
 	if (s) {
-		auddbg("PDM clock disable failed\n");
+		auddbg("ERROR: PDM clock disable failed: %d\n", s);
 	}
 	s = syntiant_ndp120_init_ring_buffer_pointers(dev->ndp, 0);
 	if (s) {
-		auddbg("syntiant_ndp120_init_ring_buffer_pointers failed\n");
+		auddbg("ERROR: syntiant_ndp120_init_ring_buffer_pointers failed: %d\n", s);
 	}
 	s = syntiant_ndp120_dsp_restart(dev->ndp);
 	if (s) {
-		auddbg("syntiant_ndp120_dsp_restart failed\n");
+		auddbg("ERROR: syntiant_ndp120_dsp_restart failed: %d\n", s);
 	}
 	s = pdm_clk_en(dev->ndp, 1);
 	if (s) {
-		auddbg("PDM clock enable failed\n");
+		auddbg("ERROR: PDM clock enable failed: %d\n", s);
 	}
 
     auddbg("Turning on sample ready...\n");
     s = syntiant_ndp120_config_notify_on_sample_ready(dev->ndp, 1);
 	if (s) {
-		auddbg("syntiant_ndp120_config_notify_on_sample_ready failed\n");
+		auddbg("ERROR: syntiant_ndp120_config_notify_on_sample_ready failed: %d\n", s);
 	}
 	return s;
 }
@@ -110,7 +115,7 @@ int ndp120_utils_stream_deinit(struct ndp120_dev_s *dev)
 	auddbg("Turning off sample ready...\n");
     int s = syntiant_ndp120_config_notify_on_sample_ready(dev->ndp, 0);
 	if (s) {
-		auddbg("syntiant_ndp120_config_notify_on_sample_ready failed\n");
+		auddbg("ERROR: syntiant_ndp120_config_notify_on_sample_ready failed: %d\n", s);
 	}
 	return s;
 }

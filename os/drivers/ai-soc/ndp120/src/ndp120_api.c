@@ -93,10 +93,11 @@
 // can be enabled to print the flow rules during init
 //#define CONFIG_DEBUG_AUDIO_INFO
 
-// when doing validation runs, don't run with health check thread
-#undef CONFIG_NDP120_ALIVE_CHECK
 
+#ifdef CONFIG_EXAMPLES_DUMP4CH
+// when doing validation runs, don't run with health check thread
 #define SKIP_NORMAL_EXTRACTION
+#endif
 
 /****************************************************************************
  * Private Data
@@ -1296,7 +1297,11 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	int s;
 
 	const char *mcu_package = "/res/kernel/audio/mcu_fw";
+#ifdef CONFIG_EXAMPLES_DUMP4CH
+	const char *dsp_package = "/res/kernel/audio/dsp_fw_4ch";	
+#else
 	const char *dsp_package = "/res/kernel/audio/dsp_fw";
+#endif
 	const char *neural_package;
 	if (dev->kd_num == 0) {
 		neural_package = "/res/kernel/audio/kd_local";
@@ -1304,17 +1309,20 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 		neural_package = "/res/kernel/audio/kd_local2";
 	}
 
-	const unsigned int AUDIO_TANK_MS =
+	
 #ifdef SKIP_NORMAL_EXTRACTION
-		700;
+	const unsigned int AUDIO_TANK_MS = 700;
+
 #else
+	const unsigned int AUDIO_TANK_MS = 
 		AUDIO_BEFORE_MATCH_MS  /* max word length + ~500 MS preroll */
 		+ 300  /* posterior latency of <= 24 MS/frame * 12 frames == 288 MS */
 		+ 100; /* generous allowance for RTL8730E match-to-extract time */
 #endif
+
 	// looks like there is some confusion around in-shift. 
 	// inshift=5 should be used with BT-mic, not with AFE runnning
-	const unsigned int DMIC_1536KHZ_PDM_IN_SHIFT_FF = 6;
+	const unsigned int DMIC_1536KHZ_PDM_IN_SHIFT_FF = 5;
 
 	/* save handle so we can use it from debug routine later, e.g. from other util/shell */
 	_ndp_debug_handle = dev;
