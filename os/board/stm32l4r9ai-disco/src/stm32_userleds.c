@@ -44,7 +44,7 @@
 #include <debug.h>
 
 #include <arch/board/board.h>
-#include <tinyara/pm/pm.h>
+
 
 #include "chip.h"
 #include "up_arch.h"
@@ -60,24 +60,11 @@
 
 /* LED Power Management */
 
-#ifdef CONFIG_PM
-static void led_pm_notify(struct pm_callback_s *cb,
-                          enum pm_state_e pmstate);
-static int led_pm_prepare(struct pm_callback_s *cb,
-                          enum pm_state_e pmstate);
-#endif
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-#ifdef CONFIG_PM
-static struct pm_callback_s g_ledscb =
-{
-  .notify  = led_pm_notify,
-  .prepare = led_pm_prepare,
-};
-#endif
 
 /****************************************************************************
  * Private Functions
@@ -92,56 +79,6 @@ static struct pm_callback_s g_ledscb =
  *
  ****************************************************************************/
 
-#ifdef CONFIG_PM
-static void led_pm_notify(struct pm_callback_s *cb,
-                          enum pm_state_e pmstate)
-{
-  switch (pmstate)
-    {
-      case(PM_NORMAL):
-        {
-          /* Restore normal LEDs operation */
-
-          //stm32l4_gpiowrite(GPIO_LED_RED, (ledset & BOARD_LED_RED_BIT) != 0);
-          //stm32l4_gpiowrite(GPIO_LED_GRN, (ledset & BOARD_LED_GRN_BIT) != 0);
-        }
-        break;
-
-      case(PM_IDLE):
-        {
-          /* Entering IDLE mode - Turn leds off */
-
-          stm32l4_gpiowrite(GPIO_LED_RED, 0);
-          stm32l4_gpiowrite(GPIO_LED_GRN, 0);
-        }
-        break;
-
-      case(PM_STANDBY):
-        {
-          /* Entering STANDBY mode - Logic for PM_STANDBY goes here */
-
-          stm32l4_gpiowrite(GPIO_LED_RED, 0);
-          stm32l4_gpiowrite(GPIO_LED_GRN, 0);
-        }
-        break;
-
-      case(PM_SLEEP):
-        {
-          /* Entering SLEEP mode - Logic for PM_SLEEP goes here */
-
-          stm32l4_gpiowrite(GPIO_LED_RED, 0);
-          stm32l4_gpiowrite(GPIO_LED_GRN, 0);
-        }
-        break;
-
-      default:
-        {
-          /* Should not get here */
-        }
-        break;
-    }
-}
-#endif
 
 /****************************************************************************
  * Name: led_pm_prepare
@@ -155,17 +92,6 @@ static void led_pm_notify(struct pm_callback_s *cb,
  *
  ****************************************************************************/
 
-#ifdef CONFIG_PM
-static int led_pm_prepare(struct pm_callback_s *cb,
-                          enum pm_state_e pmstate)
-{
-  /* No preparation to change power modes is required by the LEDs driver.
-   * We always accept the state change by returning OK.
-   */
-
-  return OK;
-}
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -211,19 +137,5 @@ void board_userled_all(uint8_t ledset)
   stm32l4_gpiowrite(GPIO_LED_GRN, (ledset & BOARD_LED_GRN_BIT) != 0);
 }
 
-/****************************************************************************
- * Name: stm32_led_pminitialize
- ****************************************************************************/
-
-#ifdef CONFIG_PM
-void stm32_led_pminitialize(void)
-{
-  /* Register to receive power management callbacks */
-
-  int ret = pm_register(&g_ledscb);
-  DEBUGASSERT(ret == OK);
-  UNUSED(ret);
-}
-#endif /* CONFIG_PM */
 
 #endif /* !CONFIG_ARCH_LEDS */
