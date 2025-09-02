@@ -62,7 +62,7 @@ static void pm_suspend_idle(void)
 		printf("Fail to open pm(errno %d)", get_errno());
 		return;
 	}
-	if (ioctl(fd, PMIOC_SUSPEND, PM_IDLE_DOMAIN) < 0) {
+	if (ioctl(fd, PMIOC_SUSPEND, "wakerec") < 0) {
 		printf("Fail to suspend(errno %d)\n", get_errno());
 	}
 	close(fd);
@@ -75,7 +75,7 @@ static void pm_resume_idle(void)
 		printf("Fail to open pm(errno %d)", get_errno());
 		return;
 	}
-	if (ioctl(fd, PMIOC_RESUME, PM_IDLE_DOMAIN) < 0) {
+	if (ioctl(fd, PMIOC_RESUME, "wakerec") < 0) {
 		printf("Fail to resume(errno %d)\n", get_errno());
 	}
 	close(fd);
