@@ -106,6 +106,7 @@ static void timer_timeout(int argc, uint32_t domain_ptr)
  *
  * Description:
  *   This function locks PM state transition for a specific duration.
+ *   This function can be called from IRQ context.
  *
  * Parameters:
  *   domain      - Pointer to the domain structure
@@ -127,7 +128,6 @@ int pm_timedsuspend(struct pm_domain_s *domain, unsigned int milliseconds)
 
 	if (pm_check_domain(domain)) {
 		set_errno(EINVAL);
-		pmdbg("Invalid domain pointer\n");
 		return ret;
 	}
 
@@ -148,14 +148,12 @@ int pm_timedsuspend(struct pm_domain_s *domain, unsigned int milliseconds)
 	if (!wdog) {
 		wdog = wd_create();
 		if (wdog == NULL) {
-			pmdbg("Unable to create WDog Timer, error = %d\n", get_errno());
 			set_errno(EAGAIN);
 			goto exit;
 		}
 
 		/* Unable to suspend domain, so delete the timer */
 		if (pm_suspend(domain) != OK) {
-			pmdbg("Unable to suspend domain: %s\n", domain->name);
 			(void)wd_delete(wdog);
 			goto exit;
 		}
@@ -165,7 +163,6 @@ int pm_timedsuspend(struct pm_domain_s *domain, unsigned int milliseconds)
 	/* New delay is less than running timer ticks left, no need to do anything */
 	tick_remain = wd_gettime(wdog);
 	if (delay <= tick_remain) {
-		pmvdbg("Domain: %s is already suspended for %d milliseconds\n", domain->name, TICK2MSEC(tick_remain));
 		ret = OK;
 		goto exit;
 	}
@@ -173,14 +170,12 @@ int pm_timedsuspend(struct pm_domain_s *domain, unsigned int milliseconds)
 	/* Start the timer */
 	/* Pass domain pointer as argument to timer_timeout */
 	if (wd_start(wdog, delay, (wdentry_t)timer_timeout, 1, (uint32_t)((uintptr_t)domain)) != OK) {
-		pmdbg("Error starting Wdog timer\n");
 		set_errno(EAGAIN);
 		/* Manually trigger timeout to resume and cleanup on failure to start */
 		timer_timeout(0, (uint32_t)((uintptr_t)domain));
 		goto exit;
 	}
 
-	pmvdbg("Domain: %s is suspended for %d milliseconds\n", domain->name, milliseconds);
 	ret = OK;
 
 exit:

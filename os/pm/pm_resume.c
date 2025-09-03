@@ -78,6 +78,7 @@
  * Description:
  *   This function is called by a device driver to indicate that it is
  *   idle now, and the domain can relax its previous power state restriction.
+ *   This function can be called from IRQ context.
  *
  * Input Parameters:
  *   domain - Pointer to the domain structure

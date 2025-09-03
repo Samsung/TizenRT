@@ -410,6 +410,9 @@ int pm_unregister(FAR struct pm_callback_s *callbacks);
  *
  * Description:
  *   This function is called by a device driver in order to register domain inside PM.
+ *   This function can be called from IRQ context, but if the domain does not
+ *   exist, it will return an error because memory allocation cannot be performed
+ *   in IRQ context.
  *
  * Input parameters:
  *   domain - the string domain need to be registered in PM.
@@ -463,6 +466,7 @@ void pm_idle(void);
  *   This function is called by a device driver to indicate that it is
  *   performing meaningful activities (non-idle), needs the power kept at
  *   last the specified level.
+ *   This function can be called from IRQ context.
  *
  * Input Parameters:
  *   domain - Pointer to the domain structure
@@ -486,6 +490,7 @@ int pm_suspend(FAR struct pm_domain_s *domain);
  * Description:
  *   This function is called by a device driver to indicate that it is
  *   idle now, could relax the previous requested power level.
+ *   This function can be called from IRQ context.
  *
  * Input Parameters:
  *   domain - Pointer to the domain structure
@@ -533,7 +538,8 @@ int pm_sleep(int milliseconds);
  * Name: pm_timedsuspend
  *
  * Description:
- *   This function locks PM transition for a specific duration.  
+ *   This function locks PM transition for a specific duration.
+ *   This function can be called from IRQ context.
  * 
  * Parameters:
  *   domain      - Pointer to the domain structure
