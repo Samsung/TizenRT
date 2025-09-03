@@ -52,7 +52,7 @@
 
 #include "PinNames.h"
 #include "i2s_api.h"
-
+#include "board_pins.h"
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -217,11 +217,11 @@ struct amebasmart_i2s_s {
 #ifdef CONFIG_AMEBASMART_I2S2
 /* I2S device structures */
 static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
-	.i2s_mclk_pin = NULL,
-	.i2s_sclk_pin = PB_21,
-	.i2s_ws_pin = PA_16,
-	.i2s_sd_tx_pin = PB_10,
-	.i2s_sd_rx_pin = PB_19,
+	.i2s_mclk_pin = I2S2_MCLK,
+	.i2s_sclk_pin = I2S2_SCLK,
+	.i2s_ws_pin = I2S2_WS,
+	.i2s_sd_tx_pin = I2S2_SD_TX,
+	.i2s_sd_rx_pin = I2S2_SD_RX,
 
 	.i2s_idx = I2S_NUM_2,
 	.rxenab = 0,
@@ -231,11 +231,11 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
 
 #ifdef CONFIG_AMEBASMART_I2S3
 static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
-	.i2s_mclk_pin = PA_15,
-	.i2s_sclk_pin = PA_14,
-	.i2s_ws_pin = PA_13,
-	.i2s_sd_tx_pin = PB_11,
-	.i2s_sd_rx_pin = PB_20,
+	.i2s_mclk_pin = I2S3_MCLK,
+	.i2s_sclk_pin = I2S3_SCLK,
+	.i2s_ws_pin = I2S3_WS,
+	.i2s_sd_tx_pin = I2S3_SD_TX,
+	.i2s_sd_rx_pin = I2S3_SD_RX,
 
 	.i2s_idx = I2S_NUM_3,
 	.rxenab = 1,

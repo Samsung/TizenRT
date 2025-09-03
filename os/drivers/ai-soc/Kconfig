@@ -11,14 +11,12 @@ config NDP120
 
 if NDP120
 
-if RTL8730E_BOARD_REVISION > 7
 config NDP120_AEC_SUPPORT
 	bool "NDP120 Support AEC"
 	default y
 	---help---
 		Select to enable support AEC
 
-endif
 
 config NDP120_ALIVE_CHECK
 	bool "NDP120 alive check thread"
