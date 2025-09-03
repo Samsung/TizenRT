@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <string.h>
 #include <debug.h>
+#include <tinyara/arch.h>
 
 #include "pm.h"
 
@@ -41,6 +42,7 @@
  * Description:
  *   This function is called to find a PM domain structure by its name.
  *   The caller must hold the PM lock (pm_lock) before calling this function.
+ *   This function can be called from IRQ context.
  *
  * Input parameters:
  *   domain_name - the string domain name to find.
@@ -108,6 +110,9 @@ int pm_check_domain(FAR struct pm_domain_s *domain)
  *   domain. Otherwise, it creates, initializes, registers a new domain,
  *   and returns it. This ensures that only one instance of a domain with
  *   a specific name exists.
+ *   This function can be called from IRQ context, but if the domain does not
+ *   exist, it will return an error because memory allocation cannot be performed
+ *   in IRQ context.
  *
  * Input parameters:
  *   domain - the string domain name to be registered or found.
@@ -132,7 +137,6 @@ FAR struct pm_domain_s *pm_domain_register(FAR const char *domain)
 	length = strlen(domain);
 	if (length == 0 || length >= CONFIG_PM_DOMAIN_NAME_SIZE) {
 		set_errno(E2BIG);
-		pmdbg("Domain string length should be between 1 and %d\n", CONFIG_PM_DOMAIN_NAME_SIZE - 1);
 		return NULL;
 	}
 
@@ -140,6 +144,11 @@ FAR struct pm_domain_s *pm_domain_register(FAR const char *domain)
 	new_domain = pm_domain_find(domain);
 	if (new_domain != NULL) {
 		return new_domain;
+	}
+
+	if (up_interrupt_context()) {
+		set_errno(EPERM);
+		return NULL;
 	}
 
 	/* Allocate memory for the new domain structure */

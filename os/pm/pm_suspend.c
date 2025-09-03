@@ -80,6 +80,7 @@
  *   This function is called by a device driver to indicate that it is
  *   performing meaningful activities (non-idle), and the domain should not
  *   enter a low-power state.
+ *   This function can be called from IRQ context.
  *
  * Input Parameters:
  *   domain - Pointer to the domain structure
