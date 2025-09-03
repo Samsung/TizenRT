@@ -81,6 +81,9 @@
 //3 SRAM Config Section
 #define SRAM_BD_DATA_SECTION                        \
         SECTION(".bdsram.data")
+#define SRAM_BD_BSS_SECTION                        \
+        SECTION(".bdsram.bss")
+
 #define SRAM_NOCACHE_DATA_SECTION		\
         SECTION(".ncsram.data")
 
