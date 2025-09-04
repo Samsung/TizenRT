@@ -222,6 +222,14 @@ config LCD_LOGO_52_340
 endchoice
 endif
 
+if LCD_ST7785
+config LCD_BACKLIGHT_PWM_FREQUENCY
+	int "LCD Backlight PWM Frequency"
+	default 100
+	---help---
+		Select LCD Backlight PWM Frequency
+endif
+
 if LCD_INTERFACE_MIPI
 config LCD_SEND_CMD_RETRY_COUNT
 	int "LCD send cmd retry count"

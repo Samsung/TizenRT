@@ -229,6 +229,14 @@ static void rtl8730e_gpio_init(void)
 	pwmout_init(&g_rtl8730e_config_dev_s.pwm_led, GPIO_PIN_BACKLIGHT);
 	lcdvdbg("initial pwm read %f\n", pwmout_read(&g_rtl8730e_config_dev_s.pwm_led));
 #endif
+
+#if defined(CONFIG_LCD_ST7785)
+#if CONFIG_LCD_BACKLIGHT_PWM_FREQUENCY > 0
+	pwmout_period_us(&g_rtl8730e_config_dev_s.pwm_led, 1000 / CONFIG_LCD_BACKLIGHT_PWM_FREQUENCY);
+#else
+#error value LCD_BACKLIGHT_PWM_FREQUENCY is invalid
+#endif
+#endif
 }
 
 static void rtl8730e_control_backlight(uint8_t level)
