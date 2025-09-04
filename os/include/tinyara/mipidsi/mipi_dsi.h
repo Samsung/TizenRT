@@ -189,7 +189,7 @@ struct mipi_dsi_host_ops {
 	CODE ssize_t(*transfer)(FAR struct mipi_dsi_host *host, FAR const struct mipi_dsi_msg *msg);
 };
 
-struct lcd_data {
+struct mipi_host_lcd_data {
 	int XPixels;
 	int YPixels;
 	int mipi_frame_rate;
@@ -206,7 +206,7 @@ struct lcd_data {
 /* Dsi host structure */
 struct mipi_dsi_host {
 	FAR const struct mipi_dsi_host_ops *ops;
-	struct lcd_data config;
+	struct mipi_host_lcd_data config;
 	int bus;
 };
 
