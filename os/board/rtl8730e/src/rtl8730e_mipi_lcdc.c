@@ -19,13 +19,6 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
-#if defined(CONFIG_LCD_ST7785)
-#include <tinyara/lcd/st7785.h>
-#elif defined(CONFIG_LCD_ST7701)
-#include <tinyara/lcd/st7701.h>
-#elif defined(CONFIG_LCD_ST7701SN)
-#include <tinyara/lcd/st7701sn.h>
-#endif
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/lcd/lcd_dev.h>
 #include "objects.h"
@@ -70,9 +63,9 @@ static void rtl8730e_control_backlight(u8 level);
 static void rtl8730e_mipi_driver_reinitialize(void);
 FAR void mipi_mode_switch_to_video(bool do_enable);
 FAR void mipidsi_acpu_reg_clear(void);
-FAR struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *config);
+FAR struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct mipi_host_lcd_data *config);
 FAR struct mipi_dsi_device *mipi_dsi_device_register(FAR struct mipi_dsi_host *host, FAR const char *name, int channel);
-FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config);
+FAR struct lcd_dev_s *mipi_lcd_initialize(struct mipi_lcd_dev_s *priv, FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config);
 FAR void amebasmart_mipi_dsi_host_reinitialize(void);
 
 struct rtl8730e_lcdc_info_s g_rtl8730e_config_dev_s = {
@@ -112,17 +105,17 @@ struct irq lcdc_irq_info = {
 
 extern struct irq mipi_irq_info;
 volatile spinlock_t g_rtl8730e_config_dev_s_underflow;
-static void LcdcInitValues(struct lcd_data config)
+static void LcdcInitValues(int XPixels, int YPixels)
 {
 	LCDC_StructInit(&lcdc_init_struct);
-	lcdc_init_struct.LCDC_ImageWidth = config.XPixels;
-	lcdc_init_struct.LCDC_ImageHeight = config.YPixels;
+	lcdc_init_struct.LCDC_ImageWidth = XPixels;
+	lcdc_init_struct.LCDC_ImageHeight = YPixels;
 	for (u8 idx = 0; idx < LCDC_LAYER_MAX_NUM; idx++) {
 		lcdc_init_struct.layerx[idx].LCDC_LayerImgFormat = LCDC_LAYER_IMG_FORMAT_RGB565;
 		lcdc_init_struct.layerx[idx].LCDC_LayerHorizontalStart = 1;
-		lcdc_init_struct.layerx[idx].LCDC_LayerHorizontalStop = config.XPixels;
+		lcdc_init_struct.layerx[idx].LCDC_LayerHorizontalStop = XPixels;
 		lcdc_init_struct.layerx[idx].LCDC_LayerVerticalStart = 1;
-		lcdc_init_struct.layerx[idx].LCDC_LayerVerticalStop = config.YPixels;
+		lcdc_init_struct.layerx[idx].LCDC_LayerVerticalStop = YPixels;
 		lcdc_init_struct.layerx[idx].LCDC_LayerColorKeyingEn = ENABLE;
 	}
 }
@@ -330,28 +323,15 @@ static void rtl8730e_register_lcdc_isr(void){
 	InterruptEn(lcdc_irq_info.num, lcdc_irq_info.priority);
 }
 
-void rtl8730e_lcdc_initialize(void)
+void rtl8730e_lcdc_initialize(struct mipi_lcd_dev_s *dev)
 {
 	rtl8730e_gpio_init();
-	struct lcd_data config;
-	config.XPixels = LCD_XRES;
-	config.YPixels = LCD_YRES;
-	config.mipi_frame_rate = MIPI_FRAME_RATE;
-	config.mipi_dsi_HBP = MIPI_DSI_HBP;
-	config.mipi_dsi_HFP = MIPI_DSI_HFP;
-	config.mipi_dsi_HSA = MIPI_DSI_HSA;
-	config.mipi_dsi_RTNI = MIPI_DSI_RTNI;
-	config.mipi_dsi_VBP = MIPI_DSI_VBP;
-	config.mipi_dsi_VFP = MIPI_DSI_VFP;
-	config.mipi_dsi_VSA = MIPI_DSI_VSA;
-	config.mipi_lcd_limit = MIPI_LCD_LIMIT;
-	config.lcd_lane_num = MIPI_LANE_NUMBER;
 	rtl8730e_gpio_reset();
 	rtl8730e_control_backlight(0);
 	struct mipi_dsi_host *dsi_host = (struct mipi_dsi_host *)amebasmart_mipi_dsi_host_initialize(&config);
 	struct mipi_dsi_device *dsi_device = (struct mipi_dsi_device *)mipi_dsi_device_register(dsi_host, "dsi", 0);
-	struct lcd_dev_s *dev = (struct lcd_dev_s *)mipi_lcdinitialize(dsi_device, &g_rtl8730e_config_dev_s.lcd_config);
-	LcdcInitValues(config);
+	mipi_lcd_initialize(dev, dsi_device, &g_rtl8730e_config_dev_s.lcd_config);
+	LcdcInitValues(LCD_XRES, LCD_YRES);
 	rtl8730e_lcd_init();
 	rtl8730e_enable_lcdc();
 	g_rtl8730e_config_dev_s.underflow = 0;

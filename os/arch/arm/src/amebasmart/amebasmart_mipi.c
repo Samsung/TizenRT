@@ -78,7 +78,7 @@ extern struct rtl8730e_lcdc_info_s g_rtl8730e_config_dev_s;
 extern volatile spinlock_t g_rtl8730e_config_dev_s_underflow;
 /* Helpers */
 static void amebasmart_set_clock(void);
-static void amebasmart_check_freq(struct lcd_data *data);
+static void amebasmart_check_freq(struct mipi_host_lcd_data *data);
 static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *priv);
 static void amebasmart_register_interrupt(void);
 
@@ -383,7 +383,7 @@ static void amebasmart_mipidsi_isr(void)
 	}
 }
 
-static void amebasmart_check_freq(struct lcd_data *data)
+static void amebasmart_check_freq(struct mipi_host_lcd_data *data)
 {
 	u32 totaly = data->mipi_dsi_VSA + data->mipi_dsi_VBP + data->mipi_dsi_VFP + data->YPixels;
 	u32 totalx = data->mipi_dsi_HSA + data->mipi_dsi_HBP + data->mipi_dsi_HFP + data->XPixels;
@@ -562,7 +562,7 @@ void amebasmart_mipi_dsi_host_reinitialize(void)
 	amebasmart_mipi_init_helper(priv);
 }
 
-struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *config)
+struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct mipi_host_lcd_data *config)
 {
 	FAR struct amebasmart_mipi_dsi_host_s *priv = NULL;
 	priv = &g_dsi_host;

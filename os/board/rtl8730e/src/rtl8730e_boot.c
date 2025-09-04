@@ -495,7 +495,16 @@ void board_initialize(void)
 	rtl8730_st7789_initialize();
 #endif
 
-#if defined(CONFIG_LCD_ST7785) || defined(CONFIG_LCD_ST7701) || defined(CONFIG_LCD_ST7701SN)
+#if defined(CONFIG_LCD_ST7785)
+	struct mipi_lcd_dev_s *dev = st7785_initialize();
+	rtl8730e_lcdc_initialize(dev);
+#endif
+
+#if defined(CONFIG_LCD_ST7701)
+	rtl8730e_lcdc_initialize();
+#endif
+
+#if defined(CONFIG_LCD_ST7701SN)
 	rtl8730e_lcdc_initialize();
 #endif
 
