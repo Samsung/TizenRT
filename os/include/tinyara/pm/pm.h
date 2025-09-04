@@ -258,8 +258,11 @@ struct pm_clock_ops {
 
 /* This structure represents a single power management domain */
 struct pm_domain_s {
-	/* Linked list entry */
+	/* Linked list entry for domains queue */
 	dq_entry_t node;
+
+	/* Linked list entry for suspended_domains queue */
+	dq_entry_t suspended_node;
 
 	/* Domain name */
 	char name[CONFIG_PM_DOMAIN_NAME_SIZE];

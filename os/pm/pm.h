@@ -124,6 +124,9 @@ struct pm_global_s {
 	/* domains is a doubly-linked list of registered power management domains */
 	dq_queue_t domains;
 
+	/* suspended_domains is a doubly-linked list of domains with suspend_count > 0 */
+	dq_queue_t suspended_domains;
+
 	/* state       - The current state for this PM domain (as determined by an
 	 *               explicit call to pm_changestate())
 	 */

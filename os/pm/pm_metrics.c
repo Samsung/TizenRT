@@ -181,7 +181,7 @@ void pm_metrics_update_idle(void)
 	if (g_pm_metrics_running) {
 		g_pm_metrics->total_try_ticks++;
 		flags = enter_critical_section(); /* Protect domain list access */
-		for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
+		for (entry = dq_peek(&g_pmglobals.suspended_domains); entry != NULL; entry = dq_next(entry)) {
 			domain = (FAR struct pm_domain_s *)entry;
 			if (domain->suspend_count != 0) {
 				domain->blocking_board_sleep_ticks++;
