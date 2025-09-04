@@ -101,22 +101,14 @@ enum pm_state_e pm_checkstate(void)
 {
 	irqstate_t flags;
 	enum pm_state_e newstate;
-	struct pm_domain_s *domain;
 
 	flags = enter_critical_section();
 
 	newstate = PM_SLEEP;
 
-	/* If there is power state lock for any domain, recommended PM_NORMAL State */
-	if (newstate == PM_SLEEP) {
-		/* Iterate through all registered domains to check their suspend status */
-		for (domain = (FAR struct pm_domain_s *)dq_peek(&g_pmglobals.domains); domain; 
-				domain = (FAR struct pm_domain_s *)dq_next((struct dq_entry_s *)domain)) {
-			if (domain->suspend_count > 0) {
-				newstate = PM_NORMAL;
-				break;
-			}
-		}
+	/* Check if there are any domains in suspended_domains queue */
+	if (!dq_empty(&g_pmglobals.suspended_domains)) {
+		newstate = PM_NORMAL;
 	}
 
 	leave_critical_section(flags);

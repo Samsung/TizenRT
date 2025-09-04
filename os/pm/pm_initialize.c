@@ -128,6 +128,7 @@ void pm_initialize(struct pm_sleep_ops *sleep_ops)
 	/* Initialize the PM registry and domains queues */
 	dq_init(&g_pmglobals.registry);
 	dq_init(&g_pmglobals.domains);
+	dq_init(&g_pmglobals.suspended_domains);
 
 	/* Register the PM ops structures */
 	g_pmglobals.sleep_ops = sleep_ops;
