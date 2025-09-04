@@ -28,7 +28,6 @@ trble_adv_type_e rtw_ble_server_adv_type = 0;
 uint8_t rtw_ble_server_direct_addr_type;
 static uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN];
 static uint8_t adv_direct_addr[TRBLE_BD_ADDR_MAX_LEN];
-extern T_ATTRIB_APPL *tizenrt_ble_service_tbl;
 extern TIZENERT_SRV_CNT tizenrt_ble_srv_count;
 extern TIZENERT_SRV_DATABASE tizenrt_ble_srv_database[7];
 
@@ -73,7 +72,6 @@ trble_result_e rtw_ble_server_deinit(void)
     }
 
     ble_tizenrt_peripheral_main(0);
-	osif_mem_free(tizenrt_ble_service_tbl);
 	memset(tizenrt_ble_srv_database, 0, (7 * sizeof(TIZENERT_SRV_DATABASE)));
 	tizenrt_ble_srv_count = 0;
     is_server_init = false;
