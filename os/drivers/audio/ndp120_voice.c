@@ -795,7 +795,7 @@ static void ndp120_interrupt_dispatch(int d)
 {
 	struct ndp120_dev_s *priv = (struct ndp120_dev_s *)d;
 #ifdef CONFIG_PM
-	pm_timedsuspend(priv->pm_id, 10000);
+	pm_timedsuspend(priv->pm_domain, 10000);
 #endif
 	ndp120_irq_handler(priv);
 }
@@ -813,9 +813,9 @@ static void ndp120_interrupt_dispatch(int d)
 static void ndp_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
 {
 	/* Currently PM follows the state changes as follows,
-	 * On boot, we are in PM_NORMAL. After that we only use PM_STANDBY and PM_SLEEP
-	 * on boot : PM_NORMAL -> PM_STANDBY -> PM_SLEEP, from there on
-	 * PM_SLEEP -> PM_STANBY -> PM_SLEEP -> PM_STANBY........
+	 * On boot, we are in PM_NORMAL. After that we only use PM_NORMAL and PM_SLEEP
+	 * on boot : PM_NORMAL -> PM_SLEEP, from there on
+	 * PM_SLEEP -> PM_NORMAL -> PM_SLEEP -> PM_NORMAL........
 	 */
 	switch (state) {
 	case(PM_SLEEP): {
@@ -899,8 +899,8 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	/* only used during pm callbacks */
 	g_ndp120 = priv;
 
-	priv->pm_id = pm_domain_register("NDP120");
-	DEBUGASSERT(priv->pm_id >= 0);
+	priv->pm_domain = pm_domain_register("NDP120");
+	DEBUGASSERT(priv->pm_domain >= 0);
 #endif
 
 	int retry = NDP120_INIT_RETRY_COUNT;

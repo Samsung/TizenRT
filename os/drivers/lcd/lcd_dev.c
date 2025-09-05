@@ -84,7 +84,7 @@ struct lcd_s {
 	sem_t sem;
 	int16_t crefs;
 #ifdef CONFIG_PM
-	int pm_domain;
+	struct pm_domain_s *pm_domain;
 #endif
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	uint8_t *lcd_kbuffer;

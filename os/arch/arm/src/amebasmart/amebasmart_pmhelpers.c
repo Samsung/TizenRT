@@ -51,7 +51,7 @@
 #include "timer_api.h"
 
 static gtimer_t g_timer1;
-static int g_bsp_domain_id[BSP_DOMAIN_MAX];
+static struct pm_domain_s *g_bsp_domain_id[BSP_DOMAIN_MAX];
 
 void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus)
 {
@@ -126,25 +126,25 @@ void up_set_pm_timer(unsigned int interval_us)
 
 void bsp_pm_domain_register(char *domain_name, int bsp_drv_id)
 {
-	int domain_id = pm_domain_register(domain_name);
-	if (domain_id < 0) {
+	struct pm_domain_s *domain = pm_domain_register(domain_name);
+	if (domain < 0) {
 		pmdbg("Unable to register %s DOMAIN\n", domain_name);
 	} else {
-		g_bsp_domain_id[bsp_drv_id] = domain_id;
+		g_bsp_domain_id[bsp_drv_id] = domain;
 	}
 }
 
 void bsp_pm_domain_control(int bsp_drv_id, bool is_suspend)
 {
 	/* Retrive the domain id from the bsp driver id */
-	int domain_id = g_bsp_domain_id[bsp_drv_id];
+	struct pm_domain_s *domain = g_bsp_domain_id[bsp_drv_id];
 	if (is_suspend) {
 		/* Check BSP_DRV_DOMAIN enum for more info */
-		if (pm_suspend(domain_id) != OK) {
+		if (pm_suspend(domain) != OK) {
 			pmdbg("Unable to suspend bsp_drv_id: %d!\n", bsp_drv_id);
 		}
 	} else {
-		if (pm_resume(domain_id) != OK) {
+		if (pm_resume(domain) != OK) {
 			pmdbg("Unable to resume bsp_drv_id: %d!\n", bsp_drv_id);
 		}
 	}

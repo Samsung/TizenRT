@@ -77,7 +77,7 @@ void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
 		wd_timer_nohz(missing_tick);
 	}
 #endif
-	/* After wakeup change PM State to STANDBY and reset the time slice */
-	pm_changestate(PM_STANDBY);
+	/* After wakeup change PM State to NORMAL and reset the time slice */
+	pm_changestate(PM_NORMAL);
 	leave_critical_section(flags);
 }

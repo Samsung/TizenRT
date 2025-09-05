@@ -97,7 +97,7 @@
 struct power_dir_s {
 	struct procfs_dir_priv_s base; /* Base directory private data */
 	uint8_t direntry;
-	int domain_id;
+	FAR struct pm_domain_s *domain_ptr; /* Pointer to the domain structure */
 	uint8_t dtype;
 };
 
@@ -177,20 +177,26 @@ const struct procfs_operations power_procfsoperations = {
  * Private Functions
  ****************************************************************************/
 
-static void power_read_domain_info(int domain_id, void (*readprint)(const char *, ...))
+static void power_read_domain_info(FAR struct pm_domain_s *domain, void (*readprint)(const char *, ...))
 {
-	readprint("%-15s : %d\n", "Domain ID", domain_id);
-	readprint("%-15s : %s\n", "Domain Name", pm_domain_map[domain_id]);
-	readprint("%-15s : %d\n", "Suspend Count", g_pmglobals.suspend_count[domain_id]);
+	if (domain) {
+		readprint("%-15s : %s\n", "Domain Name", domain->name);
+		readprint("%-15s : %d\n", "Suspend Count", domain->suspend_count);
+	}
 }
 
 static void power_read_domains(void (*readprint)(const char *, ...))
 {
-	int domain_id;
-	readprint(" DOMAIN ID |            DOMAIN NAME            | SUSPEND COUNTS \n");
-	readprint("-----------|-----------------------------------|----------------\n");
-	for (domain_id = 0; domain_id < g_pmglobals.ndomains; domain_id++) {
-		readprint(" %9d | %33s | %14d \n", domain_id, pm_domain_map[domain_id], g_pmglobals.suspend_count[domain_id]);
+	FAR struct pm_domain_s *domain;
+	FAR dq_entry_t *entry;
+	int index = 0;
+
+	readprint(" %-33s | %14s \n", "DOMAIN NAME", "SUSPEND COUNTS");
+	readprint("-----------------------------------|----------------\n");
+	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
+		domain = (FAR struct pm_domain_s *)entry;
+		readprint(" %33s | %14d \n", domain->name, domain->suspend_count);
+		index++;
 	}
 }
 
@@ -213,9 +219,12 @@ static void power_read_state(void (*readprint)(const char *, ...))
 static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *dir)
 {
 	const char *str;
-	int domain_id;
+	FAR struct pm_domain_s *domain;
+	FAR dq_entry_t *entry;
+	irqstate_t flags;
+
 	/* Function to check path is starting with given name */
-	int checkStart(char *name, bool isDirectory) {
+	int checkStart(const char *name, bool isDirectory) {
 		uint16_t length = strlen(name);
 		if (strncmp(str, name, length) != 0) {
 			return ERROR;
@@ -230,8 +239,12 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 		}
 		return ERROR;
 	}
+
 	str = relpath;
-	dir->domain_id = -1;
+	dir->domain_ptr = NULL;
+
+	flags = enter_critical_section(); /* Protect domain list access */
+
 	/* Check relpath has "power" mount point */
 	if (checkStart(POWER, true) == OK) {
 		if (str[0] == '\0') {
@@ -239,6 +252,7 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 			dir->base.index = 0;
 			dir->base.nentries = 2;
 			dir->dtype = DTYPE_DIRECTORY;
+			leave_critical_section(flags);
 			return OK;
 		}
 		/* Check relpath has "domains" mount point */
@@ -246,30 +260,40 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 			if (str[0] == '\0') {
 				dir->base.level = POWER_LEVEL_2;
 				dir->base.index = 0;
-				dir->base.nentries = g_pmglobals.ndomains + 1;
+				dir->base.nentries = g_pmglobals.ndomains + 1; /* +1 for "info" file */
 				dir->dtype = DTYPE_DIRECTORY;
+				leave_critical_section(flags);
 				return OK;
 			}
 			/* Iterate over each domain_name till you find match */
-			for (domain_id = 0; domain_id < g_pmglobals.ndomains; domain_id++) {
-				if (checkStart(pm_domain_map[domain_id], true) == OK) {
-					dir->domain_id = domain_id;
+			for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
+				domain = (FAR struct pm_domain_s *)entry;
+				if (checkStart(domain->name, true) == OK) {
+					dir->domain_ptr = domain;
 					if (str[0] == '\0') {
 						dir->base.level = POWER_LEVEL_3;
 						dir->base.index = 0;
-						dir->base.nentries = 1;
-						dir->dtype = DTYPE_DIRECTORY;	
+						dir->base.nentries = 1; /* Only "info" file */
+						dir->dtype = DTYPE_DIRECTORY;
+						leave_critical_section(flags);
 						return OK;
 					}
-					break;
+					break; /* Found domain, break to check for "info" */
 				}
 			}
-			/* Check relpath has "info" mount point */
+			/* Check relpath has "info" mount point (can be under domains or a specific domain) */
 			if (checkStart(POWER_INFO, false) == OK) {
-				dir->base.level = (dir->domain_id != -1) ? POWER_LEVEL_4 : POWER_LEVEL_3;
+				if (dir->domain_ptr) {
+					/* Info for a specific domain */
+					dir->base.level = POWER_LEVEL_4;
+				} else {
+					/* General domains info */
+					dir->base.level = POWER_LEVEL_3;
+				}
 				dir->base.index = 0;
 				dir->base.nentries = 0;
 				dir->dtype = DTYPE_FILE;
+				leave_critical_section(flags);
 				return OK;
 			}
 		/* Check relpath has "state" mount point */
@@ -278,9 +302,11 @@ static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *di
 			dir->base.index = 0;
 			dir->base.nentries = 0;
 			dir->dtype = DTYPE_FILE;
+			leave_critical_section(flags);
 			return OK;
 		}
 	}
+	leave_critical_section(flags);
 	fdbg("Invalid Path : Failed to find path %s \n", relpath);
 	return -ENOENT;
 }
@@ -307,7 +333,6 @@ static int power_open(FAR struct file *filep, FAR const char *relpath, int oflag
 	ret = power_find_dirref(relpath, &priv->dir);
 	if (ret == -ENOENT) {
 		/* Entry not found */
-
 		kmm_free(priv);
 		return ret;
 	}
@@ -333,7 +358,6 @@ static int power_close(FAR struct file *filep)
 	DEBUGASSERT(powerfile);
 
 	/* Release the file container structure */
-
 	kmm_free(powerfile);
 	filep->f_priv = NULL;
 
@@ -348,8 +372,9 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 {
 	FAR struct power_file_s *priv;
 	size_t totalsize;
-	int domain_id;
+	FAR struct pm_domain_s *domain_ptr;
 	int last_read;
+
 	/* Function to copy domain information into buffer */
 	void readprint(const char *format, ...) {
 		size_t copysize;
@@ -380,19 +405,21 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 	}
 
 	priv = (FAR struct power_file_s *)filep->f_priv;
-	domain_id = priv->dir.domain_id;
+	domain_ptr = priv->dir.domain_ptr;
 	totalsize = 0;
 	last_read = priv->offset;
+
 	/* Read the content of "{domain_name}/info" */
-	if ((priv->dir.base.level == POWER_LEVEL_4) && (priv->dir.base.index == 0) && (domain_id >= 0)) {
-		power_read_domain_info(domain_id, readprint);
-	/* Read the content of "domains/info" */
-	} else if ((priv->dir.base.level == POWER_LEVEL_3) && (priv->dir.base.index == 0)) {
+	if ((priv->dir.base.level == POWER_LEVEL_4) && (priv->dir.base.index == 0) && (domain_ptr != NULL)) {
+		power_read_domain_info(domain_ptr, readprint);
+	/* Read the content of "domains/info" (general list of domains) */
+	} else if ((priv->dir.base.level == POWER_LEVEL_3) && (priv->dir.base.index == 0) && (domain_ptr == NULL)) {
 		power_read_domains(readprint);
 	/* Read the content of "power/state" */
 	} else if ((priv->dir.base.level == POWER_LEVEL_2) && (priv->dir.base.index == 0)) {
 		power_read_state(readprint);
 	}
+
 	/* Indicate we have already provided all the data */
 	filep->f_pos += totalsize;
 	return totalsize;
@@ -410,12 +437,10 @@ static ssize_t power_write(FAR struct file *filep, FAR const char *buffer, size_
 	fvdbg("buffer=%p buflen=%d\n", buffer, (int)buflen);
 
 	/* Recover our private data from the struct file instance */
-
 	priv = (FAR struct power_file_s *)filep->f_priv;
 	DEBUGASSERT(priv);
 
 	/* pm_procfs does not have write operation, one must code write logic here */
-
 	ret = 0;
 
 	/* Update the file offset */
@@ -442,12 +467,10 @@ static int power_dup(FAR const struct file *oldp, FAR struct file *newp)
 	fvdbg("Dup %p->%p\n", oldp, newp);
 
 	/* Recover our private data from the old struct file instance */
-
 	oldfile = (FAR struct power_file_s *)oldp->f_priv;
 	DEBUGASSERT(oldfile);
 
 	/* Allocate a new container to hold the task and node selection */
-
 	newfile = (FAR struct power_file_s *)kmm_malloc(sizeof(struct power_file_s));
 	if (!newfile) {
 		fdbg("ERROR: Failed to allocate file container\n");
@@ -455,11 +478,9 @@ static int power_dup(FAR const struct file *oldp, FAR struct file *newp)
 	}
 
 	/* The copy the file information from the old container to the new */
-
 	memcpy(newfile, oldfile, sizeof(struct power_file_s));
 
 	/* Save the new container in the new file structure */
-
 	newp->f_priv = (FAR void *)newfile;
 	return OK;
 }
@@ -535,7 +556,10 @@ static int power_closedir(FAR struct fs_dirent_s *dir)
 static int power_readdir(struct fs_dirent_s *dir)
 {
 	FAR struct power_dir_s *powerdir;
+	FAR struct pm_domain_s *domain;
+	FAR dq_entry_t *entry;
 	int index;
+	irqstate_t flags;
 
 	DEBUGASSERT(dir && dir->u.procfs);
 	powerdir = dir->u.procfs;
@@ -545,6 +569,9 @@ static int power_readdir(struct fs_dirent_s *dir)
 	if (index >= powerdir->base.nentries) {
 		return -ENOENT;
 	}
+
+	flags = enter_critical_section(); /* Protect domain list access */
+
 	switch (powerdir->base.level) {
 		/* List the content of "power" directory */
 	case POWER_LEVEL_1:
@@ -563,12 +590,24 @@ static int power_readdir(struct fs_dirent_s *dir)
 		break;
 	/* List the content of "domains" directory */
 	case POWER_LEVEL_2:
-		if (index == g_pmglobals.ndomains) {
+		if (index == g_pmglobals.ndomains) { /* Last entry is the "info" file */
 			dir->fd_dir.d_type = DTYPE_FILE;
 			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), POWER_INFO);
 		} else {
-			dir->fd_dir.d_type = DTYPE_DIRECTORY;
-			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), pm_domain_map[index]);
+			/* Iterate to the current domain index */
+			entry = dq_peek(&g_pmglobals.domains);
+			for (int i = 0; i < index && entry != NULL; i++) {
+				entry = dq_next(entry);
+			}
+			if (entry) {
+				domain = (FAR struct pm_domain_s *)entry;
+				dir->fd_dir.d_type = DTYPE_DIRECTORY;
+				snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), "%s", domain->name);
+			} else {
+				/* Should not happen if nentries is correct */
+				leave_critical_section(flags);
+				return -ENOENT;
+			}
 		}
 		powerdir->base.index++;
 		break;
@@ -580,8 +619,10 @@ static int power_readdir(struct fs_dirent_s *dir)
 		break;
 	default:
 		fdbg("Invalid directory level\n");
+		leave_critical_section(flags);
 		return -ENOENT;
 	}
+	leave_critical_section(flags);
 	return OK;
 }
 
@@ -618,7 +659,6 @@ static int power_stat(const char *relpath, struct stat *buf)
 	/* Decide if the relpath is valid and if it is a file
 	 *      or a directory and set it's permissions.
 	 */
-
 	ret = power_find_dirref(relpath, &dir);
 
 	if (ret == OK) {
@@ -632,7 +672,6 @@ static int power_stat(const char *relpath, struct stat *buf)
 	}
 
 	/* File/directory size, access block size */
-
 	buf->st_size = 0;
 	buf->st_blksize = 0;
 	buf->st_blocks = 0;

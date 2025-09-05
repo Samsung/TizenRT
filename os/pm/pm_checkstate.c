@@ -100,26 +100,15 @@
 enum pm_state_e pm_checkstate(void)
 {
 	irqstate_t flags;
-	int index;
 	enum pm_state_e newstate;
 
 	flags = enter_critical_section();
-	newstate = g_pmglobals.state + 1;
-	if (newstate > PM_SLEEP) {
-		newstate = PM_SLEEP;
-	}
 
-	/* If there is power state lock for LCD and IDLE domain, recommended PM_NORMAL State */
-	if (g_pmglobals.suspend_count[PM_IDLE_DOMAIN] || g_pmglobals.suspend_count[PM_LCD_DOMAIN]) {
+	newstate = PM_SLEEP;
+
+	/* Check if there are any domains in suspended_domains queue */
+	if (!dq_empty(&g_pmglobals.suspended_domains)) {
 		newstate = PM_NORMAL;
-	} else if (newstate == PM_SLEEP) {
-		/* Consider the possible power state lock here */
-		for (index = 0; index < CONFIG_PM_NDOMAINS; index++) {
-			if (g_pmglobals.suspend_count[index] != 0) {
-				newstate = PM_STANDBY;
-				break;
-			}
-		}
 	}
 
 	leave_critical_section(flags);

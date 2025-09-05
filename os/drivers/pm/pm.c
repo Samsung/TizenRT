@@ -115,11 +115,11 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	/* Handle built-in ioctl commands */
 	switch (cmd) {
 	case PMIOC_SUSPEND:
-		ret = pm_suspend((int)arg);
+		ret = pm_suspend((struct pm_domain_s *)arg);
 		pmvdbg("State locked!\n");
 		break;
 	case PMIOC_RESUME:
-		ret = pm_resume((int)arg);
+		ret = pm_resume((struct pm_domain_s *)arg);
 		pmvdbg("State unlocked!\n");
 		break;
 	case PMIOC_SLEEP:
@@ -152,7 +152,7 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		ret = OK;
 		break;
 	case PMIOC_SUSPEND_COUNT:
-		ret = pm_suspendcount((int)arg);
+		ret = pm_suspendcount((struct pm_domain_s *)arg);
 		break;
 #ifdef CONFIG_PM_METRICS
 	case PMIOC_METRICS:

@@ -28,6 +28,8 @@
 #include <syntiant_evb_io.h>
 #include <syntiant_ilib/syntiant_ndp_error.h>
 
+#include <tinyara/pm/pm.h>
+
 #define MAX_LABELS 32
 
 #ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
@@ -80,7 +82,7 @@ struct ndp120_dev_s {
 	bool extclk_inuse;
 	volatile bool alive;
 	bool keyword_correction;
-	int pm_id;
+	struct pm_domain_s *pm_domain;
 	uint32_t sample_ready_cnt;
 
 	/* moved to using pthread cond variable for parity with reference implementation in ilib examples */

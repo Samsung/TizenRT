@@ -40,6 +40,7 @@
 #include <tinyara/i2c.h>
 #include <tinyara/wqueue.h>
 #include <tinyara/wdog.h>
+#include <tinyara/pm/pm.h>
 
 #define IST415_LOG_LEVEL_ERRO           0
 #define IST415_LOG_LEVEL_WARN           1
@@ -477,7 +478,7 @@ struct ist415_dev_s {
 
 	sem_t sem;
 
-	int pm_domain;
+	struct pm_domain_s *pm_domain;
 
 	WDOG_ID wdog;
 	struct work_s work;
