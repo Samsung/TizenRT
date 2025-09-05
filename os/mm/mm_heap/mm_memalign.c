@@ -105,11 +105,9 @@
  *   alignment is guaranteed by normal malloc calls.
  *
  ****************************************************************************/
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
+/* unification of mm_memalign api*/
 FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size, mmaddress_t caller_retaddr)
-#else
-FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
-#endif
 {
 	FAR struct mm_freenode_s *node = NULL;
 	void *ret = NULL;
@@ -125,11 +123,7 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size)
 	 */
 
 	if (alignment <= MM_MIN_CHUNK) {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 		return mm_malloc(heap, size, caller_retaddr);
-#else
-		return mm_malloc(heap, size);
-#endif
 	}
 
 	if (size > MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) {

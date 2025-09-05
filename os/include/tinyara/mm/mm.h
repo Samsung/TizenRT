@@ -242,9 +242,9 @@ typedef size_t mmsize_t;
 #endif
 
 /* typedef is used for defining size of address space */
+typedef void *mmaddress_t;             /* 32 bit address space */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-typedef void *mmaddress_t;             /* 32 bit address space */
 
 #define SIZEOF_MM_MALLOC_DEBUG_INFO \
 	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
@@ -514,18 +514,11 @@ void umm_givesemaphore(void *address);
 int kmm_trysemaphore(void *address);
 void kmm_givesemaphore(void *address);
 #endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 
 /* Functions contained in mm_malloc.c ***************************************/
+/* unified mm_malloc api */
 
 FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_retaddr);
-
-#else
-
-/* Functions contained in mm_malloc.c ***************************************/
-
-FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size);
-#endif
 
 /* Functions contained in kmm_malloc.c **************************************/
 
@@ -543,36 +536,21 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem);
 void kmm_free(FAR void *mem);
 #endif
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-
 /* Functions contained in mm_realloc.c **************************************/
+/* unified mm_realloc api */
 
 FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size, mmaddress_t caller_retaddr);
-
-#else
-
-/* Functions contained in mm_realloc.c **************************************/
-
-FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size);
-#endif
 
 /* Functions contained in kmm_realloc.c *************************************/
 
 #ifdef CONFIG_MM_KERNEL_HEAP
 FAR void *kmm_realloc(FAR void *oldmem, size_t newsize);
 #endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 
 /* Functions contained in mm_calloc.c ***************************************/
+/* unified mm_calloc api */
 
 FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size, mmaddress_t caller_retaddr);
-
-#else
-
-/* Functions contained in mm_calloc.c ***************************************/
-
-FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size);
-#endif
 
 /* Functions contained in kmm_calloc.c **************************************/
 
@@ -580,32 +558,21 @@ FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size);
 FAR void *kmm_calloc(size_t n, size_t elem_size);
 #endif
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions contained in mm_zalloc.c ***************************************/
+/* unified mm_zalloc api */
 
 FAR void *mm_zalloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_retaddr);
-#else
-/* Functions contained in mm_zalloc.c ***************************************/
-
-FAR void *mm_zalloc(FAR struct mm_heap_s *heap, size_t size);
-#endif
 
 /* Functions contained in kmm_zalloc.c **************************************/
 
 #ifdef CONFIG_MM_KERNEL_HEAP
 FAR void *kmm_zalloc(size_t size);
 #endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
 /* Functions contained in mm_memalign.c *************************************/
+/* unified mm_memalign */
 
 FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size, mmaddress_t caller_retaddr);
-
-#else
-
-/* Functions contained in mm_memalign.c *************************************/
-
-FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size);
-#endif
 
 /* Functions contained in kmm_memalign.c ************************************/
 
