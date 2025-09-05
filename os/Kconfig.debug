@@ -1277,6 +1277,15 @@ config STACK_COLORATION
 
 		Only supported by a few architectures.
 
+config DEBUG_DISABLE_DEAD_THREAD_STACKINFO  
+	bool "Disable dead threads stackinfo"  
+	default n
+	depends on DEBUG && STACK_COLORATION
+	---help---
+		Enable this option if you want the kernel to **stop keeping**
+		stack information for threads that have already exited (dead threads).
+		This can reduce memory usage since dead thread stack infos are not stored.
+
 comment "Build Debug Options"
 
 config DEBUG_SYMBOLS
