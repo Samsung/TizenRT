@@ -846,9 +846,9 @@ static void utc_crypto_gcm_encryption_p(void)
 	security_data plain = { plain_text, sizeof(plain_text) };
 	security_data enc = { NULL, 0 };
 
-	for (int gcm_mode = 0; gcm_mode < sizeof(g_gcm_mode_table) / sizeof(g_gcm_mode_table); gcm_mode++) {
+	for (int gcm_mode = 0; gcm_mode < sizeof(g_gcm_mode_table) / sizeof(security_gcm_mode); gcm_mode++) {
 		/* Generate AES key for GCM encryption / decryption */
-		for (int i = 0; i < sizeof(g_aes_key_type_table) / sizeof(g_aes_key_type_table); i++) {
+		for (int i = 0; i < sizeof(g_aes_key_type_table) / sizeof(security_key_type); i++) {
 			/* Check whether hang occurs during repeated encrypt function */
 			for (int iter = 0; iter < ITER_COUNT; iter++) {
 				security_error res = keymgr_generate_key(g_hnd, g_aes_key_type_table[i], UTC_CRYPTO_USER_KEY_NAME);
@@ -1081,9 +1081,9 @@ static void utc_crypto_gcm_decryption_p(void)
 	security_data enc = { enc_text, sizeof(enc_text) };
 	security_data dec = { NULL, 0 };
 
-	for (int gcm_mode = 0; gcm_mode < sizeof(g_gcm_mode_table) / sizeof(g_gcm_mode_table); gcm_mode++) {
+	for (int gcm_mode = 0; gcm_mode < sizeof(g_gcm_mode_table) / sizeof(security_gcm_mode); gcm_mode++) {
 		/* Set AES key for GCM encryption / decryption */
-		for (int i = 0; i < sizeof(g_aes_key_type_table) / sizeof(g_aes_key_type_table); i++) {
+		for (int i = 0; i < sizeof(g_aes_key_type_table) / sizeof(security_key_type); i++) {
 			/* Check whether hang occurs during repeated encrypt function */
 			for (int iter = 0; iter < ITER_COUNT; iter++) {
 				security_error res = keymgr_generate_key(g_hnd, g_aes_key_type_table[i], UTC_CRYPTO_USER_KEY_NAME);
