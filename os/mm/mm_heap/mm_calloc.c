@@ -74,11 +74,7 @@
  *
  ****************************************************************************/
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size, mmaddress_t caller_retaddr)
-#else
-FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size)
-#endif
 {
 	FAR void *ret = NULL;
 
@@ -87,11 +83,8 @@ FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size)
 			because multiplication of n and elem_size cannot overflow the size_t.\n", n, (MMSIZE_MAX / elem_size));
 		return NULL;
 	}
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
 	ret = mm_zalloc(heap, n * elem_size, caller_retaddr);
-#else
-	ret = mm_zalloc(heap, n * elem_size);
-#endif
 
 	return ret;
 }

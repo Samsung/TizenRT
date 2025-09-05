@@ -88,8 +88,10 @@
 void *realloc_at(int heap_index, void *oldmem, size_t size)
 {
 	void *ret;
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_realloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
@@ -102,11 +104,7 @@ void *realloc_at(int heap_index, void *oldmem, size_t size)
 		return NULL;
 	}
 
-	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size, caller_retaddr);
 	if (ret == NULL) {
 		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, 0, USER_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -139,8 +137,10 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	int prev_heap_idx ;
 #endif
 	void *ret;
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_realloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -149,11 +149,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 		return NULL;
 	}	
 	/* User supports a single heap on app separation */
-	ret = mm_realloc(BASE_HEAP, oldmem, size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	ret = mm_realloc(BASE_HEAP, oldmem, size, caller_retaddr);
 	if (ret == NULL) {
 		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -176,11 +172,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 
 	/* Try to realloc in previous allocated heap */
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 	ret = mm_realloc(&BASE_HEAP[heap_idx], oldmem, size, caller_retaddr);
-#else
-	ret = mm_realloc(&BASE_HEAP[heap_idx], oldmem, size);
-#endif
 	if (ret != NULL) {
 		return ret;
 	}
@@ -189,11 +181,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 
 	prev_heap_idx = heap_idx;
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		ret = mm_malloc(&BASE_HEAP[heap_idx], size, caller_retaddr);
 		if (ret != NULL) {
 			mm_free(&BASE_HEAP[prev_heap_idx], oldmem);
 			return ret;
