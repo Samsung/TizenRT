@@ -416,10 +416,10 @@ void board_initialize(void)
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	shell_init_rom(0, 0);
 #endif
+	board_spi_initialize();
 	amebasmart_mount_partitions();
 	board_gpio_initialize();
 	board_i2c_initialize();
-	board_spi_initialize();
 	board_i2s_initialize();
 
 #ifdef CONFIG_LCD_ST7789

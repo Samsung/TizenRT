@@ -1261,6 +1261,12 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 		goto cleanup_sems_mem;
 	}
 
+	dev->pm_domain = pm_domain_register("IST415");
+	if (dev->pm_domain < 0) {
+		ist415dbg("Fail to register pm domain, errno: %d\n", get_errno());
+		goto cleanup_task;
+	}
+
 	/* Init System Power */
 	ist415_reset(dev, false);
 
@@ -1281,12 +1287,6 @@ int ist415_initialize(const char *path, struct i2c_dev_s *i2c, struct ist415_con
 
 	dev->wdog = wd_create();
 	ist415_start(dev);
-
-	dev->pm_domain = pm_domain_register("IST415");
-	if (dev->pm_domain < 0) {
-		ist415dbg("Fail to register pm domain\n");
-		goto cleanup_wd;
-	}
 
 	upper = (struct touchscreen_s *)kmm_zalloc(sizeof(struct touchscreen_s));
 	if (!upper) {
