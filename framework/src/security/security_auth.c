@@ -47,25 +47,6 @@ security_error auth_generate_random(security_handle hnd, unsigned int size, secu
 	SECAPI_RETURN(SECURITY_OK);
 }
 
-security_error auth_generate_certificate(security_handle hnd, const char *cert_name, security_csr *csr, security_data *cert)
-{
-	SECAPI_ENTER;
-	SECAPI_ISHANDLE_VALID(hnd);
-
-	if (!csr) {
-		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
-	}
-	if (!cert) {
-		SECAPI_RETURN(SECURITY_INVALID_INPUT_PARAMS);
-	}
-
-	uint32_t cert_idx = 0;
-	SECAPI_CONVERT_PATH(cert_name, &cert_idx);
-	//TODO
-
-	SECAPI_RETURN(SECURITY_OK);
-}
-
 security_error auth_set_certificate(security_handle hnd, const char *cert_name, security_data *cert)
 {
 	SECAPI_ENTER;
