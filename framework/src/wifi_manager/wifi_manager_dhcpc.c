@@ -61,15 +61,11 @@ wifi_manager_result_e dhcpc_get_ipaddr(void)
 }
 #endif //CONFIG_WIFIMGR_DISABLE_DHCPC
 
-// Set IP to zero, regardless of DHCPC status
 void dhcpc_close_ipaddr(void)
 {
 #ifndef CONFIG_WIFIMGR_DISABLE_DHCPC
 	dhcp_client_stop(WIFIMGR_STA_IFNAME);
 #endif
-	/* To-Do is it right to clear IP address in here */
-	struct in_addr in = { .s_addr = INADDR_NONE };
-	WIFIMGR_SET_IP4ADDR(WIFIMGR_SOFTAP_IFNAME, in, in, in);
 	NET_LOGV(TAG, "release IP address\n");
 	return;
 }
