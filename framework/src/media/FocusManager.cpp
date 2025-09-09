@@ -59,19 +59,23 @@ void FocusManager::FocusRequester::notify(int focusChange)
 	}
 }
 
-void FocusManager::registerPlayerFocusLossListener(FocusLossListener playerFocusLossCallback)
+void FocusManager::registerPlayerFocusLossListener(FocusLossListener playerFocusLossCallback, stream_info_id_t id)
 {
-	mPlayerFocusLossListener = playerFocusLossCallback;
+	mPlayerFocusLossListeners[id] = playerFocusLossCallback;
+	medvdbg("Registered focus loss listener for stream ID: %u\n", id);
 }
 
-void FocusManager::unregisterPlayerFocusLossListener()
+void FocusManager::unregisterPlayerFocusLossListener(stream_info_id_t id)
 {
-	mPlayerFocusLossListener = nullptr;
+	if (mPlayerFocusLossListeners.erase(id) > 0) {
+		medvdbg("Unregistered focus loss listener for stream ID: %u\n", id);
+	} else {
+		meddbg("Attempted to unregister non-existent focus loss listener for stream ID: %u\n", id);
+	}
 }
 
 FocusManager::FocusManager()
 {
-	mPlayerFocusLossListener = nullptr;
 	mDuckedFocusRequester = nullptr;
 }
 
@@ -110,8 +114,14 @@ void FocusManager::removeFocusAndNotify(std::shared_ptr<FocusRequest> focusReque
 			lock.unlock();
 			if (frontFocusState != FOCUS_GAIN_TRANSIENT_MAY_DUCK) {
 				mDuckedFocusRequester->notify(FOCUS_LOSS);
-				mDuckedFocusRequester = nullptr;				
+				mDuckedFocusRequester = nullptr;
 			}
+			lock.lock();
+
+			PlayerWorker& worker = PlayerWorker::getWorker();
+			worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy);
+
+			lock.unlock();
 			focusList->front()->notify(frontFocusState);
 			lock.lock();
 		}
@@ -195,8 +205,11 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest, focus
 
 void FocusManager::callFocusLossListener(stream_policy_t policy)
 {
-	if (mPlayerFocusLossListener != nullptr) {
-		mPlayerFocusLossListener();
+	for (const auto &listener : mPlayerFocusLossListeners) {
+		if (mDuckedFocusRequester && listener.first == mDuckedFocusRequester->getStreamInfo().id) {
+			continue;
+		}
+		listener.second();
 	}
 }
 
@@ -258,8 +271,8 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 		}
 		focusList->push_front(focusRequester);
 
-		// 	PlayerWorker& worker = PlayerWorker::getWorker();
-		// 	worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy);
+		PlayerWorker& worker = PlayerWorker::getWorker();
+		worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy);
 
 		lock.unlock();
 		focusRequester->notify(focusState);

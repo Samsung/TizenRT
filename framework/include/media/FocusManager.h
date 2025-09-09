@@ -34,6 +34,7 @@
 #include <mutex>
 #include <string>
 #include <functional>
+#include <map>
 #include <media/FocusRequest.h>
 using FocusLossListener = std::function<void()>;
 
@@ -100,13 +101,13 @@ private:
 	 * @brief  It registers player focus loss listener. This function is called whenever player is started.
 	 * @details @b #include <media/FocusManager.h>
 	 */
-	void registerPlayerFocusLossListener(FocusLossListener playerFocusLossCallback);
+	void registerPlayerFocusLossListener(FocusLossListener playerFocusLossCallback, stream_info_id_t id);
 	/**
 	 * @brief It unregisters player focus loss listener. This function is called whenever player is paused or stopped.
 	 * @details @b #include <media/FocusManager.h>
 	 * @return void
 	*/
-	void unregisterPlayerFocusLossListener(void);
+	void unregisterPlayerFocusLossListener(stream_info_id_t id);
 
 	/*@ToDo: Find an alternative of using friend keyword*/
 	friend class MediaPlayerImpl;
@@ -137,7 +138,7 @@ private:
 	std::list<std::shared_ptr<FocusRequester>> mPlayerFocusList;
 	std::mutex mFocusLock;
 	std::mutex mPlayerFocusListAccessLock;
-	FocusLossListener mPlayerFocusLossListener;
+	std::map<stream_info_id_t, FocusLossListener> mPlayerFocusLossListeners;
 	std::shared_ptr<FocusRequester> mDuckedFocusRequester;
 };
 } // namespace media
