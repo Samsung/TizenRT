@@ -38,7 +38,9 @@ public:
 	void registerKeywordResultCallback(SpeechResultListener speechResultCallback) override;
 	bool getKeywordBufferSize(uint32_t *bufferSize) override;
 	bool getKeywordData(uint8_t *buffer) override;
-
+	bool startMultiChStream(int duration, int verbose, uint32_t *dev_extract_size) override;
+	bool readMultiChStream(uint8_t *buffer, uint32_t *extracted_len) override;
+	bool stopMultiChStream(void) override;
 private:
 	/* AUDIO_DEVICE_PROCESS_TYPE_NONE card, device id */
 	int mNormalCard;
