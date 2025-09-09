@@ -202,4 +202,6 @@ static const lcd_vendor_map_t g_lcd_vendors[] = {
 
 #define NUM_LCD_VENDERS (AVD_NB01 + AVD_2701 + HLT_A196 + TEC_181A)
 
+#define LCD_BACKLIGHT_PWM_FREQ_KHZ 20
+
 #endif	/* __DRIVERS_LCD_ST7785_H */
