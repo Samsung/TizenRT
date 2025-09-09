@@ -117,7 +117,7 @@ struct mipi_lcd_dev_s {
 	/* Publicly visible device structure */
 
 	struct lcd_dev_s dev;
-
+	struct lcd_panel_s panel;
 	FAR struct mipi_dsi_device *dsi_dev;
 
 	u8 *lcd_img_buffer[MAX_NO_PLANES];
@@ -612,9 +612,8 @@ FAR void lcd_init_put_image(FAR struct lcd_dev_s *dev)
 
 }
 
-FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config)
+FAR struct lcd_dev_s *mipi_lcd_initialize(struct mipi_lcd_dev_s *priv, FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config)
 {
-	FAR struct mipi_lcd_dev_s *priv = &g_lcdcdev;
 	priv->dev.getplaneinfo = lcd_getplaneinfo;
 	priv->dev.getvideoinfo = lcd_getvideoinfo;
 	priv->dev.getlcdinfo = lcd_getlcdinfo;
