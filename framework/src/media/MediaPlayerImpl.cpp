@@ -447,7 +447,7 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 	mpw.addPlayer(shared_from_this());
 	FocusManager &fm = FocusManager::getFocusManager();
 	FocusLossListener playerFocusLossListener = std::bind(&MediaPlayerImpl::onFocusLossListener, shared_from_this());
-	fm.registerPlayerFocusLossListener(playerFocusLossListener);
+	fm.registerPlayerFocusLossListener(playerFocusLossListener, mStreamInfo->id);
 	mCurState = PLAYER_STATE_PLAYING;
 	return notifySync();
 }
@@ -484,7 +484,7 @@ void MediaPlayerImpl::stopPlayer(player_result_t &ret)
 	ret = stopPlayback(false);
 
 	FocusManager &fm = FocusManager::getFocusManager();
-	fm.unregisterPlayerFocusLossListener();
+	fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
 	return notifySync();
 }
 
@@ -538,7 +538,7 @@ void MediaPlayerImpl::stopPlaybackInternal(bool drain)
 	}
   
   	FocusManager &fm = FocusManager::getFocusManager();
-	fm.unregisterPlayerFocusLossListener();
+	fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
   
 	notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 }
@@ -595,7 +595,7 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 		}
 
 		FocusManager &fm = FocusManager::getFocusManager();
-		fm.unregisterPlayerFocusLossListener();
+		fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
 
 		PlayerWorker &mpw = PlayerWorker::getWorker();
 		mpw.removePlayer(shared_from_this());
@@ -1110,7 +1110,7 @@ player_result_t MediaPlayerImpl::playbackFinished()
 	}
 	notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHED);
 	FocusManager &fm = FocusManager::getFocusManager();
-	fm.unregisterPlayerFocusLossListener();
+	fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
 	return PLAYER_OK;
 }
 
