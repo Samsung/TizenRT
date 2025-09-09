@@ -294,7 +294,7 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer
 	int sem_cnt;
 	int prev_sem_cnt;
 	struct ap_buffer_s *g_apb;
-	desc.numbytes = 512;
+	desc.numbytes = 1024;
 	desc.u.ppBuffer = &g_apb;
 
 	ret = apb_alloc(&desc);
