@@ -1179,10 +1179,14 @@ void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 	}
 
 	SP_InitStruct.SP_SetMultiIO = SP_RX_MULTIIO_DIS;
-	SP_InitStruct.SP_SelDataFormat = SP_DF_I2S;
+	SP_InitStruct.SP_SelDataFormat = obj->data_format;
+	//SP_InitStruct.SP_SelDataFormat = SP_DF_LEFT; // left format invert bclk
 	SP_InitStruct.SP_SelClk = clock_mode;
 
 	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &SP_InitStruct);
+
+	/* set up rx bit delay */
+	//AUDIO_SP_SetRXBitDelay(obj->i2s_idx, 1);	// 1 bit delay...?
 
 	/* setup the role of the SPORT */
 	AUDIO_SP_SetMasterSlave(obj->i2s_idx, obj->role);

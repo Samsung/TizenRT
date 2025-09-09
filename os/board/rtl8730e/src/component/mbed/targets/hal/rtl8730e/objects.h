@@ -228,6 +228,7 @@ struct i2s_s {
 	uint8_t direction;
 	uint8_t mode;
 	uint8_t role;
+  uint8_t data_format;
 };
 /**
   * @}
