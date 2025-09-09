@@ -30,7 +30,7 @@
 /********************************************************************************
  * Public Function Prototypes
  ********************************************************************************/
-#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG) && !defined(CONFIG_STACKMONITOR_DISABLE_DEAD_THREAD)
+#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG) && !defined(CONFIG_DEBUG_DISABLE_DEAD_THREAD_STACKINFO)
 void stackinfo_save_terminated(struct tcb_s *tcb);
 #endif
 
