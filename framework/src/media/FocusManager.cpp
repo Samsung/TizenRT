@@ -111,15 +111,15 @@ void FocusManager::removeFocusAndNotify(std::shared_ptr<FocusRequest> focusReque
 				return;
 			}
 
-			lock.unlock();
 			if (frontFocusState != FOCUS_GAIN_TRANSIENT_MAY_DUCK) {
+				lock.unlock();
 				mDuckedFocusRequester->notify(FOCUS_LOSS);
+				lock.lock();
 				mDuckedFocusRequester = nullptr;
 			}
-			lock.lock();
 
 			PlayerWorker& worker = PlayerWorker::getWorker();
-			worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy);
+			worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy, mDuckedFocusRequester);
 
 			lock.unlock();
 			focusList->front()->notify(frontFocusState);
@@ -203,10 +203,13 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest, focus
 	return FOCUS_REQUEST_SUCCESS;
 }
 
-void FocusManager::callFocusLossListener(stream_policy_t policy)
+void FocusManager::callFocusLossListener(stream_policy_t policy, std::shared_ptr<FocusRequester> duckedFocusRequester)
 {
-	for (const auto &listener : mPlayerFocusLossListeners) {
-		if (mDuckedFocusRequester && listener.first == mDuckedFocusRequester->getStreamInfo().id) {
+	// item will be deleted from mPlayerFocusLossListeners map in internal pause.
+	// So to avoid iterator invalidation, copy is required. And, it is not inefficient as map will have at max two elements.
+	auto listeners = mPlayerFocusLossListeners;
+	for (const auto &listener : listeners) {
+		if (duckedFocusRequester && listener.first == duckedFocusRequester->getStreamInfo().id) {
 			continue;
 		}
 		listener.second();
@@ -235,7 +238,7 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 
 	removeFocusElement(focusRequest);
 	if (mDuckedFocusRequester && mDuckedFocusRequester->hasSameId(focusRequest)) {
-		mDuckedFocusRequester = nullptr;	
+		mDuckedFocusRequester = nullptr;
 	}
 
 	auto focusRequester = std::make_shared<FocusRequester>(focusRequest->getStreamInfo(), focusRequest->getListener(), focusState);
@@ -247,32 +250,36 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 			lock.unlock();
 			if (focusState == FOCUS_GAIN_TRANSIENT_MAY_DUCK) {
 				focusList->front()->notify(FOCUS_LOSS_TRANSIENT_CAN_DUCK);
+				lock.lock();
 				mDuckedFocusRequester = focusList->front();
 			} else if (focusState == FOCUS_GAIN_TRANSIENT) {
 				focusList->front()->notify(FOCUS_LOSS_TRANSIENT);
+				lock.lock();
 			} else {
 				focusList->front()->notify(FOCUS_LOSS);
+				lock.lock();
 			}
-			lock.lock();
 		} else { // Ducking case
 			lock.unlock();
 			if (focusState == FOCUS_GAIN_TRANSIENT_MAY_DUCK) {
 				focusList->front()->notify(FOCUS_LOSS_TRANSIENT);
+				lock.lock();
 			} else if (focusState == FOCUS_GAIN_TRANSIENT) {
 				focusList->front()->notify(FOCUS_LOSS_TRANSIENT);
 				mDuckedFocusRequester->notify(FOCUS_LOSS);
+				lock.lock();
 				mDuckedFocusRequester = nullptr;
 			} else {
 				focusList->front()->notify(FOCUS_LOSS);
 				mDuckedFocusRequester->notify(FOCUS_LOSS);
+				lock.lock();
 				mDuckedFocusRequester = nullptr;
 			}
-			lock.lock();
 		}
 		focusList->push_front(focusRequester);
 
 		PlayerWorker& worker = PlayerWorker::getWorker();
-		worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy);
+		worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy, mDuckedFocusRequester);
 
 		lock.unlock();
 		focusRequester->notify(focusState);

@@ -629,6 +629,7 @@ void MediaPlayerImpl::onFocusLossListener()
 	if (mCurState == PLAYER_STATE_PLAYING) {
 		player_result_t ret = PLAYER_OK;
 		pausePlayer(ret, false);
+		meddbg("Internal pause done. player: %x\n", &mPlayer);
 	}
 }
 
