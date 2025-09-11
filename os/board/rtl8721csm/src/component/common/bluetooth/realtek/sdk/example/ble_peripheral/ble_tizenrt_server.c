@@ -20,6 +20,7 @@
 #include <os_mem.h>
 
 bool is_server_init = false;
+bool g_slave_link = false; //indicate if slave link connection is made
 uint16_t server_profile_count = 0;
 trble_server_init_config server_init_parm;
 bool (*ble_tizenrt_server_send_msg)(uint16_t sub_type, void *arg) = NULL;
@@ -206,7 +207,7 @@ uint16_t rtw_ble_server_att_get_length(trble_attr_handle attr_handle)
 trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trble_conn_handle con_handle, uint8_t *data_ptr, uint16_t data_length)
 {
     debug_print("send notify abs_handle 0x%x \n", attr_handle);
-    if (is_server_init != true)
+    if (is_server_init != true || g_slave_link != true)
     {
         return TRBLE_INVALID_STATE;
     }
@@ -251,7 +252,7 @@ extern trble_attr_handle indicate_attr;
 trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, trble_conn_handle con_handle, uint8_t *data_ptr, uint16_t data_length)
 {
     debug_print("send indicate abs_handle 0x%x \n", attr_handle);
-    if (is_server_init != true)
+    if (is_server_init != true || g_slave_link != true)
     {
         return TRBLE_INVALID_STATE;
     }
