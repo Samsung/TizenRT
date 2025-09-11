@@ -45,6 +45,7 @@
 extern trble_server_init_config server_init_parm;
 extern trble_client_init_config *client_init_parm;
 extern uint8_t g_master_link_num;
+extern bool g_slave_link;
 extern uint8_t ble_app_link_table_size;
 extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
@@ -805,6 +806,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                 {
                     disconn_data->conn_id = conn_id;
                     disconn_data->conn_type = TRBLE_SERVER_DISCONNECTED;
+                    g_slave_link = false;
                     memcpy(disconn_data->remote_bd, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, TRBLE_BD_ADDR_MAX_LEN);
                     if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, disconn_data) == false)
                     {
@@ -872,6 +874,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                     conn_data->conn_id = conn_id;
                     conn_data->conn_type = TRBLE_SERVER_LL_CONNECTED;
                     memcpy(conn_data->remote_bd, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
+                    g_slave_link = true;
                     if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, conn_data) == false)
                     {
                         os_mem_free(conn_data);
