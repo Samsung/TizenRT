@@ -668,9 +668,6 @@ trble_result_e rtw_ble_server_disconnect(trble_conn_handle con_handle)
 
 trble_result_e rtw_ble_server_start_adv(void)
 {
-#if !defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
-	uint8_t wcount = 0;
-#endif
 	rtk_bt_le_get_active_conn_t active_conn;
 	if (RTK_BT_OK != rtk_bt_le_gap_get_active_conn(&active_conn)) {
 		dbg("Get active conn fail \n");
