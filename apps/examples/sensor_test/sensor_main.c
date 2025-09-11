@@ -215,7 +215,7 @@ static int mems_sensor_start()
 		struct ais25ba_buf_s *buf = (struct ais25ba_buf_s *)msg.data;
 		sensor_data_s *buffer = (sensor_data_s *)buf->data;
 		print_sensor_data(buffer);
-		sleep(1);
+		//sleep(1);
 		ret = ioctl(mems_fd, SENSOR_SENDBUFFER, (unsigned long)buf);
 		if (ret != OK) {
 			printf("get Buffer failed. errno : %d\n", errno);
