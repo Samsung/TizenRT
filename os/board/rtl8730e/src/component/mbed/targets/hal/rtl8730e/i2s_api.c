@@ -842,17 +842,19 @@ void ameba_i2s_pause(i2s_t *obj) {
 }
 
 #ifdef CONFIG_AMEBASMART_I2S_TDM
-void ameba_i2s_tdm_pause(i2s_t *obj) {
+void ameba_i2s_tdm_pause(i2s_t *obj, u8 keep_clock) {
 
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 
-	// turn off MCLK if master
-	if (obj->role == MASTER) {
-		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+	if (keep_clock == DISABLE) {
+		// turn off MCLK if master
+		if (obj->role == MASTER) {
+			AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+		}
+		
+		// turn off BCLK
+		AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
 	}
-	
-	// turn off BCLK
-	AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
 
 	if (obj->direction == I2S_DIR_TX) {
 		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);

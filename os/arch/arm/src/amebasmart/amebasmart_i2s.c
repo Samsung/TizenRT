@@ -1262,8 +1262,8 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 			if (DMA_Done && DMA_Done_1) {
 				lldbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
 
-				/* stop clockgen */
-				ameba_i2s_tdm_pause(obj);
+				/* stop DMA, but retain clockgen */
+				ameba_i2s_tdm_pause(obj, ENABLE);
 
 				/* INTERNAL channel will have SLOT 1,2 followed by 5,6 */
 				/* EXTERNAL channel will have SLOT 3,4 followed by 7,8 */
@@ -1343,8 +1343,8 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 			}
 		} else {
 			if (DMA_Done) {
-				/* stop clockgen */
-				ameba_i2s_tdm_pause(obj);
+				/* stop DMA, but retain clockgen */
+				ameba_i2s_tdm_pause(obj, ENABLE);
 				/* copy DMA contents into buffer container ? */
 				// TODO: for single channel DMA populate the buffer
 
@@ -1680,7 +1680,7 @@ static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_TX && priv->txenab) {
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 		if (priv->tdmenab) {
-			ameba_i2s_tdm_pause(priv->i2s_object);
+			ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 		} else {
 			ameba_i2s_pause(priv->i2s_object);
 		}
@@ -1694,7 +1694,7 @@ static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_RX && priv->rxenab) {
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 		if (priv->tdmenab) {
-			ameba_i2s_tdm_pause(priv->i2s_object);
+			ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 		} else {
 			ameba_i2s_pause(priv->i2s_object);
 		}
@@ -1783,7 +1783,7 @@ static int i2s_stop_transfer(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (dir == I2S_TX && priv->tdmenab) {
-		ameba_i2s_tdm_pause(priv->i2s_object);
+		ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 	} else {
 		ameba_i2s_pause(priv->i2s_object);
 	}
@@ -1797,7 +1797,7 @@ static int i2s_stop_transfer(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (dir == I2S_RX && priv->tdmenab) {
-		ameba_i2s_tdm_pause(priv->i2s_object);
+		ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 	} else {
 		ameba_i2s_pause(priv->i2s_object);
 	}
