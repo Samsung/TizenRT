@@ -170,6 +170,7 @@ struct amebasmart_i2s_config_s {
 	uint8_t txenab : 1; /* True: TX transfers enabled */
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	uint8_t tdmenab: 1; /* True: TDM is enabled */
+	uint8_t data_format: 1;  /* 0-3: tdm data format, see ameba_sport.h AUDIO_SPORT_Interface_Format */
 #endif
 };
 
@@ -208,6 +209,7 @@ struct amebasmart_i2s_s {
 	uint8_t txenab : 1; /* True: TX transfers enabled */
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	uint8_t tdmenab : 1; /* True: TDM Enabled (this will disable MULTIIO)*/
+	uint8_t data_format : 1; /* 0-3: tdm data format, see ameba_sport.h AUDIO_SPORT_Interface_Format */
 	
 	struct ap_buffer_s *apb_rx; /* Pointer to application RX audio buffer for DMA to populate */
 #endif
@@ -245,6 +247,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
 	.txenab = 1,
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	.tdmenab = 0,
+	.data_format = SP_DF_I2S
 #endif
 };
 
@@ -260,6 +263,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
 	.txenab = 0,
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	.tdmenab = 0,
+	.data_format = SP_DF_I2S
 #endif
 };
 
@@ -276,6 +280,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_tdm_config = {
 	.rxenab = 1,
 	.txenab = 0,
 	.tdmenab = 1,
+	.data_format = SP_DF_I2S
 };
 #endif
 
@@ -868,11 +873,16 @@ static int i2s_rxdma_prep(struct amebasmart_i2s_s *priv, struct amebasmart_buffe
 	if (priv->tdmenab) {
 		i2sinfo("tdm: set dma buffer! rxbuf: %p\n", priv->i2s_rx_buf);
 
-		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE, GDMA_INT, apb->nmaxbytes);
+		u32 dma_page_size;
 		if (priv->i2s_object->fifo_num >= SP_RX_FIFO8) {
-			i2sinfo("tdm: set dma buffer for EXT! rxbuf1: %p\n", priv->i2s_rx_buf);
-			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf_ext, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE, GDMA_EXT, apb->nmaxbytes);
+			dma_page_size = apb->nmaxbytes / 2;	// 2 buffers
+			i2sinfo("tdm: set dma buffer for DMA2! rxbuf1: %p\n", priv->i2s_rx_buf);
+			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf_ext, I2S_DMA_PAGE_NUM, dma_page_size, GDMA_EXT, dma_page_size);
 		}
+
+		i2sinfo("tdm: set dma buffer for DMA1! rxbuf1: %p\n", priv->i2s_rx_buf);
+		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, dma_page_size, GDMA_INT, dma_page_size);
+
 	} else
 #else
 	{
@@ -1252,8 +1262,8 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 			if (DMA_Done && DMA_Done_1) {
 				lldbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
 
-				/* stop clockgen */
-				ameba_i2s_tdm_pause(obj);
+				/* stop DMA, but retain clockgen */
+				ameba_i2s_tdm_pause(obj, ENABLE);
 
 				/* INTERNAL channel will have SLOT 1,2 followed by 5,6 */
 				/* EXTERNAL channel will have SLOT 3,4 followed by 7,8 */
@@ -1268,18 +1278,46 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 				}
 				if (word_size == sizeof(u16)) {
 					u16 *dst_buf = (u16 *)priv->apb_rx->samp;
-					u32 *rx_int = (u32 *)priv->i2s_rx_buf;
-					u32 *rx_ext = (u32 *)priv->i2s_rx_buf_ext;
-					for (u32 count = 0, i = 0, j = 0; count < priv->apb_rx->nmaxbytes; count += 16, i += 8, j += 4) {
-						dst_buf[i + 0] = rx_int[j + 0] >> 16;		// slot 1
-						dst_buf[i + 1] = rx_int[j + 1] >> 16;		// slot 2
-						dst_buf[i + 2] = rx_ext[j + 0] >> 16;		// slot 3
-						dst_buf[i + 3] = rx_ext[j + 1] >> 16;		// slot 4
+					u16 *dma1 = (u16 *)priv->i2s_rx_buf;
+					u16 *dma2 = (u16 *)priv->i2s_rx_buf_ext;
+					lldbg("@@@@@@@@ DST BUF SIZE: %d |||| DMA PAGE SIZE: %d\n", priv->apb_rx->nmaxbytes, I2S_DMA_PAGE_SIZE);
+					// lib_dumpbuffer("Int", dma1, 512);
+					// lib_dumpbuffer("Ext", dma2, 512);
+					u32 count = 0;
+					u32 dma1_idx = 0, dma2_idx = 0, sample_idx = 0;
+					while (count < priv->apb_rx->nmaxbytes) {
+						if (priv->data_format == SP_DF_LEFT) {
+							// DMA format (Left-Justified)
+							// 11115555 22226666 (DMA1)
+							// 33337777 44448888 (DMA2)
+							dst_buf[sample_idx + 0] = dma1[dma1_idx + 0];   // slot 1
+							dst_buf[sample_idx + 1] = dma1[dma1_idx + 2];   // slot 2
+							dst_buf[sample_idx + 2] = dma2[dma2_idx + 0];   // slot 3
+							dst_buf[sample_idx + 3] = dma2[dma2_idx + 2];   // slot 4
 
-						dst_buf[i + 4] = rx_int[j + 0] & 0xFFFF;	// slot 5
-						dst_buf[i + 5] = rx_int[j + 1] & 0xFFFF;	// slot 6
-						dst_buf[i + 6] = rx_ext[j + 0] & 0xFFFF;	// slot 7
-						dst_buf[i + 7] = rx_ext[j + 1] & 0xFFFF;	// slot 8
+							dst_buf[sample_idx + 4] = dma1[dma1_idx + 1]; 	// slot 5
+							dst_buf[sample_idx + 5] = dma1[dma1_idx + 3];	// slot 6
+							dst_buf[sample_idx + 6] = dma2[dma2_idx + 1];	// slot 7
+							dst_buf[sample_idx + 7] = dma2[dma2_idx + 3];	// slot 8
+						} else {
+							// DMA format (Default)
+							// 55551111 66662222 (DMA1)
+							// 77773333 88884444 (DMA2)
+							dst_buf[sample_idx + 0] = dma1[dma1_idx + 1];   // slot 1
+							dst_buf[sample_idx + 1] = dma1[dma1_idx + 3];   // slot 2
+							dst_buf[sample_idx + 2] = dma2[dma2_idx + 1];   // slot 3
+							dst_buf[sample_idx + 3] = dma2[dma2_idx + 3];   // slot 4
+
+							dst_buf[sample_idx + 4] = dma1[dma1_idx + 0]; 	// slot 5
+							dst_buf[sample_idx + 5] = dma1[dma1_idx + 2];	// slot 6
+							dst_buf[sample_idx + 6] = dma2[dma2_idx + 0];	// slot 7
+							dst_buf[sample_idx + 7] = dma2[dma2_idx + 2];	// slot 8
+						}
+
+						sample_idx += 8;			// there are 8 slots per sample
+						dma1_idx += 4;				// each dma buffer holds 4 slots
+						dma2_idx += 4;
+						count += (word_size * 8);   // there are 16 bytes total per sample
 					}
 				} else {
 					u32 *dst_buf = (u32 *)priv->apb_rx->samp;
@@ -1305,8 +1343,8 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 			}
 		} else {
 			if (DMA_Done) {
-				/* stop clockgen */
-				ameba_i2s_tdm_pause(obj);
+				/* stop DMA, but retain clockgen */
+				ameba_i2s_tdm_pause(obj, ENABLE);
 				/* copy DMA contents into buffer container ? */
 				// TODO: for single channel DMA populate the buffer
 
@@ -1642,7 +1680,7 @@ static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_TX && priv->txenab) {
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 		if (priv->tdmenab) {
-			ameba_i2s_tdm_pause(priv->i2s_object);
+			ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 		} else {
 			ameba_i2s_pause(priv->i2s_object);
 		}
@@ -1656,7 +1694,7 @@ static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_RX && priv->rxenab) {
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 		if (priv->tdmenab) {
-			ameba_i2s_tdm_pause(priv->i2s_object);
+			ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 		} else {
 			ameba_i2s_pause(priv->i2s_object);
 		}
@@ -1745,7 +1783,7 @@ static int i2s_stop_transfer(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (dir == I2S_TX && priv->tdmenab) {
-		ameba_i2s_tdm_pause(priv->i2s_object);
+		ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 	} else {
 		ameba_i2s_pause(priv->i2s_object);
 	}
@@ -1759,7 +1797,7 @@ static int i2s_stop_transfer(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (dir == I2S_RX && priv->tdmenab) {
-		ameba_i2s_tdm_pause(priv->i2s_object);
+		ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 	} else {
 		ameba_i2s_pause(priv->i2s_object);
 	}
@@ -2020,10 +2058,13 @@ static void i2s_getdefaultconfig(struct amebasmart_i2s_s *priv)
 	if (priv->config->tdmenab) {
 		dbg("init for tdm: %d \n", priv->config->tdmenab);
 		priv->tdmenab = priv->config->tdmenab;
+		priv->data_format = priv->config->data_format;
+
 		/* TDM configuration fixed for ais25ba */
 		priv->i2s_object->mode = TDM;
 		priv->i2s_object->role = MASTER;
 		priv->i2s_object->direction = SP_DIR_RX;
+		priv->i2s_object->data_format = priv->data_format;
 
 		/* sample rate */
 		priv->i2s_object->sampling_rate = SP_16K;

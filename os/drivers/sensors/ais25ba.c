@@ -83,6 +83,7 @@ static void ais25ba_i2s_callback(FAR struct i2s_dev_s *dev, FAR struct ap_buffer
         //lldbg("apb=%p nbytes=%d result=%d\n", apb, apb->nbytes, result);
 	uint16_t *o = &apb->samp[0];
 	int16_t *p = (int16_t *)&apb->samp[0];
+	//lib_dumpbuffer("Received", apb->samp, apb->nbytes);
 	float d;
 	for (int i = 0; i < apb->nbytes; i+=8) {
 		d = (float)(*p)*0.122;
@@ -258,7 +259,7 @@ static int ais25ba_read_i2s(struct i2s_dev_s *i2s)
         //struct ap_buffer_s *apb;
         //apb_reference(&apb);
         struct audio_buf_desc_s desc;
-        desc.numbytes = 512;
+        desc.numbytes = 1024;
         desc.u.ppBuffer = &g_apb;
 
         int ret = apb_alloc(&desc);

@@ -842,17 +842,19 @@ void ameba_i2s_pause(i2s_t *obj) {
 }
 
 #ifdef CONFIG_AMEBASMART_I2S_TDM
-void ameba_i2s_tdm_pause(i2s_t *obj) {
+void ameba_i2s_tdm_pause(i2s_t *obj, u8 keep_clock) {
 
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 
-	// turn off MCLK if master
-	if (obj->role == MASTER) {
-		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+	if (keep_clock == DISABLE) {
+		// turn off MCLK if master
+		if (obj->role == MASTER) {
+			AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+		}
+		
+		// turn off BCLK
+		AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
 	}
-	
-	// turn off BCLK
-	AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
 
 	if (obj->direction == I2S_DIR_TX) {
 		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
@@ -1154,10 +1156,14 @@ void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 	}
 
 	SP_InitStruct.SP_SetMultiIO = SP_RX_MULTIIO_DIS;
-	SP_InitStruct.SP_SelDataFormat = SP_DF_I2S;
+	SP_InitStruct.SP_SelDataFormat = obj->data_format;
+	//SP_InitStruct.SP_SelDataFormat = SP_DF_LEFT; // left format invert bclk
 	SP_InitStruct.SP_SelClk = clock_mode;
 
 	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &SP_InitStruct);
+
+	/* set up rx bit delay */
+	//AUDIO_SP_SetRXBitDelay(obj->i2s_idx, 1);	// 1 bit delay...?
 
 	/* setup the role of the SPORT */
 	AUDIO_SP_SetMasterSlave(obj->i2s_idx, obj->role);
