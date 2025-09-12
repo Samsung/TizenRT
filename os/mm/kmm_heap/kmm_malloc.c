@@ -79,32 +79,21 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
 static void *kheap_malloc(size_t size, mmaddress_t caller_retaddr)
-#else
-static void *kheap_malloc(size_t size)
-#endif
 {
 	int heap_idx;
 	void *ret;
 	struct mm_heap_s *kheap = kmm_get_baseheap();
 
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
-		ret = mm_malloc(&kheap[heap_idx], size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		ret = mm_malloc(&kheap[heap_idx], size, caller_retaddr);
 		if (ret != NULL) {
 			return ret;
 		}
 	}
 
-	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, 0, KERNEL_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, 0, KERNEL_HEAP, caller_retaddr);
 	return NULL;
 }
 
@@ -133,8 +122,10 @@ void *kmm_malloc_at(int heap_index, size_t size)
 {
 	void *ret;
 	struct mm_heap_s *kheap;
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_malloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("kmm_malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
@@ -146,17 +137,9 @@ void *kmm_malloc_at(int heap_index, size_t size)
 	}
 
 	kheap = kmm_get_baseheap();
-	ret = mm_malloc(&kheap[heap_index], size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	ret = mm_malloc(&kheap[heap_index], size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, 0, KERNEL_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, 0, KERNEL_HEAP, caller_retaddr);
 	}
 	return ret;
 }
@@ -178,17 +161,14 @@ void *kmm_malloc_at(int heap_index, size_t size)
 
 FAR void *kmm_malloc(size_t size)
 {
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to kheap_malloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 	if (size == 0) {
 		return NULL;
 	}
 
-	return kheap_malloc(size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+	return kheap_malloc(size, caller_retaddr);
 }
 #endif							/* CONFIG_MM_KERNEL_HEAP */

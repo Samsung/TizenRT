@@ -42,12 +42,13 @@ void *calloc_user_at(struct mm_heap_s *heap, size_t n, size_t elem_size)
 	if (n == 0 || elem_size == 0) {
 		return NULL;
 	}
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_calloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
-	return mm_calloc(heap, n, elem_size, caller_retaddr);
-#else
-	return mm_calloc(heap, n, elem_size);
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
+
+	return mm_calloc(heap, n, elem_size, caller_retaddr);
 }
 
 /************************************************************************
@@ -64,12 +65,13 @@ void *memalign_user_at(struct mm_heap_s *heap, size_t alignment, size_t size)
 	if (size == 0) {
 		return NULL;
 	}
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_memalign api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
-	return mm_memalign(heap, alignment, size, caller_retaddr);
-#else
-	return mm_memalign(heap, alignment, size);
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
+
+	return mm_memalign(heap, alignment, size, caller_retaddr);
 }
 
 /************************************************************************
@@ -93,12 +95,13 @@ void *malloc_user_at(struct mm_heap_s *heap, size_t size)
 	if (size == 0) {
 		return NULL;
 	}
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_malloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
-	return mm_malloc(heap, size, caller_retaddr);
-#else
-	return mm_malloc(heap, size);
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
+
+	return mm_malloc(heap, size, caller_retaddr);
 }
 
 /************************************************************************
@@ -112,18 +115,17 @@ void *malloc_user_at(struct mm_heap_s *heap, size_t size)
  ************************************************************************/
 void *realloc_user_at(struct mm_heap_s *heap, void *oldmem, size_t newsize)
 {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
-#endif
 	if (newsize == 0) {
 		free_user_at(heap, oldmem);
 		return NULL;
 	}
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_realloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	return mm_realloc(heap, oldmem, newsize, caller_retaddr);
-#else
-	return mm_realloc(heap, oldmem, newsize);
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
+
+	return mm_realloc(heap, oldmem, newsize, caller_retaddr);
 }
 
 /************************************************************************
@@ -140,10 +142,11 @@ void *zalloc_user_at(struct mm_heap_s *heap, size_t size)
 	if (size == 0) {
 		return NULL;
 	}
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_zalloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
-	return mm_zalloc(heap, size, caller_retaddr);
-#else
-	return mm_zalloc(heap, size);
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
+
+	return mm_zalloc(heap, size, caller_retaddr);
 }

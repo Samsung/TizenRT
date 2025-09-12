@@ -149,11 +149,7 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	case MMINFOIOC_MNG_ALLOCFAIL:
 		/* There is a single heap for user. So start and end indexes of heap are always 0. */
-		mm_manage_alloc_fail(BASE_HEAP, 0, 0, ((struct mm_alloc_fail_s *)arg)->size, ((struct mm_alloc_fail_s *)arg)->align, USER_HEAP
-#if defined(CONFIG_DEBUG_MM_HEAPINFO)
-				, ((struct mm_alloc_fail_s *)arg)->caller
-#endif
-				);
+		mm_manage_alloc_fail(BASE_HEAP, 0, 0, ((struct mm_alloc_fail_s *)arg)->size, ((struct mm_alloc_fail_s *)arg)->align, USER_HEAP, ((struct mm_alloc_fail_s *)arg)->caller);
 		break;
 
 	case MMINFOIOC_GC:
