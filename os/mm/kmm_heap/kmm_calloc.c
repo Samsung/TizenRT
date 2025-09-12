@@ -81,11 +81,7 @@ static void *kheap_calloc(size_t n, size_t elem_size, mmaddress_t retaddr)
 		}
 	}
 
-	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, n * elem_size, 0, KERNEL_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, retaddr
-#endif
-			);
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, n * elem_size, 0, KERNEL_HEAP, retaddr);
 	return NULL;
 }
 
@@ -127,11 +123,7 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 	kheap = kmm_get_baseheap();
 	ret = mm_calloc(&kheap[heap_index], n, elem_size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, n * elem_size, 0, KERNEL_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, n * elem_size, 0, KERNEL_HEAP, caller_retaddr);
 	}
 	return ret;
 }

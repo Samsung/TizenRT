@@ -104,11 +104,7 @@ void *memalign_at(int heap_index, size_t alignment, size_t size)
 
 	ret = mm_memalign(&BASE_HEAP[heap_index], alignment, size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, alignment, USER_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, alignment, USER_HEAP, caller_retaddr);
 	}
 	return ret;
 }
@@ -144,11 +140,7 @@ FAR void *memalign(size_t alignment, size_t size)
 	/* User supports a single heap on app separation */
 	ret = mm_memalign(BASE_HEAP, alignment, size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, alignment, USER_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, alignment, USER_HEAP, caller_retaddr);
 	}
 
 #else /* CONFIG_APP_BINARY_SEPARATION */
@@ -161,11 +153,7 @@ FAR void *memalign(size_t alignment, size_t size)
 		}
 	}
 
-	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, alignment, USER_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, alignment, USER_HEAP, caller_retaddr);
 #endif /* CONFIG_APP_BINARY_SEPARATION */
 	return ret;
 }

@@ -100,11 +100,7 @@ void *zalloc_at(int heap_index, size_t size)
 	}
 	ret = mm_zalloc(&BASE_HEAP[heap_index], size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, 0, USER_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, 0, USER_HEAP, caller_retaddr);
 	}
 	return ret;
 }
@@ -139,11 +135,7 @@ static void *heap_zalloc(size_t size, int s, int e, mmaddress_t caller_retaddr)
 		}
 	}
 
-	mm_manage_alloc_fail(BASE_HEAP, s, e, size, 0, USER_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	mm_manage_alloc_fail(BASE_HEAP, s, e, size, 0, USER_HEAP, caller_retaddr);
 	return NULL;
 }
 #endif
@@ -181,11 +173,7 @@ FAR void *zalloc(size_t size)
 	if (alloc) {
 		memset(alloc, 0, size);
 	} else {
-		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP, caller_retaddr);
 	}
 
 	return alloc;
@@ -198,11 +186,7 @@ FAR void *zalloc(size_t size)
 	/* User supports a single heap on app separation */
 	ret = mm_zalloc(BASE_HEAP, size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP, caller_retaddr);
 	}
 
 #else /* CONFIG_APP_BINARY_SEPARATION */
