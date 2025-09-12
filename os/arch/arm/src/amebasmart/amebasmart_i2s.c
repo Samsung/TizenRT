@@ -873,11 +873,16 @@ static int i2s_rxdma_prep(struct amebasmart_i2s_s *priv, struct amebasmart_buffe
 	if (priv->tdmenab) {
 		i2sinfo("tdm: set dma buffer! rxbuf: %p\n", priv->i2s_rx_buf);
 
-		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE, GDMA_INT, apb->nmaxbytes);
+		u32 dma_page_size;
 		if (priv->i2s_object->fifo_num >= SP_RX_FIFO8) {
-			i2sinfo("tdm: set dma buffer for EXT! rxbuf1: %p\n", priv->i2s_rx_buf);
-			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf_ext, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE, GDMA_EXT, apb->nmaxbytes);
+			dma_page_size = apb->nmaxbytes / 2;	// 2 buffers
+			i2sinfo("tdm: set dma buffer for DMA2! rxbuf1: %p\n", priv->i2s_rx_buf);
+			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf_ext, I2S_DMA_PAGE_NUM, dma_page_size, GDMA_EXT, dma_page_size);
 		}
+
+		i2sinfo("tdm: set dma buffer for DMA1! rxbuf1: %p\n", priv->i2s_rx_buf);
+		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, dma_page_size, GDMA_INT, dma_page_size);
+
 	} else
 #else
 	{
