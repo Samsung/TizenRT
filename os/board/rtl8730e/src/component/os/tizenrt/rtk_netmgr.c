@@ -443,6 +443,8 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 
 	rtw_memset(&scan_param, 0, sizeof(rtw_scan_param_t));
 	scan_param.scan_user_callback = app_scan_result_handler; //print_ssid_scan_result
+	/* Set the maximum number of APs in scan result to 100 */
+	scan_param.max_ap_record_num = 100;
 
 	if (config) {
 		for (i = 0; i < valid_ch_list_size; i++){
@@ -521,6 +523,8 @@ trwifi_result_e wifi_netmgr_utils_scan_multi_ap(struct netdev *dev, trwifi_scan_
 
 	rtw_memset(&scan_param, 0, sizeof(rtw_scan_param_t));
 	scan_param.scan_user_callback = app_scan_result_handler;
+	/* Set the maximum number of APs in scan result to 100 */
+	scan_param.max_ap_record_num = 100;
 
 	if (config) {
 		if (config->scan_ap_config_count) {
