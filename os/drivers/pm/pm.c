@@ -154,11 +154,9 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case PMIOC_SUSPEND_COUNT:
 		ret = pm_suspendcount((struct pm_domain_s *)arg);
 		break;
-#ifdef CONFIG_PM_METRICS
 	case PMIOC_METRICS:
 		ret = pm_metrics((int)arg);
 		break;
-#endif
 #ifdef CONFIG_PM_DVFS
 	case PMIOC_TUNEFREQ:
 		pm_dvfs(arg);

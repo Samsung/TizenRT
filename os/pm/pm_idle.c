@@ -96,9 +96,9 @@ void pm_idle(void)
 		stime = now;
 		/* Decide, which power saving level can be obtained */
 		newstate = pm_checkstate();
-#ifdef CONFIG_PM_METRICS
+
 		pm_metrics_update_idle();
-#endif
+
 #ifdef CONFIG_PM_TIMEDWAKEUP
 		/* get wakeup timer */
 		if (newstate == PM_SLEEP) {
