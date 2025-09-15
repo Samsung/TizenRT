@@ -3962,5 +3962,3 @@
 //#define MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED
 
 /** \} name SECTION: Module configuration options */
-
-// #define MBEDTLS_SSL_CONF_EKU_PATCH
