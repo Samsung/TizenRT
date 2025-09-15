@@ -1685,11 +1685,7 @@ static inline mbedtls_x509_crt *mbedtls_ssl_own_cert(mbedtls_ssl_context *ssl)
 MBEDTLS_CHECK_RETURN_CRITICAL
 int mbedtls_ssl_check_cert_usage(const mbedtls_x509_crt *cert,
                                  const mbedtls_ssl_ciphersuite_t *ciphersuite,
-                                 int cert_endpoint,
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_SSL_CONF_EKU_PATCH)                                 
-                                 const char *client_oid, size_t client_oid_len,
-                                 const char *server_oid, size_t server_oid_len,
-#endif                                 
+                                 int cert_endpoint,                               
                                  uint32_t *flags);
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 

@@ -868,11 +868,7 @@ static int ssl_pick_cert(mbedtls_ssl_context *ssl,
          * and decrypting with the same RSA key.
          */
         if (mbedtls_ssl_check_cert_usage(cur->cert, ciphersuite_info,
-                                         MBEDTLS_SSL_IS_SERVER,
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_SSL_CONF_EKU_PATCH)                                          
-                                         ssl->conf->client_oid, ssl->conf->client_oid_len,
-                                         ssl->conf->server_oid, ssl->conf->server_oid_len,
-#endif                                         
+                                         MBEDTLS_SSL_IS_SERVER,                                        
                                          &flags) != 0) {
             MBEDTLS_SSL_DEBUG_MSG(3, ("certificate mismatch: "
                                       "(extended) key usage extension"));
