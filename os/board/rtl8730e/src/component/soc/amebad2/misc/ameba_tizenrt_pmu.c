@@ -196,7 +196,9 @@ int tizenrt_ready_to_sleep(void)
 	return TRUE;
 }
 
-void tizenrt_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
+static clock_t g_missing_tick_ms = 0;
+
+void tizenrt_sleep_processing(void)
 {
 	uint32_t tick_before_sleep;
 	uint32_t tick_passed;
@@ -227,17 +229,23 @@ void tizenrt_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_co
 	/* ms =x*1000/32768 = (x *1000) >>15 */
 	ms_passed = (u32)((((u64)tick_passed) * 1000) >> 15);
 
-	u16 wakeup_reason = HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_089);
+	g_missing_tick_ms = (clock_t)ms_passed;
 
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	vTaskStepTick(ms_passed); /*  update kernel tick */
-#else
-#ifdef CONFIG_PM_TICKSUPPRESS
-	if (wakeuphandler) {
-		wakeuphandler((clock_t)ms_passed, (pm_wakeup_reason_code_t)wakeup_reason); /*  update kernel tick */
-	}
 #endif
-#endif
+}
+
+pm_wakeup_reason_code_t tizenrt_get_wakeupreason(void)
+{
+	/* Store wakeup reason and missing ticks for TizenRT PM */
+	u16 raw_wakeup_reason = HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_DUMMY_089);
+	return (pm_wakeup_reason_code_t)raw_wakeup_reason;
+}
+
+clock_t tizenrt_get_missingtick(void)
+{
+	return g_missing_tick_ms;
 }
 
 u32 check_wfi_state(u8 core_id)

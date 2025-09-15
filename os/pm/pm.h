@@ -358,22 +358,38 @@ void pm_metrics_update_idle(void);
 
 
 /****************************************************************************
- * Name: pm_metrics_update_wakehandler
+ * Name: pm_metrics_update_wakeup_reason
  *
  * Description:
  *   This function is called inside pm_wakehandler. It counts the frequency of wakeup
- *   sources, which are waking up the board. It also checks the amount of time board
- *   was in sleep.
+ *   sources, which are waking up the board.
  * 
  * Input parameters:
- *   missing_tick - the amount of time the board was in sleep.
  *   wakeup_src   - the wakeup reason code.
  *
  * Returned value:
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
+void pm_metrics_update_wakeup_reason(pm_wakeup_reason_code_t wakeup_src);
+
+/****************************************************************************
+ * Name: pm_metrics_update_missing_tick
+ *
+ * Description:
+ *   This function is called inside pm_wakehandler. It checks the amount of time board
+ *   was in sleep.
+ * 
+ * Input parameters:
+ *   missing_tick - the amount of time the board was in sleep.
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_missing_tick(clock_t missing_tick);
+#else 
+
 #endif
 
 #undef EXTERN
