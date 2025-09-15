@@ -1483,12 +1483,6 @@ struct mbedtls_ssl_config {
     mbedtls_ssl_key_cert *MBEDTLS_PRIVATE(key_cert); /*!< own certificate/key pair(s)        */
     mbedtls_x509_crt *MBEDTLS_PRIVATE(ca_chain);     /*!< trusted CAs                        */
     mbedtls_x509_crl *MBEDTLS_PRIVATE(ca_crl);       /*!< trusted CAs CRLs                   */
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_SSL_CONF_EKU_PATCH)    
-    const char *MBEDTLS_PRIVATE(client_oid);         /*!< OID to check on client certs       */
-    size_t MBEDTLS_PRIVATE(client_oid_len);          /*!< length of client OID               */
-    const char *MBEDTLS_PRIVATE(server_oid);         /*!< OID to check on server certs       */
-    size_t MBEDTLS_PRIVATE(server_oid_len);          /*!< length of server OID               */
-#endif
 #if defined(MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK)
     mbedtls_x509_crt_ca_cb_t MBEDTLS_PRIVATE(f_ca_cb);
     void *MBEDTLS_PRIVATE(p_ca_cb);
@@ -3439,79 +3433,7 @@ void mbedtls_ssl_conf_ca_cb(mbedtls_ssl_config *conf,
  */
 int mbedtls_ssl_conf_own_cert(mbedtls_ssl_config *conf,
                               mbedtls_x509_crt *own_cert,
-                              mbedtls_pk_context *pk_key);
-#if defined(MBEDTLS_OCF_PATCH)
-/**
- * \brief          The type of certificate chain and private key callback.
- *
- * \note           The callback will be invoked by \c mbedtls_ssl_conf_iterate_own_certs for
- *                 each certificate chain and private key pair added to configuration
- *                 by \c mbedtls_ssl_conf_own_cert.
- *
- * \param ctx      An opaque context passed to the callback.
- * \param own_cert own public certificate chain
- * \param pk_key   own private key
- *
- * \return         \c 0 to continue iteration.
- * \return         A non-zero value to stop iteration.
- */
-typedef int (*mbedtls_ssl_conf_iterate_own_certs_cb_t)( void *ctx,
-                                                        const mbedtls_x509_crt *own_cert,
-                                                        const mbedtls_pk_context *pk_key );
-
-/**
- * \brief          Iterate over configured certificate and key pairs and invoke provided
- *                 callback with each pair.
- *
- * \param conf     SSL configuration
- * \param cert_cb  The callback to use with each certificate key pair
- * \param ctx      The context to be passed to \p cert_cb
-*/
-void mbedtls_ssl_conf_iterate_own_certs( const mbedtls_ssl_config *conf,
-                                        mbedtls_ssl_conf_iterate_own_certs_cb_t cert_cb,
-                                        void *ctx );
-
-#if defined(MBEDTLS_SSL_CONF_EKU_PATCH)
-/**
- * \brief                  Set custom EKU OIDs to be checked on certificates during TLS negotiation,
- *                         and for selecting suitable certificates for TLS negotation.
- *
- * \note                   By default, if this function is not called, clients will
- *                         check for the server authentication EKU (1.3.6.1.5.5.7.3.1) in
- *                         a server's certificate, and servers will check for the
- *                         client authentication EKU (1.3.6.1.5.5.7.3.2) if a client
- *                         presents a certificate.
- *
- * \param conf             SSL configuration
- * \param client_oid       OID to check for when verifying client certificates as a server.
- *                         This must be an MBEDTLS_OID_* constant from oid.h, or a custom OID
- *                         supplied by the caller. If a custom OID is used, it must be provided in
- *                         its ASN.1 encoding; human-readable dotted numeric strings are not supported.
- *                         Additionally, callers using custom OID buffers must ensure those buffers remain
- *                         live while this SSL configuration is live. Passing NULL will
- *                         disable EKU checking of client certificates.
- * \param client_oid_len   The length of client_oid, not counting a terminating NULL if present; for constants
- *                         from oid.h, this can be obtained with MBEDTLS_OID_SIZE(x) where x is the OID constant.
- *                         If client_oid is NULL, this must be zero.
- * \param server_oid       OID to check for when verifying server certificates as a client.
- *                         This must be an MBEDTLS_OID_* constant from oid.h, or a custom OID
- *                         supplied by the caller. If a custom OID is used, it must be provided in
- *                         its ASN.1 encoding; human-readable dotted numeric strings are not supported.
- *                         Additionally, callers using custom OID buffers must ensure those buffers remain
- *                         live while this SSL configuration is live. Passing NULL will
- *                         disable EKU checking of server certificates.
- * \param server_oid_len   The length of server_oid not counting a terminating NULL if present; for constants
- *                         from oid.h, this can be obtained with MBEDTLS_OID_SIZE(x) where x is the OID constant.
- *                         If client_oid is NULL, this must be zero.
- *
- * \return                 0 on success or MBEDTLS_ERR_SSL_BAD_INPUT_DATA for invalid arguments.
- *                         On failure, existing behavior is unchanged.
- */
-int mbedtls_ssl_conf_ekus( mbedtls_ssl_config *conf,
-                           const char *client_oid, size_t client_oid_len,
-                           const char *server_oid, size_t server_oid_len );
-#endif /* MBEDTLS_SSL_CONF_EKU_PATCH */
-#endif /* MBEDTLS_OCF_PATCH */                                                         
+                              mbedtls_pk_context *pk_key);                                                     
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 #if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
