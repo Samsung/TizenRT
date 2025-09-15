@@ -389,7 +389,13 @@ void pm_metrics_update_wakeup_reason(pm_wakeup_reason_code_t wakeup_src);
  ****************************************************************************/
 void pm_metrics_update_missing_tick(clock_t missing_tick);
 #else 
-
+#define pm_metrics_update_domain(domain)
+#define pm_metrics_update_suspend(domain)
+#define pm_metrics_update_resume(domain)
+#define pm_metrics_update_changestate()
+#define pm_metrics_update_idle()
+#define pm_metrics_update_missing_tick(missing_tick)
+#define pm_metrics_update_wakeup_reason(wakeup_src)
 #endif
 
 #undef EXTERN
