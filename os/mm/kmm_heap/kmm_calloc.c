@@ -67,32 +67,21 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
 static void *kheap_calloc(size_t n, size_t elem_size, mmaddress_t retaddr)
-#else
-static void *kheap_calloc(size_t n, size_t elem_size)
-#endif
 {
 	int heap_idx;
 	void *ret;
 	struct mm_heap_s *kheap = kmm_get_baseheap();
 
 	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
-		ret = mm_calloc(&kheap[heap_idx], n, elem_size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, retaddr
-#endif
-				);
+		ret = mm_calloc(&kheap[heap_idx], n, elem_size, retaddr);
 		if (ret != NULL) {
 			return ret;
 		}
 	}
 
-	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, n * elem_size, 0, KERNEL_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, retaddr
-#endif
-			);
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, n * elem_size, 0, KERNEL_HEAP, retaddr);
 	return NULL;
 }
 
@@ -117,8 +106,10 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 {
 	void *ret;
 	struct mm_heap_s *kheap;
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_calloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("kmm_calloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
@@ -130,17 +121,9 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 	}
 
 	kheap = kmm_get_baseheap();
-	ret = mm_calloc(&kheap[heap_index], n, elem_size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	ret = mm_calloc(&kheap[heap_index], n, elem_size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, n * elem_size, 0, KERNEL_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, n * elem_size, 0, KERNEL_HEAP, caller_retaddr);
 	}
 	return ret;
 }
@@ -159,14 +142,13 @@ FAR void *kmm_calloc(size_t n, size_t elem_size)
 	if (n == 0 || elem_size == 0) {
 		return NULL;
 	}
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to kheap_calloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
-	return kheap_calloc(n, elem_size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+
+	return kheap_calloc(n, elem_size, caller_retaddr);
 }
 
 #endif							/* CONFIG_MM_KERNEL_HEAP */

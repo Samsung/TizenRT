@@ -139,11 +139,8 @@ static void mm_free_delaylist(FAR struct mm_heap_s *heap)
  *  8-byte alignment of the allocated data is assured.
  *
  ****************************************************************************/
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
 FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_retaddr)
-#else
-FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
-#endif
 {
 	FAR struct mm_freenode_s *node;
 	void *ret = NULL;

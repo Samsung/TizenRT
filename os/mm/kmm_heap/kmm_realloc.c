@@ -89,8 +89,10 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 {
 	void *ret;
 	struct mm_heap_s *kheap;
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_realloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("kmm_realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
@@ -104,17 +106,9 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 		return NULL;
 	}
 
-	ret = mm_realloc(&kheap[heap_index], oldmem, size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	ret = mm_realloc(&kheap[heap_index], oldmem, size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, 0, KERNEL_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, 0, KERNEL_HEAP, caller_retaddr);
 	}
 	return ret;
 }
@@ -139,8 +133,10 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 {
 	void *ret;
 	int kheap_idx;
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_malloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 	struct mm_heap_s *kheap_origin;
 	struct mm_heap_s *kheap_new;
@@ -158,11 +154,7 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 			return NULL;
 		}
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 		ret = mm_realloc(kheap_origin, oldmem, newsize, caller_retaddr);
-#else
-		ret = mm_realloc(kheap_origin, oldmem, newsize);
-#endif
 		if (ret != NULL) {
 			return ret;
 		}
@@ -171,22 +163,14 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 	/* Try to mm_malloc to another heap. */
 	kheap_new = kmm_get_baseheap();
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
-		ret = mm_malloc(&kheap_new[kheap_idx], newsize
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		ret = mm_malloc(&kheap_new[kheap_idx], newsize, caller_retaddr);
 		if (ret != NULL) {
 			kmm_free(oldmem);
 			return ret;
 		}
 	}
 
-	mm_manage_alloc_fail(kheap_new, HEAP_START_IDX, HEAP_END_IDX, newsize, 0, KERNEL_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	mm_manage_alloc_fail(kheap_new, HEAP_START_IDX, HEAP_END_IDX, newsize, 0, KERNEL_HEAP, caller_retaddr);
 	return NULL;
 }
 

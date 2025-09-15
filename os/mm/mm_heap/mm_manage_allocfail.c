@@ -66,22 +66,15 @@
  ************************************************************************/
 
 #if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 void mm_ioctl_alloc_fail(size_t size, size_t align, mmaddress_t caller)
-#else
-void mm_ioctl_alloc_fail(size_t size, size_t align)
-#endif
 {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 	struct mm_alloc_fail_s arg = {size, align, caller};
-#else
-	struct mm_alloc_fail_s arg = {size, align};
-#endif
+
 	int mmfd = open(MMINFO_DRVPATH, O_RDWR);
 	if (mmfd < 0) {
 		mdbg("Fail to open %s, errno %d\n", MMINFO_DRVPATH, get_errno());
 	} else {
-		int res = ioctl(mmfd, MMINFOIOC_MNG_ALLOCFAIL, &arg);
+		int res = ioctl(mmfd, MMINFOIOC_MNG_ALLOCFAIL, &arg);	/* might need ti handle passing of NULL*/
 		if (res == ERROR) {
 			mdbg("Fail to call mm_manage_allocfail, errno %d\n", get_errno());
 		}
@@ -105,11 +98,7 @@ void mm_ioctl_garbagecollection(void)
 
 #else
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 void mm_manage_alloc_fail_dump(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type, mmaddress_t caller)
-#else
-void mm_manage_alloc_fail_dump(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type)
-#endif
 {
 #ifdef CONFIG_SMP
 	/* If SMP is enabled then we need to pause all the other cpu's immediately.
@@ -201,11 +190,7 @@ void mm_manage_alloc_fail_dump(struct mm_heap_s *heap, int startidx, int endidx,
 #endif
 }
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type, mmaddress_t caller)
-#else
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type)
-#endif
 {
 	irqstate_t flags = enter_critical_section();
 
@@ -217,11 +202,7 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 
 	/* If secure state, do not print memory usage and address infomation */
 	if (!IS_SECURE_STATE()) {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 		mm_manage_alloc_fail_dump(heap, startidx, endidx, size, align, heap_type, caller);
-#else
-		mm_manage_alloc_fail_dump(heap, startidx, endidx, size, align, heap_type);
-#endif
 	}
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
