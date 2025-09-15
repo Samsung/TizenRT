@@ -18,10 +18,6 @@
 /**
  * \file mbedtls_tizenrt_config.h
  */
-#undef MBEDTLS_NO_PLATFORM_ENTROPY
-#if !defined(CONFIG_DEV_URANDOM)
-#define MBEDTLS_NO_PLATFORM_ENTROPY
-#endif
 
 /*
  * Tizenrt mbedtls 2.7.8 uses below option. need to check whether it is really requires 
@@ -162,6 +158,7 @@
  * Uncomment to use your own hardware entropy collector.
  */
 #if defined(CONFIG_TLS_HW_RNG)
+#define MBEDTLS_NO_PLATFORM_ENTROPY
 #define MBEDTLS_ENTROPY_HARDWARE_ALT
 #endif
 
