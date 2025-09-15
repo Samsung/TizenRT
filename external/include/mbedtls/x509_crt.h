@@ -1151,21 +1151,6 @@ int mbedtls_x509write_crt_set_ext_key_usage(mbedtls_x509write_cert *ctx,
 int mbedtls_x509write_crt_set_ns_cert_type(mbedtls_x509write_cert *ctx,
                                            unsigned char ns_cert_type);
 
-
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
-/**
- * \brief           Set the subject alternative name extension
- *
- * \param ctx       CRT context to use
- * \param names     subject alternative names. For each dNSName element, the tag field of the dns_name
- *                  member does not need to be set and will be ignored.
- *
- * \return          0 if successful, or a specific error code
- */
-int mbedtls_x509write_crt_set_subject_alt_names( mbedtls_x509write_cert *ctx,
-                                                 const mbedtls_x509_general_names *names );
-#endif /* MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT */
-
 /**
  * \brief           Free the contents of a CRT write context
  *
