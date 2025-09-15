@@ -51,8 +51,10 @@
 
 /* For power save */
 #ifdef CONFIG_PM
-extern void tizenrt_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t));
-#define config_SLEEP_PROCESSING( x )         		(tizenrt_sleep_processing( x ))
+extern void tizenrt_sleep_processing(void);
+extern pm_wakeup_reason_code_t tizenrt_get_wakeupreason(void);
+extern clock_t tizenrt_get_missingtick(void);
+#define config_SLEEP_PROCESSING()         		(tizenrt_sleep_processing())
 #endif
 
 /* Is there a serial console?  It could be on UART1-5 */

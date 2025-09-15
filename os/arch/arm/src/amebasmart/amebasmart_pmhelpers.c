@@ -113,7 +113,7 @@ int SOCPS_AONWakeReason(void)
 	return reason;
 }
 
-void up_set_pm_timer(unsigned int interval_us) 
+int up_set_pm_timer(unsigned int interval_us) 
 {
 	// Check whether timer interrupt need to be set
 	if (interval_us > 0) {
@@ -121,7 +121,7 @@ void up_set_pm_timer(unsigned int interval_us)
 		/* Pass in timer obj to avoid compile warning, the last argument will not be used in the callback handler */
 		gtimer_start_one_shout(&g_timer1, interval_us, NULL, (uint32_t)&g_timer1);
 	}
-	return;
+	return 0;
 }
 
 void bsp_pm_domain_register(char *domain_name, int bsp_drv_id)
