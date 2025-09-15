@@ -617,6 +617,8 @@ void pm_dvfs(int div_lvl);
  *
  ****************************************************************************/
 int pm_metrics(int milliseconds);
+#else
+#define pm_metrics(milliseconds) (ERROR)
 #endif
 
 /****************************************************************************
@@ -641,16 +643,7 @@ int pm_metrics(int milliseconds);
 #define pm_sleep(milliseconds)				usleep(milliseconds * USEC_PER_MSEC)
 #define pm_timedsuspend(domain, milliseconds)	(0)
 #define pm_suspendcount(domain)   (0)
-#ifdef CONFIG_PM_METRICS
 #define pm_metrics(milliseconds) (ERROR)
-#define pm_metrics_update_domain(domain)
-#define pm_metrics_update_suspend(domain)
-#define pm_metrics_update_resume(domain)
-#define pm_metrics_update_changestate()
-#define pm_metrics_update_idle()
-#define pm_metrics_update_wakehandler(missing_tick, wakeup_src)
-#endif
-
 #endif							/* CONFIG_PM */
 
 #undef EXTERN

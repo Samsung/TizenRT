@@ -176,10 +176,8 @@ FAR struct pm_domain_s *pm_domain_register(FAR const char *domain)
 	dq_addlast(&new_domain->node, &g_pmglobals.domains);
 	g_pmglobals.ndomains++;
 
-#ifdef CONFIG_PM_METRICS
 	/* For newly registered domain initialize its pm metrics*/
 	pm_metrics_update_domain(new_domain);
-#endif
 
 	leave_critical_section(flags);
 	pmvdbg("Domain '%s' registered successfully\n", domain);
