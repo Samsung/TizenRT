@@ -216,27 +216,45 @@ void pm_metrics_update_changestate(void)
 }
 
 /****************************************************************************
- * Name: pm_metrics_update_wakehandler
+ * Name: pm_metrics_update_wakeup_reason
  *
  * Description:
- *   This function is called inside pm_wakehandler. It counts the frequency of wakeup
- *   sources, which are waking up the board. It also checks the amount of time board
- *   was in sleep.
- *
+ *   This function is called inside enable_and_compensate_systick. It counts
+ *   the frequency of wakeup sources, which are waking up the board.
+ * 
  * Input parameters:
- *   missing_tick - the amount of time the board was in sleep.
  *   wakeup_src   - the wakeup reason code.
  *
  * Returned value:
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
+void pm_metrics_update_wakeup_reason(pm_wakeup_reason_code_t wakeup_src)
 {
 	if (g_pm_metrics_running) {
 		if (wakeup_src < PM_WAKEUP_SRC_COUNT) {
 			g_pm_metrics->wakeup_src_counts[wakeup_src]++;
 		}
+	}
+}
+
+/****************************************************************************
+ * Name: pm_metrics_update_missing_tick
+ *
+ * Description:
+ *   This function is called inside enable_and_compensate_systick. It checks
+ *   the amount of time board was in sleep.
+ * 
+ * Input parameters:
+ *   missing_tick - the amount of time the board was in sleep.
+ *
+ * Returned value:
+ *   None
+ *
+ ****************************************************************************/
+void pm_metrics_update_missing_tick(clock_t missing_tick)
+{
+	if (g_pm_metrics_running) {
 		g_pm_metrics->board_sleep_ticks += missing_tick;
 	}
 }
