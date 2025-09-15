@@ -56,14 +56,11 @@
 
 #if !defined(MBEDTLS_NO_PLATFORM_ENTROPY)
 
-#if defined(MBED_TIZENRT)
-#else
 #if !defined(unix) && !defined(__unix__) && !defined(__unix) && \
     !defined(__APPLE__) && !defined(_WIN32) && !defined(__QNXNTO__) && \
     !defined(__HAIKU__) && !defined(__midipix__)
 #error \
     "Platform entropy sources only work on Unix and Windows, see MBEDTLS_NO_PLATFORM_ENTROPY in mbedtls_config.h"
-#endif
 #endif
 
 #if defined(_WIN32) && !defined(EFIX64) && !defined(EFI32)
@@ -72,52 +69,28 @@
 #define _WIN32_WINNT 0x0400
 #endif
 #include <windows.h>
-
-#if defined(MBEDTLS_OCF_PATCH)
-#include <bcrypt.h>
-#else
 #include <wincrypt.h>
-#endif
 
 int mbedtls_platform_entropy_poll(void *data, unsigned char *output, size_t len,
                                   size_t *olen)
 {
-#if !defined(MBEDTLS_OCF_PATCH)
     HCRYPTPROV provider;
-#endif
     ((void) data);
     *olen = 0;
 
-#if defined(MBEDTLS_OCF_PATCH)
-    /*
-     * size_t may be 64 bits, but ULONG is always 32.
-     * If len is larger than the maximum for ULONG, just fail.
-     * It's unlikely anything ever will want to ask for this much randomness.
-     */
-    if ( len > 0xFFFFFFFFULL )
-#else
     if (CryptAcquireContext(&provider, NULL, NULL,
-                            PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) == FALSE)
-#endif                            
+                            PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) == FALSE)                            
     {
         return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
     }
 
-#if defined(MBEDTLS_OCF_PATCH)
-	if( !BCRYPT_SUCCESS(BCryptGenRandom(NULL, output, (ULONG) len, BCRYPT_USE_SYSTEM_PREFERRED_RNG)) )
-#else
     if( CryptGenRandom( provider, (DWORD) len, output ) == FALSE )
-#endif
     {
-#if !defined(MBEDTLS_OCF_PATCH)
         CryptReleaseContext( provider, 0 );
-#endif
         return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
     }
 
-#if !defined(MBEDTLS_OCF_PATCH)
     CryptReleaseContext( provider, 0 );
-#endif
     *olen = len;
 
     return 0;
