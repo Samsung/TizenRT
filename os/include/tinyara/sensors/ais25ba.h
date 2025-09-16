@@ -52,7 +52,7 @@
 #define AIS25BA_ALIVECHECK_RETRY_COUNT 3 /* Number of retry when verification fail before reinitialize sensor */
 #define AIS25BA_BUFSIZE sizeof(ais25ba_buf_s)
 #define AIS25BA_BUFNUM 2
-#define AIS25BA_BUFLENGTH 32
+#define AIS25BA_BUFLENGTH 8
 #define AIS25BA_SAMPLE_RATE 32000
 /* ais25ba Message ID */
 #define AIS25BA_MSG_DEQUEUE 0
@@ -88,9 +88,10 @@ typedef struct ais25ba_dev_s {
 } ais25ba_dev_s;
 
 typedef struct sensor_data_s {
-	float x;
-	float y;
-	float z;
+	//float x;
+	//float y;
+	//float z;
+	uint16_t samples[8];
 } sensor_data_s;
 
 typedef struct ais25ba_buf_s {
