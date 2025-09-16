@@ -261,7 +261,7 @@ static void ais25ba_i2c_write_data(struct i2c_dev_s *i2c, struct i2c_config_s co
 		sndbg("ERROR: I2C writeread failed, reg_addr: %p  %p, ret: %d\n", reg[0], reg[1]);
 		return;
 	}
-	DelayMs(100);
+	usleep(1000 *100);
 	reg[0] = 0x2E;
 	reg[1] = 0x62;
 	ret = i2c_writeread(i2c, &config, (uint8_t *)reg, 2, data, 0);
@@ -275,11 +275,11 @@ static void ais25ba_i2c_write_data(struct i2c_dev_s *i2c, struct i2c_config_s co
 static void ais25ba_set_config_i2c(struct i2c_dev_s *i2c, struct i2c_config_s config)
 {
 	ais25ba_i2c_read_data(i2c, config);
-	DelayMs(2000);
+	usleep(1000 *2000);
 	ais25ba_i2c_write_data(i2c, config);
-	DelayMs(2000);
+	usleep(1000 *2000);
 	ais25ba_i2c_read_data(i2c, config);
-	DelayMs(2000);
+	usleep(1000 *2000);
 }
 
 static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer)
@@ -294,7 +294,8 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer
 	int sem_cnt;
 	int prev_sem_cnt;
 	struct ap_buffer_s *g_apb;
-	desc.numbytes = 1024;
+	//desc.numbytes = 256;
+	desc.numbytes = AIS25BA_BUFLENGTH * 16;	// N * 16 bytes
 	desc.u.ppBuffer = &g_apb;
 
 	ret = apb_alloc(&desc);
@@ -316,12 +317,14 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer
 	int16_t *samp_data = (int16_t *)&g_apb->samp[0];
 
 	for (int i = 0, j = 0; i < g_apb->nbytes; i+=16, j++) {
-		data[j].x = ais25ba_raw_to_mg(*samp_data);
-		samp_data++;
-		data[j].y = ais25ba_raw_to_mg(*samp_data);
-		samp_data++;
-		data[j].z = ais25ba_raw_to_mg(*samp_data);
-		samp_data += 6;		/* Vendor specific skip bits */
+		// data[j].x = ais25ba_raw_to_mg(*samp_data);
+		// samp_data++;
+		// data[j].y = ais25ba_raw_to_mg(*samp_data);
+		// samp_data++;
+		// data[j].z = ais25ba_raw_to_mg(*samp_data);
+		// samp_data += 6;		/* Vendor specific skip bits */
+		memcpy(data[j].samples, samp_data, 16);
+		samp_data += 8; 
 	}
 	apb_free(g_apb);
 
@@ -367,7 +370,7 @@ retry_sensor_verification:
 	while (retry_count > 0 && sensor_status == OK) {
 		sensor_status = ais25ba_verify_sensor(dev->upper, dev->i2c, dev->i2c_config);
 		retry_count--;
-		DelayMs(1000);
+		usleep(1000 *1000);
 	}
 
 	if (sensor_status != OK) {
@@ -476,10 +479,10 @@ int ais25ba_initialize(const char *devpath, struct ais25ba_dev_s *priv)
 	//I2C config set. Read data is to check if write register is successful or not
 	ais25ba_set_config_i2c(i2c, config);
 
-	priv->wdog = wd_create();
-	if (wd_start(priv->wdog, MSEC2TICK(AIS25BA_ALIVECHECK_TIME), (wdentry_t)ais25ba_timer_handler, 1, (uint32_t)priv) != OK) {
-		sndbg("Fail to start AIS25BA alive-check wdog, errno : %d\n", get_errno());
-	}
+	// priv->wdog = wd_create();
+	// if (wd_start(priv->wdog, MSEC2TICK(AIS25BA_ALIVECHECK_TIME), (wdentry_t)ais25ba_timer_handler, 1, (uint32_t)priv) != OK) {
+	// 	sndbg("Fail to start AIS25BA alive-check wdog, errno : %d\n", get_errno());
+	// }
 
 	itoa((int)priv, parm_buf, 16);
 	parm[0] = parm_buf;
