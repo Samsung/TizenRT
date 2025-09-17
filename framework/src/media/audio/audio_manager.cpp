@@ -299,6 +299,7 @@ static unsigned int get_user_output_bytes_to_frame(unsigned int bytes, uint8_t i
 static uint8_t find_volume_index(uint8_t volume, stream_policy_t stream_policy);
 static audio_manager_result_t set_audio_mixer_gain(audio_io_direction_t direct, uint8_t *gain);
 static audio_manager_result_t get_audio_mixer_gain(audio_io_direction_t direct);
+static uint8_t clamp(uint8_t val, uint8_t min_val, uint8_t max_val);
 
 std::mutex eventMutex;
 std::condition_variable syncCv;
@@ -774,12 +775,12 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 		if (card->mixing && card->policy_array[0] != card->policy_array[1]) {
 			if (stream_policy == card->policy_array[card->main_stream_idx]) {
 				// Left(Main) channel
-				// ToDo: Ensure that gain stays in range
 				config->l_mixer_gain = (config->default_lmixer_gain * volume) / config->volume;
+				config->l_mixer_gain = clamp(config->l_mixer_gain, config->min_mixer_gain, config->max_mixer_gain);
 			} else {
 				// Right(Sub) channel
-				// ToDo: Ensure that gain stays in range
 				config->r_mixer_gain = ((config->default_rmixer_gain * CONFIG_AUDIO_DUCKING_MULTIPLIER) * volume) / config->volume;
+				config->r_mixer_gain = clamp(config->r_mixer_gain, config->min_mixer_gain, config->max_mixer_gain);
 			}
 			uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
 				config->l_mixer_gain,
@@ -888,16 +889,16 @@ static audio_manager_result_t set_audio_mute(audio_io_direction_t direct, stream
 				if (mute) {
 					config->l_mixer_gain = 0;
 				} else {
-					// ToDo: Ensure that gain stays in range
 					config->l_mixer_gain = (config->default_lmixer_gain * card->volume[stream_policy]) / config->volume;
+					config->l_mixer_gain = clamp(config->l_mixer_gain, config->min_mixer_gain, config->max_mixer_gain);
 				}
 			} else {
 				// Right(Sub) channel
 				if (mute) {
 					config->r_mixer_gain = 0;
 				} else {
-					// ToDo: Ensure that gain stays in range
 					config->r_mixer_gain = ((config->default_rmixer_gain * CONFIG_AUDIO_DUCKING_MULTIPLIER) * card->volume[stream_policy]) / config->volume;
+					config->r_mixer_gain = clamp(config->r_mixer_gain, config->min_mixer_gain, config->max_mixer_gain);
 				}
 			}
 			uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
@@ -1227,6 +1228,17 @@ static audio_manager_result_t get_audio_mixer_gain(audio_io_direction_t direct)
 
 	pthread_mutex_unlock(card_mutex);
 	return ret;
+}
+
+static uint8_t clamp(uint8_t val, uint8_t min_val, uint8_t max_val)
+{
+	if (val > max_val) {
+		return max_val;
+	} else if (val < min_val) {
+		return min_val;
+	} else {
+		return val;
+	}
 }
 
 /****************************************************************************
@@ -1801,7 +1813,7 @@ static audio_manager_result_t pause_audio_stream(audio_io_direction_t direct, st
 			if (ret == -EPIPE) {
 				ret = AUDIO_MANAGER_SUCCESS;
 			} else {
-				meddbg("pcm_drain faled, ret = %d\n", ret);
+				meddbg("pcm_drain failed, ret = %d\n", ret);
 			}
 		}
 
@@ -1906,7 +1918,7 @@ audio_manager_result_t stop_audio_stream_out(stream_info_id_t stream_id, bool dr
 			if (ret == -EPIPE) {
 				ret = AUDIO_MANAGER_SUCCESS;
 			} else {
-				meddbg("pcm_drain faled, ret = %d\n", ret);
+				meddbg("pcm_drain failed, ret = %d\n", ret);
 			}
 		}
 		card->mixing = false;
@@ -1933,12 +1945,12 @@ audio_manager_result_t stop_audio_stream_out(stream_info_id_t stream_id, bool dr
 			if (ret == -EPIPE) {
 				ret = AUDIO_MANAGER_SUCCESS;
 			} else {
-				meddbg("pcm_drain faled, ret = %d\n", ret);
+				meddbg("pcm_drain failed, ret = %d\n", ret);
 			}
 		}
 	} else {
 		if ((ret = static_cast<audio_manager_result_t>(pcm_drop(card->pcm))) < 0) {
-			meddbg("pcm_drop faled, ret = %d\n", ret);
+			meddbg("pcm_drop failed, ret = %d\n", ret);
 		}
 	}
 	card->config[card->device_id].status = AUDIO_CARD_READY;
@@ -3412,6 +3424,13 @@ audio_manager_result_t set_output_audio_mixer(stream_info_id_t stream_id)
 	pthread_mutex_lock(&(card->card_mutex));
 
 	if (card->stream_status[1 - idx] == RUNNING) {
+		if ((ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm))) < 0) {
+			if (ret == -EPIPE) {
+				ret = AUDIO_MANAGER_SUCCESS;
+			} else {
+				meddbg("pcm_drain failed, ret = %d\n", ret);
+			}
+		}
 		card->mixing = true;
 		// set the mixer register value in driver
 		audio_config_t *config = &card->config[card->device_id];
