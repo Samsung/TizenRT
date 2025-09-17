@@ -914,6 +914,50 @@ audio_manager_result_t get_audio_stream_mute_state(stream_policy_t stream_policy
 void dump_audio_card_info(void);
 #endif
 
+/****************************************************************************
+ * Name: start_audio_multich_stream
+ *
+ * Description:
+ *   Start 4-ch Streaming
+ *
+ * Input parameter:
+ *   card_id : Target card id , device_id : Target device id
+ * 	 duration : streaming Term(s) , verbose : streaming info log , dev_extract_size : extracted data size size via ndp120
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t start_audio_multich_stream(int card_id, int device_id, int duration, int verbose, uint32_t *dev_extract_size);
+
+/****************************************************************************
+ * Name: read_audio_multich_stream
+ *
+ * Description: 
+ *   Read 4-ch Streaming
+ *
+ * Input parameter:
+ *   card_id : Target card id , device_id : Target device id
+ * 	 buffer : A buffer with as much 4-ch data as extracted_len , extracted_len : Data received via buffer size(multiples of dev_extract_size)
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t read_audio_multich_stream(int card_id, int device_id, uint8_t *buffer, uint32_t *extracted_len);
+
+/****************************************************************************
+ * Name: stop_audio_multich_stream
+ *
+ * Description:
+ *   Stop 4-ch Streaming
+ *
+ * Input parameter:
+ *   card_id : Target card id , device_id : Target device id
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t stop_audio_multich_stream(int card_id, int device_id);
+
 #if defined(__cplusplus)
 }								/* extern "C" */
 #endif

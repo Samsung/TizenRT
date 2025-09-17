@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_DUMP4CH
+	bool "recording and streaming 4ch audio dump(raw mic0, raw mic1, echo-ref, afe)"
+	default n
+	depends on HAVE_CXX
+	---help---
+		Enable dump4ch application
+
+config USER_ENTRYPOINT
+	string
+	default n
