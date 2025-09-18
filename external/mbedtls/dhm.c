@@ -62,8 +62,6 @@
 
 #include "mbedtls/platform.h"
 
-#if !defined(MBEDTLS_DHM_ALT)
-
 /*
  * helper to validate the mbedtls_mpi size and import it
  */
@@ -124,10 +122,12 @@ cleanup:
     return ret;
 }
 
+#if !defined(MBEDTLS_DHM_ALT)
 void mbedtls_dhm_init(mbedtls_dhm_context *ctx)
 {
     memset(ctx, 0, sizeof(mbedtls_dhm_context));
 }
+#endif /* MBEDTLS_DHM_ALT */
 
 size_t mbedtls_dhm_get_bitlen(const mbedtls_dhm_context *ctx)
 {
@@ -246,6 +246,7 @@ cleanup:
     return ret;
 }
 
+#if !defined(MBEDTLS_DHM_ALT)
 /*
  * Setup and write the ServerKeyExchange parameters
  */
@@ -294,6 +295,7 @@ cleanup:
     }
     return ret;
 }
+#endif /* MBEDTLS_DHM_ALT */
 
 /*
  * Set prime modulus and generator
@@ -331,6 +333,7 @@ int mbedtls_dhm_read_public(mbedtls_dhm_context *ctx,
     return 0;
 }
 
+#if !defined(MBEDTLS_DHM_ALT)
 /*
  * Create own private value X and export G^X
  */
@@ -372,58 +375,60 @@ cleanup:
 static int dhm_update_blinding(mbedtls_dhm_context *ctx,
                                int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
 {
-	int ret, count;
+    int ret;
+    mbedtls_mpi R;
 
-	/*
-	 * Don't use any blinding the first time a particular X is used,
-	 * but remember it to use blinding next time.
-	 */
-	if (mbedtls_mpi_cmp_mpi(&ctx->X, &ctx->pX) != 0) {
-		MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&ctx->pX, &ctx->X));
-		MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&ctx->Vi, 1));
-		MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&ctx->Vf, 1));
+    mbedtls_mpi_init(&R);
 
-		return 0;
-	}
+    /*
+     * Don't use any blinding the first time a particular X is used,
+     * but remember it to use blinding next time.
+     */
+    if (mbedtls_mpi_cmp_mpi(&ctx->X, &ctx->pX) != 0) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&ctx->pX, &ctx->X));
+        MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&ctx->Vi, 1));
+        MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&ctx->Vf, 1));
 
-	/*
-	 * Ok, we need blinding. Can we re-use existing values?
-	 * If yes, just update them by squaring them.
-	 */
-	if (mbedtls_mpi_cmp_int(&ctx->Vi, 1) != 0) {
-		MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&ctx->Vi, &ctx->Vi, &ctx->Vi));
-		MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&ctx->Vi, &ctx->Vi, &ctx->P));
+        return 0;
+    }
 
-		MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&ctx->Vf, &ctx->Vf, &ctx->Vf));
-		MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&ctx->Vf, &ctx->Vf, &ctx->P));
+    /*
+     * Ok, we need blinding. Can we re-use existing values?
+     * If yes, just update them by squaring them.
+     */
+    if (mbedtls_mpi_cmp_int(&ctx->Vi, 1) != 0) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&ctx->Vi, &ctx->Vi, &ctx->Vi));
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&ctx->Vi, &ctx->Vi, &ctx->P));
 
-		return 0;
-	}
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&ctx->Vf, &ctx->Vf, &ctx->Vf));
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&ctx->Vf, &ctx->Vf, &ctx->P));
 
-	/*
-	 * We need to generate blinding values from scratch
-	 */
+        return 0;
+    }
 
-	/* Vi = random( 2, P-1 ) */
-	count = 0;
-	do {
-		MBEDTLS_MPI_CHK(mbedtls_mpi_fill_random(&ctx->Vi, mbedtls_mpi_size(&ctx->P), f_rng, p_rng));
+    /*
+     * We need to generate blinding values from scratch
+     */
 
-		while (mbedtls_mpi_cmp_mpi(&ctx->Vi, &ctx->P) >= 0) {
-			MBEDTLS_MPI_CHK(mbedtls_mpi_shift_r(&ctx->Vi, 1));
-		}
+    /* Vi = random( 2, P-2 ) */
+    MBEDTLS_MPI_CHK(dhm_random_below(&ctx->Vi, &ctx->P, f_rng, p_rng));
 
-		if (count++ > 10) {
-			return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
-		}
-	} while (mbedtls_mpi_cmp_int(&ctx->Vi, 1) <= 0);
+    /* Vf = Vi^-X mod P
+     * First compute Vi^-1 = R * (R Vi)^-1, (avoiding leaks from inv_mod),
+     * then elevate to the Xth power. */
+    MBEDTLS_MPI_CHK(dhm_random_below(&R, &ctx->P, f_rng, p_rng));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&ctx->Vf, &ctx->Vi, &R));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&ctx->Vf, &ctx->Vf, &ctx->P));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_inv_mod(&ctx->Vf, &ctx->Vf, &ctx->P));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_mul_mpi(&ctx->Vf, &ctx->Vf, &R));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&ctx->Vf, &ctx->Vf, &ctx->P));
 
-	/* Vf = Vi^-X mod P */
-	MBEDTLS_MPI_CHK(mbedtls_mpi_inv_mod(&ctx->Vf, &ctx->Vi, &ctx->P));
-	MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(&ctx->Vf, &ctx->Vf, &ctx->X, &ctx->P, &ctx->RP));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(&ctx->Vf, &ctx->Vf, &ctx->X, &ctx->P, &ctx->RP));
 
 cleanup:
-	return ret;
+    mbedtls_mpi_free(&R);
+
+    return ret;
 }
 
 /*
@@ -478,6 +483,7 @@ cleanup:
 
     return 0;
 }
+#endif /* MBEDTLS_DHM_ALT */
 
 /*
  * Free the components of a DHM key
@@ -671,7 +677,6 @@ int mbedtls_dhm_parse_dhmfile(mbedtls_dhm_context *dhm, const char *path)
 }
 #endif /* MBEDTLS_FS_IO */
 #endif /* MBEDTLS_ASN1_PARSE_C */
-#endif /* MBEDTLS_DHM_ALT */
 
 #if defined(MBEDTLS_SELF_TEST)
 
