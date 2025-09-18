@@ -159,8 +159,6 @@ typedef enum {
 	PM_WAKEUP_SRC_COUNT,
 } pm_wakeup_reason_code_t;
 
-typedef void (*pm_wakehandler_t)(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
-
 /* This structure contain pointers callback functions in the driver.  These
  * callback functions can be used to provide power management information
  * to the driver.
@@ -236,11 +234,19 @@ struct pm_callback_s {
  *  wake up. This callback is mandatory.
  *
  * @set_timer: Set the wakeup timer
+ *
+ * @get_wakeupreason: Get the wakeup reason after sleep.
+ *  Returns the pm_wakeup_reason_code_t indicating the source of the wakeup.
+ *
+ * @get_missingtick: Get the number of ticks missed during sleep.
+ *  Returns the number of system ticks that passed while the system was asleep.
  */
 
 struct pm_sleep_ops {
-	void (*sleep)(pm_wakehandler_t handler);
-	void (*set_timer)(unsigned int delay_us);
+	int (*sleep)(void);
+	int (*set_timer)(unsigned int delay_us);
+	pm_wakeup_reason_code_t (*get_wakeupreason)(void);
+	clock_t (*get_missingtick)(void);
 };
 
 /*
@@ -617,6 +623,8 @@ void pm_dvfs(int div_lvl);
  *
  ****************************************************************************/
 int pm_metrics(int milliseconds);
+#else
+#define pm_metrics(milliseconds) (ERROR)
 #endif
 
 /****************************************************************************
@@ -641,16 +649,7 @@ int pm_metrics(int milliseconds);
 #define pm_sleep(milliseconds)				usleep(milliseconds * USEC_PER_MSEC)
 #define pm_timedsuspend(domain, milliseconds)	(0)
 #define pm_suspendcount(domain)   (0)
-#ifdef CONFIG_PM_METRICS
 #define pm_metrics(milliseconds) (ERROR)
-#define pm_metrics_update_domain(domain)
-#define pm_metrics_update_suspend(domain)
-#define pm_metrics_update_resume(domain)
-#define pm_metrics_update_changestate()
-#define pm_metrics_update_idle()
-#define pm_metrics_update_wakehandler(missing_tick, wakeup_src)
-#endif
-
 #endif							/* CONFIG_PM */
 
 #undef EXTERN

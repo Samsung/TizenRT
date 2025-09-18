@@ -119,9 +119,7 @@ int pm_suspend(FAR struct pm_domain_s *domain)
 		goto errout;
 	}
 
-#ifdef CONFIG_PM_METRICS
 	pm_metrics_update_suspend(domain);
-#endif
 
 	domain->suspend_count++;
 
