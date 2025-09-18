@@ -9,3 +9,14 @@ config EVENTLOOP
 	select LIBTUV
 	---help---
 		Enables Event Loop Framework.
+
+if EVENTLOOP
+
+config EVENTLOOP_DYNAMIC_CB_LIST
+	bool "Enable Dynamic Thread-safe Callback List Management"
+	default n
+	---help---
+		Enables dynamic management of thread-safe callback lists using sq_queue_t.
+		When disabled, callback lists are managed using static arrays.
+		When enabled, callback lists are dynamically allocated for better memory efficiency.
+endif
