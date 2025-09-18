@@ -164,7 +164,10 @@ void pm_idle(void)
 		/* Send signal to shutdown other cores here */
 		for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
 			if (up_get_cpu_state(cpu) == CPU_RUNNING) {
-				up_cpu_hotplug(cpu);
+				if (up_cpu_hotplug(cpu) != OK) {
+					pmllvdbg("CPU%d hotplug failed! Unable to shutdown secondary core for sleep mode\n", cpu);
+					goto EXIT;
+				}
 			}
 			/* Reset core gating status flag */
 			up_set_gating_flag_status(cpu, 0);

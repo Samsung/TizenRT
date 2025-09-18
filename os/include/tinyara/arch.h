@@ -2098,7 +2098,7 @@ void up_cpu_pause_all(void);
 
 void up_cpu_resume_all(void);
 
-#ifdef CONFIG_PM
+#ifdef CONFIG_CPU_HOTPLUG
 /****************************************************************************
  * Name: up_cpu_hotplug
  *
@@ -2119,8 +2119,41 @@ void up_cpu_resume_all(void);
  *   by primary core which conducts PM logic (ie. for PM + SMP).
  *
  ****************************************************************************/
-void up_cpu_hotplug(int cpu);
-#endif /* CONFIG_PM */
+int up_cpu_hotplug(int cpu);
+
+/****************************************************************************
+ * Name: up_cpu_hotplugreq
+ *
+ * Description:
+ *   Check if there is a pending hotplug request for the specified CPU.
+ *
+ * Input Parameters:
+ *   cpu - The CPU index to check
+ *
+ * Returned Value:
+ *   true if there is a pending hotplug request, false otherwise
+ *
+ ****************************************************************************/
+bool up_cpu_hotplugreq(int cpu);
+
+/****************************************************************************
+ * Name: up_cpu_hotplugabort
+ *
+ * Description:
+ *   Abort a pending hotplug request for the specified CPU.
+ *
+ * Input Parameters:
+ *   cpu - The CPU index for which to abort the hotplug request
+ *
+ * Returned Value:
+ *   OK (0) on success
+ *
+ * Assumptions:
+ *   Called from within a critical section with proper synchronization
+ *
+ ****************************************************************************/
+int up_cpu_hotplugabort(int cpu);
+#endif /* CONFIG_CPU_HOTPLUG */
 
 /****************************************************************************
  * Name: up_cpu_gating
