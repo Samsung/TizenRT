@@ -29,7 +29,7 @@
 #include "eventloop_internal.h"
 
 #define EVENTLOOP_STACK_SIZE 4096
-#define EVENTLOOP_PRIORITY 201
+#define EVENTLOOP_PRIORITY 181
 
 static int el_task_pid = -1;
 
