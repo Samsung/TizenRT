@@ -120,10 +120,14 @@ static bool irq_waitlock(int cpu)
 	 * for the deadlock condition.
 	 */
 
-	do {
+	while (spin_trylock_wo_note(&g_cpu_irqlock) == SP_LOCKED) {
 		/* Is a pause request pending? */
 
-		if (up_cpu_pausereq(cpu) || up_get_gating_flag_status(cpu) == 1) {
+		if (up_cpu_pausereq(cpu) || up_get_gating_flag_status(cpu) == 1
+#ifdef CONFIG_CPU_HOTPLUG
+		|| up_cpu_hotplugreq(cpu)
+#endif
+		) {
 			/* Yes.. some other CPU is requesting to pause this CPU!
 			 * Abort the wait and return false.
 			 */
@@ -136,7 +140,7 @@ static bool irq_waitlock(int cpu)
 
 			return false;
 		}
-	} while(spin_trylock_wo_note(&g_cpu_irqlock) == SP_LOCKED);
+	}
 
 	/* We have g_cpu_irqlock! */
 
@@ -272,8 +276,14 @@ try_again_in_irq:
 
 						DEBUGVERIFY(up_cpu_paused(cpu));
 						paused = true;
+					} else if (up_get_gating_flag_status(cpu) == 1) {
+						up_do_gating();
+#ifdef CONFIG_CPU_HOTPLUG
+					} else if (up_cpu_hotplugreq(cpu)) {
+						DEBUGVERIFY(up_cpu_hotplugabort(cpu));
+#endif
 					} else {
-						up_do_gating();	
+						/* this case can be occured, do not handling */
 					}
 
 					/* NOTE: As the result of up_cpu_paused(cpu), this CPU
