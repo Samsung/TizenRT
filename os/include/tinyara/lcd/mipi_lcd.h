@@ -70,4 +70,18 @@ struct mipi_lcd_config_s {
 	void (*mipi_drv_reset)();
 };
 
+struct lcd_panel_ops {
+	CODE int (*send_init_cmd)(FAR struct mipi_dsi_device *device);
+	CODE int (*get_lcdinfo)(FAR struct lcd_info_s *lcdinfo);
+};
+
+struct lcd_panel_s {
+	uint8_t lcd_height_mm;
+	uint8_t lcd_width_mm;
+	float lcd_size_inch;
+	float lcd_dpi;
+	struct lcd_panel_ops *ops;
+	struct mipi_host_lcd_data mipi_host_config;
+};
+
 #endif	/* __DRIVERS_LCD_MIPI_H */
