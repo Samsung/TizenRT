@@ -51,16 +51,100 @@ struct thread_safe_cb_s {
 };
 typedef struct thread_safe_cb_s thread_safe_cb_t;
 
-static thread_safe_cb_list_t g_thread_safe_cb_list[CONFIG_MAX_TASKS];
 static sq_queue_t g_thread_safe_func_list;
 
-#define CB_LIST(idx)         g_thread_safe_cb_list[idx].cb_list
+#ifdef CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
+struct thread_safe_cb_list_node_s {
+	struct thread_safe_cb_list_node_s *flink;
+	int idx;
+	thread_safe_cb_list_t cb_list_data;
+};
+typedef struct thread_safe_cb_list_node_s thread_safe_cb_list_node_t;
+static sq_queue_t g_thread_safe_cb_list;
+static sem_t g_cb_list_sem;
+#define CB_LIST(idx)         eventloop_get_cb_list(idx)
+#define ASYNC_HANDLE(idx)    eventloop_get_async_handle(idx)
+#define LIST_SEM(idx)        eventloop_get_list_sem(idx)
+#else //CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
+static thread_safe_cb_list_t g_thread_safe_cb_list[CONFIG_MAX_TASKS];
+#define CB_LIST(idx)         &g_thread_safe_cb_list[idx].cb_list
 #define ASYNC_HANDLE(idx)    g_thread_safe_cb_list[idx].async_handle
-#define LIST_SEM(idx)        g_thread_safe_cb_list[idx].list_sem
+#define LIST_SEM(idx)        &g_thread_safe_cb_list[idx].list_sem
+#endif //CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
 
 /* Define for the hash operation */
 #define MAX_PID_MASK                       (CONFIG_MAX_TASKS - 1)
 #define THREAD_SAFE_CB_LIST_IDX_HASH(pid)  ((pid) & MAX_PID_MASK)
+
+#ifdef CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
+static thread_safe_cb_list_t *eventloop_get_cb_list_node(int idx)
+{
+	thread_safe_cb_list_node_t *curr;
+
+	sem_wait(&g_cb_list_sem);
+	curr = (thread_safe_cb_list_node_t *)sq_peek(&g_thread_safe_cb_list);
+	while (curr) {
+		if (curr->idx == idx) {
+			sem_post(&g_cb_list_sem);
+			return &curr->cb_list_data;
+		}
+		curr = (thread_safe_cb_list_node_t *)sq_next(curr);
+	}
+	sem_post(&g_cb_list_sem);
+
+	return NULL;
+}
+
+static thread_safe_cb_list_t *eventloop_add_cb_list_node(int idx)
+{
+	thread_safe_cb_list_node_t *new_node;
+
+	new_node = (thread_safe_cb_list_node_t *)EL_ALLOC(sizeof(thread_safe_cb_list_node_t));
+	if (new_node == NULL) {
+		eldbg("Failed to allocate cb list node!\n");
+		return NULL;
+	}
+
+	new_node->idx = idx;
+	new_node->flink = NULL;
+	sq_init(&new_node->cb_list_data.cb_list);
+	new_node->cb_list_data.async_handle = NULL;
+	sem_init(&new_node->cb_list_data.list_sem, 0, 1);
+
+	sem_wait(&g_cb_list_sem);
+	sq_addlast((sq_entry_t *)new_node, &g_thread_safe_cb_list);
+	sem_post(&g_cb_list_sem);
+
+	return &new_node->cb_list_data;
+}
+
+static sq_queue_t *eventloop_get_cb_list(int idx)
+{
+	thread_safe_cb_list_t *cb_list_node = eventloop_get_cb_list_node(idx);
+	if (cb_list_node) {
+		return &cb_list_node->cb_list;
+	}
+	return NULL;
+}
+
+static el_async_t *eventloop_get_async_handle(int idx)
+{
+	thread_safe_cb_list_t *cb_list_node = eventloop_get_cb_list_node(idx);
+	if (cb_list_node) {
+		return cb_list_node->async_handle;
+	}
+	return NULL;
+}
+
+static sem_t *eventloop_get_list_sem(int idx)
+{
+	thread_safe_cb_list_t *cb_list_node = eventloop_get_cb_list_node(idx);
+	if (cb_list_node) {
+		return &cb_list_node->list_sem;
+	}
+	return NULL;
+}
+#endif //CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
 
 static thread_safe_func_t *eventloop_get_func_handle(thread_safe_callback func)
 {
@@ -125,15 +209,32 @@ static int eventloop_thread_safe_cb_list_node_init(int list_idx, thread_safe_fun
 		eldbg("Invalid Parameter!\n");
 		return EVENTLOOP_INVALID_PARAM;
 	}
-
+	
+#ifdef CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
+	thread_safe_cb_list_t *cb_list_node = eventloop_get_cb_list_node(list_idx);
+	if (cb_list_node == NULL) {
+		cb_list_node = eventloop_add_cb_list_node(list_idx);
+		if (cb_list_node == NULL) {
+			return EVENTLOOP_OUT_OF_MEMORY;
+		}
+	}
+	
+	if (cb_list_node->async_handle == NULL) {
+		cb_list_node->async_handle = (el_async_t *)EL_ALLOC(sizeof(el_async_t));
+		if (cb_list_node->async_handle == NULL) {
+			return EVENTLOOP_OUT_OF_MEMORY;
+		}
+	}
+#else //CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
 	ASYNC_HANDLE(list_idx) = (el_async_t *)EL_ALLOC(sizeof(el_async_t));
 	if (ASYNC_HANDLE(list_idx) == NULL) {
 		eldbg("Failed to allocate handle!\n");
 		return EVENTLOOP_OUT_OF_MEMORY;
 	}
 	
-	sq_init(&CB_LIST(list_idx));
-	sem_init(&LIST_SEM(list_idx), 0, 1);
+	sq_init(CB_LIST(list_idx));
+	sem_init(LIST_SEM(list_idx), 0, 1);
+#endif //CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
 	return OK;
 }
 
@@ -144,10 +245,30 @@ static void eventloop_thread_safe_cb_list_node_deinit(int list_idx)
 		return;
 	}
 
+#ifdef CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
+	thread_safe_cb_list_node_t *curr;
+
+	sem_wait(&g_cb_list_sem);
+	curr = (thread_safe_cb_list_node_t *)sq_peek(&g_thread_safe_cb_list);
+	while (curr) {
+		if (curr->idx == list_idx) {
+			sq_rem((sq_entry_t *)curr, &g_thread_safe_cb_list);
+			sem_destroy(&curr->cb_list_data.list_sem);
+			if (curr->cb_list_data.async_handle) {
+				EL_FREE(curr->cb_list_data.async_handle);
+			}
+			EL_FREE(curr);
+			break;
+		}
+		curr = (thread_safe_cb_list_node_t *)sq_next(curr);
+	}
+	sem_post(&g_cb_list_sem);
+#else //CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
 	ASYNC_HANDLE(list_idx)->async_cb = NULL;
 	EL_FREE(ASYNC_HANDLE(list_idx));
 	ASYNC_HANDLE(list_idx) = NULL;
-	sem_destroy(&LIST_SEM(list_idx));
+	sem_destroy(LIST_SEM(list_idx));
+#endif //CONFIG_EVENTLOOP_DYNAMIC_CB_LIST
 }
 
 static thread_safe_cb_t *eventloop_thread_safe_cb_generate(thread_safe_func_t *func_handle, void *cb_data)
@@ -187,7 +308,7 @@ void eventloop_unregister_thread_safe_cb(el_async_t *handle)
 	thread_safe_cb_t *curr;
 
 	thread_safe_cb_list_idx = THREAD_SAFE_CB_LIST_IDX_HASH(getpid());
-	while ((curr = (thread_safe_cb_t *)sq_remfirst(&CB_LIST(thread_safe_cb_list_idx)))) {
+	while ((curr = (thread_safe_cb_t *)sq_remfirst(CB_LIST(thread_safe_cb_list_idx)))) {
 		curr->func_handle->refs--;
 		if (curr->func_handle->refs == 0) {
 			eventloop_func_handle_remove(curr->func_handle);
@@ -205,7 +326,7 @@ static void eventloop_thread_safe_cb_add(thread_safe_cb_t *thread_safe_cb, int l
 		return;
 	}
 
-	sq_addlast((sq_entry_t *)thread_safe_cb, &CB_LIST(list_idx));
+	sq_addlast((sq_entry_t *)thread_safe_cb, CB_LIST(list_idx));
 	sem_wait(&thread_safe_cb->func_handle->func_sem);
 	thread_safe_cb->func_handle->refs++;
 	sem_post(&thread_safe_cb->func_handle->func_sem);
@@ -224,7 +345,7 @@ static void eventloop_async_callback(el_async_t *handle)
 	}
 
 	thread_safe_cb_list_idx = THREAD_SAFE_CB_LIST_IDX_HASH(getpid());
-	while ((curr = (thread_safe_cb_t *)sq_remfirst(&CB_LIST(thread_safe_cb_list_idx)))) {
+	while ((curr = (thread_safe_cb_t *)sq_remfirst(CB_LIST(thread_safe_cb_list_idx)))) {
 		if (curr->func_handle->refs > 0) {
 			if (curr->func_handle->func != NULL) {
 				sem_wait(&curr->func_handle->func_sem);
@@ -297,31 +418,31 @@ int eventloop_thread_safe_function_call(thread_safe_callback func, void *cb_data
 			ret = EVENTLOOP_OPERATION_FAIL;
 			goto errout;
 		}
-		sem_wait(&LIST_SEM(thread_safe_cb_list_idx));
+		sem_wait(LIST_SEM(thread_safe_cb_list_idx));
 		ret = uv_async_send(ASYNC_HANDLE(thread_safe_cb_list_idx));
 		if (ret < 0) {
 			eldbg("Failed to send async signal to main loop!");
 			eventloop_thread_safe_cb_destroy(thread_safe_cb);
 			eventloop_thread_safe_cb_list_node_deinit(thread_safe_cb_list_idx);
 			uv_async_deinit(loop, ASYNC_HANDLE(thread_safe_cb_list_idx));
-			sem_post(&LIST_SEM(thread_safe_cb_list_idx));
+			sem_post(LIST_SEM(thread_safe_cb_list_idx));
 			ret = EVENTLOOP_OPERATION_FAIL;
 			goto errout;
 		}
 	} else {
-		sem_wait(&LIST_SEM(thread_safe_cb_list_idx));
+		sem_wait(LIST_SEM(thread_safe_cb_list_idx));
 		ret = uv_async_send(ASYNC_HANDLE(thread_safe_cb_list_idx));
 		if (ret < 0) {
 			eldbg("Failed to send async signal to main loop!");
 			eventloop_thread_safe_cb_destroy(thread_safe_cb);
-			sem_post(&LIST_SEM(thread_safe_cb_list_idx));
+			sem_post(LIST_SEM(thread_safe_cb_list_idx));
 			ret = EVENTLOOP_OPERATION_FAIL;
 			goto errout;
 		}
 	}
 
 	eventloop_thread_safe_cb_add(thread_safe_cb, thread_safe_cb_list_idx);
-	sem_post(&LIST_SEM(thread_safe_cb_list_idx));
+	sem_post(LIST_SEM(thread_safe_cb_list_idx));
 
 	return OK;
 errout:
