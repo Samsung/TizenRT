@@ -142,7 +142,7 @@ typedef struct mbedtls_dhm_context {
 mbedtls_dhm_context;
 
 #else /* MBEDTLS_DHM_ALT */
-#include "alt/dhm_alt.h"
+#include "mbedtls/alt/dhm_alt.h"
 #endif /* MBEDTLS_DHM_ALT */
 
 /**
