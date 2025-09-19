@@ -19,14 +19,6 @@
  * \file mbedtls_tizenrt_config.h
  */
 
-/*
- * Tizenrt mbedtls 2.7.8 uses below option. need to check whether it is really requires 
- */
-#undef MBEDTLS_ECDSA_DETERMINISTIC
-#if defined(MBEDTLS_OCF_PATCH)
- #define MBEDTLS_ECDSA_DETERMINISTIC
-#endif
-
 /**
  * \def MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED
  *
@@ -58,11 +50,6 @@
  */
 #if defined(MBEDTLS_OCF_PATCH)
 #define MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
-#endif
-
-#undef MBEDTLS_PKCS5_C
-#if defined(MBEDTLS_OCF_PATCH)
-#define MBEDTLS_PKCS5_C
 #endif
 
 /**
