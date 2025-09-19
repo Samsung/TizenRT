@@ -1,22 +1,20 @@
-/******************************************************************************
- *
- * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
- ******************************************************************************/
+/**
+  ******************************************************************************
+  * @file    rtw_80211spec_struct.h
+  * @author
+  * @version
+  * @date
+  * @brief
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
+
 #ifndef	__RTW_80211SPEC_STRUCT_H_
 #define __RTW_80211SPEC_STRUCT_H_
 
@@ -142,7 +140,7 @@ struct ieee80211_ht_addt_info {
 RTW_PACK_STRUCT_END
 
 RTW_PACK_STRUCT_BEGIN
-struct HT_info_element {
+struct ht_info_element_t {
 	unsigned char	primary_channel;
 	unsigned char	infos[5];
 	unsigned char	MCS_rate[16];
@@ -150,7 +148,7 @@ struct HT_info_element {
 RTW_PACK_STRUCT_END
 
 RTW_PACK_STRUCT_BEGIN
-struct ADDBA_request {
+struct addba_request {
 	unsigned char		dialog_token;
 	unsigned short	BA_para_set;
 	unsigned short	BA_timeout_value;
@@ -172,7 +170,6 @@ RTW_PACK_STRUCT_END
 #define SNAP_SIZE sizeof(struct ieee80211_snap_hdr)
 #define SNAP_PROTOCOL_ID_SIZE	2
 
-#if defined(CONFIG_IEEE80211K) || defined(CONFIG_RTW_WNM)
 /* Represent channel details, subset of ieee80211_channel */
 struct rtw_ieee80211_channel {
 	/* enum ieee80211_band band; */
@@ -187,26 +184,25 @@ struct rtw_ieee80211_channel {
 	/* int orig_mag; */
 	/* int orig_mpwr; */
 };
-#endif
 
-typedef struct _NDIS_802_11_VARIABLE_IEs {
+struct _NDIS_802_11_VARIABLE_IEs {
 	uint8_t  ElementID;
 	uint8_t  Length;
 	/* Start pointer of data in this element. */
 	uint8_t  data[1];
 	/* Followed by Length bytes of data, but names are not defined here. */
-} NDIS_802_11_VARIABLE_IEs, *PNDIS_802_11_VARIABLE_IEs;
+};
 
-typedef struct _NDIS_802_11_SSID {
+struct dot11_ssid {
 	u32  SsidLength;
 	u8  Ssid[RTW_ESSID_MAX_SIZE + 4];
-} NDIS_802_11_SSID;
+};
 
-typedef struct _NDIS_802_11_FIXED_IEs {
+struct _NDIS_802_11_FIXED_IEs {
 	u8  Timestamp[8];
 	u16  BeaconInterval;
 	u16  Capabilities;
-} NDIS_802_11_FIXED_IEs;
+};
 
 
 #endif

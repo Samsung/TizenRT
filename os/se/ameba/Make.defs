@@ -67,7 +67,8 @@ endif
 ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/mbed/hal_ext/
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/mbed/targets/hal/rtl8730e
-CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/os_dep
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/os/os_wrapper
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/os/os_wrapper/include
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/app/monitor/include
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/cmsis
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/misc

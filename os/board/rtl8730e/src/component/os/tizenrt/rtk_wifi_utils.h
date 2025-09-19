@@ -71,7 +71,7 @@ typedef struct rtk_reason {
 	uint8_t locally_generated;			// Which side cause link down, 1 = locally, 0 = remotely - valid for STA mode only
 	int8_t ssid_len;					// length of ssid - # of valid octets
 	uint8_t ssid[33];	// 802.11 spec defined up to 32 octets of data
-	char bssid[17];	// BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
+	char bssid[18];	// BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
 	WiFi_InterFace_ID_t if_id; // In which interface the reason was set
 } rtk_reason_t;
 

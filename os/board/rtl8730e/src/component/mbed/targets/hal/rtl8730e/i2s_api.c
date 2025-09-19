@@ -109,7 +109,7 @@ static void i2s_release_tx_page(uint8_t i2s_index)
 
 	if (sp_tx_info.tx_empty_flag) {
 	} else {
-		memcpy((void *)ptx_block->tx_addr, sp_tx_info.tx_zero_block.tx_addr, sp_tx_info.tx_page_size);
+		memcpy((void *)ptx_block->tx_addr, (const void *)sp_tx_info.tx_zero_block.tx_addr, sp_tx_info.tx_page_size);
 		DCache_CleanInvalidate((uint32_t)ptx_block->tx_addr, sp_tx_info.tx_page_size);
 		ptx_block->tx_gdma_own = 0;
 		sp_tx_info.tx_gdma_cnt++;
@@ -122,7 +122,6 @@ static void i2s_release_tx_page(uint8_t i2s_index)
 int i2s_dma_tx_done(uint8_t page_num)
 {
 	(void)page_num;
-	int cnt = 0;
 	for (int i = 0; i < sp_tx_info.tx_page_num; i++) {
 		pTX_BLOCK ptx_block = &(sp_tx_info.tx_block[i]);
 		if (ptx_block->tx_gdma_own) {

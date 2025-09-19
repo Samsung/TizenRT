@@ -8,8 +8,7 @@
 #include "platform_stdlib.h"
 #include "platform_opts.h"
 #include "device_lock.h"
-#include "osdep_service.h"
-#include "osdep_service.h"
+#include "os_wrapper.h"
 
 #include "ftl_int.h"
 #include "ftl.h"
@@ -69,7 +68,7 @@ uint8_t        g_PAGE_num = 0;
 uint8_t        g_free_page_count;
 uint8_t        g_active = 0;
 
-ALIGNMTO(64) _mutex ftl_mutex_lock;
+ALIGNMTO(64) rtos_mutex_t ftl_mutex_lock;
 
 #if defined(FEATURE_WRITE_RECYCLE) && (FEATURE_WRITE_RECYCLE == 1)
 uint8_t  g_read_pageID;
@@ -111,7 +110,7 @@ struct Page_T {
 };
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-_sema  ftl_sem = NULL;
+rtos_sema_t  ftl_sem = NULL;
 #elif
 QueueHandle_t ftl_sem = NULL;
 #endif
@@ -594,7 +593,7 @@ uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 	if (NULL != ftl_sem)
 	{
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-		rtw_up_sema(&ftl_sem);
+		rtos_sema_give(ftl_sem);
 #elif
 		xSemaphoreTakeRecursive(ftl_sem, portMAX_DELAY);
 #endif
@@ -619,7 +618,7 @@ uint8_t ftl_page_garbage_collect(uint32_t page_thresh, uint32_t cell_thresh)
 		if (NULL != ftl_sem)
 		{
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-			rtw_down_timeout_sema(&ftl_sem, FTL_LONGEST_WAIT_TIME);
+			rtos_sema_take(ftl_sem, FTL_LONGEST_WAIT_TIME);
 #elif
 			xSemaphoreGiveRecursive(ftl_sem);
 #endif
@@ -974,7 +973,7 @@ uint32_t ftl_secure_save_to_storage(void *pdata_tmp, uint16_t offset, uint16_t s
 		FTL_PRINTF(FTL_LEVEL_INFO, "[ftl] ameba_ftl_save_to_storage ret: %x \n", ret);
 	}
 
-	rtw_mfree(tmp_buff, size);
+	kmm_free(tmp_buff);
 	return ret;
 }
 
@@ -1137,7 +1136,7 @@ uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 //#endif
 	if (NULL != ftl_sem){
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-		rtw_up_sema(&ftl_sem);
+		rtos_sema_give(ftl_sem);
 #elif
 		if(xSemaphoreTakeRecursive(ftl_sem, portMAX_DELAY) == TRUE)
 #endif
@@ -1227,7 +1226,7 @@ L_retry:
 
 		if (sem_flag){
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-			rtw_down_timeout_sema(&ftl_sem, FTL_LONGEST_WAIT_TIME);
+			rtos_sema_take(ftl_sem, FTL_LONGEST_WAIT_TIME);
 #elif
 			xSemaphoreGiveRecursive(ftl_sem);
 #endif
@@ -1379,7 +1378,7 @@ uint32_t ftl_secure_init(void)
 
 uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 {
-	rtw_mutex_init(&ftl_mutex_lock);
+	rtos_mutex_create(&ftl_mutex_lock);
 	if (pagenum < 3) {
 		pagenum = 3;
 	}
@@ -1387,7 +1386,7 @@ uint32_t ftl_init(uint32_t u32PageStartAddr, uint8_t pagenum)
 
 	if (ftl_sem == NULL) {
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-		rtw_init_sema(&ftl_sem, 0);
+	rtos_sema_create(&ftl_sem, 0, 0);
 #elif
 		ftl_sem = xSemaphoreCreateRecursiveMutex();
 #endif

@@ -412,7 +412,7 @@ static u8 cdc_acm_setup(usb_dev_t *dev, usb_setup_req_t *req)
 					usbd_ep0_transmit(dev, cdev->ctrl_buf, req->wLength);
 				}
 			} else {
-				rtw_memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
+				memcpy((void *)&cdev->ctrl_req, (void *)req, sizeof(usb_setup_req_t));
 				usbd_ep0_receive(dev, cdev->ctrl_buf, req->wLength);
 			}
 		} else {
@@ -674,7 +674,7 @@ static u8 usbd_acm_cdc_notify(u8 type, u16 value, void *data, u16 len)
 			ntf->wIndex = 0;
 			ntf->wLength = len;
 
-			rtw_memcpy((void *)ntf->buf, (void *)data, len);
+			memcpy((void *)ntf->buf, (void *)data, len);
 
 			if (cdev->is_ready) {
 				usbd_ep_transmit(dev, CDC_ACM_INTR_IN_EP, (u8 *)ntf, CDC_ACM_INTR_IN_REQUEST_SIZE + len);
@@ -864,7 +864,7 @@ u8 usbd_cdc_acm_transmit(u8 *buf, u16 len)
 
 			RTK_LOGD(TAG, "EP%02X TX: %d\n", CDC_ACM_BULK_IN_EP, len);
 
-			rtw_memcpy((void *)cdev->bulk_in_buf, (void *)buf, len);
+			memcpy((void *)cdev->bulk_in_buf, (void *)buf, len);
 
 			if (cdev->is_ready) {
 				usbd_ep_transmit(dev, CDC_ACM_BULK_IN_EP, cdev->bulk_in_buf, len);
