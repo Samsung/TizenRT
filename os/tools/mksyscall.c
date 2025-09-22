@@ -217,7 +217,7 @@ static FILE *open_proxy(void)
 static bool check_special_case(const char *name)
 {
 	static const char *special_syscalls[] = {
-		"ioctl",
+		"ioctl", "task_setcanceltype",
 	};
 
 	int count = sizeof(special_syscalls) / sizeof(special_syscalls[0]);
