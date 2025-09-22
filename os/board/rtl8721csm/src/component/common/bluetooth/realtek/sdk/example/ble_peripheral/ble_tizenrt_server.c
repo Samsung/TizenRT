@@ -496,9 +496,8 @@ trble_result_e rtw_ble_server_set_adv_data(uint8_t* data, uint16_t length)
 
     rtw_ble_server_adv_into_idle();
 
-    if(GAP_CAUSE_SUCCESS == le_adv_set_param(GAP_PARAM_ADV_DATA, length, (void *)data))
-    {
-        le_adv_update_param();
+    if (GAP_CAUSE_SUCCESS == le_adv_set_param(GAP_PARAM_ADV_DATA, length, (void *)data)) {
+        /* le_adv_update_param(); Not needed for Legacy BLE Adv */
         debug_print("Set adv data success \n");
     } else {
         dbg("Set adv data fail!!! \n");
@@ -520,9 +519,8 @@ trble_result_e rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
 
     rtw_ble_server_adv_into_idle();
 
-    if(GAP_CAUSE_SUCCESS == le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, length, (void *)data))
-    {    
-        le_adv_update_param();
+    if (GAP_CAUSE_SUCCESS == le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, length, (void *)data)) {
+        /* le_adv_update_param(); Not needed for Legacy BLE Adv */
         debug_print("Set adv name success \n");
     } else {
         dbg("Set adv name fail!!! \n");
@@ -695,6 +693,7 @@ trble_result_e rtw_ble_server_stop_adv(void)
         }
         do {
             debug_print("Waiting for adv stop \n");
+            max_count++;
             os_delay(100);
             if(max_count == 20)
             {
