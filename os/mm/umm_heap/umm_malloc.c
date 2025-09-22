@@ -105,8 +105,10 @@
 void *malloc_at(int heap_index, size_t size)
 {
 	void *ret;
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_malloc api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("malloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
@@ -116,17 +118,9 @@ void *malloc_at(int heap_index, size_t size)
 	if (size == 0) {
 		return NULL;
 	}
-	ret = mm_malloc(&BASE_HEAP[heap_index], size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	ret = mm_malloc(&BASE_HEAP[heap_index], size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, 0, USER_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, 0, USER_HEAP, caller_retaddr);
 	}
 	return ret;
 }
@@ -148,31 +142,20 @@ void *malloc_at(int heap_index, size_t size)
  *   The address of the allocated memory (NULL on failure to allocate)
  *
  ************************************************************************/
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
 static void *heap_malloc(size_t size, int s, int e, mmaddress_t caller_retaddr)
-#else
-static void *heap_malloc(size_t size, int s, int e)
-#endif
 {
 	int heap_idx;
 	void *ret;
 
 	for (heap_idx = s; heap_idx <= e; heap_idx++) {
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		ret = mm_malloc(&BASE_HEAP[heap_idx], size, caller_retaddr);
 		if (ret != NULL) {
 			return ret;
 		}
 	}
 
-	mm_manage_alloc_fail(BASE_HEAP, s, e, size, 0, USER_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	mm_manage_alloc_fail(BASE_HEAP, s, e, size, 0, USER_HEAP, caller_retaddr);
 	return NULL;
 }
 #endif
@@ -194,6 +177,11 @@ static void *heap_malloc(size_t size, int s, int e)
 
 FAR void *malloc(size_t size)
 {
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_malloc api */
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	caller_retaddr = GET_RETURN_ADDRESS();
+#endif
+
 #ifdef CONFIG_BUILD_KERNEL
 	FAR void *brkaddr;
 	FAR void *mem;
@@ -208,9 +196,8 @@ FAR void *malloc(size_t size)
 	 * execute more than twice (but more memory than we need may be
 	 * allocated).
 	 */
-
 	do {
-		mem = mm_malloc(BASE_HEAP, size);
+		mem = mm_malloc(BASE_HEAP, size, caller_retaddr);
 		if (!mem) {
 			brkaddr = sbrk(size);
 			if (brkaddr == (FAR void *)-1) {
@@ -228,23 +215,11 @@ FAR void *malloc(size_t size)
 		return NULL;
 	}
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
-#endif
-
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* User supports a single heap on app separation */
-	ret = mm_malloc(BASE_HEAP, size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	ret = mm_malloc(BASE_HEAP, size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP, caller_retaddr);
 	}
 
 #else /* CONFIG_APP_BINARY_SEPARATION */
@@ -254,22 +229,14 @@ FAR void *malloc(size_t size)
 	heap_idx = CONFIG_RAM_MALLOC_PRIOR_INDEX;
 #endif
 
-	ret = heap_malloc(size, heap_idx, HEAP_END_IDX
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+	ret = heap_malloc(size, heap_idx, HEAP_END_IDX, caller_retaddr);
 	if (ret != NULL) {
 		return ret;
 	}
 
 #if (defined(CONFIG_RAM_MALLOC_PRIOR_INDEX) && CONFIG_RAM_MALLOC_PRIOR_INDEX > 0)
 	/* Try to mm_calloc to other heaps */
-	ret = heap_malloc(size, HEAP_START_IDX, CONFIG_RAM_MALLOC_PRIOR_INDEX - 1
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+	ret = heap_malloc(size, HEAP_START_IDX, CONFIG_RAM_MALLOC_PRIOR_INDEX - 1, caller_retaddr);
 #endif
 #endif /* CONFIG_APP_BINARY_SEPARATION */
 

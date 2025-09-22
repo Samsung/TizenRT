@@ -92,8 +92,10 @@ void *kmm_memalign_at(int heap_index, size_t alignment, size_t size)
 {
 	void *ret;
 	struct mm_heap_s *kheap;
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_memalign api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("kmm_memalign_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
@@ -105,17 +107,9 @@ void *kmm_memalign_at(int heap_index, size_t alignment, size_t size)
 	}
 
 	kheap = kmm_get_baseheap();
-	ret = mm_memalign(&kheap[heap_index], alignment, size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	ret = mm_memalign(&kheap[heap_index], alignment, size, caller_retaddr);
 	if (ret == NULL) {
-		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, alignment, KERNEL_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		mm_manage_alloc_fail(&kheap[heap_index], heap_index, heap_index, size, alignment, KERNEL_HEAP, caller_retaddr);
 	}
 	return ret;
 }
@@ -144,26 +138,20 @@ FAR void *kmm_memalign(size_t alignment, size_t size)
 	if (size == 0) {
 		return NULL;
 	}
+
+	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_memalign api */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t caller_retaddr = GET_RETURN_ADDRESS();
+	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 	struct mm_heap_s *kheap = kmm_get_baseheap();
 	for (kheap_idx = HEAP_START_IDX; kheap_idx <= HEAP_END_IDX; kheap_idx++) {
-		ret = mm_memalign(&kheap[kheap_idx], alignment, size
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-				, caller_retaddr
-#endif
-				);
+		ret = mm_memalign(&kheap[kheap_idx], alignment, size, caller_retaddr);
 		if (ret != NULL) {
 			return ret;
 		}
 	}
 
-	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, alignment, KERNEL_HEAP
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-			, caller_retaddr
-#endif
-			);
+	mm_manage_alloc_fail(kheap, HEAP_START_IDX, HEAP_END_IDX, size, alignment, KERNEL_HEAP, caller_retaddr);
 	return NULL;
 }
 
