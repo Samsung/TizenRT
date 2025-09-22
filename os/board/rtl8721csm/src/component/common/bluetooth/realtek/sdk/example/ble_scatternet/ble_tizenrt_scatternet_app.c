@@ -738,6 +738,7 @@ void ble_tizenrt_scatternet_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, 
         else if (new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
         {
             debug_print("GAP adv start \n");
+            ble_tizenrt_scatternet_gap_dev_state.gap_adv_sub_state = GAP_ADV_TO_IDLE_CAUSE_STOP; /* Clear sub state */
         }
         ble_tizenrt_scatternet_gap_dev_state.gap_adv_state = new_state.gap_adv_state;
     }
