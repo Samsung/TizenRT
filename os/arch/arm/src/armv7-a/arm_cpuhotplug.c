@@ -100,6 +100,9 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 	   If the cpu off operation failed, we should face a problem during wakeup
 	   booting the secondary core, thus we can ignore the return value here first
 	*/
+	
+	putreg32(irq, GIC_ICCEOIR);
+
 	/* Shut down the secondary core */
    	(void)psci_cpu_off(); 
 	return OK;
