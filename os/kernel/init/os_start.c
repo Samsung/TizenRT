@@ -901,3 +901,6 @@ void os_start(void)
 	}
 }
 
+void os_set_cpu_idle_task(int cpuid, tstate_t state) {
+	g_idletcb[cpuid].cmn.task_state = state;
+}
