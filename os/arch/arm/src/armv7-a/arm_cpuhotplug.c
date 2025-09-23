@@ -94,6 +94,13 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 	rtcb->task_state = TSTATE_TASK_ASSIGNED;
 	CURRENT_REGS = NULL;
 
+	/*
+	 manually clear SGI4 interrupt active
+	 As psci_cpu_off is a noreturn function it will trap the CPU in a WFI loop
+	 this means that it will never exit back to arm_decodeirq where EOIR will be set
+	*/
+	putreg32(irq, GIC_ICCEOIR);
+
 	/* MINOR: PSCI is a general interface for controlling power of cortex-A cores 
 	   It is one of the feature in arm-trusted-firmware (ie. Trustzone-A)
 	   Currently, the definitions are provided by chip specific arch layer
