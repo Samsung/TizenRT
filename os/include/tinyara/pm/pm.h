@@ -323,7 +323,7 @@ void pm_driver_register(void);
  *
  * Description:
  *   This function is called by the application thread to start the Power
- *   Management system. This fucntion sets the is_running flag which
+ *   Management system. This function sets the is_running flag which
  *   enables pm to transition between low and high power states.
  *
  * Input parameters:
