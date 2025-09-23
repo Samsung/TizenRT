@@ -2903,3 +2903,64 @@ void dump_audio_card_info()
 	print_audio_card_info(OUTPUT);
 }
 #endif
+
+audio_manager_result_t start_audio_multich_stream(int card_id, int device_id, int duration, int verbose, uint32_t *dev_extract_size)
+{
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	audio_card_info_t *card;
+	audio_manager_result_t ret;
+	struct {
+		int duration;
+		int verbose;
+		uint32_t *dev_extract_size;
+	} stream_args;
+	stream_args.duration = duration;
+	stream_args.verbose = verbose;
+	stream_args.dev_extract_size = dev_extract_size;
+
+	medvdbg("start_audio_multich_stream\n");
+	card = &g_audio_in_cards[card_id];
+	get_card_path(path, card_id, device_id, INPUT);
+	pthread_mutex_lock(&(card->card_mutex));
+
+	ret = control_audio_stream_device(path, AUDIOIOC_MULTI_CH_STREAM_INIT, (unsigned long)&stream_args);
+	pthread_mutex_unlock(&(card->card_mutex));
+	return ret;
+}
+
+audio_manager_result_t read_audio_multich_stream(int card_id, int device_id, uint8_t *buffer, uint32_t *extracted_len)
+{
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	audio_card_info_t *card;
+	audio_manager_result_t ret;
+
+	struct {
+		uint8_t *buffer;
+		uint32_t *extracted_len;
+	} read_args;
+	read_args.buffer = buffer;
+	read_args.extracted_len = extracted_len;
+
+	medvdbg("read_audio_multich_stream\n");
+	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	get_card_path(path, card_id, device_id, INPUT);
+	pthread_mutex_lock(&(card->card_mutex));
+	ret = control_audio_stream_device(path, AUDIOIOC_MULTI_CH_STREAM_READ, (unsigned long)&read_args);
+	pthread_mutex_unlock(&(card->card_mutex));
+	return ret;
+}
+
+audio_manager_result_t stop_audio_multich_stream(int card_id, int device_id)
+{
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	audio_card_info_t *card;
+	audio_manager_result_t ret;
+
+	medvdbg("stop_audio_multich_stream\n");
+	card = &g_audio_in_cards[card_id];
+	get_card_path(path, card_id, device_id, INPUT);
+	pthread_mutex_lock(&(card->card_mutex));
+	ret = control_audio_stream_device(path, AUDIOIOC_MULTI_CH_STREAM_DEINIT, 0);
+	pthread_mutex_unlock(&(card->card_mutex));
+	return ret;
+}
