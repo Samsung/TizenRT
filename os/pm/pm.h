@@ -373,7 +373,7 @@ void pm_metrics_update_idle(void);
  *   None
  *
  ****************************************************************************/
-void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src)
+void pm_metrics_update_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
 #else 
 #define pm_metrics_update_domain(domain)
 #define pm_metrics_update_suspend(domain)
