@@ -155,6 +155,16 @@ jobs:
       - *docker-cp
       - *build-job
 
+  rtl8730e/loadable_ext_ddr:
+    machine:
+      image: default
+    working_directory: ~/TizenRT
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
 workflows:
   version: 2
   build-tizenrt:
@@ -194,5 +204,8 @@ workflows:
           requires:
             - checkout_code
       - rtl8730e/flat_dev_ddr:
+          requires:
+            - checkout_code
+      - rtl8730e/loadable_ext_ddr:
           requires:
             - checkout_code
