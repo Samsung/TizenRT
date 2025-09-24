@@ -161,9 +161,9 @@ void board_i2s_initialize(void)
 #ifdef CONFIG_AMEBASMART_I2S
 #ifdef CONFIG_AUDIO_I2SCHAR
 	i2schar_devinit();
-#endif
 #ifdef CONFIG_PM
 	i2s_pminitialize();
+#endif
 #endif
 #endif
 }
