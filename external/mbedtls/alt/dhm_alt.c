@@ -217,17 +217,17 @@ static int mbedtls_dhm_make_params_alt(mbedtls_dhm_context *ctx, int x_size,
 	memset(&d_param, 0, sizeof(hal_dh_data));
 
 	/*
-	 *  1. Initialize common DHM parameters using shared function
-	 */
-	if (ret = dhm_make_common_alt(ctx, &d_param, x_size, 0) != 0) {
-		goto cleanup;
-	}
-
-	/*
-	 *  2. Initialize SecLink
+	 *  1. Initialize SecLink
 	 */
 	if (sl_init(shnd) != SECLINK_OK) {
 		ret = MBEDTLS_ERR_DHM_FILE_IO_ERROR;
+		return ret;
+	}
+
+	/*
+	 *  2. Initialize common DHM parameters using shared function
+	 */
+	if (ret = dhm_make_common_alt(ctx, &d_param, x_size, 0) != 0) {
 		goto cleanup;
 	}
 
@@ -235,7 +235,6 @@ static int mbedtls_dhm_make_params_alt(mbedtls_dhm_context *ctx, int x_size,
 	 *  3. Generate X values and calculate GX from sss.
 	 */
 	if (sl_dh_generate_param(shnd, ctx->key_index, &d_param) != SECLINK_OK) {
-		sl_deinit(shnd);
 		ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 		goto cleanup;
 	}
@@ -270,9 +269,8 @@ static int mbedtls_dhm_make_params_alt(mbedtls_dhm_context *ctx, int x_size,
 	*olen = p - output;
 	ctx->len = d_param.P->data_len;
 
-	sl_deinit(shnd);
-
 cleanup:
+	sl_deinit(shnd);
 	dhm_param_cleanup_alt(&d_param);
 
 	return ret;
@@ -288,17 +286,17 @@ static int mbedtls_dhm_make_public_alt(mbedtls_dhm_context *ctx, int x_size,
 	memset(&d_param, 0, sizeof(hal_dh_data));
 
 	/*
-	 *  1. Initialize common DHM parameters using shared function
-	 */
-	if (ret = dhm_make_common_alt(ctx, &d_param, x_size, 0) != 0) {
-		goto cleanup;
-	}
-
-	/*
-	 *  2. Initialize SecLink
+	 *  1. Initialize SecLink
 	 */
 	if (sl_init(shnd) != SECLINK_OK) {
 		ret = MBEDTLS_ERR_DHM_FILE_IO_ERROR;
+		return ret;
+	}
+
+	/*
+	 *  2. Initialize common DHM parameters using shared function
+	 */
+	if (ret = dhm_make_common_alt(ctx, &d_param, x_size, 0) != 0) {
 		goto cleanup;
 	}
 
@@ -306,7 +304,6 @@ static int mbedtls_dhm_make_public_alt(mbedtls_dhm_context *ctx, int x_size,
 	 *  3. Generate X values and calculate GX from sss.
 	 */
 	if (sl_dh_generate_param(shnd, ctx->key_index, &d_param) != SECLINK_OK) {
-		sl_deinit(shnd);
 		ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 		goto cleanup;
 	}
@@ -317,14 +314,13 @@ static int mbedtls_dhm_make_public_alt(mbedtls_dhm_context *ctx, int x_size,
 	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ctx->GX, d_param.pubkey->data, d_param.pubkey->data_len));
 
 	if ((ret = dhm_check_range(&ctx->GX, &ctx->P)) != 0) {
-		sl_deinit(shnd);
 		goto cleanup;
 	}
 
 	MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&ctx->GX, output, olen));
-	sl_deinit(shnd);
 
 cleanup:
+	sl_deinit(shnd);
 	dhm_param_cleanup_alt(&d_param);
 
 	return ret;
@@ -339,17 +335,17 @@ static int mbedtls_dhm_calc_secret_alt(mbedtls_dhm_context *ctx,
 	sl_ctx shnd;
 
 	/*
-	 *  1. Initialize common DHM parameters using shared function
-	 */
-	if (ret = dhm_make_common_alt(ctx, &d_param, mbedtls_mpi_size(&ctx->GY), 1) != 0) {
-		goto cleanup;
-	}
-
-	/*
-	 *  2. Initialize SecLink
+	 *  1. Initialize SecLink
 	 */
 	if (sl_init(shnd) != SECLINK_OK) {
 		ret = MBEDTLS_ERR_DHM_FILE_IO_ERROR;
+		return ret;
+	}
+
+	/*
+	 *  2. Initialize common DHM parameters using shared function
+	 */
+	if (ret = dhm_make_common_alt(ctx, &d_param, mbedtls_mpi_size(&ctx->GY), 1) != 0) {
 		goto cleanup;
 	}
 
@@ -357,7 +353,6 @@ static int mbedtls_dhm_calc_secret_alt(mbedtls_dhm_context *ctx,
 	 *  3. Calculate shared secret(K) from sss.
 	 */
 	if (sl_dh_compute_shared_secret(shnd, &d_param, ctx->key_index, &shared_secret) != SECLINK_OK) {
-		sl_deinit(shnd);
 		ret = MBEDTLS_ERR_DHM_HW_ACCEL_FAILED;
 		goto cleanup;
 	}
@@ -369,9 +364,8 @@ static int mbedtls_dhm_calc_secret_alt(mbedtls_dhm_context *ctx,
 
 	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ctx->K, output, *olen));
 
-	sl_deinit(shnd);
-
 cleanup:
+	sl_deinit(shnd);
 	dhm_param_cleanup_alt(&d_param);
 
 	return ret;
