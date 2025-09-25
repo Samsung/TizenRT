@@ -90,7 +90,7 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void mm_free_delaylist(FAR struct mm_heap_s *heap)
+void mm_free_delaylist(FAR struct mm_heap_s *heap)
 {
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 	FAR struct mm_delaynode_s *tmp;
@@ -146,9 +146,6 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_
 	void *ret = NULL;
 	int ndx;
 	bool gc_done = false;
-
-	/* Free the delay list first */
-	mm_free_delaylist(heap);
 
 	/* Handle bad sizes */
 
@@ -259,6 +256,7 @@ retry_after_gc:
 
 	if (!ret && gc_done == false) {
 		mdbg("Allocation failed!!! We dont have enough memory. Try to free dead task stack areas\n");
+		mm_free_delaylist(heap);
 		sched_garbagecollection();
 		gc_done = true;
 		goto retry_after_gc;
