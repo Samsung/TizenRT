@@ -201,10 +201,14 @@ int start_audio_stream_in(void *data, unsigned int frames);
  *   Write the specified frame data to the output stream.
  *   If the output audio device have been paused, resume and proceed the writing.
  *   If the resampling flag is set, resamplings are performed for all target frames.
+ *   In a multi-stream (ducking) scenario, this function can also handle mixing
+ *   before writing to the hardware.
  *
  * Input parameters:
  *   data: buffer to transfer the frame data
  *   frames: number of frames to be written
+ *   playback_idx: index of the playback instance, used in audio mixing.
+ *   stream_id: ID of the stream.
  *
  * Return Value:
  *   On success, the number of frames written. Otherwise, a negative value.
@@ -228,9 +232,16 @@ audio_manager_result_t pause_audio_stream_in(void);
  * Name: pause_audio_stream_out
  *
  * Description:
- *   Pause the active output audio device.
+ *   Pause the active output audio device for the specified stream.
+ *   If the stream is part of a multi-stream (ducking) scenario and the other
+ *   stream is still running, this function will just disable mixing and reset
+ *   the audio mixer gains to their default state, the audio card itself will
+ *   not be paused.
  *	 Note that only the active audio device currently running can be paused.
  *	 If the device is resumed, the paused stream is continued.
+ *
+ * Input parameters:
+ *   stream_id: ID of the stream to be paused.
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
@@ -255,10 +266,17 @@ audio_manager_result_t stop_audio_stream_in(void);
  * Name: stop_audio_stream_out
  *
  * Description:
- *   Stop the active output audio device.
+ *   Stop the active output audio device for the specified stream.
+ *   If the stream is part of a multi-stream (ducking) scenario and the other
+ *   stream is still running, this function will just disable mixing and reset
+ *   the audio mixer gains to their default state, the audio card itself will
+ *   not be stopped.
  *   Note that only the active audio device currently running can be stopped.
  *	 Once the device is stopped, the stream should be restarted from the beginning
  *	 with calling set_audio_stream_out().
+ *
+ * Input parameters:
+ *   stream_id: ID of the stream to be stopped.
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
@@ -366,7 +384,10 @@ unsigned int get_user_input_bytes_to_frame(unsigned int bytes);
  * Name: get_output_frame_count
  *
  * Description:
- *   Get the frame size of the pcm buffer in the active output audio device.
+ *   Get the frame size of the pcm buffer for the specified stream in the active output audio device.
+ *
+ * Input parameters:
+ *   stream_id: ID of the stream.
  *
  * Return Value:
  *   On success, the size of the pcm buffer for output streams. Otherwise, 0.
@@ -423,10 +444,11 @@ unsigned int get_user_output_frames_to_byte(unsigned int frames, stream_info_id_
  *
  * Description:
  *   Get the number of frames for the given byte size with the channel value
- *   specified by the user for output stream.
+ *   specified by the user for specified output stream.
  *
  * Input parameter:
  *   bytes: the target of which frame count is returned.
+ *   stream_id: ID of the stream.
  *
  * Return Value:
  *   On success, the number of frames in output stream. Otherwise, 0.
@@ -437,7 +459,10 @@ unsigned int get_user_output_bytes_to_frame(unsigned int bytes, stream_info_id_t
  * Name: get_output_sample_rate_ratio
  *
  * Description:
- *   Get output samplerate ratio of resampler for player.
+ *   Get output samplerate ratio of resampler for player of specified output stream.
+ *
+ * Input parameter:
+ *   stream_id: ID of the stream.
  *
  * Return Value:
  *   Return card/source samplerate ratio in case of player.
@@ -731,12 +756,11 @@ audio_manager_result_t set_stream_in_policy(stream_policy_t policy);
  * Name: set_stream_out_policy
  *
  * Description:
- *   Set policy to prevent the current stream out from being stopped by another operation
- *   when the current operation is more important.
- *   The policy follows priority based on stream_policy_t
+ *   Sets the stream policy for a specific output audio stream within the audio card's internal policy array.
  *
- * Input parameter:
- *   policy : policy to set as a current stream's policy
+ * Input parameters:
+ *   policy: The stream_policy_t to be set for the stream in the card.
+ *   stream_id: ID of the stream.
  *
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
@@ -929,9 +953,37 @@ audio_manager_result_t set_audio_stream_mute_from_json(stream_policy_t stream_po
 audio_manager_result_t get_audio_stream_mute_state(stream_policy_t stream_policy, bool *mute);
 
 #if defined(__cplusplus)
+/****************************************************************************
+ * Name: get_output_read_timeout
+ *
+ * Description:
+ *   Calculate and retrieve the read timeout for the output audio stream.
+ *   This is determined by querying the active output audio card's capabilities
+ *   (sample rate, buffer size) to compute the time it takes to play one audio
+ *   data buffer.
+ *
+ * Return Value:
+ *   The calculated read timeout as a std::chrono::milliseconds duration.
+ *   Returns 0 ms if the audio card capabilities cannot be queried.
+ ****************************************************************************/
 std::chrono::milliseconds get_output_read_timeout(void);
 #endif
 
+/****************************************************************************
+ * Name: set_output_audio_mixer
+ *
+ * Description:
+ *   Configure the output audio mixer for audio mixer scenario.
+ *   If another stream is already playing, tt enables audio mixing in the driver
+ *   and sets the mixer gains to allow the new stream to be played at a lower
+ *   volume (ducked) alongside the existing main stream.
+ *
+ * Input parameters:
+ *   stream_id: ID of the stream.
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
 audio_manager_result_t set_output_audio_mixer(stream_info_id_t stream_id);
 
 #ifdef CONFIG_DEBUG_MEDIA_INFO

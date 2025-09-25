@@ -449,6 +449,8 @@ static audio_manager_result_t get_supported_capability(audio_io_direction_t dire
 
 	ret = control_audio_stream_device(card_path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps);
 	if (ret == AUDIO_MANAGER_SUCCESS) {
+		// ToDo: We can add logic to check if device supports mixer or not and add one config value to 'card'.
+		// If sound card doesn't support mixer then logic related to mixer can be skipped.
 		*channel = caps_desc.caps.ac_channels;
 		for (uint8_t idx = 0; idx < AUDIO_MAX_DUCKED_STREAMS; idx++) {
 			card->resample_array[idx].samprate_types = caps_desc.caps.ac_controls.b[0];
@@ -550,7 +552,6 @@ static uint32_t get_closest_samprate(unsigned int origin_samprate, audio_io_dire
  */
 static unsigned int resample_stream_in(audio_card_info_t *card, void *data, unsigned int frames)
 {
-	uint8_t idx = 0;
 	unsigned int used_frames = 0;
 	unsigned int resampled_frames = 0;
 	unsigned int rechanneled_frames;
@@ -1472,6 +1473,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	int err_code = 0;
 	int resampling_quality;
 	media::FocusManager &fm = media::FocusManager::getFocusManager();
+	uint8_t idx = 0;
 
 	if ((channels == 0) || (sample_rate == 0)) {
 		return AUDIO_MANAGER_INVALID_PARAM;
@@ -1514,7 +1516,6 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	}
 
 	/* ToDo: When FOCUS_LOSS happens just after playback completed & onPlaybackFinished callback gets delayed then prev stream will not get reset */
-	uint8_t idx;
 	for (uint8_t i = 0; i < AUDIO_MAX_DUCKED_STREAMS; i++) {
 		/* ToDo: Avoid comparision of signed and unsigned. Rather we can use stream status */
 		if (card->stream_id_array[i] == INVALID_STREAM_ID) {
@@ -1576,7 +1577,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	}
 	card->stream_id_array[idx] = stream_id;
 	card->stream_status[idx] = READY;
-	if (fm.getStreamFocusState(stream_id) == STREAM_FOCUS_STATE_ACQUIRED) {
+	if (fm.getStreamFocusState(stream_id) == media::STREAM_FOCUS_STATE_ACQUIRED) {
 		card->main_stream_idx = idx;
 	}
 	/* TEMP CODE, Below is very rare case but need to be handled by audio manager */
@@ -3381,7 +3382,6 @@ std::chrono::milliseconds get_output_read_timeout(void)
 	pcm_format format = PCM_FORMAT_S16_LE;
 	unsigned int frames;
 	std::chrono::milliseconds timeout = std::chrono::milliseconds(0);
-	uint8_t idx = 0;
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	caps_desc.caps.ac_type = AUDIO_TYPE_OUTPUT;
@@ -3470,7 +3470,7 @@ void print_audio_card_info(audio_io_direction_t direct)
 		max_card = CONFIG_AUDIO_MAX_INPUT_CARD_NUM;
 		actual_card_id = g_actual_audio_out_card_id;
 	}
-	get_audio_volume(direct);
+	get_audio_volume(direct, STREAM_TYPE_MEDIA);
 	get_supported_capability(direct, &channel);
 	for (j = 0; j < CONFIG_AUDIO_MAX_DEVICE_NUM; j++) {
 		for (i = 0; i < max_card; i++) {

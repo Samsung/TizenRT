@@ -48,7 +48,7 @@ int PlayerController::registerPlayer(MediaPlayer* player, stream_policy_t stream
     return playerId;
 }
 
-void PlayerController::handleCommand(int playerId, const std::string& action, int volume = 0) {
+void PlayerController::handleCommand(int playerId, const std::string& action, int volume) {
     if (mPlayers.find(playerId) == mPlayers.end()) {
         printf("Player %d not found\n", playerId);
         return;

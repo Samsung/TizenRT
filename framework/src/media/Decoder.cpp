@@ -21,6 +21,10 @@
 #include "Decoder.h"
 #include <debug.h>
 
+#ifndef CONFIG_HANDLER_STREAM_BUFFER_SIZE
+#define CONFIG_HANDLER_STREAM_BUFFER_SIZE 4096
+#endif
+
 namespace media {
 
 Decoder::Decoder(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
@@ -30,8 +34,8 @@ Decoder::Decoder(audio_type_t audioType, unsigned short channels, unsigned int s
 	mChannels(channels),
 	mSampleRate(sampleRate),
 	/* To-do: Below buffer size and channel count must be calculated correctly. */
-	mInputBufferSize(4096),
-	mOutputBufferSize(4096)
+	mInputBufferSize(CONFIG_HANDLER_STREAM_BUFFER_SIZE),
+	mOutputBufferSize(CONFIG_HANDLER_STREAM_BUFFER_SIZE)
 #endif
 {
 #ifdef CONFIG_AUDIO_CODEC
