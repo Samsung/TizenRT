@@ -867,17 +867,10 @@ void ameba_i2s_pause(i2s_t *obj) {
 }
 
 #ifdef CONFIG_AMEBASMART_I2S_TDM
-void ameba_i2s_tdm_pause(i2s_t *obj) {
+void ameba_i2s_tdm_pause(i2s_t *obj, u8 keep_clock) {
 
 	SP_GDMA_STRUCT *l_SPGdmaStruct = &SPGdmaStruct;
 
-	// turn off MCLK if master
-	if (obj->role == MASTER) {
-		AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
-	}
-	
-	// turn off BCLK
-	AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
 
 	if (obj->direction == I2S_DIR_TX) {
 		GDMA_ClearINT(l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpTxGdmaInitStruct.GDMA_ChNum);
@@ -887,8 +880,20 @@ void ameba_i2s_tdm_pause(i2s_t *obj) {
 		GDMA_Suspend(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
 		GDMA_Suspend(l_SPGdmaStruct->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStructExt.GDMA_ChNum);
 		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
-		AUDIO_SP_RXStart(obj->i2s_idx, DISABLE);
 	}
+	
+	if (keep_clock == DISABLE) {
+		// turn off MCLK if master
+		if (obj->role == MASTER) {
+			AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
+		}
+		
+		// turn off BCLK
+		AUDIO_SP_EnableBclk(obj->i2s_idx, DISABLE);
+
+		// WCLK?
+		AUDIO_SP_RXStart(obj->i2s_idx, DISABLE);
+ 	}
 }
 #endif
 
@@ -915,14 +920,6 @@ void ameba_i2s_tdm_resume(i2s_t *obj) {
 	u32 *pbuf_int, pbuf_ext;
 	u8 res0, res1;
 
-	// turn on MCLK if master
-	if (obj->role == MASTER) {
-		AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
-	}
-	
-	// turn on BCLK
-	AUDIO_SP_EnableBclk(obj->i2s_idx, ENABLE);
-
 	if (obj->direction == I2S_DIR_TX) {
 		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
 		AUDIO_SP_TXStart(obj->i2s_idx, ENABLE);
@@ -944,15 +941,21 @@ void ameba_i2s_tdm_resume(i2s_t *obj) {
 		/* reset gdma flags */
 		DMA_Done = 0;
 
-		
-
-		AUDIO_SP_RXSetFifo(obj->i2s_idx, SP_InitStruct.SP_SelFIFO, ENABLE);
-
 		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
 
 		/* Enable GDMA and SPORT handshake*/
 		AUDIO_SP_RXStart(obj->i2s_idx, ENABLE);
+
+		AUDIO_SP_RXSetFifo(obj->i2s_idx, SP_InitStruct.SP_SelFIFO, ENABLE);
 	}
+
+	// turn on MCLK if master
+	if (obj->role == MASTER) {
+		AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
+	}
+	
+	// turn on BCLK
+	AUDIO_SP_EnableBclk(obj->i2s_idx, ENABLE);
 }
 #endif
 
@@ -1196,8 +1199,7 @@ void i2s_tdm_set_param(i2s_t *obj, int channel_num, int rate, int word_len)
 
 	AUDIO_SP_Init(obj->i2s_idx, obj->direction, &SP_InitStruct);
 
-	/* set up rx bit delay */
-	//AUDIO_SP_SetRXBitDelay(obj->i2s_idx, 1);	// 1 bit delay...?
+	AUDIO_SP_SetBCLK_Inverse(obj->i2s_idx, ENABLE);
 
 	/* setup the role of the SPORT */
 	AUDIO_SP_SetMasterSlave(obj->i2s_idx, obj->role);
