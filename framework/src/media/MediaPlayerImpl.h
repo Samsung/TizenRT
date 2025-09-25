@@ -26,6 +26,7 @@
 #include <media/MediaPlayer.h>
 #include <media/InputDataSource.h>
 #include <media/MediaPlayerObserverInterface.h>
+#include <media/FocusManager.h>
 
 #include "PlayerObserverWorker.h"
 #include "InputHandler.h"
