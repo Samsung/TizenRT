@@ -1100,6 +1100,7 @@ _LONG_CALL_ void AUDIO_SP_SetTXCounter(u32 index, u32 state);
 _LONG_CALL_ void AUDIO_SP_SetTXCounterCompVal(u32 index, u32 comp_val);
 _LONG_CALL_ void AUDIO_SP_ClearTXCounterIrq(u32 index);
 _LONG_CALL_ void AUDIO_SP_SetPhaseLatch(u32 index);
+_LONG_CALL_ void AUDIO_SP_SetBCLK_Inverse(u32 index, u8 enable);
 _LONG_CALL_ u32 AUDIO_SP_GetTXCounterVal(u32 index);
 _LONG_CALL_ u32 AUDIO_SP_GetTXPhaseVal(u32 index);
 _LONG_CALL_ void AUDIO_SP_SetRXCounter(u32 index, u32 state);
