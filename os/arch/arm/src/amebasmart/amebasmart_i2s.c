@@ -288,7 +288,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_tdm_config = {
 	.rxenab = 1,
 	.txenab = 0,
 	.tdmenab = 1,
-	.data_format = SP_DF_LEFT
+	.data_format = SP_DF_I2S
 };
 #endif
 
@@ -1292,7 +1292,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 					u16 *dst_buf = (u16 *)priv->apb_rx->samp;
 					u16 *dma1 = (u16 *)priv->i2s_rx_buf;
 					u16 *dma2 = (u16 *)priv->i2s_rx_buf_ext;
-					//lldbg("@@@@@@@@ DST BUF SIZE: %d |||| DMA PAGE SIZE: %d\n", priv->apb_rx->nmaxbytes, I2S_DMA_PAGE_SIZE);
+					lldbg("@@@@@@@@ DST BUF SIZE: %d |||| DMA PAGE SIZE: %d\n", priv->apb_rx->nmaxbytes, I2S_DMA_PAGE_SIZE);
 					// lib_dumpbuffer("Int", dma1, 512);
 					// lib_dumpbuffer("Ext", dma2, 512);
 					u32 count = 0;
