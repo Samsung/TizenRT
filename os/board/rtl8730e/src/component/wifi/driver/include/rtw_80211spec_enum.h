@@ -1,22 +1,20 @@
-/******************************************************************************
- *
- * Copyright(c) 2007 - 2011 Realtek Corporation. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
- ******************************************************************************/
+/**
+  ******************************************************************************
+  * @file    rtw_80211spec_enum.h
+  * @author
+  * @version
+  * @date
+  * @brief
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
+
 #ifndef	__RTW_80211SPEC_ENUM_H_
 #define __RTW_80211SPEC_ENUM_H_
 
@@ -27,7 +25,7 @@ enum WIFI_FRAME_TYPE {
 	WIFI_QOS_DATA_TYPE	= (BIT(7) | BIT(3)),	//!< QoS Data
 };
 
-enum WIFI_FRAME_SUBTYPE {
+enum WIFI_FRAME_TYPESUBTYPE {
 	// below is for mgt frame
 	WIFI_ASSOCREQ       = (0 | WIFI_MGT_TYPE),
 	WIFI_ASSOCRSP       = (BIT(4) | WIFI_MGT_TYPE),
@@ -65,7 +63,7 @@ enum WIFI_FRAME_SUBTYPE {
 };
 
 
-typedef	enum _ELEMENT_ID {
+enum _ELEMENT_ID {
 	EID_SsId					= 0, /* service set identifier (0:32) */
 	EID_SupRates				= 1, /* supported rates (1:8) */
 	EID_FHParms				= 2, /* FH parameter set (5) */
@@ -141,14 +139,14 @@ typedef	enum _ELEMENT_ID {
 	EID_VHTOperation 			= 192, /* Based on 802.11ac D2.0 */
 	EID_AID						= 197, /* Based on 802.11ac D4.0 */
 	EID_OpModeNotification		= 199, /* Based on 802.11ac D3.0 */
-} ELEMENT_ID, *PELEMENT_ID;
+};
 
-typedef enum _HT_CAP_AMPDU_FACTOR {
+enum _HT_CAP_AMPDU_FACTOR {
 	MAX_AMPDU_FACTOR_8K		= 0,
 	MAX_AMPDU_FACTOR_16K	= 1,
 	MAX_AMPDU_FACTOR_32K	= 2,
 	MAX_AMPDU_FACTOR_64K	= 3,
-} HT_CAP_AMPDU_FACTOR;
+};
 
 enum WIFI_REASON_CODE	{
 	_RSON_RESERVED_					= 0,

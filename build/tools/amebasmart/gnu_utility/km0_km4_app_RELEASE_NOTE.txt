@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 5b5b5dea 2025/09/19-15:16:29 ==
+1. Update wifi driver to support multi-sta CSI
+
 == version d3d07d0844 2025/09/17-17:37:16 ==
 1. Fix issue of KM4 sometimes not returning scan results with 21 APs
 

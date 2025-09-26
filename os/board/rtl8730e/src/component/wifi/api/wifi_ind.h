@@ -1,23 +1,17 @@
-/******************************************************************************
- * Copyright (c) 2013-2016 Realtek Semiconductor Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+/**
   ******************************************************************************
   * @file    wifi_ind.h
   * @author
   * @version
+  * @date
   * @brief   This file provides the functions related to event handler mechanism.
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
   ******************************************************************************
   */
 
@@ -57,7 +51,7 @@ extern "C" {
 typedef void (*rtw_event_handler_t)(char *buf, int buf_len, int flags, void *handler_user_data);
 
 typedef struct {
-//	rtw_event_indicate_t	event_cmd;
+//	enum rtw_event_indicate	event_cmd;
 	rtw_event_handler_t	handler;
 	void	*handler_user_data;
 } event_list_elem_t;
@@ -71,12 +65,11 @@ typedef struct {
  */
 void init_event_callback_list(void);
 
-void wifi_join_status_indicate(rtw_join_status_t join_status);
-
+void wifi_event_join_status_internal_hdl(char *buf, int flags);
 
 /**
   * @brief  Wlan driver indicate event to upper layer through wifi_indication.
-  * @param[in]  event: An event reported from driver to upper layer application. Please refer to rtw_event_indicate_t enum.
+  * @param[in]  event: An event reported from driver to upper layer application. Please refer to enum rtw_event_indicate enum.
   * @param[in]  buf: If it is not NUL, buf is a pointer to the buffer for message string.
   * @param[in]  buf_len: The length of the buffer.
   * @param[in]  flags: Indicate some extra information, sometimes it is 0.
@@ -88,8 +81,6 @@ void wifi_join_status_indicate(rtw_join_status_t join_status);
   *			ex: using semaphore to notice another thread instead of handing event directly in wifi_indication().
   * -	Wifi event list
   *
-  * WIFI_EVENT_CONNECT							: Indicate station connect to AP
-  * WIFI_EVENT_DISCONNECT						: Indicate station disconnect with AP
   * WIFI_EVENT_RX_MGNT							: Indicate managerment frame receive
   * WIFI_EVENT_STA_ASSOC						: Indicate client associate in AP mode
   * WIFI_EVENT_STA_DISASSOC						: Indicate client disassociate in AP mode
@@ -107,7 +98,7 @@ void wifi_join_status_indicate(rtw_join_status_t join_status);
   * WIFI_EVENT_WPA_EAPOL_RECVD					: Indicate receiving EAPOL packets in wps process. This event is used in wps process.
   * WIFI_EVENT_MAX								: It stands for the end of wifi event.
   */
-extern void wifi_indication(rtw_event_indicate_t event, char *buf, int buf_len, int flags);
+extern void wifi_indication(enum rtw_event_indicate event, char *buf, int buf_len, int flags);
 
 /**
  * @brief  Register the event listener.
