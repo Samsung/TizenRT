@@ -1904,6 +1904,10 @@ errout_with_alloc:
 static void amebasmart_i2s_suspend(uint16_t port)
 {
 	struct amebasmart_i2s_s *priv = g_i2sdevice[port];
+	if (!priv) {
+		i2serr("I2S not init\n");
+		return;
+	}
 
 	i2s_disable(priv->i2s_object, 1);
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
@@ -1922,12 +1926,14 @@ static void amebasmart_i2s_suspend(uint16_t port)
 static void amebasmart_i2s_resume(uint16_t port)
 {
 	struct amebasmart_i2s_config_s *hw_config_s;
-	struct amebasmart_i2s_s *priv;
-	int ret;
-	int count;
-	/* The I2S structure should exist after system wakeup */
-	priv = g_i2sdevice[port];
-	DEBUGASSERT(priv);
+	struct amebasmart_i2s_s *priv = g_i2sdevice[port];	/* The I2S structure should exist after system wakeup */
+	int ret, count;
+
+	if (!priv) {
+		i2serr("I2S is not init\n");
+		return;
+	}
+
 	DEBUGASSERT(priv->i2s_object);
 	memset(priv->i2s_object, 0, sizeof(i2s_t));
 	/* Config values initialization */
