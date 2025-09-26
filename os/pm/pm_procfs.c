@@ -203,6 +203,8 @@ static void power_read_domains(void (*readprint)(const char *, ...))
 static void power_read_state(void (*readprint)(const char *, ...))
 {
 	enum pm_state_e pm_state;
+
+	readprint("PM %s\n\n", (g_pmglobals.is_running) ? "RUNNING" : "STOPPED");
 	for (pm_state = PM_NORMAL; pm_state < PM_COUNT; pm_state++) {
 		readprint("%s %s\n", (pm_state == g_pmglobals.state) ? "*" : " ", pm_state_name[pm_state]);
 	}
