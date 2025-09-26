@@ -928,25 +928,18 @@ void ameba_i2s_tdm_resume(i2s_t *obj) {
 		AUDIO_SP_TXStart(obj->i2s_idx, ENABLE);
 	} else {
 		pbuf_int = (u32 *)i2s_tdm_get_free_rx_page(obj->i2s_idx, GDMA_INT);
-
-		u32 dma_request_length = sp_rx_info.rx_request_length;
-
-		if (obj->fifo_num >= SP_RX_FIFO8) {
-			dma_request_length = sp_rx_info.rx_request_length / 2;
-			pbuf_ext = (u32 *)i2s_tdm_get_free_rx_page(obj->i2s_idx, GDMA_EXT);
-			res1 = AUDIO_SP_RXGDMA_Init(obj->i2s_idx, GDMA_EXT, &sp_str->SpRxGdmaInitStructExt, sp_str, (IRQ_FUN)i2s_tdm_rx_isr_ext, (u8 *)pbuf_ext, dma_request_length);
-			/* reset gdma flags */
-			DMA_Done_1 = 0;
-		}
 		
 		/* Setup the RX Length to be equal to what the OS layer wants to obtain, even though we allocate a big page size up to 4K */
-		res0 = AUDIO_SP_RXGDMA_Init(obj->i2s_idx, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tdm_rx_isr, (u8 *)pbuf_int, dma_request_length);
+		res0 = AUDIO_SP_RXGDMA_Init(obj->i2s_idx, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tdm_rx_isr, (u8 *)pbuf_int, sp_rx_info.rx_request_length);
 		/* reset gdma flags */
 		DMA_Done = 0;
 
-		
-
-		AUDIO_SP_RXSetFifo(obj->i2s_idx, SP_InitStruct.SP_SelFIFO, ENABLE);
+		if (obj->fifo_num >= SP_RX_FIFO8) {
+			pbuf_ext = (u32 *)i2s_tdm_get_free_rx_page(obj->i2s_idx, GDMA_EXT);
+			res1 = AUDIO_SP_RXGDMA_Init(obj->i2s_idx, GDMA_EXT, &sp_str->SpRxGdmaInitStructExt, sp_str, (IRQ_FUN)i2s_tdm_rx_isr_ext, (u8 *)pbuf_ext, sp_rx_info_ext.rx_request_length);
+			/* reset gdma flags */
+			DMA_Done_1 = 0;
+		}
 
 		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
 
@@ -1033,8 +1026,6 @@ static void i2s_tdm_rx_isr(void *sp_data)
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
-	AUDIO_SP_RXSetFifo(i2s_index, SP_InitStruct.SP_SelFIFO, DISABLE);
-
 	i2s_release_rx_page(i2s_index);
 
 	/* set flag to inform os layer */
@@ -1057,8 +1048,6 @@ static void i2s_tdm_rx_isr_ext(void *sp_data)
 	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
 	GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-
-	AUDIO_SP_RXSetFifo(i2s_index, SP_InitStruct.SP_SelFIFO, DISABLE);
 
 	i2s_release_rx_page(i2s_index);
 
