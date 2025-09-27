@@ -90,21 +90,39 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+
+// Forward declaration
+struct power_path_template_s;
+struct power_file_s;
+
+/* Template structure for a node in the procfs path */
+struct power_path_template_s {
+	const char *name;
+	uint8_t dtype;
+	void (*read)(FAR struct power_file_s *priv, void (*readprint)(const char *, ...));
+	int (*readdir)(struct fs_dirent_s *dir);
+	const struct power_path_template_s *children;
+};
+
 /* This enumeration identifies all of the task/thread nodes that can be
  * accessed via the procfs file system.
  */
 
+struct power_path_priv_s {
+	const struct power_path_template_s *template; /* Matched template node */
+	struct pm_domain_s *domain_ptr;               /* Pointer to the domain structure if applicable */
+};
+
 struct power_dir_s {
-	struct procfs_dir_priv_s base; /* Base directory private data */
-	uint8_t direntry;
-	FAR struct pm_domain_s *domain_ptr; /* Pointer to the domain structure */
-	uint8_t dtype;
+	struct procfs_dir_priv_s base;
+	struct power_path_priv_s path_priv;
+	FAR dq_entry_t *domain_position;                /* For efficient domain dir reading */
 };
 
 /* This structure describes one open "file" */
 struct power_file_s {
 	struct procfs_file_s base;     /* Base open file structure */
-	struct power_dir_s dir;	       /* Reference to item being accessed */
+	struct power_path_priv_s path_priv;
 	uint16_t offset;
 };
 
@@ -127,26 +145,76 @@ static int power_rewinddir(FAR struct fs_dirent_s *dir);
 
 static int power_stat(const char *relpath, FAR struct stat *buf);
 
+/* Directory-specific readdir implementations */
+static int power_readdir_common(struct fs_dirent_s *dir);
+static int power_readdir_domains(struct fs_dirent_s *dir);
+
+/* File-specific read implementations */
+static void power_read_domains_info(FAR struct power_file_s *priv, void (*readprint)(const char *, ...));
+static void power_read_dynamic_domain_info(FAR struct power_file_s *priv, void (*readprint)(const char *, ...));
+static void power_read_state(FAR struct power_file_s *priv, void (*readprint)(const char *, ...));
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-#define POWER         "power"
-#define POWER_DOMAINS "domains"
-#define POWER_STATE   "state"
-#define POWER_INFO    "info"
+/* Static Path Template Tree */
+/* This data structure declaratively defines the procfs layout using full paths. */
 
-/*
- * Level 1 : /proc/power
- * Level 2 : /proc/power/domains
- * Level 3 : /proc/power/domains/{domain_name}
- * Level 4 : /proc/power/domains/{domain_name}/info
-*/
+static const struct power_path_template_s g_power_domain_dynamic_path_list[] = {
+	{
+		.name       = "info",      /* "/proc/power/domains/* /info" */
+		.dtype      = DTYPE_FILE,
+		.read       = power_read_dynamic_domain_info,
+		.readdir    = NULL,
+		.children   = NULL
+	},
+	{ .name = NULL } /* Sentinel */
+};
 
-#define POWER_LEVEL_1   1
-#define POWER_LEVEL_2   2
-#define POWER_LEVEL_3   3
-#define POWER_LEVEL_4   4
+static const struct power_path_template_s g_power_domains_path_list[] = {
+	{
+		.name       = "info",      /* "/proc/power/domains/info" */
+		.dtype      = DTYPE_FILE,
+		.read       = power_read_domains_info,
+		.readdir    = NULL,
+		.children   = NULL
+	},
+	{
+		.name       = "*",        /* "/proc/power/domains/*" */
+		.dtype      = DTYPE_DIRECTORY,
+		.read       = NULL,
+		.readdir    = power_readdir_common,
+		.children   = g_power_domain_dynamic_path_list,
+	},
+	{ .name = NULL } /* Sentinel */
+};
+
+static const struct power_path_template_s g_power_path_list[] = {
+	{
+		.name       = "domains",   /* "/proc/power/domains" */
+		.dtype      = DTYPE_DIRECTORY,
+		.read       = NULL,
+		.readdir    = power_readdir_domains,
+		.children   = g_power_domains_path_list
+	},
+	{
+		.name       = "state",    /* "/proc/power/state" */
+		.dtype      = DTYPE_FILE,
+		.read       = power_read_state,
+		.readdir    = NULL,
+		.children   = NULL,
+	},
+	{ .name = NULL } /* Sentinel */
+};
+
+const struct power_path_template_s g_power_path = {
+	.name       = "power",        /* "/proc/power" */
+	.dtype      = DTYPE_DIRECTORY,
+	.read       = NULL,
+	.readdir    = power_readdir_common,
+	.children   = g_power_path_list,
+};
 
 /****************************************************************************
  * Public Data
@@ -177,30 +245,30 @@ const struct procfs_operations power_procfsoperations = {
  * Private Functions
  ****************************************************************************/
 
-static void power_read_domain_info(FAR struct pm_domain_s *domain, void (*readprint)(const char *, ...))
+static void power_read_dynamic_domain_info(FAR struct power_file_s *priv, void (*readprint)(const char *, ...))
 {
+	FAR struct pm_domain_s *domain = priv->path_priv.domain_ptr;
+
 	if (domain) {
 		readprint("%-15s : %s\n", "Domain Name", domain->name);
 		readprint("%-15s : %d\n", "Suspend Count", domain->suspend_count);
 	}
 }
 
-static void power_read_domains(void (*readprint)(const char *, ...))
+static void power_read_domains_info(FAR struct power_file_s *priv, void (*readprint)(const char *, ...))
 {
 	FAR struct pm_domain_s *domain;
 	FAR dq_entry_t *entry;
-	int index = 0;
 
 	readprint(" %-33s | %14s \n", "DOMAIN NAME", "SUSPEND COUNTS");
 	readprint("-----------------------------------|----------------\n");
 	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
 		domain = (FAR struct pm_domain_s *)entry;
 		readprint(" %33s | %14d \n", domain->name, domain->suspend_count);
-		index++;
 	}
 }
 
-static void power_read_state(void (*readprint)(const char *, ...))
+static void power_read_state(FAR struct power_file_s *priv, void (*readprint)(const char *, ...))
 {
 	enum pm_state_e pm_state;
 	for (pm_state = PM_NORMAL; pm_state < PM_COUNT; pm_state++) {
@@ -208,106 +276,145 @@ static void power_read_state(void (*readprint)(const char *, ...))
 	}
 }
 /****************************************************************************
- * Name: power_find_dirref
+ * Name: power_find_best_match
  *
  * Description:
- *   Analyse relpath to find the directory reference entry it represents,
- *   if any.
+ * Recursively traverses the template tree to find the most specific
+ * template that matches the given relative path.
  *
  ****************************************************************************/
 
-static int power_find_dirref(FAR const char *relpath, FAR struct power_dir_s *dir)
+static struct power_path_template_s *power_find_best_match(const char *relpath, const struct power_path_template_s *templates, struct power_path_priv_s *path_priv, struct procfs_dir_priv_s *proc_dir)
 {
-	const char *str;
-	FAR struct pm_domain_s *domain;
-	FAR dq_entry_t *entry;
 	irqstate_t flags;
+	char domain_name[CONFIG_PM_DOMAIN_NAME_SIZE];
+	struct power_path_template_s *best_match = NULL;
+	struct power_path_template_s *curr_level_candidate = NULL;
+	struct power_path_template_s *child_matched_candidate = NULL;
 
-	/* Function to check path is starting with given name */
-	int checkStart(const char *name, bool isDirectory) {
-		uint16_t length = strlen(name);
-		if (strncmp(str, name, length) != 0) {
-			return ERROR;
-		}
-		str += length;
-		if (str[0] == '\0') {
-			return OK;
-		}
-		if (isDirectory && (str[0] == '/')) {
-			str++;
-			return OK;
-		}
-		return ERROR;
+	/* Validate input parameters */
+	if (!relpath || !templates || !path_priv) {
+		return NULL;
 	}
 
-	str = relpath;
-	dir->domain_ptr = NULL;
+	size_t relpath_len = strlen(relpath);
 
-	flags = enter_critical_section(); /* Protect domain list access */
+	/* Iterate through all templates at the current level */
+	for (struct power_path_template_s *current = templates; current && current->name; current++) {
+		FAR const struct power_path_template_s *candidate = NULL;
+		size_t domain_len;
 
-	/* Check relpath has "power" mount point */
-	if (checkStart(POWER, true) == OK) {
-		if (str[0] == '\0') {
-			dir->base.level = POWER_LEVEL_1;
-			dir->base.index = 0;
-			dir->base.nentries = 2;
-			dir->dtype = DTYPE_DIRECTORY;
-			leave_critical_section(flags);
-			return OK;
-		}
-		/* Check relpath has "domains" mount point */
-		if (checkStart(POWER_DOMAINS, true) == OK) {
-			if (str[0] == '\0') {
-				dir->base.level = POWER_LEVEL_2;
-				dir->base.index = 0;
-				dir->base.nentries = g_pmglobals.ndomains + 1; /* +1 for "info" file */
-				dir->dtype = DTYPE_DIRECTORY;
-				leave_critical_section(flags);
-				return OK;
-			}
-			/* Iterate over each domain_name till you find match */
-			for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
-				domain = (FAR struct pm_domain_s *)entry;
-				if (checkStart(domain->name, true) == OK) {
-					dir->domain_ptr = domain;
-					if (str[0] == '\0') {
-						dir->base.level = POWER_LEVEL_3;
-						dir->base.index = 0;
-						dir->base.nentries = 1; /* Only "info" file */
-						dir->dtype = DTYPE_DIRECTORY;
-						leave_critical_section(flags);
-						return OK;
+		/* Check for a match with the current template */
+		const char *wildcard = strstr(current->name, "*");
+		if (wildcard) {
+
+			/* Dynamic path: extract the domain name before the first '/' */
+			const char *slash_pos = strchr(relpath, '/');
+			/* Calculate the length of the domain name */
+			domain_len = slash_pos ? slash_pos - relpath : relpath_len;
+
+			strncpy(domain_name, relpath, domain_len);
+			domain_name[domain_len] = '\0'; /* Ensure null termination */
+
+			/* Validate domain name length */
+			if (domain_len > 0 && domain_len < CONFIG_PM_DOMAIN_NAME_SIZE) {
+				flags = enter_critical_section();
+				path_priv->domain_ptr = NULL;
+				for (dq_entry_t *entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
+					struct pm_domain_s *domain = (struct pm_domain_s *)entry;
+					if (strcmp(domain->name, domain_name) == 0) {
+						path_priv->domain_ptr = domain;
+						break;
 					}
-					break; /* Found domain, break to check for "info" */
 				}
-			}
-			/* Check relpath has "info" mount point (can be under domains or a specific domain) */
-			if (checkStart(POWER_INFO, false) == OK) {
-				if (dir->domain_ptr) {
-					/* Info for a specific domain */
-					dir->base.level = POWER_LEVEL_4;
-				} else {
-					/* General domains info */
-					dir->base.level = POWER_LEVEL_3;
-				}
-				dir->base.index = 0;
-				dir->base.nentries = 0;
-				dir->dtype = DTYPE_FILE;
 				leave_critical_section(flags);
-				return OK;
+
+				/* If the domain name from path is not found, it's not a valid match */
+				if (path_priv->domain_ptr) {
+					candidate = current;
+				}
 			}
-		/* Check relpath has "state" mount point */
-		} else if (checkStart(POWER_STATE, false) == OK) {
-			dir->base.level = POWER_LEVEL_2;
-			dir->base.index = 0;
-			dir->base.nentries = 0;
-			dir->dtype = DTYPE_FILE;
-			leave_critical_section(flags);
-			return OK;
+
+		} else {
+			uint16_t length = strlen(current->name);
+			/* Static path: use strcmp for an exact match */
+			if (strncmp(relpath, current->name, length) == 0) {
+				candidate = current;
+			}
+		}
+
+		/* Is this the best match we've found so far? (Longest pattern wins) */
+		if (candidate && (!curr_level_candidate || strlen(candidate->name) > strlen(curr_level_candidate->name))) {
+
+			curr_level_candidate = candidate;
+
+			/* We have a match. Check if a more specific match exists in its children. */
+			const char *slash_pos = strchr(relpath, '/');
+			if (candidate->children && slash_pos && slash_pos[0] != '\0') {
+				child_matched_candidate = power_find_best_match(slash_pos + 1, candidate->children, path_priv, proc_dir);
+				candidate = child_matched_candidate;
+			}
+
+			best_match = candidate;
 		}
 	}
-	leave_critical_section(flags);
-	fdbg("Invalid Path : Failed to find path %s \n", relpath);
+
+	if (best_match && proc_dir) {
+		/* Increse path depth level */
+		proc_dir->level++;
+
+		if (!child_matched_candidate) {
+			/* If this level is highest, Set the nentries */
+			proc_dir->nentries = 0;
+
+			for (struct power_path_template_s *current = best_match->children; current && current->name; current++) {
+				const char *wildcard = strstr(current->name, "%s");
+				if (wildcard) {
+					proc_dir->nentries += g_pmglobals.ndomains;
+				} else {
+					proc_dir->nentries++;
+				}
+			}
+		}
+	}
+
+	return best_match;
+}
+
+/****************************************************************************
+ * Name: power_find_dirref
+ *
+ * Description:
+ * Analyse relpath to find the directory reference entry it represents.
+ *
+ ****************************************************************************/
+static int power_find_dirref(const char *relpath, struct power_path_priv_s *path_priv, struct procfs_dir_priv_s *proc_dir)
+{
+	FAR const struct power_path_template_s *match = NULL;
+
+	path_priv->template = NULL;
+	path_priv->domain_ptr = NULL;
+
+	if (proc_dir) {
+		/* init dir info value to default root */
+		proc_dir->level = 1;
+		proc_dir->index = 0;
+		proc_dir->nentries = 2;
+	}
+
+	/* Handle root path separately */
+	if (strcmp(relpath, "power") == 0 || strcmp(relpath, "power/") == 0) {
+		match = &g_power_path;
+	} else {
+		/* Search the tree for the best matching path template */
+		match = power_find_best_match(relpath + strlen("power/"), g_power_path.children, path_priv, proc_dir);
+	}
+
+	if (match) {
+		path_priv->template = match;
+		return OK;
+	}
+
 	return -ENOENT;
 }
 
@@ -330,15 +437,20 @@ static int power_open(FAR struct file *filep, FAR const char *relpath, int oflag
 	}
 
 	/* Find the directory entry being opened */
-	ret = power_find_dirref(relpath, &priv->dir);
+	ret = power_find_dirref(relpath, &priv->path_priv, NULL);
 	if (ret == -ENOENT) {
 		/* Entry not found */
 		kmm_free(priv);
 		return ret;
 	}
 
-	priv->offset = 0;
+	/* We only support opening files */
+	if (priv->path_priv.template->dtype != DTYPE_FILE) {
+		kmm_free(priv);
+		return -EISDIR;
+	}
 
+	priv->offset = 0;
 	/* Save the index as the open-specific state in filep->f_priv */
 	filep->f_priv = (FAR void *)priv;
 
@@ -372,7 +484,6 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 {
 	FAR struct power_file_s *priv;
 	size_t totalsize;
-	FAR struct pm_domain_s *domain_ptr;
 	int last_read;
 
 	/* Function to copy domain information into buffer */
@@ -405,20 +516,17 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 	}
 
 	priv = (FAR struct power_file_s *)filep->f_priv;
-	domain_ptr = priv->dir.domain_ptr;
+	/* Check if a read method is available for this file type */
+	if (!priv || !priv->path_priv.template || !priv->path_priv.template->read) {
+		return -EINVAL;
+	}
+
 	totalsize = 0;
+
 	last_read = priv->offset;
 
-	/* Read the content of "{domain_name}/info" */
-	if ((priv->dir.base.level == POWER_LEVEL_4) && (priv->dir.base.index == 0) && (domain_ptr != NULL)) {
-		power_read_domain_info(domain_ptr, readprint);
-	/* Read the content of "domains/info" (general list of domains) */
-	} else if ((priv->dir.base.level == POWER_LEVEL_3) && (priv->dir.base.index == 0) && (domain_ptr == NULL)) {
-		power_read_domains(readprint);
-	/* Read the content of "power/state" */
-	} else if ((priv->dir.base.level == POWER_LEVEL_2) && (priv->dir.base.index == 0)) {
-		power_read_state(readprint);
-	}
+	/* Generate the full content into a temporary buffer */
+	priv->path_priv.template->read(priv, readprint);
 
 	/* Indicate we have already provided all the data */
 	filep->f_pos += totalsize;
@@ -512,10 +620,15 @@ static int power_opendir(FAR const char *relpath, FAR struct fs_dirent_s *dir)
 	}
 
 	/* Initialize base structure components */
-	ret = power_find_dirref(relpath, powerdir);
-
+	ret = power_find_dirref(relpath, &powerdir->path_priv, &powerdir->base);
 	if (ret == OK) {
-		dir->u.procfs = (FAR void *)powerdir;
+		if (powerdir->path_priv.template->dtype == DTYPE_DIRECTORY) {
+			dir->u.procfs = (FAR void *)powerdir;
+		} else {
+			/* Not a directory */
+			kmm_free(powerdir);
+			ret = -ENOTDIR;
+		}
 	} else {
 		kmm_free(powerdir);
 	}
@@ -547,83 +660,87 @@ static int power_closedir(FAR struct fs_dirent_s *dir)
 }
 
 /****************************************************************************
- * Name: power_readdir
- *
- * Description: Read the next directory entry
- *
+ * Name: power_readdir_common
  ****************************************************************************/
+static int power_readdir_common(struct fs_dirent_s *dir)
+{
+	FAR struct power_dir_s *powerdir = dir->u.procfs;
+	const struct power_path_template_s *child;
+	
+	if (powerdir && powerdir->path_priv.template) {
+		child = &powerdir->path_priv.template->children[powerdir->base.index];
 
+		if (child && child->name) {
+			/* Extract basename from full path for directory entry */
+			const char *name_start = strrchr(child->name, '/');
+			name_start = (name_start) ? name_start + 1 : child->name;
+			
+			dir->fd_dir.d_type = child->dtype;
+			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), "%s", name_start);
+
+			powerdir->base.index++;
+			return OK;
+		}
+	}
+
+	return -ENOENT; /* End of directory */
+}
+
+/****************************************************************************
+ * Name: power_readdir_domains
+ ****************************************************************************/
+static int power_readdir_domains(struct fs_dirent_s *dir)
+{
+	FAR struct power_dir_s *powerdir = dir->u.procfs;
+	irqstate_t flags;
+
+	/* First, list static entries from the template. */
+	if (powerdir->base.index == 0) {
+		dir->fd_dir.d_type = DTYPE_FILE;
+		snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), "info");
+		powerdir->base.index++;
+		return OK;
+	}
+
+	flags = enter_critical_section();
+
+	/* On first dynamic read, initialize the entry pointer */
+	if (powerdir->base.index == 1 && powerdir->domain_position == NULL) {
+		powerdir->domain_position = dq_peek(&g_pmglobals.domains);
+	}
+
+	/* Read through dynamic domain entries */
+	if (powerdir->domain_position) {
+		FAR struct pm_domain_s *domain = (FAR struct pm_domain_s *)powerdir->domain_position;
+		dir->fd_dir.d_type = DTYPE_DIRECTORY;
+		snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), "%s", domain->name);
+		
+		powerdir->domain_position = dq_next(powerdir->domain_position);
+		powerdir->base.index++;
+		leave_critical_section(flags);
+		return OK;
+	}
+	
+	leave_critical_section(flags);
+	return -ENOENT; /* End of directory */
+}
+
+
+/****************************************************************************
+ * Name: power_readdir
+ ****************************************************************************/
 static int power_readdir(struct fs_dirent_s *dir)
 {
 	FAR struct power_dir_s *powerdir;
-	FAR struct pm_domain_s *domain;
-	FAR dq_entry_t *entry;
-	int index;
-	irqstate_t flags;
 
 	DEBUGASSERT(dir && dir->u.procfs);
 	powerdir = dir->u.procfs;
 
-	/* Have we reached the end of the directory */
-	index = powerdir->base.index;
-	if (index >= powerdir->base.nentries) {
-		return -ENOENT;
+	if (powerdir && powerdir->path_priv.template && powerdir->path_priv.template->readdir) {
+		return powerdir->path_priv.template->readdir(dir);
 	}
 
-	flags = enter_critical_section(); /* Protect domain list access */
-
-	switch (powerdir->base.level) {
-		/* List the content of "power" directory */
-	case POWER_LEVEL_1:
-		switch (index) {
-		case 0:
-			dir->fd_dir.d_type = DTYPE_DIRECTORY;
-			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), POWER_DOMAINS);
-			powerdir->base.index++;
-			break;
-		case 1:
-			dir->fd_dir.d_type = DTYPE_FILE;
-			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), POWER_STATE);
-			powerdir->base.index++;
-			break;
-		}
-		break;
-	/* List the content of "domains" directory */
-	case POWER_LEVEL_2:
-		if (index == g_pmglobals.ndomains) { /* Last entry is the "info" file */
-			dir->fd_dir.d_type = DTYPE_FILE;
-			snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), POWER_INFO);
-		} else {
-			/* Iterate to the current domain index */
-			entry = dq_peek(&g_pmglobals.domains);
-			for (int i = 0; i < index && entry != NULL; i++) {
-				entry = dq_next(entry);
-			}
-			if (entry) {
-				domain = (FAR struct pm_domain_s *)entry;
-				dir->fd_dir.d_type = DTYPE_DIRECTORY;
-				snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), "%s", domain->name);
-			} else {
-				/* Should not happen if nentries is correct */
-				leave_critical_section(flags);
-				return -ENOENT;
-			}
-		}
-		powerdir->base.index++;
-		break;
-	/* List the content of "{domain_name}" directory*/
-	case POWER_LEVEL_3:
-		dir->fd_dir.d_type = DTYPE_FILE;
-		snprintf(dir->fd_dir.d_name, sizeof(dir->fd_dir.d_name), POWER_INFO);
-		powerdir->base.index++;
-		break;
-	default:
-		fdbg("Invalid directory level\n");
-		leave_critical_section(flags);
-		return -ENOENT;
-	}
-	leave_critical_section(flags);
-	return OK;
+	return -ENOSYS; /* Should not happen, indicates a template misconfiguration */
 }
 
 /****************************************************************************
@@ -641,6 +758,9 @@ static int power_rewinddir(struct fs_dirent_s *dir)
 	priv = dir->u.procfs;
 
 	priv->base.index = 0;
+	priv->path_priv.domain_ptr = NULL; /* Reset the domain entry pointer */
+	priv->domain_position = NULL;     /* Reset the domain position pointer */
+
 	return OK;
 }
 
@@ -656,13 +776,14 @@ static int power_stat(const char *relpath, struct stat *buf)
 	int ret;
 	struct power_dir_s dir;
 
+
 	/* Decide if the relpath is valid and if it is a file
 	 *      or a directory and set it's permissions.
 	 */
-	ret = power_find_dirref(relpath, &dir);
+	ret = power_find_dirref(relpath, &dir.path_priv, &dir.base);
 
 	if (ret == OK) {
-		if (dir.dtype == DTYPE_DIRECTORY) {
+		if (dir.path_priv.template->dtype == DTYPE_DIRECTORY) {
 			/* This is a directory */
 			buf->st_mode = S_IFDIR | S_IROTH | S_IRGRP | S_IRUSR;
 		} else {
