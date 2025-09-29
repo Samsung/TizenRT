@@ -81,9 +81,14 @@ static void mems_teardown();
 
 static void print_sensor_data(sensor_data_s *data)
 {
+	// for (int i = 0; i < AIS25BA_BUFLENGTH; i++) {
+	// 	printf("x: %f, y: %f, z: %f\n", data[i].x, data[i].y, data[i].z);
+	// }
 	for (int i = 0; i < AIS25BA_BUFLENGTH; i++) {
-		printf("x: %f, y: %f, z: %f\n", data[i].x, data[i].y, data[i].z);
+		printf("%04x %04x %04x %04x ", data[i].samples[0], data[i].samples[1], data[i].samples[2], data[i].samples[3]);
+		printf("%04x %04x %04x %04x\n", data[i].samples[4], data[i].samples[5], data[i].samples[6], data[i].samples[7]);
 	}
+	printf("=======================================================================================\n");
 }
 
 static int mems_sensor_init()
