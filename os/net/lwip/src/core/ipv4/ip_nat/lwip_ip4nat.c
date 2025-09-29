@@ -58,6 +58,7 @@
 #include "lwip/priv/tcp_priv.h"
 #include "lwip/autoip.h"
 #include "lwip/stats.h"
+#include "lwip/sys.h"
 #include "lwip/timeouts.h"
 #include "lwip/lwip_ipnat.h"
 #include "lwip/prot/dhcp.h"
@@ -66,8 +67,6 @@
 #include "debug.h"
 
 #define configTICK_RATE_HZ								( 1000 )
-
-typedef void *_mutex;
 
 #if defined(IP_FORWARD) && (IP_FORWARD == 1)
 #if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
@@ -99,7 +98,7 @@ struct nat_table {
 u16_t nat_entry_list = NON_INDEX;
 u16_t nat_entry_list_last = NON_INDEX;
 u16_t nat_entry_idle = 0;
-_mutex nat_entry_lock;
+sys_mutex_t nat_entry_lock;
 static struct nat_table *ip_nat_table;
 
 uint32_t filter_drop_threshold = 0;
@@ -132,7 +131,7 @@ static inline struct nat_table *GET_NAT_ENTRY(u16_t en_idx)
 void ip_nat_reinitialize(void)
 {
 	int i;
-	rtw_mutex_get(&nat_entry_lock);
+	sys_mutex_lock(&nat_entry_lock);
 	memset(ip_nat_table, 0x00, sizeof(struct nat_table) * IP_NAT_MAX);
 	for (i = 0; i < IP_NAT_MAX - 1; i++) {
 		ip_nat_table[i].next = i + 1;
@@ -144,14 +143,14 @@ void ip_nat_reinitialize(void)
 	tcp_entry_count = 0;
 	udp_entry_count = 0;
 	icmp_entry_count = 0;
-	rtw_mutex_put(&nat_entry_lock);
+	sys_mutex_unlock(&nat_entry_lock);
 }
 
 #if 0
 static void ipnat_ageing_tmr(void *arg)
 {
 	int total_session = 0;
-	rtw_mutex_get(&nat_entry_lock);
+	sys_mutex_lock(&nat_entry_lock);
 	total_session = tcp_entry_count + udp_entry_count + icmp_entry_count;
 
 	if (total_session > 0 && total_session < 50) {
@@ -159,7 +158,7 @@ static void ipnat_ageing_tmr(void *arg)
 	} else {
 		//printf("\n\r total :%d %d %d", tcp_entry_count, udp_entry_count, icmp_entry_count);
 	}
-	rtw_mutex_put(&nat_entry_lock);
+	sys_mutex_unlock(&nat_entry_lock);
 	sys_timeout((30 * 1000), ipnat_ageing_tmr, arg);
 }
 #endif
@@ -168,7 +167,7 @@ static void ipnat_ageing_tmr(void *arg)
 void ip_nat_initialize(void)
 {
 	int i;
-	rtw_mutex_init(&nat_entry_lock);
+	sys_mutex_new(&nat_entry_lock);
 	filter_drop_threshold = (IP_NAT_MAX * 80) / 100;
 	int size = sizeof(struct nat_table) * IP_NAT_MAX;
 	ip_nat_table = (struct nat_table *)malloc(size);
@@ -190,13 +189,13 @@ void ip_nat_initialize(void)
 
 void ip_nat_deinitialize(void)
 {
-	rtw_mutex_get(&nat_entry_lock);
+	sys_mutex_lock(&nat_entry_lock);
 	if (ip_nat_table) {
 		free(ip_nat_table);
 		ip_nat_table = NULL;
 	}
-	rtw_mutex_put(&nat_entry_lock);
-	rtw_mutex_free(&nat_entry_lock);
+	sys_mutex_unlock(&nat_entry_lock);
+	sys_mutex_free(&nat_entry_lock);
 }
 
 static void ip_nat_insert_new_rule(struct nat_table *rule_entry)
@@ -607,17 +606,17 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 		frag_offset = lwip_ntohs(iphdr->_offset) & IP_OFFMASK;
 		struct icmp_echo_hdr *iecho = (struct icmp_echo_hdr *)((u8_t *) p->payload + IPH_HL(iphdr) * 4);
 		if (frag_offset == 0 && iecho->type == ICMP_ER) {
-			rtw_mutex_get(&nat_entry_lock);
+			sys_mutex_lock(&nat_entry_lock);
 			NEntry = ip_nat_entry_search(IP_PROTO_ICMP, iphdr->src.addr, iecho->id, iecho->id, 1, 0, 0, 0);
 			if (!NEntry) {
-				rtw_mutex_put(&nat_entry_lock);
+				sys_mutex_unlock(&nat_entry_lock);
 				return;
 			}
 			ip_nat_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
-			rtw_mutex_put(&nat_entry_lock);
+			sys_mutex_unlock(&nat_entry_lock);
 			return;
 		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
-			rtw_mutex_get(&nat_entry_lock);
+			sys_mutex_lock(&nat_entry_lock);
 			NEntry = ip_nat_entry_search(IP_PROTO_ICMP, iphdr->src.addr, 0, 0, 1, 1, 0, 0);
 
 			if (NEntry) {
@@ -625,7 +624,7 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 			} else {
 				LWIP_DEBUGF(IPNAT_DEBUG, ("%s:%d ICMP ip_nat_rx_packet NOT found\n",__FUNCTION__,__LINE__));
 			}
-			rtw_mutex_put(&nat_entry_lock);
+			sys_mutex_unlock(&nat_entry_lock);
 		}
 
 		return;
@@ -635,10 +634,10 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 #if LWIP_TCP
 	if (IPH_PROTO(iphdr) == IP_PROTO_TCP) {
 		struct tcp_hdr *tcphdr = (struct tcp_hdr *)((u8_t *) p->payload + IPH_HL(iphdr) * 4);
-		rtw_mutex_get(&nat_entry_lock);
+		sys_mutex_lock(&nat_entry_lock);
 		NEntry = ip_nat_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, tcphdr->dest, 1, 0, 0, 0);
 		if (!NEntry) {
-			rtw_mutex_put(&nat_entry_lock);
+			sys_mutex_unlock(&nat_entry_lock);
 			return;
 		}
 
@@ -667,7 +666,7 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 			NEntry->rst = 0;
 		}
 
-		rtw_mutex_put(&nat_entry_lock);
+		sys_mutex_unlock(&nat_entry_lock);
 		return;
 	}
 #endif /* LWIP_TCP */
@@ -679,29 +678,29 @@ static void ip_nat_rx_packet(struct pbuf *p, struct ip_hdr *iphdr)
 
 		if (frag_offset == 0) {
 
-			rtw_mutex_get(&nat_entry_lock);
+			sys_mutex_lock(&nat_entry_lock);
 
 			NEntry = ip_nat_entry_search(IP_PROTO_UDP, iphdr->src.addr, udphdr->src, udphdr->dest, 1, 0, 0, 0);
 
 			if (!NEntry) {
-				rtw_mutex_put(&nat_entry_lock);
+				sys_mutex_unlock(&nat_entry_lock);
 				return;
 			}
 
 			ip_nat_manipulate_address_udp(udphdr, &iphdr->dest, NEntry->src);
 			ip_nat_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
-			rtw_mutex_put(&nat_entry_lock);
+			sys_mutex_unlock(&nat_entry_lock);
 			return;
 		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
 
-			rtw_mutex_get(&nat_entry_lock);
+			sys_mutex_lock(&nat_entry_lock);
 			NEntry = ip_nat_entry_search(IP_PROTO_UDP, iphdr->src.addr, 0, 0, 1, 1, 0, 0);
 			if (NEntry) {
 				ip_nat_manipulate_address(iphdr, &iphdr->dest, NEntry->src);
 			} else {
 				//LWIP_DEBUGF(IPNAT_DEBUG, ("%s:%d UDP ip_nat_rx_packet NOT found!!!\n",__FUNCTION__,__LINE__));
 			}
-			rtw_mutex_put(&nat_entry_lock);
+			sys_mutex_unlock(&nat_entry_lock);
 		}
 	}
 #endif							// LWIP_UDP
@@ -722,12 +721,12 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 		struct icmp_echo_hdr *iecho = (struct icmp_echo_hdr *)((u8_t *) p->payload + IPH_HL(iphdr) * 4);
 
 		if (frag_offset == 0 && iecho->type == ICMP_ECHO) {
-			rtw_mutex_get(&nat_entry_lock);
+			sys_mutex_lock(&nat_entry_lock);
 			ip_nat_add_entry(IP_PROTO_ICMP, iphdr->src.addr, iecho->id, iphdr->dest.addr, iecho->id, 0);
-			rtw_mutex_put(&nat_entry_lock);
+			sys_mutex_unlock(&nat_entry_lock);
 			ip_nat_manipulate_address(iphdr, &iphdr->src, output_iface->ip_addr.u_addr.ip4.addr);
 		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
-			rtw_mutex_get(&nat_entry_lock);
+			sys_mutex_lock(&nat_entry_lock);
 			NEntry = ip_nat_entry_search(IP_PROTO_ICMP, iphdr->src.addr, 0, 0, 0, 1, iphdr->dest.addr, 0);
 
 			if (NEntry) {
@@ -735,7 +734,7 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 			} else {
 				//LWIP_DEBUGF(IPNAT_DEBUG, ("%s:%d ICMP ip_nat_forward_packet NOT found!!!\n",__FUNCTION__,__LINE__));
 			}
-			rtw_mutex_put(&nat_entry_lock);
+			sys_mutex_unlock(&nat_entry_lock);
 
 		} else {
 			//LWIP_DEBUGF(IPNAT_DEBUG, ("%s:%d ICMP type =%d ip_nat_forward_packet DO NOTthing!!\n",__FUNCTION__,__LINE__,iecho->type));
@@ -750,22 +749,22 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 	if (IPH_PROTO(iphdr) == IP_PROTO_TCP) {
 		struct tcp_hdr *tcphdr = (struct tcp_hdr *)((u8_t *) p->payload + IPH_HL(iphdr) * 4);
 		if ((TCPH_FLAGS(tcphdr) & (TCP_SYN | TCP_ACK)) == TCP_SYN) {
-			rtw_mutex_get(&nat_entry_lock);
+			sys_mutex_lock(&nat_entry_lock);
 			ip_nat_add_entry(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, iphdr->dest.addr, tcphdr->dest, 0);
-			rtw_mutex_put(&nat_entry_lock);
+			sys_mutex_unlock(&nat_entry_lock);
 
 			ip_nat_manipulate_address_tcp(tcphdr, &iphdr->src, output_iface->ip_addr.u_addr.ip4.addr);
 			ip_nat_manipulate_address(iphdr, &iphdr->src, output_iface->ip_addr.u_addr.ip4.addr);
 		} else {
 
-			rtw_mutex_get(&nat_entry_lock);
+			sys_mutex_lock(&nat_entry_lock);
 			NEntry = ip_nat_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, 0, 0, 0, 0, 0);
 
 			if (!NEntry) {
 				NEntry = ip_nat_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, tcphdr->dest, 1, 0, 0, 0);
 				if (NEntry) {
 					//printf("\n\r %s %d TCP NAT RX has update DNAT --Do Nothing %08X sport=%d ~~~%08X dport=%d",__FUNCTION__, __LINE__, iphdr->src.addr, lwip_ntohs(tcphdr->src), iphdr->dest.addr, lwip_ntohs(tcphdr->dest));
-					rtw_mutex_put(&nat_entry_lock);
+					sys_mutex_unlock(&nat_entry_lock);
 				} else {
 #if LWIP_ICMP
 					NEntry1 = ip_nat_entry_search(IP_PROTO_TCP, iphdr->src.addr, tcphdr->src, 0, 0, 0, iphdr->dest.addr, tcphdr->dest);
@@ -780,13 +779,13 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 						NEntry1->app_use = 0;
 
 						ip_nat_insert_new_rule(NEntry1);
-						rtw_mutex_put(&nat_entry_lock);
+						sys_mutex_unlock(&nat_entry_lock);
 						return ERR_OK;
 					} else {
 						icmp_dest_unreach(p, ICMP_DUR_PORT);
 					}
 #endif
-					rtw_mutex_put(&nat_entry_lock);
+					sys_mutex_unlock(&nat_entry_lock);
 					LWIP_DEBUGF(IPNAT_DEBUG, ("%s:%d return ERR_RTE\n", __FUNCTION__, __LINE__));
 					return ERR_RTE;	/* Drop unknown TCP session */
 				}
@@ -797,7 +796,7 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 #if LWIP_ICMP
 					icmp_dest_unreach(p, ICMP_DUR_PORT);
 #endif
-					rtw_mutex_put(&nat_entry_lock);
+					sys_mutex_unlock(&nat_entry_lock);
 					LWIP_DEBUGF(IPNAT_DEBUG, ("%s:%d return ERR_RTE\n", __FUNCTION__, __LINE__));
 					return ERR_RTE;
 				}
@@ -816,7 +815,7 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 					NEntry->rst = 0;
 				}
 
-				rtw_mutex_put(&nat_entry_lock);
+				sys_mutex_unlock(&nat_entry_lock);
 
 				ip_nat_manipulate_address_tcp(tcphdr, &iphdr->src, output_iface->ip_addr.u_addr.ip4.addr);
 				ip_nat_manipulate_address(iphdr, &iphdr->src, output_iface->ip_addr.u_addr.ip4.addr);
@@ -834,7 +833,7 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 		frag_offset = lwip_ntohs(iphdr->_offset) & IP_OFFMASK;
 		if (frag_offset == 0) {
 
-			rtw_mutex_get(&nat_entry_lock);
+			sys_mutex_lock(&nat_entry_lock);
 
 			NEntry = ip_nat_entry_search(IP_PROTO_UDP, iphdr->src.addr, udphdr->src, 0, 0, 0, 0, 0);
 			if (!NEntry) {
@@ -847,10 +846,10 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 					} else {
 						//printf("\n\r %s %d NAT RX has NOT update forward update %X",__FUNCTION__, __LINE__,NEntry1->src);
 					}
-					rtw_mutex_put(&nat_entry_lock);
+					sys_mutex_unlock(&nat_entry_lock);
 				} else {
 					ip_nat_add_entry(IP_PROTO_UDP, iphdr->src.addr, udphdr->src, iphdr->dest.addr, udphdr->dest, 0);
-					rtw_mutex_put(&nat_entry_lock);
+					sys_mutex_unlock(&nat_entry_lock);
 
 					ip_nat_manipulate_address_udp(udphdr, &iphdr->src, output_iface->ip_addr.u_addr.ip4.addr);
 					ip_nat_manipulate_address(iphdr, &iphdr->src, output_iface->ip_addr.u_addr.ip4.addr);
@@ -878,19 +877,19 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 						icmp_dest_unreach(p, ICMP_DUR_PORT);
 #endif
 
-						rtw_mutex_put(&nat_entry_lock);
+						sys_mutex_unlock(&nat_entry_lock);
 						LWIP_DEBUGF(IPNAT_DEBUG, ("%s:%d return ERR_RTE\n", __FUNCTION__, __LINE__));
 						return ERR_RTE;
 					}
 				}
-				rtw_mutex_put(&nat_entry_lock);
+				sys_mutex_unlock(&nat_entry_lock);
 
 				ip_nat_manipulate_address_udp(udphdr, &iphdr->src, output_iface->ip_addr.u_addr.ip4.addr);
 				ip_nat_manipulate_address(iphdr, &iphdr->src, output_iface->ip_addr.u_addr.ip4.addr);
 			}
 		} else if ((IPH_OFFSET(iphdr) & PP_HTONS(IP_OFFMASK | IP_MF)) != 0) {
 
-			rtw_mutex_get(&nat_entry_lock);
+			sys_mutex_lock(&nat_entry_lock);
 
 			NEntry = ip_nat_entry_search(IP_PROTO_UDP, iphdr->src.addr, 0, 0, 0, 1, iphdr->dest.addr, 0);
 			if (NEntry) {
@@ -898,7 +897,7 @@ err_t ip_nat_forward_packet(struct pbuf *p, struct ip_hdr *iphdr, struct netif *
 			} else {
 				LWIP_DEBUGF(IPNAT_DEBUG, ("%s:%d UDP frag ip_nat_forward_packet NOT found!!!\n", __FUNCTION__, __LINE__));
 			}
-			rtw_mutex_put(&nat_entry_lock);
+			sys_mutex_unlock(&nat_entry_lock);
 		} else {
 		}
 		return ERR_OK;
@@ -954,12 +953,12 @@ err_t ip_nat_enqueue(struct pbuf *p, struct netif *inp)
 void ipnat_dump(void)
 {
 	int total_session = 0;
-	rtw_mutex_get(&nat_entry_lock);
+	sys_mutex_lock(&nat_entry_lock);
 	total_session = tcp_entry_count + udp_entry_count + icmp_entry_count;
 	if (total_session > 0) {
 		nat_debug_print();
 	}
-	rtw_mutex_put(&nat_entry_lock);
+	sys_mutex_unlock(&nat_entry_lock);
 }
 
 void nat_debug_print(void)
