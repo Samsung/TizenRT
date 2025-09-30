@@ -300,6 +300,7 @@ static uint8_t find_volume_index(uint8_t volume, stream_policy_t stream_policy);
 static audio_manager_result_t set_audio_mixer_gain(audio_io_direction_t direct, uint8_t *gain);
 static audio_manager_result_t get_audio_mixer_gain(audio_io_direction_t direct);
 static uint8_t clamp(uint8_t val, uint8_t min_val, uint8_t max_val);
+static audio_manager_result_t restore_output_audio_state(stream_policy_t policy);
 
 std::mutex eventMutex;
 std::condition_variable syncCv;
@@ -1242,6 +1243,43 @@ static uint8_t clamp(uint8_t val, uint8_t min_val, uint8_t max_val)
 	}
 }
 
+static audio_manager_result_t restore_output_audio_state(stream_policy_t policy)
+{
+	audio_manager_result_t ret;
+	audio_card_info_t *card;
+
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+
+	card->mixing = false;
+	// reset the mixer register value in driver
+	audio_config_t *config = &card->config[card->device_id];
+	config->l_mixer_gain = config->default_lmixer_gain;
+	config->r_mixer_gain = config->default_rmixer_gain;
+	uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
+		config->l_mixer_gain,
+		config->r_mixer_gain,
+		config->l_mixer_gain,
+		config->r_mixer_gain
+	};
+	ret = set_audio_mixer_gain(OUTPUT, gain);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set mixer gain. ret: %d\n");
+		return ret;
+	}
+
+	ret = set_audio_volume(OUTPUT, card->volume[policy], policy);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set audio volume. ret: %d\n");
+		return ret;
+	}
+
+	ret = set_audio_stream_mute_from_json(policy);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set audio mute. ret: %d\n");
+	}
+	return ret;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -1577,6 +1615,8 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	}
 	card->stream_id_array[idx] = stream_id;
 	card->stream_status[idx] = READY;
+	// ToDo: Audio manager is lower layer, it should not access focus manager. Consider avoiding it
+	// Also check if fixing index for main & sub stream helps
 	if (fm.getStreamFocusState(stream_id) == media::STREAM_FOCUS_STATE_ACQUIRED) {
 		card->main_stream_idx = idx;
 	}
@@ -1822,21 +1862,10 @@ static audio_manager_result_t pause_audio_stream(audio_io_direction_t direct, st
 		card->stream_status[idx] = PAUSE;
 
 		if (card->stream_status[1 - idx] == RUNNING) {
-			card->mixing = false;
-			// reset the mixer register value in driver
-			audio_config_t *config = &card->config[card->device_id];
-			config->l_mixer_gain = config->default_lmixer_gain;
-			config->r_mixer_gain = config->default_rmixer_gain;
-			uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
-				config->l_mixer_gain,
-				config->r_mixer_gain,
-				config->l_mixer_gain,
-				config->r_mixer_gain
-			};
 			pthread_mutex_unlock(&(card->card_mutex));
-			ret = set_audio_mixer_gain(OUTPUT, gain);
+			ret = restore_output_audio_state(card->policy_array[1 - idx]);
 			if (ret != AUDIO_MANAGER_SUCCESS) {
-				meddbg("Failed to set mixer gain. ret: %d\n");
+				meddbg("Failed to restore output audio state. ret: %d\n");
 			}
 			return ret;
 		}
@@ -1922,21 +1951,10 @@ audio_manager_result_t stop_audio_stream_out(stream_info_id_t stream_id, bool dr
 				meddbg("pcm_drain failed, ret = %d\n", ret);
 			}
 		}
-		card->mixing = false;
-		// reset the mixer register value in driver
-		audio_config_t *config = &card->config[card->device_id];
-		config->l_mixer_gain = config->default_lmixer_gain;
-		config->r_mixer_gain = config->default_rmixer_gain;
-		uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
-			config->l_mixer_gain,
-			config->r_mixer_gain,
-			config->l_mixer_gain,
-			config->r_mixer_gain
-		};
 		pthread_mutex_unlock(&(card->card_mutex));
-		ret = set_audio_mixer_gain(OUTPUT, gain);
+		ret = restore_output_audio_state(card->policy_array[1 - idx]);
 		if (ret != AUDIO_MANAGER_SUCCESS) {
-			meddbg("Failed to set mixer gain. ret: %d\n");
+			meddbg("Failed to restore output audio state. ret: %d\n");
 		}
 		return ret;
 	}
@@ -2049,22 +2067,11 @@ audio_manager_result_t reset_audio_stream_out(stream_info_id_t stream_id)
 	card->stream_status[idx] = IDLE;
 
 	if (card->mixing) {
-		card->mixing = false;
-		// reset the mixer register value in driver
-		audio_config_t *config = &card->config[card->device_id];
-		config->l_mixer_gain = config->default_lmixer_gain;
-		config->r_mixer_gain = config->default_rmixer_gain;
-		uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
-			config->l_mixer_gain,
-			config->r_mixer_gain,
-			config->l_mixer_gain,
-			config->r_mixer_gain
-		};
 		pthread_mutex_unlock(&(card->card_mutex));
-		ret = set_audio_mixer_gain(OUTPUT, gain);
+		ret = restore_output_audio_state(card->policy_array[1 - idx]);
 		pthread_mutex_lock(&(card->card_mutex));
 		if (ret != AUDIO_MANAGER_SUCCESS) {
-			meddbg("Failed to set mixer gain. ret: %d\n");
+			meddbg("Failed to restore output audio state. ret: %d\n");
 		}
 	}
 
@@ -3421,36 +3428,64 @@ audio_manager_result_t set_output_audio_mixer(stream_info_id_t stream_id)
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	idx = get_stream_index(card, stream_id);
 
+	if (card->stream_status[1 - idx] != RUNNING) {
+        medvdbg("No other audio playing right now, no action needed\n");
+        return AUDIO_MANAGER_SUCCESS;
+	}
+
 	pthread_mutex_lock(&(card->card_mutex));
 
-	if (card->stream_status[1 - idx] == RUNNING) {
-		if ((ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm))) < 0) {
-			if (ret == -EPIPE) {
-				ret = AUDIO_MANAGER_SUCCESS;
-			} else {
-				meddbg("pcm_drain failed, ret = %d\n", ret);
-			}
-		}
-		card->mixing = true;
-		// set the mixer register value in driver
-		audio_config_t *config = &card->config[card->device_id];
-		config->l_mixer_gain = config->default_lmixer_gain;
-		config->r_mixer_gain = config->default_rmixer_gain * CONFIG_AUDIO_DUCKING_MULTIPLIER;
-		uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
-			config->l_mixer_gain,
-			config->r_mixer_gain,
-			config->l_mixer_gain,
-			config->r_mixer_gain
-		};
-		pthread_mutex_unlock(&(card->card_mutex));
-		ret = set_audio_mixer_gain(OUTPUT, gain);
-		pthread_mutex_lock(&(card->card_mutex));
-		if (ret != AUDIO_MANAGER_SUCCESS) {
-			meddbg("Failed to set mixer gain. ret: %d\n");
+	if ((ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm))) < 0) {
+		if (ret == -EPIPE) {
+			ret = AUDIO_MANAGER_SUCCESS;
+		} else {
+			meddbg("pcm_drain failed, ret = %d\n", ret);
 		}
 	}
 
+	bool mute;
+	stream_policy_t policy = card->policy_array[1 - idx];
+	ret = get_audio_stream_mute_state(policy, &mute);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to get mute state. stream_policy: %d, ret: %d\n", policy, ret);
+	}
+	if (mute) {
+		pthread_mutex_unlock(&(card->card_mutex));
+		ret = set_audio_mute(OUTPUT, policy, false);
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to set audio to mute. stream_policy: %d, mute: %d, ret: %d\n", policy, false, ret);
+			return ret;
+		}
+		pthread_mutex_lock(&(card->card_mutex));
+	}
+
+	card->mixing = true;
+	// set the mixer register value in driver
+	audio_config_t *config = &card->config[card->device_id];
+	config->l_mixer_gain = config->default_lmixer_gain;
+	config->r_mixer_gain = config->default_rmixer_gain * CONFIG_AUDIO_DUCKING_MULTIPLIER;
+	uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
+		config->l_mixer_gain,
+		config->r_mixer_gain,
+		config->l_mixer_gain,
+		config->r_mixer_gain
+	};
 	pthread_mutex_unlock(&(card->card_mutex));
+	ret = set_audio_mixer_gain(OUTPUT, gain);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set mixer gain. ret: %d\n");
+		return ret;
+	}
+
+	if (!mute) {
+		return ret;
+	}
+
+	ret = set_audio_mute(OUTPUT, policy, true);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set audio to mute. stream_policy: %d, mute: %d, ret: %d\n", policy, true, ret);
+	}
+
 	return ret;
 }
 

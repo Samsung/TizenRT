@@ -190,7 +190,9 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest, focus
 	if (focusRequest == nullptr) {
 		return FOCUS_REQUEST_FAIL;
 	}
-	if (focusState <= FOCUS_NONE) {
+	if (focusState != FOCUS_GAIN &&
+	    focusState != FOCUS_GAIN_TRANSIENT &&
+	    focusState != FOCUS_GAIN_TRANSIENT_MAY_DUCK ) {
 		meddbg("Invalid focus state : %d\n", focusState);
 		return FOCUS_REQUEST_FAIL;
 	}
@@ -261,6 +263,7 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 			}
 		} else { // Ducking case
 			lock.unlock();
+			// ToDo: Check if FOCUS_LOSS is proper to send to front item in case of FOCUS_GAIN_TRANSIENT_MAY_DUCK & FOCUS_GAIN_TRANSIENT
 			if (focusState == FOCUS_GAIN_TRANSIENT_MAY_DUCK) {
 				focusList->front()->notify(FOCUS_LOSS_TRANSIENT);
 				lock.lock();
