@@ -81,22 +81,15 @@ ALIGNMTO(CACHE_LINE_SIZE) u8 Flash_Sync_Flag[CACHE_LINE_ALIGMENT(64)];
 SRAMDRAM_ONLY_TEXT_SECTION
 void FLASH_Write_Lock(void)
 {
-#if (defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1)
-retry_gating:
-#endif
 	/* disable irq */
-	/* We do not need to acquire lock for this core, as the other core will enter gating */
+	/* We do not need to acquire lock for this core, as the other core will be paused */
 	PrevIrqStatus = enter_critical_section();
 
 	/* Add This Code For XIP when ca32 Program Flah */
 #if (defined(ARM_CORE_CA32) && defined(CONFIG_XIP_FLASH))
 #if (defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1)
-	/*1. Close Core1 to avoid Core1 XIP */
-	if (!vPortGateOtherCore()) {
-		/* Restore irq here due to pending pause request */
-		leave_critical_section(PrevIrqStatus);
-		goto retry_gating;
-	}
+	/*1. All cores other than the lock holder will be paused to prevent access while XIP */
+	up_cpu_pause_all();
 #endif
 #if FLASH_GATE_USE_CKE
 	/*2. Disable KM4 clock */
@@ -141,8 +134,8 @@ void FLASH_Write_Unlock(void)
 #endif
 
 #if (defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1)
-	/*2. Wakeup Core1 */
-	vPortWakeOtherCore();
+	/*2. Resume all secondary cores */
+	up_cpu_resume_all();
 #endif
 #endif
 
@@ -426,12 +419,12 @@ void FLASH_UserMode_Enter(void)
 {
 	SPIC_TypeDef *spi_flash = SPIC;
 
-#ifdef CONFIG_CPU_GATING
+#ifdef CONFIG_SMP
 	long ulCoreID = up_cpu_index();
 	ulCoreID = (ulCoreID + 1) % CONFIG_SMP_NCPUS;
 	CA32_TypeDef *ca32 = CA32_BASE;
 
-	while ((up_get_gating_flag_status(ulCoreID) != 2) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID));
+	while ((!up_is_cpu_paused(ulCoreID)) || CA32_GET_STANDBYWFE(ca32->CA32_C0_CPU_STATUS) != BIT(ulCoreID));
 #endif
 	ARM_DSB();
 	ARM_ISB();
