@@ -1200,7 +1200,7 @@ int pcm_drain(struct pcm *pcm)
 		}
 		/* Playback case */
 		/* Wait for all enqueued buffers to get dequeued. */
-		while (pcm->buf_idx > 0) {
+		if (pcm->buf_idx > 0) {
 			/* Wait for deque message from kernel */
 			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
 			if (size != sizeof(msg)) {
@@ -1209,6 +1209,10 @@ int pcm_drain(struct pcm *pcm)
 			}
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				pcm->buf_idx--;
+				if (pcm->buf_idx > 0) {
+					return -EAGAIN;
+				}
+				return 0;
 			} else if (msg.msgId == AUDIO_MSG_XRUN) {
 				/* Underrun to be handled by client */
 				if (pcm->buf_idx < pcm->buffer_cnt - 1) {

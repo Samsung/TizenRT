@@ -1850,7 +1850,10 @@ static audio_manager_result_t pause_audio_stream(audio_io_direction_t direct, st
 	pthread_mutex_lock(&(card->card_mutex));
 
 	if (direct == OUTPUT && *status == AUDIO_CARD_RUNNING) {
-		if ((ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm))) < 0) {
+		do {
+			ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm));
+		} while (ret == -EAGAIN);
+		if (ret < 0) {
 			if (ret == -EPIPE) {
 				ret = AUDIO_MANAGER_SUCCESS;
 			} else {
@@ -1944,7 +1947,10 @@ audio_manager_result_t stop_audio_stream_out(stream_info_id_t stream_id, bool dr
 
 	if (card->stream_status[1 - idx] == RUNNING) {
 		// ToDo: Cannot do pcm_drop here because it will drop the other stream data too.
-		if ((ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm))) < 0) {
+		do {
+			ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm));
+		} while (ret == -EAGAIN);
+		if (ret < 0) {
 			if (ret == -EPIPE) {
 				ret = AUDIO_MANAGER_SUCCESS;
 			} else {
@@ -1963,6 +1969,9 @@ audio_manager_result_t stop_audio_stream_out(stream_info_id_t stream_id, bool dr
 		if ((ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm))) < 0) {
 			if (ret == -EPIPE) {
 				ret = AUDIO_MANAGER_SUCCESS;
+			} else if (ret == -EAGAIN) {
+				pthread_mutex_unlock(&(card->card_mutex));
+				return AUDIO_MANAGER_EAGAIN;
 			} else {
 				meddbg("pcm_drain failed, ret = %d\n", ret);
 			}
@@ -3436,7 +3445,10 @@ audio_manager_result_t set_output_audio_mixer(stream_info_id_t stream_id)
 
 	pthread_mutex_lock(&(card->card_mutex));
 
-	if ((ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm))) < 0) {
+	do {
+		ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm));
+	} while (ret == -EAGAIN);
+	if (ret < 0) {
 		if (ret == -EPIPE) {
 			ret = AUDIO_MANAGER_SUCCESS;
 		} else {
