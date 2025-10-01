@@ -263,7 +263,7 @@ static void ais25ba_i2c_write_data(struct i2c_dev_s *i2c, struct i2c_config_s co
 	}
 	usleep(1000 *100);
 	reg[0] = 0x2E;
-	reg[1] = 0x62;
+	reg[1] = 0x02;
 	ret = i2c_writeread(i2c, &config, (uint8_t *)reg, 2, data, 0);
 	if (ret != 2) {
 		sndbg("ERROR: I2C writeread failed, reg_addr: %p  %p\n", reg[0], reg[1]);
