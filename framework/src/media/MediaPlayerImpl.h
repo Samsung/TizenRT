@@ -54,7 +54,9 @@ typedef enum player_state_e {
 	/** MediaPlayer pause to play */
 	PLAYER_STATE_PAUSED,
 	/** MediaPlayer completed play */
-	PLAYER_STATE_COMPLETED
+	PLAYER_STATE_COMPLETED,
+	/** MediaPlayer wait for completing */
+	PLAYER_STATE_COMPLETING
 } player_state_t;
 
 const char *const player_state_names[] = {
@@ -65,7 +67,8 @@ const char *const player_state_names[] = {
 	"PLAYER_STATE_READY",
 	"PLAYER_STATE_PLAYING",
 	"PLAYER_STATE_PAUSED",
-	"PLAYER_STATE_COMPLETED"
+	"PLAYER_STATE_COMPLETED",
+	"PLAYER_STATE_COMPLETING"
 };
 
 typedef enum player_observer_command_e {
@@ -115,6 +118,7 @@ public:
 	void notifyObserver(player_observer_command_t cmd, ...);
 	void notifyAsync(player_event_t event);
 	void playback(std::chrono::milliseconds timeout, uint8_t playback_idx);
+	void playbackFinished(void);
 	player_result_t setLooping(bool loop);
 
 private:
@@ -139,7 +143,6 @@ private:
 	stream_focus_state_t getStreamFocusState(void);
 	void onFocusLossListener(void);
 	void setPlayerLooping(bool loop, player_result_t &ret);
-	player_result_t playbackFinished(void);
 	void dequeueAndRunObserverCallback();
 
 private:

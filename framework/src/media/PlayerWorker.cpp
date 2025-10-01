@@ -59,16 +59,23 @@ bool PlayerWorker::processLoop()
 		return false;
 	}
 
+	std::list<std::shared_ptr<MediaPlayerImpl>> mPlayerListCopy(mPlayerList);
+
 	bool ret = false;
 	auto t_deadline = std::chrono::steady_clock::now() + mTimeout;
-	auto itr = mPlayerList.begin();
+	auto itr = mPlayerListCopy.begin();
 	uint8_t idx = 0;
 
-	while (itr != mPlayerList.end()) {
+	while (itr != mPlayerListCopy.end()) {
 		auto player = *itr;
 		if (player && player->getState() == PLAYER_STATE_PLAYING) {
 			/* ToDo: Adjust this timeout in a better way */
-			player->playback(std::chrono::duration_cast<std::chrono::milliseconds>((t_deadline - std::chrono::steady_clock::now())) / (mPlayerList.size() - idx), idx);
+			player->playback(std::chrono::duration_cast<std::chrono::milliseconds>((t_deadline - std::chrono::steady_clock::now())) / (mPlayerListCopy.size() - idx), idx);
+			ret = true;
+		}
+
+		if (player && player->getState() == PLAYER_STATE_COMPLETING) {
+			player->playbackFinished();
 			ret = true;
 		}
 		itr++;

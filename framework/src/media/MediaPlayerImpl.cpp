@@ -336,7 +336,7 @@ player_result_t MediaPlayerImpl::reset()
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	LOG_STATE_INFO(mCurState);
 
-	if (mCurState == PLAYER_STATE_READY || mCurState == PLAYER_STATE_PLAYING || mCurState == PLAYER_STATE_PAUSED) {
+	if (mCurState == PLAYER_STATE_READY || mCurState == PLAYER_STATE_PLAYING || mCurState == PLAYER_STATE_PAUSED || mCurState == PLAYER_STATE_COMPLETING) {
 		mInputHandler.close();
 		if (reset_audio_stream_out(mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer reset fail : reset_audio_stream_out fail\n");
@@ -387,14 +387,14 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (mCurState != PLAYER_STATE_READY && mCurState != PLAYER_STATE_PAUSED &&
-		mCurState != PLAYER_STATE_COMPLETED && mCurState != PLAYER_STATE_PLAYING) {
+		mCurState != PLAYER_STATE_COMPLETED && mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_COMPLETING) {
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
 		return notifySync();
 	}
 
-	if (mCurState == PLAYER_STATE_PLAYING) {
+	if (mCurState == PLAYER_STATE_PLAYING || mCurState == PLAYER_STATE_COMPLETING) {
 		meddbg("Already Playing, Ignore Start\n");
 		return notifySync();
 	}
@@ -492,7 +492,7 @@ player_result_t MediaPlayerImpl::stopPlayback(bool drain)
 {
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (mCurState != PLAYER_STATE_PLAYING && mCurState != PLAYER_STATE_PAUSED &&
-		mCurState != PLAYER_STATE_COMPLETED && mCurState != PLAYER_STATE_READY) {
+		mCurState != PLAYER_STATE_COMPLETED && mCurState != PLAYER_STATE_READY && mCurState != PLAYER_STATE_COMPLETING) {
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		return PLAYER_ERROR_INVALID_STATE;
@@ -573,7 +573,7 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 {
 	LOG_STATE_INFO(mCurState);
 
-	if (mCurState == PLAYER_STATE_PLAYING) {
+	if (mCurState == PLAYER_STATE_PLAYING || mCurState == PLAYER_STATE_COMPLETING) {
 		audio_manager_result_t result = pause_audio_stream_out(mStreamInfo->id);
 		if (result != AUDIO_MANAGER_SUCCESS) {
 			meddbg("pause_audio_stream_in failed ret : %d\n", result);
@@ -626,7 +626,7 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 
 void MediaPlayerImpl::onFocusLossListener()
 {
-	if (mCurState == PLAYER_STATE_PLAYING) {
+	if (mCurState == PLAYER_STATE_PLAYING || mCurState == PLAYER_STATE_COMPLETING) {
 		player_result_t ret = PLAYER_OK;
 		pausePlayer(ret, false);
 		meddbg("Internal pause done. player: %x\n", &mPlayer);
@@ -904,7 +904,7 @@ bool MediaPlayerImpl::isPlaying()
 
 	/* Wait for other commands to complete. */
 	mpw.enQueue([&]() {
-		if (getState() == PLAYER_STATE_PLAYING) {
+		if (getState() == PLAYER_STATE_PLAYING || getState() == PLAYER_STATE_COMPLETING) {
 			ret = true;
 		}
 		notifySync();
@@ -1085,8 +1085,7 @@ void MediaPlayerImpl::playback(std::chrono::milliseconds timeout, uint8_t playba
 			}
 		}
 	} else if (num_read == 0) {
-		PlayerWorker &mpw = PlayerWorker::getWorker();
-		mpw.enQueue(&MediaPlayerImpl::playbackFinished, shared_from_this());
+		mCurState = PLAYER_STATE_COMPLETING;
 	} else {
 		/*@ToDo: It is not possible for num_read to be negative according to code in InputHandler read() API.*/
 		meddbg("InputDatasource read error\n");
@@ -1095,24 +1094,25 @@ void MediaPlayerImpl::playback(std::chrono::milliseconds timeout, uint8_t playba
 	}
 }
 
-player_result_t MediaPlayerImpl::playbackFinished()
+void MediaPlayerImpl::playbackFinished()
 {
-	if (mCurState != PLAYER_STATE_PLAYING) {
-		return PLAYER_OK;
-	}
-
-	PlayerWorker &mpw = PlayerWorker::getWorker();
-	mCurState = PLAYER_STATE_COMPLETED;
-	mpw.removePlayer(shared_from_this());
 	audio_manager_result_t result = stop_audio_stream_out(mStreamInfo->id, true);
-	if (result != AUDIO_MANAGER_SUCCESS) {
-		meddbg("stop_audio_stream_out failed ret : %d\n", result);
-		return PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+	if (result == AUDIO_MANAGER_EAGAIN){
+		return;
 	}
-	notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHED);
+	if (result == AUDIO_MANAGER_SUCCESS){
+		mCurState = PLAYER_STATE_COMPLETED;
+		notifyObserver(PLAYER_OBSERVER_COMMAND_FINISHED);
+	} else {
+		mCurState = PLAYER_STATE_READY;
+		notifyObserver(PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+	}
+	
+	PlayerWorker &mpw = PlayerWorker::getWorker();
+	mpw.removePlayer(shared_from_this());
+
 	FocusManager &fm = FocusManager::getFocusManager();
 	fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
-	return PLAYER_OK;
 }
 
 MediaPlayerImpl::~MediaPlayerImpl()
