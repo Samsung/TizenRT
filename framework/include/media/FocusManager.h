@@ -138,14 +138,14 @@ public:
 	 *         - @c STREAM_FOCUS_STATE_RELEASED: In all other cases.
 	 */
 	stream_focus_state_t getStreamFocusState(stream_info_id_t streamId);
-
-private:
 	/**
 	 * @brief Get current focussed player stream info
 	 * @details @b #include <media/FocusManager.h>
 	 * @return return current focused player stream_info structure. If list is empty, return {0, STREAM_TYPE_MEDIA}
 	 */
-	stream_info_t getCurrentPlayerStreamInfo(void);
+	stream_info_t getCurrentStreamInfo(void);
+
+private:
 	/**
 	 * @brief  It registers player focus loss listener. This function is called whenever player is started.
 	 * @details @b #include <media/FocusManager.h>
