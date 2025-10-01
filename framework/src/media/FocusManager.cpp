@@ -305,10 +305,10 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 	return ;
 }
 
-stream_info_t FocusManager::getCurrentPlayerStreamInfo(void)
+stream_info_t FocusManager::getCurrentStreamInfo(void)
 {
 	std::lock_guard<std::mutex> lock(mPlayerFocusListAccessLock);
-	medvdbg("getCurrentPlayerStreamInfo!!\n");
+	medvdbg("getCurrentStreamInfo!!\n");
 	stream_info_t stream_info;
 	if (mPlayerFocusList.empty()) {
 		stream_info = {0, STREAM_TYPE_MEDIA};
