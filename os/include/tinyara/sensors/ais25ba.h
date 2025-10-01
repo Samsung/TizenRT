@@ -88,9 +88,10 @@ typedef struct ais25ba_dev_s {
 } ais25ba_dev_s;
 
 typedef struct sensor_data_s {
-	float x;
-	float y;
-	float z;
+	//float x;
+	//float y;
+	//float z;
+	uint16_t samples[8];
 } sensor_data_s;
 
 typedef struct ais25ba_buf_s {

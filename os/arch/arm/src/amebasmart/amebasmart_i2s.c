@@ -128,6 +128,8 @@
 #define I2S_DMA_PAGE_SIZE 8192 	/* 4 ~ 16384, set to a factor of APB size */
 #define I2S_DMA_PAGE_NUM 4	/* Vaild number is 2~4 */
 
+static volatile bool i2s_tdm_rx = 0;
+extern volatile bool initialized;
 #ifdef CONFIG_PM
 static volatile bool i2s_lock_state = 0;
 #endif
@@ -288,7 +290,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_tdm_config = {
 	.rxenab = 1,
 	.txenab = 0,
 	.tdmenab = 1,
-	.data_format = SP_DF_I2S
+	.data_format = SP_DF_LEFT
 };
 #endif
 
@@ -888,7 +890,9 @@ static int i2s_rxdma_prep(struct amebasmart_i2s_s *priv, struct amebasmart_buffe
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (priv->tdmenab) {
 		i2sinfo("tdm: set dma buffer! rxbuf: %p\n", priv->i2s_rx_buf);
-
+		if (initialized) {
+			return;
+		}
 		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE, GDMA_INT, apb->nmaxbytes);
 		if (priv->i2s_object->fifo_num >= SP_RX_FIFO8) {
 			i2sinfo("tdm: set dma buffer for EXT! rxbuf1: %p\n", priv->i2s_rx_buf);
@@ -930,11 +934,12 @@ static int i2s_rx_start(struct amebasmart_i2s_s *priv)
 		/* Add the container to the list of active DMAs */
 		sq_addlast((sq_entry_t *)bfcontainer, &priv->rx.act);
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
-		if(priv->tdmenab == 0)
-#endif
-		{
-			i2s_recv_page(priv->i2s_object);
+			/* resume the clockgen if master, GDMA-SPORT ISR will trigger the callback to pass memory to app layer */
+		if (priv->i2s_object->role == MASTER) {
+			i2s_tdm_rx = 1;
+			ameba_i2s_tdm_resume(priv->i2s_object);
 		}
+#endif
 	}
 	leave_critical_section(flags);
 
@@ -1238,10 +1243,6 @@ static int i2s_tdm_receive(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_c
 	/* Start transfer */
 	ret = i2s_rx_start(priv);
 
-	/* resume the clockgen if master, GDMA-SPORT ISR will trigger the callback to pass memory to app layer */
-	if (priv->i2s_object->role == MASTER) {
-		ameba_i2s_tdm_resume(priv->i2s_object);
-	}
 
 	i2s_exclsem_give(priv);
 	i2sinfo("RX Exclusive Exit\n");
@@ -1268,14 +1269,17 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 	i2s_t *obj = priv->i2s_object;
 
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
+
 	if (priv->tdmenab) {
 		/* this callback will be called twice if 2 DMA channels are used, only allow processing when both completion flags are true */
 		if (obj->fifo_num >= SP_RX_FIFO8) {
+
 			if (DMA_Done && DMA_Done_1) {
 				//dbg("rx complete 8CH! stopping clockgen! APB: %p\n", priv->apb_rx);
-
-				/* stop clockgen */
-				ameba_i2s_tdm_pause(obj);
+				DMA_Done_1 = 0;
+				DMA_Done = 0;
+				/* stop DMA, but retain clockgen */
+				// ameba_i2s_tdm_pause(obj, ENABLE);
 
 				/* INTERNAL channel will have SLOT 1,2 followed by 5,6 */
 				/* EXTERNAL channel will have SLOT 3,4 followed by 7,8 */
@@ -1292,7 +1296,7 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 					u16 *dst_buf = (u16 *)priv->apb_rx->samp;
 					u16 *dma1 = (u16 *)priv->i2s_rx_buf;
 					u16 *dma2 = (u16 *)priv->i2s_rx_buf_ext;
-					lldbg("@@@@@@@@ DST BUF SIZE: %d |||| DMA PAGE SIZE: %d\n", priv->apb_rx->nmaxbytes, I2S_DMA_PAGE_SIZE);
+					//lldbg("@@@@@@@@ DST BUF SIZE: %d |||| DMA PAGE SIZE: %d\n", priv->apb_rx->nmaxbytes, I2S_DMA_PAGE_SIZE);
 					// lib_dumpbuffer("Int", dma1, 512);
 					// lib_dumpbuffer("Ext", dma2, 512);
 					u32 count = 0;
@@ -1349,14 +1353,18 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 						dst_buf[i + 7] = rx_ext[j + 3];	// slot 8
 					}
 				}
-
+				if (!i2s_tdm_rx) {
+					return;
+				}
+				i2s_tdm_rx = 0;
 				/* call upper layer callback */
 				i2s_rxdma_callback(priv, OK);
 			}
 		} else {
 			if (DMA_Done) {
-				/* stop clockgen */
-				ameba_i2s_tdm_pause(obj);
+				/* stop DMA, but retain clockgen */
+				ameba_i2s_tdm_pause(obj, ENABLE);
+
 				/* copy DMA contents into buffer container ? */
 				// TODO: for single channel DMA populate the buffer
 
@@ -1692,7 +1700,7 @@ static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_TX && priv->txenab) {
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 		if (priv->tdmenab) {
-			ameba_i2s_tdm_pause(priv->i2s_object);
+			ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 		} else {
 			ameba_i2s_pause(priv->i2s_object);
 		}
@@ -1707,7 +1715,7 @@ static int i2s_pause(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_RX && priv->rxenab) {
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 		if (priv->tdmenab) {
-			ameba_i2s_tdm_pause(priv->i2s_object);
+			ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 		} else {
 			ameba_i2s_pause(priv->i2s_object);
 		}
@@ -1797,7 +1805,7 @@ static int i2s_stop_transfer(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 #if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (dir == I2S_TX && priv->tdmenab) {
-		ameba_i2s_tdm_pause(priv->i2s_object);
+		ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 	} else {
 		ameba_i2s_pause(priv->i2s_object);
 	}
@@ -1812,7 +1820,7 @@ static int i2s_stop_transfer(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (dir == I2S_RX && priv->tdmenab) {
-		ameba_i2s_tdm_pause(priv->i2s_object);
+		ameba_i2s_tdm_pause(priv->i2s_object, DISABLE);
 	} else {
 		ameba_i2s_pause(priv->i2s_object);
 	}
