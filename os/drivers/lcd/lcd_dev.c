@@ -479,30 +479,32 @@ int lcddev_register(struct lcd_dev_s *dev)
 #endif
 
 	sem_init(&lcd_info->sem, 0, 1);
-	bool is_silent_mode;
-	is_silent_mode = silent_reboot_is_silent_mode();
-	if (!is_silent_mode) {
-		ASSERT(dev->setpower);
-		ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
-		if (ret != OK) {
-			goto cleanup;
-		}
+
 #ifdef CONFIG_PM
-		(void)pm_suspend(lcd_info->pm_domain);
+	(void)pm_suspend(lcd_info->pm_domain);
 #endif
-		silent_reboot_lock();
-		lcd_init_put_image(dev);
+	silent_reboot_lock();
+
+	ret = lcd_init_put_image(dev);
+	if (ret < 0) { // No BMP file, LCD OFF
+		goto cleanup_unlock;
 	}
+
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
 		snprintf(devname, 16, "/dev/lcd0");
 		ret = register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
 		if (ret != OK) {
-			goto cleanup;
+			goto cleanup_unlock;
 		} else {
 			return ret; //successful registration of driver
 		}
 	}
+cleanup_unlock:
+#ifdef CONFIG_PM
+	(void)pm_resume(lcd_info->pm_domain);
+#endif
+	silent_reboot_unlock();
 cleanup:
 	lcddbg("ERROR: Failed to register driver %s\n", devname);
 #if defined(CONFIG_LCD_FLUSH_THREAD)
