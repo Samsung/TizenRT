@@ -1904,6 +1904,10 @@ errout_with_alloc:
 static void amebasmart_i2s_suspend(uint16_t port)
 {
 	struct amebasmart_i2s_s *priv = g_i2sdevice[port];
+	if (!priv) {
+		i2sinfo("I2S %d is not init\n", port);
+		return;
+	}
 
 	i2s_disable(priv->i2s_object, 1);
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
@@ -1922,12 +1926,14 @@ static void amebasmart_i2s_suspend(uint16_t port)
 static void amebasmart_i2s_resume(uint16_t port)
 {
 	struct amebasmart_i2s_config_s *hw_config_s;
-	struct amebasmart_i2s_s *priv;
+	struct amebasmart_i2s_s *priv = g_i2sdevice[port];	/* The I2S structure should exist after system wakeup */
 	int ret;
-	int count;
-	/* The I2S structure should exist after system wakeup */
-	priv = g_i2sdevice[port];
-	DEBUGASSERT(priv);
+
+	if (!priv) {
+		i2sinfo("I2S %d is not init\n", port);
+		return;
+	}
+
 	DEBUGASSERT(priv->i2s_object);
 	memset(priv->i2s_object, 0, sizeof(i2s_t));
 	/* Config values initialization */
@@ -1979,9 +1985,7 @@ static uint32_t rtk_i2s_resume(uint32_t expected_idle_time, void *param)
 
 	return 1;
 }
-#endif
 
-#ifdef CONFIG_PM
 void i2s_pminitialize(void)
 {
 	bsp_pm_domain_register("I2S", BSP_I2S_DRV);
