@@ -22,6 +22,7 @@
 #include <tinyara/lcd/mipi_lcd.h>
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
+#include <tinyara/silent_reboot.h>
 #include "lcd_logo.h"
 #include <debug.h>
 #include <assert.h>
@@ -55,7 +56,6 @@ typedef enum lcd_mode_e lcd_mode_t;
 #endif
 
 extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
-static uint8_t *lcd_init_fullscreen_image = NULL; // Buffer containing full screen data with logo on specific position
 
 #if defined(CONFIG_LCD_SW_ROTATION)
 #define NUM_OF_LCD_BUFFER	2
@@ -323,10 +323,6 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	priv->config->lcd_put_area((u8 *)lcd_buffer[lcd_buffer_index], row_start, col_start, row_end, col_end);
 	lcd_buffer_index = (1 - lcd_buffer_index);
 #else
-	if (lcd_init_fullscreen_image != NULL) {
-		kmm_free(lcd_init_fullscreen_image);
-		lcd_init_fullscreen_image = NULL;
-	}
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
 #endif
 	if (priv->lcdonoff == LCD_OFF) {
@@ -563,53 +559,44 @@ static int lcd_setcontrast(FAR struct lcd_dev_s *dev, unsigned int contrast)
 	return OK;
 }
 
-FAR void lcd_init_put_image(FAR struct lcd_dev_s *dev)
+FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 {
-	int logo_arr_index = 0;
-	int lcd_data_index = CONFIG_LCD_XRES * (CONFIG_LCD_YRES - LOGO_YRES) + (CONFIG_LCD_XRES - LOGO_XRES);
-	int lcd_data_col_count = 0;
+	bool is_silent_mode;
+	char bmp_file_path[50];
+	int ret = OK;
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 
-	/* Memory optimization applied using Rotation buffer
-	 * If rotation is enabled, then we have two buffers allocated for rotation.
-	 * During bootup, rotation buffer will not be used (No putarea call from application)
-	 * Therefore, the rotation buffer can be safely used for storing logo data.
-	 * 
-	 * If rotation is disabled, then we need to allocate memory for full screen data
-	 * and it will allocate memory to lcd_init_fullscreen_image buffer.
-	 * 
-	 * If rotation is enabled, then lcd_init_fullscreen_image contains pointer of rotation buffer */
-#if defined(CONFIG_LCD_SW_ROTATION)
-	lcd_init_fullscreen_image = lcd_buffer[lcd_buffer_index];
-	lcd_buffer_index = (1 - lcd_buffer_index);
-#else
-	lcd_init_fullscreen_image = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2 + 1);
-	if (!lcd_init_fullscreen_image) {
-		lcddbg("ERROR: LCD logo data memory allocation failed\n");
-		return;
+	is_silent_mode = silent_reboot_is_silent_mode();
+	if (!is_silent_mode) {
+		snprintf(bmp_file_path, sizeof(bmp_file_path), "/res/kernel/graphics/%dx%d/splash_normal.bmp", CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+	} else {
+		snprintf(bmp_file_path, sizeof(bmp_file_path), "/res/kernel/graphics/%dx%d/splash_silent.bmp", CONFIG_LCD_YRES, CONFIG_LCD_XRES);
 	}
-#endif
-	/* Filling buffer with black color using memset and
-	 * then filling it with logo data on specific index in while loop */
-	memset(lcd_init_fullscreen_image, LCD_BLACK_VAL, CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2);
 
-#if defined(CONFIG_LCD_LOGO)
-	while (logo_arr_index < (LOGO_YRES * LOGO_XRES * 2)) {
-		lcd_init_fullscreen_image[lcd_data_index + 1] = lcd_logo_raw_data[logo_arr_index++];
-		lcd_init_fullscreen_image[lcd_data_index] = lcd_logo_raw_data[logo_arr_index++];
-		lcd_data_index += 2;
-		lcd_data_col_count += 1;
-		if (lcd_data_col_count == LOGO_XRES) {
-			lcd_data_index += ((CONFIG_LCD_XRES - LOGO_XRES) * 2);
-			lcd_data_col_count = 0;
-		}
+	/* Check if BMP file exists before rendering */
+	FILE *test_file = fopen(bmp_file_path, "rb");
+	if (!test_file) {
+		lcddbg("BMP file not found at %s. LCD OFF\n", bmp_file_path);
+		return ERROR;
 	}
-#endif
+	fclose(test_file);
 
-	priv->config->lcd_put_area((u8 *)lcd_init_fullscreen_image, 1, 1, CONFIG_LCD_XRES, CONFIG_LCD_YRES);	// 1, 1 -> Start index of the frame buffer
+	ASSERT(dev->setpower);
+	ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
+	if (ret != OK) {
+		lcddbg("Failed to turn on the LCD\n");
+		return ret;
+	}
+
+	ret = lcd_render_bmp(dev, bmp_file_path);	// Displaying BMP image on LCD
+	if (ret != OK) {
+		dev->setpower(dev, 0);
+		return ret;
+	}
 	priv->config->mipi_mode_switch(VIDEO_MODE);
 	priv->lcdonoff = LCD_ON;
 
+	return ret;
 }
 
 FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config)
