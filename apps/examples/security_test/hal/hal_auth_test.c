@@ -122,7 +122,7 @@ TEST_SETUP(get_hmac)
 
 	ST_EXPECT_EQ(0, hal_test_malloc_buffer(&g_hmac, HAL_AUTH_TEST_MEM_SIZE));
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->generate_key(HAL_HMAC_SHA256, HAL_TEST_HMAC_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->generate_key(HAL_KEY_HMAC_SHA256, HAL_TEST_HMAC_KEY_SLOT));
 
 	ST_END_TEST;
 }
@@ -131,7 +131,7 @@ TEST_TEARDOWN(get_hmac)
 {
 	ST_START_TEST;
 
-	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->remove_key(HAL_HMAC_SHA256, HAL_TEST_HMAC_KEY_SLOT));
+	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->remove_key(HAL_KEY_HMAC_SHA256, HAL_TEST_HMAC_KEY_SLOT));
 	hal_test_free_buffer(&g_plain_text);
 	hal_test_free_buffer(&g_hmac);
 
@@ -270,7 +270,7 @@ TEST_SETUP(ecdsa_sign)
 	memset(g_ecdsa_hash.data, 0xa5, HAL_TEST_ECC_HASH_LEN);
 
 	ecdsa_mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
-	ecdsa_mode.hash_t = HAL_HMAC_SHA256;
+	ecdsa_mode.hash_t = HAL_HASH_SHA256;
 
 	ST_END_TEST;
 }
@@ -313,7 +313,7 @@ TEST_SETUP(ecdsa_verify)
 	memset(g_ecdsa_hash.data, 0xa5, HAL_TEST_ECC_HASH_LEN);
 
 	ecdsa_mode.curve = HAL_ECDSA_BRAINPOOL_P256R1;
-	ecdsa_mode.hash_t = HAL_HMAC_SHA256;
+	ecdsa_mode.hash_t = HAL_HASH_SHA256;
 
 	ST_EXPECT_EQ2(HAL_SUCCESS, HAL_NOT_SUPPORTED, g_se->ops->ecdsa_sign_md(ecdsa_mode, &g_ecdsa_hash, HAL_TEST_ECC_KEY_SLOT, &g_ecdsa_signature));
 
