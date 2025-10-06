@@ -107,15 +107,12 @@ static I2S_USER_CB I2SUserCB; /* Pointer to I2S User Callback */
 #ifdef CONFIG_AMEBASMART_I2S_TDM
 static SP_RX_INFO sp_rx_info_ext;
 
-volatile uint8_t DMA_Done, DMA_Done_1; /* Flag to indicate when DMA transfer is complete */
 #endif
 
-static void i2s_tdm_rx_isr(void *sp_data);
-static void i2s_tdm_rx_isr_ext(void *sp_data);
 // static void AudioLLPRXHandler(void *Data);
 // static void AudioLLPRXHandler_ext(void *Data);
 
-
+#if defined(CONFIG_AMEBASMART_I2S_RX) && (CONFIG_AMEBASMART_I2S_RX == 1)
 /*check if a page is ready for app*/
 u8 *sp_get_ready_rx_page_ext(void)
 {
@@ -141,7 +138,6 @@ u8 *sp_get_ready_rx_page(void)
 /*app reads + releases a page*/
 void sp_read_rx_page_ext(u8 *dst, u32 length)
 {
-	//lldbg("sp_rx_info_ext.rx_usr_cnt %d\n",sp_rx_info_ext.rx_usr_cnt);
 	pRX_BLOCK prx_block = &(sp_rx_info_ext.rx_block[sp_rx_info_ext.rx_usr_cnt]);
 	DCache_CleanInvalidate(prx_block->rx_addr, length);
 	memcpy(dst, prx_block->rx_addr, length);
@@ -153,7 +149,6 @@ void sp_read_rx_page_ext(u8 *dst, u32 length)
 }
 void sp_read_rx_page(u8 *dst, u32 length)
 {
-	//lldbg("sp_rx_info.rx_usr_cnt %d\n",sp_rx_info.rx_usr_cnt);
 	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
 
 	DCache_CleanInvalidate(prx_block->rx_addr, length);   //clean before read rx page
@@ -204,7 +199,6 @@ static u8 *sp_get_free_rx_page_ext(void)
 		return prx_block->rx_addr;
 	} else {
 		sp_rx_info_ext.rx_full_flag = 1;
-		//lldbg("full %d\n",sp_rx_info_ext.rx_gdma_cnt);
 		return sp_rx_info_ext.rx_full_block.rx_addr;	//for audio buffer full case
 	}
 }
@@ -217,7 +211,6 @@ static u8 *sp_get_free_rx_page(void)
 		return prx_block->rx_addr;
 	} else {
 		sp_rx_info.rx_full_flag = 1;
-		//lldbg("full %d\n",sp_rx_info.rx_gdma_cnt);
 		return sp_rx_info.rx_full_block.rx_addr;	//for audio buffer full case
 	}
 }
@@ -255,7 +248,6 @@ void AudioLLPRXHandler(void *Data)
 	sp_release_rx_page();
 	sp_get_free_rx_page();
 	sp_get_free_rx_length();
-	////lldbg("%d\n",__LINE__);
 	I2SUserCB.RxCCB((uint32_t)I2SUserCB.RxCBId, NULL);
 }
 
@@ -270,9 +262,9 @@ void AudioLLPRXHandler_ext(void *Data)
 	sp_release_rx_page_ext();
 	sp_get_free_rx_page_ext();
 	sp_get_free_rx_length_ext();
-	////lldbg("%d\n",__LINE__);
 	I2SUserCB.RxCCB((uint32_t)I2SUserCB.RxCBId, NULL);
 }
+#endif
 /**
   * @}
   */
@@ -562,62 +554,16 @@ void i2s_tdm_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 #ifdef CONFIG_AMEBASMART_I2S_RX
 	else {
 #if 0
-		/* Setup GDMA INT channel parameters */
-		if (gdma_channel == GDMA_INT) {
-			sp_rx_info.rx_gdma_cnt = 0;
-			sp_rx_info.rx_usr_cnt = 0;
-			sp_rx_info.rx_full_flag = 0;
-			sp_rx_info.rx_request_length = request_length;
-
-			for (i = 0; i < page_num; i++) {
-				sp_rx_info.rx_block[i].rx_gdma_own = 1;
-				sp_rx_info.rx_block[i].rx_addr = (uint32_t)rx_buf + i * page_size;
-			}
-
-			sp_rx_info.rx_full_block.rx_addr = (uint32_t)rx_buf + page_num * page_size;
-
-			for (i = 0; i < page_size; i++) {
-				((uint8_t *)(sp_rx_info.rx_full_block.rx_addr))[i] = 0;
-			}
-
-			sp_rx_info.rx_page_size = page_size;
-			sp_rx_info.rx_page_num = page_num;
-			/* static buffer has no LL setup*/
-		} else {
-			/* Setup GDMA EXT channel parameters */
-			sp_rx_info_ext.rx_gdma_cnt = 0;
-			sp_rx_info_ext.rx_usr_cnt = 0;
-			sp_rx_info_ext.rx_full_flag = 0;
-			sp_rx_info_ext.rx_request_length = request_length;
-
-			for (i = 0; i < page_num; i++) {
-				sp_rx_info_ext.rx_block[i].rx_gdma_own = 1;
-				sp_rx_info_ext.rx_block[i].rx_addr = (uint32_t)rx_buf + i * page_size;
-			}
-
-			sp_rx_info_ext.rx_full_block.rx_addr = (uint32_t)rx_buf + page_num * page_size;
-
-			for (i = 0; i < page_size; i++) {
-				((uint8_t *)(sp_rx_info_ext.rx_full_block.rx_addr))[i] = 0;
-			}
-
-			sp_rx_info_ext.rx_page_size = page_size;
-			sp_rx_info_ext.rx_page_num = page_num;
-			/* static buffer has no LL setup*/
-		}
 #else
 	/* Setup GDMA INT channel parameters */
 		if (gdma_channel == GDMA_INT) {
-			////lldbg("%d\n",__LINE__);
 
 			sp_rx_info.rx_gdma_cnt = 0;
 			sp_rx_info.rx_usr_cnt = 0;
 			sp_rx_info.rx_full_flag = 0;
-			// sp_rx_info.rx_request_length = request_length;
 
 			for (i = 0; i < page_num; i++) {
 				sp_rx_info.rx_block[i].rx_gdma_own = 1;
-				//lldbg("%d gdma_own %d\n",i,sp_rx_info.rx_block[i].rx_gdma_own);
 				sp_rx_info.rx_block[i].rx_addr = (uint32_t)rx_buf + i * page_size;
 				sp_rx_info.rx_block[i].rx_length = page_size;
 			}
@@ -635,16 +581,13 @@ void i2s_tdm_set_dma_buffer(i2s_t *obj, char *tx_buf, char *rx_buf,
 	}
 		} else {
 			/* Setup GDMA EXT channel parameters */
-			////lldbg("%d\n",__LINE__);
 			
 			sp_rx_info_ext.rx_gdma_cnt = 0;
 			sp_rx_info_ext.rx_usr_cnt = 0;
 			sp_rx_info_ext.rx_full_flag = 0;
-			// sp_rx_info_ext.rx_request_length = request_length;
 
 			for (i = 0; i < page_num; i++) {
 				sp_rx_info_ext.rx_block[i].rx_gdma_own = 1;
-				//lldbg("%d gdma_own %d\n",i,sp_rx_info_ext.rx_block[i].rx_gdma_own);
 				sp_rx_info_ext.rx_block[i].rx_addr = (uint32_t)rx_buf + i * page_size;
 				sp_rx_info_ext.rx_block[i].rx_length = page_size;
 			}
@@ -1134,84 +1077,26 @@ void ameba_i2s_resume(i2s_t *obj) {
 		GDMA_Resume(l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStruct.GDMA_ChNum);
 	}
 }
-volatile bool initialized = 0;
 #ifdef CONFIG_AMEBASMART_I2S_TDM
-void ameba_i2s_tdm_resume(i2s_t *obj) {
-	if (initialized) {
-		DMA_Done_1 = 0;
-		DMA_Done = 0;
-		////lldbg("%d\n",__LINE__);
-
-		return;
-	}
-	
+void ameba_i2s_tdm_init_dma(i2s_t *obj) {
 	SP_GDMA_STRUCT *sp_str = &SPGdmaStruct;
-
-	u32 *pbuf_int, *pbuf_ext;
-	u8 res0, res1;
 
 	if (obj->direction == I2S_DIR_TX) {
 		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
 		AUDIO_SP_TXStart(obj->i2s_idx, ENABLE);
 	} else {
-#if 0
-		pbuf_int = (u32 *)i2s_tdm_get_free_rx_page(obj->i2s_idx, GDMA_INT);
-		u32 dma_request_length = sp_rx_info.rx_request_length;
-
+		sp_get_free_rx_page();
 		if (obj->fifo_num >= SP_RX_FIFO8) {
-			dma_request_length = sp_rx_info.rx_request_length / 2;
-			pbuf_ext = (u32 *)i2s_tdm_get_free_rx_page(obj->i2s_idx, GDMA_EXT);
-			res1 = AUDIO_SP_RXGDMA_Init(obj->i2s_idx, GDMA_EXT, &sp_str->SpRxGdmaInitStructExt, sp_str, (IRQ_FUN)i2s_tdm_rx_isr_ext, (u8 *)pbuf_ext, dma_request_length);
-			/* reset gdma flags */
-			DMA_Done_1 = 0;
-		}
-		
-		/* Setup the RX Length to be equal to what the OS layer wants to obtain, even though we allocate a big page size up to 4K */
-		res0 = AUDIO_SP_RXGDMA_Init(obj->i2s_idx, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)i2s_tdm_rx_isr, (u8 *)pbuf_int, dma_request_length);
-		/* reset gdma flags */
-		DMA_Done = 0;
-
-		AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
-
-		/* Enable GDMA and SPORT handshake*/
-		AUDIO_SP_RXStart(obj->i2s_idx, ENABLE);
-#else
-		////lldbg("%d\n",__LINE__);
-
-		pbuf_int = (u32 *)sp_get_free_rx_page();
-		u32 rx_length = sp_get_free_rx_length();
-		//lldbg(" sp_rx_info.rx_page_size %d ,sp_rx_info.rx_page_num %d ", sp_rx_info.rx_page_size,sp_rx_info.rx_page_num);
-		if (obj->fifo_num >= SP_RX_FIFO8) {
-			res0 = AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)AudioLLPRXHandler, sp_rx_info.rx_page_size/2,
+			AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)AudioLLPRXHandler, sp_rx_info.rx_page_size/2,
 							sp_rx_info.rx_page_num + 1, LliRx);
-			pbuf_ext = (u32 *)sp_get_free_rx_page_ext();
-			res1 = AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_EXT, &sp_str->SpRxGdmaInitStructExt, sp_str, (IRQ_FUN)AudioLLPRXHandler_ext, sp_rx_info.rx_page_size/2,
+			sp_get_free_rx_page_ext();
+			AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_EXT, &sp_str->SpRxGdmaInitStructExt, sp_str, (IRQ_FUN)AudioLLPRXHandler_ext, sp_rx_info.rx_page_size/2,
 							sp_rx_info.rx_page_num + 1, LliRx_ext);
-			/* reset gdma flags */
-			DMA_Done_1 = 0;
+		} else {
+			AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)AudioLLPRXHandler, sp_rx_info.rx_page_size,
+							sp_rx_info.rx_page_num + 1, LliRx);
 		}
-		
-		/* Setup the RX Length to be equal to what the OS layer wants to obtain, even though we allocate a big page size up to 4K */
-
-		/* reset gdma flags */
-		DMA_Done = 0;
-
-		// AUDIO_SP_DmaCmd(obj->i2s_idx, ENABLE);
-
-		// /* Enable GDMA and SPORT handshake*/
-		// AUDIO_SP_RXStart(obj->i2s_idx, ENABLE);
-#endif
-		// AUDIO_SP_RXSetFifo(obj->i2s_idx, SP_InitStruct.SP_SelFIFO, ENABLE);
 	}
-
-	// turn on MCLK if master
-	// if (obj->role == MASTER) {
-	// 	AUDIO_SP_SetMclk(obj->i2s_idx, ENABLE);
-	// }
-	
-	// // turn on BCLK
-	// AUDIO_SP_EnableBclk(obj->i2s_idx, ENABLE);
-	initialized = 1;
 }
 #endif
 
@@ -1279,65 +1164,6 @@ void i2s_tdm_tx_irq_handler(i2s_t *obj, i2s_irq_handler handler, uint32_t id)
 #endif
 
 #if defined(CONFIG_AMEBASMART_I2S_RX) && (CONFIG_AMEBASMART_I2S_RX == 1)
-static void i2s_tdm_rx_isr(void *sp_data)
-{
-	SP_GDMA_STRUCT *gs = sp_data;
-	PGDMA_InitTypeDef GDMA_InitStruct;
-	GDMA_InitStruct = &(gs->SpRxGdmaInitStruct);
-
-	uint8_t i2s_index = gs->i2s_idx;
-
-	/* Clear Pending ISR*/
-	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-	GDMA_SetSrcAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct->GDMA_SrcAddr);
-	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
-	// GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
-	// GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-
-	// AUDIO_SP_RXSetFifo(i2s_index, SP_InitStruct.SP_SelFIFO, DISABLE);
-
-	// i2s_tdm_release_rx_page(i2s_index, GDMA_INT);
-
-	/* set flag to inform os layer */
-	
-
-	pRX_BLOCK prx_block = &(sp_rx_info.rx_block[sp_rx_info.rx_usr_cnt]);
-	uint16_t* p = (uint16_t*)prx_block->rx_addr;
-	DCache_Invalidate((uint32_t)p, sp_rx_info.rx_request_length);
-	__DSB();
-	DMA_Done = 1;
-	I2SUserCB.RxCCB((uint32_t)I2SUserCB.RxCBId, NULL);
-}
-
-static void i2s_tdm_rx_isr_ext(void *sp_data)
-{
-	SP_GDMA_STRUCT *gs = sp_data;
-	PGDMA_InitTypeDef GDMA_InitStruct;
-	GDMA_InitStruct = &(gs->SpRxGdmaInitStructExt);
-
-	uint8_t i2s_index = gs->i2s_idx;
-	/* Clear Pending ISR*/
-	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-	GDMA_SetSrcAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct->GDMA_SrcAddr);
-	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
-	// GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, DISABLE);
-	// GDMA_ChnlFree(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
-
-	// AUDIO_SP_RXSetFifo(i2s_index, SP_InitStruct.SP_SelFIFO, DISABLE);
-
-	// i2s_tdm_release_rx_page(i2s_index, GDMA_EXT);
-
-	/* set flag to inform os layer */
-	
-	
-	pRX_BLOCK prx_block = &(sp_rx_info_ext.rx_block[sp_rx_info_ext.rx_usr_cnt]);
-	uint16_t* p = (uint16_t*)prx_block->rx_addr;
-
-	DCache_Invalidate((uint32_t)p, sp_rx_info_ext.rx_request_length);
-	__DSB();
-	DMA_Done_1 = 1;
-	I2SUserCB.RxCCB((uint32_t)I2SUserCB.RxCBId, NULL);
-}
 
 /**
   * @brief  Register RX interrupt handler.
@@ -1408,9 +1234,6 @@ void i2s_tdm_disable(i2s_t *obj, bool is_suspend)
 			GDMA_ClearINT(l_SPGdmaStruct->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStructExt.GDMA_ChNum);
 			GDMA_Abort(l_SPGdmaStruct->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStructExt.GDMA_ChNum);
 			GDMA_ChnlFree(l_SPGdmaStruct->SpRxGdmaInitStructExt.GDMA_Index, l_SPGdmaStruct->SpRxGdmaInitStructExt.GDMA_ChNum);
-		}
-		if (obj->role == MASTER) {
-			AUDIO_SP_SetMclk(obj->i2s_idx, DISABLE);
 		}
 
 		AUDIO_SP_DmaCmd(obj->i2s_idx, DISABLE);
