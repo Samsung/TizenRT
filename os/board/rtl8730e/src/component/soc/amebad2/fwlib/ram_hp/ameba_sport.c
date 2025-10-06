@@ -1590,6 +1590,16 @@ void AUDIO_SP_SetPhaseLatch(u32 index)
 	SPORTx->SP_RX_LRCLK |= SP_BIT_EN_FS_PHASE_LATCH;
 }
 
+void AUDIO_SP_SetBCLK_Inverse(u32 index, u8 enable)
+{
+	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
+	if (enable) {
+		SPORTx->SP_CTRL0 |= SP_BIT_INV_I2S_SCLK;
+	} else {
+		SPORTx->SP_CTRL0 &= ~SP_BIT_INV_I2S_SCLK;
+	}
+}
+
 /**
   * @brief  Set SPORT tx counter value.
   * @param  index: select SPORT.
