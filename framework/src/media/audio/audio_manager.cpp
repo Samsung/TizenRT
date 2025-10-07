@@ -3400,6 +3400,7 @@ std::chrono::milliseconds get_output_read_timeout(void)
 	ret = control_audio_stream_device(card_path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		meddbg("An ioctl error occured. errno: %d\n", get_errno());
+		pthread_mutex_unlock(&(card->card_mutex));
 		return timeout;
 	}
 

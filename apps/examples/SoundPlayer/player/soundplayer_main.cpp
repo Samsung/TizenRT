@@ -61,7 +61,7 @@ class SoundPlayer : public MediaPlayerObserverInterface,
 					public enable_shared_from_this<SoundPlayer>
 {
 public:
-	SoundPlayer() : mNumContents(0), mPlayIndex(-1), mHasFocus(false), mPaused(false), mStopped(false),
+	SoundPlayer() : mPlayerId(-1), mNumContents(0), mPlayIndex(-1), mHasFocus(false), mPaused(false), mStopped(false),
 					mIsPlaying(false), mTrackFinished(false), mSampleRate(DEFAULT_SAMPLERATE_TYPE), mVolume(DEFAULT_VOLUME), mLooping(false), mFocusState(FOCUS_NONE) {};
 	~SoundPlayer() {};
 	bool init(int argc, char *argv[]);
