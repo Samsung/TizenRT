@@ -22,6 +22,7 @@
 #include <tinyara/lcd/mipi_lcd.h>
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
+#include <tinyara/silent_reboot.h>
 #include "lcd_logo.h"
 #include <debug.h>
 #include <assert.h>
@@ -56,7 +57,6 @@ typedef enum lcd_mode_e lcd_mode_t;
 #endif
 
 extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
-static uint8_t *lcd_init_fullscreen_image = NULL; // Buffer containing full screen data with logo on specific position
 
 #if defined(CONFIG_LCD_SW_ROTATION)
 #define NUM_OF_LCD_BUFFER	2
@@ -382,10 +382,6 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	priv->config->lcd_put_area((u8 *)lcd_buffer[lcd_buffer_index], row_start, col_start, row_end, col_end);
 	lcd_buffer_index = (1 - lcd_buffer_index);
 #else
-	if (lcd_init_fullscreen_image != NULL) {
-		kmm_free(lcd_init_fullscreen_image);
-		lcd_init_fullscreen_image = NULL;
-	}
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
 #endif
 	if (priv->lcdonoff == LCD_OFF) {
@@ -496,13 +492,72 @@ static int lcd_getpower(FAR struct lcd_dev_s *dev)
 }
 
 /****************************************************************************
+ * Name:  lcd_power_off
+ *
+ * Description:
+ *   Power off the LCD.
+ * 	 Switch to command mode and display off, power off the LCD.
+ *
+ ****************************************************************************/
+
+static void lcd_power_off(FAR struct mipi_lcd_dev_s *priv)
+{
+	lcddbg("Switch to CMD mode\n");
+	priv->config->mipi_mode_switch(CMD_MODE);
+	priv->lcdonoff = LCD_OFF;
+	lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};
+	send_cmd(priv, display_off_cmd);
+	/* The power off must operate only when LCD is ON */
+	priv->config->power_off();
+}
+
+/****************************************************************************
+ * Name:  lcd_power_on
+ *
+ * Description:
+ *   Power on the LCD and send init command. 
+ * 
+ * Assumption:
+ *   This function is called when LCD is OFF.
+ * 	 So we can safely assume that LCD is in command mode.
+ *
+ ****************************************************************************/
+
+static int lcd_power_on(FAR struct mipi_lcd_dev_s *priv)
+{
+	int retries = CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT;
+	
+	lcddbg("Powering up the LCD\n");
+	priv->config->power_on();
+	/* We need to send init cmd after LCD IC power on */
+	while (retries) {
+		if (check_lcd_vendor_send_init_cmd(priv) != OK) {
+			/* attempt a full reset of lcd + driver stack */
+			priv->config->reset();
+			priv->config->power_on();
+			priv->config->mipi_drv_reset();
+		} else {
+			/* panel accepted the command, normal operation */
+			break;
+		}
+		retries--;
+	}
+
+	if (retries <= 0) {
+		lcddbg("ERROR: LCD Init sequence failed\n");
+		return ERROR;
+	}
+	
+	return OK;
+}
+
+
+/****************************************************************************
  * Name:  lcd_setpower
  ****************************************************************************/
 
 static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 {
-	int retries = CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT;
-
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	if (power > CONFIG_LCD_MAXPOWER) {
 		lcddbg("Power exceeds CONFIG_LCD_MAXPOWER %d\n", power);
@@ -522,34 +577,14 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 	if (power == 0) {
 		lcddbg("Powering down the LCD\n");
 		priv->config->backlight(power);
-		lcddbg("Switch to CMD mode\n");
-		priv->config->mipi_mode_switch(CMD_MODE);
-		priv->lcdonoff = LCD_OFF;
-		lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};
-		send_cmd(priv, display_off_cmd);
-		/* The power off must operate only when LCD is ON */
-		priv->config->power_off();
+		lcd_power_off(priv);
 	} else {
 		/* The power on must operate only when LCD is OFF */
 		if (priv->power == 0) {
-			lcddbg("Powering up the LCD\n");
-			priv->config->power_on();
-			/* We need to send init cmd after LCD IC power on */
-			while (retries) {
-				if (check_lcd_vendor_send_init_cmd(priv) != OK) {
-					/* attempt a full reset of lcd + driver stack */
-					priv->config->reset();
-					priv->config->power_on();
-					priv->config->mipi_drv_reset();
-				} else {
-					/* panel accepted the command, normal operation */
-					break;
-				}
-				retries--;
-			}
-
-			if (retries <= 0) {
-				lcddbg("ERROR: LCD Init sequence failed\n");
+			/* The power on must operate only when LCD is OFF */
+			if (lcd_power_on(priv) != OK) {
+				sem_post(&priv->sem);
+				return ERROR;
 			}
 		}
 		priv->config->backlight(power);
@@ -630,13 +665,13 @@ static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	FILE *bmp_file = fopen(bmp_filename, "rb");
 	if (!bmp_file) {
-		lcddbg("Failed to open BMP file");
+		lcddbg("Failed to open BMP file\n");
 		return ERROR;
 	}
 	bmp_header_t header;
 	bmp_info_header_t info_header;
 	if (fread(&header, sizeof(bmp_header_t), 1, bmp_file) != 1) {
-		lcddbg("Failed to read BMP header");
+		lcddbg("Failed to read BMP header\n");
 		goto errout;
 	}
 	if (header.signature != 0x4D42) {
@@ -644,7 +679,7 @@ static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 		goto errout;
 	}
 	if (fread(&info_header, sizeof(bmp_info_header_t), 1, bmp_file) != 1) {
-		lcddbg("Failed to read BMP info header");
+		lcddbg("Failed to read BMP info header\n");
 		goto errout;
 	}
 
@@ -658,7 +693,7 @@ static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 		if (fread(&r_mask, sizeof(uint32_t), 1, bmp_file) != 1 ||
 			fread(&g_mask, sizeof(uint32_t), 1, bmp_file) != 1 ||
 			fread(&b_mask, sizeof(uint32_t), 1, bmp_file) != 1) {
-			lcddbg("Failed to read BMP bitmasks");
+			lcddbg("Failed to read BMP bitmasks\n");
 			goto errout;
 		}
 	} else if (info_header.compression == 0) { // BI_RGB
@@ -705,13 +740,13 @@ static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 		int bmp_file_y = img_height - 1 - src_y;
 		long file_offset_for_row = header.data_offset + (long)bmp_file_y * (img_width * 2 + padding);
 		if (fseek(bmp_file, file_offset_for_row, SEEK_SET) != 0) {
-			lcddbg("Failed to seek to BMP row");
+			lcddbg("Failed to seek to BMP row\n");
 			goto errout;
 		}
 		// Read one row of pixel data (as 16-bit words)
 		uint16_t temp_row_buffer[img_width];
 		if (fread(temp_row_buffer, sizeof(uint16_t), img_width, bmp_file) != img_width) {
-			lcddbg("Failed to read BMP pixel row");
+			lcddbg("Failed to read BMP pixel row\n");
 			goto errout;
 		}
 		for (int src_x = 0; src_x < img_width; src_x++) {
@@ -737,54 +772,52 @@ errout:
 	return ERROR;
 }
 
+/****************************************************************************
+ * Name:  lcd_init_put_image
+ *
+ * Description:
+ *   In normal booting case, render splash_normal.bmp and turn LCD on.
+ *   In silent booting case, render splash_silent.bmp and turn LCD on.
+ *   If there's no BMP file, turn off the LCD.
+ *
+ ****************************************************************************/
+
 FAR void lcd_init_put_image(FAR struct lcd_dev_s *dev)
 {
-	int logo_arr_index = 0;
-	int lcd_data_index = CONFIG_LCD_XRES * (CONFIG_LCD_YRES - LOGO_YRES) + (CONFIG_LCD_XRES - LOGO_XRES);
-	int lcd_data_col_count = 0;
+	bool is_silent_mode;
+	char bmp_file_path[50];
+	int ret = OK;
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 
-	/* Memory optimization applied using Rotation buffer
-	 * If rotation is enabled, then we have two buffers allocated for rotation.
-	 * During bootup, rotation buffer will not be used (No putarea call from application)
-	 * Therefore, the rotation buffer can be safely used for storing logo data.
-	 * 
-	 * If rotation is disabled, then we need to allocate memory for full screen data
-	 * and it will allocate memory to lcd_init_fullscreen_image buffer.
-	 * 
-	 * If rotation is enabled, then lcd_init_fullscreen_image contains pointer of rotation buffer */
-#if defined(CONFIG_LCD_SW_ROTATION)
-	lcd_init_fullscreen_image = lcd_buffer[lcd_buffer_index];
-	lcd_buffer_index = (1 - lcd_buffer_index);
-#else
-	lcd_init_fullscreen_image = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2 + 1);
-	if (!lcd_init_fullscreen_image) {
-		lcddbg("ERROR: LCD logo data memory allocation failed\n");
+	is_silent_mode = silent_reboot_is_silent_mode();
+	if (!is_silent_mode) {
+		snprintf(bmp_file_path, sizeof(bmp_file_path), "/res/kernel/graphics/%dx%d/splash_normal.bmp", CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+	} else {
+		snprintf(bmp_file_path, sizeof(bmp_file_path), "/res/kernel/graphics/%dx%d/splash_silent.bmp", CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+	}
+	
+	while (sem_wait(&priv->sem) != OK) {
+		ASSERT(get_errno() == EINTR);
+	}
+
+	ret = lcd_power_on(priv);
+	if (ret != OK) {
+		lcddbg("Failed to turn on the LCD\n");
+		sem_post(&priv->sem);
 		return;
 	}
-#endif
-	/* Filling buffer with black color using memset and
-	 * then filling it with logo data on specific index in while loop */
-	memset(lcd_init_fullscreen_image, LCD_BLACK_VAL, CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2);
 
-#if defined(CONFIG_LCD_LOGO)
-	while (logo_arr_index < (LOGO_YRES * LOGO_XRES * 2)) {
-		lcd_init_fullscreen_image[lcd_data_index + 1] = lcd_logo_raw_data[logo_arr_index++];
-		lcd_init_fullscreen_image[lcd_data_index] = lcd_logo_raw_data[logo_arr_index++];
-		lcd_data_index += 2;
-		lcd_data_col_count += 1;
-		if (lcd_data_col_count == LOGO_XRES) {
-			lcd_data_index += ((CONFIG_LCD_XRES - LOGO_XRES) * 2);
-			lcd_data_col_count = 0;
-		}
+	ret = lcd_render_bmp(dev, bmp_file_path);
+	if (ret != OK) {
+		lcd_power_off(priv);
+		sem_post(&priv->sem);
+		return;
 	}
-#endif
-
-	priv->config->lcd_put_area((u8 *)lcd_init_fullscreen_image, 1, 1, CONFIG_LCD_XRES, CONFIG_LCD_YRES);	// 1, 1 -> Start index of the frame buffer
+	priv->config->backlight(CONFIG_LCD_MAXPOWER);
+	priv->power = CONFIG_LCD_MAXPOWER;
+	sem_post(&priv->sem);
 	priv->config->mipi_mode_switch(VIDEO_MODE);
 	priv->lcdonoff = LCD_ON;
-	lcd_render_bmp(dev, "/res/kernel/audio/img_logo_samsung.bmp");	// Displaying BMP image on LCD
-
 }
 
 FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config)
