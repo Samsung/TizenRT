@@ -757,6 +757,10 @@ static int littlefs_read_block(FAR const struct lfs_config *c, lfs_block_t block
 	if (ret >= 0) {
 		return OK;
 	}
+	/* TODO Mapping table between errno.h & lfs is required */
+	if (ret == -EIO) {
+		ret = LFS_ERR_CORRUPT;
+	}
 	return ret;
 }
 
@@ -780,6 +784,10 @@ static int littlefs_write_block(FAR const struct lfs_config *c, lfs_block_t bloc
 	if (ret >= 0) {
 		return OK;
 	}
+	/* TODO Mapping table between errno.h & lfs is required */
+	if (ret == -EIO) {
+		ret = LFS_ERR_CORRUPT;
+	}
 	return ret;
 }
 
@@ -802,6 +810,11 @@ static int littlefs_erase_block(FAR const struct lfs_config *c, lfs_block_t bloc
 
 	if (ret >= 0) {
 		return OK;
+	}
+
+	/* TODO Mapping table between errno.h & lfs is required */
+	if (ret == -EIO) {
+		ret = LFS_ERR_CORRUPT;
 	}
 	return ret;
 }
