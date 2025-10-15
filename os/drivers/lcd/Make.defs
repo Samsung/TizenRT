@@ -118,10 +118,6 @@ ifeq ($(CONFIG_LCD_ST7701SN),y)
   CSRCS += st7701sn.c
 endif
 
-ifeq ($(CONFIG_LCD_LOGO_52_340),y)
-CSRCS += lcd_logo_52_340.c
-endif
-
   DEPPATH += --dep-path lcd
   VPATH += :lcd
   CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)lcd}

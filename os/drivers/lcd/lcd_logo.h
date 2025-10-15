@@ -21,14 +21,6 @@
 
 #include <tinyara/config.h>
 
-#define LCD_BLACK_VAL 0
-#ifdef CONFIG_LCD_LOGO_52_340
-#define LOGO_XRES 52
-#define LOGO_YRES 340
-#else
-#define LOGO_XRES 0
-#define LOGO_YRES 0
-#endif      /* CONFIG_LCD_LOGO_52_340 */
 #pragma pack(push, 1)
 typedef struct {
 	uint16_t signature;
