@@ -201,27 +201,6 @@ config LCD_YRES
 	---help---
 		Specifies the Y resolution of the LCD.
 
-config LCD_LOGO
-	bool "Lcd screen image shown at boot time"
-	default n
-	---help---
-		This screen image is shown at boot time.
-		This image is shown till App makes first rendering call.
-
-if LCD_LOGO
-choice
-	prompt "LCD Bootup image"
-	default LCD_LOGO_52_340
-	---help---
-		Select the bootup image to show on the LCD.
-
-config LCD_LOGO_52_340
-	bool "Logo 52x340"
-	---help---
-		LCD logo with resolution 52x340.
-endchoice
-endif
-
 if LCD_INTERFACE_MIPI
 config LCD_SEND_CMD_RETRY_COUNT
 	int "LCD send cmd retry count"

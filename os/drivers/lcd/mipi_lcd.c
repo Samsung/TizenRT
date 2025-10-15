@@ -56,8 +56,6 @@ typedef enum lcd_mode_e lcd_mode_t;
 #define CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT 3
 #endif
 
-extern const uint8_t lcd_logo_raw_data[]; // Buffer containing only logo
-
 #if defined(CONFIG_LCD_SW_ROTATION)
 #define NUM_OF_LCD_BUFFER	2
 static uint8_t *lcd_buffer[NUM_OF_LCD_BUFFER] = { NULL, NULL };	//Two lcd buffers to avoid screen tearing
