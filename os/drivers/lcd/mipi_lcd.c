@@ -723,7 +723,7 @@ static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 #endif
 	memset(fullscreen_buffer, 0, xres * yres * 2);
 
-	// Calculate offset to center the rotated image
+	// Calculate offset to center the image
 	int x_offset = (xres - img_height) / 2;
 	int y_offset = (yres - img_width) / 2;
 	if (x_offset < 0) {
@@ -748,9 +748,9 @@ static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 			goto errout;
 		}
 		for (int src_x = 0; src_x < img_width; src_x++) {
-			int dest_x_in_rotated = src_y;
-			int dest_y_in_rotated = (img_width - 1) - src_x;
-			int target_buffer_index = ((y_offset + dest_y_in_rotated) * xres + (x_offset + dest_x_in_rotated)) * 2;
+			int dest_x = (img_height - 1) - src_y;
+			int dest_y = src_x;
+			int target_buffer_index = ((y_offset + dest_y) * xres + (x_offset + dest_x)) * 2;
 			uint16_t bmp_pixel = temp_row_buffer[src_x];
 			uint16_t rgb565_pixel = convert_pixel_to_rgb565(bmp_pixel, r_mask, g_mask, b_mask);
 			fullscreen_buffer[target_buffer_index] = (uint8_t)(rgb565_pixel & 0xFF);
