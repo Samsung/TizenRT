@@ -201,6 +201,13 @@ config LCD_YRES
 	---help---
 		Specifies the Y resolution of the LCD.
 
+config LCD_SPLASH_IMAGE_PATH
+	string "LCD Splash Image Path"
+	default "/res/kernel/graphics"
+	---help---
+		This path is used find splash image during booting.
+		Final resource path is defined like "{LCD_SPLASH_IMAGE_PATH}/{LCD_YRES}x{LCD_XRES}/splash_{normal/silent}.bmp"
+
 if LCD_INTERFACE_MIPI
 config LCD_SEND_CMD_RETRY_COUNT
 	int "LCD send cmd retry count"

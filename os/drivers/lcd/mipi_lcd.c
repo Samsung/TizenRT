@@ -793,9 +793,9 @@ FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 
 	is_silent_mode = silent_reboot_is_silent_mode();
 	if (!is_silent_mode) {
-		snprintf(bmp_file_path, sizeof(bmp_file_path), "/res/kernel/graphics/%dx%d/splash_normal.bmp", CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+		snprintf(bmp_file_path, sizeof(bmp_file_path), "%s/%dx%d/splash_normal.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
 	} else {
-		snprintf(bmp_file_path, sizeof(bmp_file_path), "/res/kernel/graphics/%dx%d/splash_silent.bmp", CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+		snprintf(bmp_file_path, sizeof(bmp_file_path), "%s/%dx%d/splash_silent.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
 	}
 	
 	while (sem_wait(&priv->sem) != OK) {
