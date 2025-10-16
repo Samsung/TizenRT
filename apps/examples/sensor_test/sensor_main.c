@@ -59,6 +59,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <tinyara/sensors/sensor.h>
 #include <tinyara/rtc.h>
@@ -200,7 +201,7 @@ static int mems_sensor_start()
 	mems_sensor_init();
 	/* Start Collect */
 	ret = ioctl(mems_fd, SENSOR_START, NULL);
-	if (ret < 0) {
+	if (ret != OK) {
 		printf("ERROR: MEMS sensor start failed, errno: %d\n", errno);
 		mems_teardown();
 		return ERROR;
@@ -237,6 +238,100 @@ static int mems_sensor_start()
 	}
 	mems_teardown();
 	return OK;
+}
+
+static int mems_sensor_record_data(int total_samples_to_collect)
+{
+	struct mems_sensor_msg_s msg;
+	int prio;
+	size_t size;
+
+    mems_sensor_init();
+
+	sensor_data_s *collected_samples = (sensor_data_s *)malloc(sizeof(sensor_data_s) * total_samples_to_collect);
+	if (collected_samples == NULL) {
+		printf("ERROR: Failed to allocate memory to store %d samples\n", total_samples_to_collect);
+		return ERROR;
+	}
+
+	int sample_count_collected = 0;
+
+    /* Start Collect */
+    int ret = ioctl(mems_fd, SENSOR_START, NULL);
+    if (ret != OK) {
+        printf("ERROR: MEMS sensor start failed, errno: %d\n", errno);
+        mems_teardown();
+        free(collected_samples);
+        return ERROR;
+    }
+
+	printf("Collecting %d samples...\n", total_samples_to_collect);
+
+	while (sample_count_collected < total_samples_to_collect) {
+		size = mq_receive(g_mems_mq, (FAR char *)&msg, sizeof(msg), &prio);
+		if (size != sizeof(msg)) {
+			printf("ERROR: wrong msg, size: %d, sizeofmsg: %d\n", size, sizeof(msg));
+			continue;
+		}
+		
+		struct ais25ba_buf_s *buf = (struct ais25ba_buf_s *)msg.data;
+		sensor_data_s *buffer = (sensor_data_s *)buf->data;
+		
+		ret = ioctl(mems_fd, SENSOR_SENDBUFFER, (unsigned long)buf);
+		if (ret != OK) {
+			printf("get Buffer failed. errno : %d\n", errno);
+			mems_teardown();
+			return ERROR;
+		}
+
+		int samples_to_copy = AIS25BA_BUFLENGTH;
+		if (sample_count_collected + samples_to_copy > total_samples_to_collect) {
+			samples_to_copy = total_samples_to_collect - sample_count_collected;
+		}
+
+		for (int i = 0; i < samples_to_copy; i++) {
+			collected_samples[sample_count_collected + i] = buffer[i];
+		}
+		sample_count_collected += samples_to_copy;
+		//printf("Collected %d/%d samples\n", sample_count_collected, total_samples_to_collect);
+	
+		ret = ioctl(mems_fd, SENSOR_SENDBUFFER, (unsigned long)buf);
+        if (ret != OK) {
+            printf("get Buffer failed. errno : %d\n", errno);
+            mems_teardown();
+            free(collected_samples);
+            return ERROR;
+        }
+
+		if (sample_count_collected >= total_samples_to_collect) {
+			break;
+		}
+	}
+
+    // Print all collected samples
+    if (sample_count_collected > 0) {
+        printf("\nPrinting all %d collected samples:\n", sample_count_collected);
+        printf("=======================================================================================\n");
+        for (int i = 0; i < sample_count_collected; i++) {
+            printf("%04x %04x %04x\n", 
+                   collected_samples[i].samples[0], 
+				   collected_samples[i].samples[1], 
+				   collected_samples[i].samples[2]);
+        }
+        printf("=======================================================================================\n");
+        printf("Finished printing %d samples\n", sample_count_collected);
+    }
+    
+    // Clean up
+	ret = ioctl(mems_fd, SENSOR_STOP, NULL);
+	free(collected_samples);
+	mems_teardown();
+	if (ret != OK) {
+		printf("Error: sensor stop failed. errno : %d\n", errno);
+		return ERROR;
+	}
+
+    return OK;
 }
 
 static int mems_sensor_stop()
@@ -283,6 +378,7 @@ static void show_usage(void)
 	printf("	stop	: Stop Reading sensor data\n");
 	printf("	fpstest : Time it takes to get single data from sensor\n");
 	printf("	readinfinite: Get data from sensor using read(), MQ not used\n");
+	printf("	recordsamples: Record number of samples and print at the end, usage: sensor recordsamples <sample_count>\n");
 	printf("	show    : Show sensor stats\n");
 }
 
@@ -405,7 +501,7 @@ int sensor_main(int argc, char *argv[])
 	}
 	int status = OK;
 
-	if (argc == 2) {
+	if (argc >= 2) {
 		if (!strncmp(argv[1], "prepare", 8)) {
 			status = mems_sensor_prepare();
 		} else if (!strncmp(argv[1], "start", 6)) {
@@ -416,6 +512,8 @@ int sensor_main(int argc, char *argv[])
 			status = sensor_fps_test();
 		} else if (!strncmp(argv[1], "readinfinite", 13)) {
 			status = sensor_read();
+		} else if (!strncmp(argv[1], "recordsamples", 14) && argc == 3) {
+			mems_sensor_record_data(atoi(argv[2]));
 		} else if (!strncmp(argv[1], "show", 5)) {
 			status = sensor_show();
 		} else {
