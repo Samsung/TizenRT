@@ -777,10 +777,14 @@ errout:
  *   In normal booting case, render splash_normal.bmp and turn LCD on.
  *   In silent booting case, render splash_silent.bmp and turn LCD on.
  *   If there's no BMP file, turn off the LCD.
+ * 
+ * Returns:
+ *   OK if image rendering succeeded and LCD turned on,
+ *   ERROR if image rendering failed and LCD turned off
  *
  ****************************************************************************/
 
-FAR void lcd_init_put_image(FAR struct lcd_dev_s *dev)
+FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 {
 	bool is_silent_mode;
 	char bmp_file_path[50];
@@ -802,14 +806,14 @@ FAR void lcd_init_put_image(FAR struct lcd_dev_s *dev)
 	if (ret != OK) {
 		lcddbg("Failed to turn on the LCD\n");
 		sem_post(&priv->sem);
-		return;
+		return ret;
 	}
 
 	ret = lcd_render_bmp(dev, bmp_file_path);
 	if (ret != OK) {
 		lcd_power_off(priv);
 		sem_post(&priv->sem);
-		return;
+		return ret;
 	}
 	priv->config->backlight(CONFIG_LCD_MAXPOWER);
 	priv->power = CONFIG_LCD_MAXPOWER;

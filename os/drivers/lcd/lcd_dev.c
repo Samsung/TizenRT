@@ -483,12 +483,14 @@ int lcddev_register(struct lcd_dev_s *dev)
 #endif
 
 	sem_init(&lcd_info->sem, 0, 1);
-#ifdef CONFIG_PM
-	(void)pm_suspend(lcd_info->pm_domain);
-#endif
-	silent_reboot_lock();
 
-	lcd_init_put_image(dev);
+	ret = lcd_init_put_image(dev);
+	if (ret == OK) { // LCD ON
+#ifdef CONFIG_PM
+		(void)pm_suspend(lcd_info->pm_domain);
+#endif
+		silent_reboot_lock();
+	}
 
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
@@ -499,10 +501,6 @@ int lcddev_register(struct lcd_dev_s *dev)
 		}
 	}
 
-#ifdef CONFIG_PM
-	(void)pm_resume(lcd_info->pm_domain);
-#endif
-	silent_reboot_unlock();
 	lcddbg("ERROR: Failed to register driver %s\n", devname);
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	task_delete(pid);
