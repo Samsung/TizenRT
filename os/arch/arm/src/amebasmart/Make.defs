@@ -195,10 +195,6 @@ ifeq ($(CONFIG_SMP),y)
   CMN_CSRCS += arm_scu.c
 endif
 
-ifeq ($(CONFIG_CPU_GATING),y)
-  CMN_CSRCS += arm_cpugating.c
-endif
-
 ifeq ($(CONFIG_CPU_HOTPLUG),y)
   CMN_CSRCS += arm_cpuhotplug.c
 endif

@@ -2105,18 +2105,16 @@ void up_cpu_resume_all(void);
  * Description:
  *   Send signal for target CPU to enter hotplug mode.
  *
- *   This function is called after up_cpu_gating in order to ensure
- *   the target CPU enter hotplug when executing idle thread
- *
  * Input Parameters:
  *   cpu - The index of the CPU being hotplug.
  *
  * Returned Value:
- *   None
+ *   OK (0) on success,
+ *   -EBUSY if cpu operation cannot be completed
  *
  * Assumptions:
- *   Called from within a critical section; This function can be called 
- *   by primary core which conducts PM logic (ie. for PM + SMP).
+ *   Called from within a critical section
+ *   target CPU must be in idle
  *
  ****************************************************************************/
 int up_cpu_hotplug(int cpu);
@@ -2154,21 +2152,6 @@ bool up_cpu_hotplugreq(int cpu);
  ****************************************************************************/
 int up_cpu_hotplugabort(int cpu);
 #endif /* CONFIG_CPU_HOTPLUG */
-
-/****************************************************************************
- * Name: up_cpu_gating
- *
- * Description:
- *   Send signal for target CPU to enter gating.
- *
- * Input Parameters:
- *   cpu - The index of the CPU being gated.
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-void up_cpu_gating(int cpu);
 #endif /* CONFIG_SMP */
 
 /****************************************************************************
