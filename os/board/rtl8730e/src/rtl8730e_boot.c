@@ -79,7 +79,7 @@
 #include "common.h"
 #endif
 
-#include "board_pins.h"
+#include <board_pins.h>
 #include "up_internal.h"
 #include "amebasmart_boot.h"
 #include "ameba_soc.h"
@@ -106,6 +106,8 @@ extern int i2schar_devinit(void);
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
+
+
 #ifdef CONFIG_PRODCONFIG
 static int up_check_prod(void)
 {
@@ -251,6 +253,7 @@ void board_i2c_initialize(void)
 	}
 #endif
 #endif
+
 #ifdef CONFIG_PM
 	i2c_pminitialize();
 #endif
@@ -263,17 +266,11 @@ void board_gpio_initialize(void)
 	int i;
 	struct gpio_lowerhalf_s *lower;
 
-	struct {
-		u32 pinname;
-		u32 pinmode;
-		u32 pinpull;
-
-	} pins[] = GPIO_PIN_LIST;
-
-	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
-		lower = amebasmart_gpio_lowerhalf(pins[i].pinname, pins[i].pinmode, pins[i].pinpull);
-		gpio_register(pins[i].pinname, lower);
+	for (i = 0; i < GPIO_PIN_SIZE; i++) {
+		lower = amebasmart_gpio_lowerhalf(GPIO_PINS(GPIO, i), GPIO_PIN_NORMALPULL(GPIO, i), GPIO_PIN_SLEEPPULL(GPIO, i));
+		gpio_register(GPIO_PINS(GPIO, i), lower);
 	}
+
 #ifdef CONFIG_PM
 	gpio_pminitialize();
 #endif
@@ -432,6 +429,7 @@ void board_initialize(void)
 #endif
 
 #if defined(CONFIG_TOUCH_IST415)
+	/* Initialize touch driver */
 	rtl8730e_ist415_initialize();
 #endif
 
@@ -511,4 +509,3 @@ int board_app_initialize(void)
 {
 	return OK;
 }
-

@@ -24,7 +24,7 @@
 #include <debug.h>
 #include "objects.h"
 #include "PinNames.h"
-#include "board_pins.h"
+#include <board_pins.h>
 #include "gpio_api.h"
 #include "pwmout_api.h"
 
@@ -112,4 +112,3 @@ void rtl8730_st7789_initialize(void)
 		lcddbg("LCD driver register success\n");
 	}
 }
-

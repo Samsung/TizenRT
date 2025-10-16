@@ -41,7 +41,7 @@
 #include <arch/board/board.h>
 
 #include "PinNames.h"
-#include "board_pins.h"
+#include <board_pins.h>
 
 #include "up_arch.h"
 #include "ameba_i2c.h"
@@ -172,7 +172,7 @@ typedef struct i2c_m i2c_t;
 
 struct amebasmart_i2c_priv_s {
 	const struct i2c_ops_s *ops;	/* Standard I2C operations */
-	const struct amebasmart_i2c_config_s *config;	/* Port configuration */
+	struct amebasmart_i2c_config_s *config;	/* Port configuration */
 	int refs;					/* Referernce count */
 	sem_t sem_excl;				/* Mutual exclusion semaphore */
 #ifndef CONFIG_I2C_POLLED
@@ -302,8 +302,6 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c0_config = {
 	//.busy_idle = CONFIG_I2C0_BUSYIDLE,
 	//.filtscl = CONFIG_I2C0_FILTSCL,
 	//.filtsda = CONFIG_I2C0_FILTSDA,
-	.scl_pin = I2C0_SCL,
-	.sda_pin = I2C0_SDA,
 #ifndef CONFIG_I2C_SLAVE
 	.mode = AMEBASMART_I2C_MASTER,
 #else
@@ -334,8 +332,6 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c1_config = {
 	//.busy_idle = CONFIG_I2C1_BUSYIDLE,
 	//.filtscl = CONFIG_I2C1_FILTSCL,
 	//.filtsda = CONFIG_I2C1_FILTSDA,
-	.scl_pin = I2C1_SCL,
-	.sda_pin = I2C1_SDA,
 #ifndef CONFIG_I2C_SLAVE
 	.mode = AMEBASMART_I2C_MASTER,
 #else
@@ -366,8 +362,6 @@ static const struct amebasmart_i2c_config_s amebasmart_i2c2_config = {
 	//.busy_idle = CONFIG_I2C2_BUSYIDLE,
 	//.filtscl = CONFIG_I2C2_FILTSCL,
 	//.filtsda = CONFIG_I2C2_FILTSDA,
-	.scl_pin = I2C2_SCL,
-	.sda_pin = I2C2_SDA,
 #ifndef CONFIG_I2C_SLAVE
 	.mode = AMEBASMART_I2C_MASTER,
 #else
@@ -1150,6 +1144,9 @@ static int amebasmart_i2c_transfer(FAR struct i2c_dev_s *dev, FAR struct i2c_msg
  *
  ************************************************************************************/
 
+/* Global I2C initialization completion flags */
+static volatile bool g_i2c_board_init_complete = false; /* Board I2C initialization complete */
+
 FAR struct i2c_dev_s *up_i2cinitialize(int port)
 {
 	struct amebasmart_i2c_priv_s *priv = NULL;
@@ -1159,16 +1156,25 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
 #ifdef CONFIG_AMEBASMART_I2C0
 	if (port == 0) {
 		priv = (struct amebasmart_i2c_priv_s *)&amebasmart_i2c0_priv;
+		lldbg("\n");
+		priv->config->scl_pin = I2C_PIN(I2C0, I2C_SCL);
+		priv->config->sda_pin = I2C_PIN(I2C0, I2C_SDA);
 	} else
 #endif
 #ifdef CONFIG_AMEBASMART_I2C1
 	if (port == 1) {
 		priv = (struct amebasmart_i2c_priv_s *)&amebasmart_i2c1_priv;
+
+		priv->config->scl_pin = I2C_PIN(I2C1, I2C_SCL);
+		priv->config->sda_pin = I2C_PIN(I2C1, I2C_SDA);
 	} else 
 #endif
 #ifdef CONFIG_AMEBASMART_I2C2
 	if (port == 2) {
 		priv = (struct amebasmart_i2c_priv_s *)&amebasmart_i2c2_priv;
+
+		priv->config->scl_pin = I2C_PIN(I2C2, I2C_SCL);
+		priv->config->sda_pin = I2C_PIN(I2C2, I2C_SDA);
 	} else
 #endif
 	{
@@ -1180,9 +1186,10 @@ FAR struct i2c_dev_s *up_i2cinitialize(int port)
 	if (priv->i2c_object != NULL) {
 		return (struct i2c_dev_s *)priv;
 	}
-/* Initialize private data for the first time, increment reference count,
-	* power-up hardware and configure GPIOs.
-	*/
+
+	/* Initialize private data for the first time, increment reference count,
+	 * power-up hardware and configure GPIOs.
+	 */
 	flags = enter_critical_section();
 
 	if ((volatile int)priv->refs++ == 0) {

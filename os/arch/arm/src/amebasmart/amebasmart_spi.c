@@ -41,7 +41,7 @@
 
 #include "chip.h"
 
-#include "board_pins.h"
+#include <board_pins.h>
 #include "amebasmart_spi.h"
 #include "PinNames.h"
 #include "spi_api.h"
@@ -235,13 +235,6 @@ static struct amebasmart_spidev_s g_spi0dev = {
 	.spi_object = {0},
 	.refs = 0,
 	.spi_idx = MBED_SPI0,
-	.spi_mosi = SPI0_MOSI,
-	.spi_miso = SPI0_MISO,
-	.spi_sclk = SPI0_SCLK,
-	.spi_cs0 = SPI0_CS0,
-#if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
-	.spi_cs1 = SPI0_CS1,
-#endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
 	.role = AMEBASMART_SPI_MASTER,
@@ -294,13 +287,6 @@ static struct amebasmart_spidev_s g_spi1dev = {
 	.spi_object = {0},
 	.refs = 0,
 	.spi_idx = MBED_SPI1,
-	.spi_mosi = SPI1_MOSI,
-	.spi_miso = SPI1_MISO,
-	.spi_sclk = SPI1_SCLK,
-	.spi_cs0 = SPI1_CS0,
-#if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI1_CS)
-	.spi_cs1 = SPI1_CS1,
-#endif
 	.nbits = 8,
 	.mode = SPIDEV_MODE0,
 	.role = AMEBASMART_SPI_MASTER
@@ -1558,6 +1544,13 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 
 		priv = &g_spi0dev;
 
+		priv->spi_mosi = SPI_PIN(SPI0, SPI_MOSI);
+		priv->spi_miso = SPI_PIN(SPI0, SPI_MISO);
+		priv->spi_sclk = SPI_PIN(SPI0, SPI_SCLK);
+		priv->spi_cs0  = SPI_PIN(SPI0, SPI_CS0);
+#if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI0_CS)
+		priv->spi_cs1  = SPI_PIN(SPI0, SPI_CS1);
+#endif
 		if (priv->refs > 0) {
 			dbg("SPI port%d has been initialized before!\n", port);
 			leave_critical_section(flags);
@@ -1578,6 +1571,14 @@ FAR struct spi_dev_s *up_spiinitialize(int port)
 		/* Select SPI1 */
 
 		priv = &g_spi1dev;
+
+		priv->spi_mosi = SPI_PIN(SPI1, SPI_MOSI);
+		priv->spi_miso = SPI_PIN(SPI1, SPI_MISO);
+		priv->spi_sclk = SPI_PIN(SPI1, SPI_SCLK);
+		priv->spi_cs0  = SPI_PIN(SPI1, SPI_CS0);
+#if defined(CONFIG_SPI_CS) && defined(CONFIG_AMEBASMART_SPI1_CS)
+		priv->spi_cs1  = SPI_PIN(SPI1, SPI_CS1);
+#endif
 
 		if (priv->refs > 0) {
 			dbg("SPI port%d has been initialized before!\n", port);

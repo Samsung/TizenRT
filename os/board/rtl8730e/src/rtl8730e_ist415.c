@@ -32,7 +32,7 @@
 #include "objects.h"
 #include "gpio_irq_api.h"
 #include "PinNames.h"
-#include "board_pins.h"
+#include <board_pins.h>
 #include "gpio_api.h"
 
 #define PIN_LOW		0
@@ -119,23 +119,23 @@ static void rtl8730e_ist415_power_off(struct ist415_config_s *dev)
 	struct rtl8730e_ist415_s *priv = (struct rtl8730e_ist415_s *)dev->priv;
 	struct amebasmart_i2c_priv_s *priv_i2c = (struct amebasmart_i2c_priv_s *)priv->i2c;
 	amebasmart_i2c_deinit(priv_i2c);
-	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_LOW);
+	GPIO_WriteBit(IST415_PIN(IST415, IST415_RESET_PIN), PIN_LOW);
 }
 
 static void rtl8730e_ist415_power_on(struct ist415_config_s *dev)
 {
 	struct rtl8730e_ist415_s *priv = (struct rtl8730e_ist415_s *)dev->priv;
 	struct amebasmart_i2c_priv_s *priv_i2c = (struct amebasmart_i2c_priv_s *)priv->i2c;
-	GPIO_WriteBit(IST415_GPIO_RESET_PIN, PIN_HIGH);
+	GPIO_WriteBit(IST415_PIN(IST415, IST415_RESET_PIN), PIN_HIGH);
 	DelayMs(1);  /* Wait for stable voltage before i2c commands issued */
 	amebasmart_i2c_init(priv_i2c);
 }
 
 static void rtl8730e_ist415_gpio_init(void)
 {
-	Pinmux_Config(IST415_GPIO_RESET_PIN, PINMUX_FUNCTION_GPIO);
+	Pinmux_Config(IST415_PIN(IST415, IST415_RESET_PIN), PINMUX_FUNCTION_GPIO);
 	GPIO_InitTypeDef TouchResetPin;
-	TouchResetPin.GPIO_Pin = IST415_GPIO_RESET_PIN;
+	TouchResetPin.GPIO_Pin = IST415_PIN(IST415, IST415_RESET_PIN);
 	TouchResetPin.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	TouchResetPin.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&TouchResetPin);
@@ -175,7 +175,7 @@ void rtl8730e_ist415_initialize(void)
 	}
 	priv->i2c = i2c; /* Workaround: IC20 write hang issue */
 
-	gpio_irq_init(&priv->data_ready, IST415_GPIO_I2C_PIN, rtl8730e_ist415_irq_handler, (uint32_t)0);
+	gpio_irq_init(&priv->data_ready, IST415_PIN(IST415, IST415_I2C_PIN), rtl8730e_ist415_irq_handler, (uint32_t)0);
 	gpio_irq_set(&priv->data_ready, IRQ_FALL, 1);
 
 	if (ist415_initialize(TOUCH_DEV_PATH, i2c, dev) < 0) {
