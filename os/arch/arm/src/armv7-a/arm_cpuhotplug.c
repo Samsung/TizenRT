@@ -145,7 +145,7 @@ int up_cpu_hotplugabort(int cpu)
  * Name: arm_hotplug_handler
  *
  * Description:
- *   This is the handler for SGI4.  It performs the following operations:
+ *   This is the handler for SGI3.  It performs the following operations:
  *
  *   1. It saves the current task state at the head of the current assigned
  *      task list.
@@ -213,9 +213,6 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
  * Description:
  *   Send signal for target CPU to enter hotplug mode.
  *
- *   This function is called after up_cpu_pause in order to ensure
- *   the target CPU enter hotplug when executing idle thread
- *
  * Input Parameters:
  *   cpu - The index of the CPU being hotplug.
  *
@@ -248,7 +245,7 @@ int up_cpu_hotplug(int cpu)
 	spin_lock(&g_cpu_hotpluged[cpu]);
 
 	/* Fire SGI for cpu to enter hotplug */
-	arm_cpu_sgi(GIC_IRQ_SGI4, (1 << cpu));
+	arm_cpu_sgi(GIC_IRQ_SGI3, (1 << cpu));
 
 	spin_lock(&g_cpu_hotpluged[cpu]);
 	spin_unlock(&g_cpu_hotpluged[cpu]);

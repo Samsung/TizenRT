@@ -323,13 +323,6 @@ config SMP
 
 if SMP
 
-config CPU_GATING
-	bool "CPU Gating"
-	default n
-	---help---
-		This will register an additional Software Generated Interrupt (SGI) 
-		for CPU Gating when undergo flash operation.
-
 config CPU_HOTPLUG
 	bool "CPU Hotplug"
 	default n
