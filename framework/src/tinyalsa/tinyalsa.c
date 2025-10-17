@@ -505,7 +505,6 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 			if (pcm->buf_idx < pcm->buffer_cnt) {
 				apb = pcm->pBuffers[pcm->buf_idx];
 				apb->nbytes = 0;
-				pcm->buf_idx++;
 			} else {
 				/* We dont have any empty buffers. wait for deque message from kernel */
 				size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
@@ -517,6 +516,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 					apb = (struct ap_buffer_s *)msg.u.pPtr;
 					apb->flags = 0;
 					apb->nbytes = 0;
+					pcm->buf_idx--;
 				} else if (msg.msgId == AUDIO_MSG_XRUN) {
 					/* Underrun to be handled by client */
 					return -EPIPE;
@@ -545,6 +545,7 @@ int pcm_writei(struct pcm *pcm, const void *data, unsigned int frame_count)
 			if (ret < 0) {
 				return oops(pcm, errno, "AUDIOIOC_ENQUEUEBUFFER ioctl failed\n");
 			}
+			pcm->buf_idx++;
 			/* If playback is not already started, start now! */
 			if ((!pcm->running) && (pcm_start(pcm) < 0)) {
 				return -errno;
@@ -1209,6 +1210,7 @@ int pcm_drain(struct pcm *pcm)
 			}
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				pcm->buf_idx--;
+				// ToDo: Cannot use EAGAIN, EAGAIN is type of error. So We have to add pcm_get_avail() and return OK when we can use pcm.
 				if (pcm->buf_idx > 0) {
 					return -EAGAIN;
 				}
