@@ -8,6 +8,7 @@
 #include "ameba_soc.h"
 #include "barriers.h"
 #include "smp.h"
+#include <tinyara/cpu_state.h>
 
 #define SECONDARY_CORE_ID     1
 
@@ -73,6 +74,79 @@ void rtk_core1_power_off(void)
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_PWC, val);
 }
 
+void vPortSecondaryStart(void)
+{
+        int count = 10;
+        int state;
+
+        /* take the lock, as we are about to put cpu1 idle task back active */
+        sched_lock();
+
+        /* turn on CPU1's power domain, require time to stabilize */
+        rtk_core1_power_on();
+        DelayMs(1);
+
+        /* renable scu and invalidate tags on all processors */
+        arm_enable_smp(0);
+
+        /* cold-boot the core */
+        lldbg("Booting secondary core... \n");
+        BaseType_t err = psci_cpu_on(SECONDARY_CORE_ID, (unsigned long)__cpu1_start);
+        DEBUGASSERT(err >= 0);
+
+        /* await for PSCI to report cpu state */
+        do {
+                state  = psci_affinity_info(1, 0);
+                if (state == 1) {
+                        break;
+                }
+
+                DelayUs(50);
+        } while (count--);
+
+        lldbg("Secondary core booted?... %d\n", err);
+        cpu_set_state(SECONDARY_CORE_ID, CPU_RUNNING);
+
+        /* fire SGI1 to kick the freshly booted CPU into TizenRT Idle Task */
+        os_smp_start();
+
+        /* set the idle task state of cpu1 back to running, after it has booted */
+        os_set_cpu_idle_task(SECONDARY_CORE_ID, TSTATE_TASK_RUNNING);
+
+        /* cpu1 is now alive again and can be scheduled on */
+        sched_unlock();
+}
+
+void smp_full_powerdown_cpu(void)
+{
+        int count = 10; // 10 * 50us = 500us
+        int state;
+
+        /* take the lock, as we are about to kill cpu1 */
+        sched_lock();
+
+        /* send SGI4 to make core enter halt state (not complete powerdown yet) */
+        up_cpu_haltcore(SECONDARY_CORE_ID);
+
+        /* release the lock, cpu1 is no longer part of SMP and the idle task is marked inactive */
+        sched_unlock();
+        while (cpu_get_state(SECONDARY_CORE_ID) != CPU_HALTED);
+
+        /* wait for PSCI to report that CPU1 is now safe to power off */
+        do {
+                state  = psci_affinity_info(1, 0);
+                if (state == 1) {
+                        /* turn off CPU1's power domain */
+                        rtk_core1_power_off();
+                        return;
+                }
+
+                DelayUs(50);
+        } while (count--);
+
+        lldbg("Secondary core shutdown complete: %d\n", cpu_get_state(SECONDARY_CORE_ID));
+}
+
 void vPortSecondaryOff(void)
 {
 	int state;
@@ -81,7 +155,7 @@ void vPortSecondaryOff(void)
 
 #ifdef CONFIG_CPU_HOTPLUG
 	/* Notify secondary core to migrate task to primary core and enter wfi*/
-	up_set_cpu_state(1, CPU_HOTPLUG);
+	cpu_set_state(1, CPU_HOTPLUG);
 #endif
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	arm_gic_raise_softirq(1, 1);
@@ -123,7 +197,7 @@ void smp_init(void)
 	for (xCoreID = 0; xCoreID < CONFIG_SMP_NCPUS; xCoreID++) {
 		if (xCoreID == up_cpu_index()) {
 #ifdef CONFIG_CPU_HOTPLUG
-			up_set_cpu_state(xCoreID, CPU_RUNNING);
+			cpu_set_state(xCoreID, CPU_RUNNING);
 #endif
 			continue;
 		}
@@ -144,7 +218,7 @@ void smp_init(void)
 	   If yes, we should send SGI1 to secondary core
 	 */
 #ifdef CONFIG_CPU_HOTPLUG
-	if (up_get_cpu_state(SECONDARY_CORE_ID) == CPU_WAKE_FROM_SLEEP) {
+	if (cpu_get_state(SECONDARY_CORE_ID) == CPU_WAKEUP) {
 		os_smp_start();
 	}
 #endif
