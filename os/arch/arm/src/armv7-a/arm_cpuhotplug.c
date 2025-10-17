@@ -33,6 +33,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/sched_note.h>
+#include <tinyara/cpu_state.h>
 
 #include "up_internal.h"
 #include "cp15_cacheops.h"
@@ -51,51 +52,6 @@
 /* Spinlocks for synchronizing CPU hotplug requests and handling */
 static volatile spinlock_t g_cpu_hotpluged[CONFIG_SMP_NCPUS];
 static volatile spinlock_t g_cpu_hotplughandled[CONFIG_SMP_NCPUS];
-
-/* CPU hotplug state flags for each core */
-static volatile cpu_state_t g_cpuhp_flag[CONFIG_SMP_NCPUS];
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: up_set_cpu_state
- *
- * Description:
- *   Set the hotplug state of a specific CPU core.
- *
- * Input Parameters:
- *   CoreID   - The ID of the CPU core
- *   NewStatus - The new state to set (CPU_RUNNING, CPU_HOTPLUG, etc.)
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-void up_set_cpu_state(uint32_t CoreID, cpu_state_t NewStatus)
-{
-	g_cpuhp_flag[CoreID] = NewStatus;
-	ARM_DSB();
-}
-
-/****************************************************************************
- * Name: up_get_cpu_state
- *
- * Description:
- *   Get the current hotplug state of a specific CPU core.
- *
- * Input Parameters:
- *   CoreID - The ID of the CPU core
- *
- * Returned Value:
- *   The current state of the CPU core
- *
- ****************************************************************************/
-cpu_state_t up_get_cpu_state(uint32_t CoreID)
-{
-	return g_cpuhp_flag[CoreID];
-}
 
 /****************************************************************************
  * Name: up_cpu_hotplugreq
@@ -172,15 +128,15 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 
 	int cpu = this_cpu();
 
-	/* Prevent duplicate execution: If the IRQ was triggered but already handled
-	 * in irq_csection, we should not execute again.
-	 */
 	if (up_cpu_hotplugreq(cpu)) {
+		/* Prevent duplicate execution: If the IRQ was triggered but already handled
+		* in irq_csection, we should not execute again.
+		*/
 		ASSERT(spin_is_locked(&g_cpu_hotpluged[cpu]) && !spin_is_locked(&g_cpu_hotplughandled[cpu])
-			&& up_get_cpu_state(cpu) == CPU_RUNNING);
+			&& cpu_get_state(cpu) == CPU_SCHED_OFF);
 
 		/* Set secondary core to hotplug state */
-		up_set_cpu_state(cpu, CPU_HOTPLUG);
+		cpu_set_state(cpu, CPU_HOTPLUG);
 
 		/* Notification hotplug is handled */
 		spin_lock(&g_cpu_hotplughandled[cpu]);
@@ -190,8 +146,29 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 		/* Save the tcb state */
 		struct tcb_s *rtcb = this_task();
 		arm_savestate(rtcb->xcp.regs);
-		rtcb->task_state = TSTATE_TASK_ASSIGNED;
+
+
+		/* Mark this cpu's idle task as inactive to prevent the scheduler from putting things on it */
+		rtcb->task_state = TSTATE_TASK_INACTIVE;
 		CURRENT_REGS = NULL;
+
+		/*
+		* clear GIC APR0 as when this gets set during restore by ATF boot flow,
+		* When this register is set, it cause GIC to not serve other requests as it thinks there is an
+		* active ISR being served currently.
+		*
+		* On powerup, this register is restored by ATF from previous saved state.
+		* If hard reset, then state is re-initialized, otherwise it will save the state when psci_cpu_off
+		*/
+		putreg32(0x00000000, GIC_ICCNSAPR1);    /* clear SGI1 nonsecure APR0 */
+		putreg32(0x00000000, GIC_ICCAPR1);      /* clear SGI1 secure APR0 */
+
+		/*
+		* manually clear SGI4 interrupt active
+		* As psci_cpu_off is a noreturn function it will trap the CPU in a WFI loop
+		* this means that it will never exit back to arm_decodeirq where EOIR will be set
+		*/
+		putreg32(irq, GIC_ICCEOIR);
 
 		/* MINOR: PSCI is a general interface for controlling power of cortex-A cores
 		It is one of the feature in arm-trusted-firmware (ie. Trustzone-A)
@@ -253,11 +230,11 @@ int up_cpu_hotplug(int cpu)
 	/* Check whether the hotplug is handled */
 	if (spin_trylock(&g_cpu_hotplughandled[cpu]) == SP_UNLOCKED) {
 		/* The cpu hotplug is failed, cpu is in enter_critical_section */
-		ASSERT(up_get_cpu_state(cpu) != CPU_HOTPLUG);
+		ASSERT(cpu_get_state(cpu) != CPU_HOTPLUG);
 		ret = -EBUSY;
 	} else {
 		/* Hotplug is sucessful */
-		ASSERT(up_get_cpu_state(cpu) == CPU_HOTPLUG);
+		ASSERT(cpu_get_state(cpu) == CPU_HOTPLUG);
 	}
 
 	/* Release the handled spinlock since we've completed the state check */

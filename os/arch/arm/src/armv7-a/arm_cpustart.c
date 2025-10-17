@@ -48,6 +48,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/sched_note.h>
+#include <tinyara/cpu_state.h>
 
 #include "up_internal.h"
 #include "cp15_cacheops.h"
@@ -178,7 +179,7 @@ int up_cpu_start(int cpu)
 #endif
 
 #ifdef CONFIG_CPU_HOTPLUG
-  up_set_cpu_state(cpu, CPU_RUNNING);
+  cpu_set_state(cpu, CPU_RUNNING);
 #endif
 
   /* Execute SGI1 */

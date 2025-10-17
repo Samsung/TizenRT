@@ -408,6 +408,8 @@ void board_initialize(void)
 
 	ipc_table_init(IPCAP_DEV);
 
+	board_cpu_initialize();
+
 #ifdef CONFIG_AMEBASMART_USBDEVICE
 	usb_initialize();
 #endif
