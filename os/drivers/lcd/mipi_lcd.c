@@ -797,6 +797,14 @@ FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 	} else {
 		snprintf(bmp_file_path, sizeof(bmp_file_path), "%s/%dx%d/splash_silent.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
 	}
+
+	// Check if BMP file exists before rendering
+	FILE *test_file = fopen(bmp_file_path, "rb");
+	if (!test_file) {
+		lcddbg("BMP file not found at %s. LCD OFF\n", bmp_file_path);
+		return ERROR;
+	}
+	fclose(test_file);
 	
 	while (sem_wait(&priv->sem) != OK) {
 		ASSERT(get_errno() == EINTR);
@@ -820,6 +828,8 @@ FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 	sem_post(&priv->sem);
 	priv->config->mipi_mode_switch(VIDEO_MODE);
 	priv->lcdonoff = LCD_ON;
+
+	return OK;
 }
 
 FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config)
