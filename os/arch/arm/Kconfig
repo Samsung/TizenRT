@@ -121,7 +121,6 @@ config ARCH_CHIP_AMEBASMART
 	select ARCH_HAVE_DVFS
 	select ARCH_HAVE_TICKSUPPRESS
 	select ARM_HAVE_WFE_SEV
-	select CPU_GATING if SMP
 	select CPU_HOTPLUG if (SMP && PM)
 	---help---
 		Realtek AMEBASMART architectures (ARM Cortex-A32).

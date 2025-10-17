@@ -88,7 +88,7 @@ static int suspend_devices(void)
  ****************************************************************************/
 static void resume_devices(void)
 {
-	/* After wakeup change PM State to STANDBY and reset the time slice */
+	/* After wakeup change PM State to STANDBY */
 	(void)pm_changestate(PM_NORMAL);
 }
 
@@ -146,7 +146,7 @@ static void enable_secondary_cpus(void)
  *
  * Description:
  *   This function checks if all secondary CPUs are idle and ready for sleep.
- *   If any CPU is not idle or has a pause request, it aborts the sleep.
+ *   If any CPU is not idle, it aborts the sleep.
  *
  * Input Parameters:
  *   None
@@ -160,11 +160,10 @@ static int check_secondary_cpus_idle(void)
 	int cpu;
 	FAR struct tcb_s *tcb;
 
-	/* Perform state-dependent logic here */
 	/* For SMP case, we need to check secondary core status
-		* If secondary core status is not in idle thread, abort
-		* the sleep and check again on next cycle
-		*/
+	 * If secondary core status is not in idle thread, abort
+	 * the sleep and check again on next cycle
+	 */
 
 	for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
 		/* If the CPU is just back from sleep, abort the sleep */

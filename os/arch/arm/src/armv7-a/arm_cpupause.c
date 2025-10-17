@@ -325,11 +325,11 @@ int up_cpu_pause(int cpu)
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
 	/* If a pause request is already pending or if the cpu is already in
-	 * paused state or if cpu is already gated, then dont send the pause
+	 * paused state, then dont send the pause
 	 * request again.
 	 */
 
-	if (up_cpu_pausereq(cpu) || up_is_cpu_paused(cpu) || up_get_gating_flag_status(cpu)) {
+	if (up_cpu_pausereq(cpu) || up_is_cpu_paused(cpu)) {
 		return OK;
 	}
 

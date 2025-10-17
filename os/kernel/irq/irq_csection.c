@@ -123,7 +123,7 @@ static bool irq_waitlock(int cpu)
 	while (spin_trylock_wo_note(&g_cpu_irqlock) == SP_LOCKED) {
 		/* Is a pause request pending? */
 
-		if (up_cpu_pausereq(cpu) || up_get_gating_flag_status(cpu) == 1
+		if (up_cpu_pausereq(cpu)
 #ifdef CONFIG_CPU_HOTPLUG
 		|| up_cpu_hotplugreq(cpu)
 #endif
@@ -157,7 +157,6 @@ static bool irq_waitlock(int cpu)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-extern void up_do_gating(void);
 
 /****************************************************************************
  * Name: enter_critical_section
@@ -276,8 +275,6 @@ try_again_in_irq:
 
 						DEBUGVERIFY(up_cpu_paused(cpu));
 						paused = true;
-					} else if (up_get_gating_flag_status(cpu) == 1) {
-						up_do_gating();
 #ifdef CONFIG_CPU_HOTPLUG
 					} else if (up_cpu_hotplugreq(cpu)) {
 						DEBUGVERIFY(up_cpu_hotplugabort(cpu));
