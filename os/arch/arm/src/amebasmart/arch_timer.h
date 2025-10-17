@@ -19,6 +19,13 @@
 #define __asm__ __asm
 #endif
 
+/*----------------------------------------------------------------------------
+  Clock Variable definitionecp
+ *----------------------------------------------------------------------------*/
+#define GENERICTIMERFREQ 50000000
+
+#define pdTICKS_TO_CNT (GENERICTIMERFREQ / CLK_TCK)
+
 static inline void arm_arch_timer_set_compare(uint64_t val) /*write CNTV_CVAL: virtual timer CompareValue register*/
 {
 	__asm__ volatile("mcrr p15, 3, %Q0, %R0, c14\n\t"

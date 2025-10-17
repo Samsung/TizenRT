@@ -95,7 +95,7 @@ static int up_pm_board_sleep(void)
 	trigger an timer interrupt */
 	up_timer_enable();
 	/* Arch timer is running at 50Mhz */
-	arm_arch_timer_set_compare(arm_arch_timer_count() + 50000);
+	arm_arch_timer_set_compare(arm_arch_timer_count() + pdTICKS_TO_CNT);
 	arm_arch_timer_int_mask(0);
 
 	return 0;
