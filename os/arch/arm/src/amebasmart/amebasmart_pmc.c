@@ -60,6 +60,7 @@
 #endif
 /* Include header for DVFS implementation */
 #include <tinyara/pm/pm.h>
+#include <tinyara/cpu_state.h>
 #include "ameba_soc.h"
 #include "sys_io.h"
 #include "gic.h"
@@ -239,7 +240,7 @@ void SOCPS_SleepPG(void)
 #if ( CONFIG_SMP_NCPUS > 1 )
 #ifdef CONFIG_CPU_HOTPLUG
 	/* Now init core1 */
-	up_set_cpu_state(1, CPU_WAKE_FROM_SLEEP);
+	cpu_set_state(1, CPU_WAKEUP);
 #endif
 	smp_init();
 #endif
