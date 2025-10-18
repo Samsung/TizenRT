@@ -169,6 +169,28 @@ static void *rtc_test(void *arg)
 	return NULL;
 }
 
+/****************************************************************************
+ * Name: show_usage
+ ****************************************************************************/
+
+static void show_usage(void)
+{
+	printf("\nUsage:  rtc\n");
+	printf("\tor: rtc stop\n");
+	printf("\t\tStart, or Stop rtc test\n");
+#ifdef CONFIG_RTC_ALARM
+	printf("\tor rtc alarm [-r seconds] [-a hh:mm:ss] [-c]\n");
+	printf("\t\tset, or cancel rtc alarm\n");
+	printf("Where:\n");
+	printf("\t-a hh:mm:ss \n");
+	printf("\t\tset alarm by absolute time in hh:mm:ss format.\n");
+	printf("\t-r <seconds> \n");
+	printf("\t\tset alarm by relative time. The number of seconds until the alarm expires.\n");
+	printf("\t-c\n\t\tCancel previously set alarm\n");
+	printf("\t\t");
+#endif
+}
+
 #ifdef CONFIG_RTC_ALARM
 /****************************************************************************
  * Name: alarm_handler
@@ -203,26 +225,6 @@ static void alarm_handler(int signo, FAR siginfo_t *info, FAR void *ucontext)
 		}
 	}
 	close(fd);
-}
-
-/****************************************************************************
- * Name: show_usage
- ****************************************************************************/
-
-static void show_usage()
-{
-	printf("\nUsage:  rtc\n");
-	printf("\tor: rtc stop\n");
-	printf("\t\tStart, or Stop rtc test\n");
-	printf("\tor rtc alarm [-r seconds] [-a hh:mm:ss] [-c]\n");
-	printf("\t\tset, or cancel rtc alarm\n");
-	printf("Where:\n");
-	printf("\t-a hh:mm:ss \n");
-	printf("\t\tset alarm by absolute time in hh:mm:ss format.\n");
-	printf("\t-r <seconds> \n");
-	printf("\t\tset alarm by relative time. The number of seconds until the alarm expires.\n");
-	printf("\t-c\n\t\tCancel previously set alarm\n");
-	printf("\t\t");
 }
 
 /****************************************************************************
@@ -433,7 +435,7 @@ int rtc_main(int argc, char *argv[])
 			return ret;
 #endif
 		} else {
-			show_usage(argv[0]);
+			show_usage();
 			return ERROR;
 		}
 	}
