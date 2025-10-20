@@ -51,12 +51,12 @@
  *   CPUs specified in mask, then that thread is migrated to one of the
  *   CPUs specified in mask.
  *
- *   This function is a simply wrapper around nxsched_set_affinity() that
+ *   This function is a simply wrapper around sched_setpriority() that
  *   sets the errno value in the event of an error.
  *
  * Input Parameters:
  *   pid        - The ID of thread whose affinity set will be modified.
- *   cpusetsize - Size of mask.  MUST be sizeofcpu_set_t().
+ *   cpusetsize - Size of mask.  MUST be sizeof cpu_set_t().
  *   mask       - The location to return the thread's new affinity set.
  *
  * Returned Value:
@@ -128,7 +128,7 @@ int sched_setaffinity(pid_t pid, size_t cpusetsize, FAR const cpu_set_t *mask)
           /* No.. then we will need to move the task from the assigned
            * task list to some other ready to run list.
            *
-           * nxsched_set_priority() will do just what we want... it will
+           * sched_set_priority() will do just what we want... it will
            * remove the task from its current position in the some assigned
            * task list and then simply put it back in the right place.  This
            * works even if the task is this task.

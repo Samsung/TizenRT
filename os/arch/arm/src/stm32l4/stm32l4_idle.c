@@ -134,7 +134,7 @@ void up_idle(void)
    * "fake" timer interrupts. Hopefully, something will wake up.
    */
 
-  nxsched_process_timer();
+  sched_process_timer();
 #else
 	/* set core to WFI */
 #if !(defined(CONFIG_DEBUG_SYMBOLS) && defined(CONFIG_STM32L4_DISABLE_IDLE_SLEEP_DURING_DEBUG))

@@ -46,12 +46,12 @@
  *   argument specifies the size (in bytes) of mask.  If pid is zero, then
  *   the mask of the calling thread is returned.
  *
- *   This function is a simply wrapper around nxsched_get_affinity() that
+ *   This function is a simply wrapper around sched_gettcb() that
  *   sets the errno value in the event of an error.
  *
  * Input Parameters:
  *   pid        - The ID of thread whose affinity set will be retrieved.
- *   cpusetsize - Size of mask.  MUST be sizeofcpu_set_t().
+ *   cpusetsize - Size of mask.  MUST be sizeof cpu_set_t().
  *   mask       - The location to return the thread's new affinity set.
  *
  * Returned Value:
