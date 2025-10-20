@@ -68,7 +68,7 @@ void up_idle(void)
    * "fake" timer interrupts. Hopefully, something will wake up.
    */
 
-  nxsched_process_timer();
+  sched_process_timer();
 #else
 
   /* Sleep until an interrupt occurs to save power */
