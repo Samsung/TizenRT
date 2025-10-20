@@ -506,6 +506,9 @@ static uart_dev_t g_uart4port = {
 };
 #endif
 
+#ifdef CONFIG_UART4_SERIAL_CONSOLE
+static bool g_log_flush_running;
+#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -568,7 +571,7 @@ static int rtl8730e_log_uart_irq(void *Data)
 
 	u32 txempty_en = LOGUART_GET_ETPFEI(IrqEn);
 	if ((txempty_en == 0x4 && (reg_lsr & LOGUART_BIT_TP4F_EMPTY)) || (reg_lsr & LOGUART_BIT_TP4F_NOT_FULL)) {
-		uart_xmitchars(&CONSOLE_DEV);
+		(void)uart_xmitchars(&CONSOLE_DEV);
 	}
 	return 0;
 }
@@ -916,7 +919,7 @@ void rtl8730e_uart_irq(uint32_t id, SerialIrq event)
 	}
 	if (event == TxIrq) {
 		priv->tx_level = TX_FIFO_MAX;
-		uart_xmitchars(dev);
+		(void)uart_xmitchars(dev);
 		priv->tx_level = 0;
 	}
 }
@@ -1376,6 +1379,44 @@ int up_getc(void)
 	int ch;
 	ch = up_lowgetc();
 	return ch;
+}
+
+/****************************************************************************
+ * Name: up_flush_console
+ *
+ * Description:
+ *    This function is used to ensure that all characters in the UART buffer
+ *    are transmitted.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void up_flush_console(void)
+{
+#ifdef CONFIG_UART4_SERIAL_CONSOLE
+	uint16_t nbyte;
+	irqstate_t flags = enter_critical_section();
+
+	/* To avoid duplicated calling up_flush_console(). */
+	if (g_log_flush_running) {
+		leave_critical_section(flags);
+		return;
+	}
+	g_log_flush_running = true;
+
+	do {
+		while (!LOGUART_Ready());
+		nbyte = uart_xmitchars(&CONSOLE_DEV);
+	} while (nbyte);
+
+	g_log_flush_running = false;
+
+	leave_critical_section(flags);
+#endif
 }
 
 #else							/* USE_SERIALDRIVER */
