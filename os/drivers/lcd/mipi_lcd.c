@@ -500,6 +500,11 @@ static int lcd_getpower(FAR struct lcd_dev_s *dev)
 
 static void lcd_power_off(FAR struct mipi_lcd_dev_s *priv)
 {
+	if (priv->lcdonoff == LCD_OFF) {
+		lcddbg("ERROR: LCD already powered off\n");
+		return;
+	}
+
 	lcddbg("Switch to CMD mode\n");
 	priv->config->mipi_mode_switch(CMD_MODE);
 	priv->lcdonoff = LCD_OFF;
@@ -524,6 +529,11 @@ static void lcd_power_off(FAR struct mipi_lcd_dev_s *priv)
 static int lcd_power_on(FAR struct mipi_lcd_dev_s *priv)
 {
 	int retries = CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT;
+
+	if (priv->lcdonoff == LCD_ON) {
+		lcddbg("ERROR: LCD already powered on\n");
+		return ERROR;
+	}
 	
 	lcddbg("Powering up the LCD\n");
 	priv->config->power_on();
