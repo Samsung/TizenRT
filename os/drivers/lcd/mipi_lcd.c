@@ -496,34 +496,58 @@ static int lcd_getpower(FAR struct lcd_dev_s *dev)
  *   Power off the LCD.
  * 	 Switch to command mode and display off, power off the LCD.
  *
+ * Returns:
+ * 	 OK if power on sequence succeeded,
+ * 	 ERROR if power on sequence failed.
+ *
  ****************************************************************************/
 
-static void lcd_power_off(FAR struct mipi_lcd_dev_s *priv)
+static int lcd_power_off(FAR struct mipi_lcd_dev_s *priv)
 {
+	if (priv->lcdonoff == LCD_OFF) {
+		lcddbg("LCD already powered off\n");
+		return OK;
+	}
+
 	lcddbg("Switch to CMD mode\n");
 	priv->config->mipi_mode_switch(CMD_MODE);
-	priv->lcdonoff = LCD_OFF;
+
 	lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};
-	send_cmd(priv, display_off_cmd);
-	/* The power off must operate only when LCD is ON */
+	if (send_cmd(priv, display_off_cmd) != OK) {
+		lcddbg("ERROR: LCD power off failed\n");
+		return ERROR;
+	}
+
+	priv->lcdonoff = LCD_OFF;
 	priv->config->power_off();
+
+	return OK;
 }
 
 /****************************************************************************
  * Name:  lcd_power_on
  *
  * Description:
- *   Power on the LCD and send init command. 
- * 
+ *   Power on the LCD and send init command.
+ *
  * Assumption:
  *   This function is called when LCD is OFF.
  * 	 So we can safely assume that LCD is in command mode.
+ *
+ * Returns:
+ * 	 OK if power on sequence succeeded,
+ * 	 ERROR if power on sequence failed.
  *
  ****************************************************************************/
 
 static int lcd_power_on(FAR struct mipi_lcd_dev_s *priv)
 {
 	int retries = CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT;
+
+	if (priv->lcdonoff == LCD_ON) {
+		lcddbg("LCD already powered on\n");
+		return OK;
+	}
 	
 	lcddbg("Powering up the LCD\n");
 	priv->config->power_on();
@@ -575,7 +599,10 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 	if (power == 0) {
 		lcddbg("Powering down the LCD\n");
 		priv->config->backlight(power);
-		lcd_power_off(priv);
+		if (lcd_power_off(priv) != OK) {
+			sem_post(&priv->sem);
+			return ERROR;
+		}
 	} else {
 		/* The power on must operate only when LCD is OFF */
 		if (priv->power == 0) {
@@ -819,7 +846,10 @@ FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 
 	ret = lcd_render_bmp(dev, bmp_file_path);
 	if (ret != OK) {
-		lcd_power_off(priv);
+		if (lcd_power_off(priv) != OK) {
+			sem_post(&priv->sem);
+			return ERROR;
+		}
 		sem_post(&priv->sem);
 		return ret;
 	}
