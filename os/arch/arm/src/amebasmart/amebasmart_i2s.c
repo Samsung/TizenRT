@@ -128,7 +128,7 @@
 #define I2S_DMA_PAGE_SIZE 8192 	/* 4 ~ 16384, set to a factor of APB size */
 #define I2S_DMA_PAGE_NUM 4	/* Vaild number is 2~4 */
 
-#define I2S_TDM_DMA_PAGE_SIZE 1024 	/* 4 ~ 16384, set to a factor of APB size */
+#define I2S_TDM_DMA_PAGE_SIZE 4096 	/* 4 ~ 16384, set to a factor of APB size */
 #define I2S_TDM_DMA_PAGE_NUM 16	/* Vaild number is 2~8 */
 
 static volatile bool i2s_tdm_rx = 0;

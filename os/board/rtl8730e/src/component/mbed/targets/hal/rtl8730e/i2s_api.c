@@ -1087,10 +1087,10 @@ void ameba_i2s_tdm_init_dma(i2s_t *obj) {
 	} else {
 		sp_get_free_rx_page();
 		if (obj->fifo_num >= SP_RX_FIFO8) {
-			AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)AudioLLPRXHandler, sp_rx_info.rx_page_size/2,
+			AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)AudioLLPRXHandler, sp_rx_info.rx_page_size,
 							sp_rx_info.rx_page_num + 1, LliRx);
 			sp_get_free_rx_page_ext();
-			AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_EXT, &sp_str->SpRxGdmaInitStructExt, sp_str, (IRQ_FUN)AudioLLPRXHandler_ext, sp_rx_info.rx_page_size/2,
+			AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_EXT, &sp_str->SpRxGdmaInitStructExt, sp_str, (IRQ_FUN)AudioLLPRXHandler_ext, sp_rx_info.rx_page_size,
 							sp_rx_info.rx_page_num + 1, LliRx_ext);
 		} else {
 			AUDIO_SP_LLPRXGDMA_Init(obj->i2s_idx, GDMA_INT, &sp_str->SpRxGdmaInitStruct, sp_str, (IRQ_FUN)AudioLLPRXHandler, sp_rx_info.rx_page_size,
