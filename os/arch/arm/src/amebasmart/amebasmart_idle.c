@@ -93,7 +93,7 @@ static int up_pm_board_sleep(void)
 	config_SLEEP_PROCESSING();
 	/* When wake from pg, arm timer has been reset, so a new compare value is necessary to
 	trigger an timer interrupt */
-	up_timer_enable();
+	arm_arch_timer_enable(1);
 	/* Arch timer is running at 50Mhz */
 	arm_arch_timer_set_compare(arm_arch_timer_count() + pdTICKS_TO_CNT);
 	arm_arch_timer_int_mask(0);
