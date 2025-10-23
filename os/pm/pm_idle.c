@@ -26,6 +26,7 @@
 #include <tinyara/clock.h>
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/cpu_state.h>
 #include "../kernel/sched/sched.h"
 
 #include "pm.h"
@@ -112,7 +113,7 @@ static int disable_secondary_cpus(void)
 {
 	/* Send signal to shutdown other cores here */
 	for (int cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
-		if (up_get_cpu_state(cpu) == CPU_RUNNING) {
+		if (cpu_get_state(cpu) == CPU_RUNNING) {
 			if (up_cpu_hotplug(cpu) != OK) {
 				pmllvdbg("CPU%d hotplug failed! Unable to shutdown secondary core for sleep mode\n", cpu);
 				return ERROR;
@@ -167,9 +168,9 @@ static int check_secondary_cpus_idle(void)
 
 	for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
 		/* If the CPU is just back from sleep, abort the sleep */
-		if (up_get_cpu_state(cpu) == CPU_WAKE_FROM_SLEEP) {
+		if (cpu_get_state(cpu) == CPU_WAKEUP) {
 			return ERROR;
-		} else if (up_get_cpu_state(cpu) == CPU_HOTPLUG) {
+		} else if (cpu_get_state(cpu) == CPU_HOTPLUG) {
 			continue;
 		}
 

@@ -1,0 +1,9 @@
+config CPU_DRIVER
+    bool "CPU state driver"
+    default y
+    depends on SMP
+    ---help---
+        Enable /dev/cpuX driver for secondary CPU state control.
+        Provides IOCTL interface to manage CPU state (disable, halt,
+        offline, poweroff, query status).
+
