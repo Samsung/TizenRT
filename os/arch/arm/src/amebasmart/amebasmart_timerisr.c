@@ -36,30 +36,7 @@
 #include "arch_timer.h"
 #include "barriers.h"
 
-/*----------------------------------------------------------------------------
-  Clock Variable definitions
- *----------------------------------------------------------------------------*/
-#define GENERICTIMERFREQ 50000000
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
 
-/* The desired timer interrupt frequency is provided by the definition
- * CLK_TCK (see include/time.h).  CLK_TCK defines the desired number of
- * system clock ticks per second.  That value is a user configurable setting
- * that defaults to 100 (100 ticks per second = 10 MS interval).
- *
- */
-
-/* The size of the reload field is 24 bits.  Verify that the reload value
- * will fit in the reload register.
- */
-//Relate to pdTICKS_TO_CNT in system_sheipa.c
-#define SYSTICK_RELOAD ((GENERICTIMERFREQ / CLK_TCK) - 1)
-
-#if SYSTICK_RELOAD > 0x00ffffff
-#  error SYSTICK_RELOAD exceeds the range of the RELOAD register
-#endif
 
 #ifdef CONFIG_SMP
 static volatile u8 systimer_status[CONFIG_SMP_NCPUS];
@@ -109,7 +86,7 @@ int up_timerisr(int irq, uint32_t *regs)
 	  if (arm_arch_timer_count() < last_cycle) {
 		  return -1;
 	  } else {
-		  delta_ticks = (uint32_t)((arm_arch_timer_count() - last_cycle) / SYSTICK_RELOAD) + 1;
+		  delta_ticks = (uint32_t)((arm_arch_timer_count() - last_cycle) / pdTICKS_TO_CNT) + 1;
 	  }
 #else
 	  delta_ticks = 1;
@@ -141,7 +118,7 @@ int up_timerisr(int irq, uint32_t *regs)
     }
 
 skip_sched:
-    arm_arch_timer_set_compare(last_cycle + delta_ticks * SYSTICK_RELOAD);
+    arm_arch_timer_set_compare(last_cycle + delta_ticks * pdTICKS_TO_CNT);
     return 0;
 }
 
@@ -173,7 +150,7 @@ void up_timer_initialize(void)
 
   /* Only enable the timer for CPU0 on startup, CPU1's will be enabled when pause/gating takes place  */
   if (up_cpu_index() == 0) {
-    arm_arch_timer_set_compare(arm_arch_timer_count() + SYSTICK_RELOAD);
+    arm_arch_timer_set_compare(arm_arch_timer_count() + pdTICKS_TO_CNT);
     arm_arch_timer_enable(1);
   }
 
@@ -189,6 +166,6 @@ void up_timer_disable(void)
 
 void up_timer_enable(void)
 {
-  arm_arch_timer_set_compare(arm_arch_timer_count() + SYSTICK_RELOAD);
+  arm_arch_timer_set_compare(arm_arch_timer_count() + pdTICKS_TO_CNT);
   arm_arch_timer_enable(1);
 }
