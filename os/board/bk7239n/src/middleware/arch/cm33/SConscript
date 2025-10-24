@@ -1,0 +1,22 @@
+Import('rtconfig')
+from building import *
+
+src = []
+path = []
+
+cwd = GetCurrentDir()
+
+src = Glob('*.c')
+src += Glob('*.S')
+src += Glob('os/rttos/*.c')
+src += Glob('os/rttos/*.S')
+
+path = [cwd]
+path += [cwd + '/include']
+path += [cwd + '/include/bk_private']
+path += [cwd + '/os/rttos/include']
+path += [cwd + '/os/rttos']
+
+group = DefineGroup('cpu', src, depend = [''], CPPPATH = path)
+
+Return('group')

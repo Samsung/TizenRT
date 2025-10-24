@@ -1,0 +1,12 @@
+menu "TOUCH"
+	config TOUCH
+		bool "Enable TOUCH"
+		default n
+	config TOUCH_INTERNAL_SERIAL_CAP
+		bool "Enable TOUCH INTERNAL SERIAL CAP"
+		default n
+	config TOUCH_PM_SUPPORT
+		bool "Enable TOUCH PM SUPPORT"
+		default n
+endmenu
+	

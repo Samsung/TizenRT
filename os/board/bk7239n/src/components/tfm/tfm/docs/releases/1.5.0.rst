@@ -1,0 +1,125 @@
+*************
+Version 1.5.0
+*************
+
+New major features
+==================
+
+  - MCUboot updated to v1.8.0.
+  - :doc:`Floating-Point(FP) support in SPE only </integration_guide/tfm_fpu_support>`.
+  - Thread mode SPM.
+  - Add Non-secure Client Extension (NSCE) for non-secure client ID management
+    support.
+  - Secure Function model support in framework.
+  - Support Memory-mapped IOVECs.
+  - Decouple documentation and binary builds.
+  - Manifest tool skips disabled Secure Partitions.
+  - Provisioning and OTP are supported.
+  - PSA Protected Storage, Internal Trusted Storage, Initial Attestation
+    services are converted to Stateless services.
+  - Support out-of-tree build of Secure Partitions.
+  - Support out-of-tree build of platform specific test suites.
+  - Introduce platform binding HAL.
+  - ITS enhancement for harden ITS module against invalid data in Flash.
+  - Support to select/deselect single or multiple TF-M regression test cases.
+  - Decouple regression test flag configuration from TF-M.
+  - New platforms added.
+    See :ref:`releases/1.5.0:New platforms supported` for details.
+
+New security advisories
+=======================
+
+Profile Small key ID encoding vulnerability
+-------------------------------------------
+
+NSPE may access secure keys stored in TF-M Crypto service in Profile Small with
+Crypto key ID encoding disabled.
+Refer to :doc:`Advisory TFMV-4 </security/security_advisories/profile_small_key_id_encoding_vulnerability>`
+for more details.
+The mitigation is included in this release.
+
+New platforms supported
+=======================
+
+  - :doc:`Corstone-1000 </platform/ext/target/arm/corstone1000/readme>`
+
+  - :doc:`Corstone-Polaris </platform/ext/target/arm/mps3/corstone_polaris/README>`
+
+  - :doc:`B-U585I-IOT02A </platform/ext/target/stm/b_u585i_iot02a/readme>`
+
+Deprecated platforms
+====================
+
+The following platform has been removed from TF-M code base.
+
+  - arm/mps2/fvp_sse300
+
+See :doc:`Platform deprecation and removal </platform/ext/platform_deprecation>`
+for other platforms under deprecation process.
+
+Tested platforms
+================
+
+The following platforms are successfully tested in this release.
+
+- AN519
+- AN521
+- AN547
+- Musca-B1
+- Musca-S1
+- STM32L562E-DK
+- PSoC 64
+- B-U585I-IOT02A
+- NUCLEO-L552ZE-Q
+- nRF5340
+- nRF9160
+
+Known issues
+============
+
+Some open issues are not fixed in this release.
+
+.. list-table::
+
+  * - **Descriptions**
+    - **Issue links**
+
+  * - | PSA Arch Crypto test suite have several known failures.
+    - See this `link <https://developer.trustedfirmware.org/w/tf_m/release/psa_arch_crypto_test_failure_analysis_in_tf-m_v1.5_release/>`_
+      for detailed analysis of the failures.
+
+  * - | Armclang 6.17 generates STRBT instead of STRB in privileged code.
+      | MemManage fault occurs when the privileged code calls STRBT to access
+      | a memory location only for privileged access.
+      | The root cause is still under analysis by Armclang. Please use other
+      | Armclang versions instead.
+    - https://developer.trustedfirmware.org/T979
+
+Issues closed since v1.4.0
+==========================
+
+The following issues in v1.4.0 known issues list are closed. These issues are
+related to platform hardware limitations or deprecated platforms and therefore
+won't be fixed by TF-M.
+
+.. list-table::
+
+  * - **Descriptions**
+    - **Issue links**
+
+  * - | Protected Storage Regression test 4001 is stuck on SSE-300 in isolation
+      | level 2 when PXN is enabled.
+    - https://developer.trustedfirmware.org/T902
+
+  * - | Image size overflow on Musca-B1 PSA Arch test suite debug build.
+    - https://developer.trustedfirmware.org/T952
+
+  * - | Build errors in PSA api tests for initial attestation.
+    - https://developer.trustedfirmware.org/T953
+
+  * - | Non Secure Image size overflow on STM32L562E-DK PSA Arch Crypto.
+    - https://developer.trustedfirmware.org/T954
+
+--------------
+
+*Copyright (c) 2021, Arm Limited. All rights reserved.*

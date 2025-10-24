@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2018-2020, Arm Limited. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
+
+//This file holds description for the current directory. This documentation
+//will be included in the Doxygen output.
+
+/*!
+\dir
+\brief Source code for the Protected Storage service.
+\details The protected storage service is responsible to hold sensitive
+information in a protected storage.
+
+*/

@@ -1,0 +1,11 @@
+#TODO optimize it
+menu "Bk_Phy"
+	config NON_SIGANL_PHY_ENABLE
+		bool "Enable non signal phy"
+		default y
+
+	config PHY_LOG_ENABLE
+		bool "Enable voltage detect"
+		default n
+
+endmenu

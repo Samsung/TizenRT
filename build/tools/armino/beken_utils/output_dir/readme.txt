@@ -1,0 +1,2 @@
+the necessary generated files are placed in the ./beken_utils/output_dir directory.
+such as(aes_encrypt_key_content_gen.bin,all-app.bin,bootloader.bin,bootloader_ota.bin,key_content.json,ota.bin,ota_combine.bin,rsa_encrypt_aes_key.json,rsa_privkey_gen.bin)

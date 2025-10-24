@@ -1,0 +1,101 @@
+menu "GPIO"
+	config GPIO
+		bool "Enable GPIO"
+		default y
+
+	config AON_GPIO
+		bool "Enable AON_GPIO"
+		default y
+
+	config ANA_GPIO
+		bool "Enable ANA_GPIO"
+		default n
+
+	config GPIO_WAKEUP_SUPPORT
+		bool "Enable GPIO WAKEUP system if at low voltage status"
+		default n
+
+	config GPIO_DYNAMIC_WAKEUP_SUPPORT
+		bool "Enable GPIO dynamic config to wake system if at low volatage status"
+		depends on GPIO_WAKEUP_SUPPORT
+		default n
+
+	config GPIO_KPSTAT_SUPPORT
+		bool "Enable GPIO keep status during low voltage"
+		default n
+
+	config GPIO_DYNAMIC_KPSTAT_SUPPORT
+		bool "Enable GPIO dynamic config to keep gpio status at low voltage status"
+		depends on GPIO_KPSTAT_SUPPORT
+		default n
+
+	config GPIO_DYNAMIC_KEEP_STATUS_MAX_CNT
+		int "how many gpio can dynamic set to keep status at low power status"
+		range 0 48
+		default 4
+		help
+		The value should be changed if need more then 4 gpio
+
+	config GPIO_WAKEUP_DEBUG
+		bool "Enable GPIO wakeup module debug code"
+		depends on GPIO_WAKEUP_SUPPORT
+		default n
+
+	config GPIO_DYNAMIC_WAKEUP_SOURCE_MAX_CNT
+		int "how many gpio can dynamic set to wakeup system at low power status"
+		range 0 48
+		default 4
+		help
+		The value should be changed if need more then 4 gpio
+
+	config GPIO_SIMULATE_UART_WRITE
+		bool "Enable GPIO simulate uart write data"
+		default n
+
+	config GPIO_DEFAULT_SET_SUPPORT
+		bool "Enable GPIO default set devs"
+		default n
+
+	config GPIO_ANA_WAKEUP_SUPPORT
+		bool "Enable GPIO wakeup system from analog channel"
+		default n
+		help
+			This is for super deep sleep
+
+	config GPIO_CLOCK_SWITCH_EN
+		bool "Enable GPIO clock select from 32k/26m"
+		default n
+
+	config GPIO_RETENTION_SUPPORT
+		bool "Enable GPIO retention for (super) deep sleep and soft reset"
+		default n
+		help
+			If not open, gpio could not keep state when the always on power domain is off
+
+	config GPIO_RETENTION_DISPOSABLE
+		bool "Decide GPIO retention is disposable or permanent"
+		default y
+
+	config USR_GPIO_CFG_EN
+		bool "Enable user-defined GPIO config for each project"
+		depends on GPIO_DEFAULT_SET_SUPPORT
+		default n
+
+	config GPIO_TEST
+		depends on GPIO && DRIVER_TEST
+		bool "Enable gpio test"
+		default y
+
+	config GPIO_DUMP_MAP_DEV_DEBUG
+		bool "Enable GPIO MAP DEV DEBUG CODE"
+		default n
+		
+	config GPIO_API_TEST
+		depends on GPIO && DRIVER_TEST
+		bool "Enable gpio api test"
+		default n
+
+	config GPIO_CLOCK_PIN_SUPPORT
+		bool "Enable gpio clock pin test"
+		default n
+endmenu
