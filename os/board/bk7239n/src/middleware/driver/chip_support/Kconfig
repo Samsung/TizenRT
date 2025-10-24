@@ -1,0 +1,5 @@
+menu "SOFTWARE_SUPPORT_CHIP"
+	config CHIP_SUPPORT
+		bool "Enable chip support"
+		default n
+endmenu

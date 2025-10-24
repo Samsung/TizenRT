@@ -91,7 +91,11 @@
  * differ from the ARMv7 implementation
  */
 
+#if CONFIG_SPE
+#define EXC_RETURN_BASE          0xffffffe1 /* FIX ME 0xffffffa0 */
+#else
 #define EXC_RETURN_BASE          0xffffffa0
+#endif
 
 /* EXC_RETURN_EXC_SECURE: Exception Secure.  The security domain the
  * exception was taken to.  If this bit is clear non-secure, else secure.
