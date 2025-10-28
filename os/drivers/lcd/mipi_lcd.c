@@ -41,12 +41,12 @@
 #define CONFIG_LCD_MAXPOWER 100
 #endif
 
-enum lcd_mode_e {
-	LCD_ON = 0,
-	LCD_OFF = 1
-};
-
-typedef enum lcd_mode_e lcd_mode_t;
+/* MIPI State Machine Definitions */
+typedef enum {
+	MIPI_STATE_CMD_OFF,     // LCD power off, Display off, Backlight 0, CMD mode
+	MIPI_STATE_CMD_ON,      // LCD power on, Display on, Backlight > 0, CMD mode 
+	MIPI_STATE_VIDEO_ON     // LCD power on, Display on, Backlight > 0, VIDEO mode
+} mipi_state_t;
 
 #if !defined(CONFIG_LCD_SEND_CMD_RETRY_COUNT)
 #define CONFIG_LCD_SEND_CMD_RETRY_COUNT 0
@@ -114,16 +114,13 @@ static void lcd_rotate_buffer(short int* src, short int* dst)
 
 struct mipi_lcd_dev_s {
 	/* Publicly visible device structure */
-
 	struct lcd_dev_s dev;
-
 	FAR struct mipi_dsi_device *dsi_dev;
-
 	u8 *lcd_img_buffer[MAX_NO_PLANES];
 	//u8 *BackupLcdImgBuffer;
 	int fb_alloc_count;
 	uint8_t power;
-	lcd_mode_t lcdonoff;
+	mipi_state_t mipi_state;
 	sem_t sem;
 	struct mipi_lcd_config_s *config;
 };
@@ -234,6 +231,7 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 
 	return transfer_status;
 }
+
 /* rx_len is the maximum return packet size*/
 int set_return_packet_len(struct mipi_lcd_dev_s *priv, u8 rx_len)
 {
@@ -281,6 +279,7 @@ int read_response(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command, u8 *
 	}
 	return transfer_status;
 }
+
 int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table)
 {
 	u8 send_cmd_idx_s = 0;
@@ -321,6 +320,76 @@ int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table)
 		}
 		send_cmd_idx_s++;
 	}
+}
+
+static mipi_state_t get_mipi_state(struct mipi_lcd_dev_s *priv)
+{
+	return priv->mipi_state;
+}
+
+static int set_mipi_state(struct mipi_lcd_dev_s *priv, mipi_state_t new_state)
+{
+	int retries = CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT;
+	mipi_state_t old_state = get_mipi_state(priv);
+	
+	if (old_state == new_state) {
+		lcddbg("Already in requested state\n");
+		return OK;
+	}
+
+	switch(new_state) {
+	case MIPI_STATE_CMD_OFF:
+		priv->config->mipi_mode_switch(CMD_MODE);
+		mipi_dsi_dcs_set_display_off(priv->dsi_dev);
+		lcddbg("Powering down the LCD\n");
+		priv->config->power_off();
+		break;
+	case MIPI_STATE_CMD_ON:
+		if (old_state == MIPI_STATE_VIDEO_ON) {
+			lcddbg("Switching to CMD mode\n");
+			priv->config->mipi_mode_switch(CMD_MODE);
+		} else {
+			lcddbg("Powering up the LCD\n");
+			priv->config->power_on();
+
+			/* We need to send init cmd after LCD IC power on */
+			while (retries) {
+				if (check_lcd_vendor_send_init_cmd(priv) != OK) {
+					/* attempt a full reset of lcd + driver stack */
+					priv->config->reset();
+					priv->config->power_on();
+					priv->config->mipi_drv_reset();
+				} else {
+					/* panel accepted the command, normal operation */
+					break;
+				}
+				retries--;
+			}
+
+			if (retries <= 0) {
+				lcddbg("ERROR: LCD Init sequence failed\n");
+				return ERROR;
+			}
+		}
+		break;
+	case MIPI_STATE_VIDEO_ON:
+		if (old_state == MIPI_STATE_CMD_OFF) {
+			if (set_mipi_state(priv, MIPI_STATE_CMD_ON) != OK) {
+				lcddbg("ERROR: Failed to power up LCD for video mode\n");
+				return ERROR;
+			}
+		}
+		lcddbg("Switching to Video mode\n");
+		priv->config->mipi_mode_switch(VIDEO_MODE);
+		break;
+	default:
+		lcddbg("Wrong state requested\n");
+		return ERROR;
+	}
+
+	priv->mipi_state = new_state;
+
+	return OK;
 }
 
 /* LCD Data Transfer Methods */
@@ -390,10 +459,8 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 #else
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
 #endif
-	if (priv->lcdonoff == LCD_OFF) {
-		lcddbg("Switch to VIDEO mode\n");
-		priv->config->mipi_mode_switch(VIDEO_MODE);
-		priv->lcdonoff = LCD_ON;
+	if (get_mipi_state(priv) == MIPI_STATE_CMD_ON) {
+		set_mipi_state(priv, MIPI_STATE_VIDEO_ON);
 	}
 	sem_post(&priv->sem);
 	return OK;
@@ -518,27 +585,12 @@ static int lcd_getpower(FAR struct lcd_dev_s *dev)
 
 static int lcd_power_off(FAR struct mipi_lcd_dev_s *priv)
 {
-	int ret;
-
-	if (priv->lcdonoff == LCD_OFF) {
-		lcddbg("LCD already powered off\n");
+	if (get_mipi_state(priv) == MIPI_STATE_CMD_OFF) {
+		lcddbg("LCD is already OFF\n");
 		return OK;
 	}
 
-	lcddbg("Switch to CMD mode\n");
-	priv->config->mipi_mode_switch(CMD_MODE);
-
-	lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};
-	ret = send_cmd(priv, display_off_cmd);
-	if (ret != OK) {
-		lcddbg("ERROR: LCD power off failed ret : %d\n", ret);
-		return ret;
-	}
-
-	priv->config->power_off();
-	priv->lcdonoff = LCD_OFF;
-
-	return OK;
+	return set_mipi_state(priv, MIPI_STATE_CMD_OFF);
 }
 
 /****************************************************************************
@@ -558,35 +610,12 @@ static int lcd_power_off(FAR struct mipi_lcd_dev_s *priv)
 
 static int lcd_power_on(FAR struct mipi_lcd_dev_s *priv)
 {
-	int retries = CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT;
-
-	if (priv->lcdonoff == LCD_ON) {
-		lcddbg("LCD already powered on\n");
+	if (get_mipi_state(priv) != MIPI_STATE_CMD_OFF) {
+		lcddbg("LCD is already ON\n");
 		return OK;
 	}
-	
-	lcddbg("Powering up the LCD\n");
-	priv->config->power_on();
-	/* We need to send init cmd after LCD IC power on */
-	while (retries) {
-		if (check_lcd_vendor_send_init_cmd(priv) != OK) {
-			/* attempt a full reset of lcd + driver stack */
-			priv->config->reset();
-			priv->config->power_on();
-			priv->config->mipi_drv_reset();
-		} else {
-			/* panel accepted the command, normal operation */
-			break;
-		}
-		retries--;
-	}
 
-	if (retries <= 0) {
-		lcddbg("ERROR: LCD Init sequence failed\n");
-		return -EIO;
-	}
-	
-	return OK;
+	return set_mipi_state(priv, MIPI_STATE_CMD_ON);
 }
 
 
@@ -599,6 +628,8 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 	DEBUGASSERT(dev);
 	int ret;
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
+
+	lcddbg("Changing lcd backlight to %d requested\n", power);
 	if (power > CONFIG_LCD_MAXPOWER) {
 		lcddbg("Power exceeds CONFIG_LCD_MAXPOWER %d\n", power);
 		return -EINVAL;
@@ -615,7 +646,6 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 	}
 
 	if (power == 0) {
-		lcddbg("Powering down the LCD\n");
 		priv->config->backlight(power);
 		ret = lcd_power_off(priv);
 		if (ret != OK) {
@@ -638,8 +668,8 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 	}
 
 	priv->power = power;
-	lcddbg("Changed lcd backlight to %d\n", priv->power);
 	sem_post(&priv->sem);
+	lcddbg("Changed lcd backlight to %d\n", priv->power);
 	return OK;
 }
 
@@ -653,22 +683,31 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 
 static int lcd_init(FAR struct lcd_dev_s *dev)
 {
-	int ret;
 	DEBUGASSERT(dev);
+	int ret;
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
-
+	
 	priv->config->reset();
-
-	ret = check_lcd_vendor_send_init_cmd(priv);
+	ret = set_mipi_state(priv, MIPI_STATE_CMD_OFF);
 	if (ret != OK) {
-        lcddbg("ERROR: LCD Init sequence failed: %d\n", ret);
-        return ret; 
-    }
+		lcddbg("ERROR: LCD Init sequence failed\n");
+		return ret;
+	}
 
-	lcdvdbg("LCD Init sequence completed\n");
+	while (sem_wait(&priv->sem) != OK) {
+		DEBUGASSERT(get_errno() == EINTR);
+	}
+
+	ret = lcd_power_on(priv);
+	if (ret != OK) {
+		lcddbg("Failed to turn on the LCD\n");
+		sem_post(&priv->sem);
+		return ret;
+	}
 	priv->config->init();
 	priv->config->lcd_enable();
-
+	sem_post(&priv->sem);
+	
 	return OK;
 }
 
@@ -884,9 +923,13 @@ FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 	}
 	priv->config->backlight(CONFIG_LCD_MAXPOWER);
 	priv->power = CONFIG_LCD_MAXPOWER;
+	ret = set_mipi_state(priv, MIPI_STATE_VIDEO_ON);
+	if (ret != OK) {
+		lcddbg("Failed to switch to video mode\n");
+		lcd_power_off(priv);
+		sem_post(&priv->sem);
+	}
 	sem_post(&priv->sem);
-	priv->config->mipi_mode_switch(VIDEO_MODE);
-	priv->lcdonoff = LCD_ON;
 
 	return OK;
 }
@@ -905,7 +948,7 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	priv->dsi_dev = dsi;
 	priv->config = config;
 	priv->power = 0;
-	priv->lcdonoff = LCD_OFF;
+	priv->mipi_state = MIPI_STATE_CMD_OFF;
 
 	sem_init(&priv->sem, 0 , 1);
 #if defined(CONFIG_LCD_SW_ROTATION)
