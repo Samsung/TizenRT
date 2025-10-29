@@ -87,9 +87,32 @@ struct sensor_ops_s g_ais25ba_ops = {
 
 static struct ais25ba_dev_s g_ais25ba_priv;
 static struct sensor_info_s g_sensor_info;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static int ais25ba_sem_wait(sem_t *sem)
+{
+	int status;
+
+	do {
+		status = sem_wait(sem);
+	} while (status == -1 && get_errno() == EINTR);
+
+	return status;
+}
+
+static int ais25ba_mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned int msg_prio)
+{
+	int status;
+
+	do {
+		status = mq_send(mqdes, msg_ptr, msg_len, msg_prio);
+	} while (status == -1 && get_errno() == EINTR);
+
+	return status;
+}
+
 static float ais25ba_raw_to_mg(int16_t lsb)
 {
 	return ((float)lsb) * 0.122f;
@@ -143,7 +166,7 @@ static int ais25ba_stop(struct sensor_upperhalf_s *upper)
 		return ERROR;
 	}
 
-	sem_wait(&(priv->sensor_run_on));
+	ais25ba_sem_wait(&(priv->sensor_run_on));
 	g_sensor_info.sensor_is_running = false;
 	g_sensor_info.sensor_is_prepared = false;
 	while (sq_peek(&priv->pendq) != NULL) {
@@ -176,7 +199,7 @@ static void ais25ba_get_bufsize(struct sensor_upperhalf_s *upper, int* buf_size)
 
 static void ais25ba_get_bufnum(struct sensor_upperhalf_s *upper, int* buf_num)
 {
-	*buf_num = AIS25BA_BUFNUM;
+	*buf_num = AIS25BA_PREPARING_BUFFER_NUMBER;
 }
 
 static void ais25ba_send_buffer(struct sensor_upperhalf_s *upper, unsigned long buffer)
@@ -295,7 +318,7 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer
 	int prev_sem_cnt;
 	struct ap_buffer_s *g_apb;
 	//desc.numbytes = 256;
-	desc.numbytes = AIS25BA_BUFLENGTH * 16;	// N * 16 bytes
+	desc.numbytes = AIS25BA_DMA_BUFF_SAMPLE_NUMBER * 16;	// N * 16 bytes
 	desc.u.ppBuffer = &g_apb;
 
 	ret = apb_alloc(&desc);
@@ -304,14 +327,14 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer
 		return ret;
 	}
 
-	sem_wait(&ctrl->read_sem);
+	ais25ba_sem_wait(&ctrl->read_sem);
 
     ret = I2S_RECEIVE(i2s, g_apb, ais25ba_i2s_callback, ctrl, 100);	/* 100 ms timeout for read data */
 	if (ret != OK) {
 		sndbg("ERROR: I2S_RECEIVE FAILED\n");
 	}
 
-	sem_wait(&ctrl->callback_wait_sem);
+	ais25ba_sem_wait(&ctrl->callback_wait_sem);
 
 	sensor_data_s *data = (sensor_data_s *)buffer;
 	int16_t *samp_data = (int16_t *)&g_apb->samp[0];
@@ -376,7 +399,7 @@ retry_sensor_verification:
 	if (sensor_status != OK) {
 		// Initialize sensor again;
 		struct ais25ba_ctrl_s *ctrl = &(dev->ctrl);
-		sem_wait(&ctrl->read_sem);
+		ais25ba_sem_wait(&ctrl->read_sem);
 		ais25ba_set_config_i2c(dev->i2c, dev->i2c_config);
 		sndbg("Sensor reinitialized");
 		(void)wd_start(dev->wdog, MSEC2TICK(AIS25BA_ALIVECHECK_TIME), (wdentry_t)ais25ba_timer_handler, 1, (uint32_t)dev);
@@ -399,7 +422,7 @@ static int ais25ba_send_result(FAR struct ais25ba_dev_s *priv)		/* data transfer
 	while (sq_peek(&priv->doneq) != NULL) {
 		buf = (struct ais25ba_buf_s *)sq_remfirst(&priv->doneq);
 		msg.data = (FAR void *)buf;
-		ret = mq_send(priv->mq, (FAR const char *)&msg, sizeof(msg), CONFIG_AIS25BA_SG_DEQUEUE_PRIO);
+		ret = ais25ba_mq_send(priv->mq, (FAR const char *)&msg, sizeof(msg), CONFIG_AIS25BA_SG_DEQUEUE_PRIO);
 		if (ret != OK) {
 			sndbg("mq_send error, errno : %d\n", errno);
 		}
@@ -415,7 +438,7 @@ static int ais25ba_mq_thread(int argc, char **argv)
 	priv = (struct ais25ba_dev_s *)strtoul(argv[1], NULL, 16);
 
 	while (1) {
-		sem_wait(&(priv->sensor_run_on));
+		ais25ba_sem_wait(&(priv->sensor_run_on));
 		if (sq_peek(&priv->pendq) == NULL) {
 			sem_post(&(priv->sensor_run_on));
 			usleep(100000);
