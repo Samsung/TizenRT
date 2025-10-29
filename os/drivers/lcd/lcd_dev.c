@@ -484,6 +484,7 @@ int lcddev_register(struct lcd_dev_s *dev)
 
 	sem_init(&lcd_info->sem, 0, 1);
 
+#ifdef CONFIG_LCD_SPLASH_IMAGE
 	ret = lcd_init_put_image(dev);
 	if (ret == OK) { // LCD ON
 #ifdef CONFIG_PM
@@ -491,6 +492,7 @@ int lcddev_register(struct lcd_dev_s *dev)
 #endif
 		silent_reboot_lock();
 	}
+#endif
 
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
