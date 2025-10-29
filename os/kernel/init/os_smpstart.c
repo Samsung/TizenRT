@@ -41,6 +41,9 @@
 
 #ifdef CONFIG_SMP
 
+/* Global variable to track active CPUs */
+cpu_set_t g_active_cpus_mask = ((cpu_set_t)1 << CONFIG_SMP_NCPUS) - 1;	/* Initializing the global active cpus mask */
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/

@@ -76,6 +76,10 @@ CSRCS += sched_cpuselect.c sched_cpupause.c
 CSRCS += sched_thistask.c
 endif
 
+ifeq ($(CONFIG_SCHED_MIGRATE),y)
+CSRCS += sched_migrate_tasks.c
+endif
+
 ifeq ($(CONFIG_SCHED_SUSPENDSCHEDULER),y)
 CSRCS += sched_suspendscheduler.c
 endif
