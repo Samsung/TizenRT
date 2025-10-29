@@ -1,0 +1,14 @@
+menu "SDIO_HOST"
+	config SDIO_HOST
+		bool "Enable sdio host"
+		default n
+
+	config SDIO_HOST_DEFAULT_CLOCK_FREQ
+		int "SDIO Host default clock freq"
+		default 200000
+
+	config SDIO_HOST_CLR_WRITE_INT
+		bool "SDIO CLEAR WRITE INT NEED WAIT"
+		default n
+endmenu
+

@@ -1,0 +1,22 @@
+menu "Bk_startup"
+
+	config APP_MAIN_TASK_PRIO
+		int "Set App Main Task Prio"
+		range 1 10
+		default 4
+		help
+			priority of application main task
+
+	config APP_MAIN_TASK_STACK_SIZE
+		int "Set App Main Task Stack Size"
+		default 4096
+		help
+			stack size of application main task
+
+	config MATTER_START
+		bool "Enable Matter Start"
+		default n
+		help
+			enable matter auto start
+
+endmenu

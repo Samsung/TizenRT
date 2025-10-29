@@ -1,0 +1,31 @@
+menu "BK_Bluetooth"
+	depends on ARMINO_BLE
+
+	config BT
+		bool "Enable BT"
+		default n
+
+	config BLE
+		bool "Enable BLE"
+		default y
+
+	config BTDM_CONTROLLER_ONLY
+		bool "BTDM controller only"
+		default n
+
+    config BLUETOOTH_BLE_DISCOVER_AUTO
+        bool "auto ble discover. Only used when single ble host"
+        default n
+
+    config SUPPORT_BLE_ADV_TXPWR_SET
+        bool "support setting ble txpwr"
+        default n
+
+    config SUPPORT_BLE_RECONNECTION_STRATEGY
+        bool "automatically initialize ble reconnection due to connection establishment failed"
+        default y
+
+    config SUPPORT_REPORTING_COEX_BLE_STATE
+        bool "reporting coex ble state"
+        default n
+endmenu

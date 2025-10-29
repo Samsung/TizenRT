@@ -1,0 +1,69 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2020-2021, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "name": "PSA FF Test secure partition manifests",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+   {
+      "name": "PSA FF Test Client Partition",
+      "short_name": "PSA_FF_TEST_CLIENT",
+      "manifest": "${PSA_ARCH_TESTS_PATH}/api-tests/platform/manifests/client_partition_psa.json",
+      "output_path": "api-tests/platform/manifests",
+      "conditional": "@TFM_PARTITION_FF_TEST@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 5000,
+      "linker_pattern": {
+        "library_list":[
+          "*client_partition.a"
+        ],
+        "object_list":[
+          "*intermedia_client_partition_psa.*"
+        ]
+      }
+    },
+    {
+      "name": "PSA FF Test Server Partition",
+      "short_name": "PSA_FF_TEST_SERVER",
+      "manifest": "${PSA_ARCH_TESTS_PATH}/api-tests/platform/manifests/server_partition_psa.json",
+      "output_path": "api-tests/platform/manifests",
+      "conditional": "@TFM_PARTITION_FF_TEST@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 5001,
+      "linker_pattern": {
+        "library_list":[
+          "*server_partition.a"
+        ],
+         "object_list":[
+          "*intermedia_server_partition_psa.*"
+        ]
+      }
+    },
+    {
+      "name": "PSA FF Test Driver Partition",
+      "short_name": "PSA_FF_TEST_DRIVER",
+      "manifest": "${PSA_ARCH_TESTS_PATH}/api-tests/platform/manifests/driver_partition_psa.json",
+      "output_path": "api-tests/platform/manifests",
+      "conditional": "@TFM_PARTITION_FF_TEST@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 5002,
+      "linker_pattern": {
+        "library_list":[
+          "*driver_partition.a"
+        ],
+        "object_list":[
+          "*intermedia_driver_partition_psa.*"
+        ]
+      }
+    }
+  ]
+}

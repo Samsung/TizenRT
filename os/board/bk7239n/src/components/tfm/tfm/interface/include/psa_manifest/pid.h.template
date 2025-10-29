@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2019-2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, Cypress Semiconductor Corporation. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
+
+/***********{{utilities.donotedit_warning}}***********/
+
+#ifndef __PSA_MANIFEST_PID_H__
+#define __PSA_MANIFEST_PID_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+{% for partition in partitions %}
+#define {{"%-62s"|format(partition.manifest.name)}} ({{partition.attr.pid}})
+{% endfor %}
+
+#define {{"%-62s"|format("TFM_MAX_USER_PARTITIONS")}} ({{partitions | length()}})
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __PSA_MANIFEST_PID_H__ */

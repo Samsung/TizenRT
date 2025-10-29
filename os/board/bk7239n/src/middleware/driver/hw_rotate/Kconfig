@@ -1,0 +1,5 @@
+menu "HW_ROTATE"
+	config HW_ROTATE_PFC
+		bool "Enable hw rotate and pixel convert module"
+		default n
+endmenu

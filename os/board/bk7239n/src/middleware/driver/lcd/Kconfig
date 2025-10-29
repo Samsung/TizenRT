@@ -1,0 +1,25 @@
+menu "LCD"
+	config LCD
+		bool "Enable LCD"
+		default n
+
+	config LCD_QSPI
+		bool "Enable LCD QSPI"
+		default n
+
+	config LCD_QSPI_COLOR_DEPTH_BYTE
+		depends on LCD_QSPI
+		int "Set Lcd Qspi Color Depth"
+		default 3
+		help
+			2 - RGB565
+			3 - RGB888
+
+	config LCD_POWER_GPIO_CTRL
+		bool "Enable lcd power gpio ctrl"
+		default n
+
+	config LCD_BACKLIGHT_GPIO_CTRL
+		bool "Enable lcd backlight gpio ctrl"
+		default n
+endmenu

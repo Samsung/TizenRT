@@ -1,0 +1,69 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2018-2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.1,
+  "name": "TFM_SP_PS",
+  "type": "APPLICATION-ROT",
+  "priority": "NORMAL",
+  "model": "SFN",
+  "entry_init": "tfm_ps_entry",
+  "stack_size": "0x800",
+  "secure_functions": [
+    {
+      "name": "TFM_PS_SET",
+      "signal": "TFM_PS_SET_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_PS_GET",
+      "signal": "TFM_PS_GET_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_PS_GET_INFO",
+      "signal": "TFM_PS_GET_INFO_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_PS_REMOVE",
+      "signal": "TFM_PS_REMOVE_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_PS_GET_SUPPORT",
+      "signal": "TFM_PS_GET_SUPPORT_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ],
+  "services" : [
+    {
+      "name": "TFM_PROTECTED_STORAGE_SERVICE",
+      "sid": "0x00000060",
+      "non_secure_clients": true,
+      "connection_based": false,
+      "stateless_handle": 2,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ],
+  "dependencies": [
+    "TFM_CRYPTO",
+    "TFM_INTERNAL_TRUSTED_STORAGE_SERVICE",
+    "TFM_SP_PLATFORM_NV_COUNTER"
+  ]
+}
