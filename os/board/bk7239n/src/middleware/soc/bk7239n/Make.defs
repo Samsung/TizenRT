@@ -1,0 +1,115 @@
+###########################################################################
+#
+# Copyright 2025 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+#
+#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+
+ifeq ($(CONFIG_SPE),1)
+CSRCS += \
+	mpu_cfg.c
+else
+CSRCS += \
+	mpu_cfg_s.c
+endif
+
+CSRCS += \
+	interrupt.c \
+	psram_ll.c \
+	pwm_hal_debug.c \
+	pwm_hal_v2p2.c \
+	timer_hal_debug.c \
+	timer_ll.c \
+	timer_hal.c \
+	gpio_hal_debug.c \
+	gpio_ll.c \
+	iomx_hal_debug.c \
+	iomx_ll.c \
+	dma_hal_debug.c \
+	dma_ll.c \
+	uart_hal_debug.c \
+	uart_ll.c \
+	icu_ll.c \
+	wdt_hal_debug.c \
+	wdt_hal_ana.c \
+	wdt_ll.c \
+	spi_hal.c \
+	spi_hal_debug.c \
+	spi_ll.c \
+	sys_hal.c \
+	sys_hal_debug.c \
+	sys_pm_hal.c \
+	sys_pm_hal_ctrl.c \
+	sys_pm_hal_debug.c \
+	i2c_hal_debug.c \
+	i2c_ll.c \
+	flash_hal_debug.c \
+	flash_ll.c \
+	aon_rtc_hal_debug.c \
+	aon_pmu_hal.c \
+	aon_pmu_hal_debug.c \
+	sdio_hal_debug.c \
+	sys_clock_hal.c \
+	sys_clock_hal_debug.c \
+	ckmn_ll.c \
+	ckmn_hal_debug.c \
+	dma_hal.c \
+	icu_hal.c \
+	i2c_hal.c \
+	uart_hal.c \
+	iomx_hal.c \
+	adc_hal.c \
+	adc_hal_debug.c \
+	adc_ll.c \
+	i2s_hal.c \
+
+
+
+
+
+DEPPATH += --dep-path soc/bk7239n --dep-path soc/bk7239n/hal
+VPATH += :soc/bk7239n :soc/bk7239n/hal

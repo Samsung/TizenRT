@@ -1,0 +1,173 @@
+menu "Bk_rtos"
+
+	config CUSTOMIZE_HEAP_SIZE
+		int "Set Customize Heap Size"
+		default 163840
+		help
+			customize heap size, default 160k
+	
+	config SIZE_OPTIMIZE
+			bool "Optimize flash size"
+			default n
+
+	menu "Modify FreeRTOS Config"
+		config FREERTOS
+			bool "Enable FreeRTOS"
+			default y
+
+		config FREERTOS_USE_QUEUE_SETS
+			depends on FREERTOS
+			bool "Enable FreeRTOS Queue_Sets"
+			default n
+
+		config MEM_MGMT
+			bool "Enable Mem Mgmt"
+			default n
+			help
+				Enable heap management module
+
+		choice FREERTOS_VER
+			depends on FREERTOS
+			prompt "Select FreeRTOS Version"
+			default FREERTOS_V9
+
+			config FREERTOS_V9
+				bool "FreeRTOS v9.0.0"
+			config FREERTOS_V10
+				bool "FreeRTOS v10"
+			config FREERTOS_SMP
+				bool "FreeRTOS SMP v10"
+		endchoice
+
+		config FREERTOS_POSIX
+			depends on FREERTOS_V10 || FREERTOS_SMP
+			bool "Enable FreeRTOS Posix"
+			default n
+
+		config FREERTOS_TRACE
+			depends on FREERTOS_V10
+			bool "FreeRTOS Trace"
+			default n
+
+		config TASK_STACK_IN_PSRAM
+			depends on FREERTOS_V10
+			bool "Create FreeRTOS Task stack in psram"
+			default n
+		
+		config QUEUE_IN_PSRAM
+			depends on FREERTOS_V10
+			bool "Create FreeRTOS queue in psram"
+			default n
+
+		config FREERTOS_ALLOW_OS_API_IN_IRQ_DISABLED
+			depends on FREERTOS_SMP
+			bool "Allow Call OS API in IRQ disabled"
+			default n
+			help
+				Allow call some OS API in irq disabled, and scheduler will not enable
+				the irq but left the user app to restore previous irq status.
+
+		config FREERTOS_SMP_TEMP
+			depends on FREERTOS_SMP
+			bool "SMP TEMP code"
+			default n
+
+		config FREERTOS_RTT_MONITOR
+			depends on FREERTOS_SMP
+			bool "FreeRTOS Segger Real-Time Transfer"
+			default n
+
+		config FREERTOS_USE_TICKLESS_IDLE
+			depends on FREERTOS_V10 || FREERTOS_SMP
+			int "Set FreeRTOS Use Tickless Idle"
+			default 2
+			help
+				Use tickless idle, can be 0/1/2
+
+        config FREERTOS_USE_RECURSIVE_MUTEXES
+            bool "FreeRTOS recursive mutex"
+            default n
+
+		config FREERTOS_TICK_RATE_HZ
+			depends on FREERTOS
+			int "Set FreeRTOS tick count per second"
+			default 500
+			help
+				System tick count per second, can be 1-1000
+
+	endmenu
+
+	menu "Modify LITEOS_M Config"
+
+		config LITEOS_M
+			bool "Enable Liteos_m"
+			default n
+
+		config LITEOS_M_V3
+			bool "Enable Liteos_m_v3"
+			default n
+			help
+				liteos_m v3.0.1-LTS
+
+		config LITEOS_M_BK
+			depends on LITEOS_M_V3
+			bool "Enable Liteos_m_bk"
+			default n
+			help
+				liteos_m bk adapter
+
+	endmenu
+
+	menu "Modify NON_OS Config"
+
+		config NON_OS
+			bool "Enable Non_os"
+			default n
+
+	endmenu
+
+	menu "Modify Memory Debug Config"
+
+		config MALLOC_STATIS
+			bool "Enable Malloc Statis"
+			default n
+			help
+				enable malloc statistics
+
+		config MEM_DEBUG
+			bool "Enable Mem Debug"
+			default n
+			help
+				When this option is enable, more memory will be consumed because
+				a fixed length debug block will be appended to every memory allocated
+				from heap.
+				Moreover, suggest disable task/watchdog when this option is enabled
+				in case os_dump_memory_stats() triggers watchdog.
+
+		config MEM_DEBUG_FUNC_NAME
+			depends on MEM_DEBUG
+			bool "Enable Mem Debug Func Name"
+			default y
+
+		config MEM_DEBUG_FUNC_NAME_LEN
+			depends on MEM_DEBUG_FUNC_NAME
+			int "Set Mem Debug Func Name Len"
+			default 16
+			help
+				set memory debug function name length
+
+		config MEM_DEBUG_TASK_NAME
+			depends on MEM_DEBUG
+			bool "Enable Mem Debug Task Name"
+			default y
+
+		config MEM_DEBUG_TASK_NAME_LEN
+			depends on MEM_DEBUG_TASK_NAME
+			int "Set Mem Debug Task Name Len"
+			default 8
+			help
+				set memory debug task name length
+
+	endmenu
+
+endmenu

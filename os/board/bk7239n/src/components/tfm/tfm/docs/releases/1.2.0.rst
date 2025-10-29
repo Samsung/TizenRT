@@ -1,0 +1,143 @@
+:orphan:
+*************
+Version 1.2.0
+*************
+
+New features
+============
+
+  - A new build system based on Modern CMake.
+  - First implementation of level 3 isolation on Musca-B1 and AN521.
+  - Remove MCUBoot fork from TF-M.
+  - Move test and app code to tf-m-tests repo.
+  - Add Profile Medium.
+  - Migrate support to Mbed TLS v2.24.
+  - New platforms added.
+    See :ref:`releases/1.2.0:New platforms supported` for
+    details.
+  - New SPM HAL APIs including isolation API and logging API.
+  - Update MCUboot version to 1.7.0-rc1.
+  - Initial ITS/PS HAL for dynamic filesystem configuration.
+  - Remove auto-generated files from the source tree.
+
+New security advisories
+=======================
+
+Stack sealing
+-------------
+
+Refer to :doc:`Advisory TFMV-1</security/security_advisories/stack_seal_vulnerability>`
+for more details.
+A common mitigation is included in this release.
+
+New platforms supported
+=======================
+
+- Cortex-M33 based system:
+
+  - `Nordic nRF9160 DK (nordic_nrf/nrf9160dk_nrf9160).
+    <https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF9160-DK>`_
+  - `Nordic nRF5340 PDK (nordic_nrf/nrf5340pdk_nrf5340_cpuapp).
+    <https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF5340-PDK>`_
+  - `Nordic nRF5340 DK (nordic_nrf/nrf5340dk_nrf5340_cpuapp).
+    <https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF5340-PDK>`_
+
+- Cortex-M23 based system:
+
+  - `Nuvoton M2351.
+    <https://www.nuvoton.com/products/iot-solution/iot-platform/numaker-pfm-m2351/>`_
+
+- Cortex-M55 based system:
+
+  - `Corstone-300 Ethos-U55 FVP (Cortex-M55 plus Ethos-U55 SSE-300 MPS3).
+    <https://developer.arm.com/tools-and-software/open-source-software/arm-platforms-software/arm-ecosystem-fvps>`_
+
+Tested platforms
+================
+
+The following platforms are successfully tested in this release.
+
+ - AN519
+ - AN521
+ - Musca-B1
+ - MPS2 SSE300
+ - PSoC 64
+ - M2351
+ - nrf5340dk
+ - nrf5340pdk
+ - nrf9160dk
+ - LPCXpresso55S69
+ - NUCLEO-L552ZE-Q
+ - STM32L562E-DK
+
+Known issues
+============
+
+Some open issues exist and will not be fixed in this release.
+
+.. list-table::
+
+  *  - **Descriptions**
+     - **Issue links**
+
+  *  - | PSA Arch Crypto tests have several known failures.
+     - See this link for detailed analysis of the failures:
+       https://developer.trustedfirmware.org/w/tf_m/release/psa_arch_crypto_test_failure_analysis_in_tf-m_v1.2_release/
+
+Issues fixed since 1.1
+======================
+
+Issues fixed by TF-M since v1.1 are listed below.
+
+.. list-table::
+
+  *  - **Descriptions**
+     - **Issue links**
+
+  *  - | The eflash driver on Musca-B1 can return random failures hence
+       | triggering random failures during PSA Arch ITS and PSA Arch PS tests.
+       | This happens when ITS/SST is configured to use flash.
+     - https://developer.trustedfirmware.org/T697
+
+Issues closed since 1.1
+=======================
+
+The following issues are closed since v1.1. These issues are related to platform
+hardware limitations or 3rd-party tools and therefore won't be fixed by TF-M.
+
+.. list-table::
+
+  *  - **Descriptions**
+     - **Issue links**
+
+  *  - | All the supported GNUARM toolchain versions generate corrupt veneer
+       | code for Armv8-M baseline architecture, when the -Os optimization flag
+       | is used. This affects the Armv8-M baseline platforms built with GNUARM
+       | toolchain and Minsizerel build type.
+       | It relies on an official release of GNUARM toolchain to fix this issue.
+     - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95646
+
+  *  - | AN521 FVP soft reset via AIRCR does not reset MPC / PPC / MPU and will
+       | cause boot failure. This is a known issue for AN521 FVP. This will
+       | cause the system to fail to boot after a warm reset during PSA Arch FF
+       | testing.
+     - https://developer.trustedfirmware.org/T692
+
+  *  - | There are 2 additional failures for PSA-Arch Crypto tests with CC-312
+       | other than the known failures. This is due to limitation of CC-312
+       | implementation as it does not support MD_NONE hashing mode causing the
+       | additional failures.
+     - https://developer.trustedfirmware.org/T691
+
+  *  - | Boot up fails if there is unexpected data in flash on Musca-A. The boot
+       | is successful and the tests pass if all the associated (PS/ITS/NV
+       | Counter) flash areas are erased.
+     - https://developer.trustedfirmware.org/T694
+
+  *  - | If the flash is not erased, boot fails on Musca-B1 when SST is using
+       | flash for Minsizerel config.
+     - https://developer.trustedfirmware.org/T695
+
+--------------
+
+*Copyright (c) 2020-2021, Arm Limited. All rights reserved.*

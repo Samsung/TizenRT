@@ -1,0 +1,179 @@
+###########################################################################
+#
+# Copyright 2025 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+#
+#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+
+-include $(TOPDIR)/Make.defs
+-include $(TOPDIR)/.config
+
+
+CSRCS += cli_main.c cli_uart.c cli_gpio.c cli_misc.c cli_mem.c cli_os.c cli_timer.c
+
+ifeq ($(CONFIG_FLASH),y)
+	CSRCS += cli_flash_test.c
+	CSRCS += cli_flash.c
+endif
+
+ifeq ($(CONFIG_TRNG_SUPPORT),y)
+	CSRCS += cli_trng.c
+endif
+
+ifeq ($(CONFIG_NIST_TEST),y)
+	CSRCS += cli_nist.c cli_nist_cases.c cli_nist_common.c
+endif
+
+#ifeq ($(CONFIG_EASY_FLASH),y)
+	CSRCS += cli_easyflash.c
+#endif
+
+
+#ifeq ($(CONFIG_INT_WDT),y)
+#	CSRCS += cli_wdt.c
+#endif
+#
+#ifeq ($(CONFIG_SPI),y)
+#	CSRCS += cli_spi.c
+#endif
+#
+ifeq ($(CONFIG_MCU_PS),y)
+	CSRCS += cli_pwr.c
+endif
+#
+#ifeq ($(CONFIG_OTA_HTTP),y)
+#	CSRCS += cli_ota.c
+#endif
+#
+ifeq ($(CONFIG_WIFI_CLI_ENABLE),y)
+#	CSRCS += cli_wifi.c
+	CSRCS += cli_phy.c
+endif
+#
+#ifeq ($(CONFIG_IPERF_TEST),y)
+#	CSRCS += cli_iperf.c
+#endif
+#
+#ifeq ($(CONFIG_GENERAL_DMA),y)
+#	CSRCS += cli_dma.c
+#endif
+#
+#ifeq ($(CONFIG_SDCARD),y)
+#	CSRCS += cli_sd.c
+#endif
+#
+#ifeq ($(CONFIG_SDIO_SLAVE),y)
+#	CSRCS += cli_sdio_slave.c
+#endif
+#
+#ifeq ($(CONFIG_PWM),y)
+#	CSRCS += cli_pwm.c
+#endif
+#
+#ifeq ($(CONFIG_I2C),y)
+#	CSRCS += cli_i2c.c
+#endif
+#
+#ifeq ($(CONFIG_TRNG_SUPPORT),y)
+#	CSRCS += cli_trng.c
+#endif
+#
+#ifeq ($(CONFIG_FATFS),y)
+#	CSRCS += cli_fatfs.c
+#endif
+#
+#ifeq ($(CONFIG_VFS),y)
+#	CSRCS += cli_vfs.c
+#endif
+#
+#ifeq ($(CONFIG_EFUSE),y)
+#	CSRCS += cli_efuse.c
+#endif
+#
+#ifeq ($(CONFIG_PSRAM_TEST),y)
+#	CSRCS += cli_psram.c
+#endif
+#
+#ifeq ($(CONFIG_SDIO_HOST),y)
+#	CSRCS += cli_sdio_host.c
+#endif
+#
+#ifeq ($(CONFIG_QSPI),y)
+#	CSRCS += cli_qspi.c
+#endif
+#
+#ifeq ($(CONFIG_AON_RTC_TEST),y)
+#	CSRCS += cli_aon_rtc.c
+#endif
+#
+#
+#ifeq ($(CONFIG_TOUCH_TEST),y)
+#	CSRCS += cli_touch.c
+#endif
+
+ifeq ($(CONFIG_BKREG),y)
+	CSRCS += command_line.c 
+	CSRCS += command_table.c
+endif
+
+ifeq ($(CONFIG_BLE_CLI_ENABLE),y)
+	CSRCS += cli_ble.c
+endif
+
+ifeq ($(CONFIG_I2S_TEST),y)
+	CSRCS += cli_i2s.c
+endif
+
+ifeq ($(CONFIG_CIPHER_AES_TEST_ENABLE),y)
+	CSRCS += cli_cipher_aes.c
+endif
+
+DEPPATH += --dep-path components/bk_cli
+DEPPATH += --dep-path components/bk_cli/uart_debug
+VPATH += :components/bk_cli
+VPATH += :components/bk_cli/uart_debug
+

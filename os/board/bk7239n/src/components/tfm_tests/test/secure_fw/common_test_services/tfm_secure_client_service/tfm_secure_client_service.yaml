@@ -1,0 +1,73 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2018-2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.1,
+  "name": "TFM_SP_SECURE_TEST_PARTITION",
+  "type": "PSA-ROT",
+  "model": "dual",
+  "priority": "LOW",
+  "entry_point": "tfm_secure_client_service_init",
+  "entry_init": "tfm_secure_client_service_init",
+  "stack_size": "0x0D00",
+  "mmio_regions": [
+    {
+      "name": "TFM_PERIPHERAL_STD_UART",
+      "permission": "READ-WRITE"
+    }
+  ],
+  "secure_functions": [
+    {
+      "name": "TFM_SECURE_CLIENT_SFN_RUN_TESTS",
+      "signal": "TFM_SECURE_CLIENT_SERVICE_SFN_RUN_TESTS",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+  ],
+  "services": [
+    {
+      "name": "TFM_SECURE_CLIENT_SRV_DUMMY",
+      "sid": "0x0000F000",
+      "connection_based": true,
+      "non_secure_clients": false,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ],
+  "dependencies": [
+    "TFM_SECURE_CLIENT_2",
+  ],
+  "weak_dependencies": [
+    # This Partition can still work without the following "weak" dependencies:
+    # It has checks on whether the corresponding Partitions are enabled.
+    "TFM_CRYPTO",
+    "TFM_PROTECTED_STORAGE_SERVICE",
+    "TFM_INTERNAL_TRUSTED_STORAGE_SERVICE",
+    "TFM_ATTESTATION_SERVICE",
+    "TFM_PS_TEST_PREPARE",
+    "TFM_SP_PLATFORM_SYSTEM_RESET",
+    "TFM_SP_PLATFORM_IOCTL",
+    "TFM_FWU_WRITE",
+    "TFM_FWU_INSTALL",
+    "TFM_FWU_ABORT",
+    "TFM_FWU_QUERY",
+    "TFM_FWU_REQUEST_REBOOT",
+    "TFM_FWU_ACCEPT",
+    "IPC_SERVICE_TEST_BASIC",
+    "IPC_SERVICE_TEST_STATELESS_ROT",
+    "TFM_FPU_SERVICE_CLEAR_FP_REGISTER",
+    "TFM_FPU_SERVICE_CHECK_FP_REGISTER",
+    "IPC_CLIENT_TEST_PSA_ACCESS_APP_MEM",
+    "IPC_CLIENT_TEST_PSA_ACCESS_APP_READ_ONLY_MEM",
+    "IPC_CLIENT_TEST_APP_ACCESS_PSA_MEM",
+    "IPC_CLIENT_TEST_MEM_CHECK",
+    "IPC_CLIENT_TEST_RETRIEVE_APP_MEM",
+    "SFN_TEST_STATELESS",
+    "SFN_TEST_CONNECTION_BASED",
+  ]
+}

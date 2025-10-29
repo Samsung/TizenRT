@@ -1,0 +1,5 @@
+menu "HW_SCALE"
+	config HW_SCALE
+		bool "Enable hw scale module"
+		default n
+endmenu

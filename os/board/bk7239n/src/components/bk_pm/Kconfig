@@ -1,0 +1,44 @@
+menu "PM"
+	config PM_ENABLE
+		bool "pm enable"
+		default n
+
+	config PM_CLIENT
+		bool "indicate the current cpu running as pm client core, otherwise running as pm server core"
+		default n
+
+	config PM_SUPER_DEEP_SLEEP
+		bool "Enable super deep sleep"
+		default n
+
+	config PM_EXTEND_CPU_FREQ
+		bool "Extend cpu freq"
+		default n
+
+	config PM_LV_TIME_COST_DEBUG
+		bool "Enable low voltage sleep time cost debug"
+
+	config PM_ENTER_LV_TIME_OUT_PERIOD_MS
+		int "Enter LV time out"
+		default 30000
+		help
+			enter LV time out time(unit:ms)
+
+	config PM_LV_WDT_PROTECTION
+		bool "add protection for hardware enter low voltage fail when application abnormal operate, using wdt to reboot"
+		default n
+
+	config PM_CPU_FRQ_HIGHEST
+		int "config highest cpu frequency"
+		default 4
+		help
+		   config highest cpu frequency(0:xtal;1:60M;2:80M;3:120M;4:160M;5:240M;)
+
+	config PM_PROTECT_TIME_CHECK
+		bool "Primarily protect time check"
+		default n
+		help
+			Primarily protect the BT sleep time until re-entering the sleep scenario
+
+endmenu
+

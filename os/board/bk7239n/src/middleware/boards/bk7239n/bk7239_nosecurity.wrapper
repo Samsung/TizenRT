@@ -1,0 +1,490 @@
+#!/usr/bin/env python3
+
+#TODO - optimize it, should finally remove this packer
+
+import os
+import sys
+import json
+import shutil
+import argparse
+import copy
+import errno
+import re
+import csv
+import subprocess
+import logging
+
+armino_path = os.getenv("ARMINO_PATH")
+project_dir = os.getenv("PROJECT_DIR")
+project_name = os.getenv("PROJECT")
+armino_soc = os.getenv("ARMINO_SOC")
+build_path = os.path.realpath('.')
+ota_tool = '%s/tools/env_tools/rtt_ota/ota-rbl/ota_packager_python.py'%(armino_path)
+chip = 'bk7239'
+firmware = 'app.bin'
+image_name = 'all-app.bin'
+file_op_list = list()
+gen_file_list = set()
+security_wrapper = "%s/middleware/boards/%s/%s_security.wrapper"%(armino_path, armino_soc, armino_soc)
+pack_boot_tools = '%s/tools/env_tools/beken_packager'%(armino_path)
+armino_tool_part_table = '%s/tools/build_tools/part_table_tools/gen_bk7256partitions.py'%(armino_path)
+partition_smode = '--smode'
+partition_args = '16MB'
+bootloader_json_inseq = '1,1,2,0,0,0'
+bootloader_json_dirct = '%s/partition_bk7256_ota_a_new.json'%(pack_boot_tools)
+
+def parse_args():
+    description = '''Beken HID Downloader.'''
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-c', '--chip',
+                        default='bk7239',
+                        help="chip type")
+    parser.add_argument('-i', '--index', type=int,
+                        default=0,
+                        help="chip index")
+    parser.add_argument('-b', '--boot',
+                        help='specify boot file')
+    parser.add_argument('-f', '--firmware',
+                        help='specify firmware file')
+    parser.add_argument('-d', '--dsp',
+                        help='specify dsp file')
+    parser.add_argument('-t', '--bt',
+                        help='specify bt file')
+    parser.add_argument('-n', '--image_name',
+                        help='generated image name')
+    parser.add_argument('-u', '--cpu1',
+                        help='specify cup1 file')
+    args = parser.parse_args()
+
+    return args
+
+
+#add new process
+def run_cmd_with_ret(cmd):
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
+    out, err = p.communicate()
+    print(out)
+    if (p.returncode):
+       print(err)
+       exit(1)
+
+#Size format conversion  string->int
+def parse_int(v):
+    for letter, multiplier in [("k", 1024), ("m", 1024 * 1024)]:
+        if v.lower().endswith(letter):
+            return parse_int(v[:-1]) * multiplier
+        return int(v, 0)
+
+#Size format conversion  int->string
+def size_format(size, include_size):
+    if include_size:
+        for (val, suffix) in [(0x400, "K"), (0x100000, "M")]:
+            #if size % val == 0:
+            return "%d%s" % (size // val, suffix)
+    size_str = '%x'%size
+    lead_zero = '0'*(8 - len(size_str))
+    return "0x%s%s" % (lead_zero, size_str)
+
+#Path check, if no, create
+def ensure_directory(dir):
+    if not os.path.exists(dir):
+        try:
+            os.makedirs(dir)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+
+#physical address is translated into a logical address
+def shrink_val(val, need_shrink):
+    return int(val*32/34) if need_shrink else val
+
+#use for debug
+def show_gen_file_list():
+    for file in gen_file_list:
+        print("$$##>>:",file)
+
+#move files from gen_file_list to new sub directory
+def move_gen_files(sub_dir):
+    global gen_file_list
+    for file in gen_file_list:
+        if os.path.exists(file.strip()):
+            file_name = os.path.basename(file)
+            file_dir = os.path.dirname(file)
+            new_file = '%s/%s/%s'%(file_dir, sub_dir, file_name)
+            nem_file_dir = os.path.dirname(new_file)
+            ensure_directory(nem_file_dir)
+            shutil.move(file, new_file)
+            update_file_operation(file, new_file)
+    gen_file_list = set()
+
+#move file to another new directory
+def move_file_to_new_dir(src_dir, file, dest_dir):
+    new_file_dir = os.path.dirname(dest_dir)
+    if not os.path.exists(new_file_dir):
+        os.makedirs('%s/'%(new_file_dir))
+    else:
+        print("exsit",new_file_dir)
+    shutil.move('%s/%s'%(src_dir,file), dest_dir)
+    register_file_operation('%s/%s'%(dest_dir,file), '%s/app_ab_crc.rbl'%(dest_dir), 'move') #rename
+
+#update file_op_list
+def update_file_operation(src, new_src):
+    for file_op_entry in file_op_list:
+        if os.path.abspath(file_op_entry[0]) == os.path.abspath(src):
+            file_op_entry[0] = new_src
+
+#register file to file_op_list
+def register_file_operation(src, dest, op):
+    global file_op_list
+    need_register = True
+    if len(file_op_list) > 0:
+        for s,d,o in file_op_list:
+            if os.path.abspath(s) == os.path.abspath(src) and os.path.abspath(d) == os.path.abspath(dest) and o == op:
+                need_register = False
+                break
+    if need_register:
+        file_op_entry = [src, dest, op]
+        file_op_list.append(file_op_entry)
+
+#deal file to file_op_list
+def deal_file_operation():
+    global file_op_list
+    for src,dest,op in file_op_list:
+        if os.path.isfile(src):
+            if op == 'move':
+                ensure_directory(os.path.dirname(dest))
+                shutil.move(src, dest)
+            elif op == 'copy':
+                ensure_directory(os.path.dirname(dest))
+                shutil.copy(src, dest)
+            elif op == 'rm':
+                shutil.os.remove(src)
+            else:
+                pass
+    file_op_list = list()
+
+#get config json path
+def get_config_json_path():
+    json_path = None
+    if os.path.exists('%s/%s/%s/configuration.json'%(armino_path, project_dir, chip)):
+        json_path = '%s/%s/%s/configuration.json'%(armino_path, project_dir, chip)
+    elif os.path.exists('%s/%s/configuration.json'%(armino_path, project_dir)):
+        json_path = '%s/%s/configuration.json'%(armino_path, project_dir)
+    else:
+        json_path = '%s/middleware/boards/%s/configuration.json'%(armino_path, chip)
+    if json_path is None:
+        raise 'config_json get failed!!!'
+    return json_path
+
+#get partition csv path
+def get_partition_csv_path():
+    part_scv_path = None
+    part_scv_name = '%s_partitions.csv'%(chip)
+    if os.path.exists('%s/%s/config/%s/%s_partitions.csv'%(armino_path, project_dir, chip, chip)):
+        part_scv_path = '%s/%s/config/%s/%s'%(armino_path, project_dir, chip, part_scv_name)
+    elif os.path.exists('%s/middleware/boards/%s/partitions.csv'%(armino_path, chip)):
+        part_scv_path = '%s/middleware/boards/%s/partitions.csv'%(armino_path, chip)
+    else:
+        raise RuntimeError('partition csv not exist,get csv failed!!!')
+
+    return part_scv_path
+
+#get the bootloader json for bootloader.bin inserting
+def get_bootloader_json_for_inserting():
+    csv_path = get_partition_csv_path()
+    os.system('python3 %s %s %s --smode-inseq %s --flash-size %s --to-json %s'%(armino_tool_part_table, csv_path, partition_smode, bootloader_json_inseq, partition_args, bootloader_json_dirct))
+    os.rename(bootloader_json_dirct,'%s/partition_bootloader.json'%(pack_boot_tools))
+
+#get bootloader path
+def get_bootloader_path(armino_path, chip):
+    bootloader_no_insert_part_path = None
+    if project_name == 'customization/config_ab':
+        bootloader_no_insert_part_path = '%s/components/bk_libs/%s/bootloader/ab_bootloader'%(armino_path, chip)
+    else:
+        bootloader_no_insert_part_path = '%s/components/bk_libs/%s/bootloader/normal_bootloader'%(armino_path, chip)
+    if os.path.exists('%s/partition_bootloader.json'%(pack_boot_tools)):
+        print('project %s/%s in automatic_project list'%(project_name, armino_soc))
+    else:
+        print('project %s/%s not in automatic_project list'%(project_name, armino_soc))
+        get_bootloader_json_for_inserting()
+
+    os.system('%s/cmake_Gen_image genfile -injsonfile %s/config.json -infile %s/bootloader.bin -outfile %s/bootloader.bin -genjson %s/partition_bootloader.json'%(pack_boot_tools,pack_boot_tools, bootloader_no_insert_part_path,build_path, pack_boot_tools))
+
+    bootloader_dest_path = '%s/bootloader.bin'%(build_path)
+
+    return bootloader_dest_path
+
+#get firmware path
+def get_firmware_path(firmware):
+    firmware_path = None
+    if os.path.exists('%s/%s/%s/%s'%(armino_path, project_dir, chip, firmware)):
+        firmware_path = '%s/%s/%s/%s'%(armino_path, project_dir, chip, firmware)
+    elif os.path.exists('%s/%s/%s'%(armino_path, project_dir, firmware)):
+        firmware_path = '%s/%s/%s'%(armino_path, project_dir, firmware)
+    else:
+        if firmware == "bootloader.bin":
+            firmware_path = get_bootloader_path(armino_path, chip)
+        else:
+            firmware_path = '%s/middleware/boards/%s/%s'%(armino_path, chip, firmware)
+
+    if firmware_path is None:
+        raise 'firmware: %s get failed!!!'%(firmware)
+    if os.path.isfile(firmware_path):
+        try:
+            shutil.copy(firmware_path, "%s/%s"%(build_path, firmware))
+            #register_file_operation("%s/%s"%(build_path, firmware), "%s/firmware/%s"%(build_path, firmware), 'move')
+        except shutil.SameFileError:
+            print('firmware  exsit')
+
+    firmware_path = '%s/%s'%(build_path, firmware)
+    return firmware_path
+
+#copy bootloader.bin to components/bk_libs
+def copy_bootloader_to_component_bklibs_dir(sour_boot_dir,dest_boot_dir):
+    if not os.path.exists(dest_boot_dir):
+        os.makedirs('%s/'%(dest_boot_dir))
+    else:
+        print("exsit",dest_boot_dir)
+    shutil.copy('%s/%s/bootloader.bin'%(armino_path,sour_boot_dir),'%s/bootloader.bin'%(dest_boot_dir))
+
+#copy bootloader bin-elf-asm to relating directory
+def copy_bootloader_to_relevant_dir():
+    project_bootloader_ab = "properties/modules/bootloader/aboot/arm_bootloader_ab/output"
+    project_bootloader = "properties/modules/bootloader/aboot/arm_bootloader/output"
+    if project_name != "ate_mini_code":
+        if project_name == 'customization/config_ab':
+            if os.path.exists('%s/%s/bootloader.bin'%(armino_path,project_bootloader_ab)):
+                #copy bootloader bin to 'components/bk_libs/%s'%(chip)
+                dest_boot_dir = '%s/components/bk_libs/%s/bootloader/ab_bootloader'%(armino_path, chip)
+                copy_bootloader_to_component_bklibs_dir(project_bootloader_ab,dest_boot_dir)
+
+                #copy bootloader elf-map-asm to build directory
+                try:
+                    shutil.copytree('%s/%s/'%(armino_path,project_bootloader_ab), './bootloader_out')
+                except FileExistsError:
+                    #raise RuntimeError("==========>./bootloader_out exist")
+                    shutil.rmtree('./bootloader_out')
+                    shutil.copytree('%s/%s/'%(armino_path,project_bootloader_ab), './bootloader_out')
+        else:
+             print("PROJECT_DIRxxx:",os.getenv("PROJECT_DIR"))
+#            if os.path.exists('%s/%s/bootloader.bin'%(armino_path,project_bootloader)):
+#                print("PROJECT_DIR:",os.getenv("PROJECT_DIR"))
+#                #copy bootloader bin to 'components/bk_libs/%s'%(chip)
+#                dest_boot_dir = '%s/components/bk_libs/%s/bootloader/normal_bootloader'%(armino_path, chip)
+#                copy_bootloader_to_component_bklibs_dir(project_bootloader,dest_boot_dir)
+#
+#                #copy bootloader and monitor elf-map-asm to build directory
+#                try:
+#                    shutil.copytree('%s/%s/'%(armino_path,project_bootloader), './bootloader_out')
+#                except FileExistsError:
+#                    #raise RuntimeError("==========>./bootloader_out exist")
+#                    shutil.rmtree('./bootloader_out')
+#                    shutil.copytree('%s/%s/'%(armino_path,project_bootloader), './bootloader_out')
+
+#Read the csv file
+def read_csv_data(file_path):
+    data = {}
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        next(reader)  # Skip header line
+        for row in reader:
+            data[row[0]] = row[1]
+    return data
+
+
+#get ab position independent csv key value {TRUE :need position independent,FALSE :not need position independent }
+def get_ab_pos_independent_value(ab_input_file):
+    data = read_csv_data(ab_input_file)
+    if data.get('pos_independent').lower() == 'true':
+        output_value = 'True'
+    else :
+        output_value = 'False'
+
+    return output_value
+
+#get ab position independent csv status {TRUE :need position independent,FALSE :not need position independent }
+def get_ab_position_independent_csv_status():
+    if os.path.exists('%s/%s/config/%s/ab_position_independent.csv'%(armino_path, project_dir, chip)):
+        ab_pos_independent_file = "%s/%s/config/%s/ab_position_independent.csv"%(armino_path, project_dir, chip)
+        pos_independent_status = get_ab_pos_independent_value(ab_pos_independent_file)
+    elif os.path.exists('%s/middleware/boards/%s/ab_position_independent.csv'%(armino_path, chip)):
+        ab_pos_independent_file = "%s/middleware/boards/%s/ab_position_independent.csv"%(armino_path, chip)
+        pos_independent_status = get_ab_pos_independent_value(ab_pos_independent_file)
+    else:
+        pos_independent_status = 'False'
+    print(' >>>>>>>>>>>>pos_independent_status: %s '%pos_independent_status)
+    return pos_independent_status
+
+# add ota head note into the all_app_crc.bin
+def add_ota_head_into_all_app_image(dest_file, src_file):
+    global write_data
+    try :
+        with open(dest_file , 'r+b') as dest_f:
+            dest_f.seek(0x11000)
+            try:
+                with open(src_file,'rb') as src_f:
+                    write_data = src_f.read()
+            except FileNotFound:
+                print(f'src_file not found {src_file}')
+            dest_f.write(write_data)
+    #os.remove('app_ab_crc.bin')
+    except FileNotFound:
+        print(f'dest_file not found {dest_file}')
+
+def get_security_status():
+    if os.path.exists('%s/middleware/boards/%s/security_ctrl.csv'%(armino_path, chip)):
+        security_ctrl_file = "%s/middleware/boards/%s/security_ctrl.csv"%(armino_path, chip)
+        return (read_csv_data(security_ctrl_file).get('security'))
+    return False
+#Package according to json file
+def pack_from_config_json(cfg_json, nm):
+    pack_tool = '%s/tools/env_tools/beken_packager/cmake_Gen_image'%(armino_path)
+    json_file = './cfg_temp.json'
+    infiles = ''
+    nm_suffix = 'pack'
+    outfile = os.path.join(build_path, '%s_%s'%(nm, nm_suffix))
+    if cfg_json['count'] == 1:
+        shutil.move(cfg_json['section'][0]['firmware'], '%s.bin'%(outfile))
+    else:
+        start_addr = cfg_json['section'][0]['start_addr']
+        for sec in cfg_json['section']:
+            infiles += '%s '%(sec['firmware'])
+            start_addr = start_addr if parse_int(start_addr) <= parse_int(sec['start_addr']) else sec['start_addr']
+        cfg_json_temp = copy.deepcopy(cfg_json)
+        for sec in cfg_json_temp['section']:
+            sec['start_addr'] = size_format(parse_int(sec['start_addr']) - parse_int(start_addr), False)
+        cfg_json_temp = json.dumps(cfg_json_temp, sort_keys=False, indent=4)
+        with open(json_file, 'w') as f:
+            f.write(cfg_json_temp)
+        if os.path.exists(pack_tool.strip()) and os.path.isfile(pack_tool.strip()):
+            os.system('%s genfile -injsonfile %s -infile %s -outfile %s.bin'%(pack_tool, json_file, infiles, outfile))
+        else:
+            raise 'pack_tool path error!'
+        os.remove(json_file)
+    #gen_file_list.add('%s.bin'%(outfile))
+
+    return outfile
+
+#add crc
+def crc_from_config_json(cfg_json, nm):
+    crc_tool = '%s/tools/env_tools/beken_packager/cmake_encrypt_crc'%(armino_path)
+    nm_suffix = 'crc'
+    outfile = os.path.join(build_path, '%s_%s'%(nm, nm_suffix))
+    if os.path.exists(crc_tool.strip()) and os.path.isfile(crc_tool.strip()):
+        os.system("%s -crc %s.bin"%(crc_tool, nm))
+    else:
+        raise 'crc_tool path error!'
+    #gen_file_list.add('%s.bin'%(outfile))
+    return outfile
+
+#subfile call
+def run_cmd(cmd):
+    p = subprocess.Popen(cmd, shell=True)
+    ret = p.wait()
+    if (ret):
+        logging.error(f'failed to run "{cmd}"')
+        exit(1)
+
+#generate all app
+def package_json_rebuild():
+    global image_name
+    header_path = "{}/tools/env_tools/rtt_ota/ota-rbl/".format(armino_path)
+    app_pack_secs = list()
+
+    json_file = get_config_json_path()
+    with open(json_file, 'r') as local_json:
+        config_json = json.load(local_json)
+    for sec in config_json['section']:
+        sec['firmware'] = get_firmware_path(sec['firmware'])
+        sec['start_addr'] = size_format(shrink_val(parse_int(sec["start_addr"]), True), False)
+        sec['size'] = size_format(shrink_val(parse_int(sec["size"]), True), True)
+        if(sec['partition'] != 'bootloader'):
+            app_pack_secs.append(sec)
+    #gen all_app_pack.bin
+    app_pack_name = pack_from_config_json(config_json, 'all_app')
+    app_crc_name = crc_from_config_json(config_json, app_pack_name)
+    register_file_operation('%s.bin'%(app_pack_name), build_path, 'rm') #delete intermediate file
+    
+    src = '%s.bin'%(app_crc_name)
+    dest = '%s/%s'%(build_path, image_name)
+    op = 'move'
+    register_file_operation(src, dest, op) #rename all-app.bin
+    #gen app_pack.bin
+    if len(app_pack_secs) > 0:
+        config_json['count'] = len(app_pack_secs)
+        config_json['section'] = app_pack_secs
+    app_pack_name = pack_from_config_json(config_json, 'app')
+    os.system('python3 %s -i %s.bin -o %s -g %s -ap %s -pjd %s packager'%(ota_tool, app_pack_name, 'app_pack.rbl', header_path, armino_path, project_dir))
+
+    gen_file_list.add('%s/app_pack.rbl'%(build_path))
+
+#generate all ab app
+def package_json_ab_rebuild():
+    image_nm = 'all_app_ab_crc.bin'
+    header_path = "{}/tools/env_tools/rtt_ota/ota-rbl/".format(armino_path)
+    app_pack_secs = list()
+
+    json_file = get_config_json_path()
+    with open(json_file, 'r') as local_json:
+        config_json = json.load(local_json)
+    for sec in config_json['section']:
+        sec['firmware'] = get_firmware_path(sec['firmware'])
+        sec['start_addr'] = size_format(shrink_val(parse_int(sec["start_addr"]), True), False)
+        sec['size'] = size_format(shrink_val(parse_int(sec["size"]), True), True)
+        if(sec['partition'] != 'bootloader'):
+            app_pack_secs.append(sec)
+    #gen all_app_ab_crc.bin
+    app_pack_name = pack_from_config_json(config_json, 'all_app')
+    app_crc_name = crc_from_config_json(config_json, app_pack_name)
+    register_file_operation('%s.bin'%(app_pack_name), build_path, 'rm') #delete intermediate file
+
+    src = '%s.bin'%(app_crc_name)
+    dest = '%s/%s'%(build_path, image_nm)
+    register_file_operation(src, dest, 'move') #rename all_app_ab_crc.bin
+    if len(app_pack_secs) > 0:
+        config_json['count'] = len(app_pack_secs)
+        config_json['section'] = app_pack_secs
+    app_pack_name = pack_from_config_json(config_json, 'app')
+    register_file_operation('%s.bin'%(app_pack_name), build_path, 'rm') #delete intermediate file
+    run_cmd_with_ret('python3 %s -i %s.bin -o %s -g %s -ap %s -soc %s -pjd %s packager'%(ota_tool, app_pack_name, 'app_ab.bin', header_path, armino_path, armino_soc, project_dir))
+    app_ab = '%s/app_ab.bin'%(build_path)
+    if os.path.isfile(app_ab):
+        app_ab_crc = crc_from_config_json(config_json, 'app_ab')
+        dest_file_dir = '%s/encrypt/'%(build_path)
+        add_ota_head_into_all_app_image(src, 'app_ab_crc.bin')
+        move_file_to_new_dir(build_path, 'app_ab_crc.bin', dest_file_dir)
+
+def main():
+    global chip
+    global firmware
+    global image_name
+    args = parse_args()
+    header_path = "{}/tools/env_tools/rtt_ota/ota-rbl/".format(armino_path)
+
+    if args.chip is not None:
+        chip = args.chip
+    if args.firmware is not None:
+        firmware = args.firmware
+    if args.image_name is not None:
+        image_name = args.image_name
+
+    copy_bootloader_to_relevant_dir()
+    if get_ab_position_independent_csv_status() == 'True':
+        print('<<<<<<<<<<<<<<<<<<<<<<do_ab>>>>>>>>>>>>>>>>>>>')
+        package_json_ab_rebuild()
+        #show_gen_file_list()
+        move_gen_files('encrypt')
+        deal_file_operation()
+    else:
+        print('<<<<<<<<<<<<<<<<<<<<<<do_non_ab>>>>>>>>>>>>>>>>>>>')
+        package_json_rebuild()
+        show_gen_file_list()
+        move_gen_files('encrypt')
+        deal_file_operation()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except InputError as e:
+        print(e, file=sys.stderr)
+        sys.exit(2)

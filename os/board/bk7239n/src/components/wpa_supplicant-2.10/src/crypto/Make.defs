@@ -1,0 +1,110 @@
+###########################################################################
+#
+# Copyright 2025 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+#
+#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+
+# Crypto functions
+CSRCS += components/wpa_supplicant-2.10/src/crypto/aes-siv.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/aes-unwrap.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/aes-wrap.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/dh_group5.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/dh_groups.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/sha1-prf.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/sha256-kdf.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/sha256-prf.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/sha384-kdf.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/sha384-prf.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/sha512-prf.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/sha512-kdf.c
+CSRCS += components/wpa_supplicant-2.10/src/crypto/tls_none.c
+
+ifeq ($(CONFIG_PSA_MBEDTLS),y)
+CSRCS := $(filter-out components/wpa_supplicant-2.10/src/crypto/aes-unwrap.c, $(CSRCS))
+CSRCS := $(filter-out components/wpa_supplicant-2.10/src/crypto/aes-wrap.c, $(CSRCS))
+endif
+
+ifeq ($(CONFIG_USE_MBEDTLS),y)
+# if mbedtls is enabled, use crypto_mbedtls
+CSRCS += components/wpa_supplicant-2.10/src/crypto/crypto_mbedtls.c
+else
+# if mbedtls is not enabled, use wpa_supplicant's internal crypto implementation
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/aes-cbc.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/aes-ctr.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/aes-internal-dec.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/aes-internal-enc.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/aes-internal.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/aes-omac1.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/crypto_internal-modexp.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/md5-internal.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/md5.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/rc4.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/sha1-internal.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/sha1.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/sha1-pbkdf2.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/sha384.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/sha384-internal.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/sha512.c
+CSRCS +=components/wpa_supplicant-2.10/src/crypto/sha512-internal.c
+
+# WPA3 will use crypto_wolfssl who has sha256 implemented
+ifneq ($(CONFIG_WPA3), y)
+CSRCS += sha256-internal.c
+CSRCS += sha256.c
+endif
+endif
+
+ifeq ($(CONFIG_WPA3), y)
+ifneq ($(CONFIG_USE_MBEDTLS), y)
+CSRCS += crypto_wolfssl.c
+endif
+endif
+
+DEPPATH += --dep-path components/wpa_supplicant-2.10/src
+VPATH += :components/wpa_supplicant-2.10/src
+
