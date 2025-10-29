@@ -32,12 +32,56 @@
 #include "sched/sched.h"
 
 #ifdef CONFIG_SMP
+#include "../arch/arm/src/armv7-a/smp.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
 #define IMPOSSIBLE_CPU 0xff
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name:  sched_evaluate_cpu
+ *
+ * Description:
+ *   Evaluate a CPU for task assignment based on its current task load.
+ *   Returns the CPU index if it's running an IDLE task (best case),
+ *   otherwise returns -1 to indicate the CPU should be considered for
+ *   its task priority.
+ *
+ * Input Parameters:
+ *   cpu_index - The CPU to evaluate
+ *   minprio   - Pointer to the current minimum priority found
+ *
+ * Returned Value:
+ *   CPU index if IDLE task found, -1 otherwise
+ *
+ ****************************************************************************/
+static int sched_evaluate_cpu(int cpu_index, uint16_t *minprio)
+{
+	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_assignedtasks[cpu_index].head;
+
+	/* If this CPU is executing its IDLE task, then use it.  The
+	 * IDLE task is always the last task in the assigned task list.
+	 */
+
+	if (rtcb->flink == NULL) {
+		/* The IDLE task should always be assigned to this CPU and have
+		 * a priority of zero.
+		 */
+
+		DEBUGASSERT(rtcb->sched_priority == 0);
+		return cpu_index;
+	} else if (rtcb->sched_priority < *minprio) {
+		DEBUGASSERT(rtcb->sched_priority > 0);
+		*minprio = rtcb->sched_priority;
+	}
+
+	return -1;					// No immediate return, but this CPU is a candidate
+}
 
 /****************************************************************************
  * Public Functions
@@ -60,38 +104,40 @@
  *   Called from within a critical section.
  *
  ****************************************************************************/
-
 int sched_select_cpu(cpu_set_t affinity)
 {
 	uint16_t minprio;
-	int cpu;
-	int i;
+	int cpu = IMPOSSIBLE_CPU;
+	int i, result;
 
 	minprio = SCHED_PRIORITY_MAX + 1;
-	cpu = IMPOSSIBLE_CPU;
 
+	/* First, try to find a CPU that is both in the affinity mask and available */
 	for (i = 0; i < CONFIG_SMP_NCPUS; i++) {
-		/* Is the thread permitted to run on this CPU? */
+		/* Is the thread permitted to run on this CPU and is the CPU available? */
+		if ((affinity & (1 << i)) != 0 && !((up_get_cpu_state(i) == CPU_HALTED) || (up_get_cpu_state(i) == CPU_HOTPLUG))) {
 
-		if ((affinity & (1 << i)) != 0) {
-			FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_assignedtasks[i].head;
-
-			/* If this CPU is executing its IDLE task, then use it.  The
-			 * IDLE task is always the last task in the assigned task list.
-			 */
-
-			if (rtcb->flink == NULL) {
-				/* The IDLE task should always be assigned to this CPU and have
-				 * a priority of zero.
-				 */
-
-				DEBUGASSERT(rtcb->sched_priority == 0);
-				return i;
-			} else if (rtcb->sched_priority < minprio) {
-				DEBUGASSERT(rtcb->sched_priority > 0);
-				minprio = rtcb->sched_priority;
-				cpu = i;
+			result = sched_evaluate_cpu(i, &minprio);
+			if (result >= 0) {
+				return result;	// Found IDLE task
 			}
+			cpu = i;			// Remember best non-IDLE CPU
+		}
+	}
+
+	/* If we found a suitable CPU from the affinity mask, return it */
+	if (cpu != IMPOSSIBLE_CPU) {
+		return cpu;
+	}
+
+	/* If no CPUs with affinity are available, assign the task to any available CPU */
+	for (i = 0; i < CONFIG_SMP_NCPUS; i++) {
+		if (!((up_get_cpu_state(i) == CPU_HALTED) || (up_get_cpu_state(i) == CPU_HOTPLUG))) {
+			result = sched_evaluate_cpu(i, &minprio);
+			if (result >= 0) {
+				return result;	// Found IDLE task
+			}
+			cpu = i;			// Remember best non-IDLE CPU
 		}
 	}
 
@@ -99,4 +145,4 @@ int sched_select_cpu(cpu_set_t affinity)
 	return cpu;
 }
 
-#endif /* CONFIG_SMP */
+#endif							/* CONFIG_SMP */
