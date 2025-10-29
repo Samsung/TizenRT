@@ -23,7 +23,7 @@
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
 #include <tinyara/silent_reboot.h>
-#include "lcd_logo.h"
+#include "image_lib.h"
 #include <debug.h>
 #include <assert.h>
 #include <errno.h>
@@ -44,8 +44,8 @@
 /* MIPI State Machine Definitions */
 typedef enum {
 	MIPI_STATE_CMD_OFF,     // LCD power off, Display off, Backlight 0, CMD mode
-	MIPI_STATE_CMD_ON,      // LCD power on, Display on, Backlight > 0, CMD mode 
-	MIPI_STATE_VIDEO_ON     // LCD power on, Display on, Backlight > 0, VIDEO mode
+	MIPI_STATE_CMD_ON,      // LCD power on, Display on, Backlight >= 0, CMD mode 
+	MIPI_STATE_VIDEO_ON     // LCD power on, Display on, Backlight >= 0, VIDEO mode
 } mipi_state_t;
 
 #if !defined(CONFIG_LCD_SEND_CMD_RETRY_COUNT)
@@ -145,63 +145,6 @@ static int send_to_mipi_dsi(struct mipi_lcd_dev_s *priv, struct mipi_dsi_msg* ms
 	return transfer_status;
 }
 
-int count_trailing_zeros(uint32_t mask)
-{
-	if (mask == 0)
-		return 0;
-	int count = 0;
-	while ((mask & 1) == 0) {
-		mask >>= 1;
-		count++;
-	}
-	return count;
-}
-
-int count_set_bits(uint32_t mask)
-{
-	int count = 0;
-	while (mask) {
-		count += mask & 1;
-		mask >>= 1;
-	}
-	return count;
-}
-
-static uint16_t convert_pixel_to_rgb565(uint16_t bmp_pixel, uint32_t r_mask, uint32_t g_mask, uint32_t b_mask)
-{
-	uint8_t r, g, b;
-	// Extract red channel
-	if (r_mask == 0) {
-		r = 0;
-	} else {
-		uint8_t r_bits = count_set_bits(r_mask);
-		uint8_t r_shift =  count_trailing_zeros(r_mask);
-		r = ((bmp_pixel & r_mask) >> r_shift) << (5 - r_bits); // Scale to 5 bits
-		if (r_bits > 5)
-			r >>= (r_bits - 5); // Scale down if source has more bits
-	}
-	// Extract green channel
-	if (g_mask == 0) {
-		g = 0;
-	} else {
-		uint8_t g_bits = count_set_bits(g_mask);
-		uint8_t g_shift = count_trailing_zeros(g_mask);
-		g = ((bmp_pixel & g_mask) >> g_shift) << (6 - g_bits); // Scale to 6 bits
-		if (g_bits > 6)
-			g >>= (g_bits - 6); // Scale down if source has more bits
-	}
-	// Extract blue channel
-	if (b_mask == 0) {
-		b = 0;
-	} else {
-		uint8_t b_bits = count_set_bits(b_mask);
-		uint8_t b_shift = count_trailing_zeros(b_mask);
-		b = ((bmp_pixel & b_mask) >> b_shift) << (5 - b_bits); // Scale to 5 bits
-		if (b_bits > 5)
-			b >>= (b_bits - 5); // Scale down if source has more bits
-	}
-	return (r << 11) | (g << 5) | b;
-}
 
 static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 {
@@ -756,56 +699,7 @@ static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 	int yres = LCD_YRES;
 	uint8_t *fullscreen_buffer = NULL;
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
-	FILE *bmp_file = fopen(bmp_filename, "rb");
-	if (!bmp_file) {
-		lcddbg("Failed to open BMP file\n");
-		return -ENOENT;
-	}
-	bmp_header_t header;
-	bmp_info_header_t info_header;
-	if (fread(&header, sizeof(bmp_header_t), 1, bmp_file) != 1) {
-		lcddbg("Failed to read BMP header\n");
-		goto errout;
-	}
-	if (header.signature != 0x4D42) {
-		lcddbg("Invalid BMP file: signature mismatch\n");
-		goto errout;
-	}
-	if (fread(&info_header, sizeof(bmp_info_header_t), 1, bmp_file) != 1) {
-		lcddbg("Failed to read BMP info header\n");
-		goto errout;
-	}
 
-	if (info_header.bits_per_pixel != 16) {
-		lcddbg("Unsupported BMP format: only 16-bit color is supported (found %d-bit)\n", info_header.bits_per_pixel);
-		goto errout;
-	}
-
-	uint32_t r_mask = 0, g_mask = 0, b_mask = 0;
-	if (info_header.compression == 3) { // BI_BITFIELDS
-		if (fread(&r_mask, sizeof(uint32_t), 1, bmp_file) != 1 ||
-			fread(&g_mask, sizeof(uint32_t), 1, bmp_file) != 1 ||
-			fread(&b_mask, sizeof(uint32_t), 1, bmp_file) != 1) {
-			lcddbg("Failed to read BMP bitmasks\n");
-			goto errout;
-		}
-	} else if (info_header.compression == 0) { // BI_RGB
-		r_mask = 0x00007C00;				   // 0111110000000000 (5 bits for red)
-		g_mask = 0x000003E0;				   // 0000001111100000 (5 bits for green)
-		b_mask = 0x0000001F;				   // 0000000000011111 (5 bits for blue)
-	} else {
-		lcddbg("Unsupported BMP compression: %d. Only BI_RGB (0) and BI_BITFIELDS (3) are supported for 16-bit.\n", info_header.compression);
-		goto errout;
-	}
-
-	int img_width = info_header.width;
-	int img_height = info_header.height;
-	if (img_width > yres || img_height > xres) {
-		lcddbg("Error: Image too large for screen\n");
-		goto errout;
-	}
-	// For 16-bit, each pixel is 2 bytes. Padding is to the next 4-byte boundary.
-	int padding = (4 - (img_width * 2) % 4) % 4;
 #if defined(CONFIG_LCD_SW_ROTATION)
 	fullscreen_buffer = lcd_buffer[lcd_buffer_index];
 	lcd_buffer_index = (1 - lcd_buffer_index);
@@ -817,52 +711,14 @@ static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 	}
 #endif
 	memset(fullscreen_buffer, 0, xres * yres * 2);
-
-	// Calculate offset to center the image
-	int x_offset = (xres - img_height) / 2;
-	int y_offset = (yres - img_width) / 2;
-	if (x_offset < 0) {
-		x_offset = 0;
-	}
-	if (y_offset < 0) {
-		y_offset = 0;
-	}
-
-	// BMP stores pixels bottom-to-top. We read row by row.
-	for (int src_y = 0; src_y < img_height; src_y++) {
-		int bmp_file_y = img_height - 1 - src_y;
-		long file_offset_for_row = header.data_offset + (long)bmp_file_y * (img_width * 2 + padding);
-		if (fseek(bmp_file, file_offset_for_row, SEEK_SET) != 0) {
-			lcddbg("Failed to seek to BMP row\n");
-			goto errout;
-		}
-		// Read one row of pixel data (as 16-bit words)
-		uint16_t temp_row_buffer[img_width];
-		if (fread(temp_row_buffer, sizeof(uint16_t), img_width, bmp_file) != img_width) {
-			lcddbg("Failed to read BMP pixel row\n");
-			goto errout;
-		}
-		for (int src_x = 0; src_x < img_width; src_x++) {
-			int dest_x = (img_height - 1) - src_y;
-			int dest_y = src_x;
-			int target_buffer_index = ((y_offset + dest_y) * xres + (x_offset + dest_x)) * 2;
-			uint16_t bmp_pixel = temp_row_buffer[src_x];
-			uint16_t rgb565_pixel = convert_pixel_to_rgb565(bmp_pixel, r_mask, g_mask, b_mask);
-			fullscreen_buffer[target_buffer_index] = (uint8_t)(rgb565_pixel & 0xFF);
-			fullscreen_buffer[target_buffer_index + 1] = (uint8_t)((rgb565_pixel >> 8) & 0xFF);
-		}
+	
+	if (image_load_bmp_file(bmp_filename, fullscreen_buffer, yres, xres) != OK) {
+		lcddbg("Failed to load BMP file\n");
+		return ERROR;
 	}
 	priv->config->lcd_put_area((u8 *)fullscreen_buffer, 1, 1, CONFIG_LCD_XRES, CONFIG_LCD_YRES);
-	fclose(bmp_file);
+
 	return OK;
-errout:
-	fclose(bmp_file);
-#if !defined(CONFIG_LCD_SW_ROTATION)
-	if (fullscreen_buffer) {
-		kmm_free(fullscreen_buffer);
-	}
-#endif
-	return -EIO;
 }
 
 /****************************************************************************
