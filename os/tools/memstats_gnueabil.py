@@ -307,27 +307,45 @@ for line in infile:
                 if matchedkey != None:
                     subSymbol = matchedkey
                     if len(lsplit) > 2:
-                        if int(lsplit[1], 16) != 0:
-                            level1[currentSymbol][subSymbol] += int(
-                                lsplit[2], 16)
-                            libObject = lsplit[len(lsplit)-1]
-                            PLO(int(lsplit[2], 16), libObject,
-                                currentSymbol, subSymbol)
+                        try:
+                            if int(lsplit[1], 16) != 0:
+                                size_value = int(lsplit[2], 16)
+                                level1[currentSymbol][subSymbol] += size_value
+                                libObject = lsplit[len(lsplit)-1]
+                                PLO(size_value, libObject,
+                                    currentSymbol, subSymbol)
+                        except ValueError:
+                            # lsplit[1] or lsplit[2] is not a hex number, skip this line
+                            continue
                     else:
                         line = next(infile)
                         line = line.strip()
                         lsplit = line.split()
-                        if int(lsplit[0], 16) != 0:
-                            level1[currentSymbol][subSymbol] += int(
-                                lsplit[1], 16)
-                            libObject = lsplit[len(lsplit)-1]
-                            PLO(int(lsplit[1], 16), libObject,
-                                currentSymbol, subSymbol)
+                        try:
+                            if int(lsplit[0], 16) != 0:
+                                # Check if lsplit[1] is a valid hex number before converting
+                                try:
+                                    size_value = int(lsplit[1], 16)
+                                    level1[currentSymbol][subSymbol] += size_value
+                                    libObject = lsplit[len(lsplit)-1]
+                                    PLO(size_value, libObject,
+                                        currentSymbol, subSymbol)
+                                except ValueError:
+                                    # lsplit[1] is not a hex number, skip this line
+                                    continue
+                        except ValueError:
+                            # lsplit[0] is not a hex number, skip this line
+                            continue
                 elif re.search('\*fill\*', lsplit[0]) != None:
-                    if int(lsplit[1], 16) != 0 and subSymbol != 0:
-                        level1[currentSymbol][subSymbol] += int(lsplit[2], 16)
-                        PLO(int(lsplit[2], 16), libObject,
-                            currentSymbol, subSymbol)
+                    try:
+                        if int(lsplit[1], 16) != 0 and subSymbol != 0:
+                            size_value = int(lsplit[2], 16)
+                            level1[currentSymbol][subSymbol] += size_value
+                            PLO(size_value, libObject,
+                                currentSymbol, subSymbol)
+                    except ValueError:
+                        # lsplit[1] or lsplit[2] is not a hex number, skip this line
+                        continue
 infile.close()
 if options.all:
     options.totsize = options.libsize = options.details = True
