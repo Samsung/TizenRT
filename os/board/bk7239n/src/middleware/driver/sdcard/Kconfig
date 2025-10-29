@@ -1,0 +1,40 @@
+menu "SDCARD"
+	config SDCARD
+		bool "Enable SDCARD"
+		default y if (USB && USB_DEVICE)
+		default n if !(USB && USB_DEVICE)
+
+	choice SD_HOST_INTF
+		prompt "SD Host Interface"
+		depends on SDCARD_HOST
+		default SD_HOST_INTF
+
+		config SD_HOST_INTF
+			bool "SD Host Interface"
+
+		config SD1_HOST_INTF
+			bool "SD1 Host Interface"
+	endchoice
+
+	config SDCARD_V2P0
+		bool "Support SDCARD refactor code which version is 2.0"
+		default y
+
+	config SDCARD_V1P0
+		bool "Before SDCARD refactor code which version is 1.0"
+		default n
+
+	config SDCARD_BUSWIDTH_4LINE
+		bool "Support SDCARD 4 Data Wires"
+		default n
+
+	config SDCARD_POWER_GPIO_CTRL
+		bool "Enable SDcard power gpio ctrl"
+		default n
+
+	config SDCARD_POWER_GPIO_CTRL_AUTO_POWERDOWN_WHEN_IDLE
+	    depends on SDCARD_POWER_GPIO_CTRL
+        bool "Enable SDcard auto powerdown when idle"
+        default y
+endmenu
+

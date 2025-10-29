@@ -1,0 +1,346 @@
+diff --git a/include/mbedtls/bignum.h b/include/mbedtls/bignum.h
+old mode 100644
+new mode 100755
+index 45d3119..da38ee8
+--- a/include/mbedtls/bignum.h
++++ b/include/mbedtls/bignum.h
+@@ -183,6 +183,10 @@
+ extern "C" {
+ #endif
+ 
++#if defined(ARM_CE_DUBHE_ACA)
++typedef struct __mpi_handle_t mpi_handle;
++#endif
++
+ /**
+  * \brief          MPI structure
+  */
+@@ -191,6 +195,9 @@ typedef struct mbedtls_mpi
+     int MBEDTLS_PRIVATE(s);              /*!<  Sign: -1 if the mpi is negative, 1 otherwise */
+     size_t MBEDTLS_PRIVATE(n);           /*!<  total # of limbs  */
+     mbedtls_mpi_uint *MBEDTLS_PRIVATE(p);          /*!<  pointer to limbs  */
++#if defined(ARM_CE_DUBHE_ACA)
++    mpi_handle *MBEDTLS_PRIVATE(mhandle);
++#endif
+ }
+ mbedtls_mpi;
+ 
+@@ -855,6 +862,71 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
+                          const mbedtls_mpi *E, const mbedtls_mpi *N,
+                          mbedtls_mpi *prec_RR );
+ 
++#if defined(ARM_CE_DUBHE_ACA)
++/**
++* \brief            Signed addition: X = A & B
++*
++* \param X      Destination MPI
++* \param A      Left-hand MPI
++* \param B      Right-hand MPI
++*
++* \return       0 if successful,
++*               MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed
++*               MBEDTLS_ERR_MPI_BAD_INPUT_DATA if A or B is negative
++*/
++int mbedtls_mpi_and_mpi( mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *B );
++
++/**
++* \brief            Modulo: R = A * B mod N
++*
++* \param R      Destination MPI for the rest value
++* \param A      Left-hand MPI
++* \param B      Left-hand MPI
++* \param N      Right-hand MPI
++*
++* \return       0 if successful,
++*               MBEDTLS_ERR_MPI_ALLOC_FAILED if memory allocation failed,
++*               MBEDTLS_ERR_MPI_DIVISION_BY_ZERO if N == 0,
++*               MBEDTLS_ERR_MPI_NEGATIVE_VALUE if N < 0
++*/
++int mbedtls_mpi_mul_mod( mbedtls_mpi *    X, const mbedtls_mpi *A, const mbedtls_mpi *B, const mbedtls_mpi *N);
++int mbedtls_mpi_mul_ecp_no_naf(mbedtls_mpi*    Qx,
++                     mbedtls_mpi*       Qy,
++                     mbedtls_mpi*       Qz,
++                     const mbedtls_mpi* d,
++                     const mbedtls_mpi* Gx,
++                     const mbedtls_mpi* Gy,
++                     const mbedtls_mpi* Gz,
++                     const mbedtls_mpi* A,
++                     const mbedtls_mpi* P);
++
++int mbedtls_mpi_mul_ecp(mbedtls_mpi*        Qx,
++                     mbedtls_mpi*       Qy,
++                     mbedtls_mpi*       Qz,
++                     const mbedtls_mpi* d,
++                     const mbedtls_mpi* Gx,
++                     const mbedtls_mpi* Gy,
++                     const mbedtls_mpi* Gz,
++                     const mbedtls_mpi* A,
++                     const mbedtls_mpi* P);
++int mbedtls_mpi_add_ecp(mbedtls_mpi*        Qx,
++                     mbedtls_mpi*       Qy,
++                     mbedtls_mpi*       Qz,
++                     const mbedtls_mpi* Gx1,
++                     const mbedtls_mpi* Gy1,
++                     const mbedtls_mpi* Gz1,
++                     const mbedtls_mpi* Gx2,
++                     const mbedtls_mpi* Gy2,
++                     const mbedtls_mpi* Gz2,
++                     const mbedtls_mpi* P);
++
++int mbedtls_mpi_jac2affine(mbedtls_mpi*      Tx,
++                                mbedtls_mpi* Ty,
++                                mbedtls_mpi* Tz,
++                                const mbedtls_mpi* P);
++void mbedtls_mpi_free_handle(mbedtls_mpi* X);
++#endif
++
+ /**
+  * \brief          Fill an MPI with a number of random bytes.
+  *
+diff --git a/include/mbedtls/cipher.h b/include/mbedtls/cipher.h
+old mode 100644
+new mode 100755
+index c04097d..f46113d
+--- a/include/mbedtls/cipher.h
++++ b/include/mbedtls/cipher.h
+@@ -89,8 +89,19 @@ typedef enum {
+     MBEDTLS_CIPHER_ID_CAMELLIA,  /**< The Camellia cipher. */
+     MBEDTLS_CIPHER_ID_ARIA,      /**< The Aria cipher. */
+     MBEDTLS_CIPHER_ID_CHACHA20,  /**< The ChaCha20 cipher. */
++#if defined(ARM_CE_DUBHE_SCA)
++    MBEDTLS_CIPHER_ID_SM4,       /**< The AES cipher. */
++#endif
+ } mbedtls_cipher_id_t;
+ 
++#if defined(ARM_CE_DUBHE_SCA)
++typedef enum
++{
++    MBEDTLS_DERIVED_MODEL_KEY,
++    MBEDTLS_DERIVED_DEVICE_ROOT_KEY,
++} mbedtls_derived_key_type_t;
++#endif
++
+ /**
+  * \brief     Supported {cipher type, cipher mode} pairs.
+  *
+@@ -183,6 +194,9 @@ typedef enum {
+     MBEDTLS_CIPHER_AES_128_KWP,          /**< AES cipher with 128-bit NIST KWP mode. */
+     MBEDTLS_CIPHER_AES_192_KWP,          /**< AES cipher with 192-bit NIST KWP mode. */
+     MBEDTLS_CIPHER_AES_256_KWP,          /**< AES cipher with 256-bit NIST KWP mode. */
++    MBEDTLS_CIPHER_SM4_ECB,
++    MBEDTLS_CIPHER_SM4_CBC,
++    MBEDTLS_CIPHER_SM4_CTR,
+ } mbedtls_cipher_type_t;
+ 
+ /** Supported cipher modes. */
+@@ -816,6 +830,31 @@ int mbedtls_cipher_setkey( mbedtls_cipher_context_t *ctx,
+                            int key_bitlen,
+                            const mbedtls_operation_t operation );
+ 
++#if defined(ARM_CE_DUBHE_SCA)
++/**
++* \brief               This function sets the derived key to use with the given context.
++*
++* \param ctx           The generic cipher context. May not be NULL. Must have
++*                      been initialized using mbedtls_cipher_info_from_type()
++*                      or mbedtls_cipher_info_from_string().
++* \param key_type      The derived key type, model key or device root key.
++* \param key1          The key1 to use.
++* \param key2          The key2 to use.
++* \param key3          The key3 to use.
++* \param key1_bitlen   The key1 length to use, in bits.
++* \param operation     The operation that the key will be used for:
++*                      #MBEDTLS_ENCRYPT or #MBEDTLS_DECRYPT.
++*
++* \return              \c 0 on success.
++* \return              #MBEDTLS_ERR_CIPHER_BAD_INPUT_DATA on
++*                      parameter-verification failure.
++* \return              A cipher-specific error code on failure.
++*/
++int mbedtls_cipher_set_derived_key( mbedtls_cipher_context_t *ctx, mbedtls_derived_key_type_t key_type,
++                           const unsigned char *key1, const unsigned char *key2, const unsigned char *key3,
++                           int key1_bitlen, const mbedtls_operation_t operation );
++#endif
++
+ #if defined(MBEDTLS_CIPHER_MODE_WITH_PADDING)
+ /**
+  * \brief               This function sets the padding mode, for cipher modes
+diff --git a/include/mbedtls/ecp.h b/include/mbedtls/ecp.h
+old mode 100644
+new mode 100755
+index 5b26084..60f592d
+--- a/include/mbedtls/ecp.h
++++ b/include/mbedtls/ecp.h
+@@ -126,12 +126,13 @@ typedef enum
+     MBEDTLS_ECP_DP_SECP224K1,      /*!< Domain parameters for 224-bit "Koblitz" curve. */
+     MBEDTLS_ECP_DP_SECP256K1,      /*!< Domain parameters for 256-bit "Koblitz" curve. */
+     MBEDTLS_ECP_DP_CURVE448,       /*!< Domain parameters for Curve448. */
++    MBEDTLS_ECP_DP_SM2P256V1,      /*!< Domain parameters for SM2 curve. */
+ } mbedtls_ecp_group_id;
+ 
+ /**
+  * The number of supported curves, plus one for #MBEDTLS_ECP_DP_NONE.
+  */
+-#define MBEDTLS_ECP_DP_MAX     14
++#define MBEDTLS_ECP_DP_MAX     15
+ 
+ /*
+  * Curve types
+diff --git a/include/mbedtls/md.h b/include/mbedtls/md.h
+old mode 100644
+new mode 100755
+index 2b668f5..74eabc6
+--- a/include/mbedtls/md.h
++++ b/include/mbedtls/md.h
+@@ -61,6 +61,7 @@ typedef enum {
+     MBEDTLS_MD_SHA384,    /**< The SHA-384 message digest. */
+     MBEDTLS_MD_SHA512,    /**< The SHA-512 message digest. */
+     MBEDTLS_MD_RIPEMD160, /**< The RIPEMD-160 message digest. */
++    MBEDTLS_MD_SM3,       /**< The SM3 message digest. */
+ } mbedtls_md_type_t;
+ 
+ #if defined(MBEDTLS_SHA512_C)
+diff --git a/include/mbedtls/oid.h b/include/mbedtls/oid.h
+old mode 100644
+new mode 100755
+index 836e455..98709b5
+--- a/include/mbedtls/oid.h
++++ b/include/mbedtls/oid.h
+@@ -258,6 +258,19 @@
+ 
+ #define MBEDTLS_OID_DIGEST_ALG_RIPEMD160        MBEDTLS_OID_TELETRUST "\x03\x02\x01" /**< id-ripemd160 OBJECT IDENTIFIER :: { iso(1) identified-organization(3) teletrust(36) algorithm(3) hashAlgorithm(2) ripemd160(1) } */
+ 
++#if defined(MBEDTLS_SM3_C)
++/*
++ * GM/T OID for SM3 ( 1.2.156.10197.1.401 )
++ * #define OBJ_iso         1L
++ * #define OBJ_member_body         OBJ_iso,2L
++ * #define OBJ_ISO_CN              OBJ_member_body,156L
++ * #define OBJ_oscca               OBJ_ISO_CN,10197L
++ * #define OBJ_sm_scheme           OBJ_oscca,1L
++ * #define OBJ_sm3         OBJ_sm_scheme,401L
++ */
++#define MBEDTLS_OID_DIGEST_ALG_SM3              "\x2A\x81\x1C\xCF\x55\x01\x83\x11"/* get the SM3 OID from gmssl obj_dat.h array so[], see "[ 7410] OBJ_sm3"*/
++#endif /* MBEDTLS_SM3_C */
++
+ #define MBEDTLS_OID_HMAC_SHA1                   MBEDTLS_OID_RSA_COMPANY "\x02\x07" /**< id-hmacWithSHA1 OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) digestAlgorithm(2) 7 } */
+ 
+ #define MBEDTLS_OID_HMAC_SHA224                 MBEDTLS_OID_RSA_COMPANY "\x02\x08" /**< id-hmacWithSHA224 OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) digestAlgorithm(2) 8 } */
+diff --git a/library/CMakeLists.txt b/library/CMakeLists.txt
+old mode 100644
+new mode 100755
+index 07599f5..6d48e0d
+--- a/library/CMakeLists.txt
++++ b/library/CMakeLists.txt
+@@ -17,43 +17,30 @@ set(src_crypto
+     asn1parse.c
+     asn1write.c
+     base64.c
+-    bignum.c
+     camellia.c
+     ccm.c
+     chacha20.c
+     chachapoly.c
+-    cipher.c
+-    cipher_wrap.c
+     constant_time.c
+     cmac.c
+-    ctr_drbg.c
+     des.c
+-    dhm.c
+-    ecdh.c
+-    ecdsa.c
+     ecjpake.c
+-    ecp.c
+-    ecp_curves.c
+     entropy.c
+-    entropy_poll.c
+     error.c
+     gcm.c
+     hkdf.c
+     hmac_drbg.c
+-    md.c
+     md5.c
+     memory_buffer_alloc.c
+     mps_reader.c
+     mps_trace.c
+     nist_kw.c
+-    oid.c
+     padlock.c
+     pem.c
+     pk.c
+     pk_wrap.c
+     pkcs12.c
+     pkcs5.c
+-    pkparse.c
+     pkwrite.c
+     platform.c
+     platform_util.c
+@@ -72,7 +59,6 @@ set(src_crypto
+     psa_crypto_storage.c
+     psa_its_file.c
+     ripemd160.c
+-    rsa.c
+     rsa_alt_helpers.c
+     sha1.c
+     sha256.c
+diff --git a/library/cipher_wrap.h b/library/cipher_wrap.h
+old mode 100644
+new mode 100755
+index 90563d8..3ef32b6
+--- a/library/cipher_wrap.h
++++ b/library/cipher_wrap.h
+@@ -98,6 +98,13 @@ struct mbedtls_cipher_base_t
+     int (*setkey_dec_func)( void *ctx, const unsigned char *key,
+                             unsigned int key_bitlen);
+ 
++#if defined(ARM_CE_DUBHE_SCA)
++    /** Set derived key for using key ladder */
++    int (*set_derived_key_func)( void *ctx, mbedtls_derived_key_type_t key_type, int mode,
++                                 const unsigned char *key1, const unsigned char *key2,
++                                 const unsigned char *key3, unsigned int key1_bitlen);
++#endif
++
+     /** Allocate a new context */
+     void * (*ctx_alloc_func)( void );
+ 
+diff --git a/library/constant_time.c b/library/constant_time.c
+old mode 100644
+new mode 100755
+index d8870ae..b612a6c
+--- a/library/constant_time.c
++++ b/library/constant_time.c
+@@ -527,7 +527,7 @@ cleanup:
+ 
+ #define MPI_VALIDATE_RET( cond )                                       \
+     MBEDTLS_INTERNAL_VALIDATE_RET( cond, MBEDTLS_ERR_MPI_BAD_INPUT_DATA )
+-
++#if 0
+ /*
+  * Conditionally assign X = Y, without leaking information
+  * about whether the assignment was made or not.
+@@ -600,7 +600,7 @@ int mbedtls_mpi_safe_cond_swap( mbedtls_mpi *X,
+ cleanup:
+     return( ret );
+ }
+-
++#endif
+ /*
+  * Compare signed values in constant time
+  */
+diff --git a/library/md_wrap.h b/library/md_wrap.h
+old mode 100644
+new mode 100755
+index 90c7957..89d547f
+--- a/library/md_wrap.h
++++ b/library/md_wrap.h
+@@ -74,6 +74,9 @@ extern const mbedtls_md_info_t mbedtls_sha384_info;
+ #if defined(MBEDTLS_SHA512_C)
+ extern const mbedtls_md_info_t mbedtls_sha512_info;
+ #endif
++#if defined(ARM_CE_DUBHE_HASH)
++extern const mbedtls_md_info_t mbedtls_sm3_info;
++#endif
+ 
+ #ifdef __cplusplus
+ }

@@ -1,0 +1,2 @@
+armino_component_register_call_subdirs()
+
