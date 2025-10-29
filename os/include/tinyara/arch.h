@@ -1513,6 +1513,47 @@ int up_set_irq_affinity(int irq, cpu_set_t cpu_set);
 
 int up_reset_irq_affinity(int irq);
 
+
+/****************************************************************************
+ * Name: up_timer_disable
+ *
+ * Description:
+ *   Disable system timer. the up_timerisr will not be called.
+ *
+ *   Provided by platform-specific code and called from the architecture-
+ *   specific logic and power management logic.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure.
+ *
+ ****************************************************************************/
+int up_timer_disable(void);
+
+/****************************************************************************
+ * Name: up_timer_enable
+ *
+ * Description:
+ *   Enable system timer. This can be used to activate a disabled timer.
+ *
+ *   Provided by platform-specific code and called from the architecture-
+ *   specific logic and Power Management logic. It can reinitialize
+ *   the timer that was reset by Power Management sleep and activate the 
+ *   timer in specific architecture.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure.
+ *
+ ****************************************************************************/
+int up_timer_enable(void);
+
 /****************************************************************************
  * Tickless OS Support.
  *

@@ -59,8 +59,6 @@ u8 up_systimer_is_paused(u8 cpu)
 }
 #endif
 
-void up_timer_disable(void);
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -159,13 +157,17 @@ void up_timer_initialize(void)
   up_enable_irq(ARM_ARCH_TIMER_IRQ);
 }
 
-void up_timer_disable(void)
+int up_timer_disable(void)
 {
   arm_arch_timer_enable(0);
+  return 0;
 }
 
-void up_timer_enable(void)
+int up_timer_enable(void)
 {
+	/* When wake from pg, arm timer has been reset, so a new compare value is necessary to
+	trigger an timer interrupt */
   arm_arch_timer_set_compare(arm_arch_timer_count() + pdTICKS_TO_CNT);
   arm_arch_timer_enable(1);
+  return 0;
 }
