@@ -331,6 +331,14 @@ config CPU_HOTPLUG
 		This will register an additional Software Generated Interrupt (SGI) 
 		for CPU Hotplug when system goes low power mode (ie. Power Gating)
 
+config SCHED_MIGRATE
+	bool "Scheduler Migration Support"
+	default n
+	---help---
+		Enable support for task migration between CPUs when a CPU is taken offline.
+		This feature allows tasks to be moved from an to-be offline CPU to other 
+		available CPUs.
+
 config SMP_NCPUS
 	int "Number of CPUs"
 	default 4
