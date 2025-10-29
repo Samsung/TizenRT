@@ -1,0 +1,3 @@
+pyserial
+click
+pyyaml
