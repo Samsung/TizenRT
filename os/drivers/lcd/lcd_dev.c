@@ -435,6 +435,8 @@ int lcddev_register(struct lcd_dev_s *dev)
 	char devname[16] = { 0, };
 	int ret;
 	struct lcd_s *lcd_info;
+	bool is_silent_mode;
+	char splash_image_path[50];
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	int pid;
 	char *flushing_thread_args[2];
@@ -485,14 +487,34 @@ int lcddev_register(struct lcd_dev_s *dev)
 	sem_init(&lcd_info->sem, 0, 1);
 
 #ifdef CONFIG_LCD_SPLASH_IMAGE
-	ret = lcd_init_put_image(dev);
-	if (ret == OK) { // LCD ON
-#ifdef CONFIG_PM
-		(void)pm_suspend(lcd_info->pm_domain);
-#endif
-		silent_reboot_lock();
+#ifdef CONFIG_LCD_SPLASH_SILENT_BOOT
+	is_silent_mode = silent_reboot_is_silent_mode();
+	if (!is_silent_mode) {
+		snprintf(splash_image_path, sizeof(splash_image_path), "%s/%dx%d/splash_normal.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+	} else {
+		snprintf(splash_image_path, sizeof(splash_image_path), "%s/%dx%d/splash_silent.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
 	}
+#else
+	snprintf(splash_image_path, sizeof(splash_image_path), "%s/%dx%d/splash_normal.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+#endif /* CONFIG_LCD_SPLASH_SILENT_BOOT */
+
+	// Check if splash image file exists before rendering
+	FILE *test_file = fopen(splash_image_path, "rb");
+	if (test_file != NULL && dev->loadsplash) {
+		ret = dev->loadsplash(dev, splash_image_path);
+		if (ret == OK) { // LCD ON
+#ifdef CONFIG_PM
+			(void)pm_suspend(lcd_info->pm_domain);
 #endif
+			silent_reboot_lock();
+		}
+	} else if (test_file == NULL) {
+		lcddbg("Image file not found at %s. LCD OFF\n", splash_image_path);
+	} else {
+		lcddbg("ERROR: Failed to load splash image %s\n", splash_image_path);
+	}
+	fclose(test_file);
+#endif /* CONFIG_LCD_SPLASH_IMAGE */
 
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
