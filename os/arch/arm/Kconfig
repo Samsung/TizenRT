@@ -89,6 +89,15 @@ config ARCH_CHIP_AMEBAD
 	---help---
 		Realtek AMEBAD architectures (ARM Cortex-M23/33).
 
+config ARCH_CHIP_ARMINO
+	bool "Beken ARMINO"
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_I2CRESET
+	select ARCH_HAVE_TICKSUPPRESS
+	select ARCH_HAVE_HEAPCHECK if DEBUG
+	---help---
+		Beken ARMINO architectures (ARM Cortex-M33).
+
 config ARCH_CHIP_STM32H745
 	bool "STMicro STM32H745"
 	select ARCH_HAVE_MPU
@@ -136,6 +145,7 @@ config ARCH_CHIP
 	default "imxrt"		if ARCH_CHIP_IMXRT
 	default "stm32l4"	if ARCH_CHIP_STM32L4
 	default "amebad"	if ARCH_CHIP_AMEBAD
+	default "armino"	if ARCH_CHIP_ARMINO
 	default "amebalite"	if ARCH_CHIP_AMEBALITE
 	default "amebasmart"	if ARCH_CHIP_AMEBASMART
 	default "stm32h745"     if ARCH_CHIP_STM32H745
@@ -239,6 +249,7 @@ config ARCH_CORTEXM33
 	select ARCH_ARMV8M_FAMILY
 	select ARCH_HAVE_NESTED_INTERRUPT
 	select ARCH_HAVE_LAZYFPU
+	select ARCH_HAVE_COHERENT_DCACHE if ELF || MODULE
 
 config ARCH_CORTEXM55
 	bool
@@ -542,6 +553,9 @@ source arch/arm/src/amebalite/Kconfig
 endif
 if ARCH_CHIP_AMEBASMART
 source arch/arm/src/amebasmart/Kconfig
+endif
+if ARCH_CHIP_ARMINO
+source arch/arm/src/armino/Kconfig
 endif
 if ARCH_CHIP_STM32H745
 source arch/arm/src/stm32h745/Kconfig
