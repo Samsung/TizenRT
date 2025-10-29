@@ -101,6 +101,8 @@ static void print_sensor_data(sensor_data_s *data)
 	for (int i = 0; i < AIS25BA_DMA_BUFF_SAMPLE_NUMBER; i++) {
 		if (data[i].samples[0] == 0x0000 && data[i].samples[1] == 0x0000) {
 			trailing_zeroes++;
+		} else {
+			trailing_zeroes = 0;
 		}
 		if (trailing_zeroes >= 5) {
 			total_number_of_continuous_zeroes++;
