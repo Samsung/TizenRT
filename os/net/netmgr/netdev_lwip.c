@@ -38,7 +38,9 @@
 #include "lwip/igmp.h"
 #include "netdev_mgr_internal.h"
 #include <tinyara/net/netlog.h>
-
+#ifdef CONFIG_NET_STATS
+#include "netdev_stats.h"
+#endif
 /* This is really kind of bogus.. When asked for an IP address, this is
  * family that is returned in the ifr structure.  Probably could just skip
  * this since the address family has nothing to do with the Ethernet address.
@@ -294,7 +296,7 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 		NET_LOGKE(TAG, "invalid parameter\n");
 		return -1;
 	}
-
+	struct netif *netif = GET_NETIF_FROM_NETDEV(dev);
 	struct pbuf *p = (struct pbuf *)frame_ptr;
 	struct eth_hdr *ethhdr = p->payload;
 
@@ -314,7 +316,9 @@ static int lwip_input(struct netdev *dev, void *frame_ptr, uint16_t len)
 			LWIP_DEBUGF(NETIF_DEBUG, ("input processing error\n"));
 			NET_LOGKE(TAG, "input processing error\n");
 			LINK_STATS_INC(link.err);
+#ifdef CONFIG_NET_STATS
 			NETMGR_STATS_INC(g_link_recv_err);
+#endif
 		} else {
 			LINK_STATS_INC(link.recv);
 		}
