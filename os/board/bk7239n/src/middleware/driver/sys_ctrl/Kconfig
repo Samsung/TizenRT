@@ -1,0 +1,60 @@
+menu "SYS_CTRL"
+	config SYS_REDUCE_NORMAL_POWER
+	bool "Reduce system normal power"
+	default n
+
+	choice XTAL_FREQ
+		prompt "Xtal frequence"
+		default XTAL_FREQ_26M
+
+		config XTAL_FREQ_40M
+			bool "XTAL frequency 40M"
+
+		config XTAL_FREQ_26M
+			bool "XTAL frequency 26M"
+	endchoice
+
+	#TODO fixed it
+	config XTAL_FREQ
+		int "26000000"
+		default 26000000 if XTAL_FREQ_26M
+		default 40000000 if XTAL_FREQ_40M
+
+	config DCO_FREQ
+		int "DCO frequency"
+		default 120000000
+
+	config SYSTEM_CTRL
+		bool "Enable system_ctrl"
+		default n
+	
+	config HAL_DEBUG_SYS
+		bool "system_ctrl debug"
+		default n
+
+	config POWER_CLOCK_RF
+		bool "Enable rf power clock"
+		default n
+
+	config SYSTEM_CLOCK
+		bool "Enable system clock"
+		default n
+
+	config ROSC_TEST_MODE
+		bool "Enable ROSC test mode"
+		default n
+
+	config DEFAULT_LPO_SRC
+		int "Default low power clock source"
+		range 0 2
+		default 2
+
+	config CPU0_SUB_POWER_DOMAIN_ENA
+		bool "Enable CPU0 sub-power dowmain"
+		default n
+
+	config LDO_SELF_LOW_POWER_MODE_ENA
+		bool "Enable LDO self low power mode"
+		default n
+endmenu
+

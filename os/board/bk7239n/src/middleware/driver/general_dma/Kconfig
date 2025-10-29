@@ -1,0 +1,38 @@
+menu "GENERAL_DMA"
+	config GENERAL_DMA
+		bool "Enable General DMA"
+		default y
+
+	choice GDMA_HW_VERSION
+		prompt "GDMA HW version in ASIC"
+		default GDMA_HW_V1PX
+
+		config GDMA_HW_V2PX
+			bool "GDMA HW version v2px in ASIC"
+
+		config GDMA_HW_V1PX
+			bool "GDMA HW version v1px in ASIC"
+	endchoice
+
+	config DMA_LOGIC_CHAN_CNT
+		depends on GDMA_HW_V2PX
+		int "dma-logic-channels count"
+		default 4 if GDMA_HW_V2PX
+		---help---
+			Current CPU-CORE software system uses how many dma-logic-channels.
+			Total of all CPU-COREs dma logic chan count should be not bigger then total dma hardware supportted channels
+
+	config DMA_LOGIC_CHAN_ID_MIN
+		depends on GDMA_HW_V2PX
+		int "Current CPU-CORE software system min dma-logic-channel-id."
+		default 0 if GDMA_HW_V2PX
+		---help---
+			Current CPU-CORE software system min dma-logic-channel-id.
+			Be care overlap the other CPU-CORE software system's dma-logic-channel-id.
+			The value should be set like this:
+			CPU0 is from 0;
+			CPU1 is from CPU0_DMA_LOGIC_CHAN_CNT
+			CPU2 is from CPU0_DMA_LOGIC_CHAN_CNT + CPU1_DMA_LOGIC_CHAN_CNT
+
+endmenu
+

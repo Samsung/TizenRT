@@ -1,0 +1,230 @@
+set(incs include/bk_private)
+set(srcs "")
+
+if (CONFIG_WPA_SUPPLICANT_2_10)
+if (NOT CONFIG_FULLY_HOSTED)
+	list(APPEND incs
+		"hostapd"
+		"src/utils"
+		"src/ap"
+		"src/common"
+		"src/drivers"
+		"src"
+		"wpa_supplicant"
+		"bk_patch"
+		)
+if (CONFIG_P2P)
+	list(APPEND incs
+		"src/radius"
+		"src/wps"
+		"src/eap_peer"
+		)
+endif()
+
+	set(srcs
+		"bk_patch/ddrv.c"
+		"bk_patch/fake_socket.c"
+		"bk_patch/signal.c"
+		"bk_patch/sk_intf.c"
+		"hostapd/main_none.c"
+		"src/ap/ap_config.c"
+		"src/ap/ap_drv_ops.c"
+		"src/ap/ap_list.c"
+		"src/ap/ap_mlme.c"
+		"src/ap/beacon.c"
+		"src/ap/dfs.c"
+		"src/ap/drv_callbacks.c"
+		"src/ap/hostapd.c"
+		"src/ap/hw_features.c"
+		"src/ap/ieee802_11.c"
+		"src/ap/ieee802_11_auth.c"
+		"src/ap/ieee802_11_he.c"
+		"src/ap/ieee802_11_ht.c"
+		"src/ap/ieee802_11_shared.c"
+		"src/ap/ieee802_11_vht.c"
+		"src/ap/ieee802_1x.c"
+		"src/ap/pmksa_cache_auth.c"
+		"src/ap/sta_info.c"
+		"src/ap/tkip_countermeasures.c"
+		"src/ap/utils.c"
+		"src/ap/wmm.c"
+		"src/ap/wpa_auth.c"
+		"src/ap/wpa_auth_glue.c"
+		"src/ap/wpa_auth_ie.c"
+		"src/common/ocv.c"
+		"src/common/hw_features_common.c"
+		"src/common/ieee802_11_common.c"
+		"src/common/wpa_common.c"
+		"src/common/wpa_psk_cache.c"
+		"src/drivers/driver_beken.c"
+		"src/drivers/driver_common.c"
+		"src/drivers/drivers.c"
+		"src/l2_packet/l2_packet_none.c"
+		"src/rsn_supp/pmksa_cache.c"
+		"src/rsn_supp/wpa.c"
+		"src/rsn_supp/wpa_ie.c"
+		"src/utils/common.c"
+		"src/utils/crc32.c"
+		"src/utils/eloop.c"
+		"src/utils/os_none.c"
+		"src/utils/wpa_debug.c"
+		"src/utils/wpabuf.c"
+		"wpa_supplicant/bssid_ignore.c"
+		"wpa_supplicant/bss.c"
+		"wpa_supplicant/config.c"
+		"wpa_supplicant/config_none.c"
+		"wpa_supplicant/ctrl_iface.c"
+		"wpa_supplicant/events.c"
+		"wpa_supplicant/main_supplicant.c"
+		"wpa_supplicant/notify.c"
+		"wpa_supplicant/op_classes.c"
+		"wpa_supplicant/sme.c"
+		"wpa_supplicant/wmm_ac.c"
+		"wpa_supplicant/wpa_scan.c"
+		"wpa_supplicant/wpa_supplicant.c"
+		"wpa_supplicant/wpas_glue.c"
+		"wpa_supplicant/wnm_sta.c"
+		)
+
+	# Crypto functions
+	list(APPEND srcs 
+		"src/crypto/aes-siv.c"
+		"src/crypto/aes-unwrap.c"
+		"src/crypto/aes-wrap.c"
+		"src/crypto/dh_group5.c"
+		"src/crypto/dh_groups.c"
+		"src/crypto/sha1-pbkdf2.c"
+		"src/crypto/sha1-prf.c"
+		"src/crypto/sha256-kdf.c"
+		"src/crypto/sha256-prf.c"
+		"src/crypto/sha384-kdf.c"
+		"src/crypto/sha384-prf.c"
+		"src/crypto/sha512-prf.c"
+		"src/crypto/sha512-kdf.c"
+		"src/crypto/tls_none.c"
+		)
+	if (CONFIG_USE_MBEDTLS)
+		# if mbedtls is enabled, use crypto_mbedtls
+		list(APPEND srcs "src/crypto/crypto_mbedtls.c")
+	else()
+		# if mbedtls is not enabled, use wpa_supplicant's internal crypto implementation
+		list(APPEND srcs 
+			"src/crypto/aes-cbc.c"
+			"src/crypto/aes-ctr.c"
+			"src/crypto/aes-internal-dec.c"
+			"src/crypto/aes-internal-enc.c"
+			"src/crypto/aes-internal.c"
+			"src/crypto/aes-omac1.c"
+			"src/crypto/crypto_internal-modexp.c"
+			"src/crypto/md5-internal.c"
+			"src/crypto/md5.c"
+			"src/crypto/rc4.c"
+			"src/crypto/sha1-internal.c"
+			"src/crypto/sha1.c"
+		)
+
+		# WPA3 will use crypto_wolfssl who has sha256 implemented
+		if (NOT CONFIG_WPA3)
+		list(APPEND srcs 
+			"src/crypto/sha256-internal.c"
+			"src/crypto/sha256.c"
+		)
+		endif()
+		
+	endif()
+
+if (CONFIG_P2P)
+	list(APPEND srcs
+		"src/ap/eap_user_db.c"
+		"src/ap/p2p_hostapd.c"
+		"src/ap/wps_hostapd.c"
+		"src/common/gas.c"
+		"src/eap_common/eap_common.c"
+		"src/eap_common/eap_wsc_common.c"
+		"src/eap_peer/eap.c"
+		"src/eap_peer/eap_methods.c"
+		"src/eap_peer/eap_tls.c"
+		"src/eap_peer/eap_tls_common.c"
+		"src/eap_peer/eap_wsc.c"
+		"src/eap_server/eap_server.c"
+		"src/eap_server/eap_server_identity.c"
+		"src/eap_server/eap_server_methods.c"
+		"src/eap_server/eap_server_wsc.c"
+		"src/eapol_auth/eapol_auth_sm.c"
+		"src/eapol_supp/eapol_supp_sm.c"
+		"src/p2p/p2p.c"
+		"src/p2p/p2p_build.c"
+		"src/p2p/p2p_dev_disc.c"
+		"src/p2p/p2p_go_neg.c"
+		"src/p2p/p2p_group.c"
+		"src/p2p/p2p_invitation.c"
+		"src/p2p/p2p_parse.c"
+		"src/p2p/p2p_pd.c"
+		"src/p2p/p2p_sd.c"
+		"src/p2p/p2p_utils.c"
+		"src/rsn_supp/preauth.c"
+		"src/tls/bignum.c"
+		"src/utils/bitfield.c"
+		"src/utils/uuid.c"
+		"src/utils/xfile.c"
+		"src/wps/wps.c"
+		"src/wps/wps_attr_build.c"
+		"src/wps/wps_attr_parse.c"
+		"src/wps/wps_attr_process.c"
+		"src/wps/wps_common.c"
+		"src/wps/wps_dev_attr.c"
+		"src/wps/wps_enrollee.c"
+		"src/wps/wps_registrar.c"
+		"wpa_supplicant/ap.c"
+		"wpa_supplicant/eap_register.c"
+		"wpa_supplicant/offchannel.c"
+		"wpa_supplicant/p2p_supplicant.c"
+		"wpa_supplicant/p2p_supplicant_sd.c"
+		"wpa_supplicant/wps_supplicant.c"
+		)
+endif()
+if (CONFIG_WPA3)
+	list(APPEND srcs
+		"src/common/dragonfly.c"
+		"src/common/sae.c"
+		)
+	if (NOT CONFIG_USE_MBEDTLS)
+		list(APPEND srcs "src/crypto/crypto_wolfssl.c")
+	endif()
+endif()
+if (CONFIG_WIFI_ROAMING)
+	list(APPEND srcs
+		"src/rsn_supp/wpa_ft.c"
+		"wpa_supplicant/bgscan.c"
+		"wpa_supplicant/bgscan_simple.c"
+		"wpa_supplicant/bgscan_learn.c"
+		)
+endif()
+endif()
+
+endif() #if (CONFIG_WPA_SUPPLICANT_2_10)
+
+unset(c_compile_options)
+# always set BK_SUPPLICANT macro to indicate changes that modified by BK.
+# list(APPEND c_compile_options "-DBK_SUPPLICANT=1" "-DOS_NO_C_LIB_DEFINES")
+list(APPEND c_compile_options "-DBK_SUPPLICANT=1")
+
+if (CONFIG_USE_MBEDTLS)
+
+armino_component_register(SRCS "${srcs}"
+	INCLUDE_DIRS "${incs}"
+	REQUIRES ip_ax ip_ax_next
+	PRIV_REQUIRES bk_hostapd rwnx_intf power_save bk_wifi_impl mbedtls bk_private
+	)
+list(APPEND c_compile_options "-DMBEDTLS_CONFIG_FILE=\"tls_config.h\"")
+else()
+armino_component_register(SRCS "${srcs}"
+	INCLUDE_DIRS "${incs}"
+	REQUIRES ip_ax ip_ax_next
+	PRIV_REQUIRES bk_hostapd rwnx_intf power_save bk_wifi_impl wolfssl bk_private
+	)
+endif()
+
+# set CFLAGS
+armino_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)
+

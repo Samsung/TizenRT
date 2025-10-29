@@ -1,0 +1,84 @@
+menu "SDIO"
+	config SDIO
+		bool "Enable SDIO"
+
+	config SDIO_V1P0
+		bool "SDIO Version V1P0"
+		depends on SDIO
+		default n
+		
+	config SDIO_V2P0
+		bool "SDIO Version V2P0"
+		default n
+
+	config SDIO_TRANS
+		bool "Enable SDIO Trans"
+		depends on SDIO_V1P0
+		default n
+
+	config REAL_SDIO
+		bool "Enable Real SDIO"
+		depends on SDIO_V1P0
+
+	config SDIO_BLOCK_512
+		bool "Enable SDIO 512 Bytes Block"
+		depends on REAL_SDIO
+
+	config SDIO_SLAVE
+		bool "Enable SDIO Slave Device, BEKEN Chip Is A SDIO Slave Device"
+		depends on SDIO
+		default n
+
+	config SDIO_CHANNEL_EN
+		bool "Enable SDIO channel"
+		depends on SDIO_SLAVE && SDIO_V2P0
+		default n
+
+	config SDIO_BIDIRECT_CHANNEL_EN
+		bool "Enable SDIO two derect channel"
+		depends on SDIO_CHANNEL_EN
+		default n
+
+	config SDIO_GDMA_EN
+		bool "SDIO transfer data whether enable GDMA"
+		depends on SDIO_V2P0 && GENERAL_DMA
+		default n
+
+	config GPIO_NOTIFY_TRANSACTION_EN
+		bool "Host Wake BK7256"
+		depends on SDIO_SLAVE && SDIO_V2P0
+		default y
+
+	config SDIO_4LINES_EN
+		bool "SDIO Uses 4 Lines Transfer Data"
+		depends on SDIO
+		default y
+
+	config SDIO_TEST_EN
+		bool "SDIO Test Program Enable"
+		depends on SDIO_SLAVE && SDIO_V2P0
+		default n
+
+	config SDIO_DEBUG_EN
+		bool "SDIO Debug Program Enable"
+		depends on SDIO_SLAVE && SDIO_V2P0
+		default n
+
+	config SDIO_PM_CB_SUPPORT
+		bool "SDIO PM Support"
+		default n
+
+	config SDIO_SYNC_TRANS
+		bool "SDIO sync transmit"
+		default n
+
+	config SDIO_RK3568
+		bool "SDIO connect with RK3568 Host"
+		default n
+
+	config SDIO_1V8_EN
+		bool "SDIO 1.8v IO voltage select"
+		default n
+
+endmenu
+

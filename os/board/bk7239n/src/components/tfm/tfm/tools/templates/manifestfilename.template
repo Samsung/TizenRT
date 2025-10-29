@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2019-2022, Arm Limited. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
+
+/***********{{utilities.donotedit_warning}}***********/
+
+#ifndef __PSA_MANIFEST_{{manifest_out_basename.upper()}}_H__
+#define __PSA_MANIFEST_{{manifest_out_basename.upper()}}_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+{% if manifest.model == "SFN" %}
+#define {{"%-55s"|format(manifest.name + "_MODEL_IPC")}} 0
+#define {{"%-55s"|format(manifest.name + "_MODEL_SFN")}} 1
+{% else %}
+#define {{"%-55s"|format(manifest.name + "_MODEL_IPC")}} 1
+#define {{"%-55s"|format(manifest.name + "_MODEL_SFN")}} 0
+{% endif %}
+
+{% if manifest.services %}
+    {% for service in manifest.services %}
+        {% if manifest.model == "SFN" %}
+psa_status_t {{service.name|lower}}_sfn(const psa_msg_t* msg);
+        {% else %}
+#define {{"%-55s"|format(service.name + "_SIGNAL")}} ({{"0x%x"|format(service.signal_value)}})
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% if manifest.irqs %}
+    {% for irq in manifest.irqs %}
+        {% if manifest.psa_framework_version == 1.0 %}
+#define {{"%-55s"|format(irq.signal)}} ({{"0x%x"|format(irq.signal_value)}})
+        {% else %}
+#define {{"%-55s"|format(irq.name + "_SIGNAL")}} ({{"0x%x"|format(irq.signal_value)}})
+            {% if irq.handling == "FLIH" %}
+psa_flih_result_t {{irq.name|lower}}_flih(void);
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __PSA_MANIFEST_{{manifest_out_basename.upper()}}_H__ */

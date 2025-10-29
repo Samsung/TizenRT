@@ -1,0 +1,42 @@
+menu "SOC_CONFIG"
+
+	choice SOC
+		prompt "ARMINO SoC"
+		default SOC_BK7239N if "$ARMINO_SOC" = "bk7239n"
+
+		config SOC_BK7239N
+			bool "BK7239N"
+
+	endchoice
+
+	choice System
+		prompt "System"
+		default SYS_CPU0
+
+		config SYS_CPU0
+			bool "CPU0 system"
+
+	endchoice
+
+	config CPU_CNT
+			int "System CPU count: 1: single core, 2: dual core, etc."
+			default 1
+
+	config SOC_STR
+		string "SoC string"
+		default "bk7239n"  if SOC_BK7239N
+		default "$ARMINO_SOC"
+
+	config SOC_ARCH
+		string "Soc arch"
+		default "unknown"
+
+	config SOC_SMP
+		bool "For soc smp feature"
+		default n
+
+	config SOC_BK7239XX
+		bool "For bk7239n series chipset"
+		default n
+
+endmenu

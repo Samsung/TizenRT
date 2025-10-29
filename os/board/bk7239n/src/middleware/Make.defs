@@ -1,0 +1,214 @@
+###########################################################################
+#
+# Copyright 2025 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+#
+#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+############################################################################
+
+CSRCS += \
+	stack_base.c 						\
+	trap_base.c 						\
+    dwt.c 								\
+	arm.c 								\
+    cache.c 							\
+	arch_interrupt.c 					\
+	jump.c 								\
+	arch_delay.c						\
+	timer_hal_common.c					\
+	ana_rtc_driver.c 					\
+	aon_pmu_driver.c 					\
+	reset_reason.c 						\
+	uart_driver.c						\
+	uart_statis.c						\
+	printf.c							\
+	pwr_clk.c 							\
+	io_matrix_driver.c \
+	gpio_adapter.c \
+	ana_gpio_driver.c \
+	gpio_clk_pin.c \
+	gpio_driver.c \
+	interrupt_statis.c \
+	driver.c \
+	icu_driver.c \
+	interrupt_base.c \
+	timer_driver.c \
+	wdt_driver.c \
+	rosc_32k.c \
+	rosc_ppm.c \
+	dma_driver.c \
+	flash_driver.c \
+	flash_partition.c \
+	CheckSumUtils.c \
+	ckmn_driver.c \
+	ckmn_hal.c \
+	flash_hal.c \
+	adc_driver.c \
+	adc_ate.c \
+	adc_legacy_api.c \
+	trng_driver.c \
+	trng_hal.c \
+	chip_support.c \
+	spi_driver.c \
+	sys_audio_driver.c \
+
+
+ifeq ($(CONFIG_I2C),y)
+ifeq ($(CONFIG_SIM_I2C),y)
+	CSRCS += \
+		sim_i2c_driver.c \
+		sim_i2c_driver_v2.c
+else
+	CSRCS += \
+		i2c_driver.c \
+		i2c_statis.c
+endif
+endif
+
+ifeq ($(CONFIG_MPU),y)
+	CSRCS += \
+			armino_mpu.c			
+endif
+
+ifeq ($(CONFIG_PSRAM),y)
+	CSRCS += \
+		psram_hal.c						    \
+		psram_driver.c
+endif
+
+ifeq ($(CONFIG_OTP),y)
+	CSRCS += \
+		otp_driver.c
+endif
+
+
+ifeq ($(CONFIG_CACHE_ENABLE),y)
+	CSRCS += \
+		cache.c
+endif
+
+ifeq ($(CONFIG_I2S),y)
+	CSRCS += \
+		i2s_driver_v1_1.c \
+		audio_ring_buff.c
+endif
+
+DEPPATH += --dep-path middleware/arch/cm33
+DEPPATH += --dep-path middleware/driver/rtc
+DEPPATH += --dep-path middleware/driver/pmu
+DEPPATH += --dep-path middleware/driver/reset_reason
+DEPPATH += --dep-path middleware/driver/uart
+DEPPATH += --dep-path middleware/driver/pwr_clk
+DEPPATH += --dep-path middleware/driver/timer
+DEPPATH += --dep-path middleware/driver/wdt
+DEPPATH += --dep-path middleware/driver/otp
+DEPPATH += --dep-path middleware/driver/trng
+DEPPATH += --dep-path middleware/driver/gpio
+DEPPATH += --dep-path middleware/driver/bk7239n
+DEPPATH += --dep-path middleware/driver/common
+DEPPATH += --dep-path middleware/driver/icu
+DEPPATH += --dep-path middleware/driver/saradc
+DEPPATH += --dep-path middleware/driver/sdmadc
+DEPPATH += --dep-path middleware/driver/flash
+DEPPATH += --dep-path middleware/driver/psram
+DEPPATH += --dep-path middleware/driver/pwm/v2p2
+DEPPATH += --dep-path middleware/driver/efuse
+DEPPATH += --dep-path middleware/driver/spi
+DEPPATH += --dep-path middleware/driver/i2c
+DEPPATH += --dep-path middleware/driver/qspi
+DEPPATH += --dep-path middleware/driver/ckmn
+DEPPATH += --dep-path middleware/soc/common/hal
+DEPPATH += --dep-path middleware/soc/common/hal/include
+DEPPATH += --dep-path middleware/soc/bk7239n/hal
+DEPPATH += --dep-path middleware/driver/system_ctrl/
+DEPPATH += --dep-path middleware/driver/general_dma/v2px
+DEPPATH += --dep-path middleware/boards
+DEPPATH += --dep-path middleware/driver/io_matrix/v2.0/
+DEPPATH += --dep-path middleware/driver/sys_ctrl
+DEPPATH += --dep-path os/board/bk7239n/src/components/bk_cli/
+DEPPATH += --dep-path os/board/bk7239n/src/include
+DEPPATH += --dep-path os/board/bk7239n/src/include/os
+DEPPATH += --dep-path middleware/driver/i2s
+DEPPATH += --dep-path middleware/driver/audio
+
+VPATH += :arch/cm33
+VPATH += :driver/rtc
+VPATH += :driver/pmu
+VPATH += :driver/reset_reason
+VPATH += :driver/uart
+VPATH += :driver/pwr_clk
+VPATH += :driver/timer
+VPATH += :driver/wdt
+VPATH += :driver/otp
+VPATH += :driver/trng
+VPATH += :driver/gpio
+VPATH += :driver/bk7239n
+VPATH += :driver/common
+VPATH += :driver/icu
+VPATH += :driver/saradc
+VPATH += :driver/sdmadc
+VPATH += :driver/flash
+VPATH += :driver/pwm/v2p2
+VPATH += :driver/efuse
+VPATH += :driver/spi
+VPATH += :driver/i2c
+VPATH += :driver/qspi
+VPATH += :driver/ckmn
+VPATH += :driver/psram
+VPATH += :driver/system_ctrl
+VPATH += :soc/common/hal
+VPATH += :soc/common/hal/include
+VPATH += :soc/bk7239n/hal
+VPATH += :driver/general_dma/v2px
+VPATH += :boards
+VPATH += :driver/io_matrix/v2.0
+VPATH += :driver/sys_ctrl
+VPATH += :driver/chip_support/
+VPATH += :os/board/bk7239n/src/components/bk_cli/
+VPATH += :os/board/bk7239n/src/include
+VPATH += :os/board/bk7239n/src/include/os
+VPATH += :driver/i2s
+VPATH += :driver/audio

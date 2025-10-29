@@ -1,0 +1,130 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2018-2021, Arm Limited. All rights reserved.
+# Copyright (c) 2021, Cypress Semiconductor Corporation. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+# The "manifest" field must be relative path to this file or absolute path.
+#
+# Files per Secure Partition are generated to:
+#   - "output_path", if it is a absolute path - not recommanded
+#   - generated_file_root/"output_path", if "output_path" is relative path
+#   - generated_file_root/, if "output_path" is not specified
+#       * generated_file_root is the path passed to tfm_parse_manifest_list.py
+#         by -o/--outdir
+
+{
+  "name": "TF-M secure partition manifests",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "name": "Protected Storage Service",
+      "short_name": "TFM_SP_PS",
+      "manifest": "${CMAKE_SOURCE_DIR}/secure_fw/partitions/protected_storage/tfm_protected_storage.yaml",
+      "output_path": "secure_fw/partitions/protected_storage",
+      "conditional": "@TFM_PARTITION_PROTECTED_STORAGE@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 256,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_ps.*"
+         ],
+      }
+    },
+    {
+      "name": "TF-M Internal Trusted Storage Service",
+      "short_name": "TFM_SP_ITS",
+      "manifest": "${CMAKE_SOURCE_DIR}/secure_fw/partitions/internal_trusted_storage/tfm_internal_trusted_storage.yaml",
+      "output_path": "secure_fw/partitions/internal_trusted_storage",
+      "conditional": "@TFM_PARTITION_INTERNAL_TRUSTED_STORAGE@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 257,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_its.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM Crypto Service",
+      "short_name": "TFM_SP_CRYPTO",
+      "manifest": "${CMAKE_SOURCE_DIR}/secure_fw/partitions/crypto/tfm_crypto.yaml",
+      "output_path": "secure_fw/partitions/crypto",
+      "conditional": "@TFM_PARTITION_CRYPTO@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 259,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_crypto.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM Platform Service",
+      "short_name": "TFM_SP_PLATFORM",
+      "manifest": "${CMAKE_SOURCE_DIR}/secure_fw/partitions/platform/tfm_platform.yaml",
+      "output_path": "secure_fw/partitions/platform",
+      "conditional": "@TFM_PARTITION_PLATFORM@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 260,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_platform.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM Initial Attestation Service",
+      "short_name": "TFM_SP_INITIAL_ATTESTATION",
+      "manifest": "${CMAKE_SOURCE_DIR}/secure_fw/partitions/initial_attestation/tfm_initial_attestation.yaml",
+      "output_path": "secure_fw/partitions/initial_attestation",
+      "conditional": "@TFM_PARTITION_INITIAL_ATTESTATION@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 261,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_attestation.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM Firmware Update Service",
+      "short_name": "TFM_SP_FWU",
+      "manifest": "${CMAKE_SOURCE_DIR}/secure_fw/partitions/firmware_update/tfm_firmware_update.yaml",
+      "output_path": "secure_fw/partitions/firmware_update",
+      "conditional": "@TFM_PARTITION_FIRMWARE_UPDATE@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 271,
+      "linker_pattern": {
+        "library_list": [
+          "*tfm_*partition_fwu*"
+         ]
+      }
+    },
+    {
+      "name": "TFM System Clock Service",
+      "short_name": "TFM_SP_SYS_CLOCK",
+      "manifest": "${CMAKE_SOURCE_DIR}/secure_fw/partitions/system_clock/tfm_system_clock.yaml",
+      "output_path": "secure_fw/partitions/system_clock",
+      "conditional": "@TFM_PARTITION_SYSTEM_CLOCK@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 272,
+      "linker_pattern": {
+        "library_list": [
+          "*tfm_*partition_system_clock*"
+         ]
+      }
+    },
+  ]
+}
