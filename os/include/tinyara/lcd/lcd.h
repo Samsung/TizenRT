@@ -251,6 +251,9 @@ struct lcd_dev_s {
 
 	int (*getlcdinfo)(struct lcd_dev_s *dev, struct lcd_info_s *lcdinfo);
 
+	/* Load and render splash image during driver initialization */
+	int (*loadsplash)(struct lcd_dev_s *dev, const char* image_path);
+
 };
 
 /****************************************************************************
@@ -271,4 +274,3 @@ extern "C"
 #endif
 
 #endif /* __INCLUDE_TINYARA_LCD_H */
-
