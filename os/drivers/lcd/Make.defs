@@ -88,10 +88,13 @@ ifeq ($(CONFIG_LCD),y)
 
 # Support for the generic LCD framebufer front-end
 CSRCS += lcd_dev.c
-CSRCS += image_lib.c
 
 ifeq ($(CONFIG_LCD_FRAMEBUFFER),y)
   CSRCS += lcd_framebuffer.c
+endif
+
+ifeq ($(CONFIG_LCD_SPLASH_IMAGE),y)
+  CSRCS += image_lib.c
 endif
 
 # Include support for Graphics LCD drivers
@@ -123,4 +126,3 @@ endif
   VPATH += :lcd
   CFLAGS += ${shell $(INCDIR) $(INCDIROPT) "$(CC)" $(TOPDIR)$(DELIM)drivers$(DELIM)lcd}
 endif
-
