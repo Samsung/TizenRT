@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2020-2022, Arm Limited. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
+
+/***********{{utilities.donotedit_warning}}***********/
+
+#include <stdint.h>
+
+{% if config_impl['CONFIG_TFM_SPM_BACKEND_IPC'] == '1' or manifest.model == "IPC" %}
+uint8_t {{manifest.name.lower()}}_stack[{{manifest.stack_size}}] __attribute__((aligned(8)));
+{% endif %}

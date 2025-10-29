@@ -1,0 +1,10 @@
+menu "Compal"
+
+	config COMMON_IO
+		depends on FREERTOS_V10
+		bool "Enable Common Io"
+		default n
+		help
+			Amazon Common IO
+
+endmenu

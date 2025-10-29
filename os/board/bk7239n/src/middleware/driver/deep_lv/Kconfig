@@ -1,0 +1,6 @@
+menu "DEEP_LV"
+	config DEEP_LV
+		bool "Enable deep low voltage"
+		default n
+endmenu
+

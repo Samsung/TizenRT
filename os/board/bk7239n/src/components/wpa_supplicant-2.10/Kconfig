@@ -1,0 +1,240 @@
+menu "modules::wpa_supplicant-2.10"
+
+	config SELECT_PROPRIETARY_SUPPLICANT
+		depends on WIFI_ENABLE
+		bool "Enable BEKEN Wpa Supplicant 2.10"
+		default y
+		help
+			Enable BEKEN wpa_supplicant-2.10
+
+	menu "Modify Wpa Supplicant 2.10 Config"
+		depends on SELECT_PROPRIETARY_SUPPLICANT
+
+		config TASK_WPAS_PRIO
+			int "Set Task Wpas Prio"
+			range 1 10
+			default 5
+			help
+				Priority of WPAS task
+
+		config WPA3
+			bool "Enable WPA3"
+			default y
+			help
+				When WPA3 is enabled, the PMF should be enabled also!
+
+		config SOFTAP_WPA3
+			bool "Enable Softap WPA3"
+			default n
+			help
+				Enable softap WPA3 SAE. This may costs some code size. Use mbedtls as
+				the crypto suite may accelerate ECC caculation speed.
+
+		config PMF
+			bool "Enable PMF"
+			default y if WPA3
+			default n if !WPA3
+			help
+				Enable PMF(802.11w)
+
+		config WPA2_PREFER_TO_SAE
+			depends on WPA3 && PMF
+			bool "Enable WPA2 Prefer To Sae"
+			default y
+			help
+				Prefer WPA2 instead of WPA3 if BSS in WPA3 transition mode.
+				WPA2(prefer to use non-mfp) will be used instead of wpa3-sae if bss is
+				in WPA3 transistion mode, and wpa3 always sets to mfp capable to avoid
+				disconnection with reason code set to "Robust managment frame policy
+				viloation (0x001f)" even if bss sets mfp required bit to 0 (No Required).
+				This feature eliminates AP's SA query prodecure and reduces connecting time
+				with AP.
+
+		config WIFI_OWE
+			depends on WPA3 || SOFTAP_WPA3
+			bool "Enable WiFi OWE"
+			default n
+
+		config AP_HT_IE
+			bool "Enable AP HT IE"
+			default n
+
+		config AP_VHT
+			bool "Enable AP VHT"
+			default n
+
+		config AP_HE
+			depends on WIFI6
+			bool "Enable AP HE"
+			default n
+
+		config AP_VSIE
+			bool "Enable AP VSIE"
+			default y
+			help
+				Enable AP Vendor Specific IE
+
+		config STA_VSIE
+			bool "Enable STA VSIE"
+			default n
+			help
+				Enable STA Vendor Specific IE
+
+		config STA_AUTO_RECONNECT
+			bool "Enable STA Auto Reconnect"
+			default n
+			help
+				Enable STA auto reconnect feature.
+				Supplicant automatically reconnect with AP if connection fails or disconnected
+				by AP. When this function is enabled, users can set auto reconnect max retry count
+				and reconnect timeout, and enable or disable auto reconnect when disconnected by AP
+				if STA is in COMPLETE state.
+
+		config WPA_LOG
+			bool "Enable WPA Log"
+			default n
+
+		config P2P
+			bool "Enable P2P"
+			default n
+
+		config P2P_GO
+			bool "Enable P2P Go"
+			default n
+
+		config WIFI_WPS
+			bool "Enable WiFi WPS"
+			default n
+
+		config WPS
+			bool "Enable WPS"
+			default n
+
+		config WPA2_ENTERPRISE
+			bool "Enable Wpa2 Enterprise"
+			default n
+
+		config MOBILE_CONNECT_SAP_STATISTICS
+			bool "Enable Mobile Connect Sap Statistics"
+			default n
+			help
+				Statistics mobile connect sap time
+
+		config USE_MBEDTLS
+			bool "Enable MBEDTLS"
+			default y
+			help
+				use mbedtls as tls transport.
+				Use mbedtls as the crypto suite may accelerate ECC caculation speed.
+
+		config WPA_PSK_CACHE
+			bool "Enable WPA PSK Cache"
+			default y
+			help
+				PSK cache enable.
+				Caculate psk in advance, and store it in memory. Recommended to enable if 
+				no hw accelerator exists.
+
+		config WPA_PSK_CACHE_MULTI
+			bool "Enable WPA PSK Cache Multi"
+			default n
+			help
+				caculate multiple psk
+
+		config SELECT_NETWORK_AFTER_PSK_SET
+			bool "Enable Select Network After PSK Set"
+			default n
+			help
+				connect to AP after psk is caculated
+
+		config MINIMIZE_SCAN_RESULT_IE
+			bool "Enable Minimize Scan Result IE"
+			default n
+			help
+				minimize scan result memory usage
+	
+		config SAE_OVERCLOCK
+			bool "Enable SAE Overclock"
+			default n
+			help
+				change CPU freq when do SAE process
+
+		config WIFI_OCV
+			bool "Enable WiFi OCV"
+			default n
+
+		config MINIMUM_SCAN_RESULTS
+			bool "Enable minimum scan results"
+			default n
+	endmenu
+
+	config WIFI_FAST_CONNECT
+		bool "Enable Wifi Fast Connect"
+		default n
+		help
+			use fast connect
+
+	config WIFI_FAST_DHCP
+		depends on WIFI_FAST_CONNECT
+		bool "Enable WiFi Fast DHCP"
+		default n
+		help
+			use previous dhcp ip address
+
+	config WIFI_WNM
+		depends on SELECT_PROPRIETARY_SUPPLICANT
+		bool "WNM"
+		default n
+
+	config WLAN_FAST_CONNECT_WITHOUT_SCAN
+		bool "Enable Wlan Fast Connect Without Scan"
+		default n
+		help
+			fast connect with scan.
+			wpa_supplicant will use beacon/probersp IEs from fci, and connect with
+			AP without any scan.
+
+	config WLAN_FAST_CONNECT_DEAUTH_FIRST
+		bool "Enable Wlan Fast Connect Default First"
+		default n
+		help
+			send deauth to AP before connect with AP.
+			Recommend to enable if AP enables MFP. deauth frame is sent in encryted or
+			unencrypt format to AP according to pmf value from fci.
+
+	config WLAN_FAST_CONNECT_WPA3
+		bool "Enable Wlan Fast Connect WPA3"
+		default n
+		help
+			WPA3 fast connect support.
+			After STA has connected with AP, fci will stores additional pmk, pmkid, and
+			after reboot, supplicant will use open auth algo instread of sae. Recommends
+			to enable WLAN_FAST_CONNECT_DEAUTH_FIRST.
+
+	config FAST_CONNECT_INFO_ENC_METHOD
+		int "Enable Fast Connect Info Enc Method"
+		default 1
+		help
+			fci encryption method.
+			1 for NULL, 2 for XOR, 3 for AES.
+
+	config WPA_AUTH_TIMEOUT
+		int "Enable WPA Auth Timeout"
+		default 1 if MIDEA
+		default 2 if !MIDEA
+		help
+			auth timeout for wpa/802.1x authentication
+
+	config WIFI_ROAMING
+		bool "Enable 802.11R Roaming"
+		default n
+
+	config BK_SUPPLICANT_OPTIMIZE_CONNECTION
+		bool "Enable BK Connection Optimize"
+		default n
+	
+	config AP_STATYPE_LIMIT
+		bool "Enable Ap mode Sta Type Limit num"
+		default n
+
+endmenu
