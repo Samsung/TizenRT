@@ -21,6 +21,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#ifdef CONFIG_LCD_SPLASH_IMAGE
 #include <debug.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -58,6 +59,7 @@ static int count_set_bits(uint32_t mask)
 	return count;
 }
 
+#ifdef CONFIG_LCD_SPLASH_IMAGE_BMP_16BIT
 static uint16_t convert_pixel_to_rgb565(uint16_t bmp_pixel, uint32_t r_mask, uint32_t g_mask, uint32_t b_mask)
 {
 	uint8_t r;
@@ -217,3 +219,6 @@ errout:
 	close(bmp_fd);
 	return ERROR;
 }
+#endif /* CONFIG_LCD_SPLASH_IMAGE_BMP_16BIT */
+
+#endif /* CONFIG_LCD_SPLASH_IMAGE */
