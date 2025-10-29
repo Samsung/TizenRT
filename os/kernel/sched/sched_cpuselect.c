@@ -38,7 +38,6 @@
  ****************************************************************************/
 
 #define IMPOSSIBLE_CPU 0xff
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -58,39 +57,47 @@
  *
  * Assumptions:
  *   Called from within a critical section.
+ *   Assumes g_active_cpus_mask is maintained globally, representing CPUs that are
+ *   currently active (not halted or hotplug).
  *
  ****************************************************************************/
-
 int sched_select_cpu(cpu_set_t affinity)
 {
 	uint16_t minprio;
-	int cpu;
+	int cpu = IMPOSSIBLE_CPU;
 	int i;
 
+	// Create a mask of CPUs that are both in affinity and active
+	cpu_set_t eligible_cpus;
+	CPU_AND(&eligible_cpus, &affinity, &g_active_cpus_mask);
+
+	// If no CPUs are both in affinity and active, use all active CPUs
+	if (eligible_cpus == 0) {
+		eligible_cpus = g_active_cpus_mask;
+	}
+
 	minprio = SCHED_PRIORITY_MAX + 1;
-	cpu = IMPOSSIBLE_CPU;
 
+	/* Single loop through eligible CPUs only */
 	for (i = 0; i < CONFIG_SMP_NCPUS; i++) {
-		/* Is the thread permitted to run on this CPU? */
-
-		if ((affinity & (1 << i)) != 0) {
+		/* Is this CPU eligible? */
+		if ((eligible_cpus & (1 << i)) != 0) {
+			/* Evaluate this CPU for task assignment */
 			FAR struct tcb_s *rtcb = (FAR struct tcb_s *)g_assignedtasks[i].head;
 
 			/* If this CPU is executing its IDLE task, then use it.  The
 			 * IDLE task is always the last task in the assigned task list.
 			 */
-
 			if (rtcb->flink == NULL) {
 				/* The IDLE task should always be assigned to this CPU and have
 				 * a priority of zero.
 				 */
-
 				DEBUGASSERT(rtcb->sched_priority == 0);
-				return i;
+				return i;		// Found CPU running only IDLE task
 			} else if (rtcb->sched_priority < minprio) {
 				DEBUGASSERT(rtcb->sched_priority > 0);
 				minprio = rtcb->sched_priority;
-				cpu = i;
+				cpu = i;		// Remember best non-IDLE CPU
 			}
 		}
 	}
@@ -99,4 +106,4 @@ int sched_select_cpu(cpu_set_t affinity)
 	return cpu;
 }
 
-#endif /* CONFIG_SMP */
+#endif							/* CONFIG_SMP */
