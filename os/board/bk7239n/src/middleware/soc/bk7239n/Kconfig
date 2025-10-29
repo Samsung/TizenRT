@@ -1,0 +1,41 @@
+menu "bk7239"
+	config CPU0_SPE_RAM_SIZE
+		hex "CPU0 RAM size for SPE"
+		default 0x80000
+
+	config CPU0_NSPE_RAM_SIZE
+		hex "CPU0 RAM size for NSPE"
+		default 0x40000
+
+	config ANA_REG_WRITE_POLL_REG_B
+		bool "Write analog register polls sys reg0xb"
+		default y
+
+	config PM_HAL_DEBUG
+		bool "Enable PM hal debug"
+		default n
+
+	config PM_HAL_CTRL
+		bool "Enable PM hal debug"
+		default n
+
+	config TZ
+		bool "Supported TrustZone"
+		default y
+
+	config SPE
+		int "Enable SPE"
+		default 0
+
+	config RX_OPTIMIZE
+		bool "Optimize rx current"
+		default n
+
+	config RELEASE_IRAM
+		bool "release iram"
+		default n
+
+	config DPD_CALI
+		bool "Enable DPD Cali"
+		default n
+endmenu

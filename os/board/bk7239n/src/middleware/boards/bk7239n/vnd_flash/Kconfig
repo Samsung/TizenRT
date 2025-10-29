@@ -1,0 +1,5 @@
+menu "Boards::Bk7239::Vnd_flash"
+	config OVERRIDE_FLASH_PARTITION
+		bool "Enable Override Flash Partition"
+		default n
+endmenu

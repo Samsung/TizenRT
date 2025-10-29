@@ -1,0 +1,96 @@
+From c82920457b1e971e13a98d9937c9656ec600c5dc Mon Sep 17 00:00:00 2001
+From: Summer Qin <summer.qin@arm.com>
+Date: Mon, 11 Apr 2022 11:20:35 +0800
+Subject: [PATCH] Init non-volatile memory before using in an521 dev apis
+
+psa arch test read data from non-volatile memory directly
+without initializing it. The data maybe randomly which may
+cause test fail.
+
+Signed-off-by: Summer Qin <summer.qin@arm.com>
+---
+ api-tests/val/nspe/val_entry.c     | 19 +++++++++++++++++++
+ api-tests/val/nspe/val_framework.c |  8 +++++++-
+ api-tests/val/val_nspe.cmake       |  6 +++++-
+ 3 files changed, 31 insertions(+), 2 deletions(-)
+
+diff --git a/api-tests/val/nspe/val_entry.c b/api-tests/val/nspe/val_entry.c
+index 15aefb9..3b708ea 100644
+--- a/api-tests/val/nspe/val_entry.c
++++ b/api-tests/val/nspe/val_entry.c
+@@ -20,6 +20,11 @@
+ #include "val_peripherals.h"
+ #include "val_dispatcher.h"
+ 
++#ifdef TGT_DEV_APIS_TFM_AN521
++int intermediate_boot = 0;
++#define NVMEM_USED_SIZE 16
++#endif
++
+ /**
+     @brief    - PSA C main function, does VAL init and calls test dispatcher
+     @param    - None
+@@ -36,6 +41,20 @@ int32_t val_entry(void)
+         goto exit;
+     }
+ 
++#ifdef TGT_DEV_APIS_TFM_AN521
++    int32_t         init_value[NVMEM_USED_SIZE] = {0};
++
++    if (!intermediate_boot)
++    {
++        status = val_nvmem_write(VAL_NVMEM_OFFSET(NV_BOOT), init_value, NVMEM_USED_SIZE);
++        if (VAL_ERROR(status))
++        {
++            val_print(PRINT_ERROR, "\n\tNVMEM initialization error", 0);
++            goto exit;
++        }
++    }
++#endif
++
+     status = val_get_last_run_test_id(&test_id);
+     if (VAL_ERROR(status))
+     {
+diff --git a/api-tests/val/nspe/val_framework.c b/api-tests/val/nspe/val_framework.c
+index 54e5dbd..14c6333 100644
+--- a/api-tests/val/nspe/val_framework.c
++++ b/api-tests/val/nspe/val_framework.c
+@@ -24,6 +24,9 @@
+ 
+ extern val_api_t val_api;
+ extern psa_api_t psa_api;
++#ifdef TGT_DEV_APIS_TFM_AN521
++extern int intermediate_boot;
++#endif
+ 
+ /* globals */
+ test_status_buffer_t    g_status_buffer;
+@@ -598,7 +601,10 @@ val_status_t val_get_last_run_test_id(test_id_t *test_id)
+     val_status_t    status;
+     test_count_t    test_count;
+     boot_t          boot;
+-    int             i = 0, intermediate_boot = 0;
++    int             i = 0;
++#ifndef TGT_DEV_APIS_TFM_AN521
++    int intermediate_boot = 0;
++#endif
+     boot_state_t    boot_state[] = {BOOT_NOT_EXPECTED,
+                                     BOOT_EXPECTED_NS,
+                                     BOOT_EXPECTED_S,
+diff --git a/api-tests/val/val_nspe.cmake b/api-tests/val/val_nspe.cmake
+index 355ca68..ae0af8d 100644
+--- a/api-tests/val/val_nspe.cmake
++++ b/api-tests/val/val_nspe.cmake
+@@ -56,4 +56,8 @@ target_include_directories(${PSA_TARGET_VAL_NSPE_LIB} PRIVATE
+ if(${WATCHDOG_AVAILABLE} EQUAL 1)
+ 	target_compile_definitions(${PSA_TARGET_VAL_NSPE_LIB} PRIVATE WATCHDOG_AVAILABLE)
+ endif()
+-target_compile_definitions(${PSA_TARGET_VAL_NSPE_LIB} PRIVATE VAL_NSPE_BUILD)
++target_compile_definitions(${PSA_TARGET_VAL_NSPE_LIB}
++	PRIVATE
++		VAL_NSPE_BUILD
++		$<$<STREQUAL:${TARGET},tgt_dev_apis_tfm_an521>:TGT_DEV_APIS_TFM_AN521>
++)
+-- 
+2.17.1
+

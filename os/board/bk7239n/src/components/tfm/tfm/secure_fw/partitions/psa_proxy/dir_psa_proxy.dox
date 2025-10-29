@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2020, Arm Limited. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
+
+//This file holds description for the current directory. This documentation
+//will be included in the Doxygen output.
+
+/*!
+\dir
+\brief Source code for the PSA Proxy service.
+\details The PSA Proxy service can forward IPC messages to a Secure Enclave.
+
+*/

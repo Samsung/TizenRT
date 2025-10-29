@@ -1,0 +1,292 @@
+/*
+ * Copyright (c) 2021-2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, Cypress Semiconductor Corporation. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
+
+/***********{{utilities.donotedit_warning}}***********/
+
+#include <stdint.h>
+#include <stddef.h>
+#include "region.h"
+#include "region_defs.h"
+#include "spm_ipc.h"
+#include "load/interrupt_defs.h"
+#include "load/partition_defs.h"
+#include "load/service_defs.h"
+#include "load/asset_defs.h"
+#include "tfm_peripherals_def.h"
+#include "psa_manifest/pid.h"
+#include "psa_manifest/sid.h"
+#include "psa_manifest/{{manifest_out_basename}}.h"
+
+{% set counter = namespace() %}
+{% set counter.dep_counter = manifest.dependencies|count + manifest.weak_dependencies|count %}
+#define {{"%-55s"|format(manifest.name|upper + "_NDEPS")}} ({{"%d"|format(counter.dep_counter)}})
+{% set counter.service_counter = manifest.services|count %}
+#define {{"%-55s"|format(manifest.name|upper + "_NSERVS")}} ({{"%d"|format(counter.service_counter)}})
+{% set counter.asset_counter = manifest.mmio_regions|count %}
+#if TFM_LVL == 3
+#define {{"%-55s"|format(manifest.name|upper + "_NASSETS")}} ({{"%d"|format(counter.asset_counter)}} + 1)
+#else
+#define {{"%-55s"|format(manifest.name|upper + "_NASSETS")}} ({{"%d"|format(counter.asset_counter)}})
+#endif
+{% set counter.irq_counter = manifest.irqs|count %}
+#define {{"%-55s"|format(manifest.name|upper + "_NIRQS")}} ({{"%d"|format(counter.irq_counter)}})
+
+/* Memory region declaration */
+#if TFM_LVL == 3
+REGION_DECLARE(Image$$, PT_{{manifest.name}}_PRIVATE, _DATA_START$$Base);
+REGION_DECLARE(Image$$, PT_{{manifest.name}}_PRIVATE, _DATA_END$$Base);
+#endif
+
+{% if config_impl['CONFIG_TFM_SPM_BACKEND_IPC'] == '1' or manifest.model == "IPC" %}
+extern uint8_t {{manifest.name|lower}}_stack[];
+{% endif %}
+
+{% if manifest.model == "IPC" %}
+/* Entrypoint function declaration */
+extern void {{manifest.entry_point}}(void);
+{% elif manifest.entry_init %}
+extern psa_status_t {{manifest.entry_init}}(void);
+{% endif %}
+
+/* Interrupt init functions */
+{% if counter.irq_counter > 0 %}
+    {% for irq in manifest.irqs %}
+        {% if irq.source is number %}}
+extern enum tfm_hal_status_t {{"irq_" + irq.source|string + "_init"}}(void *p_pt,
+                                                                      struct irq_load_info_t *p_ildi);
+        {% else %}
+extern enum tfm_hal_status_t {{irq.source|lower + "_init"}}(void *p_pt,
+                                                            struct irq_load_info_t *p_ildi);
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+/* partition load info type definition */
+struct partition_{{manifest.name|lower}}_load_info_t {
+    /* common length load data */
+    struct partition_load_info_t    load_info;
+    /* per-partition variable length load data */
+    uintptr_t                       stack_addr;
+    uintptr_t                       heap_addr;
+{% if counter.dep_counter > 0 %}
+    uint32_t                        deps[{{(manifest.name|upper + "_NDEPS")}}];
+{% endif %}
+{% if counter.service_counter > 0 %}
+    struct service_load_info_t      services[{{(manifest.name|upper + "_NSERVS")}}];
+{% endif %}
+#if TFM_LVL == 3
+    struct asset_desc_t             assets[{{(manifest.name|upper + "_NASSETS")}}];
+#else
+{% if counter.asset_counter > 0 %}
+    struct asset_desc_t             assets[{{(manifest.name|upper + "_NASSETS")}}];
+{% endif %}
+#endif
+{% if counter.irq_counter > 0 %}
+    struct irq_load_info_t          irqs[{{(manifest.name|upper + "_NIRQS")}}];
+{% endif %}
+} __attribute__((aligned(4)));
+
+/* Partition load, deps, service load data. Put to a dedicated section. */
+#if defined(__ICCARM__)
+#pragma location = ".part_load"
+__root
+#endif /* __ICCARM__ */
+const struct partition_{{manifest.name|lower}}_load_info_t {{manifest.name|lower}}_load
+    __attribute__((used, section(".part_load"))) = {
+    .load_info = {
+{% if manifest.psa_framework_version == 1.0 %}
+        .psa_ff_ver                 = 0x0100 | PARTITION_INFO_MAGIC,
+{% elif manifest.psa_framework_version == 1.1 %}
+        .psa_ff_ver                 = 0x0101 | PARTITION_INFO_MAGIC,
+{% endif %}
+        .pid                        = {{manifest.name}},
+        .name                       = "{{manifest.name}}",
+        .flags                      = 0
+{% if manifest.model == "IPC" %}
+                                    | PARTITION_MODEL_IPC
+{% endif %}
+{% if manifest.type == "PSA-ROT" %}
+                                    | PARTITION_MODEL_PSA_ROT
+{% endif %}
+                                    | PARTITION_PRI_{{manifest.priority}},
+        .entry                      = ENTRY_TO_POSITION({{manifest.entry}}),
+{% if config_impl['CONFIG_TFM_SPM_BACKEND_IPC'] == '1' or manifest.model == "IPC" %}
+        .stack_size                 = {{manifest.stack_size}},
+{% else %}
+        .stack_size                 = 0,
+{% endif %}
+        .heap_size                  = 0,
+        .ndeps                      = {{(manifest.name|upper + "_NDEPS")}},
+        .nservices                  = {{(manifest.name|upper + "_NSERVS")}},
+        .nassets                    = {{(manifest.name|upper + "_NASSETS")}},
+        .nirqs                      = {{(manifest.name|upper + "_NIRQS")}},
+    },
+{% if config_impl['CONFIG_TFM_SPM_BACKEND_IPC'] == '1' or manifest.model == "IPC" %}
+    .stack_addr                     = (uintptr_t){{manifest.name|lower}}_stack,
+{% else %}
+    .stack_addr                     = 0,
+{% endif %}
+    .heap_addr                      = 0,
+{% if counter.dep_counter > 0 %}
+    .deps = {
+    {% for dep in manifest.dependencies %}
+        {{dep}}_SID,
+    {% endfor %}
+    {% for dep in manifest.weak_dependencies %}
+#ifdef {{dep}}_SID
+        {{dep}}_SID,
+#endif
+    {% endfor %}
+    },
+{% endif %}
+{% if counter.service_counter > 0 %}
+    .services = {
+    {% for service in manifest.services %}
+        {
+            .name_strid             = STRING_PTR_TO_STRID("{{service.name}}"),
+        {% if manifest.model == "SFN" %}
+            .sfn                    = ENTRY_TO_POSITION({{service.name|lower}}_sfn),
+        {% else %}
+            .sfn                    = 0,
+        {% endif %}
+{% if config_impl['CONFIG_TFM_SPM_BACKEND_IPC'] == '1' %}
+        {% if manifest.model == "SFN" %}
+            .signal                 = {{service.signal_value}},
+        {% else %}
+            .signal                 = {{service.name}}_SIGNAL,
+        {% endif %}
+{% endif %}
+
+            .sid                    = {{service.sid}},
+            .flags                  = 0
+        {% if service.non_secure_clients is sameas true %}
+                                    | SERVICE_FLAG_NS_ACCESSIBLE
+        {% endif %}
+        {% if service.connection_based is sameas false %}
+                                    | SERVICE_FLAG_STATELESS | 0x{{"%x"|format(service.stateless_handle_index)}}
+        {% endif %}
+        {% if service.mm_iovec == "enable" %}
+                                    | SERVICE_FLAG_MM_IOVEC
+        {% endif %}
+                                    | SERVICE_VERSION_POLICY_{{service.version_policy}},
+            .version                = {{service.version}},
+        },
+    {% endfor %}
+    },
+{% endif %}
+#if TFM_LVL == 3
+    .assets                         = {
+        {
+            .mem.start              = PART_REGION_ADDR(PT_{{manifest.name}}_PRIVATE, _DATA_START$$Base),
+            .mem.limit              = PART_REGION_ADDR(PT_{{manifest.name}}_PRIVATE, _DATA_END$$Base),
+            .attr                   = ASSET_ATTR_READ_WRITE,
+        },
+{% if counter.asset_counter > 0 %}
+    {% for region in manifest.mmio_regions %}
+        {% if region.conditional %}
+#ifdef {{region.conditional}}
+        {% endif %}
+        {% if region.base and region.size %}
+        {
+            .mem.start              = {{region.base}},
+            .mem.limit              = {{region.base}} + {{region.size}},
+            .attr                   = ASSET_ATTR_NUMBERED_MMIO
+        {% elif region.name %}
+        {
+            .dev.dev_ref            = PTR_TO_REFERENCE({{region.name}}),
+            .attr                   = ASSET_ATTR_NAMED_MMIO
+        {% endif %}
+        {% if region.permission == "READ-WRITE" %}
+                                    | ASSET_ATTR_READ_WRITE,
+        {% else %}
+                                    | ASSET_ATTR_READ_ONLY,
+        {% endif %}
+        },
+        {% if region.conditional %}
+#endif
+        {% endif %}
+    {% endfor %}
+{% endif %}
+    },
+#else
+{% if counter.asset_counter > 0 %}
+    .assets                         = {
+    {% for region in manifest.mmio_regions %}
+        {% if region.conditional %}
+#ifdef {{region.conditional}}
+        {% endif %}
+        {% if region.base and region.size %}
+        {
+            .mem.start              = {{region.base}},
+            .mem.limit              = {{region.base}} + {{region.size}},
+            .attr                   = ASSET_ATTR_NUMBERED_MMIO
+        {% elif region.name %}
+        {
+            .dev.dev_ref            = PTR_TO_REFERENCE({{region.name}}),
+            .attr                   = ASSET_ATTR_NAMED_MMIO
+        {% endif %}
+        {% if region.permission == "READ-WRITE" %}
+                                    | ASSET_ATTR_READ_WRITE,
+        {% else %}
+                                    | ASSET_ATTR_READ_ONLY,
+        {% endif %}
+        },
+        {% if region.conditional %}
+#endif
+        {% endif %}
+    {% endfor %}
+    },
+{% endif %}
+#endif
+{% if counter.irq_counter > 0 %}
+    .irqs = {
+    {% for irq in manifest.irqs %}
+        {% set irq_info = namespace() %}
+        {% set irq_info.source = irq.source %}
+        {% if irq.source is number %}}
+            {% set irq_info.source_symbol = "irq_" + irq.source|string %}
+        {% else %}
+            {% set irq_info.source_symbol = irq.source|lower %}
+        {% endif %}
+        {% if manifest.psa_framework_version == 1.1 and irq.handling == "FLIH" %}
+            {% set irq_info.flih_func = irq.name|lower + "_flih" %}
+        {% else %}
+            {% set irq_info.flih_func = 0 %}
+        {% endif %}
+        {% if manifest.psa_framework_version == 1.0 %}
+            {% set irq_info.signal = irq.signal %}
+        {% else %}
+            {% set irq_info.signal = irq.name + "_SIGNAL" %}
+        {% endif %}
+        {
+            .init = {{irq_info.source_symbol + "_init"}},
+            .flih_func = {{irq_info.flih_func}},
+            .pid = {{manifest.name}},
+            .source = {{irq_info.source}},
+            .signal = {{irq_info.signal}},
+        },
+    {% endfor %}
+    },
+{% endif %}
+};
+
+/* Placeholder for partition and service runtime space. Do not reference it. */
+#if defined(__ICCARM__)
+#pragma location=".bss.part_runtime"
+__root
+#endif /* __ICCARM__ */
+static struct partition_t {{manifest.name|lower}}_partition_runtime_item
+    __attribute__((used, section(".bss.part_runtime")));
+{% if counter.service_counter > 0 %}
+#if defined(__ICCARM__)
+#pragma location = ".bss.serv_runtime"
+__root
+#endif /* __ICCARM__ */
+static struct service_t {{manifest.name|lower}}_service_runtime_item[{{(manifest.name|upper + "_NSERVS")}}]
+    __attribute__((used, section(".bss.serv_runtime")));
+{% endif %}

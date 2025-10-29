@@ -1,0 +1,19 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+
+########{{utilities.donotedit_warning}}########
+
+if(TFM_PSA_API)
+    set(CONFIG_TFM_PSA_API_SFN_CALL        {{config_impl['CONFIG_TFM_PSA_API_SFN_CALL']}}        PARENT_SCOPE)
+    set(CONFIG_TFM_PSA_API_CROSS_CALL      {{config_impl['CONFIG_TFM_PSA_API_CROSS_CALL']}}      PARENT_SCOPE)
+    set(CONFIG_TFM_PSA_API_SUPERVISOR_CALL {{config_impl['CONFIG_TFM_PSA_API_SUPERVISOR_CALL']}} PARENT_SCOPE)
+
+    if((CONFIG_TFM_FP GREATER 0) AND CONFIG_TFM_SPM_BACKEND_SFN)
+        message(FATAL_ERROR "FP is not supported for SFN model.")
+    endif()
+endif()

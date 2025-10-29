@@ -1,0 +1,28 @@
+menu "PSA Mbedtls"
+	config PSA_MBEDTLS
+		bool "Enable mbedtls v3.5.2"
+		default n
+
+	config PSA_MBEDTLS_TEST
+		depends on PSA_MBEDTLS
+		bool "Enable psa mbedtls test"
+		default n
+	config PSA_CUSTOMIZATION_TZ_L
+		bool "Enable adapt customization interface"
+		default n
+	config PSA_CUSTOMIZATION_TEST
+		bool "Enable psa customization test"
+		default n
+	config PSA_MBEDTLS_FORWARD_COMPATIBILITY
+		bool "forward compatibility"
+		default n
+	config MBEDTLS_USE_PSA_CRYPTO
+		bool "use hardware accelerator"
+		default n
+	config PSA_RSA_TEST
+		bool "Enable psa RSA test"
+		default n
+	config MBEDTLS_SELF_TEST
+		bool "Enable mbedtls self test"
+		default n
+endmenu

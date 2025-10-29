@@ -1,0 +1,5 @@
+* text=auto
+
+# Binary files that should not be normalized
+*.pdf binary
+*.png binary

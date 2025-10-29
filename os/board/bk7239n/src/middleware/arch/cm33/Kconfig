@@ -1,0 +1,66 @@
+menu "Arch::Cm33"
+	config ARCH_CM33
+		bool "Enable Cortex-M33"
+		default n
+	
+	menu "Modify Arch Cm33 Config"
+		depends on ARCH_CM33
+
+		config FPGA
+			bool "Enable FPGA"
+			default n
+
+		config MPU
+			bool "Enable Memory Protect Unit Feature"
+			default n
+	
+		config CPU_FREQ_HZ
+			int "Set Cpu Freq Hz"
+			default 120000000
+			help
+				CPU frequency
+
+		config ARCH_INT_STATIS
+			bool "Enable Arch Int Statis"
+			default n
+			help
+				Enable interrupt statis
+
+		config SYSTICK_32K
+			bool "Systick use external 32K clock"
+			default n
+			
+		config CACHE_ENABLE
+                	depends on MPU
+			bool "Enable DCache"
+			default n
+			help
+				Enable DCache
+
+		config HEAP_IN_CACHE
+			depends on CACHE_ENABLE
+			bool "Enable Heap in Cache"
+			default y
+			help
+				Custom enable heap in Cache
+
+		config DUMP_ENABLE
+			bool "Enable Dump Feature"
+			default n
+			help
+				Dump all memory when exception happen
+
+		config MEMDUMP_ALL
+			bool "Enable Memdump All"
+			default y
+			help
+				Dump all memory when exception happen
+
+		config TFM_S_TO_NS_DUMP_ENABLE
+			depends on TFM
+			bool "Security to nosecurity dump"
+			default y
+			help
+				Dump memory when Secure Fault
+	endmenu
+endmenu

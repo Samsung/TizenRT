@@ -1,0 +1,107 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2021-2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.0,
+  "name": "TFM_SP_FWU",
+  "type": "PSA-ROT",
+  "priority": "NORMAL",
+  "entry_point": "tfm_fwu_init",
+  "stack_size": "0x800",
+  "secure_functions": [
+    {
+      "name": "TFM_FWU_WRITE",
+      "signal": "TFM_FWU_WRITE_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FWU_INSTALL",
+      "signal": "TFM_FWU_INSTALL_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FWU_ABORT",
+      "signal": "TFM_FWU_ABORT_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FWU_QUERY",
+      "signal": "TFM_FWU_QUERY_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FWU_REQUEST_REBOOT",
+      "signal": "TFM_FWU_REQUEST_REBOOT_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FWU_ACCEPT",
+      "signal": "TFM_FWU_ACCEPT_REQ",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+  ],
+  "services" : [
+    {
+      "name": "TFM_FWU_WRITE",
+      "sid": "0x000000A0",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FWU_INSTALL",
+      "sid": "0x000000A1",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FWU_ABORT",
+      "sid": "0x000000A2",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FWU_QUERY",
+      "sid": "0x000000A3",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FWU_REQUEST_REBOOT",
+      "sid": "0x000000A4",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FWU_ACCEPT",
+      "sid": "0x000000A5",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ],
+  "dependencies": [
+    "TFM_CRYPTO",
+    "TFM_SP_PLATFORM_SYSTEM_RESET"
+  ]
+}

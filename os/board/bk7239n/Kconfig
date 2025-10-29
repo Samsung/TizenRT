@@ -1,0 +1,79 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_BOARD_BK7239N
+
+source "board/bk7239n/src/middleware/arch/cm33/Kconfig"
+source "board/bk7239n/src/middleware/compal/Kconfig"
+source "board/bk7239n/src/middleware/boards/bk7239n/vnd_cal/Kconfig"
+source "board/bk7239n/src/middleware/boards/bk7239n/vnd_flash/Kconfig"
+source "board/bk7239n/src/middleware/soc/Kconfig"
+source "board/bk7239n/src/middleware/soc/bk7239n/Kconfig"
+source "board/bk7239n/src/middleware/driver/Kconfig"
+source "board/bk7239n/src/components/tfm/Kconfig"
+source "board/bk7239n/src/components/wpa_supplicant-2.10/Kconfig"
+source "board/bk7239n/src/components/bk_startup/Kconfig"
+source "board/bk7239n/src/components/bk_system/Kconfig"
+source "board/bk7239n/src/components/cmsis/Kconfig"
+source "board/bk7239n/src/components/tfm_mbedtls/Kconfig"
+# source "board/bk7239n/src/components/bk_rtos/Kconfig"
+source "board/bk7239n/src/components/temp_detect/Kconfig"
+source "board/bk7239n/src/components/bk_wifi/Kconfig"
+source "board/bk7239n/src/components/bk_ate/Kconfig"
+source "board/bk7239n/src/components/bk_pm/Kconfig"
+source "board/bk7239n/src/components/bk_bluetooth/Kconfig"
+source "board/bk7239n/src/components/psa_mbedtls/customization/Kconfig"
+source "board/bk7239n/src/components/psa_mbedtls/Kconfig"
+source "board/bk7239n/src/components/bk_cli/uart_debug/Kconfig"
+source "board/bk7239n/src/components/bk_cli/Kconfig"
+source "board/bk7239n/src/components/bk_phy/Kconfig"
+source "board/bk7239n/src/components/easy_flash/Kconfig"
+source "board/bk7239n/src/libs/Kconfig"
+
+
+menu "SPI Flash driver"
+config FLASH_START_ADDR
+    hex "FLASH_START_ADDR"
+    default 0x0
+    help
+        A start address of flash (in hex).
+        This is fixed value, so user doesn't need to change it.
+
+config FLASH_SIZE
+    int "FLASH_SIZE"
+    default 4194304
+    help
+        A size of flash (in bytes).
+        This is fixed value, so user doesn't need to change it.
+
+config BK_FLASH_BASE
+    hex "Start address for user filesystem"
+    default 0x200000
+    help
+        Setting this vaule to configure flash start address for user filesystem,
+        such as smartfs, romfs.
+
+config BK_FLASH_CAPACITY
+    hex "Size for user filesystem"
+    default 0x400000
+    help
+        Setting this vaule to configure flash size  for user filesystem,
+        such as smartfs, romfs.
+
+config BK_FLASH_PAGE_SIZE
+    int "Read/write unit size of SPI flash"
+    default 256
+    help
+        Setting this vaule to configure read/write unit size of BK SPI flash.
+
+    config BK_FLASH_SECTOR_SIZE
+        int "Erase unit size of SPI flash"
+        default 4096
+        help
+            Setting this vaule to configure erase unit size of BK SPI flash.
+
+endmenu
+
+endif

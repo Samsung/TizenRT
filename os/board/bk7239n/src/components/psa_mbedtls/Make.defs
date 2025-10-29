@@ -1,0 +1,214 @@
+###########################################################################
+#
+# Copyright 2025 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+ifeq ($(CONFIG_PSA_MBEDTLS),y)
+
+# Source files - src_x509
+CSRCS += pkcs7.c
+CSRCS += x509.c
+CSRCS += x509_create.c
+CSRCS += x509_crl.c
+CSRCS += x509_crt.c
+CSRCS += x509_csr.c
+CSRCS += x509write.c
+CSRCS += x509write_crt.c
+CSRCS += x509write_csr.c
+
+# Source files - src_tls
+CSRCS += debug.c
+CSRCS += mps_reader.c
+CSRCS += mps_trace.c
+CSRCS += net_sockets.c
+CSRCS += ssl_cache.c
+CSRCS += ssl_ciphersuites.c
+CSRCS += ssl_client.c
+CSRCS += ssl_cookie.c
+CSRCS += ssl_debug_helpers_generated.c
+CSRCS += ssl_msg.c
+CSRCS += ssl_ticket.c
+CSRCS += ssl_tls.c
+CSRCS += ssl_tls12_client.c
+CSRCS += ssl_tls12_server.c
+CSRCS += ssl_tls13_keys.c
+CSRCS += ssl_tls13_server.c
+CSRCS += ssl_tls13_client.c
+CSRCS += ssl_tls13_generic.c
+CSRCS += tls_hardware.c
+CSRCS += tls_mem.c
+
+# Source files - src_crypto
+CSRCS += aes.c
+CSRCS += aesni.c
+CSRCS += aria.c
+CSRCS += asn1parse.c
+CSRCS += asn1write.c
+CSRCS += base64.c
+CSRCS += bignum.c
+CSRCS += bignum_core.c
+CSRCS += camellia.c
+CSRCS += ccm.c
+CSRCS += chacha20.c
+CSRCS += chachapoly.c
+CSRCS += cipher.c
+CSRCS += cipher_wrap.c
+CSRCS += constant_time.c
+CSRCS += ctr_drbg.c
+CSRCS += des.c
+CSRCS += dhm.c
+CSRCS += ecdh.c
+CSRCS += ecdsa.c
+CSRCS += ecp.c
+CSRCS += ecp_curves.c
+CSRCS += ecp_curves_new.c
+CSRCS += entropy.c
+CSRCS += entropy_poll.c
+CSRCS += error.c
+CSRCS += gcm.c
+CSRCS += hmac_drbg.c
+CSRCS += md.c
+CSRCS += md5.c
+CSRCS += nist_kw.c
+CSRCS += oid.c
+CSRCS += ripemd160.c
+CSRCS += rsa.c
+CSRCS += rsa_alt_helpers.c
+CSRCS += sha1.c
+CSRCS += sha256.c
+CSRCS += sha512.c
+# CSRCS += sha3.c
+CSRCS += pem.c
+# CSRCS += pk.c
+# CSRCS += pk_wrap.c
+CSRCS += pkcs12.c
+CSRCS += pkcs5.c
+CSRCS += pkparse.c
+CSRCS += pkwrite.c
+CSRCS += platform_util.c
+CSRCS += platform.c
+CSRCS += poly1305.c
+#CSRCS += psa_util.c
+CSRCS += cmac.c
+#CSRCS += psa_crypto_cipher.c
+#CSRCS += psa_crypto_slot_management.c
+#CSRCS += psa_crypto_rsa.c
+#CSRCS += psa_crypto_ffdh.c
+#CSRCS += psa_crypto_ecp.c
+#CSRCS += psa_crypto_driver_wrappers_no_static.c
+#CSRCS += psa_crypto_hash.c
+#CSRCS += psa_crypto_aead.c
+#CSRCS += psa_crypto_mac.c
+#CSRCS += psa_crypto_pake.c
+#CSRCS += psa_crypto_se.c
+#CSRCS += psa_crypto_storage.c
+CSRCS += hkdf.c
+CSRCS += threading.c
+
+# Conditional source files based on TFM_CRYPTO
+ifeq ($(CONFIG_TFM_CRYPTO),y)
+#CSRCS += mbedtls_port/src/psa_crypto.c
+#CSRCS += mbedtls_port/src/psa_crypto_client.c
+else
+#CSRCS += psa_crypto.c
+#CSRCS += psa_crypto_client.c
+endif
+
+# Conditional configurations for PSA_MBEDTLS_TEST
+ifeq ($(CONFIG_PSA_MBEDTLS_TEST),y)
+DEPPATH += --dep-path os/board/bk7239n/src/components/psa_mbedtls/tests
+DEPPATH += --dep-path os/board/bk7239n/src/components/psa_mbedtls/mbedtls/tests/src
+DEPPATH += --dep-path os/board/bk7239n/src/components/psa_mbedtls/mbedtls/tests/include
+VPATH += :os/board/bk7239n/src/components/psa_mbedtls/tests
+VPATH += :os/board/bk7239n/src/components/psa_mbedtls/mbedtls/tests/src
+
+CSRCS += tests/aes_cbc.c
+CSRCS += tests/aes_gcm.c
+CSRCS += tests/cli_crypto.c
+CSRCS += tests/ecdh.c
+CSRCS += tests/ecdsa.c
+CSRCS += tests/hmac.c
+#CSRCS += tests/psa_tls_client.c
+CSRCS += tests/sha256.c
+CSRCS += tests/sha384.c
+CSRCS += tests/key_manage.c
+CSRCS += mbedtls/tests/src/certs.c
+CSRCS += mbedtls_port/src/tls_connect.c
+endif
+
+# Conditional configurations for TFM_PS
+ifeq ($(CONFIG_TFM_PS),y)
+#CSRCS += customization/tz/l/tz_ps.c
+endif
+
+# Conditional configurations for TFM_DUBHE_KEY_LADDER_NSC
+ifeq ($(CONFIG_TFM_DUBHE_KEY_LADDER_NSC),y)
+#CSRCS += customization/tests/tz_key_ladder_test.c
+endif
+
+# Conditional configurations for PSA_CUSTOMIZATION_TEST
+ifeq ($(CONFIG_PSA_CUSTOMIZATION_TEST),y)
+DEPPATH += --dep-path os/board/bk7239n/src/components/psa_mbedtls/customization/tests
+VPATH += :os/board/bk7239n/src/components/psa_mbedtls/customization/tests
+
+CSRCS += customization/tests/tz_aes_cbc_test.c
+CSRCS += customization/tests/tz_aes_gcm_test.c
+#CSRCS += customization/tests/tz_ecdh_test.c
+#CSRCS += customization/tests/tz_ecdsa_test.c
+#CSRCS += customization/tests/tz_hmac_test.c
+#CSRCS += customization/tests/tz_psa_tls_client_test.c
+#CSRCS += customization/tests/tz_sha256_test.c
+#CSRCS += customization/tests/cli_psa_custom.c
+
+# Conditional configurations for TFM_PS within PSA_CUSTOMIZATION_TEST
+ifeq ($(CONFIG_TFM_PS),y)
+#CSRCS += customization/tests/tz_ps_test.c
+endif
+
+# Conditional configurations for PSA_RSA_TEST
+ifeq ($(CONFIG_PSA_RSA_TEST),y)
+#CSRCS += customization/tests/tz_rsa_test.c
+endif
+endif
+
+# Conditional configurations for PSA_CUSTOMIZATION_TZ_L
+ifeq ($(CONFIG_PSA_CUSTOMIZATION_TZ_L),y)
+#CSRCS += customization/tz/l/tz_mbedtls.c
+#CSRCS += customization/tz/l/hal_tz.c
+endif
+
+
+# Include directories
+DEPPATH += --dep-path components/psa_mbedtls/mbedtls/include
+DEPPATH += --dep-path components/psa_mbedtls/mbedtls/library
+DEPPATH += --dep-path components/psa_mbedtls/mbedtls_port/inc
+DEPPATH += --dep-path components/psa_mbedtls/mbedtls_port/src
+DEPPATH += --dep-path components/psa_mbedtls/mbedtls_port/configs
+DEPPATH += --dep-path components/psa_mbedtls/mbedtls/include/mbedtls
+
+# VPATH directories
+VPATH += :components/psa_mbedtls/mbedtls/include
+VPATH += :components/psa_mbedtls/mbedtls/library
+VPATH += :components/psa_mbedtls/mbedtls_port/inc
+VPATH += :components/psa_mbedtls/mbedtls_port/src
+VPATH += :components/psa_mbedtls/mbedtls_port/configs
+VPATH += :components/psa_mbedtls/mbedtls/include/mbedtls
+
+# Define MBEDTLS_CONFIG_FILE
+CFLAGS += -DMBEDTLS_CONFIG_FILE='"mbedtls_psa_crypto_config.h"'
+
+endif
+
