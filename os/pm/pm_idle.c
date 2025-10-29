@@ -204,8 +204,7 @@ static int check_secondary_cpus_idle(void)
  ****************************************************************************/
 static int disable_systick(void)
 {
-	/* TODO: move disable systick code BSP to here */
-	return OK;
+	return up_timer_disable();
 }
 
 /****************************************************************************
@@ -255,7 +254,7 @@ static void enable_and_compensate_systick(void)
 	}
 #endif
 
-	/* TODO: move enable systick code BSP to here */
+	(void)up_timer_enable();
 }
 
 #ifdef CONFIG_PM_TIMEDWAKEUP
