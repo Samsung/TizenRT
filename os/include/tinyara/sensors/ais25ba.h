@@ -47,15 +47,15 @@
 #define AIS25BA_CTRL_REG_1 0x26        /* Control register, 0: Normal mode, 1: Disabled mode */
 #define AIS25BA_CTRL_REG_2 0X2F        /* Control register */
 #define AIS25BA_CTRL_REG_FS 0x30       /* Accelerometer full-scale selection */
-#define AIS25BA_DATA_SIZE 256		// Change according to datasheet
+#define AIS25BA_DMA_BUFF_SAMPLE_NUMBER 256		// Change according to datasheet
 #define AIS25BA_ALIVECHECK_TIME 5000
 #define AIS25BA_ALIVECHECK_RETRY_COUNT 3 /* Number of retry when verification fail before reinitialize sensor */
 #define AIS25BA_BUFSIZE sizeof(ais25ba_buf_s)
-#define AIS25BA_BUFNUM 2
-#define AIS25BA_BUFLENGTH 256
+#define AIS25BA_PREPARING_BUFFER_NUMBER 50
 #define AIS25BA_SAMPLE_RATE 32000
 /* ais25ba Message ID */
 #define AIS25BA_MSG_DEQUEUE 0
+#define AIS25BA_CHANNEL_COUNT 8
 
 #ifndef CONFIG_AIS25BA_SG_DEQUEUE_PRIO
 #define CONFIG_AIS25BA_SG_DEQUEUE_PRIO 1
@@ -91,12 +91,12 @@ typedef struct sensor_data_s {
 	//float x;
 	//float y;
 	//float z;
-	uint16_t samples[8];
+	uint16_t samples[AIS25BA_CHANNEL_COUNT];
 } sensor_data_s;
 
 typedef struct ais25ba_buf_s {
 	struct dq_entry_s entry;		 	/* double linked queue entry */
-	sensor_data_s data[AIS25BA_DATA_SIZE];   /* Actual Buffer include Header */
+	sensor_data_s data[AIS25BA_DMA_BUFF_SAMPLE_NUMBER];   /* Actual Buffer include Header */
 	uint16_t msgId;                     /* msgId to be shared */
 } ais25ba_buf_s;
 

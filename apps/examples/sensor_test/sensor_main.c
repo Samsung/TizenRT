@@ -68,6 +68,7 @@
 #define MEMS_SENSOR_PATH "/dev/sensor-mems"
 #define MEMS_MQ_PATH "mems_mq"
 #define EXAMPLE_SENSOR_FPS_TEST 5000
+#define SENSOR_PREPARING_BUFFER_COUNT 50 // 1 DMA Interrupt occured every 16 msec if DMA Buffer has 256 Samples , 50 count = 800 msec
 
 bool g_terminate;
 static mqd_t g_mems_mq;
@@ -75,27 +76,49 @@ static int mems_fd;
 static struct ais25ba_buf_s **gBuffer;
 int buf_size; //size of segment buffer
 int g_buf_num; //segment number of ais25ba
+int sample_cc=0;
 
 static bool is_sensor_prepared = false;
 
+static ssize_t mems_mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned int *msg_prio)
+{
+	ssize_t status;
+
+	do {
+		status = mq_receive(mqdes, msg_ptr, msg_len, msg_prio);
+	} while (status == -1 && get_errno() == EINTR);
+
+	return status;
+}
+
 static void mems_teardown();
+
+int total_number_of_continuous_zeroes = 0;
+int trailing_zeroes = 0;
 
 static void print_sensor_data(sensor_data_s *data)
 {
-	// for (int i = 0; i < AIS25BA_BUFLENGTH; i++) {
-	// 	printf("x: %f, y: %f, z: %f\n", data[i].x, data[i].y, data[i].z);
-	// }
-	for (int i = 0; i < AIS25BA_BUFLENGTH; i++) {
-		printf("%04x %04x %04x\n", data[i].samples[0], data[i].samples[1], data[i].samples[2]);
-		// printf("%04x %04x %04x %04x\n", data[i].samples[4], data[i].samples[5], data[i].samples[6], data[i].samples[7]);
+	for (int i = 0; i < AIS25BA_DMA_BUFF_SAMPLE_NUMBER; i++) {
+		if (data[i].samples[0] == 0x0000 && data[i].samples[1] == 0x0000) {
+			trailing_zeroes++;
+		}
+		if (trailing_zeroes >= 5) {
+			total_number_of_continuous_zeroes++;
+			printf("Continuous trailing zeroes found!!!!! count: %d\n", total_number_of_continuous_zeroes);
+			trailing_zeroes = 0;
+		}
+		/*printf("%04d: %04x %04x %04x %04x %04x %04x %04x %04x\n",sample_cc ,  
+                data[i].samples[0], data[i].samples[1], data[i].samples[2] , data[i].samples[3] ,
+                data[i].samples[4], data[i].samples[5], data[i].samples[6] , data[i].samples[7] );*/
+
+		 sample_cc++;
 	}
-	printf("=======================================================================================\n");
 }
 
 static int mems_sensor_init()
 {
 	struct mq_attr attr;
-	attr.mq_maxmsg = 16;
+	attr.mq_maxmsg = SENSOR_PREPARING_BUFFER_COUNT + 1;
 	attr.mq_msgsize = sizeof(struct mems_sensor_msg_s);
 	attr.mq_curmsgs = 0;
 	attr.mq_flags = 0;
@@ -113,16 +136,23 @@ static int mems_sensor_init()
 		printf("ERROR: Sensor, mq_open failed!!\n");
 		goto error_with_mq;
 	}
+
 	ret = ioctl(mems_fd, SENSOR_GET_BUFSIZE, (unsigned long)&buf_size);
 	if (ret < 0) {
 		printf("ERROR: Sensor, get Buffer size failed. errno : %d\n", errno);
 		goto error_with_fd;
 	}
+
+
+#if 0
 	ret = ioctl(mems_fd, SENSOR_GET_BUFNUM, (unsigned long)&g_buf_num);
 	if (ret < 0) {
 		printf("ERROR: Sensor, get Buffer number failed. errno : %d\n", errno);
 		goto error_with_fd;
 	}
+	g_buf_num = SENSOR_PREPARING_BUFFER_COUNT;
+
+#endif
 
 	ret = ioctl(mems_fd, SENSOR_REGISTERMQ, (unsigned long)g_mems_mq);
 	if (ret < 0) {
@@ -135,7 +165,7 @@ error_with_mq:
 	mq_close(MEMS_MQ_PATH);
 error_with_fd:
 	close(mems_fd);
-	for (int j = 0; j < g_buf_num; j++) {
+	for (int j = 0; j < SENSOR_PREPARING_BUFFER_COUNT ; j++) {
 		if (gBuffer[j]) {
 			free(gBuffer[j]);
 			gBuffer[j] = NULL;
@@ -158,14 +188,14 @@ static int mems_sensor_prepare()
 	int ret;
 	mems_sensor_init();
 	/* Alloc array of pointers to gBuffers */
-	gBuffer = (FAR struct ais25ba_buf_s **)malloc(g_buf_num * sizeof(FAR void *));
+	gBuffer = (FAR struct ais25ba_buf_s **)malloc( SENSOR_PREPARING_BUFFER_COUNT * sizeof(FAR void *));
 	if (gBuffer == NULL) {
 		printf("ERROR: Sensor, Alloc gBuffer failed\n");
 		return ERROR;
 	}
 
-	for (int i = 0; i < g_buf_num; i++) {
-		gBuffer[i] = (FAR struct ais25ba_buf_s *)malloc(sizeof(FAR struct ais25ba_buf_s) * AIS25BA_BUFLENGTH);
+	for (int i = 0; i < SENSOR_PREPARING_BUFFER_COUNT; i++) {
+		gBuffer[i] = (FAR struct ais25ba_buf_s *)malloc(sizeof(FAR struct ais25ba_buf_s));
 		if (gBuffer[i] == NULL) {
 			mems_teardown();
 			printf("gBuffer alloc failed\n");
@@ -174,7 +204,7 @@ static int mems_sensor_prepare()
 	}
 
 	/* Share Buffer with Driver */
-	for (int i = 0; i < g_buf_num; i++) {
+	for (int i = 0; i < SENSOR_PREPARING_BUFFER_COUNT; i++) {
 		ret = ioctl(mems_fd, SENSOR_SENDBUFFER, (unsigned long)gBuffer[i]);
 		if (ret != OK) {
 			printf("get Buffer failed. errno : %d\n", errno);
@@ -207,19 +237,24 @@ static int mems_sensor_start()
 		return ERROR;
 	}
 	g_terminate = false;
+	sample_cc=0;
 	while (1) {
 		if (g_terminate == true) {
 			return OK;
 		}
 
-		size = mq_receive(g_mems_mq, (FAR char *)&msg, sizeof(msg), &prio);
+		size = mems_mq_receive(g_mems_mq, (FAR char *)&msg, sizeof(msg), &prio);
 		if (size != sizeof(msg)) {
 			printf("ERROR: wrong msg, size: %d, sizeofmsg: %d\n", size, sizeof(msg));
 			continue;
 		}
-		
+	
+
+		printf ("Got MQ from driver ( at %d )\n", sample_cc);	
+	
 		struct ais25ba_buf_s *buf = (struct ais25ba_buf_s *)msg.data;
 		sensor_data_s *buffer = (sensor_data_s *)buf->data;
+
 		print_sensor_data(buffer);
 		//sleep(1);
 		ret = ioctl(mems_fd, SENSOR_SENDBUFFER, (unsigned long)buf);
@@ -246,8 +281,8 @@ static int mems_sensor_record_data(int total_samples_to_collect)
 	int prio;
 	size_t size;
 
-    mems_sensor_init();
-
+	mems_sensor_prepare();
+	
 	sensor_data_s *collected_samples = (sensor_data_s *)malloc(sizeof(sensor_data_s) * total_samples_to_collect);
 	if (collected_samples == NULL) {
 		printf("ERROR: Failed to allocate memory to store %d samples\n", total_samples_to_collect);
@@ -256,27 +291,33 @@ static int mems_sensor_record_data(int total_samples_to_collect)
 
 	int sample_count_collected = 0;
 
-    /* Start Collect */
-    int ret = ioctl(mems_fd, SENSOR_START, NULL);
-    if (ret != OK) {
-        printf("ERROR: MEMS sensor start failed, errno: %d\n", errno);
-        mems_teardown();
-        free(collected_samples);
-        return ERROR;
-    }
+        /* Start Collect */
+        int ret = ioctl(mems_fd, SENSOR_START, NULL);
+        if (ret != OK) {
+            printf("ERROR: MEMS sensor start failed, errno: %d\n", errno);
+            mems_teardown();
+            free(collected_samples);
+            return ERROR;
+        }
 
 	printf("Collecting %d samples...\n", total_samples_to_collect);
 
+	sample_cc=0;
 	while (sample_count_collected < total_samples_to_collect) {
-		size = mq_receive(g_mems_mq, (FAR char *)&msg, sizeof(msg), &prio);
+		size = mems_mq_receive(g_mems_mq, (FAR char *)&msg, sizeof(msg), &prio);
 		if (size != sizeof(msg)) {
 			printf("ERROR: wrong msg, size: %d, sizeofmsg: %d\n", size, sizeof(msg));
 			continue;
 		}
-		
+		printf ("Got MQ from driver ( at %d )\n", sample_cc);	
+	
 		struct ais25ba_buf_s *buf = (struct ais25ba_buf_s *)msg.data;
 		sensor_data_s *buffer = (sensor_data_s *)buf->data;
-		
+	      
+                //usleep ( 300 );
+	
+		print_sensor_data(buffer);		
+
 		ret = ioctl(mems_fd, SENSOR_SENDBUFFER, (unsigned long)buf);
 		if (ret != OK) {
 			printf("get Buffer failed. errno : %d\n", errno);
@@ -284,24 +325,26 @@ static int mems_sensor_record_data(int total_samples_to_collect)
 			return ERROR;
 		}
 
-		int samples_to_copy = AIS25BA_BUFLENGTH;
+		int samples_to_copy = AIS25BA_DMA_BUFF_SAMPLE_NUMBER;
 		if (sample_count_collected + samples_to_copy > total_samples_to_collect) {
 			samples_to_copy = total_samples_to_collect - sample_count_collected;
 		}
 
+#if 0
 		for (int i = 0; i < samples_to_copy; i++) {
 			collected_samples[sample_count_collected + i] = buffer[i];
 		}
+#endif
 		sample_count_collected += samples_to_copy;
 		//printf("Collected %d/%d samples\n", sample_count_collected, total_samples_to_collect);
 	
 		ret = ioctl(mems_fd, SENSOR_SENDBUFFER, (unsigned long)buf);
-        if (ret != OK) {
-            printf("get Buffer failed. errno : %d\n", errno);
-            mems_teardown();
-            free(collected_samples);
-            return ERROR;
-        }
+	        if (ret != OK) {
+        	    printf("get Buffer failed. errno : %d\n", errno);
+            	    mems_teardown();
+            	    free(collected_samples);
+                    return ERROR;
+                }
 
 		if (sample_count_collected >= total_samples_to_collect) {
 			break;
@@ -309,6 +352,7 @@ static int mems_sensor_record_data(int total_samples_to_collect)
 	}
 
     // Print all collected samples
+#if 0
     if (sample_count_collected > 0) {
         printf("\nPrinting all %d collected samples:\n", sample_count_collected);
         printf("=======================================================================================\n");
@@ -321,7 +365,8 @@ static int mems_sensor_record_data(int total_samples_to_collect)
         printf("=======================================================================================\n");
         printf("Finished printing %d samples\n", sample_count_collected);
     }
-    
+#endif    
+
     // Clean up
 	ret = ioctl(mems_fd, SENSOR_STOP, NULL);
 	free(collected_samples);
