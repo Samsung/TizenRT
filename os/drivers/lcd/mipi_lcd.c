@@ -15,13 +15,13 @@
  * limitations under the License.
  *
  ****************************************************************************/
+
 #include <tinyara/config.h>
 #include <tinyara/lcd/lcd.h>
 #include <tinyara/lcd/lcd_dev.h>
 #include <tinyara/lcd/mipi_lcd.h>
 #include <tinyara/mipidsi/mipi_dsi.h>
 #include <tinyara/mipidsi/mipi_display.h>
-#include <tinyara/silent_reboot.h>
 #include <debug.h>
 #include <assert.h>
 #include <errno.h>
@@ -723,45 +723,29 @@ static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 
 	return OK;
 }
+#endif /* CONFIG_LCD_SPLASH_IMAGE */
 
 /****************************************************************************
- * Name:  lcd_init_put_image
+ * Name:  lcd_load_splash
  *
  * Description:
+ *   Load and render splash image during driver initialization.
+ *   This function is called during lcddev_register to display splash image.
  *   In normal booting case, render splash_normal.bmp and turn LCD on.
  *   In silent booting case, render splash_silent.bmp and turn LCD on.
  *   If there's no BMP file, turn off the LCD.
- * 
+ *
  * Returns:
  *   OK if image rendering succeeded and LCD turned on,
- *   ERROR if image rendering failed and LCD turned off
+ *   ERROR if image rendering failed or no image file.
  *
  ****************************************************************************/
 
-FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
+static int lcd_load_splash(struct lcd_dev_s *dev, const char* image_path)
 {
-	char image_file_path[50];
-	int ret = OK;
+#ifdef CONFIG_LCD_SPLASH_IMAGE
+	int ret;
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
-
-#ifdef CONFIG_LCD_SPLASH_SILENT_BOOT
-	bool is_silent_mode = silent_reboot_is_silent_mode();
-	if (!is_silent_mode) {
-		snprintf(image_file_path, sizeof(image_file_path), "%s/%dx%d/splash_normal.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
-	} else {
-		snprintf(image_file_path, sizeof(image_file_path), "%s/%dx%d/splash_silent.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
-	}
-#else
-	snprintf(image_file_path, sizeof(image_file_path), "%s/%dx%d/splash_normal.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
-#endif
-
-	// Check if BMP file exists before rendering
-	FILE *test_file = fopen(image_file_path, "rb");
-	if (!test_file) {
-		lcddbg("Image file not found at %s. LCD OFF\n", image_file_path);
-		return -ENOENT;
-	}
-	fclose(test_file);
 	
 	while (sem_wait(&priv->sem) != OK) {
 		ASSERT(get_errno() == EINTR);
@@ -774,7 +758,7 @@ FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 		return ret;
 	}
 
-	ret = lcd_render_bmp(dev, image_file_path);
+	ret = lcd_render_bmp(dev, image_path);
 	if (ret != OK) {
 		if (lcd_power_off(priv) != OK) {
 			sem_post(&priv->sem);
@@ -794,8 +778,10 @@ FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 	sem_post(&priv->sem);
 
 	return OK;
+#else
+	return ERROR;
+#endif
 }
-#endif /* CONFIG_LCD_SPLASH_IMAGE */
 
 FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config)
 {
@@ -808,6 +794,7 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	priv->dev.getcontrast = lcd_getcontrast;
 	priv->dev.setcontrast = lcd_setcontrast;
 	priv->dev.init = lcd_init;
+	priv->dev.loadsplash = lcd_load_splash;
 	priv->dsi_dev = dsi;
 	priv->config = config;
 	priv->power = 0;
