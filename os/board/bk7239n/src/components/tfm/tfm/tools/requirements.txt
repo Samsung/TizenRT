@@ -1,0 +1,7 @@
+cbor2
+click
+cryptography
+pyasn1
+imgtool>=1.6.0
+Jinja2>=2.10.3
+PyYAML

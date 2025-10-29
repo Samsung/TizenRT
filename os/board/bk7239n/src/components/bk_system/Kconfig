@@ -1,0 +1,96 @@
+#TODO may need to remove this component!
+menu "BK_system"
+
+	menu "Mac Config"
+		choice BASE_MAC_SRC
+			prompt "Select Base Mac Source"
+			default NEW_MAC_POLICY
+
+			config NEW_MAC_POLICY
+				bool "NEW_MAC_POLICY"
+			config BASE_MAC_FROM_OTP2
+				bool "BASE_MAC_FROM_OTP2"
+		endchoice
+
+		config RANDOM_MAC_ADDR
+	        bool "Enable Random Mac Addr"
+	        default n
+
+		config BK_MAC_ADDR_CHECK
+			bool "Enable Beken Mac Addr Check"
+			default n
+
+		config CUS_MAC_MASK
+			hex "Set Customize Mac Address Mask"
+			default 0
+	endmenu
+
+	menu "Print Config"
+		choice SYSTEM_PRINT_DEVICE
+			prompt "System print device"
+			default SYS_PRINT_DEV_UART
+
+			config SYS_PRINT_DEV_UART
+				bool "System print by uart"
+
+			config SYS_PRINT_DEV_MAILBOX
+				bool "System print by mailbox"
+
+			config SYS_PRINT_DEV_NULL
+				bool "Close system print"
+		endchoice
+
+		config FWD_CMD_TO_CPUx
+			depends on MAILBOX
+			bool "Forward cpu1/cpu2 cmd by mailbox"
+			default y
+
+		config WIFI_DEBUG_LOG
+			bool "enable wifi debug log"
+			default n
+
+		config BT_DEBUG_LOG
+			bool "enable bluetooth debug log"
+			default n
+
+		config SMP_SYNC_PRINTF
+			bool "smp sync printf"
+			default n
+
+		config UART_PRINT_BAUD_RATE
+			depends on SYS_PRINT_DEV_UART
+			int "uart print baud rate"
+			default "115200"
+	endmenu
+
+	menu "System Config"
+		config BEKEN_EVB
+			bool "Enable Beken EVB Mode"
+			default y
+			help
+				When this macro is enabled, the internal code will automatically adapt to the BEKEN EVB environment.
+	endmenu
+
+	menu "SWD Debug Config"
+		config SWD_DEBUG_MODE
+			bool "Enable SWD Debug Mode"
+			default n
+            help
+				After enabling this marco,the SWD function will be configured by default in the 
+				code,and the board can be connected via Jlink.
+
+		config SWD_DEBUG_MODE_PIN_DIO
+			int "SWD Debug Mode Pin TMS Configuration "
+			default 16
+			depends on BEKEN_EVB
+			help 
+				Set the default pins for SWDIO
+
+		config SWD_DEBUG_MODE_PIN_CLK
+			int "SWD Debug Mode Pin TCK Configuration "
+			default 17
+			depends on BEKEN_EVB
+			help 
+				Set the default pins for SWDCLK
+	endmenu
+endmenu

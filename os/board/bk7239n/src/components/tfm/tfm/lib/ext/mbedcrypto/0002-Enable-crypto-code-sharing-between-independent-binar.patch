@@ -1,0 +1,53 @@
+From 5de1387b7c433dc0a81960ba1243b63fb8310ad4 Mon Sep 17 00:00:00 2001
+From: Tamas Ban <tamas.ban@arm.com>
+Date: Tue, 27 Oct 2020 08:55:37 +0000
+Subject: [PATCH 2/3] Enable crypto code sharing between independent binaries
+
+Signed-off-by: Tamas Ban <tamas.ban@arm.com>
+---
+ library/code_share.c    | 3 +++
+ library/platform.c      | 4 ++--
+ library/platform_util.c | 2 +-
+ 3 files changed, 6 insertions(+), 3 deletions(-)
+ create mode 100644 library/code_share.c
+
+diff --git a/library/code_share.c b/library/code_share.c
+new file mode 100644
+index 00000000..2bf67fb4
+--- /dev/null
++++ b/library/code_share.c
+@@ -0,0 +1,3 @@
++/* This is a deliberately empty file just to check whether the patch for enabling
++ * extensive crypto code sharing was already applied on the mbedtls library.
++ */
+diff --git a/library/platform.c b/library/platform.c
+index e742fde7..c309dc0c 100644
+--- a/library/platform.c
++++ b/library/platform.c
+@@ -53,8 +53,8 @@ static void platform_free_uninit( void *ptr )
+ #define MBEDTLS_PLATFORM_STD_FREE     platform_free_uninit
+ #endif /* !MBEDTLS_PLATFORM_STD_FREE */
+ 
+-static void * (*mbedtls_calloc_func)( size_t, size_t ) = MBEDTLS_PLATFORM_STD_CALLOC;
+-static void (*mbedtls_free_func)( void * ) = MBEDTLS_PLATFORM_STD_FREE;
++void * (*mbedtls_calloc_func)( size_t, size_t ) = MBEDTLS_PLATFORM_STD_CALLOC;
++void (*mbedtls_free_func)( void * ) = MBEDTLS_PLATFORM_STD_FREE;
+ 
+ void * mbedtls_calloc( size_t nmemb, size_t size )
+ {
+diff --git a/library/platform_util.c b/library/platform_util.c
+index 3d5cb5ba..277ec70b 100644
+--- a/library/platform_util.c
++++ b/library/platform_util.c
+@@ -62,7 +62,7 @@
+  * mbedtls_platform_zeroize() to use a suitable implementation for their
+  * platform and needs.
+  */
+-static void * (* const volatile memset_func)( void *, int, size_t ) = memset;
++void * (* const volatile memset_func)( void *, int, size_t ) = memset;
+ 
+ void mbedtls_platform_zeroize( void *buf, size_t len )
+ {
+-- 
+2.17.1
+

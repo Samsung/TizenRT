@@ -1,0 +1,103 @@
+*************
+Version 1.6.0
+*************
+
+New major features
+==================
+
+  - MCUboot updated to v1.9.0.
+  - Mbed TLS updated to v3.1.0 (Support all required PSA Crypto APIs).
+  - Enabled Secure Function (SFN) Model Partition compliance in IPC backend.
+  - Interrupt support (both SLIH/FLIH) for the SFN backend.
+  - MM-IOVEC Support for the SFN backend.
+  - The following Secure Partitions are converted to SFN model:
+
+    - Protected Storage
+    - Internal Trusted Storage
+    - Initial Attestation
+
+  - FF-M v1.1 SFN Model supported in Profile Small.
+  - HAL Separation of Library Model and IPC/SFN backend.
+  - FP support for Armv8.1-M Mainline for IPC backend.
+  - Simplified build output message and configurable output.
+  - Halting instead of rebooting on panic in debug build type.
+  - Automated testing of MCUboot BL2.
+  - A new driver interface for the CC-312 runtime library as specified in the PSA Unified Driver spec [1]_.
+  - Added reference bootloader stage 1 (BL1) bootloader for certain platforms.
+  - A new CC312 ROM library for the BL1.
+  - Updated documentation structure.
+
+New security advisories
+=======================
+
+  - :doc:`TFMV-5. </security/security_advisories/fwu_write_vulnerability>`
+
+New platforms supported
+=======================
+
+  - :doc:`AN552. </platform/ext/target/arm/mps3/an552/README>`
+
+Deprecated platforms
+====================
+
+None
+
+Tested platforms
+================
+
+The following platforms are successfully tested in this release.
+
+- AN519
+- AN521
+- AN547
+- B-U585I-IOT02A
+- Corstone-1000
+- Corstone-Polaris
+- LPCXpresso55S69
+- Musca-B1
+- Musca-S1
+- nrf9160
+- nrf5340
+- NUCLEO-L552ZE-Q
+- PSoC 64
+- STM32L562E-DK
+
+Known issues
+============
+
+Some open issues are not fixed in this release.
+
+.. list-table::
+
+  * - **Descriptions**
+    - **Issue links**
+
+  * - | PSA Arch framework test suite has several known failures.
+    - PSA Arch framework test failures [3]_
+
+Issues closed since v1.5.0
+==========================
+
+The following issues in v1.5.0 known issues list are closed.
+
+.. list-table::
+
+  * - **Descriptions**
+    - **Issue links**
+
+  * - | Arm Compiler [SDCOMP-59788]. See the Arm Compiler 6.18 release note [2]_ For details.
+    - https://developer.trustedfirmware.org/T979
+
+Reference
+=========
+
+
+.. [1] `PSA Unified Driver spec <https://github.com/Mbed-TLS/mbedtls/blob/development/docs/proposed/psa-driver-interface.md>`_
+
+.. [2] `Arm Compiler 6.18 release note: <https://developer.arm.com/-/media/Arm%20Developer%20Community/Downloads/Arm%20Compiler%20for%20Embedded/6-18/Release%20notes%20for%20Arm%20Compiler%20for%20Embedded%206.pdf>`_
+
+.. [3] `PSA Arch framework test failures <https://developer.trustedfirmware.org/w/tf_m/release/psa_arch_ff_test_result_in_tf-m_v1.6_release/>`_
+
+--------------
+
+*Copyright (c) 2022, Arm Limited. All rights reserved.*

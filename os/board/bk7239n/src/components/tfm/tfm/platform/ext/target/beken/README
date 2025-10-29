@@ -1,0 +1,14 @@
+Need to re-build BL2 and TFM when:
+
+1. Partition of partition offset is changed.
+2. BL2 partition offset
+3. TFM partition offset
+4. PS partition size //TODO optimized
+5. ITS partition size //TODO optimized
+
+6. ECDSA/RSA key method is changed, default to ECDSA
+7. XIP or OVERWRITE is changed, default to OVERWRITE
+8. secureboot vs legacyboot, default to secureboot
+
+Also pay attention that:
+1. TFM test stuites  

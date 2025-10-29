@@ -1,0 +1,14 @@
+menu "QSPI"
+		config QSPI
+			bool "Enable QSPI"
+			default n
+
+		config QSPI_STATIS
+			bool "Enable QSPI Statis"
+			default y
+
+		config QSPI_FLASH_GD
+			bool "Enable GD Flash"
+			default n
+endmenu
+

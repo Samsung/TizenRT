@@ -1,0 +1,297 @@
+/*
+ * Copyright (c) 2017-2022 Arm Limited. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/***********{{utilities.donotedit_warning}}***********/
+
+/*
+ * Customized region name prefix abbreviation:
+ *  LR : A Load region.
+ *  ER : A typical execution region.
+ *  PT : An empty execution region used as position-tag/address-alignment.
+ *
+ * No applying customzied prefixes on linker/system reserved/intentional
+ * names, such as 'ARM_LIB_STACK'.
+ */
+
+#include "region_defs.h"
+/* position tag block : code + RO-data */
+define block PT_RO_START with alignment = 32, size = 0 { };
+define block PT_RO_END with alignment = 32, size = 0 { };
+
+define block ER_VECTORS with size = S_CODE_VECTOR_TABLE_SIZE {
+       readonly section .intvec
+};
+
+#ifndef TFM_MULTI_CORE_TOPOLOGY
+    /*
+     * Place the CMSE Veneers (containing the SG instruction) in a separate
+     * 32 bytes aligned region so that the SAU can be programmed to
+     * just set this region as Non-Secure Callable.
+     */
+define block ER_VENEER with alignment = 0x20 {section Veneer$$CMSE};
+
+define block VENEER_ALIGN with alignment = 0x20, size = 0 { };
+#endif
+
+define block ER_TFM_CODE with fixed order, alignment = 8 {
+    ro section *startup*,
+    ro section .text  object *libplatform_s*,
+    ro section .rodata object *libplatform_s*,
+    ro object *libtfm_spm*
+};
+    /**** Section for holding partition RO load data */
+define block TFM_SP_LOAD_LIST with alignment = 4 {
+    ro section .part_load object load_info_*.o,
+};
+
+#if defined(S_CODE_SRAM_ALIAS_BASE)
+    /* eFlash driver code that gets copied from Flash to SRAM */
+initialize by copy {
+    ro object Driver_GFC100_EFlash.o,
+    ro object gfc100_eflash_drv.o,
+    ro object musca_b1_eflash_drv.o
+};
+
+define block ER_CODE_SRAM  with fixed order, alignment = 8 {
+    rw section .text,
+    rw section .rodata
+};
+
+place at address S_CODE_SRAM_ALIAS_BASE { block ER_CODE_SRAM };
+#endif
+
+/**** blocks CODE + RO-data definition starts here */
+{% for partition in partitions %}
+define block ER_{{partition.manifest.name}}_RO  with alignment = 32
+{
+    {% if partition.attr.linker_pattern.library_list %}
+        {% for pattern in partition.attr.linker_pattern.library_list %}
+    ro section .text object {{pattern}},
+    ro section .rodata object {{pattern}},
+        {% endfor %}
+    {% endif %}
+    {% if partition.attr.linker_pattern.object_list %}
+        {% for pattern in partition.attr.linker_pattern.object_list %}
+    ro object {{pattern}},
+        {% endfor %}
+    {% endif %}
+    {% if partition.manifest.type == 'PSA-ROT' %}
+       section {{partition.manifest.name}}_PSA-ROT_ATTR_FN,
+    {% endif %}
+    {% if partition.manifest.type == 'APPLICATION-ROT' %}
+       section {{partition.manifest.name}}_APP-ROT_ATTR_FN,
+    {% endif %}
+};
+{% endfor %}
+/**** blocks CODE + RO-data definition ends here*/
+
+/**** Block Unprivileged Secure code + RO-data definition starts here */
+define block TFM_UNPRIV_CODE with alignment = 32 {
+    section SFN,
+    readonly
+};
+
+ 
+/* position tag block : base address of secure data area ( S_DATA_START)*/
+define block PT_SECURE_DATA_START with alignment = 32, size = 0 { };
+define block PT_PRIV_RWZI_START with alignment = 32, size = 0 { };
+
+define block TFM_SHARED_DATA with alignment = 32, size = BOOT_TFM_SHARED_DATA_SIZE { };
+define block ARM_LIB_STACK with alignment = 32, size = S_MSP_STACK_SIZE { };
+
+define block HEAP         with alignment = 8, size = S_HEAP_SIZE { };
+define block ARM_LIB_HEAP {block HEAP};
+keep {block HEAP, block ARM_LIB_HEAP};
+
+define block ER_TFM_DATA          with alignment = 8 {readwrite};
+
+define block ER_PART_RT_POOL      with alignment = 4 {
+    zi section .bss.part_runtime
+};
+
+define block ER_SERV_RT_POOL      with alignment = 4 {
+    zi section .bss.serv_runtime
+};
+
+keep {block ER_PART_RT_POOL, block ER_SERV_RT_POOL};
+
+    /**** Blocks RWZI definition starts here */
+{% for partition in partitions %}
+    {% if partition.manifest.type == 'PSA-ROT' %}
+    /* Position  tag : start Block :*/
+    define block PT_{{partition.manifest.name}}_PRIVATE_DATA_START with alignment = 32, size = 0 { };
+
+    define block ER_{{partition.manifest.name}}_RWZI with alignment = 32 {
+    {% if partition.attr.linker_pattern.library_list %}
+        {% for pattern in partition.attr.linker_pattern.library_list %}
+	rw section .data object {{pattern}},
+	rw section .bss  object {{pattern}},
+	{% endfor %}
+    {% endif %}
+    {% if partition.attr.linker_pattern.object_list %}
+        {% for pattern in partition.attr.linker_pattern.object_list %}
+	rw object {{pattern}},
+        {% endfor %}
+    {% endif %}
+	section {{partition.manifest.name}}_PSA-ROT_ATTR_RW,
+	section {{partition.manifest.name}}_PSA-ROT_ATTR_ZI,
+};
+/* Position  tag : start Block :*/
+    define block PT_{{partition.manifest.name}}_PRIVATE_DATA_END with alignment = 32, size = 0 { };
+    {% endif %}
+{% endfor %}
+
+/**** block Position tag  PSA RoT RWZI ends definition  */
+define block PT_PRIV_RWZI_END with alignment = 32, size = 0 { };
+
+{% for partition in partitions %}
+    {% if partition.manifest.type == 'APPLICATION-ROT' %}
+    /* Position  tag : start Block :*/
+    define block PT_{{partition.manifest.name}}_PRIVATE_DATA_START with alignment = 32, size = 0 { };
+
+    define block ER_{{partition.manifest.name}}_RWZI with alignment = 32 {
+    {% if partition.attr.linker_pattern.library_list %}
+        {% for pattern in partition.attr.linker_pattern.library_list %}
+	rw section .data object {{pattern}},
+	rw section .bss  object {{pattern}},
+	{% endfor %}
+    {% endif %}
+    {% if partition.attr.linker_pattern.object_list %}
+        {% for pattern in partition.attr.linker_pattern.object_list %}
+	rw object {{pattern}},
+        {% endfor %}
+    {% endif %}
+	section {{partition.manifest.name}}_APP-ROT_ATTR_RW,
+	section {{partition.manifest.name}}_APP-ROT_ATTR_ZI,
+};
+/* Position  tag : start Block :*/
+    define block PT_{{partition.manifest.name}}_PRIVATE_DATA_END with alignment = 32, size = 0 { };
+    {% endif %}
+{% endfor %}
+
+#if defined(CONFIG_TFM_PARTITION_META)
+define block TFM_SP_META_PTR with alignment = 32 {
+    zi section .bss.SP_META_PTR_SPRTL_INST
+       };
+#endif
+
+define block PT_SRAM_WATERMARK with alignment = 32, size = 0 { };
+
+/* Define Flash content */
+define block LR_CODE with fixed order {
+    block ER_VECTORS,
+#ifndef TFM_MULTI_CORE_TOPOLOGY
+    block ER_VENEER,
+    block VENEER_ALIGN,
+#endif
+    block PT_RO_START,
+    block ER_TFM_CODE,
+    block TFM_SP_LOAD_LIST,
+    /**** PSA RoT CODE + RO-data starts here */
+{% for partition in partitions %}
+    {% if partition.manifest.type == 'PSA-ROT' %}
+    block ER_{{partition.manifest.name}}_RO,
+    {% endif %}
+{% endfor %}
+    /**** APPLICATION RoT RO CODE + data starts here */
+{% for partition in partitions %}
+    {% if partition.manifest.type == 'APPLICATION-ROT' %}
+    block ER_{{partition.manifest.name}}_RO,
+    {% endif %}
+{% endfor %}
+    block TFM_UNPRIV_CODE,
+    block PT_RO_END,
+};
+
+
+do not initialize  {
+   section .noinit,
+   rw section .ramvec
+   };
+initialize by copy with packing = none { readwrite }
+#ifndef S_RAM_CODE_START
+    except { section .textrw }
+#endif
+       ;
+if (isdefinedsymbol(__USE_DLIB_PERTHREAD))
+{
+    // Required in a multi-threaded application
+    initialize by copy { section __DLIB_PERTHREAD };
+}
+
+
+/* Place Flash content */
+place at address S_CODE_START         { block LR_CODE };
+/* Define RAM content */
+define block DATA with fixed order {
+    /**** Base address of secure data area */
+    block PT_SECURE_DATA_START,
+    block PT_PRIV_RWZI_START,
+    block TFM_SHARED_DATA,
+    block ARM_LIB_STACK,
+    block ARM_LIB_HEAP,
+    block ER_TFM_DATA,
+    block ER_PART_RT_POOL,
+    block ER_SERV_RT_POOL,
+   /* place PSA-ROT data  */
+{% for partition in partitions %}
+    {% if partition.manifest.type == 'PSA-ROT' %}
+    block PT_{{partition.manifest.name}}_PRIVATE_DATA_START,
+    block ER_{{partition.manifest.name}}_RWZI,
+    block PT_{{partition.manifest.name}}_PRIVATE_DATA_END,
+   {% endif %}
+{% endfor %}
+
+    block PT_PRIV_RWZI_END,
+
+   /* place APP-ROT data  */
+{% for partition in partitions %}
+    {% if partition.manifest.type == 'APPLICATION-ROT' %}
+    block PT_{{partition.manifest.name}}_PRIVATE_DATA_START,
+    block ER_{{partition.manifest.name}}_RWZI,
+    block PT_{{partition.manifest.name}}_PRIVATE_DATA_END,
+   {% endif %}
+{% endfor %}
+
+#if defined(CONFIG_TFM_PARTITION_META)
+    block TFM_SP_META_PTR,
+#endif
+
+    block PT_SRAM_WATERMARK,
+ /* Make sure that the sections allocated in the SRAM does not exceed the
+     * size of the SRAM available.
+     */
+};
+
+place at address S_DATA_START          { block DATA };
+
+    /* Reserved place for NS application.
+     * No code will be placed here, just address of this region is used in the
+     * secure code to configure certain HW components. This generates an empty
+     * execution region description warning during linking.
+     */
+define block LR_NS_PARTITION with size = NS_PARTITION_SIZE { };
+place at address NS_PARTITION_START { block LR_NS_PARTITION };
+
+#ifdef BL2
+    /* Reserved place for new image in case of firmware upgrade.
+     * No code will be placed here, just address of this region is used in the
+     * secure code to configure certain HW components. This generates an empty
+     * execution region description warning during linking.
+     */
+define block LR_SECONDARY_PARTITION with size = SECONDARY_PARTITION_SIZE { };
+place at address SECONDARY_PARTITION_START { block LR_SECONDARY_PARTITION };
+#endif /* BL2 */

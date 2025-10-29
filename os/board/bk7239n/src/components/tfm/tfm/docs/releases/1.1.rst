@@ -1,0 +1,127 @@
+:orphan:
+***********
+Version 1.1
+***********
+
+New Features
+============
+
+- Upgraded MCUBoot to v1.6.0., default is now the upstream MCUBoot instead of
+  the TF-M fork.
+
+- TF-Fuzz tool for fuzz testing PSA APIs.
+
+- Updated Source code folder structure.
+
+- IAR compiler support.
+
+- LPCXpresso55S69-EVK board support.
+
+- Add Profile Small.
+
+- Enable Ninja CMake Generator.
+
+- FVP_SSE300_MPS2 platform support.
+
+- Rename SST(Secure STorage) to PS(Protected Storage) and partition moved from
+  PSA Root of Trust to Application Root of Trust.
+
+- NUCLEO-L552ZE-Q and DISCO-L562QE platform support.
+
+- Restructure documentation to make it more user-friendly.
+
+- Enable Attestation service to use symmetric key algorithm.
+
+- Use CMSIS for testing from
+  `tf-m-tests <https://git.trustedfirmware.org/TF-M/tf-m-tests.git>`__
+  repository. This removes dependency on the external ``CMSIS_5`` repo.
+
+New Platforms supported
+=======================
+
+- Cortex-M33 based system:
+
+  - `LPCXpresso55S69-EVK.
+    <https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/lpc5500-cortex-m33/lpcxpresso55s69-development-board:LPC55S69-EVK>`__
+
+  - `NUCLEO-L552ZE-Q.
+    <https://www.st.com/content/st_com/en/products/evaluation-tools/product-evaluation-tools/mcu-mpu-eval-tools/stm32-mcu-mpu-eval-tools/stm32-nucleo-boards/nucleo-l552ze-q.html>`__
+
+  - `DISCO-L562QE.
+    <https://www.st.com/content/st_com/en/products/evaluation-tools/product-evaluation-tools/mcu-mpu-eval-tools/stm32-mcu-mpu-eval-tools/stm32-discovery-kits/stm32l562e-dk.html>`__
+
+- Cortex-M55 based SSE-300 system:
+
+  - `Fast model FVP_SSE300_MPS2.
+    <https://developer.arm.com/tools-and-software/open-source-software/arm-platforms-software/arm-ecosystem-fvps>`__
+
+
+New Platforms limitations
+=========================
+
+- LPCXpresso55S69-EVK doesn't support BL2.
+
+- LPCXpresso55S69-EVK doesn't support ARMCLANG and IARARM toolchain. Patch
+  with support for IARARM is available at
+  `review.trustedfirmware.org #4023 <https://review.trustedfirmware.org/c/TF-M/trusted-firmware-m/+/4023>`__
+
+- FVP_SSE300_MPS2 doesn't support GNUARM and IARARM toolchain. Patch with
+  support for IARARM is available at
+  `review.trustedfirmware.org #4574 <https://review.trustedfirmware.org/c/TF-M/trusted-firmware-m/+/4574>`__
+
+Known issues
+============
+
+Some open issues exist and will not be fixed in this release.
+
+.. list-table::
+
+  *  - | All the supported GNUARM toolchain versions generate corrupt veneer
+       | code for Armv8-M baseline architecture, when the -Os optimization flag
+       | is used. This affects the AN519 and AN539 platforms built with GNUARM
+       | toolchain and Minsizerel build type.
+     - Issue: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95646
+
+  *  - | PSA Arch Crypto tests have several known failures.
+     - See this link for detailed analysis of the failures : https://github.com/ARM-software/psa-arch-tests/blob/master/api-tests/docs/test_failure_analysis.md
+
+  *  - | AN521 FVP soft reset via AIRCR does not reset MPC / PPC / MPU and will
+       | cause boot failure. This is known issue for AN521 FVP. This will cause
+       | the system to not boot after a warm reset during PSA Arch FF testing.
+     - Issue: https://developer.trustedfirmware.org/T692
+
+  *  - | There are 2 additional failures for PSA-Arch Crypto tests with CC-312
+       | other than the known failures. This is due to limitation of CC-312
+       | implementation as it does not support MD_NONE hashing mode causing the
+       | additional failures.
+     - Issue: https://developer.trustedfirmware.org/T691
+
+  *  - | Boot up fails if there is unexpected data in flash on Musca-A. The boot
+       | is successful and the tests pass if all the associated (PS/ITS/NV
+       | Counter) flash areas are erased.
+     - Issue: https://developer.trustedfirmware.org/T694
+
+  *  - | When PS/ITS are using Flash on Musca-B1, PSA Arch FF test fails due to
+       | known warm reset limitation in the platform. There is an issue with
+       | Musca-B1 QSPI flash that causes this failure. The fix is under
+       | investigation.
+     - Issue: https://developer.trustedfirmware.org/T696
+
+Issues fixed since 1.0
+======================
+
+.. list-table::
+
+  *  - | The eflash driver on Musca-B1 can return random failures hence
+       | triggering random failures during PSA Arch ITS and PSA Arch PS tests.
+       | This happens when ITS/SST is configured to use flash.
+     - Issue: https://developer.trustedfirmware.org/T697
+
+  *  - | Release build of PSA Arch Crypto tests have a different number of tests
+       | when built for AN521 FVP. This is an issue in the PSA Arch Crypto
+       | tests.
+     - Issue for PSA Arch Tests project : https://github.com/ARM-software/psa-arch-tests/issues/169
+
+--------------
+
+*Copyright (c) 2020, Arm Limited. All rights reserved.*

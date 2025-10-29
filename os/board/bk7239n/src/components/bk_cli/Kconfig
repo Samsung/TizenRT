@@ -1,0 +1,326 @@
+menu "Beken_cli"
+
+	menu "Modify Cli Config"
+
+		config CLI
+			bool "Enable Cli"
+			default y
+
+		config BK_CLI_USE_SEPRATE_UART
+			depends on CLI
+			bool "Enable Cli Use Seprate Uart"
+			default y
+			help
+				Enable Cli Use Seprate Uart
+
+		config CLI_USER_CONFIG
+			depends on CLI
+			bool "Enable Cli User Config"
+			default n
+			help
+				support cli user configuration header
+
+		config CLI_USER_CONFIG_DIR
+			depends on CLI_USER_CONFIG
+			string "Define Cli User Config Dir"
+			default ""
+			help
+				cli user configuration header directory
+
+		config CLI_CODE_SIZE_OPTIMIZE_ENABLE
+			depends on CLI
+			bool "Enable Cli Code Size Optimize"
+			default n
+			help
+				Enable Cli Code Size Optimize
+
+		config BKREG
+			depends on CLI
+			bool "Enable Bkreg"
+			default y
+			help
+				Enable BK Reg read/write
+
+		config BKREG_SHOW_CALI
+			depends on BKREG
+			bool "Enable Show Cali Table"
+			default n
+			help
+				Enable Show Cali Table
+
+		config MAX_COMMANDS
+			depends on CLI
+			int "Set Max Commands"
+			range 0 65535
+			default 255
+			help
+				MAX number of commands is configured by default
+
+		config IPERF_TEST
+			depends on CLI && WIFI_ENABLE
+			bool "Enable Iperf Test"
+			default y
+			
+		config WIFI_CLI_ENABLE
+			depends on CLI && WIFI_ENABLE
+			bool "Enable Wifi Cli Enable"
+			default y
+			
+		config TCP_SERVER_TEST
+			depends on CLI
+			bool "Enable Tcp Server Test"
+			default n
+		
+		config BK_DUMP_FLASH_TEST
+			depends on CLI
+			bool "Enable Dump To Flash Test"
+			default n
+
+		config NIST_TEST
+			depends on CLI
+			bool "Enable Security Algorithm Nist Test"
+			default n
+
+		config AIRKISS_TEST
+			depends on CLI
+			bool "Enable Airkiss Test"
+			default n
+
+		config WIFI_RAW_TX_TEST
+			depends on CLI
+			bool "Enable Wifi Raw Tx Test"
+			default n
+
+		config WIFI_CLI_RAW_LINK_ENABLE
+			depends on CLI
+			bool "Enable Wifi CLI Raw Link enable"
+			default n
+
+		config CONNECT_THROUGH_PSK_OR_SAE_PASSWORD
+			depends on CLI
+			bool "Enable connect through psk or sae password"
+			default n
+
+		config VFS_TEST
+			depends on CLI
+			bool "Enable Vfs Test"
+			default n
+
+		#TODO Exculsive??
+		config I2C1_TEST
+			depends on CLI
+			bool "Enable I2C1 Test"
+			default n
+
+		config I2C2_TEST
+			depends on CLI
+			bool "Enable I2C2 Test"
+			default n
+
+		config UART_TEST
+			depends on CLI
+			bool "Enable Uart Test"
+			default n
+
+		config SPI_TEST
+			depends on CLI
+			bool "Enable SPI Test"
+			default n
+
+		config LCD_QSPI_TEST
+			depends on LCD_QSPI
+			bool "Enable Lcd Qspi Test"
+			default n
+
+		config PERI_TEST
+			depends on CLI
+			bool "Enable Peri Test"
+			default n
+
+		config RF_OTA_TEST
+			depends on CLI
+			bool "Enable Rf Ota Test"
+			default n
+
+		config SHELL_ASYNCLOG
+			bool "Enable Shell Asynclog"
+			default n
+			help
+				Enable Shell and Async log optimize
+				
+		config UART_RING_BUFF
+			depends on SHELL_ASYNCLOG
+			bool "Enable uart ring buffer"
+			default n
+			help
+				Enable uart ring buffer
+
+		config EX_DYNAMIC_LOG_BUFF
+			depends on SHELL_ASYNCLOG
+			bool "Enable dynamic log buffer"
+			default n
+			help
+				Enable dynamic log buffer
+
+		config TOUCH_TEST
+			depends on CLI
+			bool "Enable Touch Test"
+			default n
+
+		config SBC_TEST
+			depends on CLI
+			bool "Enable Sbc Test"
+			default n
+
+		config AUDIO
+			depends on CLI
+			bool "Enable Audio"
+			default n
+
+		config PSRAM_TEST
+			depends on CLI && PSRAM
+			bool "Enable Psram Test"
+			default n
+
+		config DVP_CAMERA_TEST
+			depends on CLI && DVP_CAMERA
+			bool "Enable dvp Camera Test"
+			default n
+
+		config INTERRUPT_TEST
+			depends on CLI
+			bool "Enable Interrupt Test"
+			default n
+
+		config AON_PMU_TEST
+			depends on CLI
+			bool "Enable Aon Pmu Test"
+			default n
+
+		config SDMADC_TEST
+			depends on CLI
+			bool "Enable Sdmadc Test"
+
+		config PM_TEST
+			depends on CLI
+			bool "Enable Pm Test"
+			default n
+
+		config VIDEO_TRANSFER_DEMO
+			depends on CLI
+			bool "Enable H264 DEMO"
+			default n
+
+		config PUF_TEST
+			depends on CLI
+			bool "Enable PUF Test"
+			default n
+
+		config EFUSE
+			bool "Enable Efuse"
+			default y
+
+		config ICU
+			bool "Enable Icu"
+			default y
+
+		config SECURITYIP
+			bool "Enable Securityip"
+			default n
+			help
+				Enable SecurityIP
+
+		config MBEDTLS_TEST
+			depends on MBEDTLS
+			bool "Enable mbedtls test"
+			default n
+			help
+				Enable mbedtls test
+
+		config KEYVALUE
+			bool "Enable Keyvalue"
+			default n
+
+		config IDLE_UART_OUT_TEST
+			bool "Enable Idle Uart Out Test"
+			default n
+
+		config COMPONENTS_WPA2_ENTERPRISE
+			bool "Enable Components Wpa2 Enterprise"
+			default n
+
+		config COMPONENTS_WPA_TWT_TEST
+			bool "Enable Wpa Twt Test"
+			default n
+
+		config COMPONENTS_WFA_CA
+			bool "Enable Components Wfa Ca"
+			default n
+
+		config ENABLE_WIFI_DEFAULT_CONNECT
+			bool "Enable Wifi Default Connect"
+			default n
+
+		config RTC_TIMER_PRECISION_TEST
+			bool "Enable RTC Timer precision test"
+			default n
+
+		config RTC_TIMER_PRECISION_TEST_BY_GPIO
+			bool "Enable RTC Timer precision test"
+			default n
+
+		config EFUSE
+			bool "Enable Efuse"
+			default y
+
+		config ICU
+			bool "Enable Icu"
+			default y
+
+		config RWNX_PROTO_DEBUG
+			bool "Enable Rwnx Proto Debug"
+			default n
+
+		config AUDIO_TEST
+			depends on AUDIO
+			bool "Enable Audio driver test"
+			default n
+
+		config AUDIO_ATE_TEST
+			depends on AUDIO_ADC
+			depends on AUDIO_DAC
+			depends on I2S
+			bool "Enable Audio ate test"
+			default n
+
+		config FFT_TEST
+			depends on FFT
+			bool "Enable FFT Test"
+			default n
+
+		config I2S_TEST
+			depends on I2S
+			bool "Enable I2S Test"
+			depends on I2S
+			default n
+
+		config SLCD_TEST
+			depends on SLCD
+			bool "Enable SLCD Test"
+			default n
+
+		config INJECT_KEY
+			bool "Enable Inject Key"
+			default n
+		
+		config BLE_CLI_ENABLE
+			depends on CLI && ARMINO_BLE
+			bool "Enable BLE Cli Enable"
+			default y
+
+		config CIPHER_AES_TEST_ENABLE
+			depends on CLI
+			bool "Enable Cipher AES TEST Enable"
+			default n
+	endmenu
+endmenu
