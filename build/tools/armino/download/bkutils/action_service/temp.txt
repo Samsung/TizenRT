@@ -1,0 +1,78 @@
+1.os/.config中必须有如下配置
+
+变量名称和值必须和下面的保持一致
+
+# 启用的芯片型号
+CONFIG_ARCH_BOARD=bk7239
+# 是否启用BK7239
+CONFIG_ARCH_BOARD_BK7239=y
+
+2、设置分区列表
+(1) 可在os/board/common/KConfig中定义,变量名称必须和下面的保持一致
+    example:
+        config FLASH_PART_SIZE
+            string "Flash partition size list (in KBytes)"
+            default "16,48,192,32,512,2400,1536,1536,1400,8,512," if !BUILD_PROTECTED
+            default "16,48,192,32,512,1200,1200,1536,1536,1400,8,512," if BUILD_PROTECTED
+            ---help---
+                Comma separated list of partition sizes in KB.
+        config FLASH_PART_NAME
+            string "Flash partition name list"
+            default "bl1,sssro,bl2,sssfw,wlanfw,os,factory,ota,user,nvram,sssrw," if !BUILD_PROTECTED
+            default "bl1,sssro,bl2,sssfw,wlanfw,os,apps,factory,ota,user,nvram,sssrw," if BUILD_PROTECTED
+            depends on MTD_PARTITION_NAMES
+            ---help---
+                Comma separated list of partition names.
+(2) 也在在os/.config中定义,变量名称必须和下面的保持一致
+    example:
+        # 分区名字
+        CONFIG_FLASH_PART_NAME=bl1,bl2,app1,app2
+        # 分区大小 单位kb
+        CONFIG_FLASH_PART_SIZE=1,4,5,12
+        # 起始地址
+        CONFIG_FLASH_START_ADDR=18
+
+3、设置分区名字和bin名称的映射
+
+需要信息写在os/.bininfo中
+
+    example
+        BL1=test_bl1
+        BL2=test_bl2
+        APP1_BIN_NAME=random.bin
+        APP2_BIN_NAME=esp-at.bin
+
+分区名字          bin名称
+bl1             ${BL1}.bin
+bl2             ${BL2}.bin
+kernel|os       ${KERNEL_BIN_NAME}
+ota             ${OTA}.bin
+app1            ${APP1_BIN_NAME}
+app2            ${APP2_BIN_NAME}
+loadparam       $1
+common          ${COMMON_BIN_NAME}
+zoneinfo        zoneinfo.img
+ext_data        ${EXTERNAL}.bin 
+resource        ${RESOURCE_BIN_NAME}
+userfs          ${CONFIG_ARCH_BOARD}_smartfs.bin
+sssfw|wlanfw    $1.bin
+rom             romfs.img
+bootparam       ${BOOTPARAM}.bin
+
+4、bin文件
+放到build/output/bin文件夹下
+
+5、烧录配置
+提供一些供修改的配置项
+如波特率、bl1 or bl2 握手、等
+build/configs/bk7239/scripts/.config
+
+6、工具代码放置目录
+/build/tools/armino/burn
+
+
+
+python bk_loader.py download -p /dev/ttyUSB0 -i /home/yibo.liu/project/bk_flash_tizen/build/output/bin/esp-at.bin -b 921600
+
+
+python tizen_entrance.py pre_download --portnum /dev/ttyUSB0 
