@@ -1,0 +1,75 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "ARMINO Configuration Options"
+
+choice
+	prompt "ARMINO Chip Selection"
+	default ARCH_CHIP_BK7239N
+	depends on ARCH_CHIP_ARMINO
+
+config ARCH_CHIP_BK7239N
+	bool "BK7239N"
+	select ARCH_CORTEXM33
+	select ARMV8M_HAVE_ICACHE
+	select ARMV8M_HAVE_DCACHE
+
+endchoice
+
+
+menu "Beken BK7239N Peripheral Support"
+
+config ARMINO_UART
+	bool "UART"
+	default n
+
+config ARMINO_UART0
+	bool "UART 0"
+	default n
+	select ARMINO_UART
+	select ARCH_HAVE_UART0
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config ARMINO_UART1
+	bool "UART 1"
+	default n
+	select ARMINO_UART
+	select ARCH_HAVE_UART1
+	select ARCH_HAVE_SERIAL_TERMIOS	
+
+config ARMINO_UART2
+	bool "UART 2"
+	default n
+	select ARMINO_UART
+	select ARCH_HAVE_UART2
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+menu "ARMINO BLE Support"
+config ARMINO_BLE
+	bool "Enable ARMINO BLE"
+	default n
+endmenu
+
+config ARMINO_I2S
+	bool "Enable Armino I2S"
+	default n
+
+if ARMINO_I2S
+config ARMINO_I2S_RX
+	bool "Enable I2S RX"
+	default n
+
+config ARMINO_I2S_TX
+	bool "Enable I2S TX"
+	default n
+
+config ARMINO_I2S_ROLE_MASTER
+	bool "Enable Armino I2S master role"
+	default n
+	---help---
+		Enable Armino I2S work in master role
+endif
+
+endmenu
