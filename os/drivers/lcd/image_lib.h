@@ -20,6 +20,8 @@
 #define __DRIVER_LCD_IMAGE_LIB_H
 
 #include <tinyara/config.h>
+#ifdef CONFIG_LCD_SPLASH_IMAGE
+#ifdef CONFIG_LCD_SPLASH_IMAGE_BMP_16BIT
 #include <stdio.h>
 
 #pragma pack(push, 1)
@@ -68,5 +70,8 @@ typedef struct {
  *
  ****************************************************************************/
 int image_load_bmp_file(const char *filename, uint8_t *buffer, int buffer_width, int buffer_height);
+
+#endif /* CONFIG_LCD_SPLASH_IMAGE_BMP_16BIT */
+#endif /* CONFIG_LCD_SPLASH_IMAGE */
 
 #endif /* __DRIVER_LCD_IMAGE_LIB_H */

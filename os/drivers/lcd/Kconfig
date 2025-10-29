@@ -201,12 +201,42 @@ config LCD_YRES
 	---help---
 		Specifies the Y resolution of the LCD.
 
+config LCD_SPLASH_IMAGE
+	bool "Enable LCD Splash Image"
+	default y
+	---help---
+		Enable splash image support for LCD display.
+		When enabled, splash image will be displayed during boot process.
+
 config LCD_SPLASH_IMAGE_PATH
 	string "LCD Splash Image Path"
 	default "/res/kernel/graphics"
+	depends on LCD_SPLASH_IMAGE
 	---help---
 		This path is used find splash image during booting.
 		Final resource path is defined like "{LCD_SPLASH_IMAGE_PATH}/{LCD_YRES}x{LCD_XRES}/splash_{normal/silent}.bmp"
+
+choice
+	prompt "Splash Image Format"
+	default LCD_SPLASH_IMAGE_BMP_16BIT
+	depends on LCD_SPLASH_IMAGE
+	---help---
+		Select the format of splash image file.
+
+config LCD_SPLASH_IMAGE_BMP_16BIT
+	bool "16-bit BMP format"
+	---help---
+		Use 16-bit BMP format for splash image.
+
+endchoice
+
+config LCD_SPLASH_SILENT_BOOT
+	bool "Use different splash image for silent boot"
+	default y
+	depends on LCD_SPLASH_IMAGE
+	---help---
+		When enabled, different splash image will be used during silent boot mode.
+		Image file name will be splash_silent.bmp for silent boot mode.
 
 if LCD_INTERFACE_MIPI
 config LCD_SEND_CMD_RETRY_COUNT
@@ -425,4 +455,3 @@ endmenu # LCD Driver selection
 endif # LCD
 
 endmenu # LCD Driver Support
-
