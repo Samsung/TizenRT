@@ -105,7 +105,7 @@ int elf_uninit(struct elf_loadinfo_s *loadinfo)
 
 	/* Free buffers used for decompression */
 #ifdef CONFIG_COMPRESSED_BINARY
-	compress_uninit();
+	compress_uninit(loadinfo->filfd);
 #endif
 #if defined(CONFIG_ELF_CACHE_READ)
 	elf_cache_uninit();
