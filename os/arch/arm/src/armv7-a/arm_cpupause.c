@@ -52,7 +52,6 @@
 #include "up_internal.h"
 #include "gic.h"
 #include "sched/sched.h"
-#include "arch_timer.h"
 
 #ifdef CONFIG_SMP
 
@@ -364,14 +363,6 @@ int up_cpu_pause(int cpu)
 	spin_lock(&g_cpu_paused[cpu]);
 	spin_unlock(&g_cpu_paused[cpu]);
 
-	/* Check if we are pausing cpu0.
-	* In this case, after pause request is being handled by cpu0,
-	* we need to enable timer irq on current cpu
-	*/
-	if (cpu == 0) {
-		up_timer_enable();
-	}
-
 	/* On successful return g_cpu_wait will be locked, the other CPU will be
 	 * spinning on g_cpu_wait and will not continue until g_cpu_resume() is
 	 * called.  g_cpu_paused will be unlocked in any case.
@@ -427,11 +418,6 @@ int up_cpu_resume(int cpu)
 		spin_lock(&g_cpu_resumed[cpu]);
 
 		spin_unlock(&g_cpu_resumed[cpu]);
-
-		/* transfer systick control back to cpu0 if cpu0 is being resumed */
-		if (cpu == 0) {
-			up_timer_disable();
-		}
 	}
 
 	return OK;

@@ -146,7 +146,7 @@ void up_timer_initialize(void)
   up_systimer_resume(up_cpu_index());
 #endif
 
-  /* Only enable the timer for CPU0 on startup, CPU1's will be enabled when pause/gating takes place  */
+  /* Only enable the timer for CPU0 */
   if (up_cpu_index() == 0) {
     arm_arch_timer_set_compare(arm_arch_timer_count() + pdTICKS_TO_CNT);
     arm_arch_timer_enable(1);
