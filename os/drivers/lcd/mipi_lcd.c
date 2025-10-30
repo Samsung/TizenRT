@@ -54,8 +54,8 @@ typedef enum {
 #define CONFIG_LCD_SEND_CMD_RETRY_COUNT 0
 #endif
 
-#if !defined(CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT)
-#define CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT 3
+#if !defined(CONFIG_LCD_SEND_VENDOR_INIT_CMD_RETRY_COUNT)
+#define CONFIG_LCD_SEND_VENDOR_INIT_CMD_RETRY_COUNT 3
 #endif
 
 #if defined(CONFIG_LCD_SW_ROTATION)
@@ -274,7 +274,7 @@ static mipi_state_t get_mipi_state(struct mipi_lcd_dev_s *priv)
 
 static int set_mipi_state(struct mipi_lcd_dev_s *priv, mipi_state_t new_state)
 {
-	int retries = CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT;
+	int retries = CONFIG_LCD_SEND_VENDOR_INIT_CMD_RETRY_COUNT;
 	mipi_state_t old_state = get_mipi_state(priv);
 	
 	if (old_state == new_state) {
