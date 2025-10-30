@@ -62,6 +62,7 @@
 #include <poll.h>
 #include <errno.h>
 #include <debug.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <sched.h>
 
@@ -411,6 +412,62 @@ static void lcd_flushing_thread(int argc, char **argv)
  * Public Functions
  ****************************************************************************/
 
+#ifdef CONFIG_LCD_SW_ROTATION
+#define NUM_OF_LCD_BUFFER	2
+uint8_t *lcd_buffer[NUM_OF_LCD_BUFFER] = { NULL, NULL };	//Two lcd buffers to avoid screen tearing
+int lcd_buffer_index = 0;
+void lcd_rotate_buffer(short int* src, short int* dst)
+{
+	int row;
+	int col;
+	int dst_inc = 2 * CONFIG_LCD_XRES;
+	short int val0;
+	short int val1;
+	short int val2;
+	short int val3;
+	short int *psrc;
+	short int *pdst;
+
+#if defined(CONFIG_LCD_LANDSCAPE)
+	for (row = 0; row < CONFIG_LCD_XRES; row += 2) {
+		psrc = src + row * CONFIG_LCD_YRES;
+		pdst = dst + CONFIG_LCD_XRES - row - 2;
+		for (col = 0; col < CONFIG_LCD_YRES; col += 2) {
+			val0 = *(psrc + 0);
+			val1 = *(psrc + 1);
+			val2 = *(psrc + CONFIG_LCD_YRES + 0);
+			val3 = *(psrc + CONFIG_LCD_YRES + 1);
+			psrc += 2;
+			*(pdst + 0) = val2;
+			*(pdst + 1) = val0;
+			*(pdst + CONFIG_LCD_XRES) = val3;
+			*(pdst + CONFIG_LCD_XRES + 1) = val1;
+			pdst += dst_inc;
+		}
+	}
+#elif defined(CONFIG_LCD_RLANDSCAPE)
+	for (row = 0; row < CONFIG_LCD_XRES; row += 2) {
+		psrc = src + row * CONFIG_LCD_YRES;
+		pdst = dst + row + (CONFIG_LCD_YRES - 1) * CONFIG_LCD_XRES;
+		for (col = 0; col < CONFIG_LCD_YRES; col += 2) {
+			val0 = *(psrc + 0);
+			val1 = *(psrc + 1);
+			val2 = *(psrc + CONFIG_LCD_YRES + 0);
+			val3 = *(psrc + CONFIG_LCD_YRES + 1);
+			psrc += 2;
+			*(pdst + 0) = val0;
+			*(pdst + 1) = val2;
+			*(pdst - CONFIG_LCD_XRES) = val1;
+			*(pdst - CONFIG_LCD_XRES + 1) = val3;
+			pdst -= dst_inc;
+		}
+	}
+#else
+	#error LCD Screen Rotation support only available from PORTRAIT to LANDSCAPE AND RLANDSCAPE
+#endif
+}
+#endif /* CONFIG_LCD_SW_ROTATION */
+
 /****************************************************************************
  * Name: lcddev_register
  *
@@ -437,6 +494,9 @@ int lcddev_register(struct lcd_dev_s *dev)
 	struct lcd_s *lcd_info;
 	bool is_silent_mode;
 	char splash_image_path[50];
+	uint8_t *fullscreen_buffer = NULL;
+	int xres = CONFIG_LCD_XRES;
+	int yres = CONFIG_LCD_YRES;
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	int pid;
 	char *flushing_thread_args[2];
@@ -486,6 +546,22 @@ int lcddev_register(struct lcd_dev_s *dev)
 
 	sem_init(&lcd_info->sem, 0, 1);
 
+	if (lcd_info->dev->getplaneinfo) {
+		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
+	}
+
+#if defined(CONFIG_LCD_SW_ROTATION)
+	fullscreen_buffer = lcd_buffer[lcd_buffer_index];
+	lcd_buffer_index = (1 - lcd_buffer_index);
+#else
+	fullscreen_buffer = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2 + 1);
+	if (!fullscreen_buffer) {
+		lcddbg("Failed to allocate memory for fullscreen buffer\n");
+		goto errout;
+	}
+#endif
+	memset(fullscreen_buffer, 0, CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2);
+
 #ifdef CONFIG_LCD_SPLASH_IMAGE
 #ifdef CONFIG_LCD_SPLASH_SILENT_BOOT
 	is_silent_mode = silent_reboot_is_silent_mode();
@@ -498,33 +574,52 @@ int lcddev_register(struct lcd_dev_s *dev)
 	snprintf(splash_image_path, sizeof(splash_image_path), "%s/%dx%d/splash_normal.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
 #endif /* CONFIG_LCD_SPLASH_SILENT_BOOT */
 
-	// Check if splash image file exists before rendering
-	FILE *test_file = fopen(splash_image_path, "rb");
-	if (test_file != NULL && dev->loadsplash) {
-		ret = dev->loadsplash(dev, splash_image_path);
-		if (ret == OK) { // LCD ON
-#ifdef CONFIG_PM
-			(void)pm_suspend(lcd_info->pm_domain);
-#endif
-			silent_reboot_lock();
-		}
-	} else if (test_file == NULL) {
-		lcddbg("Image file not found at %s. LCD OFF\n", splash_image_path);
-	} else {
+	int test_fd = open(splash_image_path, O_RDONLY);
+	if (test_fd < 0) {
+		lcddbg("No splash image found at %s.\n", splash_image_path);
+		goto skip_splash_image;
+	}
+	close(test_fd);
+
+	ret = image_load_bmp_file(splash_image_path, fullscreen_buffer, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+	if (ret != OK) {
 		lcddbg("ERROR: Failed to load splash image %s\n", splash_image_path);
+		goto skip_splash_image;
 	}
-	fclose(test_file);
+	if (!lcd_info->dev->setpower) {
+		lcddbg("ERROR: LCD setpower is not supported");
+		return -ENOSYS;
+	}
+
+	ret = lcd_info->dev->setpower(lcd_info->dev, 100);
+	if (ret == OK) { // LCD ON
+#ifdef CONFIG_PM
+		(void)pm_suspend(lcd_info->pm_domain);
+#endif
+		silent_reboot_lock();
+	} else {
+		lcddbg("ERROR: Failed to turn on LCD\n");
+		goto skip_splash_image;
+	}
+
+	ret = lcd_info->planeinfo[0].putarea(lcd_info->dev, 0, CONFIG_LCD_XRES - 1, 0, CONFIG_LCD_YRES - 1, fullscreen_buffer, CONFIG_LCD_XRES * 2);
+	if (ret != OK) {
+		lcd_info->dev->setpower(lcd_info->dev, 0);
+#ifdef CONFIG_PM
+		(void)pm_resume(lcd_info->pm_domain);
+#endif
+		silent_reboot_unlock();
+	}
+
+skip_splash_image:
 #endif /* CONFIG_LCD_SPLASH_IMAGE */
-
-	if (lcd_info->dev->getplaneinfo) {
-		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
-		snprintf(devname, 16, "/dev/lcd0");
-		ret = register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
-		if (ret == OK) {
-			return ret;
-		}
+	snprintf(devname, 16, "/dev/lcd0");
+	ret = register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
+	if (ret == OK) {
+		return ret;
 	}
 
+err_out:
 	lcddbg("ERROR: Failed to register driver %s\n", devname);
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	task_delete(pid);
