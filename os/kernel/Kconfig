@@ -331,6 +331,15 @@ config CPU_HOTPLUG
 		This will register an additional Software Generated Interrupt (SGI) 
 		for CPU Hotplug when system goes low power mode (ie. Power Gating)
 
+config CPU_HOTPLUG_MANAGER
+	bool "CPU Hotplug Manager"
+	default n
+	depends on CPU_HOTPLUG
+	---help---
+		Enable the CPU Hotplug Manager module which provides a centralized
+		interface for handling CPU hotplug operations both from user
+		applications (via syscalls) and from the PM idle logic.
+
 config SMP_NCPUS
 	int "Number of CPUs"
 	default 4
