@@ -250,7 +250,6 @@ static int mems_sensor_start()
 			printf("ERROR: wrong msg, size: %d, sizeofmsg: %d\n", size, sizeof(msg));
 			continue;
 		}
-	
 
 		printf ("Got MQ from driver ( at %d )\n", sample_cc);	
 	
@@ -394,8 +393,13 @@ static int mems_sensor_stop()
 		return;
 	}
 	int ret = ioctl(mems_fd, SENSOR_STOP, NULL);
+	if (ret != OK) {
+		printf("ERROR Sensor stop IOCTL failed\n");
+		return ERROR;
+	}
 	usleep(10000);
 	mems_teardown();
+	printf("Sensor stop Success\n");
 	return ret;
 }
 
