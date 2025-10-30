@@ -54,7 +54,6 @@
 #include "gic.h"
 #include "sched/sched.h"
 #include "smp.h"
-#include "arch_timer.h"
 
 #ifdef CONFIG_SMP
 
@@ -111,9 +110,6 @@ int arm_start_handler(int irq, void *context, void *arg)
 	struct tcb_s *tcb = this_task();
 
 	svdbg("CPU%d Started\n", this_cpu());
-
-	/* start generic timer PPI for this core */
-	up_timer_initialize();
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
 	/* Notify that this CPU has started */
