@@ -156,10 +156,13 @@ static int ais25ba_start(struct sensor_upperhalf_s *upper)
 	return OK;
 }
 
-static int ais25ba_stop(struct sensor_upperhalf_s *upper)
+static int ais25ba_stop(struct sensor_upperhalf_s *dev)
 {
+	FAR struct ais25ba_dev_s *priv = dev->priv;
+	struct i2s_dev_s *i2s = priv->i2s;
+	int ret;
+
 	snvdbg("sensor stop\n");
-	struct ais25ba_dev_s *priv = upper->priv;
 
 	if (g_sensor_info.sensor_is_running == false) {
 		sndbg("ERROR: sensor is not running\n");
@@ -174,6 +177,12 @@ static int ais25ba_stop(struct sensor_upperhalf_s *upper)
 	}
 	while (sq_peek(&priv->doneq) != NULL) {
 		sq_remfirst(&priv->doneq);
+	}
+
+	ret = I2S_STOP(i2s, I2S_RX);
+	if (ret != OK) {
+		sndbg("ERROR: I2S_STOP api failed\n");
+		return ret;
 	}
 	return OK;
 }
@@ -363,7 +372,9 @@ static int ais25ba_read_data(struct ais25ba_dev_s *priv)
 	if (ret != OK) {
 		sndbg("ERROR: Sensor read failed\n");
 	}
+
 	sq_addlast((sq_entry_t *)&buf->entry, &priv->doneq);
+
 	return ret;
 }
 
