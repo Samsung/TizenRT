@@ -248,13 +248,11 @@ config LCD_SEND_CMD_RETRY_COUNT
 		If send command gets fail in command mode, then this config will retry
 		send command to LCD.
 
-config LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT
-	int "LCD send vendor id cmd retry count"
+config LCD_SEND_VENDOR_INIT_CMD_RETRY_COUNT
+	int "LCD send vendor init cmd retry count"
 	default 3
 	---help---
-		For certain LCD panels such as ST7785, vendor ID is used to determine the correct init sequence to send.
-		When these panels are hotplugged, the MIPI+LCD stack requires to be reinitialized while the panel is power cycled
-		After this is done, this config will allow driver to re-send the vendor ID command to check panel status.
+		If LCD send vendor init command gets fail, this config will retry send command.
 endif
 
 if LCD_ST7789
