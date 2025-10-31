@@ -1008,6 +1008,7 @@ static void i2s_rx_worker(void *arg)
 
 		i2s_dump_buffer("Received", apb->samp, apb->nbytes);
 
+		lldbg("Calling ais25ba driver callback\n");
 		/* Perform the RX transfer done callback */
 		bfcontainer->callback(&priv->dev, apb, bfcontainer->arg, bfcontainer->result);
 
@@ -1059,10 +1060,13 @@ static void i2s_rx_schedule(struct amebasmart_i2s_s *priv, int result)
 	 */
 	if (work_available(&priv->rx.work)) {
 		/* Schedule the TX DMA done processing to occur on the worker thread. */
+		lldbg("Work is available\n");
 		ret = work_queue(HPWORK, &priv->rx.work, i2s_rx_worker, priv, 0);
 		if (ret != 0) {
 			i2serr("ERROR: Failed to queue RX work: %d\n", ret);
 		}
+	} else {
+		lldbg("I2S work is not available\n");
 	}
 }
 #endif
