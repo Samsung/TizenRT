@@ -166,3 +166,5 @@
 "waitid", "sys/wait.h", "defined(CONFIG_SCHED_WAITPID) && defined(CONFIG_SCHED_HAVE_PARENT)", "int", "idtype_t", "id_t", " FAR siginfo_t *", "int"
 "waitpid", "sys/wait.h", "defined(CONFIG_SCHED_WAITPID)", "pid_t", "pid_t", "int*", "int"
 "write", "unistd.h", "CONFIG_NSOCKET_DESCRIPTORS > 0 || CONFIG_NFILE_DESCRIPTORS > 0", "ssize_t", "int", "FAR const void*", "size_t"
+"cpu_offline","power/hotplug_manager.h", "defined(CONFIG_CPU_HOTPLUG_MANAGER)", "int", "int"
+"cpu_online","power/hotplug_manager.h", "defined(CONFIG_CPU_HOTPLUG_MANAGER)", "int", "int"
