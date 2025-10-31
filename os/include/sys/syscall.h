@@ -342,11 +342,15 @@
 #define SYS_socket                     (__SYS_network + 15)
 #define __SYS_prctl                    (__SYS_network + 16)
 
-#define SYS_prctl                      __SYS_prctl
+#define SYS_prctl                      (__SYS_prctl + 0)
 
-#define SYS_fin_wait                   SYS_prctl + 1
+#define SYS_fin_wait                   (SYS_prctl + 1)
+#define __SYS_hotplug                  (SYS_prctl + 2)
 
-#define SYS_maxsyscall                 (SYS_fin_wait + 1)
+#define SYS_cpu_offline                (__SYS_hotplug + 0)
+#define SYS_cpu_online                 (__SYS_hotplug + 1)
+
+#define SYS_maxsyscall                 (SYS_cpu_online + 1)
 
 /* Note that the reported number of system calls does *NOT* include the
  * architecture-specific system calls.  If the "real" total is required,

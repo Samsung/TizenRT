@@ -130,36 +130,6 @@ bool is_hotplug_available(int cpu);
  ****************************************************************************/
 cpu_state_t cpu_hotplug_get_state(int cpu);
 
-/****************************************************************************
- * Name: cpu_offline
- *
- * Description:
- *   Syscall function to take a CPU offline.
- *
- * Input Parameters:
- *   cpu - The CPU index to take offline
- *
- * Returned Value:
- *   OK (0) on success, negative value on failure.
- *
- ****************************************************************************/
-int cpu_offline(int cpu);
-
-/****************************************************************************
- * Name: cpu_online
- *
- * Description:
- *   Syscall function to bring a CPU online.
- *
- * Input Parameters:
- *   cpu - The CPU index to bring online
- *
- * Returned Value:
- *   OK (0) on success, negative value on failure.
- *
- ****************************************************************************/
-int cpu_online(int cpu);
-
 #undef EXTERN
 #ifdef __cplusplus
 }
