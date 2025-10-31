@@ -26,6 +26,7 @@
 #include <tinyara/clock.h>
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/cpu_state.h>
 #include "../kernel/sched/sched.h"
 
 #include "pm.h"
@@ -112,8 +113,9 @@ static int disable_secondary_cpus(void)
 {
 	/* Send signal to shutdown other cores here */
 	for (int cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
-		if (up_get_cpu_state(cpu) == CPU_RUNNING) {
-			if (up_cpu_hotplug(cpu) != OK) {
+		if (cpu_get_state(cpu) == CPU_RUNNING) {
+			cpu_set_state(cpu, CPU_SCHED_OFF);
+			if (cpu_hotplug(cpu) != OK) {
 				pmllvdbg("CPU%d hotplug failed! Unable to shutdown secondary core for sleep mode\n", cpu);
 				return ERROR;
 			}
@@ -133,12 +135,22 @@ static int disable_secondary_cpus(void)
  *   None
  *
  * Returned Value:
- *   None
+ *   OK on success
  *
  ****************************************************************************/
-static void enable_secondary_cpus(void)
+static int enable_secondary_cpus(void)
 {
-	/* TODO: move start smp code BSP to here */
+	/* Send signal to start other cores here */
+	for (int cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (cpu_get_state(cpu) == CPU_HOTPLUG) {
+			cpu_set_state(cpu, CPU_SCHED_OFF);
+			if (cpu_enable(cpu) != OK) {
+				pmllvdbg("CPU%d enable failed! Unable to start secondary core\n", cpu);
+				return ERROR;
+			}
+		}
+	}
+	return OK;
 }
 
 /****************************************************************************
@@ -167,9 +179,9 @@ static int check_secondary_cpus_idle(void)
 
 	for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
 		/* If the CPU is just back from sleep, abort the sleep */
-		if (up_get_cpu_state(cpu) == CPU_WAKE_FROM_SLEEP) {
+		if (cpu_get_state(cpu) == CPU_WAKE_FROM_SLEEP) {
 			return ERROR;
-		} else if (up_get_cpu_state(cpu) == CPU_HOTPLUG) {
+		} else if (cpu_get_state(cpu) == CPU_HOTPLUG) {
 			continue;
 		}
 

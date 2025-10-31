@@ -191,7 +191,7 @@ ifeq ($(CONFIG_ARCH_FPU),y)
 endif
 
 ifeq ($(CONFIG_SMP),y)
-  CMN_CSRCS += arm_cpuindex.c arm_cpustart.c arm_cpupause.c arm_cpuidlestack.c
+  CMN_CSRCS += arm_cpuindex.c arm_cpustart.c arm_cpuon.c arm_cpupause.c arm_cpuidlestack.c
   CMN_CSRCS += arm_scu.c
 endif
 
@@ -232,6 +232,7 @@ endif
 CHIP_CSRCS += amebasmart_idle.c
 CHIP_CSRCS += amebasmart_irq.c
 CHIP_CSRCS += amebasmart_cpuboot.c
+CHIP_CSRCS += amebasmart_cpu.c
 CHIP_CSRCS += amebasmart_memorymap.c
 CHIP_CSRCS += amebasmart_serial.c
 CHIP_CSRCS += amebasmart_timerisr.c

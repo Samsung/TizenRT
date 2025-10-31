@@ -2192,6 +2192,51 @@ bool up_cpu_hotplugreq(int cpu);
  *
  ****************************************************************************/
 int up_cpu_hotplugabort(int cpu);
+
+/****************************************************************************
+ * Name: up_cpu_off
+ *
+ * Description:
+ *   Stop and power down a CPU completely. This function performs a full
+ *   power down sequence including hot-plug operations and core power down.
+ *   The CPU will be completely powered off and can be restarted later
+ *   with up_cpu_on().
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to stop
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ * Assumptions:
+ *   - Called from CPU0
+ *   - Target CPU is currently running and can be safely powered down
+ *   - Task migration for target CPU has been completed
+ *
+ ****************************************************************************/
+int up_cpu_off(int cpu);
+
+/****************************************************************************
+ * Name: up_cpu_on
+ *
+ * Description:
+ *   Enable and start a CPU that was previously powered down. This function
+ *   performs the complete power on sequence including power domain activation,
+ *   SCU reinitialization, and CPU boot.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to enable
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ * Assumptions:
+ *   - Called from CPU0
+ *   - Target CPU is currently powered off and can be safely started
+ *   - System is in a state to safely bring additional CPU online
+ *
+ ****************************************************************************/
+int up_cpu_on(int cpu);
 #endif /* CONFIG_CPU_HOTPLUG */
 #endif /* CONFIG_SMP */
 
