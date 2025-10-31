@@ -1,0 +1,10 @@
+menu "FATFS"
+	config FATFS
+		bool "Support FATFS"
+		default n
+		
+	config FATFS_SDCARD
+		bool "Support SDCARD FATFS"
+		default n
+endmenu
+

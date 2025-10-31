@@ -1,0 +1,124 @@
+*************
+Version 1.4.0
+*************
+
+New major features
+==================
+
+  - Documentation restructure and enhancements.
+  - PSA Crypto migrates to Mbed TLS 'v3.0.0'.
+  - First-Level Interrupt Handling (FLIH) [1]_ proof of concept on AN521 and MUSCA-B1.
+  - Firmware Update service enhancement to support image update with dependencies.
+  - Partitions get loaded with `Static Load` mechanism.
+  - Decouple NS RTOS specific implementation from NS interface.
+  - PSA Crypto API interface updated to be based on `Stateless Handle`.
+  - MCUboot updated to version 'TF-Mv1.4-integ' to support multiple images in RAM_LOAD and DIRECT_XIP upgrade strategies.
+  - New platforms added.
+    See :ref:`releases/1.4.0:New platforms supported` for details.
+
+New security advisories
+=======================
+
+'abort' function may not take effect in some TF-M Crypto multi-part operations
+------------------------------------------------------------------------------
+
+Refer to :doc:`Advisory TFMV-3 </security/security_advisories/crypto_multi_part_ops_abort_fail>`
+for more details.
+The mitigation is included in this release.
+
+New platforms supported
+=======================
+
+  - Cortex-M33 based system:
+
+    - `BL5340 DVK.
+      <https://www.lairdconnect.com/wireless-modules/bluetooth-modules/bluetooth-5-modules/bl5340-series-multi-core-bluetooth-52-802154-nfc-modules>`_
+
+Deprecated platforms
+====================
+
+The following platforms have been removed from TF-M code base.
+
+  - nRF5340 PDK
+  - Musca_A
+
+See :doc:`Platform deprecation and removal </platform/ext/platform_deprecation>`
+for other platforms under deprecation process.
+
+Tested platforms
+================
+
+The following platforms are successfully tested in this release.
+
+- AN519
+- AN521
+- AN524
+- AN547
+- LPCXpresso55S69
+- Musca-B1
+- Musca-B1 Secure Enclave
+- Musca-S1
+- M2351
+- M2354
+- NUCLEO-L552ZE-Q
+- nrf5340dk
+- nrf9160dk
+- PSoC 64
+- STM32L562E-DK
+
+Known issues
+============
+
+Some open issues are not fixed in this release.
+
+.. list-table::
+
+  * - **Descriptions**
+    - **Issue links**
+
+  * - | PSA Arch Crypto test suite have several known failures.
+    - See this `link <https://developer.trustedfirmware.org/w/tf_m/release/psa_arch_crypto_test_failure_analysis_in_tf-m_v1.4_release/>`_
+      for detailed analysis of the failures.
+
+  * - | Protected Storage Regression test 4001 is stuck on SSE-300 in isolation
+      | level 2 when PXN is enabled.
+    - https://developer.trustedfirmware.org/T902
+
+  * - | NS interrupt masking prevents from executing PSA calls.
+    - https://developer.trustedfirmware.org/T950
+
+  * - | Image size overflow on Musca-B1 PSA Arch test suite debug build.
+    - https://developer.trustedfirmware.org/T952
+
+  * - | Build errors in PSA api tests for initial attestation.
+    - https://developer.trustedfirmware.org/T953
+
+  * - | Non Secure Image size overflow on STM32L562E-DK PSA Arch Crypto.
+    - https://developer.trustedfirmware.org/T954
+
+Issues fixed since 1.3.0
+========================
+
+Issues fixed by TF-M since v1.3.0 are listed below.
+
+.. list-table::
+
+  * - **Descriptions**
+    - **Issue links**
+
+  * - | IPC Regression test fail when non-secure regression test is enabled and
+      | secure regression test is disabled.
+    - https://developer.trustedfirmware.org/T903
+
+  * - | Panic test in PSA Arch IPC test suite generates inconsistent results
+      | between Armclang and GNUARM.
+    - https://developer.trustedfirmware.org/T909
+
+Reference
+=========
+
+  .. [1] `Arm Firmware Framework for M 1.1 Extensions <https://developer.arm.com/documentation/aes0039/latest>`_
+
+--------------
+
+*Copyright (c) 2021, Arm Limited. All rights reserved.*

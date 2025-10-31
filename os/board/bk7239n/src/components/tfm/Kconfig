@@ -1,0 +1,294 @@
+menu "Tfm"
+	config TFM
+		bool "Enable TFM"
+		default n
+
+	menu "Modify TFM Info"
+		depends on TFM
+
+		config TFM_PROFILE
+			string "Define Tfm Profile"
+			default "profile_medium"
+			help
+				psa level:0(profile_small) 1(profile_medium) 2(profile_large)
+
+		config TFM_BUILD_TYPE
+			string "Define Tfm Build Type"
+			default "minsizerel"
+			help
+				build type: debug, release or minsizerel
+
+		config TFM_FPGA
+			string "Enable FPGA: ON/OFF"
+			default "OFF"
+
+		config TFM_FWU
+			bool "Enable Firmware Update"
+			default n
+			help
+				Enable FWU: ON/OFF
+
+		config TFM_SYSTEM_CLOCK
+			bool "Enable TFM system clock ctrl"
+			default n
+			help
+				Enable TFM_SYSTEM_CLOCK: ON/OFF
+
+		config TFM_CRYPTO
+			bool "Enable TFM CRYPTO"
+			default n
+			help
+				Enable CRYPTO: ON/OFF
+
+		config TFM_PS
+			bool "Enable TFM PS"
+			default n
+			help
+				Enable PS: ON/OFF
+
+		config TFM_TEST_S
+			string "Define Tfm Test S"
+			default "OFF"
+			help
+				Enable to TFM secure bin test: ON/OFF
+
+		config TFM_TEST_NS
+			string "Define Tfm Test NS"
+			default "OFF"
+			help
+				Enable to TFM non-secure bin test: ON/OFF
+
+		config TFM_LOG_LEVEL
+			string "Define Tfm Log Level"
+			default "INFO"
+			help
+				Set TFM log level: OFF/ERROR/WARNING/INFO/DEBUG
+
+		config TFM_BL2_LOG_LEVEL
+			string "Define Tfm Bl2 Log Level"
+			default "INFO"
+			help
+				Set BL2 log level: OFF/ERROR/WARNING/INFO/DEBUG
+
+		config TFM_BL2
+			string "Define Tfm Bl2"
+			default "OFF"
+			help
+				Enable BL2: ON/OFF
+
+		config TFM_BL2_DOWNLOAD
+			bool "Enable BL2 download"
+			default y
+			help
+				Enable BL2 Download
+
+		config TFM_SECURE_DEBUG
+			bool "Enable Secure Debug"
+			default n
+			help
+				Enable Secure Debug
+
+		config OTP_NV_COUNTERS_RAM_EMULATION
+			string "Define Otp Nv Counters Ram Emulation"
+			default "OFF"
+			help
+				Enable OTP/NV counter RAM emulation: ON/OFF
+
+		config PLATFORM_DEFAULT_OTP_WRITEABLE
+			string "Define Platform Default Otp Writeable"
+			default "ON"
+			help
+				Enable platform default OTP writable: ON/OFF
+
+		config TFM_SYS_LL_NSC
+			bool "Enable system_ll nsc"
+			default n
+
+		config TFM_AON_PMU_LL_NSC
+			bool "Enable aon_pmu_ll nsc"
+			default n
+
+		config BL2_UPGRADE_STRATEGY
+			string "Define mcuboot upgrade strategy"
+			default "SWAP_USING_SCRATCH"
+			help
+				The MCUBOOT upgrade strategy can be:
+				OVERWRITE_ONLY, SWAP_USING_SCRATCH, SWAP_USING_MOVE.
+
+		config TFM_BK7236_V5
+			bool "Use BK7236 v5"
+			default y
+
+		config TFM_REG_ACCESS_NSC
+			bool "Enable security registers access"
+			default n
+			help
+				Enable read/write security registers from non-security world.
+				Should be disabled in release version!
+
+		config TFM_MPC_NSC
+			bool "Enable MPC NSC api"
+			default n
+			help
+				Enable configure MPC from non-security, for chip verification only.
+				Should be disabled in release version!
+
+		config TFM_FLASH_NSC
+			bool "Enable flash NSC api"
+			default n
+			help
+				Enable flash API for non-security, for chip verification only.
+				Should be disabled in release version!
+
+        config TFM_READ_FLASH_NSC
+			bool "Enable read flash NSC by cbus api"
+			default n
+			help
+				Enable flash API for non-security, read flash by cbus.
+
+		config TFM_DUBHE_KEY_LADDER_NSC
+			bool "Enable dubhe key ladder NSC api"
+			default n
+			help
+				Enable dubhe key ladder API for non-security
+
+		config TFM_OTP_NSC
+			bool "Enable otp NSC api"
+			default n
+			help
+				Enable otp API for non-security
+
+		config TFM_INT_TARGET_NSC
+			bool "Enable interrupt target NSC api"
+			default n
+			help
+				Enable interrupt target API for non-security, for chip verification only.
+				Should be disabled in release version!
+
+		config PM_NSC
+			bool "Enable pm NSC api"
+			default n
+			help
+				Enable PM API for non-security
+
+		config TFM_AES_GCM_NSC
+			bool "Enable do security aes gcm"
+			default n
+			help
+				Enable do security aes gcm encrypt and decrypt.
+				Should be disabled in release version!
+
+		config TFM_ECP_NSC
+			bool "Enable ecp calculation NSC api"
+			default n
+			help
+				Enable ecp calculation for non-security.
+
+		config TFM_ASYM_ALGO_NSC
+			bool "Enable asym algo NSC api"
+			default n
+			help
+				Enable asym algo API for non-security
+
+		config TFM_HKDF_NSC
+			bool "Enable HKDF calculation NSC api"
+			default n
+			help
+				expose HKDF api to reduce app size.
+
+		config TFM_DRBG_NSC
+			bool "Enable DRBG NSC api"
+			default n
+			help
+				expose DRBG api to reduce app size.
+
+		config TFM_DH_NSC
+			bool "Enable DH NSC api"
+			default n
+			help
+				adapt the DH alg.
+				expose DH api to reduce app size.
+
+		config TFM_SCA_AES_NSC
+			bool "Enable SCA AES NSC api"
+			default n
+			help
+				Enable SCA AES NSC alg.
+
+		config TFM_MPU
+			bool "Enable TFM official MPU"
+			default n
+			help
+				Enable TFM official MPU
+
+		config TFM_PANIC_DEAD_LOOP
+			bool "TFM panic trigger dead loop"
+			default n
+			help
+				Enable TFM dead loop panic
+
+		config XIP_NO_VERSION
+			bool "xip without security counter and version"
+			default n
+
+		config BL2_SKIP_VALIDATE
+			bool "Bl2 skip validate"
+			default n
+
+		config BL2_VALIDATE_ENABLED_BY_EFUSE
+			bool "BL2 validate is enabled by eFuse"
+			default y
+
+		config BL2_WDT
+			bool "Enable BL2 watchdog"
+			default n
+
+		config TFM_HEAP_SIZE
+			hex "TFM heap size"
+			default 0x1040
+
+		config BL2_WDT_PERIOD
+			hex "BL2 wdt timeout period"
+			default 0x1F40
+
+		config TFM_CRYPTO_IOVEC_BUFFER_SIZE
+			hex "TFM_CRYPTO_IOVEC_BUFFER_SIZE"
+			default 0x1400
+
+		config INITIAL_ATTESTATION
+			bool "Enable compile tfm initial attestation file"
+			default n
+			help
+				Enable compile tfm initial attestation file
+
+		config BL2_UPDATE_WITH_PC
+			bool "update BL2 with pc"
+			default n
+			help
+				update BL2 with pc
+
+		config TFM_MBEDTLS_RSA_C
+			bool "enable rsa driver for hardware"
+			default n
+			help
+				enable rsa driver for hardware: n/y
+
+		config TFM_MBEDTLS_PKCS1_V15
+			bool "enable MBEDTLS_PKCS1_V15"
+			default n
+			help
+				enable MBEDTLS_PKCS1_V15: n/y
+	endmenu
+endmenu
+
+config SECURITY_FIRMWARE
+    bool "enable security firmware / no-security firmware"
+    default n
+    help
+        enable security firmware / no-security firmware
+	
+config STARTUP_PERFORMANCE
+    bool "startup_performance, include in bl2 / tfm / app"
+    default n
+    help
+        startup_performance, include in bl2 / tfm / app

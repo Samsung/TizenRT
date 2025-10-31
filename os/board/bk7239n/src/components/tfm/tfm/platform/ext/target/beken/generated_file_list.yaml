@@ -1,0 +1,37 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2020, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+# The path of "template" can be relative path to TF-M root or absolute path
+# The path of "output" must be relative path to the root for generated files
+# Both can contain environment variables
+
+{
+  "name": "BK7236 generated file list",
+  "type": "generated_file_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "file_list": [
+    {
+        "name": "isolation l3 scatter file",
+        "short_name": "isolation_l3_sct",
+        "template": "platform/ext/common/armclang/tfm_isolation_l3.sct.template",
+        "output": "platform/ext/common/armclang/tfm_isolation_l3.sct"
+    },
+    {
+        "name": "isolation l3 linker script",
+        "short_name": "isolation_l3_ld",
+        "template": "platform/ext/common/gcc/tfm_isolation_l3.ld.template",
+        "output": "platform/ext/common/gcc/tfm_isolation_l3.ld"
+    },
+    {
+        "name": "isolation l3 linker script",
+        "short_name": "isolation_l3_icf",
+        "template": "platform/ext/common/iar/tfm_isolation_l3.icf.template",
+        "output": "platform/ext/common/iar/tfm_isolation_l3.icf"
+    }
+  ]
+}

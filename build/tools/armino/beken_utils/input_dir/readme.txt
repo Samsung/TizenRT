@@ -1,0 +1,1 @@
+Copy all the files in the ./build/secureboot/bk7234/install/pack folder to ./input_dir.

@@ -1,0 +1,41 @@
+menu "Bk_ate"
+
+	config ATE
+		bool "Enable Ate"
+		default n
+
+	menu "Modify Ate Config"
+		config ATE_GPIO_ID
+			depends on ATE
+			int "Set Ate Gpio Id"
+			default 0
+
+		config ATE_GPIO_PULL_UP
+			depends on ATE
+			bool "Enable Ate Gpio Pull Up"
+			default y
+
+		config ATE_TEST
+			depends on ATE
+			bool "Enable Ate Test"
+			default n
+			
+		config ATE_CPU2_ADDRESS
+			hex "ATE_CPU2_ADDRESS"
+			default 0x2809FFF7
+
+		config ATE_CPU2_VALUE
+			hex "ATE_CPU2_VALUE"
+			default 0x4332
+
+		config RF_TEST_ENABLE
+			depends on ATE
+			bool "RF_TEST_ENABLE"
+			default n
+		config RF_TEST_SWITCH
+			depends on ATE
+			bool "RF_TEST_ENABLE"
+			default n
+	endmenu
+
+endmenu

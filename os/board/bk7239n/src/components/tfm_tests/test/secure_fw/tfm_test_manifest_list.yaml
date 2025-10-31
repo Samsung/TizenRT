@@ -1,0 +1,180 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2021-2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "name": "TF-M secure partition manifests",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "name": "TFM Core Test Service",
+      "short_name": "TFM_SP_CORE_TEST",
+      "manifest": "suites/core/service/tfm_core_test/tfm_ss_core_test.yaml",
+      "output_path": "secure_fw/test_services/tfm_core_test",
+      "conditional": "@TEST_NS_CORE@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3000,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_core_test.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM Core Test Service 2",
+      "short_name": "TFM_SP_CORE_TEST_2",
+      "manifest": "suites/core/service/tfm_core_test_2/tfm_ss_core_test_2.yaml",
+      "output_path": "secure_fw/test_services/tfm_core_test_2",
+      "conditional": "@TEST_NS_CORE@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3001,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_core_test_2.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM Secure Client Service",
+      "short_name": "TFM_SP_SECURE_TEST_PARTITION",
+      "manifest": "common_test_services/tfm_secure_client_service/tfm_secure_client_service.yaml",
+      "output_path": "secure_fw/test_services/tfm_secure_client_service",
+      "conditional": "@TEST_FRAMEWORK_S@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3002,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_secure_client_service.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM IPC Service Test",
+      "short_name": "TFM_SP_IPC_SERVICE_TEST",
+      "manifest": "suites/spm/ipc/service/tfm_ipc_service/tfm_ipc_service_test.yaml",
+      "output_path": "secure_fw/test_services/tfm_ipc_service",
+      "conditional": "@TFM_PARTITION_IPC_TEST@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3003,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_ipc_service.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM IPC Client Service",
+      "short_name": "TFM_SP_IPC_CLIENT_TEST",
+      "manifest": "suites/spm/ipc/service/tfm_ipc_client/tfm_ipc_client_test.yaml",
+      "output_path": "secure_fw/test_services/tfm_ipc_client",
+      "conditional": "@TFM_PARTITION_IPC_TEST@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3004,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_ipc_client.*"
+         ]
+      }
+    },
+    {
+      "name": "TF-M PS Test Service",
+      "short_name": "TFM_SP_PS_TEST",
+      "manifest": "suites/ps/service/tfm_ps_test_service.yaml",
+      "output_path": "secure_fw/test_services/tfm_ps_test_service",
+      "conditional": "@TEST_S_PS@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3005,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_ps_test.*"
+         ]
+      }
+    },
+    {
+      "name": "TF-M Secure Client 2 Service",
+      "short_name": "TFM_SP_SECURE_CLIENT_2",
+      "manifest": "common_test_services/tfm_secure_client_2/tfm_secure_client_2.yaml",
+      "output_path": "secure_fw/test_services/tfm_secure_client_2",
+      "conditional": "@TEST_FRAMEWORK_S@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3006,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_secure_client_2.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM SLIH Test Service",
+      "short_name": "TFM_SP_SLIH_TEST",
+      "manifest": "suites/spm/irq/service/tfm_slih_test_service/tfm_slih_test_service.yaml",
+      "output_path": "secure_fw/test_services/tfm_slih_test_service",
+      "conditional": "@TEST_NS_SLIH_IRQ@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3008,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_slih_test.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM FLIH Test Service",
+      "short_name": "TFM_SP_FLIH_TEST",
+      "manifest": "suites/spm/irq/service/tfm_flih_test_service/tfm_flih_test_service.yaml",
+      "output_path": "secure_fw/test_services/tfm_flih_test_service",
+      "conditional": "@TEST_NS_FLIH_IRQ@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3009,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_flih_test.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM FPU Test Service",
+      "short_name": "TFM_SP_FPU_SERVICE_TEST",
+      "manifest": "suites/fpu/service/tfm_fpu_service_test.yaml",
+      "output_path": "secure_fw/test_services/tfm_fpu_service",
+      "conditional": "@TEST_PARTITION_FPU_TEST@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3010,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_fpu_service.*"
+         ]
+      }
+    },
+    {
+      "name": "TFM SFN Backend Test Partition",
+      "short_name": "SFN_BACKEND_TEST",
+      "manifest": "suites/spm/sfn/service/sfn_backend_test_partition/sfn_backend_test_partition.yaml",
+      "output_path": "secure_fw/test_services/sfn_backend_test_partition",
+      "conditional": "@TFM_PARTITION_SFN_BACKEND_TEST@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3011,
+      "linker_pattern": {
+        "library_list": [
+          "*tfm_*partition_sfn_backend_test.*"
+        ]
+      }
+    },
+  ]
+}
