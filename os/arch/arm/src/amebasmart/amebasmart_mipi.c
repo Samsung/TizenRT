@@ -280,7 +280,7 @@ static void amebasmart_mipi_reset_trx_helper(MIPI_TypeDef *MIPIx)
 	DelayUs(1);
 	MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) & ~MIPI_BIT_LPTX_RST & ~MIPI_BIT_LPRX_RST;
 
-	if (rx_data_ptr) {
+	if (rx_data_ptr && rx_data_len > 0 && rx_data_rdy) {
 		memset(rx_data_ptr, 0, rx_data_len);
 	}
 }
@@ -349,14 +349,17 @@ static void amebasmart_mipidsi_isr(void)
 		mipilldbg("LPTX Error: 0x%x, DPHY Error: 0x%x\n", reg_val, reg_dphy_err);
 
 		/* If contention is detected during LP signalling on the data lines */
-		if (reg_dphy_err & (MIPI_BIT_ERRCONTECNTIAL_LP0_CH0 | MIPI_BIT_ERRCONTECNTIAL_LP0_CH1 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH0 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH1)) {
-		if (MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT & MIPI_MASK_DETECT_ENABLE) {
-			MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT &= ~MIPI_MASK_DETECT_ENABLE;
+		if (reg_dphy_err & (
+			MIPI_BIT_ERRCONTECNTIAL_LP0_CH0 | MIPI_BIT_ERRCONTECNTIAL_LP0_CH1 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH0 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH1 |
+			MIPI_BIT_ERRCONTECNTIAL_LP0_CH2 | MIPI_BIT_ERRCONTECNTIAL_LP0_CH3 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH2 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH3
+		)) {
+			if (MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT & MIPI_MASK_DETECT_ENABLE) {
+				MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT &= ~MIPI_MASK_DETECT_ENABLE;
 
-			MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
-			MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
-			mipilldbg("LPTX Error CLR: 0x%x, DPHY: 0x%x\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
-		}
+				MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
+				MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
+				mipilldbg("LPTX Error CLR: 0x%x, DPHY: 0x%x\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
+			}
 		}
 
 		/* Control error was detected */
@@ -549,6 +552,10 @@ static uint32_t rtk_mipi_resume(uint32_t expected_idle_time, void *param)
 	amebasmart_mipi_init_helper(priv);
 	/* For LCDC */
 	rtl8730e_lcdc_pm();
+
+	/* reset stale hw status bits */
+	u32 reg_val = MIPI_DSI_INTS_Get(priv->MIPIx);
+	MIPI_DSI_INTS_Clr(priv->MIPIx, reg_val);
 
 	return 1;
 }
