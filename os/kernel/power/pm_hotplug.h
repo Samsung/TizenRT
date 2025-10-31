@@ -128,7 +128,23 @@ bool is_hotplug_available(int cpu);
  *   Current state of the CPU.
  *
  ****************************************************************************/
-cpu_state_t cpu_hotplug_get_state(int cpu);
+int cpu_hotplug_get_state(int cpu);
+
+/****************************************************************************
+ * Name: cpu_hotplug_set_state
+ *
+ * Description:
+ *   Set the current hotplug state of a CPU.
+ *
+ * Input Parameters:
+ *   cpu - The CPU index to check
+ *   state - State to set for CPU
+ *
+ * Returned Value:
+ *   void.
+ *
+ ****************************************************************************/
+void cpu_hotplug_set_state(int cpu, int state);
 
 #undef EXTERN
 #ifdef __cplusplus

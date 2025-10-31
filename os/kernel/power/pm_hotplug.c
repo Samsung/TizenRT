@@ -51,6 +51,9 @@
 #include "sched/sched.h"
 
 #ifdef CONFIG_CPU_HOTPLUG_MANAGER
+
+/* Extend the existing enum with our additional states */
+#define CPU_HOTPLUG_IN_PROGRESS     6  /* User-initiated hotplug in progress */
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -64,7 +67,7 @@
  ****************************************************************************/
 
 /* CPU hotplug state flags for each core */
-static volatile cpu_state_t g_cpuhp_state[CONFIG_SMP_NCPUS];
+static volatile int g_cpuhp_state[CONFIG_SMP_NCPUS];
 
 /* Spinlock for synchronizing access to CPU hotplug states */
 static volatile spinlock_t g_cpuhp_lock[CONFIG_SMP_NCPUS];
@@ -225,7 +228,7 @@ int perform_hotplug(int cpu)
 	}
 
 	/* Check if CPU is already offline */
-	if ((g_cpuhp_state[cpu] = up_get_cpu_state(cpu)) == CPU_OFFLINE) {
+	if ((g_cpuhp_state[cpu] = cpu_get_state(cpu)) == CPU_OFFLINE) {
 		printf("[Vivek Jain] CPU state offline for CPU%d\n", cpu);
 		return OK;
 	}
@@ -247,7 +250,7 @@ int perform_hotplug(int cpu)
 	cpu_hotplug_lock(cpu);
 
 	/* Check if CPU is available for hotplug */
-	if (!cpu_hotplug_is_available(cpu)) {
+	if (!is_hotplug_available(cpu)) {
 		printf("[Vivek Jain] Hotplug is unavailable for CPU%d\n", cpu);
 		ret = -EBUSY;
 		goto errout_with_lock;
@@ -257,7 +260,7 @@ int perform_hotplug(int cpu)
 	cpu_hotplug_set_state(cpu, CPU_HOTPLUG_IN_PROGRESS);
 
 	/* Call architecture-specific hotplug function */
-    if (up_get_cpu_state(cpu) == CPU_RUNNING) {
+    if (cpu_get_state(cpu) == CPU_RUNNING) {
 		//Must stop all running task on the CPU before taking it offline.
 		//Otherwise the hotplug is not possible.
 		printf("[Vivek Jain] Migrating tasks for CPU%d\n", cpu);
@@ -279,7 +282,7 @@ int perform_hotplug(int cpu)
 errout_with_state:
 	if (ret < 0) {
 		/* Restore state on failure */
-		cpu_hotplug_set_state(cpu, up_get_cpu_state(cpu));
+		cpu_hotplug_set_state(cpu, cpu_get_state(cpu));
 	}
 	sched_unlock();
 
@@ -353,10 +356,30 @@ bool is_hotplug_available(int cpu)
  *   Current state of the CPU.
  *
  ****************************************************************************/
-cpu_state_t cpu_hotplug_get_state(int cpu)
+int cpu_hotplug_get_state(int cpu)
 {
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS);
 	return g_cpuhp_state[cpu];
+}
+
+/****************************************************************************
+ * Name: cpu_hotplug_set_state
+ *
+ * Description:
+ *   Set the current hotplug state of a CPU.
+ *
+ * Input Parameters:
+ *   cpu - The CPU index to check
+ *   state - State to set for CPU
+ *
+ * Returned Value:
+ *   void.
+ *
+ ****************************************************************************/
+void cpu_hotplug_set_state(int cpu, int state)
+{
+	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS);
+	g_cpuhp_state[cpu] = state;
 }
 
 /****************************************************************************
