@@ -66,7 +66,7 @@
 #define RED   0xF800
 #define WHITE 0xFFFF
 #define BLACK 0x0000
-#define GREEN 0xE007
+#define GREEN 0x07E0
 #define BLUE  0x00F8
 #define SIZE  40
 
@@ -116,8 +116,8 @@ static void putarea(int x1, int x2, int y1, int y2, int color)
 		return;
 	}
 	for (int i = 0; i < xres * yres * 2; i += 2) {
-		lcd_data[i] = (color & 0xFF00) >> 8;
-		lcd_data[i + 1] = color & 0x00FF;
+		lcd_data[i + 1] = (color & 0xFF00) >> 8;
+		lcd_data[i] = color & 0x00FF;
 	}
 	set_lcd_area_data(&area, lcd_data);
 	if (ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area) < 0) {
@@ -340,8 +340,8 @@ static void test_quad(void)
 					color = WHITE;
 				}
 			}
-			lcd_data[pixel_index] = (color & 0xFF00) >> 8;
-			lcd_data[pixel_index + 1] = color & 0x00FF;
+			lcd_data[pixel_index + 1] = (color & 0xFF00) >> 8;
+			lcd_data[pixel_index] = color & 0x00FF;
 		}
 	}
 	if (ioctl(fd, LCDDEVIO_PUTAREA, (unsigned long)(uintptr_t)&area) < 0) {
@@ -367,8 +367,8 @@ static int prepare_frame_buffer(struct lcddev_area_s *area, uint16_t color, int 
 	}
 
 	for (int i = 0; i < len - 1; i += 2) {
-		lcd_data[i] = (color & 0xFF00) >> 8;
-		lcd_data[i + 1] = color & 0x00FF;
+		lcd_data[i + 1] = (color & 0xFF00) >> 8;
+		lcd_data[i] = color & 0x00FF;
 	}
 
 	area->planeno = 0;
