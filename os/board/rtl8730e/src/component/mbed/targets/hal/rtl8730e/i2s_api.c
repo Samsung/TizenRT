@@ -248,7 +248,9 @@ void AudioLLPRXHandler(void *Data)
 	sp_release_rx_page();
 	sp_get_free_rx_page();
 	sp_get_free_rx_length();
+#ifndef CONFIG_AMEBASMART_I2S_TDM
 	I2SUserCB.RxCCB((uint32_t)I2SUserCB.RxCBId, NULL);
+#endif
 }
 
 void AudioLLPRXHandler_ext(void *Data)
