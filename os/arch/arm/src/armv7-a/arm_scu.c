@@ -187,7 +187,7 @@ void arm_enable_smp(int cpu)
 		 */
 		ARM_DSB();
 		ARM_ISB();
-		cp15_invalidate_dcache_all();
+
 #ifdef CONFIG_ARCH_CORTEXA32
 		regval = arm_get_sctlr();
 		regval |= SCTLR_C;
@@ -195,6 +195,8 @@ void arm_enable_smp(int cpu)
 		arm_set_sctlr(regval);
 		ARM_ISB();
 #endif
+		cp15_invalidate_dcache_all();
+
 		/* Wait for the SCU to be enabled by the primary processor -- should
 		 * not be necessary.
 		 */
