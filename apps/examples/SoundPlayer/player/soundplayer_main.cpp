@@ -27,6 +27,7 @@
 #include <media/FocusManager.h>
 #include <media/MediaPlayer.h>
 #include <media/FileInputDataSource.h>
+#include <media/HttpInputDataSource.h>
 #include <media/MediaUtils.h>
 <<<<<<<< HEAD:apps/examples/SoundPlayer/soundplayer_main.cpp
 #include <audio/SoundManager.h>
@@ -51,6 +52,7 @@ using namespace media::stream;
 #define DEFAULT_CHANNEL_NUM 1 //mono
 #define DEFAULT_VOLUME 7
 //#define PLAYBACK_REPEAT 1
+// #define HTTP_STREAMING 1
 
 //***************************************************************************
 // class : SoundPlayer
@@ -238,9 +240,10 @@ void SoundPlayer::onFocusChange(int focusChange)
 
 bool SoundPlayer::init(int argc, char *argv[])
 {
-	struct stat st;
 	int ret;
+#ifndef HTTP_STREAMING
 	char *path = argv[1];
+	struct stat st;
 	ret = stat(path, &st);
 	if (ret != OK) {
 		printf("invalid path : %s\n", path);
@@ -252,6 +255,10 @@ bool SoundPlayer::init(int argc, char *argv[])
 		string s = path;
 		mList.push_back(s);
 	}
+#else
+	string url = argv[1];
+	mList.push_back(url);
+#endif
 
 	mNumContents = mList.size();
 	if (mNumContents > 0) {
@@ -307,7 +314,11 @@ player_result_t SoundPlayer::startPlayback(void)
 	player_result_t res = PLAYER_OK;
 	string s = mList.at(mPlayIndex);
 	printf("startPlayback... playIndex : %d path : %s\n", mPlayIndex, s.c_str());
+#ifndef HTTP_STREAMING
 	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource((const string)s)));
+#else
+	auto source = std::move(unique_ptr<HttpInputDataSource>(new HttpInputDataSource(s)));
+#endif
 	source->setSampleRate(mSampleRate);
 	source->setChannels(DEFAULT_CHANNEL_NUM);
 	source->setPcmFormat(DEFAULT_FORMAT_TYPE);
