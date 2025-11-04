@@ -132,6 +132,11 @@ config NET_SECURITY_TLS
 	depends on NET_LWIP_NETDB
 	select DEV_URANDOM
 
+config USE_PSA_CRYPTO
+	bool "Use PSA Crypto"
+	default n
+	depends on NET_SECURITY_TLS
+
 if NET_SECURITY_TLS
 source "$EXTERNALDIR/mbedtls/Kconfig.protocol"
 endif #NET_SECURITY_TLS
