@@ -52,7 +52,6 @@ using namespace media::stream;
 #define DEFAULT_CHANNEL_NUM 1 //mono
 #define DEFAULT_VOLUME 7
 //#define PLAYBACK_REPEAT 1
-// #define HTTP_STREAMING 1
 
 //***************************************************************************
 // class : SoundPlayer
@@ -64,7 +63,7 @@ class SoundPlayer : public MediaPlayerObserverInterface,
 {
 public:
 	SoundPlayer() : mPlayerId(-1), mNumContents(0), mPlayIndex(-1), mHasFocus(false), mPaused(false), mStopped(false),
-					mIsPlaying(false), mTrackFinished(false), mSampleRate(DEFAULT_SAMPLERATE_TYPE), mVolume(DEFAULT_VOLUME), mLooping(false), mFocusState(FOCUS_NONE) {};
+					mIsPlaying(false), mTrackFinished(false), mSampleRate(DEFAULT_SAMPLERATE_TYPE), mVolume(DEFAULT_VOLUME), mLooping(false), mFocusState(FOCUS_NONE), mIsHttpUrl(false) {};
 	~SoundPlayer() {};
 	bool init(int argc, char *argv[]);
 	player_result_t startPlayback(void);
@@ -92,6 +91,7 @@ private:
 	uint8_t mVolume;
 	bool mLooping;
 	focus_state_t mFocusState;
+	bool mIsHttpUrl;
 	void loadContents(const char *path);
 };
 
@@ -241,24 +241,25 @@ void SoundPlayer::onFocusChange(int focusChange)
 bool SoundPlayer::init(int argc, char *argv[])
 {
 	int ret;
-#ifndef HTTP_STREAMING
 	char *path = argv[1];
-	struct stat st;
-	ret = stat(path, &st);
-	if (ret != OK) {
-		printf("invalid path : %s\n", path);
-		return false;
-	}
-	if (S_ISDIR(st.st_mode)) {
-		loadContents(path);
-	} else {
+	mIsHttpUrl = (strncmp(path, "http://", 7) == 0 || strncmp(path, "https://", 8) == 0);
+	if (mIsHttpUrl) {
 		string s = path;
 		mList.push_back(s);
+	} else {
+		struct stat st;
+		ret = stat(path, &st);
+		if (ret != OK) {
+			printf("invalid path : %s\n", path);
+			return false;
+		}
+		if (S_ISDIR(st.st_mode)) {
+			loadContents(path);
+		} else {
+			string s = path;
+			mList.push_back(s);
+		}
 	}
-#else
-	string url = argv[1];
-	mList.push_back(url);
-#endif
 
 	mNumContents = mList.size();
 	if (mNumContents > 0) {
@@ -314,11 +315,12 @@ player_result_t SoundPlayer::startPlayback(void)
 	player_result_t res = PLAYER_OK;
 	string s = mList.at(mPlayIndex);
 	printf("startPlayback... playIndex : %d path : %s\n", mPlayIndex, s.c_str());
-#ifndef HTTP_STREAMING
-	auto source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource((const string)s)));
-#else
-	auto source = std::move(unique_ptr<HttpInputDataSource>(new HttpInputDataSource(s)));
-#endif
+	unique_ptr<InputDataSource> source;
+	if (mIsHttpUrl) {
+		source = std::move(unique_ptr<HttpInputDataSource>(new HttpInputDataSource((const string)s)));
+	} else {
+		source = std::move(unique_ptr<FileInputDataSource>(new FileInputDataSource((const string)s)));
+	}
 	source->setSampleRate(mSampleRate);
 	source->setChannels(DEFAULT_CHANNEL_NUM);
 	source->setPcmFormat(DEFAULT_FORMAT_TYPE);
