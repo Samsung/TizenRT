@@ -1,0 +1,3 @@
+include $(ROOTDIR_CSIPLATFORM)/test/utc_test.defs
+
+SRC += $(wildcard $(ROOTDIR_CSIPLATFORM)/framework/csimanager/src/*.c)

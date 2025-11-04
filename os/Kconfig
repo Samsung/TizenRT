@@ -566,6 +566,10 @@ menu "AraUI Framework"
 source "$FRAMEWORK_DIR/src/araui/Kconfig"
 endmenu
 
+menu "CSI Framework"
+source "$FRAMEWORK_DIR/src/csimanager/Kconfig"
+endmenu
+
 menu "Memory Management"
 source mm/Kconfig
 endmenu
