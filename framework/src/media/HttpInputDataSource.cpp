@@ -49,7 +49,7 @@ namespace media {
 namespace stream {
 
 // Content-Type tag
-static const std::string TAG_CONTENT_TYPE = "Content-Type:";
+static const std::string TAG_CONTENT_TYPE = "Content-type:";
 
 static const std::chrono::seconds WAIT_HEADER_TIMEOUT = std::chrono::seconds(3);
 static const std::chrono::seconds WAIT_DATA_TIMEOUT = std::chrono::seconds(3);
@@ -167,6 +167,10 @@ bool HttpInputDataSource::open()
 		setChannels(channel);
 		break;
 	}
+	case AUDIO_TYPE_PCM: {
+		setAudioType(audioType);
+		break;
+	}
 
 	default:
 		/* unsupported audio type */
@@ -248,6 +252,7 @@ void HttpInputDataSource::onBufferUpdated(ssize_t change, size_t current)
 
 size_t HttpInputDataSource::HeaderCallback(char *data, size_t size, size_t nmemb, void *userp)
 {
+	medvdbg("Received header data: %.*s\n", static_cast<int>(size * nmemb), data);
 	auto source = static_cast<HttpInputDataSource *>(userp);
 	if (source->mBufferReader->isEndOfStream()) {
 		medwdbg("end-of-stream:true\n");
