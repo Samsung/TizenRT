@@ -49,6 +49,11 @@ config SE_AMEBA
 	bool "Ameba Software SE"
 	---help---
 		Enable Ameba Software SE
+
+config SE_ARMINO
+	bool "armino Software SE"
+	---help---
+		Enable armino Software SE
 endchoice
 
 #
@@ -78,6 +83,10 @@ endif
 
 if SE_AMEBA
 source se/ameba/Kconfig
+endif
+
+if SE_ARMINO
+source se/armino/Kconfig
 endif
 
 endif
