@@ -131,9 +131,14 @@
 #define I2S_TDM_DMA_PAGE_SIZE 4096 	/* 4 ~ 16384, set to a factor of APB size */
 #define I2S_TDM_DMA_PAGE_NUM 16	/* Vaild number is 2~8 */
 
+#if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 static volatile bool i2s_tdm_rx = 0;
 static u8 prx_int_buf[I2S_TDM_DMA_PAGE_SIZE]__attribute__((aligned(64)));
 static u8 prx_ext_buf[I2S_TDM_DMA_PAGE_SIZE]__attribute__((aligned(64)));
+static uint8_t i2s_rx_buf[(I2S_TDM_DMA_PAGE_NUM + 1) * I2S_TDM_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
+static uint8_t i2s_rx_buf_ext[(I2S_TDM_DMA_PAGE_NUM + 1) * I2S_TDM_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
+#endif
+
 #ifdef CONFIG_PM
 static volatile bool i2s_lock_state = 0;
 #endif
@@ -203,8 +208,8 @@ struct amebasmart_i2s_s {
 #endif
 
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
-	uint8_t i2s_rx_buf[(I2S_TDM_DMA_PAGE_NUM + 1) * I2S_TDM_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
-	uint8_t i2s_rx_buf_ext[(I2S_TDM_DMA_PAGE_NUM + 1) * I2S_TDM_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
+	//uint8_t i2s_rx_buf[(I2S_TDM_DMA_PAGE_NUM + 1) * I2S_TDM_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
+	//uint8_t i2s_rx_buf_ext[(I2S_TDM_DMA_PAGE_NUM + 1) * I2S_TDM_DMA_PAGE_SIZE]__attribute__((aligned(64))); /* Allocate buffer for use in RX, must I2S_DMA_PAGE_NUM+1 for zero buffer */
 	//uint8_t* i2s_rx_buf;
 	i2s_irq_handler rx_isr_handler;
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
@@ -896,11 +901,11 @@ static int i2s_rxdma_prep(struct amebasmart_i2s_s *priv, struct amebasmart_buffe
 	if (priv->tdmenab) {
 		i2sinfo("tdm: set dma buffer! rxbuf: %p\n", priv->i2s_rx_buf);
 		if (priv->i2s_object->fifo_num >= SP_RX_FIFO8) {
-			i2sinfo("tdm: set dma buffer for EXT! rxbuf1: %p\n", priv->i2s_rx_buf_ext);
-			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_INT, apb->nmaxbytes);
-			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf_ext, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_EXT, apb->nmaxbytes);
+			i2sinfo("tdm: set dma buffer for EXT! rxbuf1: %p\n", (char *)i2s_rx_buf_ext);
+			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)i2s_rx_buf, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_INT, apb->nmaxbytes);
+			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)i2s_rx_buf_ext, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_EXT, apb->nmaxbytes);
 		} else {
-			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE, GDMA_INT, apb->nmaxbytes);
+			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)i2s_rx_buf, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE, GDMA_INT, apb->nmaxbytes);
 		}
 	} else
 #else
@@ -1340,8 +1345,8 @@ void i2s_transfer_rx_handleirq(void *data, char *pbuf)
 					}
 				} else {
 					u32 *dst_buf = (u32 *)priv->apb_rx->samp;
-					u32 *rx_int = (u32 *)priv->i2s_rx_buf;
-					u32 *rx_ext = (u32 *)priv->i2s_rx_buf_ext;
+					u32 *rx_int = (u32 *)i2s_rx_buf;
+					u32 *rx_ext = (u32 *)i2s_rx_buf_ext;
 
 					/* TODO: Verify correctness of this */
 					for (u32 i = 0, j = 0; i < priv->apb_rx->nmaxbytes; i += 8, j += 4) {
@@ -1918,10 +1923,10 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_RX) {
 		i2s_tdm_disable(priv->i2s_object, 0);
 		i2s_rx_enabled = 0;
-		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_INT,I2S_TDM_DMA_PAGE_SIZE/2);
+		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)i2s_rx_buf, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_INT,I2S_TDM_DMA_PAGE_SIZE/2);
 		if (priv->i2s_object->fifo_num >= SP_RX_FIFO8) {
-			lldbg("tdm: set dma buffer for EXT! rxbuf1: %p\n", priv->i2s_rx_buf_ext);
-			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf_ext, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_EXT,I2S_TDM_DMA_PAGE_SIZE/2);
+			lldbg("tdm: set dma buffer for EXT! rxbuf1: %p\n", (char *)i2s_rx_buf_ext);
+			i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)(char *)i2s_rx_buf_ext, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_EXT,I2S_TDM_DMA_PAGE_SIZE/2);
 		}
 		amebasmart_i2s_tdm_isr_initialize(priv); // TDM
 		while (sq_peek(&priv->rx.pend) != NULL) {
@@ -2388,13 +2393,13 @@ struct i2s_dev_s *amebasmart_i2s_tdm_initialize(uint16_t port, bool is_reinit)
 #if defined(I2S_HAVE_RX) && (0 < I2S_HAVE_RX)
 #if defined(I2S_HAVE_TDM) && (0 < I2S_HAVE_TDM)
 	if (priv->i2s_object->fifo_num >= SP_RX_FIFO8) {
-		lldbg("tdm: set dma buffer for EXT! rxbuf1: %p\n", priv->i2s_rx_buf_ext);
-		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_INT,I2S_TDM_DMA_PAGE_SIZE/2);
-		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf_ext, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_EXT,I2S_TDM_DMA_PAGE_SIZE/2);
+		lldbg("tdm: set dma buffer for EXT! rxbuf1: %p\n", (char *)i2s_rx_buf_ext);
+		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)i2s_rx_buf, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_INT,I2S_TDM_DMA_PAGE_SIZE/2);
+		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)i2s_rx_buf_ext, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE/2, GDMA_EXT,I2S_TDM_DMA_PAGE_SIZE/2);
 		priv->rx_isr_handler_ext = (i2s_irq_handler)&i2s_transfer_rx_handleirq;
 	} else {
 		priv->rx_isr_handler = (i2s_irq_handler)&i2s_transfer_rx_handleirq;
-		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)priv->i2s_rx_buf, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE, GDMA_INT,I2S_TDM_DMA_PAGE_SIZE);
+		i2s_tdm_set_dma_buffer(priv->i2s_object, NULL, (char *)i2s_rx_buf, I2S_TDM_DMA_PAGE_NUM, I2S_TDM_DMA_PAGE_SIZE, GDMA_INT,I2S_TDM_DMA_PAGE_SIZE);
 	}
 #endif
 
