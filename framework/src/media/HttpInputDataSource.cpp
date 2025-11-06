@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <debug.h>
+#include <algorithm>
 #include <unistd.h>
 #include <assert.h>
 #include <media/HttpInputDataSource.h>
@@ -49,7 +50,7 @@ namespace media {
 namespace stream {
 
 // Content-Type tag
-static const std::string TAG_CONTENT_TYPE = "Content-type:";
+static const std::string TAG_CONTENT_TYPE = "CONTENT-TYPE:";
 
 static const std::chrono::seconds WAIT_HEADER_TIMEOUT = std::chrono::seconds(3);
 static const std::chrono::seconds WAIT_DATA_TIMEOUT = std::chrono::seconds(3);
@@ -252,7 +253,6 @@ void HttpInputDataSource::onBufferUpdated(ssize_t change, size_t current)
 
 size_t HttpInputDataSource::HeaderCallback(char *data, size_t size, size_t nmemb, void *userp)
 {
-	medvdbg("Received header data: %.*s\n", static_cast<int>(size * nmemb), data);
 	auto source = static_cast<HttpInputDataSource *>(userp);
 	if (source->mBufferReader->isEndOfStream()) {
 		medwdbg("end-of-stream:true\n");
@@ -262,7 +262,9 @@ size_t HttpInputDataSource::HeaderCallback(char *data, size_t size, size_t nmemb
 	size_t totalsize = size * nmemb;
 	std::string header(data, totalsize);
 	medvdbg("%s\n", header.c_str());
-	auto pos = header.find(TAG_CONTENT_TYPE);
+	std::string upperCaseHeader = header;
+	std::transform(upperCaseHeader.begin(), upperCaseHeader.end(), upperCaseHeader.begin(), ::toupper);
+	auto pos = upperCaseHeader.find(TAG_CONTENT_TYPE);
 	if (pos != std::string::npos) {
 		pos = header.find_first_not_of(' ', pos + TAG_CONTENT_TYPE.length());
 		auto end = header.find((char)0x0d, pos); // CR: 0x0d
