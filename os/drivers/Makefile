@@ -148,6 +148,10 @@ ifeq ($(CONFIG_VIRTKEY),y)
 endif
 endif
 
+ifeq ($(CONFIG_CPU_DRIVER),y)
+  CSRCS += cpu/cpu_driver.c
+endif
+
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
 
