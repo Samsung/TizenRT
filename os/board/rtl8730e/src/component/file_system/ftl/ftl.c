@@ -1166,11 +1166,11 @@ L_retry:
 			uint32_t key = ftl_key_init(logical_addr, length);
 
 			//ftl_page_write(g_pPage + g_cur_pageID, g_free_cell_index + 1, key);
-			ftl_page_write(g_pPage + g_cur_pageID, g_free_cell_index, w_data);
+			ret = ftl_page_write(g_pPage + g_cur_pageID, g_free_cell_index, w_data);
 
 			flash_set_bit(&key, BIT_VALID);
 
-			ftl_page_write(g_pPage + g_cur_pageID, g_free_cell_index + 1, key);
+			ret = ftl_page_write(g_pPage + g_cur_pageID, g_free_cell_index + 1, key);
 
 			if (FTL_USE_MAPPING_TABLE == 1) { //mapping table otp
 				write_mapping_table(logical_addr, g_cur_pageID, g_free_cell_index);
@@ -1178,7 +1178,7 @@ L_retry:
 
 			g_free_cell_index += (length + 1);
 
-			ret = FTL_WRITE_SUCCESS;
+			//ret = FTL_WRITE_SUCCESS;
 		} else {
 			// try to find out free cell
 
