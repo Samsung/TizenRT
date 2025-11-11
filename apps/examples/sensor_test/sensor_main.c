@@ -70,15 +70,16 @@
 #define EXAMPLE_SENSOR_FPS_TEST 5000
 #define SENSOR_PREPARING_BUFFER_COUNT 50 // 1 DMA Interrupt occured every 16 msec if DMA Buffer has 256 Samples , 50 count = 800 msec
 
-bool g_terminate;
+static bool g_terminate;
 static mqd_t g_mems_mq;
 static int mems_fd;
 static struct ais25ba_buf_s **gBuffer;
-int buf_size; //size of segment buffer
-int g_buf_num; //segment number of ais25ba
-int sample_cc=0;
+static int sample_cc=0;
 
 static bool is_sensor_prepared = false;
+
+static void mems_teardown();
+static int mems_sensor_stop();
 
 static ssize_t mems_mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned int *msg_prio)
 {
@@ -93,25 +94,49 @@ static ssize_t mems_mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsig
 
 static void mems_teardown();
 
-int total_number_of_continuous_zeroes = 0;
-int trailing_zeroes = 0;
-
 static void print_sensor_data(sensor_data_s *data)
 {
 	for (int i = 0; i < AIS25BA_DMA_BUFF_SAMPLE_NUMBER; i++) {
-		if (data[i].samples[0] == 0x0000 && data[i].samples[1] == 0x0000) {
-			trailing_zeroes++;
+		printf("%04d: %04x %04x %04x %04x %04x %04x %04x %04x\n",sample_cc ,
+				data[i].samples[0], data[i].samples[1], data[i].samples[2] , data[i].samples[3] ,
+				data[i].samples[4], data[i].samples[5], data[i].samples[6] , data[i].samples[7] );
+
+		 sample_cc++;
+	}
+}
+
+static int trailing_positions[100] = {0};
+static int trailing_zeroes_count[2] = {0};	// ind0 --> Count of simultaneous trailing zeroes, ind1 --> Total number of corruption found
+
+static void detect_trailing_zeroes(sensor_data_s *data)
+{
+	for (int i = 0; i < AIS25BA_DMA_BUFF_SAMPLE_NUMBER; i++) {
+
+		if (data[i].samples[3] == 0xffff) {
+			if (data[i].samples[4] == 0x0000 && data[i].samples[5] == 0x0000) {
+				trailing_zeroes_count[0]++;
+			} else {
+				if (trailing_zeroes_count[0] > 0) {
+					trailing_positions[trailing_zeroes_count[1]] = i;
+					trailing_zeroes_count[1]++;
+				}
+				trailing_zeroes_count[0] = 0;
+			}
 		} else {
-			trailing_zeroes = 0;
+			if (data[i].samples[0] == 0x0000 && data[i].samples[1] == 0x0000) {
+				trailing_zeroes_count[0]++;
+			} else {
+				if (trailing_zeroes_count[0] > 0) {
+					trailing_positions[trailing_zeroes_count[1]] = i;
+					trailing_zeroes_count[1]++;
+				}
+				trailing_zeroes_count[0] = 0;
+			}
 		}
-		if (trailing_zeroes >= 5) {
-			total_number_of_continuous_zeroes++;
-			printf("Continuous trailing zeroes found!!!!! count: %d\n", total_number_of_continuous_zeroes);
-			trailing_zeroes = 0;
-		}
-		/*printf("%04d: %04x %04x %04x %04x %04x %04x %04x %04x\n",sample_cc ,  
-                data[i].samples[0], data[i].samples[1], data[i].samples[2] , data[i].samples[3] ,
-                data[i].samples[4], data[i].samples[5], data[i].samples[6] , data[i].samples[7] );*/
+
+		printf("%04d: %04x %04x %04x %04x %04x %04x %04x %04x\n",sample_cc ,
+			data[i].samples[0], data[i].samples[1], data[i].samples[2] , data[i].samples[3] ,
+			data[i].samples[4], data[i].samples[5], data[i].samples[6] , data[i].samples[7] );
 
 		 sample_cc++;
 	}
@@ -126,35 +151,25 @@ static int mems_sensor_init()
 	attr.mq_flags = 0;
 	int ret;
 
-	mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
-	if (mems_fd < 0) {
-		printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
-		return ERROR;
+	if (fcntl(mems_fd, F_GETFD) == -1) {
+		mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
+		if (mems_fd < 0) {
+			printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
+			return ERROR;
+		}
 	}
 
-	ioctl(mems_fd, SENSOR_SET_SAMPRATE, AIS25BA_SAMPLE_RATE);
+	ret = ioctl(mems_fd, SENSOR_SET_SAMPRATE, AIS25BA_SAMPLE_RATE);
+	if (ret != OK) {
+		printf("Sample rate set failed for sensor\n");
+		goto error_with_mq;
+		return ERROR;
+	}
 	g_mems_mq = mq_open(MEMS_MQ_PATH, O_RDWR | O_CREAT, 0644, &attr);
 	if (g_mems_mq == NULL) {
 		printf("ERROR: Sensor, mq_open failed!!\n");
 		goto error_with_mq;
 	}
-
-	ret = ioctl(mems_fd, SENSOR_GET_BUFSIZE, (unsigned long)&buf_size);
-	if (ret < 0) {
-		printf("ERROR: Sensor, get Buffer size failed. errno : %d\n", errno);
-		goto error_with_fd;
-	}
-
-
-#if 0
-	ret = ioctl(mems_fd, SENSOR_GET_BUFNUM, (unsigned long)&g_buf_num);
-	if (ret < 0) {
-		printf("ERROR: Sensor, get Buffer number failed. errno : %d\n", errno);
-		goto error_with_fd;
-	}
-	g_buf_num = SENSOR_PREPARING_BUFFER_COUNT;
-
-#endif
 
 	ret = ioctl(mems_fd, SENSOR_REGISTERMQ, (unsigned long)g_mems_mq);
 	if (ret < 0) {
@@ -164,8 +179,7 @@ static int mems_sensor_init()
 
 	return OK;
 error_with_mq:
-	mq_close(MEMS_MQ_PATH);
-error_with_fd:
+	mq_close(g_mems_mq);
 	close(mems_fd);
 	for (int j = 0; j < SENSOR_PREPARING_BUFFER_COUNT ; j++) {
 		if (gBuffer[j]) {
@@ -257,7 +271,7 @@ static int mems_sensor_start()
 		sensor_data_s *buffer = (sensor_data_s *)buf->data;
 
 		print_sensor_data(buffer);
-		//sleep(1);
+
 		ret = ioctl(mems_fd, SENSOR_SENDBUFFER, (unsigned long)buf);
 		if (ret != OK) {
 			printf("get Buffer failed. errno : %d\n", errno);
@@ -271,7 +285,7 @@ static int mems_sensor_start()
 		printf("Error: sensor stop failed. errno : %d\n", errno);
 		mems_teardown();
 		return ERROR;
-	}
+	} 
 	mems_teardown();
 	return OK;
 }
@@ -281,9 +295,13 @@ static int mems_sensor_record_data(int total_samples_to_collect)
 	struct mems_sensor_msg_s msg;
 	int prio;
 	size_t size;
+	int ret;
 
 	mems_sensor_prepare();
-	
+
+	memset(trailing_positions, 0, sizeof(trailing_positions));
+	memset(trailing_zeroes_count, 0, sizeof(trailing_zeroes_count));
+
 	sensor_data_s *collected_samples = (sensor_data_s *)malloc(sizeof(sensor_data_s) * total_samples_to_collect);
 	if (collected_samples == NULL) {
 		printf("ERROR: Failed to allocate memory to store %d samples\n", total_samples_to_collect);
@@ -292,14 +310,21 @@ static int mems_sensor_record_data(int total_samples_to_collect)
 
 	int sample_count_collected = 0;
 
-        /* Start Collect */
-        int ret = ioctl(mems_fd, SENSOR_START, NULL);
-        if (ret != OK) {
-            printf("ERROR: MEMS sensor start failed, errno: %d\n", errno);
-            mems_teardown();
-            free(collected_samples);
-            return ERROR;
-        }
+	/* Start Collect */
+	mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
+	if (mems_fd < 0) {
+		printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
+		mems_teardown();
+		free(collected_samples);
+		return ERROR;
+	}
+	ret = ioctl(mems_fd, SENSOR_START, NULL);
+	if (ret != OK) {
+		printf("ERROR: MEMS sensor start failed, errno: %d\n", errno);
+		mems_teardown();
+		free(collected_samples);
+		return ERROR;
+	}
 
 	printf("Collecting %d samples...\n", total_samples_to_collect);
 
@@ -314,15 +339,14 @@ static int mems_sensor_record_data(int total_samples_to_collect)
 	
 		struct ais25ba_buf_s *buf = (struct ais25ba_buf_s *)msg.data;
 		sensor_data_s *buffer = (sensor_data_s *)buf->data;
-	      
-                //usleep ( 300 );
-	
-		print_sensor_data(buffer);		
+
+		detect_trailing_zeroes(buffer);	
 
 		ret = ioctl(mems_fd, SENSOR_SENDBUFFER, (unsigned long)buf);
 		if (ret != OK) {
 			printf("get Buffer failed. errno : %d\n", errno);
 			mems_teardown();
+			free(collected_samples);
 			return ERROR;
 		}
 
@@ -331,73 +355,64 @@ static int mems_sensor_record_data(int total_samples_to_collect)
 			samples_to_copy = total_samples_to_collect - sample_count_collected;
 		}
 
-#if 0
-		for (int i = 0; i < samples_to_copy; i++) {
-			collected_samples[sample_count_collected + i] = buffer[i];
-		}
-#endif
 		sample_count_collected += samples_to_copy;
-		//printf("Collected %d/%d samples\n", sample_count_collected, total_samples_to_collect);
 	
 		ret = ioctl(mems_fd, SENSOR_SENDBUFFER, (unsigned long)buf);
-	        if (ret != OK) {
-        	    printf("get Buffer failed. errno : %d\n", errno);
-            	    mems_teardown();
-            	    free(collected_samples);
-                    return ERROR;
-                }
+		if (ret != OK) {
+			printf("get Buffer failed. errno : %d\n", errno);
+			free(collected_samples);
+			mems_teardown();
+			return ERROR;
+		}
 
 		if (sample_count_collected >= total_samples_to_collect) {
 			break;
 		}
+	}  
+
+	printf("Total Count of trailing zeroes found %d\n", trailing_zeroes_count[1]);
+	for(int i = 0; i < trailing_zeroes_count[1]; i++) {
+		printf("Frame position: %d\n", trailing_positions[i]);
 	}
 
-    // Print all collected samples
-#if 0
-    if (sample_count_collected > 0) {
-        printf("\nPrinting all %d collected samples:\n", sample_count_collected);
-        printf("=======================================================================================\n");
-        for (int i = 0; i < sample_count_collected; i++) {
-            printf("%04x %04x %04x\n", 
-                   collected_samples[i].samples[0], 
-				   collected_samples[i].samples[1], 
-				   collected_samples[i].samples[2]);
-        }
-        printf("=======================================================================================\n");
-        printf("Finished printing %d samples\n", sample_count_collected);
-    }
-#endif    
-
-    // Clean up
-	ret = ioctl(mems_fd, SENSOR_STOP, NULL);
+    /* Clean up */
+	ret = mems_sensor_stop();
 	free(collected_samples);
 	mems_teardown();
-	if (ret != OK) {
-		printf("Error: sensor stop failed. errno : %d\n", errno);
-		return ERROR;
-	}
 
-    return OK;
+	return ret;
 }
 
 static int mems_sensor_stop()
 {
+	struct mems_sensor_msg_s msg;
+	int prio;
+	int ret;
+
 	if (is_sensor_prepared == false) {
 			printf("ERROR: Sensor is not running\n");
 			return ERROR;
 	}
-	is_sensor_prepared = false;
-	mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
-	if (mems_fd < 0) {
-		printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
-		return;
+
+	if (fcntl(mems_fd, F_GETFD) == -1) {
+		mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
+		if (mems_fd < 0) {
+			printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
+			return ERROR;
+		}
 	}
-	int ret = ioctl(mems_fd, SENSOR_STOP, NULL);
+
+	ret = ioctl(mems_fd, SENSOR_STOP, NULL);
 	if (ret != OK) {
 		printf("ERROR Sensor stop IOCTL failed\n");
 		return ERROR;
 	}
-	usleep(10000);
+	is_sensor_prepared = false;
+	while (mems_mq_receive(g_mems_mq, (FAR char *)&msg, sizeof(msg), &prio) == OK);
+	ret = mq_close(g_mems_mq);
+	if (ret != OK) {
+		printf("mems MQ close failed\n");
+	}
 	mems_teardown();
 	printf("Sensor stop Success\n");
 	return ret;
@@ -408,8 +423,8 @@ static void mems_teardown()
 	g_terminate = true;
 	close(mems_fd);
 
-	for (int i = 0; i < g_buf_num; i++) {
-		if (gBuffer[i]) {
+	for (int i = 0; i < SENSOR_PREPARING_BUFFER_COUNT; i++) {
+		if (gBuffer && gBuffer[i]) {
 			free(gBuffer[i]);
 			gBuffer[i] = NULL;
 		}
@@ -435,22 +450,36 @@ static void show_usage(void)
 
 static int sensor_read()
 {
+	int ret;
 	sensor_data_s *data = (sensor_data_s *)malloc(sizeof(sensor_data_s)*64);
 	if (data == NULL) {
 		printf("ERROR: Malloc failed in example app\n");
 		return ERROR;
 	}
-	mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
-	if (mems_fd < 0) {
-		printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
+	if (fcntl(mems_fd, F_GETFD) == -1) {
+		mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
+		if (mems_fd < 0) {
+			printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
+			free(data);
+			return ERROR;
+		}
+	}
+
+	ret = ioctl(mems_fd, SENSOR_SET_SAMPRATE, AIS25BA_SAMPLE_RATE);
+	if (ret != OK) {
+		printf("ERROR: Sensor Set sample rate failed\n");
+		free(data);
+		close(mems_fd);
 		return ERROR;
 	}
 
-	ioctl(mems_fd, SENSOR_SET_SAMPRATE, AIS25BA_SAMPLE_RATE);
+	/* Start read test and print data */
 	while (true) {
 		read(mems_fd, data, 2);
 		print_sensor_data(data);
 	}
+
+	free(data);
 	close(mems_fd);
 	return OK;
 }
@@ -468,12 +497,19 @@ static int sensor_fps_test()
 	struct rtc_time start_time = RTC_TIME_INITIALIZER(1970, 1, 1, 0, 0, 0);
 	struct rtc_time end_time;
 
-	sensor_data_s *data = (sensor_data_s *)malloc(sizeof(sensor_data_s)*64);
-	mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
-	if (mems_fd < 0) {
-		printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
-		close(fd_rtc);
+	sensor_data_s *data = (sensor_data_s *)malloc(sizeof(sensor_data_s)*AIS25BA_DMA_BUFF_SAMPLE_NUMBER);
+	if (!data) {
+		printf("Data malloc failed\n");
 		return ERROR;
+	}
+
+	if (fcntl(mems_fd, F_GETFD) == -1) {
+		mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
+		if (mems_fd < 0) {
+			printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
+			close(fd_rtc);
+			return ERROR;
+		}
 	}
 
 	int count = EXAMPLE_SENSOR_FPS_TEST;
@@ -513,14 +549,16 @@ static int sensor_fps_test()
 
 static int sensor_show()
 {
-	mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
-	if (mems_fd < 0) {
-		printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
-		return ERROR;
-	}
-
 	sensor_info_s sensor_info;
 	int status = OK;
+	if (fcntl(mems_fd, F_GETFD) == -1) {
+		mems_fd = open(MEMS_SENSOR_PATH, O_RDWR | O_SYNC, 0666);
+		if (mems_fd < 0) {
+			printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
+			return ERROR;
+		}
+	}
+
 	status = ioctl(mems_fd, SENSOR_SHOW, &sensor_info);
 	if (status != OK) {
 		printf("ERROR: IOCTL SENSOR_SHOW fail, errorno: %d\n", status);
