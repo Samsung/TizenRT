@@ -3,11 +3,13 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+if NUM_APPS > 1
 menuconfig APP2_INFO
 	bool "App2 Information"
 	default y
 	---help---
 		Set App2 Information
+endif
 
 if APP2_INFO
 config APP2_BIN_NAME
