@@ -1290,13 +1290,13 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	/* File names */
 	int s;
 
-	const char *mcu_package = "/mnt/kernel/audio/mcu_fw";
-	const char *dsp_package = "/mnt/kernel/audio/dsp_fw";
+	const char *mcu_package = "/res/kernel/audio/mcu_fw";
+	const char *dsp_package = "/res/kernel/audio/dsp_fw";
 	const char *neural_package;
 	if (dev->kd_num == 0) {
-		neural_package = "/mnt/kernel/audio/kd_local";
+		neural_package = "/res/kernel/audio/kd_local";
 	} else {
-		neural_package = "/mnt/kernel/audio/kd_local2";
+		neural_package = "/res/kernel/audio/kd_local2";
 	}
 
 
@@ -1909,6 +1909,49 @@ int ndp120_stop_sample_ready(struct ndp120_dev_s *dev)
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 	g_ndp120_state = NOT_RECORDING;
 #endif
+	return s;
+}
+
+int ndp120_kw_sensitivity_set(struct ndp120_dev_s *dev, uint16_t sensitivity)
+{
+	int s;
+	uint32_t new_th;
+	syntiant_ndp120_posterior_config_t ph_config;
+
+	if (sensitivity > 1000) {
+		return SYNTIANT_NDP_ERROR_ARG;
+	}
+	// map the incoming threshold (0-1000) to 0-0xffff range
+	new_th = ((uint32_t)sensitivity) * 0xffff / 1000;
+
+	memset(&ph_config, 0, sizeof(ph_config));
+	ph_config.set = SYNTIANT_NDP120_CONFIG_SET_POSTERIOR_CONFIG_SET_THRESHOLD;
+	// kw is class index 0 of model 0
+	ph_config.class_index = 0;
+	ph_config.ph_idx = 0;
+    ph_config.threshold = new_th;
+    s = syntiant_ndp120_posterior_config(dev->ndp, &ph_config);
+	check_status("Error setting KW sensitivity", s);
+
+	return s;
+}
+
+int ndp120_kw_sensitivity_get(struct ndp120_dev_s *dev, uint16_t *sensitivity)
+{
+	int s;
+	syntiant_ndp120_posterior_config_t ph_config;
+
+	if (!sensitivity) {
+		return SYNTIANT_NDP_ERROR_ARG;
+	}
+	memset(&ph_config, 0, sizeof(ph_config));
+	// kw is class index 0 of model 0
+	ph_config.class_index = 0;
+	ph_config.ph_idx = 0;
+    s = syntiant_ndp120_posterior_config(dev->ndp, &ph_config);
+	check_status("Error getting KW sensitivity", s);
+	double d = (((double)ph_config.threshold)*1000 / 0xffff);
+	*sensitivity = (uint16_t) (d + 0.5);
 	return s;
 }
 
