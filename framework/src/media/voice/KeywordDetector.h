@@ -40,6 +40,9 @@ public:
 	virtual void registerKeywordResultCallback(SpeechResultListener speechResultCallback) = 0;
 	virtual bool getKeywordBufferSize(uint32_t *bufferSize) = 0;
 	virtual bool getKeywordData(uint8_t *buffer) = 0;
+    virtual bool startMultiChStream(int duration, int verbose, uint32_t *dev_extract_size) = 0;
+	virtual bool readMultiChStream(uint8_t *buffer, uint32_t *extracted_len) = 0;
+	virtual bool stopMultiChStream(void) = 0;
 };
 
 } // namespace voice

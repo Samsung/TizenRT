@@ -40,6 +40,25 @@ HardwareKeywordDetector::HardwareKeywordDetector(int normal_card, int normal_dev
 	medvdbg("HardwareKeywordDetector constructor");
 }
 
+bool HardwareKeywordDetector::startMultiChStream(int duration, int verbose, uint32_t *dev_extract_size)
+{
+    audio_manager_result_t result = start_audio_multich_stream(mSdCard, mSdDevice, duration, verbose, dev_extract_size);
+    return result;
+}
+
+bool HardwareKeywordDetector::readMultiChStream(uint8_t* buffer, uint32_t *extracted_len)
+{
+    audio_manager_result_t result = read_audio_multich_stream(mSdCard, mSdDevice, buffer, extracted_len);
+    return result;
+}
+
+bool HardwareKeywordDetector::stopMultiChStream(void)
+{
+    audio_manager_result_t result = stop_audio_multich_stream(mSdCard, mSdDevice);
+    return result;
+}
+
+
 bool HardwareKeywordDetector::init(uint32_t samprate, uint8_t channels)
 {
 	audio_manager_result_t result;
