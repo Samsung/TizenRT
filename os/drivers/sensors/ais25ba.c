@@ -105,11 +105,13 @@ static int ais25ba_sem_wait(sem_t *sem)
 static int ais25ba_mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned int msg_prio)
 {
 	int status;
-
+	int send_count = 0;
 	do {
 		status = mq_send(mqdes, msg_ptr, msg_len, msg_prio);
+		send_count++;
 	} while (status == -1 && get_errno() == EINTR);
 
+	lldbg("**** send count in mq_send: %d\n", send_count);
 	return status;
 }
 
@@ -540,7 +542,7 @@ int ais25ba_initialize(const char *devpath, struct ais25ba_dev_s *priv)
 	itoa((int)priv, parm_buf, 16);
 	parm[0] = parm_buf;
 	parm[1] = NULL;
-	pid = kernel_thread(AIS25BA_KERNEL_MQ_THREAD, 200, 18000, (main_t)ais25ba_mq_thread, (FAR char *const *)parm);
+	pid = kernel_thread(AIS25BA_KERNEL_MQ_THREAD, 180, 18000, (main_t)ais25ba_mq_thread, (FAR char *const *)parm);
 	if (pid < 0) {
 		sndbg("ais25ba_mq_thread thread creation failed\n");
 		goto cleanup_with_upper;

@@ -83,11 +83,14 @@ static int mems_sensor_stop();
 static ssize_t mems_mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned int *msg_prio)
 {
 	ssize_t status;
+	int receive_count = 0;
 
 	do {
 		status = mq_receive(mqdes, msg_ptr, msg_len, msg_prio);
+		receive_count++;
 	} while (status == -1 && get_errno() == EINTR);
 
+	printf("mq receive count: %d\n", receive_count);
 	return status;
 }
 
@@ -373,6 +376,7 @@ static int mems_sensor_record_data(int total_samples_to_collect)
 	}
 
     /* Clean up */
+	mq_unlink(MEMS_SENSOR_PATH);
 	ret = mems_sensor_stop();
 	free(collected_samples);
 	mems_teardown();
@@ -382,6 +386,10 @@ static int mems_sensor_record_data(int total_samples_to_collect)
 
 static int mems_sensor_stop()
 {
+	struct mems_sensor_msg_s msg;
+	int prio;
+	int ret;
+
 	if (is_sensor_prepared == false) {
 			printf("ERROR: Sensor is not running\n");
 			return ERROR;
@@ -392,12 +400,17 @@ static int mems_sensor_stop()
 		printf("ERROR: Failed to open sensor port error:%d\n", mems_fd);
 		return;
 	}
-	int ret = ioctl(mems_fd, SENSOR_STOP, NULL);
+	ret = ioctl(mems_fd, SENSOR_STOP, NULL);
 	if (ret != OK) {
 		printf("ERROR Sensor stop IOCTL failed\n");
 		return ERROR;
 	}
 	is_sensor_prepared = false;
+	while (mems_mq_receive(g_mems_mq, (FAR char *)&msg, sizeof(msg), &prio) == OK);
+	ret = mq_close(g_mems_mq);
+	if (ret != OK) {
+		printf("mems MQ close failed\n");
+	}
 	mems_teardown();
 	printf("Sensor stop Success\n");
 	return ret;
