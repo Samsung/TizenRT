@@ -1940,7 +1940,7 @@ audio_manager_result_t stop_audio_stream_out(stream_info_id_t stream_id, bool dr
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 
 	pthread_mutex_lock(&(card->card_mutex));
-	medvdbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
+	meddbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
 
 	int8_t idx = get_stream_index(card, stream_id);
 	card->stream_status[idx] = READY;

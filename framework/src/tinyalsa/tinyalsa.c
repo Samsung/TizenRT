@@ -1206,8 +1206,10 @@ int pcm_drain(struct pcm *pcm)
 			size = mq_receive(pcm->mq, (FAR char *)&msg, sizeof(msg), &prio);
 			if (size != sizeof(msg)) {
 				/* Interrupted by a signal? What to do? */
+				meddbg("Interrupted by a signal!! buf_idx : %d\n", pcm->buf_idx);
 				return oops(pcm, EINTR, "Interrupted while waiting for deque message from kernel\n");
 			}
+			meddbg("MSG received, msgId : %d buf_idx : %d\n", msg.msgId, pcm->buf_idx);
 			if (msg.msgId == AUDIO_MSG_DEQUEUE) {
 				pcm->buf_idx--;
 				// ToDo: Cannot use EAGAIN, EAGAIN is type of error. So We have to add pcm_get_avail() and return OK when we can use pcm.
