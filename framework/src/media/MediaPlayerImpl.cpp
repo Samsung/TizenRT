@@ -966,6 +966,7 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 {
 	va_list ap;
 	va_start(ap, cmd);
+	meddbg("%s cmd : %d\n", __func__, cmd);
 
 	if (mPlayerObserver != nullptr) {
 		switch (cmd) {
@@ -976,16 +977,10 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackError, mPlayerObserver, std::ref(mPlayer), (player_error_t)va_arg(ap, int));
 			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_OVERRUN:
-			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferOverrun, mPlayerObserver, std::ref(mPlayer));
-			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_UNDERRUN:
-			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUnderrun, mPlayerObserver, std::ref(mPlayer));
-			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED:
-			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferUpdated, mPlayerObserver, std::ref(mPlayer), (size_t)va_arg(ap, size_t));
-			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_STATECHANGED:
-			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onPlaybackBufferStateChanged, mPlayerObserver, std::ref(mPlayer), (buffer_state_t)va_arg(ap, int));
+			/* TODO These need to be handled by Framework Level */
 			break;
 		case PLAYER_OBSERVER_COMMAND_BUFFER_DATAREACHED: {
 			medvdbg("OBSERVER_COMMAND_BUFFER_DATAREACHED\n");
@@ -1004,8 +999,11 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 			break;
 		}
 
-		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
-		pow.enQueue(&MediaPlayerImpl::dequeueAndRunObserverCallback, shared_from_this());
+		if (cmd == PLAYER_OBSERVER_COMMAND_FINISHED || cmd == PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR 
+			|| cmd == PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED) {
+			PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
+			pow.enQueue(&MediaPlayerImpl::dequeueAndRunObserverCallback, shared_from_this());
+		}
 	}
 
 	va_end(ap);
@@ -1096,6 +1094,8 @@ void MediaPlayerImpl::playback(std::chrono::milliseconds timeout, uint8_t playba
 
 void MediaPlayerImpl::playbackFinished()
 {
+	meddbg("%s player: %x\n", __func__, &mPlayer);
+
 	audio_manager_result_t result = stop_audio_stream_out(mStreamInfo->id, true);
 	if (result == AUDIO_MANAGER_EAGAIN){
 		return;

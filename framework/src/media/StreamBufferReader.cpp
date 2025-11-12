@@ -70,11 +70,18 @@ size_t StreamBufferReader::read(unsigned char *buf, size_t size, bool sync, std:
 				// Writer may be waiting for more spaces, so it's necessary to notify after reading.
 				mStream->getCondv().notify_one();
 				// Then wait notification from writer.
+				mStream->getCondv().wait(lock);
+				/* Below Logic Need to be improved. Should we apply only timeout? */
+#if 0
 				if (timeout == std::chrono::microseconds(0)) {
 					mStream->getCondv().wait(lock);
 				} else {
 					mStream->getCondv().wait_for(lock, t_deadline - std::chrono::steady_clock::now());
+					mStream->getCondv().notify_one();
+					return rlen;
 				}
+#endif
+
 			}
 		}
 
