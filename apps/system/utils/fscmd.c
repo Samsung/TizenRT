@@ -1051,6 +1051,10 @@ static int delete_entry(const char *fullpath)
 				break;
 			}
 
+			if (DIRENT_ISDIRECTORY(entryp->d_type) && ls_specialdir(entryp->d_name)) {
+				continue;
+			}
+
 			/* Call delete_entey recursively */
 			entrypath = get_dirpath(fullpath, entryp->d_name);
 			ret = delete_entry(entrypath);
