@@ -74,11 +74,11 @@ def preprocess_log_file(input_filename, output_filename=None):
             
             # Fix potentially merged memory entries that should be on separate lines
             # Also handle the case where timestamp is missing entirely
-            content = re.sub(r'(mm_manage_alloc_fail:.*?[^0-9a-f])(\s*mm_manage_alloc_fail:)', r'\1\n\2', content)
+            content = re.sub(r'((?:mm_manage_alloc_fail|mm_manage_alloc_fail_dump):.*?[^0-9a-f])(\s*(?:mm_manage_alloc_fail|mm_manage_alloc_fail_dump):)', r'\1\n\2', content)
             
             # Add missing timestamps if needed for entries without any timestamp
             content = re.sub(r'(^|\n)(?!\[)(\s*)(0x[0-9a-f]+\s*\|)', r'\1[MISSING_TIMESTAMP] \3', content)
-            content = re.sub(r'(^|\n)(?!\[)(\s*)(mm_manage_alloc_fail:)', r'\1[MISSING_TIMESTAMP] \3', content)
+            content = re.sub(r'(^|\n)(?!\[)(\s*)((?:mm_manage_alloc_fail|mm_manage_alloc_fail_dump):)', r'\1[MISSING_TIMESTAMP] \3', content)
             
             # Write the processed content
             outfile.write(content)
@@ -101,7 +101,7 @@ def count_failures(filename):
         tuple: (num_failures, file_size, line_markers)
     """
     # Pattern that can handle missing or malformed timestamps and multiple entries per line
-    failure_start_pattern = re.compile(r'(?:\[([\d\-: .]+)\])?\s*mm_manage_alloc_fail: Allocation failed from user heap\.')
+    failure_start_pattern = re.compile(r'(?:\[([\d\-: .]+)\])?\s*(?:mm_manage_alloc_fail|mm_manage_alloc_fail_dump): Allocation failed from user heap\.')
    
     failure_count = 0
     file_size = os.path.getsize(filename)
@@ -189,11 +189,11 @@ def parse_log_file(filename, total_failures, file_size, failure_positions):
     }
    
     # Precompile regex patterns - enhanced for better matching across lines
-    failure_start_pattern = re.compile(r'(?:\[([\d\-: .]+)\])?\s*mm_manage_alloc_fail: Allocation failed from user heap\.')
-    size_pattern = re.compile(r'(?:\[.*?\])?\s*mm_manage_alloc_fail:  - requested size (\d+)')
-    caller_pattern = re.compile(r'(?:\[.*?\])?\s*mm_manage_alloc_fail:  - caller address = (0x[0-9a-f]+)')
-    largest_free_pattern = re.compile(r'(?:\[.*?\])?\s*mm_manage_alloc_fail:  - largest free size : (\d+)')
-    total_free_pattern = re.compile(r'(?:\[.*?\])?\s*mm_manage_alloc_fail:  - total free size   : (\d+)')
+    failure_start_pattern = re.compile(r'(?:\[([\d\-: .]+)\])?\s*(?:mm_manage_alloc_fail|mm_manage_alloc_fail_dump): Allocation failed from user heap\.')
+    size_pattern = re.compile(r'(?:\[.*?\])?\s*(?:mm_manage_alloc_fail|mm_manage_alloc_fail_dump):  - requested size (\d+)')
+    caller_pattern = re.compile(r'(?:\[.*?\])?\s*(?:mm_manage_alloc_fail|mm_manage_alloc_fail_dump):  - caller address = (0x[0-9a-f]+)')
+    largest_free_pattern = re.compile(r'(?:\[.*?\])?\s*(?:mm_manage_alloc_fail|mm_manage_alloc_fail_dump):  - largest free size : (\d+)')
+    total_free_pattern = re.compile(r'(?:\[.*?\])?\s*(?:mm_manage_alloc_fail|mm_manage_alloc_fail_dump):  - total free size   : (\d+)')
     header_pattern = re.compile(r'(?:\[.*?\])?\s*MemAddr \|   Size   \| Status \|    Owner   \|  Pid  \|')
     entry_pattern = re.compile(r'(?:\[.*?\])?\s*(0x[0-9a-f]+)\s*\|\s*(\d+)\s*\|\s*([A-Z])\s*\|\s*(0x[0-9a-f ]+)\s*\|\s*(\d+)(?:\(([A-Z])\))?\s*\|')
    
