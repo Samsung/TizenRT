@@ -8,6 +8,7 @@
 #include "ameba_soc.h"
 #include "barriers.h"
 #include "smp.h"
+#include <errno.h>
 
 #define SECONDARY_CORE_ID     1
 
@@ -21,6 +22,15 @@ extern void __cpu1_start(void);
 extern void _boot(void);
 extern void vPortRestoreTaskContext(void);
 #endif
+
+
+/* from psci.h aff_info_state_t */
+typedef enum {
+	AFF_STATE_ON = 0,
+	AFF_STATE_OFF = 1,
+	AFF_STATE_ON_PENDING = 2
+} aff_info_state_t;
+
 
 /*-----------------------------------------------------------*/
 
@@ -71,6 +81,138 @@ void rtk_core1_power_off(void)
 	val =  HAL_READ32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_PWC);
 	val &= ~(HSYS_PSW_HP_AP_CORE(0x2));
 	HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_PWC, val);
+}
+
+/****************************************************************************
+ * Name: cpu_core_poweron
+ *
+ * Description:
+ *   Powers on the CPU domain and initializes hardware for the secondary CPU.
+ *   This function handles the low-level power management and hardware
+ *   initialization of the cpu.
+ *
+ * Input Parameters:
+ *   cpu - The CPU ID to power on
+ *
+ * Returned Value:
+ *   OK (0) on success, negated error no on failure
+ *
+ * Assumptions:
+ *   - Called from CPU0
+ *   - Target CPU is currently powered off
+ *
+ ****************************************************************************/
+
+int cpu_core_poweron(int cpu)
+{
+	/* Currently only supports CPU1 */
+	if (cpu != 1) {
+		lldbg("%s only supports CPU1, got CPU%d\n", __func__, cpu);
+		return -ENOTSUP;
+	}
+
+	/* turn on CPU1's power domain, require time to stabilize */
+	rtk_core1_power_on();
+	DelayMs(1);
+
+	/* renable scu and invalidate tags on all processors */
+	arm_enable_smp(0);
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: vPortSecondaryBoot
+ *
+ * Description:
+ *   Starts the secondary CPU execution via PSCI and waits for it to come
+ *   online. This function handles the complete boot sequence from powered-off
+ *   state to CPU online, including PSCI boot and affinity validation.
+ *
+ * Input Parameters:
+ *   cpu - The CPU ID to start
+ *
+ * Returned Value:
+ *   OK (0) on success, negated error no on failure
+ *
+ * Assumptions:
+ *   - Called from CPU0
+ *   - Target CPU core has been powered on
+ *
+ ****************************************************************************/
+
+int vPortSecondaryBoot(int cpu)
+{
+	BaseType_t err;
+	int state;
+	int count = 10;
+
+	err = psci_cpu_on(cpu, (unsigned long)__cpu1_start);
+	DEBUGASSERT(err >= 0);
+
+	/* await for PSCI to report cpu state */
+	do {
+		state = psci_affinity_info(cpu, 0);
+		if (state == AFF_STATE_ON) {
+			break;
+		}
+
+		DelayUs(50);
+	} while (count--);
+
+	if (count <= 0) {
+		lldbg("Secondary core boot timeout affinfo: %d\n", state);
+		return -ETIMEDOUT;
+	}
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: cpu_core_powerdown
+ *
+ * Description:
+ *   Powers down the specified CPU core after ensuring it's in a safe state.
+ *   This function handles the core power down operations including PSCI
+ *   coordination and RTK power off.
+ *
+ * Input Parameters:
+ *   cpu - The CPU ID to power down
+ *
+ * Returned Value:
+ *   OK (0) on success, negated error no on failure
+ *
+ * Assumptions:
+ *   - CPU has already been hot-plugged
+ *   - Called from CPU0
+ *
+ ****************************************************************************/
+
+int cpu_core_powerdown(int cpu)
+{
+	int count = 10; // 10 * 50us = 500us
+	int state;
+
+	/* Currently only supports CPU1 */
+	if (cpu != 1) {
+		lldbg("%s only supports CPU1, got CPU%d\n", __func__, cpu);
+		return -ENOTSUP;
+	}
+
+	/* wait for PSCI to report that CPU1 is now safe to power off */
+	do {
+		state = psci_affinity_info(cpu, 0);
+		if (state == AFF_STATE_OFF) {
+			/* turn off CPU1's power domain */
+			rtk_core1_power_off();
+			return OK;
+		}
+
+		DelayUs(50);
+	} while (count--);
+
+	lldbg("Core powerdown timeout for CPU%d, affinfo: %d\n", cpu, state);
+	return -ETIMEDOUT;
 }
 
 void vPortSecondaryOff(void)

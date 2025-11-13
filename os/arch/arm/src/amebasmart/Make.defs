@@ -192,7 +192,7 @@ endif
 
 ifeq ($(CONFIG_SMP),y)
   CMN_CSRCS += arm_cpuindex.c arm_cpustart.c arm_cpupause.c arm_cpuidlestack.c
-  CMN_CSRCS += arm_scu.c
+  CMN_CSRCS += arm_scu.c arm_cpuon.c arm_cpustop.c
 endif
 
 ifeq ($(CONFIG_CPU_HOTPLUG),y)

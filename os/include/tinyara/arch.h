@@ -1969,6 +1969,7 @@ void weak_function sched_process_cpuload(void);
 void irq_dispatch(int irq, FAR void *context);
 
 #ifdef CONFIG_SMP
+
 /****************************************************************************
  * Name: up_cpu_start
  *
@@ -1977,6 +1978,11 @@ void irq_dispatch(int irq, FAR void *context);
  *   System initialization occurs on that single thread. At the completion of
  *   the initialization of the OS, just before beginning normal multitasking,
  *   the additional CPUs would be started by calling this function.
+ *
+ *   This function performs the complete CPU startup sequence by powering on
+ *   the CPU, booting the secondary core, and integrating it back into the
+ *   SMP system. The CPU will be marked as running and can participate in
+ *   task scheduling.
  *
  *   Each CPU is provided the entry point to its IDLE task when started.  A
  *   TCB for each CPU's IDLE task has been initialized and placed in the
@@ -1993,6 +1999,11 @@ void irq_dispatch(int irq, FAR void *context);
  *
  * Returned Value:
  *   Zero on success; a negated errno value on failure.
+ *
+ * Assumptions:
+ *   - Called from a different CPU than the target
+ *   - Target CPU is currently powered off and can be safely started
+ *   - System is in a state to safely bring additional CPU online
  *
  ****************************************************************************/
 
@@ -2192,6 +2203,30 @@ bool up_cpu_hotplugreq(int cpu);
  *
  ****************************************************************************/
 int up_cpu_hotplugabort(int cpu);
+
+/****************************************************************************
+ * Name: up_cpu_stop
+ *
+ * Description:
+ *   Stop and power down a secondary CPU core. This function performs a
+ *   complete CPU shutdown sequence by first hot-plugging the CPU (making it
+ *   enter halt state) and then powering it down completely. The CPU will be
+ *   removed from the SMP system and can be restarted later with up_cpu_start().
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to stop (must be > 0 and < CONFIG_SMP_NCPUS)
+ *
+ * Returned Value:
+ *   Zero (OK) on success; a negated errno value on failure.
+ *
+ * Assumptions:
+ *   - Called from a different CPU than the target
+ *   - Target CPU is currently running and can be safely stopped
+ *   - Scheduler is in a state that allows CPU hot-plug operations
+ *
+ ****************************************************************************/
+
+int up_cpu_stop(int cpu);
 #endif /* CONFIG_CPU_HOTPLUG */
 #endif /* CONFIG_SMP */
 
