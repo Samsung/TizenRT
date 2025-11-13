@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-a/arm_cpuhotplug.c
+ * arch/arm/src/armv7-a/arm_cpuoff.c
  ****************************************************************************/
 
 /****************************************************************************
@@ -190,45 +190,65 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 		/* Save the tcb state */
 		struct tcb_s *rtcb = this_task();
 		arm_savestate(rtcb->xcp.regs);
-		rtcb->task_state = TSTATE_TASK_ASSIGNED;
+
+		/* Mark this cpu's idle task as inactive to prevent the scheduler from putting things on it */
+		rtcb->task_state = TSTATE_TASK_INACTIVE;
 		CURRENT_REGS = NULL;
 
-		/* MINOR: PSCI is a general interface for controlling power of cortex-A cores
-		It is one of the feature in arm-trusted-firmware (ie. Trustzone-A)
-		Currently, the definitions are provided by chip specific arch layer
-		If the cpu off operation failed, we should face a problem during wakeup
-		booting the secondary core, thus we can ignore the return value here first
+		/*
+		* clear GIC APR0 as when this gets set during restore by ATF boot flow,
+		* When this register is set, it cause GIC to not serve other requests as it thinks there is an
+		* active ISR being served currently.
+		*
+		* On powerup, this register is restored by ATF from previous saved state.
+		* If hard reset, then state is re-initialized, otherwise it will save the state when psci_cpu_off
 		*/
+		putreg32(0x00000000, GIC_ICCNSAPR1);    /* clear SGI1 nonsecure APR0 */
+		putreg32(0x00000000, GIC_ICCAPR1);      /* clear SGI1 secure APR0 */
+
+		/*
+		* manually clear SGI4 interrupt active
+		* As psci_cpu_off is a noreturn function it will trap the CPU in a WFI loop
+		* this means that it will never exit back to arm_decodeirq where EOIR will be set
+		*/
+		putreg32(irq, GIC_ICCEOIR);
 
 		/* Shut down the secondary core */
-		(void)psci_cpu_off();
+		up_cpu_die();
 	}
 
 	return OK;
 }
 
 /****************************************************************************
- * Name: up_cpu_hotplug
+ * Name: up_cpu_off
  *
  * Description:
- *   Send signal for target CPU to enter hotplug mode.
+ *   Stop and power down a secondary CPU core. This function performs a
+ *   complete CPU shutdown sequence by first hot-plugging the CPU and
+ *   then powering it down completely. The CPU will be removed from the
+ *   SMP system and can be restarted later with up_cpu_on().
  *
  * Input Parameters:
- *   cpu - The index of the CPU being hotplug.
+ *   cpu - The index of the CPU to stop (must be > 0 and < CONFIG_SMP_NCPUS)
  *
  * Returned Value:
- *   OK (0) on success,
- *   -EBUSY if cpu operation cannot be completed
+ *   Zero (OK) on success; a negated errno value on failure.
  *
  * Assumptions:
- *   Called from within a critical section
- *   target CPU must be in idle
+ *   - Called from a different CPU than the target
+ *   - Called from within a critical section
+ *   - Target CPU is currently running and can be safely stopped
+ *   - Scheduler is in a state that allows CPU hot-plug operations
  *
  ****************************************************************************/
-int up_cpu_hotplug(int cpu)
+
+int up_cpu_off(int cpu)
 {
 	struct tcb_s * tcb;
 	int ret = OK;
+
+	smpvdbg("Disabling CPU%d\n", cpu);
 
 	DEBUGASSERT(cpu > 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
@@ -262,6 +282,23 @@ int up_cpu_hotplug(int cpu)
 
 	/* Release the handled spinlock since we've completed the state check */
 	spin_unlock(&g_cpu_hotplughandled[cpu]);
+
+	/* Check if hotplug failed */
+	if (ret < 0) {
+		smpdbg("Secondary core hotplug failed CPU%d\n", cpu);
+		return ret;
+	}
+
+	smpvdbg("Secondary core hotplug complete CPU%d\n", cpu);
+
+	/* Power down the core completely */
+	ret = up_cpu_down(cpu);
+	if (ret < 0) {
+		smpdbg("Failed to powerdown secondary core CPU%d\n", cpu);
+		return ret;
+	}
+
+	smpvdbg("Secondary core powerdown complete CPU%d\n", cpu);
 
 	return ret;
 }
