@@ -40,7 +40,7 @@ public:
 	HardwareKeywordDetector(int normal_card, int normal_device, int sd_card, int sd_device);
 	bool init(uint32_t samprate, uint8_t channels) override;
 	void deinit() override;
-	bool startKeywordDetect(bool enableLocalCommand) override;
+	bool startKeywordDetect(void) override;
 	bool stopKeywordDetect(void) override;
 	void detectKeyword(void) override;
 	bool isKeywordDetectStarted(void) override;

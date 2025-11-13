@@ -91,7 +91,7 @@ public:
 	 * @return Return success if Keyword is detected
 	 * @since TizenRT v2.0
 	 */
-	virtual bool startKeywordDetect(bool enableLocalCommand) = 0;
+	virtual bool startKeywordDetect(void) = 0;
 	/**
 	 * @brief Start Detecting EndPoint
 	 * @details @b #include <media/voice/SpeechDetector.h>
