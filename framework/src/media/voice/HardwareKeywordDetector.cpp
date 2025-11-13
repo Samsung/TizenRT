@@ -101,8 +101,7 @@ void HardwareKeywordDetector::deinit()
 	medvdbg("Hardware KD deinit done");
 }
 
-/* KWV TODO: need to fix bixby code to apply the interface change */
-bool HardwareKeywordDetector::startKeywordDetect(bool enableLocalCommand)
+bool HardwareKeywordDetector::startKeywordDetect(void)
 {
 	audio_manager_result_t result;
 
@@ -116,12 +115,6 @@ bool HardwareKeywordDetector::startKeywordDetect(bool enableLocalCommand)
 		return false;
 	}
 	mKeywordDetectStarted = true;
-
-	/* local command is expected to run only when bixby goes to READY state.
-	 * True: local command may be triggered (bixby in READY)
-	 * False: local command can be detected but should be blocked (bixby still in SPEAKING)
-	 */
-	mIsLocalCommandEnabled = enableLocalCommand;
 	medvdbg("Hardware KD start successful");
 	return true;
 }
