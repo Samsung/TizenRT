@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TICK
+	bool "Tick Compensation Test"
+	default n
+	depends on BUILD_FLAT
+	---help---
+		This application is testing whether the tick compensation works correctly or not.
+
+config USER_ENTRYPOINT
+	string
+	default "tick_compensation_test" if ENTRY_TICK
