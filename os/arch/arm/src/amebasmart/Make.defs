@@ -270,6 +270,9 @@ CMN_CSRCS += amebasmart_pmc.c
 CMN_ASRCS += a32_pm.S
 endif
 
+# EXTRA_LIBS start
+EXTRA_LIBS += --whole-archive
+
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
 EXTRA_LIBS += ${TOPDIR}/board/rtl8730e/src/libs/lib_btgap.a
 #endif
@@ -309,4 +312,7 @@ else
 #EXTRA_LIBS += $(TOPDIR)/board/
 endif
 endif
+
+# EXTRA_LIBS end
+EXTRA_LIBS += --no-whole-archive
 
