@@ -29,12 +29,8 @@
 #include <media/FileInputDataSource.h>
 #include <media/HttpInputDataSource.h>
 #include <media/MediaUtils.h>
-<<<<<<<< HEAD:apps/examples/SoundPlayer/soundplayer_main.cpp
 #include <audio/SoundManager.h>
-#include "../PlayerController/PlayerController.h"
-========
 #include "../controller/PlayerController.h"
->>>>>>>> a9615e6cf (framework/media: Fix review comments for audio mixer):apps/SoundPlayer/player/soundplayer_main.cpp
 #include <string.h>
 #include <debug.h>
 #include <fcntl.h>

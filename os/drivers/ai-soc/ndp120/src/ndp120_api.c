@@ -1442,15 +1442,15 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	const char *neural_package;
 	if ((dev->kd_num & AUDIO_NN_MODEL_MASK) == AUDIO_NN_MODEL_BIXBY) {
 		if ((dev->kd_num & AUDIO_NN_MODEL_LANG_MASK) == AUDIO_NN_MODEL_LANG_EN) {
-			neural_package = "/res/shared/model/kd_local2_en";
+			neural_package = "/mnt/kernel/audio/kd_local2_en";
 		} else {
-			neural_package = "/res/shared/model/kd_local2";
+			neural_package = "/mnt/kernel/audio/kd_local2";
 		}
 	} else {
 		if ((dev->kd_num & AUDIO_NN_MODEL_LANG_MASK) == AUDIO_NN_MODEL_LANG_EN) {
-			neural_package = "/res/shared/model/kd_local_en";
+			neural_package = "/mnt/kernel/audio/kd_local_en";
 		} else {
-			neural_package = "/res/shared/model/kd_local";
+			neural_package = "/mnt/kernel/audio/kd_local";
 		}
 	}
 
