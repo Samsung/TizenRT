@@ -74,7 +74,7 @@
 #define round_down(x, y) ((x) - ((x) % (y)))
 #define STRING_LEN		256
 
-#define AUDIO_BEFORE_MATCH_MS	(1500)
+#define AUDIO_BEFORE_MATCH_MS	(2000)
 
 #define PDM_CLOCK_PDM_RATE 1536000
 
@@ -83,6 +83,8 @@
 #define NDP120_SPI_FREQ_HIGH    12000000
 #define NDP120_SPI_FREQ_INIT    1000000
 #define FF_ID NDP120_DSP_DATA_FLOW_FUNCTION_FULL_FF_49
+#define SR_FE_ID 225
+#define SR_FE_POOLING_ID 227
 #define KEYWORD_NETWORK_ID 0
 
 /* Periodicity of NDP alivness check thread */
@@ -124,8 +126,8 @@ static struct ndp120_dev_s *_ndp_debug_handle = NULL;
 
 typedef enum {
 	DSP_FLOW_BIXBY = 0,
-	DSP_FLOW_AOD = 1,
-	DSP_FLOW_SED = 2,
+	DSP_CUSTOM_FLOW1 = 1,
+	DSP_CUSTOM_FLOW2 = 2,
 	DSP_FLOW_MAX,
 } dsp_flow_e;
 
@@ -139,8 +141,9 @@ typedef struct {
 static const dsp_flow_t g_flow_types[] = {
 	{"hi-bixby", DSP_FLOW_BIXBY},
 	{"bixby", DSP_FLOW_BIXBY},
-	{"aod", DSP_FLOW_AOD},
-	{"openset_sed", DSP_FLOW_SED},
+	{"aod", DSP_CUSTOM_FLOW1},
+	{"sed", DSP_CUSTOM_FLOW2},
+	{"openset_sed", DSP_CUSTOM_FLOW2},
 };
 
 /****************************************************************************
@@ -152,6 +155,7 @@ void ndp120_aec_disable(struct ndp120_dev_s *dev);
 void ndp120_test_internal_passthrough_switch(struct ndp120_dev_s *dev, int internal);
 
 static void do_ndp120_i2s_setup(struct syntiant_ndp_device_s *ndp);
+static void attach_algo_config_area(struct syntiant_ndp_device_s *ndp, int32_t algo_id, int32_t algo_config_index);
 
 void ndp120_semtake(struct ndp120_dev_s *dev)
 {
@@ -420,6 +424,7 @@ static int initialize_ndp(struct ndp120_dev_s *dev)
 	syntiant_ndp120_config_clk_src_t config_clk_src;
 	int s;
 
+	memset(dev->labels_per_network, 0, sizeof(dev->labels_per_network));
 	/* stuff the ILib integration interfaces */
 	iif.d = dev;
 	iif.malloc = (void * (*)(int)) kmm_malloc;
@@ -951,7 +956,7 @@ dsp_flow_e get_dsp_flow_type(struct ndp120_dev_s *dev, int index)
 	return DSP_FLOW_MAX;
 }
 
-void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
+void add_common_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn)
 {
 	// ----------
 	// COMBINED NORMAL + AEC FLOW
@@ -967,15 +972,6 @@ void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_
 	setup->src_pcm_audio[*src_pcm].algo_exec_property = 0;
 	(*src_pcm)++;
 
-	/* FUNCx->NN0 */
-	setup->src_function[*src_func].src_param = FF_ID;
-	setup->src_function[*src_func].dst_param = network_id;
-	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
-	setup->src_function[*src_func].algo_config_index = -1;
-	setup->src_function[*src_func].set_id = COMBINED_FLOW_SET_ID;
-	setup->src_function[*src_func].algo_exec_property = 0;
-	(*src_func)++;
-
 	/* FUNCx->HOST_EXT_AUDIO */
 	setup->src_function[*src_func].src_param = FF_ID;
 	setup->src_function[*src_func].dst_param = NDP120_DSP_DATA_FLOW_DST_SUBTYPE_AUDIO;
@@ -984,50 +980,11 @@ void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_
 	setup->src_function[*src_func].set_id = COMBINED_FLOW_SET_ID;
 	setup->src_function[*src_func].algo_exec_property = 0;
 	(*src_func)++;
-
-	/* NN0->MCU */
-	setup->src_nn[*src_nn].src_param = network_id;
-	setup->src_nn[*src_nn].dst_param = 0;
-	setup->src_nn[*src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
-	setup->src_nn[*src_nn].algo_config_index = -1;
-	setup->src_nn[*src_nn].set_id = COMBINED_FLOW_SET_ID;
-	setup->src_nn[*src_nn].algo_exec_property = 0;
-	(*src_nn)++;
 }
 
-void add_aod_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
+void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
 {
-	/* FUNCx->FUNC227 */
-	setup->src_function[*src_func].src_param = FF_ID;
-	setup->src_function[*src_func].dst_param = SR_FE_POOLING_ID;
-	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_FUNCTION;
-	setup->src_function[*src_func].algo_config_index = 1;
-	setup->src_function[*src_func].set_id = 0;
-	setup->src_function[*src_func].algo_exec_property = 0;
-	(*src_func)++;
-
-	/* FUNC227->NN1 */
-	setup->src_function[*src_func].src_param = SR_FE_POOLING_ID;
-	setup->src_function[*src_func].dst_param =  network_id;
-	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
-	setup->src_function[*src_func].algo_config_index = -1;
-	setup->src_function[*src_func].set_id = COMBINED_FLOW_SET_ID;
-	setup->src_function[*src_func].algo_exec_property = 0;
-	(*src_func)++;
-
-	/* NN1->MCU */
-	setup->src_nn[*src_nn].src_param =  network_id;
-	setup->src_nn[*src_nn].dst_param = 0;
-	setup->src_nn[*src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
-	setup->src_nn[*src_nn].algo_config_index = -1;
-	setup->src_nn[*src_nn].set_id = COMBINED_FLOW_SET_ID;
-	setup->src_nn[*src_nn].algo_exec_property = 0;
-	(*src_nn)++;
-}
-
-void add_sed_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
-{
-	/* FUNCx->NN1 */
+	/* FUNCx->NN */
 	setup->src_function[*src_func].src_param = FF_ID;
 	setup->src_function[*src_func].dst_param = network_id;
 	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
@@ -1036,7 +993,7 @@ void add_sed_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_fu
 	setup->src_function[*src_func].algo_exec_property = 0;
 	(*src_func)++;
 
-	/* NN1->MCU */
+	/* NN->MCU */
 	setup->src_nn[*src_nn].src_param = network_id;
 	setup->src_nn[*src_nn].dst_param = 0;
 	setup->src_nn[*src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
@@ -1044,6 +1001,69 @@ void add_sed_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_fu
 	setup->src_nn[*src_nn].set_id = COMBINED_FLOW_SET_ID;
 	setup->src_nn[*src_nn].algo_exec_property = 0;
 	(*src_nn)++;
+	auddbg("Added Bixby/Hi-Bixby flow\n");
+}
+
+void add_custom_flow1(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
+{
+	/* FUNCx->FUNC227 */
+	setup->src_function[*src_func].src_param = FF_ID;
+	setup->src_function[*src_func].dst_param = SR_FE_POOLING_ID;
+	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_FUNCTION;
+	setup->src_function[*src_func].algo_config_index = network_id;
+	setup->src_function[*src_func].set_id = 0;
+	setup->src_function[*src_func].algo_exec_property = 0;
+	(*src_func)++;
+
+	/* FUNC227->NN */
+	setup->src_function[*src_func].src_param = SR_FE_POOLING_ID;
+	setup->src_function[*src_func].dst_param =  network_id;
+	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
+	setup->src_function[*src_func].algo_config_index = -1;
+	setup->src_function[*src_func].set_id = COMBINED_FLOW_SET_ID;
+	setup->src_function[*src_func].algo_exec_property = 0;
+	(*src_func)++;
+
+	/* NN->MCU */
+	setup->src_nn[*src_nn].src_param = network_id;
+	setup->src_nn[*src_nn].dst_param = 0;
+	setup->src_nn[*src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
+	setup->src_nn[*src_nn].algo_config_index = -1;
+	setup->src_nn[*src_nn].set_id = COMBINED_FLOW_SET_ID;
+	setup->src_nn[*src_nn].algo_exec_property = 0;
+	(*src_nn)++;
+	auddbg("Added custom flow1\n");
+}
+
+void add_custom_flow2(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
+{
+	/* FUNCx->FUNC225 */
+	setup->src_function[*src_func].src_param = FF_ID;
+	setup->src_function[*src_func].dst_param = SR_FE_ID;
+	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_FUNCTION;
+	setup->src_function[*src_func].algo_config_index = network_id;
+	setup->src_function[*src_func].set_id = 0;
+	setup->src_function[*src_func].algo_exec_property = 0;
+	(*src_func)++;
+
+	/* FUNC225->NN */
+	setup->src_function[*src_func].src_param = SR_FE_ID;
+	setup->src_function[*src_func].dst_param =  network_id;
+	setup->src_function[*src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
+	setup->src_function[*src_func].algo_config_index = -1;
+	setup->src_function[*src_func].set_id = COMBINED_FLOW_SET_ID;
+	setup->src_function[*src_func].algo_exec_property = 0;
+	(*src_func)++;
+
+	/* NN->MCU */
+	setup->src_nn[*src_nn].src_param = network_id;
+	setup->src_nn[*src_nn].dst_param = 0;
+	setup->src_nn[*src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
+	setup->src_nn[*src_nn].algo_config_index = -1;
+	setup->src_nn[*src_nn].set_id = COMBINED_FLOW_SET_ID;
+	setup->src_nn[*src_nn].algo_exec_property = 0;
+	(*src_nn)++;
+	auddbg("Added custom flow2\n");
 }
 
 static
@@ -1051,6 +1071,7 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 {
 	int s = 0;
 	ndp120_dsp_data_flow_setup_t setup;
+	struct ndp120_dev_s *dev = ndp->iif.d;
 
 	int src_pcm = 0;
 	int src_func = 0;
@@ -1058,6 +1079,7 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 
 	memset(&setup, 0, sizeof(setup));
 
+	add_common_flow(&setup, &src_pcm, &src_func, &src_nn);
 	dsp_flow_e flow;
 	for (int i = 0;	i < MAX_NNETWORKS; i++) {
 		flow = get_dsp_flow_type(dev, i);
@@ -1066,11 +1088,15 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 		case DSP_FLOW_BIXBY:
 			add_bixby_flow(&setup, &src_pcm, &src_func, &src_nn, i);
 			break;
-		case DSP_FLOW_AOD:
-			add_aod_flow(&setup, &src_pcm, &src_func, &src_nn, i);
+		case DSP_CUSTOM_FLOW1:
+			attach_algo_config_area(dev->ndp, SR_FE_POOLING_ID, i);
+			auddbg("Attached ALGO id = %d at index %d.\n", SR_FE_POOLING_ID, i);
+			add_custom_flow1(&setup, &src_pcm, &src_func, &src_nn, i);
 			break;
-		case DSP_FLOW_SED:
-			add_sed_flow(&setup, &src_pcm, &src_func, &src_nn, i);
+		case DSP_CUSTOM_FLOW2:
+			attach_algo_config_area(dev->ndp, SR_FE_ID, i);
+			auddbg("Attached ALGO id = %d at index %d.\n", SR_FE_ID, i);
+			add_custom_flow2(&setup, &src_pcm, &src_func, &src_nn, i);
 			break;
 		case DSP_FLOW_MAX:
 			auddbg("Wrong value : %d\n", flow);
@@ -1495,7 +1521,11 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 		goto errout_ndp120_init;
 	}
 
+	s_num_labels = 16;
+	s = get_versions_and_labels(dev->ndp, s_label_data, sizeof(s_label_data), s_labels, &s_num_labels);
+
 	attach_algo_config_area(dev->ndp, FF_ID, 0);
+	auddbg("Attached ALGO id = %d at index 0.\n", FF_ID);
 #if BT_MIC_SUPPORT == 1
 	// when using BT-mic, attach algo config to func0 as well
 	attach_algo_config_area(dev->ndp, 0, 0);
@@ -1551,8 +1581,6 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	}
 #endif
 
-	s_num_labels = 16;
-	s = get_versions_and_labels(dev->ndp, s_label_data, sizeof(s_label_data), s_labels, &s_num_labels);
 #ifdef CONFIG_DEBUG_AUDIO_INFO
 	dsp_flow_show(dev->ndp);
 #endif
@@ -1778,7 +1806,7 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 					msg.msgId = AUDIO_MSG_KD;
 				}
 				break;
-			case DSP_FLOW_AOD:
+			case DSP_CUSTOM_FLOW1:
 				auddbg("[#%d Voice Commands] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
 				extract_keyword(dev);
 				switch (winner) {
@@ -1799,8 +1827,9 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 					goto errout_with_irq;
 				}
 				break;
-			case DSP_FLOW_SED:
+			case DSP_CUSTOM_FLOW2:
 				auddbg("[#%d SED] matched: %s\n", serialno, dev->labels_per_network[network_id][winner]);
+				extract_keyword(dev);
 				switch (winner) {
 				case 0:
 					msg.msgId = AUDIO_MSG_LOCAL8;
@@ -1816,6 +1845,9 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 					break;
 				case 4:
 					msg.msgId = AUDIO_MSG_LOCAL12;
+					break;
+				case 5:
+					msg.msgId = AUDIO_MSG_LOCAL13;
 					break;
 				default:
 					ret = SYNTIANT_NDP_ERROR_INVALID_NETWORK;
@@ -2166,3 +2198,27 @@ void ndp120_aec_disable(struct ndp120_dev_s *dev)
 	dev->extclk_inuse = false;
 }
 #endif
+
+int ndp120_kw_sensitivity_set(struct ndp120_dev_s *dev, uint16_t sensitivity)
+{
+	int s;
+	uint32_t new_th;
+	syntiant_ndp120_posterior_config_t ph_config;
+
+	if (sensitivity > 1000) {
+		return SYNTIANT_NDP_ERROR_ARG;
+	}
+	// map the incoming threshold (0-1000) to 0-0xffff range
+	new_th = sensitivity * 0xffff / 1000;
+
+	memset(&ph_config, 0, sizeof(ph_config));
+	ph_config.set = SYNTIANT_NDP120_CONFIG_SET_POSTERIOR_CONFIG_SET_THRESHOLD;
+	// kw is class index 0 of model 0
+	ph_config.class_index = 0;
+	ph_config.ph_idx = 0;
+	ph_config.threshold = new_th;
+	s = syntiant_ndp120_posterior_config(dev->ndp, &ph_config);
+	check_status("Error setting KW sensitivity", s);
+
+	return s;
+}
