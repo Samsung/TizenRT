@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2019-2022, Arm Limited. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
+
+/***********{{utilities.donotedit_warning}}***********/
+
+#ifndef __PSA_MANIFEST_SID_H__
+#define __PSA_MANIFEST_SID_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+{% for partition in partitions %}
+    {% if partition.manifest.services %}
+/******** {{partition.manifest.name}} ********/
+        {% for service in partition.manifest.services %}
+#define {{"%-58s"|format(service.name + "_SID")}} ({{"%10s"|format(service.sid)}}U)
+#define {{"%-58s"|format(service.name + "_VERSION")}} ({{"%d"|format(service.version)}}U)
+            {% if service.connection_based == false %}
+#define {{"%-58s"|format(service.name + "_HANDLE")}} ({{"%s"|format(service.stateless_handle_value)}}U)
+            {% endif %}
+        {% endfor %}
+
+    {% endif %}
+{% endfor %}
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __PSA_MANIFEST_SID_H__ */

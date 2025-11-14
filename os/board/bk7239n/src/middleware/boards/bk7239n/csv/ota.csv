@@ -1,0 +1,6 @@
+Field,Value
+strategy,XIP
+app_security_counter,3
+encrypt,FALSE
+app_version,0.0.3
+bootloader_ota,TRUE

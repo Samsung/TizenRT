@@ -1,0 +1,15 @@
+menu "PSA Mbedtls"
+	config PSA_MBEDTLS
+		bool "Enable mbedtls v3.5.2"
+		default n
+
+	config PSA_MBEDTLS_TEST
+		bool "Enable psa mbedtls test"
+		default n
+	config PSA_CUSTOMIZATION_TZ_L
+		bool "Enable adapt customization interface"
+		default n
+	config PSA_CUSTOMIZATION_TEST
+		bool "Enable psa customization test"
+		default n
+endmenu

@@ -1,0 +1,131 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2020-2021, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+########################## LIB #################################################
+
+target_include_directories(${CC312_LIB_TARGET}
+    PUBLIC
+        cc3x_sym/driver
+    INTERFACE
+        common
+        cc3x_sym/api
+        pki/poly
+        pki/ec_wrst
+        ec_wrst
+        ec_wrst/ecc_domains
+        rsa
+        pki/srp
+        pki/ec_edw
+        pki/ec_mont
+        pki/common
+        pki/rsa
+        rnd_dma/local
+        rnd_dma
+)
+
+target_sources(${CC312_LIB_TARGET}
+    PRIVATE
+        cc3x_sym/api/mbedtls_cc_chacha.c
+        cc3x_sym/api/mbedtls_cc_chacha_poly.c
+        cc3x_sym/api/mbedtls_cc_chacha_poly.c
+        cc3x_sym/api/mbedtls_cc_ecies.c
+        cc3x_sym/api/mbedtls_ccm_internal.c
+        cc3x_sym/api/mbedtls_cc_poly.c
+        cc3x_sym/api/mbedtls_cc_poly.c
+        cc3x_sym/api/mbedtls_cc_sha512_t.c
+        cc3x_sym/api/mbedtls_cc_srp.c
+        cc3x_sym/api/mbedtls_cc_srp.c
+        cc3x_sym/driver/aesccm_driver.c
+        cc3x_sym/driver/aes_driver.c
+        cc3x_sym/driver/aesgcm_driver.c
+        cc3x_sym/driver/bypass_driver.c
+        cc3x_sym/driver/chacha_driver.c
+        cc3x_sym/driver/driver_common.c
+        cc3x_sym/driver/hash_driver.c
+        cc3x_sym/driver/srp_driver.c
+        common/cc_common_conv_endian.c
+        common/cc_common_math.c
+        ec_edw/cc_ec_edw.c
+        ec_edw/cc_ec_edw.c
+        ec_mont/cc_ec_mont.c
+        ec_mont/cc_ec_mont.c
+        ec_wrst/cc_ecdh.c
+        ec_wrst/cc_ecdsa_sign.c
+        ec_wrst/cc_ecdsa_verify.c
+        ec_wrst/cc_ecpki_build_priv.c
+        ec_wrst/cc_ecpki_build_publ.c
+        ec_wrst/cc_ecpki_domain.c
+        ec_wrst/cc_ecpki_kg.c
+        ec_wrst/ecc_domains/cc_ecpki_domain_secp192k1.c
+        ec_wrst/ecc_domains/cc_ecpki_domain_secp192r1.c
+        ec_wrst/ecc_domains/cc_ecpki_domain_secp224k1.c
+        ec_wrst/ecc_domains/cc_ecpki_domain_secp224r1.c
+        ec_wrst/ecc_domains/cc_ecpki_domain_secp256k1.c
+        ec_wrst/ecc_domains/cc_ecpki_domain_secp256r1.c
+        ec_wrst/ecc_domains/cc_ecpki_domain_secp384r1.c
+        ec_wrst/ecc_domains/cc_ecpki_domain_secp521r1.c
+        ffc_domain/cc_ffc_domain.c
+        kdf/cc_kdf.c
+        pki/common/pka.c
+        pki/common/pki.c
+        pki/common/pki_modular_arithmetic.c
+        pki/ec_edw/ec_edw.c
+        pki/ec_edw/ec_edw_domain_25519.c
+        pki/ec_edw/pka_ec_edw.c
+        pki/ec_edw/pka_ec_edw.c
+        pki/ec_mont/ec_mont.c
+        pki/ec_mont/ec_mont_domain_curve25519.c
+        pki/ec_mont/pka_ec_mont.c
+        pki/ec_mont/pka_ec_mont.c
+        pki/ec_wrst/ec_wrst.c
+        pki/ec_wrst/ec_wrst_dsa.c
+        pki/ec_wrst/ec_wrst_genkey.c
+        pki/ec_wrst/pka_ec_wrst.c
+        pki/ec_wrst/pka_ec_wrst.c
+        pki/ec_wrst/pka_ec_wrst_dsa_verify.c
+        pki/ec_wrst/pka_ec_wrst_smul_no_scap.c
+        pki/poly/poly.c
+        pki/rsa/rsa_genkey.c
+        pki/rsa/rsa_private.c
+        pki/rsa/rsa_public.c
+        pki/srp/srp.c
+        rnd_dma/cc_rnd_common.c
+        rnd_dma/llf_rnd.c
+        rnd_dma/llf_rnd_fetrng.c
+        rsa/cc_rsa_build.c
+        rsa/cc_rsa_kg.c
+        rsa/cc_rsa_oaep.c
+        rsa/cc_rsa_pkcs_ver15_util.c
+        rsa/cc_rsa_prim.c
+        rsa/cc_rsa_pss21_util.c
+        rsa/cc_rsa_schemes.c
+        rsa/cc_rsa_sign.c
+        rsa/cc_rsa_verify.c
+        rsa/cc_rsa_verify.c
+)
+
+########################## CDMPU ###############################################
+
+target_include_directories(${CC312_CDMPU_TARGET}
+    INTERFACE
+        common
+        cc3x_sym/driver
+        cc3x_sym/api
+        rnd_dma
+        rnd_dma/local
+)
+
+target_sources(${CC312_CDMPU_TARGET}
+    INTERFACE
+        cc3x_sym/api/mbedtls_ccm_internal.c
+        cc3x_sym/driver/aesccm_driver.c
+        cc3x_sym/driver/aes_driver.c
+        cc3x_sym/driver/driver_common.c
+        common/cc_common_conv_endian.c
+        rnd_dma/llf_rnd.c
+        rnd_dma/llf_rnd_fetrng.c
+)

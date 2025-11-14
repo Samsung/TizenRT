@@ -1,0 +1,12 @@
+menu "ICU"
+	config ICU_GPIO
+		bool "Enable icu gpio"
+		default n
+endmenu
+
+menu "Interrupt"
+	config ISR_REG_DISABLE
+		bool "Disable irq"
+		default n
+endmenu
+
