@@ -378,6 +378,8 @@ int wakerec_main(int argc, char *argv[])
 		pm_resume_idle();
 	}
 
+	sd->startKeywordDetect();
+
 	while (1) {
 		sleep(67);
 	}

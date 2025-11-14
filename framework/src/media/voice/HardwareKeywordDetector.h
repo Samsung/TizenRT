@@ -20,7 +20,16 @@
 
 #include <functional>
 
+#include <media/MediaRecorder.h>
+
 #include "KeywordDetector.h"
+
+#include "aifw/AIInferenceHandler.h"
+#include "aifw/AIModelService.h"
+#include "../StreamBuffer.h"
+
+#define KEYWORD_INTERRUPT_MASK_KD		0
+#define KEYWORD_INTERRUPT_MASK_LOCAL	1
 
 namespace media {
 namespace voice {
@@ -48,6 +57,24 @@ private:
 	int mSdDevice;
 	SpeechResultListener mSpeechResultCallback;
 	bool mKeywordDetectStarted;
+	bool mIsLocalCommandEnabled;
+
+	/* AIFW and audio buffer for Keyword Verifier of local command */
+	std::shared_ptr<aifw::AIInferenceHandler> mAIInferenceHandler;
+	std::shared_ptr<aifw::AIModelService> mAIModelService;
+	std::shared_ptr<media::stream::StreamBuffer> mAudioDataBuffer;
+	unsigned char *mPCMData;
+	/**
+	 * @brief Size of mAudioBuffer in bytes. Size is calculated based on the number of bytes required for inference &
+	 * the number of bytes coming from the recorder in detectEndPoint() API.
+	*/
+	int16_t mAudioBufferSize;
+	/**
+	 * @brief Number of bytes required for inference.
+	*/
+	uint16_t mInferenceInputSize;
+
+	uint16_t getAudioBufferSize(void);
 };
 
 } // namespace voice

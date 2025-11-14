@@ -179,6 +179,7 @@ static const std::string MPEG_MIME_TYPE = "audio/mpeg";
 static const std::string MP4_MIME_TYPE = "audio/mp4";
 static const std::string OPUS_MIME_TYPE = "audio/opus";
 static const std::string MP2T_MIME_TYPE = "video/MP2T";
+static const std::string PCM_MIME_TYPE = "application/octet-stream";
 
 // Bit Rate (in kbps) tables
 // V1 - MPEG 1, V2 - MPEG 2 and MPEG 2.5
@@ -762,6 +763,8 @@ audio_type_t getAudioTypeFromMimeType(std::string &mimeType)
 		audioType = AUDIO_TYPE_OPUS;
 	} else if (mimeType.find(MP2T_MIME_TYPE) != std::string::npos) {
 		audioType = AUDIO_TYPE_MP2T;
+	} else if (mimeType.find(PCM_MIME_TYPE) != std::string::npos) {
+		audioType = AUDIO_TYPE_PCM;
 	} else {
 		meddbg("Unsupported mime type: %s\n", mimeType.c_str());
 		audioType = AUDIO_TYPE_UNKNOWN;
@@ -1419,6 +1422,18 @@ unsigned int splitChannel(unsigned int layout, const signed short *stream, unsig
 
 	va_end(ap);
 	return ret;
+}
+
+void mergeChannel(void *dataL, void *dataR, unsigned int frames)
+{
+	int16_t *main = (int16_t *)dataL;
+	int16_t *sub = (int16_t *)dataR;
+
+	for(int32_t i = frames - 1; i >= 0; i--)
+	{
+		main[2 * i] = main[i];
+		main[2 * i + 1] = sub[i];
+	}
 }
 
 float getSignalToNoiseRatio(const short *buffer, size_t size, int windows, int *index, ...)
