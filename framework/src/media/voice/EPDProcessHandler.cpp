@@ -87,7 +87,7 @@ AIFW_RESULT EPDProcessHandler::preProcessData(std::shared_ptr<aifw::AIDataBuffer
 	/* Step 2 : Read the parsed raw data from the latest row of buffer. At this time the latest row does not include invoke result. */
 	AIFW_RESULT res = buffer->readData(rawData, 0, modelAttribute->rawDataCount, 0);
 	if (res != AIFW_OK) {
-		AIFW_LOGE("Reading Data from the buffer failed.");
+		meddbg("Reading Data from the buffer failed.");
 		delete[] rawData;
 		return res;
 	}
