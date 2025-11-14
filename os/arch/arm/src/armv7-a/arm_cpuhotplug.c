@@ -142,6 +142,46 @@ int up_cpu_hotplugabort(int cpu)
 }
 
 /****************************************************************************
+ * Name: up_cpu_die
+ *
+ * Description:
+ *   Shut down the current CPU core using PSCI. This function is called by a
+ *   CPU that needs to power itself down as part of the hot-plug sequence.
+ *   It invokes the PSCI CPU_OFF service which puts the calling CPU into
+ *   a low-power state and prevents it from being scheduled for execution.
+ *
+ *   This is a terminal function that does not return. The CPU will remain
+ *   in the powered-down state until it is explicitly powered back on by
+ *   another CPU via PSCI_CPU_ON.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   Does not return to the caller.
+ *
+ * Assumptions:
+ *   - Called from the target CPU that needs to shut down
+ *   - CPU has already completed all necessary cleanup and state saving
+ *   - Task scheduling has been disabled for this CPU
+ *   - All interrupts have been properly handled on this CPU
+ *
+ ****************************************************************************/
+
+void up_cpu_die(void)
+{
+	/* MINOR: PSCI is a general interface for controlling power of cortex-A cores
+	It is one of the feature in arm-trusted-firmware (ie. Trustzone-A)
+	Currently, the definitions are provided by chip specific arch layer
+	If the cpu off operation failed, we should face a problem during wakeup
+	booting the secondary core, thus we can ignore the return value here first
+	*/
+
+	/* Shut down the cpu */
+	(void)psci_cpu_off();
+}
+
+/****************************************************************************
  * Name: arm_hotplug_handler
  *
  * Description:
@@ -190,18 +230,31 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 		/* Save the tcb state */
 		struct tcb_s *rtcb = this_task();
 		arm_savestate(rtcb->xcp.regs);
-		rtcb->task_state = TSTATE_TASK_ASSIGNED;
+
+		/* Mark this cpu's idle task as inactive to prevent the scheduler from putting things on it */
+		rtcb->task_state = TSTATE_TASK_INACTIVE;
 		CURRENT_REGS = NULL;
 
-		/* MINOR: PSCI is a general interface for controlling power of cortex-A cores
-		It is one of the feature in arm-trusted-firmware (ie. Trustzone-A)
-		Currently, the definitions are provided by chip specific arch layer
-		If the cpu off operation failed, we should face a problem during wakeup
-		booting the secondary core, thus we can ignore the return value here first
+		/*
+		* clear GIC APR0 as when this gets set during restore by ATF boot flow,
+		* When this register is set, it cause GIC to not serve other requests as it thinks there is an
+		* active ISR being served currently.
+		*
+		* On powerup, this register is restored by ATF from previous saved state.
+		* If hard reset, then state is re-initialized, otherwise it will save the state when psci_cpu_off
 		*/
+		putreg32(0x00000000, GIC_ICCNSAPR1);    /* clear SGI1 nonsecure APR0 */
+		putreg32(0x00000000, GIC_ICCAPR1);      /* clear SGI1 secure APR0 */
+
+		/*
+		* manually clear SGI4 interrupt active
+		* As psci_cpu_off is a noreturn function it will trap the CPU in a WFI loop
+		* this means that it will never exit back to arm_decodeirq where EOIR will be set
+		*/
+		putreg32(irq, GIC_ICCEOIR);
 
 		/* Shut down the secondary core */
-		(void)psci_cpu_off();
+		up_cpu_die();
 	}
 
 	return OK;
