@@ -73,6 +73,10 @@
 extern void iotjs_register_cmds(void);
 #endif
 
+#ifdef CONFIG_SYSTEM_CPUCONTROL
+extern void cpucontrol_register_cmds(void);
+#endif
+
 /****************************************************************************
  * Pravite Functions
  ****************************************************************************/
@@ -106,6 +110,10 @@ static void tash_register_cmds(void)
 
 #ifdef CONFIG_DEBUG_SYSTEM_APP
 	sysdbgapp_init();
+#endif
+
+#ifdef CONFIG_SYSTEM_CPUCONTROL
+	cpucontrol_register_cmds();
 #endif
 }
 #endif							/* CONFIG_TASH */
