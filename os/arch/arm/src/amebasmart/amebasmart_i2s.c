@@ -52,7 +52,7 @@
 
 #include "PinNames.h"
 #include "i2s_api.h"
-#include "board_pins.h"
+#include <board_pins.h>
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -216,12 +216,7 @@ struct amebasmart_i2s_s {
 };
 #ifdef CONFIG_AMEBASMART_I2S2
 /* I2S device structures */
-static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
-	.i2s_mclk_pin = I2S2_MCLK,
-	.i2s_sclk_pin = I2S2_SCLK,
-	.i2s_ws_pin = I2S2_WS,
-	.i2s_sd_tx_pin = I2S2_SD_TX,
-	.i2s_sd_rx_pin = I2S2_SD_RX,
+static struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
 
 	.i2s_idx = I2S_NUM_2,
 	.rxenab = 0,
@@ -230,12 +225,7 @@ static const struct amebasmart_i2s_config_s amebasmart_i2s2_config = {
 #endif
 
 #ifdef CONFIG_AMEBASMART_I2S3
-static const struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
-	.i2s_mclk_pin = I2S3_MCLK,
-	.i2s_sclk_pin = I2S3_SCLK,
-	.i2s_ws_pin = I2S3_WS,
-	.i2s_sd_tx_pin = I2S3_SD_TX,
-	.i2s_sd_rx_pin = I2S3_SD_RX,
+static struct amebasmart_i2s_config_s amebasmart_i2s3_config = {
 
 	.i2s_idx = I2S_NUM_3,
 	.rxenab = 1,
@@ -1811,11 +1801,23 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 #ifdef CONFIG_AMEBASMART_I2S2
 	if (port == I2S_NUM_2) {
 		hw_config_s = (struct amebasmart_i2s_config_s *)&amebasmart_i2s2_config;
+
+		hw_config_s->i2s_mclk_pin = I2S_PIN(I2S2, I2S_MCLK);
+		hw_config_s->i2s_sclk_pin = I2S_PIN(I2S2, I2S_SCLK);
+		hw_config_s->i2s_ws_pin = I2S_PIN(I2S2, I2S_WS);
+		hw_config_s->i2s_sd_tx_pin = I2S_PIN(I2S2, I2S_SD_TX);
+		hw_config_s->i2s_sd_rx_pin = I2S_PIN(I2S2, I2S_SD_RX);
 	} else
 #endif
 #ifdef CONFIG_AMEBASMART_I2S3
 	if (port == I2S_NUM_3) {
 		hw_config_s = (struct amebasmart_i2s_config_s *)&amebasmart_i2s3_config;
+
+		hw_config_s->i2s_mclk_pin = I2S_PIN(I2S3, I2S_MCLK);
+		hw_config_s->i2s_sclk_pin = I2S_PIN(I2S3, I2S_SCLK);
+		hw_config_s->i2s_ws_pin = I2S_PIN(I2S3, I2S_WS);
+		hw_config_s->i2s_sd_tx_pin = I2S_PIN(I2S3, I2S_SD_TX);
+		hw_config_s->i2s_sd_rx_pin = I2S_PIN(I2S3, I2S_SD_RX);
 	} else 
 #endif
 	{

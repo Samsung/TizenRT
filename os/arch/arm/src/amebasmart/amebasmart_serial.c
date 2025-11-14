@@ -84,7 +84,7 @@
 
 #include "serial_api.h"
 #include "PinNames.h"
-#include "board_pins.h"
+#include <board_pins.h>
 #include "objects.h"
 #include "ameba_uart.h"
 #include "tinyara/kmalloc.h"
@@ -234,6 +234,8 @@ struct rtl8730e_up_dev_s {
 #ifdef CONFIG_SERIAL_OFLOWCONTROL
 	uint8_t oflow:1;			/* output flow control (CTS) enabled */
 #endif
+	uint8_t uart_type:3;			/* identifies the uart type */
+
 	uint8_t tx_level;
 };
 
@@ -348,11 +350,10 @@ static struct rtl8730e_up_dev_s g_uart0priv = {
 #endif
 	.baud = CONFIG_UART0_BAUD,
 	.irq = RTL8730E_UART0_IRQ,
-	.tx = UART0_TX,
-	.rx = UART0_RX,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
+	.uart_type = 0,
 };
 
 static uart_dev_t g_uart0port = {
@@ -382,11 +383,10 @@ static struct rtl8730e_up_dev_s g_uart1priv = {
 #endif
 	.baud = CONFIG_UART1_BAUD,
 	.irq = RTL8730E_UART1_IRQ,
-	.tx = UART1_TX,
-	.rx = UART1_RX,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
+	 .uart_type = 1,
 };
 
 static uart_dev_t g_uart1port = {
@@ -416,13 +416,10 @@ static struct rtl8730e_up_dev_s g_uart2priv = {
 #endif
 	.baud = CONFIG_UART2_BAUD,
 	.irq = RTL8730E_UART2_IRQ,
-	.tx = UART2_TX,
-	.rx = UART2_RX,
-	.rts = UART2_RTS,
-	.cts = UART2_CTS,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
+	.uart_type = 2,
 };
 
 static uart_dev_t g_uart2port = {
@@ -484,11 +481,10 @@ static struct rtl8730e_up_dev_s g_uart4priv = {
 #endif
 	.baud = CONFIG_UART4_BAUD,
 	.irq = RTL8730E_UART_LOG_IRQ,
-	.tx = UART4_TX,
-	.rx = UART4_RX,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
+       .uart_type = 4,
 };
 
 static uart_dev_t g_uart4port = {
@@ -830,6 +826,15 @@ static int rtl8730e_up_setup(struct uart_dev_s *dev)
 {
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
+
+#ifdef CONFIG_RTL8730E_UART4
+	if (priv->uart_type == 4) {
+		priv->tx = UART_PIN(UART4, UART_TX);
+		priv->rx = UART_PIN(UART4, UART_RX);
+	}
+#endif
+
+
 	DEBUGASSERT(!sdrv[uart_index_get(priv->tx)]);
 	sdrv[uart_index_get(priv->tx)] = (serial_t *)kmm_malloc(sizeof(serial_t));
 	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
@@ -868,8 +873,32 @@ static int rtl8730e_up_setup_pin(struct uart_dev_s *dev)
 	struct rtl8730e_up_dev_s *priv = (struct rtl8730e_up_dev_s *)dev->priv;
 	DEBUGASSERT(priv);
 
-	serial_pin_init(priv->tx, priv->rx);
-	return OK;
+#ifdef CONFIG_RTL8730E_UART0
+	if (priv->uart_type == 0) {
+		priv->tx = UART_PIN(UART0, UART_TX);
+		priv->rx = UART_PIN(UART0, UART_RX);
+	}
+#endif
+
+#ifdef CONFIG_RTL8730E_UART1
+	if (priv->uart_type == 1) {
+#if defined(CONFIG_RTL8730E_BOARD_AIL) || defined(CONFIG_RTL8730E_BOARD_AILP) || defined(CONFIG_RTL8730E_BOARD_AILPW) || defined(CONFIG_RTL8730E_BOARD_AID)
+		priv->tx = UART_PIN(UART1, UART_TX);
+		priv->rx = UART_PIN(UART1, UART_RX);
+#endif
+	}
+#endif
+
+#ifdef CONFIG_RTL8730E_UART2
+       if (priv->uart_type == 2) {
+	       priv->tx  = UART_PIN(UART2, UART_TX);
+	       priv->rx  = UART_PIN(UART2, UART_RX);
+	       priv->cts = UART_PIN(UART2, UART_CTS);
+	       priv->rts = UART_PIN(UART2, UART_RTS);
+       }
+#endif
+       serial_pin_init(priv->tx, priv->rx);
+       return OK;
 }
 
 /****************************************************************************
@@ -1244,7 +1273,6 @@ void up_serialinit(void)
 	/* Register the console */
 	uart_register("/dev/console", &CONSOLE_DEV);
 #endif
-
 	/* Register all UARTs */
 #ifdef TTYS0_DEV
 /* Default LOGUART(UART4) is already running and could not be reinit or stopped */
@@ -1268,6 +1296,7 @@ void up_serialinit(void)
 	pmu_register_sleep_callback(PMU_LOGUART_DEVICE, (PSM_HOOK_FUN)rtk_loguart_suspend, NULL, (PSM_HOOK_FUN)rtk_loguart_resume, NULL);
 	pmu_register_sleep_callback(PMU_UART1_DEVICE, (PSM_HOOK_FUN)rtk_uart_suspend, NULL, (PSM_HOOK_FUN)rtk_uart_resume, NULL);
 #endif
+
 }
 
 /****************************************************************************
@@ -1426,5 +1455,3 @@ int up_getc(void)
 	return ch;
 }
 #endif							/* USE_SERIALDRIVER */
-
-

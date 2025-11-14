@@ -104,6 +104,7 @@ else
   CFLAGS += -I$(ARCH_SRCDIR)/common
   CFLAGS += -I$(ARCH_SRCDIR)/$(ARCH_SUBDIR)
   CFLAGS += -I$(TOPDIR)/kernel
+  CFLAGS += -I$(TOPDIR)/board/common
 endif
 endif
 

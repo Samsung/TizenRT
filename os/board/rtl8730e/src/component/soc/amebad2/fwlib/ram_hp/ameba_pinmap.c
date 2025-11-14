@@ -20,6 +20,7 @@
   */
 
 #include "ameba_soc.h"
+#include <board_pins.h>
 
 /**
   *  @brief Config all pins to the right function and pull state based on pmap_func table.
