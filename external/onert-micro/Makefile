@@ -128,10 +128,6 @@ VPATH		=
 all: .built
 .PHONY: depend clean distclean chkcxx
 
-ifeq ($(CONFIG_EXTERNAL_CMSIS_NN),y)
-include $(TOPDIR)/external/LibCMSISNNTarget.mk
-endif # CONFIG_EXTERNAL_CMSIS_NN
-
 chkcxx:
 ifneq ($(CONFIG_HAVE_CXX),y)
 	@echo ""
