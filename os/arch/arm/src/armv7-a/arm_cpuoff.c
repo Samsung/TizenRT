@@ -258,9 +258,6 @@ int up_cpu_off(int cpu)
 		return -EBUSY;
 	}
 
-	/* Ensure that hotplug target CPU's systick PPI stops firing to prevent deadlock condition */
-	up_systimer_pause(cpu);
-
 	/* Lock spinlock to synchronize with the target CPU */
 	spin_lock(&g_cpu_hotpluged[cpu]);
 
