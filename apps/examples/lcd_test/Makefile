@@ -64,7 +64,7 @@ THREADEXEC = TASH_EXECMD_ASYNC
 # SPI Example
 
 ASRCS =
-CSRCS =
+CSRCS = lcd_verification.c
 MAINSRC = example_lcd.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))

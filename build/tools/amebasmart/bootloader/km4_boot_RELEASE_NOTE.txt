@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version e520f50b6e_2025/10/14-16:23:45 ==
+
+1.	Disable hotfix since hotfix is no longer used
+
 == version a1a0ee7deb_2024/12/31-15:44:33 ==
 1.	Read back and Display the BKUP_REG2 value in the BOOT fault handlers.
 2. 	Add display the BKUP_REG2 value in the BOOTImage1 flow.

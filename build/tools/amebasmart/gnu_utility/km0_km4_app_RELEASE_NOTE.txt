@@ -1,5 +1,29 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 797a93d3 2025/11/03-10:26:01 ==
+1. Remove shell register in KM0/KM4
+
+== version 3a654af2 2025/10/17-12:45:16 ==
+1. Remove sre PG print log
+
+== version 5b5b5dea 2025/09/19-15:16:29 ==
+1. Update wifi driver to support multi-sta CSI
+
+== version d3d07d0844 2025/09/17-17:37:16 ==
+1. Fix issue of KM4 sometimes not returning scan results with 21 APs
+
+== version cbdbebb06b 2025/08/13-15:52:48 ==
+1. Fix code flow issue which can cause KM4 to be stuck
+
+== version e86a275b3d 2025/07/25-11:02:45 ==
+1. Remove whitespace in front of KM4 version info
+
+== version a9b629e748 2025/07/24-11:23:58 ==
+1. Fix hardfault when turn on bridge mode with CSI
+
+== version a310eb29e8 2025/06/27-15:37:18 ==
+1. Fix issue of CSI amplitude spike in non-HT CSI
+
 == version 3c37d0cb58 2025/04/24-11:10:27 ==
 1. Implement recovery mechanism for PG wakeup flow
 

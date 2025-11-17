@@ -24,19 +24,12 @@
 #include <debug.h>
 #include "objects.h"
 #include "PinNames.h"
+#include "board_pins.h"
 #include "gpio_api.h"
 #include "pwmout_api.h"
 
 #ifndef CONFIG_LCD_ST7789_SPI_PORT
 #define CONFIG_LCD_ST7789_SPI_PORT 1
-#endif
-
-#if CONFIG_RTL8730E_BOARD_REVISION >= 5
-#error "ERROR, Not supported this revision"
-#else
-#define GPIO_PIN_RESET 		PB_11
-#define GPIO_PIN_BACKLIGHT 	PA_9
-#define GPIO_PIN_CMDDATA 	PA_10
 #endif
 
 /****************************************************************************
@@ -63,18 +56,18 @@ struct rtl8730e_st7789_info_s g_rtl8730_config_dev_s = {
 
 static int rtl8730_st7789_gpio_reset(void)
 {
-	GPIO_WriteBit(GPIO_PIN_RESET, 1);
+	GPIO_WriteBit(LCD_ST7789_GPIO_PIN_RESET, 1);
 	DelayMs(10);
-	GPIO_WriteBit(GPIO_PIN_RESET, 0);
+	GPIO_WriteBit(LCD_ST7789_GPIO_PIN_RESET, 0);
 	DelayMs(10);
-	GPIO_WriteBit(GPIO_PIN_RESET, 1);
+	GPIO_WriteBit(LCD_ST7789_GPIO_PIN_RESET, 1);
 	DelayMs(10);
 	return OK;
 }
 
 static int rtl8730_st7789_gpio_cmddata(uint8_t cmd)	// cmd - 0, data - 1
 {
-	GPIO_WriteBit(GPIO_PIN_CMDDATA, cmd);
+	GPIO_WriteBit(LCD_ST7789_GPIO_PIN_CMDDATA, cmd);
 	return OK;
 }
 
@@ -90,20 +83,20 @@ static void gpio_pins_init(void)
 	GPIO_InitTypeDef ResetPin;
 	GPIO_InitTypeDef CmdPin;
 
-	Pinmux_Config(GPIO_PIN_RESET, PINMUX_FUNCTION_GPIO);
+	Pinmux_Config(LCD_ST7789_GPIO_PIN_RESET, PINMUX_FUNCTION_GPIO);
 
-	ResetPin.GPIO_Pin = GPIO_PIN_RESET;
+	ResetPin.GPIO_Pin = LCD_ST7789_GPIO_PIN_RESET;
 	ResetPin.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	ResetPin.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&ResetPin);
 
-	Pinmux_Config(GPIO_PIN_CMDDATA, PINMUX_FUNCTION_GPIO);
-	CmdPin.GPIO_Pin = GPIO_PIN_CMDDATA;
+	Pinmux_Config(LCD_ST7789_GPIO_PIN_CMDDATA, PINMUX_FUNCTION_GPIO);
+	CmdPin.GPIO_Pin = LCD_ST7789_GPIO_PIN_CMDDATA;
 	CmdPin.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	CmdPin.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Init(&CmdPin);
 
-	pwmout_init(&g_rtl8730_config_dev_s.pwm_led, GPIO_PIN_BACKLIGHT);
+	pwmout_init(&g_rtl8730_config_dev_s.pwm_led, LCD_ST7789_GPIO_PIN_BACKLIGHT);
 
 }
 

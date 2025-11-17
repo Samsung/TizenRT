@@ -64,6 +64,7 @@
 #include <debug.h>
 #include <stdint.h>
 #include <tinyara/mm/heap_regioninfo.h>
+#include <tinyara/compiler.h>
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/mm/heapinfo_internal.h>
 #endif
@@ -231,29 +232,6 @@ typedef size_t mmsize_t;
 #define MMSIZE_MAX SIZE_MAX
 #endif
 
-#if defined(CONFIG_ARCH_MIPS)
-/* Macro gets return address of malloc API. */
-#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
-	do { \
-		asm volatile ("sw $ra, %0" : "=m" (caller_retaddr)); \
-	} while (0);
-#elif defined(CONFIG_ARCH_ARM)
-/* This macro should be placed at the first of the function.
- * If no, it is better to use "__builtin_return_address(0)" instead.
- */
-#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
-	do { \
-		asm volatile ("mov %0,lr\n" : "=r" (caller_retaddr));\
-	} while (0);
-#elif defined(CONFIG_ARCH_XTENSA)
-#define ARCH_GET_RET_ADDRESS(caller_retaddr) \
-	do { \
-		asm volatile ("mov %0,a0\n" : "=&r" (caller_retaddr));\
-	} while (0);
-#else
-#error Unknown CONFIG_ARCH option, malloc debug feature wont work.
-#endif
-
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* This macro updates a caller return address in the 'mem' node.
  * This will show the real owner of the 'mem' even it's allocated through wrapping APIs of malloc.
@@ -264,9 +242,9 @@ typedef size_t mmsize_t;
 #endif
 
 /* typedef is used for defining size of address space */
+typedef void *mmaddress_t;             /* 32 bit address space */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-typedef void *mmaddress_t;             /* 32 bit address space */
 
 #define SIZEOF_MM_MALLOC_DEBUG_INFO \
 	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
@@ -374,9 +352,7 @@ extern struct heapinfo_group_info_s group_info[HEAPINFO_THREAD_NUM];
 struct mm_alloc_fail_s {
 	uint32_t size;
 	uint32_t align;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mmaddress_t caller;
-#endif
 };
 
 /* This describes one heap (possibly with multiple regions) */
@@ -536,18 +512,10 @@ void umm_givesemaphore(void *address);
 int kmm_trysemaphore(void *address);
 void kmm_givesemaphore(void *address);
 #endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 
 /* Functions contained in mm_malloc.c ***************************************/
 
 FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_retaddr);
-
-#else
-
-/* Functions contained in mm_malloc.c ***************************************/
-
-FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size);
-#endif
 
 /* Functions contained in kmm_malloc.c **************************************/
 
@@ -565,36 +533,19 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem);
 void kmm_free(FAR void *mem);
 #endif
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-
 /* Functions contained in mm_realloc.c **************************************/
 
 FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size, mmaddress_t caller_retaddr);
-
-#else
-
-/* Functions contained in mm_realloc.c **************************************/
-
-FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size);
-#endif
 
 /* Functions contained in kmm_realloc.c *************************************/
 
 #ifdef CONFIG_MM_KERNEL_HEAP
 FAR void *kmm_realloc(FAR void *oldmem, size_t newsize);
 #endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 
 /* Functions contained in mm_calloc.c ***************************************/
 
 FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size, mmaddress_t caller_retaddr);
-
-#else
-
-/* Functions contained in mm_calloc.c ***************************************/
-
-FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size);
-#endif
 
 /* Functions contained in kmm_calloc.c **************************************/
 
@@ -602,32 +553,19 @@ FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size);
 FAR void *kmm_calloc(size_t n, size_t elem_size);
 #endif
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions contained in mm_zalloc.c ***************************************/
 
 FAR void *mm_zalloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_retaddr);
-#else
-/* Functions contained in mm_zalloc.c ***************************************/
-
-FAR void *mm_zalloc(FAR struct mm_heap_s *heap, size_t size);
-#endif
 
 /* Functions contained in kmm_zalloc.c **************************************/
 
 #ifdef CONFIG_MM_KERNEL_HEAP
 FAR void *kmm_zalloc(size_t size);
 #endif
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
 /* Functions contained in mm_memalign.c *************************************/
 
 FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size, mmaddress_t caller_retaddr);
-
-#else
-
-/* Functions contained in mm_memalign.c *************************************/
-
-FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size);
-#endif
 
 /* Functions contained in kmm_memalign.c ************************************/
 
@@ -787,7 +725,6 @@ int mm_check_heap_corruption(struct mm_heap_s *heap);
 
 /* Function to manage the memory allocation failure case. */
 #if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 void mm_ioctl_alloc_fail(size_t size, size_t align, mmaddress_t caller);
 #define mm_manage_alloc_fail(h, b, e, s, a, t, c) 	do { \
 								(void)h; \
@@ -796,27 +733,13 @@ void mm_ioctl_alloc_fail(size_t size, size_t align, mmaddress_t caller);
 								(void)t; \
 								mm_ioctl_alloc_fail(s, a, c); \
 							} while (0)
-#else
-void mm_ioctl_alloc_fail(size_t size, size_t align);
-#define mm_manage_alloc_fail(h, b, e, s, a, t) 	do { \
-							(void)h; \
-							(void)b; \
-							(void)e; \
-							(void)t; \
-							mm_ioctl_alloc_fail(s, a); \
-						} while (0)
-#endif
 
 void mm_ioctl_garbagecollection(void);
 #define sched_garbagecollection			mm_ioctl_garbagecollection
 
 #else
 
-void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		, mmaddress_t caller
-#endif
-		);
+void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type, mmaddress_t caller);
 
 /* Functions defined in sched/sched_garbage *********************************/
 

@@ -123,7 +123,7 @@ static int uart_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
  ************************************************************************************/
 
 #ifdef CONFIG_PM
-static int pm_uart_domain_id = -1;
+static struct pm_domain_s *pm_uart_domain = NULL;
 #endif 
 
 static const struct file_operations g_serialops = {
@@ -482,7 +482,7 @@ static ssize_t uart_write(FAR struct file *filep, FAR const char *buffer, size_t
 
 #ifdef CONFIG_PM
 	/* Suspend board sleep to avoid data loss during write */
-	(void)pm_suspend(pm_uart_domain_id);
+	(void)pm_suspend(pm_uart_domain);
 #endif
 
 	/* Loop while we still have data to copy to the transmit buffer.
@@ -577,7 +577,7 @@ static ssize_t uart_write(FAR struct file *filep, FAR const char *buffer, size_t
 
 #ifdef CONFIG_PM
 	/* Enable board sleep after completing write operation */
-	(void)pm_resume(pm_uart_domain_id);
+	(void)pm_resume(pm_uart_domain);
 #endif
 	uart_givesem(&dev->xmit.sem);
 	return nwritten;
@@ -1237,12 +1237,11 @@ static int uart_open(FAR struct file *filep)
 
 #ifdef CONFIG_PM
 	/* Register PM_UART_DOMAIN to access PM APIs during UART operations. */
-	if (pm_uart_domain_id == -1) {
-		ret = pm_domain_register(PM_UART_DOMAIN);
-		if (ret < 0) {
-			return ret;
+	if (pm_uart_domain == NULL) {
+		pm_uart_domain = pm_domain_register(PM_UART_DOMAIN);
+		if (!pm_uart_domain) {
+			return ERROR;
 		}
-		pm_uart_domain_id = ret;
 	}
 #endif
 

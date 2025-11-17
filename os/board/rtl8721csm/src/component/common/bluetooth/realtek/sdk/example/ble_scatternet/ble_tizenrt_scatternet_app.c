@@ -45,6 +45,7 @@
 extern trble_server_init_config server_init_parm;
 extern trble_client_init_config *client_init_parm;
 extern uint8_t g_master_link_num;
+extern bool g_slave_link;
 extern uint8_t ble_app_link_table_size;
 extern void *ble_tizenrt_read_sem;
 extern void *ble_tizenrt_write_sem;
@@ -234,14 +235,6 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
             T_TIZENRT_CONNECTED_CALLBACK_DATA *connected = callback_msg.u.buf;
             if(connected != NULL && server_init_parm.connected_cb)
             {
-                debug_print("cb %p conn_id 0x%x conn_type 0x%x addr 0x%x0x%x0x%x0x%x0x%x0x%x \n",
-                                server_init_parm.connected_cb,
-                                connected->conn_id, connected->conn_type,
-                                connected->remote_bd[0], connected->remote_bd[1], connected->remote_bd[2],
-                                connected->remote_bd[3], connected->remote_bd[4], connected->remote_bd[5]);
-                trble_server_connected_t p_func = server_init_parm.connected_cb;
-                p_func(connected->conn_id, connected->conn_type, connected->remote_bd, 0xff);// the last field 0xff is a dummy value for adv handle which is for AI-Lite only
-
 #if defined(CONFIG_BLE_INDICATION)
                 if(connected->conn_type == TRBLE_SERVER_DISCONNECTED)
                 {
@@ -249,8 +242,15 @@ void ble_tizenrt_scatternet_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callb
                     {
                         os_mutex_give(ble_tizenrt_indicate_sem);
                     }
-                }	
+                }
 #endif
+                debug_print("cb %p conn_id 0x%x conn_type 0x%x addr 0x%x0x%x0x%x0x%x0x%x0x%x \n",
+                                server_init_parm.connected_cb,
+                                connected->conn_id, connected->conn_type,
+                                connected->remote_bd[0], connected->remote_bd[1], connected->remote_bd[2],
+                                connected->remote_bd[3], connected->remote_bd[4], connected->remote_bd[5]);
+                trble_server_connected_t p_func = server_init_parm.connected_cb;
+                p_func(connected->conn_id, connected->conn_type, connected->remote_bd, 0xff);// the last field 0xff is a dummy value for adv handle which is for AI-Lite only
             } else {
                 debug_print("NULL connected callback \n");
             }
@@ -738,6 +738,7 @@ void ble_tizenrt_scatternet_app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, 
         else if (new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
         {
             debug_print("GAP adv start \n");
+            ble_tizenrt_scatternet_gap_dev_state.gap_adv_sub_state = GAP_ADV_TO_IDLE_CAUSE_STOP; /* Clear sub state */
         }
         ble_tizenrt_scatternet_gap_dev_state.gap_adv_state = new_state.gap_adv_state;
     }
@@ -805,6 +806,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                 {
                     disconn_data->conn_id = conn_id;
                     disconn_data->conn_type = TRBLE_SERVER_DISCONNECTED;
+                    g_slave_link = false;
                     memcpy(disconn_data->remote_bd, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, TRBLE_BD_ADDR_MAX_LEN);
                     if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, disconn_data) == false)
                     {
@@ -872,6 +874,7 @@ void ble_tizenrt_scatternet_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CON
                     conn_data->conn_id = conn_id;
                     conn_data->conn_type = TRBLE_SERVER_LL_CONNECTED;
                     memcpy(conn_data->remote_bd, ble_tizenrt_scatternet_app_link_table[conn_id].remote_bd, GAP_BD_ADDR_LEN);
+                    g_slave_link = true;
                     if(ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_CALLBACK_TYPE_CONN, conn_data) == false)
                     {
                         os_mem_free(conn_data);

@@ -860,6 +860,110 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, stop_multi_adv, (dev, adv_handle));
 	}
 	break;
+	case LWNL_REQ_BLE_CMD_COC_INIT:
+	{
+		trble_le_coc_init_config *t_le_coc = NULL;
+		if (data != NULL) {
+			t_le_coc = (trble_le_coc_init_config *)data;
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		TRBLE_DRV_CALL(ret, dev, le_coc_init, (dev, t_le_coc));
+	}
+	break;
+	case LWNL_REQ_BLE_CMD_COC_REG_PSM:
+	{
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		uint8_t is_reg = *(uint8_t *)param.param[0];
+		uint16_t psm = *(uint16_t *)param.param[1];
+		TRBLE_DRV_CALL(ret, dev, coc_register_psm, (dev, is_reg, psm));
+	}
+	break;
+	case LWNL_REQ_BLE_CMD_COC_SET_PSM_SEC:
+	{
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		uint16_t le_psm = *(uint16_t *)param.param[0];
+		uint8_t active = *(uint8_t *)param.param[1];
+		uint8_t sec_mode = *(uint8_t *)param.param[2];
+		uint8_t key_size = *(uint8_t *)param.param[3];
+		TRBLE_DRV_CALL(ret, dev, coc_set_psm_security, (dev, le_psm, active, sec_mode, key_size));
+	}
+	break;
+	case LWNL_REQ_BLE_CMD_COC_SET_PARAM:
+	{
+		uint16_t value;
+		if (data != NULL) {
+			memcpy(&value, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		TRBLE_DRV_CALL(ret, dev, coc_set_param, (dev, value));
+	}
+	break;
+	case LWNL_REQ_BLE_CMD_COC_GET_PARAM:
+	{
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		uint8_t param_type = *(uint8_t *)param.param[0];
+		uint16_t cid = *(uint8_t *)param.param[1];
+		uint16_t *value = (uint8_t *)param.param[2];
+		TRBLE_DRV_CALL(ret, dev, coc_get_param, (dev, param_type, cid, value));
+	}
+	break;
+	case LWNL_REQ_BLE_CMD_COC_CONNECT:
+	{
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		uint16_t conn_handle = *(uint8_t *)param.param[0];
+		uint16_t le_psm = *(uint8_t *)param.param[1];
+		TRBLE_DRV_CALL(ret, dev, coc_connect, (dev, conn_handle, le_psm));
+	}
+	break;
+	case LWNL_REQ_BLE_CMD_COC_DISCONNECT:
+	{
+		uint16_t cid;
+		if (data != NULL) {
+			memcpy(&cid, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+
+		TRBLE_DRV_CALL(ret, dev, coc_disconnect, (dev, cid));
+	}
+	break;
+	case LWNL_REQ_BLE_CMD_COC_SEND:
+	{
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			memcpy(&param, data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		uint16_t cid = *(uint8_t *)param.param[0];
+		uint16_t len = *(uint8_t *)param.param[1];
+		uint8_t *data = (uint8_t *)param.param[2];
+		TRBLE_DRV_CALL(ret, dev, coc_send_data, (dev, cid, len, data));
+	}
+	break;
 	default:
 		ret = TRBLE_UNKNOWN;
 		break;

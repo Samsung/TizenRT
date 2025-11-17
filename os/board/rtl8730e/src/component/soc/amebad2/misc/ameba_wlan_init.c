@@ -3,16 +3,16 @@
 #ifdef CONFIG_WLAN
 
 #include "inic_ipc.h"
-#include "inic_ipc_api.h"
 #include "wifi_conf.h"
 #if CONFIG_LWIP_LAYER
 #include "lwip_netconf.h"
 #endif
 
+extern void wifi_set_rom2flash(void);
 #if defined(CONFIG_AS_INIC_AP)
 // #include "wifi_fast_connect.h"
 
-struct task_struct wlan_init_task;
+rtos_task_t wlan_init_task;
 
 void _init_thread(void *param)
 {
@@ -28,27 +28,27 @@ void _init_thread(void *param)
 
 	/* wait for inic_ipc_device ready, after that send WIFI_ON ipc msg to device */
 	while ((HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_AON_BACKUP3) & BIT(26)) == 0) {
-		rtw_mdelay_os(1);
+		rtos_time_delay_ms(1);
 	}
 	u32 value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_AON_BACKUP3);
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_AON_BACKUP3, value & ~BIT(26));
 	wifi_on(RTW_MODE_STA);
 
 	/* Kill init thread after all init tasks done */
-	rtw_delete_task(&wlan_init_task);
+	rtos_task_delete(wlan_init_task);
 }
 
 void _wlan_network(void)
 {
-	if (rtw_create_task(&wlan_init_task, ((const char *)"init"), (512 + 768), 2, _init_thread, NULL) != 1) {
+	if (rtos_task_create(&wlan_init_task, ((const char *)"init"), _init_thread, NULL, (512 + 768), 2) != SUCCESS) {
 		printf("\n\r%s xTaskCreate(init_thread) failed", __FUNCTION__);
 	}
 }
 
 void wlan_initialize(void)
 {
-	inic_ipc_init_host();
-	inic_ipc_api_init_host();
+	wifi_set_rom2flash();
+	inic_host_init();
 
 #ifndef CONFIG_MP_INCLUDED
 #if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
@@ -63,8 +63,8 @@ void wlan_initialize(void)
 #elif defined(CONFIG_AS_INIC_NP)
 void wlan_initialize(void)
 {
-	inic_ipc_init();
-	inic_ipc_api_init_dev();
+	wifi_set_rom2flash();
+	inic_dev_init();
 
 	/* set 0x42008268[26]=1 to indicate inic_ipc_device is ready */
 	u32 value = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_AON_BACKUP3);
@@ -107,6 +107,7 @@ void _wlan_network(void)
 
 void wlan_initialize(void)
 {
+	wifi_set_rom2flash();
 #ifndef CONFIG_MP_INCLUDED
 #if defined (CONFIG_CLINTWOOD) && CONFIG_CLINTWOOD
 	wifi_fast_connect_enable(0);

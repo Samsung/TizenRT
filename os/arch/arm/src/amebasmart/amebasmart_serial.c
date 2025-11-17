@@ -84,10 +84,10 @@
 
 #include "serial_api.h"
 #include "PinNames.h"
+#include "board_pins.h"
 #include "objects.h"
 #include "ameba_uart.h"
 #include "tinyara/kmalloc.h"
-#include "osdep_service.h"
 #include "ameba_vector.h"
 
 /****************************************************************************
@@ -348,8 +348,8 @@ static struct rtl8730e_up_dev_s g_uart0priv = {
 #endif
 	.baud = CONFIG_UART0_BAUD,
 	.irq = RTL8730E_UART0_IRQ,
-	.tx = PA_3,
-	.rx = PA_2,
+	.tx = UART0_TX,
+	.rx = UART0_RX,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
@@ -382,14 +382,8 @@ static struct rtl8730e_up_dev_s g_uart1priv = {
 #endif
 	.baud = CONFIG_UART1_BAUD,
 	.irq = RTL8730E_UART1_IRQ,
-
-#if CONFIG_RTL8730E_BOARD_REVISION >= 5
-	.tx = PA_10,
-	.rx = PA_9,
-#else
-	.tx = PA_5,
-	.rx = PA_4,
-#endif
+	.tx = UART1_TX,
+	.rx = UART1_RX,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
@@ -422,10 +416,10 @@ static struct rtl8730e_up_dev_s g_uart2priv = {
 #endif
 	.baud = CONFIG_UART2_BAUD,
 	.irq = RTL8730E_UART2_IRQ,
-	.tx = PB_22,
-	.rx = PB_21,
-	.rts = PB_20,
-	.cts = PB_19,
+	.tx = UART2_TX,
+	.rx = UART2_RX,
+	.rts = UART2_RTS,
+	.cts = UART2_CTS,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
@@ -490,8 +484,8 @@ static struct rtl8730e_up_dev_s g_uart4priv = {
 #endif
 	.baud = CONFIG_UART4_BAUD,
 	.irq = RTL8730E_UART_LOG_IRQ,
-	.tx = PB_24,
-	.rx = PB_23,
+	.tx = UART4_TX,
+	.rx = UART4_RX,
 	.FlowControl = FlowControlNone,
 	.txint_enable = false,
 	.rxint_enable = false,
@@ -518,17 +512,18 @@ static uart_dev_t g_uart4port = {
 
 static u32 uart_index_get(PinName tx)
 {
-	if ((tx == PA_3) || (tx == PA_14) || (tx == PA_29) || (tx == PB_6)) {
+	if (IS_UART0_TX(tx)) {
 		return 0;
-	} else if ((tx == PA_5) || (tx == PA_10) || (tx == PA_25) || (tx == PB_11) || (tx == PB_20) || (tx == PB_30)) {
+	} else if (IS_UART1_TX(tx)) {
 		return 1;
-	} else if ((tx == PA_8) || (tx == PA_12) || (tx == PA_23) || (tx == PB_22)) {
+	} else if (IS_UART2_TX(tx)) {
 		return 2;
-	} else if (tx == PB_24) {
+	} else if (IS_UART4_TX(tx)) {
 		return 4;
 	} else {
 		assert_param(0);
 	}
+
 	return -1;
 }
 
@@ -892,7 +887,7 @@ static void rtl8730e_up_shutdown(struct uart_dev_s *dev)
 	DEBUGASSERT(priv);
 	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
 	serial_free(sdrv[uart_index_get(priv->tx)]);
-	rtw_free(sdrv[uart_index_get(priv->tx)]);
+	rtos_mem_free(sdrv[uart_index_get(priv->tx)]);
 	sdrv[uart_index_get(priv->tx)] = NULL;
 }
 

@@ -79,10 +79,10 @@
 #include "common.h"
 #endif
 
+#include "board_pins.h"
 #include "up_internal.h"
 #include "amebasmart_boot.h"
 #include "ameba_soc.h"
-#include "osdep_service.h"
 #include "platform_opts_bt.h"
 
 #ifdef CONFIG_AMEBASMART_BOR
@@ -150,8 +150,10 @@ int up_check_iwdg(void)
 
 	if ((Temp & APBPeriph_IWDG) == 0) {
 		dbg("IWDG is disabled\n");
+		return 0;
 	} else {
 		dbg("IWDG is enabled\n");
+		return 1;
 	}
 }
 
@@ -221,7 +223,7 @@ void board_i2c_initialize(void)
 #ifdef CONFIG_AMEBASMART_I2C1
 	bus = 1;
 	snprintf(path, sizeof(path), "/dev/i2c-%d", bus);
-	i2c = up_i2cinitialize(bus);
+	i2c = (struct i2c_dev_s *)up_i2cinitialize(bus);
 #ifdef CONFIG_I2C_USERIO
 	if (i2c != NULL) {
 		ret = i2c_uioregister(path, i2c);
@@ -237,7 +239,7 @@ void board_i2c_initialize(void)
 #ifdef CONFIG_AMEBASMART_I2C2
 	bus = 2;
 	snprintf(path, sizeof(path), "/dev/i2c-%d", bus);
-	i2c = up_i2cinitialize(bus);
+	i2c = (struct i2c_dev_s *)up_i2cinitialize(bus);
 #ifdef CONFIG_I2C_USERIO
 	if (i2c != NULL) {
 		ret = i2c_uioregister(path, i2c);
@@ -265,78 +267,8 @@ void board_gpio_initialize(void)
 		u32 pinname;
 		u32 pinmode;
 		u32 pinpull;
-	} pins[] = {
-				{PA_23, PIN_INPUT, PullDown},
-				/* PB_20 is gpio pin number for LED */
-				{PB_20, PIN_OUTPUT, PullDown},
-				{PB_22, PIN_INPUT, PullUp},
-		/* NOTE: Do not open pins not for GPIO usage. E.g uart,SPI pins
-		Loguart pins
-		*/
-		/*		{PA_0, PIN_OUTPUT, PullNone},
-				{PA_1, PIN_OUTPUT, PullNone},
-				{PA_2, PIN_OUTPUT, PullNone},
-				{PA_3, PIN_OUTPUT, PullNone},
-				{PA_4, PIN_OUTPUT,  PullNone},
-				{PA_5, PIN_OUTPUT, PullNone},
-				{PA_6, PIN_OUTPUT, PullNone},
-				{PA_7, PIN_OUTPUT, PullNone},
-				{PA_8, PIN_OUTPUT, PullNone},
-				{PA_9, PIN_OUTPUT, PullNone},
-				{PA_10, PIN_OUTPUT, PullNone},
-				{PA_11, PIN_OUTPUT, PullNone},
-				{PA_12, PIN_OUTPUT, PullNone},
-				{PA_13, PIN_OUTPUT, PullNone},
-				{PA_14, PIN_OUTPUT, PullNone},
-				{PA_15, PIN_OUTPUT, PullNone},
-				{PA_16, PIN_OUTPUT, PullNone},
-				{PA_17, PIN_OUTPUT, PullNone},
-				{PA_18, PIN_OUTPUT, PullNone},
-				{PA_19, PIN_OUTPUT, PullNone},
-				{PA_20, PIN_OUTPUT, PullNone},
-				{PA_21, PIN_OUTPUT, PullNone},
-				{PA_22, PIN_OUTPUT, PullNone},
-				{PA_23, PIN_OUTPUT, PullNone},
-				{PA_24, PIN_OUTPUT, PullNone},
-				{PA_25, PIN_OUTPUT, PullNone},
-				{PA_26, PIN_OUTPUT, PullNone},
-				{PB_27, PIN_OUTPUT, PullNone},
-				{PA_28, PIN_OUTPUT, PullNone},
-				{PA_29, PIN_OUTPUT, PullNone},
-				{PA_30, PIN_OUTPUT, PullNone},
-				{PA_31, PIN_OUTPUT, PullNone},
-				{PB_0, PIN_OUTPUT, PullNone},
-				{PB_1, PIN_OUTPUT, PullNone},
-				{PB_2, PIN_OUTPUT, PullNone},
-				{PB_3, PIN_OUTPUT, PullNone},
-				{PB_4, PIN_OUTPUT, PullNone},
-				{PB_5, PIN_OUTPUT, PullNone},
-				{PB_6, PIN_OUTPUT, PullNone},
-				{PB_7, PIN_OUTPUT, PullNone},
-				{PB_8, PIN_OUTPUT, PullNone},
-				{PB_9, PIN_OUTPUT, PullNone},
-				{PB_10, PIN_OUTPUT, PullNone},
-				{PB_11, PIN_OUTPUT, PullNone},
-				{PB_12, PIN_OUTPUT, PullNone},
-				{PB_13, PIN_OUTPUT, PullNone},
-				{PB_14, PIN_OUTPUT, PullNone},
-				{PB_15, PIN_OUTPUT, PullNone},
-				{PB_16, PIN_OUTPUT, PullNone},
-				{PB_17, PIN_OUTPUT, PullNone},
-				{PB_18, PIN_OUTPUT, PullNone},
-				{PB_19, PIN_OUTPUT, PullNone},
-				{PB_20, PIN_OUTPUT, PullNone},
-				{PB_21, PIN_OUTPUT, PullNone},
-				{PB_22, PIN_OUTPUT, PullNone},
-				//PA23,PA_24 LOGUART PINS
-				{PB_25, PIN_OUTPUT, PullNone},
-				{PB_26, PIN_OUTPUT, PullNone},
-				{PB_27, PIN_OUTPUT, PullNone},
-				{PB_28, PIN_OUTPUT, PullNone},
-				{PB_29, PIN_OUTPUT, PullNone},
-				{PB_30, PIN_OUTPUT, PullNone},
-				{PB_31, PIN_OUTPUT, PullNone}, */
-	};
+
+	} pins[] = GPIO_PIN_LIST;
 
 	for (i = 0; i < sizeof(pins) / sizeof(*pins); i++) {
 		lower = amebasmart_gpio_lowerhalf(pins[i].pinname, pins[i].pinmode, pins[i].pinpull);
@@ -485,10 +417,10 @@ void board_initialize(void)
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	shell_init_rom(0, 0);
 #endif
+	board_spi_initialize();
 	amebasmart_mount_partitions();
 	board_gpio_initialize();
 	board_i2c_initialize();
-	board_spi_initialize();
 	board_i2s_initialize();
 
 #ifdef CONFIG_LCD_ST7789

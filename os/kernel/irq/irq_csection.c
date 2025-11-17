@@ -120,10 +120,14 @@ static bool irq_waitlock(int cpu)
 	 * for the deadlock condition.
 	 */
 
-	do {
+	while (spin_trylock_wo_note(&g_cpu_irqlock) == SP_LOCKED) {
 		/* Is a pause request pending? */
 
-		if (up_cpu_pausereq(cpu) || up_get_gating_flag_status(cpu) == 1) {
+		if (up_cpu_pausereq(cpu)
+#ifdef CONFIG_CPU_HOTPLUG
+		|| up_cpu_hotplugreq(cpu)
+#endif
+		) {
 			/* Yes.. some other CPU is requesting to pause this CPU!
 			 * Abort the wait and return false.
 			 */
@@ -136,7 +140,7 @@ static bool irq_waitlock(int cpu)
 
 			return false;
 		}
-	} while(spin_trylock_wo_note(&g_cpu_irqlock) == SP_LOCKED);
+	}
 
 	/* We have g_cpu_irqlock! */
 
@@ -153,7 +157,6 @@ static bool irq_waitlock(int cpu)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-extern void up_do_gating(void);
 
 /****************************************************************************
  * Name: enter_critical_section
@@ -272,8 +275,12 @@ try_again_in_irq:
 
 						DEBUGVERIFY(up_cpu_paused(cpu));
 						paused = true;
+#ifdef CONFIG_CPU_HOTPLUG
+					} else if (up_cpu_hotplugreq(cpu)) {
+						DEBUGVERIFY(up_cpu_hotplugabort(cpu));
+#endif
 					} else {
-						up_do_gating();	
+						/* this case can be occured, do not handling */
 					}
 
 					/* NOTE: As the result of up_cpu_paused(cpu), this CPU
@@ -601,7 +608,7 @@ void leave_critical_section(irqstate_t flags)
  *   holder of the IRQ lock.
  *
  * Input Parameters:
- *   rtcb - Points to the blocked TCB that is ready-to-run
+ *   cpu - The index of the CPU for check whether it holds the IRQ lock.
  *
  * Returned Value:
  *   true  - IRQs are locked by a different CPU.

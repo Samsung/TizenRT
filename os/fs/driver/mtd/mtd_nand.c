@@ -345,8 +345,8 @@ static int nand_eraseblock(FAR struct nand_dev_s *nand, off_t block, bool scrub)
 		/* Check block status */
 
 		if (nand_checkblock(nand, block) != GOODBLOCK) {
-			fvdbg("Block is BAD\n");
-			return -EAGAIN;
+			fdbg("Block is BAD\n");
+			return -EIO;
 		}
 	}
 #endif
@@ -392,7 +392,7 @@ static int nand_readpage(FAR struct nand_dev_s *nand, off_t block, unsigned int 
 
 	if (nand_checkblock(nand, block) != GOODBLOCK) {
 		fdbg("ERROR: Block is BAD\n");
-		return -EAGAIN;
+		return -EIO;
 	}
 #endif
 
@@ -442,7 +442,7 @@ static int nand_writepage(FAR struct nand_dev_s *nand, off_t block, unsigned int
 
 	if (nand_checkblock(nand, block) != GOODBLOCK) {
 		fdbg("ERROR: Block is BAD\n");
-		return -EAGAIN;
+		return -EIO;
 	}
 #endif
 

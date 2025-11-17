@@ -153,8 +153,7 @@ struct geometry {
 	bool geo_writeenabled;		/* true: It is okay to write to this device */
 	size_t geo_nsectors;		/* Number of sectors on the device */
 	size_t geo_sectorsize;		/* Size of one sector */
-
-	char      geo_model[NAME_MAX + 1];
+	char geo_model[NAME_MAX + 1];
 };
 
 /* This structure is provided by block devices when they register with the
@@ -262,6 +261,7 @@ union inode_ops_u {
 		*i_ops;						/* Driver operations for inode */
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 	FAR const struct block_operations *i_bops;	/* Block driver operations */
+	FAR struct mtd_dev_s *i_mtd;	/* MTD device driver */
 	FAR const struct mountpt_operations
 		*i_mops;					/* Operations on a mountpoint */
 #endif

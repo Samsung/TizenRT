@@ -57,8 +57,7 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
-#include <assert.h>
-
+#include <errno.h>
 #include <tinyara/pm/pm.h>
 
 #include "pm.h"
@@ -80,21 +79,21 @@
  *   This function is called to get current suspend count of domain.
  *
  * Input Parameters:
- *   domain_id - The domain ID of the PM activity
+ *   domain - Pointer to the domain structure
  *
  * Returned Value:
  *   Non-Negative Integer: the suspend count of domain
- *   ERROR: for invalid domain_id
+ *   ERROR (-1): for invalid domain pointer
  *
  ****************************************************************************/
 
-int pm_suspendcount(int domain_id)
+int pm_suspendcount(FAR struct pm_domain_s *domain)
 {
-	/* Check if domain_id is valid */
-	if (pm_check_domain(domain_id) != OK) {
+	/* Check if domain pointer is valid */
+	if (pm_check_domain(domain) != OK) {
 		return ERROR;
 	}
-	return g_pmglobals.suspend_count[domain_id];
+	return domain->suspend_count;
 }
 
 #endif /* CONFIG_PM */

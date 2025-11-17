@@ -4,7 +4,7 @@
 
 #include <fcntl.h>
 #include <osif.h>
-#include <osdep_service.h>
+#include <os_wrapper.h>
 #include "../kernel/mqueue/mqueue.h"
 
 #define OSIF_ALIGN 64
@@ -115,7 +115,6 @@ bool osif_task_create(void **pp_handle, const char *p_name, void (*p_routine)(vo
 	task_info[0] = itoa((int) p_routine, routine_addr, 16);
 	task_info[1] = itoa((int) p_param, param_addr, 16);
 	task_info[2] = NULL;
-	stack_size = stack_size * sizeof(uint32_t);
 	priority = priority + SCHED_PRIORITY_DEFAULT;
 	if (priority > SCHED_PRIORITY_MAX)
 		priority = SCHED_PRIORITY_DEFAULT;
@@ -300,7 +299,7 @@ uint32_t osif_lock(void)
 	uint32_t flags = 0U;
 	if (osif_task_context_check() == true)
 	{
-		flags = save_and_cli();
+		flags = tizenrt_critical_enter();
 	}
 	return flags;
 }
@@ -312,7 +311,7 @@ void osif_unlock(uint32_t flags)
 {
 	if (osif_task_context_check() == true)
 	{
-		restore_flags(flags);
+		tizenrt_critical_exit(flags);
 	}
 }
 

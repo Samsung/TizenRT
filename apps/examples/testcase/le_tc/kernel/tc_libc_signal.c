@@ -30,12 +30,15 @@
 #include <stdbool.h>
 #include <sys/wait.h>
 #include "tc_internal.h"
+#include <semaphore.h>
 
 #define SIG1  SIGUSR1
 #define SIG2  SIGUSR2
 #define SIG3  SIGALRM
 #define PRIORITY 100
 #define STACKSIZE 1024
+
+static sem_t sync_sem;
 
 /****************************************************************************
  * Public Functions
@@ -372,7 +375,7 @@ static int sigwait_receiver(int argc, FAR char *arvg[])
 	int sig;
 
 	ret_chk = sigwait(&set, &sig);
-
+	sem_wait(&sync_sem);
 	if (ret_chk == OK && sig == SIG3) {
 		return OK;
 	}
@@ -395,6 +398,9 @@ static void tc_libc_signal_sigwait(void)
 	int recv_ret;
 	int snd_ret;
 
+	int ret_chk = sem_init(&sync_sem, 0, 0);
+	TC_ASSERT_EQ("sem_init", ret_chk, OK);
+
 	/* sigwait_receiver wait for sigwait_sender to send a signal
 	 * if sigwait_receiver receive signal from sigwait_sender then return OK
 	 * else return ERROR
@@ -413,11 +419,12 @@ static void tc_libc_signal_sigwait(void)
 	snd_ret = (int)waitpid(snd_pid, &snd_status, 0);
 	TC_ASSERT_NEQ_CLEANUP("waitpid", snd_ret, ERROR, task_delete(recv_pid));
 	TC_ASSERT_EQ_CLEANUP("sigwait_sender", snd_status, OK, task_delete(recv_pid));
-
+	sem_post(&sync_sem);
 	recv_ret = (int)waitpid(recv_pid, &recv_status, 0);
 	TC_ASSERT_NEQ_CLEANUP("waitpid", recv_ret, ERROR, task_delete(recv_pid));
 	TC_ASSERT_EQ_CLEANUP("sigwait_receiver", recv_status, OK, task_delete(recv_pid));
 
+	sem_destroy(&sync_sem);
 	TC_SUCCESS_RESULT();
 }
 

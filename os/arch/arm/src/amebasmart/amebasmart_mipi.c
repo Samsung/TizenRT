@@ -49,7 +49,13 @@
 
 static u32 vo_freq;
 static volatile u8 send_cmd_done = 0;
-
+static volatile u8 receive_cmd_done = 1;
+static volatile bool rx_data_rdy = FALSE;
+static uint8_t *rx_data_ptr = NULL;
+static uint32_t rx_data_len = 0;
+static sem_t g_send_cmd_done;
+static sem_t g_read_cmd_done;
+#define MIPI_TRANSFER_TIMEOUT 1 /*one second timeout for mipi transfer*/
 struct amebasmart_mipi_dsi_host_s {
 	struct mipi_dsi_host dsi_host;
 	MIPI_TypeDef *MIPIx;
@@ -77,7 +83,7 @@ static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *p
 static void amebasmart_register_interrupt(void);
 
 /* MIPI methods */
-static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list);
+static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list, u8 cmd_type);
 static int amebasmart_mipi_attach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_detach(FAR struct mipi_dsi_host *dsi_host, FAR struct mipi_dsi_device *dsi_device);
 static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR const struct mipi_dsi_msg *msg);
@@ -182,15 +188,18 @@ static void amebasmart_mipi_init_helper(FAR struct amebasmart_mipi_dsi_host_s *p
 	MIPI_DSI_INT_Config(priv->MIPIx, DISABLE, ENABLE, FALSE);
 }
 
-static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list)
+static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_len, const u8 *para_list, u8 cmd_type)
 {
 	u32 word0, word1, addr, idx;
 	u8 cmd_addr[128];
+	if (MIPI_LPTX_IS_READ(cmd_type)) {
+		receive_cmd_done = 0;
+	}
 	if (payload_len == 0) {
-		MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_SHORT_WRITE, cmd, 0);
+		MIPI_DSI_CMD_Send(MIPIx, cmd_type, cmd, 0);
 		return;
 	} else if (payload_len == 1) {
-		MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_SHORT_WRITE_PARAM, cmd, para_list[0]);
+		MIPI_DSI_CMD_Send(MIPIx, cmd_type, cmd, para_list[0]);
 		return;
 	}
 
@@ -207,13 +216,80 @@ static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_
 		word1 = (cmd_addr[idx + 7] << 24) + (cmd_addr[idx + 6] << 16) + (cmd_addr[idx + 5] << 8) + cmd_addr[idx + 4];
 		MIPI_DSI_CMD_LongPkt_MemQWordRW(MIPIx, addr, &word0, &word1, FALSE);
 	}
-	MIPI_DSI_CMD_Send(MIPIx, MIPI_DSI_DCS_LONG_WRITE, payload_len, 0);
+	MIPI_DSI_CMD_Send(MIPIx, cmd_type, payload_len, 0);
+}
+static void amebasmart_mipidsi_rcmd_decode(MIPI_TypeDef *MIPIx, u8 rcmd_idx)
+{
+	u32 rcmd_val, payload_len, addr, word0, word1;
+	u8 data_id, byte0, byte1, rx_offset;
+	rcmd_val = MIPI_DSI_CMD_Rxcv_CMD(MIPIx, rcmd_idx);
+	if (rcmd_val & (MIPI_BIT_RCMDx_CRC_CHK_ERR | MIPI_BIT_RCMDx_ECC_CHK_ERR | MIPI_BIT_RCMDx_ECC_ERR_FIX)) {
+		mipidbg("RCMD[%d] Error\n", rcmd_idx + 1);
+	}
+	if (rcmd_val & MIPI_BIT_RCMDx_ECC_NO_ERR) {
+		data_id = MIPI_GET_RCMDx_DATAID(rcmd_val);
+		byte0 = MIPI_GET_RCMDx_BYTE0(rcmd_val);
+		byte1 = MIPI_GET_RCMDx_BYTE1(rcmd_val);
+		/*For short read, it is normally returns only two bytes, byte0: payload, byte1: checksum (if present)*/
+		/* Peripheral to Processor Transactions Long Packet is 0x1A or 0x1C, byte0 and byte1 will then be the length of payload */
+		if (MIPI_LPRX_IS_LONGRead(data_id)) {
+			payload_len = (byte1 << 8) + byte0;
+		} else {
+			payload_len = 0;
+			if (rx_data_ptr) {
+				rx_data_ptr[0] = byte0;
+				if (rx_data_len >= 2) {
+					rx_data_ptr[1] = byte1; /*checksum*/
+				}
+			}
+		}
+		rx_offset = 0;
+		/* the addr payload_len 1 ~ 8 is 0 */
+		for (addr = 0; addr < (payload_len + 7) / 8; addr++) {
+			MIPI_DSI_CMD_LongPkt_MemQWordRW(MIPIx, addr, &word0, &word1, TRUE);
+			/*unpack word0*/
+			for (int i = 0; i < 4 && rx_offset < payload_len; i++) {
+				if (rx_data_ptr && rx_offset < rx_data_len) {
+					rx_data_ptr[rx_offset] = (word0 >> (i * 8)) & 0xFF;
+				}
+				rx_offset++;
+			}
+			/*unpack word1*/
+			for (int i = 0; i < 4 && rx_offset < payload_len; i++) {
+				if (rx_data_ptr && rx_offset < rx_data_len) {
+					rx_data_ptr[rx_offset] = (word1 >> (i * 8)) & 0xFF;
+				}
+				rx_offset++;
+			}
+		}
+		rx_data_rdy = TRUE;
+	}
+	if (receive_cmd_done == 0) {
+		receive_cmd_done = 1;
+		sem_post(&g_read_cmd_done);
+	}
+}
+
+static void amebasmart_mipi_reset_trx_helper(MIPI_TypeDef *MIPIx)
+{
+	MIPIx->MIPI_CKLANE_CTRL = (MIPIx->MIPI_CKLANE_CTRL & ~MIPI_MASK_FORCETXSTOPMODE) | MIPI_FORCETXSTOPMODE(1);
+	DelayUs(1);
+	MIPIx->MIPI_CKLANE_CTRL = (MIPIx->MIPI_CKLANE_CTRL & ~MIPI_MASK_FORCETXSTOPMODE) | MIPI_FORCETXSTOPMODE(0);
+
+	MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) | MIPI_BIT_LPTX_RST | MIPI_BIT_LPRX_RST;
+	DelayUs(1);
+	MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) & ~MIPI_BIT_LPTX_RST & ~MIPI_BIT_LPRX_RST;
+
+	if (rx_data_ptr && rx_data_len > 0 && rx_data_rdy) {
+		memset(rx_data_ptr, 0, rx_data_len);
+	}
 }
 
 static void amebasmart_mipidsi_isr(void)
 {
 	MIPI_TypeDef *MIPIx = g_dsi_host.MIPIx;
 	u32 reg_val, reg_val2, reg_dphy_err;
+	u32 count = 0;
 	reg_val = MIPI_DSI_INTS_Get(MIPIx);
 	MIPI_DSI_INTS_Clr(MIPIx, reg_val);
 
@@ -221,32 +297,92 @@ static void amebasmart_mipidsi_isr(void)
 	MIPI_DSI_INTS_ACPU_Clr(MIPIx, reg_val2);
 	if (reg_val & MIPI_BIT_CMD_TXDONE) {
 		reg_val &= ~MIPI_BIT_CMD_TXDONE;
-		send_cmd_done = 1;
+		if (send_cmd_done == 0) {
+			send_cmd_done = 1;
+			sem_post(&g_send_cmd_done);
+		}
+	}
+	if (reg_val & MIPI_BIT_RCMD1) {
+		amebasmart_mipidsi_rcmd_decode(MIPIx, 0);
+	}
+	if (reg_val & MIPI_BIT_RCMD2) {
+		amebasmart_mipidsi_rcmd_decode(MIPIx, 1);
+	}
+	if (reg_val & MIPI_BIT_RCMD3) {
+		amebasmart_mipidsi_rcmd_decode(MIPIx, 2);
 	}
 
+ 	if (reg_val & (MIPI_BIT_RCMD1 | MIPI_BIT_RCMD2 | MIPI_BIT_RCMD3)){
+		if (rx_data_ptr) {
+			mipillvdbg("RCMD ");
+			for (int i = 0; i < rx_data_len; i ++) {
+				mipillvdbg("%x ", rx_data_ptr[i]);
+			}
+			mipillvdbg("\n" );
+		}
+ 	}
+
+	/* A timeout was encountered on the DPHY */
+	if (reg_val & (MIPI_BIT_LPRX_TIMEOUT | MIPI_BIT_LPTX_TIMEOUT)) {
+		if (reg_val & MIPI_BIT_LPRX_TIMEOUT) {
+			mipidbg("LPRX TimeOut\n");
+			while (MIPIx->MIPI_DPHY_STATUS0 & MIPI_BIT_DIRECTION) {
+				DelayUs(1);
+				if (count > 100000) {	/* If wait time more than 100ms */
+					mipidbg("MIPI DPHY STATUS0 Wait Timeout\n");
+					break;
+				}
+				count++;
+			}
+		} else {
+			mipidbg("LPTX TimeOut\n");
+		}
+
+		/* Restart TRX after errors handled */
+		amebasmart_mipi_reset_trx_helper(MIPIx);
+	}
+
+	/* An error has occured on the DPHY */
 	if (reg_val & MIPI_BIT_ERROR) {
 		reg_dphy_err = MIPIx->MIPI_DPHY_ERR;
 		MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
-		if (MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT & MIPI_MASK_DETECT_ENABLE) {
-			MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT &= ~MIPI_MASK_DETECT_ENABLE;
+		mipilldbg("LPTX Error: 0x%x, DPHY Error: 0x%x\n", reg_val, reg_dphy_err);
 
-			MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
-			MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
+		/* If contention is detected during LP signalling on the data lines */
+		if (reg_dphy_err & (
+			MIPI_BIT_ERRCONTECNTIAL_LP0_CH0 | MIPI_BIT_ERRCONTECNTIAL_LP0_CH1 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH0 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH1 |
+			MIPI_BIT_ERRCONTECNTIAL_LP0_CH2 | MIPI_BIT_ERRCONTECNTIAL_LP0_CH3 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH2 | MIPI_BIT_ERRCONTECNTIAL_LP1_CH3
+		)) {
+			if (MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT & MIPI_MASK_DETECT_ENABLE) {
+				MIPIx->MIPI_CONTENTION_DETECTOR_AND_STOPSTATE_DT &= ~MIPI_MASK_DETECT_ENABLE;
+
+				MIPIx->MIPI_DPHY_ERR = reg_dphy_err;
+				MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
+				mipilldbg("LPTX Error CLR: 0x%x, DPHY: 0x%x\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
+			}
 		}
+
+		/* Control error was detected */
+		if (reg_dphy_err & MIPI_BIT_ERRCONTROL) {
+			MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
+			MIPIx->MIPI_DPHY_ERR = MIPIx->MIPI_DPHY_ERR & ~MIPI_BIT_ERRCONTROL;
+			mipilldbg("Handle ERRCONTROL: LPTX Error CLR: 0x%x, DPHY: 0x%x\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
+		}
+
+		/* A sync error has occured */
+		if (reg_dphy_err & MIPI_BIT_ERRSYNCESC) {
+			MIPI_DSI_INTS_Clr(MIPIx, MIPI_BIT_ERROR);
+			MIPIx->MIPI_DPHY_ERR = MIPIx->MIPI_DPHY_ERR & ~MIPI_BIT_ERRSYNCESC;
+			mipilldbg("Handle ERRSYNC: LPTX Error CLR: 0x%x, DPHY: 0x%x\n", MIPIx->MIPI_INTS, MIPIx->MIPI_DPHY_ERR);
+		}
+
+		/* Restart TRX after errors handled */
+		amebasmart_mipi_reset_trx_helper(MIPIx);
 
 		if (MIPIx->MIPI_DPHY_ERR == reg_dphy_err) {
 			mipidbg("LPTX Still Error\n");
 			MIPI_DSI_INT_Config(MIPIx, ENABLE, DISABLE, FALSE);
 		}
-		reg_val &= ~MIPI_BIT_ERROR;
-	}
-
-	if (reg_val) {
-		mipidbg("LPTX Error Occur: 0x%x\n", reg_val);
-	}
-
-	if (reg_val2) {
-		mipidbg("error occured #\n");
 	}
 }
 
@@ -313,7 +449,8 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 #endif
 	FAR struct amebasmart_mipi_dsi_host_s *priv = (FAR struct amebasmart_mipi_dsi_host_s *)dsi_host;
 	struct mipi_dsi_packet packet;
-	int cnt = 5000;
+	struct timespec abstime;
+	irqstate_t flags;
 	/*When underflow happens, mipi's irq will be registered to rtl8730e_mipidsi_underflowreset callback to handle video mode frame done interrupt.
 	  only one type of interrupt can be enabled at any one time, either cmd mode interrupt or video mode interrupt, so we need to re-register mipi's
 	  irq cmd mode callback here
@@ -348,27 +485,39 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 		return ret;
 	}
 	send_cmd_done = 0;
+	rx_data_rdy = FALSE;
+	if (msg->rx_buf) {
+		rx_data_ptr = msg->rx_buf;
+		rx_data_len = msg->rx_len;
+	}
 	if (mipi_dsi_packet_format_is_short(msg->type)) {
 		if (packet.header[1] == 0) {
-			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 0, NULL);
+			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 0, NULL, msg->type);
 		} else {
-			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 1, packet.header + 1);
+			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 1, packet.header + 1, msg->type);
 		}
 	} else {
-		amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], packet.payload_length, packet.payload);
+		amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], packet.payload_length, packet.payload, msg->type);
 	}
-	while(send_cmd_done != 1) {
-		DelayMs(1);
-		cnt--;
-		if (cnt == 0) {
+	flags = enter_critical_section();
+	(void)clock_gettime(CLOCK_REALTIME, &abstime);
+	abstime.tv_sec += MIPI_TRANSFER_TIMEOUT;
+	ret = sem_timedwait(&g_send_cmd_done, &abstime);
+	if (!receive_cmd_done) {
+		ret = sem_timedwait(&g_read_cmd_done, &abstime);
+	}
+	leave_critical_section(flags);
+	if (send_cmd_done != 1 || receive_cmd_done != 1) {
 #ifdef CONFIG_PM
-			bsp_pm_domain_control(BSP_MIPI_DRV, 0);
+		bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
 #ifdef CONFIG_SMP
-			spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+		spin_unlock(&g_rtl8730e_config_dev_s_underflow);
 #endif
-			return FAIL;
+		if (msg->rx_buf && msg->rx_len > 0) {
+			memset(msg->rx_buf, 0, msg->rx_len);
 		}
+		return FAIL;
 	}
 #ifdef CONFIG_SMP
 	spin_unlock(&g_rtl8730e_config_dev_s_underflow);
@@ -376,6 +525,10 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 #ifdef CONFIG_PM
 	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
+	if (rx_data_rdy) {
+		rx_data_ptr = NULL;
+		rx_data_len = 0;
+	}
 	return OK;
 }
 
@@ -400,6 +553,10 @@ static uint32_t rtk_mipi_resume(uint32_t expected_idle_time, void *param)
 	/* For LCDC */
 	rtl8730e_lcdc_pm();
 
+	/* reset stale hw status bits */
+	u32 reg_val = MIPI_DSI_INTS_Get(priv->MIPIx);
+	MIPI_DSI_INTS_Clr(priv->MIPIx, reg_val);
+
 	return 1;
 }
 #endif
@@ -423,6 +580,7 @@ struct mipi_dsi_host *amebasmart_mipi_dsi_host_initialize(struct lcd_data *confi
 	bsp_pm_domain_register("MIPI", BSP_MIPI_DRV);
 	pmu_register_sleep_callback(PMU_MIPI_DEVICE, (PSM_HOOK_FUN)rtk_mipi_suspend, NULL, (PSM_HOOK_FUN)rtk_mipi_resume, NULL);
 #endif
-
+	sem_init(&g_send_cmd_done, 0, 0);
+	sem_init(&g_read_cmd_done, 0, 0);
 	return (struct mipi_dsi_host *)priv;
 }

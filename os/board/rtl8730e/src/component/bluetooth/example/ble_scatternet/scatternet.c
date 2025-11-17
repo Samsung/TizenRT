@@ -160,7 +160,7 @@ extern rtk_bt_le_conn_ind_t *ble_tizenrt_scatternet_conn_ind;
 extern uint8_t *del_bond_addr;
 extern uint8_t ble_client_connect_is_running;
 extern uint16_t scan_timeout;
-
+extern trble_le_coc_init_config le_coc_init_parm;  
 static app_conn_table_t conn_link[RTK_BLE_GAP_MAX_LINKS] = {0};
 rtk_bt_gattc_read_ind_t ble_tizenrt_scatternet_read_results[RTK_BLE_GAP_MAX_LINKS] = {0};
 rtk_bt_gattc_write_ind_t g_scatternet_write_result = {0};
@@ -177,7 +177,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
     char le_addr[30] = {0};
     char *role;
 #ifdef CONFIG_PM
-    int domain;
+    struct pm_domain_s *domain;
 #endif
     switch (evt_code) {
     case RTK_BT_LE_GAP_EVT_ADV_START_IND: {
@@ -343,6 +343,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				uint16_t mtu_size = 0;
 				connected_dev.conn_handle = conn_ind->conn_handle;
 				connected_dev.is_bonded = ble_tizenrt_scatternet_bond_list[conn_id].is_bonded;
+				connected_dev.conn_info.addr.type = conn_ind->peer_addr.type;
 				memcpy(connected_dev.conn_info.addr.mac, conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
 				connected_dev.conn_info.conn_interval = conn_ind->conn_interval;
 				connected_dev.conn_info.slave_latency = conn_ind->conn_latency;
@@ -564,6 +565,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				}
 				connected_dev.conn_handle = ble_tizenrt_scatternet_conn_ind->conn_handle;
 				connected_dev.is_bonded = ble_tizenrt_scatternet_bond_list[conn_id].is_bonded;
+				connected_dev.conn_info.addr.type = ble_tizenrt_scatternet_conn_ind->peer_addr.type;
 				memcpy(connected_dev.conn_info.addr.mac, ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
 				connected_dev.conn_info.conn_interval = ble_tizenrt_scatternet_conn_ind->conn_interval;
 				connected_dev.conn_info.slave_latency = ble_tizenrt_scatternet_conn_ind->conn_latency;
@@ -693,7 +695,109 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 			break;
 	}
 #endif
+#if defined(RTK_BLE_COC_SUPPORT) && RTK_BLE_COC_SUPPORT
+	case RTK_BT_LE_GAP_EVT_COC_REG_PSM_IND: {
+		rtk_bt_le_coc_reg_psm_ind_t *reg_psm_ind = (rtk_bt_le_coc_reg_psm_ind_t *)param;
+		if (!reg_psm_ind->err) {
+			dbg("[APP] LE COC register PSM success, le_psm: 0x%x, err: 0x%x\r\n",
+					reg_psm_ind->le_psm, reg_psm_ind->err);
+		} else {
+			dbg("[APP] LE COC register PSM fail, le_psm: 0x%x, err: 0x%x\r\n",
+					reg_psm_ind->le_psm, reg_psm_ind->err);
+		}
+		if (le_coc_init_parm.reg_psm_cb) {
+			le_coc_init_parm.reg_psm_cb(reg_psm_ind->le_psm, reg_psm_ind->err);
+		} else {
+			ble_tizenrt_dummy_callback();
+		}
+		break;
+	}
 
+	case RTK_BT_LE_GAP_EVT_COC_SET_SEC_IND: {
+		rtk_bt_le_coc_set_sec_ind_t *set_sec_ind = (rtk_bt_le_coc_set_sec_ind_t *)param;
+		if (!set_sec_ind->err) {
+			dbg("[APP] LE COC set security success, err: 0x%x\r\n",
+					set_sec_ind->err);
+		} else {
+			dbg("[APP] LE COC set security fail, err: 0x%x\r\n",
+					set_sec_ind->err);
+		}
+		if (le_coc_init_parm.set_sec_cb) {
+			le_coc_init_parm.set_sec_cb(set_sec_ind->err);
+		} else {
+			ble_tizenrt_dummy_callback();
+		}
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_CONNECT_IND: {
+		rtk_bt_le_coc_conn_state_ind_t *coc_conn_ind = (rtk_bt_le_coc_conn_state_ind_t *)param;
+		if (!coc_conn_ind->err) {
+			dbg("[APP] LE COC connected, conn_handle: %d, cid: 0x%x\r\n",
+					coc_conn_ind->conn_handle, coc_conn_ind->cid);
+		} else {
+			dbg("[APP] LE COC connect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
+					coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
+		}
+		if (le_coc_init_parm.con_cb) {
+			le_coc_init_parm.con_cb(coc_conn_ind->conn_handle, coc_conn_ind->cid, coc_conn_ind->err);
+		} else {
+			ble_tizenrt_dummy_callback();
+		}
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_DISCONNECT_IND: {
+		rtk_bt_le_coc_conn_state_ind_t *coc_disconn_ind = (rtk_bt_le_coc_conn_state_ind_t *)param;
+		if (!coc_disconn_ind->err) {
+			dbg("[APP] LE COC disconnected, conn_handle: %d, cid: 0x%x\r\n",
+					coc_disconn_ind->conn_handle, coc_disconn_ind->cid);
+		} else {
+			dbg("[APP] LE COC disconnect failed, conn_hande: %d, cid: 0x%x, err: 0x%x\r\n",
+					coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
+		}
+		if (le_coc_init_parm.discon_cb) {
+			le_coc_init_parm.discon_cb(coc_disconn_ind->conn_handle, coc_disconn_ind->cid, coc_disconn_ind->err);
+		} else {
+			ble_tizenrt_dummy_callback();
+		}
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_SEND_DATA_RESULT_IND: {
+		rtk_bt_le_coc_send_data_res_ind_t *res_ind = (rtk_bt_le_coc_send_data_res_ind_t *)param;
+		dbg("[APP] LE COC send data completed, conn_handle: %d, cid: 0x%x, credit: %d, err: 0x%x\r\n",
+				res_ind->conn_handle, res_ind->cid, res_ind->credit, res_ind->err);
+		if (le_coc_init_parm.send_cb) {
+			le_coc_init_parm.send_cb(res_ind->conn_handle, res_ind->cid, res_ind->err, res_ind->credit);
+		} else {
+			ble_tizenrt_dummy_callback();
+		}
+		break;
+	}
+
+	case RTK_BT_LE_GAP_EVT_COC_RECEIVE_DATA_IND: {
+		rtk_bt_le_coc_receive_data_ind_t *data_ind = (rtk_bt_le_coc_receive_data_ind_t *)param;
+		dbg("[APP] LE COC receive data, conn_handle: %d, cid: 0x%x, len: %d\r\n",
+				data_ind->conn_handle, data_ind->cid, data_ind->len);
+
+		trble_data read_result;
+		read_result.length = data_ind->len;
+		read_result.data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, read_result.length);
+		if (!read_result.data)
+		{
+			dbg("fail to malloc data %s\n", __FUNCTION__);
+			break;
+		}
+		memcpy(read_result.data, data_ind->data, read_result.length);
+		if (le_coc_init_parm.recv_cb) {
+			le_coc_init_parm.recv_cb(data_ind->conn_handle, data_ind->cid, &read_result);
+		} else {
+			ble_tizenrt_dummy_callback();
+		}
+		break;
+	}
+#endif /* RTK_BLE_COC_SUPPORT */
     default:
         debug_print("[APP] Unkown gap cb evt type: %d", evt_code);
         break;

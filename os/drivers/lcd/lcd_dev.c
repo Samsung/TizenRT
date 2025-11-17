@@ -84,7 +84,7 @@ struct lcd_s {
 	sem_t sem;
 	int16_t crefs;
 #ifdef CONFIG_PM
-	int pm_domain;
+	struct pm_domain_s *pm_domain;
 #endif
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	uint8_t *lcd_kbuffer;
@@ -366,6 +366,14 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 	}
 	break;
+	case LCDDEVIO_GETLCDINFO: {
+		if (priv->dev->getlcdinfo) {
+			ret = priv->dev->getlcdinfo(priv->dev, (FAR struct lcd_info_s *)arg);
+		} else {
+			ret = -ENOSYS;
+		}
+	}
+	break;
 	default: {
 		lcddbg("ERROR: Unsupported IOCTL command: %d\n", cmd);
 		ret = -ENOSYS;
@@ -407,13 +415,17 @@ static void lcd_flushing_thread(int argc, char **argv)
  * Name: lcddev_register
  *
  * Description:
- *   Register the LCD character driver as /dev/lcdN.
+ *   Register the LCD character driver.
+ *   This function register LCD driver as PM domain and render initial image
+ *   to screen. 
+ *   And if CONFIG_LCD_FLUSH_THREAD is enabled, it will create a separate 
+ *   thread which will handle screen flush operations.
  *
  * Input Parameters:
- *   devno - The LCD device number.
+ *   dev - The LCD device instance to be registered.
  *
  * Returned Value:
- *   Zero (OK) is returned on success.  Otherwise a negated errno value is
+ *   Zero (OK) is returned on success. Otherwise a negated errno value is
  *   returned to indicate the nature of the failure.
  *
  ****************************************************************************/
@@ -471,31 +483,24 @@ int lcddev_register(struct lcd_dev_s *dev)
 #endif
 
 	sem_init(&lcd_info->sem, 0, 1);
-	bool is_silent_mode;
-	is_silent_mode = silent_reboot_is_silent_mode();
-	if (!is_silent_mode) {
-		ASSERT(dev->setpower);
-		ret = dev->setpower(dev, CONFIG_LCD_MAXPOWER);
-		if (ret != OK) {
-			goto cleanup;
-		}
+
+	ret = lcd_init_put_image(dev);
+	if (ret == OK) { // LCD ON
 #ifdef CONFIG_PM
 		(void)pm_suspend(lcd_info->pm_domain);
 #endif
 		silent_reboot_lock();
-		lcd_init_put_image(dev);
 	}
+
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
 		snprintf(devname, 16, "/dev/lcd0");
 		ret = register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
-		if (ret != OK) {
-			goto cleanup;
-		} else {
-			return ret; //successful registration of driver
+		if (ret == OK) {
+			return ret;
 		}
 	}
-cleanup:
+
 	lcddbg("ERROR: Failed to register driver %s\n", devname);
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	task_delete(pid);

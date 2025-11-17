@@ -44,7 +44,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
 #include <tinyara/board.h>
-#include <tinyara/pm/pm.h>
+
 #include <errno.h>
 
 #include "chip.h"
@@ -73,8 +73,6 @@
 #  define END_IDLE()
 #endif
 
-#define PM_IDLE_DOMAIN 0 /* Revisit */
-
 #ifdef CONFIG_SCHED_TICKSUPPRESS
 #ifndef CONFIG_STM32L4_RTC
 #error "Cannot support ticksuppress without RTC enabled (Enable CONFIG_STM32L4_RTC)"
@@ -84,24 +82,7 @@
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-#ifdef CONFIG_ARCH_SUPPORT_ENTER_SLEEP
-int up_pmsleep(void)
-{
-  int ret = OK;
-  irqstate_t flags;
 
-  flags = irqsave();
-  sched_lock();
-  set_exti_button();
-  (void)stm32l4_pmstop2();
-  stm32l4_clockenable();
-errout_lock:
-  sched_unlock();
-  irqrestore(flags);
-
-  return ret;
-}
-#endif
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -132,39 +113,6 @@ void set_exti_button(void)
   (void)irq_attach(STM32L4_IRQ_EXTI1510, (xcpt_t)up_extiisr, NULL);
 }
 
-#ifdef CONFIG_PM
-/****************************************************************************
- * Name: up_pm_board_sleep
- *
- * Description:
- *   Perform IDLE state power management.
- *
- * Input Parameters:
- *   wakeuphandler - The wakeuphandler function that must be called after each board wakeup.
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
-{
-	irqstate_t flags;
-	flags = irqsave();
-	/* MCU-specific power management logic */
-	/* Set EXTI interrupt */
-	set_exti_button();
-
-	(void)stm32l4_pmstop2();
-
-	/* Re configure clocks */
-	stm32l4_clockenable();
-	printf("Wakeup from STOP2!!\n");
-	irqrestore(flags);
-}
-#else
-#define up_pm_board_sleep(wakeuphandler)
-#endif
 
 /****************************************************************************
  * Name: up_idle
@@ -186,7 +134,7 @@ void up_idle(void)
    * "fake" timer interrupts. Hopefully, something will wake up.
    */
 
-  nxsched_process_timer();
+  sched_process_timer();
 #else
 	/* set core to WFI */
 #if !(defined(CONFIG_DEBUG_SYMBOLS) && defined(CONFIG_STM32L4_DISABLE_IDLE_SLEEP_DURING_DEBUG))

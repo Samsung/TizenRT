@@ -100,11 +100,8 @@
  *  and free the old buffer.
  *
  ****************************************************************************/
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
 FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size, mmaddress_t caller_retaddr)
-#else
-FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
-#endif
 {
 	FAR struct mm_allocnode_s *oldnode;
 #ifndef CONFIG_REALLOC_DISABLE_NEIGHBOR_EXTENSION
@@ -118,15 +115,10 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 	size_t nextsize = 0;
 #endif
 	FAR void *newmem;
-
 	/* If oldmem is NULL, then realloc is equivalent to malloc */
 
 	if (!oldmem) {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 		return mm_malloc(heap, size, caller_retaddr);
-#else
-		return mm_malloc(heap, size);
-#endif
 	}
 
 	if (size > MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) {
@@ -266,7 +258,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 			/* Remove the previous node.  There must be a predecessor, but
 			 * there may not be a successor node.
 			 */
-
+			DEBUGASSERT_MM_FREE_NODE(heap, prev);
 			REMOVE_NODE_FROM_LIST(prev);
 
 			/* Extend the node into the previous free chunk */
@@ -320,7 +312,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 			/* Remove the next node.  There must be a predecessor, but there
 			 * may not be a successor node.
 			 */
-
+			DEBUGASSERT_MM_FREE_NODE(heap, next);
 			REMOVE_NODE_FROM_LIST(next);
 
 			/* Extend the node into the next chunk */
@@ -367,11 +359,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size)
 		 * leave the original memory in place.
 		 */
 		mm_givesemaphore(heap);
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 		newmem = (FAR void *)mm_malloc(heap, size, caller_retaddr);
-#else
-		newmem = (FAR void *)mm_malloc(heap, size);
-#endif
 		if (newmem) {
 			memcpy(newmem, oldmem, oldsize - SIZEOF_MM_ALLOCNODE);
 			mm_free(heap, oldmem);

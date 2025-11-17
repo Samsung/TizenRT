@@ -89,13 +89,7 @@ void stm32l4_pmsleep(bool sleeponexit)
 
   /* Sleep until the wakeup interrupt or event occurs */
 
-#ifdef CONFIG_PM_WFE
-  /* Mode: SLEEP + Entry with WFE */
-
-  asm("wfe");
-#else
   /* Mode: SLEEP + Entry with WFI */
 
   asm("wfi");
-#endif
 }

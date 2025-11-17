@@ -76,7 +76,7 @@
  */
 
 struct pm_global_s g_pmglobals;
-const char *pm_state_name[PM_COUNT] = {"NORMAL", "IDLE", "STANDBY", "SLEEP"};
+const char *pm_state_name[PM_COUNT] = {"NORMAL", "SLEEP"};
 const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "UART CONSOLE", "UART TTYS2", "GPIO", "HW TIMER"};
 
 /****************************************************************************
@@ -125,12 +125,14 @@ void pm_initialize(struct pm_sleep_ops *sleep_ops)
 {
 	sem_init(&g_pmglobals.regsem, 0, 1);
 
+	/* Initialize the PM registry and domains queues */
+	dq_init(&g_pmglobals.registry);
+	dq_init(&g_pmglobals.domains);
+	dq_init(&g_pmglobals.suspended_domains);
+
 	/* Register the PM ops structures */
 	g_pmglobals.sleep_ops = sleep_ops;
 
-	/* Register Special Domains, which are specific to Kernel*/
-	DEBUGASSERT(pm_domain_register("IDLE") == PM_IDLE_DOMAIN);
-	DEBUGASSERT(pm_domain_register("SCREEN") == PM_LCD_DOMAIN);
 }
 
 /****************************************************************************

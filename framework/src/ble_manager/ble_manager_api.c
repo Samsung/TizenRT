@@ -606,3 +606,72 @@ ble_result_e ble_server_stop_multi_adv(uint8_t adv_handle)
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_manager_le_coc_init(ble_le_coc_callback_list *le_coc_config)
+{
+	blemgr_msg_s msg = {BLE_CMD_COC_INIT, BLE_MANAGER_FAIL, (void *)(le_coc_config), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_coc_register_psm(uint8_t is_reg, uint16_t psm)
+{
+	blemgr_msg_params param = { 2, {(void *)&is_reg, (void *)&psm}};
+	blemgr_msg_s msg = {BLE_CMD_COC_REG_PSM, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_coc_set_psm_security(uint16_t le_psm, uint8_t active, uint8_t sec_mode, uint8_t key_size)
+{
+	blemgr_msg_params param = { 4, {(void *)&le_psm, (void *)&active,
+									 (void *)&sec_mode, (void *)&key_size}};
+	blemgr_msg_s msg = {BLE_CMD_COC_SET_PSM_SEC, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_coc_set_param(uint16_t value)
+{
+	blemgr_msg_s msg = {BLE_CMD_COC_SET_PARAM, BLE_MANAGER_FAIL, (void *)(&value), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_coc_get_param(uint8_t param_type, uint16_t cid, uint16_t *value)
+{
+	blemgr_msg_params param = { 3, {(void *)&param_type, (void *)&cid, (void *)value}};
+	blemgr_msg_s msg = {BLE_CMD_COC_GET_PARAM, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_coc_connect(uint16_t conn_handle, uint16_t le_psm)
+{
+	blemgr_msg_params param = { 2, {(void *)&conn_handle, (void *)&le_psm}};
+	blemgr_msg_s msg = {BLE_CMD_COC_CONNECT, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_coc_disconnect(uint16_t cid)
+{
+	blemgr_msg_s msg = {BLE_CMD_COC_DISCONNECT, BLE_MANAGER_FAIL, (void *)(&cid), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data)
+{
+	blemgr_msg_params param = { 3, {(void *)&cid, (void *)&len, (void *)data}};
+	blemgr_msg_s msg = {BLE_CMD_COC_SEND, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}

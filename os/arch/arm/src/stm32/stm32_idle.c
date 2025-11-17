@@ -59,7 +59,6 @@
 #include <debug.h>
 
 #include <tinyara/arch.h>
-#include <tinyara/pm/pm.h>
 
 #include <arch/irq.h>
 
@@ -95,32 +94,6 @@
  * Public Functions
  ****************************************************************************/
 
-#ifdef CONFIG_PM
-/****************************************************************************
- * Name: up_pm_board_sleep
- *
- * Description:
- *   Perform IDLE state power management.
- *
- * Input Parameters:
- *   wakeuphandler - The wakeuphandler function that must be called after each board wakeup.
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
-{
-	irqstate_t flags;
-	flags = irqsave();
-	/* MCU-specific power management logic */
-	(void)stm32_pmstandby();
-	irqrestore(flags);
-}
-#else
-#define up_pm_board_sleep(wakeuphandler)
-#endif
 
 /****************************************************************************
  * Name: up_idle

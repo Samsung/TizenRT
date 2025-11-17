@@ -116,6 +116,14 @@ config LCD_FLUSH_THREAD
 	---help---
 		Separate thread for LCD which will start processing next frame after previous is sent to lcd driver.
 
+config LCD_PWM_INVERSION
+	bool "LCD PWM backlight inversion mode"
+	default n
+	---help---
+		Use PWM backlight inversion mode
+		Power 0 -> backlight on
+		Power 100 -> backlight off
+
 comment "Graphic LCD Devices"
 
 choice
@@ -151,6 +159,34 @@ config LCD_ST7789
 		Enable LCD Driver, ST7789 with spi.
 endchoice
 
+config LCD_INIT_AVD_NB01
+	bool "AVD NB01 initialization"
+	depends on LCD_ST7785
+	default n
+	---help---
+		Use AVD NB01 ST7785 initialization sequence
+
+config LCD_INIT_AVD_2701
+	bool "AVD 2701 initialization"
+	depends on LCD_ST7785
+	default n
+	---help---
+		Use AVD 2701 ST7785 initialization sequence
+
+config LCD_INIT_HLT_A196
+	bool "Holitech A196 initialization"
+	depends on LCD_ST7785
+	default y
+	---help---
+		Use Holitech A196 ST7785 initialization sequence
+
+config LCD_INIT_TEC_181A
+	bool "Techshine 181A initialization"
+	depends on LCD_ST7785
+	default n
+	---help---
+		Use Techshine 181A ST7785 initialization sequence
+
 config LCD_XRES
 	int "LCD X Resolution"
 	default 480 if LCD_ST7701
@@ -165,26 +201,12 @@ config LCD_YRES
 	---help---
 		Specifies the Y resolution of the LCD.
 
-config LCD_LOGO
-	bool "Lcd screen image shown at boot time"
-	default y
+config LCD_SPLASH_IMAGE_PATH
+	string "LCD Splash Image Path"
+	default "/res/kernel/graphics"
 	---help---
-		This screen image is shown at boot time.
-		This image is shown till App makes first rendering call.
-
-if LCD_LOGO
-choice
-	prompt "LCD Bootup image"
-	default LCD_LOGO_52_340
-	---help---
-		Select the bootup image to show on the LCD.
-
-config LCD_LOGO_52_340
-	bool "Logo 52x340"
-	---help---
-		LCD logo with resolution 52x340.
-endchoice
-endif
+		This path is used find splash image during booting.
+		Final resource path is defined like "{LCD_SPLASH_IMAGE_PATH}/{LCD_YRES}x{LCD_XRES}/splash_{normal/silent}.bmp"
 
 if LCD_INTERFACE_MIPI
 config LCD_SEND_CMD_RETRY_COUNT
@@ -196,6 +218,13 @@ config LCD_SEND_CMD_RETRY_COUNT
 		If send command gets fail in command mode, then this config will retry
 		send command to LCD.
 
+config LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT
+	int "LCD send vendor id cmd retry count"
+	default 3
+	---help---
+		For certain LCD panels such as ST7785, vendor ID is used to determine the correct init sequence to send.
+		When these panels are hotplugged, the MIPI+LCD stack requires to be reinitialized while the panel is power cycled
+		After this is done, this config will allow driver to re-send the vendor ID command to check panel status.
 endif
 
 if LCD_ST7789

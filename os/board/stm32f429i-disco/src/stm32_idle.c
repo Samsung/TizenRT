@@ -61,7 +61,7 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/clock.h>
-#include <tinyara/pm/pm.h>
+
 
 #include <debug.h>
 #include <tinyara/rtc.h>
@@ -90,16 +90,6 @@
 #define END_IDLE()
 #endif
 
-/* Values for the RTC Alarm to wake up from the PM_STANDBY mode */
-
-#ifndef CONFIG_PM_ALARM_SEC
-#define CONFIG_PM_ALARM_SEC 3
-#endif
-
-#ifndef CONFIG_PM_ALARM_NSEC
-#define CONFIG_PM_ALARM_NSEC 0
-#endif
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -112,34 +102,6 @@
  * Public Functions
  ****************************************************************************/
 
-#ifdef CONFIG_PM
-/****************************************************************************
- * Name: up_pm_board_sleep
- *
- * Description:
- *   Perform IDLE state power management.
- *
- * Input Parameters:
- *   wakeuphandler - The wakeuphandler function that must be called after each board wakeup.
- *
- * Returned Value:
- *   None.
- *
- ****************************************************************************/
-
-void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
-{
-	irqstate_t flags;
-	flags = irqsave();
-	/* We should not return from standby mode.  The only way out
-	 * of standby is via the reset path.
-	 */
-	(void)stm32_pmstandby();
-	irqrestore(flags);
-}
-#else
-#define stm32_idlepm()
-#endif
 
 /****************************************************************************
  * Name: up_idle
@@ -167,7 +129,6 @@ void up_idle(void)
 	/* Perform IDLE mode power management */
 
 	BEGIN_IDLE();
-	stm32_idlepm();
 	END_IDLE();
 #endif
 }

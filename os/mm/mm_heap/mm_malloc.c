@@ -139,11 +139,8 @@ static void mm_free_delaylist(FAR struct mm_heap_s *heap)
  *  8-byte alignment of the allocated data is assured.
  *
  ****************************************************************************/
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
+
 FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_retaddr)
-#else
-FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
-#endif
 {
 	FAR struct mm_freenode_s *node;
 	void *ret = NULL;
@@ -209,7 +206,7 @@ retry_after_gc:
 		/* Remove the node.  There must be a predecessor, but there may not be
 		 * a successor node.
 		 */
-
+		DEBUGASSERT_MM_FREE_NODE(heap, node);
 		REMOVE_NODE_FROM_LIST(node);
 
 		/* Check if we have to split the free node into one of the allocated

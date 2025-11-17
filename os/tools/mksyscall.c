@@ -214,6 +214,22 @@ static FILE *open_proxy(void)
 	return stream;
 }
 
+static bool check_special_case(const char *name)
+{
+	static const char *special_syscalls[] = {
+		"ioctl", "task_setcanceltype",
+	};
+
+	int count = sizeof(special_syscalls) / sizeof(special_syscalls[0]);
+
+	for (int i = 0; i < count; i++) {
+		if (strncmp(name, special_syscalls[i], strlen(special_syscalls[i]) + 1) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static void generate_proxy(int nparms)
 {
 	FILE *stream = open_proxy();
@@ -224,6 +240,7 @@ static void generate_proxy(int nparms)
 	int nactual;
 	char *cond_parm;
 	int i;
+	bool special_case = false;
 
 	/* Generate "up-front" information, include correct header files */
 
@@ -246,9 +263,12 @@ static void generate_proxy(int nparms)
 
 	fprintf(stream, "#include <syscall.h>\n\n");
 
+	special_case = check_special_case(get_parm(NAME_INDEX));
 	cond_parm = get_parm(COND_INDEX);
-	if (cond_parm[0] != '\0')
+
+	if (cond_parm[0] != '\0' && special_case == true) {
 		fprintf(stream, "#if %s\n\n", cond_parm);
+	}
 
 	/* Generate the function definition that matches standard function prototype */
 
@@ -337,11 +357,10 @@ static void generate_proxy(int nparms)
 	} else {
 		fprintf(stream, ");\n}\n\n");
 	}
-
-	cond_parm = get_parm(COND_INDEX);
-	if (cond_parm[0] != '\0')
+	if (cond_parm[0] != '\0' && special_case == true) {
 		fprintf(stream, "#endif /* %s */\n", cond_parm);
-
+		special_case = false;
+	}
 	fclose(stream);
 }
 
@@ -390,21 +409,23 @@ static void generate_stub(int nparms)
 	char *cond_parm;
 	int i;
 	int j;
+	cond_parm = get_parm(COND_INDEX);
 
 	/* Generate "up-front" information, include correct header files */
 
 	fprintf(stream, "/* Auto-generated %s stub file -- do not edit */\n\n", get_parm(0));
 	fprintf(stream, "#include <tinyara/config.h>\n");
 	fprintf(stream, "#include <stdint.h>\n");
+	
+	if (cond_parm[0] != '\0') {
+		fprintf(stream, "#include <errno.h>\n");
+		fprintf(stream, "#include <sys/types.h>\n");
+	}
 
 	if (get_parm(HEADER_INDEX) && strlen(get_parm(HEADER_INDEX)) > 0)
 		fprintf(stream, "#include <%s>\n", get_parm(HEADER_INDEX));
 
 	putc('\n', stream);
-
-	cond_parm = get_parm(COND_INDEX);
-	if (cond_parm[0] != '\0')
-		fprintf(stream, "#if %s\n\n", cond_parm);
 
 	/* Generate the function definition that matches standard function prototype */
 
@@ -429,15 +450,19 @@ static void generate_stub(int nparms)
 
 	fprintf(stream, ")\n{\n");
 
+	if (cond_parm[0] != '\0') {
+		fprintf(stream, "#if %s\n", cond_parm);
+	}
+
 	/* Then call the proxied function.  Functions that have no return value are
 	 * a special case.
 	 */
 
-	if (strcmp(get_parm(RETTYPE_INDEX), "void") == 0)
+	if (strcmp(get_parm(RETTYPE_INDEX), "void") == 0) {
 		fprintf(stream, "  %s(", get_parm(NAME_INDEX));
-	else
+	} else {
 		fprintf(stream, "  return (uintptr_t)%s(", get_parm(NAME_INDEX));
-
+	}
 	/* The pass all of the system call parameters, casting to the correct type
 	 * as necessary.
 	 */
@@ -482,15 +507,26 @@ static void generate_stub(int nparms)
 	/* Tail end of the function.  If the proxied function has no return
 	 * value, just return zero (OK).
 	 */
-
-	if (strcmp(get_parm(RETTYPE_INDEX), "void") == 0)
-		fprintf(stream, ");\n  return 0;\n}\n\n");
-	else
-		fprintf(stream, ");\n}\n\n");
-
-	cond_parm = get_parm(COND_INDEX);
-	if (cond_parm[0] != '\0')
-		fprintf(stream, "#endif /* %s */\n", cond_parm);
+	if (cond_parm[0] == '\0') {
+		if (strcmp(get_parm(RETTYPE_INDEX), "void") == 0) {
+			fprintf(stream, ");\n  return 0;\n}\n\n");
+		} else {
+			fprintf(stream, ");\n}\n\n");
+		}
+	} else {
+		fprintf(stream, ");\n");
+		fprintf(stream, "#else\n");
+		fprintf(stream, "  set_errno(ENOSYS);\n");
+		if (strcmp(get_parm(RETTYPE_INDEX), "void") == 0) {
+			fprintf(stream, "  return 0;\n");
+		} else if (strcmp(get_parm(RETTYPE_INDEX), "int") == 0) {
+			fprintf(stream, "  return -1;\n");
+		} else {
+			fprintf(stream, "  return NULL;\n");
+		}
+		fprintf(stream, "#endif\n");
+		fprintf(stream, "}\n");
+	}
 	stub_close(stream);
 }
 

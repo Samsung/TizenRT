@@ -57,9 +57,10 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
-
 #include <tinyara/pm/pm.h>
 #include <tinyara/irq.h>
+
+#include <queue.h>
 #include <errno.h>
 
 #include "pm.h"
@@ -79,41 +80,54 @@
  *
  * Description:
  *   This function is called by a device driver to indicate that it is
- *   performing meaningful activities (non-idle), needs the power at kept
- *   last the specified level.
+ *   performing meaningful activities (non-idle), and the domain should not
+ *   enter a low-power state.
+ *   This function can be called from IRQ context.
  *
  * Input Parameters:
- *   domain_id - The domain ID of the PM activity
+ *   domain - Pointer to the domain structure
  *
  *     As an example, media player might stay in normal state during playback.
  *
  * Returned Value:
- *   None.
+ *   OK (0) on success; ERROR (-1) on failure with errno set appropriately.
  *
  * Assumptions:
  *   This function may be called from an interrupt handler.
  *
  ****************************************************************************/
 
-int pm_suspend(int domain_id)
+int pm_suspend(FAR struct pm_domain_s *domain)
 {
 	irqstate_t flags;
 	int ret = OK;
 
 	flags = enter_critical_section();
-	ret = pm_check_domain(domain_id);
+
+	/* pm_check_domain is implicitly handled by checking for NULL domain pointer
+	 * and ensuring the domain structure is valid.
+	 * If more checks are needed, pm_check_domain(domain) can be called here.
+	 */
+	ret = pm_check_domain(domain);
 	if (ret != OK) {
 		goto errout;
 	}
-	if (g_pmglobals.suspend_count[domain_id] >= UINT16_MAX) {
+
+	if (domain->suspend_count >= UINT16_MAX) {
 		ret = ERROR;
 		set_errno(ERANGE);
 		goto errout;
 	}
-#ifdef CONFIG_PM_METRICS
-	pm_metrics_update_suspend(domain_id);
-#endif
-	g_pmglobals.suspend_count[domain_id]++;
+
+	pm_metrics_update_suspend(domain);
+
+	domain->suspend_count++;
+
+	/* If this is the first suspend for this domain, add it to suspended_domains queue */
+	if (domain->suspend_count == 1) {
+		dq_addlast(&domain->suspended_node, &g_pmglobals.suspended_domains);
+	}
+
 errout:
 	leave_critical_section(flags);
 	return ret;

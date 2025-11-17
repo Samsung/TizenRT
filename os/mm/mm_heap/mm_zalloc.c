@@ -76,17 +76,9 @@
  *
  ****************************************************************************/
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 FAR void *mm_zalloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_retaddr)
-#else
-FAR void *mm_zalloc(FAR struct mm_heap_s *heap, size_t size)
-#endif
 {
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
 	FAR void *alloc = mm_malloc(heap, size, caller_retaddr);
-#else
-	FAR void *alloc = mm_malloc(heap, size);
-#endif
 	if (alloc) {
 		memset(alloc, 0, size);
 	}

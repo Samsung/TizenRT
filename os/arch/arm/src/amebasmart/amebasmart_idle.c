@@ -31,7 +31,6 @@
 #include "amebasmart_config.h"
 #include "arch_timer.h"
 #include "ameba_soc.h"
-#include "osdep_service.h"
 #endif
 
 #ifdef CONFIG_SMP
@@ -41,17 +40,35 @@
 
 #ifdef CONFIG_PM
 
+static int up_pm_board_sleep(void);
+static pm_wakeup_reason_code_t up_get_wakeupreason(void);
+static clock_t up_get_missingtick(void);
+extern int up_set_pm_timer(unsigned int interval_us);
+
 struct pm_sleep_ops rtl8730e_sleep_ops = {
 	.sleep = up_pm_board_sleep,
 	.set_timer = up_set_pm_timer,
+	.get_wakeupreason = up_get_wakeupreason,
+	.get_missingtick = up_get_missingtick,
 };
 
 #ifdef CONFIG_PM_DVFS
+
+extern void up_set_dvfs(int div_lvl);
 struct pm_clock_ops rtl8730e_clock_ops = {
 	.adjust_dvfs = up_set_dvfs,
 };
 #endif
 
+static pm_wakeup_reason_code_t up_get_wakeupreason(void)
+{
+	return tizenrt_get_wakeupreason();
+}
+
+static clock_t up_get_missingtick(void)
+{
+	return tizenrt_get_missingtick();
+}
 /****************************************************************************
  * Name: up_pm_board_sleep
  *
@@ -66,23 +83,16 @@ struct pm_clock_ops rtl8730e_clock_ops = {
  *
  ****************************************************************************/
 
-void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
+static int up_pm_board_sleep(void)
 {
-	/* mask sys tick interrupt*/
-	arm_arch_timer_int_mask(1);
-	up_timer_disable();
 	/* Interrupt source will wake cpu up, just leave expected idle time as 0
 	Enter sleep mode for AP */
-	config_SLEEP_PROCESSING(wakeuphandler);
-	/* When wake from pg, arm timer has been reset, so a new compare value is necessary to
-	trigger an timer interrupt */
-	up_timer_enable();
-	/* Arch timer is running at 50Mhz */
-	arm_arch_timer_set_compare(arm_arch_timer_count() + 50000);
-	arm_arch_timer_int_mask(0);
+	config_SLEEP_PROCESSING();
+
+	return 0;
 }
 #else
-#define up_pm_board_sleep(wakeuphandler)
+#define up_pm_board_sleep() 0
 #endif
 
 /****************************************************************************
@@ -105,7 +115,7 @@ void up_idle(void)
 	 * "fake" timer interrupts. Hopefully, something will wake up.
 	 */
 
-	nxsched_process_timer();
+	sched_process_timer();
 #else
 
 #ifdef CONFIG_PM

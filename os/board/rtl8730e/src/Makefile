@@ -89,11 +89,10 @@ include component/soc/amebad2/swlib/Make.defs
 include component/usrcfg/rtl8730e/Make.defs
 include component/lwip/api/Make.defs
 include component/wifi/Make.defs
-include component/wifi/inic/Make.defs
 include component/wifi/common/Make.defs
 include component/mbed/targets/hal/rtl8730e/Make.defs
-include component/os_dep/Make.defs
 include component/os/tizenrt/Make.defs
+include component/os/os_wrapper/Make.defs
 
 ifeq ($(CONFIG_AMEBASMART_WIFI),y)
 include component/wifi/api/Make.defs
@@ -140,7 +139,7 @@ BOARD_SRCDIR = 	$(TOPDIR)/board
 PROJ_DIR = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD2_va0_example
 COMPONENT_DIR = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component
 DIR_WIFI = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/wifi
-DIR_OSDEP = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os_dep
+DIR_OSDEP = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os/os_wrapper
 DIR_OS = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os
 DIR_MBED = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/mbed/targets/hal/rtl8730e
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
@@ -164,12 +163,15 @@ CFLAGS += -I$(TARGETDIR)/misc
 CFLAGS += -I$(COMPONENT_DIR)/stdlib
 CFLAGS += -I$(COMPONENT_DIR)/usrcfg/rtl8730e/include
 
+CFLAGS += -I$(COMPONENT_DIR)/wifi/common
 CFLAGS += -I$(COMPONENT_DIR)/wifi/api
 CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/include
 CFLAGS += -I$(COMPONENT_DIR)/wifi/inic
+CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src
 CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src/crypto
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
 
+CFLAGS += -I$(COMPONENT_DIR)/os/os_wrapper/include
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(DIR_MBED)
 CFLAGS += -I$(DIR_OSDEP)/include
@@ -178,7 +180,6 @@ CFLAGS += -I$(COMPONENT_DIR)/mbed/api
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal_ext
 CFLAGS += -I$(COMPONENT_DIR)/mbed/targets/hal/rtl8730e
-CFLAGS += -I$(COMPONENT_DIR)/os_dep
 CFLAGS += -I$(TOPDIR)/net/netmgr
 # Temporary keep it, need further check whether the usb needs the filesystem
 CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0

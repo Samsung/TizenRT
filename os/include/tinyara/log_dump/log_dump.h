@@ -28,7 +28,7 @@
 
 /* Log Dump Thread information */
 #define LOG_DUMP_NAME        "log_dump"		/* Log dump thread name */
-#define LOG_DUMP_STACKSIZE   16384		/* Log dump thread stack size */
+#define LOG_DUMP_STACKSIZE   10240		/* Log dump thread stack size */
 #define LOG_DUMP_PRIORITY    100		/* Log dump thread priority */
 
 #define LOGDUMP_SAVE_START	"1"

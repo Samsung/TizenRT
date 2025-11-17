@@ -240,7 +240,10 @@ volatile dq_queue_t g_inactivetasks;
 
 volatile sq_queue_t g_delayed_kufree;
 
+#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
+	 defined(CONFIG_MM_KERNEL_HEAP)
 volatile sq_queue_t g_delayed_kfree;
+#endif
 
 /* This gives number of alive tasks at any point of time in the system.
  * If the system is already running CONFIG_MAX_TASKS, Creating new

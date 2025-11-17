@@ -17,11 +17,50 @@ config ARCH_CHIP_RTL8730E
 	select ARMV7A_HAVE_GICv2
 	select ARCH_HAVE_FPU
 	select AMEBASMART_WIFI
-	select ARCH_BOARD_HAVE_SECOND_FLASH if RTL8730E_BOARD_REVISION > 4
 
 endchoice
 
 menu "Realtek RTL8730E Peripheral Support"
+
+config BOARD_HAVE_MIPI
+	bool
+	default n
+
+config BOARD_HAVE_SPI0
+	bool
+	default n
+
+config BOARD_HAVE_SPI0_CS
+	bool
+	default n
+
+config BOARD_HAVE_SPI1
+	bool
+	default n
+
+config BOARD_HAVE_SPI1_CS
+	bool
+	default n
+
+config BOARD_HAVE_I2C0
+	bool
+	default n
+
+config BOARD_HAVE_I2C1
+	bool
+	default n
+
+config BOARD_HAVE_I2C2
+	bool
+	default n
+
+config BOARD_HAVE_I2S2
+	bool
+	default n
+
+config BOARD_HAVE_I2S3
+	bool
+	default n
 
 config RTL8730E_UART
 	bool "UART"
@@ -68,8 +107,9 @@ config RTL8730E_SERIAL_FIFO
 	default n
 
 config AMEBASMART_MIPI
-        bool "AMEBASMART_MIPI"
-        default n
+	bool "AMEBASMART_MIPI"
+	depends on BOARD_HAVE_MIPI
+	default n
 
 config AMEBASMART_USBDEVICE
 	bool "AMEBASMART_USBDEVICE"
@@ -97,13 +137,15 @@ endif
 config AMEBASMART_SPI
 	bool "AMEBASMART_SPI"
 	default n
-	
+
 if AMEBASMART_SPI
 config AMEBASMART_SPI0
 	bool "SPI0"
+	depends on BOARD_HAVE_SPI0
 	default n
 config AMEBASMART_SPI1
 	bool "SPI1"
+	depends on BOARD_HAVE_SPI1
 	default n
 config AMEBASMART_SPI_EXCHANGE
 	bool "Enable AMEBASMART SPI EXCHANGE"
@@ -120,13 +162,13 @@ if AMEBASMART_SPI0
 config AMEBASMART_SPI0_CS
 	bool "SPI0 Multi-slaves CS pins"
 	default n
-	depends on SPI_CS
+	depends on SPI_CS && BOARD_HAVE_SPI0_CS
 endif
 if AMEBASMART_SPI1
 config AMEBASMART_SPI1_CS
 	bool "SPI1 Multi-slaves CS pins"
 	default n
-	depends on SPI_CS
+	depends on SPI_CS && BOARD_HAVE_SPI1_CS
 endif
 endif
 
@@ -138,12 +180,15 @@ if AMEBASMART_I2C
 
 config AMEBASMART_I2C0
 	bool "I2C_0"
+	depends on BOARD_HAVE_I2C0
 	default n
 config AMEBASMART_I2C1
 	bool "I2C_1"
+	depends on BOARD_HAVE_I2C1
 	default n
 config AMEBASMART_I2C2
 	bool "I2C_2"
+	depends on BOARD_HAVE_I2C2
 	default n
 
 config AMEBASMART_I2C_DYNTIMEO
@@ -183,9 +228,11 @@ config AMEBASMART_I2S
 if AMEBASMART_I2S
 config AMEBASMART_I2S2
 	bool "I2S_2"
+	depends on BOARD_HAVE_I2S2
 	default n
 config AMEBASMART_I2S3
 	bool "I2S_3"
+	depends on BOARD_HAVE_I2S3
 	default n
 
 config AMEBASMART_I2S_RX

@@ -268,7 +268,7 @@
 #include <tinyara/clock.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/kmalloc.h>
-#include <tinyara/pm/pm.h>
+
 #include <tinyara/i2c_master.h>
 
 #include <arch/board/board.h>
@@ -448,9 +448,6 @@ struct stm32l4_i2c_priv_s
 
   uint32_t status;             /* End of transfer SR2|SR1 status */
 
-#ifdef CONFIG_PM
-  struct pm_callback_s pm_cb;  /* PM callbacks */
-#endif
 };
 
 /* I2C Device, Instance */
@@ -510,10 +507,6 @@ static int stm32l4_i2c_transfer(FAR struct i2c_master_s *dev,
 #ifdef CONFIG_I2C_RESET
 static int stm32l4_i2c_reset(FAR struct i2c_master_s *dev);
 #endif
-#ifdef CONFIG_PM
-static int stm32l4_i2c_pm_prepare(FAR struct pm_callback_s *cb,
-                                  enum pm_state_e pmstate);
-#endif
 
 /************************************************************************************
  * Private Data
@@ -545,8 +538,6 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c1_priv =
   .dcnt       = 0,
   .flags      = 0,
   .status     = 0,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
 #endif
 };
 #endif
@@ -577,8 +568,6 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c2_priv =
   .dcnt       = 0,
   .flags      = 0,
   .status     = 0,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
 #endif
 };
 #endif
@@ -609,8 +598,6 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c3_priv =
   .dcnt       = 0,
   .flags      = 0,
   .status     = 0,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
 #endif
 };
 #endif
@@ -641,8 +628,6 @@ static struct stm32l4_i2c_priv_s stm32l4_i2c4_priv =
   .dcnt       = 0,
   .flags      = 0,
   .status     = 0,
-#ifdef CONFIG_PM
-  .pm_cb.prepare = stm32l4_i2c_pm_prepare,
 #endif
 };
 #endif
@@ -2839,53 +2824,6 @@ out:
  *   values when reverting back to higher power consumption modes!
  *
  ************************************************************************************/
-
-#ifdef CONFIG_PM
-static int stm32l4_i2c_pm_prepare(FAR struct pm_callback_s *cb,
-                                  enum pm_state_e pmstate)
-{
-  struct stm32l4_i2c_priv_s *priv =
-      (struct stm32l4_i2c_priv_s *)((char *)cb -
-                                    offsetof(struct stm32l4_i2c_priv_s, pm_cb));
-  int sval;
-
-  /* Logic to prepare for a reduced power state goes here. */
-
-  switch (pmstate)
-    {
-    case PM_NORMAL:
-    case PM_IDLE:
-      break;
-
-    case PM_STANDBY:
-    case PM_SLEEP:
-      /* Check if exclusive lock for I2C bus is held. */
-
-      if (nxsem_getvalue(&priv->sem_excl, &sval) < 0)
-        {
-          DEBUGASSERT(false);
-          return -EINVAL;
-        }
-
-      if (sval <= 0)
-        {
-          /* Exclusive lock is held, do not allow entry to deeper PM states. */
-
-          return -EBUSY;
-        }
-
-      break;
-
-    default:
-      /* Should not get here */
-
-      break;
-    }
-
-  return OK;
-}
-#endif
-
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
@@ -2903,9 +2841,6 @@ FAR struct i2c_master_s *stm32l4_i2cbus_initialize(int port)
   struct stm32l4_i2c_priv_s * priv = NULL;  /* private data of device with multiple instances */
   struct stm32l4_i2c_inst_s * inst = NULL;  /* device, single instance */
   irqstate_t irqs;
-#ifdef CONFIG_PM
-  int ret;
-#endif
 
   /* Get I2C private structure */
 
@@ -2957,14 +2892,6 @@ FAR struct i2c_master_s *stm32l4_i2cbus_initialize(int port)
     {
       stm32l4_i2c_sem_init((struct i2c_master_s *)inst);
       stm32l4_i2c_init(priv);
-
-#ifdef CONFIG_PM
-      /* Register to receive power management callbacks */
-
-      ret = pm_register(&priv->pm_cb);
-      DEBUGASSERT(ret == OK);
-      UNUSED(ret);
-#endif
     }
 
   irqrestore(irqs);
@@ -3003,12 +2930,6 @@ int stm32l4_i2cbus_uninitialize(FAR struct i2c_master_s * dev)
 
   irqrestore(irqs);
 
-#ifdef CONFIG_PM
-  /* Unregister power management callbacks */
-
-  pm_unregister(&((struct stm32l4_i2c_inst_s *)dev)->priv->pm_cb);
-#endif
-
   /* Disable power and other HW resource (GPIO's) */
 
   stm32l4_i2c_deinit(((struct stm32l4_i2c_inst_s *)dev)->priv);
@@ -3022,4 +2943,3 @@ int stm32l4_i2cbus_uninitialize(FAR struct i2c_master_s * dev)
 }
 
 #endif /* CONFIG_STM32L4_I2C1 || CONFIG_STM32L4_I2C2 || CONFIG_STM32L4_I2C3 || CONFIG_STM32L4_I2C4 */
-
