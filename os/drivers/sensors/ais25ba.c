@@ -170,6 +170,11 @@ static int ais25ba_stop(struct sensor_upperhalf_s *dev)
 	}
 
 	ais25ba_sem_wait(&(priv->sensor_run_on));
+	/* TODO: Replace sem_wait with sem_tickwait after callback stuck issue is resolved */
+	/*ret = sem_tickwait(&(priv->sensor_run_on), clock_systimer(), MSEC2TICK(405));
+	if (ret == ETIMEDOUT) {
+		lldbg("Timeout for sensor_run_on semaphore, driver not ready\n");
+	}*/
 	g_sensor_info.sensor_is_running = false;
 	g_sensor_info.sensor_is_prepared = false;
 	while (sq_peek(&priv->pendq) != NULL) {
@@ -337,13 +342,24 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer
 	}
 
 	ais25ba_sem_wait(&ctrl->read_sem);
+	/* TODO: Replace sem_wait with sem_tickwait after callback stuck issue is resolved */
+	/*ret = sem_tickwait(&ctrl->read_sem, clock_systimer(), MSEC2TICK(405));
+	if (ret == ETIMEDOUT) {
+		lldbg("Timeout for read_sem semaphore, previous read not finished\n");
+	}*/
 
-    ret = I2S_RECEIVE(i2s, g_apb, ais25ba_i2s_callback, ctrl, 100);	/* 100 ms timeout for read data */
+	ret = I2S_RECEIVE(i2s, g_apb, ais25ba_i2s_callback, ctrl, 100);	/* 100 ms timeout for read data */
 	if (ret != OK) {
 		sndbg("ERROR: I2S_RECEIVE FAILED\n");
+		goto error;
 	}
 
 	ais25ba_sem_wait(&ctrl->callback_wait_sem);
+	/* TODO: Replace sem_wait with sem_tickwait after callback stuck issue is resolved */
+	/*ret = sem_tickwait(&ctrl->callback_wait_sem, clock_systimer(), MSEC2TICK(405));
+	if (ret == ETIMEDOUT) {
+		lldbg("I2S BSP callback not received\n");
+	}*/
 
 	sensor_data_s *data = (sensor_data_s *)buffer;
 	int16_t *samp_data = (int16_t *)&g_apb->samp[0];
@@ -358,8 +374,9 @@ static ssize_t ais25ba_read(FAR struct sensor_upperhalf_s *dev, FAR void *buffer
 		memcpy(data[j].samples, samp_data, 16);
 		samp_data += 8; 
 	}
-	apb_free(g_apb);
 
+error:
+	apb_free(g_apb);
 	return ret;
 }
 
@@ -484,6 +501,7 @@ int ais25ba_initialize(const char *devpath, struct ais25ba_dev_s *priv)
 	struct sensor_upperhalf_s *upper = (struct sensor_upperhalf_s *)kmm_zalloc(sizeof(struct sensor_upperhalf_s));
 	if (!upper) {
 		sndbg("ERROR: upperhalf memory allocation failed\n");
+		goto cleanup_sem;
 	}
 	upper->ops = &g_ais25ba_ops;
 	upper->priv = priv;
@@ -508,6 +526,7 @@ int ais25ba_initialize(const char *devpath, struct ais25ba_dev_s *priv)
 		sndbg("Sensor connection verification success\n");
 	} else{
 		sndbg("ERROR: Sensor verification failed, sensor not found/not responding\n");
+		goto cleanup_with_upper;
 	}
 
 	//I2C config set. Read data is to check if write register is successful or not
@@ -524,8 +543,16 @@ int ais25ba_initialize(const char *devpath, struct ais25ba_dev_s *priv)
 	pid = kernel_thread(AIS25BA_KERNEL_MQ_THREAD, 200, 18000, (main_t)ais25ba_mq_thread, (FAR char *const *)parm);
 	if (pid < 0) {
 		sndbg("ais25ba_mq_thread thread creation failed\n");
-		return ERROR;
+		goto cleanup_with_upper;
 	}
 
 	return sensor_register(devpath, upper);
+
+cleanup_with_upper:
+	free(upper);
+cleanup_sem:
+	sem_destroy(&priv->ctrl.read_sem);
+	sem_destroy(&priv->ctrl.callback_wait_sem);
+	sem_destroy(&priv->sensor_run_on);
+	return ERROR;
 }
