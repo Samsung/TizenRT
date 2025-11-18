@@ -28,7 +28,8 @@
 #include <tinyara/arch.h>
 #include "../kernel/sched/sched.h"
 
-#include "pm.h"
+#include "../../pm/pm.h"
+
 #ifdef CONFIG_SMP
 #include "../arch/arm/src/armv7-a/smp.h"
 #endif
