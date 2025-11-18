@@ -367,8 +367,9 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 		ASSERT(get_errno() == EINTR);
 	}
 	if (priv->power == 0) {
+		lcddbg("ERROR: LCD is off. putarea failed\n");
 		sem_post(&priv->sem);
-		return ERROR;
+		return -EIO;
 	}
 	//coordinate shift from (0,0) -> (1,1) and (XRES-1,YRES-1) -> (XRES,YRES)
 	row_start += 1;
@@ -423,7 +424,10 @@ static int lcd_getrun(FAR struct lcd_dev_s *dev, fb_coord_t row, fb_coord_t col,
 
 static int lcd_getvideoinfo(FAR struct lcd_dev_s *dev, FAR struct fb_videoinfo_s *vinfo)
 {
-	DEBUGASSERT(dev && vinfo);
+	DEBUGASSERT(dev);
+	if (!vinfo) {
+		return -EINVAL;
+	}
 	//vinfo->fmt = st7785_COLORFMT; /* Color format: RGB16-565: RRRR RGGG GGGB BBBB */
 #if defined(CONFIG_LCD_SW_ROTATION)
 	vinfo->xres = LCD_YRES;	/* Horizontal resolution in pixel columns */
@@ -470,6 +474,10 @@ static int lcd_getlcdinfo(FAR struct lcd_dev_s *dev, FAR struct lcd_info_s *lcdi
 
 static int lcd_getplaneinfo(FAR struct lcd_dev_s *dev, unsigned int planeno, FAR struct lcd_planeinfo_s *pinfo)
 {
+	DEBUGASSERT(dev);
+	if (!pinfo) {
+		return -EINVAL;
+	}
 	DEBUGASSERT(dev && pinfo && planeno == 0);
 	pinfo->putrun = (struct lcd_planeinfo_s *)&lcd_putrun;	/* Put a run into LCD memory */
 	pinfo->putarea = (struct lcd_planeinfo_s *)&lcd_putarea;	/* Put an area into LCD */
@@ -485,6 +493,7 @@ static int lcd_getplaneinfo(FAR struct lcd_dev_s *dev, unsigned int planeno, FAR
 
 static int lcd_getpower(FAR struct lcd_dev_s *dev)
 {
+	DEBUGASSERT(dev);
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	return priv->power;
 }
@@ -496,34 +505,59 @@ static int lcd_getpower(FAR struct lcd_dev_s *dev)
  *   Power off the LCD.
  * 	 Switch to command mode and display off, power off the LCD.
  *
+ * Returns:
+ * 	 On success, OK(O). Otherwise, a negative value.
+ *
  ****************************************************************************/
 
-static void lcd_power_off(FAR struct mipi_lcd_dev_s *priv)
+static int lcd_power_off(FAR struct mipi_lcd_dev_s *priv)
 {
+	int ret;
+
+	if (priv->lcdonoff == LCD_OFF) {
+		lcddbg("LCD already powered off\n");
+		return OK;
+	}
+
 	lcddbg("Switch to CMD mode\n");
 	priv->config->mipi_mode_switch(CMD_MODE);
-	priv->lcdonoff = LCD_OFF;
+
 	lcm_setting_table_t display_off_cmd = {0x28, 0, {0x00}};
-	send_cmd(priv, display_off_cmd);
-	/* The power off must operate only when LCD is ON */
+	ret = send_cmd(priv, display_off_cmd);
+	if (ret != OK) {
+		lcddbg("ERROR: LCD power off failed ret : %d\n", ret);
+		return ret;
+	}
+
 	priv->config->power_off();
+	priv->lcdonoff = LCD_OFF;
+
+	return OK;
 }
 
 /****************************************************************************
  * Name:  lcd_power_on
  *
  * Description:
- *   Power on the LCD and send init command. 
- * 
+ *   Power on the LCD and send init command.
+ *
  * Assumption:
  *   This function is called when LCD is OFF.
  * 	 So we can safely assume that LCD is in command mode.
+ *
+ * Returns:
+ * 	 On success, OK(O). Otherwise, a negative value.
  *
  ****************************************************************************/
 
 static int lcd_power_on(FAR struct mipi_lcd_dev_s *priv)
 {
 	int retries = CONFIG_LCD_SEND_VENDOR_ID_CMD_RETRY_COUNT;
+
+	if (priv->lcdonoff == LCD_ON) {
+		lcddbg("LCD already powered on\n");
+		return OK;
+	}
 	
 	lcddbg("Powering up the LCD\n");
 	priv->config->power_on();
@@ -543,7 +577,7 @@ static int lcd_power_on(FAR struct mipi_lcd_dev_s *priv)
 
 	if (retries <= 0) {
 		lcddbg("ERROR: LCD Init sequence failed\n");
-		return ERROR;
+		return -EIO;
 	}
 	
 	return OK;
@@ -556,6 +590,8 @@ static int lcd_power_on(FAR struct mipi_lcd_dev_s *priv)
 
 static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 {
+	DEBUGASSERT(dev);
+	int ret;
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	if (power > CONFIG_LCD_MAXPOWER) {
 		lcddbg("Power exceeds CONFIG_LCD_MAXPOWER %d\n", power);
@@ -567,7 +603,7 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 	}
 
 	if (power == priv->power) {
-		lcddbg("ERROR: Already in the requested power state(%d)\n", power);
+		lcddbg("Already in the requested power state(%d)\n", power);
 		sem_post(&priv->sem);
 		return OK;
 	}
@@ -575,14 +611,21 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 	if (power == 0) {
 		lcddbg("Powering down the LCD\n");
 		priv->config->backlight(power);
-		lcd_power_off(priv);
+		ret = lcd_power_off(priv);
+		if (ret != OK) {
+			lcddbg("ERROR: LCD power off failed ret : %d\n", ret);
+			sem_post(&priv->sem);
+			return ret;
+		}
 	} else {
 		/* The power on must operate only when LCD is OFF */
 		if (priv->power == 0) {
 			/* The power on must operate only when LCD is OFF */
-			if (lcd_power_on(priv) != OK) {
+			ret = lcd_power_on(priv);
+			if (ret != OK) {
+				lcddbg("ERROR: LCD power on failed ret : %d\n", ret);
 				sem_post(&priv->sem);
-				return ERROR;
+				return -EIO;
 			}
 		}
 		priv->config->backlight(power);
@@ -604,6 +647,7 @@ static int lcd_setpower(FAR struct lcd_dev_s *dev, int power)
 
 static int lcd_init(FAR struct lcd_dev_s *dev)
 {
+	DEBUGASSERT(dev);
 	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
 	priv->config->reset();
 	if (check_lcd_vendor_send_init_cmd(priv) == OK) {
@@ -664,7 +708,7 @@ static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 	FILE *bmp_file = fopen(bmp_filename, "rb");
 	if (!bmp_file) {
 		lcddbg("Failed to open BMP file\n");
-		return ERROR;
+		return -ENOENT;
 	}
 	bmp_header_t header;
 	bmp_info_header_t info_header;
@@ -767,7 +811,7 @@ errout:
 		kmm_free(fullscreen_buffer);
 	}
 #endif
-	return ERROR;
+	return -EIO;
 }
 
 /****************************************************************************
@@ -802,7 +846,7 @@ FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 	FILE *test_file = fopen(bmp_file_path, "rb");
 	if (!test_file) {
 		lcddbg("BMP file not found at %s. LCD OFF\n", bmp_file_path);
-		return ERROR;
+		return -ENOENT;
 	}
 	fclose(test_file);
 	
@@ -819,7 +863,10 @@ FAR int lcd_init_put_image(FAR struct lcd_dev_s *dev)
 
 	ret = lcd_render_bmp(dev, bmp_file_path);
 	if (ret != OK) {
-		lcd_power_off(priv);
+		if (lcd_power_off(priv) != OK) {
+			sem_post(&priv->sem);
+			return -EIO;
+		}
 		sem_post(&priv->sem);
 		return ret;
 	}
