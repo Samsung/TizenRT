@@ -621,8 +621,12 @@ trble_result_e rtw_ble_server_start_adv(void)
         trble_adv_type_e adv_evt_type;
         T_GAP_CAUSE ret;
         ret = le_adv_get_param(GAP_PARAM_ADV_EVENT_TYPE, (void *)&adv_evt_type);
-        if (adv_evt_type != TRBLE_ADV_TYPE_NONCONN_IND || ret != GAP_CAUSE_SUCCESS)
-        {
+        if (ret != GAP_CAUSE_SUCCESS) {
+            dbg("Fail with ret = %x \n", ret);
+            return TRBLE_FAIL;
+        }
+        if (adv_evt_type == TRBLE_ADV_TYPE_IND || adv_evt_type == TRBLE_ADV_TYPE_DIRECT) {
+            dbg("Device connected, cannot send connectable adv!\n");
             return TRBLE_FAIL;
         }
     }
