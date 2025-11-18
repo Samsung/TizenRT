@@ -50,6 +50,9 @@ public:
 	bool getKeywordBufferSize(uint32_t *bufferSize) override;
 	bool getKeywordData(uint8_t *buffer) override;
 	static void speechResultListener(audio_device_process_unit_subtype_e event);
+	bool startMultiChStream(int duration, int verbose, uint32_t *dev_extract_size) override;
+	bool readMultiChStream(uint8_t *buffer, uint32_t *extracted_len) override;
+	bool stopMultiChStream(void) override;
 
 private:
 	static speech_detect_event_type_e getSpeechDetectEvent(audio_device_process_unit_subtype_e event);

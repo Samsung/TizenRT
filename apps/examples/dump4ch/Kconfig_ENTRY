@@ -1,0 +1,3 @@
+config ENTRY_DUMP4CH
+	bool "recording and streaming 4ch audio dump(raw mic0, raw mic1, echo-ref, afe) Application"
+	depends on EXAMPLES_DUMP4CH
