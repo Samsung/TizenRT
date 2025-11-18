@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ifeq ($(CONFIG_MEDIA), y)
-CSRCS += media_init.c
+CXXSRCS += media_init.cpp
 CXXSRCS += audio_manager.cpp
 DEPPATH += --dep-path src/media/audio
 VPATH += :src/media/audio
@@ -99,7 +99,7 @@ ifeq ($(CONFIG_MEDIA_HARDWARE_KD), y)
 CXXSRCS += HardwareKeywordDetector.cpp
 endif
 ifeq ($(CONFIG_MEDIA_SOFTWARE_EPD), y)
-CXXSRCS += SoftwareEndPointDetector.cpp
+CXXSRCS += SoftwareEndPointDetector.cpp EPDInferenceHandler.cpp EPDProcessHandler.cpp
 endif
 ifeq ($(CONFIG_MEDIA_HARDWARE_EPD), y)
 CXXSRCS += HardwareEndPointDetector.cpp

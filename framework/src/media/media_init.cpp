@@ -19,10 +19,22 @@
 #include <debug.h>
 #include <media/media_init.h>
 #include "audio/audio_manager.h"
+#include "PlayerWorker.h"
+#include "RecorderWorker.h"
+#include "PlayerObserverWorker.h"
+#include "RecorderObserverWorker.h"
+#include "FocusManagerWorker.h"
+using namespace media;
 
 int media_init(void)
 {
 	audio_manager_init();
+
+	PlayerWorker::getWorker().startWorker();
+	RecorderWorker::getWorker().startWorker();
+	PlayerObserverWorker::getWorker().startWorker();
+	RecorderObserverWorker::getWorker().startWorker();
+	FocusManagerWorker::getWorker().startWorker();
 	return 0;
 }
 

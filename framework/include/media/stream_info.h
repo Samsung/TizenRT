@@ -39,16 +39,6 @@ extern "C" {
 typedef struct stream_info_s stream_info_t;
 
 /**
- * @brief Enumeration for stream focus state.
- */
-enum stream_focus_state_e {
-	STREAM_FOCUS_STATE_RELEASED, /**< Focus state for release */
-	STREAM_FOCUS_STATE_ACQUIRED, /**< Focus state for acquisition */
-};
-
-typedef enum stream_focus_state_e stream_focus_state_t;
-
-/**
  * @brief Stream Policy, high value means higher priority
  */
 enum stream_policy_e {

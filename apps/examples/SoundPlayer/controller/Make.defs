@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2024 Samsung Electronics All Rights Reserved.
+# Copyright 2025 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,9 +15,7 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-ifeq ($(CONFIG_MEDIA), y)
-MOD_CXXSRCS += SoundManager.cpp
-CXXFLAGS += -I${TOPDIR}/../framework/src/media/audio
-DEPPATH += --dep-path src/audio
-VPATH += :src/audio
+
+ifeq ($(CONFIG_EXAMPLES_PLAYERCONTROLLER),y)
+MOD_CXXSRCS += playercontroller_main.cpp
 endif

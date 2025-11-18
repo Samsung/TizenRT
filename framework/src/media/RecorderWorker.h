@@ -28,11 +28,9 @@
 #include <iostream>
 #include <fstream>
 
-#include <tinyalsa/tinyalsa.h>
 #include <media/MediaRecorder.h>
 #include "MediaWorker.h"
 #include "MediaRecorderImpl.h"
-#include "audio/audio_manager.h"
 
 using namespace std;
 
