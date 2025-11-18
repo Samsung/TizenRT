@@ -80,6 +80,7 @@ include preference/Make.defs
 include task_monitor/Make.defs
 include log_dump/Make.defs
 include silent_reboot/Make.defs
+include power/Make.defs
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
