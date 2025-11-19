@@ -201,6 +201,7 @@ endif
 
 ARCH_SRCDIR = $(TOPDIR)/arch/$(CONFIG_ARCH)/src/
 
+CFLAGS += -I$(TOPDIR)/board/common
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/include
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebad2/fwlib/include
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/amebad2/cmsis
@@ -309,4 +310,3 @@ else
 #EXTRA_LIBS += $(TOPDIR)/board/
 endif
 endif
-

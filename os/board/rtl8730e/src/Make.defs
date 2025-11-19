@@ -52,6 +52,10 @@
 CSRCS += rtl8730e_boot.c
 CSRCS += rtl8730e_logtask.c
 CSRCS += rtl8730e_i2schar.c
+CSRCS += rtl8730e_ail_board_pins.c
+CSRCS += rtl8730e_ailp_board_pins.c
+CSRCS += rtl8730e_ailpw_board_pins.c
+CSRCS += rtl8730e_aid_board_pins.c
 
 ifeq ($(CONFIG_AUDIO_ALC1019),y)
 CSRCS += rtl8730e_alc1019.c
