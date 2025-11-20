@@ -1,5 +1,17 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version d4d459ef 2025/11/18-18:45:41 ==
+1. Disable PSRAM autogating
+
+== version b35db3d9 2025/11/18-17:51:32 ==
+1. enable SW IWDG when HW IWDG is not enabled
+
+== version bc5a6c89 2025/11/18-14:44:02 ==
+1. Fix CA32 wakeup fail if CA32 sleeps but KM4 remains awake
+
+== version 797a93d3 2025/11/03-10:26:01 ==
+1. Remove shell register in KM0/KM4
+
 == version 3a654af2 2025/10/17-12:45:16 ==
 1. Remove sre PG print log
 
