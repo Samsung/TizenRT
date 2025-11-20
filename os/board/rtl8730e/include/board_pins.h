@@ -170,9 +170,9 @@
 #define         PWR_PIN_41	{_PB_9,			GPIO_PuPd_UP,			GPIO_PuPd_DOWN}	// RTL8730ELH
 #define         PWR_PIN_42	{_PB_10,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA AMP-I2S
 #if defined(CONFIG_LCD_PWM_INVERSION)
-#define PWR_PIN_43 {_PB_11, GPIO_PuPd_DOWN, GPIO_PuPd_DOWN} // SDA AILite+W LCD PWN
-#else
 #define PWR_PIN_43 {_PB_11, GPIO_PuPd_UP, GPIO_PuPd_UP} // SDA AILite+W LCD PWN
+#else
+#define PWR_PIN_43 {_PB_11, GPIO_PuPd_DOWN, GPIO_PuPd_DOWN} // SDA AILite+W LCD PWN
 #endif
 #define         PWR_PIN_44	{_PB_12,		GPIO_PuPd_UP,			GPIO_PuPd_DOWN}	// RTL8730ELH
 #define         PWR_PIN_45	{_PB_13,		GPIO_PuPd_UP,			GPIO_PuPd_DOWN}	// RTL8730ELH
