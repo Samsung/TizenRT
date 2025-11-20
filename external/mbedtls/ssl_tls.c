@@ -1895,43 +1895,6 @@ int mbedtls_ssl_conf_own_cert(mbedtls_ssl_config *conf,
     return ssl_append_key_cert(&conf->key_cert, own_cert, pk_key);
 }
 
-#if defined(MBEDTLS_OCF_PATCH)
-void mbedtls_ssl_conf_iterate_own_certs( const mbedtls_ssl_config *conf,
-                                        mbedtls_ssl_conf_iterate_own_certs_cb_t cert_cb,
-                                        void *ctx )
-{
-    mbedtls_ssl_key_cert *key_cert = conf->key_cert;
-    while(key_cert != NULL)
-    {
-        if (cert_cb(ctx, key_cert->cert, key_cert->key) != 0)
-            break;
-        key_cert = key_cert->next;
-    }
-}
-
-#if defined(MBEDTLS_SSL_CONF_EKU_PATCH)
-int mbedtls_ssl_conf_ekus( mbedtls_ssl_config *conf,
-                           const char *client_oid, size_t client_oid_len,
-                           const char *server_oid, size_t server_oid_len )
-{
-    if( ( client_oid_len == 0 && client_oid )  ||
-        ( client_oid_len != 0 && !client_oid ) ||
-        ( server_oid_len == 0 && server_oid )  ||
-        ( server_oid_len != 0 && !server_oid ) )
-    {
-        return( MBEDTLS_ERR_SSL_BAD_INPUT_DATA );
-    }
-
-    conf->client_oid = client_oid;
-    conf->client_oid_len = client_oid_len;
-    conf->server_oid = server_oid;
-    conf->server_oid_len = server_oid_len;
-
-    return( 0 );
-}
-
-#endif /*defined(MBEDTLS_SSL_CONF_EKU_PATCH)*/
-#endif /*defined(MBEDTLS_OCF_PATCH)*/
 void mbedtls_ssl_conf_ca_chain(mbedtls_ssl_config *conf,
                                mbedtls_x509_crt *ca_chain,
                                mbedtls_x509_crl *ca_crl)
@@ -5321,15 +5284,6 @@ int mbedtls_ssl_config_defaults(mbedtls_ssl_config *conf,
     mbedtls_ssl_conf_endpoint(conf, endpoint);
     mbedtls_ssl_conf_transport(conf, transport);
 
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_SSL_CONF_EKU_PATCH) 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-    conf->client_oid = MBEDTLS_OID_CLIENT_AUTH;
-    conf->client_oid_len = MBEDTLS_OID_SIZE( MBEDTLS_OID_CLIENT_AUTH );
-    conf->server_oid = MBEDTLS_OID_SERVER_AUTH;
-    conf->server_oid_len = MBEDTLS_OID_SIZE( MBEDTLS_OID_SERVER_AUTH );
-#endif
-#endif /*defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_SSL_CONF_EKU_PATCH)*/
-
     /*
      * Things that are common to all presets
      */
@@ -5810,11 +5764,7 @@ const char *mbedtls_ssl_get_curve_name_from_tls_id(uint16_t tls_id)
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 int mbedtls_ssl_check_cert_usage(const mbedtls_x509_crt *cert,
                                  const mbedtls_ssl_ciphersuite_t *ciphersuite,
-                                 int cert_endpoint,
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_SSL_CONF_EKU_PATCH)                                 
-                                 const char *client_oid, size_t client_oid_len,
-                                 const char *server_oid, size_t server_oid_len,
-#endif                                 
+                                 int cert_endpoint,                                 
                                  uint32_t *flags)
 {
     int ret = 0;
@@ -5859,15 +5809,7 @@ int mbedtls_ssl_check_cert_usage(const mbedtls_x509_crt *cert,
         *flags |= MBEDTLS_X509_BADCERT_KEY_USAGE;
         ret = -1;
     }
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_SSL_CONF_EKU_PATCH)
-    if (cert_endpoint == MBEDTLS_SSL_IS_SERVER) {
-        ext_oid = server_oid;
-        ext_len = server_oid_len;
-    } else {
-        ext_oid = client_oid;
-        ext_len = client_oid_len;
-    }
-#else
+
     if (cert_endpoint == MBEDTLS_SSL_IS_SERVER) {
         ext_oid = MBEDTLS_OID_SERVER_AUTH;
         ext_len = MBEDTLS_OID_SIZE(MBEDTLS_OID_SERVER_AUTH);
@@ -5875,7 +5817,6 @@ int mbedtls_ssl_check_cert_usage(const mbedtls_x509_crt *cert,
         ext_oid = MBEDTLS_OID_CLIENT_AUTH;
         ext_len = MBEDTLS_OID_SIZE(MBEDTLS_OID_CLIENT_AUTH);
     }
-#endif /*defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_SSL_CONF_EKU_PATCH)*/
 
     if (mbedtls_x509_crt_check_extended_key_usage(cert, ext_oid, ext_len) != 0) {
         *flags |= MBEDTLS_X509_BADCERT_EXT_KEY_USAGE;
@@ -7610,11 +7551,7 @@ static int ssl_parse_certificate_verify(mbedtls_ssl_context *ssl,
 
     if (mbedtls_ssl_check_cert_usage(chain,
                                      ciphersuite_info,
-                                     !ssl->conf->endpoint,
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_SSL_CONF_EKU_PATCH)
-                                     ssl->conf->client_oid, ssl->conf->client_oid_len,
-                                     ssl->conf->server_oid, ssl->conf->server_oid_len,
-#endif                                     
+                                     !ssl->conf->endpoint,                                  
                                      &ssl->session_negotiate->verify_result) != 0) {
         MBEDTLS_SSL_DEBUG_MSG(1, ("bad certificate (usage extensions)"));
         if (ret == 0) {
