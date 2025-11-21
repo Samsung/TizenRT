@@ -1929,10 +1929,6 @@ static int rsa_rsassa_pkcs1_v15_encode(mbedtls_md_type_t md_alg,
      *                                 TAG-NULL + LEN [ NULL ] ]
      *                 TAG-OCTET + LEN [ HASH ] ]
      */
-#if defined(MBEDTLS_OCF_PATCH)    
-     if ( hashlen > 127 )
-        return( MBEDTLS_ERR_RSA_BAD_INPUT_DATA );
-#endif
     *p++ = MBEDTLS_ASN1_SEQUENCE | MBEDTLS_ASN1_CONSTRUCTED;
     *p++ = (unsigned char) (0x08 + oid_size + hashlen);
     *p++ = MBEDTLS_ASN1_SEQUENCE | MBEDTLS_ASN1_CONSTRUCTED;
