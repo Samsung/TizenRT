@@ -106,6 +106,8 @@ struct tash_cmd_info_s {
 static int tash_help(int argc, char **args);
 static int tash_clear(int argc, char **args);
 static int tash_exit(int argc, char **args);
+static int tash_setlog_ble(int argc, char *argv[]);
+static int tash_setlog_wifi(int argc, char *argv[]);
 #if TASH_MAX_STORE   > 0
 static int tash_history(int argc, char **argv);
 #endif
@@ -135,6 +137,10 @@ const static tash_cmdlist_t tash_basic_cmds[] = {
 #endif
 #if TASH_MAX_STORE > 0
 	{"history", tash_history, TASH_EXECMD_SYNC},
+#endif
+#ifdef CONFIG_TASH_LOG_SET
+	{"setlog_ble",  tash_setlog_ble,   TASH_EXECMD_SYNC},
+	{"setlog_wifi", tash_setlog_wifi,   TASH_EXECMD_SYNC},
 #endif
 	{NULL,    NULL,        0}
 };
@@ -840,3 +846,31 @@ int tash_reboot(int argc, char **argv)
 	return ERROR;
 }
 #endif /* CONFIG_TASH_REBOOT */
+
+#ifdef CONFIG_TASH_LOG_SET
+static int setlog_level(unsigned int log_cmd, int argc, char **argv)
+{
+	if (argc != 2 || argv[1] == NULL) {
+		shdbg("%s: argument invalid\n", argv[0]);
+		return ERROR;
+	}
+	char *endptr;
+	unsigned long log_level = strtol(argv[1], &endptr, 0);
+	if (endptr == argv[1] || *endptr != '\0') {
+		shdbg("%s: argument invalid\n", argv[0]);
+		return ERROR;
+	}
+	boardctl(log_cmd, log_level);
+	return OK;
+}
+
+static int tash_setlog_ble(int argc, char **argv)
+{
+	return setlog_level(BOARDIOC_BLE_LOG_SET, argc, argv);
+}
+
+static int tash_setlog_wifi(int argc, char **argv)
+{
+	return setlog_level(BOARDIOC_WIFI_LOG_SET, argc, argv);
+}
+#endif

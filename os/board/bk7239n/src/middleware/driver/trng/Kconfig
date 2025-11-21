@@ -1,0 +1,6 @@
+menu "TRNG"
+	config TRNG_SUPPORT
+		bool "Support hardware TRNG"
+		default y
+endmenu
+

@@ -170,7 +170,7 @@ void ip_nat_initialize(void)
 	sys_mutex_new(&nat_entry_lock);
 	filter_drop_threshold = (IP_NAT_MAX * 80) / 100;
 	int size = sizeof(struct nat_table) * IP_NAT_MAX;
-	ip_nat_table = (struct nat_table *)malloc(size);
+	ip_nat_table = (struct nat_table *)kmm_malloc(size);
 	if (!ip_nat_table) {
 		LWIP_DEBUGF(IPNAT_DEBUG | LWIP_DBG_LEVEL_SERIOUS, ("%s:%d Memory allocation failed for size=%u Bytes\n", __FUNCTION__, __LINE__, size));
 		return;
@@ -191,7 +191,7 @@ void ip_nat_deinitialize(void)
 {
 	sys_mutex_lock(&nat_entry_lock);
 	if (ip_nat_table) {
-		free(ip_nat_table);
+		kmm_free(ip_nat_table);
 		ip_nat_table = NULL;
 	}
 	sys_mutex_unlock(&nat_entry_lock);

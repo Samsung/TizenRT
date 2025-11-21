@@ -1,0 +1,70 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2021-2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.0,
+  "name": "TFM_SP_FPU_SERVICE_TEST",
+  "type": "APPLICATION-ROT",
+  "priority": "NORMAL",
+  "model": "IPC",
+  "entry_point": "fpu_service_test_main",
+  "stack_size": "0x0400",
+  "secure_functions": [
+  ],
+  "services" : [
+    {
+      "name": "TFM_FPU_SERVICE_CLEAR_FP_REGISTER",
+      "sid": "0x0000F090",
+      "connection_based": true,
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FPU_SERVICE_CHECK_FP_REGISTER",
+      "sid": "0x0000F091",
+      "connection_based": true,
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FPU_SERVICE_START_S_TIMER",
+      "sid": "0x0000F092",
+      "connection_based": true,
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FPU_SERVICE_CHECK_S_TIMER_TRIGGERED",
+      "sid": "0x0000F093",
+      "connection_based": true,
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_FPU_SERVICE_CHECK_NS_INTERRUPT_S_TEST",
+      "sid": "0x0000F094",
+      "connection_based": true,
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ],
+  "mmio_regions": [
+    {
+      "name": "TFM_PERIPHERAL_TIMER0",
+      "permission": "READ-WRITE"
+    },
+    {
+      "name": "TFM_PERIPHERAL_TIMER1",
+      "permission": "READ-WRITE"
+    }
+  ]
+}

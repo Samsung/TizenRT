@@ -1,0 +1,2249 @@
+./hostapd.h:#ifdef CONFIG_SQLITE
+./hostapd.h:#endif /* CONFIG_SQLITE */
+./hostapd.h:#ifdef CONFIG_MESH
+./hostapd.h:#endif /* CONFIG_MESH */
+./hostapd.h:#ifdef CONFIG_CTRL_IFACE_UDP
+./hostapd.h:#endif /* CONFIG_CTRL_IFACE_UDP */
+./hostapd.h:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.h:#ifndef CONFIG_NATIVE_WINDOWS
+./hostapd.h:#endif /* CONFIG_NATIVE_WINDOWS */
+./hostapd.h:#ifndef CONFIG_NO_VLAN
+./hostapd.h:#endif /* CONFIG_NO_VLAN */
+./hostapd.h:#ifdef CONFIG_ETH_P_OUI
+./hostapd.h:#endif /* CONFIG_ETH_P_OUI */
+./hostapd.h:#ifdef CONFIG_DPP
+./hostapd.h:#endif /* CONFIG_DPP */
+./hostapd.h:#ifdef CONFIG_CTRL_IFACE_UDP
+./hostapd.h:#endif /* CONFIG_CTRL_IFACE_UDP */
+./hostapd.h:#ifdef CONFIG_RADIUS
+./hostapd.h:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.h:#ifdef CONFIG_FULL_DYNAMIC_VLAN
+./hostapd.h:#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+./hostapd.h:#ifdef CONFIG_IEEE80211R_AP
+./hostapd.h:#endif /* CONFIG_IEEE80211R_AP */
+./hostapd.h:#ifdef CONFIG_WPS_AP
+./hostapd.h:#endif /* CONFIG_WPS_AP */
+./hostapd.h:#ifdef CONFIG_MACSEC_AP
+./hostapd.h:#endif /* CONFIG_MACSEC_AP */
+./hostapd.h:#ifdef CONFIG_P2P
+./hostapd.h:#endif /* CONFIG_P2P */
+./hostapd.h:#ifdef CONFIG_PROXYARP
+./hostapd.h:#endif /* CONFIG_PROXYARP */
+./hostapd.h:#ifdef CONFIG_MESH
+./hostapd.h:#endif /* CONFIG_MESH */
+./hostapd.h:#ifdef CONFIG_SQLITE
+./hostapd.h:#endif /* CONFIG_SQLITE */
+./hostapd.h:#ifdef CONFIG_SAE_AP
+./hostapd.h:#endif /* CONFIG_SAE_AP */
+./hostapd.h:#ifdef CONFIG_TESTING_OPTIONS
+./hostapd.h:#endif /* CONFIG_TESTING_OPTIONS */
+./hostapd.h:#ifdef CONFIG_MBO_AP
+./hostapd.h:#endif /* CONFIG_MBO_AP */
+./hostapd.h:#ifdef CONFIG_DPP
+./hostapd.h:#ifdef CONFIG_DPP2
+./hostapd.h:#endif /* CONFIG_DPP2 */
+./hostapd.h:#ifdef CONFIG_TESTING_OPTIONS
+./hostapd.h:#endif /* CONFIG_TESTING_OPTIONS */
+./hostapd.h:#endif /* CONFIG_DPP */
+./hostapd.h:#ifdef CONFIG_AIRTIME_POLICY_AP
+./hostapd.h:#endif /* CONFIG_AIRTIME_POLICY_AP */
+./hostapd.h:#ifdef CONFIG_SQLITE
+./hostapd.h:#endif /* CONFIG_SQLITE */
+./hostapd.h:#ifdef CONFIG_CTRL_IFACE_UDP
+./hostapd.h:#endif /* CONFIG_CTRL_IFACE_UDP */
+./hostapd.h:#ifdef CONFIG_TAXONOMY_AP
+./hostapd.h:#endif /* CONFIG_TAXONOMY_AP */
+./hostapd.h:#ifdef CONFIG_MESH
+./hostapd.h:#endif /* CONFIG_MESH */
+./hostapd.h:#ifdef CONFIG_FST_AP
+./hostapd.h:#endif /* CONFIG_FST_AP */
+./hostapd.h:#ifdef CONFIG_ACS
+./hostapd.h:#endif /* CONFIG_ACS */
+./hostapd.h:#ifdef CONFIG_AIRTIME_POLICY_AP
+./hostapd.h:#endif /* CONFIG_AIRTIME_POLICY_AP */
+./hostapd.h:#ifdef CONFIG_FST_AP
+./hostapd.h:#endif /* CONFIG_FST_AP */
+./ap_config.c:#ifdef CONFIG_FILS_AP
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_INTERWORKING
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#else /* CONFIG_WEP_AP */
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#ifdef CONFIG_NO_TKIP_AP
+./ap_config.c:#else /* CONFIG_NO_TKIP_AP */
+./ap_config.c:#endif /* CONFIG_NO_TKIP_AP */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_IEEE80211W_AP
+./ap_config.c:#endif /* CONFIG_IEEE80211W_AP */
+./ap_config.c:#ifdef CONFIG_IEEE80211R_AP
+./ap_config.c:#endif /* CONFIG_IEEE80211R_AP */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_SAE_AP
+./ap_config.c:#ifdef CONFIG_GAS_AP
+./ap_config.c:#ifdef CONFIG_FILS_AP
+./ap_config.c:#endif /* CONFIG_FILS_AP */
+./ap_config.c:#ifdef CONFIG_MBO_AP
+./ap_config.c:#endif /* CONFIG_MBO_AP */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_HS20_AP
+./ap_config.c:#endif /* CONFIG_HS20_AP */
+./ap_config.c:#ifdef CONFIG_MACSEC_AP
+./ap_config.c:#endif /* CONFIG_MACSEC_AP */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_TESTING_OPTIONS
+./ap_config.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ap_config.c:#ifdef CONFIG_PASN_AP
+./ap_config.c:#endif /* CONFIG_PASN_AP */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_TESTING_OPTIONS
+./ap_config.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ap_config.c:#ifdef CONFIG_ACS
+./ap_config.c:#endif /* CONFIG_ACS */
+./ap_config.c:#ifdef CONFIG_IEEE80211AX
+./ap_config.c:#endif /* CONFIG_IEEE80211AX */
+./ap_config.c:#ifdef CONFIG_AIRTIME_POLICY_AP
+./ap_config.c:#endif /* CONFIG_AIRTIME_POLICY_AP */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#if 0//def CONFIG_WPA_PSK_CACHE
+./ap_config.c:#ifdef CONFIG_SAE_AP
+./ap_config.c:#endif /* CONFIG_SAE_AP */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#endif /* CONFIG_FULL_HOSTAPD */
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#ifdef CONFIG_INTERWORKING
+./ap_config.c:#ifdef CONFIG_FILS_AP
+./ap_config.c:#endif /* CONFIG_FILS_AP */
+./ap_config.c:#ifdef CONFIG_SAE_AP
+./ap_config.c:#ifdef CONFIG_SAE_AP
+./ap_config.c:#endif /* CONFIG_SAE_AP */
+./ap_config.c:#ifdef CONFIG_SAE_PK
+./ap_config.c:#endif /* CONFIG_SAE_PK */
+./ap_config.c:#ifdef CONFIG_DPP2
+./ap_config.c:#endif /* CONFIG_DPP2 */
+./ap_config.c:#if defined(CONFIG_WPS_AP) || defined(CONFIG_HS20_AP)
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#ifdef CONFIG_FULL_DYNAMIC_VLAN
+./ap_config.c:#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+./ap_config.c:#ifdef CONFIG_SAE_AP
+./ap_config.c:#endif /* CONFIG_SAE_AP */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_HOSTAPD_ACL
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_IEEE80211R_AP
+./ap_config.c:#endif /* CONFIG_IEEE80211R_AP */
+./ap_config.c:#ifdef CONFIG_WPS_AP
+./ap_config.c:#endif /* CONFIG_WPS_AP */
+./ap_config.c:#ifdef CONFIG_INTERWORKING
+./ap_config.c:#ifdef CONFIG_RADIUS_TEST
+./ap_config.c:#endif /* CONFIG_RADIUS_TEST */
+./ap_config.c:#ifdef CONFIG_HS20_AP
+./ap_config.c:#endif /* CONFIG_HS20_AP */
+./ap_config.c:#ifdef CONFIG_SAE_AP
+./ap_config.c:#ifdef CONFIG_OWE
+./ap_config.c:#endif /* CONFIG_OWE */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_TESTING_OPTIONS
+./ap_config.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ap_config.c:#ifdef CONFIG_DPP
+./ap_config.c:#ifdef CONFIG_DPP2
+./ap_config.c:#endif /* CONFIG_DPP2 */
+./ap_config.c:#endif /* CONFIG_DPP */
+./ap_config.c:#ifdef CONFIG_SAE_AP
+./ap_config.c:#ifdef CONFIG_AIRTIME_POLICY_AP
+./ap_config.c:#endif /* CONFIG_AIRTIME_POLICY_AP */
+./ap_config.c:#ifdef CONFIG_PASN_AP
+./ap_config.c:#endif /* CONFIG_PASN_AP */
+./ap_config.c:#ifdef CONFIG_ACS
+./ap_config.c:#endif /* CONFIG_ACS */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_HOSTAPD_ACL
+./ap_config.c:#ifndef CONFIG_NO_VLAN
+./ap_config.c:#endif /* CONFIG_NO_VLAN */
+./ap_config.c:#ifdef CONFIG_SAE_PK
+./ap_config.c:#ifdef CONFIG_TESTING_OPTIONS
+./ap_config.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ap_config.c:#ifdef CONFIG_TESTING_OPTIONS
+./ap_config.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ap_config.c:#endif /* CONFIG_SAE_PK */
+./ap_config.c:#ifdef CONFIG_IEEE80211HE
+./ap_config.c:#ifdef CONFIG_IEEE80211HE
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.c:#ifdef CONFIG_IEEE80211R_AP
+./ap_config.c:#endif /* CONFIG_IEEE80211R_AP */
+./ap_config.c:#ifdef CONFIG_IEEE80211N
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#endif /* CONFIG_IEEE80211N */
+./ap_config.c:#ifdef CONFIG_IEEE80211AC
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#endif /* CONFIG_IEEE80211AC */
+./ap_config.c:#ifdef CONFIG_IEEE80211AX
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#endif /* CONFIG_IEEE80211AX */
+./ap_config.c:#ifdef CONFIG_WPS_AP
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#endif /* CONFIG_WPS_AP */
+./ap_config.c:#ifdef CONFIG_HS20_AP
+./ap_config.c:#endif /* CONFIG_HS20_AP */
+./ap_config.c:#ifdef CONFIG_MBO_AP
+./ap_config.c:#endif /* CONFIG_MBO_AP */
+./ap_config.c:#ifdef CONFIG_OCV
+./ap_config.c:#endif /* CONFIG_OCV */
+./ap_config.c:#ifdef CONFIG_SAE_PK
+./ap_config.c:#endif /* CONFIG_SAE_PK */
+./ap_config.c:#ifdef CONFIG_FILS_AP
+./ap_config.c:#endif /* CONFIG_FILS_AP */
+./ap_config.c:#ifdef CONFIG_AIRTIME_POLICY_AP
+./ap_config.c:#endif /* CONFIG_AIRTIME_POLICY_AP */
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#ifdef CONFIG_FULL_HOSTPAD
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#ifdef CONFIG_WEP_AP
+./ap_config.c:#endif /* CONFIG_WEP_AP */
+./ap_config.c:#ifdef CONFIG_OSEN
+./ap_config.c:#ifdef CONFIG_SAE_AP
+./ap_config.c:#ifdef CONFIG_SAE_PK
+./ap_config.c:#endif /* CONFIG_SAE_PK */
+./ap_config.c:#ifdef CONFIG_SAE_PK
+./ap_config.c:#endif /* CONFIG_SAE_PK */
+./wpa_auth_ie.c:#ifdef CONFIG_RSN_TESTING
+./wpa_auth_ie.c:#endif /* CONFIG_RSN_TESTING */
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_ie.c:#ifdef CONFIG_OCV
+./wpa_auth_ie.c:#endif /* CONFIG_OCV */
+./wpa_auth_ie.c:#ifdef CONFIG_RSN_TESTING
+./wpa_auth_ie.c:#endif /* CONFIG_RSN_TESTING */
+./wpa_auth_ie.c:#ifdef CONFIG_RSN_TESTING
+./wpa_auth_ie.c:#endif /* CONFIG_RSN_TESTING */
+./wpa_auth_ie.c:#ifdef CONFIG_RSN_TESTING
+./wpa_auth_ie.c:#endif /* CONFIG_RSN_TESTING */
+./wpa_auth_ie.c:#ifdef CONFIG_RSN_TESTING
+./wpa_auth_ie.c:#endif /* CONFIG_RSN_TESTING */
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_ie.c:#ifdef CONFIG_SHA384
+./wpa_auth_ie.c:#endif /* CONFIG_SHA384 */
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_SAE_AP
+./wpa_auth_ie.c:#endif /* CONFIG_SAE_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_FILS_AP
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_ie.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_OWE
+./wpa_auth_ie.c:#endif /* CONFIG_OWE */
+./wpa_auth_ie.c:#ifdef CONFIG_DPP
+./wpa_auth_ie.c:#endif /* CONFIG_DPP */
+./wpa_auth_ie.c:#ifdef CONFIG_HS20_AP
+./wpa_auth_ie.c:#endif /* CONFIG_HS20_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_PASN_AP
+./wpa_auth_ie.c:#endif /* CONFIG_PASN_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_RSN_TESTING
+./wpa_auth_ie.c:#endif /* CONFIG_RSN_TESTING */
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_RSN_TESTING
+./wpa_auth_ie.c:#endif /* CONFIG_RSN_TESTING */
+./wpa_auth_ie.c:#ifdef CONFIG_SAE_PK
+./wpa_auth_ie.c:#endif /* CONFIG_SAE_PK */
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_OCV
+./wpa_auth_ie.c:#endif /* CONFIG_OCV */
+./wpa_auth_ie.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_ie.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_FILS_AP
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_ie.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_ie.c:#ifdef CONFIG_SHA384
+./wpa_auth_ie.c:#endif /* CONFIG_SHA384 */
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_SAE_AP
+./wpa_auth_ie.c:#endif /* CONFIG_SAE_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_OWE
+./wpa_auth_ie.c:#endif /* CONFIG_OWE */
+./wpa_auth_ie.c:#ifdef CONFIG_DPP
+./wpa_auth_ie.c:#endif /* CONFIG_DPP */
+./wpa_auth_ie.c:#ifdef CONFIG_HS20_AP
+./wpa_auth_ie.c:#endif /* CONFIG_HS20_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_FILS_AP
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_ie.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_ie.c:#ifdef CONFIG_SHA384
+./wpa_auth_ie.c:#endif /* CONFIG_SHA384 */
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_SAE_AP
+./wpa_auth_ie.c:#endif /* CONFIG_SAE_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifdef CONFIG_OWE
+./wpa_auth_ie.c:#endif /* CONFIG_OWE */
+./wpa_auth_ie.c:#ifdef CONFIG_DPP
+./wpa_auth_ie.c:#endif /* CONFIG_DPP */
+./wpa_auth_ie.c:#ifdef CONFIG_HS20_AP
+./wpa_auth_ie.c:#endif /* CONFIG_HS20_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_ie.c:#ifdef CONFIG_SAE_AP
+./wpa_auth_ie.c:#endif /* CONFIG_SAE_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_OCV
+./wpa_auth_ie.c:#endif /* CONFIG_OCV */
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_OWE
+./wpa_auth_ie.c:#endif /* CONFIG_OWE */
+./wpa_auth_ie.c:#ifdef CONFIG_DPP2
+./wpa_auth_ie.c:#endif /* CONFIG_DPP2 */
+./wpa_auth_ie.c:#if defined(CONFIG_IEEE80211R_AP) && defined(CONFIG_FILS_AP)
+./wpa_auth_ie.c:#endif /* CONFIG_IEEE80211R_AP && CONFIG_FILS_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_ie.c:#ifndef CONFIG_NO_STDOUT_DEBUG
+./wpa_auth_ie.c:#ifdef CONFIG_SAE_AP
+./wpa_auth_ie.c:#endif /* CONFIG_SAE_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_DPP
+./wpa_auth_ie.c:#endif /* CONFIG_DPP */
+./wpa_auth_ie.c:#ifdef CONFIG_HS20_AP
+./wpa_auth_ie.c:#endif /* CONFIG_HS20_AP */
+./wpa_auth_ie.c:#ifdef CONFIG_OCV
+./wpa_auth_ie.c:#endif /* CONFIG_OCV */
+./wpa_auth_ie.c:#ifdef CONFIG_OWE
+./wpa_auth_ie.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_ie.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_ie.c:#endif /* CONFIG_OWE */
+./wpa_auth_ie.c:#ifdef CONFIG_FILS_AP
+./wpa_auth_ie.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth_ft.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_ft.c:#ifdef CONFIG_OCV
+./wpa_auth_ft.c:#endif /* CONFIG_OCV */
+./wpa_auth_ft.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_ft.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_ft.c:#ifdef CONFIG_OCV
+./wpa_auth_ft.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_ft.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_ft.c:#endif /* CONFIG_OCV */
+./wpa_auth_ft.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_ft.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_ft.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_ft.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_ft.c:#ifdef CONFIG_SHA384
+./wpa_auth_ft.c:#endif /* CONFIG_SHA384 */
+./wpa_auth_ft.c:#ifdef CONFIG_FILS_AP
+./wpa_auth_ft.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth_ft.c:#ifdef CONFIG_OCV
+./wpa_auth_ft.c:#endif /* CONFIG_OCV */
+./wpa_auth_ft.c:#endif /* CONFIG_IEEE80211R_AP */
+./acs.h:#ifdef CONFIG_ACS
+./acs.h:#else /* CONFIG_ACS */
+./acs.h:	wpa_printf(MSG_ERROR, "ACS was disabled on your build, rebuild hostapd with CONFIG_ACS=y or set channel");
+./acs.h:#endif /* CONFIG_ACS */
+./wps_hostapd.c:#ifdef CONFIG_WPS_UPNP
+./wps_hostapd.c:#endif /* CONFIG_WPS_UPNP */
+./wps_hostapd.c:#ifndef CONFIG_NO_WPA_MSG
+./wps_hostapd.c:#ifdef CONFIG_NO_TKIP_AP
+./wps_hostapd.c:#else /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#endif /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#ifndef CONFIG_NO_TKIP_AP
+./wps_hostapd.c:#endif /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#ifdef CONFIG_IEEE80211W_AP
+./wps_hostapd.c:#endif /* CONFIG_IEEE80211W_AP */
+./wps_hostapd.c:#ifdef CONFIG_NO_TKIP_AP
+./wps_hostapd.c:#else /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#endif /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#ifdef CONFIG_IEEE80211W_AP
+./wps_hostapd.c:#endif /* CONFIG_IEEE80211W_AP */
+./wps_hostapd.c:#ifdef CONFIG_IEEE80211W_AP
+./wps_hostapd.c:#endif /* CONFIG_IEEE80211W_AP */
+./wps_hostapd.c:#ifdef CONFIG_IEEE80211W_AP
+./wps_hostapd.c:#endif /* CONFIG_IEEE80211W_AP */
+./wps_hostapd.c:#ifndef CONFIG_NO_TKIP_AP
+./wps_hostapd.c:#endif /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#ifdef CONFIG_WEP_AP
+./wps_hostapd.c:#endif /* CONFIG_WEP_AP */
+./wps_hostapd.c:	     (WPS_CONFIG_DISPLAY | WPS_CONFIG_VIRT_DISPLAY |
+./wps_hostapd.c:	      WPS_CONFIG_PHY_DISPLAY)) == WPS_CONFIG_DISPLAY) {
+./wps_hostapd.c:		wps->config_methods |= WPS_CONFIG_VIRT_DISPLAY;
+./wps_hostapd.c:	     (WPS_CONFIG_PUSHBUTTON | WPS_CONFIG_VIRT_PUSHBUTTON |
+./wps_hostapd.c:	      WPS_CONFIG_PHY_PUSHBUTTON)) == WPS_CONFIG_PUSHBUTTON) {
+./wps_hostapd.c:		wps->config_methods |= WPS_CONFIG_VIRT_PUSHBUTTON;
+./wps_hostapd.c:#ifdef CONFIG_NO_TKIP_AP
+./wps_hostapd.c:#else /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#endif /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#ifdef CONFIG_NO_TKIP_AP
+./wps_hostapd.c:#else /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#endif /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#ifdef CONFIG_WEP_AP
+./wps_hostapd.c:#endif /* CONFIG_WEP_AP */
+./wps_hostapd.c:#ifdef CONFIG_NO_TKIP_AP
+./wps_hostapd.c:#else /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#endif /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#ifdef CONFIG_WPS_UPNP
+./wps_hostapd.c:#endif /* CONFIG_WPS_UPNP */
+./wps_hostapd.c:#ifdef CONFIG_P2P
+./wps_hostapd.c:#endif /* CONFIG_P2P */
+./wps_hostapd.c:#ifdef CONFIG_WPS_UPNP
+./wps_hostapd.c:#endif /* CONFIG_WPS_UPNP */
+./wps_hostapd.c:#ifdef CONFIG_WPS_NFC
+./wps_hostapd.c:#endif /* CONFIG_WPS_NFC */
+./wps_hostapd.c:#ifdef CONFIG_WPS_UPNP
+./wps_hostapd.c:#endif /* CONFIG_WPS_UPNP */
+./wps_hostapd.c:#ifdef CONFIG_WPS_UPNP
+./wps_hostapd.c:#endif /* CONFIG_WPS_UPNP */
+./wps_hostapd.c:#ifdef CONFIG_WEP_AP
+./wps_hostapd.c:#endif /* CONFIG_WEP_AP */
+./wps_hostapd.c:#ifdef CONFIG_P2P
+./wps_hostapd.c:#endif /* CONFIG_P2P */
+./wps_hostapd.c:#ifdef CONFIG_WPS_UPNP
+./wps_hostapd.c:#endif /* CONFIG_WPS_UPNP */
+./wps_hostapd.c:#ifdef CONFIG_WPS_UPNP
+./wps_hostapd.c:#ifndef CONFIG_WPS_STRICT
+./wps_hostapd.c:#endif /* CONFIG_WPS_STRICT */
+./wps_hostapd.c:#endif /* CONFIG_WPS_UPNP */
+./wps_hostapd.c:#ifdef CONFIG_WPS_UPNP
+./wps_hostapd.c:#endif /* CONFIG_WPS_UPNP */
+./wps_hostapd.c:#ifdef CONFIG_WPS_UPNP
+./wps_hostapd.c:#endif /* CONFIG_WPS_UPNP */
+./wps_hostapd.c:#ifndef CONFIG_NO_TKIP_AP
+./wps_hostapd.c:#endif /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#ifndef CONFIG_NO_TKIP_AP
+./wps_hostapd.c:#endif /* CONFIG_NO_TKIP_AP */
+./wps_hostapd.c:#ifdef CONFIG_WPS_NFC
+./wps_hostapd.c:#endif /* CONFIG_WPS_NFC */
+./sta_info.h:#ifdef CONFIG_SAE_AP
+./sta_info.h:#endif /* CONFIG_SAE_AP */
+./sta_info.h:#ifdef CONFIG_FILS_AP
+./sta_info.h:#endif /* CONFIG_FILS_AP */
+./sta_info.h:#ifdef CONFIG_MESH
+./sta_info.h:#endif /* CONFIG_MESH */
+./sta_info.h:#ifdef CONFIG_IEEE80211W_AP
+./sta_info.h:#endif /* CONFIG_IEEE80211W_AP */
+./sta_info.h:#if defined(CONFIG_INTERWORKING) || defined(CONFIG_DPP)
+./sta_info.h:#endif /* CONFIG_INTERWORKING || CONFIG_DPP */
+./sta_info.h:#ifdef CONFIG_FST_AP
+./sta_info.h:#endif /* CONFIG_FST_AP */
+./sta_info.h:#ifdef CONFIG_SAE_AP
+./sta_info.h:#endif /* CONFIG_SAE_AP */
+./sta_info.h:#ifdef CONFIG_MBO_AP
+./sta_info.h:#endif /* CONFIG_MBO_AP */
+./sta_info.h:#ifdef CONFIG_TAXONOMY_AP
+./sta_info.h:#endif /* CONFIG_TAXONOMY_AP */
+./sta_info.h:#ifdef CONFIG_FILS_AP
+./sta_info.h:#ifdef CONFIG_FILS_SK_PFS
+./sta_info.h:#endif /* CONFIG_FILS_SK_PFS */
+./sta_info.h:#endif /* CONFIG_FILS_AP */
+./sta_info.h:#ifdef CONFIG_OWE
+./sta_info.h:#endif /* CONFIG_OWE */
+./sta_info.h:#ifdef CONFIG_DPP2
+./sta_info.h:#endif /* CONFIG_DPP2 */
+./sta_info.h:#ifdef CONFIG_TESTING_OPTIONS
+./sta_info.h:#endif /* CONFIG_TESTING_OPTIONS */
+./sta_info.h:#ifdef CONFIG_AIRTIME_POLICY_AP
+./sta_info.h:#endif /* CONFIG_AIRTIME_POLICY_AP */
+./sta_info.h:#ifdef CONFIG_PASN_AP
+./sta_info.h:#endif /* CONFIG_PASN_AP */
+./sta_info.h:#ifdef CONFIG_WPS_AP
+./sta_info.h:#endif /* CONFIG_WPS_AP */
+./wpa_auth_i.h:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_i.h:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_i.h:#ifdef CONFIG_OCV
+./wpa_auth_i.h:#endif /* CONFIG_OCV */
+./wpa_auth_i.h:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_i.h:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_i.h:#ifdef CONFIG_P2P
+./wpa_auth_i.h:#endif /* CONFIG_P2P */
+./wpa_auth_i.h:#ifdef CONFIG_FILS_AP
+./wpa_auth_i.h:#endif /* CONFIG_FILS_AP */
+./wpa_auth_i.h:#ifdef CONFIG_DPP2
+./wpa_auth_i.h:#endif /* CONFIG_DPP2 */
+./wpa_auth_i.h:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_i.h:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_i.h:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_i.h:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth_i.h:#ifdef CONFIG_P2P
+./wpa_auth_i.h:#endif /* CONFIG_P2P */
+./wpa_auth_i.h:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_i.h:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_i.h:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_i.h:#endif /* CONFIG_IEEE80211R_AP */
+./dhcp_snoop.h:#ifdef CONFIG_PROXYARP
+./dhcp_snoop.h:#else /* CONFIG_PROXYARP */
+./dhcp_snoop.h:#endif /* CONFIG_PROXYARP */
+./authsrv.c:#ifdef CONFIG_RADIUS_TEST
+./authsrv.c:#endif /* CONFIG_RADIUS_TEST */
+./authsrv.c:#ifdef CONFIG_HS20_AP
+./authsrv.c:#endif /* CONFIG_HS20_AP */
+./ap_config.h:#ifndef HOSTAPD_CONFIG_H
+./ap_config.h:#define HOSTAPD_CONFIG_H
+./ap_config.h:#ifdef CONFIG_WEP_AP
+./ap_config.h:#endif /* CONFIG_WEP_AP */
+./ap_config.h:#ifdef CONFIG_WEP_AP
+./ap_config.h:#endif /* CONFIG_WEP_AP */
+./ap_config.h:#ifndef CONFIG_NO_VLAN
+./ap_config.h:#ifdef CONFIG_WEP_AP
+./ap_config.h:#endif /* CONFIG_WEP_AP */
+./ap_config.h:#ifdef CONFIG_FULL_DYNAMIC_VLAN
+./ap_config.h:#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+./ap_config.h:#ifdef CONFIG_FULL_DYNAMIC_VLAN
+./ap_config.h:#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+./ap_config.h:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.h:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.h:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.h:#ifdef CONFIG_WEP_AP
+./ap_config.h:#endif /* CONFIG_WEP_AP */
+./ap_config.h:#if defined(CONFIG_P2P) || defined(CONFIG_HOSTAPD_ACL)
+./ap_config.h:#ifdef CONFIG_IEEE80211W_AP
+./ap_config.h:#endif /* CONFIG_IEEE80211W_AP */
+./ap_config.h:#ifdef CONFIG_OCV
+./ap_config.h:#endif /* CONFIG_OCV */
+./ap_config.h:#ifdef CONFIG_IEEE80211R_AP
+./ap_config.h:#endif /* CONFIG_IEEE80211R_AP */
+./ap_config.h:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.h:#ifndef CONFIG_NATIVE_WINDOWS
+./ap_config.h:#endif /* CONFIG_NATIVE_WINDOWS */
+./ap_config.h:#ifdef CONFIG_P2P
+./ap_config.h:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.h:#ifdef CONFIG_WPS_AP
+./ap_config.h:#endif /* CONFIG_WPS_AP */
+./ap_config.h:#ifdef CONFIG_P2P
+./ap_config.h:#endif /* CONFIG_P2P */
+./ap_config.h:#ifdef CONFIG_TDLS
+./ap_config.h:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.h:#ifdef CONFIG_INTERWORKING
+./ap_config.h:#ifdef CONFIG_GAS_AP
+./ap_config.h:#ifdef CONFIG_HS20_AP
+./ap_config.h:#endif /* CONFIG_HS20_AP */
+./ap_config.h:#ifdef CONFIG_RADIUS_TEST
+./ap_config.h:#endif /* CONFIG_RADIUS_TEST */
+./ap_config.h:#ifdef CONFIG_SAE_AP
+./ap_config.h:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.h:#ifdef CONFIG_TESTING_OPTIONS
+./ap_config.h:#endif /* CONFIG_TESTING_OPTIONS */
+./ap_config.h:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.h:#ifdef CONFIG_IEEE80211AC
+./ap_config.h:#ifdef CONFIG_P2P
+./ap_config.h:#ifdef CONFIG_MBO_AP
+./ap_config.h:#endif /* CONFIG_MBO_AP */
+./ap_config.h:#ifdef CONFIG_FILS_AP
+./ap_config.h:#endif /* CONFIG_FILS_AP */
+./ap_config.h:#ifdef CONFIG_DPP
+./ap_config.h:#ifdef CONFIG_DPP2
+./ap_config.h:#endif /* CONFIG_DPP2 */
+./ap_config.h:#endif /* CONFIG_DPP */
+./ap_config.h:#ifdef CONFIG_OWE
+./ap_config.h:#endif /* CONFIG_OWE */
+./ap_config.h:#ifdef CONFIG_AIRTIME_POLICY_AP
+./ap_config.h:#endif /* CONFIG_AIRTIME_POLICY_AP */
+./ap_config.h:#ifdef CONFIG_MACSEC_AP
+./ap_config.h:#endif /* CONFIG_MACSEC_AP */
+./ap_config.h:#ifdef CONFIG_PASN_AP
+./ap_config.h:#ifdef CONFIG_TESTING_OPTIONS
+./ap_config.h:#endif /* CONFIG_TESTING_OPTIONS */
+./ap_config.h:#endif /* CONFIG_PASN_AP */
+./ap_config.h:#ifdef CONFIG_FST_AP
+./ap_config.h:#endif /* CONFIG_FST_AP */
+./ap_config.h:#ifdef CONFIG_P2P
+./ap_config.h:#endif /* CONFIG_P2P */
+./ap_config.h:#ifdef CONFIG_TESTING_OPTIONS
+./ap_config.h:#endif /* CONFIG_TESTING_OPTIONS */
+./ap_config.h:#ifdef CONFIG_ACS
+./ap_config.h:#endif /* CONFIG_ACS */
+./ap_config.h:#ifdef CONFIG_FULL_HOSTAPD
+./ap_config.h:#ifdef CONFIG_IEEE80211AX
+./ap_config.h:#endif /* CONFIG_IEEE80211AX */
+./ap_config.h:#ifdef CONFIG_AIRTIME_POLICY_AP
+./ap_config.h:#endif /* CONFIG_AIRTIME_POLICY_AP */
+./ap_config.h:#ifdef CONFIG_IEEE80211AX
+./ap_config.h:#endif /* CONFIG_IEEE80211AX */
+./ap_config.h:#ifdef CONFIG_IEEE80211AX
+./ap_config.h:#endif /* CONFIG_IEEE80211AX */
+./ap_config.h:#ifdef CONFIG_IEEE80211AX
+./ap_config.h:#endif /* CONFIG_IEEE80211AX */
+./ap_config.h:#ifdef CONFIG_IEEE80211AX
+./ap_config.h:#endif /* CONFIG_IEEE80211AX */
+./ap_config.h:#ifdef CONFIG_IEEE80211AX
+./ap_config.h:#endif /* CONFIG_IEEE80211AX */
+./ap_config.h:#ifdef CONFIG_IEEE80211AX
+./ap_config.h:#endif /* CONFIG_IEEE80211AX */
+./ap_config.h:#endif /* HOSTAPD_CONFIG_H */
+./airtime_policy.c:#ifdef CONFIG_TESTING_OPTIONS
+./airtime_policy.c:#endif /* CONFIG_TESTING_OPTIONS */
+./p2p_hostapd.c:#ifdef CONFIG_P2P
+./p2p_hostapd.c:#endif /* CONFIG_P2P */
+./p2p_hostapd.c:#ifdef CONFIG_P2P_MANAGER
+./p2p_hostapd.c:#endif /* CONFIG_P2P_MANAGER */
+./ieee802_11_auth.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_11_auth.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_11_auth.c:#ifdef CONFIG_HOSTAPD_ACL
+./ieee802_11_auth.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_11_auth.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_11_auth.c:#ifdef CONFIG_HOSTAPD_ACL
+./ieee802_11_auth.c:#ifdef CONFIG_NO_RADIUS
+./ieee802_11_auth.c:#else /* CONFIG_NO_RADIUS */
+./ieee802_11_auth.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_11_auth.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_11_auth.c:#ifdef CONFIG_DRIVER_RADIUS_ACL
+./ieee802_11_auth.c:#else /* CONFIG_DRIVER_RADIUS_ACL */
+./ieee802_11_auth.c:#endif /* CONFIG_DRIVER_RADIUS_ACL */
+./ieee802_11_auth.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_11_auth.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_11_auth.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_11_auth.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11_auth.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_11_auth.c:#endif /* CONFIG_NO_RADIUS */
+./preauth_auth.h:#ifdef CONFIG_RSN_PREAUTH
+./preauth_auth.h:#else /* CONFIG_RSN_PREAUTH */
+./preauth_auth.h:#endif /* CONFIG_RSN_PREAUTH */
+./ieee802_11_ht.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11_ht.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11_ht.c:#ifdef CONFIG_FULL_HOSTAPD
+./ndisc_snoop.c:#ifdef CONFIG_HS20_AP
+./ndisc_snoop.c:#endif /* CONFIG_HS20_AP */
+./dhcp_snoop.c:#ifdef CONFIG_HS20_AP
+./dhcp_snoop.c:#endif /* CONFIG_HS20_AP */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth.c:#ifdef CONFIG_MESH
+./wpa_auth.c:#endif /* CONFIG_MESH */
+./wpa_auth.c:#ifdef CONFIG_OCV
+./wpa_auth.c:#endif /* CONFIG_OCV */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_P2P
+./wpa_auth.c:#endif /* CONFIG_P2P */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_P2P
+./wpa_auth.c:#endif /* CONFIG_P2P */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_P2P
+./wpa_auth.c:#endif /* CONFIG_P2P */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_DPP2
+./wpa_auth.c:#endif /* CONFIG_DPP2 */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_SHA384
+./wpa_auth.c:#else /* CONFIG_SHA384 */
+./wpa_auth.c:#ifdef CONFIG_SHA256
+./wpa_auth.c:#else /* CONFIG_SHA256 */
+./wpa_auth.c:#endif /* CONFIG_SHA256 */
+./wpa_auth.c:#endif /* CONFIG_SHA384 */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifndef CONFIG_NO_RC4
+./wpa_auth.c:#endif /* CONFIG_NO_RC4 */
+./wpa_auth.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth.c:#ifdef CONFIG_MESH
+./wpa_auth.c:#endif /* CONFIG_MESH */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#else /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#else /* CONFIG_FILS_AP */
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_DPP
+./wpa_auth.c:#endif /* CONFIG_DPP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_SAE_AP
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#endif /* CONFIG_SAE_AP */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_SAE_AP
+./wpa_auth.c:#endif /* CONFIG_SAE_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_DPP2
+./wpa_auth.c:#endif /* CONFIG_DPP2 */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_OCV
+./wpa_auth.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth.c:#endif /* CONFIG_OCV */
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_OCV
+./wpa_auth.c:#endif /* CONFIG_OCV */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_OWE
+./wpa_auth.c:#endif /* CONFIG_OWE */
+./wpa_auth.c:#ifdef CONFIG_OCV
+./wpa_auth.c:#endif /* CONFIG_OCV */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_P2P
+./wpa_auth.c:#endif /* CONFIG_P2P */
+./wpa_auth.c:#ifdef CONFIG_DPP2
+./wpa_auth.c:#endif /* CONFIG_DPP2 */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_FULL_SUPPLICANT
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#else /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#ifdef CONFIG_OCV
+./wpa_auth.c:#endif /* CONFIG_OCV */
+./wpa_auth.c:#ifdef CONFIG_OCV
+./wpa_auth.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth.c:#else /* CONFIG_OCV */
+./wpa_auth.c:#endif /* CONFIG_OCV */
+./wpa_auth.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_P2P
+./wpa_auth.c:#endif /* CONFIG_P2P */
+./wpa_auth.c:#ifdef CONFIG_DPP2
+./wpa_auth.c:#endif /* CONFIG_DPP2 */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_P2P
+./wpa_auth.c:#endif /* CONFIG_P2P */
+./wpa_auth.c:#ifdef CONFIG_DPP2
+./wpa_auth.c:#endif /* CONFIG_DPP2 */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_DPP
+./wpa_auth.c:#endif /* CONFIG_DPP */
+./wpa_auth.c:#ifdef CONFIG_SAE_AP
+./wpa_auth.c:#endif /* CONFIG_SAE_AP */
+./wpa_auth.c:#ifdef CONFIG_OCV
+./wpa_auth.c:#endif /* CONFIG_OCV */
+./wpa_auth.c:#ifdef CONFIG_OCV
+./wpa_auth.c:#endif /* CONFIG_OCV */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#ifdef CONFIG_WNM_AP
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#endif /* CONFIG_WNM_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#ifdef CONFIG_RSN_PREAUTH
+./wpa_auth.c:#else /* CONFIG_RSN_PREAUTH */
+./wpa_auth.c:#endif /* CONFIG_RSN_PREAUTH */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_PMKSA_CACHE_EXTERNAL
+./wpa_auth.c:#ifdef CONFIG_MESH
+./wpa_auth.c:#endif /* CONFIG_MESH */
+./wpa_auth.c:#endif /* CONFIG_PMKSA_CACHE_EXTERNAL */
+./wpa_auth.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth.c:#ifdef CONFIG_P2P
+./wpa_auth.c:#endif /* CONFIG_P2P */
+./wpa_auth.c:#ifdef CONFIG_RADIUS
+./wpa_auth.c:#ifdef CONFIG_FILS_AP
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth.c:#ifdef CONFIG_DPP2
+./wpa_auth.c:#endif /* CONFIG_DPP2 */
+./wpa_auth.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_kay.h:#ifdef CONFIG_MACSEC_AP
+./wpa_auth_kay.h:#else /* CONFIG_MACSEC_AP */
+./wpa_auth_kay.h:#endif /* CONFIG_MACSEC_AP */
+./ieee802_11_shared.c:#ifdef CONFIG_IEEE80211W_AP
+./ieee802_11_shared.c:#ifdef CONFIG_OCV
+./ieee802_11_shared.c:#endif /* CONFIG_OCV */
+./ieee802_11_shared.c:#ifdef CONFIG_OCV
+./ieee802_11_shared.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11_shared.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11_shared.c:#endif /* CONFIG_OCV */
+./ieee802_11_shared.c:#ifdef CONFIG_OCV
+./ieee802_11_shared.c:#endif /* CONFIG_OCV */
+./ieee802_11_shared.c:#ifdef CONFIG_OCV
+./ieee802_11_shared.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11_shared.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11_shared.c:#endif /* CONFIG_OCV */
+./ieee802_11_shared.c:#ifdef CONFIG_OCV
+./ieee802_11_shared.c:#endif /* CONFIG_OCV */
+./ieee802_11_shared.c:#ifdef CONFIG_OCV
+./ieee802_11_shared.c:#endif /* CONFIG_OCV */
+./ieee802_11_shared.c:#endif /* CONFIG_IEEE80211W_AP */
+./ieee802_11_shared.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11_shared.c:#ifdef CONFIG_WNM_AP
+./ieee802_11_shared.c:#endif /* CONFIG_WNM_AP */
+./ieee802_11_shared.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11_shared.c:#ifdef CONFIG_INTERWORKING
+./ieee802_11_shared.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11_shared.c:#ifdef CONFIG_HS20_AP
+./ieee802_11_shared.c:#endif /* CONFIG_HS20_AP */
+./ieee802_11_shared.c:#ifdef CONFIG_MBO_AP
+./ieee802_11_shared.c:#endif /* CONFIG_MBO_AP */
+./ieee802_11_shared.c:#ifdef CONFIG_FILS_AP
+./ieee802_11_shared.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11_shared.c:#ifdef CONFIG_IEEE80211AX
+./ieee802_11_shared.c:#endif /* CONFIG_IEEE80211AX */
+./ieee802_11_shared.c:#ifdef CONFIG_SAE_AP
+./ieee802_11_shared.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11_shared.c:#ifdef CONFIG_IEEE80211W_AP
+./ieee802_11_shared.c:#ifdef CONFIG_SAE_PK
+./ieee802_11_shared.c:#endif /* CONFIG_SAE_PK */
+./ieee802_11_shared.c:#ifdef CONFIG_INTERWORKING
+./ieee802_11_shared.c:#endif /* CONFIG_INTERWORKING */
+./ieee802_11_shared.c:#ifdef CONFIG_INTERWORKING
+./ieee802_11_shared.c:#endif /* CONFIG_INTERWORKING */
+./ieee802_11_shared.c:#ifdef CONFIG_INTERWORKING
+./ieee802_11_shared.c:#endif /* CONFIG_INTERWORKING */
+./ieee802_11_shared.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11_shared.c:#ifdef CONFIG_WNM_AP
+./ieee802_11_shared.c:#endif /* CONFIG_WNM_AP */
+./ieee802_11_shared.c:#ifdef CONFIG_MBO_AP
+./ieee802_11_shared.c:#endif /* CONFIG_MBO_AP */
+./ieee802_11_shared.c:#ifdef CONFIG_OWE
+./ieee802_11_shared.c:#endif /* CONFIG_OWE */
+./ieee802_11_shared.c:#ifdef CONFIG_OWE
+./ieee802_11_shared.c:#else /* CONFIG_OWE */
+./ieee802_11_shared.c:#endif /* CONFIG_OWE */
+./ieee802_11_shared.c:#ifdef CONFIG_OWE
+./ieee802_11_shared.c:#else /* CONFIG_OWE */
+./ieee802_11_shared.c:#endif /* CONFIG_OWE */
+./ieee802_11_shared.c:#ifdef CONFIG_DPP2
+./ieee802_11_shared.c:#endif /* CONFIG_DPP2 */
+./ieee802_11_shared.c:#ifdef CONFIG_DPP2
+./ieee802_11_shared.c:#endif /* CONFIG_DPP2 */
+./ieee802_11_shared.c:#ifdef CONFIG_FILS_AP
+./ieee802_11_shared.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11_shared.c:#ifdef CONFIG_OCV
+./ieee802_11_shared.c:#endif /* CONFIG_OCV */
+./ieee802_11_shared.c:#ifdef CONFIG_SAE_AP
+./ieee802_11_shared.c:#ifdef CONFIG_SAE_PK
+./ieee802_11_shared.c:#endif /* CONFIG_SAE_PK */
+./ieee802_11_shared.c:#ifdef CONFIG_SAE_AP
+./ieee802_11_shared.c:#ifdef CONFIG_SAE_PK
+./ieee802_11_shared.c:#endif /* CONFIG_SAE_PK */
+./hostapd.c:#ifdef CONFIG_SQLITE
+./hostapd.c:#endif /* CONFIG_SQLITE */
+./hostapd.c:#ifdef CONFIG_WEP_AP
+./hostapd.c:#endif /* CONFIG_WEP_AP */
+./hostapd.c:#ifdef CONFIG_WEP_AP
+./hostapd.c:#endif /* CONFIG_WEP_AP */
+./hostapd.c:#ifndef CONFIG_NO_RADIUS
+./hostapd.c:#endif /* CONFIG_NO_RADIUS */
+./hostapd.c:#ifdef CONFIG_WEP_AP
+./hostapd.c:#endif /* CONFIG_WEP_AP */
+./hostapd.c:#ifdef CONFIG_WEP_AP
+./hostapd.c:#endif /* CONFIG_WEP_AP */
+./hostapd.c:#ifndef CONFIG_NO_RADIUS
+./hostapd.c:#endif /* CONFIG_NO_RADIUS */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_WEP_AP
+./hostapd.c:#ifdef CONFIG_IEEE80211W_AP
+./hostapd.c:#endif /* CONFIG_IEEE80211W_AP */
+./hostapd.c:#endif /* CONFIG_WEP_AP */
+./hostapd.c:#ifdef CONFIG_P2P
+./hostapd.c:#endif /* CONFIG_P2P */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifndef CONFIG_NO_RADIUS
+./hostapd.c:#endif /* CONFIG_NO_RADIUS */
+./hostapd.c:#ifdef CONFIG_DPP
+./hostapd.c:#ifdef CONFIG_AS
+./hostapd.c:#endif /* CONFIG_DPP */
+./hostapd.c:#ifdef CONFIG_EAPOL
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_INTERWORKING
+./hostapd.c:#endif /* CONFIG_INTERWORKING */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_SQLITE
+./hostapd.c:#endif /* CONFIG_SQLITE */
+./hostapd.c:#ifdef CONFIG_MESH
+./hostapd.c:#endif /* CONFIG_MESH */
+./hostapd.c:#ifdef CONFIG_RMM
+./hostapd.c:#ifdef CONFIG_FILS_AP
+./hostapd.c:#ifdef CONFIG_OCV
+./hostapd.c:#endif /* CONFIG_OCV */
+./hostapd.c:#ifdef CONFIG_SAE_AP
+./hostapd.c:#endif /* CONFIG_SAE_AP */
+./hostapd.c:#ifdef CONFIG_IEEE80211N
+./hostapd.c:#endif /* CONFIG_IEEE80211N */
+./hostapd.c:#ifdef CONFIG_WEP_AP
+./hostapd.c:#endif /* CONFIG_WEP_AP */
+./hostapd.c:#ifdef CONFIG_WEP_AP
+./hostapd.c:#endif /* CONFIG_WEP_AP */
+./hostapd.c:#ifndef CONFIG_NO_RADIUS
+./hostapd.c:#ifdef CONFIG_IPV6
+./hostapd.c:#endif /* CONFIG_IPV6 */
+./hostapd.c:#ifdef CONFIG_HS20_AP
+./hostapd.c:#else /* CONFIG_HS20_AP */
+./hostapd.c:#endif /* CONFIG_HS20_AP */
+./hostapd.c:#ifdef CONFIG_SQLITE
+./hostapd.c:#endif /* CONFIG_SQLITE */
+./hostapd.c:#endif /* CONFIG_NO_RADIUS */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_IEEE80211R_AP
+./hostapd.c:#endif /* CONFIG_IEEE80211R_AP */
+./hostapd.c:#ifdef CONFIG_MESH
+./hostapd.c:#endif /* CONFIG_MESH */
+./hostapd.c:#ifdef CONFIG_WEP_AP
+./hostapd.c:#endif /* CONFIG_WEP_AP */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTPAD
+./hostapd.c:#ifndef CONFIG_NO_RADIUS
+./hostapd.c:#ifdef CONFIG_SQLITE
+./hostapd.c:#endif /* CONFIG_SQLITE */
+./hostapd.c:#endif /* CONFIG_NO_RADIUS */
+./hostapd.c:#ifdef CONFIG_GAS_AP
+./hostapd.c:#ifdef CONFIG_DPP
+./hostapd.c:#endif /* CONFIG_DPP */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_INTERWORKING
+./hostapd.c:#endif /* CONFIG_INTERWORKING */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_MESH
+./hostapd.c:#endif /* CONFIG_MESH */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#endif /* CONFIG_FULL_HOSTAPD */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_DFS
+./hostapd.c:#ifdef CONFIG_FST_AP
+./hostapd.c:#endif /* CONFIG_FST_AP */
+./hostapd.c:#ifdef CONFIG_OWE
+./hostapd.c:#endif /* CONFIG_OWE */
+./hostapd.c:#ifdef CONFIG_OWE
+./hostapd.c:#endif /* CONFIG_OWE */
+./hostapd.c:#ifdef CONFIG_DFS
+./hostapd.c:#ifdef CONFIG_MESH
+./hostapd.c:#endif /* CONFIG_MESH */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_DFS
+./hostapd.c:#ifdef CONFIG_FST_AP
+./hostapd.c:#endif /* CONFIG_FST_AP */
+./hostapd.c:#ifdef CONFIG_MESH
+./hostapd.c:#endif /* CONFIG_MESH */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FST_AP
+./hostapd.c:#endif /* CONFIG_FST_AP */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FULL_HOSTPAD
+./hostapd.c:#ifdef CONFIG_IEEE80211R_AP
+./hostapd.c:#endif /* CONFIG_IEEE80211R_AP */
+./hostapd.c:#ifdef CONFIG_SAE_AP
+./hostapd.c:#endif /* CONFIG_SAE_AP */
+./hostapd.c:#ifdef CONFIG_SQLITE
+./hostapd.c:#endif /* CONFIG_SQLITE */
+./hostapd.c:#ifdef CONFIG_FST_AP
+./hostapd.c:#endif /* CONFIG_FST_AP */
+./hostapd.c:#ifdef CONFIG_IEEE80211N
+./hostapd.c:#endif /* CONFIG_IEEE80211N */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_OWE
+./hostapd.c:#ifdef CONFIG_P2P
+./hostapd.c:#endif /* CONFIG_P2P */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_MACSEC_AP
+./hostapd.c:#endif /* CONFIG_MACSEC_AP */
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_IEEE80211AX
+./hostapd.c:#ifdef CONFIG_IEEE80211AX
+./hostapd.c:#ifdef CONFIG_IEEE80211AX
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifdef CONFIG_FULL_HOSTAPD
+./hostapd.c:#ifndef CONFIG_NO_RADIUS
+./hostapd.c:#endif /* CONFIG_NO_RADIUS */
+./hostapd.c:#ifdef CONFIG_OCV
+./hostapd.c:#endif /* CONFIG_OCV */
+./ieee802_1x.c:#ifdef CONFIG_SQLITE
+./ieee802_1x.c:#endif /* CONFIG_SQLITE */
+./ieee802_1x.c:#ifdef CONFIG_HS20_AP
+./ieee802_1x.c:#endif /* CONFIG_HS20_AP */
+./ieee802_1x.c:#ifdef CONFIG_MACSEC_AP
+./ieee802_1x.c:#endif /* CONFIG_MACSEC_AP */
+./ieee802_1x.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_1x.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_1x.c:#ifdef CONFIG_FULL_HOSTPAD
+./ieee802_1x.c:#ifdef CONFIG_NO_ACCOUNTING
+./ieee802_1x.c:#ifdef CONFIG_WEP_AP
+./ieee802_1x.c:#ifndef CONFIG_FIPS
+./ieee802_1x.c:#ifndef CONFIG_NO_RC4
+./ieee802_1x.c:#ifdef CONFIG_MACSEC_AP
+./ieee802_1x.c:#endif /* CONFIG_MACSEC_AP */
+./ieee802_1x.c:#ifndef CONFIG_NO_VLAN
+./ieee802_1x.c:#endif /* CONFIG_NO_VLAN */
+./ieee802_1x.c:#endif /* CONFIG_NO_RC4 */
+./ieee802_1x.c:#endif /* CONFIG_FIPS */
+./ieee802_1x.c:#endif /* CONFIG_WEP_AP */
+./ieee802_1x.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_1x.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_1x.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_1x.c:#ifdef CONFIG_IPV6
+./ieee802_1x.c:#endif /* CONFIG_IPV6 */
+./ieee802_1x.c:#ifdef CONFIG_INTERWORKING
+./ieee802_1x.c:#endif /* CONFIG_INTERWORKING */
+./ieee802_1x.c:#ifdef CONFIG_SQLITE
+./ieee802_1x.c:#endif /* CONFIG_SQLITE */
+./ieee802_1x.c:#ifdef CONFIG_HS20_AP
+./ieee802_1x.c:#endif /* CONFIG_HS20_AP */
+./ieee802_1x.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_1x.c:#ifdef CONFIG_ERP_AP
+./ieee802_1x.c:#endif /* CONFIG_ERP_AP */
+./ieee802_1x.c:#ifndef CONFIG_NO_STDOUT_DEBUG
+./ieee802_1x.c:#endif /* CONFIG_NO_STDOUT_DEBUG */
+./ieee802_1x.c:#ifdef CONFIG_WPS_AP
+./ieee802_1x.c:#endif /* CONFIG_WPS_AP */
+./ieee802_1x.c:#ifdef CONFIG_MACSEC_AP
+./ieee802_1x.c:#endif /* CONFIG_MACSEC_AP */
+./ieee802_1x.c:#ifdef CONFIG_WPS_AP
+./ieee802_1x.c:#endif /* CONFIG_WPS_AP */
+./ieee802_1x.c:#ifdef CONFIG_WPS_AP
+./ieee802_1x.c:#endif /* CONFIG_WPS_AP */
+./ieee802_1x.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_1x.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_1x.c:#ifdef CONFIG_FILS_AP
+./ieee802_1x.c:#endif /* CONFIG_FILS_AP */
+./ieee802_1x.c:#ifdef CONFIG_HS20_AP
+./ieee802_1x.c:#endif /* CONFIG_HS20_AP */
+./ieee802_1x.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_1x.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_1x.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_1x.c:#ifdef CONFIG_HS20_AP
+./ieee802_1x.c:#endif /* CONFIG_HS20_AP */
+./ieee802_1x.c:#ifdef CONFIG_HS20_AP
+./ieee802_1x.c:#endif /* CONFIG_HS20_AP */
+./ieee802_1x.c:#ifndef CONFIG_NO_VLAN
+./ieee802_1x.c:#endif /* CONFIG_NO_VLAN */
+./ieee802_1x.c:#ifndef CONFIG_NO_VLAN
+./ieee802_1x.c:#endif /* CONFIG_NO_VLAN */
+./ieee802_1x.c:#ifdef CONFIG_FILS_AP
+./ieee802_1x.c:#endif /* CONFIG_FILS_AP */
+./ieee802_1x.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_1x.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_1x.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_1x.c:#ifdef CONFIG_WEP_AP
+./ieee802_1x.c:#endif /* CONFIG_WEP_AP */
+./ieee802_1x.c:#ifdef CONFIG_WPS_AP
+./ieee802_1x.c:#endif /* CONFIG_WPS_AP */
+./ieee802_1x.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_1x.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_1x.c:#ifndef CONFIG_NO_HOSTAPD_LOGGER
+./ieee802_1x.c:#endif /* CONFIG_NO_HOSTAPD_LOGGER */
+./ieee802_1x.c:#ifdef CONFIG_WEP_AP
+./ieee802_1x.c:#ifndef CONFIG_FIPS
+./ieee802_1x.c:#ifndef CONFIG_NO_RC4
+./ieee802_1x.c:#endif /* CONFIG_NO_RC4 */
+./ieee802_1x.c:#endif /* CONFIG_FIPS */
+./ieee802_1x.c:#endif /* CONFIG_WEP_AP */
+./ieee802_1x.c:#ifdef CONFIG_ERP_AP
+./ieee802_1x.c:#endif /* CONFIG_ERP_AP */
+./ieee802_1x.c:#ifdef CONFIG_ERP_AP
+./ieee802_1x.c:#ifdef CONFIG_WEP_AP
+./ieee802_1x.c:#endif /* CONFIG_WEP_AP */
+./ieee802_1x.c:#ifdef CONFIG_WEP_AP
+./ieee802_1x.c:#endif /* CONFIG_WEP_AP */
+./ieee802_1x.c:#ifdef CONFIG_ERP_AP
+./ieee802_1x.c:#endif /* CONFIG_ERP_AP */
+./ieee802_1x.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_1x.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_1x.c:#ifdef CONFIG_WEP_AP
+./ieee802_1x.c:#endif /* CONFIG_WEP_AP */
+./ieee802_1x.c:#ifdef CONFIG_ERP_AP
+./ieee802_1x.c:#ifdef CONFIG_WEP_AP
+./ieee802_1x.c:#endif /* CONFIG_WEP_AP */
+./ieee802_1x.c:#ifdef CONFIG_ERP_AP
+./ieee802_1x.c:#ifdef CONFIG_WPS_AP
+./ieee802_1x.c:#endif /* CONFIG_WPS_AP */
+./ieee802_1x.c:#ifdef CONFIG_MACSEC_AP
+./ieee802_1x.c:#endif /* CONFIG_MACSEC_AP */
+./ieee802_1x.c:#ifdef CONFIG_HS20_AP
+./ieee802_1x.c:#endif /* CONFIG_HS20_AP */
+./ieee802_1x.c:#ifdef CONFIG_HS20_AP
+./ieee802_1x.c:#endif /* CONFIG_HS20_AP */
+./ieee802_1x.c:#ifdef CONFIG_MACSEC_AP
+./ieee802_1x.c:#endif /* CONFIG_MACSEC_AP */
+./preauth_auth.c:#ifdef CONFIG_RSN_PREAUTH
+./preauth_auth.c:#endif /* CONFIG_RSN_PREAUTH */
+./ieee802_11_he.c:#ifdef CONFIG_IEEE80211AX
+./ieee802_11_he.c:#endif //CONFIG_IEEE80211AX
+./vlan_init.c:#ifdef CONFIG_WEP_AP
+./vlan_init.c:#endif /* CONFIG_WEP_AP */
+./vlan_init.c:#ifdef CONFIG_FULL_DYNAMIC_VLAN
+./vlan_init.c:#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+./vlan_init.c:#ifdef CONFIG_FULL_DYNAMIC_VLAN
+./vlan_init.c:#else /* CONFIG_FULL_DYNAMIC_VLAN */
+./vlan_init.c:#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+./vlan_init.c:#ifdef CONFIG_FULL_DYNAMIC_VLAN
+./vlan_init.c:#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+./vlan_init.c:#ifdef CONFIG_FULL_DYNAMIC_VLAN
+./vlan_init.c:#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+./vlan_init.c:#ifdef CONFIG_FULL_DYNAMIC_VLAN
+./vlan_init.c:#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+./beacon.c:#ifndef CONFIG_NATIVE_WINDOWS
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_TESTING_OPTIONS
+./beacon.c:#endif /* CONFIG_TESTING_OPTIONS */
+./beacon.c:#endif /* CONFIG_FULL_HOSTAPD */
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_DFS
+./beacon.c:#ifdef CONFIG_TESTING_OPTIONS
+./beacon.c:#endif /* CONFIG_TESTING_OPTIONS */
+./beacon.c:#ifdef CONFIG_TESTING_OPTIONS
+./beacon.c:#endif /* CONFIG_TESTING_OPTIONS */
+./beacon.c:#ifdef CONFIG_WPS_AP
+./beacon.c:#endif /* CONFIG_WPS_AP */
+./beacon.c:#ifdef CONFIG_P2P
+./beacon.c:#endif /* CONFIG_P2P */
+./beacon.c:#ifdef CONFIG_FST_AP
+./beacon.c:#endif /* CONFIG_FST_AP */
+./beacon.c:#ifdef CONFIG_IEEE80211AC
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_IEEE80211AX */
+./beacon.c:#ifdef CONFIG_MBO_AP
+./beacon.c:#ifdef CONFIG_OWE
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_IEEE80211N
+./beacon.c:#endif /* CONFIG_IEEE80211N */
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_FST_AP
+./beacon.c:#endif /* CONFIG_FST_AP */
+./beacon.c:#ifdef CONFIG_IEEE80211AC
+./beacon.c:#endif /* CONFIG_IEEE80211AC */
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_IEEE80211AX */
+./beacon.c:#ifdef CONFIG_FILS_AP
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_IEEE80211AX */
+./beacon.c:#ifdef CONFIG_IEEE80211AC
+./beacon.c:#endif /* CONFIG_IEEE80211AC */
+./beacon.c:#ifdef CONFIG_WPS_AP
+./beacon.c:#endif /* CONFIG_WPS_AP */
+./beacon.c:#ifdef CONFIG_P2P
+./beacon.c:#endif /* CONFIG_P2P */
+./beacon.c:#ifdef CONFIG_P2P_MANAGER
+./beacon.c:#endif /* CONFIG_P2P_MANAGER */
+./beacon.c:#ifdef CONFIG_HS20_AP
+./beacon.c:#endif /* CONFIG_HS20_AP */
+./beacon.c:#ifdef CONFIG_MBO_AP
+./beacon.c:#ifdef CONFIG_OWE
+./beacon.c:#ifdef CONFIG_TAXONOMY_AP
+./beacon.c:#endif /* CONFIG_TAXONOMY_AP */
+./beacon.c:#ifndef CONFIG_NO_RADIUS
+./beacon.c:#ifdef CONFIG_HOSTAPD_ACL
+./beacon.c:#ifdef CONFIG_P2P
+./beacon.c:#endif /* CONFIG_P2P */
+./beacon.c:#ifdef CONFIG_P2P
+./beacon.c:#endif /* CONFIG_P2P */
+./beacon.c:#ifdef CONFIG_TAXONOMY_AP
+./beacon.c:#endif /* CONFIG_TAXONOMY_AP */
+./beacon.c:#ifdef CONFIG_INTERWORKING
+./beacon.c:#endif /* CONFIG_INTERWORKING */
+./beacon.c:#ifdef CONFIG_P2P
+./beacon.c:#endif /* CONFIG_P2P */
+./beacon.c:#ifdef CONFIG_TESTING_OPTIONS
+./beacon.c:#endif /* CONFIG_TESTING_OPTIONS */
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_WPS_AP
+./beacon.c:#endif /* CONFIG_WPS_AP */
+./beacon.c:#ifdef CONFIG_P2P
+./beacon.c:#endif  /* CONFIG_P2P */
+./beacon.c:#ifdef CONFIG_INTERWORKING
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_IEEE80211AX */
+./beacon.c:#ifdef CONFIG_TAXONOMY_AP
+./beacon.c:#endif /* CONFIG_TAXONOMY_AP */
+./beacon.c:#ifdef CONFIG_FILS_AP
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_IEEE80211AX */
+./beacon.c:#ifdef CONFIG_IEEE80211AC
+./beacon.c:#endif /* CONFIG_IEEE80211AC */
+./beacon.c:#endif /* CONFIG_FILS_AP */
+./beacon.c:#ifdef CONFIG_WPS_AP
+./beacon.c:#endif /* CONFIG_WPS_AP */
+./beacon.c:#ifdef CONFIG_P2P
+./beacon.c:#endif /* CONFIG_P2P */
+./beacon.c:#ifdef CONFIG_FST_AP
+./beacon.c:#endif /* CONFIG_FST_AP */
+./beacon.c:#ifdef CONFIG_IEEE80211AC
+./beacon.c:#endif /* CONFIG_IEEE80211AC */
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_IEEE80211AX */
+./beacon.c:#ifdef CONFIG_MBO_AP
+./beacon.c:#ifdef CONFIG_OWE
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_IEEE80211N
+./beacon.c:#endif /* CONFIG_IEEE80211N */
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_FST_AP
+./beacon.c:#endif /* CONFIG_FST_AP */
+./beacon.c:#ifdef CONFIG_IEEE80211AC
+./beacon.c:#endif /* CONFIG_IEEE80211AC */
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_IEEE80211AX */
+./beacon.c:#ifdef CONFIG_FILS_AP
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_IEEE80211AX */
+./beacon.c:#ifdef CONFIG_IEEE80211AC
+./beacon.c:#endif /* CONFIG_IEEE80211AC */
+./beacon.c:#ifdef CONFIG_WPS_AP
+./beacon.c:#endif /* CONFIG_WPS_AP */
+./beacon.c:#ifdef CONFIG_P2P
+./beacon.c:#endif /* CONFIG_P2P */
+./beacon.c:#ifdef CONFIG_P2P_MANAGER
+./beacon.c:#endif /* CONFIG_P2P_MANAGER */
+./beacon.c:#ifdef CONFIG_HS20_AP
+./beacon.c:#endif /* CONFIG_HS20_AP */
+./beacon.c:#ifdef CONFIG_MBO_AP
+./beacon.c:#ifdef CONFIG_OWE
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_WEP_AP
+./beacon.c:#endif /* CONFIG_WEP_AP */
+./beacon.c:#ifdef CONFIG_INTERWORKING
+./beacon.c:#ifdef CONFIG_P2P
+./beacon.c:#endif /* CONFIG_P2P */
+./beacon.c:#ifdef CONFIG_HS20_AP
+./beacon.c:#endif /* CONFIG_HS20_AP */
+./beacon.c:#ifdef CONFIG_P2P
+./beacon.c:#ifdef CONFIG_FULL_HOSTAPD
+./beacon.c:#ifdef CONFIG_FILS_AP
+./beacon.c:#endif /* CONFIG_FILS_AP */
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_IEEE80211AX */
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_IEEE80211AX */
+./beacon.c:#ifdef CONFIG_SAE_AP
+./beacon.c:#endif /* CONFIG_SAE_AP */
+./beacon.c:#ifdef CONFIG_FILS_AP
+./beacon.c:#endif /* CONFIG_FILS_AP */
+./beacon.c:#ifdef CONFIG_IEEE80211AX
+./beacon.c:#endif /* CONFIG_NATIVE_WINDOWS */
+./ieee802_11.c:#ifndef CONFIG_NATIVE_WINDOWS
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_PASN_AP
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#endif /* CONFIG_PASN_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#ifdef CONFIG_IEEE80211AC
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#ifdef CONFIG_IEEE80211AC
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#ifdef CONFIG_RRM_AP
+./ieee802_11.c:#endif /* CONFIG_RRM_AP */
+./ieee802_11.c:#ifdef CONFIG_DFS
+./ieee802_11.c:#ifdef CONFIG_WEP_AP
+./ieee802_11.c:#ifdef CONFIG_FULL_SUPPLICANT
+./ieee802_11.c:#endif /* CONFIG_WEP_AP */
+./ieee802_11.c:#ifdef CONFIG_HS20_AP
+./ieee802_11.c:#endif /* CONFIG_HS20_AP */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_WEP_AP
+./ieee802_11.c:#ifndef CONFIG_NO_RC4
+./ieee802_11.c:#endif /* CONFIG_NO_RC4 */
+./ieee802_11.c:#endif /* CONFIG_WEP_AP */
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#ifdef CONFIG_SAE_PK
+./ieee802_11.c:#endif /* CONFIG_SAE_PK */
+./ieee802_11.c:#ifdef CONFIG_SAE_PK
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#endif /* CONFIG_SAE_PK */
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#if defined(CONFIG_SAE_AP) || defined(CONFIG_PASN_AP)
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_PASN_AP
+./ieee802_11.c:#endif /* CONFIG_PASN_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#endif /* defined(CONFIG_SAE_AP) || defined(CONFIG_PASN_AP) */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#ifndef CONFIG_NO_VLAN
+./ieee802_11.c:#endif /* CONFIG_NO_VLAN */
+./ieee802_11.c:#ifdef CONFIG_SAE_PK
+./ieee802_11.c:#endif /* CONFIG_SAE_PK */
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#ifdef CONFIG_FILS_SK_PFS
+./ieee802_11.c:#endif /* CONFIG_FILS_SK_PFS */
+./ieee802_11.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_11.c:#else /* CONFIG_NO_RADIUS */
+./ieee802_11.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_11.c:#ifdef CONFIG_FILS_SK_PFS
+./ieee802_11.c:#endif /* CONFIG_FILS_SK_PFS */
+./ieee802_11.c:#ifdef CONFIG_FILS_SK_PFS
+./ieee802_11.c:#endif /* CONFIG_FILS_SK_PFS */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_SK_PFS
+./ieee802_11.c:#endif /* CONFIG_FILS_SK_PFS */
+./ieee802_11.c:#ifdef CONFIG_PASN_AP
+./ieee802_11.c:#endif /* CONFIG_PASN_AP */
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_RADIUS
+./ieee802_11.c:#ifdef CONFIG_PASN_AP
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#ifdef CONFIG_NO_RADIUS
+./ieee802_11.c:#else /* CONFIG_NO_RADIUS */
+./ieee802_11.c:#endif /* CONFIG_NO_RADIUS */
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#else /* CONFIG_SAE_AP */
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_11.c:#else /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#endif /* CONFIG_PASN_AP */
+./ieee802_11.c:#ifndef CONFIG_NO_RADIUS
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#ifdef CONFIG_NO_RC4
+./ieee802_11.c:#endif /* CONFIG_NO_RC4 */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_PASN_AP
+./ieee802_11.c:#endif /* CONFIG_PASN_AP */
+./ieee802_11.c:#ifdef CONFIG_PASN_AP
+./ieee802_11.c:#endif /* CONFIG_PASN_AP */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_HOSTAPD_ACL
+./ieee802_11.c:#else /* CONFIG_HOSTAPD_ACL */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_MESH
+./ieee802_11.c:#endif /* CONFIG_MESH */
+./ieee802_11.c:#ifdef CONFIG_PASN_AP
+./ieee802_11.c:#endif /* CONFIG_PASN_AP */
+./ieee802_11.c:#ifdef CONFIG_MESH
+./ieee802_11.c:#endif /* CONFIG_MESH */
+./ieee802_11.c:#ifdef CONFIG_MBO_AP
+./ieee802_11.c:#endif /* CONFIG_MBO_AP */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_WEP_AP
+./ieee802_11.c:#ifndef CONFIG_NO_RC4
+./ieee802_11.c:#endif /* CONFIG_NO_RC4 */
+./ieee802_11.c:#endif /* CONFIG_WEP_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#ifdef CONFIG_MESH
+./ieee802_11.c:#endif /* CONFIG_MESH */
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_PASN_AP
+./ieee802_11.c:#endif /* CONFIG_PASN_AP */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_INTERWORKING
+./ieee802_11.c:#endif /* CONFIG_INTERWORKING */
+./ieee802_11.c:#ifdef CONFIG_OWE
+./ieee802_11.c:#endif /* CONFIG_OWE */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211W_AP
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_IEEE80211N
+./ieee802_11.c:#endif /* CONFIG_IEEE80211N */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211AC
+./ieee802_11.c:#endif /* CONFIG_IEEE80211AC */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211AX
+./ieee802_11.c:#endif /* CONFIG_IEEE80211AX */
+./ieee802_11.c:#ifdef CONFIG_P2P
+./ieee802_11.c:#endif /* CONFIG_P2P */
+./ieee802_11.c:#ifdef CONFIG_WPS_AP
+./ieee802_11.c:#endif /* CONFIG_WPS_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211W_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211W_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_OWE
+./ieee802_11.c:#endif /* CONFIG_OWE */
+./ieee802_11.c:#ifdef CONFIG_DPP2
+./ieee802_11.c:#endif /* CONFIG_DPP2 */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211N
+./ieee802_11.c:#endif /* CONFIG_IEEE80211N */
+./ieee802_11.c:#ifdef CONFIG_HS20_AP
+./ieee802_11.c:#endif /* CONFIG_HS20_AP */
+./ieee802_11.c:#ifdef CONFIG_P2P
+./ieee802_11.c:#endif /* CONFIG_P2P */
+./ieee802_11.c:#ifdef CONFIG_HS20_AP
+./ieee802_11.c:#endif /* CONFIG_HS20_AP */
+./ieee802_11.c:#ifdef CONFIG_FST_AP
+./ieee802_11.c:#endif /* CONFIG_FST_AP */
+./ieee802_11.c:#ifdef CONFIG_MBO_AP
+./ieee802_11.c:#endif /* CONFIG_MBO_AP */
+./ieee802_11.c:#if defined(CONFIG_FILS_AP) && defined(CONFIG_OCV)
+./ieee802_11.c:#endif /* CONFIG_FILS_AP && CONFIG_OCV */
+./ieee802_11.c:#ifdef CONFIG_RRM
+./ieee802_11.c:#ifdef CONFIG_IEEE80211N
+./ieee802_11.c:#endif /* CONFIG_IEEE80211N */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211AC
+./ieee802_11.c:#endif /* CONFIG_IEEE80211AC */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211AX
+./ieee802_11.c:#endif /* CONFIG_IEEE80211AX */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_OWE
+./ieee802_11.c:#endif /* CONFIG_OWE */
+./ieee802_11.c:#ifdef CONFIG_DPP2
+./ieee802_11.c:#endif /* CONFIG_DPP2 */
+./ieee802_11.c:#ifdef CONFIG_RRM
+./ieee802_11.c:#ifdef CONFIG_MBO_AP
+./ieee802_11.c:#endif /* CONFIG_MBO_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_OWE
+./ieee802_11.c:#endif /* CONFIG_OWE */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211W_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211W_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211N
+./ieee802_11.c:#endif /* CONFIG_IEEE80211N */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211AC
+./ieee802_11.c:#endif /* CONFIG_IEEE80211AC */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211AX
+./ieee802_11.c:#endif /* CONFIG_IEEE80211AX */
+./ieee802_11.c:#ifdef CONFIG_FST_AP
+./ieee802_11.c:#endif /* CONFIG_FST_AP */
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#ifdef CONFIG_OWE
+./ieee802_11.c:#endif /* CONFIG_OWE */
+./ieee802_11.c:#ifdef CONFIG_DPP2
+./ieee802_11.c:#endif /* CONFIG_DPP2 */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211AC
+./ieee802_11.c:#endif /* CONFIG_IEEE80211AC */
+./ieee802_11.c:#ifdef CONFIG_WPS_AP
+./ieee802_11.c:#endif /* CONFIG_WPS_AP */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_P2P
+./ieee802_11.c:#endif /* CONFIG_P2P */
+./ieee802_11.c:#ifdef CONFIG_P2P_MANAGER
+./ieee802_11.c:#endif /* CONFIG_P2P_MANAGER */
+./ieee802_11.c:#ifdef CONFIG_MBO_AP
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_OWE
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#endif /* CONFIG_OWE */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211AD
+./ieee802_11.c:#ifdef CONFIG_MBO_AP
+./ieee802_11.c:#endif /* CONFIG_MBO_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211N
+./ieee802_11.c:#endif /* CONFIG_IEEE80211N */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211W_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211W_AP */
+./ieee802_11.c:#ifdef CONFIG_TAXONOMY_AP
+./ieee802_11.c:#endif /* CONFIG_TAXONOMY_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_IEEE80211W_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211W_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211W_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211W_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211R_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_IEEE80211W_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211W_AP */
+./ieee802_11.c:#ifdef CONFIG_WNM_AP
+./ieee802_11.c:#endif /* CONFIG_WNM_AP */
+./ieee802_11.c:#ifdef CONFIG_FST_AP
+./ieee802_11.c:#endif /* CONFIG_FST_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211N
+./ieee802_11.c:#endif /* CONFIG_IEEE80211N */
+./ieee802_11.c:#ifdef CONFIG_DPP
+./ieee802_11.c:#endif /* CONFIG_DPP */
+./ieee802_11.c:#ifdef CONFIG_RMM
+./ieee802_11.c:#ifdef CONFIG_P2P
+./ieee802_11.c:#endif /* CONFIG_P2P */
+./ieee802_11.c:#ifdef CONFIG_MESH
+./ieee802_11.c:#endif /* CONFIG_MESH */
+./ieee802_11.c:#ifdef CONFIG_SAE_AP
+./ieee802_11.c:#endif /* CONFIG_SAE_AP */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_WEP_AP
+./ieee802_11.c:#endif /* CONFIG_WEP_AP */
+./ieee802_11.c:#ifdef CONFIG_IEEE80211W_AP
+./ieee802_11.c:#endif /* CONFIG_IEEE80211W_AP */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_FILS_AP
+./ieee802_11.c:#endif /* CONFIG_FILS_AP */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_RRM
+./ieee802_11.c:#ifdef CONFIG_DPP
+./ieee802_11.c:#endif /* CONFIG_DPP */
+./ieee802_11.c:#ifdef CONFIG_RRM
+./ieee802_11.c:#ifdef CONFIG_TESTING_OPTIONS
+./ieee802_11.c:#endif /* CONFIG_TESTING_OPTIONS */
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#ifdef CONFIG_FULL_HOSTAPD
+./ieee802_11.c:#endif /* CONFIG_NATIVE_WINDOWS */
+./sta_info.c:#ifdef CONFIG_IEEE80211W_AP
+./sta_info.c:#endif /* CONFIG_IEEE80211W_AP */
+./sta_info.c:#ifdef CONFIG_P2P
+./sta_info.c:#endif /* CONFIG_P2P */
+./sta_info.c:#ifdef CONFIG_PASN_AP
+./sta_info.c:#ifdef CONFIG_SAE_AP
+./sta_info.c:#endif /* CONFIG_SAE_AP */
+./sta_info.c:#ifdef CONFIG_FILS_AP
+./sta_info.c:#endif /* CONFIG_FILS_AP */
+./sta_info.c:#endif /* CONFIG_PASN_AP */
+./sta_info.c:#ifdef CONFIG_FULL_HOSTAPD
+./sta_info.c:#ifdef CONFIG_TAXONOMY_AP
+./sta_info.c:#endif /* CONFIG_TAXONOMY_AP */
+./sta_info.c:#ifdef CONFIG_IEEE80211N
+./sta_info.c:#endif /* CONFIG_IEEE80211N */
+./sta_info.c:#ifdef CONFIG_P2P
+./sta_info.c:#endif /* CONFIG_P2P */
+./sta_info.c:#if defined(NEED_AP_MLME) && defined(CONFIG_IEEE80211N)
+./sta_info.c:#endif /* NEED_AP_MLME && CONFIG_IEEE80211N */
+./sta_info.c:#ifdef CONFIG_MESH
+./sta_info.c:#endif /* CONFIG_MESH */
+./sta_info.c:#ifndef CONFIG_NO_RADIUS
+./sta_info.c:#endif /* CONFIG_NO_RADIUS */
+./sta_info.c:#ifndef CONFIG_NO_VLAN
+./sta_info.c:#endif /* CONFIG_NO_VLAN */
+./sta_info.c:#ifdef CONFIG_IEEE80211W_AP
+./sta_info.c:#endif /* CONFIG_IEEE80211W_AP */
+./sta_info.c:#ifdef CONFIG_P2P
+./sta_info.c:#endif /* CONFIG_P2P */
+./sta_info.c:#ifdef CONFIG_INTERWORKING
+./sta_info.c:#endif /* CONFIG_INTERWORKING */
+./sta_info.c:#ifdef CONFIG_INTERWORKING
+./sta_info.c:#ifdef CONFIG_FST_AP
+./sta_info.c:#endif /* CONFIG_FST_AP */
+./sta_info.c:#ifndef CONFIG_NO_RADIUS
+./sta_info.c:#ifdef CONFIG_INTERWORKING
+./sta_info.c:#ifdef CONFIG_SAE_AP
+./sta_info.c:#endif /* CONFIG_SAE_AP */
+./sta_info.c:#ifdef CONFIG_MBO_AP
+./sta_info.c:#ifdef CONFIG_FILS_AP
+./sta_info.c:#ifdef CONFIG_FILS_SK_PFS
+./sta_info.c:#endif /* CONFIG_FILS_SK_PFS */
+./sta_info.c:#endif /* CONFIG_FILS_AP */
+./sta_info.c:#ifdef CONFIG_OWE
+./sta_info.c:#endif /* CONFIG_OWE */
+./sta_info.c:#ifdef CONFIG_DPP2
+./sta_info.c:#endif /* CONFIG_DPP2 */
+./sta_info.c:#ifdef CONFIG_WNM_AP
+./sta_info.c:#endif /* CONFIG_WNM_AP */
+./sta_info.c:#ifdef CONFIG_PASN_AP
+./sta_info.c:#endif /* CONFIG_PASN_AP */
+./sta_info.c:#ifdef CONFIG_TESTING_OPTIONS
+./sta_info.c:#endif /* CONFIG_TESTING_OPTIONS */
+./sta_info.c:#ifdef CONFIG_MBO_AP
+./sta_info.c:#ifdef CONFIG_WNM_AP
+./sta_info.c:#endif /* CONFIG_WNM_AP */
+./sta_info.c:#ifdef CONFIG_FULL_HOSTAPD
+./sta_info.c:#ifdef CONFIG_TAXONOMY_AP
+./sta_info.c:#endif /* CONFIG_TAXONOMY_AP */
+./sta_info.c:#ifdef CONFIG_IEEE80211AD
+./sta_info.c:#ifdef CONFIG_WPS_AP
+./sta_info.c:#endif /* CONFIG_WPS_AP */
+./sta_info.c:#ifndef CONFIG_NO_VLAN
+./sta_info.c:#else /* CONFIG_NO_VLAN */
+./sta_info.c:#endif /* CONFIG_NO_VLAN */
+./sta_info.c:#ifdef CONFIG_IEEE80211W_AP
+./sta_info.c:#endif /* CONFIG_IEEE80211W_AP */
+./sta_info.c:#ifdef CONFIG_P2P
+./sta_info.c:#endif /* CONFIG_P2P */
+./sta_info.c:#ifdef CONFIG_P2P
+./sta_info.c:#endif /* CONFIG_P2P */
+./sta_info.c:#ifdef CONFIG_P2P
+./sta_info.c:#ifdef CONFIG_P2P
+./sta_info.c:#endif /* CONFIG_P2P */
+./sta_info.c:#ifdef CONFIG_FST_AP
+./sta_info.c:#endif /* CONFIG_FST_AP */
+./sta_info.c:#ifdef CONFIG_IEEE80211AD
+./vlan.h:#ifndef CONFIG_NO_VLAN
+./vlan.h:#else /* CONFIG_NO_VLAN */
+./vlan.h:#endif /* CONFIG_NO_VLAN */
+./hw_features.c:#ifndef CONFIG_NO_STDOUT_DEBUG
+./hw_features.c:#endif /* CONFIG_NO_STDOUT_DEBUG */
+./hw_features.c:#ifdef CONFIG_FULL_HOSTAPD
+./hw_features.c:#ifndef CONFIG_NO_STDOUT_DEBUG
+./hw_features.c:#ifdef CONFIG_FULL_HOSTAPD
+./hw_features.c:#ifndef CONFIG_NO_STDOUT_DEBUG
+./hw_features.c:#endif /* CONFIG_NO_STDOUT_DEBUG */
+./hw_features.c:#ifdef CONFIG_FULL_HOSTAPD
+./hw_features.c:#ifdef CONFIG_FULL_HOSTAPD
+./hw_features.c:#ifdef CONFIG_FULL_HOSTAPD
+./hw_features.c:#ifdef CONFIG_IEEE80211N
+./hw_features.c:#ifdef CONFIG_FULL_HOSTAPD
+./hw_features.c:#ifdef CONFIG_FULL_HOSTAPD
+./hw_features.c:#ifdef CONFIG_IEEE80211AX
+./hw_features.c:#endif /* CONFIG_IEEE80211AX */
+./hw_features.c:#ifdef CONFIG_FULL_HOSTAPD
+./hw_features.c:#ifdef CONFIG_FULL_HOSTAPD
+./hw_features.c:#ifdef CONFIG_FULL_HOSTAPD
+./hw_features.c:#ifdef CONFIG_IEEE80211AC
+./hw_features.c:#endif /* CONFIG_IEEE80211AC */
+./hw_features.c:#ifdef CONFIG_IEEE80211AX
+./hw_features.c:#endif /* CONFIG_IEEE80211AX */
+./hw_features.c:#endif /* CONFIG_IEEE80211N */
+./hw_features.c:#ifdef CONFIG_IEEE80211N
+./hw_features.c:#ifdef CONFIG_IEEE80211AX
+./hw_features.c:#endif /* CONFIG_IEEE80211AX */
+./hw_features.c:#ifdef CONFIG_IEEE80211AC
+./hw_features.c:#endif /* CONFIG_IEEE80211AC */
+./hw_features.c:#endif /* CONFIG_IEEE80211N */
+./hw_features.c:#ifdef CONFIG_IEEE80211AX
+./hw_features.c:#endif /* CONFIG_IEEE80211AX */
+./hw_features.c:	case EDMG_BW_CONFIG_4:
+./hw_features.c:	case EDMG_BW_CONFIG_5:
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_TESTING_OPTIONS
+./dpp_hostapd.c:#endif /* CONFIG_TESTING_OPTIONS */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:	enum dpp_status_error status = DPP_STATUS_CONFIG_REJECTED;
+./dpp_hostapd.c:#ifdef CONFIG_TESTING_OPTIONS
+./dpp_hostapd.c:		status = DPP_STATUS_CONFIG_REJECTED;
+./dpp_hostapd.c:#endif /* CONFIG_TESTING_OPTIONS */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_TESTING_OPTIONS
+./dpp_hostapd.c:#endif /* CONFIG_TESTING_OPTIONS */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:		MAC2STR(src), freq, DPP_PA_RECONFIG_AUTH_REQ);
+./dpp_hostapd.c:		MAC2STR(src), freq, DPP_PA_RECONFIG_AUTH_CONF);
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_TESTING_OPTIONS
+./dpp_hostapd.c:#endif /* CONFIG_TESTING_OPTIONS */
+./dpp_hostapd.c:#ifdef CONFIG_TESTING_OPTIONS
+./dpp_hostapd.c:#endif /* CONFIG_TESTING_OPTIONS */
+./dpp_hostapd.c:#ifdef CONFIG_TESTING_OPTIONS
+./dpp_hostapd.c:#endif /* CONFIG_TESTING_OPTIONS */
+./dpp_hostapd.c:#ifdef CONFIG_TESTING_OPTIONS
+./dpp_hostapd.c:#endif /* CONFIG_TESTING_OPTIONS */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#ifdef CONFIG_DPP3
+./dpp_hostapd.c:#endif /* CONFIG_DPP3 */
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_TESTING_OPTIONS
+./dpp_hostapd.c:#endif /* CONFIG_TESTING_OPTIONS */
+./dpp_hostapd.c:#ifdef CONFIG_DPP3
+./dpp_hostapd.c:#endif /* CONFIG_DPP3 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP3
+./dpp_hostapd.c:		 * CONFIG_DPP3 to avoid issues with a capability that has not
+./dpp_hostapd.c:#endif /* CONFIG_DPP3 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:	case DPP_PA_RECONFIG_ANNOUNCEMENT:
+./dpp_hostapd.c:	case DPP_PA_RECONFIG_AUTH_RESP:
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_TESTING_OPTIONS
+./dpp_hostapd.c:#endif /* CONFIG_TESTING_OPTIONS */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./dpp_hostapd.c:#ifdef CONFIG_DPP2
+./dpp_hostapd.c:#endif /* CONFIG_DPP2 */
+./accounting.h:#ifdef CONFIG_NO_ACCOUNTING
+./accounting.h:#else /* CONFIG_NO_ACCOUNTING */
+./accounting.h:#endif /* CONFIG_NO_ACCOUNTING */
+./ap_drv_ops.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_drv_ops.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_drv_ops.c:#ifdef CONFIG_FST_AP
+./ap_drv_ops.c:#endif /* CONFIG_FST_AP */
+./ap_drv_ops.c:#ifdef CONFIG_FILS_AP
+./ap_drv_ops.c:#endif /* CONFIG_FILS_AP */
+./ap_drv_ops.c:#ifdef CONFIG_WPS_AP
+./ap_drv_ops.c:#ifdef CONFIG_P2P
+./ap_drv_ops.c:#endif /* CONFIG_P2P */
+./ap_drv_ops.c:#ifdef CONFIG_P2P_MANAGER
+./ap_drv_ops.c:#endif /* CONFIG_P2P_MANAGER */
+./ap_drv_ops.c:#ifdef CONFIG_WPS_AP
+./ap_drv_ops.c:#endif /* CONFIG_WPS_AP */
+./ap_drv_ops.c:#ifdef CONFIG_P2P_MANAGER
+./ap_drv_ops.c:#endif /* CONFIG_P2P_MANAGER */
+./ap_drv_ops.c:#ifdef CONFIG_WIFI_DISPLAY
+./ap_drv_ops.c:#endif /* CONFIG_WIFI_DISPLAY */
+./ap_drv_ops.c:#ifdef CONFIG_HS20_AP
+./ap_drv_ops.c:#endif /* CONFIG_HS20_AP */
+./ap_drv_ops.c:#ifdef CONFIG_MBO_AP
+./ap_drv_ops.c:#endif /* CONFIG_MBO_AP */
+./ap_drv_ops.c:#ifdef CONFIG_OWE
+./ap_drv_ops.c:#endif /* CONFIG_OWE */
+./ap_drv_ops.c:#ifdef CONFIG_P2P
+./ap_drv_ops.c:#endif /* CONFIG_P2P */
+./ap_drv_ops.c:#ifdef CONFIG_IEEE80211W_AP
+./ap_drv_ops.c:#endif /* CONFIG_IEEE80211W_AP */
+./ap_drv_ops.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_drv_ops.c:#ifdef CONFIG_FILS_AP
+./ap_drv_ops.c:#endif /* CONFIG_FILS_AP */
+./ap_drv_ops.c:#ifdef CONFIG_FILS_AP
+./ap_drv_ops.c:#endif /* CONFIG_FILS_AP */
+./ap_drv_ops.c:#ifdef CONFIG_IEEE80211AX
+./ap_drv_ops.c:#ifdef CONFIG_FULL_HOSTAPD
+./ap_drv_ops.c:#if defined(CONFIG_IEEE80211AC) || defined(CONFIG_IEEE80211AX)
+./vlan_init.h:#ifndef CONFIG_NO_VLAN
+./vlan_init.h:#else /* CONFIG_NO_VLAN */
+./vlan_init.h:#endif /* CONFIG_NO_VLAN */
+./x_snoop.h:#ifdef CONFIG_PROXYARP
+./x_snoop.h:#else /* CONFIG_PROXYARP */
+./x_snoop.h:#endif /* CONFIG_PROXYARP */
+./wpa_auth.h:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth.h:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth.h:#ifdef CONFIG_OCV
+./wpa_auth.h:#endif /* CONFIG_OCV */
+./wpa_auth.h:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.h:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.h:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth.h:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth.h:#ifdef CONFIG_P2P
+./wpa_auth.h:#endif /* CONFIG_P2P */
+./wpa_auth.h:#ifdef CONFIG_FILS_AP
+./wpa_auth.h:#endif /* CONFIG_FILS_AP */
+./wpa_auth.h:#ifdef CONFIG_DPP2
+./wpa_auth.h:#endif /* CONFIG_DPP2 */
+./wpa_auth.h:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.h:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth.h:#ifdef CONFIG_MESH
+./wpa_auth.h:#endif /* CONFIG_MESH */
+./wpa_auth.h:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth.h:#endif /* CONFIG_IEEE80211R_AP */
+./ieee802_11.h:#ifdef CONFIG_SAE_AP
+./ieee802_11.h:#else /* CONFIG_SAE_AP */
+./ieee802_11.h:#endif /* CONFIG_SAE_AP */
+./ieee802_11.h:#ifdef CONFIG_MBO_AP
+./ieee802_11.h:#else /* CONFIG_MBO_AP */
+./ieee802_11.h:#endif /* CONFIG_MBO_AP */
+./utils.c:#ifdef CONFIG_TESTING_OPTIONS
+./utils.c:#endif /* CONFIG_TESTING_OPTIONS */
+./utils.c:#ifdef CONFIG_FST_AP
+./utils.c:#endif /* CONFIG_FST_AP */
+./wps_hostapd.h:#ifdef CONFIG_WPS_AP
+./wps_hostapd.h:#else /* CONFIG_WPS_AP */
+./wps_hostapd.h:#endif /* CONFIG_WPS_AP */
+./x_snoop.c:#ifdef CONFIG_IPV6
+./x_snoop.c:#endif /* CONFIG_IPV6 */
+./wnm_ap.c:#ifdef CONFIG_OCV
+./wnm_ap.c:#ifdef CONFIG_TESTING_OPTIONS
+./wnm_ap.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wnm_ap.c:#endif /* CONFIG_OCV */
+./wnm_ap.c:#ifdef CONFIG_OCV
+./wnm_ap.c:#endif /* CONFIG_OCV */
+./wnm_ap.c:#ifdef CONFIG_OCV
+./wnm_ap.c:#endif /* CONFIG_OCV */
+./wnm_ap.c:#ifdef CONFIG_OCV
+./wnm_ap.c:#endif /* CONFIG_OCV */
+./wnm_ap.c:#ifdef CONFIG_OCV
+./wnm_ap.c:#endif /* CONFIG_OCV */
+./wnm_ap.c:#ifdef CONFIG_MBO_AP
+./wnm_ap.c:#endif /* CONFIG_MBO_AP */
+./wnm_ap.c:#ifdef CONFIG_MBO_AP
+./wnm_ap.c:#endif /* CONFIG_MBO_AP */
+./ieee802_11_vht.c:#ifdef CONFIG_IEEE80211AC
+./dfs.c:#ifdef CONFIG_MESH
+./dfs.c:#endif /* CONFIG_MESH */
+./ap_list.c:#ifdef CONFIG_IEEE80211N
+./ap_list.c:#endif /* CONFIG_IEEE80211N */
+./ap_list.c:#ifdef CONFIG_IEEE80211N
+./ap_list.c:#endif /* CONFIG_IEEE80211N */
+./hs20.c:#ifdef CONFIG_OCV
+./hs20.c:#endif /* CONFIG_OCV */
+./ap_drv_ops.h:#ifdef CONFIG_TESTING_OPTIONS
+./ap_drv_ops.h:#endif /* CONFIG_TESTING_OPTIONS */
+./eap_user_db.c:#ifdef CONFIG_SQLITE
+./eap_user_db.c:#endif /* CONFIG_SQLITE */
+./eap_user_db.c:#ifdef CONFIG_SQLITE
+./eap_user_db.c:#endif /* CONFIG_SQLITE */
+./eap_user_db.c:#ifdef CONFIG_WPS_AP
+./eap_user_db.c:#endif /* CONFIG_WPS_AP */
+./eap_user_db.c:#ifdef CONFIG_SQLITE
+./eap_user_db.c:#endif /* CONFIG_SQLITE */
+./pmksa_cache_auth.c:#ifndef CONFIG_NO_RADIUS
+./pmksa_cache_auth.c:#endif /* CONFIG_NO_RADIUS */
+./pmksa_cache_auth.c:#ifndef CONFIG_NO_RADIUS
+./pmksa_cache_auth.c:#endif /* CONFIG_NO_RADIUS */
+./pmksa_cache_auth.c:#ifndef CONFIG_NO_RADIUS
+./pmksa_cache_auth.c:#endif /* CONFIG_NO_RADIUS */
+./pmksa_cache_auth.c:#ifndef CONFIG_NO_VLAN
+./pmksa_cache_auth.c:#endif /* CONFIG_NO_VLAN */
+./pmksa_cache_auth.c:#ifndef CONFIG_NO_RADIUS
+./pmksa_cache_auth.c:#endif /* CONFIG_NO_RADIUS */
+./pmksa_cache_auth.c:#ifdef CONFIG_FULL_HOSTAPD
+./pmksa_cache_auth.c:#ifdef CONFIG_PMKSA_CACHE_EXTERNAL
+./pmksa_cache_auth.c:#ifdef CONFIG_MESH
+./pmksa_cache_auth.c:#endif /* CONFIG_MESH */
+./pmksa_cache_auth.c:#endif /* CONFIG_PMKSA_CACHE_EXTERNAL */
+./acs.c: * - make sure you have CONFIG_ACS=y in hostapd's .config
+./drv_callbacks.c:#ifdef CONFIG_MBO_AP
+./drv_callbacks.c:#ifdef CONFIG_FILS_AP
+./drv_callbacks.c:#ifdef CONFIG_FILS_AP
+./drv_callbacks.c:#endif /* CONFIG_FILS_AP */
+./drv_callbacks.c:#ifdef CONFIG_IEEE80211W_AP
+./drv_callbacks.c:#if defined(CONFIG_IEEE80211R_AP) || defined(CONFIG_IEEE80211W_AP) || defined(CONFIG_FILS_AP) || defined(CONFIG_OWE)
+./drv_callbacks.c:#endif /* CONFIG_IEEE80211R_AP || CONFIG_IEEE80211W_AP || CONFIG_FILS_AP || CONFIG_OWE */
+./drv_callbacks.c:#ifdef CONFIG_HS20_AP
+./drv_callbacks.c:#endif /* CONFIG_HS20_AP */
+./drv_callbacks.c:#ifdef CONFIG_HOSTAPD_ACL
+./drv_callbacks.c:#ifdef CONFIG_P2P
+./drv_callbacks.c:#endif /* CONFIG_P2P */
+./drv_callbacks.c:#ifdef CONFIG_IEEE80211N
+./drv_callbacks.c:#endif /* CONFIG_IEEE80211N */
+./drv_callbacks.c:#ifdef CONFIG_INTERWORKING
+./drv_callbacks.c:#endif /* CONFIG_INTERWORKING */
+./drv_callbacks.c:#ifdef CONFIG_HS20_AP
+./drv_callbacks.c:#endif /* CONFIG_HS20_AP */
+./drv_callbacks.c:#ifdef CONFIG_FST_AP
+./drv_callbacks.c:#endif /* CONFIG_FST_AP */
+./drv_callbacks.c:#ifdef CONFIG_MBO_AP
+./drv_callbacks.c:#ifdef CONFIG_WPS_AP
+./drv_callbacks.c:#endif /* CONFIG_WPS_AP */
+./drv_callbacks.c:#ifdef CONFIG_WPS_AP
+./drv_callbacks.c:#endif /* CONFIG_WPS_AP */
+./drv_callbacks.c:#ifdef CONFIG_IEEE80211W_AP
+./drv_callbacks.c:#ifdef CONFIG_IEEE80211R_AP
+./drv_callbacks.c:#endif /* CONFIG_IEEE80211R_AP */
+./drv_callbacks.c:#ifdef CONFIG_SAE_AP
+./drv_callbacks.c:#endif /* CONFIG_SAE_AP */
+./drv_callbacks.c:#ifdef CONFIG_WPS_AP
+./drv_callbacks.c:#ifdef CONFIG_WPS_STRICT
+./drv_callbacks.c:#endif /* CONFIG_WPS_STRICT */
+./drv_callbacks.c:#endif /* CONFIG_WPS_AP */
+./drv_callbacks.c:#ifdef CONFIG_HS20_AP
+./drv_callbacks.c:#endif /* CONFIG_HS20_AP */
+./drv_callbacks.c:#ifdef CONFIG_WPS_AP
+./drv_callbacks.c:#endif /* CONFIG_WPS_AP */
+./drv_callbacks.c:#ifdef CONFIG_MBO_AP
+./drv_callbacks.c:#endif /* CONFIG_MBO_AP */
+./drv_callbacks.c:#ifdef CONFIG_IEEE80211R_AP
+./drv_callbacks.c:#endif /* CONFIG_IEEE80211R_AP */
+./drv_callbacks.c:#ifdef CONFIG_FILS_AP
+./drv_callbacks.c:#endif /* CONFIG_FILS_AP */
+./drv_callbacks.c:#ifdef CONFIG_OWE
+./drv_callbacks.c:#endif /* CONFIG_OWE */
+./drv_callbacks.c:#ifdef CONFIG_DPP2
+./drv_callbacks.c:#endif /* CONFIG_DPP2 */
+./drv_callbacks.c:#if defined(CONFIG_IEEE80211R_AP) || defined(CONFIG_FILS_AP) || defined(CONFIG_OWE)
+./drv_callbacks.c:#else /* CONFIG_IEEE80211R_AP || CONFIG_FILS_AP */
+./drv_callbacks.c:#endif /* CONFIG_IEEE80211R_AP || CONFIG_FILS_AP */
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FILS_AP
+./drv_callbacks.c:#endif /* CONFIG_FILS_AP */
+./drv_callbacks.c:#ifdef CONFIG_P2P
+./drv_callbacks.c:#endif /* CONFIG_P2P */
+./drv_callbacks.c:#ifdef CONFIG_IEEE80211R_AP
+./drv_callbacks.c:#endif /* CONFIG_IEEE80211R_AP */
+./drv_callbacks.c:#ifdef CONFIG_RADIUS
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_OCV
+./drv_callbacks.c:#endif /* CONFIG_OCV */
+./drv_callbacks.c:#ifdef CONFIG_ACS
+./drv_callbacks.c:#if defined(CONFIG_IEEE80211AC) || defined(CONFIG_IEEE80211AX)
+./drv_callbacks.c:#endif /* CONFIG_ACS */
+./drv_callbacks.c:#ifdef CONFIG_IEEE80211R_AP
+./drv_callbacks.c:#endif /* CONFIG_IEEE80211R_AP */
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FILS_AP
+./drv_callbacks.c:#endif /* CONFIG_FILS_AP */
+./drv_callbacks.c:#ifdef CONFIG_IEEE80211R_AP
+./drv_callbacks.c:#endif /* CONFIG_IEEE80211R_AP */
+./drv_callbacks.c:#ifdef CONFIG_FILS_AP
+./drv_callbacks.c:#endif /* CONFIG_FILS_AP */
+./drv_callbacks.c:#ifdef CONFIG_IEEE80211R_AP
+./drv_callbacks.c:#endif /* CONFIG_IEEE80211R_AP */
+./drv_callbacks.c:#ifdef CONFIG_IEEE80211W_AP
+./drv_callbacks.c:#endif /* CONFIG_IEEE80211W_AP */
+./drv_callbacks.c:#ifdef CONFIG_WNM_AP
+./drv_callbacks.c:#endif /* CONFIG_WNM_AP */
+./drv_callbacks.c:#ifdef CONFIG_FST_AP
+./drv_callbacks.c:#endif /* CONFIG_FST_AP */
+./drv_callbacks.c:#ifdef CONFIG_DPP
+./drv_callbacks.c:#endif /* CONFIG_DPP */
+./drv_callbacks.c:#ifdef CONFIG_TESTING_OPTIONS
+./drv_callbacks.c:#endif /* CONFIG_TESTING_OPTIONS */
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_DFS
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_OWE
+./drv_callbacks.c:#endif /* CONFIG_OWE */
+./drv_callbacks.c:#if 0//ndef CONFIG_NO_STDOUT_DEBUG
+./drv_callbacks.c:#endif /* CONFIG_NO_STDOUT_DEBUG */
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_OWE
+./drv_callbacks.c:#endif /* CONFIG_OWE */
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_DFS
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#endif /* CONFIG_FULL_SUPPLICANT */
+./drv_callbacks.c:#ifdef CONFIG_DFS
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#endif /* CONFIG_FULL_HOSTAPD */
+./drv_callbacks.c:#ifdef CONFIG_ACS
+./drv_callbacks.c:#endif /* CONFIG_ACS */
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./drv_callbacks.c:#ifdef CONFIG_FULL_HOSTAPD
+./gas_serv.c:#ifdef CONFIG_DPP
+./gas_serv.c:#endif /* CONFIG_DPP */
+./gas_serv.c:#ifdef CONFIG_HS20_AP
+./gas_serv.c:#endif /* CONFIG_HS20_AP */
+./gas_serv.c:#ifdef CONFIG_FILS_AP
+./gas_serv.c:#endif /* CONFIG_FILS_AP */
+./gas_serv.c:#ifdef CONFIG_HS20_AP
+./gas_serv.c:#endif /* CONFIG_HS20_AP */
+./gas_serv.c:#ifdef CONFIG_FILS_AP
+./gas_serv.c:#endif /* CONFIG_FILS_AP */
+./gas_serv.c:#ifdef CONFIG_HS20_AP
+./gas_serv.c:#endif /* CONFIG_HS20_AP */
+./gas_serv.c:#ifdef CONFIG_MBO_AP
+./gas_serv.c:#endif /* CONFIG_MBO_AP */
+./gas_serv.c:#ifdef CONFIG_FILS_AP
+./gas_serv.c:#endif /* CONFIG_FILS_AP */
+./gas_serv.c:#ifdef CONFIG_FILS_AP
+./gas_serv.c:#endif /* CONFIG_FILS_AP */
+./gas_serv.c:#ifdef CONFIG_HS20_AP
+./gas_serv.c:#endif /* CONFIG_HS20_AP */
+./gas_serv.c:#ifdef CONFIG_MBO_AP
+./gas_serv.c:#endif /* CONFIG_MBO_AP */
+./gas_serv.c:#ifdef CONFIG_FILS_AP
+./gas_serv.c:#endif /* CONFIG_FILS_AP */
+./gas_serv.c:#ifdef CONFIG_HS20_AP
+./gas_serv.c:#endif /* CONFIG_HS20_AP */
+./gas_serv.c:#ifdef CONFIG_P2P
+./gas_serv.c:#endif /* CONFIG_P2P */
+./gas_serv.c:#ifdef CONFIG_MBO_AP
+./gas_serv.c:#endif /* CONFIG_MBO_AP */
+./gas_serv.c:#ifdef CONFIG_P2P
+./gas_serv.c:#endif /* CONFIG_P2P */
+./gas_serv.c:#ifdef CONFIG_HS20_AP
+./gas_serv.c:#endif /* CONFIG_HS20_AP */
+./gas_serv.c:#ifdef CONFIG_MBO_AP
+./gas_serv.c:#endif /* CONFIG_MBO_AP */
+./gas_serv.c:#ifdef CONFIG_P2P
+./gas_serv.c:#endif /* CONFIG_P2P */
+./gas_serv.c:#ifdef CONFIG_DPP
+./gas_serv.c:#endif /* CONFIG_DPP */
+./gas_serv.c:#ifdef CONFIG_DPP
+./gas_serv.c:#endif /* CONFIG_DPP */
+./gas_serv.c:#ifdef CONFIG_DPP
+./gas_serv.c:#endif /* CONFIG_DPP */
+./gas_serv.c:#ifdef CONFIG_DPP
+./gas_serv.c:#endif /* CONFIG_DPP */
+./gas_serv.c:#ifdef CONFIG_DPP
+./gas_serv.c:#endif /* CONFIG_DPP */
+./gas_serv.c:#ifdef CONFIG_DPP
+./gas_serv.c:#endif /* CONFIG_DPP */
+./p2p_hostapd.h:#ifdef CONFIG_P2P
+./p2p_hostapd.h:#else /* CONFIG_P2P */
+./p2p_hostapd.h:#endif /* CONFIG_P2P */
+./ctrl_iface_ap.c:#ifdef CONFIG_SAE_AP
+./ctrl_iface_ap.c:#endif /* CONFIG_SAE_AP */
+./ctrl_iface_ap.c:#ifdef CONFIG_IEEE80211AC
+./ctrl_iface_ap.c:#endif /* CONFIG_IEEE80211AC */
+./ctrl_iface_ap.c:#ifdef CONFIG_P2P_MANAGER
+./ctrl_iface_ap.c:#endif /* CONFIG_P2P_MANAGER */
+./ctrl_iface_ap.c:#ifdef CONFIG_P2P_MANAGER
+./ctrl_iface_ap.c:#endif /* CONFIG_P2P_MANAGER */
+./ctrl_iface_ap.c:#ifdef CONFIG_P2P_MANAGER
+./ctrl_iface_ap.c:#endif /* CONFIG_P2P_MANAGER */
+./ctrl_iface_ap.c:#ifdef CONFIG_TAXONOMY_AP
+./ctrl_iface_ap.c:#endif /* CONFIG_TAXONOMY_AP */
+./ctrl_iface_ap.c:#ifdef CONFIG_IEEE80211AX
+./ctrl_iface_ap.c:#endif /* CONFIG_IEEE80211AX */
+./ctrl_iface_ap.c:#ifdef CONFIG_PMKSA_CACHE_EXTERNAL
+./ctrl_iface_ap.c:#ifdef CONFIG_MESH
+./ctrl_iface_ap.c:#endif /* CONFIG_MESH */
+./ctrl_iface_ap.c:#endif /* CONFIG_PMKSA_CACHE_EXTERNAL */
+./mbo_ap.h:#ifdef CONFIG_MBO_AP
+./mbo_ap.h:#else /* CONFIG_MBO_AP */
+./mbo_ap.h:#endif /* CONFIG_MBO_AP */
+./ndisc_snoop.h:#if defined(CONFIG_PROXYARP) && defined(CONFIG_IPV6)
+./ndisc_snoop.h:#else /* CONFIG_PROXYARP && CONFIG_IPV6 */
+./ndisc_snoop.h:#endif /* CONFIG_PROXYARP && CONFIG_IPV6 */
+./ap_mlme.c:#if !defined(CONFIG_NO_HOSTAPD_LOGGER) || CFG_ENABLE_WPA_LOG
+./ap_mlme.c:#endif /* CONFIG_NO_HOSTAPD_LOGGER */
+./wpa_auth_glue.c:#ifdef CONFIG_SAE_AP
+./wpa_auth_glue.c:#ifdef CONFIG_MACSEC_AP
+./wpa_auth_glue.c:#endif /* CONFIG_MACSEC_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_OCV
+./wpa_auth_glue.c:#endif /* CONFIG_OCV */
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_HS20_AP
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211W_AP */
+./wpa_auth_glue.c:#endif /* CONFIG_HS20_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_glue.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_glue.c:#ifdef CONFIG_P2P
+./wpa_auth_glue.c:#endif /* CONFIG_P2P */
+./wpa_auth_glue.c:#ifdef CONFIG_FILS_AP
+./wpa_auth_glue.c:#endif /* CONFIG_FILS_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_SAE_AP
+./wpa_auth_glue.c:#ifdef CONFIG_SAE_PK
+./wpa_auth_glue.c:#endif /* CONFIG_SAE_PK */
+./wpa_auth_glue.c:#ifdef CONFIG_OWE
+./wpa_auth_glue.c:#endif /* CONFIG_OWE */
+./wpa_auth_glue.c:#ifdef CONFIG_DPP2
+./wpa_auth_glue.c:#endif /* CONFIG_DPP2 */
+./wpa_auth_glue.c:#ifdef CONFIG_PASN_AP
+./wpa_auth_glue.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_glue.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_glue.c:#endif /* CONFIG_PASN_AP */
+./wpa_auth_glue.c:#ifndef CONFIG_NO_HOSTAPD_LOGGER
+./wpa_auth_glue.c:#endif /* CONFIG_NO_HOSTAPD_LOGGER */
+./wpa_auth_glue.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_glue.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_glue.c:#ifdef CONFIG_SAE_AP
+./wpa_auth_glue.c:#endif /* CONFIG_SAE_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_OWE
+./wpa_auth_glue.c:#endif /* CONFIG_OWE */
+./wpa_auth_glue.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_glue.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_glue.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_glue.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_glue.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_glue.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_TESTING_OPTIONS
+./wpa_auth_glue.c:#endif /* CONFIG_TESTING_OPTIONS */
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_ETH_P_OUI
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_glue.c:#endif /* CONFIG_ETH_P_OUI */
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_ETH_P_OUI
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_glue.c:#else /* CONFIG_ETH_P_OUI */
+./wpa_auth_glue.c:#endif /* CONFIG_ETH_P_OUI */
+./wpa_auth_glue.c:#ifdef CONFIG_PASN_AP
+./wpa_auth_glue.c:#endif /* CONFIG_PASN_AP */
+./wpa_auth_glue.c:#ifndef CONFIG_NO_VLAN
+./wpa_auth_glue.c:#endif /* CONFIG_NO_VLAN */
+./wpa_auth_glue.c:#ifdef CONFIG_OCV
+./wpa_auth_glue.c:#endif /* CONFIG_OCV */
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_glue.c:#ifdef CONFIG_PASN_AP
+./wpa_auth_glue.c:#endif /* CONFIG_PASN_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_OCV
+./wpa_auth_glue.c:#endif /* CONFIG_OCV */
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_FULL_HOSTAPD
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211W_AP
+./wpa_auth_glue.c:#ifdef CONFIG_OCV
+./wpa_auth_glue.c:#endif /* CONFIG_OCV */
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211R_AP */
+./wpa_auth_glue.c:#ifdef CONFIG_IEEE80211R_AP
+./wpa_auth_glue.c:#endif /* CONFIG_IEEE80211R_AP */
+./wmm.c:#ifndef CONFIG_NO_STDOUT_DEBUG
+./airtime_policy.h:#ifdef CONFIG_AIRTIME_POLICY_AP
+./airtime_policy.h:#else /* CONFIG_AIRTIME_POLICY_AP */
+./airtime_policy.h:#endif /* CONFIG_AIRTIME_POLICY_AP */
+./fils_hlp.h:#ifdef CONFIG_FILS_AP
+./fils_hlp.h:#else /* CONFIG_FILS_AP */
+./fils_hlp.h:#endif /* CONFIG_FILS_AP */

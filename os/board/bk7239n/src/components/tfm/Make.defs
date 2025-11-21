@@ -1,0 +1,64 @@
+###########################################################################
+#
+# Copyright 2025 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+#ifeq ($(CONFIG_TFM), y)
+
+# Add the TFM C files to the build
+CSRCS += tfm_ns_interface.c
+CSRCS += tfm_psa_ns_api.c
+
+tfm_psa_ns_api.o: tfm
+tfm_ns_interface.o: tfm
+
+#ifeq ($(CONFIG_TFM_CRYPTO), y)
+tfm_crypto_ipc_api.o: tfm
+tfm_ps_ipc_api.o: tfm
+#endif
+
+# Add the TFM include directories to the build
+CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/interface/include
+CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/secure_fw/include
+CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/generated/interface/include
+
+# Add system clock API if configured
+ifeq ($(CONFIG_TFM_SYSTEM_CLOCK), y)
+CSRCS += tfm_system_clock_ipc_api.c
+endif
+
+# Add firmware update API if configured
+ifeq ($(CONFIG_TFM_FWU), y)
+CSRCS += tfm_firmware_update_ipc_api.c
+endif
+
+# Add crypto API if configured
+ifeq ($(CONFIG_TFM_CRYPTO), y)
+CSRCS += tfm_crypto_ipc_api.c
+endif
+
+# Add protected storage API if configured
+ifeq ($(CONFIG_TFM_PS), y)
+CSRCS += tfm_ps_ipc_api.c
+endif
+
+# Add the TFM component directory to the build
+
+DEPPATH += --dep-path components/tfm/tfm/interface/src
+VPATH += :components/tfm
+VPATH += :components/tfm/tfm/interface/src/
+
+#endif

@@ -1,0 +1,43 @@
+menu "PWM"
+	config PWM
+		bool "Enable pwm"
+		default y
+
+	choice PWM_VERSION
+		prompt "ASIC PWM IP Version"
+		default PWM_V1PX
+
+		config PWM_V1PX
+			bool "PWM_V1PX"
+			help
+			    "ASIC PWM IP Version V1P1:BK7236XX...,the chips MP after 2023-04"
+
+		config PWM_V2P2
+			bool "PWM_V2P2"
+			help
+				ASIC PWM Version ID: V2.2
+	endchoice
+
+	config PWM_PM_CB_SUPPORT
+		bool "PWM PM Support"
+		default n
+
+	config PWM_PHASE_SHIFT
+		bool "PWM phase shift Support"
+		default n
+
+	config PWM_FADE
+		bool "PWM fade mode support"
+		default n
+
+	config PWM_TEST
+		depends on PWM && DRIVER_TEST
+		bool "Enable pwm test"
+		default y
+
+	config PWM_API_TEST
+		depends on PWM && DRIVER_TEST
+		bool "Enable pwm api test"
+		default n
+endmenu
+

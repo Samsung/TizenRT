@@ -1,0 +1,6 @@
+menu "CALENDAR"
+	config CALENDAR
+		bool "Enable CALENDAR"
+		default n
+endmenu
+	

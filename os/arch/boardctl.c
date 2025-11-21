@@ -67,6 +67,9 @@
 #include <tinyara/board.h>
 #include <tinyara/arch.h>
 
+extern void set_ble_log_level(uint32_t level);
+extern void set_wifi_log_level(uint32_t level);
+
 #ifdef CONFIG_LIB_BOARDCTL
 /****************************************************************************
  * Public Functions
@@ -170,6 +173,18 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 	 */
 	case BOARDIOC_UNIQUEID:
 		ret = board_uniqueid((FAR uint8_t *)arg);
+		break;
+#endif
+
+#ifdef CONFIG_BOARDCTL_LOG_SET
+	case BOARDIOC_BLE_LOG_SET:
+		lldbg("ble log set, level = %u\n", (uint32_t)arg);
+		set_ble_log_level((uint32_t)arg);
+		break;
+
+	case BOARDIOC_WIFI_LOG_SET:
+		lldbg("wifi log set, level = %u\n", (uint32_t)arg);
+		set_wifi_log_level((uint32_t)arg);
 		break;
 #endif
 

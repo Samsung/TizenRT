@@ -1,0 +1,14 @@
+The source codes under this folder are copied from:
+https://github.com/ARM-software/CMSIS_5.git, tag 5.5.0, without modifications.
+
+The prebuilt libraries have two versions:
+ - v5.5.0 for ARMCLANG and GCC compilers
+ - v5.7.0 for IAR compiler
+
+The v5.7.0 libraries for ARMCLANG and GCC have linking issues on Musca_A and
+AN524. So libraries for these two compilers keep using v5.5.0 which has been
+tested and verified.
+
+The IAR libraries of v5.5.0 has a problem and has been updated in CMSIS_5 5.7.0.
+So IAR libraries use v5.7.0.
+

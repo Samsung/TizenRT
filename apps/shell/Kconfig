@@ -36,6 +36,13 @@ config TASH_REBOOT
 	---help---
 		Enable 'reboot' command in TASH.
 
+config TASH_LOG_SET
+	bool "Enable 'logset' series commands in TASH"
+	default n
+	depends on BOARDCTL_LOG_SET
+	---help---
+		Enable 'logset' series commands in TASH.
+
 config TASH_COMMAND_INTERFACE
 	bool "enable command interface to TASH"
 	default n

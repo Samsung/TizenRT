@@ -2,7 +2,6 @@
 Make.dep
 .built
 *.o
-*.a
 *.d
 *.i
 *~
