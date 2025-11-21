@@ -122,6 +122,8 @@
  */
 
 #define BOARDIOC_USER              _BOARDIOC(0x000d)
+#define BOARDIOC_BLE_LOG_SET       _BOARDIOC(0x000e)
+#define BOARDIOC_WIFI_LOG_SET      _BOARDIOC(0x000f)
 
 /****************************************************************************
  * Public Data
