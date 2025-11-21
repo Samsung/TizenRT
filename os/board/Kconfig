@@ -333,6 +333,12 @@ config BOARDCTL_UNIQUEID_SIZE
 		Provides the size of the memory buffer that must be provided by the
 		caller of board_uniqueid() in which to receive the board unique ID.
 
+config BOARDCTL_LOG_SET
+	bool "Set Log print level"
+	default n
+	---help---
+		Set Log print level
+
 endif # LIB_BOARDCTL
 
 config BOARD_FOTA_SUPPORT
