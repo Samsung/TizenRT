@@ -347,6 +347,37 @@ config DEBUG_BLE_INFO
 
 endif #DEBUG_BLE
 
+config DEBUG_SMP
+        bool "SMP Debug Feature"
+        default n
+        ---help---
+                Enable smp debug Feature.
+
+if DEBUG_SMP
+
+config DEBUG_SMP_ERROR
+        bool "SMP Error Output"
+        default n
+        depends on DEBUG_ERROR
+        ---help---
+                Enable smp error debug output.
+
+config DEBUG_SMP_WARN
+        bool "SMP Warning Output"
+        default n
+        depends on DEBUG_WARN
+        ---help---
+                Enable smp warning debug output.
+
+config DEBUG_SMP_INFO
+        bool "SMP Infomational Debug Output"
+        default n
+        depends on DEBUG_VERBOSE
+        ---help---
+                Enable smp informational debug output.
+
+endif #DEBUG_SMP
+
 config DEBUG_PM
 	bool "Power Management Debug Features"
 	default n

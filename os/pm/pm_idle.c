@@ -113,8 +113,8 @@ static int disable_secondary_cpus(void)
 	/* Send signal to shutdown other cores here */
 	for (int cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
 		if (up_get_cpu_state(cpu) == CPU_RUNNING) {
-			if (up_cpu_hotplug(cpu) != OK) {
-				pmllvdbg("CPU%d hotplug failed! Unable to shutdown secondary core for sleep mode\n", cpu);
+			if (up_cpu_off(cpu) != OK) {
+				pmllvdbg("CPU%d shutdown failed! Unable to shutdown secondary core for sleep mode\n", cpu);
 				return ERROR;
 			}
 		}
