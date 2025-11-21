@@ -347,6 +347,9 @@ extern volatile cpu_set_t g_cpu_lockset;
 
 extern volatile spinlock_t g_cpu_tasklistlock;
 
+/* Global variable to track active CPUs */
+extern cpu_set_t g_active_cpus_mask;
+
 #endif /* CONFIG_SMP */
 
 /****************************************************************************
@@ -397,6 +400,10 @@ int  sched_pause_cpu(FAR struct tcb_s *tcb);
 
 #  define sched_islocked_global() spin_islocked(&g_cpu_schedlock)
 #  define sched_islocked_tcb(tcb) sched_islocked_global()
+
+#ifdef CONFIG_SCHED_MIGRATE
+int sched_migrate_tasks(int offline_cpu);
+#endif
 
 #else
 #  define sched_select_cpu(a)     (0)
