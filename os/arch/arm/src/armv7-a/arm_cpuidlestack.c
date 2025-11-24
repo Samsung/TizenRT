@@ -86,7 +86,7 @@ static const uint32_t *g_cpu_stackalloc[CONFIG_SMP_NCPUS] = {
  * Description:
  *   Allocate a stack for the CPU[n] IDLE task (n > 0) if appropriate and
  *   setup up stack-related information in the IDLE task's TCB.  This
- *   function is always called before up_cpu_start().  This function is
+ *   function is always called before up_cpu_on().  This function is
  *   only called for the CPU's initial IDLE task; up_create_task is used for
  *   all normal tasks, pthreads, and kernel threads for all CPUs.
  *
@@ -94,12 +94,12 @@ static const uint32_t *g_cpu_stackalloc[CONFIG_SMP_NCPUS] = {
  *   in different wans in different environments:
  *
  *   1. The CPU may already have been started and waiting in a low power
- *      state for up_cpu_start().  In this case, the IDLE thread's stack
+ *      state for up_cpu_on().  In this case, the IDLE thread's stack
  *      has already been allocated and is already in use.  Here
  *      up_cpu_idlestack() only has to provide information about the
  *      already allocated stack.
  *
- *   2. The CPU may be disabled but started when up_cpu_start() is called.
+ *   2. The CPU may be disabled but started when up_cpu_on() is called.
  *      In this case, a new stack will need to be created for the IDLE
  *      thread and this function is then equivalent to:
  *
