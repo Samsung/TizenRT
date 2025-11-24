@@ -172,7 +172,7 @@ void arm_cpu_boot(int cpu)
 #endif
 
   /* The next thing that we expect to happen is for logic running on CPU0
-   * to call up_cpu_start() which generate an SGI and a context switch to
+   * to call up_cpu_on() which generate an SGI and a context switch to
    * the configured NuttX IDLE task.
    */
 

@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-a/arm_cpustart.c
+ * arch/arm/src/armv7-a/arm_cpuon.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -139,13 +139,18 @@ int arm_start_handler(int irq, void *context, void *arg)
 }
 
 /****************************************************************************
- * Name: up_cpu_start
+ * Name: up_cpu_on
  *
  * Description:
  *   In an SMP configuration, only one CPU is initially active (CPU 0).
  *   System initialization occurs on that single thread. At the completion of
  *   the initialization of the OS, just before beginning normal multitasking,
  *   the additional CPUs would be started by calling this function.
+ *
+ *   This function performs the complete CPU startup sequence by powering on
+ *   the CPU, booting the secondary core, and integrating it back into the
+ *   SMP system. The CPU will be marked as running and can participate in
+ *   task scheduling.
  *
  *   Each CPU is provided the entry point to its IDLE task when started.  A
  *   TCB for each CPU's IDLE task has been initialized and placed in the
@@ -163,27 +168,48 @@ int arm_start_handler(int irq, void *context, void *arg)
  * Returned Value:
  *   Zero on success; a negated errno value on failure.
  *
+ * Assumptions:
+ *   - Called from a different CPU than the target
+ *   - Target CPU is currently powered off and can be safely started
+ *   - System is in a state to safely bring additional CPU online
+ *
  ****************************************************************************/
 
-int up_cpu_start(int cpu)
+int up_cpu_on(int cpu)
 {
-	svdbg("Starting CPU%d\n", cpu);
+	int ret ;
+
+	smpvdbg("Starting CPU%d\n", cpu);
 
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
+#ifdef CONFIG_CPU_HOTPLUG
+	if (up_get_cpu_state(cpu) == CPU_HOTPLUG) {
+		ret = up_cpu_up(cpu);
+		if (ret < 0) {
+			smpdbg("Failed to boot the secondary core CPU%d\n", cpu);
+			return ret;
+		}
+	}
+#endif
+
 #ifdef CONFIG_SCHED_INSTRUMENTATION
 	/* Notify of the start event */
-
 	sched_note_cpu_start(this_task(), cpu);
 #endif
 
 #ifdef CONFIG_CPU_HOTPLUG
-  up_set_cpu_state(cpu, CPU_RUNNING);
+	up_set_cpu_state(cpu, CPU_RUNNING);
 #endif
 
-  /* Execute SGI1 */
+	/* Execute SGI1 */
+	ret = arm_cpu_sgi(GIC_IRQ_SGI1, (1 << cpu));
+	if (ret < 0) {
+		smpdbg("Failed to execute SGI1 for CPU%d", cpu);
+		return ret;
+	}
 
-	return arm_cpu_sgi(GIC_IRQ_SGI1, (1 << cpu));
+	return OK;
 }
 
 #endif							/* CONFIG_SMP */

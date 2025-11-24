@@ -118,7 +118,7 @@ int os_smp_start(void)
 	for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
 		/* Start the CPU */
 
-		ret = up_cpu_start(cpu);
+		ret = up_cpu_on(cpu);
 		if (ret < 0) {
 			sdbg("ERROR: Failed to start CPU%d: %d\n", cpu, ret);
 			return ret;
