@@ -17,5 +17,5 @@
 ###########################################################################
 
 ifeq ($(CONFIG_EXAMPLES_PLAYERCONTROLLER),y)
-MOD_CXXSRCS += playercontroller_main.cpp
+CONFIGURED_APPS += examples/SoundPlayer/controller
 endif

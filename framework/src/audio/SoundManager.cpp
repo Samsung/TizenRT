@@ -17,9 +17,8 @@
  ****************************************************************************/
 
 #include <audio/SoundManager.h>
-#include <audio_manager.h>
-#include <debug.h>
 #include <audio/audio_manager.h>
+#include <debug.h>
 #include <PlayerObserverWorker.h>
 #include <RecorderObserverWorker.h>
 #include <list>
@@ -162,7 +161,7 @@ bool setMicUnmute(void)
 	}
 
 	int8_t volume = AUDIO_DEVICE_UNMUTE_VALUE;
-	res = get_input_audio_gain(&volume);
+	res = get_input_audio_gain(reinterpret_cast<uint8_t*>(&volume));
 	if (res != AUDIO_MANAGER_SUCCESS && res != AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
 		return false;
 	}
@@ -185,12 +184,12 @@ bool setStreamMute(stream_policy_t stream_policy, bool mute)
 		volume = AUDIO_DEVICE_MUTE_VALUE;
 	} else if (stream_policy == STREAM_TYPE_VOICE_RECORD) {
 		volume = AUDIO_DEVICE_UNMUTE_VALUE;
-		res = get_input_audio_gain(&volume);
+		res = get_input_audio_gain(reinterpret_cast<uint8_t*>(&volume));
 		if (res != AUDIO_MANAGER_SUCCESS && res != AUDIO_MANAGER_DEVICE_NOT_SUPPORT) {
 			return false;
 		}
 	} else {
-		res = get_output_stream_volume(&volume, stream_policy);
+		res = get_output_stream_volume(reinterpret_cast<uint8_t*>(&volume), stream_policy);
 		if (res != AUDIO_MANAGER_SUCCESS) {
 			meddbg("get_output_stream_volume failed stream_policy : %d, ret : %d\n", stream_policy, res);
 			return false;
@@ -232,4 +231,3 @@ bool enableDMIC(bool enable)
 	}
 	return true;
 }
-
