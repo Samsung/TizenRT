@@ -386,6 +386,12 @@ def make_resource_binary_header():
     SIZE_OF_HEADERSIZE = 2
     SIZE_OF_BINVER = 4
     SIZE_OF_BINSIZE = 4
+    
+    # Below logic need to be improved, If block size is very huge, then this is critical overhead, header size is very small
+    # If possible, it seems better to create the file and write the header information before creating the romfs binary.
+    use_nand_ext = util.get_value_from_file(cfg_path, "CONFIG_MTD_NAND_ERASE_SIZE=").replace('\n','')
+    if use_nand_ext == 'y' : 
+        SIZE_OF_TOTAL = 131072
 
     # Calculate binary header size
     header_size = SIZE_OF_HEADERSIZE + SIZE_OF_BINVER + SIZE_OF_BINSIZE
