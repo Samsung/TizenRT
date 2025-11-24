@@ -40,7 +40,10 @@ struct bledev *bledev_register(struct trble_ops *ops);
 trble_result_e ble_drv_init(trble_server_init_config *server, trble_queue *scan_queue);
 trble_result_e ble_drv_deinit(void);
 trble_result_e ble_drv_get_mac_addr(uint8_t mac[TRBLE_BD_ADDR_MAX_LEN]);
+trble_result_e ble_drv_passkey_confirm(uint8_t *conn_handle, uint8_t *confirm);
+trble_result_e ble_drv_start_bond(trble_conn_handle *conn_handle);
 trble_result_e ble_drv_get_bonded_device(trble_bonded_device_list_s *device_list, uint16_t *device_count);
+trble_result_e ble_drv_set_sec_param(trble_sec_param *sec_param);
 trble_result_e ble_drv_delete_bonded(trble_addr *addr);
 trble_result_e ble_drv_delete_bonded_all(void);
 trble_result_e ble_drv_conn_is_active(trble_conn_handle con_handle, bool *is_active);
@@ -49,6 +52,7 @@ trble_result_e ble_drv_conn_param_update(trble_conn_handle *con_handle, trble_co
 trble_result_e ble_drv_ioctl(trble_msg_s *msg);
 
 /*** Scanner(Observer) ***/
+trble_result_e ble_drv_set_scan(uint16_t scan_interval, uint16_t scan_window, trble_scan_type scan_type);
 trble_result_e ble_drv_start_scan(trble_scan_filter *filter);
 trble_result_e ble_drv_stop_scan(void);
 trble_result_e ble_drv_scan_whitelist_add(trble_addr *addr);
@@ -62,22 +66,26 @@ trble_result_e ble_drv_client_disconnect_all(void);
 trble_result_e ble_drv_connected_device_list(trble_connected_list *out_connected_list);
 trble_result_e ble_drv_connected_info(trble_conn_handle conn_handle, trble_device_connected *out_connected_device);
 trble_result_e ble_drv_operation_enable_notification(trble_operation_handle *handle);
+trble_result_e ble_drv_operation_enable_indication(trble_operation_handle *handle);
+trble_result_e ble_drv_operation_enable_notification_and_indication(trble_operation_handle *handle);
 trble_result_e ble_drv_operation_read(trble_operation_handle *handle, trble_data *out_data);
 trble_result_e ble_drv_operation_write(trble_operation_handle *handle, trble_data *in_data);
 trble_result_e ble_drv_operation_write_no_response(trble_operation_handle *handle, trble_data *in_data);
+trble_result_e ble_drv_get_write_read_pending_cnt(trble_conn_handle *handle, uint8_t *count);
 
 /*** Peripheral(Server) ***/
 trble_result_e ble_drv_set_server_config(trble_server_init_config *server_config);
 trble_result_e ble_drv_get_profile_count(uint16_t *count);
 trble_result_e ble_drv_charact_notify(trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
 trble_result_e ble_drv_charact_indicate(trble_attr_handle attr_handle, trble_conn_handle con_handle, trble_data *data);
+trble_result_e ble_drv_get_indicate_pending_cnt(trble_conn_handle *conn_handle, uint8_t *indicate_count);
 trble_result_e ble_drv_attr_set_data(trble_attr_handle attr_handle, trble_data *data);
 trble_result_e ble_drv_attr_get_data(trble_attr_handle attr_handle, trble_data *data);
 trble_result_e ble_drv_attr_reject(trble_attr_handle attr_handle, uint8_t app_errorcode);
 trble_result_e ble_drv_server_disconnect(trble_conn_handle con_handle);
 trble_result_e ble_drv_get_mac_addr_by_conn_handle(trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e ble_drv_get_conn_handle_by_addr(uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
-trble_result_e ble_drv_set_device_name(uint8_t* name);
+trble_result_e ble_drv_set_device_name(uint8_t *name);
 
 /*** Advertiser(Broadcaster) ***/
 trble_result_e ble_drv_set_adv_data(trble_data *data);
@@ -91,3 +99,19 @@ trble_result_e ble_drv_one_shot_adv_init(void);
 trble_result_e ble_drv_one_shot_adv_deinit(void);
 trble_result_e ble_drv_one_shot_adv_set(uint8_t *adv_id, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t *type);
 trble_result_e ble_drv_one_shot_adv(uint8_t adv_id);
+trble_result_e ble_drv_create_multi_adv(uint8_t adv_event_prop, uint32_t *primary_adv_interval, uint8_t own_addr_type, uint8_t *own_addr_val, uint8_t *adv_handle);
+trble_result_e ble_drv_delete_multi_adv(uint8_t adv_handle);
+trble_result_e ble_drv_set_multi_adv_data(uint8_t adv_handle, uint8_t adv_data_len, uint8_t *ext_adv_data);
+trble_result_e ble_drv_set_multi_resp_data(uint8_t adv_handle, uint8_t adv_data_len, uint8_t *ext_adv_data);
+trble_result_e ble_drv_start_multi_adv(uint8_t adv_handle);
+trble_result_e ble_drv_stop_multi_adv(uint8_t adv_handle);
+
+/*** LECOC ***/
+trble_result_e ble_drv_le_coc_init(trble_le_coc_init_config *le_coc);
+trble_result_e ble_drv_coc_register_psm(uint8_t is_reg, uint16_t psm);
+trble_result_e ble_drv_coc_set_psm_security(uint16_t le_psm, uint8_t active, uint8_t sec_mode, uint8_t key_size);
+trble_result_e ble_drv_coc_set_param(uint16_t value);
+trble_result_e ble_drv_coc_get_param(uint8_t param_type, uint16_t cid, uint16_t *value);
+trble_result_e ble_drv_coc_connect(uint16_t conn_handle, uint16_t le_psm);
+trble_result_e ble_drv_coc_disconnect(uint16_t cid);
+trble_result_e ble_drv_coc_send(uint16_t is_reg, uint16_t len, uint8_t *data);
