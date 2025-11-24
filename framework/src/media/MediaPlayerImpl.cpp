@@ -966,7 +966,7 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 {
 	va_list ap;
 	va_start(ap, cmd);
-	meddbg("%s cmd : %d\n", __func__, cmd);
+	medvdbg("%s cmd : %d\n", __func__, cmd);
 
 	if (mPlayerObserver != nullptr) {
 		switch (cmd) {
