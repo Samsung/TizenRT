@@ -7,5 +7,12 @@ config FS_LITTLEFS
 	bool "LITTLEFS File System"
 	default n
 	depends on !DISABLE_MOUNTPOINT
+	select MTD_NAND_ERASE_SIZE
 	---help---
 		Build the LITTLEFS file system. https://github.com/ARMmbed/littlefs.
+
+config MTD_NAND_ERASE_SIZE
+	bool "set NAND ERASE SIZE"
+	default n
+	---help---
+		Change the header size of resource partition to the appropriate size for nand at build.
