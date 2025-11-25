@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include "ble_queue.h"
 
@@ -32,7 +34,6 @@ static void *_ble_evt_handler(void)
 	int err_no;
 	ble_queue *q;
 
-	sem_init(&g_q_grp->countsem, 0, 0);
 	while (g_run_process) {
 		if (sem_wait(&g_q_grp->countsem) < 0) {
 			err_no = get_errno();
@@ -67,7 +68,6 @@ static void *_ble_evt_handler(void)
 			}
 		}
 	}
-	sem_destroy(&g_q_grp->countsem);
 
 	return 0;
 }
@@ -79,7 +79,7 @@ ble_queue_ret_e ble_queue_init(queue_event_caller caller)
 	}
 
 	if (g_q_grp == NULL) {
-		g_q_grp = (ble_queue_group *)zalloc(sizeof(ble_queue_group));
+		g_q_grp = (ble_queue_group *)calloc(1, sizeof(ble_queue_group));
 		if (g_q_grp == NULL) {
 			return BLE_QUEUE_MEM_ALLOC_FAIL;
 		}
@@ -98,9 +98,11 @@ ble_queue_ret_e ble_queue_init(queue_event_caller caller)
 			printf("[BLEQUEUE] pthread_attr_setstacksize failed, status=%d\n", __func__, ret);
 		}
 
+		sem_init(&g_q_grp->countsem, 0, 0);
 		ret = pthread_create(&g_q_grp->thread, &attr, (pthread_startroutine_t)_ble_evt_handler, NULL);
 		if (ret < 0) {
 			printf("[BLEQUEUE] create task fail\n");
+			sem_destroy(&g_q_grp->countsem);
 			g_q_grp->caller = NULL;
 			g_run_process = 0;
 			free(g_q_grp);
@@ -123,6 +125,7 @@ ble_queue_ret_e ble_queue_deinit(void)
 		g_run_process = 0;
 		sem_post(&g_q_grp->countsem);
 		pthread_join(g_q_grp->thread, NULL);
+		sem_destroy(&g_q_grp->countsem);
 		for (i = 0; i < BLE_QUEUE_EVT_PRI_MAX; i++) {
 			ble_queue *q = &g_q_grp->q[i];
 			if (q->queue != NULL) {
