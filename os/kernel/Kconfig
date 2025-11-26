@@ -339,6 +339,14 @@ config SCHED_MIGRATE
 		This feature allows tasks to be moved from an to-be offline CPU to other 
 		available CPUs.
 
+config CPU_MANAGER
+	bool "CPU Manager"
+	default n
+	---help---
+		Enable the CPU Manager module which provides a centralized
+		interface for handling CPU on and off operations both from user
+		applications (via CPU driver) and from the PM idle logic.
+
 config SMP_NCPUS
 	int "Number of CPUs"
 	default 4
