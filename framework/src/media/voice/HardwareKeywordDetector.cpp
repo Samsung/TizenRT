@@ -176,6 +176,16 @@ void HardwareKeywordDetector::registerKeywordResultCallback(SpeechResultListener
 	mSpeechResultCallback = speechResultCallback;
 }
 
+bool HardwareKeywordDetector::changeKeywordModel(uint8_t model)
+{
+	audio_manager_result_t result = set_keyword_model(model);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("change keyword model failed : %d\n", result);
+		return false;
+	}
+	return true;
+}
+
 bool HardwareKeywordDetector::getKeywordBufferSize(uint32_t *bufferSize)
 {
 	if (bufferSize == NULL) {

@@ -390,6 +390,20 @@ void SpeechDetectorImpl::resetEndPointDetectorPtr(void)
 	mEndPointDetector = nullptr;
 }
 
+bool SpeechDetectorImpl::changeKeywordModel(uint8_t model)
+{
+	if (mKeywordDetector == nullptr) {
+		meddbg("keyword detector is not init\n");
+		return false;
+	}
+	if (mKeywordDetector->changeKeywordModel(model) == false) {
+		meddbg("model change failed\n");
+		return false;
+	}
+	medvdbg("changed kd model : %d\n", model);
+	return true;
+}
+
 bool SpeechDetectorImpl::getKeywordBufferSize(uint32_t *bufferSize)
 {
 	if (mKeywordDetector == nullptr) {

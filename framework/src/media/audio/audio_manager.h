@@ -853,6 +853,20 @@ audio_manager_result_t get_stream_in_id(int *card_id, int *device_id);
 audio_manager_result_t get_stream_out_id(int *card_id, int *device_id);
 
 /****************************************************************************
+ * Name: set_keyword_model
+ *
+ * Description:
+ *   set keyword detection model based on model number
+ *
+ * Input parameter:
+ *   model : number of model to be changed 
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t set_keyword_model(uint8_t model);
+
+/****************************************************************************
  * Name: get_keyword_buffer_size
  *
  * Description:

@@ -49,6 +49,7 @@ public:
 	bool stopEndPointDetect(void) override;
 	bool getKeywordBufferSize(uint32_t *bufferSize) override;
 	bool getKeywordData(uint8_t *buffer) override;
+	bool changeKeywordModel(uint8_t model) override;
 	static void speechResultListener(audio_device_process_unit_subtype_e event);
 
 private:
