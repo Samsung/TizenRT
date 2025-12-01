@@ -136,6 +136,8 @@ public:
 
 	virtual bool getKeywordData(uint8_t *buffer) = 0;
 
+	virtual bool changeKeywordModel(uint8_t model) = 0;
+
 protected:
 	SpeechDetector() = default;
 };

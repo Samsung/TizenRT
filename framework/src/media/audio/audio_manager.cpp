@@ -3122,6 +3122,32 @@ audio_manager_result_t get_stream_out_policy(stream_policy_t *policy)
 	return get_stream_policy(policy, OUTPUT);
 }
 
+audio_manager_result_t set_keyword_model(uint8_t model)
+{
+	audio_card_info_t *card;
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	int fd;
+	if (g_actual_audio_in_card_id < 0) {
+		meddbg("card id is not valid\n");
+		return AUDIO_MANAGER_INVALID_DEVICE;
+	}
+	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	get_card_path(path, card->card_id, card->device_id, INPUT);
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		meddbg("card open fail.. path : %s errno : %d\n", path, errno);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	if (ioctl(fd, AUDIOIOC_CHANGEKD, (unsigned long)model) < 0) {
+		meddbg("change kd model failed. errno : %d\n", errno);
+		close(fd);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	close(fd);
+	return AUDIO_MANAGER_SUCCESS;
+
+}
+
 audio_manager_result_t get_keyword_buffer_size(uint32_t *keywordBufferSize)
 {
 	audio_card_info_t *card;

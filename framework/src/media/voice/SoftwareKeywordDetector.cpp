@@ -54,6 +54,11 @@ void SoftwareKeywordDetector::registerKeywordResultCallback(SpeechResultListener
 	mSpeechResultCallback = speechResultCallback;
 }
 
+bool SoftwareKeywordDetector::changeKeywordModel(uint8_t model)
+{
+	return false;
+}
+
 bool SoftwareKeywordDetector::getKeywordBufferSize(uint32_t *bufferSize)
 {
 	return false;
