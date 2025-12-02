@@ -46,7 +46,8 @@
  *
  *   IMPORTANT: This function must be called from a running CPU (e.g., CPU0)
  *   The caller must ensure preemption is locked or this is called
- *   in a context where it cannot be preempted.
+ *   in a context where it cannot be preempted. And the cpu from which the
+ *   tasks need to be migrated should cleared from the g_active_cpus_mask.
  *
  * Inputs:
  *   offline_cpu - The index of the CPU that needs to be shut down.
@@ -75,6 +76,11 @@ int sched_migrate_tasks(int offline_cpu)
 		return -EINVAL;
 	}
 
+	if (CPU_ISSET(offline_cpu, &g_active_cpus_mask)) {
+		slldbg("ERROR: CPU_%d is not cleared from the active cpus mask\n", offline_cpu);
+		return -EINVAL;
+	}
+
 	/* Lock the scheduler to prevent preemption during this operation.
 	 * This ensures that no other tasks can be scheduled while we're
 	 * migrating tasks from the offline CPU.
@@ -83,9 +89,6 @@ int sched_migrate_tasks(int offline_cpu)
 
 	/* Disable interrupts to ensure atomicity throughout this critical operation. */
 	flags = enter_critical_section();
-
-	/* Update the active CPUs mask to indicate that the offline CPU is no longer active */
-	CPU_CLR(offline_cpu, &g_active_cpus_mask);
 
 	/* Get the list of tasks assigned to the offline CPU.
 	 * We need to lock the task list to prevent concurrent access, though
