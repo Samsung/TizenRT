@@ -98,7 +98,7 @@ int pthread_key_create(FAR pthread_key_t *key, pthread_destructor_t destructor)
 	DEBUGASSERT(group);
 
 	if (!key) {
-		return -EINVAL;
+		return EINVAL;
 	}
 
 	/* Find free key */

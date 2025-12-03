@@ -206,8 +206,6 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	int err;
 	int ret;
 
-	DEBUGASSERT(stat_loc);
-
 	/* None of the options are supported */
 
 	if (options != 0) {
@@ -313,12 +311,6 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 	sigset_t sigset;
 	int err;
 	int ret;
-
-	DEBUGASSERT(stat_loc);
-	if (!stat_loc) {
-		set_errno(EINVAL);
-		return ERROR;
-	}
 
 	/* None of the options are supported */
 
@@ -427,7 +419,9 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 				/* The child has exited. Return the saved exit status */
 
-				*stat_loc = child->ch_status << 8;
+				if (stat_loc != NULL) {
+					*stat_loc = child->ch_status << 8;
+				}
 
 				/* Discard the child entry and break out of the loop */
 
@@ -450,7 +444,9 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 			if ((child->ch_flags & CHILD_FLAG_EXITED) != 0) {
 				/* The child has exited. Return the saved exit status */
 
-				*stat_loc = child->ch_status << 8;
+				if (stat_loc != NULL) {
+					*stat_loc = child->ch_status << 8;
+				}
 
 				/* Discard the child entry and break out of the loop */
 
@@ -510,7 +506,10 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 		if (info.si_signo == SIGCHLD && (pid == (pid_t)-1 || info.si_pid == pid)) {
 			/* Yes... return the status and PID (in the event it was -1) */
 
-			*stat_loc = info.si_status << 8;
+			if (stat_loc != NULL) {
+				*stat_loc = info.si_status << 8;
+			}
+
 			pid = info.si_pid;
 			break;
 		}
