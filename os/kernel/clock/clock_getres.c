@@ -108,7 +108,8 @@ int clock_getres(clockid_t clock_id, struct timespec *res)
 	int ret = OK;
 
 	if (!res) {
-		return -EINVAL;
+		set_errno(EINVAL);
+		return ERROR;
 	}
 
 	svdbg("clock_id=%d\n", clock_id);

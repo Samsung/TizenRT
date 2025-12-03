@@ -114,7 +114,8 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp)
 	int ret = OK;
 
 	if (!tp) {
-		return -EINVAL;
+		set_errno(EINVAL);
+		return ERROR;
 	}
 
 	svdbg("clock_id=%d\n", clock_id);
