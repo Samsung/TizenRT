@@ -1567,14 +1567,6 @@ struct mbedtls_ssl_config {
     const char **MBEDTLS_PRIVATE(alpn_list);         /*!< ordered list of protocols          */
 #endif
 
-#if defined(MBEDTLS_SSL_CLIENT_RPK)
-    unsigned int client_rpk : 1;   /*!< use client RPK?                     */
-#endif
-
-#if defined(MBEDTLS_SSL_SERVER_RPK)
-    unsigned int server_rpk : 1;   /*!< use server RPK?                     */
-#endif
-
 #if defined(MBEDTLS_SSL_DTLS_SRTP)
     /*! ordered list of supported srtp profile */
     const mbedtls_ssl_srtp_profile *MBEDTLS_PRIVATE(dtls_srtp_profile_list);

@@ -52,26 +52,6 @@
 #define MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
 #endif
 
-/**
- * \def MBEDTLS_SSL_CLIENT_RPK
- *
- * Enable support for RFC 7250 Using Raw Public Keys in Transport Layer
- * Security (TLS) and Datagram Transport Layer Security (DTLS) (client-side)
- *
- * Comment this macro to disable support for RPK.
- */
-#define MBEDTLS_SSL_CLIENT_RPK
-
-/**
- * \def MBEDTLS_SSL_SERVER_RPK
- *
- * Enable support for RFC 7250 Using Raw Public Keys in Transport Layer
- * Security (TLS) and Datagram Transport Layer Security (DTLS) (server-side)
- *
- * Comment this macro to disable support for RPK.
- */
-#define MBEDTLS_SSL_SERVER_RPK
-
 
 /**
  * \def MBEDTLS_LIGHT_DEVICE
