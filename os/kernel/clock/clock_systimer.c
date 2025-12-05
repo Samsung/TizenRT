@@ -126,17 +126,21 @@ clock_t clock_systimer(void)
 #endif							/* CONFIG_SYSTEM_TIME64 */
 #else							/* CONFIG_SCHED_TICKLESS */
 #ifdef CONFIG_SYSTEM_TIME64
+	uint32_t high;
+	uint32_t low;
+	uint32_t high_check;
+	volatile uint32_t *addr;
 
-	irqstate_t flags;
-	clock_t sample;
+	addr = (uint32_t *)&g_system_timer;
+	high = addr[1];
 
 	/* 64-bit accesses are not atomic on most architectures. */
-
-	flags  = enter_critical_section();
-	sample = g_system_timer;
-	leave_critical_section(flags);
-	return sample;
-
+	do {
+		high_check = high;
+		low = addr[0];
+		high = addr[1];
+	} while (high != high_check);
+	return ((uint64_t)high << 32) | low;
 #else							/* CONFIG_SYSTEM_TIME64 */
 
 	/* Return the current system time */
