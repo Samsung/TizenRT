@@ -91,6 +91,7 @@ struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_get_disconn_reason,           /* get_deauth_reason */
 	wifi_netmgr_utils_get_driver_info,                      /* get_driver_info */
 	wifi_netmgr_utils_get_wpa_supplicant_state,     /* get_wpa_supplicant_state */
+	NULL,	/* disable_11ax_mode */
 };
 
 static trwifi_scan_list_s *g_scan_list;

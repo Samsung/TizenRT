@@ -70,6 +70,7 @@ trwifi_result_e wifi_netmgr_utils_get_signal_quality(struct netdev *dev, trwifi_
 trwifi_result_e wifi_netmgr_utils_get_disconn_reason(struct netdev *dev, int *deauth_reason);
 trwifi_result_e wifi_netmgr_utils_get_driver_info(struct netdev *dev, trwifi_driver_info *driver_info);
 trwifi_result_e wifi_netmgr_utils_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
+trwifi_result_e wifi_netmgr_utils_disable_11ax_mode(struct netdev *dev, uint8_t disable);
 trwifi_result_e wifi_netmgr_utils_set_bridge(struct netdev *dev, uint8_t control);
 void print_scan_result(rtw_scan_result_t *record);
 
@@ -91,7 +92,10 @@ struct trwifi_ops g_trwifi_drv_ops = {
 	wifi_netmgr_utils_get_disconn_reason,		/* get_deauth_reason */
 	wifi_netmgr_utils_get_driver_info,			/* get_driver_info */
 	wifi_netmgr_utils_get_wpa_supplicant_state,	/* get_wpa_supplicant_state */
+	wifi_netmgr_utils_disable_11ax_mode,	/* disable_11ax_mode */
+#ifdef CONFIG_ENABLE_HOMELYNK
 	wifi_netmgr_utils_set_bridge,		/* set_bridge */
+#endif //#ifdef CONFIG_ENABLE_HOMELYNK
 };
 
 static trwifi_scan_list_s *g_scan_list;
@@ -904,6 +908,23 @@ trwifi_result_e wifi_netmgr_utils_set_bridge(struct netdev *dev, uint8_t control
 		g_bridge_on = FALSE;
 	}
 	nvdbg("[RTK] External Bridge mode set to %d\n", control);
+	return wuret;
+}
+
+trwifi_result_e wifi_netmgr_utils_disable_11ax_mode(struct netdev *dev, uint8_t disable)
+{
+	trwifi_result_e wuret = TRWIFI_FAIL;
+	if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS){
+		RTW_API_INFO("[RTK] Failed to change network mode, disconnect from AP first\n");
+		return wuret;
+	}
+	enum wlan_mode mode = WLAN_MD_MAX;
+	if (disable){
+		mode = (mode & (~WLAN_MD_11AX));
+	}
+	if (wifi_set_network_mode(mode) == RTW_SUCCESS){
+		wuret = TRWIFI_SUCCESS;
+	}
 	return wuret;
 }
 
