@@ -154,6 +154,7 @@
 #define AUDIOIOC_GETKDDATA          _AUDIOIOC(26)
 #define AUDIOIOC_ENABLEDMIC         _AUDIOIOC(27)
 #define AUDIOIOC_CHANGEKD           _AUDIOIOC(28)
+#define AUDIOIOC_CHANGEDSPFLOW      _AUDIOIOC(29)
 
 /* Audio Device Types *******************************************************/
 /* The audio interface support different types of audio devices for

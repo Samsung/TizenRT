@@ -40,6 +40,7 @@
 #include <media/voice/SpeechDetectorListenerInterface.h>
 #include <media/FocusManager.h>
 #include <media/stream_info.h>
+#include <audio/SoundManager.h>
 #include <iostream>
 #include <memory>
 #include <functional>
@@ -124,7 +125,7 @@ public:
 			return;
 		}
 
-		if (mr.setDuration(7) == RECORDER_ERROR_NONE && mr.prepare() == RECORDER_ERROR_NONE) {
+		if (mr.setDuration(15) == RECORDER_ERROR_NONE && mr.prepare() == RECORDER_ERROR_NONE) {
 			printf("#### [MR] prepare succeeded.\n");
 		} else {
 			printf("#### [MR] prepare failed.\n");
@@ -347,7 +348,12 @@ int wakerec_main(int argc, char *argv[])
 		return -1;
 	}
 	auto recorder = std::shared_ptr<WakeRec>(new WakeRec());
-	if (argc == 2 && atoi(argv[1]) == 0) {
+	if (atoi(argv[1]) == 0) {
+		uint8_t select_dsp_rules = atoi(argv[2]);
+		if (changeDSPFlow(select_dsp_rules)) {
+			printf("Success changeDSPFlow\n");
+		}
+		
 		printf("disable KD!!\n");
 		recorder->initWakeRec(false);
 		recorder->startRecord();

@@ -125,7 +125,7 @@ static struct ndp120_dev_s *_ndp_debug_handle = NULL;
 /****************************************************************************
  * Function Prototypes
  ****************************************************************************/
-int ndp120_init(struct ndp120_dev_s *dev, bool reinit);
+int ndp120_init(struct ndp120_dev_s *dev, uint8_t dsp_fw_num);
 void ndp120_aec_enable(struct ndp120_dev_s *dev);
 void ndp120_aec_disable(struct ndp120_dev_s *dev);
 void ndp120_test_internal_passthrough_switch(struct ndp120_dev_s *dev, int internal);
@@ -965,6 +965,65 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 
 }
 
+static
+void add_dsp_flow_rules_extract_raw_data(struct syntiant_ndp_device_s *ndp)
+{
+	int s = 0;
+	ndp120_dsp_data_flow_setup_t setup;
+
+	int src_pcm = 0;
+	int src_func = 0;
+	int src_nn = 0;
+
+	memset(&setup, 0, sizeof(setup));
+
+	// ----------
+	// COMBINED NORMAL + AEC FLOW
+	/* PCM7->FUNCx */
+	setup.src_pcm_audio[src_pcm].src_param = NDP120_DSP_DATA_FLOW_SRC_PARAM_AUD0_STEREO;
+#ifdef CONFIG_NDP120_AEC_SUPPORT
+	setup.src_pcm_audio[src_pcm].src_param |= NDP120_DSP_DATA_FLOW_SRC_PARAM_AUD1_LEFT;
+#endif
+	setup.src_pcm_audio[src_pcm].dst_param = FF_ID;
+	setup.src_pcm_audio[src_pcm].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_FUNCTION;
+	setup.src_pcm_audio[src_pcm].algo_config_index = 0;
+	setup.src_pcm_audio[src_pcm].set_id = COMBINED_FLOW_SET_ID;
+	setup.src_pcm_audio[src_pcm].algo_exec_property = 0;
+	src_pcm++;
+
+	/* FUNCx->NN0 */
+	setup.src_function[src_func].src_param = FF_ID;
+	setup.src_function[src_func].dst_param = KEYWORD_NETWORK_ID;
+	setup.src_function[src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
+	setup.src_function[src_func].algo_config_index = -1;
+	setup.src_function[src_func].set_id = COMBINED_FLOW_SET_ID;
+	setup.src_function[src_func].algo_exec_property = 0;
+	src_func++;
+
+	/* PCMx->HOST_EXT_AUDIO */
+	setup.src_pcm_audio[src_pcm].src_param = NDP120_DSP_DATA_FLOW_SRC_PARAM_AUD0_LEFT;
+	setup.src_pcm_audio[src_pcm].dst_param = NDP120_DSP_DATA_FLOW_DST_SUBTYPE_AUDIO;
+	setup.src_pcm_audio[src_pcm].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_HOST_EXTRACT;
+	setup.src_pcm_audio[src_pcm].algo_config_index = 0;
+	setup.src_pcm_audio[src_pcm].set_id = COMBINED_FLOW_SET_ID;
+	setup.src_pcm_audio[src_pcm].algo_exec_property = 0;
+	src_pcm++;
+
+	/* NN0->MCU */
+	setup.src_nn[src_nn].src_param = 0;
+	setup.src_nn[src_nn].dst_param = 0;
+	setup.src_nn[src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
+	setup.src_nn[src_nn].algo_config_index = -1;
+	setup.src_nn[src_nn].set_id = COMBINED_FLOW_SET_ID;
+	setup.src_nn[src_nn].algo_exec_property = 0;
+	src_nn++;
+
+	auddbg("Applied flow rules extract raw data\n");
+	s = syntiant_ndp120_dsp_flow_setup_apply(ndp, &setup);
+	check_status("syntiant_ndp120_dsp_flow_setup_apply", s);
+
+}
+
 #if BT_MIC_SUPPORT == 1
 static
 void add_dsp_flow_rules_btmic(struct syntiant_ndp_device_s *ndp)
@@ -1237,7 +1296,7 @@ check_firmware_aliveness(struct ndp120_dev_s *dev, uint32_t wait_period_ms)
 
 		dev->lower->reset();
 
-		s = ndp120_init(dev, true);
+		s = ndp120_init(dev, dev->cur_dsp_flow_num);
 
 		if (s) {
 			/* For now do nothing, there may be some cases where init might
@@ -1285,7 +1344,7 @@ ndp120_app_device_health_check(void)
 }
 #endif
 
-int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
+int ndp120_init(struct ndp120_dev_s *dev, uint8_t dsp_fw_num)
 {
 	/* File names */
 	int s;
@@ -1310,7 +1369,7 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	/* save handle so we can use it from debug routine later, e.g. from other util/shell */
 	_ndp_debug_handle = dev;
 
-	if (!reinit) {
+	if (dsp_fw_num == 0) {
 		s = pthread_mutex_init(&dev->ndp_mutex_mbsync, NULL);
 		if (s) {
 			auddbg("failed to initialize mb sync mutex variable\n");
@@ -1380,8 +1439,22 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 #if BT_MIC_SUPPORT == 1
 	// add special rules for BT-mic
 	add_dsp_flow_rules_btmic(dev->ndp);
+	dev->cur_dsp_flow_num = 1;
 #else
-	add_dsp_flow_rules(dev->ndp);
+	switch(dsp_fw_num) {
+		case 1:
+			add_dsp_flow_rules(dev->ndp);
+			dev->cur_dsp_flow_num = 1;
+			break;
+		case 2:
+			add_dsp_flow_rules_extract_raw_data(dev->ndp);
+			dev->cur_dsp_flow_num = 2;
+			break;
+		default:
+			add_dsp_flow_rules(dev->ndp);
+			dev->cur_dsp_flow_num = 1;
+			break;
+	}
 #endif
 
 	struct syntiant_ndp120_config_tank_s tank_config;
@@ -1444,7 +1517,7 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 #endif
 
 #ifdef CONFIG_NDP120_ALIVE_CHECK
-	if (!reinit) {
+	if (dsp_fw_num == 0) {
 		pid_t pid = kernel_thread("NDP_health_check", 100, 4096, ndp120_app_device_health_check, NULL);
 		if (pid < 0) {
 			auddbg("Device health check thread creation failed\n");
@@ -1835,7 +1908,7 @@ int ndp120_change_kd(struct ndp120_dev_s *dev)
 
 	dev->lower->reset();
 
-	s = ndp120_init(dev, true);
+	s = ndp120_init(dev, dev->cur_dsp_flow_num);
 
 	if (s) {
 		/* For now do nothing, there may be some cases where init might
@@ -2015,3 +2088,32 @@ void ndp120_aec_disable(struct ndp120_dev_s *dev)
 	dev->extclk_inuse = false;
 }
 #endif
+
+void ndp120_change_dsp_flow(struct ndp120_dev_s *dev, uint8_t dsp_flow_num)
+{
+	#if BT_MIC_SUPPORT == 1
+		auddbg("To change dsp flow is not spported when BT_MIC_SUPPORT.\n");
+		return;
+	#endif
+
+	int s;
+	ndp120_semtake(dev);
+	dev->lower->irq_enable(false);
+
+	s = syntiant_ndp_uninit(dev->ndp, false, SYNTIANT_NDP_INIT_MODE_RESET);
+	audvdbg("uninit : %d\n", s);
+
+	dev->lower->reset();
+
+	s = ndp120_init(dev, dsp_flow_num);
+	if (s) {
+		/* For now do nothing, there may be some cases where init might
+		 * have failed due to no memory, so retry after some time */
+		auddbg("reinit failed!\n");
+	} else {
+		/* re enable interrupts */
+		dev->lower->irq_enable(true);
+	}
+
+	ndp120_semgive(dev);
+}
