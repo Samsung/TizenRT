@@ -1,0 +1,40 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2021, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.1,
+  "name": "TFM_SP_SLIH_TEST",
+  "type": "APPLICATION-ROT",
+  "priority": "NORMAL",
+  "model": "dual",
+  "entry_point": "tfm_slih_test_service_entry",
+  "stack_size": "0x0400",
+  "services": [
+    {
+      "name": "TFM_SLIH_TEST_CASE",
+      "sid": "0x0000F0A0",
+      "connection_based": false,
+      "stateless_handle": "auto",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ],
+  "mmio_regions": [
+    {
+      "name": "TFM_PERIPHERAL_TIMER0",
+      "permission": "READ-WRITE"
+    }
+  ],
+  "irqs": [
+    {
+      "source": "TFM_TIMER0_IRQ",
+      "name": "TFM_TIMER0_IRQ",
+      "handling": "SLIH",
+    }
+  ]
+}

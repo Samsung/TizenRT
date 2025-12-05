@@ -1,0 +1,148 @@
+armino_build_get_property(target ARMINO_SOC)
+
+if(NOT "${target}" STREQUAL "bk7236" AND NOT "${target}" STREQUAL "bk7234" AND NOT "${target}" STREQUAL "bk7239n")
+    return()
+endif()
+
+set(incs)
+set(srcs)
+
+if (CONFIG_TFM)
+	list(APPEND srcs
+		tfm_ns_interface.c
+		tfm/interface/src/tfm_psa_ns_api.c
+	)
+	list(APPEND incs
+		tfm/interface/include
+		tfm/secure_fw/include
+		${CMAKE_BINARY_DIR}/armino/tfm/generated/interface/include
+	)
+endif()
+
+if (CONFIG_TFM_SYSTEM_CLOCK)
+	list(APPEND srcs
+		tfm/interface/src/tfm_system_clock_ipc_api.c
+	)
+endif()
+
+if (CONFIG_TFM_FWU)
+	list(APPEND srcs
+		tfm/interface/src/tfm_firmware_update_ipc_api.c
+	)
+endif()
+
+if (CONFIG_TFM_CRYPTO)
+	list(APPEND srcs
+		tfm/interface/src/tfm_crypto_ipc_api.c
+	)
+endif()
+
+if (CONFIG_TFM_PS)
+       list(APPEND srcs
+               tfm/interface/src/tfm_ps_ipc_api.c
+       )
+endif()
+
+
+armino_component_register(SRCS "${srcs}"
+	INCLUDE_DIRS "${incs}"
+	REQUIRES partitions)
+
+if (CONFIG_TFM)
+armino_build_get_property(partition_hdr_dir PARTITIONS_HDR_DIR)
+set(armino_dir ${COMPONENT_DIR}/../..)
+set(tfm_dir ${COMPONENT_DIR}/tfm)
+set(tfm_platform beken/${target})
+set(tfm_toolchain_path ${CONFIG_TOOLCHAIN_PATH})
+if(NOT IS_ABSOLUTE ${tfm_toolchain_path})
+	set(tfm_toolchain_path ${armino_dir}/${tfm_toolchain_path})
+endif()
+set(tfm_build_dir ${CMAKE_BINARY_DIR}/armino/tfm)
+set(tfm_install_dir ${CMAKE_BINARY_DIR}/tfm_install)
+
+include(ExternalProject)
+ExternalProject_Add(tfm_project
+	SOURCE_DIR ${tfm_dir}
+	CONFIGURE_COMMAND ""
+	BUILD_IN_SOURCE 1
+	CMAKE_ARGS
+	BUILD_COMMAND
+		cmake
+		-G Ninja
+		-B ${tfm_build_dir}
+		-DCMAKE_PREFIX_PATH=${tfm_toolchain_path}
+		-DCMAKE_INSTALL_PREFIX=${tfm_install_dir}
+		-DARMINO_SDK_PATH=${armino_path}
+		-DTFM_PLATFORM=${tfm_platform}
+		-DTFM_TOOLCHAIN_FILE=toolchain_GNUARM.cmake
+		-DCMAKE_BUILD_TYPE=${CONFIG_TFM_BUILD_TYPE}
+		-DTEST_S=${CONFIG_TFM_TEST_S}
+		-DTEST_NS=${CONFIG_TFM_TEST_NS}
+		-DUSER=$ENV{USER}
+		-DBL2=${CONFIG_TFM_BL2}
+		-DTFM_PROFILE=profile_medium
+		-DFPGA=${CONFIG_TFM_FPGA}
+		-DOTP_NV_COUNTERS_RAM_EMULATION=${CONFIG_OTP_NV_COUNTERS_RAM_EMULATION}
+		-DPLATFORM_DEFAULT_OTP_WRITEABLE=${CONFIG_PLATFORM_DEFAULT_OTP_WRITEABLE}
+		-DCONFIG_TFM_LOG_LEVEL=${CONFIG_TFM_LOG_LEVEL}
+		-DMCUBOOT_LOG_LEVEL=${CONFIG_TFM_BL2_LOG_LEVEL}
+		-DPARTITION_HDR_DIR=${partition_hdr_dir}
+		-DMCUBOOT_UPGRADE_STRATEGY=${CONFIG_BL2_UPGRADE_STRATEGY}
+		-DTFM_AON_PMU_LL_NSC=${CONFIG_TFM_AON_PMU_LL_NSC}
+		-DTFM_SYS_LL_NSC=${CONFIG_TFM_SYS_LL_NSC}
+		-DCONFIG_TFM_BK7236_V5=${CONFIG_TFM_BK7236_V5}
+		-DBL2_DOWNLOAD=${CONFIG_TFM_BL2_DOWNLOAD}
+		-DBL2_SECURE_DEBUG=${CONFIG_TFM_SECURE_DEBUG}
+		-DCONFIG_REG_ACCESS_NSC=${CONFIG_TFM_REG_ACCESS_NSC}
+		-DCONFIG_MPC_NSC=${CONFIG_TFM_MPC_NSC}
+		-DCONFIG_FLASH_NSC=${CONFIG_TFM_FLASH_NSC}
+		-DCONFIG_DUBHE_KEY_LADDER_NSC=${CONFIG_TFM_DUBHE_KEY_LADDER_NSC}
+		-DCONFIG_TFM_READ_FLASH_NSC=${CONFIG_TFM_READ_FLASH_NSC}
+        -DCONFIG_OTP_NSC=${CONFIG_TFM_OTP_NSC}
+		-DCONFIG_INT_TARGET_NSC=${CONFIG_TFM_INT_TARGET_NSC}
+		-DCONFIG_TFM_MPU=${CONFIG_TFM_MPU}
+		-DCONFIG_TFM_PANIC_DEAD_LOOP=${CONFIG_TFM_PANIC_DEAD_LOOP}
+		-DCONFIG_XIP_NO_VERSION=${CONFIG_XIP_NO_VERSION}
+		-DCONFIG_BL2_VALIDATE_ENABLED_BY_EFUSE=${CONFIG_BL2_VALIDATE_ENABLED_BY_EFUSE}
+		-DCONFIG_BL2_SKIP_VALIDATE=${CONFIG_BL2_SKIP_VALIDATE}
+		-DCONFIG_BL2_WDT=${CONFIG_BL2_WDT}
+		-DCONFIG_PM_NSC=${CONFIG_PM_NSC}
+		-DCONFIG_AES_GCM_NSC=${CONFIG_TFM_AES_GCM_NSC}
+		-DCONFIG_ECP_NSC=${CONFIG_TFM_ECP_NSC}
+		-DCONFIG_HAL_ASYM_ALGO_NSC=${CONFIG_TFM_ASYM_ALGO_NSC}
+		-DCONFIG_HKDF_NSC=${CONFIG_TFM_HKDF_NSC}
+		-DCONFIG_DRBG_NSC=${CONFIG_TFM_DRBG_NSC}
+		-DCONFIG_DH_NSC=${CONFIG_TFM_DH_NSC}
+		-DCONFIG_SCA_AES_NSC=${CONFIG_TFM_SCA_AES_NSC}
+		-DCONFIG_STARTUP_PERFORMANCE=${CONFIG_STARTUP_PERFORMANCE}
+		-DCONFIG_TFM_RAM_SIZE=${CONFIG_CPU0_SPE_RAM_SIZE}
+		-DCONFIG_TFM_HEAP_SIZE=${CONFIG_TFM_HEAP_SIZE}
+		-DCONFIG_BL2_WDT_PERIOD=${CONFIG_BL2_WDT_PERIOD}
+		-DCONFIG_INITIAL_ATTESTATION=${CONFIG_INITIAL_ATTESTATION}
+		-DCONFIG_BL2_UPDATE_WITH_PC=${CONFIG_BL2_UPDATE_WITH_PC}
+		-DCONFIG_TFM_CRYPTO_IOVEC_BUFFER_SIZE=${CONFIG_TFM_CRYPTO_IOVEC_BUFFER_SIZE}
+		-DCONFIG_TFM_MBEDTLS_RSA_C=${CONFIG_TFM_MBEDTLS_RSA_C}
+		-DCONFIG_TFM_MBEDTLS_PKCS1_V15=${CONFIG_TFM_MBEDTLS_PKCS1_V15}
+		-DCONFIG_BL2_UPDATE_WITH_OTA=${CONFIG_BL2_UPDATE_WITH_OTA}
+		-DCONFIG_NUM_APPS=${CONFIG_NUM_APPS}
+		-DCONFIG_BINARY_SIGNING=${CONFIG_BINARY_SIGNING}
+
+		&& cd ${tfm_build_dir}
+		&& ninja -- install
+	BUILD_BYPRODUCTS ${tfm_build_dir}/secure_fw/libtfm_s_veneers.a
+	BUILD_ALWAYS 1
+	INSTALL_COMMAND ""
+	)
+
+add_dependencies(${COMPONENT_LIB} tfm_project)
+add_library(lib_tfm STATIC IMPORTED GLOBAL)
+add_dependencies(lib_tfm tfm_project)
+if (CONFIG_TFM_SYSTEM_CLOCK OR CONFIG_TFM_FWU)
+set_target_properties(lib_tfm PROPERTIES IMPORTED_LOCATION ${tfm_build_dir}/secure_fw/libtfm_s_veneers.a)
+target_link_libraries(${COMPONENT_LIB} PUBLIC lib_tfm)
+target_compile_definitions(${COMPONENT_LIB}
+	PRIVATE
+		TFM_PSA_API
+)
+endif()
+endif()

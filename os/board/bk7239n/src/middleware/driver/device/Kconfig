@@ -1,0 +1,10 @@
+menu "device"
+	config DEVICE_MAX_NAME_LEN
+		int "Set maximum device name length"
+		default 32
+
+	config DM
+		bool "Enable device model"
+		default n
+endmenu
+

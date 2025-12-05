@@ -36,6 +36,14 @@ config ARCH_BOARD_ARTIK055S
 	---help---
 		Samsung ARTIK-055S Starter Kit based on S5JT200 IoT WiFi MCU
 
+config ARCH_BOARD_BK7239N
+	bool "Beken BK7239N board"
+	depends on ARCH_CHIP_BK7239N
+	select ARCH_BOARD_HAVE_FLASH
+	select ARCH_HAVE_RAM_KERNEL_TEXT
+	---help---
+		Beken BK7239N board based on the Beken BK7239N MCU.
+
 config ARCH_BOARD_LM3S6965EK
 	bool "Stellaris LM3S6965 Evaluation Kit"
 	depends on ARCH_CHIP_LM3S6965
@@ -190,6 +198,7 @@ config ARCH_BOARD
 	default "artik05x"           if ARCH_BOARD_ARTIK05X_FAMILY
 	default "lm3s6965-ek"        if ARCH_BOARD_LM3S6965EK
 	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
+	default "bk7239n"            if ARCH_BOARD_BK7239N
 	default "cy4390x"            if ARCH_BOARD_CY4390x
 	default "stm32f407-disc1"    if ARCH_BOARD_STM32F407_DISC1
 	default "stm32f429i-disco"   if ARCH_BOARD_STM32F429I_DISCO
@@ -359,6 +368,9 @@ comment "Board-Specific Options"
 
 if ARCH_BOARD_ARTIK05X_FAMILY
 source board/artik05x/Kconfig
+endif
+if ARCH_BOARD_BK7239N
+source board/bk7239n/Kconfig
 endif
 if ARCH_BOARD_LM3S6965EK
 source board/lm3s6965-ek/Kconfig

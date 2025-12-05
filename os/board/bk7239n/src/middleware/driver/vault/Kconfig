@@ -1,0 +1,5 @@
+menu "VAULT"
+	config VAULT_SUPPORT
+		bool "Enable vault"
+		default n
+endmenu

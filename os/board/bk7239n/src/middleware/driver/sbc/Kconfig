@@ -1,0 +1,6 @@
+menu "SBC"
+	config SBC
+		bool "Enable SBC"
+		default n
+endmenu
+	
