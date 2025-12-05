@@ -218,6 +218,11 @@ else
   
 endif
 
+# Generate response file containing all CFLAGS
+CFLAGS_FILE := $(TOPDIR)/cflags.rsp
+$(shell printf "%s" "$(CFLAGS)" > $(CFLAGS_FILE))
+CFLAGS := @$(CFLAGS_FILE)
+
 all: libboard$(LIBEXT)
 
 $(AOBJS): %$(OBJEXT): %$(ASMEXT)
