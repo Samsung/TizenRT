@@ -1024,6 +1024,20 @@ audio_manager_result_t set_kd_sensitivity(uint16_t sensitivity);
  ****************************************************************************/
 audio_manager_result_t get_kd_sensitivity(uint16_t *sensitivity);
 
+/****************************************************************************
+ * Name: change_input_dsp_flow
+ *
+ * Description:
+ *   It changes the current dsp flow to dsp flow of given number.
+ *
+ * Input parameter:
+ * 	 stream_policy: dwp flow rule number to be changed.
+ *   mute: pointer to store the mute state of given stream policy.
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t change_input_dsp_flow(uint8_t dsp_flow_num);
 
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 /****************************************************************************
