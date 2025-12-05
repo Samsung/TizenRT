@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version b9456c5c 2025/12/04-19:34:00 ==
+1. Fix deauth reason code 4 from AP in coex scenario
+
 == version 179dc7ff 2025/12/04-10:27:46 ==
 1. Fix ble_adv missing after PG while connected to AP
 
