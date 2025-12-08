@@ -1,8 +1,5 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
-== version 179dc7ff 2025/12/04-10:27:46 ==
-1. Fix ble_adv missing after PG while connected to AP
-
 == version d4d459ef 2025/11/18-18:45:41 ==
 1. Disable PSRAM autogating
 
