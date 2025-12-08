@@ -1,8 +1,5 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
-== version 797a93d3 2025/11/03-10:26:01 ==
-1. Remove shell register in KM0/KM4
-
 == version 3a654af2 2025/10/17-12:45:16 ==
 1. Remove sre PG print log
 
