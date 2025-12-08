@@ -8,6 +8,7 @@ aliases:
         docker create -v /${WORKING_DIR} --name ${VOLUME} --privileged tizenrt/tizenrt:${DOCKER_IMG_VERSION} /bin/bash
         docker cp ./. ${VOLUME}:/${WORKING_DIR}
         docker run -d --rm -it --name ${BUILDER} --volumes-from=${VOLUME} -w /${WORKING_DIR}/os --privileged tizenrt/tizenrt:${DOCKER_IMG_VERSION} /bin/bash
+        docker --version  
 
   arm-version: &arm-version
       run: 
