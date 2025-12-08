@@ -380,12 +380,23 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 	int ret = RTK_STATUS_SUCCESS;
 	/* At this stage, no action needs to be done by RTK driver for wlan1 */
 	if (!memcmp(dev->ifname, "wlan0", 5)) {
+		/* Register link callback to handle wifi events */
+		ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+
+		if (ret != RTK_STATUS_SUCCESS) {
+			ndbg("[RTK] Link callback handles: register failed !\n");
+			return wuret;
+		} else {
+			nvdbg("[RTK] Link callback handles: registered\n");
+		}
+
 		ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
 
 		if (ret != RTK_STATUS_SUCCESS) {
 			ndbg("[RTK] Failed to start STA mode\n");
 			return wuret;
 		}
+		wuret = TRWIFI_SUCCESS;
 #ifndef CONFIG_ENABLE_HOMELYNK
 		softap_flag = 0;
 #endif //#ifndef CONFIG_ENABLE_HOMELYNK
@@ -828,6 +839,14 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 	}
 	trwifi_result_e ret = TRWIFI_FAIL;
 
+	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+	if (ret != RTK_STATUS_SUCCESS) {
+		ndbg("[RTK] Link callback handles: register failed !\n");
+		return TRWIFI_FAIL;
+	} else {
+		nvdbg("[RTK] Link callback handles: registered\n");
+	}
+
 	for (i = 0; i < valid_ch_list_size; i++){
 		if (softap_config->channel == valid_ch_list[i]){
 			ch_valid = 1;
@@ -855,11 +874,28 @@ trwifi_result_e wifi_netmgr_utils_start_softap(struct netdev *dev, trwifi_softap
 
 trwifi_result_e wifi_netmgr_utils_start_sta(struct netdev *dev)
 {
-	trwifi_result_e wuret = TRWIFI_SUCCESS;
+	trwifi_result_e wuret = TRWIFI_FAIL;
+	int ret = RTK_STATUS_SUCCESS;
 
+	ret = WiFiRegisterLinkCallback(&linkup_handler, &linkdown_handler);
+	if (ret != RTK_STATUS_SUCCESS) {
+		ndbg("[RTK] Link callback handles: register failed !\n");
+		return wuret;
+	} else {
+		nvdbg("[RTK] Link callback handles: registered\n");
+	}
+
+	cmd_wifi_off();
+	vTaskDelay(20);
+	ret = cmd_wifi_on(RTK_WIFI_STATION_IF);
+	if (ret == RTK_STATUS_SUCCESS) {
+		wuret = TRWIFI_SUCCESS;
 #ifndef CONFIG_ENABLE_HOMELYNK
-	softap_flag = 0;
+		softap_flag = 0;
 #endif //#ifndef CONFIG_ENABLE_HOMELYNK
+	} else {
+		ndbg("[RTK] Failed to start STA mode\n");
+	}
 
 	return wuret;
 }
