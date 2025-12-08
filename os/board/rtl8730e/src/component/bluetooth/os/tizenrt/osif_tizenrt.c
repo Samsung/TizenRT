@@ -4,7 +4,7 @@
 
 #include <fcntl.h>
 #include <osif.h>
-#include <os_wrapper.h>
+#include <osdep_service.h>
 #include "../kernel/mqueue/mqueue.h"
 
 #define OSIF_ALIGN 64
@@ -299,7 +299,7 @@ uint32_t osif_lock(void)
 	uint32_t flags = 0U;
 	if (osif_task_context_check() == true)
 	{
-		flags = tizenrt_critical_enter();
+		flags = save_and_cli();
 	}
 	return flags;
 }
@@ -311,7 +311,7 @@ void osif_unlock(uint32_t flags)
 {
 	if (osif_task_context_check() == true)
 	{
-		tizenrt_critical_exit(flags);
+		restore_flags(flags);
 	}
 }
 

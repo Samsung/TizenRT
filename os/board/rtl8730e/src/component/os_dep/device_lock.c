@@ -7,7 +7,7 @@
  *  possession or use of this module requires written permission of RealTek.
  */
 
-#include "os_wrapper.h"
+#include "osdep_service.h"
 #include "device_lock.h"
 
 //------------------------------------------------------
@@ -16,7 +16,7 @@
 #define DEVICE_MUTEX_CLR_INIT(device)	(mutex_init &= (~(1<<device)))
 
 static u32 mutex_init = 0;
-static rtos_mutex_t device_mutex[RT_DEV_LOCK_MAX];
+static _mutex device_mutex[RT_DEV_LOCK_MAX];
 
 //======================================================
 static void device_mutex_init(RT_DEV_LOCK_E device)
@@ -30,7 +30,7 @@ static void device_mutex_init(RT_DEV_LOCK_E device)
 		rtw_enter_critical(&lock, &irqL);
 #endif
 		if (!DEVICE_MUTEX_IS_INIT(device)) {
-			rtos_mutex_create(&device_mutex[device]);
+			rtw_mutex_init(&device_mutex[device]);
 			DEVICE_MUTEX_SET_INIT(device);
 		}
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
@@ -53,7 +53,7 @@ void device_mutex_free(RT_DEV_LOCK_E device)
 		rtw_enter_critical(&lock, &irqL);
 #endif
 		if (DEVICE_MUTEX_IS_INIT(device)) {
-			rtos_mutex_delete(device_mutex[device]);
+			rtw_mutex_free(&device_mutex[device]);
 			DEVICE_MUTEX_CLR_INIT(device);
 		}
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
@@ -68,7 +68,7 @@ void device_mutex_free(RT_DEV_LOCK_E device)
 void device_mutex_lock(RT_DEV_LOCK_E device)
 {
 	device_mutex_init(device);
-	while (rtos_mutex_take(device_mutex[device], 10000) < 0) {
+	while (rtw_mutex_get_timeout(&device_mutex[device], 10000) < 0) {
 		printf("device lock timeout: %d\n", (int)device);
 	}
 }
@@ -77,5 +77,5 @@ void device_mutex_lock(RT_DEV_LOCK_E device)
 void device_mutex_unlock(RT_DEV_LOCK_E device)
 {
 	device_mutex_init(device);
-	rtos_mutex_give(device_mutex[device]);
+	rtw_mutex_put(&device_mutex[device]);
 }

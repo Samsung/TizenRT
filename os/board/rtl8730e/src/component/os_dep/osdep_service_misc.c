@@ -3,8 +3,7 @@
  * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
  *
  ******************************************************************************/
-/* This file is renamed from osdep_service_misc.c, purpose is for functions such as wrapper_IrqFun */
-#include <os_wrapper.h>
+#include <osdep_service.h>
 #include <stdio.h>
 
 /* Refer to ecos bsd tcpip codes */
