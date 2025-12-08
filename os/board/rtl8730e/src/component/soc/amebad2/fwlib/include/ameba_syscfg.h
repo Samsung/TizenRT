@@ -1,8 +1,20 @@
-/*
- * Copyright (c) 2024 Realtek Semiconductor Corp.
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+/**
+  ******************************************************************************
+  * @file    ameba_syscfg.h
+  * @author
+  * @version V1.0.0
+  * @date    2016-05-17
+  * @brief   This file contains all the functions prototypes for SYSCFG firmware
+  *          library.
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2015, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
 
 #ifndef _AMEBA_SYSCFG_H_
 #define _AMEBA_SYSCFG_H_
@@ -106,7 +118,6 @@
 #define SYSCFG_CUT_VERSION_A				0
 #define SYSCFG_CUT_VERSION_B				1
 #define SYSCFG_CUT_VERSION_C				2
-#define SYSCFG_CUT_VERSION_D				3
 /**
   * @}
   */
@@ -120,6 +131,7 @@
   * @{
   */
 _LONG_CALL_ u32 SYSCFG_GetChipInfo(void);
+_LONG_CALL_ u32 SYSCFG_RLVersion(void);
 //_LONG_CALL_ u32 SYSCFG_TRP_UARTImage(void);
 _LONG_CALL_ u32 SYSCFG_TRP_TestMode(void);
 _LONG_CALL_ u32 SYSCFG_TRP_OTPBYP(void);
@@ -185,3 +197,4 @@ _LONG_CALL_ u32 SYSCFG_SWTrigDownload(void);
 #define RSIP_GCM_MODE                                            2
 
 #endif //_AMEBA_SYSCFG_H_
+/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
