@@ -1,8 +1,5 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
-== version d4d459ef 2025/11/18-18:45:41 ==
-1. Disable PSRAM autogating
-
 == version b35db3d9 2025/11/18-17:51:32 ==
 1. enable SW IWDG when HW IWDG is not enabled
 
