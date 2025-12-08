@@ -1,8 +1,5 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
-== version 3a654af2 2025/10/17-12:45:16 ==
-1. Remove sre PG print log
-
 == version 5b5b5dea 2025/09/19-15:16:29 ==
 1. Update wifi driver to support multi-sta CSI
 
