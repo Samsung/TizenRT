@@ -149,10 +149,10 @@ int up_check_iwdg(void)
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_FEN);
 
 	if ((Temp & APBPeriph_IWDG) == 0) {
-		dbg("SW IWDG is enabled\n");
+		dbg("IWDG is disabled\n");
 		return 0;
 	} else {
-		dbg("HW IWDG is enabled\n");
+		dbg("IWDG is enabled\n");
 		return 1;
 	}
 }
