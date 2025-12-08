@@ -21,7 +21,7 @@ HAL_ROM_BSS_SECTION u32 ConfigDebugClose;
 HAL_ROM_BSS_SECTION u32 ConfigDebug[LEVEL_NUMs];
 
 HAL_ROM_TEXT_SECTION
-__weak int DiagVSprintf(char *buf, const char *fmt, va_list ap)
+int DiagVSprintf(char *buf, const char *fmt, va_list ap)
 {
 	char *p, *s;
 	u32 as = (u32)&ap;
@@ -193,7 +193,7 @@ __weak int DiagVSprintf(char *buf, const char *fmt, va_list ap)
 }
 
 HAL_ROM_TEXT_SECTION
-_LONG_CALL_ __weak u32
+_LONG_CALL_ u32
 DiagPrintf(
 	IN  const char *fmt, ...
 )
@@ -267,7 +267,6 @@ DiagSPrintf(
 
 
 HAL_ROM_TEXT_SECTION
-__weak
 int DiagSnPrintf(char *buf, size_t size, const char *fmt, ...)
 {
 

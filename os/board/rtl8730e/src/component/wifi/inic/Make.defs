@@ -49,7 +49,12 @@
 #
 ############################################################################
 
-CSRCS += rtw_timer.c
+CSRCS += inic_ipc_host.c \
+	 inic_ipc_host_trx.c \
+	 inic_ipc_host_api.c \
+	 inic_ipc_host_api_basic.c \
+	 inic_ipc_host_api_ext.c \
+	 inic_ipc_msg_queue.c
 
-DEPPATH += --dep-path component/wifi/common
-VPATH += :component/wifi/common
+DEPPATH += --dep-path component/wifi/inic
+VPATH += :component/wifi/inic
