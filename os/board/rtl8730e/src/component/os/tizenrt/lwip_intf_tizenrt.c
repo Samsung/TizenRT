@@ -285,9 +285,7 @@ void rltk_wlan_indicate_lwip(int idx_wlan, void *p_buf)
 {
     /* TizenRT gets netif from netdev */
     /* Currently TizenRT only uses idx 0, remove below line if TizenRT supports concurrent */
-#ifndef CONFIG_ENABLE_HOMELYNK
     idx_wlan = 0;
-#endif //#ifndef CONFIG_ENABLE_HOMELYNK
     struct netdev *dev_tmp = NULL;
     dev_tmp = (struct netdev *)rtk_get_netdev(idx_wlan);
     struct netif *netif = GET_NETIF_FROM_NETDEV(dev_tmp);
