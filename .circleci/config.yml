@@ -226,8 +226,6 @@ jobs:
     machine:
       image: default
     working_directory: ~/TizenRT
-    environment:
-        DOCKER_IMG_VERSION=2.0.1
     steps:
       - attach_workspace:
           at: ~/TizenRT
@@ -238,8 +236,6 @@ jobs:
     machine:
       image: default
     working_directory: ~/TizenRT
-    environment:
-        DOCKER_IMG_VERSION=2.0.1
     steps:
       - attach_workspace:
           at: ~/TizenRT
