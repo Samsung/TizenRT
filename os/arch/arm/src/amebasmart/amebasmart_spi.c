@@ -1241,15 +1241,15 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 	remain_data_len = nwords * mode_16bit;
 	uint8_t *rxbuff_aligned = NULL;
 	uint8_t *txbuff_aligned =  NULL;
-	rxbuff_aligned = (uint8_t *)rtos_mem_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
+	rxbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
 	if(rxbuff_aligned == NULL) {
 		lldbg("rxbuff_aligned malloc failed\n");
 		return;
 	}
 	if (txbuffer) {
-		txbuff_aligned = (uint8_t *)rtos_mem_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
+		txbuff_aligned = (uint8_t *)rtw_zmalloc(SPI_DMA_MAX_BUFFER_SIZE);
 		if(txbuff_aligned == NULL) {
-			rtos_mem_free(rxbuff_aligned);
+			rtw_mfree(rxbuff_aligned, 0);
 			lldbg("txbuff_aligned malloc failed\n");
 			return;
 		}
@@ -1286,9 +1286,9 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 		}
 	}
 	if (txbuff_aligned) {
-		rtos_mem_free(txbuff_aligned);
+		rtw_mfree(txbuff_aligned, 0);
 	}
-	rtos_mem_free(rxbuff_aligned);
+	rtw_mfree(rxbuff_aligned, 0);
 #endif							/* CONFIG_AMEBASMART_SPI_DMA */
 }
 

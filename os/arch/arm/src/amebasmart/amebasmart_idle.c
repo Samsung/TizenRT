@@ -31,6 +31,7 @@
 #include "amebasmart_config.h"
 #include "arch_timer.h"
 #include "ameba_soc.h"
+#include "osdep_service.h"
 #endif
 
 #ifdef CONFIG_SMP

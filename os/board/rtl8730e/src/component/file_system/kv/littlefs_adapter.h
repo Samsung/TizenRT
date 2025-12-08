@@ -1,4 +1,4 @@
-#include "os_wrapper.h"
+#include "osdep_service.h"
 #include "device_lock.h"
 #include "flash_api.h"
 #include "lfs.h"
