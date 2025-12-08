@@ -74,7 +74,7 @@ void arm_gic_freq_switch(void)
 		return;
 	}
 
-	preIrqStatus = tizenrt_critical_enter();
+	preIrqStatus = save_and_cli();
 
 	atomic_add(1, prvCriticalNesting);
 	__DMB();
@@ -89,7 +89,7 @@ void arm_gic_freq_switch(void)
 		}
 	}
 
-	tizenrt_critical_exit(preIrqStatus);
+	restore_flags(preIrqStatus);
 }
 
 /*restore AP frequency to ap_pll*/
@@ -103,7 +103,7 @@ void arm_gic_freq_restore(void)
 		return;
 	}
 
-	preIrqStatus = tizenrt_critical_enter();
+	preIrqStatus = save_and_cli();
 
 	atomic_sub(1, prvCriticalNesting);
 	__DMB();
@@ -113,7 +113,7 @@ void arm_gic_freq_restore(void)
 		HAL_WRITE32(SYSTEM_CTRL_BASE_HP, REG_HSYS_HP_CKSL, (temp & ~HSYS_MASK_CKD_AP) | HSYS_CKD_AP(prvCriticalNesting->pre_div));
 	}
 
-	tizenrt_critical_exit(preIrqStatus);
+	restore_flags(preIrqStatus);
 }
 
 uint32_t arm_gic_get_freq_flag(void)
