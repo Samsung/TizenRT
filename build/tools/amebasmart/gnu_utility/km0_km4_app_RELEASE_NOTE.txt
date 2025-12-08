@@ -1,8 +1,5 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
-== version bc5a6c89 2025/11/18-14:44:02 ==
-1. Fix CA32 wakeup fail if CA32 sleeps but KM4 remains awake
-
 == version 797a93d3 2025/11/03-10:26:01 ==
 1. Remove shell register in KM0/KM4
 
