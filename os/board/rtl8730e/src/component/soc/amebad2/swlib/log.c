@@ -1,8 +1,12 @@
 
-#include "ameba_soc.h"
+#include "diag.h"
+#include "strproc.h"
+#include "memproc.h"
+#include "basic_types.h"
+#include <stdarg.h>
+#include <stdio.h>
 #include "log.h"
 
-static const char *TAG = "LOG";
 /* Define default log-display level*/
 rtk_log_level_t rtk_log_default_level = CONFIG_LOG_DEFAULT_LEVEL;
 
@@ -16,19 +20,15 @@ static volatile uint32_t rtk_log_entry_count = 0;
 *
 *  @param	rtk_log_tag_array cache array
 *
-*  @return	success,0; fail,-1
+*  @return	None
 *
 ***/
-int rtk_log_array_print(rtk_log_tag_t *_rtk_log_tag_array)
+void rtk_log_array_print(rtk_log_tag_t *_rtk_log_tag_array)
 {
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
-	if (_rtk_log_tag_array != NULL) {
-		for (uint32_t i = 0; i < index; i++) {
-			RTK_LOGS(TAG, "[%s] level = %d\n", _rtk_log_tag_array[i].tag, _rtk_log_tag_array[i].level);
-		}
-		return SUCCESS;
+	for (uint32_t i = 0; i < index; i++) {
+		DiagPrintf("[%s] level = %d\n", _rtk_log_tag_array[i].tag, _rtk_log_tag_array[i].level);
 	}
-	return FAIL;
 }
 
 /***
@@ -44,7 +44,7 @@ int rtk_log_array_print(rtk_log_tag_t *_rtk_log_tag_array)
 static inline void rtk_log_array_add(const char *tag, rtk_log_level_t level)
 {
 	if (rtk_log_entry_count >= LOG_TAG_CACHE_ARRAY_SIZE) {
-		RTK_LOGS(TAG, "Cache array is full, and replace old entry\n");
+		DiagPrintf("Cache array is full, and replace old entry\n");
 	}
 	/* Replace old entry with taking the remainder. */
 	rtk_log_tag_array[rtk_log_entry_count % LOG_TAG_CACHE_ARRAY_SIZE].level = level;
@@ -77,7 +77,6 @@ void rtk_log_array_clear(void)
 rtk_log_level_t rtk_log_level_get(const char *tag)
 {
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
-	assert_param(tag != NULL);
 	// Look for the tag in cache first
 	for (uint32_t i = 0; i < index; i++) {
 		if (_strcmp(rtk_log_tag_array[i].tag, tag) == 0) {
@@ -95,21 +94,18 @@ rtk_log_level_t rtk_log_level_get(const char *tag)
 *
 *  @param	level The level of the label to set
 *
-*  @return	success,0; fail,-1
+*  @return	None
 *
 *  @note
 ***/
-int rtk_log_level_set(const char *tag, rtk_log_level_t level)
+void rtk_log_level_set(const char *tag, rtk_log_level_t level)
 {
 	uint32_t i = 0;
 	uint32_t index = MIN(rtk_log_entry_count, LOG_TAG_CACHE_ARRAY_SIZE);
-	if ((tag == NULL) || (level > RTK_LOG_DEBUG)) {
-		return FAIL;
-	}
 	// for wildcard tag, remove all array items and clear the cache
 	if (_strcmp(tag, "*") == 0) {
 		rtk_log_default_level = level;
-		return SUCCESS;
+		return;
 	}
 	// search in the cache and update the entry it if exists
 	for (i = 0; i < index; i++) {
@@ -126,7 +122,6 @@ int rtk_log_level_set(const char *tag, rtk_log_level_t level)
 	if (i >= index) { //
 		rtk_log_array_add(tag, level);
 	}
-	return SUCCESS;
 }
 
 /***
@@ -144,13 +139,13 @@ void rtk_log_memory_dump_word(uint32_t *src, uint32_t len)
 {
 	for (uint32_t i = 0; i < len; i++) {
 		if (!i) {
-			RTK_LOGS(NOTAG, "[%08x] ", (u32)src);
+			DiagPrintf("[%08x] ", src);
 		} else if (i % DISPLAY_NUMBER == 0) {
-			RTK_LOGS(NOTAG, "\r\n[%08x] ", (u32)(src + i));
+			DiagPrintf("\r\n[%08x] ", src + i);
 		}
-		RTK_LOGS(NOTAG, "%08x ", (u32)src[i]);
+		DiagPrintf("%08x ", src[i]);
 	}
-	RTK_LOGS(NOTAG, "\n");
+	DiagPrintf("\n");
 }
 /***
 *  @brief	dump memory in byte
@@ -167,13 +162,13 @@ void rtk_log_memory_dump_byte(uint8_t *src, uint32_t len)
 {
 	for (uint32_t i = 0; i < len; i++) {
 		if (!i) {
-			RTK_LOGS(NOTAG, "[%08x] ", (u32)src);
+			DiagPrintf("[%08x] ", src);
 		} else if (i % DISPLAY_NUMBER == 0) {
-			RTK_LOGS(NOTAG, "\r\n[%08x] ", (u32)(src + i));
+			DiagPrintf("\r\n[%08x] ", src + i);
 		}
-		RTK_LOGS(NOTAG, "%02x ", src[i]);
+		DiagPrintf("%02x ", src[i]);
 	}
-	RTK_LOGS(NOTAG, "\n");
+	DiagPrintf("\n");
 }
 
 /***
@@ -232,26 +227,33 @@ void rtk_log_memory_dump2char(const char *src_buff, uint32_t buff_len)
 			}
 		}
 		dst_ptr += DiagSPrintf(dst_ptr, "|");
-		RTK_LOGS(NOTAG, "%s\n", dst_buff);
+		DiagPrintf("%s\n", dst_buff);
 		src_buff += bytes_per_line;
 		buff_len -= bytes_per_line;
 	} while (buff_len);
 }
 
-/**
- * @brief print log
- *
- * @param level  current log lvel
- * @param tag    tag of the current log
- * @param letter the letter corresponding to a specific log level
- * @param fmt    the format string to be output
- * @param ... 	 other parameters
- */
-void rtk_log_write(rtk_log_level_t level, const char *tag, const char letter, const char *fmt, ...)
+/***
+*  @brief	print message
+*
+*  @param	level The current message level
+*
+*  @param	tag The current message tag
+*
+*  @param	fmt Format control strings
+*
+*  @return	None
+*
+*  @note	If the queried module level is lower than the current incoming level, the msg is not displayed.
+***/
+void rtk_log_write(rtk_log_level_t level,
+				   const char *tag,
+				   const char *fmt, ...)
 {
-	rtk_log_level_t level_of_tag = rtk_log_level_get(tag);
 	va_list ap;
-	if (level_of_tag < level) {
+	rtk_log_level_t level_of_tag = rtk_log_level_get(tag);
+
+	if (level > level_of_tag) {
 		return;
 	}
 
