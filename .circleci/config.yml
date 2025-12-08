@@ -6,6 +6,12 @@ aliases:
       name: Create Docker Volume
       command: |
         echo "DOCKER_VERSION=${DOCKER_IMG_VERSION}"
+        DEFCONFIG_FILE="build/configs/${CIRCLE_JOB}/defconfig"
+        if [ -f "$DEFCONFIG_FILE" ] && grep -q '^CONFIG_DOCKER_VERSION' "$DEFCONFIG_FILE"; then
+          DOCKER_IMG_VERSION=$(grep '^CONFIG_DOCKER_VERSION' ${DEFCONFIG_FILE} | sed 's/.*=//; s/"//g')
+          echo "GREP AND MODIFIED VERSION=${DOCKER_IMG_VERSION}"
+        fi
+
         docker create -v /${WORKING_DIR} --name ${VOLUME} --privileged tizenrt/tizenrt:${DOCKER_IMG_VERSION} /bin/bash
         docker cp ./. ${VOLUME}:/${WORKING_DIR}
         docker run -d --rm -it --name ${BUILDER} --volumes-from=${VOLUME} -w /${WORKING_DIR}/os --privileged tizenrt/tizenrt:${DOCKER_IMG_VERSION} /bin/bash
@@ -170,8 +176,6 @@ jobs:
     machine:
       image: default
     working_directory: ~/TizenRT
-    environment:
-        DOCKER_IMG_VERSION=2.0.1
     steps:
       - attach_workspace:
           at: ~/TizenRT
@@ -182,8 +186,6 @@ jobs:
     machine:
       image: default
     working_directory: ~/TizenRT
-    environment:
-        DOCKER_IMG_VERSION=2.0.1
     steps:
       - attach_workspace:
           at: ~/TizenRT
