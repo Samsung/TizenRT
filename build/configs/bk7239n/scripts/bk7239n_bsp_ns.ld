@@ -25,7 +25,7 @@ __CPU0_APP_RAM_SIZE = 0x80000 - __CPU0_SPE_RAM_SIZE;
 __CPU0_APP_IRAM_OFFSET = 0x20000000;
 __CPU0_APP_IRAM_BASE = __CPU0_APP_RAM_BASE - __CPU0_APP_IRAM_OFFSET;
 __CPU0_APP_IRAM_SIZE = __CPU0_APP_RAM_SIZE;
-__CPU0_APP_VIRTUAL_CODE_START = 0x70000;
+__CPU0_APP_VIRTUAL_CODE_START = 0xD0000;
 __CPU0_APP_VIRTUAL_CODE_SIZE = 0x1a7860;
 
 SOC_FLASH_DATA_BASE = 0x12000000;
@@ -169,7 +169,7 @@ SECTIONS
     .ramcode :
     {
         . = . +  SIZEOF(.iram);
-        . = ALIGN(512);
+        . = ALIGN(16);
     } > RAM AT > FLASH
 
     _eronly = ABSOLUTE(.);
@@ -198,8 +198,6 @@ SECTIONS
     _data_flash_begin = __data_flash_begin;
     _data_ram_begin = __data_start__;
     _data_ram_end = .;
-
-    s_rom_end = LOADADDR(.data) + SIZEOF(.data);
 
     .uninitialized (NOLOAD):
     {
@@ -320,7 +318,8 @@ SECTIONS
     } > PSRAM_DATA
 
 /*#endif*/
-       
+
+    s_rom_end = LOADADDR(.data) + SIZEOF(.data);
 
     /* Set stack top to end of RAM, and stack limit move down by
      * size of stack_dummy section */
