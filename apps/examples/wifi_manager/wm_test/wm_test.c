@@ -763,7 +763,10 @@ int _wt_parse_set(struct wt_options *opt, int argc, char *argv[])
 			return -1;
 		}
 	} else if (argc == 4) {
-		// to-do separate ibss open and open
+		opt->ssid = argv[2];
+		opt->security = argv[3];
+		opt->auth_type = WIFI_MANAGER_AUTH_OPEN;
+		opt->crypto_type = WIFI_MANAGER_CRYPTO_NONE;
 	} else {
 		return -1;
 	}
