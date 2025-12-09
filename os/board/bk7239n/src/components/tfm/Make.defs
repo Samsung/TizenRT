@@ -30,10 +30,16 @@ tfm_crypto_ipc_api.o: tfm
 tfm_ps_ipc_api.o: tfm
 #endif
 
+ifneq ($(wildcard components/tfm/tfm/CMakeLists.txt),)
 # Add the TFM include directories to the build
 CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/interface/include
 CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/secure_fw/include
-CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/generated/interface/include
+else
+CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm_build/tfm_install/interface/include
+endif
+
+# CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/generated/interface/include
+CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm_build/generated/interface/include
 
 # Add system clock API if configured
 ifeq ($(CONFIG_TFM_SYSTEM_CLOCK), y)
@@ -56,9 +62,14 @@ CSRCS += tfm_ps_ipc_api.c
 endif
 
 # Add the TFM component directory to the build
-
+ifneq ($(wildcard components/tfm/tfm/CMakeLists.txt),)
 DEPPATH += --dep-path components/tfm/tfm/interface/src
 VPATH += :components/tfm
 VPATH += :components/tfm/tfm/interface/src/
+else
+DEPPATH += --dep-path components/tfm/tfm_build/tfm_install/interface/src
+VPATH += :components/tfm
+VPATH += :components/tfm/tfm_build/tfm_install/interface/src
+endif
 
 #endif

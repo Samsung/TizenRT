@@ -93,7 +93,7 @@ typedef struct {
 	int scan_num;
 	trwifi_ap_scan_info_s *saved_multi_scan_list;
 } bkwifi_ap_multi_scan_info_s;
-static bkwifi_ap_multi_scan_info_s g_saved_multi_scan_list[AP_MULTI_SCAN_MAX_NUM] = {NULL};
+static bkwifi_ap_multi_scan_info_s g_saved_multi_scan_list[AP_MULTI_SCAN_MAX_NUM] = {{0}};
 
 
 trwifi_result_e bk_wifi_netmgr_init(struct netdev *dev);
@@ -152,7 +152,7 @@ typedef void *_mutex;
 void rtw_mutex_init(_mutex *pmutex)
 {
 	if (*pmutex == NULL) {
-		*pmutex = kmm_zalloc(sizeof(sem_t));
+		*pmutex = (_mutex)kmm_zalloc(sizeof(sem_t));
 		if (*pmutex == NULL) {
 			printf("Failed\n");
 			return;
@@ -582,10 +582,10 @@ int bk_wifi_multi_scan_result_handle(const wifi_scan_result_t *scan_result,wifi_
 		}
 
 		int scan_ssid_result_num = add_list_idx;
-		wifi_scan_ap_info_t *ap;
+		wifi_scan_ap_info_t *ap_info;
 		for (int i = 0; i < scan_result->ap_num; i++) {
-			ap = (wifi_scan_ap_info_t *)(&scan_result->aps[i]);
-			bk_trwifi_scan_result_record(&result_ap,ap);
+			ap_info = (wifi_scan_ap_info_t *)(&scan_result->aps[i]);
+			bk_trwifi_scan_result_record(&result_ap, ap_info);
 			// Skip if ap is already existent
 			bool skip = false;
 			for (int n= 0; n < scan_ssid_result_num; n ++) {
@@ -759,6 +759,7 @@ int bk_wifi_softap_init(trwifi_softap_config_s *softap_config)
 	}
 
 	os_memcpy(ap_config.ssid, softap_config->ssid, softap_config->ssid_length);
+	ap_config.ssid[softap_config->ssid_length] = '\0';
 
 	nvdbg("[BK] ssid:%s  key:%s\r\n", ap_config.ssid, ap_config.password);
 	BK_RETURN_ON_ERR(bk_wifi_ap_set_config(&ap_config));
@@ -772,7 +773,6 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
     wifi_event_sta_connected_t *sta_connected;
     wifi_event_ap_disconnected_t *ap_disconnected;
     wifi_event_ap_connected_t *ap_connected;
-    int status_code = 0;
     BK_WIFI_LOGI("BEKEN_WIFI_EVENT", "rx event <%d %d>\n", event_module, event_id);
     switch (event_id) {
     case EVENT_WIFI_STA_ASSOCIATED:
@@ -889,7 +889,6 @@ trwifi_result_e bk_wifi_netmgr_init(struct netdev *dev)
 
 trwifi_result_e bk_wifi_netmgr_deinit(struct netdev *dev)
 {
-    trwifi_result_e wnret = TRWIFI_FAIL;
     ndbg("\n[BK] Deinit netmgr with dev %s\n",dev->ifname);
 
     if (g_station_if == BK_WIFI_STATION_IF) {
@@ -1354,11 +1353,17 @@ trwifi_result_e bk_wifi_netmgr_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 		int *mode = (int *)msg->data;
 		if (*mode == TRWIFI_POWERMODE_ON) {
 			ndbg("[BK] set power mode on\n");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 			bk_wlan_ps_enable();
+#pragma GCC diagnostic pop
 			return TRWIFI_SUCCESS;
 		} else if (*mode == TRWIFI_POWERMODE_OFF) {
 			ndbg("[BK] set power mode off\n");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 			bk_wlan_ps_disable();
+#pragma GCC diagnostic pop
 			return TRWIFI_SUCCESS;
 		}
 	} else if (msg->cmd == TRWIFI_MSG_GET_STATS) {

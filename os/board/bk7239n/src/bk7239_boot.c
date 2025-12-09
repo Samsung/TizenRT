@@ -81,6 +81,7 @@
 #include <unistd.h>
 #include "hal_gpio_types.h"
 #include "hal_timer_types.h"
+#include <driver/uart.h>
 #include <modules/pm.h>
 
 #ifdef CONFIG_WATCHDOG
@@ -261,18 +262,24 @@ void armino_mount_partitions(void)
  ****************************************************************************/
 
 #ifdef CONFIG_BOARD_INITIALIZE
-
-static int board_pm_init(void)
+static int board_pm_pre_init(void)
 {
 	#ifdef CONFIG_PM
 	extern void arm_pminitialize(void);
 	arm_pminitialize();
 	#endif
+
 	#if defined(CONFIG_ROSC_CALIB_SW)
 	bk_rosc_32k_calib();
 	#endif
+	return 0;
+}
 
-	bk_pm_module_vote_cpu_freq(PM_DEV_ID_DEFAULT,PM_CPU_FRQ_120M);
+static int board_pm_init(void)
+{
+	pm_cpu_freq_e cpu_freq_default = (pm_cpu_freq_e)CONFIG_PM_CPU_FRQ_DEFAULT;
+	bk_pm_module_vote_cpu_freq(PM_DEV_ID_DEFAULT,cpu_freq_default);
+
 	#if defined(CONFIG_PM_LV_WDT_PROTECTION)
 	//pm_wifi_event_init();
 	#endif
@@ -280,8 +287,7 @@ static int board_pm_init(void)
 	ana_gpio_wakeup_init();
 	#endif
 	/* pm demo thread */
-	extern bk_err_t pm_demo_thread_main(void);
-	pm_demo_thread_main();
+	pm_thread_main();
 	return 0;
 }
 extern int32_t ns_interface_lock_init(void);
@@ -296,6 +302,10 @@ void board_initialize(void)
 	beken_commands_line_init(1, NULL);
 #endif
 
+#if defined(CONFIG_ASYNC_IRQ_LOG)
+	extern int async_irq_log_init(void);
+	async_irq_log_init();
+#endif
 
 #if defined(CONFIG_WATCHDOG)
 	armino_wdg_initialize(CONFIG_WATCHDOG_DEVPATH);
@@ -332,9 +342,12 @@ void board_initialize(void)
 		}
 	}
 #endif
+	/*pm pre init*/
+	board_pm_pre_init();
 
 	extern void bk_phy_init(void);
 	bk_phy_init();
+
 	/*pm init*/
 	board_pm_init();
 

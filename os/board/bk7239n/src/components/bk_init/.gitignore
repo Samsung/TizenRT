@@ -1,0 +1,32 @@
+.depend
+Make.dep
+.built
+*.o
+*.a
+*.d
+*.i
+*~
+*~*
+.#*
+*#
+*.orig
+*.bak
+*.rej
+.swp
+.*.swp
+.gdbinit
+cscope.out
+tags
+*.pyc
+/submodule
+
+# ctags index file
+.tags
+.tags_sorted_by_file
+
+# Developer playground
+/tmp/
+*.tmp
+*.tmp.*
+*.log
+*.log.old

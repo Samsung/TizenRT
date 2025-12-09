@@ -169,7 +169,10 @@ void wifi_netif_call_status_cb_when_sta_got_ip(void)
 	FUNC_1PARAM_PTR fn;
 	wifi_linkstate_reason_t info = mhdr_get_station_status();
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	fn = (FUNC_1PARAM_PTR)bk_wlan_get_status_cb();
+#pragma GCC diagnostic pop
 	if(fn) {
 		info.state = WIFI_LINKSTATE_STA_GOT_IP;
 		info.reason_code = WIFI_REASON_MAX;
@@ -182,7 +185,10 @@ void wifi_netif_call_status_cb_when_sta_dhcp_timeout(void)
 	FUNC_1PARAM_PTR fn;
 	wifi_linkstate_reason_t info = mhdr_get_station_status();
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	fn = (FUNC_1PARAM_PTR)bk_wlan_get_status_cb();
+#pragma GCC diagnostic pop
 	if(fn) {
 		info.state = WIFI_LINKSTATE_STA_DISCONNECTED;
 		info.reason_code = WIFI_REASON_DHCP_TIMEOUT;

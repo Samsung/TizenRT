@@ -1,0 +1,31 @@
+/properties
+.depend
+Make.dep
+.built
+*.o
+*.a
+*.d
+*.i
+*.orig
+*.bak
+*.rej
+.swp
+.*.swp
+.gdbinit
+cscope.out
+tags
+*.pyc
+
+# ctags index file
+.tags
+.tags_sorted_by_file
+
+# Developer playground
+/tmp/
+*.tmp
+*.tmp.*
+*.log
+*.log.old
+
+!/libs/*.a
+!/components/tfm/tfm_build/secure_fw/*.a

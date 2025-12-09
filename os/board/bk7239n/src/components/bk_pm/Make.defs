@@ -60,7 +60,7 @@ ifeq ($(CONFIG_PM_ENABLE),y)
 	CSRCS += bk_pm_wakeup_source.c
 	CSRCS += bk_pm_debug.c
 	CSRCS += bk_pm_misc.c
-	CSRCS += bk_pm_demo.c
+	CSRCS += bk_pm_thread.c
 endif
 
 ifeq ($(CONFIG_PSRAM),y)

@@ -80,8 +80,10 @@ CSRCS += \
 	wifi_frame.c \
 	wifi_init.c \
 	wifi_netif.c \
-	wifi_v2.c
-
+	wifi_v2.c \
+	regdb.c \
+	regdb_bin.c \
+	reg.c
 
 DEPPATH += --dep-path components/bk_wifi/src
 VPATH += :components/bk_wifi/src

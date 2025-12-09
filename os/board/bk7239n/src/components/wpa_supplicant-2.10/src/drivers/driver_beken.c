@@ -1637,7 +1637,7 @@ int hostap_set_ap(void *priv, struct wpa_driver_ap_params *params)
 {
     struct hostap_driver_data *drv = priv;
     char *pos;
-    char *beacon;
+    char *beacon_buf;
     int bcn_len;
     int ret;
     struct prism2_hostapd_param param;
@@ -1654,13 +1654,13 @@ int hostap_set_ap(void *priv, struct wpa_driver_ap_params *params)
 #else
     bcn_len = params->head_len + params->tail_len + WLAN_EID_TIM_LEN;
 #endif
-    beacon = (char *)os_malloc(bcn_len);
-    if(0 == beacon)
+    beacon_buf = (char *)os_malloc(bcn_len);
+    if(0 == beacon_buf)
     {
         return 0;
     }
 
-    pos = beacon;
+    pos = beacon_buf;
     os_memcpy(pos, params->head, params->head_len);
     pos = pos + params->head_len;
 
@@ -1679,12 +1679,12 @@ int hostap_set_ap(void *priv, struct wpa_driver_ap_params *params)
 	for (i = 0; i < bcn_extra_size; i ++)
 		*pos++ = params->beacon_ies->buf[i];
 	wpa_hexdump(MSG_DEBUG, "p2p bcn ie:", params->beacon_ies->buf, bcn_extra_size);
-	wpa_hexdump(MSG_DEBUG, "bcn ie:", beacon, bcn_len);
+	wpa_hexdump(MSG_DEBUG, "bcn ie:", beacon_buf, bcn_len);
     }
 #endif
 
     param.cmd = PRISM2_HOSTAPD_SET_AP_BCN;
-    param.u.bcn_change.beacon = beacon;
+    param.u.bcn_change.beacon = beacon_buf;
     param.u.bcn_change.bcn_len = bcn_len;
     param.u.bcn_change.head_len = params->head_len;
     param.u.bcn_change.tim_len = 6;
@@ -1692,7 +1692,7 @@ int hostap_set_ap(void *priv, struct wpa_driver_ap_params *params)
 
     ret = hostapd_ioctl(drv, &param, sizeof(param));
 
-    os_free(beacon);
+    os_free(beacon_buf);
     return ret;
 }
 
@@ -2166,7 +2166,7 @@ const u8 *wpa_driver_get_mac(void *priv)
     return drv->own_addr;
 }
 
-uint64_t rwnx_hw_mm_features();
+uint64_t rwnx_hw_mm_features(void);
 
 int wpa_driver_get_capa(void *priv, struct wpa_driver_capa *capa)
 {

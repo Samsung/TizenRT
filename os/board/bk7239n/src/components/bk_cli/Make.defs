@@ -55,6 +55,10 @@
 
 CSRCS += cli_main.c cli_uart.c cli_gpio.c cli_misc.c cli_mem.c cli_os.c cli_timer.c
 
+ifeq ($(CONFIG_SECURE_TEST),y)
+	CSRCS += cli_secure_storage.c cli_cipher_aes.c cli_ecdsa_test.c
+endif
+
 ifeq ($(CONFIG_FLASH),y)
 	CSRCS += cli_flash_test.c
 	CSRCS += cli_flash.c
@@ -65,7 +69,9 @@ ifeq ($(CONFIG_TRNG_SUPPORT),y)
 endif
 
 ifeq ($(CONFIG_NIST_TEST),y)
-	CSRCS += cli_nist.c cli_nist_cases.c cli_nist_common.c
+	CSRCS += cli_nist.c cli_nist_common.c 
+	CSRCS += cli_nist_hash.c cli_nist_aes.c cli_nist_hmac.c cli_nist_rng.c
+	CSRCS += cli_nist_ecdsa.c cli_nist_rsa.c cli_nist_gcm.c cli_nist_ecdh.c
 endif
 
 #ifeq ($(CONFIG_EASY_FLASH),y)
@@ -168,12 +174,12 @@ ifeq ($(CONFIG_I2S_TEST),y)
 	CSRCS += cli_i2s.c
 endif
 
-ifeq ($(CONFIG_CIPHER_AES_TEST_ENABLE),y)
-	CSRCS += cli_cipher_aes.c
-endif
-
 DEPPATH += --dep-path components/bk_cli
 DEPPATH += --dep-path components/bk_cli/uart_debug
+DEPPATH += --dep-path components/bk_cli/nist_test
+DEPPATH += --dep-path components/bk_cli/security_test
 VPATH += :components/bk_cli
 VPATH += :components/bk_cli/uart_debug
+VPATH += :components/bk_cli/nist_test
+VPATH += :components/bk_cli/security_test
 

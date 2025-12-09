@@ -117,7 +117,7 @@ void system_driver_set_bts_wakeup_platform_en(bool value)
 		ret = sys_amp_res_release();
 
 }
-uint32_t system_driver_get_bts_wakeup_platform_en()
+uint32_t system_driver_get_bts_wakeup_platform_en(void)
 {
 	return sys_hal_get_bts_wakeup_platform_en();
 }
@@ -129,7 +129,7 @@ void system_driver_set_bts_sleep_exit_req(bool value)
 	else
 		sys_hal_set_bts_sleep_exit_req(0);
 }
-uint32_t system_driver_get_bts_sleep_exit_req()
+uint32_t system_driver_get_bts_sleep_exit_req(void)
 {
 	return sys_hal_get_bts_sleep_exit_req();
 }

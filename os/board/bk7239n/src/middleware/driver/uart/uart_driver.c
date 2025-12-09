@@ -31,7 +31,6 @@
 #include <os/os.h>
 #include "bk_arch.h"
 #include <components/system.h>
-#include "bk_pm_demo.h"
 #include "modules/pm.h"
 #if (defined(CONFIG_SYSTEM_CTRL))
 #include "sys_driver.h"
@@ -848,7 +847,7 @@ static bk_err_t uart_enter_deep_sleep(uint64_t sleep_time, void *args)
 	return BK_OK;
 }
 
-static void shell_rx_wakeup(int gpio_id)
+static void shell_rx_wakeup(int gpio_id, void *priv)
 {
 	//wakeup_process();   //log vote to make it wakeup at least 2 seconds
 	//set_shell_event(SHELL_EVENT_WAKEUP);
@@ -856,13 +855,13 @@ static void shell_rx_wakeup(int gpio_id)
 	//bk_printf((const u8*)"wakeup\r\n", sizeof("wakeup\r\n") - 1);   	//TODO: must add log here?
 	//bk_printf("wakeup\r\n");
 	pm_ap_core_msg_t msg = {0};
-    msg.event= PM_DEMO_CALLBACK_MSG_HANDLE;
+    msg.event= PM_CALLBACK_HANDLE_MSG;
     msg.param1 = PM_MODE_LOW_VOLTAGE;
     msg.param2 = PM_WAKEUP_SOURCE_INT_GPIO;
-    msg.param3 = BK_PM_WAKEUP_UART_CONSOLE;//uart0 rxd
-    bk_pm_demo_send_msg(&msg);
+    msg.param3 = 1;//uart0 rxd
+    bk_pm_send_msg(&msg);
 
-	bk_gpio_register_isr(gpio_id, NULL);
+	bk_gpio_register_isr_ex(gpio_id, NULL, NULL);
 }
 
 gpio_id_t bk_uart_get_rx_gpio(uart_id_t id);
@@ -878,7 +877,7 @@ static bk_err_t shell_power_save_enter(uint64_t sleep_time, void *args)
 	bk_uart_set_enable_tx(uart_id, 0);
 
 	uint32_t gpio_id = (uint32_t) bk_uart_get_rx_gpio(uart_id);
-	bk_gpio_register_isr(gpio_id, (gpio_isr_t)shell_rx_wakeup);
+	bk_gpio_register_isr_ex(gpio_id, (gpio_isr_t)shell_rx_wakeup, NULL);
 	bk_uart_set_enable_rx(uart_id, 0);
 
 	return BK_OK;
@@ -1335,9 +1334,7 @@ bk_err_t bk_uart_init(uart_id_t id, const uart_config_t *config)
 
 	uart_hal_init_uart(&s_uart[id].hal, id, config);
 	uart_hal_start_common(&s_uart[id].hal, id);
-
 	s_uart_init_flag[id] = true;
-
 	return BK_OK;
 }
 
@@ -1369,9 +1366,7 @@ bk_err_t bk_uart_deinit(uart_id_t id)
 #endif
 	}
 #endif
-
 	s_uart_init_flag[id] = false;
-
 	return BK_OK;
 }
 

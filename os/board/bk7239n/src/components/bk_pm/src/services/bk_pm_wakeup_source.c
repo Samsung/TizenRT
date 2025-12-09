@@ -20,6 +20,7 @@
 #include "int_types.h"
 #include "pm_wakeup_source.h"
 #include "pm_sleep.h"
+#include "gpio_adapter.h"
 
 /*=====================DEFINE SECTION START=====================*/
 #define PM_WAKEUP_SOURCE_MARK                                (WAKEUP_SOURCE_MARK)
@@ -221,31 +222,104 @@ __attribute__((section(".iram")))  bk_err_t bk_pm_sleep_wakeup_reason_set(uint64
 	}
 	return BK_OK;
 }
+static bk_err_t pm_wakeup_reason_parse(bk_pm_wakeup_reason_e *wakeup_reason)
+{
+	peripheral_group_t wakeup_source_sub_type = bk_gpio_get_wake_source_sub_type();
 
+	switch(wakeup_source_sub_type)
+	{
+		case PERIPHERAL_GROUP_I2C0:
+
+			break;
+		case PERIPHERAL_GROUP_I2C1:
+
+			break;
+		case PERIPHERAL_GROUP_SPI0:
+
+			break;
+		case PERIPHERAL_GROUP_SPI1:
+
+			break;
+		case PERIPHERAL_GROUP_UART0:
+			*wakeup_reason = BK_PM_WAKEUP_UART_CONSOLE;
+			break;
+		case PERIPHERAL_GROUP_UART1:
+			*wakeup_reason = BK_PM_WAKEUP_UART_TTYS2;
+			break;
+		case PERIPHERAL_GROUP_UART2:
+		    *wakeup_reason = BK_PM_WAKEUP_UART_TTYS2;
+			break;
+		case PERIPHERAL_GROUP_UART3:
+		    *wakeup_reason = BK_PM_WAKEUP_UART_TTYS2;
+			break;
+		default:
+			*wakeup_reason = BK_PM_WAKEUP_GPIO;
+			break;
+	}
+
+	return BK_OK;
+}
 bk_pm_wakeup_reason_e bk_pm_sleep_wakeup_reason_get()
 {
 	if(s_normal_sleep_wakeup_irq_id != INT_SRC_NONE)
 	{
 		/*Debug*/
-		//LOGI("NS wakeup irq: %d,0x%llx", s_normal_sleep_wakeup_irq_id,s_normal_sleep_wakeup_irq);
+		//LOGI("NS wakeup irq: %d,0x%llx\r\n", s_normal_sleep_wakeup_irq_id,s_normal_sleep_wakeup_irq);
 	}
+	bk_pm_wakeup_reason_e wakeup_reason = BK_PM_WAKEUP_UNKNOWN;
 	switch (s_normal_sleep_wakeup_irq_id)
 	{
+		#if CONFIG_ANA_GPIO
 		case INT_SRC_ANA_GPIO:
-			return BK_PM_WAKEUP_GPIO;
+		#endif
+		case INT_SRC_GPIO:
+		case INT_SRC_GPIO_NS:
+			#if CONFIG_PM_LOWEST_POWER_MODE == 1
+			pm_wakeup_reason_parse(&wakeup_reason);
+			#else
+			wakeup_reason = BK_PM_WAKEUP_GPIO;
+			break;
+			#endif
+		break;
+		#if CONFIG_ANA_RTC
 		case INT_SRC_ANA_RTC:
-			return BK_PM_WAKEUP_HW_TIMER;
+		#else
+		case INT_SRC_RTC:
+		#endif
+		    if(strcmp(bk_rtc_get_first_alarm_name(), PM_WIFI_RTC_ALARM_NAME) == 0)
+		    {
+				wakeup_reason = BK_PM_WAKEUP_WIFI;
+			}
+			else if(strcmp(bk_rtc_get_first_alarm_name(), PM_BT_RTC_ALARM_NAME) == 0)
+			{
+				wakeup_reason = BK_PM_WAKEUP_BLE;
+			}
+			else if(strcmp(bk_rtc_get_first_alarm_name(), PM_APP_RTC_ALARM_NAME) == 0)
+			{
+				wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
+			}
+			else
+			{
+				wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
+			}
+
+			break;
 		case INT_SRC_MAC_GENERAL:
-			return BK_PM_WAKEUP_WIFI;
+		    wakeup_reason = BK_PM_WAKEUP_WIFI;
+			break;
 		case INT_SRC_BT:
-			return BK_PM_WAKEUP_BLE;
-		case INT_SRC_UART1:
-			return BK_PM_WAKEUP_UART_CONSOLE;
+		    wakeup_reason = BK_PM_WAKEUP_BLE;
+			break;
+		case INT_SRC_UART0:
+		    wakeup_reason = BK_PM_WAKEUP_UART_CONSOLE;
+			break;
 		case INT_SRC_UART2:
-			return BK_PM_WAKEUP_UART_TTYS2;
+		case INT_SRC_UART1:
+		    wakeup_reason = BK_PM_WAKEUP_UART_TTYS2;
+			break;
 		default:
-			return BK_PM_WAKEUP_UNKNOWN;
+		   wakeup_reason =  BK_PM_WAKEUP_UNKNOWN;
 			break;
 	}
-	return BK_PM_WAKEUP_UNKNOWN;
+	return wakeup_reason;
 }

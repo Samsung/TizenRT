@@ -35,6 +35,8 @@
 #include "bk_private/bk_wifi.h"
 #include "rwnx_rx.h"
 #include "bk_lwipif_tizenrt.h"
+#include "wifi_config.h"
+extern size_t rtos_get_free_heap_size_by_index(int heap_index);
 struct pbuf *bk_wlan_buf_alloc(uint32_t len)
 {
 	struct pbuf *p = os_zalloc_sram(len + sizeof(struct pbuf) + 96);
@@ -60,12 +62,17 @@ err_t bk_wlan_txdata_send(uint8_t * data,uint16_t len, uint32_t vif_idx)
 {
     struct pbuf* p = NULL;
     err_t ret = ERR_OK;
+
+    size_t free_heap_size = rtos_get_free_heap_size_by_index(SRAM_INDEX);
+    if (free_heap_size < WIFI_CFG_DFT_MIN_RSV_MEM) {
+        return ERR_MEM;
+    }
 #ifdef CONFIG_NET_NETMGR_ZEROCOPY
     p = bk_wlan_buf_alloc(((struct pbuf*)data)->len);   
     if(p)
     {
         //TODO: Use dma copy instead of cpu copy
-        dma_memcpy(p->payload,((struct pbuf*)data)->payload,((struct pbuf*)data)->len);
+        memcpy(p->payload,((struct pbuf*)data)->payload,((struct pbuf*)data)->len);
     }
     else
     {
@@ -75,7 +82,7 @@ err_t bk_wlan_txdata_send(uint8_t * data,uint16_t len, uint32_t vif_idx)
     p = bk_wlan_buf_alloc(len);
     if(p)
     {
-        dma_memcpy(p->payload,data,len);
+        memcpy(p->payload,data,len);
     }
     else
     {

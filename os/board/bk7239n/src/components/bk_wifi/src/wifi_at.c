@@ -1308,7 +1308,7 @@ int at_wlan_bridge_start(char *bridge_ssid, char *ext_ssid, char *key) {
 	return kNoErr;
 }
 
-int at_wlan_bridge_stop() {
+int at_wlan_bridge_stop(void) {
 	bridge_ip_stop();
 	if(bk_wifi_sta_stop()){
 		BK_WIFI_LOGE(TAG,"bridge stop sta fail\r\n");

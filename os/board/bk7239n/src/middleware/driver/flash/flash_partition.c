@@ -130,63 +130,33 @@ const partition_map_t partition_map[] = {
 /* Logic partition on flash devices */
 
 
-const bk_logic_partition_t bk_flash_partitions[BK_PARTITION_MAX] = {
-	[BK_PARTITION_BOOTLOADER] =
+bk_logic_partition_t bk_flash_partitions[] = {
 	{
 		.partition_owner           = BK_FLASH_EMBEDDED,
 		.partition_description     = "bootloader",
-		.partition_start_addr      = 0x0,
-		.partition_length          = 0x11000,
+		.partition_start_addr      = 0xFFFFFFFF,
+		.partition_length          = 0xFFFFFFFF,
 		.partition_options         = PAR_OPT_READ_EN | PAR_OPT_WRITE_DIS,
 	},
-	[BK_PARTITION_APPLICATION] =
-	{
-		.partition_owner           = BK_FLASH_EMBEDDED,
-		.partition_description     = "application",
-		.partition_start_addr      = 0x11000,
-		.partition_length          = 0x242000,
-		.partition_options         = PAR_OPT_READ_EN | PAR_OPT_WRITE_DIS,
-	},
-	[BK_PARTITION_OTA] =
-	{
-		.partition_owner           = BK_FLASH_EMBEDDED,
-		.partition_description     = "ota",
-
-		.partition_start_addr      = 0x253000,
-		.partition_length          = 0x187000, //1700KB
-
-		.partition_options         = PAR_OPT_READ_EN | PAR_OPT_WRITE_DIS,
-	},
-    [BK_PARTITION_USR_CONFIG] =
-    {
-        .partition_owner = BK_FLASH_EMBEDDED,
-        .partition_description = "usr_config",
-        .partition_start_addr = 0x3da000,
-        .partition_length = 0x1c000,
-        .partition_options = PAR_OPT_READ_EN | PAR_OPT_WRITE_DIS,
-    },
-	[BK_PARTITION_RF_FIRMWARE] =
 	{
 		.partition_owner           = BK_FLASH_EMBEDDED,
 		.partition_description     = "rf_firmware",
-		.partition_start_addr      = 0x3F6000,
-		.partition_length          = 0x1000,
+		.partition_start_addr      = 0xFFFFFFFF,
+		.partition_length          = 0xFFFFFFFF,
 		.partition_options         = PAR_OPT_READ_EN | PAR_OPT_WRITE_DIS,
 	},
-	[BK_PARTITION_NET_PARAM] =
 	{
 		.partition_owner           = BK_FLASH_EMBEDDED,
 		.partition_description     = "net_param",
-		.partition_start_addr      = 0x3F7000,
-		.partition_length          = 0x1000,
+		.partition_start_addr      = 0xFFFFFFFF,
+		.partition_length          = 0xFFFFFFFF,
 		.partition_options         = PAR_OPT_READ_EN | PAR_OPT_WRITE_DIS,
 	},
-    [BK_PARTITION_EASYFLASH] =
     {
         .partition_owner = BK_FLASH_EMBEDDED,
         .partition_description     = "easyflash",
-        .partition_start_addr      = 0x3f8000,
-        .partition_length          = 0x2000,
+        .partition_start_addr      = 0xFFFFFFFF,
+        .partition_length          = 0xFFFFFFFF,
         .partition_options         = PAR_OPT_READ_EN | PAR_OPT_WRITE_DIS,
     },
 };
@@ -297,9 +267,122 @@ static bool partitionIsEncrypt(bk_partition_t partition)
 }
 #endif
 
+static int bk_get_partition_info_from_config(const char *part_name, uint32_t *address, uint32_t *size)
+{
+    if (part_name == NULL || address == NULL || size == NULL) {
+        return -1;
+    }
+
+    // Use const pointers to the macro strings for parsing (we only read them, not modify)
+    const char *size_str = CONFIG_FLASH_PART_SIZE;
+    const char *name_str = CONFIG_FLASH_PART_NAME;
+    
+    const char *size_ptr = size_str;
+    const char *name_ptr = name_str;
+    
+    uint32_t current_address = 0;
+    int found = 0;
+    
+    // Traverse through partitions
+    while (*size_ptr != '\0' && *name_ptr != '\0') {
+        char size_buf[12] = {0};
+        char name_buf[16] = {0};
+        
+        // Extract size token
+        const char *size_comma = strchr(size_ptr, ',');
+        if (size_comma != NULL) {
+            int size_len = size_comma - size_ptr;
+            if (size_len > 0 && size_len < sizeof(size_buf)) {
+                memcpy(size_buf, size_ptr, size_len);
+                size_buf[size_len] = '\0';
+            }
+            size_ptr = size_comma + 1;
+        } else {
+            // Last token (no comma)
+            int size_len = strlen(size_ptr);
+            if (size_len > 0 && size_len < sizeof(size_buf)) {
+                memcpy(size_buf, size_ptr, size_len);
+                size_buf[size_len] = '\0';
+            }
+            size_ptr += size_len; // Move to end
+        }
+        
+        // Extract name token
+        const char *name_comma = strchr(name_ptr, ',');
+        if (name_comma != NULL) {
+            int name_len = name_comma - name_ptr;
+            if (name_len > 0 && name_len < sizeof(name_buf)) {
+                memcpy(name_buf, name_ptr, name_len);
+                name_buf[name_len] = '\0';
+            }
+            name_ptr = name_comma + 1;
+        } else {
+            // Last token (no comma)
+            int name_len = strlen(name_ptr);
+            if (name_len > 0 && name_len < sizeof(name_buf)) {
+                memcpy(name_buf, name_ptr, name_len);
+                name_buf[name_len] = '\0';
+            }
+            name_ptr += name_len; // Move to end
+        }
+        
+        // Check if we have valid tokens
+        if (strlen(size_buf) == 0 || strlen(name_buf) == 0) {
+            break;
+        }
+        
+        // Convert size from KB to bytes
+        uint32_t part_size_kb = (uint32_t)atoi(size_buf);
+        uint32_t part_size = part_size_kb * 1024;
+        
+        // Check if this is the partition we're looking for
+        if (strcmp(name_buf, part_name) == 0) {
+            *address = current_address;
+            *size = part_size;
+            found = 1;
+            break;
+        }
+        
+        // Accumulate address for next partition (in bytes)
+        current_address += part_size;
+    }
+    
+    return found ? 0 : -1;
+}
+
+void init_bk_flash_partitions(void)
+{
+	uint32_t address = 0;
+	uint32_t size = 0;
+
+	if (bk_get_partition_info_from_config("bl1", &address, &size) == 0) {
+		bk_flash_partitions[0].partition_start_addr = address;
+		bk_flash_partitions[0].partition_length = size;
+	}
+
+	if (bk_get_partition_info_from_config("rf", &address, &size) == 0) {
+		bk_flash_partitions[1].partition_start_addr = address;
+		bk_flash_partitions[1].partition_length = size;
+	}
+
+	if (bk_get_partition_info_from_config("net", &address, &size) == 0) {
+		bk_flash_partitions[2].partition_start_addr = address;
+		bk_flash_partitions[2].partition_length = size;
+	}
+
+	if (bk_get_partition_info_from_config("easyflash", &address, &size) == 0) {
+		bk_flash_partitions[3].partition_start_addr = address;
+		bk_flash_partitions[3].partition_length = size;
+	}
+}
+
 bk_logic_partition_t *bk_flash_partition_get_info(bk_partition_t partition)
 {
 	bk_logic_partition_t *pt = NULL;
+
+	if (bk_flash_partitions[0].partition_start_addr == 0xFFFFFFFF) {
+		init_bk_flash_partitions();
+	}
 
 	BK_ASSERT(BK_PARTITION_BOOTLOADER < BK_PARTITION_MAX);
 
@@ -307,7 +390,15 @@ bk_logic_partition_t *bk_flash_partition_get_info(bk_partition_t partition)
 #if defined(CONFIG_TFM_READ_FLASH_NSC)
 		pt = get_partition_info(partition);
 #else
-		pt = (bk_logic_partition_t *)&bk_flash_partitions[partition];
+		if (partition == BK_PARTITION_BOOTLOADER) {
+			pt = (bk_logic_partition_t *)&bk_flash_partitions[0];
+		} else if (partition == BK_PARTITION_RF_FIRMWARE) {
+			pt = (bk_logic_partition_t *)&bk_flash_partitions[1];
+		} else if (partition == BK_PARTITION_NET_PARAM) {
+			pt = (bk_logic_partition_t *)&bk_flash_partitions[2];
+		} else if (partition == BK_PARTITION_EASYFLASH) {
+			pt = (bk_logic_partition_t *)&bk_flash_partitions[3];
+		}
 #endif
 	}
 	return pt;
