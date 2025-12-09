@@ -5,7 +5,7 @@ from ...common.common import user_operate, bytes_reverse, BIT, BFD, bytes_revers
 from ...common.encrypt_helper import decrypt_random, encrypt_random
 from .bk7236_security import BK7236_Security
 
-class BK7236N_Security(BK7236_Security):
+class BK7239N_Security(BK7236_Security):
     def __init__(self, serial_instance):
         super().__init__(serial_instance)
         self.ser = serial_instance
