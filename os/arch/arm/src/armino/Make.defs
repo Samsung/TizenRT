@@ -74,8 +74,12 @@ CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/include/driver/hal
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/middleware/driver/reset_reason
 
 ifeq ($(CONFIG_TFM),y)
+ifneq ($(wildcard $(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/components/tfm/tfm/CMakeLists.txt),)
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/components/tfm/tfm/interface/include
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/components/tfm/tfm/secure_fw/include
+else
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/components/tfm/tfm_build/tfm_install/interface/include
+endif
 CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/generated/interface/include
 CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/_build/
 endif

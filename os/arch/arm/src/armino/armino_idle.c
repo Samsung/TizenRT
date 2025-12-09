@@ -62,52 +62,45 @@
 #include <tinyara/board.h>
 #include <tinyara/pm/pm.h>
 #include <modules/pm.h>
+#include "../../../../pm/pm.h"
 
 #include "chip.h"
 #include "up_internal.h"
-#include "pm_sleep_callback.h"
+#include <driver/uart.h>
 
-// /* CRITICAL: Workaround for compiler bug using inline assembly
-//  *
-//  * Problem: Compiler generates "asrs r3, r0, #31" which sign-extends r0
-//  * This causes 0x2ee000497c to become 0xffffffffe000497c when r0's bit 31 = 1
-//  *
-//  * Evidence from assembly (line 310157, 310164):
-//  *   bl   bk_aon_rtc_get_us
-//  *   asrs r3, r0, #31        ← Should be: mov r3, r1
-//  *
-//  * Solution: Inline assembly to manually extract r0 and r1 after function call
-//  */
-// static __attribute__((always_inline)) inline uint64_t rtc_get_us_safe(void)
-// {
-// 	uint32_t low_val, high_val;
 
-// 	__asm__ __volatile__ (
-// 		"bl bk_aon_rtc_get_us \n\t"   // Call function, returns in r0:r1
-// 		"mov %0, r0           \n\t"   // Save r0 to low_val
-// 		"mov %1, r1           \n\t"   // Save r1 to high_val (NOT asr #31!)
-// 		: "=r" (low_val), "=r" (high_val)   // Outputs
-// 		:                                     // No inputs
-// 		: "r0", "r1", "r2", "r3", "lr", "memory"  // Clobbers
-// 	);
+/*=====================DEFINE SECTION START====================*/
+typedef int                   bk_err_t;      /**< Return error code */
+#define MAX_REASONABLE_TICKS  86400000ULL    /* 24 hours in ticks (1ms per tick) */
 
-// 	// Combine using bitwise OR (not addition) to avoid any signed operations
-// 	return ((uint64_t)high_val << 32) | (uint64_t)low_val;
-// }
+/*=====================DEFINE SECTION END======================*/
 
-typedef int             bk_err_t;            /**< Return error code */
 
-extern void up_set_pm_timer(unsigned int interval_us); 
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+/*=====================VARIABLE SECTION START==================*/
+clock_t s_missed_ticks = 0;
 
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
+/*=====================VARIABLE SECTION END====================*/
+
+/*================FUNCTION DECLARATION SECTION START===========*/
+extern void up_set_pm_timer(unsigned int interval_us);
+extern void up_set_dvfs(int div_lvl);
+int armino_sleep_processing(void);
+//extern uint64_t bk_pm_suppress_ticks_and_sleep(uint32_t sleep_ticks);
+
+/*================FUNCTION DECLARATION SECTION END=============*/
 
 #ifdef CONFIG_PM
-void armino_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t));
+
+static pm_wakeup_reason_code_t up_get_wakeup_reason(void)
+{
+	return bk_pm_sleep_wakeup_reason_get();
+}
+
+static clock_t up_get_missed_ticks(void)
+{
+	return s_missed_ticks;
+}
+
 /****************************************************************************
  * Name: up_pm_board_sleep
  *
@@ -121,15 +114,34 @@ void armino_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_cod
  *   None.
  *
  ****************************************************************************/
-#define config_SLEEP_PROCESSING( x )         		(armino_sleep_processing( x ))
-void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
+static int up_pm_board_sleep()
 {
-	//config_SLEEP_PROCESSING(wakeuphandler);
-	bk_pm_sleep_mode_set(PM_MODE_NORMAL_SLEEP);
-	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x1,0x0);
+	if (!g_pmglobals.is_running) {
+		return 0;
+	}
+
+	if(pm_checkstate() == PM_SLEEP)
+	{
+		#if CONFIG_PM_LOWEST_POWER_MODE == 0
+		bk_pm_sleep_mode_set(PM_MODE_NORMAL_SLEEP);
+		#elif CONFIG_PM_LOWEST_POWER_MODE == 1
+		bk_pm_sleep_mode_set(PM_MODE_LOW_VOLTAGE);
+		#elif CONFIG_PM_LOWEST_POWER_MODE == 2
+		bk_pm_sleep_mode_set(PM_MODE_DEEP_SLEEP);
+		#elif CONFIG_PM_LOWEST_POWER_MODE == 3
+		bk_pm_sleep_mode_set(PM_MODE_SUPER_DEEP_SLEEP);
+		#endif
+		bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x1,0x0);
+	}
+	else
+	{
+		bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x0,0x0);
+	}
+
+	return 0;
 }
 #else
-#define up_pm_board_sleep(wakeuphandler)
+#define up_pm_board_sleep() 0
 #endif
 
 #ifdef CONFIG_PM
@@ -137,7 +149,16 @@ void up_pm_board_sleep(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
 struct pm_sleep_ops armino_sleep_ops = {
 	.sleep = up_pm_board_sleep,
 	.set_timer = up_set_pm_timer,
+	.get_wakeupreason = up_get_wakeup_reason,
+	.get_missingtick = up_get_missed_ticks,
 };
+
+#ifdef CONFIG_PM_DVFS
+
+struct pm_clock_ops armino_clock_ops = {
+	.adjust_dvfs = up_set_dvfs,
+};
+#endif
 #endif
 /****************************************************************************
  * Name: up_idle
@@ -151,9 +172,7 @@ struct pm_sleep_ops armino_sleep_ops = {
  *   power management operations might be performed.
  *
  ****************************************************************************/
-extern uint64_t bk_pm_suppress_ticks_and_sleep(uint32_t sleep_ticks);
-extern void pm_wakehandler(clock_t missing_tick, pm_wakeup_reason_code_t wakeup_src);
-extern uint64_t bk_aon_rtc_get_ms(void);
+
 void up_idle(void)
 {
 #if defined(CONFIG_SUPPRESS_INTERRUPTS) || defined(CONFIG_SUPPRESS_TIMER_INTS)
@@ -165,7 +184,7 @@ void up_idle(void)
 
 #endif
     //bk_pm_suppress_ticks_and_sleep(0);
-	// armino_sleep_processing(pm_wakehandler);
+	armino_sleep_processing();
 }
 #ifdef CONFIG_PM
 void arm_pminitialize(void)
@@ -173,6 +192,9 @@ void arm_pminitialize(void)
 	/* Then initialize the TinyAra power management subsystem properly */
 	pm_initialize(&armino_sleep_ops);
 
+#ifdef CONFIG_PM_DVFS
+	pm_clock_initialize(&armino_clock_ops);
+#endif
 }
 #endif
 
@@ -201,35 +223,19 @@ void arm_pminitialize(void)
  *   None
  *
  ****************************************************************************/
-void armino_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_code_t))
+int armino_sleep_processing()
 {
-	// uint64_t tick_before_sleep     =  0;
-	// uint64_t tick_after_sleep      =  0;
 	uint64_t missed_ticks          =  0;
 	uint64_t usec_passed           =  0;
 	clock_t ticks_passed           =  0;
-	uint16_t wakeup_reason         =  0;
-	//volatile uint32_t int_level    =  0;
+	volatile uint32_t int_level    = 0;
 
-	// int_level = pm_disable_int();
-
-	// /* Use safe wrapper function to avoid compiler's "asrs r3, r0, #31" bug */
-	// tick_before_sleep = rtc_get_us_safe();
+	int_level = pm_disable_int();
 	sched_lock();
+	/*Check whether the system is going to enter different sleep mode*/
+	up_pm_board_sleep();
 	/* Enter sleep mode */
 	missed_ticks = bk_pm_suppress_ticks_and_sleep(0);
-
-	// /* Use safe wrapper for after-sleep timestamp */
-	// tick_after_sleep = rtc_get_us_safe();
-	// /* Calculate actual sleep duration in microseconds */
-	// /* Protect against RTC counter overflow or abnormal values */
-	// if (tick_after_sleep >= tick_before_sleep) {
-	// 	usec_passed = ((uint64_t)tick_after_sleep - (uint64_t)tick_before_sleep);
-	// } else {
-	// 	/* RTC counter overflow detected, use maximum safe value */
-	// 	usec_passed = 0;
-	// 	bk_printf("Warning: RTC overflow detected (before=0x%llx, after=0x%llx)\n",tick_before_sleep,tick_after_sleep);
-	// }
 
 	#ifdef CONFIG_EXTERN_32K
 	/* For external 32.768 KHz crystal */
@@ -240,20 +246,6 @@ void armino_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_cod
 	#endif
 	/* Convert to system ticks with proper rounding (USEC2TICK macro does this) */
 	ticks_passed = USEC2TICK(usec_passed);
-
-	/* Get wakeup reason */
-	wakeup_reason = bk_pm_sleep_wakeup_reason_get();
-
-	#if defined(CONFIG_PM_DEBUG)
-	if(ticks_passed > 10)
-	{
-		bk_printf("Missed ticks = %llu,ticks_passed = %llu (usec=%llu), wakeup_reason = %d\n", 
-		          (unsigned long long)missed_ticks,
-		          (unsigned long long)ticks_passed,
-		          (unsigned long long)usec_passed,
-		          wakeup_reason);
-	}
-	#endif
 
 	#if defined(CONFIG_PM_TICKSUPPRESS) && defined(CONFIG_PM)
 	/* Update kernel tick only if we slept for more than 1 tick
@@ -273,24 +265,36 @@ void armino_sleep_processing(void (*wakeuphandler)(clock_t, pm_wakeup_reason_cod
 		 * Set limit to 24 hours = 86400000 ticks (assuming 1ms per tick)
 		 * This allows for reasonable deep sleep scenarios while protecting against errors
 		 */
-		#define MAX_REASONABLE_TICKS  86400000ULL  /* 24 hours in ticks (1ms per tick) */
 
 		if (ticks_passed > MAX_REASONABLE_TICKS) {
-		// bk_printf("Warning: Abnormal ticks_passed=%llu (>24h), capping to max value,(before=0x%llx, after=0x%llx)\n",
-		// 											(unsigned long long)ticks_passed,tick_before_sleep,tick_after_sleep);
-		bk_printf("Warning: Abnormal ticks_passed=0x%llx (>24h), capping to max value,missed_ticks=0x%llx,usec_passed=0x%llx\n",
-													(unsigned long long)ticks_passed,
-													(unsigned long long)missed_ticks,
-													(unsigned long long)usec_passed);
-		ticks_passed = 0;  // Reset to 0 to prevent system tick overflow
+			bk_printf("Warning: Abnormal ticks_passed=0x%llx (>24h), capping to max value,missed_ticks=0x%llx,usec_passed=0x%llx\n",
+				(unsigned long long)ticks_passed,
+				(unsigned long long)missed_ticks,
+				(unsigned long long)usec_passed);
+			ticks_passed = 0;  // Reset to 0 to prevent system tick overflow
 		}
-		if (wakeuphandler) {
-			/* Pass (ticks_passed - 1) to compensate for ticks missed during sleep
-			 * excluding the one already handled by SysTick interrupt
-			 */
-			wakeuphandler(ticks_passed - 1, wakeup_reason);
-		}
+		s_missed_ticks = ticks_passed;
+	}
+	else
+	{
+		s_missed_ticks = 0;
+	}
+
+	#endif
+	pm_enable_int(int_level);
+	sched_unlock();
+
+	#if defined(CONFIG_PM_DEBUG)
+	if(ticks_passed > 10)
+	{
+		bk_printf("Missed ticks=%llu,ticks_passed=%llu(usec=%llu),wakeup_reason=%d,wakeup_src:%s\n", 
+					(unsigned long long)missed_ticks,
+					(unsigned long long)ticks_passed,
+					(unsigned long long)usec_passed,
+					bk_pm_sleep_wakeup_reason_get(),
+					bk_rtc_get_first_alarm_name());
 	}
 	#endif
-	sched_unlock();
+
+	return 0;
 }
