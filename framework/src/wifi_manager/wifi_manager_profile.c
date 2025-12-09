@@ -36,7 +36,7 @@
 #endif
 #include "wifi_manager_profile.h"
 
-//#define WIFI_PROFILE_USE_ETC
+#define WIFI_PROFILE_USE_ETC
 #define TAG "[WM]"
 
 #define WIFI_PROFILE_PATH "/mnt/"
@@ -195,6 +195,7 @@ trwifi_result_e wifi_profile_init(void)
 {
 #ifndef CONFIG_WIFI_PROFILE_SECURESTORAGE
 #ifdef WIFI_PROFILE_USE_ETC
+	int ret = 0;
 	DIR *dir = opendir(WIFI_PROFILE_PATH);
 	if (!dir) {
 		NET_LOGE(TAG, "error reason (%d)\n", errno);
