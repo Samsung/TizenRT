@@ -181,7 +181,7 @@ SECTIONS
     .ramcode :
     {
         . = . +  SIZEOF(.iram);
-        . = ALIGN(512);
+        . = ALIGN(16);
     } > RAM AT > FLASH
 	
     _eronly = ABSOLUTE(.);
@@ -210,8 +210,6 @@ SECTIONS
     _data_flash_begin = __data_flash_begin;
     _data_ram_begin = __data_start__;
     _data_ram_end = .;
-
-    s_rom_end = LOADADDR(.data) + SIZEOF(.data);
 
     .uninitialized (NOLOAD):
     {
@@ -283,7 +281,8 @@ SECTIONS
 
 
 /*#endif*/
-       
+    s_rom_end = LOADADDR(.data) + SIZEOF(.data);
+
 
     /* Set stack top to end of RAM, and stack limit move down by
      * size of stack_dummy section */
