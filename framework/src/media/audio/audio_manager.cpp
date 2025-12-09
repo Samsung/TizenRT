@@ -2918,24 +2918,6 @@ audio_manager_result_t get_device_process_handler_message(int card_id, int devic
 		case AUDIO_MSG_LOCAL7:
 			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL7;
 			break;
-		case AUDIO_MSG_LOCAL8:
-			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL8;
-			break;
-		case AUDIO_MSG_LOCAL9:
-			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL9;
-			break;
-		case AUDIO_MSG_LOCAL10:
-			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL10;
-			break;
-		case AUDIO_MSG_LOCAL11:
-			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL11;
-			break;
-		case AUDIO_MSG_LOCAL12:
-			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL12;
-			break;
-		case AUDIO_MSG_LOCAL13:
-			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_LOCAL13;
-			break;
 		default:
 			*msgId = (uint16_t) AUDIO_DEVICE_SPEECH_DETECT_NONE;
 			break;
