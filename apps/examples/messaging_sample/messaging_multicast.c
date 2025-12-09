@@ -108,6 +108,15 @@ static int multi_recv_nonblock(int argc, FAR char *argv[])
 	/* Wait not to finish this task, because of receiving data through the callback. */
 	sleep(5);
 
+	/* Cleanup should be called by one of the tasks that registered the port.
+	 * Since this is the last task to finish (sleeps 5 seconds), it does the cleanup.
+	 */
+	ret = messaging_cleanup(TEST3_PORT);
+	if (ret != OK) {
+		fail_cnt++;
+		printf("Fail to cleanup TEST3_PORT in receiver task.\n");
+	}
+
 	free(data.buf);
 	return OK;
 }
@@ -198,10 +207,5 @@ void multicast_messaging_sample(void)
 	/* Wait for finishing multicast test. */
 	sleep(5);
 
-	ret = messaging_cleanup(TEST3_PORT);
-	if (ret != OK) {
-		fail_cnt++;
-		printf("Fail to cleanup TEST3_PORT.\n");
-		return;
-	}
+	/* Cleanup is now done in the receiver task (multi_recv_nonblock) */
 }
