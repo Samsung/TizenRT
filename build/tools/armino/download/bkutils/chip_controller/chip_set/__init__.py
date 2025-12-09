@@ -13,7 +13,7 @@ from .bk3436 import BK3436
 from .bk3437 import BK3437
 from .bk7256 import BK7256
 from .bk7236Q import BK7236Q
-from .bk7236N import BK7236N
+from .bk7239N import BK7239N
 
 # 获取chip id的寄存器列表
 #chip_id_reg_list = [0x44010004, 0x800000, 0x34010004]
@@ -21,9 +21,9 @@ from .bk7236N import BK7236N
 def get_chip_set_with_chip_id(chip_id,sec_id=0x10001) -> BaseChip:
     ChipSetClass = None
     if chip_id == BK7236.CHIP_ID or chip_id >> 16 == BK7236.CHIP_ID:       
-        if sec_id==BK7236N.SECOND_ID:
-            ChipSetClass = BK7236N()
-            BKLog.i("BK7236N")
+        if sec_id in BK7239N.SECOND_ID:
+            ChipSetClass = BK7239N()
+            BKLog.i("BK7239N")
         elif sec_id==BK7236Q.SECOND_ID:
             ChipSetClass = BK7236Q()
             BKLog.i("BK7236Q")
