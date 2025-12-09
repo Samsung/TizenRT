@@ -28,7 +28,6 @@
 #include "tfm_ns_interface.h"
 #include "tfm_dh_nsc.h"
 // #include "components/log.h"
-#include "common/bk_err.h"
 #include <debug.h>
 
 /* PSA Crypto API */
@@ -56,6 +55,7 @@ static int armino_index_chk(uint32_t key_idx)
 {
     int ret = HAL_SUCCESS;
 
+    /* Check if in valid Factory range */
     if (key_idx >= TOTAL_KEY_STORAGE_INDEX) {
         ret = HAL_INVALID_SLOT_RANGE;
     }
@@ -81,17 +81,6 @@ static void print_hex(char *name, uint8_t *data, uint32_t len) {
 // Define global array to record the mapping between key_idx and psa_key_id_t
 psa_key_id_t g_key_idx_record[TOTAL_KEY_STORAGE_INDEX] = {0};
 
-static inline void reset_psa_key_id(uint32_t key_idx)
-{
-    g_key_idx_record[key_idx] = 0;
-}
-
-/* Function to check if psa key ID is empty */
-static inline bool is_psa_key_id_empty(uint32_t key_idx)
-{
-    return (g_key_idx_record[key_idx] == 0);
-}
-
 /**
  * Common
  */
@@ -100,7 +89,7 @@ int armino_hal_init(hal_init_param *params)
     HWRAP_ENTER;
     // Initialize TFM NS interface if needed
     int32_t ret = ns_interface_lock_init();
-    if (ret != BK_OK) {
+    if (ret != HAL_SUCCESS) {
         dbg("Failed to initialize NS interface lock\n");
         return HAL_FAIL;
     }
@@ -346,8 +335,22 @@ int armino_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
     uint32_t pub_key_len;
 
     if(key_idx < FACTORY_KEY_INDEX_MAX){
-            // get ecdsa public key from flash
+        if(mode >= HAL_KEY_ECC_SEC_P192R1 && mode <= HAL_KEY_ECC_SEC_P512R1){
+            int ret = ss_read_key(key_idx, pub_key, &pub_key_len);
+            if(ret != HAL_SUCCESS){
+                dbg("Failed to read key: %d\n", ret);
+                return ret;
+            }
+            memcpy(key->data, &pub_key[0], pub_key_len/2);
+            key->data_len = pub_key_len/2;
+            memcpy(key->priv, &pub_key[pub_key_len/2], pub_key_len/2);
+            key->priv_len = pub_key_len/2;
             return HAL_SUCCESS;
+        }
+        else{
+            dbg("Not allowed to export key_idx %d mode %d\n",key_idx, mode);
+            return HAL_NOT_SUPPORTED;
+        }
     }else{
         if(is_psa_key_id_empty(key_idx)){
             dbg("key_id %d is not generated yet\n", key_idx);
@@ -397,7 +400,7 @@ int armino_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
         case HAL_KEY_DH_2048:
         case HAL_KEY_DH_4096:
             dbg("Not allowed to export key_idx %d mode %d\n",key_idx, mode);
-            return HAL_BAD_KEY_TYPE;
+            return HAL_NOT_SUPPORTED;
         default:
             dbg("Unsupported key type: %d\n", mode);
             return HAL_NOT_SUPPORTED;
@@ -412,6 +415,10 @@ int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 
     HWRAP_ENTER;
     if((armino_index_chk(key_idx)) != HAL_SUCCESS){
+        return HAL_INVALID_SLOT_RANGE;
+    }
+    if(key_idx < FACTORY_KEY_INDEX_MAX){
+        dbg("Not allowed to remove factory key_idx %d\n", key_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
@@ -873,6 +880,7 @@ int armino_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, 
     }
     size_t key_bits = psa_get_key_bits(&attributes);
     size_t signature_size = PSA_BITS_TO_BYTES(key_bits);
+    psa_reset_key_attributes(&attributes);
 
     // Perform signature
     status = psa_sign_message(key_id, alg, hash->data, hash->data_len, sign->data, signature_size, &sign->data_len);
@@ -999,22 +1007,15 @@ int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_i
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
 #if CONFIG_TFM_ASYM_ALGO_NSC
-        if(mode.curve == HAL_ECDSA_SEC_P256R1)
-        {
-            status =psa_ecdsa_sign_p256(hash, key_idx, sign);
-            if(status != HAL_SUCCESS){
-                dbg("ECDSA sign failed: %d\n", status);
-                return HAL_FAIL;
-            }
-            return HAL_SUCCESS;
+        status = psa_ecdsa_sign_p256(hash, key_idx, sign);
+        if(status != HAL_SUCCESS){
+            dbg("ECDSA sign failed: %d\n", status);
+            return HAL_FAIL;
         }
-        else{
-            dbg("invalid curve: %d key_idx = %d\r\n", mode.curve, key_idx);
-            return HAL_INVALID_SLOT_RANGE;
-        }
+        return HAL_SUCCESS;
 #else
-        dbg("unsupport inject key key_idx = %d\r\n", key_idx);
-        return HAL_INVALID_SLOT_RANGE;
+        dbg("unsupported factory curve: %d key_idx = %d\r\n", mode.curve, key_idx);
+        return HAL_NOT_SUPPORTED;
 #endif
     }
     /* key stored in SE RAM */
@@ -1085,23 +1086,20 @@ int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *si
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
 #if CONFIG_TFM_ASYM_ALGO_NSC
-        if(mode.curve == HAL_ECDSA_SEC_P256R1)
-        {
-            status =psa_ecdsa_verify_p256(hash, key_idx, sign);
-            if(status != HAL_SUCCESS){
-                dbg("ECDSA verify failed: %d\n", status);
-                return HAL_FAIL;
-            }
-            return HAL_SUCCESS;
+    if(mode.curve == HAL_ECDSA_SEC_P256R1){
+        status = psa_ecdsa_verify_p256(hash, key_idx, sign);
+        if(status != HAL_SUCCESS){
+            dbg("ECDSA verify failed: %d\n", status);
+            return HAL_FAIL;
         }
-        else{
-            dbg("invalid curve: %d key_idx = %d\r\n", mode.curve, key_idx);
-            return HAL_INVALID_SLOT_RANGE;
-        }
-        return HAL_INVALID_SLOT_RANGE;
+        return HAL_SUCCESS;
+    }else{
+        dbg("unsupported factory curve: %d key_idx = %d\r\n", mode.curve, key_idx);
+        return HAL_NOT_SUPPORTED;
+    }
 #else
-        dbg("unsupport inject key key_idx = %d\r\n", key_idx);
-        return HAL_INVALID_SLOT_RANGE;
+        dbg("unsupported factory curve: %d key_idx = %d\r\n", mode.curve, key_idx);
+        return HAL_NOT_SUPPORTED;
 #endif
     }
 
@@ -1153,7 +1151,15 @@ int armino_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
         return HAL_INVALID_ARGS;
     }
 
-    // pubkey_id;
+    if((armino_index_chk(dh_idx)) != HAL_SUCCESS){
+        return HAL_INVALID_SLOT_RANGE;
+    }
+
+    if (dh_idx < FACTORY_KEY_INDEX_MAX) {
+        dbg("Key index %d for factory key\n", dh_idx);
+        return HAL_INVALID_SLOT_RANGE;
+    }
+
     size_t key_bytes = 0;
     psa_key_id_t key_id;
 
@@ -1299,16 +1305,13 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
 {
     HWRAP_ENTER;
 
-    if (ecdh_param == NULL || shared_secret == NULL || shared_secret->data == NULL) {
+    if (ecdh_param == NULL || shared_secret == NULL || shared_secret->data == NULL ||
+    ecdh_param->pubkey_x == NULL || ecdh_param->pubkey_x->data == NULL ||
+    ecdh_param->pubkey_y == NULL || ecdh_param->pubkey_y->data == NULL) {
         return HAL_INVALID_ARGS;
     }
 
     if((armino_index_chk(key_idx)) != HAL_SUCCESS){
-        return HAL_INVALID_SLOT_RANGE;
-    }
-
-    if (key_idx < FACTORY_KEY_INDEX_MAX) {
-        dbg("Key index %d for factory key\n", key_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
@@ -1317,13 +1320,6 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
     psa_status_t status;
     size_t pub_key_len;
     uint8_t *pub_key;
-
-    if(is_psa_key_id_empty(key_idx)) {
-        dbg("key_id %d is not generated yet\n", key_idx);
-        return HAL_EMPTY_SLOT;
-    } else {
-        key_id = get_psa_key_id(key_idx);
-    }
 
     switch(ecdh_param->curve) {
         case HAL_ECDSA_SEC_P192R1:
@@ -1351,22 +1347,51 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
         default:
             return HAL_INVALID_ARGS;
     }
-    pub_key = (uint8_t *)kmm_malloc(pub_key_len + 1);
-    if (pub_key == NULL) {
-        return HAL_NOT_ENOUGH_MEMORY;
-    }
-    shared_secret->data_len = pub_key_len;
-    pub_key[0] = 0x4;
-    memcpy(&pub_key[1], ecdh_param->pubkey_x->data, ecdh_param->pubkey_x->data_len);
-    memcpy(&pub_key[1+ecdh_param->pubkey_x->data_len], ecdh_param->pubkey_y->data, ecdh_param->pubkey_y->data_len);
-    pub_key_len = 1+ecdh_param->pubkey_x->data_len+ecdh_param->pubkey_y->data_len;
-    status = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, pub_key, pub_key_len, shared_secret->data, shared_secret->data_len, &shared_secret->data_len);
-    if (status != PSA_SUCCESS) {
-        dbg("ECDH key agreement failed: %d %d\n", status, __LINE__);
+
+    if (key_idx < FACTORY_KEY_INDEX_MAX) {
+#if CONFIG_TFM_ASYM_ALGO_NSC
+        uint32_t priv_key_len = pub_key_len/2;
+
+        status = ecdh_factory_key_agreement(ecdh_param, priv_key_len, key_idx, shared_secret);
+        if (status != PSA_SUCCESS) {
+            dbg("ECDH key in flash agreement failed: %d\n", status);
+            return HAL_FAIL;
+        }
+
+#else
+        dbg("unsupported factory curve: %d key_idx = %d\r\n", ecdh_param->curve, key_idx);
+        return HAL_NOT_SUPPORTED;
+#endif
+    } else {
+        if (is_psa_key_id_empty(key_idx)) {
+            dbg("key_id %d is not generated yet\n", key_idx);
+            return HAL_EMPTY_SLOT;
+        } else {
+            key_id = get_psa_key_id(key_idx);
+        }
+
+        pub_key = (uint8_t *)kmm_malloc(pub_key_len + 1);
+        if (pub_key == NULL) {
+            return HAL_NOT_ENOUGH_MEMORY;
+        }
+
+        shared_secret->data_len = pub_key_len;
+
+        pub_key[0] = 0x4;
+        memcpy(&pub_key[1], ecdh_param->pubkey_x->data, ecdh_param->pubkey_x->data_len);
+        memcpy(&pub_key[1+ecdh_param->pubkey_x->data_len], ecdh_param->pubkey_y->data, ecdh_param->pubkey_y->data_len);
+        pub_key_len = 1+ecdh_param->pubkey_x->data_len+ecdh_param->pubkey_y->data_len;
+
+        status = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, pub_key, pub_key_len, shared_secret->data, shared_secret->data_len, &shared_secret->data_len);
+        if (status != PSA_SUCCESS) {
+            dbg("ECDH key agreement failed: %d %d\n", status, __LINE__);
+            kmm_free(pub_key);
+            return HAL_FAIL;
+        }
+
         kmm_free(pub_key);
-        return HAL_FAIL;
     }
-    kmm_free(pub_key);
+
     return HAL_SUCCESS;
 }
 
@@ -1872,7 +1897,7 @@ int armino_hal_read_storage(uint32_t ss_idx, hal_data *data)
     }
 
     int ret;
-    ret = ss_read_data(ss_idx, data->data, data->data_len);
+    ret = ss_read_data(ss_idx, data->data, &data->data_len);
     if (ret != 0) {
         dbg("Failed to read storage: %d\n", ret);
         return HAL_FAIL;
