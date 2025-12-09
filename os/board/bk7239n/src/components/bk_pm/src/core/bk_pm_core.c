@@ -73,6 +73,11 @@ void pm_hardware_init(void)
 	/*pm vote power on ticket for bakp module*/
 	bk_pm_module_vote_power_ctrl(POWER_SUB_MODULE_NAME_BAKP_PM, PM_POWER_MODULE_STATE_ON);
 #endif
+
+	//#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+	pm_cpu_freq_e cpu_freq_default = (pm_cpu_freq_e)CONFIG_PM_CPU_FRQ_DEFAULT;
+	bk_pm_module_vote_cpu_freq(PM_DEV_ID_DEFAULT,cpu_freq_default);
+	//#endif
 }
 
 /*=========================SLEEP STATE MACHINE START========================*/
@@ -329,9 +334,10 @@ bk_err_t bk_pm_module_vote_sleep_ctrl(pm_sleep_module_name_e module, uint32_t sl
 		}
 		s_pm_sleeped_modules &= ~(0x1ULL << module);
 	}
-	if (pm_debug_mode() & 0x1)
-		BK_LOGD(NULL, "pm sleep state 0x%llX 0x%x %d\r\n", s_pm_sleeped_modules, s_pm_on_modules, module);
+	//if (pm_debug_mode() & 0x1)
+		//LOGI("pm sleep state 0x%llX 0x%x %d %d\r\n", s_pm_sleeped_modules, s_pm_on_modules, module, sleep_state);
 	GLOBAL_INT_RESTORE();
+
 
 	return BK_OK;
 }

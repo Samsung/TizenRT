@@ -1041,9 +1041,15 @@ int bk_cli_init(void)
 	cli_phy_init();
 #endif
 
-#if (CONFIG_CIPHER_AES_TEST_ENABLE == 1)
+#if (CONFIG_SECURE_TEST == 1)
 extern int cli_cipher_aes_init(void);
+extern int cli_secure_storage_init(void);
+extern int cli_ecdsa_test_init(void);
+
+cli_ecdsa_test_init();
+cli_secure_storage_init();
 cli_cipher_aes_init();
+
 #endif
 
 #if 0

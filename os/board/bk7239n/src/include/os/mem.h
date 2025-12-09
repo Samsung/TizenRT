@@ -20,6 +20,10 @@ typedef enum {
     MEM_TYPE_MAX = 0xf
 } beken_mem_type_t;
 
+/* Heap index definitions */
+#define SRAM_INDEX   1
+#define PSRAM_INDEX  0
+
 void *os_memcpy(void *out, const void *in, UINT32 n);
 __attribute__ ((__optimize__ ("-fno-tree-loop-distribute-patterns"))) \
 static inline void os_memcpy_word(uint32_t *out, const uint32_t *in, uint32_t n)

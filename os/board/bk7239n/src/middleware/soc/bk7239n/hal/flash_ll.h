@@ -106,9 +106,22 @@ static inline void flash_ll_deinit_rdsr_cmd(flash_hw_t *hw)
 	flash_ll_wait_op_done(hw);
 }
 
+static inline void flash_ll_set_volatile_status_write(flash_hw_t *hw)
+{
+	while (flash_ll_is_busy(hw));
+	hw->flash_ctrl.susres_cmd_reg = 0x50;
+	hw->flash_ctrl.susres_cmd_sel = 0x1;
+	flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
+	while (flash_ll_is_busy(hw));
+	hw->flash_ctrl.susres_cmd_sel = 0x0;
+}
 
 static inline void flash_ll_write_status_reg(flash_hw_t *hw, uint8_t sr_width, uint32_t sr_data)
 {
+	#if CONFIG_FLASH_WRITE_STATUS_VOLATILE
+		flash_ll_set_volatile_status_write(hw);
+	#endif
+
 	while (flash_ll_is_busy(hw));
 	hw->cmd_cfg.v = 0;
 	hw->config.wrsr_data = sr_data;

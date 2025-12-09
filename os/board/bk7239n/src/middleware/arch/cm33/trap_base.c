@@ -42,14 +42,17 @@
 #define SOC_SRAM_TOTAL_SIZE          0x80000
 #define SOC_SRAM_DATA_END            (SOC_SRAM0_DATA_BASE + SOC_SRAM_TOTAL_SIZE)
 
-extern uint32_t RAM_KREGION1_START;
-extern uint32_t RAM_KREGION1_SIZE;
+extern uint32_t RAM_KREGION0_START;
+extern uint32_t RAM_KREGION0_SIZE;
 extern uint32_t RAM_KREGION2_START;
 extern uint32_t RAM_KREGION2_SIZE;
 
+extern uint32_t __psram_data_start__;
+extern uint32_t __psram_bss_end__;
 
-#define KERNEL_HEAP_START_ADDR   (void*)&RAM_KREGION1_START   
-#define KERNEL_HEAP_SIZE         (void*)&RAM_KREGION1_SIZE 
+
+#define KERNEL_HEAP_START_ADDR   (void*)&RAM_KREGION0_START   
+#define KERNEL_HEAP_SIZE         (void*)&RAM_KREGION0_SIZE 
 #define APP_HEAP_START_ADDR   (void*)&RAM_KREGION2_START   
 #define APP_HEAP_SIZE         (void*)&RAM_KREGION2_SIZE 
 
@@ -83,15 +86,16 @@ static void rtos_dump_plat_memory(void) {
     stack_mem_dump((uint32_t)SOC_SRAM4_DATA_BASE, (uint32_t)SOC_SRAM_DATA_END);
 #if (CONFIG_SPE == 0)
     stack_mem_dump((uint32_t)SOC_SRAM0_DATA_BASE + CONFIG_CPU0_SPE_RAM_SIZE, (uint32_t)SOC_SRAM2_DATA_BASE);
+    stack_mem_dump((uint32_t)SOC_SRAM2_DATA_BASE, (uint32_t)SOC_SRAM3_DATA_BASE);
 #else
     stack_mem_dump((uint32_t)SOC_SRAM0_DATA_BASE, (uint32_t)SOC_SRAM1_DATA_BASE);
     stack_mem_dump((uint32_t)SOC_SRAM1_DATA_BASE, (uint32_t)SOC_SRAM2_DATA_BASE);
-#endif
     stack_mem_dump((uint32_t)SOC_SRAM2_DATA_BASE, (uint32_t)SOC_SRAM3_DATA_BASE);
-
-
+#endif
+    
     stack_mem_dump((uint32_t)KERNEL_HEAP_START_ADDR, (uint32_t)KERNEL_HEAP_START_ADDR + 0xC8000);  //kernel 800k
 #ifdef CONFIG_BUILD_PROTECTED
+    stack_mem_dump((uint32_t)&__psram_data_start__, (uint32_t)&__psram_bss_end__);   //psram data and bss
     stack_mem_dump((uint32_t)APP_HEAP_START_ADDR, (uint32_t)APP_HEAP_START_ADDR + 0x100000); // app 1M
 #endif
 }
@@ -666,7 +670,7 @@ static void arch_dump_cpu_registers_securt_fault(uint32_t mcause, SAVED_CONTEXT 
 
 
 #if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE)
-#include "tfm_aes_gcm_nsc.h"
+//#include "tfm_aes_gcm_nsc.h"
 #define FRAME_BUF_LEN    (64)
 
 struct tfm_exception_info_t {

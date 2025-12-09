@@ -87,7 +87,11 @@ bk_err_t bk_iomx_driver_init(void)
 
 	//interrupt to CPU enable
 #if (defined(CONFIG_SYSTEM_CTRL))
-	sys_drv_int_group2_enable(GPIO_INTERRUPT_CTRL_BIT);
+	#if defined(CONFIG_TZ) && ( CONFIG_SPE == 0)
+		sys_drv_int_group2_enable(GPIO_NS_INTERRUPT_CTRL_BIT);  // Enable GPIO_NS interrupt for TF-M NS mode
+	#else
+		sys_drv_int_group2_enable(GPIO_INTERRUPT_CTRL_BIT);
+	#endif
 #else
 	icu_enable_gpio_interrupt();
 #endif
@@ -104,7 +108,11 @@ bk_err_t bk_iomx_driver_deinit(void)
 
 	//interrupt to CPU disable
 #if (defined(CONFIG_SYSTEM_CTRL))
-	sys_drv_int_group2_disable(GPIO_INTERRUPT_CTRL_BIT);
+	#if defined(CONFIG_TZ) && ( CONFIG_SPE == 0)
+		sys_drv_int_group2_disable(GPIO_NS_INTERRUPT_CTRL_BIT);  // Disable GPIO_NS interrupt for TF-M NS mode
+	#else
+		sys_drv_int_group2_disable(GPIO_INTERRUPT_CTRL_BIT);
+	#endif
 #else
 	icu_disable_gpio_interrupt();
 #endif
@@ -143,11 +151,13 @@ bk_err_t bk_iomx_set_gpio_func(uint32_t gpio_id, IOMX_CODE_T func_code)
 
 void bk_iomx_set_value(gpio_id_t id, uint32_t v)
 {
+	IOMX_RETURN_ON_INVALID_ID(id);
 	iomx_hal_set_value(id, v);
 }
 
 uint32_t bk_iomx_get_value(gpio_id_t id)
 {
+	IOMX_RETURN_ON_INVALID_ID(id);
 	return iomx_hal_get_value(id);
 }
 
@@ -200,6 +210,13 @@ bool bk_iomx_get_input(gpio_id_t gpio_id)
 	IOMX_RETURN_ON_INVALID_ID(gpio_id);
 
 	return iomx_hal_get_input(gpio_id);
+}
+
+bool bk_iomx_get_output(gpio_id_t gpio_id)
+{
+	IOMX_RETURN_ON_INVALID_ID(gpio_id);
+
+	return iomx_hal_get_output(gpio_id);
 }
 
 //MAX capactiy:3

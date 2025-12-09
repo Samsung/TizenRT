@@ -343,6 +343,24 @@ uint64_t bk_aon_rtc_get_us(void);
 uint64_t bk_aon_rtc_get_ms(void);
 
 /**
+ * @brief  Get the name of the first alarm node in the RTC alarm list
+ *
+ * This function returns the name of the first alarm node (earliest expired time)
+ * in the RTC alarm list. The alarm list is sorted by expired_tick in ascending order.
+ * This is useful for identifying which application (e.g., "BK_BLE", "BK_WIFI")
+ * will wake up the system next.
+ *
+ * @return
+ *    - Pointer to the alarm name string (e.g., "BK_BLE", "BK_WIFI")
+ *    - NULL if no alarm is registered or list is empty
+ *
+ * @note The returned pointer points to the internal alarm node structure.
+ *       The caller should not modify the content, and the pointer may become
+ *       invalid if the alarm is unregistered.
+ */
+uint8_t *bk_rtc_get_first_alarm_name(void);
+
+/**
  * @}
  */
 

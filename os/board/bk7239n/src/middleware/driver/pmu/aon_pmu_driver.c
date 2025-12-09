@@ -17,7 +17,7 @@
 #include <driver/aon_rtc.h>
 #include <modules/pm.h>
 
-void aon_pmu_drv_init()
+void aon_pmu_drv_init(void)
 {
     aon_pmu_hal_init();
 }
@@ -97,7 +97,7 @@ void aon_pmu_drv_lpo_src_set(uint32_t lpo_src)
 #endif
 	aon_pmu_hal_lpo_src_set(lpo_src);
 }
-__IRAM_SEC uint32_t aon_pmu_drv_lpo_src_get()
+__IRAM_SEC uint32_t aon_pmu_drv_lpo_src_get(void)
 {
 	return aon_pmu_hal_lpo_src_get();
 }
@@ -118,7 +118,7 @@ void aon_pmu_drv_wdt_change_not_rosc_clk(void)
 
 #endif
 
-uint32_t aon_pmu_drv_bias_cal_get()
+uint32_t aon_pmu_drv_bias_cal_get(void)
 {
 	return aon_pmu_hal_bias_cal_get();
 }

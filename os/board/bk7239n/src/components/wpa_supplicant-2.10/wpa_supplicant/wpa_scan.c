@@ -1240,7 +1240,8 @@ void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 		int_array_sort_unique(params.freqs);
 	}
 
-	if (ssid && max_ssids == 1) {
+	//if (ssid && max_ssids >= 1) {
+	if(params.num_ssids >= 1) {
 #ifndef BK_SUPPLICANT
 		/*
 		 * If the driver is limited to 1 SSID at a time interleave
@@ -2895,7 +2896,10 @@ wpa_supplicant_get_scan_results(struct wpa_supplicant *wpa_s,
 		FUNC_1PARAM_PTR fn;
 		u32 val;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 		fn = bk_wlan_get_status_cb();
+#pragma GCC diagnostic pop
 		if (fn) {
 			val = WIFI_LINKSTATE_STA_DISCONNECTED;
 			(*fn)(&val);

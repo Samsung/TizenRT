@@ -23,8 +23,18 @@
 
 
 uint32_t g_mpu_nregion_allocated;
+
+#if CONFIG_KMM_REGIONS == 1
 extern uint32_t RAM_KREGION1_START;
 extern uint32_t RAM_KREGION1_SIZE;
+#define PSRAM_HEAP_REGION_START (uint32_t)&RAM_KREGION1_START
+#define PSRAM_HEAP_REGION_SIZE (uint32_t)&RAM_KREGION1_SIZE
+#else
+extern uint32_t RAM_KREGION0_START;
+extern uint32_t RAM_KREGION0_SIZE;
+#define PSRAM_HEAP_REGION_START (uint32_t)&RAM_KREGION0_START
+#define PSRAM_HEAP_REGION_SIZE (uint32_t)&RAM_KREGION0_SIZE
+#endif
 /*----------------------------------------------------------------------------
   MPU configuration
  *----------------------------------------------------------------------------*/
@@ -123,8 +133,8 @@ void bk_mpu_init(void)
 
     /* MPU region 7 psram heap*/
     mpu_entry = mpu_entry_alloc();
-	mpu_cfg.region_base = (uint32_t)&RAM_KREGION1_START;
-	mpu_cfg.region_size = (uint32_t)&RAM_KREGION1_SIZE - 32;
+	mpu_cfg.region_base = PSRAM_HEAP_REGION_START;
+	mpu_cfg.region_size = PSRAM_HEAP_REGION_SIZE - 32;
 	mpu_cfg.xn = MPU_EXEC_NEVER;
 	mpu_cfg.ap = MPU_UN_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;

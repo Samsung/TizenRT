@@ -34,11 +34,42 @@ menu "PM"
 		help
 		   config highest cpu frequency(0:xtal;1:60M;2:80M;3:120M;4:160M;5:240M;)
 
+	config PM_CPU_FRQ_DEFAULT
+		int "config default cpu frequency"
+		default 3
+		help
+		   config default cpu frequency(0:xtal;1:60M;2:80M;3:120M;4:160M;5:240M;)
+
 	config PM_PROTECT_TIME_CHECK
 		bool "Primarily protect time check"
 		default n
 		help
 			Primarily protect the BT sleep time until re-entering the sleep scenario
+
+	config PM_LOWEST_POWER_MODE
+		int "config lowest power mode"
+		default 0
+		help
+		   config lowest power mode(0:normal sleep;1:low voltage sleep;2:deep sleep;3:super deep sleep;)
+
+	config PM_CPU_FIXED_FREQ
+		int "config fixed cpu frequency"
+		default 3
+		help
+		   config default cpu frequency(0:xtal;1:60M;2:80M;3:120M;4:160M;5:240M;)
+
+	config PM_CPU_FIXED_FREQ_ENABLE
+		bool "enable fixed cpu frequency, if enable, the cpu frequency will be fixed to the value of PM_CPU_FIXED_FREQ"
+		default n
+		help
+		   enable fixed cpu frequency
+
+	config PM_VDDDIG_FIXED_VOLTAGE
+		int "config fixed vdddig voltage"
+		default 8
+		help
+		   Set Low power voltage default value 0.8v(0.6+0.025*8)
+		   This value should not be configured arbitrarily. Prior discussion with the chip vendor's support engineers is required before configuration
 
 endmenu
 

@@ -64,6 +64,10 @@ static gpio_dynamic_keep_status_t s_gpio_lowpower_keep_config[CONFIG_GPIO_DYNAMI
 #endif
 
 
+// Save GPIO func_code for wakeup (to restore exact pin configuration)
+static IOMX_CODE_T s_gpio_func_code_map[SOC_GPIO_NUM] = {FUNC_CODE_INVALID};
+
+
 #if defined(CONFIG_GPIO_DEFAULT_SET_SUPPORT)
 static void gpio_default_map_init(void);
 #endif
@@ -210,6 +214,12 @@ bool bk_gpio_get_input(gpio_id_t gpio_id)
 {
 	return bk_iomx_get_input(gpio_id);
 }
+
+bool bk_gpio_get_output(gpio_id_t gpio_id)
+{
+	return bk_iomx_get_output(gpio_id);
+}
+
 
 //MAX capactiy:3
 bool bk_gpio_set_capacity(gpio_id_t gpio_id, uint32 capacity)
@@ -567,6 +577,125 @@ IOMX_CODE_T contert_gpio_dev_to_iomx_code(gpio_dev_t dev)
 	return func_code;
 }
 
+// Convert func_code to peripheral group for wakeup
+// Only support SPI, I2C, UART and GPIO
+static peripheral_group_t convert_iomx_code_to_peripheral_group(IOMX_CODE_T func_code)
+{
+	peripheral_group_t group = PERIPHERAL_GROUP_NONE;
+
+	switch (func_code)
+	{
+	// I2C0 group
+	case FUNC_CODE_I2C0_SCL:
+	case FUNC_CODE_I2C0_SDA:
+		group = PERIPHERAL_GROUP_I2C0;
+		break;
+
+	// I2C1 group
+	case FUNC_CODE_I2C1_SCL:
+	case FUNC_CODE_I2C1_SDA:
+		group = PERIPHERAL_GROUP_I2C1;
+		break;
+
+	// SPI0 group
+	case FUNC_CODE_SPI0_MISO:
+	case FUNC_CODE_SPI0_MOSI:
+	case FUNC_CODE_SPI0_NSS:
+	case FUNC_CODE_SPI0_SCK:
+		group = PERIPHERAL_GROUP_SPI0;
+		break;
+
+	// SPI1 group
+	case FUNC_CODE_SPI1_MISO:
+	case FUNC_CODE_SPI1_MOSI:
+	case FUNC_CODE_SPI1_NSS:
+	case FUNC_CODE_SPI1_SCK:
+		group = PERIPHERAL_GROUP_SPI1;
+		break;
+
+	// UART0 group (UART1 in hardware)
+	case FUNC_CODE_UART0_CTS:
+	case FUNC_CODE_UART0_RTS:
+	case FUNC_CODE_UART0_RXD:
+	case FUNC_CODE_UART0_TXD:
+		group = PERIPHERAL_GROUP_UART0;
+		break;
+
+	// UART1 group (UART2 in hardware)
+	case FUNC_CODE_UART1_RXD:
+	case FUNC_CODE_UART1_TXD:
+		group = PERIPHERAL_GROUP_UART1;
+		break;
+
+	// UART2 group (UART3 in hardware)
+	case FUNC_CODE_UART2_RXD:
+	case FUNC_CODE_UART2_TXD:
+		group = PERIPHERAL_GROUP_UART2;
+		break;
+
+	// UART3 group (UART4 in hardware)
+	case FUNC_CODE_UART3_CTS:
+	case FUNC_CODE_UART3_RTS:
+	case FUNC_CODE_UART3_RXD:
+	case FUNC_CODE_UART3_TXD:
+		group = PERIPHERAL_GROUP_UART3;
+		break;
+
+	// GPIO mode
+	case FUNC_CODE_INPUT:
+		group = PERIPHERAL_GROUP_GPIO;
+		break;
+
+	default:
+		// Other func codes not supported for wakeup
+		group = PERIPHERAL_GROUP_NONE;
+		break;
+	}
+
+	return group;
+}
+
+// Save GPIO func_code mapping before entering low power
+static void gpio_save_peripheral_mapping(void)
+{
+	gpio_id_t gpio_id;
+	IOMX_CODE_T func_code;
+
+	for (gpio_id = GPIO_0; gpio_id < SOC_GPIO_NUM; gpio_id++)
+	{
+		func_code = bk_iomx_get_gpio_func_code(gpio_id);
+		s_gpio_func_code_map[gpio_id] = func_code;
+		GPIO_LOGD("GPIO[%d] func_code=0x%x\r\n", gpio_id, func_code);
+	}
+}
+
+// Get peripheral group that caused wakeup by GPIO ID
+static peripheral_group_t gpio_get_wakeup_peripheral_group(gpio_id_t gpio_id)
+{
+	if (gpio_id >= SOC_GPIO_NUM)
+	{
+		return PERIPHERAL_GROUP_NONE;
+	}
+
+	IOMX_CODE_T func_code = s_gpio_func_code_map[gpio_id];
+	return convert_iomx_code_to_peripheral_group(func_code);
+}
+
+// Get peripheral group that caused wakeup (automatically get wakeup GPIO ID)
+peripheral_group_t bk_gpio_get_wake_source_sub_type(void)
+{
+
+	gpio_id_t wakeup_gpio_id = ana_gpio_get_wakeup_pin();
+
+	// Check if wakeup GPIO ID is valid
+	if (wakeup_gpio_id >= SOC_GPIO_NUM)
+	{
+		return PERIPHERAL_GROUP_NONE;
+	}
+
+	return gpio_get_wakeup_peripheral_group(wakeup_gpio_id);
+
+}
 static void gpio_low_power_config(void);
 bk_err_t gpio_enter_low_power(void *param)
 {
@@ -577,6 +706,9 @@ bk_err_t gpio_enter_low_power(void *param)
 	iomx_backup_gpio_configs();
 
 	iomx_dump_baked_regs();
+
+	// Save GPIO to peripheral device mapping before entering low power
+	gpio_save_peripheral_mapping();
 
 	//NOTES:force disable all int to avoid config gpio caused error isr
 	iomx_disable_all_interrupts();
@@ -599,7 +731,7 @@ bk_err_t gpio_enter_low_power(void *param)
 	return BK_OK;
 }
 
-bk_err_t gpio_exit_low_power(void *param)
+__IRAM_SEC bk_err_t gpio_exit_low_power(void *param)
 {
 	GPIO_LOGD("%s[+]\r\n", __func__);
 
@@ -625,7 +757,7 @@ bk_err_t gpio_exit_low_power(void *param)
 	return BK_OK;
 }
 
-bk_err_t gpio_hal_switch_to_low_power_status(uint64_t skip_io)
+__IRAM_SEC bk_err_t gpio_hal_switch_to_low_power_status(uint64_t skip_io)
 {
 	for (gpio_id_t i = GPIO_0; i < GPIO_NUM_MAX; i++)
 	{

@@ -49,9 +49,9 @@ struct l2_packet_head *get_l2_packet_entity(void)
 static void l2_packet_tx_cb(struct ieee80211_tx_cb *cb, bool success)
 {
  	struct l2_packet_node *item, *n;
- 	struct l2_packet_head *l2_packet = get_l2_packet_entity();
+ 	struct l2_packet_head *l2_packet_head = get_l2_packet_entity();
 
-	if(dl_list_empty(&l2_packet->head_list)) {
+	if(dl_list_empty(&l2_packet_head->head_list)) {
 		return;
 	}
 
@@ -62,8 +62,8 @@ static void l2_packet_tx_cb(struct ieee80211_tx_cb *cb, bool success)
 		return;
 	}
 
- 	rtos_lock_mutex(&l2_packet->l2_mutex);
- 	dl_list_for_each_safe(item, n, &l2_packet->head_list, struct l2_packet_node, list)
+ 	rtos_lock_mutex(&l2_packet_head->l2_mutex);
+ 	dl_list_for_each_safe(item, n, &l2_packet_head->head_list, struct l2_packet_node, list)
  	{
  		if(item->cb.l2_tag == cb->l2_tag)
  		{
@@ -72,7 +72,7 @@ static void l2_packet_tx_cb(struct ieee80211_tx_cb *cb, bool success)
  			break;
  		}
  	}
-	rtos_unlock_mutex(&l2_packet->l2_mutex);
+	rtos_unlock_mutex(&l2_packet_head->l2_mutex);
 }
 
 /**
@@ -86,7 +86,7 @@ int __l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 	struct l2_ethhdr *eth;
     S_TYPE_PTR type_ptr;
 	unsigned char *data_buf = NULL;
-	struct l2_packet_head *l2_packet = get_l2_packet_entity();
+	struct l2_packet_head *l2_packet_head = get_l2_packet_entity();
 	struct l2_packet_node *item, *n;
 	struct l2_packet_node *node = NULL; //control block
 
@@ -96,7 +96,7 @@ int __l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 			ret = -1;
 			goto send_exit;
 		}
-		(l2_packet->num)++;
+		(l2_packet_head->num)++;
 	}
 	type_ptr = os_zalloc(sizeof(S_TYPE_ST));
     if (!type_ptr) {
@@ -132,13 +132,13 @@ int __l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 
 	if (sync) {
 		node->cb.result = -1;
-		node->cb.l2_tag = l2_packet->num;
+		node->cb.l2_tag = l2_packet_head->num;
 		ret = rtos_init_semaphore(&(node->cb.sema), 1);
 		type_ptr->cb = l2_packet_tx_cb;
 		type_ptr->args = (void *)(&node->cb);
-		rtos_lock_mutex(&l2_packet->l2_mutex);
-		dl_list_add_tail(&l2_packet->head_list, &node->list);
-		rtos_unlock_mutex(&l2_packet->l2_mutex);
+		rtos_lock_mutex(&l2_packet_head->l2_mutex);
+		dl_list_add_tail(&l2_packet_head->head_list, &node->list);
+		rtos_unlock_mutex(&l2_packet_head->l2_mutex);
 	}
 
 	fsocket_send(l2->fd, data_buf, data_len, type_ptr);
@@ -151,8 +151,8 @@ int __l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 			if (ret < 0)
 				WPA_LOGE("%s: send failed\r\n", __func__);
 		}
-		rtos_lock_mutex(&l2_packet->l2_mutex);
-		dl_list_for_each_safe(item, n, &l2_packet->head_list, struct l2_packet_node, list)
+		rtos_lock_mutex(&l2_packet_head->l2_mutex);
+		dl_list_for_each_safe(item, n, &l2_packet_head->head_list, struct l2_packet_node, list)
 		{
 			if(item->cb.l2_tag == node->cb.l2_tag)
 			{
@@ -161,7 +161,7 @@ int __l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 				break;
 			}
 		}
-		rtos_unlock_mutex(&l2_packet->l2_mutex);
+		rtos_unlock_mutex(&l2_packet_head->l2_mutex);
 		if(node) {
 			os_free(node);
 			node = 0;

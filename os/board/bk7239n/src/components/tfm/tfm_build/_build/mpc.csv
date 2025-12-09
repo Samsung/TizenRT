@@ -1,0 +1,10 @@
+Device,Offset,Size,Secure
+mem0,0,64K,TRUE
+mem1,0,0b,FALSE
+mem2,0,0b,FALSE
+mem3,0,0b,FALSE
+mem4,0,0b,FALSE
+flash,0,0b,FALSE
+qspi1,0,0b,FALSE
+psram,0,0b,FALSE
+otp2,0,0b,FALSE

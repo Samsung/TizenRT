@@ -4,6 +4,7 @@
 #include "../wpa_supplicant-2.10/src/common/ieee802_11_defs.h"
 #include "../wpa_supplicant-2.10/src/utils/platform.h"
 #include <modules/wifi_types.h>
+#include "bk_list.h"
 
 #ifndef ETH_P_PAE
 #define ETH_P_PAE         0x888E /* Port Access Entity (IEEE 802.1X) */
@@ -16,6 +17,21 @@
 #ifndef ETH_P_80211_RAW
 #define ETH_P_80211_RAW           (ETH_P_ECONET + 1)
 #endif
+
+/* number of ACs */
+#define IEEE80211_NUM_ACS		4
+
+/* convert frequencies */
+#define MHZ_TO_KHZ(freq) ((freq) * 1000)
+#define KHZ_TO_MHZ(freq) ((freq) / 1000)
+#define PR_KHZ(f) KHZ_TO_MHZ(f), f % 1000
+#define KHZ_F "%d.%03d"
+
+/* convert powers */
+#define DBI_TO_MBI(gain) ((gain) * 100)
+#define MBI_TO_DBI(gain) ((gain) / 100)
+#define DBM_TO_MBM(gain) ((gain) * 100)
+#define MBM_TO_DBM(gain) ((gain) / 100)
 
 #define CHAN2G(_channel, _freq, _flags) {   \
 	.band           = IEEE80211_BAND_2GHZ,  \
@@ -67,6 +83,62 @@
 #define IEEE80211_HT_AMPDU_PARM_FACTOR		0x03
 #define IEEE80211_HT_AMPDU_PARM_DENSITY		0x1C
 #define		IEEE80211_HT_AMPDU_PARM_DENSITY_SHIFT	2
+
+#define NL80211_MAX_SUPP_REG_RULES		128
+
+/**
+ * enum nl80211_reg_rule_flags - regulatory rule flags
+ *
+ * @NL80211_RRF_NO_OFDM: OFDM modulation not allowed
+ * @NL80211_RRF_NO_CCK: CCK modulation not allowed
+ * @NL80211_RRF_NO_INDOOR: indoor operation not allowed
+ * @NL80211_RRF_NO_OUTDOOR: outdoor operation not allowed
+ * @NL80211_RRF_DFS: DFS support is required to be used
+ * @NL80211_RRF_PTP_ONLY: this is only for Point To Point links
+ * @NL80211_RRF_PTMP_ONLY: this is only for Point To Multi Point links
+ * @NL80211_RRF_NO_IR: no mechanisms that initiate radiation are allowed,
+ *	this includes probe requests or modes of operation that require
+ *	beaconing.
+ * @NL80211_RRF_AUTO_BW: maximum available bandwidth should be calculated
+ *	base on contiguous rules and wider channels will be allowed to cross
+ *	multiple contiguous/overlapping frequency ranges.
+ * @NL80211_RRF_IR_CONCURRENT: See %NL80211_FREQUENCY_ATTR_IR_CONCURRENT
+ * @NL80211_RRF_NO_HT40MINUS: channels can't be used in HT40- operation
+ * @NL80211_RRF_NO_HT40PLUS: channels can't be used in HT40+ operation
+ * @NL80211_RRF_NO_80MHZ: 80MHz operation not allowed
+ * @NL80211_RRF_NO_160MHZ: 160MHz operation not allowed
+ * @NL80211_RRF_NO_HE: HE operation not allowed
+ */
+enum nl80211_reg_rule_flags {
+	NL80211_RRF_NO_OFDM 	= 1<<0,
+	NL80211_RRF_NO_CCK		= 1<<1,
+	NL80211_RRF_NO_INDOOR		= 1<<2,
+	NL80211_RRF_NO_OUTDOOR		= 1<<3,
+	NL80211_RRF_DFS 		= 1<<4,
+	NL80211_RRF_PTP_ONLY		= 1<<5,
+	NL80211_RRF_PTMP_ONLY		= 1<<6,
+	NL80211_RRF_NO_IR		= 1<<7,
+	__NL80211_RRF_NO_IBSS		= 1<<8,
+	NL80211_RRF_AUTO_BW 	= 1<<11,
+	NL80211_RRF_IR_CONCURRENT	= 1<<12,
+	NL80211_RRF_NO_HT40MINUS	= 1<<13,
+	NL80211_RRF_NO_HT40PLUS 	= 1<<14,
+	NL80211_RRF_NO_80MHZ		= 1<<15,
+	NL80211_RRF_NO_160MHZ		= 1<<16,
+	NL80211_RRF_NO_HE		= 1<<17,
+	NL80211_RRF_NO_320MHZ		= 1<<18,
+	NL80211_RRF_NO_EHT		= 1<<19,
+};
+
+#define NL80211_RRF_PASSIVE_SCAN	NL80211_RRF_NO_IR
+#define NL80211_RRF_NO_IBSS		NL80211_RRF_NO_IR
+#define NL80211_RRF_NO_IR		NL80211_RRF_NO_IR
+#define NL80211_RRF_NO_HT40		(NL80211_RRF_NO_HT40MINUS |\
+						 NL80211_RRF_NO_HT40PLUS)
+#define NL80211_RRF_GO_CONCURRENT	NL80211_RRF_IR_CONCURRENT
+
+	/* For backport compatibility with older userspace */
+#define NL80211_RRF_NO_IR_ALL		(NL80211_RRF_NO_IR | __NL80211_RRF_NO_IBSS)
 
 /*
  * Maximum length of AMPDU that the STA can receive in high-throughput (HT).
@@ -137,12 +209,12 @@ enum ieee80211_min_mpdu_spacing {
  *
  * @IEEE80211_CHAN_DISABLED: This channel is disabled.
  * @IEEE80211_CHAN_NO_IR: do not initiate radiation, this includes
- * 	sending probe requests or beaconing.
+ *	sending probe requests or beaconing.
  * @IEEE80211_CHAN_RADAR: Radar detection is required on this channel.
  * @IEEE80211_CHAN_NO_HT40PLUS: extension channel above this channel
- * 	is not permitted.
+ *	is not permitted.
  * @IEEE80211_CHAN_NO_HT40MINUS: extension channel below this channel
- * 	is not permitted.
+ *	is not permitted.
  * @IEEE80211_CHAN_NO_OFDM: OFDM is not allowed on this channel.
  * @IEEE80211_CHAN_NO_80MHZ: If the driver supports 80 MHz on the band,
  *	this flag indicates that an 80 MHz channel cannot use this
@@ -160,31 +232,107 @@ enum ieee80211_min_mpdu_spacing {
  *	on this channel.
  * @IEEE80211_CHAN_NO_10MHZ: 10 MHz bandwidth is not permitted
  *	on this channel.
+ * @IEEE80211_CHAN_NO_HE: HE operation is not permitted on this channel.
+ * @IEEE80211_CHAN_1MHZ: 1 MHz bandwidth is permitted
+ *	on this channel.
+ * @IEEE80211_CHAN_2MHZ: 2 MHz bandwidth is permitted
+ *	on this channel.
+ * @IEEE80211_CHAN_4MHZ: 4 MHz bandwidth is permitted
+ *	on this channel.
+ * @IEEE80211_CHAN_8MHZ: 8 MHz bandwidth is permitted
+ *	on this channel.
+ * @IEEE80211_CHAN_16MHZ: 16 MHz bandwidth is permitted
+ *	on this channel.
  *
  */
 enum ieee80211_channel_flags {
-	IEEE80211_CHAN_DISABLED		= 1 << 0,
-	IEEE80211_CHAN_NO_IR		= 1 << 1,
+	IEEE80211_CHAN_DISABLED		= 1<<0,
+	IEEE80211_CHAN_NO_IR		= 1<<1,
 	/* hole at 1<<2 */
-	IEEE80211_CHAN_RADAR		= 1 << 3,
-	IEEE80211_CHAN_NO_HT40PLUS	= 1 << 4,
-	IEEE80211_CHAN_NO_HT40MINUS	= 1 << 5,
-	IEEE80211_CHAN_NO_OFDM		= 1 << 6,
-	IEEE80211_CHAN_NO_80MHZ		= 1 << 7,
-	IEEE80211_CHAN_NO_160MHZ	= 1 << 8,
-	IEEE80211_CHAN_INDOOR_ONLY	= 1 << 9,
-	IEEE80211_CHAN_IR_CONCURRENT	= 1 << 10,
-	IEEE80211_CHAN_NO_20MHZ		= 1 << 11,
-	IEEE80211_CHAN_NO_10MHZ		= 1 << 12,
+	IEEE80211_CHAN_RADAR		= 1<<3,
+	IEEE80211_CHAN_NO_HT40PLUS	= 1<<4,
+	IEEE80211_CHAN_NO_HT40MINUS	= 1<<5,
+	IEEE80211_CHAN_NO_OFDM		= 1<<6,
+	IEEE80211_CHAN_NO_80MHZ		= 1<<7,
+	IEEE80211_CHAN_NO_160MHZ	= 1<<8,
+	IEEE80211_CHAN_INDOOR_ONLY	= 1<<9,
+	IEEE80211_CHAN_IR_CONCURRENT	= 1<<10,
+	IEEE80211_CHAN_NO_20MHZ		= 1<<11,
+	IEEE80211_CHAN_NO_10MHZ		= 1<<12,
+	IEEE80211_CHAN_NO_HE		= 1<<13,
+	IEEE80211_CHAN_1MHZ		= 1<<14,
+	IEEE80211_CHAN_2MHZ		= 1<<15,
+	IEEE80211_CHAN_4MHZ		= 1<<16,
+	IEEE80211_CHAN_8MHZ		= 1<<17,
+	IEEE80211_CHAN_16MHZ		= 1<<18,
+	IEEE80211_CHAN_NO_320MHZ	= 1<<19,
+	IEEE80211_CHAN_NO_EHT		= 1<<20,
 };
 
+#define IEEE80211_CHAN_NO_HT40 \
+		(IEEE80211_CHAN_NO_HT40PLUS | IEEE80211_CHAN_NO_HT40MINUS)
+
+#define IEEE80211_DFS_MIN_CAC_TIME_MS		60000
+#define IEEE80211_DFS_MIN_NOP_TIME_MS		(30 * 60 * 1000)
+
+/**
+ * enum nl80211_dfs_state - DFS states for channels
+ *
+ * Channel states used by the DFS code.
+ *
+ * @NL80211_DFS_USABLE: The channel can be used, but channel availability
+ *	check (CAC) must be performed before using it for AP or IBSS.
+ * @NL80211_DFS_UNAVAILABLE: A radar has been detected on this channel, it
+ *	is therefore marked as not available.
+ * @NL80211_DFS_AVAILABLE: The channel has been CAC checked and is available.
+ */
+enum nl80211_dfs_state {
+	NL80211_DFS_USABLE,
+	NL80211_DFS_UNAVAILABLE,
+	NL80211_DFS_AVAILABLE,
+};
+
+/**
+ * struct ieee80211_channel - channel definition
+ *
+ * This structure describes a single channel for use
+ * with cfg80211.
+ *
+ * @center_freq: center frequency in MHz
+ * @freq_offset: offset from @center_freq, in KHz
+ * @hw_value: hardware-specific value for the channel
+ * @flags: channel flags from &enum ieee80211_channel_flags.
+ * @orig_flags: channel flags at registration time, used by regulatory
+ *	code to support devices with additional restrictions
+ * @band: band this channel belongs to.
+ * @max_antenna_gain: maximum antenna gain in dBi
+ * @max_power: maximum transmission power (in dBm)
+ * @max_reg_power: maximum regulatory transmission power (in dBm)
+ * @beacon_found: helper to regulatory code to indicate when a beacon
+ *	has been found on this channel. Use regulatory_hint_found_beacon()
+ *	to enable this, this is useful only on 5 GHz band.
+ * @orig_mag: internal use
+ * @orig_mpwr: internal use
+ * @dfs_state: current state of this channel. Only relevant if radar is required
+ *	on this channel.
+ * @dfs_state_entered: timestamp (jiffies) when the dfs state was entered.
+ * @dfs_cac_ms: DFS CAC time in milliseconds, this is valid for DFS channels.
+ */
 struct ieee80211_channel {
 	wifi_band_t band;
 	UINT16 center_freq;
+	UINT16 freq_offset;
 	UINT16 hw_value;
 	UINT32 flags;
 	INT32 max_antenna_gain;
 	INT32 max_power;
+	int max_reg_power;
+	bool beacon_found;
+	u32 orig_flags;
+	int orig_mag, orig_mpwr;
+	enum nl80211_dfs_state dfs_state;
+	unsigned long dfs_state_entered;
+	unsigned int dfs_cac_ms;
 };
 
 /* Extended Channel Switching capability to be set in the 1st byte of
@@ -898,7 +1046,7 @@ struct ieee80211_sband_iftype_data {
 struct ieee80211_supported_band {
 	struct ieee80211_channel *channels;
 	//struct ieee80211_rate *bitrates;
-	//enum nl80211_band band;
+	wifi_band_t band;
 	int n_channels;
 	//int n_bitrates;
 	struct ieee80211_sta_erp_cap erp_cap;
@@ -908,25 +1056,407 @@ struct ieee80211_supported_band {
 	const struct ieee80211_sband_iftype_data *iftype_data;
 };
 
+struct regulatory_request;
+
 struct wiphy {
 	struct ieee80211_supported_band *bands[IEEE80211_NUM_BANDS];
 	/* Supported interface modes, OR together BIT(NL80211_IFTYPE_...) */
+	/* Lets us get back the wiphy on the callback */
+	int (*reg_notifier)(struct wiphy *wiphy,
+			    struct regulatory_request *request);
 	u16 interface_modes;
 	u16 max_remain_on_channel_duration;
 	u32 flags, regulatory_flags, features;
 	u8 max_num_csa_counters;
 	//u8 ext_features[DIV_ROUND_UP(NUM_NL80211_EXT_FEATURES, 8)];
+	struct ieee80211_regdomain *regd;
+};
+
+/**
+ * enum ieee80211_regulatory_flags - device regulatory flags
+ *
+ * @REGULATORY_CUSTOM_REG: tells us the driver for this device
+ *	has its own custom regulatory domain and cannot identify the
+ *	ISO / IEC 3166 alpha2 it belongs to. When this is enabled
+ *	we will disregard the first regulatory hint (when the
+ *	initiator is %REGDOM_SET_BY_CORE). Drivers that use
+ *	wiphy_apply_custom_regulatory() should have this flag set
+ *	or the regulatory core will set it for the wiphy.
+ *	If you use regulatory_hint() *after* using
+ *	wiphy_apply_custom_regulatory() the wireless core will
+ *	clear the REGULATORY_CUSTOM_REG for your wiphy as it would be
+ *	implied that the device somehow gained knowledge of its region.
+ * @REGULATORY_STRICT_REG: tells us that the wiphy for this device
+ *	has regulatory domain that it wishes to be considered as the
+ *	superset for regulatory rules. After this device gets its regulatory
+ *	domain programmed further regulatory hints shall only be considered
+ *	for this device to enhance regulatory compliance, forcing the
+ *	device to only possibly use subsets of the original regulatory
+ *	rules. For example if channel 13 and 14 are disabled by this
+ *	device's regulatory domain no user specified regulatory hint which
+ *	has these channels enabled would enable them for this wiphy,
+ *	the device's original regulatory domain will be trusted as the
+ *	base. You can program the superset of regulatory rules for this
+ *	wiphy with regulatory_hint() for cards programmed with an
+ *	ISO3166-alpha2 country code. wiphys that use regulatory_hint()
+ *	will have their wiphy->regd programmed once the regulatory
+ *	domain is set, and all other regulatory hints will be ignored
+ *	until their own regulatory domain gets programmed.
+ * @REGULATORY_DISABLE_BEACON_HINTS: enable this if your driver needs to
+ *	ensure that passive scan flags and beaconing flags may not be lifted by
+ *	cfg80211 due to regulatory beacon hints. For more information on beacon
+ *	hints read the documenation for regulatory_hint_found_beacon()
+ * @REGULATORY_COUNTRY_IE_FOLLOW_POWER:  for devices that have a preference
+ *	that even though they may have programmed their own custom power
+ *	setting prior to wiphy registration, they want to ensure their channel
+ *	power settings are updated for this connection with the power settings
+ *	derived from the regulatory domain. The regulatory domain used will be
+ *	based on the ISO3166-alpha2 from country IE provided through
+ *	regulatory_hint_country_ie()
+ * @REGULATORY_COUNTRY_IE_IGNORE: for devices that have a preference to ignore
+ * 	all country IE information processed by the regulatory core. This will
+ * 	override %REGULATORY_COUNTRY_IE_FOLLOW_POWER as all country IEs will
+ * 	be ignored.
+ * @REGULATORY_ENABLE_RELAX_NO_IR: for devices that wish to allow the
+ *      NO_IR relaxation, which enables transmissions on channels on which
+ *      otherwise initiating radiation is not allowed. This will enable the
+ *      relaxations enabled under the CFG80211_REG_RELAX_NO_IR configuration
+ *      option
+ * @REGULATORY_IGNORE_STALE_KICKOFF: the regulatory core will _not_ make sure
+ *	all interfaces on this wiphy reside on allowed channels. If this flag
+ *	is not set, upon a regdomain change, the interfaces are given a grace
+ *	period (currently 60 seconds) to disconnect or move to an allowed
+ *	channel. Interfaces on forbidden channels are forcibly disconnected.
+ *	Currently these types of interfaces are supported for enforcement:
+ *	NL80211_IFTYPE_ADHOC, NL80211_IFTYPE_STATION, NL80211_IFTYPE_AP,
+ *	NL80211_IFTYPE_AP_VLAN, NL80211_IFTYPE_MONITOR,
+ *	NL80211_IFTYPE_P2P_CLIENT, NL80211_IFTYPE_P2P_GO,
+ *	NL80211_IFTYPE_P2P_DEVICE. The flag will be set by default if a device
+ *	includes any modes unsupported for enforcement checking.
+ * @REGULATORY_WIPHY_SELF_MANAGED: for devices that employ wiphy-specific
+ *	regdom management. These devices will ignore all regdom changes not
+ *	originating from their own wiphy.
+ *	A self-managed wiphys only employs regulatory information obtained from
+ *	the FW and driver and does not use other cfg80211 sources like
+ *	beacon-hints, country-code IEs and hints from other devices on the same
+ *	system. Conversely, a self-managed wiphy does not share its regulatory
+ *	hints with other devices in the system. If a system contains several
+ *	devices, one or more of which are self-managed, there might be
+ *	contradictory regulatory settings between them. Usage of flag is
+ *	generally discouraged. Only use it if the FW/driver is incompatible
+ *	with non-locally originated hints.
+ *	This flag is incompatible with the flags: %REGULATORY_CUSTOM_REG,
+ *	%REGULATORY_STRICT_REG, %REGULATORY_COUNTRY_IE_FOLLOW_POWER,
+ *	%REGULATORY_COUNTRY_IE_IGNORE and %REGULATORY_DISABLE_BEACON_HINTS.
+ *	Mixing any of the above flags with this flag will result in a failure
+ *	to register the wiphy. This flag implies
+ *	%REGULATORY_DISABLE_BEACON_HINTS and %REGULATORY_COUNTRY_IE_IGNORE.
+ */
+enum ieee80211_regulatory_flags {
+	REGULATORY_CUSTOM_REG			= BIT(0),
+	REGULATORY_STRICT_REG			= BIT(1),
+	REGULATORY_DISABLE_BEACON_HINTS		= BIT(2),
+	REGULATORY_COUNTRY_IE_FOLLOW_POWER	= BIT(3),
+	REGULATORY_COUNTRY_IE_IGNORE		= BIT(4),
+	REGULATORY_ENABLE_RELAX_NO_IR           = BIT(5),
+	REGULATORY_IGNORE_STALE_KICKOFF         = BIT(6),
+	REGULATORY_WIPHY_SELF_MANAGED		= BIT(7),
+};
+
+/**
+ * enum nl80211_dfs_regions - regulatory DFS regions
+ *
+ * @NL80211_DFS_UNSET: Country has no DFS master region specified
+ * @NL80211_DFS_FCC: Country follows DFS master rules from FCC
+ * @NL80211_DFS_ETSI: Country follows DFS master rules from ETSI
+ * @NL80211_DFS_JP: Country follows DFS master rules from JP/MKK/Telec
+ */
+enum nl80211_dfs_regions {
+	NL80211_DFS_UNSET	= 0,
+	NL80211_DFS_FCC		= 1,
+	NL80211_DFS_ETSI	= 2,
+	NL80211_DFS_JP		= 3,
+};
+
+/**
+ * enum nl80211_reg_type - specifies the type of regulatory domain
+ * @NL80211_REGDOM_TYPE_COUNTRY: the regulatory domain set is one that pertains
+ *	to a specific country. When this is set you can count on the
+ *	ISO / IEC 3166 alpha2 country code being valid.
+ * @NL80211_REGDOM_TYPE_WORLD: the regulatory set domain is the world regulatory
+ * 	domain.
+ * @NL80211_REGDOM_TYPE_CUSTOM_WORLD: the regulatory domain set is a custom
+ * 	driver specific world regulatory domain. These do not apply system-wide
+ * 	and are only applicable to the individual devices which have requested
+ * 	them to be applied.
+ * @NL80211_REGDOM_TYPE_INTERSECTION: the regulatory domain set is the product
+ *	of an intersection between two regulatory domains -- the previously
+ *	set regulatory domain on the system and the last accepted regulatory
+ *	domain request to be processed.
+ */
+enum nl80211_reg_type {
+	NL80211_REGDOM_TYPE_COUNTRY,
+	NL80211_REGDOM_TYPE_WORLD,
+	NL80211_REGDOM_TYPE_CUSTOM_WORLD,
+	NL80211_REGDOM_TYPE_INTERSECTION,
+};
+
+/**
+ * enum environment_cap - Environment parsed from country IE
+ * @ENVIRON_ANY: indicates country IE applies to both indoor and
+ *	outdoor operation.
+ * @ENVIRON_INDOOR: indicates country IE applies only to indoor operation
+ * @ENVIRON_OUTDOOR: indicates country IE applies only to outdoor operation
+ */
+enum environment_cap {
+	ENVIRON_ANY,
+	ENVIRON_INDOOR,
+	ENVIRON_OUTDOOR,
+};
+
+/**
+ * enum nl80211_initiator - Indicates the initiator of a reg domain request
+ * @NL80211_REGDOM_SET_BY_CORE: Core queried CRDA for a dynamic world
+ * 	regulatory domain.
+ * @NL80211_REGDOM_SET_BY_USER: User asked the wireless core to set the
+ * 	regulatory domain.
+ * @NL80211_REGDOM_SET_BY_DRIVER: a wireless drivers has hinted to the
+ * 	wireless core it thinks its knows the regulatory domain we should be in.
+ * @NL80211_REGDOM_SET_BY_COUNTRY_IE: the wireless core has received an
+ * 	802.11 country information element with regulatory information it
+ * 	thinks we should consider. cfg80211 only processes the country
+ *	code from the IE, and relies on the regulatory domain information
+ *	structure passed by userspace (CRDA) from our wireless-regdb.
+ *	If a channel is enabled but the country code indicates it should
+ *	be disabled we disable the channel and re-enable it upon disassociation.
+ */
+enum nl80211_reg_initiator {
+	NL80211_REGDOM_SET_BY_CORE,
+	NL80211_REGDOM_SET_BY_USER,
+	NL80211_REGDOM_SET_BY_DRIVER,
+	NL80211_REGDOM_SET_BY_COUNTRY_IE,
+};
+
+/**
+ * enum nl80211_user_reg_hint_type - type of user regulatory hint
+ *
+ * @NL80211_USER_REG_HINT_USER: a user sent the hint. This is always
+ *	assumed if the attribute is not set.
+ * @NL80211_USER_REG_HINT_CELL_BASE: the hint comes from a cellular
+ *	base station. Device drivers that have been tested to work
+ *	properly to support this type of hint can enable these hints
+ *	by setting the NL80211_FEATURE_CELL_BASE_REG_HINTS feature
+ *	capability on the struct wiphy. The wireless core will
+ *	ignore all cell base station hints until at least one device
+ *	present has been registered with the wireless core that
+ *	has listed NL80211_FEATURE_CELL_BASE_REG_HINTS as a
+ *	supported feature.
+ * @NL80211_USER_REG_HINT_INDOOR: a user sent an hint indicating that the
+ *	platform is operating in an indoor environment.
+ */
+enum nl80211_user_reg_hint_type {
+	NL80211_USER_REG_HINT_USER	= 0,
+	NL80211_USER_REG_HINT_CELL_BASE = 1,
+	NL80211_USER_REG_HINT_INDOOR    = 2,
 };
 
 
+/**
+ * struct regulatory_request - used to keep track of regulatory requests
+ *
+ * @wiphy_idx: this is set if this request's initiator is
+ * 	%REGDOM_SET_BY_COUNTRY_IE or %REGDOM_SET_BY_DRIVER. This
+ * 	can be used by the wireless core to deal with conflicts
+ * 	and potentially inform users of which devices specifically
+ * 	cased the conflicts.
+ * @initiator: indicates who sent this request, could be any of
+ * 	of those set in nl80211_reg_initiator (%NL80211_REGDOM_SET_BY_*)
+ * @alpha2: the ISO / IEC 3166 alpha2 country code of the requested
+ * 	regulatory domain. We have a few special codes:
+ * 	00 - World regulatory domain
+ * 	99 - built by driver but a specific alpha2 cannot be determined
+ * 	98 - result of an intersection between two regulatory domains
+ *	97 - regulatory domain has not yet been configured
+ * @dfs_region: If CRDA responded with a regulatory domain that requires
+ *	DFS master operation on a known DFS region (NL80211_DFS_*),
+ *	dfs_region represents that region. Drivers can use this and the
+ *	@alpha2 to adjust their device's DFS parameters as required.
+ * @user_reg_hint_type: if the @initiator was of type
+ *	%NL80211_REGDOM_SET_BY_USER, this classifies the type
+ *	of hint passed. This could be any of the %NL80211_USER_REG_HINT_*
+ *	types.
+ * @intersect: indicates whether the wireless core should intersect
+ * 	the requested regulatory domain with the presently set regulatory
+ * 	domain.
+ * @processed: indicates whether or not this requests has already been
+ *	processed. When the last request is processed it means that the
+ *	currently regulatory domain set on cfg80211 is updated from
+ *	CRDA and can be used by other regulatory requests. When a
+ *	the last request is not yet processed we must yield until it
+ *	is processed before processing any new requests.
+ * @country_ie_checksum: checksum of the last processed and accepted
+ * 	country IE
+ * @country_ie_env: lets us know if the AP is telling us we are outdoor,
+ * 	indoor, or if it doesn't matter
+ * @list: used to insert into the reg_requests_list linked list
+ */
+struct regulatory_request {
+	int wiphy_idx;
+	enum nl80211_reg_initiator initiator;
+	enum nl80211_user_reg_hint_type user_reg_hint_type;
+	char alpha2[2];
+	u8 dfs_region;
+	bool intersect;
+	bool processed;
+	enum environment_cap country_ie_env;
+	LIST_HEADER_T list;
+};
+
+struct ieee80211_freq_range {
+	u32 start_freq_khz;
+	u32 end_freq_khz;
+	u32 max_bandwidth_khz;
+};
+
+struct ieee80211_power_rule {
+	u32 max_antenna_gain;
+	u32 max_eirp;
+};
+
+/**
+ * struct ieee80211_wmm_ac - used to store per ac wmm regulatory limitation
+ *
+ * The information provided in this structure is required for QoS
+ * transmit queue configuration. Cf. IEEE 802.11 7.3.2.29.
+ *
+ * @cw_min: minimum contention window [a value of the form
+ *      2^n-1 in the range 1..32767]
+ * @cw_max: maximum contention window [like @cw_min]
+ * @cot: maximum burst time in units of 32 usecs, 0 meaning disabled
+ * @aifsn: arbitration interframe space [0..255]
+ *
+ */
+struct ieee80211_wmm_ac {
+	u16 cw_min;
+	u16 cw_max;
+	u16 cot;
+	u8 aifsn;
+};
+
+struct ieee80211_wmm_rule {
+	struct ieee80211_wmm_ac client[IEEE80211_NUM_ACS];
+	struct ieee80211_wmm_ac ap[IEEE80211_NUM_ACS];
+};
+
+
+struct ieee80211_reg_rule {
+	struct ieee80211_freq_range freq_range;
+	struct ieee80211_power_rule power_rule;
+#if CONFIG_WIFI_REGDOMAIN_WMM
+	struct ieee80211_wmm_rule wmm_rule;
+#endif
+	u32 flags;
+	u32 dfs_cac_ms;
+	bool has_wmm;
+};
+
+struct ieee80211_regdomain {
+	u32 n_reg_rules;
+	char alpha2[3];
+	enum nl80211_dfs_regions dfs_region;
+	struct ieee80211_reg_rule reg_rules[];
+};
+
+#define REG_RULE_EXT(start, end, bw, gain, eirp, dfs_cac, reg_flags)	\
+{									\
+	.freq_range.start_freq_khz = MHZ_TO_KHZ(start),			\
+	.freq_range.end_freq_khz = MHZ_TO_KHZ(end),			\
+	.freq_range.max_bandwidth_khz = MHZ_TO_KHZ(bw),			\
+	.power_rule.max_antenna_gain = DBI_TO_MBI(gain),		\
+	.power_rule.max_eirp = DBM_TO_MBM(eirp),			\
+	.flags = reg_flags,						\
+	.dfs_cac_ms = dfs_cac,						\
+}
+
+#define REG_RULE(start, end, bw, gain, eirp, reg_flags) \
+	REG_RULE_EXT(start, end, bw, gain, eirp, 0, reg_flags)
+
 extern struct wiphy g_wiphy;
+
+/*
+ * You can use this to mark a wiphy_idx as not having an associated wiphy.
+ * It guarantees cfg80211_rdev_by_wiphy_idx(wiphy_idx) will return NULL
+ */
+#define WIPHY_IDX_INVALID -1
+
+static inline struct wiphy *wiphy_idx_to_wiphy(int index)
+{
+	if (index == WIPHY_IDX_INVALID)
+		return NULL;
+	return &g_wiphy;
+}
+
+/* Note 0 is valid, hence phy0 */
+static inline bool wiphy_idx_valid(int wiphy_idx)
+{
+	return wiphy_idx >= 0;
+}
+
+static inline const char *wiphy_name(const struct wiphy *wiphy)
+{
+	return "phy0";
+}
+
+/**
+ * ieee80211_channel_to_khz - convert ieee80211_channel to frequency in KHz
+ * @chan: struct ieee80211_channel to convert
+ * Return: The corresponding frequency (in KHz)
+ */
+static inline u32
+ieee80211_channel_to_khz(const struct ieee80211_channel *chan)
+{
+	return MHZ_TO_KHZ(chan->center_freq) + chan->freq_offset;
+}
+
+/**
+ * ieee80211_channel_equal - compare two struct ieee80211_channel
+ *
+ * @a: 1st struct ieee80211_channel
+ * @b: 2nd struct ieee80211_channel
+ * Return: true if center frequency of @a == @b
+ */
+static inline bool
+ieee80211_channel_equal(struct ieee80211_channel *a,
+			struct ieee80211_channel *b)
+{
+	return (a->center_freq == b->center_freq &&
+		a->freq_offset == b->freq_offset);
+}
+
+/* Although the spec says 8 I'm seeing 6 in practice */
+#define IEEE80211_COUNTRY_IE_MIN_LEN	6
+
+/* The Country String field of the element shall be 3 octets in length */
+#define IEEE80211_COUNTRY_STRING_LEN	3
 
 void rwnx_hw_reinit(void);
 uint64_t rwnx_hw_mm_features(void);
 
 bool country_code_policy_is_auto(void);
 UINT8 rw_ieee80211_get_scan_default_chan_num(void);
-
+bool check_non_radar_channel_available(int chan);
+int get_wiphy_idx(struct wiphy *wiphy);
+int set_regdom(const struct ieee80211_regdomain *rd);
+int ieee80211_channel_to_frequency(int chan, wifi_band_t band);
+int ieee80211_frequency_to_channel(int freq);
+uint16_t get_chan_flags(uint32_t flags);
+void regulatory_hint_11d(struct wiphy *wiphy, wifi_band_t band, const u8 *country_ie, u8 country_ie_len);
+int regulatory_hint_found_beacon(struct wiphy *wiphy, struct ieee80211_channel *beacon_chan);
+struct ieee80211_channel *ieee80211_get_channel(struct wiphy *wiphy, int freq);
+void rwnx_regulatory_hint_11d(int freq, const u8 *country_ie, u8 country_ie_len);
+int ieee80211_freq_khz_to_channel(u32 freq);
+const char *regdom_flag_str(uint32_t channel_flags);
+enum nl80211_dfs_regions reg_get_dfs_region(struct wiphy *wiphy);
 #endif // _RW_IEEE80211_H_
 // eof
 

@@ -39,16 +39,16 @@ typedef enum {
 } aud_module_id_t;
 
 typedef enum {
-#ifdef CONFIG_AUDIO_ADC
+#if CONFIG_AUDIO_ADC
 	AUD_ISR_ADCL = 0,    /**< adcl_int_en */
 #endif
-#ifdef CONFIG_AUDIO_DMIC
+#if CONFIG_AUDIO_DMIC
 	AUD_ISR_DMIC = 2,    /**< dmic_int_en */
 #endif
-#ifdef CONFIG_AUDIO_DTMF
+#if CONFIG_AUDIO_DTMF
 	AUD_ISR_DTMF = 3,    /**< dtmf_int_en */
 #endif
-#ifdef CONFIG_AUDIO_DAC
+#if CONFIG_AUDIO_DAC
 	AUD_ISR_DACL = 4,    /**< dacl_int_en */
 	AUD_ISR_DACR = 5,    /**< dacr_int_en */
 #endif
@@ -59,16 +59,16 @@ typedef void (*aud_isr_t)(void);
 
 typedef struct
 {
-#ifdef CONFIG_AUDIO_ADC
+#if CONFIG_AUDIO_ADC
 	aud_isr_t aud_adcl_fifo_handler;
 #endif
-#ifdef CONFIG_AUDIO_DMIC
+#if CONFIG_AUDIO_DMIC
 	aud_isr_t aud_dmic_fifo_handler;
 #endif
-#ifdef CONFIG_AUDIO_DTMF
+#if CONFIG_AUDIO_DTMF
 	aud_isr_t aud_dtmf_fifo_handler;
 #endif
-#ifdef CONFIG_AUDIO_DAC
+#if CONFIG_AUDIO_DAC
 	aud_isr_t aud_dacl_fifo_handler;
 	aud_isr_t aud_dacr_fifo_handler;
 #endif

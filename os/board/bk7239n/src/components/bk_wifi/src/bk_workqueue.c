@@ -123,10 +123,12 @@ bk_err_t bk_work_run(struct bk_workqueue *workqueue, struct bk_work *work)
 
 	GLOBAL_INT_DISABLE();
 
+#if 0
 	if (workqueue->work_current == work) {
 		GLOBAL_INT_RESTORE();
 		return BK_WORKQUEUE_WORK_RUNNING;
 	}
+#endif
 
 	if (work->exist) {
 		GLOBAL_INT_RESTORE();
@@ -186,6 +188,6 @@ bk_err_t bk_work_cancel(struct bk_work *work)
 void bk_workqueue_init(void)
 {
 	if (!g_wq_default)
-		g_wq_default = bk_workqueue_create("syswq", CONFIG_WIFI_KMSG_TASK_PRIO, 1024);
+		g_wq_default = bk_workqueue_create("syswq", CONFIG_WIFI_KMSG_TASK_PRIO, 2048);
 }
 

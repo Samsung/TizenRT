@@ -815,7 +815,12 @@ int bk_wlan_start_p2p(network_InitTypeDef_st *inNetworkInitPara)
 bk_err_t bk_wlan_start(network_InitTypeDef_st *inNetworkInitPara)
 {
 	if (inNetworkInitPara->wifi_mode == BK_SOFT_AP)
+	{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 		bk_wlan_start_ap(inNetworkInitPara);
+#pragma GCC diagnostic pop
+	}
 	else if (inNetworkInitPara->wifi_mode == BK_STATION)
 		bk_wlan_start_sta(inNetworkInitPara);
 #ifdef CONFIG_P2P
@@ -2988,7 +2993,7 @@ bk_err_t bk_wifi_scan_dump_result(const wifi_scan_result_t *scan_result)
 		rtos_delay_milliseconds(10);
 	}
 
-	WIFI_LOG_RAW("\n");
+	//WIFI_LOG_RAW("\n");
 
 	return BK_OK;
 }
@@ -3067,6 +3072,10 @@ bk_err_t wifi_ap_validate_config(const wifi_ap_config_t *ap_config)
 #if (CONFIG_SOC_BK7239XX) && CONFIG_WIFI_BAND_5G
 	if (!ate_is_enabled() && ap_config->channel >= 36 && ap_config->channel <= 177) {
 
+#if CONFIG_WIFI_REGDOMAIN
+		if (check_non_radar_channel_available(ap_config->channel))
+			return BK_OK;
+#else
 		//check if configured channel is avaliable channel and no need for radat detection
 		int selected_channels_size = 0;
 		extern int* rw_select_5g_non_radar_avaliable_channels(int *selected_channels_size);
@@ -3076,6 +3085,7 @@ bk_err_t wifi_ap_validate_config(const wifi_ap_config_t *ap_config)
 			if (non_radar_avaliable_channels[i] == ap_config->channel)
 				return BK_OK;
 		}
+#endif
 
 		//TODO more parameter checking
 		WIFI_LOGE("[%s]configured unavaliable or dfs channel\r\n",__FUNCTION__);
@@ -3689,7 +3699,10 @@ bk_err_t bk_wifi_sta_pm_enable(void)
 {
 	bk_err_t result = BK_FAIL;
 #if CONFIG_STA_PS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	result = bk_wlan_ps_enable();
+#pragma GCC diagnostic pop
 #endif
 	return result;
 }
@@ -3698,7 +3711,10 @@ bk_err_t bk_wifi_sta_pm_disable(void)
 {
 	bk_err_t result = BK_FAIL;
 #if CONFIG_STA_PS
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	result = bk_wlan_ps_disable();
+#pragma GCC diagnostic pop
 #endif
 	return result;
 }
@@ -4071,7 +4087,7 @@ void bk_wifi_ps_cmd_debug_printf(uint8_t ps_val)
 	return;
 }
 
-void bk_wifi_mask_td_info()
+void bk_wifi_mask_td_info(void)
 {
 	rw_msg_send_td_mask_req();
 	return;
@@ -4391,7 +4407,7 @@ bool bk_wifi_get_ani_en(void)
 
 bool rwnxl_get_status_in_doze(void);
 
-int cmd_wlan_get_ps_status() {
+int cmd_wlan_get_ps_status(void) {
 	/* 0: the status of ps is not ok
 	 * 1: the status of ps is ok
 	 */

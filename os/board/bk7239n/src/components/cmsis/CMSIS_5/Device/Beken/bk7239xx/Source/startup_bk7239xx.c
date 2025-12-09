@@ -64,15 +64,26 @@ extern void entry_main(void);
 extern void bk_mpu_init(void);
 
 extern unsigned char _heap_start, _heap_end;
+
+#if CONFIG_KMM_REGIONS == 1
 extern uint32_t RAM_KREGION1_START;
 extern uint32_t RAM_KREGION1_SIZE;
+#else
+extern uint32_t RAM_KREGION0_START;
+extern uint32_t RAM_KREGION0_SIZE;
+#endif
 extern uint32_t RAM_KREGION2_START;
 extern uint32_t RAM_KREGION2_SIZE;
 
 #define HEAP_START_ADDRESS    (void*)&_heap_start
 #define HEAP_END_ADDRESS      (void*)&_heap_end   
+#if CONFIG_KMM_REGIONS == 1
 #define HEAP_PSRAM1_START_ADDR   (void*)&RAM_KREGION1_START   
 #define HEAP_PSRAM1_SIZE         (void*)&RAM_KREGION1_SIZE    
+#else
+#define HEAP_PSRAM1_START_ADDR   (void*)&RAM_KREGION0_START   
+#define HEAP_PSRAM1_SIZE         (void*)&RAM_KREGION0_SIZE    
+#endif
 #define HEAP_PSRAM2_START_ADDR   (void*)&RAM_KREGION2_START   
 #define HEAP_PSRAM2_SIZE         (void*)&RAM_KREGION2_SIZE  
 extern unsigned int __StackLimit;
@@ -401,24 +412,27 @@ void set_jtag_mode(void) {
 void os_heap_init(void)
 {
 
-	kregionx_start[0] = (void *)HEAP_START_ADDRESS;
-	kregionx_size[0] = (size_t)(HEAP_END_ADDRESS - HEAP_START_ADDRESS);
+#if CONFIG_KMM_REGIONS == 1
+    kregionx_start[0] = (void *)HEAP_START_ADDRESS;
+    kregionx_size[0] = (size_t)(HEAP_END_ADDRESS - HEAP_START_ADDRESS);
 
-#if CONFIG_KMM_REGIONS >= 2  
-  
+#elif CONFIG_KMM_REGIONS >= 2  
+    kregionx_start[0] = (void *)HEAP_PSRAM1_START_ADDR; 
+    kregionx_size[0] = (size_t)HEAP_PSRAM1_SIZE;  
 #if CONFIG_KMM_REGIONS == 3
-    kregionx_start[1] = (void *)HEAP_PSRAM1_START_ADDR;
+    kregionx_start[1] = (void *)HEAP_START_ADDRESS;
     kregionx_start[2] = (void *)HEAP_PSRAM2_START_ADDR;
-    kregionx_size[1]  = (size_t)HEAP_PSRAM1_SIZE;
+    kregionx_size[1]  = (size_t)(HEAP_END_ADDRESS - HEAP_START_ADDRESS);
     kregionx_size[2]  = (size_t)HEAP_PSRAM2_SIZE;
 #elif CONFIG_KMM_REGIONS > 3
 #error "Need to check here for heap."
 #else
-    kregionx_start[1] = (void *)HEAP_PSRAM1_START_ADDR;
-	kregionx_size[1]  = (size_t)HEAP_PSRAM1_SIZE;
+    kregionx_start[1] = (void *)HEAP_START_ADDRESS;
+    kregionx_size[1]  = (size_t)(HEAP_END_ADDRESS - HEAP_START_ADDRESS);
 #endif
 
-#endif    //CONFIG_KMM_REGIONS >= 2 
+
+#endif    //CONFIG_KMM_REGIONS == 1
 }
 
 void _start(void)
@@ -470,7 +484,7 @@ void _start(void)
     
 #if defined(CONFIG_PSRAM)
 	bk_psram_init();
-#if CONFIG_KMM_REGIONS > 1
+#ifdef CONFIG_BUILD_PROTECTED
 	bk_psram_code_init();
 #endif
 #endif

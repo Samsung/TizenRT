@@ -59,7 +59,7 @@ DELIM ?= $(strip /)
 bsp_path := $(abspath ../..)
 
 build_dir := $(abspath $(TOPDIR)/../build)
-tfm_build_dir := $(abspath $(build_dir)/output/bin/tfm_build)
+tfm_build_dir := $(abspath ./tfm_build)
 
 security_h := $(tfm_build_dir)/_build/security.h
 
@@ -168,7 +168,7 @@ postbuild: tfm
 
 clean:
 	$(Q) echo clean
-	$(Q) rm -rf $(tfm_build_dir)
+	# $(Q) rm -rf $(tfm_build_dir)
 
 distclean: clean
 	$(call DELFILE, Make.dep)

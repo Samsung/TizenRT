@@ -75,3 +75,14 @@ void bk_reboot(void)
 {
 	bk_reboot_ex(REBOOT_REASON_INITIALIZED);
 }
+
+void bk_reboot_reset_reason(void)
+{
+#if defined(CONFIG_SYS_CPU0)
+	bk_pm_module_vote_cpu_freq(PM_DEV_ID_DEFAULT,PM_CPU_FRQ_60M);
+	rtos_disable_int();
+
+	bk_flash_set_line_mode(FLASH_LINE_MODE_TWO);
+	bk_wdt_force_reboot();
+#endif //#if CONFIG_SYS_CPU0
+}

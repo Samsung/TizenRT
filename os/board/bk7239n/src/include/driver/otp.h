@@ -36,8 +36,8 @@ extern "C" {
 bk_err_t bk_otp_driver_init(void);
 /**
  * @brief     OTP driver deinit
- * 
- * 
+ *
+ *
  */
 void bk_otp_driver_deinit(void);
 /**
@@ -65,7 +65,7 @@ bk_err_t bk_otp_apb_read(otp1_id_t item, uint8_t *buf, uint32_t size);
  *    - BK_OK: succeed
  *    - BK_ERR_NO_WRITE_PERMISSION: wrong permission to write
  *    - BK_ERR_OTP_ADDR_OUT_OF_RANGE: param size exceeds item size
- *    - BK_ERR_OTP_UPDATE_NOT_EQUAL: updated value not match expectation 
+ *    - BK_ERR_OTP_UPDATE_NOT_EQUAL: updated value not match expectation
  *    - BK_FAIL: otp is in use.
  *    - others: other errors.
  */
@@ -152,6 +152,57 @@ otp_privilege_t bk_otp_apb_read_mask(otp1_id_t item);
 bk_err_t bk_otp_apb_write_mask(otp1_id_t item, otp_privilege_t permission);
 
 /**
+ * @brief Write security configuration for OTP
+ *
+ * @param location The OTP location to set security configuration
+ * @return bk_err_t
+ */
+ bk_err_t bk_otp_write_security(uint32_t location);
+
+ /**
+  * @brief Read security configuration for OTP
+  *
+  * @param location The OTP location to get security configuration
+  * @return uint32_t The security configuration value
+  */
+ uint32_t bk_otp_read_security(uint32_t location);
+
+ /**
+  * @brief Write security configuration for PUF
+  *
+  * @param location The PUF location to set security configuration
+  * @return bk_err_t
+  */
+ bk_err_t bk_otp_write_puf_security(uint32_t location);
+
+ /**
+  * @brief Read security configuration for PUF
+  *
+  * @param location The PUF location to get security configuration
+  * @return uint32_t The security configuration value
+  */
+ uint32_t bk_otp_read_puf_security(uint32_t location);
+
+ /**
+  * @brief Enable OTP security protection flag
+  *
+  *
+  * @return
+  *    - BK_OK: Security protection flag enabled successfully
+  *    - BK_FAIL: Failed to enable security protection flag
+  */
+ bk_err_t bk_otp_enable_security_flag(void);
+
+ /**
+  * @brief Read OTP security protection flag status
+  *
+  * @return uint32_t The security protection flag status
+  *    - 0xF: Security protection is fully enabled
+  *    - Other values: Security protection status (implementation specific)
+  */
+ uint32_t bk_otp_read_security_flag(void);
+
+/**
  * @brief     read random number
  *
  * @param buf the buffer to store value
@@ -162,6 +213,24 @@ bk_err_t bk_otp_apb_write_mask(otp1_id_t item, otp_privilege_t permission);
  *    - BK_FAIL: otp is in use.
 */
 bk_err_t bk_otp_read_random_number(uint32_t* buf, uint32_t size);
+
+/**
+ * @brief     active OTP, internal used by dubhe driver
+ *
+ * @return
+ *    - 0: succeed
+ *    - other: error
+ */
+int bk_otp_active(void);
+
+/**
+ * @brief     sleep OTP, internal used by dubhe driver
+ *
+ * @return
+ *    - 0: succeed
+ *    - other: error
+ */
+int bk_otp_sleep(void);
 #endif
 
 #ifdef CONFIG_FLASH_OTP
