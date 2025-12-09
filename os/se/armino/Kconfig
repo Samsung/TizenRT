@@ -54,3 +54,11 @@ config HW_SE_STORAGE
 	default n
 	---help---
 		SE supports Secure Stroage
+
+config USE_HW_PSA_CRYPTO
+	bool "Use HW PSA Crypto"
+	default n
+	depends on BUILD_FLAT
+	---help---
+		Use PSA features provided by TF-M
+		It should be enabled when using flat build.
