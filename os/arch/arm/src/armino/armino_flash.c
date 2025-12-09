@@ -73,11 +73,6 @@
 #include <driver/flash.h>
 #include <os/os.h>
 #include "flash_hal.h"
-#if CONFIG_TFM_FLASH_NSC
-#include "tfm_flash_nsc.h"
-#include "tfm_ns_interface.h"
-#include "partitions_gen.h"
-#endif
 /****************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -128,9 +123,9 @@ static ssize_t bk_erase_page(size_t page)
 
 	//printf("func :%s, line :%d, addr :%x\n", __func__, __LINE__, addr);
 	#if (!CONFIG_SPE)
-	if ((addr >= CONFIG_PRIMARY_TFM_S_PHY_PARTITION_OFFSET) &&
-		(addr < (CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET + CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE))) {
-		ret = psa_flash_erase_sector(addr);
+	if ((addr >= bk_primary_tfm_s_partition_offset()) &&
+		(addr < (bk_secondary_all_partition_offset() + bk_secondary_all_partition_size()))) {
+		ret = bk_security_flash_erase_sector(addr);
 	} else
 	#endif
 	{
@@ -162,11 +157,11 @@ static int bk_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 
 static ssize_t bk_flash_write(size_t addr, const void *buf, size_t length)
 {
-	//printf("func :%s, line :%d, addr :%x, length :%d\n", __func__, __LINE__, addr, length);
+	//printf("func :%s, line :%d, xxx addr :%x, length :%d\n", __func__, __LINE__, bk_secondary_all_partition_offset(), bk_secondary_all_partition_size());
 	#if (!CONFIG_SPE)
-	if ((addr >= CONFIG_PRIMARY_TFM_S_PHY_PARTITION_OFFSET) &&
-		(addr < (CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET + CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE))) {
-		psa_flash_write_bytes(addr, (uint8_t *)buf, length);
+	if ((addr >= bk_primary_tfm_s_partition_offset()) &&
+		(addr < (bk_secondary_all_partition_offset() + bk_secondary_all_partition_size()))) {
+		bk_security_flash_write_bytes(addr, (uint8_t *)buf, length);
 	} else
 	#endif
 	{
@@ -180,9 +175,9 @@ ssize_t bk_flash_read(size_t addr, void *buf, size_t length)
 {
 	//printf("func :%s, line :%d, addr :%x, length :%d\n", __func__, __LINE__, addr, length);
 	#if (!CONFIG_SPE)
-	if ((addr >= CONFIG_PRIMARY_TFM_S_PHY_PARTITION_OFFSET) &&
-		(addr < (CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET + CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE))) {
-		psa_flash_read_bytes(addr, (uint8_t *)buf, length);
+	if ((addr >= bk_primary_tfm_s_partition_offset()) &&
+		(addr < (bk_secondary_all_partition_offset() + bk_secondary_all_partition_size()))) {
+		bk_security_flash_read_bytes(addr, (uint8_t *)buf, length);
 	} else
 	#endif
 	{

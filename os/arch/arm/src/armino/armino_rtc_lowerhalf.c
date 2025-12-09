@@ -205,9 +205,9 @@ static void armino_alarm_callback(aon_rtc_id_t id, uint8_t *name_p, void *param)
 static int armino_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time *rtctime)
 {
 	FAR struct armino_lowerhalf_s *rtc;
-	struct timespec ts;
+	time_t sec;
 	int ret;
-
+	
 	DEBUGASSERT(lower != NULL && rtctime != NULL);
 	rtc = (FAR struct armino_lowerhalf_s *)lower;
 	ret = sem_wait(&rtc->devsem);
@@ -216,13 +216,9 @@ static int armino_rdtime(FAR struct rtc_lowerhalf_s *lower, FAR struct rtc_time 
 	}
 	/* The resolution of time is only 1 second */
 
-	ret = up_rtc_gettime(&ts);
-	if (ret < 0) {
-		sem_post(&rtc->devsem);
-		return ret;
-	}
+	sec = up_rtc_time();
 
-    if (gmtime_r(&ts.tv_sec, (FAR struct tm *)rtctime) == NULL) {
+    if (gmtime_r(&sec, (FAR struct tm *)rtctime) == NULL) {
         sem_post(&rtc->devsem);
         return -EINVAL;
     }
@@ -288,7 +284,6 @@ static alarm_info_t s_armino_alarm = {0};
 static int armino_setalarm(FAR struct rtc_lowerhalf_s *lower, FAR const struct lower_setalarm_s *alarminfo)
 {
 	FAR struct armino_lowerhalf_s *rtc;
-	struct timespec ts;
 	time_t alarm_time;
 	time_t diff_time;
 	uint32_t clock_freq;
@@ -305,18 +300,14 @@ static int armino_setalarm(FAR struct rtc_lowerhalf_s *lower, FAR const struct l
 	}
 
 	alarm_time = mktime((FAR struct tm *)&alarminfo->time);
-	ret = up_rtc_gettime(&ts);
-	if (ret < 0) {
-		sem_post(&rtc->devsem);
-		return ret;
-	}
+	time_t current_time = up_rtc_time();
 
-    if (alarm_time < ts.tv_sec) {
+    if (alarm_time < current_time) {
         sem_post(&rtc->devsem);
         return -EINVAL;
     }
 
-	diff_time = alarm_time - ts.tv_sec;
+	diff_time = alarm_time - current_time;
 	clock_freq = bk_rtc_get_clock_freq();
 	rel_ticks = diff_time * clock_freq;
 
