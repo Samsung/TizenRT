@@ -748,6 +748,7 @@ void up_serialinit(void)
 	uart_register("/dev/ttyS0", &TTYS0_DEV);
 #endif
 #ifdef TTYS1_DEV
+	armino_up_setup(&TTYS1_DEV);
 	uart_register("/dev/ttyS1", &TTYS1_DEV);
 #endif
 #ifdef TTYS2_DEV
@@ -886,17 +887,3 @@ int up_getc(void)
 	return ch;
 }
 #endif							/* USE_SERIALDRIVER */
-
-
-extern void bk_set_ble_log_level(uint8_t level);
-extern void bk_set_wifi_log_level(uint8_t level);
-void set_ble_log_level(uint32_t level)
-{
-	bk_set_ble_log_level(level);
-}
-
-void set_wifi_log_level(uint32_t level)
-{
-	bk_set_wifi_log_level(level);
-}
-

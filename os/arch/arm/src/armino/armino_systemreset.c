@@ -69,7 +69,7 @@
  ****************************************************************************/
 static void up_systemreset(void)
 {
-    bk_reboot();
+    bk_reboot_reset_reason();
 
 	/* Wait for the reset */
 	for (;;) {

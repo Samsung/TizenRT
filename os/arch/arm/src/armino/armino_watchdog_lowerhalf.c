@@ -134,14 +134,14 @@ const struct watchdog_ops_s g_wdgops = {
 static int armino_nmi_interrupt(int irq, void *context, FAR void *arg)
 {
 	struct armino_wdg_lowerhalf_s *priv = (struct armino_wdg_lowerhalf_s *)arg;
-	static bool nmi_occur = false;
+	static bool s_nmi_occur = false;
 
 	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
 
-	if (nmi_occur)
+	if (s_nmi_occur)
 	{
 		aon_pmu_drv_wdt_change_not_rosc_clk();
 		aon_pmu_drv_wdt_rst_dev_enable();
@@ -149,28 +149,26 @@ static int armino_nmi_interrupt(int irq, void *context, FAR void *arg)
 	}
 
 	if(REBOOT_TAG_REQ == sys_get_reboot_tag()) {
-		bk_printf("test reset reason\n");
 		while(1);
 	}
 
-	nmi_occur = true;
+	s_nmi_occur = true;
 
 	if (priv->int_mode) {
 		/* Yes... NOTE:  This interrupt service routine (ISR) must reload
 		* the WDT counter to prevent the reset.  Otherwise, we will reset
-		* about 4 ticks.
+		* about 8 ticks.
 		*/
-		bk_wdt_feed();
 		bk_misc_set_reset_reason(RESET_SOURCE_WATCHDOG);
 		if (priv->handler) 
 		{
+			bk_wdt_feed();
 			priv->handler(irq, context, NULL);
 		}
 
 	} else {
-		//TODO delete
+
         (void)irqsave();
-		bk_printf("armino_nmi_interrupt: WDT timeout\n");
         bk_wdt_feed();
 		if(REBOOT_TAG_REQ != sys_get_reboot_tag()) 
 		{
@@ -325,8 +323,8 @@ static int armino_wdg_getstatus(FAR struct watchdog_lowerhalf_s *lower, FAR stru
 		status->timeleft = priv->timeout_left;
 	} else {
 		uint32_t time_elapse;
-		//TODO optimize
-		time_elapse = ((bk_aon_rtc_get_current_tick(AON_RTC_ID_1) - priv->start_tick - priv->total_pause_duration) * 1000) / bk_rtc_get_clock_freq();	// Get time elapse in ms
+
+		time_elapse = ((bk_aon_rtc_get_current_tick(AON_RTC_ID_1) - priv->start_tick - priv->total_pause_duration) * 1000) / bk_rtc_get_clock_freq();
 		status->timeleft = status->timeout - time_elapse;
 
 		/* Return ACTIVE if watchdog timer is started */

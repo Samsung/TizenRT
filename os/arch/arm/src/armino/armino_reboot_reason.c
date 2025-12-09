@@ -133,7 +133,7 @@ void up_reboot_reason_clear(void)
 
 bool up_reboot_reason_is_written(void)
 {
-	if (bk_misc_get_reset_reason() != REBOOT_REASON_INITIALIZED) {
+	if (aon_pmu_hal_get_reset_reason() != REBOOT_REASON_INITIALIZED) {
 		return true;
 	}
 
