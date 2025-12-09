@@ -88,6 +88,13 @@ static trble_result_e vdev_set_adv_interval(struct bledev *dev, uint16_t interva
 static trble_result_e vdev_start_adv(struct bledev *dev);
 static trble_result_e vdev_stop_adv(struct bledev *dev);
 
+
+__attribute__((weak)) unsigned char rltk_wlan_running(unsigned char idx)
+{
+    return 1;
+}
+
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
