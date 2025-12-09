@@ -135,7 +135,7 @@ int sync_send(int argc, FAR char *argv[])
 	printf("Success to receive reply from receiver. msg : [%s]\n", (char *)reply_data.buf);
 	free(reply_data.buf);
 
-	return 0;
+	return OK;
 }
 
 int nonblock_recv(int argc, FAR char *argv[])
@@ -165,6 +165,13 @@ int nonblock_recv(int argc, FAR char *argv[])
 
 	/* Wait not to finish this task, because of receiving data through the callback. */
 	sleep(3);
+
+	/* Cleanup should be called by the task that registered the port */
+	ret = messaging_cleanup(TEST1_PORT);
+	if (ret != OK) {
+		fail_cnt++;
+		printf("Fail to cleanup TEST1_PORT in receiver task.\n");
+	}
 
 	free(data.buf);
 	return OK;
@@ -209,6 +216,13 @@ int block_recv(int argc, FAR char *argv[])
 		printf("We will not reply, because received msg is not sync type. %d\n", ret);
 	}
 
+	/* Cleanup should be called by the task that registered the port */
+	ret = messaging_cleanup(TEST2_PORT);
+	if (ret != OK) {
+		fail_cnt++;
+		printf("Fail to cleanup TEST2_PORT in receiver task.\n");
+	}
+
 	free(recv_data.buf);
 	return OK;
 }
@@ -238,12 +252,7 @@ void noreply_nonblock_messaging_sample(void)
 	/* Wait for finishing noreply_send and nonblock_recv tasks. */
 	sleep(1);
 
-	ret = messaging_cleanup(TEST1_PORT);
-	if (ret != OK) {
-		fail_cnt++;
-		printf("Fail to cleanup TEST1_PORT.\n");
-		return;
-	}
+	/* Cleanup is now done in the receiver task */
 }
 
 void sync_block_messaging_sample(void)
@@ -272,10 +281,5 @@ void sync_block_messaging_sample(void)
 	/* Wait for finishing snyc_send and block_recv tasks. */
 	sleep(1);
 
-	ret = messaging_cleanup(TEST2_PORT);
-	if (ret != OK) {
-		fail_cnt++;
-		printf("Fail to cleanup TEST2_PORT.\n");
-		return;
-	}
+	/* Cleanup is now done in the receiver task */
 }
