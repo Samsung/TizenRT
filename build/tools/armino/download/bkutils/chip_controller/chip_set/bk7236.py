@@ -23,13 +23,17 @@ class BK7236(BaseChip):
         '''
         use apll and change uart to high baudrate
         '''
-        high_br = BK7236_HighBaudrate(serial_instance=self.ser)
-        if not high_br.use_apll_set_baudrate(baudrate=baudrate):
-            raise Exception(f"use apll set high baudrate {baudrate} fail.")
-        base_ctrl = BaseController(serial_instance=self.ser)
-        if base_ctrl.do_link_check(linkcheck_obj=LINKCHECK.BOOTROM,max_try_count=10):
-            return True
-        return False
+        try:
+            high_br = BK7236_HighBaudrate(serial_instance=self.ser)
+            if not high_br.use_apll_set_baudrate(baudrate=baudrate):
+                raise Exception(f"use apll set high baudrate {baudrate} fail.")
+            base_ctrl = BaseController(serial_instance=self.ser)
+            if base_ctrl.do_link_check(linkcheck_obj=LINKCHECK.BOOTROM,max_try_count=10):
+                return True
+            return False
+        except Exception as e:
+            BKLog.e(f"set_high_baudrate fail: {e}")
+            return False
 
     #align the address on the start or end
     def align_sector_address_for_erase(self,addr:int,start_or_end:bool,reconnect_retry=False,reset_type=None,link_type=None,read_baudrate=115200):
@@ -274,33 +278,70 @@ class BK7236(BaseChip):
     def pre_set_efuse_nocrc(self):
         return True
 
-    def set_baudrate(self, baudrate, delay_ms=20,max_retry_cnt=5):
-        if baudrate != self.ser.baudrate:           
-            cnt = max_retry_cnt
-            while cnt>0:
-                self.ser.drain()
-                sbp = self.BOOTROM_PROTOCOL.SetBaudrateProtocol()
-                self.ser.write_cmd(sbp.cmd(baudrate, delay_ms))
-                time.sleep(delay_ms/2000)
-                self.ser.switch_baudrate(baudrate)
-                ret_content = self.ser.wait_for_cmd_response(sbp.expect_length, delay_ms/1000 + 0.5)
-                if len(ret_content) == sbp.expect_length:
-                    if sbp.response_check(ret_content, baudrate):
+    def set_baudrate(self, baudrate, delay_ms=20,max_retry_cnt=5,isBl1:bool=True):
+        if not isBl1:
+            if baudrate != self.ser.baudrate:           
+                cnt = max_retry_cnt
+                while cnt>0:
+                    self.ser.drain()
+                    sbp = self.BOOTROM_PROTOCOL.SetBaudrateProtocol()
+                    self.ser.write_cmd(sbp.cmd(baudrate, delay_ms))
+                    time.sleep(delay_ms/2000)
+                    self.ser.switch_baudrate(baudrate)
+                    ret_content = self.ser.wait_for_cmd_response(sbp.expect_length, delay_ms/1000 + 0.5)
+                    if len(ret_content) == sbp.expect_length:
+                        if sbp.response_check(ret_content, baudrate):
+                            return True
+                    base_ctrl = BaseController(serial_instance=self.ser)
+                    if base_ctrl.do_link_check(linkcheck_obj= BaseController.link_check_obj if BaseController.link_check_obj else LINKCHECK.BOOTROM):
                         return True
-                base_ctrl = BaseController(serial_instance=self.ser)
-                if base_ctrl.do_link_check(linkcheck_obj= BaseController.link_check_obj if BaseController.link_check_obj else LINKCHECK.BOOTROM):
-                    return True
-                cnt-=1
-                BKLog.e('reconnect bus to retry')
-                if not base_ctrl.reconnect_bus(reset_type=RESET_TYPE.MULTI,linkcheck_obj=BaseController.link_check_obj if BaseController.link_check_obj else LINKCHECK.BOOTROM,max_retry_count=20):
-                    BKLog.e('reconnect bus fail')
-                    BKLog.e('baudrate switch fail')
-                    return False                   
-            BKLog.e('baudrate switch fail')
-            return False
+                    cnt-=1
+                    BKLog.e('reconnect bus to retry')
+                    if not base_ctrl.reconnect_bus(reset_type=RESET_TYPE.MULTI,linkcheck_obj=BaseController.link_check_obj if BaseController.link_check_obj else LINKCHECK.BOOTROM,max_retry_count=20):
+                        BKLog.e('reconnect bus fail')
+                        BKLog.e('baudrate switch fail')
+                        return False                   
+                BKLog.e('baudrate switch fail')
+                return False
+            else:
+                BKLog.i('ignore baudrate switch')
+                return True
         else:
-            BKLog.i('ignore baudrate switch')
-            return True
+            if baudrate != self.ser.baudrate:  
+                if baudrate<=2600000:         
+                    cnt = max_retry_cnt
+                    while cnt>0:
+                        self.ser.drain()
+                        sbp = self.BOOTROM_PROTOCOL.SetBaudrateProtocol()
+                        self.ser.write_cmd(sbp.cmd(baudrate, delay_ms))
+                        time.sleep(delay_ms/2000)
+                        self.ser.switch_baudrate(baudrate)
+                        ret_content = self.ser.wait_for_cmd_response(sbp.expect_length, delay_ms/1000 + 0.5)
+                        if len(ret_content) == sbp.expect_length:
+                            if sbp.response_check(ret_content, baudrate):
+                                return True
+                        base_ctrl = BaseController(serial_instance=self.ser)
+                        if base_ctrl.do_link_check(linkcheck_obj=LINKCHECK.BOOTROM,max_try_count=10):
+                            return True
+                        
+                        BKLog.w('reconnect bus to retry')
+                        if not base_ctrl.reconnect_bus(reset_type=RESET_TYPE.DTR_RTS,linkcheck_obj=LINKCHECK.BOOTROM,max_retry_count=20):
+                            BKLog.e('reconnect bus fail')
+                            BKLog.e('baudrate switch fail')
+                            return False
+                        cnt-=1
+                elif baudrate==3000000:
+                    BKLog.w(f'use apll to set high baudrate.')
+                    if self.set_high_baudrate(baudrate):
+                        return True
+                    BKLog.w(f'use apll to set high baudrate:{baudrate} fail.')
+                else:
+                    BKLog.e(f'not support baudrate: {baudrate}')           
+                BKLog.e('baudrate switch fail')
+                return False
+            else:
+                BKLog.i('ignore baudrate switch')
+                return True
 
     def un_protect_flash(self, protect: bool):
         flash_control = FlashController(self.ser,self._flash_cfg)

@@ -7,6 +7,7 @@ from bkutils.chip_controller.flash_controller_tsingteng import FlashControllerTs
 from bkutils.chip_controller import get_chip_set_with_chip_id
 from bkutils.chip_controller.base_controller import BaseController
 from bkutils.common.common import LINKCHECK, RESET_TYPE
+from bkutils.chip_controller.chip_set import BK7239N
 
 
 class PreWorker(ActionBase):
@@ -51,13 +52,18 @@ class PreWorker(ActionBase):
                 raise Exception("get bus fail.")
             # get chip id
             time.sleep(0.1)  # fix read chip id fail sometimes
-            if self.chip_id is None:
-                self.chip_id = base_controller.get_chip_id_retry(self.retry)
-                if self.chip_id is None:
-                    raise Exception("get chip id fail.")
-            # BKLog.w("chip id is 0x{:x}".format(self.chip_id))
-            # init chip_set class
-            chip_set = get_chip_set_with_chip_id(self.chip_id)
+            # if self.chip_id is None:
+            #     self.chip_id = base_controller.get_chip_id_retry(self.retry)
+            #     if self.chip_id is None:
+            #         raise Exception("get chip id fail.")
+            #     if self.chip_id==0x7236 or self.chip_id >> 16==0x7236:
+            #         sec_id = base_controller.get_second_chip_id()
+            #         if sec_id is None:
+            #             raise Exception("get sec chip id fail.") 
+            # # BKLog.w("chip id is 0x{:x}".format(self.chip_id))
+            # # init chip_set class
+            # chip_set = get_chip_set_with_chip_id(self.chip_id,sec_id)
+            chip_set = BK7239N()
             if chip_set is None:
                 raise Exception("get chip set fail.")
             # check image file whether with crc32 per 32 bytes, BK7259 need remove it
@@ -76,7 +82,7 @@ class PreWorker(ActionBase):
             )
 
             BKLog.i("set baudrate to {0}...".format(self.worker_baudrate))
-            if not chip_set.set_baudrate(baudrate=self.worker_baudrate, delay_ms=20):
+            if not chip_set.set_baudrate(baudrate=self.worker_baudrate, delay_ms=20,isBl1= linktype == LINKCHECK.BOOTROM):
                 raise Exception("set baudrate {0} fail.".format(self.worker_baudrate))
 
             if chip_set._flash_mid == 0x1370CD:

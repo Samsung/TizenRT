@@ -1,9 +1,8 @@
 serial_ports:
-  /dev/ttyUSB0:
+  /dev/ttyUSB2:
     chip_id: '0x7236'
     debug: '3'
-    flash_id: '0x1765c8'
-    last_updated: '2025-10-28T10:20:53Z'
+    flash_id: '0x1665c8'
+    last_updated: '2025-11-27T03:48:01Z'
     link_type: '0'
-    ota_done: true
-    work_baudrate: 2000000
+    work_baudrate: 6000000

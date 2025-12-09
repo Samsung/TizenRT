@@ -11,7 +11,7 @@ SSBLOCK_MAGIC = 0x73736B62  # bkss
 class Permission(Enum):
     RO = 1  # Read-only
     RW = 2  # Read-write
-    RWE = 3  # Read-write-execute
+    RE = 3  # Read-exposed
 
 
 class BlockType(Enum):
@@ -20,9 +20,9 @@ class BlockType(Enum):
     DATA = 3  # Data
 
 
-KEY_MAX = 4  # Key
-CERT_MAX = 4  # Certificate
-DATA_MAX = 6  # Data
+KEY_MAX =  32   # Key
+CERT_MAX = 32  # Certificate
+DATA_MAX = 33  # Data
 def get_region_offset(block_type: BlockType) -> int:
     if block_type == BlockType.KEY:
         return 0
