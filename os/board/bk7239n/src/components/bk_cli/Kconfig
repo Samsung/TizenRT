@@ -81,6 +81,11 @@ menu "Beken_cli"
 			bool "Enable Security Algorithm Nist Test"
 			default n
 
+		config SECURE_TEST
+			depends on CLI
+			bool "Enable Security Test"
+			default n
+
 		config AIRKISS_TEST
 			depends on CLI
 			bool "Enable Airkiss Test"
@@ -318,9 +323,5 @@ menu "Beken_cli"
 			bool "Enable BLE Cli Enable"
 			default y
 
-		config CIPHER_AES_TEST_ENABLE
-			depends on CLI
-			bool "Enable Cipher AES TEST Enable"
-			default n
 	endmenu
 endmenu

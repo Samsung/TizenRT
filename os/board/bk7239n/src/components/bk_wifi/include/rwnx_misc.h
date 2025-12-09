@@ -61,12 +61,12 @@ enum SM_DHCP_FRAME_TYPE{
 #endif //CONFIG_DHCP_PROTECT_IN_CONNECTED
 
 #if CONFIG_NX_MEDIA_DYNC_DTIM
-void mm_media_dtim_check();
+void mm_media_dtim_check(void);
 #endif
 
 #if CONFIG_NX_OTA_DYNC_DTIM
-void mm_ota_dtim_open();
-void mm_ota_dtim_close();
+void mm_ota_dtim_open(void);
+void mm_ota_dtim_close(void);
 #endif
 #endif // NX_VERSION
 

@@ -59,6 +59,7 @@ static void cli_otp_help(void)
 #endif
 #if defined(CONFIG_TFM_OTP_NSC)
 	CLI_LOGD("otp_nsc read [item_id] \r\n");
+	CLI_LOGD("otp_nsc apb_read [map_id][item_id][size] \r\n"),
 	CLI_LOGD("otp_nsc write [map_id][item_id][size][data] \r\n");
 	CLI_LOGD("otp_nsc read_permission/write_permission [map_id][item_id][permission] \r\n");
 #endif
@@ -154,6 +155,32 @@ static void cli_otp_apb_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, 
 		int ret = bk_otp_apb_write_mask(item, permission);
 		value = bk_otp_apb_read_permission(item);
 		BK_RAW_LOGD(NULL, "permission value = %#x,ret = %d\r\n",value, ret);
+	} else if (os_strcmp(argv[1], "read_otp_s") == 0) {
+		uint32_t item = os_strtoul(argv[2], NULL, 10);
+		int ret = bk_otp_read_security(item);
+		int flag = bk_otp_read_security_flag();
+		BK_RAW_LOGI(NULL, "read otp item:%d, security:%#x,flag;%#x\r\n", item, ret, flag);
+	} else if (os_strcmp(argv[1], "write_otp_s") == 0) {
+		uint32_t item = os_strtoul(argv[2], NULL, 10);
+		int ret = bk_otp_read_security(item);
+		BK_RAW_LOGI(NULL, "befor write,read item %d : otp_security: %x\r\n", item, ret);
+		bk_otp_write_security(item);
+		bk_otp_enable_security_flag();
+		ret = bk_otp_read_security(item);
+		BK_RAW_LOGI(NULL, "after write,read item %d : otp_security: %x\r\n", item, ret);
+	} else if (os_strcmp(argv[1], "read_puf_s") == 0) {
+		uint32_t item = os_strtoul(argv[2], NULL, 10);
+		int ret = bk_otp_read_puf_security(item);
+		int flag = bk_otp_read_security_flag();
+		BK_RAW_LOGI(NULL, "read puf item:%d, security:%#x,flag;%#x\r\n", item, ret, flag);
+	} else if (os_strcmp(argv[1], "write_puf_s") == 0) {
+		uint32_t item = os_strtoul(argv[2], NULL, 10);
+		int ret = bk_otp_read_puf_security(item);
+		BK_RAW_LOGI(NULL, "befor write,read item %d : puf security: %x\r\n", item, ret);
+		bk_otp_write_puf_security(item);
+		bk_otp_enable_security_flag();
+		ret = bk_otp_read_puf_security(item);
+		BK_RAW_LOGI(NULL, "after write,read item %d : puf security: %x\r\n", item, ret);
 	}else if (os_strcmp(argv[1], "read_permission") == 0){
 		uint32_t item = os_strtoul(argv[2], NULL, 10);
 		uint32_t value;
@@ -292,6 +319,53 @@ static void cli_otp_nsc_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, 
 		uint32_t item = os_strtoul(argv[2], NULL, 10);
 		int ret = bk_otp_read_nsc(item);
 		BK_RAW_LOGD(NULL, "read ret = %d\r\n",ret);
+	} else if (os_strcmp(argv[1], "apb_read") == 0) {
+		uint32_t item = os_strtoul(argv[2], NULL, 10);
+		uint32_t size = os_strtoul(argv[3], NULL, 10);
+		uint8_t* data = (uint8_t*)os_malloc(size*sizeof(uint8_t));
+		if (data == NULL) {
+			return;
+		}
+		memset(data, 0xFF, size);
+		int ret = bk_otp_apb_read_nsc(1, item, data,size);
+		BK_RAW_LOGI(NULL, "read ret = %d\r\n",ret);
+		if (ret != BK_OK) {
+			os_free(data);
+			return;
+		}
+		BK_RAW_LOGI(NULL, "data in little endian:\r\n");
+		for(int i = 0;i < size; i++){
+			BK_RAW_LOGI(NULL, "%x ",data[i]);
+			if(i % 8 == 7) BK_RAW_LOGI(NULL,"\r\n");
+		}
+		os_free(data);
+		data = NULL;
+	} else if (os_strcmp(argv[1], "read_otp_s") == 0) {
+		uint32_t item = os_strtoul(argv[2], NULL, 10);
+		int ret = bk_otp_read_security_nsc(item);
+		int flag = bk_otp_read_security_flag();
+		BK_RAW_LOGI(NULL, "read otp item:%d, security:%#x,flag;%#x\r\n", item, ret, flag);
+	} else if (os_strcmp(argv[1], "write_otp_s") == 0) {
+		uint32_t item = os_strtoul(argv[2], NULL, 10);
+		int ret = bk_otp_read_security_nsc(item);
+		BK_RAW_LOGI(NULL, "befor write,read item %d : otp_security: %x\r\n", item, ret);
+		bk_otp_write_security_nsc(item);
+		bk_otp_enable_security_flag();
+		ret = bk_otp_read_security_nsc(item);
+		BK_RAW_LOGI(NULL, "after write,read item %d : otp_security: %x\r\n", item, ret);
+	} else if (os_strcmp(argv[1], "read_puf_s") == 0) {
+		uint32_t item = os_strtoul(argv[2], NULL, 10);
+		int ret = bk_otp_read_puf_security_nsc(item);
+		int flag = bk_otp_read_security_flag();
+		BK_RAW_LOGI(NULL, "read otp item:%d, security:%#x,flag;%#x\r\n", item, ret, flag);
+	} else if (os_strcmp(argv[1], "write_puf_s") == 0) {
+		uint32_t item = os_strtoul(argv[2], NULL, 10);
+		int ret = bk_otp_read_puf_security_nsc(item);
+		BK_RAW_LOGI(NULL, "befor write,read item %d : puf security: %x\r\n", item, ret);
+		bk_otp_write_puf_security_nsc(item);
+		bk_otp_enable_security_flag();
+		ret = bk_otp_read_puf_security_nsc(item);
+		BK_RAW_LOGI(NULL, "after write,read item %d : puf security: %x\r\n", item, ret);
 	} else if (os_strcmp(argv[1], "write") == 0) {
 		uint32_t map_id = os_strtoul(argv[2], NULL, 10);
 		uint32_t item = os_strtoul(argv[3], NULL, 10);
@@ -398,7 +472,7 @@ static const struct cli_command s_otp_commands[] = {
 	{"otp_ahb", "otp_ahb {read}", cli_otp_ahb_cmd},
 #endif
 #if defined(CONFIG_TFM_OTP_NSC)
-	{"otp_nsc","otp_test {read}", cli_otp_nsc_cmd},
+	{"otp_nsc","otp_nsc {read}", cli_otp_nsc_cmd},
 #endif
 #if defined(CONFIG_FLASH_OTP)
 	{"flash_otp", "otp {read}", cli_flash_otp_cmd},

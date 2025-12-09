@@ -16,11 +16,6 @@
 #include "sys_driver.h"
 #include "aon_pmu_driver.h"
 
-#define TAG "pm"
-#define LOGI(...) BK_LOGI(TAG, ##__VA_ARGS__)
-#define LOGW(...) BK_LOGW(TAG, ##__VA_ARGS__)
-#define LOGE(...) BK_LOGE(TAG, ##__VA_ARGS__)
-#define LOGD(...) BK_LOGD(TAG, ##__VA_ARGS__)
 
 #define PM_HIGHEST_CPU_FREQ                     (CONFIG_PM_CPU_FRQ_HIGHEST)
 
@@ -69,6 +64,9 @@ bk_err_t bk_pm_module_vote_cpu_freq(pm_dev_id_e module, pm_cpu_freq_e cpu_freq)
 
 	GLOBAL_INT_DECLARATION();
 	GLOBAL_INT_DISABLE();
+	#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+	cpu_freq = (pm_cpu_freq_e)CONFIG_PM_CPU_FIXED_FREQ;
+	#endif
 
 	/*save the cpu freq first*/
 	if (PM_CPU_FRQ_DEFAULT == cpu_freq)

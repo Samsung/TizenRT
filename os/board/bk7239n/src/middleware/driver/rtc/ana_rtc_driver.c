@@ -1204,3 +1204,30 @@ bk_err_t bk_rtc_settimeofday(const struct timeval *tv, const struct timezone *tz
 
 	return BK_OK;
 }
+uint8_t *bk_rtc_get_first_alarm_name(void)
+{
+	alarm_node_t *first_node = NULL;
+	uint32_t int_level = 0;
+	uint8_t *name = NULL;
+
+	// Enter critical section to protect alarm list access
+	int_level = rtos_disable_int();
+
+	// Get the first node (head of the sorted list)
+	first_node = s_ana_rtc.alarm_head_p;
+
+	if (first_node != NULL)
+	{
+		// Return pointer to the name field
+		name = first_node->name;
+		ANA_RTC_LOGD("%s: first alarm name=%s\r\n", __func__, name);
+	}
+	else
+	{
+		ANA_RTC_LOGD("%s: no alarm registered\r\n", __func__);
+	}
+
+	rtos_enable_int(int_level);
+
+	return name;
+}

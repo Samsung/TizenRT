@@ -143,9 +143,9 @@ static void low_level_init(struct netif *netif)
 #else
     u8 macptr[6] = {0};
 
-    if (netif == net_get_sta_handle())
+    if (netif == (struct netif *)net_get_sta_handle())
            bk_wifi_sta_get_mac(macptr);
-    else if (netif == net_get_uap_handle())
+    else if (netif == (struct netif *)net_get_uap_handle())
            bk_wifi_ap_get_mac(macptr);
     else
            return;
@@ -363,7 +363,7 @@ wlanif_init(struct netif *netif)
      * from it if you have to do some checks before sending (e.g. if link
      * is available...) */
     netif->output = etharp_output;
-    netif->linkoutput = low_level_output;
+    netif->linkoutput = (netif_linkoutput_fn)low_level_output;
 #ifdef CONFIG_IPV6
     netif->output_ip6 = ethip6_output;
 #endif
@@ -404,7 +404,7 @@ err_t lwip_netif_init(struct netif *netif)
      * from it if you have to do some checks before sending (e.g. if link
      * is available...) */
     netif->output = etharp_output;
-    netif->linkoutput = low_level_output;
+    netif->linkoutput = (netif_linkoutput_fn)low_level_output;
 #ifdef CONFIG_IPV6
     netif->output_ip6 = ethip6_output;
 #endif
@@ -426,7 +426,7 @@ err_t lwip_netif_uap_init(struct netif *netif)
      * from it if you have to do some checks before sending (e.g. if link
      * is available...) */
     netif->output = etharp_output;
-    netif->linkoutput = low_level_output;
+    netif->linkoutput = (netif_linkoutput_fn)low_level_output;
 
     /* initialize the hardware */
     low_level_init(netif);

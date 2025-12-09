@@ -121,7 +121,7 @@ exit:
 	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_ROSC_PROG,1,0);
 }
 
-bk_err_t bk_rosc_32k_ckest_prog(uint32_t count)
+__IRAM_SEC bk_err_t bk_rosc_32k_ckest_prog(uint32_t count)
 {
 	if (0 == bk_ckmn_ckest_check_busy())
 	{

@@ -44,6 +44,9 @@
 #include "mpu.h"
 #endif
 #include "sys_driver.h"
+#if CONFIG_TEMP_DETECT
+#include "components/sensor.h"
+#endif
 
 #define portNVIC_SYSTICK_CTRL_REG             ( *( ( volatile uint32_t * ) 0xe000e010 ) )
 #define portNVIC_SYSTICK_LOAD_REG             ( *( ( volatile uint32_t * ) 0xe000e014 ) )
@@ -64,7 +67,7 @@
 #define PM_EXIT_LOWVOL_SYSTICK_TIME           (32)      //1ms
 #define PM_EXIT_LOWVOL_SYSTICK_RELOAD_TIME    (0xFFFFFF)//set max
 #if defined(CONFIG_SOFT_CTRL_VOLT)
-#define PM_LOW_VOL_VCOREHSEL_LDO_SEL          (4)       // 0.7V
+#define PM_LOW_VOL_VCOREHSEL_LDO_SEL          (6)       // 0.75V
 #endif
 
 extern void delay_us(uint32_t us);
@@ -390,7 +393,7 @@ static inline void sys_hal_set_power_parameter(uint8_t sleep_mode)
  	 *  r40[19:16] halt2_delay = 0x1;
  	 *  r40[23:20] halt3_delay = 0x1;
  	 *  r40[24] halt_volt: deep = 0, lv = 1
- 	 *  r40[25] halt_xtal = 1 //If LPO is 26M32K, halt_xtal = 0
+	 *  r40[25] halt_xtal = 1 //26M32K unable to wakeup system, disable during lv sleep
  	 *  r40[26] halt_core: deep = 1, lv = 0
  	 *  r40[27] halt_flash = 1
  	 *  r40[28] halt_rosc = 0
@@ -410,34 +413,18 @@ static inline void sys_hal_set_power_parameter(uint8_t sleep_mode)
 	else
 	{
 		uint32_t val;
-		if (is_lpo_src_26m32k())//26m/32k
-		{
-			#if defined(CONFIG_LV_FLASH_ENTER_LP_ENABLE)
-			val = (0x61111000
-				|(PM_CURRENT_LOW_VOLTAGE_WAKEUP1_DELAY&0xF)
-				|((PM_CURRENT_LOW_VOLTAGE_WAKEUP2_DELAY&0xF)<<4)
-				|((PM_CURRENT_LOW_VOLTAGE_WAKEUP3_DELAY&0xF)<<8));
-			#else
-			val = (0x69111000
-				|(PM_CURRENT_LOW_VOLTAGE_WAKEUP1_DELAY&0xF)
-				|((PM_CURRENT_LOW_VOLTAGE_WAKEUP2_DELAY&0xF)<<4)
-				|((PM_CURRENT_LOW_VOLTAGE_WAKEUP3_DELAY&0xF)<<8));
-			#endif
-		}
-		else//external 32k and rosc
-		{
-			#if defined(CONFIG_LV_FLASH_ENTER_LP_ENABLE)
-			val = (0x63111000
-				|(PM_CURRENT_LOW_VOLTAGE_WAKEUP1_DELAY&0xF)
-				|((PM_CURRENT_LOW_VOLTAGE_WAKEUP2_DELAY&0xF)<<4)
-				|((PM_CURRENT_LOW_VOLTAGE_WAKEUP3_DELAY&0xF)<<8));
-			#else
-			val = (0x6B111000
-				|(PM_CURRENT_LOW_VOLTAGE_WAKEUP1_DELAY&0xF)
-				|((PM_CURRENT_LOW_VOLTAGE_WAKEUP2_DELAY&0xF)<<4)
-				|((PM_CURRENT_LOW_VOLTAGE_WAKEUP3_DELAY&0xF)<<8));
-			#endif
-		}
+		#if CONFIG_LV_FLASH_ENTER_LP_ENABLE
+		val = (0x63111000
+			|(PM_CURRENT_LOW_VOLTAGE_WAKEUP1_DELAY&0xF)
+			|((PM_CURRENT_LOW_VOLTAGE_WAKEUP2_DELAY&0xF)<<4)
+			|((PM_CURRENT_LOW_VOLTAGE_WAKEUP3_DELAY&0xF)<<8));
+		#else
+		val = (0x6B111000
+			|(PM_CURRENT_LOW_VOLTAGE_WAKEUP1_DELAY&0xF)
+			|((PM_CURRENT_LOW_VOLTAGE_WAKEUP2_DELAY&0xF)<<4)
+			|((PM_CURRENT_LOW_VOLTAGE_WAKEUP3_DELAY&0xF)<<8));
+		#endif
+
 		aon_pmu_ll_set_r40(val);
 	}
 }
@@ -590,6 +577,8 @@ __attribute__((section(".itcm_sec_code"))) void sys_hal_enter_deep_sleep(void *p
 	// disable it or it will cause error
 	sys_ana_ll_set_ana_reg7_vporsel(0);
 #endif
+	/*Enable fast boot*/
+	aon_pmu_hal_set_r0_fast_boot(1);
 
 	lpo_src = aon_pmu_ll_get_r41_lpo_config();
 	/*set enter deep sleep mode flag*/
@@ -645,15 +634,44 @@ static inline void sys_hal_set_low_voltage(volatile uint32_t *ana_r0, volatile u
 #if !defined(CONFIG_DEEP_LV)
 	sys_ana_ll_set_ana_reg3_en_xtalh_sleep(1);
 #endif
+	sys_ana_ll_set_ana_reg7_spi_pwd_regpow(0);
+	sys_ana_ll_set_ana_reg7_vbspbuf_lp(1);
 	sys_ana_ll_set_ana_reg7_envrefh1v(0);
-	sys_ana_ll_set_ana_reg7_vanaldosel(0);
-#if defined(CONFIG_LDO_SELF_LOW_POWER_MODE_ENA)
+
+#if CONFIG_TEMP_DETECT
+	float temp;
+	bk_err_t err = bk_sensor_get_current_temperature(&temp);
+
+	if((err != BK_OK) || (temp < 0)) // get temperature failed or temperature is less than 0
+	{
+		sys_ana_ll_set_ana_reg7_vanaldosel(2); // 0: 0.9V, 2: 1V
+		#if defined(CONFIG_LDO_SELF_LOW_POWER_MODE_ENA)
+		sys_ana_ll_set_ana_reg7_dldohp(1); //will increase current 15uA
+		sys_ana_ll_set_ana_reg7_aldohp(0);
+		#endif
+	}
+	else
+	{
+		sys_ana_ll_set_ana_reg7_vanaldosel(0); // 0: 0.9V, 2: 1V
+		#if defined(CONFIG_LDO_SELF_LOW_POWER_MODE_ENA)
+		sys_ana_ll_set_ana_reg7_dldohp(0);
+		sys_ana_ll_set_ana_reg7_aldohp(0);
+		#endif
+	}
+#else
+	sys_ana_ll_set_ana_reg7_vanaldosel(0); // 0: 0.9V, 2: 1V
+	#if defined(CONFIG_LDO_SELF_LOW_POWER_MODE_ENA)
 	sys_ana_ll_set_ana_reg7_dldohp(0);
 	sys_ana_ll_set_ana_reg7_aldohp(0);
 #endif
-	sys_ana_ll_set_ana_reg9_mrosci_cal(1);
+#endif
+	// sys_ana_ll_set_ana_reg9_azcd_manu(0x20);
+	// sys_ana_ll_set_ana_reg9_enzcdcalib(0);
+	// sys_ana_ll_set_ana_reg9_zcdmsel(1);
+	sys_ana_ll_set_ana_reg9_mrosci_cal(0);
+
 	sys_ana_ll_set_ana_reg10_avea_sel(3);
-	sys_ana_ll_set_ana_reg10_arampc(0);
+	// sys_ana_ll_set_ana_reg10_arampc(0);//suggest by long.teng,20251105
 
 	sys_hal_disable_spi_latch();
 }
@@ -1054,18 +1072,20 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 	bk_flash_enter_deep_sleep();
 #endif
 
+	volatile uint64_t before = bk_aon_rtc_get_us();
 #if defined(CONFIG_AON_PMU_REG0_REFACTOR_DEV)
 	aon_pmu_hal_set_gpio_sleep(1, true);
 #else
 	sys_hal_gpio_state_switch(true);
 #endif
 
-	volatile uint64_t before = bk_aon_rtc_get_us();
 
 	bk_pm_sleep_wakeup_reason_clear();
 
 /*----enter low voltage sleep-------*/
 #if defined(CONFIG_DEEP_LV)
+	/*Enable fast boot*/
+	aon_pmu_hal_set_r0_fast_boot(1);
 	sys_hal_regs_save();
 	aon_pmu_hal_backup();
 	sys_hal_deep_lv_enter();
@@ -1075,6 +1095,7 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 	}
 #else
 	arch_deep_sleep();
+	DELAY_US(40); //must delay 40us to sampling rtc value
 #endif
 	bk_pm_sleep_wakeup_reason_set(check_IRQ_pending());
 
@@ -1084,6 +1105,9 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 	sys_hal_gpio_state_switch(false);
 #endif
 
+	uint64_t current = bk_aon_rtc_get_us();
+	sys_hal_set_low_voltage_wakeup_time_us(current);
+	sys_hal_set_low_voltage_sleep_duration_us(current - before);
 #if defined(CONFIG_OTA_POSITION_INDEPENDENT_AB)
 	;//flash_ab_info_restore(&ab_flash_reg);
 #endif
@@ -1158,9 +1182,6 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 	}
 #endif
 /*---------------at least delay 190us end -----------------*/
-	uint64_t current = bk_aon_rtc_get_us();
-	sys_hal_set_low_voltage_wakeup_time_us(current);
-	sys_hal_set_low_voltage_sleep_duration_us(current - before);
 
 	sys_hal_restore_core_freq(cksel_core, clkdiv_core, clkdiv_bus);
 
@@ -1631,7 +1652,7 @@ static int sys_hal_power_config_default(void)
 	sys_hal_module_power_ctrl(POWER_MODULE_NAME_BTSP,POWER_MODULE_STATE_OFF);
 	sys_hal_module_power_ctrl(POWER_MODULE_NAME_WIFIP_MAC,POWER_MODULE_STATE_OFF);
 	sys_hal_module_power_ctrl(POWER_MODULE_NAME_WIFI_PHY,POWER_MODULE_STATE_OFF);
-	//sys_hal_module_power_ctrl(POWER_MODULE_NAME_OFDM,POWER_MODULE_STATE_OFF);
+
 #if 0
 #if defined(CONFIG_SPE) && (CONFIG_SPE == 1)
 	sys_hal_module_power_ctrl(POWER_MODULE_NAME_ENCP,POWER_MODULE_STATE_OFF);
@@ -1731,7 +1752,7 @@ void sys_hal_low_power_hardware_init()
 
 	/*set memery bypass*/
 	aon_pmu_ll_set_r0_memchk_bps(1);
-	aon_pmu_hal_set_r0_fast_boot(0);
+	aon_pmu_ll_set_r0_fast_boot(0);
 
 	/*set wakeup source*/
 	sys_hal_wakeup_source_init();

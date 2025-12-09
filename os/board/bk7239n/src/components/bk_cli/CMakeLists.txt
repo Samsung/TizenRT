@@ -23,9 +23,16 @@ list(APPEND srcs
 	cli_timer.c
 	cli_temp_detect.c
 	cli_uart.c
-	cli_security.c
 	cli_exception.c
 	)
+
+if (CONFIG_SECURE_TEST)
+	list(APPEND srcs
+		cli_secure_storage.c
+		cli_cipher_aes.c
+		cli_ecdsa_test.c
+	)
+endif()
 
 if (CONFIG_BUTTON OR CONFIG_ADC_KEY)
 	list(APPEND srcs
@@ -388,10 +395,6 @@ endif()
 
 if (CONFIG_JPEG_SW_ENCODER_TEST)
 	list(APPEND srcs cli_jpeg_sw_enc.c)
-endif()
-
-if (CONFIG_CIPHER_AES_TEST_ENABLE)
-	list(APPEND srcs cli_cipher_aes.c)
 endif()
 
 set(PRIV_REQUIRES_LIST bk_common psa_mbedtls bk_netif bk_ps bk_vfs bk_init bk_libs at bk_wifi compal ota cmsis bk_bluetooth bk_phy tfm)

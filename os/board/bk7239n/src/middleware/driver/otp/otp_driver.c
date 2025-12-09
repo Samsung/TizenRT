@@ -118,6 +118,17 @@ static int otp_active()
 	return otp_hal_power_on(&s_otp.hal);
 }
 
+int bk_otp_active(void)
+{
+	return otp_active();
+}
+
+int bk_otp_sleep(void)
+{
+	otp_sleep();
+	return 0;
+}
+
 static int switch_map(uint8_t map_id)
 {
 	if(otp_map == NULL){
@@ -363,6 +374,59 @@ bk_err_t bk_otp_ahb_write_mask(otp2_id_t item, uint32_t mask)
 	return BK_OK;
 }
 
+bk_err_t bk_otp_write_security(uint32_t item)
+{
+	OTP_ACTIVE(1);
+	uint32_t location = otp_map[item].offset / 4;
+	otp_hal_write_otp_security(&s_otp.hal, location);
+	OTP_SLEEP();
+	return BK_OK;
+}
+
+uint32_t bk_otp_read_security(uint32_t item)
+{
+	OTP_ACTIVE(1);
+	uint32_t location = otp_map[item].offset / 4;
+	uint32_t security_value = otp_hal_read_otp_security(&s_otp.hal, location);
+	OTP_SLEEP();
+
+	return security_value;
+}
+
+bk_err_t bk_otp_write_puf_security(uint32_t item)
+{
+	OTP_ACTIVE(1);
+	uint32_t location = otp_map[item].offset / 4;
+	otp_hal_write_puf_security(&s_otp.hal, location);
+	OTP_SLEEP();
+	return BK_OK;
+}
+
+uint32_t bk_otp_read_puf_security(uint32_t item)
+{
+	OTP_ACTIVE(1);
+	uint32_t location = otp_map[item].offset / 4;
+	uint32_t security_value = otp_hal_read_puf_security(&s_otp.hal, location);
+	OTP_SLEEP();
+	return security_value;
+}
+
+bk_err_t bk_otp_enable_security_flag(void)
+{
+	OTP_ACTIVE(1);
+	otp_hal_enable_security_protection(&s_otp.hal);
+	OTP_SLEEP();
+	return BK_OK;
+}
+
+bk_err_t bk_otp_read_security_flag(void)
+{
+	OTP_ACTIVE(1);
+	uint32_t flag = otp_hal_read_security_protection(&s_otp.hal);
+	OTP_SLEEP();
+	return flag;
+}
+
 static bk_err_t otp_read(uint8_t map_id, uint8_t item, uint8_t* buf, uint32_t size)
 {
 	bk_err_t ret = BK_OK;
@@ -430,7 +494,7 @@ static bk_err_t otp_read(uint8_t map_id, uint8_t item, uint8_t* buf, uint32_t si
 
 	if (otp_map[item].crc_en == OTP_NEED_CRC) {
 		uint8_t* zero_buf = os_zalloc(read_buf_len);
-		if (os_memcmp(read_buf, zero_buf, read_buf_len) != 0){ 
+		if (os_memcmp(read_buf, zero_buf, read_buf_len) != 0){
 			if (otp_check_crc8(read_buf, read_buf_len) == false) {
 				os_free(zero_buf);
 				ret = BK_ERR_OTP_CRC_WRONG;
@@ -619,7 +683,7 @@ bk_err_t bk_otp_ahb_update(otp2_id_t item, uint8_t* buf, uint32_t size)
 		return BK_ERR_NO_WRITE_PERMISSION;
 	}
 	return otp_update(2, item, buf, size);
-	
+
 }
 
 bk_err_t bk_otp_read_random_number(uint32_t* value, uint32_t size)

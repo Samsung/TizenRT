@@ -168,6 +168,9 @@ typedef enum {
 	EVENT_WIFI_AP_DISCONNECTED,    /**< A STA is disconnected from the BK AP */
 
 	EVENT_WIFI_NETWORK_FOUND,      /**< The BK STA find target AP */
+	EVENT_WIFI_BEACON_HINT,        /**< Beacon found on NO_IR channel */
+	EVENT_WIFI_REGDOMAIN_CHANGED,  /**< Regulatory domain changed */
+
 	EVENT_WIFI_COUNT,              /**< WiFi event count */
 } wifi_event_t;
 
@@ -647,6 +650,12 @@ typedef struct {
 typedef struct {
 	uint8_t mac[WIFI_MAC_LEN];            /**< MAC of the STA disconnected from the BK AP */
 } wifi_event_ap_disconnected_t;
+
+typedef struct {
+	uint8_t initiator; /**< 0: core, 1: user, 2: driver, 3: dot11d */
+	uint8_t type;    /**< 0: country, 1: world, 2: custom, 3: intersection */
+	char alpha2[2];  /**< country code */
+} wifi_event_reg_change_t;
 
 /**
  * @brief Wi-Fi Statistic info.

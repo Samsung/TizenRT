@@ -130,9 +130,11 @@ CFLAGS += -I$(COMPONENT_DIR)/bk_pm/include
 
 
 # Add the TFM include directories to the build
-CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/interface/include
-CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/secure_fw/include
+# CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/interface/include
+# CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/secure_fw/include
+CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm_build/tfm_install/interface/include
 CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/generated/interface/include
+CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/_build/
 
 # Architecture and board includes
 ifeq ($(WINTOOL),y)

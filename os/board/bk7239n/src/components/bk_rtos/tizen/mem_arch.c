@@ -8,8 +8,6 @@
 #include "rtos_init.h"
 #include <tinyara/mm/mm.h>
 
-
-
 INT32 os_memcmp(const void *s1, const void *s2, UINT32 n)
 {
     return memcmp(s1, s2, (unsigned int)n);
@@ -42,7 +40,7 @@ void *os_realloc(void *ptr, size_t size)
     pbuf = kmm_realloc(ptr, size);
 #else
 #if CONFIG_KMM_NHEAPS > 1
-    pbuf = kmm_realloc_at(1, ptr, size);
+    pbuf = kmm_realloc_at(PSRAM_INDEX, ptr, size);
 #endif
 #endif
 
@@ -62,7 +60,7 @@ void *os_malloc(size_t size)
     pbuf = kmm_malloc(size);
 #else
 #if CONFIG_KMM_NHEAPS > 1
-    pbuf = kmm_malloc_at(1, size);
+    pbuf = kmm_malloc_at(PSRAM_INDEX, size);
 #endif
 #endif
 
@@ -82,7 +80,7 @@ void *os_malloc_sram(size_t size)
     pbuf = kmm_malloc(size);
 #else
 #if CONFIG_KMM_NHEAPS > 1
-    pbuf = kmm_malloc_at(0, size);
+    pbuf = kmm_malloc_at(SRAM_INDEX, size);
 #endif
 #endif
 
@@ -102,7 +100,7 @@ void *os_zalloc_sram(size_t size)
     pbuf = kmm_zalloc(size); 
 #else
 #if CONFIG_KMM_NHEAPS > 1
-    pbuf = kmm_zalloc_at(0, size);
+    pbuf = kmm_zalloc_at(SRAM_INDEX, size);
 #endif
 #endif
 
@@ -122,7 +120,7 @@ void *os_realloc_sram(void *ptr, size_t size)
     pbuf = kmm_realloc(ptr, size); 
 #else
 #if CONFIG_KMM_NHEAPS > 1
-    pbuf = kmm_realloc_at(0, ptr, size);
+    pbuf = kmm_realloc_at(SRAM_INDEX, ptr, size);
 #endif
 #endif
 
@@ -142,7 +140,7 @@ void * os_zalloc(size_t size)
     pbuf = kmm_zalloc(size);   
 #else
 #if CONFIG_KMM_NHEAPS > 1
-    pbuf = kmm_zalloc_at(1, size);
+    pbuf = kmm_zalloc_at(PSRAM_INDEX, size);
 #endif  
 #endif
 
@@ -179,7 +177,7 @@ void *psram_malloc(size_t size)
     return NULL;
 #else
 #if CONFIG_KMM_NHEAPS > 1
-    pbuf = kmm_malloc_at(1, size);
+    pbuf = kmm_malloc_at(PSRAM_INDEX, size);
 #endif
 #endif
 
@@ -203,7 +201,7 @@ void *psram_zalloc(size_t size)
     return NULL;
 #else
 #if CONFIG_KMM_NHEAPS > 1
-    pbuf = kmm_zalloc_at(1, size);
+    pbuf = kmm_zalloc_at(PSRAM_INDEX, size);
 #endif
 #endif
 
@@ -225,7 +223,7 @@ void *bk_psram_realloc(void *ptr, size_t size)
     return NULL;
 #else
 #if CONFIG_KMM_NHEAPS > 1
-    pbuf = kmm_realloc_at(1, ptr, size);
+    pbuf = kmm_realloc_at(PSRAM_INDEX, ptr, size);
 #endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO

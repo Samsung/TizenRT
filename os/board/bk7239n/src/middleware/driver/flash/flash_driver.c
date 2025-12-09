@@ -24,7 +24,13 @@
 #include "driver/flash_partition.h"
 #include <modules/chip_support.h>
 #include "flash_bypass.h"
+#if (!CONFIG_SPE)
 #include "partitions_gen.h"
+#endif
+#if CONFIG_TFM_FLASH_NSC
+#include "tfm_flash_nsc.h"
+#include "tfm_ns_interface.h"
+#endif
 
 #if defined(CONFIG_FLASH_QUAD_ENABLE)
 #include "flash_bypass.h"
@@ -1201,4 +1207,39 @@ uint32_t flash_get_excute_enable()
 }
 #endif
 
+#if (!CONFIG_SPE)
+uint32_t bk_primary_tfm_s_partition_offset(void)
+{
+	return CONFIG_PRIMARY_TFM_S_PHY_PARTITION_OFFSET;
+}
 
+uint32_t bk_primary_all_partition_size(void)
+{
+	return CONFIG_PRIMARY_ALL_PHY_PARTITION_SIZE;
+}
+
+uint32_t bk_secondary_all_partition_offset(void)
+{
+	return CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET;
+}
+
+uint32_t bk_secondary_all_partition_size(void)
+{
+	return CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE;
+}
+
+int bk_security_flash_write_bytes(uint32_t address, const uint8_t *user_buf, uint32_t size)
+{
+	return psa_flash_write_bytes(address, user_buf, size);
+}
+
+int bk_security_flash_read_bytes(uint32_t address, uint8_t *user_buf, uint32_t size)
+{
+	return psa_flash_read_bytes(address, user_buf, size);
+}
+
+int bk_security_flash_erase_sector(uint32_t address)
+{
+	return psa_flash_erase_sector(address);
+}
+#endif

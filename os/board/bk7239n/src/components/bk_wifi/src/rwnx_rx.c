@@ -556,7 +556,7 @@ void rwnx_upload_amsdu(struct fhost_rx_header *rxhdr)
 
 	while (q && i < NX_MAX_MSDU_PER_RX_AMSDU) {
 #if BK_SS_WIFI_DP
-		uint32_t rxhdr = (*((uint32_t*)q->payload));
+		uint32_t rxhdr_addr = (*((uint32_t*)q->payload));
 		pbuf_header(q, -(s16)macif_get_rxl_payload_offset());
 #endif
 		#if NX_VERSION > NX_VERSION_PACK(6, 22, 0, 0)
@@ -566,7 +566,7 @@ void rwnx_upload_amsdu(struct fhost_rx_header *rxhdr)
 		/* upload to tcp/ip stack */
 		ethernetif_input(iface, q);
 #if BK_SS_WIFI_DP
-		if(i != 0) os_free((void *)rxhdr);
+		if(i != 0) os_free((void *)rxhdr_addr);
 #endif
 		/* get the next sub-MSDU */
 		q = (struct pbuf *)(amsdu_hostids[++i]);
@@ -664,7 +664,6 @@ UINT32 rwm_upload_data(void *host_id, uint32_t frame_len)
 		/* A-MSDU subframe, convert like `rxu_cntrl_mac2eth_update()' and then pass it to lwip */
 		RWNX_LOGD("rx_up_data len_p:%x,len_q:%x,p_next:%x,p_totlen:%x,p_payload:%x,q_payload:%x\n",
 		p->len,q->len,p->next,p->tot_len,p->payload,q->payload);
-
 		RWNX_LOGD("data_flag flag:%x \n", rxhdr->flags_is_amsdu);
 		rwnx_upload_amsdu(rxhdr);
 	} else {

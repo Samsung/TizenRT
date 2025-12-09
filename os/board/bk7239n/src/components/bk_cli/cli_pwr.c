@@ -19,7 +19,6 @@
 #include <driver/pwr_clk.h>
 #include <driver/rosc_32k.h>
 #include <driver/rosc_ppm.h>
-#include "bk_pm_demo.h"
 
 #include <driver/wdt.h>
 #include <bk_wdt.h>
@@ -31,39 +30,49 @@
 #define PM_MANUAL_LOW_VOL_VOTE_ENABLE          (0)
 #define PM_DEEP_SLEEP_REGISTER_CALLBACK_ENABLE (0x1)
 
-static UINT32 s_cli_sleep_mode  = 0;
-static UINT32 s_pm_vote1        = 0;
-static UINT32 s_pm_vote2        = 0;
-static UINT32 s_pm_vote3        = 0;
+static UINT32 s_cli_sleep_mode      = 0;
+static UINT32 s_pm_vote1            = 0;
+static UINT32 s_pm_vote2            = 0;
+static UINT32 s_pm_vote3            = 0;
+static UINT32 s_pm_sleep_time       = 0;
+static UINT32 s_pm_rtc_sleep_count  = 0;
 
 extern void stop_cpu1_core(void);
 #if defined(CONFIG_AON_RTC) || defined(CONFIG_ANA_RTC)
+
 static void cli_pm_rtc_callback(aon_rtc_id_t id, uint8_t *name_p, void *param)
 {
-	uint32_t sleep_mode = 0;
-	if(s_cli_sleep_mode == PM_MODE_DEEP_SLEEP)//when wakeup from deep sleep, all thing initial
-	{
+	uint32_t sleep_mode;
+	pm_ap_core_msg_t msg;
+
+	/* Fast path: determine sleep_mode with minimal branching */
+	if(s_cli_sleep_mode == PM_MODE_DEEP_SLEEP) {
+		/* When wakeup from deep sleep, all things initial */
 		CLI_LOGI("Attention: unable to enter deepsleep, it's not in a full function state now, please reboot !!!\r\n");
 		bk_pm_sleep_mode_set(PM_MODE_DEFAULT);
+		return;  /* Don't send message, return immediately */
 	}
-	else if(s_cli_sleep_mode == PM_MODE_LOW_VOLTAGE)
-	{
-		sleep_mode = PM_MODE_LOW_VOLTAGE;
+
+	/* Use lookup instead of multiple if-else for better performance */
+	sleep_mode = (s_cli_sleep_mode == PM_MODE_LOW_VOLTAGE) ? PM_MODE_LOW_VOLTAGE :
+	             (s_cli_sleep_mode == PM_MODE_NORMAL_SLEEP) ? PM_MODE_NORMAL_SLEEP :
+	             PM_MODE_DEFAULT;
+
+	/* Optimization: Send message every time to process 10ms interrupt,
+	 * but use deduplication to avoid redundant processing for same state */
+	if (s_pm_sleep_time < 100) {
+		msg.param3 = 0;  /* Flag: periodic callback, same state */
+	} else {
+		msg.param3 = 1;  /* Flag: state changed */
 	}
-	else if(s_cli_sleep_mode == PM_MODE_NORMAL_SLEEP)
-	{
-		sleep_mode = PM_MODE_NORMAL_SLEEP;
-	}
-	else
-	{
-		sleep_mode = PM_MODE_DEFAULT;
-	}
-	pm_ap_core_msg_t msg = {0};
-    msg.event= PM_DEMO_CALLBACK_MSG_HANDLE;
-    msg.param1 = sleep_mode;
-    msg.param2 = PM_WAKEUP_SOURCE_INT_RTC;
-    msg.param3 = 0;
-    bk_pm_demo_send_msg(&msg);
+
+	/* Always send message to ensure 10ms periodic processing */
+	msg.event  = PM_CALLBACK_HANDLE_MSG;
+	msg.param1 = sleep_mode;
+	msg.param2 = PM_WAKEUP_SOURCE_INT_RTC;
+	msg.param4 = s_pm_rtc_sleep_count;
+	/* Non-blocking send, will drop if queue is full */
+	bk_pm_send_msg(&msg);
 }
 #endif
 #if defined(CONFIG_TOUCH)
@@ -88,7 +97,7 @@ void cli_pm_touch_callback(void *param)
 	CLI_LOGI("cli_pm_touch_callback[%d]\r\n",bk_pm_exit_low_vol_wakeup_source_get());
 }
 #endif
-void cli_pm_gpio_callback(gpio_id_t gpio_id)
+void cli_pm_gpio_callback(gpio_id_t gpio_id, void *priv)
 {
 	if(s_cli_sleep_mode == PM_MODE_DEEP_SLEEP)//when wakeup from deep sleep, all thing initial
 	{
@@ -104,11 +113,11 @@ void cli_pm_gpio_callback(gpio_id_t gpio_id)
 		bk_gpio_clear_interrupt(gpio_id);
 	}
 	pm_ap_core_msg_t msg = {0};
-    msg.event= PM_DEMO_CALLBACK_MSG_HANDLE;
+    msg.event= PM_CALLBACK_HANDLE_MSG;
     msg.param1 = s_cli_sleep_mode;
     msg.param2 = PM_WAKEUP_SOURCE_INT_GPIO;
     msg.param3 = gpio_id;
-    bk_pm_demo_send_msg(&msg);
+    bk_pm_send_msg(&msg);
 }
 
 #if defined(CONFIG_ANA_RTC)
@@ -271,6 +280,8 @@ static void cli_pm_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char 
 				CLI_LOGI("param %d invalid ! must > %dms.\r\n",pm_param1,PM_LOWVOLTAGE_RTC_THRESHOLD);
 				//return;
 			}
+			s_pm_sleep_time      = pm_param1;
+			s_pm_rtc_sleep_count = pm_param2;
 			//force unregister previous if doesn't finish.
 			bk_alarm_unregister(AON_RTC_ID_1, low_valtage_alarm.name);
 			bk_alarm_register(AON_RTC_ID_1, &low_valtage_alarm);
@@ -302,7 +313,7 @@ static void cli_pm_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char 
 		{
 			#if defined(CONFIG_AON_RTC) || defined(CONFIG_ANA_RTC)
 			alarm_info_t low_valtage_alarm = {
-											"normal_sleep",
+											"ns",
 											pm_param1*AON_RTC_MS_TICK_CNT,
 											pm_param2,
 											cli_pm_rtc_callback,
@@ -313,6 +324,8 @@ static void cli_pm_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char 
 			// 	CLI_LOGI("param %d invalid ! must > %dms.\r\n",pm_param1,PM_LOWVOLTAGE_RTC_THRESHOLD);
 			// 	return;
 			// }
+			s_pm_sleep_time      = pm_param1;
+			s_pm_rtc_sleep_count = pm_param2;
 			//force unregister previous if doesn't finish.
 			bk_alarm_unregister(AON_RTC_ID_1, low_valtage_alarm.name);
 			bk_alarm_register(AON_RTC_ID_1, &low_valtage_alarm);
@@ -331,7 +344,7 @@ static void cli_pm_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char 
 		else if(pm_sleep_mode == PM_MODE_LOW_VOLTAGE)
 		{
 			#if defined(CONFIG_GPIO_WAKEUP_SUPPORT)
-			bk_gpio_register_isr(pm_param1, cli_pm_gpio_callback);
+			bk_gpio_register_isr_ex(pm_param1, cli_pm_gpio_callback, NULL);
 			#if defined(CONFIG_GPIO_DYNAMIC_WAKEUP_SUPPORT)
 			bk_gpio_register_wakeup_source(pm_param1,pm_param2);
 			#endif
@@ -353,7 +366,7 @@ static void cli_pm_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char 
 			}
 			cfg.io_mode = GPIO_INPUT_ENABLE;
 			bk_gpio_set_config(gpio_id, &cfg);
-			bk_gpio_register_isr(gpio_id ,cli_pm_gpio_callback);
+			bk_gpio_register_isr_ex(gpio_id ,cli_pm_gpio_callback, NULL);
 			bk_gpio_set_interrupt_type(gpio_id, int_type);
 			bk_gpio_enable_interrupt(gpio_id);
 		}
@@ -929,7 +942,11 @@ static void cli_pm_timer_isr(timer_id_t chan)
 	current_freq = bk_rosc_32k_get_freq();
 	current_ppm = bk_rosc_32k_get_ppm();
 #endif
-	if (s_rosc_acc_mode)
+	if (s_rosc_acc_mode == 1)
+	{
+		current_tick = bk_timer_get_cnt(3);
+	}
+	else if (s_rosc_acc_mode == 2)
 	{
 		current_tick = bk_timer_get_cnt(0);
 	}
@@ -971,7 +988,14 @@ static void cli_pm_rosc_accuracy(char *pcWriteBuffer, int xWriteBufferLen, int a
 		s_rosc_acc_mode    = os_strtoul(argv[2], NULL, 10);
 	}
 
-	if (s_rosc_acc_mode != 0)
+	if (s_rosc_acc_mode == 1)
+	{
+		sys_drv_timer_select_clock(0, 1); // TIMER0 use xtal
+		bk_timer_start_without_callback(3, 0);
+		sys_drv_timer_select_clock(1, 0); // TIMER1 use clk32
+		bk_timer_start(0, timer_count_interval, cli_pm_timer_isr);
+	}
+	else if (s_rosc_acc_mode == 2)
 	{
 		sys_drv_timer_select_clock(0, 1); // TIMER0 use xtal
 		bk_timer_start_without_callback(0, 0);
@@ -1315,67 +1339,7 @@ static void cli_pm_psram(char *pcWriteBuffer, int xWriteBufferLen, int argc, cha
 #endif//CONFIG_SYSTEM_CTRL
 
 #endif//CONFIG_SYS_CPU0
-#if defined(CONFIG_WIFI_ENABLE)
-static void cli_ps_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
-{
-#if PS_SUPPORT_MANUAL_SLEEP
-	UINT32 standby_time = 0;
-	UINT32 dtim_wait_time = 0;
-#endif
 
-	if (argc != 3)
-		goto _invalid_ps_arg;
-
-#if defined(CONFIG_MCU_PS)
-#if !defined(CONFIG_SOC_BK7236XX) && (!defined(CONFIG_SOC_BK7239XX)) && (!defined(CONFIG_SOC_BK7286XX)) //temp mofify for bk7236
-	if (0 == os_strcmp(argv[1], "mcudtim")) {
-		UINT32 dtim = os_strtoul(argv[2], NULL, 10);
-		if (dtim == 1)
-			bk_wlan_mcu_ps_mode_enable();
-		else if (dtim == 0)
-			bk_wlan_mcu_ps_mode_disable();
-		else
-			goto _invalid_ps_arg;
-	}
-#endif
-#endif
-#if defined(CONFIG_STA_PS)
-	else if (0 == os_strcmp(argv[1], "rfdtim")) {
-		UINT32 dtim = os_strtoul(argv[2], NULL, 10);
-		if (dtim == 1) {
-			if (bk_wlan_ps_enable())
-				CLI_LOGI("dtim enable failed\r\n");
-		} else if (dtim == 0) {
-			if (bk_wlan_ps_disable())
-				CLI_LOGI("dtim disable failed\r\n");
-		} else
-			goto _invalid_ps_arg;
-	}
-#if PS_USE_KEEP_TIMER
-	else if (0 == os_strcmp(argv[1], "rf_timer")) {
-		UINT32 dtim = os_strtoul(argv[2], NULL, 10);
-
-		if (dtim == 1) {
-			extern int bk_wlan_ps_timer_start(void);
-			bk_wlan_ps_timer_start();
-		} else  if (dtim == 0) {
-			extern int bk_wlan_ps_timer_pause(void);
-			bk_wlan_ps_timer_pause();
-		} else
-			goto _invalid_ps_arg;
-	}
-#endif
-#endif
-	else
-		goto _invalid_ps_arg;
-
-
-	return;
-
-_invalid_ps_arg:
-	CLI_LOGI("Usage:ps {rfdtim|mcudtim|rf_timer} {1/0}\r\n");
-}
-#endif
 #if !defined(CONFIG_SYSTEM_CTRL)
 #if defined(CONFIG_MCU_PS)
 

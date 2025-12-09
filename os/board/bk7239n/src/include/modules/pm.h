@@ -9,7 +9,32 @@ extern "C" {
 #include <driver/int.h>
 #include "common/bk_err.h"
 #include "sys_types.h"
-#include "pm_sleep_callback.h"
+
+
+#define PM_WIFI_RTC_ALARM_NAME    "bk_wifi"
+#define PM_BT_RTC_ALARM_NAME      "bk_bt"
+#define PM_APP_RTC_ALARM_NAME     "bk_app"
+
+/**
+ * Sleep callback function type
+ *
+ * @param arg  User-defined argument passed during registration
+ *
+ * Note: Callback functions are called at specific points in sleep cycle:
+ *   - Pre-sleep callback:  Called before entering sleep mode
+ *   - Post-sleep callback: Called after waking up from sleep
+ */
+typedef void (*sleep_callback_t)(void *arg);
+
+/* Standard priority definitions for callback execution order
+ * Lower value = Higher priority = Executes first
+ * Range: 0 (highest) to 255 (lowest)
+ */
+#define PM_CALLBACK_PRIORITY_CRITICAL    0    /**< Critical hardware (clocks, PMU, power domains) */
+#define PM_CALLBACK_PRIORITY_HIGH        50   /**< Important peripherals (UART, SPI, I2C) */
+#define PM_CALLBACK_PRIORITY_NORMAL      100  /**< Standard drivers (GPIO, ADC, PWM) */
+#define PM_CALLBACK_PRIORITY_LOW         150  /**< Non-critical modules (sensors, LEDs) */
+#define PM_CALLBACK_PRIORITY_LOWEST      200  /**< Optional features (debug, logging, statistics) */
 
 #define PARAM_DATA_VALID  (0xFFFF)
 #define PM_APP_AUTO_VOTE_ENABLE          (0x1)
@@ -89,7 +114,7 @@ extern "C" {
 #define PM_POWER_SUB_MODULE_NAME_AHBP_CAN              (POWER_SUB_MODULE_NAME_AHBP_CAN)
 #define PM_POWER_SUB_MODULE_NAME_AHBP_QSPI             (POWER_SUB_MODULE_NAME_AHBP_QSPI)
 #define PM_POWER_SUB_MODULE_NAME_AHBP_USB              (POWER_SUB_MODULE_NAME_AHBP_USB)
-#define PM_POWER_SUB_MODULE_NAME_AHBP_PSRAM            (POWER_SUB_MODULE_NAME_BAKP_PSRAM)
+#define PM_POWER_SUB_MODULE_NAME_AHBP_PSRAM            (POWER_SUB_MODULE_NAME_AHBP_PSRAM)
 #define PM_POWER_SUB_MODULE_NAME_AHBP_QSPI1            (POWER_SUB_MODULE_NAME_AHBP_QSPI1)
 #define PM_POWER_SUB_MODULE_NAME_AHBP_ENET             (POWER_SUB_MODULE_NAME_AHBP_ENET)
 #define PM_POWER_SUB_MODULE_NAME_AHBP_SCR              (POWER_SUB_MODULE_NAME_AHBP_SCR)
@@ -162,6 +187,22 @@ extern "C" {
 
 
 /*---------------------------POWER DOMAIN MODUEL DEFINE  END-------------------------------------*/
+typedef struct
+{
+	uint32_t event;
+	uint32_t param1;
+	uint32_t param2;
+	uint32_t param3;
+	uint32_t param4;
+} pm_ap_core_msg_t;
+
+typedef enum
+{
+   PM_ENTER_LOW_VOLTAGE_MSG = 0,
+   PM_ENTER_DEEP_SLEEP_MSG,
+   PM_CALLBACK_HANDLE_MSG
+}pm_sleep_mode_msg_e;
+
 typedef enum
 {
 	PM_CP1_AUTO_CTRL_DISABLE = 0,
@@ -525,13 +566,13 @@ typedef enum
 }
 typedef enum {
 	BK_PM_WAKEUP_UNKNOWN,       /* Unknown Wakeup Source*/
-	BK_PM_WAKEUP_BLE,           /* BLE Interrupts */
-	BK_PM_WAKEUP_WIFI,          /* Wifi Interrupts */
-	BK_PM_WAKEUP_UART_CONSOLE,  /* UART Console Interrupts */
-	BK_PM_WAKEUP_UART_TTYS2,    /* UART TTYS2 Interrupts */
-	BK_PM_WAKEUP_GPIO,          /* GPIO Interrupts */
-	BK_PM_WAKEUP_HW_TIMER,      /* Timer Expiration */
-	BK_PM_WAKEUP_SRC_COUNT,
+	BK_PM_WAKEUP_BLE,           /* 1:BLE Interrupts */
+	BK_PM_WAKEUP_WIFI,          /* 2:Wifi Interrupts */
+	BK_PM_WAKEUP_UART_CONSOLE,  /* 3:UART Console Interrupts */
+	BK_PM_WAKEUP_UART_TTYS2,    /* 4:UART TTYS2 Interrupts */
+	BK_PM_WAKEUP_GPIO,          /* 5:GPIO Interrupts */
+	BK_PM_WAKEUP_HW_TIMER,      /* 6:Timer Expiration */
+	BK_PM_WAKEUP_SRC_COUNT,     /* 7:Source Count */
 } bk_pm_wakeup_reason_e;
 /*config the voltage at low vol*/
 #define PM_VOLTAGE_OF_LOW_VOL            (PM_LOW_VOL_VOLTAGE_0_6)
@@ -546,7 +587,159 @@ typedef enum {
 #define PM_CP1_AUTO_POWER_DOWN_CTRL      (PM_CP1_AUTO_POWER_DOWN_ENABLE)
 
 /*=====================CONFIG  SECTION  END=======================*/
+/**
+ * @brief send message to pm thread for enter deepsleep or low voltage
+ *
+ * @attention
+ * - This API is to send message to pm demo thread for enter deepsleep or low voltage.
+ *
+ * @param
+ * -msg:message info
+ * @return
+ * - BK_OK: succeed
+ * - others: other errors.
+ */
+bk_err_t bk_pm_send_msg(pm_ap_core_msg_t *msg);
+/**
+ * @brief start pm thread
+ *
+ * @attention
+ * - This API is start pm thread.
+ *
+ * @param
+ * -void
+ * @return
+ * - BK_OK: succeed
+ * - others: other errors.
+ */
+bk_err_t pm_thread_main(void);
+/**
+ * @brief Register a pre-sleep callback with execution priority
+ *
+ * This callback will be called BEFORE the system enters sleep mode.
+ * Callbacks are executed in priority order (0=first, 255=last).
+ *
+ * Typical use cases:
+ *   - Save peripheral states
+ *   - Power down devices
+ *   - Flush buffers
+ *
+ * @param callback  Function to call before sleep (must not be NULL)
+ * @param arg       User argument passed to callback (can be NULL)
+ * @param priority  Execution priority: 0 (highest) to 255 (lowest)
+ *                  Use predefined constants: PM_CALLBACK_PRIORITY_*
+ *
+ * @return  0  Success
+ *         -1  Invalid callback (NULL pointer)
+ *         -2  Out of memory
+ *
+ * Memory cost: 16 bytes per registration (32-bit ARM, aligned)
+ * Time complexity: O(n) insertion, O(n) execution
+ *
+ * Example:
+ *   void uart_pre_sleep(void *arg) {
+ *       // Save UART state and power down
+ *   }
+ *   bk_pm_pre_sleep_callback_register(uart_pre_sleep, NULL, PM_CALLBACK_PRIORITY_HIGH);
+ *
+ * Priority table example:
+ *   Priority 0   (CRITICAL): Clock manager, PMU
+ *   Priority 50  (HIGH):     UART, SPI
+ *   Priority 100 (NORMAL):   GPIO, ADC
+ *   Priority 150 (LOW):      Sensors
+ *   Priority 200 (LOWEST):   Debug logging
+ */
+bk_err_t bk_pm_pre_sleep_callback_register(sleep_callback_t callback, void *arg, uint8_t priority);
 
+/**
+ * @brief Unregister a pre-sleep callback
+ *
+ * @param callback  Function to remove
+ *
+ * @return  0  Success
+ *         -1  Invalid callback (NULL pointer)
+ *         -2  Callback not found
+ *
+ * Memory: Frees 12 bytes
+ * Time complexity: O(n) where n is number of registered callbacks
+ *
+ * Example:
+ *   bk_pm_pre_sleep_callback_unregister(uart_pre_sleep);
+ */
+bk_err_t bk_pm_pre_sleep_callback_unregister(sleep_callback_t callback);
+
+/**
+ * @brief Execute all pre-sleep callbacks
+ *
+ * This function is called automatically by the PM system before entering sleep.
+ * Application modules should NOT call this directly.
+ *
+ * Execution order: LIFO (Last-In-First-Out)
+ * - The most recently registered callback executes first
+ *
+ * Time complexity: O(n)
+ */
+bk_err_t bk_pm_pre_sleep_callback_execute(void);
+
+/**
+ * @brief Register a post-sleep (wakeup) callback with execution priority
+ *
+ * This callback will be called AFTER the system wakes up from sleep.
+ * Callbacks are executed in priority order (0=first, 255=last).
+ *
+ * Typical use cases:
+ *   - Restore peripheral states
+ *   - Power up devices
+ *   - Reconfigure clocks
+ *
+ * @param callback  Function to call after wakeup (must not be NULL)
+ * @param arg       User argument passed to callback (can be NULL)
+ * @param priority  Execution priority: 0 (highest) to 255 (lowest)
+ *                  Use predefined constants: PM_CALLBACK_PRIORITY_*
+ *
+ * @return  0  Success
+ *         -1  Invalid callback (NULL pointer)
+ *         -2  Out of memory
+ *
+ * Memory cost: 16 bytes per registration (32-bit ARM, aligned)
+ * Time complexity: O(n) insertion, O(n) execution
+ *
+ * Example:
+ *   void uart_post_sleep(void *arg) {
+ *       // Restore UART state and power up
+ *   }
+ *   bk_pm_post_sleep_callback_register(uart_post_sleep, NULL, PM_CALLBACK_PRIORITY_HIGH);
+ */
+bk_err_t bk_pm_post_sleep_callback_register(sleep_callback_t callback, void *arg, uint8_t priority);
+
+/**
+ * @brief Unregister a post-sleep callback
+ *
+ * @param callback  Function to remove
+ *
+ * @return  0  Success
+ *         -1  Invalid callback (NULL pointer)
+ *         -2  Callback not found
+ *
+ * Memory: Frees 12 bytes
+ * Time complexity: O(n)
+ *
+ * Example:
+ *   bk_pm_post_sleep_callback_unregister(uart_post_sleep);
+ */
+bk_err_t bk_pm_post_sleep_callback_unregister(sleep_callback_t callback);
+
+/**
+ * @brief Execute all post-sleep callbacks
+ *
+ * This function is called automatically by the PM system after waking up.
+ * Application modules should NOT call this directly.
+ *
+ * Execution order: LIFO (Last-In-First-Out)
+ *
+ * Time complexity: O(n)
+ */
+bk_err_t bk_pm_post_sleep_callback_execute(void);
 /**
  * @brief set and save wakeup source of exiting  sleep
  *
@@ -578,7 +771,7 @@ bk_err_t bk_pm_sleep_wakeup_reason_set(uint64_t wakeup_irq);
  * - others: other errors.
  *
  */
-bk_err_t bk_pm_sleep_wakeup_reason_clear();
+bk_err_t bk_pm_sleep_wakeup_reason_clear(void);
 /**
  * @brief get wakeup source of exiting  sleep
  *
@@ -592,7 +785,7 @@ bk_err_t bk_pm_sleep_wakeup_reason_clear();
  * @return
  * - wakeup source(refer to icu_int_src_t in int_types.h)
  */
-bk_pm_wakeup_reason_e bk_pm_sleep_wakeup_reason_get();
+bk_pm_wakeup_reason_e bk_pm_sleep_wakeup_reason_get(void);
 /**
  * @brief clear deep sleep module config
  *
@@ -866,7 +1059,7 @@ bk_err_t bk_pm_external_ldo_ctrl(uint32_t value);
  * @param
  * -void
  * @return
- *  - the state of phy calibration(0x1:have calibration;0x0:not calibration)
+ *  - the state of phy calibration(True:have calibration;False:not calibration)
  */
 bool bk_pm_phy_cali_state_get(void);
 /**
@@ -880,7 +1073,7 @@ bool bk_pm_phy_cali_state_get(void);
  * @param
  * -void
  * @return
- *  - the flag of phy reinit part1 (True:have part1;false:not do it)
+ *  - the flag of phy reinit part1 (True:have part1;False:not do it)
  */
 bool bk_pm_phy_reinit_flag_get(void);
 /**
@@ -1424,18 +1617,30 @@ bk_err_t pm_extern32k_unregister_cb(pm_cb_extern32k_cfg_t *cfg);
  * -tick:tick cnt for lv
  * -callback:callback when exit lv
  * @return
- * - void
+ * - BK_OK: succeed
+ * - others: other errors.
  *
  */
-void bk_pm_wifi_rtc_set(uint32_t tick, void *callback);
+bk_err_t bk_pm_wifi_rtc_set(uint32_t tick, void *callback);
 /**
  * @brief unregister rtc callback for wifi
  *
  * @return
+ * - BK_OK: succeed
+ * - others: other errors.
+ *
+ */
+bk_err_t bk_pm_wifi_rtc_clear(void);
+/**
+ * @brief pm hardware init
+ *
+ * @param
+ * void
+ * @return
  * - void
  *
  */
-void bk_pm_wifi_rtc_clear(void);
+void pm_hardware_init(void);
 
 #ifdef __cplusplus
 }

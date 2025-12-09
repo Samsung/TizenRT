@@ -356,6 +356,72 @@ void bk_flash_set_mutex(int (*mutex_lock)(void),
                         void (*mutex_unlock)(int));
 
 
+/**
+ * @brief     Get flash primary tfm s partition offset
+ *
+ * @return the flash primary tfm s partition offset
+ */
+uint32_t bk_primary_tfm_s_partition_offset(void);
+/**
+ * @brief     Get flash primary all partition size
+ *
+ * @return the flash primary all partition size
+ */
+uint32_t bk_primary_all_partition_size(void);
+/**
+ * @brief     Get flash secondary all partition offset
+ *
+ * @return the flash secondary all partition offset
+ */
+uint32_t bk_secondary_all_partition_offset(void);
+
+/**
+ * @brief     Get flash secondary all partition size
+ *
+ * @return the flash secondary all partition size
+ */
+uint32_t bk_secondary_all_partition_size(void);
+
+
+/**
+ * @brief     Write data to flash with security 
+ *
+ * @param address address to write
+ * @param user_buf the pointer to data which is to write
+ * @param size size to write
+ *
+ * @return
+ *    - BK_OK: succeed
+ *    - BK_ERR_FLASH_ADDR_OUT_OF_RANGE: flash address is out of range
+ *    - others: other errors.
+ */
+int bk_security_flash_write_bytes(uint32_t address, const uint8_t *user_buf, uint32_t size);
+
+/**
+ * @brief     Read data from flash with security 
+ *
+ * @param address address to read
+ * @param user_buf the buffer to read the data
+ * @param size size to read
+ *
+ * @return
+ *    - BK_OK: succeed
+ *    - BK_ERR_FLASH_ADDR_OUT_OF_RANGE: flash address is out of range
+ *    - others: other errors.
+ */
+int bk_security_flash_read_bytes(uint32_t address, uint8_t *user_buf, uint32_t size);
+
+/**
+ * @brief     Erase a sector of flash with security 
+ *
+ * @param address flash address
+ *
+ * @return
+ *    - BK_OK: succeed
+ *    - BK_ERR_FLASH_ADDR_OUT_OF_RANGE: flash address is out of range
+ *    - others: other errors.
+ */
+int bk_security_flash_erase_sector(uint32_t address);
 
 #ifdef __cplusplus
 }

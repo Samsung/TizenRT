@@ -1,0 +1,14 @@
+cmake_build
+build
+si
+tfm/tfm.si4project/
+*.si4project
+tags
+out
+cmake-3.15.7/
+CMakeFiles/
+tfm_build/CMakeCache.txt
+tfm_build/Makefile
+tfm_build/cmake_install.cmake
+tfm_build/install_manifest.txt
+tfm_build/CMakeFiles/

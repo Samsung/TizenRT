@@ -57,6 +57,31 @@ menu "BK_system"
 			bool "smp sync printf"
 			default n
 
+		config ASYNC_IRQ_LOG
+			bool "Enable Async IRQ Log"
+			default y
+
+		config ASYNC_IRQ_LOG_TASK_PRIORITY
+			int "Async IRQ Log Task Priority"
+			default 7
+			depends on ASYNC_IRQ_LOG
+			help
+				The priority of the async irq log task.
+
+		config ASYNC_IRQ_LOG_MAX_MSG_LEN
+			int "Async IRQ Log Max Message Length"
+			default 128
+			depends on ASYNC_IRQ_LOG
+			help
+				The max message length of the async irq log.
+		
+		config ASYNC_IRQ_LOG_BUFFER_SIZE
+			int "Async IRQ Log Buffer Size"
+			default 2048
+			depends on ASYNC_IRQ_LOG
+			help
+				The buffer size of the async irq log.
+
 		config UART_PRINT_BAUD_RATE
 			depends on SYS_PRINT_DEV_UART
 			int "uart print baud rate"

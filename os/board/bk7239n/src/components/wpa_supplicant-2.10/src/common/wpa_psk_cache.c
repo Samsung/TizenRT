@@ -9,7 +9,7 @@
 #include "bk_wifi_types.h"
 #include "bk_wifi.h"
 
-void start_wpa_psk_cal_thread();
+void start_wpa_psk_cal_thread(void);
 bk_err_t rtos_thread_set_priority(beken_thread_t *thread, int priority);
 
 beken_thread_t wpa_pskcalc_thread_handle = NULL;
@@ -17,7 +17,7 @@ beken_mutex_t psk_mutex;
 
 struct wpa_psk_cache *psk_cache;
 
-void wpa_psk_cache_init()
+void wpa_psk_cache_init(void)
 {
 	psk_cache = os_zalloc(sizeof(*psk_cache));
 	if (psk_cache) {

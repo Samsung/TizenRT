@@ -148,7 +148,8 @@ static char *misc_get_start_type_str(uint32_t start_type)
 
 void show_reset_reason(void)
 {
-	BK_LOGI(TAG, "reason - %s\r\n", misc_get_start_type_str(s_start_type));
+	//BK_LOGI(TAG, "reason - %s\r\n", misc_get_start_type_str(s_start_type));
+	BK_LOGI(TAG, "reason - %d\r\n", s_start_type);
 	if(RESET_SOURCE_DEEPPS_GPIO == s_start_type)
 	{
 #if defined(CONFIG_DEEP_PS)

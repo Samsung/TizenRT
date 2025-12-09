@@ -244,7 +244,8 @@ static int psram_hal_APS6408L_init(uint32_t *id)
 		psram_hal_set_mode_value(PSRAM_MODE3);
 #elif (defined(CONFIG_SOC_BK7239XX))
 	psram_hal_set_mode_value(PSRAM_MODE2);
-	psram_hal_set_reg5_value(0x1703);
+	//psram_hal_set_reg5_value(0x1704);   //PSRAM 120M config
+	psram_hal_set_reg5_value(0x6C3);      //PSRAM 160M config, psram calibration value, sck_delay=0, clk_drv=3(max), dat_drv=3(max),dqs_delay=3
 #else
 	psram_hal_set_mode_value(PSRAM_MODE6);//PSRAM_MODE2
 	//psram_hal_set_reg5_value(0x282);
@@ -276,7 +277,8 @@ static int psram_hal_APS6408L_init(uint32_t *id)
 	val = (val & ~(0x1F << 8)) | (0x4 << 10) | (0x3 << 8);
 #elif (defined(CONFIG_SOC_BK7239XX))
 	//20250925: asic psram data to decrease strength for bk7239nv4
-	val = (val & ~(0x1F << 8)) | (0x2 << 10) | (0x3 << 8);
+	//val = (val & ~(0x1F << 8)) | (0x2 << 10) | (0x3 << 8);    //PSRAM 120M config
+	val = (val & ~(0x1F << 8)) | (0x4 << 10) | (0x0 << 8);      //PSRAM 160M config, data strength = 3 (0 is max driver strength, psram driver strength may affect RF)
 #else
 	val = (val & ~(0x1F)) | (0x4 << 2) | 0x3;
 #endif
@@ -287,7 +289,8 @@ static int psram_hal_APS6408L_init(uint32_t *id)
 
 	val = psram_hal_get_regb_value();
 #if ((defined(CONFIG_SOC_BK7256XX)) || (defined(CONFIG_SOC_BK7239XX)))
-	val = (val & ~(0x7 << 13)) | (0x6 << 13);//write latency 110 166Mhz
+	//val = (val & ~(0x7 << 13)) | (0x6 << 13);//write latency 110 166Mhz   //PSRAM 120M config
+	val = (val & ~(0x7 << 13)) | (0x1 << 13);//write latency 110 166Mhz     //PSRAM 160M config
 #else
 	val = (val & ~(0x7 << 5)) | (0x6 << 5);
 #endif
@@ -300,19 +303,9 @@ static int psram_hal_W955D8MKY_5J_init(uint32_t *id)
 {
 	uint32_t val = 0;
 	uint32_t io_drv = 0; /*range [0, 3]*/
-	#if (defined(CONFIG_SOC_BK7256XX))
-		psram_hal_set_mode_value(PSRAM_MODE4);// mode 4
-	#elif (defined(CONFIG_SOC_BK7236XX))
-		psram_hal_set_mode_value(PSRAM_MODE8);// mode 8
-	#endif
-#if (!defined(CONFIG_SOC_BK7256XX))
-	#if (defined(CONFIG_SOC_BK7236N))
-	psram_hal_set_reg5_value(0x1704);
-	#else
-	psram_hal_set_reg5_value(0x292);
-	//psram_hal_set_reg5_value(0x380);	//NOTES:APS PSRAM drive stength needs changed.This type PSRAM needs to be verified.
-	#endif
-#endif
+
+	psram_hal_set_mode_value(PSRAM_MODE8);// mode 8
+	psram_hal_set_reg5_value(0x6C3);
 
 	psram_hal_set_cmd_reset();
 	psram_delay(500);
@@ -331,16 +324,7 @@ static int psram_hal_W955D8MKY_5J_init(uint32_t *id)
 	val = 0x1C8F | (io_drv << 4);
 #endif
 
-
-#if (defined(CONFIG_SOC_BK7256XX))
-	psram_hal_cmd_write(0x01000000, val);
-#elif (defined(CONFIG_SOC_BK7236XX))
-	#if (defined(CONFIG_SOC_BK7236N))
 	psram_hal_cmd_write(0x01000000, 0x8f14);
-	#else
-	psram_hal_cmd_write(0x01000000, 0x1c8f);
-	#endif
-#endif
 	psram_hal_cmd_read(0x01000000);
 
 	return 0;
