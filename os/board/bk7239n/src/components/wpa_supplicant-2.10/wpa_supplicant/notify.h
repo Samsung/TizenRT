@@ -185,6 +185,6 @@ void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac);
 void hapd_notify_sta_psk_failure(struct hostapd_data *hapd, const u8 *mac);
 void wpas_notify_disconnected(struct wpa_supplicant *wpa_s);
 void wpas_notify_connected(struct wpa_supplicant *wpa_s);
-bool sta_check_user_is_11b_1mbps_supported(void);
+//bool sta_check_user_is_11b_1mbps_supported(void);
 #endif
 #endif /* NOTIFY_H */

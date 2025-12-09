@@ -64,7 +64,9 @@ extern beken_thread_t wpas_thread_handle;
 extern bool site_survey_cc;
 static int wpa_ctrl_debug_info_dump(struct wpa_supplicant *wpas, uint32_t type);
 extern void wpa_driver_scan_timeout(void *eloop_ctx, void *timeout_ctx);
-uint32_t bk_lookup_ipaddr_wrapper(void *addr);
+extern uint32_t bk_lookup_ipaddr_wrapper(void *addr);
+extern void rwnx_regulatory_hint_11d(int freq, const u8 *country_ie, u8 country_ie_len);
+extern void regulatory_hint_disconnect(void);
 
 int __wpa_ctrl_request(wpa_ctrl_cmd_t cmd, void *data, int wait, uint16_t flags)
 {
@@ -1899,6 +1901,10 @@ int wpa_supplicant_handle_events(wpah_msg_t *msg)
 		union wpa_event_data data;
 		struct disassoc_info *info = (struct disassoc_info *)&data.disassoc_info;
 
+#if CONFIG_WIFI_REGDOMAIN
+		regulatory_hint_disconnect();
+#endif
+
 		os_memset(&data, 0, sizeof(data));
 		/*
 		 * FIXME: IP specified that reason code <= 1 are local generated, but AP still can send us
@@ -1988,6 +1994,7 @@ int wpa_supplicant_handle_events(wpah_msg_t *msg)
 		}
 #endif
 	}	break;
+
 #ifdef CONFIG_IEEE80211R
 	case WPA_CTRL_EVENT_FT_AUTH_IND: {
 		struct sm_ft_auth_ind *ind = (struct sm_ft_auth_ind *)msg->argu;
@@ -2023,6 +2030,17 @@ int wpa_supplicant_handle_events(wpah_msg_t *msg)
 				data.assoc_info.resp_ies = (u8 *)ind->assoc_ie_buf + ind->assoc_req_ie_len;
 				data.assoc_info.resp_ies_len = ind->assoc_rsp_ie_len;
 				wpa_supplicant_event_sta(wpa_s, EVENT_ASSOC, &data);
+
+#if CONFIG_WIFI_REGDOMAIN
+				// handle dot11d
+				const uint8_t *country_ie = get_ie(data.assoc_info.resp_ies,
+						data.assoc_info.resp_ies_len, WLAN_EID_COUNTRY);
+				if (!country_ie)
+					country_ie = wpa_bss_get_ie(wpa_s->current_bss, WLAN_EID_COUNTRY);
+				if (country_ie)
+					rwnx_regulatory_hint_11d(wpa_s->current_bss->freq, country_ie + 2, *(country_ie + 1));
+#endif
+
 			} else {
 				union wpa_event_data data;
 

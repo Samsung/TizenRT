@@ -17,5 +17,9 @@ menu "FLASH"
 	config FLASH_FORBID_OPERATE_BOOTLADER
 		bool "Enable operate bootloader flash"
 		default y
+
+	config FLASH_WRITE_STATUS_VOLATILE
+		bool "Enable write volatile status register"
+		default n
 endmenu
 

@@ -237,6 +237,19 @@ bk_err_t bk_gpio_set_output_low(gpio_id_t gpio_id);
 bool bk_gpio_get_input(gpio_id_t gpio_id);
 
 /**
+ * @brief     Get the GPIO output value,
+ *
+ * This API get GPIO's output level: 0 :low_level 1:high_level.
+ *
+ * @return
+ *    - output value
+ *    - BK_ERR_GPIO_CHAN_ID: invalid GPIO channel
+ *    - BK_ERR_GPIO_NOT_INPUT_MODE : GPIO is not input mode
+ *    - others: other errors.
+ */
+bool bk_gpio_get_output(gpio_id_t gpio_id);
+
+/**
  * @brief     Set the GPIO driver capacity.
  *
  * This API Set GPIO's output driver capacity which range is 0~3.
@@ -301,22 +314,48 @@ bk_err_t bk_gpio_clear_interrupt(gpio_id_t gpio_id);
  *
  * This API regist gpio isr callback function.
  *
+ * @attention
+ *    - For TizenRTLite applications, please use bk_gpio_register_isr_ex() instead
+ *    - This API is kept for backward compatibility with legacy code only
+ *    - New development should prefer bk_gpio_register_isr_ex() for better context support
+ *
+ * @param id  The GPIO channel ID
+ * @param isr The interrupt callback function pointer with signature: void callback(gpio_id_t id)
+ *
  * @return
  *    - BK_OK: succeed
  *    - BK_ERR_GPIO_CHAN_ID: invalid gpio channel
  *    - others: other errors.
+ *
+ * @see bk_gpio_register_isr_ex
  */
 bk_err_t bk_gpio_register_isr(gpio_id_t id, gpio_isr_t isr);
 
 /**
- * @brief     Register the interrupt service routine for GPIO channel
+ * @brief     Register the interrupt service routine for GPIO channel with private parameter
  *
- * This API regist gpio isr callback function to adaption TizenRT.
+ * This API registers a GPIO ISR callback function with support for private parameter,
+ * designed for TizenRTLite adaptation. This is the extended version of bk_gpio_register_isr().
+ *
+ * @param id   The GPIO channel ID (e.g., GPIO_0, GPIO_1, ...)
+ * @param isr  The interrupt callback function pointer with signature:
+ *             void callback(gpio_id_t gpio_id, void *priv)
+ * @param priv Private parameter that will be passed to the callback function.
+ *             Can be NULL if no private data is needed.
+ *             Typical use: pointer to device context, state structure, etc.
+ *
+ * @attention
+ *    - Only one ISR can be registered per GPIO channel
+ *    - If both bk_gpio_register_isr() and bk_gpio_register_isr_ex() are called,
+ *      the last one will override the previous registration
+ *    - The callback function will be called in interrupt context
+ *    - Keep the ISR execution time as short as possible
  *
  * @return
  *    - BK_OK: succeed
- *    - BK_ERR_GPIO_CHAN_ID: invalid gpio channel
- *    - others: other errors.
+ *    - BK_ERR_GPIO_CHAN_ID: invalid gpio channel ID
+ *    - others: other errors
+ *
  */
 bk_err_t bk_gpio_register_isr_ex(gpio_id_t id, gpio_isr_priv_t isr, void *priv);
 

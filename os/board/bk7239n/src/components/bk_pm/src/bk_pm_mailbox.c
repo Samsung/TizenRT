@@ -412,10 +412,12 @@ static void pm_cp0_mailbox_rx_isr(int *pm_mb, mb_chnl_cmd_t *cmd_buf)
 			ret = bk_pm_module_vote_ctrl_external_ldo(cmd_buf->param1,cmd_buf->param2,cmd_buf->param3);
 			pm_cp0_mailbox_response(PM_CTRL_EXTERNAL_LDO_CMD,ret);
 			break;
+#if CONFIG_PSRAM
 		case PM_CTRL_PSRAM_POWER_CMD:
 			ret = bk_pm_module_vote_psram_ctrl(cmd_buf->param1,cmd_buf->param2);
 			pm_cp0_mailbox_response(PM_CTRL_PSRAM_POWER_CMD,ret);
 			break;
+#endif
 		case PM_CPU1_BOOT_READY_CMD:
 			if(cmd_buf->param1 == 0x1)
 			{
@@ -534,9 +536,10 @@ boot_cp1:
 				BK_LOGD(NULL, "cp0 boot cp1[%d] time out, boot cp1 fail!!!\r\n",s_pm_cp1_boot_try_count);
 
 				/*Reset psram*/
+#if CONFIG_PSRAM
 				bk_pm_module_vote_psram_ctrl(PM_POWER_PSRAM_MODULE_NAME_MEDIA, PM_POWER_MODULE_STATE_OFF);
 				bk_pm_module_vote_psram_ctrl(PM_POWER_PSRAM_MODULE_NAME_MEDIA, PM_POWER_MODULE_STATE_ON);
-
+#endif
 				s_pm_cp1_boot_try_count++;
 				if(s_pm_cp1_boot_try_count < PM_BOOT_CP1_TRY_COUNT)
 				{
@@ -569,7 +572,9 @@ static void pm_module_shutdown_cpu1(pm_power_module_name_e module)
 		if(module == PM_POWER_MODULE_NAME_CPU1)
 		{
 			stop_cpu1_core();
+#if CONFIG_PSRAM
 			bk_pm_module_vote_psram_ctrl(PM_POWER_PSRAM_MODULE_NAME_MEDIA, PM_POWER_MODULE_STATE_OFF);
+#endif
 			bk_pm_module_vote_power_ctrl(PM_POWER_MODULE_NAME_CPU1, PM_POWER_MODULE_STATE_OFF);
 			bk_pm_module_vote_cpu_freq(PM_DEV_ID_CPU1,PM_CPU_FRQ_DEFAULT);
 
@@ -634,7 +639,9 @@ bk_err_t bk_pm_module_vote_boot_cp1_ctrl(pm_boot_cp1_module_name_e module,pm_pow
     if(power_state == PM_POWER_MODULE_STATE_ON)//power on
     {
 		bk_pm_module_vote_cpu_freq(PM_DEV_ID_CPU1,PM_CPU_FRQ_480M);
+#if CONFIG_PSRAM
 		bk_pm_module_vote_psram_ctrl(PM_POWER_PSRAM_MODULE_NAME_MEDIA, PM_POWER_MODULE_STATE_ON);
+#endif
 		GLOBAL_INT_DISABLE();
 		s_pm_cp1_ctrl_state |= 0x1 << (module);
 		GLOBAL_INT_RESTORE();

@@ -23,10 +23,13 @@
 #include <arch/irq.h>
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
+#include <tinyara/config.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/mm/mm.h>
 #include <tinyara/time.h>
 #include <tinyara/wdog.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include "../kernel/mqueue/mqueue.h"
 
 /******************************************************
@@ -71,7 +74,7 @@ to enter a deadlock or abnormal status */
 	BK_ASSERT(0 == check_local_irq_disabled());        \
 } while(0)
 
-
+#define  BEKEN_RTOS_DEFAULT_PRIORITY_MIN 180
 
  /******************************************************
  *               Function Definitions
@@ -111,7 +114,7 @@ bk_err_t rtos_create_thread( beken_thread_t* thread, uint8_t priority, const cha
 	char str_func_addr[9];
 	char str_ctx_addr[9];
 	char *task_info[3];
-    priority = SCHED_PRIORITY_DEFAULT + (9 - priority);
+    priority = BEKEN_RTOS_DEFAULT_PRIORITY_MIN + (9 - priority);
 	priority = (priority > SCHED_PRIORITY_MAX || priority < SCHED_PRIORITY_MIN) ? SCHED_PRIORITY_DEFAULT:priority;
 
 	func_addr = (int)function;
@@ -1027,7 +1030,41 @@ size_t rtos_get_free_heap_size(void)
 {
 	return 0;
 }
+size_t rtos_get_free_heap_size_by_index(int heap_index)
+{
+	struct mm_heap_s *heap;
+	extern struct mm_heap_s g_kmmheap[];
+	
+	/* Check heap index validity */
+#ifdef CONFIG_KMM_NHEAPS
+	if (heap_index >= CONFIG_KMM_NHEAPS) {
+		return 0;
+	}
+#endif
+	
+	/* Use g_kmmheap directly instead of kmm_get_heap_with_index to avoid BASE_HEAP issues */
+	heap = &g_kmmheap[heap_index];
+	
+	/* Check if heap is initialized */
+	if (heap->mm_heapsize == 0) {
+		/* Fallback: if requested heap is not initialized, try heap 0 */
+		if (heap_index != 0 && g_kmmheap[0].mm_heapsize > 0) {
+			heap = &g_kmmheap[0];
+		} else {
+			return 0;
+		}
+	}
 
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	return (heap->mm_heapsize - heap->total_alloc_size);
+#else
+	struct mallinfo info;
+	if (mm_mallinfo(heap, &info) != OK) {
+		return 0;
+	}
+	return info.fordblks;
+#endif
+}
 size_t rtos_get_minimum_free_heap_size(void)
 {
 	return 0;

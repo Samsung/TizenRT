@@ -265,14 +265,21 @@ endif
 all: libboard$(LIBEXT)
 .PHONY: properties tfm modules submodules_depend
 
-modules:
+modules: tfm
 	$(Q) set -e; for module in $(submodules); do \
 		$(MAKE) -C $$module TOPDIR="$(TOPDIR)"; \
 	done
 
 tfm:
 ifeq ($(CONFIG_TFM),y)
+ifneq ($(wildcard components/tfm/tfm/CMakeLists.txt),)
 	$(Q) $(MAKE) -C components/tfm TOPDIR="$(TOPDIR)"
+endif
+ifneq ($(wildcard components/tfm/tfm_build),)
+	$(Q) cp -rf components/tfm/tfm_build $(TOPDIR)/../build/output/bin/tfm_build
+else
+	$(Q) echo "tfm_build directory not found"
+endif
 endif
 
 properties_file := properties/Makefile

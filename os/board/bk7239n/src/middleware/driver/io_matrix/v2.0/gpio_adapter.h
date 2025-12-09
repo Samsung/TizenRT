@@ -15,12 +15,29 @@
 #pragma once
 
 #include <driver/io_matrix_types.h>
+#include <driver/gpio_types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-IOMX_CODE_T contert_gpio_dev_to_iomx_code(gpio_dev_t dev);
+
+// Peripheral group type for wakeup
+typedef enum {
+	PERIPHERAL_GROUP_NONE = 0,
+	PERIPHERAL_GROUP_GPIO,
+	PERIPHERAL_GROUP_I2C0,
+	PERIPHERAL_GROUP_I2C1,
+	PERIPHERAL_GROUP_SPI0,
+	PERIPHERAL_GROUP_SPI1,
+	PERIPHERAL_GROUP_UART0,  // UART1 in hardware
+	PERIPHERAL_GROUP_UART1,  // UART2 in hardware
+	PERIPHERAL_GROUP_UART2,  // UART3 in hardware
+	PERIPHERAL_GROUP_UART3,  // UART4 in hardware
+} peripheral_group_t;
+
+// Get peripheral group that caused wakeup (automatically get wakeup GPIO ID)
+peripheral_group_t bk_gpio_get_wake_source_sub_type(void);
 
 #ifdef __cplusplus
 }

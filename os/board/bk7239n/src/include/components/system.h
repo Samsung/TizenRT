@@ -177,6 +177,7 @@ void bk_set_printf_port(uint8_t port_num);
 int bk_get_printf_port(void);
 uint32_t bk_misc_get_reset_reason(void);
 void bk_misc_set_reset_reason(uint32_t type);
+uint32_t aon_pmu_hal_get_reset_reason(void);
 
 #if (CONFIG_CPU_CNT > 1)
 //This callback function can be registered in cpu1, and will be called when cpu0 stops cpu1 

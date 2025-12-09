@@ -157,6 +157,12 @@ static inline bool iomx_ll_get_gpio_input(uint32_t id)
 	return r->gpio_input;
 }
 
+static inline bool iomx_ll_get_gpio_output(uint32_t id)
+{
+	iomx_gpio_cfg_t *r = (iomx_gpio_cfg_t*)(IOMX_LL_REG_BASE + ((0x40 + id) << 2));
+	return r->gpio_output;
+}
+
 static inline void iomx_ll_set_gpio_interrupt_type(uint32_t v, uint32_t id)
 {
 	iomx_gpio_cfg_t *r = (iomx_gpio_cfg_t*)(IOMX_LL_REG_BASE + ((0x40 + id) << 2));

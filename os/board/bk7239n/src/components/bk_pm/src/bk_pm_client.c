@@ -160,12 +160,6 @@ bk_err_t bk_pm_clock_ctrl(pm_dev_clk_e module, pm_dev_clk_pwr_e clock_state)
 
 bk_err_t bk_pm_module_vote_cpu_freq(pm_dev_id_e module, pm_cpu_freq_e cpu_freq)
 {
-#if CONFIG_CLK_FORCE_MAX_CPU_FREQ_320M
-	if(PM_CPU_FRQ_480M == cpu_freq)
-	{
-		cpu_freq = PM_CPU_FRQ_320M;
-	}
-#endif
 #if CONFIG_MAILBOX
 	uint64_t previous_tick  = 0;
 	uint64_t current_tick   = 0;

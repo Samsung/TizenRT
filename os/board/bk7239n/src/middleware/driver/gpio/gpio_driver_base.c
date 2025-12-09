@@ -1049,7 +1049,7 @@ bk_err_t bk_gpio_unregister_lowpower_keep_status(gpio_id_t gpio_id)
 #endif // CONFIG_GPIO_DYNAMIC_KPSTAT_SUPPORT
 #endif // CONFIG_GPIO_KPSTAT_SUPPORT
 
-bk_err_t gpio_enter_low_power(void *param)
+__IRAM_SEC bk_err_t gpio_enter_low_power(void *param)
 {
 	uint32_t int_cfg[2] = {0, 0};
 	uint64_t skip_io = 0;
@@ -1097,7 +1097,7 @@ bk_err_t gpio_enter_low_power(void *param)
 	return BK_OK;
 }
 
-bk_err_t gpio_exit_low_power(void *param)
+__IRAM_SEC bk_err_t gpio_exit_low_power(void *param)
 {
 	gpio_hal_t *hal = &s_gpio.hal;
 	gpio_interrupt_status_t gpio_status;

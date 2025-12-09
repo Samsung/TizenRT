@@ -25,7 +25,6 @@
 #include <os/mem.h>
 #include <driver/wdt.h>
 #include "bk_aon_wdt.h"
-#include "partitions.h"
 #include "bk_wdt.h"
 #include "stack_base.h"
 #if defined(CONFIG_CM_BACKTRACE)
@@ -43,9 +42,11 @@ extern unsigned char __iram_end__;
 
 extern char __etext;
 
+extern uint32_t __CPU0_APP_VIRTUAL_CODE_START;
+
 static inline int addr_is_in_flash_txt(uint32_t addr)
 {
-    return ((addr > (uint32_t)(SOC_FLASH_DATA_BASE + CONFIG_PRIMARY_CPU0_APP_VIRTUAL_CODE_START)) && (addr < (uint32_t)&__etext));
+    return ((addr > (uint32_t)(SOC_FLASH_DATA_BASE + (uint32_t)&__CPU0_APP_VIRTUAL_CODE_START)) && (addr < (uint32_t)&__etext));
 }
 
 static inline int addr_is_in_itcm_txt(uint32_t addr)

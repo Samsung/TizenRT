@@ -809,7 +809,7 @@ int32_t bk_tr_ble_server_attr_get_data_ptr(trble_attr_handle attr_handle, uint8_
     }
     else
     {
-        LOGW("att_index %d", att_index);
+        LOGD("att_index %d", att_index);
     }
 
     if (buffer)

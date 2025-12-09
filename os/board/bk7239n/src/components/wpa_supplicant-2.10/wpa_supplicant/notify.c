@@ -231,7 +231,8 @@ out:
 }
 #endif
 
-#if BK_SUPPLICANT
+//#if BK_SUPPLICANT
+#if 0
 #define RATE_11B_1MBPS      0x02
 #define RATE_11B_2MBPS      0x04
 #define RATE_11B_5_5MBPS    0x0B
@@ -329,7 +330,7 @@ void wpas_notify_connected(struct wpa_supplicant *wpa_s)
 #if BK_SUPPLICANT
 		wpa_bss_flush(wpa_s);
 		/* parse mac rates in the beacon frame and set 11b flags */
-		wpa_parse_mac_rates_ie(wpa_s);
+		//wpa_parse_mac_rates_ie(wpa_s);
 #endif
 #ifdef CONFIG_WPA_PSK_CACHE
 		wpa_psk_thread_lower_prio();  // stop_wpa_psk_cal_thread();
@@ -525,7 +526,11 @@ void hapd_notify_sta_connected(struct hostapd_data *hapd, const u8 *mac)
 {
 	wifi_event_ap_connected_t ap_connected = {0};
 #if !CONFIG_DISABLE_DEPRECIATED_WIFI_API
-	FUNC_1PARAM_PTR fn = bk_wlan_get_status_cb();
+	FUNC_1PARAM_PTR fn;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+	fn = bk_wlan_get_status_cb();
+#pragma GCC diagnostic pop
 
 	if (fn) {
 		uint32_t param = WIFI_LINKSTATE_AP_CONNECTED;
@@ -546,7 +551,11 @@ void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac)
 {
 	wifi_event_ap_disconnected_t ap_disconnected = {0};
 #if !CONFIG_DISABLE_DEPRECIATED_WIFI_API
-	FUNC_1PARAM_PTR fn = bk_wlan_get_status_cb();
+	FUNC_1PARAM_PTR fn;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+	fn = bk_wlan_get_status_cb();
+#pragma GCC diagnostic pop
 
 	if (fn) {
 		uint32_t param = WIFI_LINKSTATE_AP_DISCONNECTED;
@@ -565,7 +574,11 @@ void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac)
 void hapd_notify_sta_psk_failure(struct hostapd_data *hapd, const u8 *mac)
 {
 #if !CONFIG_DISABLE_DEPRECIATED_WIFI_API
-	FUNC_1PARAM_PTR fn = bk_wlan_get_status_cb();
+	FUNC_1PARAM_PTR fn;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+	fn = bk_wlan_get_status_cb();
+#pragma GCC diagnostic pop
 
 	if (fn) {
 		uint32_t param = WIFI_LINKSTATE_AP_CONNECT_FAILED;

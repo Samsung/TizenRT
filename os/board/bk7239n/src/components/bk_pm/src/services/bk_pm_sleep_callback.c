@@ -14,6 +14,7 @@
 #include <modules/pm.h>
 #include "sys_driver.h"
 #include "pm_debug.h"
+#include <os/mem.h>
 
 /****************************************************************************
  * Sleep Callback Management System

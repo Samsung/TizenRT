@@ -283,6 +283,25 @@ int find_ieee80211_channel_flags(int channel, struct ieee80211_channel *channels
 	return 0;
 }
 
+int find_ieee80211_freq_flags(int freq, struct ieee80211_channel *channels, int num_channels)
+{
+	for (int i = 0; i < num_channels; i++) {
+		if (freq == channels[i].center_freq)
+			return channels[i].flags;
+	}
+	return 0;
+}
+
+uint16_t get_chan_flags(uint32_t flags)
+{
+    uint16_t chan_flags = 0;
+    if (flags & IEEE80211_CHAN_NO_IR)
+        chan_flags |= CHAN_NO_IR;
+    if (flags & IEEE80211_CHAN_RADAR)
+        chan_flags |= CHAN_RADAR;
+    return chan_flags;
+}
+
 int rw_msg_send_me_chan_config_req(void)
 {
 	struct me_chan_config_req *req;
@@ -302,8 +321,9 @@ int rw_msg_send_me_chan_config_req(void)
 			req->chan2G4[req->chan2G4_cnt].flags = 0;
 
 			if (b->channels[i].flags & IEEE80211_CHAN_DISABLED)
-				req->chan2G4[req->chan2G4_cnt].flags |= SCAN_DISABLED_BIT;
+				req->chan2G4[req->chan2G4_cnt].flags |= CHAN_DISABLED;
 
+			req->chan2G4[req->chan2G4_cnt].flags |= get_chan_flags(b->channels[i].flags);
 			req->chan2G4[req->chan2G4_cnt].band = IEEE80211_BAND_2GHZ;
 			req->chan2G4[req->chan2G4_cnt].freq = b->channels[i].center_freq;
 			req->chan2G4[req->chan2G4_cnt].tx_power = VIF_UNDEF_POWER;
@@ -316,6 +336,24 @@ int rw_msg_send_me_chan_config_req(void)
 
 	req->chan5G_cnt = 0;
 #if CONFIG_WIFI_BAND_5G
+#if CONFIG_WIFI_REGDOMAIN
+	if (wiphy->bands[IEEE80211_BAND_5GHZ]->n_channels) {
+		struct ieee80211_supported_band *b = wiphy->bands[IEEE80211_BAND_5GHZ];
+		for (i = 0; i < b->n_channels; i++) {
+			req->chan5G[req->chan5G_cnt].flags = 0;
+
+			if (b->channels[i].flags & IEEE80211_CHAN_DISABLED && !ate_is_enabled())
+				req->chan5G[req->chan5G_cnt].flags |= CHAN_DISABLED;
+
+			req->chan5G[req->chan5G_cnt].flags |= get_chan_flags(b->channels[i].flags);
+			req->chan5G[req->chan5G_cnt].band = IEEE80211_BAND_5GHZ;
+			req->chan5G[req->chan5G_cnt].freq = b->channels[i].center_freq;
+			req->chan5G_cnt++;
+			if (req->chan5G_cnt == SCAN_CHANNEL_5G)
+				break;
+		}
+	}
+#else // CONFIG_WIFI_REGDOMAIN
 	if (wiphy->bands[IEEE80211_BAND_5GHZ]->n_channels) {
 		if (ate_is_enabled()) {
 			struct ieee80211_supported_band *b = wiphy->bands[IEEE80211_BAND_5GHZ];
@@ -323,8 +361,9 @@ int rw_msg_send_me_chan_config_req(void)
 				req->chan5G[req->chan5G_cnt].flags = 0;
 
 				if (b->channels[i].flags & IEEE80211_CHAN_DISABLED)
-					req->chan5G[req->chan5G_cnt].flags |= SCAN_DISABLED_BIT;
+					req->chan5G[req->chan5G_cnt].flags |= CHAN_DISABLED;
 
+				req->chan5G[req->chan5G_cnt].flags |= get_chan_flags(b->channels[i].flags);
 				req->chan5G[req->chan5G_cnt].band = IEEE80211_BAND_5GHZ;
 				req->chan5G[req->chan5G_cnt].freq = b->channels[i].center_freq;
 				req->chan5G_cnt++;
@@ -342,8 +381,9 @@ int rw_msg_send_me_chan_config_req(void)
 				int flag = find_ieee80211_channel_flags(selected_channels_5g[i], b->channels, b->n_channels);
 
 				if (flag & IEEE80211_CHAN_DISABLED)
-					req->chan5G[req->chan5G_cnt].flags |= SCAN_DISABLED_BIT;
+					req->chan5G[req->chan5G_cnt].flags |= CHAN_DISABLED;
 
+				req->chan5G[req->chan5G_cnt].flags |= get_chan_flags(b->channels[i].flags);
 				req->chan5G[req->chan5G_cnt].band = IEEE80211_BAND_5GHZ;
 				req->chan5G[req->chan5G_cnt].freq = (5000 + (5 *selected_channels_5g[i]));
 				req->chan5G[req->chan5G_cnt].tx_power = VIF_UNDEF_POWER;
@@ -353,6 +393,7 @@ int rw_msg_send_me_chan_config_req(void)
 			}
 		}
 	}
+#endif // CONFIG_WIFI_REGDOMAIN
 #endif
 	/* Send the ME_CHAN_CONFIG_REQ message to LMAC FW */
 	return rw_msg_send(req, 1, ME_CHAN_CONFIG_CFM, NULL);

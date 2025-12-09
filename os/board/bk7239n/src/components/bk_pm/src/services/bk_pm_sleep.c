@@ -35,6 +35,7 @@
 #define PM_DEEPSLEEP_CB_SIZE                            (10)
 #define PM_SLEEP_CB_IND_PRI_0                           (0)
 #define PM_SLEEP_CB_IND_PRI_1                           (6)
+#define PM_UNREGISTER_ALARM_WAIT_CNT                    (10000)
 
 
 static __attribute__((section(".dtcm_sec_data "))) pm_cb_conf_t s_pm_lowvol_enter_exit_cb_conf[PM_LOWVOL_CB_SIZE][PM_DEV_ID_MAX];
@@ -187,7 +188,7 @@ uint64_t pm_low_voltage_process()
 	pm_low_voltage_resource_restore();
 
 	if (pm_debug_mode() & 0x2)
-		BK_LOGD(NULL, "low voltage int open before\r\n");
+		LOGD(NULL, "low voltage int open before\r\n");
 
 #if CONFIG_AON_RTC || CONFIG_ANA_RTC
 	uint64_t exit_tick          = 0ULL;
@@ -207,7 +208,7 @@ uint64_t pm_low_voltage_process()
 	bk_pm_post_sleep_callback_execute();
 
 	if (pm_debug_mode() & 0x2)
-		BK_LOGI(NULL, "low voltage int open after 0x%x 0x%x \r\n", /*int_mie,*/ int_level, bk_pm_lp_vol_get());
+		LOGI("low voltage int open after 0x%x 0x%x \r\n", /*int_mie,*/ int_level, bk_pm_lp_vol_get());
 
 	return sleep_tick;
 }
@@ -455,7 +456,7 @@ bk_err_t bk_pm_module_lv_sleep_state_clear(pm_dev_id_e module)
 
 bk_err_t pm_debug_lv_state(void)
 {
-	BK_LOGD(NULL, "pm_module_lv_sleep_state:0x%llx\r\n",s_pm_module_lv_sleep_state);
+	LOGD(NULL, "pm_module_lv_sleep_state:0x%llx\r\n",s_pm_module_lv_sleep_state);
 	return BK_OK;
 }
 
@@ -517,18 +518,18 @@ static void pm_sleep_cb_push_item(pm_sleep_cb_t cb_arr[], uint8_t *cb_cnt_p, pm_
 	if (*cb_cnt_p == PM_DEEPSLEEP_CB_SIZE)
 	{
 		if (pm_debug_mode() & 0x2)
-			BK_LOGD(NULL, "call back function overflow, dev %d regist fail!\r\n", cb_item.id);
+			LOGD(NULL, "call back function overflow, dev %d regist fail!\r\n", cb_item.id);
 		if (pm_debug_mode() & 0x1)
 		{
-			BK_LOGD(NULL, "cb functions dump: [ ");
+			LOGD(NULL, "cb functions dump: [ ");
 			for (uint8_t i = 0; i < PM_DEEPSLEEP_CB_SIZE; i++)
-				BK_LOGD(NULL, "%d ", cb_arr[i].id);
-			BK_LOGD(NULL, "]\r\n");
+				LOGD(NULL, "%d ", cb_arr[i].id);
+			LOGD(NULL, "]\r\n");
 		}
 		return;
 	} else if (cb_arr[*cb_cnt_p].cfg.cb != NULL) {
 		if (pm_debug_mode() & 0x2)
-			BK_LOGD(NULL, "cb functions have overlap warning, dev %d -> %d\r\n", cb_item.id, cb_arr[*cb_cnt_p].id);
+			LOGD(NULL, "cb functions have overlap warning, dev %d -> %d\r\n", cb_item.id, cb_arr[*cb_cnt_p].id);
 	}
 
 	for (uint8_t i = 0; i < *cb_cnt_p; i++)
@@ -626,7 +627,7 @@ bk_err_t bk_pm_sleep_register_cb(pm_sleep_mode_e sleep_mode, pm_dev_id_e dev_id,
 #endif
 	else
 	{
-		BK_LOGD(NULL, "The sleep mode[%d] not support register call back \r\n", sleep_mode);
+		LOGD(NULL, "The sleep mode[%d] not support register call back \r\n", sleep_mode);
 	}
 	GLOBAL_INT_RESTORE();
 	return BK_OK;
@@ -704,7 +705,7 @@ bk_err_t bk_pm_sleep_unregister_cb(pm_sleep_mode_e sleep_mode, pm_dev_id_e dev_i
 #endif
 	else
 	{
-		BK_LOGD(NULL, "The sleep mode[%d] not support unregister call back \r\n", sleep_mode);
+		LOGD(NULL, "The sleep mode[%d] not support unregister call back \r\n", sleep_mode);
 	}
 	GLOBAL_INT_RESTORE();
 
@@ -751,10 +752,10 @@ bk_err_t bk_pm_light_sleep_unregister_cb(bool enter_cb, bool exit_cb)
 /*=========================SLEEP CB REGISTER API END========================*/
 
 /*=========================WIFI ALARM START========================*/
-#define PM_WIFI_RTC_ALARM_NAME "wifi"
 
-void bk_pm_wifi_rtc_set(uint32_t tick, void *callback)
+bk_err_t bk_pm_wifi_rtc_set(uint32_t tick, void *callback)
 {
+	bk_err_t ret = BK_OK;
 	alarm_info_t low_valtage_alarm = {
 									PM_WIFI_RTC_ALARM_NAME,
 									tick,
@@ -764,13 +765,25 @@ void bk_pm_wifi_rtc_set(uint32_t tick, void *callback)
 									};
 	//force unregister previous if doesn't finish.
 	bk_alarm_unregister(AON_RTC_ID_1, low_valtage_alarm.name);
-	bk_alarm_register(AON_RTC_ID_1, &low_valtage_alarm);
+	for (volatile uint32_t i = 0; i < PM_UNREGISTER_ALARM_WAIT_CNT; i++)
+	{
+		;
+	}
+	ret = bk_alarm_register(AON_RTC_ID_1, &low_valtage_alarm);
+	if(ret < 0)
+	{
+		LOGI(NULL, "wifi_rtc register failed, ret:%d\r\n", ret);
+		return ret;
+	}
 	bk_pm_wakeup_source_set(PM_WAKEUP_SOURCE_INT_RTC, NULL);
+	return ret;
 }
 
-void bk_pm_wifi_rtc_clear(void)
+bk_err_t bk_pm_wifi_rtc_clear(void)
 {
-	bk_alarm_unregister(AON_RTC_ID_1, (uint8_t *)PM_WIFI_RTC_ALARM_NAME);
+	bk_err_t ret = BK_OK;
+	ret = bk_alarm_unregister(AON_RTC_ID_1, (uint8_t *)PM_WIFI_RTC_ALARM_NAME);
+	return ret;
 }
 /*=========================WIFI ALARM END========================*/
 
