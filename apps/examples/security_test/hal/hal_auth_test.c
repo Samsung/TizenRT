@@ -110,7 +110,8 @@ TEST_F(get_hash)
  * Desc: Get hmac
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-#define HAL_TEST_HMAC_KEY_SLOT 3
+//#define HAL_TEST_HMAC_KEY_SLOT 3
+#define HAL_TEST_HMAC_KEY_SLOT 33
 static hal_data g_hmac;
 TEST_SETUP(get_hmac)
 {
@@ -155,7 +156,8 @@ static hal_data g_rsa_hash;
 static hal_data g_rsa_signature;
 hal_rsa_mode g_rsa_mode;
 #define HAL_TEST_RSA_HASH_LEN 32
-#define HAL_TEST_RSA_KEY_SLOT 1
+//#define HAL_TEST_RSA_KEY_SLOT 1
+#define HAL_TEST_RSA_KEY_SLOT 34
 TEST_SETUP(rsa_sign)
 {
 	ST_START_TEST;
@@ -252,7 +254,8 @@ TEST_F(rsa_verify)
  * Desc: Get ECDSA
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-#define HAL_TEST_ECC_KEY_SLOT 1
+//#define HAL_TEST_ECC_KEY_SLOT 1
+#define HAL_TEST_ECC_KEY_SLOT 35
 #define HAL_TEST_ECC_HASH_LEN 32
 static hal_data g_ecdsa_hash;
 static hal_data g_ecdsa_signature;
@@ -345,8 +348,10 @@ TEST_F(ecdsa_verify)
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
 /* Generate G, P, GX (G^X mod P) */
-#define HAL_TEST_DH_X_SLOT 1
-#define HAL_TEST_DH_Y_SLOT 2
+//#define HAL_TEST_DH_X_SLOT 1
+//#define HAL_TEST_DH_Y_SLOT 2
+#define HAL_TEST_DH_X_SLOT 36
+#define HAL_TEST_DH_Y_SLOT 37
 static hal_dh_data g_dh_data;
 unsigned char p_buf_1024[] = {
 	0xb1, 0x0b, 0x8f, 0x96, 0xa0, 0x80, 0xe0, 0x1d, 0xde, 0x92, 0xde, 0x5e, 0xae,
@@ -474,8 +479,10 @@ TEST_F(dh_compute_shared_secret)
  * Desc: Compute ECDH shared secret
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-#define HAL_TEST_ECDH_KEY_SLOT_A 1
-#define HAL_TEST_ECDH_KEY_SLOT_B 2
+// #define HAL_TEST_ECDH_KEY_SLOT_A 1
+// #define HAL_TEST_ECDH_KEY_SLOT_B 2
+#define HAL_TEST_ECDH_KEY_SLOT_A 38
+#define HAL_TEST_ECDH_KEY_SLOT_B 39
 static hal_data g_shared_secret_a;
 static hal_data g_shared_secret_b;
 static hal_ecdh_data ecdh_a;
@@ -564,7 +571,8 @@ TEST_F(ecdh_compute_shared_secret)
  * Desc: Save certificate in secure storage
  * Refered https://developer.artik.io/documentation/security-api/see-authentication-test_8c-example.html
  */
-#define HAL_TEST_CERT_SLOT 2
+//#define HAL_TEST_CERT_SLOT 2
+#define HAL_TEST_CERT_SLOT 32
 static const char test_crt[] =
 		"-----BEGIN CERTIFICATE-----\r\n"
 		"MIICaDCCAgygAwIBAgIBAjAMBggqhkjOPQQDAgUAMHAxLTArBgNVBAMTJFNhbXN1\r\n"
