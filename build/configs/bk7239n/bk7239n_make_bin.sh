@@ -92,7 +92,11 @@ function concatenate_binary_with_signing()
 }
 
 function make_ss_bin() {
-	export PYTHONPATH=${BUILDDIR}/tools/armino/bk_py_libs
+	if [ ! -d ${TOOL_PATH}/bk_py_libs ]; then 
+		tar -zxvf ${TOOL_PATH}/bk_py_libs.tgz -C ${TOOL_PATH}
+		find "${TOOL_PATH}/bk_py_libs" -type d -exec chmod a+wx {} \;
+	fi 
+	export PYTHONPATH=${TOOL_PATH}/bk_py_libs
 	script=${TOOL_PATH}/security_storage/security_storage.py
 	ss_config=${TOOL_PATH}/security_storage/security_storage.csv
 	ss_bin=${BUILDDIR}/output/bin/ss.bin
