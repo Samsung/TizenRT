@@ -47,3 +47,4 @@ from .chip_exit_cbus_mode_protocol import ChipExitCbusModeProtocol
 from .chip_start_bl2_upgrade_protocol import ChipStartBL2UpgradeProtocol
 from .chip_stop_bl2_upgrade_protocol import ChipStopBL2UpgradeProtocol
 from .link_check_ext_protocol import LinkCheckExtProtocol
+from .chip_high_freq_enable_protocol import ChipHighFreqEnableProtocol

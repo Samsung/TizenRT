@@ -127,6 +127,26 @@ class AuthorizeInfo:
     work_baudrate: int = 1000000
     aes_key: str = ''
 
+class PM_CPU_FREQ_LIST:
+    PM_CPU_FREQ_26M = 1
+    PM_CPU_FREQ_40M = 2
+    PM_CPU_FREQ_80M = 3
+    PM_CPU_FREQ_120M = 4
+    PM_CPU_FREQ_240M = 5
+    PM_CPU_FREQ_320M = 6
+    PM_CPU_FREQ_480M = 7
+    PM_CPU_FREQ_DEFAULT = 8
+
+class PM_FLASH_FREQ_LIST:
+    PM_FLASH_FREQ_26M = 1
+    PM_FLASH_FREQ_40M = 2
+    PM_FLASH_FREQ_80M = 3
+    
+class PROGRAMING_MODE_LIST:
+    PROGRAMING_INVALID = 0
+    PROGRAMING_DBUS = 1
+    PROGRAMING_CBUS = 2
+    PROGRAMING_ALL = 3
 
 class FLASH_SIZE_DEF:
     SIZE_PAGE = 0x100
