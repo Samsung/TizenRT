@@ -73,7 +73,8 @@ void print_smoke_result(st_smoke *smoke)
 	} else {
 		_color_print(ST_COLOR_RED, "[  FAILED    ] ");
 	}
-	printf("%s (%u/%d) %u ms\n", smoke->func->tc_name, perf->stat.count, smoke->repeat_size, perf->stat.total_elapsed);
+	
+	printf("%s (%u/%d) %u us\n", smoke->func->tc_name, perf->stat.count, smoke->repeat_size, perf->stat.total_elapsed);
 }
 
 void print_testsuite_title(st_pack *ts)
