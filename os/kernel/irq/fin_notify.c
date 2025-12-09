@@ -58,6 +58,7 @@ int fin_notify(pid_t pid, int data)
 
 	tcb = sched_gettcb(pid);
 	if (tcb == NULL) {
+		leave_critical_section(saved_state);
 		return ERROR;
 	}
 
