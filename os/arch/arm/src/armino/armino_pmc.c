@@ -55,39 +55,44 @@
 
 /* Include header for DVFS implementation */
 #include <tinyara/pm/pm.h>
-
-void cpu_suspend_save(u32 sp)
-{
-}
-
-int SOCPS_PG_Enter(unsigned long arg)
-{
-	return 0;
-}
-
-void SOCPS_Save_GIC(void)
-{
-
-}
-
-void SOCPS_Restore_GIC(void)
-{
-
-}
-/*Power gate*/
-void SOCPS_SleepPG(void)
-{
-
-}
-
-/*Clock gate*/
-void SOCPS_SleepCG(void)
-{
-}
+#include <modules/pm.h>
 
 #ifdef CONFIG_PM_DVFS
 void up_set_dvfs(int div_lvl)
 {
+	/*
+	PM_CPU_FRQ_XTAL = 0, // 0:CPU:XTAL,BUS:XTAL(XTAL:40M)
+	PM_CPU_FRQ_60M,      // 1:CPU0:60M,BUS:60M
+	PM_CPU_FRQ_80M,      // 2:CPU0:80M,BUS:80M
+	PM_CPU_FRQ_120M,     // 3:CPU0:120M,BUS:120M
+	PM_CPU_FRQ_160M,     // 4:CPU0:160M,BUS:160M
+	PM_CPU_FRQ_240M,     // 5:CPU0:240M,BUS:240M
+	*/
 
+	pm_cpu_freq_e cpu_freq = PM_CPU_FRQ_XTAL;
+	switch (div_lvl)
+	{
+	case 0:
+		cpu_freq = PM_CPU_FRQ_240M;
+		break;
+	case 1:
+		cpu_freq = PM_CPU_FRQ_160M;
+		break;
+	case 2:
+		cpu_freq = PM_CPU_FRQ_120M;
+		break;
+	case 3:
+		cpu_freq = PM_CPU_FRQ_80M;
+		break;
+	case 4:
+		cpu_freq = PM_CPU_FRQ_60M;
+		break;
+	case 5:
+		cpu_freq = PM_CPU_FRQ_XTAL;
+		break;
+	default:
+		break;
+	}
+	bk_pm_module_vote_cpu_freq(PM_DEV_ID_DEFAULT, cpu_freq);
 }
 #endif
