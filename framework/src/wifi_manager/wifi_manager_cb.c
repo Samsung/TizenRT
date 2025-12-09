@@ -259,5 +259,6 @@ void wifimgr_unregister_all(void)
 			g_cb_handler.cb[i] = NULL;
 		}
 	}
+	g_cb_handler.idx = 0;
 	UNLOCK_WIFICB;
 }
