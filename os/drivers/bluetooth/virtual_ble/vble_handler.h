@@ -30,14 +30,14 @@
 // Generate an event
 #define VBLE_CMD_GEN_EVT 0x1
 
-trble_client_init_config client_init_parm;
-trble_server_init_config server_init_parm;
-bool is_server_init;
-bool is_client_init;
-bool is_scan_started;
-uint16_t server_profile_count;
-trble_device_connected connected_device[TRBLE_MAX_CONNECTION_COUNT];
-trble_connected_list vble_connected_list;
+extern trble_client_init_config client_init_parm;
+extern trble_server_init_config server_init_parm;
+extern bool is_server_init;
+extern bool is_client_init;
+extern bool is_scan_started;
+extern uint16_t server_profile_count;
+extern trble_device_connected connected_device[TRBLE_MAX_CONNECTION_COUNT];
+extern trble_connected_list vble_connected_list;
 
 typedef struct {
 	int key;
@@ -109,7 +109,7 @@ typedef struct {
 	uint8_t count;
 } vattr_table;
 
-vattr_table attr_table;
+extern vattr_table attr_table;
 
 struct vble_req {
 	vble_req_e type;

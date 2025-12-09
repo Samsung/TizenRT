@@ -30,6 +30,13 @@
 #include <tinyara/net/if/ble.h>
 #include "vble_handler.h"
 
+trble_client_init_config client_init_parm;
+trble_server_init_config server_init_parm;
+bool is_server_init;
+bool is_client_init;
+bool is_scan_started;
+uint16_t server_profile_count;
+
 ble_scan_whitelist g_scan_whitelist[SCAN_WHITELIST_SIZE] = {0, };
 trble_connected_list vble_connected_list;
 trble_scanned_device vble_scanned_items;
