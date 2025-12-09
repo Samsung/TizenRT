@@ -71,12 +71,15 @@ SRC_CRYPTO_CSRCS =    	aes.c aesni.c aesce.c aria.c \
                         hmac_drbg.c lmots.c lms.c md.c md5.c \
                         memory_buffer_alloc.c nist_kw.c oid.c padlock.c pem.c \
                         pk.c pk_wrap.c pkcs12.c pkcs5.c pkparse.c \
-                        pkwrite.c platform.c platform_util.c poly1305.c psa_crypto.c \
-                        psa_crypto_aead.c psa_crypto_cipher.c psa_crypto_client.c psa_crypto_driver_wrappers.c psa_crypto_ecp.c \
-                        psa_crypto_hash.c psa_crypto_mac.c psa_crypto_pake.c psa_crypto_rsa.c psa_crypto_se.c \
-                        psa_crypto_slot_management.c psa_crypto_storage.c psa_its_file.c psa_util.c ripemd160.c \
+                        pkwrite.c platform.c platform_util.c poly1305.c \
+                        ripemd160.c \
                         rsa.c rsa_alt_helpers.c sha1.c sha256.c sha512.c \
                         threading.c timing.c version.c version_features.c
+
+SRC_PSA_CSRCS = 		psa_crypto.c \
+                        psa_crypto_aead.c psa_crypto_cipher.c psa_crypto_client.c psa_crypto_driver_wrappers.c psa_crypto_ecp.c \
+                        psa_crypto_hash.c psa_crypto_mac.c psa_crypto_pake.c psa_crypto_rsa.c psa_crypto_se.c \
+                        psa_crypto_slot_management.c psa_crypto_storage.c psa_its_file.c psa_util.c
 
 SRC_X509_CSRCS =  x509.c \
 	   x509_create.c \
@@ -107,6 +110,11 @@ SRC_TLS_CSRCS = debug.c \
 	  ssl_tls13_generic.c
 
 TLS_CSRCS += $(SRC_CRYPTO_CSRCS) $(SRC_X509_CSRCS) $(SRC_TLS_CSRCS) $(SRC_SEE_CSRCS) ${SRC_ALT_CSRCS} $(SRC_TEST_CSRCS)
+
+# Include PSA files if enabled
+ifneq ($(CONFIG_USE_HW_PSA_CRYPTO),y)
+TLS_CSRCS += $(SRC_PSA_CSRCS)
+endif
 
 CSRCS += $(TLS_CSRCS)
 
