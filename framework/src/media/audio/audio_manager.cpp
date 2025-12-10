@@ -32,10 +32,14 @@
 #include <tinyara/audio/audio.h>
 #include <tinyalsa/tinyalsa.h>
 #include <json/cJSON.h>
+#include "../RecorderWorker.h"
+#include <atomic>
 
 #include "audio_manager.h"
 #include "resample/speex_resampler.h"
 #include "../utils/remix.h"
+#include "media/FocusManager.h"
+#include "media/MediaUtils.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -100,6 +104,10 @@
 #define CONFIG_PROCESS_MSG_TIMEOUT_MSEC 150
 #endif
 
+#ifndef CONFIG_AUDIO_DUCKING_MULTIPLIER
+#define CONFIG_AUDIO_DUCKING_MULTIPLIER 0.5
+#endif
+
 #define INVALID_ID -1
 
 #define AUDIO_METADATA_JSON_PATH "/mnt/audio_metadata.json"
@@ -118,6 +126,15 @@
 #define RESAMPLING_QUALITY 5 // Resampling quality between 0 and 10, where 0 has poor quality and 10 has very high quality.
 #define MAX_RESAMPLING_QUALITY 10
 
+// ToDo: Number of ducking streams should be decided from h/w capability. Update it when new h/w supports more than 2 channels
+#define AUDIO_MAX_DUCKED_STREAMS 2
+
+#define INVALID_STREAM_ID -1
+
+#define INVALID_INDEX -1
+
+#define SYU645B_NMIXER_GAIN_COEFF 4
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -134,10 +151,23 @@ enum audio_io_direction_e {
 	OUTPUT = 1
 };
 
+typedef enum stream_status_e {
+	IDLE,
+	READY,
+	RUNNING,
+	PAUSE
+} stream_status_t;
+
 struct audio_device_config_s {
 	enum audio_card_status_e status;
 	uint8_t volume;
 	uint8_t max_volume;
+	uint8_t l_mixer_gain;
+	uint8_t r_mixer_gain;
+	uint8_t min_mixer_gain;
+	uint8_t max_mixer_gain;
+	uint8_t default_lmixer_gain;
+	uint8_t default_rmixer_gain;
 	audio_device_type_t device_type;
 	device_process_type_t device_process_type;
 	mqd_t process_handler;
@@ -167,11 +197,23 @@ struct audio_card_info_s {
 	uint8_t device_id;			//current device id
 	struct audio_device_config_s config[CONFIG_AUDIO_MAX_DEVICE_NUM];
 	struct pcm *pcm;
-	stream_policy_t policy;
-	stream_info_id_t stream_id;
-	struct audio_resample_s resample;
+	union {
+		stream_policy_t policy;
+		stream_policy_t policy_array[AUDIO_MAX_DUCKED_STREAMS];
+	};
+	union {
+		stream_info_id_t stream_id;
+		stream_info_id_t stream_id_array[AUDIO_MAX_DUCKED_STREAMS];
+	};
+	union {
+		struct audio_resample_s resample;
+		struct audio_resample_s resample_array[AUDIO_MAX_DUCKED_STREAMS];
+	};
 	pthread_mutex_t card_mutex;
 	uint8_t volume[MAX_STREAM_POLICY_NUM];
+	stream_status_t stream_status[AUDIO_MAX_DUCKED_STREAMS];
+	std::atomic<bool> mixing;
+	int8_t main_stream_idx;
 };
 
 struct audio_samprate_map_entry_s {
@@ -181,6 +223,7 @@ struct audio_samprate_map_entry_s {
 
 typedef enum audio_card_status_e audio_card_status_t;
 typedef enum audio_io_direction_e audio_io_direction_t;
+typedef enum stream_status_e stream_status_t;
 typedef struct audio_device_config_s audio_config_t;
 typedef struct audio_card_info_s audio_card_info_t;
 
@@ -214,6 +257,18 @@ static const uint8_t g_audio_stream_volume_entry[7][16] = {
 static cJSON *gJSON = NULL;
 static uint8_t gDefaultVolumeLevel = 0;
 
+AudioEventListener mRecorderMuteCallback = nullptr;
+
+void registerRecorderMuteListener(AudioEventListener listener)
+{
+	mRecorderMuteCallback = listener;
+}
+
+void unregisterRecorderMuteListener()
+{
+	mRecorderMuteCallback = nullptr;
+}
+
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -224,9 +279,10 @@ static audio_manager_result_t get_supported_capability(audio_io_direction_t dire
 static audio_manager_result_t get_supported_process_type(int card_id, int device_id, audio_io_direction_t direct);
 static uint32_t get_closest_samprate(unsigned origin_samprate, audio_io_direction_t direct);
 static unsigned int resample_stream_in(audio_card_info_t *card, void *data, unsigned int frames);
-static unsigned int resample_stream_out(audio_card_info_t *card, void *data, unsigned int frames);
-static audio_manager_result_t get_audio_volume(audio_io_direction_t direct);
-static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume);
+static unsigned int _resample_stream_out(audio_card_info_t *card, void *data, unsigned int frames, uint8_t idx, uint8_t channel);
+static unsigned int resample_stream_out(audio_card_info_t *card, void *data, unsigned int frames, uint8_t idx);
+static audio_manager_result_t get_audio_volume(audio_io_direction_t direct, stream_policy_t stream_policy);
+static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume, stream_policy_t stream_policy);
 static audio_manager_result_t set_audio_equalizer(audio_io_direction_t direct, uint32_t preset);
 static audio_manager_result_t set_audio_mute(audio_io_direction_t direct, stream_policy_t stream_policy, bool mute);
 static audio_manager_result_t create_audio_metadata_json(void);
@@ -235,10 +291,32 @@ static audio_manager_result_t update_audio_metadata_json(void);
 static audio_manager_result_t verify_audio_metadata_json(void);
 static const char *getJSONKey(stream_policy_t stream_policy);
 static inline audio_manager_result_t validate_stream_policy(stream_policy_t stream_policy);
+static int8_t get_stream_index(audio_card_info_t *card, stream_info_id_t stream_id);
+static unsigned int get_output_frame_count(uint8_t idx);
+static unsigned int get_user_output_frames_to_byte(unsigned int frames, uint8_t idx);
+static unsigned int get_user_output_bytes_to_frame(unsigned int bytes, uint8_t idx);
+static uint8_t find_volume_index(uint8_t volume, stream_policy_t stream_policy);
+static audio_manager_result_t set_audio_mixer_gain(audio_io_direction_t direct, uint8_t *gain);
+static audio_manager_result_t get_audio_mixer_gain(audio_io_direction_t direct);
+static uint8_t clamp(uint8_t val, uint8_t min_val, uint8_t max_val);
+static audio_manager_result_t restore_output_audio_state(stream_policy_t policy);
+
+std::mutex eventMutex;
+std::condition_variable syncCv;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+static void callMuteListener()
+{
+	unique_lock<std::mutex> lock(eventMutex);
+	if (mRecorderMuteCallback) {
+		mRecorderMuteCallback();
+	}
+	syncCv.notify_one();
+}
+
 static void get_card_path(char *card_path, uint8_t card_id, uint8_t device_id, audio_io_direction_t direct)
 {
 	char type_chr = (direct == INPUT) ? 'c' : 'p';
@@ -334,7 +412,12 @@ static audio_manager_result_t control_audio_stream_device(const char *path, int 
 	int ret = ioctl(fd, cmd, arg);
 	if (ret < 0) {
 		meddbg("Fail to ioctl(%d, %d, %lu), errno : %d\n", fd, cmd, arg, get_errno());
-		ret = AUDIO_MANAGER_DEVICE_FAIL;
+		if (errno == ENOSYS) {
+			/* Some of h/w doesn't support volume/gain control */
+			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+		} else {
+			ret = AUDIO_MANAGER_DEVICE_FAIL;
+		}
 	} else {
 		ret = AUDIO_MANAGER_SUCCESS;
 	}
@@ -366,9 +449,13 @@ static audio_manager_result_t get_supported_capability(audio_io_direction_t dire
 
 	ret = control_audio_stream_device(card_path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps);
 	if (ret == AUDIO_MANAGER_SUCCESS) {
+		// ToDo: We can add logic to check if device supports mixer or not and add one config value to 'card'.
+		// If sound card doesn't support mixer then logic related to mixer can be skipped.
 		*channel = caps_desc.caps.ac_channels;
-		card->resample.samprate_types = caps_desc.caps.ac_controls.b[0];
-		medvdbg("Samprate_type : %d,  Channel_num : %d\n\n", card->resample.samprate_types, *channel);
+		for (uint8_t idx = 0; idx < AUDIO_MAX_DUCKED_STREAMS; idx++) {
+			card->resample_array[idx].samprate_types = caps_desc.caps.ac_controls.b[0];
+		}
+		medvdbg("Samprate_type : %d,  Channel_num : %d\n\n", card->resample_array[0].samprate_types, *channel);
 	}
 
 	pthread_mutex_unlock(&(card->card_mutex));
@@ -430,6 +517,7 @@ static uint32_t get_closest_samprate(unsigned int origin_samprate, audio_io_dire
 	uint32_t result = 0;
 	int count = sizeof(g_audio_samprate_entry) / sizeof(struct audio_samprate_map_entry_s);
 	audio_card_info_t *card;
+	uint8_t idx = 0; // 0 or 1 doesnot matter
 
 	ASSERT(count > 0);
 
@@ -442,7 +530,7 @@ static uint32_t get_closest_samprate(unsigned int origin_samprate, audio_io_dire
 	}
 
 	for (i = 0; i < count; i++) {
-		if (g_audio_samprate_entry[i].samprate_types & card->resample.samprate_types) {
+		if (g_audio_samprate_entry[i].samprate_types & card->resample_array[idx].samprate_types) {
 			result = g_audio_samprate_entry[i].samprate;
 			if (g_audio_samprate_entry[i].samprate >= origin_samprate) {
 				break;
@@ -528,58 +616,67 @@ static unsigned int resample_stream_in(audio_card_info_t *card, void *data, unsi
 
 /*
  * card: Pointer to audio card information structure
- *       card->resample.buffer retrieves generated frames for output,
- *       card->resample.frames returns the number of frames saved in above buffer.
+ *       card->resample_array[idx].buffer retrieves generated frames for output,
+ *       card->resample_array[idx].frames returns the number of frames saved in above buffer.
  * data: Pointer to the input buffer contains frames to resample.
  * frames: Gives the number of frames in the input buffer
- * return: On success, returns number of frames generated in resample.buffer,
- *         besides, card->resample.frames retrieves the same value.
+ * return: On success, returns number of frames generated in resample_array[idx].buffer,
+ *         besides, card->resample_array[idx].frames retrieves the same value.
  *         Otherwise, returns negative error codes on failure.
  */
-static unsigned int resample_stream_out(audio_card_info_t *card, void *data, unsigned int frames)
+static unsigned int _resample_stream_out(audio_card_info_t *card, void *data, unsigned int frames, uint8_t idx, uint8_t channel)
 {
 	unsigned int used_frames = 0;
 	unsigned int resampled_frames = 0;
 	unsigned int rechanneled_frames;
 	unsigned int desired_channel_num;
 	unsigned int desired_sample_rate;
+	unsigned int output_size_adjust;
 	spx_int16_t *data_in;
 	spx_uint32_t input_frames;
 	spx_int16_t *data_out;
 	spx_uint32_t output_frames;
+	SpeexResamplerState *speex_resampler;
 	int ret;
 
-	desired_channel_num = pcm_get_channels(card->pcm);
+	output_size_adjust = 1;
+	speex_resampler = card->resample_array[idx].speex_resampler;
+	if (channel == AUDIO_STREAM_CHANNEL_MONO) {
+		output_size_adjust = 2;
+		// ToDo: Initialize a speex resampler instance for mono stream
+		// speex_resampler = card->resample_array[idx].speex_resampler_mono;
+	}
+	desired_channel_num = channel;
 	desired_sample_rate = pcm_get_rate(card->pcm);
-	if (desired_sample_rate == card->resample.user_sample_rate) {
+	if (desired_sample_rate == card->resample_array[idx].user_sample_rate) {
 		// Only rechanneling is required.
-		rechanneled_frames = rechannel(ch2layout(card->resample.user_channel), ch2layout(desired_channel_num), (const int16_t *)data, frames,
-						(int16_t *)card->resample.buffer, get_card_output_bytes_to_frame(card->resample.buffer_size));
+		rechanneled_frames = rechannel(ch2layout(card->resample_array[idx].user_channel), ch2layout(desired_channel_num), (const int16_t *)data, frames,
+						(int16_t *)card->resample_array[idx].buffer, get_card_output_bytes_to_frame(card->resample_array[idx].buffer_size));
 		if (rechanneled_frames != frames) {
 			meddbg("Failed to rechannel each frame, %u/%u\n", rechanneled_frames, frames);
 			return AUDIO_MANAGER_RESAMPLE_FAIL;
 		}
-		card->resample.frames = rechanneled_frames;
+		card->resample_array[idx].frames = rechanneled_frames;
 		return rechanneled_frames;
 	}
 
 	// Rechannel/Copy input frames to rechannel buffer
-	rechanneled_frames = rechannel(ch2layout(card->resample.user_channel), ch2layout(desired_channel_num), (const int16_t *)data, frames,
-					(int16_t *)card->resample.rechannel_buffer, get_card_output_bytes_to_frame(card->resample.rechannel_buffer_size));
+	rechanneled_frames = rechannel(ch2layout(card->resample_array[idx].user_channel), ch2layout(desired_channel_num), (const int16_t *)data, frames,
+					(int16_t *)card->resample_array[idx].rechannel_buffer, get_card_output_bytes_to_frame(card->resample_array[idx].rechannel_buffer_size));
 	if (rechanneled_frames != frames) {
 		meddbg("Fail to rechannel each frame, %u/%u\n", rechanneled_frames, frames);
 		return AUDIO_MANAGER_RESAMPLE_FAIL;
 	}
 
 	while (frames > used_frames) {
-		data_in = (spx_int16_t *)((char *)(card->resample.rechannel_buffer) + get_card_output_frames_to_byte(used_frames));
+		data_in = (spx_int16_t *)((char *)(card->resample_array[idx].rechannel_buffer) + get_card_output_frames_to_byte(used_frames));
 		input_frames = frames - used_frames;
-		data_out = (spx_int16_t *)((char *)card->resample.buffer + get_card_output_frames_to_byte(resampled_frames));
-		output_frames = get_card_output_bytes_to_frame(card->resample.buffer_size) - resampled_frames; // set to maximum frames resample buffer can hold.
+		data_out = (spx_int16_t *)((char *)card->resample_array[idx].buffer + get_card_output_frames_to_byte(resampled_frames));
+		output_frames = get_card_output_bytes_to_frame(card->resample_array[idx].buffer_size) * output_size_adjust - resampled_frames; // set to maximum frames resample buffer can hold.
 		medvdbg("data_in 0x%x, input_frames %d\n", data_in, input_frames);
 		medvdbg("data_out 0x%x, output_frames resample buffer can hold %d\n", data_out, output_frames);
 
-		ret = speex_resampler_process_interleaved_int(card->resample.speex_resampler, data_in, &input_frames, data_out, &output_frames);
+		ret = speex_resampler_process_interleaved_int(speex_resampler, data_in, &input_frames, data_out, &output_frames);
 		if (ret != RESAMPLER_ERR_SUCCESS) {
 			meddbg("Fail to resample in:%u/%u, error %d\n", used_frames, frames, ret);
 			return AUDIO_MANAGER_RESAMPLE_FAIL;
@@ -596,16 +693,19 @@ static unsigned int resample_stream_out(audio_card_info_t *card, void *data, uns
 	}
 
 	medvdbg("resampled frames count: %u\n", resampled_frames);
-	card->resample.frames = resampled_frames;
+	card->resample_array[idx].frames = resampled_frames;
 	return resampled_frames;
 }
 
-static audio_manager_result_t get_audio_volume(audio_io_direction_t direct)
+static unsigned int resample_stream_out(audio_card_info_t *card, void *data, unsigned int frames, uint8_t idx)
+{
+	return _resample_stream_out(card, data, frames, idx, pcm_get_channels(card->pcm));
+}
+
+static audio_manager_result_t get_audio_volume(audio_io_direction_t direct, stream_policy_t stream_policy)
 {
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
 	struct audio_caps_desc_s caps_desc;
-	uint8_t max_volume;
-	uint8_t cur_volume;
 	pthread_mutex_t *card_mutex;
 	audio_card_info_t *card;
 	audio_config_t *config;
@@ -618,10 +718,12 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct)
 		caps_desc.caps.ac_subtype = AUDIO_FU_INP_GAIN;
 		card = &g_audio_in_cards[g_actual_audio_in_card_id];
 		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
+		config = &card->config[card->device_id];
 	} else {
 		caps_desc.caps.ac_subtype = AUDIO_FU_VOLUME;
 		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 		card_mutex = &g_audio_out_cards[g_actual_audio_out_card_id].card_mutex;
+		config = &card->config[card->device_id];
 	}
 	get_card_path(card_path, card->card_id, card->device_id, direct);
 
@@ -629,27 +731,13 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct)
 
 	ret = control_audio_stream_device(card_path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps);
 	if (ret == AUDIO_MANAGER_SUCCESS) {
-		max_volume = caps_desc.caps.ac_controls.hw[0];
-		cur_volume = caps_desc.caps.ac_controls.hw[1];
+		uint8_t max_volume = caps_desc.caps.ac_controls.hw[0];
+		uint8_t cur_volume = caps_desc.caps.ac_controls.hw[1];
+		medvdbg("Device Max_vol = %d,  cur_vol = %d\n", max_volume, cur_volume);
 
 		/* scale here */
-		medvdbg("Device Max_vol = %d,  cur_vol = %d\n", max_volume, cur_volume);
-#if 0
-		cur_volume = cur_volume * AUDIO_DEVICE_MAX_VOLUME / (max_volume - (max_volume % AUDIO_DEVICE_MAX_VOLUME));
-		if (cur_volume > AUDIO_DEVICE_MAX_VOLUME) {
-			cur_volume = AUDIO_DEVICE_MAX_VOLUME;
-		}
-#endif
-		int i;
-		for (i = 0; i <= AUDIO_DEVICE_MAX_VOLUME; i++) {
-			if (g_audio_stream_volume_entry[card->policy][i] == cur_volume) {
-				break;
-			}
-				
-		}
-		config = &card->config[card->device_id];
 		config->max_volume = max_volume;
-		config->volume = i;
+		config->volume = find_volume_index(cur_volume, stream_policy);
 		medvdbg("Max_vol = %d,  cur_vol = %d\n", config->max_volume, config->volume);
 	}
 
@@ -657,7 +745,7 @@ static audio_manager_result_t get_audio_volume(audio_io_direction_t direct)
 	return ret;
 }
 
-static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume)
+static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint8_t volume, stream_policy_t stream_policy)
 {
 	audio_manager_result_t ret;
 	struct audio_caps_desc_s caps_desc;
@@ -670,29 +758,43 @@ static audio_manager_result_t set_audio_volume(audio_io_direction_t direct, uint
 		volume = AUDIO_DEVICE_MAX_VOLUME;
 	}
 
-	/* get system volume before set */
-	ret = get_audio_volume(direct);
-	if (ret != AUDIO_MANAGER_SUCCESS) {
-		return ret;
-	}
-
 	if (direct == INPUT) {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_INP_GAIN;
 		card = &g_audio_in_cards[g_actual_audio_in_card_id];
 		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
+		config = &card->config[card->device_id];
 	} else {
 		caps_desc.caps.ac_format.hw = AUDIO_FU_VOLUME;
 		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 		card_mutex = &g_audio_out_cards[g_actual_audio_out_card_id].card_mutex;
+		config = &card->config[card->device_id];
+		if (card->mixing && card->policy_array[0] != card->policy_array[1]) {
+			if (stream_policy == card->policy_array[card->main_stream_idx]) {
+				// Left(Main) channel
+				config->l_mixer_gain = (config->default_lmixer_gain * volume) / config->volume;
+				config->l_mixer_gain = clamp(config->l_mixer_gain, config->min_mixer_gain, config->max_mixer_gain);
+			} else {
+				// Right(Sub) channel
+				config->r_mixer_gain = ((config->default_rmixer_gain * CONFIG_AUDIO_DUCKING_MULTIPLIER) * volume) / config->volume;
+				config->r_mixer_gain = clamp(config->r_mixer_gain, config->min_mixer_gain, config->max_mixer_gain);
+			}
+			uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
+				config->l_mixer_gain,
+				config->r_mixer_gain,
+				config->l_mixer_gain,
+				config->r_mixer_gain
+			};
+			// Apply new mixer gain
+			ret = set_audio_mixer_gain(OUTPUT, gain);
+			if (ret != AUDIO_MANAGER_SUCCESS) {
+				meddbg("Failed to set mixer gain. ret: %d\n");
+			}
+			return ret;
+		}
 	}
 
-	config = &card->config[card->device_id];
-	if (volume == config->volume) {
-		medvdbg("Volume already set to %d\n", volume);
-		return AUDIO_MANAGER_SUCCESS;
-	}
-	caps_desc.caps.ac_controls.hw[0] = g_audio_stream_volume_entry[card->policy][volume];//volume * (config->max_volume / AUDIO_DEVICE_MAX_VOLUME);
-	medvdbg("streaminfo :  %d volume : %d value : %d\n", card->policy, volume, g_audio_stream_volume_entry[card->policy][volume]);
+	caps_desc.caps.ac_controls.hw[0] = g_audio_stream_volume_entry[stream_policy][volume];
+	medvdbg("stream_policy :  %d volume : %d value : %d\n", stream_policy, volume, g_audio_stream_volume_entry[stream_policy][volume]);
 	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
 	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
 
@@ -776,9 +878,37 @@ static audio_manager_result_t set_audio_mute(audio_io_direction_t direct, stream
 			return AUDIO_MANAGER_NO_AVAIL_CARD;
 		}
 		card = &g_audio_out_cards[g_actual_audio_out_card_id];
-		if (stream_policy != card->policy) {
-			meddbg("Policy mismatch, given_policy: %d, card_policy: %d. Mute state for given policy will be set when it will play\n", stream_policy, card->policy);
-			return AUDIO_MANAGER_SUCCESS;
+		if (card->mixing && card->policy_array[0] != card->policy_array[1]) {
+			audio_config_t *config = &card->config[card->device_id];
+			if (stream_policy == card->policy_array[card->main_stream_idx]) {
+				// Left(Main) channel
+				if (mute) {
+					config->l_mixer_gain = 0;
+				} else {
+					config->l_mixer_gain = (config->default_lmixer_gain * card->volume[stream_policy]) / config->volume;
+					config->l_mixer_gain = clamp(config->l_mixer_gain, config->min_mixer_gain, config->max_mixer_gain);
+				}
+			} else {
+				// Right(Sub) channel
+				if (mute) {
+					config->r_mixer_gain = 0;
+				} else {
+					config->r_mixer_gain = ((config->default_rmixer_gain * CONFIG_AUDIO_DUCKING_MULTIPLIER) * card->volume[stream_policy]) / config->volume;
+					config->r_mixer_gain = clamp(config->r_mixer_gain, config->min_mixer_gain, config->max_mixer_gain);
+				}
+			}
+			uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
+				config->l_mixer_gain,
+				config->r_mixer_gain,
+				config->l_mixer_gain,
+				config->r_mixer_gain
+			};
+			// Apply new mixer gain
+			ret = set_audio_mixer_gain(OUTPUT, gain);
+			if (ret != AUDIO_MANAGER_SUCCESS) {
+				meddbg("Failed to set mixer gain. ret: %d\n");
+			}
+			return ret;
 		}
 	}
 
@@ -990,6 +1120,160 @@ static inline audio_manager_result_t validate_stream_policy(stream_policy_t stre
 	return ret;
 }
 
+static int8_t get_stream_index(audio_card_info_t *card, stream_info_id_t stream_id)
+{
+	int8_t idx = INVALID_INDEX;
+	for (uint8_t i = 0; i < AUDIO_MAX_DUCKED_STREAMS; i++) {
+		if (stream_id == card->stream_id_array[i]) {
+			idx = i;
+			break;
+		}
+	}
+	medvdbg("idx: %d for stream_id: %d\n", idx, stream_id);
+	return idx;
+}
+
+static uint8_t find_volume_index(uint8_t volume, stream_policy_t stream_policy)
+{
+	uint8_t i;
+	for (i = 0; i <= AUDIO_DEVICE_MAX_VOLUME; i++) {
+		if (g_audio_stream_volume_entry[stream_policy][i] == volume) {
+			break;
+		}
+	}
+	return i;
+}
+
+static audio_manager_result_t set_audio_mixer_gain(audio_io_direction_t direct, uint8_t *gain)
+{
+	audio_manager_result_t ret;
+	struct audio_caps_desc_s caps_desc;
+	audio_card_info_t *card;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	pthread_mutex_t *card_mutex;
+
+	if (direct == INPUT) {
+		caps_desc.caps.ac_format.hw = AUDIO_FU_MIXER_GAIN;
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
+		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
+	} else {
+		caps_desc.caps.ac_format.hw = AUDIO_FU_MIXER_GAIN;
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
+		card_mutex = &g_audio_out_cards[g_actual_audio_out_card_id].card_mutex;
+	}
+
+	for (uint8_t i = 0; i < SYU645B_NMIXER_GAIN_COEFF; i++) {
+		caps_desc.caps.ac_controls.b[i] = gain[i];
+	}
+	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
+
+	get_card_path(card_path, card->card_id, card->device_id, direct);
+
+	pthread_mutex_lock(card_mutex);
+
+	medvdbg("Set mixer gain %x, %x, %x, %x\n", gain[0], gain[1], gain[2], gain[3]);
+	ret = control_audio_stream_device(card_path, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
+	if (ret == AUDIO_MANAGER_SUCCESS) {
+		medvdbg("Successfully set mixer gain\n");
+	} else {
+		meddbg("Fail to set mixer gain, ret = %d errno : %d\n", ret, get_errno());
+		if (get_errno() == EACCES) {
+			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
+		}
+	}
+
+	pthread_mutex_unlock(card_mutex);
+	return ret;
+}
+
+static audio_manager_result_t get_audio_mixer_gain(audio_io_direction_t direct)
+{
+	audio_manager_result_t ret;
+	struct audio_caps_desc_s caps_desc;
+	audio_card_info_t *card;
+	pthread_mutex_t *card_mutex;
+	audio_config_t *config;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+
+	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+	caps_desc.caps.ac_type = AUDIO_TYPE_FEATURE;
+	caps_desc.caps.ac_subtype = AUDIO_FU_MIXER_GAIN;
+
+	if (direct == INPUT) {
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
+		card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
+		config = &card->config[card->device_id];
+	} else {
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
+		card_mutex = &g_audio_out_cards[g_actual_audio_out_card_id].card_mutex;
+		config = &card->config[card->device_id];
+	}
+	get_card_path(card_path, card->card_id, card->device_id, direct);
+
+	pthread_mutex_lock(card_mutex);
+
+	ret = control_audio_stream_device(card_path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps);
+	if (ret == AUDIO_MANAGER_SUCCESS) {
+		config->default_lmixer_gain = caps_desc.caps.ac_controls.b[0];
+		config->default_rmixer_gain = caps_desc.caps.ac_controls.b[1];
+		config->min_mixer_gain = caps_desc.caps.ac_controls.b[2];
+		config->max_mixer_gain = caps_desc.caps.ac_controls.b[3];
+		medvdbg("default_lmixer_gain: %x, default_rmixer_gain: %x, min_mixer_gain: %x, max_mixer_gain: %x\n", config->default_lmixer_gain, config->default_rmixer_gain, config->min_mixer_gain, config->max_mixer_gain);
+	}
+
+	pthread_mutex_unlock(card_mutex);
+	return ret;
+}
+
+static uint8_t clamp(uint8_t val, uint8_t min_val, uint8_t max_val)
+{
+	if (val > max_val) {
+		return max_val;
+	} else if (val < min_val) {
+		return min_val;
+	} else {
+		return val;
+	}
+}
+
+static audio_manager_result_t restore_output_audio_state(stream_policy_t policy)
+{
+	audio_manager_result_t ret;
+	audio_card_info_t *card;
+
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+
+	card->mixing = false;
+	// reset the mixer register value in driver
+	audio_config_t *config = &card->config[card->device_id];
+	config->l_mixer_gain = config->default_lmixer_gain;
+	config->r_mixer_gain = config->default_rmixer_gain;
+	uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
+		config->l_mixer_gain,
+		config->r_mixer_gain,
+		config->l_mixer_gain,
+		config->r_mixer_gain
+	};
+	ret = set_audio_mixer_gain(OUTPUT, gain);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set mixer gain. ret: %d\n");
+		return ret;
+	}
+
+	ret = set_audio_volume(OUTPUT, card->volume[policy], policy);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set audio volume. ret: %d\n");
+		return ret;
+	}
+
+	ret = set_audio_stream_mute_from_json(policy);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set audio mute. ret: %d\n");
+	}
+	return ret;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -1076,6 +1360,20 @@ audio_manager_result_t audio_manager_init(void)
 		meddbg("Failed to set mic mute status from json. ret: %d\n", ret);
 	}
 
+	for (uint8_t i = 0; i < AUDIO_MAX_DUCKED_STREAMS; i++) {
+		card->stream_id_array[i] = INVALID_STREAM_ID;
+		card->stream_status[i] = IDLE;
+		card->policy_array[i] = STREAM_TYPE_INVALID;
+	}
+
+	ret = get_audio_mixer_gain(OUTPUT);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to get output audio mixer gain. ret: %d\n", ret);
+		return ret;
+	}
+
+	card->mixing = false;
+
 	return ret;
 }
 
@@ -1104,6 +1402,7 @@ audio_manager_result_t set_audio_stream_in(unsigned int channels, unsigned int s
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
 	card_config = &card->config[card->device_id];
+	medvdbg("[%s] state : %d\n", __func__, card_config->status);
 
 	if (card_config->status == AUDIO_CARD_PAUSE) {
 		medvdbg("reset previous preparing\n");
@@ -1204,6 +1503,9 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
 	unsigned int channel_num;
 	int err_code = 0;
+	int resampling_quality;
+	media::FocusManager &fm = media::FocusManager::getFocusManager();
+	uint8_t idx = 0;
 
 	if ((channels == 0) || (sample_rate == 0)) {
 		return AUDIO_MANAGER_INVALID_PARAM;
@@ -1222,16 +1524,6 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	card_config = &card->config[card->device_id];
 	medvdbg("[%s] state : %d\n", __func__, card_config->status);
-	medvdbg("card->stream_id : %d stream_id : %d\n", card->stream_id, stream_id);
-	if (card->stream_id != stream_id) {
-		if (card_config->status != AUDIO_CARD_IDLE) {
-			reset_audio_stream_out(card->stream_id);
-		}
-	}
-	if (card_config->status == AUDIO_CARD_PAUSE) {
-		medvdbg("reset previous preparing\n");
-		reset_audio_stream_out(card->stream_id);
-	}
 
 	pthread_mutex_lock(&(card->card_mutex));
 
@@ -1255,58 +1547,73 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 		goto error_with_pcm;
 	}
 
-	card->resample.necessary = false;
-	card->resample.buffer = NULL;
-	card->resample.rechannel_buffer = NULL;
-	card->resample.user_channel = channels;
-	card->resample.user_sample_rate = sample_rate;
-	card->resample.user_format = pcm_format_to_bits((enum pcm_format)format) >> 3;
-	card->resample.ratio = (float)config.rate / (float)card->resample.user_sample_rate; // ratio = card / user
+	/* ToDo: When FOCUS_LOSS happens just after playback completed & onPlaybackFinished callback gets delayed then prev stream will not get reset */
+	for (uint8_t i = 0; i < AUDIO_MAX_DUCKED_STREAMS; i++) {
+		/* ToDo: Avoid comparision of signed and unsigned. Rather we can use stream status */
+		if (card->stream_id_array[i] == static_cast<stream_info_id_t>(INVALID_STREAM_ID)) {
+			idx = i;
+			break;
+		}
+	}
+	card->resample_array[idx].necessary = false;
+	card->resample_array[idx].buffer = NULL;
+	card->resample_array[idx].rechannel_buffer = NULL;
+	card->resample_array[idx].user_channel = channels;
+	card->resample_array[idx].user_sample_rate = sample_rate;
+	card->resample_array[idx].user_format = pcm_format_to_bits((enum pcm_format)format) >> 3;
+	card->resample_array[idx].ratio = (float)config.rate / (float)card->resample_array[idx].user_sample_rate; // ratio = card / user
 
-	// Check if rechanneling or resampling is required
-	if ((config.channels != card->resample.user_channel) || (config.rate != card->resample.user_sample_rate)) {
-		// Yes, it is necessary, and rechanneling would be processed in rechannel() & resampling would be processed in speex_resampler_process_interleaved_int().
-		card->resample.necessary = true;
-		card->resample.rechannel_buffer_size = pcm_get_buffer_size(card->pcm) / card->resample.ratio;
-		card->resample.rechannel_buffer = malloc(card->resample.rechannel_buffer_size);
-		if (!card->resample.rechannel_buffer) {
-			meddbg("malloc for a rechannel buffer(stream_out) is failed, rechannel_buffer_size = %d\n", card->resample.rechannel_buffer_size);
-			goto error_with_pcm;
-		}
-		medvdbg("rechanneling buffer 0x%x, buffer_size %u\n", card->resample.rechannel_buffer, card->resample.rechannel_buffer_size);
+	// Rechannel & Resample buffers will be required in mixing even if source channel/sample rate matches with hardware supported channel/sample rate
+	// ToDo: Optimize buffer allocation
+	// Rechanneling would be processed in rechannel() & resampling would be processed in speex_resampler_process_interleaved_int().
+	card->resample_array[idx].necessary = true;
+	card->resample_array[idx].rechannel_buffer_size = pcm_get_buffer_size(card->pcm) / card->resample_array[idx].ratio;
+	card->resample_array[idx].rechannel_buffer = malloc(card->resample_array[idx].rechannel_buffer_size);
+	if (!card->resample_array[idx].rechannel_buffer) {
+		meddbg("malloc for a rechannel buffer(stream_out) is failed, rechannel_buffer_size = %d\n", card->resample_array[idx].rechannel_buffer_size);
+		goto error_with_pcm;
+	}
+	medvdbg("rechanneling buffer 0x%x, buffer_size %u\n", card->resample_array[idx].rechannel_buffer, card->resample_array[idx].rechannel_buffer_size);
 
-		/* TODO resampling quality (between 0 and 10) need to be changed manually. 0 has poor quality and 10 has very high quality. */
-		int resampling_quality = RESAMPLING_QUALITY;
-		/* if sampling rates are integral multiples e.g. 16K -> 48K or 96K -> 48K, use highest quality. Otherwise, use lower quality to avoid stutter */
-		if (((config.rate >= card->resample.user_sample_rate) && (config.rate % card->resample.user_sample_rate == 0)) ||
-			((config.rate <= card->resample.user_sample_rate) && (card->resample.user_sample_rate % config.rate == 0))) {
-			resampling_quality = MAX_RESAMPLING_QUALITY;
-		}
-		card->resample.speex_resampler = speex_resampler_init(config.channels, card->resample.user_sample_rate, config.rate, resampling_quality, &err_code);
-		if (!card->resample.speex_resampler) {
-			meddbg("Failed to create resampler. errno: %d\n",err_code);
-			speex_resampler_strerror(err_code);
-			free(card->resample.rechannel_buffer);
-			card->resample.rechannel_buffer = NULL;
-			goto error_with_pcm;
-		}
-
-		card->resample.buffer_size = pcm_get_buffer_size(card->pcm);
-		card->resample.buffer = malloc(card->resample.buffer_size);
-		if (!card->resample.buffer) {
-			meddbg("malloc for a resampling buffer(stream_out) is failed, resample_buffer_size = %d\n", card->resample.buffer_size);
-			ret = AUDIO_MANAGER_RESAMPLE_FAIL;
-			speex_resampler_destroy(card->resample.speex_resampler);
-			card->resample.speex_resampler = NULL;
-			free(card->resample.rechannel_buffer);
-			card->resample.rechannel_buffer = NULL;
-			goto error_with_pcm;
-		}
-		medvdbg("resampling buffer 0x%x, buffer_size %u\n", card->resample.buffer, card->resample.buffer_size);
+	/* TODO resampling quality (between 0 and 10) need to be changed manually. 0 has poor quality and 10 has very high quality. */
+	resampling_quality = RESAMPLING_QUALITY;
+	/* if sampling rates are integral multiples e.g. 16K -> 48K or 96K -> 48K, use highest quality. Otherwise, use lower quality to avoid stutter */
+	if (((config.rate >= card->resample_array[idx].user_sample_rate) && (config.rate % card->resample_array[idx].user_sample_rate == 0)) ||
+		((config.rate <= card->resample_array[idx].user_sample_rate) && (card->resample_array[idx].user_sample_rate % config.rate == 0))) {
+		resampling_quality = MAX_RESAMPLING_QUALITY;
+	}
+	card->resample_array[idx].speex_resampler = speex_resampler_init(config.channels, card->resample_array[idx].user_sample_rate, config.rate, resampling_quality, &err_code);
+	if (!card->resample_array[idx].speex_resampler) {
+		meddbg("Failed to create resampler. errno: %d\n",err_code);
+		speex_resampler_strerror(err_code);
+		free(card->resample_array[idx].rechannel_buffer);
+		card->resample_array[idx].rechannel_buffer = NULL;
+		goto error_with_pcm;
 	}
 
-	card_config->status = AUDIO_CARD_READY;
-	card->stream_id = stream_id;
+	card->resample_array[idx].buffer_size = pcm_get_buffer_size(card->pcm);
+	card->resample_array[idx].buffer = malloc(card->resample_array[idx].buffer_size);
+	if (!card->resample_array[idx].buffer) {
+		meddbg("malloc for a resampling buffer(stream_out) is failed, resample_buffer_size = %d\n", card->resample_array[idx].buffer_size);
+		ret = AUDIO_MANAGER_RESAMPLE_FAIL;
+		speex_resampler_destroy(card->resample_array[idx].speex_resampler);
+		card->resample_array[idx].speex_resampler = NULL;
+		free(card->resample_array[idx].rechannel_buffer);
+		card->resample_array[idx].rechannel_buffer = NULL;
+		goto error_with_pcm;
+	}
+	medvdbg("resampling buffer 0x%x, buffer_size %u\n", card->resample_array[idx].buffer, card->resample_array[idx].buffer_size);
+
+	if (card_config->status == AUDIO_CARD_IDLE) {
+		card_config->status = AUDIO_CARD_READY;
+	}
+	card->stream_id_array[idx] = stream_id;
+	card->stream_status[idx] = READY;
+	// ToDo: Audio manager is lower layer, it should not access focus manager. Consider avoiding it
+	// Also check if fixing index for main & sub stream helps
+	if (fm.getStreamFocusState(stream_id) == media::STREAM_FOCUS_STATE_ACQUIRED) {
+		card->main_stream_idx = idx;
+	}
 	/* TEMP CODE, Below is very rare case but need to be handled by audio manager */
 	audio_card_info_t *inputput_card;
 	inputput_card = &g_audio_in_cards[g_actual_audio_in_card_id];
@@ -1374,11 +1681,12 @@ int start_audio_stream_in(void *data, unsigned int frames)
 				ret = AUDIO_MANAGER_XRUN_STATE;
 				goto error_with_lock;
 			}
+		} else if (ret == -ESTRPIPE) {
+				meddbg("Mic is muted\n");
+				ret = AUDIO_MANAGER_DEVICE_SUSPENDED;
+				goto error_with_lock;
 		} else if (ret == -EINVAL) {
 			ret = AUDIO_MANAGER_INVALID_PARAM;
-			goto error_with_lock;
-		} else if (ret == -ESTRPIPE) {
-			ret = AUDIO_MANAGER_DEVICE_SUSPENDED;
 			goto error_with_lock;
 		} else if (ret == -EHOSTUNREACH) {
 			ret = AUDIO_MANAGER_DEVICE_DEAD;
@@ -1404,11 +1712,13 @@ error_with_lock:
 	return ret;
 }
 
-int start_audio_stream_out(void *data, unsigned int frames)
+int start_audio_stream_out(void *data, unsigned int frames, uint8_t playback_idx, stream_info_id_t stream_id)
 {
 	int ret = 0;
 	int prepare_retry = AUDIO_STREAM_RETRY_COUNT;
 	audio_card_info_t *card;
+	int8_t idx;
+	uint32_t processed_bytes;
 	medvdbg("start_audio_stream_out(%u)\n", frames);
 
 	if (g_actual_audio_out_card_id < 0) {
@@ -1419,19 +1729,54 @@ int start_audio_stream_out(void *data, unsigned int frames)
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 
 	pthread_mutex_lock(&(card->card_mutex));
-	if (card->resample.necessary) {
-		if (frames > get_output_frame_count()) {
-			frames = get_output_frame_count();
+
+	idx = get_stream_index(card, stream_id);
+	if (card->resample_array[idx].necessary) {
+		if (frames > get_output_frame_count((uint8_t)idx)) {
+			frames = get_output_frame_count((uint8_t)idx);
 		}
 		// Process resampling
-		ret = (int)resample_stream_out(card, data, frames);
+		ret = (int)resample_stream_out(card, data, frames, idx);
 		if (ret < 0) {
 			meddbg("Fail to resample!!\n");
 			goto error_with_lock;
 		}
 		// Redirect `data` to resampling buffer and update `frames`
-		data = card->resample.buffer;
-		frames = card->resample.frames;
+		data = card->resample_array[idx].buffer;
+		frames = card->resample_array[idx].frames;
+	} else {
+		memcpy(((char *)card->resample_array[idx].buffer), data, get_card_output_frames_to_byte(frames));
+		data = card->resample_array[idx].buffer;
+	}
+	processed_bytes = get_card_output_frames_to_byte(frames);
+	if (processed_bytes < card->resample_array[idx].buffer_size) {
+		uint32_t remaining_bytes = card->resample_array[idx].buffer_size - processed_bytes;
+		memset(((char *)card->resample_array[idx].buffer) + processed_bytes, 0x00, remaining_bytes);
+		frames += get_card_output_bytes_to_frame(remaining_bytes);
+	}
+
+	card->stream_status[idx] = RUNNING;
+
+	if (card->mixing) {
+		medvdbg("Mixing is enabled, rechannel stereo audio stream to mono\n");
+		// ToDo: Initialize a separate instance of speex resampler for mono resampling
+		unsigned int rechanneled_frames = rechannel(ch2layout(AUDIO_STREAM_CHANNEL_STEREO), ch2layout(AUDIO_STREAM_CHANNEL_MONO),
+													(const int16_t *)data, frames, (int16_t *)data, 2 * frames);
+		if (rechanneled_frames != frames) {
+			meddbg("Failed to rechannel each frame, %u/%u\n", rechanneled_frames, frames);
+			ret = AUDIO_MANAGER_RESAMPLE_FAIL;
+			goto error_with_lock;
+		}
+
+		if (playback_idx + 1 != AUDIO_MAX_DUCKED_STREAMS) {
+			medvdbg("Not the last player, early return\n");
+			pthread_mutex_unlock(&(card->card_mutex));
+			return ret;
+		}
+
+		medvdbg("Mix both streams\n");
+		media::utils::mergeChannel(card->resample_array[card->main_stream_idx].buffer, card->resample_array[1 - card->main_stream_idx].buffer, frames);
+		data = card->resample_array[card->main_stream_idx].buffer;
 	}
 
 	if (card->config[card->device_id].status == AUDIO_CARD_PAUSE) {
@@ -1479,7 +1824,7 @@ error_with_lock:
 	return ret;
 }
 
-static audio_manager_result_t pause_audio_stream(audio_io_direction_t direct)
+static audio_manager_result_t pause_audio_stream(audio_io_direction_t direct, stream_info_id_t stream_id = INVALID_STREAM_ID)
 {
 	audio_manager_result_t ret;
 	audio_card_info_t *card;
@@ -1499,12 +1844,27 @@ static audio_manager_result_t pause_audio_stream(audio_io_direction_t direct)
 	pthread_mutex_lock(&(card->card_mutex));
 
 	if (direct == OUTPUT && *status == AUDIO_CARD_RUNNING) {
-		if ((ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm))) < 0) {
+		do {
+			ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm));
+		} while (ret == -EAGAIN);
+		if (ret < 0) {
 			if (ret == -EPIPE) {
 				ret = AUDIO_MANAGER_SUCCESS;
 			} else {
-				meddbg("pcm_drain faled, ret = %d\n", ret);
+				meddbg("pcm_drain failed, ret = %d\n", ret);
 			}
+		}
+
+		int8_t idx = get_stream_index(card, stream_id);
+		card->stream_status[idx] = PAUSE;
+
+		if (card->stream_status[1 - idx] == RUNNING) {
+			pthread_mutex_unlock(&(card->card_mutex));
+			ret = restore_output_audio_state(card->policy_array[1 - idx]);
+			if (ret != AUDIO_MANAGER_SUCCESS) {
+				meddbg("Failed to restore output audio state. ret: %d\n");
+			}
+			return ret;
 		}
 	}
 	
@@ -1527,9 +1887,9 @@ audio_manager_result_t pause_audio_stream_in(void)
 	return pause_audio_stream(INPUT);
 }
 
-audio_manager_result_t pause_audio_stream_out(void)
+audio_manager_result_t pause_audio_stream_out(stream_info_id_t stream_id)
 {
-	return pause_audio_stream(OUTPUT);
+	return pause_audio_stream(OUTPUT, stream_id);
 }
 
 audio_manager_result_t stop_audio_stream_in(void)
@@ -1561,7 +1921,7 @@ audio_manager_result_t stop_audio_stream_in(void)
 	return AUDIO_MANAGER_SUCCESS;
 }
 
-audio_manager_result_t stop_audio_stream_out(bool drain)
+audio_manager_result_t stop_audio_stream_out(stream_info_id_t stream_id, bool drain)
 {
 	audio_manager_result_t ret;
 	audio_card_info_t *card;
@@ -1574,18 +1934,45 @@ audio_manager_result_t stop_audio_stream_out(bool drain)
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 
 	pthread_mutex_lock(&(card->card_mutex));
-	medvdbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
+	meddbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
+
+	int8_t idx = get_stream_index(card, stream_id);
+	card->stream_status[idx] = READY;
+
+	if (card->stream_status[1 - idx] == RUNNING) {
+		// ToDo: Cannot do pcm_drop here because it will drop the other stream data too.
+		do {
+			ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm));
+		} while (ret == -EAGAIN);
+		if (ret < 0) {
+			if (ret == -EPIPE) {
+				ret = AUDIO_MANAGER_SUCCESS;
+			} else {
+				meddbg("pcm_drain failed, ret = %d\n", ret);
+			}
+		}
+		pthread_mutex_unlock(&(card->card_mutex));
+		ret = restore_output_audio_state(card->policy_array[1 - idx]);
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to restore output audio state. ret: %d\n");
+		}
+		return ret;
+	}
+
 	if (drain) {
 		if ((ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm))) < 0) {
 			if (ret == -EPIPE) {
 				ret = AUDIO_MANAGER_SUCCESS;
+			} else if (ret == -EAGAIN) {
+				pthread_mutex_unlock(&(card->card_mutex));
+				return AUDIO_MANAGER_EAGAIN;
 			} else {
-				meddbg("pcm_drain faled, ret = %d\n", ret);
+				meddbg("pcm_drain failed, ret = %d\n", ret);
 			}
 		}
 	} else {
 		if ((ret = static_cast<audio_manager_result_t>(pcm_drop(card->pcm))) < 0) {
-			meddbg("pcm_drop faled, ret = %d\n", ret);
+			meddbg("pcm_drop failed, ret = %d\n", ret);
 		}
 	}
 	card->config[card->device_id].status = AUDIO_CARD_READY;
@@ -1608,7 +1995,6 @@ audio_manager_result_t reset_audio_stream_in(void)
 	}
 
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
-
 	pthread_mutex_lock(&(card->card_mutex));
 
 	pcm_close(card->pcm);
@@ -1648,34 +2034,55 @@ audio_manager_result_t reset_audio_stream_out(stream_info_id_t stream_id)
 	}
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	if (stream_id != card->stream_id) {
-		medvdbg("audio manager already got reset for stream_id = %d, currently being used by stream_id = %d\n", stream_id, card->stream_id);
+
+	if (stream_id == static_cast<stream_info_id_t>(INVALID_STREAM_ID)) {
+		meddbg("Invalid stream ID given for reset. stream_id: %d\n", stream_id);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+
+	int8_t idx = get_stream_index(card, stream_id);
+	if (idx == INVALID_INDEX) {
+		medvdbg("audio manager already got reset for stream_id = %d\n", stream_id)
 		return AUDIO_MANAGER_SUCCESS;
 	}
+
 	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 	medvdbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
 
-	pcm_close(card->pcm);
-	card->pcm = NULL;
-
-	if (card->resample.necessary) {
-		card->resample.necessary = false;
-		if (card->resample.buffer) {
-			free(card->resample.buffer);
-			card->resample.buffer = NULL;
+	if (card->resample_array[idx].necessary) {
+		card->resample_array[idx].necessary = false;
+		if (card->resample_array[idx].buffer) {
+			free(card->resample_array[idx].buffer);
+			card->resample_array[idx].buffer = NULL;
 		}
-		if (card->resample.rechannel_buffer) {
-			free(card->resample.rechannel_buffer);
-			card->resample.rechannel_buffer = NULL;
+		if (card->resample_array[idx].rechannel_buffer) {
+			free(card->resample_array[idx].rechannel_buffer);
+			card->resample_array[idx].rechannel_buffer = NULL;
 		}
-		if (card->resample.speex_resampler) {
-			speex_resampler_destroy(card->resample.speex_resampler);
-			card->resample.speex_resampler = NULL;
+		if (card->resample_array[idx].speex_resampler) {
+			speex_resampler_destroy(card->resample_array[idx].speex_resampler);
+			card->resample_array[idx].speex_resampler = NULL;
 		}
 	}
 
-	card->config[card->device_id].status = AUDIO_CARD_IDLE;
-	card->policy = STREAM_TYPE_MEDIA;
+	card->stream_id_array[idx] = INVALID_STREAM_ID;
+	card->policy_array[idx] = STREAM_TYPE_INVALID;
+	card->stream_status[idx] = IDLE;
+
+	if (card->mixing) {
+		pthread_mutex_unlock(&(card->card_mutex));
+		ret = restore_output_audio_state(card->policy_array[1 - idx]);
+		pthread_mutex_lock(&(card->card_mutex));
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to restore output audio state. ret: %d\n");
+		}
+	}
+
+	if (card->stream_status[1 - idx] == IDLE) {
+		pcm_close(card->pcm);
+		card->pcm = NULL;
+		card->config[card->device_id].status = AUDIO_CARD_IDLE;
+	}
 
 	pthread_mutex_unlock(&(card->card_mutex));
 
@@ -1740,14 +2147,30 @@ unsigned int get_user_input_bytes_to_frame(unsigned int bytes)
 	return frame_size;
 }
 
-unsigned int get_output_frame_count(void)
+unsigned int get_output_frame_count(uint8_t idx)
 {
 	if (g_actual_audio_out_card_id < 0) {
 		meddbg("No output audio card is active.\n");
 		return 0;
 	}
 
-	return get_user_output_bytes_to_frame(pcm_get_buffer_size(g_audio_out_cards[g_actual_audio_out_card_id].pcm));
+	return get_user_output_bytes_to_frame(pcm_get_buffer_size(g_audio_out_cards[g_actual_audio_out_card_id].pcm), idx);
+}
+
+unsigned int get_output_frame_count(stream_info_id_t stream_id)
+{
+	audio_card_info_t *card;
+	int8_t idx;
+
+	if (g_actual_audio_out_card_id < 0) {
+		meddbg("Found no active output audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	idx = get_stream_index(card, stream_id);
+
+	return get_output_frame_count((uint8_t)idx);
 }
 
 unsigned int get_card_output_frames_to_byte(unsigned int frames)
@@ -1768,7 +2191,7 @@ unsigned int get_card_output_bytes_to_frame(unsigned int bytes)
 	return pcm_bytes_to_frames(g_audio_out_cards[g_actual_audio_out_card_id].pcm, bytes);
 }
 
-unsigned int get_user_output_frames_to_byte(unsigned int frames)
+unsigned int get_user_output_frames_to_byte(unsigned int frames, uint8_t idx)
 {
 	int byte_size = 0;
 	audio_card_info_t *card;
@@ -1777,12 +2200,28 @@ unsigned int get_user_output_frames_to_byte(unsigned int frames)
 		return 0;
 	}
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	byte_size = frames * card->resample.user_channel * card->resample.user_format;
+	byte_size = frames * card->resample_array[idx].user_channel * card->resample_array[idx].user_format;
 
 	return byte_size;
 }
 
-unsigned int get_user_output_bytes_to_frame(unsigned int bytes)
+unsigned int get_user_output_frames_to_byte(unsigned int frames, stream_info_id_t stream_id)
+{
+	audio_card_info_t *card;
+	int8_t idx;
+
+	if (g_actual_audio_out_card_id < 0) {
+		meddbg("Found no active output audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	idx = get_stream_index(card, stream_id);
+
+	return get_user_output_frames_to_byte(frames, (uint8_t)idx);
+}
+
+unsigned int get_user_output_bytes_to_frame(unsigned int bytes, uint8_t idx)
 {
 	int frame_size = 0;
 	audio_card_info_t *card;
@@ -1791,15 +2230,33 @@ unsigned int get_user_output_bytes_to_frame(unsigned int bytes)
 		return 0;
 	}
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	frame_size = bytes / card->resample.user_channel / card->resample.user_format;
+	frame_size = bytes / card->resample_array[idx].user_channel / card->resample_array[idx].user_format;
 
 	return frame_size;
 }
 
-float get_output_sample_rate_ratio(void)
+unsigned int get_user_output_bytes_to_frame(unsigned int bytes, stream_info_id_t stream_id)
+{
+	audio_card_info_t *card;
+	int8_t idx;
+
+	if (g_actual_audio_out_card_id < 0) {
+		meddbg("Found no active output audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	idx = get_stream_index(card, stream_id);
+
+	return get_user_output_bytes_to_frame(bytes, (uint8_t)idx);
+}
+
+float get_output_sample_rate_ratio(stream_info_id_t stream_id)
 {
 	if (g_actual_audio_out_card_id >= 0) {
-		return g_audio_out_cards[g_actual_audio_out_card_id].resample.ratio;
+		audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
+		int8_t idx = get_stream_index(card, stream_id);
+		return card->resample_array[idx].ratio;
 	}
 	return 1;
 }
@@ -1865,7 +2322,7 @@ audio_manager_result_t get_input_audio_gain(uint8_t *gain)
 	if (gain == NULL) {
 		return AUDIO_MANAGER_INVALID_PARAM;
 	}
-	ret = get_audio_volume(INPUT);
+	ret = get_audio_volume(INPUT, STREAM_TYPE_VOICE_RECORD);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		return ret;
 	}
@@ -1888,9 +2345,8 @@ audio_manager_result_t get_output_audio_volume(uint8_t *volume)
 	}
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	card->policy = STREAM_TYPE_MEDIA;
 
-	ret = get_audio_volume(OUTPUT);
+	ret = get_audio_volume(OUTPUT, STREAM_TYPE_MEDIA);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		return ret;
 	}
@@ -1928,7 +2384,7 @@ audio_manager_result_t get_output_stream_volume(uint8_t *volume, stream_policy_t
 
 audio_manager_result_t set_input_audio_gain(uint8_t gain)
 {
-	return set_audio_volume(INPUT, gain);
+	return set_audio_volume(INPUT, gain, STREAM_TYPE_VOICE_RECORD);
 }
 
 audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_policy_t stream_policy)
@@ -1979,12 +2435,13 @@ audio_manager_result_t set_output_audio_volume(uint8_t volume, stream_policy_t s
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	card->volume[stream_policy] = volume;
 
-	if (stream_policy != card->policy) {
-		meddbg("Policy mismatch, given_policy: %d, card_policy: %d. Volume for given policy will be set when it will play\n", stream_policy, card->policy);
+	if ((stream_policy != card->policy_array[0] || card->stream_status[0] != RUNNING) &&
+		(stream_policy != card->policy_array[1] || card->stream_status[1] != RUNNING)) {
+		meddbg("Volume level for policy %d is stored, it will be set when it plays\n", stream_policy);
 		return ret;
 	}
 
-	ret = set_audio_volume(OUTPUT, volume);
+	ret = set_audio_volume(OUTPUT, volume, stream_policy);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_audio_volume failed, ret: %d\n", ret);
 	}
@@ -2005,7 +2462,7 @@ audio_manager_result_t set_output_stream_volume(stream_policy_t stream_policy)
 	CJSON_GETOBJECTITEM(policy, gJSON, policyKey)
 	uint8_t volume = policy->valueint;
 
-	ret = set_audio_volume(OUTPUT, volume);
+	ret = set_audio_volume(OUTPUT, volume, stream_policy);
 	if (ret != AUDIO_MANAGER_SUCCESS) {
 		meddbg("set_audio_volume failed, ret: %d\n", ret);
 	}
@@ -2013,10 +2470,46 @@ audio_manager_result_t set_output_stream_volume(stream_policy_t stream_policy)
 	return ret;
 }
 
+audio_manager_result_t set_dmic(bool enable)
+{
+	audio_manager_result_t ret;
+	audio_card_info_t *card;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+
+	if ((g_actual_audio_in_card_id < 0)) {
+		meddbg("Found no active input audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+
+	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	get_card_path(card_path, card->card_id, card->device_id, INPUT);
+
+	pthread_mutex_lock(&(card->card_mutex));
+
+	ret = control_audio_stream_device(card_path, AUDIOIOC_ENABLEDMIC, (unsigned long)enable);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_dmic failed ret : %d errno : %d\n", ret, get_errno());
+	}
+
+	pthread_mutex_unlock(&(card->card_mutex));
+	return ret;
+}
+
 //ToDo: In the future, driver will be changed to load the script that exists in each product app.
 audio_manager_result_t set_output_audio_equalizer(uint32_t preset)
 {
-	return set_audio_equalizer(OUTPUT, preset);
+	audio_manager_result_t ret;
+	ret = set_audio_equalizer(OUTPUT, preset);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("set_audio_equalizer failed, ret: %d\n", ret);
+		return ret;
+	}
+	ret = get_audio_mixer_gain(OUTPUT);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to get output audio mixer gain. ret: %d\n", ret);
+		return ret;
+	}
+	return AUDIO_MANAGER_SUCCESS;
 }
 
 //ToDo: In the future, driver will be changed to load the script that exists in each product app.
@@ -2032,6 +2525,8 @@ uint8_t get_process_type_audio_param_value(device_process_type_t type)
 		return AUDIO_PU_UNDEF;
 	case AUDIO_DEVICE_PROCESS_TYPE_SPEECH_DETECTOR:
 		return AUDIO_PU_SPEECH_DETECT;
+	case AUDIO_DEVICE_PROCESS_TYPE_KD_SENSITIVITY:
+		return AUDIO_PU_KD_SENSITIVITY;
 	default:
 		return AUDIO_PU_UNDEF;
 	}
@@ -2518,7 +3013,7 @@ audio_manager_result_t change_stream_out_device(int card_id, int device_id)
 }
 
 /* TODO policy should be merged logic of focus manager */
-audio_manager_result_t set_stream_policy(stream_policy_t policy, audio_io_direction_t direct)
+audio_manager_result_t set_stream_policy(stream_policy_t policy, audio_io_direction_t direct, uint8_t idx)
 {
 	audio_manager_result_t ret;
 	audio_card_info_t *card;
@@ -2543,7 +3038,7 @@ audio_manager_result_t set_stream_policy(stream_policy_t policy, audio_io_direct
 
 	/* TODO Consider that reset stream & set values(channel, buffer size) based on policy */
 	pthread_mutex_lock(&(card->card_mutex));
-	card->policy = policy;
+	card->policy_array[idx] = policy;
 	pthread_mutex_unlock(&(card->card_mutex));
 	medvdbg("stream policy set : %d\n", policy);
 	return AUDIO_MANAGER_SUCCESS;
@@ -2564,19 +3059,35 @@ audio_manager_result_t get_stream_policy(stream_policy_t *policy, audio_io_direc
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
 
-	*policy = card->policy;
+	// ToDo: Add policy null & capacity check
+	policy[0] = card->policy_array[0];
+	if (direct == OUTPUT) {
+		policy[1] = card->policy_array[1];
+	}
 
 	return AUDIO_MANAGER_SUCCESS;
 }
 
 audio_manager_result_t set_stream_in_policy(stream_policy_t policy)
 {
-	return set_stream_policy(policy, INPUT);
+	return set_stream_policy(policy, INPUT, 0);
 }
 
-audio_manager_result_t set_stream_out_policy(stream_policy_t policy)
+// ToDo: Consider passing stream_info ptr in functions where both policy and id are params
+audio_manager_result_t set_stream_out_policy(stream_policy_t policy, stream_info_id_t stream_id)
 {
-	return set_stream_policy(policy, OUTPUT);
+	audio_card_info_t *card;
+	int8_t idx;
+
+	if (g_actual_audio_out_card_id < 0) {
+		meddbg("Found no active output audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	idx = get_stream_index(card, stream_id);
+
+	return set_stream_policy(policy, OUTPUT, idx);
 }
 
 audio_manager_result_t get_stream_in_policy(stream_policy_t *policy)
@@ -2587,6 +3098,32 @@ audio_manager_result_t get_stream_in_policy(stream_policy_t *policy)
 audio_manager_result_t get_stream_out_policy(stream_policy_t *policy)
 {
 	return get_stream_policy(policy, OUTPUT);
+}
+
+audio_manager_result_t set_keyword_model(uint8_t model)
+{
+	audio_card_info_t *card;
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	int fd;
+	if (g_actual_audio_in_card_id < 0) {
+		meddbg("card id is not valid\n");
+		return AUDIO_MANAGER_INVALID_DEVICE;
+	}
+	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	get_card_path(path, card->card_id, card->device_id, INPUT);
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		meddbg("card open fail.. path : %s errno : %d\n", path, errno);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	if (ioctl(fd, AUDIOIOC_CHANGEKD, (unsigned long)model) < 0) {
+		meddbg("change kd model failed. errno : %d\n", errno);
+		close(fd);
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
+	close(fd);
+	return AUDIO_MANAGER_SUCCESS;
+
 }
 
 audio_manager_result_t get_keyword_buffer_size(uint32_t *keywordBufferSize)
@@ -2742,10 +3279,27 @@ audio_manager_result_t set_audio_stream_mute(stream_policy_t stream_policy, bool
 	cJSON *jsonValue;
 	const char *jsonKey;
 	cJSON *streamMuteStatus;
+	audio_card_info_t *card;
 
 	if (stream_policy != STREAM_TYPE_VOICE_RECORD && stream_policy != STREAM_TYPE_NOTIFY) {
 		meddbg("Invalid stream policy for set stream mute. policy: %d\n", stream_policy);
 		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	if (stream_policy == STREAM_TYPE_VOICE_RECORD) {
+		if (g_actual_audio_in_card_id) {
+			meddbg("Found no active input audio card\n");
+			return AUDIO_MANAGER_NO_AVAIL_CARD;
+		}
+		direct = INPUT;
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	} else {
+		if (g_actual_audio_out_card_id) {
+			meddbg("Found no active output audio card\n");
+			return AUDIO_MANAGER_NO_AVAIL_CARD;
+		}
+		direct = OUTPUT;
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	}
 
 	CJSON_GETOBJECTITEM(jsonValue, gJSON, STREAM_TYPE_MUTE_STATUS_KEY)
@@ -2758,7 +3312,25 @@ audio_manager_result_t set_audio_stream_mute(stream_policy_t stream_policy, bool
 			meddbg("Failed to update volume level json. ret: %d\n", ret);
 			return ret;
 		}
-		direct = (stream_policy == STREAM_TYPE_VOICE_RECORD) ? INPUT : OUTPUT;
+
+		if (direct == INPUT && mute) {
+			media::RecorderWorker& mrw = media::RecorderWorker::getWorker();
+			if (!mrw.isAlive()) {
+				meddbg("Recorder worker is not alive\n");
+				return AUDIO_MANAGER_OPERATION_FAIL;
+			}
+			unique_lock<std::mutex> lock(eventMutex);
+			mrw.enQueue(&callMuteListener);
+			syncCv.wait(lock);
+		}
+
+		if ((direct == OUTPUT) &&
+			(stream_policy != card->policy_array[0] || card->stream_status[0] != RUNNING) &&
+			(stream_policy != card->policy_array[1] || card->stream_status[1] != RUNNING)) {
+			meddbg("Mute status for policy %d is stored, it will be set when it plays\n", stream_policy);
+			return AUDIO_MANAGER_SUCCESS;
+		}
+
 		ret = set_audio_mute(direct, stream_policy, mute);
 		if (ret != AUDIO_MANAGER_SUCCESS) {
 			meddbg("Failed to set audio to mute. direct: %d, stream_policy: %d, mute: %d, ret: %d\n", direct, stream_policy, mute, ret);
@@ -2818,6 +3390,122 @@ audio_manager_result_t get_audio_stream_mute_state(stream_policy_t stream_policy
 	return AUDIO_MANAGER_SUCCESS;
 }
 
+std::chrono::milliseconds get_output_read_timeout(void)
+{
+	struct audio_caps_desc_s caps_desc;
+	audio_card_info_t *card;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	audio_manager_result_t ret;
+	unsigned int channels;
+	uint8_t samprate_types;
+	unsigned int sample_rate;
+	pcm_format format = PCM_FORMAT_S16_LE;
+	unsigned int frames;
+	std::chrono::milliseconds timeout = std::chrono::milliseconds(0);
+
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	caps_desc.caps.ac_type = AUDIO_TYPE_OUTPUT;
+	caps_desc.caps.ac_subtype = AUDIO_TYPE_QUERY;
+	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+	get_card_path(card_path, card->card_id, card->device_id, OUTPUT);
+
+	pthread_mutex_lock(&(card->card_mutex));
+	ret = control_audio_stream_device(card_path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc.caps);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("An ioctl error occured. errno: %d\n", get_errno());
+		pthread_mutex_unlock(&(card->card_mutex));
+		return timeout;
+	}
+
+	channels = caps_desc.caps.ac_channels;
+	samprate_types = caps_desc.caps.ac_controls.b[0];
+	int count = sizeof(g_audio_samprate_entry) / sizeof(struct audio_samprate_map_entry_s);
+	for (uint8_t i = 0; i < count; i++) {
+		if (g_audio_samprate_entry[i].samprate_types & samprate_types) {
+			sample_rate = g_audio_samprate_entry[i].samprate;
+		}
+	}
+
+	frames = get_output_card_buffer_size() / channels / (pcm_format_to_bits(format) >> 3);
+	timeout = (frames * std::chrono::milliseconds(1000)) / sample_rate;
+
+	pthread_mutex_unlock(&(card->card_mutex));
+	return timeout;
+}
+
+audio_manager_result_t set_output_audio_mixer(stream_info_id_t stream_id)
+{
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
+	audio_card_info_t *card;
+	int8_t idx;
+
+	card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	idx = get_stream_index(card, stream_id);
+
+	if (card->stream_status[1 - idx] != RUNNING) {
+        medvdbg("No other audio playing right now, no action needed\n");
+        return AUDIO_MANAGER_SUCCESS;
+	}
+
+	pthread_mutex_lock(&(card->card_mutex));
+
+	do {
+		ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm));
+	} while (ret == -EAGAIN);
+	if (ret < 0) {
+		if (ret == -EPIPE) {
+			ret = AUDIO_MANAGER_SUCCESS;
+		} else {
+			meddbg("pcm_drain failed, ret = %d\n", ret);
+		}
+	}
+
+	bool mute;
+	stream_policy_t policy = card->policy_array[1 - idx];
+	ret = get_audio_stream_mute_state(policy, &mute);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to get mute state. stream_policy: %d, ret: %d\n", policy, ret);
+	}
+	if (mute) {
+		pthread_mutex_unlock(&(card->card_mutex));
+		ret = set_audio_mute(OUTPUT, policy, false);
+		if (ret != AUDIO_MANAGER_SUCCESS) {
+			meddbg("Failed to set audio to mute. stream_policy: %d, mute: %d, ret: %d\n", policy, false, ret);
+			return ret;
+		}
+		pthread_mutex_lock(&(card->card_mutex));
+	}
+
+	card->mixing = true;
+	// set the mixer register value in driver
+	audio_config_t *config = &card->config[card->device_id];
+	config->l_mixer_gain = config->default_lmixer_gain;
+	config->r_mixer_gain = config->default_rmixer_gain * CONFIG_AUDIO_DUCKING_MULTIPLIER;
+	uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
+		config->l_mixer_gain,
+		config->r_mixer_gain,
+		config->l_mixer_gain,
+		config->r_mixer_gain
+	};
+	pthread_mutex_unlock(&(card->card_mutex));
+	ret = set_audio_mixer_gain(OUTPUT, gain);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set mixer gain. ret: %d\n");
+		return ret;
+	}
+
+	if (!mute) {
+		return ret;
+	}
+
+	ret = set_audio_mute(OUTPUT, policy, true);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Failed to set audio to mute. stream_policy: %d, mute: %d, ret: %d\n", policy, true, ret);
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 void print_audio_card_info(audio_io_direction_t direct)
 {
@@ -2834,7 +3522,7 @@ void print_audio_card_info(audio_io_direction_t direct)
 		max_card = CONFIG_AUDIO_MAX_INPUT_CARD_NUM;
 		actual_card_id = g_actual_audio_out_card_id;
 	}
-	get_audio_volume(direct);
+	get_audio_volume(direct, STREAM_TYPE_MEDIA);
 	get_supported_capability(direct, &channel);
 	for (j = 0; j < CONFIG_AUDIO_MAX_DEVICE_NUM; j++) {
 		for (i = 0; i < max_card; i++) {
@@ -2894,6 +3582,59 @@ void print_audio_card_info(audio_io_direction_t direct)
 	}
 }
 #endif
+
+audio_manager_result_t set_kd_sensitivity(uint16_t sensitivity)
+{
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
+	struct audio_caps_desc_s caps_desc;
+	audio_card_info_t *card;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	pthread_mutex_t *card_mutex;
+	
+	caps_desc.caps.ac_subtype = get_process_type_audio_param_value(AUDIO_DEVICE_PROCESS_TYPE_KD_SENSITIVITY);
+	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
+	caps_desc.caps.ac_controls.w = sensitivity;
+	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+	caps_desc.caps.ac_type = AUDIO_TYPE_PROCESSING;
+	get_card_path(card_path, card->card_id, card->device_id, INPUT);
+	pthread_mutex_lock(card_mutex);
+	ret = control_audio_stream_device(card_path, AUDIOIOC_CONFIGURE, (unsigned long)&caps_desc);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Fail to set a Sensitivity, ret = %d errno : %d\n", ret, get_errno());
+	}
+	pthread_mutex_unlock(card_mutex);
+	return ret;
+}
+
+audio_manager_result_t get_kd_sensitivity(uint16_t *sensitivity)
+{
+	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
+	struct audio_caps_desc_s caps_desc;
+	audio_card_info_t *card;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	pthread_mutex_t *card_mutex;
+
+	caps_desc.caps.ac_len = sizeof(struct audio_caps_s);
+	caps_desc.caps.ac_subtype = get_process_type_audio_param_value(AUDIO_DEVICE_PROCESS_TYPE_KD_SENSITIVITY);
+	caps_desc.caps.ac_type = AUDIO_TYPE_PROCESSING;
+
+	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	card_mutex = &g_audio_in_cards[g_actual_audio_in_card_id].card_mutex;
+	get_card_path(card_path, card->card_id, card->device_id, INPUT);
+
+	pthread_mutex_lock(card_mutex);
+
+	ret = control_audio_stream_device(card_path, AUDIOIOC_GETCAPS, (unsigned long)&caps_desc);
+	if (ret == AUDIO_MANAGER_SUCCESS) {
+		*sensitivity = caps_desc.caps.ac_controls.w;
+		medvdbg("Sensitivity = %d\n", caps_desc.caps.ac_controls.w);
+	}
+
+	pthread_mutex_unlock(card_mutex);
+	return ret;
+}
+
 
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 void dump_audio_card_info()
