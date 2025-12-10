@@ -126,6 +126,7 @@
 				}
 
 /* Power control pins configuration */
+#if defined(CONFIG_RTL8730E_BOARD_AIL) || defined(CONFIG_RTL8730E_BOARD_AILP) || defined(CONFIG_RTL8730E_BOARD_AILPW)
 #define         PWR_PIN_00	{_PA_0,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
 #define         PWR_PIN_01	{_PA_1,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
 #define         PWR_PIN_02	{_PA_2,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// SDA pull up 10k
@@ -202,6 +203,80 @@
 #define         PWR_PIN_69	{_PC_5,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK Int-Flash SPI_FLASH_DATA
 #define         PWR_PIN_70	{_PC_6,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK Int-Flash SPI_FLASH_CS
 #define         PWR_PIN_71	{_PNC,			GPIO_PuPd_KEEP,			GPIO_PuPd_KEEP}	// table end
+#elif defined(CONFIG_RTL8730E_BOARD_AID)
+#define         PWR_PIN_00	{_PA_0,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_01	{_PA_1,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_02	{_PA_2,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA pull up 10k
+#define         PWR_PIN_03	{_PA_3,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA pull up 10k
+#define         PWR_PIN_04	{_PA_4,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// SDA pull up 4.7k
+#define         PWR_PIN_05	{_PA_5,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// SDA pull up 4.7k & pull down 9.1k
+#define         PWR_PIN_06	{_PA_6,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_07	{_PA_7,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_08	{_PA_8,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_09	{_PA_9,			GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA pull up 10k
+#define         PWR_PIN_10	{_PA_10,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA pull up 10k
+#define         PWR_PIN_11	{_PA_11,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_12	{_PA_12,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_13	{_PA_13,		GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK SWD_DATA
+#define         PWR_PIN_14	{_PA_14,		GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK SWD_CLK
+#define         PWR_PIN_15	{_PA_15,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA pull down 4.7k
+#define         PWR_PIN_16	{_PA_16,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// RTK QA board need pull up
+#define         PWR_PIN_17	{_PA_17,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// NA
+#define         PWR_PIN_18	{_PA_18,		GPIO_PuPd_UP,			GPIO_PuPd_DOWN}	// NA
+#define         PWR_PIN_19	{_PA_19,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// NA
+#define         PWR_PIN_20	{_PA_20,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// NA
+#define         PWR_PIN_21	{_PA_21,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// NA
+#define         PWR_PIN_22	{_PA_22,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA AMP-RESET
+#define         PWR_PIN_23	{_PA_23,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA pull down 4.7k
+#define         PWR_PIN_24	{_PA_24,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA pull up 100k
+#define         PWR_PIN_25	{_PA_25,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA pull up 10k
+#define         PWR_PIN_26	{_PA_26,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_27	{_PA_27,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_28	{_PA_28,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA pull up 4.7k
+#define         PWR_PIN_29	{_PA_29,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA pull up 4.7k
+#define         PWR_PIN_30	{_PA_30,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// NA
+#define         PWR_PIN_31	{_PA_31,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// NA
+#define         PWR_PIN_32	{_PB_0,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_33	{_PB_1,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_34	{_PB_2,			GPIO_PuPd_UP,			GPIO_PuPd_DOWN}	// NA
+#define         PWR_PIN_35	{_PB_3,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA NPU SPI0_MISO
+#define         PWR_PIN_36	{_PB_4,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA NPU SPI0_MOSI
+#define         PWR_PIN_37	{_PB_5,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA NPU SPI0_CS pull up 4.7k
+#define         PWR_PIN_38	{_PB_6,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA NPU SPI0_CLK
+#define         PWR_PIN_39	{_PB_7,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_40	{_PB_8,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_41	{_PB_9,			GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_42	{_PB_10,		GPIO_PuPd_UP,			GPIO_PuPd_UP}	// SDA AMP-I2S
+#define         PWR_PIN_43	{_PB_11,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}
+#define         PWR_PIN_44	{_PB_12,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_45	{_PB_13,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_46	{_PB_14,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_47	{_PB_15,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_48	{_PB_16,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_49	{_PB_17,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_50	{_PB_18,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// RTL8730ELH
+#define         PWR_PIN_51	{_PB_19,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// NA
+#define         PWR_PIN_52	{_PB_20,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA pull down 10k
+#define         PWR_PIN_53	{_PB_21,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA AMP-I2S
+#define         PWR_PIN_54	{_PB_22,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA pull up 10k; RTK TM_DIS
+#define         PWR_PIN_55	{_PB_23,		GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK UART_LOG_RXD
+#define         PWR_PIN_56	{_PB_24,		GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK UART_LOG_TXD internal pull up 80k
+#define         PWR_PIN_57	{_PB_25,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA Ext-Flash SPI1_CLK
+#define         PWR_PIN_58	{_PB_26,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA Ext-Flash SPI1_CS pull up 4.7k
+#define         PWR_PIN_59	{_PB_27,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA Ext-Flash SPI1_MISO
+#define         PWR_PIN_60	{_PB_28,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA Ext-Flash SPI0_MOSI
+#define         PWR_PIN_61	{_PB_29,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA pull up 4.7k
+#define         PWR_PIN_62	{_PB_30,		GPIO_PuPd_NOPULL,		GPIO_PuPd_NOPULL}	// SDA pull up 4.7k
+#define         PWR_PIN_63	{_PB_31,		GPIO_PuPd_DOWN,			GPIO_PuPd_DOWN}	// SDA pull down 4.7k
+#define         PWR_PIN_64	{_PC_0,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// SDA pull up 4.7k
+#define         PWR_PIN_65	{_PC_1,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK Int-Flash SPI_FLASH_DATA
+#define         PWR_PIN_66	{_PC_2,			GPIO_PuPd_UP,			GPIO_PuPd_DOWN}	// RTK Int-Flash SPI_FLASH_CLK pull down for PG or 50uA
+#define         PWR_PIN_67	{_PC_3,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK Int-Flash SPI_FLASH_DATA
+#define         PWR_PIN_68	{_PC_4,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK Int-Flash SPI_FLASH_DATA
+#define         PWR_PIN_69	{_PC_5,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK Int-Flash SPI_FLASH_DATA
+#define         PWR_PIN_70	{_PC_6,			GPIO_PuPd_UP,			GPIO_PuPd_UP}	// RTK Int-Flash SPI_FLASH_CS
+#define         PWR_PIN_71	{_PNC,			GPIO_PuPd_KEEP,			GPIO_PuPd_KEEP}	// table end
+#endif
 
 /* Wakeup pins configuration */
 #define		WAKEPIN_0	((u32)0x00000000)	/*!< see aon_wakepin */
