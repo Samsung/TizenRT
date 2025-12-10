@@ -21,6 +21,9 @@
 #include <tinyara/lcd/lcd_dev.h>
 #include <debug.h>
 
+static struct mipi_lcd_dev_s g_lcdcdev;
+static struct mipi_lcd_config_s g_st7785_config;
+
 int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv)
 {
 	/* Only one config is set in the build configuration. If it's true, use that init code. Otherwise, check vendor id. */
@@ -77,4 +80,37 @@ int get_lcdinfo(FAR struct lcd_info_s *lcdinfo)
 	lcdinfo->lcd_height_mm = (uint8_t)(LCD_HEIGHT_MM + 0.5f);
 	lcdinfo->lcd_width_mm = (uint8_t)(LCD_WIDTH_MM + 0.5f);
 	return OK;
+}
+
+static const struct lcd_panel_ops g_panel_ops = {
+	.send_init_cmd = check_lcd_vendor_send_init_cmd,
+	.get_lcdinfo = get_lcdinfo,
+};
+
+struct mipi_lcd_dev_s* st7785_initialize(void) {
+	FAR struct mipi_lcd_dev_s *priv = &g_lcdcdev;
+	priv->panel.mipi_host_config = &g_st7785_config;
+	
+	config.XPixels = CONFIG_LCD_XRES;
+	config.YPixels = CONFIG_LCD_YRES;
+	config.mipi_frame_rate = MIPI_FRAME_RATE;
+	config.mipi_dsi_HBP = MIPI_DSI_HBP;
+	config.mipi_dsi_HFP = MIPI_DSI_HFP;
+	config.mipi_dsi_HSA = MIPI_DSI_HSA;
+	config.mipi_dsi_RTNI = MIPI_DSI_RTNI;
+	config.mipi_dsi_VBP = MIPI_DSI_VBP;
+	config.mipi_dsi_VFP = MIPI_DSI_VFP;
+	config.mipi_dsi_VSA = MIPI_DSI_VSA;
+	config.mipi_lcd_limit = MIPI_LCD_LIMIT;
+	config.lcd_lane_num = MIPI_LANE_NUMBER;
+	priv->panel.mipi_host_config = &g_st7785_config;
+
+	priv->panel.width = LCD_HEIGHT_MM;
+	priv->panel.height = LCD_WIDTH_MM;
+	// priv->panel.lcd_size_inch = 
+	// priv->panel.lcd_dpi = 
+
+	priv->panel.ops =  g_panel_ops;
+
+	return &priv;
 }
