@@ -1,0 +1,3 @@
+config ENTRY_SOUNDPLAYER
+	bool "Sound Player Application"
+	depends on EXAMPLES_SOUNDPLAYER
