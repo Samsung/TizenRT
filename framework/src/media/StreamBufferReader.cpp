@@ -42,7 +42,7 @@ size_t StreamBufferReader::copy(unsigned char *buf, size_t size, size_t offset)
 	return len;
 }
 
-size_t StreamBufferReader::read(unsigned char *buf, size_t size, bool sync)
+size_t StreamBufferReader::read(unsigned char *buf, size_t size, bool sync, std::chrono::milliseconds timeout)
 {
 	medvdbg("size %lu sync %c\n", size, sync ? 'Y' : 'N');
 	std::unique_lock<std::mutex> lock(mStream->getMutex());
@@ -70,6 +70,17 @@ size_t StreamBufferReader::read(unsigned char *buf, size_t size, bool sync)
 				mStream->getCondv().notify_one();
 				// Then wait notification from writer.
 				mStream->getCondv().wait(lock);
+				/* Below Logic Need to be improved. Should we apply only timeout? */
+#if 0
+				if (timeout == std::chrono::microseconds(0)) {
+					mStream->getCondv().wait(lock);
+				} else {
+					mStream->getCondv().wait_for(lock, t_deadline - std::chrono::steady_clock::now());
+					mStream->getCondv().notify_one();
+					return rlen;
+				}
+#endif
+
 			}
 		}
 

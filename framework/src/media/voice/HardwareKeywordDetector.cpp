@@ -159,6 +159,16 @@ void HardwareKeywordDetector::registerKeywordResultCallback(SpeechResultListener
 	mSpeechResultCallback = speechResultCallback;
 }
 
+bool HardwareKeywordDetector::changeKeywordModel(uint8_t model)
+{
+	audio_manager_result_t result = set_keyword_model(model);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("change keyword model failed : %d\n", result);
+		return false;
+	}
+	return true;
+}
+
 bool HardwareKeywordDetector::getKeywordBufferSize(uint32_t *bufferSize)
 {
 	if (bufferSize == NULL) {
@@ -180,6 +190,30 @@ bool HardwareKeywordDetector::getKeywordData(uint8_t *buffer)
 		return false;
 	}
 	audio_manager_result_t result = get_keyword_data(buffer);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Error: audio manager return not OK, return value: %d\n", result);
+		return false;
+	}
+	return true;
+}
+
+bool HardwareKeywordDetector::setKDSensitivity(uint16_t sensitivity)
+{
+	if (sensitivity > 1000) {
+		meddbg("Invalid Sensitivity : %d\n", sensitivity);
+		return false;
+	}
+	audio_manager_result_t result = set_kd_sensitivity(sensitivity);
+	if (result != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Error: audio manager return not OK, return value: %d\n", result);
+		return false;
+	}
+	return true;
+}
+
+bool HardwareKeywordDetector::getKDSensitivity(uint16_t *sensitivity)
+{
+	audio_manager_result_t result = get_kd_sensitivity(sensitivity);
 	if (result != AUDIO_MANAGER_SUCCESS) {
 		meddbg("Error: audio manager return not OK, return value: %d\n", result);
 		return false;

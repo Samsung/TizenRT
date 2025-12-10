@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ifeq ($(CONFIG_MEDIA), y)
-CSRCS += media_init.c
+CXXSRCS += media_init.cpp
 CXXSRCS += audio_manager.cpp
 DEPPATH += --dep-path src/media/audio
 VPATH += :src/media/audio

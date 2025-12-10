@@ -26,9 +26,11 @@
 #include <media/MediaPlayer.h>
 #include <media/InputDataSource.h>
 #include <media/MediaPlayerObserverInterface.h>
+#include <media/FocusManager.h>
 
 #include "PlayerObserverWorker.h"
 #include "InputHandler.h"
+#include "MediaQueue.h"
 
 namespace media {
 /**
@@ -52,7 +54,9 @@ typedef enum player_state_e {
 	/** MediaPlayer pause to play */
 	PLAYER_STATE_PAUSED,
 	/** MediaPlayer completed play */
-	PLAYER_STATE_COMPLETED
+	PLAYER_STATE_COMPLETED,
+	/** MediaPlayer wait for completing */
+	PLAYER_STATE_COMPLETING
 } player_state_t;
 
 const char *const player_state_names[] = {
@@ -63,19 +67,14 @@ const char *const player_state_names[] = {
 	"PLAYER_STATE_READY",
 	"PLAYER_STATE_PLAYING",
 	"PLAYER_STATE_PAUSED",
-	"PLAYER_STATE_COMPLETED"
+	"PLAYER_STATE_COMPLETED",
+	"PLAYER_STATE_COMPLETING"
 };
 
 typedef enum player_observer_command_e {
 	PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED,
-	PLAYER_OBSERVER_COMMAND_STARTED,
 	PLAYER_OBSERVER_COMMAND_FINISHED,
-	PLAYER_OBSERVER_COMMAND_START_ERROR,
-	PLAYER_OBSERVER_COMMAND_PAUSE_ERROR,
-	PLAYER_OBSERVER_COMMAND_STOP_ERROR,
 	PLAYER_OBSERVER_COMMAND_PLAYBACK_ERROR,
-	PLAYER_OBSERVER_COMMAND_PAUSED,
-	PLAYER_OBSERVER_COMMAND_STOPPED,
 	PLAYER_OBSERVER_COMMAND_BUFFER_OVERRUN,
 	PLAYER_OBSERVER_COMMAND_BUFFER_UNDERRUN,
 	PLAYER_OBSERVER_COMMAND_BUFFER_UPDATED,
@@ -118,7 +117,8 @@ public:
 	void notifySync();
 	void notifyObserver(player_observer_command_t cmd, ...);
 	void notifyAsync(player_event_t event);
-	void playback();
+	void playback(std::chrono::milliseconds timeout, uint8_t playback_idx);
+	void playbackFinished(void);
 	player_result_t setLooping(bool loop);
 
 private:
@@ -132,16 +132,18 @@ private:
 	void stopPlayer(player_result_t &ret);
 	player_result_t stopPlayback(bool drain);
 	void stopPlaybackInternal(bool drain);
-	void pausePlayer(player_result_t &ret);
+	void pausePlayer(player_result_t &ret, bool notify);
 	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
 	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret);
 	void setPlayerVolume(uint8_t vol, player_result_t &ret);
-	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer);
+	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer, player_result_t &ret);
+	void unsetPlayerObserver();
 	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t &ret);
 	void setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret);
 	stream_focus_state_t getStreamFocusState(void);
+	void onFocusLossListener(void);
 	void setPlayerLooping(bool loop, player_result_t &ret);
-	player_result_t playbackFinished(void);
+	void dequeueAndRunObserverCallback();
 
 private:
 	MediaPlayer &mPlayer;
@@ -153,6 +155,7 @@ private:
 	std::shared_ptr<stream_info_t> mStreamInfo;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
 	stream::InputHandler mInputHandler;
+	MediaQueue mObserverQueue;
 };
 } // namespace media
 #endif

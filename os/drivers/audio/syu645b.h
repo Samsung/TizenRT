@@ -43,6 +43,8 @@
 #define SYU645B_SAMPLE_FREQUENCY_IN_HZ  (48000) /* refer to Input data sample rate */
 #define SYU645B_CHANNELS                2
 #define SYU645B_BPSAMP                  16      /* refer to Digital Audio Interface Control registers */
+#define SYU645B_OUTPUT_CHANNELS         2
+#define SYU645B_NMIXER_GAIN_COEFF       SYU645B_CHANNELS * SYU645B_OUTPUT_CHANNELS
 
 #define SYU645B_DEFAULT_SAMPRATE    48000
 #define SYU645B_DEFAULT_NCHANNELS   2
@@ -112,6 +114,9 @@ struct syu645b_dev_s {
 #endif							/* CONFIG_AUDIO_EXCLUDE_BALANCE */
 	uint8_t volume;				/* Current volume level {0..63} */
 	uint8_t max_volume;
+	uint8_t mixer_gain[SYU645B_NMIXER_GAIN_COEFF];
+	uint8_t min_mixer_gain;
+	uint8_t max_mixer_gain;
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 	uint8_t nchannels;			/* Number of channels (1 or 2) */
 	uint8_t bpsamp;				/* Bits per sample (8 or 16) */
@@ -136,6 +141,8 @@ static void syu645b_takesem(sem_t *sem);
 
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 static void syu645b_setvolume(FAR struct syu645b_dev_s *priv);
+static void syu645b_setmute(FAR struct syu645b_dev_s *priv, bool mute);
+static void syu645_set_mixer_gain(FAR struct syu645b_dev_s *priv, uint8_t *gain);
 #endif
 
 #ifndef CONFIG_AUDIO_EXCLUDE_TONE
