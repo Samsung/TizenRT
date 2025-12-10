@@ -142,6 +142,12 @@ bool MediaWorker::isAlive()
 	return mRefCnt == 0 ? false : true;
 }
 
+bool MediaWorker::isSameThread()
+{
+	pthread_t currentThreadId = pthread_self();
+	return mWorkerThread == currentThreadId;
+}
+
 void MediaWorker::clearQueue(void)
 {
 	mWorkerQueue.clearQueue();

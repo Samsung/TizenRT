@@ -54,12 +54,27 @@ void SoftwareKeywordDetector::registerKeywordResultCallback(SpeechResultListener
 	mSpeechResultCallback = speechResultCallback;
 }
 
+bool SoftwareKeywordDetector::changeKeywordModel(uint8_t model)
+{
+	return false;
+}
+
 bool SoftwareKeywordDetector::getKeywordBufferSize(uint32_t *bufferSize)
 {
 	return false;
 }
 
 bool SoftwareKeywordDetector::getKeywordData(uint8_t *buffer)
+{
+	return false;
+}
+
+bool SoftwareKeywordDetector::setKDSensitivity(uint16_t sensitivity)
+{
+	return false;
+}
+
+bool SoftwareKeywordDetector::getKDSensitivity(uint16_t *sensitivity)
 {
 	return false;
 }

@@ -50,7 +50,7 @@ public:
 	bool open() override;
 	bool close() override;
 	int seekTo(off_t offset);
-	ssize_t read(unsigned char *buf, size_t size);
+	ssize_t read(unsigned char *buf, size_t size, std::chrono::milliseconds timeout = std::chrono::milliseconds(0));
 	void setLoop(bool loop);
 	void setBufferState(buffer_state_t state);
 

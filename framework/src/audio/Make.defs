@@ -16,8 +16,8 @@
 #
 ###########################################################################
 ifeq ($(CONFIG_MEDIA), y)
-CSRCS += SoundManager.c
-CFLAGS += -I${TOPDIR}/../framework/src/media/audio
+CXXSRCS += SoundManager.cpp
+CXXFLAGS += -I${TOPDIR}/../framework/src/media
 DEPPATH += --dep-path src/audio
 VPATH += :src/audio
 endif

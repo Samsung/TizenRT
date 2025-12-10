@@ -1,3 +1,7 @@
-config ENTRY_SOUNDPLAYER
-	bool "Sound Player Application"
-	depends on EXAMPLES_SOUNDPLAYER
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+source "/root/tizenrt/apps/examples/SoundPlayer/controller/Kconfig_ENTRY"
+source "/root/tizenrt/apps/examples/SoundPlayer/player/Kconfig_ENTRY"
