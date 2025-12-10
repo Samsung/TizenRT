@@ -136,6 +136,26 @@ public:
 
 	virtual bool getKeywordData(uint8_t *buffer) = 0;
 
+	virtual bool changeKeywordModel(uint8_t model) = 0;
+
+	/**
+	 * @brief Set KeywordDetection Sensitivity
+	 * @details @b #include <media/voice/SpeechDetector.h>
+	 * param[in] KeywordDetection Sensitivity value (0 ~ 1000)
+	 * @return Return success if Sensitivity init
+	 * @since Tizen Lite v5.3
+	 */
+	virtual bool setKDSensitivity(uint16_t sensitivity) = 0;
+
+	/**
+	 * @brief Get KeywordDetection Sensitivity
+	 * @details @b #include <media/voice/SpeechDetector.h>
+	 * param[in] KeywordDetection Sensitivity pointer
+	 * @return Return success if Sensitivity get
+	 * @since Tizen Lite v5.3
+	 */
+	virtual bool getKDSensitivity(uint16_t *sensitivity) = 0;
+
 protected:
 	SpeechDetector() = default;
 };

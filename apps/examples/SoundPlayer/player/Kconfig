@@ -1,0 +1,16 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_SOUNDPLAYER
+	bool "Sound Player"
+	default n
+	depends on HAVE_CXX
+	select EXAMPLES_PLAYERCONTROLLER
+	---help---
+		Enable Sound Player application
+
+config USER_ENTRYPOINT
+	string
+	default "soundplayer_main" if ENTRY_SOUNDPLAYER

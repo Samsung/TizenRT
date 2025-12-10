@@ -38,6 +38,9 @@ public:
 	void registerKeywordResultCallback(SpeechResultListener speechResultCallback) override;
 	bool getKeywordBufferSize(uint32_t *bufferSize) override;
 	bool getKeywordData(uint8_t *buffer) override;
+	bool changeKeywordModel(uint8_t model) override;
+	bool setKDSensitivity(uint16_t sensitivity) override;
+	bool getKDSensitivity(uint16_t *sensitivity) override;
 
 private:
 	/* AUDIO_DEVICE_PROCESS_TYPE_NONE card, device id */

@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <debug.h>
+#include <algorithm>
 #include <unistd.h>
 #include <assert.h>
 #include <media/HttpInputDataSource.h>
@@ -49,7 +50,7 @@ namespace media {
 namespace stream {
 
 // Content-Type tag
-static const std::string TAG_CONTENT_TYPE = "Content-Type:";
+static const std::string TAG_CONTENT_TYPE = "CONTENT-TYPE:";
 
 static const std::chrono::seconds WAIT_HEADER_TIMEOUT = std::chrono::seconds(3);
 static const std::chrono::seconds WAIT_DATA_TIMEOUT = std::chrono::seconds(3);
@@ -167,6 +168,10 @@ bool HttpInputDataSource::open()
 		setChannels(channel);
 		break;
 	}
+	case AUDIO_TYPE_PCM: {
+		setAudioType(audioType);
+		break;
+	}
 
 	default:
 		/* unsupported audio type */
@@ -257,7 +262,9 @@ size_t HttpInputDataSource::HeaderCallback(char *data, size_t size, size_t nmemb
 	size_t totalsize = size * nmemb;
 	std::string header(data, totalsize);
 	medvdbg("%s\n", header.c_str());
-	auto pos = header.find(TAG_CONTENT_TYPE);
+	std::string upperCaseHeader = header;
+	std::transform(upperCaseHeader.begin(), upperCaseHeader.end(), upperCaseHeader.begin(), ::toupper);
+	auto pos = upperCaseHeader.find(TAG_CONTENT_TYPE);
 	if (pos != std::string::npos) {
 		pos = header.find_first_not_of(' ', pos + TAG_CONTENT_TYPE.length());
 		auto end = header.find((char)0x0d, pos); // CR: 0x0d

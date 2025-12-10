@@ -130,6 +130,17 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
  * @endcond
  */
 unsigned int splitChannel(unsigned int layout, const signed short *stream, unsigned int frames, unsigned int channels, ...);
+/**
+ * @cond
+ * @internal
+ * @brief main(left channel) and sub(right channel) will be mixed in interleaved manner and mixed audio out will be stored in main buffer
+ * @details @b #include <media/MediaUtils.h>
+ * @param[in] dataL pointer to the main(left channel) buffer
+ * @param[in] dataR pointer to the sub(right channel) buffer
+ * @param[in] frames number of frames in buffers
+ * @endcond
+ */
+void mergeChannel(void *dataL, void *dataR, unsigned int frames);
 #ifdef CONFIG_CODEC_MP3
 /**
  * @cond
