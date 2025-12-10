@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_PLAYERCONTROLLER
+	bool "Media Player Controller"
+	default n
+	depends on HAVE_CXX
+	---help---
+		Enable Media Player Controller application
+
+config USER_ENTRYPOINT
+	string
+	default "playercontroller_main" if ENTRY_PLAYERCONTROLLER

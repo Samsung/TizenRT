@@ -150,7 +150,7 @@ public:
 	 * @since TizenRT v2.0
 	 */
 	recorder_result_t pause();
-	
+
 	/**
 	 * @brief Stop recording.
 	 * @details @b #include <media/MediaRecorder.h>

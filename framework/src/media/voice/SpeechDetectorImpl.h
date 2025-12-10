@@ -38,6 +38,8 @@ public:
 	bool deinitKeywordDetect() override;
 	bool deinitEndPointDetect() override;
 	bool startKeywordDetect(void) override;
+	bool setKDSensitivity(uint16_t sensitivity) override;
+	bool getKDSensitivity(uint16_t *sensitivity) override;
 	bool startEndPointDetect(int timeout) override;
 	bool startEndPointDetect(void) override;
 	bool detectEndPoint(std::shared_ptr<unsigned char> sample, int size) override;
@@ -49,6 +51,7 @@ public:
 	bool stopEndPointDetect(void) override;
 	bool getKeywordBufferSize(uint32_t *bufferSize) override;
 	bool getKeywordData(uint8_t *buffer) override;
+	bool changeKeywordModel(uint8_t model) override;
 	static void speechResultListener(audio_device_process_unit_subtype_e event);
 
 private:
