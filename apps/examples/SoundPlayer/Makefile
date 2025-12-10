@@ -16,124 +16,40 @@
 #
 ###########################################################################
 
--include $(TOPDIR)/.config
--include $(TOPDIR)/Make.defs
+MENUDESC = "SoundPlayer App"
+
 include $(APPDIR)/Make.defs
 
-CXXEXT ?= .cpp
-# SoundPlayer
+SUBDIRS = $(dir $(wildcard */Makefile))
 
-APPNAME    = soundplayer
-FUNCNAME   = $(APPNAME)_main
-THREADEXEC = TASH_EXECMD_ASYNC
-STACKSIZE = 16384
-PRIORITY = 100
-ASRCS		=
-CSRCS		=
-CXXSRCS		=
-MAINSRC		= soundplayer_main.cpp
+all: nothing
 
-AOBJS		= $(ASRCS:.S=$(OBJEXT))
-COBJS		= $(CSRCS:.c=$(OBJEXT))
-CXXOBJS		= $(CXXSRCS:$(CXXEXT)=$(OBJEXT))
-ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
-  MAINOBJ 	= $(MAINSRC:$(CXXEXT)=$(OBJEXT))
-else
-  MAINOBJ 	= $(MAINSRC:.c=$(OBJEXT))
-endif
+.PHONY: nothing context depend clean distclean
 
-SRCS		= $(ASRCS) $(CSRCS) $(CXXSRCS) $(MAINSRC)
-OBJS		= $(AOBJS) $(COBJS) $(CXXOBJS)
+define SDIR_template
+$(1)_$(2):
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" APPDIR="$(APPDIR)" EXTDIR="$(EXTDIR)"
+endef
 
-ifneq ($(CONFIG_BUILD_KERNEL),y)
-OBJS		+= $(MAINOBJ)
-endif
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),preconfig)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),context)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),depend)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),clean)))
+$(foreach SDIR, $(SUBDIRS), $(eval $(call SDIR_template,$(SDIR),distclean)))
 
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-BIN		= $(APPDIR)\libapps$(LIBEXT)
-else
-ifeq ($(WINTOOL),y)
-  BIN		= $(APPDIR)\\libapps$(LIBEXT)
-else
-  BIN		= $(APPDIR)/libapps$(LIBEXT)
-endif
-endif
+nothing:
 
-CONFIG_EXAMPLES_SOUNDPLAYER_PROGNAME ?= soundplayer$(EXEEXT)
-PROGNAME	= $(CONFIG_EXAMPLES_SOUNDPLAYER_PROGNAME)
-
-ROOTDEPPATH	= --dep-path .
-
-# Common build
-
-VPATH		=
-
-all: .built
-.PHONY:	clean depend distclean
-
-$(AOBJS): %$(OBJEXT): %.S
-	$(call ASSEMBLE, $<, $@)
-
-$(COBJS): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
-
-$(CXXOBJS): %$(OBJEXT): %$(CXXEXT)
-	$(call COMPILEXX, $<, $@)
-
-ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
-$(MAINOBJ): %$(OBJEXT): %$(CXXEXT)
-	$(call COMPILEXX, $<, $@)
-else
-$(MAINOBJ): %$(OBJEXT): %.c
-	$(call COMPILE, $<, $@)
-endif
-
-.built: $(OBJS)
-	$(call ARCHIVE, $(BIN), $(OBJS))
-	@touch .built
-
-ifeq ($(CONFIG_BUILD_KERNEL),y)
-$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
-	@echo "LD: $(PROGNAME)"
-	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
-	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
-
-install: $(BIN_DIR)$(DELIM)$(PROGNAME)
-
-else
 install:
 
-endif
+preconfig: $(foreach SDIR, $(SUBDIRS), $(SDIR)_preconfig)
+	$(Q) $(MKKCONFIG) -m $(MENUDESC)
+	$(Q) $(MKKCONFIG) -o Kconfig_ENTRY
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_SOUNDPLAYER),yy)
-$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
-	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+context: $(foreach SDIR, $(SUBDIRS), $(SDIR)_context)
 
-context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+depend: $(foreach SDIR, $(SUBDIRS), $(SDIR)_depend)
 
-else
-context:
+clean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_clean)
 
-endif
-
-.depend: Makefile $(SRCS)
-ifeq ($(filter %$(CXXEXT),$(SRCS)),)
-	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-else
-	@$(MKDEP) $(ROOTDEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(SRCS) >Make.dep
-endif
-	@touch $@
-
-depend: .depend
-
-clean:
-	$(call DELFILE, .built)
-	$(call CLEAN)
-
-distclean: clean
-	$(call DELFILE, Make.dep)
-	$(call DELFILE, .depend)
-
--include Make.dep
-.PHONY: preconfig
-preconfig:
+distclean: $(foreach SDIR, $(SUBDIRS), $(SDIR)_distclean)
+	$(call DELFILE, Kconfig*)

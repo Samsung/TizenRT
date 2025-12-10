@@ -21,6 +21,10 @@
 #include "Decoder.h"
 #include <debug.h>
 
+#ifndef CONFIG_HANDLER_STREAM_BUFFER_SIZE
+#define CONFIG_HANDLER_STREAM_BUFFER_SIZE 4096
+#endif
+
 namespace media {
 
 Decoder::Decoder(audio_type_t audioType, unsigned short channels, unsigned int sampleRate)
@@ -28,11 +32,16 @@ Decoder::Decoder(audio_type_t audioType, unsigned short channels, unsigned int s
 	:
 	mAudioType(audioType),
 	mChannels(channels),
-	mSampleRate(sampleRate)
+	mSampleRate(sampleRate),
+	/* To-do: Below buffer size and channel count must be calculated correctly. */
+	mInputBufferSize(CONFIG_HANDLER_STREAM_BUFFER_SIZE),
+	mOutputBufferSize(CONFIG_HANDLER_STREAM_BUFFER_SIZE)
 #endif
 {
 #ifdef CONFIG_AUDIO_CODEC
 	memset(&mDecoder, 0, sizeof(audio_decoder_t));
+	mInputBuffer = std::unique_ptr<uint8_t[]>(new uint8_t[mInputBufferSize]);
+	mOutputBuffer = std::unique_ptr<int16_t[]>(new int16_t[mOutputBufferSize]);
 #endif
 }
 
@@ -156,18 +165,14 @@ size_t Decoder::getAvailSpace()
 #ifdef CONFIG_AUDIO_CODEC
 bool Decoder::mConfig(int audioType)
 {
-	/* To-do: Below buffer size and channel count must be calculated correctly. */
-	static uint8_t inputBuf[4096];
-	static int16_t outputBuf[4096];
-
 	switch (audioType) {
 	case AUDIO_TYPE_MP3: {
 		tPVMP3DecoderExternal mp3_ext = {0};
 		mp3_ext.equalizerType = flat;
 		mp3_ext.crcEnabled = false;
-		mp3_ext.pInputBuffer = inputBuf;
-		mp3_ext.pOutputBuffer = outputBuf;
-		mp3_ext.outputFrameSize = sizeof(outputBuf) / sizeof(int16_t);
+		mp3_ext.pInputBuffer = mInputBuffer.get();
+		mp3_ext.pOutputBuffer = mOutputBuffer.get();
+		mp3_ext.outputFrameSize = mOutputBufferSize;
 
 		if (audio_decoder_configure(&mDecoder, audioType, &mp3_ext) != AUDIO_DECODER_OK) {
 			meddbg("Error! audio_decoder_configure failed!\n");
@@ -180,8 +185,8 @@ bool Decoder::mConfig(int audioType)
 		tPVMP4AudioDecoderExternal aac_ext = {0};
 		aac_ext.outputFormat = OUTPUTFORMAT_16PCM_INTERLEAVED;
 		aac_ext.desiredChannels = mChannels;
-		aac_ext.pInputBuffer = inputBuf;
-		aac_ext.pOutputBuffer = outputBuf;
+		aac_ext.pInputBuffer = mInputBuffer.get();
+		aac_ext.pOutputBuffer = mOutputBuffer.get();
 		aac_ext.aacPlusEnabled = 1;
 
 		if (audio_decoder_configure(&mDecoder, audioType, &aac_ext) != AUDIO_DECODER_OK) {
@@ -193,10 +198,10 @@ bool Decoder::mConfig(int audioType)
 
 	case AUDIO_TYPE_WAVE: {
 		wav_dec_external_t wav_ext = {0};
-		wav_ext.pInputBuffer = inputBuf;
-		wav_ext.inputBufferMaxLength = sizeof(inputBuf);
-		wav_ext.pOutputBuffer = outputBuf;
-		wav_ext.outputBufferMaxLength = sizeof(outputBuf);
+		wav_ext.pInputBuffer = mInputBuffer.get();
+		wav_ext.inputBufferMaxLength = mInputBufferSize * sizeof(uint8_t);
+		wav_ext.pOutputBuffer = mOutputBuffer.get();
+		wav_ext.outputBufferMaxLength = mOutputBufferSize * sizeof(int16_t);
 		wav_ext.desiredChannels = mChannels;
 		if (audio_decoder_configure(&mDecoder, audioType, &wav_ext) != AUDIO_DECODER_OK) {
 			meddbg("Error! audio_decoder_configure failed!\n");
@@ -208,10 +213,10 @@ bool Decoder::mConfig(int audioType)
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
 		opus_dec_external_t opus_ext = {0};
-		opus_ext.pInputBuffer = inputBuf;
-		opus_ext.inputBufferMaxLength = sizeof(inputBuf);
-		opus_ext.pOutputBuffer = outputBuf;
-		opus_ext.outputBufferMaxLength = sizeof(outputBuf);
+		opus_ext.pInputBuffer = mInputBuffer.get();
+		opus_ext.inputBufferMaxLength = mInputBufferSize * sizeof(uint8_t);
+		opus_ext.pOutputBuffer = mOutputBuffer.get();
+		opus_ext.outputBufferMaxLength = mOutputBufferSize * sizeof(int16_t);
 		opus_ext.desiredSampleRate = mSampleRate;
 		opus_ext.desiredChannels = mChannels;
 
