@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version ac677b6ae1 2025/12/10-17:27:15 ==
+1. Reduce PMC logs
+
 == version 261770ae95 2025/12/08-14:52:55 ==
 1. revert km4 driver to before multi-sta CSI
 2. disable autogating for psram
