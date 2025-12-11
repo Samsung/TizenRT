@@ -38,7 +38,7 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#define PM_DEBUG_STR "."
 /****************************************************************************
  * Private Variables
  ****************************************************************************/
@@ -338,7 +338,7 @@ static void update_wakeup_reason(void)
 	if (sleep_ops->get_wakeupreason) {
 		wakeup_src = sleep_ops->get_wakeupreason();
 
-		pmllvdbg("wakeup source code = %d\n", wakeup_src);
+		lldbg_noarg(": %s", wakeup_src_name[wakeup_src]);
 		pm_metrics_update_wakeup_reason(wakeup_src);
 	}
 }
@@ -398,10 +398,12 @@ static void enter_sleep(void)
 		return;
 	}
 
+	lldbg_noarg(PM_DEBUG_STR);
 	if (suspend_devices() != OK) {
 		goto DEVICES_RESUME;
 	}
 
+	lldbg_noarg(PM_DEBUG_STR);
 	if (disable_secondary_cpus() != OK) {
 		goto CPUS_ENABLE;
 	}
@@ -414,6 +416,7 @@ static void enter_sleep(void)
 		goto SYSTICK_ENABLE;
 	}
 
+	lldbg_noarg(PM_DEBUG_STR);
 	if (sleep_ops->sleep && sleep_ops->sleep() != 0) {
 		goto SYSTICK_ENABLE;
 	}
@@ -422,12 +425,15 @@ static void enter_sleep(void)
 
 SYSTICK_ENABLE:
 	enable_and_compensate_systick();
+	lldbg_noarg(PM_DEBUG_STR);
 
 CPUS_ENABLE:
 	enable_secondary_cpus();
+	lldbg_noarg(PM_DEBUG_STR);
 
 DEVICES_RESUME:
 	resume_devices();
+	lldbg_noarg(PM_DEBUG_STR"\n");
 }
 
 /****************************************************************************
