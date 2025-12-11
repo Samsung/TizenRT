@@ -337,6 +337,9 @@ static void update_wakeup_reason(void)
 
 	if (sleep_ops->get_wakeupreason) {
 		wakeup_src = sleep_ops->get_wakeupreason();
+		if (wakeup_src < PM_WAKEUP_UNKNOWN || wakeup_src >= PM_WAKEUP_SRC_COUNT) {
+			wakeup_src = PM_WAKEUP_UNKNOWN;
+		}
 
 		lldbg_noarg(": %s", wakeup_src_name[wakeup_src]);
 		pm_metrics_update_wakeup_reason(wakeup_src);
