@@ -77,7 +77,7 @@
 
 struct pm_global_s g_pmglobals;
 const char *pm_state_name[PM_COUNT] = {"NORMAL", "SLEEP"};
-const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "UART CONSOLE", "UART TTYS2", "GPIO", "HW TIMER"};
+const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "LOG UART", "UART", "GPIO", "HW TIMER"};
 
 /****************************************************************************
  * Public Functions
