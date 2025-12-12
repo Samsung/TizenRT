@@ -61,7 +61,7 @@ function GET_SPECIFIC_DOCKER_IMAGE()
 		fi
 	fi
 	echo "Check Docker Image"
-	DOCKER_IMAGES=`docker images | grep 'tizenrt' | awk '{print $1":"$2}'`
+	DOCKER_IMAGES=`docker images --format "{{.Repository}}:{{.Tag}}" | grep 'tizenrt'`
 	for im in ${DOCKER_IMAGES}; do
 		# check public image first
 		if [ "$im" == "$DOCKER_PUBLIC_IMAGE:$DOCKER_VERSION" ]; then
