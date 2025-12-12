@@ -254,7 +254,9 @@ int set_absoulute_alarm(int fd, int hrs, int mins, int seconds)
 		close(fd);
 		return ERROR;
 	}
-	setalarm.time.tm_sec = seconds;
+	
+	setalarm.time = g_alarm_time;
+	setalarm.time.tm_sec = seconds;     
 	setalarm.time.tm_min = mins;
 	setalarm.time.tm_hour = hrs;
 	setalarm.signo = RTC_ALARM_SIGNO;
