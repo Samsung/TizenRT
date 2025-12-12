@@ -725,6 +725,11 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		ndp120_change_kd(priv);
 		break;
 	}
+	case AUDIOIOC_CHANGEDSPFLOW: {
+		uint8_t dsp_flow_num = (uint8_t)arg;
+		ndp120_change_dsp_flow(priv, dsp_flow_num);
+		break;
+	}
 	default:
 		audvdbg("ndp120_ioctl received unkown cmd 0x%x\n", cmd);
 		ret = -EINVAL;
@@ -906,7 +911,7 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	int retry = NDP120_INIT_RETRY_COUNT;
 	while (retry--) {
 		lower->reset();
-		ret = ndp120_init(priv, false);
+		ret = ndp120_init(priv, 0);
 		if (ret != OK) {
 			auddbg("ndp120 init failed\n");
 		} else {
