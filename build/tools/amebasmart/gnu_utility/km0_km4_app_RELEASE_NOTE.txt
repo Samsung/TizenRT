@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 81d4d19fce 2025/12/12-17:23:10 ==
+1. Change wififw sleep mode to CG
+
 == version 10f5c03eed 2025/12/11-18:07:51 ==
 1. Fix issue of deauth reason code 4 from AP in coex scenario
 
