@@ -50,7 +50,11 @@ function GET_SPECIFIC_DOCKER_IMAGE()
 {
 	# check existing docker image for specified version
 	echo "Check Docker Image"
-	DOCKER_IMAGES=`docker images | grep 'tizenrt' | awk '{print $1":"$2}'`
+	# Try modern Docker format first, fallback to legacy format if it fails (modern Docker format should work with Docker 1.10+)
+	DOCKER_IMAGES=`docker images --format "{{.Repository}}:{{.Tag}}" 2>/dev/null | grep 'tizenrt'`
+	if [ $? -ne 0 ] || [ -z "$DOCKER_IMAGES" ]; then
+		DOCKER_IMAGES=`docker images | grep 'tizenrt' | awk '{print $1":"$2}'`
+	fi
 	for im in ${DOCKER_IMAGES}; do
 		# check public image first
 		if [ "$im" == "$DOCKER_PUBLIC_IMAGE:$DOCKER_VERSION" ]; then
