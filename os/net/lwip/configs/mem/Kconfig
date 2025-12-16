@@ -247,6 +247,12 @@ config NET_PBUF_POOL_SIZE
 
 endif #!NET_MEMP_MEM_MALLOC
 
+config NET_PBUF_LINK_ENCAPSULATION_HLEN
+	int "Number of bytes for link encapsulation header in pbuf"
+	default 0
+	---help---
+		The number of bytes that should be allocated for an additional
+		encapsulation header before ethernet headers (e.g. 802.11).
 
 
 endmenu #"Memory Configurations"
