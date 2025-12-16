@@ -17,6 +17,7 @@
 #include "sys_driver_common.h"
 #include "bk_misc.h"
 #include "aon_pmu_driver.h"
+#include "soc/soc.h"
 
 #define SYS_DRV_DELAY_TIME_10US	              120
 #define SYS_DRV_DELAY_TIME_200US	          3400
@@ -509,7 +510,7 @@ uint32_t sys_drv_pta_ctrl(bool pta_en)
 }
 
 //CMD_SCTRL_MODEM_AHB_CLOCK_DISABLE, CMD_SCTRL_MODEM_AHB_CLOCK_ENABLE
-uint32_t sys_drv_modem_bus_clk_ctrl(bool clk_en)
+__IRAM2 uint32_t sys_drv_modem_bus_clk_ctrl(bool clk_en)
 {
 	uint32_t int_level = sys_drv_enter_critical();
 
@@ -519,7 +520,7 @@ uint32_t sys_drv_modem_bus_clk_ctrl(bool clk_en)
 	return SYS_DRV_SUCCESS;
 }
 //CMD_SCTRL_MODEM_CLOCK480M_DISABLE, CMD_SCTRL_MODEM_CLOCK480M_ENABLE
-uint32_t sys_drv_modem_clk_ctrl(bool clk_en)
+__IRAM2 uint32_t sys_drv_modem_clk_ctrl(bool clk_en)
 {
 	uint32_t int_level = sys_drv_enter_critical();
 

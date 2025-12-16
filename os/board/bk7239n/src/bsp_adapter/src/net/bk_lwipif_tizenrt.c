@@ -68,6 +68,7 @@ err_t bk_wlan_txdata_send(uint8_t * data,uint16_t len, uint32_t vif_idx)
         return ERR_MEM;
     }
 #ifdef CONFIG_NET_NETMGR_ZEROCOPY
+#if BK_SS_WIFI_DP
     p = bk_wlan_buf_alloc(((struct pbuf*)data)->len);   
     if(p)
     {
@@ -78,6 +79,9 @@ err_t bk_wlan_txdata_send(uint8_t * data,uint16_t len, uint32_t vif_idx)
     {
         return ERR_MEM;
     }
+#else
+    p = (struct pbuf*)data;
+#endif
 #else
     p = bk_wlan_buf_alloc(len);
     if(p)

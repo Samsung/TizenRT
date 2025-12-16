@@ -48,6 +48,7 @@
 #include "reg_domain.h"
 #include "bk_rw.h"
 #include <driver/otp.h>
+#include "soc/soc.h"
 
 #if (CONFIG_CKMN)
 #include <driver/rosc_32k.h>
@@ -228,7 +229,7 @@ static void delay_wrapper(INT32 num)
     delay(num);
 }
 
-static void delay_us_wrapper(UINT32 us)
+static void __IRAM2 delay_us_wrapper(UINT32 us)
 {
 	delay_us(us);
 }
@@ -300,7 +301,7 @@ static void sys_ll_set_cpu_power_sleep_wakeup_pwd_ofdm_wrapper(uint32_t v)
 	#endif
 }
 
-static uint32_t sys_ll_get_cpu_power_sleep_wakeup_pwd_ofdm_wrapper(void)
+static uint32_t __IRAM2 sys_ll_get_cpu_power_sleep_wakeup_pwd_ofdm_wrapper(void)
 {
 	#if (CONFIG_SOC_BK7236XX || CONFIG_SOC_BK7239XX)
 	return sys_ll_get_cpu_power_sleep_wakeup_pwd_ofdm();
@@ -318,7 +319,7 @@ static uint32_t sys_ll_get_cpu_device_clk_enable_phy_cken_wrapper(void)
 {
 	return sys_ll_get_cpu_device_clk_enable_phy_cken();
 }
-static void power_save_delay_sleep_check_wrapper(void)
+static void  power_save_delay_sleep_check_wrapper(void)
 {
 	//power_save_delay_sleep_check();
 }
@@ -345,12 +346,12 @@ static UINT16 power_save_forbid_trace_wrapper(UINT16 forbid)
     return 0;
 }
 
-static bk_err_t bk_pm_module_vote_sleep_ctrl_wrapper(uint32_t module, uint32_t sleep_state, uint32_t sleep_time)
+static bk_err_t __IRAM2 bk_pm_module_vote_sleep_ctrl_wrapper(uint32_t module, uint32_t sleep_state, uint32_t sleep_time)
 {
     return bk_pm_module_vote_sleep_ctrl((pm_sleep_module_name_e)module, sleep_state, sleep_time);
 }
 
-static uint32_t bk_pm_lpo_src_get_wrapper(void)
+static uint32_t __IRAM2 bk_pm_lpo_src_get_wrapper(void)
 {
 	return (uint32_t)bk_pm_lpo_src_get();
 }
@@ -360,7 +361,7 @@ static int32 bk_pm_module_power_state_get_wrapper(unsigned int module)
     return bk_pm_module_power_state_get((pm_power_module_name_e)module);
 }
 
-static bk_err_t bk_pm_module_vote_power_ctrl_wrapper(unsigned int             module, uint32_t power_state)
+static bk_err_t __IRAM2 bk_pm_module_vote_power_ctrl_wrapper(unsigned int             module, uint32_t power_state)
 {
     return bk_pm_module_vote_power_ctrl((pm_power_module_name_e)module, (pm_power_module_state_e)power_state);
 }
@@ -408,7 +409,7 @@ bk_err_t bk_pm_low_voltage_register_wrapper(void *enter_config_cb,void *exit_con
 	return bk_pm_sleep_register_cb(PM_MODE_LOW_VOLTAGE,PM_DEV_ID_MAC, &wifi_enter_config, &wifi_exit_config);
 }
 
-static void bk_pm_wifi_rtc_set_wrapper(uint32_t tick, void *callback)
+static void __IRAM2 bk_pm_wifi_rtc_set_wrapper(uint32_t tick, void *callback)
 {
 #if CONFIG_ANA_RTC
     bk_pm_wifi_rtc_set(tick, callback);
@@ -422,7 +423,7 @@ static void bk_pm_wifi_rtc_clear_wrapper(void)
 #endif
 }
 
-static void wifi_vote_rf_ctrl_wrapper(uint8_t cmd)
+static void __IRAM2 wifi_vote_rf_ctrl_wrapper(uint8_t cmd)
 {
     rf_module_vote_ctrl(cmd,RF_BY_WIFI_BIT);
 }
@@ -483,7 +484,7 @@ static bk_err_t bk_rosc_32k_ckest_prog_wrapper(uint32_t param)
 	#endif
 }
 
-static bk_err_t bk_rosc_32k_get_ppm_wrapper(void)
+static bk_err_t __IRAM2 bk_rosc_32k_get_ppm_wrapper(void)
 {
 	#if (CONFIG_CKMN)
 	return bk_rosc_32k_get_ppm();
@@ -751,7 +752,7 @@ static int bk_feature_not_check_ssid_enable_wrapper(void)
     return bk_feature_not_check_ssid_enable();
 }
 
-static int bk_feature_config_cache_enable_wrapper(void)
+static int __IRAM2 bk_feature_config_cache_enable_wrapper(void)
 {
     return bk_feature_config_cache_enable();
 }
@@ -855,7 +856,7 @@ static uint32_t rtos_get_ms_per_tick_wrapper(void)
     return rtos_get_ms_per_tick();
 }
 
-static UINT32 rf_pll_ctrl_wrapper(UINT32 cmd, UINT32 param)
+static UINT32 __IRAM2 rf_pll_ctrl_wrapper(UINT32 cmd, UINT32 param)
 {
 #if (CONFIG_SOC_BK7236XX || CONFIG_SOC_BK7239XX)
     return rf_pll_ctrl(cmd, param);
@@ -864,12 +865,12 @@ static UINT32 rf_pll_ctrl_wrapper(UINT32 cmd, UINT32 param)
 #endif
 }
 
-static uint32_t rtos_disable_int_wrapper(void)
+static uint32_t __IRAM2 rtos_disable_int_wrapper(void)
 {
 	return rtos_enter_critical();
 }
 
-static void rtos_enable_int_wrapper(uint32_t int_level)
+static void __IRAM2 rtos_enable_int_wrapper(uint32_t int_level)
 {
 	rtos_exit_critical(int_level);
 }
@@ -898,7 +899,7 @@ static void *os_malloc_wrapper(const char *func_name, int line, size_t size)
 #endif
 }
 
-static void os_free_wrapper(void *mem_ptr)
+static void __IRAM2 os_free_wrapper(void *mem_ptr)
 {
     os_free(mem_ptr);
 }
@@ -919,7 +920,7 @@ static void *os_memset_wrapper(void *b, int c, UINT32 len)
 	return (void *)os_memset(b, c, (unsigned int)len);
 }
 
-static void *os_zalloc_wrapper(const char *func_name, int line, size_t size)
+static void *__IRAM2 os_zalloc_wrapper(const char *func_name, int line, size_t size)
 {
 #if 0 //(CONFIG_MEM_DEBUG)
 	return (void *)os_malloc_debug(func_name, line, size, 1);
@@ -949,12 +950,12 @@ static void bk_null_printf_wrapper(const char *fmt, ...)
 }
 #endif
 
-static bool wifi_ate_is_enabled_wrapper(void)
+static bool __IRAM2 wifi_ate_is_enabled_wrapper(void)
 {
 	return ate_is_enabled();
 }
 
-static bk_err_t rtos_push_to_queue_wrapper( void** queue, void* message, uint32_t timeout_ms )
+static bk_err_t __IRAM2 rtos_push_to_queue_wrapper( void** queue, void* message, uint32_t timeout_ms )
 {
     return rtos_push_to_queue(queue, message, timeout_ms );
 }
@@ -964,12 +965,12 @@ static bool rtos_is_queue_full_wrapper(void** queue )
     return rtos_is_queue_full(queue);
 }
 
-static bool rtos_is_queue_empty_wrapper(void** queue )
+static bool __IRAM2 rtos_is_queue_empty_wrapper(void** queue )
 {
     return rtos_is_queue_empty(queue);
 }
 
-static bk_err_t rtos_pop_from_queue_wrapper( void** queue, void* message, uint32_t timeout_ms )
+static bk_err_t __IRAM2 rtos_pop_from_queue_wrapper( void** queue, void* message, uint32_t timeout_ms )
 {
     return rtos_pop_from_queue( queue, message, timeout_ms );
 }
@@ -995,7 +996,7 @@ static bk_err_t bk_int_isr_register_wrapper(uint32_t src, void* isr_callback, vo
 	return bk_int_isr_register(src, isr_callback, arg);
 }
 
-static float bk_rtc_get_ms_tick_count_wrapper(void)
+static float __IRAM2 bk_rtc_get_ms_tick_count_wrapper(void)
 {
 	return (float)bk_rtc_get_ms_tick_count();
 }
@@ -1247,7 +1248,7 @@ static void sys_hal_exit_low_analog_wrapper(void)
 #endif
 }
 
-static uint64_t sys_hal_get_low_voltage_sleep_duration_us_wrapper(void)
+static uint64_t __IRAM2 sys_hal_get_low_voltage_sleep_duration_us_wrapper(void)
 {
 #if CONFIG_ANA_RTC
 	return sys_hal_get_low_voltage_sleep_duration_us();
@@ -1325,17 +1326,17 @@ static int bk_feature_mac_pwd_enable_wrapper(void)
     return bk_feature_mac_pwd_enable();
 }
 
-static int bk_feature_wrls_pwd_enable_wrapper(void)
+static int __IRAM2 bk_feature_wrls_pwd_enable_wrapper(void)
 {
     return bk_feature_wrls_pwd_enable();
 }
 
-static int bk_feature_cpu_pwd_enable_wrapper(void)
+static int __IRAM2 bk_feature_cpu_pwd_enable_wrapper(void)
 {
     return bk_feature_cpu_pwd_enable();
 }
 
-UINT32 rwnx_sys_is_use_abs_power_wrapper(void)
+UINT32 __IRAM2 rwnx_sys_is_use_abs_power_wrapper(void)
 {
 #if (CONFIG_SOC_BK7236XX || CONFIG_SOC_BK7239XX || CONFIG_SOC_BK7286XX)
 	return rwnx_sys_is_use_abs_power();

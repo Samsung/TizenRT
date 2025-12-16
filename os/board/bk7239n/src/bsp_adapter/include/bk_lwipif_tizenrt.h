@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define BK_SS_WIFI_DP 1
+#define BK_SS_WIFI_DP 0
 #define MAX_ETH_MTU_SIZE CONFIG_NET_ETH_MTU
 
 struct pbuf *bk_wlan_buf_alloc(uint32_t len);

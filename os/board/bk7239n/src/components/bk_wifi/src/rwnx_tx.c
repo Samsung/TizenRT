@@ -5,6 +5,7 @@
 //#include <os/str.h>
 //#include <os/mem.h>
 #include "rwnx_defs.h"
+#include "rwnx_config.h"
 
 #if (CONFIG_FULLY_HOSTED || CONFIG_SEMI_HOSTED)
 #include "pbuf.h"
@@ -54,7 +55,7 @@ extern int ke_mgmt_packet_tx(unsigned char *buf, int len, int flag);
 uint64_t rwnx_hw_mm_features(void);
 
 #if !CONFIG_RWNX_SW_TXQ
-static void rwnx_tx_confirm(void *param)
+__IRAM2 static void rwnx_tx_confirm(void *param)
 {
 	struct txdesc *txdesc = (struct txdesc *)param;
 	MSDU_NODE_T *node = txdesc->host.buf;
@@ -103,7 +104,7 @@ static void rwnx_tx_confirm(void *param)
 /**
  * check if the frame needs to be retransmitted if tx failed.
  */
-static bool rwnx_need_retry_tx_frame(struct sk_buff *skb)
+__IRAM2 static bool rwnx_need_retry_tx_frame(struct sk_buff *skb)
 {
 	struct txdesc *txdesc = &skb->ftxdesc->txdesc;
 
@@ -127,13 +128,13 @@ static bool rwnx_need_retry_tx_frame(struct sk_buff *skb)
 }
 #endif
 
-struct pbuf *macif_get_txdesc_pbuf(struct txdesc *txdesc)
+__IRAM2 static inline struct pbuf *macif_get_txdesc_pbuf(struct txdesc *txdesc)
 {
     MSDU_NODE_T * node = (MSDU_NODE_T *)(txdesc->host.buf);
     return node ? node->p : NULL;
 }
 
-static void rwnx_tx_confirm(void *param)
+__IRAM2 static void rwnx_tx_confirm(void *param)
 {
 	struct txdesc *txdesc = (struct txdesc *)param;
 #if NX_VERSION >= NX_VERSION_PACK(6, 22, 0, 0)
@@ -204,7 +205,7 @@ static const int rwnx_down_hwq2tid[3] = {
     [RWNX_HWQ_VI] = 4,
 };
 
-static void rwnx_downgrade_ac(void *vif, struct sk_buff *skb)
+__IRAM2 static void rwnx_downgrade_ac(void *vif, struct sk_buff *skb)
 {
     int8_t ac = rwnx_tid2hwq[skb->priority];
 	uint8_t acm = mac_vif_mgmt_get_bss_info_edca_param_acm(vif);
@@ -277,7 +278,7 @@ static uint8_t ipv6_ieee8023_dscp(void *buf)
  * get user priority from @buf.
  * ipv4 dscp/tos, ipv6 flow control. for eapol packets, disable qos.
  */
-static uint8_t classify8021d(UINT8 *buf)
+__IRAM2 static inline uint8_t classify8021d(UINT8 *buf)
 {
 	struct ethhdr *ethhdr = (struct ethhdr *)buf;
 
@@ -309,7 +310,7 @@ static uint8_t classify8021d(UINT8 *buf)
  *
  * note: tx_lock already taken.
  */
-static void rwnx_set_more_data_flag(struct sk_buff *skb)
+__IRAM2 static void rwnx_set_more_data_flag(struct sk_buff *skb)
 {
     void *sta = sta_mgmt_get_entry(skb->sta_idx);
     struct rwnx_txq *txq = skb->txq;
@@ -347,7 +348,7 @@ static void rwnx_set_more_data_flag(struct sk_buff *skb)
  * Push one packet to fw. Sw desc of the packet has already been updated.
  * Only MORE_DATA flag will be set if needed.
  */
-void rwnx_tx_push(struct sk_buff *skb)
+__IRAM2 void rwnx_tx_push(struct sk_buff *skb)
 {
 	struct rwnx_txq *txq = skb->txq;
 	struct txdesc *txdesc = &skb->ftxdesc->txdesc;
@@ -389,7 +390,7 @@ tx_exit:
 	}
 }
 
-static struct rwnx_txq *rwnx_select_txq(struct sk_buff *skb)
+__IRAM2 static struct rwnx_txq *rwnx_select_txq(struct sk_buff *skb)
 {
 	void *rwnx_vif;
 	struct rwnx_txq *txq = NULL;
@@ -468,12 +469,12 @@ __ITCM_N uint32_t rwnx_tx_get_pbuf_chain_cnt(struct pbuf *p)
 extern uint8_t proto_debug_flag;
 #endif
 
-int fhost_txdesc_extra_size(void)
+__IRAM2 static inline int fhost_txdesc_extra_size(void)
 {
 	return txdesc_extra_size() + 8;
 }
 
-static int rwnx_sg_init(struct sk_buff *skb, uint32_t seg_addr[], int seg_len[], int *seg_cnt)
+__IRAM2 static int rwnx_sg_init(struct sk_buff *skb, uint32_t seg_addr[], int seg_len[], int *seg_cnt)
 {
 	int i;
 	struct pbuf *p = skb->p;
@@ -858,7 +859,7 @@ tx_exit:
  * Push the confirmation to the FHOST, refer rwnx_drv: rwnx_txdatacfm
  *
  */
-void fhost_tx_cfm_push(uint8_t queue_idx, struct txdesc *txdesc)
+__IRAM2 void fhost_tx_cfm_push(uint8_t queue_idx, struct txdesc *txdesc)
 {
 	struct tx_cfm_tag *cfm = &txdesc->host.cfm;
 #if CONFIG_RWNX_SW_TXQ
