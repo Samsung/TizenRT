@@ -9,6 +9,7 @@
 #include "rwnx_rx.h"
 #include "rwnx_td.h"
 #include "rwnx_defs.h"
+#include "rwnx_config.h"
 
 #if CONFIG_RWNX_TD
 /*
@@ -42,7 +43,7 @@ void rwnx_td_reset(uint8_t vif_index)
     memset(rwnx_td_env, 0, sizeof(struct rwnx_td_env_tag));
 }
 
-void rwnx_td_pkt_ind(uint8_t vif_index,uint8_t access_category)
+__IRAM2 inline void rwnx_td_pkt_ind(uint8_t vif_index,uint8_t access_category)
 {
     struct rwnx_td_env_tag *rwnx_td_env = &rwnx_td_env_tab[vif_index];
 
@@ -61,7 +62,7 @@ void rwnx_td_pkt_ind(uint8_t vif_index,uint8_t access_category)
 
 }
 
-void rwnx_td_pkt_dec(uint8_t vif_index,uint8_t access_category)
+__IRAM2 inline void rwnx_td_pkt_dec(uint8_t vif_index,uint8_t access_category)
 {
     struct rwnx_td_env_tag *rwnx_td_env = &rwnx_td_env_tab[vif_index];
 
@@ -96,7 +97,7 @@ void rwnx_get_td_info(uint8_t vif_index, uint16 *pkt_cnt, bool *vivo)
     GLOBAL_INT_RESTORE();
 }
 #else
-void rwnx_td_pkt_dec(uint8_t vif_index,uint8_t access_category)
+__IRAM2 inline void rwnx_td_pkt_dec(uint8_t vif_index,uint8_t access_category)
 {
 }
 

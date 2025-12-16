@@ -94,6 +94,7 @@ extern "C" {
 #define __IRAM_SEC
 #else
 #define __IRAM_SEC __attribute__((section(".iram")))
+#define __IRAM2 __attribute__((section(".iram2")))
 #endif
 
 #ifdef __cplusplus

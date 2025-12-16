@@ -45,7 +45,7 @@ struct rwnx_mod_params rwnx_mod_params = {
 #else
 	PARAM(ldpc_on, false),
 #endif
-	PARAM(stbc_on, false),	//FIXME: BK7256, some AP compatibility test,STBC RX/TX poor performance in iperf test,so temporarily closed
+	PARAM(stbc_on, true),
 #if CONFIG_WIFI6
 	PARAM(gf_rx_on, true),
 #else

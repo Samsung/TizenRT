@@ -20,7 +20,7 @@
 #include "adc_driver.h"
 
 #include "sys_driver.h"
-
+#include "soc/soc.h"
 #include "sys_ll.h"
 #include "sys_ana_ll.h"
 
@@ -53,7 +53,6 @@
 #if CONFIG_ARMINO_BLE
 #include "bluetooth_internal.h"
 #endif
-
 #include "bk_rf_adapter.h"
 #include "bk_sys_ctrl.h"
 #include "adc_hal.h"
@@ -69,7 +68,6 @@
 #endif
 
 #include "bk_cli.h"
-
 #define PHY_OSI_VERSION              0x00060006
 
 static void bk_set_g_saradc_flag(UINT8 flag)
@@ -130,7 +128,7 @@ static int32_t os_strncmp_wrapper(const char *s1, const char *s2, const uint32_t
 {
 	return os_strncmp(s1, s2, n);
 }
-static void *os_memcpy_wrapper(void *out, const void *in, uint32_t n)
+static __IRAM2 void *os_memcpy_wrapper(void *out, const void *in, uint32_t n)
 {
 	return (void *)os_memcpy(out, in, n);
 }
@@ -273,11 +271,11 @@ static bk_err_t bk_pm_module_vote_cpu_freq_phy(uint32_t module, uint32_t cpu_fre
     return bk_pm_module_vote_cpu_freq((pm_dev_id_e)module, (pm_cpu_freq_e)cpu_freq);
 }
 
-static int32 sys_drv_module_power_state_get_wrapper(uint32_t module)
+static __IRAM2 int32 sys_drv_module_power_state_get_wrapper(uint32_t module)
 {
     return sys_drv_module_power_state_get(module);
 }
-static void phy_sys_drv_modem_bus_clk_ctrl_on(void)
+static __IRAM2 void phy_sys_drv_modem_bus_clk_ctrl_on(void)
 {
     sys_drv_modem_bus_clk_ctrl(SYS_DRV_CLK_ON);
 }
@@ -286,7 +284,7 @@ static void phy_sys_drv_modem_clk_ctrl_on(void)
     sys_drv_modem_clk_ctrl(SYS_DRV_CLK_ON);
 }
 
-static int bk_flash_read_bytes_wrapper(uint32_t address, uint8_t *user_buf, uint32_t size)
+static __IRAM2 int bk_flash_read_bytes_wrapper(uint32_t address, uint8_t *user_buf, uint32_t size)
 {
 #if (CONFIG_OTP && CONFIG_PHY_RFCALI_TO_OTP)
     return BK_ERR_NOT_SUPPORT;
@@ -425,7 +423,7 @@ static void ble_rf_test_mode_retirg(void)
 #endif
 }
 
-static uint8_t ble_adv_txpwr_set_feature_enable_wrapper(void)
+static __IRAM2 uint8_t ble_adv_txpwr_set_feature_enable_wrapper(void)
 {
 #if CONFIG_SUPPORT_BLE_ADV_TXPWR_SET
         return 1;
@@ -542,7 +540,7 @@ void sys_drv_set_pwd_anabuf_lownoise(uint32_t v) {
 #endif
 }
 
-uint32_t sys_drv_rfband(uint32_t rfband) {
+__IRAM2 uint32_t sys_drv_rfband(uint32_t rfband) {
 	return BK_OK;
 }
 
@@ -722,7 +720,7 @@ static UINT8 bk_phy_get_wifi_media_mode_config_wrapper(void)
 #endif
 }
 
-static int bk_adc_channel_raw_read_wrapper(int32_t channel_id, uint16_t* buf, uint32_t sample_cnt, uint32_t timeout)
+static __IRAM2 int bk_adc_channel_raw_read_wrapper(int32_t channel_id, uint16_t* buf, uint32_t sample_cnt, uint32_t timeout)
 {
 #if CONFIG_SARADC_V1P1
     return bk_adc_read_raw(buf, sample_cnt, timeout);
@@ -731,7 +729,7 @@ static int bk_adc_channel_raw_read_wrapper(int32_t channel_id, uint16_t* buf, ui
 #endif
 }
 
-bool rtos_is_critical_section_wrapper(void)
+__IRAM2 bool rtos_is_critical_section_wrapper(void)
 {
     return rtos_local_irq_disabled() || rtos_is_in_interrupt_context();
 }

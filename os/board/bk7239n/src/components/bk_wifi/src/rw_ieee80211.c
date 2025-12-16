@@ -6,6 +6,7 @@
 #include <os/str.h>
 #include "rwnx_intf.h"
 #include "rwnx_defs.h"
+#include "rwnx_config.h"
 #include "rwnx_rx.h"
 #include "rwnx_params.h"
 #include "bk_workqueue.h"
@@ -1519,7 +1520,7 @@ void rw_ieee80211_set_ht_cap(UINT8 ht_supp)
 }
 #endif
 
-uint64_t rwnx_hw_mm_features()
+__IRAM2 inline uint64_t rwnx_hw_mm_features()
 {
 	return g_rwnx_hw.version_cfm.features;
 }

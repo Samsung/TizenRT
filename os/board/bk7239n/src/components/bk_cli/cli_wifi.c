@@ -2002,6 +2002,14 @@ error:
 }
 #endif
 
+static void wifi_mgmt_rc_help(void)
+{
+	bk_printf("rc {param1} {param2} ...\n");
+	bk_printf("param1: fix/rssi_of/media/max_rc \n");
+	bk_printf("param1: /idx_min/he_gi/ht_gi/prb_type \n");
+	bk_printf("param1: /tx_cnt/max_tot_ms/wait_num\n");
+}
+
 void cli_wifi_rc_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
 {
 	uint8_t sta_idx = 0;
@@ -2010,19 +2018,57 @@ void cli_wifi_rc_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **
 	char *msg = NULL;
 
 	if (argc <= 2) {
+		wifi_mgmt_rc_help();
 		CLI_LOGI("invalid RC command\n");
 		goto error;
 	}
 
-	if(os_strcmp(argv[1], "set_fixrate") == 0) {
+	if(os_strcmp(argv[1], "fix") == 0) {
 		sta_idx = os_strtoul(argv[2], NULL, 10) & 0xFFFF;
 		rate_cfg = os_strtoul(argv[3], NULL, 10) & 0xFFFF;
+		CLI_LOGI("rc fix: %x\n",rate_cfg);
 		bk_wifi_rc_config(sta_idx, rate_cfg);
 	}
-        else if (os_strcmp(argv[1], "rssi_offset") == 0) {
-                CLI_LOGI("rc rssi offset: %d\n",os_strtoul(argv[2], NULL, 10));
-                bk_wifi_set_rc_rssi_offset(os_strtoul(argv[2], NULL, 10));
-        }
+	else if (os_strcmp(argv[1], "rssi_of") == 0) {
+			CLI_LOGI("rc rssi offset: %d\n",os_strtoul(argv[2], NULL, 10));
+			bk_wifi_set_rc_rssi_offset(os_strtoul(argv[2], NULL, 10));
+	}
+	else if (os_strcmp(argv[1], "media") == 0) {
+			CLI_LOGI("rc media: %d\n",os_strtoul(argv[2], NULL, 10));
+			bk_wifi_set_wifi_media_mode(os_strtoul(argv[2], NULL, 10));
+	}
+	else if (os_strcmp(argv[1], "max_rc") == 0) {
+			CLI_LOGI("rc max_rc: %d\n",os_strtoul(argv[2], NULL, 10));
+			bk_wifi_set_video_quality(os_strtoul(argv[2], NULL, 10));
+	}
+	else if (os_strcmp(argv[1], "idx_min") == 0) {
+			CLI_LOGI("rc idx_min: %d\n",os_strtoul(argv[2], NULL, 10));
+			bk_wifi_set_idx_min(os_strtoul(argv[2], NULL, 10));
+	}
+	else if (os_strcmp(argv[1], "he_gi") == 0) {
+			CLI_LOGI("rc he_gi: %d\n",os_strtoul(argv[2], NULL, 10));
+			bk_wifi_rc_set_he_gi(os_strtoul(argv[2], NULL, 10));
+	}
+	else if (os_strcmp(argv[1], "ht_gi") == 0) {
+			CLI_LOGI("rc ht_gi: %d\n",os_strtoul(argv[2], NULL, 10));
+			bk_wifi_rc_set_ht_gi(os_strtoul(argv[2], NULL, 10));
+	}
+	else if (os_strcmp(argv[1], "prb_type") == 0) {
+			CLI_LOGI("rc prb_type: %d\n",os_strtoul(argv[2], NULL, 10));
+			bk_wifi_rc_set_type(os_strtoul(argv[2], NULL, 10));
+	}
+	else if (os_strcmp(argv[1], "tx_cnt") == 0) {
+			CLI_LOGI("rc tx_cnt: %d\n",os_strtoul(argv[2], NULL, 10));
+			bk_wifi_set_stats_tx_count(os_strtoul(argv[2], NULL, 10));
+	}
+	else if (os_strcmp(argv[1], "max_tot_ms") == 0) {
+			CLI_LOGI("rc max_tot_ms: %d\n",os_strtoul(argv[2], NULL, 10));
+			bk_wifi_set_stats_max_tot(os_strtoul(argv[2], NULL, 10));
+	}
+	else if (os_strcmp(argv[1], "wait_num") == 0) {
+			CLI_LOGI("rc wait_num: %d\n",os_strtoul(argv[2], NULL, 10));
+			bk_wifi_set_wait_num(os_strtoul(argv[2], NULL, 10));
+	}
 	else {
 		CLI_LOGI("invalid RC paramter\n");
 		goto error;
@@ -2172,8 +2218,8 @@ void cli_pkt_debug_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char 
         CLI_LOGI("WIFI_TX_DBG_LOG_DATA_PKT     (1<<0)\r\n");
         CLI_LOGI("WIFI_TX_DBG_LOG_MGMT_PKT     (1<<1)\r\n");
         CLI_LOGI("WIFI_TX_DBG_LOG_PUSH_PKT     (1<<2)\r\n");
-        CLI_LOGI("WIFI_RX_DBG_LOG_DATA_PKT     (1<<4)\r\n");
-        CLI_LOGI("WIFI_RX_DBG_LOG_MGMT_PKT     (1<<5)\r\n");
+        CLI_LOGI("WIFI_RX_DBG_LOG_DATA_PKT     (1<<8)\r\n");
+        CLI_LOGI("WIFI_RX_DBG_LOG_MGMT_PKT     (1<<9)\r\n");
         CLI_LOGI("LWIP_TX_DBG_LOG_SOCKET       (1<<16)\r\n");
         CLI_LOGI("LWIP_TX_DBG_LOG_IP           (1<<17)\r\n");
         CLI_LOGI("LWIP_TX_DBG_LOG_TCP          (1<<18)\r\n");
