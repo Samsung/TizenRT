@@ -987,7 +987,12 @@ int wm_test_main(int argc, char *argv[])
 #ifdef __LINUX__
 	_wt_process(argc, argv);
 #else
-	task_create("wifi test sample", 100, 1024 * 10, (main_t)_wt_process, argv);
+	int tid = task_create("wifi test sample", 100, 1024 * 10, (main_t)_wt_process, argv);
+	if (tid < 0) {
+		WT_LOGE(TAG, "task create fail, errno=%d", errno);
+		_wt_signal_deinit();
+		return -1;
+	}
 #endif
 
 	WT_TEST_FUNC_WAIT;
