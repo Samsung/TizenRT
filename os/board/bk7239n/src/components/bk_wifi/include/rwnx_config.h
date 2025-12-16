@@ -32,6 +32,7 @@
  */
 #include "sdkconfig.h"
 #include "fhost_mac.h"
+#include "soc/soc.h"
 
 /*
  ****************************************************************************************
@@ -69,7 +70,6 @@
 #define __DTCM
 #define __DTCM_BSS
 #endif
-
 
 #define CFG_MAC_VER_V21
 #if (CONFIG_SOC_BK7256XX)

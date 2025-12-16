@@ -341,9 +341,9 @@ int driver_init(void)
 	//ATE uses UART TX PIN as the detect ATE mode pin,
 	//so it should be called after GPIO init and before UART init.
 	//or caused ATE can't work or UART can't work
-#if defined(CONFIG_ATE)
-	bk_ate_init();
-#endif
+// #if defined(CONFIG_ATE)
+// 	bk_ate_init();
+// #endif
 
 	//Important notice!
 	//Before UART is initialized, any call of BK_LOG_RAW/os_print/BK_LOGx may

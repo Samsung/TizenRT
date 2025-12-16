@@ -60,7 +60,7 @@ void skb_append(struct sk_buff *old, struct sk_buff *newsk, struct sk_buff_head 
  *
  *	A buffer cannot be placed on two lists at the same time.
  */
-void skb_queue_tail(struct sk_buff_head *list, struct sk_buff *newsk)
+__IRAM2 void skb_queue_tail(struct sk_buff_head *list, struct sk_buff *newsk)
 {
 	unsigned long flags;
 
@@ -152,7 +152,7 @@ alloc_exit:
 	return skb;
 }
 
-struct sk_buff *alloc_skb_with_pbuf(struct pbuf *p)
+__IRAM2 struct sk_buff *alloc_skb_with_pbuf(struct pbuf *p)
 {
 	struct sk_buff *skb = 0;
 
@@ -170,7 +170,7 @@ alloc_exit:
 	return skb;
 }
 
-void kfree_skb(struct sk_buff *skb)
+__IRAM2 void kfree_skb(struct sk_buff *skb)
 {
 	if (!skb)
 		return;

@@ -471,6 +471,13 @@ void _start(void)
 #endif
 
     bk_gpio_driver_init();
+    //Important notice!!!!!
+	//ATE uses UART TX PIN as the detect ATE mode pin,
+	//so it should be called after GPIO init and before UART init.
+	//or caused ATE can't work or UART can't work
+#if defined(CONFIG_ATE)
+	bk_ate_init();
+#endif
     bk_uart_driver_init();
     bk_flash_driver_init();
 
