@@ -1398,7 +1398,7 @@ static void i2s_exclsem_take(struct amebasmart_i2s_s *priv)
 	 */
 	do {
 		ret = sem_wait(&priv->exclsem);
-		DEBUGASSERT(errno != EINTR);
+		DEBUGASSERT(ret == OK || errno == EINTR);
 	} while (ret != OK);
 }
 
