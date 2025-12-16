@@ -409,4 +409,13 @@ menu "Bk_Wifi"
 		default n
 		help
 			Enable regulatory radar support.
+
+	config WIFI_CFG_DFT_MIN_RSV_MEM
+		int "Set WiFi Default Minimum Reserved Memory (bytes)"
+		range 0 30720
+		default 10240
+		help
+			Default minimum heap memory size that Wi-Fi should reserve.
+			Default value is 10KB (10240 bytes).
+
 endmenu

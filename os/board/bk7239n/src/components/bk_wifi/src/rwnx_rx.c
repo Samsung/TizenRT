@@ -169,7 +169,7 @@ void fhost_msdu_init(void)
 {
 }
 
-void rwm_check_rx_header_pattern(void *host_id)
+__IRAM2 void rwm_check_rx_header_pattern(void *host_id)
 {
 	struct pbuf *p = NULL;
 	struct fhost_rx_header *rxhdr = NULL;
@@ -211,7 +211,7 @@ void rwm_check_rx_header_pattern(void *host_id)
 
 /* Get RX Buffer */
 #if BK_SS_WIFI_DP
-UINT32 rwm_get_rx_free_node(uint32_t *host_id, int len)
+__IRAM2 UINT32 rwm_get_rx_free_node(uint32_t *host_id, int len)
 {
 	uint32_t buf_addr;
 	struct pbuf *p;
@@ -246,7 +246,7 @@ UINT32 rwm_get_rx_free_node(uint32_t *host_id, int len)
 	return buf_addr;
 }
 #else
-UINT32 rwm_get_rx_free_node(uint32_t *host_id, int len)
+__IRAM2 UINT32 rwm_get_rx_free_node(uint32_t *host_id, int len)
 {
 	uint32_t buf_addr;
 	struct pbuf *p;
@@ -583,7 +583,7 @@ void rwnx_upload_amsdu(struct fhost_rx_header *rxhdr)
 #if CONFIG_RWNX_PROTO_DEBUG
 extern uint8_t proto_debug_flag;
 #endif
-UINT32 rwm_upload_data(void *host_id, uint32_t frame_len)
+__IRAM2 UINT32 rwm_upload_data(void *host_id, uint32_t frame_len)
 {
 	/*
 	 * +-----  host_id (struct pbuf{} *)
@@ -746,7 +746,7 @@ UINT32 rwm_rx_monitor(void *host_id, uint32_t frame_len)
 	return 0;
 }
 
-int fhost_rxbuf_push()
+__IRAM2 int fhost_rxbuf_push()
 {
 #if !BK_MIN_RX_BUFSZ
 #if CONFIG_LWIP
@@ -808,7 +808,7 @@ void fhost_free_rx_buffer(uint32 host_id)
 /*
  * FIXME: BK7236, don't free buff_addr when lwip is used or monitor.
  */
-void fhost_rx_desc_handler(struct rxu_stat_val *rxstat)
+__IRAM2 void fhost_rx_desc_handler(struct rxu_stat_val *rxstat)
 {
 	uint16_t status = rxstat->status;
 	struct fhost_rx_header *rxhdr;

@@ -12,13 +12,14 @@
 #include "bk_compiler.h"
 #include "rw_msdu.h"
 #include "bk_rw.h"
+#include "rwnx_config.h"
 #include "os/str.h"
 #include "os/mem.h"
 #include "rwnx_defs.h"
 #include "lwip/netif.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-void *rwm_mgmt_vif_idx2ptr(UINT8 vif_idx)
+__IRAM2 inline void *rwm_mgmt_vif_idx2ptr(UINT8 vif_idx)
 {
 	void *vif_entry = NULL;
 
@@ -45,7 +46,7 @@ void *rwm_mgmt_vif_type2ptr(UINT8 vif_type)
 	return vif_entry;
 }
 
-void *rwm_mgmt_sta_idx2ptr(UINT8 staid)
+__IRAM2 inline void *rwm_mgmt_sta_idx2ptr(UINT8 staid)
 {
 	void *sta_entry = NULL;
 
@@ -200,7 +201,7 @@ UINT8 rwm_mgmt_get_netif2vif(struct netif *netif)
 #endif
 #endif /* CONFIG_NO_HOSTED */
 
-UINT8 rwm_mgmt_tx_get_staidx(UINT8 vif_idx, void *dstmac)
+__IRAM2 inline UINT8 rwm_mgmt_tx_get_staidx(UINT8 vif_idx, void *dstmac)
 {
 	return vif_mgmt_tx_get_staidx(vif_idx, dstmac);
 }

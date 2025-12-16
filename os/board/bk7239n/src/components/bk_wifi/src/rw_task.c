@@ -90,7 +90,7 @@ extern bool ps_close_timer;
 int ps_need_pre_process_wrapper( UINT32 arg );
 bool power_save_rf_sleep_check_wrapper(void);
 
-void app_set_sema(void)
+__IRAM2 void app_set_sema(void)
 {
 #if !CONFIG_FULLY_HOSTED
 	bk_err_t ret;
@@ -121,7 +121,7 @@ static void kmsg_bk_thread_main(void *arg)
 
 
 void macif_rx_app_handler(void);
-void bmsg_rx_handler(BUS_MSG_T *msg)
+__IRAM2 void bmsg_rx_handler(BUS_MSG_T *msg)
 {
 	GLOBAL_INT_DECLARATION();
 
@@ -166,7 +166,7 @@ void bmsg_skt_tx_handler(BUS_MSG_T *msg)
 	}
 }
 
-void bmsg_tx_handler(BUS_MSG_T *msg)
+__IRAM2 void bmsg_tx_handler(BUS_MSG_T *msg)
 {
 	struct pbuf *p = (struct pbuf *)msg->arg;
 	struct pbuf *q = p;
@@ -417,7 +417,7 @@ void bmsg_skt_tx_sender(void *arg)
 }
 
 
-void bmsg_null_sender(void)
+__IRAM2 void bmsg_null_sender(void)
 {
 	bk_err_t ret;
 	BUS_MSG_T msg;
@@ -435,7 +435,7 @@ void bmsg_null_sender(void)
 		RWNX_LOGW("bmsg_null_sender failed, ret=%d\r\n", ret);
 }
 
-void bmsg_rx_sender(void *arg)
+__IRAM2 void bmsg_rx_sender(void *arg)
 {
 	bk_err_t ret;
 	BUS_MSG_T msg;
@@ -467,7 +467,7 @@ void bmsg_rx_sender(void *arg)
 
 #if !CONFIG_FULLY_HOSTED
 #if BK_SS_WIFI_DP
-int bmsg_tx_sender(struct pbuf *p, uint32_t vif_idx)
+__IRAM2 int bmsg_tx_sender(struct pbuf *p, uint32_t vif_idx)
 {
 	bk_err_t ret;
 	BUS_MSG_T msg;
@@ -505,13 +505,13 @@ int bmsg_tx_sender(struct pbuf *p, uint32_t vif_idx)
 	return ret;
 }
 #else
-int bmsg_tx_sender(struct pbuf *p, uint32_t vif_idx)
+__IRAM2 int bmsg_tx_sender(struct pbuf *p, uint32_t vif_idx)
 {
 	bk_err_t ret;
 	BUS_MSG_T msg;
 	uint16_t min_rsv_mem __maybe_unused = 0;
 
-	#if CONFIG_RWNX_SW_TXQ
+	#if 0//CONFIG_RWNX_SW_TXQ
 	bk_wifi_get_min_rsv_mem(&min_rsv_mem);
 
 	// if the left free heap size is less than threshold value, the new coming
@@ -826,7 +826,7 @@ void bmsg_ps_handler(BUS_MSG_T *msg)
 
 #if CONFIG_PM_V2
 ////////7256 powersave V2.0
-static void core_thread_main(void *arg)
+__IRAM2 static void core_thread_main(void *arg)
 {
 	bk_err_t ret;
 	BUS_MSG_T msg;
