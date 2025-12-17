@@ -127,10 +127,13 @@ static int dsi_dev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	priv = inode->i_private;
 	DEBUGASSERT(priv);
 
-	ret = sem_wait(&priv->sem);
-	if (ret < 0) {
-		return ret;
-	}
+	/* This will be blocked until the semaphore is posted */
+	/* But this ioctl is only for getting the device params, so it's not a problem */
+	/* No possible to deadlock */
+	do {
+		ret = sem_wait(&priv->sem);
+		DEBUGASSERT(ret == 0 || errno == EINTR);
+	} while (ret < 0);
 
 	/* Process the IOCTL command */
 
