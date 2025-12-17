@@ -1117,6 +1117,7 @@ uint32_t ftl_load_from_storage_i(void *pdata_tmp, uint16_t offset, uint16_t size
 	return ret;
 }
 
+
 uint32_t ftl_write(uint16_t logical_addr, uint32_t w_data)
 {
 	uint32_t ret = FTL_WRITE_SUCCESS;
@@ -1167,11 +1168,15 @@ L_retry:
 			uint32_t key = ftl_key_init(logical_addr, length);
 
 			//ftl_page_write(g_pPage + g_cur_pageID, g_free_cell_index + 1, key);
-			ftl_page_write(g_pPage + g_cur_pageID, g_free_cell_index, w_data);
+			ret = ftl_page_write(g_pPage + g_cur_pageID, g_free_cell_index, w_data);
+			if (ret != FTL_WRITE_SUCCESS)
+				goto L_fail;
 
 			flash_set_bit(&key, BIT_VALID);
 
-			ftl_page_write(g_pPage + g_cur_pageID, g_free_cell_index + 1, key);
+			ret = ftl_page_write(g_pPage + g_cur_pageID, g_free_cell_index + 1, key);
+			if (ret != FTL_WRITE_SUCCESS)
+				goto L_fail;
 
 			if (FTL_USE_MAPPING_TABLE == 1) { //mapping table otp
 				write_mapping_table(logical_addr, g_cur_pageID, g_free_cell_index);
@@ -1179,7 +1184,7 @@ L_retry:
 
 			g_free_cell_index += (length + 1);
 
-			ret = FTL_WRITE_SUCCESS;
+			//ret = FTL_WRITE_SUCCESS;
 		} else {
 			// try to find out free cell
 
@@ -1225,6 +1230,7 @@ L_retry:
 		}
 	}
 
+L_fail:
 		if (sem_flag){
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
 			rtw_down_timeout_sema(&ftl_sem, FTL_LONGEST_WAIT_TIME);
@@ -1232,7 +1238,6 @@ L_retry:
 			xSemaphoreGiveRecursive(ftl_sem);
 #endif
 		}
-
 
 	FTL_PRINTF(FTL_LEVEL_WARN, "[ftl] w 0x%08x: 0x%08x (%d)\r\n", logical_addr, (unsigned int)w_data, (int)ret);
 
