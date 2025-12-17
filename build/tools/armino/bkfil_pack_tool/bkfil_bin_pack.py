@@ -51,7 +51,7 @@ class BKFilBinPack:
     def _get_parser(self) -> PartitionsParser:
         parser = PartitionsParser(self.config)
         required = ["kernel", "bootparam"]
-        optional = ["app1", "app2"]
+        optional = ["app1", "app2", "userfs"]
         if self.config.get("CONFIG_BINARY_SIGNING", "n") != "y":
             required += ["bl1"]
         parser.set_required(required)
