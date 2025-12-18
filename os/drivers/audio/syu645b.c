@@ -505,7 +505,7 @@ static int syu645b_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
 		case AUDIO_FU_EQUALIZER: {
 			uint32_t preset = caps->ac_controls.w;
-			syu645b_set_equalizer(priv, preset);
+			ret = syu645b_set_equalizer(priv, preset);
 		}
 		break;
 		default:
@@ -1243,11 +1243,28 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 		for (int i = 0; i < script.type - 1; i++) {
 			reg[i+1] = script.val[i];
 		}
-
+		/* TODO rtl8730 returns result of i2c_write wrongly this need to be checked */
 		ret = i2c_write(dev, syu645b_i2c_config, (uint8_t *)reg, script.type);
+		audvdbg("ret : %d\n", ret);
 		if (ret != script.type) {
-			auddbg("Error, cannot write to reg addr 0x%x, ret = %d\n", script.addr, ret);
-			break;
+			/* ETIMEDOUT can be happened if very high thread run simultaneously hence add retry */
+			if (ret == -ETIMEDOUT) {
+				int count = 0;
+				while (count < 3) {
+					ret = i2c_write(dev, syu645b_i2c_config, (uint8_t *)reg, script.type);
+					if (ret == script.type) {
+						break;
+					}
+					count++;
+				}
+				if (ret != script.type) {
+					auddbg("Error, retry failed for reg addr 0x%x, ret = %d\n", script.addr, ret);
+					break;
+				}
+			} else {
+				auddbg("Error, cannot write to reg addr 0x%x, ret = %d\n", script.addr, ret);
+				break;
+			}
 		}
 	}
 	
