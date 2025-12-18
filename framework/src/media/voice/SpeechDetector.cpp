@@ -38,6 +38,7 @@ namespace media {
 namespace voice {
 
 vector<shared_ptr<SpeechDetectorListenerInterface>> SpeechDetectorImpl::mSpeechDetectorListenerList;
+std::mutex SpeechDetectorImpl::mSpeechDetectorListenerListMutex;
 
 SpeechDetector *SpeechDetector::instance()
 {
@@ -306,11 +307,13 @@ bool SpeechDetectorImpl::waitEndPoint(int timeout)
 
 void SpeechDetectorImpl::addListener(std::shared_ptr<SpeechDetectorListenerInterface> listener)
 {
+	std::lock_guard<std::mutex> lock(mSpeechDetectorListenerListMutex);
 	mSpeechDetectorListenerList.push_back(listener);
 }
 
 bool SpeechDetectorImpl::removeListener(std::shared_ptr<SpeechDetectorListenerInterface> listener)
 {
+	std::lock_guard<std::mutex> lock(mSpeechDetectorListenerListMutex);
 	auto itr = std::find(mSpeechDetectorListenerList.begin(), mSpeechDetectorListenerList.end(), listener);
 	if (itr == mSpeechDetectorListenerList.end()) {
 		meddbg("listener is not found\n");
@@ -358,6 +361,8 @@ void SpeechDetectorImpl::speechResultListener(audio_device_process_unit_subtype_
 {
 	medvdbg("Event received in speech detector listener. Event = %d\n", event);
 	speech_detect_event_type_e sdEvent = getSpeechDetectEvent(event);
+
+	std::lock_guard<std::mutex> lock(mSpeechDetectorListenerListMutex);
 	SpeechDetectorListenerWorker& sdlw = SpeechDetectorListenerWorker::getWorker();
 	for (auto &itr : mSpeechDetectorListenerList) {
 		sdlw.enQueue(&SpeechDetectorListenerInterface::onSpeechDetectionListener, itr, sdEvent);
