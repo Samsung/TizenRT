@@ -32,7 +32,6 @@ static CSIFW_RES ping_generator_open_socket(int *ping_socket, struct sockaddr **
 
 void ping_generator_change_interval(unsigned int pingInterval)
 {
-	
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
 		CSIFW_LOGE("Invalid context pointer (NULL)");
@@ -46,7 +45,6 @@ void ping_generator_change_interval(unsigned int pingInterval)
 
 static u16_t standard_chksum(void *dataptr, u16_t len)
 {
-	
 	if (!dataptr) {
 		CSIFW_LOGE("Invalid data pointer for checksum");
 		return 0;
@@ -92,7 +90,6 @@ static u16_t standard_chksum(void *dataptr, u16_t len)
 
 static void ping_prepare_echo(struct icmp_echo_hdr *p_iecho, u16_t len)
 {
-	
 	if (!p_iecho) {
 		CSIFW_LOGE("Invalid ICMP echo header pointer");
 		return;
@@ -147,7 +144,6 @@ static CSIFW_RES ping_send(int ping_socket, struct icmp_echo_hdr *p_iecho, struc
 
 void *pingThreadFun(void *vargp)
 {
-	
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
 		CSIFW_LOGE("Invalid context pointer (NULL)");
@@ -160,7 +156,7 @@ void *pingThreadFun(void *vargp)
 	while (!p_csifw_ctx->ping_thread_stop) {
 		usleep(p_csifw_ctx->ping_Interval);
 		if (ping_send(ping_socket, p_iecho, socketAddr) != CSIFW_OK) {
-			CSIFW_LOGE("Ping send failed - errno=%d (%s)", errno, strerror(errno));
+			CSIFW_LOGE("Ping send failed");
 		}
 	}
 	CSIFW_LOGD("[THREAD] : EXIT");
@@ -169,7 +165,6 @@ void *pingThreadFun(void *vargp)
 
 CSIFW_RES ping_generator_start(void)
 {
-	
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
 		CSIFW_LOGE("Invalid context pointer (NULL)");
@@ -195,7 +190,6 @@ CSIFW_RES ping_generator_start(void)
 
 CSIFW_RES csi_ping_generator_initialize(void)
 {
-	
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
 		CSIFW_LOGE("Invalid context pointer (NULL)");
@@ -208,10 +202,7 @@ CSIFW_RES csi_ping_generator_initialize(void)
 
 	CSIFW_LOGD("Opening ping socket");
 	if (ping_generator_open_socket(&ping_socket, &socketAddr, &result) != CSIFW_OK) {
-		CSIFW_LOGE("Failed to open ping socket (errno=%d: %s)", errno, strerror(errno));
-		if (ping_generator_close_socket(&ping_socket, &result) != CSIFW_OK) {
-			CSIFW_LOGE("Failed to close socket after open failure - errno=%d (%s)", errno, strerror(errno));
-		}
+		CSIFW_LOGE("Failed to open ping socket :%d", CSIFW_ERROR);
 		return CSIFW_ERROR;
 	}
 	CSIFW_LOGD("Ping socket opened successfully (fd=%d)", ping_socket);
@@ -240,7 +231,6 @@ CSIFW_RES csi_ping_generator_initialize(void)
 
 CSIFW_RES csi_ping_generator_cleanup(void)
 {
-	
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
 		CSIFW_LOGE("Invalid context pointer (NULL)");
@@ -250,7 +240,7 @@ CSIFW_RES csi_ping_generator_cleanup(void)
 		free(p_csifw_ctx->p_iecho);
 	}
 	if (ping_generator_close_socket(&p_csifw_ctx->ping_socket, &p_csifw_ctx->result) != CSIFW_OK) {
-		CSIFW_LOGE("Failed to close ping socket - errno=%d (%s)", errno, strerror(errno));
+		CSIFW_LOGE("Failed to close ping socket :%d", CSIFW_ERROR);
 		return CSIFW_ERROR;
 	}
 	return CSIFW_OK;
@@ -258,7 +248,6 @@ CSIFW_RES csi_ping_generator_cleanup(void)
 
 CSIFW_RES ping_generator_stop(void)
 {
-	
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
 		CSIFW_LOGE("Invalid context pointer (NULL)");
@@ -276,7 +265,6 @@ CSIFW_RES ping_generator_stop(void)
 
 static int setIcmp4Config(struct addrinfo *hints)
 {
-	
 	memset(hints, 0, sizeof(struct addrinfo));
 	hints->ai_family = AF_INET;
 	hints->ai_socktype = SOCK_RAW;
@@ -286,7 +274,6 @@ static int setIcmp4Config(struct addrinfo *hints)
 
 static CSIFW_RES ping_generator_open_socket(int *ping_socket, struct sockaddr **socketAddr, struct addrinfo **result)
 {
-	
 	const char *tAddr;
 	char ipv4_buf[16];
 	char ipv4_address[4];
@@ -351,7 +338,6 @@ static CSIFW_RES ping_generator_open_socket(int *ping_socket, struct sockaddr **
 
 static CSIFW_RES ping_generator_close_socket(int *ping_socket, struct addrinfo **result)
 {
-	
 	CSIFW_RES res = CSIFW_OK;
 	if (*result) {
 		freeaddrinfo(*result);

@@ -39,14 +39,10 @@ static csifw_service_info_t *add_service(csifw_context_t *p_csifw_ctx, service_c
 
 static void csi_network_state_listener(CONNECTION_STATE state)
 {
-	
 	if (!g_pcsifw_context) {
 		return;
 	}
-
-	if (pthread_mutex_lock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Failed to lock g_api_mutex");
-	}
+	CSIFW_MUTEX_LOCK(&g_api_mutex);
 
 	csifw_context_t *p_csifw_ctx = g_pcsifw_context;
 	CSIFW_LOGD("Network Status: %s", state ? "disconnected" : "connected");
@@ -74,10 +70,7 @@ static void csi_network_state_listener(CONNECTION_STATE state)
 		}
 	}
 	nw_state_notify_service(state);
-
-	if (pthread_mutex_unlock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock g_api_mutex");
-	}
+	CSIFW_MUTEX_UNLOCK(&g_api_mutex);
 }
 
 static void CSIRawDataListener(CSIFW_RES res, int raw_csi_buff_len, unsigned char *raw_csi_buff, int raw_csi_data_len)
@@ -92,11 +85,8 @@ static void CSIRawDataListener(CSIFW_RES res, int raw_csi_buff_len, unsigned cha
 		getParsedData(raw_csi_buff, raw_csi_buff_len, p_csifw_ctx->csi_config, p_csifw_ctx->parsed_buffptr, &p_csifw_ctx->ParsedDataBufferLen);
 	}
 
-	//we use this service state but if its called parelly this is will stuck
-	if (pthread_mutex_lock(&p_csifw_ctx->data_reciever_mutex) != 0) {
-		CSIFW_LOGE("Failed to lock data_reciever_mutex");
-	}
-
+	// we use this service state but if its called parelly this is will stuck
+  	CSIFW_MUTEX_LOCK(&g_pcsifw_context->data_reciever_mutex);
 	for (int i = 0; i < CSIFW_MAX_NUM_APPS; i++) {
 		//send raw
 		if (p_csifw_ctx->csi_services[i].svc_id != 0 && p_csifw_ctx->csi_services[i].svc_state == CSI_SERVICE_START) {
@@ -109,21 +99,14 @@ static void CSIRawDataListener(CSIFW_RES res, int raw_csi_buff_len, unsigned cha
 			}
 		}
 	}
-
-	if (pthread_mutex_unlock(&p_csifw_ctx->data_reciever_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock data_reciever_mutex");
-	}
+	CSIFW_MUTEX_UNLOCK(&g_pcsifw_context->data_reciever_mutex);
 }
 
 CSIFW_RES csifw_registerService(csifw_service_handle *p_hnd, service_callbacks_t *p_svc_cb, csi_config_type_t config_type, unsigned int interval)
 {
-	
 	CSIFW_RES res = CSIFW_OK;
 	csifw_service_info_t *p_svc_info = NULL;
-	
-	if (pthread_mutex_lock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Mutex lock failed! %d", errno);
-	}
+  	CSIFW_MUTEX_LOCK(&g_api_mutex);
 
 	if (!p_hnd) {
 		CSIFW_LOGE("Invalid handle argument, should not be a null pointer");
@@ -166,9 +149,12 @@ CSIFW_RES csifw_registerService(csifw_service_handle *p_hnd, service_callbacks_t
 			goto on_error;
 		}
 		g_pcsifw_context->csi_config = config_type;
-		g_pcsifw_context->csi_interval = (config_type == HT_CSI_DATA_ACC1 || config_type == HT_CSI_DATA) ? interval : 0;
-
-		ping_generator_change_interval(g_pcsifw_context->csi_interval);
+    	g_pcsifw_context->csi_interval = interval;
+		if (config_type == HT_CSI_DATA_ACC1 || config_type == HT_CSI_DATA) {
+			ping_generator_change_interval(g_pcsifw_context->csi_interval);
+		} else {
+			ping_generator_change_interval(0);
+		}
 		csi_packet_callback_register(CSIRawDataListener);
 		if (!network_monitor_init(csi_network_state_listener)) {
 			CSIFW_LOGE("Network_Monitor_Init Failed");
@@ -203,21 +189,16 @@ CSIFW_RES csifw_registerService(csifw_service_handle *p_hnd, service_callbacks_t
 	}
 
 on_error:
-	if (pthread_mutex_unlock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock g_api_mutex");
-	}
+	CSIFW_MUTEX_UNLOCK(&g_api_mutex);
 	return res;
 }
 
 CSIFW_RES csifw_start(csifw_service_handle hnd)
 {
-	
 	CSIFW_RES res = CSIFW_OK;
 	csifw_context_t *p_csifw_ctx = NULL;
 	csifw_service_info_t *p_svc_info = NULL;
-	if (pthread_mutex_lock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Mutex lock failed! %d", errno);
-	}
+	CSIFW_MUTEX_LOCK(&g_api_mutex);
 
 	res = check_hnd_validity(hnd);
 	if (res != CSIFW_OK) {
@@ -254,38 +235,27 @@ CSIFW_RES csifw_start(csifw_service_handle hnd)
 		}
 	}
 	
-	if (pthread_mutex_lock(&p_csifw_ctx->data_reciever_mutex) != 0) {
-		CSIFW_LOGE("Mutex lock data_reciever_mutex failed! %d", errno);
-	}
-
+	CSIFW_MUTEX_LOCK(&p_csifw_ctx->data_reciever_mutex);
 	p_svc_info->svc_state = CSI_SERVICE_START;
 	if (p_svc_info->parsed_data_cb) {
 		p_csifw_ctx->parsed_data_cb_started_count++;
 	}
-	
-	if (pthread_mutex_unlock(&p_csifw_ctx->data_reciever_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock data_reciever_mutex!");
-	}
+	CSIFW_MUTEX_UNLOCK(&p_csifw_ctx->data_reciever_mutex);
 
 	CSIFW_LOGI("Service [%d] started successfully, services count is %d", 
 		p_svc_info->svc_id, p_csifw_ctx->service_count);
 
 on_error:
-	if (pthread_mutex_unlock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock g_api_mutex");
-	}
+	CSIFW_MUTEX_UNLOCK(&g_api_mutex);
 	return res;
 }
 
 CSIFW_RES csifw_stop(csifw_service_handle hnd)
 {
-	
 	CSIFW_RES res = CSIFW_OK;
 	csifw_context_t *p_csifw_ctx = NULL;
 	csifw_service_info_t *p_svc_info = NULL;
-	if (pthread_mutex_lock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Mutex lock failed! %d", errno);
-	}
+	CSIFW_MUTEX_LOCK(&g_api_mutex);
 
 	res = check_hnd_validity(hnd);
 	if (res != CSIFW_OK) {
@@ -302,16 +272,12 @@ CSIFW_RES csifw_stop(csifw_service_handle hnd)
 		goto on_error;
 	}
 
-	if (pthread_mutex_lock(&p_csifw_ctx->data_reciever_mutex) != 0) {
-		CSIFW_LOGE("Mutex lock data_reciever_mutex failed! %d", errno);
-	}
+	CSIFW_MUTEX_LOCK(&p_csifw_ctx->data_reciever_mutex);
 	p_svc_info->svc_state = CSI_SERVICE_STOP;
 	if (p_svc_info->parsed_data_cb) {
 		p_csifw_ctx->parsed_data_cb_started_count--;
 	}
-	if (pthread_mutex_unlock(&p_csifw_ctx->data_reciever_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock data_reciever_mutex!");
-	}
+	CSIFW_MUTEX_UNLOCK(&p_csifw_ctx->data_reciever_mutex);
 
 	if (!all_services_stopped()) {
 		goto on_error;
@@ -328,22 +294,16 @@ CSIFW_RES csifw_stop(csifw_service_handle hnd)
 		p_svc_info->svc_id, p_csifw_ctx->service_count);
 
 on_error:
-	if (pthread_mutex_unlock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock g_api_mutex");
-	}
+	CSIFW_MUTEX_UNLOCK(&g_api_mutex);
 	return res;
 }
 
 CSIFW_RES csifw_unregisterService(csifw_service_handle hnd)
 {
-	
 	CSIFW_RES res = CSIFW_OK;
 	csifw_context_t *p_csifw_ctx = NULL;
 	csifw_service_info_t *p_svc_info = NULL;
-
-	if (pthread_mutex_lock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Mutex lock failed! %d", errno);
-	}
+	CSIFW_MUTEX_LOCK(&g_api_mutex);
 
 	res = check_hnd_validity(hnd);
 	if (res != CSIFW_OK) {
@@ -381,20 +341,15 @@ CSIFW_RES csifw_unregisterService(csifw_service_handle hnd)
 	CSIFW_LOGI("Un-Registering Successful");
 
 on_error:
-	if (pthread_mutex_unlock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock g_api_mutex");
-	}
+	CSIFW_MUTEX_UNLOCK(&g_api_mutex);
 	return res;
 }
 
 CSIFW_RES csifw_set_interval(csifw_service_handle hnd, unsigned int interval)
 {
-	
 	CSIFW_RES res = CSIFW_OK;
 	csifw_context_t *p_csifw_ctx = NULL;
-	if (pthread_mutex_lock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Mutex lock failed! %d", errno);
-	}
+	CSIFW_MUTEX_LOCK(&g_api_mutex);
 
 	res = check_hnd_validity(hnd);
 	if (res != CSIFW_OK) {
@@ -431,20 +386,15 @@ CSIFW_RES csifw_set_interval(csifw_service_handle hnd, unsigned int interval)
 	CSIFW_LOGD("Interval updated : %u", p_csifw_ctx->csi_interval);
 
 on_error:
-	if (pthread_mutex_unlock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock g_api_mutex");
-	}
+	CSIFW_MUTEX_UNLOCK(&g_api_mutex);
 	return res;
 }
 
 CSIFW_RES csifw_get_interval(csifw_service_handle hnd, unsigned int *p_interval)
 {
-	
 	CSIFW_RES res = CSIFW_OK;
 	csifw_context_t *p_csifw_ctx = NULL;
-	if (pthread_mutex_lock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Mutex lock failed! %d", errno);
-	}
+	CSIFW_MUTEX_LOCK(&g_api_mutex);
 
 	res = check_hnd_validity(hnd);
 	if (res != CSIFW_OK) {
@@ -462,20 +412,15 @@ CSIFW_RES csifw_get_interval(csifw_service_handle hnd, unsigned int *p_interval)
 	CSIFW_LOGD("Current Interval is :%d", p_csifw_ctx->csi_interval);
 
 on_error:
-	if (pthread_mutex_unlock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock g_api_mutex");
-	}
+	CSIFW_MUTEX_UNLOCK(&g_api_mutex);
 	return res;
 }
 
 CSIFW_RES csifw_get_config(csifw_service_handle hnd, csi_config_type_t *config_type)
 {
-	
 	CSIFW_RES res = CSIFW_OK;
 	csifw_context_t *p_csifw_ctx = NULL;
-	if (pthread_mutex_lock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Mutex lock failed! %d", errno);
-	}
+	CSIFW_MUTEX_LOCK(&g_api_mutex);
 
 	res = check_hnd_validity(hnd);
 	if (res != CSIFW_OK) {
@@ -493,21 +438,16 @@ CSIFW_RES csifw_get_config(csifw_service_handle hnd, csi_config_type_t *config_t
 	CSIFW_LOGD("Current Config is :%d", p_csifw_ctx->csi_config);
 
 on_error:
-	if (pthread_mutex_unlock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock g_api_mutex");
-	}
+	CSIFW_MUTEX_UNLOCK(&g_api_mutex);
 	return res;
 }
 
 CSIFW_RES csifw_get_ap_mac_addr(csifw_service_handle hnd, csifw_mac_info *p_mac_info)
 {
-	
 	CSIFW_RES res = CSIFW_OK;
 	csifw_context_t *p_csifw_ctx = NULL;
 	csifw_service_info_t *p_svc_info = NULL;
-	if (pthread_mutex_lock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Mutex lock failed! %d", errno);
-	}
+	CSIFW_MUTEX_LOCK(&g_api_mutex);
 
 	res = check_hnd_validity(hnd);
 	if (res != CSIFW_OK) {
@@ -529,19 +469,15 @@ CSIFW_RES csifw_get_ap_mac_addr(csifw_service_handle hnd, csifw_mac_info *p_mac_
 		res = CSIFW_ERROR_INVALID_SERVICE_STATE;
 		goto on_error;
 	}
-
 	res = csi_packet_receiver_get_mac_addr(p_mac_info);
 
 on_error:
-	if (pthread_mutex_unlock(&g_api_mutex) != 0) {
-		CSIFW_LOGE("Failed to unlock g_api_mutex");
-	}
+	CSIFW_MUTEX_UNLOCK(&g_api_mutex);
 	return res;
 }
 
 CSIFW_RES csifw_force_restart(csifw_service_handle hnd)
 {
-	
 	// THIS SERVICE WILL FORCE RESTART THE THREADS TO GET DATA ANYHOW
 	// ONLY CHECHK IS INIT = TRUE.
 	CSIFW_RES res = CSIFW_ERROR;
@@ -552,7 +488,6 @@ CSIFW_RES csifw_force_restart(csifw_service_handle hnd)
 
 static int get_service_idx(unsigned int id)
 {
-	
 	if ((!g_pcsifw_context) || (g_pcsifw_context->service_count == 0)) {
 		return -1;
 	}
@@ -567,7 +502,6 @@ static int get_service_idx(unsigned int id)
 
 static int get_empty_idx(void)
 {
-	
 	if (!g_pcsifw_context) {
 		return CSIFW_ERROR_NOT_INITIALIZED;
 	}
@@ -591,10 +525,7 @@ static int get_empty_idx(void)
  */
 csifw_service_info_t *add_service(csifw_context_t *p_csifw_ctx, service_callbacks_t *p_svc_cb)
 {
-	
 	unsigned int cid = 0;
-
-	/* get empty index */
 	int idx = get_empty_idx();
 	if (idx < 0) {
 		CSIFW_LOGE("Max Number of services already registered");
@@ -647,7 +578,6 @@ csifw_service_info_t *add_service(csifw_context_t *p_csifw_ctx, service_callback
 
 static CSIFW_RES remove_service(csifw_context_t *p_csifw_ctx, csifw_service_info_t *p_svc_info)
 {
-	
 	// find service index and stop
 	if (!g_pcsifw_context) {
 		return CSIFW_ERROR_NOT_INITIALIZED;
@@ -680,7 +610,6 @@ static CSIFW_RES remove_service(csifw_context_t *p_csifw_ctx, csifw_service_info
 
 static void nw_state_notify_service(CONNECTION_STATE state)
 {
-	
 	if (!g_pcsifw_context) {
 		return;
 	}
@@ -708,7 +637,6 @@ csifw_context_t *get_csifw_context()
 
 static CSIFW_RES check_hnd_validity(csifw_service_handle hnd)
 {
-	
 	if (!hnd) {
 		CSIFW_LOGE("Invalid/NULL handle argument, should be same as csifw_service_handle returned from csifw_registerService()");
 		return CSIFW_INVALID_ARG;
@@ -746,7 +674,6 @@ static CSIFW_RES check_hnd_validity(csifw_service_handle hnd)
 
 static void destroy_csifw_context(void)
 {
-	
 	if (!g_pcsifw_context) {
 		return;
 	}
@@ -757,7 +684,6 @@ static void destroy_csifw_context(void)
 
 static int all_services_stopped(void)
 {
-	
 	if (!g_pcsifw_context) {
 		return 0;
 	}

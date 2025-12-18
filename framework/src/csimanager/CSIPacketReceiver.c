@@ -26,6 +26,21 @@
 
 #define RCVR_TH_NAME "csifw_data_receiver_th"
 
+/* FD open-close operation functions */
+static inline CSIFW_RES open_driver(unsigned int *fd) {
+  *fd = open(CONFIG_WIFICSI_CUSTOM_DEV_PATH, O_RDONLY);
+  if (*fd < 0) {
+    CSIFW_LOGE("Failed to open device path : %s errno : %d",
+               CONFIG_WIFICSI_CUSTOM_DEV_PATH, get_errno());
+    return CSIFW_ERROR;
+  }
+  return CSIFW_OK;
+}
+
+static inline void close_driver(unsigned int fd) {
+  close(fd);
+}
+
 CSIFW_RES csi_packet_receiver_set_csi_config(csi_config_action_t config_action);
 
 static int readCSIData(int fd, unsigned char *buf, int size)
@@ -44,7 +59,6 @@ static int readCSIData(int fd, unsigned char *buf, int size)
 
 static void *dataReceiverThread(void *vargp)
 {
-	
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
 		CSIFW_LOGE("Invalid context pointer (NULL)");
@@ -63,7 +77,7 @@ static void *dataReceiverThread(void *vargp)
 	while (!p_csifw_ctx->data_receiver_thread_stop) {
 		size = mq_receive(mq_handle, (char *)&msg, sizeof(msg), &prio);
 		if (size != sizeof(msg)) {
-			CSIFW_LOGE("Interrupted while waiting for deque message from kernel %zu, errono: %d", size, errno);
+			CSIFW_LOGE("Interrupted while waiting for deque message from kernel %zu, errno: %d (%s)", size, get_errno(), strerror(get_errno()));
 		} else {
 			switch (msg.msgId) {
 			case CSI_MSG_DATA_READY_CB:
@@ -99,7 +113,6 @@ static void *dataReceiverThread(void *vargp)
 
 CSIFW_RES csi_packet_callback_register(CSIDataListener CSIDataCallback)
 {
-	
 	CSIFW_LOGD("Initializing packet receiver with callback: %p", CSIDataCallback);
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
@@ -116,15 +129,17 @@ CSIFW_RES csi_packet_callback_register(CSIDataListener CSIDataCallback)
 
 CSIFW_RES csi_packet_receiver_set_csi_config(csi_config_action_t config_action)
 {
-	
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
 		CSIFW_LOGE("Invalid context pointer (NULL)");
 		return CSIFW_ERROR_NOT_INITIALIZED;
 	}
-	int fd, ret;
-	CSIFW_RES res = CSIFW_OK;
-	OPEN_DRIVER_OR_EXIT(fd)
+	unsigned int fd;
+	CSIFW_RES res = open_driver(&fd);
+	if (res != CSIFW_OK) {
+		return res;
+	}
+	int ret;
 	csi_config_args_t config_args;
 	config_args.config_action = config_action;
 	config_args.config_type = p_csifw_ctx->csi_config;
@@ -138,13 +153,12 @@ CSIFW_RES csi_packet_receiver_set_csi_config(csi_config_action_t config_action)
 	} else {
 		CSIFW_LOGD("IOCTL : CSIIOC_SET_CONFIG, Success");
 	}
-	CLOSE_DRIVER_OR_EXIT(fd)
+	close_driver(fd);
 	return res;
 }
 
 CSIFW_RES csi_packet_receiver_change_interval(void)
 {
-	
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
 		CSIFW_LOGE("Invalid context pointer (NULL)");
@@ -166,16 +180,18 @@ CSIFW_RES csi_packet_receiver_change_interval(void)
 
 CSIFW_RES csi_packet_receiver_get_mac_addr(csifw_mac_info *mac_info)
 {
-	
-	int fd;
-	OPEN_DRIVER_OR_EXIT(fd)
+	unsigned int fd;
+	CSIFW_RES res = open_driver(&fd);
+	if (res != CSIFW_OK) {
+		return res;
+	}
 	int ret = ioctl(fd, CSIIOC_GET_MAC_ADDR, (unsigned long)(mac_info));
 	if (ret < OK) {
-		CSIFW_LOGE("IOCTL : CSIIOC_GET_MAC_ADDR Failed errno : %d", get_errno());
-		CLOSE_DRIVER_OR_EXIT(fd)
+		CSIFW_LOGE("IOCTL : CSIIOC_GET_MAC_ADDR Failed errno: %d (%s)", get_errno(), strerror(get_errno()));
+		close_driver(fd);
 		return CSIFW_ERROR;
 	}
-	CLOSE_DRIVER_OR_EXIT(fd)
+	close_driver(fd);
 	CSIFW_LOGD("MAC address from driver: [%02x:%02x:%02x:%02x:%02x:%02x]", 
 		mac_info->mac_addr[0], mac_info->mac_addr[1], 
 		mac_info->mac_addr[2], mac_info->mac_addr[3], 
@@ -185,7 +201,6 @@ CSIFW_RES csi_packet_receiver_get_mac_addr(csifw_mac_info *mac_info)
 
 CSIFW_RES csi_packet_receiver_start_collect(void)
 {
-	
 	CSIFW_RES res = CSIFW_OK;
 	csifw_context_t *p_csifw_ctx = get_csifw_context();
 	if (!p_csifw_ctx) {
@@ -246,7 +261,7 @@ CSIFW_RES csi_packet_receiver_initialize(void)
 		CSIFW_LOGE("Invalid context pointer (NULL)");
 		return CSIFW_ERROR_NOT_INITIALIZED;
 	}
-	int fd;
+	unsigned int fd;
 	/* open mq */
 	mqd_t mq_handle = (mqd_t) ERROR; //= p_csifw_ctx->mq_handle;
 	struct mq_attr attr_mq;
@@ -263,15 +278,19 @@ CSIFW_RES csi_packet_receiver_initialize(void)
 	}
 	CSIFW_LOGD("Message queue opened successfully (mq_handle=%p)", mq_handle);
 	/* open driver fd */
-	OPEN_DRIVER_OR_EXIT(fd)
+	CSIFW_RES res = open_driver(&fd);
+	if (res != CSIFW_OK) {
+		mq_close(mq_handle);
+		return res;
+	}
 	// start csi data from driver
 	CSIFW_LOGD("Starting CSI data collection via IOCTL (fd=%d)", fd);
 	int ret = ioctl(fd, CSIIOC_START_CSI, NULL);
 	if (ret < OK) {
-		CSIFW_LOGE("IOCTL : CSIIOC_START_CSI Failed errno : %d", get_errno());
+		CSIFW_LOGE("IOCTL : CSIIOC_START_CSI Failed errno: %d (%s)", get_errno(), strerror(get_errno()));
 		mq_close(mq_handle);
 		mq_handle = (mqd_t) ERROR;
-		CLOSE_DRIVER_OR_EXIT(fd)
+		close_driver(fd);
 		return CSIFW_ERROR;
 	}
 	CSIFW_LOGD("Driver data collection started successfully (fd=%d)", fd);
@@ -297,13 +316,13 @@ CSIFW_RES csi_packet_receiver_cleanup(void)
 	// stop csi data from driver
 	int ret = ioctl(fd, CSIIOC_STOP_CSI, NULL);
 	if (ret < OK) {
-		CSIFW_LOGE("IOCTL : CSIIOC_STOP_CSI Failed errno : %d", get_errno());
-		CLOSE_DRIVER_OR_EXIT(fd)
+		CSIFW_LOGE("IOCTL : CSIIOC_STOP_CSI Failed errno: %d (%s)", get_errno(), strerror(get_errno()));
+		close_driver(fd);
 		return CSIFW_ERROR;
 	} else {
 		CSIFW_LOGD("Driver data collect stopped");
 	}
-	CLOSE_DRIVER_OR_EXIT(fd)
+	close_driver(fd);
 	return CSIFW_OK;
 }
 

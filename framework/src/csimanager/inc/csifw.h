@@ -99,11 +99,17 @@ int start_csi_framework(csifw_context_t *p_con_ctx);
 int stop_csi_framework(csifw_context_t *p_con_ctx);
 csifw_context_t *get_csifw_context(void);
 
-#define OPEN_DRIVER_OR_EXIT(_FD) \
-	_FD = open(CONFIG_WIFICSI_CUSTOM_DEV_PATH, O_RDONLY);\
-	if (_FD < 0) {\
-		CSIFW_LOGE("Failed to open device path : %s errno : %d", CONFIG_WIFICSI_CUSTOM_DEV_PATH, get_errno());\
-		return CSIFW_ERROR;\
-	}\
+/* Mutex lock-unlock operation macros */
+#define CSIFW_MUTEX_LOCK(mutex)                   \
+  do {                                            \
+    if (pthread_mutex_lock(mutex) != 0) {         \
+      CSIFW_LOGE("Mutex lock failed! %d", errno); \
+    }                                             \
+  } while (0)
 
-#define CLOSE_DRIVER_OR_EXIT(_FD) close(_FD);
+#define CSIFW_MUTEX_UNLOCK(mutex)                   \
+  do {                                              \
+    if (pthread_mutex_unlock(mutex) != 0) {		    \
+      CSIFW_LOGE("Mutex unlock failed! %d", errno); \
+    }                                               \
+  } while(0)
