@@ -429,6 +429,7 @@ bool SpeechDetectorImpl::changeKeywordModel(uint8_t model)
 
 bool SpeechDetectorImpl::getKeywordBufferSize(uint32_t *bufferSize)
 {
+	meddbg("[IN] getKeywordBufferSize\n");
 	if (mKeywordDetector == nullptr) {
 		meddbg("keyword detector is not init\n");
 		return false;
@@ -441,12 +442,13 @@ bool SpeechDetectorImpl::getKeywordBufferSize(uint32_t *bufferSize)
 		meddbg("keyword buffer size fetch operation failed\n");
 		return false;
 	}
-	medvdbg("keyword buffer size: %d\n", *bufferSize);
+	meddbg("keyword buffer size: %d\n", *bufferSize);
 	return true;
 }
 
 bool SpeechDetectorImpl::getKeywordData(uint8_t *buffer)
 {
+	meddbg("[IN] getKeywordData\n");
 	if (mKeywordDetector == nullptr) {
 		meddbg("keyword detector is not init\n");
 		return false;
@@ -459,6 +461,7 @@ bool SpeechDetectorImpl::getKeywordData(uint8_t *buffer)
 		meddbg("keyword buffer fetch operation failed\n");
 		return false;
 	}
+	meddbg("get keyword data done\n");
 	return true;
 }
 
