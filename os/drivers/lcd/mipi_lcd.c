@@ -129,6 +129,8 @@ struct mipi_lcd_dev_s {
 };
 
 static struct mipi_lcd_dev_s g_lcdcdev;
+static bool g_panelid_initialized = false;
+static uint32_t g_cached_panelid = 0;
 
 extern int check_lcd_vendor_send_init_cmd(struct mipi_lcd_dev_s *priv);
 extern int get_lcdinfo(FAR struct lcd_info_s *lcdinfo);
@@ -655,6 +657,66 @@ static int lcd_setcontrast(FAR struct lcd_dev_s *dev, unsigned int contrast)
 	return OK;
 }
 
+/****************************************************************************
+ * Name:  lcd_getpanelid
+ *
+ * Description:
+ *   Get the LCD panel ID (24-bit) via MIPI DSI command 0x04.
+ *   Uses lazy initialization and caches the result.
+ *
+ ****************************************************************************/
+
+static int lcd_getpanelid(FAR struct lcd_dev_s *dev, FAR uint32_t *panelid)
+{
+	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
+	int status;
+	lcd_mode_t original_mode;
+	lcm_setting_table_t read_id_cmd = {0x04, 0, {0x00}};
+	uint8_t rxbuf[3];
+	uint8_t length = sizeof(rxbuf) / sizeof(rxbuf[0]);
+
+	if (panelid == NULL) {
+		return -EINVAL;
+	}
+
+	if (g_panelid_initialized) {
+		*panelid = g_cached_panelid;
+		return OK;
+	}
+
+	while (sem_wait(&priv->sem) != OK) {
+		DEBUGASSERT(errno == EINTR);
+	}
+
+	if (priv->power == 0) {
+		lcddbg("ERROR: LCD power is OFF. Cannot read Panel ID from hardware.\n");
+		sem_post(&priv->sem);
+		return -ENODEV;
+	}
+
+	original_mode = priv->lcdonoff;
+	priv->config->mipi_mode_switch(CMD_MODE);
+	priv->lcdonoff = LCD_OFF;
+
+	status = set_return_packet_len(priv, length);
+	if (status == OK) {
+		status = read_response(priv, read_id_cmd, rxbuf, length);
+		if (status == OK) {
+			g_cached_panelid = (rxbuf[0] << 16) | (rxbuf[1] << 8) | rxbuf[2];
+			*panelid = g_cached_panelid;
+			g_panelid_initialized = true;
+		}
+	}
+
+	if (original_mode == LCD_ON) {
+		priv->config->mipi_mode_switch(VIDEO_MODE);
+		priv->lcdonoff = LCD_ON;
+	}
+
+	sem_post(&priv->sem);
+	return status;
+}
+
 static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 {
 	int xres = LCD_XRES;
@@ -843,6 +905,7 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	priv->dev.getcontrast = lcd_getcontrast;
 	priv->dev.setcontrast = lcd_setcontrast;
 	priv->dev.init = lcd_init;
+	priv->dev.getpanelid = lcd_getpanelid;
 	priv->dsi_dev = dsi;
 	priv->config = config;
 	priv->power = 0;
