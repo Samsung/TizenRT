@@ -619,6 +619,16 @@ static int binary_update_run_tests(void)
 	return OK;
 }
 
+static void show_usage(void)
+{
+	printf("Usage: kernel_update <test_type>\n");
+	printf("Available test types:\n");
+	printf("  all          - Run all tests\n");
+	printf("  same_version - Run same version test\n");
+	printf("  new_version  - Run new version test\n");
+	printf("  invalid      - Run invalid binary test\n");
+}
+
 /****************************************************************************
  * binary_update_aging_test
  ****************************************************************************/
@@ -628,5 +638,39 @@ int main(int argc, FAR char *argv[])
 int kernel_update_main(int argc, char *argv[])
 #endif
 {
-	binary_update_run_tests();	
+	if (argc == 2 && !strncmp(argv[1], "all", 4)) {
+		/* Run all tests */
+		return binary_update_run_tests();
+
+	} else if (argc == 2 && !strncmp(argv[1], "same_version", 13)) {
+		/* Get info all test. */
+		binary_update_getinfo_all();
+		
+		int ret = binary_update_same_version_test();
+		if (ret != OK) {
+			printf("Same version test failed\n");
+		}
+		return ret;
+	} else if (argc == 2 && !strncmp(argv[1], "new_version", 12)) {
+		/* Get info all test. */
+		binary_update_getinfo_all();
+		
+		int ret = binary_update_new_version_test();
+		if (ret != OK) {
+			printf("New version test failed\n");
+		}
+		return ret;
+	} else if (argc == 2 && !strncmp(argv[1], "invalid", 8)) {
+		/* Get info all test. */
+		binary_update_getinfo_all();
+		
+		int ret = binary_update_invalid_binary_test();
+		if (ret != OK) {
+			printf("Invalid binary test failed\n");
+		}
+		return ret;
+	}
+	printf("Invalid test type: %s\n", argv[1]);
+	show_usage();
+	return ERROR;
 }
