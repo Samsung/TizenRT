@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <memory>
 #include <vector>
+#include <mutex>
 
 #include <media/voice/SpeechDetector.h>
 #include <media/voice/SpeechDetectorListenerInterface.h>
@@ -63,6 +64,7 @@ private:
 	std::shared_ptr<EndPointDetector> mEndPointDetector;
 	/* @todo: check static keyword usage */
 	static std::vector<std::shared_ptr<SpeechDetectorListenerInterface>> mSpeechDetectorListenerList;
+	static std::mutex mSpeechDetectorListenerListMutex;
 };
 
 } // namespace voice
