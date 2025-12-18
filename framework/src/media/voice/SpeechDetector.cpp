@@ -307,12 +307,14 @@ bool SpeechDetectorImpl::waitEndPoint(int timeout)
 
 void SpeechDetectorImpl::addListener(std::shared_ptr<SpeechDetectorListenerInterface> listener)
 {
+	meddbg("Adding listener %p to SpeechDetector\n", listener.get());
 	std::lock_guard<std::mutex> lock(mSpeechDetectorListenerListMutex);
 	mSpeechDetectorListenerList.push_back(listener);
 }
 
 bool SpeechDetectorImpl::removeListener(std::shared_ptr<SpeechDetectorListenerInterface> listener)
 {
+	meddbg("Removing listener %p from SpeechDetector\n", listener.get());
 	std::lock_guard<std::mutex> lock(mSpeechDetectorListenerListMutex);
 	auto itr = std::find(mSpeechDetectorListenerList.begin(), mSpeechDetectorListenerList.end(), listener);
 	if (itr == mSpeechDetectorListenerList.end()) {
