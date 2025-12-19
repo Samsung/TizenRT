@@ -322,7 +322,7 @@ int csifw_test_main(int argc, char **args)
 int csifw_app_init(int argc, char **args)
 {
 	if (argc == 1) {
-		printf("CSI_TESTER APP usage: csifw_app {option}\n" 
+		printf("CSI_TESTER APP usage: csifw_test {option}\n" 
 				" 1: CSI Init only\n" 
 				" 2: CSI Start only\n" 
 				" 3: CSI Stop only\n" 

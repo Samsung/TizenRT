@@ -1,4 +1,4 @@
-UTC_TYPE=CHECK
+
 ROOTDIR=$(abspath ../../..)
 ROOTDIR_CSIPLATFORM=$(ROOTDIR)
 include utcmk.defs

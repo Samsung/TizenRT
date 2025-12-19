@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_CSIFW_SAMPLE
+	bool "CSIFW SAMPLE Application"
+	default n
+	depends on CSIFW
+	---help---
+		CSIFW SAMPLE Application
