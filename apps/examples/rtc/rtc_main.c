@@ -103,7 +103,7 @@ static void *rtc_test(void *arg)
 	int fd;
 
 	/* populate prev_time to epoch (01-01-1970) in order reset RTC as it provides number of seconds passed starting from epoch */
-	struct rtc_time prev_time = RTC_TIME_INITIALIZER(1970, 1, 1, 0, 0, 0);
+	struct rtc_time prev_time;
 	struct rtc_time next_time;
 	struct tm prev_tm;
 	struct tm next_tm;
@@ -126,11 +126,10 @@ static void *rtc_test(void *arg)
 		printf("ERROR : Fail to open rtc.\n");
 		return NULL;
 	}
-
-	/* Initialize the RTC time as 0 */
-	ret = ioctl(fd, RTC_SET_TIME, (unsigned long)&prev_time);
+	/* Read initial RTC time */
+	ret = ioctl(fd, RTC_RD_TIME, (unsigned long)&prev_time);
 	if (ret < 0) {
-		printf("ERROR : Fail to set RTC init time.\n");
+		printf("ERROR : Fail to get from RTC.\n");
 		close(fd);
 		return NULL;
 	}
