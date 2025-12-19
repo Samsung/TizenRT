@@ -63,7 +63,7 @@ CSRCS += sched_getaffinity.c sched_setaffinity.c
 CSRCS += sched_getcpu.c
 
 ifeq ($(CONFIG_CPU_HOTPLUG), y)
-CSRCS += sched_cpuon.c sched_cpuoff.c
+CSRCS += sched_cpuon.c sched_cpuoff.c sched_getactivecpu.c
 endif
 
 ifeq ($(CONFIG_SW_STACK_OVERFLOW_DETECTION),y)

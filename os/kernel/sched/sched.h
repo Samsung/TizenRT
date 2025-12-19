@@ -416,9 +416,11 @@ int  sched_pause_cpu(FAR struct tcb_s *tcb);
 #ifdef CONFIG_CPU_HOTPLUG
 int sched_cpuon(int);
 int sched_cpuoff(int);
+cpu_set_t sched_getactivecpu(void);
 #else
-#define sched_cpuon(a)			(0)
-#define sched_cpuoff(a) 		(0)
+#define sched_cpuon(a)
+#define sched_cpuoff(a)
+#define sched_getactivecpu()
 #endif
 
 #ifdef CONFIG_SCHED_MIGRATE
