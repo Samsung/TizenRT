@@ -161,7 +161,6 @@ static inline void sched_process_timeslice(int cpu)
 #define sched_process_timeslice()
 #endif
 
-
 /****************************************************************************
  * Name:  sched_process_scheduler
  *
@@ -185,7 +184,7 @@ static inline void sched_process_scheduler(void)
 
 #ifdef CONFIG_SMP
 	int i;
-	
+
 	/* If we are running on a single CPU architecture, then we know interrupts
 	 * are disabled and there is no need to explicitly call
 	 * enter_critical_section().  However, in the SMP case,
@@ -194,14 +193,11 @@ static inline void sched_process_scheduler(void)
 	 * TCB that we are manipulating.
 	 */
 
-
 	/* Perform scheduler operations on all CPUs */
 
-	for (i = 0; i < CONFIG_SMP_NCPUS; i++)
-	  {
-	    sched_process_timeslice(i);
-	  }
-
+	for (i = 0; i < CONFIG_SMP_NCPUS; i++) {
+		sched_process_timeslice(i);
+	}
 
 #else
 	/* Perform scheduler operations on the single CPUs */
@@ -212,7 +208,7 @@ static inline void sched_process_scheduler(void)
 
 }
 #else
-#  define sched_process_scheduler()
+#define sched_process_scheduler()
 #endif
 
 /************************************************************************
