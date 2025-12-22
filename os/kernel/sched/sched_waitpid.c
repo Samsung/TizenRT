@@ -267,9 +267,9 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	leave_cancellation_point();
 #ifdef CONFIG_SMP
-        leave_critical_section(flags);
+	leave_critical_section(flags);
 #else
-        sched_unlock();
+	sched_unlock();
 #endif
 	return pid;
 
@@ -321,7 +321,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	/* waitpid() is a cancellation point */
 	(void)enter_cancellation_point();
-	
+
 	/* Create a signal set that contains only SIGCHLD */
 
 	(void)sigemptyset(&sigset);
@@ -517,9 +517,9 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 	leave_cancellation_point();
 #ifdef CONFIG_SMP
-        leave_critical_section(flags);
+	leave_critical_section(flags);
 #else
-        sched_unlock();
+	sched_unlock();
 #endif
 	return (int)pid;
 
