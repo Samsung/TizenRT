@@ -545,13 +545,12 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
                     auth_cplt_ind->err, auth_cplt_ind->conn_handle);
 
             if (RTK_BT_LE_ROLE_SLAVE == ble_tizenrt_scatternet_conn_ind->role) {
-                dbg("[APP] Disconnect, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
-                if (RTK_BT_OK != rtk_bt_le_gap_disconnect(auth_cplt_ind->conn_handle)) {
-                    dbg("[APP] Disconnect failed!\r\n");
-                }
-            }
-        } else {
-            dbg("[APP] Pairing success, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
+				server_init_parm.pair_bond_cb(auth_cplt_ind->err, auth_cplt_ind->conn_handle);
+			} else {
+				client_init_parm->trble_device_pair_bond_cb(auth_cplt_ind->err, auth_cplt_ind->conn_handle);
+			}
+		} else {
+			dbg("[APP] Pairing success, conn_handle: %d\r\n", auth_cplt_ind->conn_handle);
 			if(RTK_BT_LE_ROLE_MASTER == ble_tizenrt_scatternet_conn_ind->role)
 			{
 				uint8_t conn_id;
@@ -595,7 +594,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
     case RTK_BT_LE_GAP_EVT_BOND_MODIFY_IND: {
         rtk_bt_le_bond_modify_ind_t *bond_mdf_ind = 
                                         (rtk_bt_le_bond_modify_ind_t *)param;
-        dbg("[APP] Bond info modified, op: %d", bond_mdf_ind->op);
+		dbg("[APP] Bond info modified, op: %d \r\n", bond_mdf_ind->op);
 		if(RTK_BT_LE_BOND_DELETE == bond_mdf_ind->op && del_bond_addr){
 			for(int i = 0; i < GAP_MAX_LINKS; i++)
 			{
