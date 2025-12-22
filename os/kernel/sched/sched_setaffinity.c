@@ -70,80 +70,71 @@
 int sched_setaffinity(pid_t pid, size_t cpusetsize, FAR const cpu_set_t *mask)
 {
 #ifdef CONFIG_SMP
-  FAR struct tcb_s *tcb;
-  irqstate_t flags;
-  int ret = OK;
+	FAR struct tcb_s *tcb;
+	irqstate_t flags;
+	int ret = OK;
 
+	DEBUGASSERT(cpusetsize == sizeof(cpu_set_t) && mask != NULL);
 
-  DEBUGASSERT(cpusetsize == sizeof(cpu_set_t) && mask != NULL);
+	/* Verify that the PID corresponds to a real task */
 
-  /* Verify that the PID corresponds to a real task */
+	if (!pid) {
+		tcb = this_task();
+	} else {
+		tcb = sched_gettcb(pid);
+	}
 
-  if (!pid)
-    {
-      tcb = this_task();
-    }
-  else
-    {
-      tcb = sched_gettcb(pid);
-    }
+	if (tcb == NULL) {
+		ret = -ESRCH;
+		goto errout;
+	}
 
-  if (tcb == NULL)
-    {
-      ret = -ESRCH;
-      goto errout;
-    }
+	/* Don't permit changing the affinity mask of any task locked to a CPU
+	 * (i.e., an IDLE task)
+	 */
 
-  /* Don't permit changing the affinity mask of any task locked to a CPU
-   * (i.e., an IDLE task)
-   */
+	flags = enter_critical_section();
+	if ((tcb->flags & TCB_FLAG_CPU_LOCKED) != 0) {
+		ret = -EINVAL;
+		goto errout_with_csection;
+	}
 
-  flags = enter_critical_section();
-  if ((tcb->flags & TCB_FLAG_CPU_LOCKED) != 0)
-    {
-      ret = -EINVAL;
-      goto errout_with_csection;
-    }
+	/* Set the new affinity mask. */
 
-  /* Set the new affinity mask. */
+	tcb->affinity = *mask;
 
-  tcb->affinity = *mask;
+	/* Is the task still executing a a CPU in its affinity mask? Will this
+	 * change cause the task to be removed from its current assigned task
+	 * list?
+	 *
+	 * First... is the task in an assigned task list?
+	 */
 
-  /* Is the task still executing a a CPU in its affinity mask? Will this
-   * change cause the task to be removed from its current assigned task
-   * list?
-   *
-   * First... is the task in an assigned task list?
-   */
+	if (tcb->task_state >= FIRST_ASSIGNED_STATE && tcb->task_state <= LAST_ASSIGNED_STATE) {
+		/* Yes... is the CPU associated with the assigned task in the new
+		 * affinity mask?
+		 */
 
-  if (tcb->task_state >= FIRST_ASSIGNED_STATE &&
-      tcb->task_state <= LAST_ASSIGNED_STATE)
-    {
-      /* Yes... is the CPU associated with the assigned task in the new
-       * affinity mask?
-       */
+		if ((tcb->affinity & (1 << tcb->cpu)) == 0) {
+			/* No.. then we will need to move the task from the assigned
+			 * task list to some other ready to run list.
+			 *
+			 * sched_set_priority() will do just what we want... it will
+			 * remove the task from its current position in the some assigned
+			 * task list and then simply put it back in the right place.  This
+			 * works even if the task is this task.
+			 */
 
-      if ((tcb->affinity & (1 << tcb->cpu)) == 0)
-        {
-          /* No.. then we will need to move the task from the assigned
-           * task list to some other ready to run list.
-           *
-           * sched_set_priority() will do just what we want... it will
-           * remove the task from its current position in the some assigned
-           * task list and then simply put it back in the right place.  This
-           * works even if the task is this task.
-           */
-
-          ret = sched_setpriority(tcb, tcb->sched_priority);
-        }
-    }
+			ret = sched_setpriority(tcb, tcb->sched_priority);
+		}
+	}
 
 errout_with_csection:
-  leave_critical_section(flags);
+	leave_critical_section(flags);
 
 errout:
-  return ret;
-#else 
-  return -EINVAL;
+	return ret;
+#else
+	return -EINVAL;
 #endif
 }

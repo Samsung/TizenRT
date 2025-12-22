@@ -58,22 +58,21 @@
 void sched_resume_scheduler(FAR struct tcb_s *tcb)
 {
 #ifdef CONFIG_SCHED_SPORADIC
-  if ((tcb->flags & TCB_FLAG_POLICY_MASK) == TCB_FLAG_SCHED_SPORADIC)
-    {
-      /* Reset the replenishment cycle if it is appropriate to do so */
+	if ((tcb->flags & TCB_FLAG_POLICY_MASK) == TCB_FLAG_SCHED_SPORADIC) {
+		/* Reset the replenishment cycle if it is appropriate to do so */
 
-      DEBUGVERIFY(sched_resume_sporadic(tcb));
-    }
+		DEBUGVERIFY(sched_resume_sporadic(tcb));
+	}
 #endif
 
-  /* Indicate the task has been resumed */
+	/* Indicate the task has been resumed */
 
 #ifdef CONFIG_SCHED_CRITMONITOR
-  sched_resume_critmon(tcb);
+	sched_resume_critmon(tcb);
 #endif
 #ifdef CONFIG_SCHED_INSTRUMENTATION
-  sched_note_resume(tcb);
+	sched_note_resume(tcb);
 #endif
 }
 
-#endif /* CONFIG_RR_INTERVAL > 0 || CONFIG_SCHED_RESUMESCHEDULER */
+#endif							/* CONFIG_RR_INTERVAL > 0 || CONFIG_SCHED_RESUMESCHEDULER */
