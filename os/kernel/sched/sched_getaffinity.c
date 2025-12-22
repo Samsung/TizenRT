@@ -65,39 +65,33 @@
 int sched_getaffinity(pid_t pid, size_t cpusetsize, FAR cpu_set_t *mask)
 {
 #ifdef CONFIG_SMP
-  FAR struct tcb_s *tcb;
-  int ret;
+	FAR struct tcb_s *tcb;
+	int ret;
 
-  DEBUGASSERT(cpusetsize == sizeof(cpu_set_t) && mask != NULL);
+	DEBUGASSERT(cpusetsize == sizeof(cpu_set_t) && mask != NULL);
 
-  /* Verify that the PID corresponds to a real task */
+	/* Verify that the PID corresponds to a real task */
 
-  sched_lock();
-  if (pid == 0)
-    {
-      tcb = this_task();
-    }
-  else
-    {
-      tcb = sched_gettcb(pid);
-    }
+	sched_lock();
+	if (pid == 0) {
+		tcb = this_task();
+	} else {
+		tcb = sched_gettcb(pid);
+	}
 
-  if (tcb == NULL)
-    {
-      ret = -ESRCH;
-    }
-  else
-    {
-      /* Return the affinity mask from the TCB. */
+	if (tcb == NULL) {
+		ret = -ESRCH;
+	} else {
+		/* Return the affinity mask from the TCB. */
 
-      *mask = tcb->affinity;
-      ret = OK;
-    }
+		*mask = tcb->affinity;
+		ret = OK;
+	}
 
-  sched_unlock();
-  return ret;
+	sched_unlock();
+	return ret;
 #else
-  /* In the absence of SMP, all tasks will always run on core 0 */
-  return 0;
+	/* In the absence of SMP, all tasks will always run on core 0 */
+	return 0;
 #endif
 }
