@@ -77,6 +77,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <debug.h>
+#include <errno.h>
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
@@ -316,6 +317,7 @@ static void check_sp_corruption(uint32_t sp, uint32_t *stackbase, uint32_t *stac
 	if (is_irq_assert) {
 		lldbg("IRQ num: %d\n", g_irq_nums[irq_num]);
 		lldbg("IRQ handler: %08x\n", g_irqvector[g_irq_nums[irq_num]].handler);
+		lldbg("IRQ errno: %d\n", errno);
 #ifdef CONFIG_DEBUG_IRQ_INFO
 		lldbg("IRQ name: %s\n", g_irqvector[g_irq_nums[irq_num]].irq_name);
 #endif

@@ -96,6 +96,7 @@ void task_show_tcbinfo(struct tcb_s *tcb)
 	lldbg_noarg("===========================================================\n");
 	lldbg("State       : %u\n", tcb->task_state);
 	lldbg("Flags       : %u\n", tcb->flags);
+	lldbg("Errno       : %d\n", tcb->pterrno);
 	lldbg("Lock count  : %u\n", tcb->lockcount);
 #if CONFIG_RR_INTERVAL > 0
 	lldbg("Timeslice   : %d\n", tcb->timeslice);

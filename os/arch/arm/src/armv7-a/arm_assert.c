@@ -61,6 +61,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <debug.h>
+#include <errno.h>
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
@@ -268,6 +269,7 @@ static void check_assert_location(uint32_t *sp, bool *is_irq_assert)
 		lldbg("Code asserted in IRQ state!\n");
 		lldbg("IRQ num: %d\n", g_irq_num[cpu]);
 		lldbg("IRQ handler: %08x\n", g_irqvector[g_irq_num[cpu]].handler);
+		lldbg("IRQ errno: %d\n", errno);
 #ifdef CONFIG_DEBUG_IRQ_INFO
 		lldbg("IRQ name: %s\n", g_irqvector[g_irq_num[cpu]].irq_name);
 #endif
