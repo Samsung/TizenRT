@@ -394,6 +394,80 @@ static void init_np_lp_status_timer(void)
 	gtimer_start_periodical(&g_timer_np_lp, CONFIG_AMEBASMART_NP_LP_CHECK_INTERVAL, (void *)np_lp_status_timer_hdl, (uint32_t)&g_timer_np_lp);
 }
 
+#ifdef CONFIG_AUDIO_NDP120
+static inline ndp120_do_initialize(void)
+{
+	if (rtl8730e_ndp120_initialize(0) != 0) {
+		dbg("NDP120 initialization failed\n");
+	}
+}
+
+#ifdef CONFIG_AMP
+
+#define NDP_INIT_TIMEOUT_MS 10000
+sem_t g_ndp_init_done;
+
+static void ndp120_init_task(void)
+{
+	ndp120_do_initialize();
+	ASSERT(sem_post(&g_ndp_init_done) == OK);
+}
+
+void rtl8730_ndp_init_pre(void)
+{
+	sem_init(&g_ndp_init_done, 0, 0);
+	int pid = kernel_thread("driver_init", CONFIG_BOARD_INITTHREAD_PRIORITY - 1, CONFIG_BOARD_INITTHREAD_STACKSIZE, ndp120_init_task, (FAR char *const *)NULL);
+	if (pid < 0) {
+		dbg("Failed to create thread for parallel ndp driver initialize\n");
+		sem_destroy(&g_ndp_init_done);
+	}
+
+	cpu_set_t cpu_set;
+	CPU_ZERO(&cpu_set);
+	CPU_SET(1, &cpu_set);
+	if (sched_setaffinity(pid, sizeof(cpu_set_t), &cpu_set) != OK) {
+		dbg("Failed to set affinity for parallel ndp driver initialize\n");
+	}
+}
+
+void rtl8730_ndp_init_post(void)
+{
+	struct timespec ts;
+
+	/* Calculate timeout */
+	if (clock_gettime(CLOCK_REALTIME, &ts) == OK) {
+		ts.tv_nsec += (NDP_INIT_TIMEOUT_MS * 1000000L);
+		if (ts.tv_nsec >= 1000000000L) {
+			ts.tv_sec++;
+			ts.tv_nsec -= 1000000000L;
+		}
+
+		/* Wait with timeout */
+		while (sem_timedwait(&g_ndp_init_done, &ts) != OK) {
+			if (errno == EINTR) {
+				continue;
+			} else {
+				dbg("Fail to wait NDP120 initialize done, errno=%d\n", errno);
+				break;
+			}
+		}
+	} else {
+		/* Fallback to blocking wait if clock_gettime fails */
+		while (sem_wait(&g_ndp_init_done) != OK) {
+			DEBUGASSERT(errno == EINTR);
+		}
+	}
+
+	sem_destroy(&g_ndp_init_done);
+}
+
+#else
+#define rtl8730_ndp_init_pre()
+#define rtl8730_ndp_init_post() ndp120_do_initialize()
+#endif   /* CONFIG_AMP */
+#endif   /* CONFIG_AUDIO_NDP120 */
+
+
 void board_initialize(void)
 {
 
@@ -421,6 +495,10 @@ void board_initialize(void)
 	board_gpio_initialize();
 	board_i2c_initialize();
 	board_i2s_initialize();
+
+#ifdef CONFIG_AUDIO_NDP120
+	rtl8730_ndp_init_pre();
+#endif
 
 #ifdef CONFIG_LCD_ST7789
 	rtl8730_st7789_initialize();
@@ -484,11 +562,9 @@ void board_initialize(void)
 #endif
 
 #ifdef CONFIG_AUDIO_NDP120
-	if (rtl8730e_ndp120_initialize(0) != 0) {
-		lldbg("NDP120 initialization failed\n");
-	}
- #endif
- 
+	rtl8730_ndp_init_post();
+#endif
+
  #ifdef CONFIG_AMEBASMART_BOR
 	board_initialize_bor();
  #endif
