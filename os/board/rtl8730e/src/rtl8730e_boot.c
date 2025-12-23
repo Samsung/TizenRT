@@ -394,6 +394,101 @@ static void init_np_lp_status_timer(void)
 	gtimer_start_periodical(&g_timer_np_lp, CONFIG_AMEBASMART_NP_LP_CHECK_INTERVAL, (void *)np_lp_status_timer_hdl, (uint32_t)&g_timer_np_lp);
 }
 
+#ifdef CONFIG_AUDIO_NDP120
+static inline ndp120_do_initialize(void)
+{
+	if (rtl8730e_ndp120_initialize(0) != 0) {
+		dbg("NDP120 initialization failed\n");
+	}
+}
+
+#ifdef CONFIG_AMP
+#define NDP_INITTHREAD_PRIORITY 199
+#define NDP_INITTHREAD_STACKSIZE 8192
+
+#define NDP_SYNCTHREAD_PRIORITY 199 
+#define NDP_SYNCTHREAD_STACKSIZE 2048
+
+#define NDP_SYNC_TIMEOUT 10
+
+#if defined(CONFIG_APP1_MAIN_PRIORITY) 
+#if defined(CONFIG_APP2_MAIN_PRIORITY) && (CONFIG_APP1_MAIN_PRIORITY < CONFIG_APP2_MAIN_PRIORITY)
+#define APP_MAX_PRIORITY CONFIG_APP2_MAIN_PRIORITY
+#else
+#define APP_MAX_PRIORITY CONFIG_APP1_MAIN_PRIORITY
+#endif
+#else
+#define APP_MAX_PRIORITY SCHED_PRIORITY_DEFAULT
+#endif
+
+#if (NDP_SYNCTHREAD_PRIORITY <= APP_MAX_PRIORITY) || \
+		(defined(CONFIG_BM_PRIORITY_MIN) && (CONFIG_BM_PRIORITY_MIN <= NDP_SYNCTHREAD_PRIORITY))
+#error Wrong NDP init thread priority
+#endif
+
+static volatile spinlock_t g_ndp_init_done;
+
+static void ndp120_init_task(void)
+{
+	spin_lock(&g_ndp_init_done);
+	ndp120_do_initialize();
+	spin_unlock(&g_ndp_init_done);
+}
+
+void rtl8730_ndp_init_pre(void)
+{
+	int pid;
+	cpu_set_t cpu_set;
+
+	pid = kernel_thread("driver_init", NDP_INITTHREAD_PRIORITY - 1, NDP_INITTHREAD_STACKSIZE, ndp120_init_task, (FAR char *const *)NULL);
+	if (pid < 0) {
+		dbg("Failed to create thread for parallel ndp driver init\n");
+	}
+
+	CPU_ZERO(&cpu_set);
+	CPU_SET(1, &cpu_set);
+	if (sched_setaffinity(pid, sizeof(cpu_set_t), &cpu_set) != OK) {
+		dbg("Failed to set affinity for parallel ndp driver init\n");
+	}
+}
+
+void rtl8730_ndp_init_sync_task(void)
+{
+	clock_t now = clock();
+	dbg("Waiting for NDP init\n");
+	while (spin_trylock_wo_note(&g_ndp_init_done) == SP_LOCKED) {
+		if (clock() - now > SEC2TICK(NDP_SYNC_TIMEOUT)) {
+			dbg("Timeout: Waiting for NDP init\n");
+			spin_unlock(&g_ndp_init_done);
+			return;
+		}
+	}
+	spin_unlock(&g_ndp_init_done);
+	dbg("NDP init synchronization completed\n");
+}
+
+void rtl8730_ndp_init_post(void)
+{
+	cpu_set_t cpu_set;
+
+	int pid = kernel_thread("driver_init_sync", NDP_SYNCTHREAD_PRIORITY, NDP_SYNCTHREAD_STACKSIZE, rtl8730_ndp_init_sync_task, (FAR char *const *)NULL);
+	if (pid < 0) {
+		dbg("Failed to create thread for ndp driver done sync\n");
+	}
+
+	CPU_ZERO(&cpu_set);
+	CPU_SET(0, &cpu_set);
+	if (sched_setaffinity(pid, sizeof(cpu_set_t), &cpu_set) != OK) {
+		dbg("Failed to set affinity for ndp driver done sync\n");
+	}
+}
+#else
+#define rtl8730_ndp_init_pre()
+#define rtl8730_ndp_init_post() ndp120_do_initialize()
+#endif   /* CONFIG_AMP */
+#endif   /* CONFIG_AUDIO_NDP120 */
+
+
 void board_initialize(void)
 {
 
@@ -419,9 +514,14 @@ void board_initialize(void)
 	board_spi_initialize();
 	amebasmart_mount_partitions();
 	board_gpio_initialize();
-	board_i2c_initialize();
 	board_i2s_initialize();
 
+#ifdef CONFIG_AUDIO_NDP120
+	rtl8730_ndp_init_pre();
+#endif
+
+	board_i2c_initialize();
+	
 #ifdef CONFIG_LCD_ST7789
 	rtl8730_st7789_initialize();
 #endif
@@ -484,11 +584,9 @@ void board_initialize(void)
 #endif
 
 #ifdef CONFIG_AUDIO_NDP120
-	if (rtl8730e_ndp120_initialize(0) != 0) {
-		lldbg("NDP120 initialization failed\n");
-	}
- #endif
- 
+	rtl8730_ndp_init_post();
+#endif
+
  #ifdef CONFIG_AMEBASMART_BOR
 	board_initialize_bor();
  #endif
