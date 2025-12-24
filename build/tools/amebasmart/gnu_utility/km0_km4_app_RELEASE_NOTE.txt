@@ -1,10 +1,10 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version c220540be0 2025/12/24-13:53:09 ==
+1. Fix issue of crash due to wakeup by invalid packets
+
 == version 81d4d19fce 2025/12/12-17:23:10 ==
 1. Change wififw sleep mode to CG
-
-== version 10f5c03eed 2025/12/11-18:07:51 ==
-1. Fix issue of deauth reason code 4 from AP in coex scenario
 
 == version ac677b6ae1 2025/12/10-17:27:15 ==
 1. Reduce PMC logs
