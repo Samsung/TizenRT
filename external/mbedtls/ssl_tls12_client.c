@@ -1801,8 +1801,7 @@ static int ssl_parse_server_ecdh_params(mbedtls_ssl_context *ssl,
     defined(MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED)    ||   \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED)   ||   \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED) ||   \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED) ||                    \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED)
+    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED)
 MBEDTLS_CHECK_RETURN_CRITICAL
 static int ssl_check_server_ecdh_params(const mbedtls_ssl_context *ssl)
 {
@@ -1837,13 +1836,11 @@ static int ssl_check_server_ecdh_params(const mbedtls_ssl_context *ssl)
           MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED    ||
           MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED   ||
           MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED ||
-          MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED  ||
-          MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED */
+          MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) ||     \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED) ||     \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED)  ||  \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED)
+    defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED)
 MBEDTLS_CHECK_RETURN_CRITICAL
 static int ssl_parse_server_ecdh_params(mbedtls_ssl_context *ssl,
                                         unsigned char **p,
@@ -1880,8 +1877,7 @@ static int ssl_parse_server_ecdh_params(mbedtls_ssl_context *ssl,
 }
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED || \
           MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
-          MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED  ||
-          MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED */
+          MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED */
 #endif /* !MBEDTLS_USE_PSA_CRYPTO */
 #if defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
 #if defined(MBEDTLS_OCF_PATCH)
@@ -2311,12 +2307,10 @@ start_processing:
           MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED */
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) ||     \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED) ||     \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED) ||   \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED)
+    defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED)
     if (ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_RSA ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK ||
-        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA||
-        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ANON ) {
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA) {
         if (ssl_parse_server_ecdh_params(ssl, &p, end) != 0) {
             MBEDTLS_SSL_DEBUG_MSG(1, ("bad server key exchange message"));
             mbedtls_ssl_send_alert_message(
@@ -2328,8 +2322,7 @@ start_processing:
     } else
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED ||
-          MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED ||
-          MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED */
+          MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED */
 #if defined(MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED)
     if (ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECJPAKE) {
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
@@ -2442,13 +2435,7 @@ start_processing:
             return MBEDTLS_ERR_SSL_ILLEGAL_PARAMETER;
         }
 
-// Anonymous cipher suite without sign, ecdh param only
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED)
-        if( ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ANON )
-        {
-            goto exit;
-        }
-#endif
+
         /*
          * Read signature
          */
@@ -2838,9 +2825,6 @@ static int ssl_write_client_key_exchange(mbedtls_ssl_context *ssl)
             MBEDTLS_SSL_DEBUG_RET(1, "mbedtls_dhm_make_public", ret);
             return ret;
         }
-#if !defined(MBEDTLS_DHM_ALT)
-        MBEDTLS_SSL_DEBUG_MPI(3, "DHM: X ", &ssl->handshake->dhm_ctx.X);
-#endif
         MBEDTLS_SSL_DEBUG_MPI(3, "DHM: GX", &ssl->handshake->dhm_ctx.GX);
 
         if ((ret = mbedtls_dhm_calc_secret(&ssl->handshake->dhm_ctx,
@@ -2858,13 +2842,11 @@ static int ssl_write_client_key_exchange(mbedtls_ssl_context *ssl)
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) ||                     \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED) ||                   \
     defined(MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED) ||                      \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED)  ||                    \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED)
+    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED)
     if (ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_RSA ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA ||
         ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_RSA ||
-        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA ||
-        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ANON) {
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA) {
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
         psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
         psa_status_t destruction_status = PSA_ERROR_CORRUPTION_DETECTED;
@@ -3002,8 +2984,7 @@ ecdh_calc_secret:
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED ||
           MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED ||
-          MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED ||
-          MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED */
+          MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED */
 #if defined(MBEDTLS_USE_PSA_CRYPTO) &&                           \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED)
     if (ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK) {
