@@ -20,22 +20,6 @@
  */
 
 /**
- * \def MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED
- *
- * Enable the ECDHE-ANON based ciphersuite modes in SSL / TLS.
- *
- * Requires: MBEDTLS_ECDH_C
- *
- *
- * This enables the following ciphersuites (if other requisites are
- * enabled as well):
- *      MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256
- */
-#if defined(MBEDTLS_OCF_PATCH)
-#define MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED
-#endif
-
-/**
  * \def MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
  *
  * Enable parsing of all supported subtypes of the Subject Alternative Name
