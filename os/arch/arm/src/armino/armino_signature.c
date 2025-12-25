@@ -30,8 +30,9 @@
 #define SHA256_HASH_SIZE            (32)
 #define ECDSA_PUBLIC_KEY_SIZE       (64)  /* ECDSA-256 public key size, byte[0] = 0x04 ,key format:0x04|x|y*/
 #define ECDSA_SIGNATURE_SIZE        (64)  /* ECDSA-256 signature size */
+#define SHA256_BUFFER_SIZE          (1024*4)
 
-#define FLASH_OFFSET_ADDRESS        (0x12000000)
+extern int bk_flash_read_bytes(size_t addr, void *buf, size_t length);
 
 typedef struct {
     uint32_t magic;               /* Magic number, used to verify the structure */
@@ -76,17 +77,26 @@ static int calculate_sha256(const uint8_t *data, size_t data_size, uint8_t *hash
     psa_status_t status;
     uint32_t remain_size = data_size;
     uint32_t len_in;
+    uint8_t *buffer = NULL;
     psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
     status = psa_hash_setup(&operation, PSA_ALG_SHA_256);
     if (status != PSA_SUCCESS) {
         return status;
     }
+    buffer = (uint8_t *)kmm_malloc(SHA256_BUFFER_SIZE);
+    if (buffer == NULL) {
+        psa_hash_abort(&operation);
+        return PSA_ERROR_INSUFFICIENT_MEMORY;
+    }
+
     while (remain_size > 0)
     {
-        len_in = remain_size > PSA_HASH_MAX_SIZE ? PSA_HASH_MAX_SIZE : remain_size;
-        status = psa_hash_update(&operation, data, len_in);
+        len_in = remain_size > SHA256_BUFFER_SIZE ? SHA256_BUFFER_SIZE : remain_size;
+        bk_flash_read_bytes(data, buffer, len_in);
+        status = psa_hash_update(&operation, buffer, len_in);
         if (status != PSA_SUCCESS) {
             psa_hash_abort(&operation);
+            kmm_free(buffer);
             return status;
         }
         remain_size -= len_in;
@@ -94,6 +104,7 @@ static int calculate_sha256(const uint8_t *data, size_t data_size, uint8_t *hash
     }
     size_t hash_length;
     status = psa_hash_finish(&operation, hash, SHA256_HASH_SIZE, &hash_length);
+    kmm_free(buffer);
 
     return status;
 }
@@ -122,38 +133,40 @@ static int verify_signature(const uint8_t *hash, const uint8_t *signature, const
     return status;
 }
 
-int verify_firmware_signature(uint32_t address)
+static int verify_firmware_signature(uint32_t address)
 {
-    firmware_signature_t *sig = (firmware_signature_t *)address;
+    firmware_signature_t sig = {0x0};
     uint8_t pub_key[ECDSA_PUBLIC_KEY_SIZE + 1] = {0x04}; //pub_key[0]=0x04
-    uint8_t calculated_hash[SHA256_HASH_SIZE];
+    uint8_t calculated_hash[SHA256_HASH_SIZE] = {0x0};
     int result = SIGNATURE_INVALID;
-    if (sig->magic != FIRMWARE_SIGNATURE_MAGIC) {
+
+    bk_flash_read_bytes(address, (uint8_t *)&sig, sizeof(firmware_signature_t));
+    dbg("app signature: line %d magic %x, size %x\r\n", __LINE__, sig.magic, sig.firmware_size);
+    if (sig.magic != FIRMWARE_SIGNATURE_MAGIC) {
         return SIGNATURE_INVALID;
     }
 
-    dbg("app signature: line %d magic %x, size %x\r\n", __LINE__, sig->magic, sig->firmware_size);
-    if (verify_crc32(address, sizeof(firmware_signature_t)-4) != SIGNATURE_VAILD) {
+    if (verify_crc32((uint32_t)&sig, sizeof(firmware_signature_t)-4) != SIGNATURE_VAILD) {
         return SIGNATURE_INVALID;
     }
-    
+
     if (psa_crypto_init_once() != SIGNATURE_VAILD) {
         return SIGNATURE_INVALID;
     }
     result = calculate_sha256((uint8_t *)(address + sizeof(firmware_signature_t)), 
-                              sig->firmware_size, calculated_hash);
+                              sig.firmware_size, calculated_hash);
     if (result != SIGNATURE_VAILD) {
         dbg("app hash calc fail, line %d result %d\r\n", __LINE__, result);
         return SIGNATURE_INVALID;
     }
-    if (memcmp(calculated_hash, sig->firmware_hash, SHA256_HASH_SIZE) != 0) {
+    if (memcmp(calculated_hash, sig.firmware_hash, SHA256_HASH_SIZE) != 0) {
         dbg("app hash calc not eque\r\n");
         //print_hex("calculated_hash",calculated_hash,SHA256_HASH_SIZE);
         //print_hex("sig->firmware_hash",sig->firmware_hash,SHA256_HASH_SIZE);
         return SIGNATURE_INVALID;
     }
-    memcpy(&pub_key[1], sig->public_key, ECDSA_PUBLIC_KEY_SIZE);
-    result = verify_signature(sig->firmware_hash, sig->signature, pub_key);
+    memcpy(&pub_key[1], sig.public_key, ECDSA_PUBLIC_KEY_SIZE);
+    result = verify_signature(sig.firmware_hash, sig.signature, pub_key);
     if (result != SIGNATURE_VAILD) {
         dbg("app signature verify fail, line %d result %d\r\n", __LINE__, result);
         return SIGNATURE_INVALID;
@@ -170,14 +183,13 @@ int up_verify_kernelsignature(uint32_t address)
 int up_verify_usersignature(uint32_t address)
 {
     int result = SIGNATURE_INVALID;
-#if !CONFIG_SPE
-    address |= FLASH_OFFSET_ADDRESS;
-#endif
+
     result = verify_firmware_signature(address);
     if (result != SIGNATURE_VAILD) {
         dbg("app partition addr %p\r\n", (uint32_t *)address);
         return SIGNATURE_INVALID;
     }
+
     return SIGNATURE_VAILD;
 }
 #endif
