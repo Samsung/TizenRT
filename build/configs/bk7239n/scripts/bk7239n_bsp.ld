@@ -87,7 +87,6 @@ SECTIONS
             *armino_irq.o* 
             *up_exception.o* 
             *up_svcall.o* 
-            *up_svcall.o*
             *up_switchcontext.o*
             *up_copyfullstate.o*
             *up_fullcontextrestore.o*
@@ -101,8 +100,38 @@ SECTIONS
             *sched_mergepending.o*
             *up_blocktask.o*
             *up_unblocktask.o*
+            *libkernel.a:mq_send.o*
+            *libkernel.a:mq_timedsend.o*
+            *libkernel.a:mq_sndinternal.o*
+            *libkernel.a:mq_receive.o*
+            *libkernel.a:mq_timedreceive.o*
+            *libkernel.a:mq_rcvinternal.o*
+            *libkernel.a:mq_initialize.o*
+            *libkernel.a:mq_msgfree.o*
+            *libkernel.a:mq_getattr.o*
+            *libkernel.a:mq_waitirq.o*
+            *libkernel.a:mq_recover.o*
+            *libkernel.a:mq_release.o*
+            *libkernel.a:wd_start.o*
+            *libkernel.a:wd_create.o*
+            *libkernel.a:wd_cancel.o*
+            *libkernel.a:timer_settime.o*
+            *libboard.a:rtos_pub.o*
+            *libboard.a:mem_arch.o*
+            *bk_ethernetif.o*
+            *bk_lwipif_tizenrt.o*
+            *rxl_hwdesc.o*
+            *libboard.a:rxl_cntrl.o*
+            *rf_cntrl.o*
+            *co_list.o*
+            *libnet.a:tcp_in.o*
+            *libnet.a:tcp_out.o*
+            *libnet.a:tcp.o*
+            *libnet.a:ip4.o*
+            *libnet.a:ip.o*
+            *libnet.a:netif.o*
+            *libnet.a:pbuf.o*
             ) *(.text .text.* .rodata .rodata.*)
-        /*EXCLUDE_FILE( *libboard.a:rtos_pub.c.obj* *libboard.a:mem_arch.c.obj* *libboard.a:flash_driver.c.obj* *libboard.a:ckmn_driver.c.obj* *libboard.a:arch_interrupt.c.obj* *libboard.a:ke_event.c.obj* *libboard.a:vif_mgmt.c.obj* *libboard.a:rxl_cntrl.c.obj* *libboard.a:rxl_hwdesc.c.obj* *libboard.a:rwnx.c.obj* *libboard.a:rwnx_task.o* *libboard.a:rwnx_rx.o* *libboard.a:rwnx_td.o* *libboard.a:rwnx_tx.o* *libboard.a:wifi_v2.o*  *libwifi.a:macif_fhost.o* *libboard.a:rwnx_txq.o* *libboard.a:skbuff.o* *libboard.a:bk_ethernetif.o* *libwifi.a:me_strategy.o* *libwifi.a:rxu_cntrl.o* *libwifi.a:rc.o* *libwifi.a:td.o* *libwifi.a:mcc.o* *libwifi.a:hal_machw.o* *libwifi.a:txl_cfm.o* *libwifi.a:txl_agg.o* *libwifi.a:txl_cntrl.o* *libwifi.a:rxl_hwdesc.o* *libnet.a:netdev_lwip.o* *libnet.a:netif.o* *libnet.a:ip.o* *libnet.a:pbuf.o* *libnet.a:tcp.o* *libnet.a:tcp_in.o* *libnet.a:tcp_out.o* *libnet.a:udp.o* *libnet.a:inet_chksum.o* *libnet.a:tcpip.o* *libnet.a:ip4.o* *libnet.a:sys_arch.o* *libnet.a:netdev_wifi.o* *libnet.a:mem.o* *libnet.a:memp.o* *libnet.a:api_msg.o* *libkmm.a:umm_free.o* *libkmm.a:umm_malloc.o* *libkmm.a:kmm_calloc.o* *libkmm.a:kmm_free.o* *libkmm.a:kmm_malloc.o* *libkmm.a:kmm_realloc.o* *libkmm.a:kmm_zalloc.o* *libkmm.a:kmm_heapmember.o* *libkmm.a:mm_addfreechunk.o* *libkmm.a:mm_calloc.o* *libkmm.a:mm_free.o* *libkmm.a:mm_malloc.o* *libkmm.a:mm_realloc.o* *libkmm.a:mm_zalloc.o* *libkarch.a:up_blocktask.o* *libkarch.a:up_createstack.o* *libkarch.a:up_releasepending.o* *libkarch.a:up_releasestack.o* *libkarch.a:up_reprioritizertr.o* *libkarch.a:up_schedulesigaction.o* *libkarch.a:up_unblocktask.o* *libkarch.a:up_unblocktask_withoutsavereg.o* *libkarch.a:up_restoretask.o* *libkarch.a:up_fullcontextrestore.o* *libkarch.a:up_switchcontext.o* *libkernel.a:mq_send.o* *libkernel.a:mq_timedsend.o* *libkernel.a:mq_sndinternal.o* *libkernel.a:mq_receive.o* *libkernel.a:mq_timedreceive.o* *libkernel.a:mq_rcvinternal.o* *libkernel.a:mq_initialize.o* *libkernel.a:mq_msgfree.o* *libkernel.a:mq_getattr.o* *libkernel.a:mq_waitirq.o* *libkernel.a:mq_recover.o* *libkernel.a:mq_release.o* *libkernel.a:sched_addreadytorun.o* *libkernel.a:sched_removereadytorun.o* *libkernel.a:sched_addprioritized.o* *libkernel.a:sched_free.o* *libkernel.a:sched_releasetcb.o* *libkernel.a:sched_cpuload.o* *libkernel.a:sched_setpriority.o* *libkernel.a:sched_unlock.o* *libkernel.a:task_exithook.o* *libkernel.a:task_recover.o* *libkernel.a:task_getgroup.o* *libkernel.a:task_getpid.o* *libkernel.a:task_terminate.o* *libkernel.a:task_terminate_unloaded.o* *libkernel.a:task_setup.o* *libkernel.a:task_activate.o* *libkernel.a:task_create.o* *libkernel.a:task_start.o* *libkernel.a:task_restart.o* *libkernel.a:sched_gettcb.o* *libkernel.a:sched_getsockets.o* *libkernel.a:sched_setparam.o* *libkernel.a:sched_getparam.o* *libkernel.a:sched_getscheduler.o* *libkernel.a:sched_setscheduler.o* *libkernel.a:sched_yield.o* *libkernel.a:sched_get_priority_max.o* *libkernel.a:sched_get_priority_min.o* *libkernel.a:sched_rr_get_interval.o* *libkernel.a:sem_trywait.o* *libkernel.a:sem_timedwait.o* *libkernel.a:sem_wait.o* *libkernel.a:sem_recover.o* *libkernel.a:sem_reset.o* *libkernel.a:sem_list.o* *libkernel.a:sem_init.o* *libkernel.a:sem_getvalue.o* *libkernel.a:sem_destroy.o* *libkernel.a:sem_post.o* *libkernel.a:sem_setprotocol.o* ) *(.text .text.* .rodata .rodata.*)*/
         /**(.text.* *.rodata *.rodata.*)*/
 
         . = ALIGN(4);
@@ -189,26 +218,57 @@ SECTIONS
         __vector_iram_table = .;
         KEEP(*(.vectors_iram))
         . = ALIGN(512);
-        *armino_irq.o*(.text .text.* *.rodata *.rodata.*) 
-        *up_exception.o*(.text .text.* *.rodata *.rodata.*) 
-        *up_svcall.o*(.text .text.* *.rodata *.rodata.*) 
-        *up_svcall.o*(.text .text.* *.rodata *.rodata.*)
-        *up_switchcontext.o*(.text .text.* *.rodata *.rodata.*)
-        *up_copyfullstate.o*(.text .text.* *.rodata *.rodata.*)
-        *up_fullcontextrestore.o*(.text .text.* *.rodata *.rodata.*)
-        *up_doirq.o*(.text .text.* *.rodata *.rodata.*)
-        *irq_dispatch.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_addreadytorun.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_addblocked.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_addprioritized.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_removereadytorun.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_removeblocked.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_mergepending.o*(.text .text.* *.rodata *.rodata.*)
-        *up_blocktask.o*(.text .text.* *.rodata *.rodata.*)
-        *up_unblocktask.o*(.text .text.* *.rodata *.rodata.*)
+        *armino_irq.o*                   (.text .text.* .rodata .rodata.*)
+        *up_exception.o*                 (.text .text.* .rodata .rodata.*)
+        *up_svcall.o*                    (.text .text.* .rodata .rodata.*)
+        *up_switchcontext.o*             (.text .text.* .rodata .rodata.*)
+        *up_copyfullstate.o*             (.text .text.* .rodata .rodata.*)
+        *up_fullcontextrestore.o*        (.text .text.* .rodata .rodata.*)
+        *up_doirq.o*                     (.text .text.* .rodata .rodata.*)
+        *irq_dispatch.o*                 (.text .text.* .rodata .rodata.*)
+        *sched_addreadytorun.o*          (.text .text.* .rodata .rodata.*)
+        *sched_addblocked.o*             (.text .text.* .rodata .rodata.*)
+        *sched_addprioritized.o*         (.text .text.* .rodata .rodata.*)
+        *sched_removereadytorun.o*       (.text .text.* .rodata .rodata.*)
+        *sched_removeblocked.o*          (.text .text.* .rodata .rodata.*)
+        *sched_mergepending.o*           (.text .text.* .rodata .rodata.*)
+        *up_blocktask.o*                 (.text .text.* .rodata .rodata.*)
+        *up_unblocktask.o*               (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_send.o*          (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_timedsend.o*     (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_sndinternal.o*   (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_receive.o*       (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_timedreceive.o*  (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_rcvinternal.o*   (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_initialize.o*    (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_msgfree.o*       (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_getattr.o*       (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_waitirq.o*       (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_recover.o*       (.text .text.* .rodata .rodata.*)
+        *libkernel.a:mq_release.o*       (.text .text.* .rodata .rodata.*)
+        *libkernel.a:wd_start.o*         (.text .text.* .rodata .rodata.*)
+        *libkernel.a:wd_create.o*        (.text .text.* .rodata .rodata.*)
+        *libkernel.a:wd_cancel.o*        (.text .text.* .rodata .rodata.*)
+        *libkernel.a:timer_settime.o*    (.text .text.* .rodata .rodata.*)
+        *libboard.a:rtos_pub.o*          (.text .text.* .rodata .rodata.*)
+        *libboard.a:mem_arch.o*          (.text .text.* .rodata .rodata.*)
+        *bk_ethernetif.o*                (.text .text.* .rodata .rodata.*)
+        *bk_lwipif_tizenrt.o*            (.text .text.* .rodata .rodata.*)
+        *rxl_hwdesc.o*                   (.text .text.* .rodata .rodata.*)
+        *libboard.a:rxl_cntrl.o*         (.text .text.* .rodata .rodata.*)
+        *rf_cntrl.o*                     (.text .text.* .rodata .rodata.*)
+        *co_list.o*                      (.text .text.* .rodata .rodata.*)
+        *libnet.a:tcp_in.o*              (.text .text.* .rodata .rodata.*)
+        *libnet.a:tcp_out.o*             (.text .text.* .rodata .rodata.*)
+        *libnet.a:tcp.o*                 (.text .text.* .rodata .rodata.*)
+        *libnet.a:ip4.o*                 (.text .text.* .rodata .rodata.*)
+        *libnet.a:ip.o*                   (.text .text.* .rodata .rodata.*)
+        *libnet.a:netif.o*                (.text .text.* .rodata .rodata.*)
+        *libnet.a:pbuf.o*                (.text .text.* .rodata .rodata.*)
         *(.itcm)
         *(.itcm_sec_code)
         *(.iram)
+        *(.iram2)
         *(.interrupt)
 
         . = ALIGN(4);
@@ -279,7 +339,8 @@ SECTIONS
 
        _sbss = ABSOLUTE(.);
         _bss_start = .;
-        EXCLUDE_FILE(*libnet.a:mem.o*)  *(.bss .bss*)
+        /*EXCLUDE_FILE(*libnet.a:mem.o*)  *(.bss .bss*)*/
+        *(.bss .bss*)
         *(COMMON)
 
         . = ALIGN(8);
@@ -321,151 +382,7 @@ SECTIONS
         . = ALIGN(8);
         PROVIDE(__psram_code_text = LOADADDR(.psram_code));
         __psram_code_start__ = .;
-        /*
-        *armino_irq.o*(.text .text.* *.rodata *.rodata.*) 
-        *up_exception.o*(.text .text.* *.rodata *.rodata.*) 
-        *up_svcall.o*(.text .text.* *.rodata *.rodata.*) 
-        *up_svcall.o*(.text .text.* *.rodata *.rodata.*)
-        *up_switchcontext.o*(.text .text.* *.rodata *.rodata.*)
-        *up_copyfullstate.o*(.text .text.* *.rodata *.rodata.*)
-        *up_fullcontextrestore.o*(.text .text.* *.rodata *.rodata.*)
-        *up_doirq.o*(.text .text.* *.rodata *.rodata.*)
-        *irq_dispatch.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_addreadytorun.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_addblocked.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_addprioritized.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_removereadytorun.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_removeblocked.o*(.text .text.* *.rodata *.rodata.*)
-        *sched_mergepending.o*(.text .text.* *.rodata *.rodata.*)
-        *up_blocktask.o*(.text .text.* *.rodata *.rodata.*)
-        *up_unblocktask.o*(.text .text.* *.rodata *.rodata.*)
-        *tcp_in.o*(.text .text.* *.rodata *.rodata.*)
-        *tcp_out.o*(.text .text.* *.rodata *.rodata.*)
-        *def.o*(.text .text.* *.rodata *.rodata.*)
-        *igmp.o*(.text .text.* *.rodata *.rodata.*)
-        *pbuf.o*(.text .text.* *.rodata *.rodata.*)
-        *inet_chksum.o*(.text .text.* *.rodata *.rodata.*)
-        *api_msg.o*(.text .text.* *.rodata *.rodata.*)
-        *netbuf.o*(.text .text.* *.rodata *.rodata.*)
-        *sys_arch.o*(.text .text.* *.rodata *.rodata.*)
-        *ethernetif_tizenrt.o*(.text .text.* *.rodata *.rodata.*)
-        *lwip_intf_tizenrt.o*(.text .text.* *.rodata *.rodata.*)
-        *mem.o*(.text .text.* *.rodata *.rodata.*)
-        *memp.o*(.text .text.* *.rodata *.rodata.*)
-        *netif.o*(.text .text.* *.rodata *.rodata.*)
-        *ip.o*(.text .text.* *.rodata *.rodata.*)
-        *ip4.o*(.text .text.* *.rodata *.rodata.*)
-        *ip4_addr.o*(.text .text.* *.rodata *.rodata.*)
-        *ip4_frag.o*(.text .text.* *.rodata *.rodata.*)
-        *tcp.o*(.text .text.* *.rodata *.rodata.*)
-        *udp.o*(.text .text.* *.rodata *.rodata.*)
-        *socket.o*(.text .text.* *.rodata *.rodata.*)
-        *bsd_socket_api.o*(.text .text.* *.rodata *.rodata.*)
-        *tcpip.o*(.text .text.* *.rodata *.rodata.*)
-        *ethernet.o*(.text .text.* *.rodata *.rodata.*)
-        *etharp.o*(.text .text.* *.rodata *.rodata.*)
-        *netdb.o*(.text .text.* *.rodata *.rodata.*)
-        *api_lib.o*(.text .text.* *.rodata *.rodata.*)
-        *netifapi.o*(.text .text.* *.rodata *.rodata.*)*/
-        /*
-        *rtos_pub.c.obj*(.text .text.* *.rodata *.rodata.*)
-        *mem_arch.c.obj*(.text .text.* *.rodata *.rodata.*)
-        *flash_driver.c.obj*(.text .text.* *.rodata *.rodata.*)
-        *ke_event.c.obj*(.text .text.* *.rodata *.rodata.*)
-        *rxl_cntrl.c.obj*(.text .text.* *.rodata *.rodata.*)
-        *rxl_hwdesc.c.obj*(.text .text.* *.rodata *.rodata.*)
-        *rwnx_task.o*(.text .text.* .rodata .rodata.*)
         *rwnx_rx.o*(.text .text.* .rodata .rodata.*)
-        *rwnx_td.o*(.text .text.* .rodata .rodata.*)
-        *rwnx_tx.o*(.text .text.* .rodata .rodata.*)
-        *macif_fhost.o*(.text .text.* .rodata .rodata.*)
-        *rwnx_tx.o*(.text .text.* .rodata .rodata.*)
-        *rwnx_txq.o*(.text .text.* .rodata .rodata.*)
-        *skbuff.o*(.text .text.* .rodata .rodata.*)
-        *bk_lwipif_tizenrt.o*(.text .text.* .rodata .rodata.*)
-        *bk_ethernetif.o*(.text .text.* .rodata .rodata.*)
-        *rxu_cntrl.o*(.text .text.* .rodata .rodata.*)
-        *rc.o*(.text .text.* .rodata .rodata.*)
-        *td.o*(.text .text.* .rodata .rodata.*)
-        *hal_machw.o*(.text .text.* .rodata .rodata.*)
-        *txl_cfm.o*(.text .text.* .rodata .rodata.*)
-        *txl_agg.o*(.text .text.* .rodata .rodata.*)
-        *txl_cntrl.o*(.text .text.* .rodata .rodata.*)
-        *rxl_hwdesc.o*(.text .text.* .rodata .rodata.*)
-        *mem.o*(.text .text.* .rodata .rodata.*)
-        *memp.o*(.text .text.* .rodata .rodata.*)
-        *umm_free.o*(.text .text.* .rodata .rodata.*)
-        *umm_malloc.o*(.text .text.* .rodata .rodata.*)
-        *kmm_calloc.o*(.text .text.* .rodata .rodata.*)
-        *kmm_free.o*(.text .text.* .rodata .rodata.*)
-        *kmm_malloc.o*(.text .text.* .rodata .rodata.*)
-        *kmm_realloc.o*(.text .text.* .rodata .rodata.*)
-        *kmm_zalloc.o*(.text .text.* .rodata .rodata.*)
-        *kmm_heapmember.o*(.text .text.* .rodata .rodata.*)
-        *mm_addfreechunk.o*(.text .text.* .rodata .rodata.*)
-        *mm_calloc.o*(.text .text.* .rodata .rodata.*)
-        *mm_free.o*(.text .text.* .rodata .rodata.*)
-        *mm_malloc.o*(.text .text.* .rodata .rodata.*)
-        *mm_realloc.o*(.text .text.* .rodata .rodata.*)
-        *mm_zalloc.o*(.text .text.* .rodata .rodata.*)
-        *libkarch.a:up_blocktask.o*(.text .text.* .rodata .rodata.*)
-        *libkarch.a:up_reprioritizertr.o*(.text .text.* .rodata .rodata.*)
-        *libkarch.a:up_schedulesigaction.o*(.text .text.* .rodata .rodata.*)
-        *libkarch.a:up_unblocktask.o*(.text .text.* .rodata .rodata.*)
-        *libkarch.a:up_unblocktask_withoutsavereg.o*(.text .text.* .rodata .rodata.*)
-        *libkarch.a:up_restoretask.o*(.text .text.* .rodata .rodata.*)
-        *libkarch.a:up_signal_dispatch.o*(.text .text.* .rodata .rodata.*)
-        *libkarch.a:up_fullcontextrestore.o*(.text .text.* .rodata .rodata.*)
-        *libkarch.a:up_switchcontext.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_send.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_timedsend.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_sndinternal.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_receive.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_timedreceive.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_rcvinternal.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_initialize.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_msgfree.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_getattr.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_waitirq.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_recover.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:mq_release.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_addreadytorun.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_removereadytorun.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_addprioritized.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_free.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_releasetcb.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_setpriority.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_unlock.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:task_exithook.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:task_setup.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:task_activate.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:task_create.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:task_start.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:task_restart.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_gettcb.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_getsockets.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_setparam.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_getparam.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_getscheduler.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_setscheduler.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_yield.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_get_priority_max.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_get_priority_min.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sched_rr_get_interval.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_trywait.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_timedwait.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_wait.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_recover.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_reset.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_list.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_init.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_getvalue.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_destroy.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_post.o*(.text .text.* .rodata .rodata.*)
-        *libkernel.a:sem_setprotocol.o*(.text .text.* .rodata .rodata.*)*/
-
-        *rwnx_rx.o*(.text .text.* .rodata .rodata.*)
-
         . = ALIGN(4);
         __psram_code_end__ = .;
     } > PSRAM_CODE  AT > FLASH
