@@ -103,6 +103,14 @@ source "net/lwip/configs/sys/Kconfig"
 source "net/lwip/configs/debug/Kconfig"
 source "net/lwip/configs/stats/Kconfig"
 
+config NET_LWIP_HW_CHKSUM_PORT
+	bool "Enable hardware checksum port layer"
+	default n
+	---help---
+		Enable hardware checksum port layer support. This allows vendors
+		to register hardware checksum functions that will be used instead
+		of software implementation when available.
+
 config NET_LWIP_VLAN
 	bool "Support VLAN"
 	default n
