@@ -57,6 +57,11 @@
 
 #include <tinyara/config.h>
 
+/* ---------- Hardware checksum port layer ---------- */
+#ifdef CONFIG_NET_LWIP_HW_CHKSUM_PORT
+#include "lwip/port/hw_chksum_port.h"
+#endif
+
 /* --------- PreDefined Configurations -------------*/
 /*
  * Note
