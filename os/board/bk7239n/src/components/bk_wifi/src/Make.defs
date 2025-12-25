@@ -83,7 +83,8 @@ CSRCS += \
 	wifi_v2.c \
 	regdb.c \
 	regdb_bin.c \
-	reg.c
+	reg.c \
+	hw_csum.c
 
 DEPPATH += --dep-path components/bk_wifi/src
 VPATH += :components/bk_wifi/src

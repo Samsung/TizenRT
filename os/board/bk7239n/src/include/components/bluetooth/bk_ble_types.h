@@ -106,9 +106,9 @@ typedef bk_err_t ble_err_t;
  * @brief normal perm, for BK_BLE_PERM_SET
  * @attention you cant use this direct, use BK_BLE_PERM_SET(RD, ENABLE) instead
  * @brief
- *   15 | 14 | 13 | 12 | 11 | 10 |  9 | 8  |  7 - 6  |  5 - 4  |  3 - 2  |  1 - 0  
+ *   15 | 14 | 13 | 12 | 11 | 10 |  9 | 8  |  7 - 6  |  5 - 4  |  3 - 2  |  1 - 0
  * -----|----|----|----|----|----|----|----|---------|---------|---------|---------
- *  EXT | WS | I  | N  | WR | WC | RD | B  |    NP   |    IP   |   WP    |    RP   
+ *  EXT | WS | I  | N  | WR | WC | RD | B  |    NP   |    IP   |   WP    |    RP
  *
  * Bit [0-1]  : Read Permission         (0 = NO_AUTH, 1 = UNAUTH, 2 = AUTH, 3 = SEC_CON) \n
  * Bit [2-3]  : Write Permission        (0 = NO_AUTH, 1 = UNAUTH, 2 = AUTH, 3 = SEC_CON) \n
@@ -173,9 +173,9 @@ typedef enum
  *
  * Extended Value permission bit field
  *
- *   15  |  14 - 13  |  12  |  11  |  10 - 0  
+ *   15  |  14 - 13  |  12  |  11  |  10 - 0
  * ------|-----------|------|------|----------
- *   RI  |  UUID_LEN |  EKS | INCL |  Reserved  
+ *   RI  |  UUID_LEN |  EKS | INCL |  Reserved
  *
  * Bit [0-10] : Reserved \n
  * Bit [11]   : Attribute Value is included(Value present in Database) \n
@@ -205,9 +205,9 @@ typedef enum
  * @attention you cant use this direct, use BK_BLE_PERM_SET(SVC_UUID_LEN, UUID_16) instead
  * @brief
  *
- *  7  |  6 - 5   |  4  | 3 - 2  |  1  |  0  
+ *  7  |  6 - 5   |  4  | 3 - 2  |  1  |  0
  * ----|----------|-----|--------|-----|-----
- * SEC | UUID_LEN | DIS |  AUTH  | EKS | MI  
+ * SEC | UUID_LEN | DIS |  AUTH  | EKS | MI
  *
  * Bit [0]  : Task that manage service is multi-instantiated (Connection index is conveyed) \n
  * Bit [1]  : Encryption key Size must be 16 bytes \n
@@ -296,6 +296,7 @@ typedef enum
     BLE_CMD_NONE,
     /// ADV_CMD:FOR BLE 5.1
     BLE_CREATE_ADV,
+    BLE_MODIFY_ADV,
     BLE_SET_ADV_DATA,
     BLE_SET_RSP_DATA,
     BLE_START_ADV,
@@ -421,7 +422,7 @@ typedef enum
     BLE_5_READ_BLOB_EVENT,
     BLE_5_PAIRING_SECURITY_REQ_EVENT,
     BLE_5_PARING_NUMBER_COMPARE_REQ_EVENT,
-	
+
 	BLE_5_OOB_REQ_EVENT,
     BLE_5_SC_OOB_REQ_EVENT,
     BLE_5_SC_LOC_OOB_IND,
@@ -430,6 +431,14 @@ typedef enum
 
     BLE_5_PARING_PASSKEY_INPUT_REQ,
     BLE_5_PARING_PASSKEY_DISPLAY_REQ,
+
+    BLE_5_COC_REG_COMPL_EVENT,
+    BLE_5_COC_UNREG_COMPL_EVENT,
+    BLE_5_COC_CONNECTION_COMPL_EVENT,
+    BLE_5_COC_DISCCONNECT_COMPL_EVENT,
+    BLE_5_COC_TX_DONE,
+    BLE_5_COC_RX_IND,
+
 } ble_notice_t;
 
 typedef enum
@@ -743,6 +752,46 @@ typedef struct
     uint8_t cmd;
     ///Command operation status
     uint8_t status;
+
+    union
+    {
+        struct
+        {
+            uint16_t psm;
+        } coc_reg_evt;
+
+        struct
+        {
+            uint16_t le_psm;
+            uint16_t local_cid;
+            uint16_t peer_credit;
+            uint16_t peer_mtu;
+            uint16_t peer_mps;
+        } coc_connection_compl_evt;
+
+        struct
+        {
+            uint16_t local_cid;
+            uint8_t reason;
+        } coc_disconnect_compl_evt;
+
+        struct
+        {
+            uint16_t cid;
+            uint16_t credit;
+        } coc_send_compl_evt;
+
+        struct
+        {
+            uint16_t offset;
+            uint16_t cid;
+            uint16_t credit;
+            uint16_t length;
+            uint8_t *data;
+        } coc_recv_evt;
+    };
+
+
 } ble_cmd_cmp_evt_t;
 
 typedef struct
@@ -1284,4 +1333,3 @@ enum gap_key_distr
 
 
 #endif /* INCLUDE_MODULES_BK_BLE_TYPES_H_ */
-
