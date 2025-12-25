@@ -3820,71 +3820,71 @@ END GROUP
                 0x000000000201c480       0xc4 ../platform/target/download/libdownload.a(boot_protocol.o)
 
 .text.cmd_reg_read_handler
-                0x000000000201c544       0xb8
+                0x000000000201c544       0xb0
  .text.cmd_reg_read_handler
-                0x000000000201c544       0xb8 ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x000000000201c544       0xb0 ../platform/target/download/libdownload.a(boot_protocol.o)
 
 .text.cmd_stay_rom_handler
-                0x000000000201c5fc       0x88
+                0x000000000201c5f4       0x88
  .text.cmd_stay_rom_handler
-                0x000000000201c5fc       0x88 ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x000000000201c5f4       0x88 ../platform/target/download/libdownload.a(boot_protocol.o)
 
 .text.common_cmd_process
-                0x000000000201c684       0xb0
+                0x000000000201c67c       0xb0
  .text.common_cmd_process
-                0x000000000201c684       0xb0 ../platform/target/download/libdownload.a(boot_protocol.o)
-                0x000000000201c684                common_cmd_process
+                0x000000000201c67c       0xb0 ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x000000000201c67c                common_cmd_process
 
 .text.flash_cmd_sector_write_done
-                0x000000000201c734       0xb4
+                0x000000000201c72c       0xb4
  .text.flash_cmd_sector_write_done
-                0x000000000201c734       0xb4 ../platform/target/download/libdownload.a(boot_protocol.o)
-                0x000000000201c734                flash_cmd_sector_write_done
+                0x000000000201c72c       0xb4 ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x000000000201c72c                flash_cmd_sector_write_done
 
 .text.flash_cmd_process
-                0x000000000201c7e8       0xac
+                0x000000000201c7e0       0xac
  .text.flash_cmd_process
-                0x000000000201c7e8       0xac ../platform/target/download/libdownload.a(boot_protocol.o)
-                0x000000000201c7e8                flash_cmd_process
+                0x000000000201c7e0       0xac ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x000000000201c7e0                flash_cmd_process
 
 .text.boot_rx_frm_handler
-                0x000000000201c894      0x25c
+                0x000000000201c88c      0x25c
  .text.boot_rx_frm_handler
-                0x000000000201c894      0x25c ../platform/target/download/libdownload.a(boot_protocol.o)
-                0x000000000201c894                boot_rx_frm_handler
+                0x000000000201c88c      0x25c ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x000000000201c88c                boot_rx_frm_handler
 
 .ARM.extab
  *(.ARM.extab* .gnu.linkonce.armextab.*)
-                0x000000000201caf0                __exidx_start = .
+                0x000000000201cae8                __exidx_start = .
 
-.ARM.exidx      0x000000000201caf0        0x8
+.ARM.exidx      0x000000000201cae8        0x8
  *(.ARM.exidx* .gnu.linkonce.armexidx.*)
- .ARM.exidx     0x000000000201caf0        0x8 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/crt0.o
+ .ARM.exidx     0x000000000201cae8        0x8 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/crt0.o
                                          0x10 (size before relaxing)
-                0x000000000201caf8                __exidx_end = .
+                0x000000000201caf0                __exidx_end = .
 
-.copy.table     0x000000000201caf8       0x24
-                0x000000000201caf8                . = ALIGN (0x4)
-                0x000000000201caf8                __copy_table_start__ = .
-                0x000000000201caf8        0x4 LONG 0x201d4d0 LOADADDR (.data)
-                0x000000000201cafc        0x4 LONG 0x28000e00 ADDR (.data)
-                0x000000000201cb00        0x4 LONG 0x158 SIZEOF (.data)
-                0x000000000201cb04        0x4 LONG 0x201cb24 LOADADDR (.vectors_iram)
-                0x000000000201cb08        0x4 LONG 0x8000000 ADDR (.vectors_iram)
-                0x000000000201cb0c        0x4 LONG 0x54 SIZEOF (.vectors_iram)
-                0x000000000201cb10        0x4 LONG 0x201cb78 LOADADDR (.iram)
-                0x000000000201cb14        0x4 LONG 0x8000058 ADDR (.iram)
-                0x000000000201cb18        0x4 LONG 0x958 (__iram_end__ - __iram_start__)
-                0x000000000201cb1c                __copy_table_end__ = .
+.copy.table     0x000000000201caf0       0x24
+                0x000000000201caf0                . = ALIGN (0x4)
+                0x000000000201caf0                __copy_table_start__ = .
+                0x000000000201caf0        0x4 LONG 0x201d4c8 LOADADDR (.data)
+                0x000000000201caf4        0x4 LONG 0x28000e00 ADDR (.data)
+                0x000000000201caf8        0x4 LONG 0x158 SIZEOF (.data)
+                0x000000000201cafc        0x4 LONG 0x201cb1c LOADADDR (.vectors_iram)
+                0x000000000201cb00        0x4 LONG 0x8000000 ADDR (.vectors_iram)
+                0x000000000201cb04        0x4 LONG 0x54 SIZEOF (.vectors_iram)
+                0x000000000201cb08        0x4 LONG 0x201cb70 LOADADDR (.iram)
+                0x000000000201cb0c        0x4 LONG 0x8000058 ADDR (.iram)
+                0x000000000201cb10        0x4 LONG 0x958 (__iram_end__ - __iram_start__)
+                0x000000000201cb14                __copy_table_end__ = .
 
-.zero.table     0x000000000201cb1c        0x8
-                0x000000000201cb1c                . = ALIGN (0x4)
-                0x000000000201cb1c                __zero_table_start__ = .
-                0x000000000201cb1c        0x4 LONG 0x28000f58 ADDR (.bss)
-                0x000000000201cb20        0x4 LONG 0x4a0c SIZEOF (.bss)
-                0x000000000201cb24                __zero_table_end__ = .
+.zero.table     0x000000000201cb14        0x8
+                0x000000000201cb14                . = ALIGN (0x4)
+                0x000000000201cb14                __zero_table_start__ = .
+                0x000000000201cb14        0x4 LONG 0x28000f58 ADDR (.bss)
+                0x000000000201cb18        0x4 LONG 0x4a0c SIZEOF (.bss)
+                0x000000000201cb1c                __zero_table_end__ = .
 
-.vectors_iram   0x0000000008000000       0x54 load address 0x000000000201cb24
+.vectors_iram   0x0000000008000000       0x54 load address 0x000000000201cb1c
                 0x0000000008000000                . = ALIGN (0x200)
                 0x0000000008000000                __vector_iram_table = .
  *(.vectors_iram)
@@ -3892,7 +3892,7 @@ END GROUP
                 0x0000000008000000                __VECTOR_IRAM
                 0x0000000008000054                . = ALIGN (0x4)
 
-.iram           0x0000000008000058      0x958 load address 0x000000000201cb78
+.iram           0x0000000008000058      0x958 load address 0x000000000201cb70
                 0x0000000008000058                . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__iram_text = LOADADDR (.iram))
                 0x0000000008000058                __iram_start__ = .
@@ -4004,29 +4004,29 @@ END GROUP
                 0x00000000080009b0                . = ALIGN (0x4)
                 0x00000000080009b0                _iram_end_dummy_ = .
 
-.rel.dyn        0x00000000080009b0        0x0 load address 0x000000000201d4d0
+.rel.dyn        0x00000000080009b0        0x0 load address 0x000000000201d4c8
  .rel.iplt      0x00000000080009b0        0x0 /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
 
-.iram_boundary  0x00000000080009b0        0x4 load address 0x000000000201d4d0
+.iram_boundary  0x00000000080009b0        0x4 load address 0x000000000201d4c8
                 0x00000000080009b0                __iram_end__ = .
                 0x00000000080009b4                . = (. + 0x4)
  *fill*         0x00000000080009b0        0x4 
                 0x00000000080009b4                . = ALIGN (0x4)
 
-.ramcode        0x0000000028000000      0xa00 load address 0x000000000201d4d0
+.ramcode        0x0000000028000000      0xa00 load address 0x000000000201d4c8
                 0x0000000028000958                . = (. + SIZEOF (.iram))
  *fill*         0x0000000028000000      0x958 
                 0x0000000028000a00                . = ALIGN (0x200)
  *fill*         0x0000000028000958       0xa8 
 
 .tfm_bl2_shared_data
-                0x0000000028000a00      0x400 load address 0x000000000201d4d0
+                0x0000000028000a00      0x400 load address 0x000000000201d4c8
                 0x0000000028000e00                . = (. + 0x400)
  *fill*         0x0000000028000a00      0x400 
                 0x0000000028000a00                Image$$SHARED_DATA$$RW$$Base = ADDR (.tfm_bl2_shared_data)
                 0x0000000028000e00                Image$$SHARED_DATA$$RW$$Limit = (ADDR (.tfm_bl2_shared_data) + SIZEOF (.tfm_bl2_shared_data))
 
-.data           0x0000000028000e00      0x158 load address 0x000000000201d4d0
+.data           0x0000000028000e00      0x158 load address 0x000000000201d4c8
  *(.data*)
  .data.FIH_FAILURE
                 0x0000000028000e00        0x4 ext/mcuboot/bootutil/libbootutil.a(fault_injection_hardening.o)
@@ -4085,7 +4085,7 @@ END GROUP
                 0x0000000028000f58                . = ALIGN (0x4)
                 0x0000000028000e00                Image$$ER_DATA$$Base = ADDR (.data)
 
-.igot.plt       0x0000000028000f58        0x0 load address 0x000000000201d628
+.igot.plt       0x0000000028000f58        0x0 load address 0x000000000201d620
  .igot.plt      0x0000000028000f58        0x0 /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
 
 .bss            0x0000000028000f58     0x4a0c
@@ -4747,7 +4747,7 @@ LOAD linker stubs
  .debug_ranges  0x0000000000007e70      0x158 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_sram_alloc.o)
  .debug_ranges  0x0000000000007fc8       0x18 ../platform/ext/accelerator/libbl2_crypto_hw.a(pal_mutex.o)
 
-.debug_line     0x0000000000000000    0x2b507
+.debug_line     0x0000000000000000    0x2b506
  .debug_line    0x0000000000000000      0x327 CMakeFiles/bl2_B.dir/src/security_cnt.o
  .debug_line    0x0000000000000327      0x6ba CMakeFiles/bl2_B.dir/ext/mcuboot/bl2_main.o
  .debug_line    0x00000000000009e1      0x285 CMakeFiles/bl2_B.dir/ext/mcuboot/bl2_securedebug.o
@@ -4777,26 +4777,26 @@ LOAD linker stubs
  .debug_line    0x000000000000bca7      0x214 ../platform/target/download/libdownload.a(system.o)
  .debug_line    0x000000000000bebb      0x5dd ../platform/target/download/libdownload.a(boot_update.o)
  .debug_line    0x000000000000c498      0x534 ../platform/target/download/libdownload.a(bl_uart.o)
- .debug_line    0x000000000000c9cc     0x20de ../platform/target/download/libdownload.a(boot_protocol.o)
- .debug_line    0x000000000000eaaa      0x276 ../platform/target/download/libdownload.a(driver_uart0.o)
- .debug_line    0x000000000000ed20      0x1c4 ../platform/target/download/libdownload.a(crc32.o)
- .debug_line    0x000000000000eee4      0x6b9 mbedcrypto/library/libmbedcrypto.a(memory_buffer_alloc.o)
- .debug_line    0x000000000000f59d      0x29f mbedcrypto/library/libmbedcrypto.a(platform.o)
- .debug_line    0x000000000000f83c      0x533 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_driver.o)
- .debug_line    0x000000000000fd6f      0x205 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_event.o)
- .debug_line    0x000000000000ff74    0x1152a ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_aca.o)
- .debug_line    0x000000000002149e      0xe3e ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_aca_hw.o)
- .debug_line    0x00000000000222dc      0xc40 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_hash.o)
- .debug_line    0x0000000000022f1c      0xbcb ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_otp.o)
- .debug_line    0x0000000000023ae7     0x1338 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_sca.o)
- .debug_line    0x0000000000024e1f      0x73a ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_trng.o)
- .debug_line    0x0000000000025559      0x143 ../platform/ext/accelerator/libbl2_crypto_hw.a(pal_heap.o)
- .debug_line    0x000000000002569c      0x1fb ../platform/ext/accelerator/libbl2_crypto_hw.a(pal_string.o)
- .debug_line    0x0000000000025897      0x118 ../platform/ext/accelerator/libbl2_crypto_hw.a(pal_time.o)
- .debug_line    0x00000000000259af     0x4ee0 ../platform/ext/accelerator/libbl2_crypto_hw.a(bignum.o)
- .debug_line    0x000000000002a88f      0x2f5 ../platform/ext/accelerator/libbl2_crypto_hw.a(crypto_hw.o)
- .debug_line    0x000000000002ab84      0x7ad ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_sram_alloc.o)
- .debug_line    0x000000000002b331      0x1d6 ../platform/ext/accelerator/libbl2_crypto_hw.a(pal_mutex.o)
+ .debug_line    0x000000000000c9cc     0x20dd ../platform/target/download/libdownload.a(boot_protocol.o)
+ .debug_line    0x000000000000eaa9      0x276 ../platform/target/download/libdownload.a(driver_uart0.o)
+ .debug_line    0x000000000000ed1f      0x1c4 ../platform/target/download/libdownload.a(crc32.o)
+ .debug_line    0x000000000000eee3      0x6b9 mbedcrypto/library/libmbedcrypto.a(memory_buffer_alloc.o)
+ .debug_line    0x000000000000f59c      0x29f mbedcrypto/library/libmbedcrypto.a(platform.o)
+ .debug_line    0x000000000000f83b      0x533 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_driver.o)
+ .debug_line    0x000000000000fd6e      0x205 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_event.o)
+ .debug_line    0x000000000000ff73    0x1152a ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_aca.o)
+ .debug_line    0x000000000002149d      0xe3e ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_aca_hw.o)
+ .debug_line    0x00000000000222db      0xc40 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_hash.o)
+ .debug_line    0x0000000000022f1b      0xbcb ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_otp.o)
+ .debug_line    0x0000000000023ae6     0x1338 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_sca.o)
+ .debug_line    0x0000000000024e1e      0x73a ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_trng.o)
+ .debug_line    0x0000000000025558      0x143 ../platform/ext/accelerator/libbl2_crypto_hw.a(pal_heap.o)
+ .debug_line    0x000000000002569b      0x1fb ../platform/ext/accelerator/libbl2_crypto_hw.a(pal_string.o)
+ .debug_line    0x0000000000025896      0x118 ../platform/ext/accelerator/libbl2_crypto_hw.a(pal_time.o)
+ .debug_line    0x00000000000259ae     0x4ee0 ../platform/ext/accelerator/libbl2_crypto_hw.a(bignum.o)
+ .debug_line    0x000000000002a88e      0x2f5 ../platform/ext/accelerator/libbl2_crypto_hw.a(crypto_hw.o)
+ .debug_line    0x000000000002ab83      0x7ad ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_sram_alloc.o)
+ .debug_line    0x000000000002b330      0x1d6 ../platform/ext/accelerator/libbl2_crypto_hw.a(pal_mutex.o)
 
 .debug_str      0x0000000000000000     0xee82
  .debug_str     0x0000000000000000      0x471 CMakeFiles/bl2_B.dir/src/security_cnt.o

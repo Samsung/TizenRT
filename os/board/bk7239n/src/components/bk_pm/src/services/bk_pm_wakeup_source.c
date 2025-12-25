@@ -286,17 +286,20 @@ bk_pm_wakeup_reason_e bk_pm_sleep_wakeup_reason_get()
 		#else
 		case INT_SRC_RTC:
 		#endif
-		    if(strcmp(bk_rtc_get_first_alarm_name(), PM_WIFI_RTC_ALARM_NAME) == 0)
-		    {
-				wakeup_reason = BK_PM_WAKEUP_WIFI;
-			}
-			else if(strcmp(bk_rtc_get_first_alarm_name(), PM_BT_RTC_ALARM_NAME) == 0)
+			if(bk_rtc_get_first_alarm_name() != NULL)
 			{
-				wakeup_reason = BK_PM_WAKEUP_BLE;
-			}
-			else if(strcmp(bk_rtc_get_first_alarm_name(), PM_APP_RTC_ALARM_NAME) == 0)
-			{
-				wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
+				if(strcmp(bk_rtc_get_first_alarm_name(), PM_WIFI_RTC_ALARM_NAME) == 0)
+				{
+					wakeup_reason = BK_PM_WAKEUP_WIFI;
+				}
+				else if(strcmp(bk_rtc_get_first_alarm_name(), PM_BT_RTC_ALARM_NAME) == 0)
+				{
+					wakeup_reason = BK_PM_WAKEUP_BLE;
+				}
+				else if(strcmp(bk_rtc_get_first_alarm_name(), PM_APP_RTC_ALARM_NAME) == 0)
+				{
+					wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
+				}
 			}
 			else
 			{

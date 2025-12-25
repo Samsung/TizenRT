@@ -1189,7 +1189,7 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 
 	sys_hal_restore_int(int_state1, int_state2);
 
-	portNVIC_SYSTICK_LOAD_REG = systick_load_value;
+	portNVIC_SYSTICK_LOAD_REG = systick_load_value&0xFF000002;
 
 	portNVIC_SYSTICK_CTRL_REG = systick_ctrl_value;
 #endif
@@ -1494,7 +1494,7 @@ __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_
 
 	sys_ll_set_cpu_device_clk_enable_value(clken_peri);
 
-	portNVIC_SYSTICK_LOAD_REG = systick_load_value;
+	portNVIC_SYSTICK_LOAD_REG = systick_load_value&0xFF000002;
 
 	portNVIC_SYSTICK_CTRL_REG = systick_ctrl_value;
 
