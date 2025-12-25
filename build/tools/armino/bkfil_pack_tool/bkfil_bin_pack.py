@@ -52,7 +52,7 @@ class BKFilBinPack:
         parser = PartitionsParser(self.config)
         required = ["kernel", "bootparam"]
         optional = ["app1", "app2", "userfs"]
-        if self.config.get("CONFIG_BINARY_SIGNING", "n") != "y":
+        if self.config.get("CONFIG_TFM", "n") != "y":
             required += ["bl1"]
         parser.set_required(required)
         parser.set_optional(optional)
@@ -68,8 +68,8 @@ class BKFilBinPack:
         fs_bin = self.workdir / self.fs_bin_name
         if not fs_bin.exists():
             parser.create_dummy_fs_bin(fs_bin)
-        packager = bk_packager_format(self.workdir, pack_json)
-        if self.config.get("CONFIG_TFM", "n") == "y" and self.config.get("CONFIG_BINARY_SIGNING", "n") == "y":
+        packager = bk_packager_format(self.workdir, pack_json, Path("all-app.bin"))
+        if self.config.get("CONFIG_TFM", "n") == "y":
             packager.set_magic_header(b'BKDLV10.')
         packager.pack()
 
