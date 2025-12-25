@@ -100,5 +100,8 @@ menu "PWR_CLK"
 	config NORMAL_SLEEP_ULTRA_LOW_POWER
 		bool "ultra low power of normal sleep"
 		default n
+	config MAC_USE_RTC
+		bool "mac use rtc during lv sleep"
+		default n
 endmenu
 
