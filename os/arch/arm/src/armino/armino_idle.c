@@ -67,23 +67,27 @@
 #include "chip.h"
 #include "up_internal.h"
 #include <driver/uart.h>
+#include <stdbool.h>
 
 
 /*=====================DEFINE SECTION START====================*/
-typedef int                   bk_err_t;      /**< Return error code */
-#define MAX_REASONABLE_TICKS  86400000ULL    /* 24 hours in ticks (1ms per tick) */
-
+typedef int                                bk_err_t;      /**< Return error code */
+#define MAX_REASONABLE_TICKS               86400000ULL    /* 24 hours in ticks (1ms per tick) */
+#define DOMAIN_NAME_SUSPEND_TEST           "SUSPEND_TEST"
+#define PM_DEFAULT_SLEEP_TIME_US           (100000)  //100ms
 /*=====================DEFINE SECTION END======================*/
 
 
 /*=====================VARIABLE SECTION START==================*/
 clock_t s_missed_ticks = 0;
-
+extern sq_queue_t g_wdactivelist;
 /*=====================VARIABLE SECTION END====================*/
 
 /*================FUNCTION DECLARATION SECTION START===========*/
 extern void up_set_pm_timer(unsigned int interval_us);
 extern void up_set_dvfs(int div_lvl);
+extern uint32_t pm_get_sleep_time(void);
+extern struct pm_domain_s *pm_domain_find(FAR const char *domain_name);
 int armino_sleep_processing(void);
 //extern uint64_t bk_pm_suppress_ticks_and_sleep(uint32_t sleep_ticks);
 
@@ -100,7 +104,26 @@ static clock_t up_get_missed_ticks(void)
 {
 	return s_missed_ticks;
 }
+static bool up_check_valid_wakeup()
+{
+	/* Check watchdog active list to see if there is any wakeup timer with lag > 0 */
+	bool has_valid_wakeup         = false;
+	struct wdog_s *curr           = NULL;
 
+	for (curr = (FAR struct wdog_s *)g_wdactivelist.head; curr; curr = curr->next) {
+		if (WDOG_ISWAKEUP(curr)) {
+			has_valid_wakeup = true;
+			break;
+		}
+	}
+
+	/* Check whether it set sleep time for registered domain*/
+	struct pm_domain_s * domain = pm_domain_find(DOMAIN_NAME_SUSPEND_TEST);
+	if((has_valid_wakeup == false)&& (domain != NULL)) {
+		return 0;
+	}
+	return 1;
+}
 /****************************************************************************
  * Name: up_pm_board_sleep
  *
@@ -119,23 +142,23 @@ static int up_pm_board_sleep()
 	if (!g_pmglobals.is_running) {
 		return 0;
 	}
-
+	if(up_check_valid_wakeup() == 0) {
+		return 0;
+	}
 	if(pm_checkstate() == PM_SLEEP)
 	{
-		#if CONFIG_PM_LOWEST_POWER_MODE == 0
-		bk_pm_sleep_mode_set(PM_MODE_NORMAL_SLEEP);
-		#elif CONFIG_PM_LOWEST_POWER_MODE == 1
-		bk_pm_sleep_mode_set(PM_MODE_LOW_VOLTAGE);
-		#elif CONFIG_PM_LOWEST_POWER_MODE == 2
-		bk_pm_sleep_mode_set(PM_MODE_DEEP_SLEEP);
-		#elif CONFIG_PM_LOWEST_POWER_MODE == 3
-		bk_pm_sleep_mode_set(PM_MODE_SUPER_DEEP_SLEEP);
-		#endif
-		bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x1,0x0);
+		struct wdog_s *curr           = NULL;
+
+		for (curr = (FAR struct wdog_s *)g_wdactivelist.head; curr; curr = curr->next) {
+			if ((WDOG_ISWAKEUP(curr)) && (curr->lag <= CONFIG_PM_SLEEP_ENTRY_WAIT_MS)) {
+				up_set_pm_timer(PM_DEFAULT_SLEEP_TIME_US);
+				break;
+			}
+		}
 	}
 	else
 	{
-		bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x0,0x0);
+		//bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x0,0x0);
 	}
 
 	return 0;
@@ -295,6 +318,5 @@ int armino_sleep_processing()
 					bk_rtc_get_first_alarm_name());
 	}
 	#endif
-
 	return 0;
 }
