@@ -575,7 +575,7 @@ int32_t bk_tr_ble_advertiser_create_multi_adv(uint8_t adv_event_prop,
     int32_t nest_ret = 0;
 
     ble_cmd_msg_elem_t elem = {0};
-    uint32_t temp_idx_ele[3] = {(uint32_t)&tmp_adv_index, (uint32_t)&tmp_hal_adv_index, (uint32_t)&nest_ret};
+    uint32_t temp_idx_ele[3] = {(uint32_t) &tmp_adv_index, (uint32_t) &tmp_hal_adv_index, (uint32_t) &nest_ret};
     elem.adv_elem = ADV_ELEM_NORMAL;
     elem.adv_index = tmp_adv_index;
     elem.hal_adv_index = 0xff;
@@ -727,7 +727,7 @@ int32_t bk_tr_ble_advertiser_delete_multi_adv(uint8_t adv_handle)
     LOGD("%d", adv_handle);
 
     ble_cmd_msg_elem_t elem = {0};
-    uint32_t temp_idx_ele[3] = {(uint32_t)&tmp_adv_index, (uint32_t)&tmp_hal_adv_index, (uint32_t)&nest_ret};
+    uint32_t temp_idx_ele[3] = {(uint32_t) &tmp_adv_index, (uint32_t) &tmp_hal_adv_index, (uint32_t) &nest_ret};
     elem.adv_elem = ADV_ELEM_NORMAL;
     elem.adv_index = tmp_adv_index;
     elem.hal_adv_index = 0xff;
@@ -883,14 +883,134 @@ end:;
     return ret;
 }
 
-//refer to ble_server.h
+int32_t bk_tr_ble_advertiser_set_multi_adv_type(uint8_t adv_handle, trble_adv_type_e adv_type, trble_addr *addr)
+{
+    int32_t ret = TRBLE_SUCCESS;
+
+    if (addr)
+    {
+        LOGI("adv_handle %d adv_type %d mac_type %d %02x:%02x:%02x:%02x:%02x:%02x", adv_handle, adv_type, addr->type,
+             addr->mac[5],
+             addr->mac[4],
+             addr->mac[3],
+             addr->mac[2],
+             addr->mac[1],
+             addr->mac[0]);
+    }
+    else
+    {
+        LOGI("adv_handle %d adv_type %d", adv_handle, adv_type);
+    }
+
+    int8_t hal_adv_index = hal_ble_find_adv_index_by_handle(adv_handle);
+
+    if (hal_adv_index < 0)
+    {
+        LOGE("can't find hal_adv_index %d", adv_handle);
+        return TRBLE_FAIL;
+    }
+
+    hal_ble_adv_env.array[hal_adv_index].adv_param.adv_type = ADV_TYPE_LEGACY;
+
+    switch (adv_type)
+    {
+    case TRBLE_ADV_TYPE_IND:
+        hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_SCANNABLE_BIT;
+        break;
+
+    case TRBLE_ADV_TYPE_DIRECT:
+        LOGE("can't set direct adv because hal api doesn't input peer addr !!!");
+        return TRBLE_FAIL;
+        hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_DIRECTED_BIT;
+        break;
+
+    case TRBLE_ADV_TYPE_SCAN_IND:
+        hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = ADV_PROP_SCANNABLE_BIT;
+        break;
+
+    case TRBLE_ADV_TYPE_NONCONN_IND:
+        hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = 0;
+        break;
+
+    default:
+        LOGE("invalid adv type %d", adv_type);
+        return TRBLE_FAIL;
+        break;
+    }
+
+    if (addr)
+    {
+        switch (addr->type)
+        {
+        case TRBLE_ADDR_TYPE_PUBLIC:
+            hal_ble_adv_env.array[hal_adv_index].adv_param.own_addr_type = OWN_ADDR_TYPE_PUBLIC_ADDR;
+            break;
+
+        case TRBLE_ADDR_TYPE_RANDOM_STATIC:
+        case TRBLE_ADDR_TYPE_RANDOM_RESOLVABLE:
+        case TRBLE_ADDR_TYPE_RANDOM_NON_RESOLVABLE:
+            LOGW("covert %d to OWN_ADDR_TYPE_RANDOM_ADDR", addr->type);
+            hal_ble_adv_env.array[hal_adv_index].adv_param.own_addr_type = OWN_ADDR_TYPE_RANDOM_ADDR;
+            break;
+
+        default:
+            LOGE("invalid addr type %d", addr->type);
+            return TRBLE_FAIL;
+            break;
+        }
+
+        os_memcpy(hal_ble_adv_env.array[hal_adv_index].own_addr.addr, addr->mac, sizeof(hal_ble_adv_env.array[hal_adv_index].own_addr.addr));
+    }
+
+    if (hal_ble_adv_env.array[hal_adv_index].adv_status == BLE_HAL_ADV_STATE_ADVERTISING)
+    {
+        LOGW("need restart");
+        bk_tr_ble_advertiser_multi_adv_enable(adv_handle, 0);
+        bk_tr_ble_advertiser_multi_adv_enable(adv_handle, 1);
+    }
+
+end:;
+    return ret;
+}
+
+int32_t bk_tr_ble_advertiser_set_multi_adv_interval(uint8_t adv_handle, unsigned int interval)
+{
+    int32_t ret = TRBLE_SUCCESS;
+
+    LOGD("adv_handle %d %d", adv_handle, interval);
+
+    int8_t hal_adv_index = hal_ble_find_adv_index_by_handle(adv_handle);
+
+    if (hal_adv_index < 0)
+    {
+        LOGE("can't find hal_adv_index %d", adv_handle);
+        return TRBLE_FAIL;
+    }
+
+    hal_ble_adv_env.array[hal_adv_index].adv_param.adv_intv_min = interval;
+    hal_ble_adv_env.array[hal_adv_index].adv_param.adv_intv_max = interval;
+
+    if (hal_ble_adv_env.array[hal_adv_index].adv_status == BLE_HAL_ADV_STATE_ADVERTISING)
+    {
+        LOGW("need restart");
+        bk_tr_ble_advertiser_multi_adv_enable(adv_handle, 0);
+        bk_tr_ble_advertiser_multi_adv_enable(adv_handle, 1);
+    }
+
+end:;
+    return ret;
+}
+
+int32_t bk_tr_ble_advertiser_set_multi_adv_tx_power(uint8_t adv_handle, uint8_t txpower)
+{
+    //refer to ble_server.h
 #define ADV_TX_POWER_MAX 0x31
 #define ADV_TX_POWER_STEP 0.5  //dBm
 #define ADV_TX_POWER_MIN_DBM -9 //dBm
-int32_t bk_tr_ble_advertiser_set_multi_adv_tx_power(uint8_t adv_handle, uint8_t txpower)
-{
+
     LOGD("txpower %d", txpower);
     float tx_gain = 0;
+
     if (txpower > ADV_TX_POWER_MAX)
     {
         txpower = ADV_TX_POWER_MAX;
@@ -907,15 +1027,16 @@ int32_t bk_tr_ble_advertiser_set_multi_adv_tx_power(uint8_t adv_handle, uint8_t 
     }
 
     if ((BLE_HAL_ADV_STATE_CREATED == hal_ble_adv_env.array[hal_adv_index].adv_status)
-        || (BLE_HAL_ADV_STATE_ADVERTISING == hal_ble_adv_env.array[hal_adv_index].adv_status))
+            || (BLE_HAL_ADV_STATE_ADVERTISING == hal_ble_adv_env.array[hal_adv_index].adv_status))
     {
-        bk_ble_set_adv_tx_power(hal_ble_adv_env.array[hal_adv_index].adv_idx , 0, tx_gain);
+        bk_ble_set_adv_tx_power(hal_ble_adv_env.array[hal_adv_index].adv_idx, 0, tx_gain);
     }
     else
     {
         LOGE("Wrong adv status %d", hal_ble_adv_env.array[hal_adv_index].adv_status);
         return TRBLE_INVALID_STATE;
     }
+
     return TRBLE_SUCCESS;
 }
 
@@ -1041,7 +1162,7 @@ int32_t bk_tr_ble_advertiser_one_shot_adv_enable(uint8_t adv_id)
     uint8_t tmp_hal_adv_index = 0xff;
 
     ble_cmd_msg_elem_t elem = {0};
-    uint32_t *elem_ret_para[3] = {(uint32_t *)&tmp_adv_index, (uint32_t *)&tmp_hal_adv_index, (uint32_t *)&nest_ret};
+    uint32_t *elem_ret_para[3] = {(uint32_t *) &tmp_adv_index, (uint32_t *) &tmp_hal_adv_index, (uint32_t *) &nest_ret};
 
     elem.adv_elem = ADV_ELEM_ONESHOT;
     elem.adv_index = 0xff;
@@ -1360,7 +1481,7 @@ static int32_t advertiser_adv_enable_nest_adv_cb(uint32_t evt, int32_t status, v
 
     *((int32_t *)tmp_elem->nest_ret) = status;
 
-    if(status == 0)
+    if (status == 0)
     {
         hal_ble_adv_env.static_index = tmp_elem->adv_index;
         hal_ble_adv_env.static_hal_index = tmp_elem->hal_adv_index;
@@ -1370,6 +1491,7 @@ static int32_t advertiser_adv_enable_nest_adv_cb(uint32_t evt, int32_t status, v
     {
         rtos_set_semaphore(sem);
     }
+
     return 0;
 }
 
@@ -1384,6 +1506,7 @@ static int32_t advertiser_multi_adv_enable_nest_adv_cb(uint32_t evt, int32_t sta
     {
         rtos_set_semaphore(sem);
     }
+
     return 0;
 }
 
@@ -1401,6 +1524,7 @@ int32_t advertiser_create_multi_adv_nest_adv_cb(uint32_t evt, int32_t status, vo
     {
         rtos_set_semaphore(sem);
     }
+
     return 0;
 }
 
@@ -1433,6 +1557,7 @@ static int32_t ble_advertiser_deinit_nest_adv_cb(uint32_t evt, int32_t status, v
     {
         rtos_set_semaphore(sem);
     }
+
     return 0;
 }
 

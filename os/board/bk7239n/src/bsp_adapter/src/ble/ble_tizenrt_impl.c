@@ -830,8 +830,6 @@ static void hal_ble_cmd_thread(void)
 {
     beken_semaphore_t *exit_sem = NULL;
 
-    bk_adapter_ble_whitelist_init();
-
     while (1)
     {
         int err;
@@ -936,18 +934,11 @@ static void hal_ble_cmd_thread(void)
 
                 if (BLE_HAL_ADV_STATE_CREATED == hal_ble_adv_env.array[hal_adv_index].adv_status)
                 {
-                    if (hal_ble_adv_env.array[hal_adv_index].adv_param.own_addr_type == OWN_ADDR_TYPE_RANDOM_ADDR)
-                    {
-                        err = bk_ble_set_adv_random_addr(hal_ble_adv_env.array[hal_adv_index].adv_idx, hal_ble_adv_env.array[hal_adv_index].own_addr.addr, hal_ble_cmd_cb);
-                    }
-                    else
-                    {
-                        err = bk_ble_set_adv_data(hal_ble_adv_env.array[hal_adv_index].adv_idx, hal_ble_adv_env.array[hal_adv_index].advData, hal_ble_adv_env.array[hal_adv_index].advDataLen, hal_ble_cmd_cb);
-                    }
+                    err = bk_ble_modify_advertising(hal_ble_adv_env.array[hal_adv_index].adv_idx, &hal_ble_adv_env.array[hal_adv_index].adv_param, hal_ble_cmd_cb);
 
                     if (err)
                     {
-                        LOGE("set adv random addr/set adv data err %d", err);
+                        LOGE("modify adv param err %d", err);
                         ret_status = -1;
                         break;
                     }
@@ -956,7 +947,7 @@ static void hal_ble_cmd_thread(void)
 
                     if (err)
                     {
-                        LOGE("wait et adv random addr/set adv data err");
+                        LOGE("wait modify adv param err err");
                         ret_status = -1;
                         break;
                     }
@@ -1763,6 +1754,60 @@ static void bk_adapter_ble_notice_cb(ble_notice_t notice, void *param)
         LOGD("BLE_5_KEY_EVENT");
         bk_ble_key_t ble_enc_key = *((bk_ble_key_t *)param);
 
+        LOGI("penc %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+            ble_enc_key.penc.ltk[0],
+            ble_enc_key.penc.ltk[1],
+            ble_enc_key.penc.ltk[2],
+            ble_enc_key.penc.ltk[3],
+            ble_enc_key.penc.ltk[4],
+            ble_enc_key.penc.ltk[5],
+            ble_enc_key.penc.ltk[6],
+            ble_enc_key.penc.ltk[7],
+            ble_enc_key.penc.ltk[8],
+            ble_enc_key.penc.ltk[9],
+            ble_enc_key.penc.ltk[10],
+            ble_enc_key.penc.ltk[11],
+            ble_enc_key.penc.ltk[12],
+            ble_enc_key.penc.ltk[13],
+            ble_enc_key.penc.ltk[14],
+            ble_enc_key.penc.ltk[15]);
+
+        LOGI("pidk %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+            ble_enc_key.pirk.irk[0],
+            ble_enc_key.pirk.irk[1],
+            ble_enc_key.pirk.irk[2],
+            ble_enc_key.pirk.irk[3],
+            ble_enc_key.pirk.irk[4],
+            ble_enc_key.pirk.irk[5],
+            ble_enc_key.pirk.irk[6],
+            ble_enc_key.pirk.irk[7],
+            ble_enc_key.pirk.irk[8],
+            ble_enc_key.pirk.irk[9],
+            ble_enc_key.pirk.irk[10],
+            ble_enc_key.pirk.irk[11],
+            ble_enc_key.pirk.irk[12],
+            ble_enc_key.pirk.irk[13],
+            ble_enc_key.pirk.irk[14],
+            ble_enc_key.pirk.irk[15]);
+
+        LOGI("lenc %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+            ble_enc_key.lenc.ltk[0],
+            ble_enc_key.lenc.ltk[1],
+            ble_enc_key.lenc.ltk[2],
+            ble_enc_key.lenc.ltk[3],
+            ble_enc_key.lenc.ltk[4],
+            ble_enc_key.lenc.ltk[5],
+            ble_enc_key.lenc.ltk[6],
+            ble_enc_key.lenc.ltk[7],
+            ble_enc_key.lenc.ltk[8],
+            ble_enc_key.lenc.ltk[9],
+            ble_enc_key.lenc.ltk[10],
+            ble_enc_key.lenc.ltk[11],
+            ble_enc_key.lenc.ltk[12],
+            ble_enc_key.lenc.ltk[13],
+            ble_enc_key.lenc.ltk[14],
+            ble_enc_key.lenc.ltk[15]);
+
         if (bk_adapter_bt_storage_save_linkkey_info(&ble_enc_key) >= 0)
         {
             bk_adapter_bt_storage_sync_bond_info_to_flash();
@@ -1776,8 +1821,14 @@ static void bk_adapter_ble_notice_cb(ble_notice_t notice, void *param)
         bk_ble_bond_info_req_t *bond_info_req = (bk_ble_bond_info_req_t *)param;
         uint8_t tem_addr[6];
 
-        LOGD("BLE_5_BOND_INFO_REQ_EVENT, 0x%02x:0x%02x:0x%02x:0x%02x:0x%02x:0x%02x(%d)", bond_info_req->key.peer_addr[0], bond_info_req->key.peer_addr[1],
-             bond_info_req->key.peer_addr[2], bond_info_req->key.peer_addr[3], bond_info_req->key.peer_addr[4], bond_info_req->key.peer_addr[5], bond_info_req->key.peer_addr_type);
+        LOGD("BLE_5_BOND_INFO_REQ_EVENT, %02x:%02x:%02x:%02x:%02x:%02x(%d)",
+            bond_info_req->key.peer_addr[5],
+            bond_info_req->key.peer_addr[4],
+            bond_info_req->key.peer_addr[3],
+            bond_info_req->key.peer_addr[2],
+            bond_info_req->key.peer_addr[1],
+            bond_info_req->key.peer_addr[0],
+            bond_info_req->key.peer_addr_type);
 
         os_memcpy(tem_addr, bond_info_req->key.peer_addr, 6);
 
@@ -1793,6 +1844,69 @@ static void bk_adapter_ble_notice_cb(ble_notice_t notice, void *param)
             LOGD("bond key is found (%d) ", index);
             bond_info_req->key_found = 1;
             bond_info_req->key = bt_bond_info_storage->linkkey[index];
+
+            LOGI("penc %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+                bond_info_req->key.penc.ltk[0],
+                bond_info_req->key.penc.ltk[1],
+                bond_info_req->key.penc.ltk[2],
+                bond_info_req->key.penc.ltk[3],
+                bond_info_req->key.penc.ltk[4],
+                bond_info_req->key.penc.ltk[5],
+                bond_info_req->key.penc.ltk[6],
+                bond_info_req->key.penc.ltk[7],
+                bond_info_req->key.penc.ltk[8],
+                bond_info_req->key.penc.ltk[9],
+                bond_info_req->key.penc.ltk[10],
+                bond_info_req->key.penc.ltk[11],
+                bond_info_req->key.penc.ltk[12],
+                bond_info_req->key.penc.ltk[13],
+                bond_info_req->key.penc.ltk[14],
+                bond_info_req->key.penc.ltk[15]);
+
+            LOGI("pidk %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+                bond_info_req->key.pirk.irk[0],
+                bond_info_req->key.pirk.irk[1],
+                bond_info_req->key.pirk.irk[2],
+                bond_info_req->key.pirk.irk[3],
+                bond_info_req->key.pirk.irk[4],
+                bond_info_req->key.pirk.irk[5],
+                bond_info_req->key.pirk.irk[6],
+                bond_info_req->key.pirk.irk[7],
+                bond_info_req->key.pirk.irk[8],
+                bond_info_req->key.pirk.irk[9],
+                bond_info_req->key.pirk.irk[10],
+                bond_info_req->key.pirk.irk[11],
+                bond_info_req->key.pirk.irk[12],
+                bond_info_req->key.pirk.irk[13],
+                bond_info_req->key.pirk.irk[14],
+                bond_info_req->key.pirk.irk[15]);
+
+            LOGD("peer id addr, %02x:%02x:%02x:%02x:%02x:%02x(%d)",
+                bond_info_req->key.pirk.id_addr[5],
+                bond_info_req->key.pirk.id_addr[4],
+                bond_info_req->key.pirk.id_addr[3],
+                bond_info_req->key.pirk.id_addr[2],
+                bond_info_req->key.pirk.id_addr[1],
+                bond_info_req->key.pirk.id_addr[0],
+                bond_info_req->key.pirk.addr_type);
+
+            LOGI("lenc %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+                bond_info_req->key.lenc.ltk[0],
+                bond_info_req->key.lenc.ltk[1],
+                bond_info_req->key.lenc.ltk[2],
+                bond_info_req->key.lenc.ltk[3],
+                bond_info_req->key.lenc.ltk[4],
+                bond_info_req->key.lenc.ltk[5],
+                bond_info_req->key.lenc.ltk[6],
+                bond_info_req->key.lenc.ltk[7],
+                bond_info_req->key.lenc.ltk[8],
+                bond_info_req->key.lenc.ltk[9],
+                bond_info_req->key.lenc.ltk[10],
+                bond_info_req->key.lenc.ltk[11],
+                bond_info_req->key.lenc.ltk[12],
+                bond_info_req->key.lenc.ltk[13],
+                bond_info_req->key.lenc.ltk[14],
+                bond_info_req->key.lenc.ltk[15]);
         }
         else
         {
@@ -1935,6 +2049,35 @@ static void hal_ble_cmd_cb(ble_cmd_t cmd, ble_cmd_param_t *param)
 
         hal_ble_adv_env.array[hal_adv_index].adv_status = BLE_HAL_ADV_STATE_CREATED;
         set_semaphore = 1;
+    }
+    break;
+
+    case BLE_MODIFY_ADV:
+    {
+        int8_t hal_adv_index = hal_ble_find_adv_index_by_handle(param->cmd_idx);
+
+        LOGD("BLE_MODIFY_ADV param->cmd_idx:%d hal_adv_index %d", param->cmd_idx, hal_adv_index);
+
+        if (param->status)
+        {
+            LOGE("status err 0x%x", param->status);
+            break;
+        }
+
+        if (hal_ble_adv_env.array[hal_adv_index].adv_param.own_addr_type == OWN_ADDR_TYPE_RANDOM_ADDR)
+        {
+            err = bk_ble_set_adv_random_addr(hal_ble_adv_env.array[hal_adv_index].adv_idx, hal_ble_adv_env.array[hal_adv_index].own_addr.addr, hal_ble_cmd_cb);
+        }
+        else
+        {
+            err = bk_ble_set_adv_data(hal_ble_adv_env.array[hal_adv_index].adv_idx, hal_ble_adv_env.array[hal_adv_index].advData, hal_ble_adv_env.array[hal_adv_index].advDataLen, hal_ble_cmd_cb);
+        }
+
+        if (err)
+        {
+            LOGE("set adv random addr/set adv data err %d", err);
+            break;
+        }
     }
     break;
 
@@ -2263,9 +2406,11 @@ trble_result_e bktr_ble_init(trble_client_init_config *init_client, trble_server
     bk_tr_ble_server_init(init_server);
     bk_tr_ble_advertiser_init();
     bk_tr_ble_scanner_init();
+    bk_tr_ble_coc_init_private();
 
     bk_ble_set_max_mtu(init_client->mtu);
 
+    bk_adapter_ble_whitelist_init();
     is_ble_init = true;
 
     LOGW("end");
@@ -2283,6 +2428,7 @@ trble_result_e bktr_ble_deinit(void)
 
     LOGW("start");
 
+    bk_tr_ble_coc_deinit_private();
     bk_tr_ble_scanner_deinit();
     bk_tr_ble_advertiser_deinit();
     bk_tr_ble_server_deinit();
