@@ -17,7 +17,7 @@ OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
 
 __MSP_STACK_SIZE = CONFIG_IDLETHREAD_STACKSIZE;  
 __CPU0_SPE_RAM_SIZE = CONFIG_CPU0_SPE_RAM_SIZE;
-__MIN_HEAP_SIZE = (90 << 10);
+__MIN_HEAP_SIZE = (85 << 10);
 PERSIST_MEM_AREA_SIZE = 4;
 REBOOT_TAG_AREA_SIZE = 4;
 __CPU0_APP_RAM_BASE = 0x38000000 + __CPU0_SPE_RAM_SIZE;
@@ -108,6 +108,13 @@ SECTIONS
             *libboard.a:rxl_cntrl.o*
             *rf_cntrl.o*
             *co_list.o*
+            *libnet.a:tcp_in.o*
+            *libnet.a:tcp_out.o*
+            *libnet.a:tcp.o*
+            *libnet.a:ip4.o*
+            *libnet.a:ip.o*
+            *libnet.a:netif.o*
+            *libnet.a:pbuf.o*
             ) *(.text .text.* .rodata .rodata.*)
         /**(.text.* *.rodata *.rodata.*)*/
 
@@ -235,6 +242,13 @@ SECTIONS
         *libboard.a:rxl_cntrl.o*         (.text .text.* .rodata .rodata.*)
         *rf_cntrl.o*                     (.text .text.* .rodata .rodata.*)
         *co_list.o*                      (.text .text.* .rodata .rodata.*)
+        *libnet.a:tcp_in.o*              (.text .text.* .rodata .rodata.*)
+        *libnet.a:tcp_out.o*             (.text .text.* .rodata .rodata.*)
+        *libnet.a:tcp.o*                 (.text .text.* .rodata .rodata.*)
+        *libnet.a:ip4.o*                 (.text .text.* .rodata .rodata.*)
+        *libnet.a:ip.o*                  (.text .text.* .rodata .rodata.*)
+        *libnet.a:netif.o*               (.text .text.* .rodata .rodata.*)
+        *libnet.a:pbuf.o*                (.text .text.* .rodata .rodata.*)
         *(.itcm)
         *(.itcm_sec_code)
         *(.iram)
@@ -391,5 +405,5 @@ SECTIONS
 
     ASSERT((s_rom_end < ORIGIN(FLASH) + LENGTH(FLASH)), "ROM overflow!!!")
     ASSERT(((ORIGIN(RAM) + LENGTH(RAM)) > (_heap_start + __MSP_STACK_SIZE + 8)), "Stack overflowed with bss")
-    ASSERT(((_heap_end - _heap_start) >= __MIN_HEAP_SIZE), "Heap smaller than minimize size 90K!!!")
+    ASSERT(((_heap_end - _heap_start) >= __MIN_HEAP_SIZE), "Heap smaller than minimize size 85K!!!")
 }
