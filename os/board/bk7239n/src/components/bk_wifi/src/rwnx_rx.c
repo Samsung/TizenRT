@@ -795,7 +795,7 @@ void fhost_free_rx_buffer(uint32 host_id)
 	if (p)
 		pbuf_free(p);
 
-#elif CONFIG_LWIP
+#elif CONFIG_NET_LWIP
 	struct pbuf *p = (struct pbuf *)host_id;
 
 	if (p)

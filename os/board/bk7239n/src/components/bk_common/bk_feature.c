@@ -199,3 +199,12 @@ int bk_feature_cpu_pwd_enable(void)
 	return 0;
 #endif
 }
+
+int bk_feature_mac_use_rtc_enable(void)
+{
+#if defined(CONFIG_MAC_USE_RTC)
+	return 1;
+#else
+	return 0;
+#endif
+}

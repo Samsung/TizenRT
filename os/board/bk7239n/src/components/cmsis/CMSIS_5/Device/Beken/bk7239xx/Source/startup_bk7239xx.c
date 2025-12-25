@@ -386,12 +386,10 @@ void set_jtag_mode(void) {
 
 #if defined(CONFIG_BEKEN_EVB)
     /* clear the default SWD pin configuration */
-    #if (CONFIG_SPE == 1)
-        gpio_dev_unprotect_unmap(GPIO_0);
-        gpio_dev_unprotect_unmap(GPIO_1);
-    #endif
+    gpio_dev_unprotect_unmap(GPIO_0);
+    gpio_dev_unprotect_unmap(GPIO_1);
 
-	
+
     /* Set the SWD pin configuration */
 	gpio_dev_unprotect_unmap(CONFIG_SWD_DEBUG_MODE_PIN_DIO);
 	gpio_dev_unprotect_unmap(CONFIG_SWD_DEBUG_MODE_PIN_CLK);
@@ -471,7 +469,7 @@ void _start(void)
 #endif
 
     bk_gpio_driver_init();
-    //Important notice!!!!!
+	//Important notice!!!!!
 	//ATE uses UART TX PIN as the detect ATE mode pin,
 	//so it should be called after GPIO init and before UART init.
 	//or caused ATE can't work or UART can't work
