@@ -100,6 +100,7 @@ ifeq ($(CONFIG_NET_LWIP),y)
 include lwip/src/core/Make.defs
 include lwip/src/api/Make.defs
 include lwip/src/netif/Make.defs
+include lwip/src/port/Make.defs
 include lwip/src/core/snmp/Make.defs
 ifeq ($(CONFIG_NET_IPv4),y)
 include lwip/src/core/ipv4/Make.defs
