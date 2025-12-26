@@ -40,6 +40,7 @@
 #include <media/voice/SpeechDetectorListenerInterface.h>
 #include <media/FocusManager.h>
 #include <media/stream_info.h>
+#include <audio/SoundManager.h>
 #include <iostream>
 #include <memory>
 #include <functional>
@@ -55,45 +56,209 @@ static const char *filePath = "/tmp/record.pcm";
 uint8_t *gBuffer = NULL;
 uint32_t bufferSize = 0;
 
-static void pm_suspend_idle(void)
-{
-	int fd = open(PM_DRVPATH, O_WRONLY);
-	if (fd < 0) {
-		printf("Fail to open pm(errno %d)", get_errno());
-		return;
-	}
-	if (ioctl(fd, PMIOC_SUSPEND, "wakerec") < 0) {
-		printf("Fail to suspend(errno %d)\n", get_errno());
-	}
-	close(fd);
-}
-
-static void pm_resume_idle(void)
-{
-	int fd = open(PM_DRVPATH, O_WRONLY);
-	if (fd < 0) {
-		printf("Fail to open pm(errno %d)", get_errno());
-		return;
-	}
-	if (ioctl(fd, PMIOC_RESUME, "wakerec") < 0) {
-		printf("Fail to resume(errno %d)\n", get_errno());
-	}
-	close(fd);
-}
-
+static bool isRecording = false;
 class WakeRec : public media::voice::SpeechDetectorListenerInterface,public FocusChangeListener,
 				public media::MediaRecorderObserverInterface, public media::MediaPlayerObserverInterface,
 				public std::enable_shared_from_this<WakeRec>
 {
 public:
-	void initWakeRec(bool set)
+	void onMicMute()
 	{
-		mKDEnabled = set;
-		printf("open file path : %s\n", filePath);
-		fp = fopen(filePath, "wb");
-		if (fp == NULL) {
-			printf("FILE OPEN FAILED\n");
-			return;
+		if (isRecording) {
+			/* already paused by framework, not required to stop.*/
+			mr.unprepare();
+			mr.destroy();
+			fclose(fp);
+			isRecording = false;
+			playRecordVoice();
+		}
+	}
+private:
+	MediaPlayer mp;
+	MediaRecorder mr;
+	shared_ptr<FocusRequest> mFocusRequest;
+	FILE *fp;
+	bool mPaused;
+
+	void onRecordFinished(media::MediaRecorder &mediaRecorder) override
+	{
+		printf("##################################\n");
+		printf("####      onRecordFinished    ####\n");
+		printf("##################################\n");
+		mr.unprepare();
+		mr.destroy();
+		fclose(fp);
+		isRecording = false;
+		playRecordVoice();
+	}
+
+	void onRecordStopped(MediaRecorder& mediaRecorder, recorder_error_t errCode) override
+	{
+		printf("##################################\n");
+		printf("####      onRecordStopped      ####\n");
+		printf("##################################\n");
+		mr.unprepare();
+		mr.destroy();
+		fclose(fp);
+		isRecording = false;
+		playRecordVoice();
+	}
+
+	void onRecordBufferDataReached(media::MediaRecorder &mediaRecorder, std::shared_ptr<unsigned char> data, size_t size) override
+	{
+		if (!isRecording) {
+			fp = fopen(filePath, "ab");
+			isRecording = true;
+		}
+		printf("###########################################\n");
+		printf("####      onRecordBufferDataReached    ####\n");
+		printf("###########################################\n");
+
+		short *sdata = (short *)data.get();
+		if (fp != NULL) {
+			int sz_written = fwrite(sdata, sizeof(short), size / 2, fp);
+			printf("\n********Size written to file= %d *********\n", sz_written);
+		}
+	}
+	
+	void onPlaybackFinished(media::MediaPlayer &mediaPlayer) override
+	{
+		printf("##################################\n");
+		printf("####    onPlaybackFinished    ####\n");
+		printf("##################################\n");
+
+		mp.unprepare();
+		mp.destroy();
+		mPaused = false;
+		auto &focusManager = FocusManager::getFocusManager();
+		focusManager.abandonFocus(mFocusRequest);
+
+		printf("##################################\n");
+		printf("####   Playback done!!        ####\n");
+		printf("##################################\n");
+
+		printf("###################################\n");
+		printf("#### Wait for wakeup triggered ####\n");
+		printf("###################################\n");
+
+		sd->startKeywordDetect();
+		/* Now that we finished playback, we can go to sleep */
+		sleep(3); //for test, add sleep.
+	}
+
+
+	void onPlaybackError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
+	{
+		printf("##################################\n");
+		printf("####      onPlaybackError     ####\n");
+		printf("##################################\n");
+	}
+
+	void onSpeechDetectionListener(media::voice::speech_detect_event_type_e event) override
+	{
+		printf("#### onSpeechDetectionListener\n");
+		if (event == SPEECH_DETECT_KD) {
+			/* take wakelock as soon as possible, and we hold it until we play recorded data */
+			printf("Event SPEECH_DETECT_KD\n");
+			printf("#### [SD] keyword detected.\n");
+			fp = fopen(filePath, "wb");
+			if (fp == NULL) {
+				printf("FILE OPEN FAILED\n");
+				return;
+			}
+
+			if (gBuffer) {
+				if (sd->getKeywordData(gBuffer) == true) {
+					/* consume buffer */
+					fwrite(gBuffer, 1, bufferSize, fp);	
+					printf("KD data extraction OK\n");
+				} else {
+					printf("kd data extraction failed\n");
+				}
+			}
+			fclose(fp);
+			sd->stopKeywordDetect();
+			startRecord();
+		} else if (event == SPEECH_DETECT_EPD) {
+			// do nothing
+		} else if (event == SPEECH_DETECT_NONE) {
+			printf("Event SPEECH_DETECT_NO_EPD\n");
+		} else {
+			printf("Event not valid\n");
+		}
+	}
+
+	void onFocusChange(int focusChange) override
+	{
+		player_result_t res;
+		printf("focusChange : %d mPaused : %d\n", focusChange, mPaused);
+		switch (focusChange) {
+		case FOCUS_GAIN:
+		case FOCUS_GAIN_TRANSIENT: {
+			if (mPaused) {
+				printf("it was paused, just start playback now\n");
+				res = mp.start();
+				if (res != PLAYER_OK) {
+					printf("player start failed res : %d\n", res);
+#ifdef PLAYER_SYNC_API_CALL
+					auto &focusManager = FocusManager::getFocusManager();
+					focusManager.abandonFocus(mFocusRequest);
+				} else {
+					mPaused = false;
+					printf("player start succeeded\n");
+#endif
+				}
+			} else {
+				auto source = std::move(unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(filePath)));
+				source->setSampleRate(16000);
+				source->setChannels(1);
+				source->setPcmFormat(media::AUDIO_FORMAT_TYPE_S16_LE);
+				mp.setDataSource(std::move(source));
+				mp.prepare();
+				mp.setVolume(10);
+				res = mp.start();
+				if (res != PLAYER_OK) {
+					printf("player start failed res : %d\n", res);
+#ifdef PLAYER_SYNC_API_CALL
+					auto &focusManager = FocusManager::getFocusManager();
+					focusManager.abandonFocus(mFocusRequest);
+				} else {
+					mPaused = false;
+					printf("player start succeeded\n");
+#endif
+				}
+			}
+		} break;
+		case FOCUS_LOSS: {
+			res = mp.stop();
+			if (res != PLAYER_OK) {
+				printf("player stop failed res : %d\n", res);
+			} else {
+				mPaused = false;
+				mp.unprepare();
+				mp.destroy();
+				printf("###################################\n");
+				printf("#### Wait for wakeup triggered ####\n");
+				printf("###################################\n");
+				sd->startKeywordDetect();
+			}
+			auto &focusManager = FocusManager::getFocusManager();
+			focusManager.abandonFocus(mFocusRequest); // call abandon focus when FOCUS_GAIN callback not required.
+		} break;
+		case FOCUS_LOSS_TRANSIENT: {
+			res = mp.pause(); //it will be played again
+			if (res != PLAYER_OK) {
+				printf("player pause failed res : %d\n", res);
+#ifdef PLAYER_SYNC_API_CALL
+			}
+			else {
+				mPaused = true;
+				printf("player pause succeeded\n");
+#endif
+			}
+		} break;
+		default: {
+		} break;
 		}
 	}
 
@@ -131,188 +296,11 @@ public:
 			return;
 		}
 
-		mr.start();
-	}
-
-private:
-	MediaPlayer mp;
-	MediaRecorder mr;
-	shared_ptr<FocusRequest> mFocusRequest;
-	bool mPaused;
-	bool mKDEnabled;
-	FILE *fp;
-	void onRecordStarted(media::MediaRecorder &mediaRecorder) override
-	{
-		printf("##################################\n");
-		printf("####     onRecordStarted      ####\n");
-		printf("##################################\n");
-	}
-	void onRecordPaused(media::MediaRecorder &mediaRecorder) override
-	{
-		printf("##################################\n");
-		printf("####      onRecordPaused      ####\n");
-		printf("##################################\n");
-	}
-	void onRecordFinished(media::MediaRecorder &mediaRecorder) override
-	{
-		printf("##################################\n");
-		printf("####      onRecordFinished    ####\n");
-		printf("##################################\n");
-		mr.unprepare();
-		mr.destroy();
-		fclose(fp);
-		playRecordVoice();
-	}
-	void onRecordStartError(media::MediaRecorder &mediaRecorder, media::recorder_error_t errCode) override
-	{
-		printf("#### onRecordStartError!! errCode : %d\n", errCode);
-	}
-	void onRecordPauseError(media::MediaRecorder &mediaRecorder, media::recorder_error_t errCode) override
-	{
-		printf("#### onRecordPauseError!! errCode : %d\n", errCode);
-	}
-	void onRecordStopError(media::MediaRecorder &mediaRecorder, media::recorder_error_t errCode) override
-	{
-		printf("#### onRecordStopError!! errCode : %d\n", errCode);
-	}
-
-	void onRecordStopped(media::MediaRecorder &mediaRecorder, media::recorder_error_t errCode) override
-	{
-		printf("##################################\n");
-		printf("####      onRecordStopped     ####\n");
-		printf("##################################\n");
-
-		if (errCode == RECORDER_ERROR_DEVICE_DEAD) {
-			printf("####      Mic is unreachable     ####\n");
-			mr.unprepare();
-			mr.destroy();
-			fclose(fp);
-			playRecordVoice();
-		}
-	}
-
-	void onRecordBufferDataReached(media::MediaRecorder &mediaRecorder, std::shared_ptr<unsigned char> data, size_t size) override
-	{
-		printf("###########################################\n");
-		printf("####      onRecordBufferDataReached    ####\n");
-		printf("###########################################\n");
-
-		short *sdata = (short *)data.get();
-		if (fp != NULL) {
-			int sz_written = fwrite(sdata, sizeof(short), size / 2, fp);
-			printf("\n********Size written to file= %d *********\n", sz_written);
+		mret = mr.start();
+		if( mret != RECORDER_OK) {
+			printf("#### [MR] start error!! ret : %d\n", mret);
 		} else {
-			printf("fp is null!!\n");
-		}
-	}
-	
-	void onPlaybackStarted(media::MediaPlayer &mediaPlayer) override
-	{
-		printf("##################################\n");
-		printf("####    onPlaybackStarted     ####\n");
-		printf("##################################\n");
-		mPaused = false;
-	}
-	void onPlaybackFinished(media::MediaPlayer &mediaPlayer) override
-	{
-		printf("##################################\n");
-		printf("####    onPlaybackFinished    ####\n");
-		printf("##################################\n");
-
-		mp.unprepare();
-		mp.destroy();
-		mPaused = false;
-		auto &focusManager = FocusManager::getFocusManager();
-		focusManager.abandonFocus(mFocusRequest);
-
-		printf("##################################\n");
-		printf("####   Playback done!!        ####\n");
-		printf("##################################\n");
-		if (mKDEnabled) {
-			printf("###################################\n");
-			printf("#### Wait for wakeup triggered ####\n");
-			printf("###################################\n");
-			sd->startKeywordDetect();
-		}
-		/* Now that we finished playback, we can go to sleep */
-		sleep(3); //for test, add sleep.
-	}
-
-	void onPlaybackError(media::MediaPlayer &mediaPlayer, media::player_error_t error) override
-	{
-		printf("##################################\n");
-		printf("####      onPlaybackError     ####\n");
-		printf("##################################\n");
-	}
-
-	void onSpeechDetectionListener(media::voice::speech_detect_event_type_e event) override
-	{
-		printf("#### onSpeechDetectionListener\n");
-		if (event == SPEECH_DETECT_KD) {
-			/* take wakelock as soon as possible, and we hold it until we play recorded data */
-			printf("Event SPEECH_DETECT_KD\n");
-			printf("#### [SD] keyword detected.\n");
-			if (gBuffer) {
-				if (sd->getKeywordData(gBuffer) == true) {
-					/* consume buffer */
-					fwrite(gBuffer, 1, bufferSize, fp);	
-					printf("KD data extraction OK\n");
-				} else {
-					printf("kd data extraction failed\n");
-				}
-			}
-			sd->stopKeywordDetect();
-			startRecord();
-		} else if (event == SPEECH_DETECT_EPD) {
-			// do nothing
-		} else if (event == SPEECH_DETECT_NONE) {
-			printf("Event SPEECH_DETECT_NO_EPD\n");
-		} else {
-			printf("Event not valid\n");
-		}
-	}
-
-	void onFocusChange(int focusChange) override
-	{
-		player_result_t res;
-		printf("focusChange : %d mPaused : %d\n", focusChange, mPaused);
-		switch (focusChange) {
-		case FOCUS_GAIN:
-		case FOCUS_GAIN_TRANSIENT: {
-			if (mPaused) {
-				printf("it was paused, just start playback now\n");
-				res = mp.start();
-				if (res != PLAYER_OK) {
-					printf("player start failed res : %d\n", res);
-					auto &focusManager = FocusManager::getFocusManager();
-					focusManager.abandonFocus(mFocusRequest);
-				}
-			} else {
-				auto source = std::move(unique_ptr<media::stream::FileInputDataSource>(new media::stream::FileInputDataSource(filePath)));
-				source->setSampleRate(16000);
-				source->setChannels(1);
-				source->setPcmFormat(media::AUDIO_FORMAT_TYPE_S16_LE);
-				mp.setDataSource(std::move(source));
-				mp.prepare();
-				mp.setVolume(10);
-				res = mp.start();
-				if (res != PLAYER_OK) {
-					printf("player start failed res : %d\n", res);
-					auto &focusManager = FocusManager::getFocusManager();
-					focusManager.abandonFocus(mFocusRequest);
-				}
-			}
-		} break;
-		case FOCUS_LOSS: {
-			mp.stop();
-			auto &focusManager = FocusManager::getFocusManager();
-			focusManager.abandonFocus(mFocusRequest); // call abandon focus when FOCUS_GAIN callback not required.
-		} break;
-		case FOCUS_LOSS_TRANSIENT: {
-			mp.pause(); //it will be played again
-		} break;
-		default: {
-		} break;
+			printf("#### [MR] start succeeded.\n");
 		}
 	}
 
@@ -335,55 +323,68 @@ private:
 	}
 };
 
+static shared_ptr<WakeRec> wakerecObj = make_shared<WakeRec>();
+static void WakerecVolumeChangedListener(stream_policy_t policy, int8_t volume)
+{
+	printf("WakerecVolumeChangedListener called with volume :%d, policy : %d\n",volume, policy);
+	if (volume == AUDIO_DEVICE_MUTE_VALUE) {
+		if (policy == STREAM_TYPE_VOICE_RECORD) {
+			printf("Mic is muted\n");
+			wakerecObj->onMicMute();
+		} else {
+			printf("Speaker is muted\n");
+		}
+	} else if (policy == STREAM_TYPE_VOICE_RECORD) {
+		printf("Mic unmuted\n");
+		if (volume != AUDIO_DEVICE_UNMUTE_VALUE) {
+			printf("Input gain changed to %d\n", volume);
+		}
+	} else {
+		printf("Speaker unmuted\n");
+		printf("Speaker volume changed to %d\n", volume);
+	}
+}
+
 extern "C" {
 int wakerec_main(int argc, char *argv[])
 {
 	printf("wakerec_main Entry\n");
-
-	if (argc > 3) {
+	if (argc != 2) {
 		printf("invalid input\n");
-		printf("Usage : wakerec [mode]\n");
-		printf("mode is optional 0 Disable wakeup\n");
+		printf("Usage : wakerec [model]\n");
+		printf("model 0 is 'hi bixby' model 1 is 'bixby'\n");
 		return -1;
 	}
-	auto recorder = std::shared_ptr<WakeRec>(new WakeRec());
-	if (argc == 2 && atoi(argv[1]) == 0) {
-		printf("disable KD!!\n");
-		recorder->initWakeRec(false);
-		recorder->startRecord();
-	} else {
-		recorder->initWakeRec(true);
-		sd = media::voice::SpeechDetector::instance();
-		if (!sd->initKeywordDetect(16000, 1)) {
-			printf("#### [SD] init failed.\n");
-			return 0;
-		}
 
-		sd->addListener(recorder);
-
-		printf("###################################\n");
-		printf("#### Wait for wakeup triggered ####\n");
-		printf("###################################\n");
-
-		if (sd->getKeywordBufferSize(&bufferSize) == true) {
-			printf("KD buffer size %d\n", bufferSize);
-			gBuffer = new uint8_t[bufferSize];
-			if (!gBuffer) {
-				printf("memory allocation failed\n");
-			}
-		}
-		sd->startKeywordDetect();
-		/* similar to wake lock, we release wake lock as we started our thread */
+	sd = media::voice::SpeechDetector::instance();
+	int model = atoi(argv[1]);
+	sd->changeKeywordModel(model);
+	if (!sd->initKeywordDetect(16000, 1)) {
+		printf("#### [SD] init failed.\n");
+		return 0;
 	}
+
+	sd->addListener(wakerecObj);
+
+	printf("###################################\n");
+	printf("#### Wait for wakeup triggered ####\n");
+	printf("###################################\n");
+
+	if (sd->getKeywordBufferSize(&bufferSize) == true) {
+		printf("KD buffer size %d\n", bufferSize);
+		gBuffer = new uint8_t[bufferSize];
+		if (!gBuffer) {
+			printf("memory allocation failed\n");
+		}
+	}
+	addVolumeStateChangedListener(WakerecVolumeChangedListener);
+	sd->startKeywordDetect();
 
 	while (1) {
 		sleep(67);
 	}
-	if (gBuffer) {
-		delete[] gBuffer;
-		gBuffer = NULL;
-	}
+	delete[] gBuffer;
+	gBuffer = NULL;
 	return 0;
 }
 }
-

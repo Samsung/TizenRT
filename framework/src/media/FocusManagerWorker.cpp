@@ -35,6 +35,8 @@ using namespace std;
 namespace media {
 FocusManagerWorker::FocusManagerWorker()
 {
+	FocusManager &fm = FocusManager::getFocusManager(); /* For FocusManager object to be alive for lifetime.*/
+	(void)fm; // To remove unused variable warning
 	mThreadName = "FocusManagerWorker";
 	mStacksize = CONFIG_FOCUS_MANAGER_STACKSIZE;
 	mPriority = CONFIG_FOCUS_MANAGER_THREAD_PRIORITY;

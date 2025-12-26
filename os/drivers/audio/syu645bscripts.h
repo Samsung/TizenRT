@@ -143,17 +143,16 @@ t_codec_init_script_entry codec_set_samprate_96k_script[] = {
 	{ 0x00, {0x15,}, 0, SYU645B_REG_D_2BYTE}
 };
 
-t_codec_init_script_entry t_codec_dq_preset_0_script[] = {
-	{ 0x1E, {0x01,}, 0, SYU645B_REG_D_2BYTE},
-	{ 0x07, {0xFF,}, 0, SYU645B_REG_D_2BYTE},
+t_codec_init_script_entry codec_set_mixer_gain_script[] = {
+	{ 0x5F, {0x27, 0x27, 0x27, 0x27,}, 0, SYU645B_REG_D_5BYTE}
 };
+
 t_codec_init_script_entry t_codec_dq_preset_default_script[] = { //default...
 	/* Set only MAX Volume here */
 	{ 0x07, {0xFF,}, 0, SYU645B_REG_D_2BYTE},
-	/* CH1 Volume = -9DB */
-	{ 0x08, {0x9F,}, 0, SYU645B_REG_D_2BYTE},
-	/* CH2 Volume = -9DB */
-	{ 0x09, {0x9F,}, 0, SYU645B_REG_D_2BYTE},
+	/* Input Mixer Setting */
+	{ 0x5F, {0x27, 0x27, 0x27, 0x27,}, 0, SYU645B_REG_D_5BYTE},
 };
+
 #endif	/* CONFIG_AUDIO_SYU645B */
 #endif	/* __DRIVERS_AUDIO_SYU645BSCRIPTS_H */
