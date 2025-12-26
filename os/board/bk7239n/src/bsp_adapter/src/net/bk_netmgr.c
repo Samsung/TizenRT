@@ -840,6 +840,10 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
         trwifi_post_event(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
         break;
 
+    case EVENT_WIFI_REGDOMAIN_CHANGED:
+        /* fixme: handle regulatory domain changed event */
+        break;
+
     default:
         ndbg("rx event <%d %d>\n", event_module, event_id);
         trwifi_post_event(armino_dev_wlan0, LWNL_EVT_UNKNOWN, NULL, 0);
@@ -877,7 +881,6 @@ trwifi_result_e bk_wifi_netmgr_init(struct netdev *dev)
         g_station_if = BK_WIFI_STATION_IF;
         rtos_init_mutex(&scanlistbusy);
     } else if (!(memcmp(dev->ifname, "wlan1", 5))) {
-        g_softap_if = BK_WIFI_SOFTAP_IF;
         BK_WIFI_LOGI("BK_NETMGR_INIT", "[BK] Init netmgr with softAP mode\n");
     } else {
         ndbg("[BK] Unknown interface name\n");

@@ -224,6 +224,18 @@ uint8_t bk_ble_appm_set_dev_name(uint8_t len, uint8_t* name);
 ble_err_t bk_ble_create_advertising(uint8_t actv_idx, ble_adv_param_t *adv_param, ble_cmd_cb_t callback);
 
 /**
+ * @brief     modify a ble advertising activity
+ *
+ * @param
+ *    - actv_idx: the index of activity
+ *    - adv_param: the advertising parameter
+ *    - callback: register a callback for this action, ble_cmd_t: BLE_MODIFY_ADV
+ * @attention 1.you must wait callback status, 0 mean success. 2.This function only be called when adv created and not started.
+ *
+ */
+ble_err_t bk_ble_modify_advertising(uint8_t actv_idx, ble_adv_param_t *adv_param, ble_cmd_cb_t callback);
+
+/**
  * @brief     Start a ble advertising
  *
  * @param
@@ -1341,6 +1353,85 @@ ble_err_t bk_ble_sc_oob_req_reply(uint8_t con_idx, uint8_t accept, uint8_t conf[
  */
 ble_err_t bk_ble_set_adv_tx_power(uint8_t actv_idx, uint8_t reset, float tx_gain);
 
+/**
+ * @brief Register a Protocol/Service Multiplexer (PSM) for BLE COC
+ *
+ * Registers a PSM value to enable BLE Connection Oriented Channel (COC) services.
+ * PSM is used to identify different services or protocols over a single BLE connection.
+ *
+ * @param
+ *    - psm: Protocol/Service Multiplexer value to register
+ *
+ * @return
+ * - BK_ERR_BLE_SUCCESS: succeed
+ * - others: fail
+ */
+ble_err_t bk_ble_coc_reg(uint16_t psm);
+
+/**
+ * @brief Unregister a Protocol/Service Multiplexer (PSM) for BLE COC
+ *
+ * Unregisters a previously registered PSM value, disabling the associated
+ * COC service. All active connections on this PSM should be closed before unregistering.
+ *
+ * @param
+ *    - psm: Protocol/Service Multiplexer value to unregister
+ *
+ * @return
+ * - BK_ERR_BLE_SUCCESS: succeed
+ * - others: fail
+ */
+ble_err_t bk_ble_coc_unreg(uint16_t psm);
+
+/**
+ * @brief Request to establish a BLE COC connection
+ *
+ * Initiates a connection request to establish a Connection Oriented Channel
+ * with a remote device on the specified connection using the given PSM.
+ *
+ * @param
+ *    - conn_idx: the index of BLE connection to the remote device
+ *    - psm: Protocol/Service Multiplexer value to connect to
+ *
+ * @return
+ * - BK_ERR_BLE_SUCCESS: succeed
+ * - others: fail
+ */
+ble_err_t bk_ble_coc_connection_req(uint8_t conn_idx, uint16_t psm);
+
+/**
+ * @brief Request to disconnect a BLE COC channel
+ *
+ * Initiates a disconnection request to close an established Connection
+ * Oriented Channel identified by the channel ID.
+ *
+ * @param
+ *    - conn_idx: the index of BLE connection
+ *    - cid: Channel ID of the COC connection to disconnect
+ *
+ * @return
+ * - BK_ERR_BLE_SUCCESS: succeed
+ * - others: fail
+ */
+ble_err_t bk_ble_coc_disconnection_req(uint8_t conn_idx, uint16_t cid);
+
+/**
+ * @brief Send data over a BLE COC channel
+ *
+ * Transmits data through an established Connection Oriented Channel.
+ * The data will be sent to the remote device on the specified channel.
+ *
+ * @param
+ *    - conn_idx: the index of BLE connection
+ *    - cid: Channel ID of the COC connection
+ *    - data: Pointer to the data buffer to send
+ *    - len: Length of data to send in bytes
+ *
+ * @return
+ * - BK_ERR_BLE_SUCCESS: succeed
+ * - others: fail
+ */
+ble_err_t bk_ble_coc_send_req(uint8_t conn_idx, uint16_t cid, uint8_t *data, uint32_t len);
 
 /*
  * @}

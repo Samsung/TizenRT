@@ -1335,7 +1335,10 @@ static int __IRAM2 bk_feature_cpu_pwd_enable_wrapper(void)
 {
     return bk_feature_cpu_pwd_enable();
 }
-
+static int __IRAM2 bk_feature_mac_use_rtc_enable_wrapper(void)
+{
+    return bk_feature_mac_use_rtc_enable();
+}
 UINT32 __IRAM2 rwnx_sys_is_use_abs_power_wrapper(void)
 {
 #if (CONFIG_SOC_BK7236XX || CONFIG_SOC_BK7239XX || CONFIG_SOC_BK7286XX)
@@ -1627,6 +1630,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._bk_feature_config_mac_pwd_enable = bk_feature_mac_pwd_enable_wrapper,
 	._bk_feature_config_wrls_pwd_enable = bk_feature_wrls_pwd_enable_wrapper,
 	._bk_feature_config_cpu_pwd_enable = bk_feature_cpu_pwd_enable_wrapper,
+	._bk_feature_config_mac_use_rtc_enable = bk_feature_mac_use_rtc_enable_wrapper,
 	._cli_printf = cli_printf,
 	._rf_force_set_wifi_mode = rf_force_set_wifi_mode_wrapper,
 };

@@ -138,7 +138,7 @@ void bk_mpu_init(void)
 	mpu_cfg.xn = MPU_EXEC_NEVER;
 	mpu_cfg.ap = MPU_UN_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
-	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
+	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 
     /* MPU region 8 qspi0 */

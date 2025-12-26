@@ -8190,7 +8190,7 @@ END GROUP
                 0x0000000028017600                Image$$ER_TFM_DATA$$Base = ADDR (.TFM_DATA)
                 0x000000002801ace0                Image$$ER_TFM_DATA$$Limit = ((ADDR (.TFM_DATA) + SIZEOF (.TFM_DATA)) + SIZEOF (.TFM_BSS))
                 0x00000000120d0000                Load$$LR$$LR_NS_PARTITION$$Base = 0x120d0000
-                0x0000000012216000                Load$$LR$$LR_SECONDARY_PARTITION$$Base = 0x12216000
+                0x0000000012236000                Load$$LR$$LR_SECONDARY_PARTITION$$Base = 0x12236000
                 0x0000000028000800                PROVIDE (__stack = Image$$ARM_LIB_STACK$$ZI$$Limit)
 OUTPUT(../bin/tfm_s.axf elf32-littlearm)
 LOAD linker stubs

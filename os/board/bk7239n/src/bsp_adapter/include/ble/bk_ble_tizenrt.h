@@ -19,7 +19,8 @@
 
 #include <tinyara/config.h>
 #include <tinyara/net/if/ble.h>
-
+#include "ble_tizenrt_coc.h"
+#include "ble_tizenrt_advertiser.h"
 
 ///common
 trble_result_e bktr_ble_init(trble_client_init_config* init_client, trble_server_init_config* init_server);
@@ -93,4 +94,6 @@ int32_t bk_tr_ble_advertiser_one_shot_adv_init(void);
 int32_t bk_tr_ble_advertiser_one_shot_adv_deinit(void);
 int32_t bk_tr_ble_advertiser_one_shot_adv_set(uint8_t *adv_id, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t *type);
 int32_t bk_tr_ble_advertiser_one_shot_adv_enable(uint8_t adv_id);
+int32_t bk_tr_ble_advertiser_set_multi_adv_type(uint8_t adv_handle, trble_adv_type_e adv_type, trble_addr *addr);
+int32_t bk_tr_ble_advertiser_set_multi_adv_interval(uint8_t adv_handle, unsigned int interval);
 int32_t bk_tr_ble_advertiser_set_multi_adv_tx_power(uint8_t adv_handle, uint8_t txpower);

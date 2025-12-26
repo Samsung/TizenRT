@@ -125,7 +125,9 @@ void stack_mem_dump_internel(dump_writer func, uint32_t stack_top, uint32_t stac
 
 void stack_mem_dump(uint32_t stack_top, uint32_t stack_bottom)
 {
-    stack_mem_dump_internel(bk_dump_printf, stack_top, stack_bottom);
+    if (stack_bottom > stack_top) {
+        stack_mem_dump_internel(bk_dump_printf, stack_top, stack_bottom);
+    } 
 }
 
 /* The stack is grow from bottom to top

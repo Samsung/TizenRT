@@ -330,7 +330,7 @@ class Partition:
         if self.is_secondary:
             if (self.partition_size != self.primary_partition.partition_size):
                 logging.error(f'Size of {self.partition_name} and {self.primary_partition.partition_name} not equal')
-                #exit(1) // BEKEN WORKAROUND TODO:The flash size limit causes different sizes of primary and second partitions
+                exit(1)
 
         logging.debug(f'partition{self.idx} {self.partition_name} partition size=%x' %(self.partition_size))
 

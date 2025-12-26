@@ -49,6 +49,12 @@
 #ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
 
+static uint32_t s_pm_timer_interval_us = 0;
+
+uint32_t pm_get_sleep_time(void)
+{
+	return s_pm_timer_interval_us;
+}
 static void pm_timer_wakeup_callback(aon_rtc_id_t id, uint8_t *name_p, void *param)
 {
 	pm_ap_core_msg_t msg = {0};
@@ -63,6 +69,11 @@ static void pm_timer_wakeup_callback(aon_rtc_id_t id, uint8_t *name_p, void *par
 }
 void up_set_pm_timer(unsigned int interval_us) 
 {
+	volatile uint32_t int_level    = 0;
+	int_level = pm_disable_int();
+
+	s_pm_timer_interval_us = interval_us;
+
 	#if defined(CONFIG_AON_RTC) || defined(CONFIG_ANA_RTC)
 	uint32_t sleep_count = 1; //one count
 	alarm_info_t sleep_alarm = {0};
@@ -78,6 +89,24 @@ void up_set_pm_timer(unsigned int interval_us)
 	bk_alarm_unregister(AON_RTC_ID_1, sleep_alarm.name);
 	bk_alarm_register(AON_RTC_ID_1, &sleep_alarm);
 	#endif //CONFIG_AON_RTC
+
+	#if CONFIG_PM_LOWEST_POWER_MODE == 0
+	bk_pm_sleep_mode_set(PM_MODE_NORMAL_SLEEP);
+	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x1,0x0);
+	#elif CONFIG_PM_LOWEST_POWER_MODE == 1
+	bk_pm_sleep_mode_set(PM_MODE_LOW_VOLTAGE);
+	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x1,0x0);
+	// #elif CONFIG_PM_LOWEST_POWER_MODE == 2
+	// bk_pm_sleep_mode_set(PM_MODE_DEEP_SLEEP);
+	// bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x1,0x0);
+	// #elif CONFIG_PM_LOWEST_POWER_MODE == 3
+	// bk_pm_sleep_mode_set(PM_MODE_SUPER_DEEP_SLEEP);
+	// bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x1,0x0);
+	#else
+	bk_pm_sleep_mode_set(PM_MODE_DEFAULT);
+	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x0,0x0);
+	#endif
+	pm_enable_int(int_level);
 }
 
 void bsp_pm_domain_register(char *domain_name, int bsp_drv_id)

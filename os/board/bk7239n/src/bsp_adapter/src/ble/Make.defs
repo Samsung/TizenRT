@@ -57,7 +57,8 @@ CSRCS += \
     ble_tizenrt_central.c \
     ble_tizenrt_common.c \
     ble_tizenrt_peripheral.c \
-    ble_tizenrt_scanner.c
+    ble_tizenrt_scanner.c \
+	ble_tizenrt_coc.c
 
 CFLAGS += \
 	-Ibsp_adapter/include/ble \

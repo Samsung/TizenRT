@@ -252,3 +252,13 @@ int bk_feature_wrls_pwd_enable(void);
  *
  */
 int bk_feature_cpu_pwd_enable(void);
+
+/**
+ * @brief     Interface for customer to close or open mac use rtc during lv sleep
+ *
+ *
+ * @return
+ *    - 0: mac use rtc
+ *    - 1: mac use timer
+ */
+int bk_feature_mac_use_rtc_enable(void);
