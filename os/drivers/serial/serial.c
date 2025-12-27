@@ -1357,6 +1357,8 @@ errout_with_sem:
 
 int uart_register(FAR const char *path, FAR uart_dev_t *dev)
 {
+	int ret;
+
 	/* Initialize semaphores */
 	sem_init(&dev->xmit.sem, 0, 1);
 	sem_init(&dev->recv.sem, 0, 1);
@@ -1377,8 +1379,13 @@ int uart_register(FAR const char *path, FAR uart_dev_t *dev)
 	dev->received = uart_datareceived;
 
 	/* Register the serial driver */
-	dbg("Registering %s\n", path);
-	return register_driver(path, &g_serialops, 0666, dev);
+	ret = register_driver(path, &g_serialops, 0666, dev);
+	if (ret < 0) {
+		lldbg("register_driver %s failed: %d\n", path, ret);
+	} else {
+		llvdbg("register_driver %s success\n", path);
+	}
+	return ret;
 }
 
 /************************************************************************************
