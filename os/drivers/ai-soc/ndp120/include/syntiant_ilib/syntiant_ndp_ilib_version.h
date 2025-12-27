@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024 Syntiant Corp.  All rights reserved.
+ * Copyright (c) 2020-2025 Syntiant Corp.  All rights reserved.
  * Contact at http://www.syntiant.com
  *
  * This software is available to you under a choice of one of two licenses.
@@ -29,7 +29,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * DEALINGS IN THE SOFTWARE.
- 	** SDK: v112.3.7-Samsung **
+ 	** SDK: v112.3.8-Samsung **
 */
 
 /*
@@ -43,7 +43,7 @@
 #define SYNTIANT_NDP_ILIB_VERSION_H
 
 #define SYNTIANT_NDP_ILIB_RELEASE_HASH \
-    "6369bb292a8256b669653be6cfd09f80cd1cdf6f"
+    "055a83a80ee1f90980c0819d29171752a77fc80c"
 
 #define SYNTIANT_NDP_ILIB_SYNTIANT_CORE_1_MAJOR_VERSION 1
 #define SYNTIANT_NDP_ILIB_SYNTIANT_CORE_1_MINOR_VERSION 138
