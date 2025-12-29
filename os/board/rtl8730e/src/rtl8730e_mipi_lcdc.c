@@ -19,6 +19,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <errno.h>
 #if defined(CONFIG_LCD_ST7785)
 #include <tinyara/lcd/st7785.h>
 #elif defined(CONFIG_LCD_ST7701)
@@ -203,7 +204,11 @@ static void rtl8730e_lcd_put_area(u8 *lcd_img_buffer, u32 x_start, u32 y_start, 
 #endif
 	LCDC_LayerConfig(pLCDC, LCD_LAYER, &lcdc_init_struct.layerx[LCD_LAYER]);
 	DCache_CleanInvalidate((u32)lcd_img_buffer, LCDC_IMG_BUF_SIZE);
-	sem_wait(&g_next_frame_block);
+
+	while (sem_wait(&g_next_frame_block) != OK) {
+		DEBUGASSERT(errno == EINTR);
+	}
+
 	flags = enter_critical_section();
 	lcdc_nextframe = 1;
 	LCDC_TrigerSHWReload(pLCDC);
