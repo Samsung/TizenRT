@@ -84,6 +84,7 @@ struct ndp120_dev_s {
 	bool keyword_correction;
 	struct pm_domain_s *pm_domain;
 	uint32_t sample_ready_cnt;
+	uint8_t cur_dsp_flow_num;
 
 	/* moved to using pthread cond variable for parity with reference implementation in ilib examples */
 	pthread_mutex_t ndp_mutex_mbsync;

@@ -2818,6 +2818,27 @@ audio_manager_result_t get_audio_stream_mute_state(stream_policy_t stream_policy
 	return AUDIO_MANAGER_SUCCESS;
 }
 
+audio_manager_result_t change_input_dsp_flow(uint8_t dsp_flow_num)
+{
+	audio_manager_result_t ret;
+	struct audio_caps_desc_s caps_desc;
+	audio_card_info_t *card;
+	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+
+	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	get_card_path(card_path, card->card_id, card->device_id, INPUT);
+
+	pthread_mutex_lock(&(card->card_mutex));
+
+	ret = control_audio_stream_device(card_path, AUDIOIOC_CHANGEDSPFLOW, (unsigned long)dsp_flow_num);
+	if (ret != AUDIO_MANAGER_SUCCESS) {
+		meddbg("Fail to change dsp flow, ret = %d errno : %d\n", ret, get_errno());
+	}
+
+	pthread_mutex_unlock(&(card->card_mutex));
+	return ret;
+}
+
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 void print_audio_card_info(audio_io_direction_t direct)
 {
