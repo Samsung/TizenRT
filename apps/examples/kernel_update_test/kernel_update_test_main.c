@@ -45,10 +45,22 @@
 /* Kernel binary information for update test */
 #define KERNEL                  "kernel"
 
-/* Common/app1 binary names for testing */
-/* Kernel / Common / App1 binary must be set at once */
+/* Common/app1/app2 binary names for testing */
+/* Kernel / Common / App1 / App2 binary must be set at once */
 #define COMMON                   "common"
 #define APP1                     "app1"
+#define APP2                     "app2"
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+char *bin_names[] = {KERNEL, COMMON, APP1};
+uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP};
+#else
+char *bin_names[] = {KERNEL, APP1, APP2};
+uint8_t bin_types[] = {BINARY_KERNEL, BINARY_USERAPP, BINARY_USERAPP};
+#endif
+
+int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
+
 
 #define DOWNLOAD_VALID_BIN          0
 #define DOWNLOAD_INVALID_BIN        1
@@ -410,9 +422,6 @@ static int binary_update_same_version_test(void)
 	int ret;
 	binary_update_info_t pre_bin_info[3];
 	binary_update_info_t cur_bin_info[3];
-	char *bin_names[] = {KERNEL, COMMON, APP1};
-	uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP};
-	int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
 	int i;
 	update_type_flag = 0;
 
@@ -468,9 +477,6 @@ static int binary_update_new_version_test(void)
 	int ret;
 	binary_update_info_t pre_bin_info[3];
 	binary_update_info_t cur_bin_info[3];
-	char *bin_names[] = {KERNEL, COMMON, APP1};
-	uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP};
-	int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
 	int i;
 	update_type_flag = 0;
 
@@ -530,9 +536,6 @@ static int binary_update_invalid_binary_test(void)
 	int ret;
 	binary_update_info_t pre_bin_info[3];
 	binary_update_info_t cur_bin_info[3];
-	char *bin_names[] = {KERNEL, COMMON, APP1};
-	uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP};
-	int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
 	int i;
 	update_type_flag = 0;
 
