@@ -495,10 +495,7 @@ static int binary_update_new_version_test(void)
 	printf("\n** Download and set bootparam for kernel binary. (new version) **\n");
 	printf("** (Both common and app1 binary will be updated with same version) **\n");
 	for (i = 0; i < bin_count; i++) {
-		int version_up = false;
-		if (bin_names[i] == KERNEL) {
-			version_up = true;
-		}
+		int version_up = true;
 		ret = download_binary_and_set_bootparam(bin_names[i], version_up, DOWNLOAD_VALID_BIN, bin_types[i]);
 		if (ret != OK) {
 			printf("Failed to download and set bootparam for %s\n", bin_names[i]);
