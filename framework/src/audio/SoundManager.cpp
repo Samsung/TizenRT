@@ -243,10 +243,10 @@ bool changeDSPFlow(uint8_t dsp_flow_num)
 		return false;
 	}
 
-	meddbg("SoundManager : changeDSPFlow. dsp_flow_num: %d\n", dsp_flow_num);
+	medvdbg("SoundManager : changeDSPFlow. dsp_flow_num: %d\n", dsp_flow_num);
 	audio_manager_result_t res = change_input_dsp_flow(dsp_flow_num);
 	if (res != AUDIO_MANAGER_SUCCESS) {
-		meddbg("change_output_dsp_flow failed dsp_flow_num : %d, ret : %d\n", dsp_flow_num, res);
+		meddbg("changeDSPFlow failed dsp_flow_num : %d, res : %d\n", dsp_flow_num, res);
 		return false;
 	}
 	return true;
