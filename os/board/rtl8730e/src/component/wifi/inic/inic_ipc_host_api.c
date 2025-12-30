@@ -418,7 +418,7 @@ int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 	while (1) {
 		DCache_Invalidate((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
 		if (g_host_ipc_api_request_info.API_ID != IPC_WIFI_API_PROCESS_DONE) {
-			rtw_mdelay_os(1);
+			rtw_msleep_os(1);
 			cnt = (cnt + 1) % 12000;
 		} else {
 			break;
@@ -449,7 +449,7 @@ int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 
 	while (1) {
 		if (g_host_ipc_api_request_info.API_ID != IPC_WIFI_API_PROCESS_DONE) {
-			rtw_mdelay_os(1);
+			rtw_msleep_os(1);
 			DCache_Invalidate((u32)&g_host_ipc_api_request_info, sizeof(inic_ipc_host_request_message));
 			cnt = (cnt + 1) % 12000;
 		} else {
