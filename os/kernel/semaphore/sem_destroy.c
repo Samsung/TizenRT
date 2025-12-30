@@ -119,6 +119,7 @@
 
 int sem_destroy(FAR sem_t *sem)
 {
+	irqstate_t saved_state;
 	/* Assure a valid semaphore is specified */
 
 	if (sem) {
@@ -138,6 +139,8 @@ int sem_destroy(FAR sem_t *sem)
 		 * leave the count unchanged but still return OK.
 		 */
 
+		saved_state = enter_critical_section();
+
 		if (sem->semcount >= 0) {
 			sem->semcount = 1;
 		}
@@ -153,7 +156,8 @@ int sem_destroy(FAR sem_t *sem)
 			sem_unregister(sem);
 		}
 #endif
-		sem->flags &= ~FLAGS_INITIALIZED;
+		sem->flags = 0;
+		leave_critical_section(saved_state);
 		return OK;
 	} else {
 		set_errno(EINVAL);
