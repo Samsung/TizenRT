@@ -122,7 +122,7 @@ extern char assert_info_str[CONFIG_STDIO_BUFFER_SIZE];
 #define DEBUGASSERT_INFO(f, fmt, ...) \
 	{ \
 		if (!(f)) { \
-			  DEBUGPANIC_INFO(fmt, ...); \
+			  DEBUGPANIC_INFO(fmt, ##__VA_ARGS__); \
 		} \
 	}
 
