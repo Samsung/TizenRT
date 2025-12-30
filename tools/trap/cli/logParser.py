@@ -723,9 +723,8 @@ class logParser:
 		state_no+=1
 		self.task_state[str(state_no)] = " Wait to scheduling (Ready)"
 		state_no+=1
-		if config_smp:
-			self.task_state[str(state_no)] = " Assigned to CPU (Ready)"
-			state_no+=1
+		self.task_state[str(state_no)] = " Assigned to CPU (Ready)"
+		state_no+=1
 		self.task_state[str(state_no)] = " Running"
 		state_no+=1
 		self.task_state[str(state_no)] = " Inactive"
@@ -734,17 +733,14 @@ class logParser:
 		state_no+=1
 		self.task_state[str(state_no)] = " Wait FIN"
 		state_no+=1
-		if not config_disable_signals:
-			self.task_state[str(state_no)] = " Wait Signal"
-			state_no+=1
-		if not config_disable_mqueue:
-			self.task_state[str(state_no)] = " Wait MQ Receive (MQ Empty)"
-			state_no+=1
-			self.task_state[str(state_no)] = " Wait MQ Send (MQ Full)"
-			state_no+=1
-		if config_paging:
-			self.task_state[str(state_no)] = " Wait Page Fill"
-			state_no+=1
+		self.task_state[str(state_no)] = " Wait Signal"
+		state_no+=1
+		self.task_state[str(state_no)] = " Wait MQ Receive (MQ Empty)"
+		state_no+=1
+		self.task_state[str(state_no)] = " Wait MQ Send (MQ Full)"
+		state_no+=1
+		self.task_state[str(state_no)] = " Wait Page Fill"
+		state_no+=1
 
 	# API to print all the runnning TCB in the system
 	def print_task_list(self):
