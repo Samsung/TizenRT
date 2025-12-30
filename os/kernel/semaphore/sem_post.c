@@ -203,6 +203,7 @@ int sem_post(FAR sem_t *sem)
 	size_t caller_retaddr = (size_t)GET_RETURN_ADDRESS();
 
 	/* Make sure we were supplied with a valid semaphore. */
+	saved_state = enter_critical_section();
 
 	if (sem && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
 		/* The following operations must be performed with interrupts
@@ -210,15 +211,13 @@ int sem_post(FAR sem_t *sem)
 		 * handler.
 		 */
 
-		saved_state = enter_critical_section();
-
 		/* Perform the semaphore unlock operation. */
-		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, caller address = 0x%x", sem, caller_retaddr);
+		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x", sem, sem->semcount, sem->flags, caller_retaddr);
 		sem_releaseholder(sem, this_task());
 		sem->semcount++;
 
 		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
-			DEBUGASSERT(sem->semcount < 2);
+			ASSERT_INFO(sem->semcount < 2, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x", sem, sem->semcount, sem->flags, caller_retaddr);
 		}
 
 		sem_unblock_task(sem, this_task());
@@ -226,10 +225,11 @@ int sem_post(FAR sem_t *sem)
 
 		/* Interrupts may now be enabled. */
 
-		leave_critical_section(saved_state);
 	} else {
 		set_errno(EINVAL);
 	}
+
+	leave_critical_section(saved_state);
 
 	return ret;
 }
