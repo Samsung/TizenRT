@@ -3137,17 +3137,21 @@ audio_manager_result_t get_keyword_buffer_size(uint32_t *keywordBufferSize)
 	}
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
 	get_card_path(path, card->card_id, card->device_id, INPUT);
+	pthread_mutex_lock(&(card->card_mutex));
 	fd = open(path, O_RDONLY);
 	if (fd < 0) {
 		meddbg("card open fail.. path : %s errno : %d\n", path, errno);
+		pthread_mutex_unlock(&(card->card_mutex));
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
 	if (ioctl(fd, AUDIOIOC_GETKDBUFSIZE, (unsigned long)keywordBufferSize) < 0) {
 		meddbg("get keyword buffer size ioctl failed. errno : %d\n", errno);
 		close(fd);
+		pthread_mutex_unlock(&(card->card_mutex));
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
 	close(fd);
+	pthread_mutex_unlock(&(card->card_mutex));
 	return AUDIO_MANAGER_SUCCESS;
 }
 
@@ -3162,17 +3166,21 @@ audio_manager_result_t get_keyword_data(uint8_t *buffer)
 	}
 	card = &g_audio_in_cards[g_actual_audio_in_card_id];
 	get_card_path(path, card->card_id, card->device_id, INPUT);
+	pthread_mutex_lock(&(card->card_mutex));
 	fd = open(path, O_RDONLY);
 	if (fd < 0) {
 		meddbg("card open fail.. path : %s errno : %d\n", path, errno);
+		pthread_mutex_unlock(&(card->card_mutex));
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
 	if (ioctl(fd, AUDIOIOC_GETKDDATA, (unsigned long)buffer) < 0) {
 		meddbg("get keyword data ioctl failed. errno : %d\n", errno);
 		close(fd);
+		pthread_mutex_unlock(&(card->card_mutex));
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
 	close(fd);
+	pthread_mutex_unlock(&(card->card_mutex));
 	return AUDIO_MANAGER_SUCCESS;
 }
 

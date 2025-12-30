@@ -64,6 +64,10 @@ bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 		meddbg("%s[line : %d] fail : invalid parameter. samprate : %u, channels : %u\n", __func__, __LINE__, samprate, channels);
 		return false;
 	}
+	if (mKeywordDetector) {
+		meddbg("keyword detector is already init.\n");
+		return true;
+	}
 #ifdef CONFIG_MEDIA_HARDWARE_KD
 
 	int sd_card = INVALID_HW_NUMBER;
@@ -163,8 +167,8 @@ bool SpeechDetectorImpl::deinitKeywordDetect()
 	if (mKeywordDetector) {
 		SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
 		sdw.enQueue(&KeywordDetector::deinit, mKeywordDetector);
-		sdw.enQueue(&SpeechDetectorImpl::resetKeywordDetectorPtr, this);
-		medvdbg("Speech detector deinit KD done");
+		mKeywordDetector = nullptr;
+		meddbg("Speech detector deinit KD done");
 		return true;
 	} else {
 		meddbg("Nothing to deinit\n");
@@ -401,11 +405,6 @@ bool SpeechDetectorImpl::stopEndPointDetect(void)
 	}
 	medvdbg("Speech detector stop EPD done");
 	return true;
-}
-
-void SpeechDetectorImpl::resetKeywordDetectorPtr(void)
-{
-	mKeywordDetector = nullptr;
 }
 
 void SpeechDetectorImpl::resetEndPointDetectorPtr(void)
