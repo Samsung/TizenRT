@@ -153,7 +153,7 @@ trble_result_e trble_netmgr_attr_reject(struct bledev *dev, trble_attr_handle at
 trble_result_e trble_netmgr_server_disconnect(struct bledev *dev, trble_conn_handle con_handle);
 trble_result_e trble_netmgr_get_mac_addr_by_conn_handle(struct bledev *dev, trble_conn_handle con_handle, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 trble_result_e trble_netmgr_get_conn_handle_by_addr(struct bledev *dev, uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN], trble_conn_handle *con_handle);
-trble_result_e trble_netmgr_set_gap_device_name(struct bledev *dev, uint8_t* device_name);
+trble_result_e trble_netmgr_set_gap_device_name(struct bledev *dev, uint8_t *device_name);
 
 /*** Advertiser(Broadcaster) ***/
 trble_result_e trble_netmgr_set_adv_data(struct bledev *dev, trble_data *data);
@@ -166,7 +166,7 @@ trble_result_e trble_netmgr_stop_adv(struct bledev *dev);
 
 trble_result_e trble_netmgr_one_shot_adv_init(struct bledev *dev);
 trble_result_e trble_netmgr_one_shot_adv_deinit(struct bledev *dev);
-trble_result_e trble_netmgr_one_shot_adv_set(struct bledev *dev, uint8_t *adv_id, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t* type);
+trble_result_e trble_netmgr_one_shot_adv_set(struct bledev *dev, uint8_t *adv_id, trble_data *data_adv, trble_data *data_scan_rsp, uint8_t *type);
 trble_result_e trble_netmgr_one_shot_adv(struct bledev *dev, uint8_t adv_id);
 trble_result_e trble_netmgr_create_multi_adv(struct bledev *dev, uint8_t adv_event_prop, uint32_t *primary_adv_interval, uint8_t own_addr_type, uint8_t *own_addr_val, uint8_t *adv_handle);
 trble_result_e trble_netmgr_delete_multi_adv(struct bledev *dev, uint8_t adv_handle);
@@ -174,78 +174,6 @@ trble_result_e trble_netmgr_set_multi_adv_data(struct bledev *dev, uint8_t adv_h
 trble_result_e trble_netmgr_set_multi_resp_data(struct bledev *dev, uint8_t adv_handle, uint8_t *pdata, uint8_t len);
 trble_result_e trble_netmgr_start_multi_adv(struct bledev *dev, uint8_t adv_handle);
 trble_result_e trble_netmgr_stop_multi_adv(struct bledev *dev, uint8_t adv_handle);
-
-struct trble_ops g_trble_drv_ops = {
-	// Common
-	trble_netmgr_init,
-	trble_netmgr_deinit,
-	trble_netmgr_get_mac_addr,
-	trble_netmgr_set_sec_param,
-	trble_netmgr_passkey_confirm,
-	trble_netmgr_get_bonded_device,
-	trble_netmgr_delete_bond,
-	trble_netmgr_delete_bond_all,
-	trble_netmgr_conn_is_active,
-	trble_netmgr_conn_is_any_active,
-	trble_netmgr_conn_param_update,
-	trble_netmgr_ioctl,
-
-	// Observer
-	trble_netmgr_set_scan,
-	trble_netmgr_start_scan,
-	trble_netmgr_stop_scan,
-	trble_netmgr_scan_whitelist_add,
-	trble_netmgr_scan_whitelist_delete,
-	trble_netmgr_scan_whitelist_clear_all,
-
-	// Client
-	trble_netmgr_client_connect,
-	trble_netmgr_client_bond,
-	trble_netmgr_client_disconnect,
-	trble_netmgr_client_disconnect_all,
-	trble_netmgr_connected_device_list,
-	trble_netmgr_connected_info,
-	trble_netmgr_operation_enable_notification,
-	trble_netmgr_operation_enable_indication,
-	trble_netmgr_operation_enable_notification_and_indication,
-	trble_netmgr_operation_read,
-	trble_netmgr_operation_write,
-	trble_netmgr_operation_write_no_response,
-	trble_netmgr_write_read_queue_count,
-
-	// Server
-	trble_netmgr_set_server_config,
-	trble_netmgr_get_profile_count,
-	trble_netmgr_charact_notify,
-	trble_netmgr_charact_indicate,
-	trble_netmgr_indicate_queue_count,
-	trble_netmgr_attr_set_data,
-	trble_netmgr_attr_get_data,
-	trble_netmgr_attr_reject,
-	trble_netmgr_server_disconnect,
-	trble_netmgr_get_mac_addr_by_conn_handle,
-	trble_netmgr_get_conn_handle_by_addr,
-	trble_netmgr_set_gap_device_name,
-
-	// Broadcaster
-	trble_netmgr_set_adv_data,
-	trble_netmgr_set_adv_resp,
-	trble_netmgr_set_adv_type,
-	trble_netmgr_set_adv_interval,
-	trble_netmgr_set_adv_txpower,
-	trble_netmgr_start_adv,
-	trble_netmgr_stop_adv,
-	trble_netmgr_one_shot_adv_init,
-	trble_netmgr_one_shot_adv_deinit,
-	trble_netmgr_one_shot_adv_set,
-	trble_netmgr_one_shot_adv,
-	trble_netmgr_create_multi_adv,
-	trble_netmgr_delete_multi_adv,
-	trble_netmgr_set_multi_adv_data,
-	trble_netmgr_set_multi_resp_data,
-	trble_netmgr_start_multi_adv,
-	trble_netmgr_stop_multi_adv,
-};
 
 trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server)
 {
@@ -639,7 +567,147 @@ trble_result_e trble_netmgr_stop_multi_adv(struct bledev *dev, uint8_t adv_handl
     return bk_tr_ble_advertiser_multi_adv_enable(adv_handle, 0);
 }
 
+trble_result_e trble_netmgr_set_multi_adv_type(struct bledev *dev, uint8_t adv_handle, trble_adv_type_e adv_type, trble_addr *addr)
+{
+    return bk_tr_ble_advertiser_set_multi_adv_type(adv_handle, adv_type, addr);
+}
+
+trble_result_e trble_netmgr_set_multi_adv_interval(struct bledev *dev, uint8_t adv_handle, unsigned int interval)
+{
+    return bk_tr_ble_advertiser_set_multi_adv_interval(adv_handle, interval);
+}
+
 trble_result_e trble_netmgr_set_multi_adv_tx_power(struct bledev *dev, uint8_t adv_handle, uint8_t txpower)
 {
     return bk_tr_ble_advertiser_set_multi_adv_tx_power(adv_handle, txpower);
 }
+
+trble_result_e trble_netmgr_coc_init(struct bledev *dev, trble_le_coc_init_config *le_coc)
+{
+    return bk_tr_ble_coc_init(le_coc);
+}
+
+trble_result_e trble_netmgr_coc_register_psm(struct bledev *dev, uint8_t is_reg, uint16_t psm)
+{
+    return bk_tr_ble_coc_register_psm(is_reg, psm);
+}
+
+trble_result_e trble_netmgr_coc_set_psm_security(struct bledev *dev, uint16_t le_psm, uint8_t active, uint8_t sec_mode, uint8_t key_size)
+{
+    return bk_tr_ble_coc_set_psm_security(le_psm, active, sec_mode, key_size);
+}
+
+trble_result_e trble_netmgr_coc_set_param(struct bledev *dev, uint16_t value)
+{
+    return bk_tr_ble_coc_set_param(value);
+}
+
+trble_result_e trble_netmgr_coc_get_param(struct bledev *dev, uint8_t param_type, uint16_t cid, uint16_t *value)
+{
+    return bk_tr_ble_coc_get_param(param_type, cid, value);
+}
+
+trble_result_e trble_netmgr_coc_connect(struct bledev *dev, uint16_t conn_handle, uint16_t le_psm)
+{
+    return bk_tr_ble_coc_connect(conn_handle, le_psm);
+}
+
+trble_result_e trble_netmgr_coc_disconnect(struct bledev *dev, uint16_t cid)
+{
+    return bk_tr_ble_coc_disconnect(cid);
+}
+
+trble_result_e trble_netmgr_coc_send_data(struct bledev *dev, uint16_t cid, uint16_t len, uint8_t *data)
+{
+    return bk_tr_ble_coc_send_data(cid, len, data);
+}
+
+struct trble_ops g_trble_drv_ops =
+{
+    // Common
+    .init = trble_netmgr_init,
+    .deinit = trble_netmgr_deinit,
+    .get_mac = trble_netmgr_get_mac_addr,
+    .set_sec_param = trble_netmgr_set_sec_param,
+    .passkey_confirm = trble_netmgr_passkey_confirm,
+    .get_bonded_dev = trble_netmgr_get_bonded_device,
+    .del_bond = trble_netmgr_delete_bond,
+    .del_bond_all = trble_netmgr_delete_bond_all,
+    .conn_is_active = trble_netmgr_conn_is_active,
+    .conn_is_any_active = trble_netmgr_conn_is_any_active,
+    .conn_param_update = trble_netmgr_conn_param_update,
+    .drv_ioctl = trble_netmgr_ioctl,
+
+    // Observer
+    .set_scan = trble_netmgr_set_scan,
+    .start_scan = trble_netmgr_start_scan,
+    .stop_scan = trble_netmgr_stop_scan,
+    .whitelist_add = trble_netmgr_scan_whitelist_add,
+    .whitelist_delete = trble_netmgr_scan_whitelist_delete,
+    .whitelist_clear_all = trble_netmgr_scan_whitelist_clear_all,
+
+    // Client
+    .client_connect = trble_netmgr_client_connect,
+    .start_bond = trble_netmgr_client_bond,
+    .client_disconnect = trble_netmgr_client_disconnect,
+    .client_disconnect_all = trble_netmgr_client_disconnect_all,
+    .conn_dev_list = trble_netmgr_connected_device_list,
+    .conn_info = trble_netmgr_connected_info,
+    .op_enable_noti = trble_netmgr_operation_enable_notification,
+    .op_enable_indi = trble_netmgr_operation_enable_indication,
+    .op_enable_noti_n_indi = trble_netmgr_operation_enable_notification_and_indication,
+    .op_read = trble_netmgr_operation_read,
+    .op_write = trble_netmgr_operation_write,
+    .op_wrtie_no_resp = trble_netmgr_operation_write_no_response,
+    .get_write_read_queue_cnt = trble_netmgr_write_read_queue_count,
+
+    // Server
+    .set_server_config = trble_netmgr_set_server_config,
+    .get_profile_count = trble_netmgr_get_profile_count,
+    .charact_noti = trble_netmgr_charact_notify,
+    .charact_indi = trble_netmgr_charact_indicate,
+    .get_indi_queue_cnt = trble_netmgr_indicate_queue_count,
+    .attr_set_data = trble_netmgr_attr_set_data,
+    .attr_get_data = trble_netmgr_attr_get_data,
+    .attr_reject = trble_netmgr_attr_reject,
+    .server_disconnect = trble_netmgr_server_disconnect,
+    .get_mac_by_conn = trble_netmgr_get_mac_addr_by_conn_handle,
+    .get_conn_by_mac = trble_netmgr_get_conn_handle_by_addr,
+    .set_gap_device_name = trble_netmgr_set_gap_device_name,
+
+    // Broadcaster
+    .set_adv_data = trble_netmgr_set_adv_data,
+    .set_adv_resp = trble_netmgr_set_adv_resp,
+    .set_adv_type = trble_netmgr_set_adv_type,
+    .set_adv_interval = trble_netmgr_set_adv_interval,
+    .set_adv_txpower = trble_netmgr_set_adv_txpower,
+    .start_adv = trble_netmgr_start_adv,
+    .stop_adv = trble_netmgr_stop_adv,
+    .one_shot_adv_init = trble_netmgr_one_shot_adv_init,
+    .one_shot_adv_deinit = trble_netmgr_one_shot_adv_deinit,
+    .one_shot_adv_set = trble_netmgr_one_shot_adv_set,
+    .one_shot_adv = trble_netmgr_one_shot_adv,
+
+    .create_multi_adv = trble_netmgr_create_multi_adv,
+    .delete_multi_adv = trble_netmgr_delete_multi_adv,
+    .set_multi_adv_data = trble_netmgr_set_multi_adv_data,
+    .set_multi_resp_data = trble_netmgr_set_multi_resp_data,
+    .start_multi_adv = trble_netmgr_start_multi_adv,
+    .stop_multi_adv = trble_netmgr_stop_multi_adv,
+#if 0
+    .set_multi_adv_type = trble_netmgr_set_multi_adv_type,
+    .set_multi_adv_interval = trble_netmgr_set_multi_adv_interval,
+    .set_multi_adv_tx_power = trble_netmgr_set_multi_adv_tx_power,
+#endif
+
+#if 0
+    .le_coc_init = trble_netmgr_coc_init,
+    .coc_register_psm = trble_netmgr_coc_register_psm,
+    .coc_set_psm_security = trble_netmgr_coc_set_psm_security,
+    .coc_set_param = trble_netmgr_coc_set_param,
+    .coc_get_param = trble_netmgr_coc_get_param,
+    .coc_connect = trble_netmgr_coc_connect,
+    .coc_disconnect = trble_netmgr_coc_disconnect,
+    .coc_send_data = trble_netmgr_coc_send_data,
+#endif
+};

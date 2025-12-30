@@ -28,6 +28,12 @@
 #include "bk_rf_internal.h"
 //#include "net.h"
 //#include "rwnx_rx.h"
+#ifdef CONFIG_NET_LWIP_HW_CHKSUM_PORT
+#include "lwip/port/hw_chksum_port.h"
+
+/* External hardware checksum function */
+extern uint16_t hw_ipcksum_standard_chksum(const void *dataptr, int len);
+#endif
 
 //TODO
 // 1. BLE also need to consider PS init
@@ -131,6 +137,14 @@ int wifi_init(const wifi_init_config_t *config)
 
 #if CONFIG_FIXED_NETIF
 	//net_wlan_init();
+#endif
+
+#ifdef CONFIG_NET_LWIP_HW_CHKSUM_PORT
+	/* Register hardware checksum function for lwIP */
+	if (lwip_register_hw_chksum(hw_ipcksum_standard_chksum) != 0) {
+		WIFI_LOGE("Failed to register hardware checksum function\n");
+		/* Continue even if registration fails, will use software checksum */
+	}
 #endif
 
 	return BK_OK;

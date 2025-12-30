@@ -274,6 +274,7 @@ typedef struct {
 	int (*_bk_feature_config_mac_pwd_enable)(void);
 	int (*_bk_feature_config_wrls_pwd_enable)(void);
 	int (*_bk_feature_config_cpu_pwd_enable)(void);
+	int (*_bk_feature_config_mac_use_rtc_enable)(void);
 	int (*_cli_printf)(const char *fmt, ...);
 	void (*_rf_force_set_wifi_mode)(uint8_t switch_mode);
 } wifi_os_funcs_t;
