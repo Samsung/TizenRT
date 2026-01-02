@@ -374,6 +374,14 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		}
 	}
 	break;
+	case LCDDEVIO_GETPANELID: {
+		if (priv->dev->getpanelid) {
+			ret = priv->dev->getpanelid(priv->dev, (FAR uint32_t *)arg);
+		} else {
+			ret = -ENOSYS;
+		}
+	}
+	break;
 	default: {
 		lcddbg("ERROR: Unsupported IOCTL command: %d\n", cmd);
 		ret = -ENOSYS;
