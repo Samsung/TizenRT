@@ -1,0 +1,6 @@
+config CSIFW
+	bool "CSI Framework"
+	default y
+	---help---
+		Enables CSI Framework.
+

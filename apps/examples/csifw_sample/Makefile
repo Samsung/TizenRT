@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2024 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# drivers/Makefile
+# apps/examples/csifw_sample/Makefile
 #
-#   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2009-2012 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -49,116 +49,52 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
+-include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
-DELIM ?= $(strip /)
+include $(APPDIR)/Make.defs
 
-ifeq ($(WINTOOL),y)
-INCDIROPT = -w
+CXXEXT ?= .cpp
+# C++ Test Example
+
+APPNAME = csifw_sample
+FUNCNAME = $(APPNAME)_main
+THREADEXEC = TASH_EXECMD_ASYNC
+
+# C++ Test Example
+MAINSRC		= csifw_sample.c
+
+AOBJS		= $(ASRCS:.S=$(OBJEXT))
+COBJS		= $(CSRCS:.c=$(OBJEXT))
+MAINOBJ 	= $(MAINSRC:.c=$(OBJEXT))
+
+SRCS		= $(ASRCS) $(CSRCS) $(MAINSRC)
+OBJS		= $(AOBJS) $(COBJS)
+
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+OBJS		+= $(MAINOBJ)
 endif
 
-DEPPATH = --dep-path .
-ASRCS =
-CSRCS =
-VPATH = .
-
-ifeq ($(CONFIG_TASK_MANAGER),y)
-CFLAGS += -I $(TOPDIR)/kernel
-endif
-
-# Include support for various drivers.  Each Make.defs file will add its
-# files to the source file list, add its DEPPATH info, and will add
-# the appropriate paths to the VPATH variable
-
-include analog$(DELIM)Make.defs
-include audio$(DELIM)Make.defs
-include ai-soc$(DELIM)Make.defs
-include bch$(DELIM)Make.defs
-include bluetooth$(DELIM)Make.defs
-include compression$(DELIM)Make.defs
-include cpuload$(DELIM)Make.defs
-include fota$(DELIM)Make.defs
-include gpio$(DELIM)Make.defs
-include prodconfig$(DELIM)Make.defs
-include memory$(DELIM)Make.defs
-include i2c$(DELIM)Make.defs
-include iotdev$(DELIM)Make.defs
-include input$(DELIM)Make.defs
-include os_api_test$(DELIM)Make.defs
-include lcd$(DELIM)Make.defs
-include lwnl${DELIM}Make.defs
-include mipidsi${DELIM}Make.defs
-include net$(DELIM)Make.defs
-include otp$(DELIM)Make.defs
-include pipes$(DELIM)Make.defs
-include pm$(DELIM)Make.defs
-include power$(DELIM)Make.defs
-include seclink$(DELIM)Make.defs
-include sensors$(DELIM)Make.defs
-include serial$(DELIM)Make.defs
-include silent_reboot$(DELIM)Make.defs
-include spi$(DELIM)Make.defs
-include syslog$(DELIM)Make.defs
-include task_manager$(DELIM)Make.defs
-include usbdev$(DELIM)Make.defs
-include usbhost$(DELIM)Make.defs
-include video$(DELIM)Make.defs
-include wifi_csi$(DELIM)Make.defs
-include wireless$(DELIM)Make.defs
-
-ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
-  CSRCS += dev_null.c dev_zero.c
-
-ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
-  CSRCS += loop.c
-ifeq ($(CONFIG_DRVR_WRITEBUFFER),y)
-  CSRCS += rwbuffer.c
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+BIN		= $(APPDIR)\libapps$(LIBEXT)
 else
-ifeq ($(CONFIG_DRVR_READAHEAD),y)
-  CSRCS += rwbuffer.c
-endif
-endif
-endif
-
-ifeq ($(CONFIG_CAN),y)
-  CSRCS += can.c
-endif
-
-ifeq ($(CONFIG_DEV_URANDOM),y)
-  CSRCS += dev_urandom.c
-endif
-
-ifeq ($(CONFIG_PWM),y)
-  CSRCS += pwm.c
-endif
-
-ifeq ($(CONFIG_WATCHDOG),y)
-  CSRCS += watchdog.c
-endif
-
-ifeq ($(CONFIG_TIMER),y)
-  CSRCS += timer.c
-endif
-
-ifeq ($(CONFIG_RTC),y)
-  CSRCS += rtc.c
-endif
-
-ifeq ($(CONFIG_VIRTKEY),y)
-  CSRCS += virtkey.c
+ifeq ($(WINTOOL),y)
+  BIN		= $(APPDIR)\\libapps$(LIBEXT)
+else
+  BIN		= $(APPDIR)/libapps$(LIBEXT)
 endif
 endif
 
-AOBJS = $(ASRCS:.S=$(OBJEXT))
-COBJS = $(CSRCS:.c=$(OBJEXT))
+CONFIG_EXAMPLES_CSIFW_SAMPLE_PROGNAME ?= csifw_sample$(EXEEXT)
+PROGNAME	= $(CONFIG_EXAMPLES_CSIFW_SAMPLE_PROGNAME)
 
-SRCS = $(ASRCS) $(CSRCS)
-OBJS = $(AOBJS) $(COBJS)
+ROOTDEPPATH	= --dep-path .
 
-BIN = libdrivers$(LIBEXT)
+# Common build
 
-all: $(BIN)
-.PHONY: depend clean distclean
+VPATH		=
+
+all: .built
+.PHONY:	clean depend distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -166,21 +102,57 @@ $(AOBJS): %$(OBJEXT): %.S
 $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-$(BIN): $(OBJS)
-	$(call ARCHIVE, $@, $(OBJS))
+$(CXXOBJS): %$(OBJEXT): %$(CXXEXT)
+	$(call COMPILEXX, $<, $@)
+
+ifeq ($(suffix $(MAINSRC)),$(CXXEXT))
+$(MAINOBJ): %$(OBJEXT): %$(CXXEXT)
+	$(call COMPILEXX, $<, $@)
+else
+$(MAINOBJ): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+endif
+
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	@touch .built
+
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+	@echo "LD: $(PROGNAME)"
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
+	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
+
+install: $(BIN_DIR)$(DELIM)$(PROGNAME)
+
+else
+install:
+
+endif
+
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_CSIFW_SAMPLE),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+
+else
+context:
+
+endif
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-	$(Q) touch $@
+ifeq ($(filter %$(CXXEXT),$(SRCS)),)
+	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+else
+	@$(MKDEP) $(ROOTDEPPATH) "$(CXX)" -- $(CXXFLAGS) -- $(SRCS) >Make.dep
+endif
+	@touch $@
 
 depend: .depend
 
-ifeq ($(CONFIG_NDP120),y)
-context:
-endif
-
 clean:
-	$(call DELFILE, $(BIN))
+	$(call DELFILE, .built)
 	$(call CLEAN)
 
 distclean: clean
@@ -188,3 +160,5 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
+.PHONY: preconfig
+preconfig:
