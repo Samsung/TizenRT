@@ -279,10 +279,8 @@ static void amebasmart_mipi_reset_trx_helper(MIPI_TypeDef *MIPIx)
 	MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) | MIPI_BIT_LPTX_RST | MIPI_BIT_LPRX_RST;
 	DelayUs(1);
 	MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) & ~MIPI_BIT_LPTX_RST & ~MIPI_BIT_LPRX_RST;
-
-	if (rx_data_ptr && rx_data_len > 0 && rx_data_rdy) {
-		memset(rx_data_ptr, 0, rx_data_len);
-	}
+	rx_data_ptr = NULL;
+	rx_data_len = 0;
 }
 
 static void amebasmart_mipidsi_isr(void)
