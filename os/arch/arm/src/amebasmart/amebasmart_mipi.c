@@ -485,6 +485,7 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 		return ret;
 	}
 	send_cmd_done = 0;
+	receive_cmd_done = 1;
 	rx_data_rdy = FALSE;
 	if (msg->rx_buf) {
 		rx_data_ptr = msg->rx_buf;
@@ -503,22 +504,18 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	(void)clock_gettime(CLOCK_REALTIME, &abstime);
 	abstime.tv_sec += MIPI_TRANSFER_TIMEOUT;
 	ret = sem_timedwait(&g_send_cmd_done, &abstime);
-	if (!receive_cmd_done) {
+	if (ret != OK) {
+		goto Fail_case;
+	}
+	if (MIPI_LPTX_IS_READ(msg->type)) {
+		(void)clock_gettime(CLOCK_REALTIME, &abstime);
+		abstime.tv_sec += MIPI_TRANSFER_TIMEOUT;
 		ret = sem_timedwait(&g_read_cmd_done, &abstime);
+		if (ret != OK) {
+			goto Fail_case;
+		}
 	}
 	leave_critical_section(flags);
-	if (send_cmd_done != 1 || receive_cmd_done != 1) {
-#ifdef CONFIG_PM
-		bsp_pm_domain_control(BSP_MIPI_DRV, 0);
-#endif
-#ifdef CONFIG_SMP
-		spin_unlock(&g_rtl8730e_config_dev_s_underflow);
-#endif
-		if (msg->rx_buf && msg->rx_len > 0) {
-			memset(msg->rx_buf, 0, msg->rx_len);
-		}
-		return FAIL;
-	}
 #ifdef CONFIG_SMP
 	spin_unlock(&g_rtl8730e_config_dev_s_underflow);
 #endif
@@ -530,7 +527,28 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 		rx_data_len = 0;
 	}
 	return OK;
+Fail_case:
+	if (send_cmd_done == 0) {
+		sem_init(&g_send_cmd_done, 0, 0);
+	}
+	if (receive_cmd_done == 0) {
+		sem_init(&g_read_cmd_done, 0, 0);
+	}
+	if (msg->rx_buf && msg->rx_len > 0 && MIPI_LPTX_IS_READ(msg->type)) {
+		memset(msg->rx_buf, 0, msg->rx_len);
+		rx_data_ptr = NULL;
+		rx_data_len = 0;
+	}
+	leave_critical_section(flags);
+#ifdef CONFIG_SMP
+	spin_unlock(&g_rtl8730e_config_dev_s_underflow);
+#endif
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
+#endif
+	return FAIL;
 }
+
 
 #ifdef CONFIG_PM
 static uint32_t rtk_mipi_suspend(uint32_t expected_idle_time, void *param)
