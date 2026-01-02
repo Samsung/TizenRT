@@ -223,6 +223,8 @@ static int send_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t command)
 	}
 	msg.tx_buf = cmd_addr;
 	msg.tx_len = payload_len;
+	msg.rx_buf = NULL;
+	msg.rx_len = 0;
 	msg.flags = 0;
 	transfer_status = send_to_mipi_dsi(priv, &msg);
 
@@ -239,7 +241,10 @@ int set_return_packet_len(struct mipi_lcd_dev_s *priv, u8 rx_len)
 	struct mipi_dsi_msg msg;
 	msg.channel = rx_len;
 	msg.type = MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE;
+	msg.tx_buf = NULL;
 	msg.tx_len = 0;
+	msg.rx_buf = NULL;
+	msg.rx_len = 0;
 	msg.flags = 0;
 	transfer_status = send_to_mipi_dsi(priv, &msg);
 
@@ -306,6 +311,8 @@ int send_init_cmd(struct mipi_lcd_dev_s *priv, lcm_setting_table_t *table)
 			}
 			msg.tx_buf = cmd_addr;
 			msg.tx_len = payload_len;
+			msg.rx_buf = NULL;
+			msg.rx_len = 0;
 			msg.flags = 0;
 			transfer_status = send_to_mipi_dsi(priv, &msg);
 			if (transfer_status != OK) {

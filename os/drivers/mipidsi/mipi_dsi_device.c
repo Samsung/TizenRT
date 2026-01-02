@@ -74,6 +74,8 @@ static int mipi_dsi_fill_tx_buff(FAR struct mipi_dsi_device *device, uint8_t *tx
 	msg.channel = device->channel;
 	msg.tx_buf = tx;
 	msg.tx_len = sizeof(tx);
+	msg.rx_buf = NULL;
+	msg.rx_len = 0;
 	msg.flags = 0;
 	msg.type = type;
 	
@@ -282,6 +284,8 @@ int mipi_dsi_generic_write(FAR struct mipi_dsi_device *device, FAR const void *p
 	msg.channel = device->channel;
 	msg.tx_buf = payload;
 	msg.tx_len = size;
+	msg.rx_buf = NULL;
+	msg.rx_len = 0;
 	msg.flags = 0;
 
 	switch (size) {
@@ -381,6 +385,8 @@ ssize_t mipi_dsi_dcs_write_buffer(FAR struct mipi_dsi_device *device, FAR const 
 	msg.channel = device->channel;
 	msg.tx_buf = data;
 	msg.tx_len = len;
+	msg.rx_buf = NULL;
+	msg.rx_len = 0;
 	msg.flags = 0;
 
 	switch (len) {
