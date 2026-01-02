@@ -520,11 +520,14 @@ static inline int amebad_i2c_sem_waitdone(FAR struct amebad_i2c_priv_s *priv)
 
 	while (priv->intstate != INTSTATE_DONE && elapsed < timeout);
 
-	i2cinfo("intstate: %d elapsed: %d threshold: %d status: %08x\n", priv->intstate, elapsed, timeout, priv->status);
+	if (priv->intstate != INTSTATE_DONE) {
+		i2cerr("ERROR i2c timeout: intstate: %d elapsed: %d threshold: %d status: %08x\n", priv->intstate, elapsed, timeout, priv->status);
+		ret = -ETIMEDOUT;
+	} else {
+		i2cinfo("intstate: %d elapsed: %d threshold: %d status: %08x\n", priv->intstate, elapsed, timeout, priv->status);
+	}
 
 	/* Set the interrupt state back to IDLE */
-
-	ret = priv->intstate == INTSTATE_DONE ? ret : -ETIMEDOUT;
 	priv->intstate = INTSTATE_IDLE;
 	return ret;
 }
