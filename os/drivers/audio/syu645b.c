@@ -102,6 +102,10 @@ static cJSON *gJSON = NULL;
 static void syu645b_reset_config(FAR struct syu645b_dev_s *priv);
 static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv);
 static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset);
+static int parse_equalizer_metadata_json(void);
+static int dec_to_hex_string(uint32_t decimal, char *hexadecimal);
+static int string_to_script(char *string, t_codec_init_script_entry *script);
+static int syu645b_set_basic_equalizer(FAR struct syu645b_dev_s *priv, bool set_volume);
 
 #ifdef CONFIG_PM
 static struct syu645b_dev_s *g_syu645b;
@@ -195,6 +199,8 @@ static void syu645b_pwm_shutdown(FAR struct syu645b_dev_s *priv, bool shutdown)
 	if (shutdown) {
 		syu645b_exec_i2c_script(priv, codec_shutdown_script, sizeof(codec_shutdown_script) / sizeof(t_codec_init_script_entry));
 	} else {
+		/* it takes about 80us until LRCK become stable. Hence add 1ms of delay */
+		up_mdelay(1);
 		syu645b_exec_i2c_script(priv, codec_startup_script, sizeof(codec_startup_script) / sizeof(t_codec_init_script_entry));
 	}
 }
@@ -252,6 +258,15 @@ static void syu645b_setvolume(FAR struct syu645b_dev_s *priv)
 		syu645b_setmute(priv, false);
 	}
 	syu645b_exec_i2c_script(priv, codec_set_left_right_volume_script, sizeof(codec_set_left_right_volume_script) / sizeof(t_codec_init_script_entry));
+}
+
+static void syu645_set_mixer_gain(FAR struct syu645b_dev_s *priv, uint8_t *gain)
+{
+	// ToDo: Handle channel polarity in future. By default, it is 0.
+	for (uint8_t i = 0; i < SYU645B_NMIXER_GAIN_COEFF; i++) {
+		codec_set_mixer_gain_script[0].val[i] = gain[i];
+	}
+	syu645b_exec_i2c_script(priv, codec_set_mixer_gain_script, sizeof(codec_set_mixer_gain_script) / sizeof(t_codec_init_script_entry));
 }
 #endif                                                  /* CONFIG_AUDIO_EXCLUDE_VOLUME */
 
@@ -389,20 +404,29 @@ static int syu645b_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 
 	/* Provide capabilities of our FEATURE units */
 	case AUDIO_TYPE_FEATURE:
-
-		/* If the sub-type is UNDEF, then report the Feature Units we support */
-		if (caps->ac_subtype == AUDIO_FU_UNDEF) {
+		switch (caps->ac_subtype) {
+		case AUDIO_FU_VOLUME:
+			caps->ac_controls.hw[0] = priv->max_volume;
+			caps->ac_controls.hw[1] = priv->volume;
+			break;
+		case AUDIO_FU_MIXER_GAIN:
+			caps->ac_controls.b[0] = priv->mixer_gain[0];
+			caps->ac_controls.b[1] = priv->mixer_gain[1];
+			caps->ac_controls.b[2] = priv->min_mixer_gain;
+			caps->ac_controls.b[3] = priv->max_mixer_gain;
+			break;
+		case AUDIO_FU_UNDEF:
+			/* If the sub-type is UNDEF, then report the Feature Units we support */
 			/* Fill in the ac_controls section with the Feature Units we have */
 			caps->ac_controls.b[0] = AUDIO_FU_VOLUME;
 			caps->ac_controls.b[1] = AUDIO_FU_BALANCE >> 8;
-		} else {
+			break;
+		default:
 			/* TODO:  Do we need to provide specific info for the Feature Units,
 			 * such as volume setting ranges, etc.?
 			 */
+			break;
 		}
-
-		caps->ac_controls.hw[0] = priv->max_volume;
-		caps->ac_controls.hw[1] = priv->volume;
 
 		break;
 
@@ -466,6 +490,16 @@ static int syu645b_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			audvdbg("mute: 0x%x\n", mute);
 			priv->mute = mute;
 			syu645b_setmute(priv, mute);
+		}
+		break;
+		case AUDIO_FU_MIXER_GAIN: {
+			uint8_t gain[SYU645B_NMIXER_GAIN_COEFF] = {
+				caps->ac_controls.b[0],
+				caps->ac_controls.b[1],
+				caps->ac_controls.b[2],
+				caps->ac_controls.b[3]
+			};
+			syu645_set_mixer_gain(priv, gain);
 		}
 		break;
 #endif							/* CONFIG_AUDIO_EXCLUDE_VOLUME */
@@ -837,12 +871,14 @@ static int syu645b_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		/* Take semaphore */
 		syu645b_takesem(&priv->devsem);
 
-		/* Pause i2s channel */
-		I2S_PAUSE(priv->i2s, I2S_TX);
-		
-		/* Resume I2S */
-		I2S_RESUME(priv->i2s, I2S_TX);
+		if (priv->running && !priv->paused) {
 
+			/* Pause i2s channel */
+			I2S_PAUSE(priv->i2s, I2S_TX);
+
+			/* Resume I2S */
+			I2S_RESUME(priv->i2s, I2S_TX);
+		}
 		syu645b_pwm_shutdown(priv, false);
 		/* Give semaphore */
 		syu645b_givesem(&priv->devsem);
@@ -1039,7 +1075,7 @@ static void syu645b_hw_reset_config(FAR struct syu645b_dev_s *priv)
 	syu645b_setmute(priv, true);
 }
 
-static int parse_equalizer_metadata_json(void){
+static int parse_equalizer_metadata_json(void) {
 	int ret = OK;
 
 	struct stat st;
@@ -1047,33 +1083,27 @@ static int parse_equalizer_metadata_json(void){
 	if (ret != OK) {
 		return ret;
 	}
-		
 
 	// Todo: If the script file is large, you can use a lot of memory when you read it at once, so should set a static size so that only a certain part of it can be read and used.
 	char *buffer = (char *)malloc(st.st_size + 1);
 	if (!buffer) {
-		meddbg("Failed to alloc.\n");
 		return -ENOMEM;
 	}
 	int fd = open(PROD_EQUALIZE_ENCODE_JSON_PATH, O_RDONLY);
 	if (fd == -1) {
-		meddbg("Failed to open equalizer json.\n");
 		ret = -EBADF;
 		goto err_with_buffer;
 	}
 	ssize_t bytesRead = read(fd, buffer, st.st_size);
 	if (bytesRead == -1 || bytesRead != st.st_size) {
-		meddbg("Failed to read from equalizer json.\n");
 		ret = -EIO;
 		goto err_with_fd;
 	}
 	gJSON = cJSON_Parse(buffer);
 	if (!gJSON) {
-		meddbg("Failed to parse equalizer json file.\n");
 		ret = -EIO;
 		goto err_with_fd;
 	}
-
 err_with_fd:
 	close(fd);
 err_with_buffer:
@@ -1141,6 +1171,9 @@ static int syu645b_set_basic_equalizer(FAR struct syu645b_dev_s *priv, bool set_
 	int ret = syu645b_exec_i2c_script(priv, t_codec_dq_preset_default_script, sizeof(t_codec_dq_preset_default_script) / sizeof(t_codec_init_script_entry));
 	if (set_volume) {
 		priv->max_volume = 0x9F;
+		for (uint8_t i = 0; i < SYU645B_NMIXER_GAIN_COEFF; i++) {
+			priv->mixer_gain[i] = 0x1B;
+		}
 	}
 	
 	/* And then setVolume Again */
@@ -1149,7 +1182,8 @@ static int syu645b_set_basic_equalizer(FAR struct syu645b_dev_s *priv, bool set_
 	}
 }
 
-static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset) {
+static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset)
+{
 	/* Reset First */
 	syu645b_reset_config(priv);
 
@@ -1157,10 +1191,7 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 	uint8_t reg[SYU645B_REG_DATA_TYPE_MAX];
 	FAR struct i2c_dev_s *dev = priv->i2c;
 	FAR struct i2c_config_s *syu645b_i2c_config = &(priv->lower->i2c_config);
-	
-	if (!preset) {
-		syu645b_set_basic_equalizer(priv, true);
-	}
+
 
 	int ret = OK;
 	char c_preset[EQUALIZER_PRESET_LEN];
@@ -1168,10 +1199,13 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 	/* Convert preset hex to string for key & Parse equlizer json to gJSON */
 	ret = dec_to_hex_string(preset, c_preset);
 	if (ret != OK) {
+		auddbg("convert dec2hex error preset : %x, ret : %d\n", preset, ret);
 		return -EINVAL;
 	}
 	ret = parse_equalizer_metadata_json();
 	if (ret != OK) {
+		syu645b_set_basic_equalizer(priv, true);
+		auddbg("parsing json error preset : %x, ret : %d\n", preset, ret);
 		return ret;
 	}
 
@@ -1180,7 +1214,9 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 
 	/* Not find proper key, execute default script*/
 	if (!search){
+		syu645b_set_basic_equalizer(priv, true);
 		cJSON_Delete(gJSON);
+		auddbg("search error preset : %x\n", preset);
 		return -EINVAL;
 	}
 
@@ -1192,13 +1228,17 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 		if (strcmp(key->string, "_comment") == 0) {
 			continue;
 		}
-
 		string_to_script(key->valuestring, &script);
 
 		if (script.addr == 0x08 && script.type == SYU645B_REG_D_2BYTE) {
 			priv->max_volume = script.val[0];
 		}
-
+		if (script.addr == 0x5F && script.type == SYU645B_REG_D_5BYTE) {
+			for (uint8_t i = 0; i < SYU645B_NMIXER_GAIN_COEFF; i++) {
+				// ToDo: Handle channel polarity in future. By default, it is 0. (script.val[i] & 0x3F) needs to be done.
+				priv->mixer_gain[i] = script.val[i];
+			}
+		}
 		reg[0] = script.addr;
 		for (int i = 0; i < script.type - 1; i++) {
 			reg[i+1] = script.val[i];
@@ -1206,6 +1246,7 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 
 		ret = i2c_write(dev, syu645b_i2c_config, (uint8_t *)reg, script.type);
 		if (ret != script.type) {
+			auddbg("Error, cannot write to reg addr 0x%x, ret = %d\n", script.addr, ret);
 			break;
 		}
 	}
@@ -1215,6 +1256,7 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 		syu645b_setvolume(priv);
 	}
 	cJSON_Delete(gJSON);
+	return ret;
 }
 
 /****************************************************************************
@@ -1339,7 +1381,12 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 #ifndef CONFIG_AUDIO_EXCLUDE_VOLUME
 	priv->max_volume = 0x9F;
 	priv->volume = 79;
-	syu645b_set_equalizer(priv, 0);
+	priv->min_mixer_gain = 0x00;
+	priv->max_mixer_gain = 0x3F;
+
+	/* When syu645b initilize, can not use cjson. So, call syu645b_set_basic_equalizer() instead of syu645b_set_equalizer() */
+	syu645b_reset_config(priv);
+	syu645b_set_basic_equalizer(priv, true);
 	/* Shutdown pwm and then set mute */
 	syu645b_pwm_shutdown(priv, true);
 	syu645b_setmute(priv, true);
@@ -1351,7 +1398,7 @@ FAR struct audio_lowerhalf_s *syu645b_initialize(FAR struct i2c_dev_s *i2c, FAR 
 
 	int ret = pm_register(&g_pm_syu645b_cb);
 	DEBUGASSERT(ret == OK);
-#endif	
+#endif
 
 	return &priv->dev;
 }

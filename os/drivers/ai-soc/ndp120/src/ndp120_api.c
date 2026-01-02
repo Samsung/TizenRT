@@ -74,7 +74,7 @@
 #define round_down(x, y) ((x) - ((x) % (y)))
 #define STRING_LEN		256
 
-#define AUDIO_BEFORE_MATCH_MS	(1500)
+#define AUDIO_BEFORE_MATCH_MS	(2000)
 
 #define PDM_CLOCK_PDM_RATE 1536000
 
@@ -83,7 +83,10 @@
 #define NDP120_SPI_FREQ_HIGH    12000000
 #define NDP120_SPI_FREQ_INIT    1000000
 #define FF_ID NDP120_DSP_DATA_FLOW_FUNCTION_FULL_FF_49
+#define SR_FE_ID 225
+#define SR_FE_POOLING_ID 227
 #define KEYWORD_NETWORK_ID 0
+#define AOD_NETWORK_ID 1
 
 /* Periodicity of NDP alivness check thread */
 #define NDP_ALIVENESS_CHECK_PERIOD_US (3 * 1000 * 1000)
@@ -122,6 +125,23 @@ static struct work_s ndp120_work;
 /* only used for debugging purposes */
 static struct ndp120_dev_s *_ndp_debug_handle = NULL;
 
+typedef enum {
+	DSP_FLOW_BIXBY = 0,
+	DSP_FLOW_AOD = 1,
+	DSP_FLOW_MAX,
+} dsp_flow_e;
+
+typedef struct {
+	char *label;
+	dsp_flow_e flow;
+} dsp_flow_t;
+
+static const dsp_flow_t g_flow_types[] = {
+	{"hi-bixby", DSP_FLOW_BIXBY},
+	{"bixby", DSP_FLOW_BIXBY},
+	{"aod", DSP_FLOW_AOD},
+};
+
 /****************************************************************************
  * Function Prototypes
  ****************************************************************************/
@@ -131,6 +151,7 @@ void ndp120_aec_disable(struct ndp120_dev_s *dev);
 void ndp120_test_internal_passthrough_switch(struct ndp120_dev_s *dev, int internal);
 
 static void do_ndp120_i2s_setup(struct syntiant_ndp_device_s *ndp);
+static void attach_algo_config_area(struct syntiant_ndp_device_s *ndp, int32_t algo_id, int32_t algo_config_index);
 
 void ndp120_semtake(struct ndp120_dev_s *dev)
 {
@@ -399,6 +420,7 @@ static int initialize_ndp(struct ndp120_dev_s *dev)
 	syntiant_ndp120_config_clk_src_t config_clk_src;
 	int s;
 
+	memset(dev->labels_per_network, 0, sizeof(dev->labels_per_network));
 	/* stuff the ILib integration interfaces */
 	iif.d = dev;
 	iif.malloc = (void * (*)(int)) kmm_malloc;
@@ -906,11 +928,36 @@ do_audio_sync(struct syntiant_ndp_device_s *ndp, int ref_chan, int adj_chan, int
     return s;
 }
 
+dsp_flow_e get_dsp_flow_type(struct ndp120_dev_s *dev, int index)
+{
+	char* label;
+	int count = 0;
+
+	if (index >= MAX_NNETWORKS)
+		return DSP_FLOW_MAX;
+
+	while ((label = dev->labels_per_network[index][count++]) != NULL) {
+		label = strchr(label, ':');
+		if (label == NULL) continue;
+
+		label += 1;
+		int flow_type_num = sizeof(g_flow_types)/sizeof(dsp_flow_t);
+		for (int i = 0; i < flow_type_num; i++) {
+			char *str = g_flow_types[i].label;
+			if (strncmp(label, str, strlen(str)) == 0)
+				return g_flow_types[i].flow;
+		}
+	}
+
+	return DSP_FLOW_MAX;
+}
+
 static
 void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 {
 	int s = 0;
 	ndp120_dsp_data_flow_setup_t setup;
+	struct ndp120_dev_s *dev = ndp->iif.d;
 
 	int src_pcm = 0;
 	int src_func = 0;
@@ -958,6 +1005,35 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 	setup.src_nn[src_nn].set_id = COMBINED_FLOW_SET_ID;
 	setup.src_nn[src_nn].algo_exec_property = 0;
 	src_nn++;
+
+	if (get_dsp_flow_type(dev, AOD_NETWORK_ID) == DSP_FLOW_AOD) {
+		/* FUNCx->FUNC227 */
+		setup.src_function[src_func].src_param = FF_ID;
+		setup.src_function[src_func].dst_param = SR_FE_POOLING_ID;
+		setup.src_function[src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_FUNCTION;
+		setup.src_function[src_func].algo_config_index = 1;
+		setup.src_function[src_func].set_id = 0;
+		setup.src_function[src_func].algo_exec_property = 0;
+		src_func++;
+
+		/* FUNC227->NN1 */
+		setup.src_function[src_func].src_param = SR_FE_POOLING_ID;
+		setup.src_function[src_func].dst_param =  AOD_NETWORK_ID;
+		setup.src_function[src_func].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_NN;
+		setup.src_function[src_func].algo_config_index = -1;
+		setup.src_function[src_func].set_id = COMBINED_FLOW_SET_ID;
+		setup.src_function[src_func].algo_exec_property = 0;
+		src_func++;
+
+		/* NN1->MCU */
+		setup.src_nn[src_nn].src_param =  AOD_NETWORK_ID;
+		setup.src_nn[src_nn].dst_param = 0;
+		setup.src_nn[src_nn].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_MCU;
+		setup.src_nn[src_nn].algo_config_index = -1;
+		setup.src_nn[src_nn].set_id = COMBINED_FLOW_SET_ID;
+		setup.src_nn[src_nn].algo_exec_property = 0;
+		src_nn++;
+	}
 
 	auddbg("Applied flow rules\n");
 	s = syntiant_ndp120_dsp_flow_setup_apply(ndp, &setup);
@@ -1293,12 +1369,20 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	const char *mcu_package = "/res/kernel/audio/mcu_fw";
 	const char *dsp_package = "/res/kernel/audio/dsp_fw";
 	const char *neural_package;
-	if (dev->kd_num == 0) {
-		neural_package = "/res/kernel/audio/kd_local";
-	} else {
-		neural_package = "/res/kernel/audio/kd_local2";
-	}
 
+	if ((dev->kd_num & AUDIO_NN_MODEL_MASK) == AUDIO_NN_MODEL_BIXBY) {
+		if ((dev->kd_num & AUDIO_NN_MODEL_LANG_MASK) == AUDIO_NN_MODEL_LANG_EN) {
+			neural_package = "/res/kernel/audio/kd_local2_en";
+		} else {
+			neural_package = "/res/kernel/audio/kd_local2";
+		}
+	} else {
+		if ((dev->kd_num & AUDIO_NN_MODEL_LANG_MASK) == AUDIO_NN_MODEL_LANG_EN) {
+			neural_package = "/res/kernel/audio/kd_local_en";
+		} else {
+			neural_package = "/res/kernel/audio/kd_local";
+		}
+	}
 
 	const unsigned int AUDIO_TANK_MS =
 		AUDIO_BEFORE_MATCH_MS  /* max word length + ~500 MS preroll */
@@ -1367,11 +1451,18 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 		goto errout_ndp120_init;
 	}
 
+	s_num_labels = 16;
+	s = get_versions_and_labels(dev->ndp, s_label_data, sizeof(s_label_data), s_labels, &s_num_labels);
+
 	attach_algo_config_area(dev->ndp, FF_ID, 0);
+	auddbg("Attached ALGO id = %d at index 0.\n", FF_ID);
 #if BT_MIC_SUPPORT == 1
 	// when using BT-mic, attach algo config to func0 as well
 	attach_algo_config_area(dev->ndp, 0, 0);
 #endif
+
+	if (get_dsp_flow_type(dev, 1) == DSP_FLOW_AOD)
+		attach_algo_config_area(dev->ndp, SR_FE_POOLING_ID, 1);
 
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 	do_audio_sync(dev->ndp, NDP120_DSP_AUDIO_CHAN_AUD1, NDP120_DSP_AUDIO_CHAN_AUD0, 0);
@@ -1423,8 +1514,6 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	}
 #endif
 
-	s_num_labels = 16;
-	s = get_versions_and_labels(dev->ndp, s_label_data, sizeof(s_label_data), s_labels, &s_num_labels);
 #ifdef CONFIG_DEBUG_AUDIO_INFO
 	dsp_flow_show(dev->ndp);
 #endif
@@ -1657,6 +1746,7 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 				dev->keyword_correction = true;
 				msg.msgId = AUDIO_MSG_KD;
 			} else if (network_id == 1) {
+				extract_keyword(dev);
 				switch (winner) {
 				case 0:
 					msg.msgId = AUDIO_MSG_LOCAL0;

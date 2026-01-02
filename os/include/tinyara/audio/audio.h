@@ -154,6 +154,9 @@
 #define AUDIOIOC_GETKDDATA          _AUDIOIOC(26)
 #define AUDIOIOC_ENABLEDMIC         _AUDIOIOC(27)
 #define AUDIOIOC_CHANGEKD           _AUDIOIOC(28)
+#define AUDIOIOC_MULTI_CH_STREAM_INIT   _AUDIOIOC(29)
+#define AUDIOIOC_MULTI_CH_STREAM_READ   _AUDIOIOC(30)
+#define AUDIOIOC_MULTI_CH_STREAM_DEINIT _AUDIOIOC(31)
 
 /* Audio Device Types *******************************************************/
 /* The audio interface support different types of audio devices for
@@ -275,6 +278,7 @@
 #define AUDIO_FU_UNDERFLOW          0x2000
 #define AUDIO_FU_OVERFLOW           0x4000
 #define AUDIO_FU_LATENCY            0x8000
+#define AUDIO_FU_MIXER_GAIN         0x000a	/* TODO consider optimize each of value, should we process some of these at the same time? */
 
 /* Processing Unit controls *************************************************/
 
@@ -285,6 +289,7 @@
 #define AUDIO_PU_SUBSAMPLE_FORWARD  0x0008
 #define AUDIO_PU_SUBSAMPLE_REWIND   0x0010
 #define AUDIO_PU_SPEECH_DETECT      0x0020
+#define AUDIO_PU_KD_SENSITIVITY     0x0040
 
 /* Stereo Extender PU Controls **********************************************/
 
@@ -378,6 +383,19 @@
 #define AUDIO_APB_TYPE_OUTPUT	    (1 << 5)
 
 #define AUDIO_APB_MMAP_ENQUEUED     (1 << 6)
+
+/* Audio NN Model types */
+
+#define AUDIO_NN_MODEL_HI_BIXBY     0
+#define AUDIO_NN_MODEL_BIXBY        1
+#define AUDIO_NN_MODEL_MAX          AUDIO_NN_MODEL_BIXBY
+#define AUDIO_NN_MODEL_MASK         0x0f
+
+#define AUDIO_NN_MODEL_LANG_KO     (0 << 4)
+#define AUDIO_NN_MODEL_LANG_EN     (1 << 4)
+#define AUDIO_NN_MODEL_LANG_MAX     AUDIO_NN_MODEL_LANG_EN
+#define AUDIO_NN_MODEL_LANG_MASK    0xf0
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/

@@ -21,6 +21,7 @@
 
 #include "PlayerWorker.h"
 #include "MediaPlayerImpl.h"
+#include "audio/audio_manager.h"
 
 #ifndef CONFIG_MEDIA_PLAYER_STACKSIZE
 #define CONFIG_MEDIA_PLAYER_STACKSIZE 4096
@@ -33,11 +34,13 @@
 using namespace std;
 
 namespace media {
-PlayerWorker::PlayerWorker() : mCurPlayer(nullptr)
+PlayerWorker::PlayerWorker()
 {
 	mThreadName = "PlayerWorker";
 	mStacksize = CONFIG_MEDIA_PLAYER_STACKSIZE;
 	mPriority = CONFIG_MEDIA_PLAYER_THREAD_PRIORITY;
+	mTimeout = get_output_read_timeout();
+	meddbg("Output audio read timeout: %lld\n", mTimeout);
 }
 
 PlayerWorker::~PlayerWorker()
@@ -52,22 +55,61 @@ PlayerWorker& PlayerWorker::getWorker()
 
 bool PlayerWorker::processLoop()
 {
-	if (mCurPlayer && (mCurPlayer->getState() == PLAYER_STATE_PLAYING)) {
-		mCurPlayer->playback();
-		return true;
+	if (mPlayerList.empty()) {
+		return false;
 	}
 
-	return false;
+	std::list<std::shared_ptr<MediaPlayerImpl>> mPlayerListCopy(mPlayerList);
+
+	bool ret = false;
+	auto t_deadline = std::chrono::steady_clock::now() + mTimeout;
+	auto itr = mPlayerListCopy.begin();
+	uint8_t idx = 0;
+
+	while (itr != mPlayerListCopy.end()) {
+		auto player = *itr;
+		if (player && player->getState() == PLAYER_STATE_PLAYING) {
+			/* ToDo: Adjust this timeout in a better way */
+			player->playback(std::chrono::duration_cast<std::chrono::milliseconds>((t_deadline - std::chrono::steady_clock::now())) / (mPlayerListCopy.size() - idx), idx);
+			ret = true;
+		}
+
+		if (player && player->getState() == PLAYER_STATE_COMPLETING) {
+			player->playbackFinished();
+			ret = true;
+		}
+		itr++;
+		idx++;
+	}
+
+	return ret;
 }
 
-void PlayerWorker::setPlayer(std::shared_ptr<MediaPlayerImpl> player)
+void PlayerWorker::addPlayer(std::shared_ptr<MediaPlayerImpl> player)
 {
-	mCurPlayer = player;
+	std::list<std::shared_ptr<MediaPlayerImpl>>::iterator itr  = find(player);
+	if (itr != mPlayerList.end()) {
+		meddbg("Player already added in the list\n");
+		return;
+	}
+	mPlayerList.push_back(player);
 }
 
-std::shared_ptr<MediaPlayerImpl> PlayerWorker::getPlayer()
+void PlayerWorker::removePlayer(std::shared_ptr<MediaPlayerImpl> player)
 {
-	return mCurPlayer;
+	mPlayerList.remove(player);
+}
+
+std::list<std::shared_ptr<MediaPlayerImpl>>::iterator PlayerWorker::find(std::shared_ptr<MediaPlayerImpl> player)
+{
+	auto itr = mPlayerList.begin();
+	while (itr != mPlayerList.end()) {
+		if (*itr == player) {
+			return itr;
+		}
+		itr++;
+	}
+	return itr;
 }
 
 } // namespace media
