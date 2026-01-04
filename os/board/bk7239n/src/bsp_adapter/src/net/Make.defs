@@ -49,9 +49,17 @@
 #
 ############################################################################
 
+
+
 CSRCS += bk_netmgr.c \
          bk_ethernetif.c \
          bk_lwipif_tizenrt.c
+
+
+ifeq ($(CONFIG_BK_WIFI_CSI_ADAPTER),y)
+# csi adapter
+CSRCS += bk_wifi_csi_adapter.c
+endif
 
 DEPPATH += --dep-path bsp_adapter/src/net
 VPATH += :bsp_adapter/src/net

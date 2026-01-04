@@ -262,3 +262,14 @@ int bk_feature_cpu_pwd_enable(void);
  *    - 1: mac use timer
  */
 int bk_feature_mac_use_rtc_enable(void);
+
+/**
+ * @brief     Interface for customer to change to wifi pll when wakeup from sleep
+ *
+ *
+ * @return
+ *    - 0: disable change to wifi pll
+ *    - 1: enable change to wifi pll
+ *
+ */
+int bk_feature_change_to_wifi_pll_enable(void);

@@ -614,12 +614,12 @@ trble_result_e trble_netmgr_coc_connect(struct bledev *dev, uint16_t conn_handle
 
 trble_result_e trble_netmgr_coc_disconnect(struct bledev *dev, uint16_t cid)
 {
-    return bk_tr_ble_coc_disconnect(cid);
+    return bk_tr_ble_coc_disconnect(0, cid);
 }
 
 trble_result_e trble_netmgr_coc_send_data(struct bledev *dev, uint16_t cid, uint16_t len, uint8_t *data)
 {
-    return bk_tr_ble_coc_send_data(cid, len, data);
+    return bk_tr_ble_coc_send_data(0, cid, len, data);
 }
 
 struct trble_ops g_trble_drv_ops =

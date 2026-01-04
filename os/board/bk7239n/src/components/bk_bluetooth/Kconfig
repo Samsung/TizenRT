@@ -28,4 +28,9 @@ menu "BK_Bluetooth"
     config SUPPORT_REPORTING_COEX_BLE_STATE
         bool "reporting coex ble state"
         default n
+
+    config BLE_MAX_LATENCY
+        int "max latency."
+        default 20
+        range 0 499
 endmenu
