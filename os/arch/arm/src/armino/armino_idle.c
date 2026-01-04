@@ -89,12 +89,45 @@ extern void up_set_dvfs(int div_lvl);
 extern uint32_t pm_get_sleep_time(void);
 extern struct pm_domain_s *pm_domain_find(FAR const char *domain_name);
 int armino_sleep_processing(void);
-//extern uint64_t bk_pm_suppress_ticks_and_sleep(uint32_t sleep_ticks);
+#ifdef CONFIG_SCHED_TICKSUPPRESS
+extern void clock_timer_nohz(clock_t ticks);
+extern void wd_timer_nohz(clock_t ticks);
+#endif
+
 
 /*================FUNCTION DECLARATION SECTION END=============*/
 
 #ifdef CONFIG_PM
+void up_enable_and_compensate_systick(void)
+{
+#ifdef CONFIG_PM_TICKSUPPRESS
+	struct pm_sleep_ops *sleep_ops = g_pmglobals.sleep_ops;
+	clock_t missing_tick;
 
+	if (!sleep_ops->get_missingtick) {
+		return;
+	}
+
+	missing_tick = sleep_ops->get_missingtick();
+
+	if (missing_tick > 0) {
+		/* Correcting for missed system ticks in sleep. */
+		clock_timer_nohz(missing_tick);
+
+		/* Compensate wd timer for missing ticks by pm sleep.
+		 * But to guarantee fast execution of interrupt service routine after wakeup,
+		 * expiration of wd_timer is not done here
+		 *
+		 *     WAKE UP -> HW IRQ ISR -> THREAD -> TICK ISR
+		 *           |              |          |           |
+		 *           +--------------+----------+-----------+
+		 *     (corrects tick)                       (expire timer)
+		 */
+		wd_timer_nohz(missing_tick);
+	}
+#endif
+	(void)up_timer_enable();
+}
 static pm_wakeup_reason_code_t up_get_wakeup_reason(void)
 {
 	return bk_pm_sleep_wakeup_reason_get();
@@ -102,9 +135,11 @@ static pm_wakeup_reason_code_t up_get_wakeup_reason(void)
 
 static clock_t up_get_missed_ticks(void)
 {
-	return s_missed_ticks;
+	clock_t ticks = s_missed_ticks;
+	s_missed_ticks = 0;  // Clear after reading to prevent double compensation
+	return ticks;
 }
-static bool up_check_valid_wakeup()
+static bool up_check_valid_wakeup(void)
 {
 	/* Check watchdog active list to see if there is any wakeup timer with lag > 0 */
 	bool has_valid_wakeup         = false;
@@ -137,7 +172,7 @@ static bool up_check_valid_wakeup()
  *   None.
  *
  ****************************************************************************/
-static int up_pm_board_sleep()
+static int up_pm_board_sleep(void)
 {
 	if (!g_pmglobals.is_running) {
 		return 0;
@@ -147,18 +182,11 @@ static int up_pm_board_sleep()
 	}
 	if(pm_checkstate() == PM_SLEEP)
 	{
-		struct wdog_s *curr           = NULL;
 
-		for (curr = (FAR struct wdog_s *)g_wdactivelist.head; curr; curr = curr->next) {
-			if ((WDOG_ISWAKEUP(curr)) && (curr->lag <= CONFIG_PM_SLEEP_ENTRY_WAIT_MS)) {
-				up_set_pm_timer(PM_DEFAULT_SLEEP_TIME_US);
-				break;
-			}
-		}
 	}
 	else
 	{
-		//bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_APP,0x0,0x0);
+
 	}
 
 	return 0;
@@ -206,7 +234,6 @@ void up_idle(void)
 #else
 
 #endif
-    //bk_pm_suppress_ticks_and_sleep(0);
 	armino_sleep_processing();
 }
 #ifdef CONFIG_PM
@@ -297,6 +324,7 @@ int armino_sleep_processing()
 			ticks_passed = 0;  // Reset to 0 to prevent system tick overflow
 		}
 		s_missed_ticks = ticks_passed;
+		up_enable_and_compensate_systick();
 	}
 	else
 	{
@@ -316,6 +344,7 @@ int armino_sleep_processing()
 					(unsigned long long)usec_passed,
 					bk_pm_sleep_wakeup_reason_get(),
 					bk_rtc_get_first_alarm_name());
+
 	}
 	#endif
 	return 0;
