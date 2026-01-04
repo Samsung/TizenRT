@@ -47,6 +47,7 @@
 //#include "net.h"
 #include "fhost_msg.h"
 #include "../include/generated/lmac_msg.h"
+#include "rw_ieee80211.h"
 
 uint32_t resultful_scan_cfm = 0;
 uint8_t *ind_buf_ptr = 0;
@@ -1011,7 +1012,8 @@ out:
 
 UINT32 mhdr_scanu_result_ind(SCAN_RST_UPLOAD_T *scan_rst, void *msg, UINT32 len)
 {
-	UINT32 ret, chann;
+	UINT32 ret = BK_OK;
+	UINT32 chann;
 	UINT8 *elmt_addr;
 	UINT32 vies_len;
 	UINT8 *var_part_addr;
@@ -1036,6 +1038,13 @@ UINT32 mhdr_scanu_result_ind(SCAN_RST_UPLOAD_T *scan_rst, void *msg, UINT32 len)
 	probe_rsp_ieee80211_ptr = (IEEE802_11_PROBE_RSP_PTR)scanu_ret_ptr->payload;
 	vies_len = scanu_ret_ptr->length - MAC_BEACON_VARIABLE_PART_OFT;
 	var_part_addr = probe_rsp_ieee80211_ptr->rsp.variable;
+
+	#if CONFIG_WIFI_REGDOMAIN
+	struct ieee80211_channel *chan = ieee80211_get_channel(&g_wiphy, scanu_ret_ptr->center_freq);
+
+	if (chan)
+		regulatory_hint_found_beacon(&g_wiphy, chan);
+	#endif // CONFIG_WIFI_REGDOMAIN
 
 	#if CONFIG_WIFI_SCAN_COUNTRY_CODE
 	if (site_survey_cc && g_scan_cc_rxed_cb) {
@@ -1063,7 +1072,7 @@ UINT32 mhdr_scanu_result_ind(SCAN_RST_UPLOAD_T *scan_rst, void *msg, UINT32 len)
 					ssid_len = MAC_SSID_LEN;
 
 				os_memcpy(ssid_b, elmt_addr + 2, ssid_len);
-				RWNX_LOGI("drop: %s, chan:%d\r\n", ssid_b, chann);
+				RWNX_LOGI("drop: %s, chan:%d\r\n", wpa_ssid_txt(ssid_b, ssid_len), chann);
 			}
 
 			goto scan_rst_exit;
@@ -1091,7 +1100,7 @@ UINT32 mhdr_scanu_result_ind(SCAN_RST_UPLOAD_T *scan_rst, void *msg, UINT32 len)
 						ssid_len = MAC_SSID_LEN;
 
 					os_memcpy(ssid_b, elmt_addr + 2, ssid_len);
-					RWNX_LOGI("drop: %s, chan:%d\r\n", ssid_b, chann);
+					RWNX_LOGI("drop: %s, chan:%d\r\n", wpa_ssid_txt(ssid_b, ssid_len), chann);
 				}
 				goto scan_rst_exit;
 			}
@@ -1099,7 +1108,8 @@ UINT32 mhdr_scanu_result_ind(SCAN_RST_UPLOAD_T *scan_rst, void *msg, UINT32 len)
 		} else {
 			chann = rw_ieee80211_get_chan_id(scanu_ret_ptr->center_freq);
 			on_channel = 0;
-			RWNX_LOGI("scan rst no ds param, drop it?\r\n");
+			if (scanu_ret_ptr->center_freq < 4900)
+				RWNX_LOGI("scan rst no ds param, drop it?\r\n");
 		}
 	}
 

@@ -113,7 +113,7 @@ extern "C" {
 #define LOW_POWER_XTAL_DPLL_STABILITY_DELAY_TIME  ((LOW_POWER_DPLL_STABILITY_DELAY_TIME+LOW_POWER_RESTORE_DELAY_TIME_HARDWARE)*1000)
 
 #define LOW_POWER_26M_STABILITY_DELAY_TIME_HARDWARE      (CONFIG_PM_26M_STABILITY_DELAY_TIME_HARDWARE)
-#define LOW_POWER_DELAY_TIME_HARDWARE                    (1300)
+#define LOW_POWER_DELAY_TIME_HARDWARE                    (3300)//MPW:(3300)/MP:(1300)
 #define LOW_POWER_EXTERN_32K_HARDWARE                    (3000)
 
 #define LOW_POWER_BOOTUP_RESTORE_TIME                    (2000)//from hardware wakeup to wfi() cost 3300us，hardware to bootloader cost 2200us ,bootloader to app cost 800us,app to wfi() cost 300us

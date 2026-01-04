@@ -60,7 +60,7 @@
 #else
 ////other only 16K ITCM,pick the important one to ITCM
 #define __ITCM __attribute__((section(".itcm_sec_code ")))
-#define __ITCM_N
+#define __ITCM_N  __attribute__((section(".itcm_sec_code ")))
 #endif
 
 #if CONFIG_SOC_BK7256XX && !CONFIG_RWNX_NO_USE_DTCM

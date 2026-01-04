@@ -14,6 +14,8 @@ enum
     TASK_DBG,
     /// SCAN task
     TASK_SCAN,
+    /// CSI task
+    TASK_CSI,
     /// TDLS task
     TASK_TDLS,
 
@@ -609,6 +611,49 @@ void ke_msg_forward_and_change_id(void const *param_ptr,
 
 void ke_msg_free(struct ke_msg const *param);
 
+
+#include <modules/wifi_types.h>
+
+/// Messages that are logically related to the task.
+enum csi_msg_tag
+{
+    /// Request to start the CSI active
+    CSI_ACTIVE_MODE_REQ = KE_FIRST_MSG(TASK_CSI),
+    /// Confirmation of the CSI active start.
+    CSI_ACTIVE_MODE_CFM,
+    /// Request to start the CSI pure receiving
+    CSI_RECEIVE_MODE_REQ,
+    /// Confirmation of the CSI pure receiving start.
+    CSI_RECEIVE_MODE_CFM,
+    /// CSI_START_CHECK_IND
+    CSI_START_CHECK_IND,
+    /// MAX
+    CSI_MESSAGE_MAX
+};
+
+struct csi_active_mode_req
+{
+    bool enable;
+    uint32_t interval;
+};
+
+/// Structure containing the parameters of the @ref CSI_STOT_REQ and messages
+struct csi_active_mode_cfm
+{
+    uint8_t status;
+};
+
+struct csi_receive_mode_req
+{
+    bool enable;
+    wifi_csi_filter_config_t filter_config;
+};
+
+/// Structure containing the parameters of the @ref CSI_STOT_REQ and messages
+struct csi_receive_mode_cfm
+{
+    uint8_t status;
+};
 #if NX_MON_DATA
 /// MAC header backup descriptor
 struct rxu_machdrdesc

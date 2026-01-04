@@ -67,7 +67,7 @@ static uint8_t s_printf_enable = 1;
 #define CONFIG_ASYNC_IRQ_LOG_TASK_PRIORITY  7
 #endif
 
-#define BK_ASYNC_IRQ_LOG_TASK_STACK     1024
+#define BK_ASYNC_IRQ_LOG_TASK_STACK     2048
 
 /* Async IRQ log structure */
 typedef struct {

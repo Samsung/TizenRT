@@ -15,7 +15,7 @@
 
 /**
  * @brief BLE linked list node structure
- * 
+ *
  * Used to implement linked list storage for BLE-related data
  */
 struct ble_list_node_t {
@@ -30,7 +30,7 @@ typedef struct ble_list_node_t ble_list_node_t;
 
 /**
  * @brief BLE linked list structure
- * 
+ *
  * Maintains head/tail pointers and length information for BLE linked lists
  */
 typedef struct ble_list_t {
@@ -41,7 +41,7 @@ typedef struct ble_list_t {
 
 /**
  * @brief BLE attribute client configuration descriptor structure
- * 
+ *
  * Stores client configuration descriptor information for GATT characteristics
  */
 typedef struct
@@ -53,7 +53,7 @@ typedef struct
 
 /**
  * @brief BLE connection role enumeration
- * 
+ *
  * Defines the role types for BLE devices in a connection
  */
 enum
@@ -66,7 +66,7 @@ enum
 
 /**
  * @brief BLE command type enumeration
- * 
+ *
  * Defines all command types supported by the BLE adapter
  */
 typedef enum {
@@ -85,7 +85,7 @@ typedef enum {
 
 /**
  * @brief BLE HAL state enumeration
- * 
+ *
  * Defines various operating states of the BLE Hardware Abstraction Layer
  */
 enum {
@@ -110,7 +110,7 @@ enum {
 
 /**
  * @brief BLE advertisement element type enumeration
- * 
+ *
  * Defines different types of advertisement elements
  */
 enum
@@ -122,7 +122,7 @@ enum
 
 /**
  * @brief BLE event type enumeration
- * 
+ *
  * Defines all event types supported by the BLE adapter
  */
 typedef enum
@@ -147,12 +147,14 @@ typedef enum
 
     EVT_BLE_TASK_EXIT,                       /**< BLE task exit event */
 
+    EVT_BLE_DO_CB_ONLY,                      /**< do cb only */
+
     EVT_BLE_APP_MSG_MAX                      /**< Maximum application message value */
 } ble_evt_type;
 
 /**
  * @brief BLE advertisement event type enumeration
- * 
+ *
  * Defines types of BLE advertisement packets
  */
 enum
@@ -183,7 +185,7 @@ typedef struct ble_disconnected_msg
 
 /**
  * @brief BLE event message element structure
- * 
+ *
  * This structure contains various event-specific data elements that can be used
  * with the BLE event message system. It uses a union to efficiently store
  * different types of event data depending on the event type.
@@ -194,7 +196,7 @@ typedef struct
     {
         /**
          * @brief Server connection event data
-         * 
+         *
          * Contains information about a new connection established to the server
          */
         struct
@@ -207,7 +209,7 @@ typedef struct
 
         /**
          * @brief Server disconnection event data
-         * 
+         *
          * Contains information about a disconnection from a client
          */
         struct
@@ -218,7 +220,7 @@ typedef struct
 
         /**
          * @brief MTU change event data
-         * 
+         *
          * Contains information about an MTU (Maximum Transmission Unit) change
          */
         struct
@@ -229,7 +231,7 @@ typedef struct
 
         /**
          * @brief Passkey event data
-         * 
+         *
          * Contains the passkey used for security pairing
          */
         struct
@@ -240,7 +242,7 @@ typedef struct
 
         /**
          * @brief Attribute callback event data
-         * 
+         *
          * Contains data for attribute-related callback events
          */
         struct
@@ -262,7 +264,7 @@ typedef struct
 
         /**
          * @brief Set server buffer command data
-         * 
+         *
          * Contains parameters for setting server buffer configurations
          */
         struct
@@ -274,14 +276,25 @@ typedef struct
             uint8_t att_index;           /**< Attribute index */
             void *pm;                    /**< Pointer to profile manager */
         } set_server_buffer_cmd;
+
+        /**
+         * @brief do cb only
+         *
+         * Do cb only
+         */
+        struct
+        {
+            uint32_t evt;
+            void *param;
+        } cb_only_evt;
     };
 } ble_evt_msg_elem_t;
 
 /**
  * @brief Message event callback function type
- * 
+ *
  * Callback function prototype for handling BLE events
- * 
+ *
  * @param evt Event identifier
  * @param status Operation status
  * @param param Additional event parameters
@@ -292,7 +305,7 @@ typedef int32_t (*msg_evt_cb)(uint32_t evt, int32_t status, void *param);
 
 /**
  * @brief BLE event message structure
- * 
+ *
  * This structure represents a BLE event message that can be used to transport
  * various types of event data between different components of the BLE stack.
  * It supports both simple parameter values and complex data structures.
@@ -311,7 +324,7 @@ typedef struct ble_evt_msg
 
 /**
  * @brief BLE command message element structure
- * 
+ *
  * This structure contains various indices and parameters used for BLE command
  * processing, particularly related to advertisement operations.
  */
@@ -329,9 +342,9 @@ typedef struct
 
 /**
  * @brief Message command callback function type
- * 
+ *
  * Callback function prototype for handling BLE command responses and status updates
- * 
+ *
  * @param evt Event identifier
  * @param status Operation status
  * @param param Additional command parameters
@@ -341,7 +354,7 @@ typedef int32_t (*msg_cmd_cb)(uint32_t evt, int32_t status, void *param);
 
 /**
  * @brief BLE command message structure
- * 
+ *
  * This structure represents a BLE command message used to issue commands
  * to the BLE stack and receive responses through callbacks.
  */
@@ -385,7 +398,7 @@ typedef struct ble_cmd_msg
 
 /**
  * @brief Structure for storing BLE advertisement parameters at the HAL level.
- * 
+ *
  * This structure contains various parameters related to BLE advertisement operations
  * managed by the Hardware Abstraction Layer (HAL).
  */
@@ -407,7 +420,7 @@ struct adv_hal_param
 };
 /**
  * @brief Structure for storing the BLE advertisement environment at the HAL level.
- * 
+ *
  * This structure contains information about the initialization status, advertisement parameters,
  * and indices for different types of advertisements in the Hardware Abstraction Layer (HAL).
  */
@@ -426,7 +439,7 @@ typedef struct
 
 /**
  * @brief Structure for storing advertisement duplicate filter entries.
- * 
+ *
  * This structure holds information about the advertisement address, event type, and address type
  * for duplicate filtering purposes.
  */
@@ -439,7 +452,7 @@ struct adv_dup_filter_entry
 
 /**
  * @brief Structure for storing BLE scan info filter parameters.
- * 
+ *
  * This structure contains parameters for the scan info comparison function,
  * including enable flag, offset, length, and filter data.
  */
@@ -452,7 +465,7 @@ typedef struct {
 
 /**
  * @brief Structure for storing the BLE scan environment at the HAL level.
- * 
+ *
  * This structure contains information about the scan index, status, stop cause,
  * scan parameters, duplicate filtering, and other related information in the
  * Hardware Abstraction Layer (HAL).
@@ -476,7 +489,7 @@ typedef struct
 
 /**
  * @brief Enumeration of BLE connection states at the HAL level.
- * 
+ *
  * Defines the possible states of a BLE connection managed by the Hardware Abstraction Layer (HAL).
  */
 enum
@@ -489,7 +502,7 @@ enum
 
 /**
  * @brief Structure for storing client CCCD (Client Characteristic Configuration Descriptor) information.
- * 
+ *
  * This structure holds the client flag and CCCD handle related to a client's characteristic configuration.
  */
 typedef struct {
@@ -499,7 +512,7 @@ typedef struct {
 
 /**
  * @brief Structure for storing write operation information.
- * 
+ *
  * This structure contains the client ID and attribute handle related to a write operation.
  */
 typedef struct {
@@ -509,7 +522,7 @@ typedef struct {
 
 /**
  * @brief Structure for storing read operation information.
- * 
+ *
  * This structure contains the client ID related to a read operation.
  */
 typedef struct {
@@ -518,7 +531,7 @@ typedef struct {
 
 /**
  * @brief Structure for storing service discovery operation information.
- * 
+ *
  * This structure contains the client ID related to a service discovery operation.
  */
 typedef struct {
@@ -526,8 +539,17 @@ typedef struct {
 } dis_info_t;
 
 /**
+ * @brief Structure for storing coc information.
+ *
+ * This structure contains the coc releated a connection.
+ */
+typedef struct {
+    uint16_t local_cid;  /**< local channel id. */
+} coc_info_t;
+
+/**
  * @brief Structure for storing BLE connection information at the HAL level.
- * 
+ *
  * This structure contains various parameters related to a BLE connection managed by the Hardware Abstraction Layer (HAL).
  */
 typedef struct {
@@ -560,9 +582,9 @@ typedef struct {
 #define BLE_CON_SCAN_TIMEOUT (10000)
 /**
  * @brief Structure for storing the BLE connection environment at the HAL level.
- * 
- * This structure contains information about the initialization index and status, 
- * connection parameters, peer address and its type, security connection status, 
+ *
+ * This structure contains information about the initialization index and status,
+ * connection parameters, peer address and its type, security connection status,
  * MTU size, connection scan timeout, and an array of HAL BLE connection devices.
  */
 typedef struct
@@ -610,7 +632,7 @@ typedef struct
 
 /**
  * @brief Structure for storing the BLE environment at the HAL level.
- * 
+ *
  * This structure contains various parameters related to the BLE device state, authentication,
  * security, pairing, and application queue handles at the Hardware Abstraction Layer (HAL).
  */
@@ -639,7 +661,7 @@ typedef struct
 
 /**
  * @brief Structure for storing a whitelist element in the Bluetooth storage.
- * 
+ *
  * This structure contains the address type and address of a peer device that is part of the whitelist.
  */
 typedef struct
@@ -650,7 +672,7 @@ typedef struct
 
 /**
  * @brief Structure for storing bonding information in the Bluetooth storage.
- * 
+ *
  * This structure contains an array of link keys for bonded devices, with a maximum count defined by BT_LINKKEY_MAX_SAVE_COUNT.
  */
 typedef struct
@@ -660,7 +682,7 @@ typedef struct
 
 /**
  * @brief Structure for storing whitelist information in the Bluetooth storage.
- * 
+ *
  * This structure contains an array of whitelist elements, with a maximum count defined by BT_WHITELIST_MAX_SAVE_COUNT.
  */
 typedef struct
@@ -670,7 +692,7 @@ typedef struct
 
 /**
  * @brief Structure for storing BLE authentication key confirmation information.
- * 
+ *
  * This structure contains the connection index and the passkey used for authentication confirmation.
  */
 typedef struct
@@ -681,7 +703,7 @@ typedef struct
 
 /**
  * @brief Structure for storing BLE bonding information.
- * 
+ *
  * This structure contains a single whitelist element representing the bonded device.
  */
 typedef struct
@@ -1102,4 +1124,3 @@ extern hal_ble_scan_env_t hal_ble_scan_env;
 extern hal_ble_con_env_t hal_ble_con_env;
 
 #endif
-
