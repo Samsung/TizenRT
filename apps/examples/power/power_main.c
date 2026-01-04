@@ -183,13 +183,8 @@ static int start_pm_test(int argc, char *argv[])
 
 		} else if (strncmp(argv[i], "--timed-wakeup", 15) == 0 || strncmp(argv[i], "-t", 3) == 0) {
 			timed_wakeup_test = true;
-			if (i + 1 < argc) {
-				char *endp = NULL;
-				long val = strtol(argv[i + 1], &endp, 10);
-				if (endp != argv[i + 1] && *endp == '\0' && val > 0) {
-					timed_wakeup_time = (int)val;
-					i++;
-				}
+			if (i + 1 < argc && argv[i + 1][0] != '-') {
+				timed_wakeup_time = atoi(argv[++i]);
 			}
 		}
 	}
