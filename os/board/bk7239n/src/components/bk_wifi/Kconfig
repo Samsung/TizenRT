@@ -418,4 +418,11 @@ menu "Bk_Wifi"
 			Default minimum heap memory size that Wi-Fi should reserve.
 			Default value is 10KB (10240 bytes).
 
+	config BK_TIZEN_IPERF_PROJECT
+		bool "To easily distinguish if it's an iperf project"
+		default n
+
+	config WIFI_WAKEUP_CHANGE_TO_WIFI_PLL
+		bool "Enable wifi wakeup change to wifipll"
+		default n
 endmenu
