@@ -208,3 +208,12 @@ int bk_feature_mac_use_rtc_enable(void)
 	return 0;
 #endif
 }
+
+int bk_feature_change_to_wifi_pll_enable(void)
+{
+#if defined(CONFIG_WIFI_WAKEUP_CHANGE_TO_WIFI_PLL)
+	return 1;
+#else
+	return 0;
+#endif
+}

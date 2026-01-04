@@ -382,6 +382,26 @@ uint32_t bk_secondary_all_partition_offset(void);
  */
 uint32_t bk_secondary_all_partition_size(void);
 
+/**
+ * @brief     Get flash user app partition begin
+ *
+ * @return the flash user app partition begin
+ */
+uint32_t bk_user_app_partition_begin(void);
+
+/**
+ * @brief     Get flash user app partition end
+ *
+ * @return the flash user app partition end
+ */
+uint32_t bk_user_app_partition_end(void);
+
+/**
+ * @brief     Get flash encrypt status
+ *
+ * @return the flash encrypt status
+ */
+uint32_t bk_get_flash_encrypt_status(void);
 
 /**
  * @brief     Write data to flash with security 

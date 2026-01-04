@@ -1189,7 +1189,7 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 
 	sys_hal_restore_int(int_state1, int_state2);
 
-	portNVIC_SYSTICK_LOAD_REG = systick_load_value&0xFF000002;
+	portNVIC_SYSTICK_LOAD_REG = systick_load_value;
 
 	portNVIC_SYSTICK_CTRL_REG = systick_ctrl_value;
 #endif
@@ -1380,6 +1380,13 @@ __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_
 	volatile bool xtal_sleep = false;
 	volatile uint32_t systick_ctrl_value    = 0;
 	volatile uint32_t systick_load_value    = 0;
+	volatile uint32_t systick_val_before = 0;
+	uint64_t sleep_start_tick = 0;
+	uint64_t sleep_end_tick = 0;
+	uint64_t sleep_duration_us = 0;
+	uint32_t sleep_ticks = 0;
+	uint32_t systick_ticks_per_ms = 0;
+	uint32_t adjusted_val = 0;
 
 	clken_peri = sys_ll_get_cpu_device_clk_enable_value();
 	sys_ll_set_cpu_device_clk_enable_mac_cken(0);
@@ -1390,12 +1397,14 @@ __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_
 	//sys_ll_set_cpu_device_clk_enable_btdm_cken(0);
 
 
+	/* Save SysTick state before entering sleep */
 	portNVIC_INT_CTRL_REG |= portNVIC_SYSTICKCLR_BIT;
 	systick_ctrl_value = portNVIC_SYSTICK_CTRL_REG;
 	systick_load_value = portNVIC_SYSTICK_LOAD_REG;
-	portNVIC_SYSTICK_LOAD_REG = PM_EXIT_LOWVOL_SYSTICK_RELOAD_TIME;
-	portNVIC_SYSTICK_CTRL_REG = 0;//disable the systick, avoid it affect the enter low voltage sleep
-
+	systick_val_before = portNVIC_SYSTICK_CURRENT_VALUE_REG;
+	/* Disable SysTick to avoid interference during sleep */
+	portNVIC_SYSTICK_CTRL_REG = 0;
+	//g_systick_load_value = systick_load_value;
 	__asm volatile( "nop" );
 	__asm volatile( "nop" );
 	__asm volatile( "nop" );
@@ -1408,13 +1417,14 @@ __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_
 		sys_ll_set_cpu_device_clk_enable_value(clken_peri);
 
 		portNVIC_SYSTICK_CTRL_REG = systick_ctrl_value;
-		portNVIC_SYSTICK_LOAD_REG = systick_load_value;
+		portNVIC_SYSTICK_LOAD_REG = systick_load_value & 0x00FFFFFF;
+
 		return;
 	}
 	/* flush all dcache(data in sram and psram)*/
 	flush_all_dcache();
-
-	portNVIC_SYSTICK_LOAD_REG = PM_EXIT_LOWVOL_SYSTICK_RELOAD_TIME;
+	sleep_start_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
+	//portNVIC_SYSTICK_LOAD_REG = PM_EXIT_LOWVOL_SYSTICK_RELOAD_TIME;
 	/* cpu freq use 10M*/
 	cksel_core = sys_ll_get_cpu_clk_div_mode1_cksel_core();
 	clkdiv_core = sys_ll_get_cpu_clk_div_mode1_clkdiv_core();
@@ -1493,11 +1503,35 @@ __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_
 	DELAY_US(50);
 
 	sys_ll_set_cpu_device_clk_enable_value(clken_peri);
+	/* Record sleep end time and calculate sleep duration */
+	sleep_end_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
+	if (sleep_end_tick > sleep_start_tick) {
+		sleep_duration_us = (sleep_end_tick - sleep_start_tick)*1000LL/bk_rtc_get_ms_tick_count();
+	} else {
+		sleep_duration_us = 500;
+	}
 
-	portNVIC_SYSTICK_LOAD_REG = systick_load_value&0xFF000002;
+	#ifdef USEC_PER_TICK
+	sleep_ticks = (uint32_t)(sleep_duration_us / USEC_PER_TICK);
+	#else
+	/* Default to 1ms per tick if USEC_PER_TICK not defined */
+	sleep_ticks = (uint32_t)(sleep_duration_us / 1000);
+	#endif
 
+	systick_ticks_per_ms = 32; /* 32000 Hz / 1000 = 32 ticks per ms */
+	portNVIC_SYSTICK_LOAD_REG = systick_load_value;
+
+	if (systick_load_value > 0) {
+		adjusted_val = systick_load_value / 2;
+		if (adjusted_val == 0) {
+			adjusted_val = 1;
+		} else if (adjusted_val > systick_load_value) {
+			adjusted_val = systick_load_value;
+		}
+	} else {
+	}
 	portNVIC_SYSTICK_CTRL_REG = systick_ctrl_value;
-
+	portNVIC_SYSTICK_CTRL_REG |= portNVIC_SYSTICK_ENABLE_BIT | portNVIC_SYSTICK_INT_BIT;
 }
 
 void sys_hal_enter_normal_wakeup()

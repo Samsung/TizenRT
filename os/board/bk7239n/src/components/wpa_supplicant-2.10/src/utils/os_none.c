@@ -201,7 +201,8 @@ void os_sleep(os_time_t sec, os_time_t usec)
 
 time_t os_time(time_t *tm)
 {
-	time_t t = bk_get_second();
+	uint64_t ticks = bk_get_tick();
+	time_t t = ticks / bk_get_ticks_per_second();
 	if (tm)
 		*tm = t;
 
@@ -210,8 +211,11 @@ time_t os_time(time_t *tm)
 
 int os_get_time(struct os_time *t)
 {
-	t->sec = bk_get_second();
-	t->usec = (bk_get_tick() * rtos_get_ms_per_tick() * 1000) % 1000000;
+	uint64_t ticks = bk_get_tick();
+	if (t) {
+		t->sec = ticks / bk_get_ticks_per_second();
+		t->usec = ((ticks % bk_get_ticks_per_second()) * 1000000) / bk_get_ticks_per_second();
+	}
 
 	return 0;
 }
@@ -219,8 +223,11 @@ int os_get_time(struct os_time *t)
 
 int os_get_reltime(struct os_reltime *t)
 {
-	t->sec = bk_get_second();
-	t->usec = (bk_get_tick() * rtos_get_ms_per_tick() * 1000) % 1000000;
+	uint64_t ticks = bk_get_tick();
+	if (t) {
+		t->sec = ticks / bk_get_ticks_per_second();
+		t->usec = ((ticks % bk_get_ticks_per_second()) * 1000000) / bk_get_ticks_per_second();
+	}
 
 	return 0;
 }

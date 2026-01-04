@@ -1384,6 +1384,21 @@ ble_err_t bk_ble_coc_reg(uint16_t psm);
 ble_err_t bk_ble_coc_unreg(uint16_t psm);
 
 /**
+ * @brief config BLE COC channle
+ *
+ * Unregisters a previously registered PSM value, disabling the associated
+ * COC service. All active connections on this PSM should be closed before unregistering.
+ *
+ * @param
+ *    - psm: Protocol/Service Multiplexer value to unregister
+ *    - sec_lvl: secure level
+ * @return
+ * - BK_ERR_BLE_SUCCESS: succeed
+ * - others: fail
+ */
+ble_err_t bk_ble_coc_config(uint16_t psm, uint8_t sec_lvl);
+
+/**
  * @brief Request to establish a BLE COC connection
  *
  * Initiates a connection request to establish a Connection Oriented Channel

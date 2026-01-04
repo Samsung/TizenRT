@@ -26,6 +26,7 @@
 #include "flash_bypass.h"
 #if (!CONFIG_SPE)
 #include "partitions_gen.h"
+#include "security.h"
 #endif
 #if CONFIG_TFM_FLASH_NSC
 #include "tfm_flash_nsc.h"
@@ -130,6 +131,8 @@ static const flash_config_t flash_config[] = {
 	{0xC86517,	 1, 			  FLASH_SIZE_8M, FLASH_LINE_MODE_TWO, 0,		2,			  0x1F, 		0x1F,		 0x00,		   0x0E,		 0x00E, 			   0,			 0, 		  0xA0, 						 0x01}, //gd_25Q32E
 #endif
     {0xCD6017,   3,               FLASH_SIZE_8M, FLASH_LINE_MODE_FOUR,   14,       2,            0x1F,         0x1F,        0x00,         0x0E,		  0x00E,                 9,            1,           0xA0,                         0x01}, //th_25q64ha
+	{0xC86019,	 2, 			  FLASH_SIZE_16M, FLASH_LINE_MODE_FOUR, 14,		2,			  0x1F, 		0x1F,		 0x00,		   0x0E,		 0x00E, 			   9,			 1, 		  0xA0, 						 0x02}, //for FPGA simulation and debugging type size 16M
+	{0xC84016,	 2, 			  FLASH_SIZE_4M, FLASH_LINE_MODE_FOUR, 14,		2,			  0x1F, 		0x1F,		 0x00,		   0x0E,		 0x00E, 			   9,			 1, 		  0xA0, 						 0x02}, //for FPGA simulation and debugging type size 4M
 	{0x000000,   2,               FLASH_SIZE_4M, FLASH_LINE_MODE_TWO,    0,        2,            0x1F,         0x00,        0x00,         0x00,         0x000,                0,            0,           0x00,                          0x01}, //default
 };
 
@@ -1226,6 +1229,23 @@ uint32_t bk_secondary_all_partition_offset(void)
 uint32_t bk_secondary_all_partition_size(void)
 {
 	return CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE;
+}
+
+#ifdef CONFIG_BUILD_PROTECTED
+uint32_t bk_user_app_partition_begin(void)
+{
+	return CONFIG_APP1_PHY_PARTITION_OFFSET;
+}
+
+uint32_t bk_user_app_partition_end(void)
+{
+	return CONFIG_USERFS_PHY_PARTITION_OFFSET;
+}
+#endif
+
+uint32_t bk_get_flash_encrypt_status(void)
+{
+	return CONFIG_CODE_ENCRYPTED;
 }
 
 int bk_security_flash_write_bytes(uint32_t address, const uint8_t *user_buf, uint32_t size)

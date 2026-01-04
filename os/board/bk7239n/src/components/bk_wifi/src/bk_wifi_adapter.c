@@ -796,6 +796,10 @@ static int bk_feature_get_mac_sup_sta_max_num_wrapper(void)
     return bk_feature_get_mac_sup_sta_max_num();
 }
 
+static void bk_feature_csi_out_cb_wrapper(void *data)
+{
+    bk_wifi_csi_info_cb(data);
+}
 static void flush_all_dcache_wrapper(void)
 {
 #if CONFIG_CACHE_ENABLE
@@ -897,6 +901,11 @@ static void *os_malloc_wrapper(const char *func_name, int line, size_t size)
 #else
     return (void *)os_malloc(size);
 #endif
+}
+
+static void *os_malloc_sram_wrapper(const char *func_name, int line, size_t size)
+{
+    return (void *)os_malloc_sram(size);
 }
 
 static void __IRAM2 os_free_wrapper(void *mem_ptr)
@@ -1339,6 +1348,12 @@ static int __IRAM2 bk_feature_mac_use_rtc_enable_wrapper(void)
 {
     return bk_feature_mac_use_rtc_enable();
 }
+
+static int bk_feature_change_to_wifi_pll_enable_wrapper(void)
+{
+    return bk_feature_change_to_wifi_pll_enable();
+}
+
 UINT32 __IRAM2 rwnx_sys_is_use_abs_power_wrapper(void)
 {
 #if (CONFIG_SOC_BK7236XX || CONFIG_SOC_BK7239XX || CONFIG_SOC_BK7286XX)
@@ -1530,6 +1545,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._bk_feature_close_coexist_csa = bk_feature_close_coexist_csa_wrapper,
 	._bk_feature_network_found_event = bk_feature_network_found_event_wrapper,
 	._bk_feature_get_mac_sup_sta_max_num = bk_feature_get_mac_sup_sta_max_num_wrapper,
+	._bk_feature_csi_out_cb = bk_feature_csi_out_cb_wrapper,
 	._flush_all_dcache = flush_all_dcache_wrapper,
 	._bk_ms_to_ticks = bk_ms_to_ticks_wrapper,
 	._dma_memcpy = dma_memcpy_wrapper,
@@ -1544,6 +1560,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._log_raw = bk_wifi_printf_raw,
 	._rtos_get_time = rtos_get_time_wrapper,
 	._os_malloc = os_malloc_wrapper,
+	._os_malloc_sram = os_malloc_sram_wrapper,
 	._os_free = os_free_wrapper,
 	._rtos_assert = rtos_assert_wrapper,
 	._os_memcmp = os_memcmp_wrapper,
@@ -1633,6 +1650,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._bk_feature_config_mac_use_rtc_enable = bk_feature_mac_use_rtc_enable_wrapper,
 	._cli_printf = cli_printf,
 	._rf_force_set_wifi_mode = rf_force_set_wifi_mode_wrapper,
+	._bk_feature_change_to_wifi_pll_enable = bk_feature_change_to_wifi_pll_enable_wrapper,
 };
 
 __attribute__((section(".dtcm_sec_data "))) wifi_os_variable_t g_wifi_os_variable = {

@@ -52,7 +52,7 @@
 #include "lwip/sys.h"
 #include <lwip/stats.h>
 #include <lwip/snmp.h>
-#ifdef CONFIG_IPV6
+#ifdef CONFIG_NET_IPv6
 #include <lwip/ethip6.h>
 #endif
 
@@ -203,18 +203,8 @@ err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen)
     int ret;
     err_t err = ERR_OK;
     uint8_t vif_idx = 0;
-    u8 macptr[6] = {0};
 
     vif_idx = get_idx_from_dev(dev);
-    if (vif_idx == 0)
-        bk_wifi_sta_get_mac(macptr);
-    else if (vif_idx == 1)
-        bk_wifi_ap_get_mac(macptr);
-    else
-        return ERR_ARG;
-    /* set mac address to netdev */
-    netdev_set_hwaddr(dev, macptr, ETHARP_HWADDR_LEN);
-
     ret = bk_wlan_txdata_send(data, dlen, vif_idx);
 
     return err;
@@ -301,7 +291,7 @@ ethernetif_input(int iface, struct pbuf *p)
         /* IP or ARP packet? */
     case ETHTYPE_IP:
     case ETHTYPE_ARP:
-#ifdef CONFIG_IPV6
+#ifdef CONFIG_NET_IPv6
     case ETHTYPE_IPV6:
 	wlan_set_multicast_flag();
 #endif
@@ -364,7 +354,7 @@ wlanif_init(struct netif *netif)
      * is available...) */
     netif->output = etharp_output;
     netif->linkoutput = (netif_linkoutput_fn)low_level_output;
-#ifdef CONFIG_IPV6
+#ifdef CONFIG_NET_IPv6
     netif->output_ip6 = ethip6_output;
 #endif
 
@@ -405,7 +395,7 @@ err_t lwip_netif_init(struct netif *netif)
      * is available...) */
     netif->output = etharp_output;
     netif->linkoutput = (netif_linkoutput_fn)low_level_output;
-#ifdef CONFIG_IPV6
+#ifdef CONFIG_NET_IPv6
     netif->output_ip6 = ethip6_output;
 #endif
 

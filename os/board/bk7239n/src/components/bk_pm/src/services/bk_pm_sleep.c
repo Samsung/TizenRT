@@ -35,7 +35,6 @@
 #define PM_DEEPSLEEP_CB_SIZE                            (10)
 #define PM_SLEEP_CB_IND_PRI_0                           (0)
 #define PM_SLEEP_CB_IND_PRI_1                           (6)
-#define PM_UNREGISTER_ALARM_WAIT_CNT                    (10000)
 
 
 static __attribute__((section(".dtcm_sec_data "))) pm_cb_conf_t s_pm_lowvol_enter_exit_cb_conf[PM_LOWVOL_CB_SIZE][PM_DEV_ID_MAX];
@@ -100,6 +99,7 @@ uint64_t pm_normal_sleep_process()
 {
 	volatile uint32_t int_level = 0;
 	uint64_t sleep_tick         = 0ULL;
+
 	int_level = pm_disable_int();
 	#if CONFIG_AON_RTC || CONFIG_ANA_RTC
 	uint64_t entry_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
@@ -149,7 +149,7 @@ uint64_t pm_normal_sleep_process()
 	bk_rosc_32k_ckest_prog(32);
 	#endif
 	pm_enable_int(int_level);
-
+	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_TICK_COMP,0x0,0x0);
 	return sleep_tick;
 }
 
@@ -202,6 +202,7 @@ uint64_t pm_low_voltage_process()
 		sleep_tick = exit_tick - entry_tick;
 	}
 #endif
+	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_TICK_COMP,0x0,0x0);
 	pm_enable_int(int_level);
 
 	/* Execute post-sleep (wakeup) callbacks */
@@ -765,10 +766,6 @@ bk_err_t bk_pm_wifi_rtc_set(uint32_t tick, void *callback)
 									};
 	//force unregister previous if doesn't finish.
 	bk_alarm_unregister(AON_RTC_ID_1, low_valtage_alarm.name);
-	for (volatile uint32_t i = 0; i < PM_UNREGISTER_ALARM_WAIT_CNT; i++)
-	{
-		;
-	}
 	ret = bk_alarm_register(AON_RTC_ID_1, &low_valtage_alarm);
 	if(ret < 0)
 	{

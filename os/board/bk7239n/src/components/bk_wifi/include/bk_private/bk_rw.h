@@ -355,6 +355,10 @@ extern int rw_msg_send_version_req(void);
 #if CONFIG_WIFI_FTM
 int rw_msg_send_ftm_start_req(uint8_t vif_idx, uint8_t ftm_per_burst, uint8_t nb_ftm_rsp, void *ind);
 #endif
+#if CONFIG_WIFI_CSI_EN
+extern int rw_msg_send_csi_active_mode_req(wifi_csi_active_mode_config_t *config,struct csi_active_mode_cfm *cfm);
+extern int rw_msg_send_csi_receive_mode_req(wifi_csi_receive_mode_config_t *config,struct csi_receive_mode_cfm *cfm);
+#endif
 extern int rw_msg_send_recycle_txlist_req(uint8_t sta_idx);
 extern int rwnx_handle_dynparams(void);
 
