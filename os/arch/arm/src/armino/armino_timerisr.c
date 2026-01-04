@@ -65,6 +65,10 @@
 #include "clock/clock.h"
 #include "up_internal.h"
 #include "up_arch.h"
+#include "modules/pm.h"
+#include <driver/hal/hal_aon_rtc_types.h>
+#include <driver/aon_rtc_types.h>
+#include <driver/aon_rtc.h>
 
 #include "chip.h"
 
@@ -110,7 +114,6 @@ int up_timerisr(int irq, uint32_t *regs)
 {
     /* Process timer interrupt */
     sched_process_timer();
-
     return 0;
 }
 
@@ -166,6 +169,7 @@ int up_timer_disable(void)
 
 int up_timer_enable(void)
 {
+    bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_TICK_COMP,0x1,0x0);
     //TODO: enable timer interrupt,we will adapt this function 
     return OK;
 }
