@@ -73,6 +73,7 @@
 #include <driver/flash.h>
 #include <os/os.h>
 #include "flash_hal.h"
+#include "armstar.h"
 /****************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
@@ -178,7 +179,16 @@ ssize_t bk_flash_read(size_t addr, void *buf, size_t length)
 	if ((addr >= bk_primary_tfm_s_partition_offset()) &&
 		(addr < (bk_secondary_all_partition_offset() + bk_secondary_all_partition_size()))) {
 		bk_security_flash_read_bytes(addr, (uint8_t *)buf, length);
-	} else
+		SCB_CleanInvalidateDCache();
+	}
+	#if CONFIG_BUILD_PROTECTED
+	else if ((bk_get_flash_encrypt_status() == 1) &&
+		(addr >= bk_user_app_partition_begin()) && (addr < bk_user_app_partition_end())) {
+			addr |= SOC_FLASH_DATA_BASE;
+			memcpy(buf, (uint8_t *)addr, length);
+	}
+	#endif
+	else
 	#endif
 	{
 		bk_flash_read_bytes(addr, (uint8_t *)buf, length);
