@@ -4257,36 +4257,42 @@ void bk_wifi_ftm_free_result(wifi_ftm_results_t *ftm_results)
 #endif //CONFIG_WIFI_FTM
 
 #if CONFIG_WIFI_CSI_EN
+bk_err_t bk_wifi_csi_active_mode_req(wifi_csi_active_mode_config_t *config)
+{
+	struct csi_active_mode_cfm cfm;
+	rw_msg_send_csi_active_mode_req(config, &cfm);
+	if(cfm.status != BK_OK)
+	{
+		WIFI_LOGE("csi active mode req failed, status: %d\r\n", cfm.status);
+		return BK_FAIL;
+	}
+	return BK_OK;
+}
+
+bk_err_t bk_wifi_csi_receive_mode_req(wifi_csi_receive_mode_config_t *config)
+{
+	struct csi_receive_mode_cfm cfm;
+	rw_msg_send_csi_receive_mode_req(config, &cfm);
+	if(cfm.status != BK_OK)
+	{
+		WIFI_LOGE("csi receive mode req failed, status: %d\r\n", cfm.status);
+		return BK_FAIL;
+	}
+	return BK_OK;
+}
+#endif //CONFIG_WIFI_CSI_EN
+
 wifi_csi_cb_t g_wifi_csi_info_handler = NULL;
-bool g_wifi_csi_info_enable = false;
-uint8_t g_wifi_csi_config = 0;
-
-
 void bk_wifi_csi_info_cb_register(wifi_csi_cb_t cb)
 {
 	g_wifi_csi_info_handler = cb;
 }
-wifi_csi_cb_t bk_wifi_csi_info_cb(void)
+void bk_wifi_csi_info_cb(void * data)
 {
-	return g_wifi_csi_info_handler;
+	if(g_wifi_csi_info_handler)
+		g_wifi_csi_info_handler((struct wifi_csi_info_t *)data);
 }
-void bk_wifi_csi_info_set(bool enable)
-{
-	g_wifi_csi_info_enable = enable;
-}
-bool bk_wifi_csi_info_enable(void)
-{
-	return g_wifi_csi_info_enable;
-}
-void bk_wifi_set_csi_config(uint8_t config)
-{
-	g_wifi_csi_config = config;
-}
-uint8_t bk_wifi_get_csi_config(void)
-{
-	return g_wifi_csi_config;
-}
-#endif //CONFIG_WIFI_CSI_EN
+
 bk_err_t bk_wifi_get_tx_stats(uint8_t mode,struct tx_stats_t* tx_stats)
 {
 	struct tx_stats_t* tx_stats_tmp;

@@ -1542,6 +1542,86 @@ void bk_wifi_get_noise_floor(uint8_t *noise_floor);
  */
 bk_err_t bk_wifi_get_tx_stats(uint8_t mode,struct tx_stats_t* tx_stats);
 
+
+#if CONFIG_WIFI_CSI_EN
+/**
+ * @brief Register callback function to receive CSI data.
+ *
+ * This API registers a user callback function that will be called when CSI data
+ * is available. The callback function will be invoked in a separate thread context
+ * whenever CSI information is captured and processed.
+ *
+ * @attention 1. The processing flow in the callback function should be as short as possible
+ *               to avoid missing CSI data or causing buffer overflow.
+ * @attention 2. This API must be called before starting CSI active mode or receive mode.
+ * @attention 3. The callback function should not perform blocking operations or long
+ *               processing tasks. Consider copying data to a separate buffer for
+ *               later processing if needed.
+ *
+ * @param cb    Pointer to the callback function that will be called when CSI data is available.
+ *              The callback function signature is: void callback(struct wifi_csi_info_t *info)
+ *              - info: Pointer to CSI information structure containing received CSI data
+ *
+ * @return void
+ */
+void bk_wifi_csi_info_cb_register(wifi_csi_cb_t cb);
+
+/**
+ * @brief Request to start or stop CSI active mode.
+ *
+ * CSI active mode periodically sends null frames to trigger CSI data collection.
+ * The hardware captures CSI information from the ACK frames received in response
+ * to these null frames. This mode is useful for continuous CSI monitoring.
+ *
+ * @attention 1. This API can only be used in STA (Station) mode.
+ * @attention 2. CSI active mode will only start after DHCP is completed.
+ * @attention 3. The function will automatically start CSI capture when enable is true
+ *               and stop when enable is false.
+ * @attention 4. Make sure bk_wifi_csi_info_cb_register() is called before using this API
+ *               to register a callback function for receiving CSI data.
+ * @attention 5. The processing in the callback function should be as short as possible
+ *               to avoid missing CSI data.
+ *
+ * @param config Pointer to CSI active mode configuration structure.
+ *               - enable: true to start CSI active mode, false to stop
+ *               - interval: Interval between null frame transmissions in milliseconds
+ *                 (typical range: 100-1000ms)
+ *
+ * @return
+ *    - BK_OK: succeed
+ *    - BK_FAIL: failed (e.g., not in STA mode, DHCP not completed, or resource allocation failed)
+ *    - BK_ERR_WIFI_NOT_INIT: WiFi driver is not initialized
+ *    - BK_ERR_WIFI_NOT_STARTED: WiFi STA is not started
+ */
+bk_err_t bk_wifi_csi_active_mode_req(wifi_csi_active_mode_config_t *config);
+
+/**
+ * @brief Request to start or stop CSI receive mode.
+ *
+ * CSI receive mode passively captures CSI information from received frames that
+ * match the configured filter criteria. Unlike active mode, this mode does not
+ * send any frames but captures CSI from all matching incoming frames.
+ *
+ * @attention 1. This API can be used in both STA (Station) and AP (Access Point) modes.
+ * @attention 2. The function will automatically start CSI capture when enable is true
+ *               and stop when enable is false.
+ * @attention 3. Make sure bk_wifi_csi_info_cb_register() is called before using this API
+ *               to register a callback function for receiving CSI data.
+ * @attention 4. The processing in the callback function should be as short as possible
+ *               to avoid missing CSI data.
+ * @attention 5. Multiple filter criteria can be combined. Frames matching any enabled
+ *               filter will be captured.
+ *
+ * @param config Pointer to CSI receive mode configuration structure.
+ *
+ * @return
+ *    - BK_OK: succeed
+ *    - BK_FAIL: failed (e.g., resource allocation failed, invalid configuration)
+ *    - BK_ERR_WIFI_NOT_INIT: WiFi driver is not initialized
+ *    - BK_ERR_WIFI_NOT_STARTED: WiFi STA/AP is not started
+ */
+bk_err_t bk_wifi_csi_receive_mode_req(wifi_csi_receive_mode_config_t *config);
+#endif
 #ifdef __cplusplus
 }
 #endif

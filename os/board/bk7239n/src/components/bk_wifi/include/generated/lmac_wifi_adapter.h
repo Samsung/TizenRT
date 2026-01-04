@@ -183,6 +183,7 @@ typedef struct {
 	int (*_bk_feature_close_coexist_csa)(void);
 	int (*_bk_feature_network_found_event)(void);
 	int (*_bk_feature_get_mac_sup_sta_max_num)(void);
+	void (*_bk_feature_csi_out_cb)(void *data);
 	void (*_flush_all_dcache)(void);
 	unsigned long (*_bk_ms_to_ticks)(unsigned long ms);
 	bk_err_t (*_dma_memcpy)(void *out, const void *in, uint32_t len);
@@ -195,6 +196,7 @@ typedef struct {
 	void (*_log_raw)(int level, char * tag, const char *fmt, ...);
 	uint32_t (*_rtos_get_time)(void);
 	void *(*_os_malloc)(const char *func_name, int line, size_t size);
+	void *(*_os_malloc_sram)(const char *func_name, int line, size_t size);
 	void (*_os_free)(void *mem_ptr);
 	void (*_rtos_assert)(uint32_t exp);
 	INT32 (*_os_memcmp)(const void *s, const void *s1, UINT32 n);
@@ -277,6 +279,7 @@ typedef struct {
 	int (*_bk_feature_config_mac_use_rtc_enable)(void);
 	int (*_cli_printf)(const char *fmt, ...);
 	void (*_rf_force_set_wifi_mode)(uint8_t switch_mode);
+	int (*_bk_feature_change_to_wifi_pll_enable)(void);
 } wifi_os_funcs_t;
 extern wifi_os_funcs_t g_wifi_os_funcs;
 

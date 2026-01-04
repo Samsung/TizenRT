@@ -110,7 +110,7 @@ int ble_cmd_queue_push(uint16_t event, uint16_t idx)
 
     if (!ble_cmd_que || rtos_push_to_queue(&ble_cmd_que, &msg, BEKEN_NO_WAIT) != kNoErr)
     {
-        LOGE("push failed");
+        LOGE("push failed evt %d", event);
         return -1;
     }
 
@@ -148,7 +148,13 @@ int ble_cmd_queue_push_ext(uint16_t event, uint16_t idx,
 
     if (!ble_cmd_que || rtos_push_to_queue(&ble_cmd_que, &msg, BEKEN_NO_WAIT) != kNoErr)
     {
-        LOGE("push failed");
+        LOGE("push failed evt %d", event);
+
+        if(param && size && msg.param)
+        {
+            os_free(msg.param);
+        }
+
         return -1;
     }
 
@@ -164,7 +170,8 @@ int ble_evt_queue_push(uint16_t type, void *param)
 
     if ( !ble_evt_que || rtos_push_to_queue(&ble_evt_que, &msg, BEKEN_NO_WAIT) != kNoErr)
     {
-        LOGE("push failed");
+        LOGE("push failed evt %d", type);
+
         return -1;
     }
 
@@ -198,7 +205,13 @@ int ble_evt_queue_push_ext(uint16_t type, void *param, uint32_t size, msg_evt_cb
 
     if (!ble_evt_que || rtos_push_to_queue(&ble_evt_que, &msg, BEKEN_NO_WAIT) != kNoErr)
     {
-        LOGE("push failed");
+        LOGE("push failed evt %d", type);
+
+        if (param && size && msg.u.buf)
+        {
+            os_free(msg.u.buf);
+        }
+
         return -1;
     }
 
@@ -581,6 +594,12 @@ static void hal_ble_evt_thread(void)
                 }
 
                 goto end;
+            }
+            break;
+
+            case EVT_BLE_DO_CB_ONLY:
+            {
+
             }
             break;
 
@@ -2023,6 +2042,17 @@ static void bk_adapter_ble_notice_cb(ble_notice_t notice, void *param)
     }
     break;
 
+    case BLE_5_COC_REG_COMPL_EVENT:
+    case BLE_5_COC_UNREG_COMPL_EVENT:
+    case BLE_5_COC_CONNECTION_COMPL_EVENT:
+    case BLE_5_COC_DISCCONNECT_COMPL_EVENT:
+    case BLE_5_COC_TX_DONE:
+    case BLE_5_COC_RX_IND:
+    {
+        bk_tr_ble_coc_notice_cb(notice, param);
+    }
+    break;
+
     default:
         break;
     }
@@ -2115,7 +2145,14 @@ static void hal_ble_cmd_cb(ble_cmd_t cmd, ble_cmd_param_t *param)
     {
         int8_t hal_adv_index = hal_ble_find_adv_index_by_handle(param->cmd_idx);
 
-        LOGD("BLE_SET_ADV_DATA param->cmd_idx:%d hal_adv_index %d", param->cmd_idx, hal_adv_index);
+        LOGD("BLE_SET_ADV_DATA status 0x%x param->cmd_idx:%d hal_adv_index %d", param->status, param->cmd_idx, hal_adv_index);
+
+        if(param->status)
+        {
+            LOGE("set adv data err 0x%x !!!", param->status);
+            set_semaphore = 1;
+            break;
+        }
 
         if (BLE_HAL_ADV_STATE_CREATED == hal_ble_adv_env.array[hal_adv_index].adv_status)
         {
@@ -2147,7 +2184,14 @@ static void hal_ble_cmd_cb(ble_cmd_t cmd, ble_cmd_param_t *param)
     {
         int8_t hal_adv_index = hal_ble_find_adv_index_by_handle(param->cmd_idx);
 
-        LOGD("BLE_SET_RSP_DATA param->cmd_idx:%d hal_adv_index %d", param->cmd_idx, hal_adv_index);
+        LOGD("BLE_SET_RSP_DATA status 0x%x param->cmd_idx:%d hal_adv_index %d", param->status, param->cmd_idx, hal_adv_index);
+
+        if(param->status)
+        {
+            LOGE("set adv rsp data err 0x%x !!!", param->status);
+            set_semaphore = 1;
+            break;
+        }
 
         if (BLE_HAL_ADV_STATE_CREATED == hal_ble_adv_env.array[hal_adv_index].adv_status)
         {
@@ -2171,9 +2215,16 @@ static void hal_ble_cmd_cb(ble_cmd_t cmd, ble_cmd_param_t *param)
     {
         int8_t hal_adv_index = hal_ble_find_adv_index_by_handle(param->cmd_idx);
 
-        LOGD("BLE_START_ADV param->cmd_idx:%d hal_adv_index %d status 0x%x", param->cmd_idx, hal_adv_index, param->status);
+        LOGD("BLE_START_ADV status 0x%x param->cmd_idx:%d hal_adv_index %d status 0x%x", param->status, param->cmd_idx, hal_adv_index, param->status);
 
         set_semaphore = 1;
+
+        if(param->status)
+        {
+            LOGE("start adv err 0x%x !!!", param->status);
+            set_semaphore = 1;
+            break;
+        }
 
         if (BLE_HAL_ADV_STATE_CREATED == hal_ble_adv_env.array[hal_adv_index].adv_status)
         {
