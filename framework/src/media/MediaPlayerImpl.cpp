@@ -896,6 +896,7 @@ bool MediaPlayerImpl::isPlaying()
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	bool ret = false;
+	std::condition_variable syncCv;
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
@@ -907,10 +908,11 @@ bool MediaPlayerImpl::isPlaying()
 		if (getState() == PLAYER_STATE_PLAYING || getState() == PLAYER_STATE_COMPLETING) {
 			ret = true;
 		}
-		notifySync();
+		std::unique_lock<std::mutex> lock(mCmdMtx);
+		syncCv.notify_one();
 	});
 	meddbg("getState() enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	syncCv.wait(lock);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
