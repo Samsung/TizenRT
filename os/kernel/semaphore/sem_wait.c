@@ -124,6 +124,7 @@ int sem_wait(FAR sem_t *sem)
 	FAR struct tcb_s *rtcb = this_task();
 	irqstate_t saved_state;
 	int ret = ERROR;
+	size_t caller_retaddr = (size_t)GET_RETURN_ADDRESS();
 	/* This API should not be called from interrupt handlers */
 #if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
 	DEBUGASSERT((sem != NULL && up_interrupt_context() == false) || abort_mode);
@@ -156,7 +157,7 @@ int sem_wait(FAR sem_t *sem)
 	if ((sem != NULL) && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
 
 		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
-			DEBUGASSERT(sem->semcount < 2);
+			ASSERT_INFO(sem->semcount < 2, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x\n", sem, sem->semcount, sem->flags, caller_retaddr);
 		}
 
 		/* Check if the lock is available */
