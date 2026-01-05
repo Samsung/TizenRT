@@ -212,12 +212,12 @@ int sem_post(FAR sem_t *sem)
 		 */
 
 		/* Perform the semaphore unlock operation. */
-		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, caller address = 0x%x", sem, caller_retaddr);
+		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x\n", sem, sem->semcount, sem->flags, caller_retaddr);
 		sem_releaseholder(sem, this_task());
 		sem->semcount++;
 
 		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
-			DEBUGASSERT(sem->semcount < 2);
+			ASSERT_INFO(sem->semcount < 2, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x\n", sem, sem->semcount, sem->flags, caller_retaddr);
 		}
 
 		sem_unblock_task(sem, this_task());
