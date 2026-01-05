@@ -29,7 +29,8 @@ MediaQueue::~MediaQueue()
 std::function<void()> MediaQueue::deQueue()
 {
 	std::unique_lock<std::mutex> lock(mQueueMtx);
-	if (mQueueData.empty()) {
+	/* Media Looper doesn't call mutex, hence add while to prevent spurious wake up */
+	while (mQueueData.empty()) {
 		mQueueCv.wait(lock);
 	}
 

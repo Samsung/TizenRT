@@ -36,6 +36,9 @@ public:
 	void enQueue(_Callable &&__f, _Args &&... __args) {
 		std::unique_lock<std::mutex> lock(mQueueMtx);
 		std::function<void()> func = std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...);
+		if (!func) {
+			return;
+		}
 		mQueueData.push(func);
 		mQueueCv.notify_one();
 	}

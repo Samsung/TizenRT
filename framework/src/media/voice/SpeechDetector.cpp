@@ -365,13 +365,19 @@ speech_detect_event_type_e SpeechDetectorImpl::getSpeechDetectEvent(audio_device
 
 void SpeechDetectorImpl::speechResultListener(audio_device_process_unit_subtype_e event)
 {
-	medvdbg("Event received in speech detector listener. Event = %d\n", event);
+	meddbg("Event received in speech detector listener. Event = %d\n", event);
 	speech_detect_event_type_e sdEvent = getSpeechDetectEvent(event);
 
 	std::lock_guard<std::mutex> lock(mSpeechDetectorListenerListMutex);
 	SpeechDetectorListenerWorker& sdlw = SpeechDetectorListenerWorker::getWorker();
 	for (auto &itr : mSpeechDetectorListenerList) {
-		sdlw.enQueue(&SpeechDetectorListenerInterface::onSpeechDetectionListener, itr, sdEvent);
+		/* Copy shared_ptr to increase ref count */
+		auto listener = itr;
+		if (listener) {
+			sdlw.enQueue(&SpeechDetectorListenerInterface::onSpeechDetectionListener, listener, sdEvent);
+		} else {
+			meddbg("Registered listener is already null\n");
+		}
 	}
 }
 
@@ -422,7 +428,7 @@ bool SpeechDetectorImpl::changeKeywordModel(uint8_t model)
 		meddbg("model change failed\n");
 		return false;
 	}
-	medvdbg("changed kd model : %d\n", model);
+	meddbg("changed kd model : %d\n", model);
 	return true;
 }
 
