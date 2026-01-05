@@ -482,9 +482,6 @@ void MediaPlayerImpl::stopPlayer(player_result_t &ret)
 {
 	LOG_STATE_INFO(mCurState);
 	ret = stopPlayback(false);
-
-	FocusManager &fm = FocusManager::getFocusManager();
-	fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
 	return notifySync();
 }
 
@@ -517,6 +514,9 @@ player_result_t MediaPlayerImpl::stopPlayback(bool drain)
 
 	mCurState = PLAYER_STATE_READY;
 	mpw.removePlayer(shared_from_this());
+
+	FocusManager &fm = FocusManager::getFocusManager();
+	fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
 
 	return PLAYER_OK;
 }
