@@ -501,16 +501,22 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	flags = enter_critical_section();
 	(void)clock_gettime(CLOCK_REALTIME, &abstime);
 	abstime.tv_sec += MIPI_TRANSFER_TIMEOUT;
-	ret = sem_timedwait(&g_send_cmd_done, &abstime);
-	if (ret != OK) {
-		goto Fail_case;
+	while (sem_timedwait(&g_send_cmd_done, &abstime) != OK) {
+		if (errno == EINTR) {
+			continue;
+		} else { 
+			goto Fail_case;
+		}
 	}
 	if (MIPI_LPTX_IS_READ(msg->type)) {
 		(void)clock_gettime(CLOCK_REALTIME, &abstime);
 		abstime.tv_sec += MIPI_TRANSFER_TIMEOUT;
-		ret = sem_timedwait(&g_read_cmd_done, &abstime);
-		if (ret != OK) {
-			goto Fail_case;
+		while (sem_timedwait(&g_read_cmd_done, &abstime) != OK) {
+			if (errno == EINTR) {
+				continue;
+			} else { 
+				goto Fail_case;
+			}
 		}
 	}
 	leave_critical_section(flags);
