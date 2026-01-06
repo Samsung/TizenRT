@@ -1368,6 +1368,7 @@ static int format_filesystem(fs_minor_t minor)
 	char name[CONFIG_PATH_MAX];
 	int fd;
 	int ret = ERROR;
+	int ext_dhara = 0;
 
 	if ((minor < FS_BLOCK_MINOR_PRIMARY) || (minor > FS_BLOCK_MINOR_SECONDARY)) {
 		printf("Invalid minor number : %d", minor);
@@ -1381,11 +1382,21 @@ static int format_filesystem(fs_minor_t minor)
 			snprintf(name, sizeof(name), "/dev/little%dp%d", minor, i);
 			fd = open(name, O_RDWR);
 			if (fd < 0) {
-				continue;
+				/* Then Find Littlefs over Dhara */
+				snprintf(name, sizeof(name), "/dev/mtdblock%d", minor);
+				fd = open(name, O_RDWR);
+				if (fd < 0) {
+					continue;
+				}
+				ext_dhara = 1;
 			}
 		}
 		/* TODO Multi root of smartfs should be considered when it enabled */
-		ret = ioctl(fd, BIOC_BULKERASE, 0);
+		if (ext_dhara)
+			ret = ioctl(fd, MTDIOC_BULKERASE, 0);
+		else
+			ret = ioctl(fd, BIOC_BULKERASE, 0);
+
 		close(fd);
 		if (ret != OK) {
 			printf("Low level format failed ret : %d errno : %d", ret, errno);
