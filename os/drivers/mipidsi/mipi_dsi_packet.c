@@ -195,7 +195,7 @@ int mipi_dsi_create_packet(FAR struct mipi_dsi_packet *packet, FAR const struct 
 	}
 
 	memset(packet, 0, sizeof(*packet));
-	packet->header[0] = msg->channel;
+	packet->header[0] = (msg->channel << 6) | (msg->type & 0x3f);
 
 	/* Long write packets contain the word count in header bytes 1 and 2.
 	 * The payload follows the header and is word count bytes long.
