@@ -891,7 +891,6 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 {
 	FAR struct littlefs_mountpt_s *fs;
 	int ret;
-	struct little_dev_s *dev;
 
 	/* Open the block driver */
 
@@ -917,7 +916,6 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	fs->drv = driver;			/* Save the driver reference */
 	sem_init(&fs->sem, 0, 0);	/* Initialize the access control semaphore */
 	sem_init(&fs->sem_ops, 0, 1);
-	dev = (struct little_dev_s *)fs->drv->i_private;
 
 	/* Get MTD geometry directly */
 
@@ -958,8 +956,6 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 		goto errout_with_fs;
 	}
 
-	dev->lfs = &fs->lfs;
-
 	/* Initialize lfs_config structure */
 
 	fs->cfg.context = fs;
@@ -984,40 +980,42 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	 */
 
 	/* Force format the device if -o forceformat */
-
 	if (data && strcmp(data, "forceformat") == 0) {
+		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 0);
 		ret = lfs_format(&fs->lfs, &fs->cfg);
 		if (ret < 0) {
 			goto errout_with_fs;
 		}
 	}
-
-	ret = lfs_check_format(&fs->lfs, &fs->cfg);
-	if (ret != LFS_ERR_OK) {
-		fdbg("Check formatfs failed ret : %d\n", ret);
-		goto errout_with_fs;
-	}
-	fdbg("Check formatfs successfully!\n");
 
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
-	if (ret < 0 && ret != LFS_ERR_CORRUPT) {
-		/* Auto format the device if -o autoformat */
+	if (ret < 0) {
 		fdbg("mount failed ret : %d\n", ret);
-		if (!data || strcmp(data, "autoformat")) {
+		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 0);
+		lldbg("ioctl ret:%d\n", ret);
+
+		/* Auto format the device if -o autoformat and mount failed */
+		if (!data || strcmp(data, "autoformat") != 0) {
+			fdbg("autoformat not requested, exiting\n");
 			goto errout_with_fs;
 		}
 
+		fdbg("attempting autoformat\n");
 		ret = lfs_format(&fs->lfs, &fs->cfg);
 		if (ret < 0) {
+			fdbg("autoformat failed ret : %d\n", ret);
 			goto errout_with_fs;
 		}
 
-		/* Try to mount the device again */
-
+		/* Try to mount the device again after format */
+		fdbg("mounting after autoformat\n");
 		ret = lfs_mount(&fs->lfs, &fs->cfg);
 		if (ret < 0) {
+			fdbg("mount after autoformat failed ret : %d\n", ret);
 			goto errout_with_fs;
 		}
+	} else {
+		fdbg("Check formatfs and mount successful!\n");
 	}
 
 	*handle = fs;
