@@ -577,7 +577,7 @@ int dhara_nand_read(FAR const struct dhara_nand *n, dhara_page_t p, size_t offse
 	memcpy(data, cache->buffer + offset, length);
 	cache->page = p;
 	dhara_insert_readcache(dev, cache);
-	return ret;
+	return ret >= 0 ? OK : ret;
 }
 
 int dhara_nand_copy(FAR const struct dhara_nand *n, dhara_page_t src, dhara_page_t dst, FAR dhara_error_t *err)
