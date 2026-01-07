@@ -468,6 +468,12 @@ struct  wifi_user_conf {
 	int softap_keep_silent_table_enable;
 	int softap_keep_silent_table_interval;
 #endif
+
+#ifdef CONFIG_STA_PREFER_5GHZ
+	/* TizenRT customization: prefer 5GHz */
+	unsigned char sta_prefer_5ghz_enable;
+	signed long sta_prefer_5ghz_rssi_threshold;
+#endif
 };
 
 extern  struct wifi_user_conf wifi_user_config;

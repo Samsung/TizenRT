@@ -95,6 +95,12 @@ _WEAK void wifi_set_user_config(void)
 	wifi_user_config.softap_keep_silent_table_interval = 500; /* ms. Once interval period is reached, remove from silent table, so can send probe response to same STA again. */
 #endif
 
+#ifdef CONFIG_STA_PREFER_5GHZ
+	/* TizenRT customization: prefer 5GHz */
+	wifi_user_config.sta_prefer_5ghz_enable = 1;
+	wifi_user_config.sta_prefer_5ghz_rssi_threshold = -70; /* if same ssid, prefer 5GHz network higher than threshold */
+#endif
+
 #ifdef CONFIG_AS_INIC_AP
 	DCache_Clean((u32)(&wifi_user_config), sizeof(struct wifi_user_conf));
 	param_buf[0] = (u32)(&wifi_user_config);

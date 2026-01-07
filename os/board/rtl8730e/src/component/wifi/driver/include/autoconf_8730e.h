@@ -160,6 +160,9 @@
 /* SoftAP silent table to reduce probe response when receiving probe request continuously */
 #define CONFIG_SOFTAP_KEEP_SILENT_TABLE
 
+/* TizenRT customization: prefer 5GHz */
+#define CONFIG_STA_PREFER_5GHZ
+
 //#define RA_RX_ACK_RSSI
 /*************************** Config for MP_MODE *******************************/
 //#define CONFIG_MP_INCLUDED
