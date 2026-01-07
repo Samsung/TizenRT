@@ -1,0 +1,54 @@
+#
+#For a description of the syntax of this configuration file,
+#see kconfig - language at https: //www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config CSIFW
+	bool "CSI Framework"
+	default n
+	select WIFI_CSI
+	depends on TASK_MANAGER
+	---help---
+		Enables CSI Framework.
+
+if CSIFW
+
+menu "CSIFW Debug Logs"
+
+config CSIFW_LOGS
+	bool "CSIFW Logs"
+	default y
+	---help---
+		Enables CSIFW logs
+
+if CSIFW_LOGS
+
+config CSIFW_LOGE
+	bool "CSIFW Error Logs"
+	default y
+	---help---
+		Enables CSIFW Error Logs
+
+config CSIFW_LOGI
+	bool "CSIFW Information Logs"
+	default n
+	---help---
+		Enables CSIFW Information Logs
+
+config CSIFW_LOGD
+	bool "CSIFW Debug Logs"
+	default n
+	---help---
+		Enables CSIFW Debug Logs
+
+config CSIFW_LOGV
+	bool "CSIFW Verbose Logs"
+	default n
+	---help---
+		Enables CSIFW Verbose Logs
+
+endif #CSIFW_LOGS
+
+endmenu
+
+endif #if CSIFW
