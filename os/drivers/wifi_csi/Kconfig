@@ -1,0 +1,35 @@
+menu "CSI Driver Support"
+
+menuconfig WIFI_CSI
+	bool "CSI Support"
+	default n
+	select DEBUG_WIFICSI
+	---help---
+		Enable support for WIFI CSI driver.
+
+if WIFI_CSI
+
+config WIFICSI_CUSTOM_DEV_PATH
+	string "Use custom device path"
+	default "/dev/wificsi"
+
+comment "CSI Devices"
+
+choice
+	prompt "Choose CSI device"
+	default WIFI_CSI_RTL8730E
+	---help---
+		WIFI_CSI_RTL8730E for aidual chip
+		/* Will support more in future like shown below */
+		/* WIFI_CSI_RTL8721CSM for tp1x chip */
+
+
+config WIFI_CSI_RTL8730E
+	bool "WIFI_CSI_RTL8730E Driver"
+	---help---
+		Enable CSI Driver, WIFI_CSI_RTL8730E.
+
+endchoice
+
+endif # WIFI_CSI
+endmenu
