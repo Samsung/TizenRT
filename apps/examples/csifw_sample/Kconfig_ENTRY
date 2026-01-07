@@ -1,0 +1,3 @@
+config ENTRY_CSIFW_SAMPLE
+	bool "CSI Framework example"
+	depends on EXAMPLES_CSIFW_SAMPLE
