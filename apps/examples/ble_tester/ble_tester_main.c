@@ -382,12 +382,16 @@ static ble_client_callback_list client_config = {
 	ble_device_disconnected_cb,
 	ble_device_connected_cb,
 	ble_operation_notification_cb,
+	NULL,
+	NULL,
+	NULL
 };
 
 static ble_server_init_config server_config = {
 	ble_server_connected_cb,
 	ble_server_disconnected_cb,
 	ble_server_mtu_update_cb,
+	NULL,
 	NULL,
 	true,
 	gatt_profile, 
