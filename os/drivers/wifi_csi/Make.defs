@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2020 Samsung Electronics All Rights Reserved.
+# Copyright 2024 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 #
 ###########################################################################
 ############################################################################
+# drivers/wifi_csi/Make.defs
 #
-#   Copyright (C) 2020 Gregory Nutt. All rights reserved.
-#   Author: Gregory Nutt <gnutt@nuttx.org>
+#   Copyright (C) 2013 Ken Pettit. All rights reserved.
+#   Author: Ken Pettit <pettitkd@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -49,15 +50,15 @@
 #
 ############################################################################
 
-CSRCS += lwip_intf_tizenrt.c \
-       ethernetif_tizenrt.c
-
-CSRCS += rtk_blemgr.c \
-	 rtk_netmgr.c \
-
 ifeq ($(CONFIG_WIFI_CSI),y)
-CSRCS += rtk_wifi_csi.c
-endif
 
-DEPPATH += --dep-path component/os/tizenrt
-VPATH += :component/os/tizenrt
+# Include CSI driver
+
+CSRCS += wifi_csi.c 
+
+# Include CSI driver support
+
+DEPPATH += --dep-path wifi_csi
+VPATH += :wifi_csi
+
+endif

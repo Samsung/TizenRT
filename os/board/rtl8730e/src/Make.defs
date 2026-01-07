@@ -84,3 +84,7 @@ endif
 ifeq ($(CONFIG_AUDIO_NDP120),y)
 CSRCS += rtl8730e_ndp120.c
 endif
+
+ifeq ($(CONFIG_WIFI_CSI),y)
+CSRCS += rtl8730e_rtk_csi.c
+endif
