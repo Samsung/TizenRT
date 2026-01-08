@@ -54,7 +54,7 @@ static int pm_sleep_test(void *args)
 
 	int fd = open(PM_DRVPATH, O_WRONLY);
 	if (fd < 0) {
-		printf("Fail to open pm sleep(errno %d)", get_errno());
+		printf("Fail to open pm driver(errno %d)", get_errno());
 		return -1;
 	}
 
@@ -75,7 +75,7 @@ static void _pm_suspend(char *name)
 	int domain_id;
 	int fd = open(PM_DRVPATH, O_WRONLY);
 	if (fd < 0) {
-		printf("Fail to open pm(errno %d)", get_errno());
+		printf("Fail to open pm driver(errno %d)", get_errno());
 		return;
 	}
 	domain_arg.domain_name = name;
@@ -98,7 +98,7 @@ static void _pm_resume(char *name)
 	int domain_id;
 	int fd = open(PM_DRVPATH, O_WRONLY);
 	if (fd < 0) {
-		printf("Fail to open pm(errno %d)", get_errno());
+		printf("Fail to open pm driver(errno %d)", get_errno());
 		return;
 	}
 	domain_arg.domain_name = name;
@@ -123,7 +123,7 @@ static int pm_suspend_resume_test(void)
 	int test_count = 0;
 	int fd = open(PM_DRVPATH, O_WRONLY);
 	if (fd < 0) {
-		printf("Fail to open pm(errno %d)", get_errno());
+		printf("Fail to open pm driver(errno %d)", get_errno());
 		return -1;
 	}
 
@@ -167,11 +167,11 @@ static int start_pm_test(int argc, char *argv[])
 
 	fd = open(PM_DRVPATH, O_WRONLY);
 	if (fd < 0) {
-		printf("Fail to open pm start(errno %d)", get_errno());
+		printf("Fail to open pm driver(errno %d)", get_errno());
 		return -1;
 	}
 
-	if(ioctl(fd, PMIOC_START, 0) < 0) {
+	if (ioctl(fd, PMIOC_START, 0) < 0) {
 		printf("Fail to pm start(errno %d)\n", get_errno());
 		close(fd);
 		return -1;
@@ -221,6 +221,27 @@ static int start_pm_test(int argc, char *argv[])
 		if (ret != 0) {
 			printf("Fail to join pm_sleep_tid thread(%d):\n", ret);
 		}
+	}
+
+	close(fd);
+
+	return 0;
+}
+
+static int stop_pm_test(int argc, char *argv[])
+{
+	int fd;
+
+	fd = open(PM_DRVPATH, O_WRONLY);
+	if (fd < 0) {
+		printf("Fail to open pm driver(errno %d)", get_errno());
+		return -1;
+	}
+
+	if (ioctl(fd, PMIOC_STOP, 0) < 0) {
+		printf("Fail to pm stop(errno %d)\n", get_errno());
+		close(fd);
+		return -1;
 	}
 
 	close(fd);
@@ -285,6 +306,12 @@ int power_main(int argc, char *argv[])
 		if (!is_running) {
 			printf("power test is not running\n");
 			return 0;
+		}
+
+		pid = task_create("stop_pm_test", 100, 1024, stop_pm_test, NULL);
+		if (pid < 0) {
+			printf("Fail to create stop_pm_test task(errno %d)\n", get_errno());
+			return -1;
 		}
 
 		is_running = false;
