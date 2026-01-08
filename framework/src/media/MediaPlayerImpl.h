@@ -114,7 +114,7 @@ public:
 	player_state_t getState();
 	bool isPlaying();
 
-	void notifySync();
+	void notifySync(std::condition_variable &syncCv);
 	void notifyObserver(player_observer_command_t cmd, ...);
 	void notifyAsync(player_event_t event);
 	void playback(std::chrono::milliseconds timeout, uint8_t playback_idx);
@@ -122,27 +122,27 @@ public:
 	player_result_t setLooping(bool loop);
 
 private:
-	void createPlayer(player_result_t &ret);
-	void destroyPlayer(player_result_t &ret);
-	void preparePlayer(player_result_t &ret);
+	void createPlayer(player_result_t &ret, std::condition_variable &syncCv);
+	void destroyPlayer(player_result_t &ret, std::condition_variable &syncCv);
+	void preparePlayer(player_result_t &ret, std::condition_variable &syncCv);
 	void prepareAsyncPlayer();
-	void unpreparePlayer(player_result_t &ret);
+	void unpreparePlayer(player_result_t &ret, std::condition_variable &syncCv);
 	player_result_t unpreparePlayback(void);
-	void startPlayer(player_result_t &ret);
-	void stopPlayer(player_result_t &ret);
+	void startPlayer(player_result_t &ret, std::condition_variable &syncCv);
+	void stopPlayer(player_result_t &ret, std::condition_variable &syncCv);
 	player_result_t stopPlayback(bool drain);
-	void stopPlaybackInternal(bool drain);
-	void pausePlayer(player_result_t &ret, bool notify);
-	void getPlayerVolume(uint8_t *vol, player_result_t &ret);
-	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret);
-	void setPlayerVolume(uint8_t vol, player_result_t &ret);
-	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer, player_result_t &ret);
-	void unsetPlayerObserver();
-	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t &ret);
-	void setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret);
+  	void stopPlaybackInternal(bool drain);
+	void pausePlayer(player_result_t &ret, bool notify, std::condition_variable &syncCv);
+	void getPlayerVolume(uint8_t *vol, player_result_t &ret, std::condition_variable &syncCv);
+	void getPlayerMaxVolume(uint8_t *vol, player_result_t &ret, std::condition_variable &syncCv);
+	void setPlayerVolume(uint8_t vol, player_result_t &ret, std::condition_variable &syncCv);
+	void setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer, player_result_t &ret, std::condition_variable &syncCv);
+	void unsetPlayerObserver(std::condition_variable &syncCv);
+	void setPlayerDataSource(std::shared_ptr<stream::InputDataSource> dataSource, player_result_t &ret, std::condition_variable &syncCv);
+	void setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret, std::condition_variable &syncCv);
 	stream_focus_state_t getStreamFocusState(void);
 	void onFocusLossListener(void);
-	void setPlayerLooping(bool loop, player_result_t &ret);
+	void setPlayerLooping(bool loop, player_result_t &ret, std::condition_variable &syncCv);
 	void dequeueAndRunObserverCallback();
 
 private:
@@ -151,7 +151,6 @@ private:
 	unsigned char *mBuffer;
 	int mBufSize;
 	std::mutex mCmdMtx;
-	std::condition_variable mSyncCv;
 	std::shared_ptr<stream_info_t> mStreamInfo;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;
 	stream::InputHandler mInputHandler;
