@@ -307,7 +307,16 @@
 
 #define _SNIOCVALID(c)    (_IOC_TYPE(c) == _SNIOCBASE)
 #define _SNIOC(nr)        _IOC(_SNIOCBASE, nr)
-
+#define SNIOC_GET_BUFNUM  _SNIOC(0x0001) /* get number of buffer */
+#define SNIOC_GET_BUFSIZE _SNIOC(0x0002) /* get size of each buffer */
+#define SNIOC_REGISTERMQ  _SNIOC(0x0003) /* Register Message Queue from app */
+#define SNIOC_PREPARE     _SNIOC(0x0004) /* start data ready */
+#define SNIOC_START       _SNIOC(0x0005) /* start data ready */
+#define SNIOC_STOP        _SNIOC(0x0006) /* start data ready */
+#define SNIOC_SENDBUFFER  _SNIOC(0x0007) /* Enqueue data from app again */
+#define SNIOC_SHOW        _SNIOC(0x0008) /* Show statistics */
+#define SNIOC_VERSION     _SNIOC(0x0009) /* Show firmware version */
+#define SNIOC_UPDATE      _SNIOC(0x000A)   /* Update firmware */
 /* TinyAra Analog (DAC/ADC_ ioctl commands ************************************/
 
 #define _ANIOCVALID(c)    (_IOC_TYPE(c) == _ANIOCBASE)
