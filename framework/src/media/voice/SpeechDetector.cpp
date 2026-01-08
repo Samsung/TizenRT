@@ -199,6 +199,32 @@ bool SpeechDetectorImpl::startKeywordDetect(void)
 	return true;
 }
 
+bool SpeechDetectorImpl::setKDSensitivity(uint16_t sensitivity){
+	if (mKeywordDetector == nullptr) {
+		meddbg("KeywordDetector is not init\n");
+		return false;
+	}
+
+	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
+	sdw.enQueue(&KeywordDetector::setKDSensitivity, mKeywordDetector, sensitivity);
+
+	medvdbg("Speech detector set KDSensitivity done");
+	return true;
+}
+
+bool SpeechDetectorImpl::getKDSensitivity(uint16_t *sensitivity){
+	if (mKeywordDetector == nullptr) {
+		meddbg("KeywordDetector is not init\n");
+		return false;
+	}
+
+	SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
+	sdw.enQueue(&KeywordDetector::getKDSensitivity, mKeywordDetector, sensitivity);
+
+	medvdbg("Speech detector get KDSensitivity done");
+	return true;
+}
+
 bool SpeechDetectorImpl::startEndPointDetect(int timeout)
 {
 	if (mEndPointDetector == nullptr) {
@@ -301,6 +327,8 @@ speech_detect_event_type_e SpeechDetectorImpl::getSpeechDetectEvent(audio_device
 		return SPEECH_DETECT_NONE;
 	case AUDIO_DEVICE_SPEECH_DETECT_EPD:
 		return SPEECH_DETECT_EPD;
+	case AUDIO_DEVICE_SPEECH_DETECT_SPD:
+		return SPEECH_DETECT_SPD;
 	case AUDIO_DEVICE_SPEECH_DETECT_KD:
 		return SPEECH_DETECT_KD;
 	case AUDIO_DEVICE_SPEECH_DETECT_LOCAL:
@@ -376,6 +404,20 @@ void SpeechDetectorImpl::resetKeywordDetectorPtr(void)
 void SpeechDetectorImpl::resetEndPointDetectorPtr(void)
 {
 	mEndPointDetector = nullptr;
+}
+
+bool SpeechDetectorImpl::changeKeywordModel(uint8_t model)
+{
+	if (mKeywordDetector == nullptr) {
+		meddbg("keyword detector is not init\n");
+		return false;
+	}
+	if (mKeywordDetector->changeKeywordModel(model) == false) {
+		meddbg("model change failed\n");
+		return false;
+	}
+	medvdbg("changed kd model : %d\n", model);
+	return true;
 }
 
 bool SpeechDetectorImpl::getKeywordBufferSize(uint32_t *bufferSize)

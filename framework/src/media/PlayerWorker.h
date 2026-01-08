@@ -20,6 +20,7 @@
 #define __MEDIA_PLAYERWORKER_HPP
 
 #include <memory>
+#include <list>
 #include <media/MediaPlayer.h>
 #include "MediaWorker.h"
 
@@ -29,16 +30,18 @@ class PlayerWorker : public MediaWorker
 public:
 	static PlayerWorker &getWorker();
 
-	void setPlayer(std::shared_ptr<MediaPlayerImpl>);
-	std::shared_ptr<MediaPlayerImpl> getPlayer();
+	void addPlayer(std::shared_ptr<MediaPlayerImpl> player);
+	void removePlayer(std::shared_ptr<MediaPlayerImpl> player);
 
 private:
 	PlayerWorker();
 	virtual ~PlayerWorker();
 	bool processLoop() override;
+	std::list<std::shared_ptr<MediaPlayerImpl>>::iterator find(std::shared_ptr<MediaPlayerImpl> player);
 
 private:
-	std::shared_ptr<MediaPlayerImpl> mCurPlayer;
+	std::list<std::shared_ptr<MediaPlayerImpl>> mPlayerList;
+	std::chrono::milliseconds mTimeout;
 };
 } // namespace media
 #endif
