@@ -412,6 +412,9 @@ int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 {
 	int ret = 0;
 	latest_api_id = id;
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_IPC_DRV, 1);
+#endif //#ifdef CONFIG_PM
 	rtw_down_sema(&g_host_inic_api_message_send_sema);
 	int cnt = 0;
 	/*ensure previous IPC request is handled (_inic_ipc_ip_addr_update_in_wowlan)*/
@@ -461,6 +464,9 @@ int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 	}
 	ret = g_host_ipc_api_request_info.ret;
 	rtw_up_sema(&g_host_inic_api_message_send_sema);
+#ifdef CONFIG_PM
+	bsp_pm_domain_control(BSP_IPC_DRV, 0);
+#endif //#ifdef CONFIG_PM
 	return ret;
 }
 
@@ -479,6 +485,7 @@ void inic_ipc_api_init_host(VOID)
 	/*for updating ip address before sleep*/
 #ifdef CONFIG_PM
 	pmu_register_sleep_callback(PMU_WLAN_DEVICE, (PSM_HOOK_FUN)_inic_ipc_ip_addr_update_in_wowlan, NULL, NULL, NULL);
+	bsp_pm_domain_register("IPC", BSP_IPC_DRV);
 #endif
 
 	/* Initialize the event task */

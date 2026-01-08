@@ -26,6 +26,7 @@ typedef enum {
 	BSP_FLASH_DRV           = 3,
 	BSP_UART_DRV            = 4,
 	BSP_MIPI_DRV            = 5,
+	BSP_IPC_DRV             = 6,
 	BSP_DOMAIN_MAX,
 } BSP_DRV_DOMAIN;
 
