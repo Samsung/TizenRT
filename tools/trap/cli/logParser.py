@@ -802,6 +802,8 @@ class logParser:
 	# Function to format logs and delete the timestamp (supported formats-|xxxxxxxxx| and [xxxxxxxxx]) if it consists of timestamp at the start of each log line
 	def format_log_file(self):
 
+		current_line = ""  # Initialize current_line
+
 		# Delete unwanted logs (if any) and timestamp at the start of each line
 		with open(self.log_file, "r") as f:
 			data = f.readlines()
@@ -842,4 +844,3 @@ class logParser:
 						print ('\t\t-{0}\t- Instead, supported log format in TRAP is as follows:'.format(line))
 						print ("\t\t-{0} {1}\n\tKindly modify the log file as per accepted format.\n".format(word[word.index('Assertion')-1], correctFormatString))
 						sys.exit(1)
-
