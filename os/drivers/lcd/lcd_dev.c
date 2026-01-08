@@ -62,6 +62,7 @@
 #include <poll.h>
 #include <errno.h>
 #include <debug.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <sched.h>
 
@@ -405,11 +406,153 @@ static void lcd_flushing_thread(int argc, char **argv)
 	}
 	return;
 }
+
+static int lcddev_start_flush_thread(FAR struct lcd_s *priv, FAR int *pid)
+{
+	char *flushing_thread_args[2];
+	char lcd_info_addr[9]; /* for storing 32 bit address */
+
+	sem_init(&priv->flush_buffer_sem, 0, 0);
+	sem_init(&priv->copy_buffer_sem, 0, 1);
+	priv->lcd_kbuffer = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * sizeof(uint16_t));
+	if (!priv->lcd_kbuffer) {
+		sem_destroy(&priv->flush_buffer_sem);
+		sem_destroy(&priv->copy_buffer_sem);
+		lcddbg("ERROR: Failed to allocate memory for LCD flush swap buffer\n");
+		return -ENOMEM;
+	}
+
+	itoa((int)priv, lcd_info_addr, 16);
+	flushing_thread_args[0] = lcd_info_addr;
+	flushing_thread_args[1] = NULL;
+	*pid = kernel_thread("LCD Frame flusing", 204, 8192, lcd_flushing_thread, (FAR char *const *)flushing_thread_args);
+	if (*pid < 0) {
+		kmm_free(priv->lcd_kbuffer);
+		sem_destroy(&priv->flush_buffer_sem);
+		sem_destroy(&priv->copy_buffer_sem);
+		lcddbg("ERROR: Failed to start LCD Frame Flusing thread\n");
+		return -ENOMEM;
+	}
+	lcdvdbg("lcd flushing thread %d created \n", *pid);
+
+	return OK;
+}
 #endif
+
+#ifdef CONFIG_LCD_SPLASH_IMAGE
+static int lcddev_display_splash(FAR struct lcd_s *priv, uint8_t *fullscreen_buffer)
+{
+	int ret;
+	bool is_silent_mode;
+	char splash_image_path[50];
+
+#ifdef CONFIG_LCD_SPLASH_SILENT_BOOT
+	is_silent_mode = silent_reboot_is_silent_mode();
+	if (!is_silent_mode) {
+		snprintf(splash_image_path, sizeof(splash_image_path), "%s/%dx%d/splash_normal.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+	} else {
+		snprintf(splash_image_path, sizeof(splash_image_path), "%s/%dx%d/splash_silent.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+	}
+#else
+	snprintf(splash_image_path, sizeof(splash_image_path), "%s/%dx%d/splash_normal.bmp", CONFIG_LCD_SPLASH_IMAGE_PATH, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+#endif /* CONFIG_LCD_SPLASH_SILENT_BOOT */
+
+	int test_fd = open(splash_image_path, O_RDONLY);
+	if (test_fd < 0) {
+		lcddbg("No splash image found at %s.\n", splash_image_path);
+		return -ENOENT;
+	}
+	close(test_fd);
+
+	ret = image_load_bmp_file(splash_image_path, fullscreen_buffer, CONFIG_LCD_YRES, CONFIG_LCD_XRES);
+	if (ret != OK) {
+		lcddbg("ERROR: Failed to load splash image %s\n", splash_image_path);
+		return -EIO;
+	}
+
+	ret = priv->dev->setpower(priv->dev, 100);
+	if (ret == OK) { // LCD ON
+#ifdef CONFIG_PM
+		(void)pm_suspend(priv->pm_domain);
+#endif
+		silent_reboot_lock();
+	} else {
+		lcddbg("ERROR: Failed to turn on LCD\n");
+		return -EIO;
+	}
+	ret = priv->planeinfo[0].putarea(priv->dev, 0, CONFIG_LCD_XRES - 1, 0, CONFIG_LCD_YRES - 1, fullscreen_buffer, CONFIG_LCD_YRES * 2);
+	if (ret != OK) {
+		priv->dev->setpower(priv->dev, 0);
+#ifdef CONFIG_PM
+		(void)pm_resume(priv->pm_domain);
+#endif
+		silent_reboot_unlock();
+		return -EIO;
+	}
+
+	return OK;
+}
+#endif /* CONFIG_LCD_SPLASH_IMAGE */
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+#ifdef CONFIG_LCD_SW_ROTATION
+#define NUM_OF_LCD_BUFFER	2
+uint8_t *lcd_buffer[NUM_OF_LCD_BUFFER] = { NULL, NULL };	//Two lcd buffers to avoid screen tearing
+int lcd_buffer_index = 0;
+void lcd_rotate_buffer(short int* src, short int* dst)
+{
+	int row;
+	int col;
+	int dst_inc = 2 * CONFIG_LCD_XRES;
+	short int val0;
+	short int val1;
+	short int val2;
+	short int val3;
+	short int *psrc;
+	short int *pdst;
+
+#if defined(CONFIG_LCD_LANDSCAPE)
+	for (row = 0; row < CONFIG_LCD_XRES; row += 2) {
+		psrc = src + row * CONFIG_LCD_YRES;
+		pdst = dst + CONFIG_LCD_XRES - row - 2;
+		for (col = 0; col < CONFIG_LCD_YRES; col += 2) {
+			val0 = *(psrc + 0);
+			val1 = *(psrc + 1);
+			val2 = *(psrc + CONFIG_LCD_YRES + 0);
+			val3 = *(psrc + CONFIG_LCD_YRES + 1);
+			psrc += 2;
+			*(pdst + 0) = val2;
+			*(pdst + 1) = val0;
+			*(pdst + CONFIG_LCD_XRES) = val3;
+			*(pdst + CONFIG_LCD_XRES + 1) = val1;
+			pdst += dst_inc;
+		}
+	}
+#elif defined(CONFIG_LCD_RLANDSCAPE)
+	for (row = 0; row < CONFIG_LCD_XRES; row += 2) {
+		psrc = src + row * CONFIG_LCD_YRES;
+		pdst = dst + row + (CONFIG_LCD_YRES - 1) * CONFIG_LCD_XRES;
+		for (col = 0; col < CONFIG_LCD_YRES; col += 2) {
+			val0 = *(psrc + 0);
+			val1 = *(psrc + 1);
+			val2 = *(psrc + CONFIG_LCD_YRES + 0);
+			val3 = *(psrc + CONFIG_LCD_YRES + 1);
+			psrc += 2;
+			*(pdst + 0) = val0;
+			*(pdst + 1) = val2;
+			*(pdst - CONFIG_LCD_XRES) = val1;
+			*(pdst - CONFIG_LCD_XRES + 1) = val3;
+			pdst -= dst_inc;
+		}
+	}
+#else
+	#error LCD Screen Rotation support only available from PORTRAIT to LANDSCAPE AND RLANDSCAPE
+#endif
+}
+#endif /* CONFIG_LCD_SW_ROTATION */
 
 /****************************************************************************
  * Name: lcddev_register
@@ -435,10 +578,11 @@ int lcddev_register(struct lcd_dev_s *dev)
 	char devname[16] = { 0, };
 	int ret;
 	struct lcd_s *lcd_info;
+#ifdef CONFIG_LCD_SPLASH_IMAGE
+	uint8_t *fullscreen_buffer = NULL;
+#endif
 #if defined(CONFIG_LCD_FLUSH_THREAD)
-	int pid;
-	char *flushing_thread_args[2];
-	char lcd_info_addr[9]; /* for storing 32 bit address */
+	int flush_thread_pid = -1;
 #endif
 
 	if (!dev) {
@@ -453,29 +597,11 @@ int lcddev_register(struct lcd_dev_s *dev)
 
 	lcd_info->dev = dev;
 #if defined(CONFIG_LCD_FLUSH_THREAD)
-	sem_init(&lcd_info->flush_buffer_sem, 0, 0);
-	sem_init(&lcd_info->copy_buffer_sem, 0, 1);
-	lcd_info->lcd_kbuffer = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * sizeof(uint16_t));
-	if (!lcd_info->lcd_kbuffer) {
-		sem_destroy(&lcd_info->flush_buffer_sem);
-		sem_destroy(&lcd_info->copy_buffer_sem);
+	ret = lcddev_start_flush_thread(lcd_info, &flush_thread_pid);
+	if (ret != OK) {
 		kmm_free(lcd_info);
-		lcddbg("ERROR: Failed to allocate memory for LCD flush swap buffer\n");
-		return -ENOMEM;
+		return ret;
 	}
-	itoa((int)lcd_info, lcd_info_addr, 16);
-	flushing_thread_args[0] = lcd_info_addr;
-	flushing_thread_args[1] = NULL;
-	pid = kernel_thread("LCD Frame flusing", 204, 8192, lcd_flushing_thread, (FAR char *const *)flushing_thread_args);
-	if (pid < 0) {
-		kmm_free(lcd_info->lcd_kbuffer);
-		sem_destroy(&lcd_info->flush_buffer_sem);
-		sem_destroy(&lcd_info->copy_buffer_sem);
-		kmm_free(lcd_info);
-		lcddbg("ERROR: Failed to start LCD Frame Flusing thread\n");
-		return -ENOMEM;
-	}
-	lcdvdbg("lcd flushing thread %d created \n", pid);
 #endif
 
 #ifdef CONFIG_PM
@@ -484,31 +610,49 @@ int lcddev_register(struct lcd_dev_s *dev)
 
 	sem_init(&lcd_info->sem, 0, 1);
 
-	ret = lcd_init_put_image(dev);
-	if (ret == OK) { // LCD ON
-#ifdef CONFIG_PM
-		(void)pm_suspend(lcd_info->pm_domain);
-#endif
-		silent_reboot_lock();
-	}
-
 	if (lcd_info->dev->getplaneinfo) {
 		lcd_info->dev->getplaneinfo(lcd_info->dev, 0, &lcd_info->planeinfo);	//plane no is taken 0 here
-		snprintf(devname, 16, "/dev/lcd0");
-		ret = register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
-		if (ret == OK) {
-			return ret;
-		}
 	}
 
+#if defined(CONFIG_LCD_SW_ROTATION)
+	fullscreen_buffer = lcd_buffer[lcd_buffer_index];
+	lcd_buffer_index = (1 - lcd_buffer_index);
+#else
+	fullscreen_buffer = (uint8_t *)kmm_malloc(CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2 + 1);
+	if (!fullscreen_buffer) {
+		lcddbg("Failed to allocate memory for fullscreen buffer\n");
+		ret = -ENOMEM;
+		goto err_out;
+	}
+#endif
+	memset(fullscreen_buffer, 0, CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2);
+
+
+#ifdef CONFIG_LCD_SPLASH_IMAGE
+	ret = lcddev_display_splash(lcd_info, fullscreen_buffer);
+	if (ret != OK && ret != -ENOENT) {
+		goto err_out;
+	}
+#endif
+
+	snprintf(devname, 16, "/dev/lcd0");
+	ret = register_driver(devname, &g_lcddev_fops, 0666, lcd_info);
+	if (ret == OK) {
+		return ret;
+	}
+
+	ret = -ENOSYS;
+err_out:
 	lcddbg("ERROR: Failed to register driver %s\n", devname);
 #if defined(CONFIG_LCD_FLUSH_THREAD)
-	task_delete(pid);
+	if (flush_thread_pid >= 0) {
+		task_delete(flush_thread_pid);
+	}
 	sem_destroy(&lcd_info->flush_buffer_sem);
 	sem_destroy(&lcd_info->copy_buffer_sem);
 	kmm_free(lcd_info->lcd_kbuffer);
 #endif
 	sem_destroy(&lcd_info->sem);
 	kmm_free(lcd_info);
-	return -ENOSYS;
+	return ret;
 }
