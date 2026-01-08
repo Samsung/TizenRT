@@ -120,7 +120,7 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 	if (cfsr & INVPC) {
 		/* As PC value might be invalid use LR value to determine if
 		 * the crash occurred in the kernel space or in the user space */
-		system_exception_location = regs[REG_R14];
+		system_exception_location = regs[REG_R14] - 4;
 	}
 
 	/* Add new line to distinguish between normal log and assert log.*/
