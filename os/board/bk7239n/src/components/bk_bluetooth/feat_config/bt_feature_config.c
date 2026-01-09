@@ -33,6 +33,8 @@ int bk_bt_feature_init(void)
     s_bt_feature_struct._support_reporting_coex_ble_state = 1;
 #endif
 
+    s_bt_feature_struct._ble_max_latency = CONFIG_BLE_MAX_LATENCY;
+
     extern int bt_feature_adapter_init(void *arg);
 
     if (bt_feature_adapter_init((void *)&s_bt_feature_struct) != 0)

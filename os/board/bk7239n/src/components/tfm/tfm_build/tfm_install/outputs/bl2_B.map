@@ -455,21 +455,21 @@ Discarded input sections
  .data          0x0000000000000000        0x0 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .bss           0x0000000000000000        0x0 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .text.boot_add_data_to_shared_area
-                0x0000000000000000       0xe0 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
+                0x0000000000000000       0xec ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .text.boot_save_boot_status
                 0x0000000000000000       0x9e ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .bss.shared_memory_init_done
                 0x0000000000000000        0x1 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
- .debug_info    0x0000000000000000      0xaa5 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
+ .debug_info    0x0000000000000000      0xaa7 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .debug_abbrev  0x0000000000000000      0x25a ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
- .debug_loc     0x0000000000000000      0x35b ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
+ .debug_loc     0x0000000000000000      0x357 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .debug_aranges
                 0x0000000000000000       0x28 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .debug_ranges  0x0000000000000000       0x18 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
- .debug_line    0x0000000000000000      0x480 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
+ .debug_line    0x0000000000000000      0x482 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .debug_str     0x0000000000000000      0x769 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .comment       0x0000000000000000       0x4a ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
- .debug_frame   0x0000000000000000       0x64 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
+ .debug_frame   0x0000000000000000       0x68 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .ARM.attributes
                 0x0000000000000000       0x32 ext/mcuboot/bootutil/libbootutil.a(boot_record.o)
  .text          0x0000000000000000        0x0 ext/mcuboot/bootutil/libbootutil.a(fault_injection_hardening.o)
@@ -2957,8 +2957,8 @@ Memory Configuration
 
 Name             Origin             Length             Attributes
 FLASH            0x0000000002017000 0x0000000000012000 xr
-RAM              0x0000000028000000 0x0000000000080000 xrw
-IRAM             0x0000000008000000 0x0000000000080000 xrw
+RAM              0x0000000028064000 0x0000000000080000 xrw
+IRAM             0x0000000008064000 0x0000000000080000 xrw
 *default*        0x0000000000000000 0xffffffffffffffff
 
 Linker script and memory map
@@ -3009,7 +3009,7 @@ END GROUP
                 0x0000000002017000                __Vectors
                 0x0000000002017140                __Vectors_End = .
                 0x0000000002017140                __Vectors_Size = (__Vectors_End - __Vectors)
-                0x000000002800a180                __end__ = .
+                0x000000002806e180                __end__ = .
  *(.fix.reset_entry)
  .fix.reset_entry
                 0x0000000002017140       0x74 CMakeFiles/bl2_B.dir/__/platform/ext/target/beken/bk7239n/gcc/startup_cmsdk_bk7239_bl2.o
@@ -3867,344 +3867,344 @@ END GROUP
                 0x000000000201caf0                . = ALIGN (0x4)
                 0x000000000201caf0                __copy_table_start__ = .
                 0x000000000201caf0        0x4 LONG 0x201d4c8 LOADADDR (.data)
-                0x000000000201caf4        0x4 LONG 0x28000e00 ADDR (.data)
+                0x000000000201caf4        0x4 LONG 0x28064e00 ADDR (.data)
                 0x000000000201caf8        0x4 LONG 0x158 SIZEOF (.data)
                 0x000000000201cafc        0x4 LONG 0x201cb1c LOADADDR (.vectors_iram)
-                0x000000000201cb00        0x4 LONG 0x8000000 ADDR (.vectors_iram)
+                0x000000000201cb00        0x4 LONG 0x8064000 ADDR (.vectors_iram)
                 0x000000000201cb04        0x4 LONG 0x54 SIZEOF (.vectors_iram)
                 0x000000000201cb08        0x4 LONG 0x201cb70 LOADADDR (.iram)
-                0x000000000201cb0c        0x4 LONG 0x8000058 ADDR (.iram)
+                0x000000000201cb0c        0x4 LONG 0x8064058 ADDR (.iram)
                 0x000000000201cb10        0x4 LONG 0x958 (__iram_end__ - __iram_start__)
                 0x000000000201cb14                __copy_table_end__ = .
 
 .zero.table     0x000000000201cb14        0x8
                 0x000000000201cb14                . = ALIGN (0x4)
                 0x000000000201cb14                __zero_table_start__ = .
-                0x000000000201cb14        0x4 LONG 0x28000f58 ADDR (.bss)
+                0x000000000201cb14        0x4 LONG 0x28064f58 ADDR (.bss)
                 0x000000000201cb18        0x4 LONG 0x4a0c SIZEOF (.bss)
                 0x000000000201cb1c                __zero_table_end__ = .
 
-.vectors_iram   0x0000000008000000       0x54 load address 0x000000000201cb1c
-                0x0000000008000000                . = ALIGN (0x200)
-                0x0000000008000000                __vector_iram_table = .
+.vectors_iram   0x0000000008064000       0x54 load address 0x000000000201cb1c
+                0x0000000008064000                . = ALIGN (0x200)
+                0x0000000008064000                __vector_iram_table = .
  *(.vectors_iram)
- .vectors_iram  0x0000000008000000       0x54 CMakeFiles/bl2_B.dir/__/platform/ext/target/beken/bk7239n/gcc/startup_cmsdk_bk7239_bl2.o
-                0x0000000008000000                __VECTOR_IRAM
-                0x0000000008000054                . = ALIGN (0x4)
+ .vectors_iram  0x0000000008064000       0x54 CMakeFiles/bl2_B.dir/__/platform/ext/target/beken/bk7239n/gcc/startup_cmsdk_bk7239_bl2.o
+                0x0000000008064000                __VECTOR_IRAM
+                0x0000000008064054                . = ALIGN (0x4)
 
-.iram           0x0000000008000058      0x958 load address 0x000000000201cb70
-                0x0000000008000058                . = ALIGN (0x4)
+.iram           0x0000000008064058      0x958 load address 0x000000000201cb70
+                0x0000000008064058                . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__iram_text = LOADADDR (.iram))
-                0x0000000008000058                __iram_start__ = .
+                0x0000000008064058                __iram_start__ = .
  *(.iram)
- .iram          0x0000000008000058       0xb4 ../platform/libplatform_bl2.a(sys_hal.o)
-                0x0000000008000058                sys_hal_int_disable
-                0x0000000008000070                sys_hal_int_enable
-                0x0000000008000084                sys_hal_int_group2_disable
-                0x000000000800009c                sys_hal_int_group2_enable
-                0x00000000080000b0                sys_hal_clk_pwr_ctrl
-                0x00000000080000cc                sys_hal_modem_bus_clk_ctrl
-                0x00000000080000ce                sys_hal_modem_clk_ctrl
-                0x00000000080000e0                sys_hal_set_sys2flsh_2wire
-                0x00000000080000e2                sys_hal_analog_set
-                0x00000000080000f8                sys_hal_nmi_wdt_get_clk_div
-                0x0000000008000108                sys_hal_set_ana_reg11_apfms
-                0x000000000800010a                sys_hal_set_ana_reg12_dpfms
-                0x000000000800010c                . = ALIGN (0x4)
+ .iram          0x0000000008064058       0xb4 ../platform/libplatform_bl2.a(sys_hal.o)
+                0x0000000008064058                sys_hal_int_disable
+                0x0000000008064070                sys_hal_int_enable
+                0x0000000008064084                sys_hal_int_group2_disable
+                0x000000000806409c                sys_hal_int_group2_enable
+                0x00000000080640b0                sys_hal_clk_pwr_ctrl
+                0x00000000080640cc                sys_hal_modem_bus_clk_ctrl
+                0x00000000080640ce                sys_hal_modem_clk_ctrl
+                0x00000000080640e0                sys_hal_set_sys2flsh_2wire
+                0x00000000080640e2                sys_hal_analog_set
+                0x00000000080640f8                sys_hal_nmi_wdt_get_clk_div
+                0x0000000008064108                sys_hal_set_ana_reg11_apfms
+                0x000000000806410a                sys_hal_set_ana_reg12_dpfms
+                0x000000000806410c                . = ALIGN (0x4)
  *bl_uart.o(.text.* *.rodata *.rodata.*)
  .text.ana_reg_write
-                0x000000000800010c       0x38 ../platform/target/download/libdownload.a(bl_uart.o)
+                0x000000000806410c       0x38 ../platform/target/download/libdownload.a(bl_uart.o)
  .text.hal_enable_pll
-                0x0000000008000144       0x7c ../platform/target/download/libdownload.a(bl_uart.o)
-                0x0000000008000144                hal_enable_pll
+                0x0000000008064144       0x7c ../platform/target/download/libdownload.a(bl_uart.o)
+                0x0000000008064144                hal_enable_pll
  .text.hal_set_cpu_clock
-                0x00000000080001c0       0x44 ../platform/target/download/libdownload.a(bl_uart.o)
-                0x00000000080001c0                hal_set_cpu_clock
+                0x00000000080641c0       0x44 ../platform/target/download/libdownload.a(bl_uart.o)
+                0x00000000080641c0                hal_set_cpu_clock
  .text.boot_uart_init
-                0x0000000008000204       0x5c ../platform/target/download/libdownload.a(bl_uart.o)
-                0x0000000008000204                boot_uart_init
+                0x0000000008064204       0x5c ../platform/target/download/libdownload.a(bl_uart.o)
+                0x0000000008064204                boot_uart_init
  *crc32.o(.text.* *.rodata *.rodata.*)
  .text.make_crc32_table
-                0x0000000008000260       0x30 ../platform/target/download/libdownload.a(crc32.o)
-                0x0000000008000260                make_crc32_table
- .text.crc32    0x0000000008000290       0x24 ../platform/target/download/libdownload.a(crc32.o)
-                0x0000000008000290                crc32
+                0x0000000008064260       0x30 ../platform/target/download/libdownload.a(crc32.o)
+                0x0000000008064260                make_crc32_table
+ .text.crc32    0x0000000008064290       0x24 ../platform/target/download/libdownload.a(crc32.o)
+                0x0000000008064290                crc32
  *system.o(.text.* *.rodata *.rodata.*)
  .text.timer_init
-                0x00000000080002b4       0x38 ../platform/target/download/libdownload.a(system.o)
-                0x00000000080002b4                timer_init
+                0x00000000080642b4       0x38 ../platform/target/download/libdownload.a(system.o)
+                0x00000000080642b4                timer_init
  .text.timer_hal_get_timer0_cnt
-                0x00000000080002ec       0x20 ../platform/target/download/libdownload.a(system.o)
-                0x00000000080002ec                timer_hal_get_timer0_cnt
+                0x00000000080642ec       0x20 ../platform/target/download/libdownload.a(system.o)
+                0x00000000080642ec                timer_hal_get_timer0_cnt
  .text.timer_hal_diff
-                0x000000000800030c        0xe ../platform/target/download/libdownload.a(system.o)
-                0x000000000800030c                timer_hal_diff
+                0x000000000806430c        0xe ../platform/target/download/libdownload.a(system.o)
+                0x000000000806430c                timer_hal_diff
  .text.timer_delay_us
-                0x000000000800031a       0x20 ../platform/target/download/libdownload.a(system.o)
-                0x000000000800031a                timer_delay_us
+                0x000000000806431a       0x20 ../platform/target/download/libdownload.a(system.o)
+                0x000000000806431a                timer_delay_us
  .text.timer_delay_ms
-                0x000000000800033a        0xa ../platform/target/download/libdownload.a(system.o)
-                0x000000000800033a                timer_delay_ms
+                0x000000000806433a        0xa ../platform/target/download/libdownload.a(system.o)
+                0x000000000806433a                timer_delay_ms
  *bootloader.o(.text.* *.rodata *.rodata.*)
  .text.BK3000_ICU_Initial
-                0x0000000008000344       0x2c ../platform/target/download/libdownload.a(bootloader.o)
-                0x0000000008000344                BK3000_ICU_Initial
+                0x0000000008064344       0x2c ../platform/target/download/libdownload.a(bootloader.o)
+                0x0000000008064344                BK3000_ICU_Initial
  .text.uart_enable
-                0x0000000008000370       0x34 ../platform/target/download/libdownload.a(bootloader.o)
-                0x0000000008000370                uart_enable
+                0x0000000008064370       0x34 ../platform/target/download/libdownload.a(bootloader.o)
+                0x0000000008064370                uart_enable
  .text.PMU_uninit
-                0x00000000080003a4       0x34 ../platform/target/download/libdownload.a(bootloader.o)
-                0x00000000080003a4                PMU_uninit
+                0x00000000080643a4       0x34 ../platform/target/download/libdownload.a(bootloader.o)
+                0x00000000080643a4                PMU_uninit
  .text.BK3000_start_wdt
-                0x00000000080003d8       0x12 ../platform/target/download/libdownload.a(bootloader.o)
-                0x00000000080003d8                BK3000_start_wdt
- *fill*         0x00000000080003ea        0x2 
+                0x00000000080643d8       0x12 ../platform/target/download/libdownload.a(bootloader.o)
+                0x00000000080643d8                BK3000_start_wdt
+ *fill*         0x00000000080643ea        0x2 
  .text.arch_enable_uart_int
-                0x00000000080003ec        0xc ../platform/target/download/libdownload.a(bootloader.o)
-                0x00000000080003ec                arch_enable_uart_int
- .text.bl_init  0x00000000080003f8        0xe ../platform/target/download/libdownload.a(bootloader.o)
-                0x00000000080003f8                bl_init
- *fill*         0x0000000008000406        0x2 
+                0x00000000080643ec        0xc ../platform/target/download/libdownload.a(bootloader.o)
+                0x00000000080643ec                arch_enable_uart_int
+ .text.bl_init  0x00000000080643f8        0xe ../platform/target/download/libdownload.a(bootloader.o)
+                0x00000000080643f8                bl_init
+ *fill*         0x0000000008064406        0x2 
  .text.legacy_boot_main
-                0x0000000008000408       0x68 ../platform/target/download/libdownload.a(bootloader.o)
-                0x0000000008000408                legacy_boot_main
+                0x0000000008064408       0x68 ../platform/target/download/libdownload.a(bootloader.o)
+                0x0000000008064408                legacy_boot_main
  *bl_protocol.o(.text.* *.rodata *.rodata.*)
  *boot_update.o(.text.* *.rodata *.rodata.*)
  .text.bl_get_current_boot_execute_partition
-                0x0000000008000470       0x30 ../platform/target/download/libdownload.a(boot_update.o)
-                0x0000000008000470                bl_get_current_boot_execute_partition
+                0x0000000008064470       0x30 ../platform/target/download/libdownload.a(boot_update.o)
+                0x0000000008064470                bl_get_current_boot_execute_partition
  .text.bl_double_check_the_written_value
-                0x00000000080004a0       0xd8 ../platform/target/download/libdownload.a(boot_update.o)
-                0x00000000080004a0                bl_double_check_the_written_value
+                0x00000000080644a0       0xd8 ../platform/target/download/libdownload.a(boot_update.o)
+                0x00000000080644a0                bl_double_check_the_written_value
  .text.bl_get_boot_flag_value
-                0x0000000008000578       0xe4 ../platform/target/download/libdownload.a(boot_update.o)
-                0x0000000008000578                bl_get_boot_flag_value
+                0x0000000008064578       0xe4 ../platform/target/download/libdownload.a(boot_update.o)
+                0x0000000008064578                bl_get_boot_flag_value
  .text.bl_set_boot_flag_value
-                0x000000000800065c       0x90 ../platform/target/download/libdownload.a(boot_update.o)
-                0x000000000800065c                bl_set_boot_flag_value
+                0x000000000806465c       0x90 ../platform/target/download/libdownload.a(boot_update.o)
+                0x000000000806465c                bl_set_boot_flag_value
  .text.bl_forbid_operate_boot_partition
-                0x00000000080006ec       0xf0 ../platform/target/download/libdownload.a(boot_update.o)
-                0x00000000080006ec                bl_forbid_operate_boot_partition
+                0x00000000080646ec       0xf0 ../platform/target/download/libdownload.a(boot_update.o)
+                0x00000000080646ec                bl_forbid_operate_boot_partition
  .text.bl_forbid_erase_boot_partition
-                0x00000000080007dc       0x34 ../platform/target/download/libdownload.a(boot_update.o)
-                0x00000000080007dc                bl_forbid_erase_boot_partition
+                0x00000000080647dc       0x34 ../platform/target/download/libdownload.a(boot_update.o)
+                0x00000000080647dc                bl_forbid_erase_boot_partition
  .text.bl_operate_bootloader_version
-                0x0000000008000810       0xbc ../platform/target/download/libdownload.a(boot_update.o)
-                0x0000000008000810                bl_operate_bootloader_version
+                0x0000000008064810       0xbc ../platform/target/download/libdownload.a(boot_update.o)
+                0x0000000008064810                bl_operate_bootloader_version
  *driver_uart0.o(.text.* *.rodata *.rodata.*)
  .text.uart0_disable
-                0x00000000080008cc        0x2 ../platform/target/download/libdownload.a(driver_uart0.o)
-                0x00000000080008cc                uart0_disable
- *fill*         0x00000000080008ce        0x2 
+                0x00000000080648cc        0x2 ../platform/target/download/libdownload.a(driver_uart0.o)
+                0x00000000080648cc                uart0_disable
+ *fill*         0x00000000080648ce        0x2 
  .text.UART_InterruptHandler
-                0x00000000080008d0       0x50 ../platform/target/download/libdownload.a(driver_uart0.o)
-                0x00000000080008d0                UART_InterruptHandler
+                0x00000000080648d0       0x50 ../platform/target/download/libdownload.a(driver_uart0.o)
+                0x00000000080648d0                UART_InterruptHandler
  .text.UART_InterruptHandler.__stub
-                0x0000000008000920       0x90 linker stubs
-                0x00000000080009b0                . = ALIGN (0x4)
-                0x00000000080009b0                _iram_end_dummy_ = .
+                0x0000000008064920       0x90 linker stubs
+                0x00000000080649b0                . = ALIGN (0x4)
+                0x00000000080649b0                _iram_end_dummy_ = .
 
-.rel.dyn        0x00000000080009b0        0x0 load address 0x000000000201d4c8
- .rel.iplt      0x00000000080009b0        0x0 /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
+.rel.dyn        0x00000000080649b0        0x0 load address 0x000000000201d4c8
+ .rel.iplt      0x00000000080649b0        0x0 /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
 
-.iram_boundary  0x00000000080009b0        0x4 load address 0x000000000201d4c8
-                0x00000000080009b0                __iram_end__ = .
-                0x00000000080009b4                . = (. + 0x4)
- *fill*         0x00000000080009b0        0x4 
-                0x00000000080009b4                . = ALIGN (0x4)
+.iram_boundary  0x00000000080649b0        0x4 load address 0x000000000201d4c8
+                0x00000000080649b0                __iram_end__ = .
+                0x00000000080649b4                . = (. + 0x4)
+ *fill*         0x00000000080649b0        0x4 
+                0x00000000080649b4                . = ALIGN (0x4)
 
-.ramcode        0x0000000028000000      0xa00 load address 0x000000000201d4c8
-                0x0000000028000958                . = (. + SIZEOF (.iram))
- *fill*         0x0000000028000000      0x958 
-                0x0000000028000a00                . = ALIGN (0x200)
- *fill*         0x0000000028000958       0xa8 
+.ramcode        0x0000000028064000      0xa00 load address 0x000000000201d4c8
+                0x0000000028064958                . = (. + SIZEOF (.iram))
+ *fill*         0x0000000028064000      0x958 
+                0x0000000028064a00                . = ALIGN (0x200)
+ *fill*         0x0000000028064958       0xa8 
 
 .tfm_bl2_shared_data
-                0x0000000028000a00      0x400 load address 0x000000000201d4c8
-                0x0000000028000e00                . = (. + 0x400)
- *fill*         0x0000000028000a00      0x400 
-                0x0000000028000a00                Image$$SHARED_DATA$$RW$$Base = ADDR (.tfm_bl2_shared_data)
-                0x0000000028000e00                Image$$SHARED_DATA$$RW$$Limit = (ADDR (.tfm_bl2_shared_data) + SIZEOF (.tfm_bl2_shared_data))
+                0x0000000028064a00      0x400 load address 0x000000000201d4c8
+                0x0000000028064e00                . = (. + 0x400)
+ *fill*         0x0000000028064a00      0x400 
+                0x0000000028064a00                Image$$SHARED_DATA$$RW$$Base = ADDR (.tfm_bl2_shared_data)
+                0x0000000028064e00                Image$$SHARED_DATA$$RW$$Limit = (ADDR (.tfm_bl2_shared_data) + SIZEOF (.tfm_bl2_shared_data))
 
-.data           0x0000000028000e00      0x158 load address 0x000000000201d4c8
+.data           0x0000000028064e00      0x158 load address 0x000000000201d4c8
  *(.data*)
  .data.FIH_FAILURE
-                0x0000000028000e00        0x4 ext/mcuboot/bootutil/libbootutil.a(fault_injection_hardening.o)
-                0x0000000028000e00                FIH_FAILURE
+                0x0000000028064e00        0x4 ext/mcuboot/bootutil/libbootutil.a(fault_injection_hardening.o)
+                0x0000000028064e00                FIH_FAILURE
  .data.PeripheralClock
-                0x0000000028000e04        0x4 ../platform/libplatform_bl2.a(system_cmsdk_bk7239.o)
-                0x0000000028000e04                PeripheralClock
+                0x0000000028064e04        0x4 ../platform/libplatform_bl2.a(system_cmsdk_bk7239.o)
+                0x0000000028064e04                PeripheralClock
  .data.SystemCoreClock
-                0x0000000028000e08        0x4 ../platform/libplatform_bl2.a(system_cmsdk_bk7239.o)
-                0x0000000028000e08                SystemCoreClock
+                0x0000000028064e08        0x4 ../platform/libplatform_bl2.a(system_cmsdk_bk7239.o)
+                0x0000000028064e08                SystemCoreClock
  .data.ARM_FLASH0_DEV
-                0x0000000028000e0c        0x8 ../platform/libplatform_bl2.a(Driver_Flash.o)
+                0x0000000028064e0c        0x8 ../platform/libplatform_bl2.a(Driver_Flash.o)
  .data.FLASH0_DEV
-                0x0000000028000e14        0x4 ../platform/libplatform_bl2.a(Driver_Flash.o)
-                0x0000000028000e14                FLASH0_DEV
+                0x0000000028064e14        0x4 ../platform/libplatform_bl2.a(Driver_Flash.o)
+                0x0000000028064e14                FLASH0_DEV
  .data.flash_map
-                0x0000000028000e18       0x80 ../platform/libplatform_bl2.a(flash_map.o)
-                0x0000000028000e18                flash_map
+                0x0000000028064e18       0x80 ../platform/libplatform_bl2.a(flash_map.o)
+                0x0000000028064e18                flash_map
  .data.s_partition_name
-                0x0000000028000e98       0x44 ../platform/libplatform_bl2.a(flash_partition.o)
-                0x0000000028000e98                s_partition_name
+                0x0000000028064e98       0x44 ../platform/libplatform_bl2.a(flash_partition.o)
+                0x0000000028064e98                s_partition_name
  .data.s_pre_cpu_freq
-                0x0000000028000edc        0x1 ../platform/libplatform_bl2.a(sys_hal.o)
- *fill*         0x0000000028000edd        0x3 
+                0x0000000028064edc        0x1 ../platform/libplatform_bl2.a(sys_hal.o)
+ *fill*         0x0000000028064edd        0x3 
  .data.mbedtls_calloc_func
-                0x0000000028000ee0        0x4 mbedcrypto/library/libmbedcrypto.a(platform.o)
-                0x0000000028000ee0                mbedtls_calloc_func
+                0x0000000028064ee0        0x4 mbedcrypto/library/libmbedcrypto.a(platform.o)
+                0x0000000028064ee0                mbedtls_calloc_func
  .data.mbedtls_exit
-                0x0000000028000ee4        0x4 mbedcrypto/library/libmbedcrypto.a(platform.o)
-                0x0000000028000ee4                mbedtls_exit
+                0x0000000028064ee4        0x4 mbedcrypto/library/libmbedcrypto.a(platform.o)
+                0x0000000028064ee4                mbedtls_exit
  .data.mbedtls_free_func
-                0x0000000028000ee8        0x4 mbedcrypto/library/libmbedcrypto.a(platform.o)
-                0x0000000028000ee8                mbedtls_free_func
+                0x0000000028064ee8        0x4 mbedcrypto/library/libmbedcrypto.a(platform.o)
+                0x0000000028064ee8                mbedtls_free_func
  .data._impure_ptr
-                0x0000000028000eec        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-impure.o)
-                0x0000000028000eec                _impure_ptr
+                0x0000000028064eec        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-impure.o)
+                0x0000000028064eec                _impure_ptr
  .data.impure_data
-                0x0000000028000ef0       0x60 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-impure.o)
-                0x0000000028000f50                . = ALIGN (0x4)
-                0x0000000028000f50                PROVIDE (__preinit_array_start = .)
+                0x0000000028064ef0       0x60 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-impure.o)
+                0x0000000028064f50                . = ALIGN (0x4)
+                0x0000000028064f50                PROVIDE (__preinit_array_start = .)
  *(.preinit_array)
-                0x0000000028000f50                PROVIDE (__preinit_array_end = .)
-                0x0000000028000f50                . = ALIGN (0x4)
-                0x0000000028000f50                PROVIDE (__init_array_start = .)
+                0x0000000028064f50                PROVIDE (__preinit_array_end = .)
+                0x0000000028064f50                . = ALIGN (0x4)
+                0x0000000028064f50                PROVIDE (__init_array_start = .)
  *(SORT_BY_NAME(.init_array.*))
  *(.init_array)
- .init_array    0x0000000028000f50        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
-                0x0000000028000f54                PROVIDE (__init_array_end = .)
-                0x0000000028000f54                . = ALIGN (0x4)
+ .init_array    0x0000000028064f50        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
+                0x0000000028064f54                PROVIDE (__init_array_end = .)
+                0x0000000028064f54                . = ALIGN (0x4)
                 [!provide]                        PROVIDE (__fini_array_start = .)
  *(SORT_BY_NAME(.fini_array.*))
  *(.fini_array)
- .fini_array    0x0000000028000f54        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
+ .fini_array    0x0000000028064f54        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
                 [!provide]                        PROVIDE (__fini_array_end = .)
  *(.jcr*)
-                0x0000000028000f58                . = ALIGN (0x4)
-                0x0000000028000e00                Image$$ER_DATA$$Base = ADDR (.data)
+                0x0000000028064f58                . = ALIGN (0x4)
+                0x0000000028064e00                Image$$ER_DATA$$Base = ADDR (.data)
 
-.igot.plt       0x0000000028000f58        0x0 load address 0x000000000201d620
- .igot.plt      0x0000000028000f58        0x0 /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
+.igot.plt       0x0000000028064f58        0x0 load address 0x000000000201d620
+ .igot.plt      0x0000000028064f58        0x0 /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
 
-.bss            0x0000000028000f58     0x4a0c
-                0x0000000028000f58                __bss_start__ = .
+.bss            0x0000000028064f58     0x4a0c
+                0x0000000028064f58                __bss_start__ = .
  *(.bss*)
- .bss           0x0000000028000f58       0x1c /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
+ .bss           0x0000000028064f58       0x1c /bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v8-m.main/nofp/crtbegin.o
  .bss.mbedtls_mem_buf
-                0x0000000028000f74     0x2000 CMakeFiles/bl2_B.dir/ext/mcuboot/bl2_main.o
+                0x0000000028064f74     0x2000 CMakeFiles/bl2_B.dir/ext/mcuboot/bl2_main.o
  .bss.s_bl2_tick_cnt
-                0x0000000028002f74        0x4 CMakeFiles/bl2_B.dir/ext/mcuboot/bl2_securedebug.o
+                0x0000000028066f74        0x4 CMakeFiles/bl2_B.dir/ext/mcuboot/bl2_securedebug.o
  .bss.FIH_SUCCESS
-                0x0000000028002f78        0x4 ext/mcuboot/bootutil/libbootutil.a(fault_injection_hardening.o)
-                0x0000000028002f78                FIH_SUCCESS
+                0x0000000028066f78        0x4 ext/mcuboot/bootutil/libbootutil.a(fault_injection_hardening.o)
+                0x0000000028066f78                FIH_SUCCESS
  .bss.s_bp_info
-                0x0000000028002f7c       0xa0 ext/mcuboot/bootutil/libbootutil.a(loader.o)
+                0x0000000028066f7c       0xa0 ext/mcuboot/bootutil/libbootutil.a(loader.o)
  .bss.FlashStatus
-                0x000000002800301c        0x4 ../platform/libplatform_bl2.a(Driver_Flash.o)
+                0x000000002806701c        0x4 ../platform/libplatform_bl2.a(Driver_Flash.o)
  .bss.s_flash_sector_count
-                0x0000000028003020        0x4 ../platform/libplatform_bl2.a(Driver_Flash.o)
+                0x0000000028067020        0x4 ../platform/libplatform_bl2.a(Driver_Flash.o)
  .bss.flash_max_size
-                0x0000000028003024        0x4 ../platform/libplatform_bl2.a(boot_hal_bl2.o)
-                0x0000000028003024                flash_max_size
- .bss.vt_cpy.0  0x0000000028003028        0x4 ../platform/libplatform_bl2.a(boot_hal_bl2.o)
+                0x0000000028067024        0x4 ../platform/libplatform_bl2.a(boot_hal_bl2.o)
+                0x0000000028067024                flash_max_size
+ .bss.vt_cpy.0  0x0000000028067028        0x4 ../platform/libplatform_bl2.a(boot_hal_bl2.o)
  .bss.s_partition_config
-                0x000000002800302c       0xcc ../platform/libplatform_bl2.a(flash_partition.o)
+                0x000000002806702c       0xcc ../platform/libplatform_bl2.a(flash_partition.o)
  .bss.s_partition_valid
-                0x00000000280030f8        0x4 ../platform/libplatform_bl2.a(flash_partition.o)
- .bss.flash_id  0x00000000280030fc        0x4 ../platform/libplatform_bl2.a(flash_driver.o)
-                0x00000000280030fc                flash_id
- .bss.s_flash   0x0000000028003100       0x10 ../platform/libplatform_bl2.a(flash_driver.o)
+                0x00000000280670f8        0x4 ../platform/libplatform_bl2.a(flash_partition.o)
+ .bss.flash_id  0x00000000280670fc        0x4 ../platform/libplatform_bl2.a(flash_driver.o)
+                0x00000000280670fc                flash_id
+ .bss.s_flash   0x0000000028067100       0x10 ../platform/libplatform_bl2.a(flash_driver.o)
  .bss.s_flash_is_init
-                0x0000000028003110        0x1 ../platform/libplatform_bl2.a(flash_driver.o)
+                0x0000000028067110        0x1 ../platform/libplatform_bl2.a(flash_driver.o)
  .bss.s_flash_is_unlocked.0
-                0x0000000028003111        0x1 ../platform/libplatform_bl2.a(flash_driver.o)
- *fill*         0x0000000028003112        0x2 
+                0x0000000028067111        0x1 ../platform/libplatform_bl2.a(flash_driver.o)
+ *fill*         0x0000000028067112        0x2 
  .bss.s_flash_op_ota_enable
-                0x0000000028003114        0x4 ../platform/libplatform_bl2.a(flash_driver.o)
-                0x0000000028003114                s_flash_op_ota_enable
+                0x0000000028067114        0x4 ../platform/libplatform_bl2.a(flash_driver.o)
+                0x0000000028067114                s_flash_op_ota_enable
  .bss.s_flash_op_pc_enable
-                0x0000000028003118        0x4 ../platform/libplatform_bl2.a(flash_driver.o)
-                0x0000000028003118                s_flash_op_pc_enable
+                0x0000000028067118        0x4 ../platform/libplatform_bl2.a(flash_driver.o)
+                0x0000000028067118                s_flash_op_pc_enable
  .bss.s_efuse_data
-                0x000000002800311c        0x4 ../platform/libplatform_bl2.a(bk_efuse.o)
- .bss.s_times   0x0000000028003120        0x1 ../platform/target/download/libdownload.a(boot_update.o)
- *fill*         0x0000000028003121        0x1 
- .bss.COUNT     0x0000000028003122        0x2 ../platform/target/download/libdownload.a(bl_uart.o)
-                0x0000000028003122                COUNT
+                0x000000002806711c        0x4 ../platform/libplatform_bl2.a(bk_efuse.o)
+ .bss.s_times   0x0000000028067120        0x1 ../platform/target/download/libdownload.a(boot_update.o)
+ *fill*         0x0000000028067121        0x1 
+ .bss.COUNT     0x0000000028067122        0x2 ../platform/target/download/libdownload.a(bl_uart.o)
+                0x0000000028067122                COUNT
  .bss.g_baud_rate
-                0x0000000028003124        0x4 ../platform/target/download/libdownload.a(bl_uart.o)
-                0x0000000028003124                g_baud_rate
+                0x0000000028067124        0x4 ../platform/target/download/libdownload.a(bl_uart.o)
+                0x0000000028067124                g_baud_rate
  .bss.record_times
-                0x0000000028003128        0x1 ../platform/target/download/libdownload.a(boot_protocol.o)
-                0x0000000028003128                record_times
- *fill*         0x0000000028003129        0x3 
+                0x0000000028067128        0x1 ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x0000000028067128                record_times
+ *fill*         0x0000000028067129        0x3 
  .bss.rx_frm_ctrl
-                0x000000002800312c     0x107c ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x000000002806712c     0x107c ../platform/target/download/libdownload.a(boot_protocol.o)
  .bss.rx_link_buf
-                0x00000000280041a8     0x106c ../platform/target/download/libdownload.a(boot_protocol.o)
-                0x00000000280041a8                rx_link_buf
+                0x00000000280681a8     0x106c ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x00000000280681a8                rx_link_buf
  .bss.s_record_dl_flag
-                0x0000000028005214        0x4 ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x0000000028069214        0x4 ../platform/target/download/libdownload.a(boot_protocol.o)
  .bss.uart_link_check_flag
-                0x0000000028005218        0x1 ../platform/target/download/libdownload.a(boot_protocol.o)
-                0x0000000028005218                uart_link_check_flag
- *fill*         0x0000000028005219        0x3 
+                0x0000000028069218        0x1 ../platform/target/download/libdownload.a(boot_protocol.o)
+                0x0000000028069218                uart_link_check_flag
+ *fill*         0x0000000028069219        0x3 
  .bss.crc32_table
-                0x000000002800521c      0x400 ../platform/target/download/libdownload.a(crc32.o)
-                0x000000002800521c                crc32_table
- .bss.heap      0x000000002800561c       0x14 mbedcrypto/library/libmbedcrypto.a(memory_buffer_alloc.o)
+                0x000000002806921c      0x400 ../platform/target/download/libdownload.a(crc32.o)
+                0x000000002806921c                crc32_table
+ .bss.heap      0x000000002806961c       0x14 mbedcrypto/library/libmbedcrypto.a(memory_buffer_alloc.o)
  .bss._g_Dubhe_RegBase
-                0x0000000028005630        0x4 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_driver.o)
-                0x0000000028005630                _g_Dubhe_RegBase
+                0x0000000028069630        0x4 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_driver.o)
+                0x0000000028069630                _g_Dubhe_RegBase
  .bss._g_aca_hw_res
-                0x0000000028005634      0x310 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_aca_hw.o)
+                0x0000000028069634      0x310 ../platform/ext/accelerator/libbl2_crypto_hw.a(dubhe_aca_hw.o)
  .bss._g_dubhe_bignum_init_flag
-                0x0000000028005944        0x4 ../platform/ext/accelerator/libbl2_crypto_hw.a(bignum.o)
+                0x0000000028069944        0x4 ../platform/ext/accelerator/libbl2_crypto_hw.a(bignum.o)
  .bss.head_list
-                0x0000000028005948        0x8 ../platform/ext/accelerator/libbl2_crypto_hw.a(bignum.o)
+                0x0000000028069948        0x8 ../platform/ext/accelerator/libbl2_crypto_hw.a(bignum.o)
  .bss.__malloc_free_list
-                0x0000000028005950        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-nano-mallocr.o)
-                0x0000000028005950                __malloc_free_list
+                0x0000000028069950        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+                0x0000000028069950                __malloc_free_list
  .bss.__malloc_sbrk_start
-                0x0000000028005954        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-nano-mallocr.o)
-                0x0000000028005954                __malloc_sbrk_start
+                0x0000000028069954        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+                0x0000000028069954                __malloc_sbrk_start
  .bss.__lock___malloc_recursive_mutex
-                0x0000000028005958        0x1 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-lock.o)
-                0x0000000028005958                __lock___malloc_recursive_mutex
+                0x0000000028069958        0x1 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-lock.o)
+                0x0000000028069958                __lock___malloc_recursive_mutex
  .bss.__lock___sfp_recursive_mutex
-                0x0000000028005959        0x1 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-lock.o)
-                0x0000000028005959                __lock___sfp_recursive_mutex
+                0x0000000028069959        0x1 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-lock.o)
+                0x0000000028069959                __lock___sfp_recursive_mutex
  .bss.__lock___sinit_recursive_mutex
-                0x000000002800595a        0x1 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-lock.o)
-                0x000000002800595a                __lock___sinit_recursive_mutex
- *fill*         0x000000002800595b        0x1 
- .bss.errno     0x000000002800595c        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-reent.o)
-                0x000000002800595c                errno
+                0x000000002806995a        0x1 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-lock.o)
+                0x000000002806995a                __lock___sinit_recursive_mutex
+ *fill*         0x000000002806995b        0x1 
+ .bss.errno     0x000000002806995c        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libc_nano.a(lib_a-reent.o)
+                0x000000002806995c                errno
  .bss.heap_end.0
-                0x0000000028005960        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libnosys.a(sbrk.o)
+                0x0000000028069960        0x4 /bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main/nofp/libnosys.a(sbrk.o)
  *(COMMON)
-                0x0000000028005964                . = ALIGN (0x4)
-                0x0000000028005964                __bss_end__ = .
+                0x0000000028069964                . = ALIGN (0x4)
+                0x0000000028069964                __bss_end__ = .
 
-.msp_stack      0x0000000028005980     0x4800
-                0x000000002800a180                . = (. + __msp_stack_size__)
- *fill*         0x0000000028005980     0x4800 
-                0x0000000028005980                Image$$ARM_LIB_STACK$$ZI$$Base = ADDR (.msp_stack)
-                0x000000002800a180                Image$$ARM_LIB_STACK$$ZI$$Limit = (ADDR (.msp_stack) + SIZEOF (.msp_stack))
+.msp_stack      0x0000000028069980     0x4800
+                0x000000002806e180                . = (. + __msp_stack_size__)
+ *fill*         0x0000000028069980     0x4800 
+                0x0000000028069980                Image$$ARM_LIB_STACK$$ZI$$Base = ADDR (.msp_stack)
+                0x000000002806e180                Image$$ARM_LIB_STACK$$ZI$$Limit = (ADDR (.msp_stack) + SIZEOF (.msp_stack))
 
-.heap           0x000000002800a180     0x4000
-                0x000000002800a180                __end__ = .
-                0x000000002800a180                PROVIDE (end = .)
-                0x000000002800a180                __HeapBase = .
-                0x000000002800e180                . = (. + __heap_size__)
- *fill*         0x000000002800a180     0x4000 
-                0x000000002800e180                __HeapLimit = .
-                0x000000002800e180                __heap_limit = .
-                0x000000002800a180                Image$$ARM_LIB_HEAP$$ZI$$Base = ADDR (.heap)
-                0x000000002800e180                Image$$ARM_LIB_HEAP$$ZI$$Limit = (ADDR (.heap) + SIZEOF (.heap))
-                0x000000002800a180                PROVIDE (__stack = Image$$ARM_LIB_STACK$$ZI$$Limit)
+.heap           0x000000002806e180     0x4000
+                0x000000002806e180                __end__ = .
+                0x000000002806e180                PROVIDE (end = .)
+                0x000000002806e180                __HeapBase = .
+                0x0000000028072180                . = (. + __heap_size__)
+ *fill*         0x000000002806e180     0x4000 
+                0x0000000028072180                __HeapLimit = .
+                0x0000000028072180                __heap_limit = .
+                0x000000002806e180                Image$$ARM_LIB_HEAP$$ZI$$Base = ADDR (.heap)
+                0x0000000028072180                Image$$ARM_LIB_HEAP$$ZI$$Limit = (ADDR (.heap) + SIZEOF (.heap))
+                0x000000002806e180                PROVIDE (__stack = Image$$ARM_LIB_STACK$$ZI$$Limit)
 OUTPUT(../bin/bl2_B.axf elf32-littlearm)
 LOAD linker stubs
 

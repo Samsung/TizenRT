@@ -1124,6 +1124,12 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
         return TRBLE_ALREADY_WORKING;
     }
 
+    if(!config)
+    {
+        LOGW("NULL config, pls init later !!!");
+        return TRBLE_INVALID_ARGS;
+    }
+
     LOGD("start");
 
     if (!s_ctb.sem)

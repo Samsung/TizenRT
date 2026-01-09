@@ -117,18 +117,20 @@ int32_t bk_tr_ble_coc_connect(uint16_t conn_handle, uint16_t le_psm);
  *
  * Closes an established connection-oriented channel.
  *
+ * @param[in] conn_handle BLE connection handle to the remote device
  * @param[in] cid Channel ID of the COC connection to disconnect
  * @return int32_t Operation status
  * @retval BT_SUCCESS On successful disconnection
  * @retval Negative error code On failure
  */
-int32_t bk_tr_ble_coc_disconnect(uint16_t cid);
+int32_t bk_tr_ble_coc_disconnect(uint16_t conn_handle, uint16_t cid);
 
 /**
  * @brief Send data over a COC channel
  *
  * Transmits data through an established connection-oriented channel.
  *
+ * @param[in] conn_handle BLE connection handle to the remote device
  * @param[in] cid Channel ID of the COC connection
  * @param[in] len Length of data to send in bytes
  * @param[in] data Pointer to the data buffer to send
@@ -136,4 +138,17 @@ int32_t bk_tr_ble_coc_disconnect(uint16_t cid);
  * @retval BT_SUCCESS On successful data transmission
  * @retval Negative error code On failure
  */
-int32_t bk_tr_ble_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data);
+int32_t bk_tr_ble_coc_send_data(uint16_t conn_handle, uint16_t cid, uint16_t len, uint8_t *data);
+
+/**
+ * @brief private adapter func, bk ble evt process in coc module
+ *
+ * @param
+ *    - notice: ble evt type
+ *    - param: param that assosicate with notice
+ *
+ * @return
+ *    - 0: succeed
+ *    - others: errors.
+ */
+int32_t bk_tr_ble_coc_notice_cb(ble_notice_t notice, void *param);

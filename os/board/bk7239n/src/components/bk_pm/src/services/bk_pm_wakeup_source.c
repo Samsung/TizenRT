@@ -35,6 +35,7 @@ static pm_wakeup_source_e s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_I
 static touch_wakeup_param_t s_touch_wakeup_param;
 static uint64_t s_normal_sleep_wakeup_irq                   = 0;
 static icu_int_src_t s_normal_sleep_wakeup_irq_id           = INT_SRC_NONE;
+static bk_pm_wakeup_reason_e s_wakeup_reason                = BK_PM_WAKEUP_UNKNOWN;
 /*=====================VARIABLE SECTION END=================*/
 
 /*================FUNCTION DECLARATION SECTION START========*/
@@ -207,6 +208,7 @@ __attribute__((section(".iram")))  bk_err_t bk_pm_sleep_wakeup_reason_clear()
 {
 	s_normal_sleep_wakeup_irq    = 0;
 	s_normal_sleep_wakeup_irq_id = 0;
+	s_wakeup_reason              = BK_PM_WAKEUP_UNKNOWN;
 	return BK_OK;
 }
 
@@ -224,39 +226,46 @@ __attribute__((section(".iram")))  bk_err_t bk_pm_sleep_wakeup_reason_set(uint64
 }
 static bk_err_t pm_wakeup_reason_parse(bk_pm_wakeup_reason_e *wakeup_reason)
 {
-	peripheral_group_t wakeup_source_sub_type = bk_gpio_get_wake_source_sub_type();
-
-	switch(wakeup_source_sub_type)
+	if(s_wakeup_reason != BK_PM_WAKEUP_UNKNOWN)
 	{
-		case PERIPHERAL_GROUP_I2C0:
-
-			break;
-		case PERIPHERAL_GROUP_I2C1:
-
-			break;
-		case PERIPHERAL_GROUP_SPI0:
-
-			break;
-		case PERIPHERAL_GROUP_SPI1:
-
-			break;
-		case PERIPHERAL_GROUP_UART0:
-			*wakeup_reason = BK_PM_WAKEUP_UART_CONSOLE;
-			break;
-		case PERIPHERAL_GROUP_UART1:
-			*wakeup_reason = BK_PM_WAKEUP_UART_TTYS2;
-			break;
-		case PERIPHERAL_GROUP_UART2:
-		    *wakeup_reason = BK_PM_WAKEUP_UART_TTYS2;
-			break;
-		case PERIPHERAL_GROUP_UART3:
-		    *wakeup_reason = BK_PM_WAKEUP_UART_TTYS2;
-			break;
-		default:
-			*wakeup_reason = BK_PM_WAKEUP_GPIO;
-			break;
+		*wakeup_reason = s_wakeup_reason;
+		return BK_OK;
 	}
-
+	else
+	{
+		peripheral_group_t wakeup_source_sub_type = bk_gpio_get_wake_source_sub_type();
+		switch(wakeup_source_sub_type)
+		{
+			case PERIPHERAL_GROUP_I2C0:
+			    s_wakeup_reason = BK_PM_WAKEUP_GPIO;//Current it doesn't support I2C0 wakeup,using GPIO wakeup instead
+				break;
+			case PERIPHERAL_GROUP_I2C1:
+			    s_wakeup_reason = BK_PM_WAKEUP_GPIO;//Current it doesn't support I2C1 wakeup,using GPIO wakeup instead
+				break;
+			case PERIPHERAL_GROUP_SPI0:
+				s_wakeup_reason = BK_PM_WAKEUP_GPIO;//Current it doesn't support SPI0 wakeup,using GPIO wakeup instead
+				break;
+			case PERIPHERAL_GROUP_SPI1:
+				s_wakeup_reason = BK_PM_WAKEUP_GPIO;//Current it doesn't support SPI1 wakeup,using GPIO wakeup instead
+				break;
+			case PERIPHERAL_GROUP_UART0:
+			    s_wakeup_reason = BK_PM_WAKEUP_UART_CONSOLE;
+				break;
+			case PERIPHERAL_GROUP_UART1:
+				s_wakeup_reason = BK_PM_WAKEUP_UART_TTYS2;
+				break;
+			case PERIPHERAL_GROUP_UART2:
+			    s_wakeup_reason = BK_PM_WAKEUP_UART_TTYS2;
+				break;
+			case PERIPHERAL_GROUP_UART3:
+			    s_wakeup_reason = BK_PM_WAKEUP_UART_TTYS2;
+				break;
+			default:
+			    s_wakeup_reason = BK_PM_WAKEUP_GPIO;
+				break;
+		}
+	}
+	*wakeup_reason = s_wakeup_reason;
 	return BK_OK;
 }
 bk_pm_wakeup_reason_e bk_pm_sleep_wakeup_reason_get()
@@ -311,6 +320,8 @@ bk_pm_wakeup_reason_e bk_pm_sleep_wakeup_reason_get()
 		    wakeup_reason = BK_PM_WAKEUP_WIFI;
 			break;
 		case INT_SRC_BT:
+		case INT_SRC_BLE:
+		case INT_SRC_BTDM:
 		    wakeup_reason = BK_PM_WAKEUP_BLE;
 			break;
 		case INT_SRC_UART0:

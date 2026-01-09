@@ -19,4 +19,5 @@ typedef struct
 	uint8_t _auto_rsp_write_req;
     uint8_t _support_reconnection_strategy;
     uint8_t _support_reporting_coex_ble_state;
+    uint16_t _ble_max_latency;
 }bt_feature_struct_t;

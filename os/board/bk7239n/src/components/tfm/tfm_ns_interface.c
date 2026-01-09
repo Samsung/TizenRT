@@ -23,6 +23,7 @@
 #include "tfm_ns_interface.h"
 #include "components/log.h"
 #include <driver/flash.h>
+#include "armstar.h"
 
 /* Static ns lock handle - encapsulated within module */
 static beken_mutex_t ns_lock_handle = NULL;
@@ -101,6 +102,7 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
     }
     
     result = fn(arg0, arg1, arg2, arg3);
+    SCB_CleanInvalidateDCache();
 
     /*
      * Whether to check/handle lock release return code depends on NS RTOS

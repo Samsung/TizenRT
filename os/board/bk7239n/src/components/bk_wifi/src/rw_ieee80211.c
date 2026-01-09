@@ -1177,14 +1177,18 @@ UINT8 rw_ieee80211_init_scan_chan(struct scanu_start_req *req)
 		num_chan = wiphy->bands[band]->n_channels;
 		channel = wiphy->bands[band]->channels;
 		for (i = 0; i < num_chan; i++, channel++) {
-			if ((channel->flags & IEEE80211_CHAN_DISABLED) && !ate_is_enabled())
+			if ((channel->flags & IEEE80211_CHAN_DISABLED) && !ate_is_enabled()
+				&& !rwnx_ieee80211_check_conn_instrument(&req->ssid[0], &req->bssid))
 				continue;
 
 			req->chan[cnt].band = channel->band;
 			req->chan[cnt].freq = channel->center_freq;
 			req->chan[cnt].tx_power = VIF_UNDEF_POWER;
-			req->chan[cnt].flags = get_chan_flags(channel->flags);
-
+			if(!(ate_is_enabled() || rwnx_ieee80211_check_conn_instrument(&req->ssid[0], &req->bssid)))
+				req->chan[cnt].flags = get_chan_flags(channel->flags);
+			else///ATE mode or conn instrument, set all channels to active scan
+				req->chan[cnt].flags = 0;
+			//os_printf("freq %d ,flags 0x%x\r\n ",req->chan[cnt].freq,req->chan[cnt].flags);
 			cnt++;
 		}
 	}
@@ -1297,13 +1301,18 @@ UINT8 rw_ieee80211_init_scan_chan_band(struct scanu_start_req *req, UINT8 band)
 		num_chan = wiphy->bands[band_idx]->n_channels;
 		channel = wiphy->bands[band_idx]->channels;
 		for (i = 0; i < num_chan; i++, channel++) {
-			if ((channel->flags & IEEE80211_CHAN_DISABLED) && !ate_is_enabled())
+			if ((channel->flags & IEEE80211_CHAN_DISABLED) && !ate_is_enabled()
+				&& !rwnx_ieee80211_check_conn_instrument(&req->ssid[0], &req->bssid))
 				continue;
 
 			req->chan[cnt].band = channel->band;
 			req->chan[cnt].freq = channel->center_freq;
 			req->chan[cnt].tx_power = VIF_UNDEF_POWER;
-			req->chan[cnt].flags = get_chan_flags(channel->flags);
+			if(!(ate_is_enabled() || rwnx_ieee80211_check_conn_instrument(&req->ssid[0], &req->bssid)))
+				req->chan[cnt].flags = get_chan_flags(channel->flags);
+			else///ATE mode or conn instrument, set all channels to active scan
+				req->chan[cnt].flags = 0;
+			//os_printf("freq %d ,flags 0x%x\r\n ",req->chan[cnt].freq,req->chan[cnt].flags);
 			cnt++;
 		}
 	}
@@ -1674,6 +1683,39 @@ void rwnx_regulatory_hint_11d(int freq, const u8 *country_ie, u8 country_ie_len)
         band = IEEE80211_BAND_2GHZ;
     }
 	regulatory_hint_11d(&g_wiphy, band, country_ie, country_ie_len);
+}
+
+/// Instrument discernible ssid & bssid
+bool rwnx_ieee80211_check_conn_instrument(const struct mac_ssid *ssid, const struct mac_addr *bssid)
+{
+    // check null pointer
+    if (ssid == NULL && bssid == NULL) {
+        return false;
+    }
+
+    UINT8 ssid_array[] = "CMW-AP";
+    UINT8 ssid_length = sizeof(ssid_array) - 1;
+    UINT8 ssid_array2[] = "P-DCTEST";
+    UINT8 ssid_length2 = sizeof(ssid_array2) - 1;
+    UINT16 bssid_addr1 = 0x0100; //"00:01:02:03:04:05"
+    UINT16 bssid_addr2 = 0x0302;
+    UINT16 bssid_addr3 = 0x0504;
+
+    // check SSID is matched
+    if (ssid && (ssid_length == ssid->length) && (!memcmp(ssid_array, ssid->array, ssid_length))) {
+        return true;
+    } else if (ssid && (ssid_length2 == ssid->length) && (!memcmp(ssid_array2, ssid->array, ssid_length2))) {
+        return true;
+    }
+
+    // check BSSID is matched (two SSID use the same BSSID check logic)
+    if (bssid && (bssid->array[0] == bssid_addr1) &&
+        (bssid->array[1] == bssid_addr2) &&
+        (bssid->array[2] == bssid_addr3)) {
+        return true;
+    }
+
+    return false;
 }
 // eof
 

@@ -434,6 +434,7 @@ typedef enum
 
     BLE_5_COC_REG_COMPL_EVENT,
     BLE_5_COC_UNREG_COMPL_EVENT,
+    BLE_5_COC_CONFIG_COMPL_EVENT,
     BLE_5_COC_CONNECTION_COMPL_EVENT,
     BLE_5_COC_DISCCONNECT_COMPL_EVENT,
     BLE_5_COC_TX_DONE,
@@ -759,6 +760,11 @@ typedef struct
         {
             uint16_t psm;
         } coc_reg_evt;
+
+        struct
+        {
+            uint16_t psm;
+        } coc_config_evt;
 
         struct
         {

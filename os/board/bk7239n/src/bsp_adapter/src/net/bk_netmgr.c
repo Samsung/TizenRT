@@ -773,7 +773,7 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
     wifi_event_sta_connected_t *sta_connected;
     wifi_event_ap_disconnected_t *ap_disconnected;
     wifi_event_ap_connected_t *ap_connected;
-    BK_WIFI_LOGI("BEKEN_WIFI_EVENT", "rx event <%d %d>\n", event_module, event_id);
+
     switch (event_id) {
     case EVENT_WIFI_STA_ASSOCIATED:
 
@@ -845,7 +845,7 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
         break;
 
     default:
-        ndbg("rx event <%d %d>\n", event_module, event_id);
+        BK_WIFI_LOGI("BEKEN_WIFI_EVENT", "rx event <%d %d>\n", event_module, event_id);
         trwifi_post_event(armino_dev_wlan0, LWNL_EVT_UNKNOWN, NULL, 0);
         break;
     }
@@ -886,6 +886,12 @@ trwifi_result_e bk_wifi_netmgr_init(struct netdev *dev)
         ndbg("[BK] Unknown interface name\n");
         return TRWIFI_FAIL;
     }
+
+    #if CONFIG_BK_WIFI_CSI_ADAPTER
+    extern int bk_wifi_csi_init(int minor);
+    bk_wifi_csi_init(0);
+    #endif
+
     g_netmgr_init = true;
     return TRWIFI_SUCCESS;
 }

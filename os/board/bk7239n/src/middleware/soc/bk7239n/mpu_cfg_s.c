@@ -139,18 +139,22 @@ void bk_mpu_init(void)
 	mpu_cfg.xn = MPU_EXEC_NEVER;
 	mpu_cfg.ap = MPU_UN_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
+#if defined(CONFIG_BK_TIZEN_IPERF_PROJECT) && (CONFIG_BK_TIZEN_IPERF_PROJECT == 1)
+	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
+#else
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
+#endif
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 
     /* MPU region 8 qspi0 */
-    mpu_entry = mpu_entry_alloc();
-	mpu_cfg.region_base = 0x74000000;
-	mpu_cfg.region_size = 0x3FFFFE0;
-	mpu_cfg.xn = MPU_EXEC_NEVER;
-	mpu_cfg.ap = MPU_UN_PRIV_RW;
-	mpu_cfg.sh = MPU_NON_SHAREABLE;
-	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
-	mpu_region_cfg(mpu_entry, &mpu_cfg);
+    // mpu_entry = mpu_entry_alloc();
+	// mpu_cfg.region_base = 0x74000000;
+	// mpu_cfg.region_size = 0x3FFFFE0;
+	// mpu_cfg.xn = MPU_EXEC_NEVER;
+	// mpu_cfg.ap = MPU_UN_PRIV_RW;
+	// mpu_cfg.sh = MPU_NON_SHAREABLE;
+	// mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
+	// mpu_region_cfg(mpu_entry, &mpu_cfg);
 
     /* MPU region 8 qspi1 */
     // mpu_entry = mpu_entry_alloc();
@@ -160,16 +164,6 @@ void bk_mpu_init(void)
 	// mpu_cfg.ap = MPU_UN_PRIV_RW;
 	// mpu_cfg.sh = MPU_NON_SHAREABLE;
 	// mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
-	// mpu_region_cfg(mpu_entry, &mpu_cfg);
-
-    /* MPU region 10 non-secure psram and non-secure qspi */
-    // mpu_entry = mpu_entry_alloc();
-	// mpu_cfg.region_base = 0x70000000;
-	// mpu_cfg.region_size = 0xFFFFFE0;
-	// mpu_cfg.xn = MPU_EXEC_NEVER;
-	// mpu_cfg.ap = MPU_UN_PRIV_RW;
-	// mpu_cfg.sh = MPU_NON_SHAREABLE;
-	// mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
 	// mpu_region_cfg(mpu_entry, &mpu_cfg);
 
     /* MPU region 11 ppb and other */

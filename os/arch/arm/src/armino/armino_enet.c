@@ -65,6 +65,8 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 
+extern void bk_wifi_sta_get_mac(uint8_t *mac);
+extern void bk_wifi_ap_get_mac(uint8_t *mac);
 
 
 struct netdev *armino_dev_wlan0 = NULL;
@@ -115,11 +117,19 @@ void up_netinitialize(void)
 	armino_dev_wlan0 = armino_register_dev(alloc_size);
 	if (armino_dev_wlan0 == NULL) {
 		ndbg("Failed to register armino netdev wlan0\n");
+	} else {
+		uint8_t macptr[6] = {0};
+		bk_wifi_sta_get_mac(macptr);
+		netdev_set_hwaddr(armino_dev_wlan0, macptr, 6);
 	}
 
 	armino_dev_wlan1 = armino_register_dev(alloc_size);
 	if (armino_dev_wlan1 == NULL) {
 		ndbg("Failed to register armino netdev wlan1\n");
+	} else {
+		uint8_t macptr[6] = {0};
+		bk_wifi_ap_get_mac(macptr);
+		netdev_set_hwaddr(armino_dev_wlan1, macptr, 6);
 	}
 
 #ifdef CONFIG_VIRTUAL_BLE

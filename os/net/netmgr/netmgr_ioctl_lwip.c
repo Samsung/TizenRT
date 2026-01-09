@@ -269,6 +269,16 @@ static struct addrinfo *_netdev_copy_addrinfo(struct addrinfo *src)
 		dst->ai_protocol = tmp->ai_protocol;
 		dst->ai_addrlen = tmp->ai_addrlen;
 
+#ifdef CONFIG_NET_IPv6
+		/* For IPv6 support: use ai_addrlen to handle both IPv4 (16 bytes) and IPv6 (28 bytes) correctly */
+		dst->ai_addr = (struct sockaddr *)kumm_malloc(tmp->ai_addrlen);
+		if (!dst->ai_addr) {
+			NET_LOGKE(TAG, "kumm_malloc failed\n");
+			kumm_free(dst);
+			break;
+		}
+		memcpy(dst->ai_addr, tmp->ai_addr, tmp->ai_addrlen);
+#else
 		dst->ai_addr = (struct sockaddr *)kumm_malloc(sizeof(struct sockaddr));
 		if (!dst->ai_addr) {
 			NET_LOGKE(TAG, "kumm_malloc failed\n");
@@ -276,7 +286,7 @@ static struct addrinfo *_netdev_copy_addrinfo(struct addrinfo *src)
 			break;
 		}
 		memcpy(dst->ai_addr, tmp->ai_addr, sizeof(struct sockaddr));
-
+#endif
 		if (tmp->ai_canonname) {
 			dst->ai_canonname = (char *)kumm_malloc(strlen(tmp->ai_canonname) + 1);
 			if (!dst->ai_canonname) {

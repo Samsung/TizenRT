@@ -723,21 +723,78 @@ typedef struct {
 /**
  * @brief Wi-Fi Channel State Information configuration and results.
  */
+#define FILTER_SRC_MAC_MAX (8)
+#define FILTER_DST_MAC_MAX (8)
 typedef struct {
-    /// TSF High
-    uint32_t tsfhi;
-    /// TSF Low
-    uint32_t tsflo;
-}wifi_pkt_rx_ctrl_t;
+	bool enable; 			/**< enable or disable csi active, true: enable, false: disable */
+	uint32_t interval; 		/**< interval of csi active, unit: ms */
+}wifi_csi_active_mode_config_t;
 
 typedef struct {
-	wifi_pkt_rx_ctrl_t rx_ctrl;         /**< rx packet ctrl  */ 
-	uint8_t mac[WIFI_MAC_LEN];          /**< MAC Address of the CSI info receive */
-	uint16_t len;                       /**< The length of CSI info */
-	uint32_t buf[240];                  /**< CSI info */
-}wifi_csi_info_t;
+	uint8_t proto_type_bmp; /**< b`0001:NON_HT,b`0010:HT, b`0100:VHT, b`1000:HE */
+	uint8_t cbw_bmp; /**< b`0001:20MHz, b`0010:40MHz, b`0011: 20Mhz || 40Mhz*/
+	uint8_t filter_mac_addr_type; /**< 0:all mac;1:src && dst;2: dst only; 3:src only; 4:src || dst*/
+	uint8_t filter_src_mac_num; /**< Number of source MAC addresses to filter */
+	uint8_t filter_src_mac[WIFI_MAC_LEN * FILTER_SRC_MAC_MAX]; /**< Source MAC filter list (max 16 entries) */
+	uint8_t filter_dst_mac_num; /**< Number of destination MAC addresses to filter */
+	uint8_t filter_dst_mac[WIFI_MAC_LEN * FILTER_DST_MAC_MAX]; /**< Destination MAC filter list (max 8 entries) */
+	uint32_t filter_mgmt_frame_bmp; /**< Bitmap for management frames to capture ,enable:0x80000000 */
+	uint32_t filter_ctrl_frame_bmp; /**< Bitmap for control frames to capture ,enable:0x80000000 */
+	uint32_t filter_data_frame_bmp; /**< Bitmap for data frames to capture ,enable:0x80000000 */
+}wifi_csi_filter_config_t;
 
-typedef void (* wifi_csi_cb_t)(wifi_csi_info_t **info,uint8_t flag);
+typedef struct {
+	bool enable; 			/**< enable or disable csi pure receiving, true: enable, false: disable */
+	wifi_csi_filter_config_t filter_config; /**< filter config */
+}wifi_csi_receive_mode_config_t;
+
+enum {
+	CSI_RATE_6M= 0,    // 6 Mbps
+    CSI_RATE_9M,       // 9 Mbps
+    CSI_RATE_12M,      // 12 Mbps
+    CSI_RATE_18M,      // 18 Mbps
+    CSI_RATE_24M,      // 24 Mbps
+    CSI_RATE_36M,      // 36 Mbps
+    CSI_RATE_48M,      // 48 Mbps
+    CSI_RATE_54M       // 54 Mbps
+};
+
+struct wifi_rx_pkt_t{
+	uint8_t proto_type; /**< 0x0:non HT packet; 0x2:HT packet;0x4:VHT packet;0x5:HE packet */
+	uint8_t band; /**< 0x0:2.4G; 0x1:5G*/
+	uint8_t pri_chan; /**< primary channel on which this packet is received */
+	uint8_t rate; /**< PHY rate encoding of the packet. Only valid for non-HT packet */
+	uint8_t mcs; /**< Modulation Coding Scheme. Only valid for HT,VHT,HE packet*/
+	uint8_t cbw; /**< Channel Bandwidth of the packet. 0: 20MHz; 1: 40MHz */
+	int8_t rssi; /**< Received Signal Strength Indicator(RSSI) of packet. unit: dBm */
+	uint8_t snr; /**< SNR of AGC stage */
+	uint8_t agc_gain; /**< Post-AGC link gain */
+	uint8_t gi_type; /**< Guide Interval(GI). */
+	uint8_t stbc; /**< Space Time Block Code(STBC). 0: non STBC packet; 1: STBC packet */
+	uint8_t pkt_len; /**< length of packet including Frame Check Sequence(FCS) */
+	uint8_t src_mac[WIFI_MAC_LEN]; /**< Source MAC Address of the CSI info receive */
+	uint8_t dst_mac[WIFI_MAC_LEN]; /**< Destination MAC Address of the CSI info receive */
+	uint32_t timestamp; /**< timestamp. The local time when this packet is received. unit: microsecond */
+};
+
+struct csi_cfr_t{
+	float real; /**< csi real part */
+	float imag; /**< csi imaginary part*/
+};
+
+struct csi_info_t{
+	uint8_t ltf_type; /**<0:invalid; 1:L-LTF; 2:HT_LTF; 3: VHT_LTF; 4: HE; 5: STBC_HT_LTF; 6: STBC_VHT_LTF; 7: STBC_HE_LTF */
+	uint8_t sc_num; /**< The number of CSI subcarrier */
+	struct csi_cfr_t *csi_data; /**<pointer to csi_data, data_len is sc_num */
+};
+
+#define MAX_NUM 3
+struct wifi_csi_info_t{
+	struct wifi_rx_pkt_t rx_ctrl; /**< rx packet ctrl info*/
+	struct csi_info_t csi_info[MAX_NUM]; /**< csi data info, max is 3*/
+};
+
+typedef void (* wifi_csi_cb_t)(struct wifi_csi_info_t *info);
 
 /**
  * @brief Wi-Fi tx statistics.
