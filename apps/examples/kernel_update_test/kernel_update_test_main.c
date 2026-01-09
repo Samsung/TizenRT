@@ -45,10 +45,22 @@
 /* Kernel binary information for update test */
 #define KERNEL                  "kernel"
 
-/* Common/app1 binary names for testing */
-/* Kernel / Common / App1 binary must be set at once */
+/* Common/app1/app2 binary names for testing */
+/* Kernel / Common / App1 / App2 binary must be set at once */
 #define COMMON                   "common"
 #define APP1                     "app1"
+#define APP2                     "app2"
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+char *bin_names[] = {KERNEL, COMMON, APP1};
+uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP};
+#else
+char *bin_names[] = {KERNEL, APP1, APP2};
+uint8_t bin_types[] = {BINARY_KERNEL, BINARY_USERAPP, BINARY_USERAPP};
+#endif
+
+int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
+
 
 #define DOWNLOAD_VALID_BIN          0
 #define DOWNLOAD_INVALID_BIN        1
@@ -410,9 +422,6 @@ static int binary_update_same_version_test(void)
 	int ret;
 	binary_update_info_t pre_bin_info[3];
 	binary_update_info_t cur_bin_info[3];
-	char *bin_names[] = {KERNEL, COMMON, APP1};
-	uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP};
-	int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
 	int i;
 	update_type_flag = 0;
 
@@ -468,9 +477,6 @@ static int binary_update_new_version_test(void)
 	int ret;
 	binary_update_info_t pre_bin_info[3];
 	binary_update_info_t cur_bin_info[3];
-	char *bin_names[] = {KERNEL, COMMON, APP1};
-	uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP};
-	int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
 	int i;
 	update_type_flag = 0;
 
@@ -530,9 +536,6 @@ static int binary_update_invalid_binary_test(void)
 	int ret;
 	binary_update_info_t pre_bin_info[3];
 	binary_update_info_t cur_bin_info[3];
-	char *bin_names[] = {KERNEL, COMMON, APP1};
-	uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP};
-	int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
 	int i;
 	update_type_flag = 0;
 
@@ -619,6 +622,16 @@ static int binary_update_run_tests(void)
 	return OK;
 }
 
+static void show_usage(void)
+{
+	printf("Usage: kernel_update <test_type>\n");
+	printf("Available test types:\n");
+	printf("  all          - Run all tests\n");
+	printf("  same_version - Run same version test\n");
+	printf("  new_version  - Run new version test\n");
+	printf("  invalid      - Run invalid binary test\n");
+}
+
 /****************************************************************************
  * binary_update_aging_test
  ****************************************************************************/
@@ -628,5 +641,39 @@ int main(int argc, FAR char *argv[])
 int kernel_update_main(int argc, char *argv[])
 #endif
 {
-	binary_update_run_tests();	
+	if (argc == 2 && !strncmp(argv[1], "all", 4)) {
+		/* Run all tests */
+		return binary_update_run_tests();
+
+	} else if (argc == 2 && !strncmp(argv[1], "same_version", 13)) {
+		/* Get info all test. */
+		binary_update_getinfo_all();
+		
+		int ret = binary_update_same_version_test();
+		if (ret != OK) {
+			printf("Same version test failed\n");
+		}
+		return ret;
+	} else if (argc == 2 && !strncmp(argv[1], "new_version", 12)) {
+		/* Get info all test. */
+		binary_update_getinfo_all();
+		
+		int ret = binary_update_new_version_test();
+		if (ret != OK) {
+			printf("New version test failed\n");
+		}
+		return ret;
+	} else if (argc == 2 && !strncmp(argv[1], "invalid", 8)) {
+		/* Get info all test. */
+		binary_update_getinfo_all();
+		
+		int ret = binary_update_invalid_binary_test();
+		if (ret != OK) {
+			printf("Invalid binary test failed\n");
+		}
+		return ret;
+	}
+	printf("Invalid test type: %s\n", argv[1]);
+	show_usage();
+	return ERROR;
 }
