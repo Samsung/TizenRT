@@ -290,7 +290,7 @@ int pm_metrics(int milliseconds)
 		return OK;
 	}
 	/* There is no need to do measurement if PM is not ready to state change */
-	if (!g_pmglobals.is_running) {
+	if (!is_pm_running()) {
 		pmdbg("Please Start PM to enable PM Metrics\n");
 		return OK;
 	}
