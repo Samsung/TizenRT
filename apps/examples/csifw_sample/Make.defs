@@ -1,0 +1,4 @@
+ifeq ($(CONFIG_EXAMPLES_CSIFW_SAMPLE),y)
+CONFIGURED_APPS += examples/csifw_sample
+endif
+
