@@ -787,7 +787,7 @@ static int u16550_interrupt(int irq, void *context, void *arg)
 		/* Handle outgoing, transmit bytes */
 
 		case UART_IIR_INTID_THRE: {
-			uart_xmitchars(dev);
+			(void)uart_xmitchars(dev);
 			break;
 		}
 
@@ -967,7 +967,7 @@ static void u16550_txint(struct uart_dev_s *dev, bool enable)
 		 * interrupts disabled (note this may recurse).
 		 */
 
-		uart_xmitchars(dev);
+		(void)uart_xmitchars(dev);
 	} else {
 		priv->ier &= ~UART_IER_ETBEI;
 		u16550_serialout(priv, UART_IER_OFFSET, priv->ier);
