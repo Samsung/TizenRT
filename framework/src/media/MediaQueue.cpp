@@ -21,9 +21,11 @@
 namespace media {
 MediaQueue::MediaQueue()
 {
+	medvdbg("MediaQueue::MediaQueue()\n");
 }
 MediaQueue::~MediaQueue()
 {
+	meddbg("MediaQueue::~MediaQueue()\n");
 }
 
 std::function<void()> MediaQueue::deQueue()
@@ -48,10 +50,8 @@ bool MediaQueue::isEmpty()
 void MediaQueue::clearQueue(void)
 {
 	std::unique_lock<std::mutex> lock(mQueueMtx);
-	if (!mQueueData.empty()) {
-		std::queue<std::function<void()>> empty;
-		empty.push(std::move(std::function<void()>())); //push an empty function so, that pop() in dequeue will not crash if called after clearQueue().
-		std::swap(mQueueData, empty);
+	while (!mQueueData.empty()) {
+		mQueueData.pop();
 	}
 }
 } // namespace media
