@@ -55,6 +55,9 @@ static uint8_t *rx_data_ptr = NULL;
 static uint32_t rx_data_len = 0;
 static sem_t g_send_cmd_done;
 static sem_t g_read_cmd_done;
+static volatile spinlock_t g_tx_lock = SP_UNLOCKED;
+static volatile spinlock_t g_rx_lock = SP_UNLOCKED;
+
 #define MIPI_TRANSFER_TIMEOUT 1 /*one second timeout for mipi transfer*/
 struct amebasmart_mipi_dsi_host_s {
 	struct mipi_dsi_host dsi_host;
@@ -193,7 +196,9 @@ static void amebasmart_mipidsi_send_cmd(MIPI_TypeDef *MIPIx, u8 cmd, u8 payload_
 	u32 word0, word1, addr, idx;
 	u8 cmd_addr[128];
 	if (MIPI_LPTX_IS_READ(cmd_type)) {
+		spin_lock(&g_rx_lock);
 		receive_cmd_done = 0;
+		spin_unlock(&g_rx_lock);
 	}
 	if (payload_len == 0) {
 		MIPI_DSI_CMD_Send(MIPIx, cmd_type, cmd, 0);
@@ -264,10 +269,12 @@ static void amebasmart_mipidsi_rcmd_decode(MIPI_TypeDef *MIPIx, u8 rcmd_idx)
 		}
 		rx_data_rdy = TRUE;
 	}
+	spin_lock(&g_rx_lock);
 	if (receive_cmd_done == 0) {
 		receive_cmd_done = 1;
 		sem_post(&g_read_cmd_done);
 	}
+	spin_unlock(&g_rx_lock);
 }
 
 static void amebasmart_mipi_reset_trx_helper(MIPI_TypeDef *MIPIx)
@@ -279,8 +286,10 @@ static void amebasmart_mipi_reset_trx_helper(MIPI_TypeDef *MIPIx)
 	MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) | MIPI_BIT_LPTX_RST | MIPI_BIT_LPRX_RST;
 	DelayUs(1);
 	MIPIx->MIPI_MAIN_CTRL = (MIPIx->MIPI_MAIN_CTRL & ~MIPI_BIT_DSI_MODE) & ~MIPI_BIT_LPTX_RST & ~MIPI_BIT_LPRX_RST;
+	spin_lock(&g_rx_lock);
 	rx_data_ptr = NULL;
 	rx_data_len = 0;
+	spin_unlock(&g_rx_lock);
 }
 
 static void amebasmart_mipidsi_isr(void)
@@ -295,10 +304,16 @@ static void amebasmart_mipidsi_isr(void)
 	MIPI_DSI_INTS_ACPU_Clr(MIPIx, reg_val2);
 	if (reg_val & MIPI_BIT_CMD_TXDONE) {
 		reg_val &= ~MIPI_BIT_CMD_TXDONE;
+		spin_lock(&g_tx_lock);
 		if (send_cmd_done == 0) {
 			send_cmd_done = 1;
 			sem_post(&g_send_cmd_done);
+		} else {
+			/* Already done - ignore delayed TX IRQ */
+			spin_unlock(&g_tx_lock);
+			return;
 		}
+		spin_unlock(&g_tx_lock);
 	}
 	if (reg_val & MIPI_BIT_RCMD1) {
 		amebasmart_mipidsi_rcmd_decode(MIPIx, 0);
@@ -449,10 +464,12 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	struct mipi_dsi_packet packet;
 	struct timespec abstime;
 	irqstate_t flags;
+	bool is_read_operation = false;
 	/*When underflow happens, mipi's irq will be registered to rtl8730e_mipidsi_underflowreset callback to handle video mode frame done interrupt.
 	  only one type of interrupt can be enabled at any one time, either cmd mode interrupt or video mode interrupt, so we need to re-register mipi's
 	  irq cmd mode callback here
 	*/
+	MIPI_DSI_INT_Config(priv->MIPIx, DISABLE, ENABLE, FALSE);
 #ifdef CONFIG_SMP
 	spin_lock(&g_rtl8730e_config_dev_s_underflow);
 #endif
@@ -482,13 +499,24 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 #endif
 		return ret;
 	}
+	is_read_operation = MIPI_LPTX_IS_READ(msg->type);
+	flags = enter_critical_section();
+	/* Initialize state for new transfer */
+	spin_lock(&g_tx_lock);
 	send_cmd_done = 0;
+	spin_unlock(&g_tx_lock);
+	spin_lock(&g_rx_lock);
 	receive_cmd_done = 1;
 	rx_data_rdy = FALSE;
-	if (msg->rx_buf) {
+	if (msg->rx_buf && is_read_operation) {
 		rx_data_ptr = msg->rx_buf;
 		rx_data_len = msg->rx_len;
+	} else {
+		rx_data_ptr = NULL;
+		rx_data_len = 0;
 	}
+	spin_unlock(&g_rx_lock);
+	/* Send the command */
 	if (mipi_dsi_packet_format_is_short(msg->type)) {
 		if (packet.header[1] == 0) {
 			amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], 0, NULL, msg->type);
@@ -498,27 +526,60 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 	} else {
 		amebasmart_mipidsi_send_cmd(priv->MIPIx, packet.header[0], packet.payload_length, packet.payload, msg->type);
 	}
-	flags = enter_critical_section();
+	/* Wait for TX completion */
 	(void)clock_gettime(CLOCK_REALTIME, &abstime);
 	abstime.tv_sec += MIPI_TRANSFER_TIMEOUT;
+
 	while (sem_timedwait(&g_send_cmd_done, &abstime) != OK) {
 		if (errno == EINTR) {
 			continue;
-		} else { 
-			goto Fail_case;
+		} else {
+			/* Timeout occurred */
+			if (send_cmd_done == 0) {
+				ret = -ETIMEDOUT;
+				goto cleanup;
+			}
+			break;
 		}
 	}
-	if (MIPI_LPTX_IS_READ(msg->type)) {
+	
+	/* If TX succeeded and it's a read operation, wait for RX completion */
+	if (is_read_operation) {
 		(void)clock_gettime(CLOCK_REALTIME, &abstime);
 		abstime.tv_sec += MIPI_TRANSFER_TIMEOUT;
 		while (sem_timedwait(&g_read_cmd_done, &abstime) != OK) {
 			if (errno == EINTR) {
 				continue;
 			} else { 
-				goto Fail_case;
+				/* RX timeout occurred */
+				if (receive_cmd_done == 0) {
+					spin_lock(&g_rx_lock);
+					/* if rx timeout happens, the rx_buf will need to be set as it might be garbage data.*/
+					if (msg->rx_buf && msg->rx_len > 0) {
+						memset(msg->rx_buf, 0, msg->rx_len);
+					}
+					spin_unlock(&g_rx_lock);
+					ret = -ETIMEDOUT;
+					goto cleanup;
+				}
+				break;
 			}
 		}
 	}
+	
+	ret = OK;
+	
+cleanup:
+	/* Reset state for next transfer */
+	spin_lock(&g_tx_lock);
+	send_cmd_done = 1;
+	spin_unlock(&g_tx_lock);
+	spin_lock(&g_rx_lock);
+	receive_cmd_done = 1;
+	/*in the end of transfer, set rx data ptr to NULL regardless success/fail.*/
+	rx_data_ptr = NULL;
+	rx_data_len = 0;
+	spin_unlock(&g_rx_lock);
 	leave_critical_section(flags);
 #ifdef CONFIG_SMP
 	spin_unlock(&g_rtl8730e_config_dev_s_underflow);
@@ -526,33 +587,8 @@ static int amebasmart_mipi_transfer(FAR struct mipi_dsi_host *dsi_host, FAR cons
 #ifdef CONFIG_PM
 	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
 #endif
-	if (rx_data_rdy) {
-		rx_data_ptr = NULL;
-		rx_data_len = 0;
-	}
-	return OK;
-Fail_case:
-	if (send_cmd_done == 0) {
-		sem_init(&g_send_cmd_done, 0, 0);
-	}
-	if (receive_cmd_done == 0) {
-		sem_init(&g_read_cmd_done, 0, 0);
-	}
-	if (msg->rx_buf && msg->rx_len > 0 && MIPI_LPTX_IS_READ(msg->type)) {
-		memset(msg->rx_buf, 0, msg->rx_len);
-		rx_data_ptr = NULL;
-		rx_data_len = 0;
-	}
-	leave_critical_section(flags);
-#ifdef CONFIG_SMP
-	spin_unlock(&g_rtl8730e_config_dev_s_underflow);
-#endif
-#ifdef CONFIG_PM
-	bsp_pm_domain_control(BSP_MIPI_DRV, 0);
-#endif
-	return FAIL;
+	return ret;
 }
-
 
 #ifdef CONFIG_PM
 static uint32_t rtk_mipi_suspend(uint32_t expected_idle_time, void *param)
