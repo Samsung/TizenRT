@@ -106,27 +106,27 @@ public:
 	bool isRecording();
 	recorder_result_t setDuration(int second);
 	recorder_result_t setFileSize(int byte);
-	void notifySync();
+	void notifySync(std::condition_variable &syncCv);
 	void notifyObserver(recorder_observer_command_t cmd, ...);
 	void capture();
 
 private:
-	void createRecorder(recorder_result_t& ret);
-	void destroyRecorder(recorder_result_t& ret);
-	void prepareRecorder(recorder_result_t& ret);
-	void unprepareRecorder(recorder_result_t& ret);
-	void startRecorder(recorder_result_t& ret);
-	void pauseRecorder(recorder_result_t& ret, bool notify);
-	void stopRecorder(recorder_result_t& ret);
+	void createRecorder(recorder_result_t& ret, std::condition_variable &syncCv);
+	void destroyRecorder(recorder_result_t& ret, std::condition_variable &syncCv);
+	void prepareRecorder(recorder_result_t& ret, std::condition_variable &syncCv);
+	void unprepareRecorder(recorder_result_t& ret, std::condition_variable &syncCv);
+	void startRecorder(recorder_result_t& ret, std::condition_variable &syncCv);
+	void pauseRecorder(recorder_result_t& ret, bool notify, std::condition_variable &syncCv);
+	void stopRecorder(recorder_result_t& ret, std::condition_variable &syncCv);
 	void stopRecorderInternal(recorder_observer_command_e command, recorder_result_t ret);
-	void getRecorderVolume(uint8_t *vol, recorder_result_t& ret);
-	void getRecorderMaxVolume(uint8_t *vol, recorder_result_t& ret);
-	void setRecorderVolume(uint8_t vol, recorder_result_t& ret);
-	void setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer, recorder_result_t& ret);
-	void unsetRecorderObserver();
-	void setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t& ret);
-	void setRecorderDuration(int second, recorder_result_t& ret);
-	void setRecorderFileSize(int byte, recorder_result_t& ret);
+	void getRecorderVolume(uint8_t *vol, recorder_result_t& ret, std::condition_variable &syncCv);
+	void getRecorderMaxVolume(uint8_t *vol, recorder_result_t& ret, std::condition_variable &syncCv);
+	void setRecorderVolume(uint8_t vol, recorder_result_t& ret, std::condition_variable &syncCv);
+	void setRecorderObserver(std::shared_ptr<MediaRecorderObserverInterface> observer, recorder_result_t& ret, std::condition_variable &syncCv);
+	void unsetRecorderObserver(std::condition_variable &syncCv);
+	void setRecorderDataSource(std::shared_ptr<stream::OutputDataSource> dataSource, recorder_result_t& ret, std::condition_variable &syncCv);
+	void setRecorderDuration(int second, recorder_result_t& ret, std::condition_variable &syncCv);
+	void setRecorderFileSize(int byte, recorder_result_t& ret, std::condition_variable &syncCv);
 	void dequeueAndRunObserverCallback();
 	void onMuteListener(void);
 
@@ -139,7 +139,6 @@ private:
 	unsigned char* mBuffer;
 	int mBuffSize;
 	mutex mCmdMtx; // command mutex
-	std::condition_variable mSyncCv;
 	int mDuration;
 	int mFileSize;
 	uint32_t mTotalFrames;
