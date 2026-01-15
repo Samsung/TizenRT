@@ -274,7 +274,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
     case RTK_BT_LE_GAP_EVT_EXT_SCAN_RES_IND: {
         rtk_bt_le_ext_scan_res_ind_t *scan_res_ind = (rtk_bt_le_ext_scan_res_ind_t *)param;
         rtk_bt_le_addr_to_str(&(scan_res_ind->addr), le_addr, sizeof(le_addr));
-        // printf("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %i, PHY: 0x%x, TxPower: %d, Len: %d\r\n", 
+        // dbg("[APP] Ext Scan info, [Device]: %s, AD evt type: 0x%x, RSSI: %i, PHY: 0x%x, TxPower: %d, Len: %d\r\n", 
         // 		le_addr, scan_res_ind->evt_type, scan_res_ind->rssi,
         // 		(scan_res_ind->primary_phy << 4) | scan_res_ind->secondary_phy,
         // 		scan_res_ind->tx_power, scan_res_ind->len);
@@ -421,9 +421,9 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         } else {
             dbg("[APP] Conn param is updated, conn_handle: %d, conn_interval: 0x%x, "       \
                     "conn_latency: 0x%x, supervision_Timeout: 0x%x\r\n",
-                        conn_update_ind->conn_handle, 
+                        conn_update_ind->conn_handle,
                         conn_update_ind->conn_interval,
-                        conn_update_ind->conn_latency, 
+                        conn_update_ind->conn_latency,
                         conn_update_ind->supv_timeout);
         }
         break;
@@ -435,7 +435,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         dbg("[APP] Remote device request a change in conn param, conn_handle: %d, "      \
                 "conn_interval_max: 0x%x, conn_interval_min: 0x%x, conn_latency: 0x%x, "      \
                 "timeout: 0x%x. The host stack accept it.\r\n",
-                rmt_update_req->conn_handle, 
+                rmt_update_req->conn_handle,
                 rmt_update_req->conn_interval_max,
                 rmt_update_req->conn_interval_min,
                 rmt_update_req->conn_latency,
@@ -451,9 +451,9 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
                 "max_tx_octets: 0x%x, max_tx_time: 0x%x, "        \
                 "max_rx_octets: 0x%x, max_rx_time: 0x%x\r\n", 
                 data_len_change->conn_handle,
-                data_len_change->max_tx_octets, 
+                data_len_change->max_tx_octets,
                 data_len_change->max_tx_time,
-                data_len_change->max_rx_octets, 
+                data_len_change->max_rx_octets,
                 data_len_change->max_rx_time);
         break;
     }
@@ -467,8 +467,8 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
                     phy_update_ind->err);
         } else {
             dbg("[APP] PHY is updated, conn_handle: %d, tx_phy: %d, rx_phy: %d\r\n",
-                    phy_update_ind->conn_handle, 
-                    phy_update_ind->tx_phy, 
+                    phy_update_ind->conn_handle,
+                    phy_update_ind->tx_phy,
                     phy_update_ind->rx_phy);
         }
         break;
@@ -604,7 +604,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 					memset(ble_tizenrt_scatternet_bond_list[i].conn_info.addr.mac, 0, RTK_BD_ADDR_LEN);
 					break;
 				}
-			}			
+			}
 		}else if(RTK_BT_LE_BOND_CLEAR == bond_mdf_ind->op){
 			for(int i = 0; i < GAP_MAX_LINKS; i++)
 			{
@@ -625,19 +625,19 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 			memcpy(addr.addr_val, p_ind->entry.addr, RTK_BD_ADDR_LEN);
 			rtk_bt_le_addr_to_str(&addr, le_addr, sizeof(le_addr));
 			if(p_ind->err) {
-				printf("[APP] Resolving list %s %s fail, cause:%x.\r\n",
-					   (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD)?"add":"remove",
-					   le_addr, p_ind->err);
+				dbg("[APP] Resolving list %s %s fail, cause:%x.\r\n",
+						(p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD)?"add":"remove",
+						le_addr, p_ind->err);
 			} else {
-				printf("[APP] Resolving list %s %s success, %s privacy mode.\r\n", 
-					   (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD)?"add":"remove",
-					   le_addr, p_ind->entry.device_mode?"device":"network");
+				dbg("[APP] Resolving list %s %s success, %s privacy mode.\r\n", 
+						(p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_ADD)?"add":"remove",
+						le_addr, p_ind->entry.device_mode?"device":"network");
 			}
 		} else if (p_ind->op == RTK_BT_LE_RESOLV_LIST_OP_CLEAR){
 			if(p_ind->err)
-				printf("[APP] Resolving list clear fail, cause:%x.\r\n", p_ind->err);
+				dbg("[APP] Resolving list clear fail, cause:%x.\r\n", p_ind->err);
 			else
-				printf("[APP] Resolving list clear success.\r\n");
+				dbg("[APP] Resolving list clear success.\r\n");
 		}
 		break;
 	}
@@ -646,8 +646,8 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 #if RTK_BLE_5_0_PA_SYNC_SUPPORT
 	case RTK_BT_LE_GAP_EVT_PA_SYNC_STATE_IND: {
 		rtk_bt_le_pa_sync_ind_t *pa_sync_ind = (rtk_bt_le_pa_sync_ind_t *)param;
-		printf("[APP] PA sync state change: sync_id: %d, state = %d, cause: 0x%x\r\n",
-			   pa_sync_ind->sync_id, pa_sync_ind->state, pa_sync_ind->cause);
+		dbg("[APP] PA sync state change: sync_id: %d, state = %d, cause: 0x%x\r\n",
+				pa_sync_ind->sync_id, pa_sync_ind->state, pa_sync_ind->cause);
 
 		if(pa_sync_ind->state == RTK_BT_LE_PA_SYNC_STATE_SYNCHRONIZED) {
 			rtk_bt_le_pa_sync_sync_param_t sync_param;
@@ -657,11 +657,11 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				addr.type = sync_param.adv_addr_type;
 				memcpy(addr.addr_val, sync_param.adv_addr, RTK_BD_ADDR_LEN);
 				rtk_bt_le_addr_to_str(&addr, le_addr, sizeof(le_addr));
-				printf("[APP] PA SYNCHRONIZED PARAM: [Device]: %s, sync_handle:0x%x, adv_sid:%d, skip:%d, sync_timeout:%d, ", 
+				dbg("[APP] PA SYNCHRONIZED PARAM: [Device]: %s, sync_handle:0x%x, adv_sid:%d, skip:%d, sync_timeout:%d, ", 
 						le_addr, sync_param.sync_handle, sync_param.adv_sid, sync_param.skip, sync_param.sync_timeout);
-				printf("sync_cte_type:%d, adv_phy:%d, adv_clock_accuracy:0x%x, ", 
+				dbg("sync_cte_type:%d, adv_phy:%d, adv_clock_accuracy:0x%x, ", 
 						sync_param.sync_cte_type, sync_param.adv_phy, sync_param.adv_clock_accuracy);
-				printf("periodic_adv_interval:%d, sync_transfer_received_flag:%d\r\n",	
+				dbg("periodic_adv_interval:%d, sync_transfer_received_flag:%d\r\n",	
 						sync_param.periodic_adv_interval, sync_param.sync_transfer_received_flag);
 			}
 		}
@@ -670,7 +670,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 
 	case RTK_BT_LE_GAP_EVT_PA_ADV_REPORT_IND: {
 		rtk_bt_le_pa_adv_report_ind_t *pa_report = (rtk_bt_le_pa_adv_report_ind_t *)param;
-		printf("[APP] PA sync ADV report: sync_id %d, sync_handle 0x%x, tx_power %d, rssi %d, cte_type %d, data_status 0x%x, data_len %d\r\n",
+		dbg("[APP] PA sync ADV report: sync_id %d, sync_handle 0x%x, tx_power %d, rssi %d, cte_type %d, data_status 0x%x, data_len %d\r\n",
 				pa_report->sync_id, pa_report->sync_handle, pa_report->tx_power, pa_report->rssi,
 				pa_report->cte_type, pa_report->data_status, pa_report->data_len);
 		break;
@@ -680,7 +680,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 #if RTK_BLE_5_1_PAST_RECIPIENT_SUPPORT
 		case RTK_BT_LE_GAP_PAST_RECEIVED_INFO_IND: {
 			rtk_bt_le_past_recv_ind_t *past_recv_ind = (rtk_bt_le_past_recv_ind_t *)param;
-			printf("[APP] PAST received info: conn_handle %d, service_data %d\r\n",
+			dbg("[APP] PAST received info: conn_handle %d, service_data %d\r\n",
 					past_recv_ind->conn_handle, past_recv_ind->service_data);
 			break;
 		}
@@ -689,7 +689,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 #if RTK_BLE_5_2_POWER_CONTROL_SUPPORT
 		case RTK_BT_LE_GAP_EVT_TXPOWER_REPORT_IND: {
 			rtk_bt_le_txpower_ind_t *txpower_ind = (rtk_bt_le_txpower_ind_t *)param;
-			printf("[APP] TX power report: conn_handle %d, type %d, txpower %d\r\n",
+			dbg("[APP] TX power report: conn_handle %d, type %d, txpower %d\r\n",
 					txpower_ind->conn_handle, txpower_ind->type, txpower_ind->txpower);
 			break;
 	}
@@ -845,7 +845,7 @@ static uint16_t app_get_gatts_app_id(uint8_t event, void *data)
 
 static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gatts_app_callback(uint8_t event, void *data, uint32_t len)
 {
-	/* printf("ble_peripheral_gatts_service_callback: app_id = %d, HID_SRV_ID = %d \r\n",app_id,HID_SRV_ID); */
+	/* dbg("ble_peripheral_gatts_service_callback: app_id = %d, HID_SRV_ID = %d \r\n",app_id,HID_SRV_ID); */
 
     if (RTK_BT_GATTS_EVT_MTU_EXCHANGE == event) {
         rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)data;
@@ -927,20 +927,20 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gattc_app_callback(uint8_t eve
 #if RTK_BLE_MGR_LIB
 	if (RTK_BT_GATTC_EVT_DISCOVER_ALL_STATE_IND == event) {
 		rtk_bt_gattc_discover_all_state_ind_t *p_ind = (rtk_bt_gattc_discover_all_state_ind_t *)data;
-		printf("[APP] GATTC discover all finished: conn_handle: %d, is_success: %d, load_from_storage: %d\r\n",
+		dbg("[APP] GATTC discover all finished: conn_handle: %d, is_success: %d, load_from_storage: %d\r\n",
 				p_ind->conn_handle, p_ind->is_success, p_ind->load_from_storage);
-		
+
 		return RTK_BT_EVT_CB_OK;
 	}
 
 	if (RTK_BT_GATTC_EVT_GATT_SERVICE_INFO_IND == event) {
 		rtk_bt_gattc_gatt_service_info_ind_t *p_ind = (rtk_bt_gattc_gatt_service_info_ind_t *)data;
-		printf("[APP] GATTC discover GATT service info: conn_handle: %d, is_found: %d, load_from_storage: %d\r\n",
+		dbg("[APP] GATTC discover GATT service info: conn_handle: %d, is_found: %d, load_from_storage: %d\r\n",
 				p_ind->conn_handle, p_ind->is_found, p_ind->load_from_storage);
 		if((p_ind->char_flag & RTK_BT_GATT_SVC_SERVER_SUPPORTED_FEATURES_FLAG) &&
-		   (p_ind->server_features[0] & RTK_BT_GATTS_SERVER_SUPPORTED_FEATURES_EATT_BIT))
-			printf("[APP] Server supported features: 0x%02X, support EATT.\r\n", p_ind->server_features[0]);
-		
+			(p_ind->server_features[0] & RTK_BT_GATTS_SERVER_SUPPORTED_FEATURES_EATT_BIT))
+			dbg("[APP] Server supported features: 0x%02X, support EATT.\r\n", p_ind->server_features[0]);
+
 		return RTK_BT_EVT_CB_OK;
 	}
 #endif
@@ -993,16 +993,16 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
 		bt_app_conf.cccd_not_check = false;
 
         /* Enable BT */
-		
+
 		BT_APP_PROCESS(rtk_bt_enable(&bt_app_conf)); 
         BT_APP_PROCESS(rtk_bt_le_gap_get_address(&bd_addr));
         rtk_bt_le_addr_to_str(&bd_addr, addr_str, sizeof(addr_str));
         dbg("[APP] BD_ADDR: %s\r\n", addr_str);
 		BT_APP_PROCESS(rtk_bt_le_gap_set_scan_param(&scan_param));
-        BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP, 
+        BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP,
                                                     (rtk_bt_evt_cb_t)ble_tizenrt_scatternet_gap_app_callback));
         memcpy(name,(const uint8_t*)RTK_BT_DEV_NAME,strlen((const char *)RTK_BT_DEV_NAME));
-		BT_APP_PROCESS(rtk_bt_le_gap_set_device_name((uint8_t *)name)); 
+		BT_APP_PROCESS(rtk_bt_le_gap_set_device_name((uint8_t *)name));
         BT_APP_PROCESS(rtk_bt_le_gap_set_appearance(RTK_BT_LE_GAP_APPEARANCE_HEART_RATE_BELT));
         BT_APP_PROCESS(rtk_bt_le_sm_set_security_param(&sec_param));
 #if (RTK_BLE_5_0_AE_ADV_SUPPORT==0)
@@ -1020,11 +1020,11 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
 #endif
 
         /* gatts related */
-        BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTS, 
+        BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTS,
                                                     (rtk_bt_evt_cb_t)ble_tizenrt_scatternet_gatts_app_callback));
 		BT_APP_PROCESS(ble_tizenrt_srv_add());
         /* gattc related */
-        BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTC, 
+        BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GATTC,
                                                     (rtk_bt_evt_cb_t)ble_tizenrt_scatternet_gattc_app_callback));
         BT_APP_PROCESS(general_client_add());
 #if (defined(RTK_BT_POWER_CONTROL_SUPPORT) && RTK_BT_POWER_CONTROL_SUPPORT)
