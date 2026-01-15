@@ -243,7 +243,7 @@ static uint16_t bt_stack_gattc_register_profile(void *param)
 
 	cause = gatt_client_spec_register((T_ATTR_UUID *)&reg_param->srv_uuid, cb);
 	if (cause) {
-		printf("gatt_client_spec_register() cause = %d\r\n", cause);
+		dbg("gatt_client_spec_register() cause = %d\r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -319,7 +319,7 @@ static uint16_t bt_stack_gattc_discover_all(void *param)
 
 	cause = gatt_client_start_discovery_all(conn_handle, bt_stack_gattc_discover_all_callback);
 	if (cause) {
-		printf("gatt_client_start_discovery_all() conn_handle = %d, cause = %d\r\n", conn_handle, cause);
+		dbg("gatt_client_start_discovery_all() conn_handle = %d, cause = %d\r\n", conn_handle, cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -385,7 +385,7 @@ static uint16_t bt_stack_gattc_read(void *param)
 									  p_read_param->by_uuid.end_handle, p_read_param->by_uuid.char_uuid.p.uuid16, NULL);
 
 	if (cause) {
-		printf("bt_stack_gattc_read() type = %d, cause = %d\r\n", p_read_param->type, cause);
+		dbg("bt_stack_gattc_read() type = %d, cause = %d\r\n", p_read_param->type, cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -411,7 +411,7 @@ static uint16_t bt_stack_gattc_write(void *param)
 	cause = gatt_client_write(p_write_param->conn_handle, write_type,
 							  p_write_param->handle, p_write_param->length, p_write_param->data, NULL);
 	if (cause) {
-		printf("bt_stack_gattc_write() cause = %d\r\n", cause);
+		dbg("bt_stack_gattc_write() cause = %d\r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -441,7 +441,7 @@ static uint16_t bt_stack_gattc_update_cccd(void *param, bool benable)
 											 (T_ATTR_UUID *)&p_cccd_param->char_uuid, cccd_cfg);
 
 	if (cause) {
-		printf("gatt_client_start_discovery_all() cause = %d\r\n", cause);
+		dbg("gatt_client_start_discovery_all() cause = %d\r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -454,7 +454,7 @@ uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd)
 	uint16_t ret = 0;
 
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_GATTC)) {
-		printf("Error: Gattc profile is not initiated\r\n");
+		dbg("Error: GATTC profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -482,7 +482,7 @@ uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_gattc_update_cccd(p_cmd->param, false);
 		break;
 	default:
-		printf("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
+		dbg("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}
@@ -688,7 +688,7 @@ static rtk_bt_gattc_req_t *bt_stack_gattc_create_req(rtk_bt_gattc_req_type_t typ
 static void bt_stack_gattc_free_req(rtk_bt_gattc_req_t *p_req)
 {
 	if (NULL == p_req) {
-		printf("Error: gattc free req is NULL\r\n");
+		dbg("Error: GATTC free req is NULL\r\n");
 		return;
 	}
 
@@ -1190,7 +1190,7 @@ static uint16_t bt_stack_gattc_add_req_to_list(uint8_t conn_id,
 	/* The number of element in pending queue should be limited, otherwise
 		the write and read request of high frequnce will use up memory */
 	if (p_queue->pending_ele_num >= BT_QUEUE_PENDING_ELEMENT_MAX) {
-		printf("Error: GATTC pending queue full, wait a moment to send data again !!!\r\n");
+		dbg("Error: GATTC pending queue full, wait a moment to send data again !!!\r\n");
 		return RTK_BT_ERR_QUEUE_FULL;
 	}
 	list_add_tail(&req->list, &p_queue->pending_list);
@@ -1285,7 +1285,7 @@ static void bt_stack_gattc_discover_state_cb(uint8_t conn_id,
 
 	p_req = remove_sent_req(p_queue);
 	if (!p_req || p_req->req_type != BT_STACK_GATTC_DISC_REQ) {
-		printf("Gattc cb mismatch with req type\r\n");
+		dbg("Gattc cb mismatch with req type\r\n");
 		goto end;
 	}
 
@@ -1473,7 +1473,7 @@ static void bt_stack_gattc_read_result_cb(uint8_t conn_id, uint16_t cause,
 
 	p_req = remove_sent_req(p_queue);
 	if (!p_req || p_req->req_type != BT_STACK_GATTC_READ_REQ) {
-		printf("Gattc cb mismatch with req type\r\n");
+		dbg("Gattc cb mismatch with req type\r\n");
 		goto end;
 	}
 
@@ -1568,18 +1568,18 @@ static void bt_stack_gattc_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TYPE ty
 		p_queue = &gattc_priv->request_queue[conn_id];
 		p_req = remove_sent_req(p_queue);
 		if (!p_req || p_req->req_type != BT_STACK_GATTC_WRITE_REQ) {
-			printf("Gattc cb mismatch with req type\r\n");
+			dbg("Gattc cb mismatch with req type\r\n");
 			goto end;
 		}
 	} else if (GATT_WRITE_TYPE_CMD == type || GATT_WRITE_TYPE_SIGNED_CMD == type) {
 		p_queue = &gattc_priv->cmd_queue[conn_id];
 		p_req = remove_sent_req(p_queue);
 		if (!p_req || p_req->req_type != BT_STACK_GATTC_WRITE_CMD) {
-			printf("Gattc cb mismatch with req type\r\n");
+			dbg("Gattc cb mismatch with req type\r\n");
 			goto end;
 		}
 	} else {
-		printf("bt_stack_gattc_write_result_cb: wrong type \r\n");
+		dbg("bt_stack_gattc_write_result_cb: wrong type \r\n");
 		goto end;
 	}
 
@@ -1632,7 +1632,7 @@ static void bt_stack_gattc_cccd_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TY
 
 	p_req = remove_sent_req(p_queue);
 	if (!p_req || (p_req->req_type != BT_STACK_GATTC_CCCD_ENABLE_REQ && p_req->req_type != BT_STACK_GATTC_CCCD_DISABLE_REQ)) {
-		printf("Gattc cb mismatch with req type\r\n");
+		dbg("Gattc cb mismatch with req type\r\n");
 		goto end;
 	}
 
@@ -1853,11 +1853,11 @@ uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd)
 	uint16_t ret = 0;
 
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_GATTC)) {
-		printf("Error: Gattc profile is not initiated\r\n");
+		dbg("Error: GATTC profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
-	// printf("bt_stack_gattc_act_handle: act = %d \r\n", p_cmd->act);
+	// dbg("bt_stack_gattc_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
 	case RTK_BT_GATTC_ACT_REGISTER_PROFILE:
 		ret = 0;
@@ -1881,7 +1881,7 @@ uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_gattc_update_cccd(p_cmd->param, false);
 		break;
 	default:
-		printf("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
+		dbg("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}
@@ -1917,7 +1917,7 @@ T_APP_RESULT bt_stack_gattc_multiple_read_callback(T_CLIENT_ID client_id, uint8_
 
 	p_req = remove_sent_req(p_queue);
 	if (!p_req || p_req->req_type != BT_STACK_GATTC_READ_REQ) {
-		printf("Gattc cb mismatch with req type\r\n");
+		dbg("Gattc cb mismatch with req type\r\n");
 		ret = APP_RESULT_REJECT;
 		goto end;
 	}

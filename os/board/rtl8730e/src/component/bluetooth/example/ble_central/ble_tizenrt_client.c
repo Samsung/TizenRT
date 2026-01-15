@@ -719,7 +719,7 @@ trble_result_e rtw_ble_client_write_read_queue_cnt(trble_conn_handle* handle, ui
 		the notification of high frequnce will use up memory */
 	if (queue->pending_ele_num >= BT_QUEUE_PENDING_ELEMENT_MAX)
 	{
-		dbg("Error: GATTC pending queue full, wait a moment to send data again !!!\r\n");
+		debug_print("Error: Client write/read pending queue full, wait a moment to send data again !!!\r\n");
 		return TRBLE_BUSY;
 	}
 
