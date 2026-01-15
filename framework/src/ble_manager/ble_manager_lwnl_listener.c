@@ -74,6 +74,9 @@ static void _lwnl_call_event(int fd, lwnl_cb_status status, int len)
 	case LWNL_EVT_BLE_CLIENT_DISPLAY_PASSKEY:
 		LWNL_SET_MSG(&g_msg, BLE_EVT_CLIENT_DISPLAY_PASSKEY, BLE_MANAGER_FAIL, param, NULL);
 		break;
+	case LWNL_EVT_BLE_CLIENT_PAIR_BOND:
+		LWNL_SET_MSG(&g_msg, BLE_EVT_CLIENT_PAIR_BOND, BLE_MANAGER_FAIL, param, NULL);
+		break;
 	case LWNL_EVT_BLE_CLIENT_NOTI:
 		LWNL_SET_MSG(&g_msg, BLE_EVT_CLIENT_NOTI, BLE_MANAGER_FAIL, param, NULL);
 		break;
