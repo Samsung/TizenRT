@@ -540,10 +540,10 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 			bt_stack_pending_cmd_delete(p_cmd);
 			p_cmd->ret = p_data->p_le_read_rssi_rsp->cause;
 			*read_rssi->p_rssi = p_data->p_le_read_rssi_rsp->rssi;
-			// printf("RSSI IS: %i\r\n", p_data->p_le_read_rssi_rsp->rssi);
+			// dbg("RSSI IS: %i\r\n", p_data->p_le_read_rssi_rsp->rssi);
 			osif_sem_give(p_cmd->psem);
 		} else {
-			printf("[%s] GAP_MSG_LE_READ_RSSI: find no pending command \r\n", __func__);
+			dbg("[%s] GAP_MSG_LE_READ_RSSI: find no pending command \r\n", __func__);
 		}
 		break;
 	}
@@ -3490,7 +3490,7 @@ static uint16_t bt_stack_le_gap_get_active_conn(void *param)
 	}
 	p_active_conn->conn_num = j;
 	if (j != active_num) {
-		printf("Error: Active conn num get from api mismatch with from rtk stack\r\n");
+		dbg("Error: Active conn num get from api mismatch with from rtk stack\r\n");
 		return RTK_BT_ERR_MISMATCH;
 	}
 
@@ -3975,7 +3975,7 @@ static bool privacy_add_device(T_LE_KEY_ENTRY *p_entry)
 		bool device_mode = true;
 		T_LE_PRIVACY_INFO privacy_info;
 		if (le_get_privacy_info(p_entry, &privacy_info)) {
-			printf("le_get_privacy_info(): %d %d %d\r\n", privacy_info.is_discov, privacy_info.central_addr_resolv, privacy_info.resolv_addr_only);
+			dbg("le_get_privacy_info(): %d %d %d\r\n", privacy_info.is_discov, privacy_info.central_addr_resolv, privacy_info.resolv_addr_only);
 			if (privacy_info.is_discov && privacy_info.resolv_addr_only) {
 				device_mode = false;
 			}
@@ -3983,7 +3983,7 @@ static bool privacy_add_device(T_LE_KEY_ENTRY *p_entry)
 		if ((p_entry->remote_bd.remote_bd_type == GAP_REMOTE_ADDR_LE_PUBLIC) ||
 			((p_entry->remote_bd.remote_bd_type == GAP_REMOTE_ADDR_LE_RANDOM) &&
 			 ((p_entry->remote_bd.addr[5] & RANDOM_ADDR_MASK) == RANDOM_ADDR_MASK_STATIC))
-		   ) {
+			) {
 			privacy_modify_resolving_list(GAP_RESOLV_LIST_OP_ADD,
 										  (T_GAP_IDENT_ADDR_TYPE)p_entry->remote_bd.remote_bd_type,
 										  p_entry->remote_bd.addr, device_mode);
@@ -4949,7 +4949,7 @@ uint16_t bt_stack_le_gap_act_handle(rtk_bt_cmd_t *p_cmd)
 #endif /* RTK_BLE_COC_SUPPORT */
 
 	default:
-		printf("bt_stack_le_act_handle: unknown act: %d \r\n", p_cmd->act);
+		dbg("bt_stack_le_act_handle: unknown act: %d \r\n", p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}

@@ -31,7 +31,7 @@ bool rtk_bt_pre_enable(void)
 	ret = bt_ipc_api_host_message_send(RTK_BT_IPC_DEVICE, RTK_BT_DEVICE_IPC_ACT_BT_PRE_ENABLE,
 									   NULL, 0);
 	if (ret[0] == 0) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	}
 	err = (bool)ret[0];
 	osif_mem_free(ret);
@@ -56,7 +56,7 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 	uint16_t err = 0;
 
 	if (b_bt_enabled == true) {
-		printf("%s: bt has been enabled \r\n", __func__);
+		dbg("%s: bt has been enabled \r\n", __func__);
 		return RTK_BT_ERR_ALREADY_DONE;
 	}
 
@@ -79,18 +79,18 @@ uint16_t rtk_bt_enable(rtk_bt_app_conf_t *app_default_conf)
 		/* depy copy secondary memory pointed by pointer */
 		host_msg = (bt_ipc_host_request_message *)bt_device_push_cmd_ipc_buf(RTK_BT_DEVICE_IPC_ACT_BT_ENABLE, (void *)app_default_conf, sizeof(rtk_bt_app_conf_t), &actual_size);
 		if (!host_msg) {
-			printf("%s le get ipc buf fail \r\n", __func__);
+			dbg("%s le get ipc buf fail \r\n", __func__);
 			goto exit;
 		}
 		if (actual_size > IPC_HOST_API_DATA_MAX) {
-			printf("%s: The param of %d is over ipc message memory\r\n", __func__, RTK_BT_DEVICE_IPC_ACT_BT_ENABLE);
+			dbg("%s: The param of %d is over ipc message memory\r\n", __func__, RTK_BT_DEVICE_IPC_ACT_BT_ENABLE);
 			goto exit;
 		}
 
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_DEVICE, RTK_BT_DEVICE_IPC_ACT_BT_ENABLE,
 										   host_msg->param_buf, actual_size);
 		if (ret[0] != RTK_BT_OK) {
-			printf("[core AP][IPC] %s fail ! \r\n", __func__);
+			dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 		} else {
 			/* check whether need memcpy return value */
 			rtk_bt_device_copy_act_ret_param(RTK_BT_DEVICE_IPC_ACT_BT_ENABLE, (void *)app_default_conf, &ret[1]);
@@ -126,7 +126,7 @@ uint16_t rtk_bt_disable(void)
 	uint16_t err = 0;
 
 	if (b_bt_enabled == false) {
-		printf("%s: bt has not been enabled \r\n", __func__);
+		dbg("%s: bt has not been enabled \r\n", __func__);
 		return RTK_BT_ERR_ALREADY_DONE;
 	}
 
@@ -138,7 +138,7 @@ uint16_t rtk_bt_disable(void)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_DEVICE, RTK_BT_DEVICE_IPC_ACT_BT_DISABLE,
 										   NULL, 0);
 		if (ret[0] != RTK_BT_OK) {
-			printf("[core AP][IPC] %s fail ! \r\n", __func__);
+			dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 		}
 		err = (uint16_t)ret[0];
 		osif_mem_free(ret);
