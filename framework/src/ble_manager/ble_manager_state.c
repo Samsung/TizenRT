@@ -134,6 +134,12 @@ static void _event_caller(int evt_pri, void *data) {
 			uint32_t passkey = *(uint32_t *)(msg->param[2] + sizeof(trble_conn_handle));
 			callback(msg->param[1], passkey, conn);
 		} break;
+		case BLE_EVT_CLIENT_PAIR_BOND: {
+			ble_client_pair_bond_cb callback = msg->param[0];
+			trble_conn_handle conn = *(trble_conn_handle *)(msg->param[2]);
+			uint32_t error = *(uint32_t *)(msg->param[2] + sizeof(trble_conn_handle));
+			callback(msg->param[1], error, conn);
+		} break;
 		case BLE_EVT_CLIENT_NOTI: {
 			ble_client_operation_notification_cb callback = msg->param[0];
 			ble_attr_handle attr_handle = *(ble_attr_handle *)(msg->param[2] + sizeof(ble_conn_handle));
@@ -1331,6 +1337,26 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 		if (ctx && ctx->callbacks.passkey_display_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.passkey_display_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
+			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
+		}
+	} break;
+
+	case BLE_EVT_CLIENT_PAIR_BOND: {
+		if (msg->param == NULL) {
+			break;
+		}
+		int i;
+		ble_client_ctx_internal *ctx = NULL;
+		ble_conn_handle conn_handle = *(ble_conn_handle *)msg->param;
+
+		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
+			if (g_client_table[i].conn_handle == conn_handle) {
+				ctx = &g_client_table[i];
+				break;
+			}
+		}
+		if (ctx && ctx->callbacks.pair_bond_cb) {
+			memcpy(queue_msg.param, (void*[]){ctx->callbacks.pair_bond_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
 	} break;
