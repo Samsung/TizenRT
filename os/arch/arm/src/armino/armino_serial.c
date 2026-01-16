@@ -841,6 +841,33 @@ int up_getc(void)
 	return ch;
 }
 
+/****************************************************************************
+ * Name: up_flush_console_on_assert
+ *
+ * Description:
+ *    This function is used to flush all characters in the console UART TX buffer
+ *    during abort situations.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+void up_flush_console_on_assert(void)
+{
+	uart_dev_t *dev = &CONSOLE_DEV;
+
+	while (dev->xmit.head != dev->xmit.tail) {
+		up_lowputc(dev->xmit.buffer[dev->xmit.tail]);
+
+		if (++(dev->xmit.tail) >= dev->xmit.size) {
+			dev->xmit.tail = 0;
+		}
+	}
+}
+
 #else							/* USE_SERIALDRIVER */
 /****************************************************************************
  * Name: up_putc
