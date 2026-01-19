@@ -69,6 +69,7 @@
 
 #include "up_arch.h"
 #include "up_internal.h"
+#include "sched/sched.h"
 
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 #include <tinyara/mpu.h>
