@@ -29,6 +29,7 @@ CMN_CSRCS += arm_modifyreg8.c arm_nputs.c arm_releasepending.c
 CMN_CSRCS += up_releasestack.c arm_reprioritizertr.c arm_saveusercontext.c
 CMN_CSRCS += arm_stackframe.c arm_switchcontext.c
 CMN_CSRCS += arm_vfork.c arm_unblocktask.c up_usestack.c
+CMN_CSRCS += up_checkstackoverflow.c
 
 ifneq ($(CONFIG_ALARM_ARCH),y)
   ifneq ($(CONFIG_TIMER_ARCH),y)
