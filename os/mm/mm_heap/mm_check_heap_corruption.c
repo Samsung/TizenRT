@@ -95,6 +95,10 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 {
 	struct mm_allocnode_s *node;
 	struct mm_allocnode_s *prev;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	struct mm_allocnode_s *prevtoprev = NULL;
+#endif
+
 #if CONFIG_KMM_REGIONS > 1
 	int region;
 #else
@@ -139,16 +143,34 @@ int mm_check_heap_corruption(struct mm_heap_s *heap)
 			/* Forward traversal of heap */
 			for (prev = heap->mm_heapstart[region], node = (struct mm_allocnode_s *)((char *)prev + prev->size);
 					node <= heap->mm_heapend[region];
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+					prevtoprev = prev,
+#endif
 					prev = node, node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 				if ((prev->size != MM_PREV_NODE_SIZE(node)) || (node->size < SIZEOF_MM_ALLOCNODE)) {
 					mfdbg("#########################################################################################\n");
 					mfdbg("ERROR: Heap corruption detected. Check below nodes for possible corruption.\n");
 					mfdbg("ERROR: Forward traversal of heap\n");
 					mfdbg("=========================================================================================\n");
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+					if (prev->pid < 0) {	//-ve value means prev is stack allocated node, therefore we will print prev to prev node.
+						mm_dump_node(prevtoprev, "PREV TO PREV NODE");
+					}
+#endif
 					mm_dump_node(prev, "PREV NODE");
 					mm_dump_node(node, "CORRUPT NODE");
 					iscorrupt_f = true;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+					if (prevtoprev && prev->pid < 0) {
+						if (prevtoprev->size <= MM_LAST_CORRUPT_SIZE) {
+							start_corrupt = (uint32_t)prevtoprev;
+						} else {
+							start_corrupt = (uint32_t)prevtoprev + prevtoprev->size - MM_LAST_CORRUPT_SIZE;
+						}
+					} else if (prev->size <= MM_LAST_CORRUPT_SIZE) {
+#else
 					if (prev->size <= MM_LAST_CORRUPT_SIZE) {
+#endif
 						start_corrupt = (uint32_t)prev;
 					} else {
 						start_corrupt = (uint32_t)prev + prev->size - MM_LAST_CORRUPT_SIZE;
