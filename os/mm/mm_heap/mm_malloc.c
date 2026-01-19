@@ -109,10 +109,9 @@ static void mm_free_delaylist(FAR struct mm_heap_s *heap)
 
 	while (tmp)
 	{
-		FAR void *address;
+		FAR struct mm_delaynode_s *address;
 
 		/* Get the first delayed deallocation */
-
 		address = tmp;
 		tmp = tmp->flink;
 
@@ -120,7 +119,7 @@ static void mm_free_delaylist(FAR struct mm_heap_s *heap)
 		 * 'while' condition above.
 		 */
 
-		mm_free(heap, address);
+		mm_free_withinfo(heap, (void *)address, address->free_call_addr, address->free_call_pid);
 	}
 #endif
 }
@@ -227,6 +226,10 @@ retry_after_gc:
 			remainder = (FAR struct mm_freenode_s *)(((char *)node) + size);
 			remainder->size = remaining;
 			remainder->preceding = size;
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+			remainder->free_call_addr = NULL;
+			remainder->free_call_pid = 0;
+#endif
 
 			/* Adjust the size of the node under consideration */
 
