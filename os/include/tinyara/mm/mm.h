@@ -129,40 +129,64 @@
 
 #if defined(CONFIG_MM_SMALL) && UINTPTR_MAX <= UINT32_MAX
 /* Two byte offsets; Pointers may be 2 or 4 bytes;
- * sizeof(struct mm_freenode_s) is 8 or 12 bytes.
  * REVISIT: We could do better on machines with 16-bit addressing.
  */
-
-#define MM_MIN_SHIFT    4		/* 16 bytes */
-#define MM_MAX_SHIFT   15		/* 32 Kb */
-#define MM_SHIFT_FOR_NDX (MM_MIN_SHIFT + 1)
-#define MM_SHIFT_MASK    ~(1 << MM_SHIFT_FOR_NDX)
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO)
+/* sizeof(struct mm_freenode_s) is 20 or 28 bytes. */
+#define MM_MIN_SHIFT	5			/* 32 bytes */
+#define MM_SHIFT_FOR_NDX 6			/* MM_MIN_SHIFT + 1 */
+#define MM_SHIFT_MASK    0xffffffc0	/* ~(1 << MM_SHIFT_FOR_NDX) */
+#else
+/* sizeof(struct mm_freenode_s) is 12 bytes. */
+#define MM_MIN_SHIFT	4			/* 16 bytes */
+#define MM_SHIFT_FOR_NDX 5 			/* MM_MIN_SHIFT + 1 */
+#define MM_SHIFT_MASK    0xffffffe0	/* ~(1 << MM_SHIFT_FOR_NDX) */
+#endif
+#define MM_MAX_SHIFT   15			/* 32 Kb */
 
 #elif defined(CONFIG_HAVE_LONG_LONG)
-/* Four byte offsets; Pointers may be 4 or 8 bytes
- * sizeof(struct mm_freenode_s) is 16 or 24 bytes.
- */
-
+/* Four byte offsets; Pointers may be 4 or 8 bytes */
 #if UINTPTR_MAX <= UINT32_MAX
-#define MM_MIN_SHIFT  4			/* 16 bytes */
-#define MM_SHIFT_FOR_NDX 5		/* MM_MIN_SHIFT + 1 */
-#define MM_SHIFT_MASK    0xffffffe0	/* ~(1 << MM_SHIFT_FOR_NDX) */
-#elif UINTPTR_MAX <= UINT64_MAX
-#define MM_MIN_SHIFT  5			/* 32 bytes */
-#define MM_SHIFT_FOR_NDX 6		/* MM_MIN_SHIFT + 1 */
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO)
+/* sizeof(struct mm_freenode_s) is 24 or 32 bytes. */
+#define MM_MIN_SHIFT  5				/* 32 bytes */
+#define MM_SHIFT_FOR_NDX 6			/* MM_MIN_SHIFT + 1 */
 #define MM_SHIFT_MASK    0xffffffc0	/* ~(1 << MM_SHIFT_FOR_NDX) */
-#endif
-#define MM_MAX_SHIFT   22		/*  4 Mb */
+#else /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
+/* sizeof(struct mm_freenode_s) is 16 bytes. */
+#define MM_MIN_SHIFT  4				/* 16 bytes */
+#define MM_SHIFT_FOR_NDX 5			/* MM_MIN_SHIFT + 1 */
+#define MM_SHIFT_MASK    0xffffffe0	/* ~(1 << MM_SHIFT_FOR_NDX) */
+#endif /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
+#elif UINTPTR_MAX <= UINT64_MAX
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO)
+/* sizeof(struct mm_freenode_s) is 36 or 48 bytes. */
+#define MM_MIN_SHIFT  6				/* 64 bytes */
+#define MM_SHIFT_FOR_NDX 7			/* MM_MIN_SHIFT + 1 */
+#define MM_SHIFT_MASK    0xffffff80	/* ~(1 << MM_SHIFT_FOR_NDX) */
+#else /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
+/* sizeof(struct mm_freenode_s) is 24 bytes. */
+#define MM_MIN_SHIFT  5				/* 32 bytes */
+#define MM_SHIFT_FOR_NDX 6			/* MM_MIN_SHIFT + 1 */
+#define MM_SHIFT_MASK    0xffffffc0	/* ~(1 << MM_SHIFT_FOR_NDX) */
+#endif /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
+#endif /* UINTPTR_MAX <= UINT64_MAX */
+#define MM_MAX_SHIFT   22			/* 4 Mb */
 
 #else
-/* Four byte offsets; Pointers must be 4 bytes.
- * sizeof(struct mm_freenode_s) is 16 bytes.
- */
-
-#define MM_MIN_SHIFT    4		/* 16 bytes */
-#define MM_MAX_SHIFT   22		/*  4 Mb */
-#define MM_SHIFT_FOR_NDX 5		/* MM_MIN_SHIFT + 1 */
+/* Four byte offsets; Pointers must be 4 bytes. */
+#if defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO)
+/* sizeof(struct mm_freenode_s) is 24 or 32 bytes. */
+#define MM_MIN_SHIFT    5			/* 32 bytes */
+#define MM_SHIFT_FOR_NDX 6			/* MM_MIN_SHIFT + 1*/
+#define MM_SHIFT_MASK    0xffffffc0	/* ~(1 << MM_SHIFT_FOR_NDX) */
+#else /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
+/* sizeof(struct mm_freenode_s) is 16 bytes. */
+#define MM_MIN_SHIFT    4			/* 16 bytes */
+#define MM_SHIFT_FOR_NDX 5			/* MM_MIN_SHIFT + 1 */
 #define MM_SHIFT_MASK    0xffffffe0	/* ~(1 << MM_SHIFT_FOR_NDX) */
+#endif /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
+#define MM_MAX_SHIFT   22			/* 4 Mb */
 #endif
 
 /* All other definitions derive from these two */
@@ -185,6 +209,9 @@
 #define MM_ALLOC_BIT    0x80000000
 #endif
 #define MM_IS_ALLOCATED(n) ((int)((struct mm_allocnode_s*)(n)->preceding) < 0)
+
+#define MM_REMAINDER_FREE_CALL_ADDR ((void *)0xFEEEFEEE)
+#define MM_REMAINDER_FREE_CALL_PID 	((pid_t)-1)
 
 /****************************************************************************
  * Public Types
@@ -250,6 +277,11 @@ typedef void *mmaddress_t;             /* 32 bit address space */
 	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
 #endif
 
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+#define SIZEOF_MM_FREE_DEBUG_INFO \
+	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
+#endif
+
 /* This describes an allocated chunk.  An allocated chunk is
  * distinguished from a free chunk by bit 15/31 of the 'preceding' chunk
  * size.  If set, then this is an allocated chunk.
@@ -303,19 +335,38 @@ struct mm_freenode_s {
 	mmsize_t size;				/* Size of this chunk */
 	FAR struct mm_freenode_s *flink;	/* Supports a doubly linked list */
 	FAR struct mm_freenode_s *blink;
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+	mmaddress_t free_call_addr;		/* free call address */
+	pid_t free_call_pid;			/* free call PID */
+	uint16_t reserved2;				/* Reserved for future use and padding for 4-byte alignment */
+#endif
 };
 
 /* What is the size of the freenode? */
 
 #define MM_PTR_SIZE sizeof(FAR struct mm_freenode_s *)
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+#define SIZEOF_MM_FREENODE (SIZEOF_MM_ALLOCNODE + 2 * MM_PTR_SIZE + SIZEOF_MM_FREE_DEBUG_INFO)
+#else
 #define SIZEOF_MM_FREENODE (SIZEOF_MM_ALLOCNODE + 2 * MM_PTR_SIZE)
+#endif
 
 #define CHECK_FREENODE_SIZE \
 	DEBUGASSERT(sizeof(struct mm_freenode_s) == SIZEOF_MM_FREENODE)
 
-struct mm_delaynode_s
-{
+/*
+ *	This structure is used in the free delay list. 
+ *	When a user attempts to free a memory address, this structure is used to store the relevant information for delayed freeing.
+ *	It is designed to occupy the space corresponding to the size difference between mm_freenode_s and mm_allocnode_s.
+ */
+struct mm_delaynode_s {
 	FAR struct mm_delaynode_s *flink;
+	FAR struct mm_delaynode_s *blink; /* Not used, but keep structure alignment with mm_freenode_s */
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+	mmaddress_t free_call_addr;
+	pid_t free_call_pid;
+	uint16_t reserved2;
+#endif
 };
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -526,6 +577,7 @@ FAR void *kmm_malloc(size_t size);
 /* Functions contained in mm_free.c *****************************************/
 
 void mm_free(FAR struct mm_heap_s *heap, FAR void *mem);
+void mm_free_withinfo(FAR struct mm_heap_s *heap, FAR void *mem, mmaddress_t free_call_addr, pid_t free_call_pid);
 
 /* Functions contained in kmm_free.c ****************************************/
 
