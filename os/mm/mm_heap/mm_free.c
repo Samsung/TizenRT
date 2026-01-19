@@ -75,7 +75,11 @@
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+static void mm_add_delaylist(FAR struct mm_heap_s *heap, FAR void *mem, mmaddress_t free_call_addr, pid_t free_call_pid)
+#else
 static void mm_add_delaylist(FAR struct mm_heap_s *heap, FAR void *mem)
+#endif
 {
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 	FAR struct mm_delaynode_s *tmp = mem;
@@ -86,6 +90,10 @@ static void mm_add_delaylist(FAR struct mm_heap_s *heap, FAR void *mem)
 	flags = enter_critical_section();
 
 	tmp->flink = heap->mm_delaylist[up_cpu_index()];
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+	tmp->free_call_addr = free_call_addr;
+	tmp->free_call_pid = free_call_pid;
+#endif
 	heap->mm_delaylist[up_cpu_index()] = tmp;
 
 	leave_critical_section(flags);
@@ -93,18 +101,14 @@ static void mm_add_delaylist(FAR struct mm_heap_s *heap, FAR void *mem)
 }
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: mm_free
+ * Name: mm_free_internal
  *
  * Description:
- *   Returns a chunk of memory to the list of free nodes,  merging with
+ *   Returns a chunk of memory to the list of free nodes, merging with
  *   adjacent free chunks if possible.
  *
  ****************************************************************************/
-void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
+static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddress_t free_call_addr, pid_t free_call_pid)
 {
 	FAR struct mm_freenode_s *node;
 	FAR struct mm_freenode_s *prev;
@@ -122,28 +126,30 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		 * It can be a logical bug in sw to make an attempt of double free!
 		 * free(ptr); ptr = NULL; free(ptr);
 		 */
-		mdbg("Attempt to release a null pointer by pid %d at address 0x%08x\n", getpid(), __builtin_return_address(0));
+		mvdbg("Attempt to release a null pointer by pid %d at address 0x%08x\n", free_call_pid, free_call_addr);
 		return;
 	}
 
 	/* We need to hold the MM semaphore while we muck with the
 	 * nodelist.
 	 */
-	if (mm_takesemaphore(heap) == false)
-	{
+	if (mm_takesemaphore(heap) == false) {
 		/* Meet -ESRCH return, which means we are in situations
 		 * during context switching(See mm_takesemaphore() & getpid()).
 		 * Then add to the delay list.
 		 */
 
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+		mm_add_delaylist(heap, mem, free_call_addr, free_call_pid);
+#else
 		mm_add_delaylist(heap, mem);
+#endif
 		return;
 	}
 
 	/* Map the memory chunk into a free node */
 
 	node = (FAR struct mm_freenode_s *)((char *)mem - SIZEOF_MM_ALLOCNODE);
-	
 	if ((node->preceding & MM_ALLOC_BIT) != MM_ALLOC_BIT) {
 		/* There are 3 cases of logical error scenarios
 		 * 1) Attempt to free an unallocated memory or
@@ -154,7 +160,10 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 		 * 2nd scenario: int *ptr = (int*)0x02069f50; free(ptr);
 		 * 3rd scenario: ptr = malloc(100); free(ptr); if(ptr) { free(ptr); }
 		 */
-		mdbg("Attempt for double freeing a pointer or releasing an unallocated pointer by pid %d at address 0x%08x\n", getpid(), __builtin_return_address(0));
+		mdbg("Attempt for double freeing a pointer or releasing an unallocated pointer by pid %d at address 0x%08x\n", free_call_pid, free_call_addr);
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+		mdbg("Previous free by pid %d at address 0x%08x\n", node->free_call_pid, node->free_call_addr);
+#endif
 		mm_givesemaphore(heap);
 		return;
 	}
@@ -163,6 +172,11 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 	heapinfo_update_total_size(heap, ((-1) * ((struct mm_allocnode_s *)node)->size), ((struct mm_allocnode_s *)node)->pid);
 #endif
 	node->preceding &= ~MM_ALLOC_BIT;
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+	/* Record free metadata and quarantine sequence */
+	node->free_call_addr = free_call_addr;
+	node->free_call_pid = free_call_pid;
+#endif
 
 	/* Check if the following node is free and, if so, merge it */
 
@@ -185,9 +199,9 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 
 		/* Then merge the two chunks */
 
-		node->size          += next->size;
+		node->size += next->size;
 		andbeyond->preceding = node->size | (andbeyond->preceding & MM_ALLOC_BIT);
-		next                 = (FAR struct mm_freenode_s *)andbeyond;
+		next = (FAR struct mm_freenode_s *)andbeyond;
 	}
 
 	/* Check if the preceding node is also free and, if so, merge
@@ -204,13 +218,43 @@ void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
 
 		/* Then merge the two chunks */
 
-		prev->size     += node->size;
+		prev->size += node->size;
 		next->preceding = prev->size | (next->preceding & MM_ALLOC_BIT);
-		node            = prev;
+		node = prev;
 	}
 
 	/* Add the merged node to the nodelist */
 
 	mm_addfreechunk(heap, node);
 	mm_givesemaphore(heap);
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: mm_free_withinfo
+ *
+ * Description:
+ *   Returns a chunk of memory to the list of free nodes, merging with
+ *   adjacent free chunks if possible. Record the given address and PID of the caller.
+ *
+ ****************************************************************************/
+void mm_free_withinfo(FAR struct mm_heap_s *heap, FAR void *mem, mmaddress_t free_call_addr, pid_t free_call_pid)
+{
+	mm_free_internal(heap, mem, free_call_addr, free_call_pid);
+}
+
+/****************************************************************************
+ * Name: mm_free
+ *
+ * Description:
+ *   Returns a chunk of memory to the list of free nodes, merging with
+ *   adjacent free chunks if possible.
+ *
+ ****************************************************************************/
+void mm_free(FAR struct mm_heap_s *heap, FAR void *mem)
+{
+	mm_free_internal(heap, mem, __builtin_return_address(0), getpid());
 }
