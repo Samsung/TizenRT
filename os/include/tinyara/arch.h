@@ -2240,6 +2240,10 @@ size_t up_check_intstack_remain(void);
 #endif
 #endif
 
+#ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
+void up_checkstackoverflow(FAR struct tcb_s *rtcb);
+#endif
+
 /****************************************************************************
  * Name: up_rtc_initialize
  *
