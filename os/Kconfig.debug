@@ -816,6 +816,12 @@ config DEBUG_CHECK_FRAGMENTATION
 	---help---
 		Count the number of freed memory segments with the range from size 2^n to 2^(n+1).
 
+config DEBUG_MM_FREEINFO
+	bool "Heap free debug option"
+	default n
+	---help---
+		Enable free debug with free caller information for double free debugging.
+
 config DEBUG_IRQ
 	bool "Interrupt Controller Debug Feature"
 	default n
