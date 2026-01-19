@@ -172,7 +172,7 @@ void board_spi_initialize(void)
 {
 #ifdef CONFIG_SPI
 	struct spi_dev_s *spi;
-#ifdef CONFIG_AMEBASMART_SPI0
+#if defined(CONFIG_AMEBASMART_SPI0) && !defined(CONFIG_AUDIO_NDP120)
 	spi = up_spiinitialize(0);
 #ifdef CONFIG_SPI_USERIO
 	if (spi_uioregister(0, spi) < 0) {
@@ -484,14 +484,20 @@ void board_initialize(void)
 #endif
 
 #ifdef CONFIG_AUDIO_NDP120
+#ifndef CONFIG_SENSOR_IWRL6432
 	if (rtl8730e_ndp120_initialize(0) != 0) {
 		lldbg("NDP120 initialization failed\n");
 	}
- #endif
+#else
+	if (rtl8730e_ndp120_iwrl6432_initialize(0) != 0) {
+		lldbg("Dual driver for NDP120 & IWRL6432 initialization failed\n");
+	}
+#endif
+#endif
  
- #ifdef CONFIG_AMEBASMART_BOR
+#ifdef CONFIG_AMEBASMART_BOR
 	board_initialize_bor();
- #endif
+#endif
 	IPC_MSG_STRUCT ipc_msg_loguart;
 
 	ipc_msg_loguart.msg_type = IPC_USER_POINT;

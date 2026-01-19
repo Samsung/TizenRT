@@ -1289,6 +1289,7 @@ static void amebasmart_spi_exchange(FAR struct spi_dev_s *dev,
 		rtw_mfree(txbuff_aligned, 0);
 	}
 	rtw_mfree(rxbuff_aligned, 0);
+	
 #endif							/* CONFIG_AMEBASMART_SPI_DMA */
 }
 

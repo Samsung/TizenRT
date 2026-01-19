@@ -1738,6 +1738,8 @@ int ndp120_irq_handler_work(struct ndp120_dev_s *dev)
 			msg.u.pPtr = NULL;
 			msg.msgId = AUDIO_MSG_NONE;
 			if (network_id == 0 && !dev->recording) {
+				/* Share kd event with bsp layer */
+				dev->lower->set_record_state(true);
 				/* extract keyword immediately */
 				extract_keyword(dev);
 #ifdef CONFIG_NDP120_AEC_SUPPORT
@@ -1999,6 +2001,8 @@ int ndp120_stop_sample_ready(struct ndp120_dev_s *dev)
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 	g_ndp120_state = NOT_RECORDING;
 #endif
+	dev->lower->set_record_state(false);
+
 	return s;
 }
 
