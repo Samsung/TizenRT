@@ -87,6 +87,7 @@ endif
 CMN_CSRCS  = up_initialize.c up_interruptcontext.c up_exit.c
 CMN_CSRCS += up_createstack.c up_releasestack.c up_usestack.c up_vfork.c
 CMN_CSRCS += up_puts.c up_mdelay.c up_stackframe.c up_udelay.c
+CMN_CSRCS += up_checkstackoverflow.c
 CMN_CSRCS += up_modifyreg8.c up_modifyreg16.c up_modifyreg32.c up_allocateheap.c
 CMN_CSRCS += arm_assert.c arm_blocktask.c arm_copyfullstate.c arm_dataabort.c
 CMN_CSRCS += arm_doirq.c arm_gicv2.c arm_initialstate.c arm_prefetchabort.c

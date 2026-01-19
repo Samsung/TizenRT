@@ -64,6 +64,7 @@ CMN_CSRCS += up_puts.c up_initialize.c up_initialstate.c up_interruptcontext.c
 CMN_CSRCS += up_memfault.c up_busfault.c up_usagefault.c up_modifyreg8.c up_modifyreg16.c up_modifyreg32.c
 CMN_CSRCS += up_releasepending.c up_releasestack.c up_reprioritizertr.c
 CMN_CSRCS += up_schedulesigaction.c up_sigdeliver.c up_stackframe.c
+CMN_CSRCS += up_checkstackoverflow.c
 CMN_CSRCS += up_unblocktask.c up_usestack.c up_doirq.c up_hardfault.c
 CMN_CSRCS += up_svcall.c up_vfork.c up_trigger_irq.c up_systemreset.c
 CMN_CSRCS += up_unblocktask_withoutsavereg.c up_restoretask.c
