@@ -35,6 +35,22 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+/* For use with EABI and floating point, the stack must be aligned to 8-byte
+ * addresses.
+ */
+
+#ifdef __ARM_EABI__
+#define STACK_ALIGNMENT     8
+#else
+#define STACK_ALIGNMENT     4
+#endif
+
+/* Stack alignment macros */
+
+#define STACK_ALIGN_MASK    (STACK_ALIGNMENT - 1)
+#define STACK_ALIGN_DOWN(a) ((a) & ~STACK_ALIGN_MASK)
+#define STACK_ALIGN_UP(a)   (((a) + STACK_ALIGN_MASK) & ~STACK_ALIGN_MASK)
+
 /****************************************************************************
  * Private Type Declarations
  ****************************************************************************/
@@ -68,17 +84,27 @@
 
 void sched_checkstackoverflow(FAR struct tcb_s *rtcb)
 {
-	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
+	if (*(uint32_t *)rtcb->stack_base_ptr != STACK_COLOR) {
+		//We have seen that the base pointer can get corrupted because of some
+		//code, therefore, we will be checking the stack with adjusted stack
+		//pointer and adjusted stack size also.
+		uintptr_t ptr = STACK_ALIGN_UP(((uintptr_t)rtcb->adj_stack_ptr - (uintptr_t)rtcb->adj_stack_size));
 
-		irqstate_t flags = enter_critical_section();
+		if (*(FAR uint32_t *)ptr != STACK_COLOR) {
+			irqstate_t flags = enter_critical_section();
 
-		lldbg_noarg("\n###############    STACK OVERFLOW at pid %d ", rtcb->pid);
+			lldbg_noarg("\n###############    STACK OVERFLOW at pid %d ", rtcb->pid);
 #if CONFIG_TASK_NAME_SIZE > 0
-		lldbg_noarg("(%s) ", rtcb->name);
+			lldbg_noarg("(%s) ", rtcb->name);
 #endif
-		lldbg_noarg("###################\n");
-		PANIC();
+			lldbg_noarg("###################\n");
+			PANIC();
 
-		leave_critical_section(flags);
+			leave_critical_section(flags);
+		} else {
+			//Pointer we got from adjusted stack pointer and adjusted stack size
+			//didn't reveal corrupted stack, therefore, we will print base pointer.
+			lldbg_noarg("Stack base pointer: %p", (void *)(rtcb->stack_base_ptr));
+		}
 	}
 }
