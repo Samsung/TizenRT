@@ -240,7 +240,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         role = disconn_ind->role ? "slave" : "master";
         dbg("[APP] Disconnected, reason: 0x%x, handle: %d, role: %s, remote device: %s\r\n", 
                 disconn_ind->reason, disconn_ind->conn_handle, role, le_addr);
-        client_init_parm->trble_device_disconnected_cb(disconn_ind->conn_handle);
+        client_init_parm->trble_device_disconnected_cb(disconn_ind->conn_handle, disconn_ind->reason);
 
         if(ble_client_connect_is_running)
             ble_client_connect_is_running = 0;
