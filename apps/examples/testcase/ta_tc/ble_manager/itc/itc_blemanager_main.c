@@ -79,7 +79,7 @@ static void ble_device_scanned_cb(ble_scanned_device *scanned_device)
 	);
 }
 
-static void ble_device_disconnected_cb(ble_client_ctx *ctx)
+static void ble_device_disconnected_cb(ble_client_ctx *ctx, uint16_t cause)
 {
 	printf("client disconnected callback received\n");
 	ITC_FUNC_SIGNAL;

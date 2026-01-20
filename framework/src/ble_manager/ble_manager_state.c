@@ -126,7 +126,9 @@ static void _event_caller(int evt_pri, void *data) {
 		} break;
 		case BLE_EVT_CLIENT_DISCONNECT: {
 			ble_client_device_disconnected_cb callback = msg->param[0];
-			callback(msg->param[1]);
+			trble_conn_handle conn = *(trble_conn_handle *)(msg->param[2]);
+			uint16_t error = *(uint16_t *)(msg->param[2] + sizeof(trble_conn_handle));
+			callback(msg->param[1], error);
 		} break;
 		case BLE_EVT_CLIENT_DISPLAY_PASSKEY: {
 			ble_client_passkey_display_cb callback = msg->param[0];
@@ -1283,8 +1285,6 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 				ctx_connecting = &g_client_table[i];
 			}
 		}
-		free(msg->param);
-
 		if (ctx == NULL) {
 			if (ctx_connecting == NULL) {
 				BLE_LOG_ERROR("[BLEMGR] fail to find disconnected client. (conn_handle : %u)\n", data);
@@ -1316,7 +1316,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		}
 
 		if (priv_state != BLE_CLIENT_AUTOCONNECTING && ctx->callbacks.disconnected_cb) {
-			memcpy(queue_msg.param, (void*[]){ctx->callbacks.disconnected_cb, ctx, NULL}, sizeof(void*) * queue_msg.count);
+			memcpy(queue_msg.param, (void*[]){ctx->callbacks.disconnected_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
 	} break;
