@@ -162,18 +162,6 @@ jobs:
       - *docker-cp
       - *build-job
 
-  rtl8730e_loadable_apps:
-    machine:
-      image: default
-    working_directory: ~/TizenRT
-    environment:
-      CONFIG_PATH: rtl8730e/loadable_apps
-    steps:
-      - attach_workspace:
-          at: ~/TizenRT
-      - *docker-cp
-      - *build-job
-
   rtl8730e_flat_dev_ddr:
     machine:
       image: default
@@ -186,12 +174,72 @@ jobs:
       - *docker-cp
       - *build-job
 
+  rtl8730e_flat_dev_ddr_nand:
+    machine:
+      image: default
+    working_directory: ~/TizenRT
+    environment:
+      CONFIG_PATH: rtl8730e/flat_dev_ddr_nand
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  rtl8730e_flat_dev_psram:
+    machine:
+      image: default
+    working_directory: ~/TizenRT
+    environment:
+      CONFIG_PATH: rtl8730e/flat_dev_psram
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  rtl8730e_loadable_apps:
+    machine:
+      image: default
+    working_directory: ~/TizenRT
+    environment:
+      CONFIG_PATH: rtl8730e/loadable_apps
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
   rtl8730e_loadable_ext_ddr:
     machine:
       image: default
     working_directory: ~/TizenRT
     environment:
       CONFIG_PATH: rtl8730e/loadable_ext_ddr
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  rtl8730e_loadable_ext_ddr_st7785:
+    machine:
+      image: default
+    working_directory: ~/TizenRT
+    environment:
+      CONFIG_PATH: rtl8730e/loadable_ext_ddr_st7785
+    steps:
+      - attach_workspace:
+          at: ~/TizenRT
+      - *docker-cp
+      - *build-job
+
+  rtl8730e_loadable_ext_psram:
+    machine:
+      image: default
+    working_directory: ~/TizenRT
+    environment:
+      CONFIG_PATH: rtl8730e/loadable_ext_psram
     steps:
       - attach_workspace:
           at: ~/TizenRT
@@ -305,13 +353,25 @@ workflows:
       - rtl8730e_flat_apps:
           requires:
             - checkout_code
-      - rtl8730e_loadable_apps:
-          requires:
-            - checkout_code
       - rtl8730e_flat_dev_ddr:
           requires:
             - checkout_code
+      - rtl8730e_flat_dev_ddr_nand:
+          requires:
+            - checkout_code
+      - rtl8730e_flat_dev_psram:
+          requires:
+            - checkout_code
+      - rtl8730e_loadable_apps:
+          requires:
+            - checkout_code
       - rtl8730e_loadable_ext_ddr:
+          requires:
+            - checkout_code
+      - rtl8730e_loadable_ext_ddr_st7785:
+          requires:
+            - checkout_code
+      - rtl8730e_loadable_ext_psram:
           requires:
             - checkout_code
       - bk7239n_hello:
