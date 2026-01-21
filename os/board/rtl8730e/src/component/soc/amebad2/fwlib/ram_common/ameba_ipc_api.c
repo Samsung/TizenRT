@@ -167,16 +167,19 @@ u32 IPC_wait_idle(IPC_TypeDef *IPCx, u32 IPC_ChNum)
 #endif
 		}
 
-		IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
-
+		/* clear pending interrupt status */
+		IPC_INTClear(IPCx, IPC_ChNum);
+		if (IPCx->IPC_TX_DATA & (BIT(IPC_ChNum))) {
+			IPC_INTConfig(IPCx, IPC_ChNum, ENABLE);
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-		if (rtw_down_timeout_sema(&(ipc_Semaphore[IPC_ChNum]), IPC_SEMA_MAX_DELAY) != 1) {
+			if (rtw_down_timeout_sema(&(ipc_Semaphore[IPC_ChNum]), IPC_SEMA_MAX_DELAY) != 1) {
 #else
-		if (xSemaphoreTake(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != pdTRUE) {
+			if (xSemaphoreTake(ipc_Semaphore[IPC_ChNum], IPC_SEMA_MAX_DELAY) != pdTRUE) {
 #endif
-			RTK_LOGE(TAG, "[CA32] %s IPC Get Semaphore Timeout\r\n", __FUNCTION__);
-			IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
-			return IPC_SEMA_TIMEOUT;
+				RTK_LOGE(TAG, "[CA32] %s IPC Get Semaphore Timeout\r\n", __FUNCTION__);
+				IPC_INTConfig(IPCx, IPC_ChNum, DISABLE);
+				return IPC_SEMA_TIMEOUT;
+			}
 		}
 	}
 	return 0;
