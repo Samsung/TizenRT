@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version fd093d3f2a 2026/01/16-19:48:17 ==
+1. Modify wififw logic to resolve rare KM4 crash after wakeup
+
 == version c220540be0 2025/12/24-13:53:09 ==
 1. Fix issue of crash due to wakeup by invalid packets
 
