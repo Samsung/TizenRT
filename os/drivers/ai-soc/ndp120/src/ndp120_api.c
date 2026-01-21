@@ -1455,20 +1455,20 @@ int ndp120_load_firmware(struct ndp120_dev_s *dev)
 	dev->lower->reset();
 	
 	const char *mcu_package = "/res/kernel/audio/mcu_fw";
-	const char *dsp_package = "/res/shared/model/dsp_fw";
+	const char *dsp_package = "/res/kernel/audio/dsp_fw";
 	const char *neural_package;
 
 	if ((dev->kd_num & AUDIO_NN_MODEL_MASK) == AUDIO_NN_MODEL_HI_BIXBY) {
 		if ((dev->kd_num & AUDIO_NN_MODEL_LANG_MASK) == AUDIO_NN_MODEL_LANG_EN) {
-			neural_package = "/res/shared/model/kd_local_en";
+			neural_package = "/res/kernel/audio/kd_local_en";
 		} else {
-			neural_package = "/res/shared/model/kd_local";
+			neural_package = "/res/kernel/audio/kd_local";
 		}
 	} else if ((dev->kd_num & AUDIO_NN_MODEL_MASK) == AUDIO_NN_MODEL_BIXBY) {
 		if ((dev->kd_num & AUDIO_NN_MODEL_LANG_MASK) == AUDIO_NN_MODEL_LANG_EN) {
-			neural_package = "/res/shared/model/kd_local2_en";
+			neural_package = "/res/kernel/audio/kd_local2_en";
 		} else {
-			neural_package = "/res/shared/model/kd_local2";
+			neural_package = "/res/kernel/audio/kd_local2";
 		}
 	} else {
 		auddbg("Invalid ... kd_num : %d\n", dev->kd_num);
