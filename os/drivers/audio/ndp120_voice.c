@@ -52,8 +52,6 @@
 #define NDP120_MIC_GAIN_MAX	10
 #define NDP120_MIC_GAIN_DEFAULT	7
 
-#define NDP120_INIT_RETRY_COUNT 3
-
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -180,6 +178,10 @@ static int ndp120_setMute(FAR struct ndp120_dev_s *priv, bool mute)
 {
 	int ret = 0;
 	audvdbg("mute : %d\n", mute);
+	/* if NDP has not been initialized, return without doing anything */
+	if (!priv->ndp) {
+		return 0;
+	}
 	if (mute) {
 		ret = ndp120_kd_stop(priv);
 		if (ret != 0) {
@@ -222,6 +224,7 @@ static int ndp120_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struc
 	/* Validate the structure */
 	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
 	int ret = 0;
+
 	DEBUGASSERT(caps && caps->ac_len >= sizeof(struct audio_caps_s));
 	audvdbg("type=%d ac_type=%d\n", type, caps->ac_type);
 
@@ -617,7 +620,7 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 
 	/* Deal with ioctls passed from the upper-half driver */
 
-	int ret = 0;
+	int ret = OK;
 	switch (cmd) {
 	case AUDIOIOC_PREPARE: {
 		/* nothing to prepare... */
@@ -747,8 +750,10 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		if (priv->running) {
 			return -EBUSY;
 		}
-		priv->kd_num = arg;
-		ndp120_change_kd(priv);
+		uint8_t kd_num = arg;
+		if (ndp120_change_kd(priv, kd_num) != SYNTIANT_NDP_ERROR_NONE) {
+			ret = -EIO;
+		}
 		break;
 	}
 	default:
@@ -919,8 +924,6 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	priv->lower = lower;
 	priv->recording = false;
 	priv->mute = false;
-	priv->kd_num = 0;
-	priv->kd_changed = false;
 #ifdef CONFIG_PM
 	/* only used during pm callbacks */
 	g_ndp120 = priv;
@@ -933,8 +936,9 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	while (retry--) {
 		lower->reset();
 		ret = ndp120_init(priv, false);
-		if (ret != OK) {
+		if (ret != SYNTIANT_NDP_ERROR_NONE) {
 			auddbg("ndp120 init failed\n");
+			ret = -EIO;
 		} else {
 			break;
 		}
