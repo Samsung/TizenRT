@@ -32,6 +32,8 @@
 
 #define MAX_LABELS 32
 
+#define NDP120_INIT_RETRY_COUNT 3
+
 #ifdef CONFIG_AUDIO_SPEECH_DETECT_FEATURES
 enum speech_state_e {
 	NDP120_SPI_SPEECH_STATE_NONE = 0,
@@ -71,6 +73,7 @@ struct ndp120_dev_s {
 	bool kd_enabled;
 #endif
 	struct ndp120_lower_s *lower;
+	volatile bool fw_loaded;
 	bool recording; /* during recording we ignore main keyword detections */
 	bool ndp_interrupts_enabled; /* used by mbwait to determine whether wait for sem or poll */
 	char *labels_per_network[MAX_NNETWORKS][MAX_LABELS];
@@ -80,7 +83,6 @@ struct ndp120_dev_s {
 	uint32_t extract_size;
 	uint32_t total_size;
 	bool extclk_inuse;
-	volatile bool alive;
 	bool keyword_correction;
 	struct pm_domain_s *pm_domain;
 	uint32_t sample_ready_cnt;
@@ -93,8 +95,7 @@ struct ndp120_dev_s {
 
 	pthread_mutex_t ndp_mutex_notification_sample;
 	pthread_cond_t ndp_cond_notification_sample;
-	uint8_t kd_num; // 0 is hi bixby, 1 is bixby
-	bool kd_changed;
+	int8_t kd_num; // -1 is none, 0 is hi bixby, 1 is bixby
 	sem_t reset_sem;
 };
 
