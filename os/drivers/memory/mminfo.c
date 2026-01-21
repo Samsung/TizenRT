@@ -75,7 +75,7 @@ static ssize_t mminfo_write(FAR struct file *filep, FAR const char *buffer, size
  ************************************************************************************/
 static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
-	int ret = -ENOSYS;
+	int ret = OK;
 	struct mallinfo mem;
 	struct mallinfo *retmem;
 #if defined(CONFIG_DEBUG_MM_HEAPINFO)
@@ -102,7 +102,6 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 #endif
 #endif
 		*retmem = mem;
-		ret = OK;
 		break;
 	case MMINFOIOC_PARSE:
 #if defined(CONFIG_DEBUG_MM_HEAPINFO)
@@ -121,15 +120,16 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			break;
 		}
 		if (heap == NULL) {
-			return -EINVAL;
+			ret = -EINVAL;
+			break;
 		}
 		if (option->mode == HEAPINFO_DUMP_HEAP) {
 			heapinfo_dump_heap(heap);
-			return OK;
+			break;
 		}
 		if (option->mode == HEAPINFO_INIT_PEAK) {
 			heap->peak_alloc_size = 0;
-			return OK;
+			break;
 		}
 #if CONFIG_KMM_NHEAPS > 1
 		if (option->heap_type == HEAPINFO_HEAP_TYPE_KERNEL) {
@@ -143,7 +143,6 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		{
 			heapinfo_parse_heap(heap, option->mode, option->pid);
 		}
-		ret = OK;
 		break;
 #endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
@@ -158,6 +157,7 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 #endif
 	default:
 		mdbg("Not supported\n");
+		ret = -ENOSYS;
 		break;
 	}
 	return ret;
