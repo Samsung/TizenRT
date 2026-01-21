@@ -358,12 +358,12 @@ int wakerec_main(int argc, char *argv[])
 
 	sd = media::voice::SpeechDetector::instance();
 	int model = atoi(argv[1]);
-	sd->changeKeywordModel(model);
+	
 	if (!sd->initKeywordDetect(16000, 1)) {
 		printf("#### [SD] init failed.\n");
 		return 0;
 	}
-
+	sd->changeKeywordModel(model);
 	sd->addListener(wakerecObj);
 
 	printf("###################################\n");
