@@ -30,6 +30,11 @@
 #include <crc32.h>
 
 #include <sys/types.h>
+
+#ifdef CONFIG_BOARDCTL_RESET
+#include <sys/boardctl.h>
+#endif
+
 #ifdef CONFIG_MMINFO
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/mminfo.h>
@@ -50,17 +55,46 @@
 #define COMMON                   "common"
 #define APP1                     "app1"
 #define APP2                     "app2"
+#define RESOURCE                 "resource"
 
+/* Dynamic binary configuration based on CONFIG settings */
+static char *bin_names[BINARY_COUNT];  /* Maximum possible binaries */
+static uint8_t bin_types[BINARY_COUNT]; /* Corresponding binary types */
+static int bin_count = 0;
+
+static void configure_binary_arrays(void)
+{
+	bin_count = 0;
+	
+	/* Always include kernel */
+	bin_names[bin_count] = KERNEL;
+	bin_types[bin_count] = BINARY_KERNEL;
+	bin_count++;
+	
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	/* Include app1 */
+	bin_names[bin_count] = APP1;
+	bin_types[bin_count] = BINARY_USERAPP;
+	bin_count++;
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-char *bin_names[] = {KERNEL, COMMON, APP1};
-uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP};
+	/* Include common binary when app separation and common binary are supported */
+	bin_names[bin_count] = COMMON;
+	bin_types[bin_count] = BINARY_COMMON;
+	bin_count++;
 #else
-char *bin_names[] = {KERNEL, APP1, APP2};
-uint8_t bin_types[] = {BINARY_KERNEL, BINARY_USERAPP, BINARY_USERAPP};
+	bin_names[bin_count] = APP2;
+	bin_types[bin_count] = BINARY_USERAPP;
+	bin_count++;
+#endif
 #endif
 
-int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
-
+#ifdef CONFIG_RESOURCE_FS
+	/* Include resource binary when resource filesystem is supported */
+	bin_names[bin_count] = RESOURCE;
+	bin_types[bin_count] = BINARY_RESOURCE;
+	bin_count++;
+#endif
+}
 
 #define DOWNLOAD_VALID_BIN          0
 #define DOWNLOAD_INVALID_BIN        1
@@ -96,7 +130,7 @@ static int binary_update_getinfo(char *name, binary_update_info_t *bin_info)
 	return ret;
 }
 
-static int binary_update_download_binary(binary_update_info_t *binary_info, bool version_up, int condition)
+static int binary_update_download_binary(binary_update_info_t *binary_info, int version_up, int condition)
 {
 	int read_fd;
 	int write_fd;
@@ -114,6 +148,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		user_binary_header_t user_header;
 		kernel_binary_header_t kernel_header;
 		common_binary_header_t common_header;
+		resource_binary_header_t resource_header;
 	} header_data;
 	
 	int header_size;
@@ -171,6 +206,23 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 			header_data.common_header.version = binary_info->version + 1;
 			printf("new version: %d\n", header_data.common_header.version);
 		}
+	} else if (strcmp(binary_info->name, "resource") == 0) {
+		/* Resource binary */
+		ret = read(read_fd, (FAR uint8_t *)&header_data.resource_header, sizeof(resource_binary_header_t));
+		if (ret != sizeof(resource_binary_header_t)) {
+			printf("Failed to read resource header %s: %d\n", origin_path, ret);
+			ret = ERROR;
+			goto errout_with_close_fd1;
+		}
+		header_size = sizeof(resource_binary_header_t);
+		binary_size = header_data.resource_header.bin_size;
+		version = header_data.resource_header.version;
+		
+		if (version_up) {
+			printf("current version: %d\n", header_data.resource_header.version);
+			header_data.resource_header.version = binary_info->version + 1;
+			printf("new version: %d\n", header_data.resource_header.version);
+		}
 	} else {
 		/* User application binary (app1, app2, etc.) */
 		ret = read(read_fd, (FAR uint8_t *)&header_data.user_header, sizeof(user_binary_header_t));
@@ -223,6 +275,14 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 			goto errout_with_close_fd2;
 		}
 		crc_hash = crc32part((uint8_t *)&header_data.common_header + CHECKSUM_SIZE, header_data.common_header.header_size, crc_hash);
+	} else if (strcmp(binary_info->name, "resource") == 0) {
+		ret = write(write_fd, (FAR uint8_t *)&header_data.resource_header, sizeof(resource_binary_header_t));
+		if (ret != sizeof(resource_binary_header_t)) {
+			printf("Failed to write resource header: %d\n", ret);
+			ret = ERROR;
+			goto errout_with_close_fd2;
+		}
+		crc_hash = crc32part((uint8_t *)&header_data.resource_header + CHECKSUM_SIZE, header_data.resource_header.header_size, crc_hash);
 	} else {
 		ret = write(write_fd, (FAR uint8_t *)&header_data.user_header, sizeof(user_binary_header_t));
 		if (ret != sizeof(user_binary_header_t)) {
@@ -420,8 +480,8 @@ static int binary_update_reload(void)
 static int binary_update_same_version_test(void)
 {
 	int ret;
-	binary_update_info_t pre_bin_info[3];
-	binary_update_info_t cur_bin_info[3];
+	binary_update_info_t pre_bin_info[BINARY_COUNT];
+	binary_update_info_t cur_bin_info[BINARY_COUNT];
 	int i;
 	update_type_flag = 0;
 
@@ -475,8 +535,8 @@ static int binary_update_same_version_test(void)
 static int binary_update_new_version_test(void)
 {
 	int ret;
-	binary_update_info_t pre_bin_info[3];
-	binary_update_info_t cur_bin_info[3];
+	binary_update_info_t pre_bin_info[BINARY_COUNT];
+	binary_update_info_t cur_bin_info[BINARY_COUNT];
 	int i;
 	update_type_flag = 0;
 
@@ -534,8 +594,8 @@ static int binary_update_new_version_test(void)
 static int binary_update_invalid_binary_test(void)
 {
 	int ret;
-	binary_update_info_t pre_bin_info[3];
-	binary_update_info_t cur_bin_info[3];
+	binary_update_info_t pre_bin_info[BINARY_COUNT];
+	binary_update_info_t cur_bin_info[BINARY_COUNT];
 	int i;
 	update_type_flag = 0;
 
@@ -590,6 +650,80 @@ static int binary_update_invalid_binary_test(void)
 	return OK;
 }
 
+/****************************************************************************
+ * sync_bootparam_partitions_test Functions
+ ****************************************************************************/
+
+static int create_mismatched_bootparam_scenario(void)
+{
+	int ret;
+	binary_update_info_t bin_info;
+	binary_setbp_result_t result;
+	update_type_flag = 0;
+
+	printf("\n** Creating Mismatched Bootparam Scenario **\n");
+	printf("This test creates a scenario where A and B partitions have binaries,\n");
+	printf("but bootparam indices are mismatched with kernel partition.\n");
+
+	/* Step 1: Download binaries to both partitions to ensure they exist */
+	for (int i = 0; i < bin_count; i++) {
+		ret = binary_update_getinfo(bin_names[i], &bin_info);
+		if (ret != OK) {
+			printf("Failed to get info for %s\n", bin_names[i]);
+			return ret;
+		}
+
+		/* Download binary to inactive partition */
+		ret = binary_update_download_binary(&bin_info, false, DOWNLOAD_VALID_BIN);
+		if (ret != OK) {
+			printf("Failed to download %s binary to inactive partition\n", bin_names[i]);
+			return ret;
+		}
+		printf("Downloaded %s to inactive partition\n", bin_names[i]);
+	}
+
+	/* Wait a bit more to ensure the binary is properly written */
+	sleep(2);
+
+	/* Step 2: Set bootparam only for kernel to create mismatch */
+	BM_SET_GROUP(update_type_flag, BINARY_KERNEL);
+	ret = binary_manager_set_bootparam(update_type_flag, &result);
+	if (ret != OK) {
+		printf("Failed to set bootparam for kernel only, ret %d\n", ret);
+		return ret;
+	}
+
+	printf("Created mismatched scenario: kernel bootparam updated, but common/app1 still point to old partitions\n");
+	return OK;
+}
+
+static int test_sync_bootparam_partitions(void)
+{
+	int ret;
+	binary_update_info_t pre_bin_info[BINARY_COUNT];
+	binary_update_info_t cur_bin_info[BINARY_COUNT];
+
+	printf("\n** Test binary_manager_sync_bootparam_partitions **\n");
+
+	/* Get pre-sync info for all binaries */
+	for (int i = 0; i < bin_count; i++) {
+		ret = binary_update_getinfo(bin_names[i], &pre_bin_info[i]);
+		if (ret != OK) {
+			printf("Failed to get pre-sync info for %s\n", bin_names[i]);
+			return ret;
+		}
+	}
+
+	/* Create mismatched bootparam scenario */
+	ret = create_mismatched_bootparam_scenario();
+	if (ret != OK) {
+		printf("Failed to create mismatched bootparam scenario\n");
+		return ret;
+	}
+
+	return OK;
+}
+
 static int binary_update_run_tests(void)
 {
 	int ret;
@@ -618,6 +752,16 @@ static int binary_update_run_tests(void)
 		return ret;
 	}
 
+	/* 5. Test sync bootparam partitions. */
+	ret = test_sync_bootparam_partitions();
+	if (ret != OK) {
+		printf("Sync bootparam partitions test failed\n");
+		return ret;
+	} else {
+		printf("[REBOOT] Success test_sync_bootparam_partitions. Board will be reboot...\n");
+		boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
+	}
+
 	printf("All tests completed successfully\n");
 	return OK;
 }
@@ -630,6 +774,7 @@ static void show_usage(void)
 	printf("  same_version - Run same version test\n");
 	printf("  new_version  - Run new version test\n");
 	printf("  invalid      - Run invalid binary test\n");
+	printf("  sync_bp      - Run sync bootparam test\n");
 }
 
 /****************************************************************************
@@ -641,6 +786,9 @@ int main(int argc, FAR char *argv[])
 int kernel_update_main(int argc, char *argv[])
 #endif
 {
+	/* Configure binary arrays based on CONFIG settings */
+	configure_binary_arrays();
+	
 	if (argc == 2 && !strncmp(argv[1], "all", 4)) {
 		/* Run all tests */
 		return binary_update_run_tests();
@@ -670,6 +818,18 @@ int kernel_update_main(int argc, char *argv[])
 		int ret = binary_update_invalid_binary_test();
 		if (ret != OK) {
 			printf("Invalid binary test failed\n");
+		}
+		return ret;
+	} else if (argc == 2 && !strncmp(argv[1], "sync_bp", 8)) {
+		/* Get info all test. */
+		binary_update_getinfo_all();
+		
+		int ret = test_sync_bootparam_partitions();
+		if (ret != OK) {
+			printf("Sync bootparam partitions test failed\n");
+		} else {
+			printf("[REBOOT] Success test_sync_bootparam_partitions. Board will be reboot...\n");
+			boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
 		}
 		return ret;
 	}
