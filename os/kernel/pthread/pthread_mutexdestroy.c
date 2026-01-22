@@ -117,7 +117,6 @@ int pthread_mutex_destroy(FAR pthread_mutex_t *mutex)
 	int status;
 
 	svdbg("mutex=0x%p\n", mutex);
-	DEBUGASSERT(mutex != NULL);
 
 	if (mutex != NULL) {
 
