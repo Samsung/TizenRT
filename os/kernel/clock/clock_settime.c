@@ -112,7 +112,10 @@ int clock_settime(clockid_t clock_id, FAR const struct timespec *tp)
 	int ret = OK;
 
 	svdbg("clock_id=%d\n", clock_id);
-	DEBUGASSERT(tp != NULL);
+	if (tp == NULL) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	/* CLOCK_REALTIME - POSIX demands this to be present. This is the wall
 	 * time clock.

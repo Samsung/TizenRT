@@ -74,7 +74,10 @@ int sched_setaffinity(pid_t pid, size_t cpusetsize, FAR const cpu_set_t *mask)
 	irqstate_t flags;
 	int ret = OK;
 
-	DEBUGASSERT(cpusetsize == sizeof(cpu_set_t) && mask != NULL);
+	if (cpusetsize != sizeof(cpu_set_t) || mask == NULL) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	/* Verify that the PID corresponds to a real task */
 

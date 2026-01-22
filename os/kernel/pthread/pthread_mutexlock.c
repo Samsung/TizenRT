@@ -148,7 +148,6 @@ int pthread_mutex_lock(FAR pthread_mutex_t *mutex)
 	int ret = EINVAL;
 
 	svdbg("mutex=0x%p\n", mutex);
-	DEBUGASSERT(mutex != NULL);
 
 	if (mutex != NULL) {
 		/* Make sure the semaphore is stable while we make the following
