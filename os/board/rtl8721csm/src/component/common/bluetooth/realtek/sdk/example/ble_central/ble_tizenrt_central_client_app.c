@@ -181,8 +181,13 @@ void ble_tizenrt_central_handle_callback_msg(T_TIZENRT_APP_CALLBACK_MSG callback
             if(ble_tizenrt_write_no_rsp_sem != NULL)
                 os_mutex_give(ble_tizenrt_write_no_rsp_sem);
 
-            trble_conn_handle disconnected = (uint32_t) callback_msg.u.buf;
-            client_init_parm->trble_device_disconnected_cb(disconnected);
+            trble_device_disconnected *disconnected_dev = callback_msg.u.buf;
+            if(disconnected_dev) {
+                client_init_parm->trble_device_disconnected_cb(disconnected_dev->conn_handle, disconnected_dev->cause);
+                os_mem_free(disconnected_dev);
+            } else {
+                debug_print("Disconnected parameter is NULL \n");
+            }
         }
             break;
 
@@ -583,10 +588,15 @@ void ble_tizenrt_central_app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_S
                 if (g_master_link_num){
                     g_master_link_num --;
                 }
-            uint32_t connid = (uint32_t) conn_id;
-            if(ble_tizenrt_central_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, (void *) connid) == false)
-            {
-                debug_print("callback msg send fail \n");
+            trble_device_disconnected *disconnected_dev = os_mem_alloc(0, sizeof(trble_device_disconnected));
+            if (disconnected_dev) {
+                disconnected_dev->conn_handle = (trble_conn_handle) conn_id;
+                disconnected_dev->cause = disc_cause;
+                if (ble_tizenrt_scatternet_send_callback_msg(BLE_TIZENRT_DISCONNECTED_MSG, disconnected_dev) == false) {
+                    debug_print("callback msg send fail \n");
+                }
+            } else {
+                debug_print("Memory allocation failed \n");
             }
             memset(&ble_tizenrt_central_app_link_table[conn_id], 0, sizeof(BLE_TIZENRT_APP_LINK));
         }
