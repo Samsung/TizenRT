@@ -150,7 +150,6 @@ int pthread_mutex_unlock(FAR pthread_mutex_t *mutex)
 	int ret = EPERM;
 
 	svdbg("mutex=0x%p\n", mutex);
-	DEBUGASSERT(mutex != NULL);
 	if (mutex == NULL) {
 		return EINVAL;
 	}

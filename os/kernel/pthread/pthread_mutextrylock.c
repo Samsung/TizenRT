@@ -126,7 +126,6 @@ int pthread_mutex_trylock(FAR pthread_mutex_t *mutex)
 	int ret = EINVAL;
 
 	svdbg("mutex=0x%p\n", mutex);
-	DEBUGASSERT(mutex != NULL);
 
 	if (mutex != NULL) {
 		int mypid = (int)getpid();
