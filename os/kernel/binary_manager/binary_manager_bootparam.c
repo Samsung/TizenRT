@@ -19,6 +19,7 @@
  * Included Files
  ****************************************************************************/
 #include <tinyara/config.h>
+#include <tinyara/reboot_reason.h>
 #include <debug.h>
 #include <stdio.h>
 #include <string.h>
@@ -421,4 +422,105 @@ int binary_manager_set_bpdata(binmgr_bpdata_t *bp_data)
 void binary_manager_set_bpidx(uint8_t index)
 {
 	g_bp_info.inuse_idx = index;
+}
+
+/*****************************************************************************************************
+ * Name: binary_manager_sync_bootparam_partitions
+ *
+ * Description:
+ *	 This function checks if active_idx, use_idx, and resource_active_idx are all different
+ *	 at boot time and synchronizes them if needed.
+ *
+ *****************************************************************************************************/
+int binary_manager_sync_bootparam_partitions(void)
+{
+	binmgr_bpdata_t bp_data;
+	char *bootparam;
+	bool need_update_bp = false;
+	uint8_t kernel_active_idx;
+	int ret;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int bin_idx;
+	uint32_t bin_count;
+#endif
+
+	bootparam = (char *)kmm_malloc(BOOTPARAM_SIZE);
+	if (!bootparam) {
+		bmdbg("Fail to malloc to read BP\n");
+		ret = BINMGR_OUT_OF_MEMORY;
+		goto cleanup;
+	}
+	memset(bootparam, 0xff, BOOTPARAM_SIZE);
+
+	/* Get current bootparam data */
+	memcpy(&bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
+	kernel_active_idx = bp_data.active_idx;
+	bmdbg("Current bootparam kernel's active_idx: %u\n", kernel_active_idx);
+
+	/* Check current kernel version */
+	ret = binary_manager_check_kernel_update();
+	if (ret == BINMGR_OK) {
+		/* Update index for inactive partition */
+		bp_data.active_idx ^= 1;
+		kernel_active_idx = bp_data.active_idx;
+		bmdbg("Change bootparam kernel's active_idx to the latest\n");
+	} else if (ret == BINMGR_ALREADY_UPDATED || ret == BINMGR_NOT_FOUND) {
+		bmdbg("Current kernel binary is the latest version\n");
+	} else {
+		bmdbg("Fail to check kernel update, %d\n", ret);
+		goto cleanup;
+	}
+
+	/* Check resource_active_idx with kernel's active_idx */
+#ifdef CONFIG_RESOURCE_FS
+	if (bp_data.resource_active_idx != kernel_active_idx) {
+		bmdbg("Resource partition mismatch: resource_active_idx (%u) != kernel_active_idx (%u)\n", 
+			bp_data.resource_active_idx, kernel_active_idx);
+		need_update_bp = true;
+		bp_data.resource_active_idx = kernel_active_idx;
+	}
+#endif
+
+	/* Check app_data->useidx with kernel's active_idx */
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	bin_count = bp_data.app_count;
+	for (int bp_app_idx = 0; bp_app_idx < bin_count; bp_app_idx++) {
+		if (bp_data.app_data[bp_app_idx].useidx != kernel_active_idx) {
+			bmdbg("%s partition mismatch: useidx (%u) != kernel_active_idx (%u)\n", 
+				bp_data.app_data[bp_app_idx].name, bp_data.app_data[bp_app_idx].useidx, kernel_active_idx);
+			need_update_bp = true;
+			bp_data.app_data[bp_app_idx].useidx = kernel_active_idx;
+		}
+	}
+#endif
+
+	/* Update bootparam if changes were made */
+	if (need_update_bp) {
+		bmdbg("Partition synchronization needed, updating bootparam\n");
+		bp_data.version++;
+
+		/* Write bootparam data */
+		memcpy(bootparam, &bp_data, sizeof(binmgr_bpdata_t));
+		ret = binary_manager_write_bootparam(bootparam);
+		if (ret == BINMGR_OK) {
+			bmvdbg("Update bootparam SUCCESS\n");
+		} else {
+			bmdbg("Fail to update bootparam to recover, %d\n", ret);
+			goto cleanup;
+		}
+
+		/* Reset board after successful synchronization */
+		bmdbg("Resetting board for partition synchronization\n");
+		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
+	} else {
+		bmdbg("All partitions already synchronized with kernel active_idx %u\n", kernel_active_idx);
+	}
+
+	ret = BINMGR_OK;
+
+cleanup:
+	if (bootparam != NULL) {
+		kmm_free(bootparam);
+	}
+	return ret;
 }

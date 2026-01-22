@@ -151,6 +151,15 @@ int binary_manager(int argc, char *argv[])
 	}
 #endif
 
+#ifdef CONFIG_USE_BP
+	/* Check and synchronize bootparam indices at boot time */
+	ret = binary_manager_sync_bootparam_partitions();
+	if (ret != BINMGR_OK) {
+		bmdbg("Failed to synchronize bootparam partitions, ret %d\n", ret);
+		return 0;
+	}
+#endif
+
 	bmvdbg("Binary Manager STARTED\n");
 
 	/* Unset all signals except for SIGKILL */

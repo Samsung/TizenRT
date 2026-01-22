@@ -42,7 +42,10 @@ static void display_test_scenario(void)
 	printf("\t-Press R or r : Recovery Test\n");
 #endif
 #ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
-	printf("\t-Press U or u : Binary Update Test\n");
+	printf("\t-Press U or u : Binary Update Test (All Tests)\n");
+	printf("\t-Press S or s : Same Version Test\n");
+	printf("\t-Press N or n : New Version Test\n");
+	printf("\t-Press I or i : Invalid Binary Test\n");
 #endif
 	printf("\t-Press X or x : Terminate Tests.\n");
 }
@@ -103,7 +106,19 @@ int wifiapp_main(int argc, char **argv)
 #ifdef CONFIG_EXAMPLES_BINARY_UPDATE_TEST
 		case 'U':
 		case 'u':
-			binary_update_test();
+			binary_update_test_with_type("all_tests");
+			break;
+		case 'S':
+		case 's':
+			binary_update_test_with_type("same_version");
+			break;
+		case 'N':
+		case 'n':
+			binary_update_test_with_type("new_version");
+			break;
+		case 'I':
+		case 'i':
+			binary_update_test_with_type("invalid_binary");
 			break;
 #endif
 		case 'X':
