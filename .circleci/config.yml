@@ -119,30 +119,6 @@ jobs:
       - *docker-cp
       - *build-job
 
-  rtl8720e_hello:
-    machine:
-      image: default
-    working_directory: ~/TizenRT
-    environment:
-      CONFIG_PATH: rtl8720e/hello
-    steps:
-      - attach_workspace:
-          at: ~/TizenRT
-      - *docker-cp
-      - *build-job
-
-  rtl8720e_loadable_apps:
-    machine:
-      image: default
-    working_directory: ~/TizenRT
-    environment:
-      CONFIG_PATH: rtl8720e/loadable_apps
-    steps:
-      - attach_workspace:
-          at: ~/TizenRT
-      - *docker-cp
-      - *build-job
-
   rtl8730e_flat_apps:
     machine:
       image: default
@@ -263,12 +239,6 @@ workflows:
           requires:
             - checkout_code
       - rtl8721csm_loadable_apps:
-          requires:
-            - checkout_code
-      - rtl8720e_hello:
-          requires:
-            - checkout_code
-      - rtl8720e_loadable_apps:
           requires:
             - checkout_code
       - rtl8730e_flat_apps:
