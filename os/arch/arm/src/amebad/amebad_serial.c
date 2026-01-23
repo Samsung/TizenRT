@@ -760,6 +760,28 @@ void up_serialinit(void)
 }
 
 /****************************************************************************
+ * Name: up_get_console_dev
+ *
+ * Description:
+ *   Read CONSOLE_DEV device serial structure
+ *
+ * Input Parameters:
+ *   none
+ *
+ * Returned Value:
+ *   CONSOLE_DEV structure address
+ *
+ ****************************************************************************/
+void *up_get_console_dev(void)
+{
+#ifdef CONSOLE_DEV
+	return &CONSOLE_DEV;
+#else
+	return NULL;
+#endif
+}
+
+/****************************************************************************
  * Name: up_lowputc
  *
  * Description:
