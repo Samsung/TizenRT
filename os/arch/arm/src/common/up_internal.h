@@ -619,6 +619,8 @@ void lowconsole_init(void);
 #define lowconsole_init()
 #endif
 
+EXTERN void *up_get_console_dev(void);	/* Get Console device structure of serial */
+
 /* DMA **********************************************************************/
 
 #ifdef CONFIG_ARCH_DMA
