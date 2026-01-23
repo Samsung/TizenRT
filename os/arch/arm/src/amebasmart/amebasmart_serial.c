@@ -1272,6 +1272,28 @@ void up_serialinit(void)
 }
 
 /****************************************************************************
+ * Name: up_get_console_dev
+ *
+ * Description:
+ *   Read CONSOLE_DEV device serial structure
+ *
+ * Input Parameters:
+ *   none
+ *
+ * Returned Value:
+ *   CONSOLE_DEV structure address
+ *
+ ****************************************************************************/
+void *up_get_console_dev(void)
+{
+#ifdef CONSOLE_DEV
+	return &CONSOLE_DEV;
+#else
+	return NULL;
+#endif
+}
+
+/****************************************************************************
  * Name: up_lowputc
  *
  * Description:
@@ -1377,33 +1399,6 @@ int up_getc(void)
 	int ch;
 	ch = up_lowgetc();
 	return ch;
-}
-
-/****************************************************************************
- * Name: up_flush_console_on_assert
- *
- * Description:
- *    This function is used to flush all characters in the console UART TX buffer
- *    during abort situations.
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-void up_flush_console_on_assert(void)
-{
-	uart_dev_t *dev = &CONSOLE_DEV;
-
-	while (dev->xmit.head != dev->xmit.tail) {
-		up_lowputc(dev->xmit.buffer[dev->xmit.tail]);
-
-		if (++(dev->xmit.tail) >= dev->xmit.size) {
-			dev->xmit.tail = 0;
-		}
-	}
 }
 
 #else							/* USE_SERIALDRIVER */
