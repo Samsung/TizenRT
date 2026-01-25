@@ -63,6 +63,11 @@
 
 #include <tinyara/sched.h>
 #include <tinyara/mm/mm.h>
+#include "mm_node.h" /* For mm_delayed_free_worker prototype */
+
+#ifdef CONFIG_MM_DELAYED_FREE_WORKER
+#include <tinyara/kthread.h>
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -283,5 +288,23 @@ int mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 	heapinfo_update_group_info(INVALID_PROCESS_ID, HEAPINFO_INVALID_GROUPID, HEAPINFO_INIT_INFO);
 #endif
 #endif
+
+#ifdef CONFIG_MM_DELAYED_FREE_WORKER
+	/* If the heap was initialized successfully, create the delayed free worker thread. */
+	if (ret == OK) {
+		int worker_pid;
+		worker_pid = kthread_create("mm_delayed_free", CONFIG_SCHED_PRIORITY_DEFAULT,
+									CONFIG_USERMAIN_STACKSIZE, mm_delayed_free_worker, NULL);
+		if (worker_pid < 0) {
+			mdbg("ERROR: Failed to create mm_delayed_free_worker thread: %d\n", worker_pid);
+			/* Depending on policy, we might want to undo heap initialization or return an error.
+			 * For now, we'll just log the error. The system might be unstable if this thread is critical.
+			 */
+		} else {
+			mllvdbg("Created mm_delayed_free_worker thread with pid %d\n", worker_pid);
+		}
+	}
+#endif /* CONFIG_MM_DELAYED_FREE_WORKER */
+
 	return OK;
 }

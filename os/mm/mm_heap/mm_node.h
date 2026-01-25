@@ -57,4 +57,8 @@
  * Public Functions
  ****************************************************************************/
 
+struct mm_heap_s; // Forward declaration
+void mm_free_delaylist(FAR struct mm_heap_s *heap);
+int mm_delayed_free_worker(int argc, char *argv[]);
+
 #endif /* __MM_MM_HEAP_MM_NODE_H */
