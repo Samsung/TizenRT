@@ -1,0 +1,19 @@
+menu "io_matrix"
+	config SUPPORT_IO_MATRIX
+		bool "Enable iO Mux Feature"
+		default n
+
+	config IO_MATRIX_VER1_0
+		bool "IO Mux Ver1.0 Feature, For Instance: bk7259"
+		default n
+
+	config IO_MATRIX_VER2_0
+		bool "IO Mux Ver2.0 Feature, For Instance: bk7236n,bk7236q"
+		default n
+
+	config IOMX_TEST
+		depends on SUPPORT_IO_MATRIX && DRIVER_TEST
+		bool "Enable io-mux test"
+		default y
+endmenu
+

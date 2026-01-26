@@ -1,0 +1,43 @@
+menu "SARADC"
+	config SARADC
+		bool "Enable saradc"
+		default y
+
+	config SARADC_NEED_FLUSH
+		bool "SARADC whether need flush data"
+		default y
+
+	config SARADC_RANGE_DIVIDE
+		bool "Enable saradc measure range divide"
+		default n
+
+	config SARADC_PM_CB_SUPPORT
+		bool "saradc pm support"
+		depends on SARADC
+		default n
+
+	config ADC_BUF_SIZE
+		int "config adc receive buffer size"
+		default 32
+
+	choice SARADC_VERSION
+		prompt "ASIC SARADC IP Version"
+		default SARADC_V1P1
+
+		config SARADC_V1P1
+			bool "SARADC_V1P1"
+			help
+				ASIC SARADC Version ID: V1.1
+
+		config SARADC_V1P2
+			bool "SARADC_V1P2"
+			help
+				ASIC SARADC Version ID: V1.2
+	endchoice
+
+	config SARADC_V1P2_COMPATIBLE_MODE
+		bool "Enable v1p2 compatible mode, and adapte the compatible interfaces"
+		depends on SARADC_V1P2
+		default n
+endmenu	
+

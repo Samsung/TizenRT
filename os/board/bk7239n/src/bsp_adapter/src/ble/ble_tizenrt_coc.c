@@ -72,7 +72,7 @@ typedef struct
 {
     uint8_t init;
     trble_le_coc_init_config s_init_confg;
-
+    uint16_t local_mtu;
     beken_semaphore_t sem;
 } coc_ctb_t;
 
@@ -237,7 +237,7 @@ int32_t bk_tr_ble_coc_notice_cb(ble_notice_t notice, void *param)
     {
         if (notice == BLE_5_COC_CONNECTION_COMPL_EVENT)
         {
-            LOGI("BLE_5_COC_CONNECTION_COMPL_EVENT status 0x%x conn_idx %d psm 0x%x cid 0x%x credit %d mtu %d mps %d\n", __func__,
+            LOGI("BLE_5_COC_CONNECTION_COMPL_EVENT status 0x%x conn_idx %d psm 0x%x cid 0x%x credit %d mtu %d mps %d\n",
                  evt->status,
                  evt->conn_idx,
                  evt->coc_connection_compl_evt.le_psm,
@@ -248,10 +248,10 @@ int32_t bk_tr_ble_coc_notice_cb(ble_notice_t notice, void *param)
         }
         else
         {
-            LOGI("BLE_5_COC_DISCCONNECT_COMPL_EVENT status 0x%x conn_idx %d cid 0x%x\n", __func__,
+            LOGI("BLE_5_COC_DISCCONNECT_COMPL_EVENT status 0x%x conn_idx %d cid 0x%x\n",
                  evt->status,
                  evt->conn_idx,
-                 evt->coc_connection_compl_evt.local_cid);
+                 evt->coc_disconnect_compl_evt.local_cid);
         }
 
         ble_evt_msg_elem_t elem = {0};
@@ -355,10 +355,23 @@ int32_t bk_tr_ble_coc_notice_cb(ble_notice_t notice, void *param)
     }
     break;
 
+    case BLE_5_COC_CONNECT_REQ_EVENT:
+    {
+        LOGI("BLE_5_COC_CONNECT_REQ_EVENT conn_idx %d psm 0x%x cid 0x%x mtu %d mps %d credit %d",
+             evt->conn_idx,
+             evt->coc_connect_req_evt.le_psm,
+             evt->coc_connect_req_evt.peer_cid,
+             evt->coc_connect_req_evt.peer_mtu,
+             evt->coc_connect_req_evt.peer_mps,
+             evt->coc_connect_req_evt.peer_credit);
+
+        bk_ble_coc_accept_connect_req(evt->conn_idx, 1, evt->coc_connect_req_evt.peer_cid, s_ctb.local_mtu, 0, 0);
+    }
+    break;
+
     default:
         break;
     }
-
 
 end:;
     return ret;
@@ -422,9 +435,10 @@ end:;
     return ret;
 }
 
-int32_t bk_tr_ble_coc_set_psm_security(uint16_t le_psm, uint8_t active, uint8_t sec_mode, uint8_t key_size)
+int32_t bk_tr_ble_coc_set_psm_security(uint16_t le_psm, uint8_t active, bk_le_coc_security_mode_t sec_mode, uint8_t key_size)
 {
     int32_t ret = TRBLE_UNSUPPORTED;
+    uint8_t input = 0;
 
     if (!s_ctb.init)
     {
@@ -433,9 +447,40 @@ int32_t bk_tr_ble_coc_set_psm_security(uint16_t le_psm, uint8_t active, uint8_t 
     }
 
     LOGD("psm 0x%x active %d sec_mode 0x%x size %d", le_psm, active, sec_mode, key_size);
-    LOGW("unsupport now !!!");
 
-    ret = bk_ble_coc_config(le_psm, sec_mode);
+    if (!active)
+    {
+        sec_mode = BK_LE_COC_SEC_NONE;
+    }
+
+    switch (sec_mode)
+    {
+    case BK_LE_COC_SEC_NONE:
+        input = BK_BLE_COC_SEC_NONE;
+        break;
+
+    case BK_LE_COC_SEC_UNAUTHEN_ENCRYPT:
+        input = BK_BLE_COC_SEC_UNAUTH_ENCRYPT;
+        break;
+
+    case BK_LE_COC_SEC_AUTHEN_ENCRYPT:
+        input = BK_BLE_COC_SEC_AUTH_ENCRYPT;
+        break;
+
+    case BK_LE_COC_SEC_SECURE_CONN_AUTHEN:
+        input = BK_BLE_COC_SEC_SECURE_CONNECTION;
+        break;
+
+    case BK_LE_COC_SEC_UNAUTHEN_DATA_SIGN:
+    case BK_LE_COC_SEC_AUTHEN_DATA_SIGN:
+    case BK_LE_COC_SEC_AUTHOR:
+    case BK_LE_COC_SEC_SECURE_CONN_UNAUTHEN:
+        LOGE("unsupport sec_mode param %d", sec_mode);
+        return TRBLE_UNSUPPORTED;
+        break;
+    }
+
+    ret = bk_ble_coc_config(le_psm, input);
 
     if (ret)
     {
@@ -448,7 +493,7 @@ end:;
     return ret;
 }
 
-int32_t bk_tr_ble_coc_set_param(uint16_t value)
+int32_t bk_tr_ble_coc_set_param(bk_le_coc_param_type_t type, uint16_t value)
 {
     int32_t ret = TRBLE_UNSUPPORTED;
 
@@ -458,16 +503,29 @@ int32_t bk_tr_ble_coc_set_param(uint16_t value)
         return TRBLE_FAIL;
     }
 
-    LOGD("value %d", value);
-    LOGW("unsupport now !!!");
+    LOGD("type %d value %d", type, value);
+
+    switch (type)
+    {
+    case BK_LE_COC_CHAN_PARAM_LOCAL_MTU:
+        s_ctb.local_mtu = value;
+        break;
+
+    default:
+        LOGW("invalid type %d", type);
+        return TRBLE_FAIL;
+        break;
+    }
 
 end:;
     return ret;
 }
 
-int32_t bk_tr_ble_coc_get_param(uint8_t param_type, uint16_t cid, uint16_t *value)
+int32_t bk_tr_ble_coc_chan_get_param(uint16_t conn_handle, bk_le_coc_chan_param_type_t param_type, uint16_t cid, uint16_t *value)
 {
     int32_t ret = TRBLE_UNSUPPORTED;
+    uint8_t input = 0;
+    uint32_t out = 0;
 
     if (!s_ctb.init)
     {
@@ -475,8 +533,45 @@ int32_t bk_tr_ble_coc_get_param(uint8_t param_type, uint16_t cid, uint16_t *valu
         return TRBLE_FAIL;
     }
 
-    LOGD("param_type %d cid 0x%x", param_type, cid);
-    LOGW("unsupport now !!!");
+    if (!value)
+    {
+        LOGE("param err");
+        return TRBLE_FAIL;
+    }
+
+    LOGD("conn_handle %d param_type %d cid 0x%x", conn_handle, param_type, cid);
+
+    switch (param_type)
+    {
+    case BK_LE_COC_CHAN_PARAM_CUR_CREDITS:
+        input = BK_BLE_COC_PEER_CURRENT_CREDIT;
+        break;
+
+    case BK_LE_COC_CHAN_PARAM_MAX_CREDITS:
+        input = BK_BLE_COC_PEER_MAX_CREDIT;
+        break;
+
+    case BK_LE_COC_CHAN_PARAM_MTU:
+        input = BK_BLE_COC_PEER_MTU;
+        break;
+
+    default:
+        LOGE("invalid param_type %d", param_type);
+        ret = TRBLE_FAIL;
+        goto end;
+    }
+
+    ret = bk_ble_coc_get_current_info(conn_handle, cid, input, &out);
+
+    if (ret)
+    {
+        LOGE("get info coc err %d", ret);
+        ret = TRBLE_FAIL;
+        goto end;
+    }
+
+    *value = out;
+
 end:;
     return ret;
 }
@@ -493,7 +588,7 @@ int32_t bk_tr_ble_coc_connect(uint16_t conn_handle, uint16_t le_psm)
 
     LOGD("handle %d psm 0x%x", conn_handle, le_psm);
 
-    ret = bk_ble_coc_connection_req(conn_handle, le_psm);
+    ret = bk_ble_coc_connection_req(conn_handle, le_psm, s_ctb.local_mtu, 0, 0);
 end:;
     return ret;
 }

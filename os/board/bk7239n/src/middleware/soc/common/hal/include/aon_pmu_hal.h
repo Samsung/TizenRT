@@ -53,6 +53,7 @@ void aon_pmu_hal_lpo_src_extern32k_enable(void);
 void aon_pmu_hal_lpo_src_set(uint32_t lpo_src);
 uint32_t aon_pmu_hal_lpo_src_get(void);
 uint32_t aon_pmu_hal_bias_cal_get(void);
+uint32_t aon_pmu_hal_band_cal_get();
 void aon_pmu_hal_psram_iodrv_set(uint32_t io_drv);
 void aon_pmu_hal_r0_latch_to_r7b(void);
 uint32_t aon_pmu_hal_get_reset_reason(void);

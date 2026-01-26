@@ -56,39 +56,29 @@
 #include "tfm_aes_gcm_nsc.h"
 #endif
 #include "os/mem.h"
+
+#include "cmsis_gcc.h"
+
 #define TAG "init"
 
 
 int bandgap_init(void)
 {
-#if (defined(CONFIG_SOC_BK7236XX)) && (defined(CONFIG_OTP)) && (defined(CONFIG_SYS_CPU0))
-	uint8_t device_id[2]; //only check seqNUM
+#if ((defined(CONFIG_OTP)) && (defined(CONFIG_SYS_CPU0)))
 	uint8_t new_bandgap;
 	uint8_t old_bandgap;
 	bk_err_t result;
 
 	old_bandgap = (uint8_t)sys_drv_get_bgcalm();
 
-	result = bk_otp_apb_read(OTP_VDDDIG_BANDGAP, &new_bandgap, sizeof(new_bandgap));
+	result = bk_otp_ahb_read(OTP_VDDDIG_BANDGAP, &new_bandgap, sizeof(new_bandgap));
 	if ((result != BK_OK) || (new_bandgap == 0) || (new_bandgap > 0x3F)) {
-		goto default_bandgap;
-	}
-
-	result = bk_otp_apb_read(OTP_DEVICE_ID, device_id, sizeof(device_id));
-	if ((result != BK_OK) || ((device_id[0] == 0x32) && (device_id[1] == 0x31))) {
-		goto default_bandgap;
+		return BK_OK;
 	}
 
 	BK_LOGI(TAG, "bandgap_calm_in_otp=0x%x\r\n", new_bandgap);
 	if (old_bandgap != new_bandgap) {
 		sys_drv_set_bgcalm(new_bandgap);
-	}
-	return BK_OK;
-
-default_bandgap:
-	//tenglong20240717: increase 10mV as default
-	if (old_bandgap > 6) {
-		sys_drv_set_bgcalm(old_bandgap - 6);
 	}
 #endif
 	return BK_OK;
@@ -138,15 +128,19 @@ __attribute__((unused)) static int pm_init(void)
 }
 
 #if CONFIG_PSRAM
+#if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
 void bk_psram_code_init(void){
     extern const char __psram_code_text;
     extern const char __psram_code_start__;
     extern const char __psram_code_end__;
+    extern const char __psram_data_text;
+    extern const char __psram_data_start__;
+    extern const char __psram_data_end__;
     extern const char __psram_bss_start__;
     extern const char __psram_bss_end__ ;
     unsigned int size;
+    unsigned int size_data;
     unsigned int size_bss;
-    //bk_psram_init();
 
     /*Copy psram_code section from LMA to VMA*/
     size = &__psram_code_end__ - &__psram_code_start__;
@@ -155,12 +149,62 @@ void bk_psram_code_init(void){
     {
         os_memcpy((void *)&__psram_code_start__, (void *)&__psram_code_text, size);
     }
+
+    /*Copy psram_data section from LMA to VMA*/
+    size_data = &__psram_data_end__ - &__psram_data_start__;
+
+    if(size_data!=0)
+    {
+        os_memcpy((void *)&__psram_data_start__, (void *)&__psram_data_text, size_data);
+    }
+
+    /*Clear psram_bss section*/
     size_bss = &__psram_bss_end__ - &__psram_bss_start__;
+
     if(size_bss!=0)
     {
         os_memset_word((void *)&__psram_bss_start__,0,size_bss);
     }
 }
+#else
+__FLASH_BOOT_CODE void bk_psram_code_init(void){
+    extern const char __psram_code_text;
+    extern const char __psram_code_start__;
+    extern const char __psram_code_end__;
+    extern const char __psram_data_text;
+    extern const char __psram_data_start__;
+    extern const char __psram_data_end__;
+    extern const char __psram_bss_start__;
+    extern const char __psram_bss_end__ ;
+    unsigned int size;
+    unsigned int size_data;
+    unsigned int size_bss;
+
+    /*Copy psram_code section from LMA to VMA*/
+    size = (uint32_t)(&__psram_code_end__ - &__psram_code_start__)/sizeof(uint32_t);
+
+    if(size!=0)
+    {
+        sys_memcpy_word((void *)&__psram_code_start__, (void *)&__psram_code_text, size);
+    }
+
+    /*Copy psram_data section from LMA to VMA*/
+    size_data = (uint32_t)(&__psram_data_end__ - &__psram_data_start__)/sizeof(uint32_t);
+
+    if(size_data!=0)
+    {
+        sys_memcpy_word((void *)&__psram_data_start__, (void *)&__psram_data_text, size_data);
+    }
+
+    /*Clear psram_bss section*/
+    size_bss = (uint32_t)(&__psram_bss_end__ - &__psram_bss_start__)/sizeof(uint32_t);
+    
+    if(size_bss!=0)
+    {
+        sys_memset_word((void *)&__psram_bss_start__,0,size_bss);
+    }
+}
+#endif
 #endif // #if CONFIG_PSRAM
 
 __attribute__((section(".build_ver_sections"))) const char build_ver[] = __DATE__ " " __TIME__;

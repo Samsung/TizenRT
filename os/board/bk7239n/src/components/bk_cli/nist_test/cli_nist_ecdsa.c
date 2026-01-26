@@ -20,7 +20,12 @@ extern int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key
 extern int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx);
 extern int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign);
 extern int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx);
+extern int armino_hal_der_ecdsa_private_key(hal_data *key, hal_data *prikey);
+extern int armino_hal_der_ecdsa_public_key(hal_data *key, hal_data *pubkey);
+extern int armino_hal_be_der_ecdsa_public_key(hal_key_type mode, uint8_t *key, hal_data *pubkey, uint32_t key_len);
 
+#define HAL_MAX_ECP_KEY_SIZE  133
+#define HAL_MAX_ECP_DER_KEY   288
 uint8_t nist_ecdsa_key_pair_verify_callback(nist_handle_t *nist_handle)
 {
     uint8_t key_data[132];
@@ -85,14 +90,43 @@ uint8_t nist_ecdsa_pub_key_verify_callback(nist_handle_t *nist_handle)
     key.data_len = qx_len;
     key.priv = qy;
     key.priv_len = qy_len;
-    // print_hex(key.data, key.data_len);
-    int result = armino_hal_set_key(mode, 32, &key, NULL);
-    if ((!check_result) != (!result)) {
-        BK_LOGI(NULL, "check failed, check_result = %u, result = %u\n", check_result, result);
+
+
+    hal_data pubkey = {0};
+    pubkey.data = (unsigned char *)kmm_malloc(HAL_MAX_ECP_DER_KEY);
+    if(pubkey.data == NULL){
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+
+    uint32_t pub_key_len = key.data_len + key.priv_len;
+    /* Allocate buffer for 0x04 || qx || qy, so need pub_key_len + 1 bytes */
+    uint8_t *pub_key_buffer = (uint8_t *)kmm_malloc(pub_key_len + 1);
+    if(pub_key_buffer == NULL){
+        kmm_free(pubkey.data);
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+    pub_key_buffer[0] = 0x04;  /* Uncompressed point format */
+    memcpy(pub_key_buffer + 1, qx, qx_len);
+    memcpy(pub_key_buffer + 1 + qx_len, qy, qy_len);
+
+    int result = armino_hal_be_der_ecdsa_public_key(mode, pub_key_buffer, &pubkey, pub_key_len);
+    kmm_free(pub_key_buffer);
+    if (result != NIST_OK) {
+        kmm_free(pubkey.data);
         return NIST_FAIL;
     }
+
+    // print_hex(key.data, key.data_len);
+    result = armino_hal_set_key(mode, 32, &pubkey, NULL);
+    if ((!check_result) != (!result)) {
+        BK_LOGI(NULL, "check failed, check_result = %u, result = %u\n", check_result, result);
+        kmm_free(pubkey.data);
+        return NIST_FAIL;
+    }
+
     if (result == 0) {
         armino_hal_remove_key(mode, 32);
+        kmm_free(pubkey.data);
     }
 
     return NIST_OK;
@@ -194,9 +228,35 @@ uint8_t nist_ecdsa_verify_verify_callback(nist_handle_t *nist_handle)
     key.priv = qy;
     key.priv_len = qy_len;
     hal_key_type key_mode = HAL_KEY_ECC_SEC_P192R1 + curve_id;
-    int result = armino_hal_set_key(key_mode, 32, &key, NULL);
+
+    hal_data pubkey = {0};
+    pubkey.data = (unsigned char *)kmm_malloc(HAL_MAX_ECP_DER_KEY);
+    if(pubkey.data == NULL){
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+
+    uint32_t pub_key_len = key.data_len + key.priv_len;
+    /* Allocate buffer for 0x04 || qx || qy, so need pub_key_len + 1 bytes */
+    uint8_t *pub_key_buffer = (uint8_t *)kmm_malloc(pub_key_len + 1);
+    if(pub_key_buffer == NULL){
+        kmm_free(pubkey.data);
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+    pub_key_buffer[0] = 0x04;  /* Uncompressed point format */
+    memcpy(pub_key_buffer + 1, qx, qx_len);
+    memcpy(pub_key_buffer + 1 + qx_len, qy, qy_len);
+
+    int result = armino_hal_be_der_ecdsa_public_key(key_mode, pub_key_buffer, &pubkey, pub_key_len);
+    kmm_free(pub_key_buffer);
+    if (result != NIST_OK) {
+        kmm_free(pubkey.data);
+        return NIST_FAIL;
+    }
+
+    result = armino_hal_set_key(key_mode, 32, &pubkey, NULL);
     if (result != HAL_SUCCESS) {
         BK_LOGI(NULL, "set key failed\n");
+        kmm_free(pubkey.data);
         return NIST_FAIL;
     }
     hal_data sign_data = {0};
@@ -209,8 +269,10 @@ uint8_t nist_ecdsa_verify_verify_callback(nist_handle_t *nist_handle)
     armino_hal_remove_key(key_mode, 32);
     if ((!expect_result) != (!result)) {
         BK_LOGI(NULL, "check failed, expect_result = %u, result = %u\n", expect_result, result);
+        kmm_free(pubkey.data);
         return NIST_FAIL;
     }
+    kmm_free(pubkey.data);
     return NIST_OK;
 }
 

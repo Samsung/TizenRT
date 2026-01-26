@@ -17,12 +17,14 @@
  ******************************************************************/
 #include <tinyara/config.h>
 #include <pthread.h>
+#include <stdlib.h>
 #include <debug.h>
 #include <net/if.h>
 #include <tinyara/lwnl/lwnl.h>
 #include <tinyara/net/if/wifi.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <tinyara/net/if/wifi.h>
+#include <tinyara/mm/mm.h>
 #include <include/modules/wifi.h>
 #include <bk_netmgr.h>
 #include <components/event.h>
@@ -93,7 +95,7 @@ typedef struct {
 	int scan_num;
 	trwifi_ap_scan_info_s *saved_multi_scan_list;
 } bkwifi_ap_multi_scan_info_s;
-static bkwifi_ap_multi_scan_info_s g_saved_multi_scan_list[AP_MULTI_SCAN_MAX_NUM] = {{0}};
+static bkwifi_ap_multi_scan_info_s *g_saved_multi_scan_list = NULL;
 
 
 trwifi_result_e bk_wifi_netmgr_init(struct netdev *dev);
@@ -172,8 +174,8 @@ void rtw_mutex_free(_mutex *pmutex)
 		} else {
 			printf("Fail!!!\n");
 		}
+		*pmutex = NULL;
 	}
-	*pmutex = NULL;
 }
 
 void rtw_mutex_get(_mutex *pmutex)
@@ -331,25 +333,130 @@ wifi_security_t wifi_auth_type_crypto_to_security(trwifi_ap_auth_type_e auth_typ
     return security;
 }
 
-static void bk_trwifi_free_scanlist(void)
+/* Clear persistent cached scan results used for fast connect (saved_scan_list/saved_scan_number). */
+static void bk_trwifi_clear_saved_scan_cache(void)
 {
-	if (saved_scan_list) {
+	if (saved_scan_list != NULL) {
 		os_free(saved_scan_list);
 		saved_scan_list = NULL;
+		saved_scan_number = 0;
 	}
-	saved_scan_number = 0;
+}
+
+/* Clear temporary scan result chain used only for one TRWIFI_POST_SCANEVENT (g_scan_list/g_scan_num). */
+static void bk_trwifi_clear_scan_chain_list(void)
+{
+	if (g_scan_list != NULL) {
+		os_free(g_scan_list);
+		g_scan_list = NULL;
+		g_scan_num = 0;
+	}
+}
+
+/* Clear per-SSID multi-scan cached results (g_saved_multi_scan_list). */
+static void bk_trwifi_clear_multi_scan_cache(void)
+{
+	if (g_saved_multi_scan_list == NULL) {
+		return;
+	}
+
+	for (int i = 0; i < AP_MULTI_SCAN_MAX_NUM; i++) {
+		if(g_saved_multi_scan_list[i].saved_multi_scan_list != NULL) {
+			os_free(g_saved_multi_scan_list[i].saved_multi_scan_list);
+			g_saved_multi_scan_list[i].saved_multi_scan_list = NULL;
+		}
+		g_saved_multi_scan_list[i].is_valid = false;
+		g_saved_multi_scan_list[i].scan_num = 0;
+		g_saved_multi_scan_list[i].ssid_length = 0;
+		memset(g_saved_multi_scan_list[i].ssid, 0, (TRWIFI_SSID_LEN + 1));
+	}
+
+	/* Free the array itself */
+	os_free(g_saved_multi_scan_list);
+	g_saved_multi_scan_list = NULL;
+}
+
+static void bk_trwifi_stop_scan_timer(void)
+{
+	if(rtos_is_timer_init(&scan_timer)) {
+		/* Best-effort stop. It's OK if the timer is already stopped/expired. */
+		int ret = rtos_stop_timer(&scan_timer);
+		if(ret != 0) {
+			nvdbg("[BK] scan stop timer returned %d\r\n", ret);
+		}
+	}
+}
+
+static void bk_trwifi_deinit_scan_timer(void)
+{
+	if (rtos_is_timer_init(&scan_timer)) {
+		/* Stop first (best-effort), then deinit. */
+		bk_trwifi_stop_scan_timer();
+		int ret = rtos_deinit_timer(&scan_timer);
+		if (ret != 0) {
+			ndbg("[BK] scan deinit timer failed, ret=%d\r\n", ret);
+		}
+	}
+}
+
+/* Forward declaration for timer reset helper */
+static void bk_trwifi_scan_timer_handler(void *FunctionContext);
+
+static int bk_trwifi_reset_scan_timer(void)
+{
+	int ret;
+
+	/*
+	 * Reuse scan_timer if possible:
+	 * - if timer is not initialized, init it once.
+	 * - if timer is initialized, stop + start to reset (reuses init-time duration/callback).
+	 * - if stop fails due to timer state, fallback to deinit+init.
+	 */
+	if (!rtos_is_timer_init(&scan_timer)) {
+		ret = rtos_init_timer(&scan_timer, SCAN_RESULT_KEEP_TIMER_DURATION,
+							  bk_trwifi_scan_timer_handler, NULL);
+		if (ret != 0) {
+			ndbg("[BK] scan init timer failed\r\n");
+			return ret;
+		}
+	} else {
+		/* Stop + start resets timer using original duration/callback from init */
+		ret = rtos_stop_timer(&scan_timer);
+		if (ret != 0) {
+			nvdbg("[BK] scan stop timer returned %d, fallback recreate\r\n", ret);
+			/* Stop failed, need to deinit and reinit */
+			bk_trwifi_deinit_scan_timer();
+			ret = rtos_init_timer(&scan_timer, SCAN_RESULT_KEEP_TIMER_DURATION,
+								  bk_trwifi_scan_timer_handler, NULL);
+			if (ret != 0) {
+				ndbg("[BK] scan init timer failed\r\n");
+				return ret;
+			}
+		}
+	}
+
+	ret = rtos_start_timer(&scan_timer);
+	if (ret != 0) {
+		ndbg("[BK] scan start timer failed, ret=%d\r\n", ret);
+		/* Best-effort stop to avoid leaving it running */
+		bk_trwifi_stop_scan_timer();
+		return ret;
+	}
+
+	nvdbg("[BK] Start scan timer\r\n");
+	return 0;
 }
 
 static void bk_trwifi_scan_timer_handler(void *FunctionContext)
 {
 	nvdbg("[BK] scan Timer expired : release saved scan list\r\n");
-	nvdbg("[BK] scan Timer expired : sizeof(trwifi_scan_list_s) =%d, scan_number=%d \r\n", sizeof(trwifi_scan_list_s), saved_scan_number);
+	nvdbg("[BK] scan Timer expired : sizeof(trwifi_scan_list_s) =%d, scan_number=%d \r\n", 
+	      sizeof(trwifi_scan_list_s), saved_scan_number);
 	rtos_lock_mutex(&scanlistbusy);
-	bk_trwifi_free_scanlist();
-	int ret = rtos_deinit_timer(&scan_timer);
-	if(ret!=0){
-		ndbg("[BK] scan deinit timer failed\r\n");
-	}
+	// Check if scan list still exists (might have been freed by new scan)
+	// bk_trwifi_clear_saved_scan_cache() internally checks saved_scan_list, so no need to check saved_scan_number
+	bk_trwifi_clear_saved_scan_cache();
+	/* Keep timer initialized for reuse; no need to deinit here. */
 	rtos_unlock_mutex(&scanlistbusy);
 }
 
@@ -409,57 +516,48 @@ int bk_wifi_scan_result_handle(const wifi_scan_result_t *scan_result)
 	}
 
 	rtos_lock_mutex(&scanlistbusy);
-	// If application calls scan before scan result free(before timeout), release scan list and cancel timer
-	if (saved_scan_number) {
-		bk_trwifi_free_scanlist();
-		ret = rtos_stop_timer(&scan_timer);
-		if(ret!=0){
-			ndbg("[BK] scan stop timer failed\r\n");
-		}
-		nwdbg("[BK] scan is called before timeout\r\n");
-	} else {
-		ret = rtos_init_timer(&scan_timer,SCAN_RESULT_KEEP_TIMER_DURATION,bk_trwifi_scan_timer_handler,NULL);
-		if(ret!=0){
-			ndbg("[BK] scan init timer failed\r\n");
-		}
-		nvdbg("[BK] Start scan timer\r\n");
+	// Note: Previous scan resources should be cleaned up in bk_trwlan_scan_start()
+	// before starting the new scan. However, to prevent race conditions (e.g., timer
+	// callback or rapid consecutive scans), we also check and free here as a safety measure.
+
+	// Step 1: Stop timer first to prevent timer callback from interfering
+	// This ensures that timer callback won't try to free memory while we're allocating new one
+	bk_trwifi_stop_scan_timer();
+
+	// Step 2: Handle case when no APs found (early return)
+	if(scan_result->ap_num == 0) {
+		// Still need to clear any existing scan cache
+		bk_trwifi_clear_saved_scan_cache();
+		TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_DONE, NULL);
+		rtos_unlock_mutex(&scanlistbusy);
+		return BK_OK;
 	}
 
-	rtos_start_timer(&scan_timer);
+	// Step 3: Free old saved_scan_list first to prevent memory leak
+	// This is a safety check in case cleanup in bk_trwlan_scan_start() didn't happen
+	// or timer callback cleared it but new scan result arrived before cleanup completed
+	bk_trwifi_clear_saved_scan_cache();
 
-	saved_scan_number = 0;
-	if(scan_result->ap_num != 0) {
-		saved_scan_list = (trwifi_ap_scan_info_s *)os_malloc(sizeof(trwifi_ap_scan_info_s) * scan_result->ap_num);
-	} else {
-		bk_trwifi_free_scanlist();
-	}
+	// Step 4: Allocate all required memory first
+	saved_scan_list = (trwifi_ap_scan_info_s *)os_malloc(sizeof(trwifi_ap_scan_info_s) * scan_result->ap_num);
 	if (saved_scan_list == NULL) {
-		if(rtos_is_timer_init(&scan_timer)) {
-			ret = rtos_stop_timer(&scan_timer);
-			if(ret!=0) {
-				ndbg("[BK] scan stop timer failed\r\n");
-				goto scan_res_fail;
-			}
-			ret = rtos_deinit_timer(&scan_timer);
-			if(ret!=0) {
-				ndbg("[BK] scan deinit timer failed\r\n");
-				goto scan_res_fail;
-			}
-		}
+		ndbg("[BK] Fail to malloc saved_scan_list, size=%d bytes\r\n", 
+		     sizeof(trwifi_ap_scan_info_s) * scan_result->ap_num);
+		goto scan_res_fail;
+	}
+	g_scan_list = (trwifi_scan_list_s *)os_malloc(sizeof(trwifi_scan_list_s) * scan_result->ap_num);
+	g_scan_num = scan_result->ap_num;
+	if (g_scan_list == NULL) {
+		ndbg("[BK] Fail to malloc g_scan_list\r\n");
+		bk_trwifi_clear_saved_scan_cache();
 		goto scan_res_fail;
 	}
 
-	g_scan_list	= (trwifi_scan_list_s *)os_malloc(sizeof(trwifi_scan_list_s)*scan_result->ap_num);
-	g_scan_num	= scan_result->ap_num;
-	if (g_scan_list == NULL) {
-		ndbg("[BK] Fail to malloc scan_list\r\n");
-		goto scan_res_fail;
-	}
+	// Step 5: Fill scan results
 	wifi_scan_ap_info_t *ap;
 	for (int i = 0; i < scan_result->ap_num; i++) {
 		ap = (wifi_scan_ap_info_t *)(&scan_result->aps[i]);
-		bk_trwifi_scan_result_record(&saved_scan_list[i],ap);
-
+		bk_trwifi_scan_result_record(&saved_scan_list[i], ap);
 		os_memcpy(&g_scan_list[i].ap_info, &saved_scan_list[i], sizeof(trwifi_ap_scan_info_s));
 		if(i > 0) {
 			g_scan_list[i-1].next = &g_scan_list[i];
@@ -468,8 +566,21 @@ int bk_wifi_scan_result_handle(const wifi_scan_result_t *scan_result)
 	}
 	saved_scan_number = scan_result->ap_num;
 
+	// Step 6: Initialize and start timer only after everything is ready
+	// Timer will automatically free saved_scan_list after SCAN_RESULT_KEEP_TIMER_DURATION
+	ret = bk_trwifi_reset_scan_timer();
+	if (ret != 0) {
+		ndbg("[BK] Failed to start scan timer, cleaning up\r\n");
+		bk_trwifi_clear_saved_scan_cache();
+		bk_trwifi_clear_scan_chain_list();
+		goto scan_res_fail;
+	}
+
+	// Step 7: Post event
 	TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
-	os_free(g_scan_list);
+
+	// Step 8: Cleanup temporary g_scan_list
+	bk_trwifi_clear_scan_chain_list();
 	rtos_unlock_mutex(&scanlistbusy);
 	return BK_OK;
 
@@ -502,6 +613,10 @@ int bk_wifi_multi_scan_result_handle(const wifi_scan_result_t *scan_result,wifi_
 	if (scan_config->ssid_cnt) {
 		// Get result ap number for per specific ssid
 		int ap_num_per_ssid;
+		if (g_saved_multi_scan_list == NULL) {
+			ndbg("[BK] g_saved_multi_scan_list is NULL\r\n");
+			goto scan_res_fail;
+		}
 		for(int j = 0; j < AP_MULTI_SCAN_MAX_NUM; j++) {
 			if (!g_saved_multi_scan_list[j].is_valid)
 				continue;
@@ -522,6 +637,12 @@ int bk_wifi_multi_scan_result_handle(const wifi_scan_result_t *scan_result,wifi_
 				os_printf("bk_wifi_multi_scan_result_handle: ssid %s, ap_num %d \n", g_saved_multi_scan_list[j].ssid, ap_num_per_ssid);
 			else
 				os_printf("bk_wifi_multi_scan_result_handle: ap_num %d \n", ap_num_per_ssid);
+
+			// Free old memory first to prevent memory leak
+			if (g_saved_multi_scan_list[j].saved_multi_scan_list != NULL) {
+				os_free(g_saved_multi_scan_list[j].saved_multi_scan_list);
+				g_saved_multi_scan_list[j].saved_multi_scan_list = NULL;
+			}
 
 			trwifi_ap_scan_info_s * scan_list = (trwifi_ap_scan_info_s *)os_malloc(sizeof(trwifi_ap_scan_info_s)*ap_num_per_ssid);
 			if (scan_list == NULL) {
@@ -547,9 +668,11 @@ int bk_wifi_multi_scan_result_handle(const wifi_scan_result_t *scan_result,wifi_
 		return BK_OK;
 	} else {
 		int scan_result_sum = 0;
-		for(int j = 0; j < AP_MULTI_SCAN_MAX_NUM; j++) {
-			if(g_saved_multi_scan_list[j].is_valid) {
-				scan_result_sum += g_saved_multi_scan_list[j].scan_num;
+		if (g_saved_multi_scan_list != NULL) {
+			for(int j = 0; j < AP_MULTI_SCAN_MAX_NUM; j++) {
+				if(g_saved_multi_scan_list[j].is_valid) {
+					scan_result_sum += g_saved_multi_scan_list[j].scan_num;
+				}
 			}
 		}
 
@@ -566,7 +689,7 @@ int bk_wifi_multi_scan_result_handle(const wifi_scan_result_t *scan_result,wifi_
 		}
 
 		int add_list_idx = 0;
-		if(scan_result_sum > 0){
+		if(scan_result_sum > 0 && g_saved_multi_scan_list != NULL){
 			for(int j = 0; j < AP_MULTI_SCAN_MAX_NUM; j++) {
 				if(g_saved_multi_scan_list[j].is_valid) {
 					for(int m = 0; m<g_saved_multi_scan_list[j].scan_num;m++) {
@@ -616,16 +739,7 @@ scan_res_fail:
 		TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
 	}
 	// clear saved multi scan list
-	for (int i = 0; i < AP_MULTI_SCAN_MAX_NUM; i++) {
-		g_saved_multi_scan_list[i].is_valid = false;
-		if(g_saved_multi_scan_list[i].saved_multi_scan_list != NULL) {
-			os_free(g_saved_multi_scan_list[i].saved_multi_scan_list);
-		}
-		g_saved_multi_scan_list[i].saved_multi_scan_list = NULL;
-		g_saved_multi_scan_list[i].scan_num = 0;
-		g_saved_multi_scan_list[i].ssid_length = 0;
-		memset(g_saved_multi_scan_list[i].ssid,0,(TRWIFI_SSID_LEN + 1));
-	}
+	bk_trwifi_clear_multi_scan_cache();
 	return BK_FAIL;
 }
 
@@ -633,6 +747,25 @@ static int bk_trwlan_scan_start(wifi_scan_config_t *scan_config)
 {
 	int err;
 	wifi_scan_result_t scan_result = {0};
+
+	// Release previous cached scan result before starting new scan
+	rtos_lock_mutex(&scanlistbusy);
+	// Stop and cleanup timer first to prevent timer callback from executing
+	bk_trwifi_stop_scan_timer();
+	// Print memory status before freeing previous scan result
+	bool had_previous_scan = (saved_scan_number != 0);
+	// Free scan list after stopping timer to avoid race condition
+	// bk_trwifi_clear_saved_scan_cache() internally checks saved_scan_list, so no need to check saved_scan_number
+	bk_trwifi_clear_saved_scan_cache();
+	if (had_previous_scan) {
+		nwdbg("[BK] Release previous scan result before new scan\r\n");
+	}
+	// Also check and free g_scan_list if it exists (shouldn't happen in normal flow, but for safety)
+	bk_trwifi_clear_scan_chain_list();
+	// Also free g_saved_multi_scan_list if it exists (from previous multi scan)
+	bk_trwifi_clear_multi_scan_cache();
+	rtos_unlock_mutex(&scanlistbusy);
+
 	if(bk_trwifi_wlan_scan_sema == NULL ) {
 		err = rtos_init_semaphore(&bk_trwifi_wlan_scan_sema,1);
 		if(err != kNoErr){
@@ -916,6 +1049,17 @@ trwifi_result_e bk_wifi_netmgr_deinit(struct netdev *dev)
 
     g_station_if = BK_WIFI_NONE;
     g_softap_if = BK_WIFI_NONE;
+
+    // Clean up scan related resources
+    rtos_lock_mutex(&scanlistbusy);
+    // Stop and deinit scan timer
+    bk_trwifi_deinit_scan_timer();
+    // Free scan lists
+    bk_trwifi_clear_saved_scan_cache();
+    bk_trwifi_clear_scan_chain_list();
+    bk_trwifi_clear_multi_scan_cache();
+    rtos_unlock_mutex(&scanlistbusy);
+
     /* unregister beken event callback*/
     bk_event_unregister_cb(EVENT_MOD_WIFI, EVENT_ID_ALL, beken_wifi_event_cb);
 
@@ -966,6 +1110,17 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 
 	wifi_scan_config_t scan_config = {0};
 	os_memset(&scan_config,0,sizeof(wifi_scan_config_t));
+
+	/* Allocate memory for multi-scan list */
+	if (g_saved_multi_scan_list == NULL) {
+		g_saved_multi_scan_list = (bkwifi_ap_multi_scan_info_s *)os_malloc(sizeof(bkwifi_ap_multi_scan_info_s) * AP_MULTI_SCAN_MAX_NUM);
+		if (g_saved_multi_scan_list == NULL) {
+			ndbg("[BK] Fail to malloc g_saved_multi_scan_list\r\n");
+			ret = TRWIFI_FAIL;
+			goto multi_scan_fail;
+		}
+		memset(g_saved_multi_scan_list, 0, sizeof(bkwifi_ap_multi_scan_info_s) * AP_MULTI_SCAN_MAX_NUM);
+	}
 
 	if (config) {
 		if ((config->scan_ap_config_count == 0) && !config->scan_all) {
@@ -1035,9 +1190,11 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 			}
 		} else {
 			int scan_result_sum = 0;
-			for(int j = 0; j < AP_MULTI_SCAN_MAX_NUM; j++) {
-				if(g_saved_multi_scan_list[j].is_valid) {
-					scan_result_sum += g_saved_multi_scan_list[j].scan_num;
+			if (g_saved_multi_scan_list != NULL) {
+				for(int j = 0; j < AP_MULTI_SCAN_MAX_NUM; j++) {
+					if(g_saved_multi_scan_list[j].is_valid) {
+						scan_result_sum += g_saved_multi_scan_list[j].scan_num;
+					}
 				}
 			}
 
@@ -1047,11 +1204,16 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 			}
 			if(scan_result_sum > 0){
 				g_scan_list	= (trwifi_scan_list_s *)os_malloc(sizeof(trwifi_scan_list_s)*scan_result_sum);
+				if (g_scan_list == NULL) {
+					ndbg("[BK] Fail to malloc g_scan_list\r\n");
+					goto multi_scan_fail;
+				}
 				int add_list_idx = 0;
-				for(int j = 0; j < AP_MULTI_SCAN_MAX_NUM; j++) {
-					if(g_saved_multi_scan_list[j].is_valid) {
-						for(int m = 0; m<g_saved_multi_scan_list[j].scan_num;m++) {
-							os_memcpy(&g_scan_list[add_list_idx].ap_info, &g_saved_multi_scan_list[j].saved_multi_scan_list[m], sizeof(trwifi_ap_scan_info_s));
+				if (g_saved_multi_scan_list != NULL) {
+					for(int j = 0; j < AP_MULTI_SCAN_MAX_NUM; j++) {
+						if(g_saved_multi_scan_list[j].is_valid) {
+							for(int m = 0; m<g_saved_multi_scan_list[j].scan_num;m++) {
+								os_memcpy(&g_scan_list[add_list_idx].ap_info, &g_saved_multi_scan_list[j].saved_multi_scan_list[m], sizeof(trwifi_ap_scan_info_s));
 							if(add_list_idx > 0) {
 								g_scan_list[add_list_idx-1].next = &g_scan_list[add_list_idx];
 							}
@@ -1060,10 +1222,10 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 						}
 					}
 				}
+				bk_trwifi_scan_dump_result(g_scan_list);
+				TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
+				bk_trwifi_clear_scan_chain_list();
 			}
-			bk_trwifi_scan_dump_result(g_scan_list);
-			TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
-			os_free(g_scan_list);
 		}
 	}
 
@@ -1076,17 +1238,11 @@ multi_scan_fail:
 	}
 	g_scan_flag = 0;
 	// clear saved multi scan list
-	for (i = 0; i < AP_MULTI_SCAN_MAX_NUM; i++) {
-		g_saved_multi_scan_list[i].is_valid = false;
-		if(g_saved_multi_scan_list[i].saved_multi_scan_list != NULL) {
-			os_free(g_saved_multi_scan_list[i].saved_multi_scan_list);
-		}
-		g_saved_multi_scan_list[i].saved_multi_scan_list = NULL;
-		g_saved_multi_scan_list[i].scan_num = 0;
-		g_saved_multi_scan_list[i].ssid_length = 0;
-		memset(g_saved_multi_scan_list[i].ssid,0,(TRWIFI_SSID_LEN + 1));
-	}
+	bk_trwifi_clear_multi_scan_cache();
 	return ret;
+}
+
+/* Fix missing closing brace introduced by recent refactor */
 }
 
 trwifi_result_e bk_wifi_netmgr_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg)

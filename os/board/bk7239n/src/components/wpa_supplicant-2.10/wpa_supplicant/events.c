@@ -537,17 +537,19 @@ int get_security_type_from_ie(u8 *ie_start, int len, u16 caps)
 		if (wpa_parse_wpa_ie_key_mgmt_and_pairwise_cipher(rsn_ie, 2 + rsn_ie[1],
 				&key_mgmt, &pairwise_cipher) == 0) {
 			if (wpa_key_mgmt_wpa_psk(key_mgmt)) {
-				if ((key_mgmt & (WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK))
-					== (WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK)) {
+				if (((key_mgmt & (WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK))
+					== (WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK)) ||
+					((key_mgmt & (WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK_SHA256))
+					== (WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK_SHA256))) {
 					return BK_SECURITY_TYPE_WPA3_WPA2_MIXED;;
 				} else if ((key_mgmt & WPA_KEY_MGMT_SAE) == WPA_KEY_MGMT_SAE)
 					return BK_SECURITY_TYPE_WPA3_SAE;
 				else {
-					if (pairwise_cipher == (WPA_CIPHER_CCMP | WPA_CIPHER_TKIP))
+					if ((pairwise_cipher & (WPA_CIPHER_CCMP | WPA_CIPHER_TKIP)) == (WPA_CIPHER_CCMP | WPA_CIPHER_TKIP))
 						return BK_SECURITY_TYPE_WPA2_MIXED;
-					if (pairwise_cipher == WPA_CIPHER_CCMP)
+					if ((pairwise_cipher & WPA_CIPHER_CCMP) == WPA_CIPHER_CCMP)
 						return BK_SECURITY_TYPE_WPA2_AES;
-					if (pairwise_cipher == WPA_CIPHER_TKIP)
+					if ((pairwise_cipher & WPA_CIPHER_TKIP) == WPA_CIPHER_TKIP)
 						return BK_SECURITY_TYPE_WPA2_TKIP;
 				}
 			} else if (wpa_key_mgmt_wpa_ieee8021x(key_mgmt)) {
@@ -563,11 +565,11 @@ int get_security_type_from_ie(u8 *ie_start, int len, u16 caps)
 		if (wpa_parse_wpa_ie_key_mgmt_and_pairwise_cipher(wpa_ie, 2 + wpa_ie[1],
 				&key_mgmt, &pairwise_cipher) == 0) {
 			if (wpa_key_mgmt_wpa_psk(key_mgmt)) {
-				if (pairwise_cipher == (WPA_CIPHER_CCMP | WPA_CIPHER_TKIP))
+				if ((pairwise_cipher & (WPA_CIPHER_CCMP | WPA_CIPHER_TKIP))== (WPA_CIPHER_CCMP | WPA_CIPHER_TKIP))
 					return BK_SECURITY_TYPE_WPA_MIXED;
-				if (pairwise_cipher == WPA_CIPHER_CCMP)
+				if ((pairwise_cipher & WPA_CIPHER_CCMP) == WPA_CIPHER_CCMP)
 					return BK_SECURITY_TYPE_WPA_AES;
-				if (pairwise_cipher == WPA_CIPHER_TKIP)
+				if ((pairwise_cipher & WPA_CIPHER_TKIP) == WPA_CIPHER_TKIP)
 					return BK_SECURITY_TYPE_WPA_TKIP;
 			} else if (wpa_key_mgmt_wpa_ieee8021x(key_mgmt)) {
 				return BK_SECURITY_TYPE_EAP;
@@ -5035,7 +5037,7 @@ static unsigned int wpas_event_cac_ms(const struct wpa_supplicant *wpa_s,
 	size_t i;
 	int j;
 
-	for (i = 0; i < wpa_s->hw.num_modes; i++) {
+	for (i = 0; wpa_s->hw.modes && i < wpa_s->hw.num_modes; i++) {
 		const struct hostapd_hw_modes *mode = &wpa_s->hw.modes[i];
 
 		for (j = 0; j < mode->num_channels; j++) {

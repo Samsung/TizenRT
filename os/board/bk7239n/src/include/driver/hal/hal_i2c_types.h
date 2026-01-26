@@ -39,11 +39,20 @@ typedef enum {
 	I2C_ID_MAX    /**< i2c id max */
 } i2c_id_t;
 
+
+#if defined(CONFIG_BK7239N_MP) && (CONFIG_BK7239N_MP == 1)
+typedef enum {
+	I2C_SCLK_DCO = 0,  /**< I2C source clock dco */
+	I2C_SCLK_XTAL_40M, /**< I2C source clock xtal 40M */
+	I2C_SCLK_80M,      /**< I2C source clock 80M */
+} i2c_src_clk_t;
+#else
 typedef enum {
 	I2C_SCLK_DCO = 0,  /**< I2C source clock dco */
 	I2C_SCLK_XTAL_26M, /**< I2C source clock xtal 26M */
 	I2C_SCLK_APLL,     /**< I2C source clock apll */
 } i2c_src_clk_t;
+#endif
 
 typedef enum {
 	I2C_ADDR_MODE_7BIT = 0, /**< i2c address mode 7bit */

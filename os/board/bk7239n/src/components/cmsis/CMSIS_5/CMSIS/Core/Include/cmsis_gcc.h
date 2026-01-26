@@ -152,10 +152,41 @@ __STATIC_FORCEINLINE void __tcm_start(void)
 }
 #endif
 
+#if !CONFIG_XIP_KERNEL
+#define sys_write_word(addr,val)                 *((volatile uint32_t *)(addr)) = val    /**< write value by word size */
+#define sys_read_word(addr,val)                  val = *((volatile uint32_t *)(addr))    /**< read value by word size */
+#define sys_get_word(addr)                       *((volatile uint32_t *)(addr))          /**< get value by word size */
+
+__attribute__ ((__optimize__ ("-fno-tree-loop-distribute-patterns"))) \
+__attribute__((section(".flash_boot_code"))) \
+__STATIC_FORCEINLINE void sys_memcpy_word(uint32_t *out, const uint32_t *in, uint32_t word_cnt)
+{
+    for(int i = 0; i < word_cnt; i++)
+    {
+        sys_write_word((out + i), sys_get_word(in + i));
+    }
+
+}
+
+__attribute__ ((__optimize__ ("-fno-tree-loop-distribute-patterns"))) \
+__attribute__((section(".flash_boot_code"))) \
+__STATIC_FORCEINLINE void sys_memset_word(uint32_t *b, int32_t c, uint32_t word_cnt)
+{
+    // Note:
+    // the word count == sizeof(buf)/sizeof(uint32_t)
+    for(int i = 0; i < word_cnt; i++)
+    {
+        sys_write_word((b + i), c);
+    }
+}
+#endif
+
 __STATIC_FORCEINLINE __NO_RETURN void __cmsis_start(void)
 {
+#if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
   void * memcpy(void *, const void *, unsigned int);
   void * memset(void *, int, unsigned int);
+#endif
   extern void _start(void) __NO_RETURN;
 
   typedef struct {
@@ -175,11 +206,19 @@ __STATIC_FORCEINLINE __NO_RETURN void __cmsis_start(void)
   extern const __zero_table_t __zero_table_end__;
 
   for (__copy_table_t const* pTable = &__copy_table_start__; pTable < &__copy_table_end__; ++pTable) {
+#if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
     memcpy(pTable->dest, pTable->src, pTable->wlen * 4);
+#else
+    sys_memcpy_word(pTable->dest, pTable->src, pTable->wlen);
+#endif
   }
 
   for (__zero_table_t const* pTable = &__zero_table_start__; pTable < &__zero_table_end__; ++pTable) {
+#if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
     memset(pTable->dest, 0, pTable->wlen * 4);
+#else
+    sys_memset_word(pTable->dest, 0, pTable->wlen);
+#endif
   }
 
 #if (defined(CONFIG_SOC_SMP))

@@ -71,5 +71,9 @@ menu "PM"
 		   Set Low power voltage default value 0.8v(0.6+0.025*8)
 		   This value should not be configured arbitrarily. Prior discussion with the chip vendor's support engineers is required before configuration
 
+	config DEEP_LV
+		bool "Enable deep low voltage"
+		default n
+
 endmenu
 

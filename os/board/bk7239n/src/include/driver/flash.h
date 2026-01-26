@@ -70,7 +70,12 @@ flash_line_mode_t bk_flash_get_line_mode(void);
  * @return flash line mode
  */
 uint32_t bk_flash_get_id(void);
-
+/**
+ * @brief     Get flash capacity
+ *
+ * @return flash size with bytes
+ */
+uint32_t bk_flash_get_capacity_bytes(void);
 /**
  * @brief     Set flash clock dpll
  *
@@ -397,13 +402,6 @@ uint32_t bk_user_app_partition_begin(void);
 uint32_t bk_user_app_partition_end(void);
 
 /**
- * @brief     Get flash encrypt status
- *
- * @return the flash encrypt status
- */
-uint32_t bk_get_flash_encrypt_status(void);
-
-/**
  * @brief     Write data to flash with security 
  *
  * @param address address to write
@@ -442,6 +440,19 @@ int bk_security_flash_read_bytes(uint32_t address, uint8_t *user_buf, uint32_t s
  *    - others: other errors.
  */
 int bk_security_flash_erase_sector(uint32_t address);
+
+/**
+ * @brief     Read data from flash with security 
+ *
+ * @param address address to read
+ * @param user_buf the buffer to read the data
+ * @param size size to read
+ *
+ * @return
+ *    - BK_OK: succeed
+ *    - others: other errors.
+ */
+int bk_security_flash_read_instruction(uint32_t address, uint8_t *user_buf, uint32_t size, uint32_t offset_flag);
 
 #ifdef __cplusplus
 }

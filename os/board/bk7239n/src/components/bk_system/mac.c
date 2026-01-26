@@ -31,6 +31,10 @@
 #include <driver/trng.h>
 #endif
 #include "driver/flash_partition.h"
+#if (defined(CONFIG_RF_FIRMWARE_DYNAMIC_PARTITION) && defined(CONFIG_BK7239N_MP))
+#include "driver/flash.h"
+#include "driver/flash_types.h"
+#endif
 
 #define TAG "mac"
 
@@ -325,10 +329,15 @@ static int sync_base_mac_record(uint8_t *mac, int mode)
 	}
 
 	do {
+#if (defined(CONFIG_RF_FIRMWARE_DYNAMIC_PARTITION) && defined(CONFIG_BK7239N_MP))
+		uint32_t mac_addr = bk_flash_get_capacity_bytes() - FLASH_RF_FIRMWARE_OFFSET + BASE_MAC_RECORD_OFFSET;
+		ret = bk_flash_read_bytes(mac_addr, (uint8_t *)mac_rec_p, BASE_MAC_RECORD_SIZE);
+#else
 		ret = bk_flash_partition_read(BK_PARTITION_RF_FIRMWARE,
 					(uint8_t *)mac_rec_p,
 					BASE_MAC_RECORD_OFFSET,
 					BASE_MAC_RECORD_SIZE);
+#endif
 		if(BK_OK != ret) {
 			BK_LOGE(TAG, "get_base_mac_record, read flash failed.\n");
 			break;
