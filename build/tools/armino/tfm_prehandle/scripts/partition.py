@@ -1580,7 +1580,7 @@ class Partitions:
         self.gen_ota_bin(ota_aes_en, aes_key, security_counter)
         self.gen_all_apps_bin(aes_type)
         self.gen_bootloader_ota_bin(aes_type)
-        self.gen_ota_combine_bin()
+        #self.gen_ota_combine_bin()
 
         if (self.bl1_secureboot_en == True):
             self.gen_provisioning_bin(aes_type)
