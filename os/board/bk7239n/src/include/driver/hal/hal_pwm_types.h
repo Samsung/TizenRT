@@ -58,6 +58,7 @@ typedef enum {
 typedef enum {
 	PWM_SCLK_CLK32 = 0,  /**< PWM source clock dco */
 	PWM_SCLK_XTAL,       /**< PWM source clock xtal 26M */
+	PWM_SCLK_80M,        /**< PWM source clock 80M */
 } pwm_src_clk_t;
 
 typedef enum
@@ -79,8 +80,8 @@ typedef enum {
 	PWM_POLARITY_MAX,             /**< Invalid polarity */
 } pwm_polarity_t;
 
-typedef uint8_t pwm_unit_t;
-typedef uint8_t pwm_chan_t;	//pwm_id_t
+typedef uint32_t pwm_unit_t;
+typedef uint32_t pwm_chan_t;	//pwm_id_t
 
 #define BK_ERR_PWM_HAL_CLOCK (BK_ERR_PWM_HAL_BASE - 1)
 

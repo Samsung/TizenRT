@@ -1,0 +1,103 @@
+menu "UART"
+	config UART1
+		bool "Enable UART1"
+		default n
+	config UART1_FLOW_CTRL
+		bool "Uart1 Flow Ctrl"
+		default n
+
+	config UART2
+		bool "Enable UART2"
+		default n
+
+	config UART3
+		bool "Enable UART3"
+		default n
+
+	config UART_PRINT_PORT
+		int "Config Uart Print Port"
+		range 0 2
+		default 0
+		help
+		Default 0 mean use UART1
+
+	config UART_CLI_BKREG_PORT
+		int "Config Uart CLI and BKreg Port"
+		range 0 2
+		default 1
+		help
+		Default 1 mean use UART1
+
+	config UART_ATE_PRINT_PORT
+		int "Config Uart ATE Print Port"
+		range 0 2
+		default 0
+		help
+		Default 0 mean use UART1
+
+	config UART_ATE_PORT
+		int "Config Uart ATE Port"
+		range 0 2
+		default 1
+		help
+		Default 1 mean use UART2
+
+	config PRINTF_BUF_SIZE
+		int "Print Buffer Size"
+		range 1 4096
+		default 128
+		help
+		The value should be changed if print size is more than 128
+
+	# TODO do we need to put it to uart_debug component?
+	config BACKGROUND_PRINT
+		bool "Enable background print"
+		default n
+
+	config KFIFO_SIZE
+		int "Kfifo Size"
+		range 1 4096
+		default 128
+		help
+			This will set kfifo size when software uses kfifo to cache data receiving.
+
+	config UART_STATIS
+		bool "Enable UART Statis"
+		default n
+
+	config UART_LOW_VOLTAGE_SUPPORT
+		bool "Enable UART support low power"
+		default n
+		
+	config UART_ERR_INTERRUPT
+		bool "Enable UART support error interrupt"
+		default n
+
+	config UART_TX_DMA
+		bool "Enable UART tx dma"
+		default n
+		---help---
+			Enable UART tx dma copy data support,special feature used for UART TX data. \
+			When erase Flash, CPU can't get instructions from flash then it can't work, \
+			so DMA copy data from RAM to UART FIFO
+
+	config UART_RX_DMA
+		bool "Enable UART rx dma"
+		default n
+		---help---
+			Enable UART rx dma copy data support,special feature used for UART RX data. \
+			When erase Flash, CPU can't get instructions from flash then it can't work, \
+			so DMA copy data from UART FIFO to RAM
+
+	config UART_RX_DMA_KFIFO_SIZE
+		int "Kfifo Size"
+		range 1 4096
+		default 512
+		help
+			This will reset kfifo size of "CONFIG_KFIFO_SIZE" when software enable rx dma.
+
+	config UART_PM_CB_SUPPORT
+		bool "Enable UART enter low voltage callback support"
+		default n
+endmenu
+

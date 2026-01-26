@@ -27,7 +27,7 @@ bk_err_t aon_pmu_hal_init(void)
 	return BK_OK;
 }
 
-uint32_t aon_pmu_hal_get_chipid(void)
+__FLASH_BOOT_CODE uint32_t aon_pmu_hal_get_chipid(void)
 {
 	return aon_pmu_ll_get_r7c_id();
 }
@@ -79,7 +79,7 @@ uint32_t aon_pmu_hal_get_adc_cal()
 	return aon_pmu_ll_get_r7d_adc_cal();
 }
 
-uint32_t aon_pmu_hal_get_dpll_unlock(uint32_t *unlockL, uint32_t *unlockH)
+__FLASH_BOOT_CODE uint32_t aon_pmu_hal_get_dpll_unlock(uint32_t *unlockL, uint32_t *unlockH)
 {
     aon_pmu_r7d_t r7d;
 
@@ -94,7 +94,7 @@ uint32_t aon_pmu_hal_get_dpll_unlock(uint32_t *unlockL, uint32_t *unlockH)
 	return r7d.dpll_unlockL || r7d.dpll_unlockH;
 }
 
-uint32_t aon_pmu_hal_get_dpll_band()
+__FLASH_BOOT_CODE uint32_t aon_pmu_hal_get_dpll_band()
 {
 	return aon_pmu_ll_get_r7d_dpll_band();
 }
@@ -179,6 +179,11 @@ __IRAM_SEC uint32_t aon_pmu_hal_lpo_src_get()
 uint32_t aon_pmu_hal_bias_cal_get()
 {
 	return aon_pmu_ll_get_r7e_cbcal();
+}
+
+uint32_t aon_pmu_hal_band_cal_get()
+{
+	return aon_pmu_ll_get_r7e_band_cal();
 }
 
 uint32_t aon_pmu_hal_rtc_tick_h_get(void)

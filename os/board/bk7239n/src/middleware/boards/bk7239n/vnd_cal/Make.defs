@@ -48,9 +48,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
-CSRCS += \
-	vnd_cal.c \
+ifeq ($(CONFIG_BK7239N_MP),y)
+CSRCS += vnd_cal.c
+else
+CSRCS += vnd_cal_mpw.c
+endif
 
 
 DEPPATH += --dep-path boards/bk7239n/vnd_cal

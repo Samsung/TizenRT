@@ -1,0 +1,22 @@
+menu "Watchdog"
+	config INT_WDT
+		bool "Enable Interrupt Watchdog"
+		default y
+
+	config INT_WDT_PERIOD_MS
+		int "Interrupt Watchdog Period(ms)"
+		default 1000
+
+	config TASK_WDT
+		bool "Enable Task Watchdog"
+		default y
+
+	config TASK_WDT_PERIOD_MS
+		int "Task Watchdog Period(ms)"
+		default 60000
+
+	config NMI_WDT_EN
+		bool "Enable NMI Watchdog"
+		default n
+endmenu
+

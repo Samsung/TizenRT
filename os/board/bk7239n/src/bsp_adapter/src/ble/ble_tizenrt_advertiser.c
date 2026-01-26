@@ -790,8 +790,6 @@ int32_t bk_tr_ble_advertiser_set_multi_adv_data(uint8_t adv_handle, uint8_t *pda
 
     os_memcpy(hal_ble_adv_env.array[hal_adv_index].advData, pdata, len);
     hal_ble_adv_env.array[hal_adv_index].advDataLen = len;
-    os_memcpy(hal_ble_adv_env.array[hal_adv_index].advData, pdata, len);
-    hal_ble_adv_env.array[hal_adv_index].advDataLen = len;
 
     if (hal_ble_adv_env.array[hal_adv_index].adv_status == BLE_HAL_ADV_STATE_ADVERTISING)
     {
@@ -823,8 +821,6 @@ int32_t bk_tr_ble_advertiser_set_multi_resp_data(uint8_t adv_handle, uint8_t *pd
         return TRBLE_FAIL;
     }
 
-    os_memcpy(hal_ble_adv_env.array[hal_adv_index].respData, pdata, len);
-    hal_ble_adv_env.array[hal_adv_index].respDataLen = len;
     os_memcpy(hal_ble_adv_env.array[hal_adv_index].respData, pdata, len);
     hal_ble_adv_env.array[hal_adv_index].respDataLen = len;
 
@@ -883,13 +879,13 @@ end:;
     return ret;
 }
 
-int32_t bk_tr_ble_advertiser_set_multi_adv_type(uint8_t adv_handle, trble_adv_type_e adv_type, trble_addr *addr)
+int32_t bk_tr_ble_advertiser_set_multi_adv_type(uint8_t adv_handle, uint8_t adv_event_prop, trble_addr *addr)
 {
     int32_t ret = TRBLE_SUCCESS;
 
     if (addr)
     {
-        LOGI("adv_handle %d adv_type %d mac_type %d %02x:%02x:%02x:%02x:%02x:%02x", adv_handle, adv_type, addr->type,
+        LOGI("adv_handle %d adv_event_prop 0x%x mac_type %d %02x:%02x:%02x:%02x:%02x:%02x", adv_handle, adv_event_prop, addr->type,
              addr->mac[5],
              addr->mac[4],
              addr->mac[3],
@@ -899,7 +895,7 @@ int32_t bk_tr_ble_advertiser_set_multi_adv_type(uint8_t adv_handle, trble_adv_ty
     }
     else
     {
-        LOGI("adv_handle %d adv_type %d", adv_handle, adv_type);
+        LOGI("adv_handle %d adv_event_prop 0x%x", adv_handle, adv_event_prop);
     }
 
     int8_t hal_adv_index = hal_ble_find_adv_index_by_handle(adv_handle);
@@ -912,29 +908,49 @@ int32_t bk_tr_ble_advertiser_set_multi_adv_type(uint8_t adv_handle, trble_adv_ty
 
     hal_ble_adv_env.array[hal_adv_index].adv_param.adv_type = ADV_TYPE_LEGACY;
 
-    switch (adv_type)
+    switch (adv_event_prop)
     {
-    case TRBLE_ADV_TYPE_IND:
+    case BK_EXT_ADV_LEGACY_ADV_CONN_SCAN_UNDIRECTED:
         hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_SCANNABLE_BIT;
         break;
 
-    case TRBLE_ADV_TYPE_DIRECT:
+    case BK_EXT_ADV_LEGACY_ADV_CONN_LOW_DUTY_DIRECTED:
         LOGE("can't set direct adv because hal api doesn't input peer addr !!!");
-        return TRBLE_FAIL;
+        ret = TRBLE_FAIL;
+        goto end;
         hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_DIRECTED_BIT;
         break;
 
-    case TRBLE_ADV_TYPE_SCAN_IND:
+    case BK_EXT_ADV_LEGACY_ADV_CONN_HIGH_DUTY_DIRECTED:
+        LOGE("can't set direct adv because hal api doesn't input peer addr !!!");
+        ret = TRBLE_FAIL;
+        goto end;
+        hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_HDC_BIT;
+        break;
+
+    case BK_EXT_ADV_LEGACY_ADV_SCAN_UNDIRECTED:
         hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = ADV_PROP_SCANNABLE_BIT;
         break;
 
-    case TRBLE_ADV_TYPE_NONCONN_IND:
+    case BK_EXT_ADV_LEGACY_ADV_NON_SCAN_NON_CONN_UNDIRECTED:
         hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = 0;
         break;
 
+    case BK_EXT_ADV_EXTENDED_ADV_NON_SCAN_NON_CONN_UNDIRECTED:
+    case BK_EXT_ADV_EXTENDED_ADV_NON_SCAN_NON_CONN_DIRECTED:
+    case BK_EXT_ADV_EXTENDED_ADV_CONN_UNDIRECTED:
+    case BK_EXT_ADV_EXTENDED_ADV_CONN_DIRECTED:
+    case BK_EXT_ADV_EXTENDED_ADV_SCAN_UNDIRECTED:
+    case BK_EXT_ADV_EXTENDED_ADV_SCAN_DIRECTED:
+        LOGE("unsupport ext adv 0x%x !!!", adv_event_prop);
+        ret = TRBLE_FAIL;
+        goto end;
+        break;
+
     default:
-        LOGE("invalid adv type %d", adv_type);
-        return TRBLE_FAIL;
+        LOGE("unknow adv_event_prop 0x%x", adv_event_prop);
+        ret = TRBLE_FAIL;
+        goto end;
         break;
     }
 

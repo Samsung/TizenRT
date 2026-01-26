@@ -638,24 +638,11 @@ int wpa_get_scan_rst(struct prism2_hostapd_param *param, int len)
 	struct wpa_scan_res *r;
 	#endif
 	int i, ret = 0;
-
-	// reduce IEs for scan only
-	bool reduce_ie = false;
-	bool reduce_scan_result = false;
 	u32 ie_len;
-	struct wpabuf *ies = 0;
 	GLOBAL_INT_DECLARATION();
 
 	GLOBAL_INT_DISABLE();
 	wpa_buffer_scan_results();
-
-#ifdef CONFIG_MINIMIZE_SCAN_RESULT_IE
-	if (param->sta_addr[0] == 0xFF)
-		reduce_ie = true;
-#endif
-#if CONFIG_MINIMUM_SCAN_RESULTS
-	reduce_scan_result = true;
-#endif
 
 	if (NULL == s_scan_result_upload_ptr) {
 		GLOBAL_INT_RESTORE();
@@ -666,19 +653,10 @@ int wpa_get_scan_rst(struct prism2_hostapd_param *param, int len)
 
 	BK_WIFI_LOGI(TAG, "get scan result:%d\r\n", s_scan_result_upload_ptr->scanu_num);
 
-	if (reduce_ie && !reduce_scan_result)
-		ies = wpabuf_alloc(128);
-
+	/* IE filtering is done at lower layer (rw_msg_rx.c) when CONFIG_MINIMIZE_SCAN_RESULT_IE is enabled */
 	for (i = 0; s_scan_result_upload_ptr && i < s_scan_result_upload_ptr->scanu_num; i++) {
 		scan_rst_ptr = s_scan_result_upload_ptr->res[i];
-		ie_len = 0;
-		if (reduce_ie && !reduce_scan_result && ies) {
-			wlan_get_bss_beacon_ies(ies, (u8 *)(scan_rst_ptr + 1), scan_rst_ptr->ie_len);
-			ie_len = wpabuf_len(ies);
-			//BK_WIFI_LOGI(TAG, "ie_len: %d -> %d\n", scan_rst_ptr->ie_len, ie_len);
-		} else {
-			ie_len = scan_rst_ptr->ie_len;
-		}
+		ie_len = scan_rst_ptr->ie_len;
 
 #if CONFIG_MINIMUM_SCAN_RESULTS
 		scan_rst_ptr->freq = rw_ieee80211_get_centre_frequency(scan_rst_ptr->channel);
@@ -718,9 +696,6 @@ int wpa_get_scan_rst(struct prism2_hostapd_param *param, int len)
 		r->caps = scan_rst_ptr->caps;
 		r->tsf = WPA_GET_BE64(scan_rst_ptr->tsf);
 		r->ie_len = ie_len;
-		if (reduce_ie)
-			os_memcpy(r + 1, wpabuf_head(ies), wpabuf_len(ies));
-		else
 		os_memcpy(r + 1, scan_rst_ptr + 1, scan_rst_ptr->ie_len);
 
 		results->res[results->num++] = r;
@@ -733,9 +708,6 @@ int wpa_get_scan_rst(struct prism2_hostapd_param *param, int len)
 		}
 #endif
 	}
-
-	if (reduce_ie && !reduce_scan_result && ies)
-		wpabuf_free(ies);
 
 	GLOBAL_INT_RESTORE();
 

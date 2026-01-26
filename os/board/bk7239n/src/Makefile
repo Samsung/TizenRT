@@ -224,6 +224,7 @@ CFLAGS += -I$(MIDDLEWARE_DIR)/driver/gpio
 CFLAGS += -I$(MIDDLEWARE_DIR)/driver/timer
 CFLAGS += -I$(MIDDLEWARE_DIR)/driver/io_matrix/v2.0/
 CFLAGS += -I$(MIDDLEWARE_DIR)/driver/flash
+CFLAGS += -I$(MIDDLEWARE_DIR)/driver/deep_lv
 
 # Architecture includes
 CFLAGS += -I$(MIDDLEWARE_DIR)/arch/cm33/include
@@ -263,23 +264,34 @@ endif
 
 
 all: libboard$(LIBEXT)
-.PHONY: properties tfm modules submodules_depend
+.PHONY: properties tfm modules submodules_depend secure_deployment
 
 modules: tfm
 	$(Q) set -e; for module in $(submodules); do \
 		$(MAKE) -C $$module TOPDIR="$(TOPDIR)"; \
 	done
 
+ifeq ($(CONFIG_XIP_KERNEL), y)
+tfm_firmware_dir := $(abspath components/tfm/tfm_xip_build)
+else
+tfm_firmware_dir := $(abspath components/tfm//tfm_loadable_build)
+endif
+
 tfm:
 ifeq ($(CONFIG_TFM),y)
 ifneq ($(wildcard components/tfm/tfm/CMakeLists.txt),)
 	$(Q) $(MAKE) -C components/tfm TOPDIR="$(TOPDIR)"
 endif
-ifneq ($(wildcard components/tfm/tfm_build),)
-	$(Q) cp -rf components/tfm/tfm_build $(TOPDIR)/../build/output/bin/tfm_build
-else
-	$(Q) echo "tfm_build directory not found"
+	$(Q) if [ -d "$(tfm_firmware_dir)" ]; then \
+		cp -rf "$(tfm_firmware_dir)" "$(TOPDIR)/../build/output/bin/tfm_build"; \
+	else \
+		echo "tfm_firmware_dir $(tfm_firmware_dir) directory not found, please run 'make tfm' first	"; \
+	fi
 endif
+
+secure_deployment:
+ifeq ($(CONFIG_SECURE_DEPLOYMENT),y)
+	$(Q) cd components/secure_deployment && ./build.sh
 endif
 
 properties_file := properties/Makefile
@@ -295,7 +307,7 @@ $(AOBJS): %$(OBJEXT): %.S
 $(COBJS) $(LINKOBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-libboard$(LIBEXT): $(OBJS) tfm properties modules
+libboard$(LIBEXT): $(OBJS) tfm properties modules secure_deployment
 	$(call ARCHIVE, $@, $(OBJS))
 
 submodules_depend:

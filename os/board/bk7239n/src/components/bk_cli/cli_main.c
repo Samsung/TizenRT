@@ -1045,11 +1045,12 @@ int bk_cli_init(void)
 extern int cli_cipher_aes_init(void);
 extern int cli_secure_storage_init(void);
 extern int cli_ecdsa_test_init(void);
+extern int cli_signature_verify_init(void);
 
 cli_ecdsa_test_init();
 cli_secure_storage_init();
 cli_cipher_aes_init();
-
+cli_signature_verify_init();
 #endif
 
 #if 0

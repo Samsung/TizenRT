@@ -49,6 +49,8 @@ extern uint32_t RAM_KREGION2_SIZE;
 
 extern uint32_t __psram_data_start__;
 extern uint32_t __psram_bss_end__;
+extern uint32_t __psram_code_start__;
+extern uint32_t __psram_code_end__;
 
 
 #define KERNEL_HEAP_START_ADDR   (void*)&RAM_KREGION0_START   
@@ -56,14 +58,14 @@ extern uint32_t __psram_bss_end__;
 #define APP_HEAP_START_ADDR   (void*)&RAM_KREGION2_START   
 #define APP_HEAP_SIZE         (void*)&RAM_KREGION2_SIZE 
 
-typedef struct sys_mem_info
-{
-    uint32_t mem_base_addr;
-    uint32_t mem_size;
-} sys_mem_info_t;
+// typedef struct sys_mem_info
+// {
+//     uint32_t mem_base_addr;
+//     uint32_t mem_size;
+// } sys_mem_info_t;
 
-static unsigned int s_mem_count = 0;
-static sys_mem_info_t s_dump_sys_mem_info[MAX_DUMP_SYS_MEM_COUNT] = {0};
+// static unsigned int s_mem_count = 0;
+// static sys_mem_info_t s_dump_sys_mem_info[MAX_DUMP_SYS_MEM_COUNT] = {0};
 
 static hook_func s_wifi_dump_func = NULL;
 static hook_func s_ble_dump_func = NULL;
@@ -82,19 +84,21 @@ static void rtos_dump_plat_memory(void) {
 #endif
 
     // Dump All SRAM
-    stack_mem_dump((uint32_t)SOC_SRAM3_DATA_BASE, (uint32_t)SOC_SRAM4_DATA_BASE);
-    stack_mem_dump((uint32_t)SOC_SRAM4_DATA_BASE, (uint32_t)SOC_SRAM_DATA_END);
-#if (CONFIG_SPE == 0)
-    stack_mem_dump((uint32_t)SOC_SRAM0_DATA_BASE + CONFIG_CPU0_SPE_RAM_SIZE, (uint32_t)SOC_SRAM2_DATA_BASE);
-    stack_mem_dump((uint32_t)SOC_SRAM2_DATA_BASE, (uint32_t)SOC_SRAM3_DATA_BASE);
-#else
     stack_mem_dump((uint32_t)SOC_SRAM0_DATA_BASE, (uint32_t)SOC_SRAM1_DATA_BASE);
     stack_mem_dump((uint32_t)SOC_SRAM1_DATA_BASE, (uint32_t)SOC_SRAM2_DATA_BASE);
     stack_mem_dump((uint32_t)SOC_SRAM2_DATA_BASE, (uint32_t)SOC_SRAM3_DATA_BASE);
+    stack_mem_dump((uint32_t)SOC_SRAM3_DATA_BASE, (uint32_t)SOC_SRAM4_DATA_BASE);
+#if (CONFIG_SPE == 0)
+    stack_mem_dump((uint32_t)SOC_SRAM4_DATA_BASE, (uint32_t)SOC_SRAM_DATA_END - CONFIG_CPU0_SPE_RAM_SIZE);
+#else
+    stack_mem_dump((uint32_t)SOC_SRAM4_DATA_BASE, (uint32_t)SOC_SRAM_DATA_END);
 #endif
     
     stack_mem_dump((uint32_t)KERNEL_HEAP_START_ADDR, (uint32_t)KERNEL_HEAP_START_ADDR + 0xC8000);  //kernel 800k
 #ifdef CONFIG_BUILD_PROTECTED
+#if !defined(CONFIG_XIP_KERNEL)
+    stack_mem_dump((uint32_t)&__psram_code_start__, (uint32_t)&__psram_code_end__);   //psram code
+#endif
     stack_mem_dump((uint32_t)&__psram_data_start__, (uint32_t)&__psram_bss_end__);   //psram data and bss
     stack_mem_dump((uint32_t)APP_HEAP_START_ADDR, (uint32_t)APP_HEAP_START_ADDR + 0x100000); // app 1M
 #endif
@@ -142,37 +146,37 @@ void rtos_regist_ble_dump_hook(hook_func ble_func)
     s_ble_dump_func = ble_func;
 }
 
-void rtos_regist_plat_dump_hook(uint32_t mem_base_addr, uint32_t mem_size)
-{
-    if (mem_base_addr >= SOC_SRAM0_DATA_BASE
-        && (mem_base_addr + mem_size) < SOC_SRAM_DATA_END) {
-        return;
-    }
+// void rtos_regist_plat_dump_hook(uint32_t mem_base_addr, uint32_t mem_size)
+// {
+//     if (mem_base_addr >= SOC_SRAM0_DATA_BASE
+//         && (mem_base_addr + mem_size) < SOC_SRAM_DATA_END) {
+//         return;
+//     }
 
-    for (int i = 0; i < s_mem_count; i++) {
-        if(mem_base_addr == s_dump_sys_mem_info[i].mem_base_addr
-         && mem_size == s_dump_sys_mem_info[i].mem_size) {
-            return;
-         }
-    }
+//     for (int i = 0; i < s_mem_count; i++) {
+//         if(mem_base_addr == s_dump_sys_mem_info[i].mem_base_addr
+//          && mem_size == s_dump_sys_mem_info[i].mem_size) {
+//             return;
+//          }
+//     }
 
-    if (s_mem_count < MAX_DUMP_SYS_MEM_COUNT) {
-        s_dump_sys_mem_info[s_mem_count].mem_base_addr = mem_base_addr;
-        s_dump_sys_mem_info[s_mem_count].mem_size = mem_size;
-        s_mem_count++;
-    } else {
-        //BK_DUMP_OUT("rtos_regist_plat_dump_hook failed:s_mem_count(%d).\r\n", s_mem_count);
-    }
-}
+//     if (s_mem_count < MAX_DUMP_SYS_MEM_COUNT) {
+//         s_dump_sys_mem_info[s_mem_count].mem_base_addr = mem_base_addr;
+//         s_dump_sys_mem_info[s_mem_count].mem_size = mem_size;
+//         s_mem_count++;
+//     } else {
+//         //BK_DUMP_OUT("rtos_regist_plat_dump_hook failed:s_mem_count(%d).\r\n", s_mem_count);
+//     }
+// }
 
 void rtos_dump_plat_sys_mems(void) {
     dump_peri_regs();    //move before PSRAM, avoid psram not power-on cause it can't dump out
 
-    for (int i = 0; i < s_mem_count; i++) {
-        uint32_t begin = s_dump_sys_mem_info[i].mem_base_addr;
-        uint32_t end = begin + s_dump_sys_mem_info[i].mem_size;
-        stack_mem_dump(begin, end);
-    }
+    // for (int i = 0; i < s_mem_count; i++) {
+    //     uint32_t begin = s_dump_sys_mem_info[i].mem_base_addr;
+    //     uint32_t end = begin + s_dump_sys_mem_info[i].mem_size;
+    //     stack_mem_dump(begin, end);
+    // }
     rtos_dump_plat_memory();
 }
 

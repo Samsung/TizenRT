@@ -31,6 +31,7 @@ if (CONFIG_SECURE_TEST)
 		cli_secure_storage.c
 		cli_cipher_aes.c
 		cli_ecdsa_test.c
+		cli_signature_verify.c
 	)
 endif()
 

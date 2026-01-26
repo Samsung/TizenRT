@@ -23,17 +23,17 @@ static void psram_delay(volatile uint32_t times)
 	while(times--);
 }
 
-void psram_hal_set_sf_reset(uint32_t value)
+__FLASH_BOOT_CODE void psram_hal_set_sf_reset(uint32_t value)
 {
 	psram_ll_set_sf_reset_value(value);
 }
 
-void psram_hal_set_cmd_reset(void)
+__FLASH_BOOT_CODE void psram_hal_set_cmd_reset(void)
 {
 	psram_ll_set_reg8_value(0x4);
 }
 
-void psram_hal_cmd_write(uint32_t addr, uint32_t value)
+__FLASH_BOOT_CODE void psram_hal_cmd_write(uint32_t addr, uint32_t value)
 {
 	psram_ll_set_write_address(addr);
 	psram_ll_set_write_data(value);
@@ -41,7 +41,7 @@ void psram_hal_cmd_write(uint32_t addr, uint32_t value)
 	while(psram_ll_get_reg8_value() & 0x1);
 }
 
-uint32_t psram_hal_cmd_read(uint32_t addr)
+__FLASH_BOOT_CODE uint32_t psram_hal_cmd_read(uint32_t addr)
 {
 	uint8_t m = 10, i = 5;
 
@@ -75,7 +75,7 @@ uint32_t psram_hal_cmd_read(uint32_t addr)
 	return 0;
 }
 
-void psram_hal_set_clk(psram_clk_t clk)
+__FLASH_BOOT_CODE void psram_hal_set_clk(psram_clk_t clk)
 {
 	switch (clk)
 	{
@@ -115,7 +115,7 @@ void psram_hal_set_clk(psram_clk_t clk)
 	}
 }
 
-void psram_hal_set_voltage(psram_voltage_t voltage)
+__FLASH_BOOT_CODE void psram_hal_set_voltage(psram_voltage_t voltage)
 {
 #if (COINFG_SOC_BK7256XX)
 	switch (voltage)
@@ -231,7 +231,7 @@ void psram_hal_set_transfer_mode(uint32_t value)
 	psram_ll_set_reg4_wrap_config(value);
 }
 
-static int psram_hal_APS6408L_init(uint32_t *id)
+__FLASH_BOOT_CODE static int psram_hal_APS6408L_init(uint32_t *id)
 {
 	uint32_t val = 0;
 
@@ -245,7 +245,12 @@ static int psram_hal_APS6408L_init(uint32_t *id)
 #elif (defined(CONFIG_SOC_BK7239XX))
 	psram_hal_set_mode_value(PSRAM_MODE2);
 	//psram_hal_set_reg5_value(0x1704);   //PSRAM 120M config
-	psram_hal_set_reg5_value(0x6C3);      //PSRAM 160M config, psram calibration value, sck_delay=0, clk_drv=3(max), dat_drv=3(max),dqs_delay=3
+	uint32_t chip_id = bk_get_hardware_chip_id_version();
+
+	if (chip_id == CHIP_VERSION_D)
+		psram_hal_set_reg5_value(0x14c5); //PSRAM 120M config for D version MP chip, psram calibration value, sck_delay=1, clk_drv=3(max), dat_drv=2 ,dqs_delay=5
+	else
+		psram_hal_set_reg5_value(0x6C3);  //PSRAM 160M config, psram calibration value, sck_delay=0, clk_drv=3(max), dat_drv=3(max),dqs_delay=3
 #else
 	psram_hal_set_mode_value(PSRAM_MODE6);//PSRAM_MODE2
 	//psram_hal_set_reg5_value(0x282);
@@ -278,7 +283,11 @@ static int psram_hal_APS6408L_init(uint32_t *id)
 #elif (defined(CONFIG_SOC_BK7239XX))
 	//20250925: asic psram data to decrease strength for bk7239nv4
 	//val = (val & ~(0x1F << 8)) | (0x2 << 10) | (0x3 << 8);    //PSRAM 120M config
-	val = (val & ~(0x1F << 8)) | (0x4 << 10) | (0x0 << 8);      //PSRAM 160M config, data strength = 3 (0 is max driver strength, psram driver strength may affect RF)
+	//20260115: asic psram data to increase strength for bk7239nv4  set data strength = 1
+	if (chip_id == CHIP_VERSION_D)
+		val = (val & ~(0x1F << 8)) | (0x4 << 10) | (0x1 << 8);      //PSRAM 120M config, data strength = 1 for D version MP chip
+	else
+	    val = (val & ~(0x1F << 8)) | (0x4 << 10) | (0x0 << 8);      //PSRAM 160M config, data strength = 3 (0 is max driver strength, psram driver strength may affect RF)
 #else
 	val = (val & ~(0x1F)) | (0x4 << 2) | 0x3;
 #endif
@@ -299,7 +308,7 @@ static int psram_hal_APS6408L_init(uint32_t *id)
 	return 0;
 }
 
-static int psram_hal_W955D8MKY_5J_init(uint32_t *id)
+__FLASH_BOOT_CODE static int psram_hal_W955D8MKY_5J_init(uint32_t *id)
 {
 	uint32_t val = 0;
 	uint32_t io_drv = 0; /*range [0, 3]*/
@@ -330,7 +339,7 @@ static int psram_hal_W955D8MKY_5J_init(uint32_t *id)
 	return 0;
 }
 
-static int psram_hal_APS128XXO_OB9_init(uint32_t *id)
+__FLASH_BOOT_CODE static int psram_hal_APS128XXO_OB9_init(uint32_t *id)
 {
 	uint32_t val = 0;
 	psram_hal_set_mode_value(PSRAM_MODE7);
@@ -382,7 +391,7 @@ static int psram_hal_APS128XXO_OB9_init(uint32_t *id)
 	return 0;
 }
 
-uint32_t psram_hal_config_init(uint32_t id)
+__FLASH_BOOT_CODE uint32_t psram_hal_config_init(uint32_t id)
 {
 	int ret = 0;
 	uint32_t val = 0;
@@ -438,7 +447,7 @@ uint32_t psram_hal_config_init(uint32_t id)
 }
 
 // config 1: psram power and clk config, need wait clk stable
-void psram_hal_power_clk_enable(uint8_t enable)
+__FLASH_BOOT_CODE void psram_hal_power_clk_enable(uint8_t enable)
 {
 	if (enable)
 	{

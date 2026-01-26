@@ -1,0 +1,5 @@
+menu "SCR"
+	config SCR
+		bool "Enable smart_card_reader"
+		default n
+endmenu

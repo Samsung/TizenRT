@@ -384,9 +384,9 @@ int driver_init(void)
 	//wdt driver is inited at starup period
 	//bk_wdt_driver_init();
 
-#if defined(CONFIG_TRNG_SUPPORT)
-	bk_trng_driver_init();
-#endif
+// #if defined(CONFIG_TRNG_SUPPORT)
+// 	bk_trng_driver_init();
+// #endif
 
 #if defined(CONFIG_SARADC)
 	bk_adc_driver_init();

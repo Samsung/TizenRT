@@ -83,17 +83,26 @@ bk_err_t uart_hal_flush_fifo(uart_hal_t *hal, uart_id_t id)
 bk_err_t uart_hal_set_baud_rate(uart_hal_t *hal, uart_id_t id, uint32_t sclk, uint32_t baud_rate)
 {
 	uint32_t clk_div = 0;
-#if (defined(CONFIG_SYSTEM_CTRL))
-	if (sclk == UART_SCLK_APLL) {
-		sys_hal_apll_en(1);
-		//set apll clock config
-		sys_hal_apll_cal_val_set(0x899D89D8);
-		sys_hal_apll_config_set(0xC2A0AE86);
-		clk_div = UART_CLOCK_FREQ_50M / baud_rate - 1;
+#if (defined(CONFIG_SYSTEM_CTRL))	
+#if defined(CONFIG_BK7239N_MP) && (CONFIG_BK7239N_MP == 1)
+    if (sclk == UART_SCLK_APLL) {   
+        clk_div = UART_CLOCK_FREQ_120M / baud_rate - 1;
+    } else if (sclk == UART_SCLK_80M) {
+        clk_div = UART_CLOCK_FREQ_80M / baud_rate - 1;
 	} else {
 		clk_div = UART_CLOCK / baud_rate - 1;
 	}
-
+#else
+    if (sclk == UART_SCLK_APLL) {
+        sys_hal_apll_en(1);
+        //set apll clock config
+        sys_hal_apll_cal_val_set(0x899D89D8);
+        sys_hal_apll_config_set(0xC2A0AE86);
+        clk_div = UART_CLOCK_FREQ_50M / baud_rate - 1;
+    } else {
+        clk_div = UART_CLOCK / baud_rate - 1;
+    }
+#endif
 #else
 	if (sclk == UART_SCLK_DCO) {
 		clk_div = UART_CLOCK_FREQ_120M / baud_rate - 1;

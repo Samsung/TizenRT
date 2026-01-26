@@ -41,7 +41,7 @@ int bk_clk_32k_customer_config_set(pm_lpo_src_e lpo_src)
 	s_lpo_src = lpo_src;
 	return 0;
 }
-pm_lpo_src_e bk_clk_32k_customer_config_get(void)
+__FLASH_BOOT_CODE pm_lpo_src_e bk_clk_32k_customer_config_get(void)
 {
 #if CONFIG_LPO_MP_A_FORCE_USE_EXT32K
 	uint32_t chip_id = aon_pmu_hal_get_chipid();

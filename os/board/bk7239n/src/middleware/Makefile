@@ -52,11 +52,22 @@
 -include $(TOPDIR)/.config
 include $(TOPDIR)/tools/Config.mk
 -include $(TOPDIR)/Make.defs
+
+ifeq ($(CONFIG_BK7239N_MP),y)
+driver_path := driver_mp
+bk7239n_soc_path := soc_mp
+bk7239n_hal_path := hal_mp
+else
+driver_path := driver
+bk7239n_soc_path := soc
+bk7239n_hal_path := hal
+endif
+
 -include Make.defs
 
 include soc/bk7239n/Make.defs
-include driver/sys_ctrl/Make.defs
-include soc/bk7239n/hal/Make.defs
+include $(driver_path)/sys_ctrl/Make.defs
+include soc/bk7239n/$(bk7239n_hal_path)/Make.defs
 include boards/bk7239n/vnd_cal/Make.defs
 
 
@@ -73,31 +84,32 @@ BOARD_DIR := ..
 
 # Middleware includes (consolidated)
 # SOC includes
-CFLAGS += -Isoc/bk7239n/hal
+CFLAGS += -Isoc/bk7239n/$(bk7239n_hal_path)
 CFLAGS += -Isoc/common/soc/include
-CFLAGS += -Isoc/bk7239n/soc
+CFLAGS += -Isoc/bk7239n/$(bk7239n_soc_path)
 CFLAGS += -Isoc/common/hal/include
 # CFLAGS += -Isoc/bk7239n
 
 # Driver includes (consolidated)
-CFLAGS += -Idriver
-CFLAGS += -Idriver/common
-CFLAGS += -Idriver/include
-CFLAGS += -Idriver/include/bk_private
-CFLAGS += -Idriver/include/bk_private/legacy
-CFLAGS += -Idriver/pmu
-CFLAGS += -Idriver/sys_ctrl
-CFLAGS += -Idriver/wdt
-CFLAGS += -Idriver/reset_reason
-CFLAGS += -Idriver/saradc
-CFLAGS += -Idriver/security
-CFLAGS += -Idriver/uart
-CFLAGS += -Idriver/bk7239n
+CFLAGS += -I$(driver_path)
+CFLAGS += -I$(driver_path)/common
+CFLAGS += -I$(driver_path)/include
+CFLAGS += -I$(driver_path)/include/bk_private
+CFLAGS += -I$(driver_path)/include/bk_private/legacy
+CFLAGS += -I$(driver_path)/pmu
+CFLAGS += -I$(driver_path)/sys_ctrl
+CFLAGS += -I$(driver_path)/wdt
+CFLAGS += -I$(driver_path)/reset_reason
+CFLAGS += -I$(driver_path)/saradc
+CFLAGS += -I$(driver_path)/security
+CFLAGS += -I$(driver_path)/uart
+CFLAGS += -I$(driver_path)/bk7239n
 
-CFLAGS += -Idriver/gpio
-CFLAGS += -Idriver/timer
-CFLAGS += -Idriver/io_matrix/v2.0/
-CFLAGS += -Idriver/flash
+CFLAGS += -I$(driver_path)/gpio
+CFLAGS += -I$(driver_path)/timer
+CFLAGS += -I$(driver_path)/io_matrix/v2.0/
+CFLAGS += -I$(driver_path)/flash
+CFLAGS += -I$(driver_path)/deep_lv
 
 # Architecture includes
 CFLAGS += -Iarch/cm33/include
@@ -128,11 +140,16 @@ CFLAGS += -I$(COMPONENT_DIR)/temp_detect
 CFLAGS += -I$(COMPONENT_DIR)/easy_flash/easy_flash_V4.X/inc
 CFLAGS += -I$(COMPONENT_DIR)/bk_pm/include
 
+ifeq ($(CONFIG_XIP_KERNEL), y)
+tfm_firmware_dir_name := tfm_xip_build
+else
+tfm_firmware_dir_name := tfm_loadable_build
+endif
 
 # Add the TFM include directories to the build
 # CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/interface/include
 # CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/secure_fw/include
-CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm_build/tfm_install/interface/include
+CFLAGS += -I$(COMPONENT_DIR)/tfm/$(tfm_firmware_dir_name)/tfm_install/interface/include
 CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/generated/interface/include
 CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/_build/
 

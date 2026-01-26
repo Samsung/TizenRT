@@ -1,0 +1,25 @@
+menu "FLASH"
+	config FLASH
+		bool "Enable flash"
+		default y
+
+	config FLASH_QUAD_ENABLE
+		bool "Enable flash quad enable"
+		default n
+		
+	config FLASH_SRC_CLK_60M
+		bool "Enable flash source clock 60M"
+		default n
+
+	config FLASH_MB
+		bool "Enable flash mailbox channel"
+		default n
+	config FLASH_FORBID_OPERATE_BOOTLADER
+		bool "Enable operate bootloader flash"
+		default y
+
+	config FLASH_WRITE_STATUS_VOLATILE
+		bool "Enable write volatile status register"
+		default n
+endmenu
+

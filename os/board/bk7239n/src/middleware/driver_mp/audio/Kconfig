@@ -1,0 +1,37 @@
+menu "AUDIO"
+	config AUDIO
+		bool "Enable Audio"
+		default n
+
+	config AUDIO_ADC
+		depends on AUDIO
+		bool "Enable audio adc driver"
+		default n
+
+	config AUDIO_DMIC
+		depends on AUDIO
+		bool "Enable audio dmic driver"
+		default n
+
+	config AUDIO_DTMF
+		depends on AUDIO
+		bool "Enable audio dtmf driver"
+		default n
+
+	config AUDIO_DAC
+		depends on AUDIO
+		bool "Enable audio dac driver"
+		default n
+
+    config AUDIO_RING_BUFF
+        bool "Enable Audio Ring Buff"
+		default y
+		help
+			Enable Audio ring buffer
+
+	config ES8311
+		depends on SIM_I2C
+		depends on I2S
+		bool "Enable audio codec chip ES8311 driver"
+		default n
+endmenu

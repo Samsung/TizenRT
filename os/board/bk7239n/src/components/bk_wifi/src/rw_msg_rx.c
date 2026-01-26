@@ -103,6 +103,72 @@ extern int get_security_type_from_ie(u8 *, int, u16);
 extern void rwnx_cal_set_txpwr(UINT32 pwr_gain, UINT32 grate);
 extern void bk7011_default_rxsens_setting(void);
 
+/*
+ * Reduce scan result IEs stored in heap to avoid peak memory explosion.
+ *
+ * When CONFIG_MINIMIZE_SCAN_RESULT_IE is enabled, only necessary IEs are stored
+ * in each result item to reduce peak heap usage during scan.
+ *
+ * Current selection: SSID + RSN + WPA vendor IE.
+ */
+#ifdef CONFIG_MINIMIZE_SCAN_RESULT_IE
+static size_t sr_calc_reduced_ie_len(const u8 *ies, size_t ies_len)
+{
+	size_t total = 0;
+	const u8 *ie;
+
+	ie = get_ie(ies, ies_len, WLAN_EID_SSID);
+	if (ie)
+		total += (size_t)ie[1] + 2;
+
+	ie = get_ie(ies, ies_len, WLAN_EID_RSN);
+	if (ie)
+		total += (size_t)ie[1] + 2;
+
+	ie = get_vendor_ie(ies, ies_len, WPA_IE_VENDOR_TYPE);
+	if (ie)
+		total += (size_t)ie[1] + 2;
+
+	return total;
+}
+
+static size_t sr_copy_reduced_ies(u8 *dst, size_t dst_len, const u8 *ies, size_t ies_len)
+{
+	size_t used = 0;
+	const u8 *ie;
+	size_t ilen;
+
+	ie = get_ie(ies, ies_len, WLAN_EID_SSID);
+	if (ie) {
+		ilen = (size_t)ie[1] + 2;
+		if (used + ilen <= dst_len) {
+			os_memcpy(dst + used, ie, ilen);
+			used += ilen;
+		}
+	}
+
+	ie = get_ie(ies, ies_len, WLAN_EID_RSN);
+	if (ie) {
+		ilen = (size_t)ie[1] + 2;
+		if (used + ilen <= dst_len) {
+			os_memcpy(dst + used, ie, ilen);
+			used += ilen;
+		}
+	}
+
+	ie = get_vendor_ie(ies, ies_len, WPA_IE_VENDOR_TYPE);
+	if (ie) {
+		ilen = (size_t)ie[1] + 2;
+		if (used + ilen <= dst_len) {
+			os_memcpy(dst + used, ie, ilen);
+			used += ilen;
+		}
+	}
+
+	return used;
+}
+#endif /* CONFIG_MINIMIZE_SCAN_RESULT_IE */
+
 /* scan result malloc item */
 UINT8 *sr_malloc_result_item(UINT32 vies_len)
 {
@@ -1130,7 +1196,16 @@ UINT32 mhdr_scanu_result_ind(SCAN_RST_UPLOAD_T *scan_rst, void *msg, UINT32 len)
 	} while (0);
 #endif
 
+	#ifdef CONFIG_MINIMIZE_SCAN_RESULT_IE
+	/*
+	 * Store reduced IEs (SSID/RSN/WPA vendor) in the result item to reduce
+	 * peak heap usage during scan.
+	 */
+	UINT32 reduced_len = (UINT32)sr_calc_reduced_ie_len((const u8 *)var_part_addr, (size_t)vies_len);
+	item = (SCAN_RST_ITEM_PTR)sr_malloc_result_item(reduced_len);
+	#else
 	item = (SCAN_RST_ITEM_PTR)sr_malloc_result_item(vies_len);
+	#endif
 	if (item == NULL)
 		goto scan_rst_exit;
 
@@ -1152,15 +1227,26 @@ UINT32 mhdr_scanu_result_ind(SCAN_RST_UPLOAD_T *scan_rst, void *msg, UINT32 len)
 	item->caps = probe_rsp_ieee80211_ptr->rsp.capab_info;
 	item->level = scanu_ret_ptr->rssi;
 	item->on_channel = on_channel;
+	#ifdef CONFIG_MINIMIZE_SCAN_RESULT_IE
+	{
+		size_t copied = sr_copy_reduced_ies((u8 *)(item + 1), (size_t)reduced_len,
+						   (const u8 *)var_part_addr, (size_t)vies_len);
+		item->ie_len = (UINT32)copied;
+		item->security = get_security_type_from_ie((u8 *)(item + 1), (int)copied, item->caps);
+	}
+	#else
 	item->ie_len = vies_len;
 	item->security = get_security_type_from_ie((u8 *)var_part_addr, vies_len, item->caps);
+	#endif
 	os_memcpy(item->bssid, probe_rsp_ieee80211_ptr->bssid, ETH_ALEN);
 #if CONFIG_MINIMUM_SCAN_RESULTS
 	item->tsf = probe_rsp_ieee80211_ptr->rsp.timestamp;
 #else
 	os_memcpy(item->tsf, probe_rsp_ieee80211_ptr->rsp.timestamp, 8);
 #endif
+	#if !CONFIG_MINIMUM_SCAN_RESULTS
 	os_memcpy(item + 1, var_part_addr, vies_len);
+	#endif
 #if CONFIG_RWNX_MULTIPLE_SSID_STA_MODE
 	/* upload single transmit-bss infor to upper */
 	infor_state = rwnx_inform_single_bss_data(result_ptr, item);
