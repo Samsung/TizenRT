@@ -17,12 +17,11 @@ OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
 
 __MSP_STACK_SIZE = CONFIG_IDLETHREAD_STACKSIZE;  
 __CPU0_SPE_RAM_SIZE = CONFIG_CPU0_SPE_RAM_SIZE;
-__MIN_HEAP_SIZE = (20 << 10);
-__DPD_RAM_SIZE = (64 << 10);
+__MIN_HEAP_SIZE = (84 << 10);
 PERSIST_MEM_AREA_SIZE = 4;
 REBOOT_TAG_AREA_SIZE = 4;
-__CPU0_APP_RAM_BASE = 0x38000000 + __DPD_RAM_SIZE;
-__CPU0_APP_RAM_SIZE = 0x80000 - __CPU0_SPE_RAM_SIZE - __DPD_RAM_SIZE;
+__CPU0_APP_RAM_BASE = 0x38000000;
+__CPU0_APP_RAM_SIZE = 0x80000 - __CPU0_SPE_RAM_SIZE;
 __CPU0_APP_IRAM_OFFSET = 0x20000000;
 __CPU0_APP_IRAM_BASE = __CPU0_APP_RAM_BASE - __CPU0_APP_IRAM_OFFSET;
 __CPU0_APP_IRAM_SIZE = __CPU0_APP_RAM_SIZE;
@@ -102,21 +101,6 @@ SECTIONS
             *libkernel.a:wd_create.o*
             *libkernel.a:wd_cancel.o*
             *libkernel.a:timer_settime.o*
-            *libboard.a:rtos_pub.o*
-            *libboard.a:mem_arch.o*
-            *bk_ethernetif.o*
-            *bk_lwipif_tizenrt.o*
-            *rxl_hwdesc.o*
-            *libboard.a:rxl_cntrl.o*
-            *rf_cntrl.o*
-            *co_list.o*
-            *libnet.a:tcp_in.o*
-            *libnet.a:tcp_out.o*
-            *libnet.a:tcp.o*
-            *libnet.a:ip4.o*
-            *libnet.a:ip.o*
-            *libnet.a:netif.o*
-            *libnet.a:pbuf.o*
             ) *(.text .text.* .rodata .rodata.*)
         /**(.text.* *.rodata *.rodata.*)*/
 
@@ -236,21 +220,6 @@ SECTIONS
         *libkernel.a:wd_create.o*        (.text .text.* .rodata .rodata.*)
         *libkernel.a:wd_cancel.o*        (.text .text.* .rodata .rodata.*)
         *libkernel.a:timer_settime.o*    (.text .text.* .rodata .rodata.*)
-        *libboard.a:rtos_pub.o*          (.text .text.* .rodata .rodata.*)
-        *libboard.a:mem_arch.o*          (.text .text.* .rodata .rodata.*)
-        *bk_ethernetif.o*                (.text .text.* .rodata .rodata.*)
-        *bk_lwipif_tizenrt.o*            (.text .text.* .rodata .rodata.*)
-        *rxl_hwdesc.o*                   (.text .text.* .rodata .rodata.*)
-        *libboard.a:rxl_cntrl.o*         (.text .text.* .rodata .rodata.*)
-        *rf_cntrl.o*                     (.text .text.* .rodata .rodata.*)
-        *co_list.o*                      (.text .text.* .rodata .rodata.*)
-        *libnet.a:tcp_in.o*              (.text .text.* .rodata .rodata.*)
-        *libnet.a:tcp_out.o*             (.text .text.* .rodata .rodata.*)
-        *libnet.a:tcp.o*                 (.text .text.* .rodata .rodata.*)
-        *libnet.a:ip4.o*                 (.text .text.* .rodata .rodata.*)
-        *libnet.a:ip.o*                  (.text .text.* .rodata .rodata.*)
-        *libnet.a:netif.o*               (.text .text.* .rodata .rodata.*)
-        *libnet.a:pbuf.o*                (.text .text.* .rodata .rodata.*)
         *(.itcm)
         *(.itcm_sec_code)
         *(.iram)
@@ -362,6 +331,7 @@ SECTIONS
         /*_estack = .; */
     } > RAM
 
+/*#if CONFIG_PSRAM*/
     .psram_code :
     {
         . = ALIGN(8);
@@ -395,6 +365,8 @@ SECTIONS
         . = ALIGN(4);
         __psram_bss_end__ = .;
     } > PSRAM_DATA
+
+/*#endif*/
 
     s_rom_end = LOADADDR(.data) + SIZEOF(.data);
 
