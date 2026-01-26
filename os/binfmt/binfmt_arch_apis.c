@@ -48,7 +48,18 @@ static inline void binfmt_set_mpu(struct binary_s *binp)
 
 	DEBUGASSERT(regs);
 
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+#ifdef CONFIG_XIP_ELF
+	/* XIP_ELF: Flash region as RO + executable, RAM region as RW + NOT executable */
+	/* For XIP_ELF, NUM_APP_REGIONS=2, nregion_app_bin is the START of app regions
+	 * So we use nregion and nregion+1 (not nregion-1 and nregion, which would overlap with common)
+	 */
+	/* Map Flash region (text section) as read-only and executable */
+	mpu_get_register_config_value(&regs[0], nregion, (uintptr_t)binp->flash_region_start, 
+				      binp->flash_region_end - binp->flash_region_start, true, true);
+	/* Map RAM region (data/bss/heap) as read-write and NOT executable */
+	mpu_get_register_config_value(&regs[MPU_REG_NUMBER], nregion + 1, (uintptr_t)binp->ram_region_start, 
+				      binp->ram_region_end - binp->ram_region_start, false, false);
+#elif defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME)
 	/* Configure text section as RO and executable region */
 	mpu_get_register_config_value(&regs[0], nregion - 3, (uintptr_t)binp->sections[BIN_TEXT], binp->sizes[BIN_TEXT], true, true);
 	/* Configure ro section as RO and non-executable region */
@@ -114,13 +125,9 @@ void binfmt_arch_deinit_mem_protect(struct binary_s *binp)
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (binp->islibrary) {
 #if defined(CONFIG_ARM_MPU)
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 		for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
 			up_mpu_disable_region(&binp->cmn_mpu_regs[i]);
 		}
-#else
-		up_mpu_disable_region(&binp->cmn_mpu_regs[0]);
-#endif
 #elif defined(CONFIG_ARCH_USE_MMU)
 		mmu_clear_app_pgtbl(binp->binary_idx);
 #endif
