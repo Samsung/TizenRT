@@ -182,11 +182,12 @@ ssize_t bk_flash_read(size_t addr, void *buf, size_t length)
 		SCB_CleanInvalidateDCache();
 	}
 	#if CONFIG_BUILD_PROTECTED
-	else if ((bk_get_flash_encrypt_status() == 1) &&
-		(addr >= bk_user_app_partition_begin()) && (addr < bk_user_app_partition_end())) {
+	#if CONFIG_FLASH_ENCRYPT_ENABLE
+	else if ((addr >= bk_user_app_partition_begin()) && (addr < bk_user_app_partition_end())) {
 			addr |= SOC_FLASH_DATA_BASE;
 			memcpy(buf, (uint8_t *)addr, length);
 	}
+	#endif
 	#endif
 	else
 	#endif
