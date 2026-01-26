@@ -133,6 +133,502 @@ int armino_hal_get_status(void)
     return HAL_SUCCESS;
 }
 
+static uint8_t p192r1_oid_c[] = {0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x01};
+
+static uint8_t p224r1_oid_c[] = {0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x21};
+
+static uint8_t p256r1_oid_c[] = {0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07};
+
+static uint8_t p384r1_oid_c[] = {0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x22};
+
+static uint8_t p512r1_oid_c[] = {0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x23};
+
+static uint8_t brainpool_p256r1_oid_c[] = {0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07};
+
+static uint8_t brainpool_p384r1_oid_c[] = {0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B};
+
+static uint8_t brainpool_p512r1_oid_c[] = {0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D};
+
+static uint8_t p192r1_oid[] = {0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02,
+                               0x01, 0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D,
+                               0x03, 0x01, 0x01};
+
+static uint8_t p224r1_oid[] = {0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02,
+                               0x01, 0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x21};
+
+static uint8_t p256r1_oid[] = {0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02,
+                               0x01, 0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D,
+                               0x03, 0x01, 0x07};
+
+static uint8_t p384r1_oid[] = {0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02,
+                               0x01, 0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x22};
+
+static uint8_t p512r1_oid[] = {0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02,
+                               0x01, 0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x23};
+
+static uint8_t brainpool_p256r1_oid[] = {0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02,
+                                         0x01, 0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02,
+                                         0x08, 0x01, 0x01, 0x07};
+
+static uint8_t brainpool_p384r1_oid[] = {0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02,
+                                         0x01, 0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02,
+                                         0x08, 0x01, 0x01, 0x0B};
+
+static uint8_t brainpool_p512r1_oid[] = {0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02,
+                                         0x01, 0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02,
+                                         0x08, 0x01, 0x01, 0x0D};
+
+static int armino_hal_der_length_bytes(uint32_t len)
+{
+    if (len <= 0x7F) {
+        return 1;
+    } else if (len <= 0xFF) {
+        return 2;
+    } else if (len <= 0xFFFF) {
+        return 3;
+    } else {
+        return -1;
+    }
+}
+
+static int armino_hal_write_der_length(unsigned char *buf, uint32_t len)
+{
+    if (len <= 0x7F) {
+        if (buf != NULL) {
+            buf[0] = (unsigned char)len;
+        }
+        return 1;
+    } else if (len <= 0xFF) {
+        if (buf != NULL) {
+            buf[0] = 0x81;
+            buf[1] = (unsigned char)len;
+        }
+        return 2;
+    } else if (len <= 0xFFFF) {
+        if (buf != NULL) {
+            buf[0] = 0x82;
+            buf[1] = (unsigned char)(len >> 8);
+            buf[2] = (unsigned char)(len & 0xFF);
+        }
+        return 3;
+    } else {
+        return -1;
+    }
+}
+
+int armino_hal_be_der_ecdsa_private_key(hal_key_type mode, hal_data *prikey, hal_data *pubkey, hal_data *key, uint32_t priv_key_len, uint32_t pub_key_len)
+{
+    HWRAP_ENTER;
+
+    if(key == NULL || key->data == NULL || priv_key_len == 0) {
+        return HAL_INVALID_ARGS;
+    }
+
+    if(prikey == NULL || prikey->data == NULL) {
+        return HAL_INVALID_ARGS;
+    }
+
+    if(pub_key_len > 0) {
+        if((pub_key_len & 1) != 0) {
+            return HAL_INVALID_ARGS;
+        }
+        if(pubkey == NULL || pubkey->data == NULL || pubkey->priv == NULL) {
+            return HAL_INVALID_ARGS;
+        }
+    }
+
+    int oid_total_len = 0;
+    unsigned char *oid_data = NULL;
+    uint32_t oid_data_len = 0;
+
+    switch (mode) {
+        case HAL_KEY_ECC_BRAINPOOL_P256R1:
+            oid_total_len = sizeof(brainpool_p256r1_oid_c);
+            oid_data = brainpool_p256r1_oid_c;
+            break;
+        case HAL_KEY_ECC_BRAINPOOL_P384R1:
+            oid_total_len = sizeof(brainpool_p384r1_oid_c);
+            oid_data = brainpool_p384r1_oid_c;
+            break;
+        case HAL_KEY_ECC_BRAINPOOL_P512R1:
+            oid_total_len = sizeof(brainpool_p512r1_oid_c);
+            oid_data = brainpool_p512r1_oid_c;
+            break;
+        case HAL_KEY_ECC_SEC_P192R1:
+            oid_total_len = sizeof(p192r1_oid_c);
+            oid_data = p192r1_oid_c;
+            break;
+        case HAL_KEY_ECC_SEC_P224R1:
+            oid_total_len = sizeof(p224r1_oid_c);
+            oid_data = p224r1_oid_c;
+            break;
+        case HAL_KEY_ECC_SEC_P256R1:
+            oid_total_len = sizeof(p256r1_oid_c);
+            oid_data = p256r1_oid_c;
+            break;
+        case HAL_KEY_ECC_SEC_P384R1:
+            oid_total_len = sizeof(p384r1_oid_c);
+            oid_data = p384r1_oid_c;
+            break;
+        case HAL_KEY_ECC_SEC_P512R1:
+            oid_total_len = sizeof(p512r1_oid_c);
+            oid_data = p512r1_oid_c;
+            break;
+        default:
+            return HAL_NOT_SUPPORTED;
+    }
+
+    if (oid_total_len < 2 || oid_data[0] != 0x06) {
+        return HAL_INVALID_ARGS;
+    }
+    oid_data_len = oid_data[1];
+    if (oid_total_len != 2 + oid_data_len) {
+        return HAL_INVALID_ARGS;
+    }
+
+    int privkey_octet_len_bytes = armino_hal_der_length_bytes(priv_key_len);
+    if (privkey_octet_len_bytes < 0) {
+        return HAL_NOT_SUPPORTED;
+    }
+
+    int params_len_bytes = armino_hal_der_length_bytes(oid_total_len);
+    if (params_len_bytes < 0) {
+        return HAL_NOT_SUPPORTED;
+    }
+    uint32_t params_tlv_len = 1 + params_len_bytes + oid_total_len;
+
+    uint32_t version_tlv_len = 1 + 1 + 1;
+    uint32_t privkey_tlv_len = 1 + privkey_octet_len_bytes + priv_key_len;
+
+    uint32_t pubkey_bitstring_len = 0;
+    int pubkey_bitstring_len_bytes = 0;
+    if (pub_key_len > 0) {
+        pubkey_bitstring_len = 1 + 1 + pub_key_len;
+        pubkey_bitstring_len_bytes = armino_hal_der_length_bytes(pubkey_bitstring_len);
+        if (pubkey_bitstring_len_bytes < 0) {
+            return HAL_NOT_SUPPORTED;
+        }
+    }
+
+    uint32_t pubkey_tlv_len = 0;
+    int pubkey_tlv_len_bytes = 0;
+    uint32_t pubkey_tlv_len_all = 0;
+    if (pub_key_len > 0) {
+        pubkey_tlv_len = 1 + pubkey_bitstring_len_bytes + pubkey_bitstring_len;
+        pubkey_tlv_len_bytes = armino_hal_der_length_bytes(pubkey_tlv_len);
+        if (pubkey_tlv_len_bytes < 0) {
+            return HAL_NOT_SUPPORTED;
+        }
+
+        pubkey_tlv_len_all = 1 + pubkey_tlv_len_bytes + pubkey_tlv_len;
+    }
+
+    uint32_t seq_content_len = version_tlv_len + privkey_tlv_len + params_tlv_len + pubkey_tlv_len_all;
+    int seq_len_bytes = armino_hal_der_length_bytes(seq_content_len);
+    if (seq_len_bytes < 0) {
+        return HAL_NOT_SUPPORTED;
+    }
+
+    int der_privkey_len = 1 + seq_len_bytes + seq_content_len;
+    unsigned char *der_privkey = (unsigned char *)kmm_malloc(der_privkey_len);
+    if(der_privkey == NULL){
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+
+    int offset = 0;
+
+    der_privkey[offset++] = 0x30;
+    offset += armino_hal_write_der_length(der_privkey + offset, seq_content_len);
+
+    der_privkey[offset++] = 0x02;
+    der_privkey[offset++] = 0x01;
+    der_privkey[offset++] = 0x01;
+
+    der_privkey[offset++] = 0x04;
+    offset += armino_hal_write_der_length(der_privkey + offset, priv_key_len);
+    memcpy(der_privkey + offset, prikey->data, priv_key_len);
+    offset += priv_key_len;
+
+    der_privkey[offset++] = 0xA0;
+    offset += armino_hal_write_der_length(der_privkey + offset, oid_total_len);
+    memcpy(der_privkey + offset, oid_data, oid_total_len);
+    offset += oid_total_len;
+
+    if (pub_key_len > 0) {
+        der_privkey[offset++] = 0xA1;
+        offset += armino_hal_write_der_length(der_privkey + offset, pubkey_tlv_len);
+        der_privkey[offset++] = 0x03;
+        offset += armino_hal_write_der_length(der_privkey + offset, pubkey_bitstring_len);
+        der_privkey[offset++] = 0x00;
+        der_privkey[offset++] = 0x04;
+        memcpy(der_privkey + offset, pubkey->data, pub_key_len / 2);
+        memcpy(der_privkey + offset + pub_key_len / 2, pubkey->priv, pub_key_len / 2);
+        offset += pub_key_len;
+    }
+
+    memcpy(key->data, der_privkey, der_privkey_len);
+    key->data_len = der_privkey_len;
+
+    kmm_free(der_privkey);
+
+    return HAL_SUCCESS;
+}
+
+int armino_hal_be_der_ecdsa_public_key(hal_key_type mode, uint8_t *key, hal_data *pubkey, uint32_t key_len)
+{
+    HWRAP_ENTER;
+
+    if((key == NULL || pubkey == NULL || pubkey->data == NULL)) {
+        return HAL_INVALID_ARGS;
+    }
+
+    if (key[0] != 0x04) {
+        return HAL_INVALID_ARGS;
+    }
+    uint32_t ecpoint_len = 0;
+    if (key_len == 0) {
+        return HAL_INVALID_ARGS;
+    }
+    if ((key_len & 1) == 1) {
+        ecpoint_len = key_len;
+    } else {
+        ecpoint_len = key_len + 1;
+    }
+
+    if (ecpoint_len < 3 || ((ecpoint_len - 1) & 1) != 0) {
+        return HAL_INVALID_ARGS;
+    }
+
+    int oid_tag_len = 0;
+    unsigned char *oid_data = NULL;
+
+    switch (mode) {
+        case HAL_KEY_ECC_BRAINPOOL_P256R1:
+            oid_tag_len = sizeof(brainpool_p256r1_oid);
+            oid_data = brainpool_p256r1_oid;
+            break;
+        case HAL_KEY_ECC_BRAINPOOL_P384R1:
+            oid_tag_len = sizeof(brainpool_p384r1_oid);
+            oid_data = brainpool_p384r1_oid;
+            break;
+        case HAL_KEY_ECC_BRAINPOOL_P512R1:
+            oid_tag_len = sizeof(brainpool_p512r1_oid);
+            oid_data = brainpool_p512r1_oid;
+            break;
+        case HAL_KEY_ECC_SEC_P192R1:
+            oid_tag_len = sizeof(p192r1_oid);
+            oid_data = p192r1_oid;
+            break;
+        case HAL_KEY_ECC_SEC_P224R1:
+            oid_tag_len = sizeof(p224r1_oid);
+            oid_data = p224r1_oid;
+            break;
+        case HAL_KEY_ECC_SEC_P256R1:
+            oid_tag_len = sizeof(p256r1_oid);
+            oid_data = p256r1_oid;
+            break;
+        case HAL_KEY_ECC_SEC_P384R1:
+            oid_tag_len = sizeof(p384r1_oid);
+            oid_data = p384r1_oid;
+            break;
+        case HAL_KEY_ECC_SEC_P512R1:
+            oid_tag_len = sizeof(p512r1_oid);
+            oid_data = p512r1_oid;
+            break;
+        default:
+            return HAL_NOT_SUPPORTED;
+    }
+
+    uint32_t pubkey_len = 1 + ecpoint_len;
+    int pubkey_len_bytes = armino_hal_der_length_bytes(pubkey_len);
+    if (pubkey_len_bytes < 0) {
+        return HAL_NOT_SUPPORTED;
+    }
+
+    uint32_t bit_string_tlv_len = 1 + pubkey_len_bytes + pubkey_len;
+
+    int oid_len_bytes = armino_hal_der_length_bytes(oid_tag_len);
+    if (oid_len_bytes < 0) {
+        return HAL_NOT_SUPPORTED;
+    }
+
+    uint32_t alg_id_tlv_len = 1 + oid_len_bytes + oid_tag_len;
+    uint32_t outer_seq_content_len = alg_id_tlv_len + bit_string_tlv_len;
+    int outer_seq_len_bytes = armino_hal_der_length_bytes(outer_seq_content_len);
+    if (outer_seq_len_bytes < 0) {
+        return HAL_NOT_SUPPORTED;
+    }
+
+    int tag_len = 1 + outer_seq_len_bytes + outer_seq_content_len;
+    unsigned char *der_key = (unsigned char *)kmm_malloc(tag_len);
+    if(der_key == NULL){
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+
+    int offset = 0;
+
+    der_key[offset++] = 0x30;
+    offset += armino_hal_write_der_length(der_key + offset, outer_seq_content_len);
+
+    der_key[offset++] = 0x30;
+    offset += armino_hal_write_der_length(der_key + offset, oid_tag_len);
+
+    memcpy(der_key + offset, oid_data, oid_tag_len);
+    offset += oid_tag_len;
+
+    der_key[offset++] = 0x03;
+    offset += armino_hal_write_der_length(der_key + offset, pubkey_len);
+    der_key[offset++] = 0x00;
+    memcpy(der_key + offset, key, ecpoint_len);
+    offset += ecpoint_len;
+
+    memcpy(pubkey->data, der_key, tag_len);
+    pubkey->data_len = tag_len;
+
+    kmm_free(der_key);
+    return HAL_SUCCESS;
+}
+
+static int armino_hal_get_der_length(uint32_t *len, unsigned char *data, int *bytes_consumed)
+{
+    uint8_t len_byte = data[0];
+
+    if (len_byte & 0x80) {
+        int len_bytes = len_byte & 0x7F;
+
+        if (len_bytes == 0 || len_bytes > 2) {
+            return HAL_NOT_SUPPORTED;
+        }
+
+        if (len_bytes == 1) {
+            *len = data[1];
+            *bytes_consumed = 2;
+        } else {
+            *len = (data[1] << 8) | data[2];
+            *bytes_consumed = 3;
+        }
+    } else {
+        *len = len_byte;
+        *bytes_consumed = 1;
+    }
+
+    return HAL_SUCCESS;
+}
+
+int armino_hal_der_ecdsa_private_key(hal_data *key, hal_data *prikey)
+{
+    HWRAP_ENTER;
+    if ((key == NULL || key->data == NULL || prikey == NULL || prikey->data == NULL)) {
+        return HAL_INVALID_ARGS;
+    }
+
+    unsigned char *current_pos = key->data;
+    uint32_t tag_len = 0;
+    int len_bytes = 0;
+    int ret;
+
+    if (*current_pos != 0x30)
+        return HAL_INVALID_ARGS;
+
+    current_pos += 1;
+    ret = armino_hal_get_der_length(&tag_len, current_pos, &len_bytes);
+    if(ret != HAL_SUCCESS){
+        return ret;
+    }
+    current_pos += len_bytes;
+
+    if (*current_pos != 0x02)
+        return HAL_INVALID_ARGS;
+
+    current_pos += 1;
+    ret = armino_hal_get_der_length(&tag_len, current_pos, &len_bytes);
+    if(ret != HAL_SUCCESS){
+        return ret;
+    }
+    current_pos += len_bytes + tag_len;
+
+    if (*current_pos != 0x04)
+        return HAL_INVALID_ARGS;
+
+    current_pos += 1;
+    ret = armino_hal_get_der_length(&tag_len, current_pos, &len_bytes);
+    if(ret != HAL_SUCCESS){
+        return ret;
+    }
+    current_pos += len_bytes;
+
+    memcpy(prikey->data, current_pos, tag_len);
+    prikey->data_len = tag_len;
+
+    return HAL_SUCCESS;
+}
+
+int armino_hal_der_ecdsa_public_key(hal_data *key, hal_data *pubkey)
+{
+    HWRAP_ENTER;
+    if ((key == NULL || key->data == NULL || pubkey == NULL || pubkey->data == NULL || pubkey->priv == NULL)) {
+        return HAL_INVALID_ARGS;
+    }
+
+    unsigned char *current_pos = key->data;
+    uint32_t tag_len = 0;
+    int len_bytes = 0;
+    int ret;
+
+    if (*current_pos != 0x30)
+        return HAL_INVALID_ARGS;
+
+    current_pos += 1;
+    ret = armino_hal_get_der_length(&tag_len, current_pos, &len_bytes);
+    if(ret != HAL_SUCCESS){
+        return ret;
+    }
+    current_pos += len_bytes;
+
+    if (*current_pos != 0x30)
+        return HAL_INVALID_ARGS;
+
+    current_pos += 1;
+    ret = armino_hal_get_der_length(&tag_len, current_pos, &len_bytes);
+    if(ret != HAL_SUCCESS){
+        return ret;
+    }
+    current_pos += len_bytes + tag_len;
+
+    if (*current_pos != 0x03)
+        return HAL_INVALID_ARGS;
+
+    current_pos += 1;
+    ret = armino_hal_get_der_length(&tag_len, current_pos, &len_bytes);
+    if(ret != HAL_SUCCESS){
+        return ret;
+    }
+    current_pos += len_bytes;
+
+    if (*current_pos != 0x00) {
+        return HAL_INVALID_ARGS;
+    }
+    current_pos += 1;
+
+    if (*current_pos != 0x04) {
+        return HAL_INVALID_ARGS;
+    }
+    current_pos += 1;
+
+    tag_len -= 2;
+
+    if (tag_len & 1) {
+        return HAL_INVALID_ARGS;
+    }
+
+    memcpy(pubkey->data, current_pos, tag_len/2);
+    pubkey->data_len = tag_len/2;
+    memcpy(pubkey->priv, current_pos + tag_len/2, tag_len/2);
+    pubkey->priv_len = tag_len/2;
+
+    return HAL_SUCCESS;
+}
+
 /**
  * Key Manager
  */
@@ -167,6 +663,8 @@ int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_d
     psa_key_attributes_t attributes = psa_key_attributes_init();
     psa_status_t status;
     psa_key_id_t imported_key_id;
+    hal_data pubkey, prikey_der;
+    int ret;
 
     psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
 
@@ -196,11 +694,74 @@ int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_d
         case HAL_KEY_ECC_BRAINPOOL_P256R1:
         case HAL_KEY_ECC_BRAINPOOL_P384R1:
         case HAL_KEY_ECC_BRAINPOOL_P512R1:
-            psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_BRAINPOOL_P_R1));
+
             psa_set_key_bits(&attributes, (mode == HAL_KEY_ECC_BRAINPOOL_P256R1) ? 256 : (mode == HAL_KEY_ECC_BRAINPOOL_P384R1) ? 384 : 512);
-            psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_DERIVE);
+
             psa_set_key_algorithm(&attributes, PSA_ALG_ECDSA(PSA_ECC_FAMILY_BRAINPOOL_P_R1) | PSA_ALG_ECDH);
-            status = psa_import_key(&attributes, key->data, key->data_len, &imported_key_id);
+
+            // Import the key
+            if (prikey != NULL && prikey->data != NULL && prikey->data_len > 0) {
+                psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_DERIVE);
+                psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_BRAINPOOL_P_R1));
+
+                /* Get the private key in the format of DER */
+                prikey_der.data = (unsigned char *)kmm_malloc(HAL_MAX_ECP_KEY_SIZE);
+                if(prikey_der.data == NULL){
+                    return HAL_NOT_ENOUGH_MEMORY;
+                }
+
+                ret = armino_hal_der_ecdsa_private_key(prikey, &prikey_der);
+                if(ret != HAL_SUCCESS){
+                    kmm_free(prikey_der.data);
+                    return ret;
+                }
+
+                status = psa_import_key(&attributes, prikey_der.data, prikey_der.data_len, &imported_key_id);
+                kmm_free(prikey_der.data);
+            } else if (key != NULL && key->data != NULL && key->data_len > 0){
+                uint8_t *pub_key;
+
+                /* Get the public key in the format of DER */
+                pubkey.data = (unsigned char *)kmm_malloc(HAL_MAX_ECP_KEY_SIZE);
+                if(pubkey.data == NULL){
+                    return HAL_NOT_ENOUGH_MEMORY;
+                }
+
+                pubkey.priv = (unsigned char *)kmm_malloc(HAL_MAX_ECP_KEY_SIZE);
+                if(pubkey.priv == NULL){
+                    kmm_free(pubkey.data);
+                    return HAL_NOT_ENOUGH_MEMORY;
+                }
+
+                ret = armino_hal_der_ecdsa_public_key(key, &pubkey);
+                if(ret != HAL_SUCCESS){
+                    kmm_free(pubkey.data);
+                    kmm_free(pubkey.priv);
+                    return ret;
+                }
+
+                pub_key = (uint8_t *)kmm_malloc(pubkey.data_len * 2 + 1);
+                if (pub_key == NULL) {
+                    kmm_free(pubkey.data);
+                    kmm_free(pubkey.priv);
+                    return HAL_NOT_ENOUGH_MEMORY;
+                }
+
+                pub_key[0] = 0x4;
+                memcpy(&pub_key[1], pubkey.data, pubkey.data_len);
+                memcpy(&pub_key[1+pubkey.data_len], pubkey.priv, pubkey.priv_len);
+                psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_BRAINPOOL_P_R1));
+                psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_DERIVE);
+                status = psa_import_key(&attributes, pub_key, pubkey.data_len * 2 + 1, &imported_key_id);
+
+                kmm_free(pub_key);
+                kmm_free(pubkey.data);
+                kmm_free(pubkey.priv);
+            } else {
+                psa_reset_key_attributes(&attributes);
+                return HAL_INVALID_ARGS;
+            }
+
             break;
         case HAL_KEY_ECC_SEC_P192R1:
         case HAL_KEY_ECC_SEC_P224R1:
@@ -229,26 +790,63 @@ int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_d
             if(prikey != NULL && prikey->data != NULL && prikey->data_len > 0){
                 psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_DERIVE);
                 psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-                status = psa_import_key(&attributes, prikey->data, prikey->data_len, &imported_key_id);
-            }else if (key != NULL && key->data != NULL && key->data_len > 0 && key->priv != NULL && key->priv_len > 0){
+
+                /* Get the private key in the format of DER */
+                prikey_der.data = (unsigned char *)kmm_malloc(HAL_MAX_ECP_KEY_SIZE);
+                if(prikey_der.data == NULL){
+                    return HAL_NOT_ENOUGH_MEMORY;
+                }
+
+                ret = armino_hal_der_ecdsa_private_key(prikey, &prikey_der);
+                if(ret != HAL_SUCCESS){
+                    kmm_free(prikey_der.data);
+                    return ret;
+                }
+
+                status = psa_import_key(&attributes, prikey_der.data, prikey_der.data_len, &imported_key_id);
+                kmm_free(prikey_der.data);
+            }else if (key != NULL && key->data != NULL && key->data_len > 0){
                 uint8_t *pub_key;
-                pub_key = (uint8_t *)kmm_malloc(key->data_len * 2 + 1);
+
+                /* Get the public key in the format of DER */
+                pubkey.data = (unsigned char *)kmm_malloc(HAL_MAX_ECP_KEY_SIZE);
+                if(pubkey.data == NULL){
+                    return HAL_NOT_ENOUGH_MEMORY;
+                }
+
+                pubkey.priv = (unsigned char *)kmm_malloc(HAL_MAX_ECP_KEY_SIZE);
+                if(pubkey.priv == NULL){
+                    kmm_free(pubkey.data);
+                    return HAL_NOT_ENOUGH_MEMORY;
+                }
+
+                ret = armino_hal_der_ecdsa_public_key(key, &pubkey);
+                if(ret != HAL_SUCCESS){
+                    kmm_free(pubkey.data);
+                    kmm_free(pubkey.priv);
+                    return ret;
+                }
+
+                pub_key = (uint8_t *)kmm_malloc(pubkey.data_len * 2 + 1);
                 if (pub_key == NULL) {
+                    kmm_free(pubkey.data);
+                    kmm_free(pubkey.priv);
                     return HAL_NOT_ENOUGH_MEMORY;
                 }
                 pub_key[0] = 0x4;
-                memcpy(&pub_key[1], key->data, key->data_len);
-                memcpy(&pub_key[1+key->data_len], key->priv, key->priv_len);
+                memcpy(&pub_key[1], pubkey.data, pubkey.data_len);
+                memcpy(&pub_key[1+pubkey.data_len], pubkey.priv, pubkey.priv_len);
                 psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_DERIVE);
                 psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
-                status = psa_import_key(&attributes, pub_key, key->data_len * 2 + 1, &imported_key_id);
+                status = psa_import_key(&attributes, pub_key, pubkey.data_len * 2 + 1, &imported_key_id);
+
                 kmm_free(pub_key);
+                kmm_free(pubkey.data);
+                kmm_free(pubkey.priv);
             } else {
                 psa_reset_key_attributes(&attributes);
                 return HAL_INVALID_ARGS;
             }
-
-
             break;
         case HAL_KEY_ECC_25519:
             psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_MONTGOMERY));
@@ -1540,7 +2138,7 @@ int armino_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_
         case HAL_AES_CBC_ISO9797_M2:
         case HAL_AES_CBC_PKCS5:
         case HAL_AES_CBC_PKCS7:
-            alg = PSA_ALG_CBC_NO_PADDING; 
+            alg = PSA_ALG_CBC_NO_PADDING;
             cipher_param.mode = SCA_AES_CBC_ENCRYPT_MODE;
             ret = psa_sca_aes_cbc_crypt((sca_aes_context_t *)&cipher_param, cipher_param.input_data, cipher_param.input_len, cipher_param.output_data);
             break;
@@ -1671,7 +2269,7 @@ int armino_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *mode, uint32_t key_
     }
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
-        dbg("Key index %d for factory key\n", key_idx); 
+        dbg("Key index %d for factory key\n", key_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
