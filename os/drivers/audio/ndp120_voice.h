@@ -97,6 +97,12 @@ struct ndp120_dev_s {
 	pthread_cond_t ndp_cond_notification_sample;
 	int8_t kd_num; // -1 is none, 0 is hi bixby, 1 is bixby
 	sem_t reset_sem;
+	unsigned long last_sample_wait_start[8]; // maintain N debug timestamps
+	unsigned long last_sample_int[8]; 		// maintain N debug timestamps
+	unsigned int last_sample_int_idx;
+	unsigned int last_sample_wait_idx;
+	unsigned long last_sample_rdy_ena;
+	unsigned long last_sample_rdy_dis;
 };
 
 #endif				/* __DRIVERS_AUDIO_NDP120_H */
