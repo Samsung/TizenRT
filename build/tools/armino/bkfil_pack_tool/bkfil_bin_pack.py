@@ -46,14 +46,30 @@ class BKFilBinPack:
             "bootparam": "bootparam.bin",
             "userfs": self.fs_bin_name
         }
+        # Add common binary if supported
+        if self.config.get("CONFIG_SUPPORT_COMMON_BINARY", "n") == "y":
+            common_bin_name = bininfo.get("COMMON_BIN_NAME", "None")
+            if common_bin_name != "None":
+                part_map["common"] = common_bin_name
         return part_map
 
     def _get_parser(self) -> PartitionsParser:
         parser = PartitionsParser(self.config)
         required = ["kernel", "bootparam"]
-        optional = ["app1", "app2", "userfs"]
+        optional = []
+        # Add app1 to optional if supported
+        if self.config.get("CONFIG_APP_BINARY_SEPARATION", "n") == "y":
+            optional.append("app1")
+        # Add app2 to optional if supported
+        if int(self.config.get("CONFIG_NUM_APPS", "0")) == 2:
+            optional.append("app2")
+        # Add common to optional if supported
+        if self.config.get("CONFIG_SUPPORT_COMMON_BINARY", "n") == "y":
+            optional.append("common")
         if self.config.get("CONFIG_TFM", "n") != "y":
             required += ["bl1"]
+        if self.config.get("CONFIG_DUMMY_FS_BIN", "n") == "y":
+            optional += ["userfs"]
         parser.set_required(required)
         parser.set_optional(optional)
         parser.set_part_map(self.part_map)
@@ -66,9 +82,13 @@ class BKFilBinPack:
         pack_json = self.workdir / "partition.json"
         parser.gen_partitions_json(pack_json)
         fs_bin = self.workdir / self.fs_bin_name
-        if not fs_bin.exists():
+        if self.config.get("CONFIG_DUMMY_FS_BIN", "n") == "y" and not fs_bin.exists():
             parser.create_dummy_fs_bin(fs_bin)
-        packager = bk_packager_format(self.workdir, pack_json, Path("all-app.bin"))
+        if self.config.get("CONFIG_BK7239N_MP", "n") == "y":
+            output_file_name = Path("all-app.bin")
+        else:
+            output_file_name = Path("mpw_all-app.bin")
+        packager = bk_packager_format(self.workdir, pack_json, output_file_name)
         if self.config.get("CONFIG_TFM", "n") == "y":
             packager.set_magic_header(b'BKDLV10.')
         packager.pack()
