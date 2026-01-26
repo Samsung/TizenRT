@@ -135,3 +135,10 @@ config SAVE_BIN_SECTION_ADDR
 		For debugging binary symbol, save the each section address.
 
 endif # BINFMT_ENABLE
+
+config XIP_KERNEL
+	bool "Enable XIP execute for kernel"
+	default y
+	---help---
+		Enable support for kernel to xip execute. 
+

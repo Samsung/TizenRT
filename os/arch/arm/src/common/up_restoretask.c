@@ -43,6 +43,10 @@
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_USE_MMU)
 #include "mmu.h"
 #endif
+#if defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_XIP_ELF) && defined(CONFIG_ARM_MPU)
+#include <tinyara/binfmt/binfmt.h>
+#include "../../../kernel/binary_manager/binary_manager_internal.h"
+#endif
 
 /****************************************************************************
  * Private Data
@@ -96,6 +100,18 @@ void up_restoretask(struct tcb_s *tcb)
 			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
 				up_mpu_set_register(&tcb->mpu_regs[i]);
 			}
+#if defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_XIP_ELF)
+			/* For XIP_ELF, common binary's Flash region must always be configured
+			 * because all applications may access common code in Flash.
+			 * Restore common binary's MPU regions during task switch.
+			 */
+			struct binary_s *cmn_binp = BIN_LOADINFO(BM_CMNLIB_IDX);
+			if (cmn_binp && cmn_binp->islibrary) {
+				for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
+					up_mpu_set_register(&cmn_binp->cmn_mpu_regs[i]);
+				}
+			}
+#endif
 		}
 #endif
 
