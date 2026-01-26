@@ -31,8 +31,8 @@ __CPU0_APP_VIRTUAL_CODE_START = 0xD0000;
 __CPU0_APP_VIRTUAL_CODE_SIZE = 0x600000;
 
 SOC_FLASH_DATA_BASE = 0x12000000;
-SOC_PSRAM_DATA_BASE = 0x70000000;
-SOC_PSRAM_CODE_BASE = 0x70080000;
+SOC_PSRAM_DATA_BASE = 0x70040000;
+SOC_PSRAM_CODE_BASE = 0x700C0000;
 
 OUTPUT_ARCH(arm)
 ENTRY(Reset_Handler)
@@ -43,7 +43,7 @@ MEMORY
   IRAM (rx)             : ORIGIN = __CPU0_APP_IRAM_BASE, LENGTH = __CPU0_APP_IRAM_SIZE
   RAM (rwx)             : ORIGIN = __CPU0_APP_RAM_BASE, LENGTH = __CPU0_APP_RAM_SIZE
   PSRAM_DATA (rwx)      : ORIGIN = SOC_PSRAM_DATA_BASE, LENGTH = 0x80000
-  PSRAM_CODE (rwx)      : ORIGIN = SOC_PSRAM_CODE_BASE, LENGTH = 0x80000
+  PSRAM_CODE (rwx)      : ORIGIN = SOC_PSRAM_CODE_BASE, LENGTH = 0x180000
 }
 
 SECTIONS
@@ -68,104 +68,13 @@ SECTIONS
         . = ALIGN(4);
         _stext = .;
         _stext_flash = ABSOLUTE(.);
-
-        EXCLUDE_FILE(
-            *armino_irq.o* 
-            *up_exception.o* 
-            *up_svcall.o* 
-            *up_switchcontext.o*
-            *up_copyfullstate.o*
-            *up_fullcontextrestore.o*
-            *up_doirq.o*
-            *irq_dispatch.o*
-            *sched_addreadytorun.o*
-            *sched_addblocked.o*
-            *sched_addprioritized.o*
-            *sched_removereadytorun.o*
-            *sched_removeblocked.o*
-            *sched_mergepending.o*
-            *up_blocktask.o*
-            *up_unblocktask.o*
-            *libkernel.a:mq_send.o*
-            *libkernel.a:mq_timedsend.o*
-            *libkernel.a:mq_sndinternal.o*
-            *libkernel.a:mq_receive.o*
-            *libkernel.a:mq_timedreceive.o*
-            *libkernel.a:mq_rcvinternal.o*
-            *libkernel.a:mq_initialize.o*
-            *libkernel.a:mq_msgfree.o*
-            *libkernel.a:mq_getattr.o*
-            *libkernel.a:mq_waitirq.o*
-            *libkernel.a:mq_recover.o*
-            *libkernel.a:mq_release.o*
-            *libkernel.a:wd_start.o*
-            *libkernel.a:wd_create.o*
-            *libkernel.a:wd_cancel.o*
-            *libkernel.a:timer_settime.o*
-            *libboard.a:rtos_pub.o*
-            *libboard.a:mem_arch.o*
-            *bk_ethernetif.o*
-            *bk_lwipif_tizenrt.o*
-            *rxl_hwdesc.o*
-            *libboard.a:rxl_cntrl.o*
-            *rf_cntrl.o*
-            *co_list.o*
-            *libnet.a:tcp_in.o*
-            *libnet.a:tcp_out.o*
-            *libnet.a:tcp.o*
-            *libnet.a:ip4.o*
-            *libnet.a:ip.o*
-            *libnet.a:netif.o*
-            *libnet.a:pbuf.o*
-            ) *(.text .text.* .rodata .rodata.*)
-        /**(.text.* *.rodata *.rodata.*)*/
-
-        . = ALIGN(4);
-        __devconfig_start = .;
-        *(".devconfig.*")
-        KEEP(*(SORT_BY_NAME(".devconfig*")))
-        __devconfig_end = .;
-
-        . = ALIGN(4);
-        __apps_start = .;
-        KEEP (*(.apps_data))
-        __apps_end = .;
+        /* Only keep .flash_boot_code section in FLASH */
+        *(.flash_boot_code)
+        *(.flash_boot_code.*)
         _etext_flash = ABSOLUTE(.);
         _etext = .;
         . = ALIGN(4);
     } > FLASH
-
-    .a_device_null :
-    {
-      KEEP(*(.a_deviceobj_null))
-    } > FLASH
-
-    .a_devices :
-    {
-      __device_start = .;
-      KEEP(*(.a_deviceobj_*))
-      __device_end = .;
-    } > FLASH
-
-    .a_init_entries :
-    {
-      __a_init_start = .;
-      KEEP(*(.a_init_entry_*))
-      __a_init_end = .;
-    } > FLASH
-
-    .ARM.extab :
-    {
-        *(.ARM.extab* .gnu.linkonce.armextab.*)
-        . = ALIGN(4);
-    } > FLASH
-
-    __exidx_start = .;
-    .ARM.exidx :
-    {
-        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    } > FLASH
-    __exidx_end = .;
 
     .copy.table :
     {
@@ -367,7 +276,95 @@ SECTIONS
         . = ALIGN(8);
         PROVIDE(__psram_code_text = LOADADDR(.psram_code));
         __psram_code_start__ = .;
+        _stext_psram = ABSOLUTE(.);
+
+        *(.interrupt.text)
+
+        /* All code except .flash_boot_code and IRAM code */
+        EXCLUDE_FILE(
+            *armino_irq.o* 
+            *up_exception.o* 
+            *up_svcall.o* 
+            *up_switchcontext.o*
+            *up_copyfullstate.o*
+            *up_fullcontextrestore.o*
+            *up_doirq.o*
+            *irq_dispatch.o*
+            *sched_addreadytorun.o*
+            *sched_addblocked.o*
+            *sched_addprioritized.o*
+            *sched_removereadytorun.o*
+            *sched_removeblocked.o*
+            *sched_mergepending.o*
+            *up_blocktask.o*
+            *up_unblocktask.o*
+            *libkernel.a:mq_send.o*
+            *libkernel.a:mq_timedsend.o*
+            *libkernel.a:mq_sndinternal.o*
+            *libkernel.a:mq_receive.o*
+            *libkernel.a:mq_timedreceive.o*
+            *libkernel.a:mq_rcvinternal.o*
+            *libkernel.a:mq_initialize.o*
+            *libkernel.a:mq_msgfree.o*
+            *libkernel.a:mq_getattr.o*
+            *libkernel.a:mq_waitirq.o*
+            *libkernel.a:mq_recover.o*
+            *libkernel.a:mq_release.o*
+            *libkernel.a:wd_start.o*
+            *libkernel.a:wd_create.o*
+            *libkernel.a:wd_cancel.o*
+            *libkernel.a:timer_settime.o*
+            *libboard.a:rtos_pub.o*
+            *libboard.a:mem_arch.o*
+            *bk_ethernetif.o*
+            *bk_lwipif_tizenrt.o*
+            *rxl_hwdesc.o*
+            *libboard.a:rxl_cntrl.o*
+            *rf_cntrl.o*
+            *co_list.o*
+            *libnet.a:tcp_in.o*
+            *libnet.a:tcp_out.o*
+            *libnet.a:tcp.o*
+            *libnet.a:ip4.o*
+            *libnet.a:ip.o*
+            *libnet.a:netif.o*
+            *libnet.a:pbuf.o*
+            ) *(.text .text.* .rodata .rodata.*)
+
         . = ALIGN(4);
+        __devconfig_start = .;
+        *(".devconfig.*")
+        KEEP(*(SORT_BY_NAME(".devconfig*")))
+        __devconfig_end = .;
+
+        . = ALIGN(4);
+        __apps_start = .;
+        KEEP (*(.apps_data))
+        __apps_end = .;
+
+        . = ALIGN(4);
+        KEEP(*(.a_deviceobj_null))
+
+        . = ALIGN(4);
+        __device_start = .;
+        KEEP(*(.a_deviceobj_*))
+        __device_end = .;
+
+        . = ALIGN(4);
+        __a_init_start = .;
+        KEEP(*(.a_init_entry_*))
+        __a_init_end = .;
+
+        . = ALIGN(4);
+        *(.ARM.extab* .gnu.linkonce.armextab.*)
+
+        . = ALIGN(4);
+        __exidx_start = .;
+        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+        __exidx_end = .;
+
+        . = ALIGN(4);
+        _etext_psram = ABSOLUTE(.);
         __psram_code_end__ = .;
     } > PSRAM_CODE AT > FLASH
 
@@ -396,7 +393,9 @@ SECTIONS
         __psram_bss_end__ = .;
     } > PSRAM_DATA
 
-    s_rom_end = LOADADDR(.data) + SIZEOF(.data);
+
+    /* Calculate ROM end - PSRAM_CODE is stored in FLASH after .data section */
+    s_rom_end = LOADADDR(.psram_code) + SIZEOF(.psram_code);
 
     /* Set stack top to end of RAM, and stack limit move down by
      * size of stack_dummy section */
