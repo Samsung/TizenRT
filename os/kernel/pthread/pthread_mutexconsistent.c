@@ -108,7 +108,6 @@ int pthread_mutex_consistent(FAR pthread_mutex_t *mutex)
 	int status;
 
 	svdbg("mutex=0x%p\n", mutex);
-	DEBUGASSERT(mutex != NULL);
 
 	if (mutex != NULL) {
 		/* Make sure the mutex is stable while we make the following checks. */

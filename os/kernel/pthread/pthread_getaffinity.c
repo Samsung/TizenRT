@@ -66,8 +66,9 @@ int pthread_getaffinity_np(pthread_t thread, size_t cpusetsize, FAR cpu_set_t *c
 {
 	int ret;
 
-	DEBUGASSERT(thread > 0 && cpusetsize == sizeof(cpu_set_t) && \
-			cpuset != NULL);
+	if (thread <= 0 || cpusetsize != sizeof(cpu_set_t) || cpuset == NULL) {
+		return EINVAL;
+	}
 
 	svdbg("thread ID=%d cpusetsize=%zu cpuset=%ju\n", \
 			(int)thread, cpusetsize, (uintmax_t)*cpuset);
