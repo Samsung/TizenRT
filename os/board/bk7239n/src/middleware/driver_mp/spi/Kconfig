@@ -1,0 +1,38 @@
+menu "SPI"
+	config SPI
+		bool "Enable SPI"
+		default y
+
+	config SPI_DMA
+		bool "Enable SPI DMA"
+		default y
+
+	config SPI_STATIS
+		bool "Enable SPI Statis"
+		default n
+			
+	config SPI_SUPPORT_TX_FIFO_WR_READY
+		bool "Support TX FIFO Write Ready"
+		default y
+
+	config SPI_MST_FLASH
+		bool "SPI MST Flash"
+		default n
+
+	config SPI_MST_PSRAM
+		bool "SPI MST PSRAM"
+		default n
+
+	config SPI_PM_CB_SUPPORT
+		bool "SPI PM Support"
+		default n
+	config SPI
+		bool "SPI ENABLE"
+		default n
+
+	config SPI_BYTE_INTERVAL
+		bool "SPI byte interval"
+		default n
+
+endmenu
+

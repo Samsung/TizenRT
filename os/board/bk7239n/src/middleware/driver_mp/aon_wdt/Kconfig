@@ -1,0 +1,14 @@
+menu "AON_Watchdog"
+	config AON_WDT
+		bool "Enable AON Watchdog"
+		default n
+
+	config INT_AON_WDT
+		bool "Enable Interrupt AON Watchdog"
+		default n
+
+	config INT_AON_WDT_PERIOD_MS
+		int "Interrupt AON Watchdog Period(ms)"
+		default 1000
+endmenu
+

@@ -439,6 +439,7 @@ typedef enum
     BLE_5_COC_DISCCONNECT_COMPL_EVENT,
     BLE_5_COC_TX_DONE,
     BLE_5_COC_RX_IND,
+    BLE_5_COC_CONNECT_REQ_EVENT,
 
 } ble_notice_t;
 
@@ -795,6 +796,15 @@ typedef struct
             uint16_t length;
             uint8_t *data;
         } coc_recv_evt;
+
+        struct
+        {
+            uint16_t le_psm;
+            uint16_t peer_cid;
+            uint16_t peer_mtu;
+            uint16_t peer_mps;
+            uint16_t peer_credit;
+        } coc_connect_req_evt;
     };
 
 
@@ -1328,6 +1338,27 @@ enum gap_key_distr
 
     BK_BLE_GAP_KDIST_LAST = (1 << 4),
 };
+
+enum coc_info
+{
+    BK_BLE_COC_PEER_CURRENT_CREDIT,
+    BK_BLE_COC_PEER_MAX_CREDIT,
+    BK_BLE_COC_PEER_MTU,
+    BK_BLE_COC_PEER_MPS,
+    BK_BLE_COC_LOCAL_CURRENT_CREDIT,
+    BK_BLE_COC_LOCAL_MAX_CREDIT,
+    BK_BLE_COC_LOCAL_MTU,
+    BK_BLE_COC_LOCAL_MPS,
+};
+
+enum coc_security
+{
+    BK_BLE_COC_SEC_NONE,
+    BK_BLE_COC_SEC_UNAUTH_ENCRYPT,
+    BK_BLE_COC_SEC_AUTH_ENCRYPT,
+    BK_BLE_COC_SEC_SECURE_CONNECTION,
+};
+
 /**
  * @}
  */

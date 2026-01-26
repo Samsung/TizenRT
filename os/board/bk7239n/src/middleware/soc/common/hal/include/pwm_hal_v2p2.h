@@ -40,10 +40,17 @@ bk_err_t pwm_hal_set_chan_config(pwm_chan_t sw_ch, const pwm_period_duty_config_
 bk_err_t pwm_hal_set_group_config(const pwm_period_duty_config_t *config, pwm_chan_t tim_id, uint32_t dead_cycle);
 bk_err_t pwm_hal_set_uie(pwm_chan_t tim_id, uint32_t value);
 bk_err_t pwm_hal_set_cc1ie(pwm_chan_t tim_id, uint32_t value);
+#if defined(CONFIG_BK7239N_MP) && (CONFIG_BK7239N_MP == 1)
+bk_err_t pwm_hal_get_pwm_interrupt_status(uint32_t *int_status, uint32_t group_num);
+bk_err_t pwm_hal_clear_interrupt_status(uint32_t *int_status, uint32_t group_num);
+bool pwm_hal_is_uif_triggered(pwm_chan_t tim_id, uint32_t *status, uint32_t group_num);
+bool pwm_hal_is_cc1if_triggered(pwm_chan_t tim_id, uint32_t *status, uint32_t group_num);
+#else
 uint64_t pwm_hal_get_pwm_interrupt_status(void);
 bk_err_t pwm_hal_clear_interrupt_status(uint64_t status);
 bool pwm_hal_is_uif_triggered(pwm_chan_t tim_id, uint64_t status);
 bool pwm_hal_is_cc1if_triggered(pwm_chan_t tim_id, uint64_t status);
+#endif
 void pwm_hal_set_sync_all_enable(bool is_enable);
 void pwm_hal_sync_all_shadow(void);
 bk_err_t pwm_hal_init_capture(pwm_chan_t chan, pwm_capture_edge_t edge);
@@ -51,6 +58,7 @@ uint32_t pwm_hal_get_ccr1_shadow(pwm_chan_t tim_id);
 uint32_t pwm_hal_get_ccr2_shadow(pwm_chan_t tim_id);
 uint32_t pwm_hal_get_tim_arr(pwm_chan_t tim_id);
 uint32_t pwm_hal_get_ccr2(pwm_chan_t tim_id);
+uint32_t pwm_hal_get_capture_int_type(pwm_chan_t tim_id);
 bk_err_t pwm_hal_set_fade_scale(pwm_chan_t tim_id, uint32_t value);
 uint32_t pwm_hal_get_fade_scale(pwm_chan_t tim_id);
 bk_err_t pwm_hal_set_fade_num(pwm_chan_t tim_id, uint32_t value);
@@ -58,6 +66,12 @@ uint32_t pwm_hal_get_fade_num(pwm_chan_t tim_id);
 bk_err_t pwm_hal_set_fade_intv_cycle(pwm_chan_t tim_id, uint32_t value);
 bk_err_t pwm_hal_set_fade_inc_dec(pwm_chan_t tim_id, uint32_t value);
 bk_err_t pwm_hal_set_fade_enable(pwm_chan_t tim_id, uint32_t value);
+uint32_t pwm_hal_get_ccmr_chan_polarity(pwm_chan_t chan);
+
+#if CONFIG_PWM_PM_CB_SUPPORT
+void pwm_hal_pm_backup(uint32_t chan, uint32_t *pm_backup, uint32_t reg_count);
+void pwm_hal_pm_restore(uint32_t chan, uint32_t *pm_backup, uint32_t reg_count);
+#endif
 
 #ifdef __cplusplus
 }

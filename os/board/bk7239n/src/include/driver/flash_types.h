@@ -21,11 +21,12 @@
 extern "C" {
 #endif
 
-#define BK_ERR_FLASH_NOT_INIT             (BK_ERR_FLASH_BASE - 1) /**< FLASH driver not init */
-#define BK_ERR_FLASH_ADDR_OUT_OF_RANGE    (BK_ERR_FLASH_BASE - 2) /**< FLASH address is out of range */
-#define BK_ERR_FLASH_PARTITION_NOT_FOUND  (BK_ERR_FLASH_BASE - 3) /**< FLASH partition not found */
-#define BK_ERR_FLASH_WAIT_CB_FULL         (BK_ERR_FLASH_BASE - 4) /**< FLASH wait cb is registered too much */
-#define BK_ERR_FLASH_WAIT_CB_NOT_REGISTER         (BK_ERR_FLASH_BASE - 5) /**< FLASH wait cb is not registered but tried to unregister */
+#define BK_ERR_FLASH_NOT_INIT              (BK_ERR_FLASH_BASE - 1) /**< FLASH driver not init */
+#define BK_ERR_FLASH_ADDR_OUT_OF_RANGE     (BK_ERR_FLASH_BASE - 2) /**< FLASH address is out of range */
+#define BK_ERR_FLASH_PARTITION_NOT_FOUND   (BK_ERR_FLASH_BASE - 3) /**< FLASH partition not found */
+#define BK_ERR_FLASH_WAIT_CB_FULL          (BK_ERR_FLASH_BASE - 4) /**< FLASH wait cb is registered too much */
+#define BK_ERR_FLASH_WAIT_CB_NOT_REGISTER  (BK_ERR_FLASH_BASE - 5) /**< FLASH wait cb is not registered but tried to unregister */
+#define FLASH_RF_FIRMWARE_OFFSET           (40960)
 
 typedef enum
 {
