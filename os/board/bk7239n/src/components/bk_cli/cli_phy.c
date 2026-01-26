@@ -64,8 +64,6 @@ static const struct cli_command s_phy_commands[] = {
     {"rfcali_flag_in_otp2", "",                       cmd_rfcali_flag_in_otp2},
     #if (defined(CONFIG_SOC_BK7236XX)) && (!defined(CONFIG_SOC_BK7236N))
     {"rfcfg_test_log",  "1:open,0:close",cmd_rfcfg_test_log},
-    {"get_powerindex",  "mode,chan",cmd_rf_get_pwr_idx},
-    {"set_powerindex",  "mode,chan,pwr_idx",cmd_rf_set_pwr_idx},
     #endif
 #elif (defined(CONFIG_SOC_BK7236A))
     {"la", "la rx_adc/rx_dac/tx_dac", cmd_la_sample_test},

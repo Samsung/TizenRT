@@ -8,4 +8,8 @@ menu "Bk_Phy"
 		bool "Enable voltage detect"
 		default n
 
+	config RF_FIRMWARE_DYNAMIC_PARTITION
+		bool "Enable rf firmware partition dynamic"
+		default y
+
 endmenu

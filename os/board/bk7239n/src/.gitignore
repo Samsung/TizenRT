@@ -28,4 +28,5 @@ tags
 *.log.old
 
 !/libs/*.a
-!/components/tfm/tfm_build/secure_fw/*.a
+!/components/tfm/tfm_loadable_build/secure_fw/*.a
+!/components/tfm/tfm_xip_build/secure_fw/*.a

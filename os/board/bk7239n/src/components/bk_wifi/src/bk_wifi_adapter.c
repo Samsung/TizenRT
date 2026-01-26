@@ -280,9 +280,7 @@ static void rwnx_cal_set_channel_wrapper(UINT32 freq)
 
 static void bk7011_cal_dpd_wrapper(uint32_t freq, uint32_t connect_mode)
 {
-#if CONFIG_DPD_CALI
     bk7011_cal_dpd(freq, connect_mode);
-#endif
 }
 
 static void bk7011_update_by_rx_wrapper(int8_t rssi, int8_t freq_offset)
@@ -1354,6 +1352,11 @@ static int bk_feature_change_to_wifi_pll_enable_wrapper(void)
     return bk_feature_change_to_wifi_pll_enable();
 }
 
+static int __IRAM2 bk_feature_bk7239n_mp_enable_wrapper(void)
+{
+    return bk_feature_bk7239n_mp_enable();
+}
+
 UINT32 __IRAM2 rwnx_sys_is_use_abs_power_wrapper(void)
 {
 #if (CONFIG_SOC_BK7236XX || CONFIG_SOC_BK7239XX || CONFIG_SOC_BK7286XX)
@@ -1374,7 +1377,7 @@ static void rf_force_set_wifi_mode_wrapper(uint8_t switch_mode)
 {
     volatile uint32_t *rf_reg = (volatile uint32_t *)(SOC_SYS_REG_BASE + 2*4);
     uint32_t reg_val = *rf_reg;
-	if (switch_mode == 1) 
+	if (switch_mode == 1)
     {
         reg_val |= (1 << 4);   // Set bit 4
         reg_val &= ~(1 << 5);  // Clear bit 5
@@ -1386,6 +1389,11 @@ static void rf_force_set_wifi_mode_wrapper(uint8_t switch_mode)
         reg_val |= (1 << 5);   // Set bit 5
         *rf_reg = reg_val;
     }
+}
+
+static UINT32 bk_feature_update_power_with_rssi_wrapper(void)
+{
+    return bk_feature_update_power_with_rssi();
 }
 
 __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
@@ -1412,6 +1420,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._rwnx_cal_save_trx_rcbekn_reg_val = rwnx_cal_save_trx_rcbekn_reg_val,
 	._rc_drv_set_agc_manual_en = rc_drv_set_agc_manual_en,
 	._rc_drv_set_rx_mode_enrxsw = rc_drv_set_rx_mode_enrxsw,
+	._rc_drv_set_rf_macbypass = rc_drv_set_rf_macbypass,
 	._rc_drv_get_rx_mode_enrxsw = rc_drv_get_rx_mode_enrxsw,
 	._bk7011_max_rxsens_setting = bk7011_max_rxsens_setting,
 	._bk7011_default_rxsens_setting = bk7011_default_rxsens_setting,
@@ -1431,7 +1440,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._tx_evm_mode_get      = NULL,
 #endif
 	._rwnx_tpc_get_pwridx_by_rate = rwnx_tpc_get_pwridx_by_rate,
-	._rwnx_is_enable_pwr_change_by_rssi = rwnx_is_enable_pwr_change_by_rssi,
+	._rwnx_is_enable_pwr_change_by_rssi = bk_feature_update_power_with_rssi_wrapper,
 	._tpc_auto_change_pwr_by_rssi = tpc_auto_change_pwr_by_rssi,
 	._rwnx_setting_for_single_rate = rwnx_setting_for_single_rate,
 	//._delay05us = delay05us,
@@ -1648,6 +1657,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._bk_feature_config_wrls_pwd_enable = bk_feature_wrls_pwd_enable_wrapper,
 	._bk_feature_config_cpu_pwd_enable = bk_feature_cpu_pwd_enable_wrapper,
 	._bk_feature_config_mac_use_rtc_enable = bk_feature_mac_use_rtc_enable_wrapper,
+	._bk_feature_config_bk7239n_mp_enable = bk_feature_bk7239n_mp_enable_wrapper,
 	._cli_printf = cli_printf,
 	._rf_force_set_wifi_mode = rf_force_set_wifi_mode_wrapper,
 	._bk_feature_change_to_wifi_pll_enable = bk_feature_change_to_wifi_pll_enable_wrapper,

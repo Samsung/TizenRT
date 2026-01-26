@@ -3,6 +3,33 @@
 #include <tinyara/net/if/ble.h>
 #include <stdint.h>
 
+//see rtk_bt_le_coc_param_type_t
+typedef enum
+{
+    BK_LE_COC_CHAN_PARAM_LOCAL_MTU     = 0x1,
+} bk_le_coc_param_type_t;
+
+//see rtk_bt_le_coc_chan_param_type_t
+typedef enum
+{
+    BK_LE_COC_CHAN_PARAM_CUR_CREDITS   = 0x0,
+    BK_LE_COC_CHAN_PARAM_MAX_CREDITS   = 0x1,
+    BK_LE_COC_CHAN_PARAM_MTU           = 0x2,
+} bk_le_coc_chan_param_type_t;
+
+//see rtk_bt_le_coc_security_mode_t
+typedef enum
+{
+    BK_LE_COC_SEC_NONE,                 /**< Security None */
+    BK_LE_COC_SEC_UNAUTHEN_ENCRYPT,     /**< Security unauthenticated encryption */
+    BK_LE_COC_SEC_AUTHEN_ENCRYPT,       /**< Security authenticated encryption */
+    BK_LE_COC_SEC_UNAUTHEN_DATA_SIGN,   /**< Security unauthenticated data signed */
+    BK_LE_COC_SEC_AUTHEN_DATA_SIGN,     /**< Security authenticated data signed */
+    BK_LE_COC_SEC_AUTHOR,               /**< Security authorized */
+    BK_LE_COC_SEC_SECURE_CONN_UNAUTHEN, /**< Security unauthenticated LE secure connection */
+    BK_LE_COC_SEC_SECURE_CONN_AUTHEN,   /**< Security LE secure connection */
+} bk_le_coc_security_mode_t;
+
 /**
  * @brief Initialize common BLE coc components
  *
@@ -63,13 +90,13 @@ int32_t bk_tr_ble_coc_register_psm(uint8_t is_reg, uint16_t psm);
  *
  * @param[in] le_psm The PSM value to configure security for
  * @param[in] active Enable/disable security: 1 to enable, 0 to disable
- * @param[in] sec_mode Security mode (encryption/authentication requirements)
+ * @param[in] sec_mode Security mode
  * @param[in] key_size Encryption key size in bytes
  * @return int32_t Operation status
  * @retval BT_SUCCESS On successful configuration
  * @retval Negative error code On failure
  */
-int32_t bk_tr_ble_coc_set_psm_security(uint16_t le_psm, uint8_t active, uint8_t sec_mode, uint8_t key_size);
+int32_t bk_tr_ble_coc_set_psm_security(uint16_t le_psm, uint8_t active, bk_le_coc_security_mode_t sec_mode, uint8_t key_size);
 
 /**
  * @brief Set COC parameter value
@@ -77,11 +104,12 @@ int32_t bk_tr_ble_coc_set_psm_security(uint16_t le_psm, uint8_t active, uint8_t 
  * Sets a general parameter value for the COC subsystem.
  *
  * @param[in] value The parameter value to set
+ * @param[in] type The parameter type to set
  * @return int32_t Operation status
  * @retval BT_SUCCESS On successful parameter setting
  * @retval Negative error code On failure
  */
-int32_t bk_tr_ble_coc_set_param(uint16_t value);
+int32_t bk_tr_ble_coc_set_param(bk_le_coc_param_type_t type, uint16_t value);
 
 /**
  * @brief Get COC parameter value
@@ -96,7 +124,7 @@ int32_t bk_tr_ble_coc_set_param(uint16_t value);
  * @retval BT_SUCCESS On successful retrieval
  * @retval Negative error code On failure
  */
-int32_t bk_tr_ble_coc_get_param(uint8_t param_type, uint16_t cid, uint16_t *value);
+int32_t bk_tr_ble_coc_chan_get_param(uint16_t conn_handle, bk_le_coc_chan_param_type_t param_type, uint16_t cid, uint16_t *value);
 
 /**
  * @brief Establish a COC connection

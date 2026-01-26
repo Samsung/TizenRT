@@ -1,7 +1,0 @@
-{
-    "bootloader.bin":["bl1_control", "boot_flag", "partition", "primary_manifest", "bl2"],
-    "bootloader_B.bin":["bl1_control", "boot_flag", "secondary_manifest", "bl2_B"],
-    "all-app.bin":["partition", "primary_all"],
-    "ota.bin":["primary_all"],
-    "bootloader_ota.bin":["bl1_control", "partition", "primary_manifest", "secondary_manifest", "bl2", "bl2_B"]
-}

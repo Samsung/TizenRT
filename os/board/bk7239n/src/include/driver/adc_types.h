@@ -39,6 +39,7 @@ extern "C" {
 #define BK_ERR_ADC_INSUFFICIENT_MEM      (BK_ERR_ADC_BASE - 11) /**< ADC out of memory */
 #define BK_ERR_ADC_DEINIT_MUTEX          (BK_ERR_ADC_BASE - 12) /**< ADC mutex deinit failed */
 #define BK_ERR_ADC_DEINIT_READ_SEMA      (BK_ERR_ADC_BASE - 13) /**< ADC read sync deinit failed */
+#define BK_ERR_ADC_DPLL_NOT_SUPPORTED    (BK_ERR_ADC_BASE - 14) /**< ADC DPLL clock source not supported */
 
 #ifndef CONFIG_ADC_BUF_SIZE
 #define CONFIG_ADC_BUF_SIZE              32

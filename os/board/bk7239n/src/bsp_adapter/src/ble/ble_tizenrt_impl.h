@@ -392,7 +392,7 @@ typedef struct ble_cmd_msg
 
 #define BLE_HAL_FILTER_DUPLICATES_MAX   500
 
-#define BLE_ADV_MAX_COUNT 5
+#define BLE_ADV_MAX_COUNT 6
 #define BLE_STATIC_ADV_INDEX 0
 #define BLE_ONTSHOT_MAX_STATIC_PARAM_COUNT 2
 

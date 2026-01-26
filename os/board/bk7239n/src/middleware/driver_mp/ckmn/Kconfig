@@ -1,0 +1,11 @@
+menu "CKMN"
+	config CKMN
+		bool "Enable CKMN"
+		default n
+
+	config CKMN_TEST
+		depends on CKMN && DRIVER_TEST
+		bool "Enable ckmn test"
+		default n
+endmenu
+

@@ -366,12 +366,12 @@ static const uint32_t RCON[10] =
 static unsigned char FSb[256];
 #endif /* !defined(MBEDTLS_AES_ENCRYPT_ALT) || !defined(MBEDTLS_AES_SETKEY_ENC_ALT) || \
           !defined(MBEDTLS_AES_SETKEY_DEC_ALT) */
-#if !defined(MBEDTLS_AES_ENCRYPT_ALT) || !defined(MBEDTLS_AES_SETKEY_ENC_ALT)
-static uint32_t FT0[256];
+#if !defined(MBEDTLS_AES_ENCRYPT_ALT) || !defined(MBEDTLS_AES_SETKEY_ENC_ALT) 
+__PSRAM_BSS static uint32_t FT0[256];
 #if !defined(MBEDTLS_AES_FEWER_TABLES)
-static uint32_t FT1[256];
-static uint32_t FT2[256];
-static uint32_t FT3[256];
+__PSRAM_BSS static uint32_t FT1[256];
+__PSRAM_BSS static uint32_t FT2[256];
+__PSRAM_BSS static uint32_t FT3[256];
 #endif /* !MBEDTLS_AES_FEWER_TABLES */
 #endif /* !defined(MBEDTLS_AES_ENCRYPT_ALT) || !defined(MBEDTLS_AES_SETKEY_ENC_ALT) */
 
@@ -379,15 +379,15 @@ static uint32_t FT3[256];
  * Reverse S-box & tables
  */
 #if !(defined(MBEDTLS_AES_SETKEY_ENC_ALT) && defined(MBEDTLS_AES_DECRYPT_ALT))
-static unsigned char RSb[256];
+__PSRAM_BSS static unsigned char RSb[256];
 #endif /* !(defined(MBEDTLS_AES_SETKEY_ENC_ALT) && defined(MBEDTLS_AES_DECRYPT_ALT)) */
 
 #if !defined(MBEDTLS_AES_DECRYPT_ALT) || !defined(MBEDTLS_AES_SETKEY_DEC_ALT)
-static uint32_t RT0[256];
+__PSRAM_BSS static uint32_t RT0[256];
 #if !defined(MBEDTLS_AES_FEWER_TABLES)
-static uint32_t RT1[256];
-static uint32_t RT2[256];
-static uint32_t RT3[256];
+__PSRAM_BSS static uint32_t RT1[256];
+__PSRAM_BSS static uint32_t RT2[256];
+__PSRAM_BSS static uint32_t RT3[256];
 #endif /* !MBEDTLS_AES_FEWER_TABLES */
 #endif /* !defined(MBEDTLS_AES_DECRYPT_ALT) || !defined(MBEDTLS_AES_SETKEY_DEC_ALT) */
 
@@ -395,7 +395,7 @@ static uint32_t RT3[256];
 /*
  * Round constants
  */
-static uint32_t RCON[10];
+__PSRAM_BSS static uint32_t RCON[10];
 
 /*
  * Tables generation code

@@ -1,0 +1,76 @@
+menu "ETH"
+	config ETH
+		bool "Enable Ethernet"
+		default n
+
+	choice ETH_PIN_GROUP
+		prompt "Ethernet PIN Group"
+		default ETH_PIN_GROUP0
+
+		config ETH_PIN_GROUP0
+			bool "Ethernet PIN Group (27, 29-39)"
+			help
+				Ethernet uses pin 27,29-39. Conflicts with DVP.
+		config ETH_PIN_GROUP1
+			bool "Ethernet PIN Group (46-55)"
+			help
+				Ethernet uses pin 46-55, Conflicts with LCD.
+	endchoice
+
+	config ETH_PTP
+		bool "Support PTP"
+		default n
+		help
+			Support 1588-2008 PTP.
+
+	config ETH_VLAN
+		bool "Support VLAN"
+		default n
+
+	config ETH_LPI
+		bool "Support ETH LPI"
+		default n
+		help
+			ETH Low Power IDLE Support, Current HW doesn't support on BK7236/BK7258.
+
+	config ETH_EEE
+		bool "ETH WoL"
+		default n
+		help
+			ETH Wake over LAN Support.
+
+	config ETH_REGISTER_CALLBACKS
+		bool "ETH Use register callbacks"
+		default n
+
+	config ETH_TSO
+		bool "TCP Segment Offload"
+		default n
+
+	config ETH_CSUM_OFFLOAD
+		bool "IP/TCP/UDP/ICMP Checksum offload"
+		default y
+	
+	config ETH_DHCP
+		depends on ETH
+		bool "ETH use dhcp or static"
+		default y
+
+	config ETH_PM_CB_SUPPORT
+		bool "enable PM module enter/exit low voltage callback support"
+		default n
+
+	config PHY_SMSC
+		bool "SMSC 100M PHY support"
+		default y
+
+	config PHY_MICREL_KSZ90X1
+		bool "SMSC 1000M PHY support"
+		default n
+
+	config PHY_REALTEK
+		bool "Realtek PHY Support"
+		default n
+
+endmenu
+

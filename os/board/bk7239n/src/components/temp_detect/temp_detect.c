@@ -37,6 +37,9 @@
 
 #include "drv_model.h"
 #include "sys_driver.h"
+#if CONFIG_FLASH_ORIGIN_API
+#include "flash.h"
+#endif
 #include <modules/pm.h>
 #include <driver/aon_rtc.h>
 
@@ -338,7 +341,7 @@ int temp_detect_start(void)
 }
 
 #if TEMP_DETECT_ONESHOT_TIMER
-static void temp_detect_oneshot_timer_handler(void *data1, void *data2)
+__IRAM_SEC static void temp_detect_oneshot_timer_handler(void *data1, void *data2)
 {
 	bk_sensor_send_msg(TMPD_TIMER_EXPIRED);
 	bk_sensor_send_msg(TMPD_RESTART_TIMER);

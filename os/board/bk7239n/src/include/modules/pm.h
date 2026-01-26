@@ -15,6 +15,9 @@ extern "C" {
 #define PM_BT_RTC_ALARM_NAME      "bk_bt"
 #define PM_APP_RTC_ALARM_NAME     "bk_app"
 
+#define portSVC_DEEP_LV_ENTER      (0x0D)
+#define portSVC_DEEP_LV_EXIT       (0x0E)
+
 /**
  * Sleep callback function type
  *

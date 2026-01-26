@@ -1,0 +1,52 @@
+menu "AON_RTC"
+	config AON_RTC
+		bool "Enable AON_RTC"
+		default n
+
+	config ANA_RTC
+		bool "Enable ANA_RTC to replace AON_RTC"
+		default n
+
+	config ANA_RTC_SUPPORT_64BIT
+		bool "Enable ANA_RTC to spport 64 bit"
+		default n
+	config ANA_RTC_WAKUP_BY_RTC
+		bool "Enable ana rtc to wakeup sleep, else enable ana timer to wakeup sleep"
+		default n
+
+	config ANA_RTC_DEBUG
+		bool "Enable ANA_RTC debug"
+		default n
+
+	config AON_RTC_64BIT
+		bool "Enable AON_RTC_64BIT"
+		default n
+
+	config AON_RTC_MANY_USERS
+		bool "Enable AON_RTC support many users"
+		default n
+
+	config AON_RTC_TEST
+		bool "Enable AON_RTC Test,F.E:Command line test"
+		default n
+
+	config AON_RTC_DEBUG
+		bool "Enable AON_RTC Debug"
+		default n
+
+	config AON_RTC_KEEP_TIME_SUPPORT
+		bool "Enable rtc keep time when enter deepsleep,set data on flash"
+		default n
+
+	config RTC_ANA_WAKEUP_SUPPORT
+		bool "Enable RTC wakeup system from analog channel"
+		default n
+		help
+			This is for super deep sleep
+
+	config AON_RTC_DYNAMIC_CLOCK_SUPPORT
+		bool "Enable AON RTC dynamic clock"
+		default n
+
+endmenu
+

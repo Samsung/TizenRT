@@ -34,10 +34,10 @@ extern int armino_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key
 
 static void cli_sec_help(void)
 {
-	CLI_LOGI("sec cert_write  {index} {size} {hex_data} - Write certificate to secure storage\r\n");
+	CLI_LOGI("sec cert_write  {index} - Write certificate to secure storage\r\n");
 	CLI_LOGI("sec cert_read   {index} - Read certificate from secure storage\r\n");
 	CLI_LOGI("sec cert_delete {index} - Delete certificate from secure storage\r\n");
-	CLI_LOGI("sec data_write  {index} {size} {hex_data} - Write data to secure storage\r\n");
+	CLI_LOGI("sec data_write  {index} - Write data to secure storage\r\n");
 	CLI_LOGI("sec data_read   {index} - Read data from secure storage\r\n");
 	CLI_LOGI("sec data_delete {index} - Delete data from secure storage\r\n");
 	CLI_LOGI("sec key_read    {mode} {index} - Read key from secure storage\r\n");
@@ -55,7 +55,7 @@ void sec_ss_data_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, cha
 	hal_data data_out = {0};
 
 	if (os_strcmp(argv[1], "write") == 0) {
-		CLI_RET_ON_INVALID_ARGC(argc, 5);
+		CLI_RET_ON_INVALID_ARGC(argc, 4);
 		uint32_t index = os_strtoul(argv[2], NULL, 10);
 		uint32_t size = os_strtoul(argv[3], NULL, 10);
 		data = (uint8_t *)os_malloc(size);
@@ -63,8 +63,9 @@ void sec_ss_data_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, cha
 			CLI_LOGE("Failed to allocate memory for data\r\n");
 			return;
 		}
-		os_memset(data, 0, size);
-		hexstr2bin(argv[4], data, size);
+		for (uint32_t i = 0; i < size; i++) {
+			data[i] = i % 0x100;
+		}
 		CLI_LOGI("Writing data to index %u, size %u\r\n", index, size);
 		data_in.data = data;
 		data_in.data_len = size;
@@ -94,6 +95,7 @@ void sec_ss_data_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, cha
 			data = NULL;
 			return;
 		} else {
+			size = data_out.data_len;
 			CLI_LOGI("Data read successfully, length = %u\r\n", size);
 			CLI_LOGI("Data (hex):\r\n");
 			for (uint32_t i = 0; i < size; i++) {
@@ -119,6 +121,43 @@ void sec_ss_data_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, cha
 	}
 }
 
+#define TEST_CA_CRT_RSA_SHA256_PEM                                         \
+    "-----BEGIN CERTIFICATE-----\r\n"                                      \
+    "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\r\n" \
+    "-----END CERTIFICATE-----\r\n"                                        \
+
+static const char test_cas_pem[] =
+    TEST_CA_CRT_RSA_SHA256_PEM
+    "";
+
 void sec_ss_cert_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
 {
 	if (argc < 2) {
@@ -131,9 +170,9 @@ void sec_ss_cert_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, cha
 	hal_data cert_out = {0};
 
 	if (os_strcmp(argv[1], "write") == 0) {
-		CLI_RET_ON_INVALID_ARGC(argc, 5);
+		CLI_RET_ON_INVALID_ARGC(argc, 3);
 		uint32_t index = os_strtoul(argv[2], NULL, 10);
-		uint32_t size = os_strtoul(argv[3], NULL, 10);
+		uint32_t size = sizeof(test_cas_pem);
 		CLI_LOGI("Writing data to index %d, size %d\r\n", index, size);
 		data = (uint8_t *)os_malloc(size);
 		if (data == NULL) {
@@ -141,7 +180,7 @@ void sec_ss_cert_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, cha
 			return;
 		}
 		os_memset(data, 0, size);
-		hexstr2bin(argv[4], data, size);
+		os_memcpy(data, test_cas_pem, size);
 		cert_in.data = data;
 		cert_in.data_len = size;
 		ret = armino_hal_set_certificate(index, &cert_in);
@@ -172,10 +211,11 @@ void sec_ss_cert_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, cha
 			data = NULL;
 			return;
 		} else {
+			size = cert_out.data_len;
 			CLI_LOGI("Certificate read successfully, length = %u\r\n", size);
 			CLI_LOGI("Certificate (hex):\r\n");
 			for (uint32_t i = 0; i < size; i++) {
-				CLI_LOGI("%02x", data[i]);
+				CLI_LOGI("%c", data[i]);
 			}
 			CLI_LOGI("\r\n");
 			os_free(data);

@@ -1,0 +1,15 @@
+menu "PHY"
+	#TODO is here the right place to put CONFIG_PTA?
+	config PTA
+		bool "Enable PTA"
+		default n
+
+	config ATE_TEST
+		bool "Enable ATE Test"
+		default n
+
+	config MAC_PHY_BYPASS
+		bool "Enable MAC/PHY by pass mode"
+		default y
+endmenu
+
