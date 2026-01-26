@@ -631,6 +631,7 @@ int ble_rmc_main(int argc, char *argv[])
 
 	if (strncmp(argv[1], "deinit", 7) == 0) {
 		ret = ble_manager_deinit();
+		ctx_count = 0;
 		RMC_LOG(RMC_CLIENT_TAG, "deinit done[%d]\n", ret);
 	}
 
