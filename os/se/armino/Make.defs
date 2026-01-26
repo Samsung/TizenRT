@@ -23,11 +23,17 @@ SE_PATH = armino
 SE_CSRCS += security_armino_wrapper_tz.c
 SE_CSRCS += armino_adapter_common.c
 
+ifeq ($(CONFIG_XIP_KERNEL), y)
+tfm_firmware_dir_name := tfm_xip_build
+else
+tfm_firmware_dir_name := tfm_loadable_build
+endif
+
 ifneq ($(wildcard $(TOPDIR)/board/bk7239n/src/components/tfm/tfm/CMakeLists.txt),)
 CFLAGS += -I$(TOPDIR)/board/bk7239n/src/components/tfm/tfm/interface/include
 CFLAGS += -I$(TOPDIR)/board/bk7239n/src/components/tfm/tfm/platform/ext/target/beken/armino/include
 else
-CFLAGS += -I$(TOPDIR)/board/bk7239n/src/components/tfm/tfm_build/tfm_install/interface/include
+CFLAGS += -I$(TOPDIR)/board/bk7239n/src/components/tfm/$(tfm_firmware_dir_name)/tfm_install/interface/include
 endif
 CFLAGS += -I$(TOPDIR)/se/armino/include
 CFLAGS += -I$(TOPDIR)/board/bk7239n/src/include

@@ -135,3 +135,4 @@ config SAVE_BIN_SECTION_ADDR
 		For debugging binary symbol, save the each section address.
 
 endif # BINFMT_ENABLE
+

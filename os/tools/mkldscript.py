@@ -28,6 +28,10 @@ tool_folder = os_folder + '/tools'
 build_folder = os_folder + '/../build'
 output_folder = build_folder + '/output/bin/'
 
+# Create output directory if it doesnt exist
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
+
 CONFIG_ARCH_BOARD = util.get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").rstrip('\n')
 CONFIG_TRPK_CONTAINS_MULTIPLE_BINARY = util.get_value_from_file(cfg_file, "CONFIG_TRPK_CONTAINS_MULTIPLE_BINARY=").rstrip('\n')
 # Get flash virtual remapped address instead of physical address
@@ -36,14 +40,24 @@ CONFIG_FLASH_VSTART_LOADABLE = util.get_value_from_file(cfg_file, "CONFIG_FLASH_
 # Dynamically get the offset from Kernel TRPK binary file
 # Chip specific should implement the logic for offset calculation according to trpk file content
 offset = 0
+loadable_start_offset = 0  # Starting offset for loadable apps (common, app1, app2)
 if CONFIG_TRPK_CONTAINS_MULTIPLE_BINARY == "y":
     if CONFIG_ARCH_BOARD[1:-1] == "rtl8730e":
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../build/tools/amebasmart/gnu_utility')))
         from loadable_xip_elf import get_offset
         offset_shift = get_offset()
         offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16) - int(offset_shift, 16)
+        loadable_start_offset = offset
+    elif CONFIG_ARCH_BOARD[1:-1] == "bk7239n":
+        loadable_start_offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
+        offset = loadable_start_offset
+    else:
+        # For other boards, use CONFIG_FLASH_VSTART_LOADABLE directly
+        loadable_start_offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
+        offset = loadable_start_offset
 else:
-    offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
+    loadable_start_offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
+    offset = loadable_start_offset
 
 PART_IDX = 0
 
@@ -123,28 +137,89 @@ if CONFIG_USER_SIGN_PREPEND_SIZE == 'None' :
 else :
     signing_offset = int(CONFIG_USER_SIGN_PREPEND_SIZE)
 
+count = 0
+countapp2 = 0
+countapp1 = 0
+countcommon = 0
+
+# Track if we've encountered the first loadable partition (for bk7239n offset reset)
+first_loadable_encountered = False
+
 for name in NAME_LIST :
+    count += 1
     part_size = int(SIZE_LIST[PART_IDX]) * 1024
     if name == "kernel" :
         ota_index = (ota_index + 1) % 2
     elif name == "app1" :
+        ota_index = (ota_index + 1) % 2
+        # For bk7239n, ensure offset is set correctly for first app1
+        board_name = CONFIG_ARCH_BOARD[1:-1]
+        if board_name == "bk7239n" and not first_loadable_encountered:
+            offset = loadable_start_offset
+            first_loadable_encountered = True
         app1_start = hex(offset + 0x30 + signing_offset)
         app1_size = hex(part_size - 0x30 - signing_offset)
-        ld_scripts[ota_index][1] = ld_scripts[ota_index][1] + app1_start + str1 + app1_size + str2 + app1_ram_str
-        with open(output_folder + "app1_" + str(ota_index) + ".ld", "w") as ld :
-            ld.write(ld_scripts[ota_index][1])
+        countapp1 += 1
+        # Generate app1_0.ld for first app1 partition, app1_1.ld for second app1 partition
+        # countapp1: 1 -> ota_idx 0, 2 -> ota_idx 1
+        app1_ota_idx = (countapp1 - 1) % 2
+        ld_script_content = "/* Auto-generated ld script */\nMEMORY\n"
+        ld_script_content += "{\n   uflash (rx)      : ORIGIN = "
+        ld_script_content += app1_start + str1 + app1_size + str2 + app1_ram_str
+        with open(output_folder + "app1_" + str(app1_ota_idx) + ".ld", "w") as ld :
+            print("OTA index in app1 ", app1_ota_idx)
+            ld.write(ld_script_content)
     elif name == "app2" :
+        ota_index = (ota_index + 1) % 2
+        # For bk7239n, ensure offset is set correctly for first app2
+        board_name = CONFIG_ARCH_BOARD[1:-1]
+        if board_name == "bk7239n" and not first_loadable_encountered:
+            offset = loadable_start_offset
+            first_loadable_encountered = True
         app2_start = hex(offset + 0x30 + signing_offset)
         app2_size = hex(part_size - 0x30 - signing_offset)
-        ld_scripts[ota_index][2] = ld_scripts[ota_index][2] + app2_start + str1 + app2_size + str2 + app2_ram_str
-        with open(output_folder + "app2_" + str(ota_index) + ".ld", "w") as ld :
-            ld.write(ld_scripts[ota_index][2])
+        countapp2 += 1
+        # Generate app2_0.ld for first app2 partition, app2_1.ld for second app2 partition
+        # countapp2: 1 -> ota_idx 0, 2 -> ota_idx 1
+        app2_ota_idx = (countapp2 - 1) % 2
+        ld_script_content = "/* Auto-generated ld script */\nMEMORY\n"
+        ld_script_content += "{\n   uflash (rx)      : ORIGIN = "
+        ld_script_content += app2_start + str1 + app2_size + str2 + app2_ram_str
+        with open(output_folder + "app2_" + str(app2_ota_idx) + ".ld", "w") as ld :
+            print("OTA index in app2 ", app2_ota_idx)
+            ld.write(ld_script_content)
     elif name == "common" :
-        common_start = hex(offset + 0x10 + signing_offset)
-        common_size = hex(part_size - 0x10 - signing_offset)
-        ld_scripts[ota_index][0] = ld_scripts[ota_index][0] + common_start + str1 + common_size + str2 + common_ram_str
-        with open(output_folder + "common_" + str(ota_index) + ".ld", "w") as ld :
-            ld.write(ld_scripts[ota_index][0])
+        # Track which common partition instance we're processing
+        # The first common should map to OTA index 0, second to OTA index 1
+        common_ota_idx = countcommon % 2
+        countcommon += 1
+        if CONFIG_SUPPORT_COMMON_BINARY == 'y' :
+            print("*** Making common (OTA index: " + str(common_ota_idx) + ")")
+            # For bk7239n, reset offset to loadable_start_offset when encountering first loadable partition
+            board_name = CONFIG_ARCH_BOARD[1:-1]
+            if board_name == "bk7239n" and not first_loadable_encountered:
+                offset = loadable_start_offset
+                first_loadable_encountered = True
+            common_start = hex(offset + 0x10 + signing_offset)
+            common_size = hex(part_size - 0x10 - signing_offset)
+            # Generate link script for this specific OTA index only
+            ld_script_content = "/* Auto-generated ld script */\nMEMORY\n"
+            ld_script_content += "{\n   uflash (rx)      : ORIGIN = "
+            ld_script_content += common_start + str1 + common_size + str2 + common_ram_str
+            with open(output_folder + "common_" + str(common_ota_idx) + ".ld", "w") as ld :
+                ld.write(ld_script_content)
+        else:
+            # Even if common binary is not supported, still generate link scripts
+            # to avoid linker errors when apps reference common_0.ld
+            common_start = hex(offset + 0x10 + signing_offset)
+            common_size = hex(part_size - 0x10 - signing_offset)
+            # Generate minimal link script for this specific OTA index only
+            ld_script_content = "/* Auto-generated ld script (common binary not supported) */\nMEMORY\n"
+            ld_script_content += "{\n   uflash (rx)      : ORIGIN = "
+            ld_script_content += common_start + str1 + common_size
+            ld_script_content += "\n   usram (rwx)      : ORIGIN = 0x0, LENGTH = 0x0\n}\n"
+            with open(output_folder + "common_" + str(common_ota_idx) + ".ld", "w") as ld :
+                ld.write(ld_script_content)
     else:
         PART_IDX = PART_IDX + 1
         continue

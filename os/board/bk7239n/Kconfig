@@ -34,12 +34,53 @@ source "board/bk7239n/src/libs/Kconfig"
 
 
 menu "SPI Flash driver"
+config DUMMY_FS_BIN
+	bool "Generate a dummy filesystem bin (all 0xFF)"
+	default n
+	help
+		Enable this option to generate a filesystem bin filled entirely with 0xFF bytes
+		during the bin packing process. Useful for placeholder or empty filesystem images.
+
+config FLASH_VSTART
+    hex
+    default 0x12000000
+    help
+        A start virtual address of flash (in hex).
+        This is fixed value, so user doesn't need to change it.
+	Keep this value same as FLASH_START_ADDR.
+
 config FLASH_START_ADDR
     hex "FLASH_START_ADDR"
     default 0x0
     help
         A start address of flash (in hex).
         This is fixed value, so user doesn't need to change it.
+
+config FLASH_VSTART_LOADABLE
+    hex
+    default 0x123CC000
+    depends on XIP_ELF
+    help
+        A start virtual address of flash (in hex). This macro
+        will be used to do address remapping for loadable running on XIP.
+        This value should be set to the virtual flash address where loadable
+        apps (common, app1, app2) start, typically after the kernel partition.
+        For bk7239n, this is typically 0x123CC000.
+
+config TRPK_CONTAINS_MULTIPLE_BINARY
+    bool
+    default y
+    depends on XIP_ELF
+    help
+        This macro is to differentiate whether the kernel trpk contains
+        more than 1 binary. If yes, we have to recalculate the offset
+        according to the binary that is running on Tizen Lite, to make
+        sure the loadable_apps for XIP_ELF is placed to the correct
+        virtual flash address (ie. Only Loadable_apps with running on
+        XIP is needed, because the core has to know where to execute
+        from the correct remapped address)
+        This macro is not needed for flat configs, due to the kernel 
+        binaries remapping will be handled by the bootloader.
 
 config FLASH_SIZE
     int "FLASH_SIZE"

@@ -507,11 +507,12 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 #endif
 			/* Copy the MPU register values from parent to child task */
 #ifdef CONFIG_ARM_MPU
-			int i = 0;
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-			for (; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER)
-#endif
-			{
+			/* Copy NUM_APP_REGIONS MPU regions:
+			 * - 1 region for normal ELF (NUM_APP_REGIONS=1)
+			 * - 2 regions for XIP_ELF (NUM_APP_REGIONS=2)
+			 * - 3 regions for OPTIMIZE_APP_RELOAD_TIME (NUM_APP_REGIONS=3)
+			 */
+			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
 				tcb->mpu_regs[i + MPU_REG_RNR] = rtcb->mpu_regs[i + MPU_REG_RNR];
 				tcb->mpu_regs[i + MPU_REG_RBAR] = rtcb->mpu_regs[i + MPU_REG_RBAR];
 				tcb->mpu_regs[i + MPU_REG_RASR] = rtcb->mpu_regs[i + MPU_REG_RASR];

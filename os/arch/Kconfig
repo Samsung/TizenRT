@@ -794,6 +794,12 @@ config BOOT_COPYTORAM
 		Some configurations boot in FLASH but copy themselves entirely into
 		RAM for better performance.
 
+config XIP_KERNEL
+	bool "Enable XIP execute for kernel"
+	default y
+	---help---
+		Enable support for kernel to xip execute. 
+
 endchoice
 
 menu "Boot Memory Configuration"
