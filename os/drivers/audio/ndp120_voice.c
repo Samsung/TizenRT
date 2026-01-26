@@ -935,7 +935,7 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	int retry = NDP120_INIT_RETRY_COUNT;
 	while (retry--) {
 		lower->reset();
-		ret = ndp120_init(priv, false);
+		ret = ndp120_init(priv);
 		if (ret != SYNTIANT_NDP_ERROR_NONE) {
 			auddbg("ndp120 init failed\n");
 			ret = -EIO;
