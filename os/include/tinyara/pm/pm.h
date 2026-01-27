@@ -337,6 +337,22 @@ void pm_driver_register(void);
 void pm_start(void);
 
 /****************************************************************************
+ * Name: pm_stop
+ *
+ * Description:
+ *   This function is called by the application thread to stop the Power
+ *   Management system. This function clears the is_running flag which
+ *   disables pm to transition between low and high power states.
+ *
+ * Input parameters:
+ *   None.
+ *
+ * Returned value:
+ *    None.
+ ****************************************************************************/
+void pm_stop(void);
+
+/****************************************************************************
  * Name: pm_initialize
  *
  * Description:
@@ -638,6 +654,7 @@ int pm_metrics(int milliseconds);
  */
 
 #define pm_start()
+#define pm_stop()
 #define pm_initialize(sleep_ops)      (0)
 #define pm_register(cb)         (0)
 #define pm_unregister(cb)       (0)
