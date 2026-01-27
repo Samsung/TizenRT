@@ -102,12 +102,22 @@ typedef enum sem_status_s sem_status_t;
 
 struct sysdbg_s {
 #ifdef CONFIG_TASK_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	sched_history_t *sched[CONFIG_SMP_NCPUS];
+	int task_lastindex[CONFIG_SMP_NCPUS];
+#else
 	sched_history_t *sched;
 	int task_lastindex;
 #endif
+#endif
 #ifdef CONFIG_IRQ_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	irq_history_t *irq[CONFIG_SMP_NCPUS];
+	int irq_lastindex[CONFIG_SMP_NCPUS];
+#else
 	irq_history_t *irq;
 	int irq_lastindex;
+#endif
 #endif
 #ifdef CONFIG_SEMAPHORE_HISTORY
 	sem_history_t *sem_log;
