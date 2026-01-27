@@ -95,7 +95,8 @@ def print_symbol(stack_addr, search_addr, is_app_symbol, bin_path, app_name):
 				if (is_app_symbol):
 					sname = (asymbol_lookup_table[is_app_symbol][mid - 1][1])
 					fname = subprocess.getoutput("arm-none-eabi-addr2line -e " + bin_path + app_name[is_app_symbol - 1] + "_dbg " + hex(search_addr))
-					print("{:8}\t {:8}\t {} binary    {: <45}  {}".format(hex(stack_addr), hex(search_addr), app_name[is_app_symbol - 1],  (sname[:20] + "..." + sname[-20:]) if len(sname) > 40 else sname, "File not found" if ":?" in fname else fname))
+					if not ('??:' in fname):
+						print("{:8}\t {:8}\t {} binary    {: <45}  {}".format(hex(stack_addr), hex(search_addr), app_name[is_app_symbol - 1],  (sname[:20] + "..." + sname[-20:]) if len(sname) > 40 else sname, "File not found" if "*?" in fname else fname))
 				else:
 					sname = (ksymbol_lookup_table[mid - 1][1])
 					fname = subprocess.getoutput("arm-none-eabi-addr2line -e " + bin_path + "tinyara.axf " + hex(search_addr))
