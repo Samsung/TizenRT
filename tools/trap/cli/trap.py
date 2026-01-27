@@ -98,7 +98,7 @@ def print_trap_output_header(lparser):
 		print('Number of binary            : 1 [kernel]')
 	print('"kernel" elf_file           :', lparser.elf)
 	for app_idx in range(lparser.g_app_idx):
-		print('"app%d" elf_file             :' % (app_idx + 1), lparser.bin_path + lparser.app_name[app_idx] + '_dbg ')
+		print('"' + lparser.app_name[app_idx] + '"', 'elf_file            :', lparser.bin_path + lparser.app_name[app_idx] + '_dbg ')
 	print('*************************************************************')
 	print('')
 
