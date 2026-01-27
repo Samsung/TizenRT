@@ -78,6 +78,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   PMIOC_SUSPEND_COUNT - to get suspend count of pm domain
  *   PMIOC_START - to start PM functionality to make board sleep
  *   PMIOC_STOP - to stop PM functionality to prevent board sleep
+ *   PMIOC_GET_STATUS - to get PM running status (0 = stopped, 1 = running)
  * 
  * Arguments:
  *   filep is ioctl fd, cmd is required command, arg is required argument for
@@ -92,6 +93,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   for PMIOC_SUSPEND_COUNT, arg should be an int type.
  *   for PMIOC_START, arg should be NULL
  *   for PMIOC_STOP, arg should be NULL
+ *   for PMIOC_GET_STATUS, arg should be NULL
  *
  * Description:
  *   This api can be used to perform PM operation.
@@ -109,6 +111,7 @@ static ssize_t pm_write(FAR struct file *filep, FAR const char *buffer, size_t l
  *   PMIOC_SUSPEND_COUNT     -   return non-negative suspend count of domain
  *   PMIOC_START             -   return OK
  *   PMIOC_STOP              -   return OK
+ *   PMIOC_GET_STATUS        -   return 0 (PM stopped) or 1 (PM running)
  *
  ************************************************************************************/
 static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
@@ -157,6 +160,9 @@ static int pm_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	case PMIOC_STOP:
 		pm_stop();
 		ret = OK;
+		break;
+	case PMIOC_GET_STATUS:
+		ret = pm_getstatus();
 		break;
 	case PMIOC_SUSPEND_COUNT:
 		ret = pm_suspendcount((struct pm_domain_s *)arg);
