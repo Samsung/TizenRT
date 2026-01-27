@@ -173,6 +173,14 @@ static void xtensa_assert(int errorcode)
 /****************************************************************************
  * Name: up_assert
  ****************************************************************************/
+void copy_string_from_userspace(const char *fmt, ...)
+{
+        va_list args;
+        va_start(args, fmt);
+        vsnprintf(assert_info_str, CONFIG_STDIO_BUFFER_SIZE, fmt, args);
+        va_end(args);
+        return;
+}
 
 void up_assert(const uint8_t *filename, int lineno)
 {
