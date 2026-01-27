@@ -101,7 +101,30 @@ const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "L
 
 void pm_start(void)
 {
+	pm_lock();
 	g_pmglobals.is_running = true;
+	pm_unlock();
+}
+
+/****************************************************************************
+ * Name: pm_stop
+ *
+ * Description:
+ *   This function is called by the application thread to stop the Power
+ *   Management system. This function clears the is_running flag which
+ *   disables pm to transition between low and high power states.
+ *
+ * Input parameters:
+ *   None.
+ *
+ * Returned value:
+ *    None.
+ ****************************************************************************/
+void pm_stop(void)
+{
+	pm_lock();
+	g_pmglobals.is_running = false;
+	pm_unlock();
 }
 
 /****************************************************************************
