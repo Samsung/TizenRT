@@ -68,13 +68,37 @@ endif
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 ifneq ($(CONFIG_APP2_BIN_NAME),)
 
+BUILDDIR = build
 BIN = $(CONFIG_APP2_BIN_NAME)
 
 include $(TOPDIR)/$(LOADABLEDIR)/loadable.mk
 
+$(BUILDDIR):
+	$(Q) mkdir -p $(BUILDDIR)
+
+.PHONY: move_to_build
+move_to_build: $(BIN) | $(BUILDDIR)
+	$(Q) mv $(BIN) $(BUILDDIR)/
+
+all: move_to_build
+.PHONY: clean install distclean
+
+install:
+	$(Q) install $(BUILDDIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)
+
+clean:
+	$(call DELFILE, $(BUILDDIR)/$(BIN))
+	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
+	$(call CLEAN)
+	$(Q) rm -rf $(BUILDDIR)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
 else
 
-all: 
+all:
 .PHONY: clean depend distclean
 
 endif
