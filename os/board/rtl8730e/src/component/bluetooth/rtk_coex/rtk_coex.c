@@ -160,6 +160,7 @@ static void bt_coex_set_profile_info_to_fw(void)
 
 static void bt_coex_setup_check_timer(rtk_bt_coex_conn_t *p_conn, uint16_t profile_idx)
 {
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	rtk_bt_coex_monitor_node_t *p_monitor_node = NULL;
 
 	if(profile_idx != PROFILE_A2DP && profile_idx != PROFILE_PAN)
@@ -182,10 +183,12 @@ static void bt_coex_setup_check_timer(rtk_bt_coex_conn_t *p_conn, uint16_t profi
 	osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
 	list_add_tail(&p_monitor_node->list, &p_rtk_bt_coex_priv->monitor_list);
 	osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
+#endif
 }
 
 static void bt_coex_del_check_timer(rtk_bt_coex_conn_t *p_conn, uint16_t profile_idx)
 {
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	rtk_bt_coex_monitor_node_t *p_monitor_node = NULL;
 	struct list_head *plist = NULL;
 
@@ -214,6 +217,7 @@ static void bt_coex_del_check_timer(rtk_bt_coex_conn_t *p_conn, uint16_t profile
 	osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
 
 	osif_mem_free(p_monitor_node);
+#endif
 }
 
 static void bt_coex_update_profile_info(rtk_bt_coex_conn_t *p_conn, uint8_t profile_index, bool b_is_add)
@@ -847,6 +851,7 @@ static void bt_coex_process_acl_data(uint8_t* pdata,uint16_t len,uint8_t dir)
 
 static void bt_coex_monitor_timer_handler(void *arg)
 {
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	UNUSED(arg);
 	rtk_bt_coex_monitor_node_t *p_monitor = NULL;
 	rtk_bt_coex_conn_t *p_conn = NULL;
@@ -890,6 +895,7 @@ static void bt_coex_monitor_timer_handler(void *arg)
 
 		plist = plist->next;
 	}
+#endif
 }
 
 void bt_coex_process_rx_frame(uint8_t type,uint8_t *pdata, uint16_t len)
@@ -922,23 +928,29 @@ void bt_coex_init(void)
 	}
 	memset(p_rtk_bt_coex_priv,0,sizeof(rtk_bt_coex_priv_t));
 	INIT_LIST_HEAD(&p_rtk_bt_coex_priv->conn_list);
+
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	INIT_LIST_HEAD(&p_rtk_bt_coex_priv->monitor_list);
 	if(false == osif_mutex_create(&p_rtk_bt_coex_priv->monitor_mutex))
 		return;
 
 	if(true == osif_timer_create(&p_rtk_bt_coex_priv->monitor_timer,"bt_coex_monitor_timer",(uint32_t)NULL,BT_COEX_MONITOR_INTERVAL,true,bt_coex_monitor_timer_handler))
 		osif_timer_start(&p_rtk_bt_coex_priv->monitor_timer);
+#endif
 }
 
 void bt_coex_deinit(void)
 {
 	struct list_head *plist = NULL;
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	rtk_bt_coex_monitor_node_t *p_monitor = NULL;
+#endif
 	rtk_bt_coex_conn_t *p_conn = NULL;
 
 	printf("[BT_COEX]: Deinit \r\n");
-	osif_timer_stop(&p_rtk_bt_coex_priv->monitor_timer);
 
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+	osif_timer_stop(&p_rtk_bt_coex_priv->monitor_timer);
 	osif_mutex_take(p_rtk_bt_coex_priv->monitor_mutex, 0xFFFFFFFFUL);
 	if(!list_empty(&p_rtk_bt_coex_priv->monitor_list)){
 		plist = p_rtk_bt_coex_priv->monitor_list.next;
@@ -950,6 +962,7 @@ void bt_coex_deinit(void)
 		}
 	}
 	osif_mutex_give(p_rtk_bt_coex_priv->monitor_mutex);
+#endif
 
 	plist = NULL;
 	if(!list_empty(&p_rtk_bt_coex_priv->conn_list)){
@@ -962,8 +975,10 @@ void bt_coex_deinit(void)
 		}
 	}
 
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
 	osif_mutex_delete(p_rtk_bt_coex_priv->monitor_mutex);
 	osif_timer_delete(&p_rtk_bt_coex_priv->monitor_timer);
+#endif
 	osif_mem_free(p_rtk_bt_coex_priv);
 }
 
