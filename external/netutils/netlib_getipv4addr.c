@@ -115,5 +115,45 @@ int netlib_get_ipv4addr(FAR const char *ifname, FAR struct in_addr *addr)
 
 	return ret;
 }
+/****************************************************************************
+ * Name: netlib_get_ipv4_gateway_addr
+ *
+ * Description:
+ *   Get the network driver IPv4 gateway address
+ *
+ * Parameters:
+ *   ifname   The name of the interface to use
+ *   ipaddr   The location to return the gateway address
+ *
+ * Return:
+ *   0 on success; -1 on failure
+ *
+ ****************************************************************************/
+int netlib_get_ipv4_gateway_addr(FAR const char *ifname, FAR struct in_addr *addr)
+{
+        int ret = ERROR;
 
+        if (ifname && addr) {
+                int sockfd = socket(PF_INET, NETLIB_SOCK_IOCTL, 0);
+                if (sockfd >= 0) {
+                        struct ifreq req;
+                        if (strlen(ifname) >= IFNAMSIZ) {
+                                close(sockfd);
+                                return ret;
+                        }
+                        strncpy(req.ifr_name, ifname, IFNAMSIZ);
+                        req.ifr_name[IFNAMSIZ - 1] = '\0';
+                        ret = ioctl(sockfd, SIOCGIFDSTADDR, (unsigned long)&req);
+                        if (!ret) {
+                                FAR struct sockaddr_in *req_addr;
+
+                                req_addr = (FAR struct sockaddr_in *)&req.ifr_addr;
+                                memcpy(addr, &req_addr->sin_addr, sizeof(struct in_addr));
+                        }
+                        close(sockfd);
+                }
+        }
+
+        return ret;
+}
 #endif							/* CONFIG_NET_IPv4 && CONFIG_NSOCKET_DESCRIPTORS */
