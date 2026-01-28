@@ -16,6 +16,4 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLES_SOUNDPLAYER),y)
-CONFIGURED_APPS += examples/SoundPlayer
-endif
+include $(wildcard examples/SoundPlayer/*/Make.defs)

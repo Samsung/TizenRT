@@ -64,21 +64,41 @@ extern uint32_t system_exception_location;
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: print_undefinedinsn_detail
+ ****************************************************************************/
+
+static inline void print_undefinedinsn_detail(uint32_t *regs)
+{
+	/* Abort log must always start at a new line.*/
+	lldbg_noarg("\n");
+	_alert("#########################################################################\n");
+	_alert("PANIC!!! Undefined instruction at 0x%x\n", regs[REG_PC]);
+	_alert("#########################################################################\n\n\n");
+}
+
+/****************************************************************************
  * Name: arm_undefinedinsn
  ****************************************************************************/
 
 uint32_t *arm_undefinedinsn(uint32_t *regs)
 {
+	/* Save the saved processor context in CURRENT_REGS where it can be
+	 * accessed for register dumps and possibly context switching.
+	 */
+	uint32_t *saved_state = (uint32_t *)CURRENT_REGS;
+	CURRENT_REGS = regs;
+	system_exception_location = regs[REG_R15];
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
 #endif
-  _alert("Undefined instruction at 0x%x\n", regs[REG_PC]);
-  uint32_t *saved_state = (uint32_t *)CURRENT_REGS;
-  CURRENT_REGS = regs;
 
-  system_exception_location = regs[REG_R15];
-  PANIC();
-  regs = (uint32_t *)CURRENT_REGS;
-  CURRENT_REGS = saved_state;
-  return regs; /* To keep the compiler happy */
+	/* Crash -- possibly showing diagnostic debug information. */
+	if (!IS_SECURE_STATE()) {
+		print_undefinedinsn_detail(regs);
+	}
+
+	PANIC();
+	regs = (uint32_t *)CURRENT_REGS;
+	CURRENT_REGS = saved_state;
+	return regs; /* To keep the compiler happy */
 }

@@ -195,7 +195,7 @@ static uint16_t bt_stack_init(void *app_config)
 #endif
 #if defined(RTK_BLE_SET_TX_QUEUE_NUM) && RTK_BLE_SET_TX_QUEUE_NUM
 	if (false == gap_config_credits_num(default_conf.max_stack_tx_pending_num)) {
-		printf("%s: gap_config_credits_num fail(max_stack_tx_pending_num is %d)\r\n", __func__, default_conf.max_stack_tx_pending_num);
+		dbg("%s: gap_config_credits_num fail(max_stack_tx_pending_num is %d)\r\n", __func__, default_conf.max_stack_tx_pending_num);
 	}
 #endif
 

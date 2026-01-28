@@ -52,8 +52,6 @@
 #define NDP120_MIC_GAIN_MAX	10
 #define NDP120_MIC_GAIN_DEFAULT	7
 
-#define NDP120_INIT_RETRY_COUNT 3
-
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -180,6 +178,10 @@ static int ndp120_setMute(FAR struct ndp120_dev_s *priv, bool mute)
 {
 	int ret = 0;
 	audvdbg("mute : %d\n", mute);
+	/* if NDP has not been initialized, return without doing anything */
+	if (!priv->ndp) {
+		return 0;
+	}
 	if (mute) {
 		ret = ndp120_kd_stop(priv);
 		if (ret != 0) {
@@ -221,6 +223,8 @@ static int ndp120_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struc
 {
 	/* Validate the structure */
 	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
+	int ret = 0;
+
 	DEBUGASSERT(caps && caps->ac_len >= sizeof(struct audio_caps_s));
 	audvdbg("type=%d ac_type=%d\n", type, caps->ac_type);
 
@@ -267,13 +271,7 @@ static int ndp120_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struc
 	case AUDIO_TYPE_FEATURE:
 		switch (caps->ac_subtype) {
 		case AUDIO_FU_INP_GAIN:
-			caps->ac_controls.hw[0] = NDP120_MIC_GAIN_MAX;
-#ifndef CONFIG_AUDIO_EXCLUDE_GAIN
-			caps->ac_controls.hw[1] = priv->mic_gain;
-#else
-			caps->ac_controls.hw[1] = NDP120_MIC_GAIN_DEFAULT;
-#endif
-			break;
+			return -ENOSYS;
 		case AUDIO_FU_MUTE:
 			ndp120_takesem(&priv->devsem);
 			caps->ac_controls.b[0] = priv->mute;
@@ -309,7 +307,19 @@ static int ndp120_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struc
 #endif
 				AUDIO_SD_UNDEF;
 			break;
-
+		case AUDIO_PU_KD_SENSITIVITY: {
+			uint16_t sensitivity;
+			ndp120_takesem(&priv->devsem);
+			ret = ndp120_kw_sensitivity_get(priv, &sensitivity);
+			if (ret != 0) {
+				auddbg("ndp120_kw_sensitivity_get failed ret : %d\n", ret);
+				ndp120_givesem(&priv->devsem);
+				return -EIO;
+			}
+			caps->ac_controls.w = sensitivity;
+			ndp120_givesem(&priv->devsem);
+		}
+		break;
 		default:
 			/* Other types of processing unit we don't support */
 			break;
@@ -357,20 +367,9 @@ static int ndp120_configure(FAR struct audio_lowerhalf_s *dev,
 		/* Process based on Feature Unit */
 		switch (caps->ac_format.hw) {
 		case AUDIO_FU_INP_GAIN: {
-#ifndef CONFIG_AUDIO_EXCLUDE_GAIN
-			uint16_t gain = caps->ac_controls.hw[0];
-			if (gain <= NDP120_MIC_GAIN_MAX) {
-				ndp120_takesem(&priv->devsem);
-				priv->mic_gain = gain;
-				/* No api to control gain as of now */
-				ndp120_givesem(&priv->devsem);
-			} else {
-				ret = -EDOM;
-			}
-#else /* CONFIG_AUDIO_EXCLUDE_GAIN */
-			ret = -EACCESS;
-#endif
-		} break;
+			return -ENOSYS;
+		}
+		break;
 		case AUDIO_FU_MUTE: {
 			/* Mute or unmute:  true(1) or false(0) */
 			bool mute = caps->ac_controls.b[0];
@@ -384,7 +383,8 @@ static int ndp120_configure(FAR struct audio_lowerhalf_s *dev,
 			priv->mute = mute;
 			/* No api to control gain as of now */
 			ndp120_givesem(&priv->devsem);
-		} break;
+		}
+		break;
 		default:
 			audvdbg("ERROR: Unrecognized feature unit\n");
 			break;
@@ -408,6 +408,18 @@ static int ndp120_configure(FAR struct audio_lowerhalf_s *dev,
 #endif
 			}
 			break;
+		case AUDIO_PU_KD_SENSITIVITY: {
+			uint16_t sensitivity = caps->ac_controls.w;
+			ndp120_takesem(&priv->devsem);
+			ret = ndp120_kw_sensitivity_set(priv, sensitivity);
+			if (ret != 0) {
+				auddbg("ndp120_kw_sensitivity_set failed ret : %d\n", ret);
+				ndp120_givesem(&priv->devsem);
+				return -EIO;
+			}
+			ndp120_givesem(&priv->devsem);
+		}
+		break;
 		default:
 			break;
 		}
@@ -437,6 +449,10 @@ static int ndp120_start(FAR struct audio_lowerhalf_s *dev)
 	FAR struct ndp120_dev_s *priv = (FAR struct ndp120_dev_s *)dev;
 	if (priv->running) {
 		return 0;
+	}
+
+	if (priv->mute) {
+		return -ESTRPIPE;
 	}
 
 	audvdbg(" ndp120_start Entry\n");
@@ -604,11 +620,12 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 
 	/* Deal with ioctls passed from the upper-half driver */
 
-	int ret = 0;
+	int ret = OK;
 	switch (cmd) {
 	case AUDIOIOC_PREPARE: {
 		/* nothing to prepare... */
-	} break;
+	}
+	break;
 	case AUDIOIOC_GETBUFFERINFO: {
 		/* Report our preferred buffer size and quantity */
 		audvdbg("AUDIOIOC_GETBUFFERINFO:\n");
@@ -625,7 +642,8 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 
 		/* Give semaphore */
 		ndp120_givesem(&priv->devsem);
-	} break;
+	}
+	break;
 	case AUDIOIOC_REGISTERPROCESS: {
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 		ret = ndp120_spi_registerprocess(dev, (mqd_t)arg);
@@ -637,7 +655,8 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		audvdbg("Register Process Failed - Device Doesn't support\n");
 		ret = -EINVAL;
 #endif
-	} break;
+	}
+	break;
 	case AUDIOIOC_UNREGISTERPROCESS: {
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 		ret = ndp120_spi_unregisterprocess(dev);
@@ -649,7 +668,8 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		auddbg("UnRegister Process Failed - Device Doesn't support\n");
 		ret = -EINVAL;
 #endif
-	} break;
+	}
+	break;
 	case AUDIOIOC_STARTPROCESS: {
 		audvdbg("set start process!!\n");
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
@@ -661,22 +681,26 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 				ndp120_kd_start_match_process(priv);
 				priv->kd_enabled = true;
 			}
-		} break;
+		}
+		break;
 #endif
 		case AUDIO_SD_AEC: {
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 			ndp120_aec_enable(priv);
 #endif
-		} break;
+		}
+		break;
 		default: {
 			/* DO Nothing for now */
-		} break;
+		}
+		break;
 		}
 #else
 		audvdbg("start Process Failed - Device Doesn't support\n");
 		ret = -EINVAL;
 #endif	/* CONFIG_AUDIO_PROCESSING_FEATURES */
-	} break;
+	}
+	break;
 	case AUDIOIOC_STOPPROCESS: {
 		audvdbg("set stop process!!\n");
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
@@ -686,22 +710,26 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 				ndp120_kd_stop_match_process(priv);
 				priv->kd_enabled = false;
 			}
-		} break;
+		}
+		break;
 #endif
 #else
 		audvdbg("start Process Failed - Device Doesn't support\n");
 		ret = -EINVAL;
 #endif	/* CONFIG_AUDIO_PROCESSING_FEATURES */
-	} break;
+	}
+	break;
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
 	case AUDIOIOC_GETKDBUFSIZE: {
 		*(uint32_t *)arg = priv->keyword_bytes;
-	} break;
+	}
+	break;
 	case AUDIOIOC_GETKDDATA: {
 		memcpy((uint8_t *)arg, priv->keyword_buffer, priv->keyword_bytes);
 		priv->keyword_bytes_left = 0;
-	} break;
+	}
+	break;
 #endif  /* CONFIG_AUDIO_KEYWORD_DETECT */
 #endif  /* CONFIG_AUDIO_PROCESSING_FEATURES */
 	case AUDIOIOC_ENABLEDMIC: {
@@ -715,14 +743,17 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		break;
 	}
 	case AUDIOIOC_CHANGEKD: {
-		if (arg > 1) {
+		if (((arg & AUDIO_NN_MODEL_MASK) > AUDIO_NN_MODEL_MAX) ||
+				((arg & AUDIO_NN_MODEL_LANG_MASK) > AUDIO_NN_MODEL_LANG_MAX)) {
 			return -EINVAL;
 		}
 		if (priv->running) {
 			return -EBUSY;
 		}
-		priv->kd_num = arg;
-		ndp120_change_kd(priv);
+		uint8_t kd_num = arg;
+		if (ndp120_change_kd(priv, kd_num) != SYNTIANT_NDP_ERROR_NONE) {
+			ret = -EIO;
+		}
 		break;
 	}
 	default:
@@ -893,8 +924,6 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	priv->lower = lower;
 	priv->recording = false;
 	priv->mute = false;
-	priv->kd_num = 0;
-	priv->kd_changed = false;
 #ifdef CONFIG_PM
 	/* only used during pm callbacks */
 	g_ndp120 = priv;
@@ -907,8 +936,9 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	while (retry--) {
 		lower->reset();
 		ret = ndp120_init(priv, false);
-		if (ret != OK) {
+		if (ret != SYNTIANT_NDP_ERROR_NONE) {
 			auddbg("ndp120 init failed\n");
+			ret = -EIO;
 		} else {
 			break;
 		}

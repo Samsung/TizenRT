@@ -36,10 +36,13 @@ public:
 	virtual bool startKeywordDetect(void) = 0;
 	virtual bool stopKeywordDetect(void) = 0;
 	virtual void detectKeyword(void) = 0;
+	virtual bool setKDSensitivity(uint16_t sensitivity) = 0;
+	virtual bool getKDSensitivity(uint16_t *sensitivity) = 0;
 	virtual bool isKeywordDetectStarted(void) = 0;
 	virtual void registerKeywordResultCallback(SpeechResultListener speechResultCallback) = 0;
 	virtual bool getKeywordBufferSize(uint32_t *bufferSize) = 0;
 	virtual bool getKeywordData(uint8_t *buffer) = 0;
+	virtual bool changeKeywordModel(uint8_t model) = 0;
 };
 
 } // namespace voice

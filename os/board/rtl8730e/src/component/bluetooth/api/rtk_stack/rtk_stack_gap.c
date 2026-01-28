@@ -377,7 +377,7 @@ uint16_t bt_stack_gap_act_handle(rtk_bt_cmd_t *p_cmd)
             break;
 
         default:
-            printf("bt_stack_gap_act_handle: unknown act: %d \r\n", p_cmd->act);
+            dbg("bt_stack_gap_act_handle: unknown act: %d \r\n", p_cmd->act);
             ret = RTK_BT_ERR_NO_CASE_ELEMENT;
             break;
     }

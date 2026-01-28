@@ -40,7 +40,7 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 
 	switch (cb_type) {
 	case GAP_MSG_VENDOR_CMD_RSP:
-		// printf("[bt_vendor_cb] cmd rsp, command: 0x%x, cause: 0x%x, "
+		// dbg("[bt_vendor_cb] cmd rsp, command: 0x%x, cause: 0x%x, "
 		// 	   "is_cmpl_evt: %d, param_len: %d\r\n", cmd_rsp->command, cmd_rsp->cause,
 		// 	   cmd_rsp->is_cmpl_evt, cmd_rsp->param_len);
 		switch (cb_data.p_gap_vendor_cmd_rsp->command) {
@@ -52,7 +52,7 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 				buf = *(pdata + 1);
 				bt_reg = *pdata;
 				bt_reg |= (buf << 8);
-				printf("[bt_vendor_cb] bt register is 0x%04x \r\n", bt_reg);
+				dbg("[bt_vendor_cb] bt register is 0x%04x \r\n", bt_reg);
 			}
 			break;
 #endif
@@ -74,7 +74,7 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 		break;
 
 	case GAP_MSG_VENDOR_EVT_INFO:
-		printf("[bt_vendor_cb] evt info, param_len: %d\r\n", evt_info->param_len);
+		dbg("[bt_vendor_cb] evt info, param_len: %d\r\n", evt_info->param_len);
 		break;
 
 	default:

@@ -240,17 +240,17 @@ static uint16_t rtk_bt_gap_set_act(uint16_t act, void *data, uint32_t len)
 	bt_ipc_host_request_message *host_msg = NULL;
 
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_gap_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_GAP, act)) {
@@ -259,7 +259,7 @@ static uint16_t rtk_bt_gap_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_GAP, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_gap_copy_act_ret_param(act, data, &ret[1]);
@@ -287,21 +287,21 @@ static uint16_t rtk_bt_le_set_act(uint16_t act, void *data, uint32_t len)
 		max_return_size = rtk_le_get_act_ret_param_size(act);
 	}
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_le_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_GAP_BLE, act)) {
@@ -310,7 +310,7 @@ static uint16_t rtk_bt_le_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_GAP_BLE, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_le_copy_act_ret_param(act, data, &ret[1]);
@@ -334,20 +334,20 @@ static uint16_t rtk_bt_gatts_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_gatts_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	host_msg = (bt_ipc_host_request_message *)bt_gatts_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s gatts get ipc buf fail \r\n", __func__);
+		dbg("%s gatts get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_GATTS, act)) {
@@ -356,7 +356,7 @@ static uint16_t rtk_bt_gatts_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_GATTS, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_gatts_copy_act_ret_param(act, data, &ret[1]);
@@ -381,20 +381,20 @@ static uint16_t rtk_bt_gattc_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_gattc_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	host_msg = (bt_ipc_host_request_message *)bt_gattc_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s gatts get ipc buf fail \r\n", __func__);
+		dbg("%s gatts get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_GATTC, act)) {
@@ -403,7 +403,7 @@ static uint16_t rtk_bt_gattc_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_GATTC, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_gattc_copy_act_ret_param(act, data, &ret[1]);
@@ -427,11 +427,11 @@ static uint16_t rtk_bt_mesh_set_act(uint32_t group, uint16_t act, void *data, ui
 	/* check return size whether enough */
 	max_return_size = rtk_mesh_get_act_ret_param_size(group, act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (true == rtk_bt_check_act_direct_calling(group, act)) {
@@ -440,7 +440,7 @@ static uint16_t rtk_bt_mesh_set_act(uint32_t group, uint16_t act, void *data, ui
 		ret = bt_ipc_api_host_message_send(group, act, data, len);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! ret:0x%x\r\n", __func__, ret[0]);
+		dbg("[core AP][IPC] %s fail ! ret:0x%x\r\n", __func__, ret[0]);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_mesh_copy_act_ret_param(group, act, data, &ret[1], len);
@@ -463,21 +463,21 @@ static uint16_t rtk_bt_br_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_br_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_br_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_GAP_BR, act)) {
@@ -486,7 +486,7 @@ static uint16_t rtk_bt_br_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_GAP_BR, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_br_copy_act_ret_param(act, data, &ret[1]);
@@ -510,21 +510,21 @@ static uint16_t rtk_bt_a2dp_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_a2dp_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_a2dp_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_A2DP, act)) {
@@ -533,7 +533,7 @@ static uint16_t rtk_bt_a2dp_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_A2DP, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_a2dp_copy_act_ret_param(act, data, &ret[1]);
@@ -557,21 +557,21 @@ static uint16_t rtk_bt_hfp_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_hfp_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_hfp_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_HFP, act)) {
@@ -580,7 +580,7 @@ static uint16_t rtk_bt_hfp_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_HFP, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_hfp_copy_act_ret_param(act, data, &ret[1]);
@@ -604,21 +604,21 @@ static uint16_t rtk_bt_avrcp_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_avrcp_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_avrcp_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_AVRCP, act)) {
@@ -627,7 +627,7 @@ static uint16_t rtk_bt_avrcp_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_AVRCP, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_avrcp_copy_act_ret_param(act, data, &ret[1]);
@@ -651,21 +651,21 @@ static uint16_t rtk_bt_sdp_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_sdp_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_sdp_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_SDP, act)) {
@@ -674,7 +674,7 @@ static uint16_t rtk_bt_sdp_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_SDP, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_sdp_copy_act_ret_param(act, data, &ret[1]);
@@ -698,21 +698,21 @@ static uint16_t rtk_bt_le_iso_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_le_iso_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_le_iso_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_LE_ISO, act)) {
@@ -721,7 +721,7 @@ static uint16_t rtk_bt_le_iso_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_LE_ISO, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_le_iso_copy_act_ret_param(act, data, &ret[1]);
@@ -745,21 +745,21 @@ static uint16_t rtk_bt_le_audio_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_le_audio_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_le_audio_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_LE_AUDIO, act)) {
@@ -768,7 +768,7 @@ static uint16_t rtk_bt_le_audio_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_LE_AUDIO, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_le_audio_copy_act_ret_param(act, data, &ret[1]);
@@ -792,21 +792,21 @@ static uint16_t rtk_bt_spp_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_spp_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_spp_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_SPP, act)) {
@@ -815,7 +815,7 @@ static uint16_t rtk_bt_spp_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_SPP, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_spp_copy_act_ret_param(act, data, &ret[1]);
@@ -839,21 +839,21 @@ static uint16_t rtk_bt_hid_set_act(uint16_t act, void *data, uint32_t len)
 	/* check return size whether enough */
 	max_return_size = rtk_hid_get_act_ret_param_size(act);
 	if (max_return_size > IPC_HOST_API_RET_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	if (len > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		return err;
 	}
 	/* depy copy secondary memory pointed by pointer */
 	host_msg = (bt_ipc_host_request_message *)bt_hid_push_cmd_ipc_buf(act, data, len, &actual_size);
 	if (!host_msg) {
-		printf("%s le get ipc buf fail \r\n", __func__);
+		dbg("%s le get ipc buf fail \r\n", __func__);
 		return err;
 	}
 	if (actual_size > IPC_HOST_API_DATA_MAX) {
-		printf("%s: The param of %d is over ipc message memory\r\n", __func__, act);
+		dbg("%s: The param of %d is over ipc message memory\r\n", __func__, act);
 		goto exit;
 	}
 	if (true == rtk_bt_check_act_direct_calling(RTK_BT_IPC_HID, act)) {
@@ -862,7 +862,7 @@ static uint16_t rtk_bt_hid_set_act(uint16_t act, void *data, uint32_t len)
 		ret = bt_ipc_api_host_message_send(RTK_BT_IPC_HID, act, host_msg->param_buf, actual_size);
 	}
 	if (ret[0] != RTK_BT_OK) {
-		printf("[core AP][IPC] %s fail ! \r\n", __func__);
+		dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 	} else {
 		/* check whether need memcpy return value */
 		rtk_hid_copy_act_ret_param(act, data, &ret[1]);
@@ -1113,7 +1113,7 @@ static uint16_t bt_send_ipc_cmd(uint8_t group, uint8_t act, void *param, uint32_
 		break;
 
 	default:
-		printf("%s: unknown rtk bt group index %d \r\n", __func__, group);
+		dbg("%s: unknown rtk bt group index %d \r\n", __func__, group);
 		break;
 	}
 
@@ -1479,7 +1479,7 @@ static void rtk_bt_drc_evt_taskentry(void *ctx)
 {
 	(void)ctx;
 	rtk_bt_evt_t *pevt;
-	printf("[Bt evt task]: enter bt directly calling evt task\r\n");
+	dbg("[Bt evt task]: enter bt directly calling evt task\r\n");
 	osif_sem_give(g_drc_evt_task_sem);
 
 	while (true) {
@@ -1498,7 +1498,7 @@ static void rtk_bt_drc_evt_taskentry(void *ctx)
 				bt_ipc_dev_request_message *p_ipc_msg = NULL;
 
 				if (pevt->data == NULL) {
-					printf("%s: Device IPC API message is NULL, invalid! \r\n", __func__);
+					dbg("%s: Device IPC API message is NULL, invalid! \r\n", __func__);
 					continue;
 				} else {
 					p_ipc_msg = (bt_ipc_dev_request_message *)pevt->data;
@@ -1517,7 +1517,7 @@ static void rtk_bt_drc_evt_taskentry(void *ctx)
 			}
 		}
 	}
-	printf("[Bt evt task]: exit bt directly calling evt task\r\n");
+	dbg("[Bt evt task]: exit bt directly calling evt task\r\n");
 	API_PRINT("[BT evt task] bt directly calling evt task exit\r\n");
 	osif_sem_give(g_drc_evt_task_sem);
 	osif_task_delete(NULL);
@@ -1548,7 +1548,7 @@ static void rtk_bt_evt_taskentry(void *ctx)
 				bt_ipc_dev_request_message *p_ipc_msg = NULL;
 
 				if (pevt->data == NULL) {
-					printf("%s: Device IPC API message is NULL, invalid! \r\n", __func__);
+					dbg("%s: Device IPC API message is NULL, invalid! \r\n", __func__);
 					continue;
 				} else {
 					p_ipc_msg = (bt_ipc_dev_request_message *)pevt->data;
@@ -1572,7 +1572,7 @@ static void rtk_bt_evt_taskentry(void *ctx)
 #endif
 		}
 	}
-	// printf("[Bt evt task]: exit bt evt task\r\n");
+	// dbg("[Bt evt task]: exit bt evt task\r\n");
 	API_PRINT("[BT evt task] bt evt task exit\r\n");
 	osif_sem_give(g_evt_task_sem);
 	osif_task_delete(NULL);
@@ -1750,7 +1750,7 @@ uint16_t rtk_bt_evt_register_callback(uint8_t group, rtk_bt_evt_cb_t cb)
 										   (uint8_t *)&group, sizeof(uint8_t));
 		}
 		if (ret[0] != RTK_BT_OK) {
-			printf("[core AP][IPC] %s fail ! \r\n", __func__);
+			dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 		}
 		osif_mem_free(ret);
 	}
@@ -1802,7 +1802,7 @@ uint16_t rtk_bt_evt_unregister_callback(uint8_t group)
 										   (uint8_t *)&group, sizeof(uint8_t));
 		}
 		if (ret[0] != RTK_BT_OK) {
-			printf("[core AP][IPC] %s fail ! \r\n", __func__);
+			dbg("[core AP][IPC] %s fail ! \r\n", __func__);
 		}
 		osif_mem_free(ret);
 	}

@@ -183,7 +183,7 @@ trble_result_e rtw_ble_server_att_set_length(trble_attr_handle attr_handle, uint
             }
         }
     }
-    
+
      return TRBLE_FAIL;
 }
 
@@ -260,7 +260,7 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
 	T_SERVER_ID app_id = 0;
     uint16_t cha_index = 0;
     rtk_bt_gatts_ntf_and_ind_param_t param;
-	
+
     param.data = (void *)osif_mem_alloc(0, data_length);
     if(!param.data)
     {
@@ -284,7 +284,7 @@ trble_result_e rtw_ble_server_charact_notify(trble_attr_handle attr_handle, trbl
     memcpy((void*)param.data, data_ptr, data_length);
     param.len = data_length;
     param.seq = 0;
-	
+
     if(RTK_BT_OK != rtk_bt_gatts_notify(&param))
     {
         osif_mem_free(param.data);
@@ -301,16 +301,16 @@ trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, tr
 	   {
 		   return TRBLE_INVALID_STATE;
 	   }
-	
+
 	   if (attr_handle == 0x0000) /* invalid attr_handle */
 	   {
 		   return TRBLE_NOT_FOUND;
 	   } 
-	
+
 	   T_SERVER_ID app_id = 0;
 	   uint16_t cha_index = 0;
 	   rtk_bt_gatts_ntf_and_ind_param_t param;
-	   
+
 	   param.data = (void *)osif_mem_alloc(0, data_length);
 	   if(!param.data)
 	   {
@@ -318,7 +318,7 @@ trble_result_e rtw_ble_server_charact_indicate(trble_attr_handle attr_handle, tr
 		   debug_print("Memory allocation failed \n");
 		   return TRBLE_FAIL;
 	   }
-	
+
 	   for(uint8_t i = 0; i < tizenrt_ble_srv_count; i++)
 	   {
 		   if(tizenrt_ble_srv_database[i].start_handle < attr_handle && 
@@ -353,12 +353,12 @@ trble_result_e rtw_ble_server_indicate_queue_cnt(trble_conn_handle *con_handle, 
 	rtk_bt_gatt_queue_t *queue;
 	queue = &g_rtk_bt_gatts_priv->indicate_queue[con_id];
 	*indication_count = queue->pending_ele_num;
-	
+
 	/* The number of element in pending queue should be limited, otherwise
 		the notification of high frequnce will use up memory */
 	if (queue->pending_ele_num >= BT_QUEUE_PENDING_ELEMENT_MAX)
 	{
-		printf("Error: GATTS pending queue full, wait a moment to send data again !!!\r\n");
+		debug_print("Error: Server indicate pending queue full, wait a moment to send data again !!!\r\n");
 		return TRBLE_BUSY;
 	}
 
@@ -389,8 +389,6 @@ trble_result_e rtw_ble_server_reject(trble_attr_handle attr_handle, uint8_t app_
         debug_print("fail \n");
         return TRBLE_FAIL;
     }
-
-    
 }
 
 uint8_t* rtw_ble_server_get_mac_address_by_conn_handle(trble_conn_handle con_handle)
@@ -415,7 +413,7 @@ trble_conn_handle rtw_ble_server_get_conn_handle_by_address(uint8_t* mac)
 	memcpy(p_addr.addr_val, mac, RTK_BD_ADDR_LEN);
 	p_addr.type = RTK_BT_LE_ADDR_TYPE_PUBLIC;
 	uint16_t conn_handle = 0xffff;
-		
+
     if(RTK_BT_OK == rtk_bt_le_gap_get_conn_handle_by_addr(&p_addr, &conn_handle))
     {
         debug_print("get public add handle \n");
@@ -466,7 +464,7 @@ trble_result_e rtw_ble_server_adv_into_idle(void)
         break;
     case GAP_ADV_STATE_START:
         {
-            do {   
+            do {
                 debug_print("ADV STATE : START \n");
                 osif_delay(100);
                 if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
@@ -492,7 +490,7 @@ trble_result_e rtw_ble_server_adv_into_idle(void)
         break;
     case GAP_ADV_STATE_STOP:
         {
-            do {   
+            do {
                 debug_print("ADV STATE : STOPPING \n");
                 osif_delay(100);
 				if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
@@ -513,7 +511,7 @@ trble_result_e rtw_ble_server_adv_into_idle(void)
 					dbg("Stop adv fail \n");
                     return TRBLE_FAIL;
                 }
-            }            
+            }
         }
         break;
     default:
@@ -521,7 +519,7 @@ trble_result_e rtw_ble_server_adv_into_idle(void)
     }
 
 	wcount = 0;
-    do {   
+    do {
         debug_print("Waiting for adv idle \n");
         osif_delay(100);
 		if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
@@ -574,7 +572,7 @@ trble_result_e rtw_ble_server_set_adv_name(uint8_t* data, uint16_t length)
 		return TRBLE_FAIL;
 
     if(RTK_BT_OK == rtk_bt_le_gap_set_scan_rsp_data(data, length))
-    {    
+    {
         debug_print("Set adv name success \n");
     } else {
         debug_print("Set adv name fail!!! \n");
@@ -612,7 +610,7 @@ bool rtw_ble_server_conn_is_any_active(void)
     {
         debug_print("get active conn fail \n");
 		return false;
-    }	
+    }
 
     if(active_conn.conn_num)
         return true;
@@ -852,7 +850,7 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
         debug_print("Invalid input \n");
         return TRBLE_INVALID_ARGS;
     }
-	
+
     if(RTK_BT_OK != rtk_bt_le_sm_get_bond_num((uint8_t *)device_count)){
 		debug_print("get bond num failed \n");
     }
@@ -864,11 +862,11 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
         return TRBLE_SUCCESS;
     }
 
-    rtk_bt_le_bond_info_t* bond_info = (rtk_bt_le_bond_info_t*)osif_mem_alloc(RAM_TYPE_DATA_ON, (*device_count) * sizeof(rtk_bt_le_bond_info_t));
-    if (!bond_info) {
-        printf("%s allocate bond_info fail \r\n", __func__);
-        return TRBLE_FAIL;
-    }
+	rtk_bt_le_bond_info_t* bond_info = (rtk_bt_le_bond_info_t*)osif_mem_alloc(RAM_TYPE_DATA_ON, (*device_count) * sizeof(rtk_bt_le_bond_info_t));
+	if (!bond_info) {
+		dbg("%s allocate bond_info fail \r\n", __func__);
+		return TRBLE_FAIL;
+	}
 	memset(bond_info, 0, (*device_count) * sizeof(rtk_bt_le_bond_info_t));
 	if(RTK_BT_OK != rtk_bt_le_sm_get_bond_info(bond_info, (uint8_t *)device_count)){
 		debug_print("get bond info failed \n");
@@ -890,7 +888,7 @@ trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_s* bond
 	}
 
     osif_mem_free(bond_info);
-	
+
     return TRBLE_SUCCESS;
 }
 
@@ -914,7 +912,7 @@ trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bond_addr[TRBLE_BD_AD
     trble_result_e ret = TRBLE_FAIL;
     rtk_bt_le_addr_t addr;
 	bool bond_addr_found = false;
-	
+
 	rtw_ble_server_get_bonded_device(bonded_device_list, &device_count);
 	if (!device_count)
     {
@@ -939,7 +937,7 @@ trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bond_addr[TRBLE_BD_AD
 	}
 
 	memcpy(addr.addr_val, bond_addr, TRBLE_BD_ADDR_MAX_LEN);
-	
+
     if(RTK_BT_OK == rtk_bt_le_sm_delete_bond_device(&addr))
     {
         debug_print("success \n");
@@ -950,7 +948,7 @@ trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bond_addr[TRBLE_BD_AD
 
 	if (bonded_device_list)
         osif_mem_free(bonded_device_list);
-	
+
     return ret;
 }
 
