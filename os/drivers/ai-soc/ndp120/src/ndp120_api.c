@@ -92,6 +92,7 @@
 
 #define COMBINED_FLOW_SET_ID  0
 
+#define SHOW_DEBUG 0
 // can be enabled to print the flow rules during init
 //#define CONFIG_DEBUG_AUDIO_INFO
 
@@ -1199,7 +1200,9 @@ void ndp120_show_debug(int do_check_mb)
 	int i, s;
 	ndp120_dsp_counters_t dsp_cnts;
 
-	if (!_ndp_debug_handle) return;
+	if (!_ndp_debug_handle) {
+		return;
+	}
 
 	struct ndp120_dev_s * ndp_debug_handle = _ndp_debug_handle;
 	struct syntiant_ndp_device_s *ndp = ndp_debug_handle->ndp;
@@ -1298,8 +1301,9 @@ check_firmware_aliveness(struct ndp120_dev_s *dev, uint32_t wait_period_ms)
 			state == SYNTIANT_NDP_DSP_FW_ALIVE ?
 				"MCU FW Dead and DSP FW Alive" :
 				"MCU and DSP FW Dead");
-			ndp120_show_debug(1);
-
+#if SHOW_DEBUG
+		ndp120_show_debug(1);
+#endif
 		/* At this point the device is dead, load firmware again */
 		 ndp120_load_firmware(dev);
 	}
