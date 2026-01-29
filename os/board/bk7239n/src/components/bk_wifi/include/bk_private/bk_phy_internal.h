@@ -39,6 +39,7 @@ int do_rx_sensitivity(void *cmdtp, int flag, int argc, char *const argv[]);
 ////for rf use
 INT32 rwnx_cal_save_trx_rcbekn_reg_val(void);
 void rc_drv_set_agc_manual_en(uint32_t value);
+void rc_drv_set_rf_macbypass(uint32_t value);
 void rc_drv_set_rx_mode_enrxsw(uint32_t value);
 uint32_t rc_drv_get_rx_mode_enrxsw(void);
 UINT32 rwnx_tpc_get_pwridx_by_rate(UINT32 rate, UINT32 format, UINT32 print_log);

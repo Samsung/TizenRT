@@ -40,6 +40,9 @@
 #include "cache.h"
 #endif
 
+#include <driver/aon_rtc.h>
+#define PM_BT_LP_RTC_ALARM_NAME PM_BT_RTC_ALARM_NAME
+
 #define TAG       "bluetooth"
 #define LOGV(...) BK_BLE_LOGV(TAG, ##__VA_ARGS__)
 #define LOGD(...) BK_BLE_LOGD(TAG, ##__VA_ARGS__)
@@ -994,7 +997,12 @@ static uint32_t get_chipid(uint32_t ver)
 
 static uint32_t get_current_chipid(void)
 {
-    return aon_pmu_hal_get_chipid();
+#if CONFIG_BK7239N_MP
+    return 1;
+#else
+    return 0;//mpw
+#endif
+    //return aon_pmu_hal_get_chipid();
 }
 
 static uint32_t get_test_rfconfig(void)
@@ -1100,6 +1108,62 @@ static void ble_exit_dut(void)
 {
     extern void ble_cal_exit_dut(void);
     ble_cal_exit_dut();
+}
+
+static void bt_lp_rtc_set(uint32_t tick, void *callback)
+{
+    alarm_info_t low_valtage_alarm = {
+                                    PM_BT_LP_RTC_ALARM_NAME,
+                                    tick,
+                                    1,
+                                    callback,
+                                    NULL
+                                    };
+    //force unregister previous if doesn't finish.
+    bk_alarm_unregister(AON_RTC_ID_1, low_valtage_alarm.name);
+    bk_alarm_register(AON_RTC_ID_1, &low_valtage_alarm);
+    bk_pm_wakeup_source_set(PM_WAKEUP_SOURCE_INT_RTC, NULL);
+}
+
+static void bt_lp_rtc_clear(void)
+{
+    bk_alarm_unregister(AON_RTC_ID_1, (uint8_t *)PM_BT_LP_RTC_ALARM_NAME);
+}
+
+static void bt_delay_us(uint32_t us)
+{
+    extern void delay_us(UINT32 us);
+    delay_us(us);
+}
+
+static uint32_t get_ana_timersel()
+{
+    return sys_hal_get_ana_reg12_timersel();
+}
+
+static uint32_t get_finecnt_samp(void)
+{
+    return aon_pmu_ll_get_reg72_value();
+}
+
+static uint32_t get_clkcnt_samp(void)
+{
+    return aon_pmu_ll_get_reg73_value();
+}
+
+static uint32_t get_isocnt_samp(void)
+{
+    return aon_pmu_ll_get_reg74_value();
+}
+
+void bluetooth_lowvol_enter_callback(void)
+{
+    bluetooth_lowvol_enter_cb_internal();
+}
+
+void bluetooth_lowvol_exit_callback(void)
+{
+    bluetooth_lowvol_exit_cb_internal();
 }
 
 //warning: bt_osi_funcs must be data section, otherwise a2dp_source_pcm and a2dp_source_decode will trig watchdog !!!!!!!!
@@ -1210,6 +1274,13 @@ static struct bt_osi_funcs_t bt_osi_funcs =
     ._ble_enter_dut = ble_enter_dut,
     ._ble_exit_dut = ble_exit_dut,
     ._get_dut_port = get_dut_port_wrapper,
+    ._bt_lp_rtc_set         = bt_lp_rtc_set,
+    ._bt_lp_rtc_clear       = bt_lp_rtc_clear,
+    ._get_ana_timersel      = get_ana_timersel,
+    ._get_finecnt_samp      = get_finecnt_samp,
+    ._get_clkcnt_samp       = get_clkcnt_samp,
+    ._get_isocnt_samp       = get_isocnt_samp,
+    ._bt_delay_us           = bt_delay_us,
 };
 
 int bk_bt_os_adapter_init(void)

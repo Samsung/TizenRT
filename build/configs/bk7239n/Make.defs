@@ -54,15 +54,21 @@ include ${TOPDIR}/tools/Config.mk
 ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
 include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
-ifeq ($(CONFIG_SPE),1)
+
+ifeq ($(CONFIG_BUILD_FLAT),y)
 ifeq ($(CONFIG_KMM_REGIONS),1)
-LDSCRIPT = bk7239n_bsp_lp.ld
+LDSCRIPT = bk7239n_bsp_lp_ns.ld
 else
-LDSCRIPT = bk7239n_bsp.ld
+LDSCRIPT = bk7239n_bsp_flat_ns.ld
 endif
 else
+ifeq ($(CONFIG_XIP_KERNEL), y)
 LDSCRIPT = bk7239n_bsp_ns.ld
+else
+LDSCRIPT = bk7239n_bsp_loadable_all.ld
 endif
+endif
+
 
 ifeq ($(CONFIG_LIBCXX_HAVE_LIBSUPCXX),y)
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
@@ -250,10 +256,18 @@ CXXELFFLAGS = $(CXXFLAGS) -mlong-calls # --target1-abs
 
 LDELFFLAGS = -r -e main
 
+ifeq ($(CONFIG_XIP_ELF),y)
+ifeq ($(WINTOOL),y)
+	LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld}"
+else
+	LDELFFLAGS += -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld
+endif
+else
 ifeq ($(WINTOOL),y)
 	LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/userspace/userspace_apps.ld}"
 else
 	LDELFFLAGS += -T $(TOPDIR)/userspace/userspace_apps.ld
+endif
 endif
 endif
 

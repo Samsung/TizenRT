@@ -273,3 +273,35 @@ int bk_feature_mac_use_rtc_enable(void);
  *
  */
 int bk_feature_change_to_wifi_pll_enable(void);
+
+/**
+ * @brief     Interface for customer to enable or disable BK7239N MP
+ *
+ *
+ * @return
+ *    - 0: disable BK7239N MP
+ *    - 1: enable BK7239N MP
+ */
+int bk_feature_bk7239n_mp_enable(void);
+
+/**
+ * @brief     Interface for customer to close or open temp high volt
+ *
+ *
+ * @return
+ *    - 0: disable high volt
+ *    - 1: enable high volt
+ *
+ */
+int bk_feature_temp_high_volt_enable(void);
+
+/**
+ * @brief     Interface for update power with RSSI
+ *
+ *
+ * @return
+ *    - 0: disable update power with RSSI
+ *    - 1: enable update power with RSSI
+ *
+ */
+int bk_feature_update_power_with_rssi(void);

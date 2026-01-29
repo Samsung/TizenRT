@@ -34,8 +34,10 @@ int sa_station_send_associate_cmd(ASSOC_PARAM_T *assoc_param)
 	} else {
 		/* normal case */
 		desired_ap_ptr = scanu_search_by_ssid((void *)&assoc_param->ssid);
-		if (NULL == desired_ap_ptr)
+		if ((NULL == desired_ap_ptr) || (NULL == desired_ap_ptr->chan)) {
+			WIFI_LOGE("desired_ap_ptr is NULL or chan is NULL\r\n");
 			return -1;
+		}
 		assoc_param->chan = *(desired_ap_ptr->chan);
 		if (0 == assoc_param->chan.tx_power)
 			assoc_param->chan.tx_power = 10;

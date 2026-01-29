@@ -567,9 +567,9 @@ trble_result_e trble_netmgr_stop_multi_adv(struct bledev *dev, uint8_t adv_handl
     return bk_tr_ble_advertiser_multi_adv_enable(adv_handle, 0);
 }
 
-trble_result_e trble_netmgr_set_multi_adv_type(struct bledev *dev, uint8_t adv_handle, trble_adv_type_e adv_type, trble_addr *addr)
+trble_result_e trble_netmgr_set_multi_adv_type(struct bledev *dev, uint8_t adv_handle, uint8_t adv_event_prop, trble_addr *addr)
 {
-    return bk_tr_ble_advertiser_set_multi_adv_type(adv_handle, adv_type, addr);
+    return bk_tr_ble_advertiser_set_multi_adv_type(adv_handle, adv_event_prop, addr);
 }
 
 trble_result_e trble_netmgr_set_multi_adv_interval(struct bledev *dev, uint8_t adv_handle, unsigned int interval)
@@ -599,12 +599,12 @@ trble_result_e trble_netmgr_coc_set_psm_security(struct bledev *dev, uint16_t le
 
 trble_result_e trble_netmgr_coc_set_param(struct bledev *dev, uint16_t value)
 {
-    return bk_tr_ble_coc_set_param(value);
+    return bk_tr_ble_coc_set_param(BK_LE_COC_CHAN_PARAM_LOCAL_MTU, value);
 }
 
-trble_result_e trble_netmgr_coc_get_param(struct bledev *dev, uint8_t param_type, uint16_t cid, uint16_t *value)
+trble_result_e trble_netmgr_coc_chan_get_param(struct bledev *dev, uint8_t param_type, uint16_t cid, uint16_t *value)
 {
-    return bk_tr_ble_coc_get_param(param_type, cid, value);
+    return bk_tr_ble_coc_chan_get_param(0xff, param_type, cid, value);
 }
 
 trble_result_e trble_netmgr_coc_connect(struct bledev *dev, uint16_t conn_handle, uint16_t le_psm)
@@ -614,12 +614,12 @@ trble_result_e trble_netmgr_coc_connect(struct bledev *dev, uint16_t conn_handle
 
 trble_result_e trble_netmgr_coc_disconnect(struct bledev *dev, uint16_t cid)
 {
-    return bk_tr_ble_coc_disconnect(0, cid);
+    return bk_tr_ble_coc_disconnect(0xff, cid);
 }
 
 trble_result_e trble_netmgr_coc_send_data(struct bledev *dev, uint16_t cid, uint16_t len, uint8_t *data)
 {
-    return bk_tr_ble_coc_send_data(0, cid, len, data);
+    return bk_tr_ble_coc_send_data(0xff, cid, len, data);
 }
 
 struct trble_ops g_trble_drv_ops =
@@ -700,12 +700,12 @@ struct trble_ops g_trble_drv_ops =
     .set_multi_adv_tx_power = trble_netmgr_set_multi_adv_tx_power,
 #endif
 
-#if 0
+#if 1
     .le_coc_init = trble_netmgr_coc_init,
     .coc_register_psm = trble_netmgr_coc_register_psm,
     .coc_set_psm_security = trble_netmgr_coc_set_psm_security,
     .coc_set_param = trble_netmgr_coc_set_param,
-    .coc_get_param = trble_netmgr_coc_get_param,
+    .coc_get_param = trble_netmgr_coc_chan_get_param,
     .coc_connect = trble_netmgr_coc_connect,
     .coc_disconnect = trble_netmgr_coc_disconnect,
     .coc_send_data = trble_netmgr_coc_send_data,

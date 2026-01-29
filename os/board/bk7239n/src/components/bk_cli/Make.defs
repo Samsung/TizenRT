@@ -56,7 +56,7 @@
 CSRCS += cli_main.c cli_uart.c cli_gpio.c cli_misc.c cli_mem.c cli_os.c cli_timer.c
 
 ifeq ($(CONFIG_SECURE_TEST),y)
-	CSRCS += cli_secure_storage.c cli_cipher_aes.c cli_ecdsa_test.c
+	CSRCS += cli_secure_storage.c cli_cipher_aes.c cli_ecdsa_test.c cli_signature_verify.c
 endif
 
 ifeq ($(CONFIG_FLASH),y)

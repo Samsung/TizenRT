@@ -1,10 +1,13 @@
 #include "vnd_cal.h"
 #include <driver/hal/hal_gpio_types.h>
 
-#define DEFAULT_TXID_XTAL               (0x30)
+
+#define DEFAULT_TXID_XTAL               (0x3a)
 
 #define TXPWR_ELEM_INUSED               (0)
 #define TXPWR_ELEM_UNUSED               (1)
+#define TXPWR_CAL_2G_MAX                (4)
+#define TXPWR_CAL_5G_MAX                (8)
 #define WLAN_2_4_G_CHANNEL_NUM          (14)
 #define BLE_2_4_G_CHANNEL_NUM           (40)
 
@@ -21,28 +24,76 @@
 #define GET_TXPWR_FLAG(p)               (((p)->value>>FLAG_POSI)&FLAG_MASK)
 #define SET_TXPWR_FLAG(p, flag)         {(p)->value &= (~(FLAG_MASK<<FLAG_POSI)); \
                                          (p)->value |= ((flag&FLAG_MASK)<<FLAG_POSI);}
-#define INIT_TXPWR_VALUE(gain, flag)    {(((flag&FLAG_MASK)<<FLAG_POSI)|(gain&GAIN_MASK))}
+#define INIT_TXPWR_VALUE(channel, gain)    { channel, gain }
+
+/**
+ * target power of all format:
+ * could be update with 'txevm -e 6 [-band 1] [-b 0] rate power' by iTest
+ * or update here directly before/without iTest
+ */
+float target_pwr_ble = 6.0; //2G4 BLE target power
+float target_pwr_11b = 18.0; //2G4 11B target power
+float target_pwr_11g = 16.0; //2G4 11G target power
+float target_pwr_n20 = 15.0; //2G4 N20 target power
+float target_pwr_n40 = 12.0; //2G4 N40 target power
+float target_pwr_ax20 = 12.0; //2G4 N20 target power
+float target_pwr_11a = 15.0; //5G 11A target power
+float target_pwr_n20_5g = 14.0; //5G N20 target power
+float target_pwr_n40_5g = 12.0; //5G N40 target power
+float target_pwr_ax20_5g = 12.0; //5G N20 target power
+
+/**
+ * shift power index of n/ax:
+ * 0.25dB for 1 LSB
+ * used for generate n/ax power table with g/a
+ */
+int8_t g_dif_g_n20 = 4;    //differ between g and n20
+int8_t g_dif_g_ax20 = 4;  //differ between g and ax20
+int8_t g_dif_g_n40 = 9;   //differ between g and n40
+int8_t g_dif_a_n20 = 4;    //differ between a and n20
+int8_t g_dif_a_ax20 = 4;  //differ between a and ax20
+int8_t g_dif_a_n40 = 9;    //differ between a and n40
+int8_t g_dif_g_ble_ch0 = -13;
+int8_t g_dif_g_ble_ch19 = -12;
+int8_t g_dif_g_ble_ch39 = -11;
+
+/**
+ * shift power index of all format:
+ * 0.25dB for 1 LSB
+ * used with FT PWR CAL
+ */
+int8_t shift_pwr_idx_b_ch1 = -3;
+int8_t shift_pwr_idx_b_ch7 = -5;
+int8_t shift_pwr_idx_b_ch13 = 0;
+int8_t shift_pwr_idx_g_ch1 = -4;
+int8_t shift_pwr_idx_g_ch7 = -5;
+int8_t shift_pwr_idx_g_ch13 = 0;
+int8_t shift_pwr_idx_a_ch36 = -12;
+int8_t shift_pwr_idx_a_ch64 = -5;
+int8_t shift_pwr_idx_a_ch100 = 0;
+int8_t shift_pwr_idx_a_ch132 = 0;
+int8_t shift_pwr_idx_a_ch165 = -3;
 
 const UINT32 g_default_xtal   = DEFAULT_TXID_XTAL;
 
 /**
  * pwr_gain<09:00> pregain in cfg_power_table.pregain
  * pwr_gain<13:10> pactrl in TRX_C<11:8>, F at present
- * pwr_gain<17:14> padctrl in TRX_C<7:4>, F at present
- * pwr_gain<21:18> Rgm in TRX_C<15:12>, 8 at present
+ * pwr_gain<17:14> padctrl in TRX_C<7:4>, C at present
+ * pwr_gain<21:18> Rgm in TRX_C<15:12>, E at present
  * pwr_gain<25:22> Gmgain in TRX_C<3:0>, 3 at present
  * pwr_gain<29:26> Dia in TRX_A<31:28>, 9 at present
  * pwr_gain<31:31> 1:11g/n 0:11b
  */
-const UINT32 pwr_gain_base_gain_2g = 0x24E3FC00;//0x00233C00;
+const UINT32 pwr_gain_base_gain_2g = 0x24FB3C00;
 
 /**
  * pwr_gain<09:00> pregain in cfg_power_table.pregain
  * pwr_gain<13:10> pactrl in TRX_24<11:8>, F at present
- * pwr_gain<17:14> padctrl in TRX_24<7:4>, 5 at present
+ * pwr_gain<17:14> padctrl in TRX_24<7:4>, 7 at present
  * pwr_gain<31:31> 1:11g/n 0:11b
  */
-const UINT32 pwr_gain_base_gain_5g = 0x80017C00;
+const UINT32 pwr_gain_base_gain_5g = 0x8001FC00;
 #define TPC_PAMAP_TAB_LEN			 (128)
 const PWR_REGS cfg_tab[TPC_PAMAP_TAB_LEN] = {
 	// pregain
@@ -176,7 +227,7 @@ const PWR_REGS cfg_tab[TPC_PAMAP_TAB_LEN] = {
 	PWRI(0x3FE),	//127	6db
 };
 
-const UINT32 pwr_gain_base_gain_ble = 0x0d3e0c00;//0x00220C00;
+const UINT32 pwr_gain_base_gain_ble = 0x25798400;
 #define TPC_PAMAP_TAB_BT_LEN                        (65)
 const PWR_REGS cfg_tab_bt[TPC_PAMAP_TAB_BT_LEN] = {
 	// pregain
@@ -248,189 +299,81 @@ const PWR_REGS cfg_tab_bt[TPC_PAMAP_TAB_BT_LEN] = {
 };
 
 /********************************  power table ********************************/
-const TXPWR_ST gtxpwr_tab_def_b[WLAN_2_4_G_CHANNEL_NUM] = {
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_INUSED),  // ch1  inused
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),  // ch4
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),  // ch7
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),  // ch10
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_INUSED),  // ch13  inused
-    INIT_TXPWR_VALUE(35, TXPWR_ELEM_UNUSED),
-};
-
-const TXPWR_ST gtxpwr_tab_def_g[WLAN_2_4_G_CHANNEL_NUM] = {
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_INUSED),  // ch1  inused
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),  // ch4
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),  // ch7
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),  // ch10
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_INUSED),  // ch13  inused
-    INIT_TXPWR_VALUE(68, TXPWR_ELEM_UNUSED),
-};
-
-const TXPWR_ST gtxpwr_tab_def_n_40[WLAN_2_4_G_CHANNEL_NUM] = {
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),  // ch3
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),  // ch7
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),  // ch11
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(60, TXPWR_ELEM_UNUSED),
-};
-
 /**
- * we save stripped calibration power info of 11A like this
- * [i+0]: channel
- * [i+1]: power index
- * so, max WLAN_2_4_G_CHANNEL_NUM/2=7 channels for calibration
+ * we save stripped calibration power info like this
+ * { channel, power_index },
+ * so, max TXPWR_CAL_2G_MAX channels for WIFI 2G/BLE calibration
+ * so, max TXPWR_CAL_5G_MAX channels for WIFI 5G calibration
  */
-const TXPWR_ST gtxpwr_tab_def_strip_a[WLAN_2_4_G_CHANNEL_NUM] = {
-    INIT_TXPWR_VALUE(36, TXPWR_ELEM_INUSED),//ch36
-    INIT_TXPWR_VALUE(80, TXPWR_ELEM_INUSED),//pwr_idx
-    INIT_TXPWR_VALUE(64, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(84, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(100, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(88, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(165, TXPWR_ELEM_UNUSED),//ch>127, TXPWR_ELEM_UNUSED needed
-    INIT_TXPWR_VALUE(80, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
+const TXPWR_CAL_ST gtxpwr_tab_def_b[TXPWR_CAL_2G_MAX] = {
+    INIT_TXPWR_VALUE(1,62), //ch1
+    INIT_TXPWR_VALUE(7,61), //ch7
+    INIT_TXPWR_VALUE(13,60), //ch13
 };
 
-/**
- * we save stripped calibration power info of 5G N40 like this
- * [i+0]: channel
- * [i+1]: power index
- * so, max WLAN_2_4_G_CHANNEL_NUM/2=7 channels for calibration
- */
-const TXPWR_ST gtxpwr_tab_def_strip_n40_5g[WLAN_2_4_G_CHANNEL_NUM] = {
-    INIT_TXPWR_VALUE(36, TXPWR_ELEM_INUSED),//ch36
-    INIT_TXPWR_VALUE(72, TXPWR_ELEM_INUSED),//pwr_idx
-    INIT_TXPWR_VALUE(64, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(76, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(100, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(80, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(165, TXPWR_ELEM_UNUSED),//ch>127, TXPWR_ELEM_UNUSED needed
-    INIT_TXPWR_VALUE(72, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
-    INIT_TXPWR_VALUE(0, TXPWR_ELEM_INUSED),
+const TXPWR_CAL_ST gtxpwr_tab_def_g[TXPWR_CAL_2G_MAX] = {
+    INIT_TXPWR_VALUE(1,76), //ch1
+    INIT_TXPWR_VALUE(7,75), //ch7
+    INIT_TXPWR_VALUE(13,74), //ch13
 };
 
-const TXPWR_ST gtxpwr_tab_def_ble[BLE_2_4_G_CHANNEL_NUM] = {
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),  // ch0 2402  inused
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),  // ch1 2404
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),  // ch4 2410
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),  // ch9 2420
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),  // ch14 2430
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_INUSED),  // ch19 2440 inused
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),  // ch24 2450
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),  // ch29 2460
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),  // ch34 2470
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),
-    INIT_TXPWR_VALUE(48, TXPWR_ELEM_UNUSED),  // ch39 2480 inused
+const TXPWR_CAL_ST gtxpwr_tab_def_strip_a[TXPWR_CAL_5G_MAX] = {
+    INIT_TXPWR_VALUE(36,75), //ch36
+    INIT_TXPWR_VALUE(64,69), //ch64
+    INIT_TXPWR_VALUE(100,70), //ch100
+    INIT_TXPWR_VALUE(165,78), //ch165
+};
+
+const TXPWR_CAL_ST gtxpwr_tab_def_ble[TXPWR_CAL_2G_MAX] = {
+    INIT_TXPWR_VALUE(1,48), //ch1
+    INIT_TXPWR_VALUE(20,48), //ch20
+    INIT_TXPWR_VALUE(40,48), //ch40
 };
 
 /****************************** temperature table  ****************************/
 const TMP_PWR_ST tmp_pwr_tab[TMP_PWR_TAB_LEN] = {
-//trx0x0c[12:15], shift_b, shift_g, shift_ble, xtal_c_delta
-    {  0x00,        -2,      -4,       0,         -1},   // 0     ,-40    -35
-    {  0x00,        -2,      -4,       0,         1},   // 1     ,-35    -30
-    {  0x00,        -2,      -4,       0,         2},   // 2     ,-30    -25
-    {  0x00,        -1,      -3,       0,         2},   // 3     ,-25    -20
-    {  0x00,        -1,      -3,       0,         4},   // 4     ,-20     -15
-    {  0x00,        -1,      -2,       0,         4},   // 5     ,-15  -10
-    {  0x00,        0,      -1,       0,         4},   // 6     ,-10   -5
-    {  0x00,        0,      -1,       0,         4},   // 7     ,-5     0
-    {  0x00,        0,      -1,       0,         4},   // 8     ,0       5
-    {  0x00,        0,      -1,       0,         3},   // 9     ,5      10
-    {  0x00,        0,      -1,       0,         4},   // 10    ,10     15
-    {  0x00,        0,      -1,       0,         2},   // 11    ,15    20
-    {  0x00,        0,      0,       0,         1},   // 12    ,20    25
-    {  0x00,        0,      0,       0,         0},   // 13    ,25    30
-    {  0x00,        0,       0,        0,         -2},   // 14    ,30   35
-    {  0x00,        0,       0,        0,         -2},   // 15    ,35   40
-    {  0x00,        0,       0,        0,         -3},   // 16    ,40  45
-    {  0x00,        0,       0,        0,         -3},   // 17    ,45    50
-    {  0x00,        0,       1,        0,         -4},   // 18    ,50    55
-    {  0x00,        0,       1,        0,         -4},   // 19    ,55   60
-    {  0x00,        1,       2,        0,         -4},   // 20    ,60   65
-    {  0x00,        1,       2,        0,         -4},   // 21    ,65   70
-    {  0x00,        1,       3,        0,         -3},   // 22    ,70   75
-    {  0x00,        2,       4,        0,         -2},   // 23    ,75   80
-    {  0x00,        2,       4,        0,         -1},   // 24    ,80   85
-    {  0x00,        2,       4,        0,         1},   // 25    ,85  90
-    {  0x00,        2,       4,        0,         4},   // 26    ,90  95
-    {  0x00,        2,       4,        1,        7},   // 27    ,95  100
-    {  0x00,        2,       4,        1,        11},   // 28    ,100  105
-    {  0x00,        2,       4,        2,        19},   // 29    ,105  110
-    {  0x00,        2,       4,        2,        26},   // 30    ,110  115
-    {  0x00,        2,       4,        3,        34},   // 31    ,115
-    {  0x00,        2,       4,        3,        77},   // 32    ,120
-    {  0x00,        2,       4,        3,        99},   // 33    ,125
-    {  0x00,        2,       4,        3,        117},   // 34    ,130
-    {  0x00,        2,       4,        3,        117},   // 35    ,135
-    {  0x00,        2,       4,        3,        117},   // 36    ,140
-    {  0x00,        2,       4,        3,        117},   // 37    ,145
-    {  0x00,        2,       4,        3,        117},   // 38    ,150
+//   shift_a, shift_b, shift_g, shift_ble, xtal_c_delta
+    { -10,      -15,     -15,     -15,       -11},   // 0     ,-40
+    { -9,       -13,     -13,     -13,       -4},   // 1     ,-35
+    { -8,       -12,     -12,     -12,        3},   // 2     ,-30
+    { -7,       -12,     -12,     -12,        8},   // 3     ,-25
+    { -7,       -11,     -11,     -11,        12},   // 4     ,-20
+    { -6,       -10,     -10,     -10,        14},   // 5     ,-15
+    { -6,       -10,     -10,     -10,        15},   // 6     ,-10
+    { -6,       -9,      -9,      -9,         15},   // 7     ,-5
+    { -5,       -7,      -7,      -7,         14},   // 8     ,0
+    { -5,       -5,      -5,      -5,         12},   // 9     ,5
+    { -3,       -2,      -2,      -2,         10},   // 10    ,10
+    { -1,       -1,      -1,      -1,         7},   // 11    ,15
+    {  0,        0,       0,       0,         3},   // 12    ,20
+    {  0,        0,       0,       0,         0},   // 13    ,25
+    {  1,        1,       1,       1,        -4},   // 14    ,30
+    {  2,        2,       2,       2,        -7},   // 15    ,35
+    {  3,        3,       3,       3,        -11},   // 16    ,40
+    {  4,        4,       4,       4,        -15},   // 17    ,45
+    {  2,        3,       3,       3,        -17},   // 18    ,50
+    {  2,        3,       3,       3,        -18},   // 19    ,55
+    {  2,        3,       3,       3,        -18},   // 20    ,60
+    {  3,        4,       4,       4,        -18},   // 21    ,65
+    {  3,        4,       4,       4,        -17},   // 22    ,70
+    {  3,        4,       4,       4,        -15},   // 23    ,75
+    {  4,        5,       5,       5,        -12},   // 24    ,80
+    {  4,        8,       8,       8,         6},   // 25    ,85
+    {  5,        9,       9,       9,         1},   // 26    ,90
+    {  6,        10,      10,      10,        14},   // 27    ,95
+    {  7,        11,      11,      11,        34},   // 28    ,100
+    {  7,        12,      12,      12,        62},   // 29    ,105
+    {  7,        13,      13,      13,        125},   // 30    ,110
+    {  13,       15,      15,      15,        155},   // 31    ,115
+    {  16,       16,      16,      16,        185},   // 32    ,120
+    {  17,       17,      17,      17,        185},   // 33    ,125
+    {  19,       19,      19,      19,        185},   // 34    ,130
+    {  20,       20,      20,      20,        185},   // 35    ,135
+    {  22,       22,      22,      22,        185},   // 36    ,140
+    {  23,       23,      23,      23,        185},   // 37    ,145
+    {  25,       25,      25,      25,        185},   // 38    ,150
 };
+
 
 const AUTO_PWR_CALI_CONTEXT auto_pwr =
 {
@@ -452,8 +395,14 @@ const INT16 shift_tab_n[1] = {0}; // for MCS7
 const INT16 shift_tab_b[4] = {0, 0, 0, 0}; // 11M base,5.5M,2M,1M
 // 54M base -                 54M,48M,36M,24M,18M,12M,9M,6M
 const INT16 shift_tab_g[8] = {0,  2,  2,  2,  3,  3,  4, 4/*4*/}; // 54M base -  12M,9M,6M//do
-const INT16 shift_tab_n20[10] = {-4,  -4,  0,  2,  2,  2,  3,  3,  4, 4/*4*/}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
-const INT16 shift_tab_n40[10] = {-4,  -4,  0,  2,  2,  2,  3,  3,  4, 4/*4*/}; // n40 mcs9 mcs8 mcs7(base) -  mcs0,
+const INT16 shift_tab_n20[10] = {-12,  -8,  0,  2,  2,  2,  3,  3,  4, 4/*4*/}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
+const INT16 shift_tab_ax20[10] = {-12,  -8,  0,  2,  2,  2,  3,  3,  4, 4/*4*/}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
+const INT16 shift_tab_n40[10] = {-12,  -8,  0,  2,  2,  2,  3,  3,  4, 4/*4*/}; // n40 mcs9 mcs8 mcs7(base) -  mcs0,
+// 54M base -                 54M,48M,36M,24M,18M,12M,9M,6M
+const INT16 shift_tab_a[8] = {0,  2,  2,  2,  3,  3,  4, 4}; // 54M base -  12M,9M,6M//do
+const INT16 shift_tab_n20_5g[10] = {-8,  -4,  0,  2,  2,  2,  3,  3,  4, 4}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
+const INT16 shift_tab_ax20_5g[10] = {-8,  -4,  0,  2,  2,  2,  3,  3,  4, 4}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
+const INT16 shift_tab_n40_5g[10] = {-8,  -4,  0,  2,  2,  2,  3,  3,  4, 4}; // n40 mcs9 mcs8 mcs7(base) -  mcs0,
 #endif
 
 const INT16 shift_tab_b_fcc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
@@ -461,10 +410,10 @@ const INT16 shift_tab_g_fcc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0
 const INT16 shift_tab_n20_fcc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
 const INT16 shift_tab_n40_fcc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
 
-const INT16 shift_tab_b_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -10, -12, 0}; // ch1~ch14
-const INT16 shift_tab_g_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, -32, 0}; // ch1~ch14
-const INT16 shift_tab_n20_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, -32, 0}; // ch1~ch14
-const INT16 shift_tab_n40_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, -32, 0}; // ch1~ch14
+const INT16 shift_tab_b_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
+const INT16 shift_tab_g_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
+const INT16 shift_tab_n20_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
+const INT16 shift_tab_n40_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
 
 void vnd_cal_overlay(void)
 {

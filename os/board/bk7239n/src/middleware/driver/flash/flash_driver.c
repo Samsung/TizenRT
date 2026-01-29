@@ -1234,7 +1234,7 @@ uint32_t bk_secondary_all_partition_size(void)
 #ifdef CONFIG_BUILD_PROTECTED
 uint32_t bk_user_app_partition_begin(void)
 {
-	return CONFIG_APP1_PHY_PARTITION_OFFSET;
+	return (CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET + CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE);
 }
 
 uint32_t bk_user_app_partition_end(void)
@@ -1242,11 +1242,6 @@ uint32_t bk_user_app_partition_end(void)
 	return CONFIG_USERFS_PHY_PARTITION_OFFSET;
 }
 #endif
-
-uint32_t bk_get_flash_encrypt_status(void)
-{
-	return CONFIG_CODE_ENCRYPTED;
-}
 
 int bk_security_flash_write_bytes(uint32_t address, const uint8_t *user_buf, uint32_t size)
 {
@@ -1262,4 +1257,42 @@ int bk_security_flash_erase_sector(uint32_t address)
 {
 	return psa_flash_erase_sector(address);
 }
+
+#define SOC_FLASH_DATA_SECURE_BASE 0x02000000
+int bk_security_flash_read_instruction(uint32_t address, uint8_t *user_buf, uint32_t size, uint32_t offset_flag)
+{
+    int ret = 0;
+    uint32_t int_level;
+
+    if (address >= CONFIG_PRIMARY_TFM_S_PHY_PARTITION_OFFSET && address < CONFIG_PRIMARY_CPU0_APP_PHY_CODE_START) {
+        address |= SOC_FLASH_DATA_SECURE_BASE;
+    } else if (address >= CONFIG_PRIMARY_CPU0_APP_PHY_CODE_START && address < (CONFIG_PRIMARY_CPU0_APP_PHY_CODE_START + CONFIG_PRIMARY_CPU0_APP_PHY_PARTITION_SIZE)) {
+        address |= SOC_FLASH_DATA_BASE;
+    } else {
+         return -1;
+    }
+    //BK_LOGI("flash_i"," bk_security_flash_read_instruction address 0x%x size 0x%x offset_flag %d\r\n", address, size, offset_flag);
+    int_level = flash_enter_critical();
+    ret = psa_flash_read_instruction(address, user_buf, size, offset_flag);
+    flash_exit_critical(int_level);
+
+    return ret;
+}
+
+int bk_security_flash_addr_translate(uint32_t *address, uint32_t *offset_flag)
+{
+	if(*address == CONFIG_SECONDARY_TFM_S_PHY_PARTITION_OFFSET) {
+        *offset_flag = 1;
+        *address = CONFIG_PRIMARY_TFM_S_PHY_PARTITION_OFFSET;
+    }else if(*address == CONFIG_PRIMARY_TFM_S_PHY_PARTITION_OFFSET)
+    {
+        *offset_flag = 0;
+    }else
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
 #endif

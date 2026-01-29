@@ -76,6 +76,12 @@ else
 CONFIG_BINARY_SIGNING := 0
 endif
 
+ifeq ($(CONFIG_XIP_KERNEL),y)
+CONFIG_XIP_KERNEL := 1
+else
+CONFIG_XIP_KERNEL := 0
+endif
+
 tfm: prebuild
 	$(Q) cmake -S tfm -B $(tfm_build_dir) \
 		-DCMAKE_PREFIX_PATH=/opt/gcc-arm-none-eabi-10.3-2021.10/bin \
@@ -133,16 +139,24 @@ tfm: prebuild
 		-DCONFIG_TFM_MBEDTLS_PKCS1_V15=$(CONFIG_TFM_MBEDTLS_PKCS1_V15) \
 		-DCONFIG_BL2_UPDATE_WITH_OTA=${CONFIG_BL2_UPDATE_WITH_OTA} \
 		-DCONFIG_NUM_APPS=${CONFIG_NUM_APPS} \
-		-DCONFIG_BINARY_SIGNING=${CONFIG_BINARY_SIGNING}
+		-DCONFIG_BINARY_SIGNING=${CONFIG_BINARY_SIGNING} \
+		-DCONFIG_XIP_KERNEL=${CONFIG_XIP_KERNEL}
 
 
 
 	$(Q) cmake --build $(tfm_build_dir) --target install -j16
 
 PRE_HANDLE_SCRIPT := $(abspath $(TOPDIR)/../build/tools/armino/misc/tfm_prehandle.py)
+
+ifeq ($(CONFIG_FLASH_ENCRYPT_ENABLE), y)
+	CFG_FLASH_ENCRYPT_ENABLE := 1
+else
+	CFG_FLASH_ENCRYPT_ENABLE := 0
+endif
+
 $(security_h): py_libs
 	$(Q) mkdir -p $(tfm_build_dir)/_build
-	$(Q) python3 -B $(PRE_HANDLE_SCRIPT) $(bsp_path)/middleware/boards/bk7239n $(tfm_build_dir)/_build
+	$(Q) python3 -B $(PRE_HANDLE_SCRIPT) $(bsp_path)/middleware/boards/bk7239n $(tfm_build_dir)/_build $(CFG_FLASH_ENCRYPT_ENABLE)
 
 
 cmake_exe := cmake-3.15.7/bin/cmake
@@ -160,11 +174,20 @@ py_libs: $(py_libs_depend)
 
 prebuild: py_libs $(security_h) $(cmake_exe)
 
+ifeq ($(CONFIG_XIP_KERNEL), 1)
+tfm_firmware_dir := $(abspath ./tfm_xip_build)
+else
+tfm_firmware_dir := $(abspath ./tfm_loadable_build)
+endif
+
 postbuild: tfm
 	$(Q) cp $(tfm_build_dir)/bin/tfm_s.bin $(tfm_build_dir)/_build/
-	$(Q) cp $(tfm_build_dir)/bin/bl2_B.bin $(tfm_build_dir)/_build/
+	$(if $(filter y,$(CONFIG_BL2_UPDATE_WITH_PC)),$(Q) cp $(tfm_build_dir)/bin/bl2_B.bin $(tfm_build_dir)/_build/)
 	$(Q) cp $(tfm_build_dir)/bin/bl2.bin $(tfm_build_dir)/_build/
 	$(Q) find "$(tfm_build_dir)" -type d -exec chmod a+wx {} \;
+	$(Q) if [ -d "$(tfm_firmware_dir)" ]; then rm -rf "$(tfm_firmware_dir)"; fi
+	$(Q) cp -rf $(tfm_build_dir) $(tfm_firmware_dir)
+	$(Q) find "$(tfm_firmware_dir)" -type d -exec chmod a+wx {} \;
 
 clean:
 	$(Q) echo clean

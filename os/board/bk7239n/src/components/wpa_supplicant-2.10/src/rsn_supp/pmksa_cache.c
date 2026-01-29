@@ -17,7 +17,14 @@
 
 #if (defined(IEEE8021X_EAPOL) || defined(CONFIG_SAE)) && !defined(CONFIG_NO_WPA)
 
+#if CONFIG_MINIMUM_SCAN_RESULTS
+// Memory optimization: Reduced PMKSA cache entries from 32 to 4 to save ~7KB
+// Without roaming support, only need: 1 current AP + 2-3 recently connected APs
+// Each entry is ~256 bytes, so reducing by 28 entries saves ~7KB (28 * 256 = 7168 bytes)
+static const int pmksa_cache_max_entries = 4;
+#else
 static const int pmksa_cache_max_entries = 32;
+#endif
 
 struct rsn_pmksa_cache {
 	struct rsn_pmksa_cache_entry *pmksa; /* PMKSA cache */

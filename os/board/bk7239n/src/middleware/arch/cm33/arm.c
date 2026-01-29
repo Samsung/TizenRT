@@ -35,7 +35,7 @@ __attribute__((section(".iram"))) void arch_sleep(void)
 	__WFI();
 }
 
-__attribute__((section(".itcm_sec_code")))uint64_t check_IRQ_pending(void)
+__attribute__((section(".iram")))uint64_t check_IRQ_pending(void)
 {
 	return NVIC_GetAllPendingIRQ();
 }

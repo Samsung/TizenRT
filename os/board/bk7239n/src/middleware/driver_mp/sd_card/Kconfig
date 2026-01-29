@@ -1,0 +1,42 @@
+menu "SDCARD"
+	config SDCARD
+		bool "Enable SDCARD"
+		default y if (USB && USB_DEVICE)
+		default n if !(USB && USB_DEVICE)
+
+	config SDCARD_DEFAULT_CLOCK_FREQ
+		int "sd card default clock freq"
+		default 11
+
+	config SDCARD_CHECK_INSERTION_EN
+		bool "Whether to use pin to determine whether the sdcard is connected"
+		default n
+
+	menu "SDCARD_CHECK_INSERTION_EN"
+		depends on SDCARD_CHECK_INSERTION_EN
+
+		config SDCARD_CHECK_INSERTION_GPIO_ID
+			int "Detect whether to connect the GPIO ID of the sdcard"
+			default 0
+	endmenu
+
+	config SDCARD_BUSWIDTH_4LINE
+		bool "Support SDCARD 4 Data Wires"
+		default n
+
+	config SDCARD_POWER_GPIO_CTRL
+		depends on SDCARD
+		bool "Enable SDcard power gpio ctrl"
+		default n
+
+    config SDCARD_POWER_GPIO_CTRL_AUTO_POWERDOWN_WHEN_IDLE
+        depends on SDCARD_POWER_GPIO_CTRL
+        bool "Enable SDcard auto powerdown when idle"
+        default n
+
+	config SDCARD_DEBUG_SUPPORT
+		bool "Enable SDcard debug"
+		default n
+		help
+			enable SDCARD debug, it will dump write and read data with SDCARD
+endmenu

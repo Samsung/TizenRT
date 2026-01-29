@@ -15,8 +15,10 @@
 #include "cli_nist_common.h"
 
 #define MAX_SHARED_SECURE_LEN 66
+#define HAL_MAX_ECP_DER_KEY   288
 
 extern int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t key_idx, hal_data *shared_secret);
+extern int armino_hal_be_der_ecdsa_private_key(hal_key_type mode, hal_data *prikey, hal_data *pubkey, hal_data *key, uint32_t priv_key_len, uint32_t pub_key_len);
 
 uint8_t nist_ecdh_verify_callback(nist_handle_t *nist_handle)
 {
@@ -45,9 +47,24 @@ uint8_t nist_ecdh_verify_callback(nist_handle_t *nist_handle)
     ecdh_param.pubkey_x = &QCAVSx;
     ecdh_param.pubkey_y = &QCAVSy;
 
-    result = armino_hal_set_key(HAL_KEY_ECC_SEC_P192R1 + sub_type, key_idx, NULL, &dIUT);
+    hal_data prikey = {0};
+    prikey.data = os_malloc(HAL_MAX_ECP_DER_KEY);
+    if (prikey.data == NULL) {
+        BK_LOGI(NULL, "malloc failed\n");
+        return NIST_FAIL;
+    }
+
+    result = armino_hal_be_der_ecdsa_private_key(HAL_KEY_ECC_SEC_P192R1 + sub_type, &dIUT, NULL, &prikey, dIUT.data_len, 0);
+    if (result != HAL_SUCCESS) {
+        BK_LOGI(NULL, "be der ecdsa private key failed\n");
+        os_free(prikey.data);
+        return NIST_FAIL;
+    }
+
+    result = armino_hal_set_key(HAL_KEY_ECC_SEC_P192R1 + sub_type, key_idx, NULL, &prikey);
     if (result != HAL_SUCCESS) {
         BK_LOGI(NULL, "set key failed\n");
+        os_free(prikey.data);
         return NIST_FAIL;
     }
 
@@ -56,6 +73,7 @@ uint8_t nist_ecdh_verify_callback(nist_handle_t *nist_handle)
     if (shared_secret.data == NULL) {
         armino_hal_remove_key(HAL_KEY_ECC_SEC_P192R1 + sub_type, key_idx);
         BK_LOGI(NULL, "malloc failed\n");
+        os_free(prikey.data);
         return NIST_FAIL;
     }
     shared_secret.data_len = MAX_SHARED_SECURE_LEN;
@@ -65,11 +83,20 @@ uint8_t nist_ecdh_verify_callback(nist_handle_t *nist_handle)
         BK_LOGI(NULL, "compute shared secret failed %d\n", result);
         hal_nist_free_buffer(&shared_secret);
         armino_hal_remove_key(HAL_KEY_ECC_SEC_P192R1 + sub_type, key_idx);
+        os_free(prikey.data);
         return NIST_FAIL;
     }
 
     // print_hex(shared_secret.data, shared_secret.data_len);
     // print_hex(ZIUT.data, ZIUT.data_len);
+
+    if (shared_secret.data_len != ZIUT.data_len) {
+        BK_LOGI(NULL, "shared secret length mismatch: %u != %u\n", shared_secret.data_len, ZIUT.data_len);
+        hal_nist_free_buffer(&shared_secret);
+        armino_hal_remove_key(HAL_KEY_ECC_SEC_P192R1 + sub_type, key_idx);
+        os_free(prikey.data);
+        return NIST_FAIL;
+    }
 
     result = memcmp(shared_secret.data, ZIUT.data, shared_secret.data_len);
     if(result == 0){
@@ -79,6 +106,7 @@ uint8_t nist_ecdh_verify_callback(nist_handle_t *nist_handle)
     }
     hal_nist_free_buffer(&shared_secret);
     armino_hal_remove_key(HAL_KEY_ECC_SEC_P192R1 + sub_type, key_idx);
+    os_free(prikey.data);
     return result;
 }
 

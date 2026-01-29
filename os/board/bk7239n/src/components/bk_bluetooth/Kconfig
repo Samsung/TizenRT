@@ -25,6 +25,10 @@ menu "BK_Bluetooth"
         bool "automatically initialize ble reconnection due to connection establishment failed"
         default y
 
+    config BLE_LV_SUPPORT
+        bool "support low voltage sleep"
+        default n
+
     config SUPPORT_REPORTING_COEX_BLE_STATE
         bool "reporting coex ble state"
         default n

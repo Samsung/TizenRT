@@ -53,7 +53,11 @@
 # EXTRA_LIBS += ${TOPDIR}/board/bk7239n/src/libs/libdemo.a
 EXTRA_LIBS += ${TOPDIR}/board/bk7239n/src/libs/libwifi.a
 EXTRA_LIBS += ${TOPDIR}/board/bk7239n/src/libs/libbluetooth.a
+ifeq ($(CONFIG_BK7239N_MP),y)
 EXTRA_LIBS += ${TOPDIR}/board/bk7239n/src/libs/libbk_phy.a
+else
+EXTRA_LIBS += ${TOPDIR}/board/bk7239n/src/libs/libbk_phy_mpw.a
+endif
 EXTRA_LIBS += ${TOPDIR}/board/bk7239n/src/libs/libbk_coex.a
 EXTRA_LIBS += ${TOPDIR}/board/bk7239n/src/middleware/libmiddleware.a
 ifeq ($(CONFIG_TFM), y)

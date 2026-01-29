@@ -1,0 +1,8 @@
+menu "I2S"
+    config I2S
+        depends on AUDIO_RING_BUFF
+        bool "Enable I2S"
+        default n
+
+endmenu
+

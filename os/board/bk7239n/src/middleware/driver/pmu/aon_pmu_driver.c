@@ -123,6 +123,11 @@ uint32_t aon_pmu_drv_bias_cal_get(void)
 	return aon_pmu_hal_bias_cal_get();
 }
 
+uint32_t aon_pmu_drv_band_cal_get(void)
+{
+	return aon_pmu_hal_band_cal_get();
+}
+
 void aon_pmu_drv_gpio_clksel_set(uint32_t value)
 {
 	aon_pmu_hal_gpio_clksel_set(!!value);

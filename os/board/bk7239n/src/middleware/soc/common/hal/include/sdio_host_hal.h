@@ -32,6 +32,10 @@ typedef struct {
 typedef struct {
 	gpio_id_t gpio_id;
 	gpio_dev_t dev;
+
+#if CONFIG_IO_MATRIX_VER2_0
+	uint32_t func_code;
+#endif
 } sdio_host_gpio_map_t;
 
 #define sdio_host_hal_reset_config_to_default(hal) sdio_host_ll_reset_config_to_default((hal)->hw)

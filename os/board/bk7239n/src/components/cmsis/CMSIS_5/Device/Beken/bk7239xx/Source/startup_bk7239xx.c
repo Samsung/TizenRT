@@ -42,7 +42,8 @@
 #include <tinyara/mm/heap_regioninfo.h>
 #include <tinyara/mpu.h>
 #include <tinyara/arch.h>
-
+#include <soc/bk7239n/soc.h>
+#include "os/mem.h"
 
 #define TAG "arch"
 
@@ -298,7 +299,7 @@ const VECTOR_TABLE_Type __VECTOR_TABLE_IRAM[] = {
 
 #define ENTRY_SECTION  __attribute__((section(".fix.reset_entry")))
 
-void set_reboot_tag(uint32_t tag)
+__FLASH_BOOT_CODE void set_reboot_tag(uint32_t tag)
 {
 	REG_WRITE(REBOOT_TAG_ADDR, tag);
 }
@@ -338,10 +339,10 @@ static inline void boot_mem_check(void)
 }
 
 
+
 /*----------------------------------------------------------------------------
   Reset Handler called on controller reset
  *----------------------------------------------------------------------------*/
-
 __NO_RETURN ENTRY_SECTION __attribute__((naked))void Reset_Handler(void)
 {
 #if defined(CONFIG_DEEP_LV)
@@ -433,14 +434,16 @@ void os_heap_init(void)
 #endif    //CONFIG_KMM_REGIONS == 1
 }
 
-void _start(void)
+__FLASH_BOOT_CODE void _start(void)
 {
-#if !defined(CONFIG_WATCHDOG_FOR_IRQ)
-    extern void close_wdt(void);
-    close_wdt();
+#if defined(CONFIG_PSRAM)
+#if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
+    bk_psram_init();
 #endif
-
-    os_heap_init();
+#ifdef CONFIG_BUILD_PROTECTED
+    bk_psram_code_init();
+#endif
+#endif
 
 #if defined(CONFIG_MPU)
     mpu_init();
@@ -452,7 +455,15 @@ void _start(void)
       SCB_EnableDCache();
 
     SCB_CleanInvalidateDCache();
+    SCB_InvalidateICache();
 #endif
+
+#if !defined(CONFIG_WATCHDOG_FOR_IRQ)
+    extern void close_wdt(void);
+    close_wdt();
+#endif
+
+    os_heap_init();
 
 
 #if defined(CONFIG_ATE_TEST) && defined(CONFIG_RESET_REASON)
@@ -460,13 +471,8 @@ void _start(void)
     cmd_do_memcheck();
 #endif
 
-#if defined(CONFIG_SYS_CPU0)
     /*power manager init*/
     pm_hardware_init();
-
-    bk_pm_cp1_auto_power_down_state_set(PM_CP1_AUTO_CTRL_DISABLE);
-    bk_pm_mem_auto_power_down_state_set(PM_MEM_AUTO_CTRL_DISABLE);
-#endif
 
     bk_gpio_driver_init();
 	//Important notice!!!!!
@@ -486,16 +492,12 @@ void _start(void)
 	up_mpuinitialize();
 #endif
 
-    
-#if defined(CONFIG_PSRAM)
-	bk_psram_init();
-#ifdef CONFIG_BUILD_PROTECTED
-	bk_psram_code_init();
-#endif
-#endif
-
 #if defined(CONFIG_WATCHDOG)
 	bk_wdt_driver_init();
+#endif
+
+#if defined(CONFIG_TRNG_SUPPORT)
+	bk_trng_driver_init();
 #endif
 
 #if defined(CONFIG_SWD_DEBUG_MODE)

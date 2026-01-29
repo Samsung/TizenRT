@@ -17,16 +17,18 @@ OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
 
 __MSP_STACK_SIZE = CONFIG_IDLETHREAD_STACKSIZE;  
 __CPU0_SPE_RAM_SIZE = CONFIG_CPU0_SPE_RAM_SIZE;
-__MIN_HEAP_SIZE = (84 << 10);
+__MIN_HEAP_SIZE = (20 << 10);
+__DPD_RAM_SIZE = (64 << 10);
 PERSIST_MEM_AREA_SIZE = 4;
 REBOOT_TAG_AREA_SIZE = 4;
-__CPU0_APP_RAM_BASE = 0x38000000;
-__CPU0_APP_RAM_SIZE = 0x80000 - __CPU0_SPE_RAM_SIZE;
+__CPU0_APP_RAM_BASE = 0x38000000 + __DPD_RAM_SIZE;
+__CPU0_APP_RAM_SIZE = 0x80000 - __CPU0_SPE_RAM_SIZE - __DPD_RAM_SIZE;
 __CPU0_APP_IRAM_OFFSET = 0x20000000;
 __CPU0_APP_IRAM_BASE = __CPU0_APP_RAM_BASE - __CPU0_APP_IRAM_OFFSET;
 __CPU0_APP_IRAM_SIZE = __CPU0_APP_RAM_SIZE;
 __CPU0_APP_VIRTUAL_CODE_START = 0xD0000;
-__CPU0_APP_VIRTUAL_CODE_SIZE = 0x1a7860;
+/* Set a large value here to ensure sufficient space during linking, actual size check is performed during bin packaging */
+__CPU0_APP_VIRTUAL_CODE_SIZE = 0x600000;
 
 SOC_FLASH_DATA_BASE = 0x12000000;
 SOC_PSRAM_DATA_BASE = 0x70000000;
@@ -360,7 +362,6 @@ SECTIONS
         /*_estack = .; */
     } > RAM
 
-/*#if CONFIG_PSRAM*/
     .psram_code :
     {
         . = ALIGN(8);
@@ -375,8 +376,8 @@ SECTIONS
         . = ALIGN(8);
         PROVIDE(__psram_data_text = LOADADDR(.psram_data));
         __psram_data_start__ = .;
-
-        /**rwnx_rx.o*(.data .data.*)*/
+        *(.psram.data)
+        *(.psram.data*)
 
         . = ALIGN(4);
         __psram_data_end__ = .;
@@ -386,15 +387,14 @@ SECTIONS
     {
         . = ALIGN(8);
         __psram_bss_start__ = .;
+        *(.psram.bss)
+        *(.psram.bss*)
 
-        /**rwnx_rx.o*(.bss .bss.*)*/
         *libnet.a:mem.o*(.bss .bss.*)
 
         . = ALIGN(4);
         __psram_bss_end__ = .;
     } > PSRAM_DATA
-
-/*#endif*/
 
     s_rom_end = LOADADDR(.data) + SIZEOF(.data);
 

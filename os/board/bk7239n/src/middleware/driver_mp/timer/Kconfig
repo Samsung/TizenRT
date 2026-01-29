@@ -1,0 +1,25 @@
+menu "TIMER"
+	config TIMER
+		bool "Enable TIMER"
+		default y
+		
+	config TIMER_COUNTER
+		bool "Enable timer counter"
+		default y
+
+	config TIMER_SUPPORT_ID_BITS
+		int "timer support id bits"
+		range 0 255
+		default 0
+		help
+		0 indicates that all IDs are supported by default, no configuration required
+
+	config TIMER_US
+		bool "Enable timer0 as microsecond timer"
+		default n
+
+	config TIMER_PM_CB_SUPPORT
+		bool "Enable TIMER enter low voltage callback support"
+		default n
+endmenu	
+

@@ -21,6 +21,7 @@
 #include "psram_driver.h"
 #include <driver/psram.h>
 #include <modules/pm.h>
+#include <soc/bk7239n/soc.h>
 #if (defined(CONFIG_PSRAM_AUTO_DETECT))
 #include "bk_ef.h"
 #endif
@@ -77,7 +78,7 @@ uint32_t bk_psram_get_psram_data_length(uint32_t id)
 #endif
 }
 
-bk_err_t bk_psram_set_clk(psram_clk_t clk)
+__FLASH_BOOT_CODE bk_err_t bk_psram_set_clk(psram_clk_t clk)
 {
 	bk_err_t ret = BK_OK;
 
@@ -96,7 +97,7 @@ bool bk_psram_heap_init_flag_get()
 	return s_psram_heap_is_init;
 }
 
-bk_err_t bk_psram_set_voltage(psram_voltage_t voltage)
+__FLASH_BOOT_CODE bk_err_t bk_psram_set_voltage(psram_voltage_t voltage)
 {
 	bk_err_t ret = BK_OK;
 
@@ -153,7 +154,7 @@ bk_err_t bk_psram_disable_write_through(psram_write_through_area_t area)
 	return psram_hal_set_write_through(area, 0, 0, 0);
 }
 
-bk_err_t bk_psram_calibrate(void)
+__FLASH_BOOT_CODE bk_err_t bk_psram_calibrate(void)
 {
 #if defined(CONFIG_PSRAM_CALIBRATE)
 	//20250925: psram calib data below is summed by asic for bk7239n v4
@@ -230,7 +231,7 @@ bk_err_t bk_psram_id_auto_detect(void)
 	return BK_OK;
 }
 
-bk_err_t bk_psram_init(void)
+__FLASH_BOOT_CODE bk_err_t bk_psram_init(void)
 {
 #if (defined(CONFIG_SYS_CPU0))
 	if (s_psram_server_is_init) {

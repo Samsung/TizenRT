@@ -69,12 +69,12 @@ static inline uint32_t sys_ll_get_cpu0_int_0_31_en_cpu0_uart_int_en(void) {
 #define SYS_ANA_REG0_ADDR			 (SOC_SYS_REG_BASE + (0x40 << 2))
 #define GET_SYS_ANALOG_REG_IDX(addr) ((addr - SYS_ANA_REG0_ADDR) >> 2)
 
-static inline uint32_t sys_ll_get_analog_reg_value(uint32_t addr)
+__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_analog_reg_value(uint32_t addr)
 {
 	return REG_READ(addr);
 }
 
-static inline void sys_ll_set_analog_reg_value(uint32_t addr, uint32_t value)
+__FLASH_BOOT_CODE static inline void sys_ll_set_analog_reg_value(uint32_t addr, uint32_t value)
 {
 	uint32_t idx;
 	idx = GET_SYS_ANALOG_REG_IDX(addr);
@@ -446,22 +446,22 @@ static inline uint32_t sys_ll_get_cpu_clk_div_mode1_value(void) {
 	return r->v;
 }
 
-static inline void sys_ll_set_cpu_clk_div_mode1_clkdiv_core(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ll_set_cpu_clk_div_mode1_clkdiv_core(uint32_t v) {
 	system_cpu_clk_div_mode1_t *r = (system_cpu_clk_div_mode1_t*)(SOC_SYSTEM_REG_BASE + (0x8 << 2));
 	r->clkdiv_core = v;
 }
 
-static inline uint32_t sys_ll_get_cpu_clk_div_mode1_clkdiv_core(void) {
+__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_cpu_clk_div_mode1_clkdiv_core(void) {
 	system_cpu_clk_div_mode1_t *r = (system_cpu_clk_div_mode1_t*)(SOC_SYSTEM_REG_BASE + (0x8 << 2));
 	return r->clkdiv_core;
 }
 
-static inline void sys_ll_set_cpu_clk_div_mode1_cksel_core(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ll_set_cpu_clk_div_mode1_cksel_core(uint32_t v) {
 	system_cpu_clk_div_mode1_t *r = (system_cpu_clk_div_mode1_t*)(SOC_SYSTEM_REG_BASE + (0x8 << 2));
 	r->cksel_core = v;
 }
 
-static inline uint32_t sys_ll_get_cpu_clk_div_mode1_cksel_core(void) {
+__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_cpu_clk_div_mode1_cksel_core(void) {
 	system_cpu_clk_div_mode1_t *r = (system_cpu_clk_div_mode1_t*)(SOC_SYSTEM_REG_BASE + (0x8 << 2));
 	return r->cksel_core;
 }
@@ -528,7 +528,7 @@ static inline uint32_t sys_ll_get_cpu_clk_div_mode2_ckdiv_psram(void) {
 	return r->ckdiv_psram;
 }
 
-static inline void sys_ll_set_cpu_clk_div_mode2_cksel_psram(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ll_set_cpu_clk_div_mode2_cksel_psram(uint32_t v) {
 	system_cpu_clk_div_mode2_t *r = (system_cpu_clk_div_mode2_t*)(SOC_SYSTEM_REG_BASE + (0x9 << 2));
 	r->cksel_psram = v;
 }
@@ -578,12 +578,12 @@ static inline uint32_t sys_ll_get_cpu_clk_div_mode2_cksel_auxs(void) {
 	return r->cksel_auxs;
 }
 
-static inline void sys_ll_set_cpu_clk_div_mode2_cksel_flash(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ll_set_cpu_clk_div_mode2_cksel_flash(uint32_t v) {
 	system_cpu_clk_div_mode2_t *r = (system_cpu_clk_div_mode2_t*)(SOC_SYSTEM_REG_BASE + (0x9 << 2));
 	r->cksel_flash = v;
 }
 
-static inline uint32_t sys_ll_get_cpu_clk_div_mode2_cksel_flash(void) {
+__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_cpu_clk_div_mode2_cksel_flash(void) {
 	system_cpu_clk_div_mode2_t *r = (system_cpu_clk_div_mode2_t*)(SOC_SYSTEM_REG_BASE + (0x9 << 2));
 	return r->cksel_flash;
 }
@@ -593,7 +593,7 @@ static inline void sys_ll_set_cpu_clk_div_mode2_ckdiv_flash(uint32_t v) {
 	r->ckdiv_flash = v;
 }
 
-static inline uint32_t sys_ll_get_cpu_clk_div_mode2_ckdiv_flash(void) {
+__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_cpu_clk_div_mode2_ckdiv_flash(void) {
 	system_cpu_clk_div_mode2_t *r = (system_cpu_clk_div_mode2_t*)(SOC_SYSTEM_REG_BASE + (0x9 << 2));
 	return r->ckdiv_flash;
 }
@@ -774,12 +774,12 @@ static inline uint32_t sys_ll_get_cpu_anaspi_freq_reserved_6_31(void) {
 
 //reg cpu_device_clk_enable:
 
-static inline void sys_ll_set_cpu_device_clk_enable_value(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ll_set_cpu_device_clk_enable_value(uint32_t v) {
 	system_cpu_device_clk_enable_t *r = (system_cpu_device_clk_enable_t*)(SOC_SYSTEM_REG_BASE + (0xc << 2));
 	r->v = v;
 }
 
-static inline uint32_t sys_ll_get_cpu_device_clk_enable_value(void) {
+__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_cpu_device_clk_enable_value(void) {
 	system_cpu_device_clk_enable_t *r = (system_cpu_device_clk_enable_t*)(SOC_SYSTEM_REG_BASE + (0xc << 2));
 	return r->v;
 }
@@ -1076,12 +1076,12 @@ static inline uint32_t sys_ll_get_cpu_device_clk_enable_wdt_cken(void) {
 
 //reg cpu_device_mem_ctrl2:
 
-static inline void sys_ll_set_cpu_device_mem_ctrl2_value(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ll_set_reserver_reg0xd_value(uint32_t v) {
 	system_cpu_device_mem_ctrl2_t *r = (system_cpu_device_mem_ctrl2_t*)(SOC_SYSTEM_REG_BASE + (0xf << 2));
 	r->v = v;
 }
 
-static inline uint32_t sys_ll_get_cpu_device_mem_ctrl2_value(void) {
+__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_reserver_reg0xd_value(void) {
 	system_cpu_device_mem_ctrl2_t *r = (system_cpu_device_mem_ctrl2_t*)(SOC_SYSTEM_REG_BASE + (0xf << 2));
 	return r->v;
 }

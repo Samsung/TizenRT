@@ -60,7 +60,10 @@ enum mpu_region_usages_e {
 	MPU_REGION_MAX
 };
 
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
+#ifdef CONFIG_XIP_ELF
+/* XIP_ELF needs two MPU regions (Flash and RAM) */
+#define NUM_APP_REGIONS     2
+#elif defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME)
 /* Separate three MPU regions (text, ro and rw) to optimize reloading time */
 #define NUM_APP_REGIONS     3
 #else

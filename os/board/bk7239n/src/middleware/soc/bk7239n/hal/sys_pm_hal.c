@@ -1813,4 +1813,8 @@ void sys_hal_low_power_hardware_init()
 	/*rtc on bk7236N and bk7239 requires spi_timerwken*/
 	sys_hal_set_ana_reg9_spi_timerwken(1);
 
+	#if CONFIG_PM_LOWEST_POWER_MODE == 1
+	bk_phy_set_cali_flag(0x0);
+	#endif
+
 }

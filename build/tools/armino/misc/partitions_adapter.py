@@ -86,8 +86,7 @@ def parse_bl1_partitions(part: PartitionInfo) -> list[SecurityPatitionInfo]:
         SecurityPatitionInfo(name="boot_flag", type="data", size="4K"),
         SecurityPatitionInfo(name="partition", type="data", size="4K"),
         SecurityPatitionInfo(name="primary_manifest", type="data", size="4K"),
-        SecurityPatitionInfo(name="secondary_manifest", type="data", size="4K"),
-        SecurityPatitionInfo(name="bl2", type="app", size="72K"),
+        SecurityPatitionInfo(name="bl2", type="app", size="76K"),
     ]
     return bl1_partitions
 

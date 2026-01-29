@@ -23,6 +23,8 @@
 #if defined (__ARM_FEATURE_CMSE) &&  (__ARM_FEATURE_CMSE == 3U)
   #include "partition_star.h"
 #endif
+#include <soc/bk7239n/soc.h>
+#include "os/mem.h"
 
 /*----------------------------------------------------------------------------
   Define clocks
@@ -41,7 +43,7 @@ extern const VECTOR_TABLE_Type __VECTOR_TABLE_IRAM[];
 /*----------------------------------------------------------------------------
   System initialization function
  *----------------------------------------------------------------------------*/
-void SystemInit (void)
+__FLASH_BOOT_CODE void SystemInit (void)
 {
 #if defined (__VTOR_PRESENT) && (__VTOR_PRESENT == 1U)
 	SCB->VTOR = (uint32_t) &(__VECTOR_TABLE_IRAM[0]);

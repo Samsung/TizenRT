@@ -83,7 +83,7 @@ struct attr_db_addon
     void *arg;
 
     uint16_t attr_handle;
-    uint8 app_reject; //note: maybe used in future T_APP_RESULT
+    uint8_t app_reject; //note: maybe used in future T_APP_RESULT
     uint8_t *peer_write_buffer;
     uint32_t peer_write_buffer_current_len;
     uint32_t peer_write_buffer_max_len;
@@ -686,7 +686,7 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
     {
         LOGI("realloc %d %d", service_index, buffer_len);
 
-        os_free(service_elem->db_addon[buffer_len].buffer);
+        os_free(service_elem->db_addon[att_index].buffer);
 
         service_elem->db_addon[att_index].buffer = os_malloc(buffer_len);
 
@@ -736,7 +736,6 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
 
     elem.set_server_buffer_cmd.buffer = buffer;
     elem.set_server_buffer_cmd.buffer_len = buffer_len;
-    elem.set_server_buffer_cmd.buffer_max_len = buffer_len;
     elem.set_server_buffer_cmd.buffer_max_len = buffer_len;
     elem.set_server_buffer_cmd.service_index = service_index;
     elem.set_server_buffer_cmd.att_index = att_index;
@@ -1213,7 +1212,7 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
     {
         if (input_index < config->profile_count)
         {
-            LOGV("step 2 index %d type %d before %d", input_index, config->profile[input_index].type, service_before, char_before);
+            LOGV("step 2 index %d type %d service_before %d char_before %d", input_index, config->profile[input_index].type, service_before, char_before);
         }
 
         if (input_index == config->profile_count || TRBLE_GATT_SERVICE == config->profile[input_index].type)
@@ -1305,7 +1304,7 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
     {
         if (input_index < config->profile_count)
         {
-            LOGV("step 3 index %d type %d before %d", input_index, config->profile[input_index].type, service_before, char_before);
+            LOGV("step 3 index %d type %d service_before %d char_before %d", input_index, config->profile[input_index].type, service_before, char_before);
         }
 
         if (input_index == config->profile_count || TRBLE_GATT_SERVICE == config->profile[input_index].type)
@@ -1752,8 +1751,6 @@ static void release_all_db(void)
                 os_free(s_ctb.service_array[i].cfg.att_db);
                 s_ctb.service_array[i].cfg.att_db = NULL;
             }
-
-            os_memset(&s_ctb.service_array[i].cfg.att_db, 0, sizeof(s_ctb.service_array[i].cfg.att_db));
         }
 
         os_free(s_ctb.service_array);

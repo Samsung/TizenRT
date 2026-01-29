@@ -433,7 +433,7 @@ static bool is_6ghz_supported(struct wpa_supplicant *wpa_s)
 	struct hostapd_channel_data *chnl;
 	int i, j;
 
-	for (i = 0; i < wpa_s->hw.num_modes; i++) {
+	for (i = 0; wpa_s->hw.modes && i < wpa_s->hw.num_modes; i++) {
 		if (wpa_s->hw.modes[i].mode == HOSTAPD_MODE_IEEE80211A) {
 			chnl = wpa_s->hw.modes[i].channels;
 			for (j = 0; j < wpa_s->hw.modes[i].num_channels; j++) {
@@ -1302,7 +1302,11 @@ ssid_list_set:
 		wpa_s->manual_scan_freqs = NULL;
 	}
 
-	if (params.freqs == NULL && wpa_s->select_network_scan_freqs) {
+	if (
+#if BK_SUPPLICANT
+		wpa_s->last_scan_req != MANUAL_SCAN_REQ &&
+#endif
+		params.freqs == NULL && wpa_s->select_network_scan_freqs) {
 		wpa_dbg(wpa_s, MSG_DEBUG,
 			"Limit select_network scan to specified channels");
 		params.freqs = wpa_s->select_network_scan_freqs;
@@ -1454,7 +1458,7 @@ scan:
 		 * since the 6 GHz band is disabled for P2P uses. */
 		wpa_printf(MSG_DEBUG,
 			   "P2P: 6 GHz disabled - update the scan frequency list");
-		for (i = 0; i < wpa_s->hw.num_modes; i++) {
+		for (i = 0; wpa_s->hw.modes && i < wpa_s->hw.num_modes; i++) {
 			if (wpa_s->hw.modes[i].num_channels == 0)
 				continue;
 			if (wpa_s->hw.modes[i].mode == HOSTAPD_MODE_IEEE80211G)
@@ -2702,8 +2706,12 @@ unsigned int wpas_get_est_tpt(const struct wpa_supplicant *wpa_s,
 		rate = 54 * 2;
 	est = rate * 500;
 
-	hw_mode = get_mode_with_freq(wpa_s->hw.modes, wpa_s->hw.num_modes,
-				     freq);
+	if (wpa_s->hw.modes && wpa_s->hw.num_modes) {
+		hw_mode = get_mode_with_freq(wpa_s->hw.modes, wpa_s->hw.num_modes,
+						freq);
+	} else {
+		hw_mode = NULL;
+	}
 
 	if (hw_mode && hw_mode->ht_capab) {
 		ie = get_ie(ies, ies_len, WLAN_EID_HT_CAP);
@@ -3045,7 +3053,7 @@ void scan_only_handler(struct wpa_supplicant *wpa_s,
 		wpa_s->wpa_state <= WPA_SCANNING &&
 		wpa_supplicant_enabled_networks(wpa_s)) {
 		wpa_s->scan_req = NORMAL_SCAN_REQ;
-		wpa_supplicant_req_scan(wpa_s, 1, 0);
+		wpa_supplicant_req_scan(wpa_s, 0, 100000);
 	}
 #endif
 }

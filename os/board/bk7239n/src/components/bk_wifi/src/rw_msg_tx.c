@@ -110,7 +110,7 @@ int rw_msg_send(const void *msg_params, int reqcfm, uint16_t reqid, void *cfm)
 	}
 	if (kNoErr != ret) {
 		RWNX_LOGI("%s failed send %d\n", __FUNCTION__, msg->id);
-		os_free((void *)msg_params);
+		ke_msg_free(msg);
 		err = RWNX_ERR_IOCTL_SEND;
 		goto failed_or_timeout;
 	} else if (reqcfm) {
@@ -1068,6 +1068,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 	#else
 	uint16_t scan_freq = 0;
 	#endif // CONFIG_WIFI_REGDOMAIN
+
 	/* Build the SCANU_START_REQ message */
 	req = ke_msg_alloc(SCANU_START_REQ, TASK_SCANU, TASK_API,
 					   sizeof(struct scanu_start_req) + scan_param->extra_ies_len);
@@ -1088,8 +1089,8 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 		req->ssid[i].length = scan_param->ssids[i].length;
 		os_memcpy(req->ssid[i].array, scan_param->ssids[i].array, req->ssid[i].length);
 	}
-	int *freqs = scan_param->freqs;
 
+	int *freqs = scan_param->freqs;
 	if (!freqs[0]) {
 		/* no specified freq, set to all freqs supported */
 		rw_ieee80211_init_scan_chan(req);
@@ -1106,6 +1107,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 			} else {
 				req->chan[i].band = IEEE80211_BAND_2GHZ;
 			}
+			req->chan[i].flags = 0;
 			req->chan[i].tx_power = VIF_UNDEF_POWER;
 
 			#if CONFIG_WIFI_REGDOMAIN
@@ -1122,6 +1124,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 			}
 			#else
 			req->chan[i].flags = 0;
+
 			#if CONFIG_WIFI_AUTO_COUNTRY_CODE
 			// If auto mode, disable 12/13/14,52/56/60/64a ctive scan
 			if (country_code_policy_is_auto() &&
@@ -1222,7 +1225,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 					if (scan_freq == 5260 || scan_freq == 5280 || scan_freq == 5300 || scan_freq == 5320)
 						req->chan[i].flags |= CHAN_NO_IR;
 					#endif
-					#endif
+					#endif // CONFIG_WIFI_REGDOMAIN
 				}
 			}
 			req->chan_cnt = i;

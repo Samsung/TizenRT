@@ -34,7 +34,7 @@ __attribute__((section(".iram"))) void flush_dcache(void *va, long size)
     }
 }
 
-void flush_all_dcache(void)
+__attribute__((section(".iram"))) void flush_all_dcache(void)
 {
     if (SCB->CLIDR & SCB_CLIDR_DC_Msk) {
         SCB_CleanInvalidateDCache();

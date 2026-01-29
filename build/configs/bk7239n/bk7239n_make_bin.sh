@@ -17,6 +17,9 @@
 #
 ###########################################################################
 
+set -e
+set -o pipefail
+
 THIS_PATH=`test -d ${0%/*} && cd ${0%/*}; pwd`
 TOP_PATH=${THIS_PATH}/../../..
 CONFIG=${TOP_PATH}/os/.config
@@ -136,7 +139,9 @@ function install_bin_for_deployment()
 	# Copy core binary files
 	[ -f "$BINDIR/tinyara.axf.bin" ] && cp -f "$BINDIR/tinyara.axf.bin" "$install_dir/cpu0_app.bin" || echo "Warning: cpu0_app.bin not found, skipping..."
 	[ -f "$workdir/bl2.bin" ] && cp -f "$workdir/bl2.bin" "$install_dir/" || echo "Warning: bl2.bin not found, skipping..."
-	[ -f "$workdir/bl2_B.bin" ] && cp -f "$workdir/bl2_B.bin" "$install_dir/" || echo "Warning: bl2_B.bin not found, skipping..."
+	if [ "$CONFIG_BL2_UPDATE_WITH_PC" = "y" ]; then
+		[ -f "$workdir/bl2_B.bin" ] && cp -f "$workdir/bl2_B.bin" "$install_dir/" || echo "Warning: bl2_B.bin not found, skipping..."
+	fi
 	[ -f "$workdir/tfm_s.bin" ] && cp -f "$workdir/tfm_s.bin" "$install_dir/" || echo "Warning: tfm_s.bin not found, skipping..."
 
 	# Copy configuration files
@@ -160,8 +165,17 @@ function install_bin_for_deployment()
 		[ -f "$src_app" ] && cp -f "$src_app" "$install_dir/app${app_num}_for_sign" && echo "  [${app_num}/${app_nums}] app${app_num}_for_sign" || echo "  Warning: app${app_num}_for_sign not found"
 	done
 
+	# Copy common binary if CONFIG_SUPPORT_COMMON_BINARY is enabled
+	if grep -q "^CONFIG_SUPPORT_COMMON_BINARY=y" "$CONFIG" 2>/dev/null; then
+		local src_common="${BINDIR}/common"
+		[ -f "$src_common" ] && cp -f "$src_common" "$install_dir/common_for_sign" && echo "  common_for_sign" || echo "  Warning: common_for_sign not found"
+	fi
+
 	# Copy ss.bin if exists
 	[ -f "$BINDIR/ss.bin" ] && cp -f "$BINDIR/ss.bin" "$install_dir/" && echo "  ss.bin" || echo "  Warning: ss.bin not found"
+
+	#copy partition_layout.txt
+	[ -f "$workdir/partition_layout.txt" ] && cp -f "$workdir/partition_layout.txt" "$install_dir/partition_layout.txt" || echo "Warning: partition_layout.txt not found, skipping..."
 
 	echo "Deployment installation completed: $install_dir"
 }

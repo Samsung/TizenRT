@@ -129,14 +129,7 @@ bk_err_t bk_pm_module_power_on(uint32_t *pm_off_modules, uint32_t *pm_on_modules
 				*pm_sleeped_modules &= ~(0x1ULL << domain);
 				GLOBAL_INT_RESTORE();
 
-				if (bk_pm_cp1_auto_power_down_state_get()) {
-					pm_module_check_power_on(pm_off_modules, pm_on_modules, PM_POWER_MODULE_NAME_CPU1);
-				}
-
 				if (sys_drv_module_power_state_get(domain)) {
-					if (bk_pm_mem_auto_power_down_state_get()) {
-						pm_module_check_power_on(pm_off_modules, pm_on_modules, PM_POWER_MODULE_NAME_MEM3);
-					}
 					sys_drv_module_power_ctrl(domain, PM_POWER_MODULE_STATE_ON);
 				}
 			}
@@ -151,14 +144,7 @@ bk_err_t bk_pm_module_power_on(uint32_t *pm_off_modules, uint32_t *pm_on_modules
 				*pm_sleeped_modules &= ~(0x1ULL << domain);
 				GLOBAL_INT_RESTORE();
 
-				if (bk_pm_cp1_auto_power_down_state_get()) {
-					pm_module_check_power_on(pm_off_modules, pm_on_modules, PM_POWER_MODULE_NAME_CPU1);
-				}
-
 				if (sys_drv_module_power_state_get(domain)) {
-					if (bk_pm_mem_auto_power_down_state_get()) {
-						pm_module_check_power_on(pm_off_modules, pm_on_modules, PM_POWER_MODULE_NAME_MEM3);
-					}
 					sys_drv_module_power_ctrl(domain, PM_POWER_MODULE_STATE_ON);
 				}
 			}
@@ -260,17 +246,6 @@ bk_err_t bk_pm_module_power_off(uint32_t *pm_off_modules, uint32_t *pm_on_module
 			if (pm_debug_mode() & 0x2)
 				BK_LOGD(NULL, "module[%d] can not directly power off\r\n", module);
 			return BK_FAIL;
-		}
-
-		if (bk_pm_cp1_auto_power_down_state_get()) {
-			if (module == PM_POWER_MODULE_NAME_CPU1) {
-				if (!((*pm_off_modules & (0x1 << PM_POWER_MODULE_NAME_AUDP))
-					&& (*pm_off_modules & (0x1 << PM_POWER_MODULE_NAME_VIDP)))) {
-					if (pm_debug_mode() & 0x2)
-						BK_LOGD(NULL, "module[%d] can not directly power off\r\n", module);
-					return BK_FAIL;
-				}
-			}
 		}
 
 		if (module == PM_POWER_MODULE_NAME_CPU1) {
@@ -480,38 +455,10 @@ void pm_check_power_on_module(uint32_t *pm_off_modules, uint32_t *pm_on_modules,
 		// BK_LOGD(NULL, "video not power on \r\n");
 	}
 
-	if (bk_pm_mem_auto_power_down_state_get())
-	{
-		off_modules = (0x1 << PM_POWER_MODULE_NAME_VIDP) | (0x1 << PM_POWER_MODULE_NAME_AUDP) | (0x1 << PM_POWER_MODULE_NAME_BTSP);
-		if ((*pm_off_modules & off_modules) == off_modules)
-		{
-			pm_module_check_power_off(pm_off_modules, pm_on_modules, PM_POWER_MODULE_NAME_MEM3);
-		}
-	}
-
-	// TODO: is still in use ?
-	if (bk_pm_cp1_auto_power_down_state_get())
-	{
-		off_modules = (0x1 << PM_POWER_MODULE_NAME_VIDP) | (0x1 << PM_POWER_MODULE_NAME_AUDP);
-	}
 }
 
 void pm_check_power_off_module(uint32_t *pm_off_modules, uint32_t *pm_on_modules, uint64_t *pm_sleeped_modules)
 {
-	// TODO: is still in use ?
-	uint32_t off_modules = 0;
-
-	if (bk_pm_cp1_auto_power_down_state_get())
-	{
-		off_modules = (0x1 << PM_POWER_MODULE_NAME_VIDP) | (0x1 << PM_POWER_MODULE_NAME_AUDP);
-		if ((*pm_off_modules & off_modules) == off_modules)
-		{
-			if (sys_drv_module_power_state_get(PM_POWER_MODULE_NAME_VIDP) && sys_drv_module_power_state_get(PM_POWER_MODULE_NAME_AUDP))
-			{
-				pm_module_check_power_off(pm_off_modules, pm_on_modules, PM_POWER_MODULE_NAME_CPU1);
-			}
-		}
-	}
 }
 
 static void pm_module_check_power_on(uint32_t *pm_off_modules, uint32_t *pm_on_modules, pm_power_module_name_e module)
@@ -519,22 +466,6 @@ static void pm_module_check_power_on(uint32_t *pm_off_modules, uint32_t *pm_on_m
 	if (PM_POWER_MODULE_STATE_OFF == sys_drv_module_power_state_get(module))
 	{
 		sys_drv_module_power_ctrl(module, PM_POWER_MODULE_STATE_ON);
-
-		if (module == PM_POWER_MODULE_NAME_MEM3)
-		{
-			// TODO: fix me
-			// extern void smem_reset_lastblock(void);
-			// smem_reset_lastblock();
-		}
-
-		if (module == PM_POWER_MODULE_NAME_CPU1)
-		{
-#if (CONFIG_CPU_CNT > 1)
-			extern void start_cpu1_core();
-			start_cpu1_core();
-			// s_pm_cp1_boot_ready = 0x0;
-#endif
-		}
 
 		*pm_off_modules &= ~(0x1 << module);
 		*pm_on_modules |= 0x1 << module;
@@ -545,23 +476,12 @@ static void pm_module_check_power_off(uint32_t *pm_off_modules, uint32_t *pm_on_
 {
 	if (PM_POWER_MODULE_STATE_ON == sys_drv_module_power_state_get(module))
 	{
-		if (module == PM_POWER_MODULE_NAME_CPU1)
-		{
-#if (CONFIG_CPU_CNT > 1)
-			extern void stop_cpu1_core(void);
-			stop_cpu1_core();
-#endif
-		}
 		if (pm_debug_mode() & 0x2)
 		{
 			BK_LOGD(NULL, "pm_module_check_power_off module[%d][%d]\r\n", module, sys_drv_module_power_state_get(module));
 		}
 		sys_drv_module_power_ctrl(module, PM_POWER_MODULE_STATE_OFF);
 
-		if (module == PM_POWER_MODULE_NAME_CPU1)
-		{
-			// s_pm_cp1_boot_ready = 0x0;
-		}
 		*pm_off_modules |= 0x1 << module;
 		*pm_on_modules &= ~(0x1 << module);
 	}

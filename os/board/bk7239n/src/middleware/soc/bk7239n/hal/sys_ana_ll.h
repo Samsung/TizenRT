@@ -39,7 +39,7 @@ extern "C" {
 #define SYS_ANALOG_REG_SPI_STATE_POS(idx) (idx)
 #endif
 
-static inline void sys_ana_set_ana_reg_bit(uint32_t reg_addr, uint32_t pos, uint32_t mask, uint32_t value)
+__FLASH_BOOT_CODE static inline void sys_ana_set_ana_reg_bit(uint32_t reg_addr, uint32_t pos, uint32_t mask, uint32_t value)
 {
 	uint32_t reg_value;
 	reg_value = *(volatile uint32_t *)(reg_addr);
@@ -773,7 +773,7 @@ static inline uint32_t sys_ana_ll_get_ana_reg5_value(void) {
 	return sys_ll_get_analog_reg_value(SOC_SYS_ANA_REG_BASE + (0x45 << 2));
 }
 
-static inline void sys_ana_ll_set_ana_reg5_pwd_rosc_spi(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg5_pwd_rosc_spi(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x45 << 2)), 0, 0x1, v);
 }
 
@@ -1289,7 +1289,7 @@ static inline uint32_t sys_ana_ll_get_ana_reg8_digcurlim(void) {
 	return r->digcurlim;
 }
 
-static inline void sys_ana_ll_set_ana_reg8_spi_latch1v(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg8_spi_latch1v(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x48 << 2)), 9, 0x1, v);
 }
 
