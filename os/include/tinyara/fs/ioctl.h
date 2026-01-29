@@ -498,6 +498,8 @@
 #define PMIOC_METRICS            _PMIOC(0x0007)
 #define PMIOC_SUSPEND_COUNT      _PMIOC(0x0008)
 #define PMIOC_START              _PMIOC(0x0009)
+#define PMIOC_STOP               _PMIOC(0x000a)
+#define PMIOC_GET_STATUS         _PMIOC(0x000b)
 
 /* Cpuload driver ioctl definitions ************************/
 
