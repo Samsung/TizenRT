@@ -119,7 +119,7 @@ dhara_sector_t dhara_map_capacity(const struct dhara_map *m)
 {
 	const dhara_sector_t cap = dhara_journal_capacity(&m->journal);
 	const dhara_sector_t reserve = cap / (m->gc_ratio + 1);
-	const dhara_sector_t safety_margin = DHARA_MAX_RETRIES << m->journal.nand->log2_ppb;
+	const dhara_sector_t safety_margin = DHARA_MAX_RETRIES;
 
 	if (reserve + safety_margin >= cap) {
 		return 0;

@@ -129,6 +129,16 @@ static const struct block_operations g_dhara_bops = {
  * Private Functions
  ****************************************************************************/
 
+int sectors_reduced(FAR struct inode *inode)
+{
+	FAR dhara_dev_t *dev;
+	dev = inode->i_private;
+
+	struct dhara_map *m = &dev->map;
+	int x = dhara_map_capacity(m);
+	return x;
+}
+
 static int dhara_convert_result(dhara_error_t err)
 {
 	switch (err) {
