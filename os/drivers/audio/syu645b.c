@@ -1248,9 +1248,9 @@ static int syu645b_set_equalizer(FAR struct syu645b_dev_s *priv, uint32_t preset
 		audvdbg("ret : %d\n", ret);
 		if (ret != script.type) {
 			/* ETIMEDOUT can be happened if very high thread run simultaneously hence add retry */
-			if (ret == -ETIMEDOUT) {
+			if ((ret == -ETIMEDOUT) || (ret == -EAGAIN)) {
 				int count = 0;
-				while (count < 3) {
+				while (count < 5) {
 					ret = i2c_write(dev, syu645b_i2c_config, (uint8_t *)reg, script.type);
 					if (ret == script.type) {
 						break;
