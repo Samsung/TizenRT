@@ -117,6 +117,9 @@ FAR void *mm_memalign(FAR struct mm_heap_s *heap, size_t alignment, size_t size,
 	bool found_align = false;
 	size_t mask = (size_t)(alignment - 1);
 	bool gc_done = false;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	size_t gc_before_size;
+#endif
 
 	/* If this requested alinement's less than or equal to the natural alignment
 	 * of malloc, then just let malloc do the work.
@@ -272,7 +275,15 @@ retry_after_gc:
 
 	if (!ret && gc_done == false) {
 		mdbg("Allocation failed!!! We dont have enough memory. Try to free dead task stack areas\n");
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		gc_before_size = heap->total_alloc_size;
+#endif
 		sched_garbagecollection();
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		if (gc_before_size > heap->total_alloc_size) {
+			mdbg("GC freed %u bytes\n", gc_before_size - heap->total_alloc_size);
+		}
+#endif
 		gc_done = true;
 		goto retry_after_gc;
 	}
