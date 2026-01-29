@@ -73,6 +73,31 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+/* For use with EABI and floating point, the stack must be aligned to 8-byte
+ * addresses.
+ */
+
+#ifdef __ARM_EABI__
+#define STACK_ALIGNMENT     8
+#else
+#define STACK_ALIGNMENT     4
+#endif
+
+/* Stack alignment macros */
+
+#define STACK_ALIGN_MASK    (STACK_ALIGNMENT - 1)
+#define STACK_ALIGN_DOWN(a) ((a) & ~STACK_ALIGN_MASK)
+#define STACK_ALIGN_UP(a)   (((a) + STACK_ALIGN_MASK) & ~STACK_ALIGN_MASK)
+
+/* Check if an interrupt stack size is configured */
+
+#ifndef CONFIG_ARCH_INTERRUPTSTACK
+#define CONFIG_ARCH_INTERRUPTSTACK 0
+#endif
+
+#define INTSTACK_SIZE (CONFIG_ARCH_INTERRUPTSTACK & ~STACK_ALIGN_MASK)
+
+
 /* Although task IDs can take the (positive, non-zero)
  * range of pid_t, the number of tasks that will be supported
  * at any one time is (artificially) limited by the CONFIG_MAX_TASKS

@@ -68,17 +68,32 @@
 
 void sched_checkstackoverflow(FAR struct tcb_s *rtcb)
 {
-	if (*(uint32_t *)(rtcb->stack_base_ptr) != STACK_COLOR) {
+	if (*(uint32_t *)rtcb->stack_base_ptr != STACK_COLOR) {
+		//We have seen that the base pointer can get corrupted because of some
+		//code, therefore, we will be checking the stack with adjusted stack
+		//pointer and adjusted stack size also.
+		uintptr_t ptr = STACK_ALIGN_UP(((uintptr_t)rtcb->adj_stack_ptr - (uintptr_t)rtcb->adj_stack_size));
 
-		irqstate_t flags = enter_critical_section();
+		if (*(FAR uint32_t *)ptr != STACK_COLOR) {
 
-		lldbg_noarg("\n###############    STACK OVERFLOW at pid %d ", rtcb->pid);
+			lldbg_noarg("\n###############    STACK OVERFLOW at pid %d ", rtcb->pid);
 #if CONFIG_TASK_NAME_SIZE > 0
-		lldbg_noarg("(%s) ", rtcb->name);
+			lldbg_noarg("(%s) ", rtcb->name);
 #endif
-		lldbg_noarg("###################\n");
+			lldbg_noarg("###################\n");
+		} else {
+			//Pointer we got from adjusted stack pointer and adjusted stack size
+			//didn't reveal corrupted stack, therefore, we will treat this as memory
+			//corruption and print logs accordingly.
+			lldbg_noarg("\n###############    MEMORY CORRUPTION IN TCB at pid %d ", rtcb->pid);
+#if CONFIG_TASK_NAME_SIZE > 0
+            lldbg_noarg("(%s) ", rtcb->name);
+#endif
+            lldbg_noarg("###################\n");
+			lldbg_noarg("Stack base pointer (corrupted value) : %p", (void *)(rtcb->stack_base_ptr));
+		}
+		irqstate_t flags = enter_critical_section();
 		PANIC();
-
 		leave_critical_section(flags);
 	}
 }

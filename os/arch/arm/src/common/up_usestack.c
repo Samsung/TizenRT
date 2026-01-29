@@ -65,6 +65,7 @@
 #include <tinyara/arch.h>
 
 #include "up_internal.h"
+#include "sched/sched.h"
 
 /****************************************************************************
  * Pre-processor Macros

@@ -65,6 +65,7 @@
 #include <arch/irq.h>
 
 #include "up_internal.h"
+#include "sched/sched.h"
 
 /****************************************************************************
  * Pre-processor Macros

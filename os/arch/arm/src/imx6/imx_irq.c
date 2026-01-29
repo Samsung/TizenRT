@@ -48,6 +48,7 @@
 #include "up_internal.h"
 #include "sctlr.h"
 #include "gic.h"
+#include "sched/sched.h"
 
 /****************************************************************************
  * Pre-processor Definitions
