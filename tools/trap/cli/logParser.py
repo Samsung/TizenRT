@@ -173,6 +173,44 @@ class logParser:
 					self.g_etext_app[app_idx] = self.g_stext_app[app_idx] + int(word[3], 10) # word[3] is text_size
 					app_idx = app_idx + 1
 
+		if app_idx == 0:
+			#TODO: create function to get activer partition index number, now assume
+			partition = 0
+			app_count = 0
+			app_names = []
+
+			ld_files = [
+				f for f in os.listdir(self.bin_path)
+				if f.endswith(str(partition) + ".ld") and os.path.isfile(os.path.join(self.bin_path, f))
+			]
+
+			for f in ld_files:
+				app_count = app_count + 1
+				app_names.append(f.split("_")[0])
+
+			if app_count > 0:
+				self.g_app_idx = app_count
+				self.g_stext_app = array('i', range(0, self.g_app_idx))
+				self.g_etext_app = array('i', range(0, self.g_app_idx))
+
+				for ld_file in ld_files:
+					with open(self.bin_path + ld_file) as f:
+						for line in f:
+							if self.xip_enabled:
+								if 'uflash' in line:
+									origin_hex = line.split("ORIGIN =")[1].split(",")[0].strip()
+									length_hex = line.split("LENGTH =")[1].strip()
+							else:
+								if 'usram' in line:
+									origin_hex = line.split("ORIGIN =")[1].split(",")[0].strip()
+									length_hex = line.split("LENGTH =")[1].strip()
+					self.app_name.append(app_names[app_idx])
+					self.g_stext_app[app_idx] = int(origin_hex, 16)
+					self.g_etext_app[app_idx] = self.g_stext_app[app_idx] + int(length_hex, 16) # word[3] is text_size
+					app_idx = app_idx + 1
+			else:
+				print("\nNo LD files found for common and app binaries\n")
+
 	# API to find crash binary, crash point and crash type from assert log
 	def find_crash_point(self):
 		pc_value = 0
