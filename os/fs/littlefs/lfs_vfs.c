@@ -156,6 +156,16 @@ const struct mountpt_operations littlefs_operations = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+extern int sectors_reduced(FAR struct inode *driver);
+int littlefs_blocks_reduced(FAR struct inode *driver)
+{
+	int available_sectors;
+
+	available_sectors = sectors_reduced(driver);
+	lldbg("available_sectors %lld \n", (long long)available_sectors);
+	return available_sectors;
+}
+
 
 /****************************************************************************
  * Name: littlefs_semtake
@@ -454,7 +464,6 @@ static int littlefs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		else
 			ret = -ENOTTY;
 		}
-	}
 	return ret;
 }
 
@@ -957,7 +966,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	}
 
 	/* Initialize lfs_config structure */
-
+	int blocks_available = littlefs_blocks_reduced(driver);
 	fs->cfg.context = fs;
 	fs->cfg.read = littlefs_read_block;
 	fs->cfg.prog = littlefs_write_block;
@@ -969,8 +978,8 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 #endif
 	fs->cfg.read_size = fs->geo.blocksize;
 	fs->cfg.prog_size = fs->geo.blocksize;
-	fs->cfg.block_size = fs->geo.erasesize;
-	fs->cfg.block_count = fs->geo.neraseblocks;
+	fs->cfg.block_size = fs->geo.blocksize;
+	fs->cfg.block_count = blocks_available-1;
 	fs->cfg.block_cycles = 500;
 	fs->cfg.cache_size = fs->geo.blocksize;
 	fs->cfg.lookahead_size = lfs_min(lfs_alignup(fs->cfg.block_count, 64) / 8, fs->cfg.read_size);
