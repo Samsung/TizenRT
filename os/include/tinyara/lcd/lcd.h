@@ -271,4 +271,3 @@ extern "C"
 #endif
 
 #endif /* __INCLUDE_TINYARA_LCD_H */
-
