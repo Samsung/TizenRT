@@ -346,7 +346,7 @@ static int nand_eraseblock(FAR struct nand_dev_s *nand, off_t block, bool scrub)
 
 		if (nand_checkblock(nand, block) != GOODBLOCK) {
 			fdbg("Block is BAD\n");
-			return -EIO;
+			return -EAGAIN;
 		}
 	}
 #endif
@@ -490,7 +490,7 @@ static int nand_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 		/* Erase each sector */
 
 		ret = nand_eraseblock(nand, startblock, false);
-		if (ret < 0) {
+		if (ret < 0 && ret != -EAGAIN) {
 			fdbg("ERROR: nand_eraseblock failed on block %ld: %d\n", (long)startblock, ret);
 			sem_post(&nand->lock);
 			return ret;
@@ -588,7 +588,7 @@ static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startpage, size_t npa
 	}
 
 	sem_post(&nand->lock);
-	return fixedecc ? -EUCLEAN : npages;
+	return fixedecc ? -EUCLEAN : ret;
 
 errout_with_lock:
 	sem_post(&nand->lock);
