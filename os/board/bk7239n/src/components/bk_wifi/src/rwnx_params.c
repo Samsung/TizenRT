@@ -221,7 +221,7 @@ static int rwnx_check_fw_hw_feature(struct rwnx_hw *rwnx_hw,
 
 	// LDPC is mandatory for HE40 and above, so if LDPC is not supported, then disable
 	// HE to use HT/VHT only
-	if (rwnx_hw->mod_params->he_on && !rwnx_hw->mod_params->ldpc_on) {
+	if (rwnx_hw->mod_params->he_on && !rwnx_hw->mod_params->ldpc_on && !ate_is_enabled()) {
 		rwnx_hw->mod_params->use_80 = false;
 		rwnx_hw->mod_params->use_2040 = false;
 	}
@@ -372,12 +372,15 @@ static void rwnx_set_ppe_threshold(struct rwnx_hw *rwnx_hw,
 	uint8_t *ppe_thres_ptr = he_cap->ppe_thres;
 	uint8_t i, j, cnt, offset;
 
-	if (rwnx_hw->mod_params->use_80) {
+	if (0) {
+#if (!CONFIG_SOC_BK7236N) && (!CONFIG_SOC_BK7239XX)
+	} else if (rwnx_hw->mod_params->use_80) {
 		ppe_thres_field->ru_idx_bmp = 7;
 		cnt = 3;
 	} else if (rwnx_hw->mod_params->use_2040) {
 		ppe_thres_field->ru_idx_bmp = 3;
 		cnt = 2;
+#endif
 	} else {
 		ppe_thres_field->ru_idx_bmp = 1;
 		cnt = 1;
@@ -661,6 +664,7 @@ static void rwnx_set_he_capa(struct rwnx_hw *rwnx_hw, struct wiphy *wiphy)
 
 	he_cap->he_cap_elem.mac_cap_info[2] |= IEEE80211_HE_MAC_CAP2_ALL_ACK;
 	rwnx_set_ppe_threshold(rwnx_hw, he_cap);
+#if (!CONFIG_SOC_BK7236N) && (!CONFIG_SOC_BK7239XX)
 	if (rwnx_hw->mod_params->use_2040) {
 		he_cap->he_cap_elem.phy_cap_info[0] |=
 			IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_IN_2G;
@@ -672,6 +676,7 @@ static void rwnx_set_he_capa(struct rwnx_hw *rwnx_hw, struct wiphy *wiphy)
 		mcs_map_max_2ss = IEEE80211_HE_MCS_SUPPORT_0_7;
 		dcm_max_ru = IEEE80211_HE_PHY_CAP8_DCM_MAX_RU_996;
 	}
+#endif
 	if (rwnx_hw->mod_params->ldpc_on) {
 		he_cap->he_cap_elem.phy_cap_info[1] |= IEEE80211_HE_PHY_CAP1_LDPC_CODING_IN_PAYLOAD;
 	} else {

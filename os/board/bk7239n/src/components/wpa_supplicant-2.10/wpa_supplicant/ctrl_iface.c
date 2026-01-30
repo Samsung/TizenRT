@@ -909,7 +909,8 @@ int wpa_supplicant_ctrl_iface_update_psk(struct wpa_supplicant *wpa_s, wlan_gen_
 		ssid->mem_only_psk = 0;
 
 		/* reconnect to ap */
-		wpas_select_network_from_last_scan(wpa_s, 0, 1);
+		if (!radio_work_pending(wpa_s, "scan"))
+			wpas_select_network_from_last_scan(wpa_s, 0, 1);
 	}
 
 	return 0;

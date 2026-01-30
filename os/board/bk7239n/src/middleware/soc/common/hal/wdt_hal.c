@@ -49,7 +49,7 @@ __attribute__((section(".itcm_sec_code"))) void wdt_hal_close(void)
         REG_WRITE(SOC_WDT_REG_BASE + 4 * 4, 0xA50000);
 }
 
-void wdt_hal_force_feed(void)
+__FLASH_BOOT_CODE void wdt_hal_force_feed(void)
 {
         REG_WRITE(SOC_AON_WDT_REG_BASE, 0x5AFFFC);
         REG_WRITE(SOC_AON_WDT_REG_BASE, 0xA5FFFC);

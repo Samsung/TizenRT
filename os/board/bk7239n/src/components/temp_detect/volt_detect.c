@@ -219,7 +219,7 @@ static uint16_t _volt_detect_calculate_voltage(uint16_t *raw_voltage_data)
 
 #if CONFIG_VOLT_DETECT
 #if TEMP_DETECT_ONESHOT_TIMER
-static void _volt_detect_oneshot_timer_handler(void *data1, void *data2)
+__IRAM_SEC static void _volt_detect_oneshot_timer_handler(void *data1, void *data2)
 {
 	int result;
 
@@ -263,7 +263,7 @@ static float volt_detect_calc_voltage(uint16_t adc_code)
     return volt_code;
 }
 
-int volt_daemon_restart(void)
+__IRAM_SEC int volt_daemon_restart(void)
 {
 	int err;
 

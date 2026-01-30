@@ -186,7 +186,7 @@ wpa_supplicant_find_hw_mode(struct wpa_supplicant *wpa_s,
 	struct hostapd_hw_modes *mode = NULL;
 	int i;
 
-	for (i = 0; i < wpa_s->hw.num_modes; i++) {
+	for (i = 0; wpa_s->hw.modes && i < wpa_s->hw.num_modes; i++) {
 		if (wpa_s->hw.modes[i].mode == hw_mode) {
 			mode = &wpa_s->hw.modes[i];
 			break;

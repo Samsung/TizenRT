@@ -94,6 +94,12 @@ menu "BK_system"
 			default y
 			help
 				When this macro is enabled, the internal code will automatically adapt to the BEKEN EVB environment.
+
+		config BK7239N_MP
+			bool "Enable BK7239N MP board-levle configuration"
+			default n
+			help
+				When this macro is enabled, the internal code adapts to the BK7239N MP board-levle hardware.
 	endmenu
 
 	menu "SWD Debug Config"
@@ -117,5 +123,15 @@ menu "BK_system"
 			depends on BEKEN_EVB
 			help 
 				Set the default pins for SWDCLK
+	endmenu
+
+	menu "flash encrypt function Config"
+		config FLASH_ENCRYPT_ENABLE
+			bool "Enable flash encrypt function"
+			default n
+			select BINARY_SIGNING
+			help
+				When this macro is enabled, the flash encrypt function will be enabled.
+				This will automatically enable CONFIG_BINARY_SIGNING.
 	endmenu
 endmenu

@@ -11,6 +11,22 @@
 	 .pregain	= gain,		\
 }
 
+
+#if CONFIG_BK7239N_MP
+typedef struct tmp_pwr_st {
+    int8_t p_index_delta_a;
+    int8_t p_index_delta;
+    int8_t p_index_delta_g;
+    int8_t p_index_delta_ble;
+    int16_t xtal_c_dlta;
+} TMP_PWR_ST, *TMP_PWR_PTR;
+
+typedef struct txpwr_cal_st
+{
+    UINT8 channel;
+    UINT8 value;
+} TXPWR_CAL_ST, *TXPWR_CAL_PTR;
+#else
 typedef struct tmp_pwr_st {
     unsigned trx0x0c_12_15 : 1; //not used on BK7239 actually
     signed p_index_delta : 7;
@@ -22,6 +38,7 @@ typedef struct tmp_pwr_st {
 typedef struct txpwr_st {
     UINT8 value;
 } TXPWR_ST, *TXPWR_PTR;
+#endif
 
 typedef struct
 {
@@ -45,11 +62,17 @@ typedef struct
 void vnd_cal_overlay(void);
 
 //typedef void (*hook_function_t)(void);
-
+#if CONFIG_BK7239N_MP
+extern void vnd_cal_txpwr_tab_def_b_overlay(TXPWR_CAL_ST *txpwr_tab_def_ptr);
+extern void vnd_cal_txpwr_tab_def_g_overlay(TXPWR_CAL_ST *txpwr_tab_def_ptr);
+extern void vnd_cal_txpwr_tab_def_n40_overlay(TXPWR_CAL_ST *txpwr_tab_def_ptr);
+extern void vnd_cal_txpwr_tab_def_ble_overlay(TXPWR_CAL_ST *txpwr_tab_def_ptr);
+#else
 extern void vnd_cal_txpwr_tab_def_b_overlay(TXPWR_ST *txpwr_tab_def_ptr);
 extern void vnd_cal_txpwr_tab_def_g_overlay(TXPWR_ST *txpwr_tab_def_ptr);
 extern void vnd_cal_txpwr_tab_def_n40_overlay(TXPWR_ST *txpwr_tab_def_ptr);
 extern void vnd_cal_txpwr_tab_def_ble_overlay(TXPWR_ST *txpwr_tab_def_ptr);
+#endif
 extern void vnd_cal_tmp_pwr_tab_overlay(TMP_PWR_ST *tmp_pwr_tab_def_ptr);
 extern void vnd_cal_gxtal_overlay(uint32 overlay_xtal);
 extern void vnd_cal_gcmtag_overlay(uint32 overlay_cmtag);

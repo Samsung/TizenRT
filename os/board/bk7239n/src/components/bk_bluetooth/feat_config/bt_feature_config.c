@@ -35,6 +35,14 @@ int bk_bt_feature_init(void)
 
     s_bt_feature_struct._ble_max_latency = CONFIG_BLE_MAX_LATENCY;
 
+#if CONFIG_BLE_LV_SUPPORT
+#if CONFIG_BK7239N_MP
+    s_bt_feature_struct._support_lowpower_sleep = 1;
+#endif
+#endif
+
+    s_bt_feature_struct._ble_coc_local_cid_monotonous_increase = 1;
+
     extern int bt_feature_adapter_init(void *arg);
 
     if (bt_feature_adapter_init((void *)&s_bt_feature_struct) != 0)

@@ -149,7 +149,7 @@ static ble_client_callback_list client_config = {
 };
 
 static ble_server_init_config server_config = {
-	ble_server_connected_cb,
+	ble_server_connected_cb,NULL,NULL,NULL,
 	true,
 	gatt_profile,
 	sizeof(gatt_profile) / sizeof(ble_server_gatt_t)

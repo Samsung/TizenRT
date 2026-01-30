@@ -61,13 +61,41 @@ static int bluetooth_deepsleep_enter_cb(uint64_t expected_time_ms, void *args)
     return 0;
 }
 
+#if CONFIG_BLE_LV_SUPPORT
+static int bluetooth_lv_enter_cb(uint64_t expected_time_ms, void *args)
+{
+    if (bluetooth_already_init)
+    {
+        void bluetooth_lowvol_enter_callback(void);
+        bluetooth_lowvol_enter_callback();
+    }
+    return 0;
+}
+static int bluetooth_lv_exit_cb(uint64_t expected_time_ms, void *args)
+{
+    if (bluetooth_already_init)
+    {
+        void bluetooth_lowvol_exit_callback(void);
+        bluetooth_lowvol_exit_callback();
+    }
+    return 0;
+}
+#endif
+
 bt_err_t bk_bluetooth_init(void)
 {
     bt_err_t ret;
+    LOGI("%s start, %d,%p \r\n", __func__, bluetooth_already_init, bluetooth_mutex);
+    if (bluetooth_mutex == NULL)
+    {
+        rtos_init_mutex(&bluetooth_mutex);
+    }
 
+    rtos_lock_mutex(&bluetooth_mutex);
     if (bluetooth_already_init)
     {
         LOGE("%s bluetooth already initialised\r\n", __func__);
+        rtos_unlock_mutex(&bluetooth_mutex);
         return 0;
     }
 
@@ -75,12 +103,14 @@ bt_err_t bk_bluetooth_init(void)
     if (ret)
     {
         LOGE("%s initialize bt os adapter failed\r\n", __func__);
+        rtos_unlock_mutex(&bluetooth_mutex);
         return ret;
     }
 
     if ((ret = bk_bt_feature_init()) != 0)
     {
         LOGE("%s initialize bt feature failed\r\n", __func__);
+        rtos_unlock_mutex(&bluetooth_mutex);
         return ret;
     }
 
@@ -88,6 +118,7 @@ bt_err_t bk_bluetooth_init(void)
     if (ret)
     {
         LOGE("%s initialize controller failed\r\n", __func__);
+        rtos_unlock_mutex(&bluetooth_mutex);
         return ret;
     }
 
@@ -96,6 +127,7 @@ bt_err_t bk_bluetooth_init(void)
     if (ret)
     {
         LOGE("%s init host failed\r\n", __func__);
+        rtos_unlock_mutex(&bluetooth_mutex);
         return ret;
     }
 #endif
@@ -110,12 +142,18 @@ bt_err_t bk_bluetooth_init(void)
 	extern void ble_at_cmd_init(void);
 	 	ble_at_cmd_init();
 #endif
-    if(bluetooth_mutex == NULL)
-    {
-        rtos_init_mutex(&bluetooth_mutex);
-    }
+
+    #if CONFIG_BLE_LV_SUPPORT
+    pm_cb_conf_t enter_lv_config = {NULL, NULL};
+    pm_cb_conf_t exit_lv_config = {NULL, NULL};
+    enter_lv_config.cb = bluetooth_lv_enter_cb;
+    exit_lv_config.cb = bluetooth_lv_exit_cb;
+    bk_pm_sleep_register_cb(PM_MODE_LOW_VOLTAGE, PM_DEV_ID_BTDM, &enter_lv_config, &exit_lv_config);
+    #endif
+
     bluetooth_already_init = 1;
     LOGI("%s ok\r\n", __func__);
+    rtos_unlock_mutex(&bluetooth_mutex);
     return ret;
 }
 

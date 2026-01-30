@@ -57,6 +57,7 @@ typedef struct {
 	INT32 (*_rwnx_cal_save_trx_rcbekn_reg_val)(void);
 	void (*_rc_drv_set_agc_manual_en)(uint32_t value);
 	void (*_rc_drv_set_rx_mode_enrxsw)(uint32_t value);
+	void (*_rc_drv_set_rf_macbypass)(uint32_t value);
 	uint32_t (*_rc_drv_get_rx_mode_enrxsw)(void);
 	UINT32 (*_rwnx_tpc_get_pwridx_by_rate)(UINT32 rate, UINT32 format, UINT32 print_log);
 	UINT32 (*_rwnx_is_enable_pwr_change_by_rssi)(void);
@@ -277,6 +278,7 @@ typedef struct {
 	int (*_bk_feature_config_wrls_pwd_enable)(void);
 	int (*_bk_feature_config_cpu_pwd_enable)(void);
 	int (*_bk_feature_config_mac_use_rtc_enable)(void);
+	int (*_bk_feature_config_bk7239n_mp_enable)(void);
 	int (*_cli_printf)(const char *fmt, ...);
 	void (*_rf_force_set_wifi_mode)(uint8_t switch_mode);
 	int (*_bk_feature_change_to_wifi_pll_enable)(void);

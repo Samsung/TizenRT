@@ -45,6 +45,7 @@ extern "C" {
 #define UART_CLOCK_FREQ_52M          52000000
 #define UART_CLOCK_FREQ_50M          50000000
 #define UART_CLOCK_FREQ_120M         120000000
+#define UART_CLOCK_FREQ_80M          80000000
 
 #define UART_CLOCK                   CONFIG_XTAL_FREQ
 
@@ -67,6 +68,7 @@ typedef enum {
 	UART_SCLK_DCO = 0,  /**< UART source clock dco */
 	UART_SCLK_XTAL_26M, /**< UART source clock xtal 26M */
 	UART_SCLK_APLL,     /**< UART source clock apll */
+	UART_SCLK_80M,      /**< UART source clock 80M */
 } uart_src_clk_t;
 
 typedef enum {

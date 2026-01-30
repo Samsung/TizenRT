@@ -421,8 +421,14 @@ menu "Bk_Wifi"
 	config BK_TIZEN_IPERF_PROJECT
 		bool "To easily distinguish if it's an iperf project"
 		default n
-
+	
 	config WIFI_WAKEUP_CHANGE_TO_WIFI_PLL
 		bool "Enable wifi wakeup change to wifipll"
 		default n
+
+	config UPDATE_POWER_WITH_RSSI
+		bool "Enable update power with RSSI"
+		default y
+		help
+			Enable update power with RSSI
 endmenu

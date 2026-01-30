@@ -20,4 +20,6 @@ typedef struct
     uint8_t _support_reconnection_strategy;
     uint8_t _support_reporting_coex_ble_state;
     uint16_t _ble_max_latency;
+    uint8_t _support_lowpower_sleep;
+    uint8_t _ble_coc_local_cid_monotonous_increase;
 }bt_feature_struct_t;

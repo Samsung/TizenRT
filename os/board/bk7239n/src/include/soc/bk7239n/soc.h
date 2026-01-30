@@ -97,6 +97,20 @@ extern "C" {
 #define __IRAM2 __attribute__((section(".iram2")))
 #endif
 
+#if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
+#define __FLASH_BOOT_CODE
+#else
+#define __FLASH_BOOT_CODE __attribute__((section(".flash_boot_code")))
+#endif
+
+#ifdef CONFIG_BUILD_PROTECTED
+#define __PSRAM_DATA __attribute__((section(".psram.data")))
+#define __PSRAM_BSS __attribute__((section(".psram.bss")))
+#else
+#define __PSRAM_DATA 
+#define __PSRAM_BSS 
+#endif
+
 #ifdef __cplusplus
 }
 #endif

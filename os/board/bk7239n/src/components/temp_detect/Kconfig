@@ -18,5 +18,13 @@ menu "sensor_detect"
 	config VBAT_5V
 		bool "5V Enable"
 		default n
+
+	config TEMPERATURE_HIGH_VOLT
+		bool "Switch code25 temp"
+		default n
+		help
+			Use low-voltage temp_code if the scenario involves operations from low voltage to high voltage
+			Use temp_code if it consistently works at high voltage (Vbat >= 2.8V)
+
 endmenu
 

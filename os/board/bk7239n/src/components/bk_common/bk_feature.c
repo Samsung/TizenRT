@@ -217,3 +217,29 @@ int bk_feature_change_to_wifi_pll_enable(void)
 	return 0;
 #endif
 }
+
+int bk_feature_bk7239n_mp_enable(void)
+{
+#if defined(CONFIG_BK7239N_MP)
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+int bk_feature_temp_high_volt_enable(void)
+{
+#if defined(CONFIG_TEMPERATURE_HIGH_VOLT)
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+int bk_feature_update_power_with_rssi(void) {
+#if (CONFIG_UPDATE_POWER_WITH_RSSI)
+	return 1;
+#else
+	return 0;
+#endif
+}

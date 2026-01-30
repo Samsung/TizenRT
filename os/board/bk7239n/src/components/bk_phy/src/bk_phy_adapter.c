@@ -53,7 +53,9 @@
 #if CONFIG_ARMINO_BLE
 #include "bluetooth_internal.h"
 #endif
+
 #include "bk_rf_adapter.h"
+#include "bk_wifi_phy_internal.h"
 #include "bk_sys_ctrl.h"
 #include "adc_hal.h"
 
@@ -68,7 +70,20 @@
 #endif
 
 #include "bk_cli.h"
+
 #define PHY_OSI_VERSION              0x00060006
+
+UINT32 g_phy_cali_flag =             0x1;
+
+void bk_phy_set_cali_flag(UINT32 flag)
+{
+    g_phy_cali_flag = flag;
+}
+
+UINT32 bk_phy_get_cali_flag(void)
+{
+    return g_phy_cali_flag;
+}
 
 static void bk_set_g_saradc_flag(UINT8 flag)
 {
@@ -128,7 +143,7 @@ static int32_t os_strncmp_wrapper(const char *s1, const char *s2, const uint32_t
 {
 	return os_strncmp(s1, s2, n);
 }
-static __IRAM2 void *os_memcpy_wrapper(void *out, const void *in, uint32_t n)
+static void *os_memcpy_wrapper(void *out, const void *in, uint32_t n)
 {
 	return (void *)os_memcpy(out, in, n);
 }
@@ -150,7 +165,6 @@ static int phy_bk_gpio_pull_down_wrapper(uint32_t gpio_id)
 static int bk_set_temperature_callback_wrapper(void *callback, int resigter)
 {
 #if (CONFIG_TEMP_DETECT)
-
 	if (resigter) {
 	    return bk_sensor_register_temperature_callback((bk_sensor_callback)callback);
 	} else {
@@ -271,11 +285,11 @@ static bk_err_t bk_pm_module_vote_cpu_freq_phy(uint32_t module, uint32_t cpu_fre
     return bk_pm_module_vote_cpu_freq((pm_dev_id_e)module, (pm_cpu_freq_e)cpu_freq);
 }
 
-static __IRAM2 int32 sys_drv_module_power_state_get_wrapper(uint32_t module)
+static int32 sys_drv_module_power_state_get_wrapper(uint32_t module)
 {
     return sys_drv_module_power_state_get(module);
 }
-static __IRAM2 void phy_sys_drv_modem_bus_clk_ctrl_on(void)
+static void phy_sys_drv_modem_bus_clk_ctrl_on(void)
 {
     sys_drv_modem_bus_clk_ctrl(SYS_DRV_CLK_ON);
 }
@@ -284,7 +298,7 @@ static void phy_sys_drv_modem_clk_ctrl_on(void)
     sys_drv_modem_clk_ctrl(SYS_DRV_CLK_ON);
 }
 
-static __IRAM2 int bk_flash_read_bytes_wrapper(uint32_t address, uint8_t *user_buf, uint32_t size)
+static int bk_flash_read_bytes_wrapper(uint32_t address, uint8_t *user_buf, uint32_t size)
 {
 #if (CONFIG_OTP && CONFIG_PHY_RFCALI_TO_OTP)
     return BK_ERR_NOT_SUPPORT;
@@ -316,9 +330,16 @@ static uint32_t bk_flash_partition_get_rf_firmware_info(void)
 #if (CONFIG_OTP && CONFIG_PHY_RFCALI_TO_OTP)
     return 0;
 #else
+#if (CONFIG_RF_FIRMWARE_DYNAMIC_PARTITION && CONFIG_BK7239N_MP)
+    uint32_t rf_partition_start_addr = bk_flash_get_capacity_bytes() - FLASH_RF_FIRMWARE_OFFSET;
+    //bk_printf("rf_partition_start_addr=%x\r\n",rf_partition_start_addr);
+    return rf_partition_start_addr;
+#else
     bk_logic_partition_t * pt = NULL;
     pt = bk_flash_partition_get_info(BK_PARTITION_RF_FIRMWARE);
     return pt->partition_start_addr;
+#endif
+
 #endif
 }
 
@@ -423,7 +444,7 @@ static void ble_rf_test_mode_retirg(void)
 #endif
 }
 
-static __IRAM2 uint8_t ble_adv_txpwr_set_feature_enable_wrapper(void)
+static uint8_t ble_adv_txpwr_set_feature_enable_wrapper(void)
 {
 #if CONFIG_SUPPORT_BLE_ADV_TXPWR_SET
         return 1;
@@ -540,7 +561,7 @@ void sys_drv_set_pwd_anabuf_lownoise(uint32_t v) {
 #endif
 }
 
-__IRAM2 uint32_t sys_drv_rfband(uint32_t rfband) {
+uint32_t sys_drv_rfband(uint32_t rfband) {
 	return BK_OK;
 }
 
@@ -720,7 +741,7 @@ static UINT8 bk_phy_get_wifi_media_mode_config_wrapper(void)
 #endif
 }
 
-static __IRAM2 int bk_adc_channel_raw_read_wrapper(int32_t channel_id, uint16_t* buf, uint32_t sample_cnt, uint32_t timeout)
+static int bk_adc_channel_raw_read_wrapper(int32_t channel_id, uint16_t* buf, uint32_t sample_cnt, uint32_t timeout)
 {
 #if CONFIG_SARADC_V1P1
     return bk_adc_read_raw(buf, sample_cnt, timeout);
@@ -729,7 +750,7 @@ static __IRAM2 int bk_adc_channel_raw_read_wrapper(int32_t channel_id, uint16_t*
 #endif
 }
 
-__IRAM2 bool rtos_is_critical_section_wrapper(void)
+bool rtos_is_critical_section_wrapper(void)
 {
     return rtos_local_irq_disabled() || rtos_is_in_interrupt_context();
 }
@@ -739,45 +760,38 @@ extern uint64 riscv_get_mtimer(void);
 const phy_os_funcs_t g_phy_os_funcs = {
 
     ._version = PHY_OSI_VERSION,
-    ._mpb_reg_api   = mpb_reg_api_wrapper,
-    ._crm_reg_api   = crm_reg_api_wrapper,
-    ._riu_reg_api   = riu_reg_api_wrapper,
-    ._mix_funcs     = mix_funcs_wrapper,
+    ._mpb_reg_api              = mpb_reg_api_wrapper,
+    ._crm_reg_api              = crm_reg_api_wrapper,
+    ._riu_reg_api              = riu_reg_api_wrapper,
+    ._mix_funcs                = mix_funcs_wrapper,
     ._bk_misc_get_reset_reason = bk_misc_get_reset_reason_wrapper,
 
 #if CONFIG_WIFI_ENABLE
     /* modules/wifi/... */
-    ._rs_init             = rs_init,
-    ._rs_bypass_mac_init  = rs_bypass_mac_init,
-    ._rs_deinit           = rs_deinit,
-    ._evm_init            = evm_phy_init,
-    ._evm_bypass_mac_init = evm_bypass_mac_init,
-
-    ._nv_phy_reg_set_hook     = bk_phy_set_nv_reg_hook,
-
+    ._rs_init                  = rs_init,
+    ._rs_bypass_mac_init       = rs_bypass_mac_init,
+    ._rs_deinit                = rs_deinit,
+    ._evm_init                 = evm_phy_init,
+    ._evm_bypass_mac_init      = evm_bypass_mac_init,
+    ._nv_phy_reg_set_hook      = bk_phy_set_nv_reg_hook,
     ._evm_clear_ke_evt_mac_bit = evm_clear_ke_evt_mac_bit,
     ._evm_set_ke_evt_mac_bit   = evm_set_ke_evt_mac_bit,
-
     ._tx_evm_set_chan_ctxt_pop = tx_evm_set_chan_ctxt_pop,
-
-    ._save_info_item = save_info_item,
-    ._get_info_item  = get_info_item ,
+    ._save_info_item           = save_info_item,
+    ._get_info_item            = get_info_item ,
 #else
-    ._nv_phy_reg_set_hook = NULL,
+    ._nv_phy_reg_set_hook      = NULL,
 #endif
 
     ////
     ._delay                    = bk_delay,
     ._delay_us                 = delay_us,
-#if 0//SS_BUILD_CLOSE
-    ._ddev_control             = ddev_control, 
-#endif
     ._bk_wdt_stop              = bk_wdt_stop_wrapper,
 
-     ._temp_detect_is_init              = temp_detect_is_init,
-     ._temp_detect_deinit               = temp_detect_deinit,
-     ._temp_detect_init                 = temp_detect_init,
-     ._temp_detect_get_temperature      = temp_detect_get_temperature,
+    ._temp_detect_is_init              = temp_detect_is_init,
+    ._temp_detect_deinit               = temp_detect_deinit,
+    ._temp_detect_init                 = temp_detect_init,
+    ._temp_detect_get_temperature      = temp_detect_get_temperature,
     ._bk_feature_temp_detect_enable    = bk_feature_temp_detect_enable,
 
     ._ate_is_enabled                   = ate_is_enabled,
@@ -790,159 +804,156 @@ const phy_os_funcs_t g_phy_os_funcs = {
     ._bk_pm_module_vote_cpu_freq       = bk_pm_module_vote_cpu_freq_phy,
 
     ._aon_pmu_drv_bias_cal_get         = aon_pmu_drv_bias_cal_get,
+#if CONFIG_BK7239N_MP
+    ._aon_pmu_drv_band_cal_get         = aon_pmu_drv_band_cal_get,
+#else
+    ._aon_pmu_drv_band_cal_get         = NULL,
+#endif
     ._aon_pmu_drv_get_adc_cal          = aon_pmu_drv_get_adc_cal,
 
 #if (CONFIG_SOC_BK7236XX) || (CONFIG_SOC_BK7239XX) || (CONFIG_SOC_BK7286XX)
     ._aon_pmu_hal_get_chipid           = aon_pmu_hal_get_chipid,
 
     ._sys_drv_set_pwd_anabuf_lownoise  = sys_drv_set_pwd_anabuf_lownoise,
-    ._sys_drv_rfband                  = sys_drv_rfband,
-    ._sys_drv_rf_ctrl                 = sys_drv_rf_ctrl,
+    ._sys_drv_rfband                   = sys_drv_rfband,
+    ._sys_drv_rf_ctrl                  = sys_drv_rf_ctrl,
 #if CONFIG_SOC_BK7236XX
-    ._sys_drv_set_ana_cb_cal_trig     = sys_drv_set_ana_cb_cal_trig,
-    ._sys_drv_set_ana_cb_cal_manu     = sys_drv_set_ana_cb_cal_manu,
-    ._sys_ll_set_ana_reg5_adc_div     = sys_ll_set_ana_reg5_adc_div,
-    ._sys_ll_get_ana_reg5_adc_div     = sys_ll_get_ana_reg5_adc_div,
-    ._sys_ll_set_ana_reg8_ioldo_lp    = sys_ll_set_ana_reg8_ioldo_lp,
-    ._sys_ll_set_ana_reg9_vcorehsel   = sys_ll_set_ana_reg9_vcorehsel,
-    ._sys_drv_set_spi_latch1v         = sys_ll_set_ana_reg9_spi_latch1v,
-    ._sys_ll_set_ana_reg10_iobyapssen = sys_ll_set_ana_reg10_iobyapssen,
-    ._sys_ll_set_ana_reg11_aldosel    = sys_ll_set_ana_reg11_aldosel,
-	._sys_ll_set_ana_reg12_dldosel    = sys_ll_set_ana_reg12_dldosel,
+    ._sys_drv_set_ana_cb_cal_trig      = sys_drv_set_ana_cb_cal_trig,
+    ._sys_drv_set_ana_cb_cal_manu      = sys_drv_set_ana_cb_cal_manu,
+    ._sys_ll_set_ana_reg5_adc_div      = sys_ll_set_ana_reg5_adc_div,
+    ._sys_ll_get_ana_reg5_adc_div      = sys_ll_get_ana_reg5_adc_div,
+    ._sys_ll_set_ana_reg8_ioldo_lp     = sys_ll_set_ana_reg8_ioldo_lp,
+    ._sys_ll_set_ana_reg9_vcorehsel    = sys_ll_set_ana_reg9_vcorehsel,
+    ._sys_drv_set_spi_latch1v          = sys_ll_set_ana_reg9_spi_latch1v,
+    ._sys_ll_set_ana_reg10_iobyapssen  = sys_ll_set_ana_reg10_iobyapssen,
+    ._sys_ll_set_ana_reg11_aldosel     = sys_ll_set_ana_reg11_aldosel,
+	._sys_ll_set_ana_reg12_dldosel     = sys_ll_set_ana_reg12_dldosel,
 #endif
 
-    ._sys_drv_set_iobyapssen          = sys_drv_set_iobyapssen,
-    ._sys_drv_set_ana_ioldo_lp        = sys_drv_set_ana_ioldo_lp,
-    ._sys_drv_optim_dpd_tx            = sys_drv_optim_dpd_tx,
+    ._sys_drv_set_iobyapssen           = sys_drv_set_iobyapssen,
+    ._sys_drv_set_ana_ioldo_lp         = sys_drv_set_ana_ioldo_lp,
+    ._sys_drv_optim_dpd_tx             = sys_drv_optim_dpd_tx,
 #endif
-
-    ._sys_drv_cali_bias               = sys_drv_cali_bias,
-    ._sys_drv_cali_dpll               = sys_drv_cali_dpll,
-    ._sys_drv_set_bias                = sys_drv_set_ana_cb_cal_manu_val,
-    ._sys_drv_cali_bgcalm             = sys_drv_cali_bgcalm,
-    ._sys_drv_analog_get_xtalh_ctune  = sys_drv_analog_get_xtalh_ctune,
-    ._sys_drv_analog_set_xtalh_ctune  = sys_drv_analog_set_xtalh_ctune,
-    ._sys_drv_module_power_state_get  = sys_drv_module_power_state_get_wrapper,
+    ._sys_drv_cali_bias                 = sys_drv_cali_bias,
+    ._sys_drv_cali_dpll                 = sys_drv_cali_dpll,
+    ._sys_drv_set_bias                  = sys_drv_set_ana_cb_cal_manu_val,
+    ._sys_drv_cali_bgcalm               = sys_drv_cali_bgcalm,
+    ._sys_drv_analog_get_xtalh_ctune    = sys_drv_analog_get_xtalh_ctune,
+    ._sys_drv_analog_set_xtalh_ctune    = sys_drv_analog_set_xtalh_ctune,
+    ._sys_drv_module_power_state_get    = sys_drv_module_power_state_get_wrapper,
     ._phy_sys_drv_modem_bus_clk_ctrl_on = phy_sys_drv_modem_bus_clk_ctrl_on,
     ._phy_sys_drv_modem_clk_ctrl_on     = phy_sys_drv_modem_clk_ctrl_on,
-
-    ._bk_adc_channel_raw_read       = (int (*)(int32_t , uint16_t*, uint32_t, uint32_t))bk_adc_channel_raw_read_wrapper,
-    ._bk_cal_saradc_start           = bk_cal_saradc_start,
-    ._bk_cal_saradc_stop            = bk_cal_saradc_stop,
-    ._bk_saradc_start               = bk_saradc_start,
-    ._bk_saradc_stop                = bk_saradc_stop,
-
-    ._bk_flash_read_bytes         = bk_flash_read_bytes_wrapper,
-    ._bk_flash_erase_sector       = bk_flash_erase_sector_wrapper,
-    ._bk_flash_write_bytes        = bk_flash_write_bytes_wrapper,
-
+    ._bk_adc_channel_raw_read           = (int (*)(int32_t , uint16_t*, uint32_t, uint32_t))bk_adc_channel_raw_read_wrapper,
+    ._bk_cal_saradc_start               = bk_cal_saradc_start,
+    ._bk_cal_saradc_stop                = bk_cal_saradc_stop,
+    ._bk_saradc_start                   = bk_saradc_start,
+    ._bk_saradc_stop                    = bk_saradc_stop,
+    ._bk_flash_read_bytes               = bk_flash_read_bytes_wrapper,
+    ._bk_flash_erase_sector                          = bk_flash_erase_sector_wrapper,
+    ._bk_flash_write_bytes                           = bk_flash_write_bytes_wrapper,
     ._bk_flash_set_protect_type_protect_none         = bk_flash_set_protect_type_protect_none,
     ._bk_flash_set_protect_type_unprotect_last_block = bk_flash_set_protect_type_unprotect_last_block,
     ._bk_flash_partition_get_rf_firmware_info        = bk_flash_partition_get_rf_firmware_info,
-
-    ._bk_otp_apb_read                  = bk_otp_apb_read_wrapper,
-    ._bk_otp_apb_update                = bk_otp_apb_update_wrapper,
-
-    ._log            = bk_printf_ext,
-    ._log_raw        = bk_printf_raw,
-    ._get_time       = rtos_get_time_wrapper,
-
-    ._bk_printf      = bk_printf,
-    ._bk_null_printf = bk_null_printf,
-
-    ._shell_set_log_level = shell_set_log_level_wrapper,
-    ._os_malloc      = os_malloc_wrapper,
-    ._os_free        = os_free_wrapper,
-    ._os_memcmp      = os_memcmp_wrapper,
-    ._os_memset      = os_memset_wrapper,
-    ._os_zalloc      = os_zalloc_wrapper,
-    ._os_strtoul     = os_strtoul_wrapper,
-    ._os_strcasecmp  = os_strcasecmp_wrapper,
-    ._os_strcmp      = os_strcmp_wrapper,
-    ._os_strncmp     = os_strncmp_wrapper,
-    ._os_memcpy      = os_memcpy_wrapper,
-
-    ._rtos_assert             = rtos_assert_wrapper,
-    ._rtos_enable_int         = rtos_enable_int_wrapper,
-    ._rtos_disable_int        = rtos_disable_int_wrapper,
-    ._rtos_get_time           = rtos_get_time_wrapper,
-    ._rtos_start_timer        = rtos_start_timer_wrapper,
-    ._rtos_init_timer         = rtos_init_timer_wrapper,
-    ._rtos_deinit_timer       = rtos_deinit_timer_wrapper,
-    ._rtos_reload_timer       = rtos_reload_timer_wrapper,
-    ._rtos_delay_milliseconds = rtos_delay_milliseconds_wrapper,
-    ._rtos_deinit_mutex       = rtos_deinit_mutex_wrapper,
-    ._rtos_init_mutex         = rtos_init_mutex_wrapper,
-    ._rtos_lock_mutex         = rtos_lock_mutex_wrapper,
-    ._rtos_unlock_mutex       = rtos_unlock_mutex_wrapper,
-    ._rtos_is_critical_section = rtos_is_critical_section_wrapper,
-    ._sys_drv_set_bgcalm              = sys_drv_set_bgcalm,
-    ._sys_drv_get_bgcalm              = sys_drv_get_bgcalm,
-    ._sys_drv_set_vdd_value           = sys_drv_set_vdd_value,
-    ._sys_drv_get_vdd_value           = sys_drv_get_vdd_value,
+    ._bk_otp_apb_read                                = bk_otp_apb_read_wrapper,
+    ._bk_otp_apb_update                              = bk_otp_apb_update_wrapper,
+    ._log                                  = bk_printf_ext,
+    ._log_raw                              = bk_printf_raw,
+    ._get_time                             = rtos_get_time_wrapper,
+    ._bk_printf                            = bk_printf,
+    ._bk_null_printf                       = bk_null_printf,
+    ._shell_set_log_level                  = shell_set_log_level_wrapper,
+    ._os_malloc                            = os_malloc_wrapper,
+    ._os_free                              = os_free_wrapper,
+    ._os_memcmp                            = os_memcmp_wrapper,
+    ._os_memset                            = os_memset_wrapper,
+    ._os_zalloc                            = os_zalloc_wrapper,
+    ._os_strtoul                           = os_strtoul_wrapper,
+    ._os_strcasecmp                        = os_strcasecmp_wrapper,
+    ._os_strcmp                            = os_strcmp_wrapper,
+    ._os_strncmp                           = os_strncmp_wrapper,
+    ._os_memcpy                            = os_memcpy_wrapper,
+    ._rtos_assert                          = rtos_assert_wrapper,
+    ._rtos_enable_int                      = rtos_enable_int_wrapper,
+    ._rtos_disable_int                     = rtos_disable_int_wrapper,
+    ._rtos_get_time                        = rtos_get_time_wrapper,
+    ._rtos_start_timer                     = rtos_start_timer_wrapper,
+    ._rtos_init_timer                      = rtos_init_timer_wrapper,
+    ._rtos_deinit_timer                    = rtos_deinit_timer_wrapper,
+    ._rtos_reload_timer                    = rtos_reload_timer_wrapper,
+    ._rtos_delay_milliseconds              = rtos_delay_milliseconds_wrapper,
+    ._rtos_deinit_mutex                    = rtos_deinit_mutex_wrapper,
+    ._rtos_init_mutex                      = rtos_init_mutex_wrapper,
+    ._rtos_lock_mutex                      = rtos_lock_mutex_wrapper,
+    ._rtos_unlock_mutex                    = rtos_unlock_mutex_wrapper,
+    ._rtos_is_critical_section             = rtos_is_critical_section_wrapper,
+    ._sys_drv_set_bgcalm                   = sys_drv_set_bgcalm,
+    ._sys_drv_get_bgcalm                   = sys_drv_get_bgcalm,
+    ._sys_drv_set_vdd_value                = sys_drv_set_vdd_value,
+    ._sys_drv_get_vdd_value                = sys_drv_get_vdd_value,
 
     /* For SARADC */
-    ._bk_set_g_saradc_flag   = bk_set_g_saradc_flag,
-    ._bk_set_temp_callback = bk_set_temperature_callback_wrapper,
-    ._bk_set_volt_callback = bk_set_voltage_callback_wrapper,
+    ._bk_set_g_saradc_flag                 = bk_set_g_saradc_flag,
+    ._bk_set_temp_callback                 = bk_set_temperature_callback_wrapper,
+    ._bk_set_volt_callback                 = bk_set_voltage_callback_wrapper,
 
     /* For BT */
-    ._ble_in_dut_mode        = ble_in_dut_mode_wrapper,
-    ._get_tx_pwr_idx         = get_tx_pwr_idx_wrapper,
-    ._txpwr_max_set_bt_polar = txpwr_max_set_bt_polar_wrapper,
-    ._ble_tx_testmode_retrig = ble_rf_test_mode_retirg,
-    ._ble_adv_txpwr_set_feature_enable = ble_adv_txpwr_set_feature_enable_wrapper,
-
-    ._gpio_dev_map_rxen  = gpio_dev_map_rxen,
-
-    ._bk_set_env_enhance     = phy_set_env_enhance_wrapper,
-    ._bk_get_env_enhance     = phy_get_env_enhance_wrapper,
-    ._bk_phy_get_wifi_media_mode_config = bk_phy_get_wifi_media_mode_config_wrapper,
+    ._ble_in_dut_mode                      = ble_in_dut_mode_wrapper,
+    ._get_tx_pwr_idx                       = get_tx_pwr_idx_wrapper,
+    ._txpwr_max_set_bt_polar               = txpwr_max_set_bt_polar_wrapper,
+    ._ble_tx_testmode_retrig               = ble_rf_test_mode_retirg,
+    ._ble_adv_txpwr_set_feature_enable     = ble_adv_txpwr_set_feature_enable_wrapper,
+    ._gpio_dev_map_rxen                    = gpio_dev_map_rxen,
+    ._bk_set_env_enhance                   = phy_set_env_enhance_wrapper,
+    ._bk_get_env_enhance                   = phy_get_env_enhance_wrapper,
+    ._bk_phy_get_wifi_media_mode_config    = bk_phy_get_wifi_media_mode_config_wrapper,
     ._bk_feature_save_rfcali_to_otp_enable = bk_feature_save_rfcali_to_otp_enable,
-    ._bk_otp_ahb_read        = bk_otp_ahb_read_wrapper,
-    ._bk_otp_ahb_update      = bk_otp_ahb_update_wrapper,
-    ._bk_get_otp_ahb_rfcali_item = bk_get_otp_ahb_rfcali_item_wrapper,
+    ._bk_otp_ahb_read                      = bk_otp_ahb_read_wrapper,
+    ._bk_otp_ahb_update                    = bk_otp_ahb_update_wrapper,
+    ._bk_get_otp_ahb_rfcali_item           = bk_get_otp_ahb_rfcali_item_wrapper,
 #if (CONFIG_SOC_BK7236XX)
-    ._sys_ll_set_ana_reg8_violdosel = sys_ll_set_ana_reg8_violdosel_wrapper,
-    ._sys_ll_set_ana_reg8_iocurlim = sys_ll_set_ana_reg8_iocurlim,
-    ._bk_feature_volt_5v = bk_feature_volt_5v,
+    ._sys_ll_set_ana_reg8_violdosel        = sys_ll_set_ana_reg8_violdosel_wrapper,
+    ._sys_ll_set_ana_reg8_iocurlim         = sys_ll_set_ana_reg8_iocurlim,
+    ._bk_feature_volt_5v                   = bk_feature_volt_5v,
 #else
-    ._sys_ll_set_ana_reg8_violdosel = NULL,
-    ._sys_ll_set_ana_reg8_iocurlim = NULL,
-    ._bk_feature_volt_5v = NULL,
+    ._sys_ll_set_ana_reg8_violdosel        = NULL,
+    ._sys_ll_set_ana_reg8_iocurlim         = NULL,
+    ._bk_feature_volt_5v                   = NULL,
 #endif
-    ._bk_feature_phy_log_enable = bk_feature_phy_log_enable,
-    ._os_malloc_sram      = os_malloc_sram_wrapper,
-    ._cli_printf = cli_printf,
+    ._bk_feature_phy_log_enable            = bk_feature_phy_log_enable,
+    ._os_malloc_sram                       = os_malloc_sram_wrapper,
+    ._cli_printf                           = cli_printf,
+    ._bk_feature_temp_high_volt_enable     = bk_feature_temp_high_volt_enable,
+    ._bk_phy_get_cali_flag                 = bk_phy_get_cali_flag,
+    ._me_is_connect_with_instrument        = me_is_connect_with_instrument,
 };
 
 const phy_os_variable_t g_phy_os_variable = {
 
-    ._saradc_autotest    = SARADC_AUTOTEST,
+    ._saradc_autotest        = SARADC_AUTOTEST,
 
-    ._rf_cfg_tssi_item   = RF_CFG_TSSI_ITEM,
-    ._rf_cfg_mode_item   = RF_CFG_MODE_ITEM,
-    ._rf_cfg_tssi_b_item = RF_CFG_TSSI_B_ITEM,
+    ._rf_cfg_tssi_item       = RF_CFG_TSSI_ITEM,
+    ._rf_cfg_mode_item       = RF_CFG_MODE_ITEM,
+    ._rf_cfg_tssi_b_item     = RF_CFG_TSSI_B_ITEM,
 
-    ._cmd_tl410_clk_pwr_up = CMD_TL410_CLK_PWR_UP,
-    ._pwd_ble_clk_bit      = PWD_BLE_CLK_BIT,
-
-
-    ._pm_cpu_frq_60m     = PM_CPU_FRQ_60M,
-    ._pm_cpu_frq_80m     = PM_CPU_FRQ_80M,
-    ._pm_cpu_frq_120m    = PM_CPU_FRQ_120M,
-    ._pm_cpu_frq_160m    = PM_CPU_FRQ_160M,
-    ._pm_cpu_frq_default = PM_CPU_FRQ_DEFAULT,
-
-    ._pm_dev_id_phy      = PM_DEV_ID_PHY,
+    ._cmd_tl410_clk_pwr_up   = CMD_TL410_CLK_PWR_UP,
+    ._pwd_ble_clk_bit        = PWD_BLE_CLK_BIT,
 
 
+    ._pm_cpu_frq_60m         = PM_CPU_FRQ_60M,
+    ._pm_cpu_frq_80m         = PM_CPU_FRQ_80M,
+    ._pm_cpu_frq_120m        = PM_CPU_FRQ_120M,
+    ._pm_cpu_frq_160m        = PM_CPU_FRQ_160M,
+    ._pm_cpu_frq_240m        = PM_CPU_FRQ_240M,
+    ._pm_cpu_frq_default     = PM_CPU_FRQ_DEFAULT,
+
+    ._pm_dev_id_phy          = PM_DEV_ID_PHY,
+    ._pm_dev_id_phy_dpd_cali = PM_DEV_ID_PHY_DPD_CALI,
 
 #if ((CONFIG_ARMINO_BLE))
-    ._dd_dev_type_ble   = DD_DEV_TYPE_BLE,
+    ._dd_dev_type_ble      = DD_DEV_TYPE_BLE,
 #endif
-    ._dd_dev_type_sctrl = DD_DEV_TYPE_SCTRL,
-    ._dd_dev_type_icu   = DD_DEV_TYPE_ICU,
+    ._dd_dev_type_sctrl    = DD_DEV_TYPE_SCTRL,
+    ._dd_dev_type_icu      = DD_DEV_TYPE_ICU,
 
     ._chip_version_a       = CHIP_VERSION_A,
     ._chip_version_b       = CHIP_VERSION_B,
@@ -950,33 +961,27 @@ const phy_os_variable_t g_phy_os_variable = {
     ._chip_version_default = CHIP_VERSION_DEFAULT,
 
 #if (CONFIG_SOC_BK7239XX || CONFIG_SOC_BK7286XX)
-    ._pm_chip_id_mask     = PM_CHIP_ID_MASK,
-    ._pm_chip_id_mpw_v2   = PM_CHIP_ID_MPW_V2,
-    ._pm_chip_id_mpw_v3   = PM_CHIP_ID_MPW_V3,
+    ._pm_chip_id_mask      = PM_CHIP_ID_MASK,
+    ._pm_chip_id_mpw_v2    = PM_CHIP_ID_MPW_V2,
+    ._pm_chip_id_mpw_v3    = PM_CHIP_ID_MPW_V3,
 #else
-    ._pm_chip_id_mask     = PM_CHIP_ID_MASK,
-    ._pm_chip_id_mpw_v2_3 = PM_CHIP_ID_MPW_V2_3,
-    ._pm_chip_id_mpw_v4   = PM_CHIP_ID_MPW_V4,
-    ._pm_chip_id_mp_A     = PM_CHIP_ID_MP_A,
+    ._pm_chip_id_mask      = PM_CHIP_ID_MASK,
+    ._pm_chip_id_mpw_v2_3  = PM_CHIP_ID_MPW_V2_3,
+    ._pm_chip_id_mpw_v4    = PM_CHIP_ID_MPW_V4,
+    ._pm_chip_id_mp_A      = PM_CHIP_ID_MP_A,
 #endif
-
-    ._cmd_get_device_id       = CMD_GET_DEVICE_ID,
-    ._cmd_sctrl_ble_powerdown = CMD_SCTRL_BLE_POWERDOWN,
-    ._cmd_sctrl_ble_powerup   = CMD_SCTRL_BLE_POWERUP,
-
-    ._cmd_ble_rf_bit_set = CMD_BLE_RF_BIT_SET,
-    ._cmd_ble_rf_bit_set = CMD_BLE_RF_BIT_CLR,
-
-    ._cmd_sctrl_get_vdd_value = CMD_SCTRL_GET_VDD_VALUE,
-    ._cmd_sctrl_set_vdd_value = CMD_SCTRL_SET_VDD_VALUE,
-
-    ._param_xtalh_ctune_mask   = PARAM_XTALH_CTUNE_MASK,
-    ._param_aud_dac_gain_mask  = PARAM_AUD_DAC_GAIN_MASK,
-
-    ._pm_power_module_state_on    = PM_POWER_MODULE_STATE_ON,
-    ._pm_power_module_state_off   = PM_POWER_MODULE_STATE_OFF,
-    ._pm_power_module_state_none  = PM_POWER_MODULE_STATE_NONE,
-
+    ._cmd_get_device_id             = CMD_GET_DEVICE_ID,
+    ._cmd_sctrl_ble_powerdown       = CMD_SCTRL_BLE_POWERDOWN,
+    ._cmd_sctrl_ble_powerup         = CMD_SCTRL_BLE_POWERUP,
+    ._cmd_ble_rf_bit_set            = CMD_BLE_RF_BIT_SET,
+    ._cmd_ble_rf_bit_set            = CMD_BLE_RF_BIT_CLR,
+    ._cmd_sctrl_get_vdd_value       = CMD_SCTRL_GET_VDD_VALUE,
+    ._cmd_sctrl_set_vdd_value       = CMD_SCTRL_SET_VDD_VALUE,
+    ._param_xtalh_ctune_mask        = PARAM_XTALH_CTUNE_MASK,
+    ._param_aud_dac_gain_mask       = PARAM_AUD_DAC_GAIN_MASK,
+    ._pm_power_module_state_on      = PM_POWER_MODULE_STATE_ON,
+    ._pm_power_module_state_off     = PM_POWER_MODULE_STATE_OFF,
+    ._pm_power_module_state_none    = PM_POWER_MODULE_STATE_NONE,
     ._adc_temp_10degree_per_dbpwr   = ADC_TMEP_10DEGREE_PER_DBPWR,
     ._adc_temp_buffer_size          = ADC_TEMP_BUFFER_SIZE,
     ._ADC_TEMP_SENSER_CHANNEL       = ADC_TEMP_SENSOR_CHANNEL,
@@ -988,25 +993,22 @@ const phy_os_variable_t g_phy_os_variable = {
     ._adc_xtal_dist_intial_val      = ADC_XTAL_DIST_INTIAL_VAL,
     ._adc_temp_dist_intial_val      = ADC_TMEP_DIST_INTIAL_VAL,
 
-    ._ieee80211_band_2ghz   = IEEE80211_BAND_2GHZ ,
-    ._ieee80211_band_5ghz   = IEEE80211_BAND_5GHZ ,
-    ._ieee80211_band_6ghz   = IEEE80211_BAND_6GHZ ,
-    ._ieee80211_band_60ghz  = IEEE80211_BAND_60GHZ,
-    ._ieee80211_num_bands   = IEEE80211_NUM_BANDS ,
+    ._ieee80211_band_2ghz           = IEEE80211_BAND_2GHZ ,
+    ._ieee80211_band_5ghz           = IEEE80211_BAND_5GHZ ,
+    ._ieee80211_band_6ghz           = IEEE80211_BAND_6GHZ ,
+    ._ieee80211_band_60ghz          = IEEE80211_BAND_60GHZ,
+    ._ieee80211_num_bands           = IEEE80211_NUM_BANDS ,
 
-    #if CONFIG_OTP
-    #ifdef OTP_MAC_ADDRESS
-    ._OTP_MAC_ADDRESS          = OTP_MAC_ADDRESS ,
-    #endif
-    ._OTP_VDDDIG_BANDGAP       = OTP_VDDDIG_BANDGAP ,
-    ._OTP_DIA                  = OTP_DIA ,
-    ._OTP_GADC_TEMPERATURE     = OTP_GADC_TEMPERATURE,
+#if CONFIG_OTP
+    ._OTP_MAC_ADDRESS1              = OTP_MAC_ADDRESS1,
+    ._OTP_RFCALI1                   = OTP_RFCALI1,
+    ._OTP_VDDDIG_BANDGAP            = OTP_VDDDIG_BANDGAP,
+    ._OTP_DIA                       = OTP_DIA ,
+    ._OTP_GADC_TEMPERATURE          = OTP_GADC_TEMPERATURE,
     #if CONFIG_SOC_BK7236XX
-    ._OTP_CHIP_RESERVED        = OTP_CHIP_RESERVED,
+    ._OTP_CHIP_RESERVED             = OTP_CHIP_RESERVED,
     #endif
-    #endif
-    ._pm_cpu_frq_240m          = PM_CPU_FRQ_240M,
-    ._pm_dev_id_phy_dpd_cali   = PM_DEV_ID_PHY_DPD_CALI,
+#endif
 };
 
 extern void phy_adapter_init(const void * phy_funcs, const void * phy_vars);

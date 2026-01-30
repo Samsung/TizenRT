@@ -111,5 +111,5 @@ CSRCS += \
 
 
 
-DEPPATH += --dep-path soc/bk7239n --dep-path soc/bk7239n/hal
-VPATH += :soc/bk7239n :soc/bk7239n/hal
+DEPPATH += --dep-path soc/bk7239n --dep-path soc/bk7239n/$(bk7239n_hal_path)
+VPATH += :soc/bk7239n :soc/bk7239n/$(bk7239n_hal_path)

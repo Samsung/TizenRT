@@ -1989,6 +1989,14 @@ static void bk_adapter_ble_notice_cb(ble_notice_t notice, void *param)
                 if (event->status == 0x22)
                 {
                     le_bond_delete_by_bd(hal_ble_con_env.con_dev[event->conn_idx].peer_addr, hal_ble_con_env.con_dev[event->conn_idx].peer_addr_type);
+                    if (hal_ble_con_env.con_dev[event->conn_idx].role == LINK_ROLE_MASTER)
+                    {
+                        if (hal_ble_con_env.is_secured_connect)
+                        {
+                            LOGI("re-start bond");
+                            le_bond_pair(event->conn_idx);
+                        }
+                    }
                 }
             }
 
@@ -2048,6 +2056,7 @@ static void bk_adapter_ble_notice_cb(ble_notice_t notice, void *param)
     case BLE_5_COC_DISCCONNECT_COMPL_EVENT:
     case BLE_5_COC_TX_DONE:
     case BLE_5_COC_RX_IND:
+    case BLE_5_COC_CONNECT_REQ_EVENT:
     {
         bk_tr_ble_coc_notice_cb(notice, param);
     }

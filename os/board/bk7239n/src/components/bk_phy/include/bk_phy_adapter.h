@@ -49,7 +49,7 @@ typedef struct {
     int (*_bk_feature_temp_detect_enable)(void);
 
     bool (*_ate_is_enabled)(void);
-    int (*_volt_single_get_current_voltage)(UINT32 *volt_value);
+    int (*_volt_single_get_current_voltage)(uint32_t *volt_value);
     float (*_bk_adc_data_calculate)(uint16_t adc_val, uint8_t adc_chan);
 
     int (*_bk_pm_clock_ctrl_saradc_pwrup)(void);
@@ -58,6 +58,7 @@ typedef struct {
     int (*_bk_pm_module_vote_cpu_freq)(uint32_t module, uint32_t cpu_freq);
 
     uint32_t (*_aon_pmu_drv_bias_cal_get)(void);
+    uint32_t (*_aon_pmu_drv_band_cal_get)(void);
     uint32_t (*_aon_pmu_drv_get_adc_cal)(void);
     uint32_t (*_aon_pmu_hal_get_chipid)(void);
     void (*_sys_drv_set_pwd_anabuf_lownoise)(uint32_t value);
@@ -197,6 +198,9 @@ typedef struct {
     int(*_bk_feature_phy_log_enable)(void);
     void *(*_os_malloc_sram)(uint32_t size);
     int (*_cli_printf)(const char *fmt, ...);
+    int(*_bk_feature_temp_high_volt_enable)(void);
+    uint32_t (*_bk_phy_get_cali_flag)(void);
+    bool(*_me_is_connect_with_instrument)(void);
 } phy_os_funcs_t;
 
 
@@ -215,9 +219,11 @@ typedef struct {
     uint32_t _pm_cpu_frq_80m;
     uint32_t _pm_cpu_frq_120m;
     uint32_t _pm_cpu_frq_160m;
+    uint32_t _pm_cpu_frq_240m;
     uint32_t _pm_cpu_frq_default;
 
     uint32_t _pm_dev_id_phy;
+    uint32_t _pm_dev_id_phy_dpd_cali;
 
 
 
@@ -286,14 +292,12 @@ typedef struct {
     uint32_t _ieee80211_band_60ghz;
     uint32_t _ieee80211_num_bands ;
 
-    uint32_t _OTP_MAC_ADDRESS;
+    uint32_t _OTP_MAC_ADDRESS1;
+    uint32_t _OTP_RFCALI1;
     uint32_t _OTP_VDDDIG_BANDGAP;
     uint32_t _OTP_DIA;
     uint32_t _OTP_GADC_TEMPERATURE;
-    uint32_t _OTP_SDMADC_CALIBRATION;
     uint32_t _OTP_CHIP_RESERVED;
-    uint32_t _pm_cpu_frq_240m;
-    uint32_t _pm_dev_id_phy_dpd_cali;
 } phy_os_variable_t;
 
 /*******************************************************************************

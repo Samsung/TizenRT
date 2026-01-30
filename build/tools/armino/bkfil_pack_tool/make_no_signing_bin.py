@@ -42,7 +42,7 @@ def make_bootloader_bin():
         {
             "partition": "bl2",
             "firmware": "bl2.bin",
-            "start_addr": 0x5000,
+            "start_addr": 0x4000,
             "size": 76 * 1024
         }
     ]

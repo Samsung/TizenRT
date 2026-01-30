@@ -195,6 +195,27 @@ bk_err_t bk_timer_delay_with_callback(timer_id_t timer_id, uint64_t time_us, tim
 bk_err_t bk_timer_cancel(timer_id_t timer_id);
 
 /**
+ * @brief     Get the timer clock source
+ *
+ * @param timer_id the timer ID
+ *
+ * @return the current clock source of the timer
+ *    - TIMER_SCLK_CLK32: timer source clock dco
+ *    - TIMER_SCLK_XTAL: timer source clock xtal 26M
+ */
+uint32_t bk_timer_get_clock_src(timer_id_t timer_id);
+
+/**
+ * @brief     Select the timer clock source
+ *
+ * @param id the timer ID
+ * @param mode the clock source mode to select
+ *    - TIMER_SCLK_CLK32: timer source clock dco
+ *    - TIMER_SCLK_XTAL: timer source clock xtal 26M
+ */
+void bk_timer_clock_select(timer_id_t id, timer_src_clk_t mode);
+
+/**
  * @}
  */
 

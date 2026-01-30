@@ -1399,6 +1399,42 @@ ble_err_t bk_ble_coc_unreg(uint16_t psm);
 ble_err_t bk_ble_coc_config(uint16_t psm, uint8_t sec_lvl);
 
 /**
+ * @brief Get current information of a BLE COC channel
+ *
+ * Retrieves the current information of a Connection Oriented Channel (COC)
+ * based on the specified information type. This function can be used to query
+ * various channel parameters such as current credits, maximum credits, MTU, MPS, etc.
+ *
+ * @param
+ *    - conn_idx: the index of BLE connection to the remote device
+ *    - cid: Channel ID of the COC connection to query
+ *    - type: Information type to retrieve, of type enum coc_info. Possible values:
+ *            - BK_BLE_COC_PEER_CURRENT_CREDIT: Peer's current available credits
+ *            - BK_BLE_COC_PEER_MAX_CREDIT: Peer's maximum credits
+ *            - BK_BLE_COC_PEER_MTU: Peer's Maximum Transmission Unit size
+ *            - BK_BLE_COC_PEER_MPS: Peer's Maximum PDU Payload Size
+ *            - BK_BLE_COC_LOCAL_CURRENT_CREDIT: Local current available credits
+ *            - BK_BLE_COC_LOCAL_MAX_CREDIT: Local maximum credits
+ *            - BK_BLE_COC_LOCAL_MTU: Local Maximum Transmission Unit size
+ *            - BK_BLE_COC_LOCAL_MPS: Local Maximum PDU Payload Size
+ *    - output: Pointer to a uint32_t variable to store the retrieved information.
+ *              The value will be written to this location upon successful retrieval.
+ *              Must not be NULL.
+ *
+ * @return
+ * - BK_ERR_BLE_SUCCESS: succeed, information retrieved and stored in output
+ * - BK_ERR_BLE_FAIL: fail, invalid parameters or channel not found
+ * - BK_ERR_BLE_UNKNOW_IDX: invalid connection index or channel ID
+ * - others: fail
+ *
+ * @note
+ * - The function must be called after the COC channel is established
+ * - The output parameter must point to a valid memory location
+ * - The meaning of the output value depends on the type parameter
+ */
+ble_err_t bk_ble_coc_get_current_info(uint8_t conn_idx, uint16_t cid, uint8_t type, uint32_t *output);
+
+/**
  * @brief Request to establish a BLE COC connection
  *
  * Initiates a connection request to establish a Connection Oriented Channel
@@ -1407,12 +1443,15 @@ ble_err_t bk_ble_coc_config(uint16_t psm, uint8_t sec_lvl);
  * @param
  *    - conn_idx: the index of BLE connection to the remote device
  *    - psm: Protocol/Service Multiplexer value to connect to
+ *    - mtu: max transmision unit size, use default value if 0
+ *    - mps: max pdu payload size, use default value if 0
+ *    - credit: init credit, use default value if 0
  *
  * @return
  * - BK_ERR_BLE_SUCCESS: succeed
  * - others: fail
  */
-ble_err_t bk_ble_coc_connection_req(uint8_t conn_idx, uint16_t psm);
+ble_err_t bk_ble_coc_connection_req(uint8_t conn_idx, uint16_t psm, uint16_t mtu, uint16_t mps, uint16_t credit);
 
 /**
  * @brief Request to disconnect a BLE COC channel
@@ -1429,6 +1468,42 @@ ble_err_t bk_ble_coc_connection_req(uint8_t conn_idx, uint16_t psm);
  * - others: fail
  */
 ble_err_t bk_ble_coc_disconnection_req(uint8_t conn_idx, uint16_t cid);
+
+/**
+ * @brief Accept or reject a BLE COC connection request from a peer device
+ *
+ * Responds to an incoming Connection Oriented Channel (COC) connection request
+ * from a remote device. This function is typically called by the server side
+ * after receiving a connection request event. It allows the application to
+ * accept or reject the connection and specify the channel parameters.
+ *
+ * @param
+ *    - conn_idx: the index of BLE connection to the remote device
+ *    - accept: Flag to accept or reject the connection request.
+ *              - 0: Reject the connection request
+ *              - 1 (non-zero): Accept the connection request
+ *    - peer_cid: Peer's Channel ID from the connection request event
+ *    - mtu: Maximum Transmission Unit size for the channel.
+ *           Use default value if 0. This value will be negotiated with the peer.
+ *    - mps: Maximum PDU Payload Size for the channel.
+ *           Use default value if 0. This value will be negotiated with the peer.
+ *    - credit: Initial credit value for the channel.
+ *              Use default value if 0. Credits are used for flow control.
+ *
+ * @return
+ * - BK_ERR_BLE_SUCCESS: succeed, connection request accepted or rejected
+ * - BK_ERR_BLE_FAIL: fail, invalid parameters or connection request not found
+ * - BK_ERR_BLE_UNKNOW_IDX: invalid connection index or peer channel ID
+ * - others: fail
+ *
+ * @note
+ * - This function should be called in response to a COC connection request event
+ * - If accept is 0, the connection will be rejected and mtu/mps/credit parameters are ignored
+ * - If accept is non-zero, the connection will be accepted with the specified parameters
+ * - The actual MTU and MPS used will be the minimum of local and peer values after negotiation
+ * - The function must be called before the connection request timeout expires
+ */
+ble_err_t bk_ble_coc_accept_connect_req(uint8_t conn_idx, uint8_t accept, uint16_t peer_cid, uint16_t mtu, uint16_t mps, uint16_t credit);
 
 /**
  * @brief Send data over a BLE COC channel

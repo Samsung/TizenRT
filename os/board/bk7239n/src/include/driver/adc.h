@@ -138,6 +138,48 @@ bk_err_t bk_adc_deinit(adc_chan_t id);
  *    - others: other errors.
  */
 bk_err_t bk_adc_channel_read(adc_chan_t chan_id, uint16_t *data, uint32_t timeout);
+
+/**
+ * @brief     Deinitialize the ADC channel
+ *
+ * @param chan: adc channel index
+ *
+ * @return
+ *    - BK_OK: succeed
+ *    - BK_ERR_ADC_NOT_INIT: ADC driver not init
+ *    - BK_ERR_ADC_INVALID_ID: ADC id is invalid
+ *    - others: other errors.
+ */
+bk_err_t bk_adc_channel_deinit(adc_chan_t chan);
+
+/**
+ * @brief     Initialize the ADC channel configuration
+ *
+ * @param config: adc configuration structure pointer
+ *
+ * @return
+ *    - BK_OK: succeed
+ *    - BK_ERR_ADC_NOT_INIT: ADC driver not init
+ *    - BK_ERR_ADC_INVALID_ID: ADC id is invalid
+ *    - others: other errors.
+ */
+bk_err_t bk_adc_channel_init(adc_config_t *config);
+
+/**
+ * @brief     Get raw ADC sampling data
+ *
+ * @param chan_id: adc channel index
+ * @param buf: buffer to store raw sampling data
+ * @param buf_size: buffer size
+ * @param timeout: adc read semaphore timeout
+ *
+ * @return
+ *    - BK_OK: succeed
+ *    - BK_ERR_ADC_NOT_INIT: ADC driver not init
+ *    - BK_ERR_ADC_INVALID_ID: ADC id is invalid
+ *    - others: other errors.
+ */
+bk_err_t bk_adc_get_raw(adc_chan_t chan_id, uint16_t* buf, uint32_t buf_size, uint32_t timeout);
 #endif
 
 /**

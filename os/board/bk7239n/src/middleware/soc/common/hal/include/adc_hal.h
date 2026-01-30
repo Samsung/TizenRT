@@ -30,6 +30,7 @@ typedef struct {
 } adc_hal_t;
 
 #if defined(CONFIG_SARADC_V1P2)
+#define ADC_CWT_COEF_NUM        (16)
 void adc_hal_clear_int_status(adc_hal_t *hal);
 bool adc_hal_is_fifo_empty(adc_hal_t *hal);
 uint32_t adc_hal_get_adc_data(adc_hal_t *hal);
@@ -39,6 +40,7 @@ void adc_hal_set_fifo_threshold(adc_hal_t *hal, uint32_t cnt);
 uint32_t adc_hal_get_mode(adc_hal_t *hal);
 void adc_hal_calib_init(void);
 void adc_hal_set_cwt_calib(uint16_t *adc_data, uint16_t data_num);
+void adc_hal_set_cwt(uint32_t *adc_data);
 void hal_calib_apply(void);
 
 #define adc_hal_enable_bypass_calib(hal)

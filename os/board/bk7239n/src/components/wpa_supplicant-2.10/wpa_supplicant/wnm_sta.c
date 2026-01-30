@@ -1255,7 +1255,7 @@ static int chan_supported(struct wpa_supplicant *wpa_s, int freq)
 {
 	unsigned int i;
 
-	for (i = 0; i < wpa_s->hw.num_modes; i++) {
+	for (i = 0; wpa_s->hw.modes && i < wpa_s->hw.num_modes; i++) {
 		struct hostapd_hw_modes *mode = &wpa_s->hw.modes[i];
 		int j;
 

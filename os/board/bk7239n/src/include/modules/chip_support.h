@@ -28,6 +28,7 @@ typedef enum
 	CHIP_VERSION_A = 0,
 	CHIP_VERSION_B,
 	CHIP_VERSION_C,
+	CHIP_VERSION_D,
 	CHIP_VERSION_DEFAULT
 }hardware_chip_version_e;
 
@@ -37,6 +38,7 @@ typedef enum
 	CHIP_ID_A_VALUE = 0x22041020,
 	CHIP_ID_B_VALUE ,
 	CHIP_ID_C_VALUE = 0x22091022,
+	CHIP_ID_D_VALUE = 0x25750B20,
 	CHIP_ID_DEFAULT_VALUE
 }hardware_chip_id_value_e;
 
@@ -62,15 +64,18 @@ typedef struct {
  */
 bk_err_t bk_soc_info_get(soc_info_t* soc_info);
 
+#if defined(CONFIG_CHIP_SUPPORT)
 bool bk_is_chip_supported(void);
+#endif //CONFIG_CHIP_SUPPORT
 
-/** 
+/**
 * @brief  Get chip id version.
-* 
-* @return current chip_version 
+*
+* @return current chip_version
 * 	 0:  means chip_version_A.
 * 	 1:  means chip_version_B.
 * 	 2:  means chip_version_C.
-* 	 3:  means default version.
+* 	 3:  means chip_version_D.
+* 	 4:  means default version.
 */
 hardware_chip_version_e bk_get_hardware_chip_id_version(void);
