@@ -376,7 +376,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				ble_client_connect_is_running = 0;
 
 			if (RTK_BT_LE_ROLE_MASTER == conn_ind->role) {
-				client_init_parm->trble_device_disconnected_cb(conn_ind->conn_handle);
+				client_init_parm->trble_device_disconnected_cb(conn_ind->conn_handle, conn_ind->err);
 			} else if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
 				server_init_parm.disconnected_cb(conn_ind->conn_handle, conn_ind->err);
 			}
@@ -401,7 +401,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         general_client_detach_conn(disconn_ind->conn_handle);
         /* gap action */
         if (RTK_BT_LE_ROLE_MASTER == disconn_ind->role) {
-            client_init_parm->trble_device_disconnected_cb(disconn_ind->conn_handle);
+            client_init_parm->trble_device_disconnected_cb(disconn_ind->conn_handle, disconn_ind->reason);
         } else if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
             if (server_init_parm.disconnected_cb) {
                 server_init_parm.disconnected_cb(disconn_ind->conn_handle, disconn_ind->reason);

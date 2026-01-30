@@ -142,9 +142,9 @@ static void ble_device_scanned_cb_for_connect(ble_scanned_device *scanned_device
 	}
 }
 
-static void ble_device_disconnected_cb(ble_client_ctx *ctx)
+static void ble_device_disconnected_cb(ble_client_ctx *ctx, uint16_t cause)
 {
-	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[ID : %d]\n", __FUNCTION__, ctx->conn_handle);
+	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[ID : %d] cause: %d\n", __FUNCTION__, ctx->conn_handle, cause);
 	return;
 }
 

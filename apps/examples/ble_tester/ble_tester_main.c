@@ -186,7 +186,7 @@ static void ble_device_scanned_cb_without_filter(ble_scanned_device *scanned_dev
 	return;
 }
 
-static void ble_device_disconnected_cb(ble_client_ctx *ctx)
+static void ble_device_disconnected_cb(ble_client_ctx *ctx, uint16_t cause)
 {
 	RMC_LOG(RMC_CLIENT_TAG, "'%s' is called[%p]\n", __FUNCTION__, ctx);
 	g_is_conn = 0;
