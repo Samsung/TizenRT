@@ -127,69 +127,62 @@
  *   minor performance losses.
  */
 
-#if defined(CONFIG_MM_SMALL) && UINTPTR_MAX <= UINT32_MAX
-/* Two byte offsets; Pointers may be 2 or 4 bytes;
- * REVISIT: We could do better on machines with 16-bit addressing.
+/* Each configuration is a combination of the following settings:
+ * MM_SMALL effects the size of mmsize_t and the size of the chunk header.
+ * CONFIG_DEBUG_MM_HEAPINFO and CONFIG_DEBUG_MM_FREEINFO effects the size of mm_freenode_s
+| MM_SMALL | HEAPINFO | FREEINFO | 64-bit | mmsize_t | Pointer | sizeof(mm_allocnode_s) | sizeof(mm_freenode_s) | MM_MIN_SHIFT
+| ON       | OFF      | OFF      | OFF    | 2 bytes  | 4 bytes | 4 bytes	            | 12 bytes              | 4 
+| ON       | OFF      | OFF      | ON     | 2 bytes  | 8 bytes | 4 bytes                | 20 bytes              | 5 
+| ON       | OFF      | ON       | OFF    | 2 bytes  | 4 bytes | 4 bytes                | 20 bytes              | 5 
+| ON       | OFF      | ON       | ON     | 2 bytes  | 8 bytes | 4 bytes                | 32 bytes              | 6 
+| ON       | ON       | OFF      | OFF    | 2 bytes  | 4 bytes | 12 bytes               | 20 bytes              | 5 
+| ON       | ON       | OFF      | ON     | 2 bytes  | 8 bytes | 16 bytes               | 32 bytes              | 6 
+| ON       | ON       | ON       | OFF    | 2 bytes  | 4 bytes | 12 bytes               | 28 bytes              | 5 
+| ON       | ON       | ON       | ON     | 2 bytes  | 8 bytes | 16 bytes               | 44 bytes              | 6 
+| OFF      | OFF      | OFF      | OFF    | 4 bytes  | 4 bytes | 8 bytes                | 16 bytes              | 4
+| OFF      | OFF      | OFF      | ON     | 8 bytes  | 8 bytes | 16 bytes               | 32 bytes              | 5 
+| OFF      | OFF      | ON       | OFF    | 4 bytes  | 4 bytes | 8 bytes                | 24 bytes              | 5 
+| OFF      | OFF      | ON       | ON     | 8 bytes  | 8 bytes | 16 bytes               | 44 bytes              | 6 
+| OFF      | ON       | OFF      | OFF    | 4 bytes  | 4 bytes | 16 bytes               | 24 bytes              | 5 
+| OFF      | ON       | OFF      | ON     | 8 bytes  | 8 bytes | 28 bytes               | 44 bytes              | 6 
+| OFF      | ON       | ON       | OFF    | 4 bytes  | 4 bytes | 16 bytes               | 32 bytes              | 5 
+| OFF      | ON       | ON       | ON     | 8 bytes  | 8 bytes | 28 bytes               | 56 bytes              | 6 
  */
+
+/* Base minimum shift value (16 bytes) */
+#define MM_MIN_SHIFT_BASE	4
+
+/* Adjust for debug configurations */
 #if defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO)
-/* sizeof(struct mm_freenode_s) is 20 or 28 bytes. */
-#define MM_MIN_SHIFT	5			/* 32 bytes */
-#define MM_SHIFT_FOR_NDX 6			/* MM_MIN_SHIFT + 1 */
-#define MM_SHIFT_MASK    0xffffffc0	/* ~(1 << MM_SHIFT_FOR_NDX) */
+#define MM_MIN_SHIFT_DEBUG	1
 #else
-/* sizeof(struct mm_freenode_s) is 12 bytes. */
-#define MM_MIN_SHIFT	4			/* 16 bytes */
-#define MM_SHIFT_FOR_NDX 5 			/* MM_MIN_SHIFT + 1 */
-#define MM_SHIFT_MASK    0xffffffe0	/* ~(1 << MM_SHIFT_FOR_NDX) */
+#define MM_MIN_SHIFT_DEBUG	0
 #endif
-#define MM_MAX_SHIFT   15			/* 32 Kb */
 
-#elif defined(CONFIG_HAVE_LONG_LONG)
-/* Four byte offsets; Pointers may be 4 or 8 bytes */
-#if UINTPTR_MAX <= UINT32_MAX
-#if defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO)
-/* sizeof(struct mm_freenode_s) is 24 or 32 bytes. */
-#define MM_MIN_SHIFT  5				/* 32 bytes */
-#define MM_SHIFT_FOR_NDX 6			/* MM_MIN_SHIFT + 1 */
-#define MM_SHIFT_MASK    0xffffffc0	/* ~(1 << MM_SHIFT_FOR_NDX) */
-#else /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
-/* sizeof(struct mm_freenode_s) is 16 bytes. */
-#define MM_MIN_SHIFT  4				/* 16 bytes */
-#define MM_SHIFT_FOR_NDX 5			/* MM_MIN_SHIFT + 1 */
-#define MM_SHIFT_MASK    0xffffffe0	/* ~(1 << MM_SHIFT_FOR_NDX) */
-#endif /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
-#elif UINTPTR_MAX <= UINT64_MAX
-#if defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO)
-/* sizeof(struct mm_freenode_s) is 36 or 48 bytes. */
-#define MM_MIN_SHIFT  6				/* 64 bytes */
-#define MM_SHIFT_FOR_NDX 7			/* MM_MIN_SHIFT + 1 */
-#define MM_SHIFT_MASK    0xffffff80	/* ~(1 << MM_SHIFT_FOR_NDX) */
-#else /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
-/* sizeof(struct mm_freenode_s) is 24 bytes. */
-#define MM_MIN_SHIFT  5				/* 32 bytes */
-#define MM_SHIFT_FOR_NDX 6			/* MM_MIN_SHIFT + 1 */
-#define MM_SHIFT_MASK    0xffffffc0	/* ~(1 << MM_SHIFT_FOR_NDX) */
-#endif /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
-#endif /* UINTPTR_MAX <= UINT64_MAX */
-#define MM_MAX_SHIFT   22			/* 4 Mb */
-
+/* Adjust for 64-bit pointer systems */
+#if UINTPTR_MAX > UINT32_MAX
+#define MM_MIN_SHIFT_64BIT	1
 #else
-/* Four byte offsets; Pointers must be 4 bytes. */
-#if defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO)
-/* sizeof(struct mm_freenode_s) is 24 or 32 bytes. */
-#define MM_MIN_SHIFT    5			/* 32 bytes */
-#define MM_SHIFT_FOR_NDX 6			/* MM_MIN_SHIFT + 1*/
-#define MM_SHIFT_MASK    0xffffffc0	/* ~(1 << MM_SHIFT_FOR_NDX) */
-#else /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
-/* sizeof(struct mm_freenode_s) is 16 bytes. */
-#define MM_MIN_SHIFT    4			/* 16 bytes */
-#define MM_SHIFT_FOR_NDX 5			/* MM_MIN_SHIFT + 1 */
-#define MM_SHIFT_MASK    0xffffffe0	/* ~(1 << MM_SHIFT_FOR_NDX) */
-#endif /* defined(CONFIG_DEBUG_MM_HEAPINFO) || defined(CONFIG_DEBUG_MM_FREEINFO) */
-#define MM_MAX_SHIFT   22			/* 4 Mb */
+#define MM_MIN_SHIFT_64BIT	0
+#endif
+
+/*
+	The alignment unit is set to 16 bytes (2^4) via `MM_MIN_SHIFT = 4` to optimize memory utilization with a best-fit strategy
+	Since `mm_allocnode_s` is currently 16 bytes, this works fine, but `MM_MIN_SHIFT` to 5 (32-byte alignment) should be tested.
+*/
+// #define MM_MIN_SHIFT 	(MM_MIN_SHIFT_BASE + MM_MIN_SHIFT_DEBUG + MM_MIN_SHIFT_64BIT)
+#define MM_MIN_SHIFT 	4
+
+#if defined(CONFIG_MM_SMALL) && UINTPTR_MAX <= UINT32_MAX
+#define MM_MAX_SHIFT	15		/* 32 Kb */
+#else
+#define MM_MAX_SHIFT	22		/* 4 Mb */
 #endif
 
 /* All other definitions derive from these two */
+
+#define MM_SHIFT_FOR_NDX (MM_MIN_SHIFT + 1)
+#define MM_SHIFT_MASK    (~(1 << MM_SHIFT_FOR_NDX))
 
 #define MM_MIN_CHUNK     (1 << MM_MIN_SHIFT)
 #define MM_MAX_CHUNK     (1 << MM_MAX_SHIFT)
@@ -272,14 +265,15 @@ typedef size_t mmsize_t;
 typedef void *mmaddress_t;             /* 32 bit address space */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-
-#define SIZEOF_MM_MALLOC_DEBUG_INFO \
-	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
+#define SIZEOF_MM_MALLOC_DEBUG_INFO (sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
+#else
+#define SIZEOF_MM_MALLOC_DEBUG_INFO 0
 #endif
 
 #ifdef CONFIG_DEBUG_MM_FREEINFO
-#define SIZEOF_MM_FREE_DEBUG_INFO \
-	(sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
+#define SIZEOF_MM_FREE_DEBUG_INFO (sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
+#else
+#define SIZEOF_MM_FREE_DEBUG_INFO 0
 #endif
 
 /* This describes an allocated chunk.  An allocated chunk is
@@ -300,25 +294,8 @@ struct mm_allocnode_s {
 
 /* What is the size of the allocnode? */
 
-#ifdef CONFIG_MM_SMALL
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-/* 10 = (uint16_t + uint16_t + uint16_t + uint16_t + uint16_t ) */
-#define SIZEOF_MM_ALLOCNODE   (sizeof(mmsize_t) + sizeof(mmsize_t) + SIZEOF_MM_MALLOC_DEBUG_INFO)
-#else
-/* 4 = (uint16_t + uint16_t) */
-#define SIZEOF_MM_ALLOCNODE   (sizeof(mmsize_t) + sizeof(mmsize_t))
-#endif
-
-#else
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-/* 16 = (uint32_t + uint32_t + uint32_t + uint16_t + uint16_t ) */
-#define SIZEOF_MM_ALLOCNODE  (sizeof(mmsize_t) + sizeof(mmsize_t) + SIZEOF_MM_MALLOC_DEBUG_INFO)
-#else
-/* 8 = (uint32_t + uint32_t) */
-#define SIZEOF_MM_ALLOCNODE   (sizeof(mmsize_t) + sizeof(mmsize_t))
-#endif
-#endif
+#define SIZEOF_MM_ALLOCNODE \
+	(sizeof(mmsize_t) + sizeof(mmsize_t) + SIZEOF_MM_MALLOC_DEBUG_INFO)
 
 #define CHECK_ALLOCNODE_SIZE \
 	DEBUGASSERT(sizeof(struct mm_allocnode_s) == SIZEOF_MM_ALLOCNODE)
@@ -345,11 +322,9 @@ struct mm_freenode_s {
 /* What is the size of the freenode? */
 
 #define MM_PTR_SIZE sizeof(FAR struct mm_freenode_s *)
-#ifdef CONFIG_DEBUG_MM_FREEINFO
-#define SIZEOF_MM_FREENODE (SIZEOF_MM_ALLOCNODE + 2 * MM_PTR_SIZE + SIZEOF_MM_FREE_DEBUG_INFO)
-#else
-#define SIZEOF_MM_FREENODE (SIZEOF_MM_ALLOCNODE + 2 * MM_PTR_SIZE)
-#endif
+
+#define SIZEOF_MM_FREENODE \
+	(SIZEOF_MM_ALLOCNODE + 2 * MM_PTR_SIZE + SIZEOF_MM_FREE_DEBUG_INFO)
 
 #define CHECK_FREENODE_SIZE \
 	DEBUGASSERT(sizeof(struct mm_freenode_s) == SIZEOF_MM_FREENODE)
