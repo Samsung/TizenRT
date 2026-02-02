@@ -40,8 +40,8 @@ OBJS = $(SRCS:.c=$(OBJEXT))
 prebuild:
 	$(call DELFILE, $(USERSPACE)$(OBJEXT))
 
-all: prebuild $(BIN)
-.PHONY: prebuild clean install
+all: prebuild postbuild
+.PHONY: prebuild postbuild clean install distclean
 
 $(OBJS): %$(OBJEXT): %.c
 	@echo "CC: $<"
@@ -67,12 +67,23 @@ undefsym : $(OBJS)
 	$(Q) $(NM) -u $(USER_BIN_DIR)/$(BIN).relelf | grep -v "w " | awk -F"U " '{print "--require-defined "$$2}' >> $(USER_BIN_DIR)/lib_symbols.txt
 endif
 
+BUILDDIR = build
+
+$(BUILDDIR):
+	$(Q) mkdir -p $(BUILDDIR)
+
+postbuild: $(BIN) | $(BUILDDIR)
+	$(Q) mv $(BIN) $(BUILDDIR)/
+
 clean:
-	$(call DELFILE, $(BIN))
+	$(call DELFILE, $(BUILDDIR)/$(BIN))
 	$(call DELFILE, $(USER_BIN_DIR)/$(BIN))
 	$(call CLEAN)
+	$(Q) rm -rf $(BUILDDIR)
 
 distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
 
 install:
-	$(Q) install $(BIN) $(USER_BIN_DIR)/$(BIN)
+	$(Q) install $(BUILDDIR)/$(BIN) $(USER_BIN_DIR)/$(BIN)
