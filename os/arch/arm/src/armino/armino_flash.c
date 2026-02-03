@@ -114,6 +114,13 @@ static ssize_t bk_write(FAR struct mtd_dev_s *dev, off_t offset, size_t nbytes, 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static bool s_ota_test_flag = false;
+static bool get_ota_test_flag(int arg)
+{	
+	s_ota_test_flag = arg;
+	return BK_OK;
+}
+
 /************************************************************************************
  * Name: bk_erase
  ************************************************************************************/
@@ -124,14 +131,13 @@ static ssize_t bk_erase_page(size_t page)
 
 	//printf("func :%s, line :%d, addr :%x\n", __func__, __LINE__, addr);
 	#if (!CONFIG_SPE)
-	if ((addr >= bk_primary_tfm_s_partition_offset()) &&
-		(addr < (bk_secondary_all_partition_offset() + bk_secondary_all_partition_size()))) {
+	if (bk_addr_is_kernel(addr)) {
 		ret = bk_security_flash_erase_sector(addr);
 	} else
 	#endif
 	{
 		ret = bk_flash_erase_sector(addr);
-	}	
+	}
 
 	if (ret != OK) {
 		ret = -EIO;
@@ -158,10 +164,8 @@ static int bk_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 
 static ssize_t bk_flash_write(size_t addr, const void *buf, size_t length)
 {
-	//printf("func :%s, line :%d, xxx addr :%x, length :%d\n", __func__, __LINE__, bk_secondary_all_partition_offset(), bk_secondary_all_partition_size());
 	#if (!CONFIG_SPE)
-	if ((addr >= bk_primary_tfm_s_partition_offset()) &&
-		(addr < (bk_secondary_all_partition_offset() + bk_secondary_all_partition_size()))) {
+	if (bk_addr_is_kernel(addr)) {
 		bk_security_flash_write_bytes(addr, (uint8_t *)buf, length);
 	} else
 	#endif
@@ -174,18 +178,20 @@ static ssize_t bk_flash_write(size_t addr, const void *buf, size_t length)
 
 ssize_t bk_flash_read(size_t addr, void *buf, size_t length)
 {
-	//printf("func :%s, line :%d, addr :%x, length :%d\n", __func__, __LINE__, addr, length);
+	// printf("func :%s, line :%d, addr :%x, length :%d\n", __func__, __LINE__, addr, length);
 	#if (!CONFIG_SPE)
-	if ((addr >= bk_primary_tfm_s_partition_offset()) &&
-		(addr < (bk_secondary_all_partition_offset() + bk_secondary_all_partition_size()))) {
+	if (bk_addr_is_kernel(addr)) {
 		bk_security_flash_read_bytes(addr, (uint8_t *)buf, length);
 		SCB_CleanInvalidateDCache();
 	}
 	#if CONFIG_BUILD_PROTECTED
 	#if CONFIG_FLASH_ENCRYPT_ENABLE
-	else if ((addr >= bk_user_app_partition_begin()) && (addr < bk_user_app_partition_end())) {
-			addr |= SOC_FLASH_DATA_BASE;
-			memcpy(buf, (uint8_t *)addr, length);
+	else if (bk_addr_is_app_or_common(addr)) {
+		if(s_ota_test_flag) {
+			bk_data_read_app_or_common(addr, (uint8_t *)buf, length);
+		} else {
+			bk_instruction_read_app_or_common(addr, (uint8_t *)buf, length);
+		}
 	}
 	#endif
 	#endif
