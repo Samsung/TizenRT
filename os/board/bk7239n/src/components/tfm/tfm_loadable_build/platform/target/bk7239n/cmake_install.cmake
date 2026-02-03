@@ -34,6 +34,11 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("/root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build/platform/target/bk7239n/ed25519/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("/root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build/platform/target/bk7239n/armino/cmake_install.cmake")
 endif()
 

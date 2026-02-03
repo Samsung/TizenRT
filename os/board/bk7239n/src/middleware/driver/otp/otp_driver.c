@@ -686,12 +686,25 @@ bk_err_t bk_otp_ahb_update(otp2_id_t item, uint8_t* buf, uint32_t size)
 
 }
 
-bk_err_t bk_otp_read_random_number(uint32_t* value, uint32_t size)
+bk_err_t bk_otp_read_random_number(uint8* value, uint32_t size)
 {
 	OTP_ACTIVE(1)
-	for(int i = 0; i < size; ++i){
-		value[i] = otp_hal_read_random_number(&s_otp.hal);
+	uint32_t word_len = size / 4;
+	uint32_t byte_remain = size % 4;
+	uint32_t value_word = 0;
+
+	for(int i = 0; i < word_len; ++i){
+		*(uint32_t*)value = otp_hal_read_random_number(&s_otp.hal);
+		value += 4;
 	}
+
+	if(byte_remain > 0){
+		value_word = otp_hal_read_random_number(&s_otp.hal);
+		for(int i = 0; i < byte_remain; ++i){
+			value[i] = (value_word >> (i * 8)) & 0xFF;
+		}
+	}
+
 	OTP_SLEEP()
 	return BK_OK;
 }

@@ -360,46 +360,34 @@ void bk_flash_mutex_unlock(int status);
 void bk_flash_set_mutex(int (*mutex_lock)(void),
                         void (*mutex_unlock)(int));
 
+/**
+ * @brief     Check if the address is in the kernel partition
+ *
+ * @param address address to check
+ *
+ * @return true if the address is in the kernel partition, false otherwise
+ */
+bool bk_addr_is_kernel(uint32_t addr);
 
 /**
- * @brief     Get flash primary tfm s partition offset
+ * @brief     Check if the address is in the app or common partition
  *
- * @return the flash primary tfm s partition offset
- */
-uint32_t bk_primary_tfm_s_partition_offset(void);
-/**
- * @brief     Get flash primary all partition size
+ * @param address address to check
  *
- * @return the flash primary all partition size
+ * @return true if the address is in the app or common partition, false otherwise
  */
-uint32_t bk_primary_all_partition_size(void);
-/**
- * @brief     Get flash secondary all partition offset
- *
- * @return the flash secondary all partition offset
- */
-uint32_t bk_secondary_all_partition_offset(void);
+bool bk_addr_is_app_or_common(uint32_t addr);
 
 /**
- * @brief     Get flash secondary all partition size
+ * @brief     Read data from app or common partition
  *
- * @return the flash secondary all partition size
- */
-uint32_t bk_secondary_all_partition_size(void);
-
-/**
- * @brief     Get flash user app partition begin
+ * @param address address to read
+ * @param user_buf the buffer to read the data
+ * @param size size to read
  *
- * @return the flash user app partition begin
+ * @return
  */
-uint32_t bk_user_app_partition_begin(void);
-
-/**
- * @brief     Get flash user app partition end
- *
- * @return the flash user app partition end
- */
-uint32_t bk_user_app_partition_end(void);
+int bk_instruction_read_app_or_common(uint32_t address, uint8_t *user_buf, uint32_t size);
 
 /**
  * @brief     Write data to flash with security 
@@ -413,6 +401,17 @@ uint32_t bk_user_app_partition_end(void);
  *    - BK_ERR_FLASH_ADDR_OUT_OF_RANGE: flash address is out of range
  *    - others: other errors.
  */
+
+/**
+ * @brief     Read data from app or common partition
+ *
+ * @param address address to read
+ * @param user_buf the buffer to read the data
+ * @param size size to read
+ *
+ * @return
+ */
+bk_err_t bk_data_read_app_or_common(uint32_t address, uint8_t *user_buf, uint32_t size);
 int bk_security_flash_write_bytes(uint32_t address, const uint8_t *user_buf, uint32_t size);
 
 /**

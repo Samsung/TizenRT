@@ -32,15 +32,15 @@
  * or update here directly before/without iTest
  */
 float target_pwr_ble = 6.0; //2G4 BLE target power
-float target_pwr_11b = 18.0; //2G4 11B target power
+float target_pwr_11b = 17.0; //2G4 11B target power
 float target_pwr_11g = 16.0; //2G4 11G target power
 float target_pwr_n20 = 15.0; //2G4 N20 target power
 float target_pwr_n40 = 12.0; //2G4 N40 target power
-float target_pwr_ax20 = 12.0; //2G4 N20 target power
+float target_pwr_ax20 = 15.0; //2G4 N20 target power
 float target_pwr_11a = 15.0; //5G 11A target power
 float target_pwr_n20_5g = 14.0; //5G N20 target power
 float target_pwr_n40_5g = 12.0; //5G N40 target power
-float target_pwr_ax20_5g = 12.0; //5G N20 target power
+float target_pwr_ax20_5g = 15.0; //5G N20 target power
 
 /**
  * shift power index of n/ax:
@@ -49,7 +49,7 @@ float target_pwr_ax20_5g = 12.0; //5G N20 target power
  */
 int8_t g_dif_g_n20 = 4;    //differ between g and n20
 int8_t g_dif_g_ax20 = 4;  //differ between g and ax20
-int8_t g_dif_g_n40 = 9;   //differ between g and n40
+int8_t g_dif_g_n40 = 12;   //differ between g and n40
 int8_t g_dif_a_n20 = 4;    //differ between a and n20
 int8_t g_dif_a_ax20 = 4;  //differ between a and ax20
 int8_t g_dif_a_n40 = 9;    //differ between a and n40
@@ -392,17 +392,17 @@ const INT16 shift_tab_b[4] = {0, 0, 0, 0}; // 11M base,5.5M,2M,1M
 const INT16 shift_tab_g[8] = {0, 2, 4, 4, 4, 4, 4, 4}; // 54M base -  6M
 const INT16 shift_tab_n[1] = {0}; // for MCS7
 #else
-const INT16 shift_tab_b[4] = {0, 0, 0, 0}; // 11M base,5.5M,2M,1M
-// 54M base -                 54M,48M,36M,24M,18M,12M,9M,6M
-const INT16 shift_tab_g[8] = {0,  2,  2,  2,  3,  3,  4, 4/*4*/}; // 54M base -  12M,9M,6M//do
-const INT16 shift_tab_n20[10] = {-12,  -8,  0,  2,  2,  2,  3,  3,  4, 4/*4*/}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
-const INT16 shift_tab_ax20[10] = {-12,  -8,  0,  2,  2,  2,  3,  3,  4, 4/*4*/}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
-const INT16 shift_tab_n40[10] = {-12,  -8,  0,  2,  2,  2,  3,  3,  4, 4/*4*/}; // n40 mcs9 mcs8 mcs7(base) -  mcs0,
-// 54M base -                 54M,48M,36M,24M,18M,12M,9M,6M
-const INT16 shift_tab_a[8] = {0,  2,  2,  2,  3,  3,  4, 4}; // 54M base -  12M,9M,6M//do
-const INT16 shift_tab_n20_5g[10] = {-8,  -4,  0,  2,  2,  2,  3,  3,  4, 4}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
-const INT16 shift_tab_ax20_5g[10] = {-8,  -4,  0,  2,  2,  2,  3,  3,  4, 4}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
-const INT16 shift_tab_n40_5g[10] = {-8,  -4,  0,  2,  2,  2,  3,  3,  4, 4}; // n40 mcs9 mcs8 mcs7(base) -  mcs0,
+const INT16 shift_tab_b[4]      = {0, 0, 0, 0}; // 11M base,5.5M,2M,1M
+// 54M base -                     54M,48M,36M,24M,18M,12M,9M,6M
+const INT16 shift_tab_g[8]     = { 0,  2, 2, 2, 3, 3, 4, 4/*4*/}; // 54M base -  12M,9M,6M//do
+const INT16 shift_tab_n20[10]  = {-8, -4, 0, 2, 2, 2, 3, 3, 4, 4/*4*/}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
+const INT16 shift_tab_ax20[10] = {-8, -4, 0, 2, 2, 2, 3, 3, 4, 4/*4*/}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
+const INT16 shift_tab_n40[10]  = {-8, -4, 0, 2, 2, 2, 3, 3, 4, 4/*4*/}; // n40 mcs9 mcs8 mcs7(base) -  mcs0,
+// 54M base -                        54M,48M,36M,24M,18M,12M,9M,6M
+const INT16 shift_tab_a[8]        = { 0, 2,  2, 2, 3,  3,  4, 4}; // 54M base -  12M,9M,6M//do
+const INT16 shift_tab_n20_5g[10]  = {-8, -4, 0, 2, 2,  2,  3,  3,  4, 4}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
+const INT16 shift_tab_ax20_5g[10] = {-8, -4, 0, 2, 2,  2,  3,  3,  4, 4}; // n20 mcs9 mcs8 mcs7(base) -  mcs0,
+const INT16 shift_tab_n40_5g[10]  = {-8, -4, 0, 2, 2,  2,  3,  3,  4, 4}; // n40 mcs9 mcs8 mcs7(base) -  mcs0,
 #endif
 
 const INT16 shift_tab_b_fcc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14

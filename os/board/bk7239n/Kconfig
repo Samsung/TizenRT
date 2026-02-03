@@ -30,8 +30,68 @@ source "board/bk7239n/src/components/bk_cli/uart_debug/Kconfig"
 source "board/bk7239n/src/components/bk_cli/Kconfig"
 source "board/bk7239n/src/components/bk_phy/Kconfig"
 source "board/bk7239n/src/components/easy_flash/Kconfig"
+# source "board/bk7239n/src/components/secure_deployment/Kconfig"
 source "board/bk7239n/src/libs/Kconfig"
 
+
+menu "PSRAM config"
+
+config BK_PSRAM_BASE
+	hex "PSRAM base address"
+	default 0x70000000
+	help
+		Physical base address of PSRAM.
+
+config BK_PSRAM_TOTAL_SIZE
+	hex "PSRAM total size"
+	default 0x800000
+	help
+		Total PSRAM size in bytes. For bk7239n this is typically 0x800000 (8MB).
+
+config BK_PSRAM_SECURE_SIZE
+	hex "PSRAM secure reserved size"
+	default 0x40000
+	help
+		Reserved PSRAM size for secure world. This region occupies the first
+		CONFIG_BK_PSRAM_SECURE_SIZE bytes from CONFIG_BK_PSRAM_BASE.
+
+config BK_PSRAM_DATA_BASE
+	hex "PSRAM data base address"
+	default 0x70040000 if !XIP_KERNEL
+	default 0x70000000
+	help
+		Base address of PSRAM data region.
+		When !XIP_KERNEL, the base must be 0x70040000 because the
+		first 256KB is reserved by secure world.
+		This region must not overlap PSRAM code or RAM_KREGIONx heaps.
+
+config BK_PSRAM_CODE_BASE
+	hex "PSRAM code base address"
+	default 0x70060000 if  !XIP_KERNEL
+	default 0x70020000
+	help
+		Base address of PSRAM code region.
+		This should equal CONFIG_BK_PSRAM_DATA_BASE + CONFIG_BK_PSRAM_DATA_SIZE.
+		This region must not overlap PSRAM data or RAM_KREGIONx heaps.
+
+config BK_PSRAM_DATA_SIZE
+	hex "PSRAM data size"
+	default 0x20000
+	help
+		Size of PSRAM data region.
+
+config BK_PSRAM_CODE_SIZE
+	hex "PSRAM code size"
+	default 0x180000 if !XIP_KERNEL
+	default 0x80000
+	help
+		Size of PSRAM code region.
+		The PSRAM data/code/heap/app regions must be non-overlapping and within
+		the total PSRAM size.
+
+
+
+endmenu
 
 menu "SPI Flash driver"
 config DUMMY_FS_BIN
@@ -58,14 +118,14 @@ config FLASH_START_ADDR
 
 config FLASH_VSTART_LOADABLE
     hex
-    default 0x123CC000
+    default 0x12236000
     depends on XIP_ELF
     help
         A start virtual address of flash (in hex). This macro
         will be used to do address remapping for loadable running on XIP.
         This value should be set to the virtual flash address where loadable
         apps (common, app1, app2) start, typically after the kernel partition.
-        For bk7239n, this is typically 0x123CC000.
+        For bk7239n, this is typically 0x12236000.
 
 config TRPK_CONTAINS_MULTIPLE_BINARY
     bool

@@ -442,6 +442,11 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
                 elem.attr_cb_evt.type = TRBLE_ATTR_CB_CCCD;
                 elem.attr_cb_evt.result = cccd_config;
             }
+            else if(w_req->is_cmd)
+            {
+                elem.attr_cb_evt.type = TRBLE_ATTR_CB_WRITING_NO_RSP;
+                elem.attr_cb_evt.result = 0;
+            }
             else
             {
                 elem.attr_cb_evt.type = TRBLE_ATTR_CB_WRITING;
@@ -450,7 +455,6 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
 
             ble_evt_queue_push_ext(EVT_BLE_SERVER_ATTR_CB, &elem, sizeof(ble_evt_msg_elem_t), NULL);
 
-            //todo: add evt_type = TRBLE_ATTR_CB_WRITING_NO_RSP
             //note: report data with trble_netmgr_attr_get_data
         }
     }

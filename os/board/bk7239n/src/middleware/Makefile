@@ -53,15 +53,11 @@
 include $(TOPDIR)/tools/Config.mk
 -include $(TOPDIR)/Make.defs
 
-ifeq ($(CONFIG_BK7239N_MP),y)
-driver_path := driver_mp
-bk7239n_soc_path := soc_mp
-bk7239n_hal_path := hal_mp
-else
+
 driver_path := driver
 bk7239n_soc_path := soc
 bk7239n_hal_path := hal
-endif
+
 
 -include Make.defs
 
@@ -69,8 +65,6 @@ include soc/bk7239n/Make.defs
 include $(driver_path)/sys_ctrl/Make.defs
 include soc/bk7239n/$(bk7239n_hal_path)/Make.defs
 include boards/bk7239n/vnd_cal/Make.defs
-
-
 
 
 libname := middleware
