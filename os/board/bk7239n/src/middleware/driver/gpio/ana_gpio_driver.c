@@ -32,7 +32,7 @@ gpio_id_t ana_gpio_get_wakeup_pin(void)
 		{
 			if (gpio_id == SOC_GPIO_NUM) {
 				gpio_id = i;
-				sys_drv_wakeup_source_clear();
+				sys_drv_wakeup_source_gpio_clear();
 				break;
 			} else {
 				// TODO: let user know multiple GPIOs were detected triggering wake-up at the same time
@@ -86,18 +86,18 @@ bk_err_t ana_gpio_wakeup_deinit(void)
 
 bk_err_t ana_gpio_config_wakeup_source(uint64_t gpio_bitmap)
 {
-	sys_hal_set_ana_reg8_spi_latch1v(1);
+	sys_hal_set_ana_reg8_spi_latch1v_iram(1);
 	sys_hal_set_ana_reg11_gpiowk((uint32_t)gpio_bitmap);
-	sys_hal_set_ana_reg8_spi_latch1v(0);
+	sys_hal_set_ana_reg8_spi_latch1v_iram(0);
 
 	return BK_OK;
 }
 
-bk_err_t ana_gpio_clear_wakeup_source(void)
+__IRAM_SEC bk_err_t ana_gpio_clear_wakeup_source(void)
 {
-	sys_hal_set_ana_reg8_spi_latch1v(1);
+	sys_hal_set_ana_reg8_spi_latch1v_iram(1);
 	sys_hal_set_ana_reg11_gpiowk(0);
-	sys_hal_set_ana_reg8_spi_latch1v(0);
+	sys_hal_set_ana_reg8_spi_latch1v_iram(0);
 
 	return BK_OK;
 }

@@ -15,6 +15,7 @@
 #define TAG "sadc"
 
 #include <common/bk_include.h>
+#include <stdbool.h>
 #include <common/bk_compiler.h>
 #include <os/mem.h>
 #include <driver/gpio.h>
@@ -34,6 +35,7 @@
 #include "bk_rf_internal.h"
 #include "aon_pmu_hal.h"
 #include "temp_detect.h"
+#include <driver/otp.h>
 
 uint32_t rc_drv_get_rf_rxon(void);
 
@@ -68,6 +70,58 @@ static uint8_t s_saradc_use_calibration_val_flag = 0x0;
 			return BK_ERR_ADC_INVALID_SCLK_MODE;\
 		}\
 	} while(0)
+
+static bool adc_try_load_otp_cwt(uint32_t *otp_cwt_buf)
+{
+    uint32_t otp_data_size;
+    uint8_t *data = NULL;
+    bk_err_t result = BK_FAIL;
+    uint32_t required_size = ADC_CWT_COEF_NUM * sizeof(uint32_t);
+
+#if CONFIG_SOC_BK7236XX
+    otp_data_size = otp_map_1[OTP_GADC_CALIBRATION].allocated_size;
+#else
+    otp_data_size = otp_map_2[OTP_GADC_CALIBRATION].allocated_size;
+#endif
+
+    // Check if OTP data size is sufficient for CWT coefficients
+    // For bk7236/bk7236n, otp_data_size is too small (4/8 bytes), so this will return false
+    if ((otp_cwt_buf == NULL) || (otp_data_size < required_size)) {
+        return false;
+    }
+
+    data = (uint8_t *)os_zalloc(otp_data_size);
+    if (data == NULL) {
+        ADC_LOGE("malloc otp data buffer failed\r\n");
+        return false;
+    }
+
+#if CONFIG_SOC_BK7236XX
+    result = bk_otp_apb_read(OTP_GADC_CALIBRATION, data, otp_data_size);
+#else
+    result = bk_otp_ahb_read(OTP_GADC_CALIBRATION, data, otp_data_size);
+#endif
+    if (result != BK_OK) {
+        ADC_LOGW("read otp gadc calib failed:%d\r\n", result);
+        os_free(data);
+        return false;
+    }
+
+    for (uint32_t idx = 0; idx < ADC_CWT_COEF_NUM; idx++) {
+        uint32_t otp_words;
+        os_memcpy(&otp_words, &data[idx * 4], sizeof(uint32_t));
+        otp_cwt_buf[idx] = otp_words & 0xFFFFFF;
+    }
+
+    if ((otp_cwt_buf[ADC_CWT_COEF_NUM - 1] == 0)) {//The last set of self-calibration values has the highest weight.
+        ADC_LOGW("invalid otp cwt value:[%x]\r\n",otp_cwt_buf[ADC_CWT_COEF_NUM - 1]);
+        os_free(data);
+        return false;
+    }
+
+    os_free(data);
+    return true;
+}
 
 static void adc_flush(struct sadc_device *dev)
 {
@@ -145,7 +199,7 @@ static void adc_enable_block(void)
 
 static bk_err_t adc_chan_init_common(struct sadc_device *dev, adc_chan_t chan)
 {
-    bk_err_t ret = 0;
+    bk_err_t ret;
     adc_hal_t *hal_ptr;
 
     hal_ptr = &dev->hal;
@@ -187,7 +241,7 @@ static bk_err_t adc_config_rx_buf(struct sadc_data *data, uint16_t* buf, uint32_
     return BK_OK;
 }
 
-static bk_err_t adc_enable_bypass_clalibration(struct sadc_device *dev)
+static bk_err_t adc_enable_bypass_calibration(struct sadc_device *dev)
 {
     __unused adc_hal_t *hal_ptr = &dev->hal;
 
@@ -195,7 +249,7 @@ static bk_err_t adc_enable_bypass_clalibration(struct sadc_device *dev)
     return BK_OK;
 }
 
-static bk_err_t adc_disable_bypass_clalibration(struct sadc_device *dev)
+static bk_err_t adc_disable_bypass_calibration(struct sadc_device *dev)
 {
     __unused adc_hal_t *hal_ptr = &dev->hal;
 
@@ -240,9 +294,9 @@ bk_err_t adc_activate_config(struct sadc_device *dev, adc_config_t *config)
     }
 
     if (0 == config->is_hw_using_cali_result) {
-        adc_enable_bypass_clalibration(dev);
+        adc_enable_bypass_calibration(dev);
     } else {
-        adc_disable_bypass_clalibration(dev);
+        adc_disable_bypass_calibration(dev);
     }
 
     return BK_OK;
@@ -283,8 +337,10 @@ uint32_t bk_adc_get_2Volt_threshold(void)
     return adc_hal_get_2Volt_threshold();
 }
 
-static int adc_pm_restore_cb(uint64_t sleep_time, void *args)
+__IRAM_SEC static int adc_pm_restore_cb(uint64_t sleep_time, void *args)
 {
+    (void)sleep_time;
+    (void)args;
     hal_calib_apply();
     return BK_OK;
 }
@@ -296,7 +352,7 @@ static bk_err_t adc_set_default_cali_val(struct sadc_data *data)
         /*TODO Fixme: wangzhilei*/
         0, 0x11AA, 0x2382, ADC_TEMP_CODE_DFT_25DEGREE, ADC_TMEP_LSB_PER_10DEGREE /* 1Volt, 2Volt, 25Degree, 10Step*/
         #elif (defined(CONFIG_SOC_BK7239XX))
-        0, 0x1194, 0x23ea, ADC_TEMP_CODE_DFT_25DEGREE, ADC_TMEP_LSB_PER_10DEGREE /* 1Volt, 2Volt, 25Degree, 10Step*/
+        0x4ca, 0x1194, 0x23ea, ADC_TEMP_CODE_DFT_25DEGREE, ADC_TMEP_LSB_PER_10DEGREE /* 1Volt, 2Volt, 25Degree, 10Step*/
         #elif (defined(CONFIG_SOC_BK7259))
         0, 0x1481, 0x279d, ADC_TEMP_CODE_DFT_25DEGREE, ADC_TMEP_LSB_PER_10DEGREE /* 1Volt, 2Volt, 25Degree, 10Step*/
         #elif (defined(CONFIG_SOC_BK7236XX))
@@ -450,24 +506,24 @@ static bk_err_t adc_stop_conversion(struct sadc_device *dev)
 static bk_err_t adc_wait_for_read_complete(struct sadc_device *dev, uint32_t timeout)
 {
     bk_err_t ret = BK_OK;
-	uint32 tick1 ;
-	uint32 tick2;
-	uint32 tick_duration;
+    uint32 tick1 ;
+    uint32 tick2;
+    uint32 tick_duration;
     #if (defined(CONFIG_SARADC_REVISION))
     dev->rf_active_nums = rc_drv_get_rf_rxon();
     #endif
     adc_flush(dev);
     sys_drv_sadc_int_enable();
-	tick1 = rtos_get_time();
+    tick1 = rtos_get_time();
     while(sys_drv_sadc_get_int_en())
     {
-		tick2 = rtos_get_time();
-		tick_duration = (tick2 >= tick1) ? (tick2 - tick1) : ((0xFFFFFFFF- tick1) + tick2) ;
-		if (tick_duration >= 4)
-		{
-			bk_printf(" adc_wait for_read timeout ");
-			break;
-		}
+        tick2 = rtos_get_time();
+        tick_duration = (tick2 >= tick1) ? (tick2 - tick1) : ((0xFFFFFFFF- tick1) + tick2) ;
+        if (tick_duration >= 4)
+        {
+            bk_printf(" adc_wait for_read timeout ");
+            break;
+        }
     }
     ret = rtos_get_semaphore(&dev->ctx.sync, timeout);
     if(ret != kNoErr) {
@@ -488,7 +544,7 @@ bk_err_t bk_adc_single_read(uint16_t* data)
 
 static bk_err_t adc_current_channel_convert(struct sadc_device *dev, uint16_t* buf, uint32_t buf_size, uint32_t timeout)
 {
-    uint32_t ret;
+    bk_err_t ret;
 
     ret = adc_wait_for_read_complete(dev, timeout);
 
@@ -525,6 +581,9 @@ static bk_err_t adc_revision_raw(struct sadc_device *dev, uint16_t* buf, uint32_
     }
 
     //1. estimate voltage(calc ADC average instead)
+    if (dev->data.sampling_request == 0) {
+        return BK_OK;
+    }
     for (index = 0; index < dev->data.sampling_request; index++) {
         average += buf[index];
     }
@@ -697,7 +756,11 @@ bk_err_t bk_adc_channel_read(adc_chan_t chan_id, uint16_t *data, uint32_t timeou
         sum += samples[i];
     }
 
-    sum = sum / (average_sample_count - num);
+    if ((average_sample_count - num) > 0) {
+        sum = sum / (average_sample_count - num);
+    } else {
+        sum = 0;
+    }
 
     #if defined(CONFIG_SARADC_RANGE_DIVIDE)
     sum = sum >> 1;
@@ -884,7 +947,11 @@ init_failed:
 
 bk_err_t bk_adc_is_valid_analog_channel(uint32_t channel_id)
 {
-    __unused struct sadc_device *dev = saradc_dev_ptr;
+    struct sadc_device *dev = saradc_dev_ptr;
+
+    if (dev == NULL) {
+        return BK_ERR_ADC_NOT_INIT;
+    }
 
     if (!adc_hal_is_valid_channel(&dev->hal, channel_id))
     {
@@ -982,7 +1049,7 @@ float saradc_calculate(UINT16 adc_val)
 {
     struct sadc_device *dev = saradc_dev_ptr;
     struct sadc_data *data = &dev->data;
-    float practic_voltage = 0;
+    float practical_voltage = 0;
     UINT16 cali_low_val = data->sadc_cali_val[SARADC_CALIBRATE_LOW];
     UINT16 cali_high_val = data->sadc_cali_val[SARADC_CALIBRATE_HIGH];
 
@@ -990,40 +1057,53 @@ float saradc_calculate(UINT16 adc_val)
     #if (defined(CONFIG_SOC_BK7236XX)) || (defined(CONFIG_SOC_BK7239XX))
     UINT16 cali_300mV_val = data->sadc_cali_val[SARADC_CALIBRATE_EXT_LOW];
     if ((cali_300mV_val != 0) && (adc_val < cali_low_val)) {
-        /* (adc_val - low) / (practic_voltage - 1Volt) = (low - ext_low) / 0.7Volt */
-        /* practic_voltage = 0.7 * (adc_val - low) / (low - ext_low) + 1Volt */
-        practic_voltage = 0.7 * (adc_val - cali_low_val);
-        practic_voltage = (practic_voltage / (float)(cali_low_val - cali_300mV_val)) + 1;
+        /* (adc_val - low) / (practical_voltage - 1Volt) = (low - ext_low) / 0.7Volt */
+        /* practical_voltage = 0.7 * (adc_val - low) / (low - ext_low) + 1Volt */
+        practical_voltage = 0.7 * (adc_val - cali_low_val);
+        practical_voltage = (practical_voltage / (float)(cali_low_val - cali_300mV_val)) + 1;
     } else {
-        /* (adc_val - low) / (practic_voltage - 1Volt) = (high - low) / 1Volt */
-        /* practic_voltage = (adc_val - low) / (high - low) + 1Volt */
-        practic_voltage = (float)(adc_val - cali_low_val);
-        practic_voltage = (practic_voltage / (float)(cali_high_val - cali_low_val)) + 1;
+        /* (adc_val - low) / (practical_voltage - 1Volt) = (high - low) / 1Volt */
+        /* practical_voltage = (adc_val - low) / (high - low) + 1Volt */
+        practical_voltage = (float)(adc_val - cali_low_val);
+        practical_voltage = (practical_voltage / (float)(cali_high_val - cali_low_val)) + 1;
     }
     #else
-    practic_voltage = (adc_val -(cali_low_val - 4096));
-    practic_voltage = practic_voltage/(cali_high_val  - (cali_low_val - 4096));
-    practic_voltage = 2*practic_voltage;
+    practical_voltage = (adc_val -(cali_low_val - 4096));
+    practical_voltage = practical_voltage/(cali_high_val  - (cali_low_val - 4096));
+    practical_voltage = 2*practical_voltage;
     #endif
     #elif defined(CONFIG_SARADC_V1P2)
-    /* (adc_val - low) / (practic_voltage - 1Volt) = (high - low) / 1Volt */
-    /* practic_voltage = (adc_val - low) / (high - low) + 1Volt */
-    practic_voltage = (float)(adc_val - cali_low_val);
-    practic_voltage = (practic_voltage / (float)(cali_high_val - cali_low_val)) + 1;
+    #if (defined(CONFIG_SOC_BK7239XX)) //need adapt for 0.3v valtage
+    UINT16 cali_300mV_val = data->sadc_cali_val[SARADC_CALIBRATE_EXT_LOW];
+    if ((cali_300mV_val != 0) && (adc_val < cali_low_val)) {
+        /* (adc_val - low) / (practical_voltage - 1Volt) = (low - ext_low) / 0.7Volt */
+        /* practical_voltage = 0.7 * (adc_val - low) / (low - ext_low) + 1Volt */
+        practical_voltage = 0.7 * (adc_val - cali_low_val);
+        practical_voltage = (practical_voltage / (float)(cali_low_val - cali_300mV_val)) + 1;
+    } else {
+    /* (adc_val - low) / (practical_voltage - 1Volt) = (high - low) / 1Volt */
+    /* practical_voltage = (adc_val - low) / (high - low) + 1Volt */
+    practical_voltage = (float)(adc_val - cali_low_val);
+    practical_voltage = (practical_voltage / (float)(cali_high_val - cali_low_val)) + 1;
+    }
+    #else
+    practical_voltage = (float)(adc_val - cali_low_val);
+    practical_voltage = (practical_voltage / (float)(cali_high_val - cali_low_val)) + 1;
+    #endif
     #endif
 
-    if (practic_voltage < 0) {
-        practic_voltage = 0.0f;
+    if (practical_voltage < 0) {
+        practical_voltage = 0.0f;
     }
 
-    return practic_voltage;
+    return practical_voltage;
 }
 
-float temprature_calculate(UINT16 adc_val)
+float temperature_calculate(UINT16 adc_val)
 {
     struct sadc_device *dev = saradc_dev_ptr;
     struct sadc_data *data = &dev->data;
-    float practic_temprature;
+    float practical_temperature;
     UINT16 cali_temp_val = data->sadc_cali_val[SARADC_CALIBRATE_TEMP_CODE25];
     UINT16 cali_temp_step = data->sadc_cali_val[SARADC_CALIBRATE_TEMP_STEP10];
 
@@ -1032,28 +1112,28 @@ float temprature_calculate(UINT16 adc_val)
     (void)cali_temp_step;
     if (cali_temp_val >= adc_val)
     {
-        practic_temprature = 25 + (cali_temp_val - adc_val) * 10 / 46.5;
+        practical_temperature = 25 + (cali_temp_val - adc_val) * 10 / 46.5;
     }
     else
     {
-        practic_temprature = 25 - (adc_val - cali_temp_val) * 10 / 46.5;
+        practical_temperature = 25 - (adc_val - cali_temp_val) * 10 / 46.5;
     }
-    if (practic_temprature > 90) {
+    if (practical_temperature > 90) {
         //temp > 90, thre=5.15
-        practic_temprature = 90 + (INT16)((float)(practic_temprature - 90) * 46.5 / 51.5);
+        practical_temperature = 90 + (INT16)((float)(practical_temperature - 90) * 46.5 / 51.5);
     }
     #else
     if (cali_temp_val >= adc_val)
     {
-        practic_temprature = 25 + (cali_temp_val - adc_val) * 10 / cali_temp_step;
+        practical_temperature = 25 + (cali_temp_val - adc_val) * 10 / cali_temp_step;
     }
     else
     {
-        practic_temprature = 25 - (adc_val - cali_temp_val) * 10 / cali_temp_step;
+        practical_temperature = 25 - (adc_val - cali_temp_val) * 10 / cali_temp_step;
     }
     #endif
 
-    return practic_temprature;
+    return practical_temperature;
 }
 
 float bk_adc_data_calculate(UINT16 adc_val, UINT8 adc_chan)
@@ -1061,17 +1141,17 @@ float bk_adc_data_calculate(UINT16 adc_val, UINT8 adc_chan)
     float cali_value = 0;
 
     if (adc_chan == ADC_7) {
-        return temprature_calculate(adc_val);
+        return temperature_calculate(adc_val);
     }
 
     if (adc_chan == ADC_8 || adc_chan == ADC_9 || adc_chan == ADC_11) {
         ADC_LOGI("adc_chan %d has been used\r\n", adc_chan);
-        return BK_ERR_ADC_BUSY;
+        return -1.0f;
     }
 
     cali_value = saradc_calculate(adc_val);
     if (adc_chan == ADC_0) {
-        cali_value = cali_value * 2;
+        cali_value = cali_value * 4;
     }
 
     return cali_value;
@@ -1188,13 +1268,29 @@ bk_err_t adc_calib_restore_analog_context(struct sadc_calib_ana_context *ana_con
 
 bk_err_t bk_adc_enter_calib_mode(void)
 {
-    adc_config_t config = {0};
+    uint32_t otp_cwt[ADC_CWT_COEF_NUM] = {0};
     struct sadc_calib_ana_context ana_context;
+    bk_err_t ret = BK_OK;
+    int ana_context_saved = 0;
+    int gadc_buf_enabled = 0;
+    uint16_t *adc_raw_data_buf = NULL;
 
-    uint16_t *adc_raw_data_buf = (uint16_t *)os_zalloc(ADC_CALIBRATION_DATA_NUM * sizeof(uint16_t));
+    if (adc_try_load_otp_cwt(otp_cwt)) {
+        adc_calib_save_analog_context(&ana_context);
+        ana_context_saved = 1;
+        sys_drv_set_ana_pwd_gadc_buf(1);
+        gadc_buf_enabled = 1;
+        adc_hal_calib_init();
+        adc_hal_set_cwt(otp_cwt);
+        goto cleanup;
+    }
+
+    adc_config_t config = {0};
+    adc_raw_data_buf = (uint16_t *)os_zalloc(ADC_CALIBRATION_DATA_NUM * sizeof(uint16_t));
     if (NULL == adc_raw_data_buf) {
         ADC_LOGE("adc_raw_data_buf malloc failed\r\n");
-        return BK_ERR_NO_MEM;
+        ret = BK_ERR_NO_MEM;
+        goto cleanup;
     }
 
     config.chan = 0;
@@ -1209,20 +1305,37 @@ bk_err_t bk_adc_enter_calib_mode(void)
     os_memset(adc_raw_data_buf, 0, ADC_CALIBRATION_DATA_NUM * sizeof(uint16_t));
 
     adc_calib_save_analog_context(&ana_context);
+    ana_context_saved = 1;
     sys_drv_set_ana_pwd_gadc_buf(1);
-    bk_adc_cont_start(&config, config.chan, adc_raw_data_buf, ADC_CALIBRATION_DATA_NUM);
+    gadc_buf_enabled = 1;
+
+    ret = bk_adc_cont_start(&config, config.chan, adc_raw_data_buf, ADC_CALIBRATION_DATA_NUM);
+    if (ret != BK_OK) {
+        goto cleanup;
+    }
+
     adc_hal_calib_init();
-    bk_adc_cont_get_raw(config.chan, adc_raw_data_buf, ADC_CALIBRATION_DATA_NUM);
+    ret = bk_adc_cont_get_raw(config.chan, adc_raw_data_buf, ADC_CALIBRATION_DATA_NUM);
+    if (ret != BK_OK) {
+        goto cleanup;
+    }
+
     adc_hal_stop_commom(NULL);
     adc_hal_set_cwt_calib(adc_raw_data_buf, ADC_CALIBRATION_DATA_NUM);
 
+cleanup:
     if (adc_raw_data_buf) {
         os_free(adc_raw_data_buf);
         adc_raw_data_buf = NULL;
     }
-    adc_calib_restore_analog_context(&ana_context);
+    if (gadc_buf_enabled) {
+        sys_drv_set_ana_pwd_gadc_buf(0);
+    }
+    if (ana_context_saved) {
+        adc_calib_restore_analog_context(&ana_context);
+    }
 
-    return BK_OK;
+    return ret;
 }
 #endif // CONFIG_SARADC_V1P2
 // eof

@@ -23,7 +23,7 @@ void smem_reset_lastblock(void)
 {
 }
 
-__attribute__((section(".itcm_sec_code"))) void arch_deep_sleep(void)
+__attribute__((section(".iram"))) void arch_deep_sleep(void)
 {
 	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 	__WFI();

@@ -32,7 +32,7 @@ menu "SDCARD"
     config SDCARD_POWER_GPIO_CTRL_AUTO_POWERDOWN_WHEN_IDLE
         depends on SDCARD_POWER_GPIO_CTRL
         bool "Enable SDcard auto powerdown when idle"
-        default y
+        default n
 
 	config SDCARD_DEBUG_SUPPORT
 		bool "Enable SDcard debug"

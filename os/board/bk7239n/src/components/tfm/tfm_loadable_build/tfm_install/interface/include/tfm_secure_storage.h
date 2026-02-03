@@ -16,6 +16,16 @@
 
 #include <soc/soc.h>
 
+/* Define data types */
+#define SS_TYPE_KEY                 (1)
+#define SS_TYPE_CERT                (2)
+#define SS_TYPE_DATA                (3)
+
+/* Define permission types */
+#define SS_PERM_READ_ONLY           (1)
+#define SS_PERM_READ_WRITE          (2)
+#define SS_PERM_EXPOSED             (3)
+
 #define HAL_MAX_ECP_KEY_SIZE      (132)
 
 //key and certifications : first 32 stored in Flash, next 32 stored in RAM; data : total 33 slots and stored in flash.
@@ -140,3 +150,6 @@ int ss_read_data(uint32_t index, uint8_t *data, uint32_t *data_len);
  * @return 0 on success, other values on failure
  */
 int ss_delete_data(uint32_t index);
+
+int ss_write_key(uint32_t index, uint8_t *key, uint32_t key_len);
+int ss_delete_key(uint32_t index);
