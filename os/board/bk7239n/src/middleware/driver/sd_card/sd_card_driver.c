@@ -1609,7 +1609,7 @@ bk_err_t bk_sd_card_read_blocks(uint8_t *data, uint32_t block_addr, uint32_t blo
 		data_config.data_len = SD_BLOCK_SIZE * block_num;
 
 	//read data from SDIO to buffer
-	bk_sdio_host_read_blks_fifo(data, block_num);
+	error_state = bk_sdio_host_read_blks_fifo(data, block_num);
 
 #if defined(CONFIG_SDCARD_OPS_TRACE_EN)
 	s_sdcard_sw_status.read = 4;
@@ -1782,8 +1782,9 @@ uint32_t bk_sd_card_get_card_size(void)
 			if(read_bl_len > 9)	//default:read_bl_len == 9;
 			{
 				block_len = 1 << read_bl_len;
-				size = block_nr * (read_bl_len - 9);
-				SD_CARD_LOGW("card ver=%d.0,block_len=%d != 512bytes\r\n", ver, block_len);
+				size = block_nr * block_len;
+				SD_CARD_LOGW("card ver=%d.0,block_len=%d, block_nr= %d, total_size = %d.\r\n", ver, block_len, block_nr, size);
+				size = size / (SD_BLOCK_SIZE);  // retutn sector for fatfs using, fatfs default SD_BLOCK_SIZE is 512
 			}
 
 			break;

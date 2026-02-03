@@ -64,9 +64,9 @@ menu "PWR_CLK"
 		default n
 	config LP_VOL
 		hex "Set Low power voltage value"
-		default 0x4
+		default 0x6
 		help
-			Set Low power voltage default value 0.55v(0.45+0.025*4)
+			Set Low power voltage default value 0.6v(0.45+0.025*6)
 			This value should not be configured arbitrarily. Prior discussion with the chip vendor's support engineers is required before configuration
 	config DIGLDO_LOW_VOLTAGE_ENABLE
 		 bool "enable dig ldo low voltage "
@@ -102,6 +102,6 @@ menu "PWR_CLK"
 		default n
 	config MAC_USE_RTC
 		bool "mac use rtc during lv sleep"
-		default n
+		default n        
 endmenu
 

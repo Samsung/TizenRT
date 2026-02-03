@@ -69,12 +69,37 @@ static inline uint32_t sys_ll_get_cpu0_int_0_31_en_cpu0_uart_int_en(void) {
 #define SYS_ANA_REG0_ADDR			 (SOC_SYS_REG_BASE + (0x40 << 2))
 #define GET_SYS_ANALOG_REG_IDX(addr) ((addr - SYS_ANA_REG0_ADDR) >> 2)
 
-__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_analog_reg_value(uint32_t addr)
+__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_analog_reg_value_flash(uint32_t addr)
 {
 	return REG_READ(addr);
 }
 
-__FLASH_BOOT_CODE static inline void sys_ll_set_analog_reg_value(uint32_t addr, uint32_t value)
+static inline uint32_t sys_ll_get_analog_reg_value(uint32_t addr)
+{
+	return REG_READ(addr);
+}
+
+__FLASH_BOOT_CODE static inline void sys_ll_set_analog_reg_value_flash(uint32_t addr, uint32_t value)
+{
+	uint32_t idx;
+	idx = GET_SYS_ANALOG_REG_IDX(addr);
+
+	REG_WRITE(addr, value);
+
+	while(REG_READ(SYS_ANALOG_REG_SPI_STATE_REG) & (1 << SYS_ANALOG_REG_SPI_STATE_POS(idx)));
+}
+
+static inline void sys_ll_set_analog_reg_value(uint32_t addr, uint32_t value)
+{
+	uint32_t idx;
+	idx = GET_SYS_ANALOG_REG_IDX(addr);
+
+	REG_WRITE(addr, value);
+
+	while(REG_READ(SYS_ANALOG_REG_SPI_STATE_REG) & (1 << SYS_ANALOG_REG_SPI_STATE_POS(idx)));
+}
+
+__IRAM_SEC static inline void sys_ll_set_analog_reg_value_iram(uint32_t addr, uint32_t value)
 {
 	uint32_t idx;
 	idx = GET_SYS_ANALOG_REG_IDX(addr);
@@ -588,7 +613,7 @@ __FLASH_BOOT_CODE static inline uint32_t sys_ll_get_cpu_clk_div_mode2_cksel_flas
 	return r->cksel_flash;
 }
 
-static inline void sys_ll_set_cpu_clk_div_mode2_ckdiv_flash(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ll_set_cpu_clk_div_mode2_ckdiv_flash(uint32_t v) {
 	system_cpu_clk_div_mode2_t *r = (system_cpu_clk_div_mode2_t*)(SOC_SYSTEM_REG_BASE + (0x9 << 2));
 	r->ckdiv_flash = v;
 }
@@ -1076,12 +1101,12 @@ static inline uint32_t sys_ll_get_cpu_device_clk_enable_wdt_cken(void) {
 
 //reg cpu_device_mem_ctrl2:
 
-__FLASH_BOOT_CODE static inline void sys_ll_set_reserver_reg0xd_value(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ll_set_cpu_device_mem_ctrl2_value(uint32_t v) {
 	system_cpu_device_mem_ctrl2_t *r = (system_cpu_device_mem_ctrl2_t*)(SOC_SYSTEM_REG_BASE + (0xf << 2));
 	r->v = v;
 }
 
-__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_reserver_reg0xd_value(void) {
+__FLASH_BOOT_CODE static inline uint32_t sys_ll_get_cpu_device_mem_ctrl2_value(void) {
 	system_cpu_device_mem_ctrl2_t *r = (system_cpu_device_mem_ctrl2_t*)(SOC_SYSTEM_REG_BASE + (0xf << 2));
 	return r->v;
 }

@@ -293,7 +293,7 @@ extern void rwnx_cal_do_temp_detect(uint16_t cur_val, uint16_t threshold, uint16
 
 int temp_detect_init(uint32_t init_temperature)
 {
-	TEMPD_LOGI("init temperature %d\r\n", init_temperature);
+	TEMPD_LOGD("init temperature %d\r\n", init_temperature);
 
 	BK_RETURN_ON_ERR(tempd_init_temperature_raw_data());
 	uint16_t adc_25 = (uint32_t)(init_temperature);
@@ -435,7 +435,7 @@ void temp_daemon_init(void)
 	s_tempd.detect_interval = ADC_TMEP_DETECT_INTERVAL_INIT;
 	s_tempd.detect_cnt = 0;
 
-	TEMPD_LOGI("xtal inital:%d\r\n", sys_drv_analog_get_xtalh_ctune());
+	TEMPD_LOGD("xtal inital:%d\r\n", sys_drv_analog_get_xtalh_ctune());
 
 	bk_sensor_send_msg(TMPD_TIMER_EXPIRED);
 #if TEMP_DETECT_ONESHOT_TIMER
@@ -482,7 +482,7 @@ void temp_detect_change_configuration(uint32_t interval, uint32_t threshold, uin
 	if (dist == 0)
 		dist = ADC_TMEP_DIST_INTIAL_VAL;
 
-	TEMPD_LOGI("change config, interval=%d, threshold=%d, dist=%d\r\n",
+	TEMPD_LOGD("change config, interval=%d, threshold=%d, dist=%d\r\n",
 		interval, threshold, dist);
 
 	if (s_tempd.detect_interval != interval) {
@@ -563,6 +563,6 @@ int temp_detect_get_temperature(uint32_t *temperature)
 	}
 
 	*temperature = cur_temperature;
-	TEMPD_LOGI("get temperature %d\n", cur_temperature);
+	TEMPD_LOGD("get temperature %d\n", cur_temperature);
 	return err;
 }

@@ -264,7 +264,7 @@ endif
 
 
 all: libboard$(LIBEXT)
-.PHONY: properties tfm modules submodules_depend secure_deployment
+.PHONY: properties tfm modules submodules_depend secure_deployment py_libs
 
 modules: tfm
 	$(Q) set -e; for module in $(submodules); do \
@@ -277,7 +277,44 @@ else
 tfm_firmware_dir := $(abspath components/tfm//tfm_loadable_build)
 endif
 
-tfm:
+security_h := $(tfm_firmware_dir)/_build/security.h
+middleware_path := $(abspath ./middleware/boards/bk7239n)
+
+PRE_HANDLE_SCRIPT := $(abspath $(TOPDIR)/../build/tools/armino/misc/tfm_prehandle.py)
+TOOL_PATH := $(abspath $(TOPDIR)/../build/tools/armino)
+PY_LIBS_DIR := $(TOOL_PATH)/bk_py_libs
+PY_LIBS_TGZ := $(TOOL_PATH)/bk_py_libs.tgz
+
+# Flash encrypt enable: read from config if available, otherwise default to 0
+# This parameter controls whether to modify security.csv to set flash_aes_type to FIXED
+FLASH_ENCRYPT_ENABLE := $(if $(CONFIG_FLASH_ENCRYPT),1,0)
+
+# py_libs target: ensure Python environment is ready
+py_libs:
+	@if [ ! -d $(PY_LIBS_DIR) ]; then \
+		if [ -f $(PY_LIBS_TGZ) ]; then \
+			tar -zxvf $(PY_LIBS_TGZ) -C $(TOOL_PATH) || true; \
+			find $(PY_LIBS_DIR) -type d -exec chmod a+wx {} \; 2>/dev/null || true; \
+		else \
+			echo "[WARNING] $(PY_LIBS_TGZ) not found, Python libraries may be missing"; \
+		fi \
+	fi
+
+$(security_h): py_libs
+	$(Q) mkdir -p $(tfm_firmware_dir)/_build
+	$(Q) PYTHONPATH=$(PY_LIBS_DIR):$$PYTHONPATH python3 -B $(PRE_HANDLE_SCRIPT) $(middleware_path) $(tfm_firmware_dir)/_build $(FLASH_ENCRYPT_ENABLE)
+
+ifeq ($(CONFIG_TFM),y)
+ifeq ($(wildcard components/tfm/tfm/CMakeLists.txt),)
+tfm_prebuild: $(security_h)
+else
+tfm_prebuild: 
+endif
+else
+tfm_prebuild: 
+endif
+
+tfm: tfm_prebuild
 ifeq ($(CONFIG_TFM),y)
 ifneq ($(wildcard components/tfm/tfm/CMakeLists.txt),)
 	$(Q) $(MAKE) -C components/tfm TOPDIR="$(TOPDIR)"
@@ -340,6 +377,7 @@ endif
 distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
+	$(Q) rm -rf $(PY_LIBS_DIR)
 
 -include Make.dep
 #include $(TOPDIR)/configs/Board.mk

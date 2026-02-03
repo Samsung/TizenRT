@@ -113,13 +113,7 @@ extern "C" {
 #define LOW_POWER_XTAL_DPLL_STABILITY_DELAY_TIME  ((LOW_POWER_DPLL_STABILITY_DELAY_TIME+LOW_POWER_RESTORE_DELAY_TIME_HARDWARE)*1000)
 
 #define LOW_POWER_26M_STABILITY_DELAY_TIME_HARDWARE      (CONFIG_PM_26M_STABILITY_DELAY_TIME_HARDWARE)
-
-#if (defined(CONFIG_BK7239N_MP))
-#define LOW_POWER_DELAY_TIME_HARDWARE                    (1300)//MP:(1300)
-#else
-#define LOW_POWER_DELAY_TIME_HARDWARE                    (3300)//MPW:(3300)
-#endif
-
+#define LOW_POWER_DELAY_TIME_HARDWARE                    (1300)
 #define LOW_POWER_EXTERN_32K_HARDWARE                    (3000)
 
 #define LOW_POWER_BOOTUP_RESTORE_TIME                    (2000)//from hardware wakeup to wfi() cost 3300us，hardware to bootloader cost 2200us ,bootloader to app cost 800us,app to wfi() cost 300us
@@ -529,22 +523,22 @@ typedef struct {
 } clk_div_address_map_t;
 typedef enum
 {
-	PMU_REG0 = 0,
-	PMU_REG2,
-	PMU_REG0x25,
-	PMU_REG0x40,
-	PMU_REG0x41,
-	PMU_REG0x43,
-	PMU_REG0x71,
-	PMU_REG0x72,
-	PMU_REG0x73,
-	PMU_REG0x77,
-	PMU_REG0x78,
-	PMU_REG0x79,
-	PMU_REG0x7c,
-	PMU_REG0x7d,
-	PMU_REG0x7e,
-	PMU_REG0x7f,
+	PMU_REG0    = 0,
+	PMU_REG2    = 0x2,
+	PMU_REG0x25 = 0x25,
+	PMU_REG0x40 = 0x40,
+	PMU_REG0x41 = 0x41,
+	PMU_REG0x43 = 0x43,
+	PMU_REG0x71 = 0x71,
+	PMU_REG0x72 = 0x72,
+	PMU_REG0x73 = 0x73,
+	PMU_REG0x77 = 0x77,
+	PMU_REG0x78 = 0x78,
+	PMU_REG0x79 = 0x79,
+	PMU_REG0x7c = 0x7c,
+	PMU_REG0x7d = 0x7d,
+	PMU_REG0x7e = 0x7e,
+	PMU_REG0x7f = 0x7f,
 	PMU_NONE
 } pmu_reg_e;
 #define PMU_ADDRESS_MAP  \

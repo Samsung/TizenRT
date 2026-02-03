@@ -58,16 +58,35 @@ bk_err_t spi_hal_configure(spi_hal_t *hal, const spi_config_t *config)
 	spi_ll_set_cpol(hal->hw, config->polarity);
 	spi_ll_set_cpha(hal->hw, config->phase);
 	spi_ll_set_rx_sample_edge(hal->hw, 0);
+	spi_ll_set_miso_o_fbsel(hal->hw);
 
 	if (config->role == SPI_ROLE_SLAVE) {
 		spi_ll_set_role_slave(hal->hw);
 	} else {
 		spi_ll_set_role_master(hal->hw);
-
+		/* If two beken evb boards are tested against each other, for instance bk7239n/36n spi master read with bk7239n/36n spi slave write
+		 * Mode 3 and Mode 2 require follow_up testing to supplement,baud_rate will be improved
+		 */
+		uint32_t spi_version = spi_ll_get_version_id(hal->hw);
+		if(spi_version == 0x00010003){
+			if((config->polarity == 0) && (config->phase == 0)){
+				if(config->baud_rate > 20000000){
+					spi_ll_set_rx_sample_edge(hal->hw, 1);
+				}else{
+					spi_ll_set_rx_sample_edge(hal->hw, 0);
+				}
+			}else if((config->polarity == 1) && (config->phase == 1)){
+				if(config->baud_rate > 300000){
+					spi_ll_set_rx_sample_edge(hal->hw, 1);
+				}else{
+					spi_ll_set_rx_sample_edge(hal->hw, 0);
+				}
+			}
+		}
 		/* If two beken evb boards are tested against each other, for instance bk7239n/36n spi master with bk7239n/36n spi slave
 		 * rx_sample_edge will be equal to 2 using maximum spi baudrate(80MHz)
 		 */
-		if(config->baud_rate > 10000000){
+		else if(config->baud_rate > 10000000){
 			spi_ll_set_rx_sample_edge(hal->hw, 1);
 		}
 	}

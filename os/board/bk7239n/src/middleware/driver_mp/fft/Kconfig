@@ -1,6 +1,0 @@
-menu "FFT"
-	config FFT
-		bool "Enable fft"
-		default n
-endmenu
-

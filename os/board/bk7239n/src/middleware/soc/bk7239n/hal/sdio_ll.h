@@ -223,7 +223,7 @@ static inline void sdio_host_ll_set_write_data(sdio_hw_t *hw, uint32_t size)
 {
 	hw->sd_fifo_threshold.tx_fifo_reset = 1;
 	hw->sd_fifo_threshold.sd_state_reset = 1;
-#ifdef CONFIG_SDCARD_BUSWIDTH_4LINE
+#if CONFIG_SDIO_4LINES_EN
 	hw->sd_data_ctrl.sd_data_bus = 1;
 #else
 	hw->sd_data_ctrl.sd_data_bus = 0;
@@ -237,7 +237,7 @@ static inline void sdio_host_ll_set_write_multi_block_data(sdio_hw_t *hw, uint32
 {
 	hw->sd_fifo_threshold.tx_fifo_reset = 1;
 	hw->sd_fifo_threshold.sd_state_reset = 1;
-#ifdef CONFIG_SDCARD_BUSWIDTH_4LINE
+#if CONFIG_SDIO_4LINES_EN
 	hw->sd_data_ctrl.sd_data_bus = 1;
 #else
 	hw->sd_data_ctrl.sd_data_bus = 0;
@@ -251,7 +251,7 @@ static inline void sdio_host_ll_set_read_data(sdio_hw_t *hw, uint32_t block_size
 {
 	hw->sd_fifo_threshold.sd_state_reset = 1;
 	hw->sd_fifo_threshold.rx_fifo_reset = 1;
-#ifdef CONFIG_SDCARD_BUSWIDTH_4LINE
+#if CONFIG_SDIO_4LINES_EN
 	hw->sd_data_ctrl.sd_data_bus = 1;
 #else
 	hw->sd_data_ctrl.sd_data_bus = 0;
@@ -265,7 +265,7 @@ static inline void sdio_host_ll_set_read_multi_block_data(sdio_hw_t *hw, uint32_
 {
 	hw->sd_fifo_threshold.sd_state_reset = 1;
 	hw->sd_fifo_threshold.rx_fifo_reset = 1;
-#ifdef CONFIG_SDCARD_BUSWIDTH_4LINE
+#if CONFIG_SDIO_4LINES_EN
 	hw->sd_data_ctrl.sd_data_bus = 1;
 #else
 	hw->sd_data_ctrl.sd_data_bus = 0;

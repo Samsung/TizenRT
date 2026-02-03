@@ -16,6 +16,7 @@
 #include <common/bk_include.h>
 #include <os/mem.h>
 #include "adc_hal.h"
+#include <driver/adc_types.h>
 #include "power_driver.h"
 #include "clock_driver.h"
 #include "bk_sys_ctrl.h"
@@ -169,6 +170,18 @@ void adc_hal_set_cwt_calib(uint16_t *adc_data, uint16_t data_num)
 	}
 #endif
 
+	adc_hal_set_cwt((uint32_t *)s_adc_cali_context.cwt);
+}
+
+void adc_hal_set_cwt(uint32_t *adc_data)
+{
+	if (adc_data == NULL) {
+		return;
+	}
+	for (int k = 0; k < ADC_CWT_COEF_NUM; k++) {
+		s_adc_cali_context.cwt[k] = adc_data[k];
+	}
+
 	adc_ll_set_reg7_cwt_cal00(s_adc_cali_context.cwt[0]);
 	adc_ll_set_reg8_cwt_cal01(s_adc_cali_context.cwt[1]);
 	adc_ll_set_reg9_cwt_cal02(s_adc_cali_context.cwt[2]);
@@ -193,20 +206,8 @@ void adc_hal_set_cwt_calib(uint16_t *adc_data, uint16_t data_num)
 	adc_ll_set_reg4_calib_done(1);
 }
 
-void hal_calib_apply(void)
+__IRAM_SEC void hal_calib_apply(void)
 {
-	/* ana_reg0x2 */
-	uint32_t reg_val = sys_ana_ll_get_reg2_value();
-	reg_val |= (BIT(25) | BIT(30) | BIT(31));
-	reg_val |= (0x3 << 28);
-	sys_ana_ll_set_reg2_value(reg_val);
-
-	/* ana_reg0x5 */
-	reg_val = sys_ana_ll_get_reg5_value();
-	reg_val |= (BIT(12) | BIT(14));
-	reg_val &= ~BIT(1);
-	sys_ana_ll_set_reg5_value(reg_val);
-
 	adc_ll_set_reg2_soft_rst(0);
 	adc_ll_set_reg2_soft_rst(1);
 	adc_ll_set_reg4_value(0x12112);
@@ -316,26 +317,24 @@ bk_err_t adc_hal_deinit(adc_hal_t *hal)
 
 bk_err_t adc_hal_set_clk(adc_hal_t *hal, adc_src_clk_t src_clk, uint32_t adc_clk)
 {
-	#if 0//TODO
 	uint32_t clk_src = 0;
 	uint32_t pre_div = 0;
 
 	if (src_clk == ADC_SCLK_XTAL) {
-		sys_hal_set_cksel_sadc(0);
+		sys_hal_set_cksel_sadc(1);
 		clk_src = SOC_ADC_XTAL_CLK;
 	} else if (src_clk == ADC_SCLK_DPLL) {
-		sys_hal_set_cksel_sadc(1);
-		clk_src = ADC_SRC_DPLL_CLK;
+		return BK_ERR_ADC_DPLL_NOT_SUPPORTED;
 	}
 
 	if (clk_src && (adc_clk > (clk_src / 2))) {
 		pre_div = 0;
-	} else {
-		pre_div = clk_src / 2 / adc_clk - 1;
+	} else if (clk_src && adc_clk) {
+		/* adc_clk = clk_src / (adc_sclk_div * 2) */
+		pre_div = clk_src / (2 * adc_clk);
 	}
 
 	adc_ll_set_reg4_adc_sclk_div(pre_div);
-	#endif
 
 	return BK_OK;
 }
