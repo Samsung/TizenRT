@@ -147,6 +147,7 @@ static int _files_close(FAR struct file *filep)
 		filep->f_oflags = 0;
 		filep->f_pos = 0;
 		filep->f_inode = NULL;
+		filep->f_priv = NULL;
 	}
 
 	return ret;
@@ -316,6 +317,11 @@ int file_dup2(FAR struct file *filep1, FAR struct file *filep2)
 		goto errout_with_ret;
 	}
 
+	/* Ensure f_priv is cleared even if _files_close didn't clear it
+	 * (e.g., when filep2->f_inode was NULL)
+	 */
+	filep2->f_priv = NULL;
+
 	/* Increment the reference count on the contained inode */
 
 	inode = filep1->f_inode;
@@ -461,6 +467,7 @@ void files_release(int fd)
 		list->fl_files[fd].f_oflags = 0;
 		list->fl_files[fd].f_pos = 0;
 		list->fl_files[fd].f_inode = NULL;
+		list->fl_files[fd].f_priv = NULL;
 		_files_semgive(list);
 	}
 }
