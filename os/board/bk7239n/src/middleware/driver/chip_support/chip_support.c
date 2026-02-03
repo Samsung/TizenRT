@@ -21,6 +21,7 @@
 #include "bk_misc.h"
 #include "aon_pmu_hal.h"
 
+
 #if defined(CONFIG_CHIP_SUPPORT)
 /* If we don't want to check chip ID, the application can extern s_chip_id_check,
  * and set flag CHIP_ID_CHECK_SKIP. Generally speaking, we should NOT use it.
@@ -133,14 +134,15 @@ hardware_chip_version_e bk_get_hardware_chip_id_version()
 		case CHIP_ID_C_VALUE:
 			chip_version = CHIP_VERSION_C;
 			break;
+		case CHIP_ID_D_VALUE:
+			chip_version = CHIP_VERSION_D;
+			break;
 		default:
 			chip_version = CHIP_VERSION_DEFAULT;
 	}
 
 	return chip_version;
 }
-
-
 
 bk_err_t bk_soc_info_get(soc_info_t* soc_info)
 {

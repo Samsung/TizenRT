@@ -21,7 +21,7 @@
 #include "flash_hal.h"
 
 #if (defined(CONFIG_SOC_BK7236XX)) || (defined(CONFIG_SOC_BK7239XX)) || (defined(CONFIG_SOC_BK7286XX))
-//#include "partitions_gen.h"
+//#include "partitions_gen_ns.h"
 #endif
 
 #include <ctype.h>

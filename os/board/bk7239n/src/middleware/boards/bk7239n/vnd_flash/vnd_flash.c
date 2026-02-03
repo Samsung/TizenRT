@@ -31,7 +31,7 @@
 #include <common/bk_kernel_err.h>
 #include <os/mem.h>
 #include <vnd_flash_partition.h>
-#include "partitions_gen.h"
+#include "partitions_gen_ns.h"
 
 /* Logic partition on flash devices */
 const bk_logic_partition_t bk_flash_partitions[BK_PARTITION_MAX_USER] = {

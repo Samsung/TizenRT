@@ -56,5 +56,8 @@ menu "SYS_CTRL"
 	config LDO_SELF_LOW_POWER_MODE_ENA
 		bool "Enable LDO self low power mode"
 		default n
+	config DPLL_UNLOCK_VERIFY_ENABLE
+		bool "Enable DPLL unlock verify"
+		default n
 endmenu
 

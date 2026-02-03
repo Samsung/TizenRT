@@ -152,7 +152,7 @@ __IRAM_SEC uint64_t bk_aon_rtc_get_us(void)
 		 *
 		 * Assembly proof from line 410365-410367:
 		 *   subs r3, r0, r3    // 32-bit subtract, may set borrow flag
-		 *   sbc r1, r1, r2     // If r1=1, r2=0, borrow=1 → r1=0xFFFFFFFF ❌
+		 *   sbc r1, r1, r2     // If r1=1, r2=0, borrow=1 �� r1=0xFFFFFFFF ?
 		 *
 		 * Solution: Cast BEFORE subtraction forces 64-bit operation
 		 */
@@ -252,7 +252,7 @@ __IRAM_SEC uint64_t bk_aon_rtc_get_ms(void)
 	 */
 	if (tick_diff <= UINT32_MAX) {
 		/* 32-bit fast path: tick_diff guaranteed to fit in 32-bit by if-condition
-		 * Maximum tick_diff = 0xFFFFFFFF ≈ 131,072 seconds ≈ 36 hours
+		 * Maximum tick_diff = 0xFFFFFFFF �� 131,072 seconds �� 36 hours
 		 * Cast to uint32_t is safe and lossless here
 		 */
 		uint32_t tick_diff_32 = (uint32_t)tick_diff;  /* Lossless: tick_diff <= UINT32_MAX */
@@ -1126,29 +1126,28 @@ __IRAM_SEC uint64_t bk_aon_rtc_get_current_tick(aon_rtc_id_t id)
 	int_level = rtos_disable_int();
 
 	low_tick = aon_pmu_hal_rtc_tick_l_get();
+#if CONFIG_ANA_RTC_SUPPORT_64BIT
 	if (low_tick < s_low_tick)
 	{
 		ANA_RTC_LOGD("rtc carrying:%x %x %x\n", s_low_tick, low_tick, aon_pmu_hal_rtc_tick_l_get());
-		#if !defined(CONFIG_ANA_RTC_WAKUP_BY_RTC)
+		#if !CONFIG_ANA_RTC_WAKUP_BY_RTC
 		ana_rtc_update();
 		#else
 		s_high_tick++;
 		#endif
 	}
+#else
+	s_high_tick = aon_pmu_hal_rtc_tick_h_get();
+#endif
 	s_low_tick = low_tick;
 #if defined(CONFIG_ROSC_COMPENSATION)
-	uint64_t tick_val = ((uint64_t)s_high_tick << 32) | (uint64_t)s_low_tick;
-	tick_val += s_ana_rtc_base_tick;
+	uint64_t tick_val = ((uint64_t)s_high_tick << 32) + s_low_tick + s_ana_rtc_base_tick;
 	s_ana_rtc_diff_tick = bk_rosc_32k_get_tick_diff(tick_val);
 	rtos_enable_int(int_level);
 	return (tick_val + s_ana_rtc_diff_tick);
 #else
 	rtos_enable_int(int_level);
-	/* CRITICAL: Parentheses are essential for correct operator precedence
-	 * Wrong: (high | low) + base  → low+base executed first, then OR with high
-	 * Right: ((high | low) + base) → combine high|low first, then add base
-	 */
-	return ((((uint64_t)s_high_tick << 32) | (uint64_t)s_low_tick) + s_ana_rtc_base_tick);
+	return ((uint64_t)s_high_tick << 32) + s_low_tick + s_ana_rtc_base_tick;
 #endif
 }
 
@@ -1204,6 +1203,7 @@ bk_err_t bk_rtc_settimeofday(const struct timeval *tv, const struct timezone *tz
 
 	return BK_OK;
 }
+
 uint8_t *bk_rtc_get_first_alarm_name(void)
 {
 	alarm_node_t *first_node = NULL;

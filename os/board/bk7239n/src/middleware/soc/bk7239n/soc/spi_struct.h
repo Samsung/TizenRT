@@ -69,7 +69,8 @@ typedef volatile struct {
 			uint32_t rx_en:            1;  /**< bit[1] */
 			uint32_t tx_finish_int_en: 1;  /**< bit[2] */
 			uint32_t rx_finish_int_en: 1;  /**< bit[3] */
-			uint32_t reserved:         4;  /**< bit[4:7] */
+			uint32_t miso_o_fbsel:     1;  /**< bit[4] */
+			uint32_t reserved:         3;  /**< bit[5:7] */
 			uint32_t tx_trans_len:     12; /**< bit[8:19] */
 			uint32_t rx_trans_len:     12; /**< bit[20:31] */
 		};

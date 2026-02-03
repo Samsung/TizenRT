@@ -21,6 +21,7 @@
 #include "psram_driver.h"
 #include <driver/psram.h>
 #include <modules/pm.h>
+#include <modules/chip_support.h>
 #include <soc/bk7239n/soc.h>
 #if (defined(CONFIG_PSRAM_AUTO_DETECT))
 #include "bk_ef.h"
@@ -240,8 +241,19 @@ __FLASH_BOOT_CODE bk_err_t bk_psram_init(void)
 
 	uint32_t chip_id = 0, actual_id = 0;
 
+	hardware_chip_version_e chip_version;
+	chip_version = bk_get_hardware_chip_id_version();
+	//PSRAM_LOGI("chip_version:%d\r\n", chip_version);
+
 	// psram voltage sel
-	bk_psram_set_voltage(PSRAM_OUT_1_95V);
+	if (chip_version == CHIP_VERSION_D)
+	{
+		bk_psram_set_voltage(PSRAM_OUT_1_90V);
+	}
+	else
+	{
+		bk_psram_set_voltage(PSRAM_OUT_1_90V);
+	}
 
 	// power up and clk config
 	psram_hal_power_clk_enable(1);
@@ -265,7 +277,14 @@ __FLASH_BOOT_CODE bk_err_t bk_psram_init(void)
 	delay_us(1000);
 	// set psram clk
 #if (defined(CONFIG_SOC_BK7239XX))
-	bk_psram_set_clk(PSRAM_80M);
+	if (chip_version == CHIP_VERSION_D)
+	{
+		bk_psram_set_clk(PSRAM_120M);
+	}
+	else
+	{
+		bk_psram_set_clk(PSRAM_160M);
+	}
 #else
 	bk_psram_set_clk(PSRAM_160M);
 #endif
@@ -297,8 +316,6 @@ __FLASH_BOOT_CODE bk_err_t bk_psram_init(void)
 
 	s_psram_server_is_init = true;
 
-	//asic: bk7239n v4 need psram calibrate
-	bk_psram_calibrate();
 
 	return BK_OK;
 #else

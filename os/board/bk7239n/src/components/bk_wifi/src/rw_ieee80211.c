@@ -1188,7 +1188,7 @@ UINT8 rw_ieee80211_init_scan_chan(struct scanu_start_req *req)
 				req->chan[cnt].flags = get_chan_flags(channel->flags);
 			else///ATE mode or conn instrument, set all channels to active scan
 				req->chan[cnt].flags = 0;
-			//os_printf("freq %d ,flags 0x%x\r\n ",req->chan[cnt].freq,req->chan[cnt].flags);
+			//os_printf("freq %d ,flags 0x%x,channel->flags 0x%x\r\n ",req->chan[cnt].freq,req->chan[cnt].flags,channel->flags);
 
 			cnt++;
 		}
