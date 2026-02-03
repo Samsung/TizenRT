@@ -39,13 +39,33 @@ extern "C" {
 #define SYS_ANALOG_REG_SPI_STATE_POS(idx) (idx)
 #endif
 
-__FLASH_BOOT_CODE static inline void sys_ana_set_ana_reg_bit(uint32_t reg_addr, uint32_t pos, uint32_t mask, uint32_t value)
+/* Flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE static inline void sys_ana_set_ana_reg_bit_flash(uint32_t reg_addr, uint32_t pos, uint32_t mask, uint32_t value)
+{
+	uint32_t reg_value;
+	reg_value = *(volatile uint32_t *)(reg_addr);
+	reg_value &= ~(mask << pos);
+	reg_value |= ((value & mask) <<pos);
+	sys_ll_set_analog_reg_value_flash(reg_addr, reg_value);
+}
+
+/* Runtime version (in PSRAM) - removed __FLASH_BOOT_CODE */
+static inline void sys_ana_set_ana_reg_bit(uint32_t reg_addr, uint32_t pos, uint32_t mask, uint32_t value)
 {
 	uint32_t reg_value;
 	reg_value = *(volatile uint32_t *)(reg_addr);
 	reg_value &= ~(mask << pos);
 	reg_value |= ((value & mask) <<pos);
 	sys_ll_set_analog_reg_value(reg_addr, reg_value);
+}
+
+__IRAM_SEC static inline void sys_ana_set_ana_reg_bit_iram(uint32_t reg_addr, uint32_t pos, uint32_t mask, uint32_t value)
+{
+	uint32_t reg_value;
+	reg_value = *(volatile uint32_t *)(reg_addr);
+	reg_value &= ~(mask << pos);
+	reg_value |= ((value & mask) <<pos);
+	sys_ll_set_analog_reg_value_iram(reg_addr, reg_value);
 }
 
 //reg ana_reg0:
@@ -57,13 +77,49 @@ static inline uint32_t sys_ana_ll_get_ana_reg0_value(void) {
 	return sys_ll_get_analog_reg_value(SOC_SYS_ANA_REG_BASE + (0x40 << 2));
 }
 
-static inline void sys_ana_ll_set_ana_reg0_nc_0_6(uint32_t v) {
-	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x40 << 2)), 0, 0x7f, v);
+static inline void sys_ana_ll_set_ana_reg0_vctrl_testen(uint32_t v) {
+	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x40 << 2)), 0, 0x1, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg0_nc_0_6(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg0_vctrl_testen(void) {
 	sys_ana_ana_reg0_t *r = (sys_ana_ana_reg0_t*)(SOC_SYS_ANA_REG_BASE + (0x40 << 2));
-	return r->nc_0_6;
+	return r->vctrl_testen;
+}
+
+static inline void sys_ana_ll_set_ana_reg0_vctrlsel(uint32_t v) {
+	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x40 << 2)), 1, 0x3, v);
+}
+
+static inline uint32_t sys_ana_ll_get_ana_reg0_vctrlsel(void) {
+	sys_ana_ana_reg0_t *r = (sys_ana_ana_reg0_t*)(SOC_SYS_ANA_REG_BASE + (0x40 << 2));
+	return r->vctrlsel;
+}
+
+static inline void sys_ana_ll_set_ana_reg0_cp_ioff(uint32_t v) {
+	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x40 << 2)), 3, 0x3, v);
+}
+
+static inline uint32_t sys_ana_ll_get_ana_reg0_cp_ioff(void) {
+	sys_ana_ana_reg0_t *r = (sys_ana_ana_reg0_t*)(SOC_SYS_ANA_REG_BASE + (0x40 << 2));
+	return r->cp_ioff;
+}
+
+static inline void sys_ana_ll_set_ana_reg0_spisel_unlockl(uint32_t v) {
+	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x40 << 2)), 5, 0x1, v);
+}
+
+static inline uint32_t sys_ana_ll_get_ana_reg0_spisel_unlockl(void) {
+	sys_ana_ana_reg0_t *r = (sys_ana_ana_reg0_t*)(SOC_SYS_ANA_REG_BASE + (0x40 << 2));
+	return r->spisel_unlockl;
+}
+
+static inline void sys_ana_ll_set_ana_reg0_spisel_unlockh(uint32_t v) {
+	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x40 << 2)), 6, 0x1, v);
+}
+
+static inline uint32_t sys_ana_ll_get_ana_reg0_spisel_unlockh(void) {
+	sys_ana_ana_reg0_t *r = (sys_ana_ana_reg0_t*)(SOC_SYS_ANA_REG_BASE + (0x40 << 2));
+	return r->spisel_unlockh;
 }
 
 static inline void sys_ana_ll_set_ana_reg0_cp(uint32_t v) {
@@ -82,6 +138,10 @@ static inline void sys_ana_ll_set_ana_reg0_spideten(uint32_t v) {
 static inline uint32_t sys_ana_ll_get_ana_reg0_spideten(void) {
 	sys_ana_ana_reg0_t *r = (sys_ana_ana_reg0_t*)(SOC_SYS_ANA_REG_BASE + (0x40 << 2));
 	return r->spideten;
+}
+
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg0_cben_flash(uint32_t v) {
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x40 << 2)), 11, 0x1, v);
 }
 
 static inline void sys_ana_ll_set_ana_reg0_cben(uint32_t v) {
@@ -183,13 +243,13 @@ static inline uint32_t sys_ana_ll_get_ana_reg0_bp_caldone(void) {
 	return r->bp_caldone;
 }
 
-static inline void sys_ana_ll_set_ana_reg0_nc_31_31(uint32_t v) {
+static inline void sys_ana_ll_set_ana_reg0_spi_rst_unlock(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x40 << 2)), 31, 0x1, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg0_nc_31_31(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg0_spi_rst_unlock(void) {
 	sys_ana_ana_reg0_t *r = (sys_ana_ana_reg0_t*)(SOC_SYS_ANA_REG_BASE + (0x40 << 2));
-	return r->nc_31_31;
+	return r->spi_rst_unlock;
 }
 
 //reg ana_reg1:
@@ -209,6 +269,10 @@ static inline void sys_ana_ll_set_ana_reg1_nc_0_0(uint32_t v) {
 static inline uint32_t sys_ana_ll_get_ana_reg1_nc_0_0(void) {
 	sys_ana_ana_reg1_t *r = (sys_ana_ana_reg1_t*)(SOC_SYS_ANA_REG_BASE + (0x41 << 2));
 	return r->nc_0_0;
+}
+
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg1_bandmanual_flash(uint32_t v) {
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x41 << 2)), 1, 0x7f, v);
 }
 
 static inline void sys_ana_ll_set_ana_reg1_bandmanual(uint32_t v) {
@@ -274,6 +338,10 @@ static inline uint32_t sys_ana_ll_get_ana_reg1_spi_rstn(void) {
 	return r->spi_rstn;
 }
 
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg1_osccal_trig_flash(uint32_t v) {
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x41 << 2)), 15, 0x1, v);
+}
+
 static inline void sys_ana_ll_set_ana_reg1_osccal_trig(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x41 << 2)), 15, 0x1, v);
 }
@@ -281,6 +349,10 @@ static inline void sys_ana_ll_set_ana_reg1_osccal_trig(uint32_t v) {
 static inline uint32_t sys_ana_ll_get_ana_reg1_osccal_trig(void) {
 	sys_ana_ana_reg1_t *r = (sys_ana_ana_reg1_t*)(SOC_SYS_ANA_REG_BASE + (0x41 << 2));
 	return r->osccal_trig;
+}
+
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg1_manual_flash(uint32_t v) {
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x41 << 2)), 16, 0x1, v);
 }
 
 static inline void sys_ana_ll_set_ana_reg1_manual(uint32_t v) {
@@ -347,13 +419,13 @@ static inline uint32_t sys_ana_ll_get_ana_reg2_gadc_inbufsel(void) {
 	return r->gadc_inbufsel;
 }
 
-static inline void sys_ana_ll_set_ana_reg2_nc_10_10(uint32_t v) {
+static inline void sys_ana_ll_set_ana_reg2_bufictrl(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x42 << 2)), 10, 0x1, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg2_nc_10_10(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg2_bufictrl(void) {
 	sys_ana_ana_reg2_t *r = (sys_ana_ana_reg2_t*)(SOC_SYS_ANA_REG_BASE + (0x42 << 2));
-	return r->nc_10_10;
+	return r->bufictrl;
 }
 
 static inline void sys_ana_ll_set_ana_reg2_gadc_compisel(uint32_t v) {
@@ -637,58 +709,49 @@ static inline uint32_t sys_ana_ll_get_ana_reg4_value(void) {
 	return sys_ll_get_analog_reg_value(SOC_SYS_ANA_REG_BASE + (0x44 << 2));
 }
 
-static inline void sys_ana_ll_set_ana_reg4_td_clk_en(uint32_t v) {
+static inline void sys_ana_ll_set_ana_reg4_temp_gsel(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x44 << 2)), 0, 0x1, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg4_td_clk_en(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg4_temp_gsel(void) {
 	sys_ana_ana_reg4_t *r = (sys_ana_ana_reg4_t*)(SOC_SYS_ANA_REG_BASE + (0x44 << 2));
-	return r->td_clk_en;
+	return r->temp_gsel;
 }
 
-static inline void sys_ana_ll_set_ana_reg4_td_cks(uint32_t v) {
-	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x44 << 2)), 1, 0x3, v);
+static inline void sys_ana_ll_set_ana_reg4_vbg_0v9sel(uint32_t v) {
+	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x44 << 2)), 1, 0x1, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg4_td_cks(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg4_vbg_0v9sel(void) {
 	sys_ana_ana_reg4_t *r = (sys_ana_ana_reg4_t*)(SOC_SYS_ANA_REG_BASE + (0x44 << 2));
-	return r->td_cks;
+	return r->vbg_0v9sel;
 }
 
-static inline void sys_ana_ll_set_ana_reg4_td_en(uint32_t v) {
-	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x44 << 2)), 3, 0x1, v);
+static inline void sys_ana_ll_set_ana_reg4_ck2xsel(uint32_t v) {
+	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x44 << 2)), 2, 0x7fff, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg4_td_en(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg4_ck2xsel(void) {
 	sys_ana_ana_reg4_t *r = (sys_ana_ana_reg4_t*)(SOC_SYS_ANA_REG_BASE + (0x44 << 2));
-	return r->td_en;
+	return r->ck2xsel;
 }
 
-static inline void sys_ana_ll_set_ana_reg4_td_chn(uint32_t v) {
-	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x44 << 2)), 4, 0xffff, v);
+static inline void sys_ana_ll_set_ana_reg4_nc_17_21(uint32_t v) {
+	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x44 << 2)), 17, 0x1f, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg4_td_chn(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg4_nc_17_21(void) {
 	sys_ana_ana_reg4_t *r = (sys_ana_ana_reg4_t*)(SOC_SYS_ANA_REG_BASE + (0x44 << 2));
-	return r->td_chn;
+	return r->nc_17_21;
 }
 
-static inline void sys_ana_ll_set_ana_reg4_td_enscm1v(uint32_t v) {
-	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x44 << 2)), 20, 0x1, v);
+static inline void sys_ana_ll_set_ana_reg4_dpll_vctrl_tsten(uint32_t v) {
+	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x44 << 2)), 22, 0x1, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg4_td_enscm1v(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg4_dpll_vctrl_tsten(void) {
 	sys_ana_ana_reg4_t *r = (sys_ana_ana_reg4_t*)(SOC_SYS_ANA_REG_BASE + (0x44 << 2));
-	return r->td_enscm1v;
-}
-
-static inline void sys_ana_ll_set_ana_reg4_tdldo_sel(uint32_t v) {
-	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x44 << 2)), 21, 0x3, v);
-}
-
-static inline uint32_t sys_ana_ll_get_ana_reg4_tdldo_sel(void) {
-	sys_ana_ana_reg4_t *r = (sys_ana_ana_reg4_t*)(SOC_SYS_ANA_REG_BASE + (0x44 << 2));
-	return r->tdldo_sel;
+	return r->dpll_vctrl_tsten;
 }
 
 static inline void sys_ana_ll_set_ana_reg4_spilatchb_rc32k(uint32_t v) {
@@ -773,7 +836,12 @@ static inline uint32_t sys_ana_ll_get_ana_reg5_value(void) {
 	return sys_ll_get_analog_reg_value(SOC_SYS_ANA_REG_BASE + (0x45 << 2));
 }
 
-__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg5_pwd_rosc_spi(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg5_pwd_rosc_spi_flash(uint32_t v) {
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x45 << 2)), 0, 0x1, v);
+}
+
+/* Runtime version (in PSRAM) - removed __FLASH_BOOT_CODE */
+static inline void sys_ana_ll_set_ana_reg5_pwd_rosc_spi(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x45 << 2)), 0, 0x1, v);
 }
 
@@ -1081,6 +1149,10 @@ static inline uint32_t sys_ana_ll_get_ana_reg7_dldohp(void) {
 	return r->dldohp;
 }
 
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg7_vporsel_flash(uint32_t v) {
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x47 << 2)), 3, 0x1, v);
+}
+
 static inline void sys_ana_ll_set_ana_reg7_vporsel(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x47 << 2)), 3, 0x1, v);
 }
@@ -1162,13 +1234,13 @@ static inline uint32_t sys_ana_ll_get_ana_reg7_vbatdetsel(void) {
 	return r->vbatdetsel;
 }
 
-static inline void sys_ana_ll_set_ana_reg7_nc_18_18(uint32_t v) {
+static inline void sys_ana_ll_set_ana_reg7_en_compe(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x47 << 2)), 18, 0x1, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg7_nc_18_18(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg7_en_compe(void) {
 	sys_ana_ana_reg7_t *r = (sys_ana_ana_reg7_t*)(SOC_SYS_ANA_REG_BASE + (0x47 << 2));
-	return r->nc_18_18;
+	return r->en_compe;
 }
 
 static inline void sys_ana_ll_set_ana_reg7_spi_pwd_regpow(uint32_t v) {
@@ -1207,6 +1279,10 @@ static inline uint32_t sys_ana_ll_get_ana_reg7_bgcal(void) {
 	return r->bgcal;
 }
 
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg7_vbgcalmode_flash(uint32_t v) {
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x47 << 2)), 28, 0x1, v);
+}
+
 static inline void sys_ana_ll_set_ana_reg7_vbgcalmode(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x47 << 2)), 28, 0x1, v);
 }
@@ -1216,6 +1292,10 @@ static inline uint32_t sys_ana_ll_get_ana_reg7_vbgcalmode(void) {
 	return r->vbgcalmode;
 }
 
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg7_vbgcalstart_flash(uint32_t v) {
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x47 << 2)), 29, 0x1, v);
+}
+
 static inline void sys_ana_ll_set_ana_reg7_vbgcalstart(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x47 << 2)), 29, 0x1, v);
 }
@@ -1223,6 +1303,10 @@ static inline void sys_ana_ll_set_ana_reg7_vbgcalstart(uint32_t v) {
 static inline uint32_t sys_ana_ll_get_ana_reg7_vbgcalstart(void) {
 	sys_ana_ana_reg7_t *r = (sys_ana_ana_reg7_t*)(SOC_SYS_ANA_REG_BASE + (0x47 << 2));
 	return r->vbgcalstart;
+}
+
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg7_pwd_bgcal_flash(uint32_t v) {
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x47 << 2)), 30, 0x1, v);
 }
 
 static inline void sys_ana_ll_set_ana_reg7_pwd_bgcal(uint32_t v) {
@@ -1262,13 +1346,13 @@ static inline uint32_t sys_ana_ll_get_ana_reg8_asoft_stc(void) {
 	return r->asoft_stc;
 }
 
-static inline void sys_ana_ll_set_ana_reg8_rst_wks1v(uint32_t v) {
+static inline void sys_ana_ll_set_ana_reg8_rst_timerwks1v(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x48 << 2)), 4, 0x1, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg8_rst_wks1v(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg8_rst_timerwks1v(void) {
 	sys_ana_ana_reg8_t *r = (sys_ana_ana_reg8_t*)(SOC_SYS_ANA_REG_BASE + (0x48 << 2));
-	return r->rst_wks1v;
+	return r->rst_timerwks1v;
 }
 
 static inline void sys_ana_ll_set_ana_reg8_dldo_czsel(uint32_t v) {
@@ -1289,10 +1373,17 @@ static inline uint32_t sys_ana_ll_get_ana_reg8_digcurlim(void) {
 	return r->digcurlim;
 }
 
-__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg8_spi_latch1v(uint32_t v) {
+/* Declaration for _flash version - defined in sys_hal.c */
+__FLASH_BOOT_CODE void sys_ana_ll_set_ana_reg8_spi_latch1v_flash(uint32_t v);
+
+/* Runtime version (in PSRAM) - removed __FLASH_BOOT_CODE */
+static inline void sys_ana_ll_set_ana_reg8_spi_latch1v(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x48 << 2)), 9, 0x1, v);
 }
 
+__IRAM_SEC static inline void sys_ana_ll_set_ana_reg8_spi_latch1v_iram(uint32_t v) {
+	sys_ana_set_ana_reg_bit_iram((SOC_SYS_ANA_REG_BASE + (0x48 << 2)), 9, 0x1, v);
+}
 static inline uint32_t sys_ana_ll_get_ana_reg8_spi_latch1v(void) {
 	sys_ana_ana_reg8_t *r = (sys_ana_ana_reg8_t*)(SOC_SYS_ANA_REG_BASE + (0x48 << 2));
 	return r->spi_latch1v;
@@ -1344,7 +1435,7 @@ static inline uint32_t sys_ana_ll_get_ana_reg8_ensfsdd(void) {
 }
 
 static inline void sys_ana_ll_set_ana_reg8_vcorehsel(uint32_t v) {
-	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x48 << 2)), 16, 0xf, v);
+	sys_ana_set_ana_reg_bit_iram((SOC_SYS_ANA_REG_BASE + (0x48 << 2)), 16, 0xf, v);
 }
 
 static inline uint32_t sys_ana_ll_get_ana_reg8_vcorehsel(void) {
@@ -1370,13 +1461,13 @@ static inline uint32_t sys_ana_ll_get_ana_reg8_vlden(void) {
 	return r->vlden;
 }
 
-static inline void sys_ana_ll_set_ana_reg8_tdldo_bypassen1v(uint32_t v) {
+static inline void sys_ana_ll_set_ana_reg8_rst_gpiowks(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x48 << 2)), 24, 0x1, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg8_tdldo_bypassen1v(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg8_rst_gpiowks(void) {
 	sys_ana_ana_reg8_t *r = (sys_ana_ana_reg8_t*)(SOC_SYS_ANA_REG_BASE + (0x48 << 2));
-	return r->tdldo_bypassen1v;
+	return r->rst_gpiowks;
 }
 
 static inline void sys_ana_ll_set_ana_reg8_aldo_rzsel(uint32_t v) {
@@ -1615,13 +1706,17 @@ static inline uint32_t sys_ana_ll_get_ana_reg10_ampoen(void) {
 	return r->ampoen;
 }
 
-static inline void sys_ana_ll_set_ana_reg10_nc_13_13(uint32_t v) {
+__FLASH_BOOT_CODE static inline void sys_ana_ll_set_ana_reg10_vbg_rstrtc_en_flash(uint32_t v) {
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x4a << 2)), 13, 0x1, v);
+}
+
+static inline void sys_ana_ll_set_ana_reg10_vbg_rstrtc_en(uint32_t v) {
 	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x4a << 2)), 13, 0x1, v);
 }
 
-static inline uint32_t sys_ana_ll_get_ana_reg10_nc_13_13(void) {
+static inline uint32_t sys_ana_ll_get_ana_reg10_vbg_rstrtc_en(void) {
 	sys_ana_ana_reg10_t *r = (sys_ana_ana_reg10_t*)(SOC_SYS_ANA_REG_BASE + (0x4a << 2));
-	return r->nc_13_13;
+	return r->vbg_rstrtc_en;
 }
 
 static inline void sys_ana_ll_set_ana_reg10_avea_sel(uint32_t v) {
@@ -1725,7 +1820,7 @@ static inline uint32_t sys_ana_ll_get_ana_reg11_value(void) {
 }
 
 static inline void sys_ana_ll_set_ana_reg11_gpiowk(uint32_t v) {
-	sys_ana_set_ana_reg_bit((SOC_SYS_ANA_REG_BASE + (0x4b << 2)), 0, 0xffffff, v);
+	sys_ana_set_ana_reg_bit_iram((SOC_SYS_ANA_REG_BASE + (0x4b << 2)), 0, 0xffffff, v);
 }
 
 static inline uint32_t sys_ana_ll_get_ana_reg11_gpiowk(void) {

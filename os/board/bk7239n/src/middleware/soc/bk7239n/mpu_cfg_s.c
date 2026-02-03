@@ -22,7 +22,7 @@
 #endif
 
 #ifdef CONFIG_XIP_ELF
-#include "partitions_gen.h"
+#include "partitions_gen_ns.h"
 #endif
 
 
@@ -60,7 +60,7 @@ void bk_mpu_init(void)
 	 * MPU region conflicts with common and app Flash regions which are
 	 * configured later during binary loading.
 	 */
-	mpu_cfg.region_size = CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET -32;
+	mpu_cfg.region_size = CONFIG_COMMON_PHY_PARTITION_OFFSET -32;
 #else
     /* For non-XIP_ELF, configure entire Flash space */
 	mpu_cfg.region_size = 0xFFFFE0;
@@ -127,12 +127,8 @@ void bk_mpu_init(void)
 
    /* MPU region 5 psram data */
     mpu_entry = mpu_entry_alloc();
-#if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
-	mpu_cfg.region_base = 0x70000000;
-#else
-	mpu_cfg.region_base = 0x70040000;
-#endif
-	mpu_cfg.region_size = 0x7FFE0;
+	mpu_cfg.region_base = CONFIG_BK_PSRAM_DATA_BASE;
+	mpu_cfg.region_size = CONFIG_BK_PSRAM_DATA_SIZE - 32;
 	mpu_cfg.xn = MPU_EXEC_ALLOW;
 	mpu_cfg.ap = MPU_UN_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
@@ -141,13 +137,8 @@ void bk_mpu_init(void)
 
     /* MPU region 6 psram code*/
 	mpu_entry = mpu_entry_alloc();
-#if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
-	mpu_cfg.region_base = 0x70080000;
-	mpu_cfg.region_size = 0x7FFE0;
-#else
-	mpu_cfg.region_base = 0x700C0000;
-	mpu_cfg.region_size = 0x17FFE0;
-#endif
+	mpu_cfg.region_base = CONFIG_BK_PSRAM_CODE_BASE;
+	mpu_cfg.region_size = CONFIG_BK_PSRAM_CODE_SIZE - 32;
 	mpu_cfg.xn = MPU_EXEC_ALLOW;
 	mpu_cfg.ap = MPU_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;

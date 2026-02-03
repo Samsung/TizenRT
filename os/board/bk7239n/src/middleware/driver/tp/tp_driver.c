@@ -422,7 +422,7 @@ bk_err_t bk_tp_int_init(const tp_config_t *config)
 	{
 		int_type = GPIO_INT_TYPE_HIGH_LEVEL;
 	}	
-    BK_LOG_ON_ERR(bk_gpio_register_isr_ex(int_id, tp_int_gpio_isr));
+    BK_LOG_ON_ERR(bk_gpio_register_isr_ex(int_id, tp_int_gpio_isr, NULL));
     BK_LOG_ON_ERR(bk_gpio_set_interrupt_type(int_id, int_type));
     BK_LOG_ON_ERR(bk_gpio_enable_interrupt(int_id));
 

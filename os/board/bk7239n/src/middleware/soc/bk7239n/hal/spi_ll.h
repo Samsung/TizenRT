@@ -314,6 +314,11 @@ static inline void spi_ll_set_rx_trans_len(spi_hw_t *hw, uint32_t len)
 	hw->cfg.rx_trans_len = len & SPI_F_RX_TRANS_LEN_M;
 }
 
+static inline void spi_ll_set_miso_o_fbsel(spi_hw_t *hw)
+{
+	hw->cfg.miso_o_fbsel = 1;
+}
+
 static inline void spi_ll_enable_tx_rx(spi_hw_t *hw)
 {
 	hw->cfg.v |= 0b11;

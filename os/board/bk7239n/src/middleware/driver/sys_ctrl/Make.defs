@@ -61,5 +61,5 @@ CSRCS += \
 	sys_ctrl.c
 
 
-DEPPATH += --dep-path driver/sys_ctrl
-VPATH += :driver/sys_ctrl
+DEPPATH += --dep-path $(driver_path)/sys_ctrl
+VPATH += :$(driver_path)/sys_ctrl

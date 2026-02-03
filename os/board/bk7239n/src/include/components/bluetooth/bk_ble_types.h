@@ -609,6 +609,7 @@ typedef struct
     uint16_t att_idx;     /**< The index of the attribute */
     uint8_t *value;       /**< The attribute value */
     uint16_t len;         /**< The length of the attribute value */
+    uint8_t is_cmd;
 } ble_write_req_t;
 
 typedef struct

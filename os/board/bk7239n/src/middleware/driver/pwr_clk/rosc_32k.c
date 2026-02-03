@@ -185,7 +185,7 @@ static void rosc_calib_thread(void *args)
 	uint8_t retry_count = 0;
 
 	// init
-	ROSC_LOGI("ckmn calib rosc thread start\r\n");
+	//ROSC_LOGI("ckmn calib rosc thread start\r\n");
 	sys_drv_rosc_calibration(ROSC_CALIB_MANUAL_MODE, cin0 + (cin1 << 16)); // manual mode
 	// prevent sleep first and release it after finished
 	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_ROSC, 0x0, 0x0);
@@ -293,7 +293,7 @@ static void rosc_calib_thread(void *args)
 	if (ret) {
 		ROSC_LOGE("rosc calib failed reason code: %d\r\n", ret);
 	} else {
-		ROSC_LOGI("rosc calib complete %d %d\r\n", cin0, cin1);
+		//ROSC_LOGI("rosc calib complete %d %d\r\n", cin0, cin1);
 	}
 
 #if ROSC_CALIB_DEBUG

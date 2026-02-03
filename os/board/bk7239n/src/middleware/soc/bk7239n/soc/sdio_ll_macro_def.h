@@ -1607,6 +1607,362 @@ static inline uint32_t sdio_ll_get_sd_slave_status_dat_s_wr_wai_4rd(void)
     return reg_value;
 }
 
-#ifdef __cplusplus 
-}                  
-#endif             
+/* sdio cmd auto response by hardware*/
+static inline void sdio_ll_cmd_sst_sel_en(uint32_t value)
+{
+    uint32_t reg_value;
+    reg_value = REG_READ(SDIO_REG0X1A_ADDR);
+    reg_value &= ~(SDIO_SD_CMD_IRQ_EX_OP_CMD_SST_SEL_MASK << SDIO_SD_CMD_IRQ_EX_OP_CMD_SST_SEL_POS);
+    reg_value |= ((value & SDIO_SD_CMD_IRQ_EX_OP_CMD_SST_SEL_MASK) << SDIO_SD_CMD_IRQ_EX_OP_CMD_SST_SEL_POS);
+    REG_WRITE(SDIO_REG0X1A_ADDR,reg_value);
+}
+
+static inline void sdio_ll_dat1_int_en(uint32_t value)
+{
+	uint32_t reg_value;
+	reg_value = REG_READ(SDIO_REG0X1A_ADDR);
+	reg_value &= ~(SDIO_SD_CMD_IRQ_EX_OP_DAT_S_DAT1_INT_EN_MASK << SDIO_SD_CMD_IRQ_EX_OP_DAT_S_DAT1_INT_EN_POS);
+	reg_value |= ((value & SDIO_SD_CMD_IRQ_EX_OP_DAT_S_DAT1_INT_EN_MASK) << SDIO_SD_CMD_IRQ_EX_OP_DAT_S_DAT1_INT_EN_POS);
+	REG_WRITE(SDIO_REG0X1A_ADDR,reg_value);
+}
+
+static inline void sdio_ll_cccr_intx_en(uint32_t value)
+{
+	uint32_t reg_value;
+	reg_value = REG_READ(SDIO_REG0X1E_ADDR);
+	reg_value &= ~(SDIO_SD_CCCR_2_INTX_MASK << SDIO_SD_CCCR_2_INTX_POS);
+	reg_value |= ((value & SDIO_SD_CCCR_2_INTX_MASK) << SDIO_SD_CCCR_2_INTX_POS);
+	REG_WRITE(SDIO_REG0X1E_ADDR,reg_value);
+}
+
+static inline void sdio_ll_cccr_s4mi_en(uint32_t value)
+{
+	uint32_t reg_value;
+	reg_value = REG_READ(SDIO_REG0X1F_ADDR);
+	reg_value &= ~(SDIO_SD_CCCR_3_S4MI_MASK << SDIO_SD_CCCR_3_S4MI_POS);
+	reg_value |= ((value & SDIO_SD_CCCR_3_S4MI_MASK) << SDIO_SD_CCCR_3_S4MI_POS);
+	REG_WRITE(SDIO_REG0X1F_ADDR,reg_value);
+}
+
+static inline void sdio_ll_cmd_s_buf_cnt_clr_en(uint32_t value)
+{
+	uint32_t reg_value;
+	reg_value = REG_READ(SDIO_REG0X1F_ADDR);
+	reg_value &= ~(SDIO_SD_CCCR_3_S4MI_MASK << SDIO_SD_CCCR_3_S4MI_POS);
+	reg_value |= ((value & SDIO_SD_CCCR_3_S4MI_MASK) << SDIO_SD_CCCR_3_S4MI_POS);
+	REG_WRITE(SDIO_REG0X1F_ADDR,reg_value);
+}
+
+	/* REG_0x3F */
+#define SDIO_REG0X3F_ADDR  (SOC_SDIO_REG_BASE  + 0x3F*4) //REG ADDR :0x458d00fc
+#define SDIO_REG0X3F_CMD_S_BUF_CNT_CLR_POS (0)
+#define SDIO_REG0X3F_CMD_S_BUF_CNT_CLR_MASK (0x1)
+
+#define SDIO_REG0X3F_CMD_S_BUF_CNT_NUM_POS (1)
+#define SDIO_REG0X3F_CMD_S_BUF_CNT_NUM_MASK (0x7)
+
+#define SDIO_REG0X3F_CMD_S_BUF_CNT_POS (4)
+#define SDIO_REG0X3F_CMD_S_BUF_CNT_MASK (0x7)
+
+#define SDIO_REG0X3F_CMD_S_BUF_COVER_CLR_POS (7)
+#define SDIO_REG0X3F_CMD_S_BUF_COVER_CLR_MASK (0x1)
+
+#define SDIO_REG0X3F_CMD_S_BUF_COVER_POS (8)
+#define SDIO_REG0X3F_CMD_S_BUF_COVER_MASK (0x1)
+
+#define SDIO_REG0X3F_CMD_S_BUF_EN_POS (9)
+#define SDIO_REG0X3F_CMD_S_BUF_EN_MASK (0x1)
+
+#define SDIO_REG0X3F_CMD_S_CNT_CLR_POS (10)
+#define SDIO_REG0X3F_CMD_S_CNT_CLR_MASK (0x1)
+
+#define SDIO_REG0X3F_RESERVED_POS (11)
+#define SDIO_REG0X3F_RESERVED_MASK (0x1FFFFF)
+
+	static inline uint32_t sdio_ll_get_reg0x3f_value(void)
+	{
+		return REG_READ(SDIO_REG0X3F_ADDR);
+	}
+
+	static inline void sdio_ll_set_reg0x3f_value(uint32_t value)
+	{
+		REG_WRITE(SDIO_REG0X3F_ADDR,value);
+	}
+
+	/* REG_0x3f:reg0x3f->cmd_s_buf_cnt_clr:0x3f[0],cmd buffer 计数器清零,0x0,RW*/
+	static inline uint32_t sdio_ll_get_reg0x3f_cmd_s_buf_cnt_clr(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X3F_CMD_S_BUF_CNT_CLR_POS) & SDIO_REG0X3F_CMD_S_BUF_CNT_CLR_MASK);
+		return reg_value;
+	}
+
+	static inline void sdio_ll_set_reg0x3f_cmd_s_buf_cnt_clr(uint32_t value)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value &= ~(SDIO_REG0X3F_CMD_S_BUF_CNT_CLR_MASK << SDIO_REG0X3F_CMD_S_BUF_CNT_CLR_POS);
+		reg_value |= ((value & SDIO_REG0X3F_CMD_S_BUF_CNT_CLR_MASK) << SDIO_REG0X3F_CMD_S_BUF_CNT_CLR_POS);
+		REG_WRITE(SDIO_REG0X3F_ADDR,reg_value);
+	}
+
+	/* REG_0x3f:reg0x3f->cmd_s_buf_cnt_num:0x3f[3:1],设置cmd buffer 缓存深度，最大深度值为5; 缓存深度=cmd_s_buf_cnt_num+1,0x0,RW*/
+	static inline uint32_t sdio_ll_get_reg0x3f_cmd_s_buf_cnt_num(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X3F_CMD_S_BUF_CNT_NUM_POS) & SDIO_REG0X3F_CMD_S_BUF_CNT_NUM_MASK);
+		return reg_value;
+	}
+
+	static inline void sdio_ll_set_reg0x3f_cmd_s_buf_cnt_num(uint32_t value)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value &= ~(SDIO_REG0X3F_CMD_S_BUF_CNT_NUM_MASK << SDIO_REG0X3F_CMD_S_BUF_CNT_NUM_POS);
+		reg_value |= ((value & SDIO_REG0X3F_CMD_S_BUF_CNT_NUM_MASK) << SDIO_REG0X3F_CMD_S_BUF_CNT_NUM_POS);
+		REG_WRITE(SDIO_REG0X3F_ADDR,reg_value);
+	}
+
+	/* REG_0x3f:reg0x3f->cmd_s_buf_cnt:0x3f[6:4],cmd buffer 缓存个数; 0：1个缓存的CMD; 1：2个缓存的CMD; 2：3个缓存的CMD; 3：4个缓存的CMD; 4：5个缓存的CMD ,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x3f_cmd_s_buf_cnt(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X3F_CMD_S_BUF_CNT_POS)&SDIO_REG0X3F_CMD_S_BUF_CNT_MASK);
+		return reg_value;
+	}
+
+	/* REG_0x3f:reg0x3f->cmd_s_buf_cover_clr:0x3f[7],cmd buffer 溢出标志位清零,0x0,RW*/
+	static inline uint32_t sdio_ll_get_reg0x3f_cmd_s_buf_cover_clr(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X3F_CMD_S_BUF_COVER_CLR_POS) & SDIO_REG0X3F_CMD_S_BUF_COVER_CLR_MASK);
+		return reg_value;
+	}
+
+	static inline void sdio_ll_set_reg0x3f_cmd_s_buf_cover_clr(uint32_t value)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value &= ~(SDIO_REG0X3F_CMD_S_BUF_COVER_CLR_MASK << SDIO_REG0X3F_CMD_S_BUF_COVER_CLR_POS);
+		reg_value |= ((value & SDIO_REG0X3F_CMD_S_BUF_COVER_CLR_MASK) << SDIO_REG0X3F_CMD_S_BUF_COVER_CLR_POS);
+		REG_WRITE(SDIO_REG0X3F_ADDR,reg_value);
+	}
+
+	/* REG_0x3f:reg0x3f->cmd_s_buf_cover:0x3f[8],cmd buffer 溢出标志位,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x3f_cmd_s_buf_cover(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X3F_CMD_S_BUF_COVER_POS)&SDIO_REG0X3F_CMD_S_BUF_COVER_MASK);
+		return reg_value;
+	}
+
+	/* REG_0x3f:reg0x3f->cmd_s_buf_en:0x3f[9],cmd buffer enable; 注：先把cmd_s_buf_cnt_num深度值设置完成，再使能cmd_s_buf_en,0x0,RW*/
+	static inline uint32_t sdio_ll_get_reg0x3f_cmd_s_buf_en(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X3F_CMD_S_BUF_EN_POS) & SDIO_REG0X3F_CMD_S_BUF_EN_MASK);
+		return reg_value;
+	}
+
+	static inline void sdio_ll_set_reg0x3f_cmd_s_buf_en(uint32_t value)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value &= ~(SDIO_REG0X3F_CMD_S_BUF_EN_MASK << SDIO_REG0X3F_CMD_S_BUF_EN_POS);
+		reg_value |= ((value & SDIO_REG0X3F_CMD_S_BUF_EN_MASK) << SDIO_REG0X3F_CMD_S_BUF_EN_POS);
+		REG_WRITE(SDIO_REG0X3F_ADDR,reg_value);
+	}
+
+	/* REG_0x3f:reg0x3f->cmd_s_cnt_clr:0x3f[10],cmd计数器清零,0x0,RW*/
+	static inline uint32_t sdio_ll_get_reg0x3f_cmd_s_cnt_clr(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X3F_CMD_S_CNT_CLR_POS) & SDIO_REG0X3F_CMD_S_CNT_CLR_MASK);
+		return reg_value;
+	}
+
+	static inline void sdio_ll_set_reg0x3f_cmd_s_cnt_clr(uint32_t value)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X3F_ADDR);
+		reg_value &= ~(SDIO_REG0X3F_CMD_S_CNT_CLR_MASK << SDIO_REG0X3F_CMD_S_CNT_CLR_POS);
+		reg_value |= ((value & SDIO_REG0X3F_CMD_S_CNT_CLR_MASK) << SDIO_REG0X3F_CMD_S_CNT_CLR_POS);
+		REG_WRITE(SDIO_REG0X3F_ADDR,reg_value);
+	}
+
+	/* REG_0x40 */
+#define SDIO_REG0X40_ADDR  (SOC_SDIO_REG_BASE  + 0x40*4) //REG ADDR :0x458d0100
+#define SDIO_REG0X40_CMD_S_REC_INDEX_BUF0_POS (0)
+#define SDIO_REG0X40_CMD_S_REC_INDEX_BUF0_MASK (0x3F)
+
+#define SDIO_REG0X40_CMD_S_REC_INDEX_BUF1_POS (6)
+#define SDIO_REG0X40_CMD_S_REC_INDEX_BUF1_MASK (0x3F)
+
+#define SDIO_REG0X40_CMD_S_REC_INDEX_BUF2_POS (12)
+#define SDIO_REG0X40_CMD_S_REC_INDEX_BUF2_MASK (0x3F)
+
+#define SDIO_REG0X40_CMD_S_REC_INDEX_BUF3_POS (18)
+#define SDIO_REG0X40_CMD_S_REC_INDEX_BUF3_MASK (0x3F)
+
+#define SDIO_REG0X40_CMD_S_REC_INDEX_BUF4_POS (24)
+#define SDIO_REG0X40_CMD_S_REC_INDEX_BUF4_MASK (0x3F)
+
+#define SDIO_REG0X40_RESERVED_POS (30)
+#define SDIO_REG0X40_RESERVED_MASK (0x3)
+
+	static inline uint32_t sdio_ll_get_reg0x40_value(void)
+	{
+		return REG_READ(SDIO_REG0X40_ADDR);
+	}
+
+	/* REG_0x40:reg0x40->cmd_s_rec_index_buf0:0x40[5:0],缓存接收到的第1个CMD index,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x40_cmd_s_rec_index_buf0(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X40_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X40_CMD_S_REC_INDEX_BUF0_POS)&SDIO_REG0X40_CMD_S_REC_INDEX_BUF0_MASK);
+		return reg_value;
+	}
+
+	/* REG_0x40:reg0x40->cmd_s_rec_index_buf1:0x40[11:6],缓存接收到的第2个CMD index,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x40_cmd_s_rec_index_buf1(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X40_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X40_CMD_S_REC_INDEX_BUF1_POS)&SDIO_REG0X40_CMD_S_REC_INDEX_BUF1_MASK);
+		return reg_value;
+	}
+
+	/* REG_0x40:reg0x40->cmd_s_rec_index_buf2:0x40[17:12],缓存接收到的第3个CMD index,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x40_cmd_s_rec_index_buf2(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X40_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X40_CMD_S_REC_INDEX_BUF2_POS)&SDIO_REG0X40_CMD_S_REC_INDEX_BUF2_MASK);
+		return reg_value;
+	}
+
+	/* REG_0x40:reg0x40->cmd_s_rec_index_buf3:0x40[23:18],缓存接收到的第4个CMD index,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x40_cmd_s_rec_index_buf3(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X40_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X40_CMD_S_REC_INDEX_BUF3_POS)&SDIO_REG0X40_CMD_S_REC_INDEX_BUF3_MASK);
+		return reg_value;
+	}
+
+	/* REG_0x40:reg0x40->cmd_s_rec_index_buf4:0x40[29:24],缓存接收到的第5个CMD index,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x40_cmd_s_rec_index_buf4(void)
+	{
+		uint32_t reg_value;
+		reg_value = REG_READ(SDIO_REG0X40_ADDR);
+		reg_value = ((reg_value >> SDIO_REG0X40_CMD_S_REC_INDEX_BUF4_POS)&SDIO_REG0X40_CMD_S_REC_INDEX_BUF4_MASK);
+		return reg_value;
+	}
+
+	/* REG_0x41 */
+#define SDIO_REG0X41_ADDR  (SOC_SDIO_REG_BASE  + 0x41*4) //REG ADDR :0x458d0104
+#define SDIO_REG0X41_CMD_S_REC_ARGUMENT_BUF0_POS (0)
+#define SDIO_REG0X41_CMD_S_REC_ARGUMENT_BUF0_MASK (0xFFFFFFFF)
+
+	static inline uint32_t sdio_ll_get_reg0x41_value(void)
+	{
+		return REG_READ(SDIO_REG0X41_ADDR);
+	}
+
+	/* REG_0x41:reg0x41->cmd_s_rec_argument_buf0:0x41[31:0],缓存接收到的第1个CMD argument,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x41_cmd_s_rec_argument_buf0(void)
+	{
+		return REG_READ(SDIO_REG0X41_ADDR);
+	}
+
+	/* REG_0x42 */
+#define SDIO_REG0X42_ADDR  (SOC_SDIO_REG_BASE  + 0x42*4) //REG ADDR :0x458d0108
+#define SDIO_REG0X42_CMD_S_REC_ARGUMENT_BUF1_POS (0)
+#define SDIO_REG0X42_CMD_S_REC_ARGUMENT_BUF1_MASK (0xFFFFFFFF)
+
+	static inline uint32_t sdio_ll_get_reg0x42_value(void)
+	{
+		return REG_READ(SDIO_REG0X42_ADDR);
+	}
+
+	/* REG_0x42:reg0x42->cmd_s_rec_argument_buf1:0x42[31:0],缓存接收到的第2个CMD argument,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x42_cmd_s_rec_argument_buf1(void)
+	{
+		return REG_READ(SDIO_REG0X42_ADDR);
+	}
+
+	/* REG_0x43 */
+#define SDIO_REG0X43_ADDR  (SOC_SDIO_REG_BASE  + 0x43*4) //REG ADDR :0x458d010c
+#define SDIO_REG0X43_CMD_S_REC_ARGUMENT_BUF2_POS (0)
+#define SDIO_REG0X43_CMD_S_REC_ARGUMENT_BUF2_MASK (0xFFFFFFFF)
+
+	static inline uint32_t sdio_ll_get_reg0x43_value(void)
+	{
+		return REG_READ(SDIO_REG0X43_ADDR);
+	}
+
+	/* REG_0x43:reg0x43->cmd_s_rec_argument_buf2:0x43[31:0],缓存接收到的第3个CMD argument,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x43_cmd_s_rec_argument_buf2(void)
+	{
+		return REG_READ(SDIO_REG0X43_ADDR);
+	}
+
+	/* REG_0x44 */
+#define SDIO_REG0X44_ADDR  (SOC_SDIO_REG_BASE  + 0x44*4) //REG ADDR :0x458d0110
+#define SDIO_REG0X44_CMD_S_REC_ARGUMENT_BUF3_POS (0)
+#define SDIO_REG0X44_CMD_S_REC_ARGUMENT_BUF3_MASK (0xFFFFFFFF)
+
+	static inline uint32_t sdio_ll_get_reg0x44_value(void)
+	{
+		return REG_READ(SDIO_REG0X44_ADDR);
+	}
+
+	/* REG_0x44:reg0x44->cmd_s_rec_argument_buf3:0x44[31:0],缓存接收到的第4个CMD argument,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x44_cmd_s_rec_argument_buf3(void)
+	{
+		return REG_READ(SDIO_REG0X44_ADDR);
+	}
+
+	/* REG_0x45 */
+#define SDIO_REG0X45_ADDR  (SOC_SDIO_REG_BASE  + 0x45*4) //REG ADDR :0x458d0114
+#define SDIO_REG0X45_CMD_S_REC_ARGUMENT_BUF4_POS (0)
+#define SDIO_REG0X45_CMD_S_REC_ARGUMENT_BUF4_MASK (0xFFFFFFFF)
+
+	static inline uint32_t sdio_ll_get_reg0x45_value(void)
+	{
+		return REG_READ(SDIO_REG0X45_ADDR);
+	}
+
+	/* REG_0x45:reg0x45->cmd_s_rec_argument_buf4:0x45[31:0],缓存接收到的第5个CMD argument,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x45_cmd_s_rec_argument_buf4(void)
+	{
+		return REG_READ(SDIO_REG0X45_ADDR);
+	}
+
+	/* REG_0x46 */
+#define SDIO_REG0X46_ADDR  (SOC_SDIO_REG_BASE  + 0x46*4) //REG ADDR :0x458d0118
+#define SDIO_REG0X46_CMD_S_CNT_POS (0)
+#define SDIO_REG0X46_CMD_S_CNT_MASK (0xFFFFFFFF)
+
+	static inline uint32_t sdio_ll_get_reg0x46_value(void)
+	{
+		return REG_READ(SDIO_REG0X46_ADDR);
+	}
+
+	/* REG_0x46:reg0x46->cmd_s_cnt:0x46[31:0],cmd 接收数量计数器,0x0,R*/
+	static inline uint32_t sdio_ll_get_reg0x46_cmd_s_cnt(void)
+	{
+		return REG_READ(SDIO_REG0X46_ADDR);
+	}
+
+#ifdef __cplusplus
+}
+#endif

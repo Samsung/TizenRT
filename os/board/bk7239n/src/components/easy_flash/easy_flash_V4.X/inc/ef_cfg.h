@@ -86,7 +86,7 @@ extern uint32_t g_ef_start_addr;
 #define EF_START_ADDR     (g_ef_start_addr)
 
 /* ENV area size. It's at least one empty sector for GC. So it's definition must more then or equal 2 flash sector size. */
-#define ENV_AREA_SIZE     (2 * EF_ERASE_MIN_SIZE)      /* 8K */
+#define ENV_AREA_SIZE     (6 * EF_ERASE_MIN_SIZE)      /* 24K */
 
 /* saved log area size */
 #define LOG_AREA_SIZE             (254 * EF_ERASE_MIN_SIZE)      /* 1016K */

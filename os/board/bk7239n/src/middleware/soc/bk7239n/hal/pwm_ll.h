@@ -1809,14 +1809,74 @@ static inline void pwm_ll_set_reg44_comif(uint32_t v) {
 	r->comif = v;
 }
 
-static inline void pwm_ll_set_reg44_reserved_16_31(uint32_t v) {
+static inline void pwm_ll_set_reg44_ch1eif(uint32_t v) {
 	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
-	r->reserved_16_31 = v;
+	r->ch1eif = v;
 }
 
-static inline uint32_t pwm_ll_get_reg44_reserved_16_31(void) {
+static inline uint32_t pwm_ll_get_reg44_ch1eif(void) {
 	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
-	return r->reserved_16_31;
+	return r->ch1eif;
+}
+
+static inline void pwm_ll_set_reg44_ch2eif(uint32_t v) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	r->ch2eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg44_ch2eif(void) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	return r->ch2eif;
+}
+
+static inline void pwm_ll_set_reg44_ch3eif(uint32_t v) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	r->ch3eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg44_ch3eif(void) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	return r->ch3eif;
+}
+
+static inline void pwm_ll_set_reg44_ch4eif(uint32_t v) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	r->ch4eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg44_ch4eif(void) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	return r->ch4eif;
+}
+
+static inline void pwm_ll_set_reg44_ch5eif(uint32_t v) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	r->ch5eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg44_ch5eif(void) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	return r->ch5eif;
+}
+
+static inline void pwm_ll_set_reg44_ch6eif(uint32_t v) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	r->ch6eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg44_ch6eif(void) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	return r->ch6eif;
+}
+
+static inline void pwm_ll_set_reg44_reserved_22_31(uint32_t v) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	r->reserved_22_31 = v;
+}
+
+static inline uint32_t pwm_ll_get_reg44_reserved_22_31(void) {
+	pwm_reg44_t *r = (pwm_reg44_t*)(SOC_PWM_REG_BASE + (0x44 << 2));
+	return r->reserved_22_31;
 }
 
 //reg reg45:
@@ -3936,14 +3996,74 @@ static inline void pwm_ll_set_reg84_comif(uint32_t v) {
 	r->comif = v;
 }
 
-static inline void pwm_ll_set_reg84_reserved_16_31(uint32_t v) {
+static inline void pwm_ll_set_reg84_ch1eif(uint32_t v) {
 	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
-	r->reserved_16_31 = v;
+	r->ch1eif = v;
 }
 
-static inline uint32_t pwm_ll_get_reg84_reserved_16_31(void) {
+static inline uint32_t pwm_ll_get_reg84_ch1eif(void) {
 	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
-	return r->reserved_16_31;
+	return r->ch1eif;
+}
+
+static inline void pwm_ll_set_reg84_ch2eif(uint32_t v) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	r->ch2eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg84_ch2eif(void) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	return r->ch2eif;
+}
+
+static inline void pwm_ll_set_reg84_ch3eif(uint32_t v) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	r->ch3eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg84_ch3eif(void) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	return r->ch3eif;
+}
+
+static inline void pwm_ll_set_reg84_ch4eif(uint32_t v) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	r->ch4eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg84_ch4eif(void) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	return r->ch4eif;
+}
+
+static inline void pwm_ll_set_reg84_ch5eif(uint32_t v) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	r->ch5eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg84_ch5eif(void) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	return r->ch5eif;
+}
+
+static inline void pwm_ll_set_reg84_ch6eif(uint32_t v) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	r->ch6eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg84_ch6eif(void) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	return r->ch6eif;
+}
+
+static inline void pwm_ll_set_reg84_reserved_22_31(uint32_t v) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	r->reserved_22_31 = v;
+}
+
+static inline uint32_t pwm_ll_get_reg84_reserved_22_31(void) {
+	pwm_reg84_t *r = (pwm_reg84_t*)(SOC_PWM_REG_BASE + (0x84 << 2));
+	return r->reserved_22_31;
 }
 
 //reg reg85:
@@ -6063,14 +6183,74 @@ static inline void pwm_ll_set_regc4_comif(uint32_t v) {
 	r->comif = v;
 }
 
-static inline void pwm_ll_set_regc4_reserved_16_31(uint32_t v) {
+static inline void pwm_ll_set_regc4_ch1eif(uint32_t v) {
 	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
-	r->reserved_16_31 = v;
+	r->ch1eif = v;
 }
 
-static inline uint32_t pwm_ll_get_regc4_reserved_16_31(void) {
+static inline uint32_t pwm_ll_get_regc4_ch1eif(void) {
 	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
-	return r->reserved_16_31;
+	return r->ch1eif;
+}
+
+static inline void pwm_ll_set_regc4_ch2eif(uint32_t v) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	r->ch2eif = v;
+}
+
+static inline uint32_t pwm_ll_get_regc4_ch2eif(void) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	return r->ch2eif;
+}
+
+static inline void pwm_ll_set_regc4_ch3eif(uint32_t v) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	r->ch3eif = v;
+}
+
+static inline uint32_t pwm_ll_get_regc4_ch3eif(void) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	return r->ch3eif;
+}
+
+static inline void pwm_ll_set_regc4_ch4eif(uint32_t v) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	r->ch4eif = v;
+}
+
+static inline uint32_t pwm_ll_get_regc4_ch4eif(void) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	return r->ch4eif;
+}
+
+static inline void pwm_ll_set_regc4_ch5eif(uint32_t v) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	r->ch5eif = v;
+}
+
+static inline uint32_t pwm_ll_get_regc4_ch5eif(void) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	return r->ch5eif;
+}
+
+static inline void pwm_ll_set_regc4_ch6eif(uint32_t v) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	r->ch6eif = v;
+}
+
+static inline uint32_t pwm_ll_get_regc4_ch6eif(void) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	return r->ch6eif;
+}
+
+static inline void pwm_ll_set_regc4_reserved_22_31(uint32_t v) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	r->reserved_22_31 = v;
+}
+
+static inline uint32_t pwm_ll_get_regc4_reserved_22_31(void) {
+	pwm_regc4_t *r = (pwm_regc4_t*)(SOC_PWM_REG_BASE + (0xc4 << 2));
+	return r->reserved_22_31;
 }
 
 //reg regc5:
@@ -8190,14 +8370,74 @@ static inline void pwm_ll_set_reg104_comif(uint32_t v) {
 	r->comif = v;
 }
 
-static inline void pwm_ll_set_reg104_reserved_16_31(uint32_t v) {
+static inline void pwm_ll_set_reg104_ch1eif(uint32_t v) {
 	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
-	r->reserved_16_31 = v;
+	r->ch1eif = v;
 }
 
-static inline uint32_t pwm_ll_get_reg104_reserved_16_31(void) {
+static inline uint32_t pwm_ll_get_reg104_ch1eif(void) {
 	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
-	return r->reserved_16_31;
+	return r->ch1eif;
+}
+
+static inline void pwm_ll_set_reg104_ch2eif(uint32_t v) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	r->ch2eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg104_ch2eif(void) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	return r->ch2eif;
+}
+
+static inline void pwm_ll_set_reg104_ch3eif(uint32_t v) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	r->ch3eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg104_ch3eif(void) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	return r->ch3eif;
+}
+
+static inline void pwm_ll_set_reg104_ch4eif(uint32_t v) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	r->ch4eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg104_ch4eif(void) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	return r->ch4eif;
+}
+
+static inline void pwm_ll_set_reg104_ch5eif(uint32_t v) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	r->ch5eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg104_ch5eif(void) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	return r->ch5eif;
+}
+
+static inline void pwm_ll_set_reg104_ch6eif(uint32_t v) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	r->ch6eif = v;
+}
+
+static inline uint32_t pwm_ll_get_reg104_ch6eif(void) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	return r->ch6eif;
+}
+
+static inline void pwm_ll_set_reg104_reserved_22_31(uint32_t v) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	r->reserved_22_31 = v;
+}
+
+static inline uint32_t pwm_ll_get_reg104_reserved_22_31(void) {
+	pwm_reg104_t *r = (pwm_reg104_t*)(SOC_PWM_REG_BASE + (0x104 << 2));
+	return r->reserved_22_31;
 }
 
 //reg reg105:

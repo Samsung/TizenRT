@@ -1,5 +1,0 @@
-menu "TP"
-	config TP
-		bool "Enable TP"
-		default n
-endmenu

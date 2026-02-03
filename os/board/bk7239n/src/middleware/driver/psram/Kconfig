@@ -13,36 +13,6 @@ menu "PSRAM"
 		bool "Use psram_malloc at os_malloc failed."
 		default n
 
-	config PSRAM_HEAP_BASE
-		depends on PSRAM_AS_SYS_MEMORY
-		hex "Set psram_malloc base address"
-		default 0x60700000
-		help
-			The psram address is from 0x60000000 to 0x60800000 for psram aps6408l_o
-
-	config PSRAM_HEAP_CPU0_BASE_ADDER
-		depends on PSRAM
-		hex "Set psram_malloc base address"
-		default 0x60700000
-
-	config PSRAM_HEAP_SIZE
-		depends on PSRAM_AS_SYS_MEMORY
-		hex "Set psram heap size"
-		default 0x80000
-		help
-			psram aps6408l-o
-			0x100000 - 1M
-			The max size is 0x800000
-			The suggested option is 0x100000 or 0x200000
-			psram w955d8mky-5j
-			0xE0000 - 896KB
-			The max size is 0x400000
-			The suggested option is 0xE0000
-			psram apsx256
-			0x500000 - 5M
-			The max size is 0x1000000
-			The suggested option is 0x5000000 or 0x1000000
-
 	config PSRAM_WRITE_THROUGH
 		depends on PSRAM
 		bool "Enable PSRAM write through"

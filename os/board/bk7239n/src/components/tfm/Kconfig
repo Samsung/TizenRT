@@ -209,6 +209,13 @@ menu "Tfm"
 				adapt the DH alg.
 				expose DH api to reduce app size.
 
+		config TFM_25519_NSC
+			bool "Enable 25519 NSC api"
+			default n
+			help
+				adapt the 25519 alg.
+				expose 25519 api to reduce app size.
+
 		config TFM_SCA_AES_NSC
 			bool "Enable SCA AES NSC api"
 			default n

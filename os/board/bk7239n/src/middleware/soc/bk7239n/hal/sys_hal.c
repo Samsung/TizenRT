@@ -54,7 +54,8 @@ uint32 sys_hal_get_int_group2_status(void);
 bk_err_t sys_hal_ctrl_vdddig_h_vol(uint32_t vol_value);
 uint32_t sys_hal_vdddig_h_vol_get();
 extern void sys_hal_adjust_dpll(void);
-__FLASH_BOOT_CODE static void sys_hal_delay(volatile uint32_t times);
+__FLASH_BOOT_CODE static void sys_hal_delay_flash(volatile uint32_t times);
+static void sys_hal_delay(volatile uint32_t times);
 /**  Platform Start **/
 /** Platform Misc Start **/
 bk_err_t sys_hal_init()
@@ -65,7 +66,13 @@ bk_err_t sys_hal_init()
     sys_hal_int_group2_enable(DPLL_UNLOCK_INTERRUPT_CTRL_BIT);
 
 #if defined(CONFIG_AON_PMU_POR_TIMING_SUPPORT)
-	sys_ana_ll_set_ana_reg7_vporsel(1);
+	/* Use _flash version for early boot (before PSRAM initialization) */
+	sys_ana_ll_set_ana_reg7_vporsel_flash(1);
+#if CONFIG_AON_PMU_POR_RTC_RESET
+	sys_ana_ll_set_ana_reg10_vbg_rstrtc_en_flash(0);
+#else
+	sys_ana_ll_set_ana_reg10_vbg_rstrtc_en_flash(1);
+#endif
 #endif
 
 	return BK_OK;
@@ -73,6 +80,12 @@ bk_err_t sys_hal_init()
 
 /** Platform PWM Start **/
 /** Platform PWM End **/
+
+/* POC: Create _flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE void sys_ana_ll_set_ana_reg8_spi_latch1v_flash(uint32_t v)
+{
+	sys_ana_set_ana_reg_bit_flash((SOC_SYS_ANA_REG_BASE + (0x48 << 2)), 9, 0x1, v);
+}
 
 void sys_hal_set_ana_reg_spi_latch1v(uint32_t v)
 {
@@ -109,7 +122,14 @@ void sys_hal_flash_set_dpll(void)
 	sys_ll_set_cpu_clk_div_mode2_cksel_flash(FLASH_CLK_APLL);
 }
 
-__FLASH_BOOT_CODE void sys_hal_flash_set_clk(uint32_t value)
+/* Flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE void sys_hal_flash_set_clk_flash(uint32_t value)
+{
+	sys_ll_set_cpu_clk_div_mode2_cksel_flash(value);
+}
+
+/* Runtime version (in PSRAM) - removed __FLASH_BOOT_CODE */
+void sys_hal_flash_set_clk(uint32_t value)
 {
 	sys_ll_set_cpu_clk_div_mode2_cksel_flash(value);
 }
@@ -153,6 +173,7 @@ __IRAM_SEC void sys_hal_module_power_ctrl(power_module_name_t module,power_modul
 			value |= (1 << module);
 		}
 		sys_ll_set_cpu_power_sleep_wakeup_value(value);
+		delay_us(40);// V3 delay 200us, V4 delay 0us, V5 delay 40us
     }else if(module == POWER_MODULE_NAME_TCM1_PGEN) {
 		if(power_state == POWER_MODULE_STATE_ON) {
 			/*TODO
@@ -454,30 +475,54 @@ bk_err_t sys_hal_switch_cpu_bus_freq_high_to_low(pm_cpu_freq_e cpu_bus_freq)
 	{
 		case PM_CPU_FRQ_240M://cpu0:240m;bus:240m
 			ret = sys_hal_core_bus_clock_ctrl(0x1,0x1,0x0,0x1,0x1);
-			sys_hal_ctrl_vdddig_h_vol(0xE);//0.95V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+			sys_hal_ctrl_vdddig_h_vol(CONFIG_PM_VDDDIG_FIXED_VOLTAGE);//0.925V
+			#else
+			sys_hal_ctrl_vdddig_h_vol(0xD);//0.925V
+			#endif
 
 			break;
 		case PM_CPU_FRQ_160M://cpu0:160m;bus:160m
 			ret = sys_hal_core_bus_clock_ctrl(0x1,0x2,0x0,0x1,0x1);
-			sys_hal_ctrl_vdddig_h_vol(0xD);//0.925V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+			sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#else
+			sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#endif
 
 			break;
 		case PM_CPU_FRQ_120M://cpu0:120m;bus:120m
 			ret = sys_hal_core_bus_clock_ctrl(0x1,0x3,0x0,0x1,0x1);
-			sys_hal_ctrl_vdddig_h_vol(0xC);//0.9V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#else
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#endif
 			break;
 		case PM_CPU_FRQ_80M://cpu0:80m;bus:80m
 			ret = sys_hal_core_bus_clock_ctrl(0x1,0x5,0x0,0x1,0x1);
-			sys_hal_ctrl_vdddig_h_vol(0xC);//0.9V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#else
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#endif
 
 			break;
 		case PM_CPU_FRQ_60M://cpu0:60m;bus:60m
 			ret = sys_hal_core_bus_clock_ctrl(0x1,0x7,0x0,0x1,0x1);
-			sys_hal_ctrl_vdddig_h_vol(0xC);//0.9V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#else
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#endif
 			break;
 		case PM_CPU_FRQ_XTAL://cpu0:xtral,bus:xtral (xtal:40M)
 			ret = sys_hal_core_bus_clock_ctrl(0x0,0x0,0x0,0x1,0x1);
-			sys_hal_ctrl_vdddig_h_vol(0xC);//0.9V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#else
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#endif
 			break;
 		default:
 			break;
@@ -491,27 +536,51 @@ bk_err_t sys_hal_switch_cpu_bus_freq_low_to_high(pm_cpu_freq_e cpu_bus_freq)
 	switch(cpu_bus_freq)
 	{
 		case PM_CPU_FRQ_240M://cpu0:240m;bus:240m
-			sys_hal_ctrl_vdddig_h_vol(0xE);//0.95V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+			sys_hal_ctrl_vdddig_h_vol(CONFIG_PM_VDDDIG_FIXED_VOLTAGE);//0.925V
+			#else
+			sys_hal_ctrl_vdddig_h_vol(0xD);//0.925V
+			#endif
 			ret = sys_hal_core_bus_clock_ctrl(0x1,0x1,0x0,0x1,0x1);
 			break;
 		case PM_CPU_FRQ_160M://cpu0:160m;bus:160m
-			sys_hal_ctrl_vdddig_h_vol(0xD);//0.925V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+			sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#else
+			sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#endif
 			ret = sys_hal_core_bus_clock_ctrl(0x1,0x2,0x0,0x1,0x1);
 			break;
 		case PM_CPU_FRQ_120M://cpu0:120m;bus:120m
-			sys_hal_ctrl_vdddig_h_vol(0xC);//0.9V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#else
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#endif
 			ret = sys_hal_core_bus_clock_ctrl(0x1,0x3,0x0,0x1,0x1);
 			break;
 		case PM_CPU_FRQ_80M://cpu0:80m;bus:80m
-			sys_hal_ctrl_vdddig_h_vol(0xC);//0.9V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#else
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#endif
 			ret = sys_hal_core_bus_clock_ctrl(0x1,0x5,0x0,0x1,0x1);
 			break;
 		case PM_CPU_FRQ_60M://cpu0:60m;bus:60m
-			sys_hal_ctrl_vdddig_h_vol(0xC);//0.9V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+				sys_hal_ctrl_vdddig_h_vol(0x9);
+			#else
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#endif
 			ret = sys_hal_core_bus_clock_ctrl(0x1,0x7,0x0,0x1,0x1);
 			break;
 		case PM_CPU_FRQ_XTAL://cpu0:XTAL;bus:XTAL(40M)
-			sys_hal_ctrl_vdddig_h_vol(0xC);//0.9V
+			#if CONFIG_PM_CPU_FIXED_FREQ_ENABLE
+				sys_hal_ctrl_vdddig_h_vol(0x9);
+			#else
+				sys_hal_ctrl_vdddig_h_vol(0x9);//0.825V
+			#endif
 			ret = sys_hal_core_bus_clock_ctrl(0x0,0x0,0x0,0x1,0x1);
 			break;
 		default:
@@ -838,30 +907,30 @@ __IRAM_SEC void sys_hal_clk_pwr_ctrl(dev_clk_pwr_id_t dev, dev_clk_pwr_ctrl_t po
 void sys_hal_uart_select_clock(uart_id_t id, uart_src_clk_t mode)
 {
 	int sel_xtal = 0;
-	int sel_appl = 1;
+	int sel_80m = 1;
 
 	switch(id)
 	{
 		case UART_ID_0:
 			{
-				if(mode == UART_SCLK_APLL)
-					sys_ll_set_cpu_clk_div_mode1_cksel_uart0(sel_appl);
+				if(mode == UART_SCLK_80M)
+					sys_ll_set_cpu_clk_div_mode1_cksel_uart0(sel_80m);
 				else
 					sys_ll_set_cpu_clk_div_mode1_cksel_uart0(sel_xtal);
 				break;
 			}
 		case UART_ID_1:
 			{
-				if(mode == UART_SCLK_APLL)
-					sys_ll_set_cpu_clk_div_mode1_cksel_uart1(sel_appl);
+				if(mode == UART_SCLK_80M)
+					sys_ll_set_cpu_clk_div_mode1_cksel_uart1(sel_80m);
 				else
 					sys_ll_set_cpu_clk_div_mode1_cksel_uart1(sel_xtal);
 				break;
 			}
 		case UART_ID_2:
 			{
-				if(mode == UART_SCLK_APLL)
-					sys_ll_set_cpu_clk_div_mode1_cksel_uart2(sel_appl);
+				if(mode == UART_SCLK_80M)
+					sys_ll_set_cpu_clk_div_mode1_cksel_uart2(sel_80m);
 				else
 					sys_ll_set_cpu_clk_div_mode1_cksel_uart2(sel_xtal);
 				break;
@@ -869,8 +938,8 @@ void sys_hal_uart_select_clock(uart_id_t id, uart_src_clk_t mode)
 #if (SOC_UART_ID_NUM_PER_UNIT  >= 4)
 		case UART_ID_3:
 			{
-				if(mode == UART_SCLK_APLL)
-					sys_ll_set_cpu_clk_div_mode1_cksel_uart2(sel_appl);
+				if(mode == UART_SCLK_80M)
+					sys_ll_set_cpu_clk_div_mode1_cksel_uart2(sel_80m);
 				else
 					sys_ll_set_cpu_clk_div_mode1_cksel_uart2(sel_xtal);
 				break;
@@ -886,14 +955,14 @@ void sys_hal_uart_select_clock(uart_id_t id, uart_src_clk_t mode)
 void sys_hal_i2c_select_clock(i2c_id_t id, i2c_src_clk_t mode)
 {
 	int sel_xtal = 0;
-	int sel_appl = 1;
+	int sel_80m = 1;
 
 	switch(id)
 	{
 		case I2C_ID_0:
 			{
-				if(mode == I2C_SCLK_APLL)
-					sys_ll_set_cpu_clk_div_mode1_cksel_i2c0(sel_appl);
+				if(mode == I2C_SCLK_80M)
+					sys_ll_set_cpu_clk_div_mode1_cksel_i2c0(sel_80m);
 				else
 					sys_ll_set_cpu_clk_div_mode1_cksel_i2c0(sel_xtal);
 				break;
@@ -901,8 +970,8 @@ void sys_hal_i2c_select_clock(i2c_id_t id, i2c_src_clk_t mode)
 #if (SOC_I2C_UNIT_NUM > 1)
 		case I2C_ID_1:
 			{
-				if(mode == I2C_SCLK_APLL)
-					sys_ll_set_cpu_clk_div_mode1_cksel_i2c1(sel_appl);
+				if(mode == I2C_SCLK_80M)
+					sys_ll_set_cpu_clk_div_mode1_cksel_i2c1(sel_80m);
 				else
 					sys_ll_set_cpu_clk_div_mode1_cksel_i2c1(sel_xtal);
 				break;
@@ -916,27 +985,14 @@ void sys_hal_i2c_select_clock(i2c_id_t id, i2c_src_clk_t mode)
 
 void sys_hal_pwm_select_clock(sys_sel_pwm_t num, pwm_src_clk_t mode)
 {
-	uint32_t sel_clk32 = 0;
-	uint32_t sel_xtal = 1;
+	 uint32_t sel_80m = 1;
+	 uint32_t sel_xtal = 0;
 
-	switch(num)
-	{
-		case SYS_SEL_PWM0:
-			if(mode == PWM_SCLK_XTAL)
-				sys_ll_set_cpu_clk_div_mode1_cksel_pwm0(sel_xtal);
-			else
-				sys_ll_set_cpu_clk_div_mode1_cksel_pwm0(sel_clk32);
-			break;
-		case SYS_SEL_PWM1:
-			if(mode == PWM_SCLK_XTAL)
-				sys_ll_set_cpu_clk_div_mode1_cksel_pwm0(sel_xtal);
-			else
-				sys_ll_set_cpu_clk_div_mode1_cksel_pwm0(sel_clk32);
-			break;
-
-		default:
-			break;
-	}
+	 if (mode == PWM_SCLK_XTAL) {
+		sys_ll_set_cpu_clk_div_mode1_cksel_pwm0(sel_xtal);
+	 } else {
+		sys_ll_set_cpu_clk_div_mode1_cksel_pwm0(sel_80m);
+	 }
 }
 
 void sys_hal_timer_select_clock(sys_sel_timer_t num, timer_src_clk_t mode)
@@ -1075,6 +1131,7 @@ dev_clk_dco_div_t sys_hal_get_dco_div(void)
 /*clock power control end*/
 void sys_hal_set_cksel_sadc(uint32_t value)
 {
+	sys_ll_set_cpu_device_clk_enable_sadc_cken(value);
 }
 
 void sys_hal_set_cksel_pwm0(uint32_t value)
@@ -1148,7 +1205,7 @@ uint32_t sys_hal_i2c_select_clock_get(i2c_id_t id)
             break;
     }
 
-    ret = (!ret)?I2C_SCLK_XTAL_26M:I2C_SCLK_APLL;
+    ret = (!ret)?I2C_SCLK_XTAL_40M:I2C_SCLK_80M;
 
     return ret;
 }
@@ -1191,7 +1248,7 @@ void sys_hal_set_saradc_config(void)
 	sys_ana_ll_set_ana_reg2_gadc_vncalsaw(4);
 	sys_ana_ll_set_ana_reg2_gadc_bscalsaw(4);
 	sys_ana_ll_set_ana_reg2_gadc_compisel(4);
-	sys_ana_ll_set_ana_reg2_nc_10_10(1);
+	sys_ana_ll_set_ana_reg2_bufictrl(1);
 	sys_ana_ll_set_ana_reg2_gadc_inbufsel(1);
 	sys_ana_ll_set_ana_reg2_sar_enspi(1);
 
@@ -1603,12 +1660,24 @@ __FLASH_BOOT_CODE void sys_hal_cali_dpll_spi_trig_enable(void)
 	// NOT SUPPORT
 }
 
-__FLASH_BOOT_CODE void sys_hal_cali_dpll_spi_detect_disable(void)
+/* Flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE void sys_hal_cali_dpll_spi_detect_disable_flash(void)
+{
+    sys_ana_ll_set_ana_reg1_osccal_trig_flash(0);
+}
+
+__FLASH_BOOT_CODE void sys_hal_cali_dpll_spi_detect_enable_flash(void)
+{
+    sys_ana_ll_set_ana_reg1_osccal_trig_flash(1);
+}
+
+/* Runtime version (in PSRAM) - removed __FLASH_BOOT_CODE */
+void sys_hal_cali_dpll_spi_detect_disable(void)
 {
     sys_ana_ll_set_ana_reg1_osccal_trig(0);
 }
 
-__FLASH_BOOT_CODE void sys_hal_cali_dpll_spi_detect_enable(void)
+void sys_hal_cali_dpll_spi_detect_enable(void)
 {
     sys_ana_ll_set_ana_reg1_osccal_trig(1);
 }
@@ -1618,7 +1687,22 @@ void sys_hal_set_xtalh_ctune(uint32_t value)
     sys_ana_ll_set_ana_reg2_xtalh_ctune(value);
 }
 
-__FLASH_BOOT_CODE void sys_hal_analog_set(analog_reg_t reg, uint32_t value)
+/* POC: Create _flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE void sys_hal_analog_set_flash(analog_reg_t reg, uint32_t value)
+{
+    uint32_t analog_reg_address;
+
+    if ((reg < ANALOG_REG0) || (reg >= ANALOG_MAX)) {
+        return;
+    }
+
+    analog_reg_address = SYS_ANA_REG0_ADDR + (reg - ANALOG_REG0) * 4;
+
+	sys_ll_set_analog_reg_value_flash(analog_reg_address, value);
+}
+
+/* Runtime version (in PSRAM) - removed __FLASH_BOOT_CODE */
+void sys_hal_analog_set(analog_reg_t reg, uint32_t value)
 {
     uint32_t analog_reg_address;
 
@@ -1630,7 +1714,36 @@ __FLASH_BOOT_CODE void sys_hal_analog_set(analog_reg_t reg, uint32_t value)
 
 	sys_ll_set_analog_reg_value(analog_reg_address, value);
 }
-__FLASH_BOOT_CODE uint32_t sys_hal_analog_get(analog_reg_t reg)
+
+__IRAM_SEC void sys_hal_analog_set_iram(analog_reg_t reg, uint32_t value)
+{
+    uint32_t analog_reg_address;
+
+    if ((reg < ANALOG_REG0) || (reg >= ANALOG_MAX)) {
+        return;
+    }
+
+    analog_reg_address = SYS_ANA_REG0_ADDR + (reg - ANALOG_REG0) * 4;
+
+	sys_ll_set_analog_reg_value_iram(analog_reg_address, value);
+}
+
+/* POC: Create _flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE uint32_t sys_hal_analog_get_flash(analog_reg_t reg)
+{
+    uint32_t analog_reg_address;
+
+    if ((reg < ANALOG_REG0) || (reg >= ANALOG_MAX)) {
+        return 0;
+    }
+
+    analog_reg_address = SYS_ANA_REG0_ADDR + (reg - ANALOG_REG0) * 4;
+
+	return sys_ll_get_analog_reg_value_flash(analog_reg_address);
+}
+
+/* Runtime version (in PSRAM) - removed __FLASH_BOOT_CODE */
+uint32_t sys_hal_analog_get(analog_reg_t reg)
 {
     uint32_t analog_reg_address;
 
@@ -1757,7 +1870,32 @@ uint32_t sys_hal_get_xtalh_ctune(void)
     return sys_ana_ll_get_ana_reg2_xtalh_ctune();
 }
 
-__FLASH_BOOT_CODE uint32_t sys_hal_cali_bgcalm(void)
+/* Flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE uint32_t sys_hal_cali_bgcalm_flash(void)
+{
+    uint32_t bandgap;
+
+    sys_ana_ll_set_ana_reg8_spi_latch1v_flash(1);
+    sys_ana_ll_set_ana_reg7_pwd_bgcal_flash(0);
+    sys_ana_ll_set_ana_reg7_vbgcalmode_flash(0);
+    sys_ana_ll_set_ana_reg7_vbgcalstart_flash(0);
+    sys_ana_ll_set_ana_reg7_vbgcalstart_flash(1);
+    delay_us(100); //100us
+    sys_ana_ll_set_ana_reg7_vbgcalstart_flash(0);
+
+    delay_us(2000); //2ms to avoid consistency issue
+
+    bandgap = aon_pmu_ll_get_r7d_bgcal();
+
+    sys_ana_ll_set_ana_reg7_vbgcalmode_flash(1);
+    sys_ana_ll_set_ana_reg7_pwd_bgcal_flash(1);
+    sys_ana_ll_set_ana_reg8_spi_latch1v_flash(0);
+
+    return bandgap;
+}
+
+/* Runtime version (in PSRAM) - removed __FLASH_BOOT_CODE */
+uint32_t sys_hal_cali_bgcalm(void)
 {
     uint32_t bandgap;
 
@@ -2103,6 +2241,10 @@ void sys_hal_set_h264_clk_en(uint32_t value)
 
 /** h264 End **/
 
+void sys_hal_set_ana_vddgpio_sel(uint32_t value)
+{
+	sys_ana_ll_set_ana_reg4_vddgpio_sel(value);
+}
 /**  psram Start **/
 __FLASH_BOOT_CODE void sys_hal_psram_volstage_sel(uint32_t enable)
 {
@@ -2304,6 +2446,11 @@ void sys_hal_set_ana_reg8_spi_latch1v(uint32_t value)
 	sys_ana_ll_set_ana_reg8_spi_latch1v(value);
 }
 
+__IRAM_SEC void sys_hal_set_ana_reg8_spi_latch1v_iram(uint32_t value)
+{
+	sys_ana_ll_set_ana_reg8_spi_latch1v_iram(value);
+}
+
 void sys_hal_set_ana_reg5_adc_div(uint32_t value)
 {
 	//sys_ll_set_ana_reg5_adc_div(value);
@@ -2323,14 +2470,19 @@ void sys_hal_set_ana_reg7_timer_wkrstn(uint32_t value)
 	sys_ana_ll_set_ana_reg7_timer_wkrstn(value);
 }
 
-void sys_hal_set_ana_reg8_rst_wks1v(uint32_t value)
+void sys_hal_set_ana_reg8_rst_timerwks1v(uint32_t value)
 {
-	sys_ana_ll_set_ana_reg8_rst_wks1v(value);
+	sys_ana_ll_set_ana_reg8_rst_timerwks1v(value);
+}
+
+void sys_hal_set_ana_reg8_rst_gpiowks(uint32_t value)
+{
+	sys_ana_ll_set_ana_reg8_rst_gpiowks(value);
 }
 
 __IRAM_SEC void sys_hal_set_ana_reg8_lvsleep_wkrst(uint32_t value)
 {
-	//sys_ana_ll_set_ana_reg8_lvsleep_wkrst(value);
+	sys_ana_ll_set_ana_reg8_lvsleep_wkrstn(value);
 }
 
 __IRAM_SEC void sys_hal_set_ana_reg8_gpiowk_rstn(uint32_t value)
@@ -2376,7 +2528,7 @@ uint32_t sys_hal_get_ana_reg11_gpiowk(void)
 	return sys_ana_ll_get_ana_reg11_gpiowk();
 }
 
-void sys_hal_set_ana_reg11_gpiowk(uint32_t value)
+__IRAM_SEC void sys_hal_set_ana_reg11_gpiowk(uint32_t value)
 {
 	sys_ana_ll_set_ana_reg11_gpiowk(value);
 }
@@ -2422,7 +2574,13 @@ void sys_hal_set_ana_reg13_rtcsel(uint32_t value)
 }
 #endif
 
-__FLASH_BOOT_CODE static void sys_hal_delay(volatile uint32_t times)
+/* Flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE static void sys_hal_delay_flash(volatile uint32_t times)
+{
+        while(times--);
+}
+
+static void sys_hal_delay(volatile uint32_t times)
 {
         while(times--);
 }
@@ -2449,11 +2607,78 @@ __FLASH_BOOT_CODE void sys_hal_adjust_dpll(void)
         } else if (dpll_band > 0x7F) {
             break;
         }
-        sys_ana_ll_set_ana_reg1_bandmanual(dpll_band);
+        sys_ana_ll_set_ana_reg1_bandmanual_flash(dpll_band);
     }
 }
 
-__FLASH_BOOT_CODE uint32_t sys_hal_cali_dpll(uint32_t first_time)
+/* Flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE uint32_t sys_hal_cali_dpll_flash(uint32_t first_time)
+{
+    uint32_t int_mask = sys_hal_int_group2_disable(DPLL_UNLOCK_INTERRUPT_CTRL_BIT);
+
+    //liupeng20250519: disable unlock detecter and delay 20us when cali dpll
+    sys_ana_ll_set_ana_reg0_cben_flash(1);
+    sys_ana_ll_set_ana_reg1_manual_flash(0);
+    sys_hal_delay_flash(340);
+
+    sys_hal_cali_dpll_spi_detect_disable_flash();
+
+    if (first_time)
+    {
+        sys_hal_delay_flash(3400);
+    }
+    else
+    {
+        sys_hal_delay_flash(340);
+    }
+
+	sys_hal_cali_dpll_spi_detect_enable_flash();
+
+    if (first_time)
+    {
+        sys_hal_delay_flash(3400);
+    }
+    else
+    {
+        sys_hal_delay_flash(340);
+    }
+
+    //ronghui20250604: toggle twice to avoid wrong value after 0x40<29:28>=1
+    sys_hal_cali_dpll_spi_detect_disable_flash();
+
+    if (first_time)
+    {
+        sys_hal_delay_flash(3400);
+    }
+    else
+    {
+        sys_hal_delay_flash(340);
+    }
+
+	sys_hal_cali_dpll_spi_detect_enable_flash();
+
+    if (first_time)
+    {
+        sys_hal_delay_flash(3400);
+    }
+    else
+    {
+        sys_hal_delay_flash(340);
+    }
+
+    sys_ana_ll_set_ana_reg1_bandmanual_flash(aon_pmu_hal_get_dpll_band_flash());
+    sys_ana_ll_set_ana_reg1_manual_flash(1);
+    sys_ana_ll_set_ana_reg0_cben_flash(0);
+
+    if (int_mask & DPLL_UNLOCK_INTERRUPT_CTRL_BIT) {
+        sys_hal_int_group2_enable(DPLL_UNLOCK_INTERRUPT_CTRL_BIT);
+    }
+
+    return BK_OK;
+}
+
+/* Runtime version (in PSRAM) - removed __FLASH_BOOT_CODE */
+uint32_t sys_hal_cali_dpll(uint32_t first_time)
 {
     uint32_t int_mask = sys_hal_int_group2_disable(DPLL_UNLOCK_INTERRUPT_CTRL_BIT);
 
@@ -2517,6 +2742,7 @@ __FLASH_BOOT_CODE uint32_t sys_hal_cali_dpll(uint32_t first_time)
 
     return BK_OK;
 }
+
 __FLASH_BOOT_CODE static void sys_hal_dpll_cpu_flash_time_early_init(uint32_t chip_id)
 {
 	uint32_t coresel = 0;
@@ -2527,7 +2753,7 @@ __FLASH_BOOT_CODE static void sys_hal_dpll_cpu_flash_time_early_init(uint32_t ch
 	corediv = sys_ll_get_cpu_clk_div_mode1_clkdiv_core();
 	if((coresel != PM_CLKSEL_CORE_480M) || !sys_ana_ll_get_ana_reg1_manual())
 	{
-		sys_hal_cali_dpll(1);
+		sys_hal_cali_dpll_flash(1);
 	}
 
 	/*default of MP flash 80M = 80/1*/
@@ -2537,7 +2763,7 @@ __FLASH_BOOT_CODE static void sys_hal_dpll_cpu_flash_time_early_init(uint32_t ch
 		{
 			sys_ll_set_cpu_clk_div_mode2_ckdiv_flash(0x0);
 		}
-		sys_hal_flash_set_clk(PM_CLKSEL_FLASH_80M);
+		sys_hal_flash_set_clk_flash(PM_CLKSEL_FLASH_80M);
 	}
 
 	/* clk_divd 120MHz,
@@ -2549,7 +2775,7 @@ __FLASH_BOOT_CODE static void sys_hal_dpll_cpu_flash_time_early_init(uint32_t ch
 	if((coresel != PM_CLKSEL_CORE_480M) && (corediv != 0x3))//160M
 	{
 		sys_hal_mclk_div_set(480000000/CONFIG_CPU_FREQ_HZ - 1);
-		sys_hal_delay(10000);
+		sys_hal_delay_flash(10000);
 
 		sys_hal_mclk_mux_set(PM_CLKSEL_CORE_480M);/*clock source: DPLL, 480M*/
 	}
@@ -2565,7 +2791,7 @@ __FLASH_BOOT_CODE static void sys_hal_pwd_rosc(void)
 {
 	volatile uint32_t count = PM_POWER_ON_ROSC_STABILITY_TIME;
 	/*when the lpo src select external 32k or 26m/32k, it disable the rosc;because make sure write the analog register successfully*/
-	if(bk_clk_32k_customer_config_get() != PM_LPO_SRC_ROSC)
+	if(bk_clk_32k_customer_config_get_flash() != PM_LPO_SRC_ROSC)
 	{
 		if(aon_pmu_ll_get_r41_lpo_config() == PM_LPO_SRC_ROSC)
 		{
@@ -2574,14 +2800,14 @@ __FLASH_BOOT_CODE static void sys_hal_pwd_rosc(void)
 
 		if(sys_ana_ll_get_ana_reg5_pwd_rosc_spi() != 0x1)
 		{
-			sys_ana_ll_set_ana_reg5_pwd_rosc_spi(0x1);
+			sys_ana_ll_set_ana_reg5_pwd_rosc_spi_flash(0x1);
 		}
 	}
 	else
 	{
 		if(sys_ana_ll_get_ana_reg5_pwd_rosc_spi() != 0x0)
 		{
-			sys_ana_ll_set_ana_reg5_pwd_rosc_spi(0x0);
+			sys_ana_ll_set_ana_reg5_pwd_rosc_spi_flash(0x0);
 
 			while(count--)//delay time for stability when power on rosc
 			{
@@ -2598,46 +2824,47 @@ __FLASH_BOOT_CODE void sys_hal_early_init(void)
 
 	uint32_t chip_id = aon_pmu_hal_get_chipid();
 
-	uint32_t val = sys_hal_analog_get(ANALOG_REG5);
+	/* POC: Use _flash version during early boot */
+	uint32_t val = sys_hal_analog_get_flash(ANALOG_REG5);
 	// power up dpll first
 	val |= (0x1 << 5);
-	sys_hal_analog_set(ANALOG_REG5,val);
-#if !CONFIG_XIP_KERNEL
-	val = sys_hal_analog_get(ANALOG_REG4);
+	sys_hal_analog_set_flash(ANALOG_REG5,val);
+#if !defined(CONFIG_XIP_KERNEL)
+	val = sys_hal_analog_get_flash(ANALOG_REG4);
 #endif
 
-	sys_hal_analog_set(ANALOG_REG0, 0x19219780);//liupeng202400807:<9:7>=7;zhiyin20250429<11>=0 enable dpll_unlock flag;zhiyin20250604<29:28>=1
-	sys_hal_analog_set(ANALOG_REG1, 0xC02EFA00);
-	sys_hal_analog_set(ANALOG_REG2, 0x0600D436);
-	sys_hal_analog_set(ANALOG_REG3, 0xFDFC0BC8);//tenglong20240806:high psrr as default, low when sleep;ronghui20250520<27>=1 avoid dpll unlock detect issue when high temp
+	sys_hal_analog_set_flash(ANALOG_REG0, 0x1D2197E0);//liupeng202400807:<9:7>=7;zhiyin20250429<11>=0 enable dpll_unlock flag;zhiyin20250604<29:28>=1;liupeng20251011<27:26>=3
+	sys_hal_analog_set_flash(ANALOG_REG1, 0xC02EFA00);
+	sys_hal_analog_set_flash(ANALOG_REG2, 0xFFC92536);
+	sys_hal_analog_set_flash(ANALOG_REG3, 0xFDFC0B64);//tenglong20240806:high psrr as default, low when sleep;ronghui20250520<27>=1 avoid dpll unlock detect issue when high temp
 #if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
-	sys_hal_analog_set(ANALOG_REG4, 0x40000000);
+	sys_hal_analog_set_flash(ANALOG_REG4, 0x40010000);
 #else
-	sys_hal_analog_set(ANALOG_REG4, val & 0xF0000000);
+	sys_hal_analog_set_flash(ANALOG_REG4, val & 0xF0010000);
 #endif
-	sys_hal_analog_set(ANALOG_REG5, 0x8407AF60);//liupeng20250514:hp for tx
-	sys_hal_analog_set(ANALOG_REG6, 0x80088100);//liupeng20250427
-	sys_hal_analog_set(ANALOG_REG7, 0x57E697C6);//xinyuan20250611:<9:6>=F for better EVM
-	sys_hal_analog_set(ANALOG_REG8, 0xF87C72E4);//ronghui20250519:<31:30>=3(0.9V), avoid write analog failure
+	sys_hal_analog_set_flash(ANALOG_REG5, 0x8407AF60);//liupeng20250514:hp for tx
+	sys_hal_analog_set_flash(ANALOG_REG6, 0x80088100);//liupeng20250427
+	sys_hal_analog_set_flash(ANALOG_REG7, 0x57E657C6);//xinyuan20250611:<9:6>=F for better EVM;tenglong20251010<18>=1
+	sys_hal_analog_set_flash(ANALOG_REG8, 0xF87972E4);//NOTICE TODO: modify init vdddig as 0.825V for  psram . PSRAM/CPU 120M config
 
 	/**
 	 * attention:
 	 * SPI latch must be enable before ana_reg[8~13] modification
 	 * and don't forget disable it after that.
 	 */
-	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
+	sys_ana_ll_set_ana_reg8_spi_latch1v_flash(1);
 #if defined(CONFIG_AON_RTC_KEEP_TIME_SUPPORT)
-	sys_hal_analog_set(ANALOG_REG9, 0xB555B327);//tenglong20240805:2M buck for EVM
+	sys_hal_analog_set_flash(ANALOG_REG9, 0xB55D9327);//tenglong20240805:2M buck for EVM;tenglong20251011<13>=1
 #else
-	sys_hal_analog_set(ANALOG_REG9, 0xB5553327);//tenglong20240805:2M buck for EVM
+	sys_hal_analog_set_flash(ANALOG_REG9, 0xB55D1327);//tenglong20240805:2M buck for EVM
 #endif
-	sys_hal_analog_set(ANALOG_REG10, 0xF7EEB89A);
-	sys_hal_analog_set(ANALOG_REG11, 0x00000000);
-	sys_hal_analog_set(ANALOG_REG12, 0x00100000);
-	sys_hal_analog_set(ANALOG_REG13, 0x00080000);
-	sys_hal_analog_set(ANALOG_REG14, 0x00A80008);
-	sys_hal_analog_set(ANALOG_REG15, 0x528809F6);
-	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
+	sys_hal_analog_set_flash(ANALOG_REG10, 0xF7EEB89A);
+	sys_hal_analog_set_flash(ANALOG_REG11, 0x00000000);
+	sys_hal_analog_set_flash(ANALOG_REG12, 0x00100000);
+	sys_hal_analog_set_flash(ANALOG_REG13, 0x00080000);
+	sys_hal_analog_set_flash(ANALOG_REG14, 0x00A80008);
+	sys_hal_analog_set_flash(ANALOG_REG15, 0x528809F6);
+	sys_ana_ll_set_ana_reg8_spi_latch1v_flash(0);
 
 	/*early init cpu flash time*/
 	sys_hal_dpll_cpu_flash_time_early_init(chip_id);
