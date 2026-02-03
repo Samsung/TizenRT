@@ -183,6 +183,9 @@ def real_download(port, pre_erase, infile, partition):
             infile,
             partition,
         )
+        if partition.lower() in ["rf", "net"]:
+            BKLog.i("partition %s skip download", partition)
+            return
         bintype, binlist,path_list = parse_tizen_binfile_info(infile, 0)
         tizen_download_info = TizenDownloadInfo()
         tizen_download_info.vecbinInfo = binlist
@@ -204,6 +207,9 @@ def real_erase(port, freedom, partition):
         BKLog.i(
             "erase args: port: %s, freedom: %s, partition: %s", port, freedom, partition
         )
+        if partition.lower() in ["rf", "net"]:
+            BKLog.i("partition %s skip erase", partition)
+            return
         if freedom is None:
             raise Exception("erase addr is None")
 
