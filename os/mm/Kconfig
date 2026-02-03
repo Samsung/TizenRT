@@ -16,25 +16,6 @@ config REALLOC_DISABLE_NEIGHBOR_EXTENSION
 		but waste of time and memory space. And it will be one of debugging
 		features, especially when you modify existing malloc/free logic.
 
-config MM_SMALL
-	bool "Small memory model"
-	default n
-	---help---
-		Each memory allocation has a small allocation overhead.  The size
-		of that overhead is normally determined by the "width" of the
-		address support by the MCU.  MCUs that support 16-bit addressability
-		have smaller overhead than devices that support 32-bit addressability.
-		However, there are many MCUs that support 32-bit addressability *but*
-		have internal SRAM of size less than or equal to 64Kb.  In this case,
-		MM_SMALL can be defined so that those MCUs will also benefit
-		from the smaller, 16-bit-based allocation overhead.
-
-		WARNING:  This selection will also change the alignment of allocated
-		memory.  For example, on ARM memory will have 8-byte alignment by
-		default.  If MM_SMALL is selected, then allocated memory will have
-		only 4-byte alignment.  This may be important on some platforms where
-		64-bit data is in allocated structures and 8-byte alignment is required.
-
 config KMM_REGIONS
 	int "Number of kernel memory regions"
 	default 1
