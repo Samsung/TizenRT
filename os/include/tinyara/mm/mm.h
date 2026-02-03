@@ -73,23 +73,6 @@
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
-/* Configuration ************************************************************/
-/* If the MCU has a small (16-bit) address capability, then we will use
- * a smaller chunk header that contains 16-bit size/offset information.
- * We will also use the smaller header on MCUs with wider addresses if
- * CONFIG_MM_SMALL is selected.  This configuration is common with MCUs
- * that have a large FLASH space, but only a tiny internal SRAM.
- */
-
-#ifdef CONFIG_SMALL_MEMORY
-/* If the MCU has a small addressing capability, then for the smaller
- * chunk header.
- */
-
-#undef  CONFIG_MM_SMALL
-#define CONFIG_MM_SMALL 1
-#endif
-
 /* Terminology:
  *
  * - Flat Build: In the flat build (CONFIG_BUILD_FLAT=y), there is only a
@@ -128,25 +111,17 @@
  */
 
 /* Each configuration is a combination of the following settings:
- * MM_SMALL effects the size of mmsize_t and the size of the chunk header.
  * CONFIG_DEBUG_MM_HEAPINFO and CONFIG_DEBUG_MM_FREEINFO effects the size of mm_freenode_s
-| MM_SMALL | HEAPINFO | FREEINFO | 64-bit | mmsize_t | Pointer | sizeof(mm_allocnode_s) | sizeof(mm_freenode_s) | MM_MIN_SHIFT
-| ON       | OFF      | OFF      | OFF    | 2 bytes  | 4 bytes | 4 bytes	            | 12 bytes              | 4 
-| ON       | OFF      | OFF      | ON     | 2 bytes  | 8 bytes | 4 bytes                | 20 bytes              | 5 
-| ON       | OFF      | ON       | OFF    | 2 bytes  | 4 bytes | 4 bytes                | 20 bytes              | 5 
-| ON       | OFF      | ON       | ON     | 2 bytes  | 8 bytes | 4 bytes                | 32 bytes              | 6 
-| ON       | ON       | OFF      | OFF    | 2 bytes  | 4 bytes | 12 bytes               | 20 bytes              | 5 
-| ON       | ON       | OFF      | ON     | 2 bytes  | 8 bytes | 16 bytes               | 32 bytes              | 6 
-| ON       | ON       | ON       | OFF    | 2 bytes  | 4 bytes | 12 bytes               | 28 bytes              | 5 
-| ON       | ON       | ON       | ON     | 2 bytes  | 8 bytes | 16 bytes               | 44 bytes              | 6 
-| OFF      | OFF      | OFF      | OFF    | 4 bytes  | 4 bytes | 8 bytes                | 16 bytes              | 4
-| OFF      | OFF      | OFF      | ON     | 8 bytes  | 8 bytes | 16 bytes               | 32 bytes              | 5 
-| OFF      | OFF      | ON       | OFF    | 4 bytes  | 4 bytes | 8 bytes                | 24 bytes              | 5 
-| OFF      | OFF      | ON       | ON     | 8 bytes  | 8 bytes | 16 bytes               | 44 bytes              | 6 
-| OFF      | ON       | OFF      | OFF    | 4 bytes  | 4 bytes | 16 bytes               | 24 bytes              | 5 
-| OFF      | ON       | OFF      | ON     | 8 bytes  | 8 bytes | 28 bytes               | 44 bytes              | 6 
-| OFF      | ON       | ON       | OFF    | 4 bytes  | 4 bytes | 16 bytes               | 32 bytes              | 5 
-| OFF      | ON       | ON       | ON     | 8 bytes  | 8 bytes | 28 bytes               | 56 bytes              | 6 
+ * UINTPTR_MAX > UINT32_MAX effects the size of mmsize_t and pointer size
+| HEAPINFO | FREEINFO | 64-bit | mmsize_t | pointer | sizeof(mm_allocnode_s) | sizeof(mm_freenode_s) | MM_MIN_SHIFT
+| OFF      | OFF      | OFF    | 4 bytes  | 4 bytes | 8 bytes                | 16 bytes              | 4
+| OFF      | OFF      | ON     | 8 bytes  | 8 bytes | 16 bytes               | 32 bytes              | 5 
+| OFF      | ON       | OFF    | 4 bytes  | 4 bytes | 8 bytes                | 24 bytes              | 5 
+| OFF      | ON       | ON     | 8 bytes  | 8 bytes | 16 bytes               | 44 bytes              | 6 
+| ON       | OFF      | OFF    | 4 bytes  | 4 bytes | 16 bytes               | 24 bytes              | 5 
+| ON       | OFF      | ON     | 8 bytes  | 8 bytes | 28 bytes               | 44 bytes              | 6 
+| ON       | ON       | OFF    | 4 bytes  | 4 bytes | 16 bytes               | 32 bytes              | 5 
+| ON       | ON       | ON     | 8 bytes  | 8 bytes | 28 bytes               | 56 bytes              | 6 
  */
 
 /* Base minimum shift value (16 bytes) */
@@ -172,12 +147,7 @@
 */
 // #define MM_MIN_SHIFT 	(MM_MIN_SHIFT_BASE + MM_MIN_SHIFT_DEBUG + MM_MIN_SHIFT_64BIT)
 #define MM_MIN_SHIFT 	4
-
-#if defined(CONFIG_MM_SMALL) && UINTPTR_MAX <= UINT32_MAX
-#define MM_MAX_SHIFT	15		/* 32 Kb */
-#else
 #define MM_MAX_SHIFT	22		/* 4 Mb */
-#endif
 
 /* All other definitions derive from these two */
 
@@ -192,15 +162,11 @@
 #define MM_ALIGN_UP(a)   (((a) + MM_GRAN_MASK) & ~MM_GRAN_MASK)
 #define MM_ALIGN_DOWN(a) ((a) & ~MM_GRAN_MASK)
 
-/* An allocated chunk is distinguished from a free chunk by bit 31 (or 15)
+/* An allocated chunk is distinguished from a free chunk by bit 31
  * of the 'preceding' chunk size.  If set, then this is an allocated chunk.
  */
 
-#ifdef CONFIG_MM_SMALL
-#define MM_ALLOC_BIT    0x8000
-#else
 #define MM_ALLOC_BIT    0x80000000
-#endif
 #define MM_IS_ALLOCATED(n) ((int)((struct mm_allocnode_s*)(n)->preceding) < 0)
 
 #define MM_REMAINDER_FREE_CALL_ADDR ((void *)0xFEEEFEEE)
@@ -244,13 +210,8 @@ extern bool abort_mode;
 
 /* Determines the size of the chunk size/offset type */
 
-#ifdef CONFIG_MM_SMALL
-typedef uint16_t mmsize_t;
-#define MMSIZE_MAX 0xffff
-#else
 typedef size_t mmsize_t;
 #define MMSIZE_MAX SIZE_MAX
-#endif
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* This macro updates a caller return address in the 'mem' node.

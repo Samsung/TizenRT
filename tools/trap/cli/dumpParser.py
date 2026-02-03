@@ -452,10 +452,7 @@ class dumpParser:
 
 		HEAP_START_POINT = (ALLOC_LIST_POINT + (max_tasks * SIZE_OF_HEAPINFO_TCB_INFO))
 
-		if 'CONFIG_MM_SMALL=y' in data:
-			MM_ALLOC_BIT = 0x8000
-		else:
-			MM_ALLOC_BIT = 0x80000000
+		MM_ALLOC_BIT = 0x80000000
 
 		start_heap = self.read_word(g_kmmheap + HEAP_START_POINT)
 		end_heap = self.read_word(g_kmmheap + HEAP_START_POINT + 4)
