@@ -380,7 +380,12 @@ static void tc_semaphore_sem_setprotocol(void)
 	TC_ASSERT_EQ("sem_init", ret_chk, OK);
 
 	ret_chk = sem_setprotocol(&sem, SEM_PRIO_NONE);
+#ifdef CONFIG_PRIORITY_INHERITANCE
 	TC_ASSERT_EQ("sem_setprotocol", ret_chk, OK);
+#else
+	TC_ASSERT_EQ("sem_setprotocol", ret_chk, ERROR);
+	TC_ASSERT_EQ("sem_setprotocol", errno, ENOSYS);
+#endif
 
 	ret_chk = sem_setprotocol(&sem, SEM_PRIO_INHERIT);
 #ifdef CONFIG_PRIORITY_INHERITANCE
@@ -396,7 +401,11 @@ static void tc_semaphore_sem_setprotocol(void)
 
 	ret_chk = sem_setprotocol(&sem, SEM_PRIO_DEFAULT);
 	TC_ASSERT_EQ("sem_setprotocol", ret_chk, ERROR);
+#ifdef CONFIG_PRIORITY_INHERITANCE
 	TC_ASSERT_EQ("sem_setprotocol", errno, EINVAL);
+#else
+	TC_ASSERT_EQ("sem_setprotocol", errno, ENOSYS);
+#endif
 
 	ret_chk = sem_destroy(&sem);
 	TC_ASSERT_EQ("sem_destroy", ret_chk, OK);
