@@ -57,6 +57,18 @@ include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 
 LDSCRIPT = flash.ld
 
+ifeq ($(CONFIG_LIBCXX_HAVE_LIBSUPCXX),y)
+ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
+LIBSUPXX = ${shell $(CC) $(CXXFLAGS) --print-file-name=libsupc++.a}
+EXTRA_LIBPATHS += -L "${shell dirname "$(LIBSUPXX)"}"
+EXTRA_LIBS += -lsupc++
+else
+LIBSUPXX = ${shell $(CC) $(CXXFLAGS) --print-file-name=libsupc++_nano.a}
+EXTRA_LIBPATHS += -L "${shell dirname "$(LIBSUPXX)"}"
+EXTRA_LIBS += -lsupc++_nano
+endif
+endif
+
 ifeq ($(WINTOOL),y)
   # Windows-native toolchains
   DIRLINK = $(TOPDIR)/tools/copydir.sh
@@ -131,8 +143,14 @@ else ifeq ($(CONFIG_CXX_VERSION_14),y)
 else
   CXXFLAGS += -std=c++11
 endif
-CXXFLAGS += -fno-exceptions -fcheck-new -fno-rtti
-CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -D_LIBCPP_NO_EXCEPTIONS -ffunction-sections -fdata-sections
+  CXXFLAGS += -fcheck-new -fno-rtti
+  CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -ffunction-sections -fdata-sections -D__GLIBCXX__
+endif
+
+ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
+  CXXFLAGS += -fexceptions
+else
+  CXXFLAGS += -fno-exceptions -D_LIBCPP_NO_EXCEPTIONS
 endif
 CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
 CPPFLAGS = $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRADEFINES)
@@ -148,7 +166,7 @@ ifeq ($(CONFIG_DEBUG_SYMBOLS),y)
   LDFLAGS += -g
 endif
 
-LDFLAGS += -nostartfiles -nodefaultlibs --gc-sections
+LDFLAGS += --gc-sections
 LDFLAGS += --defsym=CONFIG_IDLETHREAD_STACKSIZE=$(CONFIG_IDLETHREAD_STACKSIZE)
 
 HOSTCC = gcc

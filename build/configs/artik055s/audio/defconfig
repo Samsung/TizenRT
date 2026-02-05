@@ -13,7 +13,7 @@ CONFIG_HOST_LINUX=y
 # CONFIG_HOST_WINDOWS is not set
 # CONFIG_HOST_OTHER is not set
 # CONFIG_WINDOWS_NATIVE is not set
-
+CONFIG_DOCKER_VERSION="2.0.0"
 #
 # Build Configuration
 #
