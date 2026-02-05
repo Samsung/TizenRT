@@ -2603,7 +2603,6 @@ function toggle(id, link) {
 <li><a href="#CONFIG_MM_KERNEL_HEAP">1.12.1 <code>CONFIG_MM_KERNEL_HEAP</code>: Support a protected, kernel heap</a></li>
 <li><a href="#CONFIG_MM_KERNEL_HEAPSIZE">1.12.2 <code>CONFIG_MM_KERNEL_HEAPSIZE</code>: Kernal heap size</a></li>
 <li><a href="#CONFIG_REALLOC_DISABLE_NEIGHBOR_EXTENSION">1.12.3 <code>CONFIG_REALLOC_DISABLE_NEIGHBOR_EXTENSION</code>: Disable Realloc Neighbor Extension</a></li>
-<li><a href="#CONFIG_MM_SMALL">1.12.4 <code>CONFIG_MM_SMALL</code>: Small memory model</a></li>
 <li><a href="#CONFIG_MM_REGIONS">1.12.5 <code>CONFIG_MM_REGIONS</code>: Number of memory regions</a></li>
 <li><a href="#CONFIG_MM_NHEAPS">1.12.6 <code>CONFIG_MM_NHEAPS</code>: Number of heaps</a></li>
 <li><a href="#CONFIG_GRAN">1.12.7 <code>CONFIG_GRAN</code>: Enable Granule Allocator</a></li>
@@ -32811,18 +32810,6 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
   <li><i>Kconfig file</i>: <code>./mm/Kconfig</code>
 <p>
   If enabled, realloc will not expand from old node to neighbor freenode.  Instead, realloc will do &quot;malloc new node, memcpy, free old node&quot; which is safe,  but waste of time and memory space. And it will be one of debugging  features, especially when you modify existing malloc/free logic.</p>
-</ul>
-<h3><a name="CONFIG_MM_SMALL">1.12.4 <code>CONFIG_MM_SMALL</code>: Small memory model</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Kconfig file</i>: <code>./mm/Kconfig</code>
-<p>
-  Each memory allocation has a small allocation overhead.  The size  of that overhead is normally determined by the &quot;width&quot; of the  address support by the MCU.  MCUs that support 16-bit addressability  have smaller overhead than devices that support 32-bit addressability.  However, there are many MCUs that support 32-bit addressability *but*  have internal SRAM of size less than or equal to 64Kb.  In this case,  MM_SMALL can be defined so that those MCUs will also benefit  from the smaller, 16-bit-based allocation overhead.</p>
-<p>
-  WARNING:  This selection will also change the alignment of allocated  memory.  For example, on ARM memory will have 8-byte alignment by  default.  If MM_SMALL is selected, then allocated memory will have  only 4-byte alignment.  This may be important on some platforms where  64-bit data is in allocated structures and 8-byte alignment is required.</p>
 </ul>
 <h3><a name="CONFIG_MM_REGIONS">1.12.5 <code>CONFIG_MM_REGIONS</code>: Number of memory regions</a></h3>
 <ul>
