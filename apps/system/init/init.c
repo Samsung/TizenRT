@@ -58,6 +58,9 @@
 #include <semaphore.h>
 #include <errno.h>
 #endif
+#ifdef CONFIG_LIBCXX_EXCEPTION
+extern void register_cxx_terminate_handler(void);
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -74,7 +77,7 @@ extern void iotjs_register_cmds(void);
 #endif
 
 /****************************************************************************
- * Pravite Functions
+ * Private Functions
  ****************************************************************************/
 #ifdef CONFIG_TASH
 static void tash_register_cmds(void)
@@ -130,6 +133,9 @@ int preapp_start(int argc, char *argv[])
 	sem_init(&sem, 0, 0);
 
 	up_cxxinitialize();
+#endif
+#ifdef CONFIG_LIBCXX_EXCEPTION
+	register_cxx_terminate_handler();
 #endif
 
 #ifdef CONFIG_SYSTEM_INFORMATION

@@ -65,14 +65,20 @@ endif
 
 ASRCS =
 CSRCS =
+ifeq ($(CONFIG_HAVE_CXX)$(CONFIG_LIBCXX_EXCEPTION),yy)
+CXXSRCS = terminate_handler.cxx
+else
+CXXSRCS =
+endif
 MAINSRC = init.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
+CXXOBJS = $(CXXSRCS:.cxx=$(OBJEXT))
 MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 
-SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
-OBJS = $(AOBJS) $(COBJS)
+SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS) $(MAINSRC)
+OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
 
 ifneq ($(CONFIG_BUILD_KERNEL),y)
   OBJS += $(MAINOBJ)
@@ -111,6 +117,9 @@ $(AOBJS): %$(OBJEXT): %.S
 
 $(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
+
+$(CXXOBJS): %$(OBJEXT): %.cxx
+	$(call COMPILEXX, $<, $@)
 
 .built: $(OBJS)
 	$(call ARCHIVE, $(BIN), $(OBJS))
