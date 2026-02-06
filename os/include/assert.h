@@ -122,7 +122,8 @@ extern char assert_info_str[CONFIG_STDIO_BUFFER_SIZE];
 #define DEBUGASSERT_INFO(f, fmt, ...) \
 	{ \
 		if (!(f)) { \
-			  DEBUGPANIC_INFO(fmt, ##__VA_ARGS__); \
+			copy_string_from_userspace(fmt, ##__VA_ARGS__); \
+			up_assert((const uint8_t *)__FILE__, (int)__LINE__); \
 		} \
 	}
 
@@ -186,8 +187,8 @@ extern char assert_info_str[CONFIG_STDIO_BUFFER_SIZE];
 #define DEBUGASSERT_INFO(f, fmt, ...) \
 	{ \
 		if (!(f)) { \
-			  snprintf(assert_info_str, CONFIG_STDIO_BUFFER_SIZE, fmt, ##__VA_ARGS__): \
-			  up_assert(); \
+			copy_string_from_userspace(fmt, ##__VA_ARGS__); \
+			up_assert(); \
 		} \
 	}
 /**
@@ -260,6 +261,7 @@ void up_assert(FAR const uint8_t *filename, int linenum);
 #else
 void up_assert(void);
 #endif
+void copy_string_from_userspace(const char *fmt, ...);
 
 #ifdef CONFIG_FRAME_POINTER
 /*****************************************************************************
