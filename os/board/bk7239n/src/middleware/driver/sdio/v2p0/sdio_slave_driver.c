@@ -363,7 +363,7 @@ static void sdio_gpio_notify_from_host_deinit(uint8_t gpio_num)
 
 	gpio_dev_unmap(gpio_num);
 	bk_gpio_disable_interrupt(gpio_num);	//default check high level
-	bk_gpio_register_isr_ex(gpio_num, (gpio_isr_t)NULL);
+	bk_gpio_register_isr_ex(gpio_num, (gpio_isr_t)NULL, NULL);
 
 	SDIO_LOG_DEBUG_FUNCTION_EXIT();
 }

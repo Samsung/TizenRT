@@ -322,8 +322,9 @@ int mcheck_ate(uint16_t check_res[48])
 
 int driver_init(void)
 {
-	sys_drv_init();
-
+//BRING_UP_TAG_START: bk7239n BRING UP code, disable here to boot up, need enable later
+	//sys_drv_init();
+//BRING_UP_TAG_END
 #if defined(CONFIG_AON_PMU)
 	aon_pmu_drv_init();
 #endif

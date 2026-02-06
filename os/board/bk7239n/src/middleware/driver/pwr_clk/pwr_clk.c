@@ -41,7 +41,47 @@ int bk_clk_32k_customer_config_set(pm_lpo_src_e lpo_src)
 	s_lpo_src = lpo_src;
 	return 0;
 }
-__FLASH_BOOT_CODE pm_lpo_src_e bk_clk_32k_customer_config_get(void)
+
+/* Flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE pm_lpo_src_e bk_clk_32k_customer_config_get_flash(void)
+{
+#if CONFIG_LPO_MP_A_FORCE_USE_EXT32K
+	uint32_t chip_id = aon_pmu_hal_get_chipid();
+	if ((chip_id & PM_CHIP_ID_MASK) == (PM_CHIP_ID_MP_A & PM_CHIP_ID_MASK))
+	{
+		return PM_LPO_SRC_X32K;
+	}
+	else
+	{
+		#if CONFIG_AUTO_DETECT_32K_SOURCE
+			return s_lpo_src;
+		#else
+			#if CONFIG_EXTERN_32K
+				return PM_LPO_SRC_X32K;
+			#elif CONFIG_LPO_SRC_26M32K
+				return PM_LPO_SRC_DIVD;
+			#else
+				return PM_LPO_SRC_ROSC;
+			#endif //CONFIG_EXTERN_32K
+		#endif //CONFIG_AUTO_DETECT_32K_SOURCE
+	}
+#else
+#if CONFIG_AUTO_DETECT_32K_SOURCE
+	return s_lpo_src;
+#else
+	#if CONFIG_EXTERN_32K
+		return PM_LPO_SRC_X32K;
+	#elif CONFIG_LPO_SRC_26M32K
+		return PM_LPO_SRC_DIVD;
+	#else
+		return PM_LPO_SRC_ROSC;
+	#endif
+#endif//CONFIG_AUTO_DETECT_32K_SOURCE
+#endif//CONFIG_LPO_MP_A_FORCE_USE_EXT32K
+	return PM_LPO_SRC_ROSC;
+}
+
+pm_lpo_src_e bk_clk_32k_customer_config_get(void)
 {
 #if CONFIG_LPO_MP_A_FORCE_USE_EXT32K
 	uint32_t chip_id = aon_pmu_hal_get_chipid();

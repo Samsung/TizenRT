@@ -15,7 +15,6 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-
 #include <tinyara/config.h>
 #include <tinyara/security_hal.h>
 #include <tinyara/seclink_drv.h>
@@ -27,6 +26,7 @@
 /* TFM NS Interface */
 #include "tfm_ns_interface.h"
 #include "tfm_dh_nsc.h"
+#include "tfm_25519_nsc.h"
 // #include "components/log.h"
 #include <debug.h>
 
@@ -659,6 +659,12 @@ int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_d
         return ret ;
     }
 
+    if((mode == HAL_KEY_ED_25519)||(mode == HAL_KEY_ECC_25519)){
+        psa_25519_set_key(key_idx, key, prikey);
+        set_psa_key_id(key_idx, key_idx);
+        return HAL_SUCCESS;
+    }
+
     // Create and initialize key attributes
     psa_key_attributes_t attributes = psa_key_attributes_init();
     psa_status_t status;
@@ -957,6 +963,16 @@ int armino_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
             key_id = get_psa_key_id(key_idx);
         }
     }
+
+    if((mode == HAL_KEY_ED_25519)||(mode == HAL_KEY_ECC_25519)){
+        int ret = psa_25519_get_key(key_idx, key);
+        if(ret != HAL_SUCCESS){
+            dbg("Failed to read key: %d\n", ret);
+            return ret;
+        }
+        return HAL_SUCCESS;
+    }
+
     // Check key type
     switch (mode) {
         case HAL_KEY_ECC_BRAINPOOL_P256R1:
@@ -987,7 +1003,6 @@ int armino_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
         case HAL_KEY_RSA_3072:
         case HAL_KEY_RSA_4096:
         case HAL_KEY_ECC_25519:
-        case HAL_KEY_ED_25519:
         case HAL_KEY_HMAC_MD5:
         case HAL_KEY_HMAC_SHA1:
         case HAL_KEY_HMAC_SHA224:
@@ -1030,6 +1045,16 @@ int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx)
         return HAL_SUCCESS ;
     }
 
+    if((mode == HAL_KEY_ED_25519)||(mode == HAL_KEY_ECC_25519)){
+        status = psa_25519_remove_key(key_idx);
+        reset_psa_key_id(key_idx);
+        if(status  != HAL_SUCCESS){
+            dbg("Failed to remove key: %d\n", status);
+            return status;
+        }
+        return HAL_SUCCESS;
+    }
+
     if(is_psa_key_id_empty(key_idx)) {
         dbg("key_id %d is not generated yet\n", key_idx);
         return HAL_EMPTY_SLOT;
@@ -1063,6 +1088,12 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
     if((mode == HAL_KEY_AES_128)||(mode == HAL_KEY_AES_192)||(mode == HAL_KEY_AES_256)){
         psa_status_t ret = psa_sca_aes_generate_key((aes_key_type)mode, key_idx);
         return ret ;
+    }
+
+    if((mode == HAL_KEY_ED_25519)||(mode == HAL_KEY_ECC_25519)){
+        psa_25519_generate_key(key_idx);
+        set_psa_key_id(key_idx, key_idx);
+        return HAL_SUCCESS;
     }
 
     // Create and initialize key attributes
@@ -1138,12 +1169,6 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
             psa_set_key_bits(&attributes, 255);
             psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
             psa_set_key_algorithm(&attributes, PSA_ALG_ECDH);
-            break;
-        case HAL_KEY_ED_25519:
-            // psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_EDWARDS));
-            // psa_set_key_bits(&attributes, 255);
-            // psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE);
-            // psa_set_key_algorithm(&attributes, PSA_ALG_ED25519);
             break;
         case HAL_KEY_HMAC_MD5:
             psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
@@ -1599,6 +1624,15 @@ int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_i
         return HAL_INVALID_SLOT_RANGE;
     }
 
+    if (mode.curve == HAL_ECDSA_CURVE_25519){
+        int ret = psa_25519_sign_hash(key_idx, hash, sign);
+        if(ret != HAL_SUCCESS){
+            dbg("Failed to sign hash: %d\n", ret);
+            return ret;
+        }
+        return HAL_SUCCESS;
+    }
+
     psa_key_id_t key_id = 0;
     psa_status_t status;
     psa_algorithm_t alg;
@@ -1676,6 +1710,15 @@ int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *si
 
     if((armino_index_chk(key_idx)) != HAL_SUCCESS){
         return HAL_INVALID_SLOT_RANGE;
+    }
+
+    if(mode.curve == HAL_ECDSA_CURVE_25519){
+        int ret = psa_25519_verify_hash(key_idx, hash, sign);
+        if(ret != HAL_SUCCESS){
+            dbg("Failed to verify hash: %d\n", ret);
+            return ret;
+        }
+        return HAL_SUCCESS;
     }
 
     psa_key_id_t key_id = 0;
@@ -1941,7 +1984,8 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
             pub_key_len = 132;
             break;
         case HAL_ECDSA_CURVE_25519:
-            return HAL_NOT_SUPPORTED;
+            pub_key_len = 32;
+            break;
         default:
             return HAL_INVALID_ARGS;
     }
@@ -1966,6 +2010,16 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
             return HAL_EMPTY_SLOT;
         } else {
             key_id = get_psa_key_id(key_idx);
+        }
+
+        if(ecdh_param->curve == HAL_ECDSA_CURVE_25519){
+            status = psa_25519_compute_shared_secret(ecdh_param->pubkey_x, ecdh_param->pubkey_y, key_idx, shared_secret);
+            dbg("yxt ECDH key agreement 25519: %d %d\n", status, __LINE__);
+            if (status != PSA_SUCCESS) {
+                dbg("ECDH key agreement failed: %d %d\n", status, __LINE__);
+                return HAL_FAIL;
+            }
+            return HAL_SUCCESS;
         }
 
         pub_key = (uint8_t *)kmm_malloc(pub_key_len + 1);

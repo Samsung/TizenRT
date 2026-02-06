@@ -607,7 +607,7 @@ static inline uint32_t aon_pmu_ll_get_r7c(void) {
 	return r->v;
 }
 
-__FLASH_BOOT_CODE static inline uint32_t aon_pmu_ll_get_r7c_id(void) {
+static inline uint32_t aon_pmu_ll_get_r7c_id(void) {
 	aon_pmu_r7c_t *r = (aon_pmu_r7c_t*)(SOC_AON_PMU_REG_BASE + (0x7c << 2));
 	return r->id;
 }

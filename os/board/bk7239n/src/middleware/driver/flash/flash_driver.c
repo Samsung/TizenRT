@@ -25,7 +25,7 @@
 #include <modules/chip_support.h>
 #include "flash_bypass.h"
 #if (!CONFIG_SPE)
-#include "partitions_gen.h"
+#include "partitions_gen_ns.h"
 #include "security.h"
 #endif
 #if CONFIG_TFM_FLASH_NSC
@@ -932,6 +932,13 @@ bk_err_t bk_flash_write_bytes(uint32_t address, const uint8_t *user_buf, uint32_
 	return BK_OK;
 }
 
+uint32_t bk_flash_get_capacity_bytes(void)
+{
+	uint32_t flash_id = bk_flash_get_id();
+	uint32_t flash_capacity_bytes = 1 << (flash_id & 0xff);
+	return flash_capacity_bytes;
+}
+
 uint32_t bk_flash_get_id(void)
 {
 	uint32_t int_level = flash_enter_critical();
@@ -1211,36 +1218,67 @@ uint32_t flash_get_excute_enable()
 #endif
 
 #if (!CONFIG_SPE)
-uint32_t bk_primary_tfm_s_partition_offset(void)
+bool bk_addr_is_kernel(uint32_t addr)
 {
-	return CONFIG_PRIMARY_TFM_S_PHY_PARTITION_OFFSET;
-}
-
-uint32_t bk_primary_all_partition_size(void)
-{
-	return CONFIG_PRIMARY_ALL_PHY_PARTITION_SIZE;
-}
-
-uint32_t bk_secondary_all_partition_offset(void)
-{
-	return CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET;
-}
-
-uint32_t bk_secondary_all_partition_size(void)
-{
-	return CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE;
+	if((addr >= CONFIG_PRIMARY_TFM_S_PHY_PARTITION_OFFSET) && (addr < CONFIG_PRIMARY_ALL_PHY_PARTITION_OFFSET + CONFIG_PRIMARY_ALL_PHY_PARTITION_SIZE)) {
+		return true;
+	}
+	if((addr >= CONFIG_SECONDARY_TFM_S_PHY_PARTITION_OFFSET) && (addr < CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET + CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE)) {
+		return true;
+	}
+	return false;
 }
 
 #ifdef CONFIG_BUILD_PROTECTED
-uint32_t bk_user_app_partition_begin(void)
+bool bk_addr_is_app_or_common(uint32_t addr)
 {
-	return (CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET + CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE);
+    //A partition
+    if ((addr >= CONFIG_PRIMARY_ALL_PHY_PARTITION_OFFSET + CONFIG_PRIMARY_ALL_PHY_PARTITION_SIZE) && (addr < CONFIG_SECONDARY_TFM_S_PHY_PARTITION_OFFSET)) {
+        return true;
+    }
+    //B partition
+    if ((addr >= CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET + CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE) && (addr < CONFIG_USERFS_PHY_PARTITION_OFFSET)) {
+        return true;
+    }
+    return false;
 }
 
-uint32_t bk_user_app_partition_end(void)
+int bk_instruction_read_app_or_common(uint32_t address, uint8_t *user_buf, uint32_t size)
 {
-	return CONFIG_USERFS_PHY_PARTITION_OFFSET;
+	uint32_t int_level;
+	uint32_t addr = address;
+	bool flag = false;
+
+	if(bk_addr_is_app_or_common(addr) !=TRUE) {
+		return -1;
+	}
+	if ((addr >= CONFIG_SECONDARY_ALL_PHY_PARTITION_OFFSET + CONFIG_SECONDARY_ALL_PHY_PARTITION_SIZE)
+		&& (addr < CONFIG_USERFS_PHY_PARTITION_OFFSET)
+		&& (addr + size < CONFIG_USERFS_PHY_PARTITION_OFFSET)) {
+        addr -= (CONFIG_COMMON_B_PHY_PARTITION_OFFSET - CONFIG_COMMON_PHY_PARTITION_OFFSET);
+		flag = true;
+    }
+	addr |= SOC_FLASH_DATA_BASE;
+	int_level = flash_enter_critical();
+	psa_flash_read_instruction(addr, user_buf, size, flag);
+	flash_exit_critical(int_level);
+
+	return 0;
 }
+
+int bk_data_read_app_or_common(uint32_t address, uint8_t *user_buf, uint32_t size)
+{
+	uint32_t int_level;
+	uint32_t addr = address;
+
+	if(bk_addr_is_app_or_common(addr) !=TRUE) {
+		return -1;
+	}
+	bk_flash_read_bytes(addr, user_buf, size);
+
+	return 0;
+}
+
 #endif
 
 int bk_security_flash_write_bytes(uint32_t address, const uint8_t *user_buf, uint32_t size)
@@ -1269,7 +1307,7 @@ int bk_security_flash_read_instruction(uint32_t address, uint8_t *user_buf, uint
     } else if (address >= CONFIG_PRIMARY_CPU0_APP_PHY_CODE_START && address < (CONFIG_PRIMARY_CPU0_APP_PHY_CODE_START + CONFIG_PRIMARY_CPU0_APP_PHY_PARTITION_SIZE)) {
         address |= SOC_FLASH_DATA_BASE;
     } else {
-         return -1;
+        return -1;
     }
     //BK_LOGI("flash_i"," bk_security_flash_read_instruction address 0x%x size 0x%x offset_flag %d\r\n", address, size, offset_flag);
     int_level = flash_enter_critical();
@@ -1294,5 +1332,4 @@ int bk_security_flash_addr_translate(uint32_t *address, uint32_t *offset_flag)
 
     return 0;
 }
-
 #endif

@@ -67,7 +67,7 @@ bk_err_t saradc_start_int_disable(void)
     return BK_OK;
 }
 
-void bk_adc_read_for_ate(uint32_t saradc_num, uint16_t *saradc_buf)
+void bk_adc_read_for_ate(adc_chan_t chan_id, uint32_t saradc_num, uint16_t *saradc_buf)
 {
     uint32_t i;
     int irq_level;
@@ -77,10 +77,20 @@ void bk_adc_read_for_ate(uint32_t saradc_num, uint16_t *saradc_buf)
 
     BK_LOG_ON_ERR(saradc_start_int_disable());
 
+#if 0
     saradc_hal_start_enable();
+#else
+    bk_err_t ret = BK_OK;
+    adc_config_t *channel_config_ptr;
+    channel_config_ptr = dev->channel_cfg[chan_id];
+
+    ret = (adc_channel_config(dev, chan_id));
+    ret = (adc_activate_config(dev, channel_config_ptr));
+    ret = (adc_hw_activate(dev));
+    (void)ret;
+#endif
 
     adc_context_lock(ctx);
-
     irq_level = rtos_disable_int();
     for(i = 0; i < saradc_num; i++)
     {
@@ -95,7 +105,6 @@ void bk_adc_read_for_ate(uint32_t saradc_num, uint16_t *saradc_buf)
         }
     }
     rtos_enable_int(irq_level);
-
     adc_context_release(ctx);
 }
 
@@ -120,7 +129,7 @@ void test_adc_for_ate(adc_chan_t channel, adc_mode_t mode,
 
     BK_LOG_ON_ERR(bk_adc_channel_init(&config));
 
-    bk_adc_read_for_ate(usCount, pDataBuffer);
+    bk_adc_read_for_ate(channel, usCount, pDataBuffer);
     BK_LOG_ON_ERR(bk_adc_channel_deinit(channel));
 }
 

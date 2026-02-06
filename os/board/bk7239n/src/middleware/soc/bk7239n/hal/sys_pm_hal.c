@@ -64,6 +64,7 @@
 #define portNVIC_SYSTICKSET_BIT               ( 1UL << 26UL )
 #define portNVIC_SYSTICKCLR_BIT               ( 1UL << 25UL )
 
+#define PM_DELAY_TICKS_PER_MS                 (32)
 #define PM_EXIT_LOWVOL_SYSTICK_TIME           (32)      //1ms
 #define PM_EXIT_LOWVOL_SYSTICK_RELOAD_TIME    (0xFFFFFF)//set max
 #if defined(CONFIG_SOFT_CTRL_VOLT)
@@ -393,7 +394,7 @@ static inline void sys_hal_set_power_parameter(uint8_t sleep_mode)
  	 *  r40[19:16] halt2_delay = 0x1;
  	 *  r40[23:20] halt3_delay = 0x1;
  	 *  r40[24] halt_volt: deep = 0, lv = 1
-	 *  r40[25] halt_xtal = 1 //26M32K unable to wakeup system, disable during lv sleep
+ 	 *  r40[25] halt_xtal = 1 //26M32K unable to wakeup system, disable during lv sleep
  	 *  r40[26] halt_core: deep = 1, lv = 0
  	 *  r40[27] halt_flash = 1
  	 *  r40[28] halt_rosc = 0
@@ -554,7 +555,8 @@ __attribute__((section(".itcm_sec_code"))) void sys_hal_enter_deep_sleep(void *p
 	sys_hal_mask_cpu0_int();
 
 /*----------config wakeup source  start--------------*/
-	sys_drv_wakeup_source_clear();
+	sys_drv_wakeup_source_gpio_clear();
+	sys_drv_wakeup_source_rtc_clear();
 #if defined(CONFIG_GPIO_WAKEUP_SUPPORT)
 	extern bk_err_t gpio_enable_interrupt_mult_for_wake(void);
 	gpio_enable_interrupt_mult_for_wake();
@@ -576,6 +578,8 @@ __attribute__((section(".itcm_sec_code"))) void sys_hal_enter_deep_sleep(void *p
 #if defined(CONFIG_AON_PMU_POR_TIMING_SUPPORT)
 	// disable it or it will cause error
 	sys_ana_ll_set_ana_reg7_vporsel(0);
+	sys_ana_ll_set_ana_reg10_vbg_rstrtc_en(1);
+	//aon_pmu_ll_set_r0_saved_time(0);
 #endif
 	/*Enable fast boot*/
 	aon_pmu_hal_set_r0_fast_boot(1);
@@ -637,14 +641,13 @@ static inline void sys_hal_set_low_voltage(volatile uint32_t *ana_r0, volatile u
 	sys_ana_ll_set_ana_reg7_spi_pwd_regpow(0);
 	sys_ana_ll_set_ana_reg7_vbspbuf_lp(1);
 	sys_ana_ll_set_ana_reg7_envrefh1v(0);
-
+	sys_ana_ll_set_ana_reg7_vanaldosel(2); // 0: 0.9V, 2: 1V
 #if CONFIG_TEMP_DETECT
 	float temp;
 	bk_err_t err = bk_sensor_get_current_temperature(&temp);
 
 	if((err != BK_OK) || (temp < 0)) // get temperature failed or temperature is less than 0
 	{
-		sys_ana_ll_set_ana_reg7_vanaldosel(2); // 0: 0.9V, 2: 1V
 		#if defined(CONFIG_LDO_SELF_LOW_POWER_MODE_ENA)
 		sys_ana_ll_set_ana_reg7_dldohp(1); //will increase current 15uA
 		sys_ana_ll_set_ana_reg7_aldohp(0);
@@ -652,24 +655,26 @@ static inline void sys_hal_set_low_voltage(volatile uint32_t *ana_r0, volatile u
 	}
 	else
 	{
-		sys_ana_ll_set_ana_reg7_vanaldosel(0); // 0: 0.9V, 2: 1V
 		#if defined(CONFIG_LDO_SELF_LOW_POWER_MODE_ENA)
 		sys_ana_ll_set_ana_reg7_dldohp(0);
 		sys_ana_ll_set_ana_reg7_aldohp(0);
 		#endif
 	}
 #else
-	sys_ana_ll_set_ana_reg7_vanaldosel(0); // 0: 0.9V, 2: 1V
 	#if defined(CONFIG_LDO_SELF_LOW_POWER_MODE_ENA)
 	sys_ana_ll_set_ana_reg7_dldohp(0);
 	sys_ana_ll_set_ana_reg7_aldohp(0);
+	#endif
 #endif
-#endif
+	sys_ana_ll_set_ana_reg7_bypassen(1);//bit20
+	sys_ana_ll_set_ana_reg7_ioldolp(1);//bit21
+
 	// sys_ana_ll_set_ana_reg9_azcd_manu(0x20);
 	// sys_ana_ll_set_ana_reg9_enzcdcalib(0);
 	// sys_ana_ll_set_ana_reg9_zcdmsel(1);
-	sys_ana_ll_set_ana_reg9_mrosci_cal(0);
 
+	sys_ana_ll_set_ana_reg9_iburstsel(3);//bit[19:18]
+	sys_ana_ll_set_ana_reg9_mrosci_cal(0);//bit[27:25]
 	sys_ana_ll_set_ana_reg10_avea_sel(3);
 	// sys_ana_ll_set_ana_reg10_arampc(0);//suggest by long.teng,20251105
 
@@ -824,9 +829,9 @@ __attribute__((section(".iram"))) void sys_hal_regs_save(void)
 		s_sys_ana_regs[i] = sys_hal_analog_get(ANALOG_REG0 + i);
 	}
 
-	for (uint32_t i = 0; i < 4; i++) {
-		s_saved_sram[i] = REG_READ(0x2801FFF0 + (i << 2));
-	}
+	// for (uint32_t i = 0; i < 4; i++) {
+	// 	s_saved_sram[i] = REG_READ(0x2801FFF0 + (i << 2));
+	// }
 }
 
 __attribute__((section(".iram")))  void sys_hal_regs_restore(void)
@@ -845,12 +850,12 @@ __attribute__((section(".iram")))  void sys_hal_regs_restore(void)
 	sys_ll_set_cpu0_int_0_31_en_value(s_sys_saved_regs[9]); // reg_0x20
 	sys_ll_set_cpu0_int_32_63_en_value(s_sys_saved_regs[10]); // reg_0x21
 
-	sys_hal_set_ana_reg8_spi_latch1v(1);
+	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
 	/* restore analog regs */
 	for (uint32_t i = 0; i < 9; i++) {
 		if(( i == 0)||( i == 5)||( i == 7)||( i == 8))
 			continue;
-		sys_hal_analog_set(ANALOG_REG0 + i, s_sys_ana_regs[i]);
+		sys_hal_analog_set_iram(ANALOG_REG0 + i, s_sys_ana_regs[i]);
 	}
 	/**
 	 * attention:
@@ -858,9 +863,9 @@ __attribute__((section(".iram")))  void sys_hal_regs_restore(void)
 	 * and don't forget disable it after that.
 	 */
 	for (uint32_t i = 9; i < 16; i++) {
-		sys_hal_analog_set(ANALOG_REG0 + i, s_sys_ana_regs[i]);
+		sys_hal_analog_set_iram(ANALOG_REG0 + i, s_sys_ana_regs[i]);
 	}
-	sys_hal_set_ana_reg8_spi_latch1v(0);
+	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
 
 	for (uint32_t i = 0; i < 4; i++) {
  		REG_WRITE(0x2801FFF0 + (i << 2), s_saved_sram[i]);
@@ -893,9 +898,9 @@ __attribute__((section(".iram")))  void sys_hal_disable_ana_rtc_int(void)
 	sys_hal_set_ana_reg7_timer_wkrstn(0);
 	sys_hal_set_ana_reg8_rtcwk_rstn(0);
 	#endif
-	/*clear ana int*/
-	sys_hal_set_ana_reg8_rst_wks1v(1);
-	sys_hal_set_ana_reg8_rst_wks1v(0);
+	/*rest timer source flag*/
+	sys_ana_ll_set_ana_reg8_rst_timerwks1v(1);
+	sys_ana_ll_set_ana_reg8_rst_timerwks1v(0);
 	sys_hal_disable_spi_latch();
 }
 
@@ -914,12 +919,29 @@ __attribute__((section(".iram"))) void sys_hal_disable_ana_gpio_int(void)
 
 	sys_hal_enable_spi_latch();
 	sys_hal_set_ana_reg8_gpiowk_rstn(0);
-	/*clear ana int, ask long.teng provide a new bit for gpio in next version*/
-	sys_hal_set_ana_reg8_rst_wks1v(1);
-	sys_hal_set_ana_reg8_rst_wks1v(0);
+	/*rest gpio source flag*/
+	sys_ana_ll_set_ana_reg8_rst_gpiowks(1);
+	sys_ana_ll_set_ana_reg8_rst_gpiowks(0);
 	sys_hal_disable_spi_latch();
 }
 
+__attribute__((section(".iram"))) void sys_drv_wakeup_source_gpio_clear(void)
+{
+	//reset source flag
+	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
+	sys_ana_ll_set_ana_reg8_rst_gpiowks(1);
+	sys_ana_ll_set_ana_reg8_rst_gpiowks(0);
+	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
+}
+
+__attribute__((section(".iram"))) void sys_drv_wakeup_source_rtc_clear(void)
+{
+	//reset source flag
+	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
+	sys_ana_ll_set_ana_reg8_rst_timerwks1v(1);
+	sys_ana_ll_set_ana_reg8_rst_timerwks1v(0);
+	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
+}
 __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 {
 	//TODO: fix it when bring up pm
@@ -965,7 +987,8 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 	portNVIC_SYSTICK_LOAD_REG = PM_EXIT_LOWVOL_SYSTICK_RELOAD_TIME;
 
 	sys_hal_mask_cpu0_int();
-
+	sys_drv_wakeup_source_gpio_clear();
+	sys_drv_wakeup_source_rtc_clear();
 /*----------config wakeup source  start--------------*/
 #if defined(CONFIG_GPIO_WAKEUP_SUPPORT)
 	extern bk_err_t gpio_enable_interrupt_mult_for_wake(void);
@@ -1079,7 +1102,6 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 	sys_hal_gpio_state_switch(true);
 #endif
 
-
 	bk_pm_sleep_wakeup_reason_clear();
 
 /*----enter low voltage sleep-------*/
@@ -1088,8 +1110,10 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 	aon_pmu_hal_set_r0_fast_boot(1);
 	sys_hal_regs_save();
 	aon_pmu_hal_backup();
-	sys_hal_deep_lv_enter();
+	//sys_hal_deep_lv_enter();
 	__NOP();
+	dlv_stack_frame_save_and_dlv(__get_LR());
+	deep_lv_enter();
 	if (dlv_is_startup_iram()) {
 		arch_deep_sleep();
 	}
@@ -1121,7 +1145,7 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 #endif
 
 /*-----------restore voltage  start----------------*/
-	sys_hal_enable_spi_latch();
+	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
 
 	sys_ana_ll_set_ana_reg0_value(v_ana_r0);
 	sys_ana_ll_set_ana_reg3_value(v_ana_r3);
@@ -1147,8 +1171,6 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 
 	sys_hal_restore_hf_clock(hf_reg_v);
 
-	sys_hal_disable_spi_latch();
-
 /*-----------restore analog clock  end --------------*/
 
 	sys_hal_power_on_pd(v_sys_r10);
@@ -1161,15 +1183,14 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 	pm_low_voltage_bsp_restore();
 
 /*----------reset wakeup source  start--------------*/
-	sys_hal_enable_spi_latch();
 	#if defined(CONFIG_ANA_RTC_WAKUP_BY_RTC)
-	sys_hal_set_ana_reg8_rtcwk_rstn(0);
+	sys_ana_ll_set_ana_reg8_rtcwk_rstn(0);
 	#else
-	sys_hal_set_ana_reg7_timer_wkrstn(0);
+	sys_ana_ll_set_ana_reg7_timer_wkrstn(0);
 	#endif
-	sys_hal_set_ana_reg8_gpiowk_rstn(0);
-	sys_hal_set_ana_reg8_lvsleep_wkrst(1);
-	sys_hal_disable_spi_latch();
+	sys_ana_ll_set_ana_reg8_gpiowk_rstn(0);
+	sys_ana_ll_set_ana_reg8_lvsleep_wkrstn(1);
+	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
 /*-----------reset wakeup source  end --------------*/
 
 #if !defined(CONFIG_DEEP_LV)
@@ -1368,6 +1389,24 @@ void sys_hal_enter_cpu_wfi()
 	// sys_ll_set_cpu0_int_halt_clk_op_cpu0_halt(1);
 	arch_sleep();
 }
+__attribute__((section(".iram"))) uint64_t pm_get_current_tick()
+{
+	uint32_t low_tick   = aon_pmu_hal_rtc_tick_l_get();
+	uint32_t high_tick = aon_pmu_hal_rtc_tick_h_get()&0xF;
+	uint64_t tick_val = ((uint64_t)high_tick << 32) + low_tick;
+	return tick_val;
+}
+
+__attribute__((section(".iram"))) void pm_delay_us(volatile uint32_t us)
+{
+	uint64_t start = pm_get_current_tick();
+	uint64_t delta;
+
+	uint64_t thresh = (uint64_t)us * (uint64_t)PM_DELAY_TICKS_PER_MS;
+	do {
+		delta = pm_get_current_tick() - start;
+	} while (delta * 1000ULL < thresh);
+}
 
 __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_clk)
 {
@@ -1380,11 +1419,9 @@ __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_
 	volatile bool xtal_sleep = false;
 	volatile uint32_t systick_ctrl_value    = 0;
 	volatile uint32_t systick_load_value    = 0;
-	volatile uint32_t systick_val_before = 0;
-	uint64_t sleep_start_tick = 0;
-	uint64_t sleep_end_tick = 0;
-	uint64_t sleep_duration_us = 0;
-	uint32_t sleep_ticks = 0;
+	volatile uint32_t systick_val_before    = 0;
+	volatile uint32_t pwd_rom_value         = 0;
+
 	uint32_t systick_ticks_per_ms = 0;
 	uint32_t adjusted_val = 0;
 
@@ -1393,6 +1430,7 @@ __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_
 	sys_ll_set_cpu_device_clk_enable_thread_cken(0);
 	sys_ll_set_cpu_device_clk_enable_phy_cken(0);
 	sys_ll_set_cpu_device_clk_enable_rf_cken(0);
+	/*Support BT,it can disable btdm,xvr clock*/
 	//sys_ll_set_cpu_device_clk_enable_xvr_cken(0);
 	//sys_ll_set_cpu_device_clk_enable_btdm_cken(0);
 
@@ -1402,9 +1440,8 @@ __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_
 	systick_ctrl_value = portNVIC_SYSTICK_CTRL_REG;
 	systick_load_value = portNVIC_SYSTICK_LOAD_REG;
 	systick_val_before = portNVIC_SYSTICK_CURRENT_VALUE_REG;
-	/* Disable SysTick to avoid interference during sleep */
-	portNVIC_SYSTICK_CTRL_REG = 0;
-	//g_systick_load_value = systick_load_value;
+	portNVIC_SYSTICK_CTRL_REG = 0;//disable the systick, avoid it affect the enter low voltage sleep
+
 	__asm volatile( "nop" );
 	__asm volatile( "nop" );
 	__asm volatile( "nop" );
@@ -1423,8 +1460,10 @@ __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_
 	}
 	/* flush all dcache(data in sram and psram)*/
 	flush_all_dcache();
-	sleep_start_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-	//portNVIC_SYSTICK_LOAD_REG = PM_EXIT_LOWVOL_SYSTICK_RELOAD_TIME;
+	__asm volatile( "dsb" );
+	__asm volatile( "isb" );
+
+
 	/* cpu freq use 10M*/
 	cksel_core = sys_ll_get_cpu_clk_div_mode1_cksel_core();
 	clkdiv_core = sys_ll_get_cpu_clk_div_mode1_clkdiv_core();
@@ -1441,95 +1480,88 @@ __attribute__((section(".iram"))) void sys_hal_enter_normal_sleep(uint32_t peri_
 	sys_ll_set_cpu_device_clk_enable_thread_cken(0);
 	sys_ll_set_cpu_device_clk_enable_phy_cken(0);
 	sys_ll_set_cpu_device_clk_enable_rf_cken(0);
+	sys_ll_set_cpu_device_clk_enable_psram_cken(0);
+	sys_ll_set_cpu_device_clk_enable_otp_cken(0);
 	//sys_ll_set_cpu_device_clk_enable_xvr_cken(0);
 	//sys_ll_set_cpu_device_clk_enable_btdm_cken(0);
 
-	/*DPLL_DIV disable*/
-	en_dpll_dig = sys_ll_get_cpu_device_clk_enable_dplldiv_cken();
-	sys_ll_set_cpu_device_clk_enable_dplldiv_cken(0);
-
-	/*latch start*/
-	sys_hal_enable_spi_latch();
-
-	/*vcore 0.75v*/
-	vcoresel = sys_ana_ll_get_ana_reg8_vcorehsel();
-	sys_ana_ll_set_ana_reg8_vcorehsel(0x6);
-	DELAY_US(30);
-
-	/*DPLL disable*/
-	en_dpll_ana = sys_ana_ll_get_ana_reg5_en_dpll();
-	sys_ana_ll_set_ana_reg5_en_dpll(0);
-	DELAY_US(50);
-
-	/*xtal sleep*/
-	xtal_sleep = sys_ana_ll_get_ana_reg3_en_xtalh_sleep();
-	sys_ana_ll_set_ana_reg3_en_xtalh_sleep(1);
+	pwd_rom_value = sys_ll_get_cpu_power_sleep_wakeup_rom_pgen();
+	sys_ll_set_cpu_power_sleep_wakeup_rom_pgen(1);
+	/* cpu halt*/
+	sys_ll_set_cpu0_int_halt_clk_op_cpu0_halt(1);
 
 	bk_pm_sleep_wakeup_reason_clear();
 
-	arch_sleep();
+	pm_delay_us(30);
+	/*DPLL_DIV disable*/
+	en_dpll_dig = sys_ll_get_cpu_device_clk_enable_dplldiv_cken();
+	sys_ll_set_cpu_device_clk_enable_dplldiv_cken(0);
+	pm_delay_us(30);
+	/*latch start*/
+
+	sys_ana_ll_set_ana_reg8_spi_latch1v_iram(1);
+
+	/*vcore 0.7v*/
+	// Direct register access to avoid veneer
+	vcoresel = (*(volatile uint32_t*)(SOC_SYS_ANA_REG_BASE + (0x48 << 2)) >> 16) & 0xf;
+
+	sys_ana_set_ana_reg_bit_iram((SOC_SYS_ANA_REG_BASE + (0x48 << 2)), 16, 0xf, 0x4);//0.7v
+	pm_delay_us(30);
+
+	/*DPLL disable*/
+	// Direct register access to avoid veneer
+	en_dpll_ana = (*(volatile uint32_t*)(SOC_SYS_ANA_REG_BASE + (0x45 << 2)) >> 5) & 0x1;
+
+	sys_ana_set_ana_reg_bit_iram((SOC_SYS_ANA_REG_BASE + (0x45 << 2)), 5, 0x1, 0);
+	pm_delay_us(50);
+
+	/*xtal sleep*/
+	// Direct register access to avoid veneer
+	xtal_sleep = (*(volatile uint32_t*)(SOC_SYS_ANA_REG_BASE + (0x43 << 2)) >> 25) & 0x1;
+
+	sys_ana_set_ana_reg_bit_iram((SOC_SYS_ANA_REG_BASE + (0x43 << 2)), 25, 0x1, 1);
+
+	arch_deep_sleep();
 
 	bk_pm_sleep_wakeup_reason_set(check_IRQ_pending());
 
 	/*xtal sleep disable*/
-	sys_ana_ll_set_ana_reg3_en_xtalh_sleep(xtal_sleep);
-	DELAY_US(50);
+
+	sys_ana_set_ana_reg_bit_iram((SOC_SYS_ANA_REG_BASE + (0x43 << 2)), 25, 0x1, xtal_sleep);
+
+	pm_delay_us(50);
 
 	/*restore vcore*/
-	sys_ana_ll_set_ana_reg8_vcorehsel(vcoresel);
+	sys_ana_set_ana_reg_bit_iram((SOC_SYS_ANA_REG_BASE + (0x48 << 2)), 16, 0xf, vcoresel);
 	/*delay for vddcore stability*/
-	DELAY_US(50);
+	pm_delay_us(30);
 
 	/*DPLL enable*/
-	sys_ana_ll_set_ana_reg5_en_dpll(en_dpll_ana);
+	sys_ana_set_ana_reg_bit_iram((SOC_SYS_ANA_REG_BASE + (0x45 << 2)), 5, 0x1, en_dpll_ana);
 	/*delay for dpll stability*/
-	DELAY_US(200);
-
+	pm_delay_us(200);
 	/*latch end*/
-	sys_hal_disable_spi_latch();
+	sys_ana_ll_set_ana_reg8_spi_latch1v_iram(0);
 
 	/*DPLL_DIV enable*/
 	sys_ll_set_cpu_device_clk_enable_dplldiv_cken(en_dpll_dig);
-	DELAY_US(50);
+	pm_delay_us(30);
 	/*cpu freq restore*/
 	sys_ll_set_cpu_clk_div_mode1_cksel_core(cksel_core);
 	sys_ll_set_cpu_clk_div_mode1_clkdiv_core(clkdiv_core);
-	DELAY_US(50);
+	pm_delay_us(30);
 	/*Flash freq restore */
 	sys_ll_set_cpu_clk_div_mode2_ckdiv_flash(clkdiv_flash);
 	sys_ll_set_cpu_clk_div_mode2_cksel_flash(cksel_flash);
 
 	/*delay for flash stability*/
-	DELAY_US(50);
+	pm_delay_us(30);
 
+	sys_ll_set_cpu_power_sleep_wakeup_rom_pgen(pwd_rom_value);
 	sys_ll_set_cpu_device_clk_enable_value(clken_peri);
-	/* Record sleep end time and calculate sleep duration */
-	sleep_end_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-	if (sleep_end_tick > sleep_start_tick) {
-		sleep_duration_us = (sleep_end_tick - sleep_start_tick)*1000LL/bk_rtc_get_ms_tick_count();
-	} else {
-		sleep_duration_us = 500;
-	}
 
-	#ifdef USEC_PER_TICK
-	sleep_ticks = (uint32_t)(sleep_duration_us / USEC_PER_TICK);
-	#else
-	/* Default to 1ms per tick if USEC_PER_TICK not defined */
-	sleep_ticks = (uint32_t)(sleep_duration_us / 1000);
-	#endif
-
-	systick_ticks_per_ms = 32; /* 32000 Hz / 1000 = 32 ticks per ms */
 	portNVIC_SYSTICK_LOAD_REG = systick_load_value;
 
-	if (systick_load_value > 0) {
-		adjusted_val = systick_load_value / 2;
-		if (adjusted_val == 0) {
-			adjusted_val = 1;
-		} else if (adjusted_val > systick_load_value) {
-			adjusted_val = systick_load_value;
-		}
-	} else {
-	}
 	portNVIC_SYSTICK_CTRL_REG = systick_ctrl_value;
 	portNVIC_SYSTICK_CTRL_REG |= portNVIC_SYSTICK_ENABLE_BIT | portNVIC_SYSTICK_INT_BIT;
 }
@@ -1559,7 +1591,28 @@ int sys_hal_set_lpo_src(sys_lpo_src_t src)
 void sys_hal_enter_low_analog(void)
 {
 	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
-	sys_ana_ll_set_ana_reg7_vanaldosel(4);
+	#if CONFIG_TEMP_DETECT
+	float temp;
+	bk_err_t err = bk_sensor_get_current_temperature(&temp);
+	if((err != BK_OK) || (temp < -10))
+	{
+		sys_ana_ll_set_ana_reg7_vanaldosel(0xa);
+	}
+	else if (temp < 20)
+	{
+		sys_ana_ll_set_ana_reg7_vanaldosel(0x7);
+	}
+	else if (temp < 60)
+	{
+		sys_ana_ll_set_ana_reg7_vanaldosel(0x7);
+	}
+	else
+	{
+		sys_ana_ll_set_ana_reg7_vanaldosel(0xa);
+	}
+	#else
+	sys_ana_ll_set_ana_reg7_vanaldosel(0xa);
+	#endif
 	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
 
 	sys_ana_ll_set_ana_reg3_hpssren(0);
@@ -1764,8 +1817,17 @@ static void sys_hal_gpio_retention_reset(void)
 	}
 }
 #endif
+__attribute__((section(".iram"))) void sys_hal_flash_aes_clock_gate(void)
+{
+	/* aes flash clock gate*/
+	uint32_t aes_flash = REG_READ(SOC_FLASH_REG_BASE + 0xa*4);
+	aes_flash |= 0x1 << 28;
+	REG_WRITE(SOC_FLASH_REG_BASE + 0xa*4, aes_flash);
+}
 void sys_hal_low_power_hardware_init()
 {
+	sys_hal_flash_aes_clock_gate();
+
 	#if !defined(CONFIG_AON_PMU_REG0_REFACTOR_DEV)
 	/*recover aon pmu reg0*/
 	uint32_t reg = aon_pmu_ll_get_r7b();
@@ -1810,7 +1872,7 @@ void sys_hal_low_power_hardware_init()
 	sys_hal_rosc_calibration(2, 0x8);
 	#endif
 
-	/*rtc on bk7236N and bk7239 requires spi_timerwken*/
+	/*rtc on bk7236N and bk7239n requires spi_timerwken*/
 	sys_hal_set_ana_reg9_spi_timerwken(1);
 
 	#if CONFIG_PM_LOWEST_POWER_MODE == 1

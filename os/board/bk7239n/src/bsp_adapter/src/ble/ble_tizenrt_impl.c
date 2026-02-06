@@ -181,6 +181,7 @@ int ble_evt_queue_push(uint16_t type, void *param)
 int ble_evt_queue_push_ext(uint16_t type, void *param, uint32_t size, msg_evt_cb cb)
 {
     ble_evt_msg_t msg = {0};
+    int32_t ret = 0;
 
     msg.type = type;
     msg.cb = cb;
@@ -203,9 +204,9 @@ int ble_evt_queue_push_ext(uint16_t type, void *param, uint32_t size, msg_evt_cb
         msg.u.buf = param;
     }
 
-    if (!ble_evt_que || rtos_push_to_queue(&ble_evt_que, &msg, BEKEN_NO_WAIT) != kNoErr)
+    if (!ble_evt_que || (ret = rtos_push_to_queue(&ble_evt_que, &msg, BEKEN_NO_WAIT)) != kNoErr)
     {
-        LOGE("push failed evt %d", type);
+        LOGE("push failed evt %d ret %d", type, ret);
 
         if (param && size && msg.u.buf)
         {
@@ -1318,7 +1319,7 @@ static void bk_adapter_ble_stack_start(void)
         result = rtos_init_queue(&ble_evt_que,
                                  "ble_evt_queue",
                                  sizeof(ble_evt_msg_t),
-                                 80);
+                                 160);
         BK_ASSERT(0 == result);
 
         result = rtos_create_thread(&ble_evt_handle,

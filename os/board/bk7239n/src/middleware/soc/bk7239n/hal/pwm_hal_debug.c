@@ -388,7 +388,7 @@ static void pwm_dump_reg44(void)
 	SOC_LOGI("	tif2: %8x\r\n", r->tif2);
 	SOC_LOGI("	tif3: %8x\r\n", r->tif3);
 	SOC_LOGI("	comif: %8x\r\n", r->comif);
-	SOC_LOGI("	reserved_16_31: %8x\r\n", r->reserved_16_31);
+	SOC_LOGI("	reserved_22_31: %8x\r\n", r->reserved_22_31);
 }
 
 static void pwm_dump_reg45(void)
@@ -759,7 +759,7 @@ static void pwm_dump_reg84(void)
 	SOC_LOGI("	tif2: %8x\r\n", r->tif2);
 	SOC_LOGI("	tif3: %8x\r\n", r->tif3);
 	SOC_LOGI("	comif: %8x\r\n", r->comif);
-	SOC_LOGI("	reserved_16_31: %8x\r\n", r->reserved_16_31);
+	SOC_LOGI("	reserved_22_31: %8x\r\n", r->reserved_22_31);
 }
 
 static void pwm_dump_reg85(void)
@@ -1130,7 +1130,7 @@ static void pwm_dump_regc4(void)
 	SOC_LOGI("	tif2: %8x\r\n", r->tif2);
 	SOC_LOGI("	tif3: %8x\r\n", r->tif3);
 	SOC_LOGI("	comif: %8x\r\n", r->comif);
-	SOC_LOGI("	reserved_16_31: %8x\r\n", r->reserved_16_31);
+	SOC_LOGI("	reserved_22_31: %8x\r\n", r->reserved_22_31);
 }
 
 static void pwm_dump_regc5(void)
@@ -1501,7 +1501,7 @@ static void pwm_dump_reg104(void)
 	SOC_LOGI("	tif2: %8x\r\n", r->tif2);
 	SOC_LOGI("	tif3: %8x\r\n", r->tif3);
 	SOC_LOGI("	comif: %8x\r\n", r->comif);
-	SOC_LOGI("	reserved_16_31: %8x\r\n", r->reserved_16_31);
+	SOC_LOGI("	reserved_22_31: %8x\r\n", r->reserved_22_31);
 }
 
 static void pwm_dump_reg105(void)

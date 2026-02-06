@@ -15,5 +15,6 @@ menu "AON_PMU"
 	config AON_PMU_POR_TIMING_SUPPORT
 		bool "Por power failure timing"
 		default n
+
 endmenu
 

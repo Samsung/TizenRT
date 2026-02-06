@@ -473,7 +473,13 @@ typedef volatile union {
 		uint32_t tif2                     :  1; /**<bit[13 : 13] */
 		uint32_t tif3                     :  1; /**<bit[14 : 14] */
 		uint32_t comif                    :  1; /**<bit[15 : 15] */
-		uint32_t reserved_16_31           : 16; /**<bit[16 : 31] */
+		uint32_t ch1eif                   :  1; /**<bit[16 : 16] */
+		uint32_t ch2eif                   :  1; /**<bit[17 : 17] */
+		uint32_t ch3eif                   :  1; /**<bit[18 : 18] */
+		uint32_t ch4eif                   :  1; /**<bit[19 : 19] */
+		uint32_t ch5eif                   :  1; /**<bit[20 : 20] */
+		uint32_t ch6eif                   :  1; /**<bit[21 : 21] */
+		uint32_t reserved_22_31           : 10; /**<bit[22 : 31] */
 	};
 	uint32_t v;
 } pwm_reg44_t;
@@ -978,7 +984,13 @@ typedef volatile union {
 		uint32_t tif2                     :  1; /**<bit[13 : 13] */
 		uint32_t tif3                     :  1; /**<bit[14 : 14] */
 		uint32_t comif                    :  1; /**<bit[15 : 15] */
-		uint32_t reserved_16_31           : 16; /**<bit[16 : 31] */
+		uint32_t ch1eif                   :  1; /**<bit[16 : 16] */
+		uint32_t ch2eif                   :  1; /**<bit[17 : 17] */
+		uint32_t ch3eif                   :  1; /**<bit[18 : 18] */
+		uint32_t ch4eif                   :  1; /**<bit[19 : 19] */
+		uint32_t ch5eif                   :  1; /**<bit[20 : 20] */
+		uint32_t ch6eif                   :  1; /**<bit[21 : 21] */
+		uint32_t reserved_22_31           : 10; /**<bit[22 : 31] */
 	};
 	uint32_t v;
 } pwm_reg84_t;
@@ -1483,7 +1495,13 @@ typedef volatile union {
 		uint32_t tif2                     :  1; /**<bit[13 : 13] */
 		uint32_t tif3                     :  1; /**<bit[14 : 14] */
 		uint32_t comif                    :  1; /**<bit[15 : 15] */
-		uint32_t reserved_16_31           : 16; /**<bit[16 : 31] */
+		uint32_t ch1eif                   :  1; /**<bit[16 : 16] */
+		uint32_t ch2eif                   :  1; /**<bit[17 : 17] */
+		uint32_t ch3eif                   :  1; /**<bit[18 : 18] */
+		uint32_t ch4eif                   :  1; /**<bit[19 : 19] */
+		uint32_t ch5eif                   :  1; /**<bit[20 : 20] */
+		uint32_t ch6eif                   :  1; /**<bit[21 : 21] */
+		uint32_t reserved_22_31           : 10; /**<bit[22 : 31] */
 	};
 	uint32_t v;
 } pwm_regc4_t;
@@ -1988,7 +2006,13 @@ typedef volatile union {
 		uint32_t tif2                     :  1; /**<bit[13 : 13] */
 		uint32_t tif3                     :  1; /**<bit[14 : 14] */
 		uint32_t comif                    :  1; /**<bit[15 : 15] */
-		uint32_t reserved_16_31           : 16; /**<bit[16 : 31] */
+		uint32_t ch1eif                   :  1; /**<bit[16 : 16] */
+		uint32_t ch2eif                   :  1; /**<bit[17 : 17] */
+		uint32_t ch3eif                   :  1; /**<bit[18 : 18] */
+		uint32_t ch4eif                   :  1; /**<bit[19 : 19] */
+		uint32_t ch5eif                   :  1; /**<bit[20 : 20] */
+		uint32_t ch6eif                   :  1; /**<bit[21 : 21] */
+		uint32_t reserved_22_31           : 10; /**<bit[22 : 31] */
 	};
 	uint32_t v;
 } pwm_reg104_t;

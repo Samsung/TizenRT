@@ -30,7 +30,7 @@
 #define MDM_PHY_CONFIG_ELMA        1
 #define MDM_PHY_CONFIG_KARST       2
 
-#define RWNX_TX_LIFETIME_MS             100
+#define RWNX_TX_LIFETIME_MS             200
 
 struct rwnx_sec_phy_chan {
 	u16 prim20_freq;

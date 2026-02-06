@@ -7,6 +7,9 @@ menu "AON_RTC"
 		bool "Enable ANA_RTC to replace AON_RTC"
 		default n
 
+	config ANA_RTC_SUPPORT_64BIT
+		bool "Enable ANA_RTC to spport 64 bit"
+		default n
 	config ANA_RTC_WAKUP_BY_RTC
 		bool "Enable ana rtc to wakeup sleep, else enable ana timer to wakeup sleep"
 		default n

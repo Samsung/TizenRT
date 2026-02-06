@@ -93,7 +93,9 @@ int armino_sleep_processing(void);
 extern void clock_timer_nohz(clock_t ticks);
 extern void wd_timer_nohz(clock_t ticks);
 #endif
-
+#if defined(CONFIG_RTC_DRIVER)
+extern void armino_update_rtc_tick_after_sleep(void);
+#endif
 
 /*================FUNCTION DECLARATION SECTION END=============*/
 
@@ -325,10 +327,27 @@ int armino_sleep_processing()
 		}
 		s_missed_ticks = ticks_passed;
 		up_enable_and_compensate_systick();
+#if defined(CONFIG_RTC_DRIVER)
+		/* Update RTC tick tracking to prevent double compensation.
+		 * After sleep wakeup, we've already compensated for the sleep
+		 * duration via s_missed_ticks. We need to update g_last_rtc_tick
+		 * in timerisr.c to the current RTC tick value, otherwise the next
+		 * timer interrupt will calculate the delta from the pre-sleep
+		 * RTC tick value and cause duplicate compensation.
+		 */
+		armino_update_rtc_tick_after_sleep();
+#endif
 	}
 	else
 	{
 		s_missed_ticks = 0;
+#if defined(CONFIG_RTC_DRIVER)
+		/* Even if ticks_passed <= 1, we should still update g_last_rtc_tick
+		 * to prevent the timer ISR from calculating a large delta that includes
+		 * the sleep duration.
+		 */
+		armino_update_rtc_tick_after_sleep();
+#endif
 	}
 
 	#endif

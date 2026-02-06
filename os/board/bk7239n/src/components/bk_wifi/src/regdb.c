@@ -2525,7 +2525,7 @@ const struct ieee80211_regdomain regdom_US = {
 	.alpha2 = "US",
 	.dfs_region = NL80211_DFS_FCC,
 	.reg_rules = {
-		// 1...13
+		// 1...11
 		REG_RULE_EXT(2402, 2472, 40, 0, 30, 0, 0),
 		// 36 40 44 48
 		REG_RULE_EXT(5170, 5250, 80, 0, 17, 0,

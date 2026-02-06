@@ -817,6 +817,21 @@ ext/target/beken/armino/driver/wdt/wdt_driver.s:
 .PHONY : ext/target/beken/armino/driver/wdt/wdt_driver.s
 
 # target to build an object file
+ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.o:
+	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f platform/CMakeFiles/platform_s.dir/build.make platform/CMakeFiles/platform_s.dir/ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.o
+.PHONY : ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.o
+
+# target to preprocess a source file
+ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.i:
+	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f platform/CMakeFiles/platform_s.dir/build.make platform/CMakeFiles/platform_s.dir/ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.i
+.PHONY : ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.i
+
+# target to generate assembly for a file
+ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.s:
+	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f platform/CMakeFiles/platform_s.dir/build.make platform/CMakeFiles/platform_s.dir/ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.s
+.PHONY : ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.s
+
+# target to build an object file
 ext/target/beken/bk7239n/armino/driver/hal/aon_pmu_hal.o:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f platform/CMakeFiles/platform_ns.dir/build.make platform/CMakeFiles/platform_ns.dir/ext/target/beken/bk7239n/armino/driver/hal/aon_pmu_hal.o
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f platform/CMakeFiles/platform_s.dir/build.make platform/CMakeFiles/platform_s.dir/ext/target/beken/bk7239n/armino/driver/hal/aon_pmu_hal.o
@@ -1782,6 +1797,9 @@ help:
 	@echo "... ext/target/beken/armino/driver/wdt/wdt_driver.o"
 	@echo "... ext/target/beken/armino/driver/wdt/wdt_driver.i"
 	@echo "... ext/target/beken/armino/driver/wdt/wdt_driver.s"
+	@echo "... ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.o"
+	@echo "... ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.i"
+	@echo "... ext/target/beken/bk7239n/armino/driver/hal/25519_nsc.s"
 	@echo "... ext/target/beken/bk7239n/armino/driver/hal/aon_pmu_hal.o"
 	@echo "... ext/target/beken/bk7239n/armino/driver/hal/aon_pmu_hal.i"
 	@echo "... ext/target/beken/bk7239n/armino/driver/hal/aon_pmu_hal.s"

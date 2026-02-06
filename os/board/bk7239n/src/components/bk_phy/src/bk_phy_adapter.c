@@ -330,7 +330,7 @@ static uint32_t bk_flash_partition_get_rf_firmware_info(void)
 #if (CONFIG_OTP && CONFIG_PHY_RFCALI_TO_OTP)
     return 0;
 #else
-#if (CONFIG_RF_FIRMWARE_DYNAMIC_PARTITION && CONFIG_BK7239N_MP)
+#if (CONFIG_RF_FIRMWARE_DYNAMIC_PARTITION)
     uint32_t rf_partition_start_addr = bk_flash_get_capacity_bytes() - FLASH_RF_FIRMWARE_OFFSET;
     //bk_printf("rf_partition_start_addr=%x\r\n",rf_partition_start_addr);
     return rf_partition_start_addr;
@@ -804,11 +804,7 @@ const phy_os_funcs_t g_phy_os_funcs = {
     ._bk_pm_module_vote_cpu_freq       = bk_pm_module_vote_cpu_freq_phy,
 
     ._aon_pmu_drv_bias_cal_get         = aon_pmu_drv_bias_cal_get,
-#if CONFIG_BK7239N_MP
     ._aon_pmu_drv_band_cal_get         = aon_pmu_drv_band_cal_get,
-#else
-    ._aon_pmu_drv_band_cal_get         = NULL,
-#endif
     ._aon_pmu_drv_get_adc_cal          = aon_pmu_drv_get_adc_cal,
 
 #if (CONFIG_SOC_BK7236XX) || (CONFIG_SOC_BK7239XX) || (CONFIG_SOC_BK7286XX)

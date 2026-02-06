@@ -675,10 +675,10 @@ bk_err_t bk_i2c_init(i2c_id_t id, const i2c_config_t *cfg)
 	i2c_hal_configure(&s_i2c[id].hal, cfg);
 	i2c_hal_start_common(&s_i2c[id].hal);
 	I2C_LOGI("I2C(%d) init ok, baud_rate:%d\r\n", id, cfg->baud_rate);
-	if (cfg->src_clk == I2C_SCLK_APLL)
-		sys_drv_i2c_select_clock(id, I2C_SCLK_APLL);
+	if (cfg->src_clk == I2C_SCLK_80M)
+		sys_drv_i2c_select_clock(id, I2C_SCLK_80M);
 	else
-		sys_drv_i2c_select_clock(id, I2C_SCLK_XTAL_26M);
+		sys_drv_i2c_select_clock(id, I2C_SCLK_XTAL_40M);
 	return BK_OK;
 }
 

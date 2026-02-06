@@ -442,6 +442,60 @@ bk_err_t pwm_hal_set_group_config(const pwm_period_duty_config_t *config, pwm_ch
 	return BK_OK;
 }
 
+uint32_t pwm_hal_get_ccmr_chan_polarity(pwm_chan_t chan)
+{
+	uint32_t input_polarity = 0;
+
+	switch(chan) {
+	case 0:
+		input_polarity = pwm_ll_get_reg46_ch1p();
+		break;
+	case 1:
+		input_polarity = pwm_ll_get_reg46_ch3p();
+		break;
+	case 2:
+		input_polarity = pwm_ll_get_reg46_ch5p();
+		break;
+	case 3:
+		input_polarity = pwm_ll_get_reg86_ch1p();
+		break;
+	case 4:
+		input_polarity = pwm_ll_get_reg86_ch3p();
+		break;
+	case 5:
+		input_polarity = pwm_ll_get_reg86_ch5p();
+		break;
+	case 6:
+		input_polarity = pwm_ll_get_regc6_ch1p();
+		break;
+	case 7:
+		input_polarity = pwm_ll_get_regc6_ch3p();
+		break;
+	case 8:
+		input_polarity = pwm_ll_get_regc6_ch5p();
+		break;
+	case 9:
+		input_polarity = pwm_ll_get_reg106_ch1p();
+		break;
+	case 10:
+		input_polarity = pwm_ll_get_reg106_ch3p();
+		break;
+	case 11:
+		input_polarity = pwm_ll_get_reg106_ch5p();
+		break;
+	default:
+		break;
+	}
+
+	if (input_polarity == 0) {
+		return PWM_CAPTURE_POS;
+	} else if (input_polarity == 1) {
+		return PWM_CAPTURE_NEG;
+	} else {
+		return PWM_CAPTURE_EDGE;
+	}
+}
+
 bk_err_t pwm_hal_init_capture(pwm_chan_t chan, pwm_capture_edge_t edge)
 {
 	uint32_t input_polarity = 0;
@@ -809,6 +863,62 @@ uint32_t pwm_hal_get_tim_arr(pwm_chan_t tim_id)
 	return 0;
 }
 
+uint32_t pwm_hal_get_tim_input_level(pwm_chan_t tim_id)
+{
+	switch (tim_id) {
+	case 0:
+	case 1:
+	case 2:
+		return REG_READ(PWM_REG44_ADDR + ((0x40 * 0) << 2));
+	case 3:
+	case 4:
+	case 5:
+		return REG_READ(PWM_REG44_ADDR + ((0x40 * 1) << 2));
+	case 6:
+	case 7:
+	case 8:
+		return REG_READ(PWM_REG44_ADDR + ((0x40 * 2) << 2));
+	default:
+		return 0;
+	}
+
+	return 0;
+}
+
+uint32_t pwm_hal_get_capture_int_type(pwm_chan_t tim_id)
+{
+	switch (tim_id) {
+	case 0:
+		return pwm_ll_get_reg44_ch1eif();
+	case 1:
+		return pwm_ll_get_reg44_ch3eif();
+	case 2:
+		return pwm_ll_get_reg44_ch5eif();
+	case 3:
+		return pwm_ll_get_reg84_ch1eif();
+	case 4:
+		return pwm_ll_get_reg84_ch3eif();
+	case 5:
+		return pwm_ll_get_reg84_ch5eif();
+	case 6:
+		return pwm_ll_get_regc4_ch1eif();
+	case 7:
+		return pwm_ll_get_regc4_ch3eif();
+	case 8:
+		return pwm_ll_get_regc4_ch5eif();
+	case 9:
+		return pwm_ll_get_reg104_ch1eif();
+	case 10:
+		return pwm_ll_get_reg104_ch3eif();
+	case 11:
+		return pwm_ll_get_reg104_ch5eif();
+	default:
+		return 0;
+	}
+
+	return 0;
+}
+
 bk_err_t pwm_hal_set_fade_scale(pwm_chan_t tim_id, uint32_t value)
 {
 	switch (tim_id) {
@@ -1103,53 +1213,48 @@ bk_err_t pwm_hal_set_fade_enable(pwm_chan_t tim_id, uint32_t value)
 	return BK_OK;
 }
 
-uint64_t pwm_hal_get_pwm_interrupt_status(void)
+bk_err_t pwm_hal_get_pwm_interrupt_status(uint32_t *int_status, uint32_t group_num)
 {
-	uint64_t int_status = 0;
 	uint32_t int_status_tmp = 0;
 
-	for (uint32_t index = 0; index < 4; index++) {
-		int_status_tmp = 0;
+	for (uint32_t index = 0; index < group_num; index++) {
 		int_status_tmp = ((REG_READ(PWM_REG44_ADDR + ((0x40 * index) << 2))) & 0xffff);
-		int_status |= (int_status_tmp << (16 * index));
+		int_status[index] = 0;
+		int_status[index] = int_status_tmp;
 	}
-	return int_status;
+	return BK_OK;
 }
 
-bk_err_t pwm_hal_clear_interrupt_status(uint64_t status)
+bk_err_t pwm_hal_clear_interrupt_status(uint32_t *int_status, uint32_t group_num)
 {
-	uint32_t int_status_tmp = 0;
-
-	for (uint32_t index = 0; index < 4; index++) {
-		int_status_tmp = 0;
-		int_status_tmp |= ((status >> (16 * index)) & 0xffff);
-		if (int_status_tmp) {
-			REG_WRITE(PWM_REG44_ADDR + ((0x40 * index) << 2), int_status_tmp);
+	for (uint32_t index = 0; index < group_num; index++) {
+		if (int_status[index]) {
+			REG_WRITE(PWM_REG44_ADDR + ((0x40 * index) << 2), int_status[index]);
 		}
 	}
 
 	return BK_OK;
 }
 
-bool pwm_hal_is_uif_triggered(pwm_chan_t tim_id, uint64_t status)
+bool pwm_hal_is_uif_triggered(pwm_chan_t tim_id, uint32_t *status, uint32_t group_num)
 {
 	uint32_t int_status_tmp = 0;
 	uint32_t uif_int_status = 0;
 
-	for (uint32_t index = 0; index < 4; index++) {
-		int_status_tmp = ((status >> (9 + 16 * index)) & 0x7);
+	for (uint32_t index = 0; index < group_num; index++) {
+		int_status_tmp = ((status[index] >> 9) & 0x7);
 		uif_int_status |= (int_status_tmp << (3 * index));
 	}
 	return ((uif_int_status & BIT(tim_id)) ? true : false);
 }
 
-bool pwm_hal_is_cc1if_triggered(pwm_chan_t tim_id, uint64_t status)
+bool pwm_hal_is_cc1if_triggered(pwm_chan_t tim_id, uint32_t *status, uint32_t group_num)
 {
 	uint32_t int_status_tmp = 0;
 	uint32_t cc1if_int_status = 0;
 
-	for (uint32_t index = 0; index < 4; index++) {
-		int_status_tmp = ((status >> (16 * index)) & 0xffff);
+	for (uint32_t index = 0; index < group_num; index++) {
+		int_status_tmp = status[index] & 0xffff;
 		cc1if_int_status |= ((int_status_tmp >> 0) & 0x1) << (0 + 3 * index);
 		cc1if_int_status |= ((int_status_tmp >> 3) & 0x1) << (1 + 3 * index);
 		cc1if_int_status |= ((int_status_tmp >> 6) & 0x1) << (2 + 3 * index);
@@ -1167,3 +1272,72 @@ void pwm_hal_sync_all_shadow(void)
 	pwm_ll_set_reg4_sync_all(1);
 }
 
+#if CONFIG_PWM_PM_CB_SUPPORT
+void pwm_hal_pm_backup(uint32_t chan, uint32_t *pm_backup, uint32_t reg_count)
+{
+	if (reg_count < PWM_PM_BACKUP_REG_NUM) {
+		return;
+	}
+
+	uint32_t group_id = chan / SOC_PWM_CHAN_NUM_PER_GROUP;
+
+	pm_backup[0] = pwm_ll_get_reg2_value();
+	pm_backup[1] = pwm_ll_get_reg4_value();
+	pm_backup[2] = REG_READ(SOC_PWM_REG_BASE + ((0x10 + chan) << 2));
+	pm_backup[3] = REG_READ(SOC_PWM_REG_BASE + ((0x43 + (group_id * 0x40)) << 2));
+	pm_backup[4] = REG_READ(SOC_PWM_REG_BASE + ((0x45 + (group_id * 0x40)) << 2));
+	pm_backup[5] = REG_READ(SOC_PWM_REG_BASE + ((0x46 + (group_id * 0x40)) << 2));
+	pm_backup[6] = REG_READ(SOC_PWM_REG_BASE + ((0x4a + (group_id * 0x40)) << 2));
+
+	pm_backup[7] = REG_READ(SOC_PWM_REG_BASE + ((0x4b + (group_id * 0x40)) << 2));
+	pm_backup[8] = REG_READ(SOC_PWM_REG_BASE + ((0x51 + (group_id * 0x40)) << 2));
+	pm_backup[9] = REG_READ(SOC_PWM_REG_BASE + ((0x52 + (group_id * 0x40)) << 2));
+	pm_backup[10] = REG_READ(SOC_PWM_REG_BASE + ((0x53 + (group_id * 0x40)) << 2));
+
+	pm_backup[11] = REG_READ(SOC_PWM_REG_BASE + ((0x4c + (group_id * 0x40)) << 2));
+	pm_backup[12] = REG_READ(SOC_PWM_REG_BASE + ((0x54 + (group_id * 0x40)) << 2));
+	pm_backup[13] = REG_READ(SOC_PWM_REG_BASE + ((0x55 + (group_id * 0x40)) << 2));
+	pm_backup[14] = REG_READ(SOC_PWM_REG_BASE + ((0x56 + (group_id * 0x40)) << 2));
+
+	pm_backup[15] = REG_READ(SOC_PWM_REG_BASE + ((0x4d + (group_id * 0x40)) << 2));
+	pm_backup[16] = REG_READ(SOC_PWM_REG_BASE + ((0x57 + (group_id * 0x40)) << 2));
+	pm_backup[17] = REG_READ(SOC_PWM_REG_BASE + ((0x58 + (group_id * 0x40)) << 2));
+	pm_backup[18] = REG_READ(SOC_PWM_REG_BASE + ((0x59 + (group_id * 0x40)) << 2));
+
+	pm_backup[19] = REG_READ(SOC_PWM_REG_BASE + ((0x5a + (group_id * 0x40)) << 2));
+}
+
+void pwm_hal_pm_restore(uint32_t chan, uint32_t *pm_backup, uint32_t reg_count)
+{
+	if (reg_count < PWM_PM_BACKUP_REG_NUM) {
+		return;
+	}
+
+	uint32_t group_id = chan / SOC_PWM_CHAN_NUM_PER_GROUP;
+
+	pwm_ll_set_reg2_value(pm_backup[0]);
+	pwm_ll_set_reg4_value(pm_backup[1]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x10 + chan) << 2), pm_backup[2]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x43 + (group_id * 0x40)) << 2), pm_backup[3]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x45 + (group_id * 0x40)) << 2), pm_backup[4]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x46 + (group_id * 0x40)) << 2), pm_backup[5]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x4a + (group_id * 0x40)) << 2), pm_backup[6]);
+
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x4b + (group_id * 0x40)) << 2), pm_backup[7]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x51 + (group_id * 0x40)) << 2), pm_backup[8]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x52 + (group_id * 0x40)) << 2), pm_backup[9]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x53 + (group_id * 0x40)) << 2), pm_backup[10]);
+
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x4c + (group_id * 0x40)) << 2), pm_backup[11]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x54 + (group_id * 0x40)) << 2), pm_backup[12]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x55 + (group_id * 0x40)) << 2), pm_backup[13]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x56 + (group_id * 0x40)) << 2), pm_backup[14]);
+
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x4d + (group_id * 0x40)) << 2), pm_backup[15]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x57 + (group_id * 0x40)) << 2), pm_backup[16]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x58 + (group_id * 0x40)) << 2), pm_backup[17]);
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x59 + (group_id * 0x40)) << 2), pm_backup[18]);
+
+	REG_WRITE(SOC_PWM_REG_BASE + ((0x5a + (group_id * 0x40)) << 2), pm_backup[19]);
+}
+#endif

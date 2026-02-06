@@ -149,6 +149,23 @@ endif()
 
 endif()
 
+	list(APPEND incs
+		ed25519/src
+	)
+
+	list(APPEND srcs
+		ed25519/src/add_scalar.c
+		ed25519/src/fe.c
+		ed25519/src/ge.c
+		ed25519/src/key_exchange.c
+		ed25519/src/keypair.c
+		ed25519/src/sc.c
+		ed25519/src/seed.c
+		ed25519/src/sha512.c
+		ed25519/src/sign.c
+		ed25519/src/verify.c
+	)
+
 armino_component_register(SRCS "${srcs}"
 	INCLUDE_DIRS "${incs}"
 	PRIV_REQUIRES bk_common

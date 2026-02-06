@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-#include "partitions_gen.h"
+#include "partitions_gen_ns.h"
 #ifndef CONFIG_BL1_PHY_PARTITION_OFFSET
 #define CONFIG_BL1_PHY_PARTITION_OFFSET               0x0
 #define CONFIG_BL1_PHY_PARTITION_SIZE                 0x20000

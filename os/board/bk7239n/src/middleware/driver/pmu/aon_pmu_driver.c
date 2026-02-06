@@ -173,7 +173,7 @@ void aon_pmu_driver_dump_time(void)
 {
 	uint32_t por_timing = aon_pmu_hal_get_por_timing();
 	s_por_timing_ms = por_timing * 100;
-	os_printf("Por Timing: %dms\r\n", s_por_timing_ms);
+	os_printf("Por Timing: %dms RTC: %dms\r\n", s_por_timing_ms, aon_pmu_hal_rtc_tick_l_get()/32);
 }
 
 uint32_t aon_pmu_driver_get_por_timing(void)

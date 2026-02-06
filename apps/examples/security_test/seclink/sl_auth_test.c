@@ -178,18 +178,18 @@ END_TEST_F
 
 TESTCASE_SETUP(x25519_compute)
 {
-	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_A));
+	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ED_25519, SL_TEST_ECDH_KEY_SLOT_A));
 
-	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_B));
+	ST_EXPECT_EQ(SECLINK_OK, sl_generate_key(g_hnd, HAL_KEY_ED_25519, SL_TEST_ECDH_KEY_SLOT_B));
 
 	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_key_a, SL_TEST_AUTH_MEM_SIZE));
 	ST_EXPECT_EQ(0, sl_test_malloc_buffer_priv(&g_key_a, SL_TEST_AUTH_MEM_SIZE));
 	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_key_b, SL_TEST_AUTH_MEM_SIZE));
 	ST_EXPECT_EQ(0, sl_test_malloc_buffer_priv(&g_key_b, SL_TEST_AUTH_MEM_SIZE));
 
-	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_A, &g_key_a));
+	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ED_25519, SL_TEST_ECDH_KEY_SLOT_A, &g_key_a));
 
-	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_B, &g_key_b));
+	ST_EXPECT_EQ(SECLINK_OK, sl_get_key(g_hnd, HAL_KEY_ED_25519, SL_TEST_ECDH_KEY_SLOT_B, &g_key_b));
 
 	g_ecdh_a.pubkey_x = (hal_data *)zalloc(sizeof(hal_data));
 	ST_EXPECT_NEQ(NULL, g_ecdh_a.pubkey_x);
@@ -221,9 +221,9 @@ END_TEST_F
 
 TESTCASE_TEARDOWN(x25519_compute)
 {
-	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_A));
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ED_25519, SL_TEST_ECDH_KEY_SLOT_A));
 
-	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519, SL_TEST_ECDH_KEY_SLOT_B));
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ED_25519, SL_TEST_ECDH_KEY_SLOT_B));
 
 	sl_test_free_buffer(&g_key_a);
 	sl_test_free_buffer(&g_key_b);
@@ -568,7 +568,9 @@ TESTCASE_SETUP(ed25519_sign)
 	hal_data pub_key = {&g_ed25519_pubkey, sizeof(g_ed25519_pubkey), NULL, 0};
 	hal_data priv_key = {&g_ed25519_privkey_only, sizeof(g_ed25519_privkey_only), NULL, 0};
 
-	ST_EXPECT_EQ(0, sl_set_key(g_hnd, HAL_KEY_ECC_25519, RW_SLOT_ENTRY, &pub_key, &priv_key));
+	ST_EXPECT_EQ(0, sl_set_key(g_hnd, HAL_KEY_ED_25519, RW_SLOT_ENTRY, &pub_key, &priv_key));
+	sl_test_print_buffer(g_ed25519_pubkey, sizeof(g_ed25519_pubkey), "yxt ed25519 pubkey");
+	sl_test_print_buffer(g_ed25519_privkey_only, sizeof(g_ed25519_privkey_only), "yxt ed25519 privkey");
 	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_ecdsa_signature, SL_TEST_AUTH_MEM_SIZE));
 	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_ecdsa_hash, SL_TEST_ECC_HASH_LEN));
 	g_ecdsa_hash.data_len = SL_TEST_ECC_HASH_LEN;
@@ -581,7 +583,7 @@ END_TEST_F
 
 TESTCASE_TEARDOWN(ed25519_sign)
 {
-	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519, RW_SLOT_ENTRY));
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ED_25519, RW_SLOT_ENTRY));
 
 	sl_test_free_buffer(&g_ecdsa_hash);
 	sl_test_free_buffer(&g_ecdsa_signature);
@@ -591,6 +593,8 @@ END_TEST_F
 START_TEST_F(ed25519_sign)
 {
 	ST_EXPECT_EQ(SECLINK_OK, sl_ecdsa_sign_md(g_hnd, g_ecdsa_mode, &g_ecdsa_hash, RW_SLOT_ENTRY, &g_ecdsa_signature));
+	sl_test_print_buffer(g_ecdsa_hash.data, g_ecdsa_hash.data_len, "yxt ed25519 hash");
+	sl_test_print_buffer(g_ecdsa_signature.data, g_ecdsa_signature.data_len, "yxt ed25519_signature");
 }
 END_TEST_F
 
@@ -599,7 +603,7 @@ TESTCASE_SETUP(ed25519_verify)
 	hal_data pub_key = {&g_ed25519_pubkey, sizeof(g_ed25519_pubkey), NULL, 0};
 	hal_data priv_key = {&g_ed25519_privkey_only, sizeof(g_ed25519_privkey_only), NULL, 0};
 
-	ST_EXPECT_EQ(0, sl_set_key(g_hnd, HAL_KEY_ECC_25519, RW_SLOT_ENTRY, &pub_key, &priv_key));
+	ST_EXPECT_EQ(0, sl_set_key(g_hnd, HAL_KEY_ED_25519, RW_SLOT_ENTRY, &pub_key, &priv_key));
 
 	ST_EXPECT_EQ(0, sl_test_malloc_buffer(&g_ecdsa_signature, SL_TEST_AUTH_MEM_SIZE));
 
@@ -616,7 +620,7 @@ END_TEST_F
 
 TESTCASE_TEARDOWN(ed25519_verify)
 {
-	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ECC_25519, RW_SLOT_ENTRY));
+	ST_EXPECT_EQ(SECLINK_OK, sl_remove_key(g_hnd, HAL_KEY_ED_25519, RW_SLOT_ENTRY));
 
 	sl_test_print_buffer(g_ecdsa_hash.data, g_ecdsa_hash.data_len,
 						 "ed25519 hash");
@@ -673,7 +677,7 @@ void sl_handle_auth_ecdsa_signature(sl_options *opt)
 
 void sl_handle_auth_ecdsa_verify(sl_options *opt)
 {
-	ST_SET_SMOKE1(sl_auth, opt->count, 0, "ecdsa sign", ecdsa_verify);
+	ST_SET_SMOKE1(sl_auth, opt->count, 0, "ecdsa verify", ecdsa_verify);
 }
 
 void sl_handle_auth_ed25519_signature(sl_options *opt)
@@ -703,7 +707,7 @@ void sl_handle_auth_get_cert(sl_options *opt)
 
 void sl_handle_auth_remove_cert(sl_options *opt)
 {
-	ST_SET_SMOKE(sl_auth, opt->count, 0, "Get certificate", get_certificate);
+	ST_SET_SMOKE(sl_auth, opt->count, 0, "Remove certificate", remove_certificate);
 }
 
 void sl_handle_auth(sl_options *opt)

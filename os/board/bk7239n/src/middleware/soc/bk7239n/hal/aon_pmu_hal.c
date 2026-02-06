@@ -19,6 +19,7 @@
 #include "system_hw.h"
 #include "sys_types.h"
 #include "modules/pm.h"
+#include <soc/bk7239n/soc.h>
 
 bk_err_t aon_pmu_hal_init(void)
 {
@@ -94,27 +95,25 @@ __FLASH_BOOT_CODE uint32_t aon_pmu_hal_get_dpll_unlock(uint32_t *unlockL, uint32
 	return r7d.dpll_unlockL || r7d.dpll_unlockH;
 }
 
-__FLASH_BOOT_CODE uint32_t aon_pmu_hal_get_dpll_band()
+/* Flash version for early boot (in FLASH) */
+__FLASH_BOOT_CODE uint32_t aon_pmu_hal_get_dpll_band_flash()
+{
+	return aon_pmu_ll_get_r7d_dpll_band();
+}
+
+uint32_t aon_pmu_hal_get_dpll_band()
 {
 	return aon_pmu_ll_get_r7d_dpll_band();
 }
 
 __IRAM_SEC void aon_pmu_hal_reg_set(pmu_reg_e reg, uint32_t value)
 {
-    pmu_address_map_t pmu_addr_map[] = PMU_ADDRESS_MAP;
-    pmu_address_map_t *pmu_addr = &pmu_addr_map[reg];
-
-    uint32_t pmu_reg_addr = pmu_addr->reg_address;
-
+    uint32_t pmu_reg_addr = SOC_AON_PMU_REG_BASE + reg * 4;
 	REG_WRITE(pmu_reg_addr, value);
 }
 __IRAM_SEC uint32_t aon_pmu_hal_reg_get(pmu_reg_e reg)
 {
-    pmu_address_map_t pmu_addr_map[] = PMU_ADDRESS_MAP;
-    pmu_address_map_t *pmu_addr = &pmu_addr_map[reg];
-
-    uint32_t pmu_reg_addr = pmu_addr->reg_address;
-
+    uint32_t pmu_reg_addr = SOC_AON_PMU_REG_BASE + reg * 4;
 	return REG_READ(pmu_reg_addr);
 }
 
@@ -125,6 +124,7 @@ void aon_pmu_hal_wdt_rst_dev_enable()
 	aon_pmu_r2 = aon_pmu_ll_get_r2();
 	aon_pmu_r2 &= ~0x7;
 	aon_pmu_r2 |= 0x6;
+
 	aon_pmu_ll_set_r2(aon_pmu_r2);
 }
 
@@ -181,12 +181,11 @@ uint32_t aon_pmu_hal_bias_cal_get()
 	return aon_pmu_ll_get_r7e_cbcal();
 }
 
-uint32_t aon_pmu_hal_band_cal_get()
+__IRAM_SEC uint32_t aon_pmu_hal_band_cal_get()
 {
 	return aon_pmu_ll_get_r7e_band_cal();
 }
-
-uint32_t aon_pmu_hal_rtc_tick_h_get(void)
+__IRAM_SEC uint32_t aon_pmu_hal_rtc_tick_h_get(void)
 {
 	return aon_pmu_ll_get_r78_rtc_tick_h();
 }
@@ -242,6 +241,7 @@ void aon_pmu_hal_set_reset_reason(uint32_t value, bool write_immediately)
 		aon_pmu_ll_set_r0(r7b);
 		aon_pmu_ll_set_r0_reset_reason(value);
 		aon_pmu_hal_r0_latch_to_r7b();
+		delay_us(1);    //add delay to make sure ana value is set successfully
 		aon_pmu_ll_set_r0(r0);
 		aon_pmu_ll_set_r0_reset_reason(value);
 	} else {
@@ -316,24 +316,40 @@ void aon_pmu_hal_set_halt_cpu(uint32_t value)
 	aon_pmu_ll_set_r41_halt_cpu(value);
 }
 
-static uint32_t s_pmu_saved_regs[2] = {0};
+static uint32_t s_pmu_saved_regs[3] = {0};
 
-void aon_pmu_hal_backup(void)
+__IRAM_SEC void aon_pmu_hal_backup(void)
 {
 	aon_pmu_ll_set_r25(0x424B55AA);
 	aon_pmu_ll_set_r25(0xBDB4AA55);
 	s_pmu_saved_regs[0] = aon_pmu_ll_get_r40();
 	s_pmu_saved_regs[1] = aon_pmu_ll_get_r41();
+	s_pmu_saved_regs[2] = aon_pmu_ll_get_r2();
 }
 
-void aon_pmu_hal_restore(void)
+__IRAM_SEC void aon_pmu_hal_restore(void)
 {
 	uint32_t reg = aon_pmu_ll_get_r7b();
 	aon_pmu_ll_set_r0(reg);
 	aon_pmu_ll_set_r40(s_pmu_saved_regs[0]);
 	aon_pmu_ll_set_r41(s_pmu_saved_regs[1]);
+	aon_pmu_ll_set_r2(s_pmu_saved_regs[2]);
 }
 
+#if CONFIG_AON_PMU_POR_RTC_RESET
+void aon_pmu_hal_save_time(bool is_startup)
+{
+	uint32_t time = aon_pmu_ll_get_r79_rtc_tick_l() / 3200;
+	aon_pmu_ll_set_r0_saved_time(time);
+}
+
+uint32_t aon_pmu_hal_get_por_timing()
+{
+	uint32_t time = aon_pmu_ll_get_r0_saved_time();
+	aon_pmu_ll_set_r0_saved_time(0);
+	return time;
+}
+#else
 void aon_pmu_hal_save_time(bool is_startup)
 {
 	uint32_t time = aon_pmu_ll_get_r79_rtc_tick_l() / 3200; // unit=100ms
@@ -387,6 +403,7 @@ uint32_t aon_pmu_hal_get_por_timing(void)
 
 	return delta_time >= 0 ? delta_time : 0;
 }
+#endif
 
 uint32_t aon_pmu_hal_get_ana_gpio_status(void)
 {

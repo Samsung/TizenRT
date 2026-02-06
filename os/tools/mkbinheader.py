@@ -241,6 +241,14 @@ def make_user_binary_header():
         file_size = fp.tell()
         fp.close()
 
+        if util.get_value_from_file(cfg_path, "CONFIG_ARCH_CHIP_ARMINO=").rstrip('\n') != 'None':
+            padding_size = 32 - ((header_size + file_size + 4) % 32)
+            print("Beken user binary header padding")
+            print("crc_size: %d, header_size: %d, file_size: %d, padding_size: %d" % (4, header_size, file_size, padding_size))
+            if padding_size > 0:
+                data += b'\xff' * padding_size
+                file_size += padding_size
+
         if binary_format == 'elf' or binary_format == 'ELF' :
             bin_type = ELF
         else : # Not supported.
@@ -350,6 +358,14 @@ def make_common_binary_header():
         data = fp.read()
         file_size = fp.tell()
         fp.close()
+
+        if util.get_value_from_file(cfg_path, "CONFIG_ARCH_CHIP_ARMINO=").rstrip('\n') != 'None':
+            padding_size = 32 - ((header_size + file_size + 4) % 32)
+            print("Beken common binary header padding")
+            print("crc_size: %d, header_size: %d, file_size: %d, padding_size: %d" % (4, header_size, file_size, padding_size))
+            if padding_size > 0:
+                data += b'\xff' * padding_size
+                file_size += padding_size
 
         fp = open(file_path, 'wb')
 

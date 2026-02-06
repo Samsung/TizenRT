@@ -686,16 +686,17 @@ peripheral_group_t bk_gpio_get_wake_source_sub_type(void)
 {
 
 	gpio_id_t wakeup_gpio_id = ana_gpio_get_wakeup_pin();
-
+	
 	// Check if wakeup GPIO ID is valid
 	if (wakeup_gpio_id >= SOC_GPIO_NUM)
 	{
 		return PERIPHERAL_GROUP_NONE;
 	}
-
+	
 	return gpio_get_wakeup_peripheral_group(wakeup_gpio_id);
 
 }
+
 static void gpio_low_power_config(void);
 bk_err_t gpio_enter_low_power(void *param)
 {

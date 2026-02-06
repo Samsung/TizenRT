@@ -292,7 +292,8 @@
 											 *      erased state of the MTD cell */
 #define MTDIOC_ERASESECTORS	_MTDIOC(0x0006)	/* IN: Pointer to mtd_erase_s structure
 											 * OUT: None */
-
+#define MTDIOC_OTATESTBASE	_MTDIOC(0x0007)	/* IN:  None
+											 * OUT: None */
 /* TinyAra ARP driver ioctl definitions (see include/netinet/arp.h) *******************/
 
 #define _ARPIOCVALID(c)   (_IOC_TYPE(c) == _ARPIOCBASE)

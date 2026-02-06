@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <common/bk_include.h>
 #include <common/bk_compiler.h>
@@ -28,6 +30,8 @@
 #if defined(CONFIG_PWM_PM_CB_SUPPORT)
 #include <modules/pm.h>
 #endif
+
+#define PWM_CAPTURE_CACHE_NUM           50
 
 typedef struct {
 	pwm_chan_t chan1;
@@ -111,6 +115,21 @@ typedef enum {
 		}\
 	}\
 } while(0)
+
+#if CONFIG_PWM_PM_CB_SUPPORT
+#define PWM_PM_CHECK_RESTORE(id) do {\
+	GLOBAL_INT_DECLARATION();\
+	GLOBAL_INT_DISABLE();\
+	if (bk_pm_module_lv_sleep_state_get(PM_DEV_ID_PWM_1)) {\
+		bk_pm_module_vote_power_ctrl(PM_POWER_SUB_MODULE_NAME_BAKP_PWM0, PM_POWER_MODULE_STATE_ON);\
+		pwm_pm_restore(0, (void *)id);\
+		bk_pm_module_lv_sleep_state_clear(PM_DEV_ID_PWM_1);\
+	}\
+	GLOBAL_INT_RESTORE();\
+} while(0)
+#else
+#define PWM_PM_CHECK_RESTORE(id)
+#endif
 
 static bool s_pwm_driver_is_init = false;
 static pwm_driver_t s_pwm = {0};
@@ -255,6 +274,35 @@ static void pwm_chan_disable_interrupt_common(pwm_chan_t sw_ch)
 	pwm_hal_set_uie(sw_ch, 0);
 }
 
+#if (CONFIG_PWM_PM_CB_SUPPORT)
+static int pwm_pm_backup(uint64_t sleep_time, void *args)
+{
+	PWM_RETURN_ON_NOT_INIT();
+	uint32_t chan = (uint32_t)args;
+	if (!s_pwm.pm_bakeup_is_valid) {
+		pwm_hal_pm_backup(chan, s_pwm.pm_backup, PWM_PM_BACKUP_REG_NUM);
+		s_pwm.pm_bakeup_is_valid = 1;
+	}
+	sys_drv_dev_clk_pwr_up(CLK_PWR_ID_PWM_1, CLK_PWR_CTRL_PWR_DOWN);
+
+	return BK_OK;
+}
+
+static int pwm_pm_restore(uint64_t sleep_time, void *args)
+{
+	PWM_RETURN_ON_NOT_INIT();
+	uint32_t chan = (uint32_t)args;
+
+	sys_drv_dev_clk_pwr_up(CLK_PWR_ID_PWM_1, CLK_PWR_CTRL_PWR_UP);
+	if (s_pwm.pm_bakeup_is_valid) {
+		pwm_hal_pm_restore(chan, s_pwm.pm_backup, PWM_PM_BACKUP_REG_NUM);
+		s_pwm.pm_bakeup_is_valid = 0;
+	}
+
+	return BK_OK;
+}
+#endif
+
 bk_err_t bk_pwm_driver_init(void)
 {
 	if (s_pwm_driver_is_init) {
@@ -294,6 +342,7 @@ bk_err_t bk_pwm_init(pwm_chan_t chan, const pwm_init_config_t *config)
 {
 	BK_RETURN_ON_NULL(config);
 	PWM_RETURN_ON_NOT_INIT();
+	PWM_PM_CHECK_RESTORE(chan);
 
 	pwm_period_duty_config_t pwm_config = {0};
 	pwm_tim_map_t tim_map[] = PWM_CHAN_DEFAULT_TIM_MAP;
@@ -304,7 +353,7 @@ bk_err_t bk_pwm_init(pwm_chan_t chan, const pwm_init_config_t *config)
 		return BK_ERR_PWM_PERIOD_DUTY;
 
 #if (defined(CONFIG_PWM_PM_CB_SUPPORT))
-	pm_cb_conf_t enter_cfg = {pwm_pm_backup, (void *)id};
+	pm_cb_conf_t enter_cfg = {pwm_pm_backup, (void *)chan};
 
 	bk_pm_module_vote_power_ctrl(PM_POWER_SUB_MODULE_NAME_BAKP_PWM0, PM_POWER_MODULE_STATE_ON);
 	bk_pm_sleep_register_cb(PM_MODE_LOW_VOLTAGE, PM_DEV_ID_PWM_1, &enter_cfg, NULL);
@@ -375,6 +424,7 @@ bk_err_t bk_pwm_deinit(pwm_chan_t chan)
 
 bk_err_t bk_pwm_start(pwm_chan_t chan)
 {
+	PWM_PM_CHECK_RESTORE(chan);
 	pwm_hal_set_single_chan_tim_enable(chan, 1);
 
 	return BK_OK;
@@ -382,6 +432,7 @@ bk_err_t bk_pwm_start(pwm_chan_t chan)
 
 bk_err_t bk_pwm_stop(pwm_chan_t chan)
 {
+	PWM_PM_CHECK_RESTORE(chan);
 	pwm_hal_set_single_chan_tim_enable(chan, 0);
 
 	return BK_OK;
@@ -392,6 +443,7 @@ bk_err_t bk_pwm_set_period_duty(pwm_chan_t chan, pwm_period_duty_config_t *confi
 	BK_RETURN_ON_NULL(config);
 	PWM_RETURN_ON_INVALID_CHAN(chan);
 	PWM_RETURN_ON_CHAN_NOT_INIT(chan);
+	PWM_PM_CHECK_RESTORE(chan);
 
 	if (!pwm_driver_duty_is_valid(config->period_cycle, config->duty_cycle,
 								  config->duty2_cycle, config->duty3_cycle)) {
@@ -483,6 +535,8 @@ bk_err_t bk_pwm_group_init(const pwm_group_init_config_t *config, pwm_group_t *g
 {
 	BK_RETURN_ON_NULL(config);
 	BK_RETURN_ON_NULL(group);
+	PWM_PM_CHECK_RESTORE(config->chan1);
+	PWM_PM_CHECK_RESTORE(config->chan2);
 
 	int ret = BK_OK;
 	*group = PWM_GROUP_ID_INVALID;
@@ -555,6 +609,8 @@ bk_err_t bk_pwm_group_deinit(pwm_group_t group)
 bk_err_t bk_pwm_group_set_config(pwm_group_t group, const pwm_group_config_t *config)
 {
 	BK_RETURN_ON_NULL(config);
+	PWM_PM_CHECK_RESTORE(s_pwm.groups[group].chan1);
+	PWM_PM_CHECK_RESTORE(s_pwm.groups[group].chan2);
 
 	uint32_t dead_cycle = (config->period_cycle - config->chan1_duty_cycle - config->chan2_duty_cycle) >> 1;
 	pwm_period_duty_config_t pwm_config = {0};
@@ -602,6 +658,9 @@ bk_err_t bk_pwm_group_set_config(pwm_group_t group, const pwm_group_config_t *co
 
 bk_err_t bk_pwm_group_start(pwm_group_t group)
 {
+	PWM_PM_CHECK_RESTORE(s_pwm.groups[group].chan1);
+	PWM_PM_CHECK_RESTORE(s_pwm.groups[group].chan2);
+
 	pwm_hal_set_single_chan_tim_enable(group, 1);
 	PWM_LOGI("group(%d) start\r\n", group);
 
@@ -610,10 +669,53 @@ bk_err_t bk_pwm_group_start(pwm_group_t group)
 
 bk_err_t bk_pwm_group_stop(pwm_group_t group)
 {
+	PWM_PM_CHECK_RESTORE(s_pwm.groups[group].chan1);
+	PWM_PM_CHECK_RESTORE(s_pwm.groups[group].chan2);
+
 	pwm_hal_set_single_chan_tim_enable(group, 0);
 	PWM_LOGI("group(%d) stop\r\n", group);
 
 	return BK_OK;
+}
+
+static int compare(const void *a, const void *b)
+{
+	return (*(uint32_t *)a - *(uint32_t *)b);
+}
+
+static uint32_t find_most_freq(uint32_t arr[], uint32_t num, uint32_t *max_count)
+{
+	if (num == 0) {
+		*max_count = 0;
+		return 0xff;
+	}
+
+	qsort(arr, num, sizeof(uint32_t), compare);
+
+	uint32_t max_freq_number = arr[0];
+	uint32_t current_number = arr[0];
+	uint32_t current_count = 1;
+	*max_count = 1;
+
+	for (uint32_t i = 0; i < num; i++) {
+		if (arr[i] == current_number) {
+			current_count++;
+		} else {
+			if (current_count > *max_count) {
+				*max_count = current_count;
+				max_freq_number = current_number;
+			}
+			current_number = arr[i];
+			current_count = 1;
+		}
+	}
+
+	if (current_count > *max_count) {
+		*max_count = current_count;
+		max_freq_number =  current_number;
+	}
+
+	return max_freq_number;
 }
 
 bk_err_t bk_pwm_capture_init(pwm_chan_t chan, const pwm_capture_init_config_t *config)
@@ -621,6 +723,7 @@ bk_err_t bk_pwm_capture_init(pwm_chan_t chan, const pwm_capture_init_config_t *c
 	BK_RETURN_ON_NULL(config);
 	PWM_RETURN_ON_INVALID_CHAN(chan);
 
+	bk_err_t ret = 0;
 	pwm_capture_tim_map_t cap_map[] = PWM_CAPTURE_DEFAULT_TIM_MAP;
 
 	pwm_chan_init_common(chan);
@@ -628,6 +731,10 @@ bk_err_t bk_pwm_capture_init(pwm_chan_t chan, const pwm_capture_init_config_t *c
 	pwm_hal_chan_alloc_io(cap_map[chan].sw_ch, cap_map[chan].tim_cap_ch);
 	pwm_hal_init_capture(chan, config->edge);
 	s_pwm_isr[chan] = config->isr;
+	if (s_pwm.capture_sema == NULL) {
+		ret = rtos_init_semaphore(&(s_pwm.capture_sema), 1);
+		BK_ASSERT(kNoErr == ret); /* ASSERT VERIFIED */
+	}
 
 	return BK_OK;
 }
@@ -639,6 +746,11 @@ bk_err_t bk_pwm_capture_deinit(pwm_chan_t chan)
 	pwm_hal_set_single_chan_tim_enable(chan, 0);
 	pwm_hal_set_cc1ie(chan, 0);
 	s_pwm_isr[chan] = NULL;
+	if (s_pwm.capture_sema) {
+		rtos_deinit_semaphore(&(s_pwm.capture_sema));
+		s_pwm.capture_sema = NULL;
+	}
+
 	return BK_OK;
 }
 
@@ -667,7 +779,62 @@ uint32_t bk_pwm_capture_get_value(pwm_chan_t chan)
 
 uint32_t bk_pwm_capture_get_period_duty_cycle(pwm_chan_t chan, uint32_t timeout_ms)
 {
-	return 0;
+	bk_err_t ret = BK_OK;
+	uint32_t ccr1_shadow = 0;
+	uint32_t capture_int_type = 0;
+	uint32_t capture_edge = 0;
+	uint32_t max_count = 0;
+	uint32_t most_freq = 0;
+	uint32_t most_level = 0;
+	uint32_t ccr_shadow_array[PWM_CAPTURE_CACHE_NUM] = {0};
+	uint32_t level_array[PWM_CAPTURE_CACHE_NUM] = {0};
+	static uint32_t period_cycle = 0;
+
+	capture_edge = pwm_hal_get_ccmr_chan_polarity(chan);
+	if (capture_edge == PWM_CAPTURE_POS || capture_edge == PWM_CAPTURE_NEG) {
+		for (int i = 0; i < PWM_CAPTURE_CACHE_NUM; i++) {
+			pwm_hal_set_cc1ie(chan, 1);
+			ret = rtos_get_semaphore(&s_pwm.capture_sema, timeout_ms);
+			if (ret != kNoErr) {
+				break;
+			}
+			ccr1_shadow = pwm_hal_get_ccr1_shadow(chan);
+			ccr_shadow_array[i] = ccr1_shadow;
+		}
+		pwm_hal_set_cc1ie(chan, 0);
+		period_cycle = find_most_freq(ccr_shadow_array, PWM_CAPTURE_CACHE_NUM, &max_count);
+		return period_cycle;
+	}
+
+	if (period_cycle == 0) {
+		PWM_LOGW("pwm_capture, period_cycle:0\r\n");
+		return 0;
+	}
+
+	os_memset(&ccr_shadow_array, 0, sizeof(ccr_shadow_array));
+	os_memset(&level_array, 0, sizeof(level_array));
+	for (int i = 0; i < PWM_CAPTURE_CACHE_NUM; i++) {
+		pwm_hal_set_cc1ie(chan, 1);
+		ret = rtos_get_semaphore(&s_pwm.capture_sema, timeout_ms);
+		if (ret != kNoErr) {
+			break;
+		}
+		ccr1_shadow = pwm_hal_get_ccr1_shadow(chan);
+		capture_int_type = pwm_hal_get_capture_int_type(chan);
+
+		ccr_shadow_array[i] = ccr1_shadow;
+		level_array[i] = capture_int_type;
+	}
+
+	pwm_hal_set_cc1ie(chan, 0);
+	most_freq = find_most_freq(ccr_shadow_array, PWM_CAPTURE_CACHE_NUM, &max_count);
+	most_level = find_most_freq(level_array, PWM_CAPTURE_CACHE_NUM, &max_count);
+
+	if (most_level) {
+		return most_freq;
+	} else {
+		return period_cycle - most_freq;
+	}
 }
 
 #if defined(CONFIG_PWM_PHASE_SHIFT)
@@ -1086,21 +1253,23 @@ bk_err_t bk_pwm_fade_stop(pwm_chan_t chan)
 
 static void pwm_isr_common(pwm_unit_t id)
 {
-	uint64_t int_status;
+	uint32_t int_status[SOC_PWM_GROUP_NUM] = {0};
 
-	int_status = pwm_hal_get_pwm_interrupt_status();
-	PWM_LOGD("int_status:%llx\r\n", int_status);
-	pwm_hal_clear_interrupt_status(int_status);
+	pwm_hal_get_pwm_interrupt_status(int_status, SOC_PWM_GROUP_NUM);
+	pwm_hal_clear_interrupt_status(int_status, SOC_PWM_GROUP_NUM);
 
 	for (uint32_t index = 0; index < SOC_PWM_TIM_NUM; index++) {
-		if (pwm_hal_is_cc1if_triggered(index, int_status)) {
-			pwm_hal_set_cc1ie(index, 0);
+		if (pwm_hal_is_cc1if_triggered(index, int_status, SOC_PWM_GROUP_NUM)) {
+			// pwm_hal_set_cc1ie(index, 0);
+			if (s_pwm.capture_sema) {
+				rtos_set_semaphore(&s_pwm.capture_sema);
+			}
 			if (s_pwm_isr[index]) {
 				s_pwm_isr[index](index);
 			}
 		}
 
-		if (pwm_hal_is_uif_triggered(index, int_status)) {
+		if (pwm_hal_is_uif_triggered(index, int_status, SOC_PWM_GROUP_NUM)) {
 			if (s_pwm_isr[index]) {
 				s_pwm_isr[index](index);
 			}

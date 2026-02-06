@@ -38,21 +38,28 @@
 
 #include <binary_manager/binary_manager.h>
 
-/* Kernel, common binary information for update test */
+/* For ERROR and OK definitions */
+#include <errno.h>
+#include <sys/types.h>
+
+/* Kernel binary information for update test */
 #define KERNEL                  "kernel"
-#define COMMON                  "common"
 
-/* App binary information for update test */
+/* Common/app1/app2 binary names for testing */
+/* Kernel / Common / App1 / App2 binary must be set at once */
+#define COMMON                   "common"
+#define APP1                     "app1"
+#define APP2                     "app2"
 
-#ifdef CONFIG_APP1_BIN_NAME
-#define APP1_NAME                  CONFIG_APP1_BIN_NAME
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+char *bin_names[] = {KERNEL, COMMON, APP1, APP2};
+uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP, BINARY_USERAPP};
+#else
+char *bin_names[] = {KERNEL, APP1, APP2};
+uint8_t bin_types[] = {BINARY_KERNEL, BINARY_USERAPP, BINARY_USERAPP};
 #endif
 
-#if (CONFIG_NUM_APPS > 1)
-#ifdef CONFIG_APP2_BIN_NAME
-#define APP2_NAME                  CONFIG_APP2_BIN_NAME
-#endif
-#endif
+int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
 
 #define EXEC_FINITE                 0
 #define EXEC_INFINITE               1
@@ -62,6 +69,8 @@
 
 #define CHECKSUM_SIZE               4
 #define BUFFER_SIZE                 512
+#define USER_SIGN_APPEND_SIZE       32
+#define BUFFER_4K_SIZE              4096
 
 static volatile bool is_running;
 static volatile bool inf_flag = true;
@@ -71,7 +80,7 @@ static int update_type_flag = 0;
 static void binary_update_cb(void)
 {
 	printf(" ==========================================================================\n");
-	printf("   The state changed callback is executed in WIFI. %s state is changed. \n", APP1_NAME);
+	printf("   The state changed callback is executed in WIFI. %s state is changed. \n", KERNEL);
 	printf(" ========================================================================= \n");
 }
 
@@ -100,11 +109,116 @@ static int binary_update_getinfo(char *name, binary_update_info_t *bin_info)
 	return ret;
 }
 
+#ifdef CONFIG_BINARY_SIGNING
+/**
+ * Copy source header region (first BUFFER_4K_SIZE bytes) from source partition to
+ * download partition. Used for common/app binaries with sign header.
+ * Returns OK on success, ERROR on failure.
+ */
+static int copy_source_header_region_to_download(int read_fd, int write_fd)
+{
+	int ret;
+	char *buf = (char *)malloc(BUFFER_4K_SIZE);
+
+	if (buf == NULL) {
+		printf("Failed to malloc buffer for sign region copy\n");
+		return ERROR;
+	}
+
+#if CONFIG_FLASH_ENCRYPT_ENABLE
+	ret = ioctl(read_fd, MTDIOC_OTATESTBASE, (unsigned long)(true));
+	if (ret < 0) {
+		printf("Failed to ioctl MTDIOC_OTATESTBASE: %d\n", ret);
+		free(buf);
+		return ERROR;
+	}
+#endif
+
+	ret = lseek(read_fd, 0, SEEK_SET);
+	if (ret < 0) {
+		printf("Failed to lseek read_fd: %d, errno %d\n", ret, errno);
+		free(buf);
+		return ERROR;
+	}
+	ret = lseek(write_fd, 0, SEEK_SET);
+	if (ret < 0) {
+		printf("Failed to lseek write_fd: %d, errno %d\n", ret, errno);
+		free(buf);
+		return ERROR;
+	}
+
+	ret = read(read_fd, (FAR uint8_t *)buf, BUFFER_4K_SIZE);
+	if (ret != BUFFER_4K_SIZE) {
+		printf("Failed to read sign buffer: %d\n", ret);
+		free(buf);
+		return ERROR;
+	}
+
+	ret = write(write_fd, (FAR uint8_t *)buf, BUFFER_4K_SIZE);
+	if (ret != BUFFER_4K_SIZE) {
+		printf("Failed to write sign buffer: %d\n", ret);
+		free(buf);
+		return ERROR;
+	}
+	free(buf);
+	return OK;
+}
+#endif
+
+#if CONFIG_FLASH_ENCRYPT_ENABLE
+/**
+ * Skip bytes after sign region, then read header.
+ * Used when flash encrypt is on: read skip bytes with 4k buffer, lseek to
+ * CONFIG_USER_SIGN_PREPEND_SIZE, ioctl(MTDIOC_OTATESTBASE true), then read
+ * header into header_out.
+ * Returns OK on success, ERROR on failure.
+ */
+static int reread_source_header_data(int read_fd, int header_size,
+		FAR uint8_t *header_out, size_t header_out_size)
+{
+	int ret;
+	FAR char *buf = (FAR char *)malloc(BUFFER_4K_SIZE);
+	size_t skip_len = (BUFFER_4K_SIZE - CONFIG_USER_SIGN_PREPEND_SIZE - header_size);
+
+	if (buf == NULL) {
+		printf("Failed to malloc buffer for decrypt switch\n");
+		return ERROR;
+	}
+	memset(buf, 0, BUFFER_4K_SIZE);
+
+	ret = read(read_fd, buf, skip_len);
+	free(buf);
+	if (ret < 0 || (size_t)ret != skip_len) {
+		printf("Failed to read skip region: %d, errno %d\n", ret, errno);
+		return ERROR;
+	}
+
+	ret = lseek(read_fd, CONFIG_USER_SIGN_PREPEND_SIZE, SEEK_SET);
+	if (ret < 0) {
+		printf("Failed to lseek to sign base: %d, errno %d\n", ret, errno);
+		return ERROR;
+	}
+
+	ret = ioctl(read_fd, MTDIOC_OTATESTBASE, (unsigned long)(true));
+	if (ret < 0) {
+		printf("Failed to ioctl MTDIOC_OTATESTBASE: %d\n", ret);
+		return ERROR;
+	}
+
+	ret = read(read_fd, header_out, header_out_size);
+	if (ret < 0 || (size_t)ret != header_out_size) {
+		printf("Failed to read header after decrypt switch: %d\n", ret);
+		return ERROR;
+	}
+	return OK;
+}
+#endif
+
 static int binary_update_download_binary(binary_update_info_t *binary_info, bool version_up, int condition)
 {
 	int read_fd;
 	int write_fd;
-	int ret;
+	int ret = ERROR;
 	int total_size;
 	int copy_size;
 	int read_size;
@@ -140,8 +254,18 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		return ERROR;
 	}
 
+#ifdef CONFIG_BINARY_SIGNING
+	if ((strcmp(binary_info->name, "kernel") != 0)) {
+		ret = lseek(read_fd, CONFIG_USER_SIGN_PREPEND_SIZE, SEEK_SET);
+		if (ret < 0) {
+			printf("Failed to lseek %d, errno %d\n", ret, errno);
+			ret = ERROR;
+			goto errout_with_close_fd1;
+		}
+	}
+#endif
 	/* Determine binary type and read appropriate header */
-	if (strcmp(binary_info->name, KERNEL) == 0) {
+	if (strcmp(binary_info->name, "kernel") == 0) {
 		/* Kernel binary */
 		ret = read(read_fd, (FAR uint8_t *)&header_data.kernel_header, sizeof(kernel_binary_header_t));
 		if (ret != sizeof(kernel_binary_header_t)) {
@@ -152,13 +276,13 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		header_size = sizeof(kernel_binary_header_t);
 		binary_size = header_data.kernel_header.binary_size;
 		version = header_data.kernel_header.version;
-		
+
 		if (version_up) {
 			printf("current version: %d\n", header_data.kernel_header.version);
 			header_data.kernel_header.version = binary_info->version + 1;
 			printf("new version: %d\n", header_data.kernel_header.version);
 		}
-	} else if (strcmp(binary_info->name, COMMON) == 0) {
+	} else if (strcmp(binary_info->name, "common") == 0) {
 		/* Common binary */
 		ret = read(read_fd, (FAR uint8_t *)&header_data.common_header, sizeof(common_binary_header_t));
 		if (ret != sizeof(common_binary_header_t)) {
@@ -169,12 +293,20 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		header_size = sizeof(common_binary_header_t);
 		binary_size = header_data.common_header.bin_size;
 		version = header_data.common_header.version;
-		
+
 		if (version_up) {
 			printf("current version: %d\n", header_data.common_header.version);
 			header_data.common_header.version = binary_info->version + 1;
 			printf("new version: %d\n", header_data.common_header.version);
 		}
+#if CONFIG_FLASH_ENCRYPT_ENABLE
+		ret = reread_source_header_data(read_fd, header_size,
+				(FAR uint8_t *)&header_data.common_header, sizeof(common_binary_header_t));
+		if (ret != OK) {
+			ret = ERROR;
+			goto errout_with_close_fd1;
+		}
+#endif
 	} else {
 		/* User application binary (app1, app2, etc.) */
 		ret = read(read_fd, (FAR uint8_t *)&header_data.user_header, sizeof(user_binary_header_t));
@@ -186,12 +318,20 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		header_size = sizeof(user_binary_header_t);
 		binary_size = header_data.user_header.bin_size;
 		version = header_data.user_header.bin_ver;
-		
+
 		if (version_up) {
 			printf("current version: %d\n", header_data.user_header.bin_ver);
 			header_data.user_header.bin_ver = binary_info->version + 1;
 			printf("new version: %d\n", header_data.user_header.bin_ver);
 		}
+#if CONFIG_FLASH_ENCRYPT_ENABLE
+		ret = reread_source_header_data(read_fd, header_size,
+				(FAR uint8_t *)&header_data.user_header, sizeof(user_binary_header_t));
+		if (ret != OK) {
+			ret = ERROR;
+			goto errout_with_close_fd1;
+		}
+#endif
 	}
 
 	ret = binary_manager_get_download_path(binary_info->name, download_path);
@@ -203,13 +343,23 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		printf("path to %s's inactive partition %s\n", binary_info->name, download_path);
 	}
 
-
 	write_fd = open(download_path, O_WRONLY);
 	if (write_fd < 0) {
 		printf("Failed to open %s: errno %d\n", download_path, get_errno());
 		ret = ERROR;
 		goto errout_with_close_fd1;
 	}
+
+#ifdef CONFIG_BINARY_SIGNING
+	if ((strcmp(binary_info->name, "kernel") != 0)) {
+		ret = lseek(write_fd, CONFIG_USER_SIGN_PREPEND_SIZE, SEEK_SET);
+		if (ret < 0) {
+			printf("Failed to lseek %d, errno %d\n", ret, errno);
+			ret = ERROR;
+			goto errout_with_close_fd2;
+		}
+	}
+#endif
 
 	/* Write the binary header based on type */
 	if (strcmp(binary_info->name, "kernel") == 0) {
@@ -280,7 +430,17 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		ret = ERROR;
 		goto errout_with_close_fd2;
 	}
-	
+
+#ifdef CONFIG_BINARY_SIGNING
+	if ((strcmp(binary_info->name, "kernel") != 0) && (condition == DOWNLOAD_VALID_BIN)) {
+		ret = copy_source_header_region_to_download(read_fd, write_fd);
+		if (ret != OK) {
+			ret = ERROR;
+			goto errout_with_close_fd2;
+		}
+	}
+#endif
+
 	/* Print version based on binary type */
 	if (strcmp(binary_info->name, "kernel") == 0) {
 		printf("Download binary %s version %d Done!\n", binary_info->name, header_data.kernel_header.version);
@@ -294,6 +454,15 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 errout_with_close_fd2:
 	close(write_fd);
 errout_with_close_fd1:
+#if CONFIG_FLASH_ENCRYPT_ENABLE
+	if(strcmp(binary_info->name, "kernel") != 0) {
+		ret = ioctl(read_fd, MTDIOC_OTATESTBASE, (unsigned long)(false));
+		if (ret < 0) {
+			printf("Failed to ioctl MTDIOC_OTATESTBASE: %d\n", ret);
+			ret = ERROR;
+		}
+	}
+#endif
 	close(read_fd);
 errout:
 	if (ret < 0) {
@@ -454,28 +623,33 @@ static int binary_update_unregister_state_changed_callback(void)
 	return ret;
 }
 
-static int binary_update_same_version_test(char *bin_name)
+static int binary_update_same_version_test(void)
 {
 	int ret;
-	binary_update_info_t pre_bin_info;
-	binary_update_info_t cur_bin_info;
+	binary_update_info_t pre_bin_info[3];
+	binary_update_info_t cur_bin_info[3];
+	int i;
 	update_type_flag = 0;
 
 	printf("\n** Binary Update Same Version Test. **\n");
 
-	/* Get pre-update info for app binary */
-	ret = binary_update_getinfo(bin_name, &pre_bin_info);
-	if (ret != OK) {
-		printf("Failed to get pre-update info for %s\n", bin_name);
-		return ret;
+	/* Get pre-update info for all binaries */
+	for (i = 0; i < bin_count; i++) {
+		ret = binary_update_getinfo(bin_names[i], &pre_bin_info[i]);
+		if (ret != OK) {
+			printf("Failed to get pre-update info for %s\n", bin_names[i]);
+			return ret;
+		}
 	}
-
 	/* Download and set bootparam for all binaries with same version */
-	printf("\n** Download and set bootparam for APP1 binary. (same version) **\n");
-	ret = download_binary_and_set_bootparam(bin_name, false, DOWNLOAD_VALID_BIN, BINARY_USERAPP);
-	if (ret != OK) {
-		printf("Failed to download and set bootparam for %s\n", bin_name);
-		return ret;
+	printf("\n** Download and set bootparam for kernel binary. (same version) **\n");
+	printf("** (Both common and app1 binary will be updated with same version) **\n");
+	for (i = 0; i < bin_count; i++) {
+		ret = download_binary_and_set_bootparam(bin_names[i], false, DOWNLOAD_VALID_BIN, bin_types[i]);
+		if (ret != OK) {
+			printf("Failed to download and set bootparam for %s\n", bin_names[i]);
+			return ret;
+		}
 	}
 
 	ret = binary_update_reload();
@@ -485,94 +659,60 @@ static int binary_update_same_version_test(char *bin_name)
 	}
 
 	/* Get post-update info and check results for all binaries */
-	ret = binary_update_getinfo(bin_name, &cur_bin_info);
-	if (ret != OK) {
-		printf("Failed to get post-update info for %s\n", bin_name);
-		return ret;
-	}
+	for (i = 0; i < bin_count; i++) {
+		ret = binary_update_getinfo(bin_names[i], &cur_bin_info[i]);
+		if (ret != OK) {
+			printf("Failed to get post-update info for %s\n", bin_names[i]);
+			return ret;
+		}
 
-	ret = binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_INVALID_BIN);
-	if (ret != OK) {
-		printf("Same version test failed for %s\n", bin_name);
-		return ret;
+		ret = binary_update_check_test_result(&pre_bin_info[i], &cur_bin_info[i], DOWNLOAD_INVALID_BIN);
+		if (ret != OK) {
+			printf("Same version test failed for %s\n", bin_names[i]);
+			return ret;
+		}
 	}
 
 	printf("Same version test passed for all binaries\n");
 	return OK;
 }
 
-static int binary_update_new_version_test(char *bin_name)
+static int binary_update_new_version_test(void)
 {
 	int ret;
-	binary_update_info_t pre_bin_info;
-	binary_update_info_t cur_bin_info;
+	binary_update_info_t pre_bin_info[3];
+	binary_update_info_t cur_bin_info[3];
+	int i;
 	update_type_flag = 0;
-	bool version_up;
 
 	printf("\n** Binary Update New Version Test. **\n");
 
 	/* Get pre-update info for all binaries */
-	ret = binary_update_getinfo(bin_name, &pre_bin_info);
-	if (ret != OK) {
-		printf("Failed to get pre-update info for %s\n", bin_name);
-		return ret;
+	for (i = 0; i < bin_count; i++) {
+		ret = binary_update_getinfo(bin_names[i], &pre_bin_info[i]);
+		if (ret != OK) {
+			printf("Failed to get pre-update info for %s\n", bin_names[i]);
+			return ret;
+		}
 	}
 
 	/* Download and set bootparam for all binaries with new version */
-	printf("\n** Download and set bootparam for app binary. (new version) **\n");
-	version_up = true;
-	ret = download_binary_and_set_bootparam(bin_name, version_up, DOWNLOAD_VALID_BIN, BINARY_USERAPP);
-	if (ret != OK) {
-		printf("Failed to download and set bootparam for %s\n", bin_name);
-		return ret;
-	}
-
-	ret = binary_update_reload();
-	if (ret != OK) {
-		return ret;
-	}
-
-	/* Get post-update info and check results for all binaries */
-	ret = binary_update_getinfo(bin_name, &cur_bin_info);
-	if (ret != OK) {
-		printf("Failed to get post-update info for %s\n", bin_name);
-		return ret;
-	}
-
-	ret = binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_VALID_BIN);
-	if (ret != OK) {
-		printf("New version test failed for %s\n", bin_name);
-		return ret;
-	}
-
-	printf("New version test passed for all binaries\n");
-	return OK;
-}
-
-static int binary_update_invalid_binary_test(char *bin_name)
-{
-	int ret;
-	binary_update_info_t pre_bin_info;
-	binary_update_info_t cur_bin_info;
-	update_type_flag = 0;
-	int condition;
-
-	printf("\n** Binary Update Invalid binary update Test. **\n");
-
-	/* Get pre-update info for all binaries */
-	ret = binary_update_getinfo(bin_name, &pre_bin_info);
-	if (ret != OK) {
-		printf("Failed to get pre-update info for %s\n", bin_name);
-		return ret;
-	}
-
-	/* Download and set bootparam for all binaries with invalid CRC (Only app1 or app2 binary is invalid) */
-	printf("\n** Download and set bootparam for app binary. (invalid CRC) **\n");
-	condition = DOWNLOAD_INVALID_BIN;
-	ret = download_binary_and_set_bootparam(bin_name, true, condition, BINARY_USERAPP);
-	if (ret != OK) {
-		printf("Failed to download and set bootparam for %s\n", bin_name);
-		return ret;
+	printf("\n** Download and set bootparam for kernel binary. (new version) **\n");
+	printf("** (Both common and app1 binary will be updated with same version) **\n");
+	for (i = 0; i < bin_count; i++) {
+#ifdef CONFIG_BINARY_SIGNING
+		bool version_up = false;
+#else
+		bool version_up = true;
+#endif
+		if (strcmp(bin_names[i], KERNEL) == 0) {
+			version_up = true;
+		}
+		ret = download_binary_and_set_bootparam(bin_names[i], version_up, DOWNLOAD_VALID_BIN, bin_types[i]);
+		if (ret != OK) {
+			printf("Failed to download and set bootparam for %s\n", bin_names[i]);
+			return ret;
+		}
 	}
 
 	ret = binary_update_reload();
@@ -582,16 +722,77 @@ static int binary_update_invalid_binary_test(char *bin_name)
 	}
 
 	/* Get post-update info and check results for all binaries */
-	ret = binary_update_getinfo(bin_name, &cur_bin_info);
+	for (i = 0; i < bin_count; i++) {
+		ret = binary_update_getinfo(bin_names[i], &cur_bin_info[i]);
+		if (ret != OK) {
+			printf("Failed to get post-update info for %s\n", bin_names[i]);
+			return ret;
+		}
+
+		ret = binary_update_check_test_result(&pre_bin_info[i], &cur_bin_info[i], DOWNLOAD_VALID_BIN);
+		if (ret != OK) {
+			printf("New version test failed for %s\n", bin_names[i]);
+			return ret;
+		}
+	}
+
+	printf("New version test passed for all binaries\n");
+	return OK;
+}
+
+static int binary_update_invalid_binary_test(void)
+{
+	int ret;
+	binary_update_info_t pre_bin_info[3];
+	binary_update_info_t cur_bin_info[3];
+	int i;
+	update_type_flag = 0;
+
+	printf("\n** Binary Update Invalid binary update Test. **\n");
+
+	/* Get pre-update info for all binaries */
+	for (i = 0; i < bin_count; i++) {
+		ret = binary_update_getinfo(bin_names[i], &pre_bin_info[i]);
+		if (ret != OK) {
+			printf("Failed to get pre-update info for %s\n", bin_names[i]);
+			return ret;
+		}
+	}
+
+	/* Download and set bootparam for all binaries with invalid CRC (Only kernel binary is invalid) */
+	printf("\n** Download and set bootparam for kernel binary. (invalid CRC) **\n");
+	printf("** (Both common and app1 binary will be updated with same version & valid CRC) **\n");
+	for (i = 0; i < bin_count; i++) {
+		int condition = DOWNLOAD_VALID_BIN;
+		if (strcmp(bin_names[i], KERNEL) == 0) {
+			condition = DOWNLOAD_INVALID_BIN;
+		}
+		ret = download_binary_and_set_bootparam(bin_names[i], true, condition, bin_types[i]);
+		if (ret != OK) {
+			printf("Failed to download and set bootparam for %s\n", bin_names[i]);
+			return ret;
+		}
+	}
+
+	ret = binary_update_reload();
 	if (ret != OK) {
-		printf("Failed to get post-update info for %s\n", bin_name);
+		printf("Failed to reload binaries\n");
 		return ret;
 	}
 
-	ret = binary_update_check_test_result(&pre_bin_info, &cur_bin_info, DOWNLOAD_INVALID_BIN);
-	if (ret != OK) {
-		printf("Invalid binary test failed for %s\n", bin_name);
-		return ret;
+	/* Get post-update info and check results for all binaries */
+	for (i = 0; i < bin_count; i++) {
+		ret = binary_update_getinfo(bin_names[i], &cur_bin_info[i]);
+		if (ret != OK) {
+			printf("Failed to get post-update info for %s\n", bin_names[i]);
+			return ret;
+		}
+
+		ret = binary_update_check_test_result(&pre_bin_info[i], &cur_bin_info[i], DOWNLOAD_INVALID_BIN);
+		if (ret != OK) {
+			printf("Invalid binary test failed for %s\n", bin_names[i]);
+			return ret;
+		}
 	}
 
 	printf("Invalid binary test passed for all binaries\n");
@@ -606,14 +807,14 @@ static void binary_update_run_tests(void)
 	binary_update_getinfo_all();
 
 	/* 2. Reload test with same version. */
-	ret = binary_update_same_version_test(APP1_NAME);
+	ret = binary_update_same_version_test();
 	if (ret != OK) {
 		printf("Same version test failed\n");
 		return ret;
 	}
 
 	/* 3. Reload test with invalid binary. */
-	ret = binary_update_invalid_binary_test(APP1_NAME);
+	ret = binary_update_invalid_binary_test();
 	if (ret != OK) {
 		printf("Invalid binary test failed\n");
 		return ret;
@@ -623,7 +824,7 @@ static void binary_update_run_tests(void)
 	binary_update_register_state_changed_callback();
 
 	/* 5. Reload test with new version. */
-	ret = binary_update_new_version_test(APP1_NAME);
+	ret = binary_update_new_version_test();
 	if (ret != OK) {
 		printf("New version test failed\n");
 		return ret;
@@ -690,11 +891,11 @@ void binary_update_test_with_type(const char *test_type)
 	}
 
 	if (strcmp(test_type, "same_version") == 0) {
-		binary_update_same_version_test(APP1_NAME);
+		binary_update_same_version_test();
 	} else if (strcmp(test_type, "new_version") == 0) {
-		binary_update_new_version_test(APP1_NAME);
+		binary_update_new_version_test();
 	} else if (strcmp(test_type, "invalid_binary") == 0) {
-		binary_update_invalid_binary_test(APP1_NAME);
+		binary_update_invalid_binary_test();
 	} else if (strcmp(test_type, "all_tests") == 0) {
 		binary_update_run_tests();
 	} else {
@@ -738,9 +939,9 @@ void binary_update_aging_test(void)
 		/* Iterate update test with random binary */
 		randval = rand();
 		if (randval % 2 == 0) {
-			ret = binary_update_new_version_test(APP1_NAME);
+			ret = binary_update_new_version_test();
 		} else {
-			ret = binary_update_new_version_test(APP2_NAME);
+			ret = binary_update_new_version_test();
 		}
 		if (ret != OK) {
 			break;

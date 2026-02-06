@@ -52,8 +52,8 @@
 #define APP2                     "app2"
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
-char *bin_names[] = {KERNEL, COMMON, APP1};
-uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP};
+char *bin_names[] = {KERNEL, COMMON, APP1, APP2};
+uint8_t bin_types[] = {BINARY_KERNEL, BINARY_COMMON, BINARY_USERAPP, BINARY_USERAPP};
 #else
 char *bin_names[] = {KERNEL, APP1, APP2};
 uint8_t bin_types[] = {BINARY_KERNEL, BINARY_USERAPP, BINARY_USERAPP};
@@ -67,6 +67,7 @@ int bin_count = sizeof(bin_names) / sizeof(bin_names[0]);
 
 #define CHECKSUM_SIZE               4
 #define BUFFER_SIZE                 512
+#define BUFFER_4K_SIZE              4096
 
 static int fail_cnt = 0;
 static int update_type_flag = 0;
@@ -96,11 +97,117 @@ static int binary_update_getinfo(char *name, binary_update_info_t *bin_info)
 	return ret;
 }
 
+#ifdef CONFIG_BINARY_SIGNING
+/**
+ * Copy source header region (first BUFFER_4K_SIZE bytes) from source partition to
+ * download partition. Used for common/app binaries with sign header.
+ * Returns OK on success, ERROR on failure.
+ */
+static int copy_source_header_region_to_download(int read_fd, int write_fd)
+{
+	int ret;
+	char *buf = (char *)malloc(BUFFER_4K_SIZE);
+
+	if (buf == NULL) {
+		printf("Failed to malloc buffer for sign region copy\n");
+		return ERROR;
+	}
+
+#if CONFIG_FLASH_ENCRYPT_ENABLE
+	ret = ioctl(read_fd, MTDIOC_OTATESTBASE, (unsigned long)(true));
+	if (ret < 0) {
+		printf("Failed to ioctl MTDIOC_OTATESTBASE: %d\n", ret);
+		free(buf);
+		return ERROR;
+	}
+#endif
+
+	ret = lseek(read_fd, 0, SEEK_SET);
+	if (ret < 0) {
+		printf("Failed to lseek read_fd: %d, errno %d\n", ret, errno);
+		free(buf);
+		return ERROR;
+	}
+	ret = lseek(write_fd, 0, SEEK_SET);
+	if (ret < 0) {
+		printf("Failed to lseek write_fd: %d, errno %d\n", ret, errno);
+		free(buf);
+		return ERROR;
+	}
+
+	ret = read(read_fd, (FAR uint8_t *)buf, BUFFER_4K_SIZE);
+	if (ret != BUFFER_4K_SIZE) {
+		printf("Failed to read sign buffer: %d\n", ret);
+		free(buf);
+		return ERROR;
+	}
+
+	ret = write(write_fd, (FAR uint8_t *)buf, BUFFER_4K_SIZE);
+	if (ret != BUFFER_4K_SIZE) {
+		printf("Failed to write sign buffer: %d\n", ret);
+		free(buf);
+		return ERROR;
+	}
+
+	free(buf);
+	return OK;
+}
+#endif
+
+#if CONFIG_FLASH_ENCRYPT_ENABLE
+/**
+ * Skip bytes after sign region, then read header.
+ * Used when flash encrypt is on: read skip bytes with 4k buffer, lseek to
+ * CONFIG_USER_SIGN_PREPEND_SIZE, ioctl(MTDIOC_OTATESTBASE true), then read
+ * header into header_out.
+ * Returns OK on success, ERROR on failure.
+ */
+static int reread_source_header_data(int read_fd, int header_size,
+		FAR uint8_t *header_out, size_t header_out_size)
+{
+	int ret;
+	FAR char *buf = (FAR char *)malloc(BUFFER_4K_SIZE);
+	size_t skip_len = (BUFFER_4K_SIZE - CONFIG_USER_SIGN_PREPEND_SIZE - header_size);
+
+	if (buf == NULL) {
+		printf("Failed to malloc buffer for decrypt switch\n");
+		return ERROR;
+	}
+	memset(buf, 0, BUFFER_4K_SIZE);
+
+	ret = read(read_fd, buf, skip_len);
+	free(buf);
+	if (ret < 0 || (size_t)ret != skip_len) {
+		printf("Failed to read skip region: %d, errno %d\n", ret, errno);
+		return ERROR;
+	}
+
+	ret = lseek(read_fd, CONFIG_USER_SIGN_PREPEND_SIZE, SEEK_SET);
+	if (ret < 0) {
+		printf("Failed to lseek to sign base: %d, errno %d\n", ret, errno);
+		return ERROR;
+	}
+
+	ret = ioctl(read_fd, MTDIOC_OTATESTBASE, (unsigned long)(true));
+	if (ret < 0) {
+		printf("Failed to ioctl MTDIOC_OTATESTBASE: %d\n", ret);
+		return ERROR;
+	}
+
+	ret = read(read_fd, header_out, header_out_size);
+	if (ret < 0 || (size_t)ret != header_out_size) {
+		printf("Failed to read header after decrypt switch: %d\n", ret);
+		return ERROR;
+	}
+	return OK;
+}
+#endif
+
 static int binary_update_download_binary(binary_update_info_t *binary_info, bool version_up, int condition)
 {
 	int read_fd;
 	int write_fd;
-	int ret;
+	int ret = ERROR;
 	int total_size;
 	int copy_size;
 	int read_size;
@@ -108,14 +215,14 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 	uint8_t buffer[BUFFER_SIZE];
 	char origin_path[BINARY_PATH_LEN];
 	char download_path[BINARY_PATH_LEN];
-	
+
 	/* Union to handle different binary header types */
 	union {
 		user_binary_header_t user_header;
 		kernel_binary_header_t kernel_header;
 		common_binary_header_t common_header;
 	} header_data;
-	
+
 	int header_size;
 	uint32_t binary_size;
 	uint32_t version;
@@ -136,6 +243,16 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		return ERROR;
 	}
 
+#ifdef CONFIG_BINARY_SIGNING
+	if ((strcmp(binary_info->name, "kernel") != 0)) {
+		ret = lseek(read_fd, CONFIG_USER_SIGN_PREPEND_SIZE, SEEK_SET);
+		if (ret < 0) {
+			printf("Failed to lseek %d, errno %d\n", ret, errno);
+			ret = ERROR;
+			goto errout_with_close_fd1;
+		}
+	}
+#endif
 	/* Determine binary type and read appropriate header */
 	if (strcmp(binary_info->name, "kernel") == 0) {
 		/* Kernel binary */
@@ -148,7 +265,7 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		header_size = sizeof(kernel_binary_header_t);
 		binary_size = header_data.kernel_header.binary_size;
 		version = header_data.kernel_header.version;
-		
+
 		if (version_up) {
 			printf("current version: %d\n", header_data.kernel_header.version);
 			header_data.kernel_header.version = binary_info->version + 1;
@@ -165,12 +282,20 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		header_size = sizeof(common_binary_header_t);
 		binary_size = header_data.common_header.bin_size;
 		version = header_data.common_header.version;
-		
+
 		if (version_up) {
 			printf("current version: %d\n", header_data.common_header.version);
 			header_data.common_header.version = binary_info->version + 1;
 			printf("new version: %d\n", header_data.common_header.version);
 		}
+#if CONFIG_FLASH_ENCRYPT_ENABLE
+		ret = reread_source_header_data(read_fd, header_size,
+				(FAR uint8_t *)&header_data.common_header, sizeof(common_binary_header_t));
+		if (ret != OK) {
+			ret = ERROR;
+			goto errout_with_close_fd1;
+		}
+#endif
 	} else {
 		/* User application binary (app1, app2, etc.) */
 		ret = read(read_fd, (FAR uint8_t *)&header_data.user_header, sizeof(user_binary_header_t));
@@ -182,12 +307,20 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		header_size = sizeof(user_binary_header_t);
 		binary_size = header_data.user_header.bin_size;
 		version = header_data.user_header.bin_ver;
-		
+
 		if (version_up) {
 			printf("current version: %d\n", header_data.user_header.bin_ver);
 			header_data.user_header.bin_ver = binary_info->version + 1;
 			printf("new version: %d\n", header_data.user_header.bin_ver);
 		}
+#if CONFIG_FLASH_ENCRYPT_ENABLE
+		ret = reread_source_header_data(read_fd, header_size,
+				(FAR uint8_t *)&header_data.user_header, sizeof(user_binary_header_t));
+		if (ret != OK) {
+			ret = ERROR;
+			goto errout_with_close_fd1;
+		}
+#endif
 	}
 
 	ret = binary_manager_get_download_path(binary_info->name, download_path);
@@ -205,6 +338,17 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		ret = ERROR;
 		goto errout_with_close_fd1;
 	}
+
+#ifdef CONFIG_BINARY_SIGNING
+	if ((strcmp(binary_info->name, "kernel") != 0)) {
+		ret = lseek(write_fd, CONFIG_USER_SIGN_PREPEND_SIZE, SEEK_SET);
+		if (ret < 0) {
+			printf("Failed to lseek %d, errno %d\n", ret, errno);
+			ret = ERROR;
+			goto errout_with_close_fd2;
+		}
+	}
+#endif
 
 	/* Write the binary header based on type */
 	if (strcmp(binary_info->name, "kernel") == 0) {
@@ -275,7 +419,17 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 		ret = ERROR;
 		goto errout_with_close_fd2;
 	}
-	
+
+#ifdef CONFIG_BINARY_SIGNING
+	if ((strcmp(binary_info->name, "kernel") != 0) && (condition == DOWNLOAD_VALID_BIN)) {
+		ret = copy_source_header_region_to_download(read_fd, write_fd);
+		if (ret != OK) {
+			ret = ERROR;
+			goto errout_with_close_fd2;
+		}
+	}
+#endif
+
 	/* Print version based on binary type */
 	if (strcmp(binary_info->name, "kernel") == 0) {
 		printf("Download binary %s version %d Done!\n", binary_info->name, header_data.kernel_header.version);
@@ -289,6 +443,15 @@ static int binary_update_download_binary(binary_update_info_t *binary_info, bool
 errout_with_close_fd2:
 	close(write_fd);
 errout_with_close_fd1:
+#if CONFIG_FLASH_ENCRYPT_ENABLE
+	if(strcmp(binary_info->name, "kernel") != 0) {
+		ret = ioctl(read_fd, MTDIOC_OTATESTBASE, (unsigned long)(false));
+		if (ret < 0) {
+			printf("Failed to ioctl MTDIOC_OTATESTBASE: %d\n", ret);
+			ret = ERROR;
+		}
+	}
+#endif
 	close(read_fd);
 errout:
 	if (ret < 0) {
@@ -495,7 +658,11 @@ static int binary_update_new_version_test(void)
 	printf("\n** Download and set bootparam for kernel binary. (new version) **\n");
 	printf("** (Both common and app1 binary will be updated with same version) **\n");
 	for (i = 0; i < bin_count; i++) {
-		int version_up = false;
+#ifdef CONFIG_BINARY_SIGNING
+		bool version_up = false;
+#else
+		bool version_up = true;
+#endif
 		if (bin_names[i] == KERNEL) {
 			version_up = true;
 		}

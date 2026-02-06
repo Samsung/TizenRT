@@ -66,10 +66,10 @@
 #include <stdint.h>
 #include "common/bk_utils.h"
 #include "deep_lv.h"
+#include <modules/pm.h>
 #include "armstar.h"
 #include "core_star.h"
 #include "aon_pmu_hal.h"
-#include "FreeRTOS.h"
 #include "partition_star.h"
 #include "arch_interrupt.h"
 #if defined(CONFIG_MPU)
@@ -252,7 +252,9 @@ __IRAM_SEC DLV_STATIC void dlv_core_save(dlv_context_t *dlv)
 
 __IRAM_SEC void mini_dlv_stack_frame_save_and_dlv(void)
 {
-	uint32_t *psp_addr = (uint32_t *)__get_PSP();
+	//uint32_t *psp_addr = (uint32_t *)__get_PSP();
+	uint32_t *psp_addr = (uint32_t *)__get_MSP();
+
 	s_current_stack_frame->r0 = psp_addr[0];
 	s_current_stack_frame->r1 = psp_addr[1];
 	s_current_stack_frame->r2 = psp_addr[2];
@@ -261,7 +263,6 @@ __IRAM_SEC void mini_dlv_stack_frame_save_and_dlv(void)
 	s_current_stack_frame->lr = psp_addr[5];
 	s_current_stack_frame->ret_pc = psp_addr[6];
 	s_current_stack_frame->xpsr = psp_addr[7];
-
 	aon_pmu_ll_set_r0_memchk_bps(1);
 	aon_pmu_ll_set_r0_fast_boot(1);
 	aon_pmu_hal_set_dlv_startup(1);
@@ -286,7 +287,6 @@ __IRAM_SEC void dlv_stack_frame_save_and_dlv(uint32_t exc_return)
 		"    .align 4                                      \n"
 		::"r"(s_current_stack_frame):"r3"
 	);
-
 	mini_dlv_stack_frame_save_and_dlv();
 
 	__asm volatile
@@ -474,8 +474,8 @@ __IRAM_SEC void dlv_context_save(void)
 	dlv_sau_save(dlv);
 	dlv_mpu_save(dlv);
 	dlv_fpu_save(dlv);
-	dlv_itcm_save(dlv);
-	dlv_dtcm_save(dlv);
+	//dlv_itcm_save(dlv);
+	//dlv_dtcm_save(dlv);
 	dlv_core_save(dlv);
 }
 
