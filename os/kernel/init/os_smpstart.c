@@ -42,7 +42,7 @@
 #ifdef CONFIG_SMP
 
 /* Global variable to track active CPUs */
-cpu_set_t g_active_cpus_mask = ((cpu_set_t)1 << CONFIG_SMP_NCPUS) - 1;	/* Initializing the global active cpus mask */
+cpu_set_t g_active_cpus_mask = (cpu_set_t)1;	/* Initializing the global active cpus mask with setting primary core as active */
 
 /****************************************************************************
  * Public Functions
@@ -121,7 +121,7 @@ int os_smp_start(void)
 	for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
 		/* Start the CPU */
 
-		ret = up_cpu_on(cpu);
+		ret = sched_cpuon(cpu);
 		if (ret < 0) {
 			sdbg("ERROR: Failed to start CPU%d: %d\n", cpu, ret);
 			return ret;

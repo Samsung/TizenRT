@@ -41,7 +41,7 @@
 #include "up_internal.h"
 #include "amebasmart_config.h"
 #include "amebasmart_memorymap.h"
-#include "amebasmart_boot.h"
+
 #include "sctlr.h"
 #include "section_config.h"
 /****************************************************************************
@@ -368,7 +368,6 @@ void arm_boot(void)
 
   /* SMP pending for TizenRT Confirmation */
   cp15_wrvbar((uint32_t)_vector_start);
-  amebasmart_cpu_enable();
 
   /* Complete the rest of the step in app_start, prvSetupHardware will be done in os_start() */
   app_start();
