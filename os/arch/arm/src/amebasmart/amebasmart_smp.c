@@ -107,7 +107,7 @@ int cpu_core_poweron(int cpu)
 {
 	/* Currently only supports CPU1 */
 	if (cpu != 1) {
-		smpdbg("%s only supports CPU1, got CPU%d\n", __func__, cpu);
+		smplldbg("%s only supports CPU1, got CPU%d\n", __func__, cpu);
 		return -ENOTSUP;
 	}
 
@@ -161,7 +161,7 @@ int vPortSecondaryBoot(int cpu)
 	} while (count--);
 
 	if (count <= 0) {
-		smpdbg("Secondary core boot timeout affinfo: %d\n", state);
+		smplldbg("Secondary core boot timeout affinfo: %d\n", state);
 		return -ETIMEDOUT;
 	}
 
@@ -195,7 +195,7 @@ int cpu_core_powerdown(int cpu)
 
 	/* Currently only supports CPU1 */
 	if (cpu != 1) {
-		smpdbg("%s only supports CPU1, got CPU%d\n", __func__, cpu);
+		smplldbg("%s only supports CPU1, got CPU%d\n", __func__, cpu);
 		return -ENOTSUP;
 	}
 
@@ -211,7 +211,7 @@ int cpu_core_powerdown(int cpu)
 		DelayUs(50);
 	} while (count--);
 
-	smpdbg("Core powerdown timeout for CPU%d, affinfo: %d\n", cpu, state);
+	smplldbg("Core powerdown timeout for CPU%d, affinfo: %d\n", cpu, state);
 	return -ETIMEDOUT;
 }
 
@@ -245,7 +245,7 @@ void vPortSecondaryOff(void)
 		DelayUs(50);
 	} while (count--);
 
-	smpdbg("Secondary core power off fail: %d\n", state);
+	smplldbg("Secondary core power off fail: %d\n", state);
 }
 
 /****************************************************************************
@@ -314,19 +314,19 @@ int up_cpu_down(int cpu)
 	int ret;
 
 	if (cpu <= 0 || cpu >= CONFIG_SMP_NCPUS) {
-		smpdbg("cpu number out of range\n");
+		smplldbg("cpu number out of range\n");
 		return -EINVAL;
 	}
 
-	smpvdbg("Starting core powerdown for CPU%d\n", cpu);
+	smpllvdbg("Starting core powerdown for CPU%d\n", cpu);
 
 	ret = cpu_core_powerdown(cpu);
 	if (ret < 0) {
-		smpdbg("Failed to powerdown CPU%d, errno: %d\n", cpu, ret);
+		smplldbg("Failed to powerdown CPU%d, errno: %d\n", cpu, ret);
 		return ret;
 	}
 
-	smpvdbg("Secondary core CPU%d powerdown complete\n", cpu);
+	smpllvdbg("Secondary core CPU%d powerdown complete\n", cpu);
 	return OK;
 }
 
@@ -357,27 +357,27 @@ int up_cpu_up(int cpu)
 	int ret;
 
 	if (cpu <= 0 || cpu >= CONFIG_SMP_NCPUS) {
-		smpdbg("cpu number out of range\n");
+		smplldbg("cpu number out of range\n");
 		return -EINVAL;
 	}
 
 	/* Power on the CPU core */
 	ret = cpu_core_poweron(cpu);
 	if (ret != OK) {
-		smpdbg("Failed to power on CPU%d: errno = %d\n", cpu, ret);
+		smplldbg("Failed to power on CPU%d: errno = %d\n", cpu, ret);
 		return ret;
 	}
 
-	smpvdbg("Booting secondary core... \n");
+	smpllvdbg("Booting secondary core... \n");
 
 	/* cold-boot the core via PSCI */
 	ret = vPortSecondaryBoot(cpu);
 	if (ret != OK) {
-		smpdbg("Failed to boot CPU%d: %d\n", cpu, ret);
+		smplldbg("Failed to boot CPU%d: %d\n", cpu, ret);
 		return ret;
 	}
 
-	smpvdbg("Secondary core booted successfully\n");
+	smpllvdbg("Secondary core booted successfully\n");
 	return OK;
 }
 

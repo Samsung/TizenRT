@@ -87,13 +87,13 @@ int sched_cpuon(int cpu)
 	int ret = OK;
 	
 	if (cpu == this_cpu()) {
-		slldbg("Cannot turn on this CPU from itself: %d\n", cpu);
+		smplldbg("Cannot turn on this CPU from itself: %d\n", cpu);
 		return -EINVAL;
 	}
 
 	/* Validate CPU index */
 	if (cpu <= 0 || cpu >= CONFIG_SMP_NCPUS) {
-		slldbg("Invalid CPU number: %d\n", cpu);
+		smplldbg("Invalid CPU number: %d\n", cpu);
 		return -EINVAL;
 	}
 
@@ -109,15 +109,15 @@ int sched_cpuon(int cpu)
 		flags = enter_critical_section();
 		ret = up_cpu_on(cpu);
 		if (ret == 0) {
-			slldbg("CPU%d is turned on succesfully\n", cpu);
+			smpllvdbg("CPU%d is turned on succesfully\n", cpu);
 			/* Update the active CPUs mask to indicate that the offline CPU is active again */
 			CPU_SET(cpu, &g_active_cpus_mask);
 		} else {
-			slldbg("Failed to turn on CPU%d\n", cpu);
+			smplldbg("Failed to turn on CPU%d\n", cpu);
 		}
 		leave_critical_section(flags);
 	} else {
-		slldbg("Already desired state (ON), operation not supported\n");
+		smplldbg("Already desired state (ON), operation not supported\n");
 		ret = -ENOTSUP;
 	}
 	spin_unlock(&g_state_transition_lock);

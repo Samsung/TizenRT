@@ -175,7 +175,7 @@ int up_cpu_on(int cpu)
 {
 	int ret ;
 
-	smpvdbg("Starting CPU%d\n", cpu);
+	smpllvdbg("Starting CPU%d\n", cpu);
 
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
@@ -183,7 +183,7 @@ int up_cpu_on(int cpu)
 	if (up_get_cpu_state(cpu) == CPU_HOTPLUG) {
 		ret = up_cpu_up(cpu);
 		if (ret < 0) {
-			smpdbg("Failed to boot the secondary core CPU%d\n", cpu);
+			smplldbg("Failed to boot the secondary core CPU%d\n", cpu);
 			return ret;
 		}
 	}
@@ -201,7 +201,7 @@ int up_cpu_on(int cpu)
 	/* Execute SGI1 */
 	ret = arm_cpu_sgi(GIC_IRQ_SGI1, (1 << cpu));
 	if (ret < 0) {
-		smpdbg("Failed to execute SGI1 for CPU%d", cpu);
+		smplldbg("Failed to execute SGI1 for CPU%d", cpu);
 		return ret;
 	}
 
