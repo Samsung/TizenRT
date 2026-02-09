@@ -248,7 +248,7 @@ int up_cpu_off(int cpu)
 	struct tcb_s * tcb;
 	int ret = OK;
 
-	smpvdbg("Disabling CPU%d\n", cpu);
+	smpllvdbg("Disabling CPU%d\n", cpu);
 
 	DEBUGASSERT(cpu > 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
@@ -282,20 +282,20 @@ int up_cpu_off(int cpu)
 
 	/* Check if hotplug failed */
 	if (ret < 0) {
-		smpdbg("Secondary core hotplug failed CPU%d\n", cpu);
+		smplldbg("Secondary core hotplug failed CPU%d\n", cpu);
 		return ret;
 	}
 
-	smpvdbg("Secondary core hotplug complete CPU%d\n", cpu);
+	smpllvdbg("Secondary core hotplug complete CPU%d\n", cpu);
 
 	/* Power down the core completely */
 	ret = up_cpu_down(cpu);
 	if (ret < 0) {
-		smpdbg("Failed to powerdown secondary core CPU%d\n", cpu);
+		smplldbg("Failed to powerdown secondary core CPU%d\n", cpu);
 		return ret;
 	}
 
-	smpvdbg("Secondary core powerdown complete CPU%d\n", cpu);
+	smpllvdbg("Secondary core powerdown complete CPU%d\n", cpu);
 
 	return ret;
 }
