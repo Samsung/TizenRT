@@ -16,9 +16,6 @@
 
 typedef long BaseType_t;
 
-void smp_init(void);
-void vPortSecondaryOff(void);
-
 #endif /* !_ASMLANGUAGE */
 
 #endif

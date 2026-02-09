@@ -29,9 +29,6 @@
 #include "../kernel/sched/sched.h"
 
 #include "pm.h"
-#ifdef CONFIG_SMP
-#include "../arch/arm/src/armv7-a/smp.h"
-#endif
 
 #ifdef CONFIG_PM
 
@@ -44,6 +41,8 @@
  ****************************************************************************/
 
 static clock_t stime;
+
+static cpu_set_t g_active_cpus;
 
 /****************************************************************************
  * Private Functions
@@ -112,9 +111,9 @@ static int disable_secondary_cpus(void)
 {
 	/* Send signal to shutdown other cores here */
 	for (int cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
-		if (up_get_cpu_state(cpu) == CPU_RUNNING) {
-			if (up_cpu_off(cpu) != OK) {
-				pmllvdbg("CPU%d shutdown failed! Unable to shutdown secondary core for sleep mode\n", cpu);
+		if (CPU_ISSET(cpu, &g_active_cpus)) {
+			if (sched_cpuoff(cpu) != OK) {
+				pmlldbg("CPU%d shutdown failed! Unable to shutdown secondary core for sleep mode\n", cpu);
 				return ERROR;
 			}
 		}
@@ -138,7 +137,14 @@ static int disable_secondary_cpus(void)
  ****************************************************************************/
 static void enable_secondary_cpus(void)
 {
-	/* TODO: move start smp code BSP to here */
+	for (int cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (CPU_ISSET(cpu, &g_active_cpus)) {
+			if (sched_cpuon(cpu) != OK) {
+				pmlldbg("CPU%d power on failed!\n", cpu);
+				return;
+			}
+		}
+	}
 }
 
 /****************************************************************************
@@ -165,11 +171,10 @@ static int check_secondary_cpus_idle(void)
 	 * the sleep and check again on next cycle
 	 */
 
+	g_active_cpus = sched_getactivecpu();
+
 	for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
-		/* If the CPU is just back from sleep, abort the sleep */
-		if (up_get_cpu_state(cpu) == CPU_WAKE_FROM_SLEEP) {
-			return ERROR;
-		} else if (up_get_cpu_state(cpu) == CPU_HOTPLUG) {
+		if (!CPU_ISSET(cpu, &g_active_cpus)) {
 			continue;
 		}
 

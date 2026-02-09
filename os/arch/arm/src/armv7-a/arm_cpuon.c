@@ -179,15 +179,11 @@ int up_cpu_on(int cpu)
 
 	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
 
-#ifdef CONFIG_CPU_HOTPLUG
-	if (up_get_cpu_state(cpu) == CPU_HOTPLUG) {
-		ret = up_cpu_up(cpu);
-		if (ret < 0) {
-			smplldbg("Failed to boot the secondary core CPU%d\n", cpu);
-			return ret;
-		}
+	ret = up_cpu_up(cpu);
+	if (ret < 0) {
+		smplldbg("Failed to boot the secondary core CPU%d\n", cpu);
+		return ret;
 	}
-#endif
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION
 	/* Notify of the start event */

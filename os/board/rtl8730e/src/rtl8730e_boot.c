@@ -81,7 +81,7 @@
 
 #include "board_pins.h"
 #include "up_internal.h"
-#include "amebasmart_boot.h"
+
 #include "ameba_soc.h"
 #include "osdep_service.h"
 #include "platform_opts_bt.h"

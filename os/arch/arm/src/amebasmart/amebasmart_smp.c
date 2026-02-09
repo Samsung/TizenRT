@@ -215,39 +215,6 @@ int cpu_core_powerdown(int cpu)
 	return -ETIMEDOUT;
 }
 
-void vPortSecondaryOff(void)
-{
-	int state;
-	int count = 10;
-#if ( CONFIG_SMP_NCPUS > 1 )
-
-#ifdef CONFIG_CPU_HOTPLUG
-	/* Notify secondary core to migrate task to primary core and enter wfi*/
-	up_set_cpu_state(1, CPU_HOTPLUG);
-#endif
-#ifndef CONFIG_PLATFORM_TIZENRT_OS
-	arm_gic_raise_softirq(1, 1);
-#else
-	arm_cpu_sgi(GIC_IRQ_SGI4, (1 << 1));
-#endif
-#endif
-	//add a delay to wait cpu1 enter wfi.
-	DelayUs(100);
-
-	/* Power off secondary core */
-	do {
-		state  = psci_affinity_info(1, 0);
-		if (state == 1) {
-			rtk_core1_power_off();
-			return;
-		}
-
-		DelayUs(50);
-	} while (count--);
-
-	smplldbg("Secondary core power off fail: %d\n", state);
-}
-
 /****************************************************************************
  * Name: up_cpu_die
  *
@@ -379,49 +346,4 @@ int up_cpu_up(int cpu)
 
 	smpllvdbg("Secondary core booted successfully\n");
 	return OK;
-}
-
-
-void smp_init(void)
-{
-	BaseType_t xCoreID;
-	BaseType_t err;
-
-#if ( CONFIG_SMP_NCPUS > 1 )
-	rtk_core1_power_on();
-	DelayUs(50);
-#else
-	/* power off core1 to avoid km4 has already open it */
-	rtk_core1_power_off();
-#endif
-
-#if ( CONFIG_SMP_NCPUS > 1 )
-	for (xCoreID = 0; xCoreID < CONFIG_SMP_NCPUS; xCoreID++) {
-		if (xCoreID == up_cpu_index()) {
-#ifdef CONFIG_CPU_HOTPLUG
-			up_set_cpu_state(xCoreID, CPU_RUNNING);
-#endif
-			continue;
-		}
-		err = psci_cpu_on(xCoreID, (unsigned long)__cpu1_start);
-
-		/* Wait for CPU1 to boot from ATF to SGI1 WFI loop, before os_smp_start is called */
-		DelayUs(50);
-
-		/* If we failed to boot secondary core here, it will be very likely
-		issue is coming from ATF/kernel flow, and that operation is irreversible
-		(ie. There is no way we can restore the secondary core to come
-		back to Tizen Lite, thus we should trigger a crash here to check)
-		*/
-		DEBUGASSERT(err >= 0);
-	}
-#endif
-	/* We should check whether it is a warm boot here
-	   If yes, we should send SGI1 to secondary core
-	 */
-#ifdef CONFIG_CPU_HOTPLUG
-	if (up_get_cpu_state(SECONDARY_CORE_ID) == CPU_WAKE_FROM_SLEEP) {
-		os_smp_start();
-	}
-#endif
 }

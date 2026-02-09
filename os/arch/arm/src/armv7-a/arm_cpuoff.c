@@ -207,7 +207,7 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 		putreg32(0x00000000, GIC_ICCAPR1);      /* clear SGI1 secure APR0 */
 
 		/*
-		* manually clear SGI4 interrupt active
+		* manually clear SGI3 interrupt active
 		* As psci_cpu_off is a noreturn function it will trap the CPU in a WFI loop
 		* this means that it will never exit back to arm_decodeirq where EOIR will be set
 		*/

@@ -236,13 +236,6 @@ void SOCPS_SleepPG(void)
 	/* exec sleep hook functions */
 	pmu_exec_wakeup_hook_funs(PMU_MAX);
 
-#if ( CONFIG_SMP_NCPUS > 1 )
-#ifdef CONFIG_CPU_HOTPLUG
-	/* Now init core1 */
-	up_set_cpu_state(1, CPU_WAKE_FROM_SLEEP);
-#endif
-	smp_init();
-#endif
 	//pmu_acquire_wakelock(PMU_OS);
 }
 

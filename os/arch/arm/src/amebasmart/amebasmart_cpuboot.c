@@ -67,49 +67,6 @@ extern uint8_t _vector_start[]; /* Beginning of vector block */
  ****************************************************************************/
 
 /****************************************************************************
- * Name: amebasmart_cpu_disable
- *
- * Description:
- *   Called from CPU0 to make sure that all other CPUs are in the disabled
- *   state.  This is a formality because the other CPUs are actually running
- *   then we have probably already crashed.
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void amebasmart_cpu_disable(void)
-{
-  vPortSecondaryOff();
-}
-
-/****************************************************************************
- * Name: amebasmart_cpu_enable
- *
- * Description:
- *   Called from CPU0 to enable all other CPUs.  The enabled CPUs will start
- *   execution at __cpuN_start and, after very low-level CPU initialization
- *   has been performed, will branch to arm_cpu_boot()
- *   (see arch/arm/src/armv7-a/smp.h)
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void amebasmart_cpu_enable(void)
-{
-  smp_init();
-}
-
-/****************************************************************************
  * Name: arm_cpu_boot
  *
  * Description:
