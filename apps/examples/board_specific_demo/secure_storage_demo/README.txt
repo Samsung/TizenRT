@@ -2,7 +2,7 @@ examples/secure_storage
 ^^^^^^^^^^^^^^
 
   Secure Storage APIs is used to write data into flash with encryption.
-  This is the Secure Storage example for AmebaD, AmebaLite and AmebaSmart.
+  This is the Secure Storage example for AmebaD, AmebaLite, AmebaSmart and Armino.
 
   This shows how to call write and read from Secure Storage with SE APIs,
   and how to read data written to flash.
