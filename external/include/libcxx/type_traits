@@ -4676,6 +4676,30 @@ template<class _Tp> constexpr bool negation_v = negation<_Tp>::value;
 # endif // _LIBCPP_HAS_NO_VARIADICS
 #endif  // _LIBCPP_STD_VER > 14
 
+#if _LIBCPP_STD_VER >= 17
+#if !defined(__cpp_lib_is_invocable)
+template <typename F, typename... Args>
+struct is_invocable
+{
+private:
+    template <typename U>
+    static auto test(int) -> decltype(
+        std::declval<U>()(std::declval<Args>()...),
+        std::true_type{}
+    );
+
+    template <typename>
+    static std::false_type test(...);
+
+public:
+    static constexpr bool value = decltype(test<F>(0))::value;
+};
+
+template <typename F, typename... Args>
+constexpr bool is_invocable_v = is_invocable<F, Args...>::value;
+#endif /* missing is_invocable */
+#endif // _LIBCPP_STD_VER >= 17
+
 // These traits are used in __tree and __hash_table
 #ifndef _LIBCPP_CXX03_LANG
 struct __extract_key_fail_tag {};

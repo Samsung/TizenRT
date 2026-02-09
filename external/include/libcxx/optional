@@ -749,11 +749,18 @@ public:
                       >
              >
     _LIBCPP_INLINE_VISIBILITY
+#if _LIBCPP_STD_VER >= 17
+    value_type&
+#else
     void
+#endif
     emplace(_Args&&... __args)
     {
         reset();
         this->__construct(_VSTD::forward<_Args>(__args)...);
+#if _LIBCPP_STD_VER >= 17
+        return **this;
+#endif
     }
 
     template <class _Up, class... _Args,

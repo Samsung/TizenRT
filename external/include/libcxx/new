@@ -186,7 +186,11 @@ _LIBCPP_FUNC_VIS new_handler get_new_handler() _NOEXCEPT;
 #endif
 
 #if !__has_feature(cxx_noexcept)
+#if _LIBCPP_STD_VER >= 17
+#define _THROW_BAD_ALLOC
+#else
 #define _THROW_BAD_ALLOC throw(std::bad_alloc)
+#endif
 #else
 #define _THROW_BAD_ALLOC
 #endif
