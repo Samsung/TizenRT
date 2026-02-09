@@ -19,15 +19,17 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-
-#include <tinyara/config.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
 #include <security/security_common.h>
 #include <security/security_api.h>
 #include <tinyara/seclink.h>
 #include <tinyara/security_hal.h>
 #include <security/security_ss.h>
+
 #define TAG_LENGTH		16
 #define DATA_LENGTH		4
 #define HEAD_LENGTH		4
@@ -40,31 +42,10 @@
 	SLOT_INDEX : slot index to save the DATA, valid range 0 ~ 31\n	\
 	DATA : value to be saved in byte\n");
 
-extern int rtl_ss_flash_read(uint32_t address, uint32_t len, uint8_t *data, int en_display);
 static char rwbuf[MAX_SS_SIZE];
 static uint32_t SLOT_SIZE = 0x1000;
 
-#ifdef CONFIG_AMEBAD_TRUSTZONE
-static uint32_t SLOT0_START_ADDR = 0x1a000;
-static uint32_t SLOT1_START_ADDR = 0x1d000;
-static uint32_t SLOT_AREA_OFFSET = 0x23000;
-#endif
-#ifdef CONFIG_AMEBALITE_TRUSTZONE
-static uint32_t SLOT0_START_ADDR = 0x24000;
-static uint32_t SLOT1_START_ADDR = 0x27000;
-static uint32_t SLOT_AREA_OFFSET = 0x23000;
-#endif
-#ifdef CONFIG_AMEBASMART_TRUSTZONE
-static uint32_t SLOT0_START_ADDR = 0x2C000;
-static uint32_t SLOT1_START_ADDR = 0x2F000;
-static uint32_t SLOT_AREA_OFFSET = 0x2A000;
-#endif
-
-
-/****************************************************************************
- * secure_storage_main
- ****************************************************************************/
-int check_flash_data_empty(uint8_t *data, uint32_t length)
+static int check_flash_data_empty(uint8_t *data, uint32_t length)
 {
 	for (uint32_t i = 0; i < length; ++i) {
 		if (data[i] != 0xFF) {
@@ -74,17 +55,17 @@ int check_flash_data_empty(uint8_t *data, uint32_t length)
 	return 1; /* Empty */
 }
 
-void read_flash_data(const char *label, int slot_index, uint32_t address, uint32_t length)
+static void read_flash_data(const char *label, int slot_index, uint32_t address, uint32_t length)
 {
 	printf("\nStart Flash Raw data read!!\n");
 	printf("\nRead Raw data from Slot: %d, %s\n", slot_index, label);
-	if (!rtl_ss_flash_read(address, length, (uint8_t *)rwbuf, 1)) {
-		printf("rtl_ss_flash_read() Fail, %d\n", __LINE__);
+	if (BOARD_SS_FLASH_READ(address, length, (uint8_t *)rwbuf, 1)) {
+		printf("Board-specific flash read failed, %d\n", __LINE__);
 	}
 	printf("Read complete\n");
 }
 
-void read_ss(security_handle hnd, const char *ss_path, uint32_t slot_index)
+static void read_ss(security_handle hnd, const char *ss_path, uint32_t slot_index)
 {
 	printf("\nStart Secure Storage read!!\n");
 	security_data data;
@@ -93,7 +74,7 @@ void read_ss(security_handle hnd, const char *ss_path, uint32_t slot_index)
 
 	data.data = NULL;
 	data.length = TEST_DATA_LENGTH;
-	printf("ss_read_secure_storage() Slot: %d\n\n", slot_index);
+	printf("ss_read_secure_storage() Slot: %u\n\n", slot_index);
 	res = ss_read_secure_storage(hnd, ss_path, 0, &data);
 	if (res != SECURITY_OK) {
 		printf("ss_read_secure_storage() Fail, %d, res = %d\n", __LINE__, res);
@@ -112,7 +93,7 @@ void read_ss(security_handle hnd, const char *ss_path, uint32_t slot_index)
 	free(data.data);
 }
 
-void write_ss(security_handle hnd, const char *ss_path, uint32_t input_data, uint32_t slot_index)
+static void write_ss(security_handle hnd, const char *ss_path, uint32_t input_data, uint32_t slot_index)
 {
 	printf("\nStart Secure Storage write!!\n");
 	security_data data;
@@ -123,7 +104,7 @@ void write_ss(security_handle hnd, const char *ss_path, uint32_t input_data, uin
 	data.data = (void *)rwbuf;
 	data.length = TEST_DATA_LENGTH;
 
-	printf("ss_write_secure_storage() Slot: %d\n", slot_index);
+	printf("ss_write_secure_storage() Slot: %u\n", slot_index);
 	/* Write TEST_DATA_LENGTH bytes from buffer to the desired slot of the SS */
 	res = ss_write_secure_storage(hnd, ss_path, 0, &data);
 	if (res != SECURITY_OK) {
@@ -131,6 +112,10 @@ void write_ss(security_handle hnd, const char *ss_path, uint32_t input_data, uin
 	}
 	printf("Write Complete\n");
 }
+
+/****************************************************************************
+ * secure_storage_main
+ ****************************************************************************/
 
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
@@ -169,8 +154,8 @@ int sstorage_main(int argc, char *argv[])
 		}
 	}
 
-	printf("Start testing SE Secure Storage!!\n");
-	printf("Data: %2x, slot: %d\n", input_data, slot_index);
+	printf("Start testing SE Secure Storage for %s!!\n", BOARD_NAME);
+	printf("Data: %2x, slot: %u\n", input_data, slot_index);
 
 	/* 1. Initialize security */
 	printf("Start Security init!!\n");
@@ -183,7 +168,7 @@ int sstorage_main(int argc, char *argv[])
 	sleep(1);
 
 	/* Form the SS path name based on the slot index where we want to read and write */
-	snprintf(ss_path, 7, "ss/%d", slot_index);
+	snprintf(ss_path, 7, "ss/%u", slot_index);
 
 	/* 2. Read Secure Storage flash data before perform write */
 	printf("Let us read once before writing to the slot\n");
@@ -214,17 +199,18 @@ int sstorage_main(int argc, char *argv[])
 
 	printf("\n ***** Start Verify Secure Storage Area Protected.***** \n");
 	/* 7. Retrieve the Flash Status Bit */
-	flash_protected = rtl_verify_flash_protect();
+	flash_protected = BOARD_VERIFY_FLASH_PROTECT();
 
 	/* 8. Erase the existing data Area and Read flash raw data to verify the protection status */
+	empty = check_flash_data_empty((uint8_t *)rwbuf, length);
 	if (!area_a_empty) {
 		printf("\nErase Area A where data existed.\n");
-		ns_flash_erase(address);
+		BOARD_FLASH_ERASE(address);
 		read_flash_data("Area A", slot_index, address, length);
 		empty = check_flash_data_empty((uint8_t *)rwbuf, length);
 	} else if (!area_b_empty) {
 		printf("\nErase Area B where data existed.\n");
-		ns_flash_erase(address + SLOT_AREA_OFFSET);
+		BOARD_FLASH_ERASE(address + SLOT_AREA_OFFSET);
 		read_flash_data("Area B", slot_index, address + SLOT_AREA_OFFSET, length);
 		empty = check_flash_data_empty((uint8_t *)rwbuf, length);
 	}
