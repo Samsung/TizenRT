@@ -111,6 +111,10 @@ int arm_start_handler(int irq, void *context, void *arg)
 
 	svdbg("CPU%d Started\n", this_cpu());
 
+#ifdef CONFIG_CPU_HOTPLUG
+	up_set_cpu_state(this_cpu(), CPU_RUNNING);
+#endif
+
 #ifdef CONFIG_SCHED_INSTRUMENTATION
 	/* Notify that this CPU has started */
 
@@ -188,10 +192,6 @@ int up_cpu_on(int cpu)
 #ifdef CONFIG_SCHED_INSTRUMENTATION
 	/* Notify of the start event */
 	sched_note_cpu_start(this_task(), cpu);
-#endif
-
-#ifdef CONFIG_CPU_HOTPLUG
-	up_set_cpu_state(cpu, CPU_RUNNING);
 #endif
 
 	/* Execute SGI1 */
