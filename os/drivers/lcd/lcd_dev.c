@@ -87,9 +87,7 @@ struct lcd_s {
 	struct lcd_planeinfo_s planeinfo[MAX_NO_PLANES];
 	sem_t sem;
 	int16_t crefs;
-#ifdef CONFIG_PM
 	struct pm_domain_s *pm_domain;
-#endif
 #if defined(CONFIG_LCD_FLUSH_THREAD)
 	uint8_t *lcd_kbuffer;
 	FAR const struct lcddev_area_s *lcd_area;
@@ -376,8 +374,6 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	}
 	break;
 	case LCDDEVIO_SETPOWER: {
-
-#ifdef CONFIG_PM
 		if (!priv->dev->setpower || !priv->dev->getpower) {
 			ret = -ENOSYS;
 			break;
@@ -409,13 +405,6 @@ static int lcddev_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			silent_reboot_delay(3600);
 			(void)pm_resume(priv->pm_domain);
 		}
-#else
-		if (priv->dev->setpower) {
-			ret = priv->dev->setpower(priv->dev, (int)arg);
-		} else {
-			ret = -ENOSYS;
-		}
-#endif
 	}
 	break;
 	case LCDDEVIO_GETCONTRAST: {
@@ -588,10 +577,9 @@ static int lcddev_display_splash(FAR struct lcd_s *priv, uint8_t *splash_buffer)
 
 	ret = priv->dev->setpower(priv->dev, 100);
 	if (ret == OK) { // LCD ON
-#ifdef CONFIG_PM
-		(void)pm_suspend(priv->pm_domain);
-#endif
+		lcddbg("Lock pm & silent reboot\n");
 		silent_reboot_lock();
+		(void)pm_suspend(priv->pm_domain);
 	} else {
 		lcddbg("ERROR: Failed to turn on LCD\n");
 		return -EIO;
@@ -599,10 +587,10 @@ static int lcddev_display_splash(FAR struct lcd_s *priv, uint8_t *splash_buffer)
 	ret = lcddev_putarea(priv, 0, 0, CONFIG_LCD_XRES - 1, 0, CONFIG_LCD_YRES - 1, splash_buffer, CONFIG_LCD_YRES * 2);
 	if (ret != OK) {
 		priv->dev->setpower(priv->dev, 0);
-#ifdef CONFIG_PM
-		(void)pm_resume(priv->pm_domain);
-#endif
+		lcddbg("Unlock pm & silent reboot\n");
 		silent_reboot_unlock();
+		silent_reboot_delay(3600);
+		(void)pm_resume(priv->pm_domain);
 		return ret;
 	}
 
@@ -661,9 +649,7 @@ int lcddev_register(struct lcd_dev_s *dev)
 	}
 #endif
 
-#ifdef CONFIG_PM
 	lcd_info->pm_domain = pm_domain_register("LCD");
-#endif
 
 	sem_init(&lcd_info->sem, 0, 1);
 
