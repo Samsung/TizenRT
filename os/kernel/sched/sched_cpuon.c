@@ -54,6 +54,9 @@
  * Private Data
  ****************************************************************************/
 
+ /* Spinlock for synchronizing access to global hotplug state */
+volatile spinlock_t g_state_transition_lock = SP_UNLOCKED;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/

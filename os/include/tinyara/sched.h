@@ -1007,6 +1007,80 @@ void sched_suspend_scheduler(FAR struct tcb_s *tcb);
 #  define sched_suspend_scheduler(tcb)
 #endif
 
+/****************************************************************************
+ * Name: sched_cpuon
+ *
+ * Description:
+ *   Request to bring a CPU to power on state.
+ *
+ * Input Parameters:
+ *   cpu - The CPU index to turn on
+ *
+ * Returned Value:
+ *   OK (0) on success, negative value on failure.
+ *
+ * Preconditions(Checks):
+ *   1. CPU cannot turn itself ON.
+ *   2. CPU number must be valid (1 ... CONFIG_SMP_NCPUS).
+ *   3. CPU 0 cannot be turned ON.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+int sched_cpuon(int cpu);
+#else
+#define sched_cpuon(cpu)  (0)
+#endif
+
+/****************************************************************************
+ * Name: sched_cpuoff
+ *
+ * Description:
+ *   Request to bring a CPU to power off state.
+ *
+ * Input Parameters:
+ *   cpu - The CPU index to turn off.
+ *
+ * Returned Value:
+ *   OK (0) on success, Negative value on failure.
+ *
+ * Preconditions(Checks):
+ *   1. CPU cannot turn itself OFF.
+ *   2. CPU number must be valid (1 ... CONFIG_SMP_NCPUS).
+ *   3. CPU 0 cannot be turned OFF.
+ *   4. If task migration is required i.e. cpu is executing task other than
+ *      IDLE task, don't call this API in critical_section.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_CPU_HOTPLUG
+int sched_cpuoff(int cpu);
+#else
+#define sched_cpuoff(cpu)  (0)
+#endif
+
+/****************************************************************************
+ * Name: sched_getactivecpu
+ *
+ * Description:
+ *   Request to fetch a CPU mask indicating current state of all CPUs.
+ *
+ * Input Parameters:
+ *   void
+ *
+ * Returned Value:
+ *   CPU mask
+ *
+ * Preconditions(Checks):
+ *	 None
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+cpu_set_t sched_getactivecpu(void);
+#else
+#define sched_getactivecpu()  ((cpu_set_t)1)
+#endif
+
 /**
  * @endcond
  */
