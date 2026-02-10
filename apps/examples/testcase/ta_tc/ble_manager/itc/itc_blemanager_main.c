@@ -97,7 +97,7 @@ static void ble_operation_notification_cb(ble_client_ctx *ctx, ble_attr_handle a
 	ITC_FUNC_SIGNAL;
 }
 
-static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
+static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN], uint8_t adv_handle)
 {
 	printf("server connect callback received");
 }
@@ -149,10 +149,14 @@ static ble_client_callback_list client_config = {
 };
 
 static ble_server_init_config server_config = {
-	ble_server_connected_cb,NULL,NULL,NULL,
-	true,
-	gatt_profile,
-	sizeof(gatt_profile) / sizeof(ble_server_gatt_t)
+	.connected_cb = ble_server_connected_cb,
+	.disconnected_cb = NULL,
+	.mtu_update_cb = NULL,
+	.passkey_display_cb = NULL,
+	.pair_bond_cb = NULL,
+	.is_secured_connect_allowed = true,
+	.profile = gatt_profile,
+	.profile_count = sizeof(gatt_profile) / sizeof(ble_server_gatt_t)
 };
 
 static void set_scan_filter(ble_scan_filter *filter, uint8_t *raw_data, uint8_t len, bool whitelist_enable, uint32_t scan_duration)
