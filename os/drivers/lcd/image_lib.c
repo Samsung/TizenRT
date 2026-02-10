@@ -201,9 +201,9 @@ int image_load_bmp_file(const char *filename, uint8_t *buffer, int buffer_width,
 			goto errout;
 		}
 		for (int src_x = 0; src_x < img_width; src_x++) {
-			int dest_x = (img_height - 1) - src_y;
+			int dest_x = src_y;
 			int dest_y = src_x;
-			int target_buffer_index = ((y_offset + dest_y) * buffer_height + (x_offset + dest_x)) * 2;
+			int target_buffer_index = ((x_offset + dest_x) * buffer_width + (y_offset + dest_y)) * 2;
 			uint16_t bmp_pixel = temp_row_buffer[src_x];
 			uint16_t rgb565_pixel = convert_pixel_to_rgb565(bmp_pixel, r_mask, g_mask, b_mask);
 			buffer[target_buffer_index] = (uint8_t)(rgb565_pixel & 0xFF);
