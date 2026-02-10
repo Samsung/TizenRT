@@ -84,26 +84,6 @@ const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "L
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pm_start
- *
- * Description:
- *   This function is called by the application thread to start the Power
- *   Management system. This fucntion sets the is_running flag which
- *   enables pm to transition between low and high power states.
- *
- * Input parameters:
- *   None.
- *
- * Returned value:
- *    None.
- *
- ****************************************************************************/
-
-void pm_start(void) {
-	g_pmglobals.is_running = true;
-}
-
-/****************************************************************************
  * Name: pm_initialize
  *
  * Description:
@@ -131,7 +111,7 @@ void pm_initialize(struct pm_sleep_ops *sleep_ops)
 	dq_init(&g_pmglobals.suspended_domains);
 
 	/* Register the PM ops structures */
-	g_pmglobals.sleep_ops = sleep_ops;
+	set_sleep_ops(sleep_ops);
 
 }
 

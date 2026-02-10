@@ -26,9 +26,13 @@
 #include <tinyara/clock.h>
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <pm_power.h>
+#include <sched.h>
+
 #include "../kernel/sched/sched.h"
 
-#include "pm.h"
+#include "power.h"
+
 #ifdef CONFIG_SMP
 #include "../arch/arm/src/armv7-a/smp.h"
 #endif
@@ -225,7 +229,7 @@ static int disable_systick(void)
 static void enable_and_compensate_systick(void)
 {
 #ifdef CONFIG_PM_TICKSUPPRESS
-	struct pm_sleep_ops *sleep_ops = g_pmglobals.sleep_ops;
+	struct pm_sleep_ops *sleep_ops = get_sleep_ops();
 	clock_t missing_tick;
 
 	if (!sleep_ops->get_missingtick) {
@@ -306,7 +310,7 @@ static int set_pm_wakeup_timer(int delay)
 	if (delay > 0) {
 		/* set wakeup timer */
 		pmllvdbg("Setting timer and board will wake up after %ld millisecond\n", delay);
-		return g_pmglobals.sleep_ops->set_timer(TICK2USEC(delay));
+		return get_sleep_ops()->set_timer(TICK2USEC(delay));
 	}
 
 	return OK;
@@ -333,7 +337,7 @@ static int set_pm_wakeup_timer(int delay)
 static void update_wakeup_reason(void)
 {
 	pm_wakeup_reason_code_t wakeup_src;
-	struct pm_sleep_ops *sleep_ops = g_pmglobals.sleep_ops;
+	struct pm_sleep_ops *sleep_ops = get_sleep_ops();
 
 	if (sleep_ops->get_wakeupreason) {
 		wakeup_src = sleep_ops->get_wakeupreason();
@@ -392,7 +396,7 @@ static int check_pm_state(void)
 static void enter_sleep(void)
 {
 	int next_wakeup_time;
-	struct pm_sleep_ops *sleep_ops = g_pmglobals.sleep_ops;
+	struct pm_sleep_ops *sleep_ops = get_sleep_ops();
 
 	DEBUGASSERT(sleep_ops);
 
@@ -464,7 +468,7 @@ void pm_idle(void)
 	irqstate_t flags;
 	clock_t now;
 	/* State change only if PM is ready to state change */
-	if (!g_pmglobals.is_running) {
+	if (!is_pm_running()) {
 		return;
 	}
 
@@ -491,5 +495,42 @@ void pm_idle(void)
 	sched_unlock();
 	leave_critical_section(flags);
 }
+
+/****************************************************************************
+ * Name: pm_start
+ *
+ * Description:
+ *   This function is called by the application thread to start the Power
+ *   Management system. This fucntion sets the is_running flag which
+ *   enables pm to transition between low and high power states.
+ *
+ * Input parameters:
+ *   None.
+ *
+ * Returned value:
+ *    None.
+ *
+ ****************************************************************************/
+
+void pm_start(void) 
+{
+  is_running = true;
+}
+
+bool is_pm_running()
+{
+	return is_running;
+}
+
+void set_sleep_ops(struct pm_sleep_ops *s_ops)
+{
+	g_sleep_ops = s_ops;
+}
+
+struct pm_sleep_ops* get_sleep_ops()
+{
+	return g_sleep_ops;
+}
+
 
 #endif /* CONFIG_PM */
