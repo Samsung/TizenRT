@@ -326,10 +326,9 @@ if SMP
 config CPU_HOTPLUG
 	bool "CPU Hotplug"
 	default n
-	depends on PM
 	---help---
 		This will register an additional Software Generated Interrupt (SGI) 
-		for CPU Hotplug when system goes low power mode (ie. Power Gating)
+		for CPU Hotplug when system goes low power mode
 
 config SCHED_MIGRATE
 	bool "Scheduler Migration Support"

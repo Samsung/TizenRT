@@ -350,12 +350,9 @@ extern volatile spinlock_t g_cpu_tasklistlock;
 /* Global variable to track active CPUs */
 extern cpu_set_t g_active_cpus_mask;
 
-#endif /* CONFIG_SMP */
-
-#ifdef CONFIG_CPU_HOTPLUG
 /* Spinlock for synchronizing access to global hotplug state */
 extern volatile spinlock_t g_state_transition_lock;
-#endif
+#endif /* CONFIG_SMP */
 
 
 /****************************************************************************
@@ -411,16 +408,6 @@ int  sched_pause_cpu(FAR struct tcb_s *tcb);
 #  define sched_select_cpu(a)     (0)
 #  define sched_pause_cpu(t)      (-38)  /* -ENOSYS */
 #  define sched_islocked_tcb(tcb) ((tcb)->lockcount > 0)
-#endif
-
-#ifdef CONFIG_CPU_HOTPLUG
-int sched_cpuon(int);
-int sched_cpuoff(int);
-cpu_set_t sched_getactivecpu(void);
-#else
-#define sched_cpuon(a)
-#define sched_cpuoff(a)
-#define sched_getactivecpu()
 #endif
 
 #ifdef CONFIG_SCHED_MIGRATE

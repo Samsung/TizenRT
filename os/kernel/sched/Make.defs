@@ -62,10 +62,6 @@ CSRCS += sched_lock.c sched_unlock.c sched_lockcount.c sched_self.c
 CSRCS += sched_getaffinity.c sched_setaffinity.c
 CSRCS += sched_getcpu.c
 
-ifeq ($(CONFIG_CPU_HOTPLUG), y)
-CSRCS += sched_cpuon.c sched_cpuoff.c sched_getactivecpu.c
-endif
-
 ifeq ($(CONFIG_SW_STACK_OVERFLOW_DETECTION),y)
 CSRCS += sched_checkstackoverflow.c
 endif
@@ -78,6 +74,12 @@ ifeq ($(CONFIG_SMP),y)
 CSRCS += sched_cpuselect.c sched_cpupause.c
 
 CSRCS += sched_thistask.c
+
+CSRCS += sched_cpuon.c sched_getactivecpu.c
+endif
+
+ifeq ($(CONFIG_CPU_HOTPLUG), y)
+CSRCS += sched_cpuoff.c
 endif
 
 ifeq ($(CONFIG_SCHED_MIGRATE),y)
