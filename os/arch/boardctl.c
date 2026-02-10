@@ -152,9 +152,18 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 		/* Add 100ms delay for flushing another logs like printf. */
 		up_mdelay(100);
 		lldbg("Board will Reboot now. pid: %d\n", getpid());
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+		if (!up_reboot_reason_is_written()) {
+			for (int i = 0; i < 10; i++) {
+				lldbg("\n    VIOLATION!!! YOU MUST SET REBOOT REASON!!!\n\n");
+			}
+		}
+#endif
 		/* Add 100ms delay for flushing UART FIFO. */
 		up_mdelay(100);
 		ret = board_reset((int)arg);
+
+		sched_unlock();
 		break;
 #endif
 
