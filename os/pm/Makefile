@@ -21,6 +21,7 @@
 ASRCS =
 
 CSRCS += pm_changestate.c pm_checkstate.c pm_initialize.c pm_idle.c
+CSRCS += pm_start.c pm_stop.c
 CSRCS += pm_register.c pm_domain_register.c pm_unregister.c pm_procfs.c
 CSRCS += pm_suspend.c pm_resume.c pm_timedsuspend.c
 CSRCS += pm_suspendcount.c
@@ -34,7 +35,7 @@ CSRCS += pm_metrics.c
 endif
 
 ifeq ($(CONFIG_PM_DVFS),y)
-CSRCS += pm_dvfs.c
+CSRCS += pm_clock_initialize.c pm_dvfs.c
 endif
 
 
