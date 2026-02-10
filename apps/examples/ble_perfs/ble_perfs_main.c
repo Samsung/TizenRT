@@ -120,7 +120,7 @@ static void addr_type_to_string(char *address, const uint8_t *addr)
 }
 
 
-static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
+static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg, uint16_t result, uint16_t pending)
 {
 	char *arg_str = "None";
 
@@ -128,16 +128,16 @@ static void utc_cb_charact_a_1(ble_server_attr_cb_type_e type, ble_conn_handle c
 		arg_str = (char *)arg;
 	}
 
-	BLE_LOGD("[CHAR_A_1][%s] type : %d / handle : %d / attr : %02x \n", arg_str, type, conn_handle, attr_handle);
+	BLE_LOGD("[CHAR_A_1][%s] type : %d / handle : %d / attr : %02x / result : %d / pending : %d\n", arg_str, type, conn_handle, attr_handle, result, pending);
 }
 
-static void utc_cb_desc_b_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg)
+static void utc_cb_desc_b_1(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void *arg, uint16_t result, uint16_t pending)
 {
 	char *arg_str = "None";
 	if (arg != NULL) {
 		arg_str = (char *)arg;
 	}
-	BLE_LOGD( "[DESC_A_1][%s] type : %d / handle : %d / attr : %02x \n", arg_str, type, conn_handle, attr_handle);
+	BLE_LOGD( "[DESC_A_1][%s] type : %d / handle : %d / attr : %02x / result : %d / pending : %d\n", arg_str, type, conn_handle, attr_handle, result, pending);
 }
 
 
@@ -185,7 +185,7 @@ static int perfs_ble_get_result(void)
 	return 0;
 }
 
-static void ble_peri_cb_charact_rmc_sync(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void* arg) 
+static void ble_peri_cb_charact_rmc_sync(ble_server_attr_cb_type_e type, ble_conn_handle conn_handle, ble_attr_handle attr_handle, void* arg, uint16_t result, uint16_t pending)
 {
 	uint8_t buf[256] = { 0, };
 	ble_data blue_data = { buf, sizeof(buf) };
@@ -260,11 +260,11 @@ static ble_server_gatt_t gatt_profile[] = {
 		.attr_handle = BLE_APP_HANDLE_CHAR_RMC_SYNC, .cb = ble_peri_cb_charact_rmc_sync, .arg = &g_perf_data},
 };
 
-static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN])
+static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_connection_type_e conn_type, uint8_t mac[BLE_BD_ADDR_MAX_LEN], uint8_t adv_handle)
 {
 	char address_str[BLE_BD_ADDR_STR_LEN + 1] = {0,};
 
-	BLE_LOGD( "conn : %d / conn_type : %s(%d) \n", con_handle, get_conn_type_str(conn_type), conn_type);
+	BLE_LOGD( "conn : %d / conn_type : %s(%d) / adv_handle : %d\n", con_handle, get_conn_type_str(conn_type), conn_type, adv_handle);
 
 	addr_type_to_string(address_str, mac);
 	BLE_LOGD( "device address [%s] \n", address_str);
@@ -277,9 +277,15 @@ static void ble_server_connected_cb(ble_conn_handle con_handle, ble_server_conne
 }
 
 static ble_server_init_config server_config = {
-	ble_server_connected_cb,NULL,NULL,NULL,
-	true,
-	gatt_profile, sizeof(gatt_profile) / sizeof(ble_server_gatt_t)};
+	.connected_cb = ble_server_connected_cb,
+	.disconnected_cb = NULL,
+	.mtu_update_cb = NULL,
+	.passkey_display_cb = NULL,
+	.pair_bond_cb = NULL,
+	.is_secured_connect_allowed = true,
+	.profile = gatt_profile,
+	.profile_count = sizeof(gatt_profile) / sizeof(ble_server_gatt_t)
+};
 
 
 static void perfs_ble_usage(void)
@@ -451,4 +457,3 @@ int ble_perfs_main(int argc, char *argv[])
 
 	return 0;
 }
-
