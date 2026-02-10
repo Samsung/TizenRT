@@ -58,62 +58,6 @@ typedef enum {
 #define CONFIG_LCD_SEND_VENDOR_INIT_CMD_RETRY_COUNT 3
 #endif
 
-#if defined(CONFIG_LCD_SW_ROTATION)
-#define NUM_OF_LCD_BUFFER	2
-static uint8_t *lcd_buffer[NUM_OF_LCD_BUFFER] = { NULL, NULL };	//Two lcd buffers to avoid screen tearing
-static int lcd_buffer_index = 0;
-static void lcd_rotate_buffer(short int* src, short int* dst)
-{
-	int row;
-	int col;
-	int dst_inc = 2 * CONFIG_LCD_XRES;
-	short int val0;
-	short int val1;
-	short int val2;
-	short int val3;
-	short int *psrc;
-	short int *pdst;
-
-#if defined(CONFIG_LCD_LANDSCAPE)
-	for (row = 0; row < CONFIG_LCD_XRES; row += 2) {
-		psrc = src + row * CONFIG_LCD_YRES;
-		pdst = dst + CONFIG_LCD_XRES - row - 2;
-		for (col = 0; col < CONFIG_LCD_YRES; col += 2) {
-			val0 = *(psrc + 0);
-			val1 = *(psrc + 1);
-			val2 = *(psrc + CONFIG_LCD_YRES + 0);
-			val3 = *(psrc + CONFIG_LCD_YRES + 1);
-			psrc += 2;
-			*(pdst + 0) = val2;
-			*(pdst + 1) = val0;
-			*(pdst + CONFIG_LCD_XRES) = val3;
-			*(pdst + CONFIG_LCD_XRES + 1) = val1;
-			pdst += dst_inc;
-		}
-	}
-#elif defined(CONFIG_LCD_RLANDSCAPE)
-	for (row = 0; row < CONFIG_LCD_XRES; row += 2) {
-		psrc = src + row * CONFIG_LCD_YRES;
-		pdst = dst + row + (CONFIG_LCD_YRES - 1) * CONFIG_LCD_XRES;
-		for (col = 0; col < CONFIG_LCD_YRES; col += 2) {
-			val0 = *(psrc + 0);
-			val1 = *(psrc + 1);
-			val2 = *(psrc + CONFIG_LCD_YRES + 0);
-			val3 = *(psrc + CONFIG_LCD_YRES + 1);
-			psrc += 2;
-			*(pdst + 0) = val0;
-			*(pdst + 1) = val2;
-			*(pdst - CONFIG_LCD_XRES) = val1;
-			*(pdst - CONFIG_LCD_XRES + 1) = val3;
-			pdst -= dst_inc;
-		}
-	}
-#else
-	#error LCD Screen Rotation support only available from PORTRAIT to LANDSCAPE AND RLANDSCAPE
-#endif
-}
-#endif
-
 struct mipi_lcd_dev_s {
 	/* Publicly visible device structure */
 	struct lcd_dev_s dev;
@@ -397,13 +341,7 @@ static int lcd_putarea(FAR struct lcd_dev_s *dev, fb_coord_t row_start, fb_coord
 	row_end += 1;
 	col_start += 1;
 	col_end += 1;
-#if defined(CONFIG_LCD_SW_ROTATION)
-	lcd_rotate_buffer((uint8_t *)buffer, lcd_buffer[lcd_buffer_index]);
-	priv->config->lcd_put_area((u8 *)lcd_buffer[lcd_buffer_index], row_start, col_start, row_end, col_end);
-	lcd_buffer_index = (1 - lcd_buffer_index);
-#else
 	priv->config->lcd_put_area((u8 *)buffer, row_start, col_start, row_end, col_end);
-#endif
 	if (get_mipi_state(priv) == MIPI_STATE_CMD_ON) {
 		set_mipi_state(priv, MIPI_STATE_VIDEO_ON);
 	}
@@ -448,14 +386,9 @@ static int lcd_getvideoinfo(FAR struct lcd_dev_s *dev, FAR struct fb_videoinfo_s
 		return -EINVAL;
 	}
 	//vinfo->fmt = st7785_COLORFMT; /* Color format: RGB16-565: RRRR RGGG GGGB BBBB */
-#if defined(CONFIG_LCD_SW_ROTATION)
-	vinfo->xres = LCD_YRES;	/* Horizontal resolution in pixel columns */
-	vinfo->yres = LCD_XRES;	/* Vertical resolution in pixel rows */
-#else
 	vinfo->xres = LCD_XRES;	/* Horizontal resolution in pixel columns */
 	vinfo->yres = LCD_YRES;	/* Vertical resolution in pixel rows */
 	vinfo->nplanes = MAX_NO_PLANES;	/* Number of color planes supported */
-#endif
 	return OK;
 }
 
@@ -695,123 +628,22 @@ static int lcd_setcontrast(FAR struct lcd_dev_s *dev, unsigned int contrast)
 	return OK;
 }
 
-#ifdef CONFIG_LCD_SPLASH_IMAGE
-static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
-{
-	int xres = LCD_XRES;
-	int yres = LCD_YRES;
-	uint8_t *fullscreen_buffer = NULL;
-	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
-
-#if defined(CONFIG_LCD_SW_ROTATION)
-	fullscreen_buffer = lcd_buffer[lcd_buffer_index];
-	lcd_buffer_index = (1 - lcd_buffer_index);
-#else
-	fullscreen_buffer = (uint8_t *)kmm_malloc(xres * yres * 2 + 1);
-	if (!fullscreen_buffer) {
-		lcddbg("Failed to allocate memory for fullscreen buffer\n");
-		goto errout;
-	}
-#endif
-	memset(fullscreen_buffer, 0, xres * yres * 2);
-	
-	if (image_load_bmp_file(bmp_filename, fullscreen_buffer, yres, xres) != OK) {
-		lcddbg("Failed to load BMP file\n");
-		return ERROR;
-	}
-	priv->config->lcd_put_area((u8 *)fullscreen_buffer, 1, 1, CONFIG_LCD_XRES, CONFIG_LCD_YRES);
-
-	return OK;
-}
-#endif /* CONFIG_LCD_SPLASH_IMAGE */
-
-/****************************************************************************
- * Name:  lcd_load_splash
- *
- * Description:
- *   Load and render splash image during driver initialization.
- *   This function is called during lcddev_register to display splash image.
- *   In normal booting case, render splash_normal.bmp and turn LCD on.
- *   In silent booting case, render splash_silent.bmp and turn LCD on.
- *   If there's no BMP file, turn off the LCD.
- *
- * Returns:
- *   OK if image rendering succeeded and LCD turned on,
- *   ERROR if image rendering failed or no image file.
- *
- ****************************************************************************/
-
-static int lcd_load_splash(struct lcd_dev_s *dev, const char* image_path)
-{
-#ifdef CONFIG_LCD_SPLASH_IMAGE
-	int ret;
-	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
-	
-	while (sem_wait(&priv->sem) != OK) {
-		ASSERT(get_errno() == EINTR);
-	}
-
-	ret = lcd_power_on(priv);
-	if (ret != OK) {
-		lcddbg("Failed to turn on the LCD\n");
-		sem_post(&priv->sem);
-		return ret;
-	}
-
-	ret = lcd_render_bmp(dev, image_path);
-	if (ret != OK) {
-		if (lcd_power_off(priv) != OK) {
-			sem_post(&priv->sem);
-			return -EIO;
-		}
-		sem_post(&priv->sem);
-		return ret;
-	}
-	priv->config->backlight(CONFIG_LCD_MAXPOWER);
-	priv->power = CONFIG_LCD_MAXPOWER;
-	ret = set_mipi_state(priv, MIPI_STATE_VIDEO_ON);
-	if (ret != OK) {
-		lcddbg("Failed to switch to video mode\n");
-		lcd_power_off(priv);
-		sem_post(&priv->sem);
-	}
-	sem_post(&priv->sem);
-
-	return OK;
-#else
-	return ERROR;
-#endif
-}
-
 FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct mipi_lcd_config_s *config)
 {
 	FAR struct mipi_lcd_dev_s *priv = &g_lcdcdev;
 	priv->dev.getplaneinfo = lcd_getplaneinfo;
 	priv->dev.getvideoinfo = lcd_getvideoinfo;
 	priv->dev.getlcdinfo = lcd_getlcdinfo;
-	priv->dev.getpower = (struct mipi_lcd_dev_s *)lcd_getpower;
+	priv->dev.getpower = lcd_getpower;
 	priv->dev.setpower = lcd_setpower;
 	priv->dev.getcontrast = lcd_getcontrast;
 	priv->dev.setcontrast = lcd_setcontrast;
 	priv->dev.init = lcd_init;
-	priv->dev.loadsplash = lcd_load_splash;
 	priv->dsi_dev = dsi;
 	priv->config = config;
 	priv->power = 0;
 	priv->mipi_state = MIPI_STATE_CMD_OFF;
 
 	sem_init(&priv->sem, 0 , 1);
-#if defined(CONFIG_LCD_SW_ROTATION)
-	uint8_t *mem = (uint8_t *)kmm_malloc((CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2 + 1) * NUM_OF_LCD_BUFFER);	// each pixel is 8bit int
-	if (!mem) {
-		lcddbg("ERROR: LCD rotate buffer memory allocation failed\n");
-		return NULL;
-	} else {
-		for (int i = 0; i < NUM_OF_LCD_BUFFER; i++) {
-			lcd_buffer[i] = mem + i * CONFIG_LCD_XRES * CONFIG_LCD_YRES * 2;
-		}
-		lcdvdbg("Memory allocated for SW screen rotation, Number of buffers created %d\n", NUM_OF_LCD_BUFFER);
-	}
-#endif
 	return &priv->dev;
 }
