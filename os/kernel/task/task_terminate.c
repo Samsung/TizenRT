@@ -157,11 +157,9 @@
 int task_terminate(pid_t pid, bool nonblocking)
 {
 	FAR struct tcb_s *dtcb;
-	FAR dq_queue_t *tasklist;
 	irqstate_t flags;
-#ifdef CONFIG_SMP
-	int cpu;
-#endif
+	uint8_t task_state;
+
 	/* Find for the TCB associated with matching PID */
 
 	dtcb = sched_gettcb(pid);
@@ -185,53 +183,18 @@ int task_terminate(pid_t pid, bool nonblocking)
 	            dtcb->task_state < NUM_TASK_STATES);
 #endif
 
-#ifdef CONFIG_SMP
-	/* In the SMP case, the thread may be running on another CPU.  If that is
-	 * the case, then we will pause the CPU that the thread is running on.
+	/* Remove the task from the task list
+	 * before removing the task from the global tasklist, we are preserving its
+	 * task->state because later in the code, task_exithook() is called
+	 * task_exithook() -> task_recover() -> mq_recover() -> performs operations based
+	 * on tcb->task_state.
 	 */
 
-	cpu = sched_pause_cpu(dtcb);
-
-	/* Get the task list associated with the thread's state and CPU */
-
-	tasklist = TLIST_HEAD(dtcb->task_state, cpu);
-
-
-#else
-	/* In the non-SMP case, we can be assured that the task to be terminated
-	 * is not running.  get the task list associated with the task state.
-	 */
-
-	tasklist = TLIST_HEAD(dtcb->task_state);
-#endif
-
-	/* Remove the task from the task list */
-
-	dq_rem((FAR dq_entry_t *)dtcb, tasklist);
-
-	/* If the task was terminated by another task, it may be in an unknown
-	 * state.  Make some feeble effort to recover the state.
-	 * We need to perform this operation before we remove
-	 * the task from the tasklist. This is done to make sure that the tcb 
-	 * state is consistent with the task lists.
-	 */
-
-	task_recover(dtcb);
-	
-	/* Set the task state */
-	dtcb->task_state = TSTATE_TASK_INVALID;
+	task_state = dtcb->task_state;
+	sched_removereadytorun(dtcb);
+	dtcb->task_state = task_state;
 
 	/* At this point, the TCB should no longer be accessible to the system */
-
-#ifdef CONFIG_SMP
-
-	/* Resume the paused CPU (if any) */
-
-	if (cpu >= 0) {
-		//TODO: We are not yet sure about how to handle a failure here
-		DEBUGVERIFY(up_cpu_resume(cpu));
-	}
-#endif
 
 	leave_critical_section(flags);
 
