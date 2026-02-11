@@ -125,7 +125,7 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
 {
 	DEBUGASSERT(node);
 	node->alloc_call_addr = caller_retaddr;
-	node->reserved = 0;
+	node->memory_state = MM_MEMORY_STATE_UNUSED;
 	node->pid = getpid();
 }
 
