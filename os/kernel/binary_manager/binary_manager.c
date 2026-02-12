@@ -111,6 +111,7 @@ void binary_manager_reset_board(int reboot_reason)
 int binary_manager(int argc, char *argv[])
 {
 	int nbytes;
+	int ret;
 #if !defined(CONFIG_DISABLE_SIGNALS)
 	sigset_t sigset;
 #endif
@@ -121,7 +122,6 @@ int binary_manager(int argc, char *argv[])
 	bool is_found_bootparam = true;
 #endif
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	int ret;
 	bool is_found_ubin = true;
 #endif
 
@@ -148,6 +148,15 @@ int binary_manager(int argc, char *argv[])
 	if (binary_manager_get_ucount() <= 0) {
 		is_found_ubin = false;
 		goto errout_with_nobinary;
+	}
+#endif
+
+#ifdef CONFIG_USE_BP
+	/* Check and synchronize bootparam indices at boot time */
+	ret = binary_manager_sync_bootparam_partitions();
+	if (binary_manager_sync_bootparam_partitions() != BINMGR_OK) {
+		bmdbg("Failed to synchronize bootparam partitions, ret %d\n", ret);
+		return 0;
 	}
 #endif
 

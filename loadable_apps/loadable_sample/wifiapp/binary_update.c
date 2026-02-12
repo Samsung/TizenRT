@@ -677,6 +677,31 @@ void binary_update_test(void)
 {
 	binary_update_execute_ntimes(1);
 }
+
+/****************************************************************************
+ * binary_update_test_with_type
+ ****************************************************************************/
+void binary_update_test_with_type(const char *test_type)
+{
+	if (test_type == NULL) {
+		/* Default: run all tests */
+		binary_update_run_tests();
+		return;
+	}
+
+	if (strcmp(test_type, "same_version") == 0) {
+		binary_update_same_version_test(APP1_NAME);
+	} else if (strcmp(test_type, "new_version") == 0) {
+		binary_update_new_version_test(APP1_NAME);
+	} else if (strcmp(test_type, "invalid_binary") == 0) {
+		binary_update_invalid_binary_test(APP1_NAME);
+	} else if (strcmp(test_type, "all_tests") == 0) {
+		binary_update_run_tests();
+	} else {
+		printf("Unknown test type: %s\n", test_type);
+		printf("Available test types: same_version, new_version, invalid_binary, all_tests\n");
+	}
+}
 #endif
 
 #ifdef CONFIG_EXAMPLES_UPDATE_AGING_TEST
