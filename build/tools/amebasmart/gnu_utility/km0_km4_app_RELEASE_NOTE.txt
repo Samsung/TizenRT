@@ -1,8 +1,13 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 0d5f9b4bd7 2026/02/03-16:40:45 ==
+1. Refine wififw wake-up logic to use packet's destination address for evaluating wake-up condition                      
+2. Previous logic checks a shared buffer, but there is a rare case of timing mismatch that can cause buffer corruption, affecting the wake-up process and causing KM4 crash 
+
 == version d002f30788 2026/01/21-10:34:24 ==
 1. The original IPC flow could clear or handle interrupts while IMR was disabled, allowing a TX-done interrupt to be consumed before the waiter enabled IMR.
 2. Fix this by handling only `IPC_ISR & IPC_IMR` in the ISR and clearing any pending IPC interrupt status before enabling IMR and waiting.
+
 == version c220540be0 2025/12/24-13:53:09 ==
 1. Fix issue of crash due to wakeup by invalid packets
 
