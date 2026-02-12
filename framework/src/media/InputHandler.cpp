@@ -282,6 +282,13 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 		while (1) {
 			unsigned char *buffPCM = buf;
 			size_t sizePCM = used;
+			size_t spaces = mBufferWriter->sizeOfSpace();
+			if (spaces == 0) {
+				sleepWorker();
+			}
+			if (sizePCM > mBufferWriter->sizeOfSpace()) {
+				sizePCM = mBufferWriter->sizeOfSpace();
+			}
 			ret = getPCM(buffES, sizeES, &usedES, &buffPCM, &sizePCM);
 			if (ret < 0) {
 				meddbg("getPCM failed! error: %d\n", ret);
