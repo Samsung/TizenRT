@@ -204,49 +204,45 @@ trble_result_e rtw_ble_client_set_scan(uint16_t scan_interval, uint16_t scan_win
 }
 
 trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_parm, bool whitelist_enable)
-{ 
-    if (client_init_parm == NULL || client_init_parm->trble_device_scanned_cb == NULL || scan_parm == NULL)
-    {
-        return TRBLE_FAIL;
-    }
+{
+	if (client_init_parm == NULL || client_init_parm->trble_device_scanned_cb == NULL || scan_parm == NULL) {
+		return TRBLE_FAIL;
+	}
 
-    rtk_bt_le_gap_dev_state_t new_state;
-    if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
-    {
-        dbg("get dev state fail \n");
-    }
+	rtk_bt_le_gap_dev_state_t new_state;
+	if (RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state)) {
+		dbg("Get dev state fail \n");
+	}
 
 	if (new_state.gap_scan_state != GAP_SCAN_STATE_IDLE) {
 		dbg("Scan already started!! \n");
 		return TRBLE_INVALID_STATE;
 	}
 	rtk_bt_le_scan_info_filter_param_t scan_info;
-    if (scan_parm->raw_data_length != 0) {
+	if (scan_parm->raw_data_length != 0) {
 		scan_info.len = scan_parm->raw_data_length;
 		scan_info.enable = true;
 		scan_info.p_filter = scan_parm->raw_data;
 		scan_info.offset = 0;
-        if(RTK_BT_OK != rtk_bt_le_gap_scan_info_filter(&scan_info))
-        {
-            dbg("set scan info fail !! \n");
-            return TRBLE_FAIL;
-        } else {
-            dbg("set scan info success \n");
-        }
-    } else {
-    	scan_info.enable = false;
+		if (RTK_BT_OK != rtk_bt_le_gap_scan_info_filter(&scan_info)) {
+			dbg("Scan set info fail !! \n");
+			return TRBLE_FAIL;
+		} else {
+			dbg("Scan set info success \n");
+		}
+	} else {
+		scan_info.enable = false;
 		scan_info.len = 0;
 		scan_info.p_filter = NULL;
 		scan_info.offset = 0;
-        if(RTK_BT_OK == rtk_bt_le_gap_scan_info_filter(&scan_info))
-        {
-            dbg("disable scan info filter success \n");
-        } else {
-            dbg("disable scan info filter fail!!! \n");
-        }
-    }
+		if(RTK_BT_OK == rtk_bt_le_gap_scan_info_filter(&scan_info)) {
+			dbg("Disable scan info filter success \n");
+		} else {
+			dbg("Disable scan info filter fail!!! \n");
+		}
+	}
 
-	if(whitelist_enable){
+	if (whitelist_enable) {
 		rtk_bt_le_scan_param_t gap_scan_param;
 		gap_scan_param.type = RTK_BT_LE_SCAN_TYPE_ACTIVE;
 		gap_scan_param.interval = 0x60;
@@ -254,68 +250,67 @@ trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_par
 		gap_scan_param.own_addr_type = RTK_BT_LE_ADDR_TYPE_PUBLIC;
 		gap_scan_param.filter_policy = RTK_BT_LE_SCAN_FILTER_ALLOW_ONLY_WLST;
 		gap_scan_param.duplicate_opt = RTK_BT_LE_SCAN_DUPLICATE_DISABLE;
-        if(RTK_BT_OK != rtk_bt_le_gap_set_scan_param(&gap_scan_param))
-        {
-            dbg("set scan param fail \n");
-        }
+		if (RTK_BT_OK != rtk_bt_le_gap_set_scan_param(&gap_scan_param)) {
+			dbg("Set scan param fail \n");
+		}
 	}
-    if (RTK_BT_OK != rtk_bt_le_gap_start_scan())
-    {
-        dbg("start scan failed! \n");
-        return TRBLE_FAIL;
-    }
+	if (RTK_BT_OK != rtk_bt_le_gap_start_scan()) {
+		dbg("Start scan failed! \n");
+		return TRBLE_FAIL;
+	}
 
-    if(scan_parm->scan_duration != 0)
-    {
-        if(NULL == scan_filter_tmr_handle)
-        {
-            if(!osif_timer_create(&scan_filter_tmr_handle, "scan_with_filter", 0, scan_parm->scan_duration, 0, scan_stop_cb))
-            {
-                dbg("timer creat fail!! \n");
-                return TRBLE_FAIL;
-            } else {
-                dbg("timer creat success \n");
-            }
+	if (scan_parm->scan_duration != 0) {
+		if(NULL == scan_filter_tmr_handle) {
+			if (!osif_timer_create(&scan_filter_tmr_handle, "scan_with_filter", 0, scan_parm->scan_duration, 0, scan_stop_cb)) {
+				dbg("Scan timer creat fail!! \n");
+				return TRBLE_FAIL;
+			}
 
-            if(!osif_timer_start(&scan_filter_tmr_handle))
-            {
-                dbg("timer start fail!! \n");
-                return TRBLE_FAIL;
-            } else {
-                dbg("timer start success \n");
-            }
-        } else {
-            if(!osif_timer_restart(&scan_filter_tmr_handle, scan_parm->scan_duration))
-            {
-                dbg("timer restart fail!! \n");
-                return TRBLE_FAIL;
-            } else {
-                dbg("timer restart success \n");
-            }
-        }
-    }
-    return TRBLE_SUCCESS;  
+			if (!osif_timer_start(&scan_filter_tmr_handle)) {
+				dbg("Scan timer start fail!! \n");
+				return TRBLE_FAIL;
+			}
+		} else {
+			if(!osif_timer_restart(&scan_filter_tmr_handle, scan_parm->scan_duration)) {
+				dbg("Scan timer restart fail!! \n");
+				return TRBLE_FAIL;
+			}
+		}
+		dbg("Scan timer start success \n");
+	}
+	return TRBLE_SUCCESS;
 }
 
 trble_result_e rtw_ble_client_stop_scan(void)
-{ 
-    rtk_bt_le_gap_dev_state_t new_state;
-    if(RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state))
-    {
-        dbg("get dev state fail \n");
-    }
+{
+	rtk_bt_le_gap_dev_state_t new_state;
+	if (RTK_BT_OK != rtk_bt_le_gap_get_dev_state(&new_state)) {
+		dbg("Get dev state fail \n");
+	}
 
 	if (new_state.gap_scan_state != GAP_SCAN_STATE_SCANNING) {
 		return TRBLE_INVALID_STATE;
 	}
 
-    if (RTK_BT_OK != rtk_bt_le_gap_stop_scan())
-    {
-        dbg("stop scan failed! \n");
-        return TRBLE_FAIL;
-    }
+	if (RTK_BT_OK != rtk_bt_le_gap_stop_scan()) {
+		dbg("Stop scan failed! \n");
+		return TRBLE_FAIL;
+	}
+	if (!osif_timer_stop(&scan_filter_tmr_handle)) {
+		dbg("Scan timer stop fail!! \n");
+	}
+	return TRBLE_SUCCESS;
+}
 
-    return TRBLE_SUCCESS;
+trble_result_e rtw_ble_client_delete_scan_timer(void)
+{
+	if (scan_filter_tmr_handle) {
+		if (!osif_timer_delete(&scan_filter_tmr_handle)) {
+			dbg("Scan timer delete fail!! \n");
+			return TRBLE_FAIL;
+		}
+	}
+	return TRBLE_SUCCESS;
 }
 
 trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secured_connect)
@@ -847,14 +842,16 @@ trble_result_e rtw_ble_client_operation_enable_notification_and_indication(trble
 
 trble_result_e rtw_ble_client_deinit(void)
 {
-    ble_tizenrt_central_main(0);
+	ble_tizenrt_central_main(0);
 
-    osif_mem_free(client_init_parm);
-    client_init_parm = NULL;
-    osif_mem_free(ble_tizenrt_conn_ind);
+	rtw_ble_client_delete_scan_timer();
+
+	osif_mem_free(client_init_parm);
+	client_init_parm = NULL;
+	osif_mem_free(ble_tizenrt_conn_ind);
 	ble_tizenrt_conn_ind = NULL;
 
-    return TRBLE_SUCCESS; 
+	return TRBLE_SUCCESS;
 }
 
 #endif /* TRBLE_CLIENT_C_ */

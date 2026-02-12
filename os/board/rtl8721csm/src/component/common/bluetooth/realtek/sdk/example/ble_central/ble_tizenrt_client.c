@@ -416,19 +416,21 @@ trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_par
 }
 
 trble_result_e rtw_ble_client_stop_scan(void)
-{ 
+{
 	T_GAP_DEV_STATE new_state;
 	le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
 	if (new_state.gap_scan_state != GAP_SCAN_STATE_SCANNING) {
 		return TRBLE_INVALID_STATE;
 	}
 
-    if(ble_tizenrt_client_send_msg(BLE_TIZENRT_STOP_SCAN, NULL) == false)
-    {
-        debug_print("msg send fail \n");
-        return TRBLE_FAIL;
-    }
-    return TRBLE_SUCCESS;
+	if (ble_tizenrt_client_send_msg(BLE_TIZENRT_STOP_SCAN, NULL) == false) {
+		debug_print("msg send fail \n");
+		return TRBLE_FAIL;
+	}
+	if (!osif_timer_stop(&scan_filter_tmr_handle)) {
+		dbg("Scan timer stop fail!! \n");
+	}
+	return TRBLE_SUCCESS;
 }
 
 trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secured_connect)
