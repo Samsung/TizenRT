@@ -60,7 +60,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <tinyara/config.h>
-#include <apps/shell/tash.h>
 
 /****************************************************************************
  * Global variable
@@ -71,11 +70,6 @@
  * Definitions
  ****************************************************************************/
 static int beken_commands_line_process(int argc, char *argv[]);
-
-static tash_cmdlist_t beken_cmds[] = {
-	{"beken", beken_commands_line_process, TASH_EXECMD_ASYNC},
-	{NULL, NULL, 0}
-};
 
 static int beken_commands_line_process(int argc, char *argv[])
 {
@@ -106,12 +100,6 @@ int main(int argc, FAR char *argv[])
 int beken_commands_line_init(int argc, char *argv[])
 #endif
 {
-#ifdef CONFIG_TASH
-#ifndef CONFIG_BK_CLI_USE_SEPRATE_UART
-    /* add tash command */
-	tash_cmdlist_install(beken_cmds);
-#endif // #ifndef CONFIG_BK_CLI_USE_SEPRATE_UART
-#endif // CONFIG_TASH
     extern int bk_cli_init(void);  
     bk_cli_init();
 	return 0;
