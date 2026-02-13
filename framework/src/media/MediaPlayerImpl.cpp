@@ -1131,6 +1131,17 @@ void MediaPlayerImpl::playbackFinished()
 	fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
 }
 
+player_result_t MediaPlayerImpl::getStreamBufferSize(size_t &size)
+{
+	player_result_t ret = PLAYER_OK;
+	size = get_output_card_buffer_size();
+	if (size < 0) {
+		meddbg("MediaPlayer getStreamBufferSize fail\n");
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+	}
+	return ret;
+}
+
 MediaPlayerImpl::~MediaPlayerImpl()
 {
 	player_result_t ret;
