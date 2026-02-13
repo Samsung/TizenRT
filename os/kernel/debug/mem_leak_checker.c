@@ -37,9 +37,9 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#define MEM_USED   0
-#define MEM_LEAK   1
-#define MEM_BROKEN 2
+#define MEM_USED   MM_MEMORY_STATE_USED
+#define MEM_LEAK   MM_MEMORY_STATE_LEAK
+#define MEM_BROKEN MM_MEMORY_STATE_BROKEN
 #define CMN_BIN_IDX 0
 
 #define MEM_ACCESS_UNIT    0x04
@@ -111,10 +111,10 @@ static bool search_hash(unsigned long value)
 
 	while (cur != NULL) {
 		if ((unsigned long)cur->node == value) {
-			if (cur->node->reserved == MEM_USED) {
+			if (cur->node->memory_state == MEM_USED) {
 				return false;
 			}
-			cur->node->reserved = MEM_USED;
+			cur->node->memory_state = MEM_USED;
 			return true;
 		}
 		if (cur->next == NULL) {
@@ -197,7 +197,7 @@ static void fill_hash_table(struct mm_heap_s *heap, int *leak_cnt, int *broken_c
 
 			/* Check broken link */
 			if (node_size != MM_PREV_NODE_SIZE(node)) {
-				node->reserved = MEM_BROKEN;
+				node->memory_state = MEM_BROKEN;
 				(*broken_cnt)++;
 				continue;
 			}
@@ -210,7 +210,7 @@ static void fill_hash_table(struct mm_heap_s *heap, int *leak_cnt, int *broken_c
 			if ((node->preceding & MM_ALLOC_BIT) != 0) {
 				g_node_info[*leak_cnt].node = node;
 				g_node_info[*leak_cnt].next = NULL;
-				node->reserved = MEM_LEAK;
+				node->memory_state = MEM_LEAK;
 				add_hash(*leak_cnt);
 				(*leak_cnt)++;
 			}
@@ -344,7 +344,7 @@ static void print_info(struct mm_heap_s *heap, int leak_cnt, int broken_cnt)
 		{
 			for (node = heap->mm_heapstart[region]; node <  heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 				ASSERT(node->size);
-				if (node->reserved == MEM_LEAK) {
+				if (node->memory_state == MEM_LEAK) {
 					/* alloc_call_addr can be from kernel, app or common binary.
 					* based on the text addresses printed, user needs to check the
 					* corresponding binaries accordingly
@@ -358,7 +358,7 @@ static void print_info(struct mm_heap_s *heap, int leak_cnt, int broken_cnt)
 						pid = (-1) * pid;
 					}
 					printf("LEAK   | %10p |  %8d  | %10p | %d\n", (void *)((char *)node + SIZEOF_MM_ALLOCNODE), node->size - SIZEOF_MM_ALLOCNODE, owner_addr, pid);
-				} else if (node->reserved == MEM_BROKEN) {
+				} else if (node->memory_state == MEM_BROKEN) {
 					printf("BROKEN | %p\n", node);
 				}
 			}
