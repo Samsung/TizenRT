@@ -185,6 +185,22 @@ void InputHandler::sleepWorker()
 	}
 }
 
+bool InputHandler::getStreamBufferSize(size_t &size)
+{
+	auto mp = getPlayer();
+	if (!mp) {
+		meddbg("Mediaplayer instance is null\n");
+		return false;
+	}
+
+	player_result_t ret = mp->getStreamBufferSize(size);
+	if (ret != PLAYER_OK) {
+		meddbg("Failed to get stream buffer size. ret: %d\n", ret);
+		return false;
+	}
+	return true;
+}
+
 void InputHandler::setBufferState(buffer_state_t state)
 {
 	if (mState != state) {

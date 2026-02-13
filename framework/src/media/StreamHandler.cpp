@@ -42,8 +42,15 @@ bool StreamHandler::open()
 	}
 
 	if (!getStreamBuffer()) {
+		size_t streamBufferSize;
+		bool ret = getStreamBufferSize(streamBufferSize);
+		if (!ret) {
+			meddbg("Failed to get stream buffer size, setting default value\n");
+			streamBufferSize = CONFIG_HANDLER_STREAM_BUFFER_SIZE;
+		}
+
 		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_HANDLER_STREAM_BUFFER_SIZE)
+								.setBufferSize(streamBufferSize)
 								.setThreshold(CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD)
 								.build();
 
@@ -200,6 +207,12 @@ void StreamHandler::setStreamBuffer(std::shared_ptr<StreamBuffer> streamBuffer)
 		mBufferReader = std::make_shared<StreamBufferReader>(mStreamBuffer);
 		mBufferWriter = std::make_shared<StreamBufferWriter>(mStreamBuffer);
 	}
+}
+
+bool StreamHandler::getStreamBufferSize(size_t &size)
+{
+	size = CONFIG_HANDLER_STREAM_BUFFER_SIZE;
+	return true;
 }
 
 } // namespace stream

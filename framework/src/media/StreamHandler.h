@@ -65,6 +65,7 @@ protected:
 	virtual bool registerCodec(audio_type_t audioType, unsigned int channels, unsigned int sampleRate) = 0;
 	virtual void unregisterCodec() = 0;
 	virtual const char *getWorkerName() const = 0;
+	virtual bool getStreamBufferSize(size_t &size);
 
 	std::shared_ptr<StreamBuffer> mStreamBuffer;
 	std::shared_ptr<StreamBufferReader> mBufferReader;
