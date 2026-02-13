@@ -24,7 +24,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <tinyara/config.h>
-#include <apps/shell/tash.h>
 #include "bk_cli.h"
 #include "cli.h"
 #include "stdarg.h"
