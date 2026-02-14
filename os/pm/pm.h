@@ -77,22 +77,26 @@
 #define pm_alloc(num, size) calloc(num, size)
 #endif
 
-/* Function-like macros *****************************************************/
 /****************************************************************************
  * Name: pm_lock
  *
- * Descripton:
- *   Lock the power management registry.  NOTE: This function may return
- *   an error if a signal is received while what (errno == EINTR).
+ * Description:
+ *   Lock the power management registry. This function will block until
+ *   the semaphore is acquired. It automatically retries if interrupted
+ *   by a signal (EINTR).
+ *
+ * Returned Value:
+ *   OK (0) on success.
  *
  ****************************************************************************/
 
-#define pm_lock() sem_wait(&g_pmglobals.regsem);
+int pm_lock(void);
 
+/* Function-like macros *****************************************************/
 /****************************************************************************
  * Name: pm_unlock
  *
- * Descripton:
+ * Description:
  *   Unlock the power management registry.
  *
  ****************************************************************************/

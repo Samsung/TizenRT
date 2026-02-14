@@ -84,26 +84,6 @@ const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "L
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pm_start
- *
- * Description:
- *   This function is called by the application thread to start the Power
- *   Management system. This fucntion sets the is_running flag which
- *   enables pm to transition between low and high power states.
- *
- * Input parameters:
- *   None.
- *
- * Returned value:
- *    None.
- *
- ****************************************************************************/
-
-void pm_start(void) {
-	g_pmglobals.is_running = true;
-}
-
-/****************************************************************************
  * Name: pm_initialize
  *
  * Description:
@@ -132,32 +112,6 @@ void pm_initialize(struct pm_sleep_ops *sleep_ops)
 
 	/* Register the PM ops structures */
 	g_pmglobals.sleep_ops = sleep_ops;
-
 }
-
-/****************************************************************************
- * Name: pm_clock_initialize
- *
- * Description:
- *   This function is called by MCU-specific one-time at power on reset in
- *   order to initialize the pm clock capabilityes.  This function
- *   must be called *very* early in the initializeation sequence *before* any
- *   other device drivers are initialize (since they may attempt to register
- *   with the power management subsystem). It also fills the PM ops with the
- *   required BSP APIs.
- *
- * Input parameters:
- *   dvfs_ops: pm power gating operations to use.
- *
- * Returned value:
- *    None.
- *
- ****************************************************************************/
-#ifdef CONFIG_PM_DVFS
-void pm_clock_initialize(struct pm_clock_ops *dvfs_ops)
-{
-	g_pmglobals.dvfs_ops = dvfs_ops;
-}
-#endif
 
 #endif /* CONFIG_PM */
