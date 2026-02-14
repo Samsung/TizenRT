@@ -65,6 +65,7 @@
 #define LCDDEVIO_INIT         _LCDIOC(18)
 #define LCDDEVIO_SETORIENTATION  _LCDIOC(19)    /* Arg: int */
 #define LCDDEVIO_GETLCDINFO    _LCDIOC(20)    /* Arg: struct lcd_info_s* Description: Get the static LCD characteristics such as width, height, size and DPI. */
+#define LCDDEVIO_GETDISPLAYID  _LCDIOC(21)	  /* Arg: uint32_t* (24-bit display ID) */
 
 /****************************************************************************
  * Public Data
