@@ -26,6 +26,7 @@
 #include <tinyara/config.h>
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/spinlock.h>
 #include <tinyara/debug/sysdbg.h>
 #include <tinyara/clock.h>
 #include <sys/types.h>
@@ -59,10 +60,16 @@ static void sysdbg_print(void);
 #ifdef CONFIG_TASK_SCHED_HISTORY
 static void update_maxtask_count(int count);
 static uint32_t max_task_count = CONFIG_DEBUG_TASK_MAX_COUNT;
+#ifdef CONFIG_SMP
+static uint32_t task_index[CONFIG_SMP_NCPUS];
+#endif
 #endif
 #ifdef CONFIG_IRQ_SCHED_HISTORY
 static void update_maxirq_count(int count);
 static uint32_t max_irq_count = CONFIG_DEBUG_IRQ_MAX_COUNT;
+#ifdef CONFIG_SMP
+static uint32_t irq_index[CONFIG_SMP_NCPUS];
+#endif
 #endif
 #ifdef CONFIG_SEMAPHORE_HISTORY
 static void update_maxsem_count(int count);
@@ -91,6 +98,7 @@ static const struct file_operations g_sysdbgops = {
 FAR sysdbg_t *sysdbg_struct = NULL;
 static bool sysdbg_monitor = false;
 static int32_t sysdbg_dev_opened;
+static volatile spinlock_t g_sysdbg_lock = SP_UNLOCKED;
 
 /****************************************************************************
  * Private Functions
@@ -302,97 +310,302 @@ static void sysdbg_print(void)
 {
 #if defined(CONFIG_TASK_SCHED_HISTORY) || defined(CONFIG_IRQ_SCHED_HISTORY) || defined(CONFIG_SEMAPHORE_HISTORY)
 	uint32_t idx = 0;
+	int alloc_size = 0;
+#endif
+#ifdef CONFIG_SMP
+	int cpu;
 #endif
 	irqstate_t saved_state;
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	sched_history_t *snap_sched[CONFIG_SMP_NCPUS] = {NULL};
+	uint32_t snap_task_lastindex[CONFIG_SMP_NCPUS] = {0};
+#else
+	sched_history_t *snap_sched = NULL;
+	uint32_t snap_task_lastindex = 0;
+#endif
+#endif
+#ifdef CONFIG_IRQ_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	irq_history_t *snap_irq[CONFIG_SMP_NCPUS] = {NULL};
+	uint32_t snap_irq_lastindex[CONFIG_SMP_NCPUS] = {0};
+#else
+	irq_history_t *snap_irq = NULL;
+	uint32_t snap_irq_lastindex = 0;
+#endif
+#endif
+#ifdef CONFIG_SEMAPHORE_HISTORY
+	sem_history_t *snap_sem_log = NULL;
+	uint32_t snap_sem_lastindex = 0;
+#endif
+
 	if (!sysdbg_monitor) {
-		dbg("sysdbg monitoring is not enabled, kindly enable\n");
+		dbg("sysdbg monitoring is not enabled\n");
 		return;
 	}
-
 	if (!sysdbg_struct) {
 		dbg("sysdbg_struct is NULL\n");
 		return;
 	}
 
-	saved_state = enter_critical_section();
+#ifdef CONFIG_TASK_SCHED_HISTORY
+	alloc_size = sizeof(sched_history_t) * max_task_count;
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		snap_sched[cpu] = (sched_history_t *)kmm_zalloc(alloc_size);
+		if (snap_sched[cpu] == NULL) {
+			dbg("Failed to allocate snapshot memory for sched\n");
+			while (--cpu >= 0) {
+				kmm_free(snap_sched[cpu]);
+			}
+			return;
+		}
+	}
+#else
+	snap_sched = (sched_history_t *)kmm_zalloc(alloc_size);
+	if (snap_sched == NULL) {
+		dbg("Failed to allocate snapshot memory for sched\n");
+		return;
+	}
+#endif
+#endif
+
+#ifdef CONFIG_IRQ_SCHED_HISTORY
+	alloc_size = sizeof(irq_history_t) * max_irq_count;
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		snap_irq[cpu] = (irq_history_t *)kmm_zalloc(alloc_size);
+		if (snap_irq[cpu] == NULL) {
+			dbg("Failed to allocate snapshot memory for irq\n");
+			while (--cpu >= 0) {
+				kmm_free(snap_irq[cpu]);
+			}
+			goto cleanup;
+		}
+	}
+#else
+	snap_irq = (irq_history_t *)kmm_zalloc(size);
+	if (snap_irq == NULL) {
+		dbg("Failed to allocate snapshot memory for irq\n");
+		goto cleanup;
+	}
+#endif
+#endif
+
+#ifdef CONFIG_SEMAPHORE_HISTORY
+	alloc_size = sizeof(sem_history_t) * max_sem_count;
+	snap_sem_log = (sem_history_t *)kmm_zalloc(alloc_size);
+	if (snap_sem_log == NULL) {
+		dbg("Failed to allocate snapshot memory for sem_log\n");
+		goto cleanup;
+	}
+#endif
+
+	saved_state = spin_lock_irqsave(&g_sysdbg_lock);
+	if (!sysdbg_monitor || !sysdbg_struct) {
+		spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
+		dbg("sysdbg monitoring is not enabled or struct is NULL\n");
+		goto cleanup;
+	}
+
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (sysdbg_struct->sched[cpu]) {
+			memcpy(snap_sched[cpu], sysdbg_struct->sched[cpu], sizeof(sched_history_t) * max_task_count);
+		}
+		snap_task_lastindex[cpu] = sysdbg_struct->task_lastindex[cpu];
+	}
+#else
+	if (sysdbg_struct->sched) {
+		memcpy(snap_sched, sysdbg_struct->sched, sizeof(sched_history_t) * max_task_count);
+	}
+	snap_task_lastindex = sysdbg_struct->task_lastindex;
+#endif
+#endif
+
+#ifdef CONFIG_IRQ_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (sysdbg_struct->irq[cpu]) {
+			memcpy(snap_irq[cpu], sysdbg_struct->irq[cpu], sizeof(irq_history_t) * max_irq_count);
+		}
+		snap_irq_lastindex[cpu] = sysdbg_struct->irq_lastindex[cpu];
+	}
+#else
+	if (sysdbg_struct->irq) {
+		memcpy(snap_irq, sysdbg_struct->irq, sizeof(irq_history_t) * max_irq_count);
+	}
+	snap_irq_lastindex = sysdbg_struct->irq_lastindex;
+#endif
+#endif
+
+#ifdef CONFIG_SEMAPHORE_HISTORY
+	if (sysdbg_struct->sem_log) {
+		memcpy(snap_sem_log, sysdbg_struct->sem_log, sizeof(sem_history_t) * max_sem_count);
+	}
+	snap_sem_lastindex = sysdbg_struct->sem_lastindex;
+#endif
+
+	spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
+
 #ifdef CONFIG_TASK_SCHED_HISTORY
 	lldbg("Displaying the TASK SCHEDULING HISTORY for %d count\n", max_task_count);
 	lldbg("*****************************************************************************\n");
+#ifdef CONFIG_SMP
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("* TASK_SCHEDTIME\t\tTASK_NAME\t PID\t PRIORITY\t TCB\n");
+	lldbg("* %5s%16s%20s%6s%10s%10s\n", "CPU", "TASK_SCHEDTIME", "TASK_NAME", "PID", "PRIORITY", "TCB");
 #else
-	lldbg("* TASK_SCHEDTIME\t PID\t PRIORITY\t TCB\n");
+	lldbg("* %5s%16s%6s%10s%10s\n", "CPU", "TASK_SCHEDTIME", "PID", "PRIORITY", "TCB");
 #endif
 	lldbg("*****************************************************************************\n");
-	idx = sysdbg_struct->task_lastindex;
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (!snap_sched[cpu]) {
+			continue;
+		}
+		lldbg("******************************* CPU%d History *******************************\n", cpu);
+		idx = snap_task_lastindex[cpu];
+		do {
+#if CONFIG_TASK_NAME_SIZE > 0
+			lldbg("  %5d%16lld%20s%6d%10d%10X\n",
+#else
+			lldbg("  %5d%16lld%6d%10d%10X\n",
+#endif
+				  cpu,
+				  (uint64_t)snap_sched[cpu][idx].time,
+#if CONFIG_TASK_NAME_SIZE > 0
+				  snap_sched[cpu][idx].task,
+#endif
+				  snap_sched[cpu][idx].pid, snap_sched[cpu][idx].sched_priority, snap_sched[cpu][idx].ptcb);
+			idx--;
+			idx = idx & (max_task_count - 1);
+		} while (idx != snap_task_lastindex[cpu]);
+	}
+#else /* CONFIG_SMP */
+#if CONFIG_TASK_NAME_SIZE > 0
+	lldbg("* %16s%20s%6s%10s%10s\n", "TASK_SCHEDTIME", "TASK_NAME", "PID", "PRIORITY", "TCB");
+#else
+	lldbg("* %16s%6s%10s%10s\n", "TASK_SCHEDTIME", "PID", "PRIORITY", "TCB");
+#endif
+	lldbg("*****************************************************************************\n");
+	idx = snap_task_lastindex;
 	do {
 #if CONFIG_TASK_NAME_SIZE > 0
-		lldbg("%8lld%31s%10d%10d%16X\n",
+		lldbg("  %16lld%20s%6d%10d%10X\n",
 #else
-		lldbg("%8lld%14d%10d%16X\n",
+		lldbg("  %16lld%6d%10d%10X\n",
 #endif
-			  (uint64_t)sysdbg_struct->sched[idx].time,
+			  (uint64_t)snap_sched[idx].time,
 #if CONFIG_TASK_NAME_SIZE > 0
-			  sysdbg_struct->sched[idx].task,
+			  snap_sched[idx].task,
 #endif
-			  sysdbg_struct->sched[idx].pid, sysdbg_struct->sched[idx].sched_priority, sysdbg_struct->sched[idx].ptcb);
+			  snap_sched[idx].pid, snap_sched[idx].sched_priority, snap_sched[idx].ptcb);
 		idx--;
-		/* Keeping it circular buffer */
 		idx = idx & (max_task_count - 1);
-	} while (idx != sysdbg_struct->task_lastindex);
+	} while (idx != snap_task_lastindex);
+#endif /* CONFIG_SMP */
 #else
-	lldbg("CONFIG_TASK_SCHED_HISTORY is not enabled to view task history");
-#endif							/* End of CONFIG_TASK_SCHED_HISTORY */
+	lldbg("CONFIG_TASK_SCHED_HISTORY is not enabled to view task history\n");
+#endif /* CONFIG_TASK_SCHED_HISTORY */
 
 #ifdef CONFIG_IRQ_SCHED_HISTORY
 	lldbg("Displaying the IRQ SCHEDULING HISTORY for %d count\n", max_irq_count);
 	lldbg("*****************************************************************************\n");
-	lldbg("* IRQ_TIME\t IRQ_NUMBER\t ISR_ADDRESS\n");
+#ifdef CONFIG_SMP
+	lldbg("* %5s%16s%12s%12s\n", "CPU", "IRQ_TIME", "IRQ_NUMBER", "ISR_ADDRESS");
 	lldbg("*****************************************************************************\n");
-
-	idx = sysdbg_struct->irq_lastindex;
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (!snap_irq[cpu]) {
+			continue;
+		}
+		lldbg("******************************* CPU%d History *******************************\n", cpu);
+		idx = snap_irq_lastindex[cpu];
+		do {
+			lldbg("  %5d%16lld%12d%12X\n", cpu, (uint64_t)snap_irq[cpu][idx].time, snap_irq[cpu][idx].irq, snap_irq[cpu][idx].fn);
+			idx--;
+			idx = idx & (max_irq_count - 1);
+		} while (idx != snap_irq_lastindex[cpu]);
+	}
+#else /* CONFIG_SMP */
+	lldbg("* %16s%12s%12s\n", "IRQ_TIME", "IRQ_NUMBER", "ISR_ADDRESS");
+	lldbg("*****************************************************************************\n");
+	idx = snap_irq_lastindex;
 	do {
-		lldbg("%8lld\t%8d\t%8X\n", (uint64_t)sysdbg_struct->irq[idx].time, sysdbg_struct->irq[idx].irq, sysdbg_struct->irq[idx].fn);
+		lldbg("  %16lld%12d%12X\n", (uint64_t)snap_irq[idx].time, snap_irq[idx].irq, snap_irq[idx].fn);
 		idx--;
-		/* Keeping it circular buffer */
 		idx = idx & (max_irq_count - 1);
-	} while (idx != sysdbg_struct->irq_lastindex);
+	} while (idx != snap_irq_lastindex);
+#endif /* CONFIG_SMP */
 #else
-	lldbg("CONFIG_IRQ_SCHED_HISTORY is not enabled to view irq history");
-#endif							/* End of CONFIG_IRQ_SCHED_HISTORY */
+	lldbg("CONFIG_IRQ_SCHED_HISTORY is not enabled to view irq history\n");
+#endif /* CONFIG_IRQ_SCHED_HISTORY */
 
 #ifdef CONFIG_SEMAPHORE_HISTORY
 	lldbg("Displaying the SEMAPHORE HISTORY for %d count\n", max_sem_count);
-	lldbg("IN:INIT AQ:AQUIRED RL:RELEASED WT:WAITING DR: DESTROY UN:UNKNOWN\n");
+	lldbg("IN:INIT AQ:ACQUIRED RL:RELEASED WT:WAITING DR:DESTROY UN:UNKNOWN\n");
 	lldbg("PID : -1 indicates that, it's a ISR, for ISR, TCB field gives reference of ISR\n");
-	lldbg("*********************************************************************************\n");
+	lldbg("*****************************************************************************\n");
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("SEMAPHORE_TIME\t STATUS\t\t  TASK_NAME\t SEMAPHORE     TCB\t PID\n");
+	lldbg("* %16s%8s%20s%12s%10s%6s\n", "SEMAPHORE_TIME", "STATUS", "TASK_NAME", "SEMAPHORE", "TCB", "PID");
 #else
-	lldbg("SEMAPHORE_TIME\t STATUS\t   SEMAPHORE\t TCB\t   PID\n");
+	lldbg("* %16s%8s%12s%10s%6s\n", "SEMAPHORE_TIME", "STATUS", "SEMAPHORE", "TCB", "PID");
 #endif
-	lldbg("*********************************************************************************\n");
+	lldbg("*****************************************************************************\n");
 
-	idx = sysdbg_struct->sem_lastindex;
+	idx = snap_sem_lastindex;
 	do {
 #if CONFIG_TASK_NAME_SIZE > 0
-		lldbg("%8lld%18s%20s%16X%12X%6d\n",
+		lldbg("  %16lld%8s%20s%12X%10X%6d\n",
 #else
-		lldbg("%8lld%18s%12X%12X%6d\n",
+		lldbg("  %16lld%8s%12X%10X%6d\n",
 #endif
-			  (uint64_t)sysdbg_struct->sem_log[idx].time, sysdbg_struct->sem_log[idx].status,
+			  (uint64_t)snap_sem_log[idx].time, snap_sem_log[idx].status,
 #if CONFIG_TASK_NAME_SIZE > 0
-			  sysdbg_struct->sem_log[idx].task_name,
+			  snap_sem_log[idx].task_name,
 #endif
-			  sysdbg_struct->sem_log[idx].sem, sysdbg_struct->sem_log[idx].ptcb, sysdbg_struct->sem_log[idx].pid);
+			  snap_sem_log[idx].sem, snap_sem_log[idx].ptcb, snap_sem_log[idx].pid);
 		idx--;
-		/* Keeping it circular buffer */
 		idx = idx & (max_sem_count - 1);
-	} while (idx != sysdbg_struct->sem_lastindex);
+	} while (idx != snap_sem_lastindex);
 #else
-	lldbg("CONFIG_SEMAPHORE_HISTORY is not enabled to view semaphore history");
+	lldbg("CONFIG_SEMAPHORE_HISTORY is not enabled to view semaphore history\n");
+#endif /* CONFIG_SEMAPHORE_HISTORY */
+
+cleanup:
+#ifdef CONFIG_SEMAPHORE_HISTORY
+	if (snap_sem_log) {
+		kmm_free(snap_sem_log);
+	}
 #endif
-	leave_critical_section(saved_state);
+
+#ifdef CONFIG_IRQ_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (snap_irq[cpu]) {
+			kmm_free(snap_irq[cpu]);
+		}
+	}
+#else
+	if (snap_irq) {
+		kmm_free(snap_irq);
+	}
+#endif
+#endif
+
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (snap_sched[cpu]) {
+			kmm_free(snap_sched[cpu]);
+		}
+	}
+#else
+	if (snap_sched) {
+		kmm_free(snap_sched);
+	}
+#endif
+#endif
+	return;
 }
 
 /****************************************************************************
@@ -402,7 +615,7 @@ static void sysdbg_print(void)
  *   fops to read data buffer passed from user space
  *
  * Inputs:
- *   filp:    file pointer
+ *   filep  : file pointer
  *   buffer : User space buffer
  *   buflen : User space buffer length
  *
@@ -491,6 +704,9 @@ static ssize_t sysdbg_write(FAR struct file *filep, FAR const char *buffer, size
  *
  * Assumptions:
  *   None
+ * Limitations:
+ *   sem_init from user space is not tracked.
+ *   Since sem_init is not called through a syscall but directly from libc, save_semaphore_history is not called.
  *
  ****************************************************************************/
 
@@ -499,16 +715,15 @@ void save_semaphore_history(FAR sem_t *sem, void *addr, sem_status_t status)
 	irqstate_t saved_state;
 	static uint32_t index = 0;
 
-	if (!sysdbg_monitor) {
-		/* Monitoring is still not enabled */
+	if (!sysdbg_monitor || !sysdbg_struct) {
 		return;
 	}
-	if (!sysdbg_struct) {
-		lldbg("sysdbg_struct is NULL\n");
+
+	saved_state = spin_lock_irqsave(&g_sysdbg_lock);
+	if (!sysdbg_monitor || !sysdbg_struct) {
+		spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
 		return;
 	}
-	saved_state = enter_critical_section();
-	/* Keeping it circular buffer */
 	index = index & (max_sem_count - 1);
 
 	sysdbg_struct->sem_log[index].time = clock_systimer();
@@ -545,7 +760,7 @@ void save_semaphore_history(FAR sem_t *sem, void *addr, sem_status_t status)
 	sysdbg_struct->sem_log[index].pid = ((struct tcb_s *)addr)->pid;
 	sysdbg_struct->sem_lastindex = index;
 	index++;
-	leave_critical_section(saved_state);
+	spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
 }
 
 /****************************************************************************
@@ -606,19 +821,44 @@ static void update_maxsem_count(int count)
 void save_task_scheduling_status(struct tcb_s *tcb)
 {
 	irqstate_t saved_state;
+#ifdef CONFIG_SMP
+	int cpu;
+#else
 	static uint32_t index = 0;
+#endif
 
-	if (!sysdbg_monitor) {
-		/* Monitoring is still not enabled */
-		return;
-	}
-	if (!sysdbg_struct) {
-		lldbg("dbg_log is NULL\n");
+	if (!sysdbg_monitor || !sysdbg_struct) {
 		return;
 	}
 
-	saved_state = enter_critical_section();
-	/* Keeping it circular buffer */
+	saved_state = spin_lock_irqsave(&g_sysdbg_lock);
+	if (!sysdbg_monitor || !sysdbg_struct) {
+		spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
+		return;
+	}
+
+#ifdef CONFIG_SMP
+	cpu = this_cpu();
+	if (!sysdbg_struct->sched[cpu]) {
+		spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
+		return;
+	}
+
+	task_index[cpu] = task_index[cpu] & (max_task_count - 1);
+
+	sysdbg_struct->sched[cpu][task_index[cpu]].time = clock_systimer();
+	if (tcb) {
+#if CONFIG_TASK_NAME_SIZE > 0
+		strncpy(sysdbg_struct->sched[cpu][task_index[cpu]].task, tcb->name, TASK_NAME_SIZE);
+		sysdbg_struct->sched[cpu][task_index[cpu]].task[TASK_NAME_SIZE] = '\0';
+#endif
+		sysdbg_struct->sched[cpu][task_index[cpu]].pid = tcb->pid;
+		sysdbg_struct->sched[cpu][task_index[cpu]].sched_priority = tcb->sched_priority;
+		sysdbg_struct->sched[cpu][task_index[cpu]].ptcb = tcb;
+	}
+	sysdbg_struct->task_lastindex[cpu] = task_index[cpu];
+	task_index[cpu]++;
+#else
 	index = index & (max_task_count - 1);
 
 	sysdbg_struct->sched[index].time = clock_systimer();
@@ -632,8 +872,8 @@ void save_task_scheduling_status(struct tcb_s *tcb)
 	}
 	sysdbg_struct->task_lastindex = index;
 	index++;
-	leave_critical_section(saved_state);
-
+#endif
+	spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
 }
 
 /****************************************************************************
@@ -695,17 +935,38 @@ static void update_maxtask_count(int count)
 
 void save_irq_scheduling_status(uint32_t irq, void *fn)
 {
+	irqstate_t saved_state;
+#ifdef CONFIG_SMP
+	int cpu;
+#else
 	static uint32_t index = 0;
-	if (!sysdbg_monitor) {
-		/* Monitoring is still not enabled */
-		return;
-	}
-	if (!sysdbg_struct) {
-		lldbg("sysdbg_struct is NULL\n");
+#endif
+
+	if (!sysdbg_monitor || !sysdbg_struct) {
 		return;
 	}
 
-	/* Keeping it circular buffer */
+	saved_state = spin_lock_irqsave(&g_sysdbg_lock);
+	if (!sysdbg_monitor || !sysdbg_struct) {
+		spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
+		return;
+	}
+
+#ifdef CONFIG_SMP
+	cpu = this_cpu();
+	if (!sysdbg_struct->irq[cpu]) {
+		spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
+		return;
+	}
+
+	irq_index[cpu] = irq_index[cpu] & (max_irq_count - 1);
+
+	sysdbg_struct->irq[cpu][irq_index[cpu]].time = clock_systimer();
+	sysdbg_struct->irq[cpu][irq_index[cpu]].irq = irq;
+	sysdbg_struct->irq[cpu][irq_index[cpu]].fn = (void *)fn;
+	sysdbg_struct->irq_lastindex[cpu] = irq_index[cpu];
+	irq_index[cpu]++;
+#else
 	index = index & (max_irq_count - 1);
 
 	sysdbg_struct->irq[index].time = clock_systimer();
@@ -713,6 +974,8 @@ void save_irq_scheduling_status(uint32_t irq, void *fn)
 	sysdbg_struct->irq[index].fn = (void *)fn;
 	sysdbg_struct->irq_lastindex = index;
 	index++;
+#endif
+	spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
 }
 
 /****************************************************************************
@@ -774,46 +1037,119 @@ static void update_maxirq_count(int count)
 static void sysdbg_monitor_disable(void)
 {
 	irqstate_t saved_state;
-	if (!sysdbg_monitor) {
-		lldbg("sysdbg monitoring is not yet enabled\n");
-		return;
-	}
-	if (sysdbg_struct) {
-		saved_state = enter_critical_section();
-		/* Set the flag first to avoid any race condition */
-		sysdbg_monitor = false;
+#ifdef CONFIG_SMP
+	int cpu;
+#endif
+	sysdbg_t *tmp_struct = NULL;
 #ifdef CONFIG_TASK_SCHED_HISTORY
-		/* Free the memory allocated for sched struct */
-		if (sysdbg_struct->sched) {
-			kmm_free(sysdbg_struct->sched);
-			sysdbg_struct->sched = NULL;
-		}
-		sysdbg_struct->task_lastindex = 0;
+#ifdef CONFIG_SMP
+	sched_history_t *tmp_sched[CONFIG_SMP_NCPUS] = {NULL};
+#else
+	sched_history_t *tmp_sched = NULL;
+#endif
 #endif
 #ifdef CONFIG_IRQ_SCHED_HISTORY
-		/* Free the memory allocated for irq struct */
-		if (sysdbg_struct->irq) {
-			kmm_free(sysdbg_struct->irq);
-			sysdbg_struct->irq = NULL;
-		}
-		sysdbg_struct->irq_lastindex = 0;
+#ifdef CONFIG_SMP
+	irq_history_t *tmp_irq[CONFIG_SMP_NCPUS] = {NULL};
+#else
+	irq_history_t *tmp_irq = NULL;
+#endif
 #endif
 #ifdef CONFIG_SEMAPHORE_HISTORY
-		/* Free the memory allocated for sem_log struct */
-		if (sysdbg_struct->sem_log) {
-			kmm_free(sysdbg_struct->sem_log);
-			sysdbg_struct->sem_log = NULL;
-		}
-		sysdbg_struct->sem_lastindex = 0;
+	sem_history_t *tmp_sem_log = NULL;
 #endif
-		/* Free the memory allocated for main sysdbg_struct */
-		kmm_free(sysdbg_struct);
-		sysdbg_struct = NULL;
 
-		leave_critical_section(saved_state);
+	if (!sysdbg_monitor || !sysdbg_struct) {
+		return;
+	}
+
+	saved_state = spin_lock_irqsave(&g_sysdbg_lock);
+	if (!sysdbg_monitor || !sysdbg_struct) {
+		spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
+		return;
+	}
+
+	/* Set the flag first to avoid any race condition */
+	sysdbg_monitor = false;
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		tmp_sched[cpu] = sysdbg_struct->sched[cpu];
+		sysdbg_struct->sched[cpu] = NULL;
+		sysdbg_struct->task_lastindex[cpu] = 0;
+		task_index[cpu] = 0;
+	}
+#else /* CONFIG_SMP*/
+	tmp_sched = sysdbg_struct->sched;
+	sysdbg_struct->sched = NULL;
+	sysdbg_struct->task_lastindex = 0;
+#endif /* CONFIG_SMP*/
+#endif /* CONFIG_TASK_SCHED_HISTORY */
+
+#ifdef CONFIG_IRQ_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		tmp_irq[cpu] = sysdbg_struct->irq[cpu];
+		sysdbg_struct->irq[cpu] = NULL;
+		sysdbg_struct->irq_lastindex[cpu] = 0;
+		irq_index[cpu] = 0;
+	}
+#else /* CONFIG_SMP*/
+	tmp_irq = sysdbg_struct->irq;
+	sysdbg_struct->irq = NULL;
+	sysdbg_struct->irq_lastindex = 0;
+#endif /* CONFIG_SMP*/
+#endif /* CONFIG_IRQ_SCHED_HISTORY */
+
+#ifdef CONFIG_SEMAPHORE_HISTORY
+	tmp_sem_log = sysdbg_struct->sem_log;
+	sysdbg_struct->sem_log = NULL;
+	sysdbg_struct->sem_lastindex = 0;
+#endif /* CONFIG_SEMAPHORE_HISTORY */
+
+	tmp_struct = sysdbg_struct;
+	sysdbg_struct = NULL;
+
+	spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
+
+#ifdef CONFIG_TASK_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (tmp_sched[cpu]) {
+			kmm_free(tmp_sched[cpu]);
+		}
+	}
+#else /* CONFIG_SMP*/
+	if (tmp_sched) {
+		kmm_free(tmp_sched);
+	}
+#endif /* CONFIG_SMP*/
+#endif /* CONFIG_TASK_SCHED_HISTORY */
+
+#ifdef CONFIG_IRQ_SCHED_HISTORY
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (tmp_irq[cpu]) {
+			kmm_free(tmp_irq[cpu]);
+		}
+	}
+#else /* CONFIG_SMP*/
+	if (tmp_irq) {
+		kmm_free(tmp_irq);
+	}
+#endif /* CONFIG_SMP*/
+#endif /* CONFIG_IRQ_SCHED_HISTORY */
+
+#ifdef CONFIG_SEMAPHORE_HISTORY
+	if (tmp_sem_log) {
+		kmm_free(tmp_sem_log);
+	}
+#endif /* CONFIG_SEMAPHORE_HISTORY */
+
+	if (tmp_struct) {
+		kmm_free(tmp_struct);
 	}
 	lldbg("Disabled sysdbg monitoring feature\n");
-	return;
 }
 
 /****************************************************************************
@@ -821,7 +1157,7 @@ static void sysdbg_monitor_disable(void)
  *
  * Description:
  *   Enables the sysdbg monitoring by allocating the memory for debug struct
- *   Atlease one of the below flags must be enabled during compile time
+ *   At least one of the below flags must be enabled during compile time
  *   CONFIG_TASK_SCHED_HISTORY : Logs the task scheduling
  *   CONFIG_IRQ_SCHED_HISTORY  : Logs the IRQ scheduling
  *   CONFIG_SEMAPHORE_HISTORY  : Logs the semaphore history
@@ -840,86 +1176,158 @@ static void sysdbg_monitor_disable(void)
 
 static void sysdbg_monitor_enable(void)
 {
-	if (sysdbg_monitor) {
-		lldbg("sysdbg monitoring is alredy enabled\n");
-		return;
-	}
 #if defined(CONFIG_TASK_SCHED_HISTORY) || defined(CONFIG_IRQ_SCHED_HISTORY) \
 	|| defined(CONFIG_SEMAPHORE_HISTORY)
 	int size = 0;
 	irqstate_t saved_state;
-	saved_state = enter_critical_section();
-	if (sysdbg_struct == NULL) {
-		size = sizeof(sysdbg_t);
-		sysdbg_struct = (FAR struct sysdbg_s*)kmm_zalloc(size);
+#ifdef CONFIG_SMP
+	int cpu;
+#endif
+	sysdbg_t *new_struct = NULL;
+	bool alloc_success = true;
 
-		if (sysdbg_struct == NULL) {
-			lldbg("Failed to allocate memory(%d) for sysdbg_struct\n", size);
-			goto fail;
-		}
-#ifdef CONFIG_TASK_SCHED_HISTORY
-		size = sizeof(sched_history_t) * max_task_count;
-		sysdbg_struct->sched = (FAR sched_history_t *)kmm_zalloc(size);
-		if (sysdbg_struct->sched == NULL) {
-			lldbg("Failed to allocate memory(%d) (max_task_count * sizeof(sched_history_t)\n", size);
-			goto fail1;
-		}
-#endif
-#ifdef CONFIG_IRQ_SCHED_HISTORY
-		size = sizeof(irq_history_t) * max_irq_count;
-		sysdbg_struct->irq = (FAR irq_history_t *)kmm_zalloc(size);
-		if (sysdbg_struct->irq == NULL) {
-			lldbg("Failed to allocate memory(%d) (max_irq_count * sizeof(struct irq_history_t)\n", size);
-			goto fail2;
-		}
-#endif
-#ifdef CONFIG_SEMAPHORE_HISTORY
-		size = sizeof(sem_history_t) * max_sem_count;
-		sysdbg_struct->sem_log = (FAR sem_history_t *)kmm_zalloc(size);
-		if (sysdbg_struct->sem_log == NULL) {
-			lldbg("Failed to allocate memory(%d) (max_sem_count * sizeof(struct sem_history_t)\n", size);
-			goto fail3;
-		}
-#endif
-		sysdbg_monitor = true;
-		lldbg("Enabled sysdbg monitoring feature\n");
-
-		leave_critical_section(saved_state);
+	/* Early check without lock */
+	if (sysdbg_monitor) {
+		lldbg("sysdbg monitoring is already enabled\n");
 		return;
 	}
 
+	size = sizeof(sysdbg_t);
+	new_struct = (FAR struct sysdbg_s*)kmm_zalloc(size);
+	if (new_struct == NULL) {
+		lldbg("Failed to allocate memory(%d) for sysdbg_struct\n", size);
+		return;
+	}
+
+#ifdef CONFIG_TASK_SCHED_HISTORY
+	size = sizeof(sched_history_t) * max_task_count;
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		new_struct->sched[cpu] = (FAR sched_history_t *)kmm_zalloc(size);
+		if (new_struct->sched[cpu] == NULL) {
+			lldbg("Failed to allocate memory(%d) for CPU%d sched history\n", size, cpu);
+			while (--cpu >= 0) {
+				kmm_free(new_struct->sched[cpu]);
+				new_struct->sched[cpu] = NULL;
+			}
+			alloc_success = false;
+			goto cleanup;
+		}
+	}
+#else /* CONFIG_SMP*/
+	new_struct->sched = (FAR sched_history_t *)kmm_zalloc(size);
+	if (new_struct->sched == NULL) {
+		lldbg("Failed to allocate memory(%d) (max_task_count * sizeof(sched_history_t)\n", size);
+		alloc_success = false;
+		goto cleanup;
+	}
+#endif /* CONFIG_SMP*/
+#endif /* CONFIG_TASK_SCHED_HISTORY */
+
+#ifdef CONFIG_IRQ_SCHED_HISTORY
+	size = sizeof(irq_history_t) * max_irq_count;
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		new_struct->irq[cpu] = (FAR irq_history_t *)kmm_zalloc(size);
+		if (new_struct->irq[cpu] == NULL) {
+			lldbg("Failed to allocate memory(%d) for CPU%d irq history\n", size, cpu);
+			while (--cpu >= 0) {
+				kmm_free(new_struct->irq[cpu]);
+				new_struct->irq[cpu] = NULL;
+			}
+			alloc_success = false;
+			goto cleanup;
+		}
+	}
+#else /* CONFIG_SMP*/
+	new_struct->irq = (FAR irq_history_t *)kmm_zalloc(size);
+	if (new_struct->irq == NULL) {
+		lldbg("Failed to allocate memory(%d) (max_irq_count * sizeof(struct irq_history_t)\n", size);
+		alloc_success = false;
+		goto cleanup;
+	}
+#endif /* CONFIG_SMP*/
+#endif /* CONFIG_IRQ_SCHED_HISTORY */
+
 #ifdef CONFIG_SEMAPHORE_HISTORY
-fail3:
-#endif
+	size = sizeof(sem_history_t) * max_sem_count;
+	new_struct->sem_log = (FAR sem_history_t *)kmm_zalloc(size);
+	if (new_struct->sem_log == NULL) {
+		lldbg("Failed to allocate memory(%d) (max_sem_count * sizeof(struct sem_history_t)\n", size);
+		alloc_success = false;
+		goto cleanup;
+	}
+#endif /* CONFIG_SEMAPHORE_HISTORY */
+
+	saved_state = spin_lock_irqsave(&g_sysdbg_lock);
+
+	if (sysdbg_monitor || sysdbg_struct != NULL) {
+		spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
+		lldbg("sysdbg monitoring was enabled by another context\n");
+		goto cleanup;
+	}
+
+	sysdbg_struct = new_struct;
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		task_index[cpu] = 0;
 #ifdef CONFIG_IRQ_SCHED_HISTORY
-	kmm_free(sysdbg_struct->irq);
-	sysdbg_struct->irq = NULL;
+		irq_index[cpu] = 0;
+#endif
+	}
+#endif
+	sysdbg_monitor = true;
+
+	spin_unlock_irqrestore(&g_sysdbg_lock, saved_state);
+
+	lldbg("Enabled sysdbg monitoring feature\n");
+	return;
+
+cleanup:
+#ifdef CONFIG_SEMAPHORE_HISTORY
+	if (new_struct->sem_log) {
+		kmm_free(new_struct->sem_log);
+	}
 #endif
 
 #ifdef CONFIG_IRQ_SCHED_HISTORY
-fail2:
-#endif
-#ifdef CONFIG_TASK_SCHED_HISTORY
-	kmm_free(sysdbg_struct->sched);
-	sysdbg_struct->sched = NULL;
-#endif
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (new_struct->irq[cpu]) {
+			kmm_free(new_struct->irq[cpu]);
+		}
+	}
+#else /* CONFIG_SMP*/
+	if (new_struct->irq) {
+		kmm_free(new_struct->irq);
+	}
+#endif /* CONFIG_SMP*/
+#endif /* CONFIG_IRQ_SCHED_HISTORY */
 
 #ifdef CONFIG_TASK_SCHED_HISTORY
-fail1:
-#endif
-	kmm_free(sysdbg_struct);
-	sysdbg_struct = NULL;
+#ifdef CONFIG_SMP
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		if (new_struct->sched[cpu]) {
+			kmm_free(new_struct->sched[cpu]);
+		}
+	}
+#else /* CONFIG_SMP*/
+	if (new_struct->sched) {
+		kmm_free(new_struct->sched);
+	}
+#endif /* CONFIG_SMP*/
+#endif /* CONFIG_TASK_SCHED_HISTORY */
 
-fail:
-	lldbg("Disabling sysdbg monitoring feature, kindly use less count\n");
-	sysdbg_monitor = false;
-	leave_critical_section(saved_state);
-#else
+	kmm_free(new_struct);
+	if (!alloc_success) {
+		lldbg("Disabling sysdbg monitoring feature, kindly use less count\n");
+	}
+#else /* CONFIG_TASK_SCHED_HISTORY || CONFIG_IRQ_SCHED_HISTORY || CONFIG_SEMAPHORE_HISTORY */
 	lldbg("Kindly enable atleast one of the below config flags \n\r \
 		CONFIG_TASK_SCHED_HISTORY : To log Task scheduling history \n\r \
 		CONFIG_IRQ_SCHED_HISTORY  : To log IRQ scheduling history \n\r \
 		CONFIG_SEMAPHORE_HISTORY  : To log semaphore status\n");
-#endif
+#endif /* CONFIG_TASK_SCHED_HISTORY || CONFIG_IRQ_SCHED_HISTORY || CONFIG_SEMAPHORE_HISTORY */
 	return;
 }
 
