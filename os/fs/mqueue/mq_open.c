@@ -164,6 +164,7 @@ mqd_t mq_open(FAR const char *mq_name, int oflags, ...)
 			errcode = ENOMEM;
 			goto errout_with_inode;
 		}
+		inode->i_crefs++;
 	} else {
 		/* The mqueue does not exists.  Were we asked to create it? */
 
