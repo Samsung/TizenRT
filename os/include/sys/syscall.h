@@ -136,7 +136,8 @@
 #define SYS_task_setcanceltype         (__SYS_task_delete + 3)
 #define SYS_task_setcancelstate        (__SYS_task_delete + 4)
 #define SYS_up_assert                  (__SYS_task_delete + 5)
-#define __SYS_vfork                    (__SYS_task_delete + 6)
+#define SYS_copy_string_from_userspace  (__SYS_task_delete + 6)
+#define __SYS_vfork                    (__SYS_task_delete + 7)
 
 /* The following can be individually enabled */
 
