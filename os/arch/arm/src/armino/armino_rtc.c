@@ -236,4 +236,24 @@ int up_rtc_initialize(void)
 	return OK;
 }
 
+/************************************************************************************
+ * Name: aon_rtc_get_ms
+ *
+ * Description:
+ *   Get the current RTC time in milliseconds (64-bit). This is an adapter
+ *   function that wraps the bk_aon_rtc_get_ms() function.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   The current time in milliseconds (64-bit)
+ *
+ ************************************************************************************/
+
+uint64_t aon_rtc_get_ms(void)
+{
+	return bk_aon_rtc_get_ms();
+}
+
 #endif							/* CONFIG_RTC */
