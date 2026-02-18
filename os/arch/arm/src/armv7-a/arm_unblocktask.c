@@ -72,6 +72,14 @@
  *     in one of the waiting tasks lists.  It must be moved to
  *     the ready-to-run list and, if it is the highest priority
  *     ready to run task, executed.
+ * 
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ * - The caller has established a critical section before calling this
+ *   function (calling sched_lock() first is NOT a good idea -- use
+ *   enter_critical_section()).
  *
  ****************************************************************************/
 
