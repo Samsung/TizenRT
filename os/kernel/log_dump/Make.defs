@@ -24,3 +24,10 @@ DEPPATH += --dep-path log_dump
 VPATH += :log_dump
 
 endif
+
+ifeq ($(CONFIG_LOWLOG_DUMP),y)
+
+CSRCS += lowlog_dump_read.c lowlog_dump_ch.c lowlog_dump_save.c
+CSRCS += lowlog_dump_resume.c lowlog_dump_pause.c
+
+endif # CONFIG_LOWLOG_DUMP

@@ -633,6 +633,10 @@ menu "Binary manager"
 source kernel/binary_manager/Kconfig
 endmenu
 
+menu "Lowlog dump"
+source kernel/log_dump/Kconfig
+endmenu
+
 menu "Task Monitor"
 source kernel/task_monitor/Kconfig
 endmenu
