@@ -305,7 +305,7 @@ static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char 
 #endif
 
 #ifdef CONFIG_RESOURCE_FS
-static int make_resource_mtd_partition(struct mtd_dev_s *mtd, off_t partoffset, off_t nblocks, uint16_t partno)
+static int make_resource_mtd_partition(int minor, struct mtd_dev_s *mtd, off_t partoffset, off_t nblocks, uint16_t partno)
 {
 	FAR struct mtd_dev_s *mtd_part;
 	uint16_t resource_partno;
@@ -320,11 +320,26 @@ static int make_resource_mtd_partition(struct mtd_dev_s *mtd, off_t partoffset, 
 		return ERROR;
 	}
 
+#ifdef CONFIG_MTD_NAND
+	/* TODO If Internal memory is nand, the below code deos not work. So, We need to consider this case ( "type_specific_initialize" should also be reviewed.) */
+	if (minor > 0) {
+		/* External flash is NAND */
+		if (ftl_nand_initialize(resource_partno, mtd_part)) {
+			printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+			return ERROR;
+		}
+	} else {
+		if (ftl_initialize(resource_partno, mtd_part)) {
+			printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+			return ERROR;
+		}
+	}
+#else
 	if (ftl_initialize(resource_partno, mtd_part)) {
 		printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
 		return ERROR;
 	}
-
+#endif
 	return OK;
 }
 #endif
@@ -423,7 +438,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 		if (!strncmp(types, "resource,", 9)) {
 			int nblocks = geo.erasesize / geo.blocksize;
 			/* Make mtd dev to access resource fs. It starts from offset + erasesize (4K). */
-			ret = make_resource_mtd_partition(mtd, partoffset + nblocks, partsize / geo.blocksize - nblocks, g_partno);
+			ret = make_resource_mtd_partition(minor, mtd, partoffset + nblocks, partsize / geo.blocksize - nblocks, g_partno);
 			if (ret != OK) {
 				printf("ERROR: fail to make resource mtd part.\n");
 			}
