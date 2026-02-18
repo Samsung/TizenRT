@@ -192,7 +192,7 @@ typedef struct bin_addr_info_s bin_addr_info_t;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 /* The list for a common binary and user binaries(CONFIG_NUM_APPS) */
 static bin_addr_info_t g_bin_addr_list[CONFIG_NUM_APPS + 1];
-#endif
+
 
 bin_addr_info_t *get_bin_addr_list(void)
 {
@@ -257,3 +257,21 @@ void *elf_find_text_section_addr(int bin_idx)
 	}
 	return NULL;
 }
+
+bool elf_is_text_addr(void *addr)
+{
+	int bin_idx;
+	void *start_addr;
+	void *end_addr;
+	for (bin_idx = 0; bin_idx <= CONFIG_NUM_APPS; bin_idx++) {
+		if (g_bin_addr_list[bin_idx].text_addr != 0) {
+			start_addr = g_bin_addr_list[bin_idx].text_addr;
+			end_addr = start_addr + g_bin_addr_list[bin_idx].text_size;
+			if (start_addr <= addr && addr <= end_addr) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+#endif
