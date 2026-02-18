@@ -32,6 +32,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/stat.h>
+#include <sched.h>
+#include <sys/prctl.h>
 
 #include <tinyara/fs/ioctl.h>
 
@@ -46,7 +48,41 @@
  ****************************************************************************/
 
 static int is_running;
+static volatile int cpu_stress_running;
 
+static int cpu_stress_thread(void *arg)
+{
+	int cpu_id = (int)arg;
+	cpu_set_t cpuset;
+	pthread_t this_thread = pthread_self();
+	char thread_name[32];
+	clock_t prev = clock();
+	clock_t now;
+
+#ifdef CONFIG_SMP
+	CPU_ZERO(&cpuset);
+	CPU_SET(cpu_id, &cpuset);
+	
+	if (pthread_setaffinity_np(this_thread, sizeof(cpu_set_t), &cpuset) != 0) {
+		printf("Failed to set CPU%d affinity for thread\n", cpu_id);
+		return -1;
+	}
+#endif
+	snprintf(thread_name, sizeof(thread_name), "cpu_stress%d", cpu_id);
+	pthread_setname_np(this_thread, thread_name);
+	printf("CPU stress thread started on CPU%d\n", cpu_id);
+	
+	while (cpu_stress_running) {
+		now = clock();
+		if (TICK2SEC(now - prev) > 10) {
+			printf("CPU%d stress running... %ld\n", cpu_id, now);
+			prev = now;
+		}
+	}
+	
+	printf("CPU%d stress thread stopped\n", cpu_id);
+	return 0;
+}
 
 static int pm_sleep_test(void *args)
 {
@@ -229,6 +265,59 @@ static int start_pm_test(int argc, char *argv[])
 	return 0;
 }
 
+static int start_cpu_stress_test(int argc, char *argv[])
+{
+	pthread_t cpu_threads[CONFIG_SMP_NCPUS];
+	int cpu_num;
+
+	printf("argc %d\n", argc);
+	for (int i = 0; i < argc; i++) {
+		printf("argv %s\n", argv[i]);
+	}
+	printf("######################### CPU STRESS TEST START #########################\n");
+	printf("Starting CPU stress test to achieve 100%% CPU usage\n");
+
+	printf("System has %d CPUs available\n", CONFIG_SMP_NCPUS);
+
+	if (argc < 2) {
+		printf("Creating threads on all %d CPUs\n", CONFIG_SMP_NCPUS);
+
+		for (int i = 0; i < CONFIG_SMP_NCPUS; i++) {
+			if (pthread_create(&cpu_threads[i], NULL, (pthread_startroutine_t)cpu_stress_thread, (void*)i) < 0) {
+				printf("Failed to create CPU%d stress thread(errno %d)\n", i, get_errno());
+				
+				for (int j = 0; j < i; j++) {
+					pthread_cancel(cpu_threads[j]);
+				}
+				cpu_stress_running = false;
+				return -1;
+			}
+		}
+
+		for (int i = 0; i < CONFIG_SMP_NCPUS; i++) {
+			pthread_join(cpu_threads[i], NULL);
+		}
+	} else {
+		cpu_num = atoi(argv[1]);
+		if (cpu_num < 0 || cpu_num >= CONFIG_SMP_NCPUS) {
+			printf("Invalid CPU number: %d. Use 0 to %d, or no argument for all CPUs\n", cpu_num, CONFIG_SMP_NCPUS - 1);
+			cpu_stress_running = false;
+			return -1;
+		}
+		printf("Creating thread on CPU%d only\n", cpu_num);
+
+		if (pthread_create(&cpu_threads[cpu_num], NULL, (pthread_startroutine_t)cpu_stress_thread, (void*)cpu_num) < 0) {
+			printf("Failed to create CPU%d stress thread(errno %d)\n", cpu_num, get_errno());
+			cpu_stress_running = false;
+			return -1;
+		}
+		pthread_join(cpu_threads[cpu_num], NULL);
+	}
+
+	printf("######################### CPU STRESS TEST END #########################\n");
+	return 0;
+}
+
 static void help_func(void)
 {
 	printf("usage: power <command> \n\n");
@@ -240,12 +329,14 @@ static void help_func(void)
 	printf("and it is testing suspending of power managemenet operation and resuming for block ender chipset sleep mode.\n");
 	printf("   start [options]\t\t Start power management test\n");
 	printf("   stop           \t\t stop power management test\n");
+	printf("   cpu start [cpu_num]\t Start CPU stress test (100%% CPU usage)\n");
+	printf("   cpu stop        \t Stop CPU stress test\n");
 	printf("   options: -l, --lock-test              \t\t Test pm suspend/resume API\n");
 	printf("            -t, --timed-wakeup [time(ms)]\t\t Test timed wakeup (default 100ms)\n");
 	printf("\n");
-	printf("start and stop are used to control the power management test.\n");
-	printf("   suspend <name>\t\t Suspend power management test\n");
-	printf("   resume  <name>\t\t Start power management test\n");
+	printf("suspend and resume are used to control the power management test.\n");
+	printf("   suspend <name>\t\t suspend power management test\n");
+	printf("   resume  <name>\t\t resume power management test\n");
 	printf("\n");
 }
 
@@ -288,6 +379,37 @@ int power_main(int argc, char *argv[])
 		}
 
 		is_running = false;
+
+	} else if (strncmp(argv[1], "cpu", 8) == 0) {
+		if (argc < 3) {
+			printf("Usage: power cpu {start|stop} [cpu_num]\n");
+			return -1;
+		}
+
+		if (strncmp(argv[2], "start", 6) == 0) {
+			if (cpu_stress_running) {
+				printf("CPU stress test is already running\n");
+				return 0;
+			}
+			cpu_stress_running = true;
+
+			pid = task_create("cpu_stress_test", 100, 1024, start_cpu_stress_test, argv + 3);
+			if (pid < 0) {
+				printf("Fail to create cpu_stress_test task(errno %d)\n", get_errno());
+				return -1;
+			}
+
+		} else if (strncmp(argv[2], "stop", 5) == 0) {
+			if (!cpu_stress_running) {
+				printf("CPU stress test is not running\n");
+				return 0;
+			}
+
+			cpu_stress_running = false;
+		} else {
+			printf("Invalid cpu subcommand. Use 'start' or 'stop'\n");
+			return -1;
+		}
 
 	} else if (strncmp(argv[1], "suspend", 8) == 0 && argc == 3) {
 		_pm_suspend(argv[2]);
