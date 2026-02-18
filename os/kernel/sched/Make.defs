@@ -113,6 +113,10 @@ else
 CSRCS += sched_processtimer.c
 endif
 
+ifeq ($(CONFIG_SCHED_SAVE_DEADTASK),y)
+CSRCS += sched_deadtask.c
+endif
+
 # Include sched build support
 
 DEPPATH += --dep-path sched
