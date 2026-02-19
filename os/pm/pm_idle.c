@@ -233,8 +233,8 @@ static void enable_and_compensate_systick(void)
 	struct pm_sleep_ops *sleep_ops = g_pmglobals.sleep_ops;
 	clock_t missing_tick;
 
-	if (!sleep_ops->get_missingtick) {
-		return;
+	if (!sleep_ops || !sleep_ops->get_missingtick) {
+		goto enable_timer;
 	}
 
 	missing_tick = sleep_ops->get_missingtick();
@@ -257,8 +257,9 @@ static void enable_and_compensate_systick(void)
 		 */
 		wd_timer_nohz(missing_tick);
 	}
-#endif
 
+enable_timer:
+#endif
 	(void)up_timer_enable();
 }
 
@@ -317,7 +318,7 @@ static int set_pm_wakeup_timer(int delay)
 	return OK;
 }
 #else
-#define get_next_wakeup_time()       (ERROR)
+#define get_next_wakeup_time()       (0)
 #define set_pm_wakeup_timer(delay)  (OK)
 #endif
 
@@ -340,9 +341,9 @@ static void update_wakeup_reason(void)
 	pm_wakeup_reason_code_t wakeup_src;
 	struct pm_sleep_ops *sleep_ops = g_pmglobals.sleep_ops;
 
-	if (sleep_ops->get_wakeupreason) {
+	if (sleep_ops && sleep_ops->get_wakeupreason) {
 		wakeup_src = sleep_ops->get_wakeupreason();
-		if (wakeup_src < PM_WAKEUP_UNKNOWN || wakeup_src >= PM_WAKEUP_SRC_COUNT) {
+		if (wakeup_src >= PM_WAKEUP_SRC_COUNT) {
 			wakeup_src = PM_WAKEUP_UNKNOWN;
 		}
 
