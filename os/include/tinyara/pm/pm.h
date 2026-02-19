@@ -441,14 +441,14 @@ FAR struct pm_domain_s *pm_domain_register(FAR const char *domain);
  *   This function is called to unregister a previously registered PM domain.
  *
  * Input parameters:
- *   domain_name - the string domain name to be unregistered.
+ *   domain - Pointer to the domain structure to be unregistered.
  *
  * Returned value:
  *    OK (0)   : On Success
  *    ERROR (-1): On Error (e.g., domain not found)
  *
  ****************************************************************************/
-int pm_domain_unregister(FAR const char *domain_name);
+int pm_domain_unregister(FAR struct pm_domain_s *domain);
 
 /****************************************************************************
  * Name: pm_idle
@@ -642,7 +642,7 @@ int pm_metrics(int milliseconds);
 #define pm_register(cb)         (0)
 #define pm_unregister(cb)       (0)
 #define pm_domain_register(domain)	(NULL)
-#define pm_domain_unregister(domain_name) (ERROR)
+#define pm_domain_unregister(domain) (0)
 #define pm_idle()
 #define pm_suspend(domain)   (0)
 #define pm_resume(domain)    (0)
