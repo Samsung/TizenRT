@@ -67,16 +67,6 @@
 
 #ifdef CONFIG_PM
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-#ifdef CONFIG_MM_KERNEL_HEAP
-#define pm_alloc(num, size) kmm_calloc(num, size)
-#else
-#define pm_alloc(num, size) calloc(num, size)
-#endif
-
 /* Function-like macros *****************************************************/
 /****************************************************************************
  * Name: pm_lock
@@ -171,23 +161,6 @@ EXTERN struct pm_global_s g_pmglobals;
 /************************************************************************************
  * Public Function Prototypes
  ************************************************************************************/
-/****************************************************************************
- * Name: pm_check_domain
- *
- * Description:
- *   This function is called inside PM internal APIs to check whether the
- *   domain pointer is valid.
- * 
- * Input Parameters:
- *   domain - Pointer to the domain structure
- *
- * Returned Value:
- *   0 (OK) - If domain is valid
- *  -1 (ERROR) - If domain is not valid
- *
- ****************************************************************************/
-int pm_check_domain(FAR struct pm_domain_s *domain);
-
 /****************************************************************************
  * Name: pm_checkstate
  *

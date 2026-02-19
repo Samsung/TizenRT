@@ -74,34 +74,6 @@ FAR struct pm_domain_s *pm_domain_find(FAR const char *domain_name)
 }
 
 /****************************************************************************
- * Name: pm_check_domain
- *
- * Description:
- *   This function is called inside PM internal APIs to check whether the
- *   domain pointer is valid.
- * 
- * Input Parameters:
- *   domain - Pointer to the domain structure
- *
- * Returned Value:
- *   0 (OK) - If domain is valid
- *  -1 (ERROR) - If domain is not valid
- *
- ****************************************************************************/
-int pm_check_domain(FAR struct pm_domain_s *domain)
-{
-	if (domain == NULL) {
-		set_errno(EINVAL);
-		pmdbg("Invalid Domain Pointer: NULL\n");
-		return ERROR;
-	}
-	/* Additional checks can be added here if necessary, e.g., if the domain
-	 * is still in the list. For now, a non-NULL pointer is considered valid.
-	 */
-	return OK;
-}
-
-/****************************************************************************
  * Name: pm_domain_register
  *
  * Description:

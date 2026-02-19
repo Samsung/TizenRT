@@ -102,16 +102,12 @@ int pm_suspend(FAR struct pm_domain_s *domain)
 	irqstate_t flags;
 	int ret = OK;
 
-	flags = enter_critical_section();
-
-	/* pm_check_domain is implicitly handled by checking for NULL domain pointer
-	 * and ensuring the domain structure is valid.
-	 * If more checks are needed, pm_check_domain(domain) can be called here.
-	 */
-	ret = pm_check_domain(domain);
-	if (ret != OK) {
-		goto errout;
+	if (domain == NULL) {
+		set_errno(EINVAL);
+		return ERROR;
 	}
+
+	flags = enter_critical_section();
 
 	if (domain->suspend_count >= UINT16_MAX) {
 		ret = ERROR;

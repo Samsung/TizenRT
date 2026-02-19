@@ -89,8 +89,8 @@
 
 int pm_suspendcount(FAR struct pm_domain_s *domain)
 {
-	/* Check if domain pointer is valid */
-	if (pm_check_domain(domain) != OK) {
+	if (domain == NULL) {
+		set_errno(EINVAL);
 		return ERROR;
 	}
 	return domain->suspend_count;

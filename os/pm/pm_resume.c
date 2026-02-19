@@ -105,11 +105,6 @@ int pm_resume(FAR struct pm_domain_s *domain)
 
 	flags = enter_critical_section();
 
-	ret = pm_check_domain(domain);
-	if (ret != OK) {
-		goto errout;
-	}
-
 	if (domain->suspend_count <= 0) {
 		ret = ERROR;
 		set_errno(ERANGE);

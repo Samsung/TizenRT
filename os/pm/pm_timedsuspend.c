@@ -126,7 +126,7 @@ int pm_timedsuspend(struct pm_domain_s *domain, unsigned int milliseconds)
 	int ret = ERROR;
 	int delay = MSEC2TICK(milliseconds);
 
-	if (pm_check_domain(domain)) {
+	if (domain == NULL) {
 		set_errno(EINVAL);
 		return ret;
 	}
