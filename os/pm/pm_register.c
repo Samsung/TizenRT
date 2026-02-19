@@ -85,19 +85,18 @@
 
 int pm_register(FAR struct pm_callback_s *callbacks)
 {
-	int ret;
+	irqstate_t flags;
 
 	DEBUGASSERT(callbacks);
 
+	flags = enter_critical_section();
+
 	/* Add the new entry to the end of the list of registered callbacks */
+	dq_addlast(&callbacks->entry, &g_pmglobals.registry);
 
-	ret = pm_lock();
-	if (ret == OK) {
-		dq_addlast(&callbacks->entry, &g_pmglobals.registry);
-		pm_unlock();
-	}
+	leave_critical_section(flags);
 
-	return ret;
+	return OK;
 }
 
 #endif /* CONFIG_PM */

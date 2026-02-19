@@ -295,23 +295,22 @@ int pm_metrics(int milliseconds)
 		pmdbg("Please Start PM to enable PM Metrics\n");
 		return OK;
 	}
-	/* Lock PM so that no two thread can run PM Metrics simultaneously */
-	pm_lock();
 
 	/* Allocate memory for initializing PM Metrics measurements */
 	g_pm_metrics = (pm_metric_t *)kmm_calloc(1, sizeof(pm_metric_t));
 	if (g_pm_metrics == NULL) {
 		set_errno(ENOMEM);
 		pmdbg("Unable to initialize pm_metrics, error = %d\n", get_errno());
-		pm_unlock();
 		return ERROR;
 	}
+
+	flags = enter_critical_section();
+
 	/* PM Metrics Initialization */
 	for (index = 0; index < PM_COUNT; index++) {
 		g_pm_metrics->state_metrics.state_accum_ticks[index] = 0;
 	}
 
-	flags = enter_critical_section();
 	start_time = clock_systimer();
 	g_pm_metrics->state_metrics.stime = start_time;
 
@@ -348,7 +347,5 @@ int pm_metrics(int milliseconds)
 	kmm_free(g_pm_metrics);
 	g_pm_metrics = NULL;
 
-	/* Unlock PM Metrics for other threads */
-	pm_unlock();
 	return OK;
 }

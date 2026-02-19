@@ -67,28 +67,6 @@
 
 #ifdef CONFIG_PM
 
-/* Function-like macros *****************************************************/
-/****************************************************************************
- * Name: pm_lock
- *
- * Descripton:
- *   Lock the power management registry.  NOTE: This function may return
- *   an error if a signal is received while what (errno == EINTR).
- *
- ****************************************************************************/
-
-#define pm_lock() sem_wait(&g_pmglobals.regsem);
-
-/****************************************************************************
- * Name: pm_unlock
- *
- * Descripton:
- *   Unlock the power management registry.
- *
- ****************************************************************************/
-
-#define pm_unlock() sem_post(&g_pmglobals.regsem);
-
 /****************************************************************************
  * Public Types
  ****************************************************************************/
