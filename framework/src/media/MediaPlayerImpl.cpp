@@ -183,27 +183,6 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, std::condition_variabl
 		return notifySync(syncCv);
 	}
 
-	if (!mInputHandler.open()) {
-		meddbg("MediaPlayer prepare fail : open fail\n");
-		ret = PLAYER_ERROR_FILE_OPEN_FAILED;
-		return notifySync(syncCv);
-	}
-
-	auto source = mInputHandler.getDataSource();
-	if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
-							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
-		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
-		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync(syncCv);
-	}
-
-	audio_manager_result_t res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
-	if (res != AUDIO_MANAGER_SUCCESS) {
-		meddbg("MediaPlayer prepare fail : set_stream_out_policy fail. res: %d\n", res);
-		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync(syncCv);
-	}
-
 	mBufSize = get_output_card_buffer_size();
 	if (mBufSize < 0) {
 		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
@@ -223,6 +202,34 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, std::condition_variabl
 		}
 		return notifySync(syncCv);
 	}
+
+	if (!mInputHandler.open(mBufSize)) {
+		meddbg("MediaPlayer prepare fail : open fail\n");
+		ret = PLAYER_ERROR_FILE_OPEN_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		return notifySync(syncCv);
+	}
+
+	auto source = mInputHandler.getDataSource();
+	if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
+							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
+		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		return notifySync(syncCv);
+	}
+
+	audio_manager_result_t res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("MediaPlayer prepare fail : set_stream_out_policy fail. res: %d\n", res);
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		return notifySync(syncCv);
+	}
+
 
 	mCurState = PLAYER_STATE_READY;
 	return notifySync(syncCv);
@@ -265,9 +272,26 @@ void MediaPlayerImpl::prepareAsyncPlayer()
 		return;
 	}
 
+	mBufSize = get_output_card_buffer_size();
+	if (mBufSize < 0) {
+		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
+		return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+	}
+
+	meddbg("MediaPlayer mBuffer size : %d\n", mBufSize);
+
+	mBuffer = new unsigned char[mBufSize];
+	if (!mBuffer) {
+		meddbg("MediaPlayer prepare fail : mBuffer allocation fail\n");
+		if (get_errno() == ENOMEM) {
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_OUT_OF_MEMORY);
+		}
+		return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+	}
+
 	mCurState = PLAYER_STATE_PREPARING;
 
-	if (!mInputHandler.doStandBy()) {
+	if (!mInputHandler.doStandBy(mBufSize)) {
 		meddbg("MediaPlayer prepare fail : doStandBy fail\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		return;
@@ -1009,7 +1033,13 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 		case PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED:
 			player_error_t error = (player_error_t)va_arg(ap, int);
 			if (error != PLAYER_ERROR_NONE) {
-				mCurState = PLAYER_STATE_CONFIGURED;
+				if (mCurState == PLAYER_STATE_PREPARING) {
+					mCurState = PLAYER_STATE_CONFIGURED;
+				}
+				if (mBuffer) {
+					delete[] mBuffer;
+					mBuffer = nullptr;
+				}
 			}
 			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onAsyncPrepared, mPlayerObserver, std::ref(mPlayer), error);
 			break;
@@ -1043,23 +1073,6 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 								 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
-			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
-		}
-
-		mBufSize = get_user_output_frames_to_byte(get_output_frame_count(mStreamInfo->id), mStreamInfo->id);
-		if (mBufSize < 0) {
-			meddbg("MediaPlayer prepare fail : get_user_output_frames_to_byte fail\n");
-			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
-		}
-
-		medvdbg("MediaPlayer mBuffer size : %d\n", mBufSize);
-
-		mBuffer = new unsigned char[mBufSize];
-		if (!mBuffer) {
-			meddbg("MediaPlayer prepare fail : mBuffer allocation fail\n");
-			if (get_errno() == ENOMEM) {
-				return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_OUT_OF_MEMORY);
-			}
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		}
 
@@ -1129,17 +1142,6 @@ void MediaPlayerImpl::playbackFinished()
 
 	FocusManager &fm = FocusManager::getFocusManager();
 	fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
-}
-
-player_result_t MediaPlayerImpl::getStreamBufferSize(size_t &size)
-{
-	player_result_t ret = PLAYER_OK;
-	size = get_output_card_buffer_size();
-	if (size < 0) {
-		meddbg("MediaPlayer getStreamBufferSize fail\n");
-		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-	}
-	return ret;
 }
 
 MediaPlayerImpl::~MediaPlayerImpl()

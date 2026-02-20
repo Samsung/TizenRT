@@ -120,7 +120,6 @@ public:
 	void playback(std::chrono::milliseconds timeout, uint8_t playback_idx);
 	void playbackFinished(void);
 	player_result_t setLooping(bool loop);
-	player_result_t getStreamBufferSize(size_t &size);
 
 private:
 	void createPlayer(player_result_t &ret, std::condition_variable &syncCv);
