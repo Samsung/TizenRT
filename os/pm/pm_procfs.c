@@ -271,10 +271,15 @@ static void power_read_domains_info(FAR struct power_file_s *priv, void (*readpr
 static void power_read_state(FAR struct power_file_s *priv, void (*readprint)(const char *, ...))
 {
 	enum pm_state_e pm_state;
+
+	readprint("%s STOPPED\n", !g_pmglobals.is_running ? "*" : " ");
 	for (pm_state = PM_NORMAL; pm_state < PM_COUNT; pm_state++) {
-		readprint("%s %s\n", (pm_state == g_pmglobals.state) ? "*" : " ", pm_state_name[pm_state]);
+		readprint("%s %s\n",
+			(g_pmglobals.is_running && pm_state == g_pmglobals.state) ? "*" : " ",
+			pm_state_name[pm_state]);
 	}
 }
+
 /****************************************************************************
  * Name: power_find_best_match
  *

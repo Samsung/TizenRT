@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
@@ -153,17 +154,9 @@ static int pm_suspend_resume_test(void)
 	return 0;
 }
 
-static int start_pm_test(int argc, char *argv[])
+static int _pm_start(void)
 {
-	pthread_t suspend_resume_tid = 0;
-	pthread_t pm_sleep_tid = 0;
-	int ret;
 	int fd;
-	bool suspend_resume_test = false;
-	bool timed_wakeup_test = false;
-	int timed_wakeup_time = 100;  // 100 ms
-
-	printf("######################### PM LONG TERM TEST START #########################\n");
 
 	fd = open(PM_DRVPATH, O_WRONLY);
 	if (fd < 0) {
@@ -171,13 +164,50 @@ static int start_pm_test(int argc, char *argv[])
 		return -1;
 	}
 
-	if(ioctl(fd, PMIOC_START, 0) < 0) {
+	if (ioctl(fd, PMIOC_START, 0) < 0) {
 		printf("Fail to pm start(errno %d)\n", get_errno());
 		close(fd);
 		return -1;
 	}
 
-	for (int i = 1; i < argc; i++) {
+	close(fd);
+	is_running = true;
+	printf("######################### PM LONG TERM TEST START #########################\n");
+	return 0;
+}
+
+static int _pm_stop(void)
+{
+	int fd;
+
+	fd = open(PM_DRVPATH, O_WRONLY);
+	if (fd < 0) {
+		printf("Fail to open pm stop(errno %d)\n", get_errno());
+		return -1;
+	}
+
+	if (ioctl(fd, PMIOC_STOP, 0) < 0) {
+		printf("Fail to pm stop(errno %d)\n", get_errno());
+		close(fd);
+		return -1;
+	}
+
+	close(fd);
+	is_running = false;
+	printf("######################### PM LONG TERM TEST END #########################\n");
+	return 0;
+}
+
+static int start_pm_test(int argc, char *argv[])
+{
+	pthread_t suspend_resume_tid = 0;
+	pthread_t pm_sleep_tid = 0;
+	int ret;
+	bool suspend_resume_test = false;
+	bool timed_wakeup_test = false;
+	int timed_wakeup_time = 100;  // 100 ms
+
+	for (int i = 0; i < argc; i++) {
 		if (strncmp(argv[i], "--lock-test", 12) == 0 || strncmp(argv[i], "-l", 3) == 0) {
 			suspend_resume_test = true;
 
@@ -192,7 +222,6 @@ static int start_pm_test(int argc, char *argv[])
 	if (suspend_resume_test) {
 		if (pthread_create(&suspend_resume_tid, NULL, (pthread_startroutine_t)pm_suspend_resume_test, NULL) < 0) {
 			printf("Failed to create suspend test pthread(%d):\n", get_errno());
-			close(fd);
 			return -1;
 		}
 	}
@@ -203,7 +232,6 @@ static int start_pm_test(int argc, char *argv[])
 			if (suspend_resume_test) {
 				pthread_cancel(suspend_resume_tid);
 			}
-			close(fd);
 			return -1;
 		}
 		pthread_setname_np(pm_sleep_tid, "pm_sleep_test");
@@ -223,10 +251,28 @@ static int start_pm_test(int argc, char *argv[])
 		}
 	}
 
-	close(fd);
-	printf("######################### PM LONG TERM TEST END #########################\n");
-
 	return 0;
+}
+
+static void _pm_status(void)
+{
+	int fd;
+	int ret;
+	char buf[16];
+
+	fd = open("/proc/power/running", O_RDONLY);
+	if (fd < 0) {
+		printf("Fail to open /proc/power/running(errno %d)\n", get_errno());
+		return;
+	}
+	ret = read(fd, buf, sizeof(buf));
+	close(fd);
+
+	if (ret > 0 && strncmp(buf, "running", 8) == 0) {
+		printf("PM is running\n");
+	} else {
+		printf("PM is stopped\n");
+	}
 }
 
 static void help_func(void)
@@ -237,7 +283,7 @@ static void help_func(void)
 	printf("These are power management test commands:\n");
 	printf("\n");
 	printf("The basic test involves transitioning the chipset into a power-saving mode (sleep) and subsequently waking it up.\n");
-	printf("and it is testing suspending of power managemenet operation and resuming for block ender chipset sleep mode.\n");
+	printf("and it is testing suspending of power management operation and resuming for block ender chipset sleep mode.\n");
 	printf("   start [options]\t\t Start power management test\n");
 	printf("   stop           \t\t stop power management test\n");
 	printf("   options: -l, --lock-test              \t\t Test pm suspend/resume API\n");
@@ -246,6 +292,7 @@ static void help_func(void)
 	printf("start and stop are used to control the power management test.\n");
 	printf("   suspend <name>\t\t Suspend power management test\n");
 	printf("   resume  <name>\t\t Start power management test\n");
+	printf("   status         \t\t Get power management status\n");
 	printf("\n");
 }
 
@@ -271,30 +318,33 @@ int power_main(int argc, char *argv[])
 			return 0;
 		}
 
-		is_running = true;
-
-		pid = task_create("start_pm_test", 100, 1024, start_pm_test, argv + 1);
-		if (pid < 0) {
-			printf("Fail to create start_pm_test task(errno %d)\n", get_errno());
-			is_running = false;
+		if (_pm_start() < 0) {
 			return -1;
 		}
 
-
+		pid = task_create("start_pm_test", 100, 1024, start_pm_test, argv + 2);
+		if (pid < 0) {
+			printf("Fail to create start_pm_test task(errno %d)\n", get_errno());
+			_pm_stop();
+			return -1;
+		}
 	} else if (strncmp(argv[1], "stop", 5) == 0) {
 		if (!is_running) {
 			printf("power test is not running\n");
 			return 0;
 		}
 
-		is_running = false;
-
+		if (_pm_stop() < 0) {
+			return -1;
+		}
 	} else if (strncmp(argv[1], "suspend", 8) == 0 && argc == 3) {
 		_pm_suspend(argv[2]);
 		printf("Done pm suspend domain: %s\n", argv[2]);
 	} else if (strncmp(argv[1], "resume", 7) == 0 && argc == 3) {
 		_pm_resume(argv[2]);
 		printf("Done pm resume domain: %s\n", argv[2]);
+	} else if (strncmp(argv[1], "status", 7) == 0) {
+		_pm_status();
 	} else {
 		help_func();
 	}
