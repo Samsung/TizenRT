@@ -42,7 +42,7 @@
 
 static clock_t stime;
 
-static cpu_set_t g_active_cpus;
+static cpu_set_t g_active_cpu_snapshot;
 
 /****************************************************************************
  * Private Functions
@@ -111,7 +111,7 @@ static int disable_secondary_cpus(void)
 {
 	/* Send signal to shutdown other cores here */
 	for (int cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
-		if (CPU_ISSET(cpu, &g_active_cpus)) {
+		if (CPU_ISSET(cpu, &g_active_cpu_snapshot)) {
 			if (sched_cpuoff(cpu) != OK) {
 				pmlldbg("CPU%d shutdown failed! Unable to shutdown secondary core for sleep mode\n", cpu);
 				return ERROR;
@@ -138,7 +138,7 @@ static int disable_secondary_cpus(void)
 static void enable_secondary_cpus(void)
 {
 	for (int cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
-		if (CPU_ISSET(cpu, &g_active_cpus)) {
+		if (CPU_ISSET(cpu, &g_active_cpu_snapshot)) {
 			if (sched_cpuon(cpu) != OK) {
 				pmlldbg("CPU%d power on failed!\n", cpu);
 				return;
@@ -153,6 +153,8 @@ static void enable_secondary_cpus(void)
  * Description:
  *   This function checks if all secondary CPUs are idle and ready for sleep.
  *   If any CPU is not idle, it aborts the sleep.
+ *   It also saves a snapshot of active CPUs to g_active_cpu_snapshot,
+ *   which is later used by disable/enable_secondary_cpus functions.
  *
  * Input Parameters:
  *   None
@@ -171,10 +173,10 @@ static int check_secondary_cpus_idle(void)
 	 * the sleep and check again on next cycle
 	 */
 
-	g_active_cpus = sched_getactivecpu();
+	g_active_cpu_snapshot = sched_getactivecpu();
 
 	for (cpu = 1; cpu < CONFIG_SMP_NCPUS; cpu++) {
-		if (!CPU_ISSET(cpu, &g_active_cpus)) {
+		if (!CPU_ISSET(cpu, &g_active_cpu_snapshot)) {
 			continue;
 		}
 
