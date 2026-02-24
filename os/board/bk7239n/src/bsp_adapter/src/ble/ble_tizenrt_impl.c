@@ -406,7 +406,7 @@ static void hal_ble_evt_thread(void)
 
                     if (bktr_ble_client_get_param()->trble_device_disconnected_cb)
                     {
-                        bktr_ble_client_get_param()->trble_device_disconnected_cb(dis_msg->conn_id);
+                        bktr_ble_client_get_param()->trble_device_disconnected_cb(dis_msg->conn_id, dis_msg->reason);
                     }
 
                     os_free(dis_msg);
