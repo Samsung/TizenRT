@@ -313,11 +313,10 @@ static struct power_path_template_s *power_find_best_match(const char *relpath, 
 			/* Calculate the length of the domain name */
 			domain_len = slash_pos ? slash_pos - relpath : relpath_len;
 
-			strncpy(domain_name, relpath, domain_len);
-			domain_name[domain_len] = '\0'; /* Ensure null termination */
-
-			/* Validate domain name length */
+			/* Validate domain name length before copying to prevent buffer overflow */
 			if (domain_len > 0 && domain_len < CONFIG_PM_DOMAIN_NAME_SIZE) {
+				strncpy(domain_name, relpath, domain_len);
+				domain_name[domain_len] = '\0'; /* Ensure null termination */
 				flags = enter_critical_section();
 				path_priv->domain_ptr = NULL;
 				for (dq_entry_t *entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
