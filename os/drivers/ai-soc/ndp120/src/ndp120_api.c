@@ -985,6 +985,23 @@ void add_host_ext_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *s
 	(*src_func)++;
 }
 
+void add_host_ext_flow_factory(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, int dsp_flow_num)
+{
+	/* PCMx->HOST_EXT_AUDIO */
+	if (dsp_flow_num == 1) {
+		setup->src_pcm_audio[*src_pcm].src_param = NDP120_DSP_DATA_FLOW_SRC_PARAM_AUD0_LEFT;
+	} else {
+		setup->src_pcm_audio[*src_pcm].src_param = NDP120_DSP_DATA_FLOW_SRC_PARAM_AUD0_RIGHT;
+	}
+	setup->src_pcm_audio[*src_pcm].dst_param = NDP120_DSP_DATA_FLOW_DST_SUBTYPE_AUDIO;
+	setup->src_pcm_audio[*src_pcm].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_HOST_EXTRACT;
+	setup->src_pcm_audio[*src_pcm].algo_config_index = 0;
+	setup->src_pcm_audio[*src_pcm].set_id = COMBINED_FLOW_SET_ID;
+	setup->src_pcm_audio[*src_pcm].algo_exec_property = 0;
+	(*src_pcm)++;
+	auddbg("Added factory flow, dsp_flow_num = %d\n", dsp_flow_num);
+}
+
 void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
 {
 	/* FUNCx->NN */
@@ -1074,7 +1091,13 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 		}
 		idToFlow[i] = flow;
 	}
-	add_host_ext_flow(&setup, &src_pcm, &src_func, &src_nn);
+	
+	if (!dev->dsp_flow_num) {
+		add_host_ext_flow(&setup, &src_pcm, &src_func, &src_nn);
+	} else {
+		add_host_ext_flow_factory(&setup, &src_pcm, &src_func, &src_nn, dev->dsp_flow_num);
+	}
+	
 	auddbg("Applied flow rules\n");
 	s = syntiant_ndp120_dsp_flow_setup_apply(ndp, &setup);
 	check_status("syntiant_ndp120_dsp_flow_setup_apply", s);
@@ -1365,6 +1388,8 @@ int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
 	dev->ndp = NULL;
 	dev->fw_loaded = false;
 	dev->kd_num = -1; // set invalid kd_num during initialization
+	dev->dsp_flow_num = 0; // set dsp_flow_num to 0
+
 	s = pthread_mutex_init(&dev->ndp_mutex_mbsync, NULL);
 	if (s) {
 		auddbg("failed to initialize mb sync mutex variable\n");
@@ -2168,5 +2193,37 @@ int ndp120_kw_sensitivity_get(struct ndp120_dev_s *dev, uint16_t *sensitivity)
 	check_status("Error getting KW sensitivity", s);
 	double d = (((double)ph_config.threshold)*1000 / 0xffff);	
 	*sensitivity = (uint16_t) (d + 0.5);
+	return s;
+}
+
+/* ndp120_change_dsp_flow api must be called after the ndp120_change_kd api is called. */
+int ndp120_change_dsp_flow(struct ndp120_dev_s *dev, uint8_t dsp_flow_num)
+{
+#if BT_MIC_SUPPORT == 1
+	auddbg("To change dsp flow is not spported when BT_MIC_SUPPORT.\n");
+	return -ENOTSUP;
+#endif
+
+	int s = SYNTIANT_NDP_ERROR_NONE;
+	if (dsp_flow_num == dev->dsp_flow_num) {
+		auddbg("Same dsp_flow_num, ignore dsp_flow_num : %d dev->dsp_flow_num : %d\n", dsp_flow_num, dev->dsp_flow_num);
+		return SYNTIANT_NDP_ERROR_NONE;
+	}
+	auddbg("Change dsp_flow_num!! flow_num : %d\n", dsp_flow_num);
+	ndp120_semtake(dev);
+	/* Set false to prevent aliveness check during changing kd */
+	int temp = dev->dsp_flow_num;
+	dev->dsp_flow_num = dsp_flow_num;
+	
+	int retry = NDP120_INIT_RETRY_COUNT;
+	while (retry--) {
+		s = ndp120_load_firmware(dev);
+		if (s) {
+			dev->dsp_flow_num = temp;
+		} else {
+			break;
+		}
+	}
+	ndp120_semgive(dev);
 	return s;
 }
