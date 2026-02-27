@@ -157,6 +157,7 @@
 #define AUDIOIOC_MULTI_CH_STREAM_INIT   _AUDIOIOC(29)
 #define AUDIOIOC_MULTI_CH_STREAM_READ   _AUDIOIOC(30)
 #define AUDIOIOC_MULTI_CH_STREAM_DEINIT _AUDIOIOC(31)
+#define AUDIOIOC_CHANGEDSPFLOW      _AUDIOIOC(29)
 
 /* Audio Device Types *******************************************************/
 /* The audio interface support different types of audio devices for
