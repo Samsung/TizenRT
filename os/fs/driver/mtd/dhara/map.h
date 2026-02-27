@@ -37,10 +37,12 @@
 
 #include "journal.h"
 
+struct dhara_dev_s;
 /* The map is a journal indexing format. It maps virtual sectors to
  * pages of data in flash memory.
  */
 typedef uint32_t dhara_sector_t;
+/* Forward declaration */
 
 /* This sector value is reserved */
 #define DHARA_SECTOR_NONE	0xffffffff
@@ -65,7 +67,7 @@ void dhara_map_init(struct dhara_map *m, const struct dhara_nand *n, uint8_t *pa
 /* Recover stored state, if possible. If there is no valid stored state
  * on the chip, -1 is returned, and an empty map is initialized.
  */
-int dhara_map_resume(struct dhara_map *m, dhara_error_t *err);
+int dhara_map_resume(struct dhara_map *m, FAR struct dhara_dev_s *dev, dhara_error_t *err);
 
 /* Clear the map (delete all sectors). */
 void dhara_map_clear(struct dhara_map *m);
@@ -114,7 +116,7 @@ int dhara_map_trim(struct dhara_map *m, dhara_sector_t s, dhara_error_t *err);
  * date are persistent and durable. Conversely, there is no guarantee
  * that unsynchronized changes will be persistent.
  */
-int dhara_map_sync(struct dhara_map *m, dhara_error_t *err);
+int dhara_map_sync(struct dhara_map *m, bool format_flag, dhara_error_t *err);
 
 /* Perform one garbage collection step. You can do this whenever you
  * like, but it's not necessary -- garbage collection happens

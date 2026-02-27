@@ -156,16 +156,6 @@ const struct mountpt_operations littlefs_operations = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-extern int sectors_reduced(FAR struct inode *driver);
-int littlefs_blocks_reduced(FAR struct inode *driver)
-{
-	int available_sectors;
-
-	available_sectors = sectors_reduced(driver);
-	lldbg("available_sectors %lld \n", (long long)available_sectors);
-	return available_sectors;
-}
-
 
 /****************************************************************************
  * Name: littlefs_semtake
@@ -772,11 +762,11 @@ static int littlefs_read_block(FAR const struct lfs_config *c, lfs_block_t block
 
 	DEBUGASSERT(drv && drv->i_private);
 
-	if (INODE_IS_MTD(drv))
+	if (INODE_IS_MTD(drv)) {
 		ret = MTD_BREAD(drv->u.i_mtd, block, size, buffer);
-	else
+	} else {
 		ret = drv->u.i_bops->read(drv, buffer, block, size);
-
+	}
 	/* TODO Mapping table between errno.h & lfs is required */
 	if (ret == -EIO) {
 		ret = LFS_ERR_CORRUPT;
@@ -891,11 +881,10 @@ static int littlefs_unlock(const struct lfs_config *c)
 	sem_post(&fs->sem_ops);
 	return OK;
 }
-
+#define MTDIOC_SYNC            _MTDIOC(0x0008)
 /****************************************************************************
  * Name: littlefs_bind
  ****************************************************************************/
-
 static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR void **handle)
 {
 	FAR struct littlefs_mountpt_s *fs;
@@ -946,6 +935,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 		}
 
 		if (ret < 0) {
+
 			struct geometry geometry;
 
 			/* Not FLT MTD device, get normal block geometry */
@@ -953,7 +943,6 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 			ret = driver->u.i_bops->geometry(driver, &geometry);
 			if (ret >= 0) {
 				/* And convert to MTD geometry */
-
 				fs->geo.blocksize    = geometry.geo_sectorsize;
 				fs->geo.erasesize    = geometry.geo_sectorsize;
 				fs->geo.neraseblocks = geometry.geo_nsectors;
@@ -966,7 +955,6 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	}
 
 	/* Initialize lfs_config structure */
-	int blocks_available = littlefs_blocks_reduced(driver);
 	fs->cfg.context = fs;
 	fs->cfg.read = littlefs_read_block;
 	fs->cfg.prog = littlefs_write_block;
@@ -979,7 +967,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	fs->cfg.read_size = fs->geo.blocksize;
 	fs->cfg.prog_size = fs->geo.blocksize;
 	fs->cfg.block_size = fs->geo.blocksize;
-	fs->cfg.block_count = blocks_available-1;
+	fs->cfg.block_count = fs->geo.neraseblocks*fs->geo.erasesize/fs->geo.blocksize;
 	fs->cfg.block_cycles = 500;
 	fs->cfg.cache_size = fs->geo.blocksize;
 	fs->cfg.lookahead_size = lfs_min(lfs_alignup(fs->cfg.block_count, 64) / 8, fs->cfg.read_size);
@@ -987,10 +975,9 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	/* Then get information about the littlefs filesystem on the devices
 	 * managed by this driver.
 	 */
-
 	/* Force format the device if -o forceformat */
 	if (data && strcmp(data, "forceformat") == 0) {
-		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 0);
+		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 3);
 		ret = lfs_format(&fs->lfs, &fs->cfg);
 		if (ret < 0) {
 			goto errout_with_fs;
@@ -1000,8 +987,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
 	if (ret < 0) {
 		fdbg("mount failed ret : %d\n", ret);
-		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 0);
-		lldbg("ioctl ret:%d\n", ret);
+		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 3);
 
 		/* Auto format the device if -o autoformat and mount failed */
 		if (!data || strcmp(data, "autoformat") != 0) {
@@ -1011,6 +997,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 
 		fdbg("attempting autoformat\n");
 		ret = lfs_format(&fs->lfs, &fs->cfg);
+		ret = driver->u.i_bops->ioctl(driver, MTDIOC_SYNC, 0);
 		if (ret < 0) {
 			fdbg("autoformat failed ret : %d\n", ret);
 			goto errout_with_fs;
@@ -1026,7 +1013,6 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	} else {
 		fdbg("Check formatfs and mount successful!\n");
 	}
-
 	*handle = fs;
 	littlefs_semgive(fs);
 	if (ret == LFS_ERR_CORRUPT) {
