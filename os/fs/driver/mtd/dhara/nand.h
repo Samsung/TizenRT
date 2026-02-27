@@ -56,6 +56,7 @@ typedef uint32_t dhara_block_t;
  * The functions declared below are not implemented -- they must be
  * provided and satisfy the documented conditions.
  */
+struct dhara_dev_s;
 struct dhara_nand {
 	/* Base-2 logarithm of the page size. If your device supports
 	 * partial programming, you may want to subdivide the actual
@@ -70,6 +71,8 @@ struct dhara_nand {
 	/* Total number of eraseblocks */
 	unsigned int	num_blocks;
 };
+int dhara_erase(struct dhara_dev_s *dev, int cmd, unsigned long arg);
+
 
 /* Is the given block bad? */
 int dhara_nand_is_bad(const struct dhara_nand *n, dhara_block_t b);

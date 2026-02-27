@@ -36,6 +36,7 @@
 
 #include <stdint.h>
 #include "nand.h"
+#include <tinyara/fs/mtd.h>
 
 /* Number of bytes used by the journal checkpoint header. */
 #define DHARA_HEADER_SIZE		16
@@ -81,6 +82,7 @@
  * assist with this. If the head meets the tail, the journal will refuse
  * to enqueue more pages.
  */
+struct dhara_dev_s;
 struct dhara_journal {
 	const struct dhara_nand *nand;
 	uint8_t *page_buf;
@@ -153,7 +155,9 @@ void dhara_journal_init(struct dhara_journal *j, const struct dhara_nand *n, uin
  *
  * If this operation fails, the journal will be reset to an empty state.
  */
-int dhara_journal_resume(struct dhara_journal *j, dhara_error_t *err);
+/* Add mtd parameter */
+/* Update function signature to accept dhara_dev_t instead of mtd */
+int dhara_journal_resume(struct dhara_journal *j, FAR struct dhara_dev_s *dev, dhara_error_t *err);
 
 /* Obtain an upper bound on the number of user pages storable in the
  * journal.
@@ -211,7 +215,7 @@ void dhara_journal_clear(struct dhara_journal *j);
  * occur during recovery, E_RECOVER is returned, and the procedure must
  * be restarted.
  */
-int dhara_journal_enqueue(struct dhara_journal *j, const uint8_t *data, const uint8_t *meta, dhara_error_t *err);
+int dhara_journal_enqueue(struct dhara_journal *j, const uint8_t *data, const uint8_t *meta, bool format_flag, dhara_error_t *err);
 
 /* Copy an existing page to the front of the journal. New metadata must
  * be specified. This operation is not persistent until a checkpoint is
@@ -225,7 +229,7 @@ int dhara_journal_enqueue(struct dhara_journal *j, const uint8_t *data, const ui
  * occur during recovery, E_RECOVER is returned, and the procedure must
  * be restarted.
  */
-int dhara_journal_copy(struct dhara_journal *j, dhara_page_t p, const uint8_t *meta, dhara_error_t *err);
+int dhara_journal_copy(struct dhara_journal *j, dhara_page_t p, const uint8_t *meta, bool format_flag, dhara_error_t *err);
 
 /* Mark the journal dirty. */
 static inline void dhara_journal_mark_dirty(struct dhara_journal *j)

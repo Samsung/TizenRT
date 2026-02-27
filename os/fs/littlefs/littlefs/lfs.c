@@ -4707,7 +4707,10 @@ int lfs_fs_traverse_(lfs_t *lfs,
         int (*cb)(void *data, lfs_block_t block), void *data,
         bool includeorphans) {
     // iterate over metadata pairs
-    lfs_mdir_t dir = {.tail = {0, 1}};
+	lfs_mdir_t dir;
+
+	dir.tail[0] = 0;
+	dir.tail[1] = 1;
 
 #ifdef LFS_MIGRATE
     // also consider v1 blocks during migration
