@@ -84,12 +84,25 @@ psa_key_id_t g_key_idx_record[TOTAL_KEY_STORAGE_INDEX] = {0};
 /**
  * Common
  */
+/* Acquire TFM NSC interface lock; on failure log and return HAL_FAIL */
+#define TFM_NSC_LOCK_OR_RETURN() do { \
+	int _tfm_lock_st = tfm_ns_interface_lock(); \
+	if (_tfm_lock_st != PSA_SUCCESS) { \
+		dbg("Failed to acquire NSC interface lock\n"); \
+		return HAL_FAIL; \
+	} \
+} while (0)
+
+#define TFM_NSC_UNLOCK() do { \
+	tfm_ns_interface_unlock(); \
+} while (0)
+
 int armino_hal_init(hal_init_param *params)
 {
     HWRAP_ENTER;
     // Initialize TFM NS interface if needed
     int32_t ret = ns_interface_lock_init();
-    if (ret != HAL_SUCCESS) {
+    if (ret != PSA_SUCCESS) {
         dbg("Failed to initialize NS interface lock\n");
         return HAL_FAIL;
     }
@@ -654,13 +667,23 @@ int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_d
     }
 
     if((mode == HAL_KEY_AES_128)||(mode == HAL_KEY_AES_192)||(mode == HAL_KEY_AES_256)){
+        TFM_NSC_LOCK_OR_RETURN();
         psa_status_t ret = psa_sca_aes_set_key((aes_key_type)mode, key_idx, key);
+        TFM_NSC_UNLOCK();
+        if(ret != PSA_SUCCESS){
+            return HAL_FAIL;
+        }
         set_psa_key_id(key_idx, key_idx);
-        return ret ;
+        return HAL_SUCCESS;
     }
 
     if((mode == HAL_KEY_ED_25519)||(mode == HAL_KEY_ECC_25519)){
-        psa_25519_set_key(key_idx, key, prikey);
+        TFM_NSC_LOCK_OR_RETURN();
+        psa_status_t ret = psa_25519_set_key(key_idx, key, prikey);
+        TFM_NSC_UNLOCK();
+        if(ret != PSA_SUCCESS){
+            return HAL_FAIL;
+        }
         set_psa_key_id(key_idx, key_idx);
         return HAL_SUCCESS;
     }
@@ -1036,22 +1059,28 @@ int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx)
     }
 
     if((mode == HAL_KEY_AES_128)||(mode == HAL_KEY_AES_192)||(mode == HAL_KEY_AES_256)){
+        TFM_NSC_LOCK_OR_RETURN();
         status = psa_sca_aes_remove_key((aes_key_type)mode, key_idx);
-        reset_psa_key_id(key_idx);
+        TFM_NSC_UNLOCK();
         if(status != SCA_AES_SUCCESS){
             dbg("line :%d, Failed to remove key: %d\n", __LINE__, status);
             return HAL_FAIL;
         }
+        reset_psa_key_id(key_idx);
+
         return HAL_SUCCESS ;
     }
 
     if((mode == HAL_KEY_ED_25519)||(mode == HAL_KEY_ECC_25519)){
+        TFM_NSC_LOCK_OR_RETURN();
         status = psa_25519_remove_key(key_idx);
-        reset_psa_key_id(key_idx);
+        TFM_NSC_UNLOCK();
         if(status  != HAL_SUCCESS){
             dbg("Failed to remove key: %d\n", status);
             return status;
         }
+        reset_psa_key_id(key_idx);
+
         return HAL_SUCCESS;
     }
 
@@ -1072,6 +1101,8 @@ int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 {
     HWRAP_ENTER;
+    psa_status_t status;
+
     if((armino_index_chk(key_idx)) != HAL_SUCCESS){
         return HAL_INVALID_SLOT_RANGE;
     }
@@ -1086,12 +1117,25 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
     }
 
     if((mode == HAL_KEY_AES_128)||(mode == HAL_KEY_AES_192)||(mode == HAL_KEY_AES_256)){
-        psa_status_t ret = psa_sca_aes_generate_key((aes_key_type)mode, key_idx);
-        return ret ;
+        TFM_NSC_LOCK_OR_RETURN();
+        status = psa_sca_aes_generate_key((aes_key_type)mode, key_idx);
+        TFM_NSC_UNLOCK();
+        if(status != PSA_SUCCESS){
+            dbg("Failed to generate key: %d\n", status);
+            return HAL_FAIL;
+        }
+        set_psa_key_id(key_idx, key_idx);
+        return HAL_SUCCESS;
     }
 
     if((mode == HAL_KEY_ED_25519)||(mode == HAL_KEY_ECC_25519)){
-        psa_25519_generate_key(key_idx);
+        TFM_NSC_LOCK_OR_RETURN();
+        status = psa_25519_generate_key(key_idx);
+        TFM_NSC_UNLOCK();
+        if(status != PSA_SUCCESS){
+            dbg("Failed to generate key: %d\n", status);
+            return HAL_FAIL;
+        }
         set_psa_key_id(key_idx, key_idx);
         return HAL_SUCCESS;
     }
@@ -1232,7 +1276,7 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 
     // Generate the key
     psa_key_id_t generated_key_id;
-    psa_status_t status = psa_generate_key(&attributes, &generated_key_id);
+    status = psa_generate_key(&attributes, &generated_key_id);
     psa_reset_key_attributes(&attributes);
     if (status != PSA_SUCCESS) {
         dbg("Failed to generate key: %d\n", status);
@@ -1639,8 +1683,10 @@ int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_i
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
 #if CONFIG_TFM_ASYM_ALGO_NSC
+        TFM_NSC_LOCK_OR_RETURN();
         status = psa_ecdsa_sign_p256(hash, key_idx, sign);
-        if(status != HAL_SUCCESS){
+        TFM_NSC_UNLOCK();
+        if(status != PSA_SUCCESS){
             dbg("ECDSA sign failed: %d\n", status);
             return HAL_FAIL;
         }
@@ -1728,8 +1774,10 @@ int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *si
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
 #if CONFIG_TFM_ASYM_ALGO_NSC
     if(mode.curve == HAL_ECDSA_SEC_P256R1){
+        TFM_NSC_LOCK_OR_RETURN();
         status = psa_ecdsa_verify_p256(hash, key_idx, sign);
-        if(status != HAL_SUCCESS){
+        TFM_NSC_UNLOCK();
+        if(status != PSA_SUCCESS){
             dbg("ECDSA verify failed: %d\n", status);
             return HAL_FAIL;
         }
@@ -1826,7 +1874,9 @@ int armino_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
     dh_param_t.P = dh_param->P->data;
     dh_param_t.P_size = dh_param->P->data_len;
 
+    TFM_NSC_LOCK_OR_RETURN();
     psa_status_t status = psa_dh_import_p_g(&dh_param_t);
+    TFM_NSC_UNLOCK();
     if (status != PSA_SUCCESS) {
         dbg("Failed to import P & G: %d\n", status);
         return HAL_FAIL;
@@ -1994,7 +2044,9 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
 #if CONFIG_TFM_ASYM_ALGO_NSC
         uint32_t priv_key_len = pub_key_len/2;
 
+        TFM_NSC_LOCK_OR_RETURN();
         status = ecdh_factory_key_agreement(ecdh_param, priv_key_len, key_idx, shared_secret);
+        TFM_NSC_UNLOCK();
         if (status != PSA_SUCCESS) {
             dbg("ECDH key in flash agreement failed: %d\n", status);
             return HAL_FAIL;
@@ -2013,8 +2065,9 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
         }
 
         if(ecdh_param->curve == HAL_ECDSA_CURVE_25519){
+            TFM_NSC_LOCK_OR_RETURN();
             status = psa_25519_compute_shared_secret(ecdh_param->pubkey_x, ecdh_param->pubkey_y, key_idx, shared_secret);
-            dbg("yxt ECDH key agreement 25519: %d %d\n", status, __LINE__);
+            TFM_NSC_UNLOCK();
             if (status != PSA_SUCCESS) {
                 dbg("ECDH key agreement failed: %d %d\n", status, __LINE__);
                 return HAL_FAIL;
@@ -2055,7 +2108,9 @@ int armino_hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
     }
 
     int ret;
+    TFM_NSC_LOCK_OR_RETURN();
     ret = ss_write_cert(cert_idx, cert_in->data, cert_in->data_len);
+    TFM_NSC_UNLOCK();
     if (ret != 0) {
         dbg("Failed to store certificate: %d\n", ret);
         return HAL_FAIL;
@@ -2072,7 +2127,9 @@ int armino_hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
     }
 
     int ret;
+    TFM_NSC_LOCK_OR_RETURN();
     ret = ss_read_cert(cert_idx, cert_out->data, &cert_out->data_len);
+    TFM_NSC_UNLOCK();
     if (ret != 0) {
         dbg("Failed to read certificate: %d\n", ret);
         return HAL_FAIL;
@@ -2085,7 +2142,9 @@ int armino_hal_remove_certificate(uint32_t cert_idx)
 {
     HWRAP_ENTER;
     int ret;
+    TFM_NSC_LOCK_OR_RETURN();
     ret = ss_delete_cert(cert_idx);
+    TFM_NSC_UNLOCK();
     if (ret != 0) {
         dbg("Failed to delete certificate: %d\n", ret);
         return HAL_FAIL;
@@ -2185,7 +2244,9 @@ int armino_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_
         case HAL_AES_ECB_PKCS7:
             alg = PSA_ALG_ECB_NO_PADDING;
             cipher_param.mode = SCA_AES_ECB_ENCRYPT_MODE;
+            TFM_NSC_LOCK_OR_RETURN();
             ret = psa_sca_aes_ecb_crypt((sca_aes_context_t *)&cipher_param, cipher_param.input_data, cipher_param.input_len, cipher_param.output_data);
+            TFM_NSC_UNLOCK();
             break;
         case HAL_AES_CBC_NOPAD:
         case HAL_AES_CBC_ISO9797_M1:
@@ -2194,17 +2255,23 @@ int armino_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_
         case HAL_AES_CBC_PKCS7:
             alg = PSA_ALG_CBC_NO_PADDING;
             cipher_param.mode = SCA_AES_CBC_ENCRYPT_MODE;
+            TFM_NSC_LOCK_OR_RETURN();
             ret = psa_sca_aes_cbc_crypt((sca_aes_context_t *)&cipher_param, cipher_param.input_data, cipher_param.input_len, cipher_param.output_data);
+            TFM_NSC_UNLOCK();
             break;
         case HAL_AES_CTR:   //CTR mode no padding
             alg = PSA_ALG_CTR;
             cipher_param.mode = SCA_AES_CTR_ENCRYPT_MODE;
+            TFM_NSC_LOCK_OR_RETURN();
             ret = psa_sca_aes_ctr_crypt((sca_aes_context_t *)&cipher_param, cipher_param.input_data, cipher_param.input_len, cipher_param.output_data);
+            TFM_NSC_UNLOCK();
             break;
         case HAL_AES_CFB128: //CFB mode no padding
             alg = PSA_ALG_CFB;
             cipher_param.mode = SCA_AES_CFB_ENCRYPT_MODE;
+            TFM_NSC_LOCK_OR_RETURN();
             ret = psa_sca_aes_cfb_crypt((sca_aes_context_t *)&cipher_param, cipher_param.input_data, cipher_param.input_len, cipher_param.output_data);
+            TFM_NSC_UNLOCK();
             break;
         default:
             dbg("line :%d, Unsupported AES mode: %d\n", __LINE__, aes_param->mode);
@@ -2276,7 +2343,9 @@ int armino_hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_
         case HAL_AES_ECB_PKCS7:
             alg = PSA_ALG_ECB_NO_PADDING;
             cipher_param.mode = SCA_AES_ECB_DECRYPT_MODE;
+            TFM_NSC_LOCK_OR_RETURN();
             ret = psa_sca_aes_ecb_crypt((sca_aes_context_t *)&cipher_param, cipher_param.input_data, cipher_param.input_len, cipher_param.output_data);
+            TFM_NSC_UNLOCK();
             break;
         case HAL_AES_CBC_NOPAD:
         case HAL_AES_CBC_ISO9797_M1:
@@ -2285,17 +2354,23 @@ int armino_hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_
         case HAL_AES_CBC_PKCS7:
             alg = PSA_ALG_CBC_NO_PADDING;
             cipher_param.mode = SCA_AES_CBC_DECRYPT_MODE;
+            TFM_NSC_LOCK_OR_RETURN();
             ret = psa_sca_aes_cbc_crypt((sca_aes_context_t *)&cipher_param, cipher_param.input_data, cipher_param.input_len, cipher_param.output_data);
+            TFM_NSC_UNLOCK();
             break;
         case HAL_AES_CTR:
             alg = PSA_ALG_CTR;
             cipher_param.mode = SCA_AES_CTR_DECRYPT_MODE;
+            TFM_NSC_LOCK_OR_RETURN();
             ret = psa_sca_aes_ctr_crypt((sca_aes_context_t *)&cipher_param, cipher_param.input_data, cipher_param.input_len, cipher_param.output_data);
+            TFM_NSC_UNLOCK();
             break;
         case HAL_AES_CFB128:
             alg = PSA_ALG_CFB;
             cipher_param.mode = SCA_AES_CFB_DECRYPT_MODE;
+            TFM_NSC_LOCK_OR_RETURN();
             ret = psa_sca_aes_cfb_crypt((sca_aes_context_t *)&cipher_param, cipher_param.input_data, cipher_param.input_len, cipher_param.output_data);
+            TFM_NSC_UNLOCK();
             break;
         default:
             dbg("line :%d, Unsupported AES mode: %d\n", __LINE__, aes_param->mode);
@@ -2464,7 +2539,9 @@ int armino_hal_gcm_encrypt(hal_data *dec_data, hal_gcm_param *gcm_param, uint32_
     gcm_param_t.tag = gcm_param->tag;
 
     // Perform GCM encryption
+    TFM_NSC_LOCK_OR_RETURN();
     status = armino_hal_psa_gcm_encrypt(&gcm_param_t);
+    TFM_NSC_UNLOCK();
     if (status != PSA_SUCCESS) {
         dbg("GCM encryption failed: %d\n", status);
         return HAL_FAIL;
@@ -2510,7 +2587,9 @@ int armino_hal_gcm_decrypt(hal_data *enc_data, hal_gcm_param *gcm_param, uint32_
     gcm_param_t.tag_len = gcm_param->tag_len;
 
     // Perform GCM decryption
+    TFM_NSC_LOCK_OR_RETURN();
     status = armino_hal_psa_gcm_decrypt(&gcm_param_t);
+    TFM_NSC_UNLOCK();
     if (status != PSA_SUCCESS) {
         dbg("GCM decryption failed: %d\n", status);
         return HAL_FAIL;
@@ -2532,7 +2611,9 @@ int armino_hal_write_storage(uint32_t ss_idx, hal_data *data)
     }
 
     int ret;
+    TFM_NSC_LOCK_OR_RETURN();
     ret = ss_write_data(ss_idx, data->data, data->data_len);
+    TFM_NSC_UNLOCK();
     if (ret != 0) {
         dbg("Failed to write storage: %d\n", ret);
         return HAL_FAIL;
@@ -2549,7 +2630,9 @@ int armino_hal_read_storage(uint32_t ss_idx, hal_data *data)
     }
 
     int ret;
+    TFM_NSC_LOCK_OR_RETURN();
     ret = ss_read_data(ss_idx, data->data, &data->data_len);
+    TFM_NSC_UNLOCK();
     if (ret != 0) {
         dbg("Failed to read storage: %d\n", ret);
         return HAL_FAIL;
@@ -2563,7 +2646,9 @@ int armino_hal_delete_storage(uint32_t ss_idx)
     HWRAP_ENTER;
 
     int ret;
+    TFM_NSC_LOCK_OR_RETURN();
     ret = ss_delete_data(ss_idx);
+    TFM_NSC_UNLOCK();
     if (ret != 0) {
         dbg("Failed to delete storage: %d\n", ret);
         return HAL_FAIL;
