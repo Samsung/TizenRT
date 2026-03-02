@@ -44,7 +44,8 @@ class BKFilBinPack:
             "app1": bininfo.get("APP1_BIN_NAME", "None"),
             "app2": bininfo.get("APP2_BIN_NAME", "None"),
             "bootparam": "bootparam.bin",
-            "userfs": self.fs_bin_name
+            "userfs": self.fs_bin_name,
+            "resource": bininfo.get("RESOURCE_BIN_NAME", "None")
         }
         # Add common binary if supported
         if self.config.get("CONFIG_SUPPORT_COMMON_BINARY", "n") == "y":
@@ -70,6 +71,7 @@ class BKFilBinPack:
             required += ["bl1"]
         if self.config.get("CONFIG_DUMMY_FS_BIN", "n") == "y":
             optional += ["userfs"]
+        optional += ["resource"]
         parser.set_required(required)
         parser.set_optional(optional)
         parser.set_part_map(self.part_map)
@@ -84,10 +86,8 @@ class BKFilBinPack:
         fs_bin = self.workdir / self.fs_bin_name
         if self.config.get("CONFIG_DUMMY_FS_BIN", "n") == "y" and not fs_bin.exists():
             parser.create_dummy_fs_bin(fs_bin)
-        if self.config.get("CONFIG_BK7239N_MP", "n") == "y":
-            output_file_name = Path("all-app.bin")
-        else:
-            output_file_name = Path("mpw_all-app.bin")
+
+        output_file_name = Path("all-app.bin")
         packager = bk_packager_format(self.workdir, pack_json, output_file_name)
         if self.config.get("CONFIG_TFM", "n") == "y":
             packager.set_magic_header(b'BKDLV10.')
