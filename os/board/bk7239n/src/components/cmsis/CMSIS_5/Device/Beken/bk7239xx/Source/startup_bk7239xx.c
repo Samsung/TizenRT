@@ -507,6 +507,10 @@ __FLASH_BOOT_CODE void _start(void)
 #if defined(CONFIG_RESET_REASON)
 	reset_reason_init();
 #endif
+
+#if defined(CONFIG_OTP)
+    bk_otp_driver_init();
+#endif
     /* Call os_start() */
     extern void os_start(void);
     os_start();

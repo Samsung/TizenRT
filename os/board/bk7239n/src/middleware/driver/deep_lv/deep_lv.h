@@ -15,7 +15,7 @@
 #pragma once
 
 #define CONFIG_SAU_RECONFIG           1
-#define CONFIG_RESTORE_VIA_EXC_RETURN 1
+#define CONFIG_RESTORE_VIA_EXC_RETURN 0
 
 #if defined(CONFIG_DEEP_LOW_VOLTAGE_SLEEP)
 extern unsigned char _deep_lv_start;
@@ -165,7 +165,7 @@ void dlv_context_restore(void);
 uint32_t dlv_is_startup(void);
 uint32_t dlv_is_startup_iram(void);
 void dlv_startup(void);
-void dlv_stack_frame_save_and_dlv(uint32_t exc_return);
+void dlv_stack_frame_save_and_dlv(uint32_t exc_return, uint32_t wakeup_pc);
 void deep_lv_enter(void);
 void deep_lv_exit(void);
 // eof

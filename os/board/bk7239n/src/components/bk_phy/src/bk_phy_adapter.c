@@ -74,6 +74,7 @@
 #define PHY_OSI_VERSION              0x00060006
 
 UINT32 g_phy_cali_flag =             0x1;
+bk_err_t bk_sensor_set_enable_temperature(int enable);
 
 void bk_phy_set_cali_flag(UINT32 flag)
 {
@@ -282,6 +283,16 @@ static bk_err_t bk_pm_module_vote_power_ctrl_phy(int32_t on_off)
 
 static bk_err_t bk_pm_module_vote_cpu_freq_phy(uint32_t module, uint32_t cpu_freq)
 {
+#if (CONFIG_TEMP_DETECT)
+    if (module == PM_DEV_ID_PHY_DPD_CALI) {
+        //hengzh20260126: skip temp detect when DPD cali
+        if (cpu_freq == PM_CPU_FRQ_DEFAULT) {
+            bk_sensor_set_enable_temperature(1);
+        } else if (cpu_freq == PM_CPU_FRQ_120M) {
+            bk_sensor_set_enable_temperature(0);
+        }
+    }
+#endif
     return bk_pm_module_vote_cpu_freq((pm_dev_id_e)module, (pm_cpu_freq_e)cpu_freq);
 }
 
@@ -921,6 +932,7 @@ const phy_os_funcs_t g_phy_os_funcs = {
     ._bk_feature_temp_high_volt_enable     = bk_feature_temp_high_volt_enable,
     ._bk_phy_get_cali_flag                 = bk_phy_get_cali_flag,
     ._me_is_connect_with_instrument        = me_is_connect_with_instrument,
+    ._bk_feature_read_rfcali_from_ft_enable  = bk_feature_read_rfcali_from_ft_enable,
 };
 
 const phy_os_variable_t g_phy_os_variable = {

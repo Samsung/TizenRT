@@ -43,7 +43,7 @@
  */
 #define CONFIG_TFM_NS_AGENT_TZ_STK_SIZE_SHIFT_FACTOR             1
 #define CONFIG_TFM_NS_AGENT_TZ_STACK_SIZE                         \
-    (((0x4a00 >> CONFIG_TFM_NS_AGENT_TZ_STK_SIZE_SHIFT_FACTOR) + 0x7) & (~0x7))
+    (((0x4200 >> CONFIG_TFM_NS_AGENT_TZ_STK_SIZE_SHIFT_FACTOR) + 0x7) & (~0x7))
 
 #endif /* CONFIG_TFM_SPM_BACKEND_IPC == 1 */
 

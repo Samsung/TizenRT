@@ -217,21 +217,6 @@ __/__/crypto/tfm_crypto_secure_api.s:
 .PHONY : __/__/crypto/tfm_crypto_secure_api.s
 
 # target to build an object file
-__/__/firmware_update/tfm_fwu_secure_api.o:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/lib/sprt/CMakeFiles/tfm_sprt.dir/build.make secure_fw/partitions/lib/sprt/CMakeFiles/tfm_sprt.dir/__/__/firmware_update/tfm_fwu_secure_api.o
-.PHONY : __/__/firmware_update/tfm_fwu_secure_api.o
-
-# target to preprocess a source file
-__/__/firmware_update/tfm_fwu_secure_api.i:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/lib/sprt/CMakeFiles/tfm_sprt.dir/build.make secure_fw/partitions/lib/sprt/CMakeFiles/tfm_sprt.dir/__/__/firmware_update/tfm_fwu_secure_api.i
-.PHONY : __/__/firmware_update/tfm_fwu_secure_api.i
-
-# target to generate assembly for a file
-__/__/firmware_update/tfm_fwu_secure_api.s:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/lib/sprt/CMakeFiles/tfm_sprt.dir/build.make secure_fw/partitions/lib/sprt/CMakeFiles/tfm_sprt.dir/__/__/firmware_update/tfm_fwu_secure_api.s
-.PHONY : __/__/firmware_update/tfm_fwu_secure_api.s
-
-# target to build an object file
 __/__/internal_trusted_storage/tfm_its_secure_api.o:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/lib/sprt/CMakeFiles/tfm_sprt.dir/build.make secure_fw/partitions/lib/sprt/CMakeFiles/tfm_sprt.dir/__/__/internal_trusted_storage/tfm_its_secure_api.o
 .PHONY : __/__/internal_trusted_storage/tfm_its_secure_api.o
@@ -433,9 +418,6 @@ help:
 	@echo "... __/__/crypto/tfm_crypto_secure_api.o"
 	@echo "... __/__/crypto/tfm_crypto_secure_api.i"
 	@echo "... __/__/crypto/tfm_crypto_secure_api.s"
-	@echo "... __/__/firmware_update/tfm_fwu_secure_api.o"
-	@echo "... __/__/firmware_update/tfm_fwu_secure_api.i"
-	@echo "... __/__/firmware_update/tfm_fwu_secure_api.s"
 	@echo "... __/__/internal_trusted_storage/tfm_its_secure_api.o"
 	@echo "... __/__/internal_trusted_storage/tfm_its_secure_api.i"
 	@echo "... __/__/internal_trusted_storage/tfm_its_secure_api.s"

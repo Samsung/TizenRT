@@ -26,8 +26,6 @@
 
 #define TFM_PARTITION_TFM_SP_INITIAL_ATTESTATION_IRQ_COUNT 0
 
-#define TFM_PARTITION_TFM_SP_FWU_IRQ_COUNT 0
-
 #define TFM_PARTITION_TFM_SP_SYSTEM_CLOCK_IRQ_COUNT 0
 
 /**************************************************************************/
@@ -38,7 +36,6 @@ extern void tfm_its_entry(void);
 extern void tfm_crypto_init(void);
 extern void platform_sp_init(void);
 extern void attest_partition_init(void);
-extern void tfm_fwu_init(void);
 extern void tfm_system_clock_thread(void);
 /**************************************************************************/
 /** Context stacks for IRQ handling */
@@ -93,13 +90,6 @@ static uint32_t ctx_stack_TFM_SP_INITIAL_ATTESTATION[
                 sizeof(struct handler_ctx_stack_frame_t)
         )) / sizeof(uint32_t)];
 
-static uint32_t ctx_stack_TFM_SP_FWU[
-        (sizeof(struct interrupted_ctx_stack_frame_t) +
-            (TFM_PARTITION_TFM_SP_FWU_IRQ_COUNT) * (
-                sizeof(struct interrupted_ctx_stack_frame_t) +
-                sizeof(struct handler_ctx_stack_frame_t)
-        )) / sizeof(uint32_t)];
-
 static uint32_t ctx_stack_TFM_SP_SYSTEM_CLOCK[
         (sizeof(struct interrupted_ctx_stack_frame_t) +
             (TFM_PARTITION_TFM_SP_SYSTEM_CLOCK_IRQ_COUNT) * (
@@ -116,7 +106,6 @@ uint32_t *ctx_stack_list[] =
     ctx_stack_TFM_SP_CRYPTO,
     ctx_stack_TFM_SP_PLATFORM,
     ctx_stack_TFM_SP_INITIAL_ATTESTATION,
-    ctx_stack_TFM_SP_FWU,
     ctx_stack_TFM_SP_SYSTEM_CLOCK,
 };
 
@@ -138,12 +127,6 @@ static int32_t dependencies_TFM_SP_CRYPTO[] =
 static int32_t dependencies_TFM_SP_INITIAL_ATTESTATION[] =
 {
     TFM_CRYPTO_SID,
-};
-
-static int32_t dependencies_TFM_SP_FWU[] =
-{
-    TFM_CRYPTO_SID,
-    TFM_SP_PLATFORM_SYSTEM_RESET_SID,
 };
 
 /**************************************************************************/
@@ -217,17 +200,6 @@ const struct spm_partition_static_data_t static_data_list[] =
     },
 
     {
-        .partition_id         = TFM_SP_FWU,
-        .partition_flags      = 0
-                              | SPM_PART_FLAG_PSA_ROT | SPM_PART_FLAG_APP_ROT
-                              ,
-        .partition_priority   = TFM_PRIORITY(NORMAL),
-        .partition_init       = tfm_fwu_init,
-        .dependencies_num     = 2,
-        .p_dependencies       = dependencies_TFM_SP_FWU,
-    },
-
-    {
         .partition_id         = TFM_SP_SYSTEM_CLOCK,
         .partition_flags      = 0
                               | SPM_PART_FLAG_PSA_ROT | SPM_PART_FLAG_APP_ROT
@@ -246,8 +218,6 @@ const struct spm_partition_static_data_t static_data_list[] =
 const struct platform_data_t **platform_data_list_list[] =
 {
     NULL,
-    NULL,
-
     NULL,
 
     NULL,
@@ -310,15 +280,6 @@ static struct spm_partition_desc_t partition_list [] =
     },
     /* -----------------------------------------------------------------------*/
     /* - Partition DB record for TFM_SP_INITIAL_ATTESTATION */
-    /* -----------------------------------------------------------------------*/
-    {
-    /* Runtime data */
-        .runtime_data             = {0},
-        .static_data              = NULL,
-        .platform_data_list       = NULL,
-    },
-    /* -----------------------------------------------------------------------*/
-    /* - Partition DB record for TFM_SP_FWU */
     /* -----------------------------------------------------------------------*/
     {
     /* Runtime data */

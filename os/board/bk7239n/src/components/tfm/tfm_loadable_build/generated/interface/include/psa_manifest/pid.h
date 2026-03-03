@@ -20,10 +20,9 @@ extern "C" {
 #define TFM_SP_CRYPTO                                                  (259)
 #define TFM_SP_PLATFORM                                                (260)
 #define TFM_SP_INITIAL_ATTESTATION                                     (261)
-#define TFM_SP_FWU                                                     (271)
 #define TFM_SP_SYSTEM_CLOCK                                            (272)
 
-#define TFM_MAX_USER_PARTITIONS                                        (7)
+#define TFM_MAX_USER_PARTITIONS                                        (6)
 
 #ifdef __cplusplus
 }

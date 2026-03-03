@@ -217,21 +217,6 @@ __/__/spm/cmsis_psa/psa_interface_svc.s:
 .PHONY : __/__/spm/cmsis_psa/psa_interface_svc.s
 
 # target to build an object file
-__/firmware_update/tfm_fwu_secure_api.o:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/platform/CMakeFiles/tfm_psa_rot_partition_platform.dir/build.make secure_fw/partitions/platform/CMakeFiles/tfm_psa_rot_partition_platform.dir/__/firmware_update/tfm_fwu_secure_api.o
-.PHONY : __/firmware_update/tfm_fwu_secure_api.o
-
-# target to preprocess a source file
-__/firmware_update/tfm_fwu_secure_api.i:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/platform/CMakeFiles/tfm_psa_rot_partition_platform.dir/build.make secure_fw/partitions/platform/CMakeFiles/tfm_psa_rot_partition_platform.dir/__/firmware_update/tfm_fwu_secure_api.i
-.PHONY : __/firmware_update/tfm_fwu_secure_api.i
-
-# target to generate assembly for a file
-__/firmware_update/tfm_fwu_secure_api.s:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/platform/CMakeFiles/tfm_psa_rot_partition_platform.dir/build.make secure_fw/partitions/platform/CMakeFiles/tfm_psa_rot_partition_platform.dir/__/firmware_update/tfm_fwu_secure_api.s
-.PHONY : __/firmware_update/tfm_fwu_secure_api.s
-
-# target to build an object file
 platform_sp.o:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/platform/CMakeFiles/tfm_psa_rot_partition_platform.dir/build.make secure_fw/partitions/platform/CMakeFiles/tfm_psa_rot_partition_platform.dir/platform_sp.o
 .PHONY : platform_sp.o
@@ -268,9 +253,6 @@ help:
 	@echo "... __/__/spm/cmsis_psa/psa_interface_svc.o"
 	@echo "... __/__/spm/cmsis_psa/psa_interface_svc.i"
 	@echo "... __/__/spm/cmsis_psa/psa_interface_svc.s"
-	@echo "... __/firmware_update/tfm_fwu_secure_api.o"
-	@echo "... __/firmware_update/tfm_fwu_secure_api.i"
-	@echo "... __/firmware_update/tfm_fwu_secure_api.s"
 	@echo "... platform_sp.o"
 	@echo "... platform_sp.i"
 	@echo "... platform_sp.s"

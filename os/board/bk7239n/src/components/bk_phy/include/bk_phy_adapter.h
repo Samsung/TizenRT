@@ -201,6 +201,7 @@ typedef struct {
     int(*_bk_feature_temp_high_volt_enable)(void);
     uint32_t (*_bk_phy_get_cali_flag)(void);
     bool(*_me_is_connect_with_instrument)(void);
+    int(*_bk_feature_read_rfcali_from_ft_enable)(void);
 } phy_os_funcs_t;
 
 

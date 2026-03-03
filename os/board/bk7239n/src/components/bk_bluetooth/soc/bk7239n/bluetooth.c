@@ -994,14 +994,10 @@ static uint32_t get_chipid(uint32_t ver)
     return 0;
 }
 
-
+ 
 static uint32_t get_current_chipid(void)
 {
-#if CONFIG_BK7239N_MP
-    return 1;
-#else
-    return 0;//mpw
-#endif
+    return 1;   //mp chip
     //return aon_pmu_hal_get_chipid();
 }
 
@@ -1136,9 +1132,11 @@ static void bt_delay_us(uint32_t us)
     delay_us(us);
 }
 
-static uint32_t get_ana_timersel()
+static uint64_t bt_get_rtc_max_value(void)
 {
-    return sys_hal_get_ana_reg12_timersel();
+    uint32_t rtc_up_val_l = sys_hal_get_ana_reg12_timersel();
+    uint32_t rtc_up_val_h = sys_hal_get_ana_reg11_timersel();
+    return (((uint64_t)(rtc_up_val_h) << 32) + rtc_up_val_l);
 }
 
 static uint32_t get_finecnt_samp(void)
@@ -1276,7 +1274,7 @@ static struct bt_osi_funcs_t bt_osi_funcs =
     ._get_dut_port = get_dut_port_wrapper,
     ._bt_lp_rtc_set         = bt_lp_rtc_set,
     ._bt_lp_rtc_clear       = bt_lp_rtc_clear,
-    ._get_ana_timersel      = get_ana_timersel,
+    ._get_rtc_max_value      = bt_get_rtc_max_value,
     ._get_finecnt_samp      = get_finecnt_samp,
     ._get_clkcnt_samp       = get_clkcnt_samp,
     ._get_isocnt_samp       = get_isocnt_samp,

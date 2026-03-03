@@ -104,12 +104,6 @@ define block ER_TFM_SP_INITIAL_ATTESTATION_RO  with alignment = 32
     ro section .rodata object *tfm_*partition_attestation.*,
        section TFM_SP_INITIAL_ATTESTATION_PSA-ROT_ATTR_FN,
 };
-define block ER_TFM_SP_FWU_RO  with alignment = 32
-{
-    ro section .text object *tfm_*partition_fwu*,
-    ro section .rodata object *tfm_*partition_fwu*,
-       section TFM_SP_FWU_PSA-ROT_ATTR_FN,
-};
 define block ER_TFM_SP_SYSTEM_CLOCK_RO  with alignment = 32
 {
     ro section .text object *tfm_*partition_system_clock*,
@@ -194,17 +188,6 @@ keep {block ER_PART_RT_POOL, block ER_SERV_RT_POOL};
 /* Position  tag : start Block :*/
     define block PT_TFM_SP_INITIAL_ATTESTATION_PRIVATE_DATA_END with alignment = 32, size = 0 { };
     /* Position  tag : start Block :*/
-    define block PT_TFM_SP_FWU_PRIVATE_DATA_START with alignment = 32, size = 0 { };
-
-    define block ER_TFM_SP_FWU_RWZI with alignment = 32 {
-	rw section .data object *tfm_*partition_fwu*,
-	rw section .bss  object *tfm_*partition_fwu*,
-	section TFM_SP_FWU_PSA-ROT_ATTR_RW,
-	section TFM_SP_FWU_PSA-ROT_ATTR_ZI,
-};
-/* Position  tag : start Block :*/
-    define block PT_TFM_SP_FWU_PRIVATE_DATA_END with alignment = 32, size = 0 { };
-    /* Position  tag : start Block :*/
     define block PT_TFM_SP_SYSTEM_CLOCK_PRIVATE_DATA_START with alignment = 32, size = 0 { };
 
     define block ER_TFM_SP_SYSTEM_CLOCK_RWZI with alignment = 32 {
@@ -254,7 +237,6 @@ define block LR_CODE with fixed order {
     block ER_TFM_SP_CRYPTO_RO,
     block ER_TFM_SP_PLATFORM_RO,
     block ER_TFM_SP_INITIAL_ATTESTATION_RO,
-    block ER_TFM_SP_FWU_RO,
     block ER_TFM_SP_SYSTEM_CLOCK_RO,
     /**** APPLICATION RoT RO CODE + data starts here */
     block ER_TFM_SP_PS_RO,
@@ -305,9 +287,6 @@ define block DATA with fixed order {
     block PT_TFM_SP_INITIAL_ATTESTATION_PRIVATE_DATA_START,
     block ER_TFM_SP_INITIAL_ATTESTATION_RWZI,
     block PT_TFM_SP_INITIAL_ATTESTATION_PRIVATE_DATA_END,
-    block PT_TFM_SP_FWU_PRIVATE_DATA_START,
-    block ER_TFM_SP_FWU_RWZI,
-    block PT_TFM_SP_FWU_PRIVATE_DATA_END,
     block PT_TFM_SP_SYSTEM_CLOCK_PRIVATE_DATA_START,
     block ER_TFM_SP_SYSTEM_CLOCK_RWZI,
     block PT_TFM_SP_SYSTEM_CLOCK_PRIVATE_DATA_END,

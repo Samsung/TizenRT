@@ -95,11 +95,6 @@ menu "BK_system"
 			help
 				When this macro is enabled, the internal code will automatically adapt to the BEKEN EVB environment.
 
-		config BK7239N_MP
-			bool "Enable BK7239N MP board-levle configuration"
-			default n
-			help
-				When this macro is enabled, the internal code adapts to the BK7239N MP board-levle hardware.
 	endmenu
 
 	menu "SWD Debug Config"

@@ -42,20 +42,6 @@ extern "C" {
 #define TFM_ATTESTATION_SERVICE_VERSION                            (1U)
 #define TFM_ATTESTATION_SERVICE_HANDLE                             (0x40000103U)
 
-/******** TFM_SP_FWU ********/
-#define TFM_FWU_WRITE_SID                                          (0x000000A0U)
-#define TFM_FWU_WRITE_VERSION                                      (1U)
-#define TFM_FWU_INSTALL_SID                                        (0x000000A1U)
-#define TFM_FWU_INSTALL_VERSION                                    (1U)
-#define TFM_FWU_ABORT_SID                                          (0x000000A2U)
-#define TFM_FWU_ABORT_VERSION                                      (1U)
-#define TFM_FWU_QUERY_SID                                          (0x000000A3U)
-#define TFM_FWU_QUERY_VERSION                                      (1U)
-#define TFM_FWU_REQUEST_REBOOT_SID                                 (0x000000A4U)
-#define TFM_FWU_REQUEST_REBOOT_VERSION                             (1U)
-#define TFM_FWU_ACCEPT_SID                                         (0x000000A5U)
-#define TFM_FWU_ACCEPT_VERSION                                     (1U)
-
 /******** TFM_SP_SYSTEM_CLOCK ********/
 #define TFM_SYSTEM_POWER_CTRL_SID                                  (0x000000C0U)
 #define TFM_SYSTEM_POWER_CTRL_VERSION                              (1U)

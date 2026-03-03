@@ -106,14 +106,6 @@ psa_status_t tfm_platform_sp_nv_counter_increment_veneer(psa_invec *in_vec, size
 psa_status_t tfm_initial_attest_get_token_veneer(psa_invec *in_vec, size_t in_len, psa_outvec *out_vec, size_t out_len);
 psa_status_t tfm_initial_attest_get_token_size_veneer(psa_invec *in_vec, size_t in_len, psa_outvec *out_vec, size_t out_len);
 
-/******** TFM_SP_FWU ********/
-psa_status_t tfm_fwu_write_req_veneer(psa_invec *in_vec, size_t in_len, psa_outvec *out_vec, size_t out_len);
-psa_status_t tfm_fwu_install_req_veneer(psa_invec *in_vec, size_t in_len, psa_outvec *out_vec, size_t out_len);
-psa_status_t tfm_fwu_abort_req_veneer(psa_invec *in_vec, size_t in_len, psa_outvec *out_vec, size_t out_len);
-psa_status_t tfm_fwu_query_req_veneer(psa_invec *in_vec, size_t in_len, psa_outvec *out_vec, size_t out_len);
-psa_status_t tfm_fwu_request_reboot_req_veneer(psa_invec *in_vec, size_t in_len, psa_outvec *out_vec, size_t out_len);
-psa_status_t tfm_fwu_accept_req_veneer(psa_invec *in_vec, size_t in_len, psa_outvec *out_vec, size_t out_len);
-
 /******** TFM_SP_SYSTEM_CLOCK ********/
 
 #ifdef __cplusplus

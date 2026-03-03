@@ -101,7 +101,7 @@
       "short_name": "TFM_SP_FWU",
       "manifest": "/root/tizenrt/os/board/bk7239n/src/components/tfm/tfm/secure_fw/partitions/firmware_update/tfm_firmware_update.yaml",
       "output_path": "secure_fw/partitions/firmware_update",
-      "conditional": "ON",
+      "conditional": "OFF",
       "version_major": 0,
       "version_minor": 1,
       "pid": 271,

@@ -89,11 +89,6 @@ LR_CODE S_CODE_START S_CODE_SIZE {
         *(TFM_SP_INITIAL_ATTESTATION_PSA-ROT_ATTR_FN)
     }
 
-    ER_TFM_SP_FWU_RO +0 ALIGN 32 {
-        *tfm_*partition_fwu* (+RO-CODE, +RO-DATA)
-        *(TFM_SP_FWU_PSA-ROT_ATTR_FN)
-    }
-
     ER_TFM_SP_SYSTEM_CLOCK_RO +0 ALIGN 32 {
         *tfm_*partition_system_clock* (+RO-CODE, +RO-DATA)
         *(TFM_SP_SYSTEM_CLOCK_PSA-ROT_ATTR_FN)
@@ -209,21 +204,6 @@ LR_CODE S_CODE_START S_CODE_SIZE {
     }
 
     PT_TFM_SP_INITIAL_ATTESTATION_PRIVATE_DATA_END +0 ALIGN 32 {
-        /* Position tag */
-    }
-
-
-    PT_TFM_SP_FWU_PRIVATE_DATA_START +0 ALIGN 32 {
-        /* Position tag */
-    }
-
-    ER_TFM_SP_FWU_RWZI +0 ALIGN 32 {
-        *tfm_*partition_fwu* (+RW +ZI)
-        *(TFM_SP_FWU_PSA-ROT_ATTR_RW)
-        *(TFM_SP_FWU_PSA-ROT_ATTR_ZI)
-    }
-
-    PT_TFM_SP_FWU_PRIVATE_DATA_END +0 ALIGN 32 {
         /* Position tag */
     }
 

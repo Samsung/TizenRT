@@ -604,6 +604,33 @@ static void hal_ble_evt_thread(void)
             }
             break;
 
+            case EVT_BLE_AUTH_FAILED_MSG:
+            {
+                if (msg.u.buf)
+                {
+                    le_auth_failed_ind_t *auth_failed_msg = (typeof(auth_failed_msg))msg.u.buf;
+                    LOGD("authentication failed msg, conn_id:%d, err:0x%x ", auth_failed_msg->conn_id, auth_failed_msg->err);
+
+                    if (hal_ble_con_env.con_dev[auth_failed_msg->conn_id].role == LINK_ROLE_MASTER)
+                    {
+                        if (bktr_ble_client_get_param()->trble_device_pair_bond_cb)
+                        {
+                            bktr_ble_client_get_param()->trble_device_pair_bond_cb(auth_failed_msg->err, auth_failed_msg->conn_id);
+                        }
+                    }
+                    else
+                    {
+                        if (bktr_ble_server_get_param()->pair_bond_cb)
+                        {
+                            bktr_ble_server_get_param()->pair_bond_cb(auth_failed_msg->err, auth_failed_msg->conn_id);
+                        }
+                    }
+
+                    os_free(auth_failed_msg);
+                }
+            }
+            break;
+
             default:
                 break;
             }
@@ -815,6 +842,24 @@ void bk_adapter_notify_bt_status(uint16_t sub_type, T_LE_GAP_MSG_DATA *msg_data)
                     {
                         LOGE("push bonded dev failed");
                         os_free(bonded_dev);
+                    }
+                }
+                else
+                {
+                    le_auth_failed_ind_t *auth_failed_msg = os_zalloc(sizeof(le_auth_failed_ind_t));
+                    if (!auth_failed_msg)
+                    {
+                        LOGE("auth_failed_msg os_zalloc failed");
+                        break;
+                    }
+
+                    auth_failed_msg->conn_id = msg_data->gap_authen_state.conn_id;
+                    auth_failed_msg->err = msg_data->gap_authen_state.status;
+
+                    if (ble_evt_queue_push(EVT_BLE_AUTH_FAILED_MSG, auth_failed_msg) != 0)
+                    {
+                        LOGE("push bonded dev failed");
+                        os_free(auth_failed_msg);
                     }
                 }
             }

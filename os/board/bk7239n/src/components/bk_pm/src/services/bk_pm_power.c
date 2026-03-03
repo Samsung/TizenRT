@@ -376,6 +376,7 @@ bk_err_t bk_pm_module_power_off(uint32_t *pm_off_modules, uint32_t *pm_on_module
 
 				if (0x0 == s_pm_phy_pm_state) {
 					sys_drv_module_power_ctrl(domain, PM_POWER_MODULE_STATE_OFF);
+					bk_pm_rf_tx_vol_set(CONFIG_PM_ANALDO_VOLTAGE_DEFAULT);
 					s_pm_phy_calibration_state = 0x0;
 					*pm_off_modules |= (0x1 << domain);
 					*pm_on_modules &= ~(0x1 << domain);

@@ -305,3 +305,12 @@ int bk_feature_temp_high_volt_enable(void);
  *
  */
 int bk_feature_update_power_with_rssi(void);
+
+/**
+ * @brief     Interface for customer to Enable/Disable read pwr cali data from ft
+ *
+ * @return
+ *    - 1: enable
+ *    - 0: disable
+ */
+int bk_feature_read_rfcali_from_ft_enable(void);

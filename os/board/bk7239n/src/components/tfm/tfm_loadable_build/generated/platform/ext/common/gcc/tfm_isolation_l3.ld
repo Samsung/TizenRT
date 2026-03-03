@@ -92,9 +92,6 @@ SECTIONS
         LONG (LOADADDR(.ER_TFM_SP_INITIAL_ATTESTATION_RWZI))
         LONG (ADDR(.ER_TFM_SP_INITIAL_ATTESTATION_RWZI))
         LONG (SIZEOF(.ER_TFM_SP_INITIAL_ATTESTATION_RWZI))
-        LONG (LOADADDR(.ER_TFM_SP_FWU_RWZI))
-        LONG (ADDR(.ER_TFM_SP_FWU_RWZI))
-        LONG (SIZEOF(.ER_TFM_SP_FWU_RWZI))
         LONG (LOADADDR(.ER_TFM_SP_SYSTEM_CLOCK_RWZI))
         LONG (ADDR(.ER_TFM_SP_SYSTEM_CLOCK_RWZI))
         LONG (SIZEOF(.ER_TFM_SP_SYSTEM_CLOCK_RWZI))
@@ -125,8 +122,6 @@ SECTIONS
         LONG (SIZEOF(.TFM_SP_PLATFORM_RWZI_BSS))
         LONG (ADDR(.TFM_SP_INITIAL_ATTESTATION_RWZI_BSS))
         LONG (SIZEOF(.TFM_SP_INITIAL_ATTESTATION_RWZI_BSS))
-        LONG (ADDR(.TFM_SP_FWU_RWZI_BSS))
-        LONG (SIZEOF(.TFM_SP_FWU_RWZI_BSS))
         LONG (ADDR(.TFM_SP_SYSTEM_CLOCK_RWZI_BSS))
         LONG (SIZEOF(.TFM_SP_SYSTEM_CLOCK_RWZI_BSS))
         __zero_table_end__ = .;
@@ -181,16 +176,6 @@ SECTIONS
     } > FLASH
     Image$$TFM_SP_INITIAL_ATTESTATION_RO$$Base = ADDR(.TFM_SP_INITIAL_ATTESTATION_RO);
     Image$$TFM_SP_INITIAL_ATTESTATION_RO$$Limit = ADDR(.TFM_SP_INITIAL_ATTESTATION_RO) + SIZEOF(.TFM_SP_INITIAL_ATTESTATION_RO);
-
-    .TFM_SP_FWU_RO : ALIGN(32)
-    {
-        *tfm_*partition_fwu*:*(.text*)
-        *tfm_*partition_fwu*:*(.rodata*)
-        *(TFM_SP_FWU_PSA-ROT_ATTR_FN)
-        . = ALIGN(32);
-    } > FLASH
-    Image$$TFM_SP_FWU_RO$$Base = ADDR(.TFM_SP_FWU_RO);
-    Image$$TFM_SP_FWU_RO$$Limit = ADDR(.TFM_SP_FWU_RO) + SIZEOF(.TFM_SP_FWU_RO);
 
     .TFM_SP_SYSTEM_CLOCK_RO : ALIGN(32)
     {
@@ -436,36 +421,6 @@ SECTIONS
     /* Position tag */
     . = ALIGN(32);
     Image$$PT_TFM_SP_INITIAL_ATTESTATION_PRIVATE_DATA_END$$Base = .;
-
-
-    /* Position tag */
-    . = ALIGN(32);
-    Image$$PT_TFM_SP_FWU_PRIVATE_DATA_START$$Base = .;
-
-    .ER_TFM_SP_FWU_RWZI : ALIGN(32)
-    {
-        *tfm_*partition_fwu*:*(.data*)
-        *(TFM_SP_FWU_PSA-ROT_ATTR_RW)
-        . = ALIGN(32);
-    } > RAM AT> FLASH
-    Image$$ER_TFM_SP_FWU_RWZI$$RW$$Base = ADDR(.ER_TFM_SP_FWU_RWZI);
-    Image$$ER_TFM_SP_FWU_RWZI$$RW$$Limit = ADDR(.ER_TFM_SP_FWU_RWZI) + SIZEOF(.ER_TFM_SP_FWU_RWZI);
-
-    .TFM_SP_FWU_RWZI_BSS : ALIGN(32)
-    {
-        start_of_TFM_SP_FWU_RWZI = .;
-        *tfm_*partition_fwu*:*(.bss*)
-        *tfm_*partition_fwu*:*(COMMON)
-        *(TFM_SP_FWU_PSA-ROT_ATTR_ZI)
-        . += (. - start_of_TFM_SP_FWU_RWZI) ? 0 : 4;
-        . = ALIGN(32);
-    } > RAM AT> RAM
-    Image$$ER_TFM_SP_FWU_RWZI$$ZI$$Base = ADDR(.TFM_SP_FWU_RWZI_BSS);
-    Image$$ER_TFM_SP_FWU_RWZI$$ZI$$Limit = ADDR(.TFM_SP_FWU_RWZI_BSS) + SIZEOF(.TFM_SP_FWU_RWZI_BSS);
-
-    /* Position tag */
-    . = ALIGN(32);
-    Image$$PT_TFM_SP_FWU_PRIVATE_DATA_END$$Base = .;
 
 
     /* Position tag */

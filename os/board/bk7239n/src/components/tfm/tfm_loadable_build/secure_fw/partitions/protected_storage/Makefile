@@ -187,21 +187,6 @@ __/__/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_cryp
 .PHONY : __/__/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_crypto.s
 
 # target to build an object file
-__/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.o:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/__/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.o
-.PHONY : __/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.o
-
-# target to preprocess a source file
-__/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.i:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/__/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.i
-.PHONY : __/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.i
-
-# target to generate assembly for a file
-__/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.s:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/__/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.s
-.PHONY : __/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.s
-
-# target to build an object file
 __/__/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.o:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/__/__/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.o
 .PHONY : __/__/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.o
@@ -292,21 +277,6 @@ __/__/spm/cmsis_psa/psa_interface_svc.s:
 .PHONY : __/__/spm/cmsis_psa/psa_interface_svc.s
 
 # target to build an object file
-__/firmware_update/tfm_fwu_secure_api.o:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/__/firmware_update/tfm_fwu_secure_api.o
-.PHONY : __/firmware_update/tfm_fwu_secure_api.o
-
-# target to preprocess a source file
-__/firmware_update/tfm_fwu_secure_api.i:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/__/firmware_update/tfm_fwu_secure_api.i
-.PHONY : __/firmware_update/tfm_fwu_secure_api.i
-
-# target to generate assembly for a file
-__/firmware_update/tfm_fwu_secure_api.s:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/__/firmware_update/tfm_fwu_secure_api.s
-.PHONY : __/firmware_update/tfm_fwu_secure_api.s
-
-# target to build an object file
 __/ns_agent_tz/load_info_ns_agent_tz.o:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/__/ns_agent_tz/load_info_ns_agent_tz.o
 .PHONY : __/ns_agent_tz/load_info_ns_agent_tz.o
@@ -322,21 +292,6 @@ __/ns_agent_tz/load_info_ns_agent_tz.s:
 .PHONY : __/ns_agent_tz/load_info_ns_agent_tz.s
 
 # target to build an object file
-crypto/ps_crypto_interface.o:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/crypto/ps_crypto_interface.o
-.PHONY : crypto/ps_crypto_interface.o
-
-# target to preprocess a source file
-crypto/ps_crypto_interface.i:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/crypto/ps_crypto_interface.i
-.PHONY : crypto/ps_crypto_interface.i
-
-# target to generate assembly for a file
-crypto/ps_crypto_interface.s:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/crypto/ps_crypto_interface.s
-.PHONY : crypto/ps_crypto_interface.s
-
-# target to build an object file
 nv_counters/ps_nv_counters.o:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/nv_counters/ps_nv_counters.o
 .PHONY : nv_counters/ps_nv_counters.o
@@ -350,21 +305,6 @@ nv_counters/ps_nv_counters.i:
 nv_counters/ps_nv_counters.s:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/nv_counters/ps_nv_counters.s
 .PHONY : nv_counters/ps_nv_counters.s
-
-# target to build an object file
-ps_encrypted_object.o:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/ps_encrypted_object.o
-.PHONY : ps_encrypted_object.o
-
-# target to preprocess a source file
-ps_encrypted_object.i:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/ps_encrypted_object.i
-.PHONY : ps_encrypted_object.i
-
-# target to generate assembly for a file
-ps_encrypted_object.s:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/build.make secure_fw/partitions/protected_storage/CMakeFiles/tfm_app_rot_partition_ps.dir/ps_encrypted_object.s
-.PHONY : ps_encrypted_object.s
 
 # target to build an object file
 ps_object_system.o:
@@ -457,9 +397,6 @@ help:
 	@echo "... __/__/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_crypto.o"
 	@echo "... __/__/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_crypto.i"
 	@echo "... __/__/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_crypto.s"
-	@echo "... __/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.o"
-	@echo "... __/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.i"
-	@echo "... __/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.s"
 	@echo "... __/__/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.o"
 	@echo "... __/__/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.i"
 	@echo "... __/__/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.s"
@@ -478,21 +415,12 @@ help:
 	@echo "... __/__/spm/cmsis_psa/psa_interface_svc.o"
 	@echo "... __/__/spm/cmsis_psa/psa_interface_svc.i"
 	@echo "... __/__/spm/cmsis_psa/psa_interface_svc.s"
-	@echo "... __/firmware_update/tfm_fwu_secure_api.o"
-	@echo "... __/firmware_update/tfm_fwu_secure_api.i"
-	@echo "... __/firmware_update/tfm_fwu_secure_api.s"
 	@echo "... __/ns_agent_tz/load_info_ns_agent_tz.o"
 	@echo "... __/ns_agent_tz/load_info_ns_agent_tz.i"
 	@echo "... __/ns_agent_tz/load_info_ns_agent_tz.s"
-	@echo "... crypto/ps_crypto_interface.o"
-	@echo "... crypto/ps_crypto_interface.i"
-	@echo "... crypto/ps_crypto_interface.s"
 	@echo "... nv_counters/ps_nv_counters.o"
 	@echo "... nv_counters/ps_nv_counters.i"
 	@echo "... nv_counters/ps_nv_counters.s"
-	@echo "... ps_encrypted_object.o"
-	@echo "... ps_encrypted_object.i"
-	@echo "... ps_encrypted_object.s"
 	@echo "... ps_object_system.o"
 	@echo "... ps_object_system.i"
 	@echo "... ps_object_system.s"

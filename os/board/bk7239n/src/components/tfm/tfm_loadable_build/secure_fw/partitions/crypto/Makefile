@@ -217,21 +217,6 @@ __/__/spm/cmsis_psa/psa_interface_svc.s:
 .PHONY : __/__/spm/cmsis_psa/psa_interface_svc.s
 
 # target to build an object file
-__/firmware_update/tfm_fwu_secure_api.o:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/crypto/CMakeFiles/tfm_psa_rot_partition_crypto.dir/build.make secure_fw/partitions/crypto/CMakeFiles/tfm_psa_rot_partition_crypto.dir/__/firmware_update/tfm_fwu_secure_api.o
-.PHONY : __/firmware_update/tfm_fwu_secure_api.o
-
-# target to preprocess a source file
-__/firmware_update/tfm_fwu_secure_api.i:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/crypto/CMakeFiles/tfm_psa_rot_partition_crypto.dir/build.make secure_fw/partitions/crypto/CMakeFiles/tfm_psa_rot_partition_crypto.dir/__/firmware_update/tfm_fwu_secure_api.i
-.PHONY : __/firmware_update/tfm_fwu_secure_api.i
-
-# target to generate assembly for a file
-__/firmware_update/tfm_fwu_secure_api.s:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/crypto/CMakeFiles/tfm_psa_rot_partition_crypto.dir/build.make secure_fw/partitions/crypto/CMakeFiles/tfm_psa_rot_partition_crypto.dir/__/firmware_update/tfm_fwu_secure_api.s
-.PHONY : __/firmware_update/tfm_fwu_secure_api.s
-
-# target to build an object file
 crypto_aead.o:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/partitions/crypto/CMakeFiles/tfm_psa_rot_partition_crypto.dir/build.make secure_fw/partitions/crypto/CMakeFiles/tfm_psa_rot_partition_crypto.dir/crypto_aead.o
 .PHONY : crypto_aead.o
@@ -418,9 +403,6 @@ help:
 	@echo "... __/__/spm/cmsis_psa/psa_interface_svc.o"
 	@echo "... __/__/spm/cmsis_psa/psa_interface_svc.i"
 	@echo "... __/__/spm/cmsis_psa/psa_interface_svc.s"
-	@echo "... __/firmware_update/tfm_fwu_secure_api.o"
-	@echo "... __/firmware_update/tfm_fwu_secure_api.i"
-	@echo "... __/firmware_update/tfm_fwu_secure_api.s"
 	@echo "... crypto_aead.o"
 	@echo "... crypto_aead.i"
 	@echo "... crypto_aead.s"

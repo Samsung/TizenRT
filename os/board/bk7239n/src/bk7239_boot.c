@@ -190,7 +190,7 @@ void board_gpio_initialize(void)
 	extern void bk_iomx_gpio_isr_attach(void);
 	bk_iomx_gpio_isr_attach();
 #if CONFIG_GPIO
-
+#if 0
 	int i;
 	struct gpio_lowerhalf_s *lower;
 
@@ -219,6 +219,7 @@ void board_gpio_initialize(void)
 		lower = armino_gpio_lowerhalf(pins[i].pin, pins[i].pinmode, pins[i].pinpull);
 		gpio_register(pins[i].pin, lower);
 	}
+#endif
 #endif
 
 }
@@ -279,6 +280,7 @@ static int board_pm_init(void)
 {
 	pm_cpu_freq_e cpu_freq_default = (pm_cpu_freq_e)CONFIG_PM_CPU_FRQ_DEFAULT;
 	bk_pm_module_vote_cpu_freq(PM_DEV_ID_DEFAULT,cpu_freq_default);
+	bk_pm_rf_tx_vol_set(CONFIG_PM_ANALDO_VOLTAGE_DEFAULT);
 
 	#if defined(CONFIG_PM_LV_WDT_PROTECTION)
 	//pm_wifi_event_init();

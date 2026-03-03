@@ -40,7 +40,7 @@ float target_pwr_ax20 = 15.0; //2G4 N20 target power
 float target_pwr_11a = 15.0; //5G 11A target power
 float target_pwr_n20_5g = 14.0; //5G N20 target power
 float target_pwr_n40_5g = 12.0; //5G N40 target power
-float target_pwr_ax20_5g = 15.0; //5G N20 target power
+float target_pwr_ax20_5g = 14.0; //5G N20 target power
 
 /**
  * shift power index of n/ax:
@@ -53,26 +53,26 @@ int8_t g_dif_g_n40 = 12;   //differ between g and n40
 int8_t g_dif_a_n20 = 4;    //differ between a and n20
 int8_t g_dif_a_ax20 = 4;  //differ between a and ax20
 int8_t g_dif_a_n40 = 9;    //differ between a and n40
-int8_t g_dif_g_ble_ch0 = -13;
-int8_t g_dif_g_ble_ch19 = -12;
-int8_t g_dif_g_ble_ch39 = -11;
+int8_t g_dif_g_ble_ch0 = -5;
+int8_t g_dif_g_ble_ch19 = -4;
+int8_t g_dif_g_ble_ch39 = -3;
 
 /**
  * shift power index of all format:
  * 0.25dB for 1 LSB
  * used with FT PWR CAL
  */
-int8_t shift_pwr_idx_b_ch1 = -3;
-int8_t shift_pwr_idx_b_ch7 = -5;
-int8_t shift_pwr_idx_b_ch13 = 0;
-int8_t shift_pwr_idx_g_ch1 = -4;
-int8_t shift_pwr_idx_g_ch7 = -5;
-int8_t shift_pwr_idx_g_ch13 = 0;
-int8_t shift_pwr_idx_a_ch36 = -12;
-int8_t shift_pwr_idx_a_ch64 = -5;
-int8_t shift_pwr_idx_a_ch100 = 0;
-int8_t shift_pwr_idx_a_ch132 = 0;
-int8_t shift_pwr_idx_a_ch165 = -3;
+int8_t shift_pwr_idx_b_ch1   = 7;
+int8_t shift_pwr_idx_b_ch7   = 5;
+int8_t shift_pwr_idx_b_ch13  = 11;
+int8_t shift_pwr_idx_g_ch1   = 6;
+int8_t shift_pwr_idx_g_ch7   = 5;
+int8_t shift_pwr_idx_g_ch13  = 11;
+int8_t shift_pwr_idx_a_ch36  = -10;
+int8_t shift_pwr_idx_a_ch64  = -4;
+int8_t shift_pwr_idx_a_ch100 = 2;
+int8_t shift_pwr_idx_a_ch132 = 2;
+int8_t shift_pwr_idx_a_ch165 = -1;
 
 const UINT32 g_default_xtal   = DEFAULT_TXID_XTAL;
 
@@ -325,15 +325,15 @@ const TXPWR_CAL_ST gtxpwr_tab_def_strip_a[TXPWR_CAL_5G_MAX] = {
 };
 
 const TXPWR_CAL_ST gtxpwr_tab_def_ble[TXPWR_CAL_2G_MAX] = {
-    INIT_TXPWR_VALUE(1,48), //ch1
-    INIT_TXPWR_VALUE(20,48), //ch20
-    INIT_TXPWR_VALUE(40,48), //ch40
+    INIT_TXPWR_VALUE(1,82), //ch1
+    INIT_TXPWR_VALUE(20,82), //ch20
+    INIT_TXPWR_VALUE(40,82), //ch40
 };
 
 /****************************** temperature table  ****************************/
 const TMP_PWR_ST tmp_pwr_tab[TMP_PWR_TAB_LEN] = {
 //   shift_a, shift_b, shift_g, shift_ble, xtal_c_delta
-    { -10,      -15,     -15,     -15,       -11},   // 0     ,-40
+    { -10,      -13,     -13,     -13,       -11},   // 0     ,-40
     { -9,       -13,     -13,     -13,       -4},   // 1     ,-35
     { -8,       -12,     -12,     -12,        3},   // 2     ,-30
     { -7,       -12,     -12,     -12,        8},   // 3     ,-25
@@ -347,25 +347,25 @@ const TMP_PWR_ST tmp_pwr_tab[TMP_PWR_TAB_LEN] = {
     { -1,       -1,      -1,      -1,         7},   // 11    ,15
     {  0,        0,       0,       0,         3},   // 12    ,20
     {  0,        0,       0,       0,         0},   // 13    ,25
-    {  1,        1,       1,       1,        -4},   // 14    ,30
-    {  2,        2,       2,       2,        -7},   // 15    ,35
-    {  3,        3,       3,       3,        -11},   // 16    ,40
-    {  4,        4,       4,       4,        -15},   // 17    ,45
-    {  2,        3,       3,       3,        -17},   // 18    ,50
-    {  2,        3,       3,       3,        -18},   // 19    ,55
-    {  2,        3,       3,       3,        -18},   // 20    ,60
-    {  3,        4,       4,       4,        -18},   // 21    ,65
-    {  3,        4,       4,       4,        -17},   // 22    ,70
-    {  3,        4,       4,       4,        -15},   // 23    ,75
-    {  4,        5,       5,       5,        -12},   // 24    ,80
-    {  4,        8,       8,       8,         6},   // 25    ,85
-    {  5,        9,       9,       9,         1},   // 26    ,90
-    {  6,        10,      10,      10,        14},   // 27    ,95
-    {  7,        11,      11,      11,        34},   // 28    ,100
-    {  7,        12,      12,      12,        62},   // 29    ,105
-    {  7,        13,      13,      13,        125},   // 30    ,110
-    {  13,       15,      15,      15,        155},   // 31    ,115
-    {  16,       16,      16,      16,        185},   // 32    ,120
+    {  0,        0,       0,       0,        -4},   // 14    ,30
+    {  0,        1,       1,       1,        -7},   // 15    ,35
+    {  0,        2,       2,       2,        -11},   // 16    ,40
+    {  0,        3,       3,       3,        -15},   // 17    ,45
+    {  0,        3,       3,       3,        -17},   // 18    ,50
+    {  0,        3,       3,       3,        -18},   // 19    ,55
+    {  0,        3,       3,       3,        -18},   // 20    ,60
+    {  0,        4,       4,       4,        -18},   // 21    ,65
+    {  1,        4,       4,       4,        -17},   // 22    ,70
+    {  1,        4,       4,       4,        -15},   // 23    ,75
+    {  2,        5,       5,       5,        -12},   // 24    ,80
+    {  2,        8,       8,       8,         6},   // 25    ,85
+    {  2,        9,       9,       9,         1},   // 26    ,90
+    {  3,        10,      10,      10,        14},   // 27    ,95
+    {  3,        11,      11,      11,        34},   // 28    ,100
+    {  4,        12,      12,      12,        62},   // 29    ,105
+    {  5,        13,      13,      13,        125},   // 30    ,110
+    {  7,        15,      15,      15,        155},   // 31    ,115
+    {  11,       16,      16,      16,        185},   // 32    ,120
     {  17,       17,      17,      17,        185},   // 33    ,125
     {  19,       19,      19,      19,        185},   // 34    ,130
     {  20,       20,      20,      20,        185},   // 35    ,135
@@ -410,19 +410,19 @@ const INT16 shift_tab_g_fcc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0
 const INT16 shift_tab_n20_fcc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
 const INT16 shift_tab_n40_fcc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
 
-const INT16 shift_tab_b_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
-const INT16 shift_tab_g_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
-const INT16 shift_tab_n20_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
-const INT16 shift_tab_n40_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // ch1~ch14
+const INT16 shift_tab_b_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, -20, 0}; // ch1~ch14
+const INT16 shift_tab_g_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, -24, 0}; // ch1~ch14
+const INT16 shift_tab_n20_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, -24, 0}; // ch1~ch14
+const INT16 shift_tab_n40_srrc[WLAN_2_4_G_CHANNEL_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, -24, 0}; // ch1~ch14
 
 void vnd_cal_overlay(void)
 {
     vnd_cal_set_auto_pwr_thred(auto_pwr);
     //EPA
 #if EPA_ENABLE_FLAG
-    vnd_cal_set_epa_config(1, GPIO_28, GPIO_26, pwr_gain_base_gain_2g, pwr_gain_base_gain_5g);
+    vnd_cal_set_epa_config(1, GPIO_28, GPIO_26, 0, 0);
 #else
-    vnd_cal_set_epa_config(0, GPIO_28, GPIO_26, pwr_gain_base_gain_2g, pwr_gain_base_gain_5g);
+    vnd_cal_set_epa_config(0, GPIO_28, GPIO_26, 0, 0);
 #endif
     /*only used in SRRC adaptive testing !!!
     0:default;if SRRC adaptive test fail,you can set cca offset value 0-15(recommended use 5)*/

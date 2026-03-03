@@ -20,6 +20,7 @@
 #if defined(CONFIG_TFM_OTP_NSC)
 #include "tfm_otp_nsc.h"
 #endif
+#include <tinyara/init.h>
 typedef struct {
 	otp_hal_t hal;
 } otp_driver_t;
@@ -35,60 +36,33 @@ static otp_driver_t s_otp = {0};
 static bool s_otp_driver_is_init = false;
 typedef uint32_t (*otp_read_ptr)(uint32_t);
 typedef void (*otp_write_ptr)(uint32_t, uint32_t);
+extern uint8_t g_os_initstate;
+static uint32_t otp_lock_int_level = 0;
 
-static bk_lock_t* otp_lock = NULL;
-
-// TODO: Move the following code to a higher-level implementation
-bk_lock_t* lock_init()
+void otp_lock(void)
 {
-	bk_lock_t* bk_lock = (bk_lock_t*)os_malloc(sizeof(bk_lock_t));
-	if (bk_lock == NULL) {
-		return NULL;
+	if (g_os_initstate >= OSINIT_IDLELOOP) {
+		otp_lock_int_level = rtos_disable_int();
 	}
-	rtos_init_mutex(&bk_lock->mutex);
-	bk_lock->is_rtos_disable = false;
-	bk_lock->int_level = 0;
-	return bk_lock;
+	return;
 }
 
-void lock_deinit(bk_lock_t* bk_lock)
+void otp_unlock(void)
 {
-	if (bk_lock != NULL) {
-		os_free(bk_lock);
+	if (g_os_initstate >= OSINIT_IDLELOOP) {
+		rtos_enable_int(otp_lock_int_level);
 	}
+	return;
 }
-
-void lock(bk_lock_t* bk_lock)
-{
-//	rtos_lock_mutex(&bk_lock->mutex);
-	if (bk_lock->is_rtos_disable) {
-		bk_lock->int_level = rtos_disable_int();
-	}
-}
-
-void unlock(bk_lock_t* bk_lock)
-{
-//	rtos_unlock_mutex(&bk_lock->mutex);
-	if (bk_lock->is_rtos_disable) {
-		rtos_enable_int(bk_lock->int_level);
-	}
-}
-//TODO end
 
 bk_err_t bk_otp_driver_init(void)
 {
 	if(s_otp_driver_is_init) {
 		return BK_OK;
 	}
-	otp_lock = lock_init();
-	if (otp_lock == NULL) {
-		return BK_FAIL;
-	}
 	s_otp.hal.hw = (otp_hw_t *)OTP_LL_REG_BASE();
 	s_otp.hal.hw2 = (otp2_hw_t *)OTP2_LL_REG_BASE();
-
 	s_otp_driver_is_init = true;
-
 	return BK_OK;
 }
 
@@ -96,7 +70,6 @@ void bk_otp_driver_deinit(void)
 {
 	s_otp.hal.hw = NULL;
 	s_otp.hal.hw2 = NULL;
-	lock_deinit(otp_lock);
 
 	s_otp_driver_is_init = false;
 	return;
@@ -147,7 +120,7 @@ static int switch_map(uint8_t map_id)
 
 #define OTP_ACTIVE(map_id) \
 	do { \
-		lock(otp_lock);\
+		otp_lock();\
 		int ret = switch_map(map_id); \
 		if(ret != 0) { \
 			return ret;\
@@ -164,7 +137,7 @@ static int switch_map(uint8_t map_id)
 	do { \
 		otp_sleep(); \
 		otp_map = NULL; \
-		unlock(otp_lock); \
+		otp_unlock(); \
 	} while(0);
 
 static uint32_t _otp_read_otp(uint32_t location)
