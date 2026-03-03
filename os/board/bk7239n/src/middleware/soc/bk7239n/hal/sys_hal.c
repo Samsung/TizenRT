@@ -2840,7 +2840,7 @@ __FLASH_BOOT_CODE void sys_hal_early_init(void)
 #if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
 	sys_hal_analog_set_flash(ANALOG_REG4, 0x40010000);
 #else
-	sys_hal_analog_set_flash(ANALOG_REG4, val & 0xF0010000);
+	sys_hal_analog_set_flash(ANALOG_REG4, val | 0xF0010000);
 #endif
 	sys_hal_analog_set_flash(ANALOG_REG5, 0x8407AF60);//liupeng20250514:hp for tx
 	sys_hal_analog_set_flash(ANALOG_REG6, 0x80088100);//liupeng20250427

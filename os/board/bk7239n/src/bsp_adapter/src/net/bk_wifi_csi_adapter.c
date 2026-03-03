@@ -35,6 +35,7 @@
 #include <tinyara/wifi_csi/wifi_csi.h>
 
 #define BK_MAX_CSI_BUFF_LEN (536)
+#define BK_CSI_REPT_DATA_MAX_NUM (5)
 
 struct bk_csi_dev_s {
 	struct wifi_csi_lowerhalf_s dev;
@@ -43,11 +44,12 @@ struct bk_csi_dev_s {
 	unsigned int interval_ms;
 	unsigned int accuracy;
 	int csi_data_reported_idx;
+	beken_timer_t csi_report_timer;
 };
 
 struct bk_csi_rept_flag_s {
-	uint32_t data_received_flag;
-	uint32_t data_reported_flag;
+	uint16_t data_received_flag;
+	uint16_t data_reported_flag;
 	uint32_t data_store_buff_ptr;
 };
 
@@ -55,7 +57,7 @@ struct bk_csi_rept_flag_s {
 static int bk_wifi_csi_ioctl(int cmd, unsigned long arg);
 static int bk_wifi_csi_getmacaddr(char *mac_addr);
 static int bk_wifi_csi_getcsidata(unsigned char *buffer, size_t buflen);
-
+beken_time_t rtos_get_time( void );
 
 static const struct wifi_csi_ops_s g_wificsiops = {
 	NULL,                           /* read           */
@@ -67,9 +69,12 @@ static const struct wifi_csi_ops_s g_wificsiops = {
 
 static FAR struct bk_csi_dev_s *g_bk_drv;
 
-struct bk_csi_rept_flag_s g_bk_csi_rept_data = {0};
-
-
+uint8_t g_bk_csi_rept_read = 0;
+uint8_t g_bk_csi_rept_write = 0;
+struct bk_csi_rept_flag_s g_bk_csi_rept_data[BK_CSI_REPT_DATA_MAX_NUM] = {0};
+beken_time_t g_bk_csi_last_report_time = 0;
+uint8_t g_bk_csi_data_cb_flag = 0;
+uint8_t g_bk_csi_timeout_flag = 0;
 
 static inline void bk_wifi_csi_takesem(void)
 {
@@ -95,6 +100,27 @@ static inline int bk_wifi_csi_givesem(void)
 	return ret;
 }
 
+static int bk_wifi_csi_report_data_len_get(void)
+{
+	if(g_bk_drv == NULL)
+	{
+		csidbg("ERROR: priv null\n");
+		return 0;
+	}
+	int len = sizeof(struct wifi_rx_pkt_t);
+	// NON_HT_CSI_DATA
+	if(g_bk_drv->config_param.filter_config.proto_type_bmp == 0x1)
+	{
+		len += 52 * (g_bk_drv->accuracy+1)*2;
+	}
+	// HT_CSI_DATA
+	else if(g_bk_drv->config_param.filter_config.proto_type_bmp == 0x2)
+	{
+		len += 56 * (g_bk_drv->accuracy+1)*2;
+	}
+	return len;
+}	
+
 static void bk_wifi_csi_report_event(void)
 {
 	if(g_bk_drv == NULL)
@@ -106,33 +132,37 @@ static void bk_wifi_csi_report_event(void)
 	csivdbg("csi_report_event\n");
 	
 	struct wifi_csi_lowerhalf_s *dev = &g_bk_drv->dev;
-	int len = 0;
-	// NON_HT_CSI_DATA
-	if(g_bk_drv->config_param.filter_config.proto_type_bmp == 0x1)
-	{
-		len += 52 * (g_bk_drv->accuracy+1)*2;
-	}
-	// HT_CSI_DATA
-	else if(g_bk_drv->config_param.filter_config.proto_type_bmp == 0x2)
-	{
-		len += 56 * (g_bk_drv->accuracy+1)*2;
-	}
+	int len = bk_wifi_csi_report_data_len_get();
 	// TODO VHT_CSI_DATA, HE_CSI_DATA
-	
-	g_bk_csi_rept_data.data_reported_flag = 1;
 	/* buf_len -> data len with header */
-	dev->upper_cb(dev->priv, CSI_CALLBACK_DATA_READY, NULL, len);
+	if(dev->upper_cb != NULL)
+	{
+		dev->upper_cb(dev->priv, CSI_CALLBACK_DATA_READY, NULL, len);
+	}
+	else
+	{
+		csidbg("ERROR: upper_cb null\n");
+	}
 }
 
-static void bk_wifi_csi_report_data_transfer(uint32_t buf,uint8_t *csi_buf, uint32_t *len)
+static void bk_wifi_csi_report_data_transfer(uint32_t buf_len, uint32_t buf,uint8_t *csi_buf, uint32_t *len)
 {
 	struct wifi_csi_info_t *buf_info = (struct wifi_csi_info_t *)buf;
 	int len_offset = sizeof(struct wifi_rx_pkt_t);
+	uint32_t data_len = 0;
+	uint32_t s_len = g_bk_drv->accuracy == 0 ? 2 : 4;
+
+	if(buf_len < bk_wifi_csi_report_data_len_get())
+	{
+		csidbg("ERROR: buf_len is too small\n");
+		return;
+	}
 
 	// NON_HT_CSI_DATA
 	if(g_bk_drv->config_param.filter_config.proto_type_bmp == 0x1)
 	{
 		memcpy(csi_buf, buf_info, len_offset);
+		data_len += len_offset;
 		for(int i = 0; i < buf_info->csi_info[0].sc_num; i++)
 		{
 			if(i != 26)
@@ -157,11 +187,13 @@ static void bk_wifi_csi_report_data_transfer(uint32_t buf,uint8_t *csi_buf, uint
 				}
 			}
 		}
+		data_len += (buf_info->csi_info[0].sc_num - 1)*s_len;
 	}
 	// HT_CSI_DATA
 	else if(g_bk_drv->config_param.filter_config.proto_type_bmp == 0x2)
 	{
 		memcpy(csi_buf, buf_info, len_offset);
+		data_len += len_offset;
 		for(int i = 0; i < buf_info->csi_info[0].sc_num; i++)
 		{
 			if(i != 28)
@@ -186,24 +218,130 @@ static void bk_wifi_csi_report_data_transfer(uint32_t buf,uint8_t *csi_buf, uint
 				}
 			}
 		}
+		data_len += (buf_info->csi_info[0].sc_num - 1)*s_len;
 	}
 	// TODO VHT_CSI_DATA, HE_CSI_DATA
+	*len = data_len;
 }
 
 static int bk_wifi_csi_get(uint32_t buf_len, uint8_t *csi_buf, uint32_t *len)
 {
-	if(g_bk_csi_rept_data.data_reported_flag == 1)
+	struct bk_csi_rept_flag_s *rd_ptr = &g_bk_csi_rept_data[g_bk_csi_rept_read];
+	if(rd_ptr->data_reported_flag == 1)
 	{
-		bk_wifi_csi_report_data_transfer(g_bk_csi_rept_data.data_store_buff_ptr, csi_buf, len);
-		g_bk_csi_rept_data.data_reported_flag = 0;
-		g_bk_csi_rept_data.data_received_flag = 0;
+		bk_wifi_csi_report_data_transfer(buf_len, rd_ptr->data_store_buff_ptr, csi_buf, len);
+		rd_ptr->data_reported_flag = 0;
+		rd_ptr->data_received_flag = 0;
+		g_bk_csi_rept_read = (g_bk_csi_rept_read + 1) % BK_CSI_REPT_DATA_MAX_NUM;
 	}
 	else
 	{
-		csidbg("ERROR: no data to report");
-		return -ENODATA;
+		csidbg("ERROR: no data to report\r\n");
+		return -1;
 	}
 	return 0;
+}
+
+static void bk_wifi_csi_report_timeout_handler(void *arg)
+{
+	if(g_bk_drv == NULL)
+	{
+		csidbg("ERROR: priv null\n");
+		return;
+	}
+	//csidbg(" time:%d\n",rtos_get_time());
+	if(g_bk_csi_data_cb_flag == 0)
+	{
+		struct bk_csi_rept_flag_s *wr_ptr = &g_bk_csi_rept_data[g_bk_csi_rept_write];
+		if((wr_ptr->data_received_flag == 1)&&(wr_ptr->data_reported_flag == 0))
+		{
+			//csidbg("timeout report data\n");
+			bk_wifi_csi_report_event();
+			wr_ptr->data_reported_flag = 1;
+			g_bk_csi_rept_write = (g_bk_csi_rept_write + 1) % BK_CSI_REPT_DATA_MAX_NUM;
+			g_bk_csi_last_report_time = rtos_get_time();
+			// donot need to stop timer
+			return;
+		}
+	}
+
+	rtos_stop_timer(&g_bk_drv->csi_report_timer);
+}
+
+static bool bk_wifi_csi_report_timer_set(bool enable)
+{
+	int ret = 0;
+	if(enable)
+	{
+		if (!rtos_is_timer_init(&g_bk_drv->csi_report_timer)) {
+			ret = rtos_init_timer(&g_bk_drv->csi_report_timer, g_bk_drv->interval_ms,
+				bk_wifi_csi_report_timeout_handler, NULL);
+			if (ret != 0) {
+				csidbg("[BK] csi report init timer failed\r\n");
+				return false;
+			}
+		} else {
+			/* Stop + start resets timer using original duration/callback from init */
+			ret = rtos_stop_timer(&g_bk_drv->csi_report_timer);
+			if (ret != 0) {
+				//csidbg("[BK] csi report stop timer returned %d, fallback recreate\r\n", ret);
+				/* Stop failed, need to deinit and reinit */
+				ret = rtos_init_timer(&g_bk_drv->csi_report_timer, g_bk_drv->interval_ms,
+					bk_wifi_csi_report_timeout_handler, NULL);
+				if (ret != 0) {
+					csidbg("[BK] csi report init timer failed\r\n");
+					return false;
+				}
+			}
+		}
+	}
+	else
+	{
+		if (rtos_is_timer_init(&g_bk_drv->csi_report_timer)) 
+		{	
+			/* Stop first (best-effort), then deinit. */
+			rtos_stop_timer(&g_bk_drv->csi_report_timer);
+			ret = rtos_deinit_timer(&g_bk_drv->csi_report_timer);
+			if (ret != 0) {
+				csidbg("[BK] csi report deinit timer failed, ret=%d\r\n", ret);
+			}
+		}
+	}
+	return true;
+}
+static bool bk_wifi_csi_data_buffer_create(void)
+{
+	for(int i = 0; i < BK_CSI_REPT_DATA_MAX_NUM; i++)
+	{
+		struct bk_csi_rept_flag_s *rd_ptr = &g_bk_csi_rept_data[i];
+		rd_ptr->data_received_flag = 0;
+		rd_ptr->data_reported_flag = 0;
+		if(rd_ptr->data_store_buff_ptr == 0) 
+		{
+			rd_ptr->data_store_buff_ptr = (uint32_t)os_malloc(BK_MAX_CSI_BUFF_LEN);
+			if(rd_ptr->data_store_buff_ptr == 0) 
+			{
+				return false;
+			}
+			os_memset(rd_ptr->data_store_buff_ptr, 0, BK_MAX_CSI_BUFF_LEN);
+		}
+	}
+	
+	g_bk_csi_rept_read = 0;
+	g_bk_csi_rept_write = 0;
+	return true;
+}
+static void bk_wifi_csi_data_buffer_free(void)
+{
+	for(int i = 0; i < BK_CSI_REPT_DATA_MAX_NUM; i++)
+	{
+		struct bk_csi_rept_flag_s *rd_ptr = &g_bk_csi_rept_data[i];
+		if(rd_ptr->data_store_buff_ptr != 0) 
+		{
+			os_free(rd_ptr->data_store_buff_ptr);
+		}
+		rd_ptr->data_store_buff_ptr = 0;
+	}
 }
 
 static int bk_wifi_csi_set_config(unsigned long arg)
@@ -216,6 +354,16 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 		csidbg("ERROR: invalid config type");
 		return -EINVAL;
 	}
+	/* check if sta connected */
+	wifi_link_status_t link_status = {0};
+	os_memset(&link_status, 0x0, sizeof(link_status));
+	BK_RETURN_ON_ERR(bk_wifi_sta_get_link_status(&link_status));
+
+	if((config_action == CSI_CONFIG_ENABLE) && (link_status.state != 3)) // only enable config can be set when sta not connected
+	{
+		csidbg("ERROR: sta not connected\n");
+		return -EINVAL;
+	}
 	/* 1. memset config zero */
 	memset(&g_bk_drv->config_param, 0, sizeof(wifi_csi_receive_mode_config_t));
 	
@@ -226,28 +374,24 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 	case HT_CSI_DATA:
 		g_bk_drv->config_param.filter_config.proto_type_bmp = 0x2;
 		g_bk_drv->config_param.filter_config.cbw_bmp = 0x1;
-		g_bk_drv->config_param.filter_config.filter_mac_addr_type = 0;
 		g_bk_drv->accuracy = 0;
 		break;
 	
 	case HT_CSI_DATA_ACC1:
 		g_bk_drv->config_param.filter_config.proto_type_bmp = 0x2;
 		g_bk_drv->config_param.filter_config.cbw_bmp = 0x1;
-		g_bk_drv->config_param.filter_config.filter_mac_addr_type = 0;
 		g_bk_drv->accuracy = 1;
 		break;
 	
 	case NON_HT_CSI_DATA:
 		g_bk_drv->config_param.filter_config.proto_type_bmp = 0x1;
 		g_bk_drv->config_param.filter_config.cbw_bmp = 0x1;
-		g_bk_drv->config_param.filter_config.filter_mac_addr_type = 0;
 		g_bk_drv->accuracy = 0;
 		break;
 
 	case NON_HT_CSI_DATA_ACC1:
 		g_bk_drv->config_param.filter_config.proto_type_bmp = 0x1;
 		g_bk_drv->config_param.filter_config.cbw_bmp = 0x1;
-		g_bk_drv->config_param.filter_config.filter_mac_addr_type = 0;
 		g_bk_drv->accuracy = 1;
 		break;
 	
@@ -255,18 +399,16 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 		csidbg("ERROR: unknown config type: %d", config_type);
 		return -EINVAL;
 	}
-	
-	if(g_bk_csi_rept_data.data_store_buff_ptr == 0) 
+
+	if(config_action == CSI_CONFIG_ENABLE)
 	{
-		g_bk_csi_rept_data.data_received_flag = 0;
-		g_bk_csi_rept_data.data_reported_flag = 0;
-		g_bk_csi_rept_data.data_store_buff_ptr = (uint32_t)os_malloc(BK_MAX_CSI_BUFF_LEN);
-		if(g_bk_csi_rept_data.data_store_buff_ptr == 0) 
-		{
-			csidbg("ERROR: failed to allocate csi data buffer\n");
-			return -ENOMEM;
-		}
-		os_memset(g_bk_csi_rept_data.data_store_buff_ptr, 0, BK_MAX_CSI_BUFF_LEN);
+		g_bk_drv->config_param.filter_config.filter_mac_addr_type = 1;// src && dst
+		g_bk_drv->config_param.filter_config.filter_src_mac_num = 1;
+		os_memcpy(g_bk_drv->config_param.filter_config.filter_src_mac, link_status.bssid, BK_MAC_ADDR_LEN);
+		uint8_t sta_mac[BK_MAC_ADDR_LEN] = {0};
+		BK_RETURN_ON_ERR(bk_wifi_sta_get_mac(sta_mac));
+		g_bk_drv->config_param.filter_config.filter_dst_mac_num = 1;
+		os_memcpy(g_bk_drv->config_param.filter_config.filter_dst_mac, sta_mac, BK_MAC_ADDR_LEN);
 	}
 
 	if(g_bk_drv->config_param.enable == 1) 
@@ -283,20 +425,36 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 	/* 3. call set config for enable/disable */
 	if (config_action == CSI_CONFIG_ENABLE) 
 	{
+		if(!bk_wifi_csi_data_buffer_create()) 
+		{
+			bk_wifi_csi_data_buffer_free();
+			csidbg("ERROR: failed to allocate csi data buffer\n");
+			return -ENOMEM;
+		}
+
 		csivdbg("wifi csi enable config requested\n");
+		if (!bk_wifi_csi_report_timer_set(true)) 
+		{
+			bk_wifi_csi_data_buffer_free();
+			csidbg("ERROR: wifi csi report timer set failed\n");
+			return -EINVAL;
+		}
 		/* changes for enable */
 		g_bk_drv->config_param.enable = 1;
 		ret = bk_wifi_csi_receive_mode_req(&g_bk_drv->config_param);
 		if (ret != OK) 
 		{
+			bk_wifi_csi_data_buffer_free();
 			csidbg("ERROR: wifi csi set config(enable) failed, ret: %d\n", ret);
 			return ret;
 		}
 	} 
 	else if (config_action == CSI_CONFIG_DISABLE) 
 	{
+		bk_wifi_csi_data_buffer_free();
 		/* changes for disable*/
 		csivdbg("wifi csi disable config requested\n");
+		bk_wifi_csi_report_timer_set(false);
 		g_bk_drv->config_param.enable = 0;
 		ret = bk_wifi_csi_receive_mode_req(&g_bk_drv->config_param);
 		if (ret != OK) {
@@ -337,7 +495,6 @@ bool bk_wifi_csi_info_copy(uint32_t buf_ptr, struct wifi_csi_info_t *info)
 					buf_info->csi_info[0].ltf_type = info->csi_info[i].ltf_type;
 					buf_info->csi_info[0].csi_data = (struct csi_cfr_t *)(buf+len);
 					is_data_valid = true;
-					break;
 				}
 				break;
 			}
@@ -359,7 +516,6 @@ bool bk_wifi_csi_info_copy(uint32_t buf_ptr, struct wifi_csi_info_t *info)
 					buf_info->csi_info[0].ltf_type = info->csi_info[i].ltf_type;
 					buf_info->csi_info[0].csi_data = (struct csi_cfr_t *)(buf+len);
 					is_data_valid = true;
-					break;
 				}
 				break;
 			}
@@ -369,27 +525,36 @@ bool bk_wifi_csi_info_copy(uint32_t buf_ptr, struct wifi_csi_info_t *info)
 	
 	return is_data_valid;
 }
-beken_time_t rtos_get_time( void );
-beken_time_t g_bk_csi_last_report_time = 0;
+
 void bk_wifi_csi_rx_cb(struct wifi_csi_info_t *info)
 {
-	if((info != NULL) && (g_bk_csi_rept_data.data_store_buff_ptr != 0))
+	// func handle start
+	g_bk_csi_data_cb_flag = 1;
+
+	struct bk_csi_rept_flag_s *wr_ptr = &g_bk_csi_rept_data[g_bk_csi_rept_write];
+	if((info != NULL) && (wr_ptr->data_store_buff_ptr != 0))
 	{
+		beken_time_t current_time = rtos_get_time();
 		bool is_report_data = false;
 		if(g_bk_csi_last_report_time == 0)
 		{
-			g_bk_csi_last_report_time = rtos_get_time();
+			g_bk_csi_last_report_time = current_time;
 			is_report_data = true;
 		}
 		else
 		{
-			beken_time_t current_time = rtos_get_time();
 			if(current_time > g_bk_csi_last_report_time)
 			{
-				if(current_time - g_bk_csi_last_report_time >= (g_bk_drv->interval_ms - 5))
+				if(current_time - g_bk_csi_last_report_time >= g_bk_drv->interval_ms )
 				{
 					g_bk_csi_last_report_time = current_time;
 					is_report_data = true;
+				}
+				else
+				{
+					/* data store */
+					bk_wifi_csi_info_copy(wr_ptr->data_store_buff_ptr, info);
+					wr_ptr->data_received_flag = 1;
 				}
 			}
 			else
@@ -400,17 +565,24 @@ void bk_wifi_csi_rx_cb(struct wifi_csi_info_t *info)
 
 		if(is_report_data)
 		{
-			if(g_bk_csi_rept_data.data_reported_flag == 0)
+			if(wr_ptr->data_reported_flag == 0)
 			{
-				if(bk_wifi_csi_info_copy(g_bk_csi_rept_data.data_store_buff_ptr, info))
+				if(bk_wifi_csi_info_copy(wr_ptr->data_store_buff_ptr, info))
 				{
-					g_bk_csi_rept_data.data_received_flag = 1;
+					//csidbg("cb report data\n");
+					wr_ptr->data_received_flag = 1;
 					bk_wifi_csi_report_event();
+					wr_ptr->data_reported_flag = 1;
+					g_bk_csi_rept_write = (g_bk_csi_rept_write + 1) % BK_CSI_REPT_DATA_MAX_NUM;
+					
+					rtos_start_timer(&g_bk_drv->csi_report_timer);
 				}
 			}
 		}
 		
 	}
+	// func handle end
+	g_bk_csi_data_cb_flag = 0;
 }
 
 static int bk_wifi_csi_ioctl(int cmd, unsigned long arg)
@@ -472,24 +644,21 @@ static int bk_wifi_csi_getmacaddr(char *mac_addr) {
 		csidbg("ERROR: priv null\n");
 		return -EINVAL;
 	}
-	//if (sta_ip_is_start()) 
+	wifi_link_status_t link_status = {0};
+	os_memset(&link_status, 0x0, sizeof(link_status));
+	BK_RETURN_ON_ERR(bk_wifi_sta_get_link_status(&link_status));
+	if(link_status.state != 3)
 	{
-		wifi_link_status_t link_status = {0};
-		os_memset(&link_status, 0x0, sizeof(link_status));
-		BK_RETURN_ON_ERR(bk_wifi_sta_get_link_status(&link_status));
-
-		bk_wifi_csi_takesem();
-		csivdbg("mac addr: %02x:%02x:%02x:%02x:%02x:%02x\n", link_status.bssid[0], link_status.bssid[1], link_status.bssid[2], 
-			link_status.bssid[3], link_status.bssid[4], link_status.bssid[5]);
-		memcpy(mac_addr, link_status.bssid, 6);
-		bk_wifi_csi_givesem();
+		csidbg("ERROR: sta not connected\n");
+		return -EINVAL;
 	}
-	//else
-	//{
-	//	csidbg("ERROR: not in station mode\n");
-	//	return -EINVAL;
-	//}
-	
+
+	bk_wifi_csi_takesem();
+	csivdbg("mac addr: %02x:%02x:%02x:%02x:%02x:%02x\n", link_status.bssid[0], link_status.bssid[1], link_status.bssid[2], 
+		link_status.bssid[3], link_status.bssid[4], link_status.bssid[5]);
+	memcpy(mac_addr, link_status.bssid, 6);
+	bk_wifi_csi_givesem();
+
 	return OK;
 }
 
@@ -498,7 +667,7 @@ static int bk_wifi_csi_getcsidata(unsigned char *buffer, size_t buflen) {
 		csidbg("ERROR: priv null\n");
 		return -EINVAL;
 	}
-	uint32_t len;
+	uint32_t len = 0;
 	bk_wifi_csi_takesem();
 	if (bk_wifi_csi_get(buflen, buffer, &len) == -1) {
 		csidbg("ERROR: wifi csi report call failed\n");
@@ -517,15 +686,17 @@ FAR struct wifi_csi_lowerhalf_s *bk_wifi_csi_initialize(void)
 		csidbg("ERROR: failed to allocate driver structure\n");
 		return NULL;
 	}
+	os_memset(g_bk_drv, 0, sizeof(struct bk_csi_dev_s));
 	g_bk_drv->dev.ops = &g_wificsiops;
 
-	if(g_bk_drv->devsem == NULL) {
-		err = rtos_init_semaphore(&g_bk_drv->devsem,1);
-		if(err != kNoErr){
-			csidbg("[BK] csi semaphore init failed!\r\n");
-			return NULL;
-		}
+	err = rtos_init_semaphore(&g_bk_drv->devsem,1);
+	if(err != kNoErr){
+		os_free(g_bk_drv);
+		g_bk_drv = NULL;
+		csidbg("[BK] csi semaphore init failed!\r\n");
+		return NULL;
 	}
+	bk_wifi_csi_givesem();
 
 	return &g_bk_drv->dev;
 }
@@ -541,8 +712,9 @@ void bk_wifi_csi_deinitialize(void)
 		rtos_deinit_semaphore(&g_bk_drv->devsem);
 	}
 
+	bk_wifi_csi_data_buffer_free();
 	/* We should free g_rtk_drv->dev->priv here ? */
-	free(g_bk_drv);
+	os_free(g_bk_drv);
 	g_bk_drv = NULL;
 }
 

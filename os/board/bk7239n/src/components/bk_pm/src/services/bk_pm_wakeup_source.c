@@ -309,6 +309,10 @@ bk_pm_wakeup_reason_e bk_pm_sleep_wakeup_reason_get()
 				{
 					wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
 				}
+				else
+				{
+					wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
+				}
 			}
 			else
 			{

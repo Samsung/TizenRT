@@ -51,6 +51,7 @@
 //3. Define public temperature API, such as bk_tempsensor_get_temperature()
 //   and temp detect module depends on tempsensor!
 
+int bk_sensor_get_enable_temperature(void);
 extern void manual_cal_tmp_pwr_init(uint16_t init_temp, uint16_t init_threshold,
 		uint16_t init_dist);
 
@@ -382,7 +383,11 @@ void temp_daemon_restart(void)
 
 void temp_daemon_change_config(void)
 {
-	temp_detect_change_configuration(ADC_TMEP_DETECT_INTERVAL,
+	int interval = ADC_TMEP_DETECT_INTERVAL;
+#if CONFIG_MICROWAVE_POLICY
+	interval = 2;
+#endif
+	temp_detect_change_configuration(interval,
 		s_tempd.detect_threshold, ADC_TMEP_DIST_INTIAL_VAL);
 }
 
@@ -402,12 +407,14 @@ void temp_daemon_detect_temperature(void)
 	s_tempd.detect_cnt++;
 	temp_daemon_stop();
 
+	if (!bk_sensor_get_enable_temperature()) {
+	    goto exit;
+	}
+
 	err = tempd_adc_get_temperature(&adc_code);
 	if (BK_OK != err) {
 		TEMPD_LOGW("tdetect failed(%d), retry\n", err);
-		temp_daemon_restart();
-        bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_SARADC, 1,0);
-		return; //TODO is that correct?
+        goto exit;
 	}
 
 	TEMPD_LOGD("cnt=%d, interval=%d, last=%d, cur=%d, thr=%d\r\n",
@@ -419,6 +426,7 @@ void temp_daemon_detect_temperature(void)
 	bk_sensor_set_current_temperature(temp_code);
 	s_tempd.temp_last = temp_code;
 
+exit:
 	if (tempd_need_change_detect_interval(s_tempd.detect_cnt))
 		bk_sensor_send_msg(TMPD_CHANGE_PARAM);
 	else

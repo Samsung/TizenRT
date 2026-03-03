@@ -401,7 +401,7 @@ __FLASH_BOOT_CODE uint32_t psram_hal_config_init(uint32_t id)
 
 	/* set psram bypass */
 	val = psram_hal_get_reg2_value();
-	val |= (0x1 << 1);
+	val &= ~(0x1 << 1);//enable psram clock gate for low power
 	psram_hal_set_reg2_value(val);
 
 	if (id != 0)

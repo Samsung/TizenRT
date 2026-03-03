@@ -421,6 +421,29 @@ static void bk_pm_wifi_rtc_clear_wrapper(void)
 #endif
 }
 
+static void __IRAM2 bk_wifi_set_rtc_timer_wrapper(uint32_t tick, void *callback, uint8_t *name)
+{
+#if CONFIG_ANA_RTC
+    alarm_info_t wifi_rtc_alarm_info = {0};
+    strncpy((char *)wifi_rtc_alarm_info.name, name, ALARM_NAME_MAX_LEN);
+    wifi_rtc_alarm_info.period_tick = tick;
+    wifi_rtc_alarm_info.period_cnt = 1;
+    wifi_rtc_alarm_info.callback = (aon_rtc_isr_t)callback;
+    wifi_rtc_alarm_info.param_p = NULL;
+    //printf("bk_wifi_set_rtc_timer_wrapper: name %s, tick %d, callback %p\r\n", wifi_rtc_alarm_info.name, tick, callback);
+    //force unregister previous if doesn't finish.
+    bk_alarm_unregister(AON_RTC_ID_1, wifi_rtc_alarm_info.name);
+    bk_alarm_register(AON_RTC_ID_1, &wifi_rtc_alarm_info);
+#endif
+}
+
+static void bk_wifi_clear_rtc_timer_wrapper(uint8_t *name)
+{
+#if CONFIG_ANA_RTC
+    bk_alarm_unregister(AON_RTC_ID_1, name);
+#endif
+}
+
 static void __IRAM2 wifi_vote_rf_ctrl_wrapper(uint8_t cmd)
 {
     rf_module_vote_ctrl(cmd,RF_BY_WIFI_BIT);
@@ -1514,6 +1537,8 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._bk_pm_low_voltage_register = bk_pm_low_voltage_register_wrapper,
 	._bk_pm_wifi_rtc_set = bk_pm_wifi_rtc_set_wrapper,
 	._bk_pm_wifi_rtc_clear = bk_pm_wifi_rtc_clear_wrapper,
+	._bk_wifi_set_rtc_timer = bk_wifi_set_rtc_timer_wrapper,
+	._bk_wifi_clear_rtc_timer = bk_wifi_clear_rtc_timer_wrapper,
 	._wifi_vote_rf_ctrl = wifi_vote_rf_ctrl_wrapper,
 	._wifi_phy_clk_open = wifi_phy_clk_open_wrapper,
 	._wifi_phy_clk_close = wifi_phy_clk_close_wrapper,

@@ -187,21 +187,6 @@ __/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_crypto.
 .PHONY : __/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_crypto.s
 
 # target to build an object file
-__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.o:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/spm/CMakeFiles/tfm_spm.dir/build.make secure_fw/spm/CMakeFiles/tfm_spm.dir/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.o
-.PHONY : __/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.o
-
-# target to preprocess a source file
-__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.i:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/spm/CMakeFiles/tfm_spm.dir/build.make secure_fw/spm/CMakeFiles/tfm_spm.dir/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.i
-.PHONY : __/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.i
-
-# target to generate assembly for a file
-__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.s:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/spm/CMakeFiles/tfm_spm.dir/build.make secure_fw/spm/CMakeFiles/tfm_spm.dir/__/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.s
-.PHONY : __/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.s
-
-# target to build an object file
 __/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.o:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/spm/CMakeFiles/tfm_spm.dir/build.make secure_fw/spm/CMakeFiles/tfm_spm.dir/__/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.o
 .PHONY : __/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.o
@@ -260,21 +245,6 @@ __/__/interface/src/tfm_psa_call_pack.i:
 __/__/interface/src/tfm_psa_call_pack.s:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/spm/CMakeFiles/tfm_spm.dir/build.make secure_fw/spm/CMakeFiles/tfm_spm.dir/__/__/interface/src/tfm_psa_call_pack.s
 .PHONY : __/__/interface/src/tfm_psa_call_pack.s
-
-# target to build an object file
-__/partitions/firmware_update/tfm_fwu_secure_api.o:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/spm/CMakeFiles/tfm_spm.dir/build.make secure_fw/spm/CMakeFiles/tfm_spm.dir/__/partitions/firmware_update/tfm_fwu_secure_api.o
-.PHONY : __/partitions/firmware_update/tfm_fwu_secure_api.o
-
-# target to preprocess a source file
-__/partitions/firmware_update/tfm_fwu_secure_api.i:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/spm/CMakeFiles/tfm_spm.dir/build.make secure_fw/spm/CMakeFiles/tfm_spm.dir/__/partitions/firmware_update/tfm_fwu_secure_api.i
-.PHONY : __/partitions/firmware_update/tfm_fwu_secure_api.i
-
-# target to generate assembly for a file
-__/partitions/firmware_update/tfm_fwu_secure_api.s:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f secure_fw/spm/CMakeFiles/tfm_spm.dir/build.make secure_fw/spm/CMakeFiles/tfm_spm.dir/__/partitions/firmware_update/tfm_fwu_secure_api.s
-.PHONY : __/partitions/firmware_update/tfm_fwu_secure_api.s
 
 # target to build an object file
 __/partitions/ns_agent_tz/load_info_ns_agent_tz.o:
@@ -562,9 +532,6 @@ help:
 	@echo "... __/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_crypto.o"
 	@echo "... __/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_crypto.i"
 	@echo "... __/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_crypto.s"
-	@echo "... __/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.o"
-	@echo "... __/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.i"
-	@echo "... __/__/generated/secure_fw/partitions/firmware_update/auto_generated/load_info_tfm_firmware_update.s"
 	@echo "... __/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.o"
 	@echo "... __/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.i"
 	@echo "... __/__/generated/secure_fw/partitions/internal_trusted_storage/auto_generated/load_info_tfm_internal_trusted_storage.s"
@@ -577,9 +544,6 @@ help:
 	@echo "... __/__/interface/src/tfm_psa_call_pack.o"
 	@echo "... __/__/interface/src/tfm_psa_call_pack.i"
 	@echo "... __/__/interface/src/tfm_psa_call_pack.s"
-	@echo "... __/partitions/firmware_update/tfm_fwu_secure_api.o"
-	@echo "... __/partitions/firmware_update/tfm_fwu_secure_api.i"
-	@echo "... __/partitions/firmware_update/tfm_fwu_secure_api.s"
 	@echo "... __/partitions/ns_agent_tz/load_info_ns_agent_tz.o"
 	@echo "... __/partitions/ns_agent_tz/load_info_ns_agent_tz.i"
 	@echo "... __/partitions/ns_agent_tz/load_info_ns_agent_tz.s"

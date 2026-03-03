@@ -100,14 +100,6 @@ psa_status_t platform_sp_nv_counter_increment(psa_invec *, size_t, psa_outvec *,
 psa_status_t initial_attest_get_token(psa_invec *, size_t, psa_outvec *, size_t);
 psa_status_t initial_attest_get_token_size(psa_invec *, size_t, psa_outvec *, size_t);
 
-/******** TFM_SP_FWU ********/
-psa_status_t tfm_fwu_write_req(psa_invec *, size_t, psa_outvec *, size_t);
-psa_status_t tfm_fwu_install_req(psa_invec *, size_t, psa_outvec *, size_t);
-psa_status_t tfm_fwu_abort_req(psa_invec *, size_t, psa_outvec *, size_t);
-psa_status_t tfm_fwu_query_req(psa_invec *, size_t, psa_outvec *, size_t);
-psa_status_t tfm_fwu_request_reboot_req(psa_invec *, size_t, psa_outvec *, size_t);
-psa_status_t tfm_fwu_accept_req(psa_invec *, size_t, psa_outvec *, size_t);
-
 /******** TFM_SP_SYSTEM_CLOCK ********/
 
 
@@ -211,11 +203,4 @@ TFM_VENEER_FUNCTION(TFM_SP_PLATFORM, tfm_platform_sp_nv_counter_increment, platf
 /******** TFM_SP_INITIAL_ATTESTATION ********/
 TFM_VENEER_FUNCTION(TFM_SP_INITIAL_ATTESTATION, tfm_initial_attest_get_token, initial_attest_get_token)
 TFM_VENEER_FUNCTION(TFM_SP_INITIAL_ATTESTATION, tfm_initial_attest_get_token_size, initial_attest_get_token_size)
-/******** TFM_SP_FWU ********/
-TFM_VENEER_FUNCTION(TFM_SP_FWU, tfm_fwu_write_req, tfm_fwu_write_req)
-TFM_VENEER_FUNCTION(TFM_SP_FWU, tfm_fwu_install_req, tfm_fwu_install_req)
-TFM_VENEER_FUNCTION(TFM_SP_FWU, tfm_fwu_abort_req, tfm_fwu_abort_req)
-TFM_VENEER_FUNCTION(TFM_SP_FWU, tfm_fwu_query_req, tfm_fwu_query_req)
-TFM_VENEER_FUNCTION(TFM_SP_FWU, tfm_fwu_request_reboot_req, tfm_fwu_request_reboot_req)
-TFM_VENEER_FUNCTION(TFM_SP_FWU, tfm_fwu_accept_req, tfm_fwu_accept_req)
 /******** TFM_SP_SYSTEM_CLOCK ********/

@@ -252,17 +252,6 @@ __IRAM_SEC DLV_STATIC void dlv_core_save(dlv_context_t *dlv)
 
 __IRAM_SEC void mini_dlv_stack_frame_save_and_dlv(void)
 {
-	//uint32_t *psp_addr = (uint32_t *)__get_PSP();
-	uint32_t *psp_addr = (uint32_t *)__get_MSP();
-
-	s_current_stack_frame->r0 = psp_addr[0];
-	s_current_stack_frame->r1 = psp_addr[1];
-	s_current_stack_frame->r2 = psp_addr[2];
-	s_current_stack_frame->r3 = psp_addr[3];
-	s_current_stack_frame->r12 = psp_addr[4];
-	s_current_stack_frame->lr = psp_addr[5];
-	s_current_stack_frame->ret_pc = psp_addr[6];
-	s_current_stack_frame->xpsr = psp_addr[7];
 	aon_pmu_ll_set_r0_memchk_bps(1);
 	aon_pmu_ll_set_r0_fast_boot(1);
 	aon_pmu_hal_set_dlv_startup(1);
@@ -272,21 +261,28 @@ __IRAM_SEC void mini_dlv_stack_frame_save_and_dlv(void)
 #endif
 }
 
-__IRAM_SEC void dlv_stack_frame_save_and_dlv(uint32_t exc_return)
+__IRAM_SEC void dlv_stack_frame_save_and_dlv(uint32_t exc_return, uint32_t wakeup_pc)
 {
+	uint32_t msp_val;
+	uint32_t msplim_val;
+	__asm volatile ("mrs %0, msp" : "=r" (msp_val));
+	s_current_stack_frame->psp = msp_val;
+	__asm volatile ("mrs %0, msplim" : "=r" (msplim_val));
+	s_current_stack_frame->psplim = msplim_val;
 	__asm volatile
 	(
 		"    .syntax unified                               \n"
-		"                                                  \n"
-		"    mov r3, r0                                    \n"/* r3 = LR/EXC_RETURN. */
-		"    mov r0, %0                                  \n"/* Read s_dlv_context.stk_frame. */
-		"    mrs r1, psp                                   \n"/* Read PSP in r1. */
-		"    mrs r2, psplim                                \n"/* r2 = PSPLIM. */
-		"    stmia r0!, {r1-r11}                           \n"/* Store on the s_dlv_context.stk_frame - PSP, PSPLIM, LR, R4-R11 */
-		"                                                  \n"
+		"    mov r3, r0                                    \n"/* r3 = exc_return */
+		"    mov r0, %0                                    \n"/* r0 = &stk_frame */
+		"    push {r4}                                     \n"/* save r4 */
+		"    ldr r1, [r0]                                  \n"/* r1 = psp (set by C code) */
+		"    ldr r2, [r0, #4]                              \n"/* r2 = psplim (set by C code) */
+		"    pop {r4}                                      \n"/* restore r4 */
+		"    stmia r0!, {r1-r11}                           \n"/* store psp, psplim, exc_return, r4-r11 */
 		"    .align 4                                      \n"
 		::"r"(s_current_stack_frame):"r3"
 	);
+	s_current_stack_frame->ret_pc = wakeup_pc; /* 0 = NOP addr, idle task always uses NOP addr */
 	mini_dlv_stack_frame_save_and_dlv();
 
 	__asm volatile
@@ -432,32 +428,22 @@ __IRAM_SEC DLV_STATIC void dlv_core_restore(dlv_context_t *dlv)
 
 __IRAM_SEC DLV_STATIC void dlv_stack_frame_restore(void)
 {
-	volatile uint32_t *psp_addr = (volatile uint32_t *)s_current_stack_frame->psp;
 
-	psp_addr[0] = s_current_stack_frame->r0;
-	psp_addr[1] = s_current_stack_frame->r1;
-	psp_addr[2] = s_current_stack_frame->r2;
-	psp_addr[3] = s_current_stack_frame->r3;
-	psp_addr[4] = s_current_stack_frame->r12;
-	psp_addr[5] = s_current_stack_frame->lr;
-	psp_addr[6] = s_current_stack_frame->ret_pc;
-	psp_addr[7] = s_current_stack_frame->xpsr;
-
+	__asm volatile ("msr msp, %0" : : "r" (s_current_stack_frame->psp));
+	__asm volatile ("msr msplim, %0" : : "r" (s_current_stack_frame->psplim));
 	__asm volatile
 	(
 		"    .syntax unified                                \n"
-		"                                                   \n"
-		"    cpsid i                                     \n" /* Globally disable interrupts. */
-		"    cpsie f                                     \n"
-		"    ldr r1, stack_frame_const2                     \n"
-		"    ldr r0, [r1]                                   \n"/* Read s_dlv_context.stk_frame */
-		"    ldmia r0!, {r1-r11}                            \n"/* Read from s_dlv_context.stk_frame - r1 = PSP, r2 = PSPLIM, r3 = LR and r4-r11 restored. */
-		"    msr psp, r1                                    \n"/* Restore the PSP register value. */
-		"    msr psplim, r2                                 \n"/* Restore the PSPLIM register value. */
-		"    movs r0, #2                                    \n"/* r0 = 2. */
-		"    msr  CONTROL, r0                               \n"/* Switch to use PSP in the thread mode. */
+		"    cpsid i                                        \n"
+		"    cpsie f                                        \n"
+		"    ldr r0, stack_frame_const2                     \n"
+		"    ldr r0, [r0]                                   \n"/* r0 = &stk_frame */
+		"    add r0, r0, #4                                 \n"/* skip psp field (already set by mini_dlv) */
+		"    ldmia r0!, {r2-r11}                            \n"/* r2=msplim(unused), r3=exc_return, r4-r11 */
+		"    movs r0, #0                                    \n"/* CONTROL=0, thread mode uses MSP */
+		"    msr CONTROL, r0                                \n"
+		"    orr r3, r3, #1                                 \n"
 		"    bx r3                                          \n"
-		"                                                   \n"
 		"    .align 4                                       \n"
 		"stack_frame_const2: .word s_current_stack_frame    \n"
 	);
@@ -505,16 +491,16 @@ __IRAM_SEC void dlv_context_restore(void)
 {
 	dlv_context_t *dlv = &s_dlv_context;
 
-#if defined(CONFIG_MPU)
-	mpu_enable();
-#endif // CONFIG_MPU
+// #if defined(CONFIG_MPU)
+// 	mpu_enable();
+// #endif // CONFIG_MPU
 
-#if defined(CONFIG_DCACHE)
-	if (SCB->CLIDR & SCB_CLIDR_DC_Msk)
-		SCB_EnableDCache();
+// #if defined(CONFIG_DCACHE)
+// 	if (SCB->CLIDR & SCB_CLIDR_DC_Msk)
+// 		SCB_EnableDCache();
 
-	SCB_CleanInvalidateDCache();
-#endif
+// 	SCB_CleanInvalidateDCache();
+// #endif
 
 	arch_int_set_default_priority();
 	dlv_nvic_restore(dlv);

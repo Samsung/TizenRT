@@ -575,14 +575,9 @@ void sys_hal_set_ana_reg12_dpfms(uint32_t value);
 void sys_hal_set_ana_reg5_pwd_rosc_spi(uint32_t value);
 #if defined(CONFIG_ANA_RTC) || defined(CONFIG_ANA_GPIO)
 void sys_hal_set_ana_reg8_spi_latch1v(uint32_t value);
-#if defined(CONFIG_BK7239N_MP) && (CONFIG_BK7239N_MP == 1)
 void sys_hal_set_ana_reg8_spi_latch1v_iram(uint32_t value);
 void sys_hal_set_ana_reg8_rst_timerwks1v(uint32_t value);
 void sys_hal_set_ana_reg8_rst_gpiowks(uint32_t value);
-#else
-void sys_hal_set_ana_reg8_spi_latch1v(uint32_t value);
-void sys_hal_set_ana_reg8_rst_wks1v(uint32_t value);
-#endif
 void sys_hal_set_ana_reg5_adc_div(uint32_t value);
 void sys_hal_set_ana_reg5_rosc_disable(uint32_t value);
 void sys_hal_set_ana_reg7_timer_wkrstn(uint32_t value);
@@ -3412,14 +3407,9 @@ void sys_hal_set_scr_clk(uint32_t value);
 void sys_hal_set_ana_reg5_pwd_rosc_spi(uint32_t value);
 #if defined(CONFIG_ANA_RTC) || defined(CONFIG_ANA_GPIO)
 void sys_hal_set_ana_reg8_spi_latch1v(uint32_t value);
-#if defined(CONFIG_BK7239N_MP) && (CONFIG_BK7239N_MP == 1)
 void sys_hal_set_ana_reg8_spi_latch1v_iram(uint32_t value);
 void sys_hal_set_ana_reg8_rst_timerwks1v(uint32_t value);
 void sys_hal_set_ana_reg8_rst_gpiowks(uint32_t value);
-#else
-void sys_hal_set_ana_reg8_spi_latch1v(uint32_t value);
-void sys_hal_set_ana_reg8_rst_wks1v(uint32_t value);
-#endif
 void sys_hal_set_ana_reg5_adc_div(uint32_t value);
 void sys_hal_set_ana_reg5_rosc_disable(uint32_t value);
 void sys_hal_set_ana_reg7_timer_wkrstn(uint32_t value);

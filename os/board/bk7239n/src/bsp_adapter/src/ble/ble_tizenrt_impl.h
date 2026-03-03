@@ -148,7 +148,7 @@ typedef enum
     EVT_BLE_TASK_EXIT,                       /**< BLE task exit event */
 
     EVT_BLE_DO_CB_ONLY,                      /**< do cb only */
-
+    EVT_BLE_AUTH_FAILED_MSG,                 /**< Authentication failed message event */
     EVT_BLE_APP_MSG_MAX                      /**< Maximum application message value */
 } ble_evt_type;
 
@@ -710,6 +710,15 @@ typedef struct
 {
     bt_storage_elem_whitelist_t device;  /**< Whitelist element representing the bonded device */
 }bt_bond_info_t;
+
+/**
+ * @brief BLE authentication failed message structure
+ */
+typedef struct
+{
+    uint16_t conn_id;   /**< Connection ID */
+    uint16_t err;    /**< Error code */
+} le_auth_failed_ind_t;
 
 #define BD_ADDR_FMT "0x%02x:0x%02x:0x%02x:0x%02x:0x%02x:0x%02x"
 #define BD_ADDR_ARG(x) (x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5]

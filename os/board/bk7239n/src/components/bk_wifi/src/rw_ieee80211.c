@@ -525,8 +525,9 @@ UINT32 rw_ieee80211_init(void)
 
 	wiphy->bands[IEEE80211_BAND_2GHZ] = &rwnx_band_2GHz;
 	wiphy->bands[IEEE80211_BAND_5GHZ] = &rwnx_band_5GHz;
+	#if CONFIG_WIFI_REGDOMAIN
 	wiphy->reg_notifier = rwnx_reg_notifier;
-
+	#endif
 	intf.msg_outbound_func = mr_kmsg_fwd;
 	intf.data_outbound_func = rwm_upload_data;
 	intf.rx_alloc_func = rwm_get_rx_free_node;
@@ -1190,6 +1191,17 @@ UINT8 rw_ieee80211_init_scan_chan(struct scanu_start_req *req)
 				req->chan[cnt].flags = 0;
 			//os_printf("freq %d ,flags 0x%x,channel->flags 0x%x\r\n ",req->chan[cnt].freq,req->chan[cnt].flags,channel->flags);
 
+			//disable 12/13/14, 52/56/60/64 active scan
+			if (channel->center_freq == 2467 || channel->center_freq == 2472 || channel->center_freq == 2484) {
+				req->chan[cnt].flags |= CHAN_NO_IR;
+				//os_printf("disable IR for freq %d\n", channel->center_freq);
+			}
+			#if CONFIG_WIFI_BAND_5G
+			if (channel->center_freq == 5260 || channel->center_freq == 5280 || channel->center_freq == 5300 || channel->center_freq == 5320) {
+				req->chan[cnt].flags |= CHAN_NO_IR;
+			}
+			#endif
+
 			cnt++;
 		}
 	}
@@ -1314,6 +1326,18 @@ UINT8 rw_ieee80211_init_scan_chan_band(struct scanu_start_req *req, UINT8 band)
 			else///ATE mode or conn instrument, set all channels to active scan
 				req->chan[cnt].flags = 0;
 			//os_printf("freq %d ,flags 0x%x\r\n ",req->chan[cnt].freq,req->chan[cnt].flags);
+
+			//disable 12/13/14, 52/56/60/64 active scan
+			if (channel->center_freq == 2467 || channel->center_freq == 2472 || channel->center_freq == 2484) {
+				req->chan[cnt].flags |= CHAN_NO_IR;
+				//os_printf("disable IR for freq %d\n", channel->center_freq);
+			}
+			#if CONFIG_WIFI_BAND_5G
+			if (channel->center_freq == 5260 || channel->center_freq == 5280 || channel->center_freq == 5300 || channel->center_freq == 5320) {
+				req->chan[cnt].flags |= CHAN_NO_IR;
+			}
+			#endif
+
 			cnt++;
 		}
 	}

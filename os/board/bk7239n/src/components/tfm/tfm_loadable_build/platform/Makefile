@@ -232,21 +232,6 @@ __/interface/src/tfm_psa_call_pack.s:
 .PHONY : __/interface/src/tfm_psa_call_pack.s
 
 # target to build an object file
-__/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.o:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f platform/CMakeFiles/platform_s.dir/build.make platform/CMakeFiles/platform_s.dir/__/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.o
-.PHONY : __/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.o
-
-# target to preprocess a source file
-__/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.i:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f platform/CMakeFiles/platform_s.dir/build.make platform/CMakeFiles/platform_s.dir/__/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.i
-.PHONY : __/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.i
-
-# target to generate assembly for a file
-__/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.s:
-	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f platform/CMakeFiles/platform_s.dir/build.make platform/CMakeFiles/platform_s.dir/__/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.s
-.PHONY : __/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.s
-
-# target to build an object file
 __/secure_fw/spm/cmsis_psa/psa_interface_svc.o:
 	cd /root/tizenrt/os/board/bk7239n/src/components/tfm/tfm_build && $(MAKE) -f platform/CMakeFiles/platform_s.dir/build.make platform/CMakeFiles/platform_s.dir/__/secure_fw/spm/cmsis_psa/psa_interface_svc.o
 .PHONY : __/secure_fw/spm/cmsis_psa/psa_interface_svc.o
@@ -1698,9 +1683,6 @@ help:
 	@echo "... __/interface/src/tfm_psa_call_pack.o"
 	@echo "... __/interface/src/tfm_psa_call_pack.i"
 	@echo "... __/interface/src/tfm_psa_call_pack.s"
-	@echo "... __/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.o"
-	@echo "... __/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.i"
-	@echo "... __/secure_fw/partitions/firmware_update/tfm_fwu_secure_api.s"
 	@echo "... __/secure_fw/spm/cmsis_psa/psa_interface_svc.o"
 	@echo "... __/secure_fw/spm/cmsis_psa/psa_interface_svc.i"
 	@echo "... __/secure_fw/spm/cmsis_psa/psa_interface_svc.s"

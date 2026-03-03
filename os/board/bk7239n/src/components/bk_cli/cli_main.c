@@ -23,7 +23,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/types.h>
-#include <tinyara/config.h>
 #include "bk_cli.h"
 #include "cli.h"
 #include "stdarg.h"
@@ -38,7 +37,7 @@
 
 
 static struct cli_st *pCli = NULL;
-static struct cli_st s_Cli;
+__PSRAM_BSS static struct cli_st s_Cli;
 beken_semaphore_t log_rx_interrupt_sema = NULL;
 static uint16_t s_running_command_index = MAX_COMMANDS;
 #if CFG_CLI_DEBUG
@@ -996,19 +995,19 @@ int bk_cli_init(void)
 	if (cli_register_commands(user_clis, sizeof(user_clis) / sizeof(struct cli_command)))
 		goto init_general_err;
 
-	extern int cli_uart_init(void);
-	cli_uart_init();
+	// extern int cli_uart_init(void);
+	// cli_uart_init();
 
-	cli_flash_init();
-	cli_flash_test_init();
+	// cli_flash_init();
+	// cli_flash_test_init();
 
-#if (CLI_CFG_TRNG == 1)
-	cli_trng_init();
-#endif
+// #if (CLI_CFG_TRNG == 1)
+// 	cli_trng_init();
+// #endif
 
-#if defined(CONFIG_EASY_FLASH)
-    cli_easyflash_init();
-#endif
+// #if defined(CONFIG_EASY_FLASH)
+//     cli_easyflash_init();
+// #endif
 
 #if (CLI_CFG_PWR == 1)
 	cli_pwr_init();

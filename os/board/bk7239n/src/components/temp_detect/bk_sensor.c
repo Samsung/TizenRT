@@ -13,7 +13,7 @@
 #include "bk_sensor_internal.h"
 #include "temp_detect.h"
 #include "volt_detect.h"
-
+#include "sys_hal.h"
 #include "bk_saradc.h"
 #include "sdmadc/sdmadc_driver.h"
 #include <driver/rosc_32k.h>
@@ -22,7 +22,7 @@
 #include "sys_driver.h"
 
 #define TAG "sensor"
-#define ADC_SWITCH_DELT                   2
+#define TEMPD_MIN_DELAY                   400 //800ms in 400 ticks
 
 #define TEMPD_MAX_CALLBACK_NUM            2
 #define VOLTD_MAX_CALLBACK_NUM            2
@@ -35,11 +35,13 @@ typedef struct {
 
 #if (CONFIG_TEMP_DETECT)
 	float             temperature;
+	uint8_t           temp_detect_enable;
+	uint64_t          temp_detect_time; //mark time for next temp detect
 	bk_sensor_callback temp_callbacks[TEMPD_MAX_CALLBACK_NUM];
 #endif
 
 #if (CONFIG_VOLT_DETECT)
-	float             voltage;
+	float             voltage[3];
 	bk_sensor_callback volt_callbacks[VOLTD_MAX_CALLBACK_NUM];
 #endif
 } MCU_SENSOR_INFO;
@@ -137,14 +139,14 @@ static bk_err_t bk_sensor_load_adc_cali_value(void)
     memcpy(&vol_values[1], &data[66], sizeof(uint16_t));
     memcpy(&vol_values[2], &data[68], sizeof(uint16_t));
     if (vol_values[2] == 0) {
-        BK_LOGW(TAG, "uncali saradc_ext_low value:[%x]\r\n", vol_values[2]);
+        //BK_LOGW(TAG, "uncali saradc_ext_low value:[%x]\r\n", vol_values[2]);
         goto LOAD_SDMADC;
     }
     //BK_LOGI(TAG, "saradc ext_low value:[%x]\r\n", vol_values[2]);
     saradc_set_calibrate_val(&vol_values[2], SARADC_CALIBRATE_EXT_LOW);
 
     if ((result != BK_OK) || (vol_values[0] == 0) || (vol_values[1] == 0)) {
-        BK_LOGW(TAG, "uncali saradc value:[%x %x]\r\n", vol_values[0], vol_values[1]);
+        //BK_LOGW(TAG, "uncali saradc value:[%x %x]\r\n", vol_values[0], vol_values[1]);
         goto LOAD_SDMADC;
     }
 
@@ -217,10 +219,13 @@ bk_err_t bk_sensor_init(void)
 	{
 		ret = rtos_init_mutex(&g_sensor_info.lock);
 #if (CONFIG_VOLT_DETECT)
-		g_sensor_info.voltage    = NAN;
+        g_sensor_info.voltage[0]    = NAN;
+        g_sensor_info.voltage[1]    = NAN;
+        g_sensor_info.voltage[2]    = NAN;
 #endif
 #if (CONFIG_TEMP_DETECT)
 		g_sensor_info.temperature = NAN;
+		g_sensor_info.temp_detect_enable = 1;
 #endif
 	}
 #endif
@@ -272,7 +277,9 @@ bk_err_t bk_sensor_deinit(void)
 		ret = rtos_deinit_mutex(&g_sensor_info.lock);
 		g_sensor_info.lock       = NULL;
 #if (CONFIG_VOLT_DETECT)
-		g_sensor_info.voltage    = NAN;
+        g_sensor_info.voltage[0]    = NAN;
+        g_sensor_info.voltage[1]    = NAN;
+        g_sensor_info.voltage[2]    = NAN;
 #endif
 #if (CONFIG_TEMP_DETECT)
 		g_sensor_info.temperature = NAN;
@@ -312,6 +319,48 @@ int bk_sensor_send_msg(uint32_t msg_type)
 }
 
 #if (CONFIG_TEMP_DETECT)
+bk_err_t bk_sensor_set_enable_temperature(int enable)
+{
+    if (NULL == g_sensor_info.lock)
+    {
+        return BK_ERR_NOT_INIT;
+    }
+
+    rtos_lock_mutex(&g_sensor_info.lock);
+    g_sensor_info.temp_detect_enable = !!enable;
+    g_sensor_info.temp_detect_time = bk_get_tick();
+    rtos_unlock_mutex(&g_sensor_info.lock);
+
+    return BK_OK;
+}
+
+int bk_sensor_get_enable_temperature(void)
+{
+    uint64_t last_time;
+    uint64_t curr_time;
+    uint8_t enable;
+
+    if (NULL == g_sensor_info.lock)
+    {
+        return 1; //enable by default
+    }
+
+    rtos_lock_mutex(&g_sensor_info.lock);
+    last_time = g_sensor_info.temp_detect_time;
+    enable = g_sensor_info.temp_detect_enable;
+    rtos_unlock_mutex(&g_sensor_info.lock);
+
+    if (!enable) {
+        return 0;
+    }
+    curr_time = bk_get_tick();
+    if (curr_time < last_time) {
+        return (last_time - curr_time >= TEMPD_MIN_DELAY);
+    } else {
+        return (curr_time - last_time >= TEMPD_MIN_DELAY);
+    }
+}
+
 bk_err_t bk_sensor_set_current_temperature(float temperature)
 {
 	if (NULL == g_sensor_info.lock)
@@ -353,7 +402,6 @@ bk_err_t bk_sensor_get_current_temperature(float *temperature)
 		*temperature = g_sensor_info.temperature;
 		rtos_unlock_mutex(&g_sensor_info.lock);
 	}
-
 	return BK_OK;
 }
 
@@ -404,60 +452,76 @@ int bk_sensor_unregister_temperature_callback(bk_sensor_callback callback)
 	return BK_ERR_NOT_FOUND;
 }
 
+static bk_err_t bk_sensor_default_temperature_callback(uint16_t adc_code, float temp_code, float temp_last)
+{
+    return BK_OK;
+}
+
 bk_err_t bk_sensor_traversal_temperature_callback(uint16_t adc_code, float temp_code, float temp_last)
 {
-	int index = 0;
+    int index = 0;
 
-	rtos_lock_mutex(&g_sensor_info.lock);
-	for (; index < TEMPD_MAX_CALLBACK_NUM; index++) {
-		if (NULL == g_sensor_info.temp_callbacks[index]) {
-			continue;
-		}
-		g_sensor_info.temp_callbacks[index](adc_code, temp_code, temp_last);
-	}
-	rtos_unlock_mutex(&g_sensor_info.lock);
+    rtos_lock_mutex(&g_sensor_info.lock);
+    for (; index < TEMPD_MAX_CALLBACK_NUM; index++) {
+        if (NULL == g_sensor_info.temp_callbacks[index]) {
+            continue;
+        }
+        g_sensor_info.temp_callbacks[index](adc_code, temp_code, temp_last);
+    }
+    bk_sensor_default_temperature_callback(adc_code, temp_code, temp_last);
+    rtos_unlock_mutex(&g_sensor_info.lock);
 
-	return BK_OK;
+    return BK_OK;
 }
 #endif
 
 #if (CONFIG_VOLT_DETECT)
 bk_err_t bk_sensor_set_current_voltage(float voltage)
 {
-	if (NULL == g_sensor_info.lock)
-	{
-		return BK_ERR_NOT_INIT;
-	}
+    if (NULL == g_sensor_info.lock)
+    {
+        return BK_ERR_NOT_INIT;
+    }
 
-	rtos_lock_mutex(&g_sensor_info.lock);
-	g_sensor_info.voltage = voltage;
-	rtos_unlock_mutex(&g_sensor_info.lock);
+    rtos_lock_mutex(&g_sensor_info.lock);
+    //[0,1,2] new-> old, pop old and push new
+    g_sensor_info.voltage[2] = g_sensor_info.voltage[1];
+    g_sensor_info.voltage[1] = g_sensor_info.voltage[0];
+    g_sensor_info.voltage[0] = voltage;
+    rtos_unlock_mutex(&g_sensor_info.lock);
 
-	return BK_OK;
+    return BK_OK;
 }
 
 bk_err_t bk_sensor_get_current_voltage(float *voltage)
 {
-	if (NULL == g_sensor_info.lock)
-	{
-		return BK_ERR_NOT_INIT;
-	}
+    if (NULL == g_sensor_info.lock)
+    {
+        return BK_ERR_NOT_INIT;
+    }
 
-	if (isnan(g_sensor_info.voltage))
-	{
-		return BK_ERR_TRY_AGAIN;
-	}
+    if (isnan(g_sensor_info.voltage[0]))
+    {
+        return BK_ERR_TRY_AGAIN;
+    }
 
-	if (NULL == voltage)
-	{
-		return BK_ERR_PARAM;
-	}
+    if (NULL == voltage)
+    {
+        return BK_ERR_PARAM;
+    }
 
-	rtos_lock_mutex(&g_sensor_info.lock);
-	*voltage = g_sensor_info.voltage;
-	rtos_unlock_mutex(&g_sensor_info.lock);
+    if(rtos_local_irq_disabled() || rtos_is_in_interrupt_context())
+    {
+        *voltage = g_sensor_info.voltage[0];
+    }
+    else
+    {
+        rtos_lock_mutex(&g_sensor_info.lock);
+        *voltage = g_sensor_info.voltage[0];
+        rtos_unlock_mutex(&g_sensor_info.lock);
+    }
 
-	return BK_OK;
+    return BK_OK;
 }
 
 bk_err_t bk_sensor_register_voltage_callback(bk_sensor_callback callback)
@@ -507,19 +571,25 @@ bk_err_t bk_sensor_unregister_voltage_callback(bk_sensor_callback callback)
 	return BK_ERR_NOT_FOUND;
 }
 
+static bk_err_t bk_sensor_default_voltage_callback(uint16_t adc_code, float volt_code, float volt_last)
+{
+    return BK_OK;
+}
+
 bk_err_t bk_sensor_traversal_voltage_callback(uint16_t adc_code, float volt_code, float volt_last)
 {
-	int index = 0;
+    int index = 0;
 
-	rtos_lock_mutex(&g_sensor_info.lock);
-	for (; index < VOLTD_MAX_CALLBACK_NUM; index++) {
-		if (NULL == g_sensor_info.volt_callbacks[index]) {
-			continue;
-		}
-		g_sensor_info.volt_callbacks[index](adc_code, volt_code, volt_last);
-	}
-	rtos_unlock_mutex(&g_sensor_info.lock);
+    rtos_lock_mutex(&g_sensor_info.lock);
+    for (; index < VOLTD_MAX_CALLBACK_NUM; index++) {
+        if (NULL == g_sensor_info.volt_callbacks[index]) {
+            continue;
+        }
+        g_sensor_info.volt_callbacks[index](adc_code, volt_code, volt_last);
+    }
+    bk_sensor_default_voltage_callback(adc_code, volt_code, volt_last);
+    rtos_unlock_mutex(&g_sensor_info.lock);
 
-	return BK_OK;
+    return BK_OK;
 }
 #endif

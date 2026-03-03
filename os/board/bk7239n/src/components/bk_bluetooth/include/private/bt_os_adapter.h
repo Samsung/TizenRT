@@ -193,7 +193,7 @@ struct bt_osi_funcs_t
 	    // Add for btsp sleep
     void (*_bt_lp_rtc_set)(uint32_t tick, void *callback);
     void (*_bt_lp_rtc_clear)(void);
-    uint32_t (*_get_ana_timersel)(void); // Used to circumvent the hardware issue, can be deleted in the next version
+    uint64_t (*_get_rtc_max_value)(void); // Used to circumvent the hardware issue, can be deleted in the next version
     uint32_t (*_get_finecnt_samp)(void);
     uint32_t (*_get_clkcnt_samp)(void);
     uint32_t (*_get_isocnt_samp)(void);

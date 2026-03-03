@@ -53,6 +53,8 @@ CSRCS += bk7239_boot.c
 CSRCS += bk7239_i2schar.c
 CSRCS += bk_cli_process.c
 
+bk7239_boot.o: tfm
+
 # Optimized compiler flags - consolidated to reduce CFLAG length
 CFLAGS += -g -nostdlib -Wall -ffunction-sections -fdata-sections -fstack-protector -std=gnu99
 CFLAGS += -Wno-address -Wno-array-bounds -Wno-format

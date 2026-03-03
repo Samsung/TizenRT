@@ -75,5 +75,8 @@ menu "PM"
 		bool "Enable deep low voltage"
 		default n
 
+	config PM_ANALDO_VOLTAGE_DEFAULT
+		int "config bucka voltage"
+		default 4
 endmenu
 
