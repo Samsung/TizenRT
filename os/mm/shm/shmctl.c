@@ -158,7 +158,10 @@ int shmctl(int shmid, int cmd, struct shmid_ds *buf)
 	FAR struct shm_region_s *region;
 	int ret;
 
-	DEBUGASSERT(shmid >= 0 && shmid < CONFIG_ARCH_SHM_MAXREGIONS);
+	if (shmid < 0 || shmid >= CONFIG_ARCH_SHM_MAXREGIONS) {
+		ret = -EINVAL;
+		goto errout_with_ret;
+	}
 	region = &g_shminfo.si_region[shmid];
 	DEBUGASSERT((region->sr_flags & SRFLAG_INUSE) != 0);
 
@@ -167,7 +170,7 @@ int shmctl(int shmid, int cmd, struct shmid_ds *buf)
 	ret = sem_wait(&region->sr_sem);
 	if (ret < 0) {
 		shmdbg("sem_wait failed: %d\n", ret);
-		return ret;
+		goto errout;
 	}
 
 	/* Handle the request according to the received cmd */
@@ -236,7 +239,9 @@ int shmctl(int shmid, int cmd, struct shmid_ds *buf)
 
 errout_with_semaphore:
 	sem_post(&region->sr_sem);
+errout_with_ret:
 	set_errno(-ret);
+errout:
 	return ERROR;
 }
 
