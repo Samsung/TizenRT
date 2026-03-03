@@ -99,12 +99,19 @@ function make_ss_bin() {
 	ss_storage_dir=${TOOL_PATH}/security_storage
 	default_ss_bin=${ss_storage_dir}/ss.bin
 	ss_bin=${BUILDDIR}/output/bin/ss.bin
-	
-	if [ -f "${default_ss_bin}" ]; then
-		echo "Copying default ss.bin from ${default_ss_bin} to ${ss_bin}"
-		cp -f "${default_ss_bin}" "${ss_bin}"
+	beken_utils_path=${TOOL_PATH}/beken_utils
+
+	# If CONFIG_BINARY_SIGNING=y and beken_utils_path exists, do not copy ss.bin; otherwise copy ss.bin
+	if [ "${CONFIG_BINARY_SIGNING}" = "y" ] && [ -d "${beken_utils_path}" ]; then
+		# Do not copy ss.bin
+		echo "CONFIG_BINARY_SIGNING=y and beken_utils found, skip copying ss.bin"
 	else
-		echo "Warning: Default ss.bin not found at ${default_ss_bin}, skipping..."
+		if [ -f "${default_ss_bin}" ]; then
+			echo "Copying ss.bin from ${default_ss_bin} to ${ss_bin}"
+			cp -f "${default_ss_bin}" "${ss_bin}"
+		else
+			echo "Warning: Default ss.bin not found at ${default_ss_bin}, skipping..."
+		fi
 	fi
 }
 
