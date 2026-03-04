@@ -24,18 +24,18 @@ BASE_PATH=`echo ${MEMTOOL_PATH%/*/*}`
 
 usage()
 {
-	echo "Usages: $0 [-s SIZE] [-e ELF] [-o OUTPUT_FILENAME]"
+	echo "Usages: $0 -d OUTBIN_DIR [-s SIZE] [-e ELF] [-o OUTPUT_FILENAME]"
 	echo "This script parses the global variable which size is greater than [SIZE]"
-	echo -e "\tIf no input params are specified, below is assumed"
-	echo -e "\tSIZE : 256"
-	echo -e "\tELF : ../../build/output/bin/tinyara"
+	echo -e "\t-d OUTBIN_DIR : required"
+	echo -e "\tSIZE : 256 (default)"
+	echo -e "\tELF : \$OUTBIN_DIR/tinyara (default when -e not specified)"
 	echo -e "\tOUTPUT_FILENAME : var_list_over_SIZEbytes.txt"
 	echo "Output file info"
 	echo -e "\tSIZE : variable size(bytes)"
 	echo -e "\tTYPE : you can refer to this site <https://sourceware.org/binutils/docs/binutils/nm.html>"
 }
 
-while getopts ":hs:e:o:" arg; do
+while getopts ":hs:e:o:d:" arg; do
 	case ${arg} in
 		s)
 			REF_SIZE=`echo "${OPTARG}" | grep -E ^\-?[0-9]+$`
@@ -56,6 +56,9 @@ while getopts ":hs:e:o:" arg; do
 			;;
 		o)
 			OUTPUT_FILE=${OPTARG}
+			;;
+		d)
+			OUTBIN_DIR=${OPTARG}
 			;;
 		h)
 			usage
@@ -79,8 +82,14 @@ if [ -z ${REF_SIZE} ]; then
 	REF_SIZE=256
 fi
 
+if [ -z ${OUTBIN_DIR} ]; then
+	echo "Usage error: -d OUTBIN_DIR is required"
+	usage
+	exit 1
+fi
+
 if [ -z ${ELF} ]; then
-	ELF="${MEMTOOL_PATH}/../../build/output/bin/tinyara"
+	ELF="${OUTBIN_DIR}/tinyara"
 	if [ ! -f ${ELF} ]; then
 		echo "Unavailable Default ELF \"${ELF}\""
 		exit 1

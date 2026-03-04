@@ -144,8 +144,8 @@ endif
 # CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/interface/include
 # CFLAGS += -I$(COMPONENT_DIR)/tfm/tfm/secure_fw/include
 CFLAGS += -I$(COMPONENT_DIR)/tfm/$(tfm_firmware_dir_name)/tfm_install/interface/include
-CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/generated/interface/include
-CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/_build/
+CFLAGS += -I$(OUTBIN_DIR)/tfm_build/generated/interface/include
+CFLAGS += -I$(OUTBIN_DIR)/tfm_build/_build/
 
 # Architecture and board includes
 ifeq ($(WINTOOL),y)

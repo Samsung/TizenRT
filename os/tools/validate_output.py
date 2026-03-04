@@ -28,7 +28,10 @@ import sys
 
 os_folder = os.path.dirname(__file__) + '/..'
 tool_folder = os_folder + '/tools/'
-output_folder = os_folder + '/../build/output/bin/'
+if len(sys.argv) < 2:
+    sys.stderr.write('Usage: %s <OUTBIN_DIR>\n' % sys.argv[0])
+    sys.exit(1)
+output_folder = sys.argv[1] + '/'
 
 def check_partition_configuration():
     # Run script for checking partition configuration

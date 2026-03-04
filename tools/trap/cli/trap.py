@@ -39,7 +39,6 @@ xip_enabled = False
 # variable to check architecture family. holds true if it is armv7-r or armv8-r or armv7-a
 arch_family_v7r = False
 
-BIN_PATH = '../../../build/output/bin/'
 CONFIG_PATH = '../../../os/.config'
 MAKEFILE_PATH = '../../../os/Make.defs'
 
@@ -53,6 +52,7 @@ def usage():
 	print('\t-r, --dump_file                 RAM/FLASH dump_file along with path')
 	print('\t-t, --log_file                  Enter Logfile which contains stackdump during assert')
 	print('\t-b, --bin_path                  Enter binary folder path other than default binary')
+	print('\t-o, --output_dir                Output directory (default: ../../../build/output)')
 	print('\t-c, --config_Path               Enter configuration file path for above binary')
 	print('\t-e, --elf_path                  Enter kernel elf file name')
 	print('\t-h, --help                      Show help')
@@ -153,6 +153,7 @@ def check_path(log_file, dump_file, elf_path):
 def main():
 	global BIN_PATH
 	global CONFIG_PATH
+	BIN_PATH = None
 	dump_file = None
 	log_file = None
 	elf = None
@@ -166,7 +167,7 @@ def main():
 	global arch_family_v7r
 
 	try:
-		opts, args = GetOpt(sys.argv[1:],'r:t:b:c:e:h', ['dump_file=','log_file=','bin_path=','config_path=','elf_path=','help'])
+		opts, args = GetOpt(sys.argv[1:],'r:t:b:o:c:e:h', ['dump_file=','log_file=','bin_path=','output_dir=','config_path=','elf_path=','help'])
 	except GetoptError as e:
 		print(' ')
 		print(' ')
@@ -182,6 +183,8 @@ def main():
 		elif opt in ('-b', '--bin_path'):
 			bin_path = arg
 			BIN_PATH = bin_path
+		elif opt in ('-o', '--output_dir'):
+			BIN_PATH = arg + '/bin/'
 		elif opt in ('-c', '--config_path'):
 			config_path = arg
 			CONFIG_PATH = config_path
@@ -189,6 +192,10 @@ def main():
 			elf_path = arg
 		elif opt in ('-h', '--help'):
 			usage()
+
+	if BIN_PATH is None:
+		print('Usage error: -o/--output_dir is required')
+		usage()
 
 	elf = check_path(log_file, dump_file, elf_path)
 

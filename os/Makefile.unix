@@ -56,6 +56,7 @@ MEMSTATS =
 include $(TOPDIR)/tools/Config.mk
 -include $(TOPDIR)/Make.defs
 
+
 # Control build verbosity
 #
 #  V=1,2: Enable echo of commands
@@ -122,11 +123,14 @@ CONFIG_TOOLS_DIR = ../tools
 endif
 TOOLSDIR := ${shell if [ -r $(CONFIG_TOOLS_DIR)/Makefile ]; then echo "$(CONFIG_TOOLS_DIR)"; fi}
 
-BUILD_DIR = ../build
-OUTPUT_DIR = $(BUILD_DIR)/output
+ifeq ($(CONFIG_OUTPUT_DIR),)
+CONFIG_OUTPUT_DIR = $(TOPDIR)/../build/output
+endif
+OUTPUT_DIR := $(CONFIG_OUTPUT_DIR)
+
 LIBRARIES_DIR = $(OUTPUT_DIR)/libraries
 OUTBIN_DIR = $(OUTPUT_DIR)/bin
-LIB_DIR = ../lib
+LIB_DIR = $(TOPDIR)/../lib
 
 # Add-on directories.  These may or may not be in place in the
 # TinyAra source tree (they must be specifically installed)
@@ -387,7 +391,7 @@ context: check_context include/tinyara/config.h include/tinyara/version.h includ
 	fi
 	$(call DELFILE, $(APPDIR)/builtin/registry/*.?dat)
 	$(Q) for dir in $(CONTEXTDIRS) ; do \
-		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" context; \
+		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" OUTBIN_DIR="$(OUTBIN_DIR)" context; \
 	done
 
 # clean_context
@@ -449,7 +453,7 @@ pass1deps: pass1dep $(USERLIBS)
 pass1: pass1deps
 ifeq ($(CONFIG_BUILD_2PASS),y)
 ifeq ($(CONFIG_ELF),y)
-	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
+	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" OUTBIN_DIR="$(OUTBIN_DIR)" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 endif
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 ifeq ($(CONFIG_ELF),y)
@@ -458,12 +462,12 @@ else
 	$(Q) $(TOPDIR)/tools/mkldscript.py
 	$(Q) $(CC) -c $(CFLAGS) -D__COMMON_BINARY__ $(TOPDIR)/userspace/up_userspace.c -o  $(TOPDIR)/userspace/up_userspace_common.o
 ifneq ($(CONFIG_XIP_ELF_WARCHIVE), y)
-	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" undefsym KERNEL=n
+	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" OUTBIN_DIR="$(OUTBIN_DIR)" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" undefsym KERNEL=n
 	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt) -Map $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).map
 else
 	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --whole-archive $(USERLIBS) --no-whole-archive --start-group $(LIBGCC) $(LIBSUPXX) --end-group
 endif
-	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
+	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" OUTBIN_DIR="$(OUTBIN_DIR)" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 endif
 endif
 endif
@@ -563,7 +567,7 @@ ifeq ($(CONFIG_BINARY_SIGNING),y)
 endif
 endif
 ifeq ($(CONFIG_RESOURCE_FS),y)
-	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../resource ../build/output/bin/resourcefs.img
+	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../resource $(OUTBIN_DIR)/resourcefs.img
 	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/resourcefs.img resource
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/resourcefs.img
 endif
@@ -579,7 +583,7 @@ ifeq ($(CONFIG_USE_BP),y)
 endif
 
 ifeq ($(CONFIG_FLASH_PARTITION),y)
-	$(Q) python ./tools/validate_output.py
+	$(Q) python ./tools/validate_output.py "$(OUTBIN_DIR)"
 endif
 
 ifeq ($(CONFIG_GENERATE_FS_IMAGE),y)
@@ -735,8 +739,8 @@ subdir_distclean:
 
 memstat:
 ifneq ($(MEMSTATS),)
-	$(Q) python ./tools/memstats_$(MEMSTATS).py -l -f ../build/output/bin/tinyara.map
-	$(Q) python ./tools/memstats_$(MEMSTATS).py -a -f ../build/output/bin/tinyara.map -o ../build/output/bin/tinyara_memstats.txt
+	$(Q) python ./tools/memstats_$(MEMSTATS).py -l -f $(OUTBIN_DIR)/tinyara.map
+	$(Q) python ./tools/memstats_$(MEMSTATS).py -a -f $(OUTBIN_DIR)/tinyara.map -o $(OUTBIN_DIR)/tinyara_memstats.txt
 endif
 
 distclean: clean subdir_distclean clean_context
@@ -801,7 +805,7 @@ endif
 
 romfs:
 ifeq ($(CONFIG_FS_ROMFS),y)
-	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../tools/fs/contents-romfs ../build/output/bin/romfs.img
+	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../tools/fs/contents-romfs $(OUTBIN_DIR)/romfs.img
 endif
 
 # tools/compression/mkcompresstool.sh
@@ -821,4 +825,4 @@ endif
 # Contents need to be placed in $(TOPDIR)/../tools/fs/contents-smartfs/$BOARDNAME/base-files folder
 smartfs: include/tinyara/config.h
 	$(Q) ./../tools/nxfuse/mknxfuse.sh
-	$(Q) ./../tools/nxfuse/mksmartfsimg.sh
+	$(Q) ./../tools/nxfuse/mksmartfsimg.sh "$(OUTBIN_DIR)"

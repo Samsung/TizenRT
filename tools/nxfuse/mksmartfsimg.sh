@@ -28,7 +28,11 @@ BASE_DIR=$NXFUSE_TOOL_PATH/../..
 
 BOARDNAME=$CONFIG_ARCH_BOARD
 POSTFIX=_smartfs.bin
-BINDIR=$BASE_DIR/build/output/bin
+if [ -z "$1" ]; then
+	echo "Usage: $0 <OUTBIN_DIR>"
+	exit 1
+fi
+OUTBIN_DIR=$1
 BINNAME=$BOARDNAME$POSTFIX
 CONTENTSDIR=$BASE_DIR/tools/fs/contents-smartfs
 NXFUSEDIR=$NXFUSE_TOOL_PATH
@@ -69,14 +73,14 @@ fi
 
 echo "make a dummy"
 #Make a dummy .bin file
-touch $BINDIR/$BINNAME
+touch $OUTBIN_DIR/$BINNAME
 
 echo "make image file"
 # Making image file
 if [ "${CONFIG_SMARTFS_ERASEDSTATE}" == 0xff ]; then
-	dd if=/dev/zero bs=$blksize count=$blkcount | tr "\000" "\377" > $BINDIR/$BINNAME
+	dd if=/dev/zero bs=$blksize count=$blkcount | tr "\000" "\377" > $OUTBIN_DIR/$BINNAME
 else
-	dd if=/dev/zero of=$BINDIR/$BINNAME bs=$blksize count=$blkcount
+	dd if=/dev/zero of=$OUTBIN_DIR/$BINNAME bs=$blksize count=$blkcount
 fi
 
 echo "copy the nxfuse"
@@ -86,11 +90,11 @@ cp $NXFUSEDIR/nxfuse .
 
 echo "Now format image"
 # Formatting
-./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs -m $BINDIR/$BINNAME || exit 1
+./nxfuse -p $pagesize -e $erasesize -l $blksize -t smartfs -m $OUTBIN_DIR/$BINNAME || exit 1
 
 echo "mount binary"
 # Mounting mnt
-./nxfuse -o nonempty -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt $BINDIR/$BINNAME || exit 1
+./nxfuse -o nonempty -p $pagesize -e $erasesize -l $blksize -t smartfs $CONTENTSDIR/$BOARDNAME/mnt $OUTBIN_DIR/$BINNAME || exit 1
 
 echo "Copy files"
 # Copying files to smartfs file system

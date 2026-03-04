@@ -21,7 +21,9 @@
 OSDIR=`test -d ${0%/*} && cd ${0%/*}; pwd`
 CONFIGFILE="${OSDIR}/.config"
 TOPDIR="${OSDIR}/.."
-BINDIR="${TOPDIR}/build/output/bin"
+# Same layout as dbuild.sh: build/output
+OUTPUT_DIR="${TOPDIR}/build/output"
+OUTBIN_DIR="${OUTPUT_DIR}/bin"
 TRAPDIR="${TOPDIR}/tools/trap"
 DOCKER_IMAGE=
 DOCKER_PUBLIC_IMAGE="tizenrt/tizenrt"
@@ -118,8 +120,8 @@ function TRAP_MENU()
 	read SELECT_BIN
 	case ${SELECT_BIN,,} in
 		1|default)
-			if [ -z "$(ls -A $BINDIR)" ]; then
-				echo "No output file in $BINDIR, Build the code and run TRAP again."
+			if [ -z "$(ls -A $OUTBIN_DIR)" ]; then
+				echo "No output file in $OUTBIN_DIR, Build the code and run TRAP again."
 				return
 			fi
 			echo "Enter the crash log file name relative to os folder: (ex: ../tools/trap/testlogs)"
@@ -133,7 +135,7 @@ function TRAP_MENU()
 		2|manual)
 			echo "Enter the following wrt os directory"
 			echo ""
-			echo "Enter the binary folder name: (ex: ../../build/output/bin/)"
+			echo "Enter the binary folder name: (ex:  ../../build/output/bin/)"
 			read EXT_BIN_DIR
 			if [ -z "$(ls -A $EXT_BIN_DIR)" ]; then
 				echo "$EXT_BIN_DIR Folder does not exit, try again"
@@ -175,7 +177,7 @@ function TOOLCHAIN_MENU()
 	read SELECT_BIN
 	case ${SELECT_BIN,,} in
 		1|default)
-			TL_BIN=../build/output/bin/
+			TL_BIN=${OUTBIN_DIR}/
 			if [ -z "$(ls -A $TL_BIN)" ]; then
 				echo "No output file in $TL_BIN, Build the code and run Toolchain command again."
 				return
@@ -337,7 +339,8 @@ function TOOLCHAIN()
 
 function TRAP_RUN()
 {
-	TRAPCMD="trap.py -t /root/tizenrt/os/$2"
+	DOCKER_OUTPUT_DIR="/root/tizenrt/${OUTPUT_DIR#$TOPDIR/}"
+	TRAPCMD="trap.py -t /root/tizenrt/os/$2 -o ${DOCKER_OUTPUT_DIR}"
 
 	if [ ! -z "$3" ]; then
 		# Append the binary path

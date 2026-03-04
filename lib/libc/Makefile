@@ -138,7 +138,7 @@ $(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
 ifeq ($(CONFIG_LIBC_DOWNLOAD_ZONEINFO),y)
-	$(Q) $(MAKE) -C zoneinfo all TOPDIR=$(TOPDIR)
+	$(Q) $(MAKE) -C zoneinfo all TOPDIR=$(TOPDIR) OUTBIN_DIR="$(OUTBIN_DIR)"
 endif
 
 # C library for the user phase of the two-pass kernel build
@@ -159,7 +159,7 @@ endif
 
 context:
 ifeq ($(CONFIG_LIBC_DOWNLOAD_ZONEINFO),y)
-	$(Q) $(MAKE) -C zoneinfo context TOPDIR=$(TOPDIR)
+	$(Q) $(MAKE) -C zoneinfo context TOPDIR=$(TOPDIR) OUTBIN_DIR="$(OUTBIN_DIR)"
 endif
 
 
