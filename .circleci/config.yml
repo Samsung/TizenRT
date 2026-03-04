@@ -222,48 +222,48 @@ jobs:
       - *docker-cp
       - *build-job
 
-  bk7239n_hello_mp:
+  bk7239n_hello:
     machine:
       image: default
     working_directory: ~/TizenRT
     environment:
-      CONFIG_PATH: bk7239n/hello_mp
+      CONFIG_PATH: bk7239n/hello
     steps:
       - attach_workspace:
           at: ~/TizenRT
       - *docker-cp
       - *build-job
 
-  bk7239n_loadable_apps_mp:
+  bk7239n_loadable_apps:
     machine:
       image: default
     working_directory: ~/TizenRT
     environment:
-      CONFIG_PATH: bk7239n/loadable_apps_mp
+      CONFIG_PATH: bk7239n/loadable_apps
     steps:
       - attach_workspace:
           at: ~/TizenRT
       - *docker-cp
       - *build-job
 
-  bk7239n_xip_all_mp:
+  bk7239n_xip_all:
     machine:
       image: default
     working_directory: ~/TizenRT
     environment:
-      CONFIG_PATH: bk7239n/xip_all_mp
+      CONFIG_PATH: bk7239n/xip_all
     steps:
       - attach_workspace:
           at: ~/TizenRT
       - *docker-cp
       - *build-job
 
-  bk7239n_loadable_all_mp:
+  bk7239n_loadable_all:
     machine:
       image: default
     working_directory: ~/TizenRT
     environment:
-      CONFIG_PATH: bk7239n/loadable_all_mp
+      CONFIG_PATH: bk7239n/loadable_all
     steps:
       - attach_workspace:
           at: ~/TizenRT
@@ -320,15 +320,15 @@ workflows:
       - rtl8730e_loadable_ext_psram:
           requires:
             - checkout_code
-      - bk7239n_hello_mp:
+      - bk7239n_hello:
           requires:
             - checkout_code
-      - bk7239n_loadable_apps_mp:
+      - bk7239n_loadable_apps:
           requires:
             - checkout_code
-      - bk7239n_xip_all_mp:
+      - bk7239n_xip_all:
           requires:
             - checkout_code
-      - bk7239n_loadable_all_mp:
+      - bk7239n_loadable_all:
           requires:
             - checkout_code
