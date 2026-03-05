@@ -17,8 +17,24 @@
 #
 ###########################################################################
 
+############################################################################
+#
 # This script checks if the each partitions are large enough to accommodate their respective binaries.
 # It gets the partition size and binary size and check if the binary sizes are smaller than their respective partition sizes.
+#
+# Usage:
+#   python check_package_size.py [bin_type_or_name]
+#
+# bin_type_or_name: kernel, app1, app2, common, resource, all, or binary name from config (default: all)
+#
+# Examples:
+#   python check_package_size.py kernel         # Check only kernel binary size
+#   python check_package_size.py app1           # Check only app1 binary size
+#   python check_package_size.py myapp          # If myapp matches CONFIG_APP1_BIN_NAME
+#   python check_package_size.py all            # Check all binary sizes (legacy behavior)
+#   python check_package_size.py                # Same as 'all'
+#
+############################################################################
 
 import os
 import sys
@@ -35,19 +51,13 @@ output_file_name = output_folder + '/tinyara_binarysize.txt'
 INTERNAL_FLASH = 0
 EXTERNAL_FLASH = 1
 
-CONFIG_APP_BINARY_SEPARATION = util.get_value_from_file(cfg_file, "CONFIG_APP_BINARY_SEPARATION=").rstrip('\n')
-CONFIG_SUPPORT_COMMON_BINARY = util.get_value_from_file(cfg_file, "CONFIG_SUPPORT_COMMON_BINARY=").rstrip('\n')
-CONFIG_RESOURCE_FS = util.get_value_from_file(cfg_file, "CONFIG_RESOURCE_FS=").rstrip('\n')
-
-INTERNAL_PARTITION_NAME_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_NAME=")
-INTERNAL_PARTITION_SIZE_LIST = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_SIZE=")
-
-CONFIG_SECOND_FLASH_PARTITION = util.get_value_from_file(cfg_file, "CONFIG_SECOND_FLASH_PARTITION=").rstrip('\n')
-SECOND_PARTITION_NAME_LIST = util.get_value_from_file(cfg_file, "CONFIG_SECOND_FLASH_PART_NAME=")
-SECOND_PARTITION_SIZE_LIST = util.get_value_from_file(cfg_file, "CONFIG_SECOND_FLASH_PART_SIZE=")
-
-FAIL_TO_BUILD = False
 WARNING_RATIO = 95
+
+def get_config_value(key) :
+    return util.get_value_from_file(cfg_file, key).rstrip('\n')
+
+def get_config_bin_name(config_key) :
+    return util.get_value_from_file(cfg_file, config_key).replace('"', '').rstrip("\n")
 
 def number_with_comma_align(number):
     return ("{:10,}".format(number))
@@ -55,61 +65,20 @@ def number_with_comma_align(number):
 def number_with_comma(number):
     return ("{:,}".format(number))
 
-def validate_binary_size(bin_type, part_size):
-    outfile = open(output_file_name, 'w')
-
-    # Read the binary name from .bininfo
-    bin_name = util.get_binname_from_bininfo(bin_type)
-    if bin_name == 'None' :
-        return
-    output_path = build_folder + '/output/bin/' + bin_name
-
-    # Get the partition and binary size
-    BINARY_SIZE=os.path.getsize(output_path)
-    PARTITION_SIZE = part_size
-    used_ratio = 0
-
-    # Calculate the used ratio
-    if PARTITION_SIZE != 0 :
-        used_ratio = round(float(BINARY_SIZE) / float(PARTITION_SIZE) * 100, 2)
-
-    # Calculate the used ratio
-    if PARTITION_SIZE != 0 :
-        used_ratio = round(float(BINARY_SIZE) / float(PARTITION_SIZE) * 100, 2)
-
-    # Compare the partition size and its binary size
-    if PARTITION_SIZE < int(BINARY_SIZE) :
-        fail_type_list.append(bin_type)
-        os.remove(output_path)
-        global FAIL_TO_BUILD
-        FAIL_TO_BUILD = True
-        check_result = "FAIL"
-        result_mark = ""
-    elif used_ratio > WARNING_RATIO :
-        check_result = "WARNING"
-        result_mark = ":warning:"
+def get_partition_lists(flash_type) :
+    if flash_type == INTERNAL_FLASH :
+        name_list = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_NAME=")
+        size_list = util.get_value_from_file(cfg_file, "CONFIG_FLASH_PART_SIZE=")
     else :
-        check_result = "PASS"
-        result_mark = ":heavy_check_mark:"
-
-    # Print each information
-    print(" {:10}".format(bin_type) + " " + number_with_comma_align(BINARY_SIZE) + " bytes   " +
-            number_with_comma_align(PARTITION_SIZE) + " bytes    " + "{:6}".format(used_ratio) + "%    " + check_result)
-    # File print each information
-    outfile.write(bin_type + " | " + number_with_comma(BINARY_SIZE) + " bytes | " +
-        number_with_comma(PARTITION_SIZE) + " bytes | " + str(used_ratio)+"%" + " | " + result_mark + check_result + "\n")
-    outfile.close()
+        name_list = util.get_value_from_file(cfg_file, "CONFIG_SECOND_FLASH_PART_NAME=")
+        size_list = util.get_value_from_file(cfg_file, "CONFIG_SECOND_FLASH_PART_SIZE=")
+    return name_list, size_list
 
 def check_part_size(flash_type, bin_type):
-    if flash_type == INTERNAL_FLASH :
-        PARTITION_NAME_LIST = INTERNAL_PARTITION_NAME_LIST
-        PARTITION_SIZE_LIST = INTERNAL_PARTITION_SIZE_LIST
-    else :
-        PARTITION_NAME_LIST = SECOND_PARTITION_NAME_LIST
-        PARTITION_SIZE_LIST = SECOND_PARTITION_SIZE_LIST
+    PARTITION_NAME_LIST, PARTITION_SIZE_LIST = get_partition_lists(flash_type)
 
     if PARTITION_SIZE_LIST == 'None' :
-        sys.exit(0)
+        return 0
 
     NAME_LIST = PARTITION_NAME_LIST.replace('"','').split(",")
     SIZE_LIST = PARTITION_SIZE_LIST.replace('"','').split(",")
@@ -122,39 +91,175 @@ def check_part_size(flash_type, bin_type):
         PART_IDX += 1
     return 0
 
-def check_binary_size(bin_name):
-    part_size = check_part_size(INTERNAL_FLASH, bin_name)
-    if part_size == 0 and CONFIG_SECOND_FLASH_PARTITION == "y" :
-        part_size = check_part_size(EXTERNAL_FLASH, bin_name)
+def get_part_size(bin_type) :
+    part_size = check_part_size(INTERNAL_FLASH, bin_type)
+    if part_size == 0 and get_config_value("CONFIG_SECOND_FLASH_PARTITION=") == "y" :
+        part_size = check_part_size(EXTERNAL_FLASH, bin_type)
+    return part_size
 
-    validate_binary_size(bin_name, part_size)
+def validate_binary_size(bin_type, part_size, append_mode=False):
+    bin_name = util.get_binname_from_bininfo(bin_type)
+    if bin_name == 'None' :
+        return True
 
-# Check if the binary size is smaller than its partition size
-print("\n========== Size Verification of built Binaries ==========")
-print("Type        Binary Size     Partition Size      used(%)")
+    output_path = build_folder + '/output/bin/' + bin_name
+    if not os.path.isfile(output_path) :
+        print(" {:10}".format(bin_type) + " Binary not found: " + bin_name)
+        return True
 
-# File print init
-outfile = open(output_file_name, 'w')
-outfile.write("========== Size Verification of built Binaries ==========\n")
-outfile.write("Type | Binary Size | Partition Size | used(%) | result\n")
-outfile.write("-- | -- | -- | -- | --\n")
-outfile.close()
+    BINARY_SIZE = os.path.getsize(output_path)
+    PARTITION_SIZE = part_size
+    used_ratio = 0
 
-fail_type_list = []
-check_binary_size("KERNEL")
-if CONFIG_APP_BINARY_SEPARATION == "y" :
-    check_binary_size("APP1")
-    check_binary_size("APP2")
-    if CONFIG_SUPPORT_COMMON_BINARY == "y" :
-        check_binary_size("COMMON")
-if CONFIG_RESOURCE_FS == "y" :
-    check_binary_size("RESOURCE")
+    if PARTITION_SIZE != 0 :
+        used_ratio = round(float(BINARY_SIZE) / float(PARTITION_SIZE) * 100, 2)
 
-if FAIL_TO_BUILD == True :
-    # Stop to build, because there is mismatched size problem.
-    print("!!!!!!!! ERROR !!!!!!!")
-    for fail_type in fail_type_list :
-        print("=> " + fail_type + " Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
-    sys.exit(1)
-else :
-    print("=> Size verification SUCCESS!! The size of all binaries are OK.\n")
+    fail_to_build = False
+    if PARTITION_SIZE < int(BINARY_SIZE) :
+        os.remove(output_path)
+        fail_to_build = True
+        check_result = "FAIL"
+        result_mark = ""
+    elif used_ratio > WARNING_RATIO :
+        check_result = "WARNING"
+        result_mark = ":warning:"
+    else :
+        check_result = "PASS"
+        result_mark = ":heavy_check_mark:"
+
+    print(" {:10}".format(bin_type) + " " + number_with_comma_align(BINARY_SIZE) + " bytes   " +
+            number_with_comma_align(PARTITION_SIZE) + " bytes    " + "{:6}".format(used_ratio) + "%    " + check_result)
+
+    file_mode = 'a' if append_mode else 'w'
+    with open(output_file_name, file_mode) as outfile :
+        outfile.write(bin_type + " | " + number_with_comma(BINARY_SIZE) + " bytes | " +
+            number_with_comma(PARTITION_SIZE) + " bytes | " + str(used_ratio)+"%" + " | " + result_mark + check_result + "\n")
+
+    return not fail_to_build
+
+def print_header() :
+    print("\n========== Size Verification of built Binaries ==========")
+    print("Type        Binary Size     Partition Size      used(%)")
+
+def init_output_file() :
+    with open(output_file_name, 'w') as outfile :
+        outfile.write("========== Size Verification of built Binaries ==========\n")
+        outfile.write("Type | Binary Size | Partition Size | used(%) | result\n")
+        outfile.write("-- | -- | -- | -- | --\n")
+
+def check_kernel() :
+    print_header()
+    part_size = get_part_size("KERNEL")
+    success = validate_binary_size("KERNEL", part_size, append_mode=True)
+    if not success :
+        print("!!!!!!!! ERROR !!!!!!!")
+        print("=> KERNEL Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
+        sys.exit(1)
+    print("=> Size verification SUCCESS!! The size of KERNEL binary is OK.\n")
+
+def check_app1() :
+    if get_config_value("CONFIG_APP1_INFO=") != "y" :
+        return
+    print_header()
+    part_size = get_part_size("APP1")
+    success = validate_binary_size("APP1", part_size, append_mode=True)
+    if not success :
+        print("!!!!!!!! ERROR !!!!!!!")
+        print("=> APP1 Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
+        sys.exit(1)
+    print("=> Size verification SUCCESS!! The size of APP1 binary is OK.\n")
+
+def check_app2() :
+    if get_config_value("CONFIG_APP2_INFO=") != "y" :
+        return
+    print_header()
+    part_size = get_part_size("APP2")
+    success = validate_binary_size("APP2", part_size, append_mode=True)
+    if not success :
+        print("!!!!!!!! ERROR !!!!!!!")
+        print("=> APP2 Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
+        sys.exit(1)
+    print("=> Size verification SUCCESS!! The size of APP2 binary is OK.\n")
+
+def check_common() :
+    if get_config_value("CONFIG_SUPPORT_COMMON_BINARY=") != "y" :
+        return
+    print_header()
+    part_size = get_part_size("COMMON")
+    success = validate_binary_size("COMMON", part_size, append_mode=True)
+    if not success :
+        print("!!!!!!!! ERROR !!!!!!!")
+        print("=> COMMON Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
+        sys.exit(1)
+    print("=> Size verification SUCCESS!! The size of COMMON binary is OK.\n")
+
+def check_resource() :
+    if get_config_value("CONFIG_RESOURCE_FS=") != "y" :
+        return
+    print_header()
+    part_size = get_part_size("RESOURCE")
+    success = validate_binary_size("RESOURCE", part_size, append_mode=True)
+    if not success :
+        print("!!!!!!!! ERROR !!!!!!!")
+        print("=> RESOURCE Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
+        sys.exit(1)
+    print("=> Size verification SUCCESS!! The size of RESOURCE binary is OK.\n")
+
+def check_all() :
+    init_output_file()
+    print_header()
+
+    fail_type_list = []
+
+    part_size = get_part_size("KERNEL")
+    if not validate_binary_size("KERNEL", part_size, append_mode=True) :
+        fail_type_list.append("KERNEL")
+
+    if get_config_value("CONFIG_APP_BINARY_SEPARATION=") == "y" :
+        if get_config_value("CONFIG_APP1_INFO=") == "y" :
+            part_size = get_part_size("APP1")
+            if not validate_binary_size("APP1", part_size, append_mode=True) :
+                fail_type_list.append("APP1")
+
+        if get_config_value("CONFIG_APP2_INFO=") == "y" :
+            part_size = get_part_size("APP2")
+            if not validate_binary_size("APP2", part_size, append_mode=True) :
+                fail_type_list.append("APP2")
+
+        if get_config_value("CONFIG_SUPPORT_COMMON_BINARY=") == "y" :
+            part_size = get_part_size("COMMON")
+            if not validate_binary_size("COMMON", part_size, append_mode=True) :
+                fail_type_list.append("COMMON")
+
+    if get_config_value("CONFIG_RESOURCE_FS=") == "y" :
+        part_size = get_part_size("RESOURCE")
+        if not validate_binary_size("RESOURCE", part_size, append_mode=True) :
+            fail_type_list.append("RESOURCE")
+
+    if len(fail_type_list) > 0 :
+        print("!!!!!!!! ERROR !!!!!!!")
+        for fail_type in fail_type_list :
+            print("=> " + fail_type + " Binary will be deleted. Need to re-configure the partition using menuconfig and to re-build.")
+        sys.exit(1)
+    else :
+        print("=> Size verification SUCCESS!! The size of all binaries are OK.\n")
+
+if __name__ == "__main__" :
+    arg = sys.argv[1] if len(sys.argv) > 1 else "all"
+
+    if arg == "kernel" :
+        check_kernel()
+    elif arg == "app1" or arg == get_config_bin_name("CONFIG_APP1_BIN_NAME=") :
+        check_app1()
+    elif arg == "app2" or arg == get_config_bin_name("CONFIG_APP2_BIN_NAME=") :
+        check_app2()
+    elif arg == "common" or arg == get_config_bin_name("CONFIG_COMMON_BINARY_NAME=") :
+        check_common()
+    elif arg == "resource" :
+        check_resource()
+    elif arg == "all" :
+        check_all()
+    else :
+        print("Unknown argument: " + arg)
+        print("Usage: python check_package_size.py [kernel|app1|app2|common|resource|all|<binary_name>]")
+        sys.exit(1)

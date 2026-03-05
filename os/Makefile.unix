@@ -525,6 +525,9 @@ define PREPARE_APP
 	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/$1 $2 $3 $1 $4 $5 $6 $7 $8
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/$1
 	$(Q) cp $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/user
+	$(Q) python $(TOPDIR)/tools/set_bininfo.py $1
+	$(Q) python $(TOPDIR)/tools/convert_binary.py $1
+	$(Q) python $(TOPDIR)/tools/check_package_size.py $1
 endef
 endif
 
@@ -538,6 +541,9 @@ define PREPARE_APP
         $(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/$1 $2 $3 $1 $4 $5 $6 $7 $8
         $(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/$1
         $(Q) cp $(OUTBIN_DIR)/$1 $(OUTBIN_DIR)/user
+        $(Q) python $(TOPDIR)/tools/set_bininfo.py $1
+        $(Q) python $(TOPDIR)/tools/convert_binary.py $1
+        $(Q) python $(TOPDIR)/tools/check_package_size.py $1
 endef
 endif
 
@@ -570,13 +576,17 @@ ifeq ($(CONFIG_RESOURCE_FS),y)
 	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../resource $(OUTBIN_DIR)/resourcefs.img
 	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/resourcefs.img resource
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/resourcefs.img
+	$(Q) python ./tools/set_bininfo.py resource
+	$(Q) python ./tools/convert_binary.py resource
+	$(Q) python ./tools/check_package_size.py resource
 endif
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXT))
 
-	$(Q) python ./tools/set_bininfo.py
-	$(Q) python ./tools/convert_binary.py "$(BIN_EXT)" "$(OBJCOPY)" "$(OBJCOPYARGS)" "$(KERNEL_START)"
+	$(Q) python ./tools/set_bininfo.py kernel
+	$(Q) python ./tools/convert_binary.py kernel "$(BIN_EXT)" "$(OBJCOPY)" "$(OBJCOPYARGS)" "$(KERNEL_START)"
+	$(Q) python ./tools/check_package_size.py kernel
 
 ifeq ($(CONFIG_USE_BP),y)
 	$(Q) $(call MAKE_BOOTPARAM)
