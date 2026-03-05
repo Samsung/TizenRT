@@ -235,7 +235,7 @@ BIN = $(OUTBIN_DIR)/$(BIN_EXE)
 memstat: $(BIN) romfs
 
 all: memstat
-.PHONY: context clean_context check_context config oldconfig menuconfig nconfig qconfig gconfig export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build applist appupdate smartfs
+.PHONY: context clean_context check_context config oldconfig menuconfig nconfig qconfig gconfig export subdir_clean clean subdir_distclean distclean apps_clean apps_distclean force_build applist appupdate smartfs post post1 post2 post3
 
 # Target used to copy include/tinyara/math.h.  If CONFIG_ARCH_MATH_H is
 # defined, then there is an architecture specific math.h header file
@@ -547,7 +547,8 @@ define PREPARE_APP
 endef
 endif
 
-post:
+# post1: Build user binaries (app1, app2, common)
+post1:
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 	$(Q) mkdir -p $(OUTBIN_DIR)/user
 ifneq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
@@ -572,14 +573,9 @@ ifeq ($(CONFIG_BINARY_SIGNING),y)
 	$(Q) $(call MAKE_USER_SIGNING)
 endif
 endif
-ifeq ($(CONFIG_RESOURCE_FS),y)
-	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../resource $(OUTBIN_DIR)/resourcefs.img
-	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/resourcefs.img resource
-	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/resourcefs.img
-	$(Q) python ./tools/set_bininfo.py resource
-	$(Q) python ./tools/convert_binary.py resource
-	$(Q) python ./tools/check_package_size.py resource
-endif
+
+# post2: Build kernel binary and related outputs
+post2:
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXT))
@@ -596,17 +592,6 @@ ifeq ($(CONFIG_FLASH_PARTITION),y)
 	$(Q) python ./tools/validate_output.py "$(OUTBIN_DIR)"
 endif
 
-ifeq ($(CONFIG_GENERATE_FS_IMAGE),y)
-ifneq ($(findstring "smartfs",$(CONFIG_FLASH_PART_TYPE)), "smartfs")
-	$(Q) if [ ! -d "$(TOPDIR)/../tools/fs/contents-smartfs" ]; then \
-		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs"; \
-		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)"; \
-		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files"; \
-	fi; \
-	$(MAKE) smartfs
-endif
-endif
-
 ifeq ($(CONFIG_UBOOT_UIMAGE),y)
 	@echo "MKIMAGE: uImage"
 	$(Q) mkimage -A arm -O linux -C none -T kernel -a $(CONFIG_UIMAGE_LOAD_ADDRESS) \
@@ -621,6 +606,27 @@ else
 	$(call DELFILE, ${TOOLSDIR}/fs/contents-romfs/System.map)
 endif
 
+# post3: Build filesystem images (resource, smartfs)
+post3:
+ifeq ($(CONFIG_RESOURCE_FS),y)
+	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../resource $(OUTBIN_DIR)/resourcefs.img
+	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/resourcefs.img resource
+	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/resourcefs.img
+	$(Q) python ./tools/set_bininfo.py resource
+	$(Q) python ./tools/convert_binary.py resource
+	$(Q) python ./tools/check_package_size.py resource
+endif
+ifeq ($(CONFIG_GENERATE_FS_IMAGE),y)
+ifneq ($(findstring "smartfs",$(CONFIG_FLASH_PART_TYPE)), "smartfs")
+	$(Q) if [ ! -d "$(TOPDIR)/../tools/fs/contents-smartfs" ]; then \
+		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs"; \
+		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)"; \
+		mkdir -p "$(TOPDIR)/../tools/fs/contents-smartfs/$(CONFIG_ARCH_BOARD)/base-files"; \
+	fi; \
+	$(MAKE) smartfs
+endif
+endif
+
 # $(BIN)
 #
 # Create the final TinyAra executable in a two pass build process.  In the
@@ -628,8 +634,12 @@ endif
 # and pass2 targets are built.  However, in some cases, you may need to build
 # pass1 dependencies and pass1 first, then build pass2 dependencies and pass2.
 # in that case, execute 'make pass1 pass2' from the command line.
+# post: Run all post-build steps
+#   post1 - Build user binaries (app1, app2, common)
+#   post2 - Build kernel binary and related outputs (bootparam, uImage, etc.)
+#   post3 - Build filesystem images (resource, smartfs)
 
-$(BIN): pass1deps pass2deps pass1 pass2 post
+$(BIN): pass1deps pass2deps pass1 pass2 post1 post2 post3
 
 # download
 #
