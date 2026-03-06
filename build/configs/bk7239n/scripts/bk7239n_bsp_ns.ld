@@ -271,6 +271,57 @@ SECTIONS
 
     _eronly = ABSOLUTE(.);
 
+    .psram_data :
+    {
+        . = ALIGN(8);
+        PROVIDE(__psram_data_text = LOADADDR(.psram_data));
+        __psram_data_start__ = .;
+        *(.psram.data)
+        *(.psram.data*)
+        /* Move initialized data into PSRAM first.
+         * Keep board, armino_serial, and lwIP-related net data in SRAM.
+         */
+        EXCLUDE_FILE(
+            *board/bk7239n/*
+            *libboard.a:*
+            *libkarch.a:armino_serial.o*
+            *libnet.a:*lwip*.o*
+            *libnet.a:def.o*
+            *libnet.a:netif.o*
+            *libnet.a:ip.o*
+            *libnet.a:pbuf.o*
+            *libnet.a:raw.o*
+            *libnet.a:tcp*.o*
+            *libnet.a:udp.o*
+            *libnet.a:inet_chksum.o*
+            *libnet.a:netifapi.o*
+            *libnet.a:sockets.o*
+            *libnet.a:ethernet.o*
+            *libnet.a:etharp.o*
+            *libnet.a:icmp*.o*
+            *libnet.a:igmp.o*
+            *libnet.a:ip4*.o*
+            *libnet.a:ip6*.o*
+            *libnet.a:ethip6.o*
+            *libnet.a:nd6.o*
+            *libnet.a:mld6.o*
+            *libnet.a:sys_arch.o*
+            *libnet.a:mem*.o*
+            *libnet.a:dns.o*
+            *libnet.a:timeouts.o*
+            *libnet.a:stats.o*
+            *libnet.a:api_*.o*
+            *libnet.a:err.o*
+            *libnet.a:netbuf.o*
+            *libnet.a:init.o*
+            *libnet.a:netdb.o*
+            *libnet.a:dhcp*.o*
+        ) *(.data .data.* .sdata .gnu.linkonce.d*)
+
+        . = ALIGN(4);
+        __psram_data_end__ = .;
+    } > PSRAM_DATA AT > FLASH
+
     .data :
     {
         . = ALIGN(4);
@@ -319,13 +370,99 @@ SECTIONS
         . += REBOOT_TAG_AREA_SIZE;
     } > RAM
 
+    .psram_bss (NOLOAD):
+    {
+        . = ALIGN(8);
+        __psram_bss_start__ = .;
+        *(.psram.bss)
+        *(.psram.bss*)
+        /* Move zero-init data into PSRAM first.
+         * Keep board, armino_serial, and lwIP-related net bss/common in SRAM.
+         */
+        EXCLUDE_FILE(
+            *board/bk7239n/*
+            *libboard.a:*
+            *libkarch.a:armino_serial.o*
+            *libnet.a:*lwip*.o*
+            *libnet.a:def.o*
+            *libnet.a:netif.o*
+            *libnet.a:ip.o*
+            *libnet.a:pbuf.o*
+            *libnet.a:raw.o*
+            *libnet.a:tcp*.o*
+            *libnet.a:udp.o*
+            *libnet.a:inet_chksum.o*
+            *libnet.a:netifapi.o*
+            *libnet.a:sockets.o*
+            *libnet.a:ethernet.o*
+            *libnet.a:etharp.o*
+            *libnet.a:icmp*.o*
+            *libnet.a:igmp.o*
+            *libnet.a:ip4*.o*
+            *libnet.a:ip6*.o*
+            *libnet.a:ethip6.o*
+            *libnet.a:nd6.o*
+            *libnet.a:mld6.o*
+            *libnet.a:sys_arch.o*
+            *libnet.a:mem*.o*
+            *libnet.a:dns.o*
+            *libnet.a:timeouts.o*
+            *libnet.a:stats.o*
+            *libnet.a:api_*.o*
+            *libnet.a:err.o*
+            *libnet.a:netbuf.o*
+            *libnet.a:init.o*
+            *libnet.a:netdb.o*
+            *libnet.a:dhcp*.o*
+        ) *(.bss .bss.*)
+        EXCLUDE_FILE(
+            *board/bk7239n/*
+            *libboard.a:*
+            *libkarch.a:armino_serial.o*
+            *libnet.a:*lwip*.o*
+            *libnet.a:def.o*
+            *libnet.a:netif.o*
+            *libnet.a:ip.o*
+            *libnet.a:pbuf.o*
+            *libnet.a:raw.o*
+            *libnet.a:tcp*.o*
+            *libnet.a:udp.o*
+            *libnet.a:inet_chksum.o*
+            *libnet.a:netifapi.o*
+            *libnet.a:sockets.o*
+            *libnet.a:ethernet.o*
+            *libnet.a:etharp.o*
+            *libnet.a:icmp*.o*
+            *libnet.a:igmp.o*
+            *libnet.a:ip4*.o*
+            *libnet.a:ip6*.o*
+            *libnet.a:ethip6.o*
+            *libnet.a:nd6.o*
+            *libnet.a:mld6.o*
+            *libnet.a:sys_arch.o*
+            *libnet.a:mem*.o*
+            *libnet.a:dns.o*
+            *libnet.a:timeouts.o*
+            *libnet.a:stats.o*
+            *libnet.a:api_*.o*
+            *libnet.a:err.o*
+            *libnet.a:netbuf.o*
+            *libnet.a:init.o*
+            *libnet.a:netdb.o*
+            *libnet.a:dhcp*.o*
+        ) *(COMMON)
+
+        . = ALIGN(4);
+        __psram_bss_end__ = .;
+    } > PSRAM_DATA
+
     .bss (NOLOAD):
     {
         . = ALIGN(4);
 
        _sbss = ABSOLUTE(.);
         _bss_start = .;
-        /*EXCLUDE_FILE(*libnet.a:mem.o*)  *(.bss .bss*)*/
+
         *(.bss .bss*)
         *(COMMON)
 
@@ -370,31 +507,6 @@ SECTIONS
         . = ALIGN(4);
         __psram_code_end__ = .;
     } > PSRAM_CODE AT > FLASH
-
-    .psram_data :
-    {
-        . = ALIGN(8);
-        PROVIDE(__psram_data_text = LOADADDR(.psram_data));
-        __psram_data_start__ = .;
-        *(.psram.data)
-        *(.psram.data*)
-
-        . = ALIGN(4);
-        __psram_data_end__ = .;
-    } > PSRAM_DATA AT > FLASH
-
-    .psram_bss (NOLOAD):
-    {
-        . = ALIGN(8);
-        __psram_bss_start__ = .;
-        *(.psram.bss)
-        *(.psram.bss*)
-
-        *libnet.a:mem.o*(.bss .bss.*)
-
-        . = ALIGN(4);
-        __psram_bss_end__ = .;
-    } > PSRAM_DATA
 
     s_rom_end = LOADADDR(.data) + SIZEOF(.data);
 
