@@ -13,8 +13,14 @@ tfm_xip_build/Makefile
 tfm_xip_build/cmake_install.cmake
 tfm_xip_build/install_manifest.txt
 tfm_xip_build/CMakeFiles/
+tfm_xip_build/bin/
+tfm_xip_build/config/
+tfm_xip_build/tfm_install/outputs/
 tfm_loadable_build/CMakeCache.txt
 tfm_loadable_build/Makefile
 tfm_loadable_build/cmake_install.cmake
 tfm_loadable_build/install_manifest.txt
 tfm_loadable_build/CMakeFiles/
+tfm_loadable_build/bin/
+tfm_loadable_build/config/
+tfm_loadable_build/tfm_install/outputs/
