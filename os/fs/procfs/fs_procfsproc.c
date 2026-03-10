@@ -462,6 +462,16 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;
 
+	buffer += copysize;
+	remaining -= copysize;
+	if (totalsize >= buflen) {
+		return totalsize;
+	}
+
+	linesize = snprintf(procfile->line, STATUS_LINELEN, " %p", tcb->waitsem);
+	copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);
+	totalsize += copysize;
+
 #ifdef CONFIG_SCHED_CPULOAD
 	buffer += copysize;
 	remaining -= copysize;
