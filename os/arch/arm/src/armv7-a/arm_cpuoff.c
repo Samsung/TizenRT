@@ -292,6 +292,10 @@ int up_cpu_off(int cpu)
 	ret = up_cpu_down(cpu);
 	if (ret < 0) {
 		smplldbg("Failed to powerdown secondary core CPU%d\n", cpu);
+		/* The core has already been powered down. Returning an error here
+		 * could cause a deadlock due to inconsistent CPU state.
+		 * Therefore, turn the CPU back on. */
+		(void)up_cpu_on(cpu);
 		return ret;
 	}
 
