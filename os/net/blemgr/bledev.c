@@ -72,6 +72,15 @@ int trble_scan_data_enque(trble_scanned_device *info)
 	return 0;
 }
 
+static int _memcpy_safe(void *dest, size_t dest_size, const void *src, size_t src_size)
+{
+	if (src_size > dest_size) {
+		return -1;
+	}
+	memcpy(dest, src, src_size);
+	return 0;
+}
+
 int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_len)
 {
 	trble_result_e ret = TRBLE_FAIL;
@@ -83,7 +92,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -122,17 +131,13 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	break;
 	case LWNL_REQ_BLE_SEC_PARAM_SET:
 	{
-		trble_sec_param *sec_param = (trble_sec_param *)data;
+		trble_sec_param sec_param = { 0, };
 		if (data != NULL) {
-			memcpy(sec_param, data, data_len);
+			_memcpy_safe(&sec_param, sizeof(trble_sec_param), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
-		if (sec_param != NULL) {
-			TRBLE_DRV_CALL(ret, dev, set_sec_param, (dev, sec_param));
-		} else {
-			ret = TRBLE_INVALID_ARGS;
-		}
+		TRBLE_DRV_CALL(ret, dev, set_sec_param, (dev, &sec_param));
 	}
 	break;
 	case LWNL_REQ_BLE_PASSKEY_CONFIRM:
@@ -141,7 +146,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		uint8_t *confirm = 0;
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -168,7 +173,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -203,7 +208,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -245,7 +250,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -333,7 +338,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -388,7 +393,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -405,7 +410,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -422,7 +427,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -439,7 +444,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -480,7 +485,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -499,7 +504,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -517,7 +522,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -535,7 +540,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -552,7 +557,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -569,7 +574,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -585,7 +590,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		trble_conn_param *conn_param;
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -614,7 +619,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -631,7 +636,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -702,7 +707,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -738,7 +743,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		lwnl_msg_params param = { 0, };
 		if (data != NULL)
 		{
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -786,7 +791,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -814,7 +819,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -828,7 +833,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -875,7 +880,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -888,7 +893,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -903,7 +908,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		uint16_t value;
 		if (data != NULL) {
-			memcpy(&value, data, data_len);
+			_memcpy_safe(&value, sizeof(uint16_t), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -914,7 +919,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -928,7 +933,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -942,7 +947,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		uint16_t cid;
 		if (data != NULL) {
-			memcpy(&cid, data, data_len);
+			_memcpy_safe(&cid, sizeof(uint16_t), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -954,7 +959,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	{
 		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			memcpy(&param, data, data_len);
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
