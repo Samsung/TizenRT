@@ -234,15 +234,6 @@ bool enableDMIC(bool enable)
 
 bool changeDSPFlow(uint8_t dsp_flow_num)
 {
-	// 0: default
-	// 1: extract raw data using left mic 
-	// 2: extract raw data using right mic 
-
-	if (dsp_flow_num >= 3) {
-		meddbg("dsp_flow_num can not be %d\n", dsp_flow_num);
-		return false;
-	}
-
 	medvdbg("SoundManager : changeDSPFlow. dsp_flow_num: %d\n", dsp_flow_num);
 	audio_manager_result_t res = change_input_dsp_flow(dsp_flow_num);
 	if (res != AUDIO_MANAGER_SUCCESS) {
