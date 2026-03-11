@@ -472,6 +472,8 @@ audio_manager_result_t get_kd_sensitivity(uint16_t *sensitivity)
 
 audio_manager_result_t change_input_dsp_flow(uint8_t dsp_flow_num)
 {
-	if (ChangeInputDspFlowReturnFail) return AUDIO_MANAGER_OPERATION_FAIL;
+	if (ChangeInputDspFlowReturnFail) {
+		return AUDIO_MANAGER_OPERATION_FAIL;
+	}
 	return AUDIO_MANAGER_SUCCESS;
 }
