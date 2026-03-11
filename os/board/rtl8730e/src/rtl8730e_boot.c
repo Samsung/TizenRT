@@ -495,6 +495,12 @@ void board_initialize(void)
 		lldbg("NDP120 initialization failed\n");
 	}
  #endif
+
+#ifdef CONFIG_AUDIO_ADAM110
+	if (rtl8730e_adam110_initialize(0) != 0) {
+		lldbg("ADAM110 initialization failed\n");
+	}
+#endif
  
  #ifdef CONFIG_AMEBASMART_BOR
 	board_initialize_bor();

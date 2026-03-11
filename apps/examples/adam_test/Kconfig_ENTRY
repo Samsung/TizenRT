@@ -1,0 +1,3 @@
+config ENTRY_HELLO
+	bool "\"ADAM TEST\" example"
+	depends on EXAMPLES_HELLO

@@ -1,4 +1,4 @@
-##########################################################################
+###########################################################################
 #
 # Copyright 2017 Samsung Electronics All Rights Reserved.
 #
@@ -14,14 +14,13 @@
 # either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 #
+###########################################################################
 ############################################################################
-############################################################################
-# drivers/audio/Make.defs
-# These drivers support various Audio devices using the NuttX Audio
-# interface.
+# apps/examples/hello/Make.defs
+# Adds selected applications to apps/ build
 #
-#   Copyright (C) 2013 Ken Pettit. All rights reserved.
-#   Author: Ken Pettit <pettitkd@gmail.com>
+#   Copyright (C) 2015 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -52,49 +51,6 @@
 #
 ############################################################################
 
-# Include Audio drivers
-
-ifeq ($(CONFIG_AUDIO_DEVICES),y)
-
-ifeq ($(CONFIG_AUDIO_NULL),y)
-CSRCS += audio_null.c
-endif
-
-ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
-CSRCS += i2schar.c
-endif
-
-ifeq ($(CONFIG_AUDIO_ALC5658),y)
-CSRCS += alc5658.c
-endif
-
-ifeq ($(CONFIG_AUDIO_CX20921),y)
-CSRCS += cx20921.c
-endif
-
-ifeq ($(CONFIG_AUDIO_TAS5749),y)
-CSRCS += tas5749.c
-endif
-
-ifeq ($(CONFIG_AUDIO_ALC1019),y)
-CSRCS += alc1019.c
-endif
-
-ifeq ($(CONFIG_AUDIO_NDP120),y)
-CSRCS += ndp120_voice.c
-endif
-
-ifeq ($(CONFIG_AUDIO_ADAM110),y)
-CSRCS += adam110.c
-endif
-
-ifeq ($(CONFIG_AUDIO_SYU645B),y)
-CSRCS += syu645b.c cJSON.c
-endif
-
-# Include Audio driver support
-
-DEPPATH += --dep-path audio
-VPATH += :audio
-
+ifeq ($(CONFIG_EXAMPLES_ADAM),y)
+CONFIGURED_APPS += examples/adam_test
 endif
