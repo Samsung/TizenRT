@@ -1698,16 +1698,13 @@ int bt_start_advertising(uint8_t type, FAR const struct bt_eir_s *ad, FAR const 
 	set_data = bt_buf_extend(buf, sizeof(*set_data));
 
 	memset(set_data, 0, sizeof(*set_data));
+	struct bt_eir_s adv_data = { 0, };
+	memcpy(&adv_data, ad, sizeof(struct bt_eir_s));
 
-	for (i = 0; ad[i].len > 0; i++) {
-		/* Check if ad fit in the remaining buffer */
-
-		if (set_data->len + ad[i].len + 1 > 29) {
-			break;
-		}
-
-		memcpy(&set_data->data[set_data->len], &ad[i], ad[i].len + 1);
-		set_data->len += ad[i].len + 1;
+	/* Check if ad fit in the remaining buffer */
+	if (adv_data.len > 0 && set_data->len + adv_data.len + 1 <= 29) {
+		memcpy(&set_data->data[set_data->len], &adv_data, adv_data.len + 1);
+		set_data->len += adv_data.len + 1;
 	}
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_ADV_DATA, buf);
@@ -1726,16 +1723,13 @@ send_scan_rsp:
 	scan_rsp = bt_buf_extend(buf, sizeof(*scan_rsp));
 
 	memset(scan_rsp, 0, sizeof(*scan_rsp));
+	struct bt_eir_s resp_data = { 0, };
+	memcpy(&resp_data, sd, sizeof(struct bt_eir_s));
 
-	for (i = 0; sd[i].len > 0; i++) {
-		/* Check if ad fit in the remaining buffer */
-
-		if (scan_rsp->len + sd[i].len + 1 > 29) {
-			break;
-		}
-
-		memcpy(&scan_rsp->data[scan_rsp->len], &sd[i], sd[i].len + 1);
-		scan_rsp->len += sd[i].len + 1;
+	/* Check if ad fit in the remaining buffer */
+	if (resp_data.len > 0 && scan_rsp->len + resp_data.len + 1 <= 29) {
+		memcpy(&scan_rsp->data[scan_rsp->len], &resp_data, resp_data.len + 1);
+		scan_rsp->len += resp_data.len + 1;
 	}
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, buf);
