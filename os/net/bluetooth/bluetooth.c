@@ -135,7 +135,7 @@ static int set_ad(unsigned short hci_op, const struct bt_ad *ad, size_t ad_len)
 			/* Check if ad fit in the remaining buffer */
 			if (set_data->len + len + 2 > 31) {
 				len = 31 - (set_data->len + 2);
-				if (type != BT_DATA_NAME_COMPLETE || !len) {
+				if (type != BT_DATA_NAME_COMPLETE || len <= 0) {
 					bt_buf_release(buf);
 					ndbg("Too big advertising data");
 					return -EINVAL;
