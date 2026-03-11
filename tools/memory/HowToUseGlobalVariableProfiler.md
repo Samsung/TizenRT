@@ -6,21 +6,21 @@ It generates the list of global variables which have greater size than given.
 Please find the usages with *-h* option.
 ```bash
 tools/memory$ ./g_var_profiler.sh -h
-Usages: ./g_var_profiler.sh [-s SIZE] [-e ELF] [-o OUTPUT_FILENAME]
+Usages: ./g_var_profiler.sh -d OUTBIN_DIR [-s SIZE] [-e ELF] [-o OUTPUT_FILENAME]
 This script parses the global variable which size is greater than [SIZE]
-	If no input params are specified, below is assumed
-	SIZE : 256
-	ELF : ../../build/output/bin/tinyara
+	-d OUTBIN_DIR : required
+	SIZE : 256 (default)
+	ELF : $OUTBIN_DIR/tinyara (default when -e not specified)
 	OUTPUT_FILENAME : var_list_over_SIZEbytes.txt
 Output file info
 	SIZE : variable size(bytes)
 	TYPE : you can refer to this site <https://sourceware.org/binutils/docs/binutils/nm.html>
 ```
-All of options are optional. When they are not specified, default values are used as explained in help.
+The `-d OUTBIN_DIR` option is required. Other options are optional with default values as explained in help.
 
 # Example
 ```bash
-tools/memory$ ./g_var_profiler.sh -s 1024
+tools/memory$ ./g_var_profiler.sh -d ../../build/output/bin -s 1024
 Size   : 1024
 ELF    : ../../build/output/bin/tinyara
 Output : var_list_over_1024bytes.txt

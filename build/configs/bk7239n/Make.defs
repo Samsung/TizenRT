@@ -309,11 +309,11 @@ SECURE_HEADER_SIZE=16
 endif
 
 define MAKE_SAMSUNG_HEADER
-  $(TOPDIR)/../os/tools/mksamsungheader.py $(1) kernel ${SECURE_HEADER_SIZE}
+  $(TOPDIR)/../os/tools/mksamsungheader.py $(1) kernel ${SECURE_HEADER_SIZE} "$(OUTBIN_DIR)"
 endef
 
 define MAKE_BOOTPARAM
-  $(TOPDIR)/../os/tools/mkbootparam.py
+  $(TOPDIR)/../os/tools/mkbootparam.py "$(OUTBIN_DIR)"
   $(TOPDIR)/../build/configs/bk7239n/bk7239n_post.sh
 endef
 

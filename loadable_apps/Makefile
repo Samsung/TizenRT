@@ -53,7 +53,7 @@
 -include $(TOPDIR)/Make.defs
 
 BUILDIRS   := $(dir $(wildcard */Make.defs))
-OUTPUT_BIN_DIR = $(TOPDIR)/../build/output/bin
+
 CONFIGURED =
 
 define ADD_APPS
@@ -63,7 +63,7 @@ $(foreach BDIR, $(BUILDIRS), $(eval $(call ADD_APPS,$(BDIR))))
 
 define DIR_template
 $(1)_$(2):
-	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLEDIR}" USER_BIN_DIR="$(OUTPUT_BIN_DIR)" CROSSDEV=$(CROSSDEV)
+	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLEDIR}" USER_BIN_DIR="$(OUTBIN_DIR)" CROSSDEV=$(CROSSDEV)
 endef
 $(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),context)))
 $(foreach BDIR, $(CONFIGURED), $(eval $(call DIR_template,$(BDIR),all)))

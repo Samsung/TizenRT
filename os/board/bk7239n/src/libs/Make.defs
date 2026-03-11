@@ -57,5 +57,5 @@ EXTRA_LIBS += ${TOPDIR}/board/bk7239n/src/libs/libbk_phy.a
 EXTRA_LIBS += ${TOPDIR}/board/bk7239n/src/libs/libbk_coex.a
 EXTRA_LIBS += ${TOPDIR}/board/bk7239n/src/middleware/libmiddleware.a
 ifeq ($(CONFIG_TFM), y)
-EXTRA_LIBS += ${TOPDIR}/../build/output/bin/tfm_build/secure_fw/libtfm_s_veneers.a
+EXTRA_LIBS += $(OUTBIN_DIR)/tfm_build/secure_fw/libtfm_s_veneers.a
 endif

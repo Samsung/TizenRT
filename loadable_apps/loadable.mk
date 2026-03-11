@@ -20,7 +20,7 @@ include $(TOPDIR)/.config
 LINKLIBS = $(patsubst $(LIBRARIES_DIR)/%, %, $(USERLIBS))
 LDLIBS = $(patsubst %.a, %, $(patsubst lib%,-l%,$(LINKLIBS)))
 
-TINYARALIB = "$(TOPDIR)/../build/output/libraries"
+TINYARALIB = "$(LIBRARIES_DIR)"
 USERSPACE = $(TOPDIR)/userspace/up_userspace
 
 LDELFFLAGS += -Bstatic

@@ -22,8 +22,12 @@ import struct
 import config_util as util
 
 config_file_path = os.path.dirname(__file__) + '/../.config'
-bootparam_file_path = os.path.dirname(__file__) + '/../../build/output/bin/bootparam.bin'
-user_file_dir = os.path.dirname(__file__) + '/../../build/output/bin/user'
+if len(sys.argv) < 2:
+    sys.stderr.write('Usage: %s <OUTBIN_DIR>\n' % sys.argv[0])
+    sys.exit(1)
+output_bin_dir = sys.argv[1]
+bootparam_file_path = output_bin_dir + '/bootparam.bin'
+user_file_dir = output_bin_dir + '/user'
 
 SIZE_OF_BPx = 4096
 

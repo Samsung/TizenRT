@@ -26,90 +26,139 @@ import config_util as util
 #
 # This script converts binaries to different extension or different formats.
 #
-# parameter information :
+# Usage:
+#   python convert_binary.py <bin_type_or_name> [source_ext] [objcopy] [objcopyargs] [kernel_start]
 #
-# argv[1] is kernel binary extension
-# argv[2] is board specific objcopy tool name
-# argv[3] is board specific objcopy arguments
-# argv[4] is flash start address of kernel binary
+# bin_type_or_name: kernel, app1, app2, common, resource, all, or binary name from config
+#
+# For kernel conversion:
+#   python convert_binary.py kernel "bin" "arm-none-eabi-objcopy" "" "0x08000000"
+#
+# For app/common/resource conversion:
+#   python convert_binary.py app1
+#   python convert_binary.py myapp   # If myapp matches CONFIG_APP1_BIN_NAME
+#
+# For all (legacy behavior):
+#   python convert_binary.py all "bin" "arm-none-eabi-objcopy" "" "0x08000000"
 #
 ############################################################################
-
-SOURCE_EXT_NAME = sys.argv[1]
-if SOURCE_EXT_NAME != '' :
-    SOURCE_EXT_NAME = '.' + SOURCE_EXT_NAME
 
 os_folder = os.path.dirname(__file__) + '/..'
 cfg_file = os_folder + '/.config'
 build_folder = os_folder + '/../build'
 output_folder = build_folder + '/output/bin'
 
+def get_board_type() :
+    return util.get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").replace('"', '').rstrip("\n")
 
-############################################################################
-# Convert binary to name stored in .bininfo
-############################################################################
+def get_config_bin_name(config_key) :
+    return util.get_value_from_file(cfg_file, config_key).replace('"', '').rstrip("\n")
 
-# Check the board type. Because kernel binary name is different based on board type.
-BOARD_TYPE = util.get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").replace('"', '').rstrip("\n")
+def get_kernel_bin_name(source_ext_name) :
+    BOARD_TYPE = get_board_type()
+    metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
+    if os.path.isfile(metadata_file) :
+        return util.get_value_from_file(metadata_file, "KERNEL=").replace('"','').rstrip('\n') + source_ext_name
+    else :
+        return "tinyara.bin"
 
-# Read the kernel binary name from board_metadata.txt.
-metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
-if os.path.isfile(metadata_file) :
-    kernel_bin_name = util.get_value_from_file(metadata_file, "KERNEL=").replace('"','').rstrip('\n') + SOURCE_EXT_NAME
-else :
-    kernel_bin_name = "tinyara.bin"
+def convert_kernel_binary(source_ext_name, objcopy, objcopyargs, kernel_start) :
+    kernel_bin_name = get_kernel_bin_name(source_ext_name)
+    kernel_trpk_name = util.get_binname_from_bininfo("KERNEL")
+    if kernel_trpk_name and kernel_bin_name != kernel_trpk_name :
+        src_path = output_folder + '/' + kernel_bin_name
+        dst_path = output_folder + '/' + kernel_trpk_name
+        if os.path.isfile(src_path) :
+            shutil.copyfile(src_path, dst_path)
 
+    source_bin_path = output_folder + '/' + kernel_bin_name
 
-# Convert kernel binary to name stored in .bininfo
-kernel_trpk_name = util.get_binname_from_bininfo("KERNEL")
-if kernel_bin_name != kernel_trpk_name :
-    shutil.copyfile(output_folder + '/' + kernel_bin_name, output_folder + '/' + kernel_trpk_name)
+    if util.check_config_existence(cfg_file, 'CONFIG_INTELHEX_BINARY') == True:
+        target_path = output_folder + '/' + os.path.splitext(kernel_bin_name)[0] + '.hex'
+        print("CP: " + os.path.splitext(kernel_bin_name)[0] + '.hex')
+        os.system('%s %s --change-addresses %s -I binary -O ihex %s %s' % (objcopy, objcopyargs, kernel_start, source_bin_path, target_path))
 
-# Convert app1 binariy to name stored in .bininfo
-if util.check_config_existence(cfg_file, 'CONFIG_APP1_INFO') == True :
-    app1_bin_name = util.get_value_from_file(cfg_file, "CONFIG_APP1_BIN_NAME=").replace('"', '').rstrip("\n")
-    app1_trpk_name = util.get_binname_from_bininfo("APP1")
-    if app1_bin_name != app1_trpk_name :
-        shutil.copyfile(output_folder + '/' + app1_bin_name, output_folder + '/' + app1_trpk_name)
+    if util.check_config_existence(cfg_file, 'CONFIG_MOTOROLA_SREC') == True:
+        target_path = output_folder + '/' + os.path.splitext(kernel_bin_name)[0] + '.srec'
+        print("CP: " + os.path.splitext(kernel_bin_name)[0] + '.srec')
+        os.system('%s %s --change-addresses %s -I binary -O srec %s %s' % (objcopy, objcopyargs, kernel_start, source_bin_path, target_path))
 
-# Convert app2 binary to name stored in .bininfo
-if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
-    app2_bin_name = util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_NAME=").replace('"', '').rstrip("\n")
-    app2_trpk_name = util.get_binname_from_bininfo("APP2")
-    if app2_bin_name != app2_trpk_name :
-        shutil.copyfile(output_folder + '/' + app2_bin_name, output_folder + '/' + app2_trpk_name)
+def convert_app1_binary() :
+    if util.check_config_existence(cfg_file, 'CONFIG_APP1_INFO') == True :
+        app1_bin_name = util.get_value_from_file(cfg_file, "CONFIG_APP1_BIN_NAME=").replace('"', '').rstrip("\n")
+        app1_trpk_name = util.get_binname_from_bininfo("APP1")
+        if app1_trpk_name and app1_bin_name != app1_trpk_name :
+            src_path = output_folder + '/' + app1_bin_name
+            dst_path = output_folder + '/' + app1_trpk_name
+            if os.path.isfile(src_path) :
+                shutil.copyfile(src_path, dst_path)
 
-# Convert common binary to name stored in .bininfo
-if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True :
-    common_bin_name = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_NAME=").replace('"', '').rstrip("\n")
-    common_trpk_name = util.get_binname_from_bininfo("COMMON")
-    if common_bin_name != common_trpk_name :
-        shutil.copyfile(output_folder + '/' + common_bin_name, output_folder + '/' + common_trpk_name)
+def convert_app2_binary() :
+    if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
+        app2_bin_name = util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_NAME=").replace('"', '').rstrip("\n")
+        app2_trpk_name = util.get_binname_from_bininfo("APP2")
+        if app2_trpk_name and app2_bin_name != app2_trpk_name :
+            src_path = output_folder + '/' + app2_bin_name
+            dst_path = output_folder + '/' + app2_trpk_name
+            if os.path.isfile(src_path) :
+                shutil.copyfile(src_path, dst_path)
 
-# Convert resource binary to name stored in .bininfo
-if util.check_config_existence(cfg_file, 'CONFIG_RESOURCE_FS') == True :
-    resource_bin_name = "resourcefs.img"
-    resource_trpk_name = util.get_binname_from_bininfo("RESOURCE")
-    if resource_bin_name != resource_trpk_name :
-        shutil.copyfile(output_folder + '/' + resource_bin_name, output_folder + '/' + resource_trpk_name)
+def convert_common_binary() :
+    if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True :
+        common_bin_name = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_NAME=").replace('"', '').rstrip("\n")
+        common_trpk_name = util.get_binname_from_bininfo("COMMON")
+        if common_trpk_name and common_bin_name != common_trpk_name :
+            src_path = output_folder + '/' + common_bin_name
+            dst_path = output_folder + '/' + common_trpk_name
+            if os.path.isfile(src_path) :
+                shutil.copyfile(src_path, dst_path)
 
-############################################################################
-# Convert kernel binary format to hex or srec
-############################################################################
-OBJCOPY = sys.argv[2]
-OBJCOPYARGS = sys.argv[3]
-KERNEL_START = sys.argv[4]
+def convert_resource_binary() :
+    if util.check_config_existence(cfg_file, 'CONFIG_RESOURCE_FS') == True :
+        resource_bin_name = "resourcefs.img"
+        resource_trpk_name = util.get_binname_from_bininfo("RESOURCE")
+        if resource_trpk_name and resource_bin_name != resource_trpk_name :
+            src_path = output_folder + '/' + resource_bin_name
+            dst_path = output_folder + '/' + resource_trpk_name
+            if os.path.isfile(src_path) :
+                shutil.copyfile(src_path, dst_path)
 
-source_bin_path = output_folder + '/' + kernel_bin_name
+def convert_all_binaries(source_ext_name, objcopy, objcopyargs, kernel_start) :
+    convert_kernel_binary(source_ext_name, objcopy, objcopyargs, kernel_start)
+    convert_app1_binary()
+    convert_app2_binary()
+    convert_common_binary()
+    convert_resource_binary()
 
-# Convert kernel binary to hex format
-if util.check_config_existence(cfg_file, 'CONFIG_INTELHEX_BINARY') == True:
-    target_path = output_folder + '/' + os.path.splitext(kernel_bin_name)[0] + '.hex'
-    print("CP: " + os.path.splitext(kernel_bin_name)[0] + '.hex')
-    os.system('%s %s --change-addresses %s -I binary -O ihex %s %s' % (OBJCOPY, OBJCOPYARGS, KERNEL_START, source_bin_path, target_path))
+if __name__ == "__main__" :
+    if len(sys.argv) < 2 :
+        print("Usage: python convert_binary.py <bin_type_or_name> [source_ext] [objcopy] [objcopyargs] [kernel_start]")
+        print("bin_type_or_name: kernel, app1, app2, common, resource, all, or binary name from config")
+        sys.exit(1)
 
-# Convert kernel binary to srec format
-if util.check_config_existence(cfg_file, 'CONFIG_MOTOROLA_SREC') == True:
-    target_path = output_folder + '/' + os.path.splitext(kernel_bin_name)[0] + '.srec'
-    print("CP: " + os.path.splitext(kernel_bin_name)[0] + '.srec')
-    os.system('%s %s --change-addresses %s -I binary -O srec %s %s' % (OBJCOPY, OBJCOPYARGS, KERNEL_START, source_bin_path, target_path))
+    arg = sys.argv[1]
+
+    if arg == "kernel" or arg == "all" :
+        source_ext_name = sys.argv[2] if len(sys.argv) > 2 else ""
+        if source_ext_name != '' :
+            source_ext_name = '.' + source_ext_name
+        objcopy = sys.argv[3] if len(sys.argv) > 3 else ""
+        objcopyargs = sys.argv[4] if len(sys.argv) > 4 else ""
+        kernel_start = sys.argv[5] if len(sys.argv) > 5 else ""
+
+        if arg == "kernel" :
+            convert_kernel_binary(source_ext_name, objcopy, objcopyargs, kernel_start)
+        else :
+            convert_all_binaries(source_ext_name, objcopy, objcopyargs, kernel_start)
+    elif arg == "app1" or arg == get_config_bin_name("CONFIG_APP1_BIN_NAME=") :
+        convert_app1_binary()
+    elif arg == "app2" or arg == get_config_bin_name("CONFIG_APP2_BIN_NAME=") :
+        convert_app2_binary()
+    elif arg == "common" or arg == get_config_bin_name("CONFIG_COMMON_BINARY_NAME=") :
+        convert_common_binary()
+    elif arg == "resource" :
+        convert_resource_binary()
+    else :
+        print("Unknown argument: " + arg)
+        print("Usage: python convert_binary.py <bin_type_or_name> [source_ext] [objcopy] [objcopyargs] [kernel_start]")
+        sys.exit(1)
