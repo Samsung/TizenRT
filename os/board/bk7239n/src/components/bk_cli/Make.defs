@@ -49,10 +49,6 @@
 #
 ############################################################################
 
--include $(TOPDIR)/Make.defs
--include $(TOPDIR)/.config
-
-
 CSRCS += cli_main.c cli_misc.c cli_mem.c cli_os.c cli_timer.c
 
 #CSRCS += cli_uart.c cli_gpio.c

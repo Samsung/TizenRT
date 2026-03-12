@@ -313,18 +313,6 @@ void UartDbgInit()
 #endif
 
 __attribute__((weak)) \
-void *__stack_chk_guard = NULL;
-
-// Intialize random stack guard, must after trng start.
-void bk_stack_guard_setup(void)
-{
-    BK_LOGI(TAG, "Intialize random stack guard.\r\n");
-#if defined(CONFIG_TRNG_SUPPORT)
-    __stack_chk_guard = (void *)bk_rand();
-#endif
-}
-
-__attribute__((weak)) \
 void __stack_chk_fail (void)
 {
     BK_DUMP_OUT("Stack guard warning, local buffer overflow!!!\r\n");
@@ -355,8 +343,6 @@ int components_init(void)
 #if (defined(CONFIG_SYS_CPU0))
 	//wdt_init();
 #endif
-
-	bk_stack_guard_setup();
 
 #if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE)
 	extern void bk_security_to_nosecurity_dump_register_callback(void);

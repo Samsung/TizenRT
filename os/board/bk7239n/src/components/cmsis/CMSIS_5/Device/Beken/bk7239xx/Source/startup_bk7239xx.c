@@ -338,7 +338,17 @@ static inline void boot_mem_check(void)
 	}
 }
 
+__attribute__((weak)) \
+void *__stack_chk_guard = 0xDEADBEEF;
 
+
+static void bk_stack_guard_setup(void)
+{
+    BK_LOGI(TAG, "Intialize random stack guard.\r\n");
+#if defined(CONFIG_TRNG_SUPPORT)
+    __stack_chk_guard = (void *)bk_rand();
+#endif
+}
 
 /*----------------------------------------------------------------------------
   Reset Handler called on controller reset
@@ -499,6 +509,12 @@ __FLASH_BOOT_CODE void _start(void)
 #if defined(CONFIG_TRNG_SUPPORT)
 	bk_trng_driver_init();
 #endif
+
+    /* Initialize __stack_chk_guard before os_start() to avoid false positive
+    * when -fstack-protector is used. 
+    */
+
+    bk_stack_guard_setup();
 
 #if defined(CONFIG_SWD_DEBUG_MODE)
     set_jtag_mode();
