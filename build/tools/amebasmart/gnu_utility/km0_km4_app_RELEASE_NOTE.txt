@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 1e2f487864 2026/03/13-19:28:22 ==
+1. Fix CSI burst report fail
+
 == version 4d319ca58b 2026/02/12-20:08:13 ==
 1. Prefer 5GHz network when both 2.4GHz and 5GHz are available on same shared SSID
 
