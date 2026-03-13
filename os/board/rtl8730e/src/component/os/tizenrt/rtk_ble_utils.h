@@ -20,14 +20,14 @@
 #include <tinyara/config.h>
 #include <tinyara/net/if/ble.h>
 
-#ifdef CONFIG_AMEBALITE_BLE_SCATTERNET
+#ifdef CONFIG_AMEBASMART_BLE_SCATTERNET
 extern trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_server_init_config* init_server);
 extern trble_result_e rtw_ble_combo_deinit(void);
 extern trble_result_e rtw_ble_combo_set_server_config(trble_server_init_config* init_server);
-#elif defined(CONFIG_AMEBALITE_BLE_CENTRAL)
+#elif defined(CONFIG_AMEBASMART_BLE_CENTRAL)
 extern trble_result_e rtw_ble_client_init(trble_client_init_config* init_parm);
 extern trble_result_e rtw_ble_client_deinit(void);
-#elif defined(CONFIG_AMEBALITE_BLE_PERIPHERAL)
+#elif defined(CONFIG_AMEBASMART_BLE_PERIPHERAL)
 extern trble_result_e rtw_ble_server_init(trble_server_init_config* init_parm);
 extern trble_result_e rtw_ble_server_deinit(void);
 #endif
@@ -54,6 +54,7 @@ extern trble_result_e rtw_ble_server_get_bonded_device(trble_bonded_device_list_
 extern trble_result_e rtw_ble_server_delete_bonded_device(uint8_t bd_addr[TRBLE_BD_ADDR_MAX_LEN]);
 extern trble_result_e rtw_ble_server_delete_bonded_device_all(void);
 extern trble_result_e rtw_ble_server_set_adv_interval(uint16_t interval); // interval range (0x0020 ~ 0x4000)
+extern trble_result_e rtw_ble_server_get_version(uint8_t *version);
 
 extern trble_result_e rtw_ble_client_scan_whiltelist_add(trble_addr *addr);
 extern trble_result_e rtw_ble_client_scan_whiltelist_delete(trble_addr *addr);

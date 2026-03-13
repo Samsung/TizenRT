@@ -1,6 +1,6 @@
 /******************************************************************
  *
- * Copyright 2022 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -227,10 +227,10 @@ struct trble_ops g_trble_drv_ops = {
 trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server)
 {
 	trble_result_e ret = TRBLE_INVALID_ARGS;
-	 if (!wifi_is_running(0)) {
-	 	TRBLE_TEST_ERR("[TRBLE] WiFi is off. Please turn on WiFi first.\n");
-	 	return TRBLE_FAIL;
-	 }
+	if (!wifi_is_running(0)) {
+		TRBLE_TEST_ERR("[TRBLE] WiFi is off. Please turn on WiFi first.\n");
+		return TRBLE_FAIL;
+	}
 #ifdef CONFIG_AMEBASMART_BLE_SCATTERNET
 	if (client != NULL && server != NULL) {
 		ret = rtw_ble_combo_init(client, server);
@@ -365,9 +365,8 @@ trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg)
 	trble_result_e ret = TRBLE_UNSUPPORTED;
 	
 	if (msg->cmd == TRBLE_MSG_GET_VERSION) {
-		// uint8_t *version = (uint8_t *)msg->data;
-		// temporary remove
-		// ret = rtw_ble_get_version(version);
+		uint8_t *version = (uint8_t *)msg->data;
+		ret = rtw_ble_server_get_version(version);
 	}
 	return ret;
 }
