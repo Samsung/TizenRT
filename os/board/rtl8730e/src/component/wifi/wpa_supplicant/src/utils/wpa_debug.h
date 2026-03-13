@@ -10,7 +10,7 @@
 #define WPA_DEBUG_H
 
 #include "utils/wpabuf.h"
-/* Debugging function - conditional printf and hex dump. Driver wrappers can
+/* Debugging function - conditional DiagPrintf and hex dump. Driver wrappers can
  * use these for debugging purposes. */
 
 enum {
@@ -34,7 +34,7 @@ static inline int wpa_debug_reopen_file(void)
 }
 
 
-#define wprintf(fmt, arg...) printf("[%d] "fmt, rtw_get_current_time(),##arg)
+#define wprintf(fmt, arg...) DiagPrintf("[%d] "fmt, rtos_time_get_current_system_time_ms(),##arg)
 
 #ifdef CONFIG_NO_STDOUT_DEBUG
 #define wpa_printf(args...) do { } while (0)
@@ -48,9 +48,9 @@ static inline int wpa_debug_reopen_file(void)
 	do {\
 		if (level >= MSG_INFO) {\
 			{\
-				printf("\r\n%d:", rtw_get_current_time());\
-				printf(fmt, ##arg);\
-				printf("\n\r");\
+				DiagPrintf("\r\n%d:", rtos_time_get_current_system_time_ms());\
+				DiagPrintf(fmt, ##arg);\
+				DiagPrintf("\n\r");\
 			} \
 		}\
 	}while(0)
@@ -65,7 +65,7 @@ void wpa_hexdump_ascii(int level, const char *title, const void *buf,
 #define WPA_ASSERT(a)						       \
 	do {							       \
 		if (!(a)) {					       \
-			printf("WPA_ASSERT FAILED '" #a "' "	       \
+			DiagPrintf("WPA_ASSERT FAILED '" #a "' "	       \
 			       "%s %s:%d\n",			       \
 			       __FUNCTION__, __FILE__, __LINE__);      \
 			exit(1);				       \

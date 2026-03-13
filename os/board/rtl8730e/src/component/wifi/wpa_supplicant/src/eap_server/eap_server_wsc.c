@@ -222,7 +222,7 @@ static struct wpabuf *eap_wsc_build_start(struct eap_wsc_data *data, u8 id)
 {
 	struct wpabuf *reqbuf = NULL;
 
-	reqbuf = eap_msg_alloc(EAP_VENDOR_WFA, (EapType)EAP_VENDOR_TYPE_WSC, 2,
+	reqbuf = eap_msg_alloc(EAP_VENDOR_WFA, (enum EapType)EAP_VENDOR_TYPE_WSC, 2,
 						   EAP_CODE_REQUEST, id);
 	if (reqbuf == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-WSC: Failed to allocate memory for "
@@ -258,7 +258,7 @@ static struct wpabuf *eap_wsc_build_msg(struct eap_wsc_data *data, u8 id)
 	if (flags & WSC_FLAGS_LF) {
 		plen += 2;
 	}
-	req = eap_msg_alloc(EAP_VENDOR_WFA, (EapType)EAP_VENDOR_TYPE_WSC, plen,
+	req = eap_msg_alloc(EAP_VENDOR_WFA, (enum EapType)EAP_VENDOR_TYPE_WSC, plen,
 						EAP_CODE_REQUEST, id);
 	if (req == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-WSC: Failed to allocate memory for "
@@ -338,10 +338,10 @@ static Boolean eap_wsc_check(struct eap_sm *sm, void *priv,
 						   respData, &len);
 	if (pos == NULL || len < 2) {
 		wpa_printf(MSG_INFO, "EAP-WSC: Invalid frame");
-		return _TRUE;
+		return TRUE;
 	}
 
-	return _FALSE;
+	return FALSE;
 }
 #endif
 
@@ -419,7 +419,7 @@ static void eap_wsc_process(void *priv, struct wpabuf *respData)
 		return;
 	}
 
-	pos = eap_hdr_validate(EAP_VENDOR_WFA, (EapType)EAP_VENDOR_TYPE_WSC,
+	pos = eap_hdr_validate(EAP_VENDOR_WFA, (enum EapType)EAP_VENDOR_TYPE_WSC,
 						   respData, &len);
 	if (pos == NULL || len < 2) {
 		return;    /* Should not happen; message already verified */
@@ -532,7 +532,7 @@ static Boolean eap_wsc_isDone(struct eap_sm *sm, void *priv)
 static Boolean eap_wsc_isSuccess(struct eap_sm *sm, void *priv)
 {
 	/* EAP-WSC will always result in EAP-Failure */
-	return _FALSE;
+	return FALSE;
 }
 #endif
 

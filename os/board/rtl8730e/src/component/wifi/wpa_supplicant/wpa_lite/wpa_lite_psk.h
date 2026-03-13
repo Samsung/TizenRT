@@ -13,35 +13,14 @@
 #ifndef _WPA_LITE_PSK_H_
 #define _WPA_LITE_PSK_H_
 
+#include "rom_wpa_lite_intf.h"
+
 #ifndef TRUE
 #define TRUE					1
 #endif
 #ifndef FALSE
 #define FALSE					0
 #endif
-
-/*
-	2008-12-16, For Corega CG-WLCB54GL 54Mbps NIC interoperability issue.
-	The behavior of this NIC when it connect to the other AP with WPA/TKIP is:
-		AP	<----------------------> 	STA
-			....................
-			------------> Assoc Rsp (ok)
-			------------> EAPOL-key (4-way msg 1)
-			<------------ unknown TKIP encryption data
-			------------> EAPOL-key (4-way msg 1)
-			<------------ unknown TKIP encryption data
-			.....................
-			<------------ disassoc (code=8, STA is leaving) when the 5 seconds timer timeout counting from Assoc_Rsp is got.
-			....................
-			------------> Assoc Rsp (ok)
-			<-----------> EAPOL-key (4-way handshake success)
-
-	If MAX_RESEND_NUM=3, our AP will send disassoc (code=15, 4-way timeout) to STA before STA sending disassoc to AP.
-	And this NIC will always can not connect to our AP.
-	set MAX_RESEND_NUM=5 can fix this issue.
- */
-//#define MAX_RESEND_NUM	3
-#define MAX_RESEND_NUM		5
 
 /*
 	Revise STA EAPOL-key(4-2) resend time from "RESEND_TIME" to "CLIENT_RESEND_TIME" to make sure one 4-1 followed
@@ -81,87 +60,115 @@ enum {
 	PSK_GSTATE_KEYERROR,
 };
 
+struct wpa_global_joininfo {
+	u8	AuthInfoBuf[INFO_ELEMENT_SIZE];
+	struct wpa_gtk_info 	GTKInfo;
+#ifdef CONFIG_IEEE80211W
+	struct wpa_igkt_info	IGTKInfo;
+#endif
+};
 
 // group key info
-typedef struct _wpa_global_info {
-	OCTET32_INTEGER		Counter;
-	OCTET_STRING		AuthInfoElement;
-	unsigned char		AuthInfoBuf[INFO_ELEMENT_SIZE];
-	unsigned char		MulticastCipher;
-	unsigned int		AuthKeyMgmt;	// add for 802.11w
-	OCTET_STRING		GNonce;
-	unsigned char		GNonceBuf[KEY_NONCE_LEN];
-
-	struct wpa_gtk_info GTKInfo;
-
+struct wpa_global {
+	struct wpa_global_joininfo	*wpaglobaljoininfo;
+	struct _OCTET_STRING		AuthInfoElement;
+	union  _OCTET32_INTEGER		Counter;
+	struct wpa_gtk_info			*GTKInfo;
 #ifdef CONFIG_IEEE80211W
-	struct wpa_igkt_info IGTKInfo;
+	struct wpa_igkt_info		*IGTKInfo;
 #endif
+
+	u32					AuthKeyMgmt;	// add for 802.11w
+
+	u8					*AuthInfoBuf;
+	u8					MulticastCipher;
 	u8					transition_disable_bitmap;
 	u8					transition_disable_exist;
 
-} WPA_GLOBAL_INFO;
+};
+
+struct wpa_joininfo {
+	u8	AnonceBuf[KEY_NONCE_LEN];
+	u8	SnonceBuf[KEY_NONCE_LEN];
+	u8	eapSendBuf[MAX_EAPOLMSG_LEN];
+};
 
 // wpa sta info
-typedef struct _wpa_sta_info {
-	_lock				lock;
-	_list				list;
-	int					state;
-	int					gstate;
-	int					RSNEnabled;		// bit0-WPA, bit1-WPA2
-	int					PInitAKeys;
-	unsigned char		UnicastCipher;
-	LARGE_INTEGER		CurrentReplayCounter;
-	LARGE_INTEGER		ReplayCounterStarted; // david+1-12-2007
-	OCTET_STRING		ANonce;
-	OCTET_STRING		SNonce;
-	unsigned char		AnonceBuf[KEY_NONCE_LEN];
-	unsigned char		SnonceBuf[KEY_NONCE_LEN];
-	unsigned char		PMK[PMK_LEN];
-	unsigned char		PTK[PTK_LEN_TKIP];
-	OCTET_STRING		EAPOLMsgRecvd;
-	OCTET_STRING		EAPOLMsgSend;
-	OCTET_STRING		EapolKeyMsgRecvd;
-	OCTET_STRING		EapolKeyMsgSend;
+struct wpa_sta_info {
+	rtos_mutex_t				mutex;
+	rtos_mutex_t				sae_mutex;
 
-	unsigned char		eapSendBuf[MAX_EAPOLMSG_LEN];
-//	unsigned char		eapRecvdBuf[MAX_EAPOLMSG_LEN];
-	struct timer_list	resendTimer;
-	int					resendCnt;
-	struct timer_list	waitTimer;	// wait for 4-1 or 2-1
-	int					clientHndshkProcessing;
-	int					clientHndshkDone;
-	int 				clientGkeyUpdate;
-	LARGE_INTEGER		clientMICReportReplayCounter;
+	struct list_head						list;
+
+	struct wpa_joininfo			*wpajoininfo;
+	struct _OCTET_STRING		ANonce;
+	struct _OCTET_STRING		SNonce;
+	struct _OCTET_STRING		EAPOLMsgRecvd;
+	struct _OCTET_STRING		EAPOLMsgSend;
+	struct _OCTET_STRING		EapolKeyMsgRecvd;
+	struct _OCTET_STRING		EapolKeyMsgSend;
+	struct sae_data				*sae_priv;/*for per sta*/
+
+	struct timer_list			resendTimer;
+	struct timer_list			waitTimer;	// wait for 4-1 or 2-1
+	struct timer_list			sae_timer;
+
+	union _LARGE_INTEGER		CurrentReplayCounter;
+	union _LARGE_INTEGER		ReplayCounterStarted; // david+1-12-2007
+	union _LARGE_INTEGER		clientMICReportReplayCounter;
+
+
+	u8					UnicastCipher;
+	u8					*AnonceBuf;
+	u8					*SnonceBuf;
+	u8					PMK[PMK_LEN_MAX];
+	u8					PTK[PTK_LEN_MAX];
+	u8					*eapSendBuf;
 	u8					mac_addr[6];
 	u8					port;
-	u8					is_enterprise;
 	u8 					pmksa_id[PMKID_LEN];
 	u8					use_pmksa;
+	s8					wpa_stainfo_state;
+	s8					RSNEnabled;		// bit0-WPA, bit1-WPA2
+	s8					resendCnt;
+	u8					eapol_key_rsnd_limit;
 
-	struct				sae_data *sae_priv;/*for per sta*/
-	_lock				sae_lock;
-	struct timer_list	sae_timer;
-} WPA_STA_INFO;
+	u8					b_enterprise : 1;
+	u8					b_clientHndshkProcessing : 1;
+	u8					b_clientHndshkDone : 1;
+	u8					b_clientGkeyUpdate : 1;
+	u8					b_4way_triggered_by_join : 1;
+	u8 					b_pmk_ready : 1;
+};
+
+struct key_joininfo {
+	u8	wappriv_psk_ssid_cfg[RTW_ESSID_MAX_SIZE + 1];
+	u8	wappriv_passphrase_cfg[RTW_MAX_PSK_LEN + 1];
+	u8	wappriv_global_psk_cfg[A_SHA_DIGEST_LEN * 2];
+};
 
 struct wpa_priv_t {
-	_lock					sta_list_lock;
-	_list  					sta_list;
-	_lock					lock;
-	int					asoc_sta_count;
-	WPA_GLOBAL_INFO		wpa_global_info;
-	u32 				ndisauthtype;/*wpa/wpa2/wpa3/wpa_psk/wpa2_psk/wpa3_psk...*/
-	u8 					rsnxe_ie[RSNXE_MAX_LEN];
-	union pn48			dot11txpn;/*WPA_TODO, delete this when rom code move to AP*/
-	u64					mgnt_80211w_IPN;/*WPA_TODO, delete this when rom code move to AP*/
-	u8					self_macaddr[6];/*only valid after assoc success and request 4 way handshake*/
-	u8					port;
-	u8					initialized;
-	u8					ssid[RTW_ESSID_MAX_SIZE + 4];
-	u8 					passphrase[RTW_PASSPHRASE_MAX_SIZE + 1];
-	u8					global_psk[A_SHA_DIGEST_LEN * 2];
-	u8					global_pmk[PMK_LEN];
-	rtw_security_t      security_type;
+	struct wpa_global	wpa_global_info;
+	struct key_joininfo	*keyjoininfo;
+
+	rtos_mutex_t		sta_list_mutex;
+	struct list_head  				sta_list;
+	_lock				lock;
+
+	u64					mgnt_80211w_IPN;
+	union pn48			dot11txpn;
+
+	enum rtw_security	security_type;
+	u32 				dot11_wpa_mode;/*wpa/wpa2/wpa3/wpa_psk/wpa2_psk/wpa3_psk...*/
+	u8					self_mac_cfg[6];/*only valid after assoc success and request 4 way handshake*/
+	u8					*psk_ssid_cfg;
+	u8 					*passphrase_cfg;
+	u8					*global_psk_cfg;
+	u8					psk_asoc_sta_count;
+	u8 					psk_rsnxe_ie[RSNXE_MAX_LEN];
+
+	u8					wpa_priv_port;
+	u8					b_wpa_priv_initialized : 1;
 };
 
 enum key_type {
@@ -170,9 +177,9 @@ enum key_type {
 	KEY_IGTK,
 };
 
-static __inline__ OCTET_STRING SubStr(OCTET_STRING f, unsigned short s, unsigned short l)
+static __inline__ struct _OCTET_STRING SubStr(struct _OCTET_STRING f, unsigned short s, unsigned short l)
 {
-	OCTET_STRING res;
+	struct _OCTET_STRING res;
 
 	res.Length = l;
 	res.Octet = f.Octet + s;
@@ -187,16 +194,16 @@ static __inline__ OCTET_STRING SubStr(OCTET_STRING f, unsigned short s, unsigned
 #if defined(CONFIG_IEEE80211W) || defined(CONFIG_SAE_SUPPORT)
 extern const unsigned char igtk_expansion_const[];
 #endif
-extern struct wpa_priv_t	wpa_lite[MAX_IFACE_PORT];
+extern struct wpa_priv_t	wpa_lite[2];
 
 __inline static void set_eapol_params(
 	struct eapol_params *params,
-	OCTET_STRING *pEapolKeyMsgSend,
+	struct _OCTET_STRING *pEapolKeyMsgSend,
 	unsigned char	KeyDescVer,
 	unsigned char KeyLen,
-	LARGE_INTEGER *pReplayCounter,
-	OCTET_STRING *pNonce,
-	WPA_STA_INFO *pStaInfo)
+	union _LARGE_INTEGER *pReplayCounter,
+	struct _OCTET_STRING *pNonce,
+	struct wpa_sta_info *pStaInfo)
 {
 	params->pEapolKeyMsgSend = pEapolKeyMsgSend;
 	params->KeyDescVer = KeyDescVer;
@@ -210,14 +217,14 @@ __inline static void set_eapol_params(
 }
 
 __inline static void set_eapol_params_2(
-	struct eapol_params_2 *params, unsigned char port, WPA_STA_INFO *pStaInfo)
+	struct eapol_params_2 *params, unsigned char port, struct wpa_sta_info *pStaInfo)
 {
-	WPA_GLOBAL_INFO *pGblInfo = &wpa_lite[port].wpa_global_info;
+	struct wpa_global *pGblInfo = &wpa_lite[port].wpa_global_info;
 
 	params->pAuthInfoElement = &pGblInfo->AuthInfoElement;
 	params->MulticastCipher = pGblInfo->MulticastCipher;
-	params->pGTKInfo = &pGblInfo->GTKInfo;
-	params->pIGTKInfo = &pGblInfo->IGTKInfo;
+	params->pGTKInfo = pGblInfo->GTKInfo;
+	params->pIGTKInfo = pGblInfo->IGTKInfo;
 	params->AuthKeyMgmt = pGblInfo->AuthKeyMgmt;
 	params->mgnt_80211w_IPN = &wpa_lite[port].mgnt_80211w_IPN;
 	params->pCounter = &pGblInfo->Counter;
@@ -227,9 +234,9 @@ __inline static void set_eapol_params_2(
 
 __inline static void set_eapol_hdr_params(
 	struct eapol_hdr_params *params,
-	OCTET_STRING *pEAPOLMsgSend,
-	OCTET_STRING *pEapolKeyMsgSend,
-	u8 *da, u8 *sa, int algo, u8 *PTK, int CalMIC)
+	struct _OCTET_STRING *pEAPOLMsgSend,
+	struct _OCTET_STRING *pEapolKeyMsgSend,
+	u8 *da, u8 *sa, int algo, u8 *PTK, int CalMIC, u32 AuthKeyMgmt)
 {
 	params->pEAPOLMsgSend = pEAPOLMsgSend;
 	params->pEapolKeyMsgSend = pEapolKeyMsgSend;
@@ -238,19 +245,20 @@ __inline static void set_eapol_hdr_params(
 	params->algo = algo;
 	params->PTK = PTK;
 	params->CalMIC = CalMIC;
+	params->AuthKeyMgmt = AuthKeyMgmt;
 }
 
-void rtw_psk_sta_start_4way(char *buf, int buf_len, int flags, void *userdata);
-void rtw_psk_sta_send_eapol(WPA_STA_INFO *pStaInfo, WPA_GLOBAL_INFO *pGblInfo, u8 *rsnxe_ie, int resend);
-void rtw_psk_sta_recv_eapol(char *data, int data_len, int flags, void *userdata);
-void rtw_psk_ap_start_4way(char *buf, int buf_len, int flags, void *userdata);
-void rtw_psk_ap_send_eapol(WPA_STA_INFO	*pStaInfo, int resend);
-void rtw_psk_ap_recv_eapol(char *data, int data_len, int flags, void *userdata);
-void rtw_psk_set_psk_info_evt_hdl(char *buf, int buf_len, int flags, void *userdata);
+extern const char *TAG_WLAN_WPA;
+
+void rtw_psk_sta_send_eapol(struct wpa_sta_info *pStaInfo, struct wpa_global *pGblInfo, u8 *rsnxe_ie, int resend);
+void rtw_psk_ap_send_eapol(struct wpa_sta_info	*pStaInfo, int resend);
 void rtw_psk_timer_hdl(void *task_psta);
-WPA_STA_INFO *rtw_psk_stainfo_get(u8 port, u8 *hwaddr);
-WPA_STA_INFO *rtw_psk_stainfo_alloc(u8 port, u8 *hwaddr);
-u32 rtw_psk_stainfo_free(u8 port, u8 *hwaddr);
+struct wpa_sta_info *rtw_psk_stainfo_get(u8 port, u8 *hwaddr);
+struct wpa_sta_info *rtw_psk_stainfo_alloc(u8 port, u8 *hwaddr);
+int rtw_psk_stainfo_free(u8 port, u8 *hwaddr);
+void rtw_psk_set_key(u8 port, enum key_type type, struct wpa_sta_info *pStaInfo, struct wpa_global *pGblInfo);
+void rtw_psk_get_global_joininfo(struct wpa_global *pGblInfo);
+void rtw_psk_free_global_joininfo(struct wpa_global *pGblInfo);
 
 #endif // _WPA_LITE_PSK_H_
 

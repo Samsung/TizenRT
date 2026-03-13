@@ -176,8 +176,14 @@ enum wps_msg_type {
 #define WPS_AUTH_WPA 		0x0008
 #define WPS_AUTH_WPA2 		0x0010
 #define WPS_AUTH_WPA2PSK 	0x0020
+/* WPS is not support WPA3 flow, however the certain AP still send
+ * the WPA3 auth type to STA. The workaround is that add the
+ * definition WPS_AUTH_WPA3 to fix this compatibility issues to
+ * prevent the error of validation of Auth_type flow.
+ */
+#define WPS_AUTH_WPA3		0x0040
 #define WPS_AUTH_TYPES (WPS_AUTH_OPEN | WPS_AUTH_WPAPSK | WPS_AUTH_SHARED | \
-			WPS_AUTH_WPA | WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK)
+			WPS_AUTH_WPA | WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK | WPS_AUTH_WPA3)
 
 /* Encryption Type Flags */
 #define WPS_ENCR_NONE 	0x0001

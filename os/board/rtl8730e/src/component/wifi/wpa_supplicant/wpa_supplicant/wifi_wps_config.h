@@ -28,7 +28,7 @@
  * @param[in]  channel: Channel. Currently un-used, can be set to 0.
  * @param[in]  ssid: Target network SSID. Can be set to NULL if no target network specified.
  * @return  0 on success.
- * @note  Please make sure CONFIG_ENABLE_WPS is enabled in platform_opts.h.\n
+ * @note  Please make sure CONFIG_ENABLE_WPS is enabled by menuconfig.\n
  *			You can reference @ref cmd_wps() to know how to choose input parameters.
  */
 int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid);
@@ -38,14 +38,14 @@ int wps_start(u16 wps_config, char *pin, u8 channel, char *ssid);
  * @warning  Before invoking this function, the Wi-Fi should be enabled by using @ref wifi_on().
  * @param[in]  argc: Command line argument. Argument count.
  * @param[in]  argv: Command line argument. Argument vector.
- * @return  0 on success.
+ * @return  0 on success, 2 on invalid param value
  * @note  Command style for example:
  *			- cmd_wps pbc
  *			- cmd_wps pin
  *			- cmd_wps pin 12345678
- * @note  Please make sure CONFIG_ENABLE_WPS is enabled in platform_opts.h.
+ * @note  Please make sure CONFIG_ENABLE_WPS is enabled by menuconfig.
  */
-void cmd_wps(int argc, char **argv);
+int cmd_wps(int argc, char **argv);
 
 /* extern function declaration */
 extern int wpas_wps_enrollee_init_probe_ie(u16 config_methods);

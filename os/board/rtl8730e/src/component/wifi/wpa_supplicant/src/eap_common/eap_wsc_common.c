@@ -20,7 +20,7 @@ struct wpabuf *eap_wsc_build_frag_ack(u8 id, u8 code)
 {
 	struct wpabuf *msg;
 
-	msg = eap_msg_alloc(EAP_VENDOR_WFA, (EapType)EAP_VENDOR_TYPE_WSC, 2, code, id);
+	msg = eap_msg_alloc(EAP_VENDOR_WFA, (enum EapType)EAP_VENDOR_TYPE_WSC, 2, code, id);
 	if (msg == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-WSC: Failed to allocate memory for "
 				   "FRAG_ACK");

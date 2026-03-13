@@ -1,18 +1,20 @@
-/******************************************************************************
- * Copyright (c) 2013-2016 Realtek Semiconductor Corp.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ******************************************************************************/
+/**
+  ******************************************************************************
+  * @file    rtw_autoconf.h
+  * @author
+  * @version
+  * @date
+  * @brief
+  ******************************************************************************
+  * @attention
+  *
+  * This module is a confidential and proprietary property of RealTek and
+  * possession or use of this module requires written permission of RealTek.
+  *
+  * Copyright(c) 2024, Realtek Semiconductor Corporation. All rights reserved.
+  ******************************************************************************
+  */
+
 #ifndef WLANCONFIG_H
 #define WLANCONFIG_H
 
@@ -20,30 +22,31 @@
  * Include user defined options first. Anything not defined in these files
  * will be set to standard values. Override anything you dont like!
  */
-#include "platform_opts.h"
+#include "platform_autoconf.h"
 
 #define CONFIG_LITTLE_ENDIAN
 
-#ifndef CONFIG_PLATFORM_AMEBA_X
-#define CONFIG_PLATFORM_AMEBA_X 1
-#endif
 
 //#define CONFIG_HIGH_TP
 
 #define WIFI_LOGO_CERTIFICATION 0
 #define RX_AMSDU
 
-/* no IOT chip supports 80M now, so close it in common */
-#define NOT_SUPPORT_80M
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 #define CONFIG_AUTO_RECONNECT 0
+#else
+#define CONFIG_AUTO_RECONNECT 1
+#endif //#ifdef CONFIG_PLATFORM_TIZENRT_OS
 
 /* For WPA3 */
 #define CONFIG_IEEE80211W
+#define CONFIG_OWE_SUPPORT
 #define CONFIG_SAE_SUPPORT
 #ifdef CONFIG_SAE_SUPPORT
 #define CONFIG_SAE_DH_SUPPORT 1
 #endif
 
+#define CONFIG_PS_EN
 
 /* For promiscuous mode */
 // #define CONFIG_PROMISC
@@ -51,83 +54,94 @@
 /* For WPS and P2P */
 #define CONFIG_WPS
 
-/************************** config to support chip ****************************/
-#define RTL8723B_SUPPORT 0
-#define RTL8192E_SUPPORT 0
-#define RTL8188E_SUPPORT 0
-#define RTL8188F_SUPPORT 0
-#define RTL8720E_SUPPORT 0
-#define RTL8720F_SUPPORT 0
-#define RTL8721D_SUPPORT 0
-#define RTL8723D_SUPPORT 0
-#define RTL8195B_SUPPORT 0
-#define RTL8710C_SUPPORT 0
-#define RTL8730A_SUPPORT 0
-#define RTL8730E_SUPPORT 0
-#define RTL8721F_SUPPORT 0
-#define RTL8735B_SUPPORT 0
-/************************ config to support chip end **************************/
-
-/******************** Configurations for each platform ************************/
-#if (CONFIG_PLATFORM_AMEBA_X == 1)
 /******************* Ameba Series Common Configurations ***********************/
 /*PHYDM version*/
 #define OUTSRC	1
 #define PHYDM	2
 #define HALBBRF	3
 
-#if defined(CONFIG_PLATFORM_8721D)
-/******************************* AmebaD (8721D) *******************************/
+#if defined(CONFIG_AMEBADPLUS)
+/******************************* AmebaDPLUS (8721DA) *******************************/
+#include "autoconf_8721da.h"
+#elif defined(CONFIG_AMEBAD)
+/******************************* AmebaD2 (8730E) ******************************/
 #include "autoconf_8721d.h"
-#elif defined(CONFIG_PLATFORM_AMEBADPLUS)
-/******************************* AmebaDPLUS (8721F) *******************************/
-#include "autoconf_8721f.h"
-#elif defined(CONFIG_PLATFORM_8735B)
-/***************************** AmebaPro2 (8735B) ******************************/
-#include "autoconf_8735b.h"
-#elif defined(CONFIG_PLATFORM_AMEBAD2)
+#elif defined(CONFIG_AMEBASMART)
 /******************************* AmebaD2 (8730E) ******************************/
 #include "autoconf_8730e.h"
-#elif defined(CONFIG_PLATFORM_AMEBALITE)
+#elif defined(CONFIG_AMEBALITE)
 /***************************** AmebaLite (8720E) *****************************/
 #include "autoconf_8720e.h"
-#elif defined(CONFIG_PLATFORM_AMEBAZ6)	/* TODO_claire, just for compile costdown IC */
-#include "autoconf_amebaz6.h"
-
-#elif defined(CONFIG_PLATFORM_RTL8720F)
-/******************************* Amebalite2 (8720f) ******************************/
+#elif defined(CONFIG_AMEBAGREEN2)
+/******************************* Amebalite2 (8721f) ******************************/
+#include "autoconf_8721f.h"
+#elif defined(CONFIG_AMEBAPRO3)
+/******************************* AmebaPro3 (8735c) ******************************/
+#include "autoconf_8721f.h"
+#elif defined(CONFIG_AMEBAL2)
+/******************************* AmebaL2 (6955) ******************************/
+#include "autoconf_amebax.h"
+#elif defined(CONFIG_RTL8720F)
+/******************************* Ameba (8720F) ******************************/
 #include "autoconf_8720f.h"
-
 #endif
-
-/****************************** Ameba Series End ******************************/
-#endif /* (CONFIG_PLATFORM_AMEBA_X == 1) */
 /****************** Configurations for each platform end **********************/
 
 
 /************************ For EAP auth configurations *************************/
+/* wpa_supplicant_std handles EAP configuration in its own config.
+ * Do not include autoconf_eap.h to avoid configuration conflicts.
+ */
+#ifndef CONFIG_WPA_STD
 #include "autoconf_eap.h"
+#endif
 /************************ For EAP auth configurations *************************/
-
+/* KVR macro is default opened, but actually not working. To use it, need turn on the switch in menuconfig */
+#define CONFIG_IEEE80211V
+#define CONFIG_IEEE80211R
+#define CONFIG_IEEE80211K
 #if WIFI_LOGO_CERTIFICATION
-#undef WLAN_MAX_ETHFRM_LEN
-#define WLAN_MAX_ETHFRM_LEN	4000
 /* 80211 - K MBO */
 #define CONFIG_RTW_MBO
-#define CONFIG_IEEE80211K
-#ifndef CONFIG_LINUX_FW_EN
-#define CONFIG_LAYER2_ROAMING
-#endif
-#endif
-
-/* 80211 - V R */
-#ifdef CONFIG_LAYER2_ROAMING
-#define CONFIG_RTW_WNM
-#define CONFIG_IEEE80211R
 #endif
 
 #define CONFIG_BEACON_PERIOD 100
 
 #define CONFIG_ACM_METHOD 0	// 0:By SW 1:By HW.
+
+#if !defined(CONFIG_AMEBAL2) && !defined(CONFIG_RTL8720F)
+#define CONFIG_FRAME_DEFRAG // support frame defragmentaion
+#endif
+
+#ifdef CONFIG_MP_INCLUDED
+#endif
+
+#ifdef CONFIG_MP_SHRINK
+#undef CONFIG_PS_EN
+#undef CONFIG_AUTO_RECONNECT
+#undef CONFIG_IEEE80211W
+#undef CONFIG_OWE_SUPPORT
+#undef CONFIG_SAE_SUPPORT
+#undef CONFIG_SAE_DH_SUPPORT
+#undef CONFIG_IEEE80211V
+#undef CONFIG_IEEE80211R
+#undef CONFIG_IEEE80211K
+#undef CONFIG_RTW_MBO
+
+#define CONFIG_AUTO_RECONNECT 0
+#endif
+
+#ifdef CONFIG_WHC_DEV
+#define WHC_SKIP_NP_MSG_TASK
+#endif
+
+#ifdef NAN_CUSTOMER_NANDOW
+#define MAX_NANDOW_PARA_LEN 2600
+#endif
+
+/* When using supplicant SME, 11R is supported by default, instead of reuse the path of RTOS 11R */
+#ifdef CONFIG_SUPPLICANT_SME
+#undef CONFIG_IEEE80211R
+#endif
 
 #endif //WLANCONFIG_H

@@ -59,7 +59,7 @@ static const char *eap_wsc_state_txt(int state)
 #endif
 
 // change the state machine and
-// printf the debug message for from state to changed state
+// DiagPrintf the debug message for from state to changed state
 static void eap_wsc_state(struct eap_wsc_data *data, int state)
 {
 	wpa_printf(MSG_DEBUG, "EAP-WSC: %s -> %s", eap_wsc_state_txt(data->state),
@@ -68,85 +68,6 @@ static void eap_wsc_state(struct eap_wsc_data *data, int state)
 }
 
 // assume params = "pbc=1"
-#if 0
-static int eap_wsc_new_ap_settings(struct wps_credential *cred,
-								   const char *params)
-{
-	const char *pos, *end;
-	size_t len;
-
-	os_memset(cred, 0, sizeof(*cred));
-
-	pos = os_strstr(params, "new_ssid=");
-	if (pos == NULL) {
-		return 0;
-	}
-	pos += 9;
-	//find out the first exist ' ' place in the string pos.
-	end = os_strchr(pos, ' ');
-	if (end == NULL) {
-		len = os_strlen(pos);    // if no ' ' in string meaning all length be used
-	} else {
-		len = end - pos;
-	}
-
-	if ((len & 1) || len > 2 * sizeof(cred->ssid) //||
-		/*hexstr2bin(pos, cred->ssid, len / 2)*/) {
-		return -1;
-	}
-	cred->ssid_len = len / 2;
-
-	// check if there is "new_auth=" in the string params.
-	pos = os_strstr(params, "new_auth=");
-	if (pos == NULL) {
-		return -1;
-	}
-	if (os_strncmp(pos + 9, "OPEN", 4) == 0) {
-		cred->auth_type = WPS_AUTH_OPEN;
-	} else if (os_strncmp(pos + 9, "WPAPSK", 6) == 0) {
-		cred->auth_type = WPS_AUTH_WPAPSK;	// tkip
-	} else if (os_strncmp(pos + 9, "WPA2PSK", 7) == 0) {
-		cred->auth_type = WPS_AUTH_WPA2PSK;	// aes
-	} else {
-		return -1;
-	}
-
-	pos = os_strstr(params, "new_encr=");
-	if (pos == NULL) {
-		return -1;
-	}
-	if (os_strncmp(pos + 9, "NONE", 4) == 0) {
-		cred->encr_type = WPS_ENCR_NONE;
-	} else if (os_strncmp(pos + 9, "WEP", 3) == 0) {
-		cred->encr_type = WPS_ENCR_WEP;
-	} else if (os_strncmp(pos + 9, "TKIP", 4) == 0) {
-		cred->encr_type = WPS_ENCR_TKIP;
-	} else if (os_strncmp(pos + 9, "CCMP", 4) == 0) {
-		cred->encr_type = WPS_ENCR_AES;
-	} else {
-		return -1;
-	}
-
-	pos = os_strstr(params, "new_key=");
-	if (pos == NULL) {
-		return 0;
-	}
-	pos += 8;
-	end = os_strchr(pos, ' ');
-	if (end == NULL) {
-		len = os_strlen(pos);
-	} else {
-		len = end - pos;
-	}
-	if ((len & 1) || len > 2 * sizeof(cred->key) //||
-		/*hexstr2bin(pos, cred->key, len / 2)*/) {
-		return -1;
-	}
-	cred->key_len = len / 2;
-
-	return 1;
-}
-#endif
 extern char wps_pin_code[];
 // return struct eap_wsc_data *
 extern unsigned char wps_password_id;
@@ -181,12 +102,12 @@ static void *eap_wsc_init(struct eap_sm *sm)
 	identity_len = WSC_ID_ENROLLEE_LEN;
 
 	if (identity_len == WSC_ID_REGISTRAR_LEN &&
-		os_memcmp(identity, WSC_ID_REGISTRAR, WSC_ID_REGISTRAR_LEN) == _TRUE) {
+		os_memcmp(identity, WSC_ID_REGISTRAR, WSC_ID_REGISTRAR_LEN) == TRUE) {
 		/* Supplicant is Registrar */
 		registrar = 1;
 		wpa_printf(MSG_INFO, "eap_wsc_init() registrar = 1, Supplicant is Registrar");
 	} else if (identity_len == WSC_ID_ENROLLEE_LEN &&
-			   os_memcmp(identity, WSC_ID_ENROLLEE, WSC_ID_ENROLLEE_LEN) == _TRUE) {
+			   os_memcmp(identity, WSC_ID_ENROLLEE, WSC_ID_ENROLLEE_LEN) == TRUE) {
 		/* Supplicant is Enrollee */
 		registrar = 0;
 		wpa_printf(MSG_INFO, "eap_wsc_init() registrar = 0, Supplicant is Enrollee");
@@ -288,7 +209,7 @@ static struct wpabuf *eap_wsc_build_msg(struct eap_wsc_data *data, u8 id)
 		plen += 2;
 	}
 	// create hdr and fill content
-	resp = eap_msg_alloc(EAP_VENDOR_WFA, (EapType)EAP_VENDOR_TYPE_WSC, plen,
+	resp = eap_msg_alloc(EAP_VENDOR_WFA, (enum EapType)EAP_VENDOR_TYPE_WSC, plen,
 						 EAP_CODE_RESPONSE, id);
 	if (resp == NULL) {
 		wpa_printf(MSG_WARNING, "resp == NULL!!!");
@@ -416,7 +337,7 @@ static struct wpabuf *eap_wsc_process(struct eap_sm *sm, void *priv,
 
 
 	// verify the eap hdr content and get the addr of op-code in eap packet
-	pos = eap_hdr_validate(EAP_VENDOR_WFA, (EapType)EAP_VENDOR_TYPE_WSC, reqData, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_WFA, (enum EapType)EAP_VENDOR_TYPE_WSC, reqData, &len);
 
 
 	if (pos == NULL || len < 2) {

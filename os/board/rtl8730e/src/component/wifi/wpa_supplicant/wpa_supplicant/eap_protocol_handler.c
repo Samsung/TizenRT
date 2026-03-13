@@ -1,4 +1,4 @@
-#include <osdep_service.h>
+#include <os_wrapper.h>
 #include "lwip_netconf.h"
 #include <stdio.h>
 #include <string.h>
@@ -7,12 +7,13 @@
 #include "utils/os.h"
 #include "eap_protocol_handler.h"
 #include "wps_protocol_handler.h"
-#include "wifi_conf.h"
-#include "wifi_ind.h"
+#include "wifi_api.h"
+#include "wifi_intf_drv_to_app_internal.h"
 #include "crypto/crypto.h"
 #include "crypto/tls.h"
 #include "eap_peer/eap_config.h"
 #include "wpa_lite_intf.h"
+#include "rtw_wifi_constants.h"
 
 struct task_struct eap_recvd_tsk;
 struct rtw_eap_context g_eap_context = {0};
@@ -39,7 +40,7 @@ int get_eap_ctx_method(void)
 
 int set_eap_peap_method(void)
 {
-#if CONFIG_PEAP
+#if CONFIG_ENABLE_PEAP
 	int ret = eap_peer_peap_register();
 	if (ret != -1) {
 		ret = eap_peer_mschapv2_register();
@@ -60,7 +61,7 @@ int set_eap_peap_method(void)
 
 int set_eap_tls_method(void)
 {
-#if CONFIG_TLS
+#if CONFIG_ENABLE_TLS
 	int ret = eap_peer_tls_register();
 	if (ret != -1) {
 		eap = eap_peer_get_eap_method(EAP_VENDOR_IETF, EAP_TYPE_TLS);
@@ -78,7 +79,7 @@ int set_eap_tls_method(void)
 
 int set_eap_ttls_method(void)
 {
-#if CONFIG_TTLS
+#if CONFIG_ENABLE_TTLS
 	int ret = eap_peer_ttls_register();
 	if (ret != -1) {
 		eap = eap_peer_get_eap_method(EAP_VENDOR_IETF, EAP_TYPE_TTLS);
@@ -96,7 +97,7 @@ int set_eap_ttls_method(void)
 
 void eap_send_eapol_start(u8 *dst_mac)
 {
-	u8 *dev_mac = LwIP_GetMAC(0);
+	u8 *dev_mac = LwIP_GetMAC(NETIF_WLAN_STA_INDEX);
 	struct wlan_ethhdr_t *eth_hdr;
 	struct lib1x_eapol *eapol;
 	u8 *buf = NULL;
@@ -189,7 +190,6 @@ static void eap_send_eap_rspidentity(u8 *rx_buf)
 
 static void eap_send_packet(u8 *rx_buf, struct wpabuf *sendData)
 {
-//printf("Owen: send %d data\n", sendData->used);
 	struct lib1x_eapol *eapol = NULL;
 	struct wlan_ethhdr_t *eth_hdr = NULL;
 	struct _LIB1X_EAPOL_WSC	*Eapol_wsc_to_send = NULL;
@@ -347,8 +347,8 @@ int eap_sm_init(void)
 void dump_buf(void *buf, size_t len)
 {
 	unsigned char *b = buf;
-	for (int i = 0; i < len; i++) {
-		printf(" %02X", (unsigned int) b[i]);
+	for (size_t i = 0; i < len; i++) {
+		DiagPrintf(" %02X", (unsigned int) b[i]);
 	}
 }
 
@@ -366,7 +366,7 @@ void eap_send_Nak(u8 *rx_buf)
 							 sizeof(struct eap_hdr) + 1 + 1 + 1,
 							 EAP_CODE_RESPONSE, reqId);
 	if (sendData == NULL) {
-		printf("EAP: eap_msg_alloc failed\n");
+		DiagPrintf("EAP: eap_msg_alloc failed\n");
 		return;
 	}
 	wpabuf_put_u8(sendData, get_eap_ctx_method());
@@ -416,7 +416,7 @@ void eap_supplicant_handle_recvd(u8 *rx_buf)
 	eap_send_packet(rx_buf, sendData);
 }
 
-//void eap_eapol_recvd(char *buf, int buf_len, int flags, void* handler_user_data )
+//void eap_eapol_recvd(char *buf, int buf_len, int flags)
 void eap_eapol_recvd(void *buf)
 {
 	struct lib1x_eapol_message_hdr *eapol_payload_hdr;
@@ -436,12 +436,11 @@ void eap_eapol_recvd(void *buf)
 			if (eap_sm_init() != 0) {
 				g_eap_context.eapIsProcessing = 0;
 				//wpa_printf(MSG_INFO, "[EAP]eap_sm_init failed");
-				printf("EAP: eap_sm_init failed\n");
+				DiagPrintf("EAP: eap_sm_init failed\n");
 				goto exit;
 			}
 			eap_send_eap_rspidentity((u8 *)buf);
 		} else if (eapol_payload_hdr->Type != get_eap_ctx_method()) {
-			//printf("type not match, recv: %d, support: %d\n", eapol_payload_hdr->Type, get_eap_ctx_method());
 			eap_send_Nak((u8 *)buf);
 		} else {
 			eap_supplicant_handle_recvd((u8 *)buf);
@@ -465,35 +464,37 @@ void eap_eapol_recvd(void *buf)
 		g_eap_context.eapIsProcessing = 0;
 	} else if ((EAP_CODE_FAILURE == eapol_payload_hdr->Code)) {
 		//wpa_printf(MSG_INFO, "[EAP]Recv EAPOL packet: EAP-Failure");
-		printf("EAP: Recv EAPOL packet: EAP-Failure\n");
+		DiagPrintf("EAP: Recv EAPOL packet: EAP-Failure\n");
 		eap_sm_deinit();
 		g_eap_context.eapIsProcessing = 0;
-		wifi_indication(WIFI_EVENT_DISCONNECT, NULL, 0, 0);
 	}
 exit:
 	os_free(buf, 0);
 	if (Rx_handle != NULL) {
-		rtw_resume_task(Rx_handle);
+		rtos_task_resume(Rx_handle);
 	}
-	rtw_delete_task(&eap_recvd_tsk);
+
+	eap_recvd_tsk.task = 0;
+	rtos_task_delete(eap_recvd_tsk.task);
 }
 
-void eap_eapol_recvd_hdl(char *buf, int buf_len, int flags, void *handler_user_data)
+__weak void eap_eapol_recvd_hdl(u8 *buf, s32 buf_len)
 {
-//	eap_eapol_recvd(buf, buf_len, flags, handler_user_data);
+//	eap_eapol_recvd(buf, buf_len, flags);
 
 	char *copy_buf = os_malloc(buf_len);
 	memcpy(copy_buf, buf, buf_len);
-	if (rtw_create_task(&eap_recvd_tsk, "eap_recvd", 1024, tskIDLE_PRIORITY + 1, (thread_func_t)eap_eapol_recvd, copy_buf) != _PASS) {
-		printf("\n\r%s rtw_create_task failed\n", __FUNCTION__);
+	if (rtos_task_create(&eap_recvd_tsk.task, "eap_recvd", (thread_func_t)eap_eapol_recvd, copy_buf, 4096, 1) != RTK_SUCCESS) {
+		DiagPrintf("\n\r%s eap_recvd failed\n", __FUNCTION__);
 	} else {
-		Rx_handle = (void *)rtw_get_current_TaskHandle();
-		rtw_suspend_task(NULL);
+		Rx_handle = rtos_task_handle_get();
+		rtos_task_suspend(NULL);
 	}
 }
 
-void eap_eapol_start_hdl(char *buf, int buf_len, int flags, void *handler_user_data)
+__weak void eap_eapol_start_hdl(u8 *evt_info)
 {
-	u8 *dst_mac = (u8 *)buf;
-	eap_send_eapol_start(dst_mac);
+	struct rtw_event_wpa_eapol_start *eapol_start_info = (struct rtw_event_wpa_eapol_start *)evt_info;
+
+	eap_send_eapol_start(eapol_start_info->dst_mac);
 }

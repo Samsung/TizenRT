@@ -10,8 +10,10 @@
 #define OS_H
 
 //#include "basic_types.h"
-#include <rtw_wifi_constants.h>
-#include "osdep_service.h"
+#include "wifi_api_types.h"
+#include "os_wrapper.h"
+#include "rtw_timer.h"
+#include "rtw_misc.h" //for _ntohs
 #if defined(PLATFORM_ALIOS)
 #include "alios/wrapper.h"
 #else
@@ -24,8 +26,6 @@
 typedef void *xqueue_handle_t;
 
 typedef long os_time_t;
-
-typedef _timer os_timer;
 
 /**
  * os_sleep - Sleep (sec, usec)
@@ -458,7 +458,7 @@ char *os_strstr(const char *haystack, const char *needle);
  * os_snprintf - Print to a memory buffer
  * @str: Memory buffer to print into
  * @size: Maximum length of the str buffer
- * @format: printf format
+ * @format: DiagPrintf format
  * Returns: Number of characters printed (not including trailing '\0').
  *
  * If the output buffer is truncated, number of characters which would have
@@ -479,37 +479,37 @@ int os_snprintf(char *str, size_t size, const char *format, ...);
 
 #else /* OS_NO_C_LIB_DEFINES */
 
-#if !defined(CONFIG_PLATFORM_8721D) && !defined(CONFIG_PLATFORM_AMEBAD2) && !defined(CONFIG_PLATFORM_AMEBADPLUS)
+#if !defined(CONFIG_AMEBASMART) && !defined(CONFIG_AMEBADPLUS)
 #ifndef os_malloc
-#define os_malloc(sz) rtw_malloc(sz)
+#define os_malloc(sz) rtos_mem_malloc(sz)
 #endif
 #ifndef os_free
-#define os_free(p, sz) rtw_mfree(((uint8_t*)(p)), (sz))
+#define os_free(p, sz) rtos_mem_free(((uint8_t*)(p)))
 #endif
 #endif
 extern void *os_zalloc(size_t size);
 extern char *os_strdup(const char *string_copy_from);
 
 #ifndef os_sleep
-#define os_sleep(s, us) rtw_mdelay_os((s)*1000 + (us)/1000)
+#define os_sleep(s, us) rtos_time_delay_ms((s)*1000 + (us)/1000)
 #endif
 #ifndef os_memcpy
-#define os_memcpy(d, s, n) rtw_memcpy((void*)(d), ((void*)(s)), (n))
+#define os_memcpy(d, s, n) memcpy((void*)(d), ((void*)(s)), (n))
 #endif
 #ifndef os_memmove
 #define os_memmove(d, s, n) memmove((d), (s), (n))
 #endif
 #ifndef os_memset
-#define os_memset(pbuf, c, sz) rtw_memset(pbuf, c, sz)
+#define os_memset(pbuf, c, sz) memset(pbuf, c, sz)
 #endif
 #ifndef os_memcmp
-#define os_memcmp(s1, s2, n) rtw_memcmp(((void*)(s1)), ((void*)(s2)), (n))
+#define os_memcmp(s1, s2, n) (!memcmp(((void*)(s1)), ((void*)(s2)), (n)))
 #endif
 #ifndef os_memcmp_p2p
 #define os_memcmp_p2p(s1, s2, n) memcmp((s1), (s2), (n))
 #endif
 #ifndef os_get_random_bytes
-#define os_get_random_bytes(d,sz) rtw_get_random_bytes(((void*)(d)), (sz))
+#define os_get_random_bytes(d,sz) TRNG_get_random_bytes(((void*)(d)), (sz))
 #endif
 #ifndef os_strlen
 #define os_strlen(s) strlen(s)
@@ -541,7 +541,7 @@ extern char *os_strdup(const char *string_copy_from);
 #define os_del_timer(t) rtw_del_timer(t)
 #endif
 #ifndef os_atoi
-#define os_atoi(s) rtw_atoi(s)
+#define os_atoi(s) atoi(s)
 #endif
 
 #ifndef os_strchr

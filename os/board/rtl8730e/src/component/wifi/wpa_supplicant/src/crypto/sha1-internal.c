@@ -12,8 +12,6 @@
 #include "sha1_i.h"
 #include "crypto.h"
 
-typedef struct SHA1Context SHA1_CTX;
-
 void SHA1Transform(u32 state[5], const unsigned char buffer[64]);
 
 /**
@@ -124,7 +122,7 @@ int hmac_sha1(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
  */
 int sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
-	SHA1_CTX ctx;
+	struct SHA1Context ctx;
 	size_t i;
 
 	SHA1Init(&ctx);
@@ -150,10 +148,10 @@ Still 100% Public Domain
 
 Corrected a problem which generated improper hash values on 16 bit machines
 Routine SHA1Update changed from
-	void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned int
+	void SHA1Update(struct SHA1Context* context, unsigned char* data, unsigned int
 len)
 to
-	void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned
+	void SHA1Update(struct SHA1Context* context, unsigned char* data, unsigned
 long len)
 
 The 'len' parameter was declared an int which works fine on 32 bit machines.
@@ -249,35 +247,36 @@ A million repetitions of "a"
 
 
 #ifdef VERBOSE  /* SAK */
-void SHAPrintContext(SHA1_CTX *context, char *msg)
+void SHAPrintContext(struct SHA1Context *context, char *msg)
 {
-	printf("%s (%d,%d) %x %x %x %x %x\n",
-		   msg,
-		   context->count[0], context->count[1],
-		   context->state[0],
-		   context->state[1],
-		   context->state[2],
-		   context->state[3],
-		   context->state[4]);
+	DiagPrintf("%s (%d,%d) %x %x %x %x %x\n",
+			   msg,
+			   context->count[0], context->count[1],
+			   context->state[0],
+			   context->state[1],
+			   context->state[2],
+			   context->state[3],
+			   context->state[4]);
 }
 #endif
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
+union CHAR64LONG16 {
+	unsigned char c[64];
+	u32 l[16];
+};
 
 void SHA1Transform(u32 state[5], const unsigned char buffer[64])
 {
 	u32 a, b, c, d, e;
-	typedef union {
-		unsigned char c[64];
-		u32 l[16];
-	} CHAR64LONG16;
-	CHAR64LONG16 *block;
+
+	union CHAR64LONG16 *block;
 #ifdef SHA1HANDSOFF
-	CHAR64LONG16 workspace;
+	union CHAR64LONG16 workspace;
 	block = &workspace;
 	os_memcpy(block, buffer, 64);
 #else
-	block = (CHAR64LONG16 *) buffer;
+	block = (union CHAR64LONG16 *) buffer;
 #endif
 	/* Copy context->state[] to working vars */
 	a = state[0];
@@ -382,7 +381,7 @@ void SHA1Transform(u32 state[5], const unsigned char buffer[64])
 
 /* SHA1Init - Initialize new context */
 
-void SHA1Init(SHA1_CTX *context)
+void SHA1Init(struct SHA1Context *context)
 {
 	/* SHA1 initialization constants */
 	context->state[0] = 0x67452301;
@@ -396,7 +395,7 @@ void SHA1Init(SHA1_CTX *context)
 
 /* Run your data through this. */
 
-void SHA1Update(SHA1_CTX *context, const void *_data, u32 len)
+void SHA1Update(struct SHA1Context *context, const void *_data, u32 len)
 {
 	u32 i, j;
 	const unsigned char *data = _data;
@@ -428,7 +427,7 @@ void SHA1Update(SHA1_CTX *context, const void *_data, u32 len)
 
 /* Add padding and return the message digest. */
 
-void SHA1Final(unsigned char digest[20], SHA1_CTX *context)
+void SHA1Final(unsigned char digest[20], struct SHA1Context *context)
 {
 	u32 i;
 	unsigned char finalcount[8];

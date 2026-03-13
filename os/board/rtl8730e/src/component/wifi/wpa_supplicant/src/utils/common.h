@@ -18,10 +18,10 @@
 #include <byteswap.h>
 #endif /* __linux__ */
 
-#if defined(PLATFORM_FREERTOS)
+#if defined(CONFIG_PLATFORM_FREERTOS)
 //#include "little_endian.h"
 //#include "basic_types.h"
-#endif /* PLATFORM_FREERTOS */
+#endif /* CONFIG_PLATFORM_FREERTOS */
 
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || \
@@ -71,14 +71,6 @@ static inline unsigned int bswap_32(unsigned int v)
 #endif
 #endif /* CONFIG_TI_COMPILER */
 
-#ifdef CONFIG_NATIVE_WINDOWS
-#include <winsock.h>
-typedef int socklen_t;
-#ifndef MSG_DONTWAIT
-#define MSG_DONTWAIT 0 /* not supported */
-#endif
-#endif /* CONFIG_NATIVE_WINDOWS */
-
 #ifdef _MSC_VER
 #define inline __inline
 
@@ -90,62 +82,11 @@ typedef int socklen_t;
 
 
 /* Define platform specific integer types */
-
-#ifdef _MSC_VER
-typedef UINT64 u64;
-typedef UINT32 u32;
-typedef UINT16 u16;
-typedef UINT8 u8;
-typedef INT64 s64;
-typedef INT32 s32;
-typedef INT16 s16;
-typedef INT8 s8;
-#define WPA_TYPES_DEFINED
-#endif /* _MSC_VER */
-
-#ifdef __vxworks
-typedef unsigned long long u64;
-typedef UINT32 u32;
-typedef UINT16 u16;
-typedef UINT8 u8;
-typedef long long s64;
-typedef INT32 s32;
-typedef INT16 s16;
-typedef INT8 s8;
-#define WPA_TYPES_DEFINED
-#endif /* __vxworks */
-
-#ifdef CONFIG_TI_COMPILER
-#ifdef _LLONG_AVAILABLE
-typedef unsigned long long u64;
-#else
-/*
- * TODO: 64-bit variable not available. Using long as a workaround to test the
- * build, but this will likely not work for all operations.
- */
-typedef unsigned long u64;
-#endif
-typedef unsigned int u32;
-typedef unsigned short u16;
-typedef unsigned char u8;
-#define WPA_TYPES_DEFINED
-#endif /* CONFIG_TI_COMPILER */
-
 #ifndef WPA_TYPES_DEFINED
 #ifdef CONFIG_USE_INTTYPES_H
 #include <inttypes.h>
 #else
 //#include <stdint.h>
-#endif
-#if 0
-typedef uint64_t u64;
-typedef uint32_t u32;
-typedef uint16_t u16;
-typedef uint8_t u8;
-typedef int64_t s64;
-typedef int32_t s32;
-typedef int16_t s16;
-typedef int8_t s8;
 #endif
 #define WPA_TYPES_DEFINED
 #endif /* !WPA_TYPES_DEFINED */
@@ -186,20 +127,6 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 #endif
 
 #ifndef WPA_BYTE_SWAP_DEFINED
-#if 0
-#ifndef __BYTE_ORDER
-#ifndef __LITTLE_ENDIAN
-#ifndef __BIG_ENDIAN
-#define __LITTLE_ENDIAN 1234
-#define __BIG_ENDIAN 4321
-
-#if defined(sparc)
-#define __BYTE_ORDER __BIG_ENDIAN
-#endif
-#endif /* __BIG_ENDIAN */
-#endif /* __LITTLE_ENDIAN */
-#endif /* __BYTE_ORDER */
-#else
 #ifndef __LITTLE_ENDIAN
 #define __LITTLE_ENDIAN 1234
 #endif
@@ -208,7 +135,6 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 #endif
 #ifndef __BYTE_ORDER
 #define __BYTE_ORDER __LITTLE_ENDIAN
-#endif
 #endif
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -341,70 +267,9 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 #endif /* ETH_P_RRB */
 
 
-#if 0	//#ifdef __GNUC__
-#define PRINTF_FORMAT(a,b) __attribute__ ((format (printf, (a), (b))))
-#define STRUCT_PACKED __attribute__ ((packed))
-#else
 #define PRINTF_FORMAT(a,b)
 #define STRUCT_PACKED
-#endif
 
-
-#ifdef CONFIG_ANSI_C_EXTRA
-
-#if !defined(_MSC_VER) || _MSC_VER < 1400
-/* snprintf - used in number of places; sprintf() is _not_ a good replacement
- * due to possible buffer overflow; see, e.g.,
- * http://www.ijs.si/software/snprintf/ for portable implementation of
- * snprintf. */
-int snprintf(char *str, size_t size, const char *format, ...);
-
-/* vsnprintf - only used for wpa_msg() in wpa_supplicant.c */
-int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-#endif /* !defined(_MSC_VER) || _MSC_VER < 1400 */
-
-/* getopt - only used in main.c */
-int getopt(int argc, char *const argv[], const char *optstring);
-extern char *optarg;
-extern int optind;
-
-#ifndef CONFIG_NO_SOCKLEN_T_TYPEDEF
-#ifndef __socklen_t_defined
-typedef int socklen_t;
-#endif
-#endif
-
-/* inline - define as __inline or just define it to be empty, if needed */
-#ifdef CONFIG_NO_INLINE
-#define inline
-#else
-#define inline __inline
-#endif
-
-#ifndef __func__
-#define __func__ "__func__ not defined"
-#endif
-
-#ifndef bswap_16
-#define bswap_16(a) ((((u16) (a) << 8) & 0xff00) | (((u16) (a) >> 8) & 0xff))
-#endif
-
-#ifndef bswap_32
-#define bswap_32(a) ((((u32) (a) << 24) & 0xff000000) | \
-		     (((u32) (a) << 8) & 0xff0000) | \
-     		     (((u32) (a) >> 8) & 0xff00) | \
-     		     (((u32) (a) >> 24) & 0xff))
-#endif
-
-#ifndef MSG_DONTWAIT
-#define MSG_DONTWAIT 0
-#endif
-
-#ifdef _WIN32_WCE
-void perror(const char *s);
-#endif /* _WIN32_WCE */
-
-#endif /* CONFIG_ANSI_C_EXTRA */
 
 #ifndef MAC2STR
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]

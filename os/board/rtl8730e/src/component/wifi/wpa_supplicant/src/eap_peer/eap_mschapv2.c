@@ -139,6 +139,7 @@ static void *eap_mschapv2_init(struct eap_sm *sm)
 
 static void eap_mschapv2_deinit(struct eap_sm *sm, void *priv)
 {
+	(void)sm;
 	struct eap_mschapv2_data *data = priv;
 	os_free(data->peer_challenge, 0);
 	os_free(data->auth_challenge, 0);
@@ -179,12 +180,6 @@ static struct wpabuf *eap_mschapv2_challenge_reply(
 	ms->op_code = MSCHAPV2_OP_RESPONSE;
 	ms->mschapv2_id = mschapv2_id;
 	if (data->prev_error) {
-		/*
-		 * TODO: this does not seem to be enough when processing two
-		 * or more failure messages. IAS did not increment mschapv2_id
-		 * in its own packets, but it seemed to expect the peer to
-		 * increment this for all packets(?).
-		 */
 		ms->mschapv2_id++;
 	}
 	WPA_PUT_BE16(ms->ms_length, ms_len);
@@ -312,7 +307,7 @@ static void eap_mschapv2_password_changed(struct eap_sm *sm,
 		data->prev_error = 0;
 		bin_clear_free(config->password, config->password_len);
 		if (config->flags & EAP_CONFIG_FLAGS_EXT_PASSWORD) {
-			/* TODO: update external storage */
+
 		} else if (config->flags & EAP_CONFIG_FLAGS_PASSWORD_NTHASH) {
 			config->password = os_malloc(16);
 			config->password_len = 16;
@@ -509,15 +504,12 @@ static int eap_mschapv2_failure_txt(struct eap_sm *sm,
 			eap_sm_request_new_password(sm);
 		}
 	} else if (retry == 1 && config) {
-		/* TODO: could prevent the current password from being used
-		 * again at least for some period of time */
 		if (!config->mschapv2_retry) {
 			eap_sm_request_identity(sm);
 		}
 		eap_sm_request_password(sm);
 		config->mschapv2_retry = 1;
 	} else if (config) {
-		/* TODO: prevent retries using same username/password */
 		config->mschapv2_retry = 0;
 	}
 
@@ -714,9 +706,6 @@ static struct wpabuf *eap_mschapv2_failure(struct eap_sm *sm,
 			return NULL;
 		}
 	} else if (retry && data->prev_error == ERROR_AUTHENTICATION_FAILURE) {
-		/* TODO: could try to retry authentication, e.g, after having
-		 * changed the username/password. In this case, EAP MS-CHAP-v2
-		 * Failure Response would not be sent here. */
 		return NULL;
 	}
 
@@ -865,6 +854,7 @@ static struct wpabuf *eap_mschapv2_process(struct eap_sm *sm, void *priv,
 
 static Boolean eap_mschapv2_isKeyAvailable(struct eap_sm *sm, void *priv)
 {
+	(void)sm;
 	struct eap_mschapv2_data *data = priv;
 	return (Boolean)(data->success && data->master_key_valid);
 }
@@ -872,6 +862,7 @@ static Boolean eap_mschapv2_isKeyAvailable(struct eap_sm *sm, void *priv)
 
 static u8 *eap_mschapv2_getKey(struct eap_sm *sm, void *priv, size_t *len)
 {
+	(void)sm;
 	struct eap_mschapv2_data *data = priv;
 	u8 *key;
 	int key_len;

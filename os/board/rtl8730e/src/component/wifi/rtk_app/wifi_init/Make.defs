@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2020 Samsung Electronics All Rights Reserved.
+# Copyright 2025 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@
 #
 ############################################################################
 
-CSRCS += wifi_ind.c
+CSRCS += wifi_init.c
 
-DEPPATH += --dep-path component/wifi/api
-VPATH += :component/wifi/api
+DEPPATH += --dep-path component/wifi/rtk_app/wifi_init
+VPATH += :component/wifi/rtk_app/wifi_init

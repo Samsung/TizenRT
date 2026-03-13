@@ -78,11 +78,11 @@ struct ieee802_11_elems {
 	u8 ssid_list_len;
 };
 
-typedef enum { ParseOK = 0, ParseUnknown = 1, ParseFailed = -1 } ParseRes;
+enum ParseRes { ParseOK = 0, ParseUnknown = 1, ParseFailed = -1 };
 
-ParseRes ieee802_11_parse_elems(const u8 *start, size_t len,
-								struct ieee802_11_elems *elems,
-								int show_errors);
+enum ParseRes ieee802_11_parse_elems(const u8 *start, size_t len,
+									 struct ieee802_11_elems *elems,
+									 int show_errors);
 int ieee802_11_ie_count(const u8 *ies, size_t ies_len);
 struct wpabuf *ieee802_11_vendor_ie_concat(const u8 *ies, size_t ies_len,
 		u32 oui_type);

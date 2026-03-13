@@ -9,15 +9,17 @@
 #ifndef ROM_WPS_OS_H
 #define ROM_WPS_OS_H
 
-#if defined(CONFIG_PLATFORM_8721D) || defined(CONFIG_PLATFORM_AMEBAD2) || defined(CONFIG_PLATFORM_AMEBADPLUS)
-#ifndef CONFIG_AS_INIC_AP
+#include "rtw_autoconf.h"
+
+#if defined(CONFIG_AMEBASMART) || defined(CONFIG_AMEBADPLUS)
+#ifndef CONFIG_WHC_HOST
 #include <wifi_intf_ram_to_rom.h>
 #define os_malloc(sz) p_wifi_rom_func_map->zmalloc(sz, 1)
 #define os_free(p, sz) p_wifi_rom_func_map->mfree(p)
 #else
-#include <osdep_service.h>
-#define os_malloc(sz) rtw_malloc(sz)
-#define os_free(p, sz) rtw_mfree(((uint8_t*)(p)), (sz))
+#include <os_wrapper.h>
+#define os_malloc(sz) rtos_mem_malloc(sz)
+#define os_free(p, sz) rtos_mem_free(((uint8_t*)(p)))
 #endif
 #endif
 

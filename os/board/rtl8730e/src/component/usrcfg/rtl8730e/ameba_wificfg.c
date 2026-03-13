@@ -1,112 +1,148 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifdef CONFIG_FULLMAC
+#include <whc_host_linux.h>
+#else
 #include "platform_autoconf.h"
-#include <wifi_conf.h>
-#include <ameba_soc.h>	// include for CONFIG_LINUX_FW_EN
-#if defined(CONFIG_AS_INIC_AP)
-#include "inic_ipc_api.h"
+#include <wifi_api.h>
 #endif
 
 struct wifi_user_conf wifi_user_config __attribute__((aligned(64)));
 
 _WEAK void wifi_set_user_config(void)
 {
-#if defined(CONFIG_LINUX_FW_EN) || !defined(CONFIG_AS_INIC_NP)
+	int skb_num_np_rsvd = 6; /* 4 for rx_ring_buffer + 2 for mgnt trx */
+	_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
 
-#ifdef CONFIG_AS_INIC_AP
-	u32 param_buf[1];
-#endif
-
-	rtw_memset(&wifi_user_config, 0, sizeof(struct wifi_user_conf));
-
-	/* below items for user config */
+	/* below items for user config, for details, see wifi_user_conf in ameba_wificfg_common.h */
 #ifdef CONFIG_ENABLE_HOMELYNK
-	wifi_user_config.concurrent_enabled = (u8)_TRUE; /*Softap's mac address will equal chip's mac address + 1 if this value set as _TRUE*/
+	wifi_user_config.concurrent_enabled = 1; /*Softap's mac address will equal chip's mac address + 1 if this value set as 1*/
 #else
-	wifi_user_config.concurrent_enabled = (u8)_FALSE;
+	wifi_user_config.concurrent_enabled = 0;
 #endif //#ifdef CONFIG_ENABLE_HOMELYNK
-	wifi_user_config.auto_reconnect_count = 8;
-	wifi_user_config.auto_reconnect_interval = 5; /* in sec*/
+	wifi_user_config.softap_addr_offset_idx = 1;
+	wifi_user_config.fast_reconnect_en = 1;
+	wifi_user_config.auto_reconnect_en = 1;
+	wifi_user_config.auto_reconnect_count = 10;
+	wifi_user_config.auto_reconnect_interval = 5;
+	wifi_user_config.no_beacon_disconnect_time = 9; /* unit 2s, default 18s */
 #ifdef CONFIG_HIGH_TP_TEST /*enable high tp in make menuconfig*/
-	wifi_user_config.skb_num_np = 22; /*In INIC mode for all traffics except tx data, In single core mode for all traffics*/
-	wifi_user_config.skb_num_ap = 8; /*In INIC mode for tx data packtes, not used in single core mode*/
+	wifi_user_config.skb_num_np = 22; /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
+	wifi_user_config.skb_num_ap = 8;
 #else
-	wifi_user_config.skb_num_np = 22;  /*4 for rx_ring_buffer + 16 for rx_ampdu + 2 for mgnt trx*/
-	wifi_user_config.skb_num_ap = 8; 	/*adjust to 8 for ping 10k*/
+#ifdef CONFIG_FULLMAC
+	wifi_user_config.skb_num_ap = 10;
+#else
+	wifi_user_config.skb_num_ap = 8;	/*adjust to 8 for ping 10k*/
+#endif
+	wifi_user_config.skb_num_np = 22;  /* skb_num_np should >= rx_ampdu_num + skb_num_np_rsvd */
 #endif
 	wifi_user_config.rx_ampdu_num = 16;
+	wifi_user_config.tx_ampdu_num = 0; /* 0: default 20, 1: equivalent to wifi_user_config.ampdu_tx_enable = 0, Otherwise: max aggregation number, up to 0x3F*/
 
-#ifdef CONFIG_SINGLE_CORE_WIFI
+#ifdef CONFIG_WHC_NONE
 	wifi_user_config.skb_num_ap = 0;
 #endif
-	wifi_user_config.wifi_wpa_mode = WPA_AUTO_MODE;
+	wifi_user_config.skb_buf_size = 0;
+	wifi_user_config.wifi_wpa_mode_force = RTW_WPA_AUTO_MODE;
 
 	/*Regulatory related*/
-	wifi_user_config.channel_plan = 0;
-	wifi_user_config.rtw_tx_pwr_lmt_enable = 0;	/* 0: disable, 1: enable, 2: Depend on efuse(flash) */
-	wifi_user_config.rtw_tx_pwr_by_rate	= 2;	/* 0: disable, 1: enable, 2: Depend on efuse(flash) */
-	wifi_user_config.rtw_802_11d_en = DISABLE;
+	wifi_user_config.country_code[0] = 0;
+	wifi_user_config.country_code[1] = 0;
+	wifi_user_config.freq_band_support = RTW_SUPPORT_BAND_MAX;
+	wifi_user_config.tx_pwr_table_selection = 2;
+	wifi_user_config.rtw_802_11d_en = 0;
 	wifi_user_config.rtw_trp_tis_cert_en = RTW_TRP_TIS_DISABLE;
-	wifi_user_config.rtw_adaptivity_en = DISABLE;
-	wifi_user_config.rtw_adaptivity_mode = 0; /* 0 : RTW_ADAPTIVITY_MODE_NORMAL,1: RTW_ADAPTIVITY_MODE_CARRIER_SENSE */
-	wifi_user_config.rtw_adaptivity_th_l2h_ini = 0;
+	wifi_user_config.rtw_edcca_mode = RTW_EDCCA_NORM;
 	wifi_user_config.tdma_dig_enable = 0; /*add for customer ctrl tdma dig on/off*/
+	wifi_user_config.antdiv_mode = RTW_ANTDIV_DISABLE;
+	wifi_user_config.probe_hidden_ap_on_passive_ch = 1;
 
-	/* power save */
-	wifi_user_config.lps_dtim = 0;
-	wifi_user_config.lps_enter_threshold = 0; /* LPS_THRESH_PKT_COUNT */
-	wifi_user_config.rtw_power_mgnt = PS_MODE_MIN;
-	wifi_user_config.rtw_lps_level = LPS_NORMAL;
-	wifi_user_config.smart_ps = 2;
-	wifi_user_config.rtw_ips_level = IPS_WIFI_OFF;
 
-#ifdef CONFIG_WMMPS_STA
-	/*wmm ps*/
-	wifi_user_config.uapsd_max_sp_len = NO_LIMIT; /* 0: NO_LIMIT, 1: TWO_MSDU, 2: FOUR_MSDU, 3: SIX_MSDU */
-	wifi_user_config.uapsd_ac_enable = 0xF;  /* BIT0: AC_VO UAPSD, BIT1: AC_VI UAPSD, BIT2: AC_BK UAPSD, BIT3: AC_BE UAPSD */
-	wifi_user_config.uapsd_enable = 1;
-#endif /* CONFIG_WMMPS_STA */
+	/* IPS(Inactive Power Save), power save when wifi unconnected */
+	wifi_user_config.ips_enable = 1;
+	wifi_user_config.ips_level = RTW_IPS_WIFI_OFF;
+
+	/* LPS(Legacy Power Save), the legacy power save when wifi connected. */
+	wifi_user_config.lps_enable = 1;
+	wifi_user_config.lps_listen_interval = 0;
+	wifi_user_config.lps_rx_unicast_pkt_timeout = 40;	/* set rx unicast packet timeout in LPS, unit:ms, max_value:100*/
+	wifi_user_config.wowlan_rx_bcmc_dis = 0;
+
+	/* U-APSD WMM power save when wifi connected. Only one of the lps mode or uapsd mode can be enabled */
+	wifi_user_config.uapsd_enable = 0;
+	wifi_user_config.uapsd_max_sp_len = 0;
+	wifi_user_config.uapsd_ac_enable = 0;
 
 	/* Softap related */
-	wifi_user_config.g_user_ap_sta_num = NUM_STA;
-	wifi_user_config.bForwardingDisabled = 0;
-	wifi_user_config.ap_polling_sta = 0; /*set to 1 if CONFIG_ENABLE_AP_POLLING_CLIENT_ALIVE is defined*/
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	wifi_user_config.ap_sta_num = 3;
+#else
+	wifi_user_config.ap_sta_num = 12;	/*should not exceed 12 */
+#endif //#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	wifi_user_config.ap_polling_sta = 0;
 
 	/* MISC */
-	wifi_user_config.en_mcc = (u8) DISABLE; /*not support if CONFIG_MCC_MODE is undefined*/
-	wifi_user_config.max_roaming_times = 2; /*not support if CONFIG_LAYER2_ROAMING is undefined*/
-	wifi_user_config.ampdu_factor = 0; /* not support if CONFIG_80211AC_VHT is undefined*/
-	wifi_user_config.bAcceptAddbaReq = (u8)_TRUE; /* 0:Reject AP's Add BA req, 1:Accept AP's Add BA req.*/
-	wifi_user_config.bIssueAddbaReq = (u8)_TRUE;
-	wifi_user_config.bCheckDestAddress = (u8)_TRUE;
-	wifi_user_config.ap_compatibilty_enabled = 0x0B;
-	wifi_user_config.set_channel_api_rfk = 0;
+	wifi_user_config.en_mcc = 0;  /* must select ENABLE_MCC in menuconfig when wifi_user_config.en_mcc=1 */
+	wifi_user_config.mcc_force_p1_slot_ratio = 44;
+	wifi_user_config.ampdu_rx_enable = 1;
+	wifi_user_config.ampdu_tx_enable = 1;
+	wifi_user_config.ap_compatibilty_enabled = 0x07;
+	wifi_user_config.set_channel_api_do_rfk = 1;
+	wifi_user_config.dpk_peak_limit = 0;
+	wifi_user_config.rf_calibration_disable = 0;
 	wifi_user_config.tx_shortcut_enable = 1;
 	wifi_user_config.rx_shortcut_enable = 1;
+	wifi_user_config.keepalive_interval = 20;
+	wifi_user_config.rx_cca_thresh = 0;
+	wifi_user_config.rate_mask_cck = 0x0;
+	wifi_user_config.sgi = 1;
+	wifi_user_config.he_gi_ltf_cap = RTW_HE_GI_LTF_ALL;
 
-#if defined(CONFIG_LINUX_FW_EN)
+#ifdef CONFIG_FULLMAC
 	/* Linux wifi supports cfg80211 ops. */
 	wifi_user_config.cfg80211 = 1;
-#else
-	wifi_user_config.cfg80211 = 0;
 #endif
 
-#ifdef CONFIG_SOFTAP_KEEP_SILENT_TABLE
-	/* SoftAP silent table to reduce probe response when receiving probe request continuously */
-	wifi_user_config.softap_keep_silent_table_enable = 1;
-	wifi_user_config.softap_keep_silent_table_interval = 500; /* ms. Once interval period is reached, remove from silent table, so can send probe response to same STA again. */
-#endif
+	/* WPS */
+	wifi_user_config.wps_retry_count = 4;
+	wifi_user_config.wps_retry_interval = 5000;
 
-#ifdef CONFIG_STA_PREFER_5GHZ
-	/* TizenRT customization: prefer 5GHz */
-	wifi_user_config.sta_prefer_5ghz_enable = 1;
-	wifi_user_config.sta_prefer_5ghz_rssi_threshold = -70; /* if same ssid, prefer 5GHz network higher than threshold */
-#endif
+	/* wifi speaker */
+	wifi_user_config.wifi_speaker_feature = 0;
 
-#ifdef CONFIG_AS_INIC_AP
-	DCache_Clean((u32)(&wifi_user_config), sizeof(struct wifi_user_conf));
-	param_buf[0] = (u32)(&wifi_user_config);
-	inic_ipc_api_host_message_send(IPC_API_WIFI_SET_USR_CFG, param_buf, 1);
+	/* ensure skb_num_np >= rx_ampdu_num + skb_num_np_rsvd */
+	if (wifi_user_config.skb_num_np < wifi_user_config.rx_ampdu_num + skb_num_np_rsvd) {
+		wifi_user_config.skb_num_np = wifi_user_config.rx_ampdu_num + skb_num_np_rsvd;
+#ifndef CONFIG_FULLMAC
+		RTK_LOGW(TAG_WLAN_DRV, "change skb_num_np to %d\n", wifi_user_config.skb_num_np);
 #endif
+	}
 
+	/* ensure ap_sta_num not exceed 12*/
+	if (wifi_user_config.ap_sta_num > 12) {
+		wifi_user_config.ap_sta_num = 12;
+#ifndef CONFIG_FULLMAC
+		RTK_LOGW(TAG_WLAN_DRV, "change ap_sta_num to 12\n");
 #endif
+	}
+
+	if (wifi_user_config.lps_enable && wifi_user_config.uapsd_enable) {
+		wifi_user_config.lps_enable = 0;
+#ifndef CONFIG_FULLMAC
+		RTK_LOGW(TAG_WLAN_DRV, "only enable uspsd mode\n");
+#endif
+	}
 }
 
+/**
+ * @brief external event handle, customer can add handle functions for wifi events @ref rtw_event_id
+ */
+__weak struct rtw_event_hdl_func_t event_external_hdl[1] = {
+	{RTW_EVENT_MAX,			NULL},
+};
+__weak u16 array_len_of_event_external_hdl = sizeof(event_external_hdl) / sizeof(struct rtw_event_hdl_func_t);
