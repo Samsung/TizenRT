@@ -3,7 +3,7 @@
  * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
  *
  ******************************************************************************/
-#include <osdep_service.h>
+#include <os_wrapper.h>
 #include <stdio.h>
 
 /* Refer to ecos bsd tcpip codes */
@@ -43,18 +43,6 @@ int rtw_get_random_bytes_f_rng(void *p_rng, unsigned char *output, size_t output
 u32 rtw_getFreeHeapSize(void)
 {
 	return 0;
-}
-
-void rtw_acquire_wakelock(void)
-{
-}
-
-void rtw_release_wakelock(void)
-{
-}
-
-void rtw_wakelock_timeout(u32 timeoutms)
-{
 }
 
 int rtw_in_interrupt(void)
