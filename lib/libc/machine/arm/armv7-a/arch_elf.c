@@ -222,6 +222,15 @@ int up_relocate(const Elf32_Rel *rel, const Elf32_Sym *sym, uintptr_t addr)
 		}
 		break;
 
+	case R_ARM_TARGET2:		/* TARGET2 is a platform-specific relocation: gcc-arm-none-eabi
+								 * performs a self relocation */
+	{
+		binfo("Performing TARGET2 link at addr=%08lx [%08lx] to sym=%p st_value=%08lx\n", (long)addr, (long)(*(uint32_t *)addr), sym, (long)sym->st_value);
+
+		*(uint32_t *)addr += sym->st_value - addr;
+	}
+	break;
+
 	case R_ARM_V4BX:
 		{
 			binfo("Performing V4BX link at addr=%08lx [%08lx]\n",
@@ -481,10 +490,9 @@ int up_relocate(const Elf32_Rel *rel, const Elf32_Sym *sym, uintptr_t addr)
 		}
 		break;
 #endif /* CONFIG_ARM_THUMB */
-
+	
 	default:
-		berr("ERROR: Unsupported relocation: %\n",
-			ELF32_R_TYPE(rel->r_info));
+		berr("ERROR: Unsupported relocation: %d\n", ELF32_R_TYPE(rel->r_info));
 		return -EINVAL;
 	}
 
