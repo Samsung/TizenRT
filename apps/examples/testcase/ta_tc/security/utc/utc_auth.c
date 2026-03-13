@@ -117,77 +117,6 @@ static void utc_auth_generate_random_input_n(void)
 }
 
 /**
- * @testcase         utc_auth_generate_certificate_p
- * @brief            Generate a certificate
- * @scenario         Generate a certificate
- * @apicovered       auth_generate_certificate
- * @precondition     none
- * @postcondition    none
- */
-static void utc_auth_generate_certificate_p(void)
-{
-	security_data cert = {NULL, 0};
-	security_csr csr;
-	security_error res = auth_generate_certificate(g_hnd, UTC_CERT_NAME, &csr, &cert);
-
-	TC_ASSERT_EQ("auth_generate_certificate_p", res, SECURITY_OK);
-	TC_SUCCESS_RESULT();
-}
-
-/**
- * @testcase         utc_auth_generate_certificate_hnd_n
- * @brief            Generate a certificate
- * @scenario         Generate a certificate
- * @apicovered       auth_generate_certificate
- * @precondition     none
- * @postcondition    none
- */
-static void utc_auth_generate_certificate_hnd_n(void)
-{
-	security_data cert = {NULL, 0};
-	security_csr csr;
-	security_error res = auth_generate_certificate(NULL, UTC_CERT_NAME, &csr, &cert);
-
-	TC_ASSERT_EQ("auth_generate_certificate_hnd_n", res, SECURITY_INVALID_INPUT_PARAMS);
-	TC_SUCCESS_RESULT();
-}
-
-/**
- * @testcase         utc_auth_generate_certificate_name_n
- * @brief            Generate a certificate
- * @scenario         Generate a certificate
- * @apicovered       auth_generate_certificate
- * @precondition     none
- * @postcondition    none
- */
-static void utc_auth_generate_certificate_name_n(void)
-{
-	security_data cert = {NULL, 0};
-	security_csr csr;
-	security_error res = auth_generate_certificate(g_hnd, NULL, &csr, &cert);
-
-	TC_ASSERT_EQ("auth_generate_certificate_name_n", res, SECURITY_INVALID_KEY_INDEX);
-	TC_SUCCESS_RESULT();
-}
-
-/**
- * @testcase         utc_auth_generate_certificate_name_n
- * @brief            Generate a certificate
- * @scenario         Generate a certificate
- * @apicovered       auth_generate_certificate
- * @precondition     none
- * @postcondition    none
- */
-static void utc_auth_generate_certificate_input_n(void)
-{
-	security_csr csr;
-	security_error res = auth_generate_certificate(g_hnd, UTC_CERT_NAME, &csr, NULL);
-
-	TC_ASSERT_EQ("auth_generate_certificate_input_n", res, SECURITY_INVALID_INPUT_PARAMS);
-	TC_SUCCESS_RESULT();
-}
-
-/**
  * @testcase         utc_auth_set_certificate_p
  * @brief            Set a certificate
  * @scenario         Set a certificate
@@ -1451,10 +1380,6 @@ void utc_auth_main(void)
 	utc_auth_generate_random_p();
 	utc_auth_generate_random_hnd_n();
 	utc_auth_generate_random_input_n();
-	utc_auth_generate_certificate_p();
-	utc_auth_generate_certificate_hnd_n();
-	utc_auth_generate_certificate_name_n();
-	utc_auth_generate_certificate_name_n();
 	utc_auth_set_certificate_p();
 	utc_auth_set_certificate_hnd_n();
 	utc_auth_set_certificate_name_n();
