@@ -160,25 +160,14 @@ static const struct audio_ops_s g_audioops = {
 
 #ifdef CONFIG_PM
 static struct adam110_dev_s *g_adam110;
-#ifdef CONFIG_ARCH_CHIP_ESP32
-static void adam110_pm_notify(FAR struct pm_callback_s *cb, int domain, enum pm_state_e pmstate);
-static int adam110_pm_prepare(FAR struct pm_callback_s *cb, int domain, enum pm_state_e pmstate);
-#else
 static void adam110_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
 static int adam110_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
-#endif
 
 static struct pm_callback_s g_pmndpcb =
 {
 	.notify  = adam110_pm_notify,
 	.prepare = adam110_pm_prepare,
 };
-#endif
-
-#ifdef CONFIG_ARCH_CHIP_ESP32
-extern const uint8_t _binary_model_bin_start[];
-extern const uint8_t _binary_model_bin_end[];
-extern const uint8_t _binary_model_bin_size[];
 #endif
 
 /****************************************************************************
@@ -324,124 +313,6 @@ static int adam110_send_cmd(FAR struct spi_dev_s *spi, uint8_t op,
 	return adam110_spi_command_xfer(spi, &tx, rx_out);
 }
 
-#ifdef CONFIG_ARCH_CHIP_ESP32
-static int adam110_send_model(FAR struct spi_dev_s *spi) 
-{
-	t_proto_pkt rxpkt;
-	const uint8_t *model_ptr = _binary_model_bin_start;
-	uint32_t total_size = (uint32_t)_binary_model_bin_size;
-	uint32_t sent_size = 0;
-	uint8_t chunk_buf[ADAM110_MODEL_CHUNK_SIZE + 1]; //256 + 1(checksum)
-	int retry_remain = 0;  
-
-	if (ADAM110_AI_UPDATE_START(spi, &rxpkt) != RSLT_SUCCESS) {
-		auddbg("[E] ai update start fail.\n");
-		return -EINVAL;
-	}
-
-	up_udelay(ADAM110_TXRX_DELAY * 100);
-
-	while (sent_size < total_size) {
-		int data_len = (total_size - sent_size >= ADAM110_MODEL_CHUNK_SIZE) ? ADAM110_MODEL_CHUNK_SIZE : (total_size - sent_size);
-		uint8_t p1 = (data_len != ADAM110_MODEL_CHUNK_SIZE) ? (uint8_t)((data_len + 1) >> 8 & 0xFF) : 0x01;
-		uint8_t p2 = (data_len != ADAM110_MODEL_CHUNK_SIZE) ? (uint8_t)((data_len + 1) & 0xFF) : 0x01;
-		
-		ADAM110_AI_CHECK_XMIT(spi, p1, p2, &rxpkt);
-
-		if (rxpkt.op == RSLT_SUCCESS) {
-			memset(chunk_buf, 0x00, sizeof(chunk_buf));
-			memcpy(chunk_buf, &model_ptr[sent_size], data_len);
-
-			chunk_buf[data_len] = adam110_calculate_checksum(chunk_buf, data_len);
-			SPI_SNDBLOCK(spi, chunk_buf, data_len + 1);
-            
-			sent_size += data_len;
-
-			retry_remain = ADAM110_MODEL_RETRY_CNT;
-
-			up_udelay(ADAM110_TXRX_DELAY);
-		} else if (rxpkt.op == RSLT_BUF_FULL) {
-			retry_remain--;
-			if (retry_remain <= 0) {
-				auddbg("[E] model download timeout.\n");
-				return -ETIMEDOUT;
-			}
-			up_udelay(ADAM110_TXRX_DELAY * 300);
-			continue;
-		} else {
-			auddbg("[E] model xmit ready failed : %d.\n", ret);
-			return -EIO;
-		}
-	}
-
-	return OK;
-}
-
-static int adam110_send_firmware(FAR struct spi_dev_s *spi) 
-{
-	t_proto_pkt rxpkt;
-	const uint8_t *model_ptr = _binary_model_bin_start;
-	uint32_t total_size = (uint32_t)_binary_model_bin_size;
-	uint32_t sent_size = 0;
-	uint8_t chunk_buf[ADAM110_MODEL_CHUNK_SIZE + 1]; //256 + 1(checksum)
-	int retry_remain = 0;  
-	int ret = OK;
-	uint32_t fw_ver;
-
-	/* check f/w version */
-	ret = ADAM110_GET_FW_VER(spi, &rxpkt);
-	if (ret != RSLT_SUCCESS) {
-		return -EINVAL;
-	} 
-	
-	audvdbg("Cur FW ver:%d.%d.%d\n",rxpkt.parm1, rxpkt.parm2, (rxpkt.parm3 << 8 | rxpkt.parm4));
-    fw_ver = rxpkt.parm1 << 24 | rxpkt.parm2 << 16 | rxpkt.parm3 << 8 | rxpkt.parm4;
-
-	return OK;
-
-#ifdef NEED_IMPL_FIRMWARE_UPDATE
-    if (ADAM110_AI_UPDATE_START(spi, &rxpkt) != RSLT_SUCCESS) {
-        return -EINVAL;
-    }
-
-	up_udelay(ADAM110_TXRX_DELAY * 100);
-
-	while (sent_size < total_size) {
-		int data_len = (total_size - sent_size >= ADAM110_MODEL_CHUNK_SIZE) ? ADAM110_MODEL_CHUNK_SIZE : (total_size - sent_size);
-		uint8_t p1 = (data_len != ADAM110_MODEL_CHUNK_SIZE) ? (uint8_t)((data_len + 1) >> 8 & 0xFF) : 0x01;
-		uint8_t p2 = (data_len != ADAM110_MODEL_CHUNK_SIZE) ? (uint8_t)((data_len + 1) & 0xFF) : 0x01;
-		
-		int ret = ADAM110_AI_CHECK_XMIT(spi, p1, p2, &rxpkt);
-
-		if (rxpkt.op == RSLT_SUCCESS) {
-			memset(chunk_buf, 0x00, sizeof(chunk_buf));
-			memcpy(chunk_buf, &model_ptr[sent_size], data_len);
-
-			chunk_buf[data_len] = adam110_calculate_checksum(chunk_buf, data_len);
-			SPI_SNDBLOCK(spi, chunk_buf, data_len + 1);
-            
-			sent_size += data_len;
-
-			retry_remain = ADAM110_MODEL_RETRY_CNT;
-
-			up_udelay(ADAM110_TXRX_DELAY);
-		} else if (rxpkt.op == RSLT_BUF_FULL) {
-			retry_remain--;
-			if (retry_remain <= 0) {
-				return -ETIMEDOUT;
-			}
-			up_udelay(ADAM110_TXRX_DELAY * 300);
-			continue;
-		} else {
-			return -EIO;
-		}
-	}
-
-	return OK;
-#endif
-
-}
-#else
 static int adam110_send_model(FAR struct spi_dev_s *spi)
 {
 	t_proto_pkt rxpkt;
@@ -624,8 +495,6 @@ static int adam110_send_firmware(FAR struct spi_dev_s *spi)
 #endif
 
 }
-#endif
-
 
 static int adam110_get_kdbuffer(FAR struct spi_dev_s *spi, uint8_t *buffer, uint32_t size)
 {
@@ -885,10 +754,7 @@ static void adam110_interrupt_dispatch(FAR void *arg)
 	FAR struct adam110_dev_s *priv = (struct adam110_dev_s *)arg;
 	int ret;
 #ifdef CONFIG_PM
-#ifdef CONFIG_ARCH_CHIP_ESP32
-#else
 	pm_timedsuspend(priv->pm_domain, 10000);
-#endif
 #endif
 	ret = work_queue(HPWORK, &adam110_work, adam110_work_handler, (void *)priv, 0);
 	if (ret != 0) {
@@ -1682,11 +1548,7 @@ static int adam110_release(FAR struct audio_lowerhalf_s *dev)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ARCH_CHIP_ESP32
-static void adam110_pm_notify(struct pm_callback_s *cb, int domain, enum pm_state_e state)
-#else
 static void adam110_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
-#endif
 {
 	/* Currently PM follows the state changes as follows,
 	 * On boot, we are in PM_NORMAL. After that we only use PM_NORMAL and PM_SLEEP
@@ -1722,11 +1584,7 @@ static void adam110_pm_notify(struct pm_callback_s *cb, enum pm_state_e state)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ARCH_CHIP_ESP32
-static int adam110_pm_prepare(struct pm_callback_s *cb, int domain, enum pm_state_e state)
-#else
 static int adam110_pm_prepare(struct pm_callback_s *cb, enum pm_state_e state)
-#endif
 {
 	audvdbg("[I] entry\n");
 	return OK;
@@ -1803,11 +1661,8 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
     /* only used during pm callbacks */
 	g_adam110 = priv;
 
-#ifdef CONFIG_ARCH_CHIP_ESP32
-#else
 	priv->pm_domain = pm_domain_register("adam110");
 	DEBUGASSERT(priv->pm_domain >= 0);
-#endif
 #endif
 
 	adam110_takesem(&priv->devsem);
@@ -1853,11 +1708,7 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	/* register callbacks only if NDP init is done */
     g_adam110 = priv;
 
-#ifdef CONFIG_ARCH_CHIP_ESP32
-	ret = pm_register(0, &g_pmndpcb);
-#else
 	ret = pm_register(&g_pmndpcb);
-#endif
 	DEBUGASSERT(ret == OK);
 #endif
 

@@ -271,10 +271,7 @@ static struct work_s adam110_work; /* workqueen handle */
 static char s_rxsmlbuf[ADAM110_RX_MAX_SIZE*ADAM110_SEAMLESS_DATA_BLK]; /* seamless pre-buffer */
 static uint8_t s_temp_chunk[ADAM110_RX_MAX_SIZE+1]; /* 3840 + 1(checksum) */
 
-#ifdef CONFIG_ARCH_CHIP_ESP32
-#else
 static const char *mcu_package = "/res/kernel/audio/mcu_fw";
 static const char *dsp_package = "/res/kernel/audio/dsp_fw";
-#endif
 
 #endif				/* __DRIVERS_AUDIO_ADAM110_H */
