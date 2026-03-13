@@ -23,51 +23,6 @@
 
 #define CONFIG_ENABLE_RDP		0
 
-/**
- * For Wlan configurations
- */
-#ifdef CONFIG_WLAN
-#define CONFIG_LWIP_LAYER	1
-#define CONFIG_INIT_NET		1 //init lwip layer when start up
-
-//on/off relative commands in log service
-#define CONFIG_SSL_CLIENT	0
-#define CONFIG_WEBSERVER	0
-#define CONFIG_OTA_UPDATE	0
-#define CONFIG_BSD_TCP		1//NOTE : Enable CONFIG_BSD_TCP will increase about 11KB code size
-#define CONFIG_AIRKISS		0//on or off tencent airkiss
-#define CONFIG_UART_SOCKET	0
-#define CONFIG_UART_XMODEM	0//support uart xmodem upgrade or not
-#define CONFIG_GOOGLE_NEST	0//on or off the at command control for google nest
-#define CONFIG_TRANSPORT	0//on or off the at command for transport socket
-
-/* For WPS and P2P */
-#define CONFIG_ENABLE_WPS		1
-#define CONFIG_ENABLE_P2P		0//on/off p2p cmd in log_service or interactive mode
-#define CONFIG_ENABLE_WPS_DISCOVERY	0
-
-/*For WPS configurations*/
-#if CONFIG_ENABLE_WPS
-#define WPS_CONNECT_RETRY_COUNT		4
-#define WPS_CONNECT_RETRY_INTERVAL	5000 // in ms
-#endif
-
-/* For SSL/TLS */
-#define CONFIG_USE_POLARSSL     0
-#define CONFIG_USE_MBEDTLS      1
-#if ((CONFIG_USE_POLARSSL == 0) && (CONFIG_USE_MBEDTLS == 0)) || ((CONFIG_USE_POLARSSL == 1) && (CONFIG_USE_MBEDTLS == 1))
-#undef CONFIG_USE_POLARSSL
-#define CONFIG_USE_POLARSSL 0
-#undef CONFIG_USE_MBEDTLS
-#define CONFIG_USE_MBEDTLS 1
-#endif
-
-/* For fast dhcp*/
-#define CONFIG_FAST_DHCP	0
-
-#define CONFIG_GAGENT			0
-
-#endif //end of #if CONFIG_WLAN
 
 /*******************************************************************************/
 
@@ -116,48 +71,12 @@
 /*******************************************************************************/
 
 /**
- * For Ethernet configurations
- */
-#define CONFIG_ETHERNET 0
-#if CONFIG_ETHERNET
-
-#define CONFIG_LWIP_LAYER	1
-#define CONFIG_INIT_NET         1 //init lwip layer when start up
-
-//on/off relative commands in log service
-#define CONFIG_SSL_CLIENT	0
-#define CONFIG_BSD_TCP		0//NOTE : Enable CONFIG_BSD_TCP will increase about 11KB code size
-
-#endif
-
-/**
  * For user to adjust SLEEP_INTERVAL
  */
 #define CONFIG_DYNAMIC_TICKLESS  1
 
 /*******************************************************************************/
 
-/**
- * For EAP configurations
- */
-
-// on/off specified eap method
-#define CONFIG_ENABLE_PEAP	0
-#define CONFIG_ENABLE_TLS	0
-#define CONFIG_ENABLE_TTLS	0
-
-// optional feature: whether to verify the cert of radius server
-#define ENABLE_EAP_SSL_VERIFY_SERVER	0
-
-#if CONFIG_ENABLE_PEAP || CONFIG_ENABLE_TLS || CONFIG_ENABLE_TTLS
-#define CONFIG_ENABLE_EAP
-#endif
-
-#if CONFIG_ENABLE_TLS
-#define ENABLE_EAP_SSL_VERIFY_CLIENT	1
-#else
-#define ENABLE_EAP_SSL_VERIFY_CLIENT	0
-#endif
 /*******************************************************************************/
 /**
  *For uvc configurations
