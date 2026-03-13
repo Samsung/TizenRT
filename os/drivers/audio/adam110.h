@@ -60,7 +60,11 @@
 
 #include <tinyara/pm/pm.h>
 
-#define USE_HOST_RINGBUFFER
+//#define USE_HOST_RINGBUFFER
+#define USE_DIRECT_APB
+#if defined(USE_HOST_RINGBUFFER) && defined(USE_DIRECT_APB)
+#error "USE_HOST_RINGBUFFER and USE_DIRECT_APB cannot be enabled together"
+#endif
 
 #define ADAM110_MIC_GAIN_MAX		255
 #define ADAM110_MIC_GAIN_DEFAULT	128
@@ -78,6 +82,21 @@
 #define ADAM110_SEAMLESS_DATA_BLK	17
 #define ADAM110_MODEL_CHUNK_SIZE	256
 #define ADAM110_MODEL_RETRY_CNT		10
+
+#define ADAM110_FW_CHUNK_SIZE		128
+#define ADAM110_FW_RETRY_CNT		10
+#define ADAM110_FW_HEADER_SIZE		16
+#define ADAM110_FW_VENDOR_ID		0xAB
+#define ADAM110_FW_ERASE_WAITTIME	(2*1000*1000) /* Min 2 sec */
+#define ADAM110_FW_UPDATE_WAITTIME  100 /* Min 100us */
+#define ADAM110_FW_WRITE_WAITTIME   (4*1000) /* Min 4ms */
+#define ADAM110_FW_CHKSUM_WAITTIME  (100*1000) /* Min 100ms */
+#define ADAM110_ALIVENESS_CHECK_PERIOD_US	(3*1000*1000) /* 3 sec */
+#define ADAM110_FW_BOOT_MODE_OK		0xB004C0DE
+
+#define ADAM110_FLASH_START_ADDR	0x2000
+#define ADAM110_FLASH_END_ADDR		0xFFFF
+#define ADAM110_FLASH_TOTAL_SIZE	(ADAM110_FLASH_END_ADDR - ADAM110_FLASH_START_ADDR + 1)
 
 /* Protocol define */
 #define PKT_HEADER_SEND				0xAC
@@ -104,15 +123,18 @@
 #define AC_UPDATE_MODEL				0x60 /* Set AI Model Update Mode */
 #define AC_UPDATE_CHK_XMIT			0x61 /* Check AI Model Data Transmit */
 #define AC_UPDATE_RSLT				0x62 /* Get AI Model Update Result */
-#define AC_INT_EN					0x63 /* Set AI Model Interrupt Enable / Disable */
-#define AC_THD_ADJ					0x64 /* Set AI Model Threshold Adjust */
-#define AC_PARA_TUNING				0x65 /* Set AI Model Parameter Tuning */
+#define AC_THD_ADJ					0x63 /* Set AI Model Threshold Adjust */
+#define AC_PARA_TUNING				0x64 /* Set AI Model Parameter Tuning */
 
 /* Firmware */
 #define FW_GET_VER					0xE0 /* Get FW Version */
 #define FW_ENTER_BOOT_MODE			0xE1 /* Enter BootMode */
-#define FW_UPDATE					0xE2 /* Start FW Update */
-#define FW_UPDATE_RSLT				0xE3 /* Get FW Update Result */
+#define FW_CHK_BOOT_MODE			0xE2 /* Boot Status Read */
+#define FW_ERASE					0xE3 /* Flash Erase */
+#define FW_UPDATE					0xE4 /* Firmware write start */
+#define FW_GET_UPDATE_DATA			0xE5 /* Firmware data packet */
+#define FW_UPDATE_RSLT_CAL			0xE6 /* Firmware checksum calculation execute */
+#define FW_UPDATE_RSLT				0xE7 /* Firmware checksum read */
 
 /* Error code */
 #define RSLT_SUCCESS				0x00 /* Success */
@@ -121,6 +143,7 @@
 #define RSLT_BUF_FULL				0x03 /* Error caused by Buffer Fall */
 #define RSLT_CHKSUM_ERR				0x04 /* Checksum Error */
 #define RSLT_SYNC_ERR				0x05 /* Sync Byte Error */
+#define RSLT_INTERNAL_ERR			0x06 /* Internal Error */
 
 #ifdef USE_HOST_RINGBUFFER
 #define ADAM110_PCM_SAMPLE_RATE			16000 //16k
@@ -255,15 +278,16 @@ struct adam110_dev_s {
     uint32_t  pcm_r;
     uint32_t  pcm_fill;
 
+    /* overflow debug stats */
+    uint32_t pcm_ovf_count;
+    uint32_t pcm_drop_bytes_total;
+#endif
+#if defined(USE_HOST_RINGBUFFER) || defined(USE_DIRECT_APB)
     /* apb wait queue */
     struct sq_queue_s pcm_apb_waitq;
 
     /* protection */
     sem_t pcmsem;
-
-    /* overflow debug stats */
-    uint32_t pcm_ovf_count;
-    uint32_t pcm_drop_bytes_total;
 #endif
 };
 
