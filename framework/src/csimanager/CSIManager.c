@@ -53,7 +53,7 @@ static void csifw_update_state_and_log(CSI_FRAMEWORK_STATE new_state)
     return;
   }
   const int max_state = sizeof(csi_framework_state_strings) / sizeof(csi_framework_state_strings[0]);
-  if (new_state < CSI_FRAMEWORK_STATE_UNINITIALIZED || new_state >= max_state) {
+  if (new_state < CSI_FRAMEWORK_STATE_UNINITIALIZED || new_state >= max_state - 1) {
     CSIFW_LOGE("Invalid state value: %d", new_state);
     return;
   }
@@ -563,7 +563,7 @@ csifw_service_info_t *add_service(csifw_context_t *p_csifw_ctx, service_callback
   }
 
   if (get_service_idx(cid) != -1) {
-    if (!p_csifw_ctx->parsed_buffptr) {
+    if (p_csifw_ctx->parsed_buffptr) {
       free(p_csifw_ctx->parsed_buffptr);
       p_csifw_ctx->parsed_buffptr = NULL;
     }

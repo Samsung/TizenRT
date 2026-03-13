@@ -32,7 +32,7 @@ typedef enum _CSIFW_RES {
 	CSIFW_ERROR_ALREADY_INIT_WITH_DIFFERENT_CONFIG = -8,	/* ERROR: Service already initialized with different CSI_Configuration  */
 	CSIFW_ERROR_SERVICE_NOT_REGISTERED = -7,		/* ERROR: Service not registered. Cannot start/stop/deinit */
 	CSIFW_ERROR_WIFI_DIS_CONNECTED = -6,			/* ERROR: WIFI WIFI_DISCONNECTED */
-	CSIFW_INVALID_RAWDATA = -5,				/* Invalid Raw Data */
+	CSIFW_ERROR_DATA_NOT_AVAILABLE = -5,                    /* ERROR: CSI Data Not Available */
 	CSIFW_INVALID_ARG = -4,					/* Invalid argument */
 	CSIFW_NOT_ENOUGH_SPACE = -3,				/* read/write/other buffer has empty space less than required size */
 	CSIFW_NO_MEM = -2,					/* Memory allocation (malloc/calloc) failed */
