@@ -65,6 +65,7 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <tinyara/rtc.h>
 
 #define TEST_TIME 300	/* 300 secs */
@@ -177,6 +178,12 @@ static void show_usage(void)
 	printf("\nUsage:  rtc\n");
 	printf("\tor: rtc stop\n");
 	printf("\t\tStart, or Stop rtc test\n");
+#ifdef CONFIG_ARCH_CHIP_BK7239N
+	printf("\tor: rtc get_ms [count] [delay_ms]\n");
+	printf("\t\tTest aon_rtc_get_ms interface.\n");
+	printf("\t\tcount: test count (default: 1, max: 100)\n");
+	printf("\t\tdelay_ms: delay between tests in milliseconds (default: 100, max: 10000)\n");
+#endif
 #ifdef CONFIG_RTC_ALARM
 	printf("\tor rtc alarm [-r seconds] [-a hh:mm:ss] [-c]\n");
 	printf("\t\tset, or cancel rtc alarm\n");
@@ -410,6 +417,88 @@ int rtc_alarm_main(int argc, char *argv[])
 }
 #endif
 
+#ifdef CONFIG_ARCH_CHIP_BK7239N
+/****************************************************************************
+ * Name: test_aon_rtc_get_ms
+ ****************************************************************************/
+
+static int test_aon_rtc_get_ms(int argc, char *argv[])
+{
+	uint64_t time_ms = 0;
+	uint32_t test_count = 1;
+	uint32_t delay_ms = 100;	/* Default delay: 100ms */
+	uint32_t i;
+	uint64_t prev_time_ms = 0;
+	uint64_t time_diff = 0;
+	int fd;
+	int ret;
+
+	if (argc >= 2) {
+		test_count = strtoul(argv[1], NULL, 10);
+		if (test_count == 0 || test_count > 10000) {
+			test_count = 1;
+		}
+	}
+
+	if (argc >= 3) {
+		delay_ms = strtoul(argv[2], NULL, 10);
+		if (delay_ms == 0 || delay_ms > 10000) {
+			delay_ms = 100;
+		}
+	}
+
+	printf("\n=== Testing aon_rtc_get_ms() via ioctl ===\n");
+	printf("Test count: %u\n", test_count);
+	printf("Delay between tests: %u ms\n", delay_ms);
+	printf("----------------------------------------\n");
+
+	fd = open(RTC_DEVPATH, O_RDWR);
+	if (fd < 0) {
+		printf("ERROR: Fail to open rtc: %d\n", get_errno());
+		return ERROR;
+	}
+
+	for (i = 0; i < test_count; i++) {
+		ret = ioctl(fd, RTC_GET_MS, (unsigned long)&time_ms);
+		if (ret < 0) {
+			printf("ERROR: Fail to get RTC time in ms via ioctl: %d\n", get_errno());
+			close(fd);
+			return ERROR;
+		}
+
+		if (i == 0) {
+			printf("[%u] aon_rtc_get_ms: %llu ms (0x%08x%08x)\n",
+				i + 1,
+				(unsigned long long)time_ms,
+				(uint32_t)(time_ms >> 32),
+				(uint32_t)(time_ms & 0xFFFFFFFF));
+		} else {
+			time_diff = time_ms - prev_time_ms;
+			printf("[%u] aon_rtc_get_ms: %llu ms (0x%08x%08x), diff: %llu ms\n",
+				i + 1,
+				(unsigned long long)time_ms,
+				(uint32_t)(time_ms >> 32),
+				(uint32_t)(time_ms & 0xFFFFFFFF),
+				(unsigned long long)time_diff);
+		}
+
+		prev_time_ms = time_ms;
+
+		if (test_count > 1 && i < test_count - 1) {
+			usleep(delay_ms * 1000); /* Delay in microseconds */
+		}
+	}
+
+	close(fd);
+
+	printf("----------------------------------------\n");
+	printf("Test completed. Final time: %llu ms\n", (unsigned long long)time_ms);
+	printf("========================================\n\n");
+
+	return OK;
+}
+#endif
+
 /****************************************************************************
  * rtc_main
  ****************************************************************************/
@@ -430,6 +519,11 @@ int rtc_main(int argc, char *argv[])
 			/* stop the rtc test */
 			rtc_test_stop();
 			return OK;
+#ifdef CONFIG_ARCH_CHIP_BK7239N
+		} else if (!strncmp(argv[1], "get_ms", strlen("get_ms") + 1)) {
+			ret = test_aon_rtc_get_ms(argc - 1, ++argv);
+			return ret;
+#endif
 #ifdef CONFIG_RTC_ALARM
 		} else if (!strncmp(argv[1], "alarm", strlen("alarm") + 1)) {
 			ret = rtc_alarm_main(argc - 1, ++argv);

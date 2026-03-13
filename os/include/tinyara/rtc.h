@@ -195,6 +195,14 @@
 
 #define RTC_USER_IOCBASE   0x0006
 
+/* RTC_GET_MS returns the current RTC time in milliseconds (64-bit).
+ *
+ * Argument: A writeable reference to a uint64_t to receive the RTC's
+ *           time in milliseconds.
+ */
+
+#define RTC_GET_MS         _RTCIOC(RTC_USER_IOCBASE)
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
