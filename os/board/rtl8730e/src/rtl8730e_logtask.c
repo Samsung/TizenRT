@@ -27,7 +27,7 @@
 #include <errno.h>
 
 #include <tinyara/irq.h>
-#include <osdep_service.h>
+#include <os_wrapper.h>
 #include "rtk_km4log.h"
 #include "osif.h"
 
