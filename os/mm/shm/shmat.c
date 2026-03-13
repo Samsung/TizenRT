@@ -150,9 +150,10 @@ FAR void *shmat(int shmid, FAR const void *shmaddr, int shmflg)
 	unsigned int npages;
 	int ret;
 
-	/* Get the region associated with the shmid */
-
-	DEBUGASSERT(shmid >= 0 && shmid < CONFIG_ARCH_SHM_MAXREGIONS);
+	if (shmid < 0 || shmid >= CONFIG_ARCH_SHM_MAXREGIONS) {
+		ret = -EINVAL;
+		goto errout_with_ret;
+	}
 	region = &g_shminfo.si_region[shmid];
 	DEBUGASSERT((region->sr_flags & SRFLAG_INUSE) != 0);
 
@@ -220,6 +221,7 @@ errout_with_vaddr:
 	gran_free(group->tg_shm.gs_handle, (FAR void *)vaddr, region->sr_ds.shm_segsz);
 errout_with_semaphore:
 	sem_post(&region->sr_sem);
+errout_with_ret:
 	set_errno(-ret);
 errout:
 	return (FAR void *)ERROR;
