@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2022 Samsung Electronics All Rights Reserved.
+# Copyright 2025 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -135,19 +135,17 @@ include component/file_system/ftl/Make.defs
 include component/file_system/kv/Make.defs
 include component/file_system/vfs2.0/Make.defs
 
-ARCH_SRCDIR = 	$(TOPDIR)/arch/$(CONFIG_ARCH)/src
-BOARD_SRCDIR = 	$(TOPDIR)/board
-PROJ_DIR = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD2_va0_example
+ARCH_SRCDIR   = $(TOPDIR)/arch/$(CONFIG_ARCH)/src
+BOARD_SRCDIR  = $(TOPDIR)/board
+PROJ_DIR      = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD2_va0_example
 COMPONENT_DIR = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component
-DIR_WIFI = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/wifi
-DIR_OSDEP = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os_dep
-DIR_OS = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os
-DIR_MBED = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/mbed/targets/hal/rtl8730e
+DIR_WIFI      = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/wifi
+DIR_OS        = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
-DIR_BT = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/bluetooth
+DIR_BT        = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/bluetooth
 endif
 ifeq ($(CONFIG_AMEBASMART_USBDEVICE),y)
-DIR_USB = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/usb
+DIR_USB       = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/usb
 endif
 
 TARGETDIR = 	$(COMPONENT_DIR)/soc/amebad2
@@ -171,14 +169,13 @@ CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src/crypto
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
 
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
-CFLAGS += -I$(DIR_MBED)
-CFLAGS += -I$(DIR_OSDEP)/include
 CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/wpa_lite
 CFLAGS += -I$(COMPONENT_DIR)/mbed/api
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal_ext
 CFLAGS += -I$(COMPONENT_DIR)/mbed/targets/hal/rtl8730e
 CFLAGS += -I$(COMPONENT_DIR)/os_dep
+CFLAGS += -I$(COMPONENT_DIR)/os_dep/include
 CFLAGS += -I$(TOPDIR)/net/netmgr
 # Temporary keep it, need further check whether the usb needs the filesystem
 CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
@@ -211,11 +208,14 @@ else
   CFLAGS += -I$(COMPONENT_DIR)/soc/amebad2/cmsis
   CFLAGS += -I$(BOARD_SRCDIR)/common
   CFLAGS += -I$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src
-  CFLAGS += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/armv7-a
-  CFLAGS += -I$(TARGETDIR)/bootloader
   CFLAGS += -I$(TOPDIR)/se/ameba
-  
+
 endif
+
+# Generate response file containing all CFLAGS
+CFLAGS_FILE := $(TOPDIR)/cflags.rsp
+$(shell printf "%s" "$(CFLAGS)" > $(CFLAGS_FILE))
+CFLAGS := @$(CFLAGS_FILE)
 
 all: libboard$(LIBEXT)
 
@@ -258,4 +258,3 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
-#include $(TOPDIR)/configs/Board.mk
