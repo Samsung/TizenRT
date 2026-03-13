@@ -155,7 +155,7 @@ typedef struct {
 /**
   * @brief IPC IRQ Function Definition
  */
-typedef void (*IPC_IRQ_FUN)(VOID *Data, u32 IrqStatus, u32 ChanNum);
+typedef void (*IPC_IRQ_FUN)(void *Data, u32 IrqStatus, u32 ChanNum);
 
 /**
   * @brief IPC User Message Type Definition
@@ -178,9 +178,20 @@ typedef struct _IPC_INIT_TABLE_ {
 	u32 IPC_Channel;	/* ipc channel, this parameter is from @IPC_LP_Tx_Channel or @IPC_NP_Tx_Channel or @IPC_AP_Tx_Channel*/
 } IPC_INIT_TABLE, *PIPC_INIT_TABLE;
 
+
 /**
-  * @}
+  * @brief IPC SEM IDX
   */
+typedef enum {
+	IPC_SEM_IMQ = 0,
+	IPC_SEM_FLASH,
+	IPC_SEM_OTP,
+	IPC_SEM_CRYPTO,
+	IPC_SEM_DIAGNOSE,
+	IPC_SEM_SYSON,
+	IPC_SEM_MAX = 16,			/* can't be this value, total 16 ipc semaphores*/
+} IPC_SEM_IDX;
+/** @} */
 
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup IPC_Exported_Constants IPC Exported Constants
@@ -245,30 +256,26 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_TX0_CHANNEL_SWITCH(x)				((u32)((x) & 0x0000000F))
 #define IS_IPC_RX_CHNUM(NUM) 					((NUM) >= 16)
 #define IPC_CHANNEL_NUM 						32
-
-
-
-/**
-  * @}
-  */
+/** @} */
 
 /** @defgroup IPC_Valid_CHNUM
   * @{
   */
 #define IS_IPC_VALID_CHNUM(NUM) ((NUM) < 8)
-/**
-  * @}
-  */
+/** @} */
 
+/** @defgroup IPC_Valid_SEMID
+  * @{
+  */
+#define IS_IPC_VALID_SEMID(SEM_ID) ((SEM_ID) < 16)
+/** @} */
 
 
 /** @defgroup IPC_Valid_CPUID
   * @{
   */
 #define IS_IPC_Valid_CPUID(cpuid)		((cpuid)<=2)
-/**
-  * @}
-  */
+/** @} */
 
 /** @defgroup IPC_LP_Tx_Channel
  * @{
@@ -290,9 +297,7 @@ typedef struct _IPC_INIT_TABLE_ {
 //#define IPC_L2A_Channel5				5
 //#define IPC_L2A_Channel6				6
 #define IPC_L2A_IMQ_TRX_TRAN					7	/*!<  LP -->  AP IMQ Message Exchange */
-/**
-  * @}
-  */
+/** @} */
 
 /** @defgroup IPC_NP_Tx_Channel
  * @{
@@ -334,7 +339,7 @@ typedef struct _IPC_INIT_TABLE_ {
 #define IPC_A2N_WIFI_API_TRAN					1	/*!<  AP -->  NP WIFI API Message Exchange */
 #define IPC_A2N_FLASHPG_REQ						2	/*!<  AP -->  NP Flash Program Request*/
 #define IPC_A2N_BT_API_TRAN						3	/*!<  AP -->  NP BT API Exchange */
-#define IPC_A2N_BT_DRC_TRAN						4	/*!<  AP -->  NP BT DATA Message Exchange */
+#define IPC_A2N_DIAGNOSE						4	/*!<  AP -->  NP Diagnose API Message Exchange */
 #define IPC_A2N_802154_TRAN						5
 #define IPC_A2N_OTP_RX_TRAN						6
 #define IPC_A2N_LOGUART_RX_SWITCH				7	/*!<  AP -->  NP Loguart Message Exchange for Linux*/
@@ -377,8 +382,16 @@ u32 IPC_INTRequest(IPC_TypeDef *IPCx, u32 IPC_Dir, u8 IPC_ChNum);
 u32 IPC_INTGet(IPC_TypeDef *IPCx);
 void IPC_INTClear(IPC_TypeDef *IPCx, u8 IPC_Shiftbit);
 u32 IPC_INTHandler(void *Data);
-void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, VOID *IrqHandler, VOID *IrqData);
+void IPC_INTUserHandler(IPC_TypeDef *IPCx, u8 IPC_Shiftbit, void *IrqHandler, void *IrqData);
 IPC_TypeDef *IPC_GetDevById(u32 cpu_id);
+u32 IPC_SEMTake(u32 SEM_Idx, u32 timeout);
+u32 IPC_SEMFree(u32 SEM_Idx);
+void IPC_SEMDelayStub(void (*pfunc)(uint32_t));
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+void IPC_patch_function(irqstate_t (*pfunc1)(void), void (*pfunc2)(irqstate_t));
+#else
+void IPC_patch_function(void (*pfunc1)(u32), void (*pfunc2)(u32));
+#endif //#ifdef CONFIG_PLATFORM_TIZENRT_OS
 
 /**
   * @}

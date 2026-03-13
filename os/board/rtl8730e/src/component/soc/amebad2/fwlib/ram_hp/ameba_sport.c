@@ -1741,7 +1741,7 @@ void AUDIO_SP_SelDirectOutSource(u32 index_src, u32 index_dir)
 		break;
 
 	default:
-		RTK_LOGS(TAG, "please check sport number!!!\n");
+		RTK_LOGS(TAG, RTK_LOG_ERROR, "please check sport number!!!\n");
 		return;
 	}
 
