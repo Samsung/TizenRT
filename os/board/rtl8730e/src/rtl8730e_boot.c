@@ -75,6 +75,7 @@
 #include "timer_api.h"
 #include "ameba_i2c.h"
 #include "ameba_spi.h"
+#include "os_wrapper.h"
 #ifdef CONFIG_FLASH_PARTITION
 #include "common.h"
 #endif
@@ -83,7 +84,6 @@
 #include "up_internal.h"
 
 #include "ameba_soc.h"
-#include "osdep_service.h"
 #include "platform_opts_bt.h"
 
 #ifdef CONFIG_AMEBASMART_BOR
@@ -410,7 +410,8 @@ void board_initialize(void)
 #ifdef CONFIG_AMEBASMART_USBDEVICE
 	usb_initialize();
 #endif
-	rtl8730e_km4_logtask_initialize();
+// Temporary disable first
+	// rtl8730e_km4_logtask_initialize();
 
 	/* init console */
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
@@ -466,9 +467,11 @@ void board_initialize(void)
 	/* Start timer to check KM4/KM0 status */
 	init_np_lp_status_timer();
 #ifdef CONFIG_AMEBASMART_WIFI
-	wlan_initialize();
+	wifi_init();
 #endif
-
+	/* Set delay function & critical function for hw ipc sema */
+	IPC_patch_function(tizenrt_critical_enter, tizenrt_critical_exit);
+	IPC_SEMDelayStub(rtos_time_delay_ms);
 #ifdef CONFIG_WIFI_CSI
 	if (rtl8730e_rtk_csi_initialize(0) != 0) {
 		lldbg("rtl8730e_rtk_csi initialization failed\n");
@@ -476,7 +479,8 @@ void board_initialize(void)
 #endif	
 
 	/* Enable IPC buffered print */
-	inic_ipc_buffered_printf_set_np_enable(1);
+	//temporary disable first
+	// inic_ipc_buffered_printf_set_np_enable(1);
 
 #ifdef CONFIG_AUDIO_ALC1019
 	if (rtl8730e_alc1019_initialize(0) != 0) {
