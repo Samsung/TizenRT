@@ -40,14 +40,11 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-
 #include <errno.h>
 #include <debug.h>
 #include <stdio.h>
-
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/mtd.h>
-
 #include "dhara/map.h"
 #include "dhara/nand.h"
 
@@ -57,11 +54,10 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
+#define CONFIG_DHARA_METADATA_NCACHES 8
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-
 struct dhara_pagecache_s {
 	dq_entry_t node;
 	dhara_page_t page;
@@ -69,7 +65,13 @@ struct dhara_pagecache_s {
 };
 
 typedef struct dhara_pagecache_s dhara_pagecache_t;
+struct dhara_metadatacache_s {
+	dq_entry_t node;
+	dhara_page_t page;      /* Page number for this metadata */
+	FAR uint8_t *buffer;    /* 132-byte metadata buffer */
+};
 
+typedef struct dhara_metadatacache_s dhara_metadatacache_t;
 struct dhara_dev_s {
 	struct dhara_nand nand;
 	struct dhara_map map;
@@ -91,6 +93,8 @@ struct dhara_dev_s {
 
 	struct dq_queue_s readcache;
 	dhara_pagecache_t readpage[CONFIG_DHARA_READ_NCACHES];
+	struct dq_queue_s metadatacache;
+	dhara_metadatacache_t metadata[CONFIG_DHARA_METADATA_NCACHES];
 };
 
 typedef struct dhara_dev_s dhara_dev_t;
@@ -128,6 +132,16 @@ static const struct block_operations g_dhara_bops = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+int sectors_reduced(FAR struct inode *inode)
+{
+	FAR dhara_dev_t *dev;
+	dev = inode->i_private;
+
+	struct dhara_map *m = &dev->map;
+	int x = dhara_map_capacity(m);
+	return x;
+}
 
 static int dhara_convert_result(dhara_error_t err)
 {
@@ -259,7 +273,6 @@ static void dhara_discard_readcache(FAR dhara_dev_t *dev, dhara_page_t page)
 		}
 	}
 }
-
 static void dhara_update_readcache(FAR dhara_dev_t *dev, dhara_page_t page, FAR const uint8_t *data)
 {
 	FAR dhara_pagecache_t *cache;
@@ -284,6 +297,129 @@ static void dhara_update_readcache(FAR dhara_dev_t *dev, dhara_page_t page, FAR 
  * Description: Open the block device
  *
  ****************************************************************************/
+/****************************************************************************
+ * Name: dhara_init_metadatacache
+ ****************************************************************************/
+static int dhara_init_metadatacache(FAR dhara_dev_t *dev)
+{
+	FAR dq_queue_t *q = &dev->metadatacache;
+	int i = 0;
+
+	dq_init(q);
+
+	do {
+		dev->metadata[i].page = DHARA_PAGE_NONE;
+		dev->metadata[i].buffer = kmm_malloc(2048);
+		dq_addfirst(&dev->metadata[i].node, q);
+	} while (dev->metadata[i++].buffer && i < CONFIG_DHARA_METADATA_NCACHES);
+	return i == CONFIG_DHARA_METADATA_NCACHES ? 0 : -ENOMEM;
+}
+
+/****************************************************************************
+ * Name: dhara_deinit_metadatacache
+ ****************************************************************************/
+static void dhara_deinit_metadatacache(FAR dhara_dev_t *dev)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_DHARA_METADATA_NCACHES; i++) {
+		if (dev->metadata[i].buffer) {
+			kmm_free(dev->metadata[i].buffer);
+		}
+	}
+}
+
+/****************************************************************************
+ * Name: dhara_find_metadatacache
+ ****************************************************************************/
+static uint8_t *dhara_find_metadatacache(FAR dhara_dev_t *dev, dhara_page_t page)
+{
+	FAR dq_queue_t *q = &dev->metadatacache;
+	FAR dhara_metadatacache_t *cache;
+	FAR dq_entry_t *c;
+
+	for (c = dq_peek(q); c; c = dq_next(c)) {
+		cache = (FAR dhara_metadatacache_t *) c;
+		if (cache->page == page) {
+			dq_rem(c, q);
+			dq_addfirst(c, q);
+			return cache->buffer;
+		}
+	}
+
+	return NULL;
+}
+
+/****************************************************************************
+ * Name: dhara_grab_metadatacache
+ ****************************************************************************/
+static dhara_metadatacache_t *dhara_grab_metadatacache(FAR dhara_dev_t *dev)
+{
+	FAR dq_queue_t *q = &dev->metadatacache;
+	FAR dhara_metadatacache_t *cache;
+	FAR dq_entry_t *c;
+
+	c = dq_tail(q);
+	dq_rem(c, q);
+	cache = (FAR dhara_metadatacache_t *) c;
+	cache->page = DHARA_PAGE_NONE;
+	return cache;
+}
+
+/****************************************************************************
+ * Name: dhara_insert_metadatacache
+ ****************************************************************************/
+static void dhara_insert_metadatacache(FAR dhara_dev_t *dev, dhara_metadatacache_t *cache)
+{
+	FAR dq_queue_t *q = &dev->metadatacache;
+
+	if (cache->page != DHARA_PAGE_NONE) {
+		dq_addfirst((dq_entry_t *) cache, q);
+	} else {
+		dq_addlast((dq_entry_t *) cache, q);
+	}
+}
+
+/****************************************************************************
+ * Name: dhara_update_metadatacache
+ ****************************************************************************/
+static void dhara_update_metadatacache(FAR dhara_dev_t *dev, dhara_page_t page, FAR const uint8_t *data)
+{
+	FAR dq_queue_t *q = &dev->metadatacache;
+	FAR dhara_metadatacache_t *cache;
+	FAR dq_entry_t *c;
+
+	for (c = dq_peek(q); c; c = dq_next(c)) {
+		cache = (FAR dhara_metadatacache_t *) c;
+			if (cache->page == page) {
+			cache->page = page;
+			memcpy(cache->buffer, data, dev->geo.blocksize);
+			dq_rem(c, q);
+			dq_addfirst(c, q);
+			break;
+		}
+	}
+}
+
+/****************************************************************************
+ * Name: dhara_discard_metadatacache
+ ****************************************************************************/
+static void dhara_discard_metadatacache(FAR dhara_dev_t *dev, dhara_page_t page)
+{
+	FAR dq_queue_t *q = &dev->metadatacache;
+	FAR dhara_metadatacache_t *cache;
+	FAR dq_entry_t *c;
+
+	for (c = dq_peek(q); c; c = dq_next(c)) {
+		cache = (FAR dhara_metadatacache_t *) c;
+		if (cache->page == page) {
+			cache->page = DHARA_PAGE_NONE;
+			dq_rem(c, q);
+			dq_addlast(c, q);
+			break;
+		}
+	}
+}
 
 static int dhara_open(FAR struct inode *inode)
 {
@@ -515,7 +651,8 @@ int dhara_nand_erase(FAR const struct dhara_nand *n, dhara_block_t bno, FAR dhar
 	for (i = 0; i < dev->blkper; i++) {
 		dhara_discard_readcache(dev, pno + i);
 	}
-
+	dhara_page_t metadata_page = pno + dev->blkper - 1;
+	dhara_discard_metadatacache(dev, metadata_page);
 	return 0;
 }
 
@@ -523,14 +660,20 @@ int dhara_nand_prog(FAR const struct dhara_nand *n, dhara_page_t p, FAR const ui
 {
 	FAR dhara_dev_t *dev = (FAR dhara_dev_t *) n;
 	int ret;
-
+	int pages_per_chunk = 1 << dev->map.journal.log2_ppc;
 	ret = MTD_BWRITE(dev->mtd, p, 1, data);
 	if (ret < 0) {
 		dhara_set_error(err, DHARA_E_BAD_BLOCK);
 		return ret;
 	}
-
+	if (ret < 0) {
+		dhara_set_error(err, DHARA_E_BAD_BLOCK);
+		return ret;
+	}
 	dhara_update_readcache(dev, p, data);
+		if ((p+1)%(pages_per_chunk) == 0) {
+		dhara_update_metadatacache(dev, p, data);
+	}
 	return 0;
 }
 
@@ -540,7 +683,6 @@ int dhara_nand_is_free(FAR const struct dhara_nand *n, dhara_page_t p)
 	size_t page_size = 1 << n->log2_page_size;
 	FAR uint8_t *buf = dev->pagebuf;
 	dhara_error_t err;
-
 	if (dhara_nand_read(n, p, 0, page_size, buf, &err) < 0) {
 		ferr("Fail to read page for free check err %s\n", dhara_strerror(err));
 		return 0;
@@ -548,25 +690,51 @@ int dhara_nand_is_free(FAR const struct dhara_nand *n, dhara_page_t p)
 
 	return dhara_check_ff(buf, page_size);
 }
-
 int dhara_nand_read(FAR const struct dhara_nand *n, dhara_page_t p, size_t offset, size_t length, FAR uint8_t *data, dhara_error_t *err)
 {
 	FAR dhara_dev_t *dev = (FAR dhara_dev_t *) n;
 	FAR dhara_pagecache_t *cache;
+	FAR dhara_metadatacache_t *mcache;
+
 	FAR uint8_t *buf;
 	int ret;
+	int pages_per_chunk = 1 << dev->map.journal.log2_ppc;
+	if ((p+1)%(pages_per_chunk) == 0) {
+	/* Check metadata cache */
+	buf = dhara_find_metadatacache(dev, p);
+	if (buf) {
+		memcpy(data, buf+offset, length);
+		return 0;
+	}
+	mcache = dhara_grab_metadatacache(dev);
+	ret = MTD_BREAD(dev->mtd, p, 1, mcache->buffer);
+	if (ret == -EUCLEAN) {
+		ret = 0;
+	}
+	if (ret < 0) {
+		dhara_insert_metadatacache(dev, mcache);
+		dhara_set_error(err, DHARA_E_ECC);
+		return ret;
+	}
+	memcpy(data, mcache->buffer + offset, length);
+	mcache->page = p;
+	dhara_insert_metadatacache(dev, mcache);
 
+	} else {
+	/* Check data page cache first */
 	buf = dhara_find_readcache(dev, p);
 	if (buf) {
 		memcpy(data, buf + offset, length);
 		return 0;
 	}
 
+	/* Grab a cache entry */
 	cache = dhara_grab_readcache(dev);
+
+	/* Read page from flash */
 	ret = MTD_BREAD(dev->mtd, p, 1, cache->buffer);
-	if (ret == -EUCLEAN) {
-		ret = 0;				/* Ignore the correctable ECC error */
-	}
+	if (ret == -EUCLEAN)
+		ret = 0;  /* Ignore correctable ECC error */
 
 	if (ret < 0) {
 		dhara_insert_readcache(dev, cache);
@@ -574,11 +742,16 @@ int dhara_nand_read(FAR const struct dhara_nand *n, dhara_page_t p, size_t offse
 		return ret;
 	}
 
+	/* Copy requested data */
 	memcpy(data, cache->buffer + offset, length);
 	cache->page = p;
 	dhara_insert_readcache(dev, cache);
-	return ret;
+
+	/* Check if this is a metadata page and cache it */
 }
+	return ret >= 0 ? OK : ret;
+}
+
 
 int dhara_nand_copy(FAR const struct dhara_nand *n, dhara_page_t src, dhara_page_t dst, FAR dhara_error_t *err)
 {
@@ -586,7 +759,6 @@ int dhara_nand_copy(FAR const struct dhara_nand *n, dhara_page_t src, dhara_page
 	size_t page_size = 1 << n->log2_page_size;
 	FAR uint8_t *buf = dev->pagebuf;
 	int ret;
-
 	ret = dhara_nand_read(n, src, 0, page_size, buf, err);
 	if (ret < 0) {
 		ferr("src_page %d, ret %d failed: %s\n", src, ret, dhara_strerror(*err));
@@ -672,7 +844,7 @@ int dhara_initialize_by_path(FAR const char *path, FAR struct mtd_dev_s *mtd)
 	if (ret != 0) {
 		goto err;
 	}
-
+	ret = dhara_init_metadatacache(dev);
 	dhara_map_init(&dev->map, &dev->nand, dev->pagebuf + dev->geo.blocksize, CONFIG_DHARA_GC_RATIO);
 
 	dhara_map_resume(&dev->map, NULL);
@@ -692,6 +864,7 @@ int dhara_initialize_by_path(FAR const char *path, FAR struct mtd_dev_s *mtd)
 err:
 	sem_destroy(&dev->lock);
 	dhara_deinit_readcache(dev);
+	dhara_deinit_metadatacache(dev);
 	kmm_free(dev->pagebuf);
 	kmm_free(dev);
 	return ret;
@@ -709,7 +882,6 @@ err:
  *   mtd   - The MTD device that supports the FLASH interface.
  *
  ****************************************************************************/
-
 int dhara_initialize(int minor, FAR struct mtd_dev_s *mtd)
 {
 	char path[PATH_MAX];

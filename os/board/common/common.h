@@ -32,6 +32,7 @@ struct partition_info_s {
 	int timezone_partno;
 	int minor;
 	int littlefs_partno;
+	int dhara_minor;
 };
 typedef struct partition_info_s partition_info_t;
 
