@@ -67,13 +67,16 @@ endif
 ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/mbed/hal_ext/
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/mbed/targets/hal/rtl8730e
-CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/os_dep
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/os/os_wrapper
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/os/os_wrapper/include
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/app/monitor/include
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/cmsis
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/misc
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/fwlib/include
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/amebad2/swlib
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/soc/common/include
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/project/realtek_amebaD2_va0_example/inc/inc_ap
+CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/usrcfg/common
 CFLAGS += -I$(TOPDIR)/board/rtl8730e/src/component/usrcfg/rtl8730e/include
 endif
 endif

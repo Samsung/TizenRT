@@ -85,19 +85,22 @@ include component/soc/amebad2/fwlib/ap_core/Make.defs
 include component/soc/amebad2/fwlib/rom_common/Make.defs
 include component/soc/amebad2/fwlib/ram_hp/Make.defs
 include component/soc/amebad2/swlib/Make.defs
+include component/soc/common/diagnose/Make.defs
 
 include component/usrcfg/rtl8730e/Make.defs
 include component/lwip/api/Make.defs
-include component/wifi/Make.defs
-include component/wifi/inic/Make.defs
 include component/wifi/common/Make.defs
 include component/mbed/targets/hal/rtl8730e/Make.defs
-include component/os_dep/Make.defs
+include component/os/os_wrapper/Make.defs
 include component/os/tizenrt/Make.defs
 
 ifeq ($(CONFIG_AMEBASMART_WIFI),y)
-include component/wifi/api/Make.defs
+include component/wifi/Make.defs
+include component/wifi/rtk_app/wifi_init/Make.defs
 include component/wifi/wpa_supplicant/wpa_supplicant/Make.defs
+endif
+
+ifeq ($(CONFIG_PM),y)
 include component/soc/amebad2/misc/Make.defs
 endif
 
@@ -132,15 +135,15 @@ include component/usb/device_new/core/Make.defs
 endif
 
 include component/file_system/ftl/Make.defs
-include component/file_system/kv/Make.defs
-include component/file_system/vfs2.0/Make.defs
+# include component/file_system/kv/Make.defs
+# include component/file_system/vfs2.0/Make.defs
 
 ARCH_SRCDIR = 	$(TOPDIR)/arch/$(CONFIG_ARCH)/src
 BOARD_SRCDIR = 	$(TOPDIR)/board
 PROJ_DIR = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD2_va0_example
 COMPONENT_DIR = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component
 DIR_WIFI = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/wifi
-DIR_OSDEP = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os_dep
+DIR_OSDEP = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os/os_wrapper
 DIR_OS = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os
 DIR_MBED = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/mbed/targets/hal/rtl8730e
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
@@ -161,15 +164,23 @@ CFLAGS += -I$(TARGETDIR)/fwlib/ap_core
 CFLAGS += -I$(TARGETDIR)/app/monitor/include
 CFLAGS += -I$(TARGETDIR)/swlib
 CFLAGS += -I$(TARGETDIR)/misc
+CFLAGS += -I$(COMPONENT_DIR)/soc/common/include
 CFLAGS += -I$(COMPONENT_DIR)/stdlib
+CFLAGS += -I$(COMPONENT_DIR)/usrcfg/common
 CFLAGS += -I$(COMPONENT_DIR)/usrcfg/rtl8730e/include
 
-CFLAGS += -I$(COMPONENT_DIR)/wifi/api
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/include
-CFLAGS += -I$(COMPONENT_DIR)/wifi/inic
-CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src/crypto
+CFLAGS += -I$(DIR_WIFI)/api
+CFLAGS += -I$(DIR_WIFI)/common
+CFLAGS += -I$(DIR_WIFI)/driver/halcommon_rom
+CFLAGS += -I$(DIR_WIFI)/driver/include
+CFLAGS += -I$(DIR_WIFI)/driver/intf
+CFLAGS += -I$(DIR_WIFI)/whc
+CFLAGS += -I$(DIR_WIFI)/whc/whc_host_rtos/ipc
+CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/src
+CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/src/crypto
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
 
+CFLAGS += -I$(COMPONENT_DIR)/os/os_wrapper/include
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(DIR_MBED)
 CFLAGS += -I$(DIR_OSDEP)/include
@@ -178,12 +189,11 @@ CFLAGS += -I$(COMPONENT_DIR)/mbed/api
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal_ext
 CFLAGS += -I$(COMPONENT_DIR)/mbed/targets/hal/rtl8730e
-CFLAGS += -I$(COMPONENT_DIR)/os_dep
 CFLAGS += -I$(TOPDIR)/net/netmgr
 # Temporary keep it, need further check whether the usb needs the filesystem
-CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
+# CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
 CFLAGS += -I$(COMPONENT_DIR)/file_system/ftl
-CFLAGS += -I$(COMPONENT_DIR)/file_system/kv
+# CFLAGS += -I$(COMPONENT_DIR)/file_system/kv
 
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
 CFLAGS += -I$(DIR_BT)/inc
