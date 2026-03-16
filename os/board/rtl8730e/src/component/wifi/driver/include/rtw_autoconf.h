@@ -97,9 +97,12 @@
 #endif
 /************************ For EAP auth configurations *************************/
 /* KVR macro is default opened, but actually not working. To use it, need turn on the switch in menuconfig */
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+// Currently not used in TizenRT
 #define CONFIG_IEEE80211V
 #define CONFIG_IEEE80211R
 #define CONFIG_IEEE80211K
+#endif //#ifndef CONFIG_PLATFORM_TIZENRT_OS
 #if WIFI_LOGO_CERTIFICATION
 /* 80211 - K MBO */
 #define CONFIG_RTW_MBO

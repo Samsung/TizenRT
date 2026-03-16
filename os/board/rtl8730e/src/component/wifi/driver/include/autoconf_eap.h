@@ -18,7 +18,10 @@
 #ifndef AUTOCONF_EAP_H
 #define AUTOCONF_EAP_H
 
-#define CONFIG_EAP
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+/* Currently not using EAP, comment first */
+// #define CONFIG_EAP
+#endif //#ifndef CONFIG_PLATFORM_TIZENRT_OS
 
 /************************ For EAP auth configurations *************************/
 /* DO NOT change the below config of EAP */
@@ -39,7 +42,8 @@
 /**
  * For EAP Method Configurations
  */
-
+#ifndef CONFIG_PLATFORM_TIZENRT_OS
+/* Currently not using EAP, comment first */
 // on/off specified eap method
 #define CONFIG_ENABLE_PEAP	1
 #define CONFIG_ENABLE_TLS	1
@@ -47,6 +51,7 @@
 
 // optional feature: whether to verify the cert of radius server
 #define ENABLE_EAP_SSL_VERIFY_SERVER	0
+#endif //#ifndef CONFIG_PLATFORM_TIZENRT_OS
 
 #if CONFIG_ENABLE_PEAP || CONFIG_ENABLE_TLS || CONFIG_ENABLE_TTLS
 #define CONFIG_ENABLE_EAP

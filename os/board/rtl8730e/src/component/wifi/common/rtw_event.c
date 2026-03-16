@@ -166,8 +166,9 @@ void wifi_event_join_status_internal_hdl(u8 *evt_info)
 #else
 		dbg_noarg("wifi disconnected\r\n");
 #endif //#ifndef CONFIG_PLATFORM_TIZENRT_OS
-
+#ifdef CONFIG_EAP
 		eap_disconnected_hdl();
+#endif //#ifdef CONFIG_EAP
 	}
 
 	if ((join_status == RTW_JOINSTATUS_DISCONNECT) || (join_status == RTW_JOINSTATUS_FAIL)) {
