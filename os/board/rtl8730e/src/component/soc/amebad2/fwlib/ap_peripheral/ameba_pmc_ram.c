@@ -1,72 +1,47 @@
-/**
-  ******************************************************************************
-  * @file    ameba_pmc_ram.c
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file provides firmware functions to manage the following
-  *          functionalities of the soc power management circut:
-  *           - wakeup timer
-  *           - wakeup pin
-  *           - sleep option
-  *           - sleep mode
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2015, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
 
-static const char *TAG = "PMC";
+static const char *const TAG = "PMC";
 extern SLEEP_ParamDef sleep_param;
 
 /**
-  * @brief  set ap wake up event mask0.
+  * @brief  set AP wake up event.
   * @param  Option:
   *   This parameter can be any combination of the following values:
   *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
+  * @param  NewStatus: ENABLE/DISABLE.
   * @retval None
   */
-void SOCPS_SetAPWakeEvent_MSK0(u32 Option, u32 NewStatus)
+void SOCPS_SetAPWakeEvent(u32 Option, u32 NewStatus)
 {
 	u32 WakeEvent = 0;
-
+	u32 RegIndex = (Option >> 30) & 0x3;
+	u32 Reg = 0;
+	switch (RegIndex) {
+	case 0x0:
+	case 0x1:
+	case 0x2:
+		Reg = WAK_MASK0_AP;
+		break;
+	case 0x3:
+		Reg = WAK_MASK1_AP;
+		break;
+	default:
+		return;
+	}
 	/* Set Event */
-	WakeEvent = HAL_READ32(PMC_BASE, WAK_MASK0_AP);
+	WakeEvent = HAL_READ32(PMC_BASE, Reg);
 	if (NewStatus == ENABLE) {
 		WakeEvent |= Option;
 	} else {
 		WakeEvent &= ~Option;
 	}
-	HAL_WRITE32(PMC_BASE, WAK_MASK0_AP, WakeEvent);
-}
-
-/**
-  * @brief  set ap wake up event mask1.
-  * @param  Option:
-  *   This parameter can be any combination of the following values:
-  *		 @arg WAKE_SRC_XXX
-  * @param  NewStatus: TRUE/FALSE.
-  * @retval None
-  */
-void SOCPS_SetAPWakeEvent_MSK1(u32 Option, u32 NewStatus)
-{
-	u32 WakeEvent = 0;
-
-	/* Set Event */
-	WakeEvent = HAL_READ32(PMC_BASE, WAK_MASK1_AP);
-	if (NewStatus == ENABLE) {
-		WakeEvent |= Option;
-	} else {
-		WakeEvent &= ~Option;
-	}
-	HAL_WRITE32(PMC_BASE, WAK_MASK1_AP, WakeEvent);
+	HAL_WRITE32(PMC_BASE, Reg, WakeEvent);
 }
 
 /**
@@ -108,7 +83,7 @@ void SOCPS_Sleep(void)
 	asm volatile("wfe");
 }
 
-void SOCPS_LPWAP_ipc_int(VOID *Data, u32 IrqStatus, u32 ChanNum)
+void SOCPS_LPWAP_ipc_int(void *Data, u32 IrqStatus, u32 ChanNum)
 {
 	/* To avoid gcc warnings */
 	UNUSED(Data);
@@ -125,9 +100,9 @@ const IPC_INIT_TABLE ipc_LPWHP_table[] = {
 	{
 		.USER_MSG_TYPE = IPC_USER_DATA,
 		.Rxfunc = SOCPS_LPWAP_ipc_int,
-		.RxIrqData = (VOID *) NULL,
+		.RxIrqData = (void *) NULL,
 		.Txfunc = IPC_TXHandler,
-		.TxIrqData = (VOID *) NULL,
+		.TxIrqData = (void *) NULL,
 		.IPC_Direction = IPC_LP_TO_AP,
 		.IPC_Channel = IPC_L2A_Channel1
 	},

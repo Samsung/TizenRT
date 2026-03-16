@@ -1,29 +1,15 @@
-/**
-  ******************************************************************************
-  * @file    ameba_clk.h
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file provides firmware functions to manage the following
-  *          functionalities of clock control:
-  *           - NCO32K clock
-  *           - NCO8M clock
-  *           - CPU clock
-  *           - XTAL clock get
-  *           - OSC32K clock
-  *           - EXT32K clock
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2015, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _AMEBA_CLK_H_
 #define _AMEBA_CLK_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @addtogroup AmebaD_Platform
   * @{
@@ -258,9 +244,10 @@ _LONG_CALL_ u32 XTAL_ClkGet(void);
 _LONG_CALL_ void PLL_I2S_Div(int Sportx, u32 div);
 _LONG_CALL_ void PLL_I2S_98P304M(u32 NewState);
 _LONG_CALL_ void PLL_I2S_45P158M(u32 NewState);
-_LONG_CALL_ float PLL_I2S_98P304M_ClkTune(float ppm, u32 action);
-_LONG_CALL_ float PLL_I2S_45P158M_ClkTune(float ppm, u32 action);
+_LONG_CALL_ float PLL_I2S_98P304M_ClkTune(u32 pll_sel, float ppm, u32 action);
+_LONG_CALL_ float PLL_I2S_45P158M_ClkTune(u32 pll_sel, float ppm, u32 action);
 _LONG_CALL_ void PLL_NP_ClkSet(u32 PllClk);
+_LONG_CALL_ u32 PLL_NP_ClkGet(void);
 _LONG_CALL_ void PLL_NP(u32 NewState);
 _LONG_CALL_ void PLL_AP_ClkSet(u32 PllClk);
 _LONG_CALL_ void PLL_AP(u32 NewState);
@@ -274,6 +261,7 @@ _LONG_CALL_ void PLL_AP_ClkTune(u32 Option);
   * @{
   */
 _LONG_CALL_ void HBUS_ClkSet(u32 Source);
+_LONG_CALL_ u32 PLL_GetHBUSClk(void);
 /**
   * @}
   */
@@ -337,7 +325,13 @@ void CLK_SWITCH_XTAL(u32 State);
 #define APPLL_1480M			1400	// for Acut Vol when not cal
 #define APPLL_NULL			0
 
+#define CLK_LIMIT_PSRAM           (460 * MHZ_TICK_CNT)
+
 #define ISNPPLL				0
 #define ISAPPLL				0x80000000
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_AMEBA_CLK_H_
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

@@ -49,9 +49,9 @@
 #
 ############################################################################
 
-CSRCS += ameba_delay.c \
-	ameba_loguart.c \
-	#ameba_pmc_ram.c
+CSRCS +=		ameba_delay.c   \
+				ameba_loguart.c \
+# UNUSED		ameba_pmc_ram.c
 
 DEPPATH += --dep-path component/soc/amebad2/fwlib/ap_peripheral
 VPATH += :component/soc/amebad2/fwlib/ap_peripheral

@@ -48,6 +48,11 @@
 #define TRUE    (!FALSE)
 #endif
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+#define pdTRUE  (1)
+#define pdFALSE (0)
+#endif /* CONFIG_PLATFORM_TIZENRT_OS */
+
 #define _TRUE        TRUE
 #define _FALSE	     FALSE
 
