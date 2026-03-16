@@ -193,7 +193,6 @@ int up_relocate(FAR const Elf32_Rel *rel, FAR const Elf32_Sym *sym, uintptr_t ad
 	}
 	break;
 
-#ifdef CONFIG_ARMV7M_TARGET2_PREL
 	case R_ARM_TARGET2:		/* TARGET2 is a platform-specific relocation: gcc-arm-none-eabi
 								 * performs a self relocation */
 	{
@@ -202,7 +201,6 @@ int up_relocate(FAR const Elf32_Rel *rel, FAR const Elf32_Sym *sym, uintptr_t ad
 		*(uint32_t *)addr += sym->st_value - addr;
 	}
 	break;
-#endif
 
 	case R_ARM_THM_CALL:
 	case R_ARM_THM_JUMP24: {

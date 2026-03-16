@@ -453,7 +453,8 @@ ifeq ($(CONFIG_ELF),y)
 endif
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 ifeq ($(CONFIG_ELF),y)
-	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps.ld -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
+	$(Q) $(CC) -c $(CFLAGS) -D__COMMON_BINARY__ $(TOPDIR)/userspace/up_userspace.c -o  $(TOPDIR)/userspace/up_userspace_common.o
+	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
 else
 	$(Q) $(TOPDIR)/tools/mkldscript.py
 	$(Q) $(CC) -c $(CFLAGS) -D__COMMON_BINARY__ $(TOPDIR)/userspace/up_userspace.c -o  $(TOPDIR)/userspace/up_userspace_common.o

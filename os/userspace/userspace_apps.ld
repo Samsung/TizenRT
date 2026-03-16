@@ -79,6 +79,19 @@ SECTIONS
       *(.fini)             /* Old ABI */
       _etext_flash = . ;
     }
+    
+   /* C++ .ARM.extab/.ARM.exidx address shall same as *(.text*) */
+	.ARM.extab  : 
+	{
+		*(.ARM.extab* .gnu.linkonce.armextab.*)
+	}
+
+	.ARM.exidx :
+	{
+		__exidx_start = .;
+		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
+		__exidx_end = .;
+	}
 
   .rodata :
     {
