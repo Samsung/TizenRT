@@ -1,5 +1,11 @@
-#ifndef _AMEBAD2_MIPI_H_
-#define _AMEBAD2_MIPI_H_
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef _AMEBA_MIPI_H_
+#define _AMEBA_MIPI_H_
 
 /* AUTO_GEN_START */
 
@@ -1299,6 +1305,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @defgroup MIPI_Exported_Constants MIPI Exported Constants
  * @{
  **/
@@ -1392,6 +1402,10 @@ _LONG_CALL_ void MIPI_Init(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruc
 /**
   * @}
   */
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 /**

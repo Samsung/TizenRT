@@ -107,7 +107,7 @@ UART_StructInit(UART_InitTypeDef *UART_InitStruct)
 	UART_InitStruct->StopBit        = RUART_STOP_BIT_1;
 	UART_InitStruct->WordLen        = RUART_WLS_8BITS;
 	UART_InitStruct->RxFifoTrigLevel = UART_RX_FIFOTRIG_LEVEL_1BYTES;
-	UART_InitStruct->RxErReportCtrl  = UART_RX_EEROR_REPORT_ENABLE;
+	UART_InitStruct->RxErReportCtrl  = UART_RX_ERROR_REPORT_ENABLE;
 	UART_InitStruct->DmaModeCtrl    = ENABLE;
 	UART_InitStruct->FlowControl    = DISABLE;
 	UART_InitStruct->RxTimeOutCnt   = 64;
