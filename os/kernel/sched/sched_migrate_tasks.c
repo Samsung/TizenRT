@@ -81,14 +81,18 @@ int sched_migrate_tasks(int offline_cpu)
 		return -EINVAL;
 	}
 
+	/* Disable interrupts to ensure atomicity throughout this critical operation. */
+	flags = enter_critical_section();
+
+	if (sched_islocked_global()) {
+		leave_critical_section(flags);
+		return -EBUSY;
+	}
 	/* Lock the scheduler to prevent preemption during this operation.
 	 * This ensures that no other tasks can be scheduled while we're
 	 * migrating tasks from the offline CPU.
 	 */
 	sched_lock();
-
-	/* Disable interrupts to ensure atomicity throughout this critical operation. */
-	flags = enter_critical_section();
 
 	/* Get the list of tasks assigned to the offline CPU.
 	 * We need to lock the task list to prevent concurrent access, though
@@ -104,7 +108,7 @@ int sched_migrate_tasks(int offline_cpu)
 
 	tcb = (FAR struct tcb_s *)task_list->tail;
 
-	DEBUGASSERT(tcb->flink == NULL);
+	DEBUGASSERT(tcb && tcb->flink == NULL);
 	tcb = tcb->blink;	/* Skipping the idle task */
 
 	while (tcb != NULL) {
@@ -118,7 +122,7 @@ int sched_migrate_tasks(int offline_cpu)
 		sllvdbg("Migrating task PID %d from offline CPU %d\n", tcb->pid, offline_cpu);
 
 		/* Add the tcb to the appropriate task list */
-		ASSERT(!sched_addreadytorun(tcb))
+		ASSERT(!sched_addreadytorun(tcb));
 
 		tcb = priv_tcb;
 	}
@@ -127,16 +131,16 @@ int sched_migrate_tasks(int offline_cpu)
 	 * The idle task for that CPU would also have been processed.
 	 * We can now mark the CPU as offline in any global masks if not already done.
 	 */
-	DEBUGASSERT((task_list)->head->flink == NULL);	/* Assert if the head of assingned list is not idle */
+	DEBUGASSERT((task_list)->head->flink == NULL);	/* Assert if the head of assigned list is not idle */
 
 	/* Release critical section and scheduler lock.
 	 * Releasing the scheduler lock (sched_unlock) will process any tasks
 	 * that might have been added to g_pendingtasks during the migration
 	 * (e.g., if preemption was locked on the target CPU when sched_addreadytorun was called).
 	 */
-	leave_critical_section(flags);
 
 	sched_unlock();
+	leave_critical_section(flags);
 
 	sllvdbg("Successfully migrated all tasks from offline CPU %d.\n", offline_cpu);
 	return ret;
