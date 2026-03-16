@@ -287,6 +287,7 @@ endif
 
 ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
 #CHIP_CSRCS += amebasmart_nsc.c
+endif
 
 ifeq ($(CONFIG_SMP),y)
 CHIP_CSRCS += amebasmart_smp.c
@@ -297,7 +298,6 @@ ifeq ($(CONFIG_ARCH_FPU),y)
 #EXTRA_LIBS += ${TOPDIR}/board/
 else
 #EXTRA_LIBS += ${TOPDIR}/board/
-endif
 endif
 
 # Wifi
