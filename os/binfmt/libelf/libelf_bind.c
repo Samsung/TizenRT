@@ -90,6 +90,17 @@
 #include <tinyara/hashmap.h>
 static struct hashmap_s *g_lib_symhash;
 static int g_num_lib_syms;
+
+#ifdef CONFIG_ELF
+void *elf_get_lib_symbol(unsigned char *name)
+{
+	if (!g_lib_symhash || !name) {
+		return NULL;
+	}
+
+	return hashmap_get(g_lib_symhash, hashmap_get_hashval(name));
+}
+#endif
 #endif
 
 /****************************************************************************

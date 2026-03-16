@@ -453,15 +453,15 @@ ifeq ($(CONFIG_ELF),y)
 endif
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 ifeq ($(CONFIG_ELF),y)
-	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps.ld -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
+	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps.ld $(if $(filter y,$(CONFIG_LIBCXX_EXCEPTION)),-u __gnu_Unwind_Find_exidx) -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
 else
 	$(Q) $(TOPDIR)/tools/mkldscript.py
 	$(Q) $(CC) -c $(CFLAGS) -D__COMMON_BINARY__ $(TOPDIR)/userspace/up_userspace.c -o  $(TOPDIR)/userspace/up_userspace_common.o
 ifneq ($(CONFIG_XIP_ELF_WARCHIVE), y)
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" undefsym KERNEL=n
-	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt) -Map $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).map
+	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o $(if $(filter y,$(CONFIG_LIBCXX_EXCEPTION)),-u __gnu_Unwind_Find_exidx) -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt) -Map $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).map
 else
-	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --whole-archive $(USERLIBS) --no-whole-archive --start-group $(LIBGCC) $(LIBSUPXX) --end-group
+	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o $(if $(filter y,$(CONFIG_LIBCXX_EXCEPTION)),-u __gnu_Unwind_Find_exidx) -L $(LIBRARIES_DIR) --whole-archive $(USERLIBS) --no-whole-archive --start-group $(LIBGCC) $(LIBSUPXX) --end-group
 endif
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 endif

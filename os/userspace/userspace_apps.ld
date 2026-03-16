@@ -80,6 +80,20 @@ SECTIONS
       _etext_flash = . ;
     }
 
+  .ARM.extab :
+    {
+      *(.ARM.extab*)
+    }
+
+  __fexidx_start = ABSOLUTE(.);
+  .ARM.exidx :
+    {
+      __exidx_start = .;
+      *(.ARM.exidx*)
+      __exidx_end = .;
+    }
+  __fexidx_end = ABSOLUTE(.);
+
   .rodata :
     {
       _srodata = . ;

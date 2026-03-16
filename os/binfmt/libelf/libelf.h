@@ -426,4 +426,8 @@ void *elf_find_start_section_addr(struct binary_s *binp);
 #endif
 #endif /* CONFIG_APP_BINARY_SEPARATION */
 
+#if defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_ELF)
+void *elf_get_lib_symbol(unsigned char *name);
+#endif
+
 #endif							/* __BINFMT_LIBELF_LIBELF_H */
