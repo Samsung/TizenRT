@@ -31,8 +31,8 @@ __CPU0_APP_VIRTUAL_CODE_START = 0xD0000;
 __CPU0_APP_VIRTUAL_CODE_SIZE = 0x600000;
 
 SOC_FLASH_DATA_BASE = 0x12000000;
-SOC_PSRAM_DATA_BASE = CONFIG_BK_PSRAM_DATA_BASE;
-SOC_PSRAM_CODE_BASE = CONFIG_BK_PSRAM_CODE_BASE;
+SOC_PSRAM_BASE = RAM_KREGION0_START;
+SOC_PSRAM_SIZE = RAM_KREGION0_SIZE;
 
 OUTPUT_ARCH(arm)
 ENTRY(Reset_Handler)
@@ -42,8 +42,7 @@ MEMORY
   FLASH (rx)            : ORIGIN = (SOC_FLASH_DATA_BASE + __CPU0_APP_VIRTUAL_CODE_START), LENGTH = __CPU0_APP_VIRTUAL_CODE_SIZE
   IRAM (rx)             : ORIGIN = __CPU0_APP_IRAM_BASE, LENGTH = __CPU0_APP_IRAM_SIZE
   RAM (rwx)             : ORIGIN = __CPU0_APP_RAM_BASE, LENGTH = __CPU0_APP_RAM_SIZE
-  PSRAM_DATA (rwx)      : ORIGIN = SOC_PSRAM_DATA_BASE, LENGTH = CONFIG_BK_PSRAM_DATA_SIZE
-  PSRAM_CODE (rwx)      : ORIGIN = SOC_PSRAM_CODE_BASE, LENGTH = CONFIG_BK_PSRAM_CODE_SIZE
+  PSRAM (rwx)           : ORIGIN = SOC_PSRAM_BASE, LENGTH = SOC_PSRAM_SIZE
 }
 
 SECTIONS
@@ -180,100 +179,9 @@ SECTIONS
 
     _eronly = ABSOLUTE(.);
 
-    .data :
-    {
-        . = ALIGN(4);
-        PROVIDE(__etext = LOADADDR(.data));
-        PROVIDE(__data_flash_begin = LOADADDR(.data));
-
-        _sdata = ABSOLUTE(.);
-        __data_start__ = .;
-
-        *(.dtcm)
-        *(.dtcm_section*)
-        *(.dtcm_sec_data*)
-        *(.data)
-        *(".data.*")
-        *(.sdata)
-
-        *(.gnu.linkonce.d*)
-        __data_end__ = .;
-        _edata = ABSOLUTE(.);
-    } > RAM AT > FLASH
-
-    _data_flash_begin = __data_flash_begin;
-    _data_ram_begin = __data_start__;
-    _data_ram_end = .;
-
-    .uninitialized (NOLOAD):
-    {
-        . = ALIGN(32);
-        __uninitialized_start = .;
-        *(.uninitialized)
-        *(".uninitialized.*")
-        KEEP(*(.keep.uninitialized))
-        . = ALIGN(32);
-        __uninitialized_end = .;
-    } > RAM
-
-    .PERSIST_MEM : ALIGN(4)
-    {
-        __persist_mem__ = .;
-        . += PERSIST_MEM_AREA_SIZE;
-    } > RAM
-
-    .REBOOT_TAG : ALIGN(4)
-    {
-        __reboot_tag__ = .;
-        . += REBOOT_TAG_AREA_SIZE;
-    } > RAM
-
-    .bss (NOLOAD):
-    {
-        . = ALIGN(4);
-
-       _sbss = ABSOLUTE(.);
-        _bss_start = .;
-        /*EXCLUDE_FILE(*libnet.a:mem.o*)  *(.bss .bss*)*/
-        *(.bss .bss*)
-        *(COMMON)
-
-        . = ALIGN(8);
-        _sidle_stack = ABSOLUTE(.);
-        . = . + CONFIG_IDLETHREAD_STACKSIZE ;
-
-        . = ALIGN(4);
-        _bss_end = .;
-        _ebss = ABSOLUTE(.);
-    } > RAM
-
-    bss_size = _bss_end - _bss_start;
-
-    _msp_total_size = __MSP_STACK_SIZE;
-
-    .heap (COPY) :
-    {
-        . = ALIGN(8);
-        _heap_start = .;
-        . = . + (ORIGIN(RAM) + LENGTH(RAM) - _msp_total_size - _heap_start - 8); /* 16 bytes for boundary protection */
-        . = ALIGN(8);
-        _heap_end = .;
-    } > RAM
-
-    .stack (ORIGIN(RAM) + LENGTH(RAM) - __MSP_STACK_SIZE) (COPY) :
-    {
-        . = ALIGN(8);
-        /*_sstack = .; */
-        __StackLimit = .;
-        . = . + __MSP_STACK_SIZE;
-        . = ALIGN(8);
-        __StackTop = .;
-        /*_estack = .; */
-    } > RAM
-
     .psram_code :
     {
-        . = ALIGN(8);
+        . = ALIGN(32);
         PROVIDE(__psram_code_text = LOADADDR(.psram_code));
         __psram_code_start__ = .;
         _stext_psram = ABSOLUTE(.);
@@ -282,9 +190,9 @@ SECTIONS
 
         /* All code except .flash_boot_code and IRAM code */
         EXCLUDE_FILE(
-            *armino_irq.o* 
-            *up_exception.o* 
-            *up_svcall.o* 
+            *armino_irq.o*
+            *up_exception.o*
+            *up_svcall.o*
             *up_switchcontext.o*
             *up_copyfullstate.o*
             *up_fullcontextrestore.o*
@@ -363,10 +271,10 @@ SECTIONS
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
         __exidx_end = .;
 
-        . = ALIGN(4);
+        . = ALIGN(32);
         _etext_psram = ABSOLUTE(.);
         __psram_code_end__ = .;
-    } > PSRAM_CODE AT > FLASH
+    } > PSRAM AT > FLASH
 
     .psram_data :
     {
@@ -376,9 +284,96 @@ SECTIONS
         *(.psram.data)
         *(.psram.data*)
 
+        /* Move non-board initialized data into PSRAM first.
+         * Keep board and lwIP data in SRAM.
+         */
+        EXCLUDE_FILE(
+            *board/bk7239n/*
+            *libboard.a:*
+            *libnet.a:*lwip*.o*
+            *libnet.a:def.o*
+            *libnet.a:netif.o*
+            *libnet.a:ip.o*
+            *libnet.a:pbuf.o*
+            *libnet.a:raw.o*
+            *libnet.a:tcp*.o*
+            *libnet.a:udp.o*
+            *libnet.a:inet_chksum.o*
+            *libnet.a:netifapi.o*
+            *libnet.a:sockets.o*
+            *libnet.a:ethernet.o*
+            *libnet.a:etharp.o*
+            *libnet.a:icmp*.o*
+            *libnet.a:igmp.o*
+            *libnet.a:ip4*.o*
+            *libnet.a:ip6*.o*
+            *libnet.a:ethip6.o*
+            *libnet.a:nd6.o*
+            *libnet.a:mld6.o*
+            *libnet.a:sys_arch.o*
+            *libnet.a:mem*.o*
+            *libnet.a:dns.o*
+            *libnet.a:timeouts.o*
+            *libnet.a:stats.o*
+            *libnet.a:api_*.o*
+            *libnet.a:err.o*
+            *libnet.a:netbuf.o*
+            *libnet.a:init.o*
+            *libnet.a:netdb.o*
+            *libnet.a:dhcp*.o*
+        ) *(.data .data.* .sdata .gnu.linkonce.d*)
+
         . = ALIGN(4);
         __psram_data_end__ = .;
-    } > PSRAM_DATA AT > FLASH
+    } > PSRAM AT > FLASH
+
+    .data :
+    {
+        . = ALIGN(4);
+        PROVIDE(__etext = LOADADDR(.data));
+        PROVIDE(__data_flash_begin = LOADADDR(.data));
+
+        _sdata = ABSOLUTE(.);
+        __data_start__ = .;
+
+        *(.dtcm)
+        *(.dtcm_section*)
+        *(.dtcm_sec_data*)
+        *(.data)
+        *(".data.*")
+        *(.sdata)
+
+        *(.gnu.linkonce.d*)
+        __data_end__ = .;
+        _edata = ABSOLUTE(.);
+    } > RAM AT > FLASH
+
+    _data_flash_begin = __data_flash_begin;
+    _data_ram_begin = __data_start__;
+    _data_ram_end = .;
+
+    .uninitialized (NOLOAD):
+    {
+        . = ALIGN(32);
+        __uninitialized_start = .;
+        *(.uninitialized)
+        *(".uninitialized.*")
+        KEEP(*(.keep.uninitialized))
+        . = ALIGN(32);
+        __uninitialized_end = .;
+    } > RAM
+
+    .PERSIST_MEM : ALIGN(4)
+    {
+        __persist_mem__ = .;
+        . += PERSIST_MEM_AREA_SIZE;
+    } > RAM
+
+    .REBOOT_TAG : ALIGN(4)
+    {
+        __reboot_tag__ = .;
+        . += REBOOT_TAG_AREA_SIZE;
+    } > RAM
 
     .psram_bss (NOLOAD):
     {
@@ -387,15 +382,139 @@ SECTIONS
         *(.psram.bss)
         *(.psram.bss*)
 
-        *libnet.a:mem.o*(.bss .bss.*)
+        /* Move non-board zero-init data into PSRAM first.
+         * Keep board and lwIP bss/common in SRAM.
+         */
+        EXCLUDE_FILE(
+            *board/bk7239n/*
+            *libboard.a:*
+            *libnet.a:*lwip*.o*
+            *libnet.a:def.o*
+            *libnet.a:netif.o*
+            *libnet.a:ip.o*
+            *libnet.a:pbuf.o*
+            *libnet.a:raw.o*
+            *libnet.a:tcp*.o*
+            *libnet.a:udp.o*
+            *libnet.a:inet_chksum.o*
+            *libnet.a:netifapi.o*
+            *libnet.a:sockets.o*
+            *libnet.a:ethernet.o*
+            *libnet.a:etharp.o*
+            *libnet.a:icmp*.o*
+            *libnet.a:igmp.o*
+            *libnet.a:ip4*.o*
+            *libnet.a:ip6*.o*
+            *libnet.a:ethip6.o*
+            *libnet.a:nd6.o*
+            *libnet.a:mld6.o*
+            *libnet.a:sys_arch.o*
+            *libnet.a:mem*.o*
+            *libnet.a:dns.o*
+            *libnet.a:timeouts.o*
+            *libnet.a:stats.o*
+            *libnet.a:api_*.o*
+            *libnet.a:err.o*
+            *libnet.a:netbuf.o*
+            *libnet.a:init.o*
+            *libnet.a:netdb.o*
+            *libnet.a:dhcp*.o*
+        ) *(.bss .bss.*)
+        EXCLUDE_FILE(
+            *board/bk7239n/*
+            *libboard.a:*
+            *libnet.a:*lwip*.o*
+            *libnet.a:def.o*
+            *libnet.a:netif.o*
+            *libnet.a:ip.o*
+            *libnet.a:pbuf.o*
+            *libnet.a:raw.o*
+            *libnet.a:tcp*.o*
+            *libnet.a:udp.o*
+            *libnet.a:inet_chksum.o*
+            *libnet.a:netifapi.o*
+            *libnet.a:sockets.o*
+            *libnet.a:ethernet.o*
+            *libnet.a:etharp.o*
+            *libnet.a:icmp*.o*
+            *libnet.a:igmp.o*
+            *libnet.a:ip4*.o*
+            *libnet.a:ip6*.o*
+            *libnet.a:ethip6.o*
+            *libnet.a:nd6.o*
+            *libnet.a:mld6.o*
+            *libnet.a:sys_arch.o*
+            *libnet.a:mem*.o*
+            *libnet.a:dns.o*
+            *libnet.a:timeouts.o*
+            *libnet.a:stats.o*
+            *libnet.a:api_*.o*
+            *libnet.a:err.o*
+            *libnet.a:netbuf.o*
+            *libnet.a:init.o*
+            *libnet.a:netdb.o*
+            *libnet.a:dhcp*.o*
+        ) *(COMMON)
+
+        . = ALIGN(32);
+        __psram_bss_end__ = .;
+    } > PSRAM
+
+    .bss (NOLOAD):
+    {
+        . = ALIGN(4);
+
+       _sbss = ABSOLUTE(.);
+        _bss_start = .;
+
+        *(.bss .bss*)
+        *(COMMON)
+
+        . = ALIGN(8);
+        _sidle_stack = ABSOLUTE(.);
+        . = . + CONFIG_IDLETHREAD_STACKSIZE ;
 
         . = ALIGN(4);
-        __psram_bss_end__ = .;
-    } > PSRAM_DATA
+        _bss_end = .;
+        _ebss = ABSOLUTE(.);
+    } > RAM
 
+    bss_size = _bss_end - _bss_start;
 
-    /* Calculate ROM end - PSRAM_CODE is stored in FLASH after .data section */
-    s_rom_end = LOADADDR(.psram_code) + SIZEOF(.psram_code);
+    _msp_total_size = __MSP_STACK_SIZE;
+
+    .heap (COPY) :
+    {
+        . = ALIGN(8);
+        _heap_start = .;
+        . = . + (ORIGIN(RAM) + LENGTH(RAM) - _msp_total_size - _heap_start - 8); /* 16 bytes for boundary protection */
+        . = ALIGN(8);
+        _heap_end = .;
+    } > RAM
+
+    .stack (ORIGIN(RAM) + LENGTH(RAM) - __MSP_STACK_SIZE) (COPY) :
+    {
+        . = ALIGN(8);
+        /*_sstack = .; */
+        __StackLimit = .;
+        . = . + __MSP_STACK_SIZE;
+        . = ALIGN(8);
+        __StackTop = .;
+        /*_estack = .; */
+    } > RAM
+
+    .psram_heap (COPY) :
+    {
+        . = ALIGN(32);
+        __kernel_psram_heap_start__ = .;
+        . = ORIGIN(PSRAM) + LENGTH(PSRAM);
+        /* Round down to 32-byte boundary (ALIGN rounds up, would exceed PSRAM) */
+        . = . - (. % 32);
+        __kernel_psram_heap_end__ = .;
+    } > PSRAM
+
+    /* ROM end = last section loaded from Flash (.data comes after .psram_data) */
+    s_rom_end = LOADADDR(.data) + SIZEOF(.data);
 
     /* Set stack top to end of RAM, and stack limit move down by
      * size of stack_dummy section */
@@ -405,4 +524,6 @@ SECTIONS
     ASSERT((s_rom_end < ORIGIN(FLASH) + LENGTH(FLASH)), "ROM overflow!!!")
     ASSERT(((ORIGIN(RAM) + LENGTH(RAM)) > (_heap_start + __MSP_STACK_SIZE + 8)), "Stack overflowed with bss")
     ASSERT(((_heap_end - _heap_start) >= __MIN_HEAP_SIZE), "Heap smaller than minimize size 85K!!!")
+    ASSERT((__kernel_psram_heap_end__ > __kernel_psram_heap_start__), "PSRAM heap window invalid")
+    ASSERT(((__kernel_psram_heap_end__ - __kernel_psram_heap_start__) >= __MIN_HEAP_SIZE), "PSRAM heap smaller than minimum")
 }
