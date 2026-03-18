@@ -140,8 +140,12 @@ static void lpwork_boostworker(pid_t wpid, uint8_t reqprio)
 			 * saved priority and not to the base priority.
 			 */
 
-			wtcb->pend_reprios[wtcb->npend_reprio] = reqprio;
-			wtcb->npend_reprio++;
+			if (wtcb->npend_reprio < CONFIG_SEM_NNESTPRIO) {
+				wtcb->pend_reprios[wtcb->npend_reprio] = reqprio;
+				wtcb->npend_reprio++;
+			} else {
+				sdbg("Number of threads exceed CONFIG_SEM_NNESTPRIO\n");
+			}
 		}
 	}
 #else
