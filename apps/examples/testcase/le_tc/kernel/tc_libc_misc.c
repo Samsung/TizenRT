@@ -29,6 +29,7 @@
 #include <tinyara/regex.h>
 #include <unistd.h>
 #include <errno.h>
+#include <debug.h>
 #include <libgen.h>
 #include <crc8.h>
 #include <crc16.h>
