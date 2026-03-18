@@ -20,6 +20,7 @@
 import os
 import sys
 import string
+import subprocess
 import config_util as util
 
 os_folder = os.path.dirname(__file__) + '/..'
@@ -52,7 +53,16 @@ if CONFIG_TRPK_CONTAINS_MULTIPLE_BINARY == "y":
         offset_shift = get_offset()
         offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16) - int(offset_shift, 16)
     else:
-        # For other boards, use CONFIG_FLASH_VSTART_LOADABLE directly
+        if util.check_config_existence(cfg_file, 'CONFIG_ARCH_CHIP_ARMINO=y'):
+            # Armino (e.g. bk7239n): use chip-specific script to compute flash start from TRPK
+            _vstart_script = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../build/configs/bk7239n/get_flash_vstart_loadable.py'))
+            computed = subprocess.check_output([sys.executable, _vstart_script, os.path.abspath(cfg_file)]).decode('utf-8').strip()
+            if computed:
+                CONFIG_FLASH_VSTART_LOADABLE = computed
+            else:
+                CONFIG_FLASH_VSTART_LOADABLE = util.get_value_from_file(cfg_file, "CONFIG_FLASH_VSTART_LOADABLE=").rstrip('\n')
+        else:
+            CONFIG_FLASH_VSTART_LOADABLE = util.get_value_from_file(cfg_file, "CONFIG_FLASH_VSTART_LOADABLE=").rstrip('\n')
         offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
 else:
     offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)

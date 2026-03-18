@@ -31,8 +31,8 @@ __CPU0_APP_VIRTUAL_CODE_START = 0xD0000;
 __CPU0_APP_VIRTUAL_CODE_SIZE = 0x600000;
 
 SOC_FLASH_DATA_BASE = 0x12000000;
-SOC_PSRAM_DATA_BASE = CONFIG_BK_PSRAM_DATA_BASE;
-SOC_PSRAM_CODE_BASE = CONFIG_BK_PSRAM_CODE_BASE;
+SOC_PSRAM_BASE = RAM_KREGION0_START;
+SOC_PSRAM_SIZE = RAM_KREGION0_SIZE;
 
 OUTPUT_ARCH(arm)
 ENTRY(Reset_Handler)
@@ -42,8 +42,7 @@ MEMORY
   FLASH (rx)            : ORIGIN = (SOC_FLASH_DATA_BASE + __CPU0_APP_VIRTUAL_CODE_START), LENGTH = __CPU0_APP_VIRTUAL_CODE_SIZE
   IRAM (rx)             : ORIGIN = __CPU0_APP_IRAM_BASE, LENGTH = __CPU0_APP_IRAM_SIZE
   RAM (rwx)             : ORIGIN = __CPU0_APP_RAM_BASE, LENGTH = __CPU0_APP_RAM_SIZE
-  PSRAM_DATA (rwx)      : ORIGIN = SOC_PSRAM_DATA_BASE, LENGTH = CONFIG_BK_PSRAM_DATA_SIZE
-  PSRAM_CODE (rwx)      : ORIGIN = SOC_PSRAM_CODE_BASE, LENGTH = CONFIG_BK_PSRAM_CODE_SIZE
+  PSRAM (rwx)           : ORIGIN = SOC_PSRAM_BASE, LENGTH = SOC_PSRAM_SIZE
 }
 
 SECTIONS
@@ -271,9 +270,20 @@ SECTIONS
 
     _eronly = ABSOLUTE(.);
 
+    .psram_code :
+    {
+        . = ALIGN(32);
+        PROVIDE(__psram_code_text = LOADADDR(.psram_code));
+        __psram_code_start__ = .;
+        _stext_psram = ABSOLUTE(.);
+ 
+        . = ALIGN(32);
+        __psram_code_end__ = .;
+    } > PSRAM AT > FLASH
+
     .psram_data :
     {
-        . = ALIGN(8);
+        . = ALIGN(32);
         PROVIDE(__psram_data_text = LOADADDR(.psram_data));
         __psram_data_start__ = .;
         *(.psram.data)
@@ -320,7 +330,7 @@ SECTIONS
 
         . = ALIGN(4);
         __psram_data_end__ = .;
-    } > PSRAM_DATA AT > FLASH
+    } > PSRAM AT > FLASH
 
     .data :
     {
@@ -372,7 +382,7 @@ SECTIONS
 
     .psram_bss (NOLOAD):
     {
-        . = ALIGN(8);
+        . = ALIGN(32);
         __psram_bss_start__ = .;
         *(.psram.bss)
         *(.psram.bss*)
@@ -452,9 +462,19 @@ SECTIONS
             *libnet.a:dhcp*.o*
         ) *(COMMON)
 
-        . = ALIGN(4);
+        . = ALIGN(32);
         __psram_bss_end__ = .;
-    } > PSRAM_DATA
+    } > PSRAM
+
+    .psram_heap (COPY) :
+    {
+        . = ALIGN(32);
+        __kernel_psram_heap_start__ = .;
+        . = ORIGIN(PSRAM) + LENGTH(PSRAM);
+        /* Round down to 32-byte boundary (ALIGN rounds up, would exceed PSRAM) */
+        . = . - (. % 32);
+        __kernel_psram_heap_end__ = .;
+    } > PSRAM
 
     .bss (NOLOAD):
     {
@@ -499,15 +519,7 @@ SECTIONS
         /*_estack = .; */
     } > RAM
 
-    .psram_code :
-    {
-        . = ALIGN(8);
-        PROVIDE(__psram_code_text = LOADADDR(.psram_code));
-        __psram_code_start__ = .;
-        . = ALIGN(4);
-        __psram_code_end__ = .;
-    } > PSRAM_CODE AT > FLASH
-
+    /* ROM end = last section loaded from Flash (.data comes after .psram_data) */
     s_rom_end = LOADADDR(.data) + SIZEOF(.data);
 
     /* Set stack top to end of RAM, and stack limit move down by
@@ -518,4 +530,6 @@ SECTIONS
     ASSERT((s_rom_end < ORIGIN(FLASH) + LENGTH(FLASH)), "ROM overflow!!!")
     ASSERT(((ORIGIN(RAM) + LENGTH(RAM)) > (_heap_start + __MSP_STACK_SIZE + 8)), "Stack overflowed with bss")
     ASSERT(((_heap_end - _heap_start) >= __MIN_HEAP_SIZE), "Heap smaller than minimize size 85K!!!")
+    ASSERT((__kernel_psram_heap_end__ > __kernel_psram_heap_start__), "PSRAM heap window invalid")
+    ASSERT(((__kernel_psram_heap_end__ - __kernel_psram_heap_start__) >= __MIN_HEAP_SIZE), "PSRAM heap smaller than minimum")
 }
