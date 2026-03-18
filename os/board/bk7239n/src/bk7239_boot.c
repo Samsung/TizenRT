@@ -191,6 +191,11 @@ void board_gpio_initialize(void)
 	bk_iomx_gpio_isr_attach();
 #if CONFIG_GPIO
 #if 0
+	/* Disable GPIO file node registration in boot initialization.
+	 * Reason: GPIO device nodes (/dev/gpio%d) will be registered by application layer
+	 *         dynamically when needed, instead of registering all GPIOs at boot time.
+	 *         This approach provides more flexibility and reduces unnecessary device nodes.
+	 */
 	int i;
 	struct gpio_lowerhalf_s *lower;
 
@@ -280,7 +285,15 @@ static int board_pm_init(void)
 {
 	pm_cpu_freq_e cpu_freq_default = (pm_cpu_freq_e)CONFIG_PM_CPU_FRQ_DEFAULT;
 	bk_pm_module_vote_cpu_freq(PM_DEV_ID_DEFAULT,cpu_freq_default);
-	bk_pm_rf_tx_vol_set(CONFIG_PM_ANALDO_VOLTAGE_DEFAULT);
+
+	if(ate_is_enabled())
+	{
+		bk_pm_module_vote_analdo_vol(PM_ANALDO_VOTE_MODULE_ATE, PM_ANALDO_VOL_1_65V);
+	}
+	else
+	{
+		bk_pm_module_vote_analdo_vol(PM_ANALDO_VOTE_MODULE_DEFAULT, PM_ANALDO_VOL_1_1V);
+	}
 
 	#if defined(CONFIG_PM_LV_WDT_PROTECTION)
 	//pm_wifi_event_init();

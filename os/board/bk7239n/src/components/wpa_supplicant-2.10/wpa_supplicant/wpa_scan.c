@@ -1591,6 +1591,18 @@ int wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec)
 					wpa_s->reconnect, wpa_s->no_suitable_network, wpa_s->suitable_network);
 				// retry count reached
 				eloop_cancel_timeout(wpa_supplicant_auto_reconnect_timeout, wpa_s, NULL);
+
+				/* If current link status is 'disconnected due to wrong password', keep the existing reason code */
+				{
+					wifi_linkstate_reason_t cur = mhdr_get_station_status();
+
+					if (cur.state == WIFI_LINKSTATE_STA_DISCONNECTED &&
+					    cur.reason_code == WIFI_REASON_WRONG_PASSWORD) {
+						WPA_LOGI("%s: skip auto-reconnect status update for wrong password\n", __func__);
+						return WPA_OK;
+					}
+				}
+
 				if (wpa_s->no_suitable_network)
 					wpa_s->disconnect_reason = -WIFI_REASON_NO_AP_FOUND;
 				else

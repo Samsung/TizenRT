@@ -4289,638 +4289,638 @@ END GROUP
                 0x00000000020a5828       0x1c ../platform/libplatform_s.a(tfm_hal_platform.o)
                 0x00000000020a5828                tfm_hal_ppc_init_from_flash
  .text.tfm_hal_get_ns_entry_point
-                0x00000000020a5844      0x110 ../platform/libplatform_s.a(tfm_hal_platform.o)
+                0x00000000020a5844      0x108 ../platform/libplatform_s.a(tfm_hal_platform.o)
                 0x00000000020a5844                tfm_hal_get_ns_entry_point
  .text.enable_fault_handlers
-                0x00000000020a5954       0x14 ../platform/libplatform_s.a(target_cfg.o)
-                0x00000000020a5954                enable_fault_handlers
+                0x00000000020a594c       0x14 ../platform/libplatform_s.a(target_cfg.o)
+                0x00000000020a594c                enable_fault_handlers
  .text.platform_disable_watchdog
-                0x00000000020a5968       0x22 ../platform/libplatform_s.a(target_cfg.o)
-                0x00000000020a5968                platform_disable_watchdog
- *fill*         0x00000000020a598a        0x2 
+                0x00000000020a5960       0x22 ../platform/libplatform_s.a(target_cfg.o)
+                0x00000000020a5960                platform_disable_watchdog
+ *fill*         0x00000000020a5982        0x2 
  .text.system_reset_cfg
-                0x00000000020a598c       0x20 ../platform/libplatform_s.a(target_cfg.o)
-                0x00000000020a598c                system_reset_cfg
+                0x00000000020a5984       0x20 ../platform/libplatform_s.a(target_cfg.o)
+                0x00000000020a5984                system_reset_cfg
  .text.init_debug
-                0x00000000020a59ac        0x4 ../platform/libplatform_s.a(target_cfg.o)
-                0x00000000020a59ac                init_debug
+                0x00000000020a59a4        0x4 ../platform/libplatform_s.a(target_cfg.o)
+                0x00000000020a59a4                init_debug
  .text.nvic_interrupt_target_state_cfg
-                0x00000000020a59b0       0x30 ../platform/libplatform_s.a(target_cfg.o)
-                0x00000000020a59b0                nvic_interrupt_target_state_cfg
+                0x00000000020a59a8       0x30 ../platform/libplatform_s.a(target_cfg.o)
+                0x00000000020a59a8                nvic_interrupt_target_state_cfg
  .text.nvic_interrupt_enable
-                0x00000000020a59e0        0x4 ../platform/libplatform_s.a(target_cfg.o)
-                0x00000000020a59e0                nvic_interrupt_enable
+                0x00000000020a59d8        0x4 ../platform/libplatform_s.a(target_cfg.o)
+                0x00000000020a59d8                nvic_interrupt_enable
  .text.sau_and_idau_cfg
-                0x00000000020a59e4       0x40 ../platform/libplatform_s.a(target_cfg.o)
-                0x00000000020a59e4                sau_and_idau_cfg
+                0x00000000020a59dc       0x40 ../platform/libplatform_s.a(target_cfg.o)
+                0x00000000020a59dc                sau_and_idau_cfg
  .text.mpc_init_cfg
-                0x00000000020a5a24       0x12 ../platform/libplatform_s.a(target_cfg.o)
-                0x00000000020a5a24                mpc_init_cfg
+                0x00000000020a5a1c       0x12 ../platform/libplatform_s.a(target_cfg.o)
+                0x00000000020a5a1c                mpc_init_cfg
  .text.tfm_plat_otp_init
-                0x00000000020a5a36        0x4 ../platform/libplatform_s.a(otp_flash.o)
-                0x00000000020a5a36                tfm_plat_otp_init
- *fill*         0x00000000020a5a3a        0x2 
+                0x00000000020a5a2e        0x4 ../platform/libplatform_s.a(otp_flash.o)
+                0x00000000020a5a2e                tfm_plat_otp_init
+ *fill*         0x00000000020a5a32        0x2 
  .text.tfm_hal_irq_enable
-                0x00000000020a5a3c       0x20 ../platform/libplatform_s.a(tfm_hal_nvic.o)
-                0x00000000020a5a3c                tfm_hal_irq_enable
+                0x00000000020a5a34       0x20 ../platform/libplatform_s.a(tfm_hal_nvic.o)
+                0x00000000020a5a34                tfm_hal_irq_enable
  .text.tfm_hal_irq_disable
-                0x00000000020a5a5c       0x2c ../platform/libplatform_s.a(tfm_hal_nvic.o)
-                0x00000000020a5a5c                tfm_hal_irq_disable
+                0x00000000020a5a54       0x2c ../platform/libplatform_s.a(tfm_hal_nvic.o)
+                0x00000000020a5a54                tfm_hal_irq_disable
  .text.tfm_hal_memory_has_access
-                0x00000000020a5a88       0x50 ../platform/libplatform_s.a(tfm_hal_isolation_mpu_v8m.o)
-                0x00000000020a5a88                tfm_hal_memory_has_access
+                0x00000000020a5a80       0x50 ../platform/libplatform_s.a(tfm_hal_isolation_mpu_v8m.o)
+                0x00000000020a5a80                tfm_hal_memory_has_access
  .text.flash_ll_wait_op_done
-                0x00000000020a5ad8        0x8 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a5ad0        0x8 ../platform/libplatform_s.a(flash_driver.o)
  .text.flash_ll_read_status_reg
-                0x00000000020a5ae0       0x9a ../platform/libplatform_s.a(flash_driver.o)
- *fill*         0x00000000020a5b7a        0x2 
+                0x00000000020a5ad8       0x9a ../platform/libplatform_s.a(flash_driver.o)
+ *fill*         0x00000000020a5b72        0x2 
  .text.flash_ll_write_status_reg
-                0x00000000020a5b7c       0xf8 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a5b74       0xf8 ../platform/libplatform_s.a(flash_driver.o)
  .text.flash_op_enable_ctrl
-                0x00000000020a5c74       0x34 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a5c74                flash_op_enable_ctrl
+                0x00000000020a5c6c       0x34 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a5c6c                flash_op_enable_ctrl
  .text.bk_flash_set_line_mode
-                0x00000000020a5ca8       0xb8 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a5ca8                bk_flash_set_line_mode
+                0x00000000020a5ca0       0xb8 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a5ca0                bk_flash_set_line_mode
  .text.flash_switch_to_line_mode_two
-                0x00000000020a5d60       0x18 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a5d60                flash_switch_to_line_mode_two
+                0x00000000020a5d58       0x18 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a5d58                flash_switch_to_line_mode_two
  .text.flash_restore_line_mode
-                0x00000000020a5d78       0x14 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a5d78                flash_restore_line_mode
+                0x00000000020a5d70       0x14 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a5d70                flash_restore_line_mode
  .text.flash_erase_block
-                0x00000000020a5d8c       0xa8 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a5d84       0xa8 ../platform/libplatform_s.a(flash_driver.o)
  .text.bk_flash_read_bytes
-                0x00000000020a5e34       0xb8 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a5e34                bk_flash_read_bytes
+                0x00000000020a5e2c       0xb8 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a5e2c                bk_flash_read_bytes
  .text.bk_flash_write_bytes
-                0x00000000020a5eec      0x124 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a5eec                bk_flash_write_bytes
+                0x00000000020a5ee4      0x124 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a5ee4                bk_flash_write_bytes
  .text.bk_flash_driver_deinit
-                0x00000000020a6010       0x14 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a6010                bk_flash_driver_deinit
+                0x00000000020a6008       0x14 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a6008                bk_flash_driver_deinit
  .text.bk_flash_get_protect_type
-                0x00000000020a6024        0x4 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a6024                bk_flash_get_protect_type
+                0x00000000020a601c        0x4 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a601c                bk_flash_get_protect_type
  .text.bk_flash_set_protect_type
-                0x00000000020a6028       0x94 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a6028                bk_flash_set_protect_type
+                0x00000000020a6020       0x94 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a6020                bk_flash_set_protect_type
  .text.bk_flash_driver_init
-                0x00000000020a60bc       0xc0 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a60bc                bk_flash_driver_init
+                0x00000000020a60b4       0xc0 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a60b4                bk_flash_driver_init
  .text.bk_flash_get_current_total_size
-                0x00000000020a617c        0xc ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a617c                bk_flash_get_current_total_size
+                0x00000000020a6174        0xc ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a6174                bk_flash_get_current_total_size
  .text.bk_flash_set_dbus_security_region
-                0x00000000020a6188       0x6c ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a6188                bk_flash_set_dbus_security_region
+                0x00000000020a6180       0x6c ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a6180                bk_flash_set_dbus_security_region
  .text.flash_set_xip_offset
-                0x00000000020a61f4       0x14 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a61f4                flash_set_xip_offset
+                0x00000000020a61ec       0x14 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a61ec                flash_set_xip_offset
  .text.flash_set_excute_enable
-                0x00000000020a6208       0x24 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a6208                flash_set_excute_enable
+                0x00000000020a6200       0x24 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a6200                flash_set_excute_enable
  .text.flash_get_excute_enable
-                0x00000000020a622c       0x18 ../platform/libplatform_s.a(flash_driver.o)
-                0x00000000020a622c                flash_get_excute_enable
+                0x00000000020a6224       0x18 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a6224                flash_get_excute_enable
  .text.bk_prro_driver_init
-                0x00000000020a6244       0x24 ../platform/libplatform_s.a(prro_driver.o)
-                0x00000000020a6244                bk_prro_driver_init
+                0x00000000020a623c       0x24 ../platform/libplatform_s.a(prro_driver.o)
+                0x00000000020a623c                bk_prro_driver_init
  .text.set_wdt_clkdiv
-                0x00000000020a6268       0x10 ../platform/libplatform_s.a(wdt_driver.o)
-                0x00000000020a6268                set_wdt_clkdiv
+                0x00000000020a6260       0x10 ../platform/libplatform_s.a(wdt_driver.o)
+                0x00000000020a6260                set_wdt_clkdiv
  .text.update_wdt
-                0x00000000020a6278       0x18 ../platform/libplatform_s.a(wdt_driver.o)
-                0x00000000020a6278                update_wdt
+                0x00000000020a6270       0x18 ../platform/libplatform_s.a(wdt_driver.o)
+                0x00000000020a6270                update_wdt
  .text.close_wdt
-                0x00000000020a6290        0x8 ../platform/libplatform_s.a(wdt_driver.o)
-                0x00000000020a6290                close_wdt
+                0x00000000020a6288        0x8 ../platform/libplatform_s.a(wdt_driver.o)
+                0x00000000020a6288                close_wdt
  .text.prro_ll_set_reg_bit
-                0x00000000020a6298       0x20 ../platform/libplatform_s.a(prro_hal_v5.o)
+                0x00000000020a6290       0x20 ../platform/libplatform_s.a(prro_hal_v5.o)
  .text.prro_hal_init
-                0x00000000020a62b8       0x14 ../platform/libplatform_s.a(prro_hal_v5.o)
-                0x00000000020a62b8                prro_hal_init
+                0x00000000020a62b0       0x14 ../platform/libplatform_s.a(prro_hal_v5.o)
+                0x00000000020a62b0                prro_hal_init
  .text.prro_hal_set_secure
-                0x00000000020a62cc       0x7c ../platform/libplatform_s.a(prro_hal_v5.o)
-                0x00000000020a62cc                prro_hal_set_secure
+                0x00000000020a62c4       0x7c ../platform/libplatform_s.a(prro_hal_v5.o)
+                0x00000000020a62c4                prro_hal_set_secure
  .text.flash_hal_init
-                0x00000000020a6348       0x14 ../platform/libplatform_s.a(flash_hal.o)
-                0x00000000020a6348                flash_hal_init
+                0x00000000020a6340       0x14 ../platform/libplatform_s.a(flash_hal.o)
+                0x00000000020a6340                flash_hal_init
  .text.bk_mpc_cfg
-                0x00000000020a635c      0x270 ../platform/libplatform_s.a(bk_tfm_mpc.o)
-                0x00000000020a635c                bk_mpc_cfg
+                0x00000000020a6354      0x270 ../platform/libplatform_s.a(bk_tfm_mpc.o)
+                0x00000000020a6354                bk_mpc_cfg
  .text.bk_mpc_driver_init
-                0x00000000020a65cc       0x38 ../platform/libplatform_s.a(mpc_driver.o)
-                0x00000000020a65cc                bk_mpc_driver_init
+                0x00000000020a65c4       0x38 ../platform/libplatform_s.a(mpc_driver.o)
+                0x00000000020a65c4                bk_mpc_driver_init
  .text.bk_mpc_get_block_size
-                0x00000000020a6604       0x34 ../platform/libplatform_s.a(mpc_driver.o)
-                0x00000000020a6604                bk_mpc_get_block_size
+                0x00000000020a65fc       0x34 ../platform/libplatform_s.a(mpc_driver.o)
+                0x00000000020a65fc                bk_mpc_get_block_size
  .text.bk_mpc_get_max_block_index
-                0x00000000020a6638       0x2c ../platform/libplatform_s.a(mpc_driver.o)
-                0x00000000020a6638                bk_mpc_get_max_block_index
+                0x00000000020a6630       0x2c ../platform/libplatform_s.a(mpc_driver.o)
+                0x00000000020a6630                bk_mpc_get_max_block_index
  .text.bk_mpc_set_secure_attribute
-                0x00000000020a6664       0x64 ../platform/libplatform_s.a(mpc_driver.o)
-                0x00000000020a6664                bk_mpc_set_secure_attribute
+                0x00000000020a665c       0x64 ../platform/libplatform_s.a(mpc_driver.o)
+                0x00000000020a665c                bk_mpc_set_secure_attribute
  .text.mpc_hal_init
-                0x00000000020a66c8       0x2c ../platform/libplatform_s.a(mpc_hal.o)
-                0x00000000020a66c8                mpc_hal_init
+                0x00000000020a66c0       0x2c ../platform/libplatform_s.a(mpc_hal.o)
+                0x00000000020a66c0                mpc_hal_init
  .text.mpc_hal_config_block_lut
-                0x00000000020a66f4       0xa0 ../platform/libplatform_s.a(mpc_hal.o)
-                0x00000000020a66f4                mpc_hal_config_block_lut
+                0x00000000020a66ec       0xa0 ../platform/libplatform_s.a(mpc_hal.o)
+                0x00000000020a66ec                mpc_hal_config_block_lut
  .text.aes_gcm_crypt
-                0x00000000020a6794      0x128 ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a678c      0x128 ../platform/libplatform_s.a(secure_storage_nsc.o)
  .text.tfm_flash_erase
-                0x00000000020a68bc       0x2e ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a68b4       0x2e ../platform/libplatform_s.a(secure_storage_nsc.o)
  .text.tfm_flash_write
-                0x00000000020a68ea       0x36 ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a68e2       0x36 ../platform/libplatform_s.a(secure_storage_nsc.o)
  .text.get_ss_address.constprop.0
-                0x00000000020a6920       0x6c ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a6918       0x6c ../platform/libplatform_s.a(secure_storage_nsc.o)
  .text.psa_secure_storage_nsc_stub
-                0x00000000020a698c        0x2 ../platform/libplatform_s.a(secure_storage_nsc.o)
-                0x00000000020a698c                psa_secure_storage_nsc_stub
- *fill*         0x00000000020a698e        0x2 
+                0x00000000020a6984        0x2 ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a6984                psa_secure_storage_nsc_stub
+ *fill*         0x00000000020a6986        0x2 
  .text.ss_write
-                0x00000000020a6990      0x158 ../platform/libplatform_s.a(secure_storage_nsc.o)
-                0x00000000020a6990                ss_write
- .text.ss_read  0x00000000020a6ae8      0x12c ../platform/libplatform_s.a(secure_storage_nsc.o)
-                0x00000000020a6ae8                ss_read
+                0x00000000020a6988      0x158 ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a6988                ss_write
+ .text.ss_read  0x00000000020a6ae0      0x12c ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a6ae0                ss_read
  .text.ss_delete
-                0x00000000020a6c14       0x1c ../platform/libplatform_s.a(secure_storage_nsc.o)
-                0x00000000020a6c14                ss_delete
+                0x00000000020a6c0c       0x1c ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a6c0c                ss_delete
  .text.ss_read_key_security
-                0x00000000020a6c30       0x18 ../platform/libplatform_s.a(secure_storage_nsc.o)
-                0x00000000020a6c30                ss_read_key_security
+                0x00000000020a6c28       0x18 ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a6c28                ss_read_key_security
  .text.enable_flash_s
-                0x00000000020a6c48       0x10 ../platform/libplatform_s.a(flash_nsc.o)
+                0x00000000020a6c40       0x10 ../platform/libplatform_s.a(flash_nsc.o)
  .text.disable_flash_s
-                0x00000000020a6c58       0x10 ../platform/libplatform_s.a(flash_nsc.o)
+                0x00000000020a6c50       0x10 ../platform/libplatform_s.a(flash_nsc.o)
  .text.psa_flash_nsc_stub
-                0x00000000020a6c68        0x2 ../platform/libplatform_s.a(flash_nsc.o)
-                0x00000000020a6c68                psa_flash_nsc_stub
- *fill*         0x00000000020a6c6a        0x2 
+                0x00000000020a6c60        0x2 ../platform/libplatform_s.a(flash_nsc.o)
+                0x00000000020a6c60                psa_flash_nsc_stub
+ *fill*         0x00000000020a6c62        0x2 
  .text._otp_read_otp
-                0x00000000020a6c6c       0x14 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6c64       0x14 ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp2_read_otp
-                0x00000000020a6c80       0x10 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6c78       0x10 ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp2_write_otp
-                0x00000000020a6c90       0x10 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6c88       0x10 ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp_read_permission
-                0x00000000020a6ca0       0x20 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6c98       0x20 ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp2_read_permission
-                0x00000000020a6cc0       0x20 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6cb8       0x20 ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp_read_mask
-                0x00000000020a6ce0       0x24 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6cd8       0x24 ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp2_read_mask
-                0x00000000020a6d04       0x20 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6cfc       0x20 ../platform/libplatform_s.a(otp_nsc.o)
  .text.switch_map
-                0x00000000020a6d24       0x2c ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6d1c       0x2c ../platform/libplatform_s.a(otp_nsc.o)
  .text.otp_check_busy
-                0x00000000020a6d50       0x28 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6d48       0x28 ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp2_write_permission
-                0x00000000020a6d78       0x28 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6d70       0x28 ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp_write_permission
-                0x00000000020a6da0       0x2c ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6d98       0x2c ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp_write_otp
-                0x00000000020a6dcc       0x18 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6dc4       0x18 ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp2_write_mask
-                0x00000000020a6de4       0x2c ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6ddc       0x2c ../platform/libplatform_s.a(otp_nsc.o)
  .text._otp_write_mask
-                0x00000000020a6e10       0x2c ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6e08       0x2c ../platform/libplatform_s.a(otp_nsc.o)
  .text.psa_otp_nsc_stub
-                0x00000000020a6e3c        0x2 ../platform/libplatform_s.a(otp_nsc.o)
-                0x00000000020a6e3c                psa_otp_nsc_stub
- *fill*         0x00000000020a6e3e        0x2 
+                0x00000000020a6e34        0x2 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6e34                psa_otp_nsc_stub
+ *fill*         0x00000000020a6e36        0x2 
  .text.otp_sleep
-                0x00000000020a6e40       0x48 ../platform/libplatform_s.a(otp_nsc.o)
-                0x00000000020a6e40                otp_sleep
+                0x00000000020a6e38       0x48 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6e38                otp_sleep
  .text.otp_active
-                0x00000000020a6e88       0x54 ../platform/libplatform_s.a(otp_nsc.o)
-                0x00000000020a6e88                otp_active
+                0x00000000020a6e80       0x54 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6e80                otp_active
  .text.otp_read_permission
-                0x00000000020a6edc       0x74 ../platform/libplatform_s.a(otp_nsc.o)
-                0x00000000020a6edc                otp_read_permission
+                0x00000000020a6ed4       0x74 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6ed4                otp_read_permission
  .text.otp_write_permission
-                0x00000000020a6f50       0x78 ../platform/libplatform_s.a(otp_nsc.o)
-                0x00000000020a6f50                otp_write_permission
+                0x00000000020a6f48       0x78 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6f48                otp_write_permission
  .text.otp_read
-                0x00000000020a6fc8       0xcc ../platform/libplatform_s.a(otp_nsc.o)
-                0x00000000020a6fc8                otp_read
+                0x00000000020a6fc0       0xcc ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a6fc0                otp_read
  .text.otp_update
-                0x00000000020a7094      0x19c ../platform/libplatform_s.a(otp_nsc.o)
-                0x00000000020a7094                otp_update
+                0x00000000020a708c      0x19c ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a708c                otp_update
  .text.bk_otp_read
-                0x00000000020a7230       0x54 ../platform/libplatform_s.a(otp_nsc.o)
-                0x00000000020a7230                bk_otp_read
+                0x00000000020a7228       0x54 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a7228                bk_otp_read
  .text.hal_get_der_length
-                0x00000000020a7284       0x40 ../platform/libplatform_s.a(asym_algo_nsc.o)
+                0x00000000020a727c       0x40 ../platform/libplatform_s.a(asym_algo_nsc.o)
  .text.hal_der_ecdsa_private_key
-                0x00000000020a72c4       0x6c ../platform/libplatform_s.a(asym_algo_nsc.o)
+                0x00000000020a72bc       0x6c ../platform/libplatform_s.a(asym_algo_nsc.o)
  .text.psa_asym_algo_nsc_stub
-                0x00000000020a7330        0x2 ../platform/libplatform_s.a(asym_algo_nsc.o)
-                0x00000000020a7330                psa_asym_algo_nsc_stub
+                0x00000000020a7328        0x2 ../platform/libplatform_s.a(asym_algo_nsc.o)
+                0x00000000020a7328                psa_asym_algo_nsc_stub
  .text.psa_dh_nsc_stub
-                0x00000000020a7332        0x2 ../platform/libplatform_s.a(dh_nsc.o)
-                0x00000000020a7332                psa_dh_nsc_stub
+                0x00000000020a732a        0x2 ../platform/libplatform_s.a(dh_nsc.o)
+                0x00000000020a732a                psa_dh_nsc_stub
  .text.psa_25519_nsc_stub
-                0x00000000020a7334        0x2 ../platform/libplatform_s.a(25519_nsc.o)
-                0x00000000020a7334                psa_25519_nsc_stub
+                0x00000000020a732c        0x2 ../platform/libplatform_s.a(25519_nsc.o)
+                0x00000000020a732c                psa_25519_nsc_stub
  .text.psa_sca_aes_nsc_stub
-                0x00000000020a7336        0x2 ../platform/libplatform_s.a(sca_aes_nsc.o)
-                0x00000000020a7336                psa_sca_aes_nsc_stub
+                0x00000000020a732e        0x2 ../platform/libplatform_s.a(sca_aes_nsc.o)
+                0x00000000020a732e                psa_sca_aes_nsc_stub
  .text.psa_sca_aes_get_flash_key
-                0x00000000020a7338       0x38 ../platform/libplatform_s.a(sca_aes_nsc.o)
-                0x00000000020a7338                psa_sca_aes_get_flash_key
+                0x00000000020a7330       0x38 ../platform/libplatform_s.a(sca_aes_nsc.o)
+                0x00000000020a7330                psa_sca_aes_get_flash_key
  .text.tfm_hal_ps_fs_info
-                0x00000000020a7370       0x24 ../platform/libplatform_s.a(tfm_hal_ps.o)
-                0x00000000020a7370                tfm_hal_ps_fs_info
+                0x00000000020a7368       0x24 ../platform/libplatform_s.a(tfm_hal_ps.o)
+                0x00000000020a7368                tfm_hal_ps_fs_info
  .text.tfm_hal_its_fs_info
-                0x00000000020a7394       0x24 ../platform/libplatform_s.a(tfm_hal_its.o)
-                0x00000000020a7394                tfm_hal_its_fs_info
+                0x00000000020a738c       0x24 ../platform/libplatform_s.a(tfm_hal_its.o)
+                0x00000000020a738c                tfm_hal_its_fs_info
  .text.tfm_hal_system_reset
-                0x00000000020a73b8       0x24 ../platform/libplatform_s.a(tfm_platform.o)
-                0x00000000020a73b8                tfm_hal_system_reset
+                0x00000000020a73b0       0x24 ../platform/libplatform_s.a(tfm_platform.o)
+                0x00000000020a73b0                tfm_hal_system_reset
  .text.tfm_plat_init_nv_counter
-                0x00000000020a73dc        0x4 ../platform/libplatform_s.a(nv_counters.o)
-                0x00000000020a73dc                tfm_plat_init_nv_counter
+                0x00000000020a73d4        0x4 ../platform/libplatform_s.a(nv_counters.o)
+                0x00000000020a73d4                tfm_plat_init_nv_counter
  .text.tfm_plat_read_nv_counter
-                0x00000000020a73e0       0x16 ../platform/libplatform_s.a(nv_counters.o)
-                0x00000000020a73e0                tfm_plat_read_nv_counter
+                0x00000000020a73d8       0x16 ../platform/libplatform_s.a(nv_counters.o)
+                0x00000000020a73d8                tfm_plat_read_nv_counter
  .text.tfm_plat_increment_nv_counter
-                0x00000000020a73f6        0xc ../platform/libplatform_s.a(nv_counters.o)
-                0x00000000020a73f6                tfm_plat_increment_nv_counter
+                0x00000000020a73ee        0xc ../platform/libplatform_s.a(nv_counters.o)
+                0x00000000020a73ee                tfm_plat_increment_nv_counter
  .text.otp_map_2_col
-                0x00000000020a7402        0x4 ../platform/libplatform_s.a(_otp.o)
-                0x00000000020a7402                otp_map_2_col
- *fill*         0x00000000020a7406        0x2 
+                0x00000000020a73fa        0x4 ../platform/libplatform_s.a(_otp.o)
+                0x00000000020a73fa                otp_map_2_col
+ *fill*         0x00000000020a73fe        0x2 
  .text.flash_map_init
-                0x00000000020a7408       0xac ../platform/libplatform_s.a(flash_map.o)
-                0x00000000020a7408                flash_map_init
+                0x00000000020a7400       0xac ../platform/libplatform_s.a(flash_map.o)
+                0x00000000020a7400                flash_map_init
  .text.flush_all_dcache
-                0x00000000020a74b4       0x4c ../platform/libplatform_s.a(cache.o)
-                0x00000000020a74b4                flush_all_dcache
+                0x00000000020a74ac       0x4c ../platform/libplatform_s.a(cache.o)
+                0x00000000020a74ac                flush_all_dcache
  .text.mpu_armv8m_region_enable
-                0x00000000020a7500       0x64 ../platform/libplatform_s.a(mpu_armv8m_drv.o)
-                0x00000000020a7500                mpu_armv8m_region_enable
+                0x00000000020a74f8       0x64 ../platform/libplatform_s.a(mpu_armv8m_drv.o)
+                0x00000000020a74f8                mpu_armv8m_region_enable
  *libtfm_spm*:*(.text*)
  .text.spm_memcpy
-                0x00000000020a7564       0x6c spm/libtfm_spm.a(tfm_core_utils.o)
-                0x00000000020a7564                spm_memcpy
+                0x00000000020a755c       0x6c spm/libtfm_spm.a(tfm_core_utils.o)
+                0x00000000020a755c                spm_memcpy
  .text.spm_memset
-                0x00000000020a75d0       0x4e spm/libtfm_spm.a(tfm_core_utils.o)
-                0x00000000020a75d0                spm_memset
+                0x00000000020a75c8       0x4e spm/libtfm_spm.a(tfm_core_utils.o)
+                0x00000000020a75c8                spm_memset
  .text.psram_delay
-                0x00000000020a761e       0x12 spm/libtfm_spm.a(main.o)
-                0x00000000020a761e                psram_delay
+                0x00000000020a7616       0x12 spm/libtfm_spm.a(main.o)
+                0x00000000020a7616                psram_delay
  .text.bk_psram_init
-                0x00000000020a7630       0xe4 spm/libtfm_spm.a(main.o)
-                0x00000000020a7630                bk_psram_init
+                0x00000000020a7628       0xe4 spm/libtfm_spm.a(main.o)
+                0x00000000020a7628                bk_psram_init
  .text.bk_psram_code_init
-                0x00000000020a7714       0x40 spm/libtfm_spm.a(main.o)
-                0x00000000020a7714                bk_psram_code_init
+                0x00000000020a770c       0x40 spm/libtfm_spm.a(main.o)
+                0x00000000020a770c                bk_psram_code_init
  .text.startup.main
-                0x00000000020a7754       0x54 spm/libtfm_spm.a(main.o)
-                0x00000000020a7754                main
+                0x00000000020a774c       0x54 spm/libtfm_spm.a(main.o)
+                0x00000000020a774c                main
  .text.tfm_flih_deprivileged_handling
-                0x00000000020a77a8        0x4 spm/libtfm_spm.a(interrupt.o)
+                0x00000000020a77a0        0x4 spm/libtfm_spm.a(interrupt.o)
  .text.tfm_flih_prepare_depriv_flih
-                0x00000000020a77ac       0x74 spm/libtfm_spm.a(interrupt.o)
-                0x00000000020a77ac                tfm_flih_prepare_depriv_flih
+                0x00000000020a77a4       0x74 spm/libtfm_spm.a(interrupt.o)
+                0x00000000020a77a4                tfm_flih_prepare_depriv_flih
  .text.tfm_flih_return_to_isr
-                0x00000000020a7820       0x3c spm/libtfm_spm.a(interrupt.o)
-                0x00000000020a7820                tfm_flih_return_to_isr
+                0x00000000020a7818       0x3c spm/libtfm_spm.a(interrupt.o)
+                0x00000000020a7818                tfm_flih_return_to_isr
  .text.spm_handle_interrupt
-                0x00000000020a785c       0x64 spm/libtfm_spm.a(interrupt.o)
-                0x00000000020a785c                spm_handle_interrupt
+                0x00000000020a7854       0x64 spm/libtfm_spm.a(interrupt.o)
+                0x00000000020a7854                spm_handle_interrupt
  .text.tfm_core_svc_handler
-                0x00000000020a78c0      0x174 spm/libtfm_spm.a(tfm_core_svcalls_ipc.o)
-                0x00000000020a78c0                tfm_core_svc_handler
+                0x00000000020a78b8      0x174 spm/libtfm_spm.a(tfm_core_svcalls_ipc.o)
+                0x00000000020a78b8                tfm_core_svc_handler
  .text.tfm_core_handler_mode
-                0x00000000020a7a34        0x4 spm/libtfm_spm.a(tfm_core_svcalls_ipc.o)
-                0x00000000020a7a34                tfm_core_handler_mode
+                0x00000000020a7a2c        0x4 spm/libtfm_spm.a(tfm_core_svcalls_ipc.o)
+                0x00000000020a7a2c                tfm_core_handler_mode
  .text.thrd_next
-                0x00000000020a7a38       0x18 spm/libtfm_spm.a(thread.o)
-                0x00000000020a7a38                thrd_next
+                0x00000000020a7a30       0x18 spm/libtfm_spm.a(thread.o)
+                0x00000000020a7a30                thrd_next
  .text.thrd_set_state
-                0x00000000020a7a50       0x28 spm/libtfm_spm.a(thread.o)
-                0x00000000020a7a50                thrd_set_state
+                0x00000000020a7a48       0x28 spm/libtfm_spm.a(thread.o)
+                0x00000000020a7a48                thrd_set_state
  .text.thrd_start
-                0x00000000020a7a78       0x44 spm/libtfm_spm.a(thread.o)
-                0x00000000020a7a78                thrd_start
+                0x00000000020a7a70       0x44 spm/libtfm_spm.a(thread.o)
+                0x00000000020a7a70                thrd_start
  .text.thrd_start_scheduler
-                0x00000000020a7abc       0x1c spm/libtfm_spm.a(thread.o)
-                0x00000000020a7abc                thrd_start_scheduler
+                0x00000000020a7ab4       0x1c spm/libtfm_spm.a(thread.o)
+                0x00000000020a7ab4                thrd_start_scheduler
  .text.thrd_set_wait
-                0x00000000020a7ad8       0x18 spm/libtfm_spm.a(thread.o)
-                0x00000000020a7ad8                thrd_set_wait
+                0x00000000020a7ad0       0x18 spm/libtfm_spm.a(thread.o)
+                0x00000000020a7ad0                thrd_set_wait
  .text.thrd_wake_up
-                0x00000000020a7af0       0x26 spm/libtfm_spm.a(thread.o)
-                0x00000000020a7af0                thrd_wake_up
+                0x00000000020a7ae8       0x26 spm/libtfm_spm.a(thread.o)
+                0x00000000020a7ae8                thrd_wake_up
  .text.PendSV_Handler
-                0x00000000020a7b16       0x3c spm/libtfm_spm.a(tfm_arch_v8m_main.o)
-                0x00000000020a7b16                PendSV_Handler
- *fill*         0x00000000020a7b52        0x2 
+                0x00000000020a7b0e       0x3c spm/libtfm_spm.a(tfm_arch_v8m_main.o)
+                0x00000000020a7b0e                PendSV_Handler
+ *fill*         0x00000000020a7b4a        0x2 
  .text.SVC_Handler
-                0x00000000020a7b54       0x54 spm/libtfm_spm.a(tfm_arch_v8m_main.o)
-                0x00000000020a7b54                SVC_Handler
+                0x00000000020a7b4c       0x54 spm/libtfm_spm.a(tfm_arch_v8m_main.o)
+                0x00000000020a7b4c                SVC_Handler
  .text.tfm_arch_set_secure_exception_priorities
-                0x00000000020a7ba8       0x44 spm/libtfm_spm.a(tfm_arch_v8m_main.o)
-                0x00000000020a7ba8                tfm_arch_set_secure_exception_priorities
+                0x00000000020a7ba0       0x44 spm/libtfm_spm.a(tfm_arch_v8m_main.o)
+                0x00000000020a7ba0                tfm_arch_set_secure_exception_priorities
  .text.tfm_arch_config_extensions
-                0x00000000020a7bec        0x2 spm/libtfm_spm.a(tfm_arch_v8m_main.o)
-                0x00000000020a7bec                tfm_arch_config_extensions
+                0x00000000020a7be4        0x2 spm/libtfm_spm.a(tfm_arch_v8m_main.o)
+                0x00000000020a7be4                tfm_arch_config_extensions
  .text.tfm_arch_clear_fp_status
-                0x00000000020a7bee       0x12 spm/libtfm_spm.a(tfm_arch_v8m_main.o)
-                0x00000000020a7bee                tfm_arch_clear_fp_status
+                0x00000000020a7be6       0x12 spm/libtfm_spm.a(tfm_arch_v8m_main.o)
+                0x00000000020a7be6                tfm_arch_clear_fp_status
  .text.ns_agent_tz_init_c
-                0x00000000020a7c00       0x20 spm/libtfm_spm.a(ns_agent_tz.o)
+                0x00000000020a7bf8       0x20 spm/libtfm_spm.a(ns_agent_tz.o)
  .text.ns_agent_tz_main
-                0x00000000020a7c20       0x34 spm/libtfm_spm.a(ns_agent_tz.o)
-                0x00000000020a7c20                ns_agent_tz_main
+                0x00000000020a7c18       0x34 spm/libtfm_spm.a(ns_agent_tz.o)
+                0x00000000020a7c18                ns_agent_tz_main
  .text.tfm_core_validate_boot_data
-                0x00000000020a7c54       0x1c spm/libtfm_spm.a(tfm_boot_data.o)
-                0x00000000020a7c54                tfm_core_validate_boot_data
+                0x00000000020a7c4c       0x1c spm/libtfm_spm.a(tfm_boot_data.o)
+                0x00000000020a7c4c                tfm_core_validate_boot_data
  .text.tfm_core_get_boot_data_handler
-                0x00000000020a7c70       0x44 spm/libtfm_spm.a(tfm_boot_data.o)
-                0x00000000020a7c70                tfm_core_get_boot_data_handler
+                0x00000000020a7c68       0x44 spm/libtfm_spm.a(tfm_boot_data.o)
+                0x00000000020a7c68                tfm_core_get_boot_data_handler
  .text.tfm_core_panic
-                0x00000000020a7cb4        0x4 spm/libtfm_spm.a(utilities.o)
-                0x00000000020a7cb4                tfm_core_panic
+                0x00000000020a7cac        0x4 spm/libtfm_spm.a(utilities.o)
+                0x00000000020a7cac                tfm_core_panic
  .text.tfm_arch_free_msp_and_exc_ret
-                0x00000000020a7cb8       0x10 spm/libtfm_spm.a(tfm_arch.o)
-                0x00000000020a7cb8                tfm_arch_free_msp_and_exc_ret
+                0x00000000020a7cb0       0x10 spm/libtfm_spm.a(tfm_arch.o)
+                0x00000000020a7cb0                tfm_arch_free_msp_and_exc_ret
  .text.tfm_arch_set_context_ret_code
-                0x00000000020a7cc8       0x14 spm/libtfm_spm.a(tfm_arch.o)
-                0x00000000020a7cc8                tfm_arch_set_context_ret_code
+                0x00000000020a7cc0       0x14 spm/libtfm_spm.a(tfm_arch.o)
+                0x00000000020a7cc0                tfm_arch_set_context_ret_code
  .text.tfm_arch_trigger_pendsv
-                0x00000000020a7cdc       0x18 spm/libtfm_spm.a(tfm_arch.o)
-                0x00000000020a7cdc                tfm_arch_trigger_pendsv
+                0x00000000020a7cd4       0x18 spm/libtfm_spm.a(tfm_arch.o)
+                0x00000000020a7cd4                tfm_arch_trigger_pendsv
  .text.tfm_arch_init_context
-                0x00000000020a7cf4       0x44 spm/libtfm_spm.a(tfm_arch.o)
-                0x00000000020a7cf4                tfm_arch_init_context
+                0x00000000020a7cec       0x44 spm/libtfm_spm.a(tfm_arch.o)
+                0x00000000020a7cec                tfm_arch_init_context
  .text.tfm_arch_refresh_hardware_context
-                0x00000000020a7d38       0x12 spm/libtfm_spm.a(tfm_arch.o)
-                0x00000000020a7d38                tfm_arch_refresh_hardware_context
- *fill*         0x00000000020a7d4a        0x2 
+                0x00000000020a7d30       0x12 spm/libtfm_spm.a(tfm_arch.o)
+                0x00000000020a7d30                tfm_arch_refresh_hardware_context
+ *fill*         0x00000000020a7d42        0x2 
  .text.tfm_spm_to_user_handle
-                0x00000000020a7d4c       0x20 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7d4c                tfm_spm_to_user_handle
+                0x00000000020a7d44       0x20 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7d44                tfm_spm_to_user_handle
  .text.tfm_spm_to_handle_instance
-                0x00000000020a7d6c       0x10 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7d6c                tfm_spm_to_handle_instance
+                0x00000000020a7d64       0x10 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7d64                tfm_spm_to_handle_instance
  .text.tfm_spm_create_conn_handle
-                0x00000000020a7d7c       0x20 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7d7c                tfm_spm_create_conn_handle
+                0x00000000020a7d74       0x20 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7d74                tfm_spm_create_conn_handle
  .text.tfm_spm_validate_conn_handle
-                0x00000000020a7d9c       0x1c spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7d9c                tfm_spm_validate_conn_handle
+                0x00000000020a7d94       0x1c spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7d94                tfm_spm_validate_conn_handle
  .text.tfm_spm_free_conn_handle
-                0x00000000020a7db8       0x1c spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7db8                tfm_spm_free_conn_handle
+                0x00000000020a7db0       0x1c spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7db0                tfm_spm_free_conn_handle
  .text.spm_get_handle_by_signal
-                0x00000000020a7dd4       0x4e spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7dd4                spm_get_handle_by_signal
- *fill*         0x00000000020a7e22        0x2 
+                0x00000000020a7dcc       0x4e spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7dcc                spm_get_handle_by_signal
+ *fill*         0x00000000020a7e1a        0x2 
  .text.tfm_spm_get_service_by_sid
-                0x00000000020a7e24       0x2c spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7e24                tfm_spm_get_service_by_sid
+                0x00000000020a7e1c       0x2c spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7e1c                tfm_spm_get_service_by_sid
  .text.tfm_spm_get_partition_by_id
-                0x00000000020a7e50       0x1c spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7e50                tfm_spm_get_partition_by_id
+                0x00000000020a7e48       0x1c spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7e48                tfm_spm_get_partition_by_id
  .text.tfm_spm_check_client_version
-                0x00000000020a7e6c       0x24 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7e6c                tfm_spm_check_client_version
+                0x00000000020a7e64       0x24 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7e64                tfm_spm_check_client_version
  .text.tfm_spm_check_authorization
-                0x00000000020a7e90       0x4c spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7e90                tfm_spm_check_authorization
+                0x00000000020a7e88       0x4c spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7e88                tfm_spm_check_authorization
  .text.spm_get_handle_by_client_handle
-                0x00000000020a7edc       0x1e spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7edc                spm_get_handle_by_client_handle
- *fill*         0x00000000020a7efa        0x2 
+                0x00000000020a7ed4       0x1e spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7ed4                spm_get_handle_by_client_handle
+ *fill*         0x00000000020a7ef2        0x2 
  .text.spm_fill_message
-                0x00000000020a7efc       0x98 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7efc                spm_fill_message
+                0x00000000020a7ef4       0x98 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7ef4                spm_fill_message
  .text.tfm_spm_partition_get_running_partition_id
-                0x00000000020a7f94       0x20 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7f94                tfm_spm_partition_get_running_partition_id
+                0x00000000020a7f8c       0x20 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7f8c                tfm_spm_partition_get_running_partition_id
  .text.spm_get_handle_by_msg_handle
-                0x00000000020a7fb4       0x28 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7fb4                spm_get_handle_by_msg_handle
+                0x00000000020a7fac       0x28 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7fac                spm_get_handle_by_msg_handle
  .text.tfm_memory_check
-                0x00000000020a7fdc       0x40 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a7fdc                tfm_memory_check
+                0x00000000020a7fd4       0x40 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a7fd4                tfm_memory_check
  .text.tfm_spm_is_ns_caller
-                0x00000000020a801c       0x28 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a801c                tfm_spm_is_ns_caller
+                0x00000000020a8014       0x28 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a8014                tfm_spm_is_ns_caller
  .text.tfm_spm_get_client_id
-                0x00000000020a8044       0x20 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a8044                tfm_spm_get_client_id
+                0x00000000020a803c       0x20 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a803c                tfm_spm_get_client_id
  .text.tfm_spm_init
-                0x00000000020a8064       0x9c spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a8064                tfm_spm_init
+                0x00000000020a805c       0x9c spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a805c                tfm_spm_init
  .text.do_schedule
-                0x00000000020a8100       0x80 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a8100                do_schedule
+                0x00000000020a80f8       0x80 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a80f8                do_schedule
  .text.update_caller_outvec_len
-                0x00000000020a8180       0x28 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a8180                update_caller_outvec_len
+                0x00000000020a8178       0x28 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a8178                update_caller_outvec_len
  .text.spm_assert_signal
-                0x00000000020a81a8       0x30 spm/libtfm_spm.a(spm_ipc.o)
-                0x00000000020a81a8                spm_assert_signal
+                0x00000000020a81a0       0x30 spm/libtfm_spm.a(spm_ipc.o)
+                0x00000000020a81a0                spm_assert_signal
  .text.load_a_partition_assuredly
-                0x00000000020a81d8       0xd8 spm/libtfm_spm.a(static_load.o)
-                0x00000000020a81d8                load_a_partition_assuredly
+                0x00000000020a81d0       0xd8 spm/libtfm_spm.a(static_load.o)
+                0x00000000020a81d0                load_a_partition_assuredly
  .text.load_services_assuredly
-                0x00000000020a82b0       0xb8 spm/libtfm_spm.a(static_load.o)
-                0x00000000020a82b0                load_services_assuredly
+                0x00000000020a82a8       0xb8 spm/libtfm_spm.a(static_load.o)
+                0x00000000020a82a8                load_services_assuredly
  .text.load_irqs_assuredly
-                0x00000000020a8368       0x82 spm/libtfm_spm.a(static_load.o)
-                0x00000000020a8368                load_irqs_assuredly
+                0x00000000020a8360       0x82 spm/libtfm_spm.a(static_load.o)
+                0x00000000020a8360                load_irqs_assuredly
  .text.spm_handle_programmer_errors
-                0x00000000020a83ea       0x18 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a83ea                spm_handle_programmer_errors
+                0x00000000020a83e2       0x18 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a83e2                spm_handle_programmer_errors
  .text.tfm_spm_get_lifecycle_state
-                0x00000000020a8402        0x4 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a8402                tfm_spm_get_lifecycle_state
+                0x00000000020a83fa        0x4 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a83fa                tfm_spm_get_lifecycle_state
  .text.tfm_spm_client_psa_framework_version
-                0x00000000020a8406        0x6 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a8406                tfm_spm_client_psa_framework_version
+                0x00000000020a83fe        0x6 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a83fe                tfm_spm_client_psa_framework_version
  .text.tfm_spm_client_psa_version
-                0x00000000020a840c       0x2c spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a840c                tfm_spm_client_psa_version
+                0x00000000020a8404       0x2c spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8404                tfm_spm_client_psa_version
  .text.tfm_spm_client_psa_call
-                0x00000000020a8438      0x208 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a8438                tfm_spm_client_psa_call
+                0x00000000020a8430      0x208 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8430                tfm_spm_client_psa_call
  .text.tfm_spm_client_psa_connect
-                0x00000000020a8640       0xa4 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a8640                tfm_spm_client_psa_connect
+                0x00000000020a8638       0xa4 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8638                tfm_spm_client_psa_connect
  .text.tfm_spm_client_psa_close
-                0x00000000020a86e4       0x74 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a86e4                tfm_spm_client_psa_close
+                0x00000000020a86dc       0x74 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a86dc                tfm_spm_client_psa_close
  .text.tfm_spm_partition_psa_wait
-                0x00000000020a8758       0x40 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a8758                tfm_spm_partition_psa_wait
+                0x00000000020a8750       0x40 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8750                tfm_spm_partition_psa_wait
  .text.tfm_spm_partition_psa_get
-                0x00000000020a8798       0x74 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a8798                tfm_spm_partition_psa_get
+                0x00000000020a8790       0x74 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8790                tfm_spm_partition_psa_get
  .text.tfm_spm_partition_psa_read
-                0x00000000020a880c       0x82 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a880c                tfm_spm_partition_psa_read
+                0x00000000020a8804       0x82 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8804                tfm_spm_partition_psa_read
  .text.tfm_spm_partition_psa_skip
-                0x00000000020a888e       0x4c spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a888e                tfm_spm_partition_psa_skip
+                0x00000000020a8886       0x4c spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8886                tfm_spm_partition_psa_skip
  .text.tfm_spm_partition_psa_write
-                0x00000000020a88da       0x80 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a88da                tfm_spm_partition_psa_write
- *fill*         0x00000000020a895a        0x2 
+                0x00000000020a88d2       0x80 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a88d2                tfm_spm_partition_psa_write
+ *fill*         0x00000000020a8952        0x2 
  .text.tfm_spm_partition_psa_reply
-                0x00000000020a895c       0xa8 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a895c                tfm_spm_partition_psa_reply
+                0x00000000020a8954       0xa8 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8954                tfm_spm_partition_psa_reply
  .text.tfm_spm_partition_psa_notify
-                0x00000000020a8a04       0x10 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a8a04                tfm_spm_partition_psa_notify
+                0x00000000020a89fc       0x10 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a89fc                tfm_spm_partition_psa_notify
  .text.tfm_spm_partition_psa_clear
-                0x00000000020a8a14       0x2c spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a8a14                tfm_spm_partition_psa_clear
+                0x00000000020a8a0c       0x2c spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8a0c                tfm_spm_partition_psa_clear
  .text.tfm_spm_partition_psa_panic
-                0x00000000020a8a40        0x4 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a8a40                tfm_spm_partition_psa_panic
+                0x00000000020a8a38        0x4 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8a38                tfm_spm_partition_psa_panic
  .text.tfm_spm_partition_psa_set_rhandle
-                0x00000000020a8a44       0x22 spm/libtfm_spm.a(psa_api.o)
-                0x00000000020a8a44                tfm_spm_partition_psa_set_rhandle
+                0x00000000020a8a3c       0x22 spm/libtfm_spm.a(psa_api.o)
+                0x00000000020a8a3c                tfm_spm_partition_psa_set_rhandle
  .text.ipc_wake_up
-                0x00000000020a8a66       0x16 spm/libtfm_spm.a(backend_ipc.o)
+                0x00000000020a8a5e       0x16 spm/libtfm_spm.a(backend_ipc.o)
  .text.ipc_replying
-                0x00000000020a8a7c        0xc spm/libtfm_spm.a(backend_ipc.o)
+                0x00000000020a8a74        0xc spm/libtfm_spm.a(backend_ipc.o)
  .text.ipc_wait
-                0x00000000020a8a88       0x28 spm/libtfm_spm.a(backend_ipc.o)
+                0x00000000020a8a80       0x28 spm/libtfm_spm.a(backend_ipc.o)
  .text.ipc_messaging
-                0x00000000020a8ab0       0x64 spm/libtfm_spm.a(backend_ipc.o)
+                0x00000000020a8aa8       0x64 spm/libtfm_spm.a(backend_ipc.o)
  .text.ipc_system_run
-                0x00000000020a8b14       0x28 spm/libtfm_spm.a(backend_ipc.o)
+                0x00000000020a8b0c       0x28 spm/libtfm_spm.a(backend_ipc.o)
  .text.ipc_comp_init_assuredly
-                0x00000000020a8b3c       0xb8 spm/libtfm_spm.a(backend_ipc.o)
+                0x00000000020a8b34       0xb8 spm/libtfm_spm.a(backend_ipc.o)
  .text.tfm_pool_init
-                0x00000000020a8bf4       0x5c spm/libtfm_spm.a(tfm_pools.o)
-                0x00000000020a8bf4                tfm_pool_init
+                0x00000000020a8bec       0x5c spm/libtfm_spm.a(tfm_pools.o)
+                0x00000000020a8bec                tfm_pool_init
  .text.tfm_pool_alloc
-                0x00000000020a8c50       0x16 spm/libtfm_spm.a(tfm_pools.o)
-                0x00000000020a8c50                tfm_pool_alloc
+                0x00000000020a8c48       0x16 spm/libtfm_spm.a(tfm_pools.o)
+                0x00000000020a8c48                tfm_pool_alloc
  .text.tfm_pool_free
-                0x00000000020a8c66        0xc spm/libtfm_spm.a(tfm_pools.o)
-                0x00000000020a8c66                tfm_pool_free
+                0x00000000020a8c5e        0xc spm/libtfm_spm.a(tfm_pools.o)
+                0x00000000020a8c5e                tfm_pool_free
  .text.is_valid_chunk_data_in_pool
-                0x00000000020a8c72       0x2e spm/libtfm_spm.a(tfm_pools.o)
-                0x00000000020a8c72                is_valid_chunk_data_in_pool
+                0x00000000020a8c6a       0x2e spm/libtfm_spm.a(tfm_pools.o)
+                0x00000000020a8c6a                is_valid_chunk_data_in_pool
  .text.tfm_nspm_get_current_client_id
-                0x00000000020a8ca0        0x6 spm/libtfm_spm.a(tfm_spm_ns_ctx.o)
-                0x00000000020a8ca0                tfm_nspm_get_current_client_id
+                0x00000000020a8c98        0x6 spm/libtfm_spm.a(tfm_spm_ns_ctx.o)
+                0x00000000020a8c98                tfm_nspm_get_current_client_id
  .text.tfm_nspm_ctx_init
-                0x00000000020a8ca6        0x2 spm/libtfm_spm.a(tfm_spm_ns_ctx.o)
-                0x00000000020a8ca6                tfm_nspm_ctx_init
+                0x00000000020a8c9e        0x2 spm/libtfm_spm.a(tfm_spm_ns_ctx.o)
+                0x00000000020a8c9e                tfm_nspm_ctx_init
  .text.tfm_nspm_ctx_init.__stub
-                0x00000000020a8ca8       0x30 linker stubs
+                0x00000000020a8ca0       0x30 linker stubs
  *libplatform_s*:*(.rodata*)
  .rodata.mpu_attrs
-                0x00000000020a8cd8        0x4 ../platform/libplatform_s.a(mpu.o)
+                0x00000000020a8cd0        0x4 ../platform/libplatform_s.a(mpu.o)
  .rodata.mpu_regions
-                0x00000000020a8cdc       0x40 ../platform/libplatform_s.a(mpu.o)
+                0x00000000020a8cd4       0x40 ../platform/libplatform_s.a(mpu.o)
  .rodata.bfhfnmi_handler.str1.1
-                0x00000000020a8d1c       0x3c ../platform/libplatform_s.a(tfm_interrupts.o)
+                0x00000000020a8d14       0x3c ../platform/libplatform_s.a(tfm_interrupts.o)
  .rodata.NMI_Handler.str1.1
-                0x00000000020a8d58       0x11 ../platform/libplatform_s.a(tfm_interrupts.o)
+                0x00000000020a8d50       0x11 ../platform/libplatform_s.a(tfm_interrupts.o)
  .rodata.HardFault_Handler.str1.1
-                0x00000000020a8d69       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
+                0x00000000020a8d61       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
  .rodata.MemManage_Handler.str1.1
-                0x00000000020a8d79       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
+                0x00000000020a8d71       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
  .rodata.BusFault_Handler.str1.1
-                0x00000000020a8d89       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
+                0x00000000020a8d81       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
  .rodata.UsageFault_Handler.str1.1
-                0x00000000020a8d99       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
+                0x00000000020a8d91       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
  .rodata.SecureFault_Handler.str1.1
-                0x00000000020a8da9       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
+                0x00000000020a8da1       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
  .rodata.UART1_Handler.str1.1
-                0x00000000020a8db9       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
+                0x00000000020a8db1       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
  .rodata.GPIO_Handler.str1.1
-                0x00000000020a8dc9       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
+                0x00000000020a8dc1       0x10 ../platform/libplatform_s.a(tfm_interrupts.o)
  .rodata.printf_word_buf_hex.str1.1
-                0x00000000020a8dd9       0x1c ../platform/libplatform_s.a(bk_tfm_log.o)
+                0x00000000020a8dd1       0x1c ../platform/libplatform_s.a(bk_tfm_log.o)
                                          0x20 (size before relaxing)
  .rodata.s_tfm_tag.0
-                0x00000000020a8df5        0x7 ../platform/libplatform_s.a(bk_tfm_log.o)
+                0x00000000020a8ded        0x7 ../platform/libplatform_s.a(bk_tfm_log.o)
  .rodata.Driver_USART0
-                0x00000000020a8dfc       0x38 ../platform/libplatform_s.a(Driver_USART.o)
-                0x00000000020a8dfc                Driver_USART0
+                0x00000000020a8df4       0x38 ../platform/libplatform_s.a(Driver_USART.o)
+                0x00000000020a8df4                Driver_USART0
  .rodata.CSWTCH.26
-                0x00000000020a8e34      0x135 ../platform/libplatform_s.a(gpio_adapter.o)
+                0x00000000020a8e2c      0x135 ../platform/libplatform_s.a(gpio_adapter.o)
  .rodata.str1.1
-                0x00000000020a8f69       0xad ../platform/libplatform_s.a(flash_partition.o)
- *fill*         0x00000000020a9016        0x2 
- .rodata        0x00000000020a9018       0x14 ../platform/libplatform_s.a(flash_partition.o)
+                0x00000000020a8f61       0xad ../platform/libplatform_s.a(flash_partition.o)
+ *fill*         0x00000000020a900e        0x2 
+ .rodata        0x00000000020a9010       0x14 ../platform/libplatform_s.a(flash_partition.o)
  .rodata.Flash_EraseSector.str1.1
-                0x00000000020a902c       0x1b ../platform/libplatform_s.a(Driver_Flash.o)
+                0x00000000020a9024       0x1b ../platform/libplatform_s.a(Driver_Flash.o)
  .rodata.Flash_ProgramData.str1.1
-                0x00000000020a9047       0x20 ../platform/libplatform_s.a(Driver_Flash.o)
- *fill*         0x00000000020a9067        0x1 
+                0x00000000020a903f       0x20 ../platform/libplatform_s.a(Driver_Flash.o)
+ *fill*         0x00000000020a905f        0x1 
  .rodata.ARM_FLASH0_DEV_DATA
-                0x00000000020a9068       0x18 ../platform/libplatform_s.a(Driver_Flash.o)
+                0x00000000020a9060       0x18 ../platform/libplatform_s.a(Driver_Flash.o)
  .rodata.DriverVersion
-                0x00000000020a9080        0x4 ../platform/libplatform_s.a(Driver_Flash.o)
+                0x00000000020a9078        0x4 ../platform/libplatform_s.a(Driver_Flash.o)
  .rodata.Driver_FLASH0
-                0x00000000020a9084       0x2c ../platform/libplatform_s.a(Driver_Flash.o)
-                0x00000000020a9084                Driver_FLASH0
+                0x00000000020a907c       0x2c ../platform/libplatform_s.a(Driver_Flash.o)
+                0x00000000020a907c                Driver_FLASH0
  .rodata.tfm_hal_get_ns_entry_point.str1.1
-                0x00000000020a90b0       0x20 ../platform/libplatform_s.a(tfm_hal_platform.o)
+                0x00000000020a90a8       0x20 ../platform/libplatform_s.a(tfm_hal_platform.o)
  .rodata.memory_regions
-                0x00000000020a90d0       0x1c ../platform/libplatform_s.a(target_cfg.o)
-                0x00000000020a90d0                memory_regions
+                0x00000000020a90c8       0x1c ../platform/libplatform_s.a(target_cfg.o)
+                0x00000000020a90c8                memory_regions
  .rodata.str1.1
-                0x00000000020a90ec        0xd ../platform/libplatform_s.a(tfm_platform_system.o)
+                0x00000000020a90e4        0xd ../platform/libplatform_s.a(tfm_platform_system.o)
  .rodata.flash_erase_block.str1.1
-                0x00000000020a90f9       0x23 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a90f1       0x23 ../platform/libplatform_s.a(flash_driver.o)
  .rodata.bk_flash_write_bytes.str1.1
-                0x00000000020a911c       0x23 ../platform/libplatform_s.a(flash_driver.o)
- *fill*         0x00000000020a913f        0x1 
+                0x00000000020a9114       0x23 ../platform/libplatform_s.a(flash_driver.o)
+ *fill*         0x00000000020a9137        0x1 
  .rodata.CSWTCH.75
-                0x00000000020a9140        0xc ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a9138        0xc ../platform/libplatform_s.a(flash_driver.o)
  .rodata.flash_config
-                0x00000000020a914c       0x38 ../platform/libplatform_s.a(flash_driver.o)
+                0x00000000020a9144       0x38 ../platform/libplatform_s.a(flash_driver.o)
  .rodata.s_sec_map
-                0x00000000020a9184      0x1f8 ../platform/libplatform_s.a(prro_hal_v5.o)
- .rodata        0x00000000020a937c       0x2c ../platform/libplatform_s.a(bk_tfm_mpc.o)
+                0x00000000020a917c      0x1f8 ../platform/libplatform_s.a(prro_hal_v5.o)
+ .rodata        0x00000000020a9374       0x2c ../platform/libplatform_s.a(bk_tfm_mpc.o)
  .rodata.CSWTCH.4
-                0x00000000020a93a8       0x28 ../platform/libplatform_s.a(mpc_hal.o)
+                0x00000000020a93a0       0x28 ../platform/libplatform_s.a(mpc_hal.o)
  .rodata.aes_gcm_crypt.str1.1
-                0x00000000020a93d0       0xce ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a93c8       0xce ../platform/libplatform_s.a(secure_storage_nsc.o)
  .rodata.get_ss_address.constprop.0.str1.1
-                0x00000000020a949e       0x23 ../platform/libplatform_s.a(secure_storage_nsc.o)
+                0x00000000020a9496       0x23 ../platform/libplatform_s.a(secure_storage_nsc.o)
  .rodata.otp_check_busy.str1.1
-                0x00000000020a94c1       0x19 ../platform/libplatform_s.a(otp_nsc.o)
+                0x00000000020a94b9       0x19 ../platform/libplatform_s.a(otp_nsc.o)
  .rodata.str1.1
-                0x00000000020a94da        0xb ../platform/libplatform_s.a(asym_algo_nsc.o)
+                0x00000000020a94d2        0xb ../platform/libplatform_s.a(asym_algo_nsc.o)
  .rodata.CSWTCH.26
-                0x00000000020a94e5        0x8 ../platform/libplatform_s.a(asym_algo_nsc.o)
+                0x00000000020a94dd        0x8 ../platform/libplatform_s.a(asym_algo_nsc.o)
  .rodata.str1.1
-                0x00000000020a94ed       0x3b ../platform/libplatform_s.a(dh_nsc.o)
+                0x00000000020a94e5       0x3b ../platform/libplatform_s.a(dh_nsc.o)
  .rodata.str1.1
-                0x00000000020a9528      0x24c ../platform/libplatform_s.a(sca_aes_nsc.o)
+                0x00000000020a9520      0x24c ../platform/libplatform_s.a(sca_aes_nsc.o)
  .rodata.otp_map_1
-                0x00000000020a9774       0xc0 ../platform/libplatform_s.a(_otp.o)
-                0x00000000020a9774                otp_map_1
+                0x00000000020a976c       0xc0 ../platform/libplatform_s.a(_otp.o)
+                0x00000000020a976c                otp_map_1
  .rodata.otp_map_2
-                0x00000000020a9834       0xe4 ../platform/libplatform_s.a(_otp.o)
-                0x00000000020a9834                otp_map_2
+                0x00000000020a982c       0xe4 ../platform/libplatform_s.a(_otp.o)
+                0x00000000020a982c                otp_map_2
  *libtfm_spm*:*(.rodata*)
  .rodata.ldinf_ea
-                0x00000000020a9918        0x4 spm/libtfm_spm.a(static_load.o)
+                0x00000000020a9910        0x4 spm/libtfm_spm.a(static_load.o)
  .rodata.part_pool_ea
-                0x00000000020a991c        0x4 spm/libtfm_spm.a(static_load.o)
+                0x00000000020a9914        0x4 spm/libtfm_spm.a(static_load.o)
  .rodata.serv_pool_ea
-                0x00000000020a9920        0x4 spm/libtfm_spm.a(static_load.o)
+                0x00000000020a9918        0x4 spm/libtfm_spm.a(static_load.o)
  .rodata.backend_instance
-                0x00000000020a9924       0x18 spm/libtfm_spm.a(backend_ipc.o)
-                0x00000000020a9924                backend_instance
+                0x00000000020a991c       0x18 spm/libtfm_spm.a(backend_ipc.o)
+                0x00000000020a991c                backend_instance
                 0x00000000020a9940                . = ALIGN (0x20)
- *fill*         0x00000000020a993c        0x4 
+ *fill*         0x00000000020a9934        0xc 
                 0x00000000020a9940                Image$$ER_TFM_CODE_END$$Base = .
 
 .TFM_UNPRIV_CODE
@@ -9474,7 +9474,7 @@ LOAD linker stubs
  .debug_ranges  0x000000000000d8f0       0x60 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(chacha20.o)
  .debug_ranges  0x000000000000d950       0x30 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(rsa_alt_helpers.o)
 
-.debug_line     0x0000000000000000    0x65fc6
+.debug_line     0x0000000000000000    0x65fb1
  .debug_line    0x0000000000000000      0x1e0 CMakeFiles/tfm_s.dir/partitions/ns_agent_tz/tfm_psa_api_veneers.o
  .debug_line    0x00000000000001e0       0xe3 CMakeFiles/tfm_s.dir/__/platform/ext/target/beken/bk7239n/gcc/startup_cmsdk_bk7239_s.o
  .debug_line    0x00000000000002c3      0x2d2 CMakeFiles/tfm_s.dir/__/generated/secure_fw/partitions/crypto/auto_generated/load_info_tfm_crypto.o
@@ -9572,86 +9572,86 @@ LOAD linker stubs
  .debug_line    0x000000000003af38      0x794 ../platform/libplatform_s.a(flash_partition.o)
  .debug_line    0x000000000003b6cc      0x7c5 ../platform/libplatform_s.a(Driver_Flash.o)
  .debug_line    0x000000000003be91      0x4d9 ../platform/libplatform_s.a(tfm_hal_isolation.o)
- .debug_line    0x000000000003c36a      0x8a7 ../platform/libplatform_s.a(tfm_hal_platform.o)
- .debug_line    0x000000000003cc11      0x49c ../platform/libplatform_s.a(target_cfg.o)
- .debug_line    0x000000000003d0ad      0x342 ../platform/libplatform_s.a(otp_flash.o)
- .debug_line    0x000000000003d3ef      0x306 ../platform/libplatform_s.a(tfm_hal_nvic.o)
- .debug_line    0x000000000003d6f5      0x281 ../platform/libplatform_s.a(tfm_hal_isolation_mpu_v8m.o)
- .debug_line    0x000000000003d976      0x426 ../platform/libplatform_s.a(tfm_platform_system.o)
- .debug_line    0x000000000003dd9c     0x1581 ../platform/libplatform_s.a(flash_driver.o)
- .debug_line    0x000000000003f31d      0x405 ../platform/libplatform_s.a(prro_driver.o)
- .debug_line    0x000000000003f722      0x14d ../platform/libplatform_s.a(wdt_driver.o)
- .debug_line    0x000000000003f86f      0x535 ../platform/libplatform_s.a(prro_hal_v5.o)
- .debug_line    0x000000000003fda4      0x4be ../platform/libplatform_s.a(flash_hal.o)
- .debug_line    0x0000000000040262      0x74a ../platform/libplatform_s.a(bk_tfm_mpc.o)
- .debug_line    0x00000000000409ac      0x8fb ../platform/libplatform_s.a(mpc_driver.o)
- .debug_line    0x00000000000412a7      0x4d9 ../platform/libplatform_s.a(mpc_hal.o)
- .debug_line    0x0000000000041780      0xd0c ../platform/libplatform_s.a(secure_storage_nsc.o)
- .debug_line    0x000000000004248c      0x629 ../platform/libplatform_s.a(flash_nsc.o)
- .debug_line    0x0000000000042ab5     0x16e4 ../platform/libplatform_s.a(otp_nsc.o)
- .debug_line    0x0000000000044199      0xcd4 ../platform/libplatform_s.a(asym_algo_nsc.o)
- .debug_line    0x0000000000044e6d      0x3da ../platform/libplatform_s.a(dh_nsc.o)
- .debug_line    0x0000000000045247      0x5e6 ../platform/libplatform_s.a(25519_nsc.o)
- .debug_line    0x000000000004582d     0x1060 ../platform/libplatform_s.a(sca_aes_nsc.o)
- .debug_line    0x000000000004688d      0x22a ../platform/libplatform_s.a(tfm_hal_ps.o)
- .debug_line    0x0000000000046ab7      0x22c ../platform/libplatform_s.a(tfm_hal_its.o)
- .debug_line    0x0000000000046ce3      0x1d2 ../platform/libplatform_s.a(tfm_platform.o)
- .debug_line    0x0000000000046eb5       0xde ../platform/libplatform_s.a(tfm_hal_memory_symbols.o)
- .debug_line    0x0000000000046f93      0x1f1 ../platform/libplatform_s.a(nv_counters.o)
- .debug_line    0x0000000000047184      0x100 ../platform/libplatform_s.a(_otp.o)
- .debug_line    0x0000000000047284      0x3e8 ../platform/libplatform_s.a(flash_map.o)
- .debug_line    0x000000000004766c      0x35d ../platform/libplatform_s.a(mpu_armv8m_drv.o)
- .debug_line    0x00000000000479c9      0x1c3 partitions/lib/sprt/libtfm_sprt.a(service_api.o)
- .debug_line    0x0000000000047b8c      0x294 partitions/lib/sprt/libtfm_sprt.a(sprt_main.o)
- .debug_line    0x0000000000047e20      0x336 partitions/lib/sprt/libtfm_sprt.a(sfn_common_thread.o)
- .debug_line    0x0000000000048156      0x2ae partitions/lib/sprt/libtfm_sprt.a(tfm_its_secure_api.o)
- .debug_line    0x0000000000048404       0xf3 partitions/lib/sprt/libtfm_sprt.a(sprt_partition_metadata_indicator.o)
- .debug_line    0x00000000000484f7      0x5a7 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(entropy.o)
- .debug_line    0x0000000000048a9e      0x739 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(md5.o)
- .debug_line    0x00000000000491d7      0x692 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(memory_buffer_alloc.o)
- .debug_line    0x0000000000049869      0x227 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(platform.o)
- .debug_line    0x0000000000049a90       0xd1 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(platform_util.o)
- .debug_line    0x0000000000049b61     0x4b18 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto.o)
- .debug_line    0x000000000004e679      0x2e8 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_client.o)
- .debug_line    0x000000000004e961      0xe42 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_driver_wrappers.o)
- .debug_line    0x000000000004f7a3      0x8a2 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_ecp.o)
- .debug_line    0x0000000000050045      0x78b partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_ffdh.o)
- .debug_line    0x00000000000507d0      0x70d partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_hash.o)
- .debug_line    0x0000000000050edd      0x96e partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_mac.o)
- .debug_line    0x000000000005184b      0x9ab partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_rsa.o)
- .debug_line    0x00000000000521f6      0x942 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_slot_management.o)
- .debug_line    0x0000000000052b38      0x726 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_storage.o)
- .debug_line    0x000000000005325e      0x302 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(sha1.o)
- .debug_line    0x0000000000053560      0x310 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(sha256.o)
- .debug_line    0x0000000000053870      0x86a partitions/crypto/mbedcrypto/library/libmbedcrypto.a(sha512.o)
- .debug_line    0x00000000000540da      0x6c8 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(pk.o)
- .debug_line    0x00000000000547a2      0x5f6 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(pk_wrap.o)
- .debug_line    0x0000000000054d98      0xa14 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(pkwrite.o)
- .debug_line    0x00000000000557ac      0x842 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_cipher.o)
- .debug_line    0x0000000000055fee      0xbf5 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(asn1write.o)
- .debug_line    0x0000000000056be3      0x84d partitions/crypto/mbedcrypto/library/libmbedcrypto.a(constant_time.o)
- .debug_line    0x0000000000057430      0xb73 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(dubhe_gcm.o)
- .debug_line    0x0000000000057fa3      0x65c ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(dubhe_ghash.o)
- .debug_line    0x00000000000585ff      0x681 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(aes.o)
- .debug_line    0x0000000000058c80     0x1086 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ccm.o)
- .debug_line    0x0000000000059d06     0x124f ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(gcm.o)
- .debug_line    0x000000000005af55      0x662 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(bignum_delta.o)
- .debug_line    0x000000000005b5b7      0xebd ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(cipher.o)
- .debug_line    0x000000000005c474      0x60a ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(cipher_wrap.o)
- .debug_line    0x000000000005ca7e      0xb60 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ctr_drbg.o)
- .debug_line    0x000000000005d5de      0x746 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ecdh.o)
- .debug_line    0x000000000005dd24      0x79b ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ecdsa.o)
- .debug_line    0x000000000005e4bf     0x114c ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ecp.o)
- .debug_line    0x000000000005f60b      0x920 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ecp_curves.o)
- .debug_line    0x000000000005ff2b      0x10a ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(entropy_poll.o)
- .debug_line    0x0000000000060035      0x5f1 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(oid.o)
- .debug_line    0x0000000000060626      0xc1c ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(pkparse.o)
- .debug_line    0x0000000000061242     0x21d1 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(rsa.o)
- .debug_line    0x0000000000063413      0xbbb ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(dubhe_ccm.o)
- .debug_line    0x0000000000063fce      0x792 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(dubhe_cbcmac.o)
- .debug_line    0x0000000000064760      0x870 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(asn1parse.o)
- .debug_line    0x0000000000064fd0      0x6b1 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(chacha20.o)
- .debug_line    0x0000000000065681      0x945 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(rsa_alt_helpers.o)
+ .debug_line    0x000000000003c36a      0x892 ../platform/libplatform_s.a(tfm_hal_platform.o)
+ .debug_line    0x000000000003cbfc      0x49c ../platform/libplatform_s.a(target_cfg.o)
+ .debug_line    0x000000000003d098      0x342 ../platform/libplatform_s.a(otp_flash.o)
+ .debug_line    0x000000000003d3da      0x306 ../platform/libplatform_s.a(tfm_hal_nvic.o)
+ .debug_line    0x000000000003d6e0      0x281 ../platform/libplatform_s.a(tfm_hal_isolation_mpu_v8m.o)
+ .debug_line    0x000000000003d961      0x426 ../platform/libplatform_s.a(tfm_platform_system.o)
+ .debug_line    0x000000000003dd87     0x1581 ../platform/libplatform_s.a(flash_driver.o)
+ .debug_line    0x000000000003f308      0x405 ../platform/libplatform_s.a(prro_driver.o)
+ .debug_line    0x000000000003f70d      0x14d ../platform/libplatform_s.a(wdt_driver.o)
+ .debug_line    0x000000000003f85a      0x535 ../platform/libplatform_s.a(prro_hal_v5.o)
+ .debug_line    0x000000000003fd8f      0x4be ../platform/libplatform_s.a(flash_hal.o)
+ .debug_line    0x000000000004024d      0x74a ../platform/libplatform_s.a(bk_tfm_mpc.o)
+ .debug_line    0x0000000000040997      0x8fb ../platform/libplatform_s.a(mpc_driver.o)
+ .debug_line    0x0000000000041292      0x4d9 ../platform/libplatform_s.a(mpc_hal.o)
+ .debug_line    0x000000000004176b      0xd0c ../platform/libplatform_s.a(secure_storage_nsc.o)
+ .debug_line    0x0000000000042477      0x629 ../platform/libplatform_s.a(flash_nsc.o)
+ .debug_line    0x0000000000042aa0     0x16e4 ../platform/libplatform_s.a(otp_nsc.o)
+ .debug_line    0x0000000000044184      0xcd4 ../platform/libplatform_s.a(asym_algo_nsc.o)
+ .debug_line    0x0000000000044e58      0x3da ../platform/libplatform_s.a(dh_nsc.o)
+ .debug_line    0x0000000000045232      0x5e6 ../platform/libplatform_s.a(25519_nsc.o)
+ .debug_line    0x0000000000045818     0x1060 ../platform/libplatform_s.a(sca_aes_nsc.o)
+ .debug_line    0x0000000000046878      0x22a ../platform/libplatform_s.a(tfm_hal_ps.o)
+ .debug_line    0x0000000000046aa2      0x22c ../platform/libplatform_s.a(tfm_hal_its.o)
+ .debug_line    0x0000000000046cce      0x1d2 ../platform/libplatform_s.a(tfm_platform.o)
+ .debug_line    0x0000000000046ea0       0xde ../platform/libplatform_s.a(tfm_hal_memory_symbols.o)
+ .debug_line    0x0000000000046f7e      0x1f1 ../platform/libplatform_s.a(nv_counters.o)
+ .debug_line    0x000000000004716f      0x100 ../platform/libplatform_s.a(_otp.o)
+ .debug_line    0x000000000004726f      0x3e8 ../platform/libplatform_s.a(flash_map.o)
+ .debug_line    0x0000000000047657      0x35d ../platform/libplatform_s.a(mpu_armv8m_drv.o)
+ .debug_line    0x00000000000479b4      0x1c3 partitions/lib/sprt/libtfm_sprt.a(service_api.o)
+ .debug_line    0x0000000000047b77      0x294 partitions/lib/sprt/libtfm_sprt.a(sprt_main.o)
+ .debug_line    0x0000000000047e0b      0x336 partitions/lib/sprt/libtfm_sprt.a(sfn_common_thread.o)
+ .debug_line    0x0000000000048141      0x2ae partitions/lib/sprt/libtfm_sprt.a(tfm_its_secure_api.o)
+ .debug_line    0x00000000000483ef       0xf3 partitions/lib/sprt/libtfm_sprt.a(sprt_partition_metadata_indicator.o)
+ .debug_line    0x00000000000484e2      0x5a7 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(entropy.o)
+ .debug_line    0x0000000000048a89      0x739 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(md5.o)
+ .debug_line    0x00000000000491c2      0x692 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(memory_buffer_alloc.o)
+ .debug_line    0x0000000000049854      0x227 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(platform.o)
+ .debug_line    0x0000000000049a7b       0xd1 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(platform_util.o)
+ .debug_line    0x0000000000049b4c     0x4b18 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto.o)
+ .debug_line    0x000000000004e664      0x2e8 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_client.o)
+ .debug_line    0x000000000004e94c      0xe42 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_driver_wrappers.o)
+ .debug_line    0x000000000004f78e      0x8a2 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_ecp.o)
+ .debug_line    0x0000000000050030      0x78b partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_ffdh.o)
+ .debug_line    0x00000000000507bb      0x70d partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_hash.o)
+ .debug_line    0x0000000000050ec8      0x96e partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_mac.o)
+ .debug_line    0x0000000000051836      0x9ab partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_rsa.o)
+ .debug_line    0x00000000000521e1      0x942 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_slot_management.o)
+ .debug_line    0x0000000000052b23      0x726 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_storage.o)
+ .debug_line    0x0000000000053249      0x302 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(sha1.o)
+ .debug_line    0x000000000005354b      0x310 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(sha256.o)
+ .debug_line    0x000000000005385b      0x86a partitions/crypto/mbedcrypto/library/libmbedcrypto.a(sha512.o)
+ .debug_line    0x00000000000540c5      0x6c8 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(pk.o)
+ .debug_line    0x000000000005478d      0x5f6 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(pk_wrap.o)
+ .debug_line    0x0000000000054d83      0xa14 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(pkwrite.o)
+ .debug_line    0x0000000000055797      0x842 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(psa_crypto_cipher.o)
+ .debug_line    0x0000000000055fd9      0xbf5 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(asn1write.o)
+ .debug_line    0x0000000000056bce      0x84d partitions/crypto/mbedcrypto/library/libmbedcrypto.a(constant_time.o)
+ .debug_line    0x000000000005741b      0xb73 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(dubhe_gcm.o)
+ .debug_line    0x0000000000057f8e      0x65c ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(dubhe_ghash.o)
+ .debug_line    0x00000000000585ea      0x681 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(aes.o)
+ .debug_line    0x0000000000058c6b     0x1086 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ccm.o)
+ .debug_line    0x0000000000059cf1     0x124f ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(gcm.o)
+ .debug_line    0x000000000005af40      0x662 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(bignum_delta.o)
+ .debug_line    0x000000000005b5a2      0xebd ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(cipher.o)
+ .debug_line    0x000000000005c45f      0x60a ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(cipher_wrap.o)
+ .debug_line    0x000000000005ca69      0xb60 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ctr_drbg.o)
+ .debug_line    0x000000000005d5c9      0x746 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ecdh.o)
+ .debug_line    0x000000000005dd0f      0x79b ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ecdsa.o)
+ .debug_line    0x000000000005e4aa     0x114c ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ecp.o)
+ .debug_line    0x000000000005f5f6      0x920 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(ecp_curves.o)
+ .debug_line    0x000000000005ff16      0x10a ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(entropy_poll.o)
+ .debug_line    0x0000000000060020      0x5f1 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(oid.o)
+ .debug_line    0x0000000000060611      0xc1c ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(pkparse.o)
+ .debug_line    0x000000000006122d     0x21d1 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(rsa.o)
+ .debug_line    0x00000000000633fe      0xbbb ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(dubhe_ccm.o)
+ .debug_line    0x0000000000063fb9      0x792 ../platform/ext/accelerator/libcrypto_service_crypto_hw.a(dubhe_cbcmac.o)
+ .debug_line    0x000000000006474b      0x870 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(asn1parse.o)
+ .debug_line    0x0000000000064fbb      0x6b1 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(chacha20.o)
+ .debug_line    0x000000000006566c      0x945 partitions/crypto/mbedcrypto/library/libmbedcrypto.a(rsa_alt_helpers.o)
 
 .debug_str      0x0000000000000000    0x261af
  .debug_str     0x0000000000000000      0x2a5 CMakeFiles/tfm_s.dir/partitions/ns_agent_tz/tfm_psa_api_veneers.o

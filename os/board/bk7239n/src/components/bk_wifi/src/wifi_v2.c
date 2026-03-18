@@ -2207,7 +2207,13 @@ bk_err_t bk_wifi_scan_start(const wifi_scan_config_t *config)
 	scan_param.id = (uint32_t)rtos_get_current_thread();
 
 	if (config) {
-		scan_param.scan_cc = !!(config->flag & SCAN_TYPE_CC);
+		for(int i = 0; i < config->chan_cnt; i++) {
+			if(0 == rw_ieee80211_is_scan_rst_in_countrycode(config->chan_nb[i]))
+			{
+				WIFI_LOGW("chan %d not in countrycode\r\n", config->chan_nb[i]);
+				return BK_ERR_PARAM;
+			}
+		}
 
 		if((0 != config->scan_type) ||(0 != config->chan_cnt) ||(0 != config->duration) || (0 != config->scan_band)) {
 			scan_param_env.set_param = 1;
@@ -2221,6 +2227,8 @@ bk_err_t bk_wifi_scan_start(const wifi_scan_config_t *config)
 				scan_param_env.duration = config->duration * 1000;
 			os_memcpy(scan_param_env.chan_nb, config->chan_nb, config->chan_cnt);
 		}
+
+		scan_param.scan_cc = !!(config->flag & SCAN_TYPE_CC);
 	}
 
 	if (0 == config->ssid_cnt) {

@@ -103,11 +103,8 @@ static inline void i2c_ll_init(i2c_hw_t *hw)
 static inline void i2c_ll_enable(i2c_hw_t *hw, i2c_id_t id)
 {
 	if (id == I2C_ID_0) {
-		/* need open clock bypass, otherwise cannot read ack(BIT8) in i2c_isr */
-		hw->i2c0_hw->global_ctrl.clk_gate_bypass = 1;
 		hw->i2c0_hw->sm_bus_cfg.en = 1;
 	} else {
-		hw->i2c1_hw->global_ctrl.clk_gate_bypass = 1;
 		hw->i2c1_hw->sm_bus_cfg.en = 1;
 	}
 }
@@ -118,6 +115,25 @@ static inline void i2c_ll_disable(i2c_hw_t *hw, i2c_id_t id)
 		hw->i2c0_hw->sm_bus_cfg.en = 0;
 	} else {
 		hw->i2c1_hw->sm_bus_cfg.en = 0;
+	}
+}
+
+static inline void i2c_ll_enable_clock_bypass(i2c_hw_t *hw, i2c_id_t id)
+{
+	if (id == I2C_ID_0) {
+		/* need open clock bypass, otherwise cannot read ack(BIT8) in i2c_isr */
+		hw->i2c0_hw->global_ctrl.clk_gate_bypass = 1;
+	} else {
+		hw->i2c1_hw->global_ctrl.clk_gate_bypass = 1;
+	}
+}
+
+static inline void i2c_ll_disable_clock_bypass(i2c_hw_t *hw, i2c_id_t id)
+{
+	if (id == I2C_ID_0) {
+		hw->i2c0_hw->global_ctrl.clk_gate_bypass = 0;
+	} else {
+		hw->i2c1_hw->global_ctrl.clk_gate_bypass = 0;
 	}
 }
 

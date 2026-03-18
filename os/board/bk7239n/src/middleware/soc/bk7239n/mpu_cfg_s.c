@@ -40,6 +40,15 @@ extern uint32_t RAM_KREGION0_SIZE;
 #define PSRAM_HEAP_REGION_SIZE (uint32_t)&RAM_KREGION0_SIZE
 #endif
 
+#if CONFIG_KMM_REGIONS >= 2
+extern uint32_t __kernel_psram_heap_start__;
+extern uint32_t __kernel_psram_heap_end__;
+extern uint32_t __psram_code_start__;
+extern uint32_t __psram_code_end__;
+extern uint32_t __psram_data_start__;
+extern uint32_t __psram_bss_end__;
+#endif
+
 /*----------------------------------------------------------------------------
   MPU configuration
  *----------------------------------------------------------------------------*/
@@ -125,39 +134,59 @@ void bk_mpu_init(void)
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_DEVICE;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 
-   /* MPU region 5 psram data */
+#if CONFIG_KMM_REGIONS >= 2
+    /* MPU region 5 psram data+bss */
     mpu_entry = mpu_entry_alloc();
-	mpu_cfg.region_base = CONFIG_BK_PSRAM_DATA_BASE;
-	mpu_cfg.region_size = CONFIG_BK_PSRAM_DATA_SIZE - 32;
-	mpu_cfg.xn = MPU_EXEC_ALLOW;
-	mpu_cfg.ap = MPU_UN_PRIV_RW;
-	mpu_cfg.sh = MPU_NON_SHAREABLE;
-	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
-	mpu_region_cfg(mpu_entry, &mpu_cfg);
+    {
+        uint32_t psram_data_base = (uint32_t)&__psram_data_start__;
+        uint32_t psram_data_limit = (uint32_t)&__psram_bss_end__;
+        if (psram_data_limit > psram_data_base + 32) {
+            mpu_cfg.region_base = psram_data_base;
+            mpu_cfg.region_size = (psram_data_limit - psram_data_base) - 32;
+            mpu_cfg.xn = MPU_EXEC_ALLOW;
+            mpu_cfg.ap = MPU_UN_PRIV_RW;
+            mpu_cfg.sh = MPU_NON_SHAREABLE;
+            mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
+            mpu_region_cfg(mpu_entry, &mpu_cfg);
+        }
+    }
 
-    /* MPU region 6 psram code*/
+    /* MPU region 6 psram code */
 	mpu_entry = mpu_entry_alloc();
-	mpu_cfg.region_base = CONFIG_BK_PSRAM_CODE_BASE;
-	mpu_cfg.region_size = CONFIG_BK_PSRAM_CODE_SIZE - 32;
-	mpu_cfg.xn = MPU_EXEC_ALLOW;
-	mpu_cfg.ap = MPU_PRIV_RW;
-	mpu_cfg.sh = MPU_NON_SHAREABLE;
-	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WT_T_RA;
-	mpu_region_cfg(mpu_entry, &mpu_cfg);
+    {
+        uint32_t psram_code_base = (uint32_t)&__psram_code_start__;
+        uint32_t psram_code_limit = (uint32_t)&__psram_code_end__;
+        if (psram_code_limit > psram_code_base + 32) {
+            mpu_cfg.region_base = psram_code_base;
+            mpu_cfg.region_size = (psram_code_limit - psram_code_base) - 32;
+            mpu_cfg.xn = MPU_EXEC_ALLOW;
+            mpu_cfg.ap = MPU_PRIV_RW;
+            mpu_cfg.sh = MPU_NON_SHAREABLE;
+            mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WT_T_RA;
+            mpu_region_cfg(mpu_entry, &mpu_cfg);
+        }
+    }
 
-    /* MPU region 7 psram heap*/
+    /* MPU region 7 psram heap */
     mpu_entry = mpu_entry_alloc();
-	mpu_cfg.region_base = PSRAM_HEAP_REGION_START;
-	mpu_cfg.region_size = PSRAM_HEAP_REGION_SIZE - 32;
-	mpu_cfg.xn = MPU_EXEC_NEVER;
-	mpu_cfg.ap = MPU_UN_PRIV_RW;
-	mpu_cfg.sh = MPU_NON_SHAREABLE;
+    {
+        uint32_t psram_heap_base = (uint32_t)&__kernel_psram_heap_start__;
+        uint32_t psram_heap_limit = (uint32_t)&__kernel_psram_heap_end__;
+        if (psram_heap_limit > psram_heap_base + 32) {
+            mpu_cfg.region_base = psram_heap_base;
+            mpu_cfg.region_size = (psram_heap_limit - psram_heap_base) - 32;
+            mpu_cfg.xn = MPU_EXEC_NEVER;
+            mpu_cfg.ap = MPU_UN_PRIV_RW;
+            mpu_cfg.sh = MPU_NON_SHAREABLE;
 #if defined(CONFIG_BK_TIZEN_IPERF_PROJECT) && (CONFIG_BK_TIZEN_IPERF_PROJECT == 1)
-	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
+            mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
 #else
-	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
+            mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
 #endif
-	mpu_region_cfg(mpu_entry, &mpu_cfg);
+            mpu_region_cfg(mpu_entry, &mpu_cfg);
+        }
+    }
+#endif /* CONFIG_KMM_REGIONS >= 2 */
 
     /* MPU region 8 qspi0 */
     // mpu_entry = mpu_entry_alloc();

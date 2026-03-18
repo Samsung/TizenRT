@@ -32,6 +32,18 @@ bk_err_t i2c_hal_init(i2c_hal_t *hal)
 	return BK_OK;
 }
 
+bk_err_t i2c_hal_enable_clock_bypass(i2c_hal_t *hal)
+{
+	i2c_ll_enable_clock_bypass(&hal->hw, hal->id);
+	return BK_OK;
+}
+
+bk_err_t i2c_hal_disable_clock_bypass(i2c_hal_t *hal)
+{
+	i2c_ll_disable_clock_bypass(&hal->hw, hal->id);
+	return BK_OK;
+}
+
 bk_err_t i2c_hal_set_baud_rate(i2c_hal_t *hal, uint32_t baud_rate)
 {
 	uint32_t freq_div = I2C_CLK_DIVID(baud_rate);

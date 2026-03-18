@@ -48,12 +48,23 @@ static inline void spi_ll_soft_reset(spi_hw_t *hw)
 	hw->global_ctrl.soft_reset = 1;
 }
 
+static inline void spi_ll_enable_clock_bypass(spi_hw_t *hw)
+{
+	hw->global_ctrl.clk_gate_bypass = 1;
+}
+
+static inline void spi_ll_disable_clock_bypass(spi_hw_t *hw)
+{
+	hw->global_ctrl.clk_gate_bypass = 0;
+}
+
 static inline void spi_ll_reset_config_to_default(spi_hw_t *hw)
 {
 	hw->ctrl.enable = 0;
 	hw->ctrl.master_en = 0;
 	hw->ctrl.wire3_en = 0;
 	hw->ctrl.clk_rate = 0;
+	hw->global_ctrl.clk_gate_bypass = 0;
 }
 
 static inline uint32_t spi_ll_get_device_id(spi_hw_t *hw)
