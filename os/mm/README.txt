@@ -138,18 +138,3 @@ This directory contains the TinyAra memory management logic.  This include:
 
      mm/mm_gran - The page allocator cohabits the same directory as the
        granule allocator.
-
-4) Shared Memory Management
-
-   When TinyAra is build in kernel mode with a separate, privileged, kernel-
-   mode address space and multiple, unprivileged, user-mode address spaces,
-   then shared memory regions must also be managed.  Shared memory regions
-   are user-accessible memory regions that can be attached into the user
-   process address space for sharing between user process.
-
-   Sub-Directories:
-
-     mm/shm - The shared memory logic
-
-   The shared memory management logic has its own README file that can be
-   found at os/mm/shm/README.txt.

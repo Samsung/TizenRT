@@ -898,12 +898,9 @@ function toggle(id, link) {
 <li><a href="#CONFIG_ARCH_TEXT_VBASE">1.2.196 <code>CONFIG_ARCH_TEXT_VBASE</code>: Virtual .text base</a></li>
 <li><a href="#CONFIG_ARCH_DATA_VBASE">1.2.197 <code>CONFIG_ARCH_DATA_VBASE</code>: Virtual .bss/.data base</a></li>
 <li><a href="#CONFIG_ARCH_HEAP_VBASE">1.2.198 <code>CONFIG_ARCH_HEAP_VBASE</code>: Virtual heap base</a></li>
-<li><a href="#CONFIG_ARCH_SHM_VBASE">1.2.199 <code>CONFIG_ARCH_SHM_VBASE</code>: Shared memory base</a></li>
 <li><a href="#CONFIG_ARCH_TEXT_NPAGES">1.2.200 <code>CONFIG_ARCH_TEXT_NPAGES</code>: Max .text pages</a></li>
 <li><a href="#CONFIG_ARCH_DATA_NPAGES">1.2.201 <code>CONFIG_ARCH_DATA_NPAGES</code>: Max .bss/.data pages</a></li>
 <li><a href="#CONFIG_ARCH_HEAP_NPAGES">1.2.202 <code>CONFIG_ARCH_HEAP_NPAGES</code>: Max heap pages</a></li>
-<li><a href="#CONFIG_ARCH_SHM_MAXREGIONS">1.2.203 <code>CONFIG_ARCH_SHM_MAXREGIONS</code>: Max shared memory regions</a></li>
-<li><a href="#CONFIG_ARCH_SHM_NPAGES">1.2.204 <code>CONFIG_ARCH_SHM_NPAGES</code>: Max shared memory pages</a></li>
 <li><a href="#CONFIG_ARCH_STACK_DYNAMIC">1.2.205 <code>CONFIG_ARCH_STACK_DYNAMIC</code>: Dynamic user stack</a></li>
 <li><a href="#CONFIG_ARCH_STACK_VBASE">1.2.206 <code>CONFIG_ARCH_STACK_VBASE</code>: Virtual stack base</a></li>
 <li><a href="#CONFIG_ARCH_STACK_NPAGES">1.2.207 <code>CONFIG_ARCH_STACK_NPAGES</code>: Max. stack pages</a></li>
@@ -2612,7 +2609,6 @@ function toggle(id, link) {
 <li><a href="#CONFIG_MM_PGALLOC">1.12.11 <code>CONFIG_MM_PGALLOC</code>: Enable Page Allocator</a></li>
 <li><a href="#CONFIG_MM_PGSIZE">1.12.12 <code>CONFIG_MM_PGSIZE</code>: Page Size</a></li>
 <li><a href="#CONFIG_DEBUG_PGALLOC">1.12.13 <code>CONFIG_DEBUG_PGALLOC</code>: Page Allocator Debug</a></li>
-<li><a href="#CONFIG_MM_SHM">1.12.14 <code>CONFIG_MM_SHM</code>: Shared memory support</a></li>
 </ul>
 <li><a name="menu_137_toc"><a href="#menu_137">1.13 Menu: Power Management</a></a></li>
 <a href="#menu_137_toc" onclick="toggle('toggle_136', this)">Expand</a>
@@ -2659,10 +2655,6 @@ function toggle(id, link) {
 <li><a href="#CONFIG_DEBUG_SCHED_ERROR">1.14.32 <code>CONFIG_DEBUG_SCHED_ERROR</code>: Scheduler Error Output</a></li>
 <li><a href="#CONFIG_DEBUG_SCHED_WARN">1.14.33 <code>CONFIG_DEBUG_SCHED_WARN</code>: Scheduler Warning Output</a></li>
 <li><a href="#CONFIG_DEBUG_SCHED_INFO">1.14.34 <code>CONFIG_DEBUG_SCHED_INFO</code>: Scheduler Informational Debug Output</a></li>
-<li><a href="#CONFIG_DEBUG_SHM">1.14.35 <code>CONFIG_DEBUG_SHM</code>: Shared Memory Debug Output</a></li>
-<li><a href="#CONFIG_DEBUG_SHM_ERROR">1.14.36 <code>CONFIG_DEBUG_SHM_ERROR</code>: Shared Memory Error Output</a></li>
-<li><a href="#CONFIG_DEBUG_SHM_WARN">1.14.37 <code>CONFIG_DEBUG_SHM_WARN</code>: Shared Memory Warning Output</a></li>
-<li><a href="#CONFIG_DEBUG_SHM_INFO">1.14.38 <code>CONFIG_DEBUG_SHM_INFO</code>: Shared Memory Informational Debug Output</a></li>
 <li><a href="#CONFIG_DEBUG_ST_THINGS">1.14.39 <code>CONFIG_DEBUG_ST_THINGS</code>: ST Things Debug Output</a></li>
 <li><a href="#CONFIG_DEBUG_ST_THINGS_ERROR">1.14.40 <code>CONFIG_DEBUG_ST_THINGS_ERROR</code>: ST Things Error Output</a></li>
 <li><a href="#CONFIG_DEBUG_ST_THINGS_WARN">1.14.41 <code>CONFIG_DEBUG_ST_THINGS_WARN</code>: ST Things Warning Output</a></li>
@@ -14847,15 +14839,6 @@ exception occurs
 <p>
   The virtual address of the beginning of the heap region.</p>
 </ul>
-<h3><a name="CONFIG_ARCH_SHM_VBASE">1.2.199 <code>CONFIG_ARCH_SHM_VBASE</code>: Shared memory base</a></h3>
-<ul>
-  <li><i>Type</i>: Hexadecimal</li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_ARCH_ADDRENV"><code>CONFIG_ARCH_ADDRENV</code></a>, <a href="#CONFIG_MM_SHM"><code>CONFIG_MM_SHM</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>./arch/Kconfig</code>
-<p>
-  The virtual address of the beginning of the shared memory region.</p>
-</ul>
 <h3><a name="CONFIG_ARCH_TEXT_NPAGES">1.2.200 <code>CONFIG_ARCH_TEXT_NPAGES</code>: Max .text pages</a></h3>
 <ul>
   <li><i>Type</i>: Integer</li>
@@ -14888,34 +14871,6 @@ exception occurs
   <li><i>Kconfig file</i>: <code>./arch/Kconfig</code>
 <p>
   The maximum number of pages that can allocated for the heap region.  This, along with knowledge of the page size, determines the size of  the heap virtual address space. Default is 1.</p>
-</ul>
-<h3><a name="CONFIG_ARCH_SHM_MAXREGIONS">1.2.203 <code>CONFIG_ARCH_SHM_MAXREGIONS</code>: Max shared memory regions</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_ARCH_ADDRENV"><code>CONFIG_ARCH_ADDRENV</code></a>, <a href="#CONFIG_MM_SHM"><code>CONFIG_MM_SHM</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>./arch/Kconfig</code>
-<p>
-  The maximum number of regions that can allocated for the shared  memory space.  This hard-coded value permits static allocation of  the shared memory data structures and serves no other purpose.  Default is 1.</p>
-<p>
-  The size of the virtual shared memory address space is then  determined by the product of the maximum number of regions, the  maximum number of pages per region, and the configured size of  each page.</p>
-</ul>
-<h3><a name="CONFIG_ARCH_SHM_NPAGES">1.2.204 <code>CONFIG_ARCH_SHM_NPAGES</code>: Max shared memory pages</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_ARCH_ADDRENV"><code>CONFIG_ARCH_ADDRENV</code></a>, <a href="#CONFIG_MM_SHM"><code>CONFIG_MM_SHM</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>./arch/Kconfig</code>
-<p>
-  The maximum number of pages that can allocated per region for the shared memory  region. Default is 1.</p>
-<p>
-  The size of the virtual shared memory address space is then  determined by the product of the maximum number of regions, the  maximum number of pages per region, and the configured size of  each page.</p>
 </ul>
 <h3><a name="CONFIG_ARCH_STACK_DYNAMIC">1.2.205 <code>CONFIG_ARCH_STACK_DYNAMIC</code>: Dynamic user stack</a></h3>
 <ul>
@@ -32911,18 +32866,6 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
 <p>
   Just like DEBUG_MM, but only generates output from the page  allocation logic.</p>
 </ul>
-<h3><a name="CONFIG_MM_SHM">1.12.14 <code>CONFIG_MM_SHM</code>: Shared memory support</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_MM_PGALLOC"><code>CONFIG_MM_PGALLOC</code></a> &amp;&amp; <a href="#CONFIG_BUILD_KERNEL"><code>CONFIG_BUILD_KERNEL</code></a> &amp;&amp; <a href="#CONFIG_EXPERIMENTAL"><code>CONFIG_EXPERIMENTAL</code></a></li>
-  <li><i>Kconfig file</i>: <code>./mm/Kconfig</code>
-<p>
-  Build in support for the shared memory interfaces shmget(), shmat(),  shmctl(), and shmdt().
-</p>
-</ul>
 
 <h1><a name="menu_137">1.13 Menu: Power Management</a></h1>
 <ul>
@@ -33391,57 +33334,6 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
   <li><i>Kconfig file</i>: <code>././Kconfig.debug</code>
 <p>
   Enable OS informational debug SYSLOG output.</p>
-</ul>
-<h3><a name="CONFIG_DEBUG_SHM">1.14.35 <code>CONFIG_DEBUG_SHM</code>: Shared Memory Debug Output</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_DEBUG"><code>CONFIG_DEBUG</code></a>, <a href="#CONFIG_MM_SHM"><code>CONFIG_MM_SHM</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>././Kconfig.debug</code>
-<p>
-  Enable shared memory management debug SYSLOG output (disabled by default)</p>
-</ul>
-<h3><a name="CONFIG_DEBUG_SHM_ERROR">1.14.36 <code>CONFIG_DEBUG_SHM_ERROR</code>: Shared Memory Error Output</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_DEBUG"><code>CONFIG_DEBUG</code></a>, <a href="#CONFIG_DEBUG_SHM"><code>CONFIG_DEBUG_SHM</code></a>
-, <a href="#CONFIG_DEBUG_ERROR"><code>CONFIG_DEBUG_ERROR</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>././Kconfig.debug</code>
-<p>
-  Enable shared memory management error debug SYSLOG output.</p>
-</ul>
-<h3><a name="CONFIG_DEBUG_SHM_WARN">1.14.37 <code>CONFIG_DEBUG_SHM_WARN</code>: Shared Memory Warning Output</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_DEBUG"><code>CONFIG_DEBUG</code></a>, <a href="#CONFIG_DEBUG_SHM"><code>CONFIG_DEBUG_SHM</code></a>
-, <a href="#CONFIG_DEBUG_WARN"><code>CONFIG_DEBUG_WARN</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>././Kconfig.debug</code>
-<p>
-  Enable shared memory management warning debug SYSLOG output.</p>
-</ul>
-<h3><a name="CONFIG_DEBUG_SHM_INFO">1.14.38 <code>CONFIG_DEBUG_SHM_INFO</code>: Shared Memory Informational Debug Output</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_DEBUG"><code>CONFIG_DEBUG</code></a>, <a href="#CONFIG_DEBUG_SHM"><code>CONFIG_DEBUG_SHM</code></a>
-, <a href="#CONFIG_DEBUG_VERBOSE"><code>CONFIG_DEBUG_VERBOSE</code></a>
-</li>
-  <li><i>Kconfig file</i>: <code>././Kconfig.debug</code>
-<p>
-  Enable shared memory management informational debug SYSLOG output.</p>
 </ul>
 <h3><a name="CONFIG_DEBUG_ST_THINGS">1.14.39 <code>CONFIG_DEBUG_ST_THINGS</code>: ST Things Debug Output</a></h3>
 <ul>
