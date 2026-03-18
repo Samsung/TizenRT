@@ -3646,7 +3646,6 @@ audio_manager_result_t get_kd_sensitivity(uint16_t *sensitivity)
 audio_manager_result_t change_input_dsp_flow(uint8_t dsp_flow_num)
 {
 	audio_manager_result_t ret;
-	struct audio_caps_desc_s caps_desc;
 	audio_card_info_t *card;
 	char card_path[AUDIO_DEVICE_FULL_PATH_LENGTH];
 
