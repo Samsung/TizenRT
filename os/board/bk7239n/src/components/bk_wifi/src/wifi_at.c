@@ -841,7 +841,11 @@ static int at_wlan_scan_start(wifi_scan_config_t *scan_config,AT_WLAN_SCAN_ATTR_
 	if(scan_config)
 		BK_WIFI_LOGD(TAG,"scan ssid %s,type %d ,dur %d ,cnt %d\r\n",scan_config->ssid,scan_config->scan_type,scan_config->duration,scan_config->chan_cnt);
 
-	BK_LOG_ON_ERR(bk_wifi_scan_start(scan_config));
+	err = bk_wifi_scan_start(scan_config);
+	if(err != BK_OK) {
+		BK_WIFI_LOGE(TAG,"scan start failed! err %d\r\n", err);
+		goto error;
+	}
 
 	if(at_wlan_cfg.at_wlan_scan_sema != NULL) {
 		err = rtos_get_semaphore(&at_wlan_cfg.at_wlan_scan_sema, AT_WLAN_SCAN_TIMEOUT_MS);

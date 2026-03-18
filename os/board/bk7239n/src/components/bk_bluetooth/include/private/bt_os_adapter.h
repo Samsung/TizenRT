@@ -64,6 +64,12 @@ typedef enum
     BLUETOOTH_TASK_DM_RD,
 } bluetooth_task_id_t;
 
+enum
+{
+    ANALDO_VOL_LEVEL_LOW = 0,
+    ANALDO_VOL_LEVEL_MEDIUM,
+    ANALDO_VOL_LEVEL_HIGH,
+};
 
 /* adapter function */
 struct bt_osi_funcs_t
@@ -198,6 +204,8 @@ struct bt_osi_funcs_t
     uint32_t (*_get_clkcnt_samp)(void);
     uint32_t (*_get_isocnt_samp)(void);
     void (*_bt_delay_us)(uint32_t us);
+
+    void (*_ble_vote_analdo_vol_ctrl)(uint8_t level);
 };
 
 int bt_os_adapter_init(void *osi_funcs);

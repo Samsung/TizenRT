@@ -44,19 +44,29 @@
 
 extern uint32_t RAM_KREGION0_START;
 extern uint32_t RAM_KREGION0_SIZE;
+
+#if CONFIG_KMM_REGIONS > 2 && defined(CONFIG_ELF) && (CONFIG_ELF == 1)
 extern uint32_t RAM_KREGION2_START;
 extern uint32_t RAM_KREGION2_SIZE;
+#endif
 
+#if CONFIG_KMM_REGIONS >= 2
 extern uint32_t __psram_data_start__;
 extern uint32_t __psram_bss_end__;
 extern uint32_t __psram_code_start__;
 extern uint32_t __psram_code_end__;
+#endif
 
 
-#define KERNEL_HEAP_START_ADDR   (void*)&RAM_KREGION0_START   
-#define KERNEL_HEAP_SIZE         (void*)&RAM_KREGION0_SIZE 
-#define APP_HEAP_START_ADDR   (void*)&RAM_KREGION2_START   
-#define APP_HEAP_SIZE         (void*)&RAM_KREGION2_SIZE 
+#define KERNEL_HEAP_START_ADDR   (void *)&RAM_KREGION0_START
+#define KERNEL_HEAP_SIZE         (void *)&RAM_KREGION0_SIZE
+#if CONFIG_KMM_REGIONS > 2 && defined(CONFIG_ELF) && (CONFIG_ELF == 1)
+#define APP_HEAP_START_ADDR   (void *)&RAM_KREGION2_START
+#define APP_HEAP_SIZE         (void *)&RAM_KREGION2_SIZE
+#else
+#define APP_HEAP_START_ADDR   ((uintptr_t)CONFIG_RAM_START)
+#define APP_HEAP_SIZE         ((size_t)CONFIG_RAM_SIZE)
+#endif
 
 // typedef struct sys_mem_info
 // {
@@ -95,12 +105,12 @@ static void rtos_dump_plat_memory(void) {
 #endif
     
     stack_mem_dump((uint32_t)KERNEL_HEAP_START_ADDR, (uint32_t)KERNEL_HEAP_START_ADDR + 0xC8000);  //kernel 800k
-#ifdef CONFIG_BUILD_PROTECTED
+#if defined(CONFIG_BUILD_PROTECTED) && (CONFIG_KMM_REGIONS >= 2)
 #if !defined(CONFIG_XIP_KERNEL)
     stack_mem_dump((uint32_t)&__psram_code_start__, (uint32_t)&__psram_code_end__);   //psram code
 #endif
     stack_mem_dump((uint32_t)&__psram_data_start__, (uint32_t)&__psram_bss_end__);   //psram data and bss
-    stack_mem_dump((uint32_t)APP_HEAP_START_ADDR, (uint32_t)APP_HEAP_START_ADDR + 0x100000); // app 1M
+    stack_mem_dump((uint32_t)APP_HEAP_START_ADDR, (uint32_t)APP_HEAP_START_ADDR + APP_HEAP_SIZE); // app 1M
 #endif
 }
 
@@ -673,8 +683,9 @@ static void arch_dump_cpu_registers_securt_fault(uint32_t mcause, SAVED_CONTEXT 
 }
 
 
-#if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE)
+#if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE) && defined(CONFIG_SECURITY_LEVEL)
 //#include "tfm_aes_gcm_nsc.h"
+#include <tinyara/security_level.h>
 #define FRAME_BUF_LEN    (64)
 
 struct tfm_exception_info_t {
@@ -818,6 +829,11 @@ static void NS_handle_securt_fault(uint32_t reset_reason, struct tfm_exception_i
 
 void bk_security_donmain_notifies_non_security_domain_to_dump(uint32_t *reg)
 {
+    // High security level will not dump the exception information.
+    if (get_security_level() > LOW_SECURITY_LEVEL) { 
+        return;
+    }
+
     struct tfm_exception_info_t *ctx = &tfm_exception_info;
 
     bk_wdt_feed();
@@ -872,6 +888,10 @@ void bk_security_donmain_notifies_non_security_domain_to_dump(uint32_t *reg)
 
 void bk_security_to_nosecurity_dump_register_callback(void)
 {
+    if (get_security_level() >  LOW_SECURITY_LEVEL) {
+        return;
+    }
+    
     uint32_t callback_address = (uint32_t)(&bk_security_donmain_notifies_non_security_domain_to_dump);
     psa_register_dump_callback(callback_address, (uint32_t)&tfm_exception_info);
 }

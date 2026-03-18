@@ -777,7 +777,11 @@ static int bk_trwlan_scan_start(wifi_scan_config_t *scan_config)
 	if(scan_config)
 	    nvdbg("[BK] scan ssid %s,type %d ,dur %d ,cnt %d\r\n",scan_config->ssid,scan_config->scan_type,scan_config->duration,scan_config->chan_cnt);
 
-	BK_LOG_ON_ERR(bk_wifi_scan_start(scan_config));
+	err = bk_wifi_scan_start(scan_config);
+	if(err != BK_OK) {
+		ndbg("[BK] scan start failed! err %d\r\n", err);
+		goto error;
+	}
 
 	if(bk_trwifi_wlan_scan_sema != NULL) {
 		err = rtos_get_semaphore(&bk_trwifi_wlan_scan_sema, 10000);

@@ -1244,7 +1244,7 @@ typedef  struct  _ScanResult_adv
 		char ssid[33];    /**< The SSID of an access point.*/
 		char ApPower;     /**< Signal strength, min:0, max:100*/
 		uint8_t bssid[6]; /**< The BSSID of an access point.*/
-		char channel;     /**< The RF frequency, 1-13*/
+		uint8_t channel;     /**< The RF frequency, 1-13*/
 		wlan_sec_type_t security;       /**< Security type, see wlan_sec_type_t */
 	} *ApList;  /**< AP list found by scan */
 } ScanResult_adv;

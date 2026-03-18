@@ -766,6 +766,11 @@ bool rtos_is_critical_section_wrapper(void)
     return rtos_local_irq_disabled() || rtos_is_in_interrupt_context();
 }
 
+static bk_err_t bk_phy_pm_module_vote_analdo_vol_wrapper(uint16_t module, int16_t vol_level)
+{
+    return bk_pm_module_vote_analdo_vol(module, vol_level);
+}
+
 extern uint64 riscv_get_mtimer(void);
 
 const phy_os_funcs_t g_phy_os_funcs = {
@@ -933,6 +938,7 @@ const phy_os_funcs_t g_phy_os_funcs = {
     ._bk_phy_get_cali_flag                 = bk_phy_get_cali_flag,
     ._me_is_connect_with_instrument        = me_is_connect_with_instrument,
     ._bk_feature_read_rfcali_from_ft_enable  = bk_feature_read_rfcali_from_ft_enable,
+    ._bk_phy_pm_module_vote_analdo_vol       = bk_phy_pm_module_vote_analdo_vol_wrapper,
 };
 
 const phy_os_variable_t g_phy_os_variable = {
@@ -1016,6 +1022,9 @@ const phy_os_variable_t g_phy_os_variable = {
     #if CONFIG_SOC_BK7236XX
     ._OTP_CHIP_RESERVED             = OTP_CHIP_RESERVED,
     #endif
+    ._pm_analdo_vote_module_saradc_cali = PM_ANALDO_VOTE_MODULE_SADC_CALI,
+    ._pm_analdo_vol_enter_saradc_cali = PM_ANALDO_VOL_1_65V,
+    ._pm_analdo_vol_exit_saradc_cali = PM_ANALDO_VOL_1_1V,
 #endif
 };
 

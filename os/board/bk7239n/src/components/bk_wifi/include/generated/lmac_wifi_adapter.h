@@ -3,7 +3,7 @@
 
 /* THIS FILE IS AUTO-GENERATED, DON'T MODIFY */
 
-// Copyright 2020-2025 Beken
+// Copyright 2020-2021 Beken
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -145,6 +145,8 @@ typedef struct {
 	void (*_bk_pm_wifi_rtc_clear)(void);
 	void (*_bk_wifi_set_rtc_timer)(uint32_t tick, void *callback, uint8_t* name);
 	void (*_bk_wifi_clear_rtc_timer)(uint8_t* name);
+	uint8_t (*_bk_pm_get_sleep_mode)(void);
+	uint32_t (*_bk_pm_get_sleep_wakeup_stable_time_us)(uint8_t sleep_mode);
 	void (* _wifi_vote_rf_ctrl)(uint8_t cmd);
 	void (* _wifi_phy_clk_open)(uint8_t is_wifi);
 	void (* _wifi_phy_clk_close)(uint8_t is_wifi);
@@ -284,7 +286,9 @@ typedef struct {
 	int (*_cli_printf)(const char *fmt, ...);
 	void (*_rf_force_set_wifi_mode)(uint8_t switch_mode);
 	int (*_bk_feature_change_to_wifi_pll_enable)(void);
+	bk_err_t (*_bk_pm_module_vote_analdo_vol)(uint16_t module, int16_t vol_level);
 } wifi_os_funcs_t;
+
 extern wifi_os_funcs_t g_wifi_os_funcs;
 
 typedef struct {
@@ -363,6 +367,11 @@ typedef struct {
 	#endif
 	bool _improve_he_tb_enable;
     uint32_t _OTP_CHIP_RESERVED;
+	uint32_t _pm_analdo_vote_module_wifi_sleep_wake;
+	uint32_t _pm_analdo_vol_wifi_sleep;
+	uint32_t _pm_analdo_vol_wifi_wakeup;
+	uint32_t _pm_analdo_vote_module_wifi_rf_high_pll;
+	uint32_t _pm_analdo_vol_wifi_rf_high_pll;
 } wifi_os_variable_t;
 extern wifi_os_variable_t g_wifi_os_variable;
 

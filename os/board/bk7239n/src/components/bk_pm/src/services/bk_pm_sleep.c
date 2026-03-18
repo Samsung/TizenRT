@@ -813,4 +813,28 @@ static void pm_enter_super_deep_sleep()
 	sys_drv_enter_deep_sleep(&use_super_deep);
 }
 #endif
+pm_sleep_mode_e bk_pm_get_sleep_mode(void)
+{
+	pm_sleep_mode_e sleep_mode = PM_MODE_DEFAULT;
+	bk_err_t ret = BK_OK;
+	#if CONFIG_PM_LOWEST_POWER_MODE == 0
+	sleep_mode = PM_MODE_NORMAL_SLEEP;
+	#elif CONFIG_PM_LOWEST_POWER_MODE == 1
+	sleep_mode = PM_MODE_LOW_VOLTAGE;
+	#endif
+	return sleep_mode;
+}
+uint32_t bk_pm_get_sleep_wakeup_stable_time_us(pm_sleep_mode_e sleep_mode)
+{
+	uint32_t wakeup_stable_time_us = 0;
+	if(sleep_mode == PM_MODE_NORMAL_SLEEP)
+	{
+		wakeup_stable_time_us = CONFIG_PM_NORMAL_SLEEP_WAKEUP_STABLE_TIME_US;
+	}
+	else if(sleep_mode == PM_MODE_LOW_VOLTAGE)
+	{
+		wakeup_stable_time_us = CONFIG_PM_LOW_VOLTAGE_WAKEUP_STABLE_TIME_US;
+	}
+	return wakeup_stable_time_us;
+}
 /*=========================ENTER SLEEP FUNCTION END========================*/

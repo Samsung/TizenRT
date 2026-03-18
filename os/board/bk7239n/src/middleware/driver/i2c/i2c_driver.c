@@ -340,6 +340,7 @@ static void i2c_timer_start ( int id )
 static bk_err_t i2c_master_start(i2c_id_t id)
 {
 	i2c_hal_soft_reset(&s_i2c[id].hal);
+	i2c_hal_enable_clock_bypass(&s_i2c[id].hal);
 	i2c_hal_disable_stop(&s_i2c[id].hal);
 	i2c_hal_set_tx_mode(&s_i2c[id].hal);
 	s_i2c[id].master_status = I2C_TX_DEV_ADDR;
@@ -353,6 +354,7 @@ static bk_err_t i2c_master_stop(i2c_id_t id)
 	s_i2c[id].int_status |= I2C1_F_STOP;
 	s_i2c[id].master_status = I2C_IDLE;
 	i2c_timer_start(id);
+	i2c_hal_disable_clock_bypass(&s_i2c[id].hal);
 	return BK_OK;
 }
 
@@ -850,7 +852,7 @@ bk_err_t bk_i2c_slave_write(i2c_id_t id, const uint8_t *data, uint32_t size, uin
 	I2C_RETURN_ON_ID_NOT_INIT(id);
 	I2C_PM_CHECK_RESTORE(id);
 	BK_RETURN_ON_ERR(i2c_wait_sm_bus_idle(id, timeout_ms));
-
+	i2c_hal_enable_clock_bypass(&s_i2c[id].hal);
 	uint32_t int_level = rtos_enter_critical();
 	i2c_hal_set_write_int_mode(&s_i2c[id].hal, size);
 	s_i2c[id].work_mode = I2C_SLAVE_WRITE;
@@ -865,7 +867,7 @@ bk_err_t bk_i2c_slave_write(i2c_id_t id, const uint8_t *data, uint32_t size, uin
 	//reset i2c to clear fifo
 	i2c_hal_stop_common(&s_i2c[id].hal);
 	i2c_hal_start_common(&s_i2c[id].hal);
-
+	i2c_hal_disable_clock_bypass(&s_i2c[id].hal);
 	return BK_OK;
 }
 
@@ -875,7 +877,7 @@ bk_err_t bk_i2c_slave_read(i2c_id_t id, uint8_t *data, uint32_t size, uint32_t t
 	I2C_RETURN_ON_ID_NOT_INIT(id);
 	I2C_PM_CHECK_RESTORE(id);
 	BK_RETURN_ON_ERR(i2c_wait_sm_bus_idle(id, timeout_ms));
-
+	i2c_hal_enable_clock_bypass(&s_i2c[id].hal);
 	uint32_t int_level = rtos_enter_critical();
 	i2c_hal_set_read_int_mode(&s_i2c[id].hal, size);
 	s_i2c[id].work_mode = I2C_SLAVE_READ;
@@ -887,7 +889,7 @@ bk_err_t bk_i2c_slave_read(i2c_id_t id, uint8_t *data, uint32_t size, uint32_t t
 	rtos_exit_critical(int_level);
 
 	rtos_get_semaphore(&s_i2c[id].rx_sema, timeout_ms);
-
+	i2c_hal_disable_clock_bypass(&s_i2c[id].hal);
 	return BK_OK;
 }
 
@@ -933,6 +935,7 @@ bk_err_t bk_i2c_memory_read(i2c_id_t id, const i2c_mem_param_t *mem_param)
 	I2C_RETURN_ON_ID_NOT_INIT(id);
 	I2C_PM_CHECK_RESTORE(id);
 	BK_RETURN_ON_ERR(i2c_wait_sm_bus_idle(id, mem_param->timeout_ms));
+	BK_RETURN_ON_ERR(i2c_master_start(id));
 
 	uint32_t int_level = rtos_enter_critical();
 	s_i2c[id].err_code = BK_OK;

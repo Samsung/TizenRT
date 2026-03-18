@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <os/os.h>
@@ -135,7 +136,6 @@ uint8_t *get_param_by_index(uint32_t index, uint16_t *len)
 
 int nist_set_response_total_len(uint16_t len)
 {
-    BK_LOGI(NULL, "nist_set_response_total_len, len=%u\n", len);
     s_nist_handle.response_data_len = len;
     s_nist_handle.response_set_offset = 0;
     s_nist_handle.response_set_index = 0;
@@ -176,14 +176,23 @@ struct nist_ack_frame {
 };
 typedef struct nist_ack_frame nist_ack_frame_t;
 
+#define NIST_SEND_DATA_HEX_BUF_SIZE 128
+
 static void nist_send_data(uint8_t *data, uint16_t len)
 {
     if (data == NULL || len == 0) {
         return;
     }
-    char buf[80] = { 0 };
-    for (uint16_t i = 0; i < len; i++) {
-        sprintf(buf + (2 * i), "%02x", data[i]);
+    char buf[NIST_SEND_DATA_HEX_BUF_SIZE];
+    size_t cap = sizeof(buf);
+    size_t pos = 0;
+
+    for (uint16_t i = 0; i < len && pos + 3 <= cap; i++) {
+        (void)snprintf(buf + pos, cap - pos, "%02x", data[i]);
+        pos += 2;
+    }
+    if (cap > 0) {
+        buf[cap - 1] = '\0';
     }
     CLI_LOGI("%s\n", buf);
 }
@@ -354,9 +363,16 @@ static void nist_send_response_data(uint8_t *data, uint16_t len)
     if (data == NULL || len == 0) {
         return;
     }
-    char buf[80] = { 0 };
-    for (uint16_t i = 0; i < len; i++) {
-        sprintf(buf + (2 * i), "%02x", data[i]);
+    char buf[NIST_SEND_DATA_HEX_BUF_SIZE];
+    size_t cap = sizeof(buf);
+    size_t pos = 0;
+
+    for (uint16_t i = 0; i < len && pos + 3 <= cap; i++) {
+        (void)snprintf(buf + pos, cap - pos, "%02x", data[i]);
+        pos += 2;
+    }
+    if (cap > 0) {
+        buf[cap - 1] = '\0';
     }
     CLI_LOGI("%s\n", buf);
 }
@@ -385,8 +401,6 @@ static void nist_handle_request_data_frame(nist_frame_t *frame)
                  ? NIST_RESPONSE_FRAME_MAX_LEN : s_nist_handle.response_data_len - s_nist_handle.response_tx_offset;
     uint8_t *tx_data = s_nist_handle.response_data + s_nist_handle.response_tx_offset;
     uint8_t end_flag = s_nist_handle.response_tx_offset + tx_len == s_nist_handle.response_data_len ? 1 : 0;
-    BK_LOGI(NULL, "data_len=%u, tx_offset=%u\n", s_nist_handle.response_data_len, s_nist_handle.response_tx_offset);
-    BK_LOGI(NULL, "request_data_frame, tx_len=%u, end_flag=%u\n", tx_len, end_flag);
     nist_response_data_frame(NIST_FRAME_TYPE_REQUEST_DATA_ACK, end_flag, tx_data, tx_len);
     s_nist_handle.last_response_tx_offset = s_nist_handle.response_tx_offset;
     s_nist_handle.response_tx_offset += tx_len;
@@ -445,7 +459,6 @@ static void nist_handle_request_data_profile_frame(nist_frame_t *frame)
 
 static void nist_handle_request_over_frame(nist_frame_t *frame)
 {
-    BK_LOGI(NULL, "nist_handle_request_over_frame\n");
     if (s_nist_handle.response_data != NULL) {
         os_free(s_nist_handle.response_data);
         s_nist_handle.response_data = NULL;
@@ -455,7 +468,6 @@ static void nist_handle_request_over_frame(nist_frame_t *frame)
         s_nist_handle.response_set_offset = 0;
         s_nist_handle.response_set_index = 0;
     }
-    BK_LOGI(NULL, "nist_handle_request_over end\n");
     nist_ack_frame(NIST_OK);
 }
 

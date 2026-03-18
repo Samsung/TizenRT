@@ -1588,39 +1588,6 @@ int sys_hal_set_lpo_src(sys_lpo_src_t src)
 
 void sys_hal_enter_low_analog(void)
 {
-	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
-
-	if((sys_ll_get_cpu_power_sleep_wakeup_pwd_wifp_phy() == 0))
-	{
-		#if CONFIG_TEMP_DETECT
-		float temp;
-		bk_err_t err = bk_sensor_get_current_temperature(&temp);
-		if((err != BK_OK) || (temp < -10))
-		{
-			sys_ana_ll_set_ana_reg7_vanaldosel(0xa);
-		}
-		else if (temp < 20)
-		{
-			sys_ana_ll_set_ana_reg7_vanaldosel(0x7);
-		}
-		else if (temp < 60)
-		{
-			sys_ana_ll_set_ana_reg7_vanaldosel(0x7);
-		}
-		else
-		{
-			sys_ana_ll_set_ana_reg7_vanaldosel(0xa);
-		}
-		#else
-		sys_ana_ll_set_ana_reg7_vanaldosel(0xa);
-		#endif
-	}
-	else
-	{
-		sys_ana_ll_set_ana_reg7_vanaldosel(CONFIG_PM_ANALDO_VOLTAGE_DEFAULT);
-	}
-	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
-
 	sys_ana_ll_set_ana_reg3_hpssren(0);
 	/* tx low performence 0x45[11][9] = 1*/
 	sys_ana_ll_set_ana_reg5_anabufsel_tx1(0);
@@ -1629,15 +1596,10 @@ void sys_hal_enter_low_analog(void)
 	sys_ana_ll_set_ana_reg5_anabufsel_rx1(0);
 	sys_ana_ll_set_ana_reg5_anabufsel_rx0(1);
 
-
 }
 
 void sys_hal_exit_low_analog(void)
 {
-	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
-	sys_ana_ll_set_ana_reg7_vanaldosel(0xf);
-	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
-
 	sys_ana_ll_set_ana_reg3_hpssren(1);
 	/* tx high performence 0x45[11][9] = 3*/
 	sys_ana_ll_set_ana_reg5_anabufsel_tx1(1);
