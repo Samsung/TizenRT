@@ -82,7 +82,6 @@ include mm_heap/Make.defs
 include umm_heap/Make.defs
 include kmm_heap/Make.defs
 include mm_gran/Make.defs
-include shm/Make.defs
 
 BINDIR ?= bin
 

@@ -68,7 +68,6 @@
 #include  <tinyara/net/net.h>
 #include  <tinyara/lib.h>
 #include  <tinyara/mm/mm.h>
-#include  <tinyara/mm/shm.h>
 #include  <tinyara/kmalloc.h>
 #include  <tinyara/init.h>
 #include  <tinyara/pm/pm.h>
@@ -790,12 +789,6 @@ void os_start(void)
 
 #if defined(CONFIG_DEBUG_SYSTEM)
 	sysdbg_init();
-#endif
-
-#ifdef CONFIG_MM_SHM
-	/* Initialize shared memory support */
-
-	shm_initialize();
 #endif
 
 	/* Initialize the C libraries.  This is done last because the libraries

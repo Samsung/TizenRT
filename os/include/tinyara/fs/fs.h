@@ -246,7 +246,6 @@ struct mountpt_operations {
  *
  *   - Named semaphores:     sem_open(), sem_close(), and sem_unlink()
  *   - POSIX Message Queues: mq_open() and mq_close()
- *   - Shared memory:        shm_open() and shm_unlink();
  *
  * These are a special case in that they do not follow quite the same
  * pattern as the other file system types in that they have operations.

@@ -77,7 +77,6 @@
 #endif
 
 #include <tinyara/irq.h>
-#include <tinyara/mm/shm.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/net/net.h>
 #ifdef CONFIG_ARM_MPU
@@ -134,8 +133,6 @@
 #define HAVE_TASK_GROUP   1		/* Message queues */
 #elif defined(CONFIG_ARCH_ADDRENV)
 #define HAVE_TASK_GROUP   1		/* Address environment */
-#elif defined(CONFIG_MM_SHM)
-#define HAVE_TASK_GROUP   1		/* Shared memory */
 #elif defined(CONFIG_BINARY_MANAGER)
 #define HAVE_TASK_GROUP   1		/* Binary management */
 #endif
@@ -505,12 +502,6 @@ struct task_group_s {
 	/* Address Environment ******************************************************* */
 
 	group_addrenv_t tg_addrenv;	/* Task group address environment           */
-#endif
-
-#ifdef CONFIG_MM_SHM
-	/* Shared Memory ************************************************************* */
-
-	struct group_shm_s tg_shm;	/* Task shared memory logic                 */
 #endif
 
 #if defined(CONFIG_PREFERENCE) && CONFIG_TASK_NAME_SIZE > 0

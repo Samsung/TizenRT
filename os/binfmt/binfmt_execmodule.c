@@ -65,7 +65,6 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
-#include <tinyara/mm/shm.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/mm/mm.h>
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_USE_MMU)
@@ -261,16 +260,6 @@ int exec_module(FAR struct binary_s *binp)
 	 */
 
 	binfmt_freeargv((FAR struct binary_s *)binp);
-
-#if defined(CONFIG_BUILD_KERNEL) && defined(CONFIG_MM_SHM)
-	/* Initialize the shared memory virtual page allocator */
-
-	ret = shm_group_initialize(newtcb->cmn.group);
-	if (ret < 0) {
-		berr("ERROR: shm_group_initialize() failed: %d\n", ret);
-		goto errout_with_tcbinit;
-	}
-#endif
 
 #ifdef CONFIG_PIC
 	/* Add the D-Space address as the PIC base address.  By convention, this
