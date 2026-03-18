@@ -60,6 +60,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <debug.h>
 
 #include <tinyara/board.h>
 #include <tinyara/pwm.h>

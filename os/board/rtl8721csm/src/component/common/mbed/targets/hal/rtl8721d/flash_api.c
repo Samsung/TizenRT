@@ -22,6 +22,7 @@
 
 #include "ameba_soc.h"
 #include "flash_api.h"
+#include <debug.h>
 
 extern u32 ConfigDebugInfo;
 
