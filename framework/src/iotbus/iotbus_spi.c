@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <debug.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <tinyara/spi/spi.h>

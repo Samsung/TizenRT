@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <debug.h>
 #include <sys/types.h>
 #include <security/security_ss.h>
 #include "security_internal.h"
