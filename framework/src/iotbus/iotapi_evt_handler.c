@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <poll.h>
 #include <errno.h>
+#include <debug.h>
 #include "iotapi_evt_handler.h"
 
 #define IOTAPI_QUEUE_SIZE 19

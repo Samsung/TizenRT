@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <debug.h>
 #include <tinyara/seclink.h>
 #include <security/security_common.h>
 #include "security_internal.h"

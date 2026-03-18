@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <debug.h>
 #include <security/security_api.h>
 #include <tinyara/seclink.h>
 #include <security/security_common.h>

@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#include <debug.h>
 #include <sys/ioctl.h>
 #include <tinyara/pwm.h>
 #include <iotbus/iotbus_error.h>

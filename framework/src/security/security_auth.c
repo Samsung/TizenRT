@@ -20,6 +20,7 @@
 #include <tinyara/config.h>
 
 #include <stdlib.h>
+#include <debug.h>
 #include <security/security_auth.h>
 #include "security_internal.h"
 

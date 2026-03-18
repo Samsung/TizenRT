@@ -17,6 +17,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <debug.h>
 #include <sys/types.h>
 #include <tinyara/security_hal.h>
 #include <security/security_keymgr.h>
