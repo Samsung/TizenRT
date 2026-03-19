@@ -462,6 +462,34 @@ static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile, FAR struct tcb_
 	copysize = procfs_memcpy(procfile->line, linesize, buffer, buflen, &offset);
 	totalsize += copysize;
 
+	buffer += copysize;
+	remaining -= copysize;
+	if (totalsize >= buflen) {
+		return totalsize;
+	}
+
+	switch (state) {
+	case TSTATE_WAIT_SEM:
+		linesize = snprintf(procfile->line, STATUS_LINELEN, " %p", tcb->waitsem);
+		break;
+#ifndef CONFIG_DISABLE_SIGNALS
+	case TSTATE_WAIT_SIG:
+		linesize = snprintf(procfile->line, STATUS_LINELEN, " %08x", tcb->sigwaitmask);
+		break;
+#endif
+#ifndef CONFIG_DISABLE_MQUEUE
+	case TSTATE_WAIT_MQNOTEMPTY:
+	case TSTATE_WAIT_MQNOTFULL:
+		linesize = snprintf(procfile->line, STATUS_LINELEN, " %p", tcb->msgwaitq);
+		break;
+#endif
+	default:
+		linesize = snprintf(procfile->line, STATUS_LINELEN, " -");
+		break;
+	}
+	copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining, &offset);
+	totalsize += copysize;
+
 #ifdef CONFIG_SCHED_CPULOAD
 	buffer += copysize;
 	remaining -= copysize;
