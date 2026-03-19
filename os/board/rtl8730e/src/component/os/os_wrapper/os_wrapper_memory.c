@@ -8,9 +8,9 @@
 #include "ameba.h"
 #include "os_wrapper.h"
 
-/* For Green2, need to align malloc to 32bytes (cache line size of AP) for cache operations */
-#define ALIGN 32
-#define ALIGN_MASK 0x001f
+/* For Smart, need to align malloc to 64bytes (cache line size of AP) for cache operations */
+#define ALIGN 64
+#define ALIGN_MASK 0x003f
 
 void *rtos_mem_malloc(uint32_t size)
 {
@@ -76,8 +76,12 @@ void rtos_mem_free(void *pbuf)
 uint32_t rtos_mem_get_free_heap_size(void)
 {
 	struct mallinfo heap_info;
-	heap_info = mallinfo();
-
+#ifdef CONFIG_CAN_PASS_STRUCTS
+	/* Check kernel heap */
+	heap_info = kmm_mallinfo();
+#else
+	(void)kmm_mallinfo(&heap_info);
+#endif
 	return heap_info.fordblks;
 }
 
