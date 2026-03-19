@@ -65,6 +65,7 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <tinyara/fs/fs_utils.h>
+#include <tinyara/fs/smart_procfs.h>
 #ifdef CONFIG_TASH
 #include <apps/shell/tash.h>
 #endif
@@ -1498,6 +1499,110 @@ static int tash_corrupt(int argc, char **args)
 }
 #endif
 
+#ifndef CONFIG_DISABLE_ENVIRON
+/****************************************************************************
+ * Name: tash_smartfs_dump
+ *
+ * Description:
+ *   Dump specific logical or physical sector from SMARTFS device
+ *   This works even when SMARTFS is not mounted
+ *
+ * Usage:
+ *   smartfs_dump <device_path> <lsector|psector> <sector_num>
+ *   Example:
+ *     smartfs_dump /dev/smart0p1 lsector 0
+ *     smartfs_dump /dev/smart0p1 psector 100
+ ****************************************************************************/
+static int tash_smartfs_dump(int argc, char **args)
+{
+	int fd;
+	int ret = OK;
+	char device_path[CONFIG_PATH_MAX];
+	int sector_type;
+	int sector_num;
+	struct mtd_smart_debug_data_s debug_data;
+
+	int minor, part;
+	bool found = false;
+	for (minor = 0; minor < 2; minor++) {
+		for (part = 0; part < 32; part++) {
+			snprintf(device_path, CONFIG_PATH_MAX, "/dev/smart%dp%d", minor, part);
+			
+			fd = open(device_path, O_RDONLY);
+			if (fd >= 0) {
+				printf("Found SMARTFS device: %s\n", device_path);
+				close(fd);
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			break;
+		}
+	}
+
+	if (!found) {
+		printf("Can Not Find SMARTFS device\n");
+		return ERROR;
+	}
+
+	if (argc != 3) {
+		printf("Usage: smartfs_dump <sector_type> <sector_num>\n");
+		printf("  Example: smartfs_dump 0 0 (lsector)\n");
+		printf("  Example: smartfs_dump 1 100 (psector)\n");
+		return ERROR;
+	}
+
+	sector_type = atoi(args[1]);
+	sector_num = atoi(args[2]);
+
+	/* Validate sector type */
+	if (!(sector_type == 0) && !(sector_type == 1)) {
+		printf("Error: sector_type must be 0(lsector) or 1(psector)\n");
+		return ERROR;
+	}
+
+	/* Validate sector number */
+	if (sector_num < 0) {
+		printf("Error: sector_num must be >= 0\n");
+		return ERROR;
+	}
+
+	/* Open the MTD device directly */
+	fd = open(device_path, O_RDONLY);
+	if (fd < 0) {
+		printf("Error: Failed to open device %s (errno: %d)\n", device_path, errno);
+		return ERROR;
+	}
+
+	/* Prepare debug data structure */
+	memset(&debug_data, 0, sizeof(debug_data));
+
+	if (sector_type == 0) {
+		debug_data.debugcmd = SMART_DEBUG_CMD_DUMP_LSECTOR;
+		printf("Dumping logical sector %d from %s...\n", sector_num, device_path);
+	} else {
+		debug_data.debugcmd = SMART_DEBUG_CMD_DUMP_PSECTOR;
+		printf("Dumping physical sector %d from %s...\n", sector_num, device_path);
+	}
+
+	debug_data.debugdata = (uint32_t)sector_num;
+
+	/* Execute dump command via ioctl */
+	ret = ioctl(fd, BIOC_DEBUGCMD, (unsigned long)&debug_data);
+	if (ret != OK) {
+		printf("Error: Dump failed with ret=%d, errno=%d\n", ret, errno);
+		close(fd);
+		return ERROR;
+	}
+
+	printf("Dump completed successfully\n");
+	close(fd);
+
+	return OK;
+}
+#endif
+
 const static tash_cmdlist_t fs_utilcmds[] = {
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"cat",       tash_cat,       TASH_EXECMD_SYNC},
@@ -1555,6 +1660,10 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"rmdir",     tash_rmdir,     TASH_EXECMD_SYNC},
+#endif
+
+#ifndef CONFIG_DISABLE_ENVIRON
+	{"smartfs_dump", tash_smartfs_dump, TASH_EXECMD_SYNC},
 #endif
 
 	{NULL,        NULL,           0}
