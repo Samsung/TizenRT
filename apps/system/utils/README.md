@@ -766,11 +766,14 @@ This command shows information about a selection of the active threads.
 ```
 TASH>>ps
 
-  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | CPU | IRQCOUNT | NAME
-------|------|------|---------|----|----------|----------------------
-    0 |    0 | FIFO | KTHREAD | N  | RUNNING  |   0 |        0 | Idle Task
-    1 |  201 | RR   | KTHREAD |    | WAITSIG  |   0 |        2 | hpwork
-    2 |   50 | RR   | KTHREAD |    | WAITSIG  |   0 |        2 | lpwork
+  PID | PRIO | FLAG |  TYPE   | NP |  STATUS  | WAIT INFO  | CPU | IRQCOUNT | NAME
+------|------|------|---------|----|----------|------------|-----|----------|-----
+    0 |    0 | FIFO | KTHREAD | N  | RUNNING  |          - |   0 |        0 | CPU0 IDLE
+    1 |    0 | FIFO | KTHREAD | N  | RUNNING  |          - |   1 |        0 | CPU1 IDLE
+    2 |  201 | RR   | KTHREAD |    | WAITSIG  |   00020000 |   1 |        2 | hpwork
+    3 |   50 | RR   | KTHREAD |    | WAITSIG  |   00020000 |   1 |        2 | lpwork
+    5 |  200 | RR   | KTHREAD |    | MQNEMPTY | 0x60136aa0 |   1 |        1 | km4_log_task
+    6 |  204 | RR   | KTHREAD |    | WAITSEM  | 0x60191418 |   1 |        1 | LCD Frame flusing
 ```
 
 #### Term
@@ -778,6 +781,7 @@ TASH>>ps
 - TYPE : The type of task/thread. It can be KTHREAD(kernel thread), PTHREAD(user pthread) and TASK.  
 - NP : The flag of cancelable.  
 - STATUS : Current state of the task/thread. It can be PENDING, READYTORUN, RUNNING, etc.
+- WAIT INFO : The wait object address or value depending on STATUS. For WAITSEM, it shows the semaphore address. For WAITSIG, it shows the signal wait mask. For MQNOTEMPTY/MQNOTFULL, it shows the message queue address. Shows `-` if not waiting.
 - CPU : It represents the CPU core where the task is currently running, but if the task is not running, it holds the last CPU where it was executed.
 - IRQCOUNT : It helps us to track how many nested critical section, particular thread has entered and not left when it was running.
 - NAME :  Name of the task/thread.
