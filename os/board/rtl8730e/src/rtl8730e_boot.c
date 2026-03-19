@@ -382,7 +382,8 @@ static void np_lp_status_timer_hdl(void)
 {
 	/* Added to inspect the value of BKUP_REG2 */
 	u32 boot_reason_reg2 = BKUP_Read(BKUP_REG2);
-	if (boot_reason_reg2 != 0x0) {
+	/* Catch fault in NP/LP, 0x1 indicates hard fault, 0x5 indicates IPC dev waiting for ACK */
+	if (boot_reason_reg2 == 0x1 || boot_reason_reg2 == 0x5) {
 		lldbg("boot_reason_reg2 0x%x \n", boot_reason_reg2);
 		ASSERT(boot_reason_reg2 == 0x0);
 	}
