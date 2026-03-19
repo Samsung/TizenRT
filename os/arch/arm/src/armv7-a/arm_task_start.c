@@ -41,6 +41,7 @@
 
 #include <tinyara/config.h>
 #include <tinyara/arch.h>
+#include <tinyara/reboot_reason.h>
 
 #include <assert.h>
 
@@ -85,6 +86,9 @@ void up_task_start(main_t taskentry, int argc, char *argv[])
 
 	sys_call3(SYS_task_start, (uintptr_t)taskentry, (uintptr_t)argc, (uintptr_t)argv);
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_TASK_START_FAILURE);
+#endif
 	PANIC();
 }
 

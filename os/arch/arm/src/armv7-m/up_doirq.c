@@ -63,6 +63,7 @@
 #include <tinyara/arch.h>
 #include <arch/board/board.h>
 #include <tinyara/security_level.h>
+#include <tinyara/reboot_reason.h>
 
 #include "up_arch.h"
 #include "up_internal.h"
@@ -102,6 +103,9 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 #endif
 	board_led_on(LED_INIRQ);
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_INTERRUPT_FAILURE);
+#endif
 	PANIC();
 #else
 

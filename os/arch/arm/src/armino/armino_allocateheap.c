@@ -70,6 +70,7 @@
 #include <tinyara/mm/mm.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/mm/heap_regioninfo.h>
+#include <tinyara/reboot_reason.h>
 
 #if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
 #include <string.h>
@@ -162,6 +163,9 @@ void up_add_kregion(void)
 			lldbg("ERROR: Failed to allocate kheap for ram region configuration\n");
 			lldbg("Region start = 0x%x region end = 0x%x\n_sdata = 0x%x end of stack = 0x%x\n",
 					kregionx_start[region_cnt], kregionx_end, &_sdata, stack_end);
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+			up_reboot_reason_write(REBOOT_SYSTEM_MEMORYALLOCFAIL);
+#endif
 			PANIC();
 		} else if (stack_end >= (void *)kregionx_start[region_cnt] && stack_end < (void *)kregionx_end) {
 			heap_start = stack_end;

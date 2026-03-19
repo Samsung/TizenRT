@@ -42,6 +42,11 @@ typedef enum {
 	REBOOT_SYSTEM_BINARY_RECOVERYFAIL  = 58, /* Binary Recovery Fail */
 	REBOOT_SYSTEM_PERIODIC_REBOOT      = 59, /* Periodic reboot */
 	REBOOT_SYSTEM_ASSERT               = 60, /* Reboot from ASSERT or PANIC */
+	REBOOT_SYSTEM_INTERRUPT_FAILURE    = 61, /* Interrupt handling failure */
+	REBOOT_SYSTEM_SCHEDULER_FAILURE    = 62, /* Scheduler/reprioritization failure */
+	REBOOT_SYSTEM_TASK_START_FAILURE   = 63, /* Task start failure */
+	REBOOT_SYSTEM_PTHREAD_START_FAILURE = 64, /* Pthread start failure */
+	REBOOT_SYSTEM_STACK_OVERFLOW       = 65, /* Stack overflow detected */
 
 	REBOOT_NETWORK_WIFICORE_WATCHDOG   = 80, /* Wi-Fi Core Watchdog Reset */
 	REBOOT_NETWORK_WIFICORE_PANIC      = 81, /* Wi-Fi Core Panic */
