@@ -180,6 +180,13 @@ endef
 define MOVEOBJ
 endef
 
+# LOCK_AR - flock command for AR to prevent concurrent archive operations
+#
+# This prevents multiple ar commands from running simultaneously which can cause
+# corruption of archive files during parallel builds.
+
+LOCK_AR = flock /tmp/ar.lock
+
 # ARCHIVE - Add a list of files to an archive
 # Example: $(call ARCHIVE, archive-file, "file1 file2 file3 ...")
 #
@@ -199,12 +206,12 @@ endef
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
 define ARCHIVE
 	@echo AR: $2
-	$(Q) $(AR) $1 $(2)
+	$(Q) $(LOCK_AR) $(AR) $1 $(2)
 endef
 else
 define ARCHIVE
 	@echo "AR: $2"
-	$(Q) $(AR) $1 $(2) || { echo "$(AR) $1 FAILED!" ; exit 1 ; }
+	$(Q) $(LOCK_AR) $(AR) $1 $(2) || { echo "$(AR) $1 FAILED!" ; exit 1 ; }
 endef
 endif
 

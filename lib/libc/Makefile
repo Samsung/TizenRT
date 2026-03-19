@@ -138,28 +138,28 @@ $(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
 ifeq ($(CONFIG_LIBC_DOWNLOAD_ZONEINFO),y)
-	$(Q) $(MAKE) -C zoneinfo all TOPDIR=$(TOPDIR)
+	$(Q) $(MAKE) $(JOBS) -C zoneinfo all TOPDIR=$(TOPDIR)
 endif
 
 # C library for the user phase of the two-pass kernel build
 
 ifneq ($(BIN),$(UBIN))
 $(UBIN):
-	$(Q) $(MAKE) $(UBIN) BIN=$(UBIN) BINDIR=ubin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
+	$(Q) $(MAKE) $(JOBS) $(UBIN) BIN=$(UBIN) BINDIR=ubin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
 endif
 
 # C library for the kernel phase of the two-pass kernel build
 
 ifneq ($(BIN),$(KBIN))
 $(KBIN):
-	$(Q) $(MAKE) $(KBIN) BIN=$(KBIN) BINDIR=kbin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
+	$(Q) $(MAKE) $(JOBS) $(KBIN) BIN=$(KBIN) BINDIR=kbin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
 endif
 
 # Context
 
 context:
 ifeq ($(CONFIG_LIBC_DOWNLOAD_ZONEINFO),y)
-	$(Q) $(MAKE) -C zoneinfo context TOPDIR=$(TOPDIR)
+	$(Q) $(MAKE) $(JOBS) -C zoneinfo context TOPDIR=$(TOPDIR)
 endif
 
 

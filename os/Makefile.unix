@@ -71,6 +71,15 @@ export Q := @
 endif
 endif
 
+# Build parallelism
+ifeq ($(CONFIG_BUILD_PARALLEL_JOBS),)
+export JOBS := -j$(shell nproc)
+else ifeq ($(CONFIG_BUILD_PARALLEL_JOBS),0)
+export JOBS := -j$(shell nproc)
+else
+export JOBS := -j$(CONFIG_BUILD_PARALLEL_JOBS)
+endif
+
 # Default tools
 
 ifeq ($(DIRLINK),)
