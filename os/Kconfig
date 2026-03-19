@@ -175,6 +175,16 @@ config TOOLS_DIR
 	default "../tools" if !WINDOWS_NATIVE
 	default "..\tools" if WINDOWS_NATIVE
 
+config BUILD_PARALLEL_JOBS
+	int "Number of parallel build jobs (0 = auto-detect)"
+	default 0
+	range 0 128
+	---help---
+		Set the number of parallel build jobs.
+		0 = Auto-detect using nproc (default)
+		1-128 = Use specified number of jobs
+		This controls the -j option passed to make.
+
 choice
 	prompt "Memory organization"
 	default BUILD_FLAT
