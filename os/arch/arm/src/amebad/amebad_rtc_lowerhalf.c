@@ -283,7 +283,10 @@ static int amebad_setalarm(FAR struct rtc_lowerhalf_s *lower, FAR const struct l
 	FAR struct amebad_lowerhalf_s *rtc;
 	int ret;
 
-	DEBUGASSERT(lower != NULL && alarminfo != NULL && alarminfo->id == 0);
+	if(lower == NULL || alarminfo == NULL || alarminfo->id != 0) {
+	    set_errno(EINVAL);
+	    return ERROR;
+	}
 	rtc = (FAR struct amebad_lowerhalf_s *)lower;
 
 	/* Get exclusive access to the alarm */
@@ -349,7 +352,11 @@ static int amebad_setrelative(FAR struct rtc_lowerhalf_s *lower, FAR const struc
 	FAR struct timespec ts;
 	int ret = -EINVAL;
 
-	DEBUGASSERT(lower != NULL && alarminfo != NULL && alarminfo->id == 0);
+	if(lower == NULL || alarminfo == NULL || alarminfo->id != 0) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
+
 	rtc = (FAR struct amebad_lowerhalf_s *)lower;
 
 	/* Get exclusive access to the alarm */

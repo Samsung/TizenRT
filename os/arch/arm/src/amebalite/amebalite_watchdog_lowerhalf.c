@@ -128,7 +128,6 @@ const struct watchdog_ops_s g_wdgops = {
 static int amebalite_wdg_start(FAR struct watchdog_lowerhalf_s *lower)
 {
 	struct amebalite_wdg_lowerhalf_s *priv = (struct amebalite_wdg_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -161,7 +160,6 @@ static int amebalite_wdg_start(FAR struct watchdog_lowerhalf_s *lower)
 static int amebalite_wdg_stop(FAR struct watchdog_lowerhalf_s *lower)
 {
 	struct amebalite_wdg_lowerhalf_s *priv = (struct amebalite_wdg_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -192,7 +190,6 @@ static int amebalite_wdg_stop(FAR struct watchdog_lowerhalf_s *lower)
 static int amebalite_wdg_keepalive(FAR struct watchdog_lowerhalf_s *lower)
 {
 	struct amebalite_wdg_lowerhalf_s *priv = (struct amebalite_wdg_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -227,7 +224,6 @@ static int amebalite_wdg_keepalive(FAR struct watchdog_lowerhalf_s *lower)
 static int amebalite_wdg_getstatus(FAR struct watchdog_lowerhalf_s *lower, FAR struct watchdog_status_s *status)
 {
 	struct amebalite_wdg_lowerhalf_s *priv = (struct amebalite_wdg_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -282,7 +278,6 @@ static int amebalite_wdg_getstatus(FAR struct watchdog_lowerhalf_s *lower, FAR s
 static int amebalite_wdg_settimeout(FAR struct watchdog_lowerhalf_s *lower, uint32_t timeout)
 {
 	struct amebalite_wdg_lowerhalf_s *priv = (struct amebalite_wdg_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -327,7 +322,6 @@ static xcpt_t amebalite_wdg_capture(FAR struct watchdog_lowerhalf_s *lower, xcpt
 {
 	struct amebalite_wdg_lowerhalf_s *priv = (struct amebalite_wdg_lowerhalf_s *)lower;
 	xcpt_t oldhandler;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return NULL;
 	}
@@ -382,7 +376,6 @@ static int amebalite_wdg_ioctl(FAR struct watchdog_lowerhalf_s *lower, int cmd, 
 {
 	struct amebalite_wdg_lowerhalf_s *priv = (struct amebalite_wdg_lowerhalf_s *)lower;
 	uint32_t time_elapse;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
