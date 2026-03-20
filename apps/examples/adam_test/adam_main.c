@@ -49,42 +49,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/*******************************************************************************
-* Modifications:
-* Copyright 2026 ABOV Semiconductor Co., Ltd.
-*
-* This file has been modified by ABOV Semiconductor.
-*
-* Modifications include:
-*   Implement Adam110 test application using tash commands
-*
-* Modifications by ABOV Semiconductor are licensed under the BSD-3-Clause license.
-* The original portions of this file remain licensed under the Apache License, Version 2.0.
-* Redistribution and use in source and binary forms, with or without modification,
-* are permitted provided that the following conditions are met:
-*
-* 1. Redistributions of source code must retain the above copyright notice, this
-* list of conditions and the following disclaimer.
-*
-* 2. Redistributions in binary form must reproduce the above copyright notice,
-* this list of conditions and the following disclaimer in the documentation and/or
-* other materials provided with the distribution.
-*
- * 3. Neither the name of the copyright holder nor the names of its contributors
-* may be used to endorse or promote products derived from this software without
-* specific prior written permission.
-*
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-* ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
@@ -123,7 +88,7 @@
 static mqd_t g_cap_mq = (mqd_t)-1;
 
 static volatile bool g_cap_active = false;
-static int g_cap_target = 10;
+static int g_cap_target = 0;//10;
 static int g_cap_count  = 0;
 
 #define KD_SNAP_MAX   (3840 * 17)   // 65280 bytes
@@ -131,9 +96,14 @@ static uint8_t  g_kd_snap[KD_SNAP_MAX];
 static uint32_t g_kd_snap_size = 0;
 static pthread_mutex_t g_kd_lock = PTHREAD_MUTEX_INITIALIZER;
 
+typedef enum {
+    AI_SAVE_KD = 0,
+    AI_SAVE_PCM,
+} ai_save_mode_t;
 
 typedef struct {
 	unsigned int seconds;
+	ai_save_mode_t mode;
 } autokd_args_t;
 
 typedef struct {
@@ -157,6 +127,10 @@ static adam_status_t g_ai = {
     .nbuffers = 0,
     .bufsize = 0,
 };
+
+
+
+static ai_save_mode_t g_save_mode = AI_SAVE_KD;
 
 static int ai_wait_event(int timeout_sec, bool auto_kdget);
 static int ai_open_cap_mq_and_register(void);
@@ -197,8 +171,12 @@ static void *autokd_worker(void *arg)
 {
 	autokd_args_t *a = (autokd_args_t *)arg;
 	unsigned int seconds = a ? a->seconds : 0;
+	ai_save_mode_t mode = a ? a->mode : AI_SAVE_KD;
 	if (a)
 		free(a);
+
+	// 0. mode
+	g_save_mode = mode;
 
 	// 1. open
 	g_ai.fd = open(AI_AUDIO_DEVNODE, O_RDWR);
@@ -240,15 +218,21 @@ static void *autokd_worker(void *arg)
 
 	g_ai.proc_registered = true;
 
+	// 4. change kd as 0
+	if (ioctl(g_ai.fd, AUDIOIOC_CHANGEKD, (unsigned long)0) < 0)
+	{
+		printf("ioctl(AUDIOIOC_CHANGEKD) failed: %d (%s)\n", errno, strerror(errno));
+		goto done;
+	}
 
-	// 4. start kd
+	// 5. start kd
 	if (ioctl(g_ai.fd, AUDIOIOC_STARTPROCESS, (unsigned long)AUDIO_SD_KEYWORD_DETECT) < 0)
 	{
 		printf("ioctl(STARTPROCESS) failed: %d (%s)\n", errno, strerror(errno));
 		goto done;
 	}
 
-	// 5. watch
+	// 6. watch
 	struct timespec end;
 	if (seconds > 0)
 	{
@@ -365,9 +349,11 @@ static int ai_prepare_and_enqueue_capture_buffers(void)
     int ret = ioctl(g_ai.fd, AUDIOIOC_GETBUFFERINFO, (unsigned long)&info);
     if (ret != OK || info.nbuffers <= 0 || info.buffer_size <= 0) {
         printf("ioctl(AUDIOIOC_GETBUFFERINFO) failed: %d (%s)\n", errno, strerror(errno));
-		info.nbuffers = 4;
-    	info.buffer_size = 2048;
+		goto fail;
     }
+	else {
+		printf("AUDIOIOC_GETBUFFERINFO n=%d, s=%d\n", info.nbuffers, info.buffer_size);
+	}
 
     g_ai.nbuffers = info.nbuffers;
     g_ai.bufsize  = info.buffer_size;
@@ -475,6 +461,38 @@ static void ai_dump_pcm_head(struct ap_buffer_s *apb, int head_bytes)
     printf("\n");
 }
 
+static void ai_store_pcm_snapshot(struct ap_buffer_s *apb)
+{
+    if (!apb || apb->nbytes == 0)
+        return;
+
+    pthread_mutex_lock(&g_kd_lock);
+
+    uint32_t remain = 0;
+    uint32_t copy_sz = 0;
+
+    if (g_kd_snap_size < KD_SNAP_MAX) {
+        remain = KD_SNAP_MAX - g_kd_snap_size;
+        copy_sz = apb->nbytes;
+
+        if (copy_sz > remain) {
+            copy_sz = remain;
+        }
+
+        if (copy_sz > 0) {
+            memcpy(&g_kd_snap[g_kd_snap_size], apb->samp, copy_sz);
+            g_kd_snap_size += copy_sz;
+        }
+    }
+
+    pthread_mutex_unlock(&g_kd_lock);
+/*
+    if (copy_sz < (uint32_t)apb->nbytes) {
+        printf("pcm snapshot full: appended %u / %u bytes\n", (unsigned)copy_sz, (unsigned)apb->nbytes);
+    }
+*/
+}
+
 static int ai_handle_capture_mq_once(int timeout_sec)
 {
     if (g_cap_mq == (mqd_t)-1)
@@ -510,9 +528,14 @@ static int ai_handle_capture_mq_once(int timeout_sec)
 			// dump!!!
 			ai_dump_pcm_head(apb, 16);
 
+			//save!!
+			if (g_save_mode == AI_SAVE_PCM) {
+				ai_store_pcm_snapshot(apb);
+			}
 			g_cap_count++;
+			//printf("AUDIO_MSG_DEQUEUE\n");
 
-			if (g_cap_count >= g_cap_target) {
+			if (g_cap_target > 0 && g_cap_count >= g_cap_target) {
 				printf("Capture session done: %d chunks\n", g_cap_count);
 				g_cap_active = false;
 				
@@ -550,7 +573,7 @@ static int ai_handle_capture_mq_once(int timeout_sec)
 /****************************************************************************
  * operation
  ****************************************************************************/
-static int ai_auto(int seconds)
+static int ai_auto(ai_save_mode_t mode, int seconds)
 {
 	if (g_ai.opened)
 	{
@@ -570,6 +593,12 @@ static int ai_auto(int seconds)
 	g_autokd_stopreq = false;
 	pthread_mutex_unlock(&g_autokd_lock);
 
+	pthread_mutex_lock(&g_kd_lock);
+	g_save_mode = mode;
+	g_kd_snap_size = 0;
+	memset(g_kd_snap, 0, sizeof(g_kd_snap));
+	pthread_mutex_unlock(&g_kd_lock);
+
 
 	autokd_args_t *arg = (autokd_args_t *)malloc(sizeof(autokd_args_t));
 	if (!arg)
@@ -581,7 +610,7 @@ static int ai_auto(int seconds)
 		return ERROR;
 	}
 	arg->seconds = (unsigned int)seconds;
-
+	arg->mode = mode;
 
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
@@ -621,6 +650,7 @@ static int ai_stop_auto(void)
 	return OK;
 }
 
+/*
 static int ai_open_and_registerprocess(void)
 {
 	if (g_ai.opened)
@@ -672,7 +702,7 @@ static int ai_open_and_registerprocess(void)
 	printf("ai open ok: dev=%s, proc_mq=%s\n", AI_AUDIO_DEVNODE, AI_PROCESS_MQ_NAME);
 	return 0;
 }
-
+*/
 static void ai_close_all(void)
 {
 	// unregister
@@ -704,15 +734,20 @@ static int ai_save_dump(void)
     pthread_mutex_lock(&g_kd_lock);
 
     if (g_kd_snap_size == 0) {
-        printf("KD snapshot empty\n");
+        printf("snapshot empty\n");
         pthread_mutex_unlock(&g_kd_lock);
         return 0;
     }
 
-    printf("KD snapshot: %u bytes\n", (unsigned)g_kd_snap_size);
+	printf("snapshot(%s): %u bytes\n", (g_save_mode == AI_SAVE_PCM) ? "pcm" : "kd", (unsigned)g_kd_snap_size);
 
 	for (uint32_t i = 0; i + 1 < g_kd_snap_size; i += 2) {
-		uint16_t v = ((uint16_t)g_kd_snap[i] << 8) | g_kd_snap[i + 1];
+		uint16_t v;
+		if (g_save_mode == AI_SAVE_PCM) {
+			v = ((uint16_t)g_kd_snap[i + 1] << 8) | g_kd_snap[i];
+		} else {
+			v = ((uint16_t)g_kd_snap[i] << 8) | g_kd_snap[i + 1];
+		}
 		printf("0x%04X,", v);
 	}
 	printf("\n");
@@ -721,6 +756,7 @@ static int ai_save_dump(void)
     return 0;
 }
 
+/*
 static int ai_start_process(uint8_t mode)
 {
 	if (!g_ai.opened)
@@ -739,7 +775,9 @@ static int ai_start_process(uint8_t mode)
 	printf("ai startprocess ok (mode=%u)\n", (unsigned)mode);
 	return 0;
 }
+*/
 
+/*
 static int ai_stop_process(uint8_t mode)
 {
 	if (!g_ai.opened)
@@ -758,8 +796,8 @@ static int ai_stop_process(uint8_t mode)
 	printf("ai stopprocess ok (mode=%u)\n", (unsigned)mode);
 	return 0;
 }
-
-static int ai_kd_getdata_dump(uint32_t dump_head_bytes)
+*/
+static int ai_kd_getdata_dump(uint32_t dump_head_bytes, bool save_to_snap)
 {
 	if (!g_ai.opened)
 	{
@@ -774,12 +812,15 @@ static int ai_kd_getdata_dump(uint32_t dump_head_bytes)
 		printf("ioctl(GETKDBUFSIZE) failed: %d (%s)\n", errno, strerror(errno));
 		return -1;
 	}
+	printf("GETKDBUFSIZE sz=%d\n", sz);
 
 	if (sz == 0)
 	{
 		printf("kd buf size is 0 (no keyword data?)\n");
 		pthread_mutex_lock(&g_kd_lock);
-        g_kd_snap_size = 0;
+		if (save_to_snap) {
+			g_kd_snap_size = 0;
+		}
         pthread_mutex_unlock(&g_kd_lock);
 		return 0;
 	}
@@ -789,23 +830,28 @@ static int ai_kd_getdata_dump(uint32_t dump_head_bytes)
         sz = KD_SNAP_MAX;
     }
 
-    pthread_mutex_lock(&g_kd_lock);
 	// get kd
-    if (ioctl(g_ai.fd, AUDIOIOC_GETKDDATA, (unsigned long)(uintptr_t)g_kd_snap) < 0) {
-        pthread_mutex_unlock(&g_kd_lock);
-        return -1;
-    }
-    g_kd_snap_size = sz;
-    pthread_mutex_unlock(&g_kd_lock);
+	pthread_mutex_lock(&g_kd_lock);
+	if (ioctl(g_ai.fd, AUDIOIOC_GETKDDATA, (unsigned long)(uintptr_t)g_kd_snap) < 0) {
+		pthread_mutex_unlock(&g_kd_lock);
+		return -1;
+	}
+	g_kd_snap_size = sz;
+	pthread_mutex_unlock(&g_kd_lock);
 
 	printf("kd data: %u bytes, head:", (unsigned)sz);
 	uint32_t n = (dump_head_bytes == 0) ? 16 : dump_head_bytes;
 	if (n > sz) n = sz;
-	for (uint32_t i = 0; i < n; i++)
-	{
+	for (uint32_t i = 0; i < n; i++) {
 		printf(" %02X", g_kd_snap[i]);
 	}
 	printf("\n");
+
+	if (save_to_snap == false) {
+		pthread_mutex_lock(&g_kd_lock);
+		g_kd_snap_size = 0;
+		pthread_mutex_unlock(&g_kd_lock);
+	}
 
 	return 0;
 }
@@ -847,9 +893,17 @@ static int ai_wait_event(int timeout_sec, bool auto_kdget)
 	if (msg.msgId == 11) {
 		printf("ai event: msgId=%d prio=%u\n", (int)msg.msgId, prio);
 
+		if (ioctl(g_ai.fd, AUDIOIOC_START, 0) < 0) {
+			printf("ioctl(AUDIOIOC_START) failed: %d (%s)\n", errno, strerror(errno));
+		}
+		else
+			printf("AUDIOIOC_START\n");
+
 		/* KD snapshot */
-		if (auto_kdget)
-			(void)ai_kd_getdata_dump(16);
+		if (auto_kdget) {
+			bool save_kd = (g_save_mode == AI_SAVE_KD);
+			(void)ai_kd_getdata_dump(16, save_kd);
+		}
 
 		if (!g_cap_active) {
 			g_cap_active = true;
@@ -866,7 +920,7 @@ static int ai_wait_event(int timeout_sec, bool auto_kdget)
 	}
 	return 0;
 }
-
+/*
 static int ai_watch(int seconds)
 {
 	if (!g_ai.opened || g_ai.proc_mq == (mqd_t)-1)
@@ -886,26 +940,26 @@ static int ai_watch(int seconds)
 
 	while (!time_is_past(&end))
 	{
-		/* 1-second timed wait to allow exit on overall timeout */
+		// 1-second timed wait to allow exit on overall timeout
 		int ret = ai_wait_event(1, true);
 		if (ret < 0)
 		{
-			return ret; /* error */
+			return ret; // error
 		}
-		/* ret==1 means per-wait timeout; just continue */
+		// ret==1 means per-wait timeout; just continue
 	}
 
 	printf("ai watch done\n");
 	return 0;
 }
+*/
 
+/*
 static int parse_process_mode(const char *s, uint8_t *out_mode)
 {
 	if (!s || !out_mode)
 		return -1;
 
-	/* These constants should be defined in your headers:
-	   AUDIO_SD_KEYWORD_DETECT, AUDIO_SD_LOCAL, AUDIO_SD_AEC */
 	if (!strcmp(s, "kd"))
 	{
 		*out_mode = (uint8_t)AUDIO_SD_KEYWORD_DETECT;
@@ -924,6 +978,7 @@ static int parse_process_mode(const char *s, uint8_t *out_mode)
 
 	return -1;
 }
+*/
 
 /****************************************************************************
  * TASH command
@@ -933,15 +988,16 @@ static int cmd_ai(int argc, char *argv[])
 	if (argc < 2)
 	{
 		printf("usage:\n");
-		printf("  ai auto <sec>\n");
+		printf("  ai auto kd|pcm <sec>\n");
 		printf("  ai save\n");
-		printf("  ai open\n");
+		//printf("  ai open\n");
 		printf("  ai close\n");
-		printf("  ai start kd|local|aec\n");
-		printf("  ai stop  kd|local|aec\n");
-		printf("  ai wait <sec>          (wait 1 event)\n");
-		printf("  ai kdget               (pull keyword buffer)\n");
-		printf("  ai watch <sec>         (loop wait + auto kdget)\n");
+		printf("  ai stop\n");
+		//printf("  ai start kd|local|aec\n");
+		//printf("  ai stop  kd|local|aec\n");
+		//printf("  ai wait <sec>          (wait 1 event)\n");
+		//printf("  ai kdget               (pull keyword buffer)\n");
+		//printf("  ai watch <sec>         (loop wait + auto kdget)\n");
 		return 0;
 	}
 
@@ -949,9 +1005,27 @@ static int cmd_ai(int argc, char *argv[])
 
 	if (!strcmp(sub, "auto"))
 	{
-		int sec = (argc >= 3) ? atoi(argv[2]) : 0;
+	    if (argc < 3) {
+			printf("usage: ai auto kd [sec]\n");
+			printf("       ai auto pcm [sec]\n");
+			return -1;
+		}
+		ai_save_mode_t mode;
+		int sec = 0;
 
-		return ai_auto(sec);
+		if (!strcmp(argv[2], "kd")) {
+			mode = AI_SAVE_KD;
+		} else if (!strcmp(argv[2], "pcm")) {
+			mode = AI_SAVE_PCM;
+		} else {
+			printf("unknown auto mode: %s\n", argv[2]);
+			return -1;
+		}
+
+	    if (argc >= 4) {
+			sec = atoi(argv[3]);
+		}
+		return ai_auto(mode, sec);
 	}
 
 	if (!strcmp(sub, "save"))
@@ -963,18 +1037,18 @@ static int cmd_ai(int argc, char *argv[])
 	{
 		return ai_stop_auto();
 	}
-
+/*
 	if (!strcmp(sub, "open"))
 	{
 		return ai_open_and_registerprocess();
 	}
-
+*/
 	if (!strcmp(sub, "close"))
 	{
 		ai_close_all();
 		return 0;
 	}
-
+/*
 	if (!strcmp(sub, "start"))
 	{
 		if (argc < 3)
@@ -990,7 +1064,7 @@ static int cmd_ai(int argc, char *argv[])
 		}
 		return ai_start_process(mode);
 	}
-/*
+
 	if (!strcmp(sub, "stop"))
 	{
 		if (argc < 3)
@@ -1006,7 +1080,7 @@ static int cmd_ai(int argc, char *argv[])
 		}
 		return ai_stop_process(mode);
 	}
-*/
+
 	if (!strcmp(sub, "wait"))
 	{
 		int sec = (argc >= 3) ? atoi(argv[2]) : 10;
@@ -1015,7 +1089,7 @@ static int cmd_ai(int argc, char *argv[])
 
 	if (!strcmp(sub, "kdget"))
 	{
-		return ai_kd_getdata_dump(16);
+		return ai_kd_getdata_dump(16, true);
 	}
 
 	if (!strcmp(sub, "watch"))
@@ -1023,7 +1097,7 @@ static int cmd_ai(int argc, char *argv[])
 		int sec = (argc >= 3) ? atoi(argv[2]) : 10;
 		return ai_watch(sec);
 	}
-
+*/
 	printf("unknown subcmd: %s\n", sub);
 	return -1;
 }

@@ -81,7 +81,7 @@
 #define ADAM110_RX_MAX_SIZE			3840
 #define ADAM110_SEAMLESS_DATA_BLK	17
 #define ADAM110_MODEL_CHUNK_SIZE	256
-#define ADAM110_MODEL_RETRY_CNT		10
+#define ADAM110_MODEL_RETRY_CNT		100
 
 #define ADAM110_FW_CHUNK_SIZE		128
 #define ADAM110_FW_RETRY_CNT		10
@@ -107,7 +107,7 @@
 #define DM_GET_STATE				0x01 /* Get Device State */
 #define DM_GET_EVENT				0x02 /* Get Event Data */
 #define DM_GET_KEEP_ALIVE			0x03 /* Get Keep alive State */
-#define DM_SET_INTR					0x04 /* Set Interrupt */
+#define DM_ENTER_LP_MODE			0x04 /* Enter Low Power Mode */
 
 /* Audio Control */
 #define AUD_I2S_SET_CONFIG			0x20 /* Set I2S Audio Configuration */
@@ -118,6 +118,8 @@
 #define AUD_GET_PREP_DATA			0x41 /* Get NPU preprocessed audio data */
 #define AUD_GET_MIC_DATA			0x42 /* */
 #define AUD_GET_I2S_DATA			0x43 /* */
+#define AUD_SET_DEBUG_MODE			0x44 /* Audio Debug Mode Enable/Disable */
+#define AUD_INT_EN					0x45 /* Audio Interrupt Enable/Disable */
 
 /* AI Control */
 #define AC_UPDATE_MODEL				0x60 /* Set AI Model Update Mode */
@@ -125,6 +127,8 @@
 #define AC_UPDATE_RSLT				0x62 /* Get AI Model Update Result */
 #define AC_THD_ADJ					0x63 /* Set AI Model Threshold Adjust */
 #define AC_PARA_TUNING				0x64 /* Set AI Model Parameter Tuning */
+#define AC_GET_MODEL_NAME			0x65 /* Get AI model name */
+#define AC_INT_EN					0x66 /* AI model Interrupt Enable/Disable */
 
 /* Firmware */
 #define FW_GET_VER					0xE0 /* Get FW Version */

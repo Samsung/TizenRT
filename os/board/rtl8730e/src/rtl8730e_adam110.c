@@ -129,10 +129,11 @@ static void rtl8730e_adam110_irq_handler(uint32_t id, gpio_irq_event event)
 	 * until we finish this particular interrupt related work
 	 * in the HPWORK thread
 	 */
+	FAR char *arg = (FAR char *)id;
 	gpio_irq_disable(&g_adam110info.data_ready);
 
 	if (g_adam110info.handler != NULL) {
-		g_adam110info.handler(id);
+		g_adam110info.handler(arg);
 	} else {
 		gpio_irq_enable(&g_adam110info.data_ready);
 	}
@@ -147,12 +148,13 @@ static void rtl8730e_adam110_enable_irq(bool enable)
 	}
 }
 
-static void rtl8730e_adam110_irq_attach(adam110_handler_t handler, FAR char *arg)
+static int rtl8730e_adam110_irq_attach(adam110_handler_t handler, FAR char *arg)
 {
 	g_adam110info.handler = handler;
-	gpio_irq_init(&g_adam110info.data_ready, PA_23, rtl8730e_adam110_irq_handler, arg);
-	gpio_irq_set(&g_adam110info.data_ready, IRQ_HIGH, 1);
+	gpio_irq_init(&g_adam110info.data_ready, PA_23, rtl8730e_adam110_irq_handler, (uint32_t)arg);
+	gpio_irq_set(&g_adam110info.data_ready, IRQ_FALL, 1);
 	gpio_irq_enable(&g_adam110info.data_ready);
+	return OK;
 }
 
 static void rtl8730e_adam110_set_dmic(bool enable)
@@ -168,7 +170,7 @@ static void rtl8730e_adam110_set_dmic(bool enable)
 	}
 }
 
-static void rtl8730e_adam110_reset()
+static void rtl8730e_adam110_reset(void)
 {
 	gpio_dir(&g_adam110info.reset, PIN_OUTPUT);
 	gpio_mode(&g_adam110info.reset, PullDown);
