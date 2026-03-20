@@ -114,6 +114,7 @@ mqd_t mq_open(FAR const char *mq_name, int oflags, ...)
 	mode_t mode;
 	int errcode;
 	int ret;
+	irqstate_t flags;
 
 	/* Make sure that a non-NULL name is supplied */
 
@@ -128,11 +129,12 @@ mqd_t mq_open(FAR const char *mq_name, int oflags, ...)
 
 	/* Make sure that the check for the existence of the message queue
 	 * and the creation of the message queue are atomic with respect to
-	 * other processes executing mq_open().  A simple sched_lock() should
-	 * be sufficient.
+	 * other processes executing mq_open().  A simple sched_lock() would
+	 * be sufficient for non-SMP case but critical section is needed for
+	 * SMP case.
 	 */
 
-	sched_lock();
+	flags = enter_critical_section();
 
 	/* Get the inode for this mqueue.  This should succeed if the message
 	 * queue has already been created.
@@ -187,10 +189,10 @@ mqd_t mq_open(FAR const char *mq_name, int oflags, ...)
 
 		inode_semtake();
 		ret = inode_reserve(fullpath, &inode);
-		inode_semgive();
 
 		if (ret < 0) {
 			errcode = -ret;
+			inode_semgive();
 			goto errout_with_lock;
 		}
 
@@ -199,6 +201,7 @@ mqd_t mq_open(FAR const char *mq_name, int oflags, ...)
 		msgq = (FAR struct mqueue_inode_s *)mq_msgqalloc(mode, attr);
 		if (!msgq) {
 			errcode = ENOSPC;
+			inode_semgive();
 			goto errout_with_inode;
 		}
 
@@ -207,6 +210,7 @@ mqd_t mq_open(FAR const char *mq_name, int oflags, ...)
 		mqdes = mq_descreate(NULL, msgq, oflags);
 		if (!mqdes) {
 			errcode = ENOMEM;
+			inode_semgive();
 			goto errout_with_msgq;
 		}
 
@@ -219,9 +223,10 @@ mqd_t mq_open(FAR const char *mq_name, int oflags, ...)
 		/* Set the initial reference count on this inode to one */
 
 		inode->i_crefs = 1;
+		inode_semgive();
 	}
 
-	sched_unlock();
+	leave_critical_section(flags);
 	return mqdes;
 
 errout_with_msgq:
@@ -230,7 +235,7 @@ errout_with_msgq:
 errout_with_inode:
 	inode_release(inode);
 errout_with_lock:
-	sched_unlock();
+	leave_critical_section(flags);
 errout:
 	set_errno(errcode);
 	return (mqd_t)ERROR;
