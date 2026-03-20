@@ -63,6 +63,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <tinyara/audio/i2s.h>
 #include <tinyara/gpio.h>
 #include <tinyara/kmalloc.h>
@@ -293,21 +294,27 @@ static uint8_t adam110_calculate_checksum(uint8_t *data, uint32_t size)
 	return checksum;
 }
 
-static uint16_t adam110_calculate_checksum16(const uint8_t *data, uint32_t length)
+static uint16_t adam110_calculate_checksum16(int fd)
 {
-    uint16_t checksum = 0;
-    uint32_t total_size = ADAM110_FLASH_TOTAL_SIZE;
+	uint16_t checksum = 0;
+    uint32_t bytes_read_total = 0;
+    uint8_t buffer[128];
+    ssize_t nread;
 
-    for (uint32_t i = 0; i < length; i++) {
-        checksum += data[i];
+    while ((nread = read(fd, buffer, sizeof(buffer))) > 0) {
+        for (ssize_t i = 0; i < nread; i++) {
+            checksum += (uint16_t)buffer[i];
+        }
+        bytes_read_total += nread;
     }
 
-    if (total_size > length) {
-        uint32_t padding_count = total_size - length;
+    if (ADAM110_FLASH_TOTAL_SIZE > bytes_read_total) {
+        uint32_t padding_count = ADAM110_FLASH_TOTAL_SIZE - bytes_read_total;
         checksum += (uint16_t)(padding_count * 0xFF);
     }
 
     return checksum;
+
 }
 
 static int adam110_verify_packet(t_proto_pkt *pkt) 
@@ -454,108 +461,164 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 
 static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 {
+
 	t_proto_pkt rxpkt;
+	uint32_t sent_size = 0, fw_size = 0;
 	int fd;
+	struct stat st;
 	ssize_t nread;
-	uint32_t sent_size = 0;
-	uint8_t chunk_buf[ADAM110_MODEL_CHUNK_SIZE + 1]; // 256 + 1 (checksum)
-	uint8_t header[6];
-	int retry_remain;
-	uint32_t cur_fw_ver = 0, img_fw_ver = 0;
+	uint8_t fw_buf[ADAM110_FW_HEADER_SIZE];
+	uint8_t chunk_buf[ADAM110_FW_CHUNK_SIZE + 2]; //2(header+command) +128
+	int ret = OK;
+	uint32_t fw_ver;
 
 	/* check f/w version */
-	int ret = ADAM110_GET_FW_VER(dev, &rxpkt);
+	ret = ADAM110_GET_FW_VER(dev, &rxpkt);
 	if (ret != RSLT_SUCCESS) {
 		return -EINVAL;
 	} 
 	
-    cur_fw_ver = ((uint32_t)rxpkt.parm1 << 24) | ((uint32_t)rxpkt.parm2 << 16) | ((uint32_t)rxpkt.parm3 << 8) | ((uint32_t)rxpkt.parm4);
-    
-    audvdbg("Cur FW ver: %d.%d.%d (0x%08X)\n", rxpkt.parm1, rxpkt.parm2, (rxpkt.parm3 << 8 | rxpkt.parm4), cur_fw_ver);
-	return OK;
+    fw_ver = rxpkt.parm1 << 24 | rxpkt.parm2 << 16 | rxpkt.parm3 << 8 | rxpkt.parm4;
+	auddbg("FW ver:0x%8x\n",fw_ver);
 
-#ifdef NEED_IMPL_FIRMWARE_UPDATE
-    fd = open(mcu_package, O_RDONLY);
+	fd = open(mcu_package, O_RDONLY);
 	if (fd < 0) {
-		auddbg("[E] Open failed %s (%d)\n", mcu_package, errno);
+		auddbg("[E] Failed to open MCU package: %s (errno: %d)\n", mcu_package, errno);
 		return -ENOENT;
 	}
 
-	nread = read(fd, header, sizeof(header));
-
-	close(fd);
-
-	if (nread < (ssize_t)sizeof(header)) {
-		auddbg("[E] Header read failed (read:%zd)\n", nread);
-		return (nread < 0) ? -errno : -EIO;
-	}
-
-	img_fw_ver = ((uint32_t)header[0] << 24) | ((uint32_t)header[1] << 16) | ((uint32_t)header[2] << 8) | ((uint32_t)header[3]);
-
-	audvdbg("IMG FW ver: %d.%d.%d (0x%08X)\n", header[0], header[1], (header[2] << 8 | header[3]), img_fw_ver);
-
-	if (img_fw_ver <= cur_fw_ver) {
-		audvdbg("[I] Skip update (Current is latest)\n");
-		return OK;
-	}
-
-	audvdbg("[I] Update starting...\n");
-
-	if (ADAM110_AI_UPDATE_START(spi, &rxpkt) != RSLT_SUCCESS) {
+	if (fstat(fd, &st) != 0) {
 		close(fd);
 		return -EINVAL;
 	}
 
-	up_udelay(ADAM110_TXRX_DELAY * 100);
-	while (1) {
-		nread = read(fd, chunk_buf, ADAM110_MODEL_CHUNK_SIZE);
-		if (nread == 0) {
-			break; 
-		}
-        
-		if (nread < 0) {
+	fw_size = (uint32_t)st.st_size - ADAM110_FW_HEADER_SIZE;
+
+	nread = read(fd, fw_buf, ADAM110_FW_HEADER_SIZE);
+	if (nread == 0) {
+		auddbg("[E] Failed to read MCU package header: %s (errno: %d)\n", mcu_package, errno);
+		close(fd);
+		return -ENOENT;
+	}
+
+	/* check vendor id */
+    if (ADAM110_FW_VENDOR_ID != fw_buf[ADAM110_FW_HEADER_VENDOR_OFFSET]) {
+		auddbg("[E] Wrong F/W.\n");
+		close(fd);
+		return -EINVAL;
+	}
+
+	/* check fw version */
+	uint32_t img_fw_ver = fw_buf[ADAM110_FW_HEADER_VER_MAJOR_OFFSET] << 24 | \
+						  fw_buf[ADAM110_FW_HEADER_VER_MINOR_OFFSET] << 16 | \
+						  fw_buf[ADAM110_FW_HEADER_VER_PATCH_H_OFFSET] << 8 | \
+						  fw_buf[ADAM110_FW_HEADER_VER_PATCH_L_OFFSET];
+	if (fw_ver == img_fw_ver) {
+		auddbg("[I] Same F/W.\n");
+		close(fd);
+		return OK;
+	}
+
+	auddbg("IMG FW ver:0x%8x\n",img_fw_ver);
+
+	/* check new fw image checksum16 */
+	uint16_t img_header_checksum = fw_buf[ADAM110_FW_HEADER_CHKSUM_H_OFFSET] << 8 | \
+								   fw_buf[ADAM110_FW_HEADER_CHKSUM_L_OFFSET];
+    uint16_t img_checksum = adam110_calculate_checksum16(fd);
+	if (img_header_checksum != img_checksum) {
+		auddbg("[E] F/W image checksum failed.(0x%8x:0x%8x)\n", img_header_checksum, img_checksum);
+		close(fd);
+		return -EINVAL;
+	}
+
+	if (fw_ver != 0xB004C0DE) {
+		ret = ADAM110_SET_FW_BOOT_MODE(dev, &rxpkt);
+		if (ret != RSLT_SUCCESS) {
+			auddbg("[E] Enter boot mode failed.\n");
 			close(fd);
-			return -EIO;
+			return -EINVAL;
 		}
 
-		uint8_t p1, p2;
-		if (nread == ADAM110_MODEL_CHUNK_SIZE) {
-			p1 = 0x01;
-			p2 = 0x01;
-		} else {
-			uint16_t actual_len = (uint16_t)(nread + 1);
-			p1 = (uint8_t)((actual_len >> 8) & 0xFF);
-			p2 = (uint8_t)(actual_len & 0xFF);
+		up_udelay(100*1000);
+		g_adam110->lower->reset();
+		up_udelay(500*1000);
+	}
+
+	ret = ADAM110_GET_FW_BOOT_MODE(dev, &rxpkt);
+	if ((ret != RSLT_SUCCESS) ||
+		(rxpkt.parm1 << 24 | rxpkt.parm2 << 16 | rxpkt.parm3 << 8 | rxpkt.parm4) != ADAM110_FW_BOOT_MODE_OK) {
+		auddbg("[E] Enter boot mode failed.\n");
+		close(fd);
+		return -EINVAL;
+	}
+
+	ret = ADAM110_SET_FW_ERASE(dev, &rxpkt);
+	if (ret != RSLT_SUCCESS) {
+		auddbg("[E] Erase failed.\n");
+		close(fd);
+		return -EINVAL;
+	}
+
+	up_udelay(ADAM110_FW_ERASE_WAITTIME);
+
+	if (lseek(fd, ADAM110_FW_HEADER_SIZE, SEEK_SET) == (off_t)-1) {
+		auddbg("[E] Failed to seek to data start (16B).\n");
+		close(fd);
+	    return -EIO;
+	}
+
+	while (sent_size < fw_size) {
+		ret = ADAM110_SET_FW_UPDATE(dev, &rxpkt);
+		if (ret != RSLT_SUCCESS) {
+			close(fd);
+			return -EINVAL;
 		}
 
-		retry_remain = ADAM110_MODEL_RETRY_CNT;
-		while (retry_remain > 0) {
-			int ret = ADAM110_AI_CHECK_XMIT(spi, p1, p2, &rxpkt);
+		up_udelay(ADAM110_FW_UPDATE_WAITTIME);
 
-			if (rxpkt.op == RSLT_SUCCESS) {
-				chunk_buf[nread] = adam110_calculate_checksum(chunk_buf, nread);
-				adam110_spi_exchange(spi, chunk_buf, nread + 1, NULL, 0);
-				sent_size += nread;
-				up_udelay(ADAM110_TXRX_DELAY);
-				break; 
-			} else if (rxpkt.op == RSLT_BUF_FULL) {
-				retry_remain--;
-				if (retry_remain <= 0) {
-					close(fd);
-					return -ETIMEDOUT;
-				}
-				up_udelay(ADAM110_TXRX_DELAY * 300);
-			} else {
+		if (rxpkt.op == RSLT_SUCCESS) {
+			memset(chunk_buf, 0xff, sizeof(chunk_buf));
+			chunk_buf[0] = PKT_HEADER_SEND;
+			chunk_buf[1] = FW_GET_UPDATE_DATA;
+			nread = read(fd, &chunk_buf[ADAM110_FW_DATA_HEADER], ADAM110_FW_CHUNK_SIZE);
+	        if (nread < 0) {
+				auddbg("[E] File read error.\n");
 				close(fd);
-				return -EIO;
+	            return -EIO;
 			}
+			adam110_spi_exchange(dev, chunk_buf, ADAM110_FW_CHUNK_SIZE + ADAM110_FW_DATA_HEADER, NULL, 0); /* must send 130byte (under 128byte need padding) */
+			sent_size += nread;
+			up_udelay(ADAM110_FW_WRITE_WAITTIME);
+		} else {
+			auddbg("[E] FW write failed.\n");
+			return -EIO;
 		}
 	}
 
 	close(fd);
-	return OK;
-#endif
 
+	/* checsum */
+	ret = ADAM110_SET_FW_CHECKSUM(dev, (uint8_t)(img_checksum >> 8 & 0xFF), (uint8_t)(img_checksum & 0xFF), &rxpkt);
+	if (rxpkt.op != RSLT_SUCCESS) {
+		auddbg("[E] FW chsum re failed.\n");
+		return -EINVAL;
+	}
+
+	up_udelay(ADAM110_FW_CHKSUM_WAITTIME);
+
+	ret = ADAM110_GET_FW_CHECKSUM(dev, &rxpkt);
+	if (rxpkt.op != RSLT_SUCCESS) {
+		auddbg("[E] Get FW chsum re failed.\n");
+		return -EINVAL;
+	}
+
+	if (rxpkt.parm3 == ADAM110_FW_CHKSUM_FAIL) {
+		auddbg("[E] FW chsum failed.\n");
+		return -EINVAL;
+	}
+
+	auddbg("[I] F/W updated (0x%x.0x%x.0x%x)\n", (uint8_t)(img_fw_ver >> 24), (uint8_t)(img_fw_ver >> 16), (uint16_t)(img_fw_ver & 0xFFFF));
+	return OK;
 }
 
 static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t type, uint8_t *buffer, uint32_t size)
@@ -792,11 +855,12 @@ static void adam110_work_handler(void *arg)
 	if (rxpkt.parm2 == AI_DATA_TYPE_SEAMLESS) {
 		uint32_t data_size = 0;
 		int is_final_packet = 0;
+		int recvsize = 0;
     
-		priv->keyword_bytes_left = (uint32_t)(rxpkt.parm3 << 8 | rxpkt.parm4);
+		recvsize = (uint32_t)(rxpkt.parm3 << 8 | rxpkt.parm4);
 
-		if (priv->keyword_bytes_left > 0) {
-			data_size = (priv->keyword_bytes_left < 3840) ? priv->keyword_bytes_left : 3840;
+		if (recvsize > 0) {
+			data_size = (recvsize < 3840) ? recvsize : 3840;
         
 			is_final_packet = (data_size < 3840) ? 1 : 0;
 
@@ -806,10 +870,10 @@ static void adam110_work_handler(void *arg)
 				uint8_t recv_sum = s_temp_chunk[data_size];
 
 				if (cal_sum == recv_sum) {
-					uint8_t *dest_ptr = (uint8_t *)&s_rxsmlbuf[priv->keyword_bytes];
+					uint8_t *dest_ptr = (uint8_t *)&s_rxsmlbuf[priv->keyword_bytes_left];
 					memcpy(dest_ptr, s_temp_chunk, data_size);
 
-					priv->keyword_bytes += data_size;
+					priv->keyword_bytes_left += data_size;
 				} else {
 					auddbg("[E] KD checksum calc:0x%02x, Recv:0x%02x\n", cal_sum, recv_sum);
 					adam110_givesem(&priv->devsem);
@@ -817,12 +881,12 @@ static void adam110_work_handler(void *arg)
 			}
 		}
 
-		if (is_final_packet && priv->keyword_bytes > 0) {
+		if (is_final_packet && priv->keyword_bytes_left == priv->keyword_bytes) {
 			msg.msgId = AUDIO_MSG_KD;
 			msg.u.pPtr = (void *)s_rxsmlbuf;
 
 			if (priv->dev.process_mq != NULL && priv->kd_enabled == true) {
-				audvdbg("[I] Final Total:%u\n", priv->keyword_bytes);
+				audvdbg("[I] Final Total:%u\n", priv->keyword_bytes_left);
             
 				priv->keyword_buffer = (uint8_t *)s_rxsmlbuf;
 				int ret_mq = mq_send(priv->dev.process_mq, (FAR const char *)&msg, sizeof(msg), 100);
@@ -907,7 +971,7 @@ static void adam110_work_handler(void *arg)
 						apb->nbytes = copy_len;
 
 						if (pcm_size > apb->nmaxbytes) {
-							auddbg("pcm truncated: pcm=%u apb=%u drop=%u\n", pcm_size, apb->nmaxbytes, pcm_size - apb->nmaxbytes);
+							audvdbg("pcm truncated: pcm=%u apb=%u drop=%u\n", pcm_size, apb->nmaxbytes, pcm_size - apb->nmaxbytes);
 						}
 
 #ifdef CONFIG_AUDIO_MULTI_SESSION
@@ -1535,7 +1599,7 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		bufinfo->buffer_size = priv->sample_size;
 		bufinfo->nbuffers = CONFIG_ADAM110_NUM_BUFFERS;
 
-		audvdbg("[I] buffer_size : %d nbuffers : %d\n",
+		auddbg("[I] buffer_size : %d nbuffers : %d\n",
 				bufinfo->buffer_size, bufinfo->nbuffers);
 
 		adam110_givesem(&priv->devsem);
@@ -1632,7 +1696,6 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	break;
 	case AUDIOIOC_GETKDDATA: {
 		memcpy((uint8_t *)arg, priv->keyword_buffer, priv->keyword_bytes);
-		priv->keyword_bytes = 0;
 		priv->keyword_bytes_left = 0;
 	}
 	break;
@@ -1816,7 +1879,6 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	int ret = OK;
 	t_proto_pkt rxpkt;
 	int retry = ADAM110_RETRY_CNT;
-	uint32_t cur_fw_ver = 0, fw_ver = 0;
 
 	priv = (FAR struct adam110_dev_s *)kmm_zalloc(sizeof(struct adam110_dev_s));
 	if (!priv) {
@@ -1838,6 +1900,7 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	priv->recording = false;
 	priv->mute = false;
 	priv->dev.process_mq = NULL;
+	priv->keyword_bytes = ADAM110_KEYWORD_DATA_SIZE;
 
 #ifdef USE_HOST_RINGBUFFER
 	priv->pcm_ring_size = ADAM110_PCM_RING_SIZE_4SEC;
@@ -1882,7 +1945,6 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 		up_udelay(ADAM110_HW_RST_WAIT);
 	}
 
-#ifdef NEED_IMPL_FIRMWARE_UPGRADE
 	/* firmware update */
 	retry = ADAM110_RETRY_CNT;
 	while (retry-- > 0) {
@@ -1902,7 +1964,7 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 			}
 		}
 	}
-#endif
+
 	/* model update */
     if (ret == OK) {
         ret = ADAM110_SET_MODEL(priv);
