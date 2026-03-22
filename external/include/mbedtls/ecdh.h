@@ -167,8 +167,6 @@ typedef struct mbedtls_ecdh_context {
                                                     if this flag is set. */
 #endif /* MBEDTLS_ECP_RESTARTABLE */
 #endif /* MBEDTLS_ECDH_LEGACY_CONTEXT */
-    int MBEDTLS_PRIVATE(server_raw_public_key);  /*!< Use server Raw Public Key. */
-    int MBEDTLS_PRIVATE(client_raw_public_key);  /*!< Use client Raw Public Key. */
 }
 mbedtls_ecdh_context;
 
