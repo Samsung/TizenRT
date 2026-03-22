@@ -1839,10 +1839,12 @@ static void ssl_key_cert_free(mbedtls_ssl_key_cert *key_cert)
     }
 }
 
+#ifdef MBEDTLS_OCF_PATCH
 void mbedtls_ssl_key_cert_free(mbedtls_ssl_key_cert *key_cert)
 {
     ssl_key_cert_free(key_cert);
 }
+#endif /* MBEDTLS_OCF_PATCH */
 
 /* Append a new keycert entry to a (possibly empty) list */
 MBEDTLS_CHECK_RETURN_CRITICAL

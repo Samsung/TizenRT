@@ -3305,7 +3305,9 @@ void mbedtls_ssl_conf_ca_chain(mbedtls_ssl_config *conf,
                                mbedtls_x509_crt *ca_chain,
                                mbedtls_x509_crl *ca_crl);
 
+#ifdef MBEDTLS_OCF_PATCH
 void mbedtls_ssl_key_cert_free(mbedtls_ssl_key_cert *key_cert);
+#endif /* MBEDTLS_OCF_PATCH */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_CERT_REQ_ALLOWED_ENABLED)
 /**
