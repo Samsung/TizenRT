@@ -158,3 +158,62 @@
 /* MBEDTLS_PKCS5_C should be enabled to encrypt TASH password with PBKDF2 */
 #define MBEDTLS_PKCS5_C
 #endif /* CONFIG_MBEDTLS_PKCS5_C */
+
+/* TizenRT-specific overrides vs upstream mbedtls_config.h */
+
+/* Disable MBEDTLS_HAVE_TIME_DATE when the platform has no time/date support. */
+#ifdef CONFIG_TLS_HAVE_NO_TIME_DATE
+#undef MBEDTLS_HAVE_TIME_DATE
+#endif
+
+/* Enable deprecated-API compiler warnings (upstream default: disabled). */
+#define MBEDTLS_DEPRECATED_WARNING
+
+/* Disable Curve448 (not needed on TizenRT targets). */
+#undef MBEDTLS_ECP_DP_CURVE448_ENABLED
+
+/* Always enable platform entropy (upstream default: disabled). */
+#define MBEDTLS_NO_PLATFORM_ENTROPY
+
+/* Disable cipher modules not used on TizenRT. */
+#undef MBEDTLS_ARIA_C
+#undef MBEDTLS_CHACHA20_C
+#undef MBEDTLS_CHACHAPOLY_C
+#undef MBEDTLS_NIST_KW_C
+
+/* Limit MPI size to reduce memory usage. */
+#undef MBEDTLS_MPI_MAX_SIZE
+#define MBEDTLS_MPI_MAX_SIZE            512
+
+/* Tune ECP performance settings. */
+#undef MBEDTLS_ECP_WINDOW_SIZE
+#define MBEDTLS_ECP_WINDOW_SIZE            7
+#undef MBEDTLS_ECP_FIXED_POINT_OPTIM
+#define MBEDTLS_ECP_FIXED_POINT_OPTIM      1
+
+/* Reduce SSL session cache size. */
+#undef MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
+#define MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES      2
+
+/* Restrict cipher suites to AES-only ephemeral and non-ephemeral suites. */
+#define MBEDTLS_SSL_CIPHERSUITES                        \
+	/* All AES-256 ephemeral suites */                  \
+	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,    \
+	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,      \
+	MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,        \
+	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,    \
+	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,      \
+	MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,        \
+	/* All AES-128 ephemeral suites */                  \
+	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,    \
+	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,      \
+	MBEDTLS_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,        \
+	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,    \
+	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,      \
+	MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,        \
+	/* All AES-256 suites */                            \
+	MBEDTLS_TLS_RSA_WITH_AES_256_GCM_SHA384,            \
+	MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA256,            \
+	/* All AES-128 suites */                            \
+	MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256,            \
+	MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA256

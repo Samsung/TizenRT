@@ -182,9 +182,7 @@
  * mbedtls_platform_gmtime_r() at compile-time by using the macro
  * MBEDTLS_PLATFORM_GMTIME_R_ALT.
  */
-#ifndef CONFIG_TLS_HAVE_NO_TIME_DATE
 #define MBEDTLS_HAVE_TIME_DATE
-#endif
 
 /**
  * \def MBEDTLS_PLATFORM_MEMORY
@@ -275,7 +273,7 @@
  *
  * Uncomment to get warnings on using deprecated functions and features.
  */
-#define MBEDTLS_DEPRECATED_WARNING
+//#define MBEDTLS_DEPRECATED_WARNING
 
 /**
  * \def MBEDTLS_DEPRECATED_REMOVED
@@ -688,7 +686,7 @@
 #define MBEDTLS_ECP_DP_BP512R1_ENABLED
 /* Montgomery curves (supporting ECP) */
 #define MBEDTLS_ECP_DP_CURVE25519_ENABLED
-// #define MBEDTLS_ECP_DP_CURVE448_ENABLED
+#define MBEDTLS_ECP_DP_CURVE448_ENABLED
 
 /**
  * \def MBEDTLS_ECP_NIST_OPTIM
@@ -1091,7 +1089,7 @@
  *
  * Uncomment this macro to disable the built-in platform entropy functions.
  */
-#define MBEDTLS_NO_PLATFORM_ENTROPY
+//#define MBEDTLS_NO_PLATFORM_ENTROPY
 
 /**
  * \def MBEDTLS_ENTROPY_FORCE_SHA256
@@ -2173,7 +2171,6 @@
  *      MBEDTLS_TLS_PSK_WITH_AES_128_GCM_SHA256
  *      MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256
  *      MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA
- *      MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256
  *
  * PEM_PARSE uses AES for decrypting encrypted keys.
  */
@@ -2344,7 +2341,7 @@
  *      MBEDTLS_TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256
  *      MBEDTLS_TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384
  */
-// #define MBEDTLS_ARIA_C
+#define MBEDTLS_ARIA_C
 
 /**
  * \def MBEDTLS_CCM_C
@@ -2368,7 +2365,7 @@
  *
  * Module:  library/chacha20.c
  */
-// #define MBEDTLS_CHACHA20_C
+#define MBEDTLS_CHACHA20_C
 
 /**
  * \def MBEDTLS_CHACHAPOLY_C
@@ -2379,7 +2376,7 @@
  *
  * This module requires: MBEDTLS_CHACHA20_C, MBEDTLS_POLY1305_C
  */
-// #define MBEDTLS_CHACHAPOLY_C
+#define MBEDTLS_CHACHAPOLY_C
 
 /**
  * \def MBEDTLS_CIPHER_C
@@ -2677,7 +2674,7 @@
  *
  * Requires: MBEDTLS_AES_C and MBEDTLS_CIPHER_C
  */
-// #define MBEDTLS_NIST_KW_C
+#define MBEDTLS_NIST_KW_C
 
 /**
  * \def MBEDTLS_MD_C
@@ -3632,7 +3629,7 @@
 
 /* MPI / BIGNUM options */
 //#define MBEDTLS_MPI_WINDOW_SIZE            2 /**< Maximum window size used. */
-#define MBEDTLS_MPI_MAX_SIZE            512 /**< Maximum number of bytes for usable MPIs. */
+//#define MBEDTLS_MPI_MAX_SIZE            1024 /**< Maximum number of bytes for usable MPIs. */
 
 /* CTR_DRBG options */
 //#define MBEDTLS_CTR_DRBG_ENTROPY_LEN               48 /**< Amount of entropy used per seed by default (48 with SHA-512, 32 with SHA-256) */
@@ -3648,8 +3645,8 @@
 //#define MBEDTLS_HMAC_DRBG_MAX_SEED_INPUT      384 /**< Maximum size of (re)seed buffer */
 
 /* ECP options */
-#define MBEDTLS_ECP_WINDOW_SIZE            7 /**< Maximum window size used */
-#define MBEDTLS_ECP_FIXED_POINT_OPTIM      1 /**< Enable fixed-point speed-up */
+//#define MBEDTLS_ECP_WINDOW_SIZE            4 /**< Maximum window size used */
+//#define MBEDTLS_ECP_FIXED_POINT_OPTIM      1 /**< Enable fixed-point speed-up */
 
 /* Entropy options */
 //#define MBEDTLS_ENTROPY_MAX_SOURCES                20 /**< Maximum number of sources supported */
@@ -3741,7 +3738,7 @@
 
 /* SSL Cache options */
 //#define MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT       86400 /**< 1 day  */
-#define MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES      2 /**< Maximum entries in cache */
+//#define MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES      50 /**< Maximum entries in cache */
 
 /* SSL options */
 
@@ -3848,27 +3845,7 @@
  *
  * The value below is only an example, not the default.
  */
-#define MBEDTLS_SSL_CIPHERSUITES                        \
-	/* All AES-256 ephemeral suites */                  \
-	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,    \
-	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,      \
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,        \
-	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,    \
-	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,      \
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,        \
-	/* All AES-128 ephemeral suites */                  \
-	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,    \
-	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,      \
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,        \
-	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,    \
-	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,      \
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,        \
-	/* All AES-256 suites */                            \
-	MBEDTLS_TLS_RSA_WITH_AES_256_GCM_SHA384,            \
-	MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA256,            \
-	/* All AES-128 suites */                            \
-	MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256,            \
-	MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA256
+//#define MBEDTLS_SSL_CIPHERSUITES MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
 
 /**
  * \def MBEDTLS_SSL_TLS1_3_TICKET_AGE_TOLERANCE
