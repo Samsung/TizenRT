@@ -512,23 +512,6 @@ CAResult_t CASelectCipherSuite(const uint16_t cipher, CATransportAdapter_t adapt
     return res;
 }
 
-CAResult_t CAEnableAnonECDHCipherSuite(const bool enable)
-{
-    OIC_LOG_V(DEBUG, TAG, "CAEnableAnonECDHCipherSuite");
-    CAResult_t res = CA_STATUS_FAILED;
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-    // TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256    0xFF00 replaces 0xC018
-    res = CAsetTlsCipherSuite(enable ? 0xFF00 : 0x00);
-    if (CA_STATUS_OK != res)
-    {
-        OIC_LOG_V(ERROR, TAG, "Failed to CAsetTlsCipherSuite : %d", res);
-    }
-#else
-    OIC_LOG(ERROR, TAG, "Method not supported");
-#endif
-    OIC_LOG_V(ERROR, TAG, "Out %s", __func__);
-    return res;
-}
 
 CAResult_t CAGenerateOwnerPSK(const CAEndpoint_t* endpoint,
                     const uint8_t* label, const size_t labelLen,

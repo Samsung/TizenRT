@@ -1144,10 +1144,6 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest * ehRe
                         CAResult_t caRes = CA_STATUS_FAILED;
                         if(OIC_PRECONFIG_PIN == gDoxm->oxmSel || OIC_RANDOM_DEVICE_PIN == gDoxm->oxmSel)
                         {
-                            caRes = CAEnableAnonECDHCipherSuite(false);
-                            VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
-                            OIC_LOG(INFO, TAG, "ECDH_ANON CipherSuite is DISABLED");
-
                             caRes = CASelectCipherSuite((uint16_t)MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256, ehRequest->devAddr.adapter);
                             VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
                             OIC_LOG(INFO, TAG, "ECDHE_PSK CipherSuite will be used for MOT");
@@ -1251,10 +1247,6 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest * ehRe
                             ehRet = OC_EH_ERROR;
                             goto exit;
                         }
-                        OIC_LOG (INFO, TAG, "Doxm EntityHandle  enabling AnonECDHCipherSuite");
-#if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
-                        ehRet = (CAEnableAnonECDHCipherSuite(true) == CA_STATUS_OK) ? OC_EH_OK : OC_EH_ERROR;
-#endif // __WITH_DTLS__ or __WITH_TLS__
                         goto exit;
                     }
                     else
@@ -1274,15 +1266,6 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest * ehRe
                             ehRet = OC_EH_ERROR;
                             goto exit;
                         }
-
-                        /*
-                         * Disable anonymous ECDH cipher in tinyDTLS since device is now
-                         * in owned state.
-                         */
-                        CAResult_t caRes = CA_STATUS_OK;
-                        caRes = CAEnableAnonECDHCipherSuite(false);
-                        VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
-                        OIC_LOG(INFO, TAG, "ECDH_ANON CipherSuite is DISABLED");
 
                         //In case of Mutual Verified Just-Works, verify mutualVerifNum
                         if (OIC_MV_JUST_WORKS == newDoxm->oxmSel && false == newDoxm->owned &&
@@ -1363,10 +1346,6 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest * ehRe
 
 #if defined(__WITH_DTLS__) || defined(__WITH_TLS__)
                         CAResult_t caRes = CA_STATUS_OK;
-
-                        caRes = CAEnableAnonECDHCipherSuite(false);
-                        VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
-                        OIC_LOG(INFO, TAG, "ECDH_ANON CipherSuite is DISABLED");
 
                         caRes = CASelectCipherSuite(MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
                                                     ehRequest->devAddr.adapter);
@@ -1458,12 +1437,8 @@ static OCEntityHandlerResult HandleDoxmPostRequest(OCEntityHandlerRequest * ehRe
                         OIC_LOG(WARNING, TAG, "Failed to update DOXM in persistent storage");
                         ehRet = OC_EH_ERROR;
                     }
-                    CAResult_t caRes = CAEnableAnonECDHCipherSuite(false);
-                    VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
-                    OIC_LOG(INFO, TAG, "ECDH_ANON CipherSuite is DISABLED");
-
                     //Unset pre-selected ciphersuite, if any
-                    caRes = CASelectCipherSuite(0, ehRequest->devAddr.adapter);
+                    CAResult_t caRes = CASelectCipherSuite(0, ehRequest->devAddr.adapter);
                     VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
                     OIC_LOG(DEBUG, TAG, "No ciphersuite preferred");
 
@@ -1838,10 +1813,6 @@ static void PrepareMOT(const OicSecDoxm_t* doxm)
 
         if(OIC_PRECONFIG_PIN == doxm->oxmSel)
         {
-            caRes = CAEnableAnonECDHCipherSuite(false);
-            VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
-            OIC_LOG(INFO, TAG, "ECDH_ANON CipherSuite is DISABLED");
-
             caRes = CASelectCipherSuite((uint16_t)MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256, CA_ADAPTER_IP);
             VERIFY_SUCCESS(TAG, caRes == CA_STATUS_OK, ERROR);
 #ifdef __WITH_TLS__

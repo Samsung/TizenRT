@@ -290,7 +290,6 @@ typedef enum
     SSL_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
     SSL_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     SSL_ECDHE_PSK_WITH_AES_128_CBC_SHA256,
-    SSL_ECDH_ANON_WITH_AES_128_CBC_SHA256,
     SSL_CIPHER_MAX
 } SslCipher_t;
 
@@ -310,8 +309,7 @@ static const int tlsCipher[SSL_CIPHER_MAX][2] =
     {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM, 0},
     {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, 0},
     {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, 0},
-    {MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256, 0},
-    {MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256, 0}
+    {MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256, 0}
 };
 
 static int g_cipherSuitesList[SSL_CIPHER_MAX];
@@ -2246,8 +2244,7 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
 
             int selectedCipher = peer->ssl.session->ciphersuite;
             OIC_LOG_V(DEBUG, NET_SSL_TAG, "(D)TLS Session is connected via ciphersuite [0x%x]", selectedCipher);
-            if (MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 != selectedCipher &&
-                MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256 != selectedCipher)
+            if (MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 != selectedCipher)
             {
                 char uuid[UUID_LENGTH * 2 + 5] = {0};
                 void * uuidPos = NULL;
@@ -2471,10 +2468,6 @@ static SslCipher_t GetCipherIndex(const uint32_t cipher)
         {
             return SSL_ECDHE_PSK_WITH_AES_128_CBC_SHA256;
         }
-        case MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256:
-        {
-            return SSL_ECDH_ANON_WITH_AES_128_CBC_SHA256;
-        }
         default:
         {
             return SSL_CIPHER_MAX;
@@ -2659,8 +2652,7 @@ CAResult_t CAsslGenerateOwnerPsk(const CAEndpoint_t *endpoint,
     int ivSize = 0;
     int keySize = 0;
     int keyBlockLen = 0;
-    if (MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher ||
-        MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher)
+    if (MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 == g_caSslContext->selectedCipher)
     {
         // 2 * ( 32 + 0 + 16 ) = 96
         macKeyLen = SHA256_MAC_KEY_LENGTH;

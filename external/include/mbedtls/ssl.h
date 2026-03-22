@@ -569,8 +569,6 @@
 
 #define MBEDTLS_TLS_EXT_MAX_FRAGMENT_LENGTH          1
 
-#define MBEDTLS_TLS_CERT_TYPE_RAW_PUBLIC_KEY         2
-
 #define MBEDTLS_TLS_EXT_TRUNCATED_HMAC               4
 #define MBEDTLS_TLS_EXT_STATUS_REQUEST               5 /* RFC 6066 TLS 1.2 and 1.3 */
 
@@ -3424,7 +3422,7 @@ void mbedtls_ssl_conf_ca_cb(mbedtls_ssl_config *conf,
  */
 int mbedtls_ssl_conf_own_cert(mbedtls_ssl_config *conf,
                               mbedtls_x509_crt *own_cert,
-                              mbedtls_pk_context *pk_key);                                                     
+                              mbedtls_pk_context *pk_key);
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 #if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
