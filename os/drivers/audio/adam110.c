@@ -1156,6 +1156,12 @@ static int adam110_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			uint16_t sensitivity = caps->ac_controls.w;
 			uint8_t level = AI_MODEL_THD_LOW;
 			t_proto_pkt rxpkt;
+
+			/* To Do
+			 * Discussion is required regarding the scenarios
+			 * NDP120 (Range : 0~0xFFFF)
+			 * ADAM110 (Low/Mid/High)
+			 */
 			if (sensitivity >= 0xAAAA)
 				level = AI_MODEL_THD_HIGH;
 			else if (sensitivity >= 0x5555)
