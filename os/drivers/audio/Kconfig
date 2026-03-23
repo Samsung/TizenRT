@@ -203,6 +203,19 @@ config AUDIO_ADAM110_AEC_SUPPORT
 	--help--
         Select to enable support AEC
 
+config AUDIO_ADAM110_AEC_SUPPORT
+	bool "ADAM110 Support AEC"
+	default n
+	depends on AUDIO_ADAM110
+	--help--
+        Select to enable support AEC
+
+config AUDIO_ADAM110_ALIVE_CHECK
+	bool "ADAM110 alive check thread"
+	default n
+	---help---
+		Select to enable support Alive check thread
+
 endif
 
 config AUDIO_SYU645B

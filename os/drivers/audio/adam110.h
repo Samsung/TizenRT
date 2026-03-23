@@ -60,12 +60,6 @@
 
 #include <tinyara/pm/pm.h>
 
-//#define USE_HOST_RINGBUFFER
-#define USE_DIRECT_APB
-#if defined(USE_HOST_RINGBUFFER) && defined(USE_DIRECT_APB)
-#error "USE_HOST_RINGBUFFER and USE_DIRECT_APB cannot be enabled together"
-#endif
-
 #define ADAM110_MIC_GAIN_MAX		255
 #define ADAM110_MIC_GAIN_DEFAULT	128
 #define ADAM110_DEFAULT_SENSITIVITY	0xAAAA
@@ -160,13 +154,6 @@
 #define RSLT_CHKSUM_ERR				0x04 /* Checksum Error */
 #define RSLT_SYNC_ERR				0x05 /* Sync Byte Error */
 #define RSLT_INTERNAL_ERR			0x06 /* Internal Error */
-
-#ifdef USE_HOST_RINGBUFFER
-#define ADAM110_PCM_SAMPLE_RATE			16000 //16k
-#define ADAM110_PCM_BYTES_PER_SAMPLE	2     // 16bit
-#define ADAM110_PCM_SECONDS				4     // 4sec
-#define ADAM110_PCM_RING_SIZE_4SEC		(ADAM110_PCM_SAMPLE_RATE * ADAM110_PCM_BYTES_PER_SAMPLE * ADAM110_PCM_SECONDS)
-#endif
 
 typedef struct {
 	uint8_t header;
@@ -284,26 +271,6 @@ struct adam110_dev_s {
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
 	volatile bool keyword_detect;
 #endif
-#endif
-
-#ifdef USE_HOST_RINGBUFFER
-    /* Host PCM Ring Buffer */
-    uint8_t  *pcm_ring;
-    uint32_t  pcm_ring_size;
-    uint32_t  pcm_w;
-    uint32_t  pcm_r;
-    uint32_t  pcm_fill;
-
-    /* overflow debug stats */
-    uint32_t pcm_ovf_count;
-    uint32_t pcm_drop_bytes_total;
-#endif
-#if defined(USE_HOST_RINGBUFFER) || defined(USE_DIRECT_APB)
-    /* apb wait queue */
-    struct sq_queue_s pcm_apb_waitq;
-
-    /* protection */
-    sem_t pcmsem;
 #endif
 };
 

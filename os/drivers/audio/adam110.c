@@ -645,108 +645,13 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 	return ret;
 }
 
-#ifdef USE_HOST_RINGBUFFER
-static void pcm_ring_log_overflow(FAR struct adam110_dev_s *p,
-                                  uint32_t incoming,
-                                  uint32_t drop,
-                                  uint32_t fill_before)
-{
-	p->pcm_ovf_count++;
-	p->pcm_drop_bytes_total += drop;
-
-	if ((p->pcm_ovf_count == 1) || ((p->pcm_ovf_count % 10) == 0)) {
-		auddbg("[HOST_RING] OVERFLOW #%lu: incoming=%lu drop=%lu fill_before=%lu ring=%lu drop_total=%lu\n",
-				(unsigned long)p->pcm_ovf_count,
-				(unsigned long)incoming,
-				(unsigned long)drop,
-				(unsigned long)fill_before,
-				(unsigned long)p->pcm_ring_size,
-				(unsigned long)p->pcm_drop_bytes_total);
-    }
-}
-
-static void pcm_ring_push(FAR struct adam110_dev_s *p, const uint8_t *src, uint32_t n)
-{
-	if (!p || !src || n == 0)
-		return;
-
-	/* if incoming bigger than ring: keep only last ring_size bytes */
-	if (n > p->pcm_ring_size) {
-		src += (n - p->pcm_ring_size);
-		n = p->pcm_ring_size;
-	}
-
-	uint32_t fill_before = p->pcm_fill;
-
-	/* drop oldest if overflow */
-	if (p->pcm_fill + n > p->pcm_ring_size) {
-		uint32_t drop = (p->pcm_fill + n) - p->pcm_ring_size;
-		pcm_ring_log_overflow(p, n, drop, fill_before);
-
-		p->pcm_r = (p->pcm_r + drop) % p->pcm_ring_size;
-		p->pcm_fill -= drop;
-	}
-
-	uint32_t first = p->pcm_ring_size - p->pcm_w;
-	uint32_t w1 = (n < first) ? n : first;
-
-	memcpy(p->pcm_ring + p->pcm_w, src, w1);
-	if (n > w1) {
-		memcpy(p->pcm_ring, src + w1, n - w1);
-	}
-
-	p->pcm_w = (p->pcm_w + n) % p->pcm_ring_size;
-	p->pcm_fill += n;
-}
-
-static uint32_t pcm_ring_pop(FAR struct adam110_dev_s *p, uint8_t *dst, uint32_t n)
-{
-	if (!p || !dst || n == 0 || p->pcm_fill == 0)
-		return 0;
-
-	if (n > p->pcm_fill)
-		n = p->pcm_fill;
-
-	uint32_t first = p->pcm_ring_size - p->pcm_r;
-	uint32_t r1 = (n < first) ? n : first;
-
-	memcpy(dst, p->pcm_ring + p->pcm_r, r1);
-	if (n > r1) {
-		memcpy(dst + r1, p->pcm_ring, n - r1);
-	}
-
-	p->pcm_r = (p->pcm_r + n) % p->pcm_ring_size;
-	p->pcm_fill -= n;
-
-	return n;
-}
-
-static FAR struct ap_buffer_s * try_fill_one_apb(FAR struct adam110_dev_s *priv)
-{
-	struct ap_buffer_s *apb;
-
-	apb = (struct ap_buffer_s *)sq_remfirst(&priv->pcm_apb_waitq);
-	if (!apb)
-		return NULL;
-
-	uint32_t got = pcm_ring_pop(priv, apb->samp, apb->nmaxbytes);
-
-	apb->curbyte = 0;
-	apb->nbytes = got;
-
-	return apb;
-}
-#endif
-
-#ifdef USE_DIRECT_APB
 static FAR struct ap_buffer_s *pcm_waitq_take_one(FAR struct adam110_dev_s *priv)
 {
 	struct ap_buffer_s *apb;
 
-	apb = (struct ap_buffer_s *)sq_remfirst(&priv->pcm_apb_waitq);
+	apb = (struct ap_buffer_s *)sq_remfirst(&priv->pendq);
 	return apb;
 }
-#endif
 
 /************************************************************************************
  * Name: adam110_takesem
@@ -766,7 +671,7 @@ static void adam110_takesem(sem_t *sem)
 	} while (ret < 0);
 }
 
-#ifdef CONFIG_ADAM110_ALIVE_CHECK
+#ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
 static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 {
 	int ret = OK;
@@ -775,7 +680,7 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 
 	/* check keep alive from adam110 */
 	while (retry-- > 0) {
-		if (ADAM110_GET_KEEP_ALIVE(priv->spi, &rxpkt) == RSLT_SUCCESS) {
+		if (ADAM110_GET_KEEP_ALIVE(priv, &rxpkt) == RSLT_SUCCESS) {
 			ret = OK;
 			break;
 		} else {
@@ -788,7 +693,7 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 
 	/* if reset, re-send model */
     if (ret == OK && priv->fw_loaded == false) {
-        ret = ADAM110_SET_MODEL(priv->spi);
+        ret = ADAM110_SET_MODEL(priv);
         if (ret != RSLT_SUCCESS) {
             auddbg("[E] Model send fail!\n");
             ret = -EINVAL;
@@ -801,7 +706,7 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 	return ret;
 }
 
-static void adam110_app_device_alive_check(void)
+static int adam110_app_device_alive_check(int argc, FAR char *argv[])
 {
 	FAR struct adam110_dev_s *priv = (struct adam110_dev_s *)g_adam110;
 	int ret = OK;
@@ -833,6 +738,11 @@ static void adam110_work_handler(void *arg)
 	t_proto_pkt txpkt, rxpkt;
 	int ret = 0;
 
+	bool send_kd_msg = false;
+	bool send_pcm_cb = false;
+	FAR struct ap_buffer_s *pcm_apb = NULL;
+
+	memset(&msg, 0x00, sizeof(msg));
 	memset(&txpkt, 0x00, sizeof(txpkt));
 	memset(&rxpkt, 0x00, sizeof(rxpkt));
 
@@ -841,15 +751,13 @@ static void adam110_work_handler(void *arg)
 	ret = ADAM110_GET_KEEP_ALIVE(priv, &rxpkt);
 	if (ret != RSLT_SUCCESS) {
 		auddbg("[E] Keep alive failed.\n");
-		adam110_givesem(&priv->devsem);
-		return;	
+		goto out_unlock;
 	}
 
 	ret = ADAM110_GET_EVENT(priv, &rxpkt);
 	if (ret != RSLT_SUCCESS) {
 		auddbg("[E] Get event failed.\n");
-		adam110_givesem(&priv->devsem);
-		return;	
+		goto out_unlock;
 	}
 
 	if (rxpkt.parm2 == AI_DATA_TYPE_SEAMLESS) {
@@ -876,7 +784,7 @@ static void adam110_work_handler(void *arg)
 					priv->keyword_bytes_left += data_size;
 				} else {
 					auddbg("[E] KD checksum calc:0x%02x, Recv:0x%02x\n", cal_sum, recv_sum);
-					adam110_givesem(&priv->devsem);
+					goto out_unlock;
 				}
 			}
 		}
@@ -889,61 +797,21 @@ static void adam110_work_handler(void *arg)
 				audvdbg("[I] Final Total:%u\n", priv->keyword_bytes_left);
             
 				priv->keyword_buffer = (uint8_t *)s_rxsmlbuf;
-				int ret_mq = mq_send(priv->dev.process_mq, (FAR const char *)&msg, sizeof(msg), 100);
-            
-				if (ret_mq < 0) {
-					auddbg("[E] MQ:ret=%d, errno=%d\n", ret_mq, errno);
-				}
+				send_kd_msg = true;
 			}
 		}
+		goto out_unlock_then_mq;
 	}
 
-#if defined(USE_HOST_RINGBUFFER)
+
 	if (rxpkt.parm2 == AI_DATA_TYPE_AUDIO) {
 		uint16_t pcm_size = (uint16_t)(rxpkt.parm3 << 8 | rxpkt.parm4);
 
-		if (pcm_size > 0) {
-			if (pcm_size > ADAM110_RX_MAX_SIZE) {
-				auddbg("[HOST_RING] pcm_size(%d) > tmp(%d)\n", pcm_size, ADAM110_RX_MAX_SIZE);
-				pcm_size = ADAM110_RX_MAX_SIZE;
-			}
-
-			ret = ADAM110_GET_AUDIOBUFFER(priv, rxpkt.parm2, s_temp_chunk, pcm_size + 1);
-			if (ret == OK) {
-				uint8_t cal_sum = adam110_calculate_checksum(s_temp_chunk, pcm_size);
-				uint8_t recv_sum = s_temp_chunk[pcm_size];
-
-				if (cal_sum == recv_sum) {
-					adam110_takesem(&priv->pcmsem);
-					pcm_ring_push(priv, s_temp_chunk, pcm_size);
-					adam110_givesem(&priv->pcmsem);
-				}
-			}
-
-			while (1) {
-				FAR struct ap_buffer_s *apb = NULL;
-				adam110_takesem(&priv->pcmsem);
-				if (priv->pcm_fill > 0 && sq_peek(&priv->pcm_apb_waitq) != NULL) {
-					apb = try_fill_one_apb(priv);
-				}
-				adam110_givesem(&priv->pcmsem);
-
-				if (!apb)
-					break;
-
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-				priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK, NULL);
-#else
-				priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
-#endif
-			}
-        }
-    }
-#endif
-
-#if defined(USE_DIRECT_APB)
-	if (rxpkt.parm2 == AI_DATA_TYPE_AUDIO) {
-		uint16_t pcm_size = (uint16_t)(rxpkt.parm3 << 8 | rxpkt.parm4);
+		if (!priv->running || !priv->recording) {
+			auddbg("[PCM] drop after stop: running=%d recording=%d size=%u\n",
+				   priv->running, priv->recording, pcm_size);
+			goto out_unlock;
+		}
 
 		if (pcm_size > 0) {
 			if (pcm_size > ADAM110_RX_MAX_SIZE) {
@@ -957,31 +825,21 @@ static void adam110_work_handler(void *arg)
 				uint8_t recv_sum = s_temp_chunk[pcm_size];
 
 				if (cal_sum == recv_sum) {
-					FAR struct ap_buffer_s *apb = NULL;
-					uint32_t copy_len = 0;
+					pcm_apb = pcm_waitq_take_one(priv);
 
-					adam110_takesem(&priv->pcmsem);
-					apb = pcm_waitq_take_one(priv);
-					adam110_givesem(&priv->pcmsem);
+					if (pcm_apb) {
+						uint32_t copy_len = (pcm_size < pcm_apb->nmaxbytes) ? pcm_size : pcm_apb->nmaxbytes;
+						memcpy(pcm_apb->samp, s_temp_chunk, copy_len);
+						pcm_apb->curbyte = 0;
+						pcm_apb->nbytes = copy_len;
+						send_pcm_cb = true;
 
-					if (apb) {
-						copy_len = (pcm_size < apb->nmaxbytes) ? pcm_size : apb->nmaxbytes;
-						memcpy(apb->samp, s_temp_chunk, copy_len);
-						apb->curbyte = 0;
-						apb->nbytes = copy_len;
-
-						if (pcm_size > apb->nmaxbytes) {
-							audvdbg("pcm truncated: pcm=%u apb=%u drop=%u\n", pcm_size, apb->nmaxbytes, pcm_size - apb->nmaxbytes);
+						if (pcm_size > pcm_apb->nmaxbytes) {
+							auddbg("pcm truncated: pcm=%u pcm_apb=%u drop=%u\n", pcm_size, pcm_apb->nmaxbytes, pcm_size - pcm_apb->nmaxbytes);
 						}
-
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-						priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK, NULL);
-#else
-						priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
-#endif
 					}
 					else {
-						audvdbg("no waiting apb, drop pcm=%u\n", pcm_size);
+						auddbg("no waiting pcm_apb, drop pcm=%u\n", pcm_size);
 					}
 				}
 				else {
@@ -989,10 +847,37 @@ static void adam110_work_handler(void *arg)
 				}
 			}
         }
+		goto out_unlock_then_cb;
     }
-#endif
-	adam110_givesem(&priv->devsem);
+	goto out_unlock;
 
+out_unlock_then_mq:
+	adam110_givesem(&priv->devsem);
+	priv->lower->irq_enable(true);
+
+	if (send_kd_msg) {
+		int ret_mq = mq_send(priv->dev.process_mq, (FAR const char *)&msg, sizeof(msg), 100);
+		if (ret_mq < 0) {
+			auddbg("[E] MQ:ret=%d, errno=%d\n", ret_mq, errno);
+		}
+	}	
+	return;
+
+out_unlock_then_cb:
+	adam110_givesem(&priv->devsem);
+	priv->lower->irq_enable(true);
+
+	if (send_pcm_cb && pcm_apb) {
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, pcm_apb, OK, NULL);
+#else
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, pcm_apb, OK);
+#endif
+	}
+	return;
+
+out_unlock:
+	adam110_givesem(&priv->devsem);
 	priv->lower->irq_enable(true);
 
 }
@@ -1395,18 +1280,6 @@ static int adam110_start(FAR struct audio_lowerhalf_s *dev)
 
 	ADAM110_SET_INTR(priv, AI_DATA_TYPE_AUDIO, true, &rxpkt);
 
-	/* Enqueue buffers (enqueueed before the start of alc) to lower layer */
-	sq_entry_t *tmp = NULL;
-	sq_queue_t *q = &priv->pendq;
-	for (tmp = sq_peek(q); tmp; tmp = sq_next(tmp)) {
-		adam110_enqueuebuffer(dev, (struct ap_buffer_s *)tmp);
-	}
-
-	/* Remove audio buffers from pending queue here */
-	while ((tmp = sq_remfirst(&priv->pendq)) != NULL) {
-		apb_free((struct ap_buffer_s *)tmp);
-	}
-
 	adam110_givesem(&priv->devsem);
 	return 0;
 }
@@ -1438,6 +1311,18 @@ static int adam110_stop(FAR struct audio_lowerhalf_s *dev)
 	priv->running = false;
 	priv->recording = false;
 	ADAM110_SET_INTR(priv, AI_DATA_TYPE_AUDIO, false, &rxpkt);
+
+	FAR struct ap_buffer_s *apb;
+	int flushed = 0;
+
+	while ((apb = (FAR struct ap_buffer_s *)sq_remfirst(&priv->pendq)) != NULL) {
+		apb->nbytes = 0;
+		apb->curbyte = 0;
+		flushed++;
+	}
+
+	auddbg("[I] stop flushed pendq=%d\n", flushed);
+
 	adam110_givesem(&priv->devsem);
 	return 0;
 }
@@ -1508,42 +1393,11 @@ static int adam110_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 		return -EINVAL;
 	}
 
-	if (!priv->running) {
-		adam110_takesem(&priv->devsem);
-		sq_addlast((sq_entry_t *)&apb->dq_entry, &priv->pendq);
-		audvdbg("[I] enquene added buf 0x%x\n", apb);
-		adam110_givesem(&priv->devsem);
-		return 0;
-	}
-#if defined(USE_HOST_RINGBUFFER)
-	adam110_takesem(&priv->pcmsem);
-
-	if (priv->pcm_fill > 0) {
-		uint32_t got = pcm_ring_pop(priv, apb->samp, apb->nmaxbytes);
-		apb->curbyte = 0;
-		apb->nbytes = got;
-		adam110_givesem(&priv->pcmsem);
-
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK, NULL);
-#else
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
-#endif
-		return OK;
-	}
-
-	sq_addlast((sq_entry_t *)&apb->dq_entry, &priv->pcm_apb_waitq);
-	adam110_givesem(&priv->pcmsem);
+	adam110_takesem(&priv->devsem);
+	sq_addlast((sq_entry_t *)&apb->dq_entry, &priv->pendq);
+	auddbg("[I] enqueue added buf %p nmax=%u running=%d\n", apb, apb->nmaxbytes, priv->running);	
+	adam110_givesem(&priv->devsem);
 	return OK;
-#elif defined(USE_DIRECT_APB)
-	adam110_takesem(&priv->pcmsem);
-	sq_addlast((sq_entry_t *)&apb->dq_entry, &priv->pcm_apb_waitq);
-	adam110_givesem(&priv->pcmsem);
-	return OK;
-#else
-	audvdbg("[I] Return OK\n");
-	return OK;
-#endif
 }
 
 /****************************************************************************
@@ -1902,26 +1756,6 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	priv->dev.process_mq = NULL;
 	priv->keyword_bytes = ADAM110_KEYWORD_DATA_SIZE;
 
-#ifdef USE_HOST_RINGBUFFER
-	priv->pcm_ring_size = ADAM110_PCM_RING_SIZE_4SEC;
-	priv->pcm_ring = (uint8_t *)kmm_malloc(priv->pcm_ring_size);
-	if (!priv->pcm_ring) {
-		kmm_free(priv);
-		auddbg("[E] Adam110 ring alloc failed.\n");
-		return NULL;
-	}
-	priv->pcm_w = 0;
-	priv->pcm_r = 0;
-	priv->pcm_fill = 0;
-	priv->pcm_ovf_count = 0;
-	priv->pcm_drop_bytes_total = 0;
-#endif
-
-#if defined(USE_HOST_RINGBUFFER) || defined(USE_DIRECT_APB)
-	sq_init(&priv->pcm_apb_waitq);
-	sem_init(&priv->pcmsem, 0, 1);
-#endif
-
 #ifdef CONFIG_PM
     /* only used during pm callbacks */
 	g_adam110 = priv;
@@ -1980,8 +1814,8 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 
     g_adam110 = priv;
 
-#ifdef CONFIG_ADAM110_ALIVE_CHECK
-	pid_t pid = kernel_thread("alive_check", 100, 512, adam110_app_device_alive_check, NULL);
+#ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
+	pid_t pid = kernel_thread("alive_check", 100, 1024, adam110_app_device_alive_check, NULL);
 	if (pid < 0) {
 		auddbg("Device alive check thread creatiopn failed\n");
 		ret = -EINVAL;
@@ -1989,11 +1823,6 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 #endif
 
 	if (ret != OK) {
-#ifdef USE_HOST_RINGBUFFER
-		if (priv->pcm_ring) {
-			kmm_free(priv->pcm_ring);
-		}
-#endif
 		kmm_free(priv);
 		g_adam110 = NULL;
 		auddbg("[E] Model send fail!\n");
@@ -2001,7 +1830,7 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	}
 
 #ifdef CONFIG_PM
-	/* register callbacks only if NDP init is done */
+	/* register callbacks only if ADAM110 init is done */
 	ret = pm_register(&g_pmndpcb);
 	DEBUGASSERT(ret == OK);
 #endif
