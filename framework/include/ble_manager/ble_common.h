@@ -31,6 +31,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Length defines */
 #define BLE_BD_ADDR_MAX_LEN 6
 #define BLE_BD_ADDR_STR_LEN 17
@@ -131,3 +135,7 @@ typedef struct {
 	ble_le_coc_send_cb send_cb;
 	ble_le_coc_recv_cb recv_cb;
 } ble_le_coc_callback_list;
+
+#ifdef __cplusplus
+}
+#endif

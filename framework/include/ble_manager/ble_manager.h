@@ -36,6 +36,10 @@
 #include "ble_server.h"
 #include "ble_scan.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	BLEMGR_SERVER_MODE,
 	BLEMGR_CLIENT_MODE,
@@ -177,3 +181,7 @@ ble_result_e ble_manager_get_version(uint8_t version[3]);
 ble_result_e ble_manager_conn_param_update(ble_conn_handle *con_handle, ble_conn_param *conn_param);
 
 ble_result_e ble_manager_set_gap_device_name(char name[BLE_GAP_DEVICE_NAME_LEN]);
+
+#ifdef __cplusplus
+}
+#endif

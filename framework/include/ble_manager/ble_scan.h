@@ -33,6 +33,10 @@
 #include <stdbool.h>
 #include "ble_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	BLE_SCAN_STOPPED = 0,
 	BLE_SCAN_STARTED,
@@ -158,3 +162,7 @@ ble_result_e ble_scan_whitelist_clear_all(void);
  *
  ****************************************************************************/
 uint16_t ble_scan_whitelist_list(ble_addr addr[], uint16_t size);
+
+#ifdef __cplusplus
+}
+#endif

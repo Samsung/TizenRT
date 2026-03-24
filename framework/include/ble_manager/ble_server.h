@@ -33,6 +33,10 @@
 #include <stdbool.h>
 #include "ble_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum  {
 	BLE_SERVER_GATT_SERVICE,
 	BLE_SERVER_GATT_CHARACT,
@@ -178,3 +182,7 @@ ble_result_e ble_server_stop_adv(void);
 
 // Disconnect client. The client with secured connection would be required pairing again. 
 ble_result_e ble_server_disconnect(ble_conn_handle con_handle);
+
+#ifdef __cplusplus
+}
+#endif
