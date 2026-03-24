@@ -503,6 +503,15 @@ ble_result_e ble_server_start_adv(void)
 
 	RETURN_RESULT(res, msg);
 }
+
+ble_result_e ble_server_stop_adv(void)
+{
+	blemgr_msg_s msg = {BLE_CMD_STOP_ADV, BLE_MANAGER_FAIL, NULL, NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_server_one_shot_adv_init(void)
 {
 	blemgr_msg_s msg = {BLE_CMD_ONE_SHOT_ADV_INIT, BLE_MANAGER_FAIL, NULL, NULL};
@@ -531,14 +540,6 @@ ble_result_e ble_server_one_shot_adv_set(uint8_t adv_id, ble_data *data_adv, ble
 ble_result_e ble_server_one_shot_adv(uint8_t adv_id)
 {
 	blemgr_msg_s msg = {BLE_CMD_ONE_SHOT_ADV, BLE_MANAGER_FAIL, (void *)(&adv_id), NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
-}
-
-ble_result_e ble_server_stop_adv(void)
-{
-	blemgr_msg_s msg = {BLE_CMD_STOP_ADV, BLE_MANAGER_FAIL, NULL, NULL};
 	int res = blemgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);

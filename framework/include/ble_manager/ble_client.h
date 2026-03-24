@@ -111,8 +111,8 @@ ble_client_state_e ble_client_get_state(ble_client_ctx *ctx);
  *
  ****************************************************************************/
 ble_result_e ble_client_connect(ble_client_ctx *ctx, ble_conn_info* conn_info);
-ble_result_e ble_client_reconnect(ble_client_ctx *ctx);
 ble_result_e ble_client_autoconnect(ble_client_ctx *ctx, bool is_auto);
+ble_result_e ble_client_reconnect(ble_client_ctx *ctx);
 
 /****************************************************************************
  * Name: ble_client_disconnect
@@ -222,6 +222,23 @@ ble_result_e ble_client_operation_enable_notification_and_indication(ble_client_
 ble_result_e ble_client_operation_read(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
 ble_result_e ble_client_operation_write(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
 ble_result_e ble_client_operation_write_no_response(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
+
+/****************************************************************************
+ * Name: ble_client_get_write_read_pending_count
+ *
+ * Description:
+ *   Get the count of pending write/read operations.
+ *
+ * Input Parameters:
+ *   ctx   - The context of client.
+ *   count - Pointer to store the count of pending operations.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_client_get_write_read_pending_count(ble_client_ctx *ctx, uint8_t *count);
 
 #ifdef __cplusplus
 }
