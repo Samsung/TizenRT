@@ -50,6 +50,22 @@ MCU_SENSOR_INFO g_sensor_info;
 static void bk_sensor_main(beken_thread_arg_t data)
 {
 	int err;
+	bk_err_t ret;
+
+	/* Create queue in sensor task context so mqdes belongs to this task's group.
+	 * This prevents mqdes reuse when entry_main's task group is destroyed
+	 * (e.g. in CONFIG_BUILD_PROTECTED). The sensor task never exits, so mqdes
+	 * is never freed.
+	 */
+	ret = rtos_init_queue(&g_sensor_info.msg_queue,
+			"sensor_q",
+			sizeof(tempd_msg_t),
+			TEMPD_QUEUE_LEN);
+	if (BK_OK != ret) {
+		TEMPD_LOGE("create Q failed(%d)\r\n", ret);
+		rtos_delete_thread(NULL);
+		return;
+	}
 
 #if (CONFIG_TEMP_DETECT)
 	temp_daemon_init();
@@ -117,6 +133,10 @@ tempd_exit:
 #if CONFIG_VOLT_DETECT
 	volt_daemon_deinit();
 #endif
+	if (g_sensor_info.msg_queue) {
+		rtos_deinit_queue(&g_sensor_info.msg_queue);
+		g_sensor_info.msg_queue = NULL;
+	}
 	rtos_delete_thread(NULL);
 }
 
@@ -239,16 +259,10 @@ bk_err_t bk_sensor_start(void)
 
 #if (CONFIG_TEMP_DETECT || CONFIG_VOLT_DETECT)
 	if ((!g_sensor_info.task_handle) && (!g_sensor_info.msg_queue)) {
-
-		ret = rtos_init_queue(&g_sensor_info.msg_queue,
-				"sensor_q",
-				sizeof(tempd_msg_t),
-				TEMPD_QUEUE_LEN);
-		if (BK_OK != ret) {
-			TEMPD_LOGE("ceate Q failed(%d)\r\n", ret);
-			return ret;
-		}
-
+		/* Queue is created in bk_sensor_main (sensor task context) so mqdes
+		 * belongs to the sensor task's group. This avoids mqdes reuse when
+		 * entry_main's task group is destroyed.
+		 */
 		ret = rtos_create_thread(&g_sensor_info.task_handle,
 			TEMPD_TASK_PRIO,
 			"bk_sensor",
@@ -256,8 +270,6 @@ bk_err_t bk_sensor_start(void)
 			TEMPD_TASK_STACK_SIZE,
 			(beken_thread_arg_t)NULL);
 		if (BK_OK != ret) {
-			rtos_deinit_queue(&g_sensor_info.msg_queue);
-			g_sensor_info.msg_queue = NULL;
 			TEMPD_LOGE("create task failed(%d)\r\n", ret);
 			return ret;
 		}
