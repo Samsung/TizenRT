@@ -33,6 +33,10 @@
 #include <stdbool.h>
 #include "ble_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	BLE_CLIENT_NONE = 0,
 	BLE_CLIENT_IDLE,
@@ -218,3 +222,7 @@ ble_result_e ble_client_operation_enable_notification_and_indication(ble_client_
 ble_result_e ble_client_operation_read(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
 ble_result_e ble_client_operation_write(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
 ble_result_e ble_client_operation_write_no_response(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
+
+#ifdef __cplusplus
+}
+#endif
