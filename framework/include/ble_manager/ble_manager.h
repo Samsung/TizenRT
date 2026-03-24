@@ -97,6 +97,55 @@ ble_result_e ble_manager_deinit(void);
 ble_result_e ble_manager_get_mac_addr(uint8_t mac[BLE_BD_ADDR_MAX_LEN]);
 
 /****************************************************************************
+ * Name: ble_manager_passkey_confirm
+ *
+ * Description:
+ *   Confirm passkey for pairing process.
+ *
+ * Input Parameters:
+ *   conn_handle - Connection handle.
+ *   confirm     - Confirmation value (0: reject, 1: accept).
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_passkey_confirm(uint8_t conn_handle, uint8_t confirm);
+
+/****************************************************************************
+ * Name: ble_manager_set_secure_param
+ *
+ * Description:
+ *   Set security parameters for BLE connection.
+ *
+ * Input Parameters:
+ *   sec_param - Security parameters including IO capability, OOB data flag, bonding flag, etc.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_set_secure_param(ble_sec_param *sec_param);
+
+/****************************************************************************
+ * Name: ble_manager_start_bond
+ *
+ * Description:
+ *   Start bonding process with a connected device.
+ *
+ * Input Parameters:
+ *   conn_handle - Connection handle of the device to bond with.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_start_bond(ble_conn_handle conn_handle);
+
+/****************************************************************************
  * Name: ble_manager_get_bonded_device
  *
  * Description:
@@ -162,7 +211,6 @@ ble_result_e ble_manager_conn_is_any_active(bool *is_active);
  ****************************************************************************/
 ble_result_e ble_manager_get_version(uint8_t version[3]);
 
-
 /****************************************************************************
  * Name: ble_manager_conn_param_update
  *
@@ -180,7 +228,143 @@ ble_result_e ble_manager_get_version(uint8_t version[3]);
  ****************************************************************************/
 ble_result_e ble_manager_conn_param_update(ble_conn_handle *con_handle, ble_conn_param *conn_param);
 
-ble_result_e ble_manager_set_gap_device_name(char name[BLE_GAP_DEVICE_NAME_LEN]);
+/****************************************************************************
+ * Name: ble_manager_le_coc_init
+ *
+ * Description:
+ *   Initialize LE Connection-Oriented Channels.
+ *
+ * Input Parameters:
+ *   le_coc_config - Callback list for LE COC events.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_le_coc_init(ble_le_coc_callback_list *le_coc_config);
+
+/****************************************************************************
+ * Name: ble_coc_register_psm
+ *
+ * Description:
+ *   Register/deregister PSM (Protocol/Service Multiplexer) for LE COC.
+ *
+ * Input Parameters:
+ *   is_reg - Registration flag (0: deregister, 1: register).
+ *   psm    - PSM value to register/deregister.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_coc_register_psm(uint8_t is_reg, uint16_t psm);
+
+/****************************************************************************
+ * Name: ble_coc_set_psm_security
+ *
+ * Description:
+ *   Set security parameters for a specific PSM.
+ *
+ * Input Parameters:
+ *   le_psm    - PSM value.
+ *   active    - Security activation flag.
+ *   sec_mode  - Security mode.
+ *   key_size  - Key size.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_coc_set_psm_security(uint16_t le_psm, uint8_t active, uint8_t sec_mode, uint8_t key_size);
+
+/****************************************************************************
+ * Name: ble_coc_set_param
+ *
+ * Description:
+ *   Set MTU size for LE COC.
+ *
+ * Input Parameters:
+ *   value - Parameter value to set.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_coc_set_param(uint16_t value);
+
+/****************************************************************************
+ * Name: ble_coc_get_param
+ *
+ * Description:
+ *   Get parameter for LE COC.
+ *
+ * Input Parameters:
+ *   param_type - Type of parameter to get. (2: MTU size)
+ *   cid        - Channel identifier.
+ *   value      - Pointer to store the parameter value.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_coc_get_param(uint8_t param_type, uint16_t cid, uint16_t *value);
+
+/****************************************************************************
+ * Name: ble_coc_connect
+ *
+ * Description:
+ *   Connect to a remote device using LE COC.
+ *   Note: In the current implementation, only one conn_handle can be connected per cid.
+ *
+ * Input Parameters:
+ *   conn_handle - Connection handle.
+ *   le_psm      - PSM value.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_coc_connect(uint16_t conn_handle, uint16_t le_psm);
+
+/****************************************************************************
+ * Name: ble_coc_disconnect
+ *
+ * Description:
+ *   Disconnect LE COC connection.
+ *
+ * Input Parameters:
+ *   cid - Channel identifier.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_coc_disconnect(uint16_t cid);
+
+/****************************************************************************
+ * Name: ble_coc_send_data
+ *
+ * Description:
+ *   Send data through LE COC.
+ *
+ * Input Parameters:
+ *   cid  - Channel identifier.
+ *   len  - Length of data to send.
+ *   data - Pointer to data to send.
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data);
 
 #ifdef __cplusplus
 }

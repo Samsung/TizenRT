@@ -82,6 +82,24 @@ typedef struct {
 } ble_scan_whitelist;
 
 /****************************************************************************
+ * Name: ble_client_set_scan
+ *
+ * Description:
+ *   Set BLE scan parameters including scan interval, scan window, and scan type.
+ *
+ * Input Parameters:
+ *   scan_interval - Scan interval value in units of 0.625 msec.
+ *   scan_window   - Scan window value in units of 0.625 msec.
+ *   scan_type     - Scan type (0: passive scanning, 1: active scanning).
+ *
+ * Returned Value
+ *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_client_set_scan(uint16_t scan_interval, uint16_t scan_window, uint8_t scan_type);
+
+/****************************************************************************
  * Name: ble_client_start_scan
  *
  * Description:
