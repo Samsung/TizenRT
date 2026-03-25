@@ -274,7 +274,7 @@ static void adam110_spi_exchange(FAR struct adam110_dev_s *dev, uint8_t *txpkt, 
 	SPI_SELECT(dev->spi, 0, true);
 	if (txpkt != NULL) {
 		SPI_SNDBLOCK(dev->spi, (void *)txpkt, txlen);
-		up_udelay(ADAM110_TXRX_DELAY);
+		up_udelay(ADAM110_COM_RES_DELAY);
 	}
 	
 	if (rxpkt != NULL) {
@@ -428,7 +428,7 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 				chunk_buf[nread] = adam110_calculate_checksum(chunk_buf, nread);
 				adam110_spi_exchange(dev, chunk_buf, nread + 1, NULL, 0);
 				sent_size += nread;
-				up_udelay(ADAM110_TXRX_DELAY);
+				up_udelay(ADAM110_COM_RES_DELAY);
 				break;
 			} else if (rxpkt.op == RSLT_BUF_FULL) {
 				retry_remain--;
@@ -437,7 +437,7 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 					close(fd);
 					return -ETIMEDOUT;
 				}
-				up_udelay(ADAM110_TXRX_DELAY * 300);
+				up_udelay(ADAM110_TXRX_DELAY * 150);
 			} else {
 				auddbg("[E] model xmit ready failed : %d.\n", ret);
 				close(fd);
@@ -621,11 +621,11 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 	return OK;
 }
 
-static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t type, uint8_t *buffer, uint32_t size)
+static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t data, uint8_t *buffer, uint32_t size)
 {
 	int ret = 0;
-	switch(type) {
-		case AI_DATA_TYPE_SEAMLESS:
+	switch(data) {
+		case AI_DATA_TYPE_SEAMLESS_R:
 			ret = ADAM110_GET_SEAMLESS(dev, NULL);
 			break;
 		case AI_DATA_TYPE_AUDIO:
@@ -760,7 +760,8 @@ static void adam110_work_handler(void *arg)
 		goto out_unlock;
 	}
 
-	if (rxpkt.parm2 == AI_DATA_TYPE_SEAMLESS) {
+	auddbg("parm2 = 0x%x\n", rxpkt.parm2);
+	if (rxpkt.parm2 == AI_DATA_TYPE_SEAMLESS_R) {
 		uint32_t data_size = 0;
 		int is_final_packet = 0;
 		int recvsize = 0;
@@ -906,7 +907,7 @@ static int adam110_setMute(FAR struct adam110_dev_s *priv, bool mute)
 		return 0;
 	}
 	if (mute) {
-		ret = ADAM110_SET_INTR(priv, AI_DATA_TYPE_SEAMLESS, false, &rxpkt);
+		ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, false, &rxpkt);
 		if (ret != 0) {
 			auddbg("adam110 kd stop failed ret : %d\n", ret);
 			return ret;
@@ -917,7 +918,7 @@ static int adam110_setMute(FAR struct adam110_dev_s *priv, bool mute)
 		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK);
 #endif
 	} else {
-		ret = ADAM110_SET_INTR(priv, AI_DATA_TYPE_SEAMLESS, true, &rxpkt);
+		ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, true, &rxpkt);
 		if (ret != 0) {
 			auddbg("adam110 kd start failed ret : %d\n", ret);
 			return ret;
@@ -1284,7 +1285,7 @@ static int adam110_start(FAR struct audio_lowerhalf_s *dev)
 	priv->running = true;
 	priv->recording = true;
 
-	ADAM110_SET_INTR(priv, AI_DATA_TYPE_AUDIO, true, &rxpkt);
+	ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, true, &rxpkt);
 
 	adam110_givesem(&priv->devsem);
 	return 0;
@@ -1307,29 +1308,40 @@ static int adam110_stop(FAR struct audio_lowerhalf_s *dev)
 {
 	FAR struct adam110_dev_s *priv = (FAR struct adam110_dev_s *)dev;
 	t_proto_pkt rxpkt;
+	sq_queue_t flushq;
+	FAR struct ap_buffer_s *apb;
+	int flushed = 0;
 
 	if (!priv) {
 		return -EINVAL;
 	}
 
 	audvdbg("[I] adam110_stop Entry\n");
+	sq_init(&flushq);
+
 	adam110_takesem(&priv->devsem);
 	priv->running = false;
 	priv->recording = false;
-	ADAM110_SET_INTR(priv, AI_DATA_TYPE_AUDIO, false, &rxpkt);
-
-	FAR struct ap_buffer_s *apb;
-	int flushed = 0;
+	ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, false, &rxpkt);
 
 	while ((apb = (FAR struct ap_buffer_s *)sq_remfirst(&priv->pendq)) != NULL) {
 		apb->nbytes = 0;
 		apb->curbyte = 0;
+		sq_addlast((sq_entry_t *)&apb->dq_entry, &flushq);
 		flushed++;
 	}
 
 	auddbg("[I] stop flushed pendq=%d\n", flushed);
 
 	adam110_givesem(&priv->devsem);
+
+	while ((apb = (FAR struct ap_buffer_s *)sq_remfirst(&flushq)) != NULL) {
+#ifdef CONFIG_AUDIO_MULTI_SESSION
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK, session);
+#else
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
+#endif
+	}
 	return 0;
 }
 #endif
@@ -1501,7 +1513,7 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		case AUDIO_SD_KEYWORD_DETECT: {
 			if (priv->kd_enabled == false) {
 				priv->kd_enabled = true;
-				ret = ADAM110_SET_INTR(priv, AI_DATA_TYPE_SEAMLESS, priv->kd_enabled, &rxpkt);
+				ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, priv->kd_enabled, &rxpkt);
 				if (ret != RSLT_SUCCESS) {
 					auddbg("KD enable failed.\n");
 				}
@@ -1536,7 +1548,7 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 			if (priv->kd_enabled == true) {
 				/* stop keyword detect */
 				priv->kd_enabled = false;
-				ADAM110_SET_INTR(priv, AI_DATA_TYPE_SEAMLESS, priv->kd_enabled, &rxpkt);
+				ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, priv->kd_enabled, &rxpkt);
 			}
 		}
 		break;

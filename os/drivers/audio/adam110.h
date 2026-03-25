@@ -71,6 +71,7 @@
 #define ADAM110_RETRY_CNT			1
 #define ADAM110_HW_RST_WAIT			(50 * 1000)	/* Almost 30 ~ 50 msec */
 #define ADAM110_TXRX_DELAY			20 /* between tx and rx delay 20usec */ 
+#define ADAM110_COM_RES_DELAY		1 /* between command and respone imprecise */ 
 
 #define ADAM110_RX_MAX_SIZE			3840
 #define ADAM110_SEAMLESS_DATA_BLK	17
@@ -199,21 +200,24 @@ typedef enum {
 	AI_MODEL_HIBIXBY	= 1,	/* Hi-Bixby */
 	AI_MODEL_BIXBY,				/* Bixby */
 	AI_MODEL_ALEAX,				/* Alexa */
-	AI_MODEL_1,					/* Model 1 reserved */
-	AI_MODEL_2,					/* Model 2 reserved */
-	AI_MODEL_3,					/* Model 3 reserved */
-	AI_MODEL_4,					/* Model 3 reserved */
-	AI_MODEL_SEAMLESS,			/* Seamless audio data ready */
-	AI_MODEL_AUDIO,				/* RT audio data ready */
 	AI_MODEL_MAX
 } ai_model_t;
 
 /* AI Data */
 typedef enum {
-	AI_DATA_TYPE_SEAMLESS = 1,		/* Keyword Detect Seamless data */
-	AI_DATA_TYPE_AUDIO = 	2,		/* Real Audio data */
+	AI_DATA_TYPE_SEAMLESS_R = 	0x01,		/* Keyword Detect Seamless data MIC Right */
+	AI_DATA_TYPE_SEAMLESS_L = 	0x02,		/* Keyword Detect Seamless data MIC Left */
+	AI_DATA_TYPE_AUDIO =		0x04,		/* Real Audio data */
 	AI_DATA_TYPE_MAX
 } ai_data_type_t;
+
+/* AI INTR */
+typedef enum {
+	AI_INTR_TYPE_SEAMLESS_R = 	1,			/* Keyword Detect Seamless data MIC Right */
+	AI_INTR_TYPE_SEAMLESS_L = 	2,			/* Keyword Detect Seamless data MIC Left */
+	AI_INTR_TYPE_AUDIO =		3,			/* Real Audio data */
+	AI_INTR_TYPE_MAX
+} ai_intr_type_t;
 
 typedef enum {
 	AI_MODEL_THD_LOW = 0,
