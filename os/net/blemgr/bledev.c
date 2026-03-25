@@ -843,6 +843,56 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		TRBLE_DRV_CALL(ret, dev, set_multi_resp_data, (dev, adv_handle, adv_data, adv_data_len));
 	}
 	break;
+	case LWNL_REQ_BLE_SET_MULTI_ADV_TYPE:
+	{
+		uint8_t adv_handle;
+		trble_adv_type_e adv_type;
+		trble_addr *addr;
+
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		adv_handle = *(uint8_t *)param.param[0];
+		adv_type = *(trble_adv_type_e *)param.param[1];
+		addr = (trble_addr *)param.param[2];
+		TRBLE_DRV_CALL(ret, dev, set_multi_adv_type, (dev, adv_handle, adv_type, addr));
+	}
+	break;
+	case LWNL_REQ_BLE_SET_MULTI_ADV_INTERVAL:
+	{
+		uint8_t adv_handle;
+		unsigned int interval;
+
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		adv_handle = *(uint8_t *)param.param[0];
+		interval = *(unsigned int *)param.param[1];
+		TRBLE_DRV_CALL(ret, dev, set_multi_adv_interval, (dev, adv_handle, interval));
+	}
+	break;
+	case LWNL_REQ_BLE_SET_MULTI_ADV_TX_POWER:
+	{
+		uint8_t adv_handle;
+		uint8_t txpower;
+
+		lwnl_msg_params param = { 0, };
+		if (data != NULL) {
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+		} else {
+			return TRBLE_INVALID_ARGS;
+		}
+		adv_handle = *(uint8_t *)param.param[0];
+		txpower = *(uint8_t *)param.param[1];
+		TRBLE_DRV_CALL(ret, dev, set_multi_adv_tx_power, (dev, adv_handle, txpower));
+	}
+	break;
 	case LWNL_REQ_BLE_START_MULTI_ADV:
 	{
 		uint8_t adv_handle = 0;
