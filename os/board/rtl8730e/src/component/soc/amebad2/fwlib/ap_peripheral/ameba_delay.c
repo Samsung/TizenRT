@@ -8,7 +8,7 @@
 #include "arch_timer.h"
 
 #ifdef CONFIG_PLATFORM_TIZENRT_OS
-#define vGetGenericTimerFreq()		((u32)PLL_GetHBUSClk() / 2)
+#define vGetGenericTimerFreq()		((u64)PLL_GetHBUSClk() / 2)
 #endif /* CONFIG_PLATFORM_TIZENRT_OS */
 
 #define DelayCheck()						\

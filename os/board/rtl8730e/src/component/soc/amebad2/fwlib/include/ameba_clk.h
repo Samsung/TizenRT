@@ -325,8 +325,6 @@ void CLK_SWITCH_XTAL(u32 State);
 #define APPLL_1480M			1400	// for Acut Vol when not cal
 #define APPLL_NULL			0
 
-#define CLK_LIMIT_PSRAM           (460 * MHZ_TICK_CNT)
-
 #define ISNPPLL				0
 #define ISAPPLL				0x80000000
 
