@@ -357,16 +357,16 @@ ble_result_e ble_server_set_multi_resp_data(uint8_t adv_handle, uint16_t adv_dat
  *   Set advertiser type for a multi advertiser instance.
  *
  * Input Parameters:
- *   adv_handle - Advertiser handle.
- *   adv_type   - Advertiser type.
- *   addr       - Pointer to address (can be NULL).
+ *   adv_handle     - Advertiser handle.
+ *   adv_event_prop - Advertiser type. (0x10: Non-connectable non-scannable, 0x12: Non-connectable scannable, 0x13: Connectable scannable)
+ *   addr           - Pointer to address (can be NULL).
  *
  * Returned Value
  *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
  *   failure.
  *
  ****************************************************************************/
-ble_result_e ble_server_set_multi_adv_type(uint8_t adv_handle, ble_adv_type_e adv_type, ble_addr *addr);
+ble_result_e ble_server_set_multi_adv_type(uint8_t adv_handle, uint8_t adv_event_prop, ble_addr *addr);
 
 /****************************************************************************
  * Name: ble_server_set_multi_adv_interval
