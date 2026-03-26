@@ -32,13 +32,9 @@ config COMPRESSED_BINARY
 		this config needs to be enabled. It adds support for
 		reading compressed binary.
 
-if COMPRESSED_BINARY
-
 config COMPRESSION_BLOCK_SIZE
 	int "Block size for binary compression"
 	default 16384
 	range 512 16384
 	---help---
 		Enter block size to use for compression of binary.
-
-endif # COMPRESSED_BINARY
