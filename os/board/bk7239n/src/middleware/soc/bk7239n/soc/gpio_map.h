@@ -127,11 +127,11 @@ extern "C" {
 #define UART0_CTS_PIN GPIO_12
 #define UART0_RTS_PIN GPIO_13
 
-#define UART1_TX_PIN  GPIO_14
-#define UART1_RX_PIN  GPIO_15
+#define UART1_TX_PIN  GPIO_20
+#define UART1_RX_PIN  GPIO_21
 
-#define UART2_TX_PIN  GPIO_20
-#define UART2_RX_PIN  GPIO_21
+#define UART2_TX_PIN  GPIO_14
+#define UART2_RX_PIN  GPIO_15
 
 #define UART3_TX_PIN  GPIO_0
 #define UART3_RX_PIN  GPIO_1
@@ -142,11 +142,11 @@ extern "C" {
 #define UART0_CTS_PIN GPIO_12
 #define UART0_RTS_PIN GPIO_13
 
-#define UART1_TX_PIN  GPIO_14
-#define UART1_RX_PIN  GPIO_15
+#define UART1_TX_PIN  GPIO_20
+#define UART1_RX_PIN  GPIO_21
 
-#define UART2_TX_PIN  GPIO_20
-#define UART2_RX_PIN  GPIO_21
+#define UART2_TX_PIN  GPIO_14
+#define UART2_RX_PIN  GPIO_15
 
 #define UART3_TX_PIN  GPIO_16
 #define UART3_RX_PIN  GPIO_17
