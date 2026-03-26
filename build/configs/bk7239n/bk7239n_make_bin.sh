@@ -160,10 +160,6 @@ function install_bin_for_deployment()
 	[ -f "$workdir/pack.json" ] && cp -f "$workdir/pack.json" "$install_dir/" || echo "Warning: pack.json not found, skipping..."
 	[ -f "$workdir/ppc_config.bin" ] && cp -f "$workdir/ppc_config.bin" "$install_dir/" || echo "Warning: ppc_config.bin not found, skipping..."
 
-	# Copy key files
-	[ -f "$workdir/root_ec256_privkey.pem" ] && cp -f "$workdir/root_ec256_privkey.pem" "$install_dir/" || echo "Warning: root_ec256_privkey.pem not found, skipping..."
-	[ -f "$workdir/root_ec256_pubkey.pem" ] && cp -f "$workdir/root_ec256_pubkey.pem" "$install_dir/" || echo "Warning: root_ec256_pubkey.pem not found, skipping..."
-
 	# Copy optional app files
 	# Copy signed apps
 	local app_nums=$(get_global_app_num_from_config_for_deployment)
@@ -179,9 +175,6 @@ function install_bin_for_deployment()
 		local src_common="${BINDIR}/common"
 		[ -f "$src_common" ] && cp -f "$src_common" "$install_dir/common_for_sign" && echo "  common_for_sign" || echo "  Warning: common_for_sign not found"
 	fi
-
-	# Copy ss.bin if exists
-	[ -f "$BINDIR/ss.bin" ] && cp -f "$BINDIR/ss.bin" "$install_dir/" && echo "  ss.bin" || echo "  Warning: ss.bin not found"
 
 	#copy partition_layout.txt
 	[ -f "$workdir/partition_layout.txt" ] && cp -f "$workdir/partition_layout.txt" "$install_dir/partition_layout.txt" || echo "Warning: partition_layout.txt not found, skipping..."
@@ -214,9 +207,13 @@ function pack_secure_bin()
 	make_ss_bin
 	install_bin_for_deployment
 	if [ "$CONFIG_BINARY_SIGNING" = "y" ]; then
-		echo "Making signing binary"
-		input_dir=${BUILDDIR}/tools/armino/beken_utils/input_dir
-		cp -rf ${BUILDDIR}/output/bin/install_for_deployment/. $input_dir
+		if [ ! -f "${BUILDDIR}/tools/armino/beken_utils/deployment_main.sh" ]; then
+			echo "Warning: deployment_main.sh not found, skipping..."
+		else
+			echo "Making signing binary"
+			input_dir=${BUILDDIR}/tools/armino/beken_utils/input_dir
+			cp -rf ${BUILDDIR}/output/bin/install_for_deployment/. $input_dir
+		fi
 		cp ${BINDIR}/tinyara.axf.bin ${BINDIR}/kernel.bin
 	else
 		echo "Making no signing binary"
