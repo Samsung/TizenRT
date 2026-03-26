@@ -1149,9 +1149,9 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		BLE_STATE_CHECK;
 		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
 		uint8_t adv_handle = *(uint8_t *)param->param[0];
-		trble_adv_type_e adv_type = *(trble_adv_type_e *)param->param[1];
+		uint8_t adv_event_prop = *(uint8_t *)param->param[1];
 		trble_addr *addr = (trble_addr *)param->param[2];
-		ret = ble_drv_set_multi_adv_type(adv_handle, adv_type, addr);
+		ret = ble_drv_set_multi_adv_type(adv_handle, adv_event_prop, addr);
 	} break;
 
 	case BLE_CMD_SET_MULTI_ADV_INTERVAL: {

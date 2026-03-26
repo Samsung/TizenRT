@@ -846,7 +846,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_SET_MULTI_ADV_TYPE:
 	{
 		uint8_t adv_handle;
-		trble_adv_type_e adv_type;
+		uint8_t adv_event_prop;
 		trble_addr *addr;
 
 		lwnl_msg_params param = { 0, };
@@ -856,9 +856,9 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 			return TRBLE_INVALID_ARGS;
 		}
 		adv_handle = *(uint8_t *)param.param[0];
-		adv_type = *(trble_adv_type_e *)param.param[1];
+		adv_event_prop = *(uint8_t *)param.param[1];
 		addr = (trble_addr *)param.param[2];
-		TRBLE_DRV_CALL(ret, dev, set_multi_adv_type, (dev, adv_handle, adv_type, addr));
+		TRBLE_DRV_CALL(ret, dev, set_multi_adv_type, (dev, adv_handle, adv_event_prop, addr));
 	}
 	break;
 	case LWNL_REQ_BLE_SET_MULTI_ADV_INTERVAL:
