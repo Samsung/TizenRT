@@ -2,7 +2,7 @@
 #include <driver/hal/hal_gpio_types.h>
 
 
-#define DEFAULT_TXID_XTAL               (0x3a)
+#define DEFAULT_TXID_XTAL               109
 
 #define TXPWR_ELEM_INUSED               (0)
 #define TXPWR_ELEM_UNUSED               (1)
@@ -306,28 +306,28 @@ const PWR_REGS cfg_tab_bt[TPC_PAMAP_TAB_BT_LEN] = {
  * so, max TXPWR_CAL_5G_MAX channels for WIFI 5G calibration
  */
 const TXPWR_CAL_ST gtxpwr_tab_def_b[TXPWR_CAL_2G_MAX] = {
-    INIT_TXPWR_VALUE(1,62), //ch1
-    INIT_TXPWR_VALUE(7,61), //ch7
+    INIT_TXPWR_VALUE(1,58), //ch1
+    INIT_TXPWR_VALUE(7,58), //ch7
     INIT_TXPWR_VALUE(13,60), //ch13
 };
 
 const TXPWR_CAL_ST gtxpwr_tab_def_g[TXPWR_CAL_2G_MAX] = {
-    INIT_TXPWR_VALUE(1,76), //ch1
-    INIT_TXPWR_VALUE(7,75), //ch7
-    INIT_TXPWR_VALUE(13,74), //ch13
+    INIT_TXPWR_VALUE(1,79), //ch1
+    INIT_TXPWR_VALUE(7,80), //ch7
+    INIT_TXPWR_VALUE(13,81), //ch13
 };
 
 const TXPWR_CAL_ST gtxpwr_tab_def_strip_a[TXPWR_CAL_5G_MAX] = {
-    INIT_TXPWR_VALUE(36,75), //ch36
-    INIT_TXPWR_VALUE(64,69), //ch64
-    INIT_TXPWR_VALUE(100,70), //ch100
-    INIT_TXPWR_VALUE(165,78), //ch165
+    INIT_TXPWR_VALUE(36,76), //ch36
+    INIT_TXPWR_VALUE(64,72), //ch64
+    INIT_TXPWR_VALUE(100,72), //ch100
+    INIT_TXPWR_VALUE(165,86), //ch165
 };
 
 const TXPWR_CAL_ST gtxpwr_tab_def_ble[TXPWR_CAL_2G_MAX] = {
-    INIT_TXPWR_VALUE(1,82), //ch1
-    INIT_TXPWR_VALUE(20,82), //ch20
-    INIT_TXPWR_VALUE(40,82), //ch40
+    INIT_TXPWR_VALUE(1,81), //ch1
+    INIT_TXPWR_VALUE(20,79), //ch20
+    INIT_TXPWR_VALUE(40,80), //ch40
 };
 
 /****************************** temperature table  ****************************/
