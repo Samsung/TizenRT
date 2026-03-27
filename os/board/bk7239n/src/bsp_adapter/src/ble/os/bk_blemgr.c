@@ -692,11 +692,11 @@ struct trble_ops g_trble_drv_ops =
     .delete_multi_adv = trble_netmgr_delete_multi_adv,
     .set_multi_adv_data = trble_netmgr_set_multi_adv_data,
     .set_multi_resp_data = trble_netmgr_set_multi_resp_data,
-    .start_multi_adv = trble_netmgr_start_multi_adv,
-    .stop_multi_adv = trble_netmgr_stop_multi_adv,
     .set_multi_adv_type = trble_netmgr_set_multi_adv_type,
     .set_multi_adv_interval = trble_netmgr_set_multi_adv_interval,
     .set_multi_adv_tx_power = trble_netmgr_set_multi_adv_tx_power,
+    .start_multi_adv = trble_netmgr_start_multi_adv,
+    .stop_multi_adv = trble_netmgr_stop_multi_adv,
 
 #if 1
     .le_coc_init = trble_netmgr_coc_init,
