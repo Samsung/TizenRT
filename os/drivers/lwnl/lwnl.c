@@ -200,13 +200,6 @@ static ssize_t lwnl_read(struct file *filep, char *buffer, size_t len)
 static ssize_t lwnl_write(struct file *filep, const char *buffer, size_t len)
 {
 	LWNL_ENTER(TAG);
-
-	/* Validate message length to prevent buffer underread */
-	if (!buffer || len < sizeof(lwnl_msg)) {
-		LWNL_LOGE(TAG, "invalid buffer or message length");
-		return -EINVAL;
-	}
-
 	int ret = netdev_req_handle(buffer, len);
 #ifdef CONFIG_BLE_MANAGER
 	if (ret == -ENOSYS) {
@@ -336,7 +329,7 @@ int lwnl_register(struct lwnl_lowerhalf_s *dev)
 
 	lwnl_queue_initialize();
 
-	ret = register_driver(LWNL_PATH, &g_lwnl_fops, 0660, upper);
+	ret = register_driver(LWNL_PATH, &g_lwnl_fops, 0666, upper);
 	if (ret < 0) {
 		LWNL_LOGE(TAG, "fail to register lwnl driver");
 		goto errout_with_priv;
