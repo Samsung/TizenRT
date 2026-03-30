@@ -6,7 +6,7 @@
 
 #include "ameba_soc.h"
 
-static const char *TAG = "SPORT";
+static const char *const TAG = "SPORT";
 
 /** @addtogroup Ameba_Periph_Driver
   * @{
@@ -95,7 +95,7 @@ void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct)
 			SP_InitStruct->SP_SelChLen = SP_TXCL_24;
 			break;
 		case 32:
-			SP_InitStruct->SP_SelChLen = SP_TXCL_32;
+	SP_InitStruct->SP_SelChLen = SP_TXCL_32;
 			break;
 		default:
 			break;
@@ -123,7 +123,7 @@ void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct)
   * @param  SP_StructInit: pointer to an SP_StructInit structure.
   * @retval None
 */
-BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
+bool AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct)
 {
 	assert_param(IS_SP_SET_DIR(direction));
 
@@ -1151,7 +1151,7 @@ void AUDIO_SP_SetMasterSlave(u32 index, u32 SP_MasterSlave)
   * @param  Length: TX length.
   * @retval   TRUE/FLASE
   */
-BOOL AUDIO_SP_TXGDMA_Init(
+bool AUDIO_SP_TXGDMA_Init(
 	u32 Index,
 	u32 SelGDMA,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -1169,7 +1169,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_HIGH);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -1208,7 +1208,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
 		RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTXData=%p,  Length=%lu\n", pTXData, Length);
-		return _FALSE;
+		return FALSE;
 	}
 	GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
 	GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
@@ -1221,7 +1221,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 	//RTK_LOGD(TAG, "TXGDMA_End\n");
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1236,7 +1236,7 @@ BOOL AUDIO_SP_TXGDMA_Init(
   * @param  Length: RX length.
   * @retval   TRUE/FLASE
   */
-BOOL AUDIO_SP_RXGDMA_Init(
+bool AUDIO_SP_RXGDMA_Init(
 	u32 Index,
 	u32 SelGDMA,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -1253,7 +1253,7 @@ BOOL AUDIO_SP_RXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -1295,7 +1295,7 @@ BOOL AUDIO_SP_RXGDMA_Init(
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 	//RTK_LOGD(TAG, "RXGDMA_End\n");
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1306,7 +1306,7 @@ BOOL AUDIO_SP_RXGDMA_Init(
   * @param  TX_length: Length of data to be sent.
   * @retval TRUE
   */
-BOOL AUDIO_SP_TXGDMA_Restart(
+bool AUDIO_SP_TXGDMA_Restart(
 	u8 GDMA_Index,
 	u8 GDMA_ChNum,
 	u32 TX_addr,
@@ -1318,7 +1318,7 @@ BOOL AUDIO_SP_TXGDMA_Restart(
 	DCache_CleanInvalidate(TX_addr, TX_length);
 	GDMA_Cmd(GDMA_Index, GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1329,7 +1329,7 @@ BOOL AUDIO_SP_TXGDMA_Restart(
   * @param  TX_length: Length of data to be received.
   * @retval TRUE
   */
-BOOL AUDIO_SP_RXGDMA_Restart(
+bool AUDIO_SP_RXGDMA_Restart(
 	u8 GDMA_Index,
 	u8 GDMA_ChNum,
 	u32 RX_addr,
@@ -1341,7 +1341,7 @@ BOOL AUDIO_SP_RXGDMA_Restart(
 	DCache_CleanInvalidate(RX_addr, RX_length);
 	GDMA_Cmd(GDMA_Index, GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1358,7 +1358,7 @@ BOOL AUDIO_SP_RXGDMA_Restart(
   * @retval   TRUE/FLASE
   */
 
-BOOL AUDIO_SP_LLPTXGDMA_Init(
+bool AUDIO_SP_LLPTXGDMA_Init(
 	u32 Index,
 	u32 SelGDMA,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -1381,7 +1381,7 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_HIGH);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 	}
 
 	/*set GDMA initial structure member value*/
@@ -1427,7 +1427,7 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
 		GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 	} else {
 		RTK_LOGE(TAG, "AUDIO_SP_TXGDMA_Init: Aligment Err: pTxData=0x%lX,  Length=%lu\n", pTxData, Length);
-		return _FALSE;
+		return FALSE;
 	}
 
 	for (i = 0; i < MaxLLP; i++) {
@@ -1439,7 +1439,7 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
 	GDMA_SetLLP(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct->MaxMuliBlock, Lli, 1);
 	DCache_CleanInvalidate((u32)Lli, MaxLLP * sizeof(*Lli));
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -1455,7 +1455,7 @@ BOOL AUDIO_SP_LLPTXGDMA_Init(
   * @param  Lli: This parameter stores the address pointing to the next Linked List Item in block chaining.
   * @retval   TRUE/FLASE
   */
-BOOL AUDIO_SP_LLPRXGDMA_Init(
+bool AUDIO_SP_LLPRXGDMA_Init(
 	u32 Index,
 	u32 SelGDMA,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -1476,7 +1476,7 @@ BOOL AUDIO_SP_LLPRXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 	}
 
 	/*set GDMA initial structure member value*/
@@ -1523,7 +1523,7 @@ BOOL AUDIO_SP_LLPRXGDMA_Init(
 	GDMA_SetLLP(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct->MaxMuliBlock, Lli, 1);
 	DCache_CleanInvalidate((u32)Lli, MaxLLP * sizeof(*Lli));
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
-	return _TRUE;
+	return TRUE;
 }
 
 
@@ -1566,13 +1566,18 @@ void AUDIO_SP_ClearTXCounterIrq(u32 index)
 }
 
 /**
-  * @brief  Set SPORT phase latch.
-  * @param  index: select SPORT.
-  */
+ * @brief  Set SPORT phase latch.
+ * @param  index: select SPORT.
+ * @retval None
+ */
 void AUDIO_SP_SetPhaseLatch(u32 index)
 {
 	AUDIO_SPORT_TypeDef *SPORTx = AUDIO_DEV_TABLE[index].SPORTx;
-	SPORTx->SP_RX_LRCLK |= SP_BIT_EN_FS_PHASE_LATCH;
+	u32 temp = SPORTx->SP_RX_LRCLK | SP_BIT_EN_FS_PHASE_LATCH;
+
+	/*To aviod clear tx_sport_interrupt signal(bit31), set bit31 to 0 before write back.*/
+	temp &= ~SP_BIT_CLR_TX_SPORT_RDY;
+	SPORTx->SP_RX_LRCLK = temp;
 }
 
 /**
@@ -1588,7 +1593,7 @@ u32 AUDIO_SP_GetTXCounterVal(u32 index)
 }
 
 /**
-  * @brief  Get SPORT tx phase value:only available when SPORT channel length is 32bit.
+  * @brief  Get SPORT tx phase value：only available when SPORT channel length is 32bit.
   * @param  index: select SPORT.
   * @retval the value of tx phase value.
   */
@@ -1654,7 +1659,7 @@ u32 AUDIO_SP_GetRXCounterVal(u32 index)
 }
 
 /**
-  * @brief  Get SPORT RX phase:only available when SPORT channel length is 32bit.
+  * @brief  Get SPORT RX phase：only available when SPORT channel length is 32bit.
   * @param  index: select SPORT.
   * @retval the value of rx phase value.
   */

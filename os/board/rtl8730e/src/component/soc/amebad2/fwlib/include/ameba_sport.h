@@ -603,6 +603,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Exported types ------------------------------------------------------------*/
 /** @addtogroup AUDIO_SPORT_Exported_Types AUDIO_SPORT Exported Types
@@ -1060,7 +1064,7 @@ typedef struct {
   */
 
 _LONG_CALL_ void AUDIO_SP_StructInit(SP_InitTypeDef *SP_InitStruct);
-_LONG_CALL_ BOOL AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct);
+_LONG_CALL_ bool AUDIO_SP_Register(u32 index, u32 direction, SP_InitTypeDef *SP_InitStruct);
 _LONG_CALL_ void AUDIO_SP_Unregister(u32 index, u32 direction);
 _LONG_CALL_ void AUDIO_SP_Reset(u32 index);
 _LONG_CALL_ u32 AUDIO_SP_GetTXChnLen(u32 index);
@@ -1086,15 +1090,15 @@ _LONG_CALL_ u32 AUDIO_SP_GetTXWordLen(u32 index);
 _LONG_CALL_ u32 AUDIO_SP_GetRXWordLen(u32 index);
 _LONG_CALL_ void AUDIO_SP_SetMonoStereo(u32 index, u32 SP_MonoStereo);
 _LONG_CALL_ void AUDIO_SP_SetMasterSlave(u32 index, u32 SP_MasterSlave);
-_LONG_CALL_ BOOL AUDIO_SP_TXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool AUDIO_SP_TXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 									  IRQ_FUN CallbackFunc, u8 *pTxData, u32 Length);
-_LONG_CALL_ BOOL AUDIO_SP_RXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool AUDIO_SP_RXGDMA_Init(u32 Index, u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 									  IRQ_FUN CallbackFunc, u8 *pRxData, u32 Length);
-_LONG_CALL_ BOOL AUDIO_SP_TXGDMA_Restart(u8 GDMA_Index, u8 GDMA_ChNum, u32 TX_addr,	u32 TX_length);
-_LONG_CALL_ BOOL AUDIO_SP_RXGDMA_Restart(u8 GDMA_Index,	u8 GDMA_ChNum,	u32 RX_addr,	u32 RX_length);
-_LONG_CALL_ BOOL AUDIO_SP_LLPTXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool AUDIO_SP_TXGDMA_Restart(u8 GDMA_Index, u8 GDMA_ChNum, u32 TX_addr,	u32 TX_length);
+_LONG_CALL_ bool AUDIO_SP_RXGDMA_Restart(u8 GDMA_Index,	u8 GDMA_ChNum,	u32 RX_addr,	u32 RX_length);
+_LONG_CALL_ bool AUDIO_SP_LLPTXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 		IRQ_FUN CallbackFunc, u32 Length, u32 MaxLLP, struct GDMA_CH_LLI *Lli);
-_LONG_CALL_ BOOL AUDIO_SP_LLPRXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
+_LONG_CALL_ bool AUDIO_SP_LLPRXGDMA_Init(u32 Index,	u32 SelGDMA, GDMA_InitTypeDef *GDMA_InitStruct, void *CallbackData,
 		IRQ_FUN CallbackFunc, u32 Length, u32 MaxLLP, struct GDMA_CH_LLI *Lli);
 _LONG_CALL_ void AUDIO_SP_SetTXCounter(u32 index, u32 state);
 _LONG_CALL_ void AUDIO_SP_SetTXCounterCompVal(u32 index, u32 comp_val);
@@ -1135,8 +1139,10 @@ typedef struct {
 extern const AUDIO_DevTable AUDIO_DEV_TABLE[4];
 #define AUDIO_BLOCK_SIZE 2048
 
+#ifdef __cplusplus
+}
+#endif
+
 /* MANUAL_GEN_END */
 
 #endif
-
-
