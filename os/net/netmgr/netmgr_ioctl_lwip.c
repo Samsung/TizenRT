@@ -38,9 +38,6 @@
 #include "lwip/dns.h"
 #include "lwip/igmp.h"
 #include "lwip/netifapi.h"
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-#include <tinyara/mm/mm.h>
-#endif
 
 #define TAG "[NETMGR]"
 
@@ -404,21 +401,6 @@ static int lwip_func_ioctl(int s, int cmd, void *arg)
 			ret = -EINVAL;
 		} else {
 			user_ent = req->msg.netdb.host_entry;
-			/* Validate user-provided pointers to prevent kernel memory corruption */
-			if (!user_ent || !user_ent->h_name || !user_ent->h_addr_list || !user_ent->h_addr_list[0]) {
-				NET_LOGKE(TAG, "invalid host_entry or its fields\n");
-				ret = -EINVAL;
-				break;
-			}
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
-			/* In protected builds, verify pointers are not in kernel memory */
-			if (kmm_heapmember(user_ent) || kmm_heapmember(user_ent->h_name) ||
-				kmm_heapmember(user_ent->h_addr_list) || kmm_heapmember(user_ent->h_addr_list[0])) {
-				NET_LOGKE(TAG, "user pointers in kernel memory\n");
-				ret = -EFAULT;
-				break;
-			}
-#endif
 			strncpy(user_ent->h_name, host_ent->h_name, DNS_MAX_NAME_LENGTH);
 			user_ent->h_name[DNS_MAX_NAME_LENGTH] = 0;
 			memcpy(user_ent->h_addr_list[0], host_ent->h_addr_list[0], sizeof(struct in_addr));

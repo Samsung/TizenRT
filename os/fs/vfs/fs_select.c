@@ -60,7 +60,6 @@
 #include <sys/time.h>
 
 #include <string.h>
-#include <stdint.h>
 #include <poll.h>
 #include <errno.h>
 #include <assert.h>
@@ -240,13 +239,6 @@ int select(int nfds, FAR fd_set *readfds, FAR fd_set *writefds, FAR fd_set *exce
 	/* select() is a cancellation point */
 	(void)enter_cancellation_point();
 
-	/* Validate nfds to prevent out-of-bounds access and integer overflow */
-	if (nfds < 0 || nfds > __SELECT_NDESCRIPTORS) {
-		set_errno(EINVAL);
-		leave_cancellation_point();
-		return ERROR;
-	}
-
 	/* How many pollfd structures do we need to allocate? */
 
 	/* Initialize the descriptor list for poll() */
@@ -259,13 +251,6 @@ int select(int nfds, FAR fd_set *readfds, FAR fd_set *writefds, FAR fd_set *exce
 	}
 
 	if (npfds > 0) {
-		/* Guard against integer overflow in allocation size */
-		if (npfds > SIZE_MAX / sizeof(struct pollfd)) {
-			set_errno(ENOMEM);
-			leave_cancellation_point();
-			return ERROR;
-		}
-
 		/* Allocate the descriptor list for poll() */
 		pollset = (struct pollfd *)kmm_zalloc(npfds * sizeof(struct pollfd));
 		if (!pollset) {
