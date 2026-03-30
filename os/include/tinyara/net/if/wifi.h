@@ -128,6 +128,7 @@ typedef enum {
 	LWNL_REQ_WIFI_GET_DISCONNECT_REASON,
 	LWNL_REQ_WIFI_GET_DRIVER_INFO,
 	LWNL_REQ_WIFI_GET_WPA_SUPPLICANT_STATE,
+	LWNL_REQ_WIFI_DISABLE_11AX_MODE,
 	LWNL_REQ_WIFI_UNKNOWN,
 #if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 	LWNL_REQ_WIFI_SETBRIDGE,
@@ -675,6 +676,22 @@ typedef trwifi_result_e (*trwifi_get_driver_info)(struct netdev *dev, trwifi_dri
  */
 typedef trwifi_result_e (*trwifi_get_wpa_supplicant_state)(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
 
+/**
+ * @brief   Disable/enable 11ax mode
+ *
+ * @param[in]   dev                  : struct netdev registered by netdev_register()
+ * @param[in]  disable : Whether disable/enable
+ *
+ * @function_type  synchronous call
+ *
+ * @description    can disable/enable 802.11ax connection. 
+ *                 need to call on ap disconnect state
+ *
+ * @return TRWIFI_SUCCESS      : success
+ * @return TRWIFI_FAIL         : fail
+ */
+typedef trwifi_result_e (*trwifi_disable_11ax_mode)(struct netdev *dev, uint8_t disable);
+
 struct trwifi_ops {
 	trwifi_init init;
 	trwifi_deinit deinit;
@@ -693,9 +710,11 @@ struct trwifi_ops {
 	trwifi_get_deauth_reason get_deauth_reason;
 	trwifi_get_driver_info get_driver_info;
 	trwifi_get_wpa_supplicant_state get_wpa_supplicant_state;
+	trwifi_disable_11ax_mode disable_11ax_mode;
 #if defined(CONFIG_ENABLE_HOMELYNK) && (CONFIG_ENABLE_HOMELYNK == 1)
 	trwifi_set_bridge set_bridge;
 #endif
+	
 };
 
 int trwifi_serialize_scaninfo(uint8_t **buffer, trwifi_scan_list_s *scan_list);
