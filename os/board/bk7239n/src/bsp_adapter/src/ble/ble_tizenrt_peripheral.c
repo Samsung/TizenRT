@@ -1150,7 +1150,7 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
     if (!config || !config->profile_count)
     {
         LOGW("no need set db");
-        s_ctb.init = 1;
+        ret = TRBLE_INVALID_ARGS;
         goto end;
     }
 
