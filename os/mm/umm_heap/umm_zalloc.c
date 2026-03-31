@@ -96,6 +96,7 @@ void *zalloc_at(int heap_index, size_t size)
 	}
 
 	if (size == 0) {
+		mdbg("Invalid parameter, size is 0\n");
 		return NULL;
 	}
 	ret = mm_zalloc(&BASE_HEAP[heap_index], size, caller_retaddr);
@@ -158,6 +159,7 @@ static void *heap_zalloc(size_t size, int s, int e, mmaddress_t caller_retaddr)
 FAR void *zalloc(size_t size)
 {
 	if (size == 0) {
+		mdbg("Invalid parameter, size is 0\n");
 		return NULL;
 	}
 

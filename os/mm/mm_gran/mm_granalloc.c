@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <assert.h>
+#include <debug.h>
 
 #include <tinyara/mm/gran.h>
 
@@ -251,6 +252,7 @@ static inline FAR void *gran_common_alloc(FAR struct gran_s *priv, size_t size)
 		gran_leave_critical(priv);
 	}
 
+	mdbg("Failed to allocate %u granules\n", ngranules);
 	return NULL;
 }
 

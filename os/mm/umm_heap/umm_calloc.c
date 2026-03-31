@@ -95,6 +95,7 @@ void *calloc_at(int heap_index, size_t n, size_t elem_size)
 	}
 
 	if (n == 0 || elem_size == 0) {
+		mdbg("Invalid parameter, n %u, elem_size %u\n", n, elem_size);
 		return NULL;
 	}
 	ret = mm_calloc(&BASE_HEAP[heap_index], n, elem_size, caller_retaddr);
@@ -156,6 +157,7 @@ FAR void *calloc(size_t n, size_t elem_size)
 #endif
 
 	if (n == 0 || elem_size == 0) {
+		mdbg("Invalid parameter, n %u, elem_size %u\n", n, elem_size);
 		return NULL;
 	}
 
