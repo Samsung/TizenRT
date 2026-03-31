@@ -66,12 +66,18 @@ def cli():
     default="3",
     help="Set debug level: 0=nothing, 1=error message, 2=warning message, 3=info in test process + file, 999=full debug message + file",
 )
+@click.option(
+    "--random_bin_path",
+    type=str,
+    help="Input random.bin path",
+)
 def pre_download_cli(**kwargs):
     debug = kwargs["debug"]
     port = kwargs["portnum"]
     baudrate = kwargs["baudrate"]
     link_type = kwargs["link_type"]
-    real_pre_download(debug, port, baudrate, link_type)
+    random_bin_path = kwargs["random_bin_path"]
+    real_pre_download(debug, port, baudrate, link_type, random_bin_path)
 
 
 @cli.command("download")
@@ -143,21 +149,23 @@ def post_download(**kwargs):
     real_post_download(port, reboot)
 
 
-def real_pre_download(debug, port, baudrate, link_type):
+def real_pre_download(debug, port, baudrate, link_type, random_bin_path):
     try:
         init_log(debug, port=port)
         BKLog.i(
-            "pre download args: debug: %s, port: %s, baudrate: %s, link_type: %s",
+            "pre download args: debug: %s, port: %s, baudrate: %s, link_type: %s, random_bin_path: %s",
             debug,
             port,
             baudrate,
             link_type,
+            random_bin_path,
         )
         TizenSerialPortConfig(port).delete_port_config()
         pre_worker = PreWorker(
             port=port,
             worker_baudrate=baudrate,
             link_check_type=LINKCHECK.BOOTROM if link_type == "0" else LINKCHECK.BL2,
+            random_bin_path=random_bin_path,
         )
 
         result, chip_id, flash_id, worker_baudrate, real_link_type = pre_worker.pre_work()
