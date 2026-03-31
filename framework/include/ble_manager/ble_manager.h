@@ -61,8 +61,7 @@ typedef struct _ble_bonded_device_list {
  *   server_config - Server config. It can be NULL if an user doesn't want server role.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_init(ble_server_init_config *server_config);
@@ -74,8 +73,7 @@ ble_result_e ble_manager_init(ble_server_init_config *server_config);
  *   Deinitialize ble manager.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_deinit(void);
@@ -90,8 +88,7 @@ ble_result_e ble_manager_deinit(void);
  *   mac       - Empty buffer for mac address.
  * 
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_get_mac_addr(uint8_t mac[BLE_BD_ADDR_MAX_LEN]);
@@ -107,8 +104,7 @@ ble_result_e ble_manager_get_mac_addr(uint8_t mac[BLE_BD_ADDR_MAX_LEN]);
  *   confirm     - Confirmation value (0: reject, 1: accept).
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_passkey_confirm(uint8_t conn_handle, uint8_t confirm);
@@ -123,8 +119,7 @@ ble_result_e ble_manager_passkey_confirm(uint8_t conn_handle, uint8_t confirm);
  *   sec_param - Security parameters including IO capability, OOB data flag, bonding flag, etc.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_set_secure_param(ble_sec_param *sec_param);
@@ -139,8 +134,7 @@ ble_result_e ble_manager_set_secure_param(ble_sec_param *sec_param);
  *   conn_handle - Connection handle of the device to bond with.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_start_bond(ble_conn_handle conn_handle);
@@ -156,8 +150,7 @@ ble_result_e ble_manager_start_bond(ble_conn_handle conn_handle);
  *   device_count  - The number of bonded devices.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_get_bonded_device(ble_bonded_device_list* device_list, uint16_t* device_count);
@@ -172,8 +165,7 @@ ble_result_e ble_manager_get_bonded_device(ble_bonded_device_list* device_list, 
  *   addr      - The ble address of bonded device.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_delete_bonded(ble_addr *addr);
@@ -185,8 +177,7 @@ ble_result_e ble_manager_delete_bonded(ble_addr *addr);
  *   Delete all of the bonded devices.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_delete_bonded_all(void);
@@ -205,8 +196,7 @@ ble_result_e ble_manager_conn_is_any_active(bool *is_active);
  *   version  - 3 bytes array to get BLE current version.
  * 
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_get_version(uint8_t version[3]);
@@ -222,8 +212,7 @@ ble_result_e ble_manager_get_version(uint8_t version[3]);
  *   ble_conn_param : structure including connection parameters.
  * 
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_conn_param_update(ble_conn_handle *con_handle, ble_conn_param *conn_param);
@@ -238,8 +227,7 @@ ble_result_e ble_manager_conn_param_update(ble_conn_handle *con_handle, ble_conn
  *   le_coc_config - Callback list for LE COC events.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_manager_le_coc_init(ble_le_coc_callback_list *le_coc_config);
@@ -255,8 +243,7 @@ ble_result_e ble_manager_le_coc_init(ble_le_coc_callback_list *le_coc_config);
  *   psm    - PSM value to register/deregister.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_coc_register_psm(uint8_t is_reg, uint16_t psm);
@@ -274,8 +261,7 @@ ble_result_e ble_coc_register_psm(uint8_t is_reg, uint16_t psm);
  *   key_size  - Key size.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_coc_set_psm_security(uint16_t le_psm, uint8_t active, uint8_t sec_mode, uint8_t key_size);
@@ -290,8 +276,7 @@ ble_result_e ble_coc_set_psm_security(uint16_t le_psm, uint8_t active, uint8_t s
  *   value - Parameter value to set.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_coc_set_param(uint16_t value);
@@ -308,8 +293,7 @@ ble_result_e ble_coc_set_param(uint16_t value);
  *   value      - Pointer to store the parameter value.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_coc_get_param(uint8_t param_type, uint16_t cid, uint16_t *value);
@@ -326,8 +310,7 @@ ble_result_e ble_coc_get_param(uint8_t param_type, uint16_t cid, uint16_t *value
  *   le_psm      - PSM value.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_coc_connect(uint16_t conn_handle, uint16_t le_psm);
@@ -342,8 +325,7 @@ ble_result_e ble_coc_connect(uint16_t conn_handle, uint16_t le_psm);
  *   cid - Channel identifier.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_coc_disconnect(uint16_t cid);
@@ -360,8 +342,7 @@ ble_result_e ble_coc_disconnect(uint16_t cid);
  *   data - Pointer to data to send.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_coc_send_data(uint16_t cid, uint16_t len, uint8_t *data);
