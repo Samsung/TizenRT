@@ -154,6 +154,7 @@ struct mm_heap_s *mm_get_app_heap_with_name(char *app_name)
 	}
 
 	/* There is no app which matched with app_name. */
+	mdbg("No app heap found for app_name: %s\n", app_name);
 	return NULL;
 }
 
@@ -191,6 +192,7 @@ struct mm_heap_s *mm_get_heap(void *address)
 		if (node->is_active) {
 			return node->heap;
 		} else {
+			mdbg("App heap for address %p is not active\n", address);
 			return NULL;
 		}
 	}
@@ -213,6 +215,7 @@ struct mm_heap_s *mm_get_heap(void *address)
 		}
 	}
 #endif
+	mdbg("No heap found for address %p\n", address);
 	return NULL;
 }
 

@@ -117,6 +117,7 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 	}
 
 	if (n == 0 || elem_size == 0) {
+		mdbg("Invalid parameter, n %u, elem_size %u\n", n, elem_size);
 		return NULL;
 	}
 
@@ -140,6 +141,7 @@ void *kmm_calloc_at(int heap_index, size_t n, size_t elem_size)
 FAR void *kmm_calloc(size_t n, size_t elem_size)
 {
 	if (n == 0 || elem_size == 0) {
+		mdbg("Invalid parameter, n %u, elem_size %u\n", n, elem_size);
 		return NULL;
 	}
 

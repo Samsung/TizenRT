@@ -96,6 +96,7 @@ void *kmm_zalloc_at(int heap_index, size_t size)
 	}
 
 	if (size == 0) {
+		mdbg("Invalid parameter, size is 0\n");
 		return NULL;
 	}
 
@@ -132,6 +133,7 @@ FAR void *kmm_zalloc(size_t size)
 	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 	if (size == 0) {
+		mdbg("Invalid parameter, size is 0\n");
 		return NULL;
 	}
 
