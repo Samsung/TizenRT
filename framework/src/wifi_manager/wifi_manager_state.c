@@ -416,6 +416,13 @@ wifi_manager_result_e _wifimgr_control_bridge(uint8_t isenable)
 }
 #endif
 
+wifi_manager_result_e _wifimgr_disable_11ax_mode(void)
+{
+	uint8_t disable = true;
+	WIFIMGR_CHECK_UTILRESULT(wifi_utils_disable_11ax_mode(disable), TAG, "disable 11ax mode fail");
+	return WIFI_MANAGER_SUCCESS;
+}
+
 wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 {
 	wifimgr_evt_e evt = msg->event;
@@ -490,6 +497,8 @@ wifi_manager_result_e _handler_on_disconnected_state(wifimgr_msg_s *msg)
 		WIFIMGR_SEND_API_SIGNAL(msg->signal);
 		WIFIMGR_SET_STATE(WIFIMGR_BRIDGE);
 #endif
+	} else if (msg->event == WIFIMGR_CMD_DISABLE_11AX_MODE) {
+		WIFIMGR_CHECK_RESULT(_wifimgr_disable_11ax_mode(), (TAG, "critical error\n"), WIFI_MANAGER_FAIL);
 	} else {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;
