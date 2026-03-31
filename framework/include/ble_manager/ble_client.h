@@ -234,8 +234,9 @@ ble_result_e ble_client_operation_write_no_response(ble_client_ctx *ctx, ble_att
  *   count - Pointer to store the count of pending operations.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_RESULT_SUCCESS - is returned on success; a positive value is returned on failure.
+ *   BLE_MANAGER_BUSY   - If the internal max pending count value and count value are the same.
+ *                        The default value of max pending count is 40.
  *
  ****************************************************************************/
 ble_result_e ble_client_get_write_read_pending_count(ble_client_ctx *ctx, uint8_t *count);

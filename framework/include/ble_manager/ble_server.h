@@ -157,7 +157,22 @@ ble_result_e ble_server_charact_notify(ble_attr_handle attr_handle, ble_conn_han
 // API for sending a characteristic value indication to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
 ble_result_e ble_server_charact_indicate(ble_attr_handle attr_handle, ble_conn_handle con_handle, ble_data *data);
 
-// get count of pending ble indication packet count
+/****************************************************************************
+ * Name: ble_server_get_indicate_pending_count
+ *
+ * Description:
+ *   Get the count of pending ble indication packet count.
+ *
+ * Input Parameters:
+ *   con_handle - Connection handle.
+ *   count      - Pointer to store the count of pending operations.
+ *
+ * Returned Value
+ *   BLE_RESULT_SUCCESS - is returned on success; a positive value is returned on failure.
+ *   BLE_MANAGER_BUSY   - If the internal max pending count value and count value are the same.
+ *                        The default value of max pending count is 40.
+ *
+ ****************************************************************************/
 ble_result_e ble_server_get_indicate_pending_count(ble_conn_handle con_handle, uint8_t *count);
 
 // set data of attribute value
