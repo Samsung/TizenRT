@@ -115,6 +115,7 @@ trwifi_result_e bk_wifi_netmgr_get_signal_quality(struct netdev *dev, trwifi_sig
 trwifi_result_e bk_wifi_netmgr_get_disconn_reason(struct netdev *dev, int *deauth_reason);
 trwifi_result_e bk_wifi_netmgr_get_driver_info(struct netdev *dev, trwifi_driver_info *driver_info);
 trwifi_result_e bk_wifi_netmgr_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
+trwifi_result_e bk_wifi_netmgr_disable_11ax_mode(struct netdev *dev, uint8_t disable);
 trwifi_result_e bk_wifi_netmgr_set_bridge(struct netdev *dev, uint8_t control);
 
 struct trwifi_ops g_trwifi_bk_ops = {
@@ -135,6 +136,7 @@ struct trwifi_ops g_trwifi_bk_ops = {
     bk_wifi_netmgr_get_disconn_reason,          /* get_deauth_reason */
     bk_wifi_netmgr_get_driver_info,             /* get_driver_info */
     bk_wifi_netmgr_get_wpa_supplicant_state,    /* get_wpa_supplicant_state */
+    bk_wifi_netmgr_disable_11ax_mode,           /* disable_11ax_mode */
     bk_wifi_netmgr_set_bridge,                  /* set_bridge */
 };
 
@@ -1505,6 +1507,26 @@ trwifi_result_e bk_wifi_netmgr_set_autoconnect(struct netdev *dev, uint8_t check
 #endif
 }
 
+trwifi_result_e bk_wifi_netmgr_disable_11ax_mode(struct netdev *dev, uint8_t disable)
+{
+	uint32_t enable_11ax = 0;
+	int ret = TRWIFI_SUCCESS;
+
+	if (disable) {
+		enable_11ax = 0;
+	} else {
+		enable_11ax = 1;
+	}
+	nvdbg("[BK] Set 11ax mode to %d\n", enable_11ax);
+	ret = bk_wifi_capa_config(WIFI_CAPA_ID_HE_EN, enable_11ax);
+	if (ret != BK_OK) {
+		ndbg("[BK] Failed to set 11ax mode ret: %d\n", ret);
+		return TRWIFI_FAIL;
+	}
+	else {
+		return TRWIFI_SUCCESS;
+	}
+}
 trwifi_result_e bk_wifi_netmgr_set_bridge(struct netdev *dev, uint8_t control)
 {
     if (control) {
