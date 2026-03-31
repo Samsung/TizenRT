@@ -51,7 +51,7 @@ uint32_t otp_map_1_col(void)
     return sizeof(otp_map_1) / sizeof(otp_map_1[0]);
 }
 
-const otp_item_t otp_map_2[19] = {
+const otp_item_t otp_map_2[20] = {
     {OTP_PHY_PWR1,                       48,    0x0,    OTP_READ_WRITE,    OTP_NON_SECURITY,    OTP_NO_NEED_CRC},
     {OTP_PHY_PWR2,                       48,    0x30,    OTP_READ_WRITE,    OTP_NON_SECURITY,    OTP_NO_NEED_CRC},
     {OTP_RFCALI1,                       256,    0x60,    OTP_READ_WRITE,    OTP_NON_SECURITY,    OTP_NO_NEED_CRC},
@@ -62,6 +62,7 @@ const otp_item_t otp_map_2[19] = {
     {OTP_MAC_ADDRESS2,                    8,    0x468,    OTP_READ_WRITE,    OTP_NON_SECURITY,    OTP_NO_NEED_CRC},
     {OTP_MAC_ADDRESS3,                    8,    0x470,    OTP_READ_WRITE,    OTP_NON_SECURITY,    OTP_NO_NEED_CRC},
     {OTP_MAC_ADDRESS4,                    8,    0x478,    OTP_READ_WRITE,    OTP_NON_SECURITY,    OTP_NO_NEED_CRC},
+    {OTP_RESERVED1,                     264,    0x480,    OTP_READ_WRITE,    OTP_NON_SECURITY,    OTP_NO_NEED_CRC},
     {OTP_FACTORY_ID,                      4,    0x588,    OTP_READ_WRITE,    OTP_NON_SECURITY,    OTP_NEED_CRC},
     {OTP_PRODUCT_ID,                     16,    0x58c,    OTP_READ_WRITE,    OTP_NON_SECURITY,    OTP_NEED_CRC},
     {OTP_GADC_CALIBRATION,               72,    0x59c,    OTP_READ_WRITE,    OTP_NON_SECURITY,    OTP_NEED_CRC},
