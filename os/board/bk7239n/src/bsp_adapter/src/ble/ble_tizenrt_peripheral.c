@@ -73,7 +73,7 @@ enum
 #define BLE_TIZENRT_READ_MAX_LEN 20 //520
 #define TIZENRT_MAX_VAL_LEN 520
 #define NOTIFY_SYNC_API 1
-#define NOTIFY_ASYNC_MAX_COUNT 5
+
 
 #define BK_BLE_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -1051,6 +1051,12 @@ int32_t bk_tr_ble_server_indicate_queue_count(trble_conn_handle *con_handle, uin
     *count = (typeof(*count))hal_ble_con_env.con_dev[*con_handle].notify_pending_count;
 
     LOGD("%d %d", *con_handle, *count);
+
+    if (*count >= NOTIFY_ASYNC_MAX_COUNT)
+    {
+        LOGE("Server indicate pending queue full, wait a moment to send data again !!!\r\n");
+        return TRBLE_BUSY;
+    }
 
     return TRBLE_SUCCESS;
 }
