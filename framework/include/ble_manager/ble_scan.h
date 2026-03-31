@@ -93,8 +93,7 @@ typedef struct {
  *   scan_type     - Scan type (0: passive scanning, 1: active scanning).
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_client_set_scan(uint16_t scan_interval, uint16_t scan_window, uint8_t scan_type);
@@ -113,8 +112,7 @@ ble_result_e ble_client_set_scan(uint16_t scan_interval, uint16_t scan_window, u
  *   callbacks - The list of scan result callback.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_client_start_scan(ble_scan_filter* filter, ble_scan_callback_list *callbacks);
@@ -127,8 +125,7 @@ ble_result_e ble_client_start_scan(ble_scan_filter* filter, ble_scan_callback_li
  *   ble_client_start_scan is called without filter.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_client_stop_scan(void);
@@ -145,8 +142,7 @@ ble_result_e ble_client_stop_scan(void);
  *   If a scanning is started with whitelist enabling, scan results are filtered by the whitelist.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_scan_whitelist_add(ble_addr *addr);
@@ -159,8 +155,7 @@ ble_result_e ble_scan_whitelist_delete(ble_addr *addr);
  *   Clear data of the scan whitelist.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_scan_whitelist_clear_all(void);
