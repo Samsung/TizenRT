@@ -325,7 +325,7 @@ ifneq ($(wildcard components/tfm/tfm/CMakeLists.txt),)
 	$(Q) $(MAKE) -C components/tfm TOPDIR="$(TOPDIR)"
 endif
 	$(Q) if [ -d "$(tfm_firmware_dir)" ]; then \
-		cp -rf "$(tfm_firmware_dir)" "$(TOPDIR)/../build/output/bin/tfm_build"; \
+		cp -rf "$(tfm_firmware_dir)" "$(OUTBIN_DIR)/tfm_build"; \
 	else \
 		echo "tfm_firmware_dir $(tfm_firmware_dir) directory not found, please run 'make tfm' first	"; \
 	fi

@@ -22,70 +22,110 @@ import sys
 import string
 import config_util as util
 
+############################################################################
+#
+# This script saves the binary name as "[bin_type]_[board]_[version].extension" in .bininfo file
+#
+# Usage:
+#   python set_bininfo.py [bin_type_or_name]
+#
+# bin_type_or_name: kernel, app1, app2, common, resource, all, or binary name from config
+#
+# Examples:
+#   python set_bininfo.py kernel           # Set only kernel binary info
+#   python set_bininfo.py app1             # Set only app1 binary info
+#   python set_bininfo.py myapp            # If myapp matches CONFIG_APP1_BIN_NAME, set app1 info
+#   python set_bininfo.py all              # Set all binary info (legacy behavior)
+#   python set_bininfo.py                  # Same as 'all'
+#
+############################################################################
+
 TARGET_EXT_NAME = "trpk" # TizenRT Package (TizenRT Header + output)
 BP_EXT_NAME = "bin" # Boot parameter Extension
-
-# This script save the binary name as "[bin_type]_[board]_[version].extension" in .bininfo file
 
 os_folder = os.path.dirname(__file__) + '/..'
 cfg_file = os_folder + '/.config'
 build_folder = os_folder + '/../build'
 
-def save_bininfo(bin_name) :
+def save_bininfo(bin_type, bin_name) :
     with open(os_folder + '/.bininfo', "a") as f :
-        if ("app1" in bin_name) :
-            f.write('APP1_BIN_NAME=' + bin_name + '\n')
-        elif ("app2" in bin_name) :
-            f.write('APP2_BIN_NAME=' + bin_name + '\n')
-        elif ("common" in bin_name) :
-            f.write('COMMON_BIN_NAME=' + bin_name + '\n')
-        elif ("resource" in bin_name) :
-            f.write('RESOURCE_BIN_NAME=' + bin_name + '\n')
-        else :
-            f.write('KERNEL_BIN_NAME=' + bin_name + '\n')
+        f.write(bin_type + '_BIN_NAME=' + bin_name + '\n')
 
-# Delete previous .bininfo
-if os.path.isfile(os_folder + '/.bininfo') :
-    os.remove(os_folder + '/.bininfo')
+def get_board_type() :
+    return util.get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").replace('"', '').rstrip("\n")
 
-# Check the board type. Because kernel binary name is different based on board type.
-BOARD_TYPE = util.get_value_from_file(cfg_file, "CONFIG_ARCH_BOARD=").replace('"', '').rstrip("\n")
+def get_config_bin_name(config_key) :
+    return util.get_value_from_file(cfg_file, config_key).replace('"', '').rstrip("\n")
 
-# Set the kernel bin name as "kernel_[board]_[version].extension"
-if util.check_config_existence(cfg_file, 'CONFIG_BOARD_BUILD_DATE') == True:
-    BIN_VERSION = util.get_value_from_file(cfg_file, "CONFIG_BOARD_BUILD_DATE=").replace('"', '').rstrip("\n").strip()
-    BIN_NAME = 'kernel_' + BOARD_TYPE + '_' + BIN_VERSION
-else :
-    BIN_NAME = 'kernel_' + BOARD_TYPE
+def set_kernel_bininfo() :
+    BOARD_TYPE = get_board_type()
+    if util.check_config_existence(cfg_file, 'CONFIG_BOARD_BUILD_DATE') == True:
+        BIN_VERSION = util.get_value_from_file(cfg_file, "CONFIG_BOARD_BUILD_DATE=").replace('"', '').rstrip("\n").strip()
+        BIN_NAME = 'kernel_' + BOARD_TYPE + '_' + BIN_VERSION
+    else :
+        BIN_NAME = 'kernel_' + BOARD_TYPE
 
-# Check board_metadata.txt
-metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
-if os.path.isfile(metadata_file) :
-    save_bininfo(BIN_NAME + '.' + TARGET_EXT_NAME)
-else :
-    # if this board has not board_metadata.txt, kernal binary name is setted 'tinyara.bin'
-    save_bininfo("tinyara.bin")
+    metadata_file = build_folder + '/configs/' + BOARD_TYPE + '/board_metadata.txt'
+    if os.path.isfile(metadata_file) :
+        save_bininfo('KERNEL', BIN_NAME + '.' + TARGET_EXT_NAME)
+    else :
+        save_bininfo('KERNEL', "tinyara.bin")
 
-# Set the user bin name as "app1_[board]_[version]"
-if util.check_config_existence(cfg_file, 'CONFIG_APP1_INFO') == True :
-    APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_APP1_BIN_VER=").replace('"','').rstrip("\n").strip()
-    USER_BIN_NAME = 'app1_' + BOARD_TYPE + '_' + APP_BIN_VER
-    save_bininfo(USER_BIN_NAME + '.' + TARGET_EXT_NAME)
+def set_app1_bininfo() :
+    if util.check_config_existence(cfg_file, 'CONFIG_APP1_INFO') == True :
+        BOARD_TYPE = get_board_type()
+        APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_APP1_BIN_VER=").replace('"','').rstrip("\n").strip()
+        USER_BIN_NAME = 'app1_' + BOARD_TYPE + '_' + APP_BIN_VER
+        save_bininfo('APP1', USER_BIN_NAME + '.' + TARGET_EXT_NAME)
 
-# Set the user bin name as "app2_[board]_[version]"
-if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
-    APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_VER=").replace('"','').rstrip("\n").strip()
-    USER_BIN_NAME = 'app2_' + BOARD_TYPE + '_' + APP_BIN_VER
-    save_bininfo(USER_BIN_NAME + '.' + TARGET_EXT_NAME)
+def set_app2_bininfo() :
+    if util.check_config_existence(cfg_file, 'CONFIG_APP2_INFO') == True :
+        BOARD_TYPE = get_board_type()
+        APP_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_APP2_BIN_VER=").replace('"','').rstrip("\n").strip()
+        USER_BIN_NAME = 'app2_' + BOARD_TYPE + '_' + APP_BIN_VER
+        save_bininfo('APP2', USER_BIN_NAME + '.' + TARGET_EXT_NAME)
 
-# Set the common bin name as "common_[board]_[version]"
-if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True :
-    COMMON_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').rstrip('\n').strip()
-    COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + COMMON_BIN_VER
-    save_bininfo(COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
+def set_common_bininfo() :
+    if util.check_config_existence(cfg_file, 'CONFIG_SUPPORT_COMMON_BINARY') == True :
+        BOARD_TYPE = get_board_type()
+        COMMON_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_COMMON_BINARY_VERSION=").replace('"','').rstrip('\n').strip()
+        COMMON_BIN_NAME = 'common_' + BOARD_TYPE + '_' + COMMON_BIN_VER
+        save_bininfo('COMMON', COMMON_BIN_NAME + '.' + TARGET_EXT_NAME)
 
-# Set the resource bin name as "resource_[board]_[version]"
-if util.check_config_existence(cfg_file, 'CONFIG_RESOURCE_FS') == True :
-    RESOURCE_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_RESOURCE_BINARY_VERSION=").replace('"','').rstrip('\n').strip()
-    RESOURCE_BIN_NAME = 'resource_' + BOARD_TYPE + '_' + RESOURCE_BIN_VER
-    save_bininfo(RESOURCE_BIN_NAME + '.' + TARGET_EXT_NAME)
+def set_resource_bininfo() :
+    if util.check_config_existence(cfg_file, 'CONFIG_RESOURCE_FS') == True :
+        BOARD_TYPE = get_board_type()
+        RESOURCE_BIN_VER = util.get_value_from_file(cfg_file, "CONFIG_RESOURCE_BINARY_VERSION=").replace('"','').rstrip('\n').strip()
+        RESOURCE_BIN_NAME = 'resource_' + BOARD_TYPE + '_' + RESOURCE_BIN_VER
+        save_bininfo('RESOURCE', RESOURCE_BIN_NAME + '.' + TARGET_EXT_NAME)
+
+def set_all_bininfo() :
+    # Delete previous .bininfo only when setting all
+    if os.path.isfile(os_folder + '/.bininfo') :
+        os.remove(os_folder + '/.bininfo')
+
+    set_kernel_bininfo()
+    set_app1_bininfo()
+    set_app2_bininfo()
+    set_common_bininfo()
+    set_resource_bininfo()
+
+if __name__ == "__main__" :
+    arg = sys.argv[1] if len(sys.argv) > 1 else "all"
+
+    if arg == "kernel" :
+        set_kernel_bininfo()
+    elif arg == "app1" or arg == get_config_bin_name("CONFIG_APP1_BIN_NAME=") :
+        set_app1_bininfo()
+    elif arg == "app2" or arg == get_config_bin_name("CONFIG_APP2_BIN_NAME=") :
+        set_app2_bininfo()
+    elif arg == "common" or arg == get_config_bin_name("CONFIG_COMMON_BINARY_NAME=") :
+        set_common_bininfo()
+    elif arg == "resource" :
+        set_resource_bininfo()
+    elif arg == "all" :
+        set_all_bininfo()
+    else :
+        print("Unknown argument: " + arg)
+        print("Usage: python set_bininfo.py [kernel|app1|app2|common|resource|all|<binary_name>]")
+        sys.exit(1)

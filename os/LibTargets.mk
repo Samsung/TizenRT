@@ -58,7 +58,7 @@
 # Possible kernel-mode builds
 
 libc$(DELIM)libkc$(LIBEXT): context
-	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libkc$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkc$(LIBEXT) BINDIR=kbin
+	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" OUTBIN_DIR="$(OUTBIN_DIR)" libkc$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkc$(LIBEXT) BINDIR=kbin
 
 $(LIBRARIES_DIR)$(DELIM)libkc$(LIBEXT): libc$(DELIM)libkc$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libkc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkc$(LIBEXT)
@@ -160,7 +160,7 @@ $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT): syscall$(DELIM)libstubs$(LIBEXT)
 # Possible user-mode builds
 
 libc$(DELIM)libuc$(LIBEXT): context
-	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libuc$(LIBEXT) KERNEL=n BIN=libuc$(LIBEXT) BINDIR=ubin
+	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" OUTBIN_DIR="$(OUTBIN_DIR)" libuc$(LIBEXT) KERNEL=n BIN=libuc$(LIBEXT) BINDIR=ubin
 
 $(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT): libc$(DELIM)libuc$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libuc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT)
@@ -251,7 +251,7 @@ endif
 # Possible non-kernel builds
 
 libc$(DELIM)libc$(LIBEXT): context
-	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libc$(LIBEXT)
+	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" OUTBIN_DIR="$(OUTBIN_DIR)" libc$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libc$(LIBEXT): libc$(DELIM)libc$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libc$(LIBEXT)

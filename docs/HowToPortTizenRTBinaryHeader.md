@@ -57,13 +57,14 @@ User should define MAKE_SAMSUNG_HEADER for binary header support in build/config
 SECURE_HEADER_SIZE=xx
 
 define MAKE_SAMSUNG_HEADER
-  $(TOPDIR)/../os/tools/mksamsungheader.py $(1) kernel ${SECURE_HEADER_SIZE}
+  $(TOPDIR)/../os/tools/mksamsungheader.py $(1) kernel ${SECURE_HEADER_SIZE} "$(OUTBIN_DIR)"
 endef
 ```
 This parameters are as follows:
 
 1. `$(1)` is source binary extension. This is used to import the source binary path in `mksamsungheader.py`, so we should fill it out as it is.
 2. `${SECURE_HEADER_SIZE}` is the size of the secure header. set a size as per board bootloader.
+3. `$(OUTBIN_DIR)` is the output binary directory (build/output/bin). Passed from Makefile.unix.
 
 
 The `MAKE_SAMSUNG_HEADER` is called after `MAKE_BOARD_SPECIFIC_BIN`. The binary name can be changed in `MAKE_BOARD_SPECIFIC_BIN`. So we manage kernel binary name using `board_metadata.txt`. The `mksamsungheader.py` gets kernel binary name from board_metadata.txt

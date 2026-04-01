@@ -86,8 +86,8 @@ CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/components/tfm/tfm/secure_f
 else
 CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/components/tfm/$(tfm_firmware_dir_name)/tfm_install/interface/include
 endif
-CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/generated/interface/include
-CFLAGS += -I$(TOPDIR)/../build/output/bin/tfm_build/_build/
+CFLAGS += -I$(OUTBIN_DIR)/tfm_build/generated/interface/include
+CFLAGS += -I$(OUTBIN_DIR)/tfm_build/_build/
 endif
 
 CMN_ASRCS  = up_saveusercontext.S up_fullcontextrestore.S up_switchcontext.S

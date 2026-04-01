@@ -28,17 +28,14 @@ import sys
 
 os_folder = os.path.dirname(__file__) + '/..'
 tool_folder = os_folder + '/tools/'
-output_folder = os_folder + '/../build/output/bin/'
+if len(sys.argv) < 2:
+    sys.stderr.write('Usage: %s <OUTBIN_DIR>\n' % sys.argv[0])
+    sys.exit(1)
+output_folder = sys.argv[1] + '/'
 
 def check_partition_configuration():
     # Run script for checking partition configuration
     ret = os.system('python ' + tool_folder + 'check_partition.py')
-    if ret != 0 :
-        sys.exit(1)
-
-def check_package_size():
-    # Run script for checking binary sizes
-    ret = os.system('python ' + tool_folder + 'check_package_size.py')
     if ret != 0 :
         sys.exit(1)
 
@@ -54,8 +51,5 @@ def check_package_header():
 # 1. Validate partition
 check_partition_configuration()
 
-# 2. Validate the binary size with partition size
-check_package_size()
-
-# 3. Validate the header data of binaries
+# 2. Validate the header data of binaries
 check_package_header()

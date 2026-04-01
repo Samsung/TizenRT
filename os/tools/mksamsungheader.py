@@ -23,7 +23,15 @@ import config_util as util
 OS_DIR = os.path.dirname(__file__) + '/..'
 TOOL_DIR = OS_DIR + '/tools'
 BUILD_DIR = OS_DIR + '/../build'
-OUTPUT_DIR = BUILD_DIR + '/output/bin'
+
+# argv[1]=ext, argv[2]=type, argv[3]=secure_header_size, argv[4]=OUTBIN_DIR (required)
+if len(sys.argv) < 5:
+    sys.stderr.write('Usage: %s <ext> <type> <secure_header_size> <OUTBIN_DIR>\n' % sys.argv[0])
+    sys.exit(1)
+OUTBIN_DIR = sys.argv[4]
+if not os.path.isabs(OUTBIN_DIR):
+    sys.stderr.write('OUTBIN_DIR not found: %s\n' % OUTBIN_DIR)
+    sys.exit(1)
 
 CFG_PATH = OS_DIR + '/.config'
 
@@ -63,7 +71,7 @@ if os.path.isfile(metadata_file) :
 else :
 	kernel_bin_name = "tinyara.bin"
 
-binary_path = OUTPUT_DIR + '/' + kernel_bin_name
+binary_path = OUTBIN_DIR + '/' + kernel_bin_name
 binary_type = sys.argv[2]
 secure_header_size = sys.argv[3]
 

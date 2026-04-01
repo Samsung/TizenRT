@@ -68,7 +68,7 @@ checkgenromfs:
 
 zoneinfo.img : checkgenromfs .tzbuilt
 	@genromfs -f $@ -d $(TZBIN_PATH)/usr/share/zoneinfo -V "TZDatbase" || { echo "genromfs failed" ; exit 1 ; }
-	$(Q) cp zoneinfo.img $(TOPDIR)/../build/output/bin
+	$(Q) cp zoneinfo.img $(OUTBIN_DIR)
 
 .romfs : zoneinfo.img
 	$(Q) touch $@
