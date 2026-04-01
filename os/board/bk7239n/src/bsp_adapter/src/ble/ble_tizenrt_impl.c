@@ -527,7 +527,7 @@ static void hal_ble_evt_thread(void)
 
                 if (bktr_ble_server_get_param()->passkey_display_cb)
                 {
-                    bktr_ble_server_get_param()->passkey_display_cb(elem->passkey_evt.conn_idx, elem->passkey_evt.passkey);
+                    bktr_ble_server_get_param()->passkey_display_cb(elem->passkey_evt.passkey, elem->passkey_evt.conn_idx);
                 }
             }
             break;

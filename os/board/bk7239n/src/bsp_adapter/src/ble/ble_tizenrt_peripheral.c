@@ -1114,8 +1114,8 @@ int32_t bk_tr_ble_server_report_passkey_evt(uint8_t conn_idx, uint32_t passkey)
     ble_evt_msg_elem_t elem = {0};
     os_memset(&elem, 0, sizeof(ble_evt_msg_elem_t));
 
-    elem.server_disconnect_evt.conn_idx = conn_idx;
-    elem.server_disconnect_evt.reason = passkey;
+    elem.passkey_evt.conn_idx = conn_idx;
+    elem.passkey_evt.passkey = passkey;
 
     ble_evt_queue_push_ext(EVT_BLE_SERVER_PASSKEY, &elem, sizeof(ble_evt_msg_elem_t), NULL);
 
