@@ -186,7 +186,38 @@ ble_result_e ble_server_reject(ble_attr_handle attr_handle, uint8_t app_errorcod
 // Disconnect client. The client with secured connection would be required pairing again. 
 ble_result_e ble_server_disconnect(ble_conn_handle con_handle);
 
+/****************************************************************************
+ * Name: ble_server_get_mac_addr_by_conn_handle
+ *
+ * Description:
+ *   Get the MAC address by connection handle.
+ *   The bd_addr value is in big endian format, which is received through the callback function.
+ *
+ * Input Parameters:
+ *   con_handle - Connection handle.
+ *   bd_addr    - Buffer to store the MAC address in big endian format.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
 ble_result_e ble_server_get_mac_addr_by_conn_handle(ble_conn_handle con_handle, uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
+
+/****************************************************************************
+ * Name: ble_server_get_conn_handle_by_addr
+ *
+ * Description:
+ *   Get the connection handle by MAC address.
+ *   The bd_addr value is in big endian format, which is received through the callback function.
+ *
+ * Input Parameters:
+ *   bd_addr    - MAC address in big endian format.
+ *   con_handle - Pointer to store the connection handle.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
 ble_result_e ble_server_get_conn_handle_by_addr(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN], ble_conn_handle *con_handle);
 
 // Set Advertisement Data 
