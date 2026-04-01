@@ -245,12 +245,20 @@ int arm_hotplug_handler(int irq, void *context, void *arg)
 
 int up_cpu_off(int cpu)
 {
-	struct tcb_s * tcb;
+	struct tcb_s *tcb;
 	int ret = OK;
 
 	smpllvdbg("Disabling CPU%d\n", cpu);
 
-	DEBUGASSERT(cpu > 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+	if (cpu <= 0 || cpu >= CONFIG_SMP_NCPUS) {
+		smplldbg("Invalid CPU index: %d (valid: 1 ~ %d)\n", cpu, CONFIG_SMP_NCPUS - 1);
+		return -EINVAL;
+	}
+
+	if (cpu == this_cpu()) {
+		smplldbg("Cannot stop current CPU%d from itself\n", cpu);
+		return -EINVAL;
+	}
 
 	/* Check the target cpu idle */
 	tcb = current_task(cpu);
