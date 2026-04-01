@@ -1308,40 +1308,20 @@ static int adam110_stop(FAR struct audio_lowerhalf_s *dev)
 {
 	FAR struct adam110_dev_s *priv = (FAR struct adam110_dev_s *)dev;
 	t_proto_pkt rxpkt;
-	sq_queue_t flushq;
-	FAR struct ap_buffer_s *apb;
-	int flushed = 0;
 
 	if (!priv) {
 		return -EINVAL;
 	}
 
 	audvdbg("[I] adam110_stop Entry\n");
-	sq_init(&flushq);
 
 	adam110_takesem(&priv->devsem);
 	priv->running = false;
 	priv->recording = false;
 	ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, false, &rxpkt);
 
-	while ((apb = (FAR struct ap_buffer_s *)sq_remfirst(&priv->pendq)) != NULL) {
-		apb->nbytes = 0;
-		apb->curbyte = 0;
-		sq_addlast((sq_entry_t *)&apb->dq_entry, &flushq);
-		flushed++;
-	}
-
-	auddbg("[I] stop flushed pendq=%d\n", flushed);
-
 	adam110_givesem(&priv->devsem);
 
-	while ((apb = (FAR struct ap_buffer_s *)sq_remfirst(&flushq)) != NULL) {
-#ifdef CONFIG_AUDIO_MULTI_SESSION
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK, session);
-#else
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, OK);
-#endif
-	}
 	return 0;
 }
 #endif
