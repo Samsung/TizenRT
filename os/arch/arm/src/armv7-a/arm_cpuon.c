@@ -44,6 +44,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <debug.h>
+#include <errno.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
@@ -177,11 +178,19 @@ int arm_start_handler(int irq, void *context, void *arg)
 
 int up_cpu_on(int cpu)
 {
-	int ret ;
+	int ret;
 
 	smpllvdbg("Starting CPU%d\n", cpu);
 
-	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+	if (cpu <= 0 || cpu >= CONFIG_SMP_NCPUS) {
+		smplldbg("Invalid CPU index: %d (valid: 1 ~ %d)\n", cpu, CONFIG_SMP_NCPUS - 1);
+		return -EINVAL;
+	}
+
+	if (cpu == this_cpu()) {
+		smplldbg("Cannot start current CPU%d from itself\n", cpu);
+		return -EINVAL;
+	}
 
 	ret = up_cpu_up(cpu);
 	if (ret < 0) {
