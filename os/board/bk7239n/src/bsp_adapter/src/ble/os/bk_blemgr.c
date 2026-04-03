@@ -404,7 +404,7 @@ trble_result_e trble_netmgr_write_read_queue_count(struct bledev *dev, trble_con
 /*** Peripheral(Server) ***/
 trble_result_e trble_netmgr_set_server_config(struct bledev *dev, trble_server_init_config *server)
 {
-    trble_result_e ret = bk_tr_ble_server_init(server);
+    trble_result_e ret = bk_tr_ble_server_add_config(server);
 
     if(ret == TRBLE_ALREADY_WORKING)
     {
