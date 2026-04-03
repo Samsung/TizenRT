@@ -548,7 +548,7 @@ static void hal_ble_evt_thread(void)
                     {
                         uint16_t final_len = (current_buffer_max_len < elem->attr_cb_evt.tmp_buffer_len ? current_buffer_max_len : elem->attr_cb_evt.tmp_buffer_len);
                         os_memcpy(current_buffer, elem->attr_cb_evt.tmp_buffer, final_len);
-                        bk_tr_ble_server_attr_set_data_ptr_private(elem->attr_cb_evt.service_index, elem->attr_cb_evt.att_index,
+                        bk_tr_ble_server_attr_set_data_ptr_private(elem->attr_cb_evt.service_p, elem->attr_cb_evt.att_index,
                                 current_buffer, final_len, current_buffer_max_len);
                     }
                 }
@@ -576,7 +576,7 @@ static void hal_ble_evt_thread(void)
             {
                 ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
 
-                bk_tr_ble_server_attr_set_data_ptr_private(elem->set_server_buffer_cmd.service_index,
+                bk_tr_ble_server_attr_set_data_ptr_private(elem->set_server_buffer_cmd.service_p,
                         elem->set_server_buffer_cmd.att_index,
                         elem->set_server_buffer_cmd.buffer,
                         elem->set_server_buffer_cmd.buffer_len,

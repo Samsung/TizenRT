@@ -21,6 +21,7 @@
 #include <tinyara/net/if/ble.h>
 #include "ble_tizenrt_coc.h"
 #include "ble_tizenrt_advertiser.h"
+#include "ble_tizenrt_peripheral.h"
 
 ///common
 trble_result_e bktr_ble_init(trble_client_init_config* init_client, trble_server_init_config* init_server);
@@ -61,19 +62,6 @@ trble_result_e bktr_ble_client_operation_enable_notification(trble_operation_han
 trble_result_e bktr_ble_client_operation_enable_indication(trble_operation_handle* handle);
 trble_result_e bktr_ble_client_operation_enable_notification_and_indication(trble_operation_handle* handle);
 
-///server
-int32_t bk_tr_ble_server_init(trble_server_init_config *config);
-uint16_t bktr_ble_server_get_profile_count(void);
-trble_server_init_config *bktr_ble_server_get_param(void);
-int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_t *buffer, uint16_t buffer_len);
-int32_t bk_tr_ble_server_attr_get_data_ptr(trble_attr_handle attr_handle, uint8_t **buffer, uint16_t *buffer_len, uint16_t *buffer_max_len);
-int32_t bk_tr_ble_server_charact_notify(trble_attr_handle attr_handle, trble_conn_handle con_handle, uint8_t *buffer, uint16_t buffer_len, uint8_t is_notify);
-int32_t bk_tr_ble_server_disconnect(trble_conn_handle conn_handle);
-int32_t bk_tr_ble_server_get_mac_addr_by_conn_handle(trble_conn_handle conn_handle, uint8_t *bd_addr);
-int32_t bk_tr_ble_server_get_conn_handle_by_addr(uint8_t *bd_addr, trble_conn_handle *con_handle);
-int32_t bk_tr_ble_server_set_gap_device_name(uint8_t len, uint8_t *device_name);
-int32_t bk_tr_ble_server_indicate_queue_count(trble_conn_handle *con_handle, uint8_t *count);
-int32_t bk_tr_ble_server_attr_reject(trble_attr_handle attr_handle, uint8_t app_errorcode);
 
 //adv
 int32_t bk_tr_ble_advertiser_set_adv_data(uint8_t *data, uint16_t length);
