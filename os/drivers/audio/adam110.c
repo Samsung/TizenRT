@@ -1308,6 +1308,7 @@ static int adam110_stop(FAR struct audio_lowerhalf_s *dev)
 {
 	FAR struct adam110_dev_s *priv = (FAR struct adam110_dev_s *)dev;
 	t_proto_pkt rxpkt;
+	FAR struct ap_buffer_s *apb;
 
 	if (!priv) {
 		return -EINVAL;
@@ -1319,6 +1320,11 @@ static int adam110_stop(FAR struct audio_lowerhalf_s *dev)
 	priv->running = false;
 	priv->recording = false;
 	ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, false, &rxpkt);
+
+	while ((apb = (FAR struct ap_buffer_s *)sq_remfirst(&priv->pendq)) != NULL) {
+		apb->nbytes = 0;
+		apb->curbyte = 0;
+	}
 
 	adam110_givesem(&priv->devsem);
 
