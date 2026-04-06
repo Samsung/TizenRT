@@ -131,6 +131,7 @@ void up_sigdeliver(void)
 	regs[REG_XPSR] = rtcb->xcp.saved_xpsr;
 #ifdef CONFIG_BUILD_PROTECTED
 	regs[REG_LR] = rtcb->xcp.saved_lr;
+	regs[REG_EXC_RETURN] = rtcb->xcp.saved_exec_ret;
 #endif
 
 	/* Get a local copy of the sigdeliver function pointer. We do this so that
@@ -139,7 +140,6 @@ void up_sigdeliver(void)
 	 */
 
 	sigdeliver = (sig_deliver_t)rtcb->xcp.sigdeliver;
-	rtcb->xcp.sigdeliver = NULL;
 
 	/* Then restore the task interrupt state */
 
@@ -165,6 +165,8 @@ void up_sigdeliver(void)
 	/* Then restore the correct state for this thread of
 	 * execution.
 	 */
+	/* handle new signal only after finishing current signal processing */
+	rtcb->xcp.sigdeliver = NULL;
 
 	board_led_off(LED_SIGNAL);
 
