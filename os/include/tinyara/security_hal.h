@@ -545,7 +545,7 @@ typedef int (*hal_get_hmac)(_IN_ hal_hmac_type mode, _IN_ hal_data *input, _IN_ 
  * @param[in]   key_idx The key index of the RSA private key to be used for signing.
  *                      - Available key index : 0 ~ 63 
  * @param[out]  sign    A pointer to the structure where the generated signature will be stored.
- *                      - data: Pointer to the buffer where the signature will be stored.
+ *                      - data: Pointer to the buffer where the DER-encoded signature will be stored.
  *                              The caller must allocate this buffer.
  *                      - data_len: Length of the generated signature.
  *
@@ -560,7 +560,8 @@ typedef int (*hal_get_hmac)(_IN_ hal_hmac_type mode, _IN_ hal_data *input, _IN_ 
  *
  * @note    The input `hash` is the message digest, not the original message.
  *          The message digest should be computed using the hash algorithm specified in `mode->hash_t`.
- *          The size of the `sign->data` buffer should be at least the size of the RSA key modulus (e.g., 256 bytes for RSA-2048).
+ *          The generated signature in `sign` is DER-encoded.
+ *          The size of the `sign->data` buffer should be large enough to hold the DER-encoded signature.
  */
 typedef int (*hal_rsa_sign_md)(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign);
 
@@ -576,7 +577,7 @@ typedef int (*hal_rsa_sign_md)(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_
  *                      - data: Pointer to the message digest buffer.
  *                      - data_len: Length of the message digest buffer.
  * @param[in]   sign    A pointer to the structure containing the signature to be verified.
- *                      - data: Pointer to the signature buffer.
+ *                      - data: Pointer to the DER-encoded signature buffer.
  *                      - data_len: Length of the signature buffer.
  * @param[in]   key_idx The key index of the RSA public key to be used for verification.
  *                      - Available key index : 0 ~ 63 
@@ -592,6 +593,7 @@ typedef int (*hal_rsa_sign_md)(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_
  *
  * @note    This function verifies the signature against the provided message digest.
  *          The message digest should be computed using the hash algorithm specified in `mode->hash_t`.
+ *          The input `sign` must contain a DER-encoded signature.
  */
 typedef int (*hal_rsa_verify_md)(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign, _IN_ uint32_t key_idx);
 
@@ -607,8 +609,8 @@ typedef int (*hal_rsa_verify_md)(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _I
  * @param[in]   key_idx The key index of the ECDSA private key to be used for signing.
  *                      - Available key index : 0 ~ 63 
  * @param[out]  sign    A pointer to the structure where the generated signature will be stored.
- *                      - data: Pointer to the buffer where the signature will be stored.
- *                              The caller must allocate this buffer. The signature typically consists of (r, s) values.
+ *                      - data: Pointer to the buffer where the DER-encoded signature will be stored.
+ *                              The caller must allocate this buffer.
  *                      - data_len: Length of the generated signature.
  *
  * @return  HAL_SUCCESS(0) on success, otherwise a positive error value.
@@ -622,7 +624,8 @@ typedef int (*hal_rsa_verify_md)(_IN_ hal_rsa_mode mode, _IN_ hal_data *hash, _I
  *
  * @note    The input `hash` is the message digest, not the original message.
  *          The message digest should be computed using the hash algorithm specified in `mode->hash_t`.
- *          The size of the `sign->data` buffer depends on the curve (e.g., 64 bytes for P-256 for r and s).
+ *          The generated signature in `sign` is DER-encoded.
+ *          The size of the `sign->data` buffer depends on the curve and DER encoding length.
  */
 typedef int (*hal_ecdsa_sign_md)(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, _IN_ uint32_t key_idx, _OUT_ hal_data *sign);
 
@@ -636,7 +639,7 @@ typedef int (*hal_ecdsa_sign_md)(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, 
  *                      - data: Pointer to the message digest buffer.
  *                      - data_len: Length of the message digest buffer.
  * @param[in]   sign    A pointer to the structure containing the signature to be verified.
- *                      - data: Pointer to the signature buffer (contains r and s values).
+ *                      - data: Pointer to the DER-encoded signature buffer.
  *                      - data_len: Length of the signature buffer.
  * @param[in]   key_idx The key index of the ECDSA public key to be used for verification.
  *                      - Available key index : 0 ~ 63 
@@ -652,6 +655,7 @@ typedef int (*hal_ecdsa_sign_md)(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, 
  *
  * @note    This function verifies the signature against the provided message digest.
  *          The message digest should be computed using the hash algorithm specified in `mode->hash_t`.
+ *          The input `sign` must contain a DER-encoded signature.
  */
 typedef int (*hal_ecdsa_verify_md)(_IN_ hal_ecdsa_mode mode, _IN_ hal_data *hash, _IN_ hal_data *sign, _IN_ uint32_t key_idx);
 
