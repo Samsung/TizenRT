@@ -539,7 +539,6 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 static ssize_t power_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	FAR struct power_file_s *priv;
-	ssize_t ret;
 
 	fvdbg("buffer=%p buflen=%d\n", buffer, (int)buflen);
 
@@ -548,14 +547,7 @@ static ssize_t power_write(FAR struct file *filep, FAR const char *buffer, size_
 	DEBUGASSERT(priv);
 
 	/* pm_procfs does not have write operation, one must code write logic here */
-	ret = 0;
-
-	/* Update the file offset */
-	if (ret > 0) {
-		filep->f_pos += ret;
-	}
-
-	return ret;
+	return 0;
 }
 
 /****************************************************************************
