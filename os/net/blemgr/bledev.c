@@ -466,6 +466,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		}
 		TRBLE_DRV_CALL(ret, dev, set_server_config, (dev, t_server));
 	}
+	break;
 	case LWNL_REQ_BLE_GET_PROFILE_COUNT:
 	{
 		uint16_t *count = NULL;
