@@ -64,6 +64,7 @@ typedef enum {
 	SECURITY_KEY_STORAGE_IN_USE,
 	SECURITY_RSC_BUSY,
 	SECURITY_NOT_SUPPORT,
+	SECURITY_INVALID_SIGN_FORMAT,
 } security_error;
 
 typedef struct _security_csr {
