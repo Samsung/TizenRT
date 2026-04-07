@@ -68,7 +68,8 @@
 #define ADMA110_DIS_OFF				0x00
 #define ADAM110_EN_ON				0x01
 
-#define ADAM110_RETRY_CNT			1
+#define ADAM110_RETRY_CNT			3
+#define ADAM110_FW_LOAD_RETRY_CNT   3
 #define ADAM110_HW_RST_WAIT			(50 * 1000)	/* Almost 30 ~ 50 msec */
 #define ADAM110_TXRX_DELAY			20 /* between tx and rx delay 20usec */ 
 #define ADAM110_COM_RES_DELAY		1 /* between command and respone imprecise */ 
@@ -251,7 +252,7 @@ struct adam110_dev_s {
 	bool recording;
 	bool reserved;
 	bool init_done;
-
+	int kd_num;
 	FAR struct spi_dev_s *spi;
 
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
@@ -263,6 +264,7 @@ struct adam110_dev_s {
 
 	uint32_t sample_size;
 	volatile bool fw_loaded;
+	uint32_t mcu_fw_ver;
 	uint16_t sensitivity;
 	uint32_t total_size;
 

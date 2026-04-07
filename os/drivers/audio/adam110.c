@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2017 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -321,42 +321,44 @@ static int adam110_verify_packet(t_proto_pkt *pkt)
 {
 	if (pkt->header != PKT_HEADER_RECV) {
 		auddbg("[E] pkt rxheader: 0x%x\n", pkt->header);
-		return RSLT_SYNC_ERR;
+		return -EINVAL;
 	}
 
 	uint8_t cal_checksum = adam110_calculate_checksum((uint8_t *)pkt, sizeof(t_proto_pkt) - 1);
 	if (cal_checksum != pkt->checksum) {
 		auddbg("[E] pkt chsum : 0x%x|0x%x|0x%x|0x%x|0x%x|0x%x|0x%x\n", pkt->header, pkt->op, pkt->parm1, pkt->parm2, pkt->parm3, pkt->parm4, pkt->checksum);
-	return RSLT_CHKSUM_ERR;
+		return -EIO;
 	}
 
-	return RSLT_SUCCESS;
+	return OK;
 }
 
 static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *txpkt, t_proto_pkt *rxpkt)
 {
+	int ret = OK;
 	txpkt->header = PKT_HEADER_SEND;
 	txpkt->checksum = adam110_calculate_checksum((uint8_t *)txpkt, sizeof(t_proto_pkt) - 1);
 
 	adam110_spi_exchange(dev, (uint8_t *)txpkt, sizeof(t_proto_pkt),
                               (uint8_t *)rxpkt, (rxpkt != NULL) ? sizeof(t_proto_pkt) : 0);
 
+	/* TODO should we return OK here? */
 	if (rxpkt == NULL) {
-		return RSLT_SUCCESS;
+		return OK;
 	}
 
-	int result = adam110_verify_packet(rxpkt);
-	if (result != RSLT_SUCCESS) {
-		auddbg("[E] packet verification : %d\n", result);
-		return result;
+	ret = adam110_verify_packet(rxpkt);
+	if (ret != OK) {
+		auddbg("[E] packet verification : %d\n", ret);
+		return ret;
 	}
 
 	if (rxpkt->op == RSLT_ERROR) {
-		auddbg("[E] result : %d\n", result);
+		auddbg("[E] rxpkt->op is RSLT_ERROR\n");
 		return -EIO;
 	}
 
-	return RSLT_SUCCESS;
+	return ret;
 }
 
 static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
@@ -380,6 +382,7 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 {
 	t_proto_pkt rxpkt;
 	int fd;
+	int ret = OK;
 	ssize_t nread;
 	uint32_t sent_size = 0;
 	uint8_t chunk_buf[ADAM110_MODEL_CHUNK_SIZE + 1]; // 256 + 1 (checksum)
@@ -391,10 +394,11 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 		return -ENOENT;
 	}
 
-	if (ADAM110_AI_UPDATE_START(dev, &rxpkt) != RSLT_SUCCESS) {
+	ret = ADAM110_AI_UPDATE_START(dev, &rxpkt);
+	if (ret != OK) {
 		auddbg("[E] Update start failed.\n");
 		close(fd);
-		return -EINVAL;
+		return ret;
 	}
 
 	up_udelay(ADAM110_TXRX_DELAY * 100);
@@ -422,8 +426,11 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 
 		retry_remain = ADAM110_MODEL_RETRY_CNT;
 		while (retry_remain > 0) {
-			int ret = ADAM110_AI_CHECK_XMIT(dev, p1, p2, &rxpkt);
-
+			ret = ADAM110_AI_CHECK_XMIT(dev, p1, p2, &rxpkt);
+			if (ret != OK) {
+				retry_remain--;
+				continue;
+			}
 			if (rxpkt.op == RSLT_SUCCESS) {
 				chunk_buf[nread] = adam110_calculate_checksum(chunk_buf, nread);
 				adam110_spi_exchange(dev, chunk_buf, nread + 1, NULL, 0);
@@ -432,17 +439,18 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 				break;
 			} else if (rxpkt.op == RSLT_BUF_FULL) {
 				retry_remain--;
-				if (retry_remain <= 0) {
-					auddbg("[E] model download timeout.\n");
-					close(fd);
-					return -ETIMEDOUT;
-				}
+				ret = -ETIMEDOUT;
 				up_udelay(ADAM110_TXRX_DELAY * 150);
+				continue;
 			} else {
-				auddbg("[E] model xmit ready failed : %d.\n", ret);
-				close(fd);
-				return -EIO;
+				auddbg("[E] model xmit failed rxpkt.op : %d.\n", rxpkt.op);
+				ret = -EPIPE;
+				continue;
 			}
+		}
+		if (ret != OK) {
+			close(fd);
+			return ret;
 		}
 	}
 	close(fd);
@@ -474,38 +482,40 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 
 	/* check f/w version */
 	ret = ADAM110_GET_FW_VER(dev, &rxpkt);
-	if (ret != RSLT_SUCCESS) {
-		return -EINVAL;
+	if (ret != OK) {
+		return -ret;
 	} 
 	
     fw_ver = rxpkt.parm1 << 24 | rxpkt.parm2 << 16 | rxpkt.parm3 << 8 | rxpkt.parm4;
-	auddbg("FW ver:0x%8x\n",fw_ver);
+	audvdbg("FW ver:0x%8x\n",fw_ver);
+	
+	dev->mcu_fw_ver = fw_ver;
 
 	fd = open(mcu_package, O_RDONLY);
 	if (fd < 0) {
-		auddbg("[E] Failed to open MCU package: %s (errno: %d)\n", mcu_package, errno);
+		auddbg("[E] Failed to open MCU package: %s (errno: %d | fd: %d)\n", mcu_package, errno, fd);
 		return -ENOENT;
 	}
 
 	if (fstat(fd, &st) != 0) {
-		close(fd);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto errout_with_fd;
 	}
 
 	fw_size = (uint32_t)st.st_size - ADAM110_FW_HEADER_SIZE;
 
 	nread = read(fd, fw_buf, ADAM110_FW_HEADER_SIZE);
-	if (nread == 0) {
-		auddbg("[E] Failed to read MCU package header: %s (errno: %d)\n", mcu_package, errno);
-		close(fd);
-		return -ENOENT;
+	if (nread != ADAM110_FW_HEADER_SIZE) {
+		auddbg("[E] Failed to read MCU package header: %s (errno: %d | nread: %d)\n", mcu_package, errno, nread);
+		ret = -EIO;
+		goto errout_with_fd;
 	}
 
 	/* check vendor id */
     if (ADAM110_FW_VENDOR_ID != fw_buf[ADAM110_FW_HEADER_VENDOR_OFFSET]) {
 		auddbg("[E] Wrong F/W.\n");
-		close(fd);
-		return -EINVAL;
+		ret = -EIO;
+		goto errout_with_fd;
 	}
 
 	/* check fw version */
@@ -514,9 +524,9 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 						  fw_buf[ADAM110_FW_HEADER_VER_PATCH_H_OFFSET] << 8 | \
 						  fw_buf[ADAM110_FW_HEADER_VER_PATCH_L_OFFSET];
 	if (fw_ver == img_fw_ver) {
-		auddbg("[I] Same F/W.\n");
+		audvdbg("[I] Same F/W.\n");
 		close(fd);
-		return OK;
+		return -EEXIST;
 	}
 
 	auddbg("IMG FW ver:0x%8x\n",img_fw_ver);
@@ -533,45 +543,43 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 
 	if (fw_ver != 0xB004C0DE) {
 		ret = ADAM110_SET_FW_BOOT_MODE(dev, &rxpkt);
-		if (ret != RSLT_SUCCESS) {
+		if (ret != OK) {
 			auddbg("[E] Enter boot mode failed.\n");
-			close(fd);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto errout_with_fd;
 		}
 
-		up_udelay(100*1000);
-		g_adam110->lower->reset();
-		up_udelay(500*1000);
+		up_udelay(100 * 1000);
+		dev->lower->reset();
+		up_udelay(500 * 1000);
 	}
 
 	ret = ADAM110_GET_FW_BOOT_MODE(dev, &rxpkt);
-	if ((ret != RSLT_SUCCESS) ||
+	if ((ret != OK) ||
 		(rxpkt.parm1 << 24 | rxpkt.parm2 << 16 | rxpkt.parm3 << 8 | rxpkt.parm4) != ADAM110_FW_BOOT_MODE_OK) {
 		auddbg("[E] Enter boot mode failed.\n");
-		close(fd);
-		return -EINVAL;
+		ret = -EIO;
+		goto errout_with_fd;
 	}
 
 	ret = ADAM110_SET_FW_ERASE(dev, &rxpkt);
-	if (ret != RSLT_SUCCESS) {
+	if (ret != OK) {
 		auddbg("[E] Erase failed.\n");
-		close(fd);
-		return -EINVAL;
+		goto errout_with_fd;
 	}
 
 	up_udelay(ADAM110_FW_ERASE_WAITTIME);
 
 	if (lseek(fd, ADAM110_FW_HEADER_SIZE, SEEK_SET) == (off_t)-1) {
 		auddbg("[E] Failed to seek to data start (16B).\n");
-		close(fd);
-	    return -EIO;
+	    ret = -EIO;
+		goto errout_with_fd;
 	}
 
 	while (sent_size < fw_size) {
 		ret = ADAM110_SET_FW_UPDATE(dev, &rxpkt);
-		if (ret != RSLT_SUCCESS) {
-			close(fd);
-			return -EINVAL;
+		if (ret != OK) {
+			goto errout_with_fd;
 		}
 
 		up_udelay(ADAM110_FW_UPDATE_WAITTIME);
@@ -583,61 +591,68 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 			nread = read(fd, &chunk_buf[ADAM110_FW_DATA_HEADER], ADAM110_FW_CHUNK_SIZE);
 	        if (nread < 0) {
 				auddbg("[E] File read error.\n");
-				close(fd);
-	            return -EIO;
+	            ret = -EIO;
+				goto errout_with_fd;
 			}
 			adam110_spi_exchange(dev, chunk_buf, ADAM110_FW_CHUNK_SIZE + ADAM110_FW_DATA_HEADER, NULL, 0); /* must send 130byte (under 128byte need padding) */
 			sent_size += nread;
 			up_udelay(ADAM110_FW_WRITE_WAITTIME);
 		} else {
 			auddbg("[E] FW write failed.\n");
-			return -EIO;
+			ret = -EIO;
+			goto errout_with_fd;
 		}
 	}
 
-	close(fd);
-
 	/* checsum */
 	ret = ADAM110_SET_FW_CHECKSUM(dev, (uint8_t)(img_checksum >> 8 & 0xFF), (uint8_t)(img_checksum & 0xFF), &rxpkt);
-	if (rxpkt.op != RSLT_SUCCESS) {
+	if (ret != OK || rxpkt.op != RSLT_SUCCESS) {
 		auddbg("[E] FW chsum re failed.\n");
-		return -EINVAL;
+		ret = -EIO;
+		goto errout_with_fd;
 	}
 
 	up_udelay(ADAM110_FW_CHKSUM_WAITTIME);
 
 	ret = ADAM110_GET_FW_CHECKSUM(dev, &rxpkt);
-	if (rxpkt.op != RSLT_SUCCESS) {
+	if (ret != OK) {
 		auddbg("[E] Get FW chsum re failed.\n");
-		return -EINVAL;
+		ret = -EIO;
+		goto errout_with_fd;
 	}
 
-	if (rxpkt.parm3 == ADAM110_FW_CHKSUM_FAIL) {
-		auddbg("[E] FW chsum failed.\n");
-		return -EINVAL;
+	if (rxpkt.op != RSLT_SUCCESS || rxpkt.parm3 == ADAM110_FW_CHKSUM_FAIL) {
+		auddbg("[E] FW chsum failed.op : %d parm3 : %d\n", rxpkt.op, rxpkt.parm3);
+		ret = -EIO;
+		goto errout_with_fd;
 	}
 
+	close(fd);
 	auddbg("[I] F/W updated (0x%x.0x%x.0x%x)\n", (uint8_t)(img_fw_ver >> 24), (uint8_t)(img_fw_ver >> 16), (uint16_t)(img_fw_ver & 0xFFFF));
+	dev->mcu_fw_ver = img_fw_ver;
 	return OK;
+
+errout_with_fd:
+	close(fd);
+	return ret;
 }
 
 static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t data, uint8_t *buffer, uint32_t size)
 {
 	int ret = 0;
 	switch(data) {
-		case AI_DATA_TYPE_SEAMLESS_R:
-			ret = ADAM110_GET_SEAMLESS(dev, NULL);
-			break;
-		case AI_DATA_TYPE_AUDIO:
-			ret = ADAM110_GET_AUDIO(dev, NULL);
-			break;
-		default:
-			auddbg("[E] invalid data type\n");
-			ret = -EINVAL;
-
+	case AI_DATA_TYPE_SEAMLESS_R:
+		ret = ADAM110_GET_SEAMLESS(dev, NULL);
+		break;
+	case AI_DATA_TYPE_AUDIO:
+		ret = ADAM110_GET_AUDIO(dev, NULL);
+		break;
+	default:
+		auddbg("[E] invalid data type\n");
+		ret = -EINVAL;
 	}
 
-	if (ret == RSLT_SUCCESS) {
+	if (ret == OK) {
 		up_udelay(ADAM110_TXRX_DELAY);
 		adam110_spi_exchange(dev, NULL, 0, buffer, size);
 	}
@@ -671,6 +686,50 @@ static void adam110_takesem(sem_t *sem)
 	} while (ret < 0);
 }
 
+
+static int adam110_load_dsp_firmware(FAR struct adam110_dev_s *priv)
+{
+	int ret = OK;
+	priv->lower->reset();
+	up_udelay(ADAM110_HW_RST_WAIT);
+	priv->fw_loaded = false;
+
+	ret = ADAM110_SET_MODEL(priv);
+	if (ret != OK) {
+	    auddbg("[E] Model send fail!\n");
+	    ret = -EINVAL;
+	} else {
+		priv->fw_loaded = true;
+		ret = OK;
+	}
+	return ret;
+}
+
+static int adam110_load_mcu_firmware(FAR struct adam110_dev_s *priv)
+{
+	int ret = OK;
+	t_proto_pkt rxpkt;
+
+	ret = ADAM110_SET_FIRMWARE(priv);
+	/* if same version return -EEXIST errno */
+	if (ret == -EEXIST) {
+		return OK;
+	} else if (ret != OK) {
+		ret = -EINVAL;
+	}
+
+	priv->lower->reset();
+	up_udelay(ADAM110_HW_RST_WAIT);
+	if (ret == OK) {
+		ret = ADAM110_GET_KEEP_ALIVE(priv, &rxpkt);
+		if (ret != OK) {
+			auddbg("MCU F/W update failed.\n");
+		}
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
 static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 {
@@ -678,30 +737,33 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 	int retry = ADAM110_RETRY_CNT;
 	t_proto_pkt rxpkt;
 
+	/* check firmware version between mcu_fw and adam110 
+	 * if same version, only return OK 
+	 * */
+	ret = adam110_load_mcu_firmware(priv);
+	if (ret != OK) {
+		auddbg("FW update failed.\n");
+		return ret;
+	}
+
 	/* check keep alive from adam110 */
 	while (retry-- > 0) {
-		if (ADAM110_GET_KEEP_ALIVE(priv, &rxpkt) == RSLT_SUCCESS) {
-			ret = OK;
+		ret = ADAM110_GET_KEEP_ALIVE(priv, &rxpkt);
+		if (ret == OK) {
 			break;
-		} else {
-			ret = -EINVAL;
-			priv->lower->reset();
-			up_udelay(ADAM110_HW_RST_WAIT);
-			priv->fw_loaded = false;
 		}
 	}
 
-	/* if reset, re-send model */
-    if (ret == OK && priv->fw_loaded == false) {
-        ret = ADAM110_SET_MODEL(priv);
-        if (ret != RSLT_SUCCESS) {
-            auddbg("[E] Model send fail!\n");
-            ret = -EINVAL;
-        } else {
-			priv->fw_loaded = true;
-			ret = OK;
+	/* if aliveness failed, then load firmware again */
+	if (ret != OK) {
+		ret = adam110_load_dsp_firmware(priv);
+		if (ret == OK) {
+			ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num + 1), true, &rxpkt);
+			if (ret != OK) {
+				auddbg("Model enable failed.\n");
+			}
 		}
-    }
+	}
 
 	return ret;
 }
@@ -716,9 +778,11 @@ static int adam110_app_device_alive_check(int argc, FAR char *argv[])
 #ifdef CONFIG_PM
 		(void)pm_suspend(priv->pm_domain);
 #endif
-		ret = adam110_check_aliveness(priv);
-		if (ret != OK) {
-			auddbg("[E] Adam110 check aliveness failed\n");
+		if (priv->fw_loaded) {
+			ret = adam110_check_aliveness(priv);
+			if (ret != OK) {
+				auddbg("[E] Adam110 check aliveness failed\n");
+			}
 		}
 #ifdef CONFIG_PM
 		(void)pm_resume(priv->pm_domain);
@@ -748,19 +812,16 @@ static void adam110_work_handler(void *arg)
 
 	adam110_takesem(&priv->devsem);
 
-	ret = ADAM110_GET_KEEP_ALIVE(priv, &rxpkt);
-	if (ret != RSLT_SUCCESS) {
-		auddbg("[E] Keep alive failed.\n");
-		goto out_unlock;
-	}
-
 	ret = ADAM110_GET_EVENT(priv, &rxpkt);
-	if (ret != RSLT_SUCCESS) {
+	if (ret != OK) {
 		auddbg("[E] Get event failed.\n");
 		goto out_unlock;
 	}
-
-	auddbg("parm2 = 0x%x\n", rxpkt.parm2);
+	/* TODO if it is invalid event, should we return OK here? */
+	if (rxpkt.parm2 != AI_DATA_TYPE_SEAMLESS_R && rxpkt.parm2 != AI_DATA_TYPE_AUDIO) {
+		goto out_unlock;
+	}
+	audvdbg("parm2 = 0x%x\n", rxpkt.parm2);
 	if (rxpkt.parm2 == AI_DATA_TYPE_SEAMLESS_R) {
 		uint32_t data_size = 0;
 		int is_final_packet = 0;
@@ -802,10 +863,7 @@ static void adam110_work_handler(void *arg)
 			}
 		}
 		goto out_unlock_then_mq;
-	}
-
-
-	if (rxpkt.parm2 == AI_DATA_TYPE_AUDIO) {
+	} else {
 		uint16_t pcm_size = (uint16_t)(rxpkt.parm3 << 8 | rxpkt.parm4);
 
 		if (!priv->running || !priv->recording) {
@@ -827,7 +885,7 @@ static void adam110_work_handler(void *arg)
 
 				if (cal_sum == recv_sum) {
 					pcm_apb = pcm_waitq_take_one(priv);
-
+					auddbg("pcm_apb : %p\n", pcm_apb);
 					if (pcm_apb) {
 						uint32_t copy_len = (pcm_size < pcm_apb->nmaxbytes) ? pcm_size : pcm_apb->nmaxbytes;
 						memcpy(pcm_apb->samp, s_temp_chunk, copy_len);
@@ -1320,12 +1378,10 @@ static int adam110_stop(FAR struct audio_lowerhalf_s *dev)
 	priv->running = false;
 	priv->recording = false;
 	ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, false, &rxpkt);
-
 	while ((apb = (FAR struct ap_buffer_s *)sq_remfirst(&priv->pendq)) != NULL) {
 		apb->nbytes = 0;
 		apb->curbyte = 0;
 	}
-
 	adam110_givesem(&priv->devsem);
 
 	return 0;
@@ -1347,12 +1403,14 @@ static int adam110_pause(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
 	FAR struct adam110_dev_s *priv = (FAR struct adam110_dev_s *)dev;
+	t_proto_pkt rxpkt;
 
 	if (!priv) {
 		return -EINVAL;
 	}
 
 	adam110_takesem(&priv->devsem);
+	ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, false, &rxpkt);
 	adam110_givesem(&priv->devsem);
 	return 0;
 }
@@ -1372,12 +1430,13 @@ static int adam110_resume(FAR struct audio_lowerhalf_s *dev)
 #endif
 {
 	FAR struct adam110_dev_s *priv = (FAR struct adam110_dev_s *)dev;
-
+	t_proto_pkt rxpkt;
 	if (!priv) {
 		return -EINVAL;
 	}
 
 	adam110_takesem(&priv->devsem);
+	ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, true, &rxpkt);
 	adam110_givesem(&priv->devsem);
 	return 0;
 }
@@ -1580,13 +1639,49 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		}
 
 		uint8_t kd_num = arg;
-		if (arg > 2)
+		if (arg > 2) {
 			ret = -EINVAL;
-		else {
-			ret = ADAM110_AI_SET_INTR(priv, (kd_num + 1), true, &rxpkt);
-			if (ret != RSLT_SUCCESS) {
-				auddbg("Model enable failed.\n");
+		} else {
+
+			adam110_takesem(&priv->devsem);
+			int retry = ADAM110_FW_LOAD_RETRY_CNT;
+			while (retry--) {
+				ret = adam110_load_mcu_firmware(priv);
+				if (ret == OK) {
+					auddbg("[I] FW ver : 0%08x\n", priv->mcu_fw_ver);
+					break;
+				}
 			}
+
+			if (!priv->fw_loaded) {
+				retry = ADAM110_FW_LOAD_RETRY_CNT;
+				while (retry--) {
+					ret = adam110_load_dsp_firmware(priv);
+					if (ret == OK) {
+						break;
+					}
+				}
+			}
+
+			if (ret != OK) {
+				adam110_givesem(&priv->devsem);
+				return -EIO;
+			}
+			if (kd_num == priv->kd_num) {
+				auddbg("already loaded, ignore change kd. kd_num : %d\n", priv->kd_num);
+				adam110_givesem(&priv->devsem);
+				return OK;
+			}
+			/* If firmware loaded, then change interrupt here */
+			ret = ADAM110_AI_SET_INTR(priv, (kd_num + 1), true, &rxpkt);
+			if (ret != OK) {
+				auddbg("Model enable failed.\n");
+				adam110_givesem(&priv->devsem);
+				return ret;
+			}
+			priv->kd_num = kd_num;
+			adam110_givesem(&priv->devsem);
+
 		}
 	}
 	break;
@@ -1735,8 +1830,6 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 {
 	FAR struct adam110_dev_s *priv;
 	int ret = OK;
-	t_proto_pkt rxpkt;
-	int retry = ADAM110_RETRY_CNT;
 
 	priv = (FAR struct adam110_dev_s *)kmm_zalloc(sizeof(struct adam110_dev_s));
 	if (!priv) {
@@ -1757,74 +1850,17 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	priv->lower = lower;
 	priv->recording = false;
 	priv->mute = false;
+	priv->fw_loaded = false;
+	priv->kd_num = -1;
 	priv->dev.process_mq = NULL;
 	priv->keyword_bytes = ADAM110_KEYWORD_DATA_SIZE;
 
 #ifdef CONFIG_PM
-    /* only used during pm callbacks */
-	g_adam110 = priv;
-
 	priv->pm_domain = pm_domain_register("adam110");
 	DEBUGASSERT(priv->pm_domain >= 0);
 #endif
 
-
-	adam110_takesem(&priv->devsem);
-
-	/* keep alive */
-	while (retry-- > 0) {
-		if (ADAM110_GET_KEEP_ALIVE(priv, &rxpkt) == RSLT_SUCCESS) {
-			ret = OK;
-			break;
-		} else {
-			ret = -EINVAL;
-		}
-		priv->lower->reset();
-		up_udelay(ADAM110_HW_RST_WAIT);
-	}
-
-	/* firmware update */
-	retry = ADAM110_RETRY_CNT;
-	while (retry-- > 0) {
-		ret = ADAM110_SET_FIRMWARE(priv);
-		if (ret == RSLT_SUCCESS) {
-			ret = OK;
-		} else {
-			ret = -EINVAL;
-		}
-		priv->lower->reset();
-		up_udelay(ADAM110_HW_RST_WAIT);
-		if (ret == OK) {
-			if (ADAM110_GET_KEEP_ALIVE(priv, &rxpkt) == RSLT_SUCCESS) {
-				break;
-			} else {
-				ret = -EINVAL;
-			}
-		}
-	}
-
-	/* model update */
-    if (ret == OK) {
-        ret = ADAM110_SET_MODEL(priv);
-        if (ret != RSLT_SUCCESS) {
-            auddbg("[E] Model send fail!\n");
-            ret = -EINVAL;
-        } else {
-			priv->fw_loaded = true;
-		}
-    }
-
-	adam110_givesem(&priv->devsem);
-
     g_adam110 = priv;
-
-#ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
-	pid_t pid = kernel_thread("alive_check", 100, 1024, adam110_app_device_alive_check, NULL);
-	if (pid < 0) {
-		auddbg("Device alive check thread creatiopn failed\n");
-		ret = -EINVAL;
-	}
-#endif
 
 	if (ret != OK) {
 		kmm_free(priv);
@@ -1832,6 +1868,13 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 		auddbg("[E] Model send fail!\n");
 		return NULL;
 	}
+
+#ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
+	pid_t pid = kernel_thread("alive_check", 100, 4096, adam110_app_device_alive_check, NULL);
+	if (pid < 0) {
+		auddbg("Device alive check thread creatiopn failed\n");
+	}
+#endif
 
 #ifdef CONFIG_PM
 	/* register callbacks only if ADAM110 init is done */
