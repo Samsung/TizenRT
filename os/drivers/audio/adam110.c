@@ -212,6 +212,9 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 #define ADAM110_SET_AEC(dev, enable, rx_ptr) \
     adam110_send_cmd(dev, AUD_I2S_AEC_CTRL, (uint8_t)(enable), 0, 0, 0, rx_ptr)
 
+#define ADAM110_SET_MIC_GAIN(dev, gain, rx_ptr) \
+    adam110_send_cmd(dev, AUD_PDM_SET_GAIN, (uint8_t)(gain), 0, 0, 0, rx_ptr)
+
 #define ADAM110_AI_UPDATE_START(dev, rx_ptr) \
     adam110_send_cmd(dev, AC_UPDATE_MODEL, 0, 0, 0, 0, rx_ptr)
 
@@ -526,7 +529,7 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 	if (fw_ver == img_fw_ver) {
 		audvdbg("[I] Same F/W.\n");
 		close(fd);
-		return -EEXIST;
+		return OK;
 	}
 
 	auddbg("IMG FW ver:0x%8x\n",img_fw_ver);
@@ -686,47 +689,31 @@ static void adam110_takesem(sem_t *sem)
 	} while (ret < 0);
 }
 
-
-static int adam110_load_dsp_firmware(FAR struct adam110_dev_s *priv)
+static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 {
 	int ret = OK;
+
+	priv->fw_loaded = false;
+	auddbg("start set firmware!!\n");
+
 	priv->lower->reset();
 	up_udelay(ADAM110_HW_RST_WAIT);
-	priv->fw_loaded = false;
+
+	ret = ADAM110_SET_FIRMWARE(priv);
+	if (ret != OK) {
+	    auddbg("[E] FW update fail!\n");
+		return ret;
+	}
+	
+	priv->lower->reset();
+	up_udelay(ADAM110_HW_RST_WAIT);
 
 	ret = ADAM110_SET_MODEL(priv);
 	if (ret != OK) {
 	    auddbg("[E] Model send fail!\n");
-	    ret = -EINVAL;
 	} else {
 		priv->fw_loaded = true;
-		ret = OK;
 	}
-	return ret;
-}
-
-static int adam110_load_mcu_firmware(FAR struct adam110_dev_s *priv)
-{
-	int ret = OK;
-	t_proto_pkt rxpkt;
-
-	ret = ADAM110_SET_FIRMWARE(priv);
-	/* if same version return -EEXIST errno */
-	if (ret == -EEXIST) {
-		return OK;
-	} else if (ret != OK) {
-		ret = -EINVAL;
-	}
-
-	priv->lower->reset();
-	up_udelay(ADAM110_HW_RST_WAIT);
-	if (ret == OK) {
-		ret = ADAM110_GET_KEEP_ALIVE(priv, &rxpkt);
-		if (ret != OK) {
-			auddbg("MCU F/W update failed.\n");
-		}
-	}
-
 	return ret;
 }
 
@@ -737,14 +724,6 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 	int retry = ADAM110_RETRY_CNT;
 	t_proto_pkt rxpkt;
 
-	/* check firmware version between mcu_fw and adam110 
-	 * if same version, only return OK 
-	 * */
-	ret = adam110_load_mcu_firmware(priv);
-	if (ret != OK) {
-		auddbg("FW update failed.\n");
-		return ret;
-	}
 
 	/* check keep alive from adam110 */
 	while (retry-- > 0) {
@@ -756,12 +735,9 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 
 	/* if aliveness failed, then load firmware again */
 	if (ret != OK) {
-		ret = adam110_load_dsp_firmware(priv);
-		if (ret == OK) {
-			ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num + 1), true, &rxpkt);
-			if (ret != OK) {
-				auddbg("Model enable failed.\n");
-			}
+		ret = adam110_load_firmware(priv);
+		if (ret != OK) {
+			auddbg("FW update failed.\n");
 		}
 	}
 
@@ -1066,11 +1042,15 @@ static int adam110_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR stru
 	
 		switch(caps->ac_subtype) {
 		case AUDIO_FU_INP_GAIN:
-			return -ENOSYS;
+			adam110_takesem(&priv->devsem);
+			caps->ac_controls.b[0] = priv->mic_gain;
+			adam110_givesem(&priv->devsem);
+			break;
 		case AUDIO_FU_MUTE:
 			adam110_takesem(&priv->devsem);
 			caps->ac_controls.b[0] = priv->mute;
 			adam110_givesem(&priv->devsem);
+			break;
 		default:
 			break;
 		}
@@ -1171,12 +1151,27 @@ static int adam110_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 		/* Process based on Feature Unit */
 		switch (caps->ac_format.hw) {
 		case AUDIO_FU_INP_GAIN: {
-			return -ENOSYS;
+			t_proto_pkt rxpkt;
+			uint8_t mic_gain = caps->ac_controls.w;
+			if (mic_gain > ADAM110_MIC_GAIN_MAX) {
+				auddbg("[E] MIC Gain out of range. (range 0 ~ 255)");
+				return -EINVAL;
+			}
+			adam110_takesem(&priv->devsem);
+			/* set mic gain */
+			ret = ADAM110_SET_MIC_GAIN(priv, mic_gain, &rxpkt);
+			if (ret != 0) {
+				auddbg("[E} adam110 set Mic Gain failed ret : %d\n", ret);
+				adam110_givesem(&priv->devsem);
+				return ret;
+			}
+			priv->mic_gain = mic_gain;
+			audvdbg("[I] mic_gain : %d\n",priv->mic_gain);
+			adam110_givesem(&priv->devsem);
 		}
 		break;
 		case AUDIO_FU_MUTE: {
 			bool mute = caps->ac_controls.b[0];
-			audvdbg("[I] mute: 0x%x\n", mute);
 			adam110_takesem(&priv->devsem);
 			/* set HW mute */
 			ret = adam110_setMute(priv, mute);
@@ -1186,6 +1181,7 @@ static int adam110_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 				return ret;
 			}
 			priv->mute = mute;
+			audvdbg("[I] mute: 0x%x\n", priv->mute);
 			adam110_givesem(&priv->devsem);
 
 		}
@@ -1456,6 +1452,11 @@ static int adam110_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct a
 		return -EINVAL;
 	}
 
+	if (!priv->fw_loaded) {
+		// notify upper layer to stop capture
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_UNREACHABLE, NULL, OK);
+	}
+
 	adam110_takesem(&priv->devsem);
 	sq_addlast((sq_entry_t *)&apb->dq_entry, &priv->pendq);
 	auddbg("[I] enqueue added buf %p nmax=%u running=%d\n", apb, apb->nmaxbytes, priv->running);	
@@ -1646,42 +1647,30 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 			adam110_takesem(&priv->devsem);
 			int retry = ADAM110_FW_LOAD_RETRY_CNT;
 			while (retry--) {
-				ret = adam110_load_mcu_firmware(priv);
+				ret = adam110_load_firmware(priv);
 				if (ret == OK) {
 					auddbg("[I] FW ver : 0%08x\n", priv->mcu_fw_ver);
 					break;
 				}
 			}
-
-			if (!priv->fw_loaded) {
-				retry = ADAM110_FW_LOAD_RETRY_CNT;
-				while (retry--) {
-					ret = adam110_load_dsp_firmware(priv);
-					if (ret == OK) {
-						break;
-					}
-				}
-			}
+			adam110_givesem(&priv->devsem);
 
 			if (ret != OK) {
-				adam110_givesem(&priv->devsem);
 				return -EIO;
 			}
 			if (kd_num == priv->kd_num) {
 				auddbg("already loaded, ignore change kd. kd_num : %d\n", priv->kd_num);
-				adam110_givesem(&priv->devsem);
 				return OK;
 			}
+
+			adam110_takesem(&priv->devsem);
 			/* If firmware loaded, then change interrupt here */
 			ret = ADAM110_AI_SET_INTR(priv, (kd_num + 1), true, &rxpkt);
 			if (ret != OK) {
 				auddbg("Model enable failed.\n");
-				adam110_givesem(&priv->devsem);
-				return ret;
 			}
 			priv->kd_num = kd_num;
 			adam110_givesem(&priv->devsem);
-
 		}
 	}
 	break;
