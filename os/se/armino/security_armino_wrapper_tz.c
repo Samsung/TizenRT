@@ -528,6 +528,174 @@ static int armino_hal_get_der_length(uint32_t *len, unsigned char *data, int *by
     return HAL_SUCCESS;
 }
 
+static int armino_hal_get_der_length_safe(size_t *len, const uint8_t *data, size_t data_len, size_t *bytes_consumed)
+{
+    if (len == NULL || data == NULL || bytes_consumed == NULL || data_len == 0) {
+        return HAL_INVALID_ARGS;
+    }
+
+    uint8_t len_byte = data[0];
+    if ((len_byte & 0x80) == 0) {
+        *len = len_byte;
+        *bytes_consumed = 1;
+        return HAL_SUCCESS;
+    }
+
+    size_t len_bytes = (size_t)(len_byte & 0x7F);
+    if (len_bytes == 0 || len_bytes > 2 || data_len < (1 + len_bytes)) {
+        return HAL_INVALID_ARGS;
+    }
+
+    size_t value = 0;
+    for (size_t i = 0; i < len_bytes; i++) {
+        value = (value << 8) | data[1 + i];
+    }
+
+    *len = value;
+    *bytes_consumed = 1 + len_bytes;
+    return HAL_SUCCESS;
+}
+
+static int armino_hal_ecdsa_raw_to_der(const uint8_t *raw_sig, size_t raw_sig_len,
+                                       uint8_t *der_sig, size_t der_sig_buf_len, size_t *der_sig_len)
+{
+    if (raw_sig == NULL || der_sig == NULL || der_sig_len == NULL || raw_sig_len == 0 || (raw_sig_len & 1)) {
+        return HAL_INVALID_ARGS;
+    }
+
+    size_t comp_len = raw_sig_len / 2;
+    const uint8_t *r = raw_sig;
+    const uint8_t *s = raw_sig + comp_len;
+
+    size_t r_off = 0;
+    while (r_off < (comp_len - 1) && r[r_off] == 0x00) {
+        r_off++;
+    }
+    size_t s_off = 0;
+    while (s_off < (comp_len - 1) && s[s_off] == 0x00) {
+        s_off++;
+    }
+
+    size_t r_val_len = comp_len - r_off;
+    size_t s_val_len = comp_len - s_off;
+    size_t r_pad = ((r[r_off] & 0x80) != 0) ? 1 : 0;
+    size_t s_pad = ((s[s_off] & 0x80) != 0) ? 1 : 0;
+    size_t r_int_len = r_val_len + r_pad;
+    size_t s_int_len = s_val_len + s_pad;
+
+    int r_len_bytes = armino_hal_der_length_bytes((uint32_t)r_int_len);
+    int s_len_bytes = armino_hal_der_length_bytes((uint32_t)s_int_len);
+    if (r_len_bytes < 0 || s_len_bytes < 0) {
+        return HAL_NOT_SUPPORTED;
+    }
+
+    uint32_t seq_content_len = (uint32_t)(1 + r_len_bytes + r_int_len + 1 + s_len_bytes + s_int_len);
+    int seq_len_bytes = armino_hal_der_length_bytes(seq_content_len);
+    if (seq_len_bytes < 0) {
+        return HAL_NOT_SUPPORTED;
+    }
+
+    size_t total_der_len = (size_t)(1 + seq_len_bytes) + seq_content_len;
+    if (der_sig_buf_len < total_der_len) {
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+
+    size_t off = 0;
+    der_sig[off++] = 0x30;
+    off += armino_hal_write_der_length(der_sig + off, seq_content_len);
+
+    der_sig[off++] = 0x02;
+    off += armino_hal_write_der_length(der_sig + off, (uint32_t)r_int_len);
+    if (r_pad) {
+        der_sig[off++] = 0x00;
+    }
+    memcpy(der_sig + off, r + r_off, r_val_len);
+    off += r_val_len;
+
+    der_sig[off++] = 0x02;
+    off += armino_hal_write_der_length(der_sig + off, (uint32_t)s_int_len);
+    if (s_pad) {
+        der_sig[off++] = 0x00;
+    }
+    memcpy(der_sig + off, s + s_off, s_val_len);
+    off += s_val_len;
+
+    *der_sig_len = off;
+    return HAL_SUCCESS;
+}
+
+static int armino_hal_ecdsa_der_to_raw(const uint8_t *der_sig, size_t der_sig_len,
+                                       uint8_t *raw_sig, size_t raw_sig_buf_len, size_t *raw_sig_len)
+{
+    if (der_sig == NULL || raw_sig == NULL || raw_sig_len == NULL || der_sig_len == 0 ||
+        raw_sig_buf_len == 0 || (raw_sig_buf_len & 1)) {
+        return HAL_INVALID_ARGS;
+    }
+
+    size_t comp_len = raw_sig_buf_len / 2;
+    size_t off = 0;
+    size_t item_len = 0;
+    size_t len_bytes = 0;
+
+    if (der_sig[off++] != 0x30) {
+        return HAL_INVALID_ARGS;
+    }
+
+    int ret = armino_hal_get_der_length_safe(&item_len, der_sig + off, der_sig_len - off, &len_bytes);
+    if (ret != HAL_SUCCESS) {
+        return ret;
+    }
+    off += len_bytes;
+    if (off + item_len != der_sig_len) {
+        return HAL_INVALID_ARGS;
+    }
+
+    for (int comp = 0; comp < 2; comp++) {
+        if (off >= der_sig_len || der_sig[off++] != 0x02) {
+            return HAL_INVALID_ARGS;
+        }
+
+        ret = armino_hal_get_der_length_safe(&item_len, der_sig + off, der_sig_len - off, &len_bytes);
+        if (ret != HAL_SUCCESS) {
+            return ret;
+        }
+        off += len_bytes;
+
+        if (item_len == 0 || off + item_len > der_sig_len) {
+            return HAL_INVALID_ARGS;
+        }
+
+        const uint8_t *src = der_sig + off;
+        size_t src_len = item_len;
+
+        if ((src[0] & 0x80) != 0) {
+            return HAL_INVALID_ARGS;
+        }
+
+        while (src_len > 1 && src[0] == 0x00) {
+            src++;
+            src_len--;
+        }
+
+        if (src_len > comp_len) {
+            return HAL_INVALID_ARGS;
+        }
+
+        uint8_t *dst = raw_sig + (comp * comp_len);
+        memset(dst, 0, comp_len);
+        memcpy(dst + (comp_len - src_len), src, src_len);
+
+        off += item_len;
+    }
+
+    if (off != der_sig_len) {
+        return HAL_INVALID_ARGS;
+    }
+
+    *raw_sig_len = raw_sig_buf_len;
+    return HAL_SUCCESS;
+}
+
 int armino_hal_der_ecdsa_private_key(hal_data *key, hal_data *prikey)
 {
     HWRAP_ENTER;
@@ -1680,16 +1848,30 @@ int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_i
     psa_key_id_t key_id = 0;
     psa_status_t status;
     psa_algorithm_t alg;
+    int ret;
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
 #if CONFIG_TFM_ASYM_ALGO_NSC
+        if (mode.curve != HAL_ECDSA_SEC_P256R1) {
+            dbg("unsupported factory curve: %d key_idx = %d\r\n", mode.curve, key_idx);
+            return HAL_NOT_SUPPORTED;
+        }
+        uint8_t raw_sign_buf[64] = {0};
+        hal_data raw_sign = {raw_sign_buf, sizeof(raw_sign_buf), NULL, 0};
+        size_t der_sign_len = (sign->data_len == 0) ? 72 : sign->data_len;
         TFM_NSC_LOCK_OR_RETURN();
-        status = psa_ecdsa_sign_p256(hash, key_idx, sign);
+        status = psa_ecdsa_sign_p256(hash, key_idx, &raw_sign);
         TFM_NSC_UNLOCK();
         if(status != PSA_SUCCESS){
             dbg("ECDSA sign failed: %d\n", status);
             return HAL_FAIL;
         }
+        ret = armino_hal_ecdsa_raw_to_der(raw_sign.data, raw_sign.data_len, sign->data, der_sign_len, &der_sign_len);
+        if (ret != HAL_SUCCESS) {
+            dbg("ECDSA RAW->DER failed: %d\n", ret);
+            return ret;
+        }
+        sign->data_len = der_sign_len;
         return HAL_SUCCESS;
 #else
         dbg("unsupported factory curve: %d key_idx = %d\r\n", mode.curve, key_idx);
@@ -1725,7 +1907,7 @@ int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_i
             return HAL_NOT_SUPPORTED;
     }
 
-    // Get key attributes to determine signature size
+    // Get key attributes to determine raw signature size
     psa_key_attributes_t attributes;
     status = psa_get_key_attributes(key_id, &attributes);
     if (status != PSA_SUCCESS) {
@@ -1733,16 +1915,33 @@ int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_i
         return HAL_FAIL;
     }
     size_t key_bits = psa_get_key_bits(&attributes);
-    size_t signature_size = ((key_bits + 7) / 8) * 2; // ECDSA signature is R + S
+    size_t raw_signature_size = ((key_bits + 7) / 8) * 2; // raw ECDSA signature is R || S
     psa_reset_key_attributes(&attributes);
 
-    // Perform signature
-    status = psa_sign_message(key_id, alg, hash->data, hash->data_len, sign->data, signature_size, &sign->data_len);
+    uint8_t *raw_signature = (uint8_t *)kmm_malloc(raw_signature_size);
+    if (raw_signature == NULL) {
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+    size_t raw_signature_len = 0;
+    size_t der_signature_len = (sign->data_len == 0) ? (raw_signature_size + 10) : sign->data_len;
+
+    // Perform signature to raw (R || S), then convert to DER
+    status = psa_sign_message(key_id, alg, hash->data, hash->data_len,
+                           raw_signature, raw_signature_size, &raw_signature_len);
 
     if (status != PSA_SUCCESS) {
         dbg("ECDSA signature failed: %d\n", status);
+        kmm_free(raw_signature);
         return HAL_FAIL;
     }
+
+    ret = armino_hal_ecdsa_raw_to_der(raw_signature, raw_signature_len, sign->data, der_signature_len, &der_signature_len);
+    kmm_free(raw_signature);
+    if (ret != HAL_SUCCESS) {
+        dbg("ECDSA RAW->DER failed: %d\n", ret);
+        return ret;
+    }
+    sign->data_len = der_signature_len;
 
     return HAL_SUCCESS;
 }
@@ -1770,12 +1969,23 @@ int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *si
     psa_key_id_t key_id = 0;
     psa_status_t status;
     psa_algorithm_t alg;
+    int ret;
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
 #if CONFIG_TFM_ASYM_ALGO_NSC
     if(mode.curve == HAL_ECDSA_SEC_P256R1){
+        uint8_t raw_sign_buf[64] = {0};
+        size_t raw_sign_len = sizeof(raw_sign_buf);
+        hal_data raw_sign = {raw_sign_buf, 0, NULL, 0};
+        ret = armino_hal_ecdsa_der_to_raw(sign->data, sign->data_len, raw_sign_buf, sizeof(raw_sign_buf), &raw_sign_len);
+        if (ret != HAL_SUCCESS) {
+            dbg("ECDSA DER->RAW failed: %d\n", ret);
+            return ret;
+        }
+        raw_sign.data_len = raw_sign_len;
+
         TFM_NSC_LOCK_OR_RETURN();
-        status = psa_ecdsa_verify_p256(hash, key_idx, sign);
+        status = psa_ecdsa_verify_p256(hash, key_idx, &raw_sign);
         TFM_NSC_UNLOCK();
         if(status != PSA_SUCCESS){
             dbg("ECDSA verify failed: %d\n", status);
@@ -1820,8 +2030,33 @@ int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *si
             return HAL_NOT_SUPPORTED;
     }
 
-    // Perform verification
-    status = psa_verify_message(key_id, alg, hash->data, hash->data_len, sign->data, sign->data_len);
+    // Get key attributes to determine expected raw signature size
+    psa_key_attributes_t attributes;
+    status = psa_get_key_attributes(key_id, &attributes);
+    if (status != PSA_SUCCESS) {
+        dbg("Failed to get key attributes: %d\n", status);
+        return HAL_FAIL;
+    }
+    size_t key_bits = psa_get_key_bits(&attributes);
+    size_t raw_signature_size = ((key_bits + 7) / 8) * 2;
+    psa_reset_key_attributes(&attributes);
+
+    uint8_t *raw_signature = (uint8_t *)kmm_malloc(raw_signature_size);
+    if (raw_signature == NULL) {
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+    size_t raw_signature_len = 0;
+
+    ret = armino_hal_ecdsa_der_to_raw(sign->data, sign->data_len, raw_signature, raw_signature_size, &raw_signature_len);
+    if (ret != HAL_SUCCESS) {
+        dbg("ECDSA DER->RAW failed: %d\n", ret);
+        kmm_free(raw_signature);
+        return ret;
+    }
+
+    // Verify with raw signature (R || S)
+    status = psa_verify_message(key_id, alg, hash->data, hash->data_len, raw_signature, raw_signature_len);
+    kmm_free(raw_signature);
 
     if (status != PSA_SUCCESS) {
         dbg("ECDSA verification failed: %d\n", status);
