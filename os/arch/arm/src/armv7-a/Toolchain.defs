@@ -78,6 +78,8 @@ else ifeq ($(CONFIG_ARCH_CORTEXA8),y)
   ARCHCPUFLAGS += -mcpu=cortex-a8
 else ifeq ($(CONFIG_ARCH_CORTEXA9),y)
   ARCHCPUFLAGS += -mcpu=cortex-a9
+else ifeq ($(CONFIG_ARCH_CORTEXA15),y)
+  ARCHCPUFLAGS += -mcpu=cortex-a15
 else ifeq ($(CONFIG_ARCH_CORTEXA32),y)
   ARCHCPUFLAGS += -mcpu=cortex-a32
 endif

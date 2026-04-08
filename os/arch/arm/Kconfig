@@ -134,6 +134,12 @@ config ARCH_CHIP_AMEBASMART
 	---help---
 		Realtek AMEBASMART architectures (ARM Cortex-A32).
 
+config ARCH_CHIP_QEMU_ARM_VIRT
+	bool "QEMU virt platform (ARMv7a)"
+	select ARCH_HAVE_RESET
+	---help---
+		QEMU virt platform (ARMv7a)
+
 endchoice
 
 config ARCH_CHIP
@@ -150,6 +156,7 @@ config ARCH_CHIP
 	default "amebasmart"	if ARCH_CHIP_AMEBASMART
 	default "stm32h745"     if ARCH_CHIP_STM32H745
 	default "imx6"		if ARCH_CHIP_IMX6
+	default "qemu-virt"	if ARCH_CHIP_QEMU_ARM_VIRT
 
 config ARM_THUMB
         bool "Thumb Mode"
@@ -274,6 +281,19 @@ config ARCH_CORTEXA9
 	select ARCH_HAVE_TESTSET
 	select ARCH_HAVE_THREAD_LOCAL
 	select ARM_HAVE_MPCORE
+	select ARCH_ARMV7A_FAMILY
+
+config ARCH_CORTEXA15
+	bool
+	default n
+	select ARCH_DCACHE
+	select ARCH_ICACHE
+	select ARCH_HAVE_IRQPRIO
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_MMU
+	select ARCH_USE_MMU
+	select ARCH_HAVE_TESTSET
+	select ARCH_HAVE_THREAD_LOCAL
 	select ARCH_ARMV7A_FAMILY
 
 config ARCH_CORTEXR4
@@ -559,5 +579,8 @@ source arch/arm/src/armino/Kconfig
 endif
 if ARCH_CHIP_STM32H745
 source arch/arm/src/stm32h745/Kconfig
+endif
+if ARCH_CHIP_QEMU_ARM_VIRT
+source arch/arm/src/qemu-virt/Kconfig
 endif
 endif

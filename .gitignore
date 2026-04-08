@@ -30,3 +30,9 @@ tags
 *.tmp.*
 *.log
 *.log.old
+test-results/
+runtime-results/
+qemu_flash.bin
+qemu_flash2.bin
+disk.raw
+run_qemu.sh

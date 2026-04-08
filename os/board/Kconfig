@@ -182,6 +182,15 @@ config ARCH_BOARD_SABRE_6QUAD
 	select ARCH_BUTTONS
 	select ARCH_HAVE_IRQBUTTONS
 	select ARCH_HAVE_RAM_KERNEL_TEXT
+
+config ARCH_BOARD_QEMU_VIRT
+	bool "Qemu ARMv7a CPUs board"
+	depends on ARCH_CHIP_QEMU_ARM_VIRT
+	select ARCH_BOARD_HAVE_FLASH
+	select ARCH_HAVE_RAM_KERNEL_TEXT if BOOT_RUNFROMSDRAM
+	---help---
+		This option selects support for TizenRT on the QEMU ARMv7a virt
+		board featuring the qemu ARMv7a CPUs.
  
 endchoice
 
@@ -195,6 +204,7 @@ config ARCH_BOARD_ESP32_FAMILY
 
 config ARCH_BOARD
 	string
+	default "qemu-virt"          if ARCH_BOARD_QEMU_VIRT
 	default "artik05x"           if ARCH_BOARD_ARTIK05X_FAMILY
 	default "lm3s6965-ek"        if ARCH_BOARD_LM3S6965EK
 	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
@@ -294,6 +304,14 @@ config LIB_BOARDCTL
 
 if LIB_BOARDCTL
 
+config BOARDCTL_IOCTL
+	bool "Enable board-specific ioctl interfaces"
+	default n
+	---help---
+		Enables support for forwarding board-specific boardctl commands
+		starting at BOARDIOC_USER to the board-provided board_ioctl()
+		interface.
+
 config BOARDCTL_POWEROFF
 	bool "Enable power off interfaces"
 	default n
@@ -366,6 +384,9 @@ endif
 
 comment "Board-Specific Options"
 
+if ARCH_BOARD_QEMU_VIRT
+source board/qemu-virt/Kconfig
+endif
 if ARCH_BOARD_ARTIK05X_FAMILY
 source board/artik05x/Kconfig
 endif

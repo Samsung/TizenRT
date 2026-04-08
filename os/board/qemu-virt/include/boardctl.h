@@ -1,0 +1,8 @@
+#ifndef __BOARD_QEMU_VIRT_INCLUDE_BOARDCTL_H
+#define __BOARD_QEMU_VIRT_INCLUDE_BOARDCTL_H
+
+#include <sys/boardctl.h>
+
+#define BIOC_QEMU_VIRTIO_BLK_TEST (BOARDIOC_USER + 1)
+
+#endif

@@ -1,0 +1,83 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "QEMU Virt Chipset Options"
+
+if ARCH_CHIP_QEMU_ARM_VIRT
+
+menu "Qemu Virt Configuration"
+
+if BOOT_RUNFROMSDRAM
+config QEMU_KERNEL_LOAD_ADDR
+	hex "Kernel Load address"
+	default 0x40100000
+endif #BOOT_RUNFROMSDRAM
+
+choice
+	prompt "Qemu Core Configuration"
+	default ARCH_CHIP_QEMU_CORTEXA15
+
+config ARCH_CHIP_QEMU_CORTEXA15
+	bool "Qemu virtual Processor (cortex-a15)"
+	select ARCH_CORTEXA15
+	select ARCH_HAVE_ADDRENV
+	select ARCH_HAVE_ELF_EXECUTABLE
+	select ARCH_HAVE_LOWVECTORS
+	select ARCH_HAVE_MULTICPU
+	select ARCH_NEED_ADDRENV_MAPPING
+	select ARM_HAVE_NEON
+	select ARM_HAVE_PSCI
+	select ARMV7A_HAVE_GICv2
+	select ARCH_HAVE_FPU
+	select ARMV7A_HAVE_GTM
+	select ARMV7A_HAVE_PTM
+	select ARCH_BOARD_HAVE_SECOND_FLASH
+
+endchoice
+
+config ARCH_CHIP_QEMU_TRUSTZONE
+	bool "Enable Arm Security Extensions (TrustZone)"
+	select ARCH_HAVE_TRUSTZONE
+	default n
+	---help---
+		Doc: https://qemu-project.gitlab.io/qemu/system/arm/virt.html
+		shows that set secure=on/of can emulating a guest CPU which
+		implements the Arm Security Extensions (TrustZone).
+		The default is off. And this config can enable/disable
+		TrustZone in qemu chip.
+		(Currently not supported.)
+
+config ARM_HAVE_PSCI
+	bool "ARM PSCI (Power State Coordination Interface) Support"
+	default n
+	---help---
+		This Power State Coordination Interface (PSCI) defines
+		a standard interface for power management. the PCSI need
+		to implement handling firmware at EL2 or EL3. The option
+		maybe not applicable for arm core without PCSI firmware
+		interface implement
+
+config ARM_PSCI
+	bool "Enabled PSCI"
+	depends on ARM_HAVE_PSCI
+	default n
+	---help---
+		See ARM_HAVE_PSCI for details
+
+
+menuconfig UART_PL011
+	bool "PL011 Chip support"
+	default n
+
+if UART_PL011
+source "arch/arm/src/qemu-virt/Kconfig-pl011"
+endif
+
+# Virtio support
+source "arch/arm/src/qemu-virt/virtio/Kconfig"
+
+endmenu # "Qemu Virt Configuration"
+
+endif # ARCH_CHIP_QEMU_ARM_VIRT

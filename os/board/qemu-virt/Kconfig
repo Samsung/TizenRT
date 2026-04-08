@@ -1,0 +1,83 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_BOARD_QEMU_VIRT
+menu "Bootloader Configurations"
+# choice
+#     prompt "Boot Method"
+#     default QEMU_VIRT_KERNEL_LOAD
+# config QEMU_VIRT_KERNEL_LOAD
+#     bool "Load kernel to RAM"
+#     select BOOT_RUNFROMSDRAM
+#     help
+#         Bootloader loads kernel to RAM.
+# config QEMU_VIRT_KERNEL_XIP
+#     bool "Jump to kernel (XIP)"
+#     select BOOT_RUNFROMFLASH
+#     help
+#         Bootloader just jumps to kernel.
+# endchoice
+endmenu
+
+config FLASH_VSTART
+    hex
+    default 0x00000000
+    help
+        A start virtual address of flash (in hex).
+        This is fixed value, so user doesn't need to change it.
+        Keep this value same as FLASH_START_ADDR.
+
+config FLASH_START_ADDR
+    hex
+    default 0x00000000
+    help
+        A start address of flash (in hex).
+        This is fixed value, so user doesn't need to change it.
+
+config FLASH_VSTART_LOADABLE
+    hex
+    default 0x00008000
+    depends on XIP_ELF
+    help
+        A start virtual address of flash (in hex). This macro
+        will be used to do address remapping for loadable running on XIP.
+        This is fixed value, so user doesn't need to change it.
+
+config FLASH_SIZE
+    int
+    default 67108864
+    help
+        A size of flash (in bytes).
+        This is fixed value, so user doesn't need to change it.
+
+    if SECOND_FLASH_PARTITION
+        config SECOND_FLASH_START_ADDR
+            hex
+            default 0x04000000
+            help
+                A start address of second flash (in hex).
+                This is fixed value, so user doesn't need to change it.
+
+        config SECOND_FLASH_SIZE
+            int
+            default 67108864
+            help
+                A size of second flash (in bytes).
+    endif
+
+config USERFS_MNTPT
+    string
+    default "/mnt" if AUTOMOUNT_USERFS && !SECOND_FLASH_PARTITION
+    default "/mnt0" if AUTOMOUNT_USERFS && SECOND_FLASH_PARTITION
+    help
+        A mount point name of first flash partition.
+
+config USERFS_EXT_MNTPT
+    string
+    default "/mnt" if AUTOMOUNT_USERFS && SECOND_FLASH_PARTITION
+    help
+        A mount point name of second flash partition.
+
+endif #ARCH_BOARD_QEMU_VIRT

@@ -65,6 +65,9 @@ CXXSRCS =
 ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
 
 CSRCS += tc_main.c
+ifeq ($(CONFIG_ARCH_BOARD_QEMU_VIRT)$(CONFIG_QEMU_VIRT_VIRTIO_BLK),yy)
+CSRCS += virtio_blk_test_main.c
+endif
 DEPPATH = --dep-path .
 VPATH = .
 
@@ -160,6 +163,9 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM),y)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_KERNEL),y)
 	$(Q) $(call REGISTER,kernel_tc,tc_kernel_main,TASH_EXECMD_ASYNC,180,4096)
+endif
+ifeq ($(CONFIG_ARCH_BOARD_QEMU_VIRT)$(CONFIG_QEMU_VIRT_VIRTIO_BLK),yy)
+	$(Q) $(call REGISTER,virtio_blk_test,virtio_blk_test_main,TASH_EXECMD_SYNC,100,2048)
 endif
 ifeq ($(CONFIG_LIBCXX_UTC),y)
 	$(Q) $(call REGISTER,libcxx_utc,utc_libcxx_main,TASH_EXECMD_ASYNC,100,4096)

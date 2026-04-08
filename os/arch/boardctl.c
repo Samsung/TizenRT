@@ -183,7 +183,11 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 #endif
 
 	default:
+#ifdef CONFIG_BOARDCTL_IOCTL
+		ret = board_ioctl(cmd, arg);
+#else
 		ret = -ENOTTY;
+#endif
 		break;
 	}
 

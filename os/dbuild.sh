@@ -27,9 +27,27 @@ CONFIGDIR="${BUILDDIR}/configs"
 DOCKER_IMAGE=
 DOCKER_PUBLIC_IMAGE="tizenrt/tizenrt"
 DOCKER_VERSION="1.5.8"
+DOCKER_VERSION_OVERRIDE=
 
 STATUS_LIST="NOT_CONFIGURED BOARD_CONFIGURED CONFIGURED BUILT PREPARE_DL DOWNLOAD_READY"
 BUILD_CMD=make
+
+HOST_UNAME=$(uname -s 2>/dev/null || echo unknown)
+case "${HOST_UNAME}" in
+MINGW*|MSYS*|CYGWIN*)
+	HOST_IS_WINDOWS_SHELL=true
+	;;
+*)
+	HOST_IS_WINDOWS_SHELL=false
+	;;
+esac
+
+DOCKER_TOPDIR="${TOPDIR}"
+DOCKER_RUN_PREFIX=
+if [ "${HOST_IS_WINDOWS_SHELL}" = "true" ]; then
+	DOCKER_TOPDIR=$(cygpath -m "${TOPDIR}")
+	DOCKER_RUN_PREFIX='MSYS2_ARG_CONV_EXCL="*"'
+fi
 
 # Checking docker is installed
 nodocker() {
@@ -60,6 +78,9 @@ function GET_SPECIFIC_DOCKER_IMAGE()
 			DOCKER_VERSION=${CONFIG_DOCKER_VERSION}
 		fi
 	fi
+	if [ -n "${DOCKER_VERSION_OVERRIDE}" ]; then
+		DOCKER_VERSION=${DOCKER_VERSION_OVERRIDE}
+	fi
 	echo "Check Docker Image"
 	# Try modern Docker format first, fallback to legacy format if it fails (modern Docker format should work with Docker 1.10+)
 	DOCKER_IMAGES=`docker images --format "{{.Repository}}:{{.Tag}}" 2>/dev/null | grep 'tizenrt'`
@@ -88,6 +109,27 @@ function GET_SPECIFIC_DOCKER_IMAGE()
 		echo "failed to pull docker image: ${DOCKER_PUBLIC_IMAGE}:${DOCKER_VERSION}"
 		# Can add other docker image
 		exit 1
+	fi
+}
+
+function LOAD_DOCKER_VERSION_FROM_DEFCONFIG()
+{
+	local DEFCONFIG_PATH=
+	local DEFCONFIG_DOCKER_VERSION=
+
+	if [ -z "$1" ]; then
+		return
+	fi
+
+	DEFCONFIG_PATH="${CONFIGDIR}/$1/defconfig"
+	if [ ! -f "${DEFCONFIG_PATH}" ]; then
+		return
+	fi
+
+	DEFCONFIG_DOCKER_VERSION=$(grep '^CONFIG_DOCKER_VERSION=' "${DEFCONFIG_PATH}" | cut -d'=' -f2- | sed 's/^"//; s/"$//')
+	if [ -n "${DEFCONFIG_DOCKER_VERSION}" ]; then
+		DOCKER_VERSION_OVERRIDE="${DEFCONFIG_DOCKER_VERSION}"
+		DOCKER_VERSION="${DEFCONFIG_DOCKER_VERSION}"
 	fi
 }
 
@@ -216,7 +258,7 @@ function BUILD_TEST()
 {
 	# execute a shell script for build test
 	pushd ${OSDIR} > /dev/null
-	docker run --rm ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} bash -c "./tools/build_test.sh"
+	eval ${DOCKER_RUN_PREFIX} docker run --rm ${DOCKER_OPT} -v ${DOCKER_TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} bash -c "./tools/build_test.sh"
 	popd > /dev/null
 }
 
@@ -362,6 +404,7 @@ function SELECT_CONFIG()
 
 	echo "${CONFIG} is selected"
 
+	LOAD_DOCKER_VERSION_FROM_DEFCONFIG "${BOARD}/${CONFIG}"
 	CONFIGURE ${BOARD}/${CONFIG} || exit 1
 }
 
@@ -467,9 +510,20 @@ function CONFIGURE()
 
 function DOWNLOAD()
 {
+	UDEV_MOUNT="-v /run/udev:/run/udev:ro"
+	if [ "${HOST_IS_WINDOWS_SHELL}" = "true" ]; then
+		UDEV_MOUNT=
+	fi
+
+	if [ -t 0 ] && [ -t 1 ]; then
+		DOWNLOAD_OPT="-it"
+	else
+		DOWNLOAD_OPT="-i"
+	fi
+
 	# Currently supports ALL only, later this will have a menu
 	pushd ${OSDIR} > /dev/null
-	docker run --rm -it ${DOCKER_OPT} -v ${TOPDIR}:/root/tizenrt -v /run/udev:/run/udev:ro -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} download $1 $2 $3 $4 $5 $6
+	eval ${DOCKER_RUN_PREFIX} docker run --rm ${DOWNLOAD_OPT} ${DOCKER_OPT} -v ${DOCKER_TOPDIR}:/root/tizenrt ${UDEV_MOUNT} -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} download $1 $2 $3 $4 $5 $6
 	popd > /dev/null
 
 }
@@ -504,8 +558,11 @@ function BUILD()
 
 	HOSTNAME="-h=`git config user.name | tr -d ' '`" # set github username instead of hostname, "-h=`hostname`"
 	LOCALTIME="-v /etc/localtime:/etc/localtime:ro"
+	if [ "${HOST_IS_WINDOWS_SHELL}" = "true" ]; then
+		LOCALTIME=
+	fi
 	
-	docker run --rm ${DOCKER_OPT} ${HOSTNAME} ${LOCALTIME} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
+	eval ${DOCKER_RUN_PREFIX} docker run --rm ${DOCKER_OPT} ${HOSTNAME} ${LOCALTIME} -v ${DOCKER_TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
 	UPDATE_STATUS
 }
 
@@ -534,6 +591,47 @@ function MENU()
 		esac
 	done
 }
+
+if [ "$1" == "configure" ]; then
+	if [ $# -lt 3 ]; then
+		echo "Usage: ./dbuild.sh configure <board> <config>"
+		exit 1
+	fi
+
+	LOAD_DOCKER_VERSION_FROM_DEFCONFIG "$2/$3"
+	UPDATE_STATUS
+	if [ "${STATUS}" == "CONFIGURED" -o "${STATUS}" == "BUILT" ]; then
+		BUILD distclean
+	fi
+
+	STATUS=NOT_CONFIGURED
+	SELECT_BOARD "$2"
+	SELECT_CONFIG "$3"
+	exit 0
+fi
+
+if [ "$1" == "build" ]; then
+	UPDATE_STATUS
+	if [ "${STATUS}" == "NOT_CONFIGURED" -o "${STATUS}" == "BOARD_CONFIGURED" ]; then
+		echo "Error!! Need to configure"
+		exit 1
+	fi
+
+	BUILD
+	exit 0
+fi
+
+if [ "$1" == "download" ]; then
+	UPDATE_STATUS
+	if [ "${STATUS}" != "BUILT" ]; then
+		echo "No output file"
+		exit 1
+	fi
+
+	shift
+	DOWNLOAD "$1" "$2" "$3" "$4" "$5" "$6"
+	exit 0
+fi
 
 UPDATE_STATUS
 if [ -z "$1" ]; then

@@ -1,0 +1,22 @@
+# QEMU Virtio support
+#
+
+config QEMU_VIRT_VIRTIO
+	bool "Virtio support for QEMU Virt machine"
+	default y
+	help
+	  Enable Virtio support for QEMU Virt machine.
+	  This enables the generic virtio-mmio framework and
+	  device drivers for virtio devices.
+
+if QEMU_VIRT_VIRTIO
+
+config QEMU_VIRT_VIRTIO_BLK
+	bool "Virtio block device support"
+	default y
+	help
+	  Enable Virtio block device support.
+	  This enables the virtio-blk driver for block devices
+	  connected via virtio-mmio transport.
+
+endif # QEMU_VIRT_VIRTIO
