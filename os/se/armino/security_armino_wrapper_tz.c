@@ -1718,7 +1718,7 @@ int armino_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, 
     psa_reset_key_attributes(&attributes);
 
     // Perform signature
-    status = psa_sign_message(key_id, alg, hash->data, hash->data_len, sign->data, signature_size, &sign->data_len);
+    status = psa_sign_hash(key_id, alg, hash->data, hash->data_len, sign->data, signature_size, &sign->data_len);
 
     if (status != PSA_SUCCESS) {
         dbg("RSA signature failed: %d\n", status);
@@ -1816,7 +1816,7 @@ int armino_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, 
     }
 
     // Perform verification
-    status = psa_verify_message(key_id, alg, hash->data, hash->data_len, sign->data, sign->data_len);
+    status = psa_verify_hash(key_id, alg, hash->data, hash->data_len, sign->data, sign->data_len);
     if (status != PSA_SUCCESS) {
         dbg("RSA verification failed: %d\n", status);
         return HAL_FAIL;
@@ -1926,7 +1926,7 @@ int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_i
     size_t der_signature_len = (sign->data_len == 0) ? (raw_signature_size + 10) : sign->data_len;
 
     // Perform signature to raw (R || S), then convert to DER
-    status = psa_sign_message(key_id, alg, hash->data, hash->data_len,
+    status = psa_sign_hash(key_id, alg, hash->data, hash->data_len,
                            raw_signature, raw_signature_size, &raw_signature_len);
 
     if (status != PSA_SUCCESS) {
@@ -2055,7 +2055,7 @@ int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *si
     }
 
     // Verify with raw signature (R || S)
-    status = psa_verify_message(key_id, alg, hash->data, hash->data_len, raw_signature, raw_signature_len);
+    status = psa_verify_hash(key_id, alg, hash->data, hash->data_len, raw_signature, raw_signature_len);
     kmm_free(raw_signature);
 
     if (status != PSA_SUCCESS) {
