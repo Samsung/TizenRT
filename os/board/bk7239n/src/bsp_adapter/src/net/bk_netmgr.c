@@ -1339,7 +1339,7 @@ trwifi_result_e bk_wifi_netmgr_get_signal_quality(struct netdev *dev, trwifi_sig
 	memset(signal_quality, 0, sizeof(trwifi_signal_quality));
 	wuret = TRWIFI_FAIL;
 
-	if (g_station_if == BK_WIFI_NONE || g_softap_if == BK_WIFI_NONE) {
+	if ((g_station_if == BK_WIFI_NONE) && (g_softap_if == BK_WIFI_NONE)) {
 		ndbg("[BK] Failed to get signal quality, wifi not initialized \n");
 		return wuret;
 	}
