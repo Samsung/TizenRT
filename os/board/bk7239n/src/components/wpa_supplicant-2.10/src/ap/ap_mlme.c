@@ -17,6 +17,30 @@
 #include "sta_info.h"
 #include "ap_mlme.h"
 #include "hostapd.h"
+#ifdef BK_SUPPLICANT
+#include "../../wpa_supplicant/notify.h"
+#endif
+
+#ifdef BK_SUPPLICANT
+void mlme_report_sta_disconnect(struct hostapd_data *hapd,
+				struct sta_info *sta, u16 reason_code)
+{
+	if (sta == NULL || sta->disconnect_event_reported) {
+		return;
+	}
+
+	hapd_notify_sta_disconnected(hapd, sta->addr, reason_code);
+	sta->disconnect_event_reported = true;
+}
+#else
+void mlme_report_sta_disconnect(struct hostapd_data *hapd,
+				struct sta_info *sta, u16 reason_code)
+{
+	(void)hapd;
+	(void)sta;
+	(void)reason_code;
+}
+#endif
 
 
 #if !defined(CONFIG_NO_HOSTAPD_LOGGER) || (defined(BK_SUPPLICANT) && CONFIG_WPA_LOG)
