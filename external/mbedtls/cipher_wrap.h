@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file cipher_wrap.h
  *
@@ -24,33 +7,62 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
-#ifndef MBEDTLS_CIPHER_WRAP_H
-#define MBEDTLS_CIPHER_WRAP_H
+#ifndef TF_PSA_CRYPTO_CIPHER_WRAP_H
+#define TF_PSA_CRYPTO_CIPHER_WRAP_H
 
-#include "mbedtls/build_info.h"
+#include "tf-psa-crypto/build_info.h"
 
-#include "mbedtls/cipher.h"
+#include "mbedtls/private/cipher.h"
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
-#include "mbedtls/psa/crypto.h"
-#endif /* MBEDTLS_USE_PSA_CRYPTO */
+#include "psa/crypto.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/* Support for GCM either through Mbed TLS SW implementation or PSA */
+#if defined(MBEDTLS_GCM_C) || defined(PSA_WANT_ALG_GCM)
+#define MBEDTLS_CIPHER_HAVE_GCM_VIA_LEGACY_OR_USE_PSA
+#endif
+
+#if (defined(MBEDTLS_GCM_C) && defined(MBEDTLS_AES_C)) || \
+    (defined(PSA_WANT_ALG_GCM) && defined(PSA_WANT_KEY_TYPE_AES))
+#define MBEDTLS_CIPHER_HAVE_GCM_AES_VIA_LEGACY_OR_USE_PSA
+#endif
+
+#if defined(MBEDTLS_CCM_C) || \
+    defined(PSA_WANT_ALG_CCM)
+#define MBEDTLS_CIPHER_HAVE_CCM_VIA_LEGACY_OR_USE_PSA
+#endif
+
+#if (defined(MBEDTLS_CCM_C) && defined(MBEDTLS_AES_C)) || \
+    (defined(PSA_WANT_ALG_CCM) && defined(PSA_WANT_KEY_TYPE_AES))
+#define MBEDTLS_CIPHER_HAVE_CCM_AES_VIA_LEGACY_OR_USE_PSA
+#endif
+
+#if defined(MBEDTLS_CCM_C) || \
+    defined(PSA_WANT_ALG_CCM_STAR_NO_TAG)
+#define MBEDTLS_CIPHER_HAVE_CCM_STAR_NO_TAG_VIA_LEGACY_OR_USE_PSA
+#endif
+
+#if (defined(MBEDTLS_CCM_C) && defined(MBEDTLS_AES_C)) || \
+    (defined(PSA_WANT_ALG_CCM_STAR_NO_TAG) && \
+    defined(PSA_WANT_KEY_TYPE_AES))
+#define MBEDTLS_CIPHER_HAVE_CCM_STAR_NO_TAG_AES_VIA_LEGACY_OR_USE_PSA
+#endif
+
+#if defined(MBEDTLS_CHACHAPOLY_C) || \
+    defined(PSA_WANT_ALG_CHACHA20_POLY1305)
+#define MBEDTLS_CIPHER_HAVE_CHACHAPOLY_VIA_LEGACY_OR_USE_PSA
+#endif
+
+#if defined(MBEDTLS_CIPHER_HAVE_GCM_VIA_LEGACY_OR_USE_PSA) || \
+    defined(MBEDTLS_CIPHER_HAVE_CCM_VIA_LEGACY_OR_USE_PSA) || \
+    defined(MBEDTLS_CIPHER_HAVE_CCM_STAR_NO_TAG_VIA_LEGACY_OR_USE_PSA) || \
+    defined(MBEDTLS_CIPHER_HAVE_CHACHAPOLY_VIA_LEGACY_OR_USE_PSA)
+#define MBEDTLS_CIPHER_HAVE_SOME_AEAD_VIA_LEGACY_OR_USE_PSA
 #endif
 
 /**
@@ -110,9 +122,11 @@ struct mbedtls_cipher_base_t {
     int (*setkey_enc_func)(void *ctx, const unsigned char *key,
                            unsigned int key_bitlen);
 
+#if !defined(MBEDTLS_BLOCK_CIPHER_NO_DECRYPT)
     /** Set key for decryption purposes */
     int (*setkey_dec_func)(void *ctx, const unsigned char *key,
                            unsigned int key_bitlen);
+#endif
 
     /** Allocate a new context */
     void * (*ctx_alloc_func)(void);
@@ -127,7 +141,6 @@ typedef struct {
     const mbedtls_cipher_info_t *info;
 } mbedtls_cipher_definition_t;
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
 typedef enum {
     MBEDTLS_CIPHER_PSA_KEY_UNSET = 0,
     MBEDTLS_CIPHER_PSA_KEY_OWNED, /* Used for PSA-based cipher contexts which */
@@ -146,14 +159,15 @@ typedef struct {
     mbedtls_svc_key_id_t slot;
     mbedtls_cipher_psa_key_ownership slot_state;
 } mbedtls_cipher_context_psa;
-#endif /* MBEDTLS_USE_PSA_CRYPTO */
 
 extern const mbedtls_cipher_definition_t mbedtls_cipher_definitions[];
 
 extern int mbedtls_cipher_supported[];
 
+extern const mbedtls_cipher_base_t * const mbedtls_cipher_base_lookup_table[];
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* MBEDTLS_CIPHER_WRAP_H */
+#endif /* TF_PSA_CRYPTO_CIPHER_WRAP_H */

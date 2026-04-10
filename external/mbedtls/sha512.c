@@ -1,37 +1,8 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  FIPS-180-2 compliant SHA-384/512 implementation
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 /*
  *  The SHA-512 Secure Hash Standard was published by NIST in 2002.
@@ -41,27 +12,30 @@
 
 #if defined(__aarch64__) && !defined(__ARM_FEATURE_SHA512) && \
     defined(__clang__) && __clang_major__ >= 7
-/* TODO: Re-consider above after https://reviews.llvm.org/D131064 merged.
- *
+/*
  * The intrinsic declaration are guarded by predefined ACLE macros in clang:
  * these are normally only enabled by the -march option on the command line.
  * By defining the macros ourselves we gain access to those declarations without
  * requiring -march on the command line.
  *
- * `arm_neon.h` could be included by any header file, so we put these defines
- * at the top of this file, before any includes.
+ * `arm_neon.h` is included by tf_psa_crypto_common.h, so we put these defines
+ * at the top of this file, before any includes but after the intrinsic
+ * declaration. This is necessary with
+ * Clang <=15.x. With Clang 16.0 and above, these macro definitions are
+ * no longer required, but they're harmless. See
+ * https://reviews.llvm.org/D131064
  */
 #define __ARM_FEATURE_SHA512 1
 #define MBEDTLS_ENABLE_ARM_SHA3_EXTENSIONS_COMPILER_FLAG
 #endif
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_SHA512_C) || defined(MBEDTLS_SHA384_C)
 
-#include "mbedtls/sha512.h"
+#include "mbedtls/private/sha512.h"
 #include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
+#include "mbedtls/private/error_common.h"
 
 #if defined(_MSC_VER) || defined(__WATCOMC__)
   #define UL64(x) x##ui64
@@ -77,6 +51,9 @@
 #  if defined(MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT) || \
     defined(MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY)
 /* *INDENT-OFF* */
+#   if !defined(MBEDTLS_HAVE_NEON_INTRINSICS)
+#       error "Target does not support NEON instructions"
+#   endif
 /*
  * Best performance comes from most recent compilers, with intrinsics and -O3.
  * Must compile with -march=armv8.2-a+sha3, but we can't detect armv8.2-a, and
@@ -93,7 +70,16 @@
  */
 #    if !defined(__ARM_FEATURE_SHA512) || defined(MBEDTLS_ENABLE_ARM_SHA3_EXTENSIONS_COMPILER_FLAG)
        /* Test Clang first, as it defines __GNUC__ */
-#      if defined(__clang__)
+#      if defined(__ARMCOMPILER_VERSION)
+#        if __ARMCOMPILER_VERSION < 6090000
+#          error "A more recent armclang is required for MBEDTLS_SHA512_USE_A64_CRYPTO_*"
+#        elif __ARMCOMPILER_VERSION == 6090000
+#          error "Must use minimum -march=armv8.2-a+sha3 for MBEDTLS_SHA512_USE_A64_CRYPTO_*"
+#        else
+#          pragma clang attribute push (__attribute__((target("sha3"))), apply_to=function)
+#          define MBEDTLS_POP_TARGET_PRAGMA
+#        endif
+#      elif defined(__clang__)
 #        if __clang_major__ < 7
 #          error "A more recent Clang is required for MBEDTLS_SHA512_USE_A64_CRYPTO_*"
 #        else
@@ -113,24 +99,26 @@
 #      endif
 #    endif
 /* *INDENT-ON* */
-#    include <arm_neon.h>
 #  endif
 #  if defined(MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT)
 #    if defined(__unix__)
 #      if defined(__linux__)
 /* Our preferred method of detection is getauxval() */
 #        include <sys/auxv.h>
+#        if !defined(HWCAP_SHA512)
+/* The same header that declares getauxval() should provide the HWCAP_xxx
+ * constants to analyze its return value. However, the libc may be too
+ * old to have the constant that we need. So if it's missing, assume that
+ * the value is the same one used by the Linux kernel ABI.
+ */
+#          define HWCAP_SHA512 (1 << 21)
+#        endif
 #      endif
 /* Use SIGILL on Unix, and fall back to it on Linux */
 #      include <signal.h>
 #    endif
 #  endif
-#elif defined(_M_ARM64)
-#  if defined(MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT) || \
-    defined(MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY)
-#    include <arm64_neon.h>
-#  endif
-#else
+#elif !defined(MBEDTLS_PLATFORM_IS_WINDOWS_ON_ARM64)
 #  undef MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY
 #  undef MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT
 #endif
@@ -158,7 +146,7 @@ static int mbedtls_a64_crypto_sha512_determine_support(void)
                            NULL, 0);
     return ret == 0 && value != 0;
 }
-#elif defined(_M_ARM64)
+#elif defined(MBEDTLS_PLATFORM_IS_WINDOWS_ON_ARM64)
 /*
  * As of March 2022, there don't appear to be any PF_ARM_V8_* flags
  * available to pass to IsProcessorFeaturePresent() to check for
@@ -219,8 +207,6 @@ static int mbedtls_a64_crypto_sha512_determine_support(void)
 #endif  /* HWCAP_SHA512, __APPLE__, __unix__ && SIG_SETMASK */
 
 #endif  /* MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT */
-
-#if !defined(MBEDTLS_SHA512_ALT)
 
 #define SHA512_BLOCK_SIZE 128
 
@@ -306,8 +292,6 @@ int mbedtls_sha512_starts(mbedtls_sha512_context *ctx, int is384)
     return 0;
 }
 
-#if !defined(MBEDTLS_SHA512_PROCESS_ALT)
-
 /*
  * Round constants
  */
@@ -354,7 +338,6 @@ static const uint64_t K[80] =
     UL64(0x4CC5D4BECB3E42B6),  UL64(0x597F299CFC657E2A),
     UL64(0x5FCB6FAB3AD6FAEC),  UL64(0x6C44198C4A475817)
 };
-#endif
 
 #if defined(MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT) || \
     defined(MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY)
@@ -571,20 +554,15 @@ static size_t mbedtls_internal_sha512_process_many_a64_crypto(
     return processed;
 }
 
-#if defined(MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT)
-/*
- * This function is for internal use only if we are building both C and A64
- * versions, otherwise it is renamed to be the public mbedtls_internal_sha512_process()
- */
-static
-#endif
-int mbedtls_internal_sha512_process_a64_crypto(mbedtls_sha512_context *ctx,
-                                               const unsigned char data[SHA512_BLOCK_SIZE])
+static int mbedtls_internal_sha512_process_a64_crypto(mbedtls_sha512_context *ctx,
+                                                      const unsigned char data[SHA512_BLOCK_SIZE])
 {
     return (mbedtls_internal_sha512_process_many_a64_crypto(ctx, data,
                                                             SHA512_BLOCK_SIZE) ==
             SHA512_BLOCK_SIZE) ? 0 : -1;
 }
+
+#endif /* MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT || MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY */
 
 #if defined(MBEDTLS_POP_TARGET_PRAGMA)
 #if defined(__clang__)
@@ -595,8 +573,6 @@ int mbedtls_internal_sha512_process_a64_crypto(mbedtls_sha512_context *ctx,
 #undef MBEDTLS_POP_TARGET_PRAGMA
 #endif
 
-#endif /* MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT || MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY */
-
 
 #if !defined(MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT)
 #define mbedtls_internal_sha512_process_many_c mbedtls_internal_sha512_process_many
@@ -604,17 +580,10 @@ int mbedtls_internal_sha512_process_a64_crypto(mbedtls_sha512_context *ctx,
 #endif
 
 
-#if !defined(MBEDTLS_SHA512_PROCESS_ALT) && !defined(MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY)
+#if !defined(MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY)
 
-#if defined(MBEDTLS_SHA512_USE_A64_CRYPTO_IF_PRESENT)
-/*
- * This function is for internal use only if we are building both C and A64
- * versions, otherwise it is renamed to be the public mbedtls_internal_sha512_process()
- */
-static
-#endif
-int mbedtls_internal_sha512_process_c(mbedtls_sha512_context *ctx,
-                                      const unsigned char data[SHA512_BLOCK_SIZE])
+static int mbedtls_internal_sha512_process_c(mbedtls_sha512_context *ctx,
+                                             const unsigned char data[SHA512_BLOCK_SIZE])
 {
     int i;
     struct {
@@ -705,11 +674,6 @@ int mbedtls_internal_sha512_process_c(mbedtls_sha512_context *ctx,
     return 0;
 }
 
-#endif /* !MBEDTLS_SHA512_PROCESS_ALT && !MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY */
-
-
-#if !defined(MBEDTLS_SHA512_USE_A64_CRYPTO_ONLY)
-
 static size_t mbedtls_internal_sha512_process_many_c(
     mbedtls_sha512_context *ctx, const uint8_t *data, size_t len)
 {
@@ -757,8 +721,8 @@ static size_t mbedtls_internal_sha512_process_many(mbedtls_sha512_context *ctx,
     }
 }
 
-int mbedtls_internal_sha512_process(mbedtls_sha512_context *ctx,
-                                    const unsigned char data[SHA512_BLOCK_SIZE])
+static int mbedtls_internal_sha512_process(mbedtls_sha512_context *ctx,
+                                           const unsigned char data[SHA512_BLOCK_SIZE])
 {
     if (mbedtls_a64_crypto_sha512_has_support()) {
         return mbedtls_internal_sha512_process_a64_crypto(ctx, data);
@@ -832,6 +796,7 @@ int mbedtls_sha512_finish(mbedtls_sha512_context *ctx,
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     unsigned used;
     uint64_t high, low;
+    int truncated = 0;
 
     /*
      * Add padding: 0x80 then 0x00 until 16 bytes remain for the length
@@ -848,7 +813,7 @@ int mbedtls_sha512_finish(mbedtls_sha512_context *ctx,
         memset(ctx->buffer + used, 0, SHA512_BLOCK_SIZE - used);
 
         if ((ret = mbedtls_internal_sha512_process(ctx, ctx->buffer)) != 0) {
-            return ret;
+            goto exit;
         }
 
         memset(ctx->buffer, 0, 112);
@@ -865,7 +830,7 @@ int mbedtls_sha512_finish(mbedtls_sha512_context *ctx,
     sha512_put_uint64_be(low,  ctx->buffer, 120);
 
     if ((ret = mbedtls_internal_sha512_process(ctx, ctx->buffer)) != 0) {
-        return ret;
+        goto exit;
     }
 
     /*
@@ -878,7 +843,6 @@ int mbedtls_sha512_finish(mbedtls_sha512_context *ctx,
     sha512_put_uint64_be(ctx->state[4], output, 32);
     sha512_put_uint64_be(ctx->state[5], output, 40);
 
-    int truncated = 0;
 #if defined(MBEDTLS_SHA384_C)
     truncated = ctx->is384;
 #endif
@@ -887,10 +851,12 @@ int mbedtls_sha512_finish(mbedtls_sha512_context *ctx,
         sha512_put_uint64_be(ctx->state[7], output, 56);
     }
 
-    return 0;
-}
+    ret = 0;
 
-#endif /* !MBEDTLS_SHA512_ALT */
+exit:
+    mbedtls_sha512_free(ctx);
+    return ret;
+}
 
 /*
  * output = SHA-512( input buffer )
@@ -1017,8 +983,6 @@ static sha_test_sum_t sha512_test_sum[] =
       0x4E, 0xAD, 0xB2, 0x17, 0xAD, 0x8C, 0xC0, 0x9B }
 };
 #endif /* MBEDTLS_SHA512_C */
-
-#define ARRAY_LENGTH(a)   (sizeof(a) / sizeof((a)[0]))
 
 static int mbedtls_sha512_common_self_test(int verbose, int is384)
 {

@@ -1,53 +1,23 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file chachapoly.c
  *
  * \brief ChaCha20-Poly1305 AEAD construction based on RFC 7539.
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_CHACHAPOLY_C)
 
-#include "mbedtls/chachapoly.h"
+#include "mbedtls/private/chachapoly.h"
 #include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
+#include "mbedtls/private/error_common.h"
+#include "mbedtls/constant_time.h"
 
 #include <string.h>
 
 #include "mbedtls/platform.h"
-
-#if !defined(MBEDTLS_CHACHAPOLY_ALT)
 
 #define CHACHAPOLY_STATE_INIT       (0)
 #define CHACHAPOLY_STATE_AAD        (1)
@@ -327,7 +297,6 @@ int mbedtls_chachapoly_auth_decrypt(mbedtls_chachapoly_context *ctx,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     unsigned char check_tag[16];
-    size_t i;
     int diff;
 
     if ((ret = chachapoly_crypt_and_tag(ctx,
@@ -337,9 +306,7 @@ int mbedtls_chachapoly_auth_decrypt(mbedtls_chachapoly_context *ctx,
     }
 
     /* Check tag in "constant-time" */
-    for (diff = 0, i = 0; i < sizeof(check_tag); i++) {
-        diff |= tag[i] ^ check_tag[i];
-    }
+    diff = mbedtls_ct_memcmp(tag, check_tag, sizeof(check_tag));
 
     if (diff != 0) {
         mbedtls_platform_zeroize(output, length);
@@ -348,8 +315,6 @@ int mbedtls_chachapoly_auth_decrypt(mbedtls_chachapoly_context *ctx,
 
     return 0;
 }
-
-#endif /* MBEDTLS_CHACHAPOLY_ALT */
 
 #if defined(MBEDTLS_SELF_TEST)
 

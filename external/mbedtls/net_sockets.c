@@ -44,7 +44,7 @@
 #define _XOPEN_SOURCE 600 /* sockaddr_storage */
 #endif
 
-#include "mbedtls/common.h"
+#include "ssl_misc.h"
 
 #if defined(MBEDTLS_NET_C)
 

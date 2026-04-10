@@ -1,22 +1,5 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
- * \file build_info.h
+ * \file mbedtls/build_info.h
  *
  * \brief Build-time configuration info
  *
@@ -25,52 +8,13 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
 #ifndef MBEDTLS_BUILD_INFO_H
 #define MBEDTLS_BUILD_INFO_H
 
-#include <tinyara/config.h>
-
-/**
- * \def MBED_TIZENRT
- *
- * Indicate the platform specific patches.
- */
-#ifndef MBED_TIZENRT
-#define MBED_TIZENRT
-#endif
-
-#ifdef MBED_TIZENRT
-#define MBEDTLS_MAXIMUM_HANDSHAKE_MEMORY_USAGE ( 60 * 1024 )
-#endif
-
-/**
- * \def MBEDTLS_OCF_PATCH
- *
- * Indicate the OCF specific patches.
- * CAUTION: Please undef "MBEDTLS_OCF_PATCH" for using other network protocol
- *          such as HTTPS, MQTT-Secure, etc. This definition will be able to
- *          make an abnormal situation.
- */
-#if defined(CONFIG_ENABLE_IOTIVITY_SECURED)
-#define MBEDTLS_OCF_PATCH
-#else
-#undef MBEDTLS_OCF_PATCH
-#endif
+#include "tf-psa-crypto/build_info.h"
 
 /*
  * This set of compile-time defines can be used to determine the version number
@@ -82,8 +26,8 @@
  * The version number x.y.z is split into three parts.
  * Major, Minor, Patchlevel
  */
-#define MBEDTLS_VERSION_MAJOR  3
-#define MBEDTLS_VERSION_MINOR  4
+#define MBEDTLS_VERSION_MAJOR  4
+#define MBEDTLS_VERSION_MINOR  1
 #define MBEDTLS_VERSION_PATCH  0
 
 /**
@@ -91,20 +35,18 @@
  *    MMNNPP00
  *    Major version | Minor version | Patch version
  */
-#define MBEDTLS_VERSION_NUMBER         0x03040000
-#define MBEDTLS_VERSION_STRING         "3.4.0"
-#define MBEDTLS_VERSION_STRING_FULL    "mbed TLS 3.4.0"
+#define MBEDTLS_VERSION_NUMBER         0x04010000
+#define MBEDTLS_VERSION_STRING         "4.1.0"
+#define MBEDTLS_VERSION_STRING_FULL    "Mbed TLS 4.1.0"
 
-#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
-#define _CRT_SECURE_NO_DEPRECATE 1
+#if defined(MBEDTLS_CONFIG_FILES_READ)
+#error "Something went wrong: MBEDTLS_CONFIG_FILES_READ defined before reading the config files!"
+#endif
+#if defined(MBEDTLS_CONFIG_IS_FINALIZED)
+#error "Something went wrong: MBEDTLS_CONFIG_IS_FINALIZED defined before reading the config files!"
 #endif
 
-/* Define `inline` on some non-C99-compliant compilers. */
-#if (defined(__ARMCC_VERSION) || defined(_MSC_VER)) && \
-    !defined(inline) && !defined(__cplusplus)
-#define inline __inline
-#endif
-
+/* X.509 and TLS configuration */
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/mbedtls_config.h"
 #else
@@ -112,13 +54,9 @@
 #endif
 
 #if defined(MBEDTLS_CONFIG_VERSION) && ( \
-    MBEDTLS_CONFIG_VERSION < 0x03000000 || \
+    MBEDTLS_CONFIG_VERSION < 0x04000000 || \
                              MBEDTLS_CONFIG_VERSION > MBEDTLS_VERSION_NUMBER)
 #error "Invalid config version, defined value of MBEDTLS_CONFIG_VERSION is unsupported"
-#endif
-
-#ifdef MBED_TIZENRT
-#include "mbedtls_tizenrt_config.h"
 #endif
 
 /* Target and application specific configurations
@@ -130,79 +68,26 @@
 #include MBEDTLS_USER_CONFIG_FILE
 #endif
 
-/* Auto-enable MBEDTLS_MD_LIGHT based on MBEDTLS_MD_C.
- * This allows checking for MD_LIGHT rather than MD_LIGHT || MD_C.
+/* For the sake of consistency checks in mbedtls_config.c */
+#if defined(MBEDTLS_INCLUDE_AFTER_RAW_CONFIG)
+#include MBEDTLS_INCLUDE_AFTER_RAW_CONFIG
+#endif
+
+/* Indicate that all configuration files have been read.
+ * It is now time to adjust the configuration (follow through on dependencies,
+ * make PSA and legacy crypto consistent, etc.).
  */
-#if defined(MBEDTLS_MD_C)
-#define MBEDTLS_MD_LIGHT
-#endif
+#define MBEDTLS_CONFIG_FILES_READ
 
-/* Auto-enable MBEDTLS_MD_LIGHT if some module needs it.
+#include "mbedtls/private/config_adjust_x509.h"
+
+#include "mbedtls/private/config_adjust_ssl.h"
+
+/* Indicate that all configuration symbols are set,
+ * even the ones that are calculated programmatically.
+ * It is now safe to query the configuration (to check it, to size buffers,
+ * etc.).
  */
-#if defined(MBEDTLS_PEM_PARSE_C) || \
-    defined(MBEDTLS_RSA_C)
-#define MBEDTLS_MD_LIGHT
-#endif
-
-/* If MBEDTLS_PSA_CRYPTO_C is defined, make sure MBEDTLS_PSA_CRYPTO_CLIENT
- * is defined as well to include all PSA code.
- */
-#if defined(MBEDTLS_PSA_CRYPTO_C)
-#define MBEDTLS_PSA_CRYPTO_CLIENT
-#endif /* MBEDTLS_PSA_CRYPTO_C */
-
-/* The PK wrappers need pk_write functions to format RSA key objects
- * when they are dispatching to the PSA API. This happens under USE_PSA_CRYPTO,
- * and also even without USE_PSA_CRYPTO for mbedtls_pk_sign_ext(). */
-#if defined(MBEDTLS_PSA_CRYPTO_C) && defined(MBEDTLS_RSA_C)
-#define MBEDTLS_PK_C
-#define MBEDTLS_PK_WRITE_C
-#define MBEDTLS_PK_PARSE_C
-#endif
-
-#if !defined(MBEDTLS_SSL_PROTO_TLS1_2)
-#undef MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
-#undef MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
-#endif
-
-#if !defined(MBEDTLS_SSL_PROTO_TLS1_3)
-#undef MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
-#undef MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
-#undef MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
-#undef MBEDTLS_SSL_EARLY_DATA
-#endif
-
-#if defined(MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED) || \
-    defined(MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED)
-#define MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_SOME_PSK_ENABLED
-#endif
-
-#if defined(MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED) || \
-    defined(MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED)
-#define MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_SOME_EPHEMERAL_ENABLED
-#endif
-
-/* Make sure all configuration symbols are set before including check_config.h,
- * even the ones that are calculated programmatically. */
-#if defined(MBEDTLS_PSA_CRYPTO_CONFIG) /* PSA_WANT_xxx influences MBEDTLS_xxx */ || \
-    defined(MBEDTLS_PSA_CRYPTO_C) /* MBEDTLS_xxx influences PSA_WANT_xxx */
-#include "mbedtls/config_psa.h"
-#endif
-
-/* override some previous default for STDK. */
-#if defined(CONFIG_STDK_IOT_CORE)
-#include "stdk/mbedtls_config.h"
-#endif
-
-#include "mbedtls/check_config.h"
+#define MBEDTLS_CONFIG_IS_FINALIZED
 
 #endif /* MBEDTLS_BUILD_INFO_H */

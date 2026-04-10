@@ -1,56 +1,27 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  PSA persistent key storage
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_PSA_CRYPTO_STORAGE_C)
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "mbedtls/psa/crypto.h"
+#include "psa/crypto.h"
 #include "psa_crypto_storage.h"
 #include "mbedtls/platform_util.h"
 
 #if defined(MBEDTLS_PSA_ITS_FILE_C)
 #include "psa_crypto_its.h"
 #else /* Native ITS implementation */
-#include "mbedtls/error.h"
-#include "mbedtls/internal_trusted_storage.h"
+#include "psa/error.h"
+#include "psa/internal_trusted_storage.h"
 #endif
 
 #include "mbedtls/platform.h"
@@ -264,7 +235,7 @@ typedef struct {
 
 void psa_format_key_data_for_storage(const uint8_t *data,
                                      const size_t data_length,
-                                     const psa_core_key_attributes_t *attr,
+                                     const psa_key_attributes_t *attr,
                                      uint8_t *storage_data)
 {
     psa_persistent_key_storage_format *storage_format =
@@ -296,7 +267,7 @@ psa_status_t psa_parse_key_data_from_storage(const uint8_t *storage_data,
                                              size_t storage_data_length,
                                              uint8_t **key_data,
                                              size_t *key_data_length,
-                                             psa_core_key_attributes_t *attr)
+                                             psa_key_attributes_t *attr)
 {
     psa_status_t status;
     const psa_persistent_key_storage_format *storage_format =
@@ -343,7 +314,7 @@ psa_status_t psa_parse_key_data_from_storage(const uint8_t *storage_data,
     return PSA_SUCCESS;
 }
 
-psa_status_t psa_save_persistent_key(const psa_core_key_attributes_t *attr,
+psa_status_t psa_save_persistent_key(const psa_key_attributes_t *attr,
                                      const uint8_t *data,
                                      const size_t data_length)
 {
@@ -371,21 +342,17 @@ psa_status_t psa_save_persistent_key(const psa_core_key_attributes_t *attr,
     status = psa_crypto_storage_store(attr->id,
                                       storage_data, storage_data_length);
 
-    mbedtls_platform_zeroize(storage_data, storage_data_length);
-    mbedtls_free(storage_data);
+    mbedtls_zeroize_and_free(storage_data, storage_data_length);
 
     return status;
 }
 
 void psa_free_persistent_key_data(uint8_t *key_data, size_t key_data_length)
 {
-    if (key_data != NULL) {
-        mbedtls_platform_zeroize(key_data, key_data_length);
-    }
-    mbedtls_free(key_data);
+    mbedtls_zeroize_and_free(key_data, key_data_length);
 }
 
-psa_status_t psa_load_persistent_key(psa_core_key_attributes_t *attr,
+psa_status_t psa_load_persistent_key(psa_key_attributes_t *attr,
                                      uint8_t **data,
                                      size_t *data_length)
 {
@@ -420,91 +387,9 @@ psa_status_t psa_load_persistent_key(psa_core_key_attributes_t *attr,
     }
 
 exit:
-    mbedtls_platform_zeroize(loaded_data, storage_data_length);
-    mbedtls_free(loaded_data);
+    mbedtls_zeroize_and_free(loaded_data, storage_data_length);
     return status;
 }
-
-
-
-/****************************************************************/
-/* Transactions */
-/****************************************************************/
-
-#if defined(PSA_CRYPTO_STORAGE_HAS_TRANSACTIONS)
-
-psa_crypto_transaction_t psa_crypto_transaction;
-
-psa_status_t psa_crypto_save_transaction(void)
-{
-    struct psa_storage_info_t p_info;
-    psa_status_t status;
-    status = psa_its_get_info(PSA_CRYPTO_ITS_TRANSACTION_UID, &p_info);
-    if (status == PSA_SUCCESS) {
-        /* This shouldn't happen: we're trying to start a transaction while
-         * there is still a transaction that hasn't been replayed. */
-        return PSA_ERROR_CORRUPTION_DETECTED;
-    } else if (status != PSA_ERROR_DOES_NOT_EXIST) {
-        return status;
-    }
-    return psa_its_set(PSA_CRYPTO_ITS_TRANSACTION_UID,
-                       sizeof(psa_crypto_transaction),
-                       &psa_crypto_transaction,
-                       0);
-}
-
-psa_status_t psa_crypto_load_transaction(void)
-{
-    psa_status_t status;
-    size_t length;
-    status = psa_its_get(PSA_CRYPTO_ITS_TRANSACTION_UID, 0,
-                         sizeof(psa_crypto_transaction),
-                         &psa_crypto_transaction, &length);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
-    if (length != sizeof(psa_crypto_transaction)) {
-        return PSA_ERROR_DATA_INVALID;
-    }
-    return PSA_SUCCESS;
-}
-
-psa_status_t psa_crypto_stop_transaction(void)
-{
-    psa_status_t status = psa_its_remove(PSA_CRYPTO_ITS_TRANSACTION_UID);
-    /* Whether or not updating the storage succeeded, the transaction is
-     * finished now. It's too late to go back, so zero out the in-memory
-     * data. */
-    memset(&psa_crypto_transaction, 0, sizeof(psa_crypto_transaction));
-    return status;
-}
-
-#endif /* PSA_CRYPTO_STORAGE_HAS_TRANSACTIONS */
-
-
-
-/****************************************************************/
-/* Random generator state */
-/****************************************************************/
-
-#if defined(MBEDTLS_PSA_INJECT_ENTROPY)
-psa_status_t mbedtls_psa_storage_inject_entropy(const unsigned char *seed,
-                                                size_t seed_size)
-{
-    psa_status_t status;
-    struct psa_storage_info_t p_info;
-
-    status = psa_its_get_info(PSA_CRYPTO_ITS_RANDOM_SEED_UID, &p_info);
-
-    if (PSA_ERROR_DOES_NOT_EXIST == status) { /* No seed exists */
-        status = psa_its_set(PSA_CRYPTO_ITS_RANDOM_SEED_UID, seed_size, seed, 0);
-    } else if (PSA_SUCCESS == status) {
-        /* You should not be here. Seed needs to be injected only once */
-        status = PSA_ERROR_NOT_PERMITTED;
-    }
-    return status;
-}
-#endif /* MBEDTLS_PSA_INJECT_ENTROPY */
 
 
 

@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file net_sockets.h
  *
@@ -38,29 +21,13 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 #ifndef MBEDTLS_NET_SOCKETS_H
 #define MBEDTLS_NET_SOCKETS_H
 #include "mbedtls/private_access.h"
 
 #include "mbedtls/build_info.h"
-
-#if defined(MBEDTLS_HAVE_WINSOCK2)
-#include <winsock2.h>
-#endif
 
 #include "mbedtls/ssl.h"
 
@@ -86,7 +53,7 @@
 /** Failed to get an IP address for the given hostname. */
 #define MBEDTLS_ERR_NET_UNKNOWN_HOST                      -0x0052
 /** Buffer is too small to hold the data. */
-#define MBEDTLS_ERR_NET_BUFFER_TOO_SMALL                  -0x0043
+#define MBEDTLS_ERR_NET_BUFFER_TOO_SMALL                  PSA_ERROR_BUFFER_TOO_SMALL
 /** The context is invalid, eg because it was free()ed. */
 #define MBEDTLS_ERR_NET_INVALID_CONTEXT                   -0x0045
 /** Polling the net context failed. */
@@ -101,21 +68,6 @@
 
 #define MBEDTLS_NET_POLL_READ  1 /**< Used in \c mbedtls_net_poll to check for pending data  */
 #define MBEDTLS_NET_POLL_WRITE 2 /**< Used in \c mbedtls_net_poll to check if write possible */
-
-/**
- * Socket types and invalid values differ between platforms.
- */
-#if defined(MBEDTLS_HAVE_WINSOCK2)
-
-#define MBEDTLS_INVALID_SOCKET INVALID_SOCKET
-typedef SOCKET mbedtls_socket;
-
-#else
-
-#define MBEDTLS_INVALID_SOCKET -1
-typedef int mbedtls_socket;
-
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,7 +87,7 @@ typedef struct mbedtls_net_context {
      * On other platforms, it may have a different type, have a different
      * meaning, or be absent altogether.
      */
-    mbedtls_socket fd;
+    int fd;
 }
 mbedtls_net_context;
 
@@ -191,20 +143,20 @@ int mbedtls_net_bind(mbedtls_net_context *ctx, const char *bind_ip, const char *
  * \param client_ctx Will contain the connected client socket
  * \param client_ip Will contain the client IP address, can be NULL
  * \param buf_size  Size of the client_ip buffer
- * \param ip_len    Will receive the size of the client IP written,
+ * \param cip_len   Will receive the size of the client IP written,
  *                  can be NULL if client_ip is null
  *
  * \return          0 if successful, or
- *                  MBEDTLS_ERR_NET_SOCKET_FAILED,
- *                  MBEDTLS_ERR_NET_BIND_FAILED,
- *                  MBEDTLS_ERR_NET_ACCEPT_FAILED, or
- *                  MBEDTLS_ERR_NET_BUFFER_TOO_SMALL if buf_size is too small,
- *                  MBEDTLS_ERR_SSL_WANT_READ if bind_fd was set to
+ *                  #MBEDTLS_ERR_NET_SOCKET_FAILED,
+ *                  #MBEDTLS_ERR_NET_BIND_FAILED,
+ *                  #MBEDTLS_ERR_NET_ACCEPT_FAILED, or
+ *                  #PSA_ERROR_BUFFER_TOO_SMALL if buf_size is too small,
+ *                  #MBEDTLS_ERR_SSL_WANT_READ if bind_fd was set to
  *                  non-blocking and accept() would block.
  */
 int mbedtls_net_accept(mbedtls_net_context *bind_ctx,
                        mbedtls_net_context *client_ctx,
-                       void *client_ip, size_t buf_size, size_t *ip_len);
+                       void *client_ip, size_t buf_size, size_t *cip_len);
 
 /**
  * \brief          Check and wait for the context to be ready for read/write
@@ -277,7 +229,7 @@ int mbedtls_net_recv(void *ctx, unsigned char *buf, size_t len);
 
 /**
  * \brief          Write at most 'len' characters. If no error occurs,
- *                 the actual amount read is returned.
+ *                 the actual amount written is returned.
  *
  * \param ctx      Socket
  * \param buf      The buffer to read from
@@ -322,6 +274,10 @@ int mbedtls_net_recv_timeout(void *ctx, unsigned char *buf, size_t len,
  * \brief          Closes down the connection and free associated data
  *
  * \param ctx      The context to close
+ *
+ * \note           This function frees and clears data associated with the
+ *                 context but does not free the memory pointed to by \p ctx.
+ *                 This memory is the responsibility of the caller.
  */
 void mbedtls_net_close(mbedtls_net_context *ctx);
 
@@ -329,6 +285,10 @@ void mbedtls_net_close(mbedtls_net_context *ctx);
  * \brief          Gracefully shutdown the connection and free associated data
  *
  * \param ctx      The context to free
+ *
+ * \note           This function frees and clears data associated with the
+ *                 context but does not free the memory pointed to by \p ctx.
+ *                 This memory is the responsibility of the caller.
  */
 void mbedtls_net_free(mbedtls_net_context *ctx);
 

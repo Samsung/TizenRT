@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file lmots.h
  *
@@ -25,27 +8,15 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#ifndef MBEDTLS_LMOTS_H
-#define MBEDTLS_LMOTS_H
+#ifndef TF_PSA_CRYPTO_LMOTS_H
+#define TF_PSA_CRYPTO_LMOTS_H
 
-#include "mbedtls/build_info.h"
+#include "tf-psa-crypto/build_info.h"
 
-#include "mbedtls/psa/crypto.h"
+#include "psa/crypto.h"
 
 #include "mbedtls/lms.h"
 
@@ -72,41 +43,6 @@ extern "C" {
 #if defined(MBEDTLS_TEST_HOOKS)
 extern int (*mbedtls_lmots_sign_private_key_invalidated_hook)(unsigned char *);
 #endif /* defined(MBEDTLS_TEST_HOOKS) */
-
-/**
- * \brief                    This function converts an unsigned int into a
- *                           network-byte-order (big endian) string.
- *
- * \param val                The unsigned integer value
- * \param len                The length of the string.
- * \param bytes              The string to output into.
- */
-void mbedtls_lms_unsigned_int_to_network_bytes(unsigned int val, size_t len,
-                                               unsigned char *bytes);
-
-/**
- * \brief                    This function converts a network-byte-order
- *                           (big endian) string into an unsigned integer.
- *
- * \param len                The length of the string.
- * \param bytes              The string.
- *
- * \return                   The corresponding LMS error code.
- */
-unsigned int mbedtls_lms_network_bytes_to_unsigned_int(size_t len,
-                                                       const unsigned char *bytes);
-
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-/**
- * \brief                    This function converts a \ref psa_status_t to a
- *                           low-level LMS error code.
- *
- * \param status             The psa_status_t to convert
- *
- * \return                   The corresponding LMS error code.
- */
-int MBEDTLS_DEPRECATED mbedtls_lms_error_from_psa(psa_status_t status);
-#endif
 
 /**
  * \brief                    This function initializes a public LMOTS context
@@ -315,9 +251,6 @@ int mbedtls_lmots_calculate_public_key(mbedtls_lmots_public_t *ctx,
  *
  * \param ctx                The initialized LMOTS context from which the
  *                           private key will be read.
- * \param f_rng              The RNG function to be used for signature
- *                           generation.
- * \param p_rng              The RNG context to be passed to f_rng
  * \param msg                The buffer from which the message will be read.
  * \param msg_size           The size of the message that will be read.
  * \param sig                The buf into which the signature will be stored.
@@ -327,8 +260,7 @@ int mbedtls_lmots_calculate_public_key(mbedtls_lmots_public_t *ctx,
  * \return         A non-zero error code on failure.
  */
 int mbedtls_lmots_sign(mbedtls_lmots_private_t *ctx,
-                       int (*f_rng)(void *, unsigned char *, size_t),
-                       void *p_rng, const unsigned char *msg, size_t msg_size,
+                       const unsigned char *msg, size_t msg_size,
                        unsigned char *sig, size_t sig_size, size_t *sig_len);
 
 #endif /* defined(MBEDTLS_LMS_PRIVATE) */
@@ -337,4 +269,4 @@ int mbedtls_lmots_sign(mbedtls_lmots_private_t *ctx,
 }
 #endif
 
-#endif /* MBEDTLS_LMOTS_H */
+#endif /* TF_PSA_CRYPTO_LMOTS_H */

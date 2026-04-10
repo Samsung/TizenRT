@@ -1,46 +1,17 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  Platform abstraction layer
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_PLATFORM_C)
 
 #include "mbedtls/platform.h"
 #include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
+#include "mbedtls/private/error_common.h"
 
 /* The compile time configuration of memory allocation via the macros
  * MBEDTLS_PLATFORM_{FREE/CALLOC}_MACRO takes precedence over the runtime
@@ -94,21 +65,6 @@ int mbedtls_platform_set_calloc_free(void *(*calloc_func)(size_t, size_t),
           !( defined(MBEDTLS_PLATFORM_CALLOC_MACRO) &&
              defined(MBEDTLS_PLATFORM_FREE_MACRO) ) */
 
-#if defined(MBEDTLS_PLATFORM_HAS_NON_CONFORMING_SNPRINTF)
-#include <stdarg.h>
-int mbedtls_platform_win32_snprintf(char *s, size_t n, const char *fmt, ...)
-{
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    va_list argp;
-
-    va_start(argp, fmt);
-    ret = mbedtls_vsnprintf(s, n, fmt, argp);
-    va_end(argp);
-
-    return ret;
-}
-#endif
-
 #if defined(MBEDTLS_PLATFORM_SNPRINTF_ALT)
 #if !defined(MBEDTLS_PLATFORM_STD_SNPRINTF)
 /*
@@ -138,31 +94,6 @@ int mbedtls_platform_set_snprintf(int (*snprintf_func)(char *s, size_t n,
     return 0;
 }
 #endif /* MBEDTLS_PLATFORM_SNPRINTF_ALT */
-
-#if defined(MBEDTLS_PLATFORM_HAS_NON_CONFORMING_VSNPRINTF)
-#include <stdarg.h>
-int mbedtls_platform_win32_vsnprintf(char *s, size_t n, const char *fmt, va_list arg)
-{
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-
-    /* Avoid calling the invalid parameter handler by checking ourselves */
-    if (s == NULL || n == 0 || fmt == NULL) {
-        return -1;
-    }
-
-#if defined(_TRUNCATE)
-    ret = vsnprintf_s(s, n, _TRUNCATE, fmt, arg);
-#else
-    ret = vsnprintf(s, n, fmt, arg);
-    if (ret < 0 || (size_t) ret == n) {
-        s[n-1] = '\0';
-        ret = -1;
-    }
-#endif
-
-    return ret;
-}
-#endif
 
 #if defined(MBEDTLS_PLATFORM_VSNPRINTF_ALT)
 #if !defined(MBEDTLS_PLATFORM_STD_VSNPRINTF)

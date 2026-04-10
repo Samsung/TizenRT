@@ -1,49 +1,20 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  PSA hashing layer on top of Mbed TLS software crypto
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_PSA_CRYPTO_C)
 
-#include "mbedtls/psa/crypto.h"
+#include <psa/crypto.h>
 #include "psa_crypto_core.h"
 #include "psa_crypto_hash.h"
 
-#include <mbedtls/error.h>
+#include <mbedtls/private/error_common.h>
 #include <string.h>
 
 #if defined(MBEDTLS_PSA_BUILTIN_HASH)
@@ -89,6 +60,22 @@ psa_status_t mbedtls_psa_hash_abort(
 #if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA_512)
         case PSA_ALG_SHA_512:
             mbedtls_sha512_free(&operation->ctx.sha512);
+            break;
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_224)
+        case PSA_ALG_SHA3_224:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_256)
+        case PSA_ALG_SHA3_256:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_384)
+        case PSA_ALG_SHA3_384:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_512)
+        case PSA_ALG_SHA3_512:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_SOME_HASH)
+            mbedtls_sha3_free(&operation->ctx.sha3);
             break;
 #endif
         default:
@@ -150,6 +137,30 @@ psa_status_t mbedtls_psa_hash_setup(
         case PSA_ALG_SHA_512:
             mbedtls_sha512_init(&operation->ctx.sha512);
             ret = mbedtls_sha512_starts(&operation->ctx.sha512, 0);
+            break;
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_224)
+        case PSA_ALG_SHA3_224:
+            mbedtls_sha3_init(&operation->ctx.sha3);
+            ret = mbedtls_sha3_starts(&operation->ctx.sha3, MBEDTLS_SHA3_224);
+            break;
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_256)
+        case PSA_ALG_SHA3_256:
+            mbedtls_sha3_init(&operation->ctx.sha3);
+            ret = mbedtls_sha3_starts(&operation->ctx.sha3, MBEDTLS_SHA3_256);
+            break;
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_384)
+        case PSA_ALG_SHA3_384:
+            mbedtls_sha3_init(&operation->ctx.sha3);
+            ret = mbedtls_sha3_starts(&operation->ctx.sha3, MBEDTLS_SHA3_384);
+            break;
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_512)
+        case PSA_ALG_SHA3_512:
+            mbedtls_sha3_init(&operation->ctx.sha3);
+            ret = mbedtls_sha3_starts(&operation->ctx.sha3, MBEDTLS_SHA3_512);
             break;
 #endif
         default:
@@ -214,6 +225,23 @@ psa_status_t mbedtls_psa_hash_clone(
                                  &source_operation->ctx.sha512);
             break;
 #endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_224)
+        case PSA_ALG_SHA3_224:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_256)
+        case PSA_ALG_SHA3_256:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_384)
+        case PSA_ALG_SHA3_384:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_512)
+        case PSA_ALG_SHA3_512:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_SOME_HASH)
+            mbedtls_sha3_clone(&target_operation->ctx.sha3,
+                               &source_operation->ctx.sha3);
+            break;
+#endif
         default:
             (void) source_operation;
             (void) target_operation;
@@ -273,6 +301,23 @@ psa_status_t mbedtls_psa_hash_update(
             ret = mbedtls_sha512_update(&operation->ctx.sha512,
                                         input, input_length);
             break;
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_224)
+        case PSA_ALG_SHA3_224:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_256)
+        case PSA_ALG_SHA3_256:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_384)
+        case PSA_ALG_SHA3_384:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_512)
+        case PSA_ALG_SHA3_512:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_SOME_HASH)
+    ret = mbedtls_sha3_update(&operation->ctx.sha3,
+                              input, input_length);
+    break;
 #endif
         default:
             (void) input;
@@ -343,6 +388,22 @@ psa_status_t mbedtls_psa_hash_finish(
         case PSA_ALG_SHA_512:
             ret = mbedtls_sha512_finish(&operation->ctx.sha512, hash);
             break;
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_224)
+        case PSA_ALG_SHA3_224:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_256)
+        case PSA_ALG_SHA3_256:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_384)
+        case PSA_ALG_SHA3_384:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_512)
+        case PSA_ALG_SHA3_512:
+#endif
+#if defined(MBEDTLS_PSA_BUILTIN_ALG_SHA3_SOME_HASH)
+    ret = mbedtls_sha3_finish(&operation->ctx.sha3, hash, hash_size);
+    break;
 #endif
         default:
             (void) hash;

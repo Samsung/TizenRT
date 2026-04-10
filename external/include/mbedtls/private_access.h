@@ -1,49 +1,53 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file private_access.h
  *
- * \brief Macro wrapper for struct's members.
+ * \brief Optionally activate declarations of private identifiers
+ *        in public headers.
+ *
+ * This header is reserved for internal use in TF-PSA-Crypto and Mbed TLS.
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#ifndef MBEDTLS_PRIVATE_ACCESS_H
-#define MBEDTLS_PRIVATE_ACCESS_H
+#ifndef TF_PSA_CRYPTO_MBEDTLS_PRIVATE_ACCESS_H
+#define TF_PSA_CRYPTO_MBEDTLS_PRIVATE_ACCESS_H
 
 #ifndef MBEDTLS_ALLOW_PRIVATE_ACCESS
+/* Public use: do not declare private identifiers. */
+
+/* Pseudo-hide an identifier (typically a struct or union member) by giving
+ * it the prefix `private_`.
+ *
+ * Typical usage:
+ * ```
+ * typedef struct {
+ *     int MBEDTLS_PRIVATE(foo); // private member (not part of the public API,
+ *                               // but part of the ABI)
+ *     int bar; // public member (covered by API stability guarantees)
+ * } mbedtls_some_type_t;
+ * ```
+ */
 #define MBEDTLS_PRIVATE(member) private_##member
+
 #else
+/* Private use: declare private identifiers. */
+
 #define MBEDTLS_PRIVATE(member) member
+
+/* Activate declarations guarded by this macro.
+ *
+ * Typical usage:
+ * ```
+ * typedef ... mbedtls_some_type_t; // built-in crypto type
+ * #if defined(MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
+ * int mbedtls_some_function(...); // built-in crypto function
+ * #endif // MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+ * ```
+ */
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+
 #endif
 
-#endif /* MBEDTLS_PRIVATE_ACCESS_H */
+#endif /* TF_PSA_CRYPTO_MBEDTLS_PRIVATE_ACCESS_H */

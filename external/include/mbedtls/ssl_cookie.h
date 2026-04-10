@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file ssl_cookie.h
  *
@@ -22,19 +5,7 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 #ifndef MBEDTLS_SSL_COOKIE_H
 #define MBEDTLS_SSL_COOKIE_H
@@ -44,11 +15,6 @@
 
 #include "mbedtls/ssl.h"
 
-#if !defined(MBEDTLS_USE_PSA_CRYPTO)
-#if defined(MBEDTLS_THREADING_C)
-#include "mbedtls/threading.h"
-#endif
-#endif /* !MBEDTLS_USE_PSA_CRYPTO */
 
 /**
  * \name SECTION: Module settings
@@ -71,23 +37,14 @@ extern "C" {
  * \brief          Context for the default cookie functions.
  */
 typedef struct mbedtls_ssl_cookie_ctx {
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
     mbedtls_svc_key_id_t    MBEDTLS_PRIVATE(psa_hmac_key);  /*!< key id for the HMAC portion   */
     psa_algorithm_t         MBEDTLS_PRIVATE(psa_hmac_alg);  /*!< key algorithm for the HMAC portion   */
-#else
-    mbedtls_md_context_t    MBEDTLS_PRIVATE(hmac_ctx);   /*!< context for the HMAC portion   */
-#endif /* MBEDTLS_USE_PSA_CRYPTO */
 #if !defined(MBEDTLS_HAVE_TIME)
     unsigned long   MBEDTLS_PRIVATE(serial);     /*!< serial number for expiration   */
 #endif
     unsigned long   MBEDTLS_PRIVATE(timeout);    /*!< timeout delay, in seconds if HAVE_TIME,
                                                     or in number of tickets issued */
 
-#if !defined(MBEDTLS_USE_PSA_CRYPTO)
-#if defined(MBEDTLS_THREADING_C)
-    mbedtls_threading_mutex_t MBEDTLS_PRIVATE(mutex);
-#endif
-#endif /* !MBEDTLS_USE_PSA_CRYPTO */
 } mbedtls_ssl_cookie_ctx;
 
 /**
@@ -98,9 +55,7 @@ void mbedtls_ssl_cookie_init(mbedtls_ssl_cookie_ctx *ctx);
 /**
  * \brief          Setup cookie context (generate keys)
  */
-int mbedtls_ssl_cookie_setup(mbedtls_ssl_cookie_ctx *ctx,
-                             int (*f_rng)(void *, unsigned char *, size_t),
-                             void *p_rng);
+int mbedtls_ssl_cookie_setup(mbedtls_ssl_cookie_ctx *ctx);
 
 /**
  * \brief          Set expiration delay for cookies

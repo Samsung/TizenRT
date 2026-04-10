@@ -1,41 +1,12 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  PSA AEAD entry points
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_PSA_CRYPTO_C)
 
@@ -46,12 +17,13 @@
 #include <string.h>
 #include "mbedtls/platform.h"
 
-#include "mbedtls/ccm.h"
-#include "mbedtls/chachapoly.h"
-#include "mbedtls/cipher.h"
-#include "mbedtls/gcm.h"
-#include "mbedtls/error.h"
+#include "mbedtls/private/ccm.h"
+#include "mbedtls/private/chachapoly.h"
+#include "mbedtls/private/cipher.h"
+#include "mbedtls/private/gcm.h"
+#include "mbedtls/private/error_common.h"
 
+#if defined(MBEDTLS_PSA_BUILTIN_AEAD)
 static psa_status_t psa_aead_setup(
     mbedtls_psa_aead_operation_t *operation,
     const psa_key_attributes_t *attributes,
@@ -60,19 +32,14 @@ static psa_status_t psa_aead_setup(
     psa_algorithm_t alg)
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
-    size_t key_bits;
-    const mbedtls_cipher_info_t *cipher_info;
     mbedtls_cipher_id_t cipher_id;
-
+    mbedtls_cipher_mode_t mode;
     (void) key_buffer_size;
 
-    key_bits = attributes->core.bits;
-
-    cipher_info = mbedtls_cipher_info_from_psa(alg,
-                                               attributes->core.type, key_bits,
-                                               &cipher_id);
-    if (cipher_info == NULL) {
-        return PSA_ERROR_NOT_SUPPORTED;
+    status = mbedtls_cipher_values_from_psa(alg, attributes->type,
+                                            &mode, &cipher_id);
+    if (status != PSA_SUCCESS) {
+        return status;
     }
 
     switch (PSA_ALG_AEAD_WITH_SHORTENED_TAG(alg, 0)) {
@@ -82,14 +49,14 @@ static psa_status_t psa_aead_setup(
             /* CCM allows the following tag lengths: 4, 6, 8, 10, 12, 14, 16.
              * The call to mbedtls_ccm_encrypt_and_tag or
              * mbedtls_ccm_auth_decrypt will validate the tag length. */
-            if (PSA_BLOCK_CIPHER_BLOCK_LENGTH(attributes->core.type) != 16) {
+            if (PSA_BLOCK_CIPHER_BLOCK_LENGTH(attributes->type) != 16) {
                 return PSA_ERROR_INVALID_ARGUMENT;
             }
 
             mbedtls_ccm_init(&operation->ctx.ccm);
             status = mbedtls_to_psa_error(
                 mbedtls_ccm_setkey(&operation->ctx.ccm, cipher_id,
-                                   key_buffer, (unsigned int) key_bits));
+                                   key_buffer, (unsigned int) attributes->bits));
             if (status != PSA_SUCCESS) {
                 return status;
             }
@@ -102,14 +69,14 @@ static psa_status_t psa_aead_setup(
             /* GCM allows the following tag lengths: 4, 8, 12, 13, 14, 15, 16.
              * The call to mbedtls_gcm_crypt_and_tag or
              * mbedtls_gcm_auth_decrypt will validate the tag length. */
-            if (PSA_BLOCK_CIPHER_BLOCK_LENGTH(attributes->core.type) != 16) {
+            if (PSA_BLOCK_CIPHER_BLOCK_LENGTH(attributes->type) != 16) {
                 return PSA_ERROR_INVALID_ARGUMENT;
             }
 
             mbedtls_gcm_init(&operation->ctx.gcm);
             status = mbedtls_to_psa_error(
                 mbedtls_gcm_setkey(&operation->ctx.gcm, cipher_id,
-                                   key_buffer, (unsigned int) key_bits));
+                                   key_buffer, (unsigned int) attributes->bits));
             if (status != PSA_SUCCESS) {
                 return status;
             }
@@ -343,9 +310,6 @@ psa_status_t mbedtls_psa_aead_decrypt(
 exit:
     mbedtls_psa_aead_abort(&operation);
 
-    if (status == PSA_SUCCESS) {
-        *plaintext_length = ciphertext_length - operation.tag_length;
-    }
     return status;
 }
 
@@ -678,5 +642,7 @@ psa_status_t mbedtls_psa_aead_abort(
 
     return PSA_SUCCESS;
 }
+
+#endif /* MBEDTLS_PSA_BUILTIN_AEAD */
 
 #endif /* MBEDTLS_PSA_CRYPTO_C */

@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file pkcs5.c
  *
@@ -23,19 +6,7 @@
  * \author Mathias Olsson <mathias@kompetensum.com>
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 /*
  * PKCS#5 includes PBKDF2 and more
@@ -44,33 +15,29 @@
  * http://tools.ietf.org/html/rfc6070 (Test vectors)
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_PKCS5_C)
 
-#include "mbedtls/pkcs5.h"
-#include "mbedtls/error.h"
+#include "mbedtls/private/pkcs5.h"
+#include "mbedtls/private/error_common.h"
 
 #if defined(MBEDTLS_ASN1_PARSE_C)
 #include "mbedtls/asn1.h"
-#include "mbedtls/cipher.h"
-#include "mbedtls/oid.h"
+#if defined(MBEDTLS_CIPHER_C)
+#include "mbedtls/private/cipher.h"
+#endif /* MBEDTLS_CIPHER_C */
+#include "crypto_oid.h"
 #endif /* MBEDTLS_ASN1_PARSE_C */
 
+#include <limits.h>
 #include <string.h>
 
 #include "mbedtls/platform.h"
 
-#include "mbedtls/hash_info.h"
-#include "mbedtls/psa_util.h"
+#include "psa_util_internal.h"
 
-#if !defined(MBEDTLS_MD_C)
-#define PSA_TO_MBEDTLS_ERR(status) PSA_TO_MBEDTLS_ERR_LIST(status,   \
-                                                           psa_to_md_errors,              \
-                                                           psa_generic_status_to_mbedtls)
-#endif
-
-#if defined(MBEDTLS_ASN1_PARSE_C)
+#if defined(MBEDTLS_ASN1_PARSE_C) && defined(MBEDTLS_CIPHER_C)
 static int pkcs5_parse_pbkdf2_params(const mbedtls_asn1_buf *params,
                                      mbedtls_asn1_buf *salt, int *iterations,
                                      int *keylen, mbedtls_md_type_t *md_type)
@@ -135,10 +102,19 @@ static int pkcs5_parse_pbkdf2_params(const mbedtls_asn1_buf *params,
     return 0;
 }
 
-int mbedtls_pkcs5_pbes2(const mbedtls_asn1_buf *pbe_params, int mode,
-                        const unsigned char *pwd,  size_t pwdlen,
-                        const unsigned char *data, size_t datalen,
-                        unsigned char *output)
+#if !defined(MBEDTLS_CIPHER_PADDING_PKCS7)
+int mbedtls_pkcs5_pbes2_ext(const mbedtls_asn1_buf *pbe_params, int mode,
+                            const unsigned char *pwd,  size_t pwdlen,
+                            const unsigned char *data, size_t datalen,
+                            unsigned char *output, size_t output_size,
+                            size_t *output_len);
+#endif
+
+int mbedtls_pkcs5_pbes2_ext(const mbedtls_asn1_buf *pbe_params, int mode,
+                            const unsigned char *pwd,  size_t pwdlen,
+                            const unsigned char *data, size_t datalen,
+                            unsigned char *output, size_t output_size,
+                            size_t *output_len)
 {
     int ret, iterations = 0, keylen = 0;
     unsigned char *p, *end;
@@ -146,10 +122,10 @@ int mbedtls_pkcs5_pbes2(const mbedtls_asn1_buf *pbe_params, int mode,
     mbedtls_asn1_buf salt;
     mbedtls_md_type_t md_type = MBEDTLS_MD_SHA1;
     unsigned char key[32], iv[32];
-    size_t olen = 0;
     const mbedtls_cipher_info_t *cipher_info;
     mbedtls_cipher_type_t cipher_alg;
     mbedtls_cipher_context_t cipher_ctx;
+    unsigned int padlen = 0;
 
     p = pbe_params->p;
     end = p + pbe_params->len;
@@ -200,11 +176,24 @@ int mbedtls_pkcs5_pbes2(const mbedtls_asn1_buf *pbe_params, int mode,
      * The value of keylen from pkcs5_parse_pbkdf2_params() is ignored
      * since it is optional and we don't know if it was set or not
      */
-    keylen = cipher_info->key_bitlen / 8;
+    keylen = (int) mbedtls_cipher_info_get_key_bitlen(cipher_info) / 8;
 
     if (enc_scheme_params.tag != MBEDTLS_ASN1_OCTET_STRING ||
-        enc_scheme_params.len != cipher_info->iv_size) {
+        enc_scheme_params.len != mbedtls_cipher_info_get_iv_size(cipher_info)) {
         return MBEDTLS_ERR_PKCS5_INVALID_FORMAT;
+    }
+
+    if (mode == MBEDTLS_PKCS5_DECRYPT) {
+        if (output_size < datalen) {
+            return MBEDTLS_ERR_ASN1_BUF_TOO_SMALL;
+        }
+    }
+
+    if (mode == MBEDTLS_PKCS5_ENCRYPT) {
+        padlen = cipher_info->block_size - (datalen % cipher_info->block_size);
+        if (output_size < (datalen + padlen)) {
+            return MBEDTLS_ERR_ASN1_BUF_TOO_SMALL;
+        }
     }
 
     mbedtls_cipher_init(&cipher_ctx);
@@ -226,8 +215,30 @@ int mbedtls_pkcs5_pbes2(const mbedtls_asn1_buf *pbe_params, int mode,
         goto exit;
     }
 
+#if defined(MBEDTLS_CIPHER_MODE_WITH_PADDING)
+    {
+        /* PKCS5 uses CBC with PKCS7 padding (which is the same as
+         * "PKCS5 padding" except that it's typically only called PKCS5
+         * with 64-bit-block ciphers).
+         */
+        mbedtls_cipher_padding_t padding = MBEDTLS_PADDING_PKCS7;
+#if !defined(MBEDTLS_CIPHER_PADDING_PKCS7)
+        /* For historical reasons, when decrypting, this function works when
+         * decrypting even when support for PKCS7 padding is disabled. In this
+         * case, it ignores the padding, and so will never report a
+         * password mismatch.
+         */
+        if (mode == MBEDTLS_DECRYPT) {
+            padding = MBEDTLS_PADDING_NONE;
+        }
+#endif
+        if ((ret = mbedtls_cipher_set_padding_mode(&cipher_ctx, padding)) != 0) {
+            goto exit;
+        }
+    }
+#endif /* MBEDTLS_CIPHER_MODE_WITH_PADDING */
     if ((ret = mbedtls_cipher_crypt(&cipher_ctx, iv, enc_scheme_params.len,
-                                    data, datalen, output, &olen)) != 0) {
+                                    data, datalen, output, output_len)) != 0) {
         ret = MBEDTLS_ERR_PKCS5_PASSWORD_MISMATCH;
     }
 
@@ -236,9 +247,8 @@ exit:
 
     return ret;
 }
-#endif /* MBEDTLS_ASN1_PARSE_C */
+#endif /* MBEDTLS_ASN1_PARSE_C && MBEDTLS_CIPHER_C */
 
-#if defined(MBEDTLS_MD_C)
 static int pkcs5_pbkdf2_hmac(mbedtls_md_context_t *ctx,
                              const unsigned char *password,
                              size_t plen, const unsigned char *salt, size_t slen,
@@ -328,26 +338,12 @@ cleanup:
     return ret;
 }
 
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-int mbedtls_pkcs5_pbkdf2_hmac(mbedtls_md_context_t *ctx,
-                              const unsigned char *password,
-                              size_t plen, const unsigned char *salt, size_t slen,
-                              unsigned int iteration_count,
-                              uint32_t key_length, unsigned char *output)
-{
-    return pkcs5_pbkdf2_hmac(ctx, password, plen, salt, slen, iteration_count,
-                             key_length, output);
-}
-#endif
-#endif /* MBEDTLS_MD_C */
-
 int mbedtls_pkcs5_pbkdf2_hmac_ext(mbedtls_md_type_t md_alg,
                                   const unsigned char *password,
                                   size_t plen, const unsigned char *salt, size_t slen,
                                   unsigned int iteration_count,
                                   uint32_t key_length, unsigned char *output)
 {
-#if defined(MBEDTLS_MD_C)
     mbedtls_md_context_t md_ctx;
     const mbedtls_md_info_t *md_info = NULL;
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
@@ -359,7 +355,10 @@ int mbedtls_pkcs5_pbkdf2_hmac_ext(mbedtls_md_type_t md_alg,
 
     mbedtls_md_init(&md_ctx);
 
-    if ((ret = mbedtls_md_setup(&md_ctx, md_info, 1)) != 0) {
+    if ((ret = mbedtls_md_setup(&md_ctx, md_info, 0)) != 0) {
+        goto exit;
+    }
+    if ((ret = mbedtls_md_hmac_setup(&md_ctx, md_info)) != 0) {
         goto exit;
     }
     ret = pkcs5_pbkdf2_hmac(&md_ctx, password, plen, salt, slen,
@@ -367,121 +366,11 @@ int mbedtls_pkcs5_pbkdf2_hmac_ext(mbedtls_md_type_t md_alg,
 exit:
     mbedtls_md_free(&md_ctx);
     return ret;
-#else
-    unsigned int i;
-    unsigned char md1[PSA_HASH_MAX_SIZE];
-    unsigned char work[PSA_HASH_MAX_SIZE];
-    const unsigned char md_size = mbedtls_hash_info_get_size(md_alg);
-    psa_mac_operation_t operation = PSA_MAC_OPERATION_INIT;
-
-    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
-    psa_status_t status_destruction = PSA_ERROR_CORRUPTION_DETECTED;
-    size_t use_len, out_len;
-    unsigned char *out_p = output;
-    unsigned char counter[4];
-    mbedtls_svc_key_id_t psa_hmac_key = MBEDTLS_SVC_KEY_ID_INIT;
-    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-    const psa_algorithm_t alg = PSA_ALG_HMAC(mbedtls_hash_info_psa_from_md(md_alg));
-    const size_t out_size = PSA_MAC_LENGTH(PSA_KEY_TYPE_HMAC, 0, alg);
-
-    memset(counter, 0, sizeof(counter));
-    counter[3] = 1;
-
-    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
-    psa_set_key_algorithm(&attributes,  alg);
-    psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
-
-    if (key_length == 0) {
-        return 0;
-    }
-    if ((status = psa_import_key(&attributes,
-                                 password, plen,
-                                 &psa_hmac_key)) != PSA_SUCCESS) {
-        return MBEDTLS_ERR_PKCS5_BAD_INPUT_DATA;
-    }
-
-#if UINT_MAX > 0xFFFFFFFF
-    if (iteration_count > 0xFFFFFFFF) {
-        return MBEDTLS_ERR_PKCS5_BAD_INPUT_DATA;
-    }
-#endif
-
-    while (key_length) {
-        status = psa_mac_sign_setup(&operation, psa_hmac_key,
-                                    PSA_ALG_HMAC(alg));
-        if (status != PSA_SUCCESS) {
-            goto cleanup;
-        }
-        // U1 ends up in work
-        if ((status = psa_mac_update(&operation, salt, slen)) != PSA_SUCCESS) {
-            goto cleanup;
-        }
-
-        if ((status = psa_mac_update(&operation, counter, sizeof(counter))) != PSA_SUCCESS) {
-            goto cleanup;
-        }
-
-        if ((status = psa_mac_sign_finish(&operation, work, out_size, &out_len))
-            != PSA_SUCCESS) {
-            goto cleanup;
-        }
-
-        memcpy(md1, work, out_len);
-
-        for (i = 1; i < iteration_count; i++) {
-            // U2 ends up in md1
-            //
-            status = psa_mac_sign_setup(&operation, psa_hmac_key,
-                                        PSA_ALG_HMAC(alg));
-            if (status != PSA_SUCCESS) {
-                goto cleanup;
-            }
-            if ((status = psa_mac_update(&operation, md1, md_size)) != PSA_SUCCESS) {
-                goto cleanup;
-            }
-            if ((status =
-                     psa_mac_sign_finish(&operation, md1, out_size, &out_len)) != PSA_SUCCESS) {
-                goto cleanup;
-            }
-
-            // U1 xor U2
-            //
-            mbedtls_xor(work, work, md1, md_size);
-        }
-
-        use_len = (key_length < md_size) ? key_length : md_size;
-        memcpy(out_p, work, use_len);
-
-        key_length -= (uint32_t) use_len;
-        out_p += use_len;
-
-        for (i = 4; i > 0; i--) {
-            if (++counter[i - 1] != 0) {
-                break;
-            }
-        }
-    }
-
-cleanup:
-    /* Zeroise buffers to clear sensitive data from memory. */
-    mbedtls_platform_zeroize(work, PSA_HASH_MAX_SIZE);
-    mbedtls_platform_zeroize(md1, PSA_HASH_MAX_SIZE);
-    status_destruction = psa_destroy_key(psa_hmac_key);
-    if (status == PSA_SUCCESS && status_destruction != PSA_SUCCESS) {
-        status = status_destruction;
-    }
-    status_destruction = psa_mac_abort(&operation);
-    if (status == PSA_SUCCESS && status_destruction != PSA_SUCCESS) {
-        status = status_destruction;
-    }
-
-    return PSA_TO_MBEDTLS_ERR(status);
-#endif /* !MBEDTLS_MD_C */
 }
 
 #if defined(MBEDTLS_SELF_TEST)
 
-#if !defined(MBEDTLS_HAS_ALG_SHA_1_VIA_MD_OR_PSA)
+#if !defined(PSA_WANT_ALG_SHA_1)
 int mbedtls_pkcs5_self_test(int verbose)
 {
     if (verbose != 0) {
@@ -579,7 +468,7 @@ int mbedtls_pkcs5_self_test(int verbose)
 exit:
     return ret;
 }
-#endif /* MBEDTLS_HAS_ALG_SHA_1_VIA_MD_OR_PSA */
+#endif /* PSA_WANT_ALG_SHA_1 */
 
 #endif /* MBEDTLS_SELF_TEST */
 

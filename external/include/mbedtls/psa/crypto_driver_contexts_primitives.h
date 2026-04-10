@@ -1,65 +1,42 @@
-/****************************************************************************
+/**
+ * \file crypto_driver_contexts_primitives.h
  *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
+ * \brief Declaration of context structures for use with the PSA driver wrapper
+ * interface. This file contains the context structures for 'primitive'
+ * operations, i.e. those operations which do not rely on other contexts.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
-/*
- *  Declaration of context structures for use with the PSA driver wrapper
- *  interface. This file contains the context structures for 'primitive'
- *  operations, i.e. those operations which do not rely on other contexts.
- *
- *  Warning: This file will be auto-generated in the future.
+ * \warning This file will be auto-generated in the future.
  *
  * \note This file may not be included directly. Applications must
  * include psa/crypto.h.
  *
- * \note This header and its content is not part of the Mbed TLS API and
+ * \note This header and its content are not part of the Mbed TLS API and
  * applications must not depend on it. Its main purpose is to define the
  * multi-part state objects of the PSA drivers included in the cryptographic
- * library. The definition of these objects are then used by crypto_struct.h
+ * library. The definitions of these objects are then used by crypto_struct.h
  * to define the implementation-defined types of PSA multi-part state objects.
  */
 /*  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
 #ifndef PSA_CRYPTO_DRIVER_CONTEXTS_PRIMITIVES_H
 #define PSA_CRYPTO_DRIVER_CONTEXTS_PRIMITIVES_H
 
-#include "mbedtls/psa/crypto_driver_common.h"
+#include "psa/crypto_driver_common.h"
 
 /* Include the context structure definitions for the Mbed TLS software drivers */
-#include "mbedtls/psa/crypto_builtin_primitives.h"
+#include "mbedtls/private/crypto_builtin_primitives.h"
 
 /* Include the context structure definitions for those drivers that were
  * declared during the autogeneration process. */
 
 #if defined(MBEDTLS_TEST_LIBTESTDRIVER1)
-#include <libtestdriver1/include/psa/crypto.h>
+#if defined(TF_PSA_CRYPTO_TEST_LIBTESTDRIVER1)
+#include "mbedtls/private/libtestdriver1-crypto_builtin_primitives.h"
+#else
+#include <libtestdriver1/tf-psa-crypto/include/psa/crypto.h>
+#endif
 #endif
 
 #if defined(PSA_CRYPTO_DRIVER_TEST)
@@ -96,6 +73,22 @@ typedef mbedtls_psa_hash_operation_t
 #endif /* MBEDTLS_TEST_LIBTESTDRIVER1 &&
           LIBTESTDRIVER1_MBEDTLS_PSA_BUILTIN_HASH */
 
+#if defined(MBEDTLS_TEST_LIBTESTDRIVER1) && \
+    defined(LIBTESTDRIVER1_MBEDTLS_PSA_BUILTIN_XOF)
+typedef libtestdriver1_mbedtls_psa_xof_operation_t
+    mbedtls_transparent_test_driver_xof_operation_t;
+
+#define MBEDTLS_TRANSPARENT_TEST_DRIVER_XOF_OPERATION_INIT \
+    LIBTESTDRIVER1_MBEDTLS_PSA_XOF_OPERATION_INIT
+#else
+typedef mbedtls_psa_xof_operation_t
+    mbedtls_transparent_test_driver_xof_operation_t;
+
+#define MBEDTLS_TRANSPARENT_TEST_DRIVER_XOF_OPERATION_INIT \
+    MBEDTLS_PSA_XOF_OPERATION_INIT
+#endif /* MBEDTLS_TEST_LIBTESTDRIVER1 &&
+          LIBTESTDRIVER1_MBEDTLS_PSA_BUILTIN_XOF */
+
 typedef struct {
     unsigned int initialised : 1;
     mbedtls_transparent_test_driver_cipher_operation_t ctx;
@@ -111,7 +104,7 @@ typedef struct {
  *
  * The union members are the driver's context structures, and the member names
  * are formatted as `'drivername'_ctx`. This allows for procedural generation
- * of both this file and the content of psa_crypto_driver_wrappers.c */
+ * of both this file and the content of psa_crypto_driver_wrappers.h */
 
 typedef union {
     unsigned dummy; /* Make sure this union is always non-empty */
@@ -120,6 +113,14 @@ typedef union {
     mbedtls_transparent_test_driver_hash_operation_t test_driver_ctx;
 #endif
 } psa_driver_hash_context_t;
+
+typedef union {
+    unsigned dummy; /* Make sure this union is always non-empty */
+    mbedtls_psa_xof_operation_t mbedtls_ctx;
+#if defined(PSA_CRYPTO_DRIVER_TEST)
+    mbedtls_transparent_test_driver_xof_operation_t test_driver_ctx;
+#endif
+} psa_driver_xof_context_t;
 
 typedef union {
     unsigned dummy; /* Make sure this union is always non-empty */

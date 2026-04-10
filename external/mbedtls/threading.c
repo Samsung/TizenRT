@@ -1,58 +1,21 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  Threading abstraction layer
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-/*
- * Ensure gmtime_r is available even with -std=c99; must be defined before
- * mbedtls_config.h, which pulls in glibc's features.h. Harmless on other platforms.
- */
-#if !defined(_POSIX_C_SOURCE)
-#define _POSIX_C_SOURCE 200112L
-#endif
-
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_THREADING_C)
 
-#include "mbedtls/threading.h"
+#include "threading_internal.h"
+
+#include <psa/crypto_values.h>
 
 #if defined(MBEDTLS_HAVE_TIME_DATE) && !defined(MBEDTLS_PLATFORM_GMTIME_R_ALT)
 
-#if !defined(_WIN32) && (defined(unix) || \
-    defined(__unix) || defined(__unix__) || (defined(__APPLE__) && \
-    defined(__MACH__)))
+#if defined(MBEDTLS_PLATFORM_IS_UNIXLIKE)
 #include <unistd.h>
 #endif /* !_WIN32 && (unix || __unix || __unix__ ||
         * (__APPLE__ && __MACH__)) */
@@ -79,104 +42,232 @@
 #endif /* MBEDTLS_HAVE_TIME_DATE && !MBEDTLS_PLATFORM_GMTIME_R_ALT */
 
 #if defined(MBEDTLS_THREADING_PTHREAD)
-static void threading_mutex_init_pthread(mbedtls_threading_mutex_t *mutex)
+static int err_from_posix(int posix_ret)
 {
-    if (mutex == NULL || mutex->is_valid) {
-        return;
+    switch (posix_ret) {
+        case 0:
+            return 0;
+        default:
+            return MBEDTLS_ERR_THREADING_USAGE_ERROR;
     }
-
-    /* A nonzero value of is_valid indicates a successfully initialized
-     * mutex. This is a workaround for not being able to return an error
-     * code for this function. The lock/unlock functions return an error
-     * if is_valid is nonzero. The Mbed TLS unit test code uses this field
-     * to distinguish more states of the mutex; see
-     * tests/src/threading_helpers for details. */
-    mutex->is_valid = pthread_mutex_init(&mutex->mutex, NULL) == 0;
 }
 
-static void threading_mutex_free_pthread(mbedtls_threading_mutex_t *mutex)
+static int threading_mutex_init_pthread(mbedtls_platform_mutex_t *mutex)
 {
-    if (mutex == NULL || !mutex->is_valid) {
-        return;
-    }
-
-    (void) pthread_mutex_destroy(&mutex->mutex);
-    mutex->is_valid = 0;
+    int posix_ret = pthread_mutex_init(mutex, NULL);
+    return err_from_posix(posix_ret);
 }
 
-static int threading_mutex_lock_pthread(mbedtls_threading_mutex_t *mutex)
+static void threading_mutex_destroy_pthread(mbedtls_platform_mutex_t *mutex)
 {
-    if (mutex == NULL || !mutex->is_valid) {
-        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
-    }
-
-    if (pthread_mutex_lock(&mutex->mutex) != 0) {
-        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
-    }
-
-    return 0;
+    (void) pthread_mutex_destroy(mutex);
 }
 
-static int threading_mutex_unlock_pthread(mbedtls_threading_mutex_t *mutex)
+static int threading_mutex_lock_pthread(mbedtls_platform_mutex_t *mutex)
 {
-    if (mutex == NULL || !mutex->is_valid) {
-        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
-    }
-
-    if (pthread_mutex_unlock(&mutex->mutex) != 0) {
-        return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
-    }
-
-    return 0;
+    int posix_ret = pthread_mutex_lock(mutex);
+    return err_from_posix(posix_ret);
 }
 
-void (*mbedtls_mutex_init)(mbedtls_threading_mutex_t *) = threading_mutex_init_pthread;
-void (*mbedtls_mutex_free)(mbedtls_threading_mutex_t *) = threading_mutex_free_pthread;
-int (*mbedtls_mutex_lock)(mbedtls_threading_mutex_t *) = threading_mutex_lock_pthread;
-int (*mbedtls_mutex_unlock)(mbedtls_threading_mutex_t *) = threading_mutex_unlock_pthread;
+static int threading_mutex_unlock_pthread(mbedtls_platform_mutex_t *mutex)
+{
+    int posix_ret = pthread_mutex_unlock(mutex);
+    return err_from_posix(posix_ret);
+}
+
+int (*mbedtls_mutex_init_ptr)(mbedtls_platform_mutex_t *) = threading_mutex_init_pthread;
+void (*mbedtls_mutex_free_ptr)(mbedtls_platform_mutex_t *) = threading_mutex_destroy_pthread;
+int (*mbedtls_mutex_lock_ptr)(mbedtls_platform_mutex_t *) = threading_mutex_lock_pthread;
+int (*mbedtls_mutex_unlock_ptr)(mbedtls_platform_mutex_t *) = threading_mutex_unlock_pthread;
 
 /*
  * With pthreads we can statically initialize mutexes
  */
-#define MUTEX_INIT  = { PTHREAD_MUTEX_INITIALIZER, 1 }
+#define MUTEX_INIT  = { PTHREAD_MUTEX_INITIALIZER, 1, 1 }
+
+int mbedtls_condition_variable_init(
+    mbedtls_threading_condition_variable_t *cond)
+{
+    int posix_ret = pthread_cond_init(&cond->cond, NULL);
+    return err_from_posix(posix_ret);
+}
+
+void mbedtls_condition_variable_free(
+    mbedtls_threading_condition_variable_t *cond)
+{
+    (void) pthread_cond_destroy(&cond->cond);
+}
+
+int mbedtls_condition_variable_signal(
+    mbedtls_threading_condition_variable_t *cond)
+{
+    int posix_ret = pthread_cond_signal(&cond->cond);
+    return err_from_posix(posix_ret);
+}
+
+int mbedtls_condition_variable_broadcast(
+    mbedtls_threading_condition_variable_t *cond)
+{
+    int posix_ret = pthread_cond_broadcast(&cond->cond);
+    return err_from_posix(posix_ret);
+}
+
+int mbedtls_condition_variable_wait(
+    mbedtls_threading_condition_variable_t *cond,
+    mbedtls_threading_mutex_t *mutex)
+{
+    int posix_ret = pthread_cond_wait(&cond->cond, &mutex->mutex);
+    return err_from_posix(posix_ret);
+}
 
 #endif /* MBEDTLS_THREADING_PTHREAD */
 
 #if defined(MBEDTLS_THREADING_ALT)
-static int threading_mutex_fail(mbedtls_threading_mutex_t *mutex)
+static int threading_mutex_fail(mbedtls_platform_mutex_t *mutex)
 {
     ((void) mutex);
-    return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    return PSA_ERROR_BAD_STATE;
 }
-static void threading_mutex_dummy(mbedtls_threading_mutex_t *mutex)
+static void threading_mutex_dummy(mbedtls_platform_mutex_t *mutex)
 {
     ((void) mutex);
     return;
 }
 
-void (*mbedtls_mutex_init)(mbedtls_threading_mutex_t *) = threading_mutex_dummy;
-void (*mbedtls_mutex_free)(mbedtls_threading_mutex_t *) = threading_mutex_dummy;
-int (*mbedtls_mutex_lock)(mbedtls_threading_mutex_t *) = threading_mutex_fail;
-int (*mbedtls_mutex_unlock)(mbedtls_threading_mutex_t *) = threading_mutex_fail;
+int (*mbedtls_mutex_init_ptr)(mbedtls_platform_mutex_t *) = threading_mutex_fail;
+void (*mbedtls_mutex_free_ptr)(mbedtls_platform_mutex_t *) = threading_mutex_dummy;
+int (*mbedtls_mutex_lock_ptr)(mbedtls_platform_mutex_t *) = threading_mutex_fail;
+int (*mbedtls_mutex_unlock_ptr)(mbedtls_platform_mutex_t *) = threading_mutex_fail;
+
+#endif /* MBEDTLS_THREADING_ALT */
+
+void mbedtls_mutex_init(mbedtls_threading_mutex_t *mutex)
+{
+    int ret = (*mbedtls_mutex_init_ptr)(&mutex->mutex);
+    mutex->initialized = (ret == 0);
+}
+
+void mbedtls_mutex_free(mbedtls_threading_mutex_t *mutex)
+{
+    if (!mutex->initialized) {
+        return;
+    }
+    (*mbedtls_mutex_free_ptr)(&mutex->mutex);
+    mutex->initialized = 0;
+}
+
+int mbedtls_mutex_lock(mbedtls_threading_mutex_t *mutex)
+{
+    if (!mutex->initialized) {
+        return MBEDTLS_ERR_THREADING_USAGE_ERROR;
+    }
+    return (*mbedtls_mutex_lock_ptr)(&mutex->mutex);
+}
+
+int mbedtls_mutex_unlock(mbedtls_threading_mutex_t *mutex)
+{
+    if (!mutex->initialized) {
+        return MBEDTLS_ERR_THREADING_USAGE_ERROR;
+    }
+    return (*mbedtls_mutex_unlock_ptr)(&mutex->mutex);
+}
+
+
+
+#if defined(MBEDTLS_THREADING_ALT)
+
+static int (*cond_init_ptr)(mbedtls_platform_condition_variable_t *) = NULL;
+
+int mbedtls_condition_variable_init(
+    mbedtls_threading_condition_variable_t *cond)
+{
+    if (*cond_init_ptr == NULL) {
+        return PSA_ERROR_BAD_STATE;
+    }
+    return (*cond_init_ptr)(&cond->cond);
+}
+
+static void (*cond_destroy_ptr)(mbedtls_platform_condition_variable_t *) = NULL;
+
+void mbedtls_condition_variable_free(
+    mbedtls_threading_condition_variable_t *cond)
+{
+    if (*cond_destroy_ptr == NULL) {
+        return;
+    }
+    (*cond_destroy_ptr)(&cond->cond);
+}
+
+static int (*cond_signal_ptr)(mbedtls_platform_condition_variable_t *) = NULL;
+
+int mbedtls_condition_variable_signal(
+    mbedtls_threading_condition_variable_t *cond)
+{
+    if (*cond_signal_ptr == NULL) {
+        return PSA_ERROR_BAD_STATE;
+    }
+    return (*cond_signal_ptr)(&cond->cond);
+}
+
+static int (*cond_broadcast_ptr)(mbedtls_platform_condition_variable_t *) = NULL;
+
+int mbedtls_condition_variable_broadcast(
+    mbedtls_threading_condition_variable_t *cond)
+{
+    if (*cond_broadcast_ptr == NULL) {
+        return PSA_ERROR_BAD_STATE;
+    }
+    return (*cond_broadcast_ptr)(&cond->cond);
+}
+
+static int (*cond_wait_ptr)(mbedtls_platform_condition_variable_t *,
+                            mbedtls_platform_mutex_t *) = NULL;
+
+int mbedtls_condition_variable_wait(
+    mbedtls_threading_condition_variable_t *cond,
+    mbedtls_threading_mutex_t *mutex)
+{
+    if (*cond_wait_ptr == NULL) {
+        return PSA_ERROR_BAD_STATE;
+    }
+    return (*cond_wait_ptr)(&cond->cond, &mutex->mutex);
+}
 
 /*
  * Set functions pointers and initialize global mutexes
  */
-void mbedtls_threading_set_alt(void (*mutex_init)(mbedtls_threading_mutex_t *),
-                               void (*mutex_free)(mbedtls_threading_mutex_t *),
-                               int (*mutex_lock)(mbedtls_threading_mutex_t *),
-                               int (*mutex_unlock)(mbedtls_threading_mutex_t *))
+void mbedtls_threading_set_alt(
+    int (*mutex_init)(mbedtls_platform_mutex_t *),
+    void (*mutex_destroy)(mbedtls_platform_mutex_t *),
+    int (*mutex_lock)(mbedtls_platform_mutex_t *),
+    int (*mutex_unlock)(mbedtls_platform_mutex_t *),
+    int (*cond_init)(mbedtls_platform_condition_variable_t *),
+    void (*cond_destroy)(mbedtls_platform_condition_variable_t *),
+    int (*cond_signal)(mbedtls_platform_condition_variable_t *),
+    int (*cond_broadcast)(mbedtls_platform_condition_variable_t *),
+    int (*cond_wait)(mbedtls_platform_condition_variable_t *,
+                     mbedtls_platform_mutex_t *))
 {
-    mbedtls_mutex_init = mutex_init;
-    mbedtls_mutex_free = mutex_free;
-    mbedtls_mutex_lock = mutex_lock;
-    mbedtls_mutex_unlock = mutex_unlock;
+    mbedtls_mutex_init_ptr = mutex_init;
+    mbedtls_mutex_free_ptr = mutex_destroy;
+    mbedtls_mutex_lock_ptr = mutex_lock;
+    mbedtls_mutex_unlock_ptr = mutex_unlock;
+    cond_init_ptr = cond_init;
+    cond_destroy_ptr = cond_destroy;
+    cond_signal_ptr = cond_signal;
+    cond_broadcast_ptr = cond_broadcast;
+    cond_wait_ptr = cond_wait;
 
 #if defined(MBEDTLS_FS_IO)
     mbedtls_mutex_init(&mbedtls_threading_readdir_mutex);
 #endif
 #if defined(THREADING_USE_GMTIME)
     mbedtls_mutex_init(&mbedtls_threading_gmtime_mutex);
+#endif
+#if defined(MBEDTLS_PSA_CRYPTO_C)
+    mbedtls_mutex_init(&mbedtls_threading_key_slot_mutex);
+    mbedtls_mutex_init(&mbedtls_threading_psa_globaldata_mutex);
+    mbedtls_mutex_init(&mbedtls_threading_psa_rngdata_mutex);
 #endif
 }
 
@@ -190,6 +281,11 @@ void mbedtls_threading_free_alt(void)
 #endif
 #if defined(THREADING_USE_GMTIME)
     mbedtls_mutex_free(&mbedtls_threading_gmtime_mutex);
+#endif
+#if defined(MBEDTLS_PSA_CRYPTO_C)
+    mbedtls_mutex_free(&mbedtls_threading_key_slot_mutex);
+    mbedtls_mutex_free(&mbedtls_threading_psa_globaldata_mutex);
+    mbedtls_mutex_free(&mbedtls_threading_psa_rngdata_mutex);
 #endif
 }
 #endif /* MBEDTLS_THREADING_ALT */
@@ -205,6 +301,11 @@ mbedtls_threading_mutex_t mbedtls_threading_readdir_mutex MUTEX_INIT;
 #endif
 #if defined(THREADING_USE_GMTIME)
 mbedtls_threading_mutex_t mbedtls_threading_gmtime_mutex MUTEX_INIT;
+#endif
+#if defined(MBEDTLS_PSA_CRYPTO_C)
+mbedtls_threading_mutex_t mbedtls_threading_key_slot_mutex MUTEX_INIT;
+mbedtls_threading_mutex_t mbedtls_threading_psa_globaldata_mutex MUTEX_INIT;
+mbedtls_threading_mutex_t mbedtls_threading_psa_rngdata_mutex MUTEX_INIT;
 #endif
 
 #endif /* MBEDTLS_THREADING_C */

@@ -1,37 +1,8 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  * The LM-OTS one-time public-key signature scheme
  *
  * Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
 /*
@@ -47,7 +18,7 @@
  *      https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-208.pdf
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_LMS_C)
 
@@ -57,14 +28,20 @@
 
 #include "mbedtls/lms.h"
 #include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
-#include "mbedtls/psa_util.h"
+#include "mbedtls/private/error_common.h"
+#include "psa_util_internal.h"
 
-#include "mbedtls/psa/crypto.h"
+#include "psa/crypto.h"
 
-#define PSA_TO_MBEDTLS_ERR(status) PSA_TO_MBEDTLS_ERR_LIST(status,   \
-                                                           psa_to_lms_errors,             \
-                                                           psa_generic_status_to_mbedtls)
+/* Define a local translating function to save code size by not using too many
+ * arguments in each translating place. */
+static int local_err_translation(psa_status_t status)
+{
+    return psa_status_to_mbedtls(status, psa_to_lms_errors,
+                                 ARRAY_LENGTH(psa_to_lms_errors),
+                                 psa_generic_status_to_mbedtls);
+}
+#define PSA_TO_MBEDTLS_ERR(status) local_err_translation(status)
 
 #define PUBLIC_KEY_TYPE_OFFSET     (0)
 #define PUBLIC_KEY_I_KEY_ID_OFFSET (PUBLIC_KEY_TYPE_OFFSET + \
@@ -91,29 +68,6 @@ static const unsigned char D_MESSAGE_CONSTANT_BYTES[D_CONST_LEN] = { 0x81, 0x81 
 #if defined(MBEDTLS_TEST_HOOKS)
 int (*mbedtls_lmots_sign_private_key_invalidated_hook)(unsigned char *) = NULL;
 #endif /* defined(MBEDTLS_TEST_HOOKS) */
-
-void mbedtls_lms_unsigned_int_to_network_bytes(unsigned int val, size_t len,
-                                               unsigned char *bytes)
-{
-    size_t idx;
-
-    for (idx = 0; idx < len; idx++) {
-        bytes[idx] = (val >> ((len - 1 - idx) * 8)) & 0xFF;
-    }
-}
-
-unsigned int mbedtls_lms_network_bytes_to_unsigned_int(size_t len,
-                                                       const unsigned char *bytes)
-{
-    size_t idx;
-    unsigned int val = 0;
-
-    for (idx = 0; idx < len; idx++) {
-        val |= ((unsigned int) bytes[idx]) << (8 * (len - 1 - idx));
-    }
-
-    return val;
-}
 
 /* Calculate the checksum digits that are appended to the end of the LMOTS digit
  * string. See NIST SP800-208 section 3.1 or RFC8554 Algorithm 2 for details of
@@ -214,8 +168,7 @@ static int create_digit_array_with_checksum(const mbedtls_lmots_parameters_t *pa
     }
 
     checksum = lmots_checksum_calculate(params, out);
-    mbedtls_lms_unsigned_int_to_network_bytes(checksum, CHECKSUM_LEN,
-                                              out + MBEDTLS_LMOTS_N_HASH_LEN(params->type));
+    MBEDTLS_PUT_UINT16_BE(checksum, out, MBEDTLS_LMOTS_N_HASH_LEN(params->type));
 
 exit:
     psa_hash_abort(&op);
@@ -304,17 +257,13 @@ static int hash_digit_array(const mbedtls_lmots_parameters_t *params,
                 goto exit;
             }
 
-            mbedtls_lms_unsigned_int_to_network_bytes(i_digit_idx,
-                                                      I_DIGIT_IDX_LEN,
-                                                      i_digit_idx_bytes);
+            MBEDTLS_PUT_UINT16_BE(i_digit_idx, i_digit_idx_bytes, 0);
             status = psa_hash_update(&op, i_digit_idx_bytes, I_DIGIT_IDX_LEN);
             if (status != PSA_SUCCESS) {
                 goto exit;
             }
 
-            mbedtls_lms_unsigned_int_to_network_bytes(j_hash_idx,
-                                                      J_HASH_IDX_LEN,
-                                                      j_hash_idx_bytes);
+            j_hash_idx_bytes[0] = (uint8_t) j_hash_idx;
             status = psa_hash_update(&op, j_hash_idx_bytes, J_HASH_IDX_LEN);
             if (status != PSA_SUCCESS) {
                 goto exit;
@@ -411,26 +360,6 @@ exit:
     return PSA_TO_MBEDTLS_ERR(status);
 }
 
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-int mbedtls_lms_error_from_psa(psa_status_t status)
-{
-    switch (status) {
-        case PSA_SUCCESS:
-            return 0;
-        case PSA_ERROR_HARDWARE_FAILURE:
-            return MBEDTLS_ERR_PLATFORM_HW_ACCEL_FAILED;
-        case PSA_ERROR_NOT_SUPPORTED:
-            return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
-        case PSA_ERROR_BUFFER_TOO_SMALL:
-            return MBEDTLS_ERR_LMS_BUFFER_TOO_SMALL;
-        case PSA_ERROR_INVALID_ARGUMENT:
-            return MBEDTLS_ERR_LMS_BAD_INPUT_DATA;
-        default:
-            return MBEDTLS_ERR_ERROR_GENERIC_ERROR;
-    }
-}
-#endif /* !MBEDTLS_DEPRECATED_REMOVED */
-
 void mbedtls_lmots_public_init(mbedtls_lmots_public_t *ctx)
 {
     memset(ctx, 0, sizeof(*ctx));
@@ -438,6 +367,10 @@ void mbedtls_lmots_public_init(mbedtls_lmots_public_t *ctx)
 
 void mbedtls_lmots_public_free(mbedtls_lmots_public_t *ctx)
 {
+    if (ctx == NULL) {
+        return;
+    }
+
     mbedtls_platform_zeroize(ctx, sizeof(*ctx));
 }
 
@@ -448,9 +381,11 @@ int mbedtls_lmots_import_public_key(mbedtls_lmots_public_t *ctx,
         return MBEDTLS_ERR_LMS_BAD_INPUT_DATA;
     }
 
-    ctx->params.type =
-        mbedtls_lms_network_bytes_to_unsigned_int(MBEDTLS_LMOTS_TYPE_LEN,
-                                                  key + MBEDTLS_LMOTS_SIG_TYPE_OFFSET);
+    uint32_t type = MBEDTLS_GET_UINT32_BE(key, MBEDTLS_LMOTS_SIG_TYPE_OFFSET);
+    if (type != (uint32_t) MBEDTLS_LMOTS_SHA256_N32_W8) {
+        return MBEDTLS_ERR_LMS_BAD_INPUT_DATA;
+    }
+    ctx->params.type = (mbedtls_lmots_algorithm_type_t) type;
 
     if (key_len != MBEDTLS_LMOTS_PUBLIC_KEY_LEN(ctx->params.type)) {
         return MBEDTLS_ERR_LMS_BAD_INPUT_DATA;
@@ -485,9 +420,7 @@ int mbedtls_lmots_export_public_key(const mbedtls_lmots_public_t *ctx,
         return MBEDTLS_ERR_LMS_BAD_INPUT_DATA;
     }
 
-    mbedtls_lms_unsigned_int_to_network_bytes(ctx->params.type,
-                                              MBEDTLS_LMOTS_TYPE_LEN,
-                                              key + MBEDTLS_LMOTS_SIG_TYPE_OFFSET);
+    MBEDTLS_PUT_UINT32_BE(ctx->params.type, key, MBEDTLS_LMOTS_SIG_TYPE_OFFSET);
 
     memcpy(key + PUBLIC_KEY_I_KEY_ID_OFFSET,
            ctx->params.I_key_identifier,
@@ -580,9 +513,7 @@ int mbedtls_lmots_verify(const mbedtls_lmots_public_t *ctx,
         return MBEDTLS_ERR_LMS_VERIFY_FAILED;
     }
 
-    if (mbedtls_lms_network_bytes_to_unsigned_int(MBEDTLS_LMOTS_TYPE_LEN,
-                                                  sig + MBEDTLS_LMOTS_SIG_TYPE_OFFSET) !=
-        MBEDTLS_LMOTS_SHA256_N32_W8) {
+    if (MBEDTLS_GET_UINT32_BE(sig, MBEDTLS_LMOTS_SIG_TYPE_OFFSET) != MBEDTLS_LMOTS_SHA256_N32_W8) {
         return MBEDTLS_ERR_LMS_VERIFY_FAILED;
     }
 
@@ -612,6 +543,10 @@ void mbedtls_lmots_private_init(mbedtls_lmots_private_t *ctx)
 
 void mbedtls_lmots_private_free(mbedtls_lmots_private_t *ctx)
 {
+    if (ctx == NULL) {
+        return;
+    }
+
     mbedtls_platform_zeroize(ctx,
                              sizeof(*ctx));
 }
@@ -628,7 +563,7 @@ int mbedtls_lmots_generate_private_key(mbedtls_lmots_private_t *ctx,
     size_t output_hash_len;
     unsigned int i_digit_idx;
     unsigned char i_digit_idx_bytes[2];
-    unsigned char const_bytes[1];
+    unsigned char const_bytes[1] = { 0xFF };
 
     if (ctx->have_private_key) {
         return MBEDTLS_ERR_LMS_BAD_INPUT_DATA;
@@ -644,12 +579,7 @@ int mbedtls_lmots_generate_private_key(mbedtls_lmots_private_t *ctx,
            I_key_identifier,
            sizeof(ctx->params.I_key_identifier));
 
-    mbedtls_lms_unsigned_int_to_network_bytes(q_leaf_identifier,
-                                              MBEDTLS_LMOTS_Q_LEAF_ID_LEN,
-                                              ctx->params.q_leaf_identifier);
-
-    mbedtls_lms_unsigned_int_to_network_bytes(0xFF, sizeof(const_bytes),
-                                              const_bytes);
+    MBEDTLS_PUT_UINT32_BE(q_leaf_identifier, ctx->params.q_leaf_identifier, 0);
 
     for (i_digit_idx = 0;
          i_digit_idx < MBEDTLS_LMOTS_P_SIG_DIGIT_COUNT(ctx->params.type);
@@ -673,8 +603,7 @@ int mbedtls_lmots_generate_private_key(mbedtls_lmots_private_t *ctx,
             goto exit;
         }
 
-        mbedtls_lms_unsigned_int_to_network_bytes(i_digit_idx, I_DIGIT_IDX_LEN,
-                                                  i_digit_idx_bytes);
+        MBEDTLS_PUT_UINT16_BE(i_digit_idx, i_digit_idx_bytes, 0);
         status = psa_hash_update(&op, i_digit_idx_bytes, I_DIGIT_IDX_LEN);
         if (status != PSA_SUCCESS) {
             goto exit;
@@ -746,8 +675,7 @@ exit:
 }
 
 int mbedtls_lmots_sign(mbedtls_lmots_private_t *ctx,
-                       int (*f_rng)(void *, unsigned char *, size_t),
-                       void *p_rng, const unsigned char *msg, size_t msg_size,
+                       const unsigned char *msg, size_t msg_size,
                        unsigned char *sig, size_t sig_size, size_t *sig_len)
 {
     unsigned char tmp_digit_array[MBEDTLS_LMOTS_P_SIG_DIGIT_COUNT_MAX];
@@ -775,8 +703,8 @@ int mbedtls_lmots_sign(mbedtls_lmots_private_t *ctx,
         return MBEDTLS_ERR_LMS_BAD_INPUT_DATA;
     }
 
-    ret = f_rng(p_rng, tmp_c_random,
-                MBEDTLS_LMOTS_N_HASH_LEN(ctx->params.type));
+    ret = psa_generate_random(tmp_c_random,
+                              MBEDTLS_LMOTS_N_HASH_LEN(ctx->params.type));
     if (ret) {
         return ret;
     }
@@ -795,9 +723,7 @@ int mbedtls_lmots_sign(mbedtls_lmots_private_t *ctx,
         goto exit;
     }
 
-    mbedtls_lms_unsigned_int_to_network_bytes(ctx->params.type,
-                                              MBEDTLS_LMOTS_TYPE_LEN,
-                                              sig + MBEDTLS_LMOTS_SIG_TYPE_OFFSET);
+    MBEDTLS_PUT_UINT32_BE(ctx->params.type, sig, MBEDTLS_LMOTS_SIG_TYPE_OFFSET);
 
     /* Test hook to check if sig is being written to before we invalidate the
      * private key.

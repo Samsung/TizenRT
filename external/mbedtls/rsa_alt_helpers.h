@@ -1,24 +1,13 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file rsa_alt_helpers.h
  *
  * \brief Context-independent RSA helper functions
+ *
+ *  Please note: The below explanation is historical and is no longer relevant
+ *  due to there being no compelling reason to keep these functions separate
+ *  since the RSA alt interface was removed. A future refactoring will address
+ *  this which is tracked by the following issue:
+ *  https://github.com/Mbed-TLS/TF-PSA-Crypto/issues/105.
  *
  *  This module declares some RSA-related helper functions useful when
  *  implementing the RSA interface. These functions are provided in a separate
@@ -38,7 +27,6 @@
  *  There are two classes of helper functions:
  *
  *  (1) Parameter-generating helpers. These are:
- *      - mbedtls_rsa_deduce_primes
  *      - mbedtls_rsa_deduce_private_exponent
  *      - mbedtls_rsa_deduce_crt
  *       Each of these functions takes a set of core RSA parameters and
@@ -53,61 +41,18 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
+#ifndef TF_PSA_CRYPTO_RSA_ALT_HELPERS_H
+#define TF_PSA_CRYPTO_RSA_ALT_HELPERS_H
 
-#ifndef MBEDTLS_RSA_INTERNAL_H
-#define MBEDTLS_RSA_INTERNAL_H
+#include "tf-psa-crypto/build_info.h"
 
-#include "mbedtls/build_info.h"
-
-#include "mbedtls/bignum.h"
+#include "mbedtls/private/bignum.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-/**
- * \brief          Compute RSA prime moduli P, Q from public modulus N=PQ
- *                 and a pair of private and public key.
- *
- * \note           This is a 'static' helper function not operating on
- *                 an RSA context. Alternative implementations need not
- *                 overwrite it.
- *
- * \param N        RSA modulus N = PQ, with P, Q to be found
- * \param E        RSA public exponent
- * \param D        RSA private exponent
- * \param P        Pointer to MPI holding first prime factor of N on success
- * \param Q        Pointer to MPI holding second prime factor of N on success
- *
- * \return
- *                 - 0 if successful. In this case, P and Q constitute a
- *                   factorization of N.
- *                 - A non-zero error code otherwise.
- *
- * \note           It is neither checked that P, Q are prime nor that
- *                 D, E are modular inverses wrt. P-1 and Q-1. For that,
- *                 use the helper function \c mbedtls_rsa_validate_params.
- *
- */
-int mbedtls_rsa_deduce_primes(mbedtls_mpi const *N, mbedtls_mpi const *E,
-                              mbedtls_mpi const *D,
-                              mbedtls_mpi *P, mbedtls_mpi *Q);
 
 /**
  * \brief          Compute RSA private exponent from
@@ -120,12 +65,15 @@ int mbedtls_rsa_deduce_primes(mbedtls_mpi const *N, mbedtls_mpi const *E,
  * \param P        First prime factor of RSA modulus
  * \param Q        Second prime factor of RSA modulus
  * \param E        RSA public exponent
- * \param D        Pointer to MPI holding the private exponent on success.
+ * \param D        Pointer to MPI holding the private exponent on success,
+ *                 i.e. the modular inverse of E modulo LCM(P-1,Q-1).
  *
- * \return
- *                 - 0 if successful. In this case, D is set to a simultaneous
- *                   modular inverse of E modulo both P-1 and Q-1.
- *                 - A non-zero error code otherwise.
+ * \return         \c 0 if successful.
+ * \return         #MBEDTLS_ERR_MPI_ALLOC_FAILED if a memory allocation failed.
+ * \return         #MBEDTLS_ERR_MPI_NOT_ACCEPTABLE if E is not coprime to P-1
+ *                 and Q-1, that is, if GCD( E, (P-1)*(Q-1) ) != 1.
+ * \return         #MBEDTLS_ERR_MPI_BAD_INPUT_DATA if inputs are otherwise
+ *                 invalid.
  *
  * \note           This function does not check whether P and Q are primes.
  *
@@ -234,4 +182,4 @@ int mbedtls_rsa_validate_crt(const mbedtls_mpi *P,  const mbedtls_mpi *Q,
 }
 #endif
 
-#endif /* rsa_alt_helpers.h */
+#endif /* TF_PSA_CRYPTO_RSA_ALT_HELPERS_H */

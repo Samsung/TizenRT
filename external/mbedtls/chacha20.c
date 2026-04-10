@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file chacha20.c
  *
@@ -23,42 +6,30 @@
  * \author Daniel King <damaki.gh@gmail.com>
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_CHACHA20_C)
 
-#include "mbedtls/chacha20.h"
+#include "chacha20_neon.h"
+
+#include "mbedtls/private/chacha20.h"
 #include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
+#include "mbedtls/private/error_common.h"
 
 #include <stddef.h>
 #include <string.h>
 
 #include "mbedtls/platform.h"
 
-#if !defined(MBEDTLS_CHACHA20_ALT)
+#define CHACHA20_CTR_INDEX (12U)
+
+#if MBEDTLS_CHACHA20_NEON_MULTIBLOCK == 0
 
 #define ROTL32(value, amount) \
     ((uint32_t) ((value) << (amount)) | ((value) >> (32 - (amount))))
-
-#define CHACHA20_CTR_INDEX (12U)
-
-#define CHACHA20_BLOCK_SIZE_BYTES (4U * 16U)
 
 /**
  * \brief           ChaCha20 quarter round operation.
@@ -137,7 +108,7 @@ static void chacha20_block(const uint32_t initial_state[16],
 
     memcpy(working_state,
            initial_state,
-           CHACHA20_BLOCK_SIZE_BYTES);
+           MBEDTLS_CHACHA20_BLOCK_SIZE_BYTES);
 
     for (i = 0U; i < 10U; i++) {
         chacha20_inner_block(working_state);
@@ -169,13 +140,14 @@ static void chacha20_block(const uint32_t initial_state[16],
     mbedtls_platform_zeroize(working_state, sizeof(working_state));
 }
 
+#endif /* MBEDTLS_CHACHA20_NEON_MULTIBLOCK == 0 */
+
 void mbedtls_chacha20_init(mbedtls_chacha20_context *ctx)
 {
-    mbedtls_platform_zeroize(ctx->state, sizeof(ctx->state));
-    mbedtls_platform_zeroize(ctx->keystream8, sizeof(ctx->keystream8));
+    mbedtls_platform_zeroize(ctx, sizeof(mbedtls_chacha20_context));
 
     /* Initially, there's no keystream bytes available */
-    ctx->keystream_bytes_used = CHACHA20_BLOCK_SIZE_BYTES;
+    ctx->keystream_bytes_used = MBEDTLS_CHACHA20_BLOCK_SIZE_BYTES;
 }
 
 void mbedtls_chacha20_free(mbedtls_chacha20_context *ctx)
@@ -189,20 +161,30 @@ int mbedtls_chacha20_setkey(mbedtls_chacha20_context *ctx,
                             const unsigned char key[32])
 {
     /* ChaCha20 constants - the string "expand 32-byte k" */
-    ctx->state[0] = 0x61707865;
-    ctx->state[1] = 0x3320646e;
-    ctx->state[2] = 0x79622d32;
-    ctx->state[3] = 0x6b206574;
+    static const char EXPAND_32_BYTE_K[16]
+    MBEDTLS_ATTRIBUTE_UNTERMINATED_STRING = "expand 32-byte k";
+    if (MBEDTLS_IS_BIG_ENDIAN) {
+        ctx->state[0] = MBEDTLS_GET_UINT32_LE(EXPAND_32_BYTE_K, 0);
+        ctx->state[1] = MBEDTLS_GET_UINT32_LE(EXPAND_32_BYTE_K, 4);
+        ctx->state[2] = MBEDTLS_GET_UINT32_LE(EXPAND_32_BYTE_K, 8);
+        ctx->state[3] = MBEDTLS_GET_UINT32_LE(EXPAND_32_BYTE_K, 12);
+    } else {
+        memcpy(ctx->state, EXPAND_32_BYTE_K, 16);
+    }
 
     /* Set key */
-    ctx->state[4]  = MBEDTLS_GET_UINT32_LE(key, 0);
-    ctx->state[5]  = MBEDTLS_GET_UINT32_LE(key, 4);
-    ctx->state[6]  = MBEDTLS_GET_UINT32_LE(key, 8);
-    ctx->state[7]  = MBEDTLS_GET_UINT32_LE(key, 12);
-    ctx->state[8]  = MBEDTLS_GET_UINT32_LE(key, 16);
-    ctx->state[9]  = MBEDTLS_GET_UINT32_LE(key, 20);
-    ctx->state[10] = MBEDTLS_GET_UINT32_LE(key, 24);
-    ctx->state[11] = MBEDTLS_GET_UINT32_LE(key, 28);
+    if (MBEDTLS_IS_BIG_ENDIAN) {
+        ctx->state[4]  = MBEDTLS_GET_UINT32_LE(key, 0);
+        ctx->state[5]  = MBEDTLS_GET_UINT32_LE(key, 4);
+        ctx->state[6]  = MBEDTLS_GET_UINT32_LE(key, 8);
+        ctx->state[7]  = MBEDTLS_GET_UINT32_LE(key, 12);
+        ctx->state[8]  = MBEDTLS_GET_UINT32_LE(key, 16);
+        ctx->state[9]  = MBEDTLS_GET_UINT32_LE(key, 20);
+        ctx->state[10] = MBEDTLS_GET_UINT32_LE(key, 24);
+        ctx->state[11] = MBEDTLS_GET_UINT32_LE(key, 28);
+    } else {
+        memcpy(&ctx->state[4], key, 32);
+    }
 
     return 0;
 }
@@ -215,17 +197,23 @@ int mbedtls_chacha20_starts(mbedtls_chacha20_context *ctx,
     ctx->state[12] = counter;
 
     /* Nonce */
-    ctx->state[13] = MBEDTLS_GET_UINT32_LE(nonce, 0);
-    ctx->state[14] = MBEDTLS_GET_UINT32_LE(nonce, 4);
-    ctx->state[15] = MBEDTLS_GET_UINT32_LE(nonce, 8);
+    if (MBEDTLS_IS_BIG_ENDIAN) {
+        ctx->state[13] = MBEDTLS_GET_UINT32_LE(nonce, 0);
+        ctx->state[14] = MBEDTLS_GET_UINT32_LE(nonce, 4);
+        ctx->state[15] = MBEDTLS_GET_UINT32_LE(nonce, 8);
+    } else {
+        memcpy(&ctx->state[13], nonce, 12);
+    }
 
     mbedtls_platform_zeroize(ctx->keystream8, sizeof(ctx->keystream8));
 
     /* Initially, there's no keystream bytes available */
-    ctx->keystream_bytes_used = CHACHA20_BLOCK_SIZE_BYTES;
+    ctx->keystream_bytes_used = MBEDTLS_CHACHA20_BLOCK_SIZE_BYTES;
 
     return 0;
 }
+
+#if MBEDTLS_CHACHA20_NEON_MULTIBLOCK == 0
 
 int mbedtls_chacha20_update(mbedtls_chacha20_context *ctx,
                             size_t size,
@@ -235,7 +223,7 @@ int mbedtls_chacha20_update(mbedtls_chacha20_context *ctx,
     size_t offset = 0U;
 
     /* Use leftover keystream bytes, if available */
-    while (size > 0U && ctx->keystream_bytes_used < CHACHA20_BLOCK_SIZE_BYTES) {
+    while (ctx->keystream_bytes_used < MBEDTLS_CHACHA20_BLOCK_SIZE_BYTES && size > 0) {
         output[offset] = input[offset]
                          ^ ctx->keystream8[ctx->keystream_bytes_used];
 
@@ -245,15 +233,15 @@ int mbedtls_chacha20_update(mbedtls_chacha20_context *ctx,
     }
 
     /* Process full blocks */
-    while (size >= CHACHA20_BLOCK_SIZE_BYTES) {
+    while (size >= MBEDTLS_CHACHA20_BLOCK_SIZE_BYTES) {
         /* Generate new keystream block and increment counter */
         chacha20_block(ctx->state, ctx->keystream8);
         ctx->state[CHACHA20_CTR_INDEX]++;
 
         mbedtls_xor(output + offset, input + offset, ctx->keystream8, 64U);
 
-        offset += CHACHA20_BLOCK_SIZE_BYTES;
-        size   -= CHACHA20_BLOCK_SIZE_BYTES;
+        offset += MBEDTLS_CHACHA20_BLOCK_SIZE_BYTES;
+        size   -= MBEDTLS_CHACHA20_BLOCK_SIZE_BYTES;
     }
 
     /* Last (partial) block */
@@ -270,6 +258,8 @@ int mbedtls_chacha20_update(mbedtls_chacha20_context *ctx,
 
     return 0;
 }
+
+#endif /* MBEDTLS_CHACHA20_NEON_MULTIBLOCK == 0 */
 
 int mbedtls_chacha20_crypt(const unsigned char key[32],
                            const unsigned char nonce[12],
@@ -299,8 +289,6 @@ cleanup:
     mbedtls_chacha20_free(&ctx);
     return ret;
 }
-
-#endif /* !MBEDTLS_CHACHA20_ALT */
 
 #if defined(MBEDTLS_SELF_TEST)
 

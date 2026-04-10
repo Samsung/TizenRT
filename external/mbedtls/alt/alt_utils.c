@@ -18,13 +18,9 @@
 #include <tinyara/config.h>
 #include <tinyara/seclink.h>
 #include <tinyara/security_hal.h>
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+#include "mbedtls/build_info.h"
 #if defined(MBEDTLS_ECP_C)
-#include "mbedtls/ecp.h"
+#include "mbedtls/private/ecp.h"
 #endif
 
 hal_key_type alt_get_keytype(unsigned int curve)

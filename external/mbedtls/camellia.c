@@ -1,37 +1,8 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  Camellia implementation
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 /*
  *  The Camellia block cipher was designed by NTT and Mitsubishi Electric
@@ -40,18 +11,16 @@
  *  http://info.isl.ntt.co.jp/crypt/eng/camellia/dl/01espec.pdf
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_CAMELLIA_C)
 
-#include "mbedtls/camellia.h"
+#include "mbedtls/private/camellia.h"
 #include "mbedtls/platform_util.h"
 
 #include <string.h>
 
 #include "mbedtls/platform.h"
-
-#if !defined(MBEDTLS_CAMELLIA_ALT)
 
 static const unsigned char SIGMA_CHARS[6][8] =
 {
@@ -428,6 +397,7 @@ int mbedtls_camellia_setkey_enc(mbedtls_camellia_context *ctx,
 /*
  * Camellia key schedule (decryption)
  */
+#if !defined(MBEDTLS_BLOCK_CIPHER_NO_DECRYPT)
 int mbedtls_camellia_setkey_dec(mbedtls_camellia_context *ctx,
                                 const unsigned char *key,
                                 unsigned int keybits)
@@ -473,6 +443,7 @@ exit:
 
     return ret;
 }
+#endif /* !MBEDTLS_BLOCK_CIPHER_NO_DECRYPT */
 
 /*
  * Camellia-ECB block encryption/decryption
@@ -684,7 +655,6 @@ int mbedtls_camellia_crypt_ctr(mbedtls_camellia_context *ctx,
     return 0;
 }
 #endif /* MBEDTLS_CIPHER_MODE_CTR */
-#endif /* !MBEDTLS_CAMELLIA_ALT */
 
 #if defined(MBEDTLS_SELF_TEST)
 
@@ -917,14 +887,26 @@ int mbedtls_camellia_self_test(int verbose)
                            (v == MBEDTLS_CAMELLIA_DECRYPT) ? "dec" : "enc");
         }
 
+#if defined(MBEDTLS_BLOCK_CIPHER_NO_DECRYPT)
+        if (v == MBEDTLS_CAMELLIA_DECRYPT) {
+            if (verbose != 0) {
+                mbedtls_printf("skipped\n");
+            }
+            continue;
+        }
+#endif
+
         for (i = 0; i < CAMELLIA_TESTS_ECB; i++) {
             memcpy(key, camellia_test_ecb_key[u][i], 16 + 8 * u);
 
+#if !defined(MBEDTLS_BLOCK_CIPHER_NO_DECRYPT)
             if (v == MBEDTLS_CAMELLIA_DECRYPT) {
                 mbedtls_camellia_setkey_dec(&ctx, key, 128 + u * 64);
                 memcpy(src, camellia_test_ecb_cipher[u][i], 16);
                 memcpy(dst, camellia_test_ecb_plain[i], 16);
-            } else { /* MBEDTLS_CAMELLIA_ENCRYPT */
+            } else
+#endif
+            { /* MBEDTLS_CAMELLIA_ENCRYPT */
                 mbedtls_camellia_setkey_enc(&ctx, key, 128 + u * 64);
                 memcpy(src, camellia_test_ecb_plain[i], 16);
                 memcpy(dst, camellia_test_ecb_cipher[u][i], 16);
