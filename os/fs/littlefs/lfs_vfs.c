@@ -891,11 +891,10 @@ static int littlefs_unlock(const struct lfs_config *c)
 	sem_post(&fs->sem_ops);
 	return OK;
 }
-
+#define MTDIOC_SYNC            _MTDIOC(0x0008)
 /****************************************************************************
  * Name: littlefs_bind
  ****************************************************************************/
-
 static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR void **handle)
 {
 	FAR struct littlefs_mountpt_s *fs;
@@ -987,10 +986,10 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	/* Then get information about the littlefs filesystem on the devices
 	 * managed by this driver.
 	 */
-
+	//first_format=false;
 	/* Force format the device if -o forceformat */
 	if (data && strcmp(data, "forceformat") == 0) {
-		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 0);
+		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 3);
 		ret = lfs_format(&fs->lfs, &fs->cfg);
 		if (ret < 0) {
 			goto errout_with_fs;
@@ -1000,7 +999,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
 	if (ret < 0) {
 		fdbg("mount failed ret : %d\n", ret);
-		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 0);
+		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 3);
 		lldbg("ioctl ret:%d\n", ret);
 
 		/* Auto format the device if -o autoformat and mount failed */
@@ -1011,6 +1010,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 
 		fdbg("attempting autoformat\n");
 		ret = lfs_format(&fs->lfs, &fs->cfg);
+		ret = driver->u.i_bops->ioctl(driver, MTDIOC_SYNC, 0);
 		if (ret < 0) {
 			fdbg("autoformat failed ret : %d\n", ret);
 			goto errout_with_fs;
@@ -1026,7 +1026,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	} else {
 		fdbg("Check formatfs and mount successful!\n");
 	}
-
+	//first_format=true;
 	*handle = fs;
 	littlefs_semgive(fs);
 	if (ret == LFS_ERR_CORRUPT) {

@@ -37,7 +37,6 @@
 #include "map.h"
 
 #define DHARA_RADIX_DEPTH	(sizeof(dhara_sector_t) << 3)
-
 static inline dhara_sector_t d_bit(int depth)
 {
 	return ((dhara_sector_t) 1) << (DHARA_RADIX_DEPTH - depth - 1);
@@ -85,7 +84,6 @@ static inline void meta_set_alt(uint8_t *meta, int level, dhara_page_t alt)
 /************************************************************************
  * Public interface
  */
-
 void dhara_map_init(struct dhara_map *m, const struct dhara_nand *n, uint8_t *page_buf, uint8_t gc_ratio)
 {
 	if (!gc_ratio) {
@@ -95,16 +93,16 @@ void dhara_map_init(struct dhara_map *m, const struct dhara_nand *n, uint8_t *pa
 	dhara_journal_init(&m->journal, n, page_buf);
 	m->gc_ratio = gc_ratio;
 }
-
-int dhara_map_resume(struct dhara_map *m, dhara_error_t *err)
+int dhara_map_resume(struct dhara_map *m, FAR struct dhara_dev_s *dev, dhara_error_t *err)
 {
-	if (dhara_journal_resume(&m->journal, err) < 0) {
-		m->count = 0;
-		return -1;
-	}
+    /* Pass MTD device to journal resume */
+	if (dhara_journal_resume(&m->journal, dev, err) < 0) {
+        m->count = 0;
+        return -1;
+    }
 
-	m->count = ck_get_count(dhara_journal_cookie(&m->journal));
-	return 0;
+    m->count = ck_get_count(dhara_journal_cookie(&m->journal));
+    return 0;
 }
 
 void dhara_map_clear(struct dhara_map *m)
@@ -275,7 +273,7 @@ static int raw_gc(struct dhara_map *m, dhara_page_t src, dhara_error_t *err)
 	return 0;
 }
 
-static int pad_queue(struct dhara_map *m, dhara_error_t *err)
+static int pad_queue(struct dhara_map *m,bool format_flag,dhara_error_t *err)
 {
 	dhara_page_t p = dhara_journal_root(&m->journal);
 	uint8_t root_meta[DHARA_META_SIZE];
@@ -283,7 +281,7 @@ static int pad_queue(struct dhara_map *m, dhara_error_t *err)
 	ck_set_count(dhara_journal_cookie(&m->journal), m->count);
 
 	if (p == DHARA_PAGE_NONE) {
-		return dhara_journal_enqueue(&m->journal, NULL, NULL, err);
+		return dhara_journal_enqueue(&m->journal, NULL, NULL, format_flag, err);
 	}
 
 	if (dhara_journal_read_meta(&m->journal, p, root_meta, err) < 0) {
@@ -309,7 +307,7 @@ static int try_recover(struct dhara_map *m, dhara_error_t cause, dhara_error_t *
 		int ret;
 
 		if (p == DHARA_PAGE_NONE) {
-			ret = pad_queue(m, &my_err);
+			ret = pad_queue(m, false,&my_err);
 		} else {
 			ret = raw_gc(m, p, &my_err);
 		}
@@ -385,7 +383,7 @@ int dhara_map_write(struct dhara_map *m, dhara_sector_t dst, const uint8_t *data
 			return -1;
 		}
 
-		if (!dhara_journal_enqueue(&m->journal, data, meta, &my_err)) {
+		if (!dhara_journal_enqueue(&m->journal, data, meta, false, &my_err)) {
 			break;
 		}
 
@@ -522,16 +520,19 @@ int dhara_map_trim(struct dhara_map *m, dhara_sector_t s, dhara_error_t *err)
 
 	return 0;
 }
-
-int dhara_map_sync(struct dhara_map *m, dhara_error_t *err)
+int dhara_map_sync(struct dhara_map *m, bool format_flag, dhara_error_t *err)
 {
+	printf("dhara_map_sync %d \n",format_flag);
+	if (dhara_journal_is_clean(&m->journal)) {
+		dhara_journal_enqueue(&m->journal, NULL, NULL, format_flag, err);
+    }
 	while (!dhara_journal_is_clean(&m->journal)) {
 		dhara_page_t p = dhara_journal_peek(&m->journal);
 		dhara_error_t my_err;
 		int ret;
 
 		if (p == DHARA_PAGE_NONE) {
-			ret = pad_queue(m, &my_err);
+			ret = pad_queue(m, format_flag,&my_err);
 		} else {
 			ret = raw_gc(m, p, &my_err);
 			if (!ret) {

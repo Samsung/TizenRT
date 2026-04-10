@@ -132,7 +132,7 @@ static const struct block_operations g_dhara_bops = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
+bool first_format=true;
 int sectors_reduced(FAR struct inode *inode)
 {
 	FAR dhara_dev_t *dev;
@@ -290,7 +290,70 @@ static void dhara_update_readcache(FAR dhara_dev_t *dev, dhara_page_t page, FAR 
 		}
 	}
 }
+/****************************************************************************
+ * Name: dhara_erase
+ *
+ * Description:
+ *   Centralized function to handle all MTD bulk erase operations.
+ *   This function is called from both dhara_journal_resume and dhara_ioctl
+ *   to ensure consistent bulk erase handling.
+ *
+ * Input Parameters:
+ *   mtd - MTD device interface
+ *   cmd - IOCTL command (should be MTDIOC_BULKERASE)
+ *   arg - Argument for different erase scenarios:
+ *         0 - Direct bulk erase (from journal resume)
+ *         1 - Format reservation (from dhara_ioctl with arg=1)
+ *         2 - Application format (from dhara_ioctl with arg=2)
+ *         3 - First format or application format (from dhara_ioctl with arg=3)
+ *
+ * Returned Value:
+ *   OK on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+int dhara_erase(FAR struct dhara_dev_s *dev, int cmd, unsigned long arg)
+{
+    int ret = OK;
+    
+    printf("dhara_erase: cmd=0x%04x, arg=%lu\n", cmd, arg);
+    
+    switch (arg) {
+    case 1:
+        dhara_map_sync(&dev->map, true, NULL);
+        break;
+        
+    case 2:
+		ret = MTD_IOCTL(dev->mtd, cmd, 0);
+		if (ret < 0 && ret != -ENOTTY) {
+            ferr("MTD application bulk erase failed: %d\n", ret);
+        }
+        first_format = false;
 
+        break;
+        
+    case 3:
+        /* Application format - called from dhara_ioctl with arg=2 */
+		if(first_format == true)
+		{
+        ret = MTD_IOCTL(dev->mtd, cmd, 0);
+        if (ret < 0 && ret != -ENOTTY) {
+            ferr("MTD application bulk erase failed: %d\n", ret);
+        }
+		first_format = false;
+		}
+        break;
+        
+    default:
+        printf("dhara_erase: Unknown arg=%lu, using direct erase\n", arg);
+        ret = MTD_IOCTL(dev->mtd, cmd, 0);
+        if (ret < 0 && ret != -ENOTTY) {
+            ferr("MTD unknown arg bulk erase failed: %d\n", ret);
+        }
+        break;
+    }
+    
+    return ret;
+}
 /****************************************************************************
  * Name: dhara_open
  *
@@ -536,7 +599,7 @@ static ssize_t dhara_write(FAR struct inode *inode, FAR const unsigned char *buf
  *
  * Description: Return device geometry
  *
- ****************************************************************************/
+		****************************************************************************/
 
 static int dhara_geometry(FAR struct inode *inode, FAR struct geometry *geometry)
 {
@@ -559,14 +622,13 @@ static int dhara_geometry(FAR struct inode *inode, FAR struct geometry *geometry
 
 	return -EINVAL;
 }
-
+#define MTDIOC_SYNC    _MTDIOC(0x0008)
 /****************************************************************************
  * Name: dhara_ioctl
  *
  * Description: Return device geometry
  *
  ****************************************************************************/
-
 static int dhara_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 {
 	FAR dhara_dev_t *dev;
@@ -574,17 +636,31 @@ static int dhara_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 
 	DEBUGASSERT(inode->i_private);
 	dev = inode->i_private;
-
+	dhara_error_t dhara_err;
 	/* No other block driver ioctl commands are not recognized by this
 	 * driver.  Other possible MTD driver ioctl commands are passed through
 	 * to the MTD driver (unchanged).
 	 */
-
-	ret = MTD_IOCTL(dev->mtd, cmd, arg);
-	if (ret < 0 && ret != -ENOTTY) {
-		ferr("MTD ioctl(%04x) failed: %d\n", cmd, ret);
+	switch (cmd) {
+	case MTDIOC_BULKERASE:
+		ret = dhara_erase(dev, cmd, arg);
+		if (ret < 0 && ret != -ENOTTY) {
+            ferr("MTD ioctl(%04x) failed: erase %d\n", cmd, ret);
+        }
+        break;
+	case MTDIOC_SYNC:
+        ret = dhara_map_sync(&dev->map, false,&dhara_err);	
+		if (ret < 0 && ret != -ENOTTY) {
+            ferr("MTD ioctl(%04x) failed: sync %d\n", cmd, ret);
+        }
+		break;
+	default:
+		ret = MTD_IOCTL(dev->mtd, cmd, 0);
+		if (ret < 0 && ret != -ENOTTY) {
+			ferr("MTD ioctl(%04x) failed: default %d\n", cmd, ret);
+		}
+		break;
 	}
-
 	return ret;
 }
 
@@ -847,7 +923,7 @@ int dhara_initialize_by_path(FAR const char *path, FAR struct mtd_dev_s *mtd)
 	ret = dhara_init_metadatacache(dev);
 	dhara_map_init(&dev->map, &dev->nand, dev->pagebuf + dev->geo.blocksize, CONFIG_DHARA_GC_RATIO);
 
-	dhara_map_resume(&dev->map, NULL);
+	dhara_map_resume(&dev->map,dev, NULL);
 
 	/* Inode private data is a reference to the
 	 * DHARA_MTDBLOCK device structure

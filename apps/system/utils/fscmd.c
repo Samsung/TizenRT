@@ -1393,7 +1393,7 @@ static int format_filesystem(fs_minor_t minor)
 		}
 		/* TODO Multi root of smartfs should be considered when it enabled */
 		if (ext_dhara)
-			ret = ioctl(fd, MTDIOC_BULKERASE, 0);
+			ret = ioctl(fd, MTDIOC_BULKERASE, 1);
 		else
 			ret = ioctl(fd, BIOC_BULKERASE, 0);
 
