@@ -176,6 +176,15 @@ function install_bin_for_deployment()
 		[ -f "$src_common" ] && cp -f "$src_common" "$install_dir/common_for_sign" && echo "  common_for_sign" || echo "  Warning: common_for_sign not found"
 	fi
 
+	#Copy resource binary if CONFIG_RESOURCE_FS is enabled
+	if grep -q "^CONFIG_RESOURCE_FS=y" "$CONFIG" 2>/dev/null; then
+		#copy resourcefs.img to resourcefs.bin
+		local resource_bin_name="resourcefs.bin"
+		[ -f "$BINDIR/resourcefs.img" ] && cp "$BINDIR/resourcefs.img" "$BINDIR/$resource_bin_name" && echo "  resourcefs.img -> $resource_bin_name" || echo "  Warning: resourcefs.img not found"
+		#copy resourcefs.bin to install directory
+		[ -f "$BINDIR/$resource_bin_name" ] && cp -f "$BINDIR/$resource_bin_name" "$install_dir/resource_for_sign" && echo "  resource_for_sign" || echo "  Warning: resource_for_sign not found"
+	fi
+
 	#copy partition_layout.txt
 	[ -f "$workdir/partition_layout.txt" ] && cp -f "$workdir/partition_layout.txt" "$install_dir/partition_layout.txt" || echo "Warning: partition_layout.txt not found, skipping..."
 

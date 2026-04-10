@@ -21,7 +21,8 @@ function copy_from_deploy()
 	cp -rf ${deploy_output_dir}/app1 ${BINDIR}/app1
 	cp -rf ${deploy_output_dir}/app2 ${BINDIR}/app2
 	cp -rf ${deploy_output_dir}/common ${BINDIR}/common
-    cp -rf ${deploy_output_dir}/*.trpk ${BINDIR}/
+	cp -rf ${deploy_output_dir}/resource ${BINDIR}/resource
+	cp -rf ${deploy_output_dir}/*.trpk ${BINDIR}/
 }
 
 copy_from_deploy
