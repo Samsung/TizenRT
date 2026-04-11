@@ -191,6 +191,14 @@ config ARCH_BOARD_QEMU_VIRT
 	---help---
 		This option selects support for TizenRT on the QEMU ARMv7a virt
 		board featuring the qemu ARMv7a CPUs.
+
+config ARCH_BOARD_QEMU_MPS2_AN505
+	bool "QEMU MPS2 AN505 board"
+	depends on ARCH_CHIP_QEMU_MPS2_AN505
+	select ARCH_BOARD_HAVE_FLASH
+	---help---
+		This option selects support for TizenRT on the QEMU MPS2 AN505
+		board featuring a Cortex-M33 execution model.
  
 endchoice
 
@@ -205,6 +213,7 @@ config ARCH_BOARD_ESP32_FAMILY
 config ARCH_BOARD
 	string
 	default "qemu-virt"          if ARCH_BOARD_QEMU_VIRT
+	default "qemu-mps2-an505"    if ARCH_BOARD_QEMU_MPS2_AN505
 	default "artik05x"           if ARCH_BOARD_ARTIK05X_FAMILY
 	default "lm3s6965-ek"        if ARCH_BOARD_LM3S6965EK
 	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
@@ -386,6 +395,9 @@ comment "Board-Specific Options"
 
 if ARCH_BOARD_QEMU_VIRT
 source board/qemu-virt/Kconfig
+endif
+if ARCH_BOARD_QEMU_MPS2_AN505
+source board/qemu-mps2-an505/Kconfig
 endif
 if ARCH_BOARD_ARTIK05X_FAMILY
 source board/artik05x/Kconfig

@@ -63,6 +63,16 @@ config ARMV8M_TRUSTZONE
 	default n
 	depends on (ARCH_CORTEXM33 || ARCH_CORTEXM55)
 
+config ARMV8M_SECURE_STATE
+	bool "Run TizenRT in Secure state"
+	default n
+	depends on (ARCH_CORTEXM33 || ARCH_CORTEXM55)
+	---help---
+		Select this when the board boots TizenRT directly in Secure state on
+		an ARMv8-M TrustZone system. This changes the default EXC_RETURN
+		template so scheduler context restores match the current security
+		domain.
+
 config ARMV8M_ICACHE
 	bool "Use I-Cache"
 	default n

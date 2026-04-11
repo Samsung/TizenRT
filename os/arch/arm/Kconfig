@@ -140,6 +140,15 @@ config ARCH_CHIP_QEMU_ARM_VIRT
 	---help---
 		QEMU virt platform (ARMv7a)
 
+config ARCH_CHIP_QEMU_MPS2_AN505
+	bool "QEMU MPS2 AN505 platform (ARMv8-M)"
+	select ARCH_CORTEXM33
+	select ARCH_HAVE_MPU
+	select ARCH_HAVE_RESET
+	select ARCH_HAVE_TICKSUPPRESS
+	---help---
+		QEMU MPS2 AN505 platform (Cortex-M33)
+
 endchoice
 
 config ARCH_CHIP
@@ -157,6 +166,7 @@ config ARCH_CHIP
 	default "stm32h745"     if ARCH_CHIP_STM32H745
 	default "imx6"		if ARCH_CHIP_IMX6
 	default "qemu-virt"	if ARCH_CHIP_QEMU_ARM_VIRT
+	default "qemu-mps2-an505"	if ARCH_CHIP_QEMU_MPS2_AN505
 
 config ARM_THUMB
         bool "Thumb Mode"
@@ -582,5 +592,8 @@ source arch/arm/src/stm32h745/Kconfig
 endif
 if ARCH_CHIP_QEMU_ARM_VIRT
 source arch/arm/src/qemu-virt/Kconfig
+endif
+if ARCH_CHIP_QEMU_MPS2_AN505
+source arch/arm/src/qemu-mps2-an505/Kconfig
 endif
 endif

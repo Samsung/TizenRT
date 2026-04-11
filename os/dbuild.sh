@@ -133,6 +133,50 @@ function LOAD_DOCKER_VERSION_FROM_DEFCONFIG()
 	fi
 }
 
+function DISPLAY_CONFIG_ALIAS()
+{
+	local BOARD_NAME=$1
+	local CONFIG_NAME=$2
+
+	case "${BOARD_NAME}/${CONFIG_NAME}" in
+	qemu-virt/flat_dramboot)
+		echo "flat"
+		;;
+	qemu-virt/full_dramboot_xipelf)
+		echo "loadable_xip_elf"
+		;;
+	*)
+		echo "${CONFIG_NAME}"
+		;;
+	esac
+}
+
+function RESOLVE_BOARD_CONFIG_PATH()
+{
+	local BOARD_NAME=$1
+	local CONFIG_NAME=$2
+
+	case "${BOARD_NAME}/${CONFIG_NAME}" in
+	qemu-virt/flat|qemu-virt/flat_dramboot)
+		if [ -d "${CONFIGDIR}/qemu-virt/flat" ]; then
+			echo "qemu-virt/flat"
+		else
+			echo "qemu-virt/flat_dramboot"
+		fi
+		;;
+	qemu-virt/loadable_xip_elf|qemu-virt/full_dramboot_xipelf)
+		if [ -d "${CONFIGDIR}/qemu-virt/loadable_xip_elf" ]; then
+			echo "qemu-virt/loadable_xip_elf"
+		else
+			echo "qemu-virt/full_dramboot_xipelf"
+		fi
+		;;
+	*)
+		echo "${BOARD_NAME}/${CONFIG_NAME}"
+		;;
+	esac
+}
+
 
 # Board Specific output files
 #
@@ -343,32 +387,35 @@ function SELECT_BOARD()
 function SELECT_CONFIG()
 {
 	unset CONFIG
+	unset CONFIG_PATH
 	unset SELECTED_CONFIG
-	unset CONFIGNAME_LIST
+	unset CONFIGNAME_STR
+	unset CONFIGNAME_REAL
 
 	# make a list of full paths which includes defconfig inside
 	CONFIGS_FULLPATH_LIST=`find -L ${CONFIGDIR}/${BOARD} -name defconfig`
-	for CONFIGS_FULLPATH_MEMBER in ${CONFIGS_FULLPATH_LIST}; do
-		# extract "configname"s from full paths
-		CONFIGNAME_LIST+=`dirname ${CONFIGS_FULLPATH_MEMBER} | sed -e "s,${CONFIGDIR}/${BOARD}/,,g"`
-		CONFIGNAME_LIST+=" "
-	done
 
 	# print menu
 	IDX=1
 	if [ ! -z "$1" ];then
 		SELECTED_CONFIG=$1
-		for CONFIGNAME_MEMBER in ${CONFIGNAME_LIST}; do
+		for CONFIGS_FULLPATH_MEMBER in ${CONFIGS_FULLPATH_LIST}; do
+			REAL_CONFIGNAME_MEMBER=`dirname ${CONFIGS_FULLPATH_MEMBER} | sed -e "s,${CONFIGDIR}/${BOARD}/,,g"`
+			CONFIGNAME_MEMBER=`DISPLAY_CONFIG_ALIAS "${BOARD}" "${REAL_CONFIGNAME_MEMBER}"`
 			CONFIGNAME_STR[${IDX}]=${CONFIGNAME_MEMBER}
+			CONFIGNAME_REAL[${IDX}]=${REAL_CONFIGNAME_MEMBER}
 			((IDX=IDX+1))
 		done
 	else
 		echo ==================================================
 		echo "  \"Select Configuration of ${BOARD}\""
 		echo ==================================================
-		for CONFIGNAME_MEMBER in ${CONFIGNAME_LIST}; do
+		for CONFIGS_FULLPATH_MEMBER in ${CONFIGS_FULLPATH_LIST}; do
+			REAL_CONFIGNAME_MEMBER=`dirname ${CONFIGS_FULLPATH_MEMBER} | sed -e "s,${CONFIGDIR}/${BOARD}/,,g"`
+			CONFIGNAME_MEMBER=`DISPLAY_CONFIG_ALIAS "${BOARD}" "${REAL_CONFIGNAME_MEMBER}"`
 			echo "  \"${IDX}. ${CONFIGNAME_MEMBER}\""
 			CONFIGNAME_STR[${IDX}]=${CONFIGNAME_MEMBER}
+			CONFIGNAME_REAL[${IDX}]=${REAL_CONFIGNAME_MEMBER}
 			((IDX=IDX+1))
 		done
 		echo "  \"x. EXIT\""
@@ -384,7 +431,7 @@ function SELECT_CONFIG()
 	# treat selected number
 	if [ ! -z ${CONFIGNAME_STR[${SELECTED_CONFIG}]} ]; then
 		CONFIG=${CONFIGNAME_STR[${SELECTED_CONFIG}]}
-		
+		CONFIG_PATH=${CONFIGNAME_REAL[${SELECTED_CONFIG}]}
 	fi
 
 	# treat given config string
@@ -393,7 +440,12 @@ function SELECT_CONFIG()
 		for CONFIGNAME_MEMBER in ${CONFIGNAME_STR[@]}; do
 			if [ "${SELECTED_CONFIG}" == "${CONFIGNAME_MEMBER}" ]; then
 				CONFIG=${CONFIGNAME_MEMBER}
+				CONFIG_PATH=${CONFIGNAME_REAL[${IDX}]}
+			elif [ "${SELECTED_CONFIG}" == "${CONFIGNAME_REAL[${IDX}]}" ]; then
+				CONFIG=${CONFIGNAME_MEMBER}
+				CONFIG_PATH=${CONFIGNAME_REAL[${IDX}]}
 			fi
+			((IDX=IDX+1))
 		done
 	fi
 
@@ -404,8 +456,13 @@ function SELECT_CONFIG()
 
 	echo "${CONFIG} is selected"
 
-	LOAD_DOCKER_VERSION_FROM_DEFCONFIG "${BOARD}/${CONFIG}"
-	CONFIGURE ${BOARD}/${CONFIG} || exit 1
+	if [ -z "${CONFIG_PATH}" ]; then
+		CONFIG_PATH="${CONFIG}"
+	fi
+
+	RESOLVED_BOARD_CONFIG=`RESOLVE_BOARD_CONFIG_PATH "${BOARD}" "${CONFIG_PATH}"`
+	LOAD_DOCKER_VERSION_FROM_DEFCONFIG "${RESOLVED_BOARD_CONFIG}"
+	CONFIGURE ${RESOLVED_BOARD_CONFIG} || exit 1
 }
 
 function get_selected_board
@@ -505,7 +562,42 @@ function SELECT_DL
 function CONFIGURE()
 {
 	${OSDIR}/tools/configure.sh $1 || exit 1
+	REFRESH_INCLUDE_MIRRORS || exit 1
+	# These objects are architecture-specific and can survive distclean when
+	# switching boards locally. Force them to rebuild for the selected target.
+	rm -f "${OSDIR}/userspace/"*.o "${OSDIR}/userspace/"*.a 2>/dev/null || true
 	UPDATE_STATUS
+}
+
+function REFRESH_INCLUDE_MIRRORS()
+{
+	local CONFIG_ARCH_NAME=
+	local CONFIG_CHIP_NAME=
+	local CONFIG_BOARD_NAME=
+
+	if [ ! -f "${CONFIGFILE}" ]; then
+		return 0
+	fi
+
+	CONFIG_ARCH_NAME=$(grep '^CONFIG_ARCH=' "${CONFIGFILE}" | cut -d'=' -f2- | sed 's/^"//; s/"$//')
+	CONFIG_CHIP_NAME=$(grep '^CONFIG_ARCH_CHIP=' "${CONFIGFILE}" | cut -d'=' -f2- | sed 's/^"//; s/"$//')
+	CONFIG_BOARD_NAME=$(grep '^CONFIG_ARCH_BOARD=' "${CONFIGFILE}" | cut -d'=' -f2- | sed 's/^"//; s/"$//')
+
+	local ARCH_SRC="${OSDIR}/arch/${CONFIG_ARCH_NAME}/include"
+	local CHIP_SRC="${ARCH_SRC}/${CONFIG_CHIP_NAME}"
+	local BOARD_SRC="${OSDIR}/board/${CONFIG_BOARD_NAME}/include"
+
+	if [ ! -d "${ARCH_SRC}" ] || [ ! -d "${CHIP_SRC}" ] || [ ! -d "${BOARD_SRC}" ]; then
+		echo "Failed to refresh include mirrors: missing source include directories"
+		echo "  arch:  ${ARCH_SRC}"
+		echo "  chip:  ${CHIP_SRC}"
+		echo "  board: ${BOARD_SRC}"
+		return 1
+	fi
+
+	"${OSDIR}/tools/copydir.sh" "${ARCH_SRC}" "${OSDIR}/include/arch" || return 1
+	"${OSDIR}/tools/copydir.sh" "${CHIP_SRC}" "${OSDIR}/include/chip" || return 1
+	"${OSDIR}/tools/copydir.sh" "${BOARD_SRC}" "${OSDIR}/include/board" || return 1
 }
 
 function DOWNLOAD()
@@ -546,6 +638,8 @@ function UPDATE_STATUS()
 
 function BUILD()
 {
+	local BUILD_STATUS=0
+
 	if [ -f build.log ]; then
 		mv build.log build.log.old
 	fi
@@ -561,8 +655,15 @@ function BUILD()
 	if [ "${HOST_IS_WINDOWS_SHELL}" = "true" ]; then
 		LOCALTIME=
 	fi
-	
+
+	set -o pipefail
 	eval ${DOCKER_RUN_PREFIX} docker run --rm ${DOCKER_OPT} ${HOSTNAME} ${LOCALTIME} -v ${DOCKER_TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
+	BUILD_STATUS=$?
+	set +o pipefail
+	if [ ${BUILD_STATUS} -ne 0 ]; then
+		return ${BUILD_STATUS}
+	fi
+
 	UPDATE_STATUS
 }
 
@@ -598,10 +699,11 @@ if [ "$1" == "configure" ]; then
 		exit 1
 	fi
 
-	LOAD_DOCKER_VERSION_FROM_DEFCONFIG "$2/$3"
+	RESOLVED_BOARD_CONFIG=`RESOLVE_BOARD_CONFIG_PATH "$2" "$3"`
+	LOAD_DOCKER_VERSION_FROM_DEFCONFIG "${RESOLVED_BOARD_CONFIG}"
 	UPDATE_STATUS
 	if [ "${STATUS}" == "CONFIGURED" -o "${STATUS}" == "BUILT" ]; then
-		BUILD distclean
+		BUILD distclean || exit 1
 	fi
 
 	STATUS=NOT_CONFIGURED
@@ -617,7 +719,7 @@ if [ "$1" == "build" ]; then
 		exit 1
 	fi
 
-	BUILD
+	BUILD || exit 1
 	exit 0
 fi
 
@@ -636,7 +738,7 @@ fi
 UPDATE_STATUS
 if [ -z "$1" ]; then
 	if [ "$STATUS" != "NOT_CONFIGURED" ]; then
-		BUILD
+		BUILD || exit 1
 		exit 0
 	else
 		echo "Error!! Need to configure"

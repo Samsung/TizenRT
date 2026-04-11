@@ -1,0 +1,63 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "QEMU MPS2 AN505 Chipset Options"
+
+if ARCH_CHIP_QEMU_MPS2_AN505
+
+menu "QEMU MPS2 AN505 Configuration"
+
+config QEMU_MPS2_AN505_PROFILE_BK7239N
+	bool "BK7239N execution profile"
+	default y
+	---help---
+		Select the qemu-mps2-an505 execution profile intended to model the
+		bk7239n software environment on a Cortex-M33 QEMU board.
+
+config QEMU_MPS2_AN505_SECURE_STATE
+	bool "Boot TizenRT in secure state"
+	default y if QEMU_MPS2_AN505_PROFILE_BK7239N
+	default n
+	select ARMV8M_SECURE_STATE
+	---help---
+		QEMU mps2-an505 currently boots the kernel directly in Secure state.
+		Keep the ARMv8-M exception-return template aligned with that runtime
+		behavior so kernel threads can start correctly.
+
+config QEMU_MPS2_AN505_CPU_CLOCK
+	int "QEMU mps2-an505 core clock (Hz)"
+	default 25000000 if QEMU_MPS2_AN505_PROFILE_BK7239N
+	default 25000000
+	---help---
+		Core clock used by the SysTick runtime and default runtime timing
+		assumptions for the qemu-mps2-an505 Cortex-M33 platform.
+
+config QEMU_MPS2_AN505_UART_CLOCK
+	int "QEMU mps2-an505 UART clock (Hz)"
+	default QEMU_MPS2_AN505_CPU_CLOCK
+	---help---
+		Input clock used to program the CMSDK APB UART baud divider.
+
+config QEMU_MPS2_AN505_CMSDK_UART
+	bool "CMSDK APB UART support"
+	default y if QEMU_MPS2_AN505_PROFILE_BK7239N
+	default y
+	select ARCH_HAVE_UART0
+	select ARCH_HAVE_SERIAL_TERMIOS
+	---help---
+		Enable the in-tree CMSDK APB UART driver for the non-secure UART0
+		instance on the qemu-mps2-an505 board.
+
+config QEMU_MPS2_AN505_LOADABLE_LOADER
+	bool "Seed loadable/XIP runtime loader helpers"
+	default y if QEMU_MPS2_AN505_PROFILE_BK7239N
+	default n
+	---help---
+		Build the lightweight qemu-mps2-an505 loader hook used as the Phase 4
+		runtime stub for later loadable and XIP bring-up work.
+
+endmenu # "QEMU MPS2 AN505 Configuration"
+
+endif # ARCH_CHIP_QEMU_MPS2_AN505

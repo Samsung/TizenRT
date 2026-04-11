@@ -1,0 +1,27 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_BOARD_QEMU_MPS2_AN505
+
+menu "QEMU MPS2 AN505 Board Configuration"
+
+config QEMU_MPS2_AN505_TESTFS
+	bool "Reserve board hook for runtime test filesystem setup"
+	default y if QEMU_MPS2_AN505_PROFILE_BK7239N
+	default y
+	---help---
+		Keep the board initialization hook available for the RAM-backed test
+		filesystem plumbing that will be added with the qemu-mps2-an505
+		runtime defconfigs.
+
+config USERFS_MNTPT
+	string
+	default "/mnt" if AUTOMOUNT_USERFS
+	---help---
+		Default mount point for runtime filesystem checks on qemu-mps2-an505.
+
+endmenu # "QEMU MPS2 AN505 Board Configuration"
+
+endif # ARCH_BOARD_QEMU_MPS2_AN505

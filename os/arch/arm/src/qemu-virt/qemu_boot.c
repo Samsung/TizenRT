@@ -80,6 +80,10 @@
 static char g_syslog_rpmsg_buf[4096];
 #endif
 
+#if defined(CONFIG_SMP) && !defined(CONFIG_ARM_PSCI)
+#  error "qemu-virt SMP boot requires CONFIG_ARM_PSCI"
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -94,6 +98,13 @@ static char g_syslog_rpmsg_buf[4096];
 
 void arm_boot(void)
 {
+#ifdef CONFIG_QEMU_VIRT_PROFILE_RTL8730E
+  /* qemu-virt models the rtl8730e execution profile as an A-profile, MMU,
+   * PSCI-backed SMP platform. Keep the boot path explicit so later qemu-virt
+   * configs can diverge without silently changing this profile.
+   */
+#endif
+
 #ifdef CONFIG_ARCH_PERF_EVENTS
   /* Perf init */
 

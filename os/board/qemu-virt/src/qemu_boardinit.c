@@ -76,11 +76,36 @@ extern void app_ftl_init(void);
  * Private Functions
  ****************************************************************************/
 
+static void qemu_mount_partitions(void);
+
+static void qemu_virt_profile_mount_storage(void)
+{
+#ifdef CONFIG_QEMU_VIRT_MOUNT_FLASH_PARTITIONS
+	qemu_mount_partitions();
+#endif
+}
+
+static void qemu_virt_profile_init_ftl(void)
+{
+#if defined(CONFIG_FTL_ENABLED) && defined(CONFIG_QEMU_VIRT_INIT_FTL)
+	app_ftl_init();
+#endif
+}
+
+static void qemu_virt_profile_init_block_runtime(void)
+{
+#if defined(CONFIG_QEMU_VIRT_VIRTIO_BLK) && defined(CONFIG_QEMU_VIRT_INIT_VIRTIO_BLK_AT_BOOT)
+	if (qemu_virtio_blk_initialize() != OK) {
+		lldbg("ERROR: failed to initialize virtio-blk\n");
+	}
+#endif
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void qemu_mount_partitions(void)
+static void qemu_mount_partitions(void)
 {
 	int ret;
 	struct mtd_dev_s *mtd;
@@ -147,17 +172,9 @@ void board_initialize(void)
 #ifndef CONFIG_PLATFORM_TIZENRT_OS
 	shell_init_rom(0, 0);
 #endif
-	qemu_mount_partitions();
-
-#ifdef CONFIG_FTL_ENABLED
-	app_ftl_init();
-#endif
-
-#ifdef CONFIG_QEMU_VIRT_VIRTIO_BLK
-	if (qemu_virtio_blk_initialize() != OK) {
-		lldbg("ERROR: failed to initialize virtio-blk\n");
-	}
-#endif
+	qemu_virt_profile_mount_storage();
+	qemu_virt_profile_init_ftl();
+	qemu_virt_profile_init_block_runtime();
 
 }
 #else

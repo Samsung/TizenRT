@@ -45,6 +45,7 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include <errno.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
@@ -86,6 +87,22 @@ extern uint8_t _vector_start[]; /* Beginning of vector block */
  ****************************************************************************/
 
 #ifdef CONFIG_SMP
+int up_cpu_up(int cpu)
+{
+  /* qemu-virt powers on the secondary CPUs during the early PSCI-based
+   * smp_init() path in qemu_boot.c.  By the time os_smp_start() reaches the
+   * generic armv7-a CPU bring-up flow, the secondary cores are already
+   * parked in arm_cpu_boot() and only need the SGI kick from up_cpu_on().
+   */
+
+  if (cpu <= 0 || cpu >= CONFIG_SMP_NCPUS)
+    {
+      return -EINVAL;
+    }
+
+  return OK;
+}
+
 void arm_cpu_boot(int cpu)
 {
   /* Enable SMP cache coherency for the CPU */

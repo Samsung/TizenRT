@@ -141,9 +141,10 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 
 	binp->entrypt = (main_t)uspace.entry;
 
+#ifdef CONFIG_BINFMT_CONSTRUCTORS
 	binp->ctors = (binfmt_ctor_t *) uspace.sctors;
-
 	binp->nctors = (uspace.ectors - uspace.sctors) / (sizeof(binfmt_ctor_t));
+#endif
 	
 	return OK;
 }

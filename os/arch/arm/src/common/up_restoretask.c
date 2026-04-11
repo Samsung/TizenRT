@@ -37,9 +37,15 @@
 #include "mpu.h"
 #endif
 #include <tinyara/arch.h>
+#if defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_BINARY_MANAGER)
+#include <tinyara/binfmt/binfmt.h>
+#endif
 
 #include "up_internal.h"
 #include "sched/sched.h"
+#ifdef CONFIG_BINARY_MANAGER
+#include "binary_manager/binary_manager_internal.h"
+#endif
 #if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_USE_MMU)
 #include "mmu.h"
 #endif
@@ -49,6 +55,30 @@
  ****************************************************************************/
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 extern uint32_t *g_umm_app_id;
+#endif
+
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_BINARY_MANAGER)
+static void up_restore_common_binary_mpu(struct tcb_s *tcb)
+{
+	struct binary_s *binp;
+
+	/* Common binary MPU regions are not stored in each task TCB. Reload them
+	 * from the binary manager's persistent load info before restoring the
+	 * per-task app regions.
+	 */
+	if (tcb->app_id == 0) {
+		return;
+	}
+
+	binp = BIN_LOADINFO(BM_CMNLIB_IDX);
+	if (binp == NULL) {
+		return;
+	}
+
+	for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
+		up_mpu_set_register(&binp->cmn_mpu_regs[i]);
+	}
+}
 #endif
 
 /************************************************************************************
@@ -93,6 +123,9 @@ void up_restoretask(struct tcb_s *tcb)
 		/* Condition check : Update MPU registers only if this is not a kernel thread. */
 
 		if ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+#if defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_BINARY_MANAGER)
+			up_restore_common_binary_mpu(tcb);
+#endif
 			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
 				up_mpu_set_register(&tcb->mpu_regs[i]);
 			}

@@ -65,6 +65,13 @@
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/userspace.h>
+#ifdef CONFIG_ARM_MPU
+#include <tinyara/mpu.h>
+#endif
+#if defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_BINARY_MANAGER)
+#include <tinyara/binfmt/binfmt.h>
+#include "binary_manager/binary_manager_internal.h"
+#endif
 
 #ifdef CONFIG_LIB_SYSCALL
 #include <syscall.h>
@@ -101,6 +108,28 @@
 uint32_t user_assert_location;
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 extern uint32_t *g_umm_app_id;
+#endif
+
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_BINARY_MANAGER)
+static void up_svcall_restore_user_mpu(struct tcb_s *rtcb)
+{
+	struct binary_s *binp;
+
+	if (rtcb->app_id == 0) {
+		return;
+	}
+
+	binp = BIN_LOADINFO(BM_CMNLIB_IDX);
+	if (binp != NULL) {
+		for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
+			up_mpu_set_register(&binp->cmn_mpu_regs[i]);
+		}
+	}
+
+	for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
+		up_mpu_set_register(&rtcb->mpu_regs[i]);
+	}
+}
 #endif
 
 /****************************************************************************
@@ -355,6 +384,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		 * unprivileged mode.
 		 */
 		DEBUGASSERT(rtcb->uspace);
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_BINARY_MANAGER)
+		up_svcall_restore_user_mpu(rtcb);
+#endif
 
 		/* While starting loadable apps, we cannot go through the
 		* USERSPACE->task_startup method. Instead we pick the PC value
@@ -395,6 +427,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		 * unprivileged mode.
 		 */
 		DEBUGASSERT(rtcb->uspace);
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_BINARY_MANAGER)
+		up_svcall_restore_user_mpu(rtcb);
+#endif
 
 		/* While starting loadable apps, we cannot go through the
 		* USERSPACE->task_startup method. Instead we pick the PC value
@@ -438,6 +473,9 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 		DEBUGASSERT(rtcb->xcp.sigreturn == 0);
 		DEBUGASSERT(rtcb->uspace);
 		rtcb->xcp.sigreturn = regs[REG_PC];
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_SUPPORT_COMMON_BINARY) && defined(CONFIG_BINARY_MANAGER)
+		up_svcall_restore_user_mpu(rtcb);
+#endif
 
 		/* Set up to return to the user-space pthread start-up function in
 		 * unprivileged mode.

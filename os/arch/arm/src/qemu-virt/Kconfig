@@ -9,6 +9,69 @@ if ARCH_CHIP_QEMU_ARM_VIRT
 
 menu "Qemu Virt Configuration"
 
+config QEMU_VIRT_PROFILE_RTL8730E
+	bool "RTL8730E execution profile"
+	default y
+	---help---
+		Select the qemu-virt execution profile intended to model the
+		rtl8730e software environment on an A-profile QEMU virt machine.
+
+config QEMU_VIRT_CPU_MODEL
+	string "QEMU virt CPU model"
+	default "cortex-a15" if QEMU_VIRT_PROFILE_RTL8730E
+	default "cortex-a15"
+	---help---
+		CPU model passed to QEMU for the qemu-virt runtime.
+
+config QEMU_VIRT_MEMORY_MB
+	int "QEMU virt memory size (MiB)"
+	range 32 4096
+	default 64 if QEMU_VIRT_PROFILE_RTL8730E
+	default 64
+	---help---
+		Guest memory size passed to QEMU for the qemu-virt runtime.
+
+config QEMU_VIRT_SMP_DEFAULT
+	int "Default CPU count for qemu-virt SMP"
+	range 1 4
+	default 2 if QEMU_VIRT_PROFILE_RTL8730E
+	default 1
+	---help---
+		Fallback CPU count used by qemu-virt runtime helpers when SMP is
+		enabled but CONFIG_SMP_NCPUS is not explicitly set in a defconfig.
+
+config QEMU_VIRT_ARCH_TIMER_FREQ
+	int "Architected timer frequency"
+	default 62500000 if QEMU_VIRT_PROFILE_RTL8730E
+	default 62500000
+	---help---
+		Architected timer frequency used by the qemu-virt timer driver.
+
+config QEMU_VIRT_MOUNT_FLASH_PARTITIONS
+	bool "Mount flash partitions during board init"
+	default y if QEMU_VIRT_PROFILE_RTL8730E
+	default y
+	---help---
+		Initialize the in-tree CFI-backed flash layout and mount the runtime
+		filesystems during board initialization.
+
+config QEMU_VIRT_INIT_FTL
+	bool "Initialize FTL during board init"
+	depends on FTL_ENABLED
+	default y if QEMU_VIRT_PROFILE_RTL8730E
+	default y if FTL_ENABLED
+	---help---
+		Run the generic FTL initialization step during board initialization.
+
+config QEMU_VIRT_INIT_VIRTIO_BLK_AT_BOOT
+	bool "Initialize virtio-blk during board init"
+	depends on QEMU_VIRT_VIRTIO_BLK
+	default y if QEMU_VIRT_PROFILE_RTL8730E
+	default y if QEMU_VIRT_VIRTIO_BLK
+	---help---
+		Bring up the virtio-blk transport during board initialization so the
+		runtime environment matches the rtl8730e execution profile assumptions.
+
 if BOOT_RUNFROMSDRAM
 config QEMU_KERNEL_LOAD_ADDR
 	hex "Kernel Load address"
@@ -62,6 +125,7 @@ config ARM_HAVE_PSCI
 config ARM_PSCI
 	bool "Enabled PSCI"
 	depends on ARM_HAVE_PSCI
+	default y if QEMU_VIRT_PROFILE_RTL8730E
 	default n
 	---help---
 		See ARM_HAVE_PSCI for details
@@ -69,6 +133,7 @@ config ARM_PSCI
 
 menuconfig UART_PL011
 	bool "PL011 Chip support"
+	default y if QEMU_VIRT_PROFILE_RTL8730E
 	default n
 
 if UART_PL011

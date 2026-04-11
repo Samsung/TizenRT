@@ -72,6 +72,11 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#ifdef CONFIG_ARMV8M_SECURE_STATE
+#define ARMV8M_STACK_SEAL_WORD 0xFEF5EDA5u
+#define ARMV8M_STACK_SEAL_SIZE 8u
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -106,9 +111,28 @@ void up_initial_state(struct tcb_s *tcb)
 
 	memset(xcp, 0, sizeof(struct xcptcontext));
 
-	/* Save the initial stack pointer */
+	/* Save the initial stack pointer. Secure Armv8-M thread starts return
+	 * from a fake exception frame; keep the architectural stack seal above
+	 * that frame so the first secure exception return does not underflow an
+	 * unsealed stack.
+	 */
 
+#ifdef CONFIG_ARMV8M_SECURE_STATE
+	{
+		if (tcb->adj_stack_ptr != NULL) {
+			uint32_t *stackseal =
+				(uint32_t *)((uintptr_t)tcb->adj_stack_ptr - ARMV8M_STACK_SEAL_SIZE);
+
+			stackseal[0] = ARMV8M_STACK_SEAL_WORD;
+			stackseal[1] = ARMV8M_STACK_SEAL_WORD;
+			xcp->regs[REG_SP] = (uint32_t)stackseal;
+		} else {
+			xcp->regs[REG_SP] = (uint32_t)tcb->adj_stack_ptr;
+		}
+	}
+#else
 	xcp->regs[REG_SP] = (uint32_t)tcb->adj_stack_ptr;
+#endif
 
 #ifdef CONFIG_ARMV8M_STACKCHECK
 	/* Set the stack limit value */

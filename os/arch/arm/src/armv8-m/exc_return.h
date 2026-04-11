@@ -142,18 +142,31 @@
  * from the main stack. Execution uses MSP after return.
  */
 
+#ifdef CONFIG_ARMV8M_SECURE_STATE
+/* Secure thread restore must also indicate that the hardware stack frame is
+ * being restored from the secure stack. QEMU AN505 raises AUVIOL during the
+ * first thread unstack if only the security-state bit is set.
+ */
+#define EXC_RETURN_SECURITY_STATE (EXC_RETURN_SECURE_STACK | EXC_RETURN_EXC_SECURE)
+#else
+#define EXC_RETURN_SECURITY_STATE 0
+#endif
+
 #define EXC_RETURN_HANDLER       (EXC_RETURN_BASE | EXC_RETURN_DEF_STACKING | \
-                                  EXC_RETURN_STD_CONTEXT)
+                                  EXC_RETURN_STD_CONTEXT |                   \
+                                  EXC_RETURN_SECURITY_STATE)
 
 /* EXC_RETURN_PRIVTHR: Return to privileged thread mode. Exception return gets
  * state from the main stack. Execution uses MSP after return.
  */
 
 #if defined(CONFIG_ARM_CMNVECTOR) && defined(CONFIG_ARCH_FPU)
-#define EXC_RETURN_PRIVTHR     (EXC_RETURN_BASE | EXC_RETURN_THREAD_MODE)
+#define EXC_RETURN_PRIVTHR     (EXC_RETURN_BASE | EXC_RETURN_THREAD_MODE | \
+								EXC_RETURN_SECURITY_STATE)
 #else
 #define EXC_RETURN_PRIVTHR     (EXC_RETURN_BASE | EXC_RETURN_STD_CONTEXT | \
-								EXC_RETURN_THREAD_MODE)
+								EXC_RETURN_THREAD_MODE |          \
+								EXC_RETURN_SECURITY_STATE)
 #endif
 
 /* EXC_RETURN_UNPRIVTHR: Return to unprivileged thread mode. Exception return gets
@@ -162,10 +175,13 @@
 
 #if defined(CONFIG_ARM_CMNVECTOR) && defined(CONFIG_ARCH_FPU)
 #define EXC_RETURN_UNPRIVTHR   (EXC_RETURN_BASE | EXC_RETURN_THREAD_MODE | \
-								EXC_RETURN_PROCESS_STACK)
+								EXC_RETURN_PROCESS_STACK |        \
+								EXC_RETURN_SECURITY_STATE)
 #else
 #define EXC_RETURN_UNPRIVTHR   (EXC_RETURN_BASE | EXC_RETURN_STD_CONTEXT | \
-								EXC_RETURN_THREAD_MODE | EXC_RETURN_PROCESS_STACK)
+								EXC_RETURN_THREAD_MODE |          \
+								EXC_RETURN_PROCESS_STACK |        \
+								EXC_RETURN_SECURITY_STATE)
 #endif
 
 /************************Th************************************************************
