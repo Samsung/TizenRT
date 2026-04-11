@@ -15,8 +15,8 @@ This directory contains the following pre-defined configurations for the `qemu-v
 
 | Configuration | Build Model | CPU | Binary Format | Description |
 |---------------|-------------|-----|---------------|-------------|
-| `flat_dramboot` | Flat (`CONFIG_BUILD_FLAT=y`) | Single Core | - | Kernel and applications are linked into a single image and downloaded as `bl1/kernel/bootparam` |
-| `full_dramboot_xipelf` | Protected (`CONFIG_BUILD_PROTECTED=y`) | Single Core | XIP-ELF (`CONFIG_XIP_ELF=y`) | Kernel runs from DRAM while `common` and `app1` execute from flash and download as `bl1/kernel/common/app1/bootparam` |
+| `flat` | Flat (`CONFIG_BUILD_FLAT=y`) | Dual Core (SMP 2) | - | Kernel and applications are linked into a single image and downloaded as `bl1/kernel/bootparam` |
+| `loadable_xip_elf` | Protected (`CONFIG_BUILD_PROTECTED=y`) | Dual Core (SMP 2) | XIP-ELF (`CONFIG_XIP_ELF=y`) | Kernel runs from DRAM while `common` and `app1` execute from flash and download as `bl1/kernel/common/app1/bootparam` |
 
 
 ## Quick Start Guide
@@ -28,7 +28,7 @@ This directory contains the following pre-defined configurations for the `qemu-v
 cd os
 
 # Configure for XIP (recommended for beginners)
-./dbuild.sh configure qemu-virt full_dramboot_xipelf
+./dbuild.sh configure qemu-virt loadable_xip_elf
 
 # Build the system
 ./dbuild.sh build
@@ -37,7 +37,7 @@ cd os
 For the flat configuration, use:
 
 ```bash
-./dbuild.sh configure qemu-virt flat_dramboot
+./dbuild.sh configure qemu-virt flat
 ./dbuild.sh build
 ```
 
@@ -51,7 +51,7 @@ For the flat configuration, use:
 ./dbuild.sh download ALL
 ```
 
-For `flat_dramboot`, use the flat image layout:
+For `flat`, use the flat image layout:
 
 ```bash
 ./dbuild.sh download bl1 kernel bootparam
@@ -196,11 +196,21 @@ The VS Code debugger should now attach to the QEMU session, and you can start de
 
 ## CI
 
-GitHub Actions workflow `qemu-virt-runtime-tests.yml` builds both supported defconfigs, generates flash images, boots QEMU, runs shell smoke checks, executes `virtio_blk_test`, and then runs `drivers_tc`, `filesystem_tc`, and `kernel_tc`.
+GitHub Actions workflow `qemu-runtime-tests.yml` validates the full 5-config emulation matrix:
 
-Local Docker validation has also been completed for both `full_dramboot_xipelf` and `flat_dramboot`.
+- `qemu-virt/flat`
+- `qemu-virt/loadable_xip_elf`
+- `qemu-mps2-an505/flat`
+- `qemu-mps2-an505/loadable_elf`
+- `qemu-mps2-an505/loadable_xip_elf`
+
+For the `qemu-virt` subset, the workflow builds both supported defconfigs, generates flash images, boots QEMU, runs shell smoke checks, executes `virtio_blk_test`, and then runs `drivers_tc`, `filesystem_tc`, and `kernel_tc`.
+
+Local Docker validation has also been completed for both `loadable_xip_elf` and `flat`.
+
+For the full RTL8730E / BK7239N emulation expansion plan and phase log, refer to `260409_qemu_emulation_plan_KOR.md`.
 
 ## Limitations
    - Only `virtio-blk` is covered in the current automation scope.
    - `virtio-net` and network validation are out of scope.
-   - The workflow validates `flat_dramboot` and `full_dramboot_xipelf` only.
+   - The `qemu-virt` workflow coverage is limited to `flat` and `loadable_xip_elf`.

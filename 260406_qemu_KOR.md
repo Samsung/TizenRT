@@ -6,8 +6,8 @@
 
 수행 범위:
 
-- `dbuild.sh configure qemu-virt full_dramboot_xipelf`
-- `dbuild.sh configure qemu-virt flat_dramboot`
+- `dbuild.sh configure qemu-virt loadable_xip_elf`
+- `dbuild.sh configure qemu-virt flat`
 - `dbuild.sh build`
 - `dbuild.sh download bl1 kernel common app1 bootparam`
 - `dbuild.sh download bl1 kernel bootparam`
@@ -18,7 +18,7 @@
 - `drivers_tc`, `filesystem_tc`, `kernel_tc` 실행
 - 검증 결과 수집
 
-이번 로컬 검증에서는 `full_dramboot_xipelf`, `flat_dramboot` 두 구성을 모두 실제 실행했습니다.
+이번 로컬 검증에서는 `loadable_xip_elf`, `flat` 두 구성을 모두 실제 실행했습니다.
 
 ## 2. qemu-virt 포팅 요약
 
@@ -48,8 +48,8 @@
 
 [build/configs/qemu-virt](/C:/Users/seokhun/Desktop/TizenRT/build/configs/qemu-virt)에 다음 구성을 추가했습니다.
 
-- `full_dramboot_xipelf`
-- `flat_dramboot`
+- `loadable_xip_elf`
+- `flat`
 
 자동화 검증용 대표 defconfig에는 다음을 반영했습니다.
 
@@ -143,7 +143,7 @@ Ubuntu 패키지 기본 `qemu-system-arm`을 그대로 사용하면 게스트에
 빌드/configure/download:
 
 ```bash
-./os/dbuild.sh configure qemu-virt full_dramboot_xipelf
+./os/dbuild.sh configure qemu-virt loadable_xip_elf
 ./os/dbuild.sh build
 ./os/dbuild.sh download bl1 kernel common app1 bootparam
 ```
@@ -233,14 +233,14 @@ filesystem testcase는 동일한 `qemu_flash.bin`을 반복 재사용할 경우 
 
 이후 `qemu-virt_download.sh ERASE`로 flash를 다시 초기화하고, `bl1/kernel/common/app1/bootparam`을 재배치한 뒤 전체 런타임 suite를 다시 실행해 PASS를 확인했습니다.
 
-### 4.5 `flat_dramboot` 검증
+### 4.5 `flat` 검증
 
-`flat_dramboot`에 대해서도 별도의 로컬 1사이클을 수행했습니다.
+`flat`에 대해서도 별도의 로컬 1사이클을 수행했습니다.
 
 build/configure/download:
 
 ```bash
-./os/dbuild.sh configure qemu-virt flat_dramboot
+./os/dbuild.sh configure qemu-virt flat
 ./os/dbuild.sh build
 ./os/dbuild.sh download bl1 kernel bootparam
 ```
@@ -252,7 +252,7 @@ TOPDIR=$PWD bash build/configs/qemu-virt/qemu-virt_download.sh ERASE
 TOPDIR=$PWD bash build/configs/qemu-virt/qemu-virt_download.sh bl1 kernel bootparam
 ```
 
-`flat_dramboot` 최종 결과: **PASS**
+`flat` 최종 결과: **PASS**
 
 요약:
 
@@ -267,13 +267,36 @@ TOPDIR=$PWD bash build/configs/qemu-virt/qemu-virt_download.sh bl1 kernel bootpa
 
 현재 기준 상태:
 
-- `qemu-virt` 포트는 `full_dramboot_xipelf`, `flat_dramboot` 두 구성 기준 빌드 가능
+- `qemu-virt` 포트는 `loadable_xip_elf`, `flat` 두 구성 기준 빌드 가능
 - Docker 기반 QEMU 런타임 사이클을 두 구성 모두에서 실행 가능
 - CLI smoke + virtio block + testcase 흐름이 두 구성 모두에서 end-to-end 통과
 - 로컬 하네스와 CI 워크플로 기준 런타임 결과 수집 경로 정리 완료
 - 런타임 Dockerfile은 외부 비공식 이미지 없이 레포 내부에서 재현 가능
 
-## 6. 후속 권장 사항
+## 6. 현재 프로젝트 확장 상태
 
-- GitHub Actions에서 두 defconfig 모두 실제 실행 검증
-- 로컬 재실행 시 filesystem testcase 전에 `qemu_flash.bin`을 자동 재생성할지 결정
+이 보고서는 원래 `qemu-virt` 포팅과 로컬 검증 결과를 정리한 문서입니다. 현재 프로젝트 범위는 이 보고서 작성 시점보다 더 확장되어 있습니다.
+
+- `qemu-virt/flat`
+- `qemu-virt/loadable_xip_elf`
+- `qemu-mps2-an505/flat`
+- `qemu-mps2-an505/loadable_elf`
+- `qemu-mps2-an505/loadable_xip_elf`
+
+이후 추가로 반영된 상태:
+
+- `bk7239n` 실행 모델 검증용 `qemu-mps2-an505` 포트 추가
+- `qemu-mps2-an505` 3개 defconfig 모두 로컬 Docker runtime 검증 통과
+- 공용 runtime 하네스가 `qemu-virt`와 `qemu-mps2-an505`를 모두 지원하도록 일반화
+- GitHub Actions 워크플로가 `qemu-runtime-tests.yml` 5-config matrix 기준으로 확장
+
+현재 구현 계획과 phase별 진행 상태는 다음 문서를 기준으로 관리합니다.
+
+- [260409_qemu_emulation_plan_KOR.md](/C:/Users/seokhun/Desktop/TizenRT/260409_qemu_emulation_plan_KOR.md)
+- [README.md](/C:/Users/seokhun/Desktop/TizenRT/build/configs/qemu-virt/README.md)
+- [README.md](/C:/Users/seokhun/Desktop/TizenRT/build/configs/qemu-mps2-an505/README.md)
+
+## 7. 후속 권장 사항
+
+- GitHub Actions에서 5-config matrix 실제 실행 검증
+- 로컬 재실행 시 보드별 flash/runtime 이미지를 testcase 전에 자동 재생성할지 결정
