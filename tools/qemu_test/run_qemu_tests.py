@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -16,15 +15,11 @@ from pathlib import Path
 
 import pexpect
 
+from platform_base import PlatformSpec, PromptCommandStep, TestcaseStep
+import platform_qemu_mps2_an505
+import platform_qemu_virt
 
-PROMPT = "TASH>>"
-FAIL_MARKERS = [
-    "] FAIL",
-    "unregistered",
-    "Assertion failed",
-    "up_assert",
-    "panic",
-]
+
 TESTCASE_END_RE = re.compile(
     r"##########\s+(?P<name>.+?)\s+End\s+\[PASS\s+:\s+(?P<pass>\d+),\s+FAIL\s+:\s+(?P<fail>\d+)\]\s+##########"
 )
@@ -32,6 +27,63 @@ TESTCASE_END_RE = re.compile(
 
 class HarnessError(RuntimeError):
     pass
+
+
+class SanitizedTranscriptWriter:
+    def __init__(self, handle) -> None:
+        self._handle = handle
+        self._line: list[str] = []
+        self._col = 0
+        self._pending_cr = False
+        self._last_blank = False
+
+    def _emit_line(self) -> None:
+        text = "".join(self._line).rstrip()
+        if text or not self._last_blank:
+            self._handle.write(text + "\n")
+        self._last_blank = not text
+        self._line = []
+        self._col = 0
+
+    def write(self, data: str) -> int:
+        written = 0
+        for ch in data:
+            if self._pending_cr:
+                if ch == "\n":
+                    self._emit_line()
+                    self._pending_cr = False
+                    written += 1
+                    continue
+
+                self._line = []
+                self._col = 0
+                self._pending_cr = False
+
+            if ch == "\x00":
+                continue
+            if ch == "\r":
+                self._pending_cr = True
+                continue
+            if ch == "\n":
+                self._emit_line()
+                written += 1
+                continue
+
+            if self._col < len(self._line):
+                self._line[self._col] = ch
+            else:
+                self._line.append(ch)
+            self._col += 1
+            written += 1
+        return written
+
+    def flush(self) -> None:
+        if self._pending_cr:
+            self._emit_line()
+            self._pending_cr = False
+        if self._line:
+            self._emit_line()
+        self._handle.flush()
 
 
 @dataclass
@@ -42,13 +94,24 @@ class StepResult:
     message: str = ""
 
 
+PLATFORM_BUILDERS = {
+    "qemu-virt": platform_qemu_virt.build_platform,
+    "qemu-mps2-an505": platform_qemu_mps2_an505.build_platform,
+}
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--artifact-dir", required=True)
+    parser.add_argument("--results-dir")
+    parser.add_argument("--artifact-dir")
+    parser.add_argument("--board", choices=sorted(PLATFORM_BUILDERS))
     parser.add_argument("--boot-timeout", type=int, default=120)
     parser.add_argument("--command-timeout", type=int, default=10)
     parser.add_argument("--tc-timeout", type=int, default=60)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if not args.results_dir and not args.artifact_dir:
+        parser.error("one of --results-dir or --artifact-dir is required")
+    return args
 
 
 def read_config(config_path: Path) -> dict[str, str]:
@@ -60,111 +123,62 @@ def read_config(config_path: Path) -> dict[str, str]:
         config[key] = value.strip().strip('"')
     return config
 
+def resolve_platform(topdir: Path, config: dict[str, str], board: str | None) -> PlatformSpec:
+    board_name = board or config.get("CONFIG_ARCH_BOARD")
+    if not board_name:
+        raise HarnessError("CONFIG_ARCH_BOARD is not defined and --board was not provided")
 
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        while True:
-            chunk = handle.read(1024 * 1024)
-            if not chunk:
-                break
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def collect_flash_metadata(topdir: Path) -> dict[str, dict[str, object]]:
-    metadata: dict[str, dict[str, object]] = {}
-    for name in ("qemu_flash.bin", "qemu_flash2.bin", "disk.raw"):
-        path = topdir / name
-        if not path.exists():
-            continue
-        metadata[name] = {
-            "path": str(path),
-            "size": path.stat().st_size,
-            "sha256": sha256_file(path),
-        }
-    return metadata
-
-
-def ensure_disk_image(topdir: Path, config: dict[str, str]) -> None:
-    if config.get("CONFIG_QEMU_VIRT_VIRTIO_BLK") != "y":
-        return
-
-    disk_path = topdir / "disk.raw"
-    if not disk_path.exists():
-        with disk_path.open("wb") as handle:
-            handle.truncate(64 * 1024 * 1024)
-
-
-def build_qemu_command(topdir: Path, config: dict[str, str]) -> list[str]:
-    qemu_flash = topdir / "qemu_flash.bin"
-    if not qemu_flash.exists():
-        raise HarnessError(f"Flash image not found: {qemu_flash}")
-
-    command = [
-        "qemu-system-arm",
-        "-machine",
-        "virt,virtualization=off,gic-version=2",
-        "-cpu",
-        "cortex-a15",
-        "-m",
-        "64M",
-        "-nographic",
-        "-monitor",
-        "none",
-        "-net",
-        "none",
-        "-drive",
-        f"if=pflash,format=raw,file={qemu_flash}",
-    ]
-
-    if config.get("CONFIG_SECOND_FLASH_PARTITION") == "y":
-        second_flash = topdir / "qemu_flash2.bin"
-        if second_flash.exists():
-            command.extend(
-                ["-drive", f"if=pflash,format=raw,file={second_flash}"]
-            )
-
-    if config.get("CONFIG_QEMU_VIRT_VIRTIO_BLK") == "y":
-        disk_path = topdir / "disk.raw"
-        command.extend(
-            [
-                "-drive",
-                f"file={disk_path},format=raw,if=none,id=blk0",
-                "-device",
-                "virtio-blk-device,drive=blk0,bus=virtio-mmio-bus.0",
-            ]
-        )
-
-    if config.get("CONFIG_SMP") == "y":
-        command.extend(["-smp", config.get("CONFIG_SMP_NCPUS", "2")])
-
-    return command
+    builder = PLATFORM_BUILDERS.get(board_name)
+    if builder is None:
+        raise HarnessError(f"Unsupported board '{board_name}'")
+    return builder(topdir, config)
 
 
 class QemuHarness:
     def __init__(
         self,
         child: pexpect.spawn,
-        transcript_path: Path,
+        prompt: str,
+        fail_markers: list[str],
         boot_timeout: int,
         command_timeout: int,
         tc_timeout: int,
+        post_boot_delay: float = 0.0,
+        prompt_settle_delay: float = 0.0,
+        send_char_delay: float = 0.0,
     ) -> None:
         self.child = child
-        self.transcript_path = transcript_path
+        self.prompt = prompt
+        self.fail_markers = fail_markers
         self.boot_timeout = boot_timeout
         self.command_timeout = command_timeout
         self.tc_timeout = tc_timeout
+        self.post_boot_delay = post_boot_delay
+        self.prompt_settle_delay = prompt_settle_delay
+        self.send_char_delay = send_char_delay
         self.results: list[StepResult] = []
 
+    def _settle_prompt(self) -> None:
+        if self.prompt_settle_delay > 0:
+            time.sleep(self.prompt_settle_delay)
+
+    def _send_command(self, command: str) -> None:
+        self._settle_prompt()
+        if self.send_char_delay > 0:
+            for ch in command:
+                self.child.send(ch)
+                time.sleep(self.send_char_delay)
+            self.child.send("\r\n")
+        else:
+            self.child.sendline(command)
+
     def _expect(self, patterns: list[object], timeout: int, description: str) -> object:
-        all_patterns: list[object] = list(patterns) + FAIL_MARKERS + [pexpect.EOF, pexpect.TIMEOUT]
+        all_patterns: list[object] = list(patterns) + self.fail_markers + [pexpect.EOF, pexpect.TIMEOUT]
         index = self.child.expect(all_patterns, timeout=timeout)
         if index < len(patterns):
             return all_patterns[index]
         marker_index = index - len(patterns)
-        if marker_index < len(FAIL_MARKERS):
+        if marker_index < len(self.fail_markers):
             raise HarnessError(f"{description}: detected failure marker '{all_patterns[index]}'")
         if all_patterns[index] is pexpect.EOF:
             raise HarnessError(f"{description}: QEMU exited unexpectedly")
@@ -188,7 +202,9 @@ class QemuHarness:
         started_at = time.monotonic()
         error: Exception | None = None
         try:
-            self._expect([PROMPT], self.boot_timeout, "boot")
+            self._expect([self.prompt], self.boot_timeout, "boot")
+            if self.post_boot_delay > 0:
+                time.sleep(self.post_boot_delay)
         except Exception as exc:
             error = exc
             raise
@@ -205,10 +221,10 @@ class QemuHarness:
         started_at = time.monotonic()
         error: Exception | None = None
         try:
-            self.child.sendline(command)
+            self._send_command(command)
             for token in expected_tokens or []:
                 self._expect([token], timeout or self.command_timeout, name)
-            self._expect([PROMPT], timeout or self.command_timeout, name)
+            self._expect([self.prompt], timeout or self.command_timeout, name)
         except Exception as exc:
             error = exc
             raise
@@ -219,7 +235,7 @@ class QemuHarness:
         started_at = time.monotonic()
         error: Exception | None = None
         try:
-            self.child.sendline(command)
+            self._send_command(command)
             matched = self._expect([TESTCASE_END_RE], self.tc_timeout, command)
             match = matched.match(self.child.after) if hasattr(matched, "match") else None
             if not match:
@@ -228,7 +244,7 @@ class QemuHarness:
             if fail_count != 0:
                 raise HarnessError(f"{command}: testcase reported FAIL={fail_count}")
             self.child.sendline("")
-            self._expect([PROMPT], self.command_timeout, f"{command} prompt")
+            self._expect([self.prompt], self.command_timeout, f"{command} prompt")
         except Exception as exc:
             error = exc
             raise
@@ -236,10 +252,25 @@ class QemuHarness:
             self._record(command, started_at, error)
 
 
-def write_junit(results: list[StepResult], output_path: Path) -> None:
+def run_platform_steps(harness: QemuHarness, platform: PlatformSpec) -> None:
+    for step in platform.steps:
+        if isinstance(step, PromptCommandStep):
+            harness.run_prompt_command(
+                step.name,
+                step.command,
+                list(step.expected_tokens),
+                timeout=step.timeout,
+            )
+        elif isinstance(step, TestcaseStep):
+            harness.run_testcase(step.command)
+        else:
+            raise HarnessError(f"Unsupported step type: {type(step)!r}")
+
+
+def write_junit(results: list[StepResult], output_path: Path, suite_name: str) -> None:
     suite = ET.Element(
         "testsuite",
-        name="qemu-virt-runtime",
+        name=suite_name,
         tests=str(len(results)),
         failures=str(sum(1 for item in results if item.status != "passed")),
     )
@@ -263,13 +294,15 @@ def write_junit(results: list[StepResult], output_path: Path) -> None:
 def write_summary(
     results: list[StepResult],
     output_path: Path,
-    command: list[str],
+    platform: PlatformSpec,
     metadata: dict[str, dict[str, object]],
 ) -> None:
-    lines = ["# QEMU Virt Runtime Test Summary", ""]
+    lines = [f"# {platform.suite_name} Summary", ""]
+    lines.append(f"- Board: `{platform.board}`")
+    lines.append("")
     lines.append("## Command")
     lines.append("")
-    lines.append(f"`{' '.join(shlex.quote(part) for part in command)}`")
+    lines.append(f"`{' '.join(shlex.quote(part) for part in platform.qemu_command)}`")
     lines.append("")
     lines.append("## Results")
     lines.append("")
@@ -279,7 +312,7 @@ def write_summary(
             + (f" - {result.message}" if result.message else "")
         )
     lines.append("")
-    lines.append("## Flash Metadata")
+    lines.append("## Runtime Metadata")
     lines.append("")
     for name, entry in metadata.items():
         lines.append(f"- `{name}`: {entry['size']} bytes, sha256 `{entry['sha256']}`")
@@ -289,18 +322,17 @@ def write_summary(
 
 def main() -> int:
     args = parse_args()
-    artifact_dir = Path(args.artifact_dir)
-    artifact_dir.mkdir(parents=True, exist_ok=True)
+    results_dir = Path(args.results_dir or args.artifact_dir)
+    results_dir.mkdir(parents=True, exist_ok=True)
 
     topdir = Path.cwd()
     config = read_config(topdir / "os" / ".config")
-    ensure_disk_image(topdir, config)
-    qemu_command = build_qemu_command(topdir, config)
+    platform = resolve_platform(topdir, config, args.board)
 
-    transcript_path = artifact_dir / "qemu-transcript.log"
-    junit_path = artifact_dir / "qemu-tests.xml"
-    summary_path = artifact_dir / "summary.md"
-    metadata_path = artifact_dir / "flash-metadata.json"
+    transcript_path = results_dir / "qemu-transcript.log"
+    junit_path = results_dir / "qemu-tests.xml"
+    summary_path = results_dir / "summary.md"
+    metadata_path = results_dir / "runtime-metadata.json"
 
     results: list[StepResult] = []
     child: pexpect.spawn | None = None
@@ -308,49 +340,37 @@ def main() -> int:
     exit_code = 0
 
     with transcript_path.open("w", encoding="utf-8") as transcript:
+        transcript_writer = SanitizedTranscriptWriter(transcript)
         try:
             child = pexpect.spawn(
-                qemu_command[0],
-                qemu_command[1:],
+                platform.qemu_command[0],
+                platform.qemu_command[1:],
                 cwd=str(topdir),
                 encoding="utf-8",
                 codec_errors="ignore",
             )
-            child.logfile_read = transcript
+            child.logfile_read = transcript_writer
 
             harness = QemuHarness(
                 child=child,
-                transcript_path=transcript_path,
+                prompt=platform.prompt,
+                fail_markers=list(platform.fail_markers),
                 boot_timeout=args.boot_timeout,
                 command_timeout=args.command_timeout,
                 tc_timeout=args.tc_timeout,
+                post_boot_delay=platform.post_boot_delay,
+                prompt_settle_delay=platform.prompt_settle_delay,
+                send_char_delay=platform.send_char_delay,
             )
 
             harness.wait_for_prompt()
-            harness.run_prompt_command("help", "help", ["virtio_blk_test"])
-            harness.run_prompt_command("free", "free")
-            harness.run_prompt_command("ps", "ps")
-            harness.run_prompt_command("pwd-root", "pwd", ["/"])
-            harness.run_prompt_command("ls-mnt", "ls /mnt")
-            harness.run_prompt_command("mkdir", "mkdir /mnt/qemu-smoke")
-            harness.run_prompt_command("ls-created-dir", "ls /mnt", ["qemu-smoke"])
-            harness.run_prompt_command("write-file", "echo qemu-virt-smoke > /mnt/qemu-smoke.txt")
-            harness.run_prompt_command("read-file", "cat /mnt/qemu-smoke.txt", ["qemu-virt-smoke"])
-            harness.run_prompt_command("remove-file", "rm /mnt/qemu-smoke.txt")
-            harness.run_prompt_command("remove-dir", "rmdir /mnt/qemu-smoke")
-            harness.run_prompt_command("cd-mnt", "cd /mnt")
-            harness.run_prompt_command("pwd-mnt", "pwd", ["/mnt"])
-            harness.run_prompt_command("cd-root", "cd /")
-            harness.run_prompt_command("virtio-blk", "virtio_blk_test", ["VIRTIO_BLK_TEST: PASS"], timeout=args.tc_timeout)
-            harness.run_testcase("drivers_tc")
-            harness.run_testcase("filesystem_tc")
-            harness.run_testcase("kernel_tc")
+            run_platform_steps(harness, platform)
         except Exception as exc:
             exit_code = 1
             if harness is not None:
                 results = list(harness.results)
             if child is not None and hasattr(child, "before"):
-                transcript.write(f"\n[HARNESS] {exc}\n")
+                transcript_writer.write(f"\n[HARNESS] {exc}\n")
             if results:
                 results.append(
                     StepResult(
@@ -377,11 +397,12 @@ def main() -> int:
                     child.terminate(force=True)
                 except Exception:
                     pass
+            transcript_writer.flush()
 
-    metadata = collect_flash_metadata(topdir)
+    metadata = platform.metadata
     metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
-    write_junit(results, junit_path)
-    write_summary(results, summary_path, qemu_command, metadata)
+    write_junit(results, junit_path, platform.suite_name)
+    write_summary(results, summary_path, platform, metadata)
     return exit_code
 
 

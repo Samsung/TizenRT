@@ -14,7 +14,13 @@ QEMU_FLASH="${TOPDIR}/qemu_flash.bin"
 QEMU_FLASH2="${TOPDIR}/qemu_flash2.bin"
 DISK_IMAGE="${TOPDIR}/disk.raw"
 DEFAULT_IMAGE="tizenrt-qemu-virt-runtime:local"
-QEMU_IMAGE="${QEMU_VIRT_DOCKER_IMAGE:-${DEFAULT_IMAGE}}"
+QEMU_IMAGE="${QEMU_RUNTIME_DOCKER_IMAGE:-${QEMU_VIRT_DOCKER_IMAGE:-${DEFAULT_IMAGE}}}"
+
+if [ -t 0 ] && [ -t 1 ]; then
+    DOCKER_TTY_FLAGS="-it"
+else
+    DOCKER_TTY_FLAGS="-i"
+fi
 
 get_config_value() {
     if [ ! -f "${CONFIG_FILE}" ]; then
@@ -22,6 +28,16 @@ get_config_value() {
     fi
 
     grep "^$1=" "${CONFIG_FILE}" | cut -d'=' -f2- | sed 's/^"//; s/"$//'
+}
+
+get_config_value_or_default() {
+    local value
+    value=$(get_config_value "$1")
+    if [ -n "${value}" ]; then
+        echo "${value}"
+    else
+        echo "$2"
+    fi
 }
 
 build_runtime_image_if_needed() {
@@ -44,8 +60,9 @@ fi
 
 SMP_OPTION=()
 if [ "$(get_config_value "CONFIG_SMP")" = "y" ]; then
+    SMP_DEFAULT=$(get_config_value_or_default "CONFIG_QEMU_VIRT_SMP_DEFAULT" "2")
     SMP_NCPUS=$(get_config_value "CONFIG_SMP_NCPUS")
-    SMP_OPTION=(-smp "${SMP_NCPUS:-2}")
+    SMP_OPTION=(-smp "${SMP_NCPUS:-$SMP_DEFAULT}")
 fi
 
 VIRTIO_BLK_OPTION=()
@@ -67,15 +84,18 @@ fi
 
 build_runtime_image_if_needed
 
-exec docker run --rm -it \
+QEMU_CPU_MODEL=$(get_config_value_or_default "CONFIG_QEMU_VIRT_CPU_MODEL" "cortex-a15")
+QEMU_MEMORY_MB=$(get_config_value_or_default "CONFIG_QEMU_VIRT_MEMORY_MB" "64")
+
+exec docker run --rm ${DOCKER_TTY_FLAGS} \
     -v "${TOPDIR}:/workspace" \
     -w /workspace \
     -p 1234:1234 \
     "${QEMU_IMAGE}" \
     qemu-system-arm \
     -machine virt,virtualization=off,gic-version=2 \
-    -cpu cortex-a15 \
-    -m 64M \
+    -cpu "${QEMU_CPU_MODEL}" \
+    -m "${QEMU_MEMORY_MB}M" \
     -nographic \
     -monitor none \
     -net none \

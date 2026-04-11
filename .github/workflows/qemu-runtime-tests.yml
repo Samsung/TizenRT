@@ -1,0 +1,83 @@
+name: qemu-runtime-tests
+
+on:
+  push:
+    paths:
+      - ".github/workflows/qemu-runtime-tests.yml"
+      - "apps/**"
+      - "build/**"
+      - "os/**"
+      - "tools/**"
+  pull_request:
+    paths:
+      - ".github/workflows/qemu-runtime-tests.yml"
+      - "apps/**"
+      - "build/**"
+      - "os/**"
+      - "tools/**"
+  workflow_dispatch:
+
+jobs:
+  qemu-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - board: qemu-virt
+            config: flat
+            download_args: "bl1 kernel bootparam"
+          - board: qemu-virt
+            config: loadable_xip_elf
+            download_args: "bl1 kernel common app1 bootparam"
+          - board: qemu-mps2-an505
+            config: flat
+            download_args: ""
+          - board: qemu-mps2-an505
+            config: loadable_elf
+            download_args: ""
+          - board: qemu-mps2-an505
+            config: loadable_xip_elf
+            download_args: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build QEMU runtime image
+        run: docker build -t tizenrt-qemu-test:ci -f tools/qemu_test/Dockerfile .
+
+      - name: Configure
+        run: ./os/dbuild.sh configure ${{ matrix.board }} ${{ matrix.config }}
+
+      - name: Build
+        run: ./os/dbuild.sh build
+
+      - name: Download flash images
+        run: |
+          if [ -n "${{ matrix.download_args }}" ]; then
+            ./os/dbuild.sh download ${{ matrix.download_args }}
+          else
+            ./os/dbuild.sh download
+          fi
+
+      - name: Run runtime tests
+        run: |
+          mkdir -p test-results/${{ matrix.board }}-${{ matrix.config }}
+          docker run --rm --network none \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            tizenrt-qemu-test:ci \
+            python3 tools/qemu_test/run_qemu_tests.py \
+              --results-dir /workspace/test-results/${{ matrix.board }}-${{ matrix.config }} \
+              --board ${{ matrix.board }} \
+              --boot-timeout 120 \
+              --command-timeout 10 \
+              --tc-timeout 60
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-runtime-${{ matrix.board }}-${{ matrix.config }}
+          path: test-results/${{ matrix.board }}-${{ matrix.config }}
