@@ -22,7 +22,7 @@
  *
  * This driver replaces the old MBEDTLS_*_ALT mechanisms removed in mbedtls 4.1.0.
  *
- * OPAQUE DRIVER (PSA_KEY_LOCATION_TIZENRT_SSS):
+ * OPAQUE DRIVER (PSA_KEY_LOCATION_TIZENRT_SE):
  *   ECC key pair is generated inside the hardware and the private key
  *   never leaves the device. The PSA key buffer stores only the hardware
  *   slot index.  Supported operations:
@@ -51,7 +51,7 @@
  * =========================================================================
  * Custom locations must be in [0x800000, 0xFFFFFF] per PSA spec.
  */
-#define PSA_KEY_LOCATION_TIZENRT_SSS  ((psa_key_location_t) 0x800001)
+#define PSA_KEY_LOCATION_TIZENRT_SE  ((psa_key_location_t) 0x800001)
 
 /* =========================================================================
  * Opaque key context
@@ -62,7 +62,7 @@
 typedef struct {
     uint32_t key_index;   /**< Hardware slot index (ECP_KEY_INDEX + offset) */
     uint32_t key_type;    /**< HAL key type (hal_key_type enum value)        */
-} tizenrt_sss_key_ctx_t;
+} tizenrt_se_key_ctx_t;
 
 /*
  * tizenrt_transparent_cipher_operation_t is defined in
@@ -79,7 +79,7 @@ typedef struct {
 
 /**
  * Return the key buffer size needed to store an opaque TizenRT key.
- * Always returns sizeof(tizenrt_sss_key_ctx_t) for ECC key pairs.
+ * Always returns sizeof(tizenrt_se_key_ctx_t) for ECC key pairs.
  */
 psa_status_t tizenrt_opaque_get_key_buffer_size(
     const psa_key_attributes_t *attributes,

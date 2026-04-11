@@ -58,6 +58,7 @@ SRC_ALT_CSRCS += entropy_poll_alt.c
 CFLAGS += -DMBEDTLS_PSA_DRIVER_GET_ENTROPY
 endif
 
+CFLAGS += -DMBED_TIZENRT
 CFLAGS += -I$(TOPDIR)/../external/mbedtls/
 CFLAGS += -I$(TOPDIR)/../external/include/psa/
 CFLAGS += -I$(TOPDIR)/../external/include/tf-psa-crypto/

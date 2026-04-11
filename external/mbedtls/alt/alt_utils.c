@@ -53,10 +53,11 @@ switch (curve) {
 hal_ecdsa_curve alt_get_curve(mbedtls_ecp_group_id curve)
 {
 	switch (curve) {
-	case MBEDTLS_ECP_DP_SECP192R1:
+	/* MBEDTLS_ECP_DP_SECP192R1 and MBEDTLS_ECP_DP_SECP224R1 removed in mbedtls 4.x */
+	/* case MBEDTLS_ECP_DP_SECP192R1:
 		return HAL_ECDSA_SEC_P192R1;
 	case MBEDTLS_ECP_DP_SECP224R1:
-		return HAL_ECDSA_SEC_P224R1;
+		return HAL_ECDSA_SEC_P224R1; */
 	case MBEDTLS_ECP_DP_SECP256R1:
 		return HAL_ECDSA_SEC_P256R1;
 	case MBEDTLS_ECP_DP_SECP384R1:

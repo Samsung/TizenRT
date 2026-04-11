@@ -1110,6 +1110,34 @@
 //#define MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
 
 /**
+ * \def MBEDTLS_PSA_DRIVER_GET_ENTROPY
+ *
+ * Requires: MBEDTLS_PSA_CRYPTO_C, !MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+ *
+ * Enable the custom entropy callback mbedtls_platform_get_entropy()
+ * (declared in mbedtls/platform.h). You need to provide this callback
+ * if you need an entropy source and the built-in entropy callback
+ * provided by #MBEDTLS_PSA_BUILTIN_GET_ENTROPY does not work on your platform.
+ *
+ * Enabling both #MBEDTLS_PSA_BUILTIN_GET_ENTROPY and
+ * #MBEDTLS_PSA_DRIVER_GET_ENTROPY is currently not supported.
+ *
+ * You do not need any entropy source in the following circumstances:
+ *
+ * - If your platform has a fast cryptographic-quality random generator, and
+ *   you enable #MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG and provide a random generator
+ *   callback instead.
+ * - If your platform has no source of entropy at all, and you enable
+ *   #MBEDTLS_ENTROPY_NV_SEED and provide a seed in nonvolatile memory
+ *   during the provisioning of the device.
+ * - If you build the library with no random generator.
+ *   Builds with no random generator are not officially supported yet, except
+ *   client-only builds (#MBEDTLS_PSA_CRYPTO_CLIENT enabled and
+ *   #MBEDTLS_PSA_CRYPTO_C disabled).
+ */
+#define MBEDTLS_PSA_DRIVER_GET_ENTROPY
+
+/**
  * \def MBEDTLS_PSA_BUILTIN_GET_ENTROPY
  *
  * Enable entropy sources for which the library has a built-in driver.
@@ -1142,10 +1170,9 @@
  */
 /* MBEDTLS_PSA_BUILTIN_GET_ENTROPY and MBEDTLS_PSA_DRIVER_GET_ENTROPY are
  * mutually exclusive.  When CONFIG_HW_RNG is enabled (Samsung SE hardware
- * random number generator), the driver version is selected via CFLAGS
- * (-DMBEDTLS_PSA_DRIVER_GET_ENTROPY) and the builtin source must be off.
- * For all other targets the builtin getrandom()/BCryptGenRandom() source is
- * used as before. */
+ * random number generator), the driver version is selected (defined above)
+ * and the builtin source must be off. For all other targets the builtin
+ * getrandom()/BCryptGenRandom() source is used as before. */
 #if !defined(MBEDTLS_PSA_DRIVER_GET_ENTROPY)
 #define MBEDTLS_PSA_BUILTIN_GET_ENTROPY
 #endif
@@ -1265,34 +1292,6 @@
  *           the PSA ITS interface
  */
 #define MBEDTLS_PSA_CRYPTO_STORAGE_C
-
-/**
- * \def MBEDTLS_PSA_DRIVER_GET_ENTROPY
- *
- * Requires: MBEDTLS_PSA_CRYPTO_C, !MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
- *
- * Enable the custom entropy callback mbedtls_platform_get_entropy()
- * (declared in mbedtls/platform.h). You need to provide this callback
- * if you need an entropy source and the built-in entropy callback
- * provided by #MBEDTLS_PSA_BUILTIN_GET_ENTROPY does not work on your platform.
- *
- * Enabling both #MBEDTLS_PSA_BUILTIN_GET_ENTROPY and
- * #MBEDTLS_PSA_DRIVER_GET_ENTROPY is currently not supported.
- *
- * You do not need any entropy source in the following circumstances:
- *
- * - If your platform has a fast cryptographic-quality random generator, and
- *   you enable #MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG and provide a random generator
- *   callback instead.
- * - If your platform has no source of entropy at all, and you enable
- *   #MBEDTLS_ENTROPY_NV_SEED and provide a seed in nonvolatile memory
- *   during the provisioning of the device.
- * - If you build the library with no random generator.
- *   Builds with no random generator are not officially supported yet, except
- *   client-only builds (#MBEDTLS_PSA_CRYPTO_CLIENT enabled and
- *   #MBEDTLS_PSA_CRYPTO_C disabled).
- */
-//#define MBEDTLS_PSA_DRIVER_GET_ENTROPY
 
 /**
  * \def MBEDTLS_PSA_ITS_FILE_C

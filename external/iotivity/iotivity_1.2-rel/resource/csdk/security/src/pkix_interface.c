@@ -18,12 +18,15 @@
  *
  * *****************************************************************/
 
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
 #include "pkix_interface.h"
 #include "credresource.h"
 #include "crlresource.h"
 #include "srmresourcestrings.h"
 #include "casecurityinterface.h"
 #include "logger.h"
+#include "mbedtls/x509_crt.h"
+#include "mbedtls/asn1.h"
 #ifdef __TIZENRT__
 #include "oic_malloc.h"
 #endif
