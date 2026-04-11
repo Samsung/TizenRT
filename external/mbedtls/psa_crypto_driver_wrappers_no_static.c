@@ -10,7 +10,7 @@
 /*
  * TizenRT note: This file was copied from
  * tf-psa-crypto/core/psa_crypto_driver_wrappers_no_static.c and extended
- * with TizenRT Samsung SE opaque driver support (PSA_KEY_LOCATION_TIZENRT_SSS).
+ * with TizenRT Samsung SE opaque driver support (PSA_KEY_LOCATION_TIZENRT_SE).
  */
 
 /* BEGIN-common headers */
@@ -61,7 +61,7 @@
 #define MBEDTLS_TEST_OPAQUE_DRIVER_ID (2)
 #define MBEDTLS_TEST_TRANSPARENT_DRIVER_ID (3)
 #define P256_TRANSPARENT_DRIVER_ID (4)
-#define TIZENRT_SSS_OPAQUE_DRIVER_ID (5)
+#define TIZENRT_SE_OPAQUE_DRIVER_ID (5)
 #define TIZENRT_TRANSPARENT_CIPHER_DRIVER_ID (6)
 
 /* END-driver id */
@@ -115,7 +115,7 @@ psa_status_t psa_driver_wrapper_get_key_buffer_size(
 #endif /* PSA_CRYPTO_DRIVER_TEST */
 
 #if defined(TIZENRT_PSA_DRIVER_PRESENT)
-        case PSA_KEY_LOCATION_TIZENRT_SSS:
+        case PSA_KEY_LOCATION_TIZENRT_SE:
             return tizenrt_opaque_get_key_buffer_size( attributes,
                                                         key_buffer_size );
 #endif /* TIZENRT_PSA_DRIVER_PRESENT */
@@ -202,7 +202,7 @@ psa_status_t psa_driver_wrapper_export_public_key(
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
 #if defined(TIZENRT_PSA_DRIVER_PRESENT)
-        case PSA_KEY_LOCATION_TIZENRT_SSS:
+        case PSA_KEY_LOCATION_TIZENRT_SE:
             return tizenrt_opaque_export_public_key( attributes,
                                                       key_buffer,
                                                       key_buffer_size,

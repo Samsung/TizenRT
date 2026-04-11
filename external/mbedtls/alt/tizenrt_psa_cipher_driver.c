@@ -52,6 +52,9 @@
 /* AES block size in bytes */
 #define AES_BLOCK_SIZE 16
 
+/* The starting slot for AES keys (same as ECP but AES uses lower indices) */
+#define AES_KEY_SLOT_START  32
+
 /* =========================================================================
  * Internal helpers
  * =========================================================================
@@ -69,13 +72,13 @@ static hal_key_type tizenrt_aes_key_type(size_t key_bits)
 }
 
 /** Map PSA algorithm to HAL AES mode. Returns 0 if unsupported. */
-static hal_aes_mode tizenrt_aes_hal_mode(psa_algorithm_t alg)
+static hal_aes_algo tizenrt_aes_hal_mode(psa_algorithm_t alg)
 {
     if (alg == PSA_ALG_ECB_NO_PADDING)  return HAL_AES_ECB_NOPAD;
     if (alg == PSA_ALG_CBC_NO_PADDING)  return HAL_AES_CBC_NOPAD;
     if (alg == PSA_ALG_CTR)             return HAL_AES_CTR;
     if (alg == PSA_ALG_CFB)             return HAL_AES_CFB128;
-    return (hal_aes_mode)0;  /* unsupported */
+    return (hal_aes_algo)0;  /* unsupported */
 }
 
 /** Return 1 if the algorithm needs an IV (all except ECB). */
@@ -114,9 +117,6 @@ static int tizenrt_load_aes_key(sl_ctx shnd, hal_key_type key_type,
     return alt_set_key(shnd, key_type, &aeskey, NULL, AES_KEY_SLOT_START);
 }
 
-/* The starting slot for AES keys (same as ECP but AES uses lower indices) */
-#define AES_KEY_SLOT_START  32
-
 /* =========================================================================
  * One-shot cipher_encrypt
  * =========================================================================
@@ -138,7 +138,7 @@ psa_status_t tizenrt_transparent_cipher_encrypt(
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    hal_aes_mode hal_mode = tizenrt_aes_hal_mode(alg);
+    hal_aes_algo hal_mode = tizenrt_aes_hal_mode(alg);
     if (hal_mode == 0) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
@@ -223,7 +223,7 @@ psa_status_t tizenrt_transparent_cipher_decrypt(
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    hal_aes_mode hal_mode = tizenrt_aes_hal_mode(alg);
+    hal_aes_algo hal_mode = tizenrt_aes_hal_mode(alg);
     if (hal_mode == 0) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
@@ -317,7 +317,7 @@ static psa_status_t tizenrt_cipher_setup(
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    hal_aes_mode hal_mode = tizenrt_aes_hal_mode(alg);
+    hal_aes_algo hal_mode = tizenrt_aes_hal_mode(alg);
     if (hal_mode == 0) {
         return PSA_ERROR_NOT_SUPPORTED;
     }

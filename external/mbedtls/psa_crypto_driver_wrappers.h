@@ -62,7 +62,7 @@
 #define MBEDTLS_TEST_OPAQUE_DRIVER_ID (2)
 #define MBEDTLS_TEST_TRANSPARENT_DRIVER_ID (3)
 #define P256_TRANSPARENT_DRIVER_ID (4)
-#define TIZENRT_SSS_OPAQUE_DRIVER_ID (5)
+#define TIZENRT_SE_OPAQUE_DRIVER_ID (5)
 #define TIZENRT_TRANSPARENT_CIPHER_DRIVER_ID (6)
 
 /* END-driver id */
@@ -321,7 +321,7 @@ static inline psa_status_t psa_driver_wrapper_sign_hash(
 #endif /* PSA_CRYPTO_DRIVER_TEST */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(TIZENRT_PSA_DRIVER_PRESENT)
-        case PSA_KEY_LOCATION_TIZENRT_SSS:
+        case PSA_KEY_LOCATION_TIZENRT_SE:
             return( tizenrt_opaque_sign_hash( attributes,
                                               key_buffer,
                                               key_buffer_size,
@@ -413,7 +413,7 @@ static inline psa_status_t psa_driver_wrapper_verify_hash(
 #endif /* PSA_CRYPTO_DRIVER_TEST */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(TIZENRT_PSA_DRIVER_PRESENT)
-        case PSA_KEY_LOCATION_TIZENRT_SSS:
+        case PSA_KEY_LOCATION_TIZENRT_SE:
             return( tizenrt_opaque_verify_hash( attributes,
                                                 key_buffer,
                                                 key_buffer_size,
@@ -775,7 +775,7 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
 #endif /* PSA_CRYPTO_DRIVER_TEST */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(TIZENRT_PSA_DRIVER_PRESENT)
-        case PSA_KEY_LOCATION_TIZENRT_SSS:
+        case PSA_KEY_LOCATION_TIZENRT_SE:
             status = tizenrt_opaque_generate_key( attributes,
                                                    key_buffer, key_buffer_size,
                                                    key_buffer_length );
@@ -914,7 +914,7 @@ static inline psa_status_t psa_driver_wrapper_export_key(
 
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(TIZENRT_PSA_DRIVER_PRESENT)
-        case PSA_KEY_LOCATION_TIZENRT_SSS:
+        case PSA_KEY_LOCATION_TIZENRT_SE:
             /* Opaque keys: private key never leaves hardware.
              * Exporting the public portion is handled by export_public_key.
              * Return NOT_PERMITTED for private key export. */
@@ -2849,7 +2849,7 @@ static inline psa_status_t psa_driver_wrapper_key_agreement(
 #endif /* PSA_CRYPTO_DRIVER_TEST */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(TIZENRT_PSA_DRIVER_PRESENT)
-        case PSA_KEY_LOCATION_TIZENRT_SSS:
+        case PSA_KEY_LOCATION_TIZENRT_SE:
             return( tizenrt_opaque_key_agreement( attributes,
                                                    key_buffer,
                                                    key_buffer_size,

@@ -19,6 +19,7 @@
  ******************************************************************/
 
 #define MBEDTLS_SSL_SRV_RESPECT_CLIENT_PREFERENCE
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
 
 #define _GNU_SOURCE
 
@@ -37,10 +38,8 @@
 // headers required for mbed TLS
 #include "mbedtls/platform.h"
 #include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/pkcs12.h"
-#include "mbedtls/ssl_misc.h"
+#include "mbedtls/private/entropy.h"
+#include "mbedtls/private/ctr_drbg.h"
 #include "mbedtls/net_sockets.h"
 #ifdef __WITH_DTLS__
 #include "mbedtls/timing.h"
@@ -281,7 +280,6 @@ if (0 != ret) {                                                                 
 
 typedef enum
 {
-    SSL_RSA_WITH_AES_128_GCM_SHA256,
     SSL_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
     SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
     SSL_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
@@ -301,7 +299,6 @@ typedef enum
 
 static const int tlsCipher[SSL_CIPHER_MAX][2] =
 {
-    {MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256, 0},
     {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, 0},
     {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, 0},
     {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, 0},
@@ -936,7 +933,7 @@ static int InitPKIX(CATransportAdapter_t adapter)
     {
         OIC_LOG(ERROR, NET_SSL_TAG, "g_setupPkContextCallback is NULL");
         ret =  mbedtls_pk_parse_key(&g_caSslContext->pkey, g_pkiInfo.key.data, g_pkiInfo.key.len,
-                                                                                   NULL, 0, mbedtls_ctr_drbg_random, &g_caSslContext->rnd);
+                                                                                   NULL, 0);
     }
     else
     {
@@ -944,27 +941,10 @@ static int InitPKIX(CATransportAdapter_t adapter)
         ret = g_setupPkContextCallback(&g_caSslContext->pkey);
         if (0 == ret)
         {
-            // setup public parameter
-            mbedtls_pk_type_t ktype = mbedtls_pk_get_type(&g_caSslContext->pkey);
-            if (MBEDTLS_PK_ECKEY == ktype || MBEDTLS_PK_ECKEY_DH == ktype
-                || MBEDTLS_PK_ECDSA == ktype)
-            {
-                OIC_LOG_V(DEBUG, NET_SSL_TAG, "Copy ecp public param from cert, keytype [%d]", ktype);
-                mbedtls_ecp_keypair *eckey = (mbedtls_ecp_keypair*)g_caSslContext->crt.pk.pk_ctx;
-                mbedtls_ecdsa_context *ecdsa = (mbedtls_ecdsa_context*)g_caSslContext->pkey.pk_ctx;
-                if (ecdsa && eckey)
-                {
-                    ret = mbedtls_ecdsa_from_keypair(ecdsa, eckey);
-                    if(0 != ret )
-                    {
-                        OIC_LOG_V(ERROR, NET_SSL_TAG, "Fail to copy public param [0x%x]", ret);
-                    }
-                }
-                else
-                {
-                    OIC_LOG_V(WARNING, NET_SSL_TAG, "key-ctx(0x%x), cert-ctx(0x%x)", ecdsa, eckey);
-                }
-            }
+            // Note: In new mbedtls/PSA API, the pk context structure has changed.
+            // The pk_ctx member is no longer directly accessible.
+            // Public parameters are handled internally by PSA.
+            OIC_LOG(DEBUG, NET_SSL_TAG, "HW PK context setup completed");
         }
     }
     if (0 != ret)
@@ -1716,7 +1696,7 @@ static int InitConfig(mbedtls_ssl_config * conf, int transport, int mode)
     mbedtls_ssl_conf_psk_cb(conf, GetPskCredentialsCallback, NULL);
     mbedtls_ssl_conf_rng(conf, mbedtls_ctr_drbg_random, &g_caSslContext->rnd);
     mbedtls_ssl_conf_curves(conf, curve[ADAPTER_CURVE_SECP256R1]);
-    mbedtls_ssl_conf_min_version(conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3);
+    mbedtls_ssl_conf_min_tls_version(conf, MBEDTLS_SSL_VERSION_TLS1_2);
     mbedtls_ssl_conf_renegotiation(conf, MBEDTLS_SSL_RENEGOTIATION_DISABLED);
     mbedtls_ssl_conf_authmode(conf, MBEDTLS_SSL_VERIFY_REQUIRED);
 
@@ -1901,8 +1881,7 @@ CAResult_t CAinitSslAdapter()
 #endif // __WITH_TLS__
 #ifdef __WITH_DTLS__
     mbedtls_ssl_cookie_init(&g_caSslContext->cookieCtx);
-    if (0 != mbedtls_ssl_cookie_setup(&g_caSslContext->cookieCtx, mbedtls_ctr_drbg_random,
-                                      &g_caSslContext->rnd))
+    if (0 != mbedtls_ssl_cookie_setup(&g_caSslContext->cookieCtx))
     {
         OIC_LOG(ERROR, NET_SSL_TAG, "Cookie setup failed!");
         oc_mutex_unlock(g_sslContextMutex);
@@ -2228,10 +2207,20 @@ CAResult_t CAdecryptSsl(const CASecureEndpoint_t *sep, uint8_t *data, uint32_t d
         {
             memcpy(peer->master, peer->ssl.session_negotiate->master, sizeof(peer->master));
             g_caSslContext->selectedCipher = peer->ssl.session_negotiate->ciphersuite;
-        }
-        if (MBEDTLS_SSL_CLIENT_KEY_EXCHANGE == peer->ssl.state)
-        {
-            memcpy(peer->random, peer->ssl.handshake->randbytes, sizeof(peer->random));
+            
+            // In mbedtls 3.x, use mbedtls_ssl_get_client_random/get_server_random APIs
+            // to retrieve random bytes instead of accessing handshake->randbytes directly
+            unsigned char client_random[RANDOM_LEN];
+            unsigned char server_random[RANDOM_LEN];
+            
+            if (mbedtls_ssl_get_client_random(&peer->ssl, client_random, RANDOM_LEN) == 0 &&
+                mbedtls_ssl_get_server_random(&peer->ssl, server_random, RANDOM_LEN) == 0)
+            {
+                // Store in peer->random: first 32 bytes = server_random, next 32 bytes = client_random
+                // This matches the original randbytes layout: [client_random][server_random]
+                memcpy(peer->random, client_random, RANDOM_LEN);
+                memcpy(peer->random + RANDOM_LEN, server_random, RANDOM_LEN);
+            }
         }
 
         if (MBEDTLS_SSL_HANDSHAKE_OVER == peer->ssl.state)
@@ -2432,10 +2421,6 @@ static SslCipher_t GetCipherIndex(const uint32_t cipher)
 {
     switch(cipher)
     {
-        case MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256:
-        {
-            return SSL_RSA_WITH_AES_128_GCM_SHA256;
-        }
         case MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
         {
             return SSL_ECDHE_RSA_WITH_AES_128_GCM_SHA256;
@@ -2688,12 +2673,19 @@ CAResult_t CAsslGenerateOwnerPsk(const CAEndpoint_t *endpoint,
         ivSize = GCM_IV_LENGTH;
         keySize = AES256_KEY_LENGTH;
     }
-    else if (MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256 == g_caSslContext->selectedCipher)
+    else if (MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 == g_caSslContext->selectedCipher)
     {
-        // 2 * ( 48 + 12 + 32 ) = 184
+        // 2 * ( 32 + 12 + 16 ) = 120
         macKeyLen = SHA256_MAC_KEY_LENGTH;
         ivSize = GCM_IV_LENGTH;
         keySize = AES128_KEY_LENGTH;
+    }
+    else if (MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 == g_caSslContext->selectedCipher)
+    {
+        // 2 * ( 48 + 12 + 32 ) = 184
+        macKeyLen = SHA384_MAC_KEY_LENGTH;
+        ivSize = GCM_IV_LENGTH;
+        keySize = AES256_KEY_LENGTH;
     }
     keyBlockLen = 2 * (macKeyLen + keySize + ivSize);
 
