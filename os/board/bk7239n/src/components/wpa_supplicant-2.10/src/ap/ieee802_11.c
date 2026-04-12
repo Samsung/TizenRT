@@ -5985,6 +5985,8 @@ static void handle_disassoc(struct hostapd_data *hapd,
 				       hapd, sta);
 	}
 
+	mlme_report_sta_disconnect(
+		hapd, sta, le_to_host16(mgmt->u.disassoc.reason_code));
 	mlme_disassociate_indication(
 		hapd, sta, le_to_host16(mgmt->u.disassoc.reason_code));
 
@@ -6037,6 +6039,8 @@ static void handle_deauth(struct hostapd_data *hapd,
 	wpa_auth_sm_event(sta->wpa_sm, WPA_DEAUTH);
 	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
 		       HOSTAPD_LEVEL_DEBUG, "deauthenticated");
+	mlme_report_sta_disconnect(
+		hapd, sta, le_to_host16(mgmt->u.deauth.reason_code));
 	mlme_deauthenticate_indication(
 		hapd, sta, le_to_host16(mgmt->u.deauth.reason_code));
 #ifdef CONFIG_FULL_HOSTAPD

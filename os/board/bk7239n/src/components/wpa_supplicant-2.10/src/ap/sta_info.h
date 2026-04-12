@@ -111,6 +111,9 @@ struct sta_info {
 	struct dl_list ip6addr; /* list head for struct ip6addr */
 	u16 aid; /* STA's unique AID (1 .. 2007) or 0 if not yet assigned */
 	u16 disconnect_reason_code; /* RADIUS server override */
+#ifdef BK_SUPPLICANT
+	bool disconnect_event_reported;
+#endif
 	u32 flags; /* Bitfield of WLAN_STA_* */
 	u16 capability;
 	u16 listen_interval; /* or beacon_int for APs */

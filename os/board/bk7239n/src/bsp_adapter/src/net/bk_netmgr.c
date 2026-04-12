@@ -975,8 +975,14 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
 
     case EVENT_WIFI_AP_DISCONNECTED:
         ap_disconnected = (wifi_event_ap_disconnected_t *)event_data;
-        ndbg(BK_MAC_FORMAT" disconnected from BK AP\n", BK_MAC_STR(ap_disconnected->mac));
-        trwifi_post_event(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
+        {
+            trwifi_cbk_msg_s msg = {TRWIFI_REASON_UNKNOWN, {0,}, NULL};
+            os_memcpy(msg.bssid, ap_disconnected->mac, WIFI_BSSID_LEN);
+            msg.reason = ap_disconnected->disconnect_reason;
+            ndbg(BK_MAC_FORMAT" disconnected from BK AP, reason(%d)\n",
+                BK_MAC_STR(ap_disconnected->mac), ap_disconnected->disconnect_reason);
+            trwifi_post_event(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_LEFT, &msg, sizeof(trwifi_cbk_msg_s));
+        }
         break;
 
     case EVENT_WIFI_REGDOMAIN_CHANGED:

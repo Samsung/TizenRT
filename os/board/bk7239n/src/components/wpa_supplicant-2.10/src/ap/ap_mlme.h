@@ -16,6 +16,8 @@ void mlme_authenticate_indication(struct hostapd_data *hapd,
 
 void mlme_deauthenticate_indication(struct hostapd_data *hapd,
 				    struct sta_info *sta, u16 reason_code);
+void mlme_report_sta_disconnect(struct hostapd_data *hapd,
+				struct sta_info *sta, u16 reason_code);
 
 void mlme_associate_indication(struct hostapd_data *hapd,
 			       struct sta_info *sta);

@@ -547,7 +547,8 @@ void hapd_notify_sta_connected(struct hostapd_data *hapd, const u8 *mac)
 				&ap_connected, sizeof(ap_connected), BEKEN_NEVER_TIMEOUT));
 }
 
-void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac)
+void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac,
+					 u16 reason_code)
 {
 	wifi_event_ap_disconnected_t ap_disconnected = {0};
 #if !CONFIG_DISABLE_DEPRECIATED_WIFI_API
@@ -563,6 +564,7 @@ void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac)
 	}
 #endif
 	os_memcpy(ap_disconnected.mac, mac, ETH_ALEN);
+	ap_disconnected.disconnect_reason = reason_code;
 #if CONFIG_AP_STATYPE_LIMIT
 	if (bk_feature_ap_statype_limit_enable())
 		bk_vsie_cus_del_sta(ap_disconnected.mac, true);
