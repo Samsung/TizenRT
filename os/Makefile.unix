@@ -558,15 +558,17 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 	$(Q) $(call VERIFY_APP,$(CONFIG_COMMON_BINARY_NAME), 0)
 	$(Q) $(call PREPARE_APP,$(CONFIG_COMMON_BINARY_NAME),"common",$(CONFIG_COMMON_BINARY_VERSION))
 endif
-ifeq ($(CONFIG_BINARY_SIGNING),y)
-	$(Q) $(call MAKE_USER_SIGNING)
-endif
 endif
 ifeq ($(CONFIG_RESOURCE_FS),y)
 	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../resource ../build/output/bin/resourcefs.img
 	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/resourcefs.img resource
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/resourcefs.img
 endif
+
+ifeq ($(CONFIG_BINARY_SIGNING),y)
+	$(Q) $(call MAKE_USER_SIGNING)
+endif
+
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXT))

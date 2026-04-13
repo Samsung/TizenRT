@@ -147,6 +147,17 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	}
 #endif
 
+#ifdef CONFIG_RESOURCE_BINARY_SIGNING
+	if (type == BINARY_RESOURCE) {
+		ret = lseek(fd, USER_SIGN_PREPEND_SIZE, SEEK_SET);
+		if (ret < 0) {
+			bmdbg("Fail to set offset to skip signing header, errno : %d\n", errno);
+			ret = BINMGR_OPERATION_FAIL;
+			goto errout_with_fd;
+		}
+	}
+#endif
+
 	/* Read the binary header */
 	ret = read(fd, (FAR uint8_t *)header_data, header_size);
 	if (ret != header_size) {

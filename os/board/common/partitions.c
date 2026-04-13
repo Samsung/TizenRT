@@ -164,7 +164,9 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 
 #ifdef CONFIG_FS_ROMFS
 	else if (!strncmp(types, "romfs,", 6)) {
+#ifndef CONFIG_RESOURCE_FS
 		do_ftlinit = true;
+#endif
 		tagno = MTD_ROMFS;
 		save_romfs_partno = true;
 	}
@@ -304,31 +306,6 @@ static void configure_partition_name(FAR struct mtd_dev_s *mtd_part, const char 
 }
 #endif
 
-#ifdef CONFIG_RESOURCE_FS
-static int make_resource_mtd_partition(struct mtd_dev_s *mtd, off_t partoffset, off_t nblocks, uint16_t partno)
-{
-	FAR struct mtd_dev_s *mtd_part;
-	uint16_t resource_partno;
-
-	/* Set part num to avoid duplication */
-	resource_partno = partno + RESOURCE_DEVNUM_OFFSET;
-
-	mtd_part = mtd_partition(mtd, partoffset, nblocks, resource_partno);
-
-	if (!mtd_part) {
-		printf("ERROR: failed to create partition.\n");
-		return ERROR;
-	}
-
-	if (ftl_initialize(resource_partno, mtd_part)) {
-		printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
-		return ERROR;
-	}
-
-	return OK;
-}
-#endif
-
 int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t *partinfo)
 {
 	int ret;
@@ -417,16 +394,6 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 		} else if (!strncmp(types, "bootparam,", 10)) {
 			binary_manager_register_bppart(g_partno, partsize);
 #endif
-		}
-#endif
-#ifdef CONFIG_RESOURCE_FS
-		if (!strncmp(types, "resource,", 9)) {
-			int nblocks = geo.erasesize / geo.blocksize;
-			/* Make mtd dev to access resource fs. It starts from offset + erasesize (4K). */
-			ret = make_resource_mtd_partition(mtd, partoffset + nblocks, partsize / geo.blocksize - nblocks, g_partno);
-			if (ret != OK) {
-				printf("ERROR: fail to make resource mtd part.\n");
-			}
 		}
 #endif
 #ifdef CONFIG_MTD_PARTITION_NAMES

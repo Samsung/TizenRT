@@ -59,7 +59,6 @@
 #endif
 #define KERNEL_BIN_COUNT                 2
 
-#define RESOURCE_DEVNUM_OFFSET           30
 #define RESOURCE_HEADER_SIZE             4096
 #define RESOURCE_BIN_COUNT               2
 
