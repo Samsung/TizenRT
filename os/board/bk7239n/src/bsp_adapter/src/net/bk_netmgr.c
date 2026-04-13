@@ -548,12 +548,12 @@ int bk_wifi_scan_result_handle(const wifi_scan_result_t *scan_result)
 		goto scan_res_fail;
 	}
 	g_scan_list = (trwifi_scan_list_s *)os_malloc(sizeof(trwifi_scan_list_s) * scan_result->ap_num);
-	g_scan_num = scan_result->ap_num;
 	if (g_scan_list == NULL) {
 		ndbg("[BK] Fail to malloc g_scan_list\r\n");
 		bk_trwifi_clear_saved_scan_cache();
 		goto scan_res_fail;
 	}
+	g_scan_num = scan_result->ap_num;
 
 	// Step 5: Fill scan results
 	wifi_scan_ap_info_t *ap;
@@ -732,7 +732,7 @@ int bk_wifi_multi_scan_result_handle(const wifi_scan_result_t *scan_result,wifi_
 
 		bk_trwifi_scan_dump_result(g_scan_list);
 		TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
-		os_free(g_scan_list);
+		bk_trwifi_clear_scan_chain_list();
 		ret = BK_OK;
 	}
 
@@ -764,8 +764,10 @@ static int bk_trwlan_scan_start(wifi_scan_config_t *scan_config)
 	}
 	// Also check and free g_scan_list if it exists (shouldn't happen in normal flow, but for safety)
 	bk_trwifi_clear_scan_chain_list();
-	// Also free g_saved_multi_scan_list if it exists (from previous multi scan)
-	bk_trwifi_clear_multi_scan_cache();
+	// Only clear multi scan cache if not currently in a multi scan operation
+	if (g_scan_flag != 2) {
+		bk_trwifi_clear_multi_scan_cache();
+	}
 	rtos_unlock_mutex(&scanlistbusy);
 
 	if(bk_trwifi_wlan_scan_sema == NULL ) {
@@ -1226,11 +1228,12 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 						if(g_saved_multi_scan_list[j].is_valid) {
 							for(int m = 0; m<g_saved_multi_scan_list[j].scan_num;m++) {
 								os_memcpy(&g_scan_list[add_list_idx].ap_info, &g_saved_multi_scan_list[j].saved_multi_scan_list[m], sizeof(trwifi_ap_scan_info_s));
-							if(add_list_idx > 0) {
-								g_scan_list[add_list_idx-1].next = &g_scan_list[add_list_idx];
+								if(add_list_idx > 0) {
+									g_scan_list[add_list_idx-1].next = &g_scan_list[add_list_idx];
+								}
+								g_scan_list[add_list_idx].next = NULL;
+								add_list_idx++;
 							}
-							g_scan_list[add_list_idx].next = NULL;
-							add_list_idx++;
 						}
 					}
 				}
@@ -1252,9 +1255,6 @@ multi_scan_fail:
 	// clear saved multi scan list
 	bk_trwifi_clear_multi_scan_cache();
 	return ret;
-}
-
-/* Fix missing closing brace introduced by recent refactor */
 }
 
 trwifi_result_e bk_wifi_netmgr_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg)
