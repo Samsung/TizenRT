@@ -34,9 +34,7 @@
 
 int up_verify_kernelsignature(uint32_t address);
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
 int up_verify_usersignature(uint32_t address);
-#endif
 
 #ifdef __cplusplus
 #define EXTERN extern "C"

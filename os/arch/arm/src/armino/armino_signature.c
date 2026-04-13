@@ -653,7 +653,6 @@ int up_verify_kernelsignature(uint32_t address)
     return SIGNATURE_VAILD;
 }
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
 int up_verify_usersignature(uint32_t address)
 {
     int result = SIGNATURE_INVALID;
@@ -666,4 +665,3 @@ int up_verify_usersignature(uint32_t address)
 
     return SIGNATURE_VAILD;
 }
-#endif
