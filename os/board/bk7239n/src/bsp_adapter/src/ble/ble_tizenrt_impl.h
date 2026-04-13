@@ -595,7 +595,7 @@ typedef struct
     uint8_t peer_addr_type;     /**< Peer device address type */
     bd_addr_t peer_addr;        /**< Peer device address */
     bool is_secured_connect;    /**< Flag indicating whether it is a secure connection */
-    uint8_t mtu;                /**< Maximum Transmission Unit size */
+    uint16_t mtu;                /**< Maximum Transmission Unit size */
     uint16_t conn_scan_timeout; /**< Connection scan timeout value */
     hal_ble_conn_t con_dev[HAL_BLE_CON_NUM]; /**< Array of HAL BLE connection devices */
 } hal_ble_con_env_t;
