@@ -27,6 +27,7 @@ import string
 import sys, time
 from array import *
 import utils as utils
+import logAnalyser.logUtils as logUtils
 import heapNode
 
 # Global variables
@@ -83,57 +84,7 @@ class logParser:
 		self.xip_enabled = xip_enabled
 		self.have_ram_kernel_text = have_ram_kernel_text
 
-		self.convert_stateno_statemsg()
-
-	def format_output(self,res , string):
-		r = res.split('\n')
-		print('\t- symbol addr {0}       : {1}'.format(string, r[0]))
-		print('\t- function name {0}     : {1}'.format(string, r[1]))
-		print('\t- file {0}              : {1}'.format(string, r[2]))
-
-	def print_crash_type(self, string):
-		if 'up_memfault' in string:
-			print('\n2. Crash type               : memory fault')
-		elif 'up_busfault' in string:
-			print('\n2. Crash type               : bus fault')
-		elif 'up_usagefault' in string:
-			print('\n2. Crash type               : usage fault')
-		elif 'up_hardfault' in string:
-			print('\n2. Crash type               : hard fault')
-		elif 'dataabort' in string:
-			print('\n2. Crash type               : data abort')
-		elif 'prefetchabort' in string:
-			print('\n2. Crash type               : prefetch abort')
-		elif 'undefinedinsn' in string:
-			print('\n2. Crash type               : undefined instruction abort')
-		elif 'Assertion failed' in string:
-			self.crash_type_assert = True
-			print('\n2. Crash type               : code assertion by code ASSERT or PANIC')
-		else:
-			print('\n2. Crash type               : etc')
-		if (self.crash_type_assert == True):
-			print('\n3. Crash point\n\t-', string.split(': ',1)[1])
-		else:
-			print('   Crash log\n\t-', string)
-
-	# Function to check if address lies in the application's text address range
-	def is_app_text_address(self, address):
-		idx = 0
-		# Check the application text address range
-		for idx in range(self.g_app_idx):
-			if (address >= hex(self.g_stext_app[idx]) and address < hex(self.g_etext_app[idx])):
-				return (idx + 1)
-		if (idx == self.g_app_idx):
-			return False
-
-	# Function to check if address lies in the kernel text address range
-	def is_kernel_text_address(self, address):
-
-		# Check the kernel text address range
-		if (address >= hex(self.g_stext_ram) and address < hex(self.g_etext_ram)) or (address >= hex(self.g_stext_flash) and address < hex(self.g_etext_flash)):
-			return True
-		else:
-			return False
+		logUtils.convert_stateno_statemsg(self)
 
 	# API to find crash binary, crash point and crash type from assert log
 	def find_crash_point(self):
@@ -184,7 +135,7 @@ class logParser:
 					word = line.split(':')
 					#word[2] contains the g_assertpc value
 					self.g_assertpc = int(word[2].strip(),16)
-
+					
 		print('-----------------------------------------------------------------------------------------')
 		address1 = hex(lr_value)
 		address2 = hex(pc_value)
@@ -202,11 +153,11 @@ class logParser:
 					if '??' not in result and '$d' not in result:
 						is_app_crash = 1
 						print('\n1. Crash Binary             : {0}'.format(self.app_name[app_idx]))
-						self.print_crash_type(assertline)
+						logUtils.print_crash_type(self, assertline)
 						if (self.crash_type_assert == False):
 							print('3. Crash point (PC or LR)')
 							print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
-							self.format_output(result, "")
+							logUtils.format_output(result, "")
 				if (address2 >= hex(self.g_stext_app[app_idx]) and address2 < hex(self.g_etext_app[app_idx])):
 					if self.xip_enabled:
 						addr = pc_value
@@ -217,27 +168,27 @@ class logParser:
 					if '??' not in result and '$d' not in result:
 						if (not is_app_crash):
 							print('\n1. Crash Binary             : {0}'.format(self.app_name[app_idx]))
-							self.print_crash_type(assertline)
+							logUtils.print_crash_type(self, assertline)
 							if (self.crash_type_assert == False):
 								print('3. Crash point (PC or LR)')
 						is_app_crash = 1
 						if (self.crash_type_assert == False):
 							print('\n\t[ Current location (PC) of assert ]')
-							self.format_output(result, "")
+							logUtils.format_output(result, "")
 					if ((addr - 4) > 0x0):
 						f = os.popen('arm-none-eabi-addr2line -a -f -e ' + self.bin_path + self.app_name[app_idx] + '_dbg ' + hex(addr - 4))
 						result1 = f.read()
 						if '??' not in result1 and '$d' not in result1:
 							if (self.crash_type_assert == False):
 								print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-								self.format_output(result1, "of (pc - 4)")
+								logUtils.format_output(result1, "of (pc - 4)")
 					if ((addr - 8) > 0x0):
 						f = os.popen('arm-none-eabi-addr2line -a -f -e ' + self.bin_path + self.app_name[app_idx] + '_dbg ' + hex(addr - 8))
 						result2 = f.read()
 						if '??' not in result2 and '$d' not in result2:
 							if (self.crash_type_assert == False):
 								print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-								self.format_output(result2, "of (pc - 8)")
+								logUtils.format_output(result2, "of (pc - 8)")
 
 		# Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
 		else:
@@ -253,25 +204,25 @@ class logParser:
 					if '??' not in result and '$d' not in result:
 						is_app_crash = 1
 						print('\n1. Crash Binary             : {0}'.format(self.app_name[app_idx]))
-						self.print_crash_type(assertline)
+						logUtils.print_crash_type(self, assertline)
 						if (self.crash_type_assert == False):
 							print('3. Crash point (PC or LR)')
 							print('\n\t[ Current location (PC) of assert ]')
-							self.format_output(result, "")
+							logUtils.format_output(result, "")
 					if ((addr - 4) > 0x0):
 						f = os.popen('arm-none-eabi-addr2line -a -f -e ' + self.bin_path + self.app_name[app_idx] + '_dbg ' + hex(addr - 4))
 						result1 = f.read()
 						if '??' not in result1 and '$d' not in result1:
 							if (self.crash_type_assert == False):
 								print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-								self.format_output(result1, "of (pc - 4)")
+								logUtils.format_output(result1, "of (pc - 4)")
 					if ((addr - 8) > 0x0):
 						f = os.popen('arm-none-eabi-addr2line -a -f -e ' + self.bin_path + self.app_name[app_idx] + '_dbg ' + hex(addr - 8))
 						result2 = f.read()
 						if '??' not in result2 and '$d' not in result2:
 							if (self.crash_type_assert == False):
 								print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-								self.format_output(result2, "of (pc - 8)")
+								logUtils.format_output(result2, "of (pc - 8)")
 
 		# Check for lr & pc values in kernel text address range
 		if (not is_app_crash) and (pc_value != 00000000):
@@ -283,38 +234,38 @@ class logParser:
 				if '??' not in result and '$d' not in result:
 					is_kernel_crash = 1
 					print('1. Crash Binary             : kernel')
-					self.print_crash_type(assertline)
+					logUtils.print_crash_type(self, assertline)
 					if (self.crash_type_assert == False):
 						print('3. Crash point (PC or LR)')
 						print('\n\t[ Caller - return address (LR) - of the function which has caused the crash ]')
-						self.format_output(result, "")
+						logUtils.format_output(result, "")
 			if (address2 >= hex(self.g_stext_flash) and address2 < hex(self.g_etext_flash)) or (address2 >= hex(self.g_stext_ram) and address2 < hex(self.g_etext_ram)):
 				f = os.popen('arm-none-eabi-addr2line -a -f -e' + self.elf + ' ' + hex(pc_value))
 				result = f.read()
 				if '??' not in result and '$d' not in result:
 					if (not is_kernel_crash):
 						print('1. Crash Binary             : kernel')
-						self.print_crash_type(assertline)
+						logUtils.print_crash_type(self, assertline)
 						if (self.crash_type_assert == False):
 							print('3. Crash point (PC or LR)')
 					is_kernel_crash = 1
 					if (self.crash_type_assert == False):
 						print('\n\t[ Current location (PC) of assert ]')
-						self.format_output(result, "")
+						logUtils.format_output(result, "")
 				if ((pc_value - 4) > 0x0):
 					f = os.popen('arm-none-eabi-addr2line -a -f -e' + self.elf + ' ' + hex(pc_value - 4))
 					result1 = f.read()
 					if '??' not in result1 and '$d' not in result1:
 						if (self.crash_type_assert == False):
 							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-							self.format_output(result1, "of (pc - 4)")
+							logUtils.format_output(result1, "of (pc - 4)")
 				if ((pc_value - 8) > 0x0):
 					f = os.popen('arm-none-eabi-addr2line -a -f -e' + self.elf + ' ' + hex(pc_value - 8))
 					result2 = f.read()
 					if '??' not in result2 and '$d' not in result2:
 						if (self.crash_type_assert == False):
 							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-							self.format_output(result2, "of (pc - 8)")
+							logUtils.format_output(result2, "of (pc - 8)")
 
 		# Scenario when up_registerdump() is not present in dump logs, use g_assertpc value to give crash point
 		if (pc_value == 00000000 and self.g_assertpc):
@@ -326,29 +277,29 @@ class logParser:
 				if '??' not in result and '$d' not in result:
 					is_kernel_crash = 1
 					print('1. Crash Binary             : kernel')
-					self.print_crash_type(assertline)
+					logUtils.print_crash_type(self, assertline)
 					if (self.crash_type_assert == False):
 						print('3. Crash point (PC or LR)')
 						print('\n\t[ Current location (PC) of assert ]')
-						self.format_output(result, "")
+						logUtils.format_output(result, "")
 				if ((self.g_assertpc - 4) > 0x0):
 					f = os.popen('arm-none-eabi-addr2line -a -f -e' + self.elf + ' ' + hex(self.g_assertpc - 4))
 					result1 = f.read()
 					if '??' not in result1 and '$d' not in result1:
 						if (self.crash_type_assert == False):
 							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-							self.format_output(result1, "of (pc - 4)")
+							logUtils.format_output(result1, "of (pc - 4)")
 				if ((self.g_assertpc - 8) > 0x0):
 					f = os.popen('arm-none-eabi-addr2line -a -f -e' + self.elf + ' ' + hex(self.g_assertpc - 8))
 					result2 = f.read()
 					if '??' not in result2 and '$d' not in result2:
 						if (self.crash_type_assert == False):
 							print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
-							self.format_output(result2, "of (pc - 8)")
+							logUtils.format_output(result2, "of (pc - 8)")
 
 		if (not is_app_crash) and (not is_kernel_crash):
 			print('1. Crash Binary             : NA')
-			self.print_crash_type(assertline)
+			logUtils.print_crash_type(self, assertline)
 			if (self.crash_type_assert == False):
 				print('3. Crash point (PC or LR)')
 				# Parse the contents based on tokens in log file.
@@ -508,7 +459,7 @@ class logParser:
 
 						stack_val = int(sub_word,16)
 						# Check if the stack address lies in kernel text address range
-						if (self.is_kernel_text_address(hex(stack_val))):
+						if (logUtils.is_kernel_text_address(self, hex(stack_val))):
 							#If yes, print it's corresponding symbol
 							utils.print_symbol(stack_addr, stack_val, 0, self.bin_path, self.app_name)
 						else:
@@ -519,7 +470,7 @@ class logParser:
 									utils.print_symbol(stack_addr, stack_val, i + 1, self.bin_path, self.app_name)
 							else:
 								# Check if the stack address lies in application text address range
-								is_app_symbol = self.is_app_text_address(hex(stack_val))	# app index in case of application symbol
+								is_app_symbol = logUtils.is_app_text_address(self, hex(stack_val))	# app index in case of application symbol
 								if (is_app_symbol):
 									#If yes, print it's corresponding symbol
 									if not self.xip_enabled:
@@ -550,7 +501,7 @@ class logParser:
 
 						stack_val = int(sub_word,16)
 						# Check if the stack address lies in kernel text address range
-						if (self.is_kernel_text_address(hex(stack_val))):
+						if (logUtils.is_kernel_text_address(self, hex(stack_val))):
 							if (format_print):
 								print('\t- SP is out of the stack range. Debug symbols corresponding to the wrong stack pointer addresses are given below:')
 								print('Stack_address\t Symbol_address\t Symbol location  {: <45}  File_name'.format("Symbol_name"))
@@ -558,7 +509,7 @@ class logParser:
 							#If yes, print it's corresponding symbol
 							utils.print_symbol(stack_addr, stack_val, 0, self.bin_path, self.app_name)
 						# Check if the stack address lies in application text address range
-						is_app_symbol = self.is_app_text_address(hex(stack_val))	# app index in case of application symbol
+						is_app_symbol = logUtils.is_app_text_address(self, hex(stack_val))	# app index in case of application symbol
 						if (is_app_symbol):
 							if (format_print):
 								print('\t- SP is out of the stack range. Debug symbols corresponding to the wrong stack pointer addresses are given below:')
@@ -587,7 +538,7 @@ class logParser:
 						if "State" in line:
 							line = line.replace(" " + data, self.task_state[data.split()[0]])
 						elif "Syscall" in line:
-							app_idx = self.is_app_text_address(data)
+							app_idx = logUtils.is_app_text_address(self, data)
 							if app_idx:
 								if self.xip_enabled:
 									addr = data
@@ -597,7 +548,7 @@ class logParser:
 								result = f.read()
 								if '??' not in result and '$d' not in result:
 									line = line.replace(data, result.replace("\n"," ").split()[0])
-							elif self.is_kernel_text_address(data):
+							elif logUtils.is_kernel_text_address(self, data):
 								f = os.popen('arm-none-eabi-addr2line -f -e ' + self.elf + ' ' + hex(int(data, 16)))
 								result = f.read()
 								if '??' not in result and '$d' not in result:
@@ -668,49 +619,6 @@ class logParser:
 					if heapNode.parseCorruptHeapInfo(line, self.g_app_idx, self.g_stext_app, self.g_etext_app,self.app_name, self.elf, self.bin_path, self.xip_enabled, searchfile) == False:
 						print("No app heap corruption detected.\n")
 
-	# API to parse TCB state to corresponding TCB state msg
-	def convert_stateno_statemsg(self):
-		# Convert task state number to corresponding task state message
-		config_smp = False
-		config_disable_signals = False
-		config_disable_mqueue = False
-		config_paging = False
-		with open(self.config_path) as configfile:
-			for line in configfile:
-				if "CONFIG_SMP=y" in line:
-					config_smp = True
-				elif "CONFIG_DISABLE_SIGNALS=y" in line:
-					config_disable_signals = True
-				elif "CONFIG_DISABLE_MQUEUE=y" in line:
-					config_disable_mqueue = True
-				elif "CONFIG_PAGING=y" in line:
-					config_paging = True
-		state_no = 0
-		self.task_state[str(state_no)] = " Invalid"
-		state_no+=1
-		self.task_state[str(state_no)] = " Pending preemption unlock"
-		state_no+=1
-		self.task_state[str(state_no)] = " Wait to scheduling (Ready)"
-		state_no+=1
-		self.task_state[str(state_no)] = " Assigned to CPU (Ready)"
-		state_no+=1
-		self.task_state[str(state_no)] = " Running"
-		state_no+=1
-		self.task_state[str(state_no)] = " Inactive"
-		state_no+=1
-		self.task_state[str(state_no)] = " Wait Semaphore"
-		state_no+=1
-		self.task_state[str(state_no)] = " Wait FIN"
-		state_no+=1
-		self.task_state[str(state_no)] = " Wait Signal"
-		state_no+=1
-		self.task_state[str(state_no)] = " Wait MQ Receive (MQ Empty)"
-		state_no+=1
-		self.task_state[str(state_no)] = " Wait MQ Send (MQ Full)"
-		state_no+=1
-		self.task_state[str(state_no)] = " Wait Page Fill"
-		state_no+=1
-
 	# API to print all the runnning TCB in the system
 	def print_task_list(self):
 		#Parse content of file for displaying tasks
@@ -741,6 +649,7 @@ class logParser:
 
 		os.system("nm --defined-only -n -C " + self.bin_path + "tinyara.axf > " + self.bin_path + "Kernel.map")
 		utils.setup_symbol_table(self.bin_path + "Kernel.map", 0)
+
 		for idx in range(self.g_app_idx):
 			os.system("nm --defined-only -n -C " + self.bin_path + self.app_name[idx] + "_dbg > " + self.bin_path + self.app_name[idx] + ".map")
 			utils.setup_symbol_table(self.bin_path + self.app_name[idx] + ".map", idx + 1)
@@ -767,3 +676,4 @@ class logParser:
 
 		# print current running task List
 		self.print_task_list()
+
