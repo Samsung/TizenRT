@@ -27,7 +27,7 @@ import string
 import sys, time
 from getopt import GetoptError, getopt as GetOpt
 from dumpParser import dumpParser
-from logAnalyser.logParser import logParser
+from logAnalyser.log_parser.logParser import logParser
 from logAnalyser.logPreprocessor import preprocessLogFile
 
 # Global variables
