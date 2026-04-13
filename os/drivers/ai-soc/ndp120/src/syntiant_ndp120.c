@@ -9048,7 +9048,7 @@ int syntiant_ndp120_secure_get_info(struct syntiant_ndp_device_s *ndp,
         address = NDP120_MCU_DSP_FW_VER_LEN;
         s = syntiant_ndp120_read(ndp, 1, address, &sec_data->dsp_fw_version_len);
         if (s) goto error;
-        if (sec_data->fw_version_len > NDP120_MCU_DSP_FW_VER_MAX_LEN) {
+        if (sec_data->dsp_fw_version_len > NDP120_MCU_DSP_FW_VER_MAX_LEN) {
             DEBUG_PRINTF("Firmware sent invalid DSP FW version length:%d bytes\n",
                     sec_data->dsp_fw_version_len);
             s = SYNTIANT_NDP_ERROR_INVALID_LENGTH;
