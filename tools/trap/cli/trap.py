@@ -27,7 +27,8 @@ import string
 import sys, time
 from getopt import GetoptError, getopt as GetOpt
 from dumpParser import dumpParser
-from logParser import logParser
+from logAnalyser.logParser import logParser
+from logAnalyser.logPreprocessor import preprocessLogFile
 
 # Global variables
 # Variable to check if board has kernel text in RAM region
@@ -204,11 +205,8 @@ def main():
 			# Instance for assert log Parsing
 			lparser = logParser(elf = elf, log_file = log_file, bin_path = BIN_PATH, config_path = CONFIG_PATH, xip_enabled = xip_enabled, have_ram_kernel_text =have_ram_kernel_text)
 
-			# Format log file if timestamp is present at the start of each line
-			lparser.format_log_file()
-
-			# Get the number of application binaries, names, text address and sizes
-			lparser.find_number_of_binaries()
+			# preprocess the log files
+			preprocessLogFile(lparser)
 
 			# Print TRAP output Header information i.e. log_file, dump file, elf files, etc.
 			print_trap_output_header(lparser)
