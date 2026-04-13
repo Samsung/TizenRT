@@ -636,8 +636,7 @@ int32_t bk_tr_ble_client_notice_cb(ble_notice_t notice, void *param)
 
         hal_ble_env.master_count++;
 
-        bk_ble_set_max_mtu(hal_ble_con_env.mtu);
-        bk_ble_gatt_mtu_change(c_ind->conn_idx);
+        bk_ble_gatt_mtu_change(c_ind->conn_idx, hal_ble_con_env.mtu);
 
         if (BLE_HAL_CONN_DEV_STATE_INITIATING == hal_ble_con_env.init_status)
         {
