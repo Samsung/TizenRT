@@ -213,8 +213,6 @@ static int audio_open(FAR struct file *filep)
 
 errout_with_sem:
 	audio_semgive(upper);
-
-errout:
 	return ret;
 }
 
@@ -261,8 +259,6 @@ static int audio_close(FAR struct file *filep)
 
 //errout_with_sem:
 	audio_semgive(upper);
-
-errout:
 	return ret;
 }
 
