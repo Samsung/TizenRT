@@ -26,6 +26,10 @@
 
 #include <tinyara/binary_manager.h>
 
+#ifdef CONFIG_RESOURCE_BINARY_SIGNING
+#include <tinyara/signature.h>
+#endif
+
 #include "binary_manager_internal.h"
 
 /****************************************************************************
@@ -91,6 +95,7 @@ int binary_manager_mount_resource(void)
 	char devpath[BINARY_PATH_LEN];
 	char fs_devpath[BINARY_PATH_LEN];
 	resource_binary_header_t header_data;
+	uint32_t resource_start_address = 0;
 
 	if (resource_info.is_mounted) {
 		bmvdbg("RESOURCEFS is already mounted\n");
@@ -112,6 +117,18 @@ int binary_manager_mount_resource(void)
 	int latest_partidx = -1;
 
 	for (int part_idx = 0; part_idx < resource_info.part_count; part_idx++) {
+#ifdef CONFIG_RESOURCE_BINARY_SIGNING
+		/* Check signature first at the start address */
+		resource_start_address = resource_info.part_info[part_idx].address;
+		ret = up_verify_usersignature(resource_start_address);
+		if (ret == SIGNATURE_VAILD) {
+			bmdbg("Resource Signature Checking Success, address : 0x%x\n", resource_start_address);
+		} else {
+			bmdbg("Invalid Resource Signature, address : 0x%x\n", resource_start_address);
+			/* Skip this partition and check next partition */
+			continue;
+		}
+#endif
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[part_idx].devnum);
 		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, &header_data, true);
 		if (ret == OK && latest_ver < header_data.version) {
@@ -129,14 +146,40 @@ int binary_manager_mount_resource(void)
 
 	bin_count = resource_info.part_count;
 	do {
+#ifdef CONFIG_RESOURCE_BINARY_SIGNING
+		/* Check signature */
+		resource_start_address = resource_info.part_info[inuse_idx].address;
+		ret = up_verify_usersignature(resource_start_address);
+		if (ret == SIGNATURE_VAILD) {
+			bmdbg("Resource Signature Checking Success, address : 0x%x\n", resource_start_address);
+		} else {
+			bmdbg("Invalid Resource Signature, address : 0x%x\n", resource_start_address);
+			/* Check if a binary exists in another partition. */
+			if (--bin_count > 0) {
+				inuse_idx ^= 1;
+#ifdef CONFIG_USE_BP
+				need_update_bp = true;
+#endif
+				bmdbg("Try to read another partition %d\n", resource_info.part_info[inuse_idx].devnum);
+				continue;
+			} else {
+				bmdbg("No valid Resource binary\n");
+				return ERROR;
+			}
+		}
+#endif
 		/* Read and verify header data */
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum);
 		bmdbg("Checking resource in partition [%d], path %s\n", inuse_idx, devpath);
 		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, &header_data, false);
 		if (ret == BINMGR_OK) {
 			bmvdbg("Resource [%d] Header Checking Success.\n", inuse_idx);
-			snprintf(fs_devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum + RESOURCE_DEVNUM_OFFSET);
-			ret = mount(fs_devpath, RESOURCE_MOUNTPT, "romfs", MS_RDONLY, NULL);
+			snprintf(fs_devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum);
+#ifdef CONFIG_RESOURCE_BINARY_SIGNING
+			ret = mount(fs_devpath, RESOURCE_MOUNTPT, "romfs", MS_RDONLY, RESOURCE_HEADER_SIZE + USER_SIGN_PREPEND_SIZE);
+#else
+			ret = mount(fs_devpath, RESOURCE_MOUNTPT, "romfs", MS_RDONLY, RESOURCE_HEADER_SIZE);
+#endif
 			if (ret == OK) {
 				/* Update inuse index and resource version */
 				resource_info.inuse_idx = inuse_idx;
@@ -161,7 +204,7 @@ int binary_manager_mount_resource(void)
 			bmdbg("Try to read another partition %d\n", resource_info.part_info[inuse_idx].devnum);
 			continue;
 		} else {
-			bmvdbg("No valid Resource binary\n");
+			bmdbg("No valid Resource binary\n");
 			return ERROR;
 		}
 	} while (bin_count > 0);
@@ -226,8 +269,21 @@ int binary_manager_check_resource_update(bool check_updatable)
 	int inactive_partidx;
 	char filepath[BINARY_PATH_LEN];
 	resource_binary_header_t header_data;
+	uint32_t resource_start_address;
 
 	inactive_partidx = resource_info.inuse_idx ^ 1;
+
+#ifdef CONFIG_RESOURCE_BINARY_SIGNING
+	/* Check signature */
+	resource_start_address = resource_info.part_info[inactive_partidx].address;
+	ret = up_verify_usersignature(resource_start_address);
+	if (ret == SIGNATURE_VAILD) {
+		bmvdbg("Resource Signature Checking Success, address : 0x%x\n", resource_start_address);
+	} else {
+		bmdbg("Invalid Resource Signature, address : 0x%x\n", resource_start_address);
+		return BINMGR_NOT_FOUND;
+	}
+#endif
 
 	/* Verify resource binary on the partition without running binary */
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inactive_partidx].devnum);

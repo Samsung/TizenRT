@@ -343,7 +343,15 @@ config USER_SIGN_PREPEND_SIZE
 	if ARCH_BOARD_BK7239N
 		source board/bk7239n/Kconfig.signing
 	endif
-	
+
+config RESOURCE_BINARY_SIGNING
+	bool "Enable Resource Binary Signing"
+	default n
+	depends on BINARY_SIGNING && RESOURCE_FS
+	select USER_SIGN_PREPEND_SIZE
+	---help---
+		Enable signing for resource binaries.
+		This option enables signing for resource binaries used in the system.
 
 endmenu # Build Configuration
 

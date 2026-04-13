@@ -193,7 +193,7 @@ int16_t romfs_devcacheread(struct romfs_mountpt_s *rm, uint32_t offset)
 	 * then we do nothing.
 	 */
 
-	sector = SEC_NSECTORS(rm, offset);
+	sector = ROMFS_DEVSECTOR(rm, offset);
 	if (rm->rm_cachesector != sector) {
 		/* Check the access mode */
 
@@ -202,7 +202,7 @@ int16_t romfs_devcacheread(struct romfs_mountpt_s *rm, uint32_t offset)
 			 * address space.
 			 */
 
-			rm->rm_buffer = rm->rm_xipbase + SEC_ALIGN(rm, offset);
+			rm->rm_buffer = rm->rm_xipbase + ROMFS_DEVALIGN(rm, offset);
 		} else {
 			/* In non-XIP mode, we will have to read the new sector. */
 
@@ -219,7 +219,7 @@ int16_t romfs_devcacheread(struct romfs_mountpt_s *rm, uint32_t offset)
 
 	/* Return the offset */
 
-	return offset & SEC_NDXMASK(rm);
+	return ROMFS_DEVNDX(rm, offset);
 }
 
 /****************************************************************************
@@ -543,17 +543,17 @@ int romfs_fsconfigure(struct romfs_mountpt_s *rm)
 
 	/* Verify the magic number at that identifies this as a ROMFS filesystem */
 
-	if (memcmp(rm->rm_buffer, ROMFS_VHDR_MAGIC, 8) != 0) {
+	if (memcmp(&rm->rm_buffer[ndx + ROMFS_VHDR_ROM1FS], ROMFS_VHDR_MAGIC, 8) != 0) {
 		return -EINVAL;
 	}
 
 	/* Then extract the values we need from the header and return success */
 
-	rm->rm_volsize = romfs_devread32(rm, ROMFS_VHDR_SIZE);
+	rm->rm_volsize = romfs_devread32(rm, ndx + ROMFS_VHDR_SIZE);
 
 	/* The root directory entry begins right after the header */
 
-	name = (const char *)&rm->rm_buffer[ROMFS_VHDR_VOLNAME];
+	name = (const char *)&rm->rm_buffer[ndx + ROMFS_VHDR_VOLNAME];
 	rm->rm_rootoffset = ROMFS_ALIGNUP(ROMFS_VHDR_VOLNAME + strlen(name) + 1);
 
 	/* and return success */

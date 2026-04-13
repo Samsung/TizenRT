@@ -136,6 +136,11 @@
 #define SEC_NSECTORS(r, o)   ((o) / (r)->rm_hwsectorsize)
 #define SEC_ALIGN(r, o)      ((o) & ~SEC_NDXMASK(r))
 
+#define ROMFS_DEVOFFSET(r, o)  ((o) + (r)->rm_headersize)
+#define ROMFS_DEVSECTOR(r, o)  (SEC_NSECTORS(r, ROMFS_DEVOFFSET(r, o)))
+#define ROMFS_DEVNDX(r, o)     (ROMFS_DEVOFFSET(r, o) & SEC_NDXMASK(r))
+#define ROMFS_DEVALIGN(r, o)   (SEC_ALIGN(r, ROMFS_DEVOFFSET(r, o)))
+
 /* Maximum numbr of links that will be followed before we decide that there
  * is a problem.
  */
@@ -161,6 +166,7 @@ struct romfs_mountpt_s {
 	bool rm_mounted;			/* true: The file system is ready */
 	uint16_t rm_hwsectorsize;	/* HW: Sector size reported by block driver */
 	sem_t rm_sem;				/* Used to assume thread-safe access */
+	uint32_t rm_headersize;		/* Size of metadata that should not be used for user */
 	uint32_t rm_rootoffset;		/* Saved offset to the first root directory entry */
 	uint32_t rm_hwnsectors;		/* HW: The number of sectors reported by the hardware */
 	uint32_t rm_volsize;		/* Size of the ROMFS volume */
