@@ -523,7 +523,7 @@ int dhara_map_trim(struct dhara_map *m, dhara_sector_t s, dhara_error_t *err)
 int dhara_map_sync(struct dhara_map *m, bool format_flag, dhara_error_t *err)
 {
 	printf("dhara_map_sync %d \n",format_flag);
-	if (dhara_journal_is_clean(&m->journal)) {
+	if (format_flag){
 		dhara_journal_enqueue(&m->journal, NULL, NULL, format_flag, err);
     }
 	while (!dhara_journal_is_clean(&m->journal)) {

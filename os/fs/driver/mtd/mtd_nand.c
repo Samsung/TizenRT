@@ -588,7 +588,7 @@ static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startpage, size_t npa
 	}
 
 	sem_post(&nand->lock);
-	return fixedecc ? -EUCLEAN : ret;
+	return fixedecc ? -EUCLEAN : npages;
 
 errout_with_lock:
 	sem_post(&nand->lock);
