@@ -438,7 +438,7 @@ trble_result_e trble_netmgr_indicate_queue_count(struct bledev *dev, trble_conn_
 trble_result_e trble_netmgr_attr_set_data(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data)
 {
     LOGV("attr handle %d len %d", attr_handle, data->length);
-    return bk_tr_ble_server_attr_set_data_ptr(attr_handle, data->data, data->length);
+    return bk_tr_ble_server_attr_set_peer_read_data_ptr(attr_handle, data->data, data->length);
 }
 
 trble_result_e trble_netmgr_attr_get_data(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data)
