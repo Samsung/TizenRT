@@ -66,7 +66,7 @@ CXXSRCS += memory.cpp mutex.cpp mutex_destructor.cpp new.cpp optional.cpp
 CXXSRCS += shared_mutex.cpp string.cpp system_error.cpp
 CXXSRCS += thread.cpp typeinfo.cpp valarray.cpp vector.cpp
 CXXSRCS += bad_alloc.cpp ios.cpp iostream.cpp locale.cpp strstream.cpp
-CXXSRCS += ios.instantiations.cpp 
+CXXSRCS += ios.instantiations.cpp random.cpp
 
 # Exception handling logic
 
