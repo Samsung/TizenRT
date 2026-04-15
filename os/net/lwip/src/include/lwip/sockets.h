@@ -313,6 +313,8 @@ struct linger {
  */
 #define IPV6_CHECKSUM       7	/* RFC3542: calculate and insert the ICMPv6 checksum for raw sockets. */
 #define IPV6_V6ONLY         27	/* RFC3493: boolean control to restrict AF_INET6 sockets to IPv6 communications only. */
+#define IPV6_JOIN_GROUP     20
+#define IPV6_LEAVE_GROUP    21
 #endif							/* LWIP_IPV6 */
 
 #if LWIP_UDP && LWIP_UDPLITE
@@ -343,6 +345,14 @@ typedef struct ip_mreq {
 	struct in_addr imr_multiaddr;	/* IP multicast address of group */
 	struct in_addr imr_interface;	/* local IP address of interface */
 } ip_mreq;
+
+/* Used with certain IPv6 socket options */
+struct ipv6_mreq
+{
+	struct in6_addr ipv6mr_multiaddr; /* IPv6 multicast address of group */
+	unsigned int    ipv6mr_interface; /* Local interface index */
+};
+
 #endif							/* LWIP_IGMP */
 
 /*

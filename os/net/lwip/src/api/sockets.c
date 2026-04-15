@@ -2743,6 +2743,24 @@ static u8_t lwip_setsockopt_impl(int s, int level, int optname, const void *optv
 			}
 			LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_setsockopt(%d, IPPROTO_IPV6, IPV6_V6ONLY, ..) -> %d\n", s, (netconn_get_ipv6only(sock->conn) ? 1 : 0)));
 			break;
+		case IPV6_JOIN_GROUP:
+		case IPV6_LEAVE_GROUP: {
+			err_t err_ret;
+			const struct ipv6_mreq *imr = (const struct ipv6_mreq *)optval;
+
+			//LWIP_SOCKOPT_CHECK_OPTLEN_CONN_PCB_TYPE(sock, optlen, struct ipv6_mreq, NETCONN_UDP_IPV6);
+
+			if (optname == IPV6_JOIN_GROUP) {
+				err_ret = mld6_joingroup(IP6_ADDR_ANY6, &imr->ipv6mr_multiaddr);
+			} else {
+				err_ret = mld6_leavegroup(IP6_ADDR_ANY6, &imr->ipv6mr_multiaddr);
+			}
+
+			if (err_ret != ERR_OK) {
+				err = EADDRNOTAVAIL;
+			}
+		}
+			break;
 		default:
 			LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_setsockopt(%d, IPPROTO_IPV6, UNIMPL: optname=0x%x, ..)\n", s, optname));
 			err = ENOPROTOOPT;
