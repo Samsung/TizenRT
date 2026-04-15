@@ -142,6 +142,9 @@ struct trwifi_ops g_trwifi_bk_ops = {
 
 extern struct netdev *armino_dev_wlan0;
 extern struct netdev *armino_dev_wlan1;
+#ifndef CONFIG_BK_CONCURRENT_MODE
+extern volatile int g_bk_wifi_current_vif;
+#endif
 static int auth_fail_cnt = 0;
 static int valid_ch_list[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165};
 static int valid_ch_list_size = sizeof(valid_ch_list)/sizeof(valid_ch_list[0]);
@@ -972,7 +975,11 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
 		if (bk_trwifi_new_sta_join_func) {
 			(*bk_trwifi_new_sta_join_func)();
 		}
+#ifdef CONFIG_BK_CONCURRENT_MODE
         trwifi_post_event(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+#else
+        trwifi_post_event(armino_dev_wlan0, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+#endif
         break;
 
     case EVENT_WIFI_AP_DISCONNECTED:
@@ -983,7 +990,11 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
             msg.reason = ap_disconnected->disconnect_reason;
             ndbg(BK_MAC_FORMAT" disconnected from BK AP, reason(%d)\n",
                 BK_MAC_STR(ap_disconnected->mac), ap_disconnected->disconnect_reason);
+#ifdef CONFIG_BK_CONCURRENT_MODE
             trwifi_post_event(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_LEFT, &msg, sizeof(trwifi_cbk_msg_s));
+#else
+            trwifi_post_event(armino_dev_wlan0, LWNL_EVT_SOFTAP_STA_LEFT, &msg, sizeof(trwifi_cbk_msg_s));
+#endif
         }
         break;
 
@@ -1456,6 +1467,9 @@ trwifi_result_e bk_wifi_netmgr_start_softap(struct netdev *dev, trwifi_softap_co
 		return ret;
 	}
 	g_softap_if = BK_WIFI_SOFTAP_IF;
+#ifndef CONFIG_BK_CONCURRENT_MODE
+	g_bk_wifi_current_vif = 1;
+#endif
 	nvdbg("[BK] SoftAP with SSID: %s has successfully started!\r\n", softap_config->ssid);
 
 	ret = TRWIFI_SUCCESS;
@@ -1468,6 +1482,9 @@ trwifi_result_e bk_wifi_netmgr_start_sta(struct netdev *dev)
 	trwifi_result_e ret = TRWIFI_FAIL;
 
 	g_station_if = BK_WIFI_STATION_IF;
+#ifndef CONFIG_BK_CONCURRENT_MODE
+	g_bk_wifi_current_vif = 0;
+#endif
 	ret = TRWIFI_SUCCESS;
 
 	return ret;
@@ -1480,6 +1497,9 @@ trwifi_result_e bk_wifi_netmgr_stop_softap(struct netdev *dev)
 	int res = bk_wifi_ap_stop();
 	if (res == BK_OK) {
 		g_softap_if = BK_WIFI_NONE;
+#ifndef CONFIG_BK_CONCURRENT_MODE
+		g_bk_wifi_current_vif = 0;
+#endif
 		ret = TRWIFI_SUCCESS;
 		nvdbg("[BK] Stop AP mode successfully\r\n");
 	} else {

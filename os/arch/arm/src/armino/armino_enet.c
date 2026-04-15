@@ -122,7 +122,7 @@ void up_netinitialize(void)
 		bk_wifi_sta_get_mac(macptr);
 		netdev_set_hwaddr(armino_dev_wlan0, macptr, 6);
 	}
-
+#ifdef CONFIG_BK_CONCURRENT_MODE
 	armino_dev_wlan1 = armino_register_dev(alloc_size);
 	if (armino_dev_wlan1 == NULL) {
 		ndbg("Failed to register armino netdev wlan1\n");
@@ -131,7 +131,7 @@ void up_netinitialize(void)
 		bk_wifi_ap_get_mac(macptr);
 		netdev_set_hwaddr(armino_dev_wlan1, macptr, 6);
 	}
-
+#endif
 #ifdef CONFIG_VIRTUAL_BLE
 	vble_register();
 #else

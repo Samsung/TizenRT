@@ -496,6 +496,7 @@ bk_err_t bk_get_mac(uint8_t *mac, mac_type_t type)
 		break;
 
 	case MAC_TYPE_AP:
+#if defined(CONFIG_BK_CONCURRENT_MODE)
 #if defined(CONFIG_CUS_MAC_MASK)
 		os_memcpy(mac, s_base_mac, BK_MAC_ADDR_LEN);
 		for (int i = 0; i < BK_MAC_ADDR_LEN; i++) {
@@ -514,6 +515,9 @@ bk_err_t bk_get_mac(uint8_t *mac, mac_type_t type)
 		mac[5] &= ~mac_mask;
 		mac_low = ((mac_low & mac_mask) ^ mac_mask);
 		mac[5] |= mac_low;
+#endif
+#else
+		os_memcpy(mac, s_base_mac, BK_MAC_ADDR_LEN);
 #endif
 		break;
 
