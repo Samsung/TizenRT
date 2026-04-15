@@ -283,9 +283,16 @@ LD_RAM_SIZE := $(shell \
     tr '\n' ' ' | sed -e 's/ $$//' \
 )
 
+LD_CPU0_APP_VSTART := $(shell \
+    python3 -B $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/get_kernel_vstart.py \
+    --config $(TOPDIR)/.config \
+    2>/dev/null || echo 0xB0000 \
+)
+
 LDFLAGS += --gc-sections
 LDFLAGS += --defsym=CONFIG_IDLETHREAD_STACKSIZE=$(CONFIG_IDLETHREAD_STACKSIZE)
 LDFLAGS += --defsym=CONFIG_CPU0_SPE_RAM_SIZE=$(CONFIG_CPU0_SPE_RAM_SIZE)
+LDFLAGS += --defsym=CONFIG_CPU0_APP_VIRTUAL_CODE_START=$(LD_CPU0_APP_VSTART)
 LDFLAGS += $(LD_RAM_ADDRS)
 LDFLAGS += $(LD_RAM_SIZE)
 

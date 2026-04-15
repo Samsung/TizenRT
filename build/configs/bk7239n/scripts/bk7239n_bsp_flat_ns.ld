@@ -25,7 +25,8 @@ __CPU0_APP_RAM_SIZE = 0x80000 - __CPU0_SPE_RAM_SIZE;
 __CPU0_APP_IRAM_OFFSET = 0x20000000;
 __CPU0_APP_IRAM_BASE = __CPU0_APP_RAM_BASE - __CPU0_APP_IRAM_OFFSET;
 __CPU0_APP_IRAM_SIZE = __CPU0_APP_RAM_SIZE;
-__CPU0_APP_VIRTUAL_CODE_START = 0xD0000;
+/* Kernel flash code start: injected from Make.defs, with a safe fallback. */
+__CPU0_APP_VIRTUAL_CODE_START = DEFINED(CONFIG_CPU0_APP_VIRTUAL_CODE_START) ? CONFIG_CPU0_APP_VIRTUAL_CODE_START : 0xB0000;
 /* Set a large value here to ensure sufficient space during linking, actual size check is performed during bin packaging */
 __CPU0_APP_VIRTUAL_CODE_SIZE = 0x600000;
 
