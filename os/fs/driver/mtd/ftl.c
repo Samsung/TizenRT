@@ -471,7 +471,11 @@ static int ftl_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 	dev = (struct ftl_struct_s *)inode->i_private;
 	ret = MTD_IOCTL(dev->mtd, cmd, arg);
 	if (ret < 0) {
-		dbg("ERROR: MTD ioctl(%04x) failed: %d\n", cmd, ret);
+		if (cmd == MTDIOC_XIPBASE) {
+			dbg("XIP is not supported path : /dev/%s\n", inode->i_name);
+		} else {
+			dbg("ERROR: MTD ioctl(%04x) failed: %d\n", cmd, ret);
+		}
 	}
 
 	return ret;
