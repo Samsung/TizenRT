@@ -1,163 +1,167 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
-//***************************************************************************
-// include/libcxx/cstdlib
+// -*- C++ -*-
+//===----------------------------------------------------------------------===//
 //
-//   Copyright (C) 2009, 2012 Gregory Nutt. All rights reserved.
-//   Author: Gregory Nutt <gnutt@nuttx.org>
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//
-// 1. Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-// 2. Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in
-//    the documentation and/or other materials provided with the
-//    distribution.
-// 3. Neither the name NuttX nor the names of its contributors may be
-//    used to endorse or promote products derived from this software
-//    without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-// OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-// AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//***************************************************************************
+//===----------------------------------------------------------------------===//
 
-#ifndef __INCLUDE_CXX_CSTDLIB
-#define __INCLUDE_CXX_CSTDLIB
+#ifndef _LIBCPP_CSTDLIB
+#define _LIBCPP_CSTDLIB
 
-//***************************************************************************
-// Included Files
-//***************************************************************************
+/*
+    cstdlib synopsis
 
-#include <tinyara/config.h>
-#include <stdlib.h>
+Macros:
 
-//***************************************************************************
-// Namespace
-//***************************************************************************
+    EXIT_FAILURE
+    EXIT_SUCCESS
+    MB_CUR_MAX
+    NULL
+    RAND_MAX
 
 namespace std
 {
-  // Random number generation
 
-  using ::srand;
-  using ::rand;
+Types:
 
-#ifndef CONFIG_DISABLE_ENVIRON
-  // Environment variable support
+    size_t
+    div_t
+    ldiv_t
+    lldiv_t                                                               // C99
 
-  using ::get_environ_ptr;
-  using ::getenv;
-  using ::putenv;
-  using ::clearenv;
-  using ::setenv;
-  using ::unsetenv;
+double    atof (const char* nptr);
+int       atoi (const char* nptr);
+long      atol (const char* nptr);
+long long atoll(const char* nptr);                                        // C99
+double             strtod  (const char* restrict nptr, char** restrict endptr);
+float              strtof  (const char* restrict nptr, char** restrict endptr); // C99
+long double        strtold (const char* restrict nptr, char** restrict endptr); // C99
+long               strtol  (const char* restrict nptr, char** restrict endptr, int base);
+long long          strtoll (const char* restrict nptr, char** restrict endptr, int base); // C99
+unsigned long      strtoul (const char* restrict nptr, char** restrict endptr, int base);
+unsigned long long strtoull(const char* restrict nptr, char** restrict endptr, int base); // C99
+int rand(void);
+void srand(unsigned int seed);
+void* calloc(size_t nmemb, size_t size);
+void free(void* ptr);
+void* malloc(size_t size);
+void* realloc(void* ptr, size_t size);
+void abort(void);
+int atexit(void (*func)(void));
+void exit(int status);
+void _Exit(int status);
+char* getenv(const char* name);
+int system(const char* string);
+void* bsearch(const void* key, const void* base, size_t nmemb, size_t size,
+              int (*compar)(const void *, const void *));
+void qsort(void* base, size_t nmemb, size_t size,
+           int (*compar)(const void *, const void *));
+int         abs(      int j);
+long        abs(     long j);
+long long   abs(long long j);                                             // C++0X
+long       labs(     long j);
+long long llabs(long long j);                                             // C99
+div_t     div(      int numer,       int denom);
+ldiv_t    div(     long numer,      long denom);
+lldiv_t   div(long long numer, long long denom);                          // C++0X
+ldiv_t   ldiv(     long numer,      long denom);
+lldiv_t lldiv(long long numer, long long denom);                          // C99
+int mblen(const char* s, size_t n);
+int mbtowc(wchar_t* restrict pwc, const char* restrict s, size_t n);
+int wctomb(char* s, wchar_t wchar);
+size_t mbstowcs(wchar_t* restrict pwcs, const char* restrict s, size_t n);
+size_t wcstombs(char* restrict s, const wchar_t* restrict pwcs, size_t n);
+int at_quick_exit(void (*func)(void))                                     // C++11
+void quick_exit(int status);                                              // C++11
+void *aligned_alloc(size_t alignment, size_t size);                       // C11
+
+}  // std
+
+*/
+
+#include <__assert> // all public C++ headers provide the assertion handler
+#include <__config>
+
+#include <stdlib.h>
+
+//SRID  For TizenRT compatibility, comment out the strict header check
+// This allows the header to work even when system headers are found first
+#ifndef _LIBCPP_STDLIB_H
+#   error <cstdlib> tried including <stdlib.h> but didn't find libc++'s <stdlib.h> header. \
+	This usually means that your header search paths are not configured properly. \
+           The header search paths should contain the C++ Standard Library headers before \
+           any C Standard Library, and you are probably using compiler flags that make that \
+           not be the case.
 #endif
 
-  // Process exit functions
-
-  using ::exit;
-  using ::abort;
-#ifdef CONFIG_SCHED_ATEXIT
-  using ::atexit;
-#endif
-#ifdef CONFIG_SCHED_ONEXIT
-  using ::on_exit;
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#  pragma GCC system_header
 #endif
 
-  // String to binary conversions
+_LIBCPP_BEGIN_NAMESPACE_STD
 
-  using ::strtol;
-  using ::strtoul;
-#ifdef CONFIG_HAVE_LONG_LONG
-  using ::strtoll;
-  using ::strtoull;
+using ::size_t _LIBCPP_USING_IF_EXISTS;
+using ::div_t _LIBCPP_USING_IF_EXISTS;
+using ::ldiv_t _LIBCPP_USING_IF_EXISTS;
+using ::lldiv_t _LIBCPP_USING_IF_EXISTS;
+// TizenRT compatibility: Remove problematic function declarations
+// These functions may not be available in the system's stdlib.h
+using ::strtod _LIBCPP_USING_IF_EXISTS;
+using ::strtof _LIBCPP_USING_IF_EXISTS;
+using ::strtold _LIBCPP_USING_IF_EXISTS;
+using ::strtol _LIBCPP_USING_IF_EXISTS;
+using ::strtoll _LIBCPP_USING_IF_EXISTS;
+using ::strtoul _LIBCPP_USING_IF_EXISTS;
+using ::strtoull _LIBCPP_USING_IF_EXISTS;
+using ::rand _LIBCPP_USING_IF_EXISTS;
+using ::srand _LIBCPP_USING_IF_EXISTS;
+using ::calloc _LIBCPP_USING_IF_EXISTS;
+using ::free _LIBCPP_USING_IF_EXISTS;
+using ::malloc _LIBCPP_USING_IF_EXISTS;
+using ::realloc _LIBCPP_USING_IF_EXISTS;
+using ::abort _LIBCPP_USING_IF_EXISTS;
+using ::atexit _LIBCPP_USING_IF_EXISTS;
+using ::exit _LIBCPP_USING_IF_EXISTS;
+// TizenRT compatibility: Remove _Exit declaration
+using ::getenv _LIBCPP_USING_IF_EXISTS;
+#if defined(system)
+using ::system;
 #endif
-  using ::strtof;
-#ifdef CONFIG_HAVE_DOUBLE
-  using ::strtod;
+using ::bsearch _LIBCPP_USING_IF_EXISTS;
+using ::qsort _LIBCPP_USING_IF_EXISTS;
+using ::abs _LIBCPP_USING_IF_EXISTS;
+using ::labs _LIBCPP_USING_IF_EXISTS;
+using ::llabs _LIBCPP_USING_IF_EXISTS;
+using ::div _LIBCPP_USING_IF_EXISTS;
+using ::ldiv _LIBCPP_USING_IF_EXISTS;
+using ::lldiv _LIBCPP_USING_IF_EXISTS;
+#if defined(mblen)
+using ::mblen;
 #endif
-#ifdef CONFIG_HAVE_LONG_DOUBLE
-  using ::strtold;
+using ::mbtowc _LIBCPP_USING_IF_EXISTS;
+using ::wctomb _LIBCPP_USING_IF_EXISTS;
+#if defined(mbstowcs)
+using ::mbstowcs;
 #endif
-
-  // Binary to string conversions
-
-  using ::itoa;
-
-  // Wide character operations
-
-#ifdef CONFIG_LIBC_WCHAR
-  using ::mbtowc;
-  using ::wctomb;
+#if defined(wcstombs)
+using ::wcstombs;
 #endif
-
-  // Memory Management
-
-  using ::malloc;
-  using ::free;
-  using ::realloc;
-  using ::memalign;
-  using ::zalloc;
-  using ::calloc;
-  using ::mallinfo;
-
-#ifdef CONFIG_PSEUDOTERM
-  // Pseudo-Terminals
-
-#ifdef CONFIG_PSEUDOTERM_SUSV1
-  using ::ptsname;
-  using ::ptsname_r;
+#if !defined(_LIBCPP_CXX03_LANG)
+#if defined(at_quick_exit)
+using ::at_quick_exit;
 #endif
-  using ::unlockpt;
+#if defined(quick_exit)
+using ::quick_exit;
+#endif
+#endif
+#if _LIBCPP_STD_VER >= 17
+#if defined(aligned_alloc)
+using ::aligned_alloc;
+#endif
 #endif
 
-  // Misc.
+_LIBCPP_END_NAMESPACE_STD
 
-  using ::abs;
-  using ::labs;
-#ifdef CONFIG_HAVE_LONG_LONG
-  using ::llabs;
-#endif
-  using ::mktemp;
-  using ::mkstemp;
-  using ::qsort;
-
-// Sorting
-
-  using ::qsort;
-
-  // Binary search
-
-  using ::bsearch;
-}
-
-#endif // __INCLUDE_CXX_CSTDLIB
+#endif // _LIBCPP_CSTDLIB

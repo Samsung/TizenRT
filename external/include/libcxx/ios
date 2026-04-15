@@ -1,27 +1,9 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 // -*- C++ -*-
-//===---------------------------- ios -------------------------------------===//
+//===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -229,26 +211,44 @@ storage-class-specifier const error_category& iostream_category() noexcept;
 */
 
 #include <__config>
-#include <iosfwd>
+
+#if defined(_LIBCPP_HAS_NO_LOCALIZATION)
+#   error "The iostreams library is not supported since libc++ has been configured without support for localization."
+#endif
+
+#include <__assert> // all public C++ headers provide the assertion handler
+#include <__fwd/ios.h>
+#include <__ios/fpos.h>
 #include <__locale>
-#include <system_error>
+#include <__system_error/error_category.h>
+#include <__system_error/error_code.h>
+#include <__system_error/error_condition.h>
+#include <__system_error/system_error.h>
+#include <__utility/swap.h>
+#include <__verbose_abort>
+#include <version>
+
+// standard-mandated includes
+
+// [ios.syn]
+#include <iosfwd>
 
 #if !defined(_LIBCPP_HAS_NO_ATOMIC_HEADER)
-#include <atomic>     // for __xindex_
+#  include <__atomic/atomic.h> // for __xindex_
 #endif
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
-#pragma GCC system_header
+#  pragma GCC system_header
 #endif
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
 typedef ptrdiff_t streamsize;
 
-class _LIBCPP_TYPE_VIS ios_base
+class _LIBCPP_EXPORTED_FROM_ABI ios_base
 {
 public:
-    class _LIBCPP_EXCEPTION_ABI failure;
+    class _LIBCPP_EXPORTED_FROM_ABI failure;
 
     typedef unsigned int fmtflags;
     static const fmtflags boolalpha   = 0x0001;
@@ -295,7 +295,7 @@ public:
     typedef _VSTD::streampos streampos;
 #endif
 
-    class _LIBCPP_TYPE_VIS Init;
+    class _LIBCPP_EXPORTED_FROM_ABI Init;
 
     // 27.5.2.2 fmtflags state:
     _LIBCPP_INLINE_VISIBILITY fmtflags flags() const;
@@ -326,11 +326,9 @@ public:
     typedef void (*event_callback)(event, ios_base&, int __index);
     void register_callback(event_callback __fn, int __index);
 
-private:
-    ios_base(const ios_base&); // = delete;
-    ios_base& operator=(const ios_base&); // = delete;
+    ios_base(const ios_base&) = delete;
+    ios_base& operator=(const ios_base&) = delete;
 
-public:
     static bool sync_with_stdio(bool __sync = true);
 
     _LIBCPP_INLINE_VISIBILITY iostate rdstate() const;
@@ -348,15 +346,24 @@ public:
     void __set_badbit_and_consider_rethrow();
     void __set_failbit_and_consider_rethrow();
 
+    _LIBCPP_INLINE_VISIBILITY
+    void __setstate_nothrow(iostate __state)
+    {
+        if (__rdbuf_)
+            __rdstate_ |= __state;
+        else
+            __rdstate_ |= __state | ios_base::badbit;
+    }
+
 protected:
     _LIBCPP_INLINE_VISIBILITY
     ios_base() {// purposefully does no initialization
                }
 
     void init(void* __sb);
-    _LIBCPP_ALWAYS_INLINE void* rdbuf() const {return __rdbuf_;}
+    _LIBCPP_INLINE_VISIBILITY void* rdbuf() const {return __rdbuf_;}
 
-    _LIBCPP_ALWAYS_INLINE
+    _LIBCPP_INLINE_VISIBILITY
     void rdbuf(void* __sb)
     {
         __rdbuf_ = __sb;
@@ -368,7 +375,7 @@ protected:
     void move(ios_base&);
     void swap(ios_base&) _NOEXCEPT;
 
-    _LIBCPP_ALWAYS_INLINE
+    _LIBCPP_INLINE_VISIBILITY
     void set_rdbuf(void* __sb)
     {
         __rdbuf_ = __sb;
@@ -410,15 +417,19 @@ _LIBCPP_DECLARE_STRONG_ENUM(io_errc)
 _LIBCPP_DECLARE_STRONG_ENUM_EPILOG(io_errc)
 
 template <>
-struct _LIBCPP_TYPE_VIS_ONLY is_error_code_enum<io_errc> : public true_type { };
+struct _LIBCPP_TEMPLATE_VIS is_error_code_enum<io_errc> : public true_type { };
 
-#ifdef _LIBCPP_HAS_NO_STRONG_ENUMS
+#ifdef _LIBCPP_CXX03_LANG
 template <>
-struct _LIBCPP_TYPE_VIS_ONLY is_error_code_enum<io_errc::__lx> : public true_type { };
+struct _LIBCPP_TEMPLATE_VIS is_error_code_enum<io_errc::__lx> : public true_type { };
 #endif
 
-_LIBCPP_FUNC_VIS
-const error_category& iostream_category() _NOEXCEPT;
+_LIBCPP_EXPORTED_FROM_ABI const error_category& iostream_category() _NOEXCEPT;
+
+// Specialized constructor to bypass ADL issues with io_errc
+inline _LIBCPP_INLINE_VISIBILITY
+error_code::error_code(io_errc __e) _NOEXCEPT
+    : __val_(static_cast<int>(__e)), __cat_(&iostream_category()) {}
 
 inline _LIBCPP_INLINE_VISIBILITY
 error_code
@@ -434,16 +445,26 @@ make_error_condition(io_errc __e) _NOEXCEPT
     return error_condition(static_cast<int>(__e), iostream_category());
 }
 
-class _LIBCPP_EXCEPTION_ABI ios_base::failure
+class _LIBCPP_EXPORTED_FROM_ABI ios_base::failure
     : public system_error
 {
 public:
     explicit failure(const string& __msg, const error_code& __ec = io_errc::stream);
     explicit failure(const char* __msg, const error_code& __ec = io_errc::stream);
-    virtual ~failure() throw();
+    _LIBCPP_HIDE_FROM_ABI failure(const failure&) _NOEXCEPT = default;
+    ~failure() _NOEXCEPT override;
 };
 
-class _LIBCPP_TYPE_VIS ios_base::Init
+_LIBCPP_NORETURN inline _LIBCPP_INLINE_VISIBILITY
+void __throw_failure(char const* __msg) {
+#ifndef _LIBCPP_HAS_NO_EXCEPTIONS
+    throw ios_base::failure(__msg);
+#else
+    _LIBCPP_VERBOSE_ABORT("ios_base::failure was thrown in -fno-exceptions mode with message \"%s\"", __msg);
+#endif
+}
+
+class _LIBCPP_EXPORTED_FROM_ABI ios_base::Init
 {
 public:
     Init();
@@ -590,7 +611,7 @@ ios_base::exceptions(iostate __iostate)
 }
 
 template <class _CharT, class _Traits>
-class _LIBCPP_TYPE_VIS_ONLY basic_ios
+class _LIBCPP_TEMPLATE_VIS basic_ios
     : public ios_base
 {
 public:
@@ -602,25 +623,35 @@ public:
     typedef typename traits_type::pos_type pos_type;
     typedef typename traits_type::off_type off_type;
 
-    _LIBCPP_ALWAYS_INLINE
-        _LIBCPP_EXPLICIT
-        operator bool() const {return !fail();}
-    _LIBCPP_ALWAYS_INLINE bool operator!() const    {return  fail();}
-    _LIBCPP_ALWAYS_INLINE iostate rdstate() const   {return ios_base::rdstate();}
-    _LIBCPP_ALWAYS_INLINE void clear(iostate __state = goodbit) {ios_base::clear(__state);}
-    _LIBCPP_ALWAYS_INLINE void setstate(iostate __state) {ios_base::setstate(__state);}
-    _LIBCPP_ALWAYS_INLINE bool good() const {return ios_base::good();}
-    _LIBCPP_ALWAYS_INLINE bool eof() const  {return ios_base::eof();}
-    _LIBCPP_ALWAYS_INLINE bool fail() const {return ios_base::fail();}
-    _LIBCPP_ALWAYS_INLINE bool bad() const  {return ios_base::bad();}
+    static_assert((is_same<_CharT, typename traits_type::char_type>::value),
+                  "traits_type::char_type must be the same type as CharT");
 
-    _LIBCPP_ALWAYS_INLINE iostate exceptions() const {return ios_base::exceptions();}
-    _LIBCPP_ALWAYS_INLINE void exceptions(iostate __iostate) {ios_base::exceptions(__iostate);}
+#ifdef _LIBCPP_CXX03_LANG
+    // Preserve the ability to compare with literal 0,
+    // and implicitly convert to bool, but not implicitly convert to int.
+    _LIBCPP_INLINE_VISIBILITY
+    operator void*() const {return fail() ? nullptr : (void*)this;}
+#else
+    _LIBCPP_INLINE_VISIBILITY
+    explicit operator bool() const {return !fail();}
+#endif
+
+    _LIBCPP_INLINE_VISIBILITY bool operator!() const    {return  fail();}
+    _LIBCPP_INLINE_VISIBILITY iostate rdstate() const   {return ios_base::rdstate();}
+    _LIBCPP_INLINE_VISIBILITY void clear(iostate __state = goodbit) {ios_base::clear(__state);}
+    _LIBCPP_INLINE_VISIBILITY void setstate(iostate __state) {ios_base::setstate(__state);}
+    _LIBCPP_INLINE_VISIBILITY bool good() const {return ios_base::good();}
+    _LIBCPP_INLINE_VISIBILITY bool eof() const  {return ios_base::eof();}
+    _LIBCPP_INLINE_VISIBILITY bool fail() const {return ios_base::fail();}
+    _LIBCPP_INLINE_VISIBILITY bool bad() const  {return ios_base::bad();}
+
+    _LIBCPP_INLINE_VISIBILITY iostate exceptions() const {return ios_base::exceptions();}
+    _LIBCPP_INLINE_VISIBILITY void exceptions(iostate __iostate) {ios_base::exceptions(__iostate);}
 
     // 27.5.4.1 Constructor/destructor:
     _LIBCPP_INLINE_VISIBILITY
     explicit basic_ios(basic_streambuf<char_type,traits_type>* __sb);
-    virtual ~basic_ios();
+    ~basic_ios() override;
 
     // 27.5.4.2 Members:
     _LIBCPP_INLINE_VISIBILITY
@@ -649,7 +680,7 @@ public:
     char_type widen(char __c) const;
 
 protected:
-    _LIBCPP_ALWAYS_INLINE
+    _LIBCPP_INLINE_VISIBILITY
     basic_ios() {// purposefully does no initialization
                 }
     _LIBCPP_INLINE_VISIBILITY
@@ -657,17 +688,15 @@ protected:
 
     _LIBCPP_INLINE_VISIBILITY
     void move(basic_ios& __rhs);
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-    _LIBCPP_ALWAYS_INLINE
+    _LIBCPP_INLINE_VISIBILITY
     void move(basic_ios&& __rhs) {move(__rhs);}
-#endif
     _LIBCPP_INLINE_VISIBILITY
     void swap(basic_ios& __rhs) _NOEXCEPT;
     _LIBCPP_INLINE_VISIBILITY
     void set_rdbuf(basic_streambuf<char_type, traits_type>* __sb);
 private:
     basic_ostream<char_type, traits_type>* __tie_;
-     mutable int_type __fill_;
+    mutable int_type __fill_;
 };
 
 template <class _CharT, class _Traits>
@@ -688,7 +717,7 @@ void
 basic_ios<_CharT, _Traits>::init(basic_streambuf<char_type, traits_type>* __sb)
 {
     ios_base::init(__sb);
-    __tie_ = 0;
+    __tie_ = nullptr;
     __fill_ = traits_type::eof();
 }
 
@@ -745,7 +774,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 char
 basic_ios<_CharT, _Traits>::narrow(char_type __c, char __dfault) const
 {
-    return use_facet<ctype<char_type> >(getloc()).narrow(__c, __dfault);
+    return std::use_facet<ctype<char_type> >(getloc()).narrow(__c, __dfault);
 }
 
 template <class _CharT, class _Traits>
@@ -753,7 +782,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 _CharT
 basic_ios<_CharT, _Traits>::widen(char __c) const
 {
-    return use_facet<ctype<char_type> >(getloc()).widen(__c);
+    return std::use_facet<ctype<char_type> >(getloc()).widen(__c);
 }
 
 template <class _CharT, class _Traits>
@@ -771,6 +800,8 @@ inline _LIBCPP_INLINE_VISIBILITY
 _CharT
 basic_ios<_CharT, _Traits>::fill(char_type __ch)
 {
+    if (traits_type::eq_int_type(traits_type::eof(), __fill_))
+        __fill_ = widen(' ');
     char_type __r = __fill_;
     __fill_ = __ch;
     return __r;
@@ -799,7 +830,7 @@ basic_ios<_CharT, _Traits>::move(basic_ios& __rhs)
 {
     ios_base::move(__rhs);
     __tie_ = __rhs.__tie_;
-    __rhs.__tie_ = 0;
+    __rhs.__tie_ = nullptr;
     __fill_ = __rhs.__fill_;
 }
 
@@ -821,7 +852,13 @@ basic_ios<_CharT, _Traits>::set_rdbuf(basic_streambuf<char_type, traits_type>* _
     ios_base::set_rdbuf(__sb);
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+extern template class _LIBCPP_EXTERN_TEMPLATE_TYPE_VIS basic_ios<char>;
+
+#ifndef _LIBCPP_HAS_NO_WIDE_CHARACTERS
+extern template class _LIBCPP_EXTERN_TEMPLATE_TYPE_VIS basic_ios<wchar_t>;
+#endif
+
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 boolalpha(ios_base& __str)
 {
@@ -829,7 +866,7 @@ boolalpha(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 noboolalpha(ios_base& __str)
 {
@@ -837,7 +874,7 @@ noboolalpha(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 showbase(ios_base& __str)
 {
@@ -845,7 +882,7 @@ showbase(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 noshowbase(ios_base& __str)
 {
@@ -853,7 +890,7 @@ noshowbase(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 showpoint(ios_base& __str)
 {
@@ -861,7 +898,7 @@ showpoint(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 noshowpoint(ios_base& __str)
 {
@@ -869,7 +906,7 @@ noshowpoint(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 showpos(ios_base& __str)
 {
@@ -877,7 +914,7 @@ showpos(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 noshowpos(ios_base& __str)
 {
@@ -885,7 +922,7 @@ noshowpos(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 skipws(ios_base& __str)
 {
@@ -893,7 +930,7 @@ skipws(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 noskipws(ios_base& __str)
 {
@@ -901,7 +938,7 @@ noskipws(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 uppercase(ios_base& __str)
 {
@@ -909,7 +946,7 @@ uppercase(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 nouppercase(ios_base& __str)
 {
@@ -917,7 +954,7 @@ nouppercase(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 unitbuf(ios_base& __str)
 {
@@ -925,7 +962,7 @@ unitbuf(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 nounitbuf(ios_base& __str)
 {
@@ -933,7 +970,7 @@ nounitbuf(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 internal(ios_base& __str)
 {
@@ -941,7 +978,7 @@ internal(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 left(ios_base& __str)
 {
@@ -949,7 +986,7 @@ left(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 right(ios_base& __str)
 {
@@ -957,7 +994,7 @@ right(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 dec(ios_base& __str)
 {
@@ -965,7 +1002,7 @@ dec(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 hex(ios_base& __str)
 {
@@ -973,7 +1010,7 @@ hex(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 oct(ios_base& __str)
 {
@@ -981,7 +1018,7 @@ oct(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 fixed(ios_base& __str)
 {
@@ -989,7 +1026,7 @@ fixed(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 scientific(ios_base& __str)
 {
@@ -997,7 +1034,7 @@ scientific(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 hexfloat(ios_base& __str)
 {
@@ -1005,7 +1042,7 @@ hexfloat(ios_base& __str)
     return __str;
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
+_LIBCPP_HIDE_FROM_ABI inline
 ios_base&
 defaultfloat(ios_base& __str)
 {
@@ -1013,33 +1050,21 @@ defaultfloat(ios_base& __str)
     return __str;
 }
 
-template <class _CharT, class _Traits>
-class __save_flags
-{
-    typedef basic_ios<_CharT, _Traits> __stream_type;
-    typedef typename __stream_type::fmtflags fmtflags;
-
-    __stream_type& __stream_;
-    fmtflags       __fmtflags_;
-    _CharT         __fill_;
-
-    __save_flags(const __save_flags&);
-    __save_flags& operator=(const __save_flags&);
-public:
-    _LIBCPP_INLINE_VISIBILITY
-    explicit __save_flags(__stream_type& __stream)
-        : __stream_(__stream),
-          __fmtflags_(__stream.flags()),
-          __fill_(__stream.fill())
-        {}
-    _LIBCPP_INLINE_VISIBILITY
-    ~__save_flags()
-    {
-        __stream_.flags(__fmtflags_);
-        __stream_.fill(__fill_);
-    }
-};
-
 _LIBCPP_END_NAMESPACE_STD
 
-#endif  // _LIBCPP_IOS
+#if !defined(_LIBCPP_REMOVE_TRANSITIVE_INCLUDES) && _LIBCPP_STD_VER <= 20
+#  include <atomic>
+#  include <concepts>
+#  include <cstddef>
+#  include <cstdlib>
+#  include <cstring>
+#  include <initializer_list>
+#  include <limits>
+#  include <new>
+#  include <stdexcept>
+#  include <system_error>
+#  include <type_traits>
+#  include <typeinfo>
+#endif
+
+#endif // _LIBCPP_IOS

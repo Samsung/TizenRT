@@ -1,34 +1,16 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 // -*- C++ -*-
-//===--------------------------- wchar.h ----------------------------------===//
+//===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
 #if defined(__need_wint_t) || defined(__need_mbstate_t)
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
-#pragma GCC system_header
+#  pragma GCC system_header
 #endif
 
 #include_next <wchar.h>
@@ -124,22 +106,37 @@ size_t wcsrtombs(char* restrict dst, const wchar_t** restrict src, size_t len,
 */
 
 #include <__config>
+#include <stddef.h>
 
-#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
-#pragma GCC system_header
+#if defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
+#   error "The <wchar.h> header is not supported since libc++ has been configured with LIBCXX_ENABLE_WIDE_CHARACTERS disabled"
 #endif
 
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#  pragma GCC system_header
+#endif
+
+// We define this here to support older versions of glibc <wchar.h> that do
+// not define this for clang.
 #ifdef __cplusplus
 #define __CORRECT_ISO_CPP_WCHAR_H_PROTO
 #endif
 
-#include_next <wchar.h>
+#  if __has_include_next(<wchar.h>)
+#    include_next <wchar.h>
+#  else
+#    include <__mbstate_t.h> // make sure we have mbstate_t regardless of the existence of <wchar.h>
+#  endif
 
 // Determine whether we have const-correct overloads for wcschr and friends.
 #if defined(_WCHAR_H_CPLUSPLUS_98_CONFORMANCE_)
 #  define _LIBCPP_WCHAR_H_HAS_CONST_OVERLOADS 1
 #elif defined(__GLIBC_PREREQ)
 #  if __GLIBC_PREREQ(2, 10)
+#    define _LIBCPP_WCHAR_H_HAS_CONST_OVERLOADS 1
+#  endif
+#elif defined(_LIBCPP_MSVCRT)
+#  if defined(_CRT_CONST_CORRECT_OVERLOADS)
 #    define _LIBCPP_WCHAR_H_HAS_CONST_OVERLOADS 1
 #  endif
 #endif
@@ -183,10 +180,13 @@ inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_PREFERRED_OVERLOAD
 }
 #endif
 
-#if defined(__cplusplus) && (defined(_LIBCPP_MSVCRT) || defined(__MINGW32__))
-extern "C++" {
-#include <support/win32/support.h> // pull in *swprintf defines
-}  // extern "C++"
-#endif  // __cplusplus && _LIBCPP_MSVCRT
+#if defined(__cplusplus) && (defined(_LIBCPP_MSVCRT_LIKE) || defined(__MVS__))
+extern "C" {
+size_t mbsnrtowcs(wchar_t *__restrict __dst, const char **__restrict __src,
+                  size_t __nmc, size_t __len, mbstate_t *__restrict __ps);
+size_t wcsnrtombs(char *__restrict __dst, const wchar_t **__restrict __src,
+                  size_t __nwc, size_t __len, mbstate_t *__restrict __ps);
+}  // extern "C"
+#endif  // __cplusplus && (_LIBCPP_MSVCRT || __MVS__)
 
-#endif  // _LIBCPP_WCHAR_H
+#endif // _LIBCPP_WCHAR_H
