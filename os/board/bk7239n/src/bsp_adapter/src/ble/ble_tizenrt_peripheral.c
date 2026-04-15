@@ -73,7 +73,7 @@ enum
 #define BLE_TIZENRT_READ_MAX_LEN 20 //520
 #define TIZENRT_MAX_VAL_LEN 520
 #define NOTIFY_SYNC_API 1
-
+#define WRITE_READ_BUFF_SAME 0
 
 #define BK_BLE_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -87,7 +87,14 @@ struct attr_db_addon
     uint8_t *peer_write_buffer;
     uint32_t peer_write_buffer_current_len;
     uint32_t peer_write_buffer_max_len;
+#if WRITE_READ_BUFF_SAME
+#else
+    uint8_t *peer_read_buffer;
+    uint32_t peer_read_buffer_current_len;
+    uint32_t peer_read_buffer_max_len;
+#endif
     uint16_t cccd_config;
+
 };
 
 struct service_elem
@@ -532,9 +539,16 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
         {
             evt_type = TRBLE_ATTR_CB_READING;
 
+#if WRITE_READ_BUFF_SAME
+
             //note: peer will always read default_read_buffer, see rtk ble_tizenrt_read_val impl
             rsp_buff = s_ctb.default_read_buffer;
             rsp_len = sizeof(s_ctb.default_read_buffer);
+#else
+
+            rsp_buff = service_elem->db_addon[r_req->att_idx].peer_read_buffer;
+            rsp_len = service_elem->db_addon[r_req->att_idx].peer_read_buffer_current_len;
+#endif
         }
 
         bk_ble_read_response_value_ext(r_req->conn_idx, rsp_len, rsp_buff, r_req->prf_id, r_req->att_idx, service_elem->db_addon[r_req->att_idx].app_reject);
@@ -655,7 +669,7 @@ int32_t bk_tr_ble_server_attr_set_data_ptr_private(void* service_p, uint8_t att_
 }
 
 //note: app will input attr_handle as char value handle, see rtk abs_handle impl
-int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_t *buffer, uint16_t buffer_len)
+int32_t bk_tr_ble_server_attr_set_peer_read_data_ptr(trble_attr_handle attr_handle, uint8_t *buffer, uint16_t buffer_len)
 {
     int32_t ret = 0;
     uint16_t att_index = 0;
@@ -694,6 +708,15 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
         LOGV("att_index %d -> %d", att_index, att_index + 1);
 
         LOGE("can't set char decl attr data !!!");
+        return TRBLE_FAIL;
+    }
+    else if ((BK_BLE_PERM_GET(service_elem->cfg.att_db[att_index].ext_perm, UUID_LEN) == BK_BLE_PERM_RIGHT_UUID_16)
+             && uuid_16 == BK_GATT_CHAR_CLIENT_CONFIG_UUID)
+    {
+        LOGV("decl attr_handle 0x%x -> value attr handle 0x%x", attr_handle, attr_handle + 1);
+        LOGV("att_index %d -> %d", att_index, att_index + 1);
+
+        LOGE("can't set ccc buffer handle 0x%x len %d !!!", attr_handle, buffer_len);
         return TRBLE_FAIL;
     }
     else
@@ -739,7 +762,8 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
     }
 
     service_elem->db_addon[att_index].peer_write_buffer_current_len = buffer_len;
-#else
+
+#elif WRITE_READ_BUFF_SAME
 
     int32_t set_buffer_cb(uint32_t evt, int32_t status, void *param)
     {
@@ -789,6 +813,10 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
         ret = TRBLE_FAIL;
     }
 
+#else
+    service_elem->db_addon[att_index].peer_read_buffer = buffer;
+    service_elem->db_addon[att_index].peer_read_buffer_current_len = buffer_len;
+    service_elem->db_addon[att_index].peer_read_buffer_max_len = buffer_len;
 #endif
 
 end:;
@@ -1591,6 +1619,16 @@ int32_t bk_tr_ble_server_add_config(trble_server_init_config *config)
                 tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_max_len = sizeof(s_ctb.default_write_buffer);
             }
 
+#if WRITE_READ_BUFF_SAME
+#else
+
+            if (!tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer)
+            {
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer = s_ctb.default_read_buffer;
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer_max_len = sizeof(s_ctb.default_read_buffer);
+            }
+
+#endif
             LOGI("find service index %d char value index %d decl attr handle 0x%x", service_index, attr_tmp_index, config->profile[input_index].attr_handle);
 
             if (tmp_service_array[service_index].cfg.start_hdl + attr_tmp_index - 1 != config->profile[input_index].attr_handle)
@@ -1714,6 +1752,16 @@ int32_t bk_tr_ble_server_add_config(trble_server_init_config *config)
                     tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer = (void *)&tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config;
                     tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_current_len = sizeof(tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config);
                     tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_max_len = sizeof(tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config);
+#if WRITE_READ_BUFF_SAME
+#else
+
+                    if (!tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer)
+                    {
+                        tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer = (void *)&tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config;
+                        tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer_current_len = sizeof(tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config);
+                        tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer_max_len = sizeof(tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config);
+					}
+#endif
                 }
             }
 
@@ -1723,6 +1771,16 @@ int32_t bk_tr_ble_server_add_config(trble_server_init_config *config)
                 tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer = s_ctb.default_write_buffer;
                 tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_max_len = sizeof(s_ctb.default_write_buffer);
             }
+
+#if WRITE_READ_BUFF_SAME
+#else
+
+            if (!tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer)
+            {
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer = s_ctb.default_read_buffer;
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer_max_len = sizeof(s_ctb.default_read_buffer);
+			}
+#endif
 
             LOGI("find service %d char desc index %d attr handle 0x%x", service_index, attr_tmp_index, config->profile[input_index].attr_handle);
 
@@ -1759,7 +1817,7 @@ end:;
     return ret;
 }
 
-int32_t bk_tr_ble_server_init(trble_server_init_config *config)
+int32_t bk_tr_ble_server_init(trble_server_init_config * config)
 {
     int32_t ret = TRBLE_SUCCESS;
     int32_t err = 0;

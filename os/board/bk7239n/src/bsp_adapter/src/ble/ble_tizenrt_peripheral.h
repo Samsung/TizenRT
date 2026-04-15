@@ -69,7 +69,7 @@ trble_server_init_config *bktr_ble_server_get_param(void);
  *    - 0: succeed
  *    - others: errors.
  */
-int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_t *buffer, uint16_t buffer_len);
+int32_t bk_tr_ble_server_attr_set_peer_read_data_ptr(trble_attr_handle attr_handle, uint8_t *buffer, uint16_t buffer_len);
 
 /**
  * @brief bk tizenrt adapter server get attr data buffer ptr
