@@ -24,6 +24,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
 #include <tinyara/irq.h>
+#include <tinyara/reboot_reason.h>
 
 #include <assert.h>
 #include <debug.h>
@@ -93,6 +94,9 @@ void up_checkstackoverflow(FAR struct tcb_s *rtcb)
             lldbg_noarg("###################\n");
 			lldbg_noarg("Stack base pointer (corrupted value) : %p", (void *)(rtcb->stack_base_ptr));
 		}
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+		up_reboot_reason_write(REBOOT_SYSTEM_STACK_OVERFLOW);
+#endif
 		PANIC();
 		leave_critical_section(flags);
 	}

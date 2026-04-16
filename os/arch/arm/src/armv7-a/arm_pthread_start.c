@@ -42,6 +42,7 @@
 #include <tinyara/config.h>
 #include <pthread.h>
 #include <tinyara/arch.h>
+#include <tinyara/reboot_reason.h>
 
 #include <assert.h>
 
@@ -86,6 +87,9 @@ void up_pthread_start(pthread_startroutine_t entrypt, pthread_addr_t arg)
 
 	sys_call2(SYS_pthread_start, (uintptr_t) entrypt, (uintptr_t) arg);
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_PTHREAD_START_FAILURE);
+#endif
 	PANIC();
 }
 

@@ -59,6 +59,7 @@
 #include <tinyara/watchdog.h>
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/reboot_reason.h>
 #include "wdt.h"
 #include "hal_aon_rtc_types.h"
 #include "aon_rtc.h"
@@ -176,6 +177,9 @@ static int armino_nmi_interrupt(int irq, void *context, FAR void *arg)
 		}
 		aon_pmu_drv_wdt_change_not_rosc_clk();
 		aon_pmu_drv_wdt_rst_dev_enable();
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+		up_reboot_reason_write(REBOOT_SYSTEM_WATCHDOG);
+#endif
         PANIC();
 		while(1);
 	}

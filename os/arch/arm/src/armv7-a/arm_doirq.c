@@ -75,6 +75,9 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
 
 	board_autoled_on(LED_INIRQ);
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	up_reboot_reason_write(REBOOT_SYSTEM_INTERRUPT_FAILURE);
+#endif
 	PANIC();
 #else
 	/* Nested interrupts are not supported */

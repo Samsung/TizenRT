@@ -48,6 +48,7 @@
 #include <debug.h>
 #include <tinyara/arch.h>
 #include <tinyara/sched.h>
+#include <tinyara/reboot_reason.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -91,6 +92,9 @@ void up_reprioritize_rtr(struct tcb_s *tcb, uint8_t priority)
 		|| priority > SCHED_PRIORITY_MAX
 #endif
 	   ) {
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+		up_reboot_reason_write(REBOOT_SYSTEM_SCHEDULER_FAILURE);
+#endif
 		DEBUGPANIC();
 	} else {
 		struct tcb_s *rtcb = this_task();
