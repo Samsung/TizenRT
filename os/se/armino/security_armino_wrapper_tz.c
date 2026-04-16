@@ -2850,8 +2850,8 @@ int armino_hal_write_storage(uint32_t ss_idx, hal_data *data)
     ret = ss_write_data(ss_idx, data->data, data->data_len);
     TFM_NSC_UNLOCK();
     if (ret != 0) {
-        dbg("Failed to write storage: %d\n", ret);
-        return HAL_FAIL;
+        sedbg("Failed to write storage: %d\n", ret);
+        return ret;
     }
 
     return HAL_SUCCESS;
@@ -2870,7 +2870,7 @@ int armino_hal_read_storage(uint32_t ss_idx, hal_data *data)
     TFM_NSC_UNLOCK();
     if (ret != 0) {
         dbg("Failed to read storage: %d\n", ret);
-        return HAL_FAIL;
+        return ret;
     }
 
     return HAL_SUCCESS;
@@ -2886,7 +2886,7 @@ int armino_hal_delete_storage(uint32_t ss_idx)
     TFM_NSC_UNLOCK();
     if (ret != 0) {
         dbg("Failed to delete storage: %d\n", ret);
-        return HAL_FAIL;
+        return ret;
     }
 
     return HAL_SUCCESS;
