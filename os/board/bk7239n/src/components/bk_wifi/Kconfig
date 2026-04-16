@@ -431,4 +431,10 @@ menu "Bk_Wifi"
 		default y
 		help
 			Enable update power with RSSI
+
+	config BK_CONCURRENT_MODE
+		bool "Enable bk concurrent mode (STA + SoftAP simultaneously)"
+		default n
+		help
+			Enable STA and SoftAP concurrent mode.
 endmenu
