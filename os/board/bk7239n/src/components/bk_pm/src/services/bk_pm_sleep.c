@@ -148,6 +148,9 @@ uint64_t pm_normal_sleep_process()
 	#if CONFIG_CKMN
 	bk_rosc_32k_ckest_prog(32);
 	#endif
+
+	pm_rtc_wakeup_reason_parse();
+
 	pm_enable_int(int_level);
 	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_TICK_COMP,0x0,0x0);
 	return sleep_tick;
@@ -203,6 +206,8 @@ uint64_t pm_low_voltage_process()
 	}
 #endif
 	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_TICK_COMP,0x0,0x0);
+	pm_rtc_wakeup_reason_parse();
+
 	pm_enable_int(int_level);
 
 	/* Execute post-sleep (wakeup) callbacks */
