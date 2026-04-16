@@ -117,8 +117,11 @@ static void CSIRawDataListener(CSIFW_RES res, int raw_csi_buff_len, unsigned cha
 					&g_pcsifw_context->ParsedDataBufferLen);
   }
 
-  // we use this service state but if its called parelly this is will stuck
+  // CSIRawDataListener callback can be invoked from a background thread when CSI data arrives. 
+  // Simultaneously, application threads may call `csifw_start()/csifw_stop()` to modify service states. 
+  // Without this mutex, race conditions will occur
   CSIFW_MUTEX_LOCK(&g_pcsifw_context->data_reciever_mutex);
+
   for (int i = 0; i < CSIFW_MAX_NUM_APPS; i++) {
     // send raw
     if (g_pcsifw_context->csi_services[i].svc_id != 0 && g_pcsifw_context->csi_services[i].svc_state == CSI_SERVICE_START) {
@@ -401,6 +404,10 @@ CSIFW_RES csifw_set_interval(csifw_service_handle hnd, unsigned int interval)
     ping_generator_change_interval(g_pcsifw_context->csi_interval);
   } else {
     res = csi_packet_receiver_change_interval();
+    if (res != CSIFW_OK) {
+      CSIFW_LOGE("Interval update Failed %d", res);
+      goto on_error;
+    }
   }
   CSIFW_LOGD("Interval updated : %u", g_pcsifw_context->csi_interval);
 
@@ -482,6 +489,10 @@ CSIFW_RES csifw_get_ap_mac_addr(csifw_service_handle hnd, csifw_mac_info *p_mac_
   }
 
   res = csi_packet_receiver_get_mac_addr(p_mac_info);
+  if (res != CSIFW_OK) {
+    CSIFW_LOGE("Failed to get AP MAC %d", res);
+    goto on_error;
+  }
 
 on_error:
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
@@ -702,3 +713,4 @@ static int all_services_stopped(void)
   CSIFW_LOGI("All services are stopped\n");
   return 1;
 }
+

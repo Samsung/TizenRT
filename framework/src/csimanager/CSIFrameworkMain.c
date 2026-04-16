@@ -42,6 +42,7 @@ const static int CSIFW_TASK_PRIORITY = 100;
 const static int CSIFW_TASK_PERMISSION = TM_APP_PERMISSION_ALL;
 
 int csifw_task_Main(int argc, char *argv[]);
+static void task_manager_stop_and_unregister(int m_task_handle);
 
 int start_csi_framework(csifw_context_t *p_ctx)
 {
@@ -84,8 +85,14 @@ int start_csi_framework(csifw_context_t *p_ctx)
 	int result = task_manager_start(handle, TM_RESPONSE_WAIT_INF);
 	if (result < 0) {
 		CSIFW_LOGE("Failed to start %s (handle=%d). Return: %d. Cleaning up...", CSIFW_TASK_NAME, handle, result);
-		task_manager_unregister(handle, TM_RESPONSE_WAIT_INF);
-		CSIFW_LOGD("Unregistered task %s (handle=%d) after failed start", CSIFW_TASK_NAME, handle);
+		CSIFW_LOGD("Unregistering task %s (handle=%d)", CSIFW_TASK_NAME, handle);
+		int tm_unregister_return = task_manager_unregister(handle, TM_RESPONSE_WAIT_INF);
+		if (tm_unregister_return < 0) {
+			CSIFW_LOGE("Failed to unregister csifw task to the task manager! Return: %d", tm_unregister_return);
+			//To-Do: Error handling logic to be addressed later.
+		} else {
+			CSIFW_LOGD("Unregistered successfully csifw task to the task manager! Return: %d", tm_unregister_return);
+		}
 		sem_destroy(&p_ctx->csifw_task_sema);
 		CSIFW_LOGD("Destroyed semaphore for %s after failed start", CSIFW_TASK_NAME);
 	} else {
@@ -94,7 +101,7 @@ int start_csi_framework(csifw_context_t *p_ctx)
 
 		if (!p_ctx->task_run_success) {
 			CSIFW_LOGE("CSI framework task initialization failed");
-			task_manager_unregister(handle, TM_RESPONSE_WAIT_INF);
+			task_manager_stop_and_unregister(p_ctx->task_handle);
 			sem_destroy(&p_ctx->csifw_task_sema);
 			return -1;
 		}
@@ -113,8 +120,7 @@ int stop_csi_framework(csifw_context_t *p_ctx)
 	p_ctx->task_run_state = STOPPED;			//stop the main loop of the task
 	CSIFW_LOGD("Waiting for csifw_task to complete...");
 	sem_wait(&p_ctx->csifw_task_sema);
-	CSIFW_LOGD("Unregistering task %s (handle=%d)", CSIFW_TASK_NAME, p_ctx->task_handle);
-	task_manager_unregister(p_ctx->task_handle, TM_RESPONSE_WAIT_INF);
+	task_manager_stop_and_unregister(p_ctx->task_handle);
 	CSIFW_LOGD("Destroying semaphore for %s", CSIFW_TASK_NAME);
 	sem_destroy(&p_ctx->csifw_task_sema);
 	return 0;
@@ -136,7 +142,6 @@ int csifw_task_Main(int argc, char *argv[])
 		sem_post(&p_csifw_ctx->csifw_task_sema);
 		return -1;
 	}
-
 	if (csi_ping_generator_initialize() != CSIFW_OK) {
 		CSIFW_LOGE("CSI ping generator initialize failed");
 		csi_packet_receiver_stop_collect();
@@ -173,9 +178,72 @@ int csifw_task_Main(int argc, char *argv[])
 		CSIFW_LOGE("CSI packet receiver stop failed");
 	}
 	if (csi_packet_receiver_cleanup() == CSIFW_ERROR){
-		CSIFW_LOGD("CSI packet receiver cleanup failed");
+		CSIFW_LOGE("CSI packet receiver cleanup failed");
 	}
 	//to unlock stop_csi_framework()
 	sem_post(&p_csifw_ctx->csifw_task_sema);
 	return 0;
 }
+
+static void task_manager_stop_and_unregister(int m_task_handle)
+{
+	CSIFW_LOGD("Stopping task %s (Task_Handle=%d)", CSIFW_TASK_NAME, m_task_handle);
+	tm_appinfo_t *info = task_manager_getinfo_with_handle(m_task_handle, TM_RESPONSE_WAIT_INF);
+	if (info == NULL) {
+		CSIFW_LOGE("Failed to get task info for handle %d", m_task_handle);
+		return;
+	}
+	
+	//Print task status
+	switch (info->status) {
+	case TM_APP_STATE_RUNNING:
+		CSIFW_LOGI("Task (handle=%d) status: RUNNING", m_task_handle);
+		break;
+	case TM_APP_STATE_PAUSE:
+		CSIFW_LOGI("Task (handle=%d) status: PAUSED", m_task_handle);
+		break;
+	case TM_APP_STATE_STOP:
+		CSIFW_LOGI("Task (handle=%d) status: STOPPED", m_task_handle);
+		break;
+	case TM_APP_STATE_UNREGISTERED:
+		CSIFW_LOGI("Task (handle=%d) status: UNREGISTERED", m_task_handle);
+		break;
+	case TM_APP_STATE_CANCELLING:
+		CSIFW_LOGI("Task (handle=%d) status: CANCELLING", m_task_handle);
+		break;
+	case TM_APP_STATE_WAIT_UNREGISTER:
+		CSIFW_LOGI("Task (handle=%d) status: WAIT_UNREGISTER", m_task_handle);
+		break;
+	default:
+		CSIFW_LOGE("Task (handle=%d) status: UNKNOWN (%d)", m_task_handle, info->status);
+		break;
+	}
+
+	if (info->status == TM_APP_STATE_RUNNING) {	
+		int tm_stop_return = task_manager_stop(m_task_handle, TM_RESPONSE_WAIT_INF);
+		if (tm_stop_return != 0) {
+			CSIFW_LOGE("Failed to stop (Task_Handle=%d). Return: %d.", m_task_handle, tm_stop_return);
+		} else {
+			CSIFW_LOGD("Stopped successfully (Task_Handle=%d). Return: %d.", m_task_handle, tm_stop_return);
+		}
+	} else if (info->status == TM_APP_STATE_STOP) {
+		CSIFW_LOGD("Task already stopped (Task_Handle=%d)", m_task_handle);
+	} else {
+		CSIFW_LOGD("Task state unknown Failed to stop (Task_Handle=%d)", m_task_handle);
+	}
+
+	CSIFW_LOGD("Unregistering task %s (Task_Handle=%d)", CSIFW_TASK_NAME, m_task_handle);
+	int tm_unregister_return = task_manager_unregister(m_task_handle, TM_RESPONSE_WAIT_INF);
+	if (tm_unregister_return < 0) {
+		CSIFW_LOGE("Failed to unregister csifw task to the task manager! Return: %d", tm_unregister_return);
+		//To-Do: Error handling logic to be addressed later.
+	} else {
+		CSIFW_LOGD("Unregistered successfully csifw task to the task manager! Return: %d", tm_unregister_return);
+	}
+
+	task_manager_clean_info(&info);
+	if (info != NULL) {
+		CSIFW_LOGE("Failed to clean task info memory");
+	}
+}
+

@@ -25,6 +25,8 @@
 #include <tinyara/wifi_csi/wifi_csi.h>
 
 #define RCVR_TH_NAME "csifw_data_receiver_th"
+#define MAX_CONSECUTIVE_FAILURES 50
+static unsigned long long get_monotonic_time_us(void);
 
 static inline CSIFW_RES open_driver(int *fd) {
   *fd = open(CONFIG_WIFICSI_CUSTOM_DEV_PATH, O_RDONLY);
@@ -68,16 +70,23 @@ static void *dataReceiverThread(void *vargp)
 	int prio;
 	size_t size;
 	int csi_data_len = 0;
+	int timeout_count = 0;
 	struct wifi_csi_msg_s msg;
+	int consecutive_failures = 0;
+	struct timespec st_time = {0,};
 	int fd = p_csifw_ctx->data_receiver_fd;
 	mqd_t mq_handle = p_csifw_ctx->mq_handle;
+	unsigned long long last_data_read_timestamp_us = 0;
 	unsigned char *get_data_buffptr = p_csifw_ctx->get_data_buffptr;
 
 	while (!p_csifw_ctx->data_receiver_thread_stop) {
-		size = mq_receive(mq_handle, (char *)&msg, sizeof(msg), &prio);
-		if (size != sizeof(msg)) {
-			CSIFW_LOGE("Interrupted while waiting for deque message from kernel %zu, errno: %d (%s)", size, get_errno(), strerror(get_errno()));
-		} else {
+		last_data_read_timestamp_us = get_monotonic_time_us();
+		CSIFW_LOGD("last_data_read_timestamp_us before mq_timedreceive:%llu",last_data_read_timestamp_us);
+		clock_gettime(CLOCK_REALTIME, &st_time);
+		st_time.tv_sec += 1;
+		size = mq_timedreceive(mq_handle, (char *)&msg, sizeof(msg), &prio, &st_time);
+		if (size >= 0) {
+			CSIFW_LOGD("Message received - msgId: %d, data_len: %d, size: %zu: %d", msg.msgId, msg.data_len, size);
 			switch (msg.msgId) {
 			case CSI_MSG_DATA_READY_CB:
 				if (msg.data_len == 0 || msg.data_len > CSIFW_MAX_RAW_BUFF_LEN) {
@@ -86,6 +95,8 @@ static void *dataReceiverThread(void *vargp)
 				}
 				csi_data_len = msg.data_len;
 				len = readCSIData(fd, get_data_buffptr, csi_data_len);
+				last_data_read_timestamp_us = get_monotonic_time_us();
+				CSIFW_LOGD("last_data_read_timestamp_us after readCSIData:%llu",last_data_read_timestamp_us);
 				if (len < 0) {
 					CSIFW_LOGE("Skipping packet: error: %d", len);
 					continue;
@@ -218,7 +229,6 @@ CSIFW_RES csi_packet_receiver_start_collect(void)
 	}
 	if (p_csifw_ctx->disable_required) {
 		CSIFW_LOGD("WiFi reconnected: Disabling CSI config");
-		csi_packet_receiver_set_csi_config(CSI_CONFIG_ENABLE);
 		csi_packet_receiver_set_csi_config(CSI_CONFIG_DISABLE);
 		p_csifw_ctx->disable_required = false;
 	}
@@ -228,6 +238,17 @@ CSIFW_RES csi_packet_receiver_start_collect(void)
 		return res;
 	}
 	p_csifw_ctx->data_receiver_thread_stop = false;
+
+	// allocate buffer for receiveing data from driver
+	if (!p_csifw_ctx->get_data_buffptr) {
+		p_csifw_ctx->get_data_buffptr = (unsigned char *)malloc(CSIFW_MAX_RAW_BUFF_LEN);
+		if (!p_csifw_ctx->get_data_buffptr) {
+			csi_packet_receiver_set_csi_config(CSI_CONFIG_DISABLE);
+			CSIFW_LOGE("Buffer allocation Fail.");
+			return CSIFW_ERROR;
+		}
+		CSIFW_LOGD("CSI data buffer allocated successfully, size: %d bytes", CSIFW_MAX_RAW_BUFF_LEN);
+	}
 
 	pthread_attr_t recv_th_attr;
 	if (pthread_attr_init(&recv_th_attr) != 0) {
@@ -369,3 +390,11 @@ CSIFW_RES csi_packet_receiver_deinit(void)
 	CSIFW_LOGD("CSI packet receiver successfully deinitialized (callback: %p)", p_csifw_ctx->CSI_DataCallback);
 	return CSIFW_OK;
 }
+
+static unsigned long long get_monotonic_time_us(void)
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (unsigned long long)ts.tv_sec * 1000000ULL + ts.tv_nsec / 1000ULL;
+}
+
