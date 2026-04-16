@@ -34,6 +34,7 @@
 
 
 #define TAG "cli"
+#define CLI_ATE_EMPTY_LINE_PROBE_TIMEOUT 20
 
 
 static struct cli_st *pCli = NULL;
@@ -459,6 +460,24 @@ static int get_input(char *inbuf, unsigned int *bp)
 		/* find first invalid input data, discard input data more than 0x7f */
 		if ((uint8_t)inbuf[0] > 0x7f) {
 			continue;
+		}
+		if (*bp == 0 && (inbuf[*bp] == RET_CHAR || inbuf[*bp] == END_CHAR)) {
+			char next_ch = 0;
+
+			/* Keep a standalone CR/LF as an empty line, but wait briefly so
+			 * CRLF-prefixed commands are not split.
+			 */
+			while (bk_uart_read_bytes(CLI_UART, &next_ch, 1, CLI_ATE_EMPTY_LINE_PROBE_TIMEOUT) > 0) {
+				inbuf[0] = next_ch;
+				if (next_ch != RET_CHAR && next_ch != END_CHAR) {
+					break;
+				}
+			}
+
+			if (inbuf[0] == RET_CHAR || inbuf[0] == END_CHAR) {
+				inbuf[0] = '\0';
+				return 1;
+			}
 		}
 		if (inbuf[*bp] == RET_CHAR)
 			continue;
