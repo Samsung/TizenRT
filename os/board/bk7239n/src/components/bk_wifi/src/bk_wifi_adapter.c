@@ -921,6 +921,13 @@ static void rtos_exit_critical_wrapper(uint32_t irq_level)
 	rtos_exit_critical(irq_level);
 }
 
+static void bk_reg_reset_rf_reg_wrapper(void)
+{
+  #if CONFIG_SOC_BK7239XX
+    bk_reg_reset_rf_reg();
+  #endif
+}
+
 static uint32_t rtos_get_time_wrapper(void)
 {
     return rtos_get_time();
@@ -1677,6 +1684,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	/////
 	._rf_pll_ctrl = rf_pll_ctrl_wrapper,
 	//._send_udp_bc_pkt = bk_airkiss_start_udp_boardcast_wrapper,
+	._bk_reg_reset_rf_reg = bk_reg_reset_rf_reg_wrapper,
 	._tx_verify_test_call_back = tx_verify_test_call_back_wrapper,
 	._sys_hal_enter_low_analog = sys_hal_enter_low_analog_wrapper,
 	._sys_hal_exit_low_analog = sys_hal_exit_low_analog_wrapper,
