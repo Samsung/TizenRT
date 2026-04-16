@@ -32,9 +32,7 @@
 #define _LIBCPP_HAS_THREAD_API_PTHREAD
 
 // Embedded system constraints for TizenRT
-#define _LIBCPP_HAS_NO_FILESYSTEM
 #define _LIBCPP_HAS_NO_WIDE_CHARACTERS
-#define _LIBCPP_HAS_NO_SYSTEM_ERROR
 #define _LIBCPP_HAS_NO_UNICODE
 #define _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS
 #define _LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE
@@ -94,7 +92,6 @@ struct mbstate_t {
 #define _LIBCPP_ENABLE_DEBUG_MODE_DEFAULT 0
 
 // Optional features for embedded systems (disable if not needed)
-#define _LIBCPP_NO_EXCEPTIONS
 #define _LIBCPP_NO_RTTI
 
 
