@@ -32,6 +32,7 @@
 #define _LIBCPP_HAS_THREAD_API_PTHREAD
 
 // Embedded system constraints for TizenRT
+// TizenRT compatibility: Disable wide characters (not fully supported)
 #define _LIBCPP_HAS_NO_WIDE_CHARACTERS
 #define _LIBCPP_HAS_NO_UNICODE
 #define _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS
@@ -69,11 +70,18 @@
 #define __is_nothrow_default_constructible(T) true
 #endif
 
-// mbstate_t definition for embedded systems when wide characters are disabled
+// TizenRT compatibility: Define mbstate_t when wide characters are disabled
+// This matches TizenRT's definition in os/include/wchar.h
 #if defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
-struct mbstate_t {
+#ifndef _MBSTATE_T_DEFINED
+#define _MBSTATE_T_DEFINED
+struct mbstate_s {
     int __fill[6];
 };
+typedef struct mbstate_s mbstate_t;
+// Define wint_t for systems that don't provide it properly
+typedef unsigned int wint_t;
+#endif
 #endif
 
 // C++17 feature compatibility fixes for TizenRT
@@ -136,8 +144,7 @@ struct mbstate_t {
 #define LC_ALL_MASK (LC_COLLATE_MASK | LC_CTYPE_MASK | LC_MONETARY_MASK | LC_NUMERIC_MASK | LC_TIME_MASK | LC_MESSAGES_MASK)
 #endif
 
-// Define wint_t for systems that don't provide it properly
-typedef unsigned int wint_t;
+
 
 // TizenRT needs stdio file functions for iostream
 #define _LIBCPP_NEEDS_STDIO_FILE_FUNCTIONS
