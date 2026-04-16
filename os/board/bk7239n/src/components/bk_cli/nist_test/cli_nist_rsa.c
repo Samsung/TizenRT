@@ -13,11 +13,62 @@
 // limitations under the License.
 
 #include "cli_nist_common.h"
+#include "psa/crypto.h"
 
 extern int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_data *prikey);
 extern int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx);
 extern int armino_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx);
 extern int armino_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign);
+
+static psa_algorithm_t hal_hash_type_to_psa_alg(hal_hash_type hash_t)
+{
+    switch (hash_t) {
+    case HAL_HASH_MD5:    return PSA_ALG_MD5;
+    case HAL_HASH_SHA1:   return PSA_ALG_SHA_1;
+    case HAL_HASH_SHA224: return PSA_ALG_SHA_224;
+    case HAL_HASH_SHA256: return PSA_ALG_SHA_256;
+    case HAL_HASH_SHA384: return PSA_ALG_SHA_384;
+    case HAL_HASH_SHA512: return PSA_ALG_SHA_512;
+    default:              return PSA_ALG_NONE;
+    }
+}
+
+#define RSA_HASH_OUTPUT_MAX_SIZE 64
+
+static size_t hal_hash_output_size(hal_hash_type hash_t)
+{
+    switch (hash_t) {
+    case HAL_HASH_MD5:    return 16;
+    case HAL_HASH_SHA1:   return 20;
+    case HAL_HASH_SHA224: return 28;
+    case HAL_HASH_SHA256: return 32;
+    case HAL_HASH_SHA384: return 48;
+    case HAL_HASH_SHA512: return 64;
+    default:              return 0;
+    }
+}
+
+static int compute_msg_hash(hal_hash_type hash_t, const uint8_t *msg, size_t msg_len,
+                            uint8_t *hash_buf, size_t hash_buf_size, size_t *hash_len)
+{
+    psa_algorithm_t alg = hal_hash_type_to_psa_alg(hash_t);
+    if (alg == PSA_ALG_NONE) {
+        BK_LOGE(NULL, "unsupported hash type %d\n", hash_t);
+        return NIST_FAIL;
+    }
+    size_t expected_len = hal_hash_output_size(hash_t);
+    if (expected_len == 0 || hash_buf_size < expected_len) {
+        BK_LOGE(NULL, "hash buffer too small: need %u, have %u\n",
+                (unsigned)expected_len, (unsigned)hash_buf_size);
+        return NIST_FAIL;
+    }
+    psa_status_t status = psa_hash_compute(alg, msg, msg_len, hash_buf, hash_buf_size, hash_len);
+    if (status != PSA_SUCCESS) {
+        BK_LOGE(NULL, "psa_hash_compute failed: %d\n", status);
+        return NIST_FAIL;
+    }
+    return NIST_OK;
+}
 
 #define SET_RSA_KEY_MODE(sub_type_var, key_mode_var) do { \
     switch (sub_type_var) { \
@@ -140,13 +191,20 @@ uint8_t nist_rsa_sign_verify_callback(nist_handle_t *nist_handle)
     mode.mgf = hash;
     mode.salt_byte_len = 20;
 
+    uint8_t hash_buf[RSA_HASH_OUTPUT_MAX_SIZE];
+    size_t hash_len = 0;
+    if (compute_msg_hash(hash, Msg.data, Msg.data_len, hash_buf, sizeof(hash_buf), &hash_len) != NIST_OK) {
+        return NIST_FAIL;
+    }
+    hal_data msg_digest = {hash_buf, hash_len, NULL, 0};
+
     result = armino_hal_set_key(key_mode, key_idx, &e, NULL);
     if (result != HAL_SUCCESS) {
         BK_LOGE(NULL, "set key failed\n");
         return NIST_FAIL;
     }
 
-    result = armino_hal_rsa_verify_md(mode, &Msg, &S, key_idx);
+    result = armino_hal_rsa_verify_md(mode, &msg_digest, &S, key_idx);
     if (result != HAL_SUCCESS) {
         armino_hal_remove_key(key_mode, key_idx);
         BK_LOGE(NULL, "verify failed\n");
@@ -209,6 +267,13 @@ uint8_t nist_rsa_verify_verify_callback(nist_handle_t *nist_handle)
     mode.mgf = hash;
     mode.salt_byte_len = 20;
 
+    uint8_t hash_buf[RSA_HASH_OUTPUT_MAX_SIZE];
+    size_t hash_len = 0;
+    if (compute_msg_hash(hash, Msg.data, Msg.data_len, hash_buf, sizeof(hash_buf), &hash_len) != NIST_OK) {
+        return NIST_FAIL;
+    }
+    hal_data msg_digest = {hash_buf, hash_len, NULL, 0};
+
     result = armino_hal_set_key(key_mode, key_idx, NULL, &d);
     if (result != HAL_SUCCESS) {
         BK_LOGI(NULL, "set key failed\n");
@@ -217,7 +282,7 @@ uint8_t nist_rsa_verify_verify_callback(nist_handle_t *nist_handle)
 
     signature.data = os_malloc(RSA_MAX_SIGNATURE_BYTE_LEN);
     signature.data_len = RSA_MAX_SIGNATURE_BYTE_LEN;
-    result = armino_hal_rsa_sign_md(mode, &Msg, key_idx, &signature);
+    result = armino_hal_rsa_sign_md(mode, &msg_digest, key_idx, &signature);
     if (result != HAL_SUCCESS) {
         BK_LOGE(NULL, "sign failed\n");
         result = NIST_FAIL;

@@ -19,7 +19,7 @@
 extern int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_idx, hal_data *sign);
 extern int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *sign, uint32_t key_idx);
 
-#define SEC_MAX_BUF_SIZE (64)
+#define SEC_MAX_BUF_SIZE (139)
 
 static void sec_ecdsa_help(void)
 {
