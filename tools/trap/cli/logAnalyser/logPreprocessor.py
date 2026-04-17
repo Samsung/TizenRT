@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###########################################################################
 #
-# Copyright 2024 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,14 +23,15 @@
 from __future__ import print_function
 import os
 import sys
+import logAnalyser.logUtils as logUtils
 from array import *
 
 # Global variables
-assertion_details = "Assertion details\n"
-BIN_ADDR_FXN = "Loading location information\n"
+assertion_details = logUtils.assertion_details
+BIN_ADDR_FXN = logUtils.BIN_ADDR_FXN
 
 
-partition_string = "==========================================================="
+partition_string = logUtils.partition_string
 
 
 # Function to format logs and delete the timestamp (supported formats-|xxxxxxxxx| and [xxxxxxxxx]) if it consists of timestamp at the start of each log line

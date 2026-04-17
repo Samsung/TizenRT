@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###########################################################################
 #
-# Copyright 2024 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,18 @@
 # formatting, crash type detection, address validation, and state mapping
 
 from __future__ import print_function
+
+# strings used for log analysis
+assertion_details = "Assertion details\n"
+stack_details = "Asserted task's stack details\n"
+register_dump = "Asserted task's register dump\n"
+BIN_ADDR_FXN = "Loading location information\n"
+tcb_info = "Asserted task's TCB info"
+
+partition_string = "==========================================================="
+
+# used in heapNode
+closing_log_line = "##########################################################################################################################################"
 
 
 

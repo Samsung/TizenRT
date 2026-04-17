@@ -33,14 +33,11 @@ import logAnalyser.log_parser.assertInfo as assertInfo
 import logAnalyser.log_parser.crashPoint as crashPoint
 import logAnalyser.log_parser.tcbInfo as tcbInfo
 
-# Global variables
-assertion_details = "Assertion details\n"
-stack_details = "Asserted task's stack details\n"
-register_dump = "Asserted task's register dump\n"
-BIN_ADDR_FXN = "Loading location information\n"
-tcb_info = "Asserted task's TCB info"
 
-partition_string = "==========================================================="
+stack_details = logUtils.stack_details
+register_dump = logUtils.register_dump
+
+partition_string = logUtils.partition_string
 
 
 class logParser:

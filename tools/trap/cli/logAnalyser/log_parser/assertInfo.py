@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###########################################################################
 #
-# Copyright 2024 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@
 
 from __future__ import print_function
 import utils
+import logAnalyser.logUtils as logUtils
 
 
-stack_details = "Asserted task's stack details\n"
+stack_details = logUtils.stack_details
 
-partition_string = "==========================================================="
+partition_string = logUtils.partition_string
 
 
 # API to find point of assertion

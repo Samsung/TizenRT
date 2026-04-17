@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###########################################################################
 #
-# Copyright 2024 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import logAnalyser.logUtils as logUtils
 import utils
 
 
-assertion_details = "Assertion details\n"
-register_dump = "Asserted task's register dump\n"
+assertion_details = logUtils.assertion_details
+register_dump = logUtils.register_dump
 
-partition_string = "==========================================================="
+partition_string = logUtils.partition_string
 
 
 # API to find crash binary, crash point and crash type from assert log

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###########################################################################
 #
-# Copyright 2024 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,9 +32,9 @@ from __future__ import print_function
 import os
 import logAnalyser.logUtils as logUtils
 
-tcb_info = "Asserted task's TCB info"
+tcb_info = logUtils.tcb_info
 
-partition_string = "==========================================================="
+partition_string = logUtils.partition_string
 
 TCB_FLAG_TTYPE_SHIFT      = (0)	                         # Bits 0-1: thread type 
 TCB_FLAG_TTYPE_MASK       = (3 << TCB_FLAG_TTYPE_SHIFT)
