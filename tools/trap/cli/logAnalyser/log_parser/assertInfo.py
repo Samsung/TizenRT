@@ -28,22 +28,8 @@ stack_details = logUtils.stack_details
 
 partition_string = logUtils.partition_string
 
-
-# API to find point of assertion
-def parse_assert_info(parser):
-    is_interrupt_mode = 0
-    current_line = ""
-
-    with open(parser.log_file) as searchfile:
-        for line in searchfile:
-            if 'ERROR: Stack pointer is not within any of the allocated stack' in line:
-                word = line.split(':')
-                print('\n\t-', word[1], ':', word[2])
-
-    print('\n4. Code asserted in:')
-
-    # Parse the contents based on tokens in log file to determine point of assertion in details
-    with open(parser.log_file) as searchfile:
+def get_assert_location(log_file):
+    with open(log_file) as searchfile:
         found_type = 0
         for line in searchfile:
             if 'Code asserted in nested IRQ state!' in line:
@@ -61,8 +47,10 @@ def parse_assert_info(parser):
         if (found_type == 0):
                 print('\n\t- Code asserted in normal thread.')
 
-    # Parse the contents based on tokens in log file for assert during interrupt context
-    with open(parser.log_file) as searchfile:
+
+def check_IRQ_assertion(log_file, bin_path, app_name):
+    is_interrupt_mode = 0
+    with open(log_file) as searchfile:
         for line in searchfile:
             # Print the interrupt data during crash (if crashed during interrupt context)
             if 'IRQ num:' in line:
@@ -75,9 +63,9 @@ def parse_assert_info(parser):
                 # It displays the interrupt handler information corresponding to the Interrupt
                 print("\n5. Assertion Data during interrupt mode:\n")
                 print('\t- Interrupt handler at addr\t\tSymbol_name')
-                utils.print_interrupt_handler_data(parser.log_file, parser.bin_path, parser.app_name)
+                utils.print_interrupt_handler_data(log_file, bin_path, app_name)
 
-    with open(parser.log_file) as searchfile:
+    with open(log_file) as searchfile:
         for line in searchfile:
             if 'Nested IRQ stack:' in line:
                 is_interrupt_mode = 2
@@ -86,13 +74,11 @@ def parse_assert_info(parser):
                 is_interrupt_mode = is_interrupt_mode + 1
                 print("\033[F", line)
 
-    if (is_interrupt_mode):
-        print('\n6. Call stack of last run thread')
-    else:
-        print('\n5. Call stack of last run thread')
+    return is_interrupt_mode
 
-    # Parse the contents based on tokens in log file for memory allocation failure data
-    with open(parser.log_file) as searchfile:
+
+def memory_allocation_failure(log_file):
+    with open(log_file) as searchfile:
         mm_fail = 0
         for line in searchfile:
             # Print the mm allocation failure data during crash (if crashed during mm allocation)
@@ -102,9 +88,17 @@ def parse_assert_info(parser):
             if (mm_fail == 1):
                 print(line)
 
-    # Parse the contents based on tokens in log file.
-    with open(parser.log_file) as searchfile:
+
+def print_current_task(log_file, bin_path, app_name):
+    current_line = ""
+
+    with open(log_file) as searchfile:
         for line in searchfile:
+            if partition_string in line:
+                line = next(searchfile)
+                current_line = line
+                line = next(searchfile)
+                continue
             
             # Print the current stack pointer value
             if current_line == stack_details and ' sp:' in line:
@@ -121,5 +115,38 @@ def parse_assert_info(parser):
                 print("\t- Current running work function is:\t", hex(curr_worker))
                 # It displays the symbol corresponding to the current running work function
                 print('\nCurrent running work function\t\tFile_name')
-                utils.print_running_work_function(parser.log_file, parser.bin_path, parser.app_name)
+                utils.print_running_work_function(log_file, bin_path, app_name)
 
+
+# API to find point of assertion
+def parse_assert_info(parser):
+    log_file, bin_path, app_name = parser.log_file, parser.bin_path, parser.app_name
+
+    with open(parser.log_file) as searchfile:
+        for line in searchfile:
+            if 'ERROR: Stack pointer is not within any of the allocated stack' in line:
+                word = line.split(':')
+                print('\n\t-', word[1], ':', word[2])
+
+    print('\n4. Code asserted in:')
+
+    # Parse the contents based on tokens in log file to determine point of assertion in details
+    get_assert_location(log_file)
+
+
+    # Parse the contents based on tokens in log file for assert during interrupt context
+    is_interrupt_mode = check_IRQ_assertion(log_file, bin_path, app_name)
+
+
+    if (is_interrupt_mode):
+        print('\n6. Call stack of last run thread')
+    else:
+        print('\n5. Call stack of last run thread')
+
+    # Parse the contents based on tokens in log file for memory allocation failure data
+    memory_allocation_failure(log_file)
+
+
+    # Parse the contents based on tokens in log file.
+    print_current_task(log_file, bin_path, app_name)
+
