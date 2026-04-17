@@ -144,7 +144,12 @@ int task_terminate_unloaded(FAR struct tcb_s *tcb)
 #ifdef CONFIG_PREFERENCE
 	preference_clear_callbacks(tcb->pid);
 #endif
+
+	saved_state = enter_critical_section();
+
 	tcb->flags |= TCB_FLAG_EXIT_PROCESSING;
+
+	leave_critical_section(saved_state);
 
 	/* No need to release the unloading thread's stack,
 	 * because whole heap memory will be released at one go.
