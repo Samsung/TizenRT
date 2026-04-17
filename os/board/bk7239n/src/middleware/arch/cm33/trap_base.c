@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <arch/reboot_reason.h>
 #include "boot.h"
 #include "sdkconfig.h"
 #include "reset_reason.h"
@@ -35,6 +36,7 @@
 #include <driver/flash_types.h>
 #include <driver/flash.h>
 
+#define BK_SECURE_FAULT_REBOOT_REASON   (REBOOT_BOARD_SPECIFIC4) /* TFM watch dog */
 
 #define MAX_DUMP_SYS_MEM_COUNT       (8)
 #define SOC_DTCM_DATA_SIZE           (0x4000)
@@ -815,15 +817,16 @@ static void NS_handle_securt_fault(uint32_t reset_reason, struct tfm_exception_i
         rtos_dump_system(msp, psp);
 
 
-        bk_reboot_ex(reset_reason);
+        up_reboot_reason_write(BK_SECURE_FAULT_REBOOT_REASON);
+        bk_reboot_reset_reason();
 
         while(g_enter_exception);
 
         // rtos_enable_int(int_level);
     } else {
 
-        bk_misc_set_reset_reason(reset_reason);
-        bk_wdt_force_reboot();
+        up_reboot_reason_write(BK_SECURE_FAULT_REBOOT_REASON);
+        bk_reboot_reset_reason();
     }
 }
 
@@ -831,6 +834,8 @@ void bk_security_donmain_notifies_non_security_domain_to_dump(uint32_t *reg)
 {
     // High security level will not dump the exception information.
     if (get_security_level() > LOW_SECURITY_LEVEL) { 
+        up_reboot_reason_write(BK_SECURE_FAULT_REBOOT_REASON);
+        bk_reboot_reset_reason();
         return;
     }
 
@@ -888,10 +893,6 @@ void bk_security_donmain_notifies_non_security_domain_to_dump(uint32_t *reg)
 
 void bk_security_to_nosecurity_dump_register_callback(void)
 {
-    if (get_security_level() >  LOW_SECURITY_LEVEL) {
-        return;
-    }
-    
     uint32_t callback_address = (uint32_t)(&bk_security_donmain_notifies_non_security_domain_to_dump);
     psa_register_dump_callback(callback_address, (uint32_t)&tfm_exception_info);
 }
