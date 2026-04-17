@@ -553,9 +553,17 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 	 * that bit is set, then just exit doing nothing more..
 	 */
 
+	irqstate_t flags;
+
+	flags = enter_critical_section();
+
 	if ((tcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0) {
+
+		leave_critical_section(flags);
 		return;
 	}
+
+	leave_critical_section(flags);
 
 #ifdef CONFIG_DEBUG
 	/* Save the terminated task/pthread's information for stack monitor and heapinfo. */
@@ -604,9 +612,15 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 	task_recover(tcb);
 
 	/* NOTE: signal handling needs to be done in a critical section. */
-#ifdef CONFIG_SMP
-	irqstate_t flags = enter_critical_section();
-#endif
+
+	flags = enter_critical_section();
+
+	/* This function can be re-entered in certain cases.  Set a flag
+	 * bit in the TCB to note that we have already completed this exit
+	 * processing.
+	 */
+
+	tcb->flags |= TCB_FLAG_EXIT_PROCESSING;
 
 	/* Send the SIGCHILD signal to the parent task group */
 
@@ -650,14 +664,5 @@ void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
 	sig_cleanup(tcb);			/* Deallocate Signal lists */
 #endif
 
-#ifdef CONFIG_SMP
 	leave_critical_section(flags);
-#endif
-
-	/* This function can be re-entered in certain cases.  Set a flag
-	 * bit in the TCB to not that we have already completed this exit
-	 * processing.
-	 */
-
-	tcb->flags |= TCB_FLAG_EXIT_PROCESSING;
 }
