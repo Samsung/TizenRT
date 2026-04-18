@@ -589,6 +589,32 @@ void _wt_set_power(void *arg)
 	WT_LEAVE;
 }
 
+void _wt_set_channel_plan(void *arg)
+{
+	WT_ENTER;
+	struct wt_options *opt = (struct wt_options *)arg;
+	wifi_manager_result_e res = wifi_manager_set_channel_plan(opt->channel_plan);
+	if (res != WIFI_MANAGER_SUCCESS) {
+		WT_LOGE(TAG, "fail to set channel plan\n");
+		return;
+	}
+	WT_LOG(TAG, "set channel plan %d\n", opt->channel_plan);
+	WT_LEAVE;
+}
+
+int _wt_parse_channel_plan(struct wt_options *opt, int argc, char *argv[])
+{
+	if (argc != 3) {
+		WT_LOGE(TAG, "invalid argument\n");
+		return -1;
+	}
+	
+	opt->channel_plan = atoi(argv[2]);
+	WT_LOG(TAG, "channel plan %d\n", opt->channel_plan);
+
+	return 0;
+}
+
 void _wt_stress_test(void *arg)
 {
 	wm_run_stress_test(arg);

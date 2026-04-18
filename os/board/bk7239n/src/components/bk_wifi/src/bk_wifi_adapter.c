@@ -292,6 +292,14 @@ static void bk7011_update_by_rx_wrapper(int8_t rssi, int8_t freq_offset)
 	#endif
 }
 
+static void bk7011_update_max_tx_power_wrapper(struct mac_chan_op *chan)
+{
+#if CONFIG_WIFI_REGDOMAIN
+	extern void rwnx_reg_update_max_txpower(struct mac_chan_op *chan);
+	rwnx_reg_update_max_txpower(chan);
+#endif
+}
+
 static void sys_ll_set_cpu_power_sleep_wakeup_pwd_ofdm_wrapper(uint32_t v)
 {
     #if (CONFIG_SOC_BK7236XX || CONFIG_SOC_BK7239XX)
@@ -1493,6 +1501,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._bk7011_cal_dpd = bk7011_cal_dpd_wrapper,
 	._bk7011_cal_pll = bk7011_cal_pll,
 	._bk7011_update_by_rx = bk7011_update_by_rx_wrapper,
+	._bk7011_update_max_tx_power = bk7011_update_max_tx_power_wrapper,
 	._rwnx_cal_load_trx_rcbekn_reg_val = rwnx_cal_load_trx_rcbekn_reg_val,
 	._manual_get_epa_flag = manual_get_epa_flag,
 #if CONFIG_NON_SIGANL_PHY_ENABLE

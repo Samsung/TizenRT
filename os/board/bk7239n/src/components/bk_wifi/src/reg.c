@@ -66,6 +66,97 @@ extern const struct ieee80211_regdomain *reg_regdb[];
 static void restore_regulatory_settings(bool reset_user);
 static void print_regdomain_info(const struct ieee80211_regdomain *rd);
 
+struct reg_code_alias {
+	const char *display;
+	char internal[2];
+};
+
+static const struct reg_code_alias reg_code_aliases[] = {
+	{ "A",  { 'A', '0' } }, { "B",  { 'B', '0' } }, { "C",  { 'C', '0' } },
+	{ "D",  { 'D', '0' } }, { "E",  { 'E', '0' } }, { "F",  { 'F', '0' } },
+	{ "G",  { 'G', '0' } }, { "H",  { 'H', '0' } }, { "I",  { 'I', '0' } },
+	{ "J",  { 'J', '0' } }, { "K",  { 'K', '0' } }, { "L",  { 'L', '0' } },
+	{ "M",  { 'M', '0' } }, { "N",  { 'N', '0' } }, { "O",  { 'O', '0' } },
+	{ "P",  { 'P', '0' } }, { "Q",  { 'Q', '0' } }, { "R",  { 'R', '0' } },
+	{ "S",  { 'S', '0' } }, { "T",  { 'T', '0' } }, { "U",  { 'U', '0' } },
+	{ "V",  { 'V', '0' } }, { "W",  { 'W', '0' } }, { "X",  { 'X', '0' } },
+	{ "Y",  { 'Y', '0' } }, { "Z",  { 'Z', '0' } },
+};
+
+static const struct reg_code_alias *reg_code_alias_from_display(const char *code)
+{
+	unsigned int i;
+
+	if (!code)
+		return NULL;
+
+	for (i = 0; i < sizeof(reg_code_aliases) / sizeof(reg_code_aliases[0]); i++) {
+		if (!strcmp(code, reg_code_aliases[i].display))
+			return &reg_code_aliases[i];
+	}
+
+	return NULL;
+}
+
+static const struct reg_code_alias *reg_code_alias_from_internal(const char *alpha2)
+{
+	unsigned int i;
+
+	if (!alpha2 || !alpha2[0] || !alpha2[1])
+		return NULL;
+
+	for (i = 0; i < sizeof(reg_code_aliases) / sizeof(reg_code_aliases[0]); i++) {
+		if (alpha2[0] == reg_code_aliases[i].internal[0] &&
+		    alpha2[1] == reg_code_aliases[i].internal[1])
+			return &reg_code_aliases[i];
+	}
+
+	return NULL;
+}
+
+static bool normalize_country_code(const char *code, char alpha2[2])
+{
+	const struct reg_code_alias *alias;
+
+	if (!code || !alpha2)
+		return false;
+
+	alias = reg_code_alias_from_display(code);
+	if (alias) {
+		alpha2[0] = alias->internal[0];
+		alpha2[1] = alias->internal[1];
+		return true;
+	}
+
+	if (!code[0] || !code[1])
+		return false;
+
+	alpha2[0] = isalpha((u8)code[0]) ? toupper((u8)code[0]) : code[0];
+	alpha2[1] = isalpha((u8)code[1]) ? toupper((u8)code[1]) : code[1];
+	return true;
+}
+
+static const char *country_code_for_display(const char *alpha2, char display[3])
+{
+	const struct reg_code_alias *alias;
+
+	if (!alpha2 || !display)
+		return "";
+
+	alias = reg_code_alias_from_internal(alpha2);
+	if (alias) {
+		display[0] = '\0';
+		os_strncpy(display, alias->display, sizeof(char) * 2);
+		display[2] = '\0';
+		return display;
+	}
+
+	display[0] = alpha2[0];
+	display[1] = alpha2[1];
+	display[2] = '\0';
+	return display;
+}
+
 static struct regulatory_request core_request_world = {
 	.initiator = NL80211_REGDOM_SET_BY_CORE,
 	.alpha2[0] = '0',
@@ -235,7 +326,8 @@ static bool is_an_alpha2(const char *alpha2)
 {
 	if (!alpha2)
 		return false;
-	return isalpha((u8)alpha2[0]) && isalpha((u8)alpha2[1]);
+	return (isalpha((u8)alpha2[0]) && isalpha((u8)alpha2[1])) ||
+	       reg_code_alias_from_internal(alpha2);
 }
 
 static bool alpha2_equal(const char *alpha2_x, const char *alpha2_y)
@@ -382,9 +474,11 @@ static void reg_regdb_size_check(void)
  */
 static int call_crda(const char *alpha2)
 {
+	char display[3];
+
 	if (!is_world_regdom((char *) alpha2))
-		WIFI_LOGI("Calling CRDA for country: %c%c\n",
-			alpha2[0], alpha2[1]);
+		WIFI_LOGI("Calling CRDA for country: %s\n",
+			country_code_for_display(alpha2, display));
 	else
 		WIFI_LOGI("Calling CRDA to update world regulatory domain\n");
 
@@ -2290,13 +2384,17 @@ static void queue_regulatory_request(struct regulatory_request *request)
 static int regulatory_hint_core(const char *alpha2)
 {
 	struct regulatory_request *request;
+	char normalized[2];
+
+	if (!normalize_country_code(alpha2, normalized))
+		return -EINVAL;
 
 	request = os_zalloc(sizeof(struct regulatory_request));
 	if (!request)
 		return -ENOMEM;
 
-	request->alpha2[0] = alpha2[0];
-	request->alpha2[1] = alpha2[1];
+	request->alpha2[0] = normalized[0];
+	request->alpha2[1] = normalized[1];
 	request->initiator = NL80211_REGDOM_SET_BY_CORE;
 	request->wiphy_idx = WIPHY_IDX_INVALID;
 
@@ -2310,11 +2408,16 @@ int regulatory_hint_user(const char *alpha2,
 			 enum nl80211_user_reg_hint_type user_reg_hint_type)
 {
 	struct regulatory_request *request;
+	char normalized[2];
+	WIFI_LOGI("regulatory_hint_user: alpha2 %s\n", alpha2);
 
 	if (WARN_ON(!alpha2))
 		return -EINVAL;
 
-	if (!is_world_regdom(alpha2) && !is_an_alpha2(alpha2))
+	if (!normalize_country_code(alpha2, normalized))
+		return -EINVAL;
+
+	if (!is_world_regdom(normalized) && !is_an_alpha2(normalized))
 		return -EINVAL;
 
 	request = os_zalloc(sizeof(struct regulatory_request));
@@ -2322,13 +2425,16 @@ int regulatory_hint_user(const char *alpha2,
 		return -ENOMEM;
 
 	request->wiphy_idx = WIPHY_IDX_INVALID;
-	request->alpha2[0] = alpha2[0];
-	request->alpha2[1] = alpha2[1];
+	request->alpha2[0] = normalized[0];
+	request->alpha2[1] = normalized[1];
 	request->initiator = NL80211_REGDOM_SET_BY_USER;
 	request->user_reg_hint_type = user_reg_hint_type;
 
 	queue_regulatory_request(request);
 
+	char display[3];
+	WIFI_LOGD("regulatory_hint_user: country %s\n",
+		country_code_for_display((char *)cfg80211_regdomain->alpha2, display));
 	return 0;
 }
 
@@ -2360,8 +2466,9 @@ void regulatory_hint_11d(struct wiphy *wiphy, wifi_band_t band, const u8 *countr
 	else if (country_ie[2] == 'O')
 		env = ENVIRON_OUTDOOR;
 
-	if (likely(last_request->initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
-	    wiphy_idx_valid(last_request->wiphy_idx)))
+	if (last_request->initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
+	    alpha2_equal(last_request->alpha2, alpha2) &&
+	    wiphy_idx_valid(last_request->wiphy_idx))
 		goto out;
 
 	request = os_zalloc(sizeof(struct regulatory_request));
@@ -2386,6 +2493,8 @@ out:
 
 static void restore_alpha2(char *alpha2, bool reset_user)
 {
+	char normalized[2];
+
 	/* indicates there is no alpha2 to consider for restoration */
 	alpha2[0] = '9';
 	alpha2[1] = '7';
@@ -2403,11 +2512,12 @@ static void restore_alpha2(char *alpha2, bool reset_user)
 			 * check the module parameter to ensure we put things
 			 * back as they were for a full restore.
 			 */
-			if (!is_world_regdom(ieee80211_regdom)) {
-				WIFI_LOGD("Keeping preference on module parameter ieee80211_regdom: %c%c\n",
-					 ieee80211_regdom[0], ieee80211_regdom[1]);
-				alpha2[0] = ieee80211_regdom[0];
-				alpha2[1] = ieee80211_regdom[1];
+			if (!is_world_regdom(ieee80211_regdom) &&
+			    normalize_country_code(ieee80211_regdom, normalized)) {
+				WIFI_LOGD("Keeping preference on module parameter ieee80211_regdom: %s\n",
+					 ieee80211_regdom);
+				alpha2[0] = normalized[0];
+				alpha2[1] = normalized[1];
 			}
 		} else {
 			WIFI_LOGD("Restoring regulatory settings while preserving user preference for: %c%c\n",
@@ -2415,11 +2525,12 @@ static void restore_alpha2(char *alpha2, bool reset_user)
 			alpha2[0] = user_alpha2[0];
 			alpha2[1] = user_alpha2[1];
 		}
-	} else if (!is_world_regdom(ieee80211_regdom)) {
-		WIFI_LOGD("Keeping preference on module parameter ieee80211_regdom: %c%c\n",
-			 ieee80211_regdom[0], ieee80211_regdom[1]);
-		alpha2[0] = ieee80211_regdom[0];
-		alpha2[1] = ieee80211_regdom[1];
+	} else if (!is_world_regdom(ieee80211_regdom) &&
+		   normalize_country_code(ieee80211_regdom, normalized)) {
+		WIFI_LOGD("Keeping preference on module parameter ieee80211_regdom: %s\n",
+			 ieee80211_regdom);
+		alpha2[0] = normalized[0];
+		alpha2[1] = normalized[1];
 	} else
 		WIFI_LOGD("Restoring regulatory settings\n");
 }
@@ -2735,6 +2846,8 @@ out:
 
 static void print_regdomain(const struct ieee80211_regdomain *rd)
 {
+	char display[3];
+
 	if (is_intersected_alpha2(rd->alpha2)) {
 		if (last_request->initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE)
 			WIFI_LOGI("Current regulatory domain intersected: by AP\n");
@@ -2746,7 +2859,8 @@ static void print_regdomain(const struct ieee80211_regdomain *rd)
 		if (is_unknown_alpha2(rd->alpha2))
 			WIFI_LOGI("Regulatory domain changed to driver built-in settings (unknown country)\n");
 		else
-			WIFI_LOGI("Regulatory domain changed to country: %c%c\n", rd->alpha2[0], rd->alpha2[1]);
+			WIFI_LOGI("Regulatory domain changed to country: %s\n",
+				  country_code_for_display(rd->alpha2, display));
 	}
 
 	WIFI_LOGD(" DFS Master region: %s", reg_dfs_region_str(rd->dfs_region));
@@ -2755,7 +2869,9 @@ static void print_regdomain(const struct ieee80211_regdomain *rd)
 
 static void print_regdomain_info(const struct ieee80211_regdomain *rd)
 {
-	WIFI_LOGI("Regulatory domain: %c%c\n", rd->alpha2[0], rd->alpha2[1]);
+	char display[3];
+
+	WIFI_LOGI("Regulatory domain: %s\n", country_code_for_display(rd->alpha2, display));
 	print_rd_rules(rd);
 }
 
@@ -3017,14 +3133,21 @@ bk_err_t bk_wifi_set_country_code(const char *alpha2)
 
 char *bk_wifi_get_country_code(void)
 {
-	return (char *)cfg80211_regdomain->alpha2;
+	static char display[3];
+
+	country_code_for_display((char *)cfg80211_regdomain->alpha2, display);
+	//WIFI_LOGI("country code for display: %s\n", display);
+	bk_wifi_print_regdomain();
+	return display;
 }
 
 void bk_wifi_print_regdomain()
 {
+	char display[3];
+
 	rtos_lock_recursive_mutex(&reg_mutex);
-	WIFI_LOGI("country %c%c: DFS-%s\n", cfg80211_regdomain->alpha2[0], cfg80211_regdomain->alpha2[1],
-		reg_dfs_region_str(cfg80211_regdomain->dfs_region));
+	WIFI_LOGI("country %s\n",
+		country_code_for_display((char *)cfg80211_regdomain->alpha2, display));
 	print_rd_rules(cfg80211_regdomain);
 	// reg_print_ieee80211_channel(&g_wiphy);
 	rtos_unlock_recursive_mutex(&reg_mutex);
