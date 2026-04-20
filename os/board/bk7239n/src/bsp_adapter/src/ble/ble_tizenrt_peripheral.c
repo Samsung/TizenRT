@@ -287,15 +287,6 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
         ble_evt_msg_elem_t elem = {0};
         os_memset(&elem, 0, sizeof(ble_evt_msg_elem_t));
 
-        elem.server_connect_evt.conn_idx = d_ind->conn_idx;
-        elem.server_connect_evt.relate_adv_handle = hal_ble_con_env.con_dev[d_ind->conn_idx].relate_adv_index;
-        elem.server_connect_evt.type = TRBLE_SERVER_DISCONNECTED;
-        os_memcpy(elem.server_connect_evt.peer_addr, hal_ble_con_env.con_dev[d_ind->conn_idx].peer_addr, sizeof(hal_ble_con_env.con_dev[d_ind->conn_idx].peer_addr));
-
-        ble_evt_queue_push_ext(EVT_BLE_SERVER_CONNECTED, &elem, sizeof(ble_evt_msg_elem_t), NULL);
-
-        os_memset(&elem, 0, sizeof(ble_evt_msg_elem_t));
-
         elem.server_disconnect_evt.conn_idx = d_ind->conn_idx;
         elem.server_disconnect_evt.reason = d_ind->reason;
 
