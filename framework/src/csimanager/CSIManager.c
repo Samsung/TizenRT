@@ -53,7 +53,7 @@ static void csifw_update_state_and_log(CSI_FRAMEWORK_STATE new_state)
     return;
   }
   const int max_state = sizeof(csi_framework_state_strings) / sizeof(csi_framework_state_strings[0]);
-  if (new_state < CSI_FRAMEWORK_STATE_UNINITIALIZED || new_state >= max_state) {
+  if (new_state < CSI_FRAMEWORK_STATE_UNINITIALIZED || new_state >= max_state - 1) {
     CSIFW_LOGE("Invalid state value: %d", new_state);
     return;
   }
@@ -111,13 +111,24 @@ static void CSIRawDataListener(CSIFW_RES res, int raw_csi_buff_len, unsigned cha
   }
 
   if (g_pcsifw_context->parsed_data_cb_count > 0 && g_pcsifw_context->parsed_data_cb_started_count > 0) {
-    getParsedData(raw_csi_buff, raw_csi_buff_len, 
-					g_pcsifw_context->csi_config,
-					g_pcsifw_context->parsed_buffptr,
-					&g_pcsifw_context->ParsedDataBufferLen);
+        #if defined(CONFIG_WIFI_CSI_RTL8730E)
+          getParsedData(raw_csi_buff,
+                        raw_csi_buff_len,
+                        g_pcsifw_context->csi_config,
+                        g_pcsifw_context->parsed_buffptr,
+                        &g_pcsifw_context->ParsedDataBufferLen);
+        #elif defined(CONFIG_BK_WIFI_CSI_ADAPTER)
+          CSIFW_LOGE("Parsing is not enabled for BEKEN");
+          return;
+        #else
+          CSIFW_LOGE("Unknown CSI board configuration");
+          return;
+        #endif
   }
 
-  // we use this service state but if its called parelly this is will stuck
+  // CSIRawDataListener callback can be invoked from a background thread when CSI data arrives. 
+  // Simultaneously, application threads may call `csifw_start()/csifw_stop()` to modify service states. 
+  // Without this mutex, race conditions will occur
   CSIFW_MUTEX_LOCK(&g_pcsifw_context->data_reciever_mutex);
   for (int i = 0; i < CSIFW_MAX_NUM_APPS; i++) {
     // send raw
@@ -401,6 +412,10 @@ CSIFW_RES csifw_set_interval(csifw_service_handle hnd, unsigned int interval)
     ping_generator_change_interval(g_pcsifw_context->csi_interval);
   } else {
     res = csi_packet_receiver_change_interval();
+    if (res != CSIFW_OK) {
+      CSIFW_LOGE("Interval update Failed %d", res);
+      goto on_error;
+    }
   }
   CSIFW_LOGD("Interval updated : %u", g_pcsifw_context->csi_interval);
 
@@ -482,6 +497,10 @@ CSIFW_RES csifw_get_ap_mac_addr(csifw_service_handle hnd, csifw_mac_info *p_mac_
   }
 
   res = csi_packet_receiver_get_mac_addr(p_mac_info);
+  if (res != CSIFW_OK) {
+    CSIFW_LOGE("Failed to get AP MAC %d", res);
+    goto on_error;
+  }
 
 on_error:
   CSIFW_MUTEX_UNLOCK(&g_api_mutex);
@@ -563,7 +582,7 @@ csifw_service_info_t *add_service(csifw_context_t *p_csifw_ctx, service_callback
   }
 
   if (get_service_idx(cid) != -1) {
-    if (!p_csifw_ctx->parsed_buffptr) {
+    if (p_csifw_ctx->parsed_buffptr) {
       free(p_csifw_ctx->parsed_buffptr);
       p_csifw_ctx->parsed_buffptr = NULL;
     }
@@ -702,3 +721,4 @@ static int all_services_stopped(void)
   CSIFW_LOGI("All services are stopped\n");
   return 1;
 }
+
