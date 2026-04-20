@@ -149,4 +149,5 @@ def parse_assert_info(parser):
 
     # Parse the contents based on tokens in log file.
     print_current_task(log_file, bin_path, app_name)
-
+
+    

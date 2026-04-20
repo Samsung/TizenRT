@@ -31,15 +31,17 @@ register_dump = logUtils.register_dump
 partition_string = logUtils.partition_string
 
 
-# API to find crash binary, crash point and crash type from assert log
-def find_crash_point(parser):
-    pc_value = 0
-    lr_value = 0
-    is_app_crash = 0
-    is_kernel_crash = 0
-    assertline = ""
-    current_line = ""
+pc_value = 0
+lr_value = 0
+is_app_crash = 0
+is_kernel_crash = 0
+assertline = ""
 
+
+def extract_crash_info(parser):
+    global pc_value, lr_value, assertline
+    current_line = ""
+    
     parser.g_stext_flash = utils.get_address_of_symbol("_stext_flash")
     parser.g_etext_flash = utils.get_address_of_symbol("_etext_flash")
     if (parser.have_ram_kernel_text):
@@ -81,7 +83,11 @@ def find_crash_point(parser):
                 #word[2] contains the g_assertpc value
                 parser.g_assertpc = int(word[2].strip(),16)
                 
-    print('-----------------------------------------------------------------------------------------')
+
+
+def check_app_crash(parser):
+    global pc_value, lr_value, is_app_crash, assertline
+
     address1 = hex(lr_value)
     address2 = hex(pc_value)
     result = 0
@@ -169,7 +175,15 @@ def find_crash_point(parser):
                             print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
                             logUtils.format_output(result2, "of (pc - 8)")
 
-    # Check for lr & pc values in kernel text address range
+
+
+def check_kernel_crash(parser):
+    global pc_value, lr_value, is_kernel_crash, assertline
+
+    address1 = hex(lr_value)
+    address2 = hex(pc_value)
+    result = 0
+
     if (not is_app_crash) and (pc_value != 00000000):
         address1 = hex(lr_value)
         if (address1 >= hex(parser.g_stext_flash) and address1 < hex(parser.g_etext_flash)) or (address1 >= hex(parser.g_stext_ram) and address1 < hex(parser.g_etext_ram)):
@@ -242,6 +256,32 @@ def find_crash_point(parser):
                         print('\n\t[ Exact crash point might be -4 or -8 bytes from the PC ]')
                         logUtils.format_output(result2, "of (pc - 8)")
 
+
+
+# API to find crash binary, crash point and crash type from assert log
+def find_crash_point(parser):
+    global is_app_crash, is_kernel_crash, assertline
+
+    parser.g_stext_flash = utils.get_address_of_symbol("_stext_flash")
+    parser.g_etext_flash = utils.get_address_of_symbol("_etext_flash")
+    if (parser.have_ram_kernel_text):
+        parser.g_stext_ram = utils.get_address_of_symbol("_stext_ram")
+        parser.g_etext_ram = utils.get_address_of_symbol("_etext_ram")
+
+    # Parse the contents based on tokens in log file.
+    # pc_value, lr_value, assertline 
+    extract_crash_info(parser)
+    
+                
+    print('-----------------------------------------------------------------------------------------')
+    
+    # Check for application crash
+    check_app_crash(parser)
+
+    # Check for kernel crash 
+    check_kernel_crash(parser)
+    
+
     if (not is_app_crash) and (not is_kernel_crash):
         print('1. Crash Binary             : NA')
         logUtils.print_crash_type(parser, assertline)
@@ -254,3 +294,4 @@ def find_crash_point(parser):
                     if 'PC value might be invalid' in line:
                         print('\tPC value might be invalid.')
             print('\t-  PC & LR values not in any text range! No probable crash point detected.')
+            

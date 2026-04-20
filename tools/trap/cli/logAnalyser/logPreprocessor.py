@@ -152,3 +152,4 @@ def preprocessLogFile(lparser):
 
     # Get the number of application binaries, names, text address and sizes
 	find_number_of_binaries(lparser)
+    
