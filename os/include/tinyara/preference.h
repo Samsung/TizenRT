@@ -41,6 +41,7 @@
 
 /* Error Type of Result Value returned from Preference */
 enum preference_result_error_e {
+	PREFERENCE_ERROR_NONE = 0,
 	PREFERENCE_IO_ERROR = -1,
 	PREFERENCE_INVALID_PARAMETER = -2,
 	PREFERENCE_PATH_NOT_FOUND = -3,

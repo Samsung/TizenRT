@@ -93,7 +93,7 @@ static int _netdev_getname(struct netdev *dev, void *arg)
 	uint8_t flag;
 	struct ifreq *req = (struct ifreq *)arg;
 	ND_NETOPS(dev, get_flag)(dev, &flag);
-	if ((flag & IFF_RUNNING) && req->ifr_name[0] == 0) {
+	if ((flag & IFF_RUNNING)) { //&& req->ifr_name[0] == 0) {/*This will provide latest running interface*/
 		strncpy(req->ifr_name, dev->ifname, IFNAMSIZ);
 	}
 	return 0;
