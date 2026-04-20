@@ -40,9 +40,6 @@
 #define _LIBCPP_HAS_NO_STDIN
 #define _LIBCPP_HAS_NO_STDOUT
 
-// Additional constraints for older compiler compatibility
-#define _LIBCPP_HAS_NO_FGETPOS_FSETPOS
-
 // Compiler built-in function fallbacks for arm-none-eabi-g++
 // These are required for libc++ 17.0.6 compatibility
 // For embedded systems, assume nothrow for simple types to avoid compilation issues
