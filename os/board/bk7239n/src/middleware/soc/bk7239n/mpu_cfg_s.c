@@ -106,8 +106,8 @@ void bk_mpu_init(void)
     mpu_entry = mpu_entry_alloc();
     mpu_cfg.region_base = 0x38000000UL;
     mpu_cfg.region_size = 0x7FFE0;
-    mpu_cfg.xn = MPU_EXEC_ALLOW;
-    mpu_cfg.ap = MPU_UN_PRIV_RW;
+    mpu_cfg.xn = MPU_EXEC_NEVER;
+    mpu_cfg.ap = MPU_PRIV_RW;
     mpu_cfg.sh = MPU_NON_SHAREABLE;
     mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WT_T_RA;
     mpu_region_cfg(mpu_entry, &mpu_cfg);
@@ -115,8 +115,8 @@ void bk_mpu_init(void)
     mpu_entry = mpu_entry_alloc();
 	mpu_cfg.region_base = 0x38000000UL;
 	mpu_cfg.region_size = 0x7FFE0;
-	mpu_cfg.xn = MPU_EXEC_ALLOW;
-	mpu_cfg.ap = MPU_UN_PRIV_RW;
+	mpu_cfg.xn = MPU_EXEC_NEVER;
+	mpu_cfg.ap = MPU_PRIV_RW;
 	mpu_cfg.sh = MPU_NON_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
@@ -129,7 +129,7 @@ void bk_mpu_init(void)
 	mpu_cfg.region_base = 0x50000000;
 	mpu_cfg.region_size = 0x1FFFFFE0;
 	mpu_cfg.xn = MPU_EXEC_NEVER;
-	mpu_cfg.ap = MPU_UN_PRIV_RW;
+	mpu_cfg.ap = MPU_PRIV_RW;
 	mpu_cfg.sh = MPU_INR_SHAREABLE;
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_DEVICE;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
@@ -143,8 +143,8 @@ void bk_mpu_init(void)
         if (psram_data_limit > psram_data_base + 32) {
             mpu_cfg.region_base = psram_data_base;
             mpu_cfg.region_size = (psram_data_limit - psram_data_base) - 32;
-            mpu_cfg.xn = MPU_EXEC_ALLOW;
-            mpu_cfg.ap = MPU_UN_PRIV_RW;
+            mpu_cfg.xn = MPU_EXEC_NEVER;
+            mpu_cfg.ap = MPU_PRIV_RW;
             mpu_cfg.sh = MPU_NON_SHAREABLE;
             mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
             mpu_region_cfg(mpu_entry, &mpu_cfg);
@@ -176,7 +176,7 @@ void bk_mpu_init(void)
             mpu_cfg.region_base = psram_heap_base;
             mpu_cfg.region_size = (psram_heap_limit - psram_heap_base) - 32;
             mpu_cfg.xn = MPU_EXEC_NEVER;
-            mpu_cfg.ap = MPU_UN_PRIV_RW;
+            mpu_cfg.ap = MPU_PRIV_RW;
             mpu_cfg.sh = MPU_NON_SHAREABLE;
 #if defined(CONFIG_BK_TIZEN_IPERF_PROJECT) && (CONFIG_BK_TIZEN_IPERF_PROJECT == 1)
             mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
