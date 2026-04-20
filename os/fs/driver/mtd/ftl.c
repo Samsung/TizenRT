@@ -586,3 +586,110 @@ int ftl_initialize(int minor, FAR struct mtd_dev_s *mtd)
 
 	return ret;
 }
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: ftl_initialize_ext
+ *
+ * Description:
+ *   Initialize to provide a block driver wrapper around an MTD interface
+ *
+ * Input Parameters:
+ *   minor - The minor device number.  The MTD block device will be
+ *      registered as as /dev/mtdblockN where N is the minor number.
+ *   mtd - The MTD device that supports the FLASH interface.
+ *   partname - Optional partition name to append to dev entry, NULL if
+ *              not supplied.
+ ****************************************************************************/
+
+#ifdef CONFIG_SMARTFS_DEBUG
+int ftl_initialize_ext(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partname)
+{
+	struct ftl_struct_s *dev;
+	char devname[22];
+	int ret = -ENOMEM;
+
+	/* Sanity check */
+
+	if (minor < 0 || minor > 255 || !mtd) {
+		return -EINVAL;
+	}
+
+	/* Allocate a FTL device structure */
+
+	dev = (struct ftl_struct_s *)kmm_malloc(sizeof(struct ftl_struct_s));
+	if (dev) {
+		/* Initialize the FTL device structure */
+
+		dev->mtd = mtd;
+
+		/* Get the device geometry. (casting to uintptr_t first eliminates
+		 * complaints on some architectures where the sizeof long is different
+		 * from the size of a pointer).
+		 */
+
+		ret = MTD_IOCTL(mtd, MTDIOC_GEOMETRY, (unsigned long)((uintptr_t)&dev->geo));
+		if (ret < 0) {
+			dbg("ERROR: MTD ioctl(MTDIOC_GEOMETRY) failed: %d\n", ret);
+			kmm_free(dev);
+			return ret;
+		}
+
+		/* Allocate one, in-memory erase block buffer */
+
+#ifdef CONFIG_FS_WRITABLE
+		dev->eblock  = (FAR uint8_t *)kmm_malloc(dev->geo.erasesize);
+		if (!dev->eblock) {
+			dbg("ERROR: Failed to allocate an erase block buffer\n");
+			kmm_free(dev);
+			return -ENOMEM;
+		}
+#endif
+
+		/* Get the number of R/W blocks per erase block */
+
+		dev->blkper = dev->geo.erasesize / dev->geo.blocksize;
+		DEBUGASSERT(dev->blkper * dev->geo.blocksize == dev->geo.erasesize);
+
+		/* Configure read-ahead/write buffering */
+
+#ifdef FTL_HAVE_RWBUFFER
+		dev->rwb.blocksize   = dev->geo.blocksize;
+		dev->rwb.nblocks     = dev->geo.neraseblocks * dev->blkper;
+		dev->rwb.dev         = (FAR void *)dev;
+
+#if defined(CONFIG_FS_WRITABLE) && defined(CONFIG_FTL_WRITEBUFFER)
+		dev->rwb.wrmaxblocks = dev->blkper;
+		dev->rwb.wrflush     = ftl_flush;
+#endif
+
+#ifdef CONFIG_FTL_READAHEAD
+		dev->rwb.rhmaxblocks = dev->blkper;
+		dev->rwb.rhreload    = ftl_reload;
+#endif
+
+		ret = rwb_initialize(&dev->rwb);
+		if (ret < 0) {
+			dbg("ERROR: rwb_initialize failed: %d\n", ret);
+			kmm_free(dev);
+			return ret;
+		}
+#endif
+
+		/* Create a MTD block device name */
+		snprintf(devname, 22, "/dev/mtdblock%d%s", minor, partname);
+		/* Inode private data is a reference to the FTL device structure */
+
+		ret = register_blockdriver(devname, &g_bops, 0, dev);
+		if (ret < 0) {
+			dbg("ERROR: register_blockdriver failed: %d\n", -ret);
+			kmm_free(dev);
+		}
+	}
+
+	return ret;
+}
+#endif
