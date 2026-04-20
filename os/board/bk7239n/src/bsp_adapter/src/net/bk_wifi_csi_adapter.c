@@ -41,6 +41,7 @@ struct bk_csi_dev_s {
 	struct wifi_csi_lowerhalf_s dev;
 	beken_semaphore_t devsem;
 	wifi_csi_receive_mode_config_t config_param;
+	wifi_csi_active_mode_config_t active_mode_config_param;
 	unsigned int interval_ms;
 	unsigned int accuracy;
 	int csi_data_reported_idx;
@@ -355,6 +356,7 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 		return -EINVAL;
 	}
 	/* check if sta connected */
+	bool is_ht = (config_type == HT_CSI_DATA || config_type == HT_CSI_DATA_ACC1);
 	wifi_link_status_t link_status = {0};
 	os_memset(&link_status, 0x0, sizeof(link_status));
 	BK_RETURN_ON_ERR(bk_wifi_sta_get_link_status(&link_status));
@@ -365,8 +367,8 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 		return -EINVAL;
 	}
 	/* 1. memset config zero */
-	memset(&g_bk_drv->config_param, 0, sizeof(wifi_csi_receive_mode_config_t));
-	
+	memset(&g_bk_drv->config_param.filter_config, 0, sizeof(wifi_csi_filter_config_t));
+
 	/* 2. assign configs */
 	g_bk_drv->interval_ms = config_args->interval;
 
@@ -386,12 +388,13 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 	case NON_HT_CSI_DATA:
 		g_bk_drv->config_param.filter_config.proto_type_bmp = 0x1;
 		g_bk_drv->config_param.filter_config.cbw_bmp = 0x1;
+		g_bk_drv->active_mode_config_param.interval = config_args->interval;
 		g_bk_drv->accuracy = 0;
 		break;
-
 	case NON_HT_CSI_DATA_ACC1:
 		g_bk_drv->config_param.filter_config.proto_type_bmp = 0x1;
 		g_bk_drv->config_param.filter_config.cbw_bmp = 0x1;
+		g_bk_drv->active_mode_config_param.interval = config_args->interval;
 		g_bk_drv->accuracy = 1;
 		break;
 	
@@ -400,8 +403,7 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 		return -EINVAL;
 	}
 
-	if(config_action == CSI_CONFIG_ENABLE)
-	{
+	if(is_ht && config_action == CSI_CONFIG_ENABLE) {
 		g_bk_drv->config_param.filter_config.filter_mac_addr_type = 1;// src && dst
 		g_bk_drv->config_param.filter_config.filter_src_mac_num = 1;
 		os_memcpy(g_bk_drv->config_param.filter_config.filter_src_mac, link_status.bssid, BK_MAC_ADDR_LEN);
@@ -411,17 +413,31 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 		os_memcpy(g_bk_drv->config_param.filter_config.filter_dst_mac, sta_mac, BK_MAC_ADDR_LEN);
 	}
 
-	if(g_bk_drv->config_param.enable == 1) 
-	{	
-		g_bk_drv->config_param.enable = 0;
-		ret = bk_wifi_csi_receive_mode_req(&g_bk_drv->config_param);
-		if (ret != OK) 
-		{
-			csidbg("ERROR: wifi csi set config(enable) failed, ret: %d\n", ret);
-			return ret;
+	if (is_ht) {
+		if (g_bk_drv->config_param.enable == 1) {
+			bk_wifi_csi_data_buffer_free();
+			bk_wifi_csi_report_timer_set(false);
+			g_bk_drv->config_param.enable = 0;
+			ret = bk_wifi_csi_receive_mode_req(&g_bk_drv->config_param);
+			if (ret != OK) 
+			{
+				csidbg("ERROR: wifi csi set config(enable) failed, ret: %d\n", ret);
+				return ret;
+			}
+		}
+	} else {
+		if (g_bk_drv->active_mode_config_param.enable == 1) {
+			bk_wifi_csi_data_buffer_free();
+			bk_wifi_csi_report_timer_set(false);
+			g_bk_drv->active_mode_config_param.enable = 0;
+			ret = bk_wifi_csi_active_mode_req(&g_bk_drv->active_mode_config_param);
+			if (ret != OK) 
+			{
+				csidbg("ERROR: wifi csi set config(enable) failed, ret: %d\n", ret);
+				return ret;
+			}
 		}
 	}
-
 	/* 3. call set config for enable/disable */
 	if (config_action == CSI_CONFIG_ENABLE) 
 	{
@@ -431,7 +447,6 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 			csidbg("ERROR: failed to allocate csi data buffer\n");
 			return -ENOMEM;
 		}
-
 		csivdbg("wifi csi enable config requested\n");
 		if (!bk_wifi_csi_report_timer_set(true)) 
 		{
@@ -440,26 +455,24 @@ static int bk_wifi_csi_set_config(unsigned long arg)
 			return -EINVAL;
 		}
 		/* changes for enable */
-		g_bk_drv->config_param.enable = 1;
-		ret = bk_wifi_csi_receive_mode_req(&g_bk_drv->config_param);
-		if (ret != OK) 
-		{
-			bk_wifi_csi_data_buffer_free();
-			csidbg("ERROR: wifi csi set config(enable) failed, ret: %d\n", ret);
-			return ret;
-		}
-	} 
-	else if (config_action == CSI_CONFIG_DISABLE) 
-	{
-		bk_wifi_csi_data_buffer_free();
-		/* changes for disable*/
-		csivdbg("wifi csi disable config requested\n");
-		bk_wifi_csi_report_timer_set(false);
-		g_bk_drv->config_param.enable = 0;
-		ret = bk_wifi_csi_receive_mode_req(&g_bk_drv->config_param);
-		if (ret != OK) {
-			csidbg("ERROR: wifi csi set config(disable) failed, ret: %d\n", ret);
-			return ret;
+		if(is_ht) {
+			g_bk_drv->config_param.enable = 1;
+			ret = bk_wifi_csi_receive_mode_req(&g_bk_drv->config_param);
+			if (ret != OK) 
+			{
+				bk_wifi_csi_data_buffer_free();
+				csidbg("ERROR: wifi csi set config(enable) failed, ret: %d\n", ret);
+				return ret;
+			}
+		} else {
+			g_bk_drv->active_mode_config_param.enable = 1;
+			ret = bk_wifi_csi_active_mode_req(&g_bk_drv->active_mode_config_param);
+			if (ret != OK) 
+			{
+				bk_wifi_csi_data_buffer_free();
+				csidbg("ERROR: wifi csi set config(enable) failed, ret: %d\n", ret);
+				return ret;
+			}
 		}
 	}
 
@@ -677,6 +690,12 @@ static int bk_wifi_csi_getcsidata(unsigned char *buffer, size_t buflen) {
 	return len;
 }
 
+void bk_wifi_csi_disable_HE_and_VHT(void)
+{
+	BK_LOG_ON_ERR(bk_wifi_capa_config(WIFI_CAPA_ID_VHT_EN, 0));
+	BK_LOG_ON_ERR(bk_wifi_capa_config(WIFI_CAPA_ID_HE_EN, 0));
+}
+
 FAR struct wifi_csi_lowerhalf_s *bk_wifi_csi_initialize(void)
 {
 	int err = 0;
@@ -697,6 +716,7 @@ FAR struct wifi_csi_lowerhalf_s *bk_wifi_csi_initialize(void)
 		return NULL;
 	}
 	bk_wifi_csi_givesem();
+	bk_wifi_csi_disable_HE_and_VHT();
 
 	return &g_bk_drv->dev;
 }
