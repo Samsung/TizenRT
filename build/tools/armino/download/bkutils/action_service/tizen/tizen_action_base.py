@@ -1,6 +1,6 @@
 from bkutils.action_service.action_base import ActionBase
 from bkutils.action_service.tizen.serial_port_config import TizenSerialPortConfig
-from bkutils.chip_controller.chip_set import get_chip_set_with_chip_id
+from bkutils.chip_controller.chip_set import BK7239N
 
 
 class TizenActionBase(ActionBase):
@@ -16,7 +16,7 @@ class TizenActionBase(ActionBase):
 
     def init_chip_set(self):
         # init chip_set class
-        self.chip_set = get_chip_set_with_chip_id(self.config.chip_id)
+        self.chip_set = BK7239N()
 
         if self.chip_set is None:
             raise Exception("get chip set fail.")

@@ -105,17 +105,13 @@ class BaseController(object):
     
     def get_bus_v3(self, reset_type=None, linkcheck_obj=None, reset_baudrate=115200, max_try_count=100,link_key=None):
         BKLog.i('Getting bus v3...')
-        self.do_reset(RESET_TYPE.DTR_RTS, baudrate=reset_baudrate)
         link_check_ret = False
         outter_cnt = 0
         max_recycle_count = 30
-        max_retry_interval_first = 80
-        max_retry_interval_other = 400
-        max_retry_interval = max_retry_interval_first
+        max_retry_interval = 400
         use_mixed_detection = True
-        delay_time_before_reboot = 200
-        delay_time_after_reboot = 10
         while outter_cnt < max_recycle_count:
+            self.serial_instance.drain()
             inner_cnt = 0
             while inner_cnt < max_retry_interval:
                 link_check_ret = self.do_link_check(LINKCHECK.BOOTROM,link_key=link_key,max_try_count=1,use_mixed_detection=use_mixed_detection)
@@ -128,11 +124,6 @@ class BaseController(object):
             if link_check_ret:
                 break
 
-            self.serial_instance.write_cmd(b'\n')
-            time.sleep(delay_time_before_reboot/1000)
-            self.do_reset(RESET_TYPE.CMD_ASCII, baudrate=reset_baudrate)
-            time.sleep(delay_time_after_reboot/1000)
-            max_retry_interval = max_retry_interval_other
             outter_cnt += 1
         
         if link_check_ret:

@@ -1,28 +1,30 @@
-# 该配置文件用于配置flash信息，工具会根据配置信息做相应的flash操作
+# This configuration file is used to configure flash information.
+# The tool will perform corresponding flash operations based on the configuration.
 
-# 注意: 错误的配置信息会导致不可预知的错误，添加新的flash的时请认真核对信息
+# WARNING: Incorrect configuration may cause unpredictable errors.
+# Please verify the information carefully when adding a new flash device.
 
-
-#############################################################
-#################       参数说明      ########################
-#############################################################
-# MID: flash MID，类型: hex   
-# IC Name: flash的IC名称  类型:string
-# Manufactor: 制造商      类型:string
-# Size: flash容量         类型:int 单位为bit
-# UNPROT_CMD: flash寄存器解保护控制位内容 (bit数组) 一般只关心CMP、BPx bit位
-# PROT_CMD: flash寄存器加保护命令控制位内容 (bit数组)  一般只关心CMP、BPx bit位
-# R_SR_CMD（Read status register）: 状态寄存器读命令，最多支持4个字节
-# W_SR_CMD（Write status register）: 状态寄存器写命令(用于Flash加保护和解保护操作)(0x01支持写入多个SR时，可以忽略0x31指令，只填写0x01即可)
 
 #############################################################
-#################       如何添加新的flash      ###############
+#################   Parameter Description   ##################
+#############################################################
+# MID: Flash manufacturer ID, type: hex   
+# IC Name: Flash IC name, type: string
+# Manufactor: Manufacturer name, type: string
+# Size: Flash capacity, type: int, unit: bit
+# UNPROT_CMD: Flash register unprotect control bits (bit array), typically only CMP and BPx bits matter
+# PROT_CMD: Flash register protect control bits (bit array), typically only CMP and BPx bits matter
+# R_SR_CMD (Read Status Register): Status register read command, supports up to 4 bytes
+# W_SR_CMD (Write Status Register): Status register write command (used for flash protect/unprotect operations). When 0x01 supports writing multiple status registers, the 0x31 command can be omitted; just use 0x01.
+
+#############################################################
+#################   How to Add a New Flash   #################
 #############################################################
 # 
-#  1. 获取flash的datasheet
-#  2. 从datasheet中获取上述“参数说明”中所需的信息
-#  3. 参考下面已有的flash配置，添加后保存 （修改前建议备份一下配置文件，以便出现错误后恢复）
-#  4. 关闭工具后重新打开
+#  1. Obtain the flash datasheet
+#  2. Extract the required information described in "Parameter Description" from the datasheet
+#  3. Refer to existing flash configurations below, add and save (backup the config file before modifying to recover from errors)
+#  4. Close and reopen the tool
 # 
 
 [
@@ -60,6 +62,7 @@
   #boya
   [  0x001440e0      ,     BY25Q80A        ,        BY              ,     8 * 1024 * 1024       ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         0x01             ],
   [  0x001340e0      ,     BY25Q40A        ,        BY              ,     4 * 1024 * 1024       ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         0x01             ],
+  [  0x00184068      ,     BY25Q128ES      ,        BY              ,     128 * 1024 * 1024     ,  [null, 0, 0, 0, 0, 0, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         0x01             ],
   #puya
   [  0x00124485      ,     PY25D22U        ,        PY              ,     2 * 1024 * 1024       ,  [null, 0, 0, 0, 0, 0, null, null]                                              , [null, 0, 0, 1, 1, 1, null, null]                                              , [null, null, null, null, null, null, null, null]                                                ,          0x05                   ,         0x01             ],
   [  0x00124585      ,     PY25D24U        ,        PY              ,     2 * 1024 * 1024       ,  [null, 0, 0, 0, 0, 0, null, null]                                              , [null, 0, 0, 1, 1, 1, null, null]                                              , [null, null, null, null, null, null, null, null]                                                ,          0x05                   ,         0x01             ],
@@ -70,10 +73,16 @@
   [  0x00152085      ,     PY25Q16HB_K     ,        PY              ,     16 * 1024 * 1024      ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         [0x01,0x31]      ],
   [  0x00166085      ,     PY25Q32H        ,        PY              ,     32 * 1024 * 1024      ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         [0x01,0x31]      ],
   [  0x00176085      ,     PY25Q64H        ,        PY              ,     64 * 1024 * 1024      ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         [0x01,0x31]      ],
+  [  0x00172085      ,     PY25Q64HA       ,        PY              ,     64 * 1024 * 1024      ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         [0x01,0x31]      ], 
   #UC
   [  0x001260b3      ,     UC25HQ20        ,        UC              ,     2 * 1024 * 1024       ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         0x01             ],
   [  0x001360b3      ,     UC25HQ40        ,        UC              ,     4 * 1024 * 1024       ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         0x01             ],
   #GT
   [  0x001240c4      ,     GT25Q20D        ,        GT              ,     2 * 1024 * 1024       ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         0x01             ],
-  [  0x001340c4      ,     GT25Q40D        ,        GT              ,     4 * 1024 * 1024       ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         0x01             ]
+  [  0x001340c4      ,     GT25Q40D        ,        GT              ,     4 * 1024 * 1024       ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         0x01             ],
+  [  0x001840c4      ,     GT25Q128EZ      ,        GT              ,     128 * 1024 * 1024     ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         [0x01,0x31]      ],
+  #WB
+  [  0x001840ef      ,     WB25Q128JV      ,        WB              ,     128 * 1024 * 1024     ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         0x01             ],
+  #xm
+  [  0x00184020      ,     XM25QH128D       ,        XM              ,     128 * 1024 * 1024     ,  [null, 0, null, null, null, null, null, null, null, 0, 0, 0, 0, 0, null, null] , [null, 0, null, null, null, null, null, null, null, 0, 0, 1, 1, 1, null, null] , [null, null, 1, 1, 1, null, null, null, null, null, null, null, null, null, null, null]         ,          [0x05, 0x35]           ,         [0x01,0x31]      ]
 ]
