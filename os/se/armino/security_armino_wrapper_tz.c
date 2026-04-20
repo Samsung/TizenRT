@@ -2244,40 +2244,47 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
     // Open the key
     psa_key_id_t key_id = 0;
     psa_status_t status;
+    size_t coord_len;
     size_t pub_key_len;
     uint8_t *pub_key;
 
     switch(ecdh_param->curve) {
         case HAL_ECDSA_SEC_P192R1:
-            pub_key_len = 48;
+            coord_len = 24;
             break;
         case HAL_ECDSA_SEC_P224R1:
-            pub_key_len = 56;
+            coord_len = 28;
             break;
         case HAL_ECDSA_SEC_P256R1:
         case HAL_ECDSA_BRAINPOOL_P256R1:
-            pub_key_len = 64;
+            coord_len = 32;
             break;
         case HAL_ECDSA_SEC_P384R1:
         case HAL_ECDSA_BRAINPOOL_P384R1:
-            pub_key_len = 96;
+            coord_len = 48;
             break;
         case HAL_ECDSA_BRAINPOOL_P512R1:
-            pub_key_len = 128;
+            coord_len = 64;
             break;
         case HAL_ECDSA_SEC_P521R1:
-            pub_key_len = 132;
+            coord_len = 66;
             break;
         case HAL_ECDSA_CURVE_25519:
-            pub_key_len = 32;
+            coord_len = 32;
             break;
         default:
             return HAL_INVALID_ARGS;
     }
 
+    if (ecdh_param->curve == HAL_ECDSA_CURVE_25519) {
+        pub_key_len = coord_len;
+    } else {
+        pub_key_len = coord_len * 2;
+    }
+
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
 #if CONFIG_TFM_ASYM_ALGO_NSC
-        uint32_t priv_key_len = pub_key_len/2;
+        uint32_t priv_key_len = coord_len;
 
         TFM_NSC_LOCK_OR_RETURN();
         status = ecdh_factory_key_agreement(ecdh_param, priv_key_len, key_idx, shared_secret);
@@ -2310,6 +2317,14 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
             return HAL_SUCCESS;
         }
 
+        if (ecdh_param->pubkey_x->data_len == 0 || ecdh_param->pubkey_x->data_len > coord_len ||
+            ecdh_param->pubkey_y->data_len == 0 || ecdh_param->pubkey_y->data_len > coord_len) {
+            dbg("ECDH invalid peer key length: curve=%d x_len=%d y_len=%d expected_max=%d\n",
+                ecdh_param->curve, ecdh_param->pubkey_x->data_len,
+                ecdh_param->pubkey_y->data_len, coord_len);
+            return HAL_INVALID_ARGS;
+        }
+
         pub_key = (uint8_t *)kmm_malloc(pub_key_len + 1);
         if (pub_key == NULL) {
             return HAL_NOT_ENOUGH_MEMORY;
@@ -2318,9 +2333,12 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
         shared_secret->data_len = pub_key_len;
 
         pub_key[0] = 0x4;
-        memcpy(&pub_key[1], ecdh_param->pubkey_x->data, ecdh_param->pubkey_x->data_len);
-        memcpy(&pub_key[1+ecdh_param->pubkey_x->data_len], ecdh_param->pubkey_y->data, ecdh_param->pubkey_y->data_len);
-        pub_key_len = 1+ecdh_param->pubkey_x->data_len+ecdh_param->pubkey_y->data_len;
+        memset(&pub_key[1], 0, pub_key_len);
+        memcpy(&pub_key[1 + coord_len - ecdh_param->pubkey_x->data_len],
+               ecdh_param->pubkey_x->data, ecdh_param->pubkey_x->data_len);
+        memcpy(&pub_key[1 + coord_len + coord_len - ecdh_param->pubkey_y->data_len],
+               ecdh_param->pubkey_y->data, ecdh_param->pubkey_y->data_len);
+        pub_key_len = 1 + pub_key_len;
 
         status = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, pub_key, pub_key_len, shared_secret->data, shared_secret->data_len, &shared_secret->data_len);
         if (status != PSA_SUCCESS) {
