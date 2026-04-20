@@ -1267,7 +1267,10 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 
 			if (scan_result_sum == 0) {
 				ndbg("[BK] scan multi doesn't found AP\r\n");
-				goto multi_scan_fail;
+				TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+				g_scan_flag = 0;
+				bk_trwifi_clear_multi_scan_cache();
+				return TRWIFI_SUCCESS;
 			}
 			if(scan_result_sum > 0){
 				g_scan_list	= (trwifi_scan_list_s *)os_malloc(sizeof(trwifi_scan_list_s)*scan_result_sum);
