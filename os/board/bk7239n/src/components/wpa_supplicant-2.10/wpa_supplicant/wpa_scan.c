@@ -1584,6 +1584,7 @@ int wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec)
 				info.state = WIFI_LINKSTATE_STA_CONNECTING;
 				info.reason_code = WIFI_REASON_MAX;
 				mhdr_set_station_status(info);
+				bk_set_last_join_wpa_state((uint8_t)WPA_SCANNING);
 				wpa_s->auto_reconnect_count--;
 				eloop_register_timeout(sec, usec, wpa_supplicant_scan, wpa_s, NULL);
 			} else if (wpa_s->auto_reconnect_count == 0) {
@@ -2930,6 +2931,7 @@ wpa_supplicant_get_scan_results(struct wpa_supplicant *wpa_s,
 		linkinfo.state = WIFI_LINKSTATE_STA_DISCONNECTED;
 		linkinfo.reason_code= WIFI_REASON_NO_AP_FOUND;
 		mhdr_set_station_status(linkinfo);
+		bk_set_last_join_wpa_state((uint8_t)WPA_SCANNING);
 
 #ifdef CONFIG_AUTO_RECONNECT
 		if (!wpas_auto_reconnect_limited(wpa_s)) {

@@ -150,6 +150,41 @@ static int valid_ch_list[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 36,
 static int valid_ch_list_size = sizeof(valid_ch_list)/sizeof(valid_ch_list[0]);
 
 bool g_sta_is_start = 0;
+
+static void bk_netmgr_log_sta_connect_failure(uint32_t reason_code, uint8_t last_join_wpa_state)
+{
+        if (reason_code == WIFI_REASON_NO_AP_FOUND || last_join_wpa_state == WPA_SCANNING) {
+                return;
+        }
+
+        if (reason_code == WIFI_REASON_WRONG_PASSWORD ||
+                reason_code == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT ||
+                last_join_wpa_state == WPA_ASSOCIATED ||
+                last_join_wpa_state == WPA_4WAY_HANDSHAKE) {
+                return;
+        }
+
+        if (last_join_wpa_state == WPA_AUTHENTICATING ||
+                reason_code == WIFI_REASON_IEEE_802_1X_AUTH_FAILED ||
+                reason_code == WIFI_REASON_PREV_AUTH_NOT_VALID) {
+                return;
+        }
+
+        if (last_join_wpa_state == WPA_ASSOCIATING ||
+                reason_code == WIFI_REASON_STA_REQ_ASSOC_WITHOUT_AUTH ||
+                reason_code == WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA) {
+        }
+}
+
+static void bk_netmgr_log_sta_disconnection(uint32_t reason_code, bool local_generated)
+{
+        if (reason_code == WIFI_REASON_BEACON_LOST) {
+                return;
+        }
+
+        if (!local_generated && reason_code != WIFI_REASON_DISCONNECT_BY_APP) {
+        }
+}
 /*
  * Callback
 */
@@ -201,6 +236,8 @@ void rtw_mutex_put(_mutex *pmutex)
 void beken_report_wrong_password( void )
 {
     auth_fail_cnt++;
+    bk_netmgr_log_sta_connect_failure(WIFI_REASON_WRONG_PASSWORD,
+                                      bk_get_last_join_wpa_state());
     //set80211_sta_error_flag(CLP_STA_WRONG_PASSWORD);
     if (auth_fail_cnt%2 == 1) {
         trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
@@ -925,6 +962,7 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
     case EVENT_WIFI_STA_CONNECTED:
         sta_connected = (wifi_event_sta_connected_t *)event_data;
         BK_WIFI_LOGI("BEKEN_WIFI_EVENT", "BK STA connected %s\n", sta_connected->ssid);
+        auth_fail_cnt = 0;
         // set ap info start
 		g_sta_is_start = 1;
 #if 0
@@ -952,8 +990,12 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
         ndbg("BK STA disconnected, reason(%d)%s\n", sta_disconnected->disconnect_reason,
             sta_disconnected->local_generated ? ", local_generated" : "");
         if (g_sta_connecting) {
+            bk_netmgr_log_sta_connect_failure(sta_disconnected->disconnect_reason,
+                                              bk_get_last_join_wpa_state());
             trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
         } else {
+            bk_netmgr_log_sta_disconnection(sta_disconnected->disconnect_reason,
+                                            sta_disconnected->local_generated);
             trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
         }
         g_sta_connecting = false;
@@ -1420,13 +1462,19 @@ trwifi_result_e bk_wifi_netmgr_get_info(struct netdev *dev, trwifi_info *wifi_in
 trwifi_result_e bk_wifi_netmgr_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state)
 {
     wifi_linkstate_reason_t wpas_state = mhdr_get_station_status();
+    uint8_t last_join_wpa_state = bk_get_last_join_wpa_state();
     
     switch (wpas_state.state) {
         case WIFI_LINKSTATE_STA_IDLE:
         wpa_supplicant_state->wpa_supplicant_state = WPA_INACTIVE;
         break;
         case WIFI_LINKSTATE_STA_CONNECTING:
-        wpa_supplicant_state->wpa_supplicant_state = WPA_ASSOCIATING;
+        if (last_join_wpa_state >= WPA_AUTHENTICATING &&
+            last_join_wpa_state < WPA_COMPLETED) {
+            wpa_supplicant_state->wpa_supplicant_state = last_join_wpa_state;
+        } else {
+            wpa_supplicant_state->wpa_supplicant_state = WPA_ASSOCIATING;
+        }
         break;
         case WIFI_LINKSTATE_STA_CONNECTED:
         wpa_supplicant_state->wpa_supplicant_state = WPA_COMPLETED;
