@@ -85,6 +85,7 @@
 #define AMEBASMART_SPI_MASTER	0
 #define AMEBASMART_SPI_SLAVE	1
 #define SPI_DMA_MAX_BUFFER_SIZE 65535
+#define SPI_DEFAULT_FREQUENCY 1000000
 /************************************************************************************
  * Private Types
  ************************************************************************************/
@@ -233,6 +234,7 @@ static struct amebasmart_spidev_s g_spi0dev = {
 */
 
 	.spi_object = {0},
+	.frequency = SPI_DEFAULT_FREQUENCY,
 	.refs = 0,
 	.spi_idx = MBED_SPI0,
 	.spi_mosi = SPI0_MOSI,
@@ -292,6 +294,7 @@ static struct amebasmart_spidev_s g_spi1dev = {
 */
 
 	.spi_object = {0},
+	.frequency = SPI_DEFAULT_FREQUENCY,
 	.refs = 0,
 	.spi_idx = MBED_SPI1,
 	.spi_mosi = SPI1_MOSI,
@@ -1399,6 +1402,10 @@ static void amebasmart_spi_bus_initialize(struct amebasmart_spidev_s *priv, uint
 
 	spi_init(&priv->spi_object, priv->spi_mosi, priv->spi_miso, priv->spi_sclk, priv->spi_cs0);
 	spi_format(&priv->spi_object, priv->nbits, priv->mode, priv->role);
+	/*should only set the frequency when its in master mode*/
+	if (priv->role == AMEBASMART_SPI_MASTER) {
+		spi_frequency(&priv->spi_object, priv->frequency);
+	}
 	sem_init(&priv->exclsem, 0, 1);
 #ifdef CONFIG_AMEBASMART_SPI_DMA
 	sem_init(&priv->rxsem, 0, 0);
