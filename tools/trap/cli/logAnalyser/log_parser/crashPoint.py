@@ -42,12 +42,6 @@ def extract_crash_info(parser):
     global pc_value, lr_value, assertline
     current_line = ""
     
-    parser.g_stext_flash = utils.get_address_of_symbol("_stext_flash")
-    parser.g_etext_flash = utils.get_address_of_symbol("_etext_flash")
-    if (parser.have_ram_kernel_text):
-        parser.g_stext_ram = utils.get_address_of_symbol("_stext_ram")
-        parser.g_etext_ram = utils.get_address_of_symbol("_etext_ram")
-
     # Parse the contents based on tokens in log file.
     with open(parser.log_file) as searchfile:
         for line in searchfile:
@@ -184,6 +178,7 @@ def check_kernel_crash(parser):
     address2 = hex(pc_value)
     result = 0
 
+    # Check for lr & pc values in kernel text address range
     if (not is_app_crash) and (pc_value != 00000000):
         address1 = hex(lr_value)
         if (address1 >= hex(parser.g_stext_flash) and address1 < hex(parser.g_etext_flash)) or (address1 >= hex(parser.g_stext_ram) and address1 < hex(parser.g_etext_ram)):
