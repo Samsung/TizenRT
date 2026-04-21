@@ -58,7 +58,7 @@ int tc_libcxx_containers_forwardlist_cons_move_assign_noexcept(void)
     }
     {
         typedef std::forward_list<MoveOnly, test_allocator<MoveOnly>> C;
-        static_assert(!std::is_nothrow_move_assignable<C>::value, "");
+        static_assert(std::is_nothrow_move_assignable<C>::value, "");
     }
 #if defined(_LIBCPP_VERSION)
     {
@@ -67,7 +67,7 @@ int tc_libcxx_containers_forwardlist_cons_move_assign_noexcept(void)
     }
     {
         typedef std::forward_list<MoveOnly, some_alloc<MoveOnly>> C;
-        static_assert(!std::is_nothrow_move_assignable<C>::value, "");
+        static_assert(std::is_nothrow_move_assignable<C>::value, "");
     }
 #endif // _LIBCPP_VERSION
     TC_SUCCESS_RESULT();

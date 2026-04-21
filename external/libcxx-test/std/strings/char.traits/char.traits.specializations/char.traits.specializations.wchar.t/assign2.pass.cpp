@@ -37,13 +37,13 @@
 
 #include "test_macros.h"
 
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
 #if TEST_STD_VER > 14
 constexpr bool test_constexpr()
 {
     wchar_t c = L'1';
     std::char_traits<wchar_t>::assign(c, L'a');
     return c == L'a';
-    return 0;
 }
 #endif
 
@@ -59,3 +59,10 @@ int tc_libcxx_strings_char_traits_specializations_wchar_t_assign2(void)
     TC_SUCCESS_RESULT();
     return 0;
 }
+#else
+int tc_libcxx_strings_char_traits_specializations_wchar_t_assign2(void)
+{
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif

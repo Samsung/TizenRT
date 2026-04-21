@@ -79,6 +79,7 @@ int tc_libcxx_iterators_istreambuf_iterator_op___not_equal(void)
         TC_ASSERT_EXPR(!(i5 != i4));
         TC_ASSERT_EXPR(!(i5 != i5));
     }
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     {
         std::wistringstream inf1(L"abc");
         std::wistringstream inf2(L"def");
@@ -118,6 +119,7 @@ int tc_libcxx_iterators_istreambuf_iterator_op___not_equal(void)
         TC_ASSERT_EXPR(!(i5 != i4));
         TC_ASSERT_EXPR(!(i5 != i5));
     }
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

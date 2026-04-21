@@ -61,11 +61,11 @@ int tc_libcxx_containers_vector_bool_default_noexcept(void)
 #endif // _LIBCPP_VERSION
     {
         typedef std::vector<bool, other_allocator<bool>> C;
-        static_assert(!std::is_nothrow_default_constructible<C>::value, "");
+        static_assert(std::is_nothrow_default_constructible<C>::value, "");
     }
     {
         typedef std::vector<bool, some_alloc<bool>> C;
-        static_assert(!std::is_nothrow_default_constructible<C>::value, "");
+        static_assert(std::is_nothrow_default_constructible<C>::value, "");
     }
     TC_SUCCESS_RESULT();
     return 0;

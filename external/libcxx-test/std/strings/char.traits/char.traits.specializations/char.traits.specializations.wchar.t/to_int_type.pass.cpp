@@ -37,9 +37,11 @@
 
 int tc_libcxx_strings_char_traits_specializations_wchar_t_to_int_type(void)
 {
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     TC_ASSERT_EXPR(std::char_traits<wchar_t>::to_int_type(L'a') == L'a');
     TC_ASSERT_EXPR(std::char_traits<wchar_t>::to_int_type(L'A') == L'A');
     TC_ASSERT_EXPR(std::char_traits<wchar_t>::to_int_type(0) == 0);
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

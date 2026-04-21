@@ -51,6 +51,7 @@ int tc_libcxx_iterators_istreambuf_iterator_cons_default(void)
         (void)it2;
 #endif
     }
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     {
         typedef std::istreambuf_iterator<wchar_t> T;
         T it;
@@ -60,6 +61,7 @@ int tc_libcxx_iterators_istreambuf_iterator_cons_default(void)
         (void)it2;
 #endif
     }
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

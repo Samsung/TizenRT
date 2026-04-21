@@ -50,8 +50,11 @@ int tc_libcxx_containers_forwardlist_cons_move(void)
         C c0(I(std::begin(t)), I(std::end(t)), A(10));
         C c = std::move(c0);
         int n = 0;
-        for (C::const_iterator i = c.begin(), e = c.end(); i != e; ++i, ++n)
+        for (C::const_iterator i = c.begin(), e = c.end(); i != e; ++i)
+        {
             TC_ASSERT_EXPR(*i == n);
+            ++n;
+        }
         TC_ASSERT_EXPR(n == std::end(t) - std::begin(t));
         TC_ASSERT_EXPR(c0.empty());
         TC_ASSERT_EXPR(c.get_allocator() == A(10));
@@ -65,8 +68,11 @@ int tc_libcxx_containers_forwardlist_cons_move(void)
         C c0(I(std::begin(t)), I(std::end(t)), A(10));
         C c = std::move(c0);
         int n = 0;
-        for (C::const_iterator i = c.begin(), e = c.end(); i != e; ++i, ++n)
+        for (C::const_iterator i = c.begin(), e = c.end(); i != e; ++i)
+        {
             TC_ASSERT_EXPR(*i == n);
+            ++n;
+        }
         TC_ASSERT_EXPR(n == std::end(t) - std::begin(t));
         TC_ASSERT_EXPR(c0.empty());
         TC_ASSERT_EXPR(c.get_allocator() == A(10));

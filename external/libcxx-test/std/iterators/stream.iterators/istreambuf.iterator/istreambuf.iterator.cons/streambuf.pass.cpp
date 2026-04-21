@@ -52,6 +52,7 @@ int tc_libcxx_iterators_istreambuf_iterator_cons_streambuf(void)
         std::istreambuf_iterator<char> i(inf.rdbuf());
         TC_ASSERT_EXPR(i != std::istreambuf_iterator<char>());
     }
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     {
         std::istreambuf_iterator<wchar_t> i(nullptr);
         TC_ASSERT_EXPR(i == std::istreambuf_iterator<wchar_t>());
@@ -66,6 +67,7 @@ int tc_libcxx_iterators_istreambuf_iterator_cons_streambuf(void)
         std::istreambuf_iterator<wchar_t> i(inf.rdbuf());
         TC_ASSERT_EXPR(i != std::istreambuf_iterator<wchar_t>());
     }
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

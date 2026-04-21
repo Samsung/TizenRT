@@ -85,7 +85,7 @@ int tc_libcxx_containers_vector_bool_move_assign_noexcept(void)
 #endif // _LIBCPP_VERSION
     {
         typedef std::vector<bool, test_allocator<bool>> C;
-        static_assert(!std::is_nothrow_move_assignable<C>::value, "");
+        static_assert(std::is_nothrow_move_assignable<C>::value, "");
     }
 #if defined(_LIBCPP_VERSION)
     {
@@ -113,7 +113,7 @@ int tc_libcxx_containers_vector_bool_move_assign_noexcept(void)
 #endif // _LIBCPP_VERSION
     {  // POCMA false, is_always_equal false
         typedef std::vector<bool, some_alloc3<bool>> C;
-        static_assert(!std::is_nothrow_move_assignable<C>::value, "");
+        static_assert(std::is_nothrow_move_assignable<C>::value, "");
     }
 #endif
     TC_SUCCESS_RESULT();

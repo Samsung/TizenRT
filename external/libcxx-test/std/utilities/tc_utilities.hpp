@@ -18,7 +18,7 @@
 
 #ifndef __EXTERNAL_LIBCXX_TEST_TC_UTILITIES_H
 #define __EXTERNAL_LIBCXX_TEST_TC_UTILITIES_H
-int tc_libcxx_utilities_util_smartptr_shared_assign_auto_ptr_Y(void);
+// Note: auto_ptr_Y test removed - auto_ptr was removed in C++17
 int tc_libcxx_utilities_util_smartptr_shared_assign_shared_ptr(void);
 int tc_libcxx_utilities_util_smartptr_shared_assign_shared_ptr_Y(void);
 int tc_libcxx_utilities_util_smartptr_shared_assign_shared_ptr_Y_rv(void);

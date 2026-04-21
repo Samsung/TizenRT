@@ -53,7 +53,7 @@ int tc_libcxx_utilities_pairs_spec_make_pair(void)
     }
     {
         typedef std::pair<std::unique_ptr<int>, short> P1;
-        P1 p1 = std::make_pair(nullptr, static_cast<short>(4));
+        P1 p1 = std::make_pair(std::unique_ptr<int>(), static_cast<short>(4));
         TC_ASSERT_EXPR(p1.first == nullptr);
         TC_ASSERT_EXPR(p1.second == 4);
     }

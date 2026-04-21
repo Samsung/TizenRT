@@ -43,11 +43,13 @@ int tc_libcxx_iterators_ostreambuf_iter_cons_ostream(void)
         std::ostreambuf_iterator<char> i(outf);
         TC_ASSERT_EXPR(!i.failed());
     }
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     {
         std::wostringstream outf;
         std::ostreambuf_iterator<wchar_t> i(outf);
         TC_ASSERT_EXPR(!i.failed());
     }
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

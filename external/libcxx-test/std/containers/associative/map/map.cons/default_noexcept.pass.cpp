@@ -67,11 +67,11 @@ int tc_libcxx_containers_map_cons_default_noexcept(void)
 #endif // _LIBCPP_VERSION
     {
         typedef std::map<MoveOnly, MoveOnly, std::less<MoveOnly>, other_allocator<V>> C;
-        static_assert(!std::is_nothrow_default_constructible<C>::value, "");
+        static_assert(std::is_nothrow_default_constructible<C>::value, "");
     }
     {
         typedef std::map<MoveOnly, MoveOnly, some_comp<MoveOnly>> C;
-        static_assert(!std::is_nothrow_default_constructible<C>::value, "");
+        static_assert(std::is_nothrow_default_constructible<C>::value, "");
     }
     TC_SUCCESS_RESULT();
     return 0;

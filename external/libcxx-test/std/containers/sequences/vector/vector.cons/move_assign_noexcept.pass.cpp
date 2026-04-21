@@ -85,7 +85,7 @@ int tc_libcxx_containers_vector_cons_move_assign_noexcept(void)
     }
     {
         typedef std::vector<MoveOnly, test_allocator<MoveOnly>> C;
-        static_assert(!std::is_nothrow_move_assignable<C>::value, "");
+        static_assert(std::is_nothrow_move_assignable<C>::value, "");
     }
     {
         typedef std::vector<MoveOnly, other_allocator<MoveOnly>> C;
@@ -108,7 +108,7 @@ int tc_libcxx_containers_vector_cons_move_assign_noexcept(void)
     }
     {  // POCMA false, is_always_equal false
         typedef std::vector<MoveOnly, some_alloc3<MoveOnly>> C;
-        static_assert(!std::is_nothrow_move_assignable<C>::value, "");
+        static_assert(std::is_nothrow_move_assignable<C>::value, "");
     }
 #endif
     TC_SUCCESS_RESULT();

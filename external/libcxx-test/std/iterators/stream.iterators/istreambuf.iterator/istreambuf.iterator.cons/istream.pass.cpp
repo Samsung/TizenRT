@@ -48,6 +48,7 @@ int tc_libcxx_iterators_istreambuf_iterator_cons_istream(void)
         std::istreambuf_iterator<char> i(inf);
         TC_ASSERT_EXPR(i != std::istreambuf_iterator<char>());
     }
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     {
         std::wistringstream inf;
         std::istreambuf_iterator<wchar_t> i(inf);
@@ -58,6 +59,7 @@ int tc_libcxx_iterators_istreambuf_iterator_cons_istream(void)
         std::istreambuf_iterator<wchar_t> i(inf);
         TC_ASSERT_EXPR(i != std::istreambuf_iterator<wchar_t>());
     }
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

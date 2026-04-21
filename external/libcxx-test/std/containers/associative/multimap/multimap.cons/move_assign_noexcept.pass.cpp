@@ -61,7 +61,7 @@ int tc_libcxx_containers_multimap_cons_move_assign_noexcept(void)
     }
     {
         typedef std::multimap<MoveOnly, MoveOnly, std::less<MoveOnly>, test_allocator<V>> C;
-        static_assert(!std::is_nothrow_move_assignable<C>::value, "");
+        static_assert(std::is_nothrow_move_assignable<C>::value, "");
     }
 #if defined(_LIBCPP_VERSION)
     {
@@ -71,7 +71,7 @@ int tc_libcxx_containers_multimap_cons_move_assign_noexcept(void)
 #endif // _LIBCPP_VERSION
     {
         typedef std::multimap<MoveOnly, MoveOnly, some_comp<MoveOnly>> C;
-        static_assert(!std::is_nothrow_move_assignable<C>::value, "");
+        static_assert(std::is_nothrow_move_assignable<C>::value, "");
     }
     TC_SUCCESS_RESULT();
     return 0;

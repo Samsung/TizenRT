@@ -22,9 +22,7 @@ extern "C"
 {
 	int tc_numerics_main(void)
 	{
-		tc_numerics_rand_device_ctor();
-		tc_numerics_rand_device_entropy();
-		tc_numerics_rand_device_eval();
+		// Note: random_device tests removed - not supported in TizenRT libcxx configuration
 		return 0;
 	}
 }

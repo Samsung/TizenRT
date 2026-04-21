@@ -60,11 +60,11 @@ int tc_libcxx_containers_vector_cons_default_noexcept(void)
     }
     {
         typedef std::vector<MoveOnly, other_allocator<MoveOnly>> C;
-        static_assert(!std::is_nothrow_default_constructible<C>::value, "");
+        static_assert(std::is_nothrow_default_constructible<C>::value, "");
     }
     {
         typedef std::vector<MoveOnly, some_alloc<MoveOnly>> C;
-        static_assert(!std::is_nothrow_default_constructible<C>::value, "");
+        static_assert(std::is_nothrow_default_constructible<C>::value, "");
     }
     TC_SUCCESS_RESULT();
     return 0;

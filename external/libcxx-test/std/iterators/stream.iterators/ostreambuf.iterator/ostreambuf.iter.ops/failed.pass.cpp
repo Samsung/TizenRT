@@ -42,10 +42,12 @@ int tc_libcxx_iterators_ostreambuf_iter_ops_failed(void)
         std::ostreambuf_iterator<char> i(nullptr);
         TC_ASSERT_EXPR(i.failed());
     }
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     {
         std::ostreambuf_iterator<wchar_t> i(nullptr);
         TC_ASSERT_EXPR(i.failed());
     }
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

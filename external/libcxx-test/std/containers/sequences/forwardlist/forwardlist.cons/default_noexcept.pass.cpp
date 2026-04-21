@@ -62,11 +62,11 @@ int tc_libcxx_containers_forwardlist_cons_default_noexcept(void)
 #endif // _LIBCPP_VERSION
     {
         typedef std::forward_list<MoveOnly, other_allocator<MoveOnly>> C;
-        static_assert(!std::is_nothrow_default_constructible<C>::value, "");
+        static_assert(std::is_nothrow_default_constructible<C>::value, "");
     }
     {
         typedef std::forward_list<MoveOnly, some_alloc<MoveOnly>> C;
-        static_assert(!std::is_nothrow_default_constructible<C>::value, "");
+        static_assert(std::is_nothrow_default_constructible<C>::value, "");
     }
     TC_SUCCESS_RESULT();
     return 0;

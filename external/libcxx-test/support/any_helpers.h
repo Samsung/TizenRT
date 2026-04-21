@@ -1,28 +1,11 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 //===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+
 #ifndef ANY_HELPERS_H
 #define ANY_HELPERS_H
 
@@ -44,7 +27,7 @@ namespace std { namespace experimental {} }
 template <class T>
   struct IsSmallObject
     : public std::integral_constant<bool
-        , sizeof(T) <= (sizeof(void*)*3)
+        , sizeof(T) <= sizeof(std::any) - sizeof(void*)
           && std::alignment_of<void*>::value
              % std::alignment_of<T>::value == 0
           && std::is_nothrow_move_constructible<T>::value
@@ -70,10 +53,9 @@ bool isSmallType() {
 // of type 'LastType' check that it can no longer be accessed.
 template <class LastType = int>
 void assertEmpty(std::any const& a) {
-    using namespace std;
     assert(!a.has_value());
     RTTI_ASSERT(a.type() == typeid(void));
-    assert(any_cast<LastType const>(&a) == nullptr);
+    assert(std::any_cast<LastType const>(&a) == nullptr);
 }
 
 template <class Type>
@@ -85,6 +67,7 @@ template <class> constexpr bool has_value_member(long) { return false; }
 // Assert that an 'any' object stores the specified 'Type' and 'value'.
 template <class Type>
 std::enable_if_t<has_value_member<Type>(0)>
+_LIBCPP_AVAILABILITY_THROW_BAD_ANY_CAST
 assertContains(std::any const& a, int value) {
     assert(a.has_value());
     assert(containsType<Type>(a));
@@ -93,6 +76,7 @@ assertContains(std::any const& a, int value) {
 
 template <class Type, class Value>
 std::enable_if_t<!has_value_member<Type>(0)>
+_LIBCPP_AVAILABILITY_THROW_BAD_ANY_CAST
 assertContains(std::any const& a, Value value) {
     assert(a.has_value());
     assert(containsType<Type>(a));
@@ -103,12 +87,11 @@ assertContains(std::any const& a, Value value) {
 // Modify the value of a "test type" stored within an any to the specified
 // 'value'.
 template <class Type>
+_LIBCPP_AVAILABILITY_THROW_BAD_ANY_CAST
 void modifyValue(std::any& a, int value) {
-    using namespace std;
-    using namespace std::experimental;
     assert(a.has_value());
     assert(containsType<Type>(a));
-    any_cast<Type&>(a).value = value;
+    std::any_cast<Type&>(a).value = value;
 }
 
 // A test type that will trigger the small object optimization within 'any'.
@@ -429,19 +412,17 @@ struct large_tracked_t {
       : arg_types(&makeArgumentID<std::initializer_list<int>, Args...>()) {}
 
   TypeID const* arg_types;
-  int dummy[10];
+  int dummy[sizeof(std::any) / sizeof(int) + 1];
 };
 
-static_assert(!IsSmallObject<large_tracked_t>::value, "must be small");
+static_assert(!IsSmallObject<large_tracked_t>::value, "must not be small");
 
 
 template <class Type, class ...Args>
 void assertArgsMatch(std::any const& a) {
-    using namespace std;
-    using namespace std::experimental;
     assert(a.has_value());
     assert(containsType<Type>(a));
-    assert(any_cast<Type const &>(a).arg_types == &makeArgumentID<Args...>());
+    assert(std::any_cast<Type const &>(a).arg_types == &makeArgumentID<Args...>());
 };
 
 

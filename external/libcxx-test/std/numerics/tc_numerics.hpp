@@ -17,7 +17,5 @@
  ****************************************************************************/
 #ifndef __EXTERNAL_LIBCXX_TEST_TC_NUMERICS_H
 #define __EXTERNAL_LIBCXX_TEST_TC_NUMERICS_H
-int tc_numerics_rand_device_ctor(void);
-int tc_numerics_rand_device_entropy(void);
-int tc_numerics_rand_device_eval(void);
+// Note: random_device tests removed - not supported in TizenRT libcxx configuration
 #endif

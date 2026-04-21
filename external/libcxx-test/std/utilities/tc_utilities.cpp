@@ -23,7 +23,7 @@ extern "C"
 {
 	int tc_utilities_main(void)
 	{
-		tc_libcxx_utilities_util_smartptr_shared_assign_auto_ptr_Y();
+		// Note: auto_ptr_Y test removed - auto_ptr was removed in C++17
 		tc_libcxx_utilities_util_smartptr_shared_assign_shared_ptr();
 		tc_libcxx_utilities_util_smartptr_shared_assign_shared_ptr_Y();
 		tc_libcxx_utilities_util_smartptr_shared_assign_shared_ptr_Y_rv();

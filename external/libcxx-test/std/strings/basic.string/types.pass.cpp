@@ -93,7 +93,9 @@ test()
 int tc_libcxx_strings_basic_string_types(void)
 {
     TC_ASSERT_FUNC((test<test_traits<char>, test_allocator<char> >()));
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     TC_ASSERT_FUNC((test<std::char_traits<wchar_t>, std::allocator<wchar_t> >()));
+#endif
     static_assert((std::is_same<std::basic_string<char>::traits_type,
                                 std::char_traits<char> >::value), "");
     static_assert((std::is_same<std::basic_string<char>::allocator_type,

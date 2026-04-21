@@ -73,8 +73,6 @@ CXXSRCS +=  filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp file
 ifeq ($(CONFIG_LIBCXX_FILESYSTEM),y)
 CXXSRCS += filesystem/directory_entry.cpp filesystem/directory_iterator.cpp
 CXXSRCS += filesystem/operations.cpp filesystem/int128_builtins.cpp
-else
-CXXFLAGS += -D_LIBCPP_HAS_NO_FILESYSTEM
 endif
 
 

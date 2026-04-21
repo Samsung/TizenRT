@@ -1,26 +1,8 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 //===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -29,10 +11,10 @@
 
 #include "test_macros.h"
 
+#include <functional> // for std::equal_to
+
 // testing transparent
 #if TEST_STD_VER > 11
-
-#include <utility>  //for std::forward
 
 struct transparent_less
 {
@@ -95,11 +77,10 @@ private:
     int i_;
     };
 
-//declare as inline function to prevent linking error (multiple definition error)
-inline bool operator <(int          rhs,   const C2Int& lhs) { return rhs       < lhs.get(); }
-inline bool operator <(const C2Int& rhs,   const C2Int& lhs) { return rhs.get() < lhs.get(); }
-inline bool operator <(const C2Int& rhs,            int lhs) { return rhs.get() < lhs; }
+bool operator <(int          rhs,   const C2Int& lhs) { return rhs       < lhs.get(); }
+bool operator <(const C2Int& rhs,   const C2Int& lhs) { return rhs.get() < lhs.get(); }
+bool operator <(const C2Int& rhs,            int lhs) { return rhs.get() < lhs; }
 
-#endif
+#endif // TEST_STD_VER > 11
 
-#endif  // TRANSPARENT_H
+#endif // TRANSPARENT_H

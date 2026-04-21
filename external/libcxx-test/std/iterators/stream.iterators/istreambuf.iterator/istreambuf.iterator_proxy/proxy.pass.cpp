@@ -55,11 +55,13 @@ int tc_libcxx_iterators_istreambuf_iterator_proxy_proxy(void)
         std::istreambuf_iterator<char> i(inf);
         TC_ASSERT_EXPR(*i++ == 'a');
     }
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     {
         std::wistringstream inf(L"abc");
         std::istreambuf_iterator<wchar_t> i(inf);
         TC_ASSERT_EXPR(*i++ == L'a');
     }
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

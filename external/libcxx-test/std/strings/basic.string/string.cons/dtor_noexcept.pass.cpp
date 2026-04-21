@@ -48,7 +48,9 @@ struct some_alloc
 // Test that it's possible to take the address of basic_string's destructors
 // by creating globals which will register their destructors with cxa_atexit.
 std::string s;
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
 std::wstring ws;
+#endif
 
 int tc_libcxx_strings_string_cons_dtor_noexcept(void)
 {

@@ -44,12 +44,14 @@ int tc_libcxx_iterators_ostreambuf_iter_ops_deref(void)
         std::ostreambuf_iterator<char>& iref = *i;
         TC_ASSERT_EXPR(&iref == &i);
     }
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     {
         std::wostringstream outf;
         std::ostreambuf_iterator<wchar_t> i(outf);
         std::ostreambuf_iterator<wchar_t>& iref = *i;
         TC_ASSERT_EXPR(&iref == &i);
     }
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

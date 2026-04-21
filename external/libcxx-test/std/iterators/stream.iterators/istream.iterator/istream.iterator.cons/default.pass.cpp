@@ -48,15 +48,16 @@ struct S { S(); }; // not constexpr
 #if TEST_STD_VER > 14
 template <typename T, bool isTrivial = std::is_trivially_default_constructible_v<T>>
 struct test_trivial {
-void operator ()() const {
+int operator ()() const {
     constexpr std::istream_iterator<T> it;
     (void)it;
+    return 0;
     }
 };
 
 template <typename T>
 struct test_trivial<T, false> {
-void operator ()() const {}
+int operator ()() const { return 0; }
 };
 #endif
 

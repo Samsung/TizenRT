@@ -37,11 +37,13 @@
 
 int tc_libcxx_strings_char_traits_specializations_wchar_t_not_eof(void)
 {
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     TC_ASSERT_EXPR(std::char_traits<wchar_t>::not_eof(L'a') == L'a');
     TC_ASSERT_EXPR(std::char_traits<wchar_t>::not_eof(L'A') == L'A');
     TC_ASSERT_EXPR(std::char_traits<wchar_t>::not_eof(0) == 0);
     TC_ASSERT_EXPR(std::char_traits<wchar_t>::not_eof(std::char_traits<wchar_t>::eof()) !=
            std::char_traits<wchar_t>::eof());
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

@@ -37,8 +37,10 @@
 
 int tc_libcxx_strings_char_traits_specializations_wchar_t_lt(void)
 {
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     TC_ASSERT_EXPR(!std::char_traits<wchar_t>::lt(L'a', L'a'));
     TC_ASSERT_EXPR( std::char_traits<wchar_t>::lt(L'A', L'a'));
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

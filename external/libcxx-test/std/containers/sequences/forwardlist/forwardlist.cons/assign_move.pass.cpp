@@ -52,8 +52,11 @@ int tc_libcxx_containers_forwardlist_cons_assign_move(void)
         C c1(I(std::begin(t1)), I(std::end(t1)), A(10));
         c1 = std::move(c0);
         int n = 0;
-        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
+        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i)
+        {
             TC_ASSERT_EXPR(*i == n);
+            ++n;
+        }
         TC_ASSERT_EXPR(n == 10);
         TC_ASSERT_EXPR(c1.get_allocator() == A(10));
         TC_ASSERT_EXPR(c0.empty());
@@ -69,8 +72,11 @@ int tc_libcxx_containers_forwardlist_cons_assign_move(void)
         C c1(I(std::begin(t1)), I(std::end(t1)), A(11));
         c1 = std::move(c0);
         int n = 0;
-        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
+        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i)
+        {
             TC_ASSERT_EXPR(*i == n);
+            ++n;
+        }
         TC_ASSERT_EXPR(n == 10);
         TC_ASSERT_EXPR(c1.get_allocator() == A(11));
         TC_ASSERT_EXPR(!c0.empty());
@@ -86,8 +92,11 @@ int tc_libcxx_containers_forwardlist_cons_assign_move(void)
         C c1(I(std::begin(t1)), I(std::end(t1)), A(10));
         c1 = std::move(c0);
         int n = 0;
-        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
+        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i)
+        {
             TC_ASSERT_EXPR(*i == 10+n);
+            ++n;
+        }
         TC_ASSERT_EXPR(n == 4);
         TC_ASSERT_EXPR(c1.get_allocator() == A(10));
         TC_ASSERT_EXPR(c0.empty());
@@ -103,8 +112,11 @@ int tc_libcxx_containers_forwardlist_cons_assign_move(void)
         C c1(I(std::begin(t1)), I(std::end(t1)), A(11));
         c1 = std::move(c0);
         int n = 0;
-        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
+        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i)
+        {
             TC_ASSERT_EXPR(*i == 10+n);
+            ++n;
+        }
         TC_ASSERT_EXPR(n == 4);
         TC_ASSERT_EXPR(c1.get_allocator() == A(11));
         TC_ASSERT_EXPR(!c0.empty());
@@ -121,8 +133,11 @@ int tc_libcxx_containers_forwardlist_cons_assign_move(void)
         C c1(I(std::begin(t1)), I(std::end(t1)), A(10));
         c1 = std::move(c0);
         int n = 0;
-        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
+        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i)
+        {
             TC_ASSERT_EXPR(*i == n);
+            ++n;
+        }
         TC_ASSERT_EXPR(n == 10);
         TC_ASSERT_EXPR(c1.get_allocator() == A(10));
         TC_ASSERT_EXPR(c0.empty());
@@ -138,8 +153,11 @@ int tc_libcxx_containers_forwardlist_cons_assign_move(void)
         C c1(I(std::begin(t1)), I(std::end(t1)), A(11));
         c1 = std::move(c0);
         int n = 0;
-        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
+        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i)
+        {
             TC_ASSERT_EXPR(*i == n);
+            ++n;
+        }
         TC_ASSERT_EXPR(n == 10);
         TC_ASSERT_EXPR(c1.get_allocator() == A(10));
         TC_ASSERT_EXPR(c0.empty());
@@ -155,8 +173,11 @@ int tc_libcxx_containers_forwardlist_cons_assign_move(void)
         C c1(I(std::begin(t1)), I(std::end(t1)), A(10));
         c1 = std::move(c0);
         int n = 0;
-        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
+        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i)
+        {
             TC_ASSERT_EXPR(*i == 10+n);
+            ++n;
+        }
         TC_ASSERT_EXPR(n == 4);
         TC_ASSERT_EXPR(c1.get_allocator() == A(10));
         TC_ASSERT_EXPR(c0.empty());
@@ -172,8 +193,11 @@ int tc_libcxx_containers_forwardlist_cons_assign_move(void)
         C c1(I(std::begin(t1)), I(std::end(t1)), A(11));
         c1 = std::move(c0);
         int n = 0;
-        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i, ++n)
+        for (C::const_iterator i = c1.cbegin(); i != c1.cend(); ++i)
+        {
             TC_ASSERT_EXPR(*i == 10+n);
+            ++n;
+        }
         TC_ASSERT_EXPR(n == 4);
         TC_ASSERT_EXPR(c1.get_allocator() == A(10));
         TC_ASSERT_EXPR(c0.empty());
