@@ -89,8 +89,6 @@ typedef unsigned int wint_t;
 #define _LIBCPP_HAS_NO_TIME_UTC
 #endif
 
-#define _LIBCPP_HAS_NO_RANGES
-
 // Filesystem support configuration (set via Kconfig)
 // Disabled by default for TizenRT (no sys/statvfs.h)
 #ifndef CONFIG_LIBCXX_FILESYSTEM
