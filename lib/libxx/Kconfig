@@ -90,6 +90,43 @@ config LIBCXX_HAVE_LIBSUPCXX
 		Select if your toolchain provides libsupc++.  This option is required
 		at present because the built-in libsupc++ support is incomplete.
 
+
+choice LIBCXX_PSTL_BACKEND
+	prompt "Parallel STL CPU Backend"
+	default LIBCXX_PSTL_BACKEND_SERIAL
+	---help---
+		Select the Parallel STL (PSTL) CPU backend for C++17 parallel algorithms.
+		SERIAL is recommended for embedded systems.
+
+config LIBCXX_PSTL_BACKEND_SERIAL
+	bool "Serial (No Parallelism)"
+	---help---
+		Execute all parallel algorithms sequentially.		
+		Recommended for embedded systems:
+		- No threading overhead
+		- Minimal code size
+		- No pthread dependency for parallel algorithms
+		- Deterministic execution		
+		Use this when: No multi-threading support or constrained resources.
+
+config LIBCXX_PSTL_BACKEND_THREAD
+	bool "Thread (std::thread based)"
+	---help---
+		Use std::thread for actual parallel execution.		
+		Requires:
+		- Full pthread implementation
+		- Thread pool infrastructure
+		- Sufficient memory for thread stacks		
+		Use this when: Multi-core CPU with full threading support.
+
+config LIBCXX_PSTL_BACKEND_LIBDISPATCH
+	bool "libdispatch (Apple's Grand Central Dispatch)"
+	---help---
+		Use Apple's Grand Central Dispatch for parallel execution.		
+		NOTE: Not available on TizenRT - requires Apple's libdispatch library.
+
+endchoice
+
 endif
 
 endif

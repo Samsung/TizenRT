@@ -91,8 +91,16 @@ typedef unsigned int wint_t;
 #define _LIBCPP_HAS_NO_FILESYSTEM
 #endif
 
-// Parallel STL (PSTL) backend configuration for embedded systems
+// Parallel STL (PSTL) Backend configuration (set via Kconfig)
+// Default to SERIAL if no backend is explicitly selected
+#if defined(CONFIG_LIBCXX_PSTL_BACKEND_THREAD)
+#define _LIBCPP_PSTL_CPU_BACKEND_THREAD
+#elif defined(CONFIG_LIBCXX_PSTL_BACKEND_LIBDISPATCH)
+#define _LIBCPP_PSTL_CPU_BACKEND_LIBDISPATCH
+#else
+// Default: serial backend (CONFIG_LIBCXX_PSTL_BACKEND_SERIAL or no selection)
 #define _LIBCPP_PSTL_CPU_BACKEND_SERIAL
+#endif
 
 // __bit_log2 fallback for C++17 compatibility
 #define _LIBCPP_BIT_LOG2_FALLBACK
@@ -104,7 +112,6 @@ typedef unsigned int wint_t;
 
 // Optional features for embedded systems (disable if not needed)
 #define _LIBCPP_NO_RTTI
-
 
 // TizenRT compatibility: Disable debug mode for embedded systems
 #define _LIBCPP_HAS_NO_DEBUG_MODE 1
@@ -146,8 +153,6 @@ typedef unsigned int wint_t;
 #ifndef LC_ALL_MASK
 #define LC_ALL_MASK (LC_COLLATE_MASK | LC_CTYPE_MASK | LC_MONETARY_MASK | LC_NUMERIC_MASK | LC_TIME_MASK | LC_MESSAGES_MASK)
 #endif
-
-
 
 // TizenRT needs stdio file functions for iostream
 #define _LIBCPP_NEEDS_STDIO_FILE_FUNCTIONS

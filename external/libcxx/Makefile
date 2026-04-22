@@ -69,12 +69,11 @@ CXXSRCS += ios.cpp iostream.cpp locale.cpp strstream.cpp
 CXXSRCS += ios.instantiations.cpp random.cpp
 CXXSRCS +=  filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp filesystem/path.cpp
 
-# Disable filesystem support for TizenRT (no sys/statvfs.h)
+# Filesystem support (set via Kconfig, _LIBCPP_HAS_NO_FILESYSTEM is in __config_site)
 ifeq ($(CONFIG_LIBCXX_FILESYSTEM),y)
 CXXSRCS += filesystem/directory_entry.cpp filesystem/directory_iterator.cpp
 CXXSRCS += filesystem/operations.cpp filesystem/int128_builtins.cpp
 endif
-
 
 # Exception handling logic
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
