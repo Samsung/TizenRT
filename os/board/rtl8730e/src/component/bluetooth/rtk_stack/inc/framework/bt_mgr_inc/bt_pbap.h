@@ -123,6 +123,15 @@ typedef enum t_bt_pbap_phone_book
 bool bt_pbap_init(uint8_t link_num);
 
 /**
+ *  bt_pbap.h
+ *
+ * \brief   De-initialize PBAP profile.
+ *
+ * \ingroup BT_PBAP
+ */
+void bt_pbap_deinit(void);
+
+/**
  * bt_pbap.h
  *
  * \brief  Send a PBAP connection request.

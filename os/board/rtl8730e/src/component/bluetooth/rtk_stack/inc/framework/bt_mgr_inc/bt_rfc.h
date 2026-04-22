@@ -144,6 +144,21 @@ bool bt_rfc_profile_register(uint8_t server_chann, P_BT_RFC_PROFILE_CBACK cback)
 /**
  * bt_rfc.h
  *
+ * \brief  Unregister profile from RFCOMM.
+ *
+ * \param[in] server_chann    Server channel number of the registered profile.
+ *
+ * \return    The result of unregistration.
+ * \retval true    Unregistration has been completed successfully.
+ * \retval false   Unregistration was failed to complete.
+ *
+ * \ingroup BT_RFC
+ */
+bool bt_rfc_profile_unregister(uint8_t server_chann);
+
+/**
+ * bt_rfc.h
+ *
  * \brief  Send a request to create a RFCOMM connection.
  *
  * \param[in] bd_addr             Remote BT address.

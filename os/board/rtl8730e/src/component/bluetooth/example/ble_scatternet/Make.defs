@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2022 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@
 ############################################################################
 
 CSRCS += scatternet.c \
-	 ble_tizenrt_combo.c
+	ble_tizenrt_combo.c
 
 DEPPATH += --dep-path component/bluetooth/example/ble_scatternet
 VPATH += :component/bluetooth/example/ble_scatternet

@@ -110,6 +110,23 @@ extern "C" {
 /**
  * bt_hfp_ag.h
  *
+ * \defgroup BT_HFP_AG_SUPPORTED_CODEC_TYPE BT HFP AG supported codec type
+ *
+ * \brief Define BT HFP AG supported codec type.
+ *
+ * \ingroup BT_HFP_AG
+ * @{
+ */
+#define BT_HFP_AG_CODEC_TYPE_CVSD               (1 << 0)
+#define BT_HFP_AG_CODEC_TYPE_MSBC               (1 << 1)
+#define BT_HFP_AG_CODEC_TYPE_LC3                (1 << 2)
+/**
+ * @}
+ */
+
+/**
+ * bt_hfp_ag.h
+ *
  * \brief  Define BT HFP AG call status.
  *
  * \ingroup BT_HFP_AG
@@ -123,19 +140,6 @@ typedef enum t_bt_hfp_ag_call_status
     BT_HFP_AG_CALL_ACTIVE_WITH_CALL_WAITING = 0x04,
     BT_HFP_AG_CALL_ACTIVE_WITH_CALL_HOLD    = 0x05,
 } T_BT_HFP_AG_CALL_STATUS;
-
-/**
- * bt_hfp_ag.h
- *
- * \brief  Define BT HFP AG codec type.
- *
- * \ingroup BT_HFP_AG
- */
-typedef enum t_bt_hfp_ag_codec_type
-{
-    BT_HFP_AG_CODEC_TYPE_CVSD = 0x01,
-    BT_HFP_AG_CODEC_TYPE_MSBC = 0x02,
-} T_BT_HFP_AG_CODEC_TYPE;
 
 /**
  * bt_hfp_ag.h
@@ -203,7 +207,7 @@ typedef enum t_bt_hfp_ag_roaming_indicator
 {
     BT_HFP_AG_ROAMING_STATUS_INACTIVE = 0x00,
     BT_HFP_AG_ROAMING_STATUS_ACTIVE   = 0x01,
-} T_BT_HFP_AG_ROAMING_INICATOR;
+} T_BT_HFP_AG_ROAMING_INDICATOR;
 
 /**
  * bt_hfp_ag.h
@@ -253,6 +257,7 @@ typedef bool (*P_BT_HFP_AG_VND_AT_CMD_CBACK)(uint8_t *bd_addr, char *at_cmd);
  * \param[in]  rfc_hfp_ag_chann_num       RFCOMM channel num used for hfp.
  * \param[in]  rfc_hsp_ag_chann_num       RFCOMM channel num used for hsp.
  * \param[in]  ag_supported_features      HFP AG hf supported features \ref BT_HFP_AG_LOCAL_SUPPORTED_FEATURE.
+ * \param[in]  supported_codecs           AG supported codecs \ref BT_HFP_AG_SUPPORTED_CODEC_TYPE.
  * \param[in]  vendor_cmd_cback           callback function for vendor AT CMD.
  *
  * \return          The status of initializing HFP AG profile.
@@ -265,7 +270,18 @@ bool bt_hfp_ag_init(uint8_t                       link_num,
                     uint8_t                       rfc_hfp_ag_chann_num,
                     uint8_t                       rfc_hsp_ag_chann_num,
                     uint16_t                      ag_supported_features,
+                    uint8_t                       supported_codecs,
                     P_BT_HFP_AG_VND_AT_CMD_CBACK  vendor_cmd_cback);
+
+/**
+ * bt_hfp_ag.h
+ *
+ * \brief  De-initialize HFP AG profile.
+ *
+ *
+ * \ingroup BT_HFP_AG
+ */
+void bt_hfp_ag_deinit(void);
 
 /**
  * bt_hfp_ag.h
@@ -432,7 +448,7 @@ bool bt_hfp_ag_indicators_send(uint8_t                          *bd_addr,
                                T_BT_HFP_AG_CALL_SETUP_INDICATOR  call_setup_indicator,
                                T_BT_HFP_AG_CALL_HELD_INDICATOR   call_held_indicator,
                                uint8_t                           signal_indicator,
-                               T_BT_HFP_AG_ROAMING_INICATOR      roaming_indicator,
+                               T_BT_HFP_AG_ROAMING_INDICATOR      roaming_indicator,
                                uint8_t                           batt_chg_indicator);
 
 /**
@@ -665,7 +681,7 @@ bool bt_hfp_ag_signal_strength_send(uint8_t *bd_addr, uint8_t value);
  *
  * \ingroup BT_HFP_AG
  */
-bool bt_hfp_ag_roaming_indicator_send(uint8_t *bd_addr, T_BT_HFP_AG_ROAMING_INICATOR status);
+bool bt_hfp_ag_roaming_indicator_send(uint8_t *bd_addr, T_BT_HFP_AG_ROAMING_INDICATOR status);
 
 /**
  * bt_hfp_ag.h

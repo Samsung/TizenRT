@@ -146,6 +146,8 @@
 //#define RA_RX_ACK_RSSI
 
 #define CONFIG_P2P
+#define COEX_IPC_HST_API_BASIC_SIZE               376
+#define COEX_IPC_DEV_API_BASIC_SIZE               632
 
 /**************** configurations for task size **********************/
 #if defined (CONFIG_WHC_DEV)

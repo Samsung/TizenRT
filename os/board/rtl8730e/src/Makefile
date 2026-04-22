@@ -98,6 +98,7 @@ ifeq ($(CONFIG_AMEBASMART_WIFI),y)
 include component/wifi/Make.defs
 include component/wifi/rtk_app/wifi_init/Make.defs
 include component/wifi/wpa_supplicant/wpa_supplicant/Make.defs
+include component/rtk_coex/Make.defs
 endif
 
 ifeq ($(CONFIG_PM),y)
@@ -106,22 +107,23 @@ endif
 
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
 include component/bluetooth/api/Make.defs
-include component/bluetooth/os/tizenrt/Make.defs
-include component/bluetooth/example/utils/Make.defs
-include component/bluetooth/driver/platform/amebad2/hci/Make.defs
 include component/bluetooth/api/rtk_stack/Make.defs
-include component/bluetooth/rtk_stack/platform/amebad2/src/Make.defs
-include component/bluetooth/driver/hci/hci_transport/Make.defs
 include component/bluetooth/driver/hci/Make.defs
 include component/bluetooth/driver/hci/hci_process/Make.defs
+include component/bluetooth/driver/hci/hci_transport/Make.defs
+include component/bluetooth/driver/platform/amebasmart/hci/Make.defs
+include component/bluetooth/example/gatt_service/client/Make.defs
+include component/bluetooth/example/gatt_service/server/Make.defs
+include component/bluetooth/example/utils/Make.defs
+include component/bluetooth/osif/Make.defs
 include component/bluetooth/rtk_coex/Make.defs
+include component/bluetooth/rtk_stack/platform/common/Make.defs
 
 ifeq ($(CONFIG_AMEBASMART_BLE_PERIPHERAL),y)
 include component/bluetooth/example/ble_peripheral/Make.defs
 endif
 ifeq ($(CONFIG_AMEBASMART_BLE_CENTRAL),y)
 include component/bluetooth/example/ble_central/Make.defs
-include component/bluetooth/profile/client/Make.defs
 endif
 ifeq ($(CONFIG_AMEBASMART_BLE_SCATTERNET),y)
 include component/bluetooth/example/ble_scatternet/Make.defs
@@ -179,10 +181,9 @@ CFLAGS += -I$(DIR_WIFI)/whc/whc_host_rtos/ipc
 CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/src
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
 
-CFLAGS += -I$(COMPONENT_DIR)/os/os_wrapper/include
+CFLAGS += -I$(DIR_OSDEP)/include
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(DIR_MBED)
-CFLAGS += -I$(DIR_OSDEP)/include
 CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/wpa_lite
 CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/wpa_lite/rom
 CFLAGS += -I$(COMPONENT_DIR)/mbed/api
@@ -194,15 +195,27 @@ CFLAGS += -I$(TOPDIR)/net/netmgr
 # CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
 CFLAGS += -I$(COMPONENT_DIR)/file_system/ftl
 # CFLAGS += -I$(COMPONENT_DIR)/file_system/kv
+CFLAGS += -I$(COMPONENT_DIR)/rtk_coex/
 
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
-CFLAGS += -I$(DIR_BT)/inc
-CFLAGS += -I$(DIR_BT)/profile/client
-CFLAGS += -I$(DIR_BT)/driver/inc
-CFLAGS += -I$(DIR_BT)/driver/inc/hci
+CFLAGS += -I$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/libs
+CFLAGS += -I$(DIR_BT)/api/include
 CFLAGS += -I$(DIR_BT)/api/rtk_stack
-CFLAGS += -I$(DIR_BT)/rtk_stack/inc
-CFLAGS += -I$(DIR_BT)/rtk_stack/platform/amebad2/inc
+CFLAGS += -I$(DIR_BT)/driver/hci
+CFLAGS += -I$(DIR_BT)/driver/inc/hci
+CFLAGS += -I$(DIR_BT)/driver/platform/amebasmart/inc
+CFLAGS += -I$(DIR_BT)/example/gatt_service/client
+CFLAGS += -I$(DIR_BT)/example/gatt_service/server
+CFLAGS += -I$(DIR_BT)/example/utils
+CFLAGS += -I$(DIR_BT)/osif
+CFLAGS += -I$(DIR_BT)/rtk_coex
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/app
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/bluetooth/gap
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/bluetooth/profile
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/os
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/platform
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/stack
+CFLAGS += -I$(DIR_BT)/rtk_stack/platform/common
 endif
 
 COBJS = $(CSRCS:.c=$(OBJEXT))

@@ -120,7 +120,7 @@ void whc_ipc_print_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	if ((char)g_whc_ipc_logging_buf[g_whc_ipc_logging_buf_ctr][0] == 0) {
 		strncpy((char *)g_whc_ipc_logging_buf[g_whc_ipc_logging_buf_ctr], tmp_buffer, ipc_recv_msg->msg_len);
 	} else {
-		dbg("WARN: KM4 logbuf full, dropped log!\n");
+		lldbg("WARN: KM4 logbuf full, dropped log!\n");
 		return;
 	}
 	
@@ -131,7 +131,7 @@ void whc_ipc_print_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
 	/* use mq_send via osif api directly in ISR instead of semaphore-based */
 	if ((NULL == g_km4_log_queue) || (FAIL == rtos_queue_send(g_km4_log_queue, &message_event, 0))) {
 		/* mixlog queue handle was invalid, or sending to queue failed, clear the memory here. */
-		dbg("queue hndl is null or send failed\n");
+		lldbg("queue hndl is null or send failed\n");
 
 		/* set the first byte to null to cause string to print empty in case this buffer slot is accidentally reused */
 		g_whc_ipc_logging_buf[g_whc_ipc_logging_buf_ctr][0] = 0;

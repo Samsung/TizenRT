@@ -93,6 +93,15 @@ bool bt_map_init(uint8_t link_num, uint8_t mns_server_chann,
 /**
  * bt_map.h
  *
+ * \brief  De-initialize MAP profile.
+ *
+ * \ingroup BT_MAP
+ */
+void bt_map_deinit(void);
+
+/**
+ * bt_map.h
+ *
  * \brief   Accept or reject the incoming MNS Connection.
  *
  * \param[in]  bd_addr    Remote BT address.

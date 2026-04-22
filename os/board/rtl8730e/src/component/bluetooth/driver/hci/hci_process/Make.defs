@@ -49,8 +49,12 @@
 #
 ############################################################################
 
-CSRCS += hci_process.c \
-	 hci_standalone.c
+CSRCS += hci_controller.c \
+	hci_download_v1.c \
+	hci_download_v2.c \
+	hci_download_v3.c \
+	hci_process.c \
+	hci_standalone.c
 
 DEPPATH += --dep-path component/bluetooth/driver/hci/hci_process
 VPATH += :component/bluetooth/driver/hci/hci_process

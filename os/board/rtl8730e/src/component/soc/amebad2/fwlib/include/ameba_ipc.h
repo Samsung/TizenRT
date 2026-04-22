@@ -314,7 +314,7 @@ typedef enum {
 #define IPC_N2A_WIFI_TRX_TRAN					0	/*!<  NP -->  AP WIFI Message Exchange */
 #define IPC_N2A_WIFI_API_TRAN					1	/*!<  NP -->  AP API WIFI Message Exchange */
 #define IPC_N2A_NP_LOG_CHN						2	/*!<  NP -->  AP Send NP log to AP */
-#define IPC_N2A_BT_API_TRAN						3	/*!<  NP -->  AP BT API Exchange */
+#define IPC_N2A_COEX_API_TRAN					3	/*!<  NP -->  AP COEX API Exchange */
 #define IPC_N2A_BT_DRC_TRAN						4	/*!<  NP -->  AP BT DATA Message Exchange */
 #define IPC_N2A_802154_TRAN						5
 #define IPC_N2A_OTP_TX_TRAN						6
@@ -343,9 +343,7 @@ typedef enum {
 #define IPC_A2N_WIFI_TRX_TRAN					0	/*!<  AP -->  NP WIFI Message Exchange */
 #define IPC_A2N_WIFI_API_TRAN					1	/*!<  AP -->  NP WIFI API Message Exchange */
 #define IPC_A2N_FLASHPG_REQ						2	/*!<  AP -->  NP Flash Program Request*/
-#define IPC_A2N_BT_API_TRAN						3	/*!<  AP -->  NP BT API Exchange */
-#define IPC_A2N_DIAGNOSE						4	/*!<  AP -->  NP Diagnose API Message Exchange */
-#define IPC_A2N_802154_TRAN						5
+#define IPC_A2N_COEX_API_TRAN					3	/*!<  AP -->  NP COEX API Exchange */
 #define IPC_A2N_OTP_RX_TRAN						6
 #define IPC_A2N_LOGUART_RX_SWITCH				7	/*!<  AP -->  NP Loguart Message Exchange for Linux*/
 #define IPC_A2N_IMQ_TRX_TRAN					7	/*!<  AP -->  NP IMQ Message Exchange for RTOS*/

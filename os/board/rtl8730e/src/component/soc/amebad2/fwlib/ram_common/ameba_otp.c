@@ -395,10 +395,10 @@ static u32 OTP_PG_Packet_Byte(u16 offset, u8 Contant)
 
 	/* Make sure the offset is correct*/
 	if (offset > OTP_LMAP_LEN) {
-		RTK_LOGW(TAG, "Make sure OTP logical area  :%x  defined\n", offset);
+		RTK_LOGW(TAG, "Make sure OTP logical area  :%x  defined \r\n", offset);
 	}
 
-	RTK_LOGI(TAG, "OTP_PG_Packet Byte  [%x] %x \n", offset, Contant);
+	RTK_LOGI(TAG, "OTP_PG_Packet Byte  [%x] %x \r\n", offset, Contant);
 
 	//count the physical written num of word
 	while (Idx < LOGICAL_MAP_SECTION_LEN) {
@@ -421,7 +421,7 @@ static u32 OTP_PG_Packet_Byte(u16 offset, u8 Contant)
 	}
 
 	if (Idx  > LOGICAL_MAP_SECTION_LEN) {
-		RTK_LOGE(TAG, "OTP_PG_Packet no enough space %x \n", Idx);
+		RTK_LOGE(TAG, "OTP_PG_Packet no enough space %x \r\n", Idx);
 		return _FAIL;
 	}
 
@@ -451,17 +451,17 @@ static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
 
 	/* 4byte align and size should less than 16bytes*/
 	if ((len > OTP_LPGPKT_SIZE)  || ((len & 0x03) != 0)) {
-		RTK_LOGE(TAG, "OTP_PG_Packet_Word size error :%x len:%x \n", offset, len);
+		RTK_LOGE(TAG, "OTP_PG_Packet_Word size error :%x len:%x \r\n", offset, len);
 		return _FAIL;
 	}
 
 	/* Make sure the offset is correct*/
 	if (offset > OTP_LMAP_LEN) {
-		RTK_LOGW(TAG, "Make sure OTP logical area  :%x  defined\n", offset);
+		RTK_LOGW(TAG, "Make sure OTP logical area  :%x  defined \r\n", offset);
 	}
 
 	for (IdxTemp = 0; IdxTemp < len; IdxTemp++) {
-		DiagPrintf("OTP_PG_Packet [%x] %x \n", IdxTemp, *(pContant + IdxTemp));
+		DiagPrintf("OTP_PG_Packet [%x] %x \r\n", IdxTemp, *(pContant + IdxTemp));
 	}
 
 	//count the physical written num of word
@@ -486,7 +486,7 @@ static u32 OTP_PG_Packet_Word(u16 offset, u8 len, u8 *pContant)
 
 
 	if (Idx + len > LOGICAL_MAP_SECTION_LEN) {
-		RTK_LOGE(TAG, "OTP_PG_Packet no enough space %x \n", Idx);
+		RTK_LOGE(TAG, "OTP_PG_Packet no enough space %x \r\n", Idx);
 		return _FAIL;
 	}
 
@@ -518,7 +518,7 @@ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 	u8 data, plen, type;
 
 	if ((addr + len) > OTP_LMAP_LEN) {
-		RTK_LOGE(TAG, "LogicalMap Read error %x+%x  exceed limit\n", addr, len);
+		RTK_LOGE(TAG, "LogicalMap Read error %x+%x  exceed limit \r\n", addr, len);
 		return _FAIL;
 	}
 
@@ -529,7 +529,7 @@ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 		OTP_Read32(OTP_Addr, &OTPData);
 
 		if (OTPData == 0xFFFFFFFF) {/* not write */
-			RTK_LOGI(TAG, "OTP_LogicalMap_Read: data end at address=%x\n", OTP_Addr);
+			RTK_LOGI(TAG, "OTP_LogicalMap_Read: data end at address=%x \r\n", OTP_Addr);
 			break;
 		}
 
@@ -578,7 +578,7 @@ u32 OTP_LogicalMap_Read(u8 *pbuf, u32 addr, u32 len)
 		}
 
 		if ((OTP_Addr & 0x03) != 0) {
-			RTK_LOGE(TAG, "alignment error %x %x \n", OTP_Addr, OTPData);
+			RTK_LOGE(TAG, "alignment error %x %x \r\n", OTP_Addr, OTPData);
 		}
 
 	}
@@ -609,7 +609,7 @@ u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 	u8 write_pkt;
 
 	if ((addr + cnts) > OTP_LMAP_LEN) {
-		RTK_LOGE(TAG, "LogicalMap Write error %x+%x  exceed limit\n", addr, cnts);
+		RTK_LOGE(TAG, "LogicalMap Write error %x+%x  exceed limit \r\n", addr, cnts);
 		return _FAIL;
 	}
 
@@ -623,7 +623,7 @@ u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 		ret = OTP_LogicalMap_Read(newdata, base, OTP_LPGPKT_SIZE);
 
 		if (ret == _FAIL) {
-			RTK_LOGE(TAG, "LogicalMap Read error when write @ %x \n", base);
+			RTK_LOGE(TAG, "LogicalMap Read error when write @ %x \r\n", base);
 			return _FAIL;
 		}
 
@@ -634,7 +634,7 @@ u32 OTP_LogicalMap_Write(u32 addr, u32 cnts, u8 *data)
 				bytemap |= BIT(i);
 				wordmap |= BIT(i >> 2);
 				byte_change++;
-				DiagPrintf("newdata[%x]= %x\n", i, newdata[i]);
+				DiagPrintf("newdata[%x]= %x \r\n", i, newdata[i]);
 			}
 		}
 
@@ -683,7 +683,7 @@ next:
 		wordmap = 0;
 		byte_change = 0;
 
-		RTK_LOGI(TAG, "next write cycle Base %x cnts %x \n", base, left_cnts);
+		RTK_LOGI(TAG, "next write cycle Base %x cnts %x \r\n", base, left_cnts);
 	}
 
 	return ret;

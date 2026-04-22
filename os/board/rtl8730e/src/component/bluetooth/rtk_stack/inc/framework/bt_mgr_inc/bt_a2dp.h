@@ -18,6 +18,36 @@ extern "C" {
  * \brief   Provide BT A2DP profile interfaces.
  */
 
+/**
+ * bt_a2dp.h
+ *
+ * \brief  BT A2DP role.
+ *
+ * \ingroup BT_A2DP
+ */
+typedef enum t_bt_a2dp_role
+{
+    BT_A2DP_ROLE_SRC = 0x00,
+    BT_A2DP_ROLE_SNK = 0x01,
+} T_BT_A2DP_ROLE;
+
+/**
+ * bt_a2dp.h
+ *
+ * \defgroup BT_A2DP_SERVICE_CAPABILITIES BT A2DP Service Capabilities
+ *
+ * \brief Define BT A2DP Service Capabilities.
+ *
+ * \ingroup BT_A2DP
+ * @{
+ */
+#define BT_A2DP_CAPABILITY_MEDIA_TRANSPORT          0x01
+#define BT_A2DP_CAPABILITY_CONTENT_PROTECTION       0x08
+#define BT_A2DP_CAPABILITY_MEDIA_CODEC              0x40
+#define BT_A2DP_CAPABILITY_DELAY_REPORTING          0x80
+/**
+ * @}
+ */
 
 /**
  * bt_a2dp.h
@@ -32,8 +62,9 @@ extern "C" {
 #define BT_A2DP_CODEC_TYPE_SBC                 0x00
 #define BT_A2DP_CODEC_TYPE_AAC                 0x02
 #define BT_A2DP_CODEC_TYPE_USAC                0x03
-#define BT_A2DP_CODEC_TYPE_LDAC                0x08
-#define BT_A2DP_CODEC_TYPE_LC3                 0x0f
+#define BT_A2DP_CODEC_TYPE_LDAC                0xf0
+#define BT_A2DP_CODEC_TYPE_LC3                 0xf1
+#define BT_A2DP_CODEC_TYPE_LHDC                0xf2
 #define BT_A2DP_CODEC_TYPE_VENDOR              0xff
 /**
  * @}
@@ -191,10 +222,102 @@ extern "C" {
 #define BT_A2DP_LC3_CHANNEL_NUM_2                        (1<<0)
 #define BT_A2DP_LC3_FRAME_DURATION_7_5MS                 (1<<2)
 #define BT_A2DP_LC3_FRAME_DURATION_10MS                  (1<<1)
+/**
+ * @}
+ */
+
+/**
+ * bt_a2dp.h
+ *
+ * \defgroup BT_A2DP_LHDC_CODEC BT A2DP LHDC Codec
+ *
+ * \brief Define BT A2DP LHDC Codec.
+ *
+ * \ingroup BT_A2DP
+ * @{
+ */
+#define BT_A2DP_LHDC_BIT_DEPTH_16BIT                        (1<<2)
+#define BT_A2DP_LHDC_BIT_DEPTH_24BIT                        (1<<1)
+#define BT_A2DP_LHDC_BIT_DEPTH_32BIT                        (1<<0)
+#define BT_A2DP_LHDC_SAMPLING_FREQUENCY_44_1KHZ             (1<<5)
+#define BT_A2DP_LHDC_SAMPLING_FREQUENCY_48KHZ               (1<<4)
+#define BT_A2DP_LHDC_SAMPLING_FREQUENCY_96KHZ               (1<<2)
+#define BT_A2DP_LHDC_SAMPLING_FREQUENCY_192KHZ              (1<<0)
+#define BT_A2DP_LHDC_VERSION_NUMBER_5_3                     (1<<3)
+#define BT_A2DP_LHDC_VERSION_NUMBER_5_2                     (1<<2)
+#define BT_A2DP_LHDC_VERSION_NUMBER_5_1                     (1<<1)
+#define BT_A2DP_LHDC_VERSION_NUMBER_5_0                     (1<<0)
 
 /**
  * @}
  */
+
+/**
+ * bt_a2dp.h
+ *
+ * \brief  BT A2DP LHDC minimum bitrate.
+ *
+ * \ingroup BT_A2DP
+ */
+typedef enum t_bt_a2dp_lhdc_min_bitrate
+{
+    /**
+     * No lower limit, but re-adjusted by specific rules:
+     * 44.1/48KHz: 64kbps (re-adjusted to at least 64Kbps)
+     * 96/192KHz: 256kbps (re-adjusted to at least 256Kbps)
+     */
+    BT_A2DP_LHDC_MIN_BITRATE_AUTO_ADJUST_LOW = 0x00,
+
+    /**
+     * No lower limit, but re-adjusted by specific rules:
+     * 44.1/48KHz: 128kbps (re-adjusted to at least 128Kbps)
+     * 96/192KHz: 256kbps (re-adjusted to at least 256Kbps)
+     */
+    BT_A2DP_LHDC_MIN_BITRATE_AUTO_ADJUST_HIGH = 0x01,
+
+    /**
+     *  minimum bitrate 256Kbps
+     */
+    BT_A2DP_LHDC_MIN_BITRATE_256KBPS = 0x02,
+
+    /**
+     *  minimum bitrate 400Kbps
+     */
+    BT_A2DP_LHDC_MIN_BITRATE_400KBPS = 0x03,
+} T_BT_A2DP_LHDC_MIN_BITRATE;
+
+/**
+ * bt_a2dp.h
+ *
+ * \brief  BT A2DP LHDC maximum bitrate.
+ *
+ * \ingroup BT_A2DP
+ */
+typedef enum t_bt_a2dp_lhdc_max_bitrate
+{
+    /**
+     * re-adjusted by specific rules:
+     * 44.1KHz: 900kbps (re-adjusted to at most 900Kbps)
+     * 48KHz: 900kbps (re-adjusted to at most 900Kbps)
+     * 96/192KHz: 1000kbps (re-adjusted to at most 900Kbps)
+     */
+    BT_A2DP_LHDC_MAX_BITRATE_AUTO_ADJUST    = 0x00,
+
+    /**
+     *  maximum bitrate 400Kbps
+     */
+    BT_A2DP_LHDC_MAX_BITRATE_400KBPS        = 0x01,
+
+    /**
+     *  maximum bitrate 500Kbps
+     */
+    BT_A2DP_LHDC_MAX_BITRATE_500KBPS        = 0x02,
+
+    /**
+     *  maximum bitrate 900Kbps
+     */
+    BT_A2DP_LHDC_MAX_BITRATE_900KBPS        = 0x03,
+} T_BT_A2DP_LHDC_MAX_BITRATE;
 
 /**
  * bt_a2dp.h
@@ -277,13 +400,34 @@ typedef struct t_bt_a2dp_media_codec_lc3
 /**
  * bt_a2dp.h
  *
+ * \brief  BT A2DP media codec LHDC.
+ *
+ * \ingroup BT_A2DP
+ */
+typedef struct t_bt_a2dp_media_codec_lhdc
+{
+    uint8_t                     sampling_frequency_mask;
+    T_BT_A2DP_LHDC_MIN_BITRATE  min_bitrate;
+    T_BT_A2DP_LHDC_MAX_BITRATE  max_bitrate;
+    uint8_t                     bit_depth_mask;
+    uint8_t                     version_number;
+    bool                        low_latency;
+    bool                        meta;
+    bool                        jas;
+    bool                        ar;
+} T_BT_A2DP_MEDIA_CODEC_LHDC;
+
+/**
+ * bt_a2dp.h
+ *
  * \brief  BT A2DP stream end point.
  *
  * \ingroup BT_A2DP
  */
 typedef struct t_bt_a2dp_stream_endpoint
 {
-    uint8_t codec_type;
+    T_BT_A2DP_ROLE role;
+    uint8_t        codec_type;
     union
     {
         T_BT_A2DP_MEDIA_CODEC_SBC  codec_sbc;
@@ -291,22 +435,17 @@ typedef struct t_bt_a2dp_stream_endpoint
         T_BT_A2DP_MEDIA_CODEC_USAC codec_usac;
         T_BT_A2DP_MEDIA_CODEC_LDAC codec_ldac;
         T_BT_A2DP_MEDIA_CODEC_LC3  codec_lc3;
+        T_BT_A2DP_MEDIA_CODEC_LHDC codec_lhdc;
     } u;
 } T_BT_A2DP_STREAM_ENDPOINT;
 
 /**
  * bt_a2dp.h
  *
- * \brief  BT A2DP role.
+ * \brief  BT A2DP stream data indication.
  *
  * \ingroup BT_A2DP
  */
-typedef enum t_bt_a2dp_role
-{
-    BT_A2DP_ROLE_SNK = 0x00,
-    BT_A2DP_ROLE_SRC = 0x01,
-} T_BT_A2DP_ROLE;
-
 typedef struct t_bt_a2dp_stream_data_ind
 {
     uint32_t    bt_clock;
@@ -339,6 +478,8 @@ bool bt_a2dp_stream_endpoint_add(T_BT_A2DP_STREAM_ENDPOINT sep);
  *
  * \brief  Delete A2DP stream endpoint.
  *
+ * \xrefitem Added_API_2_14_1_0 "Added Since 2.14.1.0" "Added API"
+ *
  * \note   Stream endpoint must be deleted when all a2dp profile links were disconnected.
  *
  * \param[in] sep   A2DP stream endpoint \ref T_BT_A2DP_STREAM_ENDPOINT.
@@ -354,25 +495,11 @@ bool bt_a2dp_stream_endpoint_delete(T_BT_A2DP_STREAM_ENDPOINT sep);
 /**
  * bt_a2dp.h
  *
- * \brief  Set A2DP role.
- *
- * \param[in] role   Sink or Source of A2DP role.
- *
- * \return          The status of seting A2DP role.
- * \retval true     A2DP role was set successfully.
- * \retval false    A2DP role was failed to set.
- *
- * \ingroup BT_A2DP
- */
-bool bt_a2dp_role_set(T_BT_A2DP_ROLE role);
-
-/**
- * bt_a2dp.h
- *
  * \brief  Initialize A2DP profile.
  *
- * \param[in] link_num   A2DP maximum connected link number.
- * \param[in] latency   A2DP latency.
+ * \param[in] link_num               A2DP maximum connected link number.
+ * \param[in] latency                A2DP latency.
+ * \param[in] service_capabilities   A2DP supported service capabilities bitmask \ref BT_A2DP_SERVICE_CAPABILITIES.
  *
  * \return          The status of initializing A2DP profile.
  * \retval true     A2DP profile was initialized successfully.
@@ -380,13 +507,26 @@ bool bt_a2dp_role_set(T_BT_A2DP_ROLE role);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_init(uint8_t link_num, uint16_t latency);
+bool bt_a2dp_init(uint8_t  link_num,
+                  uint16_t latency,
+                  uint8_t  service_capabilities);
+
+/**
+ * bt_a2dp.h
+ *
+ * \brief  De-initialize A2DP profile.
+ *
+ *
+ * \ingroup BT_A2DP
+ */
+void bt_a2dp_deinit(void);
 
 /**
  * \brief  Send an A2DP connection request.
  *
  * \param[in] bd_addr   Remote BT address.
  * \param[in] avdtp_ver Remote AVDTP version.
+ * \param[in] role      Remote AVDTP role.
  *
  * \return          The status of sending the A2DP connection request.
  * \retval true     A2DP connection request was sent successfully.
@@ -394,7 +534,9 @@ bool bt_a2dp_init(uint8_t link_num, uint16_t latency);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_connect_req(uint8_t *bd_addr, uint16_t avdtp_ver);
+bool bt_a2dp_connect_req(uint8_t        bd_addr[6],
+                         uint16_t       avdtp_ver,
+                         T_BT_A2DP_ROLE role);
 
 /**
  * \brief  Send an A2DP disconnection request.
@@ -407,7 +549,7 @@ bool bt_a2dp_connect_req(uint8_t *bd_addr, uint16_t avdtp_ver);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_disconnect_req(uint8_t *bd_addr);
+bool bt_a2dp_disconnect_req(uint8_t bd_addr[6]);
 
 /**
  * \brief  Send an A2DP connection confirmation.
@@ -423,7 +565,8 @@ bool bt_a2dp_disconnect_req(uint8_t *bd_addr);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_connect_cfm(uint8_t *bd_addr, bool accept);
+bool bt_a2dp_connect_cfm(uint8_t bd_addr[6],
+                         bool    accept);
 
 /**
  * \brief  Send an A2DP stream start confirmation.
@@ -439,12 +582,14 @@ bool bt_a2dp_connect_cfm(uint8_t *bd_addr, bool accept);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_stream_start_cfm(uint8_t *bd_addr, bool accept);
+bool bt_a2dp_stream_start_cfm(uint8_t bd_addr[6],
+                              bool    accept);
 
 /**
  * \brief  Send an A2DP stream channel open request.
  *
  * \param[in] bd_addr   Remote BT address.
+ * \param[in] role      Remote AVDTP role.
  *
  * \return          The status of sending the A2DP stream channel open request.
  * \retval true     A2DP stream channel open request was sent successfully.
@@ -452,7 +597,25 @@ bool bt_a2dp_stream_start_cfm(uint8_t *bd_addr, bool accept);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_stream_open_req(uint8_t *bd_addr);
+bool bt_a2dp_stream_open_req(uint8_t        bd_addr[6],
+                             T_BT_A2DP_ROLE role);
+
+/**
+ * \brief  Send an A2DP stream channel reconfigure request.
+ *
+ * \param[in] bd_addr      Remote BT address.
+ * \param[in] codec_type   Reconfigured codec type \ref BT_A2DP_CODEC_TYPE.
+ * \param[in] role         Remote AVDTP role.
+ *
+ * \return          The status of sending the A2DP stream channel reconfigure request.
+ * \retval true     A2DP stream channel reconfigure request was sent successfully.
+ * \retval false    A2DP stream channel reconfigure request was failed to send.
+ *
+ * \ingroup BT_A2DP
+ */
+bool bt_a2dp_stream_reconfigure_req(uint8_t        bd_addr[6],
+                                    uint8_t        codec_type,
+                                    T_BT_A2DP_ROLE role);
 
 /**
  * \brief  Send an A2DP stream channel start request.
@@ -465,15 +628,20 @@ bool bt_a2dp_stream_open_req(uint8_t *bd_addr);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_stream_start_req(uint8_t *bd_addr);
+bool bt_a2dp_stream_start_req(uint8_t bd_addr[6]);
 
 /**
  * \brief  Send A2DP stream data.
  *
- * \param[in] bd_addr   Remote BT address.
- * \param[in] frame_num The frame number of the stream data.
- * \param[in] frame_buf The start address of the data buffer.
- * \param[in] len       The length of the data.
+ * \param[in] bd_addr    Remote BT address.
+ * \param[in] seq_num    The sequence number of the stream data.
+ * \param[in] time_stamp The sampling instant of the first octet which determined from the sampling clock is to be used.
+ * \param[in] frame_num  The frame number of the stream data.
+ * \param[in] frame_buf  The start address of the data buffer.
+ * \param[in] len        The length of the data.
+ * \param[in] flush      Auto flush option for current stream data.
+ * \arg    true     Flushable stream data.
+ * \arg    false    Non-flushable stream data.
  *
  * \return          The status of sending A2DP stream data.
  * \retval true     A2DP stream data was sent successfully.
@@ -481,10 +649,13 @@ bool bt_a2dp_stream_start_req(uint8_t *bd_addr);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_stream_data_send(uint8_t *bd_addr,
-                              uint8_t  frame_num,
-                              uint8_t *frame_buf,
-                              uint16_t len);
+bool bt_a2dp_stream_data_send(uint8_t   bd_addr[6],
+                              uint16_t  seq_num,
+                              uint32_t  time_stamp,
+                              uint8_t   frame_num,
+                              uint8_t  *frame_buf,
+                              uint16_t  len,
+                              bool      flush);
 
 /**
  * \brief  Send an A2DP stream channel close request.
@@ -497,7 +668,7 @@ bool bt_a2dp_stream_data_send(uint8_t *bd_addr,
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_stream_close_req(uint8_t *bd_addr);
+bool bt_a2dp_stream_close_req(uint8_t bd_addr[6]);
 
 /**
  * \brief  Send an A2DP stream channel suspend request.
@@ -510,7 +681,7 @@ bool bt_a2dp_stream_close_req(uint8_t *bd_addr);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_stream_suspend_req(uint8_t *bd_addr);
+bool bt_a2dp_stream_suspend_req(uint8_t bd_addr[6]);
 
 /**
  * \brief  Send an A2DP stream channel abort request.
@@ -523,7 +694,7 @@ bool bt_a2dp_stream_suspend_req(uint8_t *bd_addr);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_stream_abort_req(uint8_t *bd_addr);
+bool bt_a2dp_stream_abort_req(uint8_t bd_addr[6]);
 
 /**
  * \brief  Set an active A2DP stream link for A2DP multi-links.
@@ -536,7 +707,7 @@ bool bt_a2dp_stream_abort_req(uint8_t *bd_addr);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_active_link_set(uint8_t *bd_addr);
+bool bt_a2dp_active_link_set(uint8_t bd_addr[6]);
 
 /**
  * \brief  Set A2DP stream latency.
@@ -550,7 +721,8 @@ bool bt_a2dp_active_link_set(uint8_t *bd_addr);
  *
  * \ingroup BT_A2DP
  */
-bool bt_a2dp_stream_delay_report_request(uint8_t *bd_addr, uint16_t latency);
+bool bt_a2dp_stream_delay_report_request(uint8_t  bd_addr[6],
+                                         uint16_t latency);
 
 #ifdef __cplusplus
 }
