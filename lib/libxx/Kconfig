@@ -79,6 +79,15 @@ config LIBCXX_FILESYSTEM
         When disabled, basic path manipulation support is still available
         (path, filesystem_error, filesystem_clock).
 
+config LIBCXX_TIME_UTC
+    bool "Enable C++17 UTC time support"
+    default n
+    ---help---
+        Enable std::timespec and std::timespec_get support (C++17).
+        Requires TizenRT C library to provide timespec_get() and TIME_UTC.
+        Currently TizenRT does not provide these, so this must remain disabled
+        until they are implemented in the C library.
+
 config LIBCXX_IOSTREAM_BUFSIZE
 	int "IO Stream Buffer Size"
 	default 32

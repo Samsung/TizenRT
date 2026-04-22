@@ -82,7 +82,13 @@ typedef unsigned int wint_t;
 #endif
 
 // C++17 feature compatibility fixes for TizenRT
+
+// UTC time support configuration (set via Kconfig)
+// Disabled by default for TizenRT (no timespec_get / TIME_UTC in C library)
+#ifndef CONFIG_LIBCXX_TIME_UTC
 #define _LIBCPP_HAS_NO_TIME_UTC
+#endif
+
 #define _LIBCPP_HAS_NO_RANGES
 
 // Filesystem support configuration (set via Kconfig)
