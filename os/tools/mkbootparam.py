@@ -40,7 +40,7 @@ SIZE_OF_BP_PARTITION = SIZE_OF_BPx * 2
 #  * An output, 'bootparam.bin' should be downloaded and be located at the end of a flash.
 #
 # Boot Parameter information (BPx) :
-#  - Boot Parameter Format Version 1 (bootparam_format_version = 1)
+#  - Boot Parameter Format Version 2 (bootparam_format_version = 2)
 #  - The data from 'App Count' depends on CONFIG_APP_SEPARATION.
 # +------------------------------------------------------------------------------------------
 # | Checksum | BP Version | BP Format Version | Active Idx | First Address | Second Address |
@@ -50,11 +50,11 @@ SIZE_OF_BP_PARTITION = SIZE_OF_BPx * 2
 # | App Count | App1 Name  | App1 Active Idx | App2 Name  | App2 Active Idx |     App# ...   |
 # |  (1byte)  | (16 bytes) |   (1 bytes)     | (16 bytes) |    (1 bytes)    |  (## bytes)    |
 # --------------------------------------------------------------------------------------------
-# ------------------------------------------------------------------+
-# | Resource Active Idx |                 Reserved                  |
-# |       (1 byte)      |        (4Kbytes - (23 + @)bytes)          |
-# ------------------------------------------------------------------+
-#  * The "Checksum" is crc32 value for data from "BP Version" to "Second Address".
+# -------------------------------------------------------------------------------+
+# | Resource Active Idx |              Reserved               | BP Update Reason |
+# |       (1 byte)      |       ... to fixed bp tail          |      (1 byte)    |
+# -------------------------------------------------------------------------------+
+#  * The "Checksum" is crc32 value for data from "BP Version" to the last byte of BP.
 #  * The "BP Version" is a version to check the latest of boot parameters.
 #  * The "BP Format Version" is a version to manage the format of boot parameters.
 #  * The "Active Idx" is a index indicating which address value to use.
@@ -70,6 +70,9 @@ SIZE_OF_BP_PARTITION = SIZE_OF_BPx * 2
 #    - All resource have 2 partitions.
 #    - If the value is 0, "First partition" will be mounted.
 #    - If the value is 1, "Second partition" will be mounted.
+#  * The "BP Update Reason" is the last successful reason for updating BP.
+#    It is located at the last byte of each 4KB BP so the bootloader can update
+#    it without knowing the variable app/resource data layout.
 #
 ###########################################################################################
 
@@ -81,8 +84,10 @@ def make_bootparam():
     SIZE_OF_KERNEL_INDEX = 1
     SIZE_OF_KERNEL_FIRST_ADDR = 4
     SIZE_OF_KERNEL_SECOND_ADDR = 4
+    SIZE_OF_RESOURCE_INDEX = 1
+    SIZE_OF_UPDATE_REASON = 1
 
-    kernel_data_size = SIZE_OF_CHECKSUM + SIZE_OF_BP_VERSION + SIZE_OF_BP_VERSION + SIZE_OF_KERNEL_INDEX + SIZE_OF_KERNEL_FIRST_ADDR + SIZE_OF_KERNEL_SECOND_ADDR
+    kernel_data_size = SIZE_OF_CHECKSUM + SIZE_OF_BP_VERSION + SIZE_OF_BP_FORMAT_VERSION + SIZE_OF_KERNEL_INDEX + SIZE_OF_KERNEL_FIRST_ADDR + SIZE_OF_KERNEL_SECOND_ADDR
 
     FLASH_START_ADDR = util.get_value_from_file(config_file_path, "CONFIG_FLASH_START_ADDR=")
     FLASH_SIZE = util.get_value_from_file(config_file_path, "CONFIG_FLASH_SIZE=")
@@ -92,6 +97,7 @@ def make_bootparam():
     sizes = filter(None, sizes)
 
     INITIAL_ACTIVE_IDX = 0
+    INITIAL_BP_REASON = 0
 
     # Check partitions of kernel and bootparam
     kernel_address = []
@@ -125,7 +131,7 @@ def make_bootparam():
     with open(bootparam_file_path, 'wb') as fp:
         # Write Data
         bootparam_version = 1
-        bootparam_format_version = 1
+        bootparam_format_version = 2
         fp.write(struct.pack('I', bootparam_version))
         fp.write(struct.pack('I', bootparam_format_version))
         # Kernel data
@@ -161,14 +167,16 @@ def make_bootparam():
     # Resource Data
     resource_data_size = 0
     if (util.check_config_existence(config_file_path, "CONFIG_RESOURCE_FS")) :
-        resource_data_size = 1
+        resource_data_size = SIZE_OF_RESOURCE_INDEX
         with open(bootparam_file_path, 'a') as fp:
                 fp.write(struct.pack('B', INITIAL_ACTIVE_IDX))
 
-    # Fill remaining space with '0xff'
+    # Fill remaining space with '0xff' up to the fixed BP tail and write bp_tail
+    bp_tail = struct.pack('B', INITIAL_BP_REASON)
     with open(bootparam_file_path, 'a') as fp:
         remain_size = SIZE_OF_BPx - (kernel_data_size + total_app_data_size + resource_data_size)
-        fp.write(b'\xff' * remain_size)
+        fp.write(b'\xff' * (remain_size - len(bp_tail)))
+        fp.write(bp_tail)
 
     # Add checksum for BP1
     mkchecksum_path = os.path.dirname(__file__) + '/mkchecksum.py'
