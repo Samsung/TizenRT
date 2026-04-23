@@ -78,6 +78,9 @@
 #define BOOTPARAM_COUNT            2                          /* The number of boot parameters */
 #define BOOTPARAM_SIZE             4096                       /* The size of boot parameter : 4K */
 #define BOOTPARAM_PARTSIZE         (BOOTPARAM_SIZE * 2)       /* The size of partition for dual boot parameters : 8K */
+#define BOOTPARAM_FORMAT_VERSION_1       1
+#define BOOTPARAM_FORMAT_VERSION_2       2
+#define BOOTPARAM_FORMAT_VERSION_LATEST  BOOTPARAM_FORMAT_VERSION_2
 
 #define CHECKSUM_SIZE              4
 
@@ -180,8 +183,28 @@ struct binmgr_userbp_s {
 };
 typedef struct binmgr_userbp_s binmgr_userbp_t;
 
-/* Boot parameter data */
-struct binmgr_bpdata_s {
+enum bp_update_reason_e {
+	BP_UPDATE_INITIALIZED = 0,
+	BP_UPDATE_BOOTLOADER_BP_CRC_FAIL = 1,
+	BP_UPDATE_BOOTLOADER_KERNEL_CRC_FAIL = 2,
+	BP_UPDATE_BOOTLOADER_KERNEL_INVALID_SIZE = 3,
+	BP_UPDATE_BOOTLOADER_KERNEL_FAIL_TO_BOOT = 4,
+	BP_UPDATE_BOOTLOADER_SPECIFIC_1 = 5,
+	BP_UPDATE_BOOTLOADER_SPECIFIC_2 = 6,
+	BP_UPDATE_BOOTLOADER_SPECIFIC_3 = 7,
+	BP_UPDATE_BINARY_MANAGER_SWAP = 8,
+	BP_UPDATE_BINARY_MANAGER_UPDATE = 9,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_USER = 10,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_RESOURCE = 11,
+	BP_UPDATE_BINARY_MANAGER_SPECIFIC_1 = 12,
+	BP_UPDATE_BINARY_MANAGER_SPECIFIC_2 = 13,
+	BP_UPDATE_BINARY_MANAGER_SPECIFIC_3 = 14,
+	BP_UPDATE_BINARY_MANAGER_SPECIFIC_4 = 15,
+	BP_UPDATE_UNKNOWN = 16
+};
+
+/* Boot parameter head data, stored at the beginning of each BP. */
+struct binmgr_bpdata_head_s {
 	uint32_t crc_hash;
 	uint32_t version;
 	uint32_t format_ver;
@@ -195,7 +218,24 @@ struct binmgr_bpdata_s {
 	uint8_t resource_active_idx;
 #endif
 } __attribute__((__packed__));
+typedef struct binmgr_bpdata_head_s binmgr_bpdata_head_t;
+
+/* Boot parameter tail data, stored at the end of each BP. */
+struct binmgr_bpdata_tail_s {
+	/* future field should be added here */
+	uint8_t bp_update_reason;						/* Added on format version 2 */
+} __attribute__((__packed__));
+typedef struct binmgr_bpdata_tail_s binmgr_bpdata_tail_t;
+
+/* Logical boot parameter data */
+struct binmgr_bpdata_s {
+	binmgr_bpdata_head_t head;
+	binmgr_bpdata_tail_t tail;
+} __attribute__((__packed__));
 typedef struct binmgr_bpdata_s binmgr_bpdata_t;
+
+/* Compile-time assertion: serialized head and tail must fit in one BP. */
+static_assert(sizeof(binmgr_bpdata_t) <= BOOTPARAM_SIZE, "binmgr_bpdata_t size exceeds BOOTPARAM_SIZE");
 
 struct binmgr_bpinfo_s {
 	uint8_t inuse_idx;
@@ -293,6 +333,8 @@ void binary_manager_update_running_state(int bin_id);
 int binary_manager_get_index_with_name(char *bin_name);
 int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info);
 binmgr_bpdata_t *binary_manager_get_bpdata(void);
+int binary_manager_set_bpdata(binmgr_bpdata_t *bp_data);
+int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data);
 int binary_manager_get_inactive_path(int requester_pid, char *bin_name);
 void binary_manager_update_bootparam(int requester_pid, uint8_t type);
 void binary_manager_reset_board(int reboot_reason);
