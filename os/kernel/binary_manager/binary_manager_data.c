@@ -130,11 +130,11 @@ bool binary_manager_scan_kbin(void)
 	binmgr_bpdata_t *bp_data;
 	bp_data = binary_manager_get_bpdata();
 	/* Verify running kernel binary based on bootparam */
-	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[bp_data->active_idx].devnum);
+	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[bp_data->head.active_idx].devnum);
 	ret = binary_manager_read_header(BINARY_KERNEL, filepath, &header_data, false);
 	if (ret == OK) {
 		/* Update inuse index and kernel version */
-		kernel_info.inuse_idx = bp_data->active_idx;
+		kernel_info.inuse_idx = bp_data->head.active_idx;
 		kernel_info.version = header_data.version;
 		bmdbg("Kernel version [%u] %u\n", kernel_info.inuse_idx, kernel_info.version);
 		return true;
@@ -244,17 +244,17 @@ int binary_manager_check_update(void)
 	}
 
 	/* Compare bootparam version with current running version */
-	if (binary_manager_get_bpdata()->version >= bp_info.bp_data.version) {
+	if (binary_manager_get_bpdata()->head.version >= bp_info.bp_data.head.version) {
 		/* No bootparam update */
 		bmdbg("All binaries are running based on BP\n");
 		return BINMGR_NOT_FOUND;
 	}
 
 	/* Do kernel need to update? */
-	if (binary_manager_get_kdata()->inuse_idx != bp_info.bp_data.active_idx) {
+	if (binary_manager_get_kdata()->inuse_idx != bp_info.bp_data.head.active_idx) {
 		/* Running partition and partition written in the latest BP are different.
 		 * Reboot to switch kernel binary in another partition. */
-		bmvdbg("Need to update to kernel binary in partition %d in the latest BP.\n", binary_manager_get_kdata()->part_info[bp_info.bp_data.active_idx].devnum);
+		bmvdbg("Need to update to kernel binary in partition %d in the latest BP.\n", binary_manager_get_kdata()->part_info[bp_info.bp_data.head.active_idx].devnum);
 		goto reboot;
 	}
 #else
@@ -417,14 +417,14 @@ bool binary_manager_scan_ubin_all(void)
 #ifdef CONFIG_USE_BP
 	bp_data = binary_manager_get_bpdata();
 	/* Update user binary data based on bootparam */
-	for (bp_app_idx = 0; bp_app_idx < bp_data->app_count; bp_app_idx++) {
-		bin_idx = binary_manager_get_index_with_name(bp_data->app_data[bp_app_idx].name);
+	for (bp_app_idx = 0; bp_app_idx < bp_data->head.app_count; bp_app_idx++) {
+		bin_idx = binary_manager_get_index_with_name(bp_data->head.app_data[bp_app_idx].name);
 		if (bin_idx < 0) {
-			bmdbg("Fail to find matched binary %s in binary table \n", bp_data->app_data[bp_app_idx].name);
+			bmdbg("Fail to find matched binary %s in binary table \n", bp_data->head.app_data[bp_app_idx].name);
 			continue;
 		}
 		BIN_BPIDX(bin_idx) = bp_app_idx;
-		part_idx = bp_data->app_data[bp_app_idx].useidx;
+		part_idx = bp_data->head.app_data[bp_app_idx].useidx;
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
 		bmdbg("Checking user in partition [%d], path %s\n", part_idx, devpath);
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
