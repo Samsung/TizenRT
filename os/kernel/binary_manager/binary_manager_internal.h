@@ -191,7 +191,9 @@ struct binmgr_bpdata_s {
 	uint8_t app_count;
 	binmgr_userbp_t app_data[CONFIG_NUM_APPS + 1];
 #endif
+#ifdef CONFIG_RESOURCE_FS
 	uint8_t resource_active_idx;
+#endif
 } __attribute__((__packed__));
 typedef struct binmgr_bpdata_s binmgr_bpdata_t;
 
