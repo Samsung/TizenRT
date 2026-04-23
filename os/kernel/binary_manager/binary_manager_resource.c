@@ -111,7 +111,7 @@ int binary_manager_mount_resource(void)
 	}
 
 	bp_data = binary_manager_get_bpdata();
-	inuse_idx = bp_data->resource_active_idx;
+	inuse_idx = bp_data->head.resource_active_idx;
 #else
 	uint32_t latest_ver = 0;
 	int latest_partidx = -1;
@@ -214,8 +214,10 @@ int binary_manager_mount_resource(void)
 		/* Update boot param data because the binary not written to bootparam is loaded */
 		binmgr_bpdata_t update_bp_data;
 		memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
-		update_bp_data.version++;
-		update_bp_data.resource_active_idx = inuse_idx;
+		update_bp_data.head.version++;
+		update_bp_data.head.format_ver = BOOTPARAM_FORMAT_VERSION_LATEST;
+		update_bp_data.head.resource_active_idx = inuse_idx;
+		update_bp_data.tail.bp_update_reason = BP_UPDATE_BINARY_MANAGER_RECOVERY_RESOURCE;
 		ret = binary_manager_write_bootparam(&update_bp_data);
 		if (ret == BINMGR_OK) {
 			binary_manager_set_bpdata(&update_bp_data);
