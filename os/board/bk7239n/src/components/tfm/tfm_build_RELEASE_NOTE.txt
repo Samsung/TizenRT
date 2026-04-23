@@ -5,3 +5,12 @@
    1. solve the problem of ss decryption failure
      The key read from otp does not perform big-endian conversion
    2. update the flash config of XMC type
+
+
+== version beken_trustzone pr-211 2026/04/22-17:25:00==
+
+   1. let the TFM dump log can be controlled by the secure level
+     The secure world provides a service interface, and non-secure registered callbacks pass in
+the value of the current secure level.
+   2. Optimize the ld file
+     Fix the name of a file in ld.
