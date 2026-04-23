@@ -52,9 +52,7 @@
 #include <driver/otp.h>
 #endif
 
-#if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE)
 #include "tfm_aes_gcm_nsc.h"
-#endif
 #include "os/mem.h"
 
 #include "cmsis_gcc.h"
@@ -344,9 +342,7 @@ int components_init(void)
 	//wdt_init();
 #endif
 
-#if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE) && defined(CONFIG_SECURITY_LEVEL)
 	extern void bk_security_to_nosecurity_dump_register_callback(void);
 	bk_security_to_nosecurity_dump_register_callback();
-#endif
 	return BK_OK;
 }
