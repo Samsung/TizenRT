@@ -684,11 +684,12 @@ static void arch_dump_cpu_registers_securt_fault(uint32_t mcause, SAVED_CONTEXT 
     }
 }
 
-
-#if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE) && defined(CONFIG_SECURITY_LEVEL)
 //#include "tfm_aes_gcm_nsc.h"
 #include <tinyara/security_level.h>
 #define FRAME_BUF_LEN    (64)
+
+extern int psa_register_dump_callback(uint32_t cb_address, uint32_t cb_arg);
+extern int psa_register_dump_policy_callback(uint32_t cb_address);
 
 struct tfm_exception_info_t {
     uint32_t EXC_RETURN;        /* EXC_RETURN value in LR. */
@@ -719,6 +720,15 @@ struct tfm_exception_info_t {
 
 static struct tfm_exception_info_t tfm_exception_info;
 
+static int dump_secure_register_policy(void)
+{
+#if defined(CONFIG_SECURITY_LEVEL)
+    return (get_security_level() == LOW_SECURITY_LEVEL) ? 1 : 0;
+#else
+    return 1;
+#endif
+}
+
 static void exception_frame_printf (uint32_t *ptr_buff , uint32_t buflen)
 {
     if(!ptr_buff)
@@ -737,11 +747,18 @@ static void exception_frame_printf (uint32_t *ptr_buff , uint32_t buflen)
     }
 }
 
-static void NS_handle_securt_fault(uint32_t reset_reason, struct tfm_exception_info_t *ctx)
+static void panic_secure_fault(void)
 {
-    // BK_DUMP_OUT("build time => %s !\r\n", build_version);
-    
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+    up_reboot_reason_write(BK_SECURE_FAULT_REBOOT_REASON);
+#endif
+    PANIC();
+}
+
+static void NS_handle_securt_fault(uint32_t reset_reason, struct tfm_exception_info_t *ctx, bool should_dump)
+{   
     SAVED_CONTEXT regs;
+    bool first_exception = (g_enter_exception == 0);
 
     uint32_t lr ;
     uint32_t msp;
@@ -802,42 +819,33 @@ static void NS_handle_securt_fault(uint32_t reset_reason, struct tfm_exception_i
     bk_int_aon_wdt_feed();
 #endif
 #endif
-    // bk_set_printf_sync(true);
-    // dump_prologue();
-    arch_dump_cpu_registers_securt_fault(0, &regs);
+    if (should_dump) {
+        arch_dump_cpu_registers_securt_fault(0, &regs);
+    }
 
-    if (0 == g_enter_exception) {
-
-        // Make sure the interrupt is disable
-        // uint32_t int_level = rtos_disable_int();
+    if (first_exception) {
 
         /* Handled Trap */
         g_enter_exception = 1;
+#if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE)
+        if (should_dump) {
+            rtos_dump_system(msp, psp);
+        }
+#endif
+    }
 
-        rtos_dump_system(msp, psp);
+    panic_secure_fault();
 
-
-        up_reboot_reason_write(BK_SECURE_FAULT_REBOOT_REASON);
-        bk_reboot_reset_reason();
-
+    if (first_exception) {
+        /* Defensive fallback in case PANIC() unexpectedly returns. */
         while(g_enter_exception);
 
-        // rtos_enable_int(int_level);
-    } else {
-
-        up_reboot_reason_write(BK_SECURE_FAULT_REBOOT_REASON);
-        bk_reboot_reset_reason();
     }
 }
 
 void bk_security_donmain_notifies_non_security_domain_to_dump(uint32_t *reg)
 {
-    // High security level will not dump the exception information.
-    if (get_security_level() > LOW_SECURITY_LEVEL) { 
-        up_reboot_reason_write(BK_SECURE_FAULT_REBOOT_REASON);
-        bk_reboot_reset_reason();
-        return;
-    }
+    (void)reg;
 
     struct tfm_exception_info_t *ctx = &tfm_exception_info;
 
@@ -882,21 +890,25 @@ void bk_security_donmain_notifies_non_security_domain_to_dump(uint32_t *reg)
     BK_DUMP_OUT("SFSR: 0x%x\r\n", ctx->SFSR);
     BK_DUMP_OUT("SFARVALID: 0x%x\r\n", ctx->SFARVALID);
 
-    uint32_t buflen = (sizeof(ctx->SE_EXC_FRAME_BUF) >>2);
+}
 
-    BK_DUMP_OUT(">>>>SE stack mem dump begin, stack_top=%08x, stack end=%08x\r\n", ctx->SE_EXC_FRAME_BUF, &(ctx->SE_EXC_FRAME_BUF[FRAME_BUF_LEN -1]));
-    exception_frame_printf((uint32_t*)(ctx->SE_EXC_FRAME_BUF), buflen);
-    BK_DUMP_OUT("<<<<SE stack mem dump end. stack_top=%08x, stack end=%08x\r\n", ctx->SE_EXC_FRAME_BUF, &(ctx->SE_EXC_FRAME_BUF[FRAME_BUF_LEN -1]));
+static void tfm_fault_callback(uint32_t *reg)
+{
+    bool should_dump = dump_secure_register_policy();
 
-    NS_handle_securt_fault(RESET_SOURCE_SECURE_FAULT, ctx);
+    if (should_dump) {
+        bk_security_donmain_notifies_non_security_domain_to_dump(reg);
+    }
+
+    NS_handle_securt_fault(RESET_SOURCE_SECURE_FAULT, &tfm_exception_info, should_dump);
 }
 
 void bk_security_to_nosecurity_dump_register_callback(void)
 {
-    uint32_t callback_address = (uint32_t)(&bk_security_donmain_notifies_non_security_domain_to_dump);
+    uint32_t callback_address = (uint32_t)(&tfm_fault_callback);
     psa_register_dump_callback(callback_address, (uint32_t)&tfm_exception_info);
+    psa_register_dump_policy_callback((uint32_t)dump_secure_register_policy);
 }
-#endif
 
 /* if mpu enable, accessing itcm zero pointer violates the mpu rule, please refer to mpu_cfg
  * if mpu disable, null pointer/zero pointer maybe is a software fault. So bk_null_trap_handler
