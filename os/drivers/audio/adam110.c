@@ -165,7 +165,7 @@ static struct adam110_dev_s *g_adam110;
 static void adam110_pm_notify(struct pm_callback_s *cb, enum pm_state_e pmstate);
 static int adam110_pm_prepare(struct pm_callback_s *cb, enum pm_state_e pmstate);
 
-static struct pm_callback_s g_pmndpcb =
+static struct pm_callback_s g_pm_adam110_cb =
 {
 	.notify  = adam110_pm_notify,
 	.prepare = adam110_pm_prepare,
@@ -177,49 +177,49 @@ static struct pm_callback_s g_pmndpcb =
  ****************************************************************************/
 
 static uint8_t adam110_calculate_checksum(uint8_t *pkt, uint32_t size);
-static void adam110_spi_exchange(FAR struct adam110_dev_s *dev, uint8_t *txpkt, int txlen, uint8_t *rxpkt, int rxlen);
+static void adam110_spi_exchange(FAR struct adam110_dev_s *dev, uint8_t *txpkt, int txlen, uint8_t *rxpkt, int rxlen, bool delay);
 static int adam110_verify_packet(t_proto_pkt *pkt);
-static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *txpkt, t_proto_pkt *rxpkt);
+static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *txpkt, t_proto_pkt *rxpkt, bool delay);
 static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
                                     uint8_t p1, uint8_t p2, uint8_t p3, uint8_t p4,
-                                    t_proto_pkt *rx_out);
+                                    t_proto_pkt *rx_out, bool txrx_delay);
 
 
 #define adam110_givesem(s)    sem_post(s)
 
-#define ADAM110_RESET(dev, rx_ptr)           adam110_send_cmd(dev, DM_RESET, 0, 0, 0, 0, rx_ptr)
-#define ADAM110_GET_KEEP_ALIVE(dev, rx_ptr)  adam110_send_cmd(dev, DM_GET_KEEP_ALIVE, 0, 0, 0, 0, rx_ptr)
-#define ADAM110_GET_STATE(dev, rx_ptr)       adam110_send_cmd(dev, DM_GET_STATE, 0, 0, 0, 0, rx_ptr)
+#define ADAM110_RESET(dev, rx_ptr)           adam110_send_cmd(dev, DM_RESET, 0, 0, 0, 0, rx_ptr, false)
+#define ADAM110_GET_KEEP_ALIVE(dev, rx_ptr)  adam110_send_cmd(dev, DM_GET_KEEP_ALIVE, 0, 0, 0, 0, rx_ptr, false)
+#define ADAM110_GET_STATE(dev, rx_ptr)       adam110_send_cmd(dev, DM_GET_STATE, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_GET_FW_VER(dev, rx_ptr) \
-    adam110_send_cmd(dev, FW_GET_VER, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, FW_GET_VER, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_GET_EVENT(dev, rx_ptr) \
-    adam110_send_cmd(dev, DM_GET_EVENT, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, DM_GET_EVENT, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_GET_SEAMLESS(dev, rx_ptr) \
-    adam110_send_cmd(dev, AUD_GET_SEAMLESS_DATA, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AUD_GET_SEAMLESS_DATA, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_GET_AUDIO(dev, rx_ptr) \
-    adam110_send_cmd(dev, AUD_GET_PREP_DATA, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AUD_GET_PREP_DATA, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_AI_CHECK_XMIT(dev, h_size, l_size, rx_ptr) \
-    adam110_send_cmd(dev, AC_UPDATE_CHK_XMIT, h_size, l_size, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AC_UPDATE_CHK_XMIT, h_size, l_size, 0, 0, rx_ptr, false)
 
 #define ADAM110_SET_I2S(dev, rate, width, rx_ptr) \
-    adam110_send_cmd(dev, AUD_I2S_SET_CONFIG, (uint8_t)(rate), (uint8_t)(width), 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AUD_I2S_SET_CONFIG, (uint8_t)(rate), (uint8_t)(width), 0, 0, rx_ptr, false)
 
 #define ADAM110_SET_AEC(dev, enable, rx_ptr) \
-    adam110_send_cmd(dev, AUD_I2S_AEC_CTRL, (uint8_t)(enable), 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AUD_I2S_AEC_CTRL, (uint8_t)(enable), 0, 0, 0, rx_ptr, true)
 
 #define ADAM110_SET_MIC_GAIN(dev, gain, rx_ptr) \
-    adam110_send_cmd(dev, AUD_PDM_SET_GAIN, (uint8_t)(gain), 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AUD_PDM_SET_GAIN, (uint8_t)(gain), 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_AI_UPDATE_START(dev, rx_ptr) \
-    adam110_send_cmd(dev, AC_UPDATE_MODEL, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AC_UPDATE_MODEL, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_AI_UPDATE_RSLT(dev, rx_ptr) \
-    adam110_send_cmd(dev, AC_UPDATE_RSLT, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AC_UPDATE_RSLT, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_SET_MODEL(dev) \
 	adam110_send_model(dev)
@@ -231,31 +231,31 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 	adam110_get_audiobuffer(dev, type, buf_ptr, size)
 
 #define ADAM110_SET_INTR(dev, data, enable, rx_ptr) \
-    adam110_send_cmd(dev, AUD_INT_EN, (uint8_t)(data), (uint8_t)(enable), 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AUD_INT_EN, (uint8_t)(data), (uint8_t)(enable), 0, 0, rx_ptr, false)
 
 #define ADAM110_AI_SET_THD(dev, thd_level, rx_ptr) \
-    adam110_send_cmd(dev, AC_THD_ADJ, (uint8_t)(thd_level), 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AC_THD_ADJ, (uint8_t)(thd_level), 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_AI_SET_INTR(dev, model, enable, rx_ptr) \
-    adam110_send_cmd(dev, AC_INT_EN, (uint8_t)(model), (uint8_t)(enable), 0, 0, rx_ptr)
+    adam110_send_cmd(dev, AC_INT_EN, (uint8_t)(model), (uint8_t)(enable), 0, 0, rx_ptr, false)
 
 #define ADAM110_SET_FW_BOOT_MODE(dev, rx_ptr) \
-    adam110_send_cmd(dev, FW_ENTER_BOOT_MODE, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, FW_ENTER_BOOT_MODE, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_GET_FW_BOOT_MODE(dev, rx_ptr) \
-    adam110_send_cmd(dev, FW_CHK_BOOT_MODE, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, FW_CHK_BOOT_MODE, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_SET_FW_ERASE(dev, rx_ptr) \
-    adam110_send_cmd(dev, FW_ERASE, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, FW_ERASE, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_SET_FW_UPDATE(dev, rx_ptr) \
-    adam110_send_cmd(dev, FW_UPDATE, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, FW_UPDATE, 0, 0, 0, 0, rx_ptr, false)
 
 #define ADAM110_SET_FW_CHECKSUM(dev, chk_h, chk_l, rx_ptr) \
-    adam110_send_cmd(dev, FW_UPDATE_RSLT_CAL, chk_h, chk_l, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, FW_UPDATE_RSLT_CAL, chk_h, chk_l, 0, 0, rx_ptr, false)
 
 #define ADAM110_GET_FW_CHECKSUM(dev, rx_ptr) \
-    adam110_send_cmd(dev, FW_UPDATE_RSLT, 0, 0, 0, 0, rx_ptr)
+    adam110_send_cmd(dev, FW_UPDATE_RSLT, 0, 0, 0, 0, rx_ptr, false)
 
 static void adam110_spi_lock(FAR struct adam110_dev_s *dev)
 {
@@ -264,28 +264,29 @@ static void adam110_spi_lock(FAR struct adam110_dev_s *dev)
 	SPI_SETMODE(dev->spi, dev->lower->spi_config.mode);
 	SPI_SETFREQUENCY(dev->spi, dev->lower->spi_config.freq);
 	SPI_SETBITS(dev->spi, dev->lower->spi_config.bpw);
+	SPI_SELECT(dev->spi, dev->lower->spi_config.cs, true);
 }
 
 static void adam110_spi_unlock(FAR struct adam110_dev_s *dev)
 {
+	SPI_SELECT(dev->spi, dev->lower->spi_config.cs, false);
 	(void)SPI_LOCK(dev->spi, false);
 }
 
-static void adam110_spi_exchange(FAR struct adam110_dev_s *dev, uint8_t *txpkt, int txlen, uint8_t *rxpkt, int rxlen)
+static void adam110_spi_exchange(FAR struct adam110_dev_s *dev, uint8_t *txpkt, int txlen, uint8_t *rxpkt, int rxlen, bool txrx_delay)
 {
 	adam110_spi_lock(dev);
-	SPI_SELECT(dev->spi, 0, true);
 	if (txpkt != NULL) {
 		SPI_SNDBLOCK(dev->spi, (void *)txpkt, txlen);
-		up_udelay(ADAM110_COM_RES_DELAY);
+		up_udelay(txrx_delay ? ADAM110_TXRX_DELAY : ADAM110_COM_RES_DELAY);
 	}
-	
+
 	if (rxpkt != NULL) {
 		SPI_RECVBLOCK(dev->spi, (void *)rxpkt, rxlen);
 	}
 
-	SPI_SELECT(dev->spi, 0, false);
 	adam110_spi_unlock(dev);
+
 }
 
 static uint8_t adam110_calculate_checksum(uint8_t *data, uint32_t size) 
@@ -329,21 +330,21 @@ static int adam110_verify_packet(t_proto_pkt *pkt)
 
 	uint8_t cal_checksum = adam110_calculate_checksum((uint8_t *)pkt, sizeof(t_proto_pkt) - 1);
 	if (cal_checksum != pkt->checksum) {
-		auddbg("[E] pkt chsum : 0x%x|0x%x|0x%x|0x%x|0x%x|0x%x|0x%x\n", pkt->header, pkt->op, pkt->parm1, pkt->parm2, pkt->parm3, pkt->parm4, pkt->checksum);
+		auddbg("[E] cal_checksum : %d\n pkt : 0x%x|0x%x|0x%x|0x%x|0x%x|0x%x|0x%x\n", cal_checksum, pkt->header, pkt->op, pkt->parm1, pkt->parm2, pkt->parm3, pkt->parm4, pkt->checksum);
 		return -EIO;
 	}
 
 	return OK;
 }
 
-static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *txpkt, t_proto_pkt *rxpkt)
+static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *txpkt, t_proto_pkt *rxpkt, bool txrx_delay)
 {
 	int ret = OK;
 	txpkt->header = PKT_HEADER_SEND;
 	txpkt->checksum = adam110_calculate_checksum((uint8_t *)txpkt, sizeof(t_proto_pkt) - 1);
 
 	adam110_spi_exchange(dev, (uint8_t *)txpkt, sizeof(t_proto_pkt),
-                              (uint8_t *)rxpkt, (rxpkt != NULL) ? sizeof(t_proto_pkt) : 0);
+                              (uint8_t *)rxpkt, (rxpkt != NULL) ? sizeof(t_proto_pkt) : 0, txrx_delay);
 
 	/* TODO should we return OK here? */
 	if (rxpkt == NULL) {
@@ -366,7 +367,7 @@ static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *
 
 static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
                             uint8_t p1, uint8_t p2, uint8_t p3, uint8_t p4,
-                            t_proto_pkt *rx_out)
+                            t_proto_pkt *rx_out, bool txrx_delay)
 {
 	t_proto_pkt tx;
 
@@ -377,8 +378,7 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 	tx.parm2  = p2;
 	tx.parm3  = p3;
 	tx.parm4  = p4;
-
-	return adam110_spi_command_xfer(dev, &tx, rx_out);
+	return adam110_spi_command_xfer(dev, &tx, rx_out, txrx_delay);
 }
 
 static int adam110_send_model(FAR struct adam110_dev_s *dev)
@@ -436,7 +436,7 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 			}
 			if (rxpkt.op == RSLT_SUCCESS) {
 				chunk_buf[nread] = adam110_calculate_checksum(chunk_buf, nread);
-				adam110_spi_exchange(dev, chunk_buf, nread + 1, NULL, 0);
+				adam110_spi_exchange(dev, chunk_buf, nread + 1, NULL, 0, false);
 				sent_size += nread;
 				up_udelay(ADAM110_COM_RES_DELAY);
 				break;
@@ -465,6 +465,12 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 		return -EINVAL;
 	}
 
+	ret = ADAM110_SET_MIC_GAIN(dev, dev->mic_gain, &rxpkt);
+	if (ret != OK) {
+		auddbg("Set mic gain failed.\n");
+		return ret;
+	}
+
 	auddbg("[I] Model update success (Total: %u bytes)\n", sent_size);
 
 	return OK;
@@ -486,22 +492,20 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 	/* check f/w version */
 	ret = ADAM110_GET_FW_VER(dev, &rxpkt);
 	if (ret != OK) {
-		return -ret;
+		return ret;
 	} 
 	
     fw_ver = rxpkt.parm1 << 24 | rxpkt.parm2 << 16 | rxpkt.parm3 << 8 | rxpkt.parm4;
-	audvdbg("FW ver:0x%8x\n",fw_ver);
-	
-	dev->mcu_fw_ver = fw_ver;
+	auddbg("FW ver:0x%8x\n",fw_ver);
 
 	fd = open(mcu_package, O_RDONLY);
 	if (fd < 0) {
-		auddbg("[E] Failed to open MCU package: %s (errno: %d | fd: %d)\n", mcu_package, errno, fd);
+		auddbg("[E] Failed to open MCU package: %s (errno: %d)\n", mcu_package, errno);
 		return -ENOENT;
 	}
 
-	if (fstat(fd, &st) != 0) {
-		ret = -EINVAL;
+	ret = fstat(fd, &st);
+	if (ret != OK) {
 		goto errout_with_fd;
 	}
 
@@ -527,7 +531,7 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 						  fw_buf[ADAM110_FW_HEADER_VER_PATCH_H_OFFSET] << 8 | \
 						  fw_buf[ADAM110_FW_HEADER_VER_PATCH_L_OFFSET];
 	if (fw_ver == img_fw_ver) {
-		audvdbg("[I] Same F/W.\n");
+		auddbg("[I] Same F/W.\n");
 		close(fd);
 		return OK;
 	}
@@ -597,7 +601,7 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 	            ret = -EIO;
 				goto errout_with_fd;
 			}
-			adam110_spi_exchange(dev, chunk_buf, ADAM110_FW_CHUNK_SIZE + ADAM110_FW_DATA_HEADER, NULL, 0); /* must send 130byte (under 128byte need padding) */
+			adam110_spi_exchange(dev, chunk_buf, ADAM110_FW_CHUNK_SIZE + ADAM110_FW_DATA_HEADER, NULL, 0, false); /* must send 130byte (under 128byte need padding) */
 			sent_size += nread;
 			up_udelay(ADAM110_FW_WRITE_WAITTIME);
 		} else {
@@ -632,7 +636,6 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 
 	close(fd);
 	auddbg("[I] F/W updated (0x%x.0x%x.0x%x)\n", (uint8_t)(img_fw_ver >> 24), (uint8_t)(img_fw_ver >> 16), (uint16_t)(img_fw_ver & 0xFFFF));
-	dev->mcu_fw_ver = img_fw_ver;
 	return OK;
 
 errout_with_fd:
@@ -657,7 +660,7 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 
 	if (ret == OK) {
 		up_udelay(ADAM110_TXRX_DELAY);
-		adam110_spi_exchange(dev, NULL, 0, buffer, size);
+		adam110_spi_exchange(dev, NULL, 0, buffer, size, false);
 	}
 
 	return ret;
@@ -695,14 +698,14 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 
 	priv->fw_loaded = false;
 	auddbg("start set firmware!!\n");
-
+	priv->lower->irq_enable(false);
 	priv->lower->reset();
 	up_udelay(ADAM110_HW_RST_WAIT);
 
 	ret = ADAM110_SET_FIRMWARE(priv);
 	if (ret != OK) {
-	    auddbg("[E] FW update fail!\n");
-		return ret;
+	    auddbg("[E] Firmware send fail!\n");
+		goto errout;
 	}
 	
 	priv->lower->reset();
@@ -712,8 +715,11 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 	if (ret != OK) {
 	    auddbg("[E] Model send fail!\n");
 	} else {
-		priv->fw_loaded = true;
+		priv->lower->irq_enable(true);
 	}
+errout:
+	/* Regardless result, set fw_loaded as true for next check */
+	priv->fw_loaded = true;
 	return ret;
 }
 
@@ -723,7 +729,6 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 	int ret = OK;
 	int retry = ADAM110_RETRY_CNT;
 	t_proto_pkt rxpkt;
-
 
 	/* check keep alive from adam110 */
 	while (retry-- > 0) {
@@ -740,7 +745,6 @@ static int adam110_check_aliveness(FAR struct adam110_dev_s *priv)
 			auddbg("FW update failed.\n");
 		}
 	}
-
 	return ret;
 }
 
@@ -793,12 +797,18 @@ static void adam110_work_handler(void *arg)
 		auddbg("[E] Get event failed.\n");
 		goto out_unlock;
 	}
+	audvdbg("parm2 = 0x%x\n", rxpkt.parm2);
+
 	/* TODO if it is invalid event, should we return OK here? */
 	if (rxpkt.parm2 != AI_DATA_TYPE_SEAMLESS_R && rxpkt.parm2 != AI_DATA_TYPE_AUDIO) {
 		goto out_unlock;
 	}
-	audvdbg("parm2 = 0x%x\n", rxpkt.parm2);
+
 	if (rxpkt.parm2 == AI_DATA_TYPE_SEAMLESS_R) {
+		if (!priv->kd_enabled) {
+			audvdbg("kd is not enabled, ignore it\n");
+			goto out_unlock;
+		}
 		uint32_t data_size = 0;
 		int is_final_packet = 0;
 		int recvsize = 0;
@@ -1560,7 +1570,7 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 			if (priv->kd_enabled == false) {
 				priv->kd_enabled = true;
 				ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, priv->kd_enabled, &rxpkt);
-				if (ret != RSLT_SUCCESS) {
+				if (ret != OK) {
 					auddbg("KD enable failed.\n");
 				}
 			}
@@ -1635,43 +1645,40 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 			return -EINVAL;
 		}
 
+		uint8_t kd_num = arg;
+		if (arg > 2) {
+			return -EINVAL;
+		}
+
 		if (priv->running) {
 			return -EBUSY;
 		}
 
-		uint8_t kd_num = arg;
-		if (arg > 2) {
-			ret = -EINVAL;
-		} else {
+		if (kd_num == priv->kd_num) {
+			auddbg("already loaded, ignore change kd. kd_num : %d\n", priv->kd_num);
+			return OK;
+		}
 
-			adam110_takesem(&priv->devsem);
+		adam110_takesem(&priv->devsem);
+		ret = OK;
+		if (!priv->fw_loaded) {
 			int retry = ADAM110_FW_LOAD_RETRY_CNT;
 			while (retry--) {
 				ret = adam110_load_firmware(priv);
 				if (ret == OK) {
-					auddbg("[I] FW ver : 0%08x\n", priv->mcu_fw_ver);
 					break;
 				}
 			}
-			adam110_givesem(&priv->devsem);
-
-			if (ret != OK) {
-				return -EIO;
-			}
-			if (kd_num == priv->kd_num) {
-				auddbg("already loaded, ignore change kd. kd_num : %d\n", priv->kd_num);
-				return OK;
-			}
-
-			adam110_takesem(&priv->devsem);
-			/* If firmware loaded, then change interrupt here */
-			ret = ADAM110_AI_SET_INTR(priv, (kd_num + 1), true, &rxpkt);
-			if (ret != OK) {
-				auddbg("Model enable failed.\n");
-			}
-			priv->kd_num = kd_num;
-			adam110_givesem(&priv->devsem);
 		}
+		if (ret == OK) {
+			ret = ADAM110_AI_SET_INTR(priv, (kd_num + 1), true, &rxpkt);
+			if (ret == OK) {
+				priv->kd_num = kd_num;
+			} else {
+				auddbg("Set Interrupt failed.\n");
+			}
+		}
+		adam110_givesem(&priv->devsem);
 	}
 	break;
 	default:
@@ -1819,6 +1826,7 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 {
 	FAR struct adam110_dev_s *priv;
 	int ret = OK;
+	t_proto_pkt rxpkt;
 
 	priv = (FAR struct adam110_dev_s *)kmm_zalloc(sizeof(struct adam110_dev_s));
 	if (!priv) {
@@ -1840,34 +1848,36 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	priv->recording = false;
 	priv->mute = false;
 	priv->fw_loaded = false;
+	priv->kd_enabled = false;
+	priv->running = false;
 	priv->kd_num = -1;
 	priv->dev.process_mq = NULL;
 	priv->keyword_bytes = ADAM110_KEYWORD_DATA_SIZE;
+	ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, false, &rxpkt);
+	ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, false, &rxpkt);
 
 #ifdef CONFIG_PM
+    /* only used during pm callbacks */
+	g_adam110 = priv;
+
 	priv->pm_domain = pm_domain_register("adam110");
 	DEBUGASSERT(priv->pm_domain >= 0);
 #endif
 
-    g_adam110 = priv;
 
-	if (ret != OK) {
-		kmm_free(priv);
-		g_adam110 = NULL;
-		auddbg("[E] Model send fail!\n");
-		return NULL;
-	}
+    g_adam110 = priv;
 
 #ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
 	pid_t pid = kernel_thread("alive_check", 100, 4096, adam110_app_device_alive_check, NULL);
 	if (pid < 0) {
 		auddbg("Device alive check thread creatiopn failed\n");
+		goto errout;
 	}
 #endif
 
 #ifdef CONFIG_PM
 	/* register callbacks only if ADAM110 init is done */
-	ret = pm_register(&g_pmndpcb);
+	ret = pm_register(&g_pm_adam110_cb);
 	DEBUGASSERT(ret == OK);
 #endif
 
@@ -1876,4 +1886,10 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	priv->init_done = true;
 
 	return &priv->dev;
+errout:
+	kmm_free(priv);
+	g_adam110 = NULL;
+	auddbg("[E] Model send fail!\n");
+	return NULL;
 }
+
