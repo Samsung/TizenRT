@@ -89,12 +89,18 @@ class SerialHelper(object):
     def write_cmd_and_wait_response(self, cmd, expect_length, timeout_sec=0.1):
         self.drain()
         self.write_cmd(cmd)
-        tmp_res = False       
         ret_content = self.wait_for_cmd_response(expect_length=expect_length, timeout_sec=timeout_sec)
-        if len(ret_content) == expect_length:
-            tmp_res = True
+        content_len = len(ret_content)
+        if content_len == expect_length:
+            return True, ret_content
 
-        return tmp_res, ret_content 
+        if content_len == 0:
+            BKLog.w("chip response timeout ({0:g}s)".format(timeout_sec))       
+        else:
+            BKLog.w("chip response truncated (got {0} / expected {1} bytes)".format(
+                content_len, expect_length
+            ))
+        return False, ret_content
     
 
     def write_cmd_and_wait_response_without_drain(self, cmd, expect_length, timeout_sec=0.1):
