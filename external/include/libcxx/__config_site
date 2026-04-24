@@ -29,20 +29,28 @@
 
 // TizenRT specific configurations for __TINYARA__ platform
 #define _LIBCPP_ABI_VERSION 2
+
+//use the standard pthread functions for thread management, synchronization, and condition variables
 #define _LIBCPP_HAS_THREAD_API_PTHREAD
 
 // Embedded system constraints for TizenRT
-// TizenRT compatibility: Disable wide characters (not fully supported)
+// TizenRT compatibility: C library doesn't fully implement wide character functions
+// making wide character and Unicode support impractical
+// Disable wide characters (not fully supported)
 #define _LIBCPP_HAS_NO_WIDE_CHARACTERS
 #define _LIBCPP_HAS_NO_UNICODE
+
+//ensure that only reentrant/thread-safe versions of functions are available
 #define _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS
-#define _LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE
+
+//Embedded system generally dont have IO - Disable them
 #define _LIBCPP_HAS_NO_STDIN
 #define _LIBCPP_HAS_NO_STDOUT
 
-// Compiler built-in function fallbacks for arm-none-eabi-g++
-// These are required for libc++ 17.0.6 compatibility
-// For embedded systems, assume nothrow for simple types to avoid compilation issues
+// 'arm-none-eabi-g++' (10.3.1) cross-compiler does not provide the Clang-specific
+// compiler built-in intrinsics `__is_nothrow_assignable` and `__is_nothrow_constructible`
+// Following macros are defined to return `true` for all types (assume nothrow),
+// to avoid compilation issues
 #ifndef __is_nothrow_assignable
 #define __is_nothrow_assignable(T, U) true
 #endif
@@ -89,6 +97,10 @@ typedef unsigned int wint_t;
 #define _LIBCPP_HAS_NO_TIME_UTC
 #endif
 
+// Platform property: TizenRT does not have a global filesystem namespace
+//(e.g., no root `/`, no `statvfs`, etc.)
+#define _LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE
+
 // Filesystem support configuration (set via Kconfig)
 // Disabled by default for TizenRT (no sys/statvfs.h)
 #ifndef CONFIG_LIBCXX_FILESYSTEM
@@ -106,8 +118,11 @@ typedef unsigned int wint_t;
 #define _LIBCPP_PSTL_CPU_BACKEND_SERIAL
 #endif
 
-// __bit_log2 fallback for C++17 compatibility
+// <= C++17-: in bit_log2.h, __bit_log2 is undefined without this fallback, breaking algorithm.cpp (introsort)
+// >= C++20: __bit_log2 uses countl_zero (__builtin_clz), making this fallback unnecessary
+#if __cplusplus < 202002L
 #define _LIBCPP_BIT_LOG2_FALLBACK
+#endif
 
 // Debug and assertion configuration
 #define _LIBCPP_ENABLE_ASSERTIONS_DEFAULT 0
