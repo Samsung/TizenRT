@@ -78,7 +78,7 @@
  *   state is not automatically changed, however.  The IDLE loop must call
  *   pm_changestate() in order to make the state change.
  *
- *   These two steps are separated because the plaform-specific IDLE loop may
+ *   These two steps are separated because the platform-specific IDLE loop may
  *   have additional situational information that is not available to the
  *   the PM sub-system.  For example, the IDLE loop may know that the
  *   battery charge level is very low and may force lower power states
