@@ -503,7 +503,7 @@ function BUILD()
 	fi
 
 	HOSTNAME="-h=`git config user.name | tr -d ' '`" # set github username instead of hostname, "-h=`hostname`"
-	LOCALTIME="-v /etc/localtime:/etc/localtime:ro"
+	#LOCALTIME="-v /etc/localtime:/etc/localtime:ro"
 	
 	docker run --rm ${DOCKER_OPT} ${HOSTNAME} ${LOCALTIME} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
 	UPDATE_STATUS
