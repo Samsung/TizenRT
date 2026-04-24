@@ -1,0 +1,119 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// <algorithm>
+
+// template<ForwardIterator Iter, Predicate<auto, Iter::value_type> Pred>
+//   requires OutputIterator<Iter, RvalueOf<Iter::reference>::type>
+//         && CopyConstructible<Pred>
+//   constexpr Iter         // constexpr after C++17
+//   remove_if(Iter first, Iter last, Pred pred);
+
+#include <algorithm>
+#include <functional>
+#include <cassert>
+#include <memory>
+
+#include "test_macros.h"
+#include "test_iterators.h"
+#include "counting_predicates.h"
+#include "libcxx_tc_common.h"
+
+TEST_CONSTEXPR bool equal2 ( int i ) { return i == 2; }
+
+#if TEST_STD_VER > 17
+TEST_CONSTEXPR bool test_constexpr() {
+    int ia[] = {1, 3, 5, 2, 5, 6};
+
+    auto it = std::remove_if(std::begin(ia), std::end(ia), equal2);
+
+    return (std::begin(ia) + std::size(ia) - 1) == it  // we removed one element
+        && std::none_of(std::begin(ia), it, equal2)
+           ;
+    }
+#endif
+
+template <class Iter>
+void
+test()
+{
+    int ia[] = {0, 1, 2, 3, 4, 2, 3, 4, 2};
+    const unsigned sa = sizeof(ia)/sizeof(ia[0]);
+//     int* r = std::remove_if(ia, ia+sa, std::bind2nd(std::equal_to<int>(), 2));
+    unary_counting_predicate<bool(*)(int), int> cp(equal2);
+    int* r = std::remove_if(ia, ia+sa, std::ref(cp));
+    TC_ASSERT_EXPR(r == ia + sa-3);
+    TC_ASSERT_EXPR(ia[0] == 0);
+    TC_ASSERT_EXPR(ia[1] == 1);
+    TC_ASSERT_EXPR(ia[2] == 3);
+    TC_ASSERT_EXPR(ia[3] == 4);
+    TC_ASSERT_EXPR(ia[4] == 3);
+    TC_ASSERT_EXPR(ia[5] == 4);
+    TC_ASSERT_EXPR(cp.count() == sa);
+}
+
+#if TEST_STD_VER >= 11
+struct pred
+{
+    bool operator()(const std::unique_ptr<int>& i) {return *i == 2;}
+};
+
+template <class Iter>
+void
+test1()
+{
+    const unsigned sa = 9;
+    std::unique_ptr<int> ia[sa];
+    ia[0].reset(new int(0));
+    ia[1].reset(new int(1));
+    ia[2].reset(new int(2));
+    ia[3].reset(new int(3));
+    ia[4].reset(new int(4));
+    ia[5].reset(new int(2));
+    ia[6].reset(new int(3));
+    ia[7].reset(new int(4));
+    ia[8].reset(new int(2));
+    Iter r = std::remove_if(Iter(ia), Iter(ia+sa), pred());
+    TC_ASSERT_EXPR(base(r) == ia + sa-3);
+    TC_ASSERT_EXPR(*ia[0] == 0);
+    TC_ASSERT_EXPR(*ia[1] == 1);
+    TC_ASSERT_EXPR(*ia[2] == 3);
+    TC_ASSERT_EXPR(*ia[3] == 4);
+    TC_ASSERT_EXPR(*ia[4] == 3);
+    TC_ASSERT_EXPR(*ia[5] == 4);
+}
+#endif // TEST_STD_VER >= 11
+
+int tc_algorithms_alg_modifying_operations_alg_remove_remove_if(void) {
+    test<forward_iterator<int*> >();
+    test<bidirectional_iterator<int*> >();
+    test<random_access_iterator<int*> >();
+    test<int*>();
+
+#if TEST_STD_VER >= 11
+    test1<forward_iterator<std::unique_ptr<int>*> >();
+    test1<bidirectional_iterator<std::unique_ptr<int>*> >();
+    test1<random_access_iterator<std::unique_ptr<int>*> >();
+    test1<std::unique_ptr<int>*>();
+#endif // TEST_STD_VER >= 11
+
+#if TEST_STD_VER > 17
+    static_assert(test_constexpr());
+#endif
+
+  return 0;
+}

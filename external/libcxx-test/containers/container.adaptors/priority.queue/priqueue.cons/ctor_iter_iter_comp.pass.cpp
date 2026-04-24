@@ -1,0 +1,40 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// <queue>
+
+// template <class InputIterator>
+//   priority_queue(InputIterator first, InputIterator last, const Compare& comp);
+
+#include <queue>
+#include <cassert>
+#include <functional>
+#include <cstddef>
+
+#include "test_macros.h"
+#include "libcxx_tc_common.h"
+
+int tc_containers_container_adaptors_priority_queue_priqueue_cons_ctor_iter_iter_comp(void) {
+    int a[] = {3, 5, 2, 0, 6, 8, 1};
+    int* an = a + sizeof(a)/sizeof(a[0]);
+    std::priority_queue<int, std::vector<int>, std::greater<int> >
+        q(a, an, std::greater<int>());
+    TC_ASSERT_EXPR(q.size() == static_cast<std::size_t>(an - a));
+    TC_ASSERT_EXPR(q.top() == 0);
+
+  return 0;
+}

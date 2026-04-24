@@ -99,7 +99,7 @@ static memory_resource *
 __default_memory_resource(bool set = false, memory_resource * new_res = nullptr) noexcept
 {
 #ifndef _LIBCPP_HAS_NO_ATOMIC_HEADER
-    static constinit atomic<memory_resource*> __res{&res_init.resources.new_delete_res};
+    static _LIBCPP_CONSTINIT atomic<memory_resource*> __res{&res_init.resources.new_delete_res};
     if (set) {
         new_res = new_res ? new_res : new_delete_resource();
         // TODO: Can a weaker ordering be used?
@@ -111,7 +111,7 @@ __default_memory_resource(bool set = false, memory_resource * new_res = nullptr)
             &__res, memory_order_acquire);
     }
 #elif !defined(_LIBCPP_HAS_NO_THREADS)
-    static constinit memory_resource *res = &res_init.resources.new_delete_res;
+    static _LIBCPP_CONSTINIT memory_resource *res = &res_init.resources.new_delete_res;
     static mutex res_lock;
     if (set) {
         new_res = new_res ? new_res : new_delete_resource();
@@ -124,7 +124,7 @@ __default_memory_resource(bool set = false, memory_resource * new_res = nullptr)
         return res;
     }
 #else
-    static constinit memory_resource *res = &res_init.resources.new_delete_res;
+    static _LIBCPP_CONSTINIT memory_resource *res = &res_init.resources.new_delete_res;
     if (set) {
         new_res = new_res ? new_res : new_delete_resource();
         memory_resource * old_res = res;

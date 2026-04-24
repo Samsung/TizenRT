@@ -1,0 +1,114 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14
+
+// REQUIRES: with-pstl
+
+// <algorithm>
+
+// template<class ExecutionPolicy, class ForwardIterator1, class ForwardIterator2>
+//   ForwardIterator2 copy(ExecutionPolicy&& policy,
+//                         ForwardIterator1 first, ForwardIterator1 last,
+//                         ForwardIterator2 result);
+
+#include <algorithm>
+#include <vector>
+
+#include "test_macros.h"
+#include "test_execution_policies.h"
+#include "test_iterators.h"
+#include "libcxx_tc_common.h"
+
+EXECUTION_POLICY_SFINAE_TEST(copy);
+
+static_assert(sfinae_test_copy<int, int*, int*, bool (*)(int)>);
+static_assert(!sfinae_test_copy<std::execution::parallel_policy, int*, int*, int>);
+
+template <class Iter1, class Iter2>
+struct TestInt {
+  template <class Policy>
+  void operator()(Policy&& policy) {
+    // simple test
+    for (const int size : {0, 1, 2, 100, 350}) {
+      std::vector<int> a(size);
+      for (int i = 0; i != size; ++i)
+        a[i] = i + 1;
+
+      std::vector<int> out(std::size(a));
+      decltype(auto) ret =
+          std::copy(policy, Iter1(std::data(a)), Iter1(std::data(a) + std::size(a)), Iter2(std::data(out)));
+      static_assert(std::is_same_v<decltype(ret), Iter2>);
+      TC_ASSERT_EXPR(base(ret) == std::data(out) + std::size(out));
+      for (int i = 0; i != size; ++i)
+        TC_ASSERT_EXPR(out[i] == i + 1);
+    }
+  }
+};
+
+struct CopiedToTester {
+  bool copied_to   = false;
+  CopiedToTester() = default;
+  CopiedToTester(const CopiedToTester&) {}
+  CopiedToTester& operator=(const CopiedToTester&) {
+    TC_ASSERT_EXPR(!copied_to);
+    copied_to = true;
+    return *this;
+  }
+  ~CopiedToTester() = default;
+};
+
+template <class Iter1, class Iter2>
+struct TestNonTrivial {
+  template <class Policy>
+  void operator()(Policy&& policy) {
+    // simple test
+    for (const int size : {0, 1, 2, 100, 350}) {
+      std::vector<CopiedToTester> a(size);
+
+      std::vector<CopiedToTester> out(std::size(a));
+      auto ret = std::copy(policy, Iter1(std::data(a)), Iter1(std::data(a) + std::size(a)), Iter2(std::data(out)));
+      TC_ASSERT_EXPR(base(ret) == std::data(out) + std::size(out));
+      TC_ASSERT_EXPR(std::all_of(std::begin(out), std::end(out), [](CopiedToTester& t) { return t.copied_to; }));
+      TC_ASSERT_EXPR(std::none_of(std::begin(a), std::end(a), [](CopiedToTester& t) { return t.copied_to; }));
+    }
+  }
+};
+
+struct TestIteratorsNonTrivial {
+  template <class Iter2>
+  void operator()() {}
+};
+
+int tc_algorithms_alg_modifying_operations_alg_copy_pstl_copy(void) {
+  types::for_each(types::forward_iterator_list<int*>{}, types::apply_type_identity{[](auto v) {
+                    using Iter = typename decltype(v)::type;
+                    types::for_each(
+                        types::forward_iterator_list<int*>{},
+                        TestIteratorWithPolicies< types::partial_instantiation<TestInt, Iter>::template apply>{});
+                  }});
+
+  types::for_each(
+      types::forward_iterator_list<CopiedToTester*>{}, types::apply_type_identity{[](auto v) {
+        using Iter = typename decltype(v)::type;
+        types::for_each(
+            types::forward_iterator_list<CopiedToTester*>{},
+            TestIteratorWithPolicies< types::partial_instantiation<TestNonTrivial, Iter>::template apply>{});
+      }});
+
+  return 0;
+}

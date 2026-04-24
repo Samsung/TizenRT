@@ -67,9 +67,11 @@ CXXSRCS += shared_mutex.cpp string.cpp system_error.cpp
 CXXSRCS += thread.cpp typeinfo.cpp valarray.cpp vector.cpp
 CXXSRCS += ios.cpp iostream.cpp locale.cpp strstream.cpp
 CXXSRCS += ios.instantiations.cpp random.cpp
-CXXSRCS +=  filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp filesystem/path.cpp
-CXXSRCS += functional.cpp regex.cpp stdexcept.cpp atomic.cpp new_handler.cpp
-CXXSRCS += new_helpers.cpp variant.cpp legacy_pointer_safety.cpp
+CXXSRCS += filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp filesystem/path.cpp
+CXXSRCS += functional.cpp 
+CXXSRCS += regex.cpp atomic.cpp random_shuffle.cpp
+CXXSRCS += memory_resource.cpp variant.cpp charconv.cpp legacy_pointer_safety.cpp
+CXXSRCS += new_handler.cpp new_helpers.cpp barrier.cpp print.cpp
 
 # Filesystem support (set via Kconfig, _LIBCPP_HAS_NO_FILESYSTEM is in __config_site)
 ifeq ($(CONFIG_LIBCXX_FILESYSTEM),y)

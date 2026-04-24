@@ -1,0 +1,169 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14, c++17, c++20
+
+// template<class U = T>
+//   constexpr explicit(!is_convertible_v<U, T>) expected(U&& v);
+//
+// Constraints:
+// - is_same_v<remove_cvref_t<U>, in_place_t> is false; and
+// - is_same_v<expected, remove_cvref_t<U>> is false; and
+// - remove_cvref_t<U> is not a specialization of unexpected; and
+// - is_constructible_v<T, U> is true.
+//
+// Effects: Direct-non-list-initializes val with std::forward<U>(v).
+//
+// Postconditions: has_value() is true.
+//
+// Throws: Any exception thrown by the initialization of val.
+
+#include <cassert>
+#include <expected>
+#include <type_traits>
+#include <utility>
+
+#include "MoveOnly.h"
+#include "test_macros.h"
+#include "../../types.h"
+#include "libcxx_tc_common.h"
+
+// Test Constraints:
+static_assert(std::is_constructible_v<std::expected<int, int>, int>);
+
+// is_same_v<remove_cvref_t<U>, in_place_t>
+struct FromJustInplace {
+  FromJustInplace(std::in_place_t);
+};
+static_assert(!std::is_constructible_v<std::expected<FromJustInplace, int>, std::in_place_t>);
+static_assert(!std::is_constructible_v<std::expected<FromJustInplace, int>, std::in_place_t const&>);
+
+// is_same_v<expected, remove_cvref_t<U>>
+// Note that result is true because it is covered by the constructors that take expected
+static_assert(std::is_constructible_v<std::expected<int, int>, std::expected<int, int>&>);
+
+// remove_cvref_t<U> is a specialization of unexpected
+// Note that result is true because it is covered by the constructors that take unexpected
+static_assert(std::is_constructible_v<std::expected<int, int>, std::unexpected<int>&>);
+
+// !is_constructible_v<T, U>
+struct foo {};
+static_assert(!std::is_constructible_v<std::expected<int, int>, foo>);
+
+// test explicit(!is_convertible_v<U, T>)
+struct NotConvertible {
+  explicit NotConvertible(int);
+};
+static_assert(std::is_convertible_v<int, std::expected<int, int>>);
+static_assert(!std::is_convertible_v<int, std::expected<NotConvertible, int>>);
+
+struct CopyOnly {
+  int i;
+  constexpr CopyOnly(int ii) : i(ii) {}
+  CopyOnly(const CopyOnly&) = default;
+  CopyOnly(CopyOnly&&)      = delete;
+  friend constexpr bool operator==(const CopyOnly& mi, int ii) { return mi.i == ii; }
+};
+
+struct BaseError {};
+struct DerivedError : BaseError {};
+
+template <class T, class E = int>
+constexpr void testInt() {
+  std::expected<T, E> e(5);
+  TC_ASSERT_EXPR(e.has_value());
+  TC_ASSERT_EXPR(e.value() == 5);
+}
+
+template <class T, class E = int>
+constexpr void testLValue() {
+  T t(5);
+  std::expected<T, E> e(t);
+  TC_ASSERT_EXPR(e.has_value());
+  TC_ASSERT_EXPR(e.value() == 5);
+}
+
+template <class T, class E = int>
+constexpr void testRValue() {
+  std::expected<T, E> e(T(5));
+  TC_ASSERT_EXPR(e.has_value());
+  TC_ASSERT_EXPR(e.value() == 5);
+}
+
+constexpr bool test() {
+  testInt<int>();
+  testInt<CopyOnly>();
+  testInt<MoveOnly>();
+  testInt<TailClobberer<0>, bool>();
+  testLValue<int>();
+  testLValue<CopyOnly>();
+  testLValue<TailClobberer<0>, bool>();
+  testRValue<int>();
+  testRValue<MoveOnly>();
+  testRValue<TailClobberer<0>, bool>();
+
+  // Test default template argument.
+  // Without it, the template parameter cannot be deduced from an initializer list
+  {
+    struct Bar {
+      int i;
+      int j;
+      constexpr Bar(int ii, int jj) : i(ii), j(jj) {}
+    };
+
+    std::expected<Bar, int> e({5, 6});
+    TC_ASSERT_EXPR(e.value().i == 5);
+    TC_ASSERT_EXPR(e.value().j == 6);
+  }
+
+  // this is a confusing example, but the behaviour
+  // is exactly what is specified in the spec
+  // see https://cplusplus.github.io/LWG/issue3836
+  {
+    struct BaseError {};
+    struct DerivedError : BaseError {};
+
+    std::expected<bool, DerivedError> e1(false);
+    std::expected<bool, BaseError> e2(e1);
+    TC_ASSERT_EXPR(e2.has_value());
+    TC_ASSERT_EXPR(e2.value()); // yes, e2 holds "true"
+  }
+  return true;
+}
+
+void testException() {
+#ifndef TEST_HAS_NO_EXCEPTIONS
+  struct Throwing {
+    Throwing(int) { throw Except{}; };
+  };
+
+#ifndef _LIBCPP_NO_EXCEPTIONS
+  try {
+    std::expected<Throwing, int> u(5);
+    TC_ASSERT_EXPR(false);
+  } catch (Except) {
+  }
+#endif // _LIBCPP_NO_EXCEPTIONS
+#endif // TEST_HAS_NO_EXCEPTIONS
+}
+
+int tc_utilities_expected_expected_expected_ctor_ctor_u(void) {
+  test();
+  static_assert(test());
+  testException();
+  return 0;
+}

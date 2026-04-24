@@ -1,0 +1,170 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14
+
+// XFAIL: availability-bad_variant_access-missing && !no-exceptions
+
+// <variant>
+
+// template <class ...Types> class variant;
+
+// template <class T, class ...Args> T& emplace(Args&&... args);
+
+#include <cassert>
+#include <string>
+#include <type_traits>
+#include <variant>
+
+#include "archetypes.h"
+#include "test_convertible.h"
+#include "test_macros.h"
+#include "variant_test_helpers.h"
+#include "libcxx_tc_common.h"
+
+template <class Var, class T, class... Args>
+constexpr auto test_emplace_exists_imp(int) -> decltype(
+    std::declval<Var>().template emplace<T>(std::declval<Args>()...), true) {
+  return true;
+}
+
+template <class, class, class...>
+constexpr auto test_emplace_exists_imp(long) -> bool {
+  return false;
+}
+
+template <class... Args> constexpr bool emplace_exists() {
+  return test_emplace_exists_imp<Args...>(0);
+}
+
+void test_emplace_sfinae() {
+  {
+    using V = std::variant<int, void *, const void *, TestTypes::NoCtors>;
+    static_assert(emplace_exists<V, int>(), "");
+    static_assert(emplace_exists<V, int, int>(), "");
+    static_assert(!emplace_exists<V, int, decltype(nullptr)>(),
+                  "cannot construct");
+    static_assert(emplace_exists<V, void *, decltype(nullptr)>(), "");
+    static_assert(!emplace_exists<V, void *, int>(), "cannot construct");
+    static_assert(emplace_exists<V, void *, int *>(), "");
+    static_assert(!emplace_exists<V, void *, const int *>(), "");
+    static_assert(emplace_exists<V, const void *, const int *>(), "");
+    static_assert(emplace_exists<V, const void *, int *>(), "");
+    static_assert(!emplace_exists<V, TestTypes::NoCtors>(), "cannot construct");
+  }
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
+  using V = std::variant<int, int &, const int &, int &&, long, long,
+                         TestTypes::NoCtors>;
+  static_assert(emplace_exists<V, int>(), "");
+  static_assert(emplace_exists<V, int, int>(), "");
+  static_assert(emplace_exists<V, int, long long>(), "");
+  static_assert(!emplace_exists<V, int, int, int>(), "too many args");
+  static_assert(emplace_exists<V, int &, int &>(), "");
+  static_assert(!emplace_exists<V, int &>(), "cannot default construct ref");
+  static_assert(!emplace_exists<V, int &, const int &>(), "cannot bind ref");
+  static_assert(!emplace_exists<V, int &, int &&>(), "cannot bind ref");
+  static_assert(emplace_exists<V, const int &, int &>(), "");
+  static_assert(emplace_exists<V, const int &, const int &>(), "");
+  static_assert(emplace_exists<V, const int &, int &&>(), "");
+  static_assert(!emplace_exists<V, const int &, void *>(),
+                "not constructible from void*");
+  static_assert(emplace_exists<V, int &&, int>(), "");
+  static_assert(!emplace_exists<V, int &&, int &>(), "cannot bind ref");
+  static_assert(!emplace_exists<V, int &&, const int &>(), "cannot bind ref");
+  static_assert(!emplace_exists<V, int &&, const int &&>(), "cannot bind ref");
+  static_assert(!emplace_exists<V, long, long>(), "ambiguous");
+  static_assert(!emplace_exists<V, TestTypes::NoCtors>(),
+                "cannot construct void");
+#endif
+}
+
+void test_basic() {
+  {
+    using V = std::variant<int>;
+    V v(42);
+    auto& ref1 = v.emplace<int>();
+    static_assert(std::is_same_v<int&, decltype(ref1)>, "");
+    TC_ASSERT_EXPR(std::get<0>(v) == 0);
+    TC_ASSERT_EXPR(&ref1 == &std::get<0>(v));
+    auto& ref2 = v.emplace<int>(42);
+    static_assert(std::is_same_v<int&, decltype(ref2)>, "");
+    TC_ASSERT_EXPR(std::get<0>(v) == 42);
+    TC_ASSERT_EXPR(&ref2 == &std::get<0>(v));
+  }
+  {
+    using V =
+        std::variant<int, long, const void *, TestTypes::NoCtors, std::string>;
+    const int x = 100;
+    V v(std::in_place_type<int>, -1);
+    // default emplace a value
+    auto& ref1 = v.emplace<long>();
+    static_assert(std::is_same_v<long&, decltype(ref1)>, "");
+    TC_ASSERT_EXPR(std::get<1>(v) == 0);
+    TC_ASSERT_EXPR(&ref1 == &std::get<1>(v));
+    auto& ref2 = v.emplace<const void *>(&x);
+    static_assert(std::is_same_v<const void *&, decltype(ref2)>, "");
+    TC_ASSERT_EXPR(std::get<2>(v) == &x);
+    TC_ASSERT_EXPR(&ref2 == &std::get<2>(v));
+    // emplace with multiple args
+    auto& ref3 = v.emplace<std::string>(3u, 'a');
+    static_assert(std::is_same_v<std::string&, decltype(ref3)>, "");
+    TC_ASSERT_EXPR(std::get<4>(v) == "aaa");
+    TC_ASSERT_EXPR(&ref3 == &std::get<4>(v));
+  }
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
+  {
+    using V = std::variant<int, long, const int &, int &&, TestTypes::NoCtors,
+                           std::string>;
+    const int x = 100;
+    int y = 42;
+    int z = 43;
+    V v(std::in_place_index<0>, -1);
+    // default emplace a value
+    auto& ref1 = v.emplace<long>();
+    static_assert(std::is_same_v<long&, decltype(ref1)>, "");
+    TC_ASSERT_EXPR(std::get<long>(v) == 0);
+    TC_ASSERT_EXPR(&ref1 == &std::get<long>(v));
+    // emplace a reference
+    auto& ref2 = v.emplace<const int &>(x);
+    static_assert(std::is_same_v<const int&, decltype(ref2)>, "");
+    TC_ASSERT_EXPR(&std::get<const int &>(v) == &x);
+    TC_ASSERT_EXPR(&ref2 == &std::get<const int &>(v));
+    // emplace an rvalue reference
+    auto& ref3 = v.emplace<int &&>(std::move(y));
+    static_assert(std::is_same_v<int &&, decltype(ref3)>, "");
+    TC_ASSERT_EXPR(&std::get<int &&>(v) == &y);
+    TC_ASSERT_EXPR(&ref3 == &std::get<int &&>(v));
+    // re-emplace a new reference over the active member
+    auto& ref4 = v.emplace<int &&>(std::move(z));
+    static_assert(std::is_same_v<int &, decltype(ref4)>, "");
+    TC_ASSERT_EXPR(&std::get<int &&>(v) == &z);
+    TC_ASSERT_EXPR(&ref4 == &std::get<int &&>(v));
+    // emplace with multiple args
+    auto& ref5 = v.emplace<std::string>(3u, 'a');
+    static_assert(std::is_same_v<std::string&, decltype(ref5)>, "");
+    TC_ASSERT_EXPR(std::get<std::string>(v) == "aaa");
+    TC_ASSERT_EXPR(&ref5 == &std::get<std::string>(v));
+  }
+#endif
+}
+
+int tc_utilities_variant_variant_variant_variant_mod_emplace_type_args(void) {
+  test_basic();
+  test_emplace_sfinae();
+
+  return 0;
+}

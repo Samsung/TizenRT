@@ -26,7 +26,29 @@ template <class _ToType, class _FromType>
            is_trivially_copyable_v<_ToType> &&
            is_trivially_copyable_v<_FromType>)
 _LIBCPP_NODISCARD_EXT _LIBCPP_HIDE_FROM_ABI constexpr _ToType bit_cast(const _FromType& __from) noexcept {
+#  if __has_builtin(__builtin_bit_cast)
   return __builtin_bit_cast(_ToType, __from);
+#  else
+  _ToType __to;
+  __builtin_memcpy(&__to, &__from, sizeof(_ToType));
+  return __to;
+#  endif
+}
+
+#else // _LIBCPP_STD_VER < 20
+
+template <class _ToType, class _FromType,
+          __enable_if_t<sizeof(_ToType) == sizeof(_FromType) &&
+                        is_trivially_copyable<_ToType>::value &&
+                        is_trivially_copyable<_FromType>::value, int> = 0>
+_LIBCPP_NODISCARD_EXT _LIBCPP_HIDE_FROM_ABI constexpr _ToType bit_cast(const _FromType& __from) noexcept {
+#  if __has_builtin(__builtin_bit_cast)
+  return __builtin_bit_cast(_ToType, __from);
+#  else
+  _ToType __to;
+  __builtin_memcpy(&__to, &__from, sizeof(_ToType));
+  return __to;
+#  endif
 }
 
 #endif // _LIBCPP_STD_VER >= 20

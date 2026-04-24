@@ -28,7 +28,7 @@
 
 namespace std { // purposefully not versioned
 
-static constinit std::new_handler __new_handler = nullptr;
+static _LIBCPP_CONSTINIT std::new_handler __new_handler = nullptr;
 
 new_handler set_new_handler(new_handler handler) noexcept { return __libcpp_atomic_exchange(&__new_handler, handler); }
 

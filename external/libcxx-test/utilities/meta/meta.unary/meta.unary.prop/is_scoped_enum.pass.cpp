@@ -1,0 +1,130 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14, c++17, c++20
+
+// type_traits
+
+// is_scoped_enum // C++23
+
+#include <type_traits>
+#include <cstddef> // for std::nullptr_t
+#include "test_macros.h"
+#include "libcxx_tc_common.h"
+
+template <class T>
+void test_positive() {
+  static_assert(std::is_scoped_enum<T>::value);
+  static_assert(std::is_scoped_enum<const T>::value);
+  static_assert(std::is_scoped_enum<volatile T>::value);
+  static_assert(std::is_scoped_enum<const volatile T>::value);
+
+  static_assert(std::is_scoped_enum_v<T>);
+  static_assert(std::is_scoped_enum_v<const T>);
+  static_assert(std::is_scoped_enum_v<volatile T>);
+  static_assert(std::is_scoped_enum_v<const volatile T>);
+}
+
+template <class T>
+void test_negative() {
+  static_assert(!std::is_scoped_enum<T>::value);
+  static_assert(!std::is_scoped_enum<const T>::value);
+  static_assert(!std::is_scoped_enum<volatile T>::value);
+  static_assert(!std::is_scoped_enum<const volatile T>::value);
+
+  static_assert(!std::is_scoped_enum_v<T>);
+  static_assert(!std::is_scoped_enum_v<const T>);
+  static_assert(!std::is_scoped_enum_v<volatile T>);
+  static_assert(!std::is_scoped_enum_v<const volatile T>);
+}
+
+class Empty {};
+
+class NotEmpty {
+  virtual ~NotEmpty();
+};
+
+union Union {};
+
+struct bit_zero {
+  int : 0;
+};
+
+class Abstract {
+  virtual ~Abstract() = 0;
+};
+
+enum Enum { zero, one };
+enum class CEnum1 { zero, one };
+enum class CEnum2;
+enum class CEnum3 : short;
+struct incomplete_type;
+
+using FunctionPtr = void (*)();
+using FunctionType = void();
+
+struct TestMembers {
+  static int static_method(int) { return 0; }
+  int method() { return 0; }
+
+  enum E1 { m_zero, m_one };
+  enum class CE1;
+};
+
+void func1();
+int func2(int);
+
+int tc_utilities_meta_meta_unary_meta_unary_prop_is_scoped_enum(void) {
+  test_positive<CEnum1>();
+  test_positive<CEnum2>();
+  test_positive<CEnum3>();
+  test_positive<TestMembers::CE1>();
+
+  test_negative<Enum>();
+  test_negative<TestMembers::E1>();
+
+  test_negative<std::nullptr_t>();
+  test_negative<void>();
+  test_negative<int>();
+  test_negative<int&>();
+  test_negative<int&&>();
+  test_negative<int*>();
+  test_negative<double>();
+  test_negative<const int*>();
+  test_negative<char[3]>();
+  test_negative<char[]>();
+  test_negative<Union>();
+  test_negative<Empty>();
+  test_negative<bit_zero>();
+  test_negative<NotEmpty>();
+  test_negative<Abstract>();
+  test_negative<FunctionPtr>();
+  test_negative<FunctionType>();
+  test_negative<incomplete_type>();
+  test_negative<int TestMembers::*>();
+  test_negative<void (TestMembers::*)()>();
+
+  test_negative<decltype(func1)>();
+  test_negative<decltype(&func1)>();
+  test_negative<decltype(func2)>();
+  test_negative<decltype(&func2)>();
+  test_negative<decltype(TestMembers::static_method)>();
+  test_negative<decltype(&TestMembers::static_method)>();
+  test_negative<decltype(&TestMembers::method)>();
+
+  return 0;
+}

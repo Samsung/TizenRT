@@ -1,0 +1,139 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14, c++17
+// UNSUPPORTED: GCC-ALWAYS_INLINE-FIXME
+
+// TODO FMT This test should not require std::to_chars(floating-point)
+// XFAIL: availability-fp_to_chars-missing
+
+// Tests whether a move only type can be formatted. This is required by
+// P2418R2 "Add support for std::generator-like types to std::format"
+
+// <format>
+
+#include <format>
+#include <cassert>
+
+#include "MoveOnly.h"
+#include "make_string.h"
+#include "test_macros.h"
+#include "libcxx_tc_common.h"
+
+#ifndef TEST_HAS_NO_LOCALIZATION
+#  include <locale>
+#endif
+
+#define SV(S) MAKE_STRING_VIEW(CharT, S)
+
+template <class CharT>
+struct std::formatter<MoveOnly, CharT> : std::formatter<int, CharT> {
+  auto format(const MoveOnly& m, auto& ctx) const -> decltype(ctx.out()) {
+    return std::formatter<int, CharT>::format(m.get(), ctx);
+  }
+};
+
+template <class CharT>
+static void test() {
+  MoveOnly m{10};
+  CharT buffer[10];
+#ifndef TEST_HAS_NO_LOCALIZATION
+  std::locale loc;
+#endif
+
+  TC_ASSERT_EXPR(std::format(SV("{}"), MoveOnly{}) == SV("1"));
+
+  TC_ASSERT_EXPR(std::format(SV("{}"), m) == SV("10"));
+  TC_ASSERT_EXPR(m.get() == 10);
+
+  TC_ASSERT_EXPR(std::format(SV("{}"), std::move(m)) == SV("10"));
+  TC_ASSERT_EXPR(m.get() == 10);
+
+#ifndef TEST_HAS_NO_LOCALIZATION
+  TC_ASSERT_EXPR(std::format(loc, SV("{}"), MoveOnly{}) == SV("1"));
+
+  TC_ASSERT_EXPR(std::format(loc, SV("{}"), m) == SV("10"));
+  TC_ASSERT_EXPR(m.get() == 10);
+
+  TC_ASSERT_EXPR(std::format(loc, SV("{}"), std::move(m)) == SV("10"));
+  TC_ASSERT_EXPR(m.get() == 10);
+#endif
+
+  TC_ASSERT_EXPR(std::format_to(buffer, SV("{}"), MoveOnly{}) == &buffer[1]);
+
+  TC_ASSERT_EXPR(std::format_to(buffer, SV("{}"), m) == &buffer[2]);
+  TC_ASSERT_EXPR(m.get() == 10);
+
+  TC_ASSERT_EXPR(std::format_to(buffer, SV("{}"), std::move(m)) == &buffer[2]);
+  TC_ASSERT_EXPR(m.get() == 10);
+
+#ifndef TEST_HAS_NO_LOCALIZATION
+  TC_ASSERT_EXPR(std::format_to(buffer, loc, SV("{}"), MoveOnly{}) == &buffer[1]);
+
+  TC_ASSERT_EXPR(std::format_to(buffer, loc, SV("{}"), m) == &buffer[2]);
+  TC_ASSERT_EXPR(m.get() == 10);
+
+  TC_ASSERT_EXPR(std::format_to(buffer, loc, SV("{}"), std::move(m)) == &buffer[2]);
+  TC_ASSERT_EXPR(m.get() == 10);
+#endif
+
+  TC_ASSERT_EXPR(std::format_to_n(buffer, 5, SV("{}"), MoveOnly{}).out == &buffer[1]);
+
+  TC_ASSERT_EXPR(std::format_to_n(buffer, 5, SV("{}"), m).out == &buffer[2]);
+  TC_ASSERT_EXPR(m.get() == 10);
+
+  TC_ASSERT_EXPR(std::format_to_n(buffer, 5, SV("{}"), std::move(m)).out == &buffer[2]);
+  TC_ASSERT_EXPR(m.get() == 10);
+
+#ifndef TEST_HAS_NO_LOCALIZATION
+  TC_ASSERT_EXPR(std::format_to_n(buffer, 5, loc, SV("{}"), MoveOnly{}).out == &buffer[1]);
+
+  TC_ASSERT_EXPR(std::format_to_n(buffer, 5, loc, SV("{}"), m).out == &buffer[2]);
+  TC_ASSERT_EXPR(m.get() == 10);
+
+  TC_ASSERT_EXPR(std::format_to_n(buffer, 5, loc, SV("{}"), std::move(m)).out == &buffer[2]);
+  TC_ASSERT_EXPR(m.get() == 10);
+#endif
+
+  TC_ASSERT_EXPR(std::formatted_size(SV("{}"), MoveOnly{}) == 1);
+
+  TC_ASSERT_EXPR(std::formatted_size(SV("{}"), m) == 2);
+  TC_ASSERT_EXPR(m.get() == 10);
+
+  TC_ASSERT_EXPR(std::formatted_size(SV("{}"), std::move(m)) == 2);
+  TC_ASSERT_EXPR(m.get() == 10);
+
+#ifndef TEST_HAS_NO_LOCALIZATION
+  TC_ASSERT_EXPR(std::formatted_size(loc, SV("{}"), MoveOnly{}) == 1);
+
+  TC_ASSERT_EXPR(std::formatted_size(loc, SV("{}"), m) == 2);
+  TC_ASSERT_EXPR(m.get() == 10);
+
+  TC_ASSERT_EXPR(std::formatted_size(loc, SV("{}"), std::move(m)) == 2);
+  TC_ASSERT_EXPR(m.get() == 10);
+#endif
+}
+
+int tc_utilities_format_format_functions_P2418(void) {
+  test<char>();
+
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
+  test<wchar_t>();
+#endif
+
+  return 0;
+}

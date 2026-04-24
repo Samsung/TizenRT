@@ -1,0 +1,219 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14, c++17, c++20
+
+// XFAIL: availability-bad_optional_access-missing && !no-exceptions
+
+// <optional>
+
+// template<class F> constexpr auto transform(F&&) &;
+// template<class F> constexpr auto transform(F&&) &&;
+// template<class F> constexpr auto transform(F&&) const&;
+// template<class F> constexpr auto transform(F&&) const&&;
+
+#include "test_macros.h"
+#include <cassert>
+#include <optional>
+#include <type_traits>
+#include "libcxx_tc_common.h"
+
+struct LVal {
+  constexpr int operator()(int&) { return 1; }
+  int operator()(const int&) = delete;
+  int operator()(int&&) = delete;
+  int operator()(const int&&) = delete;
+};
+
+struct CLVal {
+  int operator()(int&) = delete;
+  constexpr int operator()(const int&) { return 1; }
+  int operator()(int&&) = delete;
+  int operator()(const int&&) = delete;
+};
+
+struct RVal {
+  int operator()(int&) = delete;
+  int operator()(const int&) = delete;
+  constexpr int operator()(int&&) { return 1; }
+  int operator()(const int&&) = delete;
+};
+
+struct CRVal {
+  int operator()(int&) = delete;
+  int operator()(const int&) = delete;
+  int operator()(int&&) = delete;
+  constexpr int operator()(const int&&) { return 1; }
+};
+
+struct RefQual {
+  constexpr int operator()(int) & { return 1; }
+  int operator()(int) const& = delete;
+  int operator()(int) && = delete;
+  int operator()(int) const&& = delete;
+};
+
+struct CRefQual {
+  int operator()(int) & = delete;
+  constexpr int operator()(int) const& { return 1; }
+  int operator()(int) && = delete;
+  int operator()(int) const&& = delete;
+};
+
+struct RVRefQual {
+  int operator()(int) & = delete;
+  int operator()(int) const& = delete;
+  constexpr int operator()(int) && { return 1; }
+  int operator()(int) const&& = delete;
+};
+
+struct RVCRefQual {
+  int operator()(int) & = delete;
+  int operator()(int) const& = delete;
+  int operator()(int) && = delete;
+  constexpr int operator()(int) const&& { return 1; }
+};
+
+struct NoCopy {
+  NoCopy() = default;
+  NoCopy(const NoCopy&) { TC_ASSERT_EXPR(false); }
+  int operator()(const NoCopy&&) { return 1; }
+};
+
+struct NoMove {
+  NoMove() = default;
+  NoMove(NoMove&&) = delete;
+  NoMove operator()(const NoCopy&&) { return NoMove{}; }
+};
+
+constexpr void test_val_types() {
+  // Test & overload
+  {
+    // Without & qualifier on F's operator()
+    {
+      std::optional<int> i{0};
+      TC_ASSERT_EXPR(i.transform(LVal{}) == 1);
+      ASSERT_SAME_TYPE(decltype(i.transform(LVal{})), std::optional<int>);
+    }
+
+    //With & qualifier on F's operator()
+    {
+      std::optional<int> i{0};
+      RefQual l{};
+      TC_ASSERT_EXPR(i.transform(l) == 1);
+      ASSERT_SAME_TYPE(decltype(i.transform(l)), std::optional<int>);
+    }
+  }
+
+  // Test const& overload
+  {
+    // Without & qualifier on F's operator()
+    {
+      const std::optional<int> i{0};
+      TC_ASSERT_EXPR(i.transform(CLVal{}) == 1);
+      ASSERT_SAME_TYPE(decltype(i.transform(CLVal{})), std::optional<int>);
+    }
+
+    //With & qualifier on F's operator()
+    {
+      const std::optional<int> i{0};
+      const CRefQual l{};
+      TC_ASSERT_EXPR(i.transform(l) == 1);
+      ASSERT_SAME_TYPE(decltype(i.transform(l)), std::optional<int>);
+    }
+  }
+
+  // Test && overload
+  {
+    // Without & qualifier on F's operator()
+    {
+      std::optional<int> i{0};
+      TC_ASSERT_EXPR(std::move(i).transform(RVal{}) == 1);
+      ASSERT_SAME_TYPE(decltype(std::move(i).transform(RVal{})), std::optional<int>);
+    }
+
+    //With & qualifier on F's operator()
+    {
+      std::optional<int> i{0};
+      TC_ASSERT_EXPR(i.transform(RVRefQual{}) == 1);
+      ASSERT_SAME_TYPE(decltype(i.transform(RVRefQual{})), std::optional<int>);
+    }
+  }
+
+  // Test const&& overload
+  {
+    // Without & qualifier on F's operator()
+    {
+      const std::optional<int> i{0};
+      TC_ASSERT_EXPR(std::move(i).transform(CRVal{}) == 1);
+      ASSERT_SAME_TYPE(decltype(std::move(i).transform(CRVal{})), std::optional<int>);
+    }
+
+    //With & qualifier on F's operator()
+    {
+      const std::optional<int> i{0};
+      const RVCRefQual l{};
+      TC_ASSERT_EXPR(i.transform(std::move(l)) == 1);
+      ASSERT_SAME_TYPE(decltype(i.transform(std::move(l))), std::optional<int>);
+    }
+  }
+}
+
+struct NonConst {
+  int non_const() { return 1; }
+};
+
+// check that the lambda body is not instantiated during overload resolution
+constexpr void test_sfinae() {
+  std::optional<NonConst> opt{};
+  auto l = [](auto&& x) { return x.non_const(); };
+  opt.transform(l);
+  std::move(opt).transform(l);
+}
+
+constexpr bool test() {
+  test_sfinae();
+  test_val_types();
+  std::optional<int> opt;
+  const auto& copt = opt;
+
+  const auto never_called = [](int) {
+    TC_ASSERT_EXPR(false);
+    return 0;
+  };
+
+  opt.transform(never_called);
+  std::move(opt).transform(never_called);
+  copt.transform(never_called);
+  std::move(copt).transform(never_called);
+
+  std::optional<NoCopy> nc;
+  const auto& cnc = nc;
+  std::move(nc).transform(NoCopy{});
+  std::move(cnc).transform(NoCopy{});
+
+  std::move(nc).transform(NoMove{});
+  std::move(cnc).transform(NoMove{});
+
+  return true;
+}
+
+int tc_utilities_optional_optional_monadic_transform(void) {
+  test();
+  static_assert(test());
+  return 0;
+}

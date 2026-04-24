@@ -1,0 +1,149 @@
+﻿/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************///
+//
+// UNSUPPORTED: c++03, c++11, c++14, c++17
+
+// <algorithm>
+
+// template<class InputIterator1, class InputIterator2, class Cmp>
+//     constexpr auto
+//     lexicographical_compare_three_way(InputIterator1 first1, InputIterator1 last1,
+//                                       InputIterator2 first2, InputIterator2 last2)
+
+#include <array>
+#include <algorithm>
+#include <cassert>
+#include <compare>
+#include <concepts>
+#include <vector>
+
+#include "test_macros.h"
+#include "test_comparisons.h"
+#include "test_iterators.h"
+#include "libcxx_tc_common.h"
+
+namespace {
+template <typename Iter1, typename Iter2, typename C1, typename C2, typename Order>
+constexpr void test_lexicographical_compare(C1 a, C2 b, Order expected) {
+  std::same_as<Order> decltype(auto) result =
+      std::lexicographical_compare_three_way(Iter1{a.begin()}, Iter1{a.end()}, Iter2{b.begin()}, Iter2{b.end()});
+  TC_ASSERT_EXPR(expected == result);
+}
+
+template <typename Iter1, typename Iter2>
+constexpr void test_given_iterator_types() {
+  // Both inputs empty
+  test_lexicographical_compare<Iter1, Iter2>(std::array<int, 0>{}, std::array<int, 0>{}, std::strong_ordering::equal);
+  // Left input empty
+  test_lexicographical_compare<Iter1, Iter2>(std::array<int, 0>{}, std::array{0, 1}, std::strong_ordering::less);
+  // Right input empty
+  test_lexicographical_compare<Iter1, Iter2>(std::array{0, 1}, std::array<int, 0>{}, std::strong_ordering::greater);
+
+  // Identical arrays
+  test_lexicographical_compare<Iter1, Iter2>(std::array{0, 1}, std::array{0, 1}, std::strong_ordering::equal);
+  // "Less" on 2nd element
+  test_lexicographical_compare<Iter1, Iter2>(std::array{0, 1}, std::array{0, 2}, std::strong_ordering::less);
+  // "Greater" on 2nd element
+  test_lexicographical_compare<Iter1, Iter2>(std::array{0, 2}, std::array{0, 1}, std::strong_ordering::greater);
+  // "Greater" on 2nd element, but "less" on first entry
+  test_lexicographical_compare<Iter1, Iter2>(std::array{0, 2}, std::array{1, 1}, std::strong_ordering::less);
+  // Identical elements, but longer
+  test_lexicographical_compare<Iter1, Iter2>(std::array{0, 1}, std::array{0, 1, 2}, std::strong_ordering::less);
+  // Identical elements, but shorter
+  test_lexicographical_compare<Iter1, Iter2>(std::array{0, 1, 2}, std::array{0, 1}, std::strong_ordering::greater);
+}
+
+template <typename Iter1>
+constexpr void test_iterator_types1() {
+  test_given_iterator_types<Iter1, int*>();
+  test_given_iterator_types<Iter1, const int*>();
+  test_given_iterator_types<Iter1, cpp17_input_iterator<const int*>>();
+  test_given_iterator_types<Iter1, forward_iterator<const int*>>();
+  test_given_iterator_types<Iter1, bidirectional_iterator<const int*>>();
+  test_given_iterator_types<Iter1, random_access_iterator<const int*>>();
+  test_given_iterator_types<Iter1, contiguous_iterator<const int*>>();
+}
+
+constexpr void test_iterator_types() {
+  // Exhaustively test all combinations of `int*`, `const int*`, `cpp17_input_iterator`,
+  // `forward_iterator`, `bidirectional_iterator`, `random_access_iterator`,
+  // `contiguous_iterator`.
+  //
+  // `lexicographical_compare_three_way` has a fast path which triggers if both
+  // iterators are random access iterators.
+
+  test_iterator_types1<int*>();
+  test_iterator_types1<const int*>();
+  test_iterator_types1<cpp17_input_iterator<const int*>>();
+  test_iterator_types1<forward_iterator<const int*>>();
+  test_iterator_types1<bidirectional_iterator<const int*>>();
+  test_iterator_types1<random_access_iterator<const int*>>();
+  test_iterator_types1<contiguous_iterator<const int*>>();
+}
+
+// Check for other comparison categories
+constexpr void test_comparison_categories() {
+  // Check all comparison categories for inputs with a difference in the contained elements
+  test_lexicographical_compare<const StrongOrder*, const StrongOrder*>(
+      std::array<StrongOrder, 2>{0, 1}, std::array<StrongOrder, 2>{1, 1}, std::strong_ordering::less);
+  test_lexicographical_compare<const WeakOrder*, const WeakOrder*>(
+      std::array<WeakOrder, 2>{0, 1}, std::array<WeakOrder, 2>{1, 1}, std::weak_ordering::less);
+  test_lexicographical_compare<const PartialOrder*, const PartialOrder*>(
+      std::array<PartialOrder, 2>{0, 1}, std::array<PartialOrder, 2>{1, 1}, std::partial_ordering::less);
+
+  // Check comparison categories with arrays of different sizes
+  test_lexicographical_compare<const StrongOrder*, const StrongOrder*>(
+      std::array<StrongOrder, 2>{0, 1}, std::array<StrongOrder, 3>{0, 1, 2}, std::strong_ordering::less);
+  test_lexicographical_compare<const WeakOrder*, const WeakOrder*>(
+      std::array<WeakOrder, 2>{0, 1}, std::array<WeakOrder, 3>{0, 1, 2}, std::weak_ordering::less);
+  test_lexicographical_compare<const PartialOrder*, const PartialOrder*>(
+      std::array<PartialOrder, 2>{0, 1}, std::array<PartialOrder, 3>{0, 1, 2}, std::partial_ordering::less);
+
+  // Check for a `partial_ordering::unordered` result
+  test_lexicographical_compare<const PartialOrder*, const PartialOrder*>(
+      std::array<PartialOrder, 2>{std::numeric_limits<int>::min(), 1},
+      std::array<PartialOrder, 3>{0, 1, 2},
+      std::partial_ordering::unordered);
+}
+
+// Check that it works with proxy iterators
+constexpr void test_proxy_iterators() {
+    std::vector<bool> vec(10, true);
+    auto result = std::lexicographical_compare_three_way(vec.begin(), vec.end(), vec.begin(), vec.end());
+    TC_ASSERT_EXPR(result == std::strong_ordering::equal);
+}
+
+constexpr bool test() {
+  test_iterator_types();
+  test_comparison_categories();
+  test_proxy_iterators();
+
+  return true;
+}
+
+} // namespace
+
+int tc_libcxx_algorithms_alg_sorting_alg_three_way_lexicographical_compare_three_way(void) {
+  test();
+  static_assert(test());
+
+  TC_SUCCESS_RESULT();
+
+
+  return 0;
+}

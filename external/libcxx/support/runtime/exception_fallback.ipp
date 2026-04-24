@@ -11,8 +11,8 @@
 
 namespace std {
 
-static constinit std::terminate_handler  __terminate_handler = nullptr;
-static constinit std::unexpected_handler __unexpected_handler = nullptr;
+static _LIBCPP_CONSTINIT std::terminate_handler  __terminate_handler = nullptr;
+static _LIBCPP_CONSTINIT std::unexpected_handler __unexpected_handler = nullptr;
 
 // libcxxrt provides implementations of these functions itself.
 unexpected_handler

@@ -1,0 +1,103 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14
+
+// XFAIL: availability-bad_variant_access-missing && !no-exceptions
+
+// <variant>
+
+// template <class ...Types> class variant;
+
+// template <class T, class U, class ...Args>
+//   T& emplace(initializer_list<U> il,Args&&... args);
+
+#include <cassert>
+#include <string>
+#include <type_traits>
+#include <variant>
+
+#include "archetypes.h"
+#include "test_convertible.h"
+#include "test_macros.h"
+#include "libcxx_tc_common.h"
+
+struct InitList {
+  std::size_t size;
+  constexpr InitList(std::initializer_list<int> il) : size(il.size()) {}
+};
+
+struct InitListArg {
+  std::size_t size;
+  int value;
+  constexpr InitListArg(std::initializer_list<int> il, int v)
+      : size(il.size()), value(v) {}
+};
+
+template <class Var, class T, class... Args>
+constexpr auto test_emplace_exists_imp(int) -> decltype(
+    std::declval<Var>().template emplace<T>(std::declval<Args>()...), true) {
+  return true;
+}
+
+template <class, class, class...>
+constexpr auto test_emplace_exists_imp(long) -> bool {
+  return false;
+}
+
+template <class... Args> constexpr bool emplace_exists() {
+  return test_emplace_exists_imp<Args...>(0);
+}
+
+void test_emplace_sfinae() {
+  using V =
+      std::variant<int, TestTypes::NoCtors, InitList, InitListArg, long, long>;
+  using IL = std::initializer_list<int>;
+  static_assert(emplace_exists<V, InitList, IL>(), "");
+  static_assert(!emplace_exists<V, InitList, int>(), "args don't match");
+  static_assert(!emplace_exists<V, InitList, IL, int>(), "too many args");
+  static_assert(emplace_exists<V, InitListArg, IL, int>(), "");
+  static_assert(!emplace_exists<V, InitListArg, int>(), "args don't match");
+  static_assert(!emplace_exists<V, InitListArg, IL>(), "too few args");
+  static_assert(!emplace_exists<V, InitListArg, IL, int, int>(),
+                "too many args");
+}
+
+void test_basic() {
+  using V = std::variant<int, InitList, InitListArg, TestTypes::NoCtors>;
+  V v;
+  auto& ref1 = v.emplace<InitList>({1, 2, 3});
+  static_assert(std::is_same_v<InitList&,decltype(ref1)>, "");
+  TC_ASSERT_EXPR(std::get<InitList>(v).size == 3);
+  TC_ASSERT_EXPR(&ref1 == &std::get<InitList>(v));
+  auto& ref2 = v.emplace<InitListArg>({1, 2, 3, 4}, 42);
+  static_assert(std::is_same_v<InitListArg&,decltype(ref2)>, "");
+  TC_ASSERT_EXPR(std::get<InitListArg>(v).size == 4);
+  TC_ASSERT_EXPR(std::get<InitListArg>(v).value == 42);
+  TC_ASSERT_EXPR(&ref2 == &std::get<InitListArg>(v));
+  auto& ref3 = v.emplace<InitList>({1});
+  static_assert(std::is_same_v<InitList&,decltype(ref3)>, "");
+  TC_ASSERT_EXPR(std::get<InitList>(v).size == 1);
+  TC_ASSERT_EXPR(&ref3 == &std::get<InitList>(v));
+}
+
+int tc_utilities_variant_variant_variant_variant_mod_emplace_type_init_list_args(void) {
+  test_basic();
+  test_emplace_sfinae();
+
+  return 0;
+}

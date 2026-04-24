@@ -1,0 +1,92 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14
+// TODO: Change to XFAIL once https://github.com/llvm/llvm-project/issues/40340 is fixed
+// UNSUPPORTED: availability-pmr-missing
+
+// test_memory_resource requires RTTI for dynamic_cast
+// UNSUPPORTED: no-rtti
+
+// <memory_resource>
+
+//------------------------------------------------------------------------------
+// TESTING void *memory_resource::allocate(size_t, size_t = max_align)
+//
+// Concerns:
+//  A) 'memory_resource' contains a member 'allocate' with the required
+//     signature, including the default alignment parameter.
+//  B) The return type of 'allocate' is 'void*'.
+//  C) 'allocate' is not marked as 'noexcept'.
+//  D) Invoking 'allocate' invokes 'do_allocate' with the same arguments.
+//  E) If 'do_allocate' throws then 'allocate' propagates that exception.
+
+#include <memory_resource>
+#include <cassert>
+#include <cstddef>
+#include <type_traits>
+
+#include "test_macros.h"
+#include "test_std_memory_resource.h"
+#include "libcxx_tc_common.h"
+
+int tc_utilities_utility_mem_res_mem_res_mem_res_public_allocate(void) {
+  TestResource R(42);
+  auto& P                      = R.getController();
+  std::pmr::memory_resource& M = R;
+  {
+    static_assert(std::is_same<decltype(M.allocate(0, 1)), void*>::value, "Must be void*");
+    static_assert(std::is_same<decltype(M.allocate(0)), void*>::value, "Must be void*");
+  }
+  {
+    static_assert(!noexcept(M.allocate(0, 1)), "Must not be noexcept.");
+    static_assert(!noexcept(M.allocate(0)), "Must not be noexcept.");
+  }
+  {
+    int s   = 42;
+    int a   = 64;
+    void* p = M.allocate(s, a);
+    TC_ASSERT_EXPR(P.alloc_count == 1);
+    TC_ASSERT_EXPR(P.checkAlloc(p, s, a));
+
+    s = 128;
+    a = MaxAlignV;
+    p = M.allocate(s);
+    TC_ASSERT_EXPR(P.alloc_count == 2);
+    TC_ASSERT_EXPR(P.checkAlloc(p, s, a));
+  }
+#ifndef TEST_HAS_NO_EXCEPTIONS
+  {
+    TestResource R2;
+    auto& P2                      = R2.getController();
+    P2.throw_on_alloc             = true;
+    std::pmr::memory_resource& M2 = R2;
+#ifndef _LIBCPP_NO_EXCEPTIONS
+    try {
+      (void)M2.allocate(42);
+      TC_ASSERT_EXPR(false);
+    } catch (TestException const&) {
+      // do nothing.
+    } catch (...) {
+      TC_ASSERT_EXPR(false);
+    }
+#endif // _LIBCPP_NO_EXCEPTIONS
+  }
+#endif
+
+  return 0;
+}

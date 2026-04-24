@@ -22,14 +22,13 @@
 
 /* Custom TC macros */
 
-#define TC_ASSERT_EXPR(expr)	\
-{\
-	if (!(expr)) {\
+#define TC_ASSERT_EXPR(expr) \
+do { \
+	if (!(expr)) { \
 		printf("\nTC Assertion FAIL at function: %s, file: %s line: %d\n", __func__, (const uint8_t *)__FILE__, (int)__LINE__); \
 		total_fail++; \
-		return -1; \
 	} \
-}
+} while(0)
 
 #define TC_ASSERT_FUNC(funcret)\
 {\

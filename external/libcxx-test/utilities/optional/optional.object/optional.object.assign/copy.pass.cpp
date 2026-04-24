@@ -1,0 +1,113 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14
+// <optional>
+
+// constexpr optional<T>& operator=(const optional<T>& rhs);
+
+#include <optional>
+#include <type_traits>
+#include <cassert>
+
+#include "test_macros.h"
+#include "archetypes.h"
+#include "libcxx_tc_common.h"
+
+using std::optional;
+
+struct X
+{
+    static bool throw_now;
+
+    X() = default;
+    X(const X&)
+    {
+        if (throw_now)
+            TEST_THROW(6);
+    }
+    X& operator=(X const&) = default;
+};
+
+bool X::throw_now = false;
+
+template <class Tp>
+constexpr bool assign_empty(optional<Tp>&& lhs) {
+    const optional<Tp> rhs;
+    lhs = rhs;
+    return !lhs.has_value() && !rhs.has_value();
+}
+
+template <class Tp>
+constexpr bool assign_value(optional<Tp>&& lhs) {
+    const optional<Tp> rhs(101);
+    lhs = rhs;
+    return lhs.has_value() && rhs.has_value() && *lhs == *rhs;
+}
+
+int tc_utilities_optional_optional_object_optional_object_assign_copy(void) {
+    {
+        using O = optional<int>;
+        static_assert(assign_empty(O{42}));
+        static_assert(assign_value(O{42}));
+        TC_ASSERT_EXPR(assign_empty(O{42}));
+        TC_ASSERT_EXPR(assign_value(O{42}));
+    }
+    {
+        using O = optional<TrivialTestTypes::TestType>;
+        static_assert(assign_empty(O{42}));
+        static_assert(assign_value(O{42}));
+        TC_ASSERT_EXPR(assign_empty(O{42}));
+        TC_ASSERT_EXPR(assign_value(O{42}));
+    }
+    {
+        using O = optional<TestTypes::TestType>;
+        TC_ASSERT_EXPR(assign_empty(O{42}));
+        TC_ASSERT_EXPR(assign_value(O{42}));
+    }
+    {
+        using T = TestTypes::TestType;
+        T::reset();
+        optional<T> opt(3);
+        const optional<T> opt2;
+        TC_ASSERT_EXPR(T::alive == 1);
+        opt = opt2;
+        TC_ASSERT_EXPR(T::alive == 0);
+        TC_ASSERT_EXPR(!opt2.has_value());
+        TC_ASSERT_EXPR(!opt.has_value());
+    }
+#ifndef TEST_HAS_NO_EXCEPTIONS
+    {
+        optional<X> opt;
+        optional<X> opt2(X{});
+        TC_ASSERT_EXPR(static_cast<bool>(opt2) == true);
+        try
+        {
+            X::throw_now = true;
+            opt = opt2;
+            TC_ASSERT_EXPR(false);
+        }
+        catch (int i)
+        {
+            TC_ASSERT_EXPR(i == 6);
+            TC_ASSERT_EXPR(static_cast<bool>(opt) == false);
+        }
+    }
+#endif
+
+  return 0;
+}

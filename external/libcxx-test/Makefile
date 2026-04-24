@@ -36,9 +36,168 @@ CXXFLAGS += -I. -I support/
 CXXSRCS += support/test_allocator.cpp
 
 ifeq ($(CONFIG_LIBCXX_UTC_ALGORITHMS),y)
-#Algorithms Source
-# Note: Individual algorithm test files removed - they had main() functions
-# that conflicted with TizenRT test format. tc_algorithms.cpp is stubbed.
+#Algorithms Source - Non-modifying operations
+ifeq ($(CONFIG_LIBCXX_UTC_ALGORITHMS_NONMOD),y)
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.adjacent.find/adjacent_find.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.adjacent.find/adjacent_find_pred.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.all_of/all_of.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.any_of/any_of.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.count/count.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.count/count_if.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.equal/equal.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.equal/equal_pred.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.find/find.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.find/find_if.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.find/find_if_not.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.end/find_end.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.end/find_end_pred.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.first.of/find_first_of.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.first.of/find_first_of_pred.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.foreach/for_each_n.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.foreach/test.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.is_permutation/is_permutation.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.is_permutation/is_permutation_pred.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.none_of/none_of.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.search/search.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.search/search_n.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.search/search_n_pred.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.search/search_pred.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/mismatch/mismatch.pass.cpp
+CXXSRCS += std/algorithms/alg.nonmodifying/mismatch/mismatch_pred.pass.cpp
+endif
+
+#Algorithms Source - Modifying operations
+ifeq ($(CONFIG_LIBCXX_UTC_ALGORITHMS_MOD),y)
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.copy/copy.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.copy/copy_backward.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.copy/copy_if.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.copy/copy_n.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.fill/fill.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.fill/fill_n.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.generate/generate.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.generate/generate_n.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.move/move.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.move/move_backward.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/is_partitioned.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition_copy.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition_point.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/stable_partition.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.stable.pass.cpp
+# Note: random_shuffle.pass.cpp removed - std::random_shuffle was removed in C++17
+# Note: random_shuffle_rand.pass.cpp removed - std::random_shuffle was removed in C++17
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.shuffle/random_shuffle_urng.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.remove/remove.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.remove/remove_copy.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.remove/remove_copy_if.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.remove/remove_if.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.replace/replace.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.replace/replace_copy.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.replace/replace_copy_if.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.replace/replace_if.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.reverse/reverse.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.reverse/reverse_copy.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.rotate/rotate.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.rotate/rotate_copy.pass.cpp
+# Note: shift_left.pass.cpp removed - std::shift_left is C++23
+# Note: shift_right.pass.cpp removed - std::shift_right is C++23
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.swap/iter_swap.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.transform/binary_transform.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.transform/unary_transform.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.unique/unique.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.unique/unique_copy.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.unique/unique_copy_pred.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.unique/unique_pred.pass.cpp
+endif
+
+#Algorithms Source - Sorting operations
+ifeq ($(CONFIG_LIBCXX_UTC_ALGORITHMS_SORT),y)
+CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/binary.search/binary_search.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/binary.search/binary_search_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/equal.range/equal_range.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/equal.range/equal_range_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/lower.bound/lower_bound.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/lower.bound/lower_bound_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/upper.bound/upper_bound.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/upper.bound/upper_bound_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/is.heap/is_heap.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/is.heap/is_heap_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/is.heap/is_heap_until.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/is.heap/is_heap_until_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/make.heap/make_heap.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/make.heap/make_heap_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/pop.heap/pop_heap.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/pop.heap/pop_heap_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/push.heap/push_heap.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/push.heap/push_heap_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/sort.heap/sort_heap.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/sort.heap/sort_heap_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.lex.comparison/lexicographical_compare.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.lex.comparison/lexicographical_compare_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.merge/inplace_merge.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.merge/inplace_merge_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.merge/merge.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.merge/merge_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_element.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_element_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_init_list.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/max_init_list_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_element.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_element_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_init_list.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/min_init_list_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_element.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_element_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_init_list.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.min.max/minmax_init_list_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.nth.element/nth_element.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.nth.element/nth_element_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.permutation.generators/next_permutation.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.permutation.generators/next_permutation_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.permutation.generators/prev_permutation.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.permutation.generators/prev_permutation_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/includes/includes.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/includes/includes_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/set.difference/set_difference.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/set.difference/set_difference_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/set.intersection/set_intersection.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/set.intersection/set_intersection_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/set.symmetric.difference/set_symmetric_difference.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/set.symmetric.difference/set_symmetric_difference_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/set.union/set_union.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/set.union/set_union_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.set.operations/set.union/set_union_move.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/is.sorted/is_sorted.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/is.sorted/is_sorted_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/is.sorted/is_sorted_until.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/is.sorted/is_sorted_until_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/partial.sort/partial_sort.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/partial.sort/partial_sort_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/partial.sort.copy/partial_sort_copy.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/partial.sort.copy/partial_sort_copy_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/sort/sort.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/sort/sort_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/sort/sort_constexpr.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/sort/sort_constexpr_comp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/stable.sort/stable_sort.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.sort/stable.sort/stable_sort_comp.pass.cpp
+# Note: lexicographical_compare_three_way.pass.cpp removed - uses C++20 features (std::same_as, std::strong_ordering, etc.)
+# Note: lexicographical_compare_three_way_comp.pass.cpp removed - uses C++20 features
+endif
+
+#Algorithms Source - General
+CXXSRCS += std/algorithms/robust_against_adl_on_new.pass.cpp
+# Note: robust_against_proxy_iterators_lifetime_bugs.pass.cpp removed - uses assert() in constructors/void functions
+# Note: algorithms.results/ files removed - they use std::ranges (C++20) not available in TizenRT
 
 #Algorithms TC Main
 CXXSRCS += std/algorithms/tc_algorithms.cpp
@@ -916,6 +1075,321 @@ endif
 #Containers TC Main
 CXXSRCS += std/containers/tc_containers.cpp
 endif
+
+# ====================================================================
+# New test categories from libcxx-17.0.6 conversion
+# NOTE: These entries are commented out because the converted test files
+# have not been synced from the Linux PC yet. To enable:
+# 1. Run convert_tests.py on Linux to generate the .pass.cpp files
+# 2. Sync the files to the shared folder
+# 3. Uncomment the sections below
+# ====================================================================
+# The following sections are disabled until test files are available.
+# To enable, change DISABLE_NEW_TESTS=y to DISABLE_NEW_TESTS=n
+ifeq ($(DISABLE_NEW_TESTS),y)
+
+# --- Utilities: Tuple ---
+ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES),y)
+ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES_TUPLE),y)
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/PR38601.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/TupleFunction.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.helper/tuple.include.array.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.helper/tuple.include.utility.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.helper/tuple_element.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.helper/tuple_size.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.helper/tuple_size_incomplete.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.helper/tuple_size_structured_bindings.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.helper/tuple_size_v.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.helper/tuple_size_value_sfinae.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.rel/eq.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.rel/lt.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.rel/three_way.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.apply/apply.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.apply/apply_extended_types.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.apply/apply_large_arity.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.apply/make_from_tuple.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/const_convert_copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/const_convert_move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/const_copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/const_move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/const_pair.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/const_pair_copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/const_pair_move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/convert_copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/convert_move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/derived_from_tuple_like.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/laziness.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.assign/move_pair.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.traits/uses_allocator.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.creation/forward_as_tuple.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.creation/make_tuple.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.creation/tie.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.creation/tuple_cat.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.elem/get_const.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.elem/get_const_rv.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.elem/get_non_const.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.elem/get_rv.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.elem/tuple.by.type.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/UTypes.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_UTypes.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_const_Types.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_const_move_pair.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_const_pair.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_convert_const_move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_convert_copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_convert_move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_convert_non_const_copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_move_pair.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/alloc_non_const_pair.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/const_Types.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/const_move_pair.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/const_pair.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/convert_const_move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/convert_copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/convert_move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/convert_non_const_copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/copy.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/deduct.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/default.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/dtor.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/move.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/move_pair.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/non_const_pair.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/recursion_depth.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.cnstr/test_lazy_sfinae.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.special/non_member_swap.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.special/non_member_swap_const.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.swap/member_swap.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.swap/member_swap_const.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.general/ignore.pass.cpp
+CXXSRCS += std/utilities/utilities/tuple/tuple.general/tuple.smartptr.pass.cpp
+endif
+endif
+
+# --- Utilities: Optional ---
+ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES),y)
+ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES_OPTIONAL),y)
+CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/compare.three_way.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/equal.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/greater.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/greater_equal.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/less_equal.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/less_than.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/not_equal.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.nullopt/nullopt_t.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.hash/enabled_hash.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.hash/hash.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/special_members.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/triviality.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/types.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/U.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/const_T.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/const_optional_U.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/copy.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/deduct.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/default.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/in_place_t.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/move.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/nullopt_t.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/optional_U.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.ctor/rvalue_T.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.assign/assign_value.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.assign/copy.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.assign/emplace.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.assign/move.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.assign/nullopt_t.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.mod/reset.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.observe/bool.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.observe/dereference.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.observe/has_value.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.observe/op_arrow.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.observe/value.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.observe/value_or.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.dtor/dtor.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.object/optional.object.swap/swap.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.relops/equal.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.relops/less_than.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.relops/not_equal.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.bad_optional_access/default.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.specalg/make_optional.pass.cpp
+CXXSRCS += std/utilities/utilities/optional/optional.specalg/swap.pass.cpp
+endif
+endif
+
+# --- Utilities: Variant ---
+ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES),y)
+ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES_VARIANT),y)
+CXXSRCS += std/utilities/utilities/variant/variant.get/get_if_index.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.get/get_if_type.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.get/get_index.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.get/get_type.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.get/holds_alternative.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.helpers/variant_alternative.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.helpers/variant_size.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.relops/relops.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.monostate/monostate.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.bad_variant_access/bad_variant_access.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.synopsis/variant_npos.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.visit/visit.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.visit/visit_return_type.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.dtor/dtor.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.mod/emplace_index_args.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.mod/emplace_type_args.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.assign/copy.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.assign/move.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.ctor/T.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.ctor/copy.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.ctor/default.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.ctor/in_place_index_args.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.ctor/in_place_type_args.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.ctor/move.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.variant/variant.swap/swap.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.hash/enabled_hash.pass.cpp
+CXXSRCS += std/utilities/utilities/variant/variant.hash/hash.pass.cpp
+endif
+endif
+
+# --- Utilities: Any ---
+ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES),y)
+ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES_ANY),y)
+CXXSRCS += std/utilities/utilities/any/any.nonmembers/make_any.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.nonmembers/any.cast/any_cast_pointer.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.nonmembers/any.cast/any_cast_reference.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.cons/copy.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.cons/default.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.cons/in_place_type.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.cons/move.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.cons/value.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.modifiers/emplace.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.modifiers/reset.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.modifiers/swap.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.observers/has_value.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.observers/type.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.assign/copy.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.assign/move.pass.cpp
+CXXSRCS += std/utilities/utilities/any/any.class/any.assign/value.pass.cpp
+endif
+endif
+
+# --- Containers: Set/Multiset ---
+ifeq ($(CONFIG_LIBCXX_UTC_CONTAINERS),y)
+ifeq ($(CONFIG_LIBCXX_UTC_CONTAINERS_SET),y)
+CXXSRCS += std/containers/containers/associative/set/clear.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/contains.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/count.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/emplace.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/emplace_hint.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/empty.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/equal_range.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/erase_iter.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/erase_iter_iter.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/erase_key.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/find.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/get_allocator.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/insert_cv.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/insert_rv.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/iterator.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/lower_bound.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/max_size.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/size.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/types.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/upper_bound.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/set.cons/default.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/set.cons/copy.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/set.cons/move.pass.cpp
+CXXSRCS += std/containers/containers/associative/set/set.cons/deduct.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/clear.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/count.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/emplace.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/emplace_hint.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/empty.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/equal_range.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/erase_iter.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/erase_iter_iter.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/erase_key.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/find.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/insert_cv.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/insert_rv.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/iterator.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/size.pass.cpp
+CXXSRCS += std/containers/containers/associative/multiset/types.pass.cpp
+endif
+endif
+
+# --- Containers: Deque ---
+ifeq ($(CONFIG_LIBCXX_UTC_CONTAINERS),y)
+ifeq ($(CONFIG_LIBCXX_UTC_CONTAINERS_DEQUE),y)
+CXXSRCS += std/containers/containers/sequences/deque/types.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/iterators.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/get_allocator.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.cons/default.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.cons/copy.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.cons/move.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.cons/deduct.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.cons/alloc.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.cons/size.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.cons/iter_iter.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/push_back.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/push_front.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/pop_back.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/pop_front.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/emplace.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/emplace_back.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/emplace_front.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/erase_iter.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/erase_iter_iter.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/clear.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.modifiers/insert_iter_rvalue.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.capacity/size.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.capacity/empty.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.capacity/resize_size.pass.cpp
+CXXSRCS += std/containers/containers/sequences/deque/deque.special/swap.pass.cpp
+endif
+endif
+
+# --- Containers: Adaptors (Queue/Stack/PriorityQueue) ---
+ifeq ($(CONFIG_LIBCXX_UTC_CONTAINERS),y)
+ifeq ($(CONFIG_LIBCXX_UTC_CONTAINERS_ADAPTORS),y)
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.defn/types.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.defn/empty.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.defn/size.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.defn/front.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.defn/back.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.defn/push.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.defn/pop.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.cons/ctor_default.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.cons/ctor_container.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.cons/ctor_move.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/queue/queue.cons/deduct.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/stack/stack.defn/types.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/stack/stack.defn/empty.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/stack/stack.defn/size.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/stack/stack.defn/top.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/stack/stack.defn/push.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/stack/stack.defn/pop.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/stack/stack.cons/ctor_default.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/stack/stack.cons/ctor_container.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/stack/stack.cons/ctor_move.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/stack/stack.cons/deduct.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/priority.queue/types.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/priority.queue/priqueue.members/empty.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/priority.queue/priqueue.members/size.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/priority.queue/priqueue.members/top.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/priority.queue/priqueue.members/push.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/priority.queue/priqueue.members/pop.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/priority.queue/priqueue.cons/ctor_default.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/priority.queue/priqueue.cons/ctor_comp_container.pass.cpp
+CXXSRCS += std/containers/containers/container.adaptors/priority.queue/priqueue.cons/deduct.pass.cpp
+endif
+endif
+
+# ====================================================================
+endif # DISABLE_NEW_TESTS
 
 AOBJS		= $(ASRCS:.S=$(OBJEXT))
 COBJS		= $(CSRCS:.c=$(OBJEXT))

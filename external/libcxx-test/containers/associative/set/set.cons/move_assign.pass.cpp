@@ -1,0 +1,195 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03
+
+// <set>
+
+// class set
+
+// set& operator=(set&& s);
+
+#include <set>
+#include <cassert>
+
+#include "test_macros.h"
+#include "MoveOnly.h"
+#include "../../../test_compare.h"
+#include "test_allocator.h"
+#include "min_allocator.h"
+#include "libcxx_tc_common.h"
+
+int tc_containers_associative_set_set_cons_move_assign(void) {
+    {
+        typedef MoveOnly V;
+        typedef test_less<MoveOnly> C;
+        typedef test_allocator<V> A;
+        typedef std::set<MoveOnly, C, A> M;
+        typedef std::move_iterator<V*> I;
+        V a1[] =
+        {
+            V(1),
+            V(1),
+            V(1),
+            V(2),
+            V(2),
+            V(2),
+            V(3),
+            V(3),
+            V(3)
+        };
+        M m1(I(a1), I(a1+sizeof(a1)/sizeof(a1[0])), C(5), A(7));
+        V a2[] =
+        {
+            V(1),
+            V(1),
+            V(1),
+            V(2),
+            V(2),
+            V(2),
+            V(3),
+            V(3),
+            V(3)
+        };
+        M m2(I(a2), I(a2+sizeof(a2)/sizeof(a2[0])), C(5), A(7));
+        M m3(C(3), A(7));
+        m3 = std::move(m1);
+        TC_ASSERT_EXPR(m3 == m2);
+        TC_ASSERT_EXPR(m3.get_allocator() == A(7));
+        TC_ASSERT_EXPR(m3.key_comp() == C(5));
+        TC_ASSERT_EXPR(m1.empty());
+    }
+    {
+        typedef MoveOnly V;
+        typedef test_less<MoveOnly> C;
+        typedef test_allocator<V> A;
+        typedef std::set<MoveOnly, C, A> M;
+        typedef std::move_iterator<V*> I;
+        V a1[] =
+        {
+            V(1),
+            V(1),
+            V(1),
+            V(2),
+            V(2),
+            V(2),
+            V(3),
+            V(3),
+            V(3)
+        };
+        M m1(I(a1), I(a1+sizeof(a1)/sizeof(a1[0])), C(5), A(7));
+        V a2[] =
+        {
+            V(1),
+            V(1),
+            V(1),
+            V(2),
+            V(2),
+            V(2),
+            V(3),
+            V(3),
+            V(3)
+        };
+        M m2(I(a2), I(a2+sizeof(a2)/sizeof(a2[0])), C(5), A(7));
+        M m3(C(3), A(5));
+        m3 = std::move(m1);
+        TC_ASSERT_EXPR(m3 == m2);
+        TC_ASSERT_EXPR(m3.get_allocator() == A(5));
+        TC_ASSERT_EXPR(m3.key_comp() == C(5));
+        LIBCPP_ASSERT(m1.empty());
+    }
+    {
+        typedef MoveOnly V;
+        typedef test_less<MoveOnly> C;
+        typedef other_allocator<V> A;
+        typedef std::set<MoveOnly, C, A> M;
+        typedef std::move_iterator<V*> I;
+        V a1[] =
+        {
+            V(1),
+            V(1),
+            V(1),
+            V(2),
+            V(2),
+            V(2),
+            V(3),
+            V(3),
+            V(3)
+        };
+        M m1(I(a1), I(a1+sizeof(a1)/sizeof(a1[0])), C(5), A(7));
+        V a2[] =
+        {
+            V(1),
+            V(1),
+            V(1),
+            V(2),
+            V(2),
+            V(2),
+            V(3),
+            V(3),
+            V(3)
+        };
+        M m2(I(a2), I(a2+sizeof(a2)/sizeof(a2[0])), C(5), A(7));
+        M m3(C(3), A(5));
+        m3 = std::move(m1);
+        TC_ASSERT_EXPR(m3 == m2);
+        TC_ASSERT_EXPR(m3.get_allocator() == A(7));
+        TC_ASSERT_EXPR(m3.key_comp() == C(5));
+        TC_ASSERT_EXPR(m1.empty());
+    }
+    {
+        typedef MoveOnly V;
+        typedef test_less<MoveOnly> C;
+        typedef min_allocator<V> A;
+        typedef std::set<MoveOnly, C, A> M;
+        typedef std::move_iterator<V*> I;
+        V a1[] =
+        {
+            V(1),
+            V(1),
+            V(1),
+            V(2),
+            V(2),
+            V(2),
+            V(3),
+            V(3),
+            V(3)
+        };
+        M m1(I(a1), I(a1+sizeof(a1)/sizeof(a1[0])), C(5), A());
+        V a2[] =
+        {
+            V(1),
+            V(1),
+            V(1),
+            V(2),
+            V(2),
+            V(2),
+            V(3),
+            V(3),
+            V(3)
+        };
+        M m2(I(a2), I(a2+sizeof(a2)/sizeof(a2[0])), C(5), A());
+        M m3(C(3), A());
+        m3 = std::move(m1);
+        TC_ASSERT_EXPR(m3 == m2);
+        TC_ASSERT_EXPR(m3.get_allocator() == A());
+        TC_ASSERT_EXPR(m3.key_comp() == C(5));
+        TC_ASSERT_EXPR(m1.empty());
+    }
+
+  return 0;
+}

@@ -1,0 +1,115 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14
+
+// XFAIL: availability-bad_any_cast-missing && !no-exceptions
+
+// <any>
+
+// any& operator=(any &&);
+
+// Test move assignment.
+
+#include <any>
+#include <cassert>
+
+#include "any_helpers.h"
+#include "test_macros.h"
+#include "libcxx_tc_common.h"
+
+template <class LHS, class RHS>
+void test_move_assign() {
+    TC_ASSERT_EXPR(LHS::count == 0);
+    TC_ASSERT_EXPR(RHS::count == 0);
+    {
+        LHS const s1(1);
+        std::any a = s1;
+        RHS const s2(2);
+        std::any a2 = s2;
+
+        TC_ASSERT_EXPR(LHS::count == 2);
+        TC_ASSERT_EXPR(RHS::count == 2);
+
+        a = std::move(a2);
+
+        TC_ASSERT_EXPR(LHS::count == 1);
+        TC_ASSERT_EXPR(RHS::count == 2 + a2.has_value());
+        LIBCPP_ASSERT(RHS::count == 2); // libc++ leaves the object empty
+
+        assertContains<RHS>(a, 2);
+        if (a2.has_value())
+            assertContains<RHS>(a2, 0);
+        LIBCPP_ASSERT(!a2.has_value());
+    }
+    TC_ASSERT_EXPR(LHS::count == 0);
+    TC_ASSERT_EXPR(RHS::count == 0);
+}
+
+template <class LHS>
+void test_move_assign_empty() {
+    TC_ASSERT_EXPR(LHS::count == 0);
+    {
+        std::any a;
+        std::any a2 = LHS(1);
+
+        TC_ASSERT_EXPR(LHS::count == 1);
+
+        a = std::move(a2);
+
+        TC_ASSERT_EXPR(LHS::count == 1 + a2.has_value());
+        LIBCPP_ASSERT(LHS::count == 1);
+
+        assertContains<LHS>(a, 1);
+        if (a2.has_value())
+            assertContains<LHS>(a2, 0);
+        LIBCPP_ASSERT(!a2.has_value());
+    }
+    TC_ASSERT_EXPR(LHS::count == 0);
+    {
+        std::any a = LHS(1);
+        std::any a2;
+
+        TC_ASSERT_EXPR(LHS::count == 1);
+
+        a = std::move(a2);
+
+        TC_ASSERT_EXPR(LHS::count == 0);
+
+        assertEmpty<LHS>(a);
+        assertEmpty(a2);
+    }
+    TC_ASSERT_EXPR(LHS::count == 0);
+}
+
+void test_move_assign_noexcept() {
+    std::any a1;
+    std::any a2;
+    ASSERT_NOEXCEPT(a1 = std::move(a2));
+}
+
+int tc_utilities_any_any_class_any_assign_move(void) {
+    test_move_assign_noexcept();
+    test_move_assign<small1, small2>();
+    test_move_assign<large1, large2>();
+    test_move_assign<small, large>();
+    test_move_assign<large, small>();
+    test_move_assign_empty<small>();
+    test_move_assign_empty<large>();
+
+  return 0;
+}

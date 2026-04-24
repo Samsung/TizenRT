@@ -1,0 +1,283 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// <tuple>
+
+// template <class... Types> class tuple;
+
+// template <class... Tuples> tuple<CTypes...> tuple_cat(Tuples&&... tpls);
+
+// UNSUPPORTED: c++03
+
+#include <tuple>
+#include <utility>
+#include <array>
+#include <string>
+#include <cassert>
+
+#include "test_macros.h"
+#include "MoveOnly.h"
+#include "libcxx_tc_common.h"
+
+namespace NS {
+struct Namespaced {
+  int i;
+};
+template<typename ...Ts>
+void forward_as_tuple(Ts...) = delete;
+}
+
+int tc_utilities_tuple_tuple_tuple_tuple_creation_tuple_cat(void) {
+    {
+        std::tuple<> t = std::tuple_cat();
+        ((void)t); // Prevent unused warning
+    }
+    {
+        std::tuple<> t1;
+        std::tuple<> t2 = std::tuple_cat(t1);
+        ((void)t2); // Prevent unused warning
+    }
+    {
+        std::tuple<> t = std::tuple_cat(std::tuple<>());
+        ((void)t); // Prevent unused warning
+    }
+    {
+        std::tuple<> t = std::tuple_cat(std::array<int, 0>());
+        ((void)t); // Prevent unused warning
+    }
+    {
+        std::tuple<int> t1(1);
+        std::tuple<int> t = std::tuple_cat(t1);
+        TC_ASSERT_EXPR(std::get<0>(t) == 1);
+    }
+
+#if TEST_STD_VER > 11
+    {
+        constexpr std::tuple<> t = std::tuple_cat();
+        ((void)t); // Prevent unused warning
+    }
+    {
+        constexpr std::tuple<> t1;
+        constexpr std::tuple<> t2 = std::tuple_cat(t1);
+        ((void)t2); // Prevent unused warning
+    }
+    {
+        constexpr std::tuple<> t = std::tuple_cat(std::tuple<>());
+        ((void)t); // Prevent unused warning
+    }
+    {
+        constexpr std::tuple<> t = std::tuple_cat(std::array<int, 0>());
+        ((void)t); // Prevent unused warning
+    }
+    {
+        constexpr std::tuple<int> t1(1);
+        constexpr std::tuple<int> t = std::tuple_cat(t1);
+        static_assert(std::get<0>(t) == 1, "");
+    }
+    {
+        constexpr std::tuple<int> t1(1);
+        constexpr std::tuple<int, int> t = std::tuple_cat(t1, t1);
+        static_assert(std::get<0>(t) == 1, "");
+        static_assert(std::get<1>(t) == 1, "");
+    }
+#endif
+    {
+        std::tuple<int, MoveOnly> t =
+                                std::tuple_cat(std::tuple<int, MoveOnly>(1, 2));
+        TC_ASSERT_EXPR(std::get<0>(t) == 1);
+        TC_ASSERT_EXPR(std::get<1>(t) == 2);
+    }
+    {
+        std::tuple<int, int, int> t = std::tuple_cat(std::array<int, 3>());
+        TC_ASSERT_EXPR(std::get<0>(t) == 0);
+        TC_ASSERT_EXPR(std::get<1>(t) == 0);
+        TC_ASSERT_EXPR(std::get<2>(t) == 0);
+    }
+    {
+        std::tuple<int, MoveOnly> t = std::tuple_cat(std::pair<int, MoveOnly>(2, 1));
+        TC_ASSERT_EXPR(std::get<0>(t) == 2);
+        TC_ASSERT_EXPR(std::get<1>(t) == 1);
+    }
+
+    {
+        std::tuple<> t1;
+        std::tuple<> t2;
+        std::tuple<> t3 = std::tuple_cat(t1, t2);
+        ((void)t3); // Prevent unused warning
+    }
+    {
+        std::tuple<> t1;
+        std::tuple<int> t2(2);
+        std::tuple<int> t3 = std::tuple_cat(t1, t2);
+        TC_ASSERT_EXPR(std::get<0>(t3) == 2);
+    }
+    {
+        std::tuple<> t1;
+        std::tuple<int> t2(2);
+        std::tuple<int> t3 = std::tuple_cat(t2, t1);
+        TC_ASSERT_EXPR(std::get<0>(t3) == 2);
+    }
+    {
+        std::tuple<int*> t1;
+        std::tuple<int> t2(2);
+        std::tuple<int*, int> t3 = std::tuple_cat(t1, t2);
+        TC_ASSERT_EXPR(std::get<0>(t3) == nullptr);
+        TC_ASSERT_EXPR(std::get<1>(t3) == 2);
+    }
+    {
+        std::tuple<int*> t1;
+        std::tuple<int> t2(2);
+        std::tuple<int, int*> t3 = std::tuple_cat(t2, t1);
+        TC_ASSERT_EXPR(std::get<0>(t3) == 2);
+        TC_ASSERT_EXPR(std::get<1>(t3) == nullptr);
+    }
+    {
+        std::tuple<int*> t1;
+        std::tuple<int, double> t2(2, 3.5);
+        std::tuple<int*, int, double> t3 = std::tuple_cat(t1, t2);
+        TC_ASSERT_EXPR(std::get<0>(t3) == nullptr);
+        TC_ASSERT_EXPR(std::get<1>(t3) == 2);
+        TC_ASSERT_EXPR(std::get<2>(t3) == 3.5);
+    }
+    {
+        std::tuple<int*> t1;
+        std::tuple<int, double> t2(2, 3.5);
+        std::tuple<int, double, int*> t3 = std::tuple_cat(t2, t1);
+        TC_ASSERT_EXPR(std::get<0>(t3) == 2);
+        TC_ASSERT_EXPR(std::get<1>(t3) == 3.5);
+        TC_ASSERT_EXPR(std::get<2>(t3) == nullptr);
+    }
+    {
+        std::tuple<int*, MoveOnly> t1(nullptr, 1);
+        std::tuple<int, double> t2(2, 3.5);
+        std::tuple<int*, MoveOnly, int, double> t3 =
+                                              std::tuple_cat(std::move(t1), t2);
+        TC_ASSERT_EXPR(std::get<0>(t3) == nullptr);
+        TC_ASSERT_EXPR(std::get<1>(t3) == 1);
+        TC_ASSERT_EXPR(std::get<2>(t3) == 2);
+        TC_ASSERT_EXPR(std::get<3>(t3) == 3.5);
+    }
+    {
+        std::tuple<int*, MoveOnly> t1(nullptr, 1);
+        std::tuple<int, double> t2(2, 3.5);
+        std::tuple<int, double, int*, MoveOnly> t3 =
+                                              std::tuple_cat(t2, std::move(t1));
+        TC_ASSERT_EXPR(std::get<0>(t3) == 2);
+        TC_ASSERT_EXPR(std::get<1>(t3) == 3.5);
+        TC_ASSERT_EXPR(std::get<2>(t3) == nullptr);
+        TC_ASSERT_EXPR(std::get<3>(t3) == 1);
+    }
+    {
+        std::tuple<MoveOnly, MoveOnly> t1(1, 2);
+        std::tuple<int*, MoveOnly> t2(nullptr, 4);
+        std::tuple<MoveOnly, MoveOnly, int*, MoveOnly> t3 =
+                                   std::tuple_cat(std::move(t1), std::move(t2));
+        TC_ASSERT_EXPR(std::get<0>(t3) == 1);
+        TC_ASSERT_EXPR(std::get<1>(t3) == 2);
+        TC_ASSERT_EXPR(std::get<2>(t3) == nullptr);
+        TC_ASSERT_EXPR(std::get<3>(t3) == 4);
+    }
+
+    {
+        std::tuple<MoveOnly, MoveOnly> t1(1, 2);
+        std::tuple<int*, MoveOnly> t2(nullptr, 4);
+        std::tuple<MoveOnly, MoveOnly, int*, MoveOnly> t3 =
+                                   std::tuple_cat(std::tuple<>(),
+                                                  std::move(t1),
+                                                  std::move(t2));
+        TC_ASSERT_EXPR(std::get<0>(t3) == 1);
+        TC_ASSERT_EXPR(std::get<1>(t3) == 2);
+        TC_ASSERT_EXPR(std::get<2>(t3) == nullptr);
+        TC_ASSERT_EXPR(std::get<3>(t3) == 4);
+    }
+    {
+        std::tuple<MoveOnly, MoveOnly> t1(1, 2);
+        std::tuple<int*, MoveOnly> t2(nullptr, 4);
+        std::tuple<MoveOnly, MoveOnly, int*, MoveOnly> t3 =
+                                   std::tuple_cat(std::move(t1),
+                                                  std::tuple<>(),
+                                                  std::move(t2));
+        TC_ASSERT_EXPR(std::get<0>(t3) == 1);
+        TC_ASSERT_EXPR(std::get<1>(t3) == 2);
+        TC_ASSERT_EXPR(std::get<2>(t3) == nullptr);
+        TC_ASSERT_EXPR(std::get<3>(t3) == 4);
+    }
+    {
+        std::tuple<MoveOnly, MoveOnly> t1(1, 2);
+        std::tuple<int*, MoveOnly> t2(nullptr, 4);
+        std::tuple<MoveOnly, MoveOnly, int*, MoveOnly> t3 =
+                                   std::tuple_cat(std::move(t1),
+                                                  std::move(t2),
+                                                  std::tuple<>());
+        TC_ASSERT_EXPR(std::get<0>(t3) == 1);
+        TC_ASSERT_EXPR(std::get<1>(t3) == 2);
+        TC_ASSERT_EXPR(std::get<2>(t3) == nullptr);
+        TC_ASSERT_EXPR(std::get<3>(t3) == 4);
+    }
+    {
+        std::tuple<MoveOnly, MoveOnly> t1(1, 2);
+        std::tuple<int*, MoveOnly> t2(nullptr, 4);
+        std::tuple<MoveOnly, MoveOnly, int*, MoveOnly, int> t3 =
+                                   std::tuple_cat(std::move(t1),
+                                                  std::move(t2),
+                                                  std::tuple<int>(5));
+        TC_ASSERT_EXPR(std::get<0>(t3) == 1);
+        TC_ASSERT_EXPR(std::get<1>(t3) == 2);
+        TC_ASSERT_EXPR(std::get<2>(t3) == nullptr);
+        TC_ASSERT_EXPR(std::get<3>(t3) == 4);
+        TC_ASSERT_EXPR(std::get<4>(t3) == 5);
+    }
+    {
+        // See bug #19616.
+        auto t1 = std::tuple_cat(
+            std::make_tuple(std::make_tuple(1)),
+            std::make_tuple()
+        );
+        TC_ASSERT_EXPR(t1 == std::make_tuple(std::make_tuple(1)));
+
+        auto t2 = std::tuple_cat(
+            std::make_tuple(std::make_tuple(1)),
+            std::make_tuple(std::make_tuple(2))
+        );
+        TC_ASSERT_EXPR(t2 == std::make_tuple(std::make_tuple(1), std::make_tuple(2)));
+    }
+    {
+        int x = 101;
+        std::tuple<int, const int, int&, const int&, int&&> t(42, 101, x, x, std::move(x));
+        const auto& ct = t;
+        std::tuple<int, const int, int&, const int&> t2(42, 101, x, x);
+        const auto& ct2 = t2;
+
+        auto r = std::tuple_cat(std::move(t), std::move(ct), t2, ct2);
+
+        ASSERT_SAME_TYPE(decltype(r), std::tuple<
+            int, const int, int&, const int&, int&&,
+            int, const int, int&, const int&, int&&,
+            int, const int, int&, const int&,
+            int, const int, int&, const int&>);
+        ((void)r);
+    }
+    {
+        std::tuple<NS::Namespaced> t1(NS::Namespaced{1});
+        std::tuple<NS::Namespaced> t = std::tuple_cat(t1);
+        std::tuple<NS::Namespaced, NS::Namespaced> t2 =
+            std::tuple_cat(t1, t1);
+        TC_ASSERT_EXPR(std::get<0>(t).i == 1);
+        TC_ASSERT_EXPR(std::get<0>(t2).i == 1);
+    }
+  return 0;
+}

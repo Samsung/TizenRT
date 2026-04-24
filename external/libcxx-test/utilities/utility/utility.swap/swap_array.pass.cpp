@@ -1,0 +1,131 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// <utility>
+
+// template<ValueType T, size_t N>
+//   requires Swappable<T>
+//   void
+//   swap(T (&a)[N], T (&b)[N]);
+
+#include <algorithm>
+#include <cassert>
+#include <memory>
+#include <type_traits>
+#include <utility>
+
+#include "test_macros.h"
+#include "libcxx_tc_common.h"
+
+
+#if TEST_STD_VER >= 11
+struct CopyOnly {
+    CopyOnly() {}
+    CopyOnly(CopyOnly const&) noexcept {}
+    CopyOnly& operator=(CopyOnly const&) { return *this; }
+};
+
+
+struct NoexceptMoveOnly {
+    NoexceptMoveOnly() {}
+    NoexceptMoveOnly(NoexceptMoveOnly&&) noexcept {}
+    NoexceptMoveOnly& operator=(NoexceptMoveOnly&&) noexcept { return *this; }
+};
+
+struct NotMoveConstructible {
+    NotMoveConstructible() {}
+    NotMoveConstructible& operator=(NotMoveConstructible&&) { return *this; }
+private:
+    NotMoveConstructible(NotMoveConstructible&&);
+};
+
+template <class Tp>
+auto can_swap_test(int) -> decltype(std::swap(std::declval<Tp>(), std::declval<Tp>()));
+
+template <class Tp>
+auto can_swap_test(...) -> std::false_type;
+
+template <class Tp>
+constexpr bool can_swap() {
+    return std::is_same<decltype(can_swap_test<Tp>(0)), void>::value;
+}
+#endif
+
+#if TEST_STD_VER > 17
+constexpr bool test_swap_constexpr()
+{
+    int i[3] = {1, 2, 3};
+    int j[3] = {4, 5, 6};
+    std::swap(i, j);
+    return i[0] == 4 &&
+           i[1] == 5 &&
+           i[2] == 6 &&
+           j[0] == 1 &&
+           j[1] == 2 &&
+           j[2] == 3;
+}
+#endif // TEST_STD_VER > 17
+
+int tc_utilities_utility_utility_swap_swap_array(void) {
+    {
+        int i[3] = {1, 2, 3};
+        int j[3] = {4, 5, 6};
+        std::swap(i, j);
+        TC_ASSERT_EXPR(i[0] == 4);
+        TC_ASSERT_EXPR(i[1] == 5);
+        TC_ASSERT_EXPR(i[2] == 6);
+        TC_ASSERT_EXPR(j[0] == 1);
+        TC_ASSERT_EXPR(j[1] == 2);
+        TC_ASSERT_EXPR(j[2] == 3);
+    }
+#if TEST_STD_VER >= 11
+    {
+        std::unique_ptr<int> i[3];
+        for (int k = 0; k < 3; ++k)
+            i[k].reset(new int(k+1));
+        std::unique_ptr<int> j[3];
+        for (int k = 0; k < 3; ++k)
+            j[k].reset(new int(k+4));
+        std::swap(i, j);
+        TC_ASSERT_EXPR(*i[0] == 4);
+        TC_ASSERT_EXPR(*i[1] == 5);
+        TC_ASSERT_EXPR(*i[2] == 6);
+        TC_ASSERT_EXPR(*j[0] == 1);
+        TC_ASSERT_EXPR(*j[1] == 2);
+        TC_ASSERT_EXPR(*j[2] == 3);
+    }
+    {
+        using CA = CopyOnly[42];
+        using MA = NoexceptMoveOnly[42];
+        using NA = NotMoveConstructible[42];
+        static_assert(can_swap<CA&>(), "");
+        static_assert(can_swap<MA&>(), "");
+        static_assert(!can_swap<NA&>(), "");
+
+        CA ca;
+        MA ma;
+        static_assert(!noexcept(std::swap(ca, ca)), "");
+        static_assert(noexcept(std::swap(ma, ma)), "");
+    }
+#endif
+
+#if TEST_STD_VER > 17
+    static_assert(test_swap_constexpr());
+#endif // TEST_STD_VER > 17
+
+  return 0;
+}

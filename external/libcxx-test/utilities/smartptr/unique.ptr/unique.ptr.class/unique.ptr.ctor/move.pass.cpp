@@ -1,0 +1,210 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// <memory>
+
+// unique_ptr
+
+// Test unique_ptr move ctor
+
+#include <memory>
+#include <utility>
+#include <cassert>
+
+#include "test_macros.h"
+#include "unique_ptr_test_helper.h"
+#include "libcxx_tc_common.h"
+
+//=============================================================================
+// TESTING unique_ptr(unique_ptr&&)
+//
+// Concerns
+//   1 The moved from pointer is empty and the new pointer stores the old value.
+//   2 The only requirement on the deleter is that it is MoveConstructible
+//     or a reference.
+//   3 The constructor works for explicitly moved values (i.e. std::move(x))
+//   4 The constructor works for true temporaries (e.g. a return value)
+//
+// Plan
+//  1 Explicitly construct unique_ptr<T, D> for various deleter types 'D'.
+//    check that the value and deleter have been properly moved. (C-1,2,3)
+//
+//  2 Use the expression 'sink(source())' to move construct a unique_ptr<T, D>
+//    from a temporary. 'source' should return the unique_ptr by value and
+//    'sink' should accept the unique_ptr by value. (C-1,2,4)
+
+template <class VT>
+TEST_CONSTEXPR_CXX23 std::unique_ptr<VT> source1() {
+  return std::unique_ptr<VT>(newValue<VT>(1));
+}
+
+template <class VT>
+TEST_CONSTEXPR_CXX23 std::unique_ptr<VT, Deleter<VT> > source2() {
+  return std::unique_ptr<VT, Deleter<VT> >(newValue<VT>(1), Deleter<VT>(5));
+}
+
+template <class VT>
+std::unique_ptr<VT, NCDeleter<VT>&> source3() {
+  static NCDeleter<VT> d(5);
+  return std::unique_ptr<VT, NCDeleter<VT>&>(newValue<VT>(1), d);
+}
+
+template <class VT>
+TEST_CONSTEXPR_CXX23 void sink1(std::unique_ptr<VT> p) {
+  TC_ASSERT_EXPR(p.get() != nullptr);
+}
+
+template <class VT>
+TEST_CONSTEXPR_CXX23 void sink2(std::unique_ptr<VT, Deleter<VT> > p) {
+  TC_ASSERT_EXPR(p.get() != nullptr);
+  TC_ASSERT_EXPR(p.get_deleter().state() == 5);
+}
+
+template <class VT>
+void sink3(std::unique_ptr<VT, NCDeleter<VT>&> p) {
+  TC_ASSERT_EXPR(p.get() != nullptr);
+  TC_ASSERT_EXPR(p.get_deleter().state() == 5);
+  TC_ASSERT_EXPR(&p.get_deleter() == &source3<VT>().get_deleter());
+}
+
+template <class ValueT>
+TEST_CONSTEXPR_CXX23 void test_sfinae() {
+  typedef std::unique_ptr<ValueT> U;
+  { // Ensure unique_ptr is non-copyable
+    static_assert((!std::is_constructible<U, U const&>::value), "");
+    static_assert((!std::is_constructible<U, U&>::value), "");
+  }
+}
+
+template <bool IsArray>
+TEST_CONSTEXPR_CXX23 void test_basic() {
+  typedef typename std::conditional<!IsArray, A, A[]>::type VT;
+  const int expect_alive = IsArray ? 5 : 1;
+  {
+    typedef std::unique_ptr<VT> APtr;
+    APtr s(newValue<VT>(expect_alive));
+    A* p = s.get();
+    APtr s2 = std::move(s);
+    TC_ASSERT_EXPR(s2.get() == p);
+    TC_ASSERT_EXPR(s.get() == 0);
+    if (!TEST_IS_CONSTANT_EVALUATED)
+      TC_ASSERT_EXPR(A::count == expect_alive);
+  }
+  if (!TEST_IS_CONSTANT_EVALUATED)
+    TC_ASSERT_EXPR(A::count == 0);
+  {
+    typedef Deleter<VT> MoveDel;
+    typedef std::unique_ptr<VT, MoveDel> APtr;
+    MoveDel d(5);
+    APtr s(newValue<VT>(expect_alive), std::move(d));
+    TC_ASSERT_EXPR(d.state() == 0);
+    TC_ASSERT_EXPR(s.get_deleter().state() == 5);
+    A* p = s.get();
+    APtr s2 = std::move(s);
+    TC_ASSERT_EXPR(s2.get() == p);
+    TC_ASSERT_EXPR(s.get() == 0);
+    if (!TEST_IS_CONSTANT_EVALUATED)
+      TC_ASSERT_EXPR(A::count == expect_alive);
+    TC_ASSERT_EXPR(s2.get_deleter().state() == 5);
+    TC_ASSERT_EXPR(s.get_deleter().state() == 0);
+  }
+  if (!TEST_IS_CONSTANT_EVALUATED)
+    TC_ASSERT_EXPR(A::count == 0);
+  {
+    typedef NCDeleter<VT> NonCopyDel;
+    typedef std::unique_ptr<VT, NonCopyDel&> APtr;
+
+    NonCopyDel d;
+    APtr s(newValue<VT>(expect_alive), d);
+    A* p = s.get();
+    APtr s2 = std::move(s);
+    TC_ASSERT_EXPR(s2.get() == p);
+    TC_ASSERT_EXPR(s.get() == 0);
+    if (!TEST_IS_CONSTANT_EVALUATED)
+      TC_ASSERT_EXPR(A::count == expect_alive);
+    d.set_state(6);
+    TC_ASSERT_EXPR(s2.get_deleter().state() == d.state());
+    TC_ASSERT_EXPR(s.get_deleter().state() == d.state());
+  }
+  if (!TEST_IS_CONSTANT_EVALUATED)
+    TC_ASSERT_EXPR(A::count == 0);
+  {
+    sink1<VT>(source1<VT>());
+    if (!TEST_IS_CONSTANT_EVALUATED)
+      TC_ASSERT_EXPR(A::count == 0);
+    sink2<VT>(source2<VT>());
+    if (!TEST_IS_CONSTANT_EVALUATED)
+      TC_ASSERT_EXPR(A::count == 0);
+  }
+  if (!TEST_IS_CONSTANT_EVALUATED)
+    TC_ASSERT_EXPR(A::count == 0);
+}
+
+template <class VT>
+TEST_CONSTEXPR_CXX23 void test_noexcept() {
+#if TEST_STD_VER >= 11
+  {
+    typedef std::unique_ptr<VT> U;
+    static_assert(std::is_nothrow_move_constructible<U>::value, "");
+  }
+  {
+    typedef std::unique_ptr<VT, Deleter<VT> > U;
+    static_assert(std::is_nothrow_move_constructible<U>::value, "");
+  }
+  {
+    typedef std::unique_ptr<VT, NCDeleter<VT> &> U;
+    static_assert(std::is_nothrow_move_constructible<U>::value, "");
+  }
+  {
+    typedef std::unique_ptr<VT, const NCConstDeleter<VT> &> U;
+    static_assert(std::is_nothrow_move_constructible<U>::value, "");
+  }
+#endif
+}
+
+TEST_CONSTEXPR_CXX23 bool test() {
+  {
+    test_basic</*IsArray*/ false>();
+    test_sfinae<int>();
+    test_noexcept<int>();
+  }
+  {
+    test_basic</*IsArray*/ true>();
+    test_sfinae<int[]>();
+    test_noexcept<int[]>();
+  }
+
+  return true;
+}
+
+template <bool IsArray>
+void test_sink3() {
+  typedef typename std::conditional<!IsArray, A, A[]>::type VT;
+  sink3<VT>(source3<VT>());
+  TC_ASSERT_EXPR(A::count == 0);
+}
+
+int tc_utilities_smartptr_unique_ptr_unique_ptr_class_unique_ptr_ctor_move(void) {
+  test_sink3</*IsArray*/ false>();
+  test_sink3</*IsArray*/ true>();
+  test();
+#if TEST_STD_VER >= 23
+  static_assert(test());
+#endif
+
+  return 0;
+}

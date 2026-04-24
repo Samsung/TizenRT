@@ -1,0 +1,67 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// <functional>
+
+// struct is_placeholder
+
+#include <functional>
+#include "test_macros.h"
+#include "libcxx_tc_common.h"
+
+template <int Expected, class T>
+void
+test(const T&)
+{
+    static_assert(std::is_placeholder<T>::value == Expected, "");
+    LIBCPP_STATIC_ASSERT(std::is_placeholder<T&>::value == Expected, "");
+    LIBCPP_STATIC_ASSERT(std::is_placeholder<const T>::value == Expected, "");
+    LIBCPP_STATIC_ASSERT(std::is_placeholder<const T&>::value == Expected, "");
+    static_assert(std::is_base_of<std::integral_constant<int, Expected>, std::is_placeholder<T> >::value, "");
+    LIBCPP_STATIC_ASSERT(std::is_base_of<std::integral_constant<int, Expected>, std::is_placeholder<T&> >::value, "");
+    LIBCPP_STATIC_ASSERT(std::is_base_of<std::integral_constant<int, Expected>, std::is_placeholder<const T> >::value, "");
+    LIBCPP_STATIC_ASSERT(std::is_base_of<std::integral_constant<int, Expected>, std::is_placeholder<const T&> >::value, "");
+
+#if TEST_STD_VER > 14
+    ASSERT_SAME_TYPE(decltype(std::is_placeholder_v<T>), const int);
+    static_assert(std::is_placeholder_v<T> == Expected, "");
+    LIBCPP_STATIC_ASSERT(std::is_placeholder_v<T&> == Expected, "");
+    LIBCPP_STATIC_ASSERT(std::is_placeholder_v<const T> == Expected, "");
+    LIBCPP_STATIC_ASSERT(std::is_placeholder_v<const T&> == Expected, "");
+#endif
+}
+
+struct C {};
+
+int tc_utilities_function_objects_bind_func_bind_func_bind_isplace_is_placeholder(void) {
+    test<1>(std::placeholders::_1);
+    test<2>(std::placeholders::_2);
+    test<3>(std::placeholders::_3);
+    test<4>(std::placeholders::_4);
+    test<5>(std::placeholders::_5);
+    test<6>(std::placeholders::_6);
+    test<7>(std::placeholders::_7);
+    test<8>(std::placeholders::_8);
+    test<9>(std::placeholders::_9);
+    test<10>(std::placeholders::_10);
+    test<0>(4);
+    test<0>(5.5);
+    test<0>('a');
+    test<0>(C());
+
+  return 0;
+}

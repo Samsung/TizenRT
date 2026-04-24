@@ -1,0 +1,206 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14, c++17
+
+// <variant>
+
+// template <class... Types> class variant;
+
+// template <class... Types> requires (three_way_comparable<Types> && ...)
+//   constexpr std::common_comparison_category_t<
+//     std::compare_three_way_result_t<Types>...>
+//   operator<=>(const variant<Types...>& t, const variant<Types...>& u);
+
+#include <cassert>
+#include <limits>
+#include <type_traits>
+#include <utility>
+#include <variant>
+
+#include "test_macros.h"
+#include "test_comparisons.h"
+#include "libcxx_tc_common.h"
+
+#ifndef TEST_HAS_NO_EXCEPTIONS
+// MakeEmptyT throws in operator=(&&), so we can move to it to create valueless-by-exception variants.
+struct MakeEmptyT {
+  MakeEmptyT() = default;
+  MakeEmptyT(MakeEmptyT&&) { throw 42; }
+  MakeEmptyT& operator=(MakeEmptyT&&) { throw 42; }
+};
+inline bool operator==(const MakeEmptyT&, const MakeEmptyT&) {
+  TC_ASSERT_EXPR(false);
+  return false;
+}
+inline std::weak_ordering operator<=>(const MakeEmptyT&, const MakeEmptyT&) {
+  TC_ASSERT_EXPR(false);
+  return std::weak_ordering::equivalent;
+}
+
+template <class Variant>
+void makeEmpty(Variant& v) {
+  Variant v2(std::in_place_type<MakeEmptyT>);
+#ifndef _LIBCPP_NO_EXCEPTIONS
+  try {
+    v = std::move(v2);
+    TC_ASSERT_EXPR(false);
+  } catch (...) {
+    TC_ASSERT_EXPR(v.valueless_by_exception());
+  }
+#endif // _LIBCPP_NO_EXCEPTIONS
+}
+
+void test_empty() {
+  {
+    using V = std::variant<int, MakeEmptyT>;
+    V v1;
+    V v2;
+    makeEmpty(v2);
+    TC_ASSERT_EXPR(testOrder(v1, v2, std::weak_ordering::greater));
+  }
+  {
+    using V = std::variant<int, MakeEmptyT>;
+    V v1;
+    makeEmpty(v1);
+    V v2;
+    TC_ASSERT_EXPR(testOrder(v1, v2, std::weak_ordering::less));
+  }
+  {
+    using V = std::variant<int, MakeEmptyT>;
+    V v1;
+    makeEmpty(v1);
+    V v2;
+    makeEmpty(v2);
+    TC_ASSERT_EXPR(testOrder(v1, v2, std::weak_ordering::equivalent));
+  }
+}
+#endif // TEST_HAS_NO_EXCEPTIONS
+
+template <class T1, class T2, class Order>
+constexpr bool test_with_types() {
+  using V = std::variant<T1, T2>;
+  AssertOrderReturn<Order, V>();
+  { // same index, same value
+    constexpr V v1(std::in_place_index<0>, T1{1});
+    constexpr V v2(std::in_place_index<0>, T1{1});
+    TC_ASSERT_EXPR(testOrder(v1, v2, Order::equivalent));
+  }
+  { // same index, value < other_value
+    constexpr V v1(std::in_place_index<0>, T1{0});
+    constexpr V v2(std::in_place_index<0>, T1{1});
+    TC_ASSERT_EXPR(testOrder(v1, v2, Order::less));
+  }
+  { // same index, value > other_value
+    constexpr V v1(std::in_place_index<0>, T1{1});
+    constexpr V v2(std::in_place_index<0>, T1{0});
+    TC_ASSERT_EXPR(testOrder(v1, v2, Order::greater));
+  }
+  { // LHS.index() < RHS.index()
+    constexpr V v1(std::in_place_index<0>, T1{0});
+    constexpr V v2(std::in_place_index<1>, T2{0});
+    TC_ASSERT_EXPR(testOrder(v1, v2, Order::less));
+  }
+  { // LHS.index() > RHS.index()
+    constexpr V v1(std::in_place_index<1>, T2{0});
+    constexpr V v2(std::in_place_index<0>, T1{0});
+    TC_ASSERT_EXPR(testOrder(v1, v2, Order::greater));
+  }
+
+  return true;
+}
+
+constexpr bool test_three_way() {
+  TC_ASSERT_EXPR((test_with_types<int, double, std::partial_ordering>()));
+  TC_ASSERT_EXPR((test_with_types<int, long, std::strong_ordering>()));
+
+  {
+    using V              = std::variant<int, double>;
+    constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+    {
+      constexpr V v1(std::in_place_type<int>, 1);
+      constexpr V v2(std::in_place_type<double>, nan);
+      TC_ASSERT_EXPR(testOrder(v1, v2, std::partial_ordering::less));
+    }
+    {
+      constexpr V v1(std::in_place_type<double>, nan);
+      constexpr V v2(std::in_place_type<int>, 2);
+      TC_ASSERT_EXPR(testOrder(v1, v2, std::partial_ordering::greater));
+    }
+    {
+      constexpr V v1(std::in_place_type<double>, nan);
+      constexpr V v2(std::in_place_type<double>, nan);
+      TC_ASSERT_EXPR(testOrder(v1, v2, std::partial_ordering::unordered));
+    }
+  }
+
+  return true;
+}
+
+// SFINAE tests
+template <class T, class U = T>
+concept has_three_way_op = requires (T& t, U& u) { t <=> u; };
+
+// std::three_way_comparable is a more stringent requirement that demands
+// operator== and a few other things.
+using std::three_way_comparable;
+
+struct HasSimpleOrdering {
+  constexpr bool operator==(const HasSimpleOrdering&) const;
+  constexpr bool operator<(const HasSimpleOrdering&) const;
+};
+
+struct HasOnlySpaceship {
+  constexpr bool operator==(const HasOnlySpaceship&) const = delete;
+  constexpr std::weak_ordering operator<=>(const HasOnlySpaceship&) const;
+};
+
+struct HasFullOrdering {
+  constexpr bool operator==(const HasFullOrdering&) const;
+  constexpr std::weak_ordering operator<=>(const HasFullOrdering&) const;
+};
+
+// operator<=> must resolve the return types of all its union types'
+// operator<=>s to determine its own return type, so it is detectable by SFINAE
+static_assert(!has_three_way_op<HasSimpleOrdering>);
+static_assert(!has_three_way_op<std::variant<int, HasSimpleOrdering>>);
+
+static_assert(!three_way_comparable<HasSimpleOrdering>);
+static_assert(!three_way_comparable<std::variant<int, HasSimpleOrdering>>);
+
+static_assert(has_three_way_op<HasOnlySpaceship>);
+static_assert(!has_three_way_op<std::variant<int, HasOnlySpaceship>>);
+
+static_assert(!three_way_comparable<HasOnlySpaceship>);
+static_assert(!three_way_comparable<std::variant<int, HasOnlySpaceship>>);
+
+static_assert( has_three_way_op<HasFullOrdering>);
+static_assert( has_three_way_op<std::variant<int, HasFullOrdering>>);
+
+static_assert( three_way_comparable<HasFullOrdering>);
+static_assert( three_way_comparable<std::variant<int, HasFullOrdering>>);
+
+int tc_utilities_variant_variant_relops_three_way(void) {
+  test_three_way();
+  static_assert(test_three_way());
+
+#ifndef TEST_HAS_NO_EXCEPTIONS
+  test_empty();
+#endif // TEST_HAS_NO_EXCEPTIONS
+
+  return 0;
+}

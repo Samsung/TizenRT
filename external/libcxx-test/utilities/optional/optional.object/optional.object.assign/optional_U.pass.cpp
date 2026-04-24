@@ -1,0 +1,347 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14
+// <optional>
+
+// From LWG2451:
+// template <class U>
+// optional<T>& operator=(optional<U>&& rhs);
+
+#include <optional>
+
+#include <array>
+#include <cassert>
+#include <memory>
+#include <type_traits>
+
+#include "test_macros.h"
+#include "archetypes.h"
+#include "libcxx_tc_common.h"
+
+using std::optional;
+
+struct X
+{
+    static bool throw_now;
+
+    X() = default;
+    X(int &&)
+    {
+        if (throw_now)
+            TEST_THROW(6);
+    }
+};
+
+bool X::throw_now = false;
+
+struct Y1
+{
+    Y1() = default;
+    Y1(const int&) {}
+    Y1& operator=(const Y1&) = delete;
+};
+
+struct Y2
+{
+    Y2() = default;
+    Y2(const int&) = delete;
+    Y2& operator=(const int&) { return *this; }
+};
+
+struct B { virtual ~B() = default; };
+class D : public B {};
+
+
+template <class T>
+struct AssignableFrom {
+  static int type_constructed;
+  static int type_assigned;
+static int int_constructed;
+  static int int_assigned;
+
+  static void reset() {
+      type_constructed = int_constructed = 0;
+      type_assigned = int_assigned = 0;
+  }
+
+  AssignableFrom() = default;
+
+  explicit AssignableFrom(T) { ++type_constructed; }
+  AssignableFrom& operator=(T) { ++type_assigned; return *this; }
+
+  AssignableFrom(int) { ++int_constructed; }
+  AssignableFrom& operator=(int) { ++int_assigned; return *this; }
+private:
+  AssignableFrom(AssignableFrom const&) = delete;
+  AssignableFrom& operator=(AssignableFrom const&) = delete;
+};
+
+template <class T> int AssignableFrom<T>::type_constructed = 0;
+template <class T> int AssignableFrom<T>::type_assigned = 0;
+template <class T> int AssignableFrom<T>::int_constructed = 0;
+template <class T> int AssignableFrom<T>::int_assigned = 0;
+
+void test_with_test_type() {
+    using T = TestTypes::TestType;
+    T::reset();
+    { // non-empty to empty
+        T::reset_constructors();
+        optional<T> opt;
+        optional<int> other(42);
+        opt = std::move(other);
+        TC_ASSERT_EXPR(T::alive == 1);
+        TC_ASSERT_EXPR(T::constructed == 1);
+        TC_ASSERT_EXPR(T::value_constructed == 1);
+        TC_ASSERT_EXPR(T::assigned == 0);
+        TC_ASSERT_EXPR(T::destroyed == 0);
+        TC_ASSERT_EXPR(static_cast<bool>(other) == true);
+        TC_ASSERT_EXPR(*other == 42);
+        TC_ASSERT_EXPR(static_cast<bool>(opt) == true);
+        TC_ASSERT_EXPR(*opt == T(42));
+    }
+    TC_ASSERT_EXPR(T::alive == 0);
+    { // non-empty to non-empty
+        optional<T> opt(101);
+        optional<int> other(42);
+        T::reset_constructors();
+        opt = std::move(other);
+        TC_ASSERT_EXPR(T::alive == 1);
+        TC_ASSERT_EXPR(T::constructed == 0);
+        TC_ASSERT_EXPR(T::assigned == 1);
+        TC_ASSERT_EXPR(T::value_assigned == 1);
+        TC_ASSERT_EXPR(T::destroyed == 0);
+        TC_ASSERT_EXPR(static_cast<bool>(other) == true);
+        TC_ASSERT_EXPR(*other == 42);
+        TC_ASSERT_EXPR(static_cast<bool>(opt) == true);
+        TC_ASSERT_EXPR(*opt == T(42));
+    }
+    TC_ASSERT_EXPR(T::alive == 0);
+    { // empty to non-empty
+        optional<T> opt(101);
+        optional<int> other;
+        T::reset_constructors();
+        opt = std::move(other);
+        TC_ASSERT_EXPR(T::alive == 0);
+        TC_ASSERT_EXPR(T::constructed == 0);
+        TC_ASSERT_EXPR(T::assigned == 0);
+        TC_ASSERT_EXPR(T::destroyed == 1);
+        TC_ASSERT_EXPR(static_cast<bool>(other) == false);
+        TC_ASSERT_EXPR(static_cast<bool>(opt) == false);
+    }
+    TC_ASSERT_EXPR(T::alive == 0);
+    { // empty to empty
+        optional<T> opt;
+        optional<int> other;
+        T::reset_constructors();
+        opt = std::move(other);
+        TC_ASSERT_EXPR(T::alive == 0);
+        TC_ASSERT_EXPR(T::constructed == 0);
+        TC_ASSERT_EXPR(T::assigned == 0);
+        TC_ASSERT_EXPR(T::destroyed == 0);
+        TC_ASSERT_EXPR(static_cast<bool>(other) == false);
+        TC_ASSERT_EXPR(static_cast<bool>(opt) == false);
+    }
+    TC_ASSERT_EXPR(T::alive == 0);
+}
+
+
+void test_ambiguous_assign() {
+    using OptInt = std::optional<int>;
+    {
+        using T = AssignableFrom<OptInt&&>;
+        T::reset();
+        {
+            OptInt a(42);
+            std::optional<T> t;
+            t = std::move(a);
+            TC_ASSERT_EXPR(T::type_constructed == 1);
+            TC_ASSERT_EXPR(T::type_assigned == 0);
+            TC_ASSERT_EXPR(T::int_constructed == 0);
+            TC_ASSERT_EXPR(T::int_assigned == 0);
+        }
+        {
+            using Opt = std::optional<T>;
+            static_assert(!std::is_assignable<Opt&, const OptInt&&>::value, "");
+            static_assert(!std::is_assignable<Opt&, const OptInt&>::value, "");
+            static_assert(!std::is_assignable<Opt&, OptInt&>::value, "");
+        }
+    }
+    {
+        using T = AssignableFrom<OptInt const&&>;
+        T::reset();
+        {
+            const OptInt a(42);
+            std::optional<T> t;
+            t = std::move(a);
+            TC_ASSERT_EXPR(T::type_constructed == 1);
+            TC_ASSERT_EXPR(T::type_assigned == 0);
+            TC_ASSERT_EXPR(T::int_constructed == 0);
+            TC_ASSERT_EXPR(T::int_assigned == 0);
+        }
+        T::reset();
+        {
+            OptInt a(42);
+            std::optional<T> t;
+            t = std::move(a);
+            TC_ASSERT_EXPR(T::type_constructed == 1);
+            TC_ASSERT_EXPR(T::type_assigned == 0);
+            TC_ASSERT_EXPR(T::int_constructed == 0);
+            TC_ASSERT_EXPR(T::int_assigned == 0);
+        }
+        {
+            using Opt = std::optional<T>;
+            static_assert(std::is_assignable<Opt&, OptInt&&>::value, "");
+            static_assert(!std::is_assignable<Opt&, const OptInt&>::value, "");
+            static_assert(!std::is_assignable<Opt&, OptInt&>::value, "");
+        }
+    }
+}
+
+
+TEST_CONSTEXPR_CXX20 bool test()
+{
+    {
+        optional<int> opt;
+        optional<short> opt2;
+        opt = std::move(opt2);
+        TC_ASSERT_EXPR(static_cast<bool>(opt2) == false);
+        TC_ASSERT_EXPR(static_cast<bool>(opt) == static_cast<bool>(opt2));
+    }
+    {
+        optional<int> opt;
+        optional<short> opt2(short{2});
+        opt = std::move(opt2);
+        TC_ASSERT_EXPR(static_cast<bool>(opt2) == true);
+        TC_ASSERT_EXPR(*opt2 == 2);
+        TC_ASSERT_EXPR(static_cast<bool>(opt) == static_cast<bool>(opt2));
+        TC_ASSERT_EXPR(*opt == *opt2);
+    }
+    {
+        optional<int> opt(3);
+        optional<short> opt2;
+        opt = std::move(opt2);
+        TC_ASSERT_EXPR(static_cast<bool>(opt2) == false);
+        TC_ASSERT_EXPR(static_cast<bool>(opt) == static_cast<bool>(opt2));
+    }
+    {
+        optional<int> opt(3);
+        optional<short> opt2(short{2});
+        opt = std::move(opt2);
+        TC_ASSERT_EXPR(static_cast<bool>(opt2) == true);
+        TC_ASSERT_EXPR(*opt2 == 2);
+        TC_ASSERT_EXPR(static_cast<bool>(opt) == static_cast<bool>(opt2));
+        TC_ASSERT_EXPR(*opt == *opt2);
+    }
+
+    enum class state_t { inactive, constructed, copy_assigned, move_assigned };
+    class StateTracker {
+    public:
+      constexpr StateTracker(state_t& s)
+      : state_(&s)
+      {
+        *state_ = state_t::constructed;
+      }
+
+      StateTracker(StateTracker&&) = default;
+      StateTracker(StateTracker const&) = default;
+
+      constexpr StateTracker& operator=(StateTracker&& other) noexcept
+      {
+        *state_ = state_t::inactive;
+        state_ = other.state_;
+        *state_ = state_t::move_assigned;
+        other.state_ = nullptr;
+        return *this;
+      }
+
+      constexpr StateTracker& operator=(StateTracker const& other) noexcept
+      {
+        *state_ = state_t::inactive;
+        state_ = other.state_;
+        *state_ = state_t::copy_assigned;
+        return *this;
+      }
+    private:
+      state_t* state_;
+    };
+    {
+      auto state = std::array{state_t::inactive, state_t::inactive};
+      auto opt1 = std::optional<StateTracker>(state[0]);
+      TC_ASSERT_EXPR(state[0] == state_t::constructed);
+
+      auto opt2 = std::optional<StateTracker>(state[1]);
+      TC_ASSERT_EXPR(state[1] == state_t::constructed);
+
+      opt1 = std::move(opt2);
+      TC_ASSERT_EXPR(state[0] == state_t::inactive);
+      TC_ASSERT_EXPR(state[1] == state_t::move_assigned);
+    }
+    {
+      auto state = std::array{state_t::inactive, state_t::inactive};
+      auto opt1 = std::optional<StateTracker>(state[0]);
+      TC_ASSERT_EXPR(state[0] == state_t::constructed);
+
+      auto opt2 = std::optional<StateTracker>(state[1]);
+      TC_ASSERT_EXPR(state[1] == state_t::constructed);
+
+      opt1 = opt2;
+      TC_ASSERT_EXPR(state[0] == state_t::inactive);
+      TC_ASSERT_EXPR(state[1] == state_t::copy_assigned);
+    }
+
+    return true;
+}
+
+
+int tc_utilities_optional_optional_object_optional_object_assign_optional_U(void) {
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    test_with_test_type();
+    test_ambiguous_assign();
+    test();
+    {
+        optional<std::unique_ptr<B>> opt;
+        optional<std::unique_ptr<D>> other(new D());
+        opt = std::move(other);
+        TC_ASSERT_EXPR(static_cast<bool>(opt) == true);
+        TC_ASSERT_EXPR(static_cast<bool>(other) == true);
+        TC_ASSERT_EXPR(opt->get() != nullptr);
+        TC_ASSERT_EXPR(other->get() == nullptr);
+    }
+#ifndef TEST_HAS_NO_EXCEPTIONS
+    {
+        optional<X> opt;
+        optional<int> opt2(42);
+        TC_ASSERT_EXPR(static_cast<bool>(opt2) == true);
+        try
+        {
+            X::throw_now = true;
+            opt = std::move(opt2);
+            TC_ASSERT_EXPR(false);
+        }
+        catch (int i)
+        {
+            TC_ASSERT_EXPR(i == 6);
+            TC_ASSERT_EXPR(static_cast<bool>(opt) == false);
+        }
+    }
+#endif
+
+  return 0;
+}

@@ -1,0 +1,55 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// ADDITIONAL_COMPILE_FLAGS: -D_LIBCPP_DISABLE_DEPRECATION_WARNINGS
+
+// <functional>
+
+// plus
+
+#include <functional>
+#include <type_traits>
+#include <cassert>
+
+#include "test_macros.h"
+#include "libcxx_tc_common.h"
+
+int tc_utilities_function_objects_arithmetic_operations_plus(void) {
+    typedef std::plus<int> F;
+    const F f = F();
+#if TEST_STD_VER <= 17
+    static_assert((std::is_same<int, F::first_argument_type>::value), "");
+    static_assert((std::is_same<int, F::second_argument_type>::value), "");
+    static_assert((std::is_same<int, F::result_type>::value), "");
+#endif
+    TC_ASSERT_EXPR(f(3, 2) == 5);
+#if TEST_STD_VER > 11
+    typedef std::plus<> F2;
+    const F2 f2 = F2();
+    TC_ASSERT_EXPR(f2(3,2) == 5);
+    TC_ASSERT_EXPR(f2(3.0, 2) == 5);
+    TC_ASSERT_EXPR(f2(3, 2.5) == 5.5);
+
+    constexpr int foo = std::plus<int> () (3, 2);
+    static_assert ( foo == 5, "" );
+
+    constexpr double bar = std::plus<> () (3.0, 2);
+    static_assert ( bar == 5.0, "" );
+#endif
+
+  return 0;
+}

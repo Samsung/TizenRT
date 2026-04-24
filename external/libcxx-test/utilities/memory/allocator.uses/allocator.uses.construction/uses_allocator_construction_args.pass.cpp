@@ -1,0 +1,165 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// template<class T, class Alloc, ...>
+// constexpr auto uses_allocator_construction_args(const Alloc& alloc, ...) noexcept;
+
+// UNSUPPORTED: c++03, c++11, c++14, c++17
+
+// test_memory_resource requires RTTI for dynamic_cast
+// UNSUPPORTED: no-rtti
+
+#include <concepts>
+#include <memory>
+#include <tuple>
+#include <utility>
+
+#include "common.h"
+#include "test_allocator.h"
+#include "libcxx_tc_common.h"
+
+template <class Type, class... Args>
+constexpr decltype(auto) test_uses_allocator_construction_args(Args&&... args) {
+  static_assert(noexcept(std::uses_allocator_construction_args<Type>(std::forward<Args>(args)...)));
+  return std::uses_allocator_construction_args<Type>(std::forward<Args>(args)...);
+}
+
+constexpr bool test() {
+  Alloc a(12);
+  {
+    std::same_as<std::tuple<std::allocator_arg_t, const Alloc&>> auto ret =
+        test_uses_allocator_construction_args<UsesAllocArgT>(a);
+    TC_ASSERT_EXPR(std::get<1>(ret).get_data() == 12);
+  }
+  {
+    std::same_as<std::tuple<const Alloc&>> auto ret = test_uses_allocator_construction_args<UsesAllocLast>(a);
+    TC_ASSERT_EXPR(std::get<0>(ret).get_data() == 12);
+  }
+  {
+    [[maybe_unused]] std::same_as<std::tuple<>> auto ret = test_uses_allocator_construction_args<NotAllocatorAware>(a);
+  }
+  {
+    std::same_as<std::tuple<std::piecewise_construct_t,
+                            std::tuple<std::allocator_arg_t, const Alloc&>,
+                            std::tuple<const Alloc&>>> auto ret =
+        test_uses_allocator_construction_args<std::pair<UsesAllocArgT, UsesAllocLast>>(
+            a, std::piecewise_construct, std::tuple<>{}, std::tuple<>{});
+    TC_ASSERT_EXPR(std::get<1>(std::get<1>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<0>(std::get<2>(ret)).get_data() == 12);
+  }
+  {
+    std::same_as<std::tuple<std::piecewise_construct_t,
+                            std::tuple<std::allocator_arg_t, const Alloc&>,
+                            std::tuple<const Alloc&>>> auto ret =
+        test_uses_allocator_construction_args<std::pair<UsesAllocArgT, UsesAllocLast>>(a);
+    TC_ASSERT_EXPR(std::get<1>(std::get<1>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<0>(std::get<2>(ret)).get_data() == 12);
+  }
+  {
+    int val = 0;
+    std::same_as<std::tuple<std::piecewise_construct_t,
+                            std::tuple<std::allocator_arg_t, const Alloc&, int&>,
+                            std::tuple<int&, const Alloc&>>> auto ret =
+        test_uses_allocator_construction_args<std::pair<UsesAllocArgT, UsesAllocLast>>(a, val, val);
+    TC_ASSERT_EXPR(std::get<1>(std::get<1>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<1>(std::get<2>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(&std::get<2>(std::get<1>(ret)) == &val);
+    TC_ASSERT_EXPR(&std::get<0>(std::get<2>(ret)) == &val);
+  }
+  {
+    int val = 0;
+    std::same_as<std::tuple<std::piecewise_construct_t,
+                            std::tuple<std::allocator_arg_t, const Alloc&, int&&>,
+                            std::tuple<int&&, const Alloc&>>> auto ret =
+        test_uses_allocator_construction_args<std::pair<UsesAllocArgT, UsesAllocLast>>(
+            a, std::move(val), std::move(val));
+    TC_ASSERT_EXPR(std::get<1>(std::get<1>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<1>(std::get<2>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(&std::get<2>(std::get<1>(ret)) == &val);
+    TC_ASSERT_EXPR(&std::get<0>(std::get<2>(ret)) == &val);
+  }
+#if TEST_STD_VER >= 23
+  {
+    std::pair p{3, 4};
+
+    std::same_as<std::tuple<std::piecewise_construct_t,
+                            std::tuple<std::allocator_arg_t, const Alloc&, int&>,
+                            std::tuple<int&, const Alloc&>>> auto ret =
+        test_uses_allocator_construction_args<std::pair<UsesAllocArgT, UsesAllocLast>>(a, p);
+    TC_ASSERT_EXPR(std::get<1>(std::get<1>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<1>(std::get<2>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<2>(std::get<1>(ret)) == 3);
+    TC_ASSERT_EXPR(std::get<0>(std::get<2>(ret)) == 4);
+  }
+#endif
+  {
+    std::pair p{3, 4};
+    std::same_as<std::tuple<std::piecewise_construct_t,
+                            std::tuple<std::allocator_arg_t, const Alloc&, const int&>,
+                            std::tuple<const int&, const Alloc&>>> auto ret =
+        test_uses_allocator_construction_args<std::pair<UsesAllocArgT, UsesAllocLast>>(a, std::as_const(p));
+    TC_ASSERT_EXPR(std::get<1>(std::get<1>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<1>(std::get<2>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<2>(std::get<1>(ret)) == 3);
+    TC_ASSERT_EXPR(std::get<0>(std::get<2>(ret)) == 4);
+  }
+  {
+    std::pair p{3, 4};
+    std::same_as<std::tuple<std::piecewise_construct_t,
+                            std::tuple<std::allocator_arg_t, const Alloc&, int&&>,
+                            std::tuple<int&&, const Alloc&>>> auto ret =
+        test_uses_allocator_construction_args<std::pair<UsesAllocArgT, UsesAllocLast>>(a, std::move(p));
+    TC_ASSERT_EXPR(std::get<1>(std::get<1>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<1>(std::get<2>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<2>(std::get<1>(ret)) == 3);
+    TC_ASSERT_EXPR(std::get<0>(std::get<2>(ret)) == 4);
+  }
+#if TEST_STD_VER >= 23
+  {
+    std::pair p{3, 4};
+    std::same_as<std::tuple<std::piecewise_construct_t,
+                            std::tuple<std::allocator_arg_t, const Alloc&, const int&&>,
+                            std::tuple<const int&&, const Alloc&>>> auto ret =
+        test_uses_allocator_construction_args<std::pair<UsesAllocArgT, UsesAllocLast>>(a, std::move(std::as_const(p)));
+    TC_ASSERT_EXPR(std::get<1>(std::get<1>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<1>(std::get<2>(ret)).get_data() == 12);
+    TC_ASSERT_EXPR(std::get<2>(std::get<1>(ret)) == 3);
+    TC_ASSERT_EXPR(std::get<0>(std::get<2>(ret)) == 4);
+  }
+#endif
+  {
+    ConvertibleToPair ctp {};
+    auto ret = test_uses_allocator_construction_args<std::pair<int, int>>(a, ctp);
+    std::pair<int, int> v = std::get<0>(ret);
+    TC_ASSERT_EXPR(std::get<0>(v) == 1);
+    TC_ASSERT_EXPR(std::get<1>(v) == 2);
+  }
+  {
+    ConvertibleToPair ctp {};
+    auto ret = test_uses_allocator_construction_args<std::pair<int, int>>(a, std::move(ctp));
+    std::pair<int, int> v = std::get<0>(ret);
+    TC_ASSERT_EXPR(std::get<0>(v) == 1);
+    TC_ASSERT_EXPR(std::get<1>(v) == 2);
+  }
+
+  return true;
+}
+
+int tc_utilities_memory_allocator_uses_allocator_uses_construction_uses_allocator_construction_args(void) {
+  test();
+  static_assert(test());
+}

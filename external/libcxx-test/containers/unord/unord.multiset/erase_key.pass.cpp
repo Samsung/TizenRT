@@ -1,0 +1,187 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// <unordered_set>
+
+// template <class Value, class Hash = hash<Value>, class Pred = equal_to<Value>,
+//           class Alloc = allocator<Value>>
+// class unordered_multiset
+
+// size_type erase(const key_type& k);
+
+#include <unordered_set>
+#include <string>
+#include <cassert>
+
+#include "test_macros.h"
+#include "min_allocator.h"
+#include "libcxx_tc_common.h"
+
+#if TEST_STD_VER >= 11
+template <typename Unordered>
+bool only_deletions ( const Unordered &whole, const Unordered &part ) {
+    typename Unordered::const_iterator w = whole.begin();
+    typename Unordered::const_iterator p = part.begin();
+
+    while ( w != whole.end () && p != part.end()) {
+        if ( *w == *p )
+            p++;
+        w++;
+        }
+
+    return p == part.end();
+}
+#endif
+
+int tc_containers_unord_unord_multiset_erase_key(void) {
+    {
+        typedef std::unordered_multiset<int> C;
+        typedef int P;
+        P a[] =
+        {
+            P(1),
+            P(2),
+            P(3),
+            P(4),
+            P(1),
+            P(2)
+        };
+        C c(a, a + sizeof(a)/sizeof(a[0]));
+        TC_ASSERT_EXPR(c.erase(5) == 0);
+        TC_ASSERT_EXPR(c.size() == 6);
+        TC_ASSERT_EXPR(c.count(1) == 2);
+        TC_ASSERT_EXPR(c.count(2) == 2);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+        TC_ASSERT_EXPR(c.count(4) == 1);
+
+        TC_ASSERT_EXPR(c.erase(2) == 2);
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(c.count(1) == 2);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+        TC_ASSERT_EXPR(c.count(4) == 1);
+
+        TC_ASSERT_EXPR(c.erase(2) == 0);
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(c.count(1) == 2);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+        TC_ASSERT_EXPR(c.count(4) == 1);
+
+        TC_ASSERT_EXPR(c.erase(4) == 1);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(c.count(1) == 2);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+
+        TC_ASSERT_EXPR(c.erase(4) == 0);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(c.count(1) == 2);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+
+        TC_ASSERT_EXPR(c.erase(1) == 2);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+
+        TC_ASSERT_EXPR(c.erase(1) == 0);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+
+        TC_ASSERT_EXPR(c.erase(3) == 1);
+        TC_ASSERT_EXPR(c.size() == 0);
+
+        TC_ASSERT_EXPR(c.erase(3) == 0);
+        TC_ASSERT_EXPR(c.size() == 0);
+    }
+#if TEST_STD_VER >= 11
+    {
+        typedef std::unordered_multiset<int, std::hash<int>,
+                                      std::equal_to<int>, min_allocator<int>> C;
+        typedef int P;
+        P a[] =
+        {
+            P(1),
+            P(2),
+            P(3),
+            P(4),
+            P(1),
+            P(2)
+        };
+        C c(a, a + sizeof(a)/sizeof(a[0]));
+        TC_ASSERT_EXPR(c.erase(5) == 0);
+        TC_ASSERT_EXPR(c.size() == 6);
+        TC_ASSERT_EXPR(c.count(1) == 2);
+        TC_ASSERT_EXPR(c.count(2) == 2);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+        TC_ASSERT_EXPR(c.count(4) == 1);
+
+        TC_ASSERT_EXPR(c.erase(2) == 2);
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(c.count(1) == 2);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+        TC_ASSERT_EXPR(c.count(4) == 1);
+
+        TC_ASSERT_EXPR(c.erase(2) == 0);
+        TC_ASSERT_EXPR(c.size() == 4);
+        TC_ASSERT_EXPR(c.count(1) == 2);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+        TC_ASSERT_EXPR(c.count(4) == 1);
+
+        TC_ASSERT_EXPR(c.erase(4) == 1);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(c.count(1) == 2);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+
+        TC_ASSERT_EXPR(c.erase(4) == 0);
+        TC_ASSERT_EXPR(c.size() == 3);
+        TC_ASSERT_EXPR(c.count(1) == 2);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+
+        TC_ASSERT_EXPR(c.erase(1) == 2);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+
+        TC_ASSERT_EXPR(c.erase(1) == 0);
+        TC_ASSERT_EXPR(c.size() == 1);
+        TC_ASSERT_EXPR(c.count(3) == 1);
+
+        TC_ASSERT_EXPR(c.erase(3) == 1);
+        TC_ASSERT_EXPR(c.size() == 0);
+
+        TC_ASSERT_EXPR(c.erase(3) == 0);
+        TC_ASSERT_EXPR(c.size() == 0);
+    }
+    {
+    typedef std::unordered_multiset<int> C;
+    C m, m2;
+    for ( int i = 0; i < 10; ++i ) {
+        m.insert(i);  m.insert(i);
+        m2.insert(i); m2.insert(i);
+        }
+
+    C::iterator i = m2.begin();
+    int ctr = 0;
+    while (i != m2.end()) {
+        if (ctr++ % 2 == 0)
+            m2.erase(i++);
+        else
+            ++i;
+        }
+
+    TC_ASSERT_EXPR(only_deletions (m, m2));
+    }
+#endif
+
+  return 0;
+}

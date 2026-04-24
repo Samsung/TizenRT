@@ -1,0 +1,212 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14, c++17, c++20
+
+// <expected>
+
+// template<class F> constexpr auto or_else(F&& f) &;
+// template<class F> constexpr auto or_else(F&& f) const &;
+// template<class F> constexpr auto or_else(F&& f) &&;
+// template<class F> constexpr auto or_else(F&& f) const &&;
+
+#include <cassert>
+#include <concepts>
+#include <expected>
+#include <memory>
+#include <type_traits>
+#include <utility>
+#include "libcxx_tc_common.h"
+
+struct LVal {
+  constexpr std::expected<int, int> operator()(int&) { return 1; }
+  std::expected<int, int> operator()(const int&)  = delete;
+  std::expected<int, int> operator()(int&&)       = delete;
+  std::expected<int, int> operator()(const int&&) = delete;
+};
+
+struct CLVal {
+  std::expected<int, int> operator()(int&) = delete;
+  constexpr std::expected<int, int> operator()(const int&) { return 1; }
+  std::expected<int, int> operator()(int&&)       = delete;
+  std::expected<int, int> operator()(const int&&) = delete;
+};
+
+struct RVal {
+  std::expected<int, int> operator()(int&)       = delete;
+  std::expected<int, int> operator()(const int&) = delete;
+  constexpr std::expected<int, int> operator()(int&&) { return 1; }
+  std::expected<int, int> operator()(const int&&) = delete;
+};
+
+struct CRVal {
+  std::expected<int, int> operator()(int&)       = delete;
+  std::expected<int, int> operator()(const int&) = delete;
+  std::expected<int, int> operator()(int&&)      = delete;
+  constexpr std::expected<int, int> operator()(const int&&) { return 1; }
+};
+
+struct RefQual {
+  constexpr std::expected<int, int> operator()(int) & { return 1; }
+  std::expected<int, int> operator()(int) const&  = delete;
+  std::expected<int, int> operator()(int) &&      = delete;
+  std::expected<int, int> operator()(int) const&& = delete;
+};
+
+struct CRefQual {
+  std::expected<int, int> operator()(int) & = delete;
+  constexpr std::expected<int, int> operator()(int) const& { return 1; }
+  std::expected<int, int> operator()(int) &&      = delete;
+  std::expected<int, int> operator()(int) const&& = delete;
+};
+
+struct RVRefQual {
+  std::expected<int, int> operator()(int) &      = delete;
+  std::expected<int, int> operator()(int) const& = delete;
+  constexpr std::expected<int, int> operator()(int) && { return 1; }
+  std::expected<int, int> operator()(int) const&& = delete;
+};
+
+struct RVCRefQual {
+  std::expected<int, int> operator()(int) &      = delete;
+  std::expected<int, int> operator()(int) const& = delete;
+  std::expected<int, int> operator()(int) &&     = delete;
+  constexpr std::expected<int, int> operator()(int) const&& { return 1; }
+};
+
+template <class E, class F>
+concept has_or_else =
+    requires(E&& e, F&& f) {
+      { std::forward<E>(e).or_else(std::forward<F>(f)) };
+    };
+
+// [LWG 3877] https://cplusplus.github.io/LWG/issue3877, check constraint failing but not compile error inside the function body.
+static_assert(!has_or_else<const std::expected<std::unique_ptr<int>, int>&, int()>);
+static_assert(!has_or_else<const std::expected<std::unique_ptr<int>, int>&&, int()>);
+
+// clang-format off
+constexpr void test_val_types() {
+  // Test & overload
+  {
+    // Without & qualifier on F's operator()
+    {
+      std::expected<int, int> e(std::unexpected<int>(0));
+      std::same_as<std::expected<int, int>> decltype(auto) val = e.or_else(LVal{});
+      TC_ASSERT_EXPR(val == 1);
+    }
+
+    // With & qualifier on F's operator
+    {
+      std::expected<int, int> e(std::unexpected<int>(0));
+      RefQual l{};
+      std::same_as<std::expected<int, int>> decltype(auto) val = e.or_else(l);
+      TC_ASSERT_EXPR(val == 1);
+    }
+  }
+
+  // Test const& overload
+  {
+    // Without const& qualifier on F's operator()
+    {
+      const std::expected<int, int> e(std::unexpected<int>(0));
+      std::same_as<std::expected<int, int>> decltype(auto) val = e.or_else(CLVal{});
+      TC_ASSERT_EXPR(val == 1);
+    }
+
+    // With const& qualifier on F's operator()
+    {
+      const std::expected<int, int> e(std::unexpected<int>(0));
+      const CRefQual l{};
+      std::same_as<std::expected<int, int>> decltype(auto) val = e.or_else(l);
+      TC_ASSERT_EXPR(val == 1);
+    }
+  }
+
+  // Test && overload
+  {
+    // Without && qualifier on F's operator()
+    {
+      std::expected<int, int> e(std::unexpected<int>(0));
+      std::same_as<std::expected<int, int>> decltype(auto) val = std::move(e).or_else(RVal{});
+      TC_ASSERT_EXPR(val == 1);
+    }
+
+    // With && qualifier on F's operator()
+    {
+      std::expected<int, int> e(std::unexpected<int>(0));
+      std::same_as<std::expected<int, int>> decltype(auto) val = std::move(e).or_else(RVRefQual{});
+      TC_ASSERT_EXPR(val == 1);
+    }
+  }
+
+  // Test const&& overload
+  {
+    // Without const&& qualifier on F's operator()
+    {
+      const std::expected<int, int> e(std::unexpected<int>(0));
+      std::same_as<std::expected<int, int>> decltype(auto) val = std::move(e).or_else(CRVal{});
+      TC_ASSERT_EXPR(val == 1);
+    }
+
+    // With const&& qualifier on F's operator()
+    {
+      const std::expected<int, int> e(std::unexpected<int>(0));
+      const RVCRefQual l{};
+      std::same_as<std::expected<int, int>> decltype(auto) val = std::move(e).or_else(std::move(l));
+      TC_ASSERT_EXPR(val == 1);
+    }
+  }
+}
+// clang-format on
+
+struct NonConst {
+  std::expected<int, int> non_const() { return std::expected<int, int>(std::unexpect, 1); }
+};
+
+// check that the lambda body is not instantiated during overload resolution
+constexpr void test_sfinae() {
+  std::expected<int, NonConst> e{1};
+  auto l = [](auto&& x) { return x.non_const(); };
+  e.or_else(l);
+  std::move(e).or_else(l);
+}
+
+constexpr bool test() {
+  test_sfinae();
+  test_val_types();
+
+  std::expected<int, int> e(1);
+  const auto& ce = e;
+
+  const auto never_called = [](int) {
+    TC_ASSERT_EXPR(false);
+    return std::expected<int, int>();
+  };
+
+  e.or_else(never_called);
+  std::move(e).or_else(never_called);
+  ce.or_else(never_called);
+  std::move(ce).or_else(never_called);
+  return true;
+}
+
+int tc_utilities_expected_expected_expected_monadic_or_else(void) {
+  test();
+  static_assert(test());
+
+  return 0;
+}

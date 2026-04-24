@@ -1,0 +1,117 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// <tuple>
+
+// template <class... Types> class tuple;
+
+// template <class Alloc>
+//   tuple(allocator_arg_t, const Alloc& a, const Types&...);
+
+// UNSUPPORTED: c++03
+
+#include <tuple>
+#include <memory>
+#include <cassert>
+
+#include "test_macros.h"
+#include "allocators.h"
+#include "../alloc_first.h"
+#include "../alloc_last.h"
+#include "libcxx_tc_common.h"
+
+struct ImplicitCopy {
+  explicit ImplicitCopy(int) {}
+  ImplicitCopy(ImplicitCopy const&) {}
+};
+
+// Test that tuple(std::allocator_arg, Alloc, Types const&...) allows implicit
+// copy conversions in return value expressions.
+std::tuple<ImplicitCopy> testImplicitCopy1() {
+    ImplicitCopy i(42);
+    return {std::allocator_arg, std::allocator<int>{}, i};
+}
+
+std::tuple<ImplicitCopy> testImplicitCopy2() {
+    const ImplicitCopy i(42);
+    return {std::allocator_arg, std::allocator<int>{}, i};
+}
+
+int tc_utilities_tuple_tuple_tuple_tuple_cnstr_alloc_const_Types(void) {
+    {
+        // check that the literal '0' can implicitly initialize a stored pointer.
+        std::tuple<int*>{std::allocator_arg, std::allocator<int>{}, 0};
+    }
+    {
+        std::tuple<int> t(std::allocator_arg, A1<int>(), 3);
+        TC_ASSERT_EXPR(std::get<0>(t) == 3);
+    }
+    {
+        TC_ASSERT_EXPR(!alloc_first::allocator_constructed);
+        std::tuple<alloc_first> t(std::allocator_arg, A1<int>(5), alloc_first(3));
+        TC_ASSERT_EXPR(alloc_first::allocator_constructed);
+        TC_ASSERT_EXPR(std::get<0>(t) == alloc_first(3));
+    }
+    {
+        TC_ASSERT_EXPR(!alloc_last::allocator_constructed);
+        std::tuple<alloc_last> t(std::allocator_arg, A1<int>(5), alloc_last(3));
+        TC_ASSERT_EXPR(alloc_last::allocator_constructed);
+        TC_ASSERT_EXPR(std::get<0>(t) == alloc_last(3));
+    }
+    {
+        alloc_first::allocator_constructed = false;
+        std::tuple<int, alloc_first> t(std::allocator_arg, A1<int>(5),
+                                       10, alloc_first(15));
+        TC_ASSERT_EXPR(std::get<0>(t) == 10);
+        TC_ASSERT_EXPR(alloc_first::allocator_constructed);
+        TC_ASSERT_EXPR(std::get<1>(t) == alloc_first(15));
+    }
+    {
+        alloc_first::allocator_constructed = false;
+        alloc_last::allocator_constructed = false;
+        std::tuple<int, alloc_first, alloc_last> t(std::allocator_arg,
+                                                   A1<int>(5), 1, alloc_first(2),
+                                                   alloc_last(3));
+        TC_ASSERT_EXPR(std::get<0>(t) == 1);
+        TC_ASSERT_EXPR(alloc_first::allocator_constructed);
+        TC_ASSERT_EXPR(std::get<1>(t) == alloc_first(2));
+        TC_ASSERT_EXPR(alloc_last::allocator_constructed);
+        TC_ASSERT_EXPR(std::get<2>(t) == alloc_last(3));
+    }
+    {
+        alloc_first::allocator_constructed = false;
+        alloc_last::allocator_constructed = false;
+        std::tuple<int, alloc_first, alloc_last> t(std::allocator_arg,
+                                                   A2<int>(5), 1, alloc_first(2),
+                                                   alloc_last(3));
+        TC_ASSERT_EXPR(std::get<0>(t) == 1);
+        TC_ASSERT_EXPR(!alloc_first::allocator_constructed);
+        TC_ASSERT_EXPR(std::get<1>(t) == alloc_first(2));
+        TC_ASSERT_EXPR(!alloc_last::allocator_constructed);
+        TC_ASSERT_EXPR(std::get<2>(t) == alloc_last(3));
+    }
+    {
+        // Test that we can use a tag derived from allocator_arg_t
+        struct DerivedFromAllocatorArgT : std::allocator_arg_t { };
+        DerivedFromAllocatorArgT derived;
+        std::tuple<> t1(derived, A1<int>());
+        std::tuple<int> t2(derived, A1<int>(), 1);
+        std::tuple<int, int> t3(derived, A1<int>(), 1, 2);
+    }
+
+    return 0;
+}

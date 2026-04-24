@@ -1,0 +1,191 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03
+
+// <scoped_allocator>
+
+// template <class OtherAlloc, class ...InnerAlloc>
+//   class scoped_allocator_adaptor
+
+// template <class U1, class U2, class Tp, class Vp>
+// void scoped_allocator_adaptor::construct(pair<U1, U2>*, Tp&&, Up&&)
+
+#include <scoped_allocator>
+#include <type_traits>
+#include <utility>
+#include <tuple>
+#include <cassert>
+#include <cstdlib>
+#include "uses_alloc_types.h"
+#include "controlled_allocators.h"
+
+#include "test_macros.h"
+#include "libcxx_tc_common.h"
+
+
+void test_no_inner_alloc()
+{
+    using VoidAlloc = CountingAllocator<void>;
+    AllocController P;
+    {
+        using T = UsesAllocatorV1<VoidAlloc, 1>;
+        using U = UsesAllocatorV2<VoidAlloc, 1>;
+        using Pair = std::pair<T, U>;
+        int x = 42;
+        const int y = 101;
+        using Alloc = CountingAllocator<Pair>;
+        using SA = std::scoped_allocator_adaptor<Alloc>;
+        static_assert(std::uses_allocator<T, CountingAllocator<T> >::value, "");
+        Pair * ptr = (Pair*)std::malloc(sizeof(Pair));
+        TC_ASSERT_EXPR(ptr != nullptr);
+        Alloc CA(P);
+        SA A(CA);
+        A.construct(ptr, x, std::move(y));
+        TC_ASSERT_EXPR(checkConstruct<int&>(ptr->first, UA_AllocArg, CA));
+        TC_ASSERT_EXPR(checkConstruct<int const&&>(ptr->second, UA_AllocLast, CA));
+#if TEST_STD_VER >= 20
+        TC_ASSERT_EXPR((P.checkConstruct<std::piecewise_construct_t&&,
+                                 std::tuple<std::allocator_arg_t, const SA&, int&>&&,
+                                 std::tuple<int const&&, const SA&>&&
+              >(CA, ptr)));
+#else
+        TC_ASSERT_EXPR((P.checkConstruct<std::piecewise_construct_t const&,
+                                 std::tuple<std::allocator_arg_t, SA&, int&>&&,
+                                 std::tuple<int const&&, SA&>&&
+              >(CA, ptr)));
+#endif
+        A.destroy(ptr);
+        std::free(ptr);
+
+    }
+    P.reset();
+    {
+        using T = UsesAllocatorV3<VoidAlloc, 1>;
+        using U = NotUsesAllocator<VoidAlloc, 1>;
+        using Pair = std::pair<T, U>;
+        int x = 42;
+        const int y = 101;
+        using Alloc = CountingAllocator<Pair>;
+        using SA = std::scoped_allocator_adaptor<Alloc>;
+        static_assert(std::uses_allocator<T, CountingAllocator<T> >::value, "");
+        Pair * ptr = (Pair*)std::malloc(sizeof(Pair));
+        TC_ASSERT_EXPR(ptr != nullptr);
+        Alloc CA(P);
+        SA A(CA);
+        A.construct(ptr, std::move(x), y);
+        TC_ASSERT_EXPR(checkConstruct<int&&>(ptr->first, UA_AllocArg, CA));
+        TC_ASSERT_EXPR(checkConstruct<int const&>(ptr->second, UA_None));
+#if TEST_STD_VER >= 20
+        TC_ASSERT_EXPR((P.checkConstruct<std::piecewise_construct_t&&,
+                                 std::tuple<std::allocator_arg_t, const SA&, int&&>&&,
+                                 std::tuple<int const&>&&
+                   >(CA, ptr)));
+#else
+        TC_ASSERT_EXPR((P.checkConstruct<std::piecewise_construct_t const&,
+                                 std::tuple<std::allocator_arg_t, SA&, int&&>&&,
+                                 std::tuple<int const&>&&
+                   >(CA, ptr)));
+#endif
+        A.destroy(ptr);
+        std::free(ptr);
+    }
+}
+
+void test_with_inner_alloc()
+{
+    using VoidAlloc2 = CountingAllocator<void, 2>;
+
+    AllocController POuter;
+    AllocController PInner;
+    {
+        using T = UsesAllocatorV1<VoidAlloc2, 1>;
+        using U = UsesAllocatorV2<VoidAlloc2, 1>;
+        using Pair = std::pair<T, U>;
+        int x = 42;
+        int y = 101;
+        using Outer = CountingAllocator<Pair, 1>;
+        using Inner = CountingAllocator<Pair, 2>;
+        using SA = std::scoped_allocator_adaptor<Outer, Inner>;
+        using SAInner = std::scoped_allocator_adaptor<Inner>;
+        static_assert(!std::uses_allocator<T, Outer>::value, "");
+        static_assert(std::uses_allocator<T, Inner>::value, "");
+        Pair * ptr = (Pair*)std::malloc(sizeof(Pair));
+        TC_ASSERT_EXPR(ptr != nullptr);
+        Outer O(POuter);
+        Inner I(PInner);
+        SA A(O, I);
+        A.construct(ptr, x, std::move(y));
+        TC_ASSERT_EXPR(checkConstruct<int&>(ptr->first, UA_AllocArg, I));
+        TC_ASSERT_EXPR(checkConstruct<int &&>(ptr->second, UA_AllocLast));
+#if TEST_STD_VER >= 20
+        TC_ASSERT_EXPR((POuter.checkConstruct<std::piecewise_construct_t&&,
+                                 std::tuple<std::allocator_arg_t, const SAInner&, int&>&&,
+                                 std::tuple<int &&, const SAInner&>&&
+              >(O, ptr)));
+#else
+        TC_ASSERT_EXPR((POuter.checkConstruct<std::piecewise_construct_t const&,
+                                 std::tuple<std::allocator_arg_t, SAInner&, int&>&&,
+                                 std::tuple<int &&, SAInner&>&&
+              >(O, ptr)));
+#endif
+        A.destroy(ptr);
+        std::free(ptr);
+    }
+    PInner.reset();
+    POuter.reset();
+    {
+        using T = UsesAllocatorV3<VoidAlloc2, 1>;
+        using U = NotUsesAllocator<VoidAlloc2, 1>;
+        using Pair = std::pair<T, U>;
+        int x = 42;
+        const int y = 101;
+        using Outer = CountingAllocator<Pair, 1>;
+        using Inner = CountingAllocator<Pair, 2>;
+        using SA = std::scoped_allocator_adaptor<Outer, Inner>;
+        using SAInner = std::scoped_allocator_adaptor<Inner>;
+        static_assert(!std::uses_allocator<T, Outer>::value, "");
+        static_assert(std::uses_allocator<T, Inner>::value, "");
+        Pair * ptr = (Pair*)std::malloc(sizeof(Pair));
+        TC_ASSERT_EXPR(ptr != nullptr);
+        Outer O(POuter);
+        Inner I(PInner);
+        SA A(O, I);
+        A.construct(ptr, std::move(x), std::move(y));
+        TC_ASSERT_EXPR(checkConstruct<int&&>(ptr->first, UA_AllocArg, I));
+        TC_ASSERT_EXPR(checkConstruct<int const&&>(ptr->second, UA_None));
+#if TEST_STD_VER >= 20
+        TC_ASSERT_EXPR((POuter.checkConstruct<std::piecewise_construct_t&&,
+                                 std::tuple<std::allocator_arg_t, const SAInner&, int&&>&&,
+                                 std::tuple<int const&&>&&
+              >(O, ptr)));
+#else
+        TC_ASSERT_EXPR((POuter.checkConstruct<std::piecewise_construct_t const&,
+                                 std::tuple<std::allocator_arg_t, SAInner&, int&&>&&,
+                                 std::tuple<int const&&>&&
+              >(O, ptr)));
+#endif
+        A.destroy(ptr);
+        std::free(ptr);
+    }
+}
+int tc_utilities_allocator_adaptor_allocator_adaptor_members_construct_pair_values(void) {
+    test_no_inner_alloc();
+    test_with_inner_alloc();
+
+  return 0;
+}

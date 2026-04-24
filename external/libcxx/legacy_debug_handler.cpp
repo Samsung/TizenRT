@@ -43,7 +43,7 @@ _LIBCPP_NORETURN _LIBCPP_EXPORTED_FROM_ABI void __libcpp_abort_debug_function(__
 typedef void (*__libcpp_debug_function_type)(__libcpp_debug_info const&);
 
 _LIBCPP_EXPORTED_FROM_ABI
-constinit __libcpp_debug_function_type __libcpp_debug_function = __libcpp_abort_debug_function;
+_LIBCPP_CONSTINIT __libcpp_debug_function_type __libcpp_debug_function = __libcpp_abort_debug_function;
 
 _LIBCPP_EXPORTED_FROM_ABI
 bool __libcpp_set_debug_function(__libcpp_debug_function_type __func) {

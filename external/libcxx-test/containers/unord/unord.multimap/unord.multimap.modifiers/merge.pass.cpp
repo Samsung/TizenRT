@@ -1,0 +1,168 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03, c++11, c++14
+
+// <unordered_map>
+
+// class unordered_multimap
+
+// template <class H2, class P2>
+//   void merge(unordered_map<key_type, value_type, H2, P2, allocator_type>& source);
+// template <class H2, class P2>
+//   void merge(unordered_map<key_type, value_type, H2, P2, allocator_type>&& source);
+// template <class H2, class P2>
+//   void merge(unordered_multimap<key_type, value_type, H2, P2, allocator_type>& source);
+// template <class H2, class P2>
+//   void merge(unordered_multimap<key_type, value_type, H2, P2, allocator_type>&& source);
+
+#include <unordered_map>
+#include <cassert>
+#include "test_macros.h"
+#include "Counter.h"
+#include "libcxx_tc_common.h"
+
+template <class Map>
+bool map_equal(const Map& map, Map other)
+{
+    return map == other;
+}
+
+#ifndef TEST_HAS_NO_EXCEPTIONS
+template <class T>
+struct throw_hasher
+{
+    bool& should_throw_;
+
+    throw_hasher(bool& should_throw) : should_throw_(should_throw) {}
+
+    std::size_t operator()(const T& p) const
+    {
+        if (should_throw_)
+#ifndef _LIBCPP_NO_EXCEPTIONS
+            throw 0;
+        return std::hash<T>()(p);
+    }
+#endif // _LIBCPP_NO_EXCEPTIONS
+};
+#endif
+
+int tc_containers_unord_unord_multimap_unord_multimap_modifiers_merge(void) {
+    {
+        std::unordered_multimap<int, int> src{{1, 0}, {3, 0}, {5, 0}};
+        std::unordered_multimap<int, int> dst{{2, 0}, {4, 0}, {5, 0}};
+        dst.merge(src);
+        TC_ASSERT_EXPR(map_equal(src, {}));
+        TC_ASSERT_EXPR(map_equal(dst, {{1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {5, 0}}));
+    }
+
+#ifndef TEST_HAS_NO_EXCEPTIONS
+    {
+        bool do_throw = false;
+        typedef std::unordered_multimap<Counter<int>, int, throw_hasher<Counter<int>>> map_type;
+        map_type src({{1, 0}, {3, 0}, {5, 0}}, 0, throw_hasher<Counter<int>>(do_throw));
+        map_type dst({{2, 0}, {4, 0}, {5, 0}}, 0, throw_hasher<Counter<int>>(do_throw));
+
+        TC_ASSERT_EXPR(Counter_base::gConstructed == 6);
+
+        do_throw = true;
+        try
+        {
+            dst.merge(src);
+        }
+        catch (int)
+        {
+            do_throw = false;
+        }
+        TC_ASSERT_EXPR(!do_throw);
+        TC_ASSERT_EXPR(map_equal(src, map_type({{1, 0}, {3, 0}, {5, 0}}, 0, throw_hasher<Counter<int>>(do_throw))));
+        TC_ASSERT_EXPR(map_equal(dst, map_type({{2, 0}, {4, 0}, {5, 0}}, 0, throw_hasher<Counter<int>>(do_throw))));
+    }
+#endif
+    TC_ASSERT_EXPR(Counter_base::gConstructed == 0);
+    struct equal
+    {
+        equal() = default;
+
+        bool operator()(const Counter<int>& lhs, const Counter<int>& rhs) const
+        {
+            return lhs == rhs;
+        }
+    };
+    struct hasher
+    {
+        hasher() = default;
+        std::size_t operator()(const Counter<int>& p) const
+        {
+            return std::hash<Counter<int>>()(p);
+        }
+    };
+    {
+        typedef std::unordered_multimap<Counter<int>, int, std::hash<Counter<int>>, std::equal_to<Counter<int>>> first_map_type;
+        typedef std::unordered_multimap<Counter<int>, int, hasher, equal> second_map_type;
+        typedef std::unordered_map<Counter<int>, int, hasher, equal> third_map_type;
+
+        {
+            first_map_type first{{1, 0}, {2, 0}, {3, 0}};
+            second_map_type second{{2, 0}, {3, 0}, {4, 0}};
+            third_map_type third{{1, 0}, {3, 0}};
+
+            TC_ASSERT_EXPR(Counter_base::gConstructed == 8);
+
+            first.merge(second);
+            first.merge(third);
+
+            TC_ASSERT_EXPR(map_equal(first, {{1, 0}, {2, 0}, {3, 0}, {4, 0}, {2, 0}, {3, 0}, {1, 0}, {3, 0}}));
+            TC_ASSERT_EXPR(map_equal(second, {}));
+            TC_ASSERT_EXPR(map_equal(third, {}));
+
+            TC_ASSERT_EXPR(Counter_base::gConstructed == 8);
+        }
+        TC_ASSERT_EXPR(Counter_base::gConstructed == 0);
+        {
+            first_map_type first{{1, 0}, {2, 0}, {3, 0}};
+            second_map_type second{{2, 0}, {3, 0}, {4, 0}};
+            third_map_type third{{1, 0}, {3, 0}};
+
+            TC_ASSERT_EXPR(Counter_base::gConstructed == 8);
+
+            first.merge(std::move(second));
+            first.merge(std::move(third));
+
+            TC_ASSERT_EXPR(map_equal(first, {{1, 0}, {2, 0}, {3, 0}, {4, 0}, {2, 0}, {3, 0}, {1, 0}, {3, 0}}));
+            TC_ASSERT_EXPR(map_equal(second, {}));
+            TC_ASSERT_EXPR(map_equal(third, {}));
+
+            TC_ASSERT_EXPR(Counter_base::gConstructed == 8);
+        }
+        TC_ASSERT_EXPR(Counter_base::gConstructed == 0);
+    }
+    {
+        std::unordered_multimap<int, int> first;
+        {
+            std::unordered_multimap<int, int> second;
+            first.merge(second);
+            first.merge(std::move(second));
+        }
+        {
+            std::unordered_map<int, int> second;
+            first.merge(second);
+            first.merge(std::move(second));
+        }
+    }
+    return 0;
+}

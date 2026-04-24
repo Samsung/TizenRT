@@ -18,6 +18,41 @@ config LIBCXX_UTC_ALGORITHMS
 	---help---
 		UTC for Libc++ Algorithms
 
+config LIBCXX_UTC_ALGORITHMS_NONMOD
+	bool "UTC for Libc++ Non-modifying Algorithms"
+	default y
+	depends on LIBCXX_UTC_ALGORITHMS
+	---help---
+		UTC for Libc++ Non-modifying Algorithms (find, count, search, equal, etc.)
+
+config LIBCXX_UTC_ALGORITHMS_MOD
+	bool "UTC for Libc++ Modifying Algorithms"
+	default y
+	depends on LIBCXX_UTC_ALGORITHMS
+	---help---
+		UTC for Libc++ Modifying Algorithms (copy, move, swap, transform, fill, etc.)
+
+config LIBCXX_UTC_ALGORITHMS_SORT
+	bool "UTC for Libc++ Sorting Algorithms"
+	default y
+	depends on LIBCXX_UTC_ALGORITHMS
+	---help---
+		UTC for Libc++ Sorting Algorithms (sort, merge, heap, min/max, etc.)
+
+config LIBCXX_UTC_ALGORITHMS_CLIB
+	bool "UTC for Libc++ C Library Algorithms"
+	default y
+	depends on LIBCXX_UTC_ALGORITHMS
+	---help---
+		UTC for Libc++ C Library Algorithms (bsearch, qsort)
+
+config LIBCXX_UTC_ALGORITHMS_NUMERIC
+	bool "UTC for Libc++ Numeric Algorithms"
+	default y
+	depends on LIBCXX_UTC_ALGORITHMS
+	---help---
+		UTC for Libc++ Numeric Algorithms (accumulate, reduce, gcd, lcm, etc.)
+
 config LIBCXX_UTC_CONTAINERS
 	bool "UTC for Libc++ Containers"
 	default y
@@ -101,3 +136,73 @@ config LIBCXX_UTC_STRINGS_LARGESIZE
 	depends on LIBCXX_UTC_STRINGS
 	---help---
 		UTC for Libc++ Strings Large size tests
+
+config LIBCXX_UTC_UTILITIES_TUPLE
+	bool "UTC for Libc++ Tuple"
+	default n
+	depends on LIBCXX_UTC_UTILITIES
+	---help---
+		UTC for Libc++ Utilities(Tuple)
+
+config LIBCXX_UTC_UTILITIES_OPTIONAL
+	bool "UTC for Libc++ Optional"
+	default n
+	depends on LIBCXX_UTC_UTILITIES
+	---help---
+		UTC for Libc++ Utilities(Optional)
+
+config LIBCXX_UTC_UTILITIES_VARIANT
+	bool "UTC for Libc++ Variant"
+	default n
+	depends on LIBCXX_UTC_UTILITIES
+	---help---
+		UTC for Libc++ Utilities(Variant)
+
+config LIBCXX_UTC_UTILITIES_ANY
+	bool "UTC for Libc++ Any"
+	default n
+	depends on LIBCXX_UTC_UTILITIES
+	---help---
+		UTC for Libc++ Utilities(Any)
+
+config LIBCXX_UTC_UTILITIES_META
+	bool "UTC for Libc++ Type Traits"
+	default n
+	depends on LIBCXX_UTC_UTILITIES
+	---help---
+		UTC for Libc++ Utilities(Type Traits/Meta)
+
+config LIBCXX_UTC_UTILITIES_RATIO
+	bool "UTC for Libc++ Ratio"
+	default n
+	depends on LIBCXX_UTC_UTILITIES
+	---help---
+		UTC for Libc++ Utilities(Ratio)
+
+config LIBCXX_UTC_UTILITIES_BITSET
+	bool "UTC for Libc++ Bitset"
+	default n
+	depends on LIBCXX_UTC_UTILITIES
+	---help---
+		UTC for Libc++ Utilities(Bitset)
+
+config LIBCXX_UTC_CONTAINERS_SET
+	bool "UTC for Libc++ Set"
+	default n
+	depends on LIBCXX_UTC_CONTAINERS
+	---help---
+		UTC for Libc++ Containers(Set/Multiset)
+
+config LIBCXX_UTC_CONTAINERS_DEQUE
+	bool "UTC for Libc++ Deque"
+	default n
+	depends on LIBCXX_UTC_CONTAINERS
+	---help---
+		UTC for Libc++ Containers(Deque)
+
+config LIBCXX_UTC_CONTAINERS_ADAPTORS
+	bool "UTC for Libc++ Container Adaptors"
+	default n
+	depends on LIBCXX_UTC_CONTAINERS
+	---help---
+		UTC for Libc++ Containers(Queue/Stack/PriorityQueue)

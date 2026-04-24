@@ -1,0 +1,114 @@
+/****************************************************************************
+ *
+ * Copyright 2018 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+// UNSUPPORTED: c++03
+
+// <utility>
+
+// template <class T1, class T2> struct pair
+
+// pair& operator=(pair const& p);
+
+#include <utility>
+#include <memory>
+#include <cassert>
+
+#include "test_macros.h"
+#include "archetypes.h"
+#include "libcxx_tc_common.h"
+
+struct CountAssign {
+  int copied = 0;
+  int moved = 0;
+  TEST_CONSTEXPR_CXX20 CountAssign() = default;
+  TEST_CONSTEXPR_CXX20 CountAssign& operator=(CountAssign const&) {
+    ++copied;
+    return *this;
+  }
+  TEST_CONSTEXPR_CXX20 CountAssign& operator=(CountAssign&&) {
+    ++moved;
+    return *this;
+  }
+};
+
+struct Incomplete;
+extern Incomplete inc_obj;
+
+TEST_CONSTEXPR_CXX20 bool test() {
+  {
+    typedef std::pair<ConstexprTestTypes::CopyOnly, int> P;
+    const P p1(ConstexprTestTypes::CopyOnly(), short{4});
+    P p2;
+    p2 = p1;
+    TC_ASSERT_EXPR(p2.second == 4);
+  }
+  {
+    using P = std::pair<int&, int&&>;
+    int x = 42;
+    int y = 101;
+    int x2 = -1;
+    int y2 = 300;
+    P p1(x, std::move(y));
+    P p2(x2, std::move(y2));
+    p1 = p2;
+    TC_ASSERT_EXPR(p1.first == x2);
+    TC_ASSERT_EXPR(p1.second == y2);
+  }
+  {
+    using P = std::pair<int, ConstexprTestTypes::NonCopyable>;
+    static_assert(!std::is_copy_assignable<P>::value, "");
+  }
+  {
+    using P = std::pair<CountAssign, ConstexprTestTypes::Copyable>;
+    static_assert(std::is_copy_assignable<P>::value, "");
+    P p;
+    P p2;
+    p = p2;
+    TC_ASSERT_EXPR(p.first.copied == 1);
+    TC_ASSERT_EXPR(p.first.moved == 0);
+    TC_ASSERT_EXPR(p2.first.copied == 0);
+    TC_ASSERT_EXPR(p2.first.moved == 0);
+  }
+  {
+    using P = std::pair<int, ConstexprTestTypes::MoveAssignOnly>;
+    static_assert(!std::is_copy_assignable<P>::value, "");
+  }
+  {
+    using P = std::pair<int, std::unique_ptr<int> >;
+    static_assert(!std::is_copy_assignable<P>::value, "");
+  }
+  {
+    using P = std::pair<int, Incomplete&>;
+    static_assert(!std::is_copy_assignable<P>::value, "");
+    P p(42, inc_obj);
+    TC_ASSERT_EXPR(&p.second == &inc_obj);
+  }
+
+  return true;
+}
+
+int tc_utilities_utility_pairs_pairs_pair_assign_pair(void) {
+  test();
+#if TEST_STD_VER >= 20
+  static_assert(test());
+#endif
+
+  return 0;
+}
+
+struct Incomplete {};
+Incomplete inc_obj;
