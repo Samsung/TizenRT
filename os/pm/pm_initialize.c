@@ -88,7 +88,7 @@ const char *wakeup_src_name[PM_WAKEUP_SRC_COUNT] = {"UNKNOWN", "BLE", "WIFI", "L
  *
  * Description:
  *   This function is called by the application thread to start the Power
- *   Management system. This fucntion sets the is_running flag which
+ *   Management system. This function sets the is_running flag which
  *   enables pm to transition between low and high power states.
  *
  * Input parameters:
@@ -109,8 +109,8 @@ void pm_start(void) {
  * Description:
  *   This function is called by MCU-specific one-time at power on reset in
  *   order to initialize the power management capabilities.  This function
- *   must be called *very* early in the initializeation sequence *before* any
- *   other device drivers are initialize (since they may attempt to register
+ *   must be called *very* early in the initialization sequence *before* any
+ *   other device drivers are initialized (since they may attempt to register
  *   with the power management subsystem). It also fills the PM ops with the
  *   required BSP APIs.
  *
@@ -140,9 +140,9 @@ void pm_initialize(struct pm_sleep_ops *sleep_ops)
  *
  * Description:
  *   This function is called by MCU-specific one-time at power on reset in
- *   order to initialize the pm clock capabilityes.  This function
- *   must be called *very* early in the initializeation sequence *before* any
- *   other device drivers are initialize (since they may attempt to register
+ *   order to initialize the PM clock capabilities. This function
+ *   must be called *very* early in the initialization sequence *before* any
+ *   other device drivers are initialized (since they may attempt to register
  *   with the power management subsystem). It also fills the PM ops with the
  *   required BSP APIs.
  *

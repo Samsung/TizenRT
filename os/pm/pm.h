@@ -176,8 +176,8 @@ enum pm_state_e pm_checkstate(void);
  * Name: pm_changestate
  *
  * Description:
- *   This function is used to platform-specific power management logic.  It
- *   will announce the power management power management state change to all
+ *   This function is used by platform-specific power management logic. It
+ *   will announce the power management state change to all
  *   drivers that have registered for power management event callbacks.
  *
  * Input Parameters:
@@ -245,7 +245,7 @@ void pm_metrics_update_domain(FAR struct pm_domain_s *domain);
  * Name: pm_metrics_update_suspend
  *
  * Description:
- *   This function is called inside pm_suspend. It note the timestamp (in ticks) of
+ *   This function is called inside pm_suspend. It notes the timestamp (in ticks) of
  *   suspended domain.
  *
  * Input parameters:
@@ -312,7 +312,7 @@ void pm_metrics_update_idle(void);
  * Name: pm_metrics_update_wakeup_reason
  *
  * Description:
- *   This function is called inside pm_wakehandler. It counts the frequency of wakeup
+ *   This function is called inside enable_and_compensate_systick. It counts the frequency of wakeup
  *   sources, which are waking up the board.
  * 
  * Input parameters:
@@ -328,7 +328,7 @@ void pm_metrics_update_wakeup_reason(pm_wakeup_reason_code_t wakeup_src);
  * Name: pm_metrics_update_missing_tick
  *
  * Description:
- *   This function is called inside pm_wakehandler. It checks the amount of time board
+ *   This function is called inside enable_and_compensate_systick. It checks the amount of time the board
  *   was in sleep.
  * 
  * Input parameters:

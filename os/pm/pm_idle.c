@@ -87,13 +87,13 @@ static int suspend_devices(void)
  ****************************************************************************/
 static void resume_devices(void)
 {
-	/* After wakeup change PM State to STANDBY */
+	/* After wakeup, restore the PM state to NORMAL. */
 	(void)pm_changestate(PM_NORMAL);
 }
 
 #ifdef CONFIG_SMP
 /****************************************************************************
- * Name: disable_secondery_cpus
+ * Name: disable_secondary_cpus
  *
  * Description:
  *   This function disables all secondary CPUs by sending a hotplug signal.
@@ -123,7 +123,7 @@ static int disable_secondary_cpus(void)
 }
 
 /****************************************************************************
- * Name: enable_secondery_cpus
+ * Name: enable_secondary_cpus
  *
  * Description:
  *   This function enables all secondary CPUs after waking up from sleep.
@@ -148,7 +148,7 @@ static void enable_secondary_cpus(void)
 }
 
 /****************************************************************************
- * Name: check_secondery_cpus_idle
+ * Name: check_secondary_cpus_idle
  *
  * Description:
  *   This function checks if all secondary CPUs are idle and ready for sleep.
