@@ -37,6 +37,20 @@ class PreWorker(ActionBase):
         self.debug = debug
         self.random_bin_path = random_bin_path
 
+    def _toggle_baudrate_before_handshake(self):
+        # Before handshake, toggle the serial baudrate to another value
+        # and then back to reset_baudrate. The baudrate flip forces the UART
+        # to resynchronize, improving the success rate of the following get_bus.
+        toggle_baudrate = 921600
+        if toggle_baudrate != self.reset_baudrate:
+            BKLog.i(
+                "toggle baudrate before handshake: {0} -> {1}".format(
+                    toggle_baudrate, self.reset_baudrate
+                )
+            )
+            self.ser.reset(baudrate=toggle_baudrate)
+            self.ser.reset(baudrate=self.reset_baudrate)
+
 
     def _maybe_verify_random_bin(self, linktype):
         from bkutils.common.random_bin_verify import maybe_verify_random_bin_after_get_bus
@@ -49,9 +63,11 @@ class PreWorker(ActionBase):
     def pre_work(self):
         BKLog.i("====================pre work start...====================")
         result = False
+        chip_set = None
         start_time = time.time()
         base_controller = BaseController(serial_instance=self.ser)
         try:
+            self._toggle_baudrate_before_handshake()
             # get bus
             tmp_res, linktype = base_controller.get_bus(
                 reset_type=RESET_TYPE.MULTI,
@@ -62,6 +78,7 @@ class PreWorker(ActionBase):
             if not tmp_res:
                 raise Exception("get bus fail.")
 
+            self.ser.drain()
             self._maybe_verify_random_bin(linktype)
 
             # get chip id
@@ -126,9 +143,10 @@ class PreWorker(ActionBase):
             end_time = time.time()
             elapsed_time = end_time - start_time
             if result:
-                BKLog.w("pre work complete, all pass.")
-                BKLog.w("done.")
+                BKLog.i("pre work complete, all pass.")
+                BKLog.i(f"Elapse time: {elapsed_time:.6f} seconds.")
+                BKLog.i("Flashing in progress, do not power-cycle the board!\n\n")
             else:
                 BKLog.e("pre work fail.")
-            BKLog.i(f"Elapse time: {elapsed_time:.6f} seconds.\n\n")
+                BKLog.i(f"Elapse time: {elapsed_time:.6f} seconds.\n\n")
             return result, chip_set.CHIP_ID if result else None, chip_set._flash_mid if result else None, self.worker_baudrate, linktype
