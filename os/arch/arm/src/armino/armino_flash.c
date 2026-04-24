@@ -77,7 +77,8 @@
 /****************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
-#define PAGE_SHIFT (12)
+#define SUBSECTOR_SHIFT (12) /* Size of SubSector */
+#define PAGE_SHIFT (8) /*Size of programmable page */
 #define FLASH_FS_START CONFIG_BK_FLASH_BASE
 #define BK_NSECTORS (CONFIG_BK_FLASH_CAPACITY / CONFIG_BK_FLASH_SECTOR_SIZE)
 #define BK_START_SECOTR (FLASH_FS_START / CONFIG_BK_FLASH_SECTOR_SIZE)
@@ -126,7 +127,7 @@ static bool get_ota_test_flag(int arg)
  ************************************************************************************/
 static ssize_t bk_erase_page(size_t page)
 {
-	uint32_t addr = (page << PAGE_SHIFT);
+	uint32_t addr = (page << SUBSECTOR_SHIFT);
 	ssize_t ret;
 
 	//printf("func :%s, line :%d, addr :%x\n", __func__, __LINE__, addr);
@@ -212,7 +213,7 @@ static ssize_t bk_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblo
 {
 	ssize_t result;
 	// size_t off = (startblock << PAGE_SHIFT); // Unused variable
-	result = bk_flash_read(CONFIG_BK_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, nblocks << PAGE_SHIFT);
+	result = bk_flash_read(CONFIG_BK_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, (nblocks << PAGE_SHIFT));
 	return result < 0 ? result : nblocks;
 }
 
@@ -223,7 +224,7 @@ static ssize_t bk_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblo
 static ssize_t bk_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buffer)
 {
 	ssize_t result;
-	result = bk_flash_write(CONFIG_BK_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, nblocks << PAGE_SHIFT);
+	result = bk_flash_write(CONFIG_BK_FLASH_BASE + (startblock << PAGE_SHIFT), buffer, (nblocks << PAGE_SHIFT));
 	return result < 0 ? result : nblocks;
 }
 
@@ -269,7 +270,7 @@ static int bk_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 	case MTDIOC_GEOMETRY: {
 		FAR struct mtd_geometry_s *geo = (FAR struct mtd_geometry_s *)((uintptr_t) arg);
 		if (geo) {
-			geo->blocksize = CONFIG_BK_FLASH_SECTOR_SIZE;
+			geo->blocksize = (1 << PAGE_SHIFT);
 			geo->erasesize = CONFIG_BK_FLASH_SECTOR_SIZE;
 			geo->neraseblocks = priv->nsectors;
 			ret = OK;

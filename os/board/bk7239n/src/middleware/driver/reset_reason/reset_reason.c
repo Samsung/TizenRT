@@ -222,7 +222,7 @@ uint32_t bk_misc_get_reset_reason(void)
 	uint32_t misc_value;
 
 	if (s_start_type) {
-		if (s_start_type == 0x7f)
+		if ((s_start_type == 0x7f) || (s_start_type == 0x7d))
 		{
 			s_start_type += 0x80;
 		}
@@ -231,7 +231,7 @@ uint32_t bk_misc_get_reset_reason(void)
 	}
 
 	misc_value = aon_pmu_hal_get_reset_reason();
-	if (misc_value == 0x7f)
+	if ((misc_value == 0x7f) || (misc_value == 0x7d))
 	{
 		misc_value += 0x80;
 	}

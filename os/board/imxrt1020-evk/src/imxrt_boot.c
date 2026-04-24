@@ -62,6 +62,7 @@
 #include "imxrt_gpio.h"
 //#include <tinyara/gpio.h>
 #include <arch/board/board.h>
+#include <debug.h>
 
 #include "imxrt1020-evk.h"
 #include "imxrt_start.h"

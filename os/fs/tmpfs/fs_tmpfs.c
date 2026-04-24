@@ -1584,8 +1584,15 @@ static off_t tmpfs_seek(FAR struct file *filep, off_t offset, int whence)
 	}
 #endif
 
-	/* Save the new file position */
+	if (position < 0) {
+		position = 0;
+	}
 
+	if (position > tfo->tfo_size) {
+		position = tfo->tfo_size;
+	}
+
+	/* Save the new file position */
 	filep->f_pos = position;
 	return position;
 }

@@ -12,4 +12,8 @@ menu "Bk_Phy"
 		bool "Enable rf firmware partition dynamic"
 		default y
 
+	config PHY_RFCALI_FROM_FT
+		bool "Enable read pwr cali data from ft"
+		default n
+
 endmenu

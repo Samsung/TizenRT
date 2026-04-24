@@ -220,11 +220,7 @@ int bk_feature_change_to_wifi_pll_enable(void)
 
 int bk_feature_bk7239n_mp_enable(void)
 {
-#if defined(CONFIG_BK7239N_MP)
-	return 1;
-#else
-	return 0;
-#endif
+	return 1;   //mp chip
 }
 
 int bk_feature_temp_high_volt_enable(void)
@@ -241,5 +237,12 @@ int bk_feature_update_power_with_rssi(void) {
 	return 1;
 #else
 	return 0;
+#endif
+}
+int bk_feature_read_rfcali_from_ft_enable(void) {
+#if (CONFIG_OTP && CONFIG_PHY_RFCALI_FROM_FT)
+    return 1;
+#else
+    return 0;
 #endif
 }

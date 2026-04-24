@@ -82,6 +82,71 @@ extern int sl_post_msg(int fd, int cmd, unsigned long arg);
 		fd = -1;     \
 	} while (0)
 
+static int _is_valid_der_format(hal_data *data)
+{
+	if (!data || !data->data || data->data_len < 2) {
+		return 0;
+	}
+
+	unsigned char *p = (unsigned char *)data->data;
+
+	/* DER format for ECDSA signature: SEQUENCE { INTEGER r, INTEGER s } */
+	/* Must start with 0x30 (SEQUENCE tag) */
+	if (p[0] != 0x30) {
+		return 0;
+	}
+
+	/* Check if length field is valid */
+	size_t seq_len = p[1];
+	size_t idx = 2;
+
+	/* Handle multi-byte length encoding (if length >= 128) */
+	if (seq_len & 0x80) {
+		int num_bytes = seq_len & 0x7F;
+		if (num_bytes > 2 || data->data_len < 2 + num_bytes) {
+			return 0;
+		}
+		seq_len = 0;
+		for (int i = 0; i < num_bytes; i++) {
+			seq_len = (seq_len << 8) | p[idx++];
+		}
+	}
+
+	/* Check total length */
+	if (data->data_len < idx + seq_len) {
+		return 0;
+	}
+
+	/* First INTEGER (r) */
+	if (idx >= data->data_len || p[idx] != 0x02) {
+		return 0;
+	}
+	idx++;
+	if (idx >= data->data_len) {
+		return 0;
+	}
+	int r_len = p[idx++];
+	if (idx + r_len > data->data_len) {
+		return 0;
+	}
+	idx += r_len;
+
+	/* Second INTEGER (s) */
+	if (idx >= data->data_len || p[idx] != 0x02) {
+		return 0;
+	}
+	idx++;
+	if (idx >= data->data_len) {
+		return 0;
+	}
+	int s_len = p[idx++];
+	if (idx + s_len > data->data_len) {
+		return 0;
+	}
+
+	return 1;
+}
+
 #define SL_CHECK_VALID(hnd)                                 \
 	do {                                                    \
 		if (!hnd || ((struct _seclink_s_ *)hnd)->fd <= 0) { \
@@ -348,6 +413,12 @@ int sl_ecdsa_sign_md(sl_ctx hnd,
 	struct seclink_req req = {.req_type.auth = &info, 0};
 
 	SL_CALL(sl, SECLINKIOC_ECDSASIGNMD, req);
+	/* Check if signature is DER format or not (except ed25519) */
+	if (_sl_convert_res(req.res) == SECLINK_OK) {
+		if (mode.curve != HAL_ECDSA_CURVE_25519 && !_is_valid_der_format(sign)) {
+			return SECLINK_INVALID_SIGN_FORMAT;
+		}
+	}
 	return _sl_convert_res(req.res);
 }
 
@@ -360,6 +431,10 @@ int sl_ecdsa_verify_md(sl_ctx hnd,
 	SL_CHECK_VALID(hnd);
 	SLC_LOGI(TAG, "--> hnd(%p) mode(%d %d) idx(%d)\n",
 			 hnd, mode.curve, mode.hash_t, key_idx);
+
+	if (mode.curve != HAL_ECDSA_CURVE_25519 && !_is_valid_der_format(sign)) {
+		return SECLINK_INVALID_SIGN_FORMAT;
+	}
 
 	struct _seclink_s_ *sl = (struct _seclink_s_ *)hnd;
 	struct seclink_auth_info info = {.auth_type.ecdsa_type = mode,
@@ -687,6 +762,8 @@ char *sl_strerror(int error)
 		return "Busy";
 	case SECLINK_NOT_INITIALIZED:
 		return "Not initialized";
+	case SECLINK_INVALID_SIGN_FORMAT:
+		return "Invalid signature format";
 	}
 	return "Unknown error(this should be handled carefully)";
 }

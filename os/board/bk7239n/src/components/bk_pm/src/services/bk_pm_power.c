@@ -29,18 +29,21 @@
 #include "pm_debug.h"
 
 
-static bool s_pm_phy_calibration_state    = false;
-static bool s_pm_is_phy_reinit_flag       = false;
+static bool s_pm_phy_calibration_state                     = false;
+static bool s_pm_is_phy_reinit_flag                        = false;
 
-static uint32_t s_pm_encp_pm_state                      = 0;
-static uint32_t s_pm_bakp_pm_state                      = 0;
-static uint32_t s_pm_ahpb_pm_state                      = 0;
-static uint32_t s_pm_audio_pm_state                     = 0;
-static uint32_t s_pm_video_pm_state                     = 0;
-static uint32_t s_pm_btsp_pm_state                      = 0;
-static uint32_t s_pm_thread_pm_state                    = 0;
-static uint32_t s_pm_phy_pm_state                       = 0;
+static uint32_t s_pm_encp_pm_state                         = 0;
+static uint32_t s_pm_bakp_pm_state                         = 0;
+static uint32_t s_pm_ahpb_pm_state                         = 0;
+static uint32_t s_pm_audio_pm_state                        = 0;
+static uint32_t s_pm_video_pm_state                        = 0;
+static uint32_t s_pm_btsp_pm_state                         = 0;
+static uint32_t s_pm_thread_pm_state                       = 0;
+static uint32_t s_pm_phy_pm_state                          = 0;
 
+/* Store voted level (pm_analdo_vol_level_e: 4, 7, 0xF or app ext 0x10..) */
+static uint32_t s_pm_analdo_vol[PM_ANALDO_VOTE_MODULE_MAX] = {0};
+static uint32_t s_pm_current_analdo_vol                    = 0;
 
 static void pm_module_check_power_on(uint32_t *pm_off_modules, uint32_t *pm_on_modules, pm_power_module_name_e module);
 static void pm_module_check_power_off(uint32_t *pm_off_modules, uint32_t *pm_on_modules, pm_power_module_name_e module);
@@ -502,6 +505,102 @@ uint32_t bk_pm_phy_pm_state_get()
 }
 /*=========================MODULES POWER CTRL END========================*/
 
+/*=========================ANALDO VOTE CTRL START========================*/
+static uint32_t pm_select_analdo_vol_according_to_temperature(void)
+{
+	uint32_t analdo_vol = 0;
+
+	#if CONFIG_TEMP_DETECT
+	float temp;
+	bk_err_t err = bk_sensor_get_current_temperature(&temp);
+	if((err != BK_OK) || (temp < -10))
+	{
+		analdo_vol = 0xa;
+	}
+	else if (temp < 20)
+	{
+		analdo_vol = CONFIG_PM_ANALDO_VOLTAGE_TYPICAL;
+	}
+	else if (temp < 60)
+	{
+		analdo_vol = CONFIG_PM_ANALDO_VOLTAGE_TYPICAL;
+	}
+	else
+	{
+		analdo_vol = 0xa;
+	}
+	#else
+	analdo_vol = 0xa;
+	#endif
+
+	return analdo_vol;
+}
+bk_err_t bk_pm_module_vote_analdo_vol(pm_analdo_vote_module_e module, pm_analdo_vol_level_e vol_level)
+{
+	bk_err_t ret = BK_OK;
+	uint32_t i = 0;
+	uint32_t vol_max = 0;
+	uint32_t vol_max_index = 0;
+	uint32_t analdo_level = (uint32_t)vol_level;
+
+	GLOBAL_INT_DECLARATION();
+
+	if (module >= PM_ANALDO_VOTE_MODULE_MAX) {
+		return BK_ERR_PARAM;
+	}
+	if (analdo_level >= PM_ANALDO_VOL_LEVEL_MAX) {
+		return BK_ERR_PARAM;
+	}
+
+	GLOBAL_INT_DISABLE();
+	if(vol_level == PM_ANALDO_VOL_TEMP_ADJ)
+	{
+		analdo_level = pm_select_analdo_vol_according_to_temperature();
+	}
+
+	/* save this module's vote */
+	s_pm_analdo_vol[module] = analdo_level;
+
+	/* get max voted analdo vol over all modules */
+	vol_max = s_pm_analdo_vol[0];
+	for (i = 1; i < PM_ANALDO_VOTE_MODULE_MAX; i++) {
+		if (vol_max < s_pm_analdo_vol[i]) {
+			vol_max = s_pm_analdo_vol[i];
+			vol_max_index = i;
+		}
+	}
+
+	/* if current applied vol equals max, no need to switch */
+	if (s_pm_current_analdo_vol == vol_max) {
+		GLOBAL_INT_RESTORE();
+		return BK_OK;
+	}
+
+	ret = (sys_drv_rf_tx_vol_set(vol_max) == 0) ? BK_OK : BK_FAIL;
+	if (ret == BK_OK) {
+		s_pm_current_analdo_vol = vol_max;
+	}
+
+	GLOBAL_INT_RESTORE();
+
+	if (ret != BK_OK) {
+		LOGI("analdo vol set error\r\n");
+		return ret;
+	}
+	//LOGI("Switch analdo vol %lu %lu\r\n", (unsigned long)vol_max, (unsigned long)vol_max_index);
+	return BK_OK;
+}
+
+pm_analdo_vol_level_e bk_pm_module_current_analdo_vol_get(pm_analdo_vote_module_e module)
+{
+	if (module >= PM_ANALDO_VOTE_MODULE_MAX) {
+		return (pm_analdo_vol_level_e)0;
+	}
+	return (pm_analdo_vol_level_e)s_pm_analdo_vol[module];
+}
+
+/*=========================ANALDO VOTE CTRL END========================*/
+
 /*=========================RF POWER CTRL START========================*/
 // TODO: is still in use ?
 static uint32_t s_pm_rf_on_modules;
@@ -556,7 +655,6 @@ void pm_power_modules_dump_with_sleep_mode(pm_sleep_mode_e sleep_mode)
 		s_pm_ahpb_pm_state, s_pm_video_pm_state, s_pm_audio_pm_state, s_pm_bakp_pm_state);
 }
 
-// TODO: rename or remove
 bk_err_t pm_debug_module_state(void)
 {
 	#if CONFIG_PSRAM && CONFIG_PSRAM_AS_SYS_MEMORY

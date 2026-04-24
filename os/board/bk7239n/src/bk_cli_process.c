@@ -59,7 +59,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/types.h>
-#include <tinyara/config.h>
 
 /****************************************************************************
  * Global variable
@@ -100,6 +99,7 @@ int main(int argc, FAR char *argv[])
 int beken_commands_line_init(int argc, char *argv[])
 #endif
 {
+
     extern int bk_cli_init(void);  
     bk_cli_init();
 	return 0;

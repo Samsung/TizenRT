@@ -57,6 +57,7 @@
 #include <tinyara/clock.h>
 #include <tinyara/sched.h>
 #include <errno.h>
+#include <debug.h>
 /************************************************************************
  * Pre-processor Definitions
  ************************************************************************/

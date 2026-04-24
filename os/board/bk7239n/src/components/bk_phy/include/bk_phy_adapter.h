@@ -201,6 +201,8 @@ typedef struct {
     int(*_bk_feature_temp_high_volt_enable)(void);
     uint32_t (*_bk_phy_get_cali_flag)(void);
     bool(*_me_is_connect_with_instrument)(void);
+    int(*_bk_feature_read_rfcali_from_ft_enable)(void);
+    bk_err_t (*_bk_phy_pm_module_vote_analdo_vol)(uint16_t module, int16_t vol_level);
 } phy_os_funcs_t;
 
 
@@ -298,6 +300,9 @@ typedef struct {
     uint32_t _OTP_DIA;
     uint32_t _OTP_GADC_TEMPERATURE;
     uint32_t _OTP_CHIP_RESERVED;
+    uint32_t _pm_analdo_vote_module_saradc_cali;
+    uint32_t _pm_analdo_vol_enter_saradc_cali;
+    uint32_t _pm_analdo_vol_exit_saradc_cali;
 } phy_os_variable_t;
 
 /*******************************************************************************

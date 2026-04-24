@@ -440,7 +440,7 @@ static int armino_up_interrupt(int irq, void *context, void *arg)
 	uint32_t get_int_status = uart_get_interrupt_status(priv->uart_id);
 	uart_clear_interrupt_status(priv->uart_id, get_int_status);
 	bk_uart_enable_rx_interrupt(priv->uart_id);
-	if(get_int_status & (0x1 << 6)){
+	if(get_int_status & ((0x1 << 1) | (0x1 << 6))){
 		uart_recvchars(dev);
 	}
 	if(get_int_status & (0x1 << 0)){

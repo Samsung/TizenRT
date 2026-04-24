@@ -145,7 +145,7 @@ static void board_initialize_bor(void)
 }
 #endif
 
-int up_check_iwdg(void)
+void up_print_iwdg_status(void)
 {
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE, REG_AON_FEN);
 
@@ -513,7 +513,7 @@ void board_initialize(void)
 	ipc_msg_loguart.rsvd = 0; /* for coverity init issue */
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_DISLOGUART, &ipc_msg_loguart);
 	
-	up_check_iwdg();
+	up_print_iwdg_status();
 }
 #else
 #error "CONFIG_BOARD_INITIALIZE MUST ENABLE"

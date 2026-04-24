@@ -696,9 +696,9 @@ static const struct cli_command s_misc_commands[] = {
 	{"efusemac",    "efusemac [-r] [-w] [mac]",       efuse_mac_cmd_test},
 #endif //#if (CONFIG_EFUSE)
 #endif
-#if (defined(CONFIG_SYS_CPU0)) && (CONFIG_CPU_CNT > 1)
-	{"bootcore", "bootcore [core id] [mode: 1:start,0:stop]", boot_cpu_core},
-#endif
+// #if (defined(CONFIG_SYS_CPU0)) && (CONFIG_CPU_CNT > 1)
+// 	{"bootcore", "bootcore [core id] [mode: 1:start,0:stop]", boot_cpu_core},
+// #endif
 
 #if (defined(CONFIG_SYS_CPU0))
 	{"setjtagmode", "set jtag mode {cpu0|cpu1|cpu2} {group1|group2}", set_jtag_mode},

@@ -1065,9 +1065,8 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 	#if CONFIG_WIFI_REGDOMAIN
 	struct wiphy *wiphy = &g_wiphy;
 	uint32_t flags;
-	#else
-	uint16_t scan_freq = 0;
 	#endif // CONFIG_WIFI_REGDOMAIN
+	uint16_t scan_freq = 0;
 	int band = IEEE80211_BAND_2GHZ;
 	int chan_cnt = 0;
 
@@ -1135,7 +1134,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 			}
 			#else
 			req->chan[chan_cnt].flags = 0;
-
+			#endif // CONFIG_WIFI_REGDOMAIN
 			#if CONFIG_WIFI_AUTO_COUNTRY_CODE
 			// If auto mode, disable 12/13/14,52/56/60/64a ctive scan
 			if (country_code_policy_is_auto() &&
@@ -1155,7 +1154,6 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 				req->chan[chan_cnt].flags |= CHAN_NO_IR;
 			#endif
 			#endif // CONFIG_WIFI_AUTO_COUNTRY_CODE
-			#endif // CONFIG_WIFI_REGDOMAIN
 			chan_cnt++;
 		}
 		req->chan_cnt = chan_cnt;
@@ -1213,7 +1211,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 				flags = find_ieee80211_freq_flags(freq, wiphy->bands[band]->channels,wiphy->bands[band]->n_channels);
 				if((flags & IEEE80211_CHAN_DISABLED) && (!(ate_is_enabled() || rwnx_ieee80211_check_conn_instrument(&req->ssid[0], &req->bssid))))
 				{
-					RWNX_LOGW("rw_msg_send_scanu_req:freq %d,CHAN_DISABLED\r\n ",freq);
+					RWNX_LOGW("rw_msg_send_scanu_req:freq %d,CHAN_DISABLED 0x%x\r\n ",freq,flags);
 				    continue;
 				}
 
@@ -1238,6 +1236,8 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 					}
 					#else
 					req->chan[chan_cnt].flags = 0;
+					#endif // CONFIG_WIFI_REGDOMAIN
+
 					scan_freq = req->chan[chan_cnt].freq;
 					//disable 12/13/14,52/56/60/64 active scan
 					if (scan_freq == 2467 || scan_freq == 2472 || scan_freq == 2484)
@@ -1247,12 +1247,12 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 					if (scan_freq == 5260 || scan_freq == 5280 || scan_freq == 5300 || scan_freq == 5320)
 						req->chan[chan_cnt].flags |= CHAN_NO_IR;
 					#endif
-					#endif // CONFIG_WIFI_REGDOMAIN
 				}
 				chan_cnt++;
 			}
 			req->chan_cnt = chan_cnt;
-			RWNX_LOGW("Using specified freqs\n");
+			const struct ieee80211_regdomain *regd = reg_get_regdomain(&g_wiphy);
+			RWNX_LOGW("Using specified freqs, chan_cnt %d, regd %s\n",req->chan_cnt,regd->alpha2);
 		}
 
 		if(0 != scan_param_env.scan_type) {

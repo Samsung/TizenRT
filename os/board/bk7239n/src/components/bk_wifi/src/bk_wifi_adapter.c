@@ -421,6 +421,40 @@ static void bk_pm_wifi_rtc_clear_wrapper(void)
 #endif
 }
 
+static void __IRAM2 bk_wifi_set_rtc_timer_wrapper(uint32_t tick, void *callback, uint8_t *name)
+{
+#if CONFIG_ANA_RTC
+    alarm_info_t wifi_rtc_alarm_info = {0};
+    strncpy((char *)wifi_rtc_alarm_info.name, name, ALARM_NAME_MAX_LEN);
+    wifi_rtc_alarm_info.period_tick = tick;
+    wifi_rtc_alarm_info.period_cnt = 1;
+    wifi_rtc_alarm_info.callback = (aon_rtc_isr_t)callback;
+    wifi_rtc_alarm_info.param_p = NULL;
+    //printf("bk_wifi_set_rtc_timer_wrapper: name %s, tick %d, callback %p\r\n", wifi_rtc_alarm_info.name, tick, callback);
+    //force unregister previous if doesn't finish.
+    bk_alarm_unregister(AON_RTC_ID_1, wifi_rtc_alarm_info.name);
+    bk_alarm_register(AON_RTC_ID_1, &wifi_rtc_alarm_info);
+#endif
+}
+
+static void bk_wifi_clear_rtc_timer_wrapper(uint8_t *name)
+{
+#if CONFIG_ANA_RTC
+    bk_alarm_unregister(AON_RTC_ID_1, name);
+#endif
+}
+
+static uint8_t bk_pm_get_sleep_mode_wrapper(void)
+{
+    return (uint8_t)bk_pm_get_sleep_mode();
+}
+
+
+static uint32_t bk_pm_get_sleep_wakeup_stable_time_us_wrapper(uint8_t sleep_mode)
+{
+    return bk_pm_get_sleep_wakeup_stable_time_us(sleep_mode);
+}
+
 static void __IRAM2 wifi_vote_rf_ctrl_wrapper(uint8_t cmd)
 {
     rf_module_vote_ctrl(cmd,RF_BY_WIFI_BIT);
@@ -602,80 +636,80 @@ static void mac_printf_encode_wrapper(char *txt, size_t maxlen, const u8 *data, 
     *txt = '\0';
 }
 
-static void dbg_enable_debug_gpio_wrapper(void)
-{
-    // 2 -> 9
-    gpio_dev_unmap(GPIO_2);              // BK7256 EVB    BK7236 EVB      BIT
-    gpio_dev_map(GPIO_2, GPIO_DEV_DEBUG0);   //CLK(H6)    CLK(H6)          0
-    gpio_dev_unmap(GPIO_3);
-    gpio_dev_map(GPIO_3, GPIO_DEV_DEBUG1);   //CMD(H6)    CMD(H6)          1
-    gpio_dev_unmap(GPIO_4);
-    gpio_dev_map(GPIO_4, GPIO_DEV_DEBUG2);   //D0(H6)     D0(H6)           2
-    gpio_dev_unmap(GPIO_5);
-    gpio_dev_map(GPIO_5, GPIO_DEV_DEBUG3);   //D1(H6)     D1(H6)           3
-    gpio_dev_unmap(GPIO_6);
-    gpio_dev_map(GPIO_6, GPIO_DEV_DEBUG4);   //CD(H6)     CD(H6)           4
-    gpio_dev_unmap(GPIO_7);
-    gpio_dev_map(GPIO_7, GPIO_DEV_DEBUG5);   //P7(H5)     P7(H5)           5
-    gpio_dev_unmap(GPIO_8);
-    gpio_dev_map(GPIO_8, GPIO_DEV_DEBUG6);   //P8(CON4)   P8(CON4)         6
-    gpio_dev_unmap(GPIO_9);
-    gpio_dev_map(GPIO_9, GPIO_DEV_DEBUG7);   //P9(CON4)   P9(CON4)         7
+// static void dbg_enable_debug_gpio_wrapper(void)
+// {
+//     // 2 -> 9
+//     gpio_dev_unmap(GPIO_2);              // BK7256 EVB    BK7236 EVB      BIT
+//     gpio_dev_map(GPIO_2, GPIO_DEV_DEBUG0);   //CLK(H6)    CLK(H6)          0
+//     gpio_dev_unmap(GPIO_3);
+//     gpio_dev_map(GPIO_3, GPIO_DEV_DEBUG1);   //CMD(H6)    CMD(H6)          1
+//     gpio_dev_unmap(GPIO_4);
+//     gpio_dev_map(GPIO_4, GPIO_DEV_DEBUG2);   //D0(H6)     D0(H6)           2
+//     gpio_dev_unmap(GPIO_5);
+//     gpio_dev_map(GPIO_5, GPIO_DEV_DEBUG3);   //D1(H6)     D1(H6)           3
+//     gpio_dev_unmap(GPIO_6);
+//     gpio_dev_map(GPIO_6, GPIO_DEV_DEBUG4);   //CD(H6)     CD(H6)           4
+//     gpio_dev_unmap(GPIO_7);
+//     gpio_dev_map(GPIO_7, GPIO_DEV_DEBUG5);   //P7(H5)     P7(H5)           5
+//     gpio_dev_unmap(GPIO_8);
+//     gpio_dev_map(GPIO_8, GPIO_DEV_DEBUG6);   //P8(CON4)   P8(CON4)         6
+//     gpio_dev_unmap(GPIO_9);
+//     gpio_dev_map(GPIO_9, GPIO_DEV_DEBUG7);   //P9(CON4)   P9(CON4)         7
 
-    // 14 -> 19
-    gpio_dev_unmap(GPIO_14);
-    gpio_dev_map(GPIO_14, GPIO_DEV_DEBUG8);  //P14(CON3)  P14(H3)          8
-    gpio_dev_unmap(GPIO_15);
-    gpio_dev_map(GPIO_15, GPIO_DEV_DEBUG9);  //P15(CON3)  P15(H3)          9
-    gpio_dev_unmap(GPIO_16);
-    gpio_dev_map(GPIO_16, GPIO_DEV_DEBUG10); //S14(H3)    P16(H3)         10
-    gpio_dev_unmap(GPIO_17);
-    gpio_dev_map(GPIO_17, GPIO_DEV_DEBUG11); //           P17(H3)         11
-    gpio_dev_unmap(GPIO_18);
-    gpio_dev_map(GPIO_18, GPIO_DEV_DEBUG12); //           P18(H5)         12
-    gpio_dev_unmap(GPIO_19);
-    gpio_dev_map(GPIO_19, GPIO_DEV_DEBUG13); //           P19(H5)         13
+//     // 14 -> 19
+//     gpio_dev_unmap(GPIO_14);
+//     gpio_dev_map(GPIO_14, GPIO_DEV_DEBUG8);  //P14(CON3)  P14(H3)          8
+//     gpio_dev_unmap(GPIO_15);
+//     gpio_dev_map(GPIO_15, GPIO_DEV_DEBUG9);  //P15(CON3)  P15(H3)          9
+//     gpio_dev_unmap(GPIO_16);
+//     gpio_dev_map(GPIO_16, GPIO_DEV_DEBUG10); //S14(H3)    P16(H3)         10
+//     gpio_dev_unmap(GPIO_17);
+//     gpio_dev_map(GPIO_17, GPIO_DEV_DEBUG11); //           P17(H3)         11
+//     gpio_dev_unmap(GPIO_18);
+//     gpio_dev_map(GPIO_18, GPIO_DEV_DEBUG12); //           P18(H5)         12
+//     gpio_dev_unmap(GPIO_19);
+//     gpio_dev_map(GPIO_19, GPIO_DEV_DEBUG13); //           P19(H5)         13
 
-    // 24 -> 39
-    gpio_dev_unmap(GPIO_24);
-    gpio_dev_map(GPIO_24, GPIO_DEV_DEBUG14); //           P24(H8)         14
-    gpio_dev_unmap(GPIO_25);
-    gpio_dev_map(GPIO_25, GPIO_DEV_DEBUG15); //           P25(H8)         15
-    gpio_dev_unmap(GPIO_26);
-    gpio_dev_map(GPIO_26, GPIO_DEV_DEBUG16); //           P26(H8)         16
-    gpio_dev_unmap(GPIO_27);
-    gpio_dev_map(GPIO_27, GPIO_DEV_DEBUG17); //           MCLK(H14)       17
-    gpio_dev_unmap(GPIO_28);
-    gpio_dev_map(GPIO_28, GPIO_DEV_DEBUG18); //           P28/ADC4(H5)    18
-    gpio_dev_unmap(GPIO_29);
-    gpio_dev_map(GPIO_29, GPIO_DEV_DEBUG19); //           PCLK(H14)       19
-    gpio_dev_unmap(GPIO_30);
-    gpio_dev_map(GPIO_30, GPIO_DEV_DEBUG20); //           HSYNC(H14)      20
-    gpio_dev_unmap(GPIO_31);
-    gpio_dev_map(GPIO_31, GPIO_DEV_DEBUG21); //           VSYNC(H14)      21
-    gpio_dev_unmap(GPIO_32);
-    gpio_dev_map(GPIO_32, GPIO_DEV_DEBUG22); //           PXD0(H14)       22
-    gpio_dev_unmap(GPIO_33);
-    gpio_dev_map(GPIO_33, GPIO_DEV_DEBUG23); //           PXD1(H14)       23
-    gpio_dev_unmap(GPIO_34);
-    gpio_dev_map(GPIO_34, GPIO_DEV_DEBUG24); //           PXD2(H14)       24
-    gpio_dev_unmap(GPIO_35);
-    gpio_dev_map(GPIO_35, GPIO_DEV_DEBUG25); //           PXD3(H14)       25
-    gpio_dev_unmap(GPIO_36);
-    gpio_dev_map(GPIO_36, GPIO_DEV_DEBUG26); //           PXD4(H14)       26
-    gpio_dev_unmap(GPIO_37);
-    gpio_dev_map(GPIO_37, GPIO_DEV_DEBUG27); //           PXD5(H14)       27
-    gpio_dev_unmap(GPIO_38);
-    gpio_dev_map(GPIO_38, GPIO_DEV_DEBUG28); //           PXD6(H14)       28
-    gpio_dev_unmap(GPIO_39);
-    gpio_dev_map(GPIO_39, GPIO_DEV_DEBUG29); //           PXD7(H14)       29
+//     // 24 -> 39
+//     gpio_dev_unmap(GPIO_24);
+//     gpio_dev_map(GPIO_24, GPIO_DEV_DEBUG14); //           P24(H8)         14
+//     gpio_dev_unmap(GPIO_25);
+//     gpio_dev_map(GPIO_25, GPIO_DEV_DEBUG15); //           P25(H8)         15
+//     gpio_dev_unmap(GPIO_26);
+//     gpio_dev_map(GPIO_26, GPIO_DEV_DEBUG16); //           P26(H8)         16
+//     gpio_dev_unmap(GPIO_27);
+//     gpio_dev_map(GPIO_27, GPIO_DEV_DEBUG17); //           MCLK(H14)       17
+//     gpio_dev_unmap(GPIO_28);
+//     gpio_dev_map(GPIO_28, GPIO_DEV_DEBUG18); //           P28/ADC4(H5)    18
+//     gpio_dev_unmap(GPIO_29);
+//     gpio_dev_map(GPIO_29, GPIO_DEV_DEBUG19); //           PCLK(H14)       19
+//     gpio_dev_unmap(GPIO_30);
+//     gpio_dev_map(GPIO_30, GPIO_DEV_DEBUG20); //           HSYNC(H14)      20
+//     gpio_dev_unmap(GPIO_31);
+//     gpio_dev_map(GPIO_31, GPIO_DEV_DEBUG21); //           VSYNC(H14)      21
+//     gpio_dev_unmap(GPIO_32);
+//     gpio_dev_map(GPIO_32, GPIO_DEV_DEBUG22); //           PXD0(H14)       22
+//     gpio_dev_unmap(GPIO_33);
+//     gpio_dev_map(GPIO_33, GPIO_DEV_DEBUG23); //           PXD1(H14)       23
+//     gpio_dev_unmap(GPIO_34);
+//     gpio_dev_map(GPIO_34, GPIO_DEV_DEBUG24); //           PXD2(H14)       24
+//     gpio_dev_unmap(GPIO_35);
+//     gpio_dev_map(GPIO_35, GPIO_DEV_DEBUG25); //           PXD3(H14)       25
+//     gpio_dev_unmap(GPIO_36);
+//     gpio_dev_map(GPIO_36, GPIO_DEV_DEBUG26); //           PXD4(H14)       26
+//     gpio_dev_unmap(GPIO_37);
+//     gpio_dev_map(GPIO_37, GPIO_DEV_DEBUG27); //           PXD5(H14)       27
+//     gpio_dev_unmap(GPIO_38);
+//     gpio_dev_map(GPIO_38, GPIO_DEV_DEBUG28); //           PXD6(H14)       28
+//     gpio_dev_unmap(GPIO_39);
+//     gpio_dev_map(GPIO_39, GPIO_DEV_DEBUG29); //           PXD7(H14)       29
 
-    // 42 -> 43
-    gpio_dev_unmap(GPIO_42);
-    gpio_dev_map(GPIO_42, GPIO_DEV_DEBUG30); //           P42(CONN4)      30
-    gpio_dev_unmap(GPIO_43);
-    gpio_dev_map(GPIO_43, GPIO_DEV_DEBUG31); //           P43(CONN4)      31
-}
+//     // 42 -> 43
+//     gpio_dev_unmap(GPIO_42);
+//     gpio_dev_map(GPIO_42, GPIO_DEV_DEBUG30); //           P42(CONN4)      30
+//     gpio_dev_unmap(GPIO_43);
+//     gpio_dev_map(GPIO_43, GPIO_DEV_DEBUG31); //           P43(CONN4)      31
+// }
 
 static bk_err_t gpio_dev_unprotect_unmap_wrapper(uint32_t gpio_id)
 {
@@ -1198,37 +1232,37 @@ static void register_wifi_dump_hook_wrapper(void *wifi_func)
 	rtos_regist_wifi_dump_hook(wifi_func);
 }
 
-static void bk_airkiss_start_udp_boardcast_wrapper(u8 random_data)
-{
-	int err, i;
-	int udp_broadcast_fd = -1;
-	struct sockaddr_in remote_skt;
+// static void bk_airkiss_start_udp_boardcast_wrapper(u8 random_data)
+// {
+// 	int err, i;
+// 	int udp_broadcast_fd = -1;
+// 	struct sockaddr_in remote_skt;
 
-	BK_WIFI_LOGD(TAG, "start_udp_boardcast\n");
-	udp_broadcast_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (udp_broadcast_fd == -1) {
-		BK_WIFI_LOGE(TAG, "Socket failed\r\n");
-		return;
-	}
-	os_memset(&remote_skt, 0, sizeof(struct sockaddr_in));
-	remote_skt.sin_family = AF_INET;
-	remote_skt.sin_addr.s_addr = INADDR_BROADCAST;//INADDR_ANY;
-	remote_skt.sin_port = htons(10000);
+// 	BK_WIFI_LOGD(TAG, "start_udp_boardcast\n");
+// 	udp_broadcast_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+// 	if (udp_broadcast_fd == -1) {
+// 		BK_WIFI_LOGE(TAG, "Socket failed\r\n");
+// 		return;
+// 	}
+// 	os_memset(&remote_skt, 0, sizeof(struct sockaddr_in));
+// 	remote_skt.sin_family = AF_INET;
+// 	remote_skt.sin_addr.s_addr = INADDR_BROADCAST;//INADDR_ANY;
+// 	remote_skt.sin_port = htons(10000);
 
-	i = 20;
-	while (i --) {
-		BK_WIFI_LOGD(TAG, "udp-sendto:%d\r\n", i);
+// 	i = 20;
+// 	while (i --) {
+// 		BK_WIFI_LOGD(TAG, "udp-sendto:%d\r\n", i);
 
-		err = sendto(udp_broadcast_fd, &random_data, 1, 0, (struct sockaddr *)&remote_skt, sizeof(remote_skt));
-		rtos_delay_milliseconds(2);
+// 		err = sendto(udp_broadcast_fd, &random_data, 1, 0, (struct sockaddr *)&remote_skt, sizeof(remote_skt));
+// 		rtos_delay_milliseconds(2);
 
-		if (err == -1)
-			BK_WIFI_LOGE(TAG, "send udp boardcast failed\r\n");
-	}
+// 		if (err == -1)
+// 			BK_WIFI_LOGE(TAG, "send udp boardcast failed\r\n");
+// 	}
 
-	BK_WIFI_LOGD(TAG, "close socket\r\n");
-	close(udp_broadcast_fd);
-}
+// 	BK_WIFI_LOGD(TAG, "close socket\r\n");
+// 	close(udp_broadcast_fd);
+// }
 
 static void tx_verify_test_call_back_wrapper(void)
 {
@@ -1396,6 +1430,11 @@ static UINT32 bk_feature_update_power_with_rssi_wrapper(void)
     return bk_feature_update_power_with_rssi();
 }
 
+static bk_err_t bk_pm_module_vote_analdo_vol_wrapper(uint16_t module, int16_t vol_level)
+{
+    return bk_pm_module_vote_analdo_vol((pm_analdo_vote_module_e)module, (pm_analdo_vol_level_e)vol_level);
+}
+
 __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._version = BK_WIFI_OS_ADAPTER_VERSION,
 	._manual_cal_rfcali        = manual_cal_rfcali_status,
@@ -1514,12 +1553,16 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._bk_pm_low_voltage_register = bk_pm_low_voltage_register_wrapper,
 	._bk_pm_wifi_rtc_set = bk_pm_wifi_rtc_set_wrapper,
 	._bk_pm_wifi_rtc_clear = bk_pm_wifi_rtc_clear_wrapper,
+	._bk_wifi_set_rtc_timer = bk_wifi_set_rtc_timer_wrapper,
+	._bk_wifi_clear_rtc_timer = bk_wifi_clear_rtc_timer_wrapper,
+	._bk_pm_get_sleep_mode = bk_pm_get_sleep_mode_wrapper,
+	._bk_pm_get_sleep_wakeup_stable_time_us = bk_pm_get_sleep_wakeup_stable_time_us_wrapper,
 	._wifi_vote_rf_ctrl = wifi_vote_rf_ctrl_wrapper,
 	._wifi_phy_clk_open = wifi_phy_clk_open_wrapper,
 	._wifi_phy_clk_close = wifi_phy_clk_close_wrapper,
 	._wifi_mac_clk_open = wifi_mac_clk_open_wrapper,
 	._wifi_mac_clk_close = wifi_mac_clk_close_wrapper,
-	._wifi_mac_phy_power_on = wifi_mac_phy_power_on_wrapper,
+	//._wifi_mac_phy_power_on = wifi_mac_phy_power_on_wrapper,
 	._mac_ps_exc32_cb_notify = mac_ps_exc32_cb_notify_wrapper,
 	._mac_ps_exc32_init = mac_ps_exc32_init_wrapper,
 	._wifi_32k_src_switch_ready_notify = wifi_32k_src_switch_ready_notify_wrapper,
@@ -1531,8 +1574,8 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._bk_rosc_32k_get_ppm = bk_rosc_32k_get_ppm_wrapper,
 	._bk_rosc_32k_get_freq = bk_rosc_32k_get_freq_wrapper,
 	._bk_rosc_32k_get_time_diff = bk_rosc_32k_get_time_diff_wrapper,
-	._mac_printf_encode = mac_printf_encode_wrapper,
-	._dbg_enable_debug_gpio = dbg_enable_debug_gpio_wrapper,
+	//._mac_printf_encode = mac_printf_encode_wrapper,
+	//._dbg_enable_debug_gpio = dbg_enable_debug_gpio_wrapper,
 	._gpio_dev_unprotect_unmap = gpio_dev_unprotect_unmap_wrapper,
 	._gpio_dev_unprotect_map = gpio_dev_unprotect_map_wrapper,
 	._mcu_ps_machw_cal = mcu_ps_machw_cal_wrapper,
@@ -1633,7 +1676,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._os_strstr = os_strstr_wrapper,
 	/////
 	._rf_pll_ctrl = rf_pll_ctrl_wrapper,
-	._send_udp_bc_pkt = bk_airkiss_start_udp_boardcast_wrapper,
+	//._send_udp_bc_pkt = bk_airkiss_start_udp_boardcast_wrapper,
 	._tx_verify_test_call_back = tx_verify_test_call_back_wrapper,
 	._sys_hal_enter_low_analog = sys_hal_enter_low_analog_wrapper,
 	._sys_hal_exit_low_analog = sys_hal_exit_low_analog_wrapper,
@@ -1661,6 +1704,7 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_funcs_t g_wifi_os_funcs = {
 	._cli_printf = cli_printf,
 	._rf_force_set_wifi_mode = rf_force_set_wifi_mode_wrapper,
 	._bk_feature_change_to_wifi_pll_enable = bk_feature_change_to_wifi_pll_enable_wrapper,
+    ._bk_pm_module_vote_analdo_vol = bk_pm_module_vote_analdo_vol_wrapper,
 };
 
 __attribute__((section(".dtcm_sec_data "))) wifi_os_variable_t g_wifi_os_variable = {
@@ -1736,6 +1780,11 @@ __attribute__((section(".dtcm_sec_data "))) wifi_os_variable_t g_wifi_os_variabl
 	#if (!CONFIG_SOC_BK7239XX)
 	._OTP_CHIP_RESERVED = OTP_CHIP_RESERVED,
 	#endif
+    ._pm_analdo_vote_module_wifi_sleep_wake = PM_ANALDO_VOTE_MODULE_WIFI_SLEEP_WAKE,
+    ._pm_analdo_vote_module_wifi_rf_high_pll = PM_ANALDO_VOTE_MODULE_EXIT_DSSS_ONLY,
+    ._pm_analdo_vol_wifi_sleep = PM_ANALDO_VOL_1_1V,
+    ._pm_analdo_vol_wifi_wakeup = PM_ANALDO_VOL_TEMP_ADJ,
+    ._pm_analdo_vol_wifi_rf_high_pll = PM_ANALDO_VOL_1_65V,
 };
 
 Countryregulations country_regulation_table[] = {

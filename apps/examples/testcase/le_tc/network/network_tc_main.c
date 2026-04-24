@@ -22,6 +22,7 @@
 #include <tinyara/config.h>
 #include <stdio.h>
 #include <errno.h>
+#include <debug.h>
 #include <fcntl.h>
 #include <tinyara/os_api_test_drv.h>
 #include <tinyara/fs/fs.h>

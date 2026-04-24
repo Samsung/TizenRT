@@ -982,7 +982,7 @@ T_GAP_CONN_INFO *le_get_conn_info_by_mac(uint8_t *mac, uint32_t *index)
    for (uint32_t i = 0; i < sizeof(hal_ble_con_env.con_dev) / sizeof(hal_ble_con_env.con_dev[0]); ++i)
    {
        if(hal_ble_con_env.con_dev[i].con_status == GAP_CONN_STATE_CONNECTED &&
-                       !os_memcpy(mac, hal_ble_con_env.con_dev[i].peer_addr, sizeof(hal_ble_con_env.con_dev[i].peer_addr)))
+                       !os_memcmp(mac, hal_ble_con_env.con_dev[i].peer_addr, sizeof(hal_ble_con_env.con_dev[i].peer_addr)))
        {
            if(index)
            {

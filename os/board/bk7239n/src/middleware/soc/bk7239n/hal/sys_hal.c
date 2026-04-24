@@ -348,10 +348,36 @@ uint32_t sys_hal_lp_vol_get()
 	return sys_ana_ll_get_ana_reg8_vcorelsel();
 }
 
+#define RF_TX_VOL_STEP_UP_DELAY_US  (10)
+#define RF_TX_VOL_STEP_SIZE         (2)
+
 int32 sys_hal_rf_tx_vol_set(uint32_t value)
 {
+	uint32_t cur = 0;
+
 	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
-	sys_ana_ll_set_ana_reg7_vanaldosel(value);
+
+	cur = sys_ana_ll_get_ana_reg7_vanaldosel();
+	if (cur == value) {
+		sys_ana_ll_set_ana_reg8_spi_latch1v(0);
+		return 0;
+	}
+
+	if (value < cur) {
+		/* Target is lower or equal: set directly */
+		sys_ana_ll_set_ana_reg7_vanaldosel(value);
+	} else {
+		/* Target is higher: step up by RF_TX_VOL_STEP_SIZE, delay RF_TX_VOL_STEP_UP_DELAY_US each step */
+		uint32_t v;
+		for (v = cur + RF_TX_VOL_STEP_SIZE; v < value; v += RF_TX_VOL_STEP_SIZE) {
+			sys_ana_ll_set_ana_reg7_vanaldosel(v);
+			delay_us(RF_TX_VOL_STEP_UP_DELAY_US);
+		}
+		sys_ana_ll_set_ana_reg7_vanaldosel(value);
+
+		delay_us(RF_TX_VOL_STEP_UP_DELAY_US);
+	}
+
 	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
 	return 0;
 }
@@ -2840,7 +2866,7 @@ __FLASH_BOOT_CODE void sys_hal_early_init(void)
 #if defined(CONFIG_XIP_KERNEL) && (CONFIG_XIP_KERNEL == 1)
 	sys_hal_analog_set_flash(ANALOG_REG4, 0x40010000);
 #else
-	sys_hal_analog_set_flash(ANALOG_REG4, val & 0xF0010000);
+	sys_hal_analog_set_flash(ANALOG_REG4, val|0xF0010000);
 #endif
 	sys_hal_analog_set_flash(ANALOG_REG5, 0x8407AF60);//liupeng20250514:hp for tx
 	sys_hal_analog_set_flash(ANALOG_REG6, 0x80088100);//liupeng20250427

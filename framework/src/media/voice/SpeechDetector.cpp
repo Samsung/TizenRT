@@ -38,6 +38,7 @@ namespace media {
 namespace voice {
 
 vector<shared_ptr<SpeechDetectorListenerInterface>> SpeechDetectorImpl::mSpeechDetectorListenerList;
+std::mutex SpeechDetectorImpl::mSpeechDetectorListenerListMutex;
 
 SpeechDetector *SpeechDetector::instance()
 {
@@ -62,6 +63,10 @@ bool SpeechDetectorImpl::initKeywordDetect(uint32_t samprate, uint8_t channels)
 	if (samprate == 0 || channels == 0) {
 		meddbg("%s[line : %d] fail : invalid parameter. samprate : %u, channels : %u\n", __func__, __LINE__, samprate, channels);
 		return false;
+	}
+	if (mKeywordDetector) {
+		meddbg("keyword detector is already init.\n");
+		return true;
 	}
 #ifdef CONFIG_MEDIA_HARDWARE_KD
 
@@ -162,8 +167,8 @@ bool SpeechDetectorImpl::deinitKeywordDetect()
 	if (mKeywordDetector) {
 		SpeechDetectorWorker &sdw = SpeechDetectorWorker::getWorker();
 		sdw.enQueue(&KeywordDetector::deinit, mKeywordDetector);
-		sdw.enQueue(&SpeechDetectorImpl::resetKeywordDetectorPtr, this);
-		medvdbg("Speech detector deinit KD done");
+		mKeywordDetector = nullptr;
+		meddbg("Speech detector deinit KD done");
 		return true;
 	} else {
 		meddbg("Nothing to deinit\n");
@@ -306,11 +311,15 @@ bool SpeechDetectorImpl::waitEndPoint(int timeout)
 
 void SpeechDetectorImpl::addListener(std::shared_ptr<SpeechDetectorListenerInterface> listener)
 {
+	meddbg("Adding listener %p to SpeechDetector\n", listener.get());
+	std::lock_guard<std::mutex> lock(mSpeechDetectorListenerListMutex);
 	mSpeechDetectorListenerList.push_back(listener);
 }
 
 bool SpeechDetectorImpl::removeListener(std::shared_ptr<SpeechDetectorListenerInterface> listener)
 {
+	meddbg("Removing listener %p from SpeechDetector\n", listener.get());
+	std::lock_guard<std::mutex> lock(mSpeechDetectorListenerListMutex);
 	auto itr = std::find(mSpeechDetectorListenerList.begin(), mSpeechDetectorListenerList.end(), listener);
 	if (itr == mSpeechDetectorListenerList.end()) {
 		meddbg("listener is not found\n");
@@ -356,11 +365,19 @@ speech_detect_event_type_e SpeechDetectorImpl::getSpeechDetectEvent(audio_device
 
 void SpeechDetectorImpl::speechResultListener(audio_device_process_unit_subtype_e event)
 {
-	medvdbg("Event received in speech detector listener. Event = %d\n", event);
+	meddbg("Event received in speech detector listener. Event = %d\n", event);
 	speech_detect_event_type_e sdEvent = getSpeechDetectEvent(event);
+
+	std::lock_guard<std::mutex> lock(mSpeechDetectorListenerListMutex);
 	SpeechDetectorListenerWorker& sdlw = SpeechDetectorListenerWorker::getWorker();
 	for (auto &itr : mSpeechDetectorListenerList) {
-		sdlw.enQueue(&SpeechDetectorListenerInterface::onSpeechDetectionListener, itr, sdEvent);
+		/* Copy shared_ptr to increase ref count */
+		auto listener = itr;
+		if (listener) {
+			sdlw.enQueue(&SpeechDetectorListenerInterface::onSpeechDetectionListener, listener, sdEvent);
+		} else {
+			meddbg("Registered listener is already null\n");
+		}
 	}
 }
 
@@ -396,11 +413,6 @@ bool SpeechDetectorImpl::stopEndPointDetect(void)
 	return true;
 }
 
-void SpeechDetectorImpl::resetKeywordDetectorPtr(void)
-{
-	mKeywordDetector = nullptr;
-}
-
 void SpeechDetectorImpl::resetEndPointDetectorPtr(void)
 {
 	mEndPointDetector = nullptr;
@@ -416,12 +428,13 @@ bool SpeechDetectorImpl::changeKeywordModel(uint8_t model)
 		meddbg("model change failed\n");
 		return false;
 	}
-	medvdbg("changed kd model : %d\n", model);
+	meddbg("changed kd model : %d\n", model);
 	return true;
 }
 
 bool SpeechDetectorImpl::getKeywordBufferSize(uint32_t *bufferSize)
 {
+	meddbg("[IN] getKeywordBufferSize\n");
 	if (mKeywordDetector == nullptr) {
 		meddbg("keyword detector is not init\n");
 		return false;
@@ -434,12 +447,13 @@ bool SpeechDetectorImpl::getKeywordBufferSize(uint32_t *bufferSize)
 		meddbg("keyword buffer size fetch operation failed\n");
 		return false;
 	}
-	medvdbg("keyword buffer size: %d\n", *bufferSize);
+	meddbg("keyword buffer size: %d\n", *bufferSize);
 	return true;
 }
 
 bool SpeechDetectorImpl::getKeywordData(uint8_t *buffer)
 {
+	meddbg("[IN] getKeywordData\n");
 	if (mKeywordDetector == nullptr) {
 		meddbg("keyword detector is not init\n");
 		return false;
@@ -452,6 +466,7 @@ bool SpeechDetectorImpl::getKeywordData(uint8_t *buffer)
 		meddbg("keyword buffer fetch operation failed\n");
 		return false;
 	}
+	meddbg("get keyword data done\n");
 	return true;
 }
 

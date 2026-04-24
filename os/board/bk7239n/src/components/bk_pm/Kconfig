@@ -75,5 +75,20 @@ menu "PM"
 		bool "Enable deep low voltage"
 		default n
 
+	config PM_ANALDO_VOLTAGE_DEFAULT
+		int "config default bucka voltage"
+		default 4
+
+	config PM_ANALDO_VOLTAGE_TYPICAL
+		int "config typical bucka  voltage"
+		default 7
+
+	config PM_NORMAL_SLEEP_WAKEUP_STABLE_TIME_US
+		int "config normal sleep wakeup stable time"
+		default 650
+
+	config PM_LOW_VOLTAGE_WAKEUP_STABLE_TIME_US
+		int "config low voltage wakeup stable time"
+		default 1300
 endmenu
 

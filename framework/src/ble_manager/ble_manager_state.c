@@ -1144,6 +1144,31 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		uint8_t *ext_adv_data = (uint8_t *)param->param[2];
 		ret = ble_drv_set_multi_resp_data(adv_handle, adv_data_len, ext_adv_data);
 	} break;
+	
+	case BLE_CMD_SET_MULTI_ADV_TYPE: {
+		BLE_STATE_CHECK;
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		uint8_t adv_handle = *(uint8_t *)param->param[0];
+		uint8_t adv_event_prop = *(uint8_t *)param->param[1];
+		trble_addr *addr = (trble_addr *)param->param[2];
+		ret = ble_drv_set_multi_adv_type(adv_handle, adv_event_prop, addr);
+	} break;
+
+	case BLE_CMD_SET_MULTI_ADV_INTERVAL: {
+		BLE_STATE_CHECK;
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		uint8_t adv_handle = *(uint8_t *)param->param[0];
+		unsigned int interval = *(unsigned int *)param->param[1];
+		ret = ble_drv_set_multi_adv_interval(adv_handle, interval);
+	} break;
+
+	case BLE_CMD_SET_MULTI_ADV_TX_POWER: {
+		BLE_STATE_CHECK;
+		blemgr_msg_params *param = (blemgr_msg_params *)msg->param;
+		uint8_t adv_handle = *(uint8_t *)param->param[0];
+		uint8_t txpower = *(uint8_t *)param->param[1];
+		ret = ble_drv_set_multi_adv_tx_power(adv_handle, txpower);
+	} break;
 
 	case BLE_CMD_START_MULTI_ADV: {
 		BLE_STATE_CHECK;

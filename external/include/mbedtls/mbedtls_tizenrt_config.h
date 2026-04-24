@@ -20,22 +20,6 @@
  */
 
 /**
- * \def MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED
- *
- * Enable the ECDHE-ANON based ciphersuite modes in SSL / TLS.
- *
- * Requires: MBEDTLS_ECDH_C
- *
- *
- * This enables the following ciphersuites (if other requisites are
- * enabled as well):
- *      MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256
- */
-#if defined(MBEDTLS_OCF_PATCH)
-#define MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED
-#endif
-
-/**
  * \def MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
  *
  * Enable parsing of all supported subtypes of the Subject Alternative Name
@@ -51,26 +35,6 @@
 #if defined(MBEDTLS_OCF_PATCH)
 #define MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT
 #endif
-
-/**
- * \def MBEDTLS_SSL_CLIENT_RPK
- *
- * Enable support for RFC 7250 Using Raw Public Keys in Transport Layer
- * Security (TLS) and Datagram Transport Layer Security (DTLS) (client-side)
- *
- * Comment this macro to disable support for RPK.
- */
-#define MBEDTLS_SSL_CLIENT_RPK
-
-/**
- * \def MBEDTLS_SSL_SERVER_RPK
- *
- * Enable support for RFC 7250 Using Raw Public Keys in Transport Layer
- * Security (TLS) and Datagram Transport Layer Security (DTLS) (server-side)
- *
- * Comment this macro to disable support for RPK.
- */
-#define MBEDTLS_SSL_SERVER_RPK
 
 
 /**

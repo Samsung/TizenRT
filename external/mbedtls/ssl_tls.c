@@ -55,9 +55,6 @@
 #include "mbedtls/version.h"
 #include "mbedtls/constant_time.h"
 
-#if defined(MBED_TIZENRT)
-#include <stdlib.h>
-#endif
 #include <string.h>
 
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
@@ -69,9 +66,6 @@
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 #include "mbedtls/oid.h"
 #endif
-
-#define ECP_PUB_DER_MAX_BYTES   30 + 2 * MBEDTLS_ECP_MAX_BYTES
-#define PUB_DER_MAX_BYTES   ECP_PUB_DER_MAX_BYTES
 
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 #define PSA_TO_MBEDTLS_ERR(status) PSA_TO_MBEDTLS_ERR_LIST(status, \
@@ -3172,20 +3166,6 @@ void mbedtls_ssl_get_dtls_srtp_negotiation_result(const mbedtls_ssl_context *ssl
 }
 #endif /* MBEDTLS_SSL_DTLS_SRTP */
 
-#if defined(MBEDTLS_SSL_CLIENT_RPK)
-void mbedtls_ssl_conf_client_rpk_support( mbedtls_ssl_config *conf, int use_rpk )
-{
-    conf->client_rpk = use_rpk;
-}
-#endif /* MBEDTLS_SSL_CLIENT_RPK */
-
-#if defined(MBEDTLS_SSL_SERVER_RPK)
-void mbedtls_ssl_conf_server_rpk_support( mbedtls_ssl_config *conf, int use_rpk )
-{
-    conf->server_rpk = use_rpk;
-}
-#endif /* MBEDTLS_SSL_SERVER_RPK */
-
 #if !defined(MBEDTLS_DEPRECATED_REMOVED)
 void mbedtls_ssl_conf_max_version(mbedtls_ssl_config *conf, int major, int minor)
 {
@@ -5797,7 +5777,6 @@ int mbedtls_ssl_check_cert_usage(const mbedtls_x509_crt *cert,
             case MBEDTLS_KEY_EXCHANGE_DHE_PSK:
             case MBEDTLS_KEY_EXCHANGE_ECDHE_PSK:
             case MBEDTLS_KEY_EXCHANGE_ECJPAKE:
-            case MBEDTLS_KEY_EXCHANGE_ECDH_ANON:
                 usage = 0;
         }
     } else {
@@ -7070,55 +7049,26 @@ int mbedtls_ssl_write_certificate(mbedtls_ssl_context *ssl)
     i = 7;
     crt = mbedtls_ssl_own_cert(ssl);
 
-    if (crt && (ssl->handshake->ecdh_ctx.client_raw_public_key ||
-        ssl->handshake->ecdh_ctx.server_raw_public_key)) {
-
-        unsigned char buf[PUB_DER_MAX_BYTES];
-        mbedtls_pk_context *pk = (mbedtls_pk_context *)&crt->pk;
-
-        if (pk) {
-            n = mbedtls_pk_write_pubkey_der( pk, buf, PUB_DER_MAX_BYTES );
-
-            if (n > MBEDTLS_SSL_OUT_CONTENT_LEN - 3 - i) {
-                MBEDTLS_SSL_DEBUG_MSG( 1, ( "public key too large, %d > %d",
-                               i + 3 + n, MBEDTLS_SSL_OUT_CONTENT_LEN ) );
-                return( MBEDTLS_ERR_SSL_BUFFER_TOO_SMALL );
-            }
-
-            mbedtls_pk_write_pubkey_der(pk, ssl->out_msg + i, n);
-        } else {
-            MBEDTLS_SSL_DEBUG_MSG( 1, ( "no public key" ) );
-            return( MBEDTLS_ERR_SSL_INTERNAL_ERROR );
+    while (crt != NULL) {
+        n = crt->raw.len;
+        if (n > MBEDTLS_SSL_OUT_CONTENT_LEN - 3 - i) {
+            MBEDTLS_SSL_DEBUG_MSG(1, ("certificate too large, %" MBEDTLS_PRINTF_SIZET
+                                    " > %" MBEDTLS_PRINTF_SIZET,
+                                    i + 3 + n, (size_t) MBEDTLS_SSL_OUT_CONTENT_LEN));
+            return MBEDTLS_ERR_SSL_BUFFER_TOO_SMALL;
         }
 
-        i += n;
+        ssl->out_msg[i] = MBEDTLS_BYTE_2(n);
+        ssl->out_msg[i + 1] = MBEDTLS_BYTE_1(n);
+        ssl->out_msg[i + 2] = MBEDTLS_BYTE_0(n);
 
-        ssl->out_msg[4] = (unsigned char)( n >> 16 );
-        ssl->out_msg[5] = (unsigned char)( n >> 8 );
-        ssl->out_msg[6] = (unsigned char)( n );
-
-    } else {
-        while (crt != NULL) {
-            n = crt->raw.len;
-            if (n > MBEDTLS_SSL_OUT_CONTENT_LEN - 3 - i) {
-                MBEDTLS_SSL_DEBUG_MSG(1, ("certificate too large, %" MBEDTLS_PRINTF_SIZET
-                                        " > %" MBEDTLS_PRINTF_SIZET,
-                                        i + 3 + n, (size_t) MBEDTLS_SSL_OUT_CONTENT_LEN));
-                return MBEDTLS_ERR_SSL_BUFFER_TOO_SMALL;
-            }
-
-            ssl->out_msg[i] = MBEDTLS_BYTE_2(n);
-            ssl->out_msg[i + 1] = MBEDTLS_BYTE_1(n);
-            ssl->out_msg[i + 2] = MBEDTLS_BYTE_0(n);
-
-            i += 3; memcpy(ssl->out_msg + i, crt->raw.p, n);
-            i += n; crt = crt->next;
-        }
-    
-        ssl->out_msg[4]  = MBEDTLS_BYTE_2(i - 7);
-        ssl->out_msg[5]  = MBEDTLS_BYTE_1(i - 7);
-        ssl->out_msg[6]  = MBEDTLS_BYTE_0(i - 7);
+        i += 3; memcpy(ssl->out_msg + i, crt->raw.p, n);
+        i += n; crt = crt->next;
     }
+
+    ssl->out_msg[4]  = MBEDTLS_BYTE_2(i - 7);
+    ssl->out_msg[5]  = MBEDTLS_BYTE_1(i - 7);
+    ssl->out_msg[6]  = MBEDTLS_BYTE_0(i - 7);
 
     ssl->out_msglen  = i;
     ssl->out_msgtype = MBEDTLS_SSL_MSG_HANDSHAKE;
@@ -7241,131 +7191,100 @@ static int ssl_parse_certificate_chain(mbedtls_ssl_context *ssl,
         return MBEDTLS_ERR_SSL_DECODE_ERROR;
     }
 
-    if (ssl->conf->endpoint == MBEDTLS_SSL_IS_CLIENT &&
-            ssl->handshake->ecdh_ctx.server_raw_public_key) {
-        i += 3;
 
-        unsigned char *p = ssl->in_msg + i;
-        unsigned char *end = p + n;
+    /* Make &ssl->in_msg[i] point to the beginning of the CRT chain. */
+    i += 3;
 
-        ret = mbedtls_pk_parse_subpubkey(&p, end, &chain->pk);
-
-        if (ret != 0)
-        {
-            MBEDTLS_SSL_DEBUG_RET(1, "mbedtls_pk_parse_subpubkey", ret);
-            return (ret);
+    /* Iterate through and parse the CRTs in the provided chain. */
+    while (i < ssl->in_hslen) {
+        /* Check that there's room for the next CRT's length fields. */
+        if (i + 3 > ssl->in_hslen) {
+            MBEDTLS_SSL_DEBUG_MSG(1, ("bad certificate message"));
+            mbedtls_ssl_send_alert_message(ssl,
+                                        MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                                        MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR);
+            return MBEDTLS_ERR_SSL_DECODE_ERROR;
         }
-    }
-    else if (ssl->conf->endpoint == MBEDTLS_SSL_IS_SERVER &&
-            ssl->handshake->ecdh_ctx.client_raw_public_key) {
-        i += 3;
-
-        unsigned char *p = ssl->in_msg + i;
-        unsigned char *end = p + n;
-
-        ret = mbedtls_pk_parse_subpubkey(&p, end, &chain->pk);
-
-        if (ret != 0)
-        {
-            MBEDTLS_SSL_DEBUG_RET(1, "mbedtls_pk_parse_subpubkey", ret);
-            return (ret);
+        /* In theory, the CRT can be up to 2**24 Bytes, but we don't support
+        * anything beyond 2**16 ~ 64K. */
+        if (ssl->in_msg[i] != 0) {
+            MBEDTLS_SSL_DEBUG_MSG(1, ("bad certificate message"));
+            mbedtls_ssl_send_alert_message(ssl,
+                                        MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                                        MBEDTLS_SSL_ALERT_MSG_UNSUPPORTED_CERT);
+            return MBEDTLS_ERR_SSL_BAD_CERTIFICATE;
         }
-    } else {
 
-        /* Make &ssl->in_msg[i] point to the beginning of the CRT chain. */
+        /* Read length of the next CRT in the chain. */
+        n = ((unsigned int) ssl->in_msg[i + 1] << 8)
+            | (unsigned int) ssl->in_msg[i + 2];
         i += 3;
 
-        /* Iterate through and parse the CRTs in the provided chain. */
-        while (i < ssl->in_hslen) {
-            /* Check that there's room for the next CRT's length fields. */
-            if (i + 3 > ssl->in_hslen) {
-                MBEDTLS_SSL_DEBUG_MSG(1, ("bad certificate message"));
+        if (n < 128 || i + n > ssl->in_hslen) {
+            MBEDTLS_SSL_DEBUG_MSG(1, ("bad certificate message"));
+            mbedtls_ssl_send_alert_message(ssl,
+                                        MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                                        MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR);
+            return MBEDTLS_ERR_SSL_DECODE_ERROR;
+        }
+
+        /* Check if we're handling the first CRT in the chain. */
+#if defined(MBEDTLS_SSL_RENEGOTIATION) && defined(MBEDTLS_SSL_CLI_C)
+        if (crt_cnt++ == 0 &&
+            ssl->conf->endpoint == MBEDTLS_SSL_IS_CLIENT &&
+            ssl->renego_status == MBEDTLS_SSL_RENEGOTIATION_IN_PROGRESS) {
+            /* During client-side renegotiation, check that the server's
+            * end-CRTs hasn't changed compared to the initial handshake,
+            * mitigating the triple handshake attack. On success, reuse
+            * the original end-CRT instead of parsing it again. */
+            MBEDTLS_SSL_DEBUG_MSG(3, ("Check that peer CRT hasn't changed during renegotiation"));
+            if (ssl_check_peer_crt_unchanged(ssl,
+                                            &ssl->in_msg[i],
+                                            n) != 0) {
+                MBEDTLS_SSL_DEBUG_MSG(1, ("new server cert during renegotiation"));
                 mbedtls_ssl_send_alert_message(ssl,
                                             MBEDTLS_SSL_ALERT_LEVEL_FATAL,
-                                            MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR);
-                return MBEDTLS_ERR_SSL_DECODE_ERROR;
-            }
-            /* In theory, the CRT can be up to 2**24 Bytes, but we don't support
-            * anything beyond 2**16 ~ 64K. */
-            if (ssl->in_msg[i] != 0) {
-                MBEDTLS_SSL_DEBUG_MSG(1, ("bad certificate message"));
-                mbedtls_ssl_send_alert_message(ssl,
-                                            MBEDTLS_SSL_ALERT_LEVEL_FATAL,
-                                            MBEDTLS_SSL_ALERT_MSG_UNSUPPORTED_CERT);
+                                            MBEDTLS_SSL_ALERT_MSG_ACCESS_DENIED);
                 return MBEDTLS_ERR_SSL_BAD_CERTIFICATE;
             }
 
-            /* Read length of the next CRT in the chain. */
-            n = ((unsigned int) ssl->in_msg[i + 1] << 8)
-                | (unsigned int) ssl->in_msg[i + 2];
-            i += 3;
-
-            if (n < 128 || i + n > ssl->in_hslen) {
-                MBEDTLS_SSL_DEBUG_MSG(1, ("bad certificate message"));
-                mbedtls_ssl_send_alert_message(ssl,
-                                            MBEDTLS_SSL_ALERT_LEVEL_FATAL,
-                                            MBEDTLS_SSL_ALERT_MSG_DECODE_ERROR);
-                return MBEDTLS_ERR_SSL_DECODE_ERROR;
-            }
-
-            /* Check if we're handling the first CRT in the chain. */
-    #if defined(MBEDTLS_SSL_RENEGOTIATION) && defined(MBEDTLS_SSL_CLI_C)
-            if (crt_cnt++ == 0 &&
-                ssl->conf->endpoint == MBEDTLS_SSL_IS_CLIENT &&
-                ssl->renego_status == MBEDTLS_SSL_RENEGOTIATION_IN_PROGRESS) {
-                /* During client-side renegotiation, check that the server's
-                * end-CRTs hasn't changed compared to the initial handshake,
-                * mitigating the triple handshake attack. On success, reuse
-                * the original end-CRT instead of parsing it again. */
-                MBEDTLS_SSL_DEBUG_MSG(3, ("Check that peer CRT hasn't changed during renegotiation"));
-                if (ssl_check_peer_crt_unchanged(ssl,
-                                                &ssl->in_msg[i],
-                                                n) != 0) {
-                    MBEDTLS_SSL_DEBUG_MSG(1, ("new server cert during renegotiation"));
-                    mbedtls_ssl_send_alert_message(ssl,
-                                                MBEDTLS_SSL_ALERT_LEVEL_FATAL,
-                                                MBEDTLS_SSL_ALERT_MSG_ACCESS_DENIED);
-                    return MBEDTLS_ERR_SSL_BAD_CERTIFICATE;
-                }
-
-                /* Now we can safely free the original chain. */
-                ssl_clear_peer_cert(ssl->session);
-            }
-    #endif /* MBEDTLS_SSL_RENEGOTIATION && MBEDTLS_SSL_CLI_C */
-
-            /* Parse the next certificate in the chain. */
-    #if defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
-            ret = mbedtls_x509_crt_parse_der(chain, ssl->in_msg + i, n);
-    #else
-            /* If we don't need to store the CRT chain permanently, parse
-            * it in-place from the input buffer instead of making a copy. */
-            ret = mbedtls_x509_crt_parse_der_nocopy(chain, ssl->in_msg + i, n);
-    #endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
-            switch (ret) {
-                case 0: /*ok*/
-                case MBEDTLS_ERR_X509_UNKNOWN_SIG_ALG + MBEDTLS_ERR_OID_NOT_FOUND:
-                    /* Ignore certificate with an unknown algorithm: maybe a
-                    prior certificate was already trusted. */
-                    break;
-
-                case MBEDTLS_ERR_X509_ALLOC_FAILED:
-                    alert = MBEDTLS_SSL_ALERT_MSG_INTERNAL_ERROR;
-                    goto crt_parse_der_failed;
-
-                case MBEDTLS_ERR_X509_UNKNOWN_VERSION:
-                    alert = MBEDTLS_SSL_ALERT_MSG_UNSUPPORTED_CERT;
-                    goto crt_parse_der_failed;
-
-                default:
-                    alert = MBEDTLS_SSL_ALERT_MSG_BAD_CERT;
-    crt_parse_der_failed:
-                    mbedtls_ssl_send_alert_message(ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL, alert);
-                    MBEDTLS_SSL_DEBUG_RET(1, " mbedtls_x509_crt_parse_der", ret);
-                    return ret;
-            }
-
-            i += n;
+            /* Now we can safely free the original chain. */
+            ssl_clear_peer_cert(ssl->session);
         }
+#endif /* MBEDTLS_SSL_RENEGOTIATION && MBEDTLS_SSL_CLI_C */
+
+        /* Parse the next certificate in the chain. */
+#if defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
+        ret = mbedtls_x509_crt_parse_der(chain, ssl->in_msg + i, n);
+#else
+        /* If we don't need to store the CRT chain permanently, parse
+        * it in-place from the input buffer instead of making a copy. */
+        ret = mbedtls_x509_crt_parse_der_nocopy(chain, ssl->in_msg + i, n);
+#endif /* MBEDTLS_SSL_KEEP_PEER_CERTIFICATE */
+        switch (ret) {
+               case 0: /*ok*/
+            case MBEDTLS_ERR_X509_UNKNOWN_SIG_ALG + MBEDTLS_ERR_OID_NOT_FOUND:
+                /* Ignore certificate with an unknown algorithm: maybe a
+                   prior certificate was already trusted. */
+                break;
+
+            case MBEDTLS_ERR_X509_ALLOC_FAILED:
+                alert = MBEDTLS_SSL_ALERT_MSG_INTERNAL_ERROR;
+                goto crt_parse_der_failed;
+
+            case MBEDTLS_ERR_X509_UNKNOWN_VERSION:
+                alert = MBEDTLS_SSL_ALERT_MSG_UNSUPPORTED_CERT;
+                goto crt_parse_der_failed;
+
+            default:
+                alert = MBEDTLS_SSL_ALERT_MSG_BAD_CERT;
+crt_parse_der_failed:
+                mbedtls_ssl_send_alert_message(ssl, MBEDTLS_SSL_ALERT_LEVEL_FATAL, alert);
+                MBEDTLS_SSL_DEBUG_RET(1, " mbedtls_x509_crt_parse_der", ret);
+                return ret;
+        }
+
+        i += n;
     }
 
     MBEDTLS_SSL_DEBUG_CRT(3, "peer certificate", chain);

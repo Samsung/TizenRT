@@ -33,17 +33,20 @@ OBJCOPY = $(CROSSDEV)objcopy
 
 APPDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __APP_BUILD__}
 
-SRCS += $(USERSPACE).c
-
-OBJS = $(SRCS:.c=$(OBJEXT))
+APP_OBJS = $(SRCS:.c=$(OBJEXT))
+USERSPACE_OBJ = $(USERSPACE)$(OBJEXT)
+OBJS = $(APP_OBJS) $(USERSPACE_OBJ)
 
 prebuild:
-	$(call DELFILE, $(USERSPACE)$(OBJEXT))
+	$(call DELFILE, $(USERSPACE_OBJ))
 
 all: prebuild postbuild
 .PHONY: prebuild postbuild clean install distclean
 
-$(OBJS): %$(OBJEXT): %.c
+$(USERSPACE_OBJ):
+	$(Q) $(MAKE) -C $(TOPDIR)/userspace TOPDIR="$(TOPDIR)" APPDEFINE="$(APPDEFINE)" CELFFLAGS="$(CELFFLAGS)" app_obj
+
+$(APP_OBJS): %$(OBJEXT): %.c
 	@echo "CC: $<"
 	$(Q) $(CC) $(APPDEFINE) -c $(CELFFLAGS) $< -o $@
 

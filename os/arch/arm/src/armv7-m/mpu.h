@@ -286,7 +286,7 @@ static inline void mpu_show_regioninfo(void)
 	lldbg("********************************************************************************************************\n");
 	lldbg("%-12s\t%-12s\t%-12s\t%-12s\t%-12s\t%-12s\t%-12s\n", "REGION_NO.", "BASE_ADDRESS", "SIZE", "REG",  "STATUS", "ACCESS (P/U)", "EXECUTE");
 	lldbg("********************************************************************************************************\n");
-	for (idx = 0; idx < 8; idx++) {
+	for (idx = 0; idx < CONFIG_ARMV7M_MPU_NREGIONS; idx++) {
 		putreg32(idx, MPU_RNR);
 		base = getreg32(MPU_RBAR);
 		size = getreg32(MPU_RASR);

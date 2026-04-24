@@ -642,6 +642,7 @@ skip_poll:
 			   __func__, MAC2STR(sta->addr), AP_DEAUTH_DELAY);
 		eloop_register_timeout(AP_DEAUTH_DELAY, 0, ap_handle_timer,
 				       hapd, sta);
+		mlme_report_sta_disconnect(hapd, sta, reason);
 		mlme_disassociate_indication(hapd, sta, reason);
 		break;
 	case STA_DEAUTH:
@@ -655,6 +656,8 @@ skip_poll:
 				RADIUS_ACCT_TERMINATE_CAUSE_IDLE_TIMEOUT;
 #endif
 		WPA_LOGD("ap_free_sta\r\n");
+		mlme_report_sta_disconnect(hapd, sta,
+				       WLAN_REASON_PREV_AUTH_NOT_VALID);
 		mlme_deauthenticate_indication(
 			hapd, sta,
 			WLAN_REASON_PREV_AUTH_NOT_VALID);
@@ -683,6 +686,8 @@ static void ap_handle_session_timer(void *eloop_ctx, void *timeout_ctx)
 
 	hostapd_drv_sta_deauth(hapd, sta->addr,
 			       WLAN_REASON_PREV_AUTH_NOT_VALID);
+	mlme_report_sta_disconnect(hapd, sta,
+				       WLAN_REASON_PREV_AUTH_NOT_VALID);
 	mlme_deauthenticate_indication(hapd, sta,
 				       WLAN_REASON_PREV_AUTH_NOT_VALID);
 	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
@@ -887,6 +892,7 @@ static void ap_sta_disassoc_cb_timeout(void *eloop_ctx, void *timeout_ctx)
 	wpa_printf(MSG_DEBUG, "%s: Disassociation callback for STA " MACSTR,
 		   hapd->conf->iface, MAC2STR(sta->addr));
 	ap_sta_remove(hapd, sta);
+	mlme_report_sta_disconnect(hapd, sta, sta->disassoc_reason);
 	mlme_disassociate_indication(hapd, sta, sta->disassoc_reason);
 }
 
@@ -941,6 +947,7 @@ static void ap_sta_deauth_cb_timeout(void *eloop_ctx, void *timeout_ctx)
 	wpa_printf(MSG_DEBUG, "%s: Deauthentication callback for STA " MACSTR,
 		   hapd->conf->iface, MAC2STR(sta->addr));
 	ap_sta_remove(hapd, sta);
+	mlme_report_sta_disconnect(hapd, sta, sta->deauth_reason);
 	mlme_deauthenticate_indication(hapd, sta, sta->deauth_reason);
 }
 
@@ -1343,8 +1350,8 @@ void ap_sta_set_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 #ifdef BK_SUPPLICANT
 	if (!!authorized)
 		hapd_notify_sta_connected(hapd, sta->addr);
-	else
-		hapd_notify_sta_disconnected(hapd, sta->addr);
+	if (!!authorized)
+		sta->disconnect_event_reported = false;
 #endif
 
 	if (authorized)

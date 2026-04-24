@@ -504,6 +504,8 @@ void demo_wifi_mem_apply_init(uint8_t module, uint8_t value);
 /* bk_wifi_rw  */
 void mhdr_set_station_status(wifi_linkstate_reason_t info);
 wifi_linkstate_reason_t mhdr_get_station_status(void);
+void bk_set_last_join_wpa_state(uint8_t state);
+uint8_t bk_get_last_join_wpa_state(void);
 void rwm_mgmt_set_vif_netif(uint8_t *mac, void *netif);
 int rw_msg_send_arp_msg(u8 vif_idx);
 

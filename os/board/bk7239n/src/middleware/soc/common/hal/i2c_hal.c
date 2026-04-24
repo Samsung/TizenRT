@@ -32,6 +32,18 @@ bk_err_t i2c_hal_init(i2c_hal_t *hal)
 	return BK_OK;
 }
 
+bk_err_t i2c_hal_enable_clock_bypass(i2c_hal_t *hal)
+{
+	i2c_ll_enable_clock_bypass(&hal->hw, hal->id);
+	return BK_OK;
+}
+
+bk_err_t i2c_hal_disable_clock_bypass(i2c_hal_t *hal)
+{
+	i2c_ll_disable_clock_bypass(&hal->hw, hal->id);
+	return BK_OK;
+}
+
 bk_err_t i2c_hal_set_baud_rate(i2c_hal_t *hal, uint32_t baud_rate)
 {
 	uint32_t freq_div = I2C_CLK_DIVID(baud_rate);
@@ -42,20 +54,17 @@ bk_err_t i2c_hal_set_baud_rate(i2c_hal_t *hal, uint32_t baud_rate)
 bk_err_t i2c_hal_configure(i2c_hal_t *hal, const i2c_config_t *cfg)
 {
 	uint32_t baud_rate = cfg->baud_rate;
-#if defined(CONFIG_BK7239N_MP) && (CONFIG_BK7239N_MP == 1)
 	uint32_t freq_div  = 0;
-#endif
+
 	if (!baud_rate) {
 		baud_rate = I2C_DEFAULT_BAUD_RATE;
 	}
-#if defined(CONFIG_BK7239N_MP) && (CONFIG_BK7239N_MP == 1)
+
 	if (cfg->src_clk == I2C_SCLK_80M)
 		freq_div = I2C_CLK_DIVID(baud_rate)/2;  // 80M / 40M = 2
 	else
 		freq_div = I2C_CLK_DIVID(baud_rate);
-#else
-    uint32_t freq_div = I2C_CLK_DIVID(baud_rate);
-#endif
+
 	i2c_ll_set_freq_div(&hal->hw, hal->id, freq_div);
 	i2c_ll_set_slave_addr(&hal->hw, hal->id, cfg->slave_addr);
 	i2c_ll_set_idle_detect_threshold(&hal->hw, hal->id, 0x3);

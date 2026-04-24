@@ -79,6 +79,8 @@ int32_t tfm_ns_interface_lock(void)
 
 int32_t tfm_ns_interface_unlock(void)
 {
+    SCB_CleanInvalidateDCache();
+
     if (!ns_lock_initialized) {
         BK_LOGE("TFM", "NS interface lock not initialized\n");
         return BK_ERR_NOT_INIT;
@@ -92,25 +94,20 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
                                   uint32_t arg2, uint32_t arg3)
 {
     int32_t result;
-    int32_t status = bk_flash_mutex_lock();
 
     /* TF-M request protected by NS lock. */
     int32_t lock_result = tfm_ns_interface_lock();
     if (lock_result != BK_OK) {
-        bk_flash_mutex_unlock(status);
         return lock_result;
     }
     
     result = fn(arg0, arg1, arg2, arg3);
-    SCB_CleanInvalidateDCache();
 
     /*
      * Whether to check/handle lock release return code depends on NS RTOS
      * specific implementation and usage scenario.
      */
     tfm_ns_interface_unlock();
-
-    bk_flash_mutex_unlock(status);
 
     return result;
 }

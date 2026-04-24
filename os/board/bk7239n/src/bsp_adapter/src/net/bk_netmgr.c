@@ -115,6 +115,7 @@ trwifi_result_e bk_wifi_netmgr_get_signal_quality(struct netdev *dev, trwifi_sig
 trwifi_result_e bk_wifi_netmgr_get_disconn_reason(struct netdev *dev, int *deauth_reason);
 trwifi_result_e bk_wifi_netmgr_get_driver_info(struct netdev *dev, trwifi_driver_info *driver_info);
 trwifi_result_e bk_wifi_netmgr_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
+trwifi_result_e bk_wifi_netmgr_disable_11ax_mode(struct netdev *dev, uint8_t disable);
 trwifi_result_e bk_wifi_netmgr_set_bridge(struct netdev *dev, uint8_t control);
 
 struct trwifi_ops g_trwifi_bk_ops = {
@@ -135,16 +136,55 @@ struct trwifi_ops g_trwifi_bk_ops = {
     bk_wifi_netmgr_get_disconn_reason,          /* get_deauth_reason */
     bk_wifi_netmgr_get_driver_info,             /* get_driver_info */
     bk_wifi_netmgr_get_wpa_supplicant_state,    /* get_wpa_supplicant_state */
+    bk_wifi_netmgr_disable_11ax_mode,           /* disable_11ax_mode */
     bk_wifi_netmgr_set_bridge,                  /* set_bridge */
 };
 
 extern struct netdev *armino_dev_wlan0;
 extern struct netdev *armino_dev_wlan1;
+#ifndef CONFIG_BK_CONCURRENT_MODE
+extern volatile int g_bk_wifi_current_vif;
+#endif
 static int auth_fail_cnt = 0;
 static int valid_ch_list[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165};
 static int valid_ch_list_size = sizeof(valid_ch_list)/sizeof(valid_ch_list[0]);
 
 bool g_sta_is_start = 0;
+
+static void bk_netmgr_log_sta_connect_failure(uint32_t reason_code, uint8_t last_join_wpa_state)
+{
+        if (reason_code == WIFI_REASON_NO_AP_FOUND || last_join_wpa_state == WPA_SCANNING) {
+                return;
+        }
+
+        if (reason_code == WIFI_REASON_WRONG_PASSWORD ||
+                reason_code == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT ||
+                last_join_wpa_state == WPA_ASSOCIATED ||
+                last_join_wpa_state == WPA_4WAY_HANDSHAKE) {
+                return;
+        }
+
+        if (last_join_wpa_state == WPA_AUTHENTICATING ||
+                reason_code == WIFI_REASON_IEEE_802_1X_AUTH_FAILED ||
+                reason_code == WIFI_REASON_PREV_AUTH_NOT_VALID) {
+                return;
+        }
+
+        if (last_join_wpa_state == WPA_ASSOCIATING ||
+                reason_code == WIFI_REASON_STA_REQ_ASSOC_WITHOUT_AUTH ||
+                reason_code == WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA) {
+        }
+}
+
+static void bk_netmgr_log_sta_disconnection(uint32_t reason_code, bool local_generated)
+{
+        if (reason_code == WIFI_REASON_BEACON_LOST) {
+                return;
+        }
+
+        if (!local_generated && reason_code != WIFI_REASON_DISCONNECT_BY_APP) {
+        }
+}
 /*
  * Callback
 */
@@ -196,6 +236,8 @@ void rtw_mutex_put(_mutex *pmutex)
 void beken_report_wrong_password( void )
 {
     auth_fail_cnt++;
+    bk_netmgr_log_sta_connect_failure(WIFI_REASON_WRONG_PASSWORD,
+                                      bk_get_last_join_wpa_state());
     //set80211_sta_error_flag(CLP_STA_WRONG_PASSWORD);
     if (auth_fail_cnt%2 == 1) {
         trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
@@ -546,12 +588,12 @@ int bk_wifi_scan_result_handle(const wifi_scan_result_t *scan_result)
 		goto scan_res_fail;
 	}
 	g_scan_list = (trwifi_scan_list_s *)os_malloc(sizeof(trwifi_scan_list_s) * scan_result->ap_num);
-	g_scan_num = scan_result->ap_num;
 	if (g_scan_list == NULL) {
 		ndbg("[BK] Fail to malloc g_scan_list\r\n");
 		bk_trwifi_clear_saved_scan_cache();
 		goto scan_res_fail;
 	}
+	g_scan_num = scan_result->ap_num;
 
 	// Step 5: Fill scan results
 	wifi_scan_ap_info_t *ap;
@@ -730,7 +772,7 @@ int bk_wifi_multi_scan_result_handle(const wifi_scan_result_t *scan_result,wifi_
 
 		bk_trwifi_scan_dump_result(g_scan_list);
 		TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
-		os_free(g_scan_list);
+		bk_trwifi_clear_scan_chain_list();
 		ret = BK_OK;
 	}
 
@@ -762,8 +804,10 @@ static int bk_trwlan_scan_start(wifi_scan_config_t *scan_config)
 	}
 	// Also check and free g_scan_list if it exists (shouldn't happen in normal flow, but for safety)
 	bk_trwifi_clear_scan_chain_list();
-	// Also free g_saved_multi_scan_list if it exists (from previous multi scan)
-	bk_trwifi_clear_multi_scan_cache();
+	// Only clear multi scan cache if not currently in a multi scan operation
+	if (g_scan_flag != 2) {
+		bk_trwifi_clear_multi_scan_cache();
+	}
 	rtos_unlock_mutex(&scanlistbusy);
 
 	if(bk_trwifi_wlan_scan_sema == NULL ) {
@@ -777,7 +821,11 @@ static int bk_trwlan_scan_start(wifi_scan_config_t *scan_config)
 	if(scan_config)
 	    nvdbg("[BK] scan ssid %s,type %d ,dur %d ,cnt %d\r\n",scan_config->ssid,scan_config->scan_type,scan_config->duration,scan_config->chan_cnt);
 
-	BK_LOG_ON_ERR(bk_wifi_scan_start(scan_config));
+	err = bk_wifi_scan_start(scan_config);
+	if(err != BK_OK) {
+		ndbg("[BK] scan start failed! err %d\r\n", err);
+		goto error;
+	}
 
 	if(bk_trwifi_wlan_scan_sema != NULL) {
 		err = rtos_get_semaphore(&bk_trwifi_wlan_scan_sema, 10000);
@@ -914,6 +962,7 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
     case EVENT_WIFI_STA_CONNECTED:
         sta_connected = (wifi_event_sta_connected_t *)event_data;
         BK_WIFI_LOGI("BEKEN_WIFI_EVENT", "BK STA connected %s\n", sta_connected->ssid);
+        auth_fail_cnt = 0;
         // set ap info start
 		g_sta_is_start = 1;
 #if 0
@@ -941,8 +990,12 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
         ndbg("BK STA disconnected, reason(%d)%s\n", sta_disconnected->disconnect_reason,
             sta_disconnected->local_generated ? ", local_generated" : "");
         if (g_sta_connecting) {
+            bk_netmgr_log_sta_connect_failure(sta_disconnected->disconnect_reason,
+                                              bk_get_last_join_wpa_state());
             trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_CONNECT_FAILED, NULL, 0);
         } else {
+            bk_netmgr_log_sta_disconnection(sta_disconnected->disconnect_reason,
+                                            sta_disconnected->local_generated);
             trwifi_post_event(armino_dev_wlan0, LWNL_EVT_STA_DISCONNECTED, NULL, 0);
         }
         g_sta_connecting = false;
@@ -964,13 +1017,27 @@ int beken_wifi_event_cb(void *arg, event_module_t event_module,
 		if (bk_trwifi_new_sta_join_func) {
 			(*bk_trwifi_new_sta_join_func)();
 		}
+#ifdef CONFIG_BK_CONCURRENT_MODE
         trwifi_post_event(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+#else
+        trwifi_post_event(armino_dev_wlan0, LWNL_EVT_SOFTAP_STA_JOINED, NULL, 0);
+#endif
         break;
 
     case EVENT_WIFI_AP_DISCONNECTED:
         ap_disconnected = (wifi_event_ap_disconnected_t *)event_data;
-        ndbg(BK_MAC_FORMAT" disconnected from BK AP\n", BK_MAC_STR(ap_disconnected->mac));
-        trwifi_post_event(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_LEFT, NULL, 0);
+        {
+            trwifi_cbk_msg_s msg = {TRWIFI_REASON_UNKNOWN, {0,}, NULL};
+            os_memcpy(msg.bssid, ap_disconnected->mac, WIFI_BSSID_LEN);
+            msg.reason = ap_disconnected->disconnect_reason;
+            ndbg(BK_MAC_FORMAT" disconnected from BK AP, reason(%d)\n",
+                BK_MAC_STR(ap_disconnected->mac), ap_disconnected->disconnect_reason);
+#ifdef CONFIG_BK_CONCURRENT_MODE
+            trwifi_post_event(armino_dev_wlan1, LWNL_EVT_SOFTAP_STA_LEFT, &msg, sizeof(trwifi_cbk_msg_s));
+#else
+            trwifi_post_event(armino_dev_wlan0, LWNL_EVT_SOFTAP_STA_LEFT, &msg, sizeof(trwifi_cbk_msg_s));
+#endif
+        }
         break;
 
     case EVENT_WIFI_REGDOMAIN_CHANGED:
@@ -1200,7 +1267,10 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 
 			if (scan_result_sum == 0) {
 				ndbg("[BK] scan multi doesn't found AP\r\n");
-				goto multi_scan_fail;
+				TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+				g_scan_flag = 0;
+				bk_trwifi_clear_multi_scan_cache();
+				return TRWIFI_SUCCESS;
 			}
 			if(scan_result_sum > 0){
 				g_scan_list	= (trwifi_scan_list_s *)os_malloc(sizeof(trwifi_scan_list_s)*scan_result_sum);
@@ -1214,11 +1284,12 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 						if(g_saved_multi_scan_list[j].is_valid) {
 							for(int m = 0; m<g_saved_multi_scan_list[j].scan_num;m++) {
 								os_memcpy(&g_scan_list[add_list_idx].ap_info, &g_saved_multi_scan_list[j].saved_multi_scan_list[m], sizeof(trwifi_ap_scan_info_s));
-							if(add_list_idx > 0) {
-								g_scan_list[add_list_idx-1].next = &g_scan_list[add_list_idx];
+								if(add_list_idx > 0) {
+									g_scan_list[add_list_idx-1].next = &g_scan_list[add_list_idx];
+								}
+								g_scan_list[add_list_idx].next = NULL;
+								add_list_idx++;
 							}
-							g_scan_list[add_list_idx].next = NULL;
-							add_list_idx++;
 						}
 					}
 				}
@@ -1240,9 +1311,6 @@ multi_scan_fail:
 	// clear saved multi scan list
 	bk_trwifi_clear_multi_scan_cache();
 	return ret;
-}
-
-/* Fix missing closing brace introduced by recent refactor */
 }
 
 trwifi_result_e bk_wifi_netmgr_connect_ap(struct netdev *dev, trwifi_ap_config_s *ap_connect_config, void *arg)
@@ -1333,7 +1401,7 @@ trwifi_result_e bk_wifi_netmgr_get_signal_quality(struct netdev *dev, trwifi_sig
 	memset(signal_quality, 0, sizeof(trwifi_signal_quality));
 	wuret = TRWIFI_FAIL;
 
-	if (g_station_if == BK_WIFI_NONE || g_softap_if == BK_WIFI_NONE) {
+	if ((g_station_if == BK_WIFI_NONE) && (g_softap_if == BK_WIFI_NONE)) {
 		ndbg("[BK] Failed to get signal quality, wifi not initialized \n");
 		return wuret;
 	}
@@ -1397,13 +1465,19 @@ trwifi_result_e bk_wifi_netmgr_get_info(struct netdev *dev, trwifi_info *wifi_in
 trwifi_result_e bk_wifi_netmgr_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state)
 {
     wifi_linkstate_reason_t wpas_state = mhdr_get_station_status();
+    uint8_t last_join_wpa_state = bk_get_last_join_wpa_state();
     
     switch (wpas_state.state) {
         case WIFI_LINKSTATE_STA_IDLE:
         wpa_supplicant_state->wpa_supplicant_state = WPA_INACTIVE;
         break;
         case WIFI_LINKSTATE_STA_CONNECTING:
-        wpa_supplicant_state->wpa_supplicant_state = WPA_ASSOCIATING;
+        if (last_join_wpa_state >= WPA_AUTHENTICATING &&
+            last_join_wpa_state < WPA_COMPLETED) {
+            wpa_supplicant_state->wpa_supplicant_state = last_join_wpa_state;
+        } else {
+            wpa_supplicant_state->wpa_supplicant_state = WPA_ASSOCIATING;
+        }
         break;
         case WIFI_LINKSTATE_STA_CONNECTED:
         wpa_supplicant_state->wpa_supplicant_state = WPA_COMPLETED;
@@ -1444,6 +1518,9 @@ trwifi_result_e bk_wifi_netmgr_start_softap(struct netdev *dev, trwifi_softap_co
 		return ret;
 	}
 	g_softap_if = BK_WIFI_SOFTAP_IF;
+#ifndef CONFIG_BK_CONCURRENT_MODE
+	g_bk_wifi_current_vif = 1;
+#endif
 	nvdbg("[BK] SoftAP with SSID: %s has successfully started!\r\n", softap_config->ssid);
 
 	ret = TRWIFI_SUCCESS;
@@ -1456,6 +1533,9 @@ trwifi_result_e bk_wifi_netmgr_start_sta(struct netdev *dev)
 	trwifi_result_e ret = TRWIFI_FAIL;
 
 	g_station_if = BK_WIFI_STATION_IF;
+#ifndef CONFIG_BK_CONCURRENT_MODE
+	g_bk_wifi_current_vif = 0;
+#endif
 	ret = TRWIFI_SUCCESS;
 
 	return ret;
@@ -1468,6 +1548,9 @@ trwifi_result_e bk_wifi_netmgr_stop_softap(struct netdev *dev)
 	int res = bk_wifi_ap_stop();
 	if (res == BK_OK) {
 		g_softap_if = BK_WIFI_NONE;
+#ifndef CONFIG_BK_CONCURRENT_MODE
+		g_bk_wifi_current_vif = 0;
+#endif
 		ret = TRWIFI_SUCCESS;
 		nvdbg("[BK] Stop AP mode successfully\r\n");
 	} else {
@@ -1501,6 +1584,26 @@ trwifi_result_e bk_wifi_netmgr_set_autoconnect(struct netdev *dev, uint8_t check
 #endif
 }
 
+trwifi_result_e bk_wifi_netmgr_disable_11ax_mode(struct netdev *dev, uint8_t disable)
+{
+	uint32_t enable_11ax = 0;
+	int ret = TRWIFI_SUCCESS;
+
+	if (disable) {
+		enable_11ax = 0;
+	} else {
+		enable_11ax = 1;
+	}
+	nvdbg("[BK] Set 11ax mode to %d\n", enable_11ax);
+	ret = bk_wifi_capa_config(WIFI_CAPA_ID_HE_EN, enable_11ax);
+	if (ret != BK_OK) {
+		ndbg("[BK] Failed to set 11ax mode ret: %d\n", ret);
+		return TRWIFI_FAIL;
+	}
+	else {
+		return TRWIFI_SUCCESS;
+	}
+}
 trwifi_result_e bk_wifi_netmgr_set_bridge(struct netdev *dev, uint8_t control)
 {
     if (control) {

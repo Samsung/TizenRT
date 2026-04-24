@@ -117,6 +117,11 @@ static const flash_config_t flash_config[] = {
 #endif
 	{0xEF4016,   2,               FLASH_SIZE_4M, FLASH_LINE_MODE_TWO, 14,       2,            0x1F,         0x1F,        0x00,         0x00,         0x101,                9,            1,           0xA0,                          0x01}, //w_25q32(bfj)
 #if defined(CONFIG_FLASH_QUAD_ENABLE)
+	{0xEF4018,   2,               FLASH_SIZE_16M, FLASH_LINE_MODE_FOUR, 14,     2,            0x1F,         0x1F,        0x00,         0x0E,         0x00E,                9,            1,           0xA0,                          0x02}, //w_25q128jv
+#else
+	{0xEF4018,   1,               FLASH_SIZE_16M, FLASH_LINE_MODE_TWO,   0,     2,            0x1F,         0x1F,        0x00,         0x0E,         0x00E,                0,            0,           0xA0,                          0x01}, //w_25q128jv
+#endif
+#if defined(CONFIG_FLASH_QUAD_ENABLE)
 	{0x204118,	 2, 			  FLASH_SIZE_16M,FLASH_LINE_MODE_FOUR, 0,		2,			  0x0F, 		0x0F,		 0x00,		   0x0A,		 0x00E, 			   9,			 1, 		  0xA0, 						 0x02}, //xm_25qu128c
 #else
 	{0x204118,	 1, 			  FLASH_SIZE_16M,FLASH_LINE_MODE_TWO,  0,		2,			  0x0F, 		0x0F,		 0x00,		   0x0A,		 0x00E, 			   0,			 0, 		  0xA0, 						 0x01}, //xm_25qu128c
@@ -130,10 +135,52 @@ static const flash_config_t flash_config[] = {
 #else
 	{0xC86517,	 1, 			  FLASH_SIZE_8M, FLASH_LINE_MODE_TWO, 0,		2,			  0x1F, 		0x1F,		 0x00,		   0x0E,		 0x00E, 			   0,			 0, 		  0xA0, 						 0x01}, //gd_25Q32E
 #endif
-    {0xCD6017,   3,               FLASH_SIZE_8M, FLASH_LINE_MODE_FOUR,   14,       2,            0x1F,         0x1F,        0x00,         0x0E,		  0x00E,                 9,            1,           0xA0,                         0x01}, //th_25q64ha
+#if defined(CONFIG_FLASH_QUAD_ENABLE)
+	{0x852017,	 2, 			  FLASH_SIZE_8M, FLASH_LINE_MODE_FOUR, 14,		2,			  0x1F, 		0x1F,		 0x00,		   0x0E,		 0x00E, 			   9,			 1, 		  0xA0, 						 0x02}, //PY25Q64HA
+#else
+	{0x852017,	 1, 			  FLASH_SIZE_8M, FLASH_LINE_MODE_TWO, 0,		2,			  0x1F, 		0x1F,		 0x00,		   0x0E,		 0x00E, 			   0,			 0, 		  0xA0, 						 0x01}, //PY25Q64HA
+#endif
+#if defined(CONFIG_FLASH_QUAD_ENABLE)
+    {0xCD6017,   2,               FLASH_SIZE_8M, FLASH_LINE_MODE_FOUR,   14,       2,            0x1F,         0x1F,        0x00,         0x0E,		  0x00E,                 9,            1,           0xA0,                         0x01}, //th_25q64ha
+#else
+    {0xCD6017,   1,               FLASH_SIZE_8M, FLASH_LINE_MODE_TWO,     0,       2,            0x1F,         0x1F,        0x00,         0x0E,		  0x00E,                 0,            0,           0xA0,                         0x01}, //th_25q64ha
+#endif
+#if defined(CONFIG_FLASH_QUAD_ENABLE)
+	{0xC86518,   2,               FLASH_SIZE_16M, FLASH_LINE_MODE_FOUR, 14,       2,            0x1F,         0x1F,        0x00,         0x0E,         0x00E,                9,            1,           0xA0,                          0x02}, //gd_25wq128e
+#else
+	{0xC86518,   1,               FLASH_SIZE_16M, FLASH_LINE_MODE_TWO,   0,       2,            0x1F,         0x1F,        0x00,         0x0E,         0x00E,                0,            0,           0xA0,                          0x01}, //gd_25wq128e
+#endif
+#if defined(CONFIG_FLASH_QUAD_ENABLE)
+	{0xC84018,   2,               FLASH_SIZE_16M, FLASH_LINE_MODE_FOUR, 14,       2,            0x1F,         0x1F,        0x00,         0x0E,         0x00E,                9,            1,           0xA0,                          0x02}, //gd_25q128e
+#else
+	{0xC84018,   1,               FLASH_SIZE_16M, FLASH_LINE_MODE_TWO,   0,       2,            0x1F,         0x1F,        0x00,         0x0E,         0x00E,                0,            0,           0xA0,                          0x01}, //gd_25q128e
+#endif
+#if defined(CONFIG_FLASH_QUAD_ENABLE)
 	{0xC86019,	 2, 			  FLASH_SIZE_16M, FLASH_LINE_MODE_FOUR, 14,		2,			  0x1F, 		0x1F,		 0x00,		   0x0E,		 0x00E, 			   9,			 1, 		  0xA0, 						 0x02}, //for FPGA simulation and debugging type size 16M
+#else
+	{0xC86019,	 1, 			  FLASH_SIZE_16M, FLASH_LINE_MODE_TWO,  0,		2,			  0x1F, 		0x1F,		 0x00,		   0x0E,		 0x00E, 			   0,			 0, 		  0xA0, 						 0x01}, //for FPGA simulation and debugging type size 16M
+#endif
+#if defined(CONFIG_FLASH_QUAD_ENABLE)
 	{0xC84016,	 2, 			  FLASH_SIZE_4M, FLASH_LINE_MODE_FOUR, 14,		2,			  0x1F, 		0x1F,		 0x00,		   0x0E,		 0x00E, 			   9,			 1, 		  0xA0, 						 0x02}, //for FPGA simulation and debugging type size 4M
-	{0x000000,   2,               FLASH_SIZE_4M, FLASH_LINE_MODE_TWO,    0,        2,            0x1F,         0x00,        0x00,         0x00,         0x000,                0,            0,           0x00,                          0x01}, //default
+#else
+	{0xC84016,	 1, 			  FLASH_SIZE_4M, FLASH_LINE_MODE_TWO,  0,		2,			  0x1F, 		0x1F,		 0x00,		   0x0E,		 0x00E, 			   0,			 0, 		  0xA0, 						 0x01}, //for FPGA simulation and debugging type size 4M
+#endif
+#if CONFIG_FLASH_QUAD_ENABLE
+	{0x684018,   2,               FLASH_SIZE_16M, FLASH_LINE_MODE_FOUR,   14,       2,            0x1F,         0x1F,        0x00,         0x0E,		  0x00E,                 9,            1,           0xA0,                     0x02}, //BY25Q128ES
+#else
+	{0x684018,   1,               FLASH_SIZE_16M, FLASH_LINE_MODE_TWO,    0,        2,            0x1F,         0x1F,        0x00,         0x0E,		  0x00E,                 0,            0,           0xA0,                         0x01}, //BY25Q128ES
+#endif
+#if defined(CONFIG_FLASH_QUAD_ENABLE)
+	{0x1C7118,   2,               FLASH_SIZE_16M, FLASH_LINE_MODE_FOUR, 14,       2,            0x1F,         0x1F,        0x00,         0x0E,         0x00E,                9,            1,           0xA5,                          0x02}, //GT25Q128EZ
+#else
+	{0x1C7118,   1,               FLASH_SIZE_16M, FLASH_LINE_MODE_TWO,   0,       2,            0x1F,         0x1F,        0x00,         0x0E,         0x00E,                0,            0,           0xA5,                          0x01}, //GT25Q128EZ
+#endif
+#if CONFIG_FLASH_QUAD_ENABLE
+	{0x204018,	 2, 			  FLASH_SIZE_16M,FLASH_LINE_MODE_FOUR,  14,		2,			  0x0F, 		0x0F,		 0x00,		   0x0A,		 0x00E, 			   9,			 1, 		  0x20, 						 0x02}, //xm_25QH128D
+#else
+	{0x204018,	 1, 			  FLASH_SIZE_16M,FLASH_LINE_MODE_TWO,  0,		2,			  0x0F, 		0x0F,		 0x00,		   0x0A,		 0x00E, 			   0,			 0, 		  0x20, 						 0x01}, //xm_25QH128D
+#endif
+	{0x000000,   2,               FLASH_SIZE_16M, FLASH_LINE_MODE_TWO,    0,        2,            0x1F,         0x00,        0x00,         0x00,         0x000,                0,            0,           0x00,                          0x01}, //default
 };
 
 static flash_driver_t s_flash = {0};

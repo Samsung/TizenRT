@@ -90,8 +90,7 @@ $(COBJS): %$(OBJEXT): %.c
 .built: $(OBJS)
 	$(eval CMSIS_OBJS = $(wildcard *.o))
 	$(call ARCHIVE, $(BIN), $(OBJS))
-	$(Q) $(CROSSDEV)ar -rcs $(BIN) $(CMSIS_OBJS)
-	@find . -name "*.o" -delete
+	$(call ARCHIVE, $(BIN), $(CMSIS_OBJS))
 	$(Q) touch .built
 
 .depend: Makefile $(SRCS)
@@ -107,6 +106,7 @@ clean:
 distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
+	@find . -name "*.o" -delete
 
 -include Make.dep
 

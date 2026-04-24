@@ -17,6 +17,7 @@
  ****************************************************************************/
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <debug.h>
 #include <sys/types.h>
 #include <security/security_crypto.h>
 #include "security_internal.h"

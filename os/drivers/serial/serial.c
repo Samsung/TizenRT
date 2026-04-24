@@ -194,7 +194,6 @@ static void uart_pollnotify(FAR uart_dev_t *dev, pollevent_t eventset)
 			fds->revents |= (fds->events & eventset);
 #endif
 			if (fds->revents != 0) {
-				fvdbg("Report events: %02x\n", fds->revents);
 				sem_post(fds->sem);
 			}
 		}

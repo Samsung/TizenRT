@@ -27,6 +27,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <debug.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <tinyara/analog/adc.h>

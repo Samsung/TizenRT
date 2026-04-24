@@ -313,11 +313,10 @@ static struct power_path_template_s *power_find_best_match(const char *relpath, 
 			/* Calculate the length of the domain name */
 			domain_len = slash_pos ? slash_pos - relpath : relpath_len;
 
-			strncpy(domain_name, relpath, domain_len);
-			domain_name[domain_len] = '\0'; /* Ensure null termination */
-
-			/* Validate domain name length */
+			/* Validate domain name length before copying to prevent buffer overflow */
 			if (domain_len > 0 && domain_len < CONFIG_PM_DOMAIN_NAME_SIZE) {
+				strncpy(domain_name, relpath, domain_len);
+				domain_name[domain_len] = '\0'; /* Ensure null termination */
 				flags = enter_critical_section();
 				path_priv->domain_ptr = NULL;
 				for (dq_entry_t *entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
@@ -540,7 +539,6 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 static ssize_t power_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
 {
 	FAR struct power_file_s *priv;
-	ssize_t ret;
 
 	fvdbg("buffer=%p buflen=%d\n", buffer, (int)buflen);
 
@@ -549,14 +547,7 @@ static ssize_t power_write(FAR struct file *filep, FAR const char *buffer, size_
 	DEBUGASSERT(priv);
 
 	/* pm_procfs does not have write operation, one must code write logic here */
-	ret = 0;
-
-	/* Update the file offset */
-	if (ret > 0) {
-		filep->f_pos += ret;
-	}
-
-	return ret;
+	return 0;
 }
 
 /****************************************************************************

@@ -77,10 +77,11 @@ typedef enum{
     OTP_SECURE_DEBUG_PK,
     OTP_BL2_SECURITY_COUNTER,
     OTP_HUK,
+    OTP_AES_GCM,
     OTP1_MAX_ID,
 } otp1_id_t;
 
-extern const otp_item_t otp_map_1[15];
+extern const otp_item_t otp_map_1[16];
 
 uint32_t otp_map_1_row(void);
 
@@ -97,6 +98,7 @@ typedef enum{
     OTP_MAC_ADDRESS2,
     OTP_MAC_ADDRESS3,
     OTP_MAC_ADDRESS4,
+    OTP_RESERVED1,
     OTP_FACTORY_ID,
     OTP_PRODUCT_ID,
     OTP_GADC_CALIBRATION,
@@ -105,10 +107,11 @@ typedef enum{
     OTP_DIA,
     OTP_MEMORY_CHECK_VDDDIG,
     OTP_DEVICE_ID,
+    OTP_RESERVED,
     OTP2_MAX_ID,
 } otp2_id_t;
 
-extern const otp_item_t otp_map_2[18];
+extern const otp_item_t otp_map_2[20];
 
 uint32_t otp_map_2_row(void);
 

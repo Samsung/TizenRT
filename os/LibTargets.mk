@@ -58,92 +58,92 @@
 # Possible kernel-mode builds
 
 libc$(DELIM)libkc$(LIBEXT): context
-	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libkc$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkc$(LIBEXT) BINDIR=kbin
+	$(Q) $(MAKE) $(JOBS) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libkc$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkc$(LIBEXT) BINDIR=kbin
 
 $(LIBRARIES_DIR)$(DELIM)libkc$(LIBEXT): libc$(DELIM)libkc$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libkc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkc$(LIBEXT)
 
 mm$(DELIM)libkmm$(LIBEXT): context
-	$(Q) $(MAKE) -C mm TOPDIR="$(TOPDIR)" libkmm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkmm$(LIBEXT) BINDIR=kbin
+	$(Q) $(MAKE) $(JOBS) -C mm TOPDIR="$(TOPDIR)" libkmm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkmm$(LIBEXT) BINDIR=kbin
 
 $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT): mm$(DELIM)libkmm$(LIBEXT)
 	$(Q) install mm$(DELIM)libkmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkmm$(LIBEXT)
 
 wqueue$(DELIM)libkwque$(LIBEXT): context
-	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libkwque$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkwque$(LIBEXT) BINDIR=kbin
+	$(Q) $(MAKE) $(JOBS) -C wqueue TOPDIR="$(TOPDIR)" libkwque$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE) BIN=libkwque$(LIBEXT) BINDIR=kbin
 
 $(LIBRARIES_DIR)$(DELIM)libkwque$(LIBEXT): wqueue$(DELIM)libkwque$(LIBEXT)
 	$(Q) install wqueue$(DELIM)libkwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkwque$(LIBEXT)
 
 $(ARCH_SRC)$(DELIM)libkarch$(LIBEXT): context
-	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libkarch$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libkarch$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libkarch$(LIBEXT): $(ARCH_SRC)$(DELIM)libkarch$(LIBEXT)
 	$(Q) install $(ARCH_SRC)$(DELIM)libkarch$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkarch$(LIBEXT)
 
 kernel$(DELIM)libkernel$(LIBEXT): context
-	$(Q) $(MAKE) -C kernel TOPDIR="$(TOPDIR)" libkernel$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C kernel TOPDIR="$(TOPDIR)" libkernel$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libkernel$(LIBEXT): kernel$(DELIM)libkernel$(LIBEXT)
 	$(Q) install kernel$(DELIM)libkernel$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libkernel$(LIBEXT)
 
 net$(DELIM)libnet$(LIBEXT): context
-	$(Q) $(MAKE) -C net TOPDIR="$(TOPDIR)" libnet$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C net TOPDIR="$(TOPDIR)" libnet$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libnet$(LIBEXT): net$(DELIM)libnet$(LIBEXT)
 	$(Q) install net$(DELIM)libnet$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libnet$(LIBEXT)
 
 pm$(DELIM)libpm$(LIBEXT): context
-	$(Q) $(MAKE) -C pm TOPDIR="$(TOPDIR)" libpm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C pm TOPDIR="$(TOPDIR)" libpm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libpm$(LIBEXT): pm$(DELIM)libpm$(LIBEXT)
 	$(Q) install pm$(DELIM)libpm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libpm$(LIBEXT)
 
 logm$(DELIM)liblogm$(LIBEXT): context
-	$(Q) $(MAKE) -C logm TOPDIR="$(TOPDIR)" liblogm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C logm TOPDIR="$(TOPDIR)" liblogm$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)liblogm$(LIBEXT): logm$(DELIM)liblogm$(LIBEXT)
 	$(Q) install logm$(DELIM)liblogm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)liblogm$(LIBEXT)
 
 fs$(DELIM)libfs$(LIBEXT): context
-	$(Q) $(MAKE) -C fs TOPDIR="$(TOPDIR)" libfs$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C fs TOPDIR="$(TOPDIR)" libfs$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT): fs$(DELIM)libfs$(LIBEXT)
 	$(Q) install fs$(DELIM)libfs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libfs$(LIBEXT)
 
 audio$(DELIM)libaudio$(LIBEXT): context
-	$(Q) $(MAKE) -C audio TOPDIR="$(TOPDIR)" libaudio$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C audio TOPDIR="$(TOPDIR)" libaudio$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT): audio$(DELIM)libaudio$(LIBEXT)
 	$(Q) install audio$(DELIM)libaudio$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libaudio$(LIBEXT)
 
 se$(DELIM)libse$(LIBEXT): context
-	$(Q) $(MAKE) -C se TOPDIR="$(TOPDIR)" libse$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C se TOPDIR="$(TOPDIR)" libse$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT): se$(DELIM)libse$(LIBEXT)
 	$(Q) install se$(DELIM)libse$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT)
 
 compression$(DELIM)libcompression$(LIBEXT): context
-	$(Q) $(MAKE) -C compression TOPDIR="$(TOPDIR)" libcompression$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C compression TOPDIR="$(TOPDIR)" libcompression$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT): compression$(DELIM)libcompression$(LIBEXT)
 	$(Q) install compression$(DELIM)libcompression$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT)
 
 crypto$(DELIM)libcrypto$(LIBEXT): context
-	$(Q) $(MAKE) -C crypto TOPDIR="$(TOPDIR)" libcrypto$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C crypto TOPDIR="$(TOPDIR)" libcrypto$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libcrypto$(LIBEXT): crypto$(DELIM)libcrypto$(LIBEXT)
 	$(Q) install crypto$(DELIM)libcrypto$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcrypto$(LIBEXT)
 
 drivers$(DELIM)libdrivers$(LIBEXT): context
-	$(Q) $(MAKE) -C drivers TOPDIR="$(TOPDIR)" libdrivers$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C drivers TOPDIR="$(TOPDIR)" libdrivers$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT): drivers$(DELIM)libdrivers$(LIBEXT)
 	$(Q) install drivers$(DELIM)libdrivers$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libdrivers$(LIBEXT)
 
 ifeq ($(CONFIG_BINFMT_ENABLE),y)
 binfmt$(DELIM)libbinfmt$(LIBEXT): context
-	$(Q) $(MAKE) -C binfmt TOPDIR="$(TOPDIR)" libbinfmt$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C binfmt TOPDIR="$(TOPDIR)" libbinfmt$(LIBEXT) KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libbinfmt$(LIBEXT): binfmt$(DELIM)libbinfmt$(LIBEXT)
 	$(Q) install binfmt$(DELIM)libbinfmt$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libbinfmt$(LIBEXT)
@@ -152,7 +152,7 @@ endif
 # Special case
 
 syscall$(DELIM)libstubs$(LIBEXT): context
-	$(Q) $(MAKE) -C syscall TOPDIR="$(TOPDIR)" libstubs$(LIBEXT) # KERNEL=y EXTRADEFINES=$(KDEFINE)
+	$(Q) $(MAKE) $(JOBS) -C syscall TOPDIR="$(TOPDIR)" libstubs$(LIBEXT) # KERNEL=y EXTRADEFINES=$(KDEFINE)
 
 $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT): syscall$(DELIM)libstubs$(LIBEXT)
 	$(Q) install syscall$(DELIM)libstubs$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT)
@@ -160,63 +160,63 @@ $(LIBRARIES_DIR)$(DELIM)libstubs$(LIBEXT): syscall$(DELIM)libstubs$(LIBEXT)
 # Possible user-mode builds
 
 libc$(DELIM)libuc$(LIBEXT): context
-	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libuc$(LIBEXT) KERNEL=n BIN=libuc$(LIBEXT) BINDIR=ubin
+	$(Q) $(MAKE) $(JOBS) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libuc$(LIBEXT) KERNEL=n BIN=libuc$(LIBEXT) BINDIR=ubin
 
 $(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT): libc$(DELIM)libuc$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libuc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuc$(LIBEXT)
 
 mm$(DELIM)libumm$(LIBEXT): context
-	$(Q) $(MAKE) -C mm TOPDIR="$(TOPDIR)" libumm$(LIBEXT) KERNEL=n BIN=libumm$(LIBEXT) BINDIR=ubin
+	$(Q) $(MAKE) $(JOBS) -C mm TOPDIR="$(TOPDIR)" libumm$(LIBEXT) KERNEL=n BIN=libumm$(LIBEXT) BINDIR=ubin
 
 $(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT): mm$(DELIM)libumm$(LIBEXT)
 	$(Q) install mm$(DELIM)libumm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libumm$(LIBEXT)
 
 wqueue$(DELIM)libuwque$(LIBEXT): context
-	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libuwque$(LIBEXT) KERNEL=n BIN=libuwque$(LIBEXT) BINDIR=ubin
+	$(Q) $(MAKE) $(JOBS) -C wqueue TOPDIR="$(TOPDIR)" libuwque$(LIBEXT) KERNEL=n BIN=libuwque$(LIBEXT) BINDIR=ubin
 
 $(LIBRARIES_DIR)$(DELIM)libuwque$(LIBEXT): wqueue$(DELIM)libuwque$(LIBEXT)
 	$(Q) install wqueue$(DELIM)libuwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuwque$(LIBEXT)
 
 $(ARCH_SRC)$(DELIM)libuarch$(LIBEXT): context
-	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libuarch$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) $(JOBS) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libuarch$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libuarch$(LIBEXT): $(ARCH_SRC)$(DELIM)libuarch$(LIBEXT)
 	$(Q) install $(ARCH_SRC)$(DELIM)libuarch$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libuarch$(LIBEXT)
 
 libxx$(DELIM)libcxx$(LIBEXT): context
-	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libxx TOPDIR="$(TOPDIR)" libcxx$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) $(JOBS) -C $(LIB_DIR)$(DELIM)libxx TOPDIR="$(TOPDIR)" libcxx$(LIBEXT) KERNEL=n
 ifeq ($(CONFIG_LIBCXX),y)
-	$(Q) $(MAKE) -C $(EXTDIR)$(DELIM)libcxx TOPDIR="$(TOPDIR)" all KERNEL=n
+	$(Q) $(MAKE) $(JOBS) -C $(EXTDIR)$(DELIM)libcxx TOPDIR="$(TOPDIR)" all KERNEL=n
 endif
 
 $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT): libxx$(DELIM)libcxx$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libxx$(DELIM)libcxx$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libcxx$(LIBEXT)
 
 $(APPDIR)$(DELIM)libapps$(LIBEXT): context
-	$(Q) $(MAKE) -C $(APPDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" libapps$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) $(JOBS) -C $(APPDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" libapps$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT): $(APPDIR)$(DELIM)libapps$(LIBEXT)
 	$(Q) install $(APPDIR)$(DELIM)libapps$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libapps$(LIBEXT)
 
 syscall$(DELIM)libproxies$(LIBEXT): context
-	$(Q) $(MAKE) -C syscall TOPDIR="$(TOPDIR)" libproxies$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) $(JOBS) -C syscall TOPDIR="$(TOPDIR)" libproxies$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libproxies$(LIBEXT): syscall$(DELIM)libproxies$(LIBEXT)
 	$(Q) install syscall$(DELIM)libproxies$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libproxies$(LIBEXT)
 
 $(FRAMEWORK_LIB_DIR)$(DELIM)libframework$(LIBEXT): context
-	$(Q) $(MAKE) -C $(FRAMEWORK_LIB_DIR) TOPDIR="$(TOPDIR)" libframework$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) $(JOBS) -C $(FRAMEWORK_LIB_DIR) TOPDIR="$(TOPDIR)" libframework$(LIBEXT) KERNEL=n
 
 $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT): $(FRAMEWORK_LIB_DIR)$(DELIM)libframework$(LIBEXT)
 	$(Q) install $(FRAMEWORK_LIB_DIR)$(DELIM)libframework$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libframework$(LIBEXT)
 
 $(EXTDIR)$(DELIM)libexternal$(LIBEXT): context
-	$(Q) $(MAKE) -C $(EXTDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" libexternal$(LIBEXT) KERNEL=n
+	$(Q) $(MAKE) $(JOBS) -C $(EXTDIR) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" libexternal$(LIBEXT) KERNEL=n
 ifeq ($(CONFIG_ENABLE_IOTIVITY),y)
-	$(Q) $(MAKE) -C $(EXTDIR)/iotivity TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" KERNEL=n
+	$(Q) $(MAKE) $(JOBS) -C $(EXTDIR)/iotivity TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" KERNEL=n
 endif
 ifeq ($(CONFIG_ENABLE_IOTJS),y)
-	$(Q) $(MAKE) -C $(EXTDIR)/iotjs/config/tizenrt TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" KERNEL=n
+	$(Q) $(MAKE) $(JOBS) -C $(EXTDIR)/iotjs/config/tizenrt TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" KERNEL=n
 endif
 
 $(LIBRARIES_DIR)$(DELIM)libexternal$(LIBEXT): $(EXTDIR)$(DELIM)libexternal$(LIBEXT)
@@ -251,25 +251,25 @@ endif
 # Possible non-kernel builds
 
 libc$(DELIM)libc$(LIBEXT): context
-	$(Q) $(MAKE) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libc$(LIBEXT)
+	$(Q) $(MAKE) $(JOBS) -C $(LIB_DIR)$(DELIM)libc TOPDIR="$(TOPDIR)" libc$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libc$(LIBEXT): libc$(DELIM)libc$(LIBEXT)
 	$(Q) install $(LIB_DIR)$(DELIM)libc$(DELIM)libc$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libc$(LIBEXT)
 
 mm$(DELIM)libmm$(LIBEXT): context
-	$(Q) $(MAKE) -C mm TOPDIR="$(TOPDIR)" libmm$(LIBEXT)
+	$(Q) $(MAKE) $(JOBS) -C mm TOPDIR="$(TOPDIR)" libmm$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT): mm$(DELIM)libmm$(LIBEXT)
 	$(Q) install mm$(DELIM)libmm$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libmm$(LIBEXT)
 
 wqueue$(DELIM)libwque$(LIBEXT): context
-	$(Q) $(MAKE) -C wqueue TOPDIR="$(TOPDIR)" libwque$(LIBEXT) KERNEL=y
+	$(Q) $(MAKE) $(JOBS) -C wqueue TOPDIR="$(TOPDIR)" libwque$(LIBEXT) KERNEL=y
 
 $(LIBRARIES_DIR)$(DELIM)libwque$(LIBEXT): wqueue$(DELIM)libwque$(LIBEXT)
 	$(Q) install wqueue$(DELIM)libwque$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libwque$(LIBEXT)
 
 $(ARCH_SRC)$(DELIM)libarch$(LIBEXT): context
-	$(Q) $(MAKE) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libarch$(LIBEXT)
+	$(Q) $(MAKE) $(JOBS) -C $(ARCH_SRC) TOPDIR="$(TOPDIR)" libarch$(LIBEXT)
 
 $(LIBRARIES_DIR)$(DELIM)libarch$(LIBEXT): $(ARCH_SRC)$(DELIM)libarch$(LIBEXT)
 	$(Q) install $(ARCH_SRC)$(DELIM)libarch$(LIBEXT) $(LIBRARIES_DIR)$(DELIM)libarch$(LIBEXT)

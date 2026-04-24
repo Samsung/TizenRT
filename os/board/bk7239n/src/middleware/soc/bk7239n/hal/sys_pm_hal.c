@@ -867,9 +867,7 @@ __attribute__((section(".iram")))  void sys_hal_regs_restore(void)
 	}
 	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
 
-	for (uint32_t i = 0; i < 4; i++) {
- 		REG_WRITE(0x2801FFF0 + (i << 2), s_saved_sram[i]);
-	}
+
 }
 #endif
 
@@ -1111,9 +1109,13 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 	sys_hal_regs_save();
 	aon_pmu_hal_backup();
 	//sys_hal_deep_lv_enter();
-	__NOP();
-	dlv_stack_frame_save_and_dlv(__get_LR());
 	deep_lv_enter();
+
+	dlv_stack_frame_save_and_dlv((uint32_t)&dlv_wakeup_nop_addr, (uint32_t)&dlv_wakeup_nop_addr);
+	__asm volatile (
+		".global dlv_wakeup_nop_addr\n"
+		"dlv_wakeup_nop_addr: nop\n"
+		: : : "memory");
 	if (dlv_is_startup_iram()) {
 		arch_deep_sleep();
 	}
@@ -1383,10 +1385,6 @@ bk_err_t sys_hal_normal_sleep_mode_ctrl(pm_normal_sleep_mode_e normal_sleep,pm_c
 
 void sys_hal_enter_cpu_wfi()
 {
-	// TODO - find out the reason:
-	// When sys_ll_set_cpu0_int_halt_clk_op_cpu0_int_mask() is called, the normal sleep can't wakedup,
-	// need to find out!!!
-	// sys_ll_set_cpu0_int_halt_clk_op_cpu0_halt(1);
 	arch_sleep();
 }
 __attribute__((section(".iram"))) uint64_t pm_get_current_tick()
@@ -1590,31 +1588,6 @@ int sys_hal_set_lpo_src(sys_lpo_src_t src)
 
 void sys_hal_enter_low_analog(void)
 {
-	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
-	#if CONFIG_TEMP_DETECT
-	float temp;
-	bk_err_t err = bk_sensor_get_current_temperature(&temp);
-	if((err != BK_OK) || (temp < -10))
-	{
-		sys_ana_ll_set_ana_reg7_vanaldosel(0xa);
-	}
-	else if (temp < 20)
-	{
-		sys_ana_ll_set_ana_reg7_vanaldosel(0x7);
-	}
-	else if (temp < 60)
-	{
-		sys_ana_ll_set_ana_reg7_vanaldosel(0x7);
-	}
-	else
-	{
-		sys_ana_ll_set_ana_reg7_vanaldosel(0xa);
-	}
-	#else
-	sys_ana_ll_set_ana_reg7_vanaldosel(0xa);
-	#endif
-	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
-
 	sys_ana_ll_set_ana_reg3_hpssren(0);
 	/* tx low performence 0x45[11][9] = 1*/
 	sys_ana_ll_set_ana_reg5_anabufsel_tx1(0);
@@ -1623,15 +1596,10 @@ void sys_hal_enter_low_analog(void)
 	sys_ana_ll_set_ana_reg5_anabufsel_rx1(0);
 	sys_ana_ll_set_ana_reg5_anabufsel_rx0(1);
 
-
 }
 
 void sys_hal_exit_low_analog(void)
 {
-	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
-	sys_ana_ll_set_ana_reg7_vanaldosel(0xf);
-	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
-
 	sys_ana_ll_set_ana_reg3_hpssren(1);
 	/* tx high performence 0x45[11][9] = 3*/
 	sys_ana_ll_set_ana_reg5_anabufsel_tx1(1);

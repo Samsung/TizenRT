@@ -99,6 +99,7 @@ void *memalign_at(int heap_index, size_t alignment, size_t size)
 	}
 
 	if (size == 0) {
+		mdbg("Invalid parameter, size is 0\n");
 		return NULL;
 	}
 
@@ -128,6 +129,7 @@ FAR void *memalign(size_t alignment, size_t size)
 	void *ret;
 
 	if (size == 0) {
+		mdbg("Invalid parameter, size is 0\n");
 		return NULL;
 	}
 

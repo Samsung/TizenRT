@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <debug.h>
 #include <sys/types.h>
 #include <pthread.h>
 #include "tc_internal.h"

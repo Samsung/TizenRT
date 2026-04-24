@@ -65,7 +65,7 @@ enum
 #define LOGV(format, ...) do{if(LOG_LEVEL >= LOG_LEVEL_VERBOSE) BK_BLE_LOGV(LOG_TAG, "%s:" format "\n", __func__, ##__VA_ARGS__);} while(0)
 
 #define API_SEM_TIMEOUT 7000
-#define FIRST_PRF_ID_OFFSET 0
+#define FIRST_PRF_ID_OFFSET 1
 #define ALLOC_ATTR_DATA 0
 
 #define ATTR_MAX_BUFFER_LEN 512
@@ -73,7 +73,7 @@ enum
 #define BLE_TIZENRT_READ_MAX_LEN 20 //520
 #define TIZENRT_MAX_VAL_LEN 520
 #define NOTIFY_SYNC_API 1
-#define NOTIFY_ASYNC_MAX_COUNT 5
+#define WRITE_READ_BUFF_SAME 0
 
 #define BK_BLE_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -87,7 +87,14 @@ struct attr_db_addon
     uint8_t *peer_write_buffer;
     uint32_t peer_write_buffer_current_len;
     uint32_t peer_write_buffer_max_len;
+#if WRITE_READ_BUFF_SAME
+#else
+    uint8_t *peer_read_buffer;
+    uint32_t peer_read_buffer_current_len;
+    uint32_t peer_read_buffer_max_len;
+#endif
     uint16_t cccd_config;
+
 };
 
 struct service_elem
@@ -99,25 +106,35 @@ struct service_elem
 typedef struct
 {
     uint8_t init;
+    beken_semaphore_t sem;
     trble_server_init_config server_init_parm;
-
-    uint32_t db_attr_count;
-    uint32_t service_count;
-    struct service_elem *service_array;
-
     uint8_t default_read_buffer[BLE_TIZENRT_READ_MAX_LEN]; //note: see rtk ble_tizenrt_read_val
     uint8_t default_write_buffer[TIZENRT_MAX_VAL_LEN]; //note: see rtk tizenrt_ble_write_value
 
-    beken_semaphore_t sem;
+    uint8_t db_start;
+
+    uint32_t profile_count;
+    uint32_t db_attr_count;
+    uint32_t service_count;
+    uint32_t server_config_count;
+    struct
+    {
+        uint32_t c_db_attr_count;
+        uint32_t c_service_count;
+        struct service_elem *c_service_array;
+    } server_config_array[5];
+
+    uint8_t db_end;
 } peripheral_ctb_t;
 
 static peripheral_ctb_t s_ctb;
 
 static void release_all_db(void);
+static void release_one_db(uint32_t index);
 
 uint16_t bktr_ble_server_get_profile_count(void)
 {
-    return s_ctb.server_init_parm.profile_count;
+    return s_ctb.profile_count;
 }
 
 trble_server_init_config *bktr_ble_server_get_param(void)
@@ -127,11 +144,14 @@ trble_server_init_config *bktr_ble_server_get_param(void)
 
 static struct service_elem *find_service_by_prf_id(uint8_t prf_id)
 {
-    for (int i = 0; i < s_ctb.service_count; ++i)
+    for (size_t i = 0; i < s_ctb.server_config_count; i++)
     {
-        if (s_ctb.service_array[i].cfg.prf_task_id == prf_id)
+        for (size_t j = 0; j < s_ctb.server_config_array[i].c_service_count; j++)
         {
-            return &s_ctb.service_array[i];
+            if (s_ctb.server_config_array[i].c_service_array[j].cfg.prf_task_id == prf_id)
+            {
+                return &s_ctb.server_config_array[i].c_service_array[j];
+            }
         }
     }
 
@@ -146,7 +166,7 @@ static uint16_t att_index_2_attr_handle(uint16_t prf_task_id, uint16_t att_index
         return 0;
     }
 
-    if (!s_ctb.db_attr_count || !s_ctb.service_count || !s_ctb.service_array)
+    if (!s_ctb.db_attr_count || !s_ctb.service_count)
     {
         LOGE("ctx err");
         return 0;
@@ -164,7 +184,7 @@ static uint16_t att_index_2_attr_handle(uint16_t prf_task_id, uint16_t att_index
     return service_elem->cfg.start_hdl + att_index;
 }
 
-static int8_t attr_handle_2_att_index(uint16_t attr_handle, uint16_t *prf_task_id, uint16_t *att_index, uint32_t *service_index)
+static int8_t attr_handle_2_att_index(uint16_t attr_handle, uint16_t *prf_task_id, uint16_t *att_index, struct service_elem **service_p)
 {
     if (!s_ctb.init)
     {
@@ -178,36 +198,42 @@ static int8_t attr_handle_2_att_index(uint16_t attr_handle, uint16_t *prf_task_i
         return -1;
     }
 
-    if (!s_ctb.db_attr_count || !s_ctb.service_count || !s_ctb.service_array)
+    if (!s_ctb.db_attr_count || !s_ctb.service_count)
     {
         LOGE("ctx err");
         return -1;
     }
 
-    for (int i = 0; i < s_ctb.service_count; ++i)
+    uint32_t server_config_index = 0;
+    uint32_t c_service_index = 0;
+
+    for (server_config_index = 0; server_config_index < s_ctb.server_config_count; server_config_index++)
     {
-        LOGV("index %d start hdl 0x%x", i, s_ctb.service_array[i].cfg.start_hdl);
-
-        if (s_ctb.service_array[i].cfg.start_hdl <= attr_handle &&
-                (i + 1 >= s_ctb.service_count ||
-                 attr_handle < s_ctb.service_array[i + 1].cfg.start_hdl))
+        for (c_service_index = 0; c_service_index < s_ctb.server_config_array[server_config_index].c_service_count; c_service_index++)
         {
-            if (prf_task_id)
-            {
-                *prf_task_id = s_ctb.service_array[i].cfg.prf_task_id;
-            }
+            LOGV("server config index %d service index %d start hdl 0x%x", server_config_index, c_service_index, s_ctb.server_config_array[server_config_index].c_service_array[c_service_index].cfg.start_hdl);
 
-            if (att_index)
+            if (s_ctb.server_config_array[server_config_index].c_service_array[c_service_index].cfg.start_hdl <= attr_handle &&
+                    s_ctb.server_config_array[server_config_index].c_service_array[c_service_index].cfg.start_hdl + s_ctb.server_config_array[server_config_index].c_service_array[c_service_index].cfg.att_db_nb > attr_handle
+               )
             {
-                *att_index = attr_handle - s_ctb.service_array[i].cfg.start_hdl;
-            }
+                if (prf_task_id)
+                {
+                    *prf_task_id = s_ctb.server_config_array[server_config_index].c_service_array[c_service_index].cfg.prf_task_id;
+                }
 
-            if (service_index)
-            {
-                *service_index = i;
-            }
+                if (att_index)
+                {
+                    *att_index = attr_handle - s_ctb.server_config_array[server_config_index].c_service_array[c_service_index].cfg.start_hdl;
+                }
 
-            return 0;
+                if (service_p)
+                {
+                    *service_p = &s_ctb.server_config_array[server_config_index].c_service_array[c_service_index];
+                }
+
+                return 0;
+            }
         }
     }
 
@@ -261,15 +287,6 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
         ble_evt_msg_elem_t elem = {0};
         os_memset(&elem, 0, sizeof(ble_evt_msg_elem_t));
 
-        elem.server_connect_evt.conn_idx = d_ind->conn_idx;
-        elem.server_connect_evt.relate_adv_handle = hal_ble_con_env.con_dev[d_ind->conn_idx].relate_adv_index;
-        elem.server_connect_evt.type = TRBLE_SERVER_DISCONNECTED;
-        os_memcpy(elem.server_connect_evt.peer_addr, hal_ble_con_env.con_dev[d_ind->conn_idx].peer_addr, sizeof(hal_ble_con_env.con_dev[d_ind->conn_idx].peer_addr));
-
-        ble_evt_queue_push_ext(EVT_BLE_SERVER_CONNECTED, &elem, sizeof(ble_evt_msg_elem_t), NULL);
-
-        os_memset(&elem, 0, sizeof(ble_evt_msg_elem_t));
-
         elem.server_disconnect_evt.conn_idx = d_ind->conn_idx;
         elem.server_disconnect_evt.reason = d_ind->reason;
 
@@ -303,6 +320,14 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
 
     case BLE_5_CREATE_DB:
     {
+        ble_create_db_t *cd_ind = (typeof(cd_ind))param;
+        LOGD("BLE_5_CREATE_DB prf_id:%d, status:0x%x sh 0x%x", cd_ind->prf_id, cd_ind->status, cd_ind->start_hdl);
+
+        if (cd_ind->status)
+        {
+            LOGE("BLE_5_CREATE_DB create err prf_id:%d, status:0x%x", cd_ind->prf_id, cd_ind->status);
+        }
+
         if (s_ctb.sem)
         {
             rtos_set_semaphore(&s_ctb.sem);
@@ -329,7 +354,7 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
 
         if (!service_elem || service_elem->cfg.att_db_nb <= w_req->att_idx)
         {
-            LOGE("can't find prf_id %d or att_idx %d >= num %d", w_req->prf_id, w_req->att_idx, service_elem->cfg.att_db_nb);
+            LOGE("can't find prf_id %d or att_idx %d >= num %d", w_req->prf_id, w_req->att_idx, service_elem ? service_elem->cfg.att_db_nb : 0);
             break;
         }
 
@@ -358,7 +383,7 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
 
             if (!service_elem->db_addon[w_req->att_idx].buffer)
             {
-                LOGE("alloc db buffer err %d %d", db_index, w_req->len);
+                LOGE("alloc db buffer err prf %d att %d len %d", w_req->prf_id, w_req->att_idx, w_req->len);
                 break;
             }
 
@@ -367,7 +392,7 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
         else if (service_elem->db_addon[w_req->att_idx].buffer_max_len < w_req->len ||
                  service_elem->db_addon[w_req->att_idx].buffer_max_len > 2 * w_req->len + 32)
         {
-            LOGI("realloc %d %d", db_index, w_req->len);
+            LOGI("realloc prf %d att %d len %d", w_req->prf_id, w_req->att_idx, w_req->len);
 
             os_free(service_elem->db_addon[w_req->att_idx].buffer);
 
@@ -375,7 +400,7 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
 
             if (!service_elem->db_addon[w_req->att_idx].buffer)
             {
-                LOGE("alloc db buffer err %d %d", db_index, w_req->len);
+                LOGE("alloc db buffer err prf %d att %d len %d", w_req->prf_id, w_req->att_idx, w_req->len);
                 break;
             }
 
@@ -429,7 +454,7 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
             elem.attr_cb_evt.pending = 0; //note: result pending see rtk impl
             elem.attr_cb_evt.tmp_buffer = tmp_buffer;
             elem.attr_cb_evt.tmp_buffer_len = tmp_buffer_len;
-            elem.attr_cb_evt.service_index = service_elem - &s_ctb.service_array[0];
+            elem.attr_cb_evt.service_p = service_elem;
             elem.attr_cb_evt.att_index = w_req->att_idx;
 
             if ((BK_BLE_PERM_GET(attm_desc[w_req->att_idx].ext_perm, UUID_LEN) == BK_BLE_PERM_RIGHT_UUID_16)
@@ -437,12 +462,12 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
             {
                 uint16_t cccd_config = 0;
 
-                os_memcpy(&cccd_config, service_elem->db_addon[w_req->att_idx].peer_write_buffer, sizeof(cccd_config));
+                os_memcpy(&cccd_config, w_req->value, sizeof(cccd_config) < w_req->len ? sizeof(cccd_config) : w_req->len);
 
                 elem.attr_cb_evt.type = TRBLE_ATTR_CB_CCCD;
                 elem.attr_cb_evt.result = cccd_config;
             }
-            else if(w_req->is_cmd)
+            else if (w_req->is_cmd)
             {
                 elem.attr_cb_evt.type = TRBLE_ATTR_CB_WRITING_NO_RSP;
                 elem.attr_cb_evt.result = 0;
@@ -457,6 +482,10 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
 
             //note: report data with trble_netmgr_attr_get_data
         }
+        else if (tmp_buffer)
+        {
+            os_free(tmp_buffer);
+        }
     }
     break;
 
@@ -469,7 +498,7 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
 
         if (!service_elem || service_elem->cfg.att_db_nb <= r_req->att_idx)
         {
-            LOGE("can't find prf_id %d or att_idx %d >= num %d", r_req->prf_id, r_req->att_idx, service_elem->cfg.att_db_nb);
+            LOGE("can't find prf_id %d or att_idx %d >= num %d", r_req->prf_id, r_req->att_idx, service_elem ? service_elem->cfg.att_db_nb : 0);
             break;
         }
 
@@ -501,9 +530,16 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
         {
             evt_type = TRBLE_ATTR_CB_READING;
 
+#if WRITE_READ_BUFF_SAME
+
             //note: peer will always read default_read_buffer, see rtk ble_tizenrt_read_val impl
             rsp_buff = s_ctb.default_read_buffer;
             rsp_len = sizeof(s_ctb.default_read_buffer);
+#else
+
+            rsp_buff = service_elem->db_addon[r_req->att_idx].peer_read_buffer;
+            rsp_len = service_elem->db_addon[r_req->att_idx].peer_read_buffer_current_len;
+#endif
         }
 
         bk_ble_read_response_value_ext(r_req->conn_idx, rsp_len, rsp_buff, r_req->prf_id, r_req->att_idx, service_elem->db_addon[r_req->att_idx].app_reject);
@@ -550,7 +586,7 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
 
         if (!service_elem || service_elem->cfg.att_db_nb <= evt->att_id)
         {
-            LOGE("can't find prf_id %d or att_idx %d >= num %d", evt->prf_id, evt->att_id, service_elem->cfg.att_db_nb);
+            LOGE("can't find prf_id %d or att_idx %d >= num %d", evt->prf_id, evt->att_id, service_elem ? service_elem->cfg.att_db_nb : 0);
             break;
         }
 
@@ -599,14 +635,14 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
     return 0;
 }
 
-int32_t bk_tr_ble_server_attr_set_data_ptr_private(uint8_t service_index, uint8_t att_index,
+int32_t bk_tr_ble_server_attr_set_data_ptr_private(void* service_p, uint8_t att_index,
         uint8_t *buffer, uint16_t buffer_len, uint16_t buffer_max_len)
 {
-    struct service_elem *service_elem = &s_ctb.service_array[service_index];
+    struct service_elem *service_elem = service_p;
 
-    if (service_index >= s_ctb.service_count)
+    if (!service_elem)
     {
-        LOGE("service index out range %d >= %d", service_index, s_ctb.service_count);
+        LOGE("service_elem NULL");
         return -1;
     }
 
@@ -624,12 +660,13 @@ int32_t bk_tr_ble_server_attr_set_data_ptr_private(uint8_t service_index, uint8_
 }
 
 //note: app will input attr_handle as char value handle, see rtk abs_handle impl
-int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_t *buffer, uint16_t buffer_len)
+int32_t bk_tr_ble_server_attr_set_peer_read_data_ptr(trble_attr_handle attr_handle, uint8_t *buffer, uint16_t buffer_len)
 {
     int32_t ret = 0;
     uint16_t att_index = 0;
     uint16_t prof_id = 0;
-    uint32_t service_index = 0;
+    struct service_elem *service_elem = NULL;
+    beken_semaphore_t sem = NULL;
 
     if ((buffer && !buffer_len) || (!buffer && buffer_len))
     {
@@ -637,15 +674,13 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
         return TRBLE_FAIL;
     }
 
-    if (attr_handle_2_att_index(attr_handle, &prof_id, &att_index, &service_index) < 0)
+    if (attr_handle_2_att_index(attr_handle, &prof_id, &att_index, &service_elem) < 0)
     {
         LOGE("can't find attr_handle 0x%x", attr_handle);
         return TRBLE_FAIL;
     }
 
     LOGD("attr_handle 0x%x len %d", attr_handle, buffer_len);
-
-    struct service_elem *service_elem = &s_ctb.service_array[service_index];
 
     uint16_t uuid_16 = 0;
 
@@ -666,6 +701,15 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
         LOGE("can't set char decl attr data !!!");
         return TRBLE_FAIL;
     }
+    else if ((BK_BLE_PERM_GET(service_elem->cfg.att_db[att_index].ext_perm, UUID_LEN) == BK_BLE_PERM_RIGHT_UUID_16)
+             && uuid_16 == BK_GATT_CHAR_CLIENT_CONFIG_UUID)
+    {
+        LOGV("decl attr_handle 0x%x -> value attr handle 0x%x", attr_handle, attr_handle + 1);
+        LOGV("att_index %d -> %d", att_index, att_index + 1);
+
+        LOGE("can't set ccc buffer handle 0x%x len %d !!!", attr_handle, buffer_len);
+        return TRBLE_FAIL;
+    }
     else
     {
         LOGW("att_index %d", att_index);
@@ -679,7 +723,7 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
 
         if (!service_elem->db_addon[att_index].buffer)
         {
-            LOGE("alloc db buffer err %d %d", service_index, buffer_len);
+            LOGE("alloc db buffer err att %u len %d", att_index, buffer_len);
             return TRBLE_OUT_OF_MEMORY;
         }
 
@@ -688,7 +732,7 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
     else if (service_elem->db_addon[att_index].buffer_max_len < buffer_len ||
              service_elem->db_addon[att_index].buffer_max_len > 2 * buffer_len + 32)
     {
-        LOGI("realloc %d %d", service_index, buffer_len);
+        LOGI("realloc att %u len %d", att_index, buffer_len);
 
         os_free(service_elem->db_addon[att_index].buffer);
 
@@ -696,7 +740,7 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
 
         if (!service_elem->db_addon[att_index].buffer)
         {
-            LOGE("alloc db buffer err %d %d", service_index, buffer_len);
+            LOGE("alloc db buffer err att %u len %d", att_index, buffer_len);
             return TRBLE_OUT_OF_MEMORY;
         }
 
@@ -709,7 +753,8 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
     }
 
     service_elem->db_addon[att_index].peer_write_buffer_current_len = buffer_len;
-#else
+
+#elif WRITE_READ_BUFF_SAME
 
     int32_t set_buffer_cb(uint32_t evt, int32_t status, void *param)
     {
@@ -723,8 +768,6 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
 
         return 0;
     }
-
-    beken_semaphore_t sem = NULL;
 
     ret = rtos_init_semaphore(&sem, 1);
 
@@ -741,7 +784,7 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
     elem.set_server_buffer_cmd.buffer = buffer;
     elem.set_server_buffer_cmd.buffer_len = buffer_len;
     elem.set_server_buffer_cmd.buffer_max_len = buffer_len;
-    elem.set_server_buffer_cmd.service_index = service_index;
+    elem.set_server_buffer_cmd.service_p = service_elem;
     elem.set_server_buffer_cmd.att_index = att_index;
     elem.set_server_buffer_cmd.pm = &sem;
     ret = ble_evt_queue_push_ext(EVT_BLE_SERVER_SET_BUFFER, &elem, sizeof(ble_evt_msg_elem_t), set_buffer_cb);
@@ -758,8 +801,13 @@ int32_t bk_tr_ble_server_attr_set_data_ptr(trble_attr_handle attr_handle, uint8_
     if (ret)
     {
         LOGE("wait sem %d err", ret);
+        ret = TRBLE_FAIL;
     }
 
+#else
+    service_elem->db_addon[att_index].peer_read_buffer = buffer;
+    service_elem->db_addon[att_index].peer_read_buffer_current_len = buffer_len;
+    service_elem->db_addon[att_index].peer_read_buffer_max_len = buffer_len;
 #endif
 
 end:;
@@ -780,8 +828,9 @@ int32_t bk_tr_ble_server_attr_get_data_ptr(trble_attr_handle attr_handle, uint8_
     uint16_t att_index = 0;
     uint16_t prof_id = 0;
     uint32_t service_index = 0;
+    struct service_elem *service_elem = NULL;
 
-    if (attr_handle_2_att_index(attr_handle, &prof_id, &att_index, &service_index) < 0)
+    if (attr_handle_2_att_index(attr_handle, &prof_id, &att_index, &service_elem) < 0)
     {
         LOGE("can't find attr_handle 0x%x", attr_handle);
         return TRBLE_FAIL;
@@ -789,7 +838,6 @@ int32_t bk_tr_ble_server_attr_get_data_ptr(trble_attr_handle attr_handle, uint8_
 
     LOGD("attr_handle 0x%x", attr_handle);
 
-    struct service_elem *service_elem = &s_ctb.service_array[service_index];
 
     uint16_t uuid_16 = 0;
 
@@ -817,17 +865,17 @@ int32_t bk_tr_ble_server_attr_get_data_ptr(trble_attr_handle attr_handle, uint8_
 
     if (buffer)
     {
-        *buffer = s_ctb.service_array[service_index].db_addon[att_index].peer_write_buffer;
+        *buffer = service_elem->db_addon[att_index].peer_write_buffer;
     }
 
     if (buffer_len)
     {
-        *buffer_len = s_ctb.service_array[service_index].db_addon[att_index].peer_write_buffer_current_len;
+        *buffer_len = service_elem->db_addon[att_index].peer_write_buffer_current_len;
     }
 
     if (buffer_max_len)
     {
-        *buffer_max_len = s_ctb.service_array[service_index].db_addon[att_index].peer_write_buffer_max_len;
+        *buffer_max_len = service_elem->db_addon[att_index].peer_write_buffer_max_len;
     }
 
     return TRBLE_SUCCESS;
@@ -868,9 +916,8 @@ int32_t bk_tr_ble_server_charact_notify(trble_attr_handle attr_handle, trble_con
 
     uint16_t att_index = 0;
     uint16_t prof_id = 0;
-    uint32_t service_index = 0;
 
-    if (attr_handle_2_att_index(attr_handle, &prof_id, &att_index, &service_index) < 0)
+    if (attr_handle_2_att_index(attr_handle, &prof_id, &att_index, NULL) < 0)
     {
         LOGE("can't find attr_handle 0x%x", attr_handle);
         return TRBLE_FAIL;
@@ -906,9 +953,19 @@ int32_t bk_tr_ble_server_charact_notify(trble_attr_handle attr_handle, trble_con
     //todo: wait send completed ?
     if (ret != BK_ERR_BLE_SUCCESS)
     {
-        rtos_lock_mutex(&hal_ble_con_env.con_dev[con_handle].notify_list_mutex);
-        hal_ble_con_env.con_dev[con_handle].notify_pending_count--;
-        rtos_unlock_mutex(&hal_ble_con_env.con_dev[con_handle].notify_list_mutex);
+        /* notify_pending_count is only incremented for indicate (!is_notify). */
+        if (!is_notify)
+        {
+            rtos_lock_mutex(&hal_ble_con_env.con_dev[con_handle].notify_list_mutex);
+
+            if (hal_ble_con_env.con_dev[con_handle].notify_pending_count > 0)
+            {
+                hal_ble_con_env.con_dev[con_handle].notify_pending_count--;
+            }
+
+            rtos_unlock_mutex(&hal_ble_con_env.con_dev[con_handle].notify_list_mutex);
+        }
+
         LOGE("ret err %d", ret);
         ret = TRBLE_FAIL;
         goto end;
@@ -923,11 +980,8 @@ int32_t bk_tr_ble_server_charact_notify(trble_attr_handle attr_handle, trble_con
         if (ret)
         {
             LOGE("wait data_sem %d err", ret);
+            ret = TRBLE_FAIL;
         }
-    }
-    else
-    {
-        LOGE("send notify/indicate err %d", con_handle);
     }
 
 #endif
@@ -937,9 +991,7 @@ end:;
 
     if (hal_ble_con_env.con_dev[con_handle].data_sem)
     {
-        ret = rtos_deinit_semaphore(&hal_ble_con_env.con_dev[con_handle].data_sem);
-
-        if (ret)
+        if (rtos_deinit_semaphore(&hal_ble_con_env.con_dev[con_handle].data_sem))
         {
             LOGE("deinit data_sem err with ind %d", con_handle);
         }
@@ -1025,9 +1077,9 @@ int32_t bk_tr_ble_server_set_gap_device_name(uint8_t len, uint8_t *device_name)
 
     ret = bk_ble_appm_set_dev_name(len, device_name);
 
-    if (ret)
+    if (ret != len)
     {
-        LOGE("set name err %d", ret);
+        LOGE("set name err %d", len);
         return TRBLE_FAIL;
     }
 
@@ -1052,6 +1104,12 @@ int32_t bk_tr_ble_server_indicate_queue_count(trble_conn_handle *con_handle, uin
 
     LOGD("%d %d", *con_handle, *count);
 
+    if (*count >= NOTIFY_ASYNC_MAX_COUNT)
+    {
+        LOGE("Server indicate pending queue full, wait a moment to send data again !!!\r\n");
+        return TRBLE_BUSY;
+    }
+
     return TRBLE_SUCCESS;
 }
 
@@ -1062,15 +1120,15 @@ int32_t bk_tr_ble_server_attr_reject(trble_attr_handle attr_handle, uint8_t app_
 
     uint16_t att_index = 0;
     uint16_t prof_id = 0;
-    uint32_t service_index = 0;
+    struct service_elem *service_p = NULL;
 
-    if (attr_handle_2_att_index(attr_handle, &prof_id, &att_index, &service_index) < 0)
+    if (attr_handle_2_att_index(attr_handle, &prof_id, &att_index, &service_p) < 0)
     {
         LOGE("can't find attr_handle 0x%x", attr_handle);
         return TRBLE_FAIL;
     }
 
-    s_ctb.service_array[service_index].db_addon[att_index].app_reject = app_errorcode;
+    service_p->db_addon[att_index].app_reject = app_errorcode;
 
     return TRBLE_SUCCESS;
 }
@@ -1108,66 +1166,61 @@ int32_t bk_tr_ble_server_report_passkey_evt(uint8_t conn_idx, uint32_t passkey)
     ble_evt_msg_elem_t elem = {0};
     os_memset(&elem, 0, sizeof(ble_evt_msg_elem_t));
 
-    elem.server_disconnect_evt.conn_idx = conn_idx;
-    elem.server_disconnect_evt.reason = passkey;
+    elem.passkey_evt.conn_idx = conn_idx;
+    elem.passkey_evt.passkey = passkey;
 
     ble_evt_queue_push_ext(EVT_BLE_SERVER_PASSKEY, &elem, sizeof(ble_evt_msg_elem_t), NULL);
 
     return TRBLE_SUCCESS;
 }
 
-int32_t bk_tr_ble_server_init(trble_server_init_config *config)
+int32_t bk_tr_ble_server_add_config(trble_server_init_config *config)
 {
     int32_t ret = TRBLE_SUCCESS;
     int32_t err = 0;
 
-    if (s_ctb.init)
+    if (!s_ctb.init)
     {
-        LOGE("already init");
-        return TRBLE_ALREADY_WORKING;
-    }
-
-    if(!config)
-    {
-        LOGW("NULL config, pls init later !!!");
-        return TRBLE_INVALID_ARGS;
-    }
-
-    LOGD("start");
-
-    if (!s_ctb.sem)
-    {
-        err = rtos_init_semaphore(&s_ctb.sem, 1);
-
-        if (err)
-        {
-            LOGE("init sem err %d", err);
-            ret = TRBLE_FAIL;
-            goto end;
-        }
+        LOGE("not init");
+        return TRBLE_INVALID_STATE;
     }
 
     if (!config || !config->profile_count)
     {
-        LOGW("no need set db");
-        s_ctb.init = 1;
-        goto end;
+        LOGW("NULL or zero config !!!");
+        return TRBLE_INVALID_ARGS;
+    }
+
+    if (s_ctb.server_config_count >= sizeof(s_ctb.server_config_array) / sizeof(s_ctb.server_config_array[0]))
+    {
+        LOGW("can't add config, too much !!!");
+        return TRBLE_OUT_OF_MEMORY;
+    }
+
+    LOGD("start");
+
+    if (s_ctb.service_count && os_memcmp(&s_ctb.server_init_parm, config, offsetof(trble_server_init_config, profile)))
+    {
+        LOGW("warning: server config not match set before !!!");
     }
 
     os_memcpy(&s_ctb.server_init_parm, config, sizeof(*config));
-    os_memcpy(s_ctb.default_read_buffer, "Tizenrt", sizeof("Tizenrt"));
 
-    LOGD("profile_count %d", config->profile_count);
+    LOGI("profile_count %d connected_cb %p disconnected_cb %p", config->profile_count, s_ctb.server_init_parm.connected_cb, s_ctb.server_init_parm.disconnected_cb);
+    s_ctb.profile_count += config->profile_count;
 
     //todo: ble_server_init_config not match trble_server_init_config in example !!!
 
-    s_ctb.db_attr_count = config->profile_count;
+    uint32_t tmp_db_attr_count = config->profile_count;
+    uint32_t tmp_service_count = 0;
+    uint8_t tmp_server_config_count = s_ctb.server_config_count;
+    uint32_t last_service_count = s_ctb.service_count;
 
     //step 1: get count
     //todo: trble_gatt_t not match ble_server_gatt_t !!!
     for (int i = 0; i < config->profile_count; i++)
     {
-        if (!config->profile[i].attr_handle)
+        if (config->profile[i].attr_handle == 0xffff)
         {
             LOGE("invalid attr_handle, index %d", i);
             ret = TRBLE_FAIL;
@@ -1177,11 +1230,11 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
         switch (config->profile[i].type)
         {
         case TRBLE_GATT_SERVICE:
-            s_ctb.service_count++;
+            tmp_service_count++;
             break;
 
         case TRBLE_GATT_CHARACT:
-            s_ctb.db_attr_count++;
+            tmp_db_attr_count++;
             break;
 
         case TRBLE_GATT_DESC:
@@ -1195,14 +1248,20 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
         }
     }
 
-    s_ctb.service_array = os_zalloc(s_ctb.service_count * sizeof(*s_ctb.service_array));
+    struct service_elem *tmp_service_array = NULL;
 
-    if (!s_ctb.service_array)
+    s_ctb.server_config_array[tmp_server_config_count].c_service_array = os_zalloc(tmp_service_count * sizeof(*s_ctb.server_config_array[0].c_service_array));
+    tmp_service_array = s_ctb.server_config_array[tmp_server_config_count].c_service_array;
+
+    if (!tmp_service_array)
     {
         LOGE("service_array alloc err");
         ret = TRBLE_OUT_OF_MEMORY;
         goto end;
     }
+
+    s_ctb.server_config_array[tmp_server_config_count].c_db_attr_count = tmp_db_attr_count;
+    s_ctb.server_config_array[tmp_server_config_count].c_service_count = tmp_service_count;
 
     uint8_t service_before = 0;
     uint8_t char_before = 0;
@@ -1224,20 +1283,20 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
             if (service_before)
             {
                 LOGV("alloc att count %d for service index %d", attr_tmp_count, service_index);
-                s_ctb.service_array[service_index].cfg.att_db = os_zalloc(attr_tmp_count * sizeof(*s_ctb.service_array[service_index].cfg.att_db));
+                tmp_service_array[service_index].cfg.att_db = os_zalloc(attr_tmp_count * sizeof(*tmp_service_array[service_index].cfg.att_db));
 
-                if (!s_ctb.service_array[service_index].cfg.att_db)
+                if (!tmp_service_array[service_index].cfg.att_db)
                 {
                     LOGE("service db alloc err %d %d", service_index, attr_tmp_count);
                     ret = TRBLE_OUT_OF_MEMORY;
                     goto end;
                 }
 
-                s_ctb.service_array[service_index].cfg.att_db_nb = attr_tmp_count;
+                tmp_service_array[service_index].cfg.att_db_nb = attr_tmp_count;
 
-                s_ctb.service_array[service_index].db_addon = os_zalloc(attr_tmp_count * sizeof(*s_ctb.service_array[service_index].db_addon));
+                tmp_service_array[service_index].db_addon = os_zalloc(attr_tmp_count * sizeof(*tmp_service_array[service_index].db_addon));
 
-                if (!s_ctb.service_array[service_index].db_addon)
+                if (!tmp_service_array[service_index].db_addon)
                 {
                     LOGE("service db_addon alloc err %d %d", service_index, attr_tmp_count);
                     ret = TRBLE_OUT_OF_MEMORY;
@@ -1262,7 +1321,7 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
         {
             if (!service_before)
             {
-                LOGE("service must set before %d !!!", input_index);
+                LOGE("service must set before char %d !!!", input_index);
                 ret = TRBLE_FAIL;
                 goto end;
             }
@@ -1274,14 +1333,14 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
         {
             if (!service_before)
             {
-                LOGE("service must set before %d !!!", input_index);
+                LOGE("service must set before char desc %d !!!", input_index);
                 ret = TRBLE_FAIL;
                 goto end;
             }
 
             if (!char_before)
             {
-                LOGE("char must set before %d !!!", input_index);
+                LOGE("char must set before char desc %d !!!", input_index);
                 ret = TRBLE_FAIL;
                 goto end;
             }
@@ -1315,9 +1374,9 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
         {
             if (service_before)
             {
-                LOGV("start create db %d %d", service_index, s_ctb.service_array[service_index].cfg.att_db_nb);
+                LOGV("start create db %d %d prof id %d", service_index, tmp_service_array[service_index].cfg.att_db_nb, tmp_service_array[service_index].cfg.prf_task_id);
 
-                err = bk_ble_create_db(&s_ctb.service_array[service_index].cfg);
+                err = bk_ble_create_db(&tmp_service_array[service_index].cfg);
 
                 if (err)
                 {
@@ -1339,48 +1398,52 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
                 attr_tmp_index = 0;
                 service_index++;
 
-                LOGI("create db %d success", service_index - 1);
+                LOGI("create db config %d service %d success", tmp_server_config_count, service_index - 1);
 
                 if (input_index == config->profile_count)
                 {
-                    if (attr_all_count != s_ctb.db_attr_count)
+                    if (attr_all_count != tmp_db_attr_count)
                     {
-                        LOGE("attr count not match %d %d !!!", attr_all_count, s_ctb.db_attr_count);
+                        LOGE("attr count not match %d %d !!!", attr_all_count, tmp_db_attr_count);
                     }
 
-                    if (service_index != s_ctb.service_count)
+                    if (service_index != tmp_service_count)
                     {
-                        LOGE("service count not match %d %d !!!", service_index, s_ctb.service_count);
+                        LOGE("service count not match %d %d !!!", service_index, tmp_service_count);
                     }
 
                     break;
                 }
-
             }
 
             char_before = 0;
             service_before = 1;
 
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].uuid[0] = (BK_GATT_PRI_SERVICE_DECL_UUID & 0xff);
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].uuid[1] = ((BK_GATT_PRI_SERVICE_DECL_UUID & 0xff00) >> 8);
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm = BK_BLE_PERM_SET(RD, ENABLE);
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].uuid[0] = (BK_GATT_PRI_SERVICE_DECL_UUID & 0xff);
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].uuid[1] = ((BK_GATT_PRI_SERVICE_DECL_UUID & 0xff00) >> 8);
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm = BK_BLE_PERM_SET(RD, ENABLE);
 
-            s_ctb.service_array[service_index].cfg.prf_task_id = service_index + FIRST_PRF_ID_OFFSET;
-            s_ctb.service_array[service_index].cfg.start_hdl = config->profile[input_index].attr_handle;
-            os_memcpy(s_ctb.service_array[service_index].cfg.uuid, config->profile[input_index].uuid, config->profile[input_index].uuid_length);
+            tmp_service_array[service_index].cfg.prf_task_id = service_index + last_service_count + FIRST_PRF_ID_OFFSET;
+            tmp_service_array[service_index].cfg.start_hdl = config->profile[input_index].attr_handle;
+            os_memcpy(tmp_service_array[service_index].cfg.uuid, config->profile[input_index].uuid, config->profile[input_index].uuid_length);
+
+            if (!config->profile[input_index].attr_handle)
+            {
+                LOGI("attr_handle 0, auto assign service %d start hd", service_index);
+            }
 
             switch (config->profile[input_index].uuid_length)
             {
             case 2:
-                s_ctb.service_array[service_index].cfg.svc_perm |= BK_BLE_PERM_SET(SVC_UUID_LEN, UUID_16);
+                tmp_service_array[service_index].cfg.svc_perm |= BK_BLE_PERM_SET(SVC_UUID_LEN, UUID_16);
                 break;
 
             case 4:
-                s_ctb.service_array[service_index].cfg.svc_perm |= BK_BLE_PERM_SET(SVC_UUID_LEN, UUID_32);
+                tmp_service_array[service_index].cfg.svc_perm |= BK_BLE_PERM_SET(SVC_UUID_LEN, UUID_32);
                 break;
 
             case 16:
-                s_ctb.service_array[service_index].cfg.svc_perm |= BK_BLE_PERM_SET(SVC_UUID_LEN, UUID_128);
+                tmp_service_array[service_index].cfg.svc_perm |= BK_BLE_PERM_SET(SVC_UUID_LEN, UUID_128);
                 break;
 
             default:
@@ -1390,11 +1453,11 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
                 break;
             }
 
-            s_ctb.service_array[service_index].db_addon[attr_tmp_index].arg = config->profile[input_index].arg;
-            s_ctb.service_array[service_index].db_addon[attr_tmp_index].cb = config->profile[input_index].cb;
+            tmp_service_array[service_index].db_addon[attr_tmp_index].arg = config->profile[input_index].arg;
+            tmp_service_array[service_index].db_addon[attr_tmp_index].cb = config->profile[input_index].cb;
 
             LOGI("find service index %d attr_tmp_index %d start handle %d ", service_index, attr_tmp_index,
-                 s_ctb.service_array[service_index].cfg.start_hdl);
+                 tmp_service_array[service_index].cfg.start_hdl);
 
             attr_tmp_index++;
             attr_all_count++;
@@ -1411,50 +1474,50 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
             char_before = 1;
 
             //declare
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].uuid[0] = (BK_GATT_CHAR_DECL_UUID & 0xff);
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].uuid[1] = ((BK_GATT_CHAR_DECL_UUID & 0xff00) >> 8);
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm = BK_BLE_PERM_SET(RD, ENABLE);
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].uuid[0] = (BK_GATT_CHAR_DECL_UUID & 0xff);
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].uuid[1] = ((BK_GATT_CHAR_DECL_UUID & 0xff00) >> 8);
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm = BK_BLE_PERM_SET(RD, ENABLE);
             attr_tmp_index++;
             attr_all_count++;
 
             //value
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(RI, ENABLE);
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].max_size = ATTR_MAX_BUFFER_LEN;
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(RI, ENABLE);
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].max_size = ATTR_MAX_BUFFER_LEN;
 
             if (config->profile[input_index].property & TRBLE_ATTR_PROP_READ)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RD, ENABLE);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RD, ENABLE);
             }
 
             if (config->profile[input_index].property & TRBLE_ATTR_PROP_WRITE)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WRITE_REQ, ENABLE);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WRITE_REQ, ENABLE);
             }
 
             if (config->profile[input_index].property & TRBLE_ATTR_PROP_WRITE_NO_RSP)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WRITE_COMMAND, ENABLE);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WRITE_COMMAND, ENABLE);
             }
 
             if (config->profile[input_index].property & TRBLE_ATTR_PROP_NOTIFY)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(NTF, ENABLE);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(NTF, ENABLE);
             }
 
             if (config->profile[input_index].property & TRBLE_ATTR_PROP_INDICATE)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(IND, ENABLE);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(IND, ENABLE);
             }
 
             if (config->profile[input_index].property & TRBLE_ATTR_PROP_AUTHEN)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WRITE_SIGNED, ENABLE);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WRITE_SIGNED, ENABLE);
                 LOGW("not support TRBLE_ATTR_PROP_AUTHEN now !!!");
             }
 
             if (config->profile[input_index].property & TRBLE_ATTR_PROP_EXTENDED)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(EXT, ENABLE);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(EXT, ENABLE);
             }
 
             //            if (config->profile[input_index].property & TRBLE_ATTR_PROP_RWN)
@@ -1470,19 +1533,19 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_R_AUTHEN | TRBLE_ATTR_PERM_R_ENCRYPT))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, AUTH);
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_R_AUTHOR))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, UNAUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, UNAUTH);
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_R_PERMIT))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
             }
             else if ((config->profile[input_index].permission & TRBLE_ATTR_PERM_R_PERMIT) == TRBLE_ATTR_PERM_R_PERMIT)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
             }
             else
             {
@@ -1495,39 +1558,39 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_W_AUTHEN | TRBLE_ATTR_PERM_W_ENCRYPT))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, AUTH);
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_W_AUTHOR))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, UNAUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, UNAUTH);
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_W_PERMIT))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
             }
             else if ((config->profile[input_index].permission & TRBLE_ATTR_PERM_W_PERMIT) == TRBLE_ATTR_PERM_W_PERMIT)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
             }
             else
             {
 
             }
 
-            os_memcpy(s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].uuid, config->profile[input_index].uuid, config->profile[input_index].uuid_length);
+            os_memcpy(tmp_service_array[service_index].cfg.att_db[attr_tmp_index].uuid, config->profile[input_index].uuid, config->profile[input_index].uuid_length);
 
             switch (config->profile[input_index].uuid_length)
             {
             case 2:
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_16);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_16);
                 break;
 
             case 4:
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_32);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_32);
                 break;
 
             case 16:
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_128);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_128);
                 break;
 
             default:
@@ -1537,22 +1600,32 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
                 break;
             }
 
-            s_ctb.service_array[service_index].db_addon[attr_tmp_index].arg = config->profile[input_index].arg;
-            s_ctb.service_array[service_index].db_addon[attr_tmp_index].cb = config->profile[input_index].cb;
+            tmp_service_array[service_index].db_addon[attr_tmp_index].arg = config->profile[input_index].arg;
+            tmp_service_array[service_index].db_addon[attr_tmp_index].cb = config->profile[input_index].cb;
 
-            if (!s_ctb.service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer)
+            if (!tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer)
             {
                 //note: peer write and app read will use default_write_buffer default, see rtk setup_ble_char_info impl
-                s_ctb.service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer = s_ctb.default_write_buffer;
-                s_ctb.service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_max_len = sizeof(s_ctb.default_write_buffer);
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer = s_ctb.default_write_buffer;
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_max_len = sizeof(s_ctb.default_write_buffer);
             }
 
+#if WRITE_READ_BUFF_SAME
+#else
+
+            if (!tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer)
+            {
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer = s_ctb.default_read_buffer;
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer_max_len = sizeof(s_ctb.default_read_buffer);
+            }
+
+#endif
             LOGI("find service index %d char value index %d decl attr handle 0x%x", service_index, attr_tmp_index, config->profile[input_index].attr_handle);
 
-            if (s_ctb.service_array[service_index].cfg.start_hdl + attr_tmp_index - 1 != config->profile[input_index].attr_handle)
+            if (tmp_service_array[service_index].cfg.start_hdl + attr_tmp_index - 1 != config->profile[input_index].attr_handle)
             {
                 LOGE("warning: char decl attr handle expect 0x%x but 0x%x !!!",
-                     s_ctb.service_array[service_index].cfg.start_hdl + attr_tmp_index - 1,
+                     tmp_service_array[service_index].cfg.start_hdl + attr_tmp_index - 1,
                      config->profile[input_index].attr_handle);
             }
 
@@ -1576,10 +1649,10 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
                 goto end;
             }
 
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(RI, ENABLE);
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].max_size = ATTR_MAX_BUFFER_LEN;
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RD, ENABLE);
-            s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WRITE_REQ, ENABLE);
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(RI, ENABLE);
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].max_size = ATTR_MAX_BUFFER_LEN;
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RD, ENABLE);
+            tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WRITE_REQ, ENABLE);
 
             LOGW("perm 0x%x %d", config->profile[input_index].permission, input_index);
 
@@ -1589,64 +1662,64 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_R_AUTHEN | TRBLE_ATTR_PERM_R_ENCRYPT))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, AUTH);
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_R_AUTHOR))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, UNAUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, UNAUTH);
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_R_PERMIT))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
             }
             else if ((config->profile[input_index].permission & TRBLE_ATTR_PERM_R_PERMIT) == TRBLE_ATTR_PERM_R_PERMIT)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
             }
             else
             {
 
             }
 
-            if (config->profile[input_index].permission & TRBLE_ATTR_PERM_R_BANNED)
+            if (config->profile[input_index].permission & TRBLE_ATTR_PERM_W_BANNED)
             {
 
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_W_AUTHEN | TRBLE_ATTR_PERM_W_ENCRYPT))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, AUTH);
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_W_AUTHOR))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, UNAUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, UNAUTH);
             }
             else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_W_PERMIT))
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
             }
             else if ((config->profile[input_index].permission & TRBLE_ATTR_PERM_W_PERMIT) == TRBLE_ATTR_PERM_W_PERMIT)
             {
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
             }
             else
             {
 
             }
 
-            os_memcpy(s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].uuid, config->profile[input_index].uuid, config->profile[input_index].uuid_length);
+            os_memcpy(tmp_service_array[service_index].cfg.att_db[attr_tmp_index].uuid, config->profile[input_index].uuid, config->profile[input_index].uuid_length);
 
             switch (config->profile[input_index].uuid_length)
             {
             case 2:
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_16);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_16);
                 break;
 
             case 4:
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_32);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_32);
                 break;
 
             case 16:
-                s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_128);
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm |= BK_BLE_PERM_SET(UUID_LEN, UUID_128);
                 break;
 
             default:
@@ -1656,36 +1729,56 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
                 break;
             }
 
-            s_ctb.service_array[service_index].db_addon[attr_tmp_index].arg = config->profile[input_index].arg;
-            s_ctb.service_array[service_index].db_addon[attr_tmp_index].cb = config->profile[input_index].cb;
+            tmp_service_array[service_index].db_addon[attr_tmp_index].arg = config->profile[input_index].arg;
+            tmp_service_array[service_index].db_addon[attr_tmp_index].cb = config->profile[input_index].cb;
 
-            if (BK_BLE_PERM_GET(s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm, UUID_LEN) == BK_BLE_PERM_RIGHT_UUID_16)
+            if (BK_BLE_PERM_GET(tmp_service_array[service_index].cfg.att_db[attr_tmp_index].ext_perm, UUID_LEN) == BK_BLE_PERM_RIGHT_UUID_16)
             {
                 uint16_t uuid_16 = 0;
 
-                os_memcpy(&uuid_16, s_ctb.service_array[service_index].cfg.att_db[attr_tmp_index].uuid, sizeof(uuid_16));
+                os_memcpy(&uuid_16, tmp_service_array[service_index].cfg.att_db[attr_tmp_index].uuid, sizeof(uuid_16));
 
                 if (BK_GATT_CHAR_CLIENT_CONFIG_UUID == uuid_16)
                 {
-                    s_ctb.service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer = (void *)&s_ctb.service_array[service_index].db_addon[attr_tmp_index].cccd_config;
-                    s_ctb.service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_current_len = sizeof(s_ctb.service_array[service_index].db_addon[attr_tmp_index].cccd_config);
-                    s_ctb.service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_max_len = sizeof(s_ctb.service_array[service_index].db_addon[attr_tmp_index].cccd_config);
+                    tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer = (void *)&tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config;
+                    tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_current_len = sizeof(tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config);
+                    tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_max_len = sizeof(tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config);
+#if WRITE_READ_BUFF_SAME
+#else
+
+                    if (!tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer)
+                    {
+                        tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer = (void *)&tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config;
+                        tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer_current_len = sizeof(tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config);
+                        tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer_max_len = sizeof(tmp_service_array[service_index].db_addon[attr_tmp_index].cccd_config);
+					}
+#endif
                 }
             }
 
-            if (!s_ctb.service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer)
+            if (!tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer)
             {
                 //note: peer write and app read will use default_write_buffer default, see rtk setup_ble_char_info impl
-                s_ctb.service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer = s_ctb.default_write_buffer;
-                s_ctb.service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_max_len = sizeof(s_ctb.default_write_buffer);
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer = s_ctb.default_write_buffer;
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_write_buffer_max_len = sizeof(s_ctb.default_write_buffer);
             }
+
+#if WRITE_READ_BUFF_SAME
+#else
+
+            if (!tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer)
+            {
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer = s_ctb.default_read_buffer;
+                tmp_service_array[service_index].db_addon[attr_tmp_index].peer_read_buffer_max_len = sizeof(s_ctb.default_read_buffer);
+			}
+#endif
 
             LOGI("find service %d char desc index %d attr handle 0x%x", service_index, attr_tmp_index, config->profile[input_index].attr_handle);
 
-            if (s_ctb.service_array[service_index].cfg.start_hdl + attr_tmp_index != config->profile[input_index].attr_handle)
+            if (tmp_service_array[service_index].cfg.start_hdl + attr_tmp_index != config->profile[input_index].attr_handle)
             {
                 LOGE("warning: desc attr handle expect 0x%x but 0x%x !!!",
-                     s_ctb.service_array[service_index].cfg.start_hdl + attr_tmp_index,
+                     tmp_service_array[service_index].cfg.start_hdl + attr_tmp_index,
                      config->profile[input_index].attr_handle);
             }
 
@@ -1700,13 +1793,64 @@ int32_t bk_tr_ble_server_init(trble_server_init_config *config)
         }
     }
 
+    s_ctb.server_config_count++;
+    s_ctb.service_count += tmp_service_count;
+    s_ctb.db_attr_count += tmp_db_attr_count;
+
+end:;
+    LOGD("end ret %d", ret);
+
+    if (ret)
+    {
+        release_one_db(s_ctb.server_config_count);
+    }
+
+    return ret;
+}
+
+int32_t bk_tr_ble_server_init(trble_server_init_config * config)
+{
+    int32_t ret = TRBLE_SUCCESS;
+    int32_t err = 0;
+
+    if (s_ctb.init)
+    {
+        LOGE("already init");
+        return TRBLE_ALREADY_WORKING;
+    }
+
+    LOGD("start");
+
+    if (!s_ctb.sem)
+    {
+        err = rtos_init_semaphore(&s_ctb.sem, 1);
+
+        if (err)
+        {
+            LOGE("init sem err %d", err);
+            ret = TRBLE_FAIL;
+            goto end;
+        }
+    }
+
+    os_memcpy(s_ctb.default_read_buffer, "Tizenrt", sizeof("Tizenrt"));
+
     s_ctb.init = 1;
+
+    if (!config || !config->profile_count)
+    {
+        LOGW("NULL or zero config, pls add config later !!!");
+        goto end;
+    }
+
+    ret = bk_tr_ble_server_add_config(config);
 
 end:;
     LOGD("end");
 
     if (ret)
     {
+        s_ctb.init = 0;
         release_all_db();
 
         if (s_ctb.sem)
@@ -1725,42 +1869,61 @@ end:;
     return ret;
 }
 
-static void release_all_db(void)
+static void release_one_db(uint32_t index)
 {
-    if (s_ctb.service_array)
+    uint32_t i = index;
+
+    if (i >= sizeof(s_ctb.server_config_array) / sizeof(s_ctb.server_config_array[0]))
     {
-        for (int i = 0; i < s_ctb.service_count; ++i)
+        LOGE("index %d invalid", i);
+        return;
+    }
+
+    if (s_ctb.server_config_array[i].c_service_array && s_ctb.server_config_array[i].c_service_count)
+    {
+        struct service_elem *tmp_service_array = s_ctb.server_config_array[i].c_service_array;
+
+        for (size_t j = 0; j < s_ctb.server_config_array[i].c_service_count; j++)
         {
-            if (s_ctb.service_array[i].cfg.att_db)
+            if (tmp_service_array[j].cfg.att_db)
             {
-                if (s_ctb.service_array[i].db_addon)
+                if (tmp_service_array[j].db_addon)
                 {
-                    for (int j = 0; j < s_ctb.service_array[i].cfg.att_db_nb; ++j)
+                    for (int k = 0; k < tmp_service_array[j].cfg.att_db_nb; ++k)
                     {
 #if ALLOC_ATTR_DATA
 
-                        if (s_ctb.service_array[i].db_addon[j].buffer)
+                        if (tmp_service_array[j].db_addon[k].buffer)
                         {
-                            os_free(s_ctb.service_array[i].db_addon[j].buffer);
-                            s_ctb.service_array[i].db_addon[j].buffer = NULL;
+                            os_free(tmp_service_array[j].db_addon[k].buffer);
+                            tmp_service_array[j].db_addon[k].buffer = NULL;
                         }
 
 #endif
                     }
 
-                    os_free(s_ctb.service_array[i].db_addon);
-                    s_ctb.service_array[i].db_addon = NULL;
+                    os_free(tmp_service_array[j].db_addon);
+                    tmp_service_array[j].db_addon = NULL;
                 }
 
-                os_free(s_ctb.service_array[i].cfg.att_db);
-                s_ctb.service_array[i].cfg.att_db = NULL;
+                os_free(tmp_service_array[j].cfg.att_db);
+                tmp_service_array[j].cfg.att_db = NULL;
             }
         }
 
-        os_free(s_ctb.service_array);
-        s_ctb.service_array = NULL;
-        s_ctb.db_attr_count = 0;
+        os_free(tmp_service_array);
+        s_ctb.server_config_array[i].c_service_array = NULL;
     }
+}
+
+static void release_all_db(void)
+{
+    for (uint32_t i = 0; i < sizeof(s_ctb.server_config_array) / sizeof(s_ctb.server_config_array[0]); i++)
+    {
+        release_one_db(i);
+    }
+
+    os_memset(((uint8_t *)&s_ctb.profile_count) + offsetof(peripheral_ctb_t, db_start), 0, offsetof(peripheral_ctb_t, db_end));
 }
 
 int32_t bk_tr_ble_server_deinit(void)

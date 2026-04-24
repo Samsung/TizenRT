@@ -73,3 +73,21 @@ config ARMINO_I2S_ROLE_MASTER
 endif
 
 endmenu
+
+if WATCHDOG
+config ARMINO_WDG_SLICE_MAX_MS
+	int "Max WDT slice (ms) for software-extended timeout"
+	default 30000
+	range 1 32767
+	---help---
+		Hardware watchdog is reloaded in slices no longer than this value
+		(and never longer than the chip-specific hardware limit), so the
+		logical timeout can exceed one hardware period.
+
+config ARMINO_WDG_MAX_SOFT_TIMEOUT_MS
+	int "Max logical watchdog timeout (ms)"
+	default 300000
+	range 1 86400000
+	---help---
+		Upper bound for WDIOC_SETTIMEOUT / settimeout in milliseconds.
+endif

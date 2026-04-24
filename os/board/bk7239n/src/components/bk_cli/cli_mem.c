@@ -44,29 +44,29 @@ void bk_mem_dump(const char *title, uint32_t start, uint32_t len)
 	BK_LOG_RAW("\n");
 }
 
-void cli_memory_free_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
-{
-	uint32_t total_size,free_size,mini_size;
-    CLI_LOGI("================Static memory================\r\n");
-    os_show_memory_config_info();
+// void cli_memory_free_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
+// {
+// 	uint32_t total_size,free_size,mini_size;
+//     CLI_LOGI("================Static memory================\r\n");
+//     os_show_memory_config_info();
 
-	CLI_LOGI("================Dynamic memory================\r\n");
-	cmd_printf("%-5s   %-5s   %-5s   %-5s   %-5s\r\n",
-		"name", "total", "free", "minimum", "peak");
+// 	CLI_LOGI("================Dynamic memory================\r\n");
+// 	cmd_printf("%-5s   %-5s   %-5s   %-5s   %-5s\r\n",
+// 		"name", "total", "free", "minimum", "peak");
 	
-	total_size = rtos_get_total_heap_size();
-	free_size  = rtos_get_free_heap_size();
-	mini_size  = rtos_get_minimum_free_heap_size();
-	cmd_printf("heap\t%d\t%d\t%d\t%d\r\n",  total_size,free_size,mini_size,total_size-mini_size);
+// 	total_size = rtos_get_total_heap_size();
+// 	free_size  = rtos_get_free_heap_size();
+// 	mini_size  = rtos_get_minimum_free_heap_size();
+// 	cmd_printf("heap\t%d\t%d\t%d\t%d\r\n",  total_size,free_size,mini_size,total_size-mini_size);
 
-#if defined(CONFIG_PSRAM_AS_SYS_MEMORY)
-	total_size = rtos_get_psram_total_heap_size();
-	free_size  = rtos_get_psram_free_heap_size();
-	mini_size  = rtos_get_psram_minimum_free_heap_size();
-	cmd_printf("psram\t%d\t%d\t%d\t%d\r\n", total_size,free_size,mini_size,total_size-mini_size);
-#endif
+// #if defined(CONFIG_PSRAM_AS_SYS_MEMORY)
+// 	total_size = rtos_get_psram_total_heap_size();
+// 	free_size  = rtos_get_psram_free_heap_size();
+// 	mini_size  = rtos_get_psram_minimum_free_heap_size();
+// 	cmd_printf("psram\t%d\t%d\t%d\t%d\r\n", total_size,free_size,mini_size,total_size-mini_size);
+// #endif
 
-}
+// }
 
 void cli_memory_set_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
 {
@@ -523,54 +523,54 @@ int32_t mem_read_test(uint32_t src, uint32_t dst, uint32_t size)
 }
 
 
-static void cli_mem_test(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
-{
-    uint32_t address, size;
+// static void cli_mem_test(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
+// {
+//     uint32_t address, size;
 
-    if (argc >= 3) {
-        address = strtol(argv[1], NULL, 16);
-        size = strtol(argv[2], NULL, 16);
-        CLI_LOGI("memtest,address: 0x%08X size: 0x%08X\r\n", address, size);
+//     if (argc >= 3) {
+//         address = strtol(argv[1], NULL, 16);
+//         size = strtol(argv[2], NULL, 16);
+//         CLI_LOGI("memtest,address: 0x%08X size: 0x%08X\r\n", address, size);
 
-        mem_test(address, size, 0);
-    } else if (argc == 1) {
-        // auto_mem_test();
-    } else {
-        CLI_LOGI("memtest <addr> <length> \r\n");
-    }
-}
-
-
-static void cli_mem_time(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
-{
-    uint32_t address, count, mode;
-    if (argc >= 4) {
-        address = strtol(argv[1], NULL, 16);
-        count = strtol(argv[2], NULL, 16);
-        mode = strtol(argv[3], NULL, 16);
-    } else {
-        CLI_LOGI("memtime <addr> <count> <0:write,1:read> \r\n");
-        return;
-    }
-    CLI_LOGI("memtime, address: 0x%08X count: 0x%08X, read=%d\r\n", address, count, mode);
-    mem_time((uint32_t *)address, count, mode);
-}
+//         mem_test(address, size, 0);
+//     } else if (argc == 1) {
+//         // auto_mem_test();
+//     } else {
+//         CLI_LOGI("memtest <addr> <length> \r\n");
+//     }
+// }
 
 
-static void cli_memread_test(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
-{
-    uint32_t src, dest, size;
+// static void cli_mem_time(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
+// {
+//     uint32_t address, count, mode;
+//     if (argc >= 4) {
+//         address = strtol(argv[1], NULL, 16);
+//         count = strtol(argv[2], NULL, 16);
+//         mode = strtol(argv[3], NULL, 16);
+//     } else {
+//         CLI_LOGI("memtime <addr> <count> <0:write,1:read> \r\n");
+//         return;
+//     }
+//     CLI_LOGI("memtime, address: 0x%08X count: 0x%08X, read=%d\r\n", address, count, mode);
+//     mem_time((uint32_t *)address, count, mode);
+// }
 
-    if (argc >= 4) {
-        src = strtol(argv[1], NULL, 16);
-        dest = strtol(argv[2], NULL, 16);
-        size = strtol(argv[3], NULL, 16);
-        CLI_LOGI("memread, src: 0x%08X dest: 0x%08X size: 0x%08X\r\n", src, dest, size);
-        mem_read_test(src, dest, size);
-    } else {
-        CLI_LOGI("memread <src> <dest> <size> \r\n");
-    }
-}
+
+// static void cli_memread_test(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
+// {
+//     uint32_t src, dest, size;
+
+//     if (argc >= 4) {
+//         src = strtol(argv[1], NULL, 16);
+//         dest = strtol(argv[2], NULL, 16);
+//         size = strtol(argv[3], NULL, 16);
+//         CLI_LOGI("memread, src: 0x%08X dest: 0x%08X size: 0x%08X\r\n", src, dest, size);
+//         mem_read_test(src, dest, size);
+//     } else {
+//         CLI_LOGI("memread <src> <dest> <size> \r\n");
+//     }
+// }
 
 #if  0   //defined(CONFIG_MPU)
 void mpu_cfg(int index, uint32_t rbar, uint32_t rlar);
@@ -689,18 +689,18 @@ static void cli_trap_disable(char *pcWriteBuffer, int xWriteBufferLen, int argc,
 
 #define MEM_CMD_CNT (sizeof(s_mem_commands) / sizeof(struct cli_command))
 static const struct cli_command s_mem_commands[] = {
-    {"memstack", "show stack memory usage", cli_memory_stack_cmd},
-    {"memshow", "show free heap", cli_memory_free_cmd},
+    //{"memstack", "show stack memory usage", cli_memory_stack_cmd},
+    //{"memshow", "show free heap", cli_memory_free_cmd},
 #if defined(CONFIG_MEM_DEBUG) && defined(CONFIG_FREERTOS)
     {"memleak", "[show memleak", cli_memory_leak_cmd},
 #endif
 #if defined(CONFIG_DEBUG_FIRMWARE)
     {"memdump", "<addr> <length>", cli_memory_dump_cmd},
     {"memset", "<addr> <value 1> [<value 2> ... <value n>]", cli_memory_set_cmd},
-    {"memtest", "<addr> <length>", cli_mem_test},
-    {"memtest_r", "<src> <dest> <size>", cli_memread_test},
-    {"memtest_wr", "<addr> <count>", cli_memtest_wr_cmd},
-	{"memtime", "<addr> <count> <0:write,1:read>", cli_mem_time},
+    //{"memtest", "<addr> <length>", cli_mem_test},
+    //{"memtest_r", "<src> <dest> <size>", cli_memread_test},
+    //{"memtest_wr", "<addr> <count>", cli_memtest_wr_cmd},
+	//{"memtime", "<addr> <count> <0:write,1:read>", cli_mem_time},
 #if 0  //defined(CONFIG_MPU)
     {"mpucfg", "<rnr> <rbar> <rlar>", cli_mpucfg_cmd},
     {"mpuclr", "<rnr>", cli_mpuclr_cmd},

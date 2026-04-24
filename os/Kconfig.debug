@@ -440,38 +440,6 @@ config DEBUG_SCHED_INFO
 
 endif #DEBUG_SCHED
 
-config DEBUG_SHM
-	bool "Shared Memory Debug Feature"
-	default n
-	depends on MM_SHM
-	---help---
-		Enable shared memory management debug feature.
-
-if DEBUG_SHM
-
-config DEBUG_SHM_ERROR
-	bool "Shared Memory Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable shared memory management error debug SYSLOG output.
-
-config DEBUG_SHM_WARN
-	bool "Shared Memory Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable shared memory management warning debug SYSLOG output.
-
-config DEBUG_SHM_INFO
-	bool "Shared Memory Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable shared memory management informational debug SYSLOG output.
-
-endif #DEBUG_SHM
-
 config DEBUG_SYSCALL
 	bool "SYSCALL Debug Feature"
 	default n

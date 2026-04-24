@@ -648,8 +648,7 @@ union mbedtls_ssl_premaster_secret {
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED)    || \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED)  || \
     defined(MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED)     || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED)   || \
-    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ANON_ENABLED)
+    defined(MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED)
     unsigned char _pms_ecdh[MBEDTLS_ECP_MAX_BYTES];    /* RFC 4492 5.10 */
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
@@ -1565,14 +1564,6 @@ struct mbedtls_ssl_config {
 
 #if defined(MBEDTLS_SSL_ALPN)
     const char **MBEDTLS_PRIVATE(alpn_list);         /*!< ordered list of protocols          */
-#endif
-
-#if defined(MBEDTLS_SSL_CLIENT_RPK)
-    unsigned int client_rpk : 1;   /*!< use client RPK?                     */
-#endif
-
-#if defined(MBEDTLS_SSL_SERVER_RPK)
-    unsigned int server_rpk : 1;   /*!< use server RPK?                     */
 #endif
 
 #if defined(MBEDTLS_SSL_DTLS_SRTP)

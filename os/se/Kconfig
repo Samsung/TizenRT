@@ -40,11 +40,6 @@ config SE_KONAI
 	---help---
 		KONAI SE chip
 
-config SE_VIRTUAL
-	bool "Virtual SE chip"
-	---help---
-		Enable Virtual SE chip for testing
-
 config SE_AMEBA
 	bool "Ameba Software SE"
 	---help---
@@ -77,10 +72,6 @@ if SE_KONAI
 source se/konai/Kconfig
 endif
 
-if SE_VIRTUAL
-source se/virtual/Kconfig
-endif
-
 if SE_AMEBA
 source se/ameba/Kconfig
 endif
@@ -97,5 +88,6 @@ endif
 config SECURITY_LEVEL
 	bool "Enable setting security level"
 	default y
+	depends on CONFIG_SE
 	---help---
 		Setting security level high or low.

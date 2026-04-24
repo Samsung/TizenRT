@@ -466,6 +466,13 @@ wifi_manager_result_e wifi_manager_control_bridge(bool enable, wifi_manager_soft
 }
 #endif
 
+wifi_manager_result_e wifi_manager_disable_11ax_mode(void)
+{
+	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
+	wifimgr_msg_s msg = {WIFIMGR_CMD_DISABLE_11AX_MODE, WIFI_MANAGER_FAIL, NULL, NULL};
+	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+}
+
 /**
  * Wi-Fi Profile
  */

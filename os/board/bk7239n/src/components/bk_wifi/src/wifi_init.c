@@ -70,6 +70,8 @@ int wifi_init(const wifi_init_config_t *config)
 	/* init workqueue */
 	bk_workqueue_init();
 
+	bk_pm_module_vote_analdo_vol(PM_ANALDO_VOTE_MODULE_WIFI_SLEEP_WAKE, PM_ANALDO_VOL_1_65V);
+
 	/* power up Wi-Fi MAC and PHY */
 	//enable mac and phy power
 	bk_pm_module_vote_power_ctrl(PM_POWER_MODULE_NAME_WIFIP_MAC, PM_POWER_MODULE_STATE_ON);

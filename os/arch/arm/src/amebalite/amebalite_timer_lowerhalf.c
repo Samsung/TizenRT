@@ -141,7 +141,6 @@ static void amebalite_gpt_handler(uint32_t data)
 {
 	struct amebalite_gpt_lowerhalf_s *priv = (struct amebalite_gpt_lowerhalf_s *)data;
 	uint32_t next_interval_us = 0;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return;
 	}
@@ -177,7 +176,6 @@ static void amebalite_gpt_handler(uint32_t data)
 static int amebalite_gpt_start(struct timer_lowerhalf_s *lower)
 {
 	struct amebalite_gpt_lowerhalf_s *priv = (struct amebalite_gpt_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -224,7 +222,6 @@ static int amebalite_gpt_start(struct timer_lowerhalf_s *lower)
 static int amebalite_gpt_stop(struct timer_lowerhalf_s *lower)
 {
 	struct amebalite_gpt_lowerhalf_s *priv = (struct amebalite_gpt_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -261,7 +258,6 @@ static int amebalite_gpt_getstatus(struct timer_lowerhalf_s *lower, struct timer
 {
 	struct amebalite_gpt_lowerhalf_s *priv = (struct amebalite_gpt_lowerhalf_s *)lower;
 	uint32_t ticks;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -309,7 +305,6 @@ static int amebalite_gpt_getstatus(struct timer_lowerhalf_s *lower, struct timer
 static int amebalite_gpt_settimeout(struct timer_lowerhalf_s *lower, uint32_t timeout)
 {
 	struct amebalite_gpt_lowerhalf_s *priv = (struct amebalite_gpt_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -389,7 +384,6 @@ static void amebalite_gpt_setcallback(struct timer_lowerhalf_s *lower, tccb_t ca
 static int amebalite_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned long arg)
 {
 	struct amebalite_gpt_lowerhalf_s *priv = (struct amebalite_gpt_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}

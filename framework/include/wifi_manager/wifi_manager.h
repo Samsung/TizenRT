@@ -618,6 +618,8 @@ wifi_manager_result_e wifi_manager_set_powermode(wifi_manager_powermode_e mode);
 wifi_manager_result_e wifi_manager_control_bridge(bool enable, wifi_manager_softap_config_s *softap_config);
 #endif
 
+wifi_manager_result_e wifi_manager_disable_11ax_mode(void);
+
 #ifdef __cplusplus
 }
 #endif

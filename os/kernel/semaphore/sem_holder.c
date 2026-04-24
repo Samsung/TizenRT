@@ -309,8 +309,13 @@ static int sem_boostholderprio(FAR struct semholder_s *pholder, FAR sem_t *sem, 
 			 * saved priority and not to the base priority.
 			 */
 
-			htcb->pend_reprios[htcb->npend_reprio] = rtcb->sched_priority;
-			htcb->npend_reprio++;
+			if (htcb->npend_reprio < CONFIG_SEM_NNESTPRIO) {
+				htcb->pend_reprios[htcb->npend_reprio] = rtcb->sched_priority;
+				htcb->npend_reprio++;
+			} else {
+				sdbg("Number of threads exceed CONFIG_SEM_NNESTPRIO\n");
+			}
+
 		}
 	}
 #else

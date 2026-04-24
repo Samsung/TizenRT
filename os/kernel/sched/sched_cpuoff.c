@@ -101,12 +101,6 @@ int sched_cpuoff(int cpu)
 		return -EINVAL;
 	}
 
-	tcb = current_task(cpu);
-	if (tcb->pid != cpu) {
-		//Trying to turnoff a busy CPU, error case
-		return -EBUSY;
-	}
-
 	if (spin_trylock(&g_state_transition_lock) == SP_LOCKED) {
 		return -EBUSY;
 	}
@@ -116,6 +110,15 @@ int sched_cpuoff(int cpu)
 		 * throughout this critical operation.
 		 */
 		flags = enter_critical_section();
+
+		tcb = current_task(cpu);
+		if (tcb->pid != cpu) {
+			/* Trying to turnoff a busy CPU, error case */
+			ret = -EBUSY;
+			leave_critical_section(flags);
+			goto errout_with_global_lock;
+		}
+
 		/* Update the active CPUs mask to indicate that the offline CPU is no longer active */
 		CPU_CLR(cpu, &g_active_cpus_mask);
 		//Call up_cpu_off function

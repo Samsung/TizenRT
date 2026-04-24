@@ -37,6 +37,7 @@ public:
 	StreamHandler();
 
 	virtual bool open();
+	virtual bool open(size_t buffSize);
 	virtual bool close();
 	virtual bool start();
 	virtual bool stop();

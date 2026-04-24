@@ -89,6 +89,8 @@ extern uint32_t RAM_KREGION2_SIZE;
 #define HEAP_PSRAM2_SIZE         (void*)&RAM_KREGION2_SIZE  
 extern unsigned int __StackLimit;
 extern uint32_t _sidle_stack;
+extern uint32_t __kernel_psram_heap_start__;
+extern uint32_t __kernel_psram_heap_end__;
 
 #define IDLE_STACK      ((unsigned)&__StackLimit + CONFIG_IDLETHREAD_STACKSIZE)
 const uintptr_t g_idle_topstack = IDLE_STACK;
@@ -338,7 +340,17 @@ static inline void boot_mem_check(void)
 	}
 }
 
+__attribute__((weak)) \
+void *__stack_chk_guard = 0xDEADBEEF;
 
+
+static void bk_stack_guard_setup(void)
+{
+    BK_LOGI(TAG, "Intialize random stack guard.\r\n");
+#if defined(CONFIG_TRNG_SUPPORT)
+    __stack_chk_guard = (void *)bk_rand();
+#endif
+}
 
 /*----------------------------------------------------------------------------
   Reset Handler called on controller reset
@@ -410,24 +422,33 @@ void set_jtag_mode(void) {
 
 void os_heap_init(void)
 {
-
 #if CONFIG_KMM_REGIONS == 1
-    kregionx_start[0] = (void *)HEAP_START_ADDRESS;
-    kregionx_size[0] = (size_t)(HEAP_END_ADDRESS - HEAP_START_ADDRESS);
-
+    {
+        kregionx_start[0] = (void *)HEAP_START_ADDRESS;
+        kregionx_size[0] = (size_t)(HEAP_END_ADDRESS - HEAP_START_ADDRESS);
+    }
 #elif CONFIG_KMM_REGIONS >= 2  
-    kregionx_start[0] = (void *)HEAP_PSRAM1_START_ADDR; 
-    kregionx_size[0] = (size_t)HEAP_PSRAM1_SIZE;  
+    {
+        uintptr_t psram_heap_start = (uintptr_t)&__kernel_psram_heap_start__;
+        uintptr_t psram_heap_end = (uintptr_t)&__kernel_psram_heap_end__;
+
+        kregionx_start[0] = (void *)psram_heap_start;
+        kregionx_size[0] = (size_t)(psram_heap_end - psram_heap_start);
+    }
 #if CONFIG_KMM_REGIONS == 3
-    kregionx_start[1] = (void *)HEAP_START_ADDRESS;
-    kregionx_start[2] = (void *)HEAP_PSRAM2_START_ADDR;
-    kregionx_size[1]  = (size_t)(HEAP_END_ADDRESS - HEAP_START_ADDRESS);
-    kregionx_size[2]  = (size_t)HEAP_PSRAM2_SIZE;
+    {
+        kregionx_start[1] = (void *)HEAP_START_ADDRESS;
+        kregionx_start[2] = (void *)HEAP_PSRAM2_START_ADDR;
+        kregionx_size[1]  = (size_t)(HEAP_END_ADDRESS - HEAP_START_ADDRESS);
+        kregionx_size[2]  = (size_t)HEAP_PSRAM2_SIZE;
+    }
 #elif CONFIG_KMM_REGIONS > 3
 #error "Need to check here for heap."
 #else
-    kregionx_start[1] = (void *)HEAP_START_ADDRESS;
-    kregionx_size[1]  = (size_t)(HEAP_END_ADDRESS - HEAP_START_ADDRESS);
+    {
+        kregionx_start[1] = (void *)HEAP_START_ADDRESS;
+        kregionx_size[1]  = (size_t)(HEAP_END_ADDRESS - HEAP_START_ADDRESS);
+    }
 #endif
 
 
@@ -500,12 +521,22 @@ __FLASH_BOOT_CODE void _start(void)
 	bk_trng_driver_init();
 #endif
 
+    /* Initialize __stack_chk_guard before os_start() to avoid false positive
+    * when -fstack-protector is used. 
+    */
+
+    bk_stack_guard_setup();
+
 #if defined(CONFIG_SWD_DEBUG_MODE)
     set_jtag_mode();
 #endif
 
 #if defined(CONFIG_RESET_REASON)
 	reset_reason_init();
+#endif
+
+#if defined(CONFIG_OTP)
+    bk_otp_driver_init();
 #endif
     /* Call os_start() */
     extern void os_start(void);

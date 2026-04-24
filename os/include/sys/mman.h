@@ -192,8 +192,6 @@ int posix_madvise(FAR void *addr, size_t len, int advice);
 int posix_mem_offset(FAR const void *addr, size_t len, FAR off_t *off, FAR size_t *contig_len, FAR int *fildes);
 int posix_typed_mem_get_info(int fildes, FAR struct posix_typed_mem_info *info);
 int posix_typed_mem_open(FAR const char *name, int oflag, int tflag);
-int shm_open(FAR const char *name, int oflag, mode_t mode);
-int shm_unlink(FAR const char *name);
 
 #undef EXTERN
 #if defined(__cplusplus)

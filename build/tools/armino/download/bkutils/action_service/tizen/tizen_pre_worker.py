@@ -24,6 +24,7 @@ class PreWorker(ActionBase):
         recnt=5,
         chipid=None,
         debug=3,
+        random_bin_path=None,
     ) -> None:
         super().__init__(port, link_check_baudrate)
         self.link_check_type = link_check_type
@@ -34,6 +35,16 @@ class PreWorker(ActionBase):
         self.retry = recnt
         self.chip_id = chipid
         self.debug = debug
+        self.random_bin_path = random_bin_path
+
+
+    def _maybe_verify_random_bin(self, linktype):
+        from bkutils.common.random_bin_verify import maybe_verify_random_bin_after_get_bus
+        maybe_verify_random_bin_after_get_bus(
+            self.ser,
+            linktype,
+            self.random_bin_path,
+        )
 
     def pre_work(self):
         BKLog.i("====================pre work start...====================")
@@ -50,6 +61,9 @@ class PreWorker(ActionBase):
             )
             if not tmp_res:
                 raise Exception("get bus fail.")
+
+            self._maybe_verify_random_bin(linktype)
+
             # get chip id
             time.sleep(0.1)  # fix read chip id fail sometimes
             # if self.chip_id is None:

@@ -26,13 +26,14 @@ __CPU0_APP_RAM_SIZE = 0x80000 - __CPU0_SPE_RAM_SIZE - __DPD_RAM_SIZE;
 __CPU0_APP_IRAM_OFFSET = 0x20000000;
 __CPU0_APP_IRAM_BASE = __CPU0_APP_RAM_BASE - __CPU0_APP_IRAM_OFFSET;
 __CPU0_APP_IRAM_SIZE = __CPU0_APP_RAM_SIZE;
-__CPU0_APP_VIRTUAL_CODE_START = 0xD0000;
+/* Kernel flash code start: injected from Make.defs, with a safe fallback. */
+__CPU0_APP_VIRTUAL_CODE_START = DEFINED(CONFIG_CPU0_APP_VIRTUAL_CODE_START) ? CONFIG_CPU0_APP_VIRTUAL_CODE_START : 0xB0000;
 /* Set a large value here to ensure sufficient space during linking, actual size check is performed during bin packaging */
 __CPU0_APP_VIRTUAL_CODE_SIZE = 0x600000;
 
 SOC_FLASH_DATA_BASE = 0x12000000;
-SOC_PSRAM_DATA_BASE = CONFIG_BK_PSRAM_DATA_BASE;
-SOC_PSRAM_CODE_BASE = CONFIG_BK_PSRAM_CODE_BASE;
+SOC_PSRAM_BASE = RAM_KREGION0_START;
+SOC_PSRAM_SIZE = RAM_KREGION0_SIZE;
 
 OUTPUT_ARCH(arm)
 ENTRY(Reset_Handler)
@@ -42,8 +43,7 @@ MEMORY
   FLASH (rx)            : ORIGIN = (SOC_FLASH_DATA_BASE + __CPU0_APP_VIRTUAL_CODE_START), LENGTH = __CPU0_APP_VIRTUAL_CODE_SIZE
   IRAM (rx)             : ORIGIN = __CPU0_APP_IRAM_BASE, LENGTH = __CPU0_APP_IRAM_SIZE
   RAM (rwx)             : ORIGIN = __CPU0_APP_RAM_BASE, LENGTH = __CPU0_APP_RAM_SIZE
-  PSRAM_DATA (rwx)      : ORIGIN = SOC_PSRAM_DATA_BASE, LENGTH = CONFIG_BK_PSRAM_DATA_SIZE
-  PSRAM_CODE (rwx)      : ORIGIN = SOC_PSRAM_CODE_BASE, LENGTH = CONFIG_BK_PSRAM_CODE_SIZE
+  PSRAM (rwx)           : ORIGIN = SOC_PSRAM_BASE, LENGTH = SOC_PSRAM_SIZE
 }
 
 SECTIONS
@@ -271,6 +271,68 @@ SECTIONS
 
     _eronly = ABSOLUTE(.);
 
+    .psram_code :
+    {
+        . = ALIGN(32);
+        PROVIDE(__psram_code_text = LOADADDR(.psram_code));
+        __psram_code_start__ = .;
+        _stext_psram = ABSOLUTE(.);
+ 
+        . = ALIGN(32);
+        __psram_code_end__ = .;
+    } > PSRAM AT > FLASH
+
+    .psram_data :
+    {
+        . = ALIGN(32);
+        PROVIDE(__psram_data_text = LOADADDR(.psram_data));
+        __psram_data_start__ = .;
+        *(.psram.data)
+        *(.psram.data*)
+        /* Move initialized data into PSRAM first.
+         * Keep board, armino_serial, and lwIP-related net data in SRAM.
+         */
+        EXCLUDE_FILE(
+            *board/bk7239n/*
+            *libboard.a:*
+            *libkarch.a:armino_serial.o*
+            *libnet.a:*lwip*.o*
+            *libnet.a:def.o*
+            *libnet.a:netif.o*
+            *libnet.a:ip.o*
+            *libnet.a:pbuf.o*
+            *libnet.a:raw.o*
+            *libnet.a:tcp*.o*
+            *libnet.a:udp.o*
+            *libnet.a:inet_chksum.o*
+            *libnet.a:netifapi.o*
+            *libnet.a:sockets.o*
+            *libnet.a:ethernet.o*
+            *libnet.a:etharp.o*
+            *libnet.a:icmp*.o*
+            *libnet.a:igmp.o*
+            *libnet.a:ip4*.o*
+            *libnet.a:ip6*.o*
+            *libnet.a:ethip6.o*
+            *libnet.a:nd6.o*
+            *libnet.a:mld6.o*
+            *libnet.a:sys_arch.o*
+            *libnet.a:mem*.o*
+            *libnet.a:dns.o*
+            *libnet.a:timeouts.o*
+            *libnet.a:stats.o*
+            *libnet.a:api_*.o*
+            *libnet.a:err.o*
+            *libnet.a:netbuf.o*
+            *libnet.a:init.o*
+            *libnet.a:netdb.o*
+            *libnet.a:dhcp*.o*
+        ) *(.data .data.* .sdata .gnu.linkonce.d*)
+
+        . = ALIGN(4);
+        __psram_data_end__ = .;
+    } > PSRAM AT > FLASH
+
     .data :
     {
         . = ALIGN(4);
@@ -319,13 +381,109 @@ SECTIONS
         . += REBOOT_TAG_AREA_SIZE;
     } > RAM
 
+    .psram_bss (NOLOAD):
+    {
+        . = ALIGN(32);
+        __psram_bss_start__ = .;
+        *(.psram.bss)
+        *(.psram.bss*)
+        /* Move zero-init data into PSRAM first.
+         * Keep board, armino_serial, and lwIP-related net bss/common in SRAM.
+         */
+        EXCLUDE_FILE(
+            *board/bk7239n/*
+            *libboard.a:*
+            *libkarch.a:armino_serial.o*
+            *libnet.a:*lwip*.o*
+            *libnet.a:def.o*
+            *libnet.a:netif.o*
+            *libnet.a:ip.o*
+            *libnet.a:pbuf.o*
+            *libnet.a:raw.o*
+            *libnet.a:tcp*.o*
+            *libnet.a:udp.o*
+            *libnet.a:inet_chksum.o*
+            *libnet.a:netifapi.o*
+            *libnet.a:sockets.o*
+            *libnet.a:ethernet.o*
+            *libnet.a:etharp.o*
+            *libnet.a:icmp*.o*
+            *libnet.a:igmp.o*
+            *libnet.a:ip4*.o*
+            *libnet.a:ip6*.o*
+            *libnet.a:ethip6.o*
+            *libnet.a:nd6.o*
+            *libnet.a:mld6.o*
+            *libnet.a:sys_arch.o*
+            *libnet.a:mem*.o*
+            *libnet.a:dns.o*
+            *libnet.a:timeouts.o*
+            *libnet.a:stats.o*
+            *libnet.a:api_*.o*
+            *libnet.a:err.o*
+            *libnet.a:netbuf.o*
+            *libnet.a:init.o*
+            *libnet.a:netdb.o*
+            *libnet.a:dhcp*.o*
+        ) *(.bss .bss.*)
+        EXCLUDE_FILE(
+            *board/bk7239n/*
+            *libboard.a:*
+            *libkarch.a:armino_serial.o*
+            *libnet.a:*lwip*.o*
+            *libnet.a:def.o*
+            *libnet.a:netif.o*
+            *libnet.a:ip.o*
+            *libnet.a:pbuf.o*
+            *libnet.a:raw.o*
+            *libnet.a:tcp*.o*
+            *libnet.a:udp.o*
+            *libnet.a:inet_chksum.o*
+            *libnet.a:netifapi.o*
+            *libnet.a:sockets.o*
+            *libnet.a:ethernet.o*
+            *libnet.a:etharp.o*
+            *libnet.a:icmp*.o*
+            *libnet.a:igmp.o*
+            *libnet.a:ip4*.o*
+            *libnet.a:ip6*.o*
+            *libnet.a:ethip6.o*
+            *libnet.a:nd6.o*
+            *libnet.a:mld6.o*
+            *libnet.a:sys_arch.o*
+            *libnet.a:mem*.o*
+            *libnet.a:dns.o*
+            *libnet.a:timeouts.o*
+            *libnet.a:stats.o*
+            *libnet.a:api_*.o*
+            *libnet.a:err.o*
+            *libnet.a:netbuf.o*
+            *libnet.a:init.o*
+            *libnet.a:netdb.o*
+            *libnet.a:dhcp*.o*
+        ) *(COMMON)
+
+        . = ALIGN(32);
+        __psram_bss_end__ = .;
+    } > PSRAM
+
+    .psram_heap (COPY) :
+    {
+        . = ALIGN(32);
+        __kernel_psram_heap_start__ = .;
+        . = ORIGIN(PSRAM) + LENGTH(PSRAM);
+        /* Round down to 32-byte boundary (ALIGN rounds up, would exceed PSRAM) */
+        . = . - (. % 32);
+        __kernel_psram_heap_end__ = .;
+    } > PSRAM
+
     .bss (NOLOAD):
     {
         . = ALIGN(4);
 
        _sbss = ABSOLUTE(.);
         _bss_start = .;
-        /*EXCLUDE_FILE(*libnet.a:mem.o*)  *(.bss .bss*)*/
+
         *(.bss .bss*)
         *(COMMON)
 
@@ -362,40 +520,7 @@ SECTIONS
         /*_estack = .; */
     } > RAM
 
-    .psram_code :
-    {
-        . = ALIGN(8);
-        PROVIDE(__psram_code_text = LOADADDR(.psram_code));
-        __psram_code_start__ = .;
-        . = ALIGN(4);
-        __psram_code_end__ = .;
-    } > PSRAM_CODE AT > FLASH
-
-    .psram_data :
-    {
-        . = ALIGN(8);
-        PROVIDE(__psram_data_text = LOADADDR(.psram_data));
-        __psram_data_start__ = .;
-        *(.psram.data)
-        *(.psram.data*)
-
-        . = ALIGN(4);
-        __psram_data_end__ = .;
-    } > PSRAM_DATA AT > FLASH
-
-    .psram_bss (NOLOAD):
-    {
-        . = ALIGN(8);
-        __psram_bss_start__ = .;
-        *(.psram.bss)
-        *(.psram.bss*)
-
-        *libnet.a:mem.o*(.bss .bss.*)
-
-        . = ALIGN(4);
-        __psram_bss_end__ = .;
-    } > PSRAM_DATA
-
+    /* ROM end = last section loaded from Flash (.data comes after .psram_data) */
     s_rom_end = LOADADDR(.data) + SIZEOF(.data);
 
     /* Set stack top to end of RAM, and stack limit move down by
@@ -406,4 +531,6 @@ SECTIONS
     ASSERT((s_rom_end < ORIGIN(FLASH) + LENGTH(FLASH)), "ROM overflow!!!")
     ASSERT(((ORIGIN(RAM) + LENGTH(RAM)) > (_heap_start + __MSP_STACK_SIZE + 8)), "Stack overflowed with bss")
     ASSERT(((_heap_end - _heap_start) >= __MIN_HEAP_SIZE), "Heap smaller than minimize size 85K!!!")
+    ASSERT((__kernel_psram_heap_end__ > __kernel_psram_heap_start__), "PSRAM heap window invalid")
+    ASSERT(((__kernel_psram_heap_end__ - __kernel_psram_heap_start__) >= __MIN_HEAP_SIZE), "PSRAM heap smaller than minimum")
 }

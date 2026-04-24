@@ -33,6 +33,10 @@
 #include <stdbool.h>
 #include "ble_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum  {
 	BLE_SERVER_GATT_SERVICE,
 	BLE_SERVER_GATT_CHARACT,
@@ -129,6 +133,21 @@ typedef struct {
 	uint16_t profile_count;
 } ble_server_init_config;
 
+/****************************************************************************
+ * Name: ble_manager_set_server_config
+ *
+ * Description:
+ *   Set the server configuration after ble_manage_init.
+ *
+ * Input Parameters:
+ *   server_config - Server configuration to set.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_set_server_config(ble_server_init_config *server_config);
+
 ble_result_e ble_server_get_profile_count(uint16_t *count);
 
 // API for sending a characteristic value notification to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
@@ -136,6 +155,24 @@ ble_result_e ble_server_charact_notify(ble_attr_handle attr_handle, ble_conn_han
 
 // API for sending a characteristic value indication to the selected target(s). (notify to all clients conn_handle (notify all = 0x99))
 ble_result_e ble_server_charact_indicate(ble_attr_handle attr_handle, ble_conn_handle con_handle, ble_data *data);
+
+/****************************************************************************
+ * Name: ble_server_get_indicate_pending_count
+ *
+ * Description:
+ *   Get the count of pending ble indication packet count.
+ *
+ * Input Parameters:
+ *   con_handle - Connection handle.
+ *   count      - Pointer to store the count of pending operations.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *   BLE_MANAGER_BUSY   - If the internal max pending count value and count value are the same.
+ *                        The default value of max pending count is 40.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_get_indicate_pending_count(ble_conn_handle con_handle, uint8_t *count);
 
 // set data of attribute value
 ble_result_e ble_server_attr_set_data(ble_attr_handle attr_handle, ble_data *data);
@@ -146,7 +183,41 @@ ble_result_e ble_server_attr_get_data(ble_attr_handle attr_handle, ble_data *dat
 // reject attribute request in callback function and return error code
 ble_result_e ble_server_reject(ble_attr_handle attr_handle, uint8_t app_errorcode);
 
+// Disconnect client. The client with secured connection would be required pairing again. 
+ble_result_e ble_server_disconnect(ble_conn_handle con_handle);
+
+/****************************************************************************
+ * Name: ble_server_get_mac_addr_by_conn_handle
+ *
+ * Description:
+ *   Get the MAC address by connection handle.
+ *   The bd_addr value is in big endian format, which is received through the callback function.
+ *
+ * Input Parameters:
+ *   con_handle - Connection handle.
+ *   bd_addr    - Buffer to store the MAC address in big endian format.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
 ble_result_e ble_server_get_mac_addr_by_conn_handle(ble_conn_handle con_handle, uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN]);
+
+/****************************************************************************
+ * Name: ble_server_get_conn_handle_by_addr
+ *
+ * Description:
+ *   Get the connection handle by MAC address.
+ *   The bd_addr value is in big endian format, which is received through the callback function.
+ *
+ * Input Parameters:
+ *   bd_addr    - MAC address in big endian format.
+ *   con_handle - Pointer to store the connection handle.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
 ble_result_e ble_server_get_conn_handle_by_addr(uint8_t bd_addr[BLE_BD_ADDR_MAX_LEN], ble_conn_handle *con_handle);
 
 // Set Advertisement Data 
@@ -165,16 +236,248 @@ This randomness helps reduce the possibility of collisions between advertisement
 */
 ble_result_e ble_server_set_adv_interval(unsigned int interval);
 
-/* Set tx power for advertising
-   Arguement txpower: 
-			0x00(-9dBm) ~ 0x31(15.5dBm) 
-			step : 0.5dBm
-			tested value: 0x06, 0x1A, 0x26
-*/
+/****************************************************************************
+ * Name: ble_server_set_adv_tx_power
+ *
+ * Description:
+ *   Set tx power for advertising.
+ *
+ * Input Parameters:
+ *   txpower - Transmission power value. The value will be according to chipset specific table.
+ *             ex) Range: 0x00(-9dBm) ~ 0x31(15.5dBm), step: 0.5dBm
+ *             Tested value: 0x06(-6dBm), 0x1A(4dBm), 0x26(10dBm)
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
 ble_result_e ble_server_set_adv_tx_power(uint8_t txpower);
 
 ble_result_e ble_server_start_adv(void);
 ble_result_e ble_server_stop_adv(void);
 
-// Disconnect client. The client with secured connection would be required pairing again. 
-ble_result_e ble_server_disconnect(ble_conn_handle con_handle);
+/****************************************************************************
+ * Name: ble_server_one_shot_adv_init
+ *
+ * Description:
+ *   Initialize one-shot advertising.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_one_shot_adv_init(void);
+
+/****************************************************************************
+ * Name: ble_server_one_shot_adv_deinit
+ *
+ * Description:
+ *   Deinitialize one-shot advertising.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_one_shot_adv_deinit(void);
+
+/****************************************************************************
+ * Name: ble_server_one_shot_adv_set
+ *
+ * Description:
+ *   Set one-shot advertising data.
+ *
+ * Input Parameters:
+ *   adv_id         - Advertising ID.
+ *   data_adv       - Advertising data.
+ *   data_scan_rsp  - Scan response data.
+ *   type           - Advertising type.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_one_shot_adv_set(uint8_t adv_id, ble_data *data_adv, ble_data *data_scan_rsp, uint8_t type);
+
+/****************************************************************************
+ * Name: ble_server_one_shot_adv
+ *
+ * Description:
+ *   Start one-shot advertising.
+ *
+ * Input Parameters:
+ *   adv_id - Advertising ID.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_one_shot_adv(uint8_t adv_id);
+
+/****************************************************************************
+ * Name: ble_manager_set_gap_device_name
+ *
+ * Description:
+ *   Set the GAP device name.
+ *
+ * Input Parameters:
+ *   name - Device name to set (max length: BLE_GAP_DEVICE_NAME_LEN).
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_set_gap_device_name(char name[BLE_GAP_DEVICE_NAME_LEN]);
+
+/****************************************************************************
+ * Name: ble_server_create_multi_adv
+ *
+ * Description:
+ *   Create a multi advertiser instance with the specified parameters.
+ *
+ * Input Parameters:
+ *   adv_event_prop      - Advertiser type. (0x10: Non-connectable non-scannable, 0x12: Non-connectable scannable, 0x13: Connectable scannable)
+ *   primary_adv_interval- Advertising interval (min, max) in units of 0.625 msec.
+ *   own_addr_type       - Own address type. (0: Public, 1: Random static)
+ *   own_addr_val        - Own address value.
+ *   adv_handle          - Pointer to store the advertiser handle.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_create_multi_adv(uint8_t adv_event_prop, uint32_t primary_adv_interval[2],
+												uint8_t own_addr_type, uint8_t own_addr_val[BLE_BD_ADDR_MAX_LEN], uint8_t *adv_handle);
+
+/****************************************************************************
+ * Name: ble_server_delete_multi_adv
+ *
+ * Description:
+ *   Delete a multi advertiser instance.
+ *
+ * Input Parameters:
+ *   adv_handle - Advertiser handle to delete.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_delete_multi_adv(uint8_t adv_handle);
+
+/****************************************************************************
+ * Name: ble_server_set_multi_adv_data
+ *
+ * Description:
+ *   Set advertising data for a multi advertiser instance.
+ *
+ * Input Parameters:
+ *   adv_handle   - Advertiser handle.
+ *   adv_data_len - Length of advertiser data.
+ *   adv_data     - Pointer to advertiser data.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_set_multi_adv_data(uint8_t adv_handle, uint16_t adv_data_len, uint8_t *adv_data);
+
+/****************************************************************************
+ * Name: ble_server_set_multi_resp_data
+ *
+ * Description:
+ *   Set scan response data for a multi advertiser instance.
+ *
+ * Input Parameters:
+ *   adv_handle   - Advertiser handle.
+ *   adv_data_len - Length of scan response data.
+ *   adv_data     - Pointer to scan response data.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_set_multi_resp_data(uint8_t adv_handle, uint16_t adv_data_len, uint8_t *adv_data);
+
+/****************************************************************************
+ * Name: ble_server_set_multi_adv_type
+ *
+ * Description:
+ *   Set advertiser type for a multi advertiser instance.
+ *
+ * Input Parameters:
+ *   adv_handle     - Advertiser handle.
+ *   adv_event_prop - Advertiser type. (0x10: Non-connectable non-scannable, 0x12: Non-connectable scannable, 0x13: Connectable scannable)
+ *   addr           - Pointer to address (can be NULL).
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_set_multi_adv_type(uint8_t adv_handle, uint8_t adv_event_prop, ble_addr *addr);
+
+/****************************************************************************
+ * Name: ble_server_set_multi_adv_interval
+ *
+ * Description:
+ *   Set advertising interval for a multi advertiser instance.
+ *
+ * Input Parameters:
+ *   adv_handle - Advertiser handle.
+ *   interval   - Advertising interval in units of 0.625 msec.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_set_multi_adv_interval(uint8_t adv_handle, unsigned int interval);
+
+/****************************************************************************
+ * Name: ble_server_set_multi_adv_tx_power
+ *
+ * Description:
+ *   Set transmission power for a multi advertiser instance.
+ *
+ * Input Parameters:
+ *   adv_handle - Advertiser handle.
+ *   txpower    - Transmission power value. The value will be according to chipset specific table.
+ *                ex) Range: 0x00(-9dBm) ~ 0x31(15.5dBm), step: 0.5dBm
+ *                Tested value: 0x06(-6dBm), 0x1A(4dBm), 0x26(10dBm)
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_set_multi_adv_tx_power(uint8_t adv_handle, uint8_t txpower);
+
+/****************************************************************************
+ * Name: ble_server_start_multi_adv
+ *
+ * Description:
+ *   Start a multi advertiser.
+ *
+ * Input Parameters:
+ *   adv_handle - Advertiser handle to start.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_start_multi_adv(uint8_t adv_handle);
+
+/****************************************************************************
+ * Name: ble_server_stop_multi_adv
+ *
+ * Description:
+ *   Stop a multi advertiser.
+ *
+ * Input Parameters:
+ *   adv_handle - Advertiser handle to stop.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_server_stop_multi_adv(uint8_t adv_handle);
+
+#ifdef __cplusplus
+}
+#endif

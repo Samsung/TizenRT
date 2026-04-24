@@ -400,8 +400,8 @@ static ssize_t romfs_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 		/* Get the first sector and index to read from. */
 
 		offset = rf->rf_startoffset + filep->f_pos;
-		sector = SEC_NSECTORS(rm, offset);
-		sectorndx = offset & SEC_NDXMASK(rm);
+		sector = ROMFS_DEVSECTOR(rm, offset);
+		sectorndx = ROMFS_DEVNDX(rm, offset);
 		bytesread = 0;
 
 		/* Check if the user has provided a buffer large enough to
@@ -946,6 +946,11 @@ static int romfs_bind(FAR struct inode *blkdriver, FAR const void *data, FAR voi
 	sem_init(&rm->rm_sem, 0, 0);	/* Initialize the semaphore that controls access */
 	rm->rm_blkdriver = blkdriver;	/* Save the block driver reference */
 
+	if (data != NULL) {
+		rm->rm_headersize = (uint32_t)data;
+	} else {
+		rm->rm_headersize = 0;
+	}
 	/* Get the hardware configuration and setup buffering appropriately */
 
 	ret = romfs_hwconfigure(rm);

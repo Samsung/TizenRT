@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <errno.h>
+#include <debug.h>
 #include <tinyara/clock.h>
 #include <tinyara/wdog.h>
 

@@ -22,6 +22,7 @@
 
 #include <tinyara/config.h>
 #include <errno.h>
+#include <debug.h>
 
 #include <tinyara/arch.h>
 #ifdef CONFIG_AMEBAD_TRUSTZONE

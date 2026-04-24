@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <debug.h>
 #include <security/security_api.h>
 #include <tinyara/seclink.h>
 #include <security/security_common.h>
@@ -162,6 +163,8 @@ security_error secutils_convert_error_h2s(int herr)
 		return SECURITY_NOT_SUPPORT;
 	case SECLINK_BUSY:
 		return SECURITY_RSC_BUSY;
+	case SECLINK_INVALID_SIGN_FORMAT:
+		return SECURITY_INVALID_SIGN_FORMAT;
 	default:
 		return SECURITY_ERROR;
 	}

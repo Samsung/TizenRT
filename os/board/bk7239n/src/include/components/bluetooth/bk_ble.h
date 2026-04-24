@@ -440,13 +440,14 @@ ble_err_t bk_ble_disconnect(uint8_t conn_idx);
  *
  * @param
  *    - conn_idx: the index of connection
+ *    - mtu: the value to exchange
  * @attention 1.must used after connected
  *
  * @return
  *    - BK_ERR_BLE_SUCCESS: succeed
  *    - others: other errors.
  */
-ble_err_t bk_ble_gatt_mtu_change(uint8_t conn_idx);
+ble_err_t bk_ble_gatt_mtu_change(uint8_t conn_idx, uint16_t mtu);
 
 /**
  * @brief     Set maximal Exchange MTU

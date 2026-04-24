@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <memory>
 #include <vector>
+#include <mutex>
 
 #include <media/voice/SpeechDetector.h>
 #include <media/voice/SpeechDetectorListenerInterface.h>
@@ -56,13 +57,13 @@ public:
 
 private:
 	static speech_detect_event_type_e getSpeechDetectEvent(audio_device_process_unit_subtype_e event);
-	void resetKeywordDetectorPtr(void);
 	void resetEndPointDetectorPtr(void);
 
 	std::shared_ptr<KeywordDetector> mKeywordDetector;
 	std::shared_ptr<EndPointDetector> mEndPointDetector;
 	/* @todo: check static keyword usage */
 	static std::vector<std::shared_ptr<SpeechDetectorListenerInterface>> mSpeechDetectorListenerList;
+	static std::mutex mSpeechDetectorListenerListMutex;
 };
 
 } // namespace voice

@@ -96,24 +96,38 @@ void ethernetif_input(int iface, struct pbuf *p);
 
 #ifdef CONFIG_NET_NETMGR
 extern struct netdev *armino_dev_wlan0;
+#ifdef CONFIG_BK_CONCURRENT_MODE
 extern struct netdev *armino_dev_wlan1;
+#else
+volatile int g_bk_wifi_current_vif = 0;
+#endif
 
 int get_idx_from_dev(struct netdev *dev)
 {
+#ifdef CONFIG_BK_CONCURRENT_MODE
 	if (!strcmp(WLAN0_NAME, dev->ifname))
 		return 0;
 	else if(!strcmp(WLAN1_NAME, dev->ifname))
 		return 1;
 	else
 		return -1;
+#else
+	(void)dev;
+	return g_bk_wifi_current_vif;
+#endif
 }
 
 static struct netdev *bk_get_netdev(int idx)
 {
+#ifdef CONFIG_BK_CONCURRENT_MODE
 	if (idx == 1)
 	    return armino_dev_wlan1;
 	else
 	    return armino_dev_wlan0;
+#else
+	(void)idx;
+	return armino_dev_wlan0;
+#endif
 }
 #endif
 
@@ -268,6 +282,10 @@ ethernetif_input(int iface, struct pbuf *p)
         return;
     }
     dev_tmp = (struct netdev *)bk_get_netdev(iface);
+    if(!dev_tmp) {
+        pbuf_free(p);
+        return;
+    }
     netif = GET_NETIF_FROM_NETDEV(dev_tmp);
     if(!netif) {
         //LWIP_LOGI("ethernetif_input no netif found %d\r\n", iface);

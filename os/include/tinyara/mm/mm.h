@@ -227,6 +227,12 @@ typedef void *mmaddress_t;             /* 32 bit address space */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 #define SIZEOF_MM_MALLOC_DEBUG_INFO (sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
+
+/* Memory state values */
+#define MM_MEMORY_STATE_UNUSED   0  /* Initial state */
+#define MM_MEMORY_STATE_USED     1  /* Memory is referenced */
+#define MM_MEMORY_STATE_LEAK     2  /* Potential memory leak */
+#define MM_MEMORY_STATE_BROKEN   3  /* Heap corruption detected */
 #else
 #define SIZEOF_MM_MALLOC_DEBUG_INFO 0
 #endif
@@ -247,7 +253,7 @@ struct mm_allocnode_s {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mmaddress_t alloc_call_addr;			/* malloc call address */
 	pid_t pid;					/* PID info */
-	uint16_t reserved;				/* Reserved for future use. */
+	uint16_t memory_state;				/* Memory state for leak detection. */
 #endif
 	mmsize_t size;					/* Size of this chunk */
 
@@ -268,7 +274,7 @@ struct mm_freenode_s {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	mmaddress_t alloc_call_addr;			/* malloc call address */
 	pid_t pid;					/* PID info */
-	uint16_t reserved;				/* Reserved for future use. */
+	uint16_t memory_state;				/* Memory state for leak detection. */
 #endif
 	mmsize_t size;				/* Size of this chunk */
 	FAR struct mm_freenode_s *flink;	/* Supports a doubly linked list */
@@ -276,7 +282,7 @@ struct mm_freenode_s {
 #ifdef CONFIG_DEBUG_MM_FREEINFO
 	mmaddress_t free_call_addr;		/* free call address */
 	pid_t free_call_pid;			/* free call PID */
-	uint16_t reserved2;				/* Reserved for future use and padding for 4-byte alignment */
+	uint16_t reserved;				/* Reserved for future use and padding for 4-byte alignment */
 #endif
 };
 
@@ -301,7 +307,7 @@ struct mm_delaynode_s {
 #ifdef CONFIG_DEBUG_MM_FREEINFO
 	mmaddress_t free_call_addr;
 	pid_t free_call_pid;
-	uint16_t reserved2;
+	uint16_t reserved;
 #endif
 };
 

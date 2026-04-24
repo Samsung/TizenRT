@@ -59,7 +59,6 @@
 #endif
 #define KERNEL_BIN_COUNT                 2
 
-#define RESOURCE_DEVNUM_OFFSET           30
 #define RESOURCE_HEADER_SIZE             4096
 #define RESOURCE_BIN_COUNT               2
 
@@ -121,6 +120,8 @@ enum binmgr_request_msg_type {
 	BINMGR_REGISTER_STATECB = 8,
 	BINMGR_UNREGISTER_STATECB = 9,
 	BINMGR_FAULT = 10,
+	BINMGR_SWAPBP = 11,
+	BINMGR_GET_INFO_INACTIVE_ALL = 12,
 };
 
 /* Result values of returned from binary manager. */
@@ -249,6 +250,11 @@ struct binmgr_request_s {
 	} data;
 };
 typedef struct binmgr_request_s binmgr_request_t;
+
+struct binmgr_response_s {
+	binmgr_result_type_e result;
+};
+typedef struct binmgr_response_s binmgr_response_t;
 
 struct binmgr_setbp_response_s {
 	binmgr_result_type_e result;

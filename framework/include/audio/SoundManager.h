@@ -122,6 +122,13 @@ bool getStreamMuteState(stream_policy_t stream_policy, bool *mute);
  */
 bool enableDMIC(bool enable);
 
+/**
+ * @brief Change dsp flow rule.
+ * @param[in] dwp flow rule number to be changed.
+ * @return true if the operation was successful, false otherwise.
+ */
+bool changeDSPFlow(uint8_t dsp_flow_num);
+
 #if defined(__cplusplus)
 }
 #endif

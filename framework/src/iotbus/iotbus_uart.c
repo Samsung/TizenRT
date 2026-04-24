@@ -32,6 +32,7 @@
 #include <pthread.h>
 #include <sys/ioctl.h>
 #include <poll.h>
+#include <debug.h>
 #include <tinyara/serial/tioctl.h>
 #include <iotbus/iotbus_error.h>
 #include <iotbus/iotbus_uart.h>

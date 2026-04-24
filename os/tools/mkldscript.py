@@ -20,6 +20,7 @@
 import os
 import sys
 import string
+import subprocess
 import config_util as util
 
 os_folder = os.path.dirname(__file__) + '/..'
@@ -45,24 +46,26 @@ is_dual_ld_mode = board_name in DUAL_LD_BOARDS
 # Dynamically get the offset from Kernel TRPK binary file
 # Chip specific should implement the logic for offset calculation according to trpk file content
 offset = 0
-loadable_start_offset = 0  # Starting offset for loadable apps (common, app1, app2)
 if CONFIG_TRPK_CONTAINS_MULTIPLE_BINARY == "y":
     if is_dual_ld_mode:
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../build/tools/amebasmart/gnu_utility')))
         from loadable_xip_elf import get_offset
         offset_shift = get_offset()
-        loadable_start_offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16) - int(offset_shift, 16)
+        offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16) - int(offset_shift, 16)
     else:
-        # For other boards, use CONFIG_FLASH_VSTART_LOADABLE directly
-        loadable_start_offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
-        offset = loadable_start_offset
+        if util.check_config_existence(cfg_file, 'CONFIG_ARCH_CHIP_ARMINO=y'):
+            # Armino (e.g. bk7239n): use chip-specific script to compute flash start from TRPK
+            _vstart_script = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../build/configs/bk7239n/get_flash_vstart_loadable.py'))
+            computed = subprocess.check_output([sys.executable, _vstart_script, os.path.abspath(cfg_file)]).decode('utf-8').strip()
+            if computed:
+                CONFIG_FLASH_VSTART_LOADABLE = computed
+            else:
+                CONFIG_FLASH_VSTART_LOADABLE = util.get_value_from_file(cfg_file, "CONFIG_FLASH_VSTART_LOADABLE=").rstrip('\n')
+        else:
+            CONFIG_FLASH_VSTART_LOADABLE = util.get_value_from_file(cfg_file, "CONFIG_FLASH_VSTART_LOADABLE=").rstrip('\n')
+        offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
 else:
-    loadable_start_offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
-
-# For dual mode, initialize offset with loadable_start_offset
-# For generic mode, offset starts from 0 and will be reset when encountering first loadable partition
-if is_dual_ld_mode:
-    offset = loadable_start_offset
+    offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
 
 PART_IDX = 0
 
@@ -167,7 +170,7 @@ else :
 def reset_offset_if_needed():
     global offset, first_loadable_encountered
     if not is_dual_ld_mode and board_name == "bk7239n" and not first_loadable_encountered:
-        offset = loadable_start_offset
+        offset = int(CONFIG_FLASH_VSTART_LOADABLE, 16)
         first_loadable_encountered = True
 
 # Helper function to generate ld script content
@@ -251,7 +254,9 @@ for name in NAME_LIST :
             if not ld_generated["common"] and CONFIG_SUPPORT_COMMON_BINARY == 'y':
                 common_start = hex(offset + 0x10 + signing_offset)
                 common_size = hex(part_size - 0x10 - signing_offset)
-                with open(output_folder + "common_0.ld", "w") as ld :
+                ld_file = "common_0.ld"
+                with open(output_folder + ld_file, "w") as ld :
+                    print("Generating " + ld_file + " for position-independent code")
                     ld.write(generate_ld_script(common_start, common_size, common_ram_str))
                 ld_generated["common"] = True
     else:

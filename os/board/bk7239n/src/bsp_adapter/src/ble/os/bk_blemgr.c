@@ -404,7 +404,7 @@ trble_result_e trble_netmgr_write_read_queue_count(struct bledev *dev, trble_con
 /*** Peripheral(Server) ***/
 trble_result_e trble_netmgr_set_server_config(struct bledev *dev, trble_server_init_config *server)
 {
-    trble_result_e ret = bk_tr_ble_server_init(server);
+    trble_result_e ret = bk_tr_ble_server_add_config(server);
 
     if(ret == TRBLE_ALREADY_WORKING)
     {
@@ -438,7 +438,7 @@ trble_result_e trble_netmgr_indicate_queue_count(struct bledev *dev, trble_conn_
 trble_result_e trble_netmgr_attr_set_data(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data)
 {
     LOGV("attr handle %d len %d", attr_handle, data->length);
-    return bk_tr_ble_server_attr_set_data_ptr(attr_handle, data->data, data->length);
+    return bk_tr_ble_server_attr_set_peer_read_data_ptr(attr_handle, data->data, data->length);
 }
 
 trble_result_e trble_netmgr_attr_get_data(struct bledev *dev, trble_attr_handle attr_handle, trble_data *data)
@@ -692,13 +692,11 @@ struct trble_ops g_trble_drv_ops =
     .delete_multi_adv = trble_netmgr_delete_multi_adv,
     .set_multi_adv_data = trble_netmgr_set_multi_adv_data,
     .set_multi_resp_data = trble_netmgr_set_multi_resp_data,
-    .start_multi_adv = trble_netmgr_start_multi_adv,
-    .stop_multi_adv = trble_netmgr_stop_multi_adv,
-#if 0
     .set_multi_adv_type = trble_netmgr_set_multi_adv_type,
     .set_multi_adv_interval = trble_netmgr_set_multi_adv_interval,
     .set_multi_adv_tx_power = trble_netmgr_set_multi_adv_tx_power,
-#endif
+    .start_multi_adv = trble_netmgr_start_multi_adv,
+    .stop_multi_adv = trble_netmgr_stop_multi_adv,
 
 #if 1
     .le_coc_init = trble_netmgr_coc_init,

@@ -256,15 +256,7 @@
 #define SYS_umount                     (__SYS_mountpoint + 5)
 #define SYS_unlink                     (__SYS_mountpoint + 6)
 #define SYS_ftruncate                  (__SYS_mountpoint + 7)
-#define __SYS_shm                      (__SYS_mountpoint + 8)
-
-/* Shared memory interfaces */
-
-#define SYS_shmget                     (__SYS_shm + 0)
-#define SYS_shmat                      (__SYS_shm + 1)
-#define SYS_shmctl                     (__SYS_shm + 2)
-#define SYS_shmdt                      (__SYS_shm + 3)
-#define __SYS_pthread                  (__SYS_shm + 4)
+#define __SYS_pthread                  (__SYS_mountpoint + 8)
 
 /* The following are defined if pthreads are enabled */
 
