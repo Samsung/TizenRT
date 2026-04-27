@@ -126,9 +126,13 @@ int pm_sleep(int milliseconds)
 		delay = 1;
 	}
 
-	/* initialize the timer's semaphore. It will be used to lock the
-	 * thread before sleep and unlock after expire */
-	sem_init(&pm_sem, 0, 0);
+	/* Initialize the timer semaphore. It is used to block until the
+	 * wakeup timer expires.
+	 */
+	ret = sem_init(&pm_sem, 0, 0);
+	if (ret != OK) {
+		return ERROR;
+	}
 	flags = enter_critical_section();
 	DEBUGASSERT(rtcb->waitdog == NULL);
 	/* Create wakeup timer */
@@ -161,5 +165,6 @@ int pm_sleep(int milliseconds)
 errout:
 	rtcb->waitdog = NULL;
 	leave_critical_section(flags);
+	sem_destroy(&pm_sem);
 	return ret;
 }
