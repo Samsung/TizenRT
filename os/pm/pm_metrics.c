@@ -46,6 +46,15 @@ typedef struct pm_metric_s pm_metric_t;
 static pm_metric_t *g_pm_metrics;
 static bool g_pm_metrics_running = false;
 
+static double pm_metrics_percent(double numerator, double denominator)
+{
+	if (denominator <= 0.0) {
+		return 0.0;
+	}
+
+	return numerator * 100.0 / denominator;
+}
+
 static void pm_print_metrics(double total_time)
 {
 	int index;
@@ -63,8 +72,8 @@ static void pm_print_metrics(double total_time)
 	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
 		domain = (FAR struct pm_domain_s *)entry;
 		pmdbg(" %32s | %13dms (%6.2f%%) | %17dms (%6.2f%%) \n", domain->name, TICK2MSEC(domain->suspend_ticks),
-			  ((double)domain->suspend_ticks) * 100.0 / total_time, domain->blocking_board_sleep_ticks,
-			  ((double)domain->blocking_board_sleep_ticks) * 100.0 / ((double)g_pm_metrics->total_try_ticks));
+			  pm_metrics_percent((double)domain->suspend_ticks, total_time), domain->blocking_board_sleep_ticks,
+			  pm_metrics_percent((double)domain->blocking_board_sleep_ticks, (double)g_pm_metrics->total_try_ticks));
 	}
 	pmdbg("\n");
 	pmdbg("*[3] = total time pm domain was suspended.\n");
@@ -84,11 +93,11 @@ static void pm_print_metrics(double total_time)
 	pmdbg("-------------|----------|------------------------\n");
 	for (pm_state = PM_NORMAL; pm_state < PM_SLEEP; pm_state++) {
 		pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", ((pm_state == PM_NORMAL) ? "WAKEUP" : ""), pm_state_name[pm_state], TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[pm_state]),
-			((double)g_pm_metrics->state_metrics.state_accum_ticks[pm_state]) * 100.0 / total_time);
+				pm_metrics_percent((double)g_pm_metrics->state_metrics.state_accum_ticks[pm_state], total_time));
 	}
 	pmdbg("-------------|----------|------------------------\n");
 	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "SLEEP", pm_state_name[PM_SLEEP], TICK2MSEC(g_pm_metrics->board_sleep_ticks),
-		  ((double)g_pm_metrics->board_sleep_ticks) * 100.0 / total_time);
+			  pm_metrics_percent((double)g_pm_metrics->board_sleep_ticks, total_time));
 }
 /************************************************************************************
  * Public Functions
