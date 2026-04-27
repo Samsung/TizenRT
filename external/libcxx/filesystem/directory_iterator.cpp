@@ -8,6 +8,9 @@
 
 #include <__assert>
 #include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <errno.h>
 #include <filesystem>
 #include <stack>
@@ -340,3 +343,5 @@ bool recursive_directory_iterator::__try_recursion(error_code* ec) {
 }
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
+
+#endif // _LIBCPP_STD_VER >= 17

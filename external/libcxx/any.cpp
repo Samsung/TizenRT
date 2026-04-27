@@ -6,6 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <any>
 
 namespace std {
@@ -32,3 +36,5 @@ const char* bad_any_cast::what() const noexcept {
 }
 
 _LIBCPP_END_NAMESPACE_LFTS
+
+#endif // _LIBCPP_STD_VER >= 17

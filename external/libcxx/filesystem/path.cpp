@@ -7,6 +7,9 @@
 //===----------------------------------------------------------------------===//
 
 #include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <filesystem>
 #include <vector>
 
@@ -458,3 +461,5 @@ size_t __char_to_wide(const string &str, wchar_t *out, size_t outlen) {
 #endif
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
+
+#endif // _LIBCPP_STD_VER >= 17

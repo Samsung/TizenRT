@@ -8,6 +8,8 @@
 
 #include <__config>
 
+#if _LIBCPP_STD_VER >= 17
+
 #ifndef _LIBCPP_HAS_NO_THREADS
 
 #include <barrier>
@@ -95,3 +97,5 @@ void __destroy_barrier_algorithm_base(__barrier_algorithm_base* __barrier)
 _LIBCPP_END_NAMESPACE_STD
 
 #endif //_LIBCPP_HAS_NO_THREADS
+
+#endif // _LIBCPP_STD_VER >= 17

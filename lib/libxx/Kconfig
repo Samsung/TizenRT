@@ -71,6 +71,7 @@ config LIBCXX_EXCEPTION
 config LIBCXX_FILESYSTEM
     bool "Enable full filesystem support"
     default n
+    depends on CXX_VERSION_17
     ---help---
         Enable std::filesystem directory operations, iterators, and file status
         functions. This requires sys/statvfs.h and related system calls, which are not currently available.
@@ -79,9 +80,12 @@ config LIBCXX_FILESYSTEM
         When disabled, basic path manipulation support is still available
         (path, filesystem_error, filesystem_clock).
 
+        Note: Filesystem is a C++17 feature and requires CONFIG_CXX_VERSION_17.
+
 config LIBCXX_TIME_UTC
     bool "Enable C++17 UTC time support"
     default n
+    depends on CXX_VERSION_17
     ---help---
         Enable std::timespec and std::timespec_get support (C++17).
         Requires TizenRT C library to provide timespec_get() and TIME_UTC.

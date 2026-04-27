@@ -58,25 +58,36 @@ ASRCS =
 CSRCS =
 
 # Add the libcxx sources
+# Common sources (compatible with C++14 and C++17)
 
-CXXSRCS = algorithm.cpp any.cpp bind.cpp chrono.cpp condition_variable.cpp
+CXXSRCS = algorithm.cpp bind.cpp chrono.cpp condition_variable.cpp
 CXXSRCS += condition_variable_destructor.cpp
 CXXSRCS += future.cpp hash.cpp verbose_abort.cpp bad_alloc.cpp 
-CXXSRCS += memory.cpp mutex.cpp mutex_destructor.cpp new.cpp optional.cpp
+CXXSRCS += memory.cpp mutex.cpp mutex_destructor.cpp new.cpp
 CXXSRCS += shared_mutex.cpp string.cpp system_error.cpp
 CXXSRCS += thread.cpp typeinfo.cpp valarray.cpp vector.cpp
 CXXSRCS += ios.cpp iostream.cpp locale.cpp strstream.cpp
 CXXSRCS += ios.instantiations.cpp random.cpp
-CXXSRCS += filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp filesystem/path.cpp
 CXXSRCS += functional.cpp 
 CXXSRCS += regex.cpp atomic.cpp random_shuffle.cpp
-CXXSRCS += memory_resource.cpp variant.cpp charconv.cpp legacy_pointer_safety.cpp
-CXXSRCS += new_handler.cpp new_helpers.cpp barrier.cpp print.cpp
+CXXSRCS += legacy_pointer_safety.cpp
+CXXSRCS += new_handler.cpp new_helpers.cpp
+
+# C++17 and later sources (only compiled when CONFIG_CXX_VERSION_17 is enabled)
+ifeq ($(CONFIG_CXX_VERSION_17),y)
+CXXSRCS += any.cpp optional.cpp variant.cpp
+CXXSRCS += memory_resource.cpp charconv.cpp barrier.cpp
+CXXSRCS += filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp filesystem/path.cpp
+CXXSRCS += print.cpp
+endif
 
 # Filesystem support (set via Kconfig, _LIBCPP_HAS_NO_FILESYSTEM is in __config_site)
+# Note: Filesystem is a C++17 feature and requires CONFIG_CXX_VERSION_17
+ifeq ($(CONFIG_CXX_VERSION_17),y)
 ifeq ($(CONFIG_LIBCXX_FILESYSTEM),y)
 CXXSRCS += filesystem/directory_entry.cpp filesystem/directory_iterator.cpp
 CXXSRCS += filesystem/operations.cpp filesystem/int128_builtins.cpp
+endif
 endif
 
 # Exception handling logic

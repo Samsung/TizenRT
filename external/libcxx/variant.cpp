@@ -6,6 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <variant>
 
 namespace std {
@@ -15,3 +19,5 @@ const char* bad_variant_access::what() const noexcept {
 }
 
 }  // namespace std
+
+#endif // _LIBCPP_STD_VER >= 17

@@ -8,9 +8,12 @@
 
 #include <__assert>
 #include <cerrno>
+#if _LIBCPP_STD_VER >= 17
 #include <charconv>
+#endif
 #include <cstdlib>
 #include <limits>
+#include <type_traits>
 #include <stdexcept>
 #include <string>
 
@@ -345,9 +348,17 @@ S i_to_string(V v) {
 //  so we need +1 here.
     constexpr size_t bufsize = numeric_limits<V>::digits10 + 2;  // +1 for minus, +1 for digits10
     char buf[bufsize];
+#if _LIBCPP_STD_VER >= 17
     const auto res = to_chars(buf, buf + bufsize, v);
     _LIBCPP_ASSERT_INTERNAL(res.ec == errc(), "bufsize must be large enough to accomodate the value");
     return S(buf, res.ptr);
+#else
+    // C++14 fallback: use snprintf for integer to string conversion
+    int len = snprintf(buf, bufsize, (numeric_limits<V>::is_signed ? "%lld" : "%llu"),
+                        static_cast<typename conditional<numeric_limits<V>::is_signed, long long, unsigned long long>::type>(v));
+    _LIBCPP_ASSERT_INTERNAL(len > 0 && static_cast<size_t>(len) < bufsize, "bufsize must be large enough to accomodate the value");
+    return S(buf, static_cast<size_t>(len));
+#endif
 }
 
 }  // unnamed namespace

@@ -14,6 +14,9 @@
  * ===----------------------------------------------------------------------===
  */
 #include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <climits>
 
 #if !defined(_LIBCPP_HAS_NO_INT128)
@@ -51,4 +54,6 @@ __int128_t __muloti4(__int128_t a, __int128_t b, int* overflow) {
   return result;
 }
 
-#endif
+#endif // !defined(_LIBCPP_HAS_NO_INT128)
+
+#endif // _LIBCPP_STD_VER >= 17

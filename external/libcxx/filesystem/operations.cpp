@@ -8,6 +8,9 @@
 
 #include <__assert>
 #include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <__utility/unreachable.h>
 #include <array>
 #include <climits>
@@ -973,3 +976,5 @@ path __weakly_canonical(const path& p, error_code* ec) {
 }
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
+
+#endif // _LIBCPP_STD_VER >= 17

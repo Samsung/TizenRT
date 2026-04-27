@@ -53,7 +53,8 @@ CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.end/find_end.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.end/find_end_pred.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.first.of/find_first_of.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.first.of/find_first_of_pred.pass.cpp
-CXXSRCS += std/algorithms/alg.nonmodifying/alg.foreach/for_each_n.pass.cpp
+# Note: for_each_n.pass.cpp removed - std::for_each_n is C++17 only
+# CXXSRCS += std/algorithms/alg.nonmodifying/alg.foreach/for_each_n.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.foreach/test.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.is_permutation/is_permutation.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.is_permutation/is_permutation_pred.pass.cpp
@@ -83,8 +84,10 @@ CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition.pass
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition_copy.pass.cpp
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition_point.pass.cpp
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/stable_partition.pass.cpp
-CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.pass.cpp
-CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.stable.pass.cpp
+# Note: sample.pass.cpp removed - std::sample is C++17 only
+# CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.pass.cpp
+# Note: sample.stable.pass.cpp removed - std::sample is C++17 only
+# CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.stable.pass.cpp
 # Note: random_shuffle.pass.cpp removed - std::random_shuffle was removed in C++17
 # Note: random_shuffle_rand.pass.cpp removed - std::random_shuffle was removed in C++17
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.shuffle/random_shuffle_urng.pass.cpp
@@ -121,8 +124,10 @@ CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/lower.bound/lower_bound.
 CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/lower.bound/lower_bound_comp.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/upper.bound/upper_bound.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/upper.bound/upper_bound_comp.pass.cpp
-CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.pass.cpp
-CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.comp.pass.cpp
+# Note: clamp.pass.cpp removed - std::clamp is C++17 only
+# CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.pass.cpp
+# Note: clamp.comp.pass.cpp removed - std::clamp is C++17 only
+# CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.comp.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/is.heap/is_heap.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/is.heap/is_heap_comp.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/is.heap/is_heap_until.pass.cpp
@@ -1103,7 +1108,8 @@ CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.helper/tuple_size_v.p
 CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.helper/tuple_size_value_sfinae.pass.cpp
 CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.rel/eq.pass.cpp
 CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.rel/lt.pass.cpp
-CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.rel/three_way.pass.cpp
+# Note: three_way.pass.cpp removed - uses C++20 features (std::strong_ordering, etc.)
+# CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.rel/three_way.pass.cpp
 CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.apply/apply.pass.cpp
 CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.apply/apply_extended_types.pass.cpp
 CXXSRCS += std/utilities/utilities/tuple/tuple.tuple/tuple.apply/apply_large_arity.pass.cpp
@@ -1171,10 +1177,11 @@ CXXSRCS += std/utilities/utilities/tuple/tuple.general/tuple.smartptr.pass.cpp
 endif
 endif
 
-# --- Utilities: Optional ---
+# --- Utilities: Optional (C++17) ---
 ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES),y)
 ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES_OPTIONAL),y)
-CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/compare.three_way.pass.cpp
+# Note: compare.three_way.pass.cpp removed - uses C++20 features
+# CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/compare.three_way.pass.cpp
 CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/equal.pass.cpp
 CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/greater.pass.cpp
 CXXSRCS += std/utilities/utilities/optional/optional.comp_with_t/greater_equal.pass.cpp
@@ -1221,7 +1228,7 @@ CXXSRCS += std/utilities/utilities/optional/optional.specalg/swap.pass.cpp
 endif
 endif
 
-# --- Utilities: Variant ---
+# --- Utilities: Variant (C++17) ---
 ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES),y)
 ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES_VARIANT),y)
 CXXSRCS += std/utilities/utilities/variant/variant.get/get_if_index.pass.cpp
@@ -1254,7 +1261,7 @@ CXXSRCS += std/utilities/utilities/variant/variant.hash/hash.pass.cpp
 endif
 endif
 
-# --- Utilities: Any ---
+# --- Utilities: Any (C++17) ---
 ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES),y)
 ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES_ANY),y)
 CXXSRCS += std/utilities/utilities/any/any.nonmembers/make_any.pass.cpp

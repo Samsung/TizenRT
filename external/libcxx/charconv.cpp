@@ -6,6 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <charconv>
 #include <string.h>
 
@@ -84,3 +88,5 @@ to_chars_result to_chars(char* __first, char* __last, long double __value, chars
 }
 
 _LIBCPP_END_NAMESPACE_STD
+
+#endif // _LIBCPP_STD_VER >= 17

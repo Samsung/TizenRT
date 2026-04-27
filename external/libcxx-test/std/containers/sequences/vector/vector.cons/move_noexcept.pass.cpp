@@ -62,8 +62,8 @@ int tc_libcxx_containers_vector_cons_move_noexcept(void)
         typedef std::vector<MoveOnly, other_allocator<MoveOnly>> C;
         static_assert(std::is_nothrow_move_constructible<C>::value, "");
     }
-// Note: some_alloc test removed - in libcxx 17.0.6, vector with allocators
-// that have non-noexcept move constructors have different behavior
+// Note: some_alloc test removed - some_alloc doesn't meet the full allocator
+// requirements for libcxx 17.0.6's vector template, causing substitution failure
     TC_SUCCESS_RESULT();
     return 0;
 }

@@ -7,6 +7,9 @@
 //===----------------------------------------------------------------------===//
 
 #include <__config>
+
+#if _LIBCPP_STD_VER >= 23
+
 #include <cstdlib>
 #include <print>
 
@@ -60,3 +63,5 @@ __write_to_windows_console([[maybe_unused]] FILE* __stream, [[maybe_unused]] wst
 #endif // _WIN32
 
 _LIBCPP_END_NAMESPACE_STD
+
+#endif // _LIBCPP_STD_VER >= 23

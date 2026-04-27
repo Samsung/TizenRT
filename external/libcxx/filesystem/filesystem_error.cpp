@@ -7,6 +7,9 @@
 //===----------------------------------------------------------------------===//
 
 #include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <__utility/unreachable.h>
 #include <filesystem>
 #include <system_error>
@@ -35,3 +38,5 @@ void filesystem_error::__create_what(int __num_paths) {
 }
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
+
+#endif // _LIBCPP_STD_VER >= 17

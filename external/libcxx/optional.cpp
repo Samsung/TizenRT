@@ -6,6 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <__availability>
 #include <optional>
 
@@ -40,3 +44,5 @@ public:
 bad_optional_access::~bad_optional_access() noexcept = default;
 
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL
+
+#endif // _LIBCPP_STD_VER >= 17

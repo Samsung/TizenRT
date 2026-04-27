@@ -7,6 +7,9 @@
 //===----------------------------------------------------------------------===//
 
 #include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <chrono>
 #include <filesystem>
 #include <time.h>
@@ -62,3 +65,5 @@ _FilesystemClock::time_point _FilesystemClock::now() noexcept {
 }
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
+
+#endif // _LIBCPP_STD_VER >= 17

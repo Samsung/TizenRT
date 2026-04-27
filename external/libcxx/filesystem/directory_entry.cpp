@@ -7,6 +7,9 @@
 //===----------------------------------------------------------------------===//
 
 #include <__config>
+
+#if _LIBCPP_STD_VER >= 17
+
 #include <cstdint>
 #include <filesystem>
 #include <system_error>
@@ -72,3 +75,5 @@ error_code directory_entry::__do_refresh() noexcept {
 }
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
+
+#endif // _LIBCPP_STD_VER >= 17
