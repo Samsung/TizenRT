@@ -16,6 +16,7 @@ if [ "${CONFIG_BINARY_SIGNING}" = "y" ]; then
         ${TOP_PATH}/build/tools/armino/beken_utils/deployment_main.sh ${BUILDDIR}/tools/armino/beken_utils/input_dir ${BUILDDIR}/tools/armino/beken_utils/output_dir
         ${THIS_PATH}/copy_from_deploy.sh
     fi
+    python3 -B ${BUILDDIR}/tools/armino/bkfil_pack_tool/bkfil_bin_pack.py ${TOPDIR} ${BUILDDIR}/output/bin --partition-json-only
 else
     python3 -B ${BUILDDIR}/tools/armino/bkfil_pack_tool/bkfil_bin_pack.py ${TOPDIR} ${BUILDDIR}/output/bin
 fi

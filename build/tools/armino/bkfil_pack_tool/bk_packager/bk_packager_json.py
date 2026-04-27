@@ -45,12 +45,16 @@ class bk_packager_json:
         space_sections: list[tuple[int, int]] = []
         for part in self.section:
             bin_name: str = part["firmware"]
+            start_addr_is_hex_string = isinstance(part["start_addr"], str)
             if type(part["start_addr"]) is int:
                 part_addr = part["start_addr"]
             else:
                 part_addr = int(part["start_addr"], 16)
             if type(part["size"]) is int:
-                part_size = part["size"]
+                # Backward compatible:
+                # - old format used integer bytes
+                # - new partition.json uses hex string start_addr and integer KB size
+                part_size = part["size"] * 1024 if start_addr_is_hex_string else part["size"]
             else:
                 part_size = parse_format_size(part["size"])
             part_name = part["partition"]
