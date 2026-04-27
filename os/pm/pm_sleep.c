@@ -105,11 +105,27 @@ int pm_sleep(int milliseconds)
 {
 	sem_t pm_sem;
 	irqstate_t flags;
+	int delay;
 	int ret = ERROR;
 	/* TODO - Since PM & Kernel are separate, we should not use tcb inside pm.
 	 * We need to remove tcb in future.
 	 */
 	FAR struct tcb_s *rtcb = sched_self();
+
+	if (milliseconds < 0) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
+
+	if (milliseconds == 0) {
+		return OK;
+	}
+
+	delay = MSEC2TICK(milliseconds);
+	if (delay <= 0) {
+		delay = 1;
+	}
+
 	/* initialize the timer's semaphore. It will be used to lock the
 	 * thread before sleep and unlock after expire */
 	sem_init(&pm_sem, 0, 0);
@@ -129,7 +145,7 @@ int pm_sleep(int milliseconds)
 		goto errout;
 	}
 	/* before going into sleep start the wakeup timer */
-	ret = wd_start(rtcb->waitdog, MSEC2TICK(milliseconds), (wdentry_t)pm_timer_callback, 1, (uint32_t)&pm_sem);
+	ret = wd_start(rtcb->waitdog, delay, (wdentry_t)pm_timer_callback, 1, (uint32_t)&pm_sem);
 	if (ret != OK) {
 		pmdbg("pm_sleep: wd_start failed\n");
 		wd_delete(rtcb->waitdog);
