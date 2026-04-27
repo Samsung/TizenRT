@@ -75,9 +75,8 @@ config PM_DOMAIN_NAME_SIZE
 	int "Maximum Length of Domain String"
 	default 32
 	---help---
-		This value represents maxinmum domain string size. The domain string should be less than
-		this size. This config is intended to reduce unwanted memory consumption cause of long 
+		This value represents the maximum domain string size. The domain string should be less than
+		this size. This config is intended to reduce unwanted memory consumption caused by long
 		domain string.
 
 endif # PM
-

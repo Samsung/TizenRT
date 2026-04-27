@@ -124,24 +124,33 @@ int pm_timedsuspend(struct pm_domain_s *domain, unsigned int milliseconds)
 	WDOG_ID wdog;
 	int tick_remain;
 	int ret = ERROR;
-	int delay = MSEC2TICK(milliseconds);
+	int delay;
 
 	if (domain == NULL) {
 		set_errno(EINVAL);
 		return ret;
 	}
 
+	delay = MSEC2TICK(milliseconds);
+
 	flags = enter_critical_section();
 	wdog = domain->wdog;
 
-	/* If delay is zero then cancel the timer (PM Policy) */
-	if (delay == 0) {
+	/* A zero-millisecond timeout means that the timed suspend should be
+	 * cancelled immediately. Non-zero timeouts are rounded up to at least one
+	 * tick so they do not get misinterpreted as a cancel request.
+	 */
+	if (milliseconds == 0) {
 		if (wdog) {
 			/* Manually trigger timeout to resume and cleanup */
 			timer_timeout(0, (uint32_t)((uintptr_t)domain));
 		}
 		ret = OK;
 		goto exit;
+	}
+
+	if (delay <= 0) {
+		delay = 1;
 	}
 
 	/* If timer is not there, then create a timer & suspend domain */

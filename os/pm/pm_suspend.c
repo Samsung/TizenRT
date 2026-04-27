@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * pm/pm_activity.c
+ * pm/pm_suspend.c
  *
  *   Copyright (C) 2011-2012, 2016 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>

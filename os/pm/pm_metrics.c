@@ -46,7 +46,16 @@ typedef struct pm_metric_s pm_metric_t;
 static pm_metric_t *g_pm_metrics;
 static bool g_pm_metrics_running = false;
 
-static void pm_print_metrics(double total_time, int n_domains)
+static double pm_metrics_percent(double numerator, double denominator)
+{
+	if (denominator <= 0.0) {
+		return 0.0;
+	}
+
+	return numerator * 100.0 / denominator;
+}
+
+static void pm_print_metrics(double total_time)
 {
 	int index;
 	struct pm_domain_s *domain;
@@ -63,8 +72,8 @@ static void pm_print_metrics(double total_time, int n_domains)
 	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
 		domain = (FAR struct pm_domain_s *)entry;
 		pmdbg(" %32s | %13dms (%6.2f%%) | %17dms (%6.2f%%) \n", domain->name, TICK2MSEC(domain->suspend_ticks),
-			  ((double)domain->suspend_ticks) * 100.0 / total_time, domain->blocking_board_sleep_ticks,
-			  ((double)domain->blocking_board_sleep_ticks) * 100.0 / ((double)g_pm_metrics->total_try_ticks));
+			  pm_metrics_percent((double)domain->suspend_ticks, total_time), domain->blocking_board_sleep_ticks,
+			  pm_metrics_percent((double)domain->blocking_board_sleep_ticks, (double)g_pm_metrics->total_try_ticks));
 	}
 	pmdbg("\n");
 	pmdbg("*[3] = total time pm domain was suspended.\n");
@@ -84,11 +93,11 @@ static void pm_print_metrics(double total_time, int n_domains)
 	pmdbg("-------------|----------|------------------------\n");
 	for (pm_state = PM_NORMAL; pm_state < PM_SLEEP; pm_state++) {
 		pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", ((pm_state == PM_NORMAL) ? "WAKEUP" : ""), pm_state_name[pm_state], TICK2MSEC(g_pm_metrics->state_metrics.state_accum_ticks[pm_state]),
-			((double)g_pm_metrics->state_metrics.state_accum_ticks[pm_state]) * 100.0 / total_time);
+				pm_metrics_percent((double)g_pm_metrics->state_metrics.state_accum_ticks[pm_state], total_time));
 	}
 	pmdbg("-------------|----------|------------------------\n");
 	pmdbg(" %11s | %8s | %10dms (%6.2f%%) \n", "SLEEP", pm_state_name[PM_SLEEP], TICK2MSEC(g_pm_metrics->board_sleep_ticks),
-		  ((double)g_pm_metrics->board_sleep_ticks) * 100.0 / total_time);
+			  pm_metrics_percent((double)g_pm_metrics->board_sleep_ticks, total_time));
 }
 /************************************************************************************
  * Public Functions
@@ -121,7 +130,7 @@ void pm_metrics_update_domain(FAR struct pm_domain_s *domain)
  * Name: pm_metrics_update_suspend
  *
  * Description:
- *   This function is called inside pm_suspend. It note the timestamp (in ticks) of
+ *   This function is called inside pm_suspend. It notes the timestamp (in ticks) of
  *   suspended domain.
  *
  * Input parameters:
@@ -278,12 +287,18 @@ void pm_metrics_update_missing_tick(clock_t missing_tick)
  ****************************************************************************/
 int pm_metrics(int milliseconds)
 {
+	clock_t elapsed;
+	clock_t remaining_ticks;
 	clock_t start_time, end_time;
 	irqstate_t flags;
 	int index;
-	int n_domains = 0;
 	FAR struct pm_domain_s *domain;
 	FAR dq_entry_t *entry;
+
+	if (milliseconds < 0) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	/* If PM Metrics already running then notify other thread */
 	if (g_pm_metrics) {
@@ -318,13 +333,16 @@ int pm_metrics(int milliseconds)
 	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
 		domain = (FAR struct pm_domain_s *)entry;
 		pm_metrics_update_domain(domain); /* This will set domain->stime */
-		n_domains++;
 	}
 	g_pm_metrics_running = true;
 	leave_critical_section(flags);
 
 	/* Suspend for given time interval */
-	pm_sleep(TICK2MSEC(MSEC2TICK(milliseconds) - (clock_systimer() - start_time)));
+	elapsed = clock_systimer() - start_time;
+	remaining_ticks = MSEC2TICK(milliseconds);
+	if (elapsed < remaining_ticks) {
+		pm_sleep(TICK2MSEC(remaining_ticks - elapsed));
+	}
 
 	/* PM Metrics post calculations for consistent result */
 	flags = enter_critical_section();
@@ -338,11 +356,11 @@ int pm_metrics(int milliseconds)
 			domain->suspend_ticks += end_time - domain->stime;
 		}
 	}
-	n_domains = g_pmglobals.ndomains; /* Get final count of domains */
 	g_pm_metrics->state_metrics.state_accum_ticks[g_pmglobals.state] += end_time - g_pm_metrics->state_metrics.stime;
 	leave_critical_section(flags);
+
 	/* Show PM Metrics Results */
-	pm_print_metrics((double)(end_time - start_time), n_domains);
+	pm_print_metrics((double)(end_time - start_time));
 	/* Free allocated memory */
 	kmm_free(g_pm_metrics);
 	g_pm_metrics = NULL;
