@@ -88,6 +88,56 @@ config LIBCXX_TIME_UTC
         Currently TizenRT does not provide these, so this must remain disabled
         until they are implemented in the C library.
 
+choice LIBCXX_HARDENING_MODE
+	prompt "libc++ hardening mode"
+	default LIBCXX_HARDENING_DISABLED
+	---help---
+		Select the hardening mode for libc++ containers and algorithms.
+		Modes are mutually exclusive.
+
+		- Disabled: No runtime checks (production, minimal code size)
+		- Hardened: Production security (security-critical checks only)
+		- Assertions: Safe mode for development (all checks enabled)
+		- Debug: Testing mode (comprehensive checks, may affect complexity)
+
+config LIBCXX_HARDENING_DISABLED
+	bool "Disabled (recommended for production)"
+	---help---
+		No runtime checks. Optimal performance and minimal code size.
+		Recommended for production builds.
+
+config LIBCXX_HARDENING_HARDENED
+	bool "Hardened Mode"
+	---help---
+		Enable security-critical checks for production.
+		Catches: invalid input ranges, invalid element access.
+		Does NOT catch: overlapping ranges, allocator compatibility.
+
+config LIBCXX_HARDENING_ASSERTIONS
+	bool "Assertions (Safe Mode)"
+	---help---
+		Enable all runtime assertion checks. Good for development.
+		Catches: invalid ranges, out-of-bounds access, overlapping ranges,
+		compatible allocator issues, and internal invariants.
+
+config LIBCXX_HARDENING_DEBUG
+	bool "Debug Mode"
+	---help---
+		Enable comprehensive checks for testing.
+		Includes all hardened checks plus overlapping ranges,
+		allocator compatibility, and internal invariants.
+		May change algorithm complexity (e.g., O(1) to O(n)).
+
+endchoice
+
+config LIBCXX_HARDENING_VERBOSE
+	bool "Enable verbose assertion messages"
+	default y
+	depends on !LIBCXX_HARDENING_DISABLED
+	---help---
+		Include detailed messages in assertion failures.
+		Increases code size due to string storage.
+
 config LIBCXX_IOSTREAM_BUFSIZE
 	int "IO Stream Buffer Size"
 	default 32

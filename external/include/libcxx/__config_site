@@ -125,15 +125,37 @@ typedef unsigned int wint_t;
 #endif
 
 // Debug and assertion configuration
+// TizenRT hardening mode via Kconfig (mutually exclusive options)
+// See: https://libcxx.llvm.org/Hardening.html
+#if defined(CONFIG_LIBCXX_HARDENING_ASSERTIONS)
+#define _LIBCPP_ENABLE_ASSERTIONS_DEFAULT 1
+#else
 #define _LIBCPP_ENABLE_ASSERTIONS_DEFAULT 0
+#endif
+
+#if defined(CONFIG_LIBCXX_HARDENING_HARDENED)
+#define _LIBCPP_ENABLE_HARDENED_MODE_DEFAULT 1
+#else
 #define _LIBCPP_ENABLE_HARDENED_MODE_DEFAULT 0
+#endif
+
+#if defined(CONFIG_LIBCXX_HARDENING_DEBUG)
+#define _LIBCPP_ENABLE_DEBUG_MODE_DEFAULT 1
+#else
 #define _LIBCPP_ENABLE_DEBUG_MODE_DEFAULT 0
+#endif
+
+// TizenRT custom verbose abort - integrates with TizenRT's assertion system
+// Use __builtin_abort() which is always available and has no header dependencies.
+#if !defined(CONFIG_LIBCXX_HARDENING_DISABLED) && defined(CONFIG_LIBCXX_HARDENING_VERBOSE)
+#define _LIBCPP_VERBOSE_ABORT(format, ...) \
+    ({ \
+        __builtin_abort(); \
+    })
+#endif
 
 // Optional features for embedded systems (disable if not needed)
 #define _LIBCPP_NO_RTTI
-
-// TizenRT compatibility: Disable debug mode for embedded systems
-#define _LIBCPP_HAS_NO_DEBUG_MODE 1
 
 // TizenRT compatibility: Disable nullptr_t constructor for void* to avoid overload conflict
 #define _LIBCPP_HAS_NULLPTR_T_FOR_VOID 0
