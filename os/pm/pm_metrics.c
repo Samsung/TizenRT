@@ -287,11 +287,18 @@ void pm_metrics_update_missing_tick(clock_t missing_tick)
  ****************************************************************************/
 int pm_metrics(int milliseconds)
 {
+	clock_t elapsed;
+	clock_t remaining_ticks;
 	clock_t start_time, end_time;
 	irqstate_t flags;
 	int index;
 	FAR struct pm_domain_s *domain;
 	FAR dq_entry_t *entry;
+
+	if (milliseconds < 0) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	/* If PM Metrics already running then notify other thread */
 	if (g_pm_metrics) {
@@ -331,7 +338,11 @@ int pm_metrics(int milliseconds)
 	leave_critical_section(flags);
 
 	/* Suspend for given time interval */
-	pm_sleep(TICK2MSEC(MSEC2TICK(milliseconds) - (clock_systimer() - start_time)));
+	elapsed = clock_systimer() - start_time;
+	remaining_ticks = MSEC2TICK(milliseconds);
+	if (elapsed < remaining_ticks) {
+		pm_sleep(TICK2MSEC(remaining_ticks - elapsed));
+	}
 
 	/* PM Metrics post calculations for consistent result */
 	flags = enter_critical_section();
@@ -347,6 +358,7 @@ int pm_metrics(int milliseconds)
 	}
 	g_pm_metrics->state_metrics.state_accum_ticks[g_pmglobals.state] += end_time - g_pm_metrics->state_metrics.stime;
 	leave_critical_section(flags);
+
 	/* Show PM Metrics Results */
 	pm_print_metrics((double)(end_time - start_time));
 	/* Free allocated memory */
