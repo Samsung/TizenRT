@@ -88,6 +88,33 @@ config LIBCXX_TIME_UTC
         Currently TizenRT does not provide these, so this must remain disabled
         until they are implemented in the C library.
 
+choice LIBCXX_RTTI_MODE
+	prompt "RTTI mode"
+	default LIBCXX_RTTI_AUTO
+	---help---
+		Control RTTI (Run-Time Type Information) behavior in libc++.
+
+		Auto-detect (default): Reads the compiler's __GXX_RTTI macro to
+		determine if -frtti or -fno-rtti was passed from your board config.
+
+		Force enabled: Always enable RTTI regardless of compiler flags.
+		You must ensure -frtti is in your board's CXXFLAGS.
+
+		Force disabled: Always disable RTTI regardless of compiler flags.
+		Useful for minimizing code size even if -frtti is in CXXFLAGS.
+		Disabling RTTI reduces code size.
+
+config LIBCXX_RTTI_AUTO
+	bool "Auto-detect from compiler flags (recommended)"
+
+config LIBCXX_RTTI_FORCE_ON
+	bool "Force RTTI enabled"
+
+config LIBCXX_RTTI_FORCE_OFF
+	bool "Force RTTI disabled"
+
+endchoice
+
 choice LIBCXX_HARDENING_MODE
 	prompt "libc++ hardening mode"
 	default LIBCXX_HARDENING_DISABLED

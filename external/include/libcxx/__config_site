@@ -154,8 +154,20 @@ typedef unsigned int wint_t;
     })
 #endif
 
-// Optional features for embedded systems (disable if not needed)
-#define _LIBCPP_NO_RTTI
+// Controls whether libcxx RTTI features are available (compiler's -frtti/-fno-rtti flags )
+#if defined(CONFIG_LIBCXX_RTTI_FORCE_ON)
+    // Explicitly forced on — user must ensure -frtti in board config
+    // Do NOT define _LIBCPP_NO_RTTI
+#elif defined(CONFIG_LIBCXX_RTTI_FORCE_OFF)
+    // Explicitly forced off — disable RTTI unconditionally
+    #define _LIBCPP_NO_RTTI
+#else
+    // CONFIG_LIBCXX_RTTI_AUTO (default) - Auto-detect from compiler flags :    
+    #ifndef __GXX_RTTI
+    //   __GXX_RTTI is NOT defined when -fno-rtti is active
+    #define _LIBCPP_NO_RTTI
+    #endif
+#endif
 
 // TizenRT compatibility: Disable nullptr_t constructor for void* to avoid overload conflict
 #define _LIBCPP_HAS_NULLPTR_T_FOR_VOID 0
