@@ -46,7 +46,7 @@ typedef struct pm_metric_s pm_metric_t;
 static pm_metric_t *g_pm_metrics;
 static bool g_pm_metrics_running = false;
 
-static void pm_print_metrics(double total_time, int n_domains)
+static void pm_print_metrics(double total_time)
 {
 	int index;
 	struct pm_domain_s *domain;
@@ -121,7 +121,7 @@ void pm_metrics_update_domain(FAR struct pm_domain_s *domain)
  * Name: pm_metrics_update_suspend
  *
  * Description:
- *   This function is called inside pm_suspend. It note the timestamp (in ticks) of
+ *   This function is called inside pm_suspend. It notes the timestamp (in ticks) of
  *   suspended domain.
  *
  * Input parameters:
@@ -281,7 +281,6 @@ int pm_metrics(int milliseconds)
 	clock_t start_time, end_time;
 	irqstate_t flags;
 	int index;
-	int n_domains = 0;
 	FAR struct pm_domain_s *domain;
 	FAR dq_entry_t *entry;
 
@@ -318,7 +317,6 @@ int pm_metrics(int milliseconds)
 	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
 		domain = (FAR struct pm_domain_s *)entry;
 		pm_metrics_update_domain(domain); /* This will set domain->stime */
-		n_domains++;
 	}
 	g_pm_metrics_running = true;
 	leave_critical_section(flags);
@@ -338,11 +336,10 @@ int pm_metrics(int milliseconds)
 			domain->suspend_ticks += end_time - domain->stime;
 		}
 	}
-	n_domains = g_pmglobals.ndomains; /* Get final count of domains */
 	g_pm_metrics->state_metrics.state_accum_ticks[g_pmglobals.state] += end_time - g_pm_metrics->state_metrics.stime;
 	leave_critical_section(flags);
 	/* Show PM Metrics Results */
-	pm_print_metrics((double)(end_time - start_time), n_domains);
+	pm_print_metrics((double)(end_time - start_time));
 	/* Free allocated memory */
 	kmm_free(g_pm_metrics);
 	g_pm_metrics = NULL;
