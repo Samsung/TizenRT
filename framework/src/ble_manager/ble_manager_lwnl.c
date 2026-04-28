@@ -193,7 +193,7 @@ trble_result_e ble_drv_start_scan(trble_scan_filter *filter)
 {
 	trble_result_e res = TRBLE_SUCCESS;
 	lwnl_msg_params msg_data = {1, {(void *)filter }};
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_START_SCAN}, sizeof(trble_scan_filter), (void *)&msg_data, (void *)&res};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_START_SCAN}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}

@@ -38,18 +38,6 @@ int bledev_req_handle(const char *msg, size_t msg_len)
 		return -ENOSYS;
 	}
 
-	/* Handle BLE start scan specially because the scan filter is now wrapped
-	 * in a lwnl_msg_params structure (see ble_drv_start_scan modification).
-	 */
-	if (lmsg->req_type.type == LWNL_REQ_BLE_START_SCAN) {
-		/* Unwrap the filter pointer */
-		lwnl_msg_params *msg_data = (lwnl_msg_params *)lmsg->data;
-		void *filter = msg_data->param[0];
-		trble_result_e *res = (trble_result_e *)lmsg->result;
-		*res = bledev_handle(dev, lmsg->req_type, filter, lmsg->data_len);
-		return 0;
-	}
-
 	trble_result_e *res = (trble_result_e *)lmsg->result;
 	*res = bledev_handle(dev, lmsg->req_type, lmsg->data, lmsg->data_len);
 
