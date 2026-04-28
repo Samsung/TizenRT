@@ -88,7 +88,16 @@ else
 CONFIG_BL2_WDT := 0
 endif
 tfm: prebuild
-	$(Q) cmake -S tfm -B $(tfm_build_dir) \
+	# Isolate the TF-M CMake configure/build from outer build flags (e.g. LDFLAGS
+	# containing ld-only options like --defsym/--gc-sections) which can break
+	# CMake try_compile during compiler detection.
+	$(Q) env -u LDFLAGS cmake -S tfm -B $(tfm_build_dir) \
+		-U CMAKE_EXE_LINKER_FLAGS \
+		-U CMAKE_SHARED_LINKER_FLAGS \
+		-U CMAKE_MODULE_LINKER_FLAGS \
+		-DCMAKE_EXE_LINKER_FLAGS= \
+		-DCMAKE_SHARED_LINKER_FLAGS= \
+		-DCMAKE_MODULE_LINKER_FLAGS= \
 		-DCMAKE_PREFIX_PATH=/opt/gcc-arm-none-eabi-10.3-2021.10/bin \
 		-DCMAKE_INSTALL_PREFIX=$(tfm_build_dir)/tfm_install \
 		-DARMINO_SDK_PATH=$(bsp_path) \
@@ -151,7 +160,7 @@ tfm: prebuild
 
 
 
-	$(Q) cmake --build $(tfm_build_dir) --target install -j16
+	$(Q) env -u LDFLAGS cmake --build $(tfm_build_dir) --target install -j16
 
 PRE_HANDLE_SCRIPT := $(abspath $(TOPDIR)/../build/tools/armino/misc/tfm_prehandle.py)
 

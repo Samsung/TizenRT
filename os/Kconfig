@@ -175,6 +175,16 @@ config TOOLS_DIR
 	default "../tools" if !WINDOWS_NATIVE
 	default "..\tools" if WINDOWS_NATIVE
 
+config BUILD_PARALLEL_JOBS
+	int "Number of parallel build jobs (0 = auto-detect)"
+	default 0
+	range 0 128
+	---help---
+		Set the number of parallel build jobs.
+		0 = Auto-detect using nproc (default)
+		1-128 = Use specified number of jobs
+		This controls the -j option passed to make.
+
 choice
 	prompt "Memory organization"
 	default BUILD_FLAT
@@ -333,7 +343,15 @@ config USER_SIGN_PREPEND_SIZE
 	if ARCH_BOARD_BK7239N
 		source board/bk7239n/Kconfig.signing
 	endif
-	
+
+config RESOURCE_BINARY_SIGNING
+	bool "Enable Resource Binary Signing"
+	default n
+	depends on BINARY_SIGNING && RESOURCE_FS
+	select USER_SIGN_PREPEND_SIZE
+	---help---
+		Enable signing for resource binaries.
+		This option enables signing for resource binaries used in the system.
 
 endmenu # Build Configuration
 

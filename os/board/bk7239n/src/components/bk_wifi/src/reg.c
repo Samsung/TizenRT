@@ -753,7 +753,7 @@ bool reg_is_valid_request(const char *alpha2)
 	return alpha2_equal(last_request->alpha2, alpha2);
 }
 
-static const struct ieee80211_regdomain *reg_get_regdomain(struct wiphy *wiphy)
+const struct ieee80211_regdomain *reg_get_regdomain(struct wiphy *wiphy)
 {
 	/*
 	 * Follow the driver's regulatory domain, if present, unless a country
@@ -2609,6 +2609,14 @@ int regulatory_hint_found_beacon(struct wiphy *wiphy,
 	bk_work_sched(&reg_work);
 
 	return 0;
+}
+
+void regd_hint_beacon(int freq)
+{
+	struct ieee80211_channel *chan = ieee80211_get_channel(&g_wiphy, freq);
+
+	if (chan)
+		regulatory_hint_found_beacon(&g_wiphy, chan);
 }
 
 static void print_rd_rules(const struct ieee80211_regdomain *rd)

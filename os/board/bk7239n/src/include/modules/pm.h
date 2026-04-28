@@ -408,6 +408,36 @@ typedef enum
 
 	PM_CPU_FRQ_DEFAULT   // 7:default cpu frequency which control by pm module
 }pm_cpu_freq_e;
+
+typedef enum
+{
+	/* SDK base types; do not change values */
+	PM_ANALDO_VOTE_MODULE_SADC_CALI = 0,     /*0*< SADC calibration */
+	PM_ANALDO_VOTE_MODULE_WIFI_SLEEP_WAKE,   /*1*< WIFI sleep wake */
+	PM_ANALDO_VOTE_MODULE_BLE_SLEEP_WAKE,    /*2*< BLE sleep wake */
+	PM_ANALDO_VOTE_MODULE_EXIT_DSSS_ONLY,    /*3*< Exit DSSS ONLY */
+	PM_ANALDO_VOTE_MODULE_ATE,               /*4*< ATE mode */
+
+
+	PM_ANALDO_VOTE_MODULE_DEFAULT,           /*5*< Default analdo voltage  only for pm vote */
+
+
+	PM_ANALDO_VOTE_MODULE_APP_EXT_BASE = PM_ANALDO_VOTE_MODULE_DEFAULT+1,
+	PM_ANALDO_VOTE_MODULE_MAX = PM_ANALDO_VOTE_MODULE_APP_EXT_BASE
+} pm_analdo_vote_module_e;
+
+
+
+typedef enum
+{
+	/* SDK base levels; do not change values (hardware encoding) */
+	PM_ANALDO_VOL_1_1V     = CONFIG_PM_ANALDO_VOLTAGE_DEFAULT,   /**< 1.1V */
+	PM_ANALDO_VOL_TEMP_ADJ = CONFIG_PM_ANALDO_VOLTAGE_TYPICAL,  /**< Temperature adjusted(1.25/1.45v) */
+	PM_ANALDO_VOL_1_65V    = 0xF, /**< 1.65V */
+
+	PM_ANALDO_VOL_LEVEL_MAX
+} pm_analdo_vol_level_e;
+
 typedef enum
 {
 	PM_ROSC_CALI_AUTO = 0,  // 0:auto calibration
@@ -593,6 +623,36 @@ typedef enum {
 #define PM_CP1_AUTO_POWER_DOWN_CTRL      (PM_CP1_AUTO_POWER_DOWN_ENABLE)
 
 /*=====================CONFIG  SECTION  END=======================*/
+
+/**
+ * @brief Get stable time after sleep wake-up (in microseconds).
+ *
+ * @attention
+ * - This API returns the time that the system needs for the clock to become
+ *   stable after waking up from the given sleep mode. Caller may use this
+ *   value to delay before using clock-dependent peripherals or services.
+ *
+ * @param
+ * - sleep_mode: Sleep mode (e.g. PM_MODE_NORMAL_SLEEP, PM_MODE_LOW_VOLTAGE).
+ *
+ * @return
+ * - Clock stable time in microseconds (us) after wake-up for the given sleep mode.
+ */
+uint32_t bk_pm_get_sleep_wakeup_stable_time_us(pm_sleep_mode_e sleep_mode);
+/**
+ * @brief get sleep mode
+ *
+ * @attention
+ * - This API is to get sleep mode.
+ *
+ * @param
+ * -void
+ * @return
+ * - PM_MODE_NORMAL_SLEEP: normal sleep
+ * - PM_MODE_LOW_VOLTAGE: low voltage
+ * - PM_MODE_DEFAULT: default
+ */
+pm_sleep_mode_e bk_pm_get_sleep_mode(void);
 /**
  * @brief send message to pm thread for enter deepsleep or low voltage
  *
@@ -1272,6 +1332,28 @@ pm_cpu_freq_e bk_pm_current_max_cpu_freq_get(void);
  *  - others: other errors.
  */
 bk_err_t bk_pm_module_vote_cpu_freq(pm_dev_id_e module,pm_cpu_freq_e cpu_freq);
+
+/**
+ * @brief vote analdo  voltage
+ *
+ * Each module votes an analdo voltage level; the highest vote is applied.
+ * SDK base module types: SADC_CALI, WIFI_SLEEP_WAKE, BLE_SLEEP_WAKE, EXIT_DSSS_ONLY, ATE.
+ * SDK base voltage levels: PM_ANALDO_VOL_1_1V (4), PM_ANALDO_VOL_TEMP_ADJ (7), PM_ANALDO_VOL_1_65V (0xF).
+ *
+ * @param module   - pm_analdo_vote_module_e (base type)
+ * @param vol_level - pm_analdo_vol_level_e (1.1V=4, temp_adj=7, 1.65V=0xF)
+ * @return BK_OK on success, else error.
+ */
+bk_err_t bk_pm_module_vote_analdo_vol(pm_analdo_vote_module_e module, pm_analdo_vol_level_e vol_level);
+
+/**
+ * @brief get current voted analdo voltage level for a module
+ *
+ * @param module - pm_analdo_vote_module_e
+ * @return voted voltage level (pm_analdo_vol_level_e)
+ */
+pm_analdo_vol_level_e bk_pm_module_current_analdo_vol_get(pm_analdo_vote_module_e module);
+
 /**
  * @brief clock ctrl
  *

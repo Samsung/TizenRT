@@ -231,3 +231,15 @@ bool enableDMIC(bool enable)
 	}
 	return true;
 }
+
+bool changeDSPFlow(uint8_t dsp_flow_num)
+{
+	medvdbg("SoundManager : changeDSPFlow. dsp_flow_num: %d\n", dsp_flow_num);
+	audio_manager_result_t res = change_input_dsp_flow(dsp_flow_num);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("changeDSPFlow failed dsp_flow_num : %d, res : %d\n", dsp_flow_num, res);
+		return false;
+	}
+	return true;
+}
+

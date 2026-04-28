@@ -154,14 +154,14 @@ int32_t bk_tr_ble_scanner_notice_cb(ble_notice_t notice, void *param)
                     scan_device->adv_type = TRBLE_ADV_TYPE_NONCONN_IND;
                     break;
 
-                case SCAN_RSP:
-                    scan_device->adv_type = TRBLE_ADV_TYPE_SCAN_RSP;
-                    break;
-
                 default:
                     scan_device->adv_type = TRBLE_ADV_TYPE_UNKNOWN;
                     break;
                 }
+            }
+            else if (adv_type == REPORT_TYPE_SCAN_RSP_LEG)
+            {
+                scan_device->adv_type = TRBLE_ADV_TYPE_SCAN_RSP;
             }
             else
             {

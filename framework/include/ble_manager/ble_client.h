@@ -33,6 +33,10 @@
 #include <stdbool.h>
 #include "ble_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	BLE_CLIENT_NONE = 0,
 	BLE_CLIENT_IDLE,
@@ -102,13 +106,12 @@ ble_client_state_e ble_client_get_state(ble_client_ctx *ctx);
  *   conn_info  - This includes Server(Peripheral) info.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_client_connect(ble_client_ctx *ctx, ble_conn_info* conn_info);
-ble_result_e ble_client_reconnect(ble_client_ctx *ctx);
 ble_result_e ble_client_autoconnect(ble_client_ctx *ctx, bool is_auto);
+ble_result_e ble_client_reconnect(ble_client_ctx *ctx);
 
 /****************************************************************************
  * Name: ble_client_disconnect
@@ -120,8 +123,7 @@ ble_result_e ble_client_autoconnect(ble_client_ctx *ctx, bool is_auto);
  *   ctx        - The context of client.
  * 
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_client_disconnect(ble_client_ctx *ctx);
@@ -133,8 +135,7 @@ ble_result_e ble_client_disconnect(ble_client_ctx *ctx);
  *   Disconnect all of the connected devices.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_client_disconnect_all(void);
@@ -150,8 +151,7 @@ ble_result_e ble_client_disconnect_all(void);
  *                        The BLE driver will write the device list.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_client_connected_device_list(ble_device_connected_list* out_connected_list);
@@ -168,8 +168,7 @@ ble_result_e ble_client_connected_device_list(ble_device_connected_list* out_con
  *                          The BLE driver will write the device info.
  *
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_client_connected_info(ble_client_ctx *ctx, ble_device_connected* out_connected_device);
@@ -187,8 +186,7 @@ ble_result_e ble_client_connected_info(ble_client_ctx *ctx, ble_device_connected
  *   attr_handle  - attribute handle.
  * 
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_client_operation_enable_notification(ble_client_ctx *ctx, ble_attr_handle attr_handle);
@@ -211,10 +209,31 @@ ble_result_e ble_client_operation_enable_notification_and_indication(ble_client_
  *
  * 
  * Returned Value
- *   Zero (BLE_RESULT_SUCCESS) is returned on success; a positive value is returned on
- *   failure.
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
  *
  ****************************************************************************/
 ble_result_e ble_client_operation_read(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
 ble_result_e ble_client_operation_write(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
 ble_result_e ble_client_operation_write_no_response(ble_client_ctx *ctx, ble_attr_handle attr_handle, ble_data* data);
+
+/****************************************************************************
+ * Name: ble_client_get_write_read_pending_count
+ *
+ * Description:
+ *   Get the count of pending write/read operations.
+ *
+ * Input Parameters:
+ *   ctx   - The context of client.
+ *   count - Pointer to store the count of pending operations.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *   BLE_MANAGER_BUSY   - If the internal max pending count value and count value are the same.
+ *                        The default value of max pending count is 40.
+ *
+ ****************************************************************************/
+ble_result_e ble_client_get_write_read_pending_count(ble_client_ctx *ctx, uint8_t *count);
+
+#ifdef __cplusplus
+}
+#endif

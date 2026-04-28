@@ -125,8 +125,48 @@ void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_re
 {
 	DEBUGASSERT(node);
 	node->alloc_call_addr = caller_retaddr;
-	node->reserved = 0;
+	node->memory_state = MM_MEMORY_STATE_UNUSED;
 	node->pid = getpid();
+}
+
+/****************************************************************************
+ * Name: heapinfo_set_pid
+ *
+ * Description:
+ * Set PID of the task to mem chunk
+ * This is useful when kernel modules allocate memory on behalf of other tasks
+ * and want to attribute the allocation to themselves.
+ * This function also updates per-PID and group accounting to maintain consistency.
+ ****************************************************************************/
+void heapinfo_set_pid(void *address, pid_t pid)
+{
+	struct mm_allocnode_s *node;
+	struct mm_heap_s *heap;
+	pid_t old_pid;
+
+	heap = mm_get_heap(address);
+	if (heap) {
+		node = (struct mm_allocnode_s *)((char *)address - SIZEOF_MM_ALLOCNODE);
+		DEBUGASSERT(mm_takesemaphore(heap));
+		
+		old_pid = node->pid;
+		if (old_pid != pid) {
+			/* Subtract from old PID's accounting */
+			heapinfo_subtract_size(heap, old_pid, node->size);
+			heapinfo_update_total_size(heap, (-1) * node->size, old_pid);
+			
+			/* Update node PID */
+			node->pid = pid;
+			
+			/* Add to new PID's accounting */
+			heapinfo_add_size(heap, pid, node->size);
+			heapinfo_update_total_size(heap, node->size, pid);
+		}
+		
+		mm_givesemaphore(heap);
+	} else {
+		mdbg("Failed to set pid, heap not found. addr:%x\n", address);
+	}
 }
 
 /****************************************************************************

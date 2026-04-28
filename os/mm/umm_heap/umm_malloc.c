@@ -116,6 +116,7 @@ void *malloc_at(int heap_index, size_t size)
 	}
 
 	if (size == 0) {
+		mdbg("Invalid parameter, size is 0\n");
 		return NULL;
 	}
 	ret = mm_malloc(&BASE_HEAP[heap_index], size, caller_retaddr);
@@ -212,6 +213,7 @@ FAR void *malloc(size_t size)
 	void *ret = NULL;
 
 	if (size == 0) {
+		mdbg("Invalid parameter, size is 0\n");
 		return NULL;
 	}
 

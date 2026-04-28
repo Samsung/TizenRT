@@ -71,6 +71,15 @@ export Q := @
 endif
 endif
 
+# Build parallelism
+ifeq ($(CONFIG_BUILD_PARALLEL_JOBS),)
+export JOBS := -j$(shell nproc)
+else ifeq ($(CONFIG_BUILD_PARALLEL_JOBS),0)
+export JOBS := -j$(shell nproc)
+else
+export JOBS := -j$(CONFIG_BUILD_PARALLEL_JOBS)
+endif
+
 # Default tools
 
 ifeq ($(DIRLINK),)
@@ -456,7 +465,7 @@ ifeq ($(CONFIG_ELF),y)
 	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps.ld -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
 else
 	$(Q) $(TOPDIR)/tools/mkldscript.py
-	$(Q) $(CC) -c $(CFLAGS) -D__COMMON_BINARY__ $(TOPDIR)/userspace/up_userspace.c -o  $(TOPDIR)/userspace/up_userspace_common.o
+	$(Q) $(MAKE) -C userspace CFLAGS="$(CFLAGS)" TOPDIR="$(TOPDIR)" common_obj
 ifneq ($(CONFIG_XIP_ELF_WARCHIVE), y)
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" undefsym KERNEL=n
 	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt) -Map $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).map
@@ -558,15 +567,17 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 	$(Q) $(call VERIFY_APP,$(CONFIG_COMMON_BINARY_NAME), 0)
 	$(Q) $(call PREPARE_APP,$(CONFIG_COMMON_BINARY_NAME),"common",$(CONFIG_COMMON_BINARY_VERSION))
 endif
-ifeq ($(CONFIG_BINARY_SIGNING),y)
-	$(Q) $(call MAKE_USER_SIGNING)
-endif
 endif
 ifeq ($(CONFIG_RESOURCE_FS),y)
 	$(Q) $(TOPDIR)/../tools/fs/mkromfsimg.sh $(TOPDIR)/../resource ../build/output/bin/resourcefs.img
 	$(Q) $(TOPDIR)/tools/mkbinheader.py $(OUTBIN_DIR)/resourcefs.img resource
 	$(Q) $(TOPDIR)/tools/mkchecksum.py $(OUTBIN_DIR)/resourcefs.img
 endif
+
+ifeq ($(CONFIG_BINARY_SIGNING),y)
+	$(Q) $(call MAKE_USER_SIGNING)
+endif
+
 	$(Q) echo "Start the Board Specific Work for Binary"
 	$(Q) $(call MAKE_BOARD_SPECIFIC_BIN, $(BIN_EXE), $(BIN_EXT))
 	$(Q) $(call MAKE_SAMSUNG_HEADER, $(BIN_EXT))

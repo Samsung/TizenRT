@@ -39,7 +39,7 @@
 #include "tfm_sca_aes_nsc.h"
 
 #define HWRAP_TAG "[ARMINO_HAL_WRAPPER]"
-#define HWRAP_ENTER do { dbg(HWRAP_TAG"%s:%d\n", __FILE__, __LINE__); } while (0)
+#define HWRAP_ENTER do { sevdbg(HWRAP_TAG"%s:%d\n", __FILE__, __LINE__); } while (0)
 
 #define HAL_TO_PSA_HASH_ALG(hal_type) ( \
     (hal_type) == HAL_HASH_MD5 ? PSA_ALG_MD5 : \
@@ -70,12 +70,12 @@ static void print_hex(char *name, uint8_t *data, uint32_t len) {
     if(len > HEX_PRINT_BYTE_MAX){
         len = HEX_PRINT_BYTE_MAX;
     }
-    dbg("%s len %d\r\n", name, len);
+    sevdbg("%s len %d\r\n", name, len);
     for (size_t i = 0; i < len; i++) {
         sprintf(s_hex_buff + (2 * i), "%02x", data[i]);
     }
     s_hex_buff[len * 2] = 0;
-    dbg("%s\n", s_hex_buff);
+    sevdbg("%s\n", s_hex_buff);
 }
 
 // Define global array to record the mapping between key_idx and psa_key_id_t
@@ -88,7 +88,7 @@ psa_key_id_t g_key_idx_record[TOTAL_KEY_STORAGE_INDEX] = {0};
 #define TFM_NSC_LOCK_OR_RETURN() do { \
 	int _tfm_lock_st = tfm_ns_interface_lock(); \
 	if (_tfm_lock_st != PSA_SUCCESS) { \
-		dbg("Failed to acquire NSC interface lock\n"); \
+		sedbg("Failed to acquire NSC interface lock\n"); \
 		return HAL_FAIL; \
 	} \
 } while (0)
@@ -103,14 +103,14 @@ int armino_hal_init(hal_init_param *params)
     // Initialize TFM NS interface if needed
     int32_t ret = ns_interface_lock_init();
     if (ret != PSA_SUCCESS) {
-        dbg("Failed to initialize NS interface lock\n");
+        sedbg("Failed to initialize NS interface lock\n");
         return HAL_FAIL;
     }
 
     // Initialize PSA Crypto
     psa_status_t psa_ret = psa_crypto_init();
     if (psa_ret != PSA_SUCCESS) {
-        dbg("Failed to initialize PSA crypto: %d\n", psa_ret);
+        sedbg("Failed to initialize PSA crypto: %d\n", psa_ret);
         return HAL_FAIL;
     }
 
@@ -528,6 +528,174 @@ static int armino_hal_get_der_length(uint32_t *len, unsigned char *data, int *by
     return HAL_SUCCESS;
 }
 
+static int armino_hal_get_der_length_safe(size_t *len, const uint8_t *data, size_t data_len, size_t *bytes_consumed)
+{
+    if (len == NULL || data == NULL || bytes_consumed == NULL || data_len == 0) {
+        return HAL_INVALID_ARGS;
+    }
+
+    uint8_t len_byte = data[0];
+    if ((len_byte & 0x80) == 0) {
+        *len = len_byte;
+        *bytes_consumed = 1;
+        return HAL_SUCCESS;
+    }
+
+    size_t len_bytes = (size_t)(len_byte & 0x7F);
+    if (len_bytes == 0 || len_bytes > 2 || data_len < (1 + len_bytes)) {
+        return HAL_INVALID_ARGS;
+    }
+
+    size_t value = 0;
+    for (size_t i = 0; i < len_bytes; i++) {
+        value = (value << 8) | data[1 + i];
+    }
+
+    *len = value;
+    *bytes_consumed = 1 + len_bytes;
+    return HAL_SUCCESS;
+}
+
+static int armino_hal_ecdsa_raw_to_der(const uint8_t *raw_sig, size_t raw_sig_len,
+                                       uint8_t *der_sig, size_t der_sig_buf_len, size_t *der_sig_len)
+{
+    if (raw_sig == NULL || der_sig == NULL || der_sig_len == NULL || raw_sig_len == 0 || (raw_sig_len & 1)) {
+        return HAL_INVALID_ARGS;
+    }
+
+    size_t comp_len = raw_sig_len / 2;
+    const uint8_t *r = raw_sig;
+    const uint8_t *s = raw_sig + comp_len;
+
+    size_t r_off = 0;
+    while (r_off < (comp_len - 1) && r[r_off] == 0x00) {
+        r_off++;
+    }
+    size_t s_off = 0;
+    while (s_off < (comp_len - 1) && s[s_off] == 0x00) {
+        s_off++;
+    }
+
+    size_t r_val_len = comp_len - r_off;
+    size_t s_val_len = comp_len - s_off;
+    size_t r_pad = ((r[r_off] & 0x80) != 0) ? 1 : 0;
+    size_t s_pad = ((s[s_off] & 0x80) != 0) ? 1 : 0;
+    size_t r_int_len = r_val_len + r_pad;
+    size_t s_int_len = s_val_len + s_pad;
+
+    int r_len_bytes = armino_hal_der_length_bytes((uint32_t)r_int_len);
+    int s_len_bytes = armino_hal_der_length_bytes((uint32_t)s_int_len);
+    if (r_len_bytes < 0 || s_len_bytes < 0) {
+        return HAL_NOT_SUPPORTED;
+    }
+
+    uint32_t seq_content_len = (uint32_t)(1 + r_len_bytes + r_int_len + 1 + s_len_bytes + s_int_len);
+    int seq_len_bytes = armino_hal_der_length_bytes(seq_content_len);
+    if (seq_len_bytes < 0) {
+        return HAL_NOT_SUPPORTED;
+    }
+
+    size_t total_der_len = (size_t)(1 + seq_len_bytes) + seq_content_len;
+    if (der_sig_buf_len < total_der_len) {
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+
+    size_t off = 0;
+    der_sig[off++] = 0x30;
+    off += armino_hal_write_der_length(der_sig + off, seq_content_len);
+
+    der_sig[off++] = 0x02;
+    off += armino_hal_write_der_length(der_sig + off, (uint32_t)r_int_len);
+    if (r_pad) {
+        der_sig[off++] = 0x00;
+    }
+    memcpy(der_sig + off, r + r_off, r_val_len);
+    off += r_val_len;
+
+    der_sig[off++] = 0x02;
+    off += armino_hal_write_der_length(der_sig + off, (uint32_t)s_int_len);
+    if (s_pad) {
+        der_sig[off++] = 0x00;
+    }
+    memcpy(der_sig + off, s + s_off, s_val_len);
+    off += s_val_len;
+
+    *der_sig_len = off;
+    return HAL_SUCCESS;
+}
+
+static int armino_hal_ecdsa_der_to_raw(const uint8_t *der_sig, size_t der_sig_len,
+                                       uint8_t *raw_sig, size_t raw_sig_buf_len, size_t *raw_sig_len)
+{
+    if (der_sig == NULL || raw_sig == NULL || raw_sig_len == NULL || der_sig_len == 0 ||
+        raw_sig_buf_len == 0 || (raw_sig_buf_len & 1)) {
+        return HAL_INVALID_ARGS;
+    }
+
+    size_t comp_len = raw_sig_buf_len / 2;
+    size_t off = 0;
+    size_t item_len = 0;
+    size_t len_bytes = 0;
+
+    if (der_sig[off++] != 0x30) {
+        return HAL_INVALID_ARGS;
+    }
+
+    int ret = armino_hal_get_der_length_safe(&item_len, der_sig + off, der_sig_len - off, &len_bytes);
+    if (ret != HAL_SUCCESS) {
+        return ret;
+    }
+    off += len_bytes;
+    if (off + item_len != der_sig_len) {
+        return HAL_INVALID_ARGS;
+    }
+
+    for (int comp = 0; comp < 2; comp++) {
+        if (off >= der_sig_len || der_sig[off++] != 0x02) {
+            return HAL_INVALID_ARGS;
+        }
+
+        ret = armino_hal_get_der_length_safe(&item_len, der_sig + off, der_sig_len - off, &len_bytes);
+        if (ret != HAL_SUCCESS) {
+            return ret;
+        }
+        off += len_bytes;
+
+        if (item_len == 0 || off + item_len > der_sig_len) {
+            return HAL_INVALID_ARGS;
+        }
+
+        const uint8_t *src = der_sig + off;
+        size_t src_len = item_len;
+
+        if ((src[0] & 0x80) != 0) {
+            return HAL_INVALID_ARGS;
+        }
+
+        while (src_len > 1 && src[0] == 0x00) {
+            src++;
+            src_len--;
+        }
+
+        if (src_len > comp_len) {
+            return HAL_INVALID_ARGS;
+        }
+
+        uint8_t *dst = raw_sig + (comp * comp_len);
+        memset(dst, 0, comp_len);
+        memcpy(dst + (comp_len - src_len), src, src_len);
+
+        off += item_len;
+    }
+
+    if (off != der_sig_len) {
+        return HAL_INVALID_ARGS;
+    }
+
+    *raw_sig_len = raw_sig_buf_len;
+    return HAL_SUCCESS;
+}
+
 int armino_hal_der_ecdsa_private_key(hal_data *key, hal_data *prikey)
 {
     HWRAP_ENTER;
@@ -662,7 +830,7 @@ int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_d
     }
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
-        dbg("Key index %d (0-31)  for factory key\n", key_idx);
+        sedbg("Key index %d (0-31)  for read only key\n", key_idx);
         return HAL_INVALID_REQUEST;
     }
 
@@ -927,20 +1095,20 @@ int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_d
             status = psa_import_key(&attributes, key->data, key->data_len, &imported_key_id);
             break;
         default:
-            dbg("Unsupported key type: %d\n", mode);
+            sevdbg("Unsupported key type: %d\n", mode);
             psa_reset_key_attributes(&attributes);
             return HAL_NOT_SUPPORTED;
     }
 
     if (status != PSA_SUCCESS) {
-        dbg("Failed to import key_idx %d status %d: %d\n", key_idx, status);
+        sedbg("Failed to import key_idx %d status %d: %d\n", key_idx, status);
         psa_reset_key_attributes(&attributes);
         return HAL_FAIL;
     }
     psa_reset_key_attributes(&attributes);
     // Record the mapping between key_idx and psa_key_id_t
     set_psa_key_id(key_idx, imported_key_id);
-    dbg("Imported key with ID: %u, mapped to index: %u\n", imported_key_id, key_idx);
+    sevdbg("Imported key with ID: %u, mapped to index: %u\n", imported_key_id, key_idx);
     return HAL_SUCCESS;
 }
 
@@ -965,7 +1133,7 @@ int armino_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
         if(mode >= HAL_KEY_ECC_SEC_P192R1 && mode <= HAL_KEY_ECC_SEC_P512R1){
             int ret = ss_read_key(key_idx, pub_key, &pub_key_len);
             if(ret != HAL_SUCCESS){
-                dbg("Failed to read key: %d\n", ret);
+                sedbg("Failed to read key: %d\n", ret);
                 return ret;
             }
             memcpy(key->data, &pub_key[0], pub_key_len/2);
@@ -975,12 +1143,12 @@ int armino_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
             return HAL_SUCCESS;
         }
         else{
-            dbg("Not allowed to export key_idx %d mode %d\n",key_idx, mode);
+            sedbg("Not allowed to export key_idx %d mode %d\n",key_idx, mode);
             return HAL_NOT_SUPPORTED;
         }
     }else{
         if(is_psa_key_id_empty(key_idx)){
-            dbg("key_id %d is not generated yet\n", key_idx);
+            sedbg("key_id %d is not generated yet\n", key_idx);
             return HAL_EMPTY_SLOT;
         }else{
             key_id = get_psa_key_id(key_idx);
@@ -990,7 +1158,7 @@ int armino_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
     if((mode == HAL_KEY_ED_25519)||(mode == HAL_KEY_ECC_25519)){
         int ret = psa_25519_get_key(key_idx, key);
         if(ret != HAL_SUCCESS){
-            dbg("Failed to read key: %d\n", ret);
+            sedbg("Failed to read key: %d\n", ret);
             return ret;
         }
         return HAL_SUCCESS;
@@ -1009,7 +1177,7 @@ int armino_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
             // Export the public key
             status = psa_export_public_key(key_id, pub_key, HAL_MAX_ECP_KEY_SIZE, &pub_key_len);
             if (status != PSA_SUCCESS) {
-                dbg("Failed to export key: %d\n", status);
+                sedbg("Failed to export key: %d\n", status);
                 return HAL_FAIL;
             }
             //print_hex("get pub key", pub_key, pub_key_len);
@@ -1035,10 +1203,10 @@ int armino_hal_get_key(hal_key_type mode, uint32_t key_idx, hal_data *key)
         case HAL_KEY_DH_1024:
         case HAL_KEY_DH_2048:
         case HAL_KEY_DH_4096:
-            dbg("Not allowed to export key_idx %d mode %d\n",key_idx, mode);
+            sevdbg("Not allowed to export key_idx %d mode %d\n",key_idx, mode);
             return HAL_NOT_SUPPORTED;
         default:
-            dbg("Unsupported key type: %d\n", mode);
+            sevdbg("Unsupported key type: %d\n", mode);
             return HAL_NOT_SUPPORTED;
     }
 
@@ -1054,7 +1222,7 @@ int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx)
         return HAL_INVALID_SLOT_RANGE;
     }
     if(key_idx < FACTORY_KEY_INDEX_MAX){
-        dbg("Not allowed to remove factory key_idx %d\n", key_idx);
+        sedbg("Not allowed to remove read only key_idx %d\n", key_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
@@ -1063,7 +1231,7 @@ int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx)
         status = psa_sca_aes_remove_key((aes_key_type)mode, key_idx);
         TFM_NSC_UNLOCK();
         if(status != SCA_AES_SUCCESS){
-            dbg("line :%d, Failed to remove key: %d\n", __LINE__, status);
+            sedbg("line :%d, Failed to remove key: %d\n", __LINE__, status);
             return HAL_FAIL;
         }
         reset_psa_key_id(key_idx);
@@ -1076,7 +1244,7 @@ int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx)
         status = psa_25519_remove_key(key_idx);
         TFM_NSC_UNLOCK();
         if(status  != HAL_SUCCESS){
-            dbg("Failed to remove key: %d\n", status);
+            sedbg("Failed to remove key: %d\n", status);
             return status;
         }
         reset_psa_key_id(key_idx);
@@ -1085,12 +1253,12 @@ int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx)
     }
 
     if(is_psa_key_id_empty(key_idx)) {
-        dbg("key_id %d is not generated yet\n", key_idx);
+        sedbg("key_id %d is not generated yet\n", key_idx);
         return HAL_EMPTY_SLOT;
     } else {
         status = psa_destroy_key(g_key_idx_record[key_idx]);
         if (status != PSA_SUCCESS) {
-            dbg("Failed to remove key: %d\n", status);
+            sedbg("Failed to remove key: %d\n", status);
             return HAL_FAIL;
         }
     }
@@ -1108,7 +1276,7 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
     }
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
-        dbg("Key index %d for factory key\n", key_idx);
+        sedbg("Key index %d for read only key\n", key_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
@@ -1121,7 +1289,7 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
         status = psa_sca_aes_generate_key((aes_key_type)mode, key_idx);
         TFM_NSC_UNLOCK();
         if(status != PSA_SUCCESS){
-            dbg("Failed to generate key: %d\n", status);
+            sedbg("Failed to generate key: %d\n", status);
             return HAL_FAIL;
         }
         set_psa_key_id(key_idx, key_idx);
@@ -1133,7 +1301,7 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
         status = psa_25519_generate_key(key_idx);
         TFM_NSC_UNLOCK();
         if(status != PSA_SUCCESS){
-            dbg("Failed to generate key: %d\n", status);
+            sedbg("Failed to generate key: %d\n", status);
             return HAL_FAIL;
         }
         set_psa_key_id(key_idx, key_idx);
@@ -1269,7 +1437,7 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
             psa_set_key_algorithm(&attributes, PSA_ALG_FFDH);
             break;
         default:
-            dbg("Unsupported key type: %d\n", mode);
+            sevdbg("Unsupported key type: %d\n", mode);
             psa_reset_key_attributes(&attributes);
             return HAL_NOT_SUPPORTED;
     }
@@ -1279,12 +1447,12 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
     status = psa_generate_key(&attributes, &generated_key_id);
     psa_reset_key_attributes(&attributes);
     if (status != PSA_SUCCESS) {
-        dbg("Failed to generate key: %d\n", status);
+        sedbg("Failed to generate key: %d\n", status);
         return HAL_FAIL;
     }
 
     set_psa_key_id(key_idx, generated_key_id);
-    dbg("Generated key with ID: %u, mapped to index: %u\n", generated_key_id, key_idx);
+    sevdbg("Generated key with ID: %u, mapped to index: %u\n", generated_key_id, key_idx);
     return HAL_SUCCESS;
 }
 
@@ -1301,7 +1469,7 @@ int armino_hal_generate_random(uint32_t len, hal_data *random)
     // Generate random data
     psa_status_t status = psa_generate_random(random->data, len);
     if (status != PSA_SUCCESS) {
-        dbg("Failed to generate random data: %d\n", status);
+        sedbg("Failed to generate random data: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -1323,7 +1491,7 @@ int armino_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
 
     psa_status_t psa_ret = psa_crypto_init();
     if (psa_ret != PSA_SUCCESS) {
-        dbg("Failed to initialize PSA crypto: %d\n", psa_ret);
+        sedbg("Failed to initialize PSA crypto: %d\n", psa_ret);
         return HAL_FAIL;
     }
 
@@ -1355,25 +1523,25 @@ int armino_hal_get_hash(hal_hash_type mode, hal_data *input, hal_data *hash)
             break;
         // Add other hash modes as needed
         default:
-            dbg("Unsupported hash mode: %d\n", mode);
+            sevdbg("Unsupported hash mode: %d\n", mode);
             return HAL_NOT_SUPPORTED;
     }
 
     psa_ret = psa_hash_setup(&operation, alg);
     if (psa_ret != PSA_SUCCESS) {
-        dbg("Hash setup failed: %d\n", psa_ret);
+        sedbg("Hash setup failed: %d\n", psa_ret);
         return HAL_FAIL;
     }
 
     psa_ret = psa_hash_update(&operation, input->data, input->data_len);
     if (psa_ret != PSA_SUCCESS) {
-        dbg("Hash update failed: %d\n", psa_ret);
+        sedbg("Hash update failed: %d\n", psa_ret);
         return HAL_FAIL;
     }
 
     psa_ret = psa_hash_finish(&operation, hash->data, hash_size, &hash->data_len);
     if (psa_ret != PSA_SUCCESS) {
-        dbg("Hash finish failed: %d\n", psa_ret);
+        sedbg("Hash finish failed: %d\n", psa_ret);
         return HAL_FAIL;
     }
 
@@ -1394,7 +1562,7 @@ int armino_hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, h
     }
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
-        dbg("Key index %d for factory key\n", key_idx);
+        sedbg("Key index %d for read only key\n", key_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
@@ -1404,7 +1572,7 @@ int armino_hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, h
     size_t hmac_size;
 
     if(is_psa_key_id_empty(key_idx)) {
-        dbg("key_id %d is not generated yet\n", key_idx);
+        sedbg("key_id %d is not generated yet\n", key_idx);
         return HAL_EMPTY_SLOT;
     } else {
         key_id = get_psa_key_id(key_idx);
@@ -1437,7 +1605,7 @@ int armino_hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, h
             break;
         // Add other HMAC modes as needed
         default:
-            dbg("Unsupported HMAC mode: %d\n", mode);
+            sevdbg("Unsupported HMAC mode: %d\n", mode);
             return HAL_NOT_SUPPORTED;
     }
 
@@ -1445,7 +1613,7 @@ int armino_hal_get_hmac(hal_hmac_type mode, hal_data *input, uint32_t key_idx, h
     status = psa_mac_compute(key_id, alg, input->data, input->data_len, hmac->data, hmac_size, &hmac->data_len);
 
     if (status != PSA_SUCCESS) {
-        dbg("HMAC computation failed: %d\n", status);
+        sedbg("HMAC computation failed: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -1465,7 +1633,7 @@ int armino_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, 
     }
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
-        dbg("Key index %d for factory key\n", key_idx);
+        sedbg("Key index %d for read only key\n", key_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
@@ -1474,7 +1642,7 @@ int armino_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, 
     psa_algorithm_t alg;
 
     if(is_psa_key_id_empty(key_idx)) {
-        dbg("key_id %d is not generated yet\n", key_idx);
+        sedbg("key_id %d is not generated yet\n", key_idx);
         return HAL_EMPTY_SLOT;
     } else {
         key_id = get_psa_key_id(key_idx);
@@ -1503,7 +1671,7 @@ int armino_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, 
                     alg = PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_512);
                     break;
                 default:
-                    dbg("Unsupported hash type for PKCS1 v1.5: %d\n", mode.hash_t);
+                    sevdbg("Unsupported hash type for PKCS1 v1.5: %d\n", mode.hash_t);
                     return HAL_NOT_SUPPORTED;
             }
             break;
@@ -1529,12 +1697,12 @@ int armino_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, 
                     alg = PSA_ALG_RSA_PSS_ANY_SALT(PSA_ALG_SHA_512);
                     break;
                 default:
-                    dbg("Unsupported hash type for PSS: %d\n", mode.hash_t);
+                    sevdbg("Unsupported hash type for PSS: %d\n", mode.hash_t);
                     return HAL_NOT_SUPPORTED;
             }
             break;
         default:
-            dbg("Unsupported RSA algorithm: %d\n", mode.rsa_a);
+            sevdbg("Unsupported RSA algorithm: %d\n", mode.rsa_a);
             return HAL_NOT_SUPPORTED;
     }
 
@@ -1542,7 +1710,7 @@ int armino_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, 
     psa_key_attributes_t attributes;
     status = psa_get_key_attributes(key_id, &attributes);
     if (status != PSA_SUCCESS) {
-        dbg("Failed to get key attributes: %d\n", status);
+        sedbg("Failed to get key attributes: %d\n", status);
         return HAL_FAIL;
     }
     size_t key_bits = psa_get_key_bits(&attributes);
@@ -1550,10 +1718,10 @@ int armino_hal_rsa_sign_md(hal_rsa_mode mode, hal_data *hash, uint32_t key_idx, 
     psa_reset_key_attributes(&attributes);
 
     // Perform signature
-    status = psa_sign_message(key_id, alg, hash->data, hash->data_len, sign->data, signature_size, &sign->data_len);
+    status = psa_sign_hash(key_id, alg, hash->data, hash->data_len, sign->data, signature_size, &sign->data_len);
 
     if (status != PSA_SUCCESS) {
-        dbg("RSA signature failed: %d\n", status);
+        sedbg("RSA signature failed: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -1573,7 +1741,7 @@ int armino_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, 
     }
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
-        dbg("Key index %d for factory key\n", key_idx);
+        sedbg("Key index %d for read only key\n", key_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
@@ -1583,7 +1751,7 @@ int armino_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, 
     psa_algorithm_t alg;
 
     if(is_psa_key_id_empty(key_idx)) {
-        dbg("key_id %d is not generated yet\n", key_idx);
+        sedbg("key_id %d is not generated yet\n", key_idx);
         return HAL_EMPTY_SLOT;
     } else {
         key_id = get_psa_key_id(key_idx);
@@ -1612,7 +1780,7 @@ int armino_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, 
                     alg = PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_512);
                     break;
                 default:
-                    dbg("Unsupported hash type for PKCS1 v1.5: %d\n", mode.hash_t);
+                    sevdbg("Unsupported hash type for PKCS1 v1.5: %d\n", mode.hash_t);
                     return HAL_NOT_SUPPORTED;
             }
             break;
@@ -1638,19 +1806,19 @@ int armino_hal_rsa_verify_md(hal_rsa_mode mode, hal_data *hash, hal_data *sign, 
                     alg = PSA_ALG_RSA_PSS_ANY_SALT(PSA_ALG_SHA_512);
                     break;
                 default:
-                    dbg("Unsupported hash type for PSS: %d\n", mode.hash_t);
+                    sevdbg("Unsupported hash type for PSS: %d\n", mode.hash_t);
                     return HAL_NOT_SUPPORTED;
             }
             break;
         default:
-            dbg("Unsupported RSA algorithm: %d\n", mode.rsa_a);
+            sevdbg("Unsupported RSA algorithm: %d\n", mode.rsa_a);
             return HAL_NOT_SUPPORTED;
     }
 
     // Perform verification
-    status = psa_verify_message(key_id, alg, hash->data, hash->data_len, sign->data, sign->data_len);
+    status = psa_verify_hash(key_id, alg, hash->data, hash->data_len, sign->data, sign->data_len);
     if (status != PSA_SUCCESS) {
-        dbg("RSA verification failed: %d\n", status);
+        sedbg("RSA verification failed: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -1671,7 +1839,7 @@ int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_i
     if (mode.curve == HAL_ECDSA_CURVE_25519){
         int ret = psa_25519_sign_hash(key_idx, hash, sign);
         if(ret != HAL_SUCCESS){
-            dbg("Failed to sign hash: %d\n", ret);
+            sedbg("Failed to sign hash: %d\n", ret);
             return ret;
         }
         return HAL_SUCCESS;
@@ -1680,25 +1848,39 @@ int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_i
     psa_key_id_t key_id = 0;
     psa_status_t status;
     psa_algorithm_t alg;
+    int ret;
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
 #if CONFIG_TFM_ASYM_ALGO_NSC
+        if (mode.curve != HAL_ECDSA_SEC_P256R1) {
+            sedbg("unsupported read only curve: %d key_idx = %d\r\n", mode.curve, key_idx);
+            return HAL_NOT_SUPPORTED;
+        }
+        uint8_t raw_sign_buf[64] = {0};
+        hal_data raw_sign = {raw_sign_buf, sizeof(raw_sign_buf), NULL, 0};
+        size_t der_sign_len = (sign->data_len == 0) ? 72 : sign->data_len;
         TFM_NSC_LOCK_OR_RETURN();
-        status = psa_ecdsa_sign_p256(hash, key_idx, sign);
+        status = psa_ecdsa_sign_p256(hash, key_idx, &raw_sign);
         TFM_NSC_UNLOCK();
         if(status != PSA_SUCCESS){
-            dbg("ECDSA sign failed: %d\n", status);
+            sedbg("ECDSA sign failed: %d\n", status);
             return HAL_FAIL;
         }
+        ret = armino_hal_ecdsa_raw_to_der(raw_sign.data, raw_sign.data_len, sign->data, der_sign_len, &der_sign_len);
+        if (ret != HAL_SUCCESS) {
+            sedbg("ECDSA RAW->DER failed: %d\n", ret);
+            return ret;
+        }
+        sign->data_len = der_sign_len;
         return HAL_SUCCESS;
 #else
-        dbg("unsupported factory curve: %d key_idx = %d\r\n", mode.curve, key_idx);
+        sedbg("unsupported read only curve: %d key_idx = %d\r\n", mode.curve, key_idx);
         return HAL_NOT_SUPPORTED;
 #endif
     }
     /* key stored in SE RAM */
     if(is_psa_key_id_empty(key_idx)) {
-        dbg("key_id %d is not generated yet\n", key_idx);
+        sedbg("key_id %d is not generated yet\n", key_idx);
         return HAL_EMPTY_SLOT;
     } else {
         key_id = get_psa_key_id(key_idx);
@@ -1721,28 +1903,45 @@ int armino_hal_ecdsa_sign_md(hal_ecdsa_mode mode, hal_data *hash, uint32_t key_i
             alg = PSA_ALG_ECDSA(PSA_ALG_SHA_512);
             break;
         default:
-            dbg("Unsupported ECDSA hash type: %d\n", mode.hash_t);
+            sevdbg("Unsupported ECDSA hash type: %d\n", mode.hash_t);
             return HAL_NOT_SUPPORTED;
     }
 
-    // Get key attributes to determine signature size
+    // Get key attributes to determine raw signature size
     psa_key_attributes_t attributes;
     status = psa_get_key_attributes(key_id, &attributes);
     if (status != PSA_SUCCESS) {
-        dbg("Failed to get key attributes: %d\n", status);
+        sedbg("Failed to get key attributes: %d\n", status);
         return HAL_FAIL;
     }
     size_t key_bits = psa_get_key_bits(&attributes);
-    size_t signature_size = ((key_bits + 7) / 8) * 2; // ECDSA signature is R + S
+    size_t raw_signature_size = ((key_bits + 7) / 8) * 2; // raw ECDSA signature is R || S
     psa_reset_key_attributes(&attributes);
 
-    // Perform signature
-    status = psa_sign_message(key_id, alg, hash->data, hash->data_len, sign->data, signature_size, &sign->data_len);
+    uint8_t *raw_signature = (uint8_t *)kmm_malloc(raw_signature_size);
+    if (raw_signature == NULL) {
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+    size_t raw_signature_len = 0;
+    size_t der_signature_len = (sign->data_len == 0) ? (raw_signature_size + 10) : sign->data_len;
+
+    // Perform signature to raw (R || S), then convert to DER
+    status = psa_sign_hash(key_id, alg, hash->data, hash->data_len,
+                           raw_signature, raw_signature_size, &raw_signature_len);
 
     if (status != PSA_SUCCESS) {
-        dbg("ECDSA signature failed: %d\n", status);
+        sedbg("ECDSA signature failed: %d\n", status);
+        kmm_free(raw_signature);
         return HAL_FAIL;
     }
+
+    ret = armino_hal_ecdsa_raw_to_der(raw_signature, raw_signature_len, sign->data, der_signature_len, &der_signature_len);
+    kmm_free(raw_signature);
+    if (ret != HAL_SUCCESS) {
+        sedbg("ECDSA RAW->DER failed: %d\n", ret);
+        return ret;
+    }
+    sign->data_len = der_signature_len;
 
     return HAL_SUCCESS;
 }
@@ -1761,7 +1960,7 @@ int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *si
     if(mode.curve == HAL_ECDSA_CURVE_25519){
         int ret = psa_25519_verify_hash(key_idx, hash, sign);
         if(ret != HAL_SUCCESS){
-            dbg("Failed to verify hash: %d\n", ret);
+            sedbg("Failed to verify hash: %d\n", ret);
             return ret;
         }
         return HAL_SUCCESS;
@@ -1770,30 +1969,41 @@ int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *si
     psa_key_id_t key_id = 0;
     psa_status_t status;
     psa_algorithm_t alg;
+    int ret;
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
 #if CONFIG_TFM_ASYM_ALGO_NSC
     if(mode.curve == HAL_ECDSA_SEC_P256R1){
+        uint8_t raw_sign_buf[64] = {0};
+        size_t raw_sign_len = sizeof(raw_sign_buf);
+        hal_data raw_sign = {raw_sign_buf, 0, NULL, 0};
+        ret = armino_hal_ecdsa_der_to_raw(sign->data, sign->data_len, raw_sign_buf, sizeof(raw_sign_buf), &raw_sign_len);
+        if (ret != HAL_SUCCESS) {
+            sedbg("ECDSA DER->RAW failed: %d\n", ret);
+            return ret;
+        }
+        raw_sign.data_len = raw_sign_len;
+
         TFM_NSC_LOCK_OR_RETURN();
-        status = psa_ecdsa_verify_p256(hash, key_idx, sign);
+        status = psa_ecdsa_verify_p256(hash, key_idx, &raw_sign);
         TFM_NSC_UNLOCK();
         if(status != PSA_SUCCESS){
-            dbg("ECDSA verify failed: %d\n", status);
+            sedbg("ECDSA verify failed: %d\n", status);
             return HAL_FAIL;
         }
         return HAL_SUCCESS;
     }else{
-        dbg("unsupported factory curve: %d key_idx = %d\r\n", mode.curve, key_idx);
+        sedbg("unsupported read only curve: %d key_idx = %d\r\n", mode.curve, key_idx);
         return HAL_NOT_SUPPORTED;
     }
 #else
-        dbg("unsupported factory curve: %d key_idx = %d\r\n", mode.curve, key_idx);
+        sedbg("unsupported read only curve: %d key_idx = %d\r\n", mode.curve, key_idx);
         return HAL_NOT_SUPPORTED;
 #endif
     }
 
     if(is_psa_key_id_empty(key_idx)) {
-        dbg("key_id %d is not generated yet\n", key_idx);
+        sedbg("key_id %d is not generated yet\n", key_idx);
         return HAL_EMPTY_SLOT;
     } else {
         key_id = get_psa_key_id(key_idx);
@@ -1816,15 +2026,40 @@ int armino_hal_ecdsa_verify_md(hal_ecdsa_mode mode, hal_data *hash, hal_data *si
             alg = PSA_ALG_ECDSA(PSA_ALG_SHA_512);
             break;
         default:
-            dbg("Unsupported ECDSA hash type: %d\n", mode.hash_t);
+            sevdbg("Unsupported ECDSA hash type: %d\n", mode.hash_t);
             return HAL_NOT_SUPPORTED;
     }
 
-    // Perform verification
-    status = psa_verify_message(key_id, alg, hash->data, hash->data_len, sign->data, sign->data_len);
+    // Get key attributes to determine expected raw signature size
+    psa_key_attributes_t attributes;
+    status = psa_get_key_attributes(key_id, &attributes);
+    if (status != PSA_SUCCESS) {
+        sedbg("Failed to get key attributes: %d\n", status);
+        return HAL_FAIL;
+    }
+    size_t key_bits = psa_get_key_bits(&attributes);
+    size_t raw_signature_size = ((key_bits + 7) / 8) * 2;
+    psa_reset_key_attributes(&attributes);
+
+    uint8_t *raw_signature = (uint8_t *)kmm_malloc(raw_signature_size);
+    if (raw_signature == NULL) {
+        return HAL_NOT_ENOUGH_MEMORY;
+    }
+    size_t raw_signature_len = 0;
+
+    ret = armino_hal_ecdsa_der_to_raw(sign->data, sign->data_len, raw_signature, raw_signature_size, &raw_signature_len);
+    if (ret != HAL_SUCCESS) {
+        sedbg("ECDSA DER->RAW failed: %d\n", ret);
+        kmm_free(raw_signature);
+        return ret;
+    }
+
+    // Verify with raw signature (R || S)
+    status = psa_verify_hash(key_id, alg, hash->data, hash->data_len, raw_signature, raw_signature_len);
+    kmm_free(raw_signature);
 
     if (status != PSA_SUCCESS) {
-        dbg("ECDSA verification failed: %d\n", status);
+        sedbg("ECDSA verification failed: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -1836,7 +2071,7 @@ int armino_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
      HWRAP_ENTER;
     if (dh_param == NULL || dh_param->P == NULL || dh_param->P->data == NULL || dh_param->G == NULL ||
             dh_param->G->data == NULL || dh_param->pubkey == NULL || dh_param->pubkey->data == NULL) {
-        dbg("Invalid DH parameter\n");
+        sedbg("Invalid DH parameter\n");
         return HAL_INVALID_ARGS;
     }
 
@@ -1845,7 +2080,7 @@ int armino_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
     }
 
     if (dh_idx < FACTORY_KEY_INDEX_MAX) {
-        dbg("Key index %d for factory key\n", dh_idx);
+        sedbg("Key index %d for read only key\n", dh_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
@@ -1863,7 +2098,7 @@ int armino_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
             dh_param->pubkey->data_len = 512;
             break;
         default:
-            dbg("Unsupported DH mode: %d\n", dh_param->mode);
+            sevdbg("Unsupported DH mode: %d\n", dh_param->mode);
             return HAL_NOT_SUPPORTED;
     }
 
@@ -1878,7 +2113,7 @@ int armino_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
     psa_status_t status = psa_dh_import_p_g(&dh_param_t);
     TFM_NSC_UNLOCK();
     if (status != PSA_SUCCESS) {
-        dbg("Failed to import P & G: %d\n", status);
+        sedbg("Failed to import P & G: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -1895,12 +2130,12 @@ int armino_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
         psa_reset_key_attributes(&priv_attributes);
 
         if (status != PSA_SUCCESS) {
-            dbg("Failed to generate DH key pair: %d\n", status);
+            sedbg("Failed to generate DH key pair: %d\n", status);
             return HAL_FAIL;
         }
         set_psa_key_id(dh_idx, key_id);
     } else {
-        dbg("now the key_id is valid\n");
+        sedbg("now the key_id is valid\n");
         key_id = get_psa_key_id(dh_idx);
     }
 
@@ -1908,7 +2143,7 @@ int armino_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
     psa_dh_mem_free();
 
     if (status != PSA_SUCCESS) {
-        dbg("Failed to export DH public key: %d\n", status);
+        sedbg("Failed to export DH public key: %d\n", status);
         return HAL_FAIL;
     }
     dh_param->pubkey->data_len = key_bytes;
@@ -1933,7 +2168,7 @@ int armino_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, 
     }
 
     if(is_psa_key_id_empty(dh_idx)) {
-        dbg("dh_idx %d is not generated yet\n", dh_idx);
+        sedbg("dh_idx %d is not generated yet\n", dh_idx);
         return HAL_EMPTY_SLOT;
     } else {
         key_id = get_psa_key_id(dh_idx);
@@ -1951,7 +2186,7 @@ int armino_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, 
             shared_secret->data_len = 512;
             break;
         default:
-            dbg("Unsupported DH mode: %d\n", dh_param->mode);
+            sevdbg("Unsupported DH mode: %d\n", dh_param->mode);
             return HAL_NOT_SUPPORTED;
     }
 
@@ -1972,7 +2207,7 @@ int armino_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, 
 
     status = psa_dh_import_p_g(&dh_param_t);
     if (status != PSA_SUCCESS) {
-        dbg("Failed to import P & G: %d\n", status);
+        sedbg("Failed to import P & G: %d\n", status);
         kmm_free(pub_key);
         return HAL_FAIL;
     }
@@ -1985,7 +2220,7 @@ int armino_hal_dh_compute_shared_secret(hal_dh_data *dh_param, uint32_t dh_idx, 
     kmm_free(pub_key);
 
     if (status != PSA_SUCCESS) {
-        dbg("DH shared secret key agreement failed: %d\n", status);
+        sedbg("DH shared secret key agreement failed: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -2009,56 +2244,63 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
     // Open the key
     psa_key_id_t key_id = 0;
     psa_status_t status;
+    size_t coord_len;
     size_t pub_key_len;
     uint8_t *pub_key;
 
     switch(ecdh_param->curve) {
         case HAL_ECDSA_SEC_P192R1:
-            pub_key_len = 48;
+            coord_len = 24;
             break;
         case HAL_ECDSA_SEC_P224R1:
-            pub_key_len = 56;
+            coord_len = 28;
             break;
         case HAL_ECDSA_SEC_P256R1:
         case HAL_ECDSA_BRAINPOOL_P256R1:
-            pub_key_len = 64;
+            coord_len = 32;
             break;
         case HAL_ECDSA_SEC_P384R1:
         case HAL_ECDSA_BRAINPOOL_P384R1:
-            pub_key_len = 96;
+            coord_len = 48;
             break;
         case HAL_ECDSA_BRAINPOOL_P512R1:
-            pub_key_len = 128;
+            coord_len = 64;
             break;
         case HAL_ECDSA_SEC_P521R1:
-            pub_key_len = 132;
+            coord_len = 66;
             break;
         case HAL_ECDSA_CURVE_25519:
-            pub_key_len = 32;
+            coord_len = 32;
             break;
         default:
             return HAL_INVALID_ARGS;
     }
 
+    if (ecdh_param->curve == HAL_ECDSA_CURVE_25519) {
+        pub_key_len = coord_len;
+    } else {
+        pub_key_len = coord_len * 2;
+    }
+
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
 #if CONFIG_TFM_ASYM_ALGO_NSC
-        uint32_t priv_key_len = pub_key_len/2;
+        uint32_t priv_key_len = coord_len;
 
         TFM_NSC_LOCK_OR_RETURN();
         status = ecdh_factory_key_agreement(ecdh_param, priv_key_len, key_idx, shared_secret);
         TFM_NSC_UNLOCK();
         if (status != PSA_SUCCESS) {
-            dbg("ECDH key in flash agreement failed: %d\n", status);
+            sedbg("ECDH key in flash agreement failed: %d\n", status);
             return HAL_FAIL;
         }
 
 #else
-        dbg("unsupported factory curve: %d key_idx = %d\r\n", ecdh_param->curve, key_idx);
+        sevdbg("unsupported read only curve: %d key_idx = %d\r\n", ecdh_param->curve, key_idx);
         return HAL_NOT_SUPPORTED;
 #endif
     } else {
         if (is_psa_key_id_empty(key_idx)) {
-            dbg("key_id %d is not generated yet\n", key_idx);
+            sedbg("key_id %d is not generated yet\n", key_idx);
             return HAL_EMPTY_SLOT;
         } else {
             key_id = get_psa_key_id(key_idx);
@@ -2069,10 +2311,18 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
             status = psa_25519_compute_shared_secret(ecdh_param->pubkey_x, ecdh_param->pubkey_y, key_idx, shared_secret);
             TFM_NSC_UNLOCK();
             if (status != PSA_SUCCESS) {
-                dbg("ECDH key agreement failed: %d %d\n", status, __LINE__);
+                sedbg("ECDH key agreement failed: %d %d\n", status, __LINE__);
                 return HAL_FAIL;
             }
             return HAL_SUCCESS;
+        }
+
+        if (ecdh_param->pubkey_x->data_len == 0 || ecdh_param->pubkey_x->data_len > coord_len ||
+            ecdh_param->pubkey_y->data_len == 0 || ecdh_param->pubkey_y->data_len > coord_len) {
+            dbg("ECDH invalid peer key length: curve=%d x_len=%d y_len=%d expected_max=%d\n",
+                ecdh_param->curve, ecdh_param->pubkey_x->data_len,
+                ecdh_param->pubkey_y->data_len, coord_len);
+            return HAL_INVALID_ARGS;
         }
 
         pub_key = (uint8_t *)kmm_malloc(pub_key_len + 1);
@@ -2083,13 +2333,16 @@ int armino_hal_ecdh_compute_shared_secret(hal_ecdh_data *ecdh_param, uint32_t ke
         shared_secret->data_len = pub_key_len;
 
         pub_key[0] = 0x4;
-        memcpy(&pub_key[1], ecdh_param->pubkey_x->data, ecdh_param->pubkey_x->data_len);
-        memcpy(&pub_key[1+ecdh_param->pubkey_x->data_len], ecdh_param->pubkey_y->data, ecdh_param->pubkey_y->data_len);
-        pub_key_len = 1+ecdh_param->pubkey_x->data_len+ecdh_param->pubkey_y->data_len;
+        memset(&pub_key[1], 0, pub_key_len);
+        memcpy(&pub_key[1 + coord_len - ecdh_param->pubkey_x->data_len],
+               ecdh_param->pubkey_x->data, ecdh_param->pubkey_x->data_len);
+        memcpy(&pub_key[1 + coord_len + coord_len - ecdh_param->pubkey_y->data_len],
+               ecdh_param->pubkey_y->data, ecdh_param->pubkey_y->data_len);
+        pub_key_len = 1 + pub_key_len;
 
         status = psa_raw_key_agreement(PSA_ALG_ECDH, key_id, pub_key, pub_key_len, shared_secret->data, shared_secret->data_len, &shared_secret->data_len);
         if (status != PSA_SUCCESS) {
-            dbg("ECDH key agreement failed: %d %d\n", status, __LINE__);
+            sedbg("ECDH key agreement failed: %d %d\n", status, __LINE__);
             kmm_free(pub_key);
             return HAL_FAIL;
         }
@@ -2112,7 +2365,7 @@ int armino_hal_set_certificate(uint32_t cert_idx, hal_data *cert_in)
     ret = ss_write_cert(cert_idx, cert_in->data, cert_in->data_len);
     TFM_NSC_UNLOCK();
     if (ret != 0) {
-        dbg("Failed to store certificate: %d\n", ret);
+        sedbg("Failed to store certificate: %d\n", ret);
         return HAL_FAIL;
     }
 
@@ -2131,7 +2384,7 @@ int armino_hal_get_certificate(uint32_t cert_idx, hal_data *cert_out)
     ret = ss_read_cert(cert_idx, cert_out->data, &cert_out->data_len);
     TFM_NSC_UNLOCK();
     if (ret != 0) {
-        dbg("Failed to read certificate: %d\n", ret);
+        sedbg("Failed to read certificate: %d\n", ret);
         return HAL_FAIL;
     }
 
@@ -2146,7 +2399,7 @@ int armino_hal_remove_certificate(uint32_t cert_idx)
     ret = ss_delete_cert(cert_idx);
     TFM_NSC_UNLOCK();
     if (ret != 0) {
-        dbg("Failed to delete certificate: %d\n", ret);
+        sedbg("Failed to delete certificate: %d\n", ret);
         return HAL_FAIL;
     }
 
@@ -2202,7 +2455,7 @@ int armino_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_
 
     ret = aes_padding_adapter(aes_param->mode, dec_data->data, dec_data->data_len, output_data, &padded_len, 0);
     if (ret != 0) {
-        dbg("Failed to pad input data: %d\n", ret);
+        sedbg("Failed to pad input data: %d\n", ret);
         kmm_free(output_data);
         return HAL_FAIL;
     }
@@ -2235,7 +2488,7 @@ int armino_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_
         cipher_param.stream_block = aes_param->stream_block;
     }
 
-    dbg("line :%d, aes_param->mode :%d \r\n", __LINE__, aes_param->mode);
+    sevdbg("line :%d, aes_param->mode :%d \r\n", __LINE__, aes_param->mode);
     switch (aes_param->mode) {
         case HAL_AES_ECB_NOPAD:
         case HAL_AES_ECB_ISO9797_M1:
@@ -2274,14 +2527,14 @@ int armino_hal_aes_encrypt(hal_data *dec_data, hal_aes_param *aes_param, uint32_
             TFM_NSC_UNLOCK();
             break;
         default:
-            dbg("line :%d, Unsupported AES mode: %d\n", __LINE__, aes_param->mode);
+            sevdbg("line :%d, Unsupported AES mode: %d\n", __LINE__, aes_param->mode);
             kmm_free(output_data);
             return HAL_NOT_SUPPORTED;
     }
 
     kmm_free(output_data);
     if (ret != PSA_SUCCESS) {
-        dbg("AES encryption failed: %d\n", ret);
+        sedbg("AES encryption failed: %d\n", ret);
         return HAL_FAIL;
     }
 
@@ -2334,7 +2587,7 @@ int armino_hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_
         cipher_param.stream_block = aes_param->stream_block;
     }
 
-    dbg("line :%d ,cipher_param.mode :%d \r\n", __LINE__,cipher_param.mode);
+    sevdbg("line :%d ,cipher_param.mode :%d \r\n", __LINE__,cipher_param.mode);
     switch (aes_param->mode) {
         case HAL_AES_ECB_NOPAD:
         case HAL_AES_ECB_ISO9797_M1:
@@ -2373,12 +2626,12 @@ int armino_hal_aes_decrypt(hal_data *enc_data, hal_aes_param *aes_param, uint32_
             TFM_NSC_UNLOCK();
             break;
         default:
-            dbg("line :%d, Unsupported AES mode: %d\n", __LINE__, aes_param->mode);
+            sevdbg("line :%d, Unsupported AES mode: %d\n", __LINE__, aes_param->mode);
             return HAL_NOT_SUPPORTED;
     }
 
     if (ret != PSA_SUCCESS) {
-        dbg("AES encryption failed: %d\n", ret);
+        sedbg("AES encryption failed: %d\n", ret);
         return HAL_FAIL;
     }
 
@@ -2398,7 +2651,7 @@ int armino_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *mode, uint32_t key_
     }
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
-        dbg("Key index %d for factory key\n", key_idx);
+        sedbg("Key index %d for read only key\n", key_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
@@ -2409,7 +2662,7 @@ int armino_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *mode, uint32_t key_
     psa_key_attributes_t attributes;
 
     if(is_psa_key_id_empty(key_idx)) {
-        dbg("key_id %d is not generated yet\n", key_idx);
+        sedbg("key_id %d is not generated yet\n", key_idx);
         return HAL_EMPTY_SLOT;
     } else {
         key_id = get_psa_key_id(key_idx);
@@ -2423,13 +2676,13 @@ int armino_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *mode, uint32_t key_
             alg = PSA_ALG_RSA_OAEP(HAL_TO_PSA_HASH_ALG(mode->hash_t));
             break;
         default:
-            dbg("Unsupported RSA mode: %d\n", mode->rsa_a);
+            sedbg("Unsupported RSA mode: %d\n", mode->rsa_a);
             return HAL_NOT_SUPPORTED;
     }
 
     status = psa_get_key_attributes(key_id, &attributes);
     if (status != PSA_SUCCESS) {
-        dbg("Failed to get key attributes: %d\n", status);
+        sedbg("Failed to get key attributes: %d\n", status);
         return HAL_FAIL;
     }
     size_t key_bits = psa_get_key_bits(&attributes);
@@ -2439,7 +2692,7 @@ int armino_hal_rsa_encrypt(hal_data *dec_data, hal_rsa_mode *mode, uint32_t key_
     status = psa_asymmetric_encrypt(key_id, alg, dec_data->data, dec_data->data_len, NULL, 0, enc_data->data, output_size, &enc_data->data_len);
 
     if (status != PSA_SUCCESS) {
-        dbg("RSA encryption failed: %d\n", status);
+        sedbg("RSA encryption failed: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -2458,7 +2711,7 @@ int armino_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *mode, uint32_t key_
     }
 
     if (key_idx < FACTORY_KEY_INDEX_MAX) {
-        dbg("Key index %d for factory key\n", key_idx);
+        sedbg("Key index %d for read only key\n", key_idx);
         return HAL_INVALID_SLOT_RANGE;
     }
 
@@ -2469,7 +2722,7 @@ int armino_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *mode, uint32_t key_
     psa_key_attributes_t attributes;
 
     if(is_psa_key_id_empty(key_idx)) {
-        dbg("key_id %d is not generated yet\n", key_idx);
+        sedbg("key_id %d is not generated yet\n", key_idx);
         return HAL_EMPTY_SLOT;
     } else {
         key_id = get_psa_key_id(key_idx);
@@ -2483,13 +2736,13 @@ int armino_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *mode, uint32_t key_
             alg = PSA_ALG_RSA_OAEP(HAL_TO_PSA_HASH_ALG(mode->hash_t));
             break;
         default:
-            dbg("Unsupported RSA mode: %d\n", mode->rsa_a);
+            sedbg("Unsupported RSA mode: %d\n", mode->rsa_a);
             return HAL_NOT_SUPPORTED;
     }
 
     status = psa_get_key_attributes(key_id, &attributes);
     if (status != PSA_SUCCESS) {
-        dbg("Failed to get key attributes: %d\n", status);
+        sedbg("Failed to get key attributes: %d\n", status);
         return HAL_FAIL;
     }
     size_t key_bits = psa_get_key_bits(&attributes);
@@ -2500,7 +2753,7 @@ int armino_hal_rsa_decrypt(hal_data *enc_data, hal_rsa_mode *mode, uint32_t key_
     status = psa_asymmetric_decrypt(key_id, alg, enc_data->data, enc_data->data_len, NULL, 0, dec_data->data, output_size, &dec_data->data_len);
 
     if (status != PSA_SUCCESS) {
-        dbg("RSA decryption failed: %d\n", status);
+        sedbg("RSA decryption failed: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -2512,13 +2765,13 @@ int armino_hal_gcm_encrypt(hal_data *dec_data, hal_gcm_param *gcm_param, uint32_
     HWRAP_ENTER;
     if (dec_data == NULL || gcm_param == NULL ||
             enc_data == NULL || gcm_param->tag == NULL) {
-        dbg("Invalid args: dec_data, gcm_param, enc_data, tag\n");
+        sedbg("Invalid args: dec_data, gcm_param, enc_data, tag\n");
         return HAL_INVALID_ARGS;
     }
 
     // Set GCM algorithm
     if (gcm_param->cipher != HAL_GCM_AES) {
-        dbg("Unsupported cipher: %d\n", gcm_param->cipher);
+        sedbg("Unsupported cipher: %d\n", gcm_param->cipher);
         return HAL_NOT_SUPPORTED;
     }
 
@@ -2543,7 +2796,7 @@ int armino_hal_gcm_encrypt(hal_data *dec_data, hal_gcm_param *gcm_param, uint32_
     status = armino_hal_psa_gcm_encrypt(&gcm_param_t);
     TFM_NSC_UNLOCK();
     if (status != PSA_SUCCESS) {
-        dbg("GCM encryption failed: %d\n", status);
+        sedbg("GCM encryption failed: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -2565,7 +2818,7 @@ int armino_hal_gcm_decrypt(hal_data *enc_data, hal_gcm_param *gcm_param, uint32_
 
    // Set GCM algorithm
     if (gcm_param->cipher != HAL_GCM_AES) {
-        dbg("Unsupported cipher: %d\n", gcm_param->cipher);
+        sedbg("Unsupported cipher: %d\n", gcm_param->cipher);
         return HAL_NOT_SUPPORTED;
     }
 
@@ -2591,7 +2844,7 @@ int armino_hal_gcm_decrypt(hal_data *enc_data, hal_gcm_param *gcm_param, uint32_
     status = armino_hal_psa_gcm_decrypt(&gcm_param_t);
     TFM_NSC_UNLOCK();
     if (status != PSA_SUCCESS) {
-        dbg("GCM decryption failed: %d\n", status);
+        sedbg("GCM decryption failed: %d\n", status);
         return HAL_FAIL;
     }
 
@@ -2615,8 +2868,8 @@ int armino_hal_write_storage(uint32_t ss_idx, hal_data *data)
     ret = ss_write_data(ss_idx, data->data, data->data_len);
     TFM_NSC_UNLOCK();
     if (ret != 0) {
-        dbg("Failed to write storage: %d\n", ret);
-        return HAL_FAIL;
+        sedbg("Failed to write storage: %d\n", ret);
+        return ret;
     }
 
     return HAL_SUCCESS;
@@ -2634,8 +2887,8 @@ int armino_hal_read_storage(uint32_t ss_idx, hal_data *data)
     ret = ss_read_data(ss_idx, data->data, &data->data_len);
     TFM_NSC_UNLOCK();
     if (ret != 0) {
-        dbg("Failed to read storage: %d\n", ret);
-        return HAL_FAIL;
+        sedbg("Failed to read storage: %d\n", ret);
+        return ret;
     }
 
     return HAL_SUCCESS;
@@ -2650,8 +2903,8 @@ int armino_hal_delete_storage(uint32_t ss_idx)
     ret = ss_delete_data(ss_idx);
     TFM_NSC_UNLOCK();
     if (ret != 0) {
-        dbg("Failed to delete storage: %d\n", ret);
-        return HAL_FAIL;
+        sedbg("Failed to delete storage: %d\n", ret);
+        return ret;
     }
 
     return HAL_SUCCESS;

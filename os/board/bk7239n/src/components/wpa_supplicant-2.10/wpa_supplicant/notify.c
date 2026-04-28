@@ -51,9 +51,23 @@
 #include "bk_ef.h"
 #endif
 
-#if BK_SUPPLICANT
 extern uint32_t wpa_hostapd_no_password_connected(const uint8_t *addr);
-#endif
+static uint8_t g_last_join_wpa_state = WPA_DISCONNECTED;
+
+void bk_set_last_join_wpa_state(uint8_t state)
+{
+        g_last_join_wpa_state = state;
+}
+
+uint8_t bk_get_last_join_wpa_state(void)
+{
+        return g_last_join_wpa_state;
+}
+
+static int bk_is_join_progress_state(enum wpa_states state)
+{
+        return state >= WPA_AUTHENTICATING && state < WPA_COMPLETED;
+}
 
 int wpas_notify_supplicant_initialized(struct wpa_global *global)
 {
@@ -400,6 +414,16 @@ void wpas_notify_state_changed(struct wpa_supplicant *wpa_s,
 	if (wpa_s->p2p_mgmt)
 		return;
 
+#if BK_SUPPLICANT
+        if (bk_is_join_progress_state(new_state)) {
+                bk_set_last_join_wpa_state((uint8_t)new_state);
+        } else if (new_state == WPA_DISCONNECTED && bk_is_join_progress_state(old_state)) {
+                bk_set_last_join_wpa_state((uint8_t)old_state);
+        } else if (new_state <= WPA_SCANNING) {
+                bk_set_last_join_wpa_state((uint8_t)new_state);
+        }
+#endif
+
 #ifdef CONFIG_DBUS
 	/* notify the new DBus API */
 	wpas_dbus_signal_prop_changed(wpa_s, WPAS_DBUS_PROP_STATE);
@@ -547,7 +571,8 @@ void hapd_notify_sta_connected(struct hostapd_data *hapd, const u8 *mac)
 				&ap_connected, sizeof(ap_connected), BEKEN_NEVER_TIMEOUT));
 }
 
-void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac)
+void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac,
+					 u16 reason_code)
 {
 	wifi_event_ap_disconnected_t ap_disconnected = {0};
 #if !CONFIG_DISABLE_DEPRECIATED_WIFI_API
@@ -563,6 +588,7 @@ void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac)
 	}
 #endif
 	os_memcpy(ap_disconnected.mac, mac, ETH_ALEN);
+	ap_disconnected.disconnect_reason = reason_code;
 #if CONFIG_AP_STATYPE_LIMIT
 	if (bk_feature_ap_statype_limit_enable())
 		bk_vsie_cus_del_sta(ap_disconnected.mac, true);

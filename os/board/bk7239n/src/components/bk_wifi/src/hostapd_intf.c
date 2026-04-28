@@ -312,14 +312,15 @@ int hapd_get_sta_info(struct prism2_hostapd_param *param, int len)
 	param->u.get_info_sta.inactive_sec = 0;
 
 	entry = sta_mgmt_get_sta(param->sta_addr);
+	uint32_t sta_last_active = sta_mgmt_get_last_active(entry);
 	uint32_t mac_time = bk_wifi_get_mac_time();
 
-	if (entry && sta_mgmt_get_last_active(entry)) {
+	if (entry && sta_last_active) {
 		// TODO: bk7236 hal_machw_time may not accessable when enter PS.
-		if (mac_time >= sta_mgmt_get_last_active(entry)) {
-			param->u.get_info_sta.inactive_sec = (mac_time - sta_mgmt_get_last_active(entry)) / 1000000;
+		if (mac_time >= sta_last_active) {
+			param->u.get_info_sta.inactive_sec = (mac_time - sta_last_active) / 1000000;
 		} else {
-			param->u.get_info_sta.inactive_sec = ((uint32_t)-1 - sta_mgmt_get_last_active(entry) + mac_time) / 1000000;
+			param->u.get_info_sta.inactive_sec = ((uint32_t)-1 - sta_last_active + mac_time) / 1000000;
 		}
 	}
 

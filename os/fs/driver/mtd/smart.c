@@ -6096,6 +6096,16 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 #ifdef CONFIG_SMARTFS_MULTI_ROOT_DIRS
 		dev->minor = minor;
 #endif
+		
+#ifdef CONFIG_MTD_SMART_JOURNALING
+		/* Now ready to initialize journal here */
+		ret = smart_journal_init(dev);
+		if (ret < 0) {
+			fdbg("journal init failed ret : %d\n", ret);
+			goto errout;
+		}
+#endif
+
 		/* Do a scan of the device. */
 		smart_scan(dev);
 
@@ -6141,16 +6151,6 @@ int smart_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *partn
 			fdbg("register_blockdriver failed: %d\n", -ret);
 			goto errout;
 		}
-
-#ifdef CONFIG_MTD_SMART_JOURNALING
-		/* Now ready to initialize journal here */
-		ret = smart_journal_init(dev);
-		if (ret < 0) {
-			fdbg("journal init failed ret : %d\n", ret);
-			goto errout;
-		}
-#endif
-
 	}
 
 	return OK;

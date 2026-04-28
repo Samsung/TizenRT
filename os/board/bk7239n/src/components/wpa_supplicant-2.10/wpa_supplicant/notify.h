@@ -181,7 +181,8 @@ void wpas_notify_interworking_select_done(struct wpa_supplicant *wpa_s);
 void wpas_notify_psk_mismatch(struct wpa_supplicant *wpa_s, u16 reason_code,
 						 int locally_generated);
 void hapd_notify_sta_connected(struct hostapd_data *hapd, const u8 *mac);
-void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac);
+void hapd_notify_sta_disconnected(struct hostapd_data *hapd, const u8 *mac,
+					 u16 reason_code);
 void hapd_notify_sta_psk_failure(struct hostapd_data *hapd, const u8 *mac);
 void wpas_notify_disconnected(struct wpa_supplicant *wpa_s);
 void wpas_notify_connected(struct wpa_supplicant *wpa_s);

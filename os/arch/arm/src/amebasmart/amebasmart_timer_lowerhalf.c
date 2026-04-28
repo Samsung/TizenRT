@@ -141,7 +141,6 @@ static void amebasmart_gpt_handler(uint32_t data)
 {
 	struct amebasmart_gpt_lowerhalf_s *priv = (struct amebasmart_gpt_lowerhalf_s *)data;
 	uint32_t next_interval_us = 0;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return;
 	}
@@ -177,7 +176,6 @@ static void amebasmart_gpt_handler(uint32_t data)
 static int amebasmart_gpt_start(struct timer_lowerhalf_s *lower)
 {
 	struct amebasmart_gpt_lowerhalf_s *priv = (struct amebasmart_gpt_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -224,7 +222,6 @@ static int amebasmart_gpt_start(struct timer_lowerhalf_s *lower)
 static int amebasmart_gpt_stop(struct timer_lowerhalf_s *lower)
 {
 	struct amebasmart_gpt_lowerhalf_s *priv = (struct amebasmart_gpt_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -261,7 +258,6 @@ static int amebasmart_gpt_getstatus(struct timer_lowerhalf_s *lower, struct time
 {
 	struct amebasmart_gpt_lowerhalf_s *priv = (struct amebasmart_gpt_lowerhalf_s *)lower;
 	uint32_t ticks;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -309,7 +305,6 @@ static int amebasmart_gpt_getstatus(struct timer_lowerhalf_s *lower, struct time
 static int amebasmart_gpt_settimeout(struct timer_lowerhalf_s *lower, uint32_t timeout)
 {
 	struct amebasmart_gpt_lowerhalf_s *priv = (struct amebasmart_gpt_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
@@ -389,7 +384,6 @@ static void amebasmart_gpt_setcallback(struct timer_lowerhalf_s *lower, tccb_t c
 static int amebasmart_gpt_ioctl(struct timer_lowerhalf_s *lower, int cmd, unsigned long arg)
 {
 	struct amebasmart_gpt_lowerhalf_s *priv = (struct amebasmart_gpt_lowerhalf_s *)lower;
-	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}

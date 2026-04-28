@@ -187,7 +187,7 @@ static trble_client_init_config g_client_fake_config = {
 	bledrv_operation_indication_cb,
 	bledrv_operation_display_passkey_cb,
 	bledrv_operation_pair_bond_cb,
-	247
+	512,
 };
 
 trble_client_init_config *bledrv_client_get_fake_config(void)

@@ -831,6 +831,17 @@ __IRAM2 static void core_thread_main(void *arg)
 	bk_err_t ret;
 	BUS_MSG_T msg;
 
+	g_wifi_core.queue_item_count = CORE_QITEM_COUNT;
+
+	ret = rtos_init_queue(&g_wifi_core.io_queue,
+							 "core_queue",
+							 sizeof(BUS_MSG_T),
+							 g_wifi_core.queue_item_count);
+	if (kNoErr != ret) {
+		RWNX_LOGE("rtos_init_queue failed, ret=%d\r\n", ret);
+		return;
+	}
+
 	while (1) {
 		ret = rtos_pop_from_queue(&g_wifi_core.io_queue, &msg, BEKEN_WAIT_FOREVER);
 
@@ -932,6 +943,12 @@ __IRAM2 static void core_thread_main(void *arg)
 		}
 		////check if mac need sleep
 		mac_sleep_check();
+	}
+
+	if (g_wifi_core.io_queue) {
+		rtos_deinit_queue(&g_wifi_core.io_queue);
+		g_wifi_core.io_queue = 0;
+		g_wifi_core.queue_item_count = 0;
 	}
 }
 
@@ -1055,13 +1072,6 @@ void core_thread_deinit(void)
 		rtos_delete_thread(&g_wifi_core.handle);
 		g_wifi_core.handle = 0;
 	}
-
-	if (g_wifi_core.io_queue) {
-		rtos_deinit_queue(&g_wifi_core.io_queue);
-		g_wifi_core.io_queue = 0;
-	}
-
-	g_wifi_core.queue_item_count = 0;
 }
 
 int core_thread_init(void)
@@ -1069,16 +1079,7 @@ int core_thread_init(void)
 	bk_err_t os_ret;
 	int ret = BK_OK;
 
-	g_wifi_core.queue_item_count = CORE_QITEM_COUNT;
 
-	os_ret = rtos_init_queue(&g_wifi_core.io_queue,
-							 "core_queue",
-							 sizeof(BUS_MSG_T),
-							 g_wifi_core.queue_item_count);
-	if (kNoErr != os_ret) {
-		ret = BK_ERR_RWNX_INIT_IO_QUEUE;
-		goto _core_thread_init_fail;
-	}
 
 	os_ret = rtos_create_thread(&g_wifi_core.handle,
 								CONFIG_WIFI_CORE_TASK_PRIO,

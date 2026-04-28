@@ -1,0 +1,7 @@
+/* == "version" + "beken_trustzone pr-xxx "compile date" + "compile time"" == */
+
+== version beken_trustzone pr-209 2026/04/21-17:28:00==
+   
+   1. solve the problem of ss decryption failure
+     The key read from otp does not perform big-endian conversion
+   2. update the flash config of XMC type

@@ -24,6 +24,7 @@
 #include <debug.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <semaphore.h>
 #include "audio/audio_manager.h"
 
 namespace media {
@@ -49,20 +50,23 @@ player_result_t MediaPlayerImpl::create()
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 
-	mpw.enQueue(&MediaPlayerImpl::createPlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::createPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
 	meddbg("createPlayer enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::createPlayer(player_result_t &ret)
+void MediaPlayerImpl::createPlayer(player_result_t &ret, sem_t &syncSem)
 {
 	LOG_STATE_INFO(mCurState);
 
@@ -70,11 +74,12 @@ void MediaPlayerImpl::createPlayer(player_result_t &ret)
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	mCurState = PLAYER_STATE_IDLE;
-	notifySync();
+	notifySync(syncSem);
 }
 
 player_result_t MediaPlayerImpl::destroy()
@@ -82,17 +87,21 @@ player_result_t MediaPlayerImpl::destroy()
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::destroyPlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::destroyPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
 	meddbg("destroyPlayer enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	if (ret == PLAYER_OK && mPlayerObserver) {
 		PlayerObserverWorker &pow = PlayerObserverWorker::getWorker();
@@ -101,8 +110,11 @@ player_result_t MediaPlayerImpl::destroy()
 		if (pow.isSameThread()) {
 			mPlayerObserver = nullptr;
 		} else {
-			pow.enQueue(&MediaPlayerImpl::unsetPlayerObserver, shared_from_this());
-			mSyncCv.wait(lock);
+			sem_t observerSem;
+			sem_init(&observerSem, 0, 0);
+			pow.enQueue(&MediaPlayerImpl::unsetPlayerObserver, shared_from_this(), std::ref(observerSem));
+			sem_wait(&observerSem);
+			sem_destroy(&observerSem);
 		}
 	}
 
@@ -110,13 +122,13 @@ player_result_t MediaPlayerImpl::destroy()
 	return ret;
 }
 
-void MediaPlayerImpl::unsetPlayerObserver()
+void MediaPlayerImpl::unsetPlayerObserver(sem_t &syncSem)
 {
 	mPlayerObserver = nullptr;
-	notifySync();
+	notifySync(syncSem);
 }
 
-void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
+void MediaPlayerImpl::destroyPlayer(player_result_t &ret, sem_t &syncSem)
 {
 	LOG_STATE_INFO(mCurState);
 
@@ -124,11 +136,12 @@ void MediaPlayerImpl::destroyPlayer(player_result_t &ret)
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	mCurState = PLAYER_STATE_NONE;
-	notifySync();
+	notifySync(syncSem);
 }
 
 void MediaPlayerImpl::dequeueAndRunObserverCallback()
@@ -145,11 +158,14 @@ player_result_t MediaPlayerImpl::prepare()
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	stream_focus_state_t streamState = getStreamFocusState();
 	if (streamState == STREAM_FOCUS_STATE_RELEASED) {
 		ret = PLAYER_ERROR_FOCUS_NOT_READY;
 		meddbg("MediaPlayer prepare failed. ret: %d, player: %x\n", ret, &mPlayer);
+		sem_destroy(&syncSem);
 		return ret;
 	}
 
@@ -158,18 +174,20 @@ player_result_t MediaPlayerImpl::prepare()
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::preparePlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::preparePlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
 	meddbg("preparePlayer enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::preparePlayer(player_result_t &ret)
+void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 {
 	LOG_STATE_INFO(mCurState);
 
@@ -177,35 +195,16 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
-		return notifySync();
-	}
-
-	if (!mInputHandler.open()) {
-		meddbg("MediaPlayer prepare fail : open fail\n");
-		ret = PLAYER_ERROR_FILE_OPEN_FAILED;
-		return notifySync();
-	}
-
-	auto source = mInputHandler.getDataSource();
-	if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
-							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
-		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
-		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
-	}
-
-	audio_manager_result_t res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
-	if (res != AUDIO_MANAGER_SUCCESS) {
-		meddbg("MediaPlayer prepare fail : set_stream_out_policy fail. res: %d\n", res);
-		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	mBufSize = get_output_card_buffer_size();
 	if (mBufSize < 0) {
 		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	meddbg("MediaPlayer mBuffer size : %d\n", mBufSize);
@@ -218,11 +217,41 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret)
 		} else {
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		}
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
+	if (!mInputHandler.open(mBufSize)) {
+		meddbg("MediaPlayer prepare fail : open fail\n");
+		ret = PLAYER_ERROR_FILE_OPEN_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		notifySync(syncSem);
+		return;
+	}
+
+	auto source = mInputHandler.getDataSource();
+	if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
+							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
+		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		notifySync(syncSem);
+		return;
+	}
+
+	audio_manager_result_t res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("MediaPlayer prepare fail : set_stream_out_policy fail. res: %d\n", res);
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		notifySync(syncSem);
+		return;
+	}
 	mCurState = PLAYER_STATE_READY;
-	return notifySync();
+	notifySync(syncSem);
 }
 
 player_result_t MediaPlayerImpl::prepareAsync()
@@ -262,9 +291,26 @@ void MediaPlayerImpl::prepareAsyncPlayer()
 		return;
 	}
 
+	mBufSize = get_output_card_buffer_size();
+	if (mBufSize < 0) {
+		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
+		return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+	}
+
+	meddbg("MediaPlayer mBuffer size : %d\n", mBufSize);
+
+	mBuffer = new unsigned char[mBufSize];
+	if (!mBuffer) {
+		meddbg("MediaPlayer prepare fail : mBuffer allocation fail\n");
+		if (get_errno() == ENOMEM) {
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_OUT_OF_MEMORY);
+		}
+		return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+	}
+
 	mCurState = PLAYER_STATE_PREPARING;
 
-	if (!mInputHandler.doStandBy()) {
+	if (!mInputHandler.doStandBy(mBufSize)) {
 		meddbg("MediaPlayer prepare fail : doStandBy fail\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		return;
@@ -275,24 +321,28 @@ player_result_t MediaPlayerImpl::unprepare()
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::unpreparePlayer, shared_from_this(), std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::unpreparePlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
 	meddbg("unpreparePlayer enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
+void MediaPlayerImpl::unpreparePlayer(player_result_t &ret, sem_t &syncSem)
 {
 	LOG_STATE_INFO(mCurState);
 
@@ -301,7 +351,7 @@ void MediaPlayerImpl::unpreparePlayer(player_result_t &ret)
 		ret = errCode;
 	}
 
-	return notifySync();
+	notifySync(syncSem);
 }
 
 player_result_t MediaPlayerImpl::unpreparePlayback(void)
@@ -359,11 +409,14 @@ player_result_t MediaPlayerImpl::start()
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	stream_focus_state_t streamState = getStreamFocusState();
 	if (streamState == STREAM_FOCUS_STATE_RELEASED) {
 		ret = PLAYER_ERROR_FOCUS_NOT_READY;
 		meddbg("MediaPlayer start failed. ret: %d, player: %x\n", ret, &mPlayer);
+		sem_destroy(&syncSem);
 		return ret;
 	}
 
@@ -372,16 +425,18 @@ player_result_t MediaPlayerImpl::start()
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::startPlayer, shared_from_this(), std::ref(ret));
-	mSyncCv.wait(lock);
+	mpw.enQueue(&MediaPlayerImpl::startPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::startPlayer(player_result_t &ret)
+void MediaPlayerImpl::startPlayer(player_result_t &ret, sem_t &syncSem)
 {
 	LOG_STATE_INFO(mCurState);
 
@@ -391,12 +446,14 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	if (mCurState == PLAYER_STATE_PLAYING || mCurState == PLAYER_STATE_COMPLETING) {
 		meddbg("Already Playing, Ignore Start\n");
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	if (mCurState == PLAYER_STATE_COMPLETED) {
@@ -413,13 +470,15 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 								 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer startPlayer fail : set_audio_stream_out fail\n");
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-			return notifySync();
+			notifySync(syncSem);
+			return;
 		}
 		res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
 		if (res != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer startPlayer fail : set_stream_out_policy fail. res: %d\n", res);
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-			return notifySync();
+			notifySync(syncSem);
+			return;
 		}
 	}
 
@@ -427,21 +486,24 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 	if (res != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_output_audio_mixer fail. ret: %d\n", res);
 		ret = (res == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) ? PLAYER_ERROR_DEVICE_NOT_SUPPORTED : PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	res = set_output_stream_volume(mStreamInfo->policy);
 	if (res != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_output_stream_volume fail. ret: %d\n", res);
 		ret = (res == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) ? PLAYER_ERROR_DEVICE_NOT_SUPPORTED : PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	res = set_audio_stream_mute_from_json(mStreamInfo->policy);
 	if (res != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_audio_stream_mute_from_json fail. policy: %d, ret: %d\n", mStreamInfo->policy, res);
 		ret = (res == AUDIO_MANAGER_DEVICE_NOT_SUPPORT) ? PLAYER_ERROR_DEVICE_NOT_SUPPORTED : PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	mpw.addPlayer(shared_from_this());
@@ -449,18 +511,21 @@ void MediaPlayerImpl::startPlayer(player_result_t &ret)
 	FocusManager::FocusLossListener playerFocusLossListener = std::bind(&MediaPlayerImpl::onFocusLossListener, shared_from_this());
 	fm.registerPlayerFocusLossListener(playerFocusLossListener, mStreamInfo->id);
 	mCurState = PLAYER_STATE_PLAYING;
-	return notifySync();
+	notifySync(syncSem);
 }
 
 player_result_t MediaPlayerImpl::stop()
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	stream_focus_state_t streamState = getStreamFocusState();
 	if (streamState == STREAM_FOCUS_STATE_RELEASED) {
 		ret = PLAYER_ERROR_FOCUS_NOT_READY;
 		meddbg("MediaPlayer stop failed. ret: %d, player: %x\n", ret, &mPlayer);
+		sem_destroy(&syncSem);
 		return ret;
 	}
 
@@ -469,23 +534,22 @@ player_result_t MediaPlayerImpl::stop()
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), std::ref(ret));
-	mSyncCv.wait(lock);
+	mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::stopPlayer(player_result_t &ret)
+void MediaPlayerImpl::stopPlayer(player_result_t &ret, sem_t &syncSem)
 {
 	LOG_STATE_INFO(mCurState);
 	ret = stopPlayback(false);
-
-	FocusManager &fm = FocusManager::getFocusManager();
-	fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
-	return notifySync();
+	notifySync(syncSem);
 }
 
 player_result_t MediaPlayerImpl::stopPlayback(bool drain)
@@ -517,6 +581,9 @@ player_result_t MediaPlayerImpl::stopPlayback(bool drain)
 
 	mCurState = PLAYER_STATE_READY;
 	mpw.removePlayer(shared_from_this());
+
+	FocusManager &fm = FocusManager::getFocusManager();
+	fm.unregisterPlayerFocusLossListener(mStreamInfo->id);
 
 	return PLAYER_OK;
 }
@@ -555,21 +622,26 @@ player_result_t MediaPlayerImpl::pause()
 		return ret;
 	}
 
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::pausePlayer, shared_from_this(), std::ref(ret), true);
-	mSyncCv.wait(lock);
+	mpw.enQueue(&MediaPlayerImpl::pausePlayer, shared_from_this(), std::ref(ret), true, std::ref(syncSem));
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
+void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify, sem_t &syncSem)
 {
 	LOG_STATE_INFO(mCurState);
 
@@ -579,7 +651,7 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 			meddbg("pause_audio_stream_in failed ret : %d\n", result);
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 			if (notify) {
-				notifySync();
+				notifySync(syncSem);
 			}
 			return;
 		}
@@ -589,7 +661,7 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 			meddbg("reset_audio_stream_out failed, stream_id: %lu, ret : %d\n", mStreamInfo->id, result);
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 			if (notify) {
-				notifySync();
+				notifySync(syncSem);
 			}
 			return;
 		}
@@ -602,33 +674,38 @@ void MediaPlayerImpl::pausePlayer(player_result_t &ret, bool notify)
 
 		mCurState = PLAYER_STATE_PAUSED;
 		if (notify) {
-			notifySync();
+			notifySync(syncSem);
 		}
 		return;
 	}
 
 	if (mCurState == PLAYER_STATE_PAUSED) {
 		medvdbg("Currently in Paused State, Ignore Pause\n");
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	if (mCurState == PLAYER_STATE_COMPLETED) {
 		medvdbg("Playback already Finished, Ignore Pause\n");
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 	LOG_STATE_DEBUG(mCurState);
 
 	ret = PLAYER_ERROR_INVALID_STATE;
-	return notifySync();
+	notifySync(syncSem);
 }
 
 void MediaPlayerImpl::onFocusLossListener()
 {
 	if (mCurState == PLAYER_STATE_PLAYING || mCurState == PLAYER_STATE_COMPLETING) {
 		player_result_t ret = PLAYER_OK;
-		pausePlayer(ret, false);
+		sem_t syncSem;
+		sem_init(&syncSem, 0, 0);
+		pausePlayer(ret, false, syncSem);
+		sem_destroy(&syncSem);
 		meddbg("Internal pause done. player: %x\n", &mPlayer);
 	}
 }
@@ -637,11 +714,14 @@ player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	if (vol == nullptr) {
 		meddbg("The given argument is invalid.\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_INVALID_PARAMETER;
 	}
 
@@ -649,18 +729,20 @@ player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)
 
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::getPlayerVolume, shared_from_this(), vol, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::getPlayerVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
 	meddbg("getPlayerVolume enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::getPlayerVolume(uint8_t *vol, player_result_t &ret)
+void MediaPlayerImpl::getPlayerVolume(uint8_t *vol, player_result_t &ret, sem_t &syncSem)
 {
 	medvdbg("MediaPlayer Worker : getVolume\n");
 	audio_manager_result_t res = get_output_stream_volume(vol, mStreamInfo->policy);
@@ -670,18 +752,21 @@ void MediaPlayerImpl::getPlayerVolume(uint8_t *vol, player_result_t &ret)
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 	}
 
-	notifySync();
+	notifySync(syncSem);
 }
 
 player_result_t MediaPlayerImpl::getMaxVolume(uint8_t *vol)
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	if (vol == nullptr) {
 		meddbg("The given argument is invalid.\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_INVALID_PARAMETER;
 	}
 
@@ -689,18 +774,20 @@ player_result_t MediaPlayerImpl::getMaxVolume(uint8_t *vol)
 
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::getPlayerMaxVolume, shared_from_this(), vol, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::getPlayerMaxVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
 	meddbg("getPlayerMaxVolume enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::getPlayerMaxVolume(uint8_t *vol, player_result_t &ret)
+void MediaPlayerImpl::getPlayerMaxVolume(uint8_t *vol, player_result_t &ret, sem_t &syncSem)
 {
 	medvdbg("MediaPlayer Worker : getMaxVolume\n");
 	audio_manager_result_t res = get_max_audio_volume(vol);
@@ -709,7 +796,7 @@ void MediaPlayerImpl::getPlayerMaxVolume(uint8_t *vol, player_result_t &ret)
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 	}
 
-	notifySync();
+	notifySync(syncSem);
 }
 
 player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
@@ -724,23 +811,28 @@ player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 		return ret;
 	}
 
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
+
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::setPlayerVolume, shared_from_this(), vol, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::setPlayerVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
 	meddbg("setPlayerVolume enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::setPlayerVolume(uint8_t vol, player_result_t &ret)
+void MediaPlayerImpl::setPlayerVolume(uint8_t vol, player_result_t &ret, sem_t &syncSem)
 {
 	medvdbg("MediaPlayer Worker : setVolume %d\n", vol);
 
@@ -752,88 +844,100 @@ void MediaPlayerImpl::setPlayerVolume(uint8_t vol, player_result_t &ret)
 		} else {
 			ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		}
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	medvdbg("MediaPlayer setVolume success\n");
 	ret = PLAYER_OK;
-	return notifySync();
+	notifySync(syncSem);
 }
 
 player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputDataSource> source)
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
 	std::shared_ptr<stream::InputDataSource> sharedDataSource = std::move(source);
-	mpw.enQueue(&MediaPlayerImpl::setPlayerDataSource, shared_from_this(), sharedDataSource, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::setPlayerDataSource, shared_from_this(), sharedDataSource, std::ref(ret), std::ref(syncSem));
 	meddbg("setPlayerDataSource enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSource> source, player_result_t &ret)
+void MediaPlayerImpl::setPlayerDataSource(std::shared_ptr<stream::InputDataSource> source, player_result_t &ret, sem_t &syncSem)
 {
 	if (mCurState != PLAYER_STATE_IDLE && mCurState != PLAYER_STATE_CONFIGURED &&
 		mCurState != PLAYER_STATE_COMPLETED) {
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	if (mCurState == PLAYER_STATE_COMPLETED) {
 		player_result_t errCode = unpreparePlayback();
 		if (ret == PLAYER_OK && errCode != PLAYER_OK) {
 			ret = errCode;
-			return notifySync();
+			notifySync(syncSem);
+			return;
 		}
 	}
 
 	if (!source) {
 		meddbg("MediaPlayer setDataSource fail : invalid argument. DataSource should not be nullptr\n");
 		ret = PLAYER_ERROR_INVALID_PARAMETER;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 
 	mInputHandler.setPlayer(shared_from_this());
 	mInputHandler.setInputDataSource(source);
 	mCurState = PLAYER_STATE_CONFIGURED;
 
-	return notifySync();
+	notifySync(syncSem);
 }
 
 player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserverInterface> observer)
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::setPlayerObserver, shared_from_this(), observer, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::setPlayerObserver, shared_from_this(), observer, std::ref(ret), std::ref(syncSem));
 	meddbg("setPlayerObserver enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer, player_result_t &ret)
+void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInterface> observer, player_result_t &ret, sem_t &syncSem)
 {
 	medvdbg("setPlayerObserver\n");
 
@@ -843,31 +947,35 @@ void MediaPlayerImpl::setPlayerObserver(std::shared_ptr<MediaPlayerObserverInter
 	}
 
 	mPlayerObserver = observer;
-	notifySync();
+	notifySync(syncSem);
 }
 
 player_result_t MediaPlayerImpl::setStreamInfo(std::shared_ptr<stream_info_t> stream_info)
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::setPlayerStreamInfo, shared_from_this(), stream_info, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::setPlayerStreamInfo, shared_from_this(), stream_info, std::ref(ret), std::ref(syncSem));
 	meddbg("setPlayerStreamInfo enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret)
+void MediaPlayerImpl::setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_info, player_result_t &ret, sem_t &syncSem)
 {
 	LOG_STATE_INFO(mCurState);
 
@@ -875,15 +983,17 @@ void MediaPlayerImpl::setPlayerStreamInfo(std::shared_ptr<stream_info_t> stream_
 		meddbg("%s Fail : invalid state mPlayer : %x\n", __func__, &mPlayer);
 		LOG_STATE_DEBUG(mCurState);
 		ret = PLAYER_ERROR_INVALID_STATE;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 	if (stream_info->policy == STREAM_TYPE_VOICE_RECORD) {
 		meddbg("MediaPlayer setStreamInfo fail : invalid argument. Stream Type should not be VOICE_RECORD\n");
 		ret = PLAYER_ERROR_INVALID_PARAMETER;
-		return notifySync();
+		notifySync(syncSem);
+		return;
 	}
 	mStreamInfo = stream_info;
-	notifySync();
+	notifySync(syncSem);
 }
 
 stream_focus_state_t MediaPlayerImpl::getStreamFocusState(void)
@@ -896,9 +1006,12 @@ bool MediaPlayerImpl::isPlaying()
 {
 	meddbg("%s player: %x\n", __func__, &mPlayer);
 	bool ret = false;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 	if (!mpw.isAlive()) {
+		sem_destroy(&syncSem);
 		return ret;
 	}
 
@@ -907,10 +1020,11 @@ bool MediaPlayerImpl::isPlaying()
 		if (getState() == PLAYER_STATE_PLAYING || getState() == PLAYER_STATE_COMPLETING) {
 			ret = true;
 		}
-		notifySync();
+		notifySync(syncSem);
 	});
 	meddbg("getState() enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
@@ -920,6 +1034,8 @@ player_result_t MediaPlayerImpl::setLooping(bool loop)
 {
 	meddbg("%s loop: %d player: %x\n", __func__, loop, &mPlayer);
 	player_result_t ret = PLAYER_OK;
+	sem_t syncSem;
+	sem_init(&syncSem, 0, 0);
 
 	std::unique_lock<std::mutex> lock(mCmdMtx);
 
@@ -927,18 +1043,20 @@ player_result_t MediaPlayerImpl::setLooping(bool loop)
 
 	if (!mpw.isAlive()) {
 		meddbg("PlayerWorker is not alive\n");
+		sem_destroy(&syncSem);
 		return PLAYER_ERROR_NOT_ALIVE;
 	}
 
-	mpw.enQueue(&MediaPlayerImpl::setPlayerLooping, shared_from_this(), loop, std::ref(ret));
+	mpw.enQueue(&MediaPlayerImpl::setPlayerLooping, shared_from_this(), loop, std::ref(ret), std::ref(syncSem));
 	meddbg("setPlayerLooping enqueued. player: %x\n", &mPlayer);
-	mSyncCv.wait(lock);
+	sem_wait(&syncSem);
+	sem_destroy(&syncSem);
 
 	meddbg("%s returned. player: %x\n", __func__, &mPlayer);
 	return ret;
 }
 
-void MediaPlayerImpl::setPlayerLooping(bool loop, player_result_t &ret)
+void MediaPlayerImpl::setPlayerLooping(bool loop, player_result_t &ret, sem_t &syncSem)
 {
 	medvdbg("setPlayerLooping\n");
 	if (mCurState != PLAYER_STATE_IDLE && mCurState != PLAYER_STATE_CONFIGURED) {
@@ -947,7 +1065,7 @@ void MediaPlayerImpl::setPlayerLooping(bool loop, player_result_t &ret)
 		ret = PLAYER_ERROR_INVALID_STATE;
 	}
 	mInputHandler.setLoop(loop);
-	notifySync();
+	notifySync(syncSem);
 }
 
 player_state_t MediaPlayerImpl::getState()
@@ -956,10 +1074,9 @@ player_state_t MediaPlayerImpl::getState()
 	return mCurState;
 }
 
-void MediaPlayerImpl::notifySync()
+void MediaPlayerImpl::notifySync(sem_t &syncSem)
 {
-	std::unique_lock<std::mutex> lock(mCmdMtx);
-	mSyncCv.notify_one();
+	sem_post(&syncSem);
 }
 
 void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
@@ -993,7 +1110,13 @@ void MediaPlayerImpl::notifyObserver(player_observer_command_t cmd, ...)
 		case PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED:
 			player_error_t error = (player_error_t)va_arg(ap, int);
 			if (error != PLAYER_ERROR_NONE) {
-				mCurState = PLAYER_STATE_CONFIGURED;
+				if (mCurState == PLAYER_STATE_PREPARING) {
+					mCurState = PLAYER_STATE_CONFIGURED;
+				}
+				if (mBuffer) {
+					delete[] mBuffer;
+					mBuffer = nullptr;
+				}
 			}
 			mObserverQueue.enQueue(&MediaPlayerObserverInterface::onAsyncPrepared, mPlayerObserver, std::ref(mPlayer), error);
 			break;
@@ -1027,23 +1150,6 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 								 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
-			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
-		}
-
-		mBufSize = get_user_output_frames_to_byte(get_output_frame_count(mStreamInfo->id), mStreamInfo->id);
-		if (mBufSize < 0) {
-			meddbg("MediaPlayer prepare fail : get_user_output_frames_to_byte fail\n");
-			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
-		}
-
-		medvdbg("MediaPlayer mBuffer size : %d\n", mBufSize);
-
-		mBuffer = new unsigned char[mBufSize];
-		if (!mBuffer) {
-			meddbg("MediaPlayer prepare fail : mBuffer allocation fail\n");
-			if (get_errno() == ENOMEM) {
-				return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_OUT_OF_MEMORY);
-			}
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		}
 

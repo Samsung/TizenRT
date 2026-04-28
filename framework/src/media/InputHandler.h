@@ -46,8 +46,8 @@ class InputHandler : public StreamHandler
 public:
 	InputHandler();
 	void setInputDataSource(std::shared_ptr<InputDataSource> source);
-	bool doStandBy();
-	bool open() override;
+	bool doStandBy(size_t buffSize);
+	bool open(size_t buffSize) override;
 	bool close() override;
 	int seekTo(off_t offset);
 	ssize_t read(unsigned char *buf, size_t size, std::chrono::milliseconds timeout = std::chrono::milliseconds(0));

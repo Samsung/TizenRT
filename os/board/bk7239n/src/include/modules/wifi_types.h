@@ -649,6 +649,7 @@ typedef struct {
 
 typedef struct {
 	uint8_t mac[WIFI_MAC_LEN];            /**< MAC of the STA disconnected from the BK AP */
+	int disconnect_reason;                /**< Disconnect reason of the STA from BK AP */
 } wifi_event_ap_disconnected_t;
 
 typedef struct {

@@ -51,6 +51,9 @@ static void ieee80211_tkip_countermeasures_start(struct hostapd_data *hapd)
 			RADIUS_ACCT_TERMINATE_CAUSE_ADMIN_RESET;
 #endif
 		if (sta->flags & WLAN_STA_AUTH) {
+			mlme_report_sta_disconnect(
+				hapd, sta,
+				WLAN_REASON_MICHAEL_MIC_FAILURE);
 			mlme_deauthenticate_indication(
 				hapd, sta,
 				WLAN_REASON_MICHAEL_MIC_FAILURE);

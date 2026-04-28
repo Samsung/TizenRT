@@ -37,6 +37,8 @@
 #include <miniz/miniz.h>
 #endif
 
+#define COMPRESSION_BLOCKSIZE_MIN 1024
+
 /****************************************************************************
  * Private Declarations
  ****************************************************************************/
@@ -86,27 +88,56 @@ static int compress_parse_header(int filfd, uint16_t offset)
 	off_t rpos;					/* Position returned by lseek */
 	int nbytes;					/* Number of bytes read  */
 	int compheader_size;				/* Total size of compression header */
+	int ret = OK;				/* Return value */
+	off_t file_size;
+	off_t max_compheader_size;
+
+	file_size = lseek(filfd, 0, SEEK_END);
+	
+	if (file_size <= 0){
+		bcmpdbg("Invalid file size: %d\n", file_size);
+		ret = -EINVAL;
+		goto exit;
+	}
 
 	/* Seek to location of size of compression header */
 	rpos = lseek(filfd, offset, SEEK_SET);
 	if (rpos != offset) {
 		int errval = get_errno();
 		bcmpdbg("ERROR : lseek to offset %lu failed: %d\n", (unsigned long)offset, errval);
-		return -errval;
+		ret = -errval;
+		goto exit;
 	}
 
 	/* Read compression header size from the file data */
 	nbytes = read(filfd, &compheader_size, sizeof(compheader_size));
 	if (nbytes != sizeof(compheader_size)) {
 		bcmpdbg("Read for compression header size from offset %lu failed\n", offset);
-		return ERROR;
+		ret = ERROR;
+		goto exit;
+	}
+
+	/* Validate minimum header size and calculate maximum based on actual file size */
+	max_compheader_size = file_size - offset - sizeof(compheader_size);
+	if (max_compheader_size < sizeof(struct s_header)) {
+		bcmpdbg("File too small to contain valid header\n");
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	if (compheader_size < sizeof(struct s_header) || compheader_size > max_compheader_size) {
+		bcmpdbg("Invalid compheader_size: %d (max: %ld)\n", 
+		        compheader_size, (long)max_compheader_size);
+		ret = -EINVAL;
+		goto exit;
 	}
 
 	/* Allocate memory for compression header now that we know it's size */
 	compression_header = (struct s_header *)kmm_malloc(compheader_size);
 	if (!compression_header) {
 		bcmpdbg("Failed kmm_malloc for compression_header\n");
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto exit;
 	}
 
 	/* Assign compresssion_header->size_header */
@@ -116,12 +147,69 @@ static int compress_parse_header(int filfd, uint16_t offset)
 	nbytes = read(filfd, ((uint8_t *)compression_header + sizeof(compression_header->size_header)), compheader_size - sizeof(compression_header->size_header));
 	if (nbytes != (compheader_size - sizeof(compression_header->size_header))) {
 		bcmpdbg("Read for compression header from offset %lu failed\n", offset);
-		return ERROR;
+		ret = ERROR;
+		goto exit;
+	}
+
+	/* Validate header fields after allocation */
+	if (compression_header->blocksize != CONFIG_COMPRESSION_BLOCK_SIZE) {
+		bcmpdbg("Invalid blocksize: %d\n", compression_header->blocksize);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	/* Validate binary_size: must be positive and reasonable (max 10x compressed file size) */
+	if (compression_header->binary_size < 0 || 
+	    compression_header->binary_size > file_size * 10) {
+		bcmpdbg("Invalid binary_size: %d\n", 
+		        compression_header->binary_size);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	if (compression_header->sections < 0 || 
+	    compression_header->sections > compression_header->binary_size / compression_header->blocksize + 2) {
+		bcmpdbg("Invalid sections: %d\n", compression_header->sections);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	if (compression_header->compression_format != CONFIG_COMPRESSION_TYPE) {
+		bcmpdbg("Invalid compression format: %d\n", compression_header->compression_format);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	/* Validate header size consistency with sections */
+	int expected_header_size = sizeof(struct s_header) + compression_header->sections * sizeof(int);
+	if (compheader_size != expected_header_size) {
+		bcmpdbg("Header size mismatch: %d\n", compheader_size);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	/* Validate secoff[] monotonic increasing to detect corrupted offsets */
+	for (int i = 1; i < compression_header->sections; i++) {
+		if (compression_header->secoff[i] < compression_header->secoff[i-1]) {
+			bcmpdbg("secoff not monotonic increasing at index %d\n", i);
+			ret = -EINVAL;
+			goto exit;
+		}
+		if (compression_header->secoff[i] > file_size) {
+			bcmpdbg("secoff exceeds the real file size at index %d\n", i);
+			ret = -EINVAL;
+			goto exit;
+		}
 	}
 
 	bcmpvdbg("Compressed Binary Header info: size (%d), compression format (%d), blocksize (%d), No. sections (%d), Uncompressed binary size = %d\n", compression_header->size_header, compression_header->compression_format, compression_header->blocksize, compression_header->sections, compression_header->binary_size);
 
-	return OK;
+exit:
+	if (ret != OK && compression_header) {
+		kmm_free(compression_header);
+		compression_header = NULL;
+	}
+	return ret;
 }
 
 /****************************************************************************
@@ -137,6 +225,13 @@ static int compress_parse_header(int filfd, uint16_t offset)
 static off_t compress_offset_block(int filfd, uint16_t binary_header_size, int block_number)
 {
 	off_t position;
+
+	/* Validate block_number is within sections range to prevent OOB access */
+	if (block_number < 0 || block_number >= compression_header->sections) {
+		bcmpdbg("Block number %d out of range (sections: %d)\n", 
+			block_number, compression_header->sections);
+		return -EINVAL;
+	}
 
 	/* Return position for 'block_number' block */
 	position = binary_header_size + compression_header->size_header + compression_header->secoff[block_number];

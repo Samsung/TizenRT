@@ -50,7 +50,7 @@ void InputHandler::setInputDataSource(std::shared_ptr<InputDataSource> source)
 	mInputDataSource = source;
 }
 
-bool InputHandler::doStandBy()
+bool InputHandler::doStandBy(size_t buffSize)
 {
 	auto mp = getPlayer();
 	if (!mp) {
@@ -61,7 +61,7 @@ bool InputHandler::doStandBy()
 	std::thread wk = std::thread([=]() {
 		medvdbg("InputHandler::doStandBy thread enter\n");
 		player_event_t event;
-		if (open()) {
+		if (open(buffSize)) {
 			event = PLAYER_EVENT_SOURCE_PREPARED;
 		} else {
 			event = PLAYER_EVENT_SOURCE_OPEN_FAILED;
@@ -74,10 +74,10 @@ bool InputHandler::doStandBy()
 	return true;
 }
 
-bool InputHandler::open()
+bool InputHandler::open(size_t buffSize)
 {
 	// Open stream handler and start buffering
-	if (!StreamHandler::open()) {
+	if (!StreamHandler::open(buffSize)) {
 		meddbg("StreamHandler::open failed!\n");
 		return false;
 	}
@@ -282,6 +282,13 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 		while (1) {
 			unsigned char *buffPCM = buf;
 			size_t sizePCM = used;
+			size_t spaces = mBufferWriter->sizeOfSpace();
+			if (spaces == 0) {
+				sleepWorker();
+			}
+			if (sizePCM > mBufferWriter->sizeOfSpace()) {
+				sizePCM = mBufferWriter->sizeOfSpace();
+			}
 			ret = getPCM(buffES, sizeES, &usedES, &buffPCM, &sizePCM);
 			if (ret < 0) {
 				meddbg("getPCM failed! error: %d\n", ret);

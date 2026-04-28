@@ -664,6 +664,39 @@ trble_result_e ble_drv_set_multi_resp_data(uint8_t adv_handle, uint8_t adv_data_
 	return res;
 }
 
+trble_result_e ble_drv_set_multi_adv_type(uint8_t adv_handle, uint8_t adv_event_prop, trble_addr *addr)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 3, {(void *)&adv_handle, (void *)&adv_event_prop, (void *)addr} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_MULTI_ADV_TYPE}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_set_multi_adv_interval(uint8_t adv_handle, unsigned int interval)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 2, {(void *)&adv_handle, (void *)&interval} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_MULTI_ADV_INTERVAL}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
+trble_result_e ble_drv_set_multi_adv_tx_power(uint8_t adv_handle, uint8_t txpower)
+{
+	trble_result_e res = TRBLE_SUCCESS;
+	lwnl_msg_params msg_data = { 2, {(void *)&adv_handle, (void *)&txpower} };
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_SET_MULTI_ADV_TX_POWER}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
+	if (_send_msg(&msg) < 0) {
+		res = TRBLE_FILE_ERROR;
+	}
+	return res;
+}
+
 trble_result_e ble_drv_start_multi_adv(uint8_t adv_handle)
 {
 	trble_result_e res = TRBLE_SUCCESS;

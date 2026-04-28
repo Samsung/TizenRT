@@ -344,7 +344,7 @@ int components_init(void)
 	//wdt_init();
 #endif
 
-#if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE)
+#if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE) && defined(CONFIG_SECURITY_LEVEL)
 	extern void bk_security_to_nosecurity_dump_register_callback(void);
 	bk_security_to_nosecurity_dump_register_callback();
 #endif

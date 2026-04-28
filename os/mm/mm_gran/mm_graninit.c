@@ -58,6 +58,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <debug.h>
 
 #include <tinyara/mm/gran.h>
 #include <tinyara/kmalloc.h>
@@ -221,6 +222,7 @@ int gran_initialize(FAR void *heapstart, size_t heapsize, uint8_t log2gran, uint
 {
 	g_graninfo = gran_common_initialize(heapstart, heapsize, log2gran, log2align);
 	if (!g_graninfo) {
+		mdbg("Failed to allocate granule allocator structure\n");
 		return -ENOMEM;
 	}
 

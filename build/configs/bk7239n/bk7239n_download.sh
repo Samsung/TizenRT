@@ -22,6 +22,7 @@ TOOL_PATH=${TOP_PATH}/build/tools/armino
 IMG_TOOL_PATH=${TOOL_PATH}/image_tool
 SCRIPT_PATH="${TOOL_PATH}/download/tizen_entrance.py"
 OUTPUT_PATH=${TOP_PATH}/build/output/bin
+RANDOM_BIN_PATH=${OUTPUT_PATH}/random.bin
 OS_PATH=${TOP_PATH}/os
 CONFIG=${OS_PATH}/.config
 source ${CONFIG}
@@ -50,7 +51,7 @@ fi
 function pre_download()
 {
 	port=$TTYDEV
-	python3 -B ${SCRIPT_PATH} pre_download -p $port -b $WORKER_BAUD -d $DEBUG --link_type $WORK_SPACE
+	python3 ${SCRIPT_PATH} pre_download -p $port -b $WORKER_BAUD -d $DEBUG --link_type $WORK_SPACE --random_bin_path $RANDOM_BIN_PATH
 }
 
 function board_download()

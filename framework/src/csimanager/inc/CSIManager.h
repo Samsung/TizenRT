@@ -30,9 +30,14 @@
 
 #define ERROR -1  // for ERROR
 #define CSIFW_MAX_NUM_APPS 3 // Max number of Services
-#define CSIFW_CSI_HEADER_LEN 43 // CSI packet header size
 #define CSIFW_MIN_INTERVAL_MS 30  // Minimum supported CSI interval in milliseconds
 #define CSIFW_MAX_RAW_BUFF_LEN 1024 // CSI data buffer xax size
+#define CSIFW_RTK_CSI_HEADER_LEN 43 // CSI packet header size
+#define CSIFW_BEKEN_CSI_HEADER_LEN 28 // CSI packet header size
+
+#ifndef CONFIG_CSI_DATA_TIMEOUT_SEC /* In case not defined in defconfig, force it to default value*/ 
+#define CONFIG_CSI_DATA_TIMEOUT_SEC 15 
+#endif
 
 typedef unsigned long long u64;  // for u64
 typedef void (*CSIDataListener)(CSIFW_RES res, int csi_buff_len, unsigned char *csi_buff, int csi_data_len);

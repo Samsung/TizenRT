@@ -154,6 +154,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	int heap_idx;
 	heap_idx = mm_get_index_of_heap(oldmem);
 	if (heap_idx < HEAP_START_IDX) {
+		mdbg("Invalid heap index for oldmem %p, heap_idx %d\n", oldmem, heap_idx);
 		return NULL;
 	}
 

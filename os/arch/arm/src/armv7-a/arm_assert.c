@@ -508,6 +508,7 @@ void check_heap_corrupt(struct tcb_s *fault_tcb)
 			lldbg_noarg("Checking app %d heap for corruption \n",index);
 			lldbg_noarg("===========================================================\n");
 			struct mm_heap_s *app_heap = BIN_BINARY_HEAP_PTR(index);
+			lldbg_noarg("mm_holder: %d\n", app_heap->mm_holder);
 			mm_check_heap_corruption(app_heap);
 		}
 #endif
@@ -515,6 +516,7 @@ void check_heap_corrupt(struct tcb_s *fault_tcb)
 		lldbg_noarg("===========================================================\n");
 		lldbg_noarg("Checking kernel heap for corruption\n");
 		lldbg_noarg("===========================================================\n");
+		lldbg_noarg("mm_holder: %d\n", g_kmmheap->mm_holder);
 	}
 	if (mm_check_heap_corruption(g_kmmheap) != OK) {
 		/* treat kernel fault */

@@ -13,10 +13,7 @@ class TizenEndWorker(TizenActionBase):
     def end_worker(self, reboot_after_donwload=True):
         BKLog.i("====================end worker start...====================")
         try:
-            BKLog.i("protect flash...")
-            if not self.chip_set.un_protect_flash(protect=True):
-                raise Exception("protect flash fail.")
-            BKLog.i("protect flash OK.")
+            self.chip_set.un_protect_flash(protect=True)
 
             if (
                 self.chip_set._flash_mid == 0x1360CD

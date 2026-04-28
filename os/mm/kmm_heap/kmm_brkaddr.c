@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <assert.h>
+#include <debug.h>
 
 #include <tinyara/mm/mm.h>
 
@@ -82,6 +83,7 @@ static void *kheap_brkaddr(int region)
 		}
 	}
 
+	mdbg("No break address found for region %d\n", region);
 	return NULL;
 }
 

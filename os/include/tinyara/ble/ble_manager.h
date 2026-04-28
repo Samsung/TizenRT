@@ -103,6 +103,9 @@ trble_result_e ble_drv_create_multi_adv(uint8_t adv_event_prop, uint32_t *primar
 trble_result_e ble_drv_delete_multi_adv(uint8_t adv_handle);
 trble_result_e ble_drv_set_multi_adv_data(uint8_t adv_handle, uint8_t adv_data_len, uint8_t *ext_adv_data);
 trble_result_e ble_drv_set_multi_resp_data(uint8_t adv_handle, uint8_t adv_data_len, uint8_t *ext_adv_data);
+trble_result_e ble_drv_set_multi_adv_type(uint8_t adv_handle, uint8_t adv_event_prop, trble_addr *addr);
+trble_result_e ble_drv_set_multi_adv_interval(uint8_t adv_handle, unsigned int interval);
+trble_result_e ble_drv_set_multi_adv_tx_power(uint8_t adv_handle, uint8_t txpower);
 trble_result_e ble_drv_start_multi_adv(uint8_t adv_handle);
 trble_result_e ble_drv_stop_multi_adv(uint8_t adv_handle);
 

@@ -92,6 +92,7 @@
 
 #define COMBINED_FLOW_SET_ID  0
 
+#define SHOW_DEBUG 0
 // can be enabled to print the flow rules during init
 //#define CONFIG_DEBUG_AUDIO_INFO
 
@@ -146,7 +147,7 @@ static const dsp_flow_t g_flow_types[] = {
 /****************************************************************************
  * Function Prototypes
  ****************************************************************************/
-int ndp120_init(struct ndp120_dev_s *dev, bool reinit);
+int ndp120_init(struct ndp120_dev_s *dev);
 int ndp120_load_firmware(struct ndp120_dev_s *dev);
 void ndp120_aec_enable(struct ndp120_dev_s *dev);
 void ndp120_aec_disable(struct ndp120_dev_s *dev);
@@ -222,7 +223,7 @@ int tizenrt_io_spi_transfer(struct ndp120_dev_s *dev, int mcu, uint32_t addr, co
 
 	if (in && out) {
 		s = SYNTIANT_NDP_ERROR_ARG;
-		goto error_nounlock;
+		goto error;
 	}
 
 	SPI_LOCK(dev->spi, 1);
@@ -235,7 +236,7 @@ int tizenrt_io_spi_transfer(struct ndp120_dev_s *dev, int mcu, uint32_t addr, co
 	if (mcu) {
 		if ((count & 0x3) != 0) {
 			s = SYNTIANT_NDP_ERROR_ARG;
-			goto error;
+			goto error_with_lock;
 		}
 
 		uint8_t mcu_addr[10];
@@ -270,7 +271,7 @@ int tizenrt_io_spi_transfer(struct ndp120_dev_s *dev, int mcu, uint32_t addr, co
 
 		if (0xff < addr) {
 				s = SYNTIANT_NDP_ERROR_ARG;
-				goto error;
+				goto error_with_lock;
 		}
 		spi_cmd[0] = (in ? 0x80 : 0) | addr;
 
@@ -284,9 +285,9 @@ int tizenrt_io_spi_transfer(struct ndp120_dev_s *dev, int mcu, uint32_t addr, co
 		}
 		SPI_SELECT(dev->spi, dev->lower->spi_config.cs, false);
 	}
-error:
+error_with_lock:
 	SPI_LOCK(dev->spi, 0);
-	error_nounlock:
+error:
 	return s;
 }
 
@@ -971,7 +972,6 @@ void add_common_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src
 	setup->src_pcm_audio[*src_pcm].algo_exec_property = 0;
 	(*src_pcm)++;
 }
-
 void add_host_ext_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn)
 {
 	/* FUNCx->HOST_EXT_AUDIO */
@@ -982,6 +982,23 @@ void add_host_ext_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *s
 	setup->src_function[*src_func].set_id = COMBINED_FLOW_SET_ID;
 	setup->src_function[*src_func].algo_exec_property = 0;
 	(*src_func)++;
+}
+
+void add_host_ext_flow_factory(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, int dsp_flow_num)
+{
+	/* PCMx->HOST_EXT_AUDIO */
+	if (dsp_flow_num == 1) {
+		setup->src_pcm_audio[*src_pcm].src_param = NDP120_DSP_DATA_FLOW_SRC_PARAM_AUD0_LEFT;
+	} else {
+		setup->src_pcm_audio[*src_pcm].src_param = NDP120_DSP_DATA_FLOW_SRC_PARAM_AUD0_RIGHT;
+	}
+	setup->src_pcm_audio[*src_pcm].dst_param = NDP120_DSP_DATA_FLOW_DST_SUBTYPE_AUDIO;
+	setup->src_pcm_audio[*src_pcm].dst_type = NDP120_DSP_DATA_FLOW_DST_TYPE_HOST_EXTRACT;
+	setup->src_pcm_audio[*src_pcm].algo_config_index = 0;
+	setup->src_pcm_audio[*src_pcm].set_id = COMBINED_FLOW_SET_ID;
+	setup->src_pcm_audio[*src_pcm].algo_exec_property = 0;
+	(*src_pcm)++;
+	auddbg("Added factory flow, dsp_flow_num = %d\n", dsp_flow_num);
 }
 
 void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
@@ -1073,7 +1090,13 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 		}
 		idToFlow[i] = flow;
 	}
-	add_host_ext_flow(&setup, &src_pcm, &src_func, &src_nn);
+	
+	if (!dev->dsp_flow_num) {
+		add_host_ext_flow(&setup, &src_pcm, &src_func, &src_nn);
+	} else {
+		add_host_ext_flow_factory(&setup, &src_pcm, &src_func, &src_nn, dev->dsp_flow_num);
+	}
+	
 	auddbg("Applied flow rules\n");
 	s = syntiant_ndp120_dsp_flow_setup_apply(ndp, &setup);
 	check_status("syntiant_ndp120_dsp_flow_setup_apply", s);
@@ -1199,76 +1222,79 @@ void ndp120_show_debug(int do_check_mb)
 	int i, s;
 	ndp120_dsp_counters_t dsp_cnts;
 
-	if (!_ndp_debug_handle) return;
+	if (!_ndp_debug_handle) {
+		return;
+	}
 
 	struct ndp120_dev_s * ndp_debug_handle = _ndp_debug_handle;
 	struct syntiant_ndp_device_s *ndp = ndp_debug_handle->ndp;
-
+    
 	auddbg("FW Loaded: %d\n", ndp_debug_handle->fw_loaded);
-    if (!ndp) {
-        return;
-    }
+	if (!ndp) {
+		return;
+	}
 
 	auddbg("ilib: %s\n", SYNTIANT_NDP_ILIB_RELEASE_HASH);
+
 	uint8_t ndp_spi_reg;
-    int spi_regs_to_read[] = {0,1,2,3,4,5,0x10,0x11,0x12};
+	int spi_regs_to_read[] = {0,1,2,3,4,5,0x10,0x11,0x12};
 	auddbg("SPI regs\n");
 	for (i = 0; i < sizeof(spi_regs_to_read)/sizeof(spi_regs_to_read[0]); i++) {
 		syntiant_ndp120_read(ndp, 0, spi_regs_to_read[i], &ndp_spi_reg);
-		auddbg("0x%02X = 0x%02X\n", spi_regs_to_read[i], ndp_spi_reg);
+		printf("0x%02X = 0x%02X\n", spi_regs_to_read[i], ndp_spi_reg);
 	}
 
-    s = syntiant_ndp120_get_dsp_counters(ndp, &dsp_cnts);
-    if (s) {
-        auddbg("ERROR Getting DSP counters: %d\n", s);
-    }
-
-	printf("frame_cnt: %d\n", dsp_cnts.frame_cnt);
-	printf("dnn_int_cnt: %d\n", dsp_cnts.dnn_int_cnt);
-	printf("dnn_err_cnt: %d\n", dsp_cnts.dnn_err_cnt);
-    printf("mem_alloc_err_cnt: %d\n", dsp_cnts.mem_alloc_err_cnt);
-    printf("func_debug_cnt: %d\n", dsp_cnts.func_debug_cnt);
-    printf("pcm_debug_cnt: %d\n", dsp_cnts.pcm_debug_cnt);
-    printf("dnn_run_err_cnt: %d\n", dsp_cnts.dnn_run_err_cnt);
+	s = syntiant_ndp120_get_dsp_counters(ndp, &dsp_cnts);
+	if (s) {
+		auddbg("ERROR Getting DSP counters: %d\n", s);
+	}
+	auddbg("frame_cnt: %d\n", dsp_cnts.frame_cnt);
+	auddbg("dnn_int_cnt: %d\n", dsp_cnts.dnn_int_cnt);
+	auddbg("dnn_err_cnt: %d\n", dsp_cnts.dnn_err_cnt);
+	auddbg("dnn_run_err_cnt: %d\n", dsp_cnts.dnn_run_err_cnt);
+	auddbg("pcm_debug_cnt: %d\n", dsp_cnts.pcm_debug_cnt);
+	auddbg("func_debug_cnt: %d\n", dsp_cnts.func_debug_cnt);
+	auddbg("mem_alloc_err_cnt: %d\n", dsp_cnts.mem_alloc_err_cnt);
 
 	syntiant_ndp120_config_tank_t tank_config;
 	memset(&tank_config, 0, sizeof(tank_config));
 	tank_config.get = 1;
 	s = syntiant_ndp120_config_dsp_tank_memory(ndp, &tank_config);
-
-    if (s) {
-        auddbg("ERROR Getting Tank config: %d\n", s);
-    }
+	if (s) {
+		auddbg("ERROR Getting Tank config: %d\n", s);
+	}
 	auddbg("NDP120 Tank memory type: %s\n", tank_config.sampletank_mem_type == 1? "HEAP": "DNN");
 	auddbg("NDP120 Tank size (ms)  : %d\n", tank_config.sampletank_msec);
 
 	auddbg("KD Enabled: %d\n",ndp_debug_handle->kd_enabled);
-    auddbg("Sample ready count: %u\n", ndp_debug_handle->sample_ready_cnt);
-    auddbg("Last Sample Ready at:\n");
-    for (i = 0; i < sizeof(ndp_debug_handle->last_sample_int) / sizeof(ndp_debug_handle->last_sample_int[0]); i++) {
-        printf("                      %u\n",ndp_debug_handle->last_sample_int[i]);
-    }
-    auddbg("Last Sample wait at:\n",ndp_debug_handle->last_sample_wait_start);
-    for (i = 0; i < sizeof(ndp_debug_handle->last_sample_wait_start) / sizeof(ndp_debug_handle->last_sample_wait_start[0]); i++) {
-        printf("                      %u\n",ndp_debug_handle->last_sample_wait_start[i]);
-    }
+	auddbg("Sample ready count: %u\n", ndp_debug_handle->sample_ready_cnt);
+	auddbg("Last Sample Ready at:\n");
+	for (i = 0; i < sizeof(ndp_debug_handle->last_sample_int) / sizeof(ndp_debug_handle->last_sample_int[0]); i++) {
+		printf("                      %u\n",ndp_debug_handle->last_sample_int[i]);
+	}
+	auddbg("Last Sample wait at:\n",ndp_debug_handle->last_sample_wait_start);
+	for (i = 0; i < sizeof(ndp_debug_handle->last_sample_wait_start) / sizeof(ndp_debug_handle->last_sample_wait_start[0]); i++) {
+		printf("                      %u\n",ndp_debug_handle->last_sample_wait_start[i]);
+	}
 
-    auddbg("Sample ready enable at : %u\n", ndp_debug_handle->last_sample_rdy_ena);
-    auddbg("Sample ready disable at: %u\n", ndp_debug_handle->last_sample_rdy_dis);
+	auddbg("Sample ready enable at : %u\n", ndp_debug_handle->last_sample_rdy_ena);
+	auddbg("Sample ready disable at: %u\n", ndp_debug_handle->last_sample_rdy_dis);
 
-    uint32_t bufwrptr1[NDP120_DSP_CONFIG_BUFCURWRPTR_COUNT];
-    uint32_t bufwrptr2[NDP120_DSP_CONFIG_BUFCURWRPTR_COUNT];
-    for (i = 0; i < 3; i++) {
-        syntiant_ndp120_read(ndp, 1, NDP120_DSP_CONFIG_BUFCURWRPTR(i), &bufwrptr1[i]);
-    }
-    usleep(10);
-    for (i = 0; i < 3; i++) {
-        syntiant_ndp120_read(ndp, 1, NDP120_DSP_CONFIG_BUFCURWRPTR(i), &bufwrptr2[i]);
-    }
+	uint32_t bufwrptr1[NDP120_DSP_CONFIG_BUFCURWRPTR_COUNT];
+	uint32_t bufwrptr2[NDP120_DSP_CONFIG_BUFCURWRPTR_COUNT];
+	for (i = 0; i < 3; i++) {
+		syntiant_ndp120_read(ndp, 1, NDP120_DSP_CONFIG_BUFCURWRPTR(i), &bufwrptr1[i]);
+	}
+	usleep(1000);
 
-    for (i = 0; i < 3; i++) {
-        printf("BUFCURWRPTR[%d]: 0x%X -> 0x%X\n", i, bufwrptr1[i], bufwrptr2[i]);
-    }
+	for (i = 0; i < 3; i++) {
+		syntiant_ndp120_read(ndp, 1, NDP120_DSP_CONFIG_BUFCURWRPTR(i), &bufwrptr2[i]);
+	}
+
+	for (i = 0; i < 3; i++) {
+		printf("BUFCURWRPTR[%d]: 0x%X -> 0x%X\n", i, bufwrptr1[i], bufwrptr2[i]);
+	}
+
 
 	if (do_check_mb) {
 		check_mb(_ndp_debug_handle);
@@ -1282,9 +1308,8 @@ check_firmware_aliveness(struct ndp120_dev_s *dev, uint32_t wait_period_ms)
 	int s;
 	enum syntiant_ndp_fw_state state;
 
-	/* wait 1 ms more */
-	s = syntiant_ndp120_check_fw(dev->ndp, &state,
-		(wait_period_ms + 1) * 1000);
+	/* calculate wait time again, multiply 3 times, then covert to us */
+	s = syntiant_ndp120_check_fw(dev->ndp, &state, ((wait_period_ms * 3) * 1000));
 	if (s) {
 		auddbg("Error in getting the status of firmware: %d\n", s);
 		/* force reload since we are unable to get the status from NDP */
@@ -1298,8 +1323,9 @@ check_firmware_aliveness(struct ndp120_dev_s *dev, uint32_t wait_period_ms)
 			state == SYNTIANT_NDP_DSP_FW_ALIVE ?
 				"MCU FW Dead and DSP FW Alive" :
 				"MCU and DSP FW Dead");
-			ndp120_show_debug(1);
-
+#if SHOW_DEBUG
+		ndp120_show_debug(1);
+#endif
 		/* At this point the device is dead, load firmware again */
 		 ndp120_load_firmware(dev);
 	}
@@ -1341,26 +1367,24 @@ ndp120_app_device_health_check(void)
 }
 #endif
 
-int ndp120_init(struct ndp120_dev_s *dev, bool reinit)
+int ndp120_init(struct ndp120_dev_s *dev)
 {
 	/* File names */
 	int s;
 
 	dev->keyword_correction = false;
-
-	if (!reinit) {
-		dev->sample_ready_cnt = 0;
-		dev->last_sample_int_idx = 0;
-		dev->last_sample_wait_idx = 0;
-	}
+	dev->sample_ready_cnt = 0;
+	dev->last_sample_int_idx = 0;
+	dev->last_sample_wait_idx = 0;
 
 	/* save handle so we can use it from debug routine later, e.g. from other util/shell */
 	_ndp_debug_handle = dev;
 
-
 	dev->ndp = NULL;
 	dev->fw_loaded = false;
 	dev->kd_num = -1; // set invalid kd_num during initialization
+	dev->dsp_flow_num = 0; // set dsp_flow_num to 0
+
 	s = pthread_mutex_init(&dev->ndp_mutex_mbsync, NULL);
 	if (s) {
 		auddbg("failed to initialize mb sync mutex variable\n");
@@ -1417,8 +1441,10 @@ errout_mutex_mcu_mb_in:
 
 int ndp120_load_firmware(struct ndp120_dev_s *dev)
 {
-	dev->lower->irq_enable(false);
 	int s = SYNTIANT_NDP_ERROR_NONE;
+
+	dev->fw_loaded = false;
+	dev->lower->irq_enable(false);
 
 	if (dev->ndp) {
 		s = syntiant_ndp_uninit(dev->ndp, false, SYNTIANT_NDP_INIT_MODE_RESET);
@@ -1572,6 +1598,11 @@ errout_ndp120_load_firmware:
 	} else {
 		dev->lower->irq_enable(true);
 	}
+
+	/* Regardless result, set true to run aliveness check after this */
+	dev->fw_loaded = true;
+	dev->keyword_correction = false;
+	dev->sample_ready_cnt = 0;
 	return s;
 }
 
@@ -1885,27 +1916,31 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 		auddbg("NDP sample mutex lock err: %d\n", err);
 		return SYNTIANT_NDP_ERROR_FAIL;
 	}
-	
-	struct timespec abstime;
-	clock_gettime(CLOCK_REALTIME, &abstime);
-	/* Set timeout value to three sample sizes (2 should be enough). Generally the time values are in milli seconds */
+	/* Set timeout value to 2 sample sizes. Generally the time values are in milli seconds */
 	/* 16KHz, 1 channel, 2bytes = 16000 * 1 * 2 = 32000 bytes per second, 32 bytes per millisecond, (sample size is 640 or 768) */
-	uint32_t timeout_in_msec = (3 * dev->sample_size * 1000) / (SYNTIANT_NDP120_AUDIO_SAMPLE_RATE * SYNTIANT_NDP120_AUDIO_SAMPLES_PER_WORD);
-	timespec_add_ms(&abstime, timeout_in_msec);
+	uint32_t timeout_in_msec = (2 * dev->sample_size * 1000) / (SYNTIANT_NDP120_AUDIO_SAMPLE_RATE * SYNTIANT_NDP120_AUDIO_SAMPLES_PER_WORD);
 
-	syntiant_get_ms_time(&dev->last_sample_wait_start[dev->last_sample_wait_idx]);
-	dev->last_sample_wait_idx = (dev->last_sample_wait_idx + 1) % (sizeof(dev->last_sample_wait_start) / sizeof(dev->last_sample_wait_start[0]));
-
-	int timedwait_err = pthread_cond_timedwait(&dev->ndp_cond_notification_sample,
-							&dev->ndp_mutex_notification_sample, &abstime);
-	if (timedwait_err) {
-		auddbg("NDP sample wait err: %d\n", timedwait_err);
-		/* Fall through to unlock the mutex */
-		// show debug info twice so we can see if things are moving
-		ndp120_show_debug(1);
-		usleep(20);
-		ndp120_show_debug(1);
-	}
+	int retries = 3;
+	int timedwait_err = 0;
+	do {
+		struct timespec abstime;
+		clock_gettime(CLOCK_REALTIME, &abstime);
+		timespec_add_ms(&abstime, timeout_in_msec);
+		syntiant_get_ms_time(&dev->last_sample_wait_start[dev->last_sample_wait_idx]);
+		dev->last_sample_wait_idx = (dev->last_sample_wait_idx + 1) % (sizeof(dev->last_sample_wait_start) / sizeof(dev->last_sample_wait_start[0]));
+		timedwait_err = pthread_cond_timedwait(&dev->ndp_cond_notification_sample,
+													&dev->ndp_mutex_notification_sample, &abstime);
+		if (timedwait_err) {
+			syntiant_ms_time tnow;
+			syntiant_get_ms_time(&tnow);
+			auddbg("NDP cond timed wait err: %d (at %u) Retries = %d\n", timedwait_err, tnow, retries);
+			/* Fall through to unlock the mutex */
+			// show debug info twice so we can see if things are moving
+			ndp120_show_debug(1);
+			usleep(20);
+			ndp120_show_debug(1);
+		}
+	} while(--retries && timedwait_err);
 
 	err = pthread_mutex_unlock(&dev->ndp_mutex_notification_sample);
 	if (err) {
@@ -1914,6 +1949,14 @@ int ndp120_extract_audio(struct ndp120_dev_s *dev, struct ap_buffer_s *apb)
 	}
 
 	if (timedwait_err) {
+		syntiant_ms_time tnow;
+		syntiant_get_ms_time(&tnow);
+		auddbg("NDP sample wait err: %d (at %u)\n", timedwait_err, tnow);
+#if SHOW_DEBUG
+		ndp120_show_debug(1);
+		usleep(25 * 1000);
+		ndp120_show_debug(0);
+#endif
 		/* Underrun need to be handled here, however, as of now we are doing
 		 * data extraction in sync. So, send back the apb with zero bytes
 		 * TODO : apply async method of extraction, then handle the underrun
@@ -1976,7 +2019,6 @@ int ndp120_change_kd(struct ndp120_dev_s *dev, uint8_t kd_num)
 	auddbg("Change kd!! model : %d\n", kd_num);
 	ndp120_semtake(dev);
 	/* Set false to prevent aliveness check during changing kd */
-	dev->fw_loaded = false;
 	int temp = dev->kd_num;
 	dev->kd_num = kd_num;
 	
@@ -1989,8 +2031,6 @@ int ndp120_change_kd(struct ndp120_dev_s *dev, uint8_t kd_num)
 			break;
 		}
 	}
-	/* Regardless result, set true to run aliveness check after this */
-	dev->fw_loaded = true;
 	ndp120_semgive(dev);
 	return s;
 }
@@ -2053,6 +2093,7 @@ int ndp120_stop_sample_ready(struct ndp120_dev_s *dev)
 	s = ndp120_set_sample_ready_int(dev, 0);
 
 	dev->recording = false;
+	dev->sample_ready_cnt = 0;
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 	g_ndp120_state = NOT_RECORDING;
 #endif
@@ -2164,5 +2205,37 @@ int ndp120_kw_sensitivity_get(struct ndp120_dev_s *dev, uint16_t *sensitivity)
 	check_status("Error getting KW sensitivity", s);
 	double d = (((double)ph_config.threshold)*1000 / 0xffff);	
 	*sensitivity = (uint16_t) (d + 0.5);
+	return s;
+}
+
+/* ndp120_change_dsp_flow api must be called after the ndp120_change_kd api is called. */
+int ndp120_change_dsp_flow(struct ndp120_dev_s *dev, uint8_t dsp_flow_num)
+{
+#if BT_MIC_SUPPORT == 1
+	auddbg("To change dsp flow is not spported when BT_MIC_SUPPORT.\n");
+	return -ENOTSUP;
+#endif
+
+	int s = SYNTIANT_NDP_ERROR_NONE;
+	if (dsp_flow_num == dev->dsp_flow_num) {
+		auddbg("Same dsp_flow_num, ignore dsp_flow_num : %d dev->dsp_flow_num : %d\n", dsp_flow_num, dev->dsp_flow_num);
+		return SYNTIANT_NDP_ERROR_NONE;
+	}
+	auddbg("Change dsp_flow_num!! flow_num : %d\n", dsp_flow_num);
+	ndp120_semtake(dev);
+	/* Set false to prevent aliveness check during changing kd */
+	int temp = dev->dsp_flow_num;
+	dev->dsp_flow_num = dsp_flow_num;
+	
+	int retry = NDP120_INIT_RETRY_COUNT;
+	while (retry--) {
+		s = ndp120_load_firmware(dev);
+		if (s) {
+			dev->dsp_flow_num = temp;
+		} else {
+			break;
+		}
+	}
+	ndp120_semgive(dev);
 	return s;
 }

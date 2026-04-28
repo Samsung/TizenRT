@@ -503,6 +503,15 @@ ble_result_e ble_server_start_adv(void)
 
 	RETURN_RESULT(res, msg);
 }
+
+ble_result_e ble_server_stop_adv(void)
+{
+	blemgr_msg_s msg = {BLE_CMD_STOP_ADV, BLE_MANAGER_FAIL, NULL, NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_server_one_shot_adv_init(void)
 {
 	blemgr_msg_s msg = {BLE_CMD_ONE_SHOT_ADV_INIT, BLE_MANAGER_FAIL, NULL, NULL};
@@ -531,14 +540,6 @@ ble_result_e ble_server_one_shot_adv_set(uint8_t adv_id, ble_data *data_adv, ble
 ble_result_e ble_server_one_shot_adv(uint8_t adv_id)
 {
 	blemgr_msg_s msg = {BLE_CMD_ONE_SHOT_ADV, BLE_MANAGER_FAIL, (void *)(&adv_id), NULL};
-	int res = blemgr_post_message(&msg);
-
-	RETURN_RESULT(res, msg);
-}
-
-ble_result_e ble_server_stop_adv(void)
-{
-	blemgr_msg_s msg = {BLE_CMD_STOP_ADV, BLE_MANAGER_FAIL, NULL, NULL};
 	int res = blemgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);
@@ -585,6 +586,33 @@ ble_result_e ble_server_set_multi_resp_data(uint8_t adv_handle, uint16_t adv_dat
 {
 	blemgr_msg_params param = { 3, {(void *)&adv_handle, (void *)&adv_data_len, (void *)adv_data}};
 	blemgr_msg_s msg = {BLE_CMD_SET_MULTI_RESP_DATA, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_set_multi_adv_type(uint8_t adv_handle, uint8_t adv_event_prop, ble_addr *addr)
+{
+	blemgr_msg_params param = { 3, {(void *)&adv_handle, (void *)&adv_event_prop, (void *)addr}};
+	blemgr_msg_s msg = {BLE_CMD_SET_MULTI_ADV_TYPE, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_set_multi_adv_interval(uint8_t adv_handle, unsigned int interval)
+{
+	blemgr_msg_params param = { 2, {(void *)&adv_handle, (void *)&interval}};
+	blemgr_msg_s msg = {BLE_CMD_SET_MULTI_ADV_INTERVAL, BLE_MANAGER_FAIL, (void *)(&param), NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
+ble_result_e ble_server_set_multi_adv_tx_power(uint8_t adv_handle, uint8_t txpower)
+{
+	blemgr_msg_params param = { 2, {(void *)&adv_handle, (void *)&txpower}};
+	blemgr_msg_s msg = {BLE_CMD_SET_MULTI_ADV_TX_POWER, BLE_MANAGER_FAIL, (void *)(&param), NULL};
 	int res = blemgr_post_message(&msg);
 
 	RETURN_RESULT(res, msg);

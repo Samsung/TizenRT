@@ -112,6 +112,9 @@ static size_t writesize = CONFIG_LOG_DUMP_CHUNK_SIZE;
 static unsigned char *out_buf;
 static bool compress_full_block;	/* indicate completion of complete block compression */
 static int compress_ret;
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+static pid_t g_log_dump_pid;		/* PID of log_dump kernel thread */
+#endif
 
 /* Structures used to compress last partially filled block */
 static unsigned char *last_comp_block;
@@ -137,6 +140,7 @@ int log_dump_init(void)
 		ldpdbg("memory allocation failure\n");
 		return LOG_DUMP_MEM_FAIL;
 	}
+	DEBUG_SET_PID(node, g_log_dump_pid);
 
 	/* The buffers allocated below are required for log-dump till the 
 	 * device is shut down or restarted. So these buffers MUST NEVER
@@ -333,7 +337,7 @@ static int log_dump_tobuffer(char ch, size_t *free_size)
 			if (node == NULL) {
 				return LOG_DUMP_MEM_FAIL;
 			}
-
+			DEBUG_SET_PID(node, g_log_dump_pid);
 			compress_curbytes = 1;
 			node->arr[0] = ch;
 			sq_addlast((sq_entry_t *) node, &log_dump_chunks);
@@ -591,6 +595,11 @@ int log_dump(int argc, char *argv[])
 	attr.mq_maxmsg = 32;
 	attr.mq_msgsize = sizeof(int);
 	attr.mq_flags = 0;
+
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+	/* Store the PID of log_dump kernel thread for memory attribution */
+	g_log_dump_pid = getpid();
+#endif
 
 	/* Create log dump message queue */
 	mq_fd = mq_open(LOG_DUMP_MSGQ, O_RDWR | O_CREAT, 0666, &attr);

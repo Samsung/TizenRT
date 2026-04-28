@@ -3952,14 +3952,13 @@ syntiant_ndp120_check_fw(struct syntiant_ndp_device_s *ndp,
         &mcu_fw_wake_count1);
     if (s) goto error;
 
+    auddbg("DSP counts: %d %d           MCU counts: %d %d\n",
+        dsp_fw_wake_count1, dsp_fw_wake_count2,
+        mcu_fw_wake_count1, mcu_fw_wake_count2);
+
     if (dsp_fw_wake_count1 != dsp_fw_wake_count2) {
         *state = SYNTIANT_NDP_DSP_FW_ALIVE;
     }
-
-	auddbg("DSP counts: %d %d           MCU counts: %d %d\n",
-	dsp_fw_wake_count1, dsp_fw_wake_count2,
-	mcu_fw_wake_count1, mcu_fw_wake_count2);
-
     if (mcu_fw_wake_count1 != mcu_fw_wake_count2) {
         *state |= SYNTIANT_NDP_MCU_FW_ALIVE;
     }
@@ -6859,8 +6858,7 @@ int syntiant_ndp120_init(
         /* hacky stuff to allow things to "work"
 
            It's arguable that init -N restart shouldn't
-           call sync() or set ndp->init to 0
-           ¯\_(ツ)_/¯ */
+           call sync() or set ndp->init to 0 */
 
         s = ndp->iif.unsync(ndp->iif.d); /* allow processing */
         if (s) goto error;
@@ -9048,7 +9046,7 @@ int syntiant_ndp120_secure_get_info(struct syntiant_ndp_device_s *ndp,
         address = NDP120_MCU_DSP_FW_VER_LEN;
         s = syntiant_ndp120_read(ndp, 1, address, &sec_data->dsp_fw_version_len);
         if (s) goto error;
-        if (sec_data->fw_version_len > NDP120_MCU_DSP_FW_VER_MAX_LEN) {
+        if (sec_data->dsp_fw_version_len > NDP120_MCU_DSP_FW_VER_MAX_LEN) {
             DEBUG_PRINTF("Firmware sent invalid DSP FW version length:%d bytes\n",
                     sec_data->dsp_fw_version_len);
             s = SYNTIANT_NDP_ERROR_INVALID_LENGTH;
@@ -10354,4 +10352,3 @@ struct syntiant_ndp_driver_s syntiant_ndp120_driver = {
     syntiant_ndp120_write_block,
     NULL
 };
-

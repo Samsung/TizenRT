@@ -94,27 +94,6 @@ function concatenate_binary_with_signing()
 	bash $BUILDDIR/configs/bk7239n/bk7239n_signing.sh kernel
 }
 
-function make_ss_bin() {
-	# Copy default ss.bin from security_storage directory to output
-	ss_storage_dir=${TOOL_PATH}/security_storage
-	default_ss_bin=${ss_storage_dir}/ss.bin
-	ss_bin=${BUILDDIR}/output/bin/ss.bin
-	beken_utils_path=${TOOL_PATH}/beken_utils
-
-	# If CONFIG_BINARY_SIGNING=y and beken_utils_path exists, do not copy ss.bin; otherwise copy ss.bin
-	if [ "${CONFIG_BINARY_SIGNING}" = "y" ] && [ -d "${beken_utils_path}" ]; then
-		# Do not copy ss.bin
-		echo "CONFIG_BINARY_SIGNING=y and beken_utils found, skip copying ss.bin"
-	else
-		if [ -f "${default_ss_bin}" ]; then
-			echo "Copying ss.bin from ${default_ss_bin} to ${ss_bin}"
-			cp -f "${default_ss_bin}" "${ss_bin}"
-		else
-			echo "Warning: Default ss.bin not found at ${default_ss_bin}, skipping..."
-		fi
-	fi
-}
-
 function get_global_app_num_from_config_for_deployment() {
     # Get CONFIG_NUM_APPS value from os/.config
     [ ! -f "$CONFIG" ] && { echo "0"; return 1; }
@@ -160,10 +139,6 @@ function install_bin_for_deployment()
 	[ -f "$workdir/pack.json" ] && cp -f "$workdir/pack.json" "$install_dir/" || echo "Warning: pack.json not found, skipping..."
 	[ -f "$workdir/ppc_config.bin" ] && cp -f "$workdir/ppc_config.bin" "$install_dir/" || echo "Warning: ppc_config.bin not found, skipping..."
 
-	# Copy key files
-	[ -f "$workdir/root_ec256_privkey.pem" ] && cp -f "$workdir/root_ec256_privkey.pem" "$install_dir/" || echo "Warning: root_ec256_privkey.pem not found, skipping..."
-	[ -f "$workdir/root_ec256_pubkey.pem" ] && cp -f "$workdir/root_ec256_pubkey.pem" "$install_dir/" || echo "Warning: root_ec256_pubkey.pem not found, skipping..."
-
 	# Copy optional app files
 	# Copy signed apps
 	local app_nums=$(get_global_app_num_from_config_for_deployment)
@@ -180,8 +155,14 @@ function install_bin_for_deployment()
 		[ -f "$src_common" ] && cp -f "$src_common" "$install_dir/common_for_sign" && echo "  common_for_sign" || echo "  Warning: common_for_sign not found"
 	fi
 
-	# Copy ss.bin if exists
-	[ -f "$BINDIR/ss.bin" ] && cp -f "$BINDIR/ss.bin" "$install_dir/" && echo "  ss.bin" || echo "  Warning: ss.bin not found"
+	#Copy resource binary if CONFIG_RESOURCE_FS is enabled
+	if grep -q "^CONFIG_RESOURCE_FS=y" "$CONFIG" 2>/dev/null; then
+		#copy resourcefs.img to resourcefs.bin
+		local resource_bin_name="resourcefs.bin"
+		[ -f "$BINDIR/resourcefs.img" ] && cp "$BINDIR/resourcefs.img" "$BINDIR/$resource_bin_name" && echo "  resourcefs.img -> $resource_bin_name" || echo "  Warning: resourcefs.img not found"
+		#copy resourcefs.bin to install directory
+		[ -f "$BINDIR/$resource_bin_name" ] && cp -f "$BINDIR/$resource_bin_name" "$install_dir/resource_for_sign" && echo "  resource_for_sign" || echo "  Warning: resource_for_sign not found"
+	fi
 
 	#copy partition_layout.txt
 	[ -f "$workdir/partition_layout.txt" ] && cp -f "$workdir/partition_layout.txt" "$install_dir/partition_layout.txt" || echo "Warning: partition_layout.txt not found, skipping..."
@@ -211,12 +192,15 @@ function copy_signed_files()
 function pack_secure_bin()
 {
     python3 ${THIS_PATH}/psram_layout_check.py ${CONFIG}
-	make_ss_bin
 	install_bin_for_deployment
 	if [ "$CONFIG_BINARY_SIGNING" = "y" ]; then
-		echo "Making signing binary"
-		input_dir=${BUILDDIR}/tools/armino/beken_utils/input_dir
-		cp -rf ${BUILDDIR}/output/bin/install_for_deployment/. $input_dir
+		if [ ! -f "${BUILDDIR}/tools/armino/beken_utils/deployment_main.sh" ]; then
+			echo "Warning: deployment_main.sh not found, skipping..."
+		else
+			echo "Making signing binary"
+			input_dir=${BUILDDIR}/tools/armino/beken_utils/input_dir
+			cp -rf ${BUILDDIR}/output/bin/install_for_deployment/. $input_dir
+		fi
 		cp ${BINDIR}/tinyara.axf.bin ${BINDIR}/kernel.bin
 	else
 		echo "Making no signing binary"

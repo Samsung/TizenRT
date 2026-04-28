@@ -104,7 +104,7 @@ $(CXXOBJS): %$(OBJEXT): %.cpp
 
 define SDIR_template
 $(1)_$(2):
-	$(Q) $(MAKE) -C $(1) $(2) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)"
+	$(Q) $(MAKE) $(JOBS) -C $(1) $(2) TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)"
 
 endef
 

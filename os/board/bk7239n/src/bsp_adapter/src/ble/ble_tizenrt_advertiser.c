@@ -201,6 +201,8 @@ int32_t bk_tr_ble_advertiser_notice_cb(ble_notice_t notice, void *param)
                 if (ble_cmd_queue_push_ext(CMD_BLE_DEL_ADV, 0xff, elem, 0, nest_report_connected_evt))
                 {
                     LOGE("ble_cmd_queue_push fail");
+                    os_free(elem);
+                    elem = NULL;
                 }
             }
             else

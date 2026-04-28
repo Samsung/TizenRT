@@ -147,22 +147,25 @@ int vPortSecondaryBoot(int cpu)
 	int state;
 	int count = 10;
 
-	err = psci_cpu_on(cpu, (unsigned long)__cpu1_start);
-	DEBUGASSERT(err >= 0);
+	/* If psci_cpu_on is called more than once, the CPU may not function properly. */
+	if (psci_affinity_info(cpu, 0) == AFF_STATE_OFF) {
+		err = psci_cpu_on(cpu, (unsigned long)__cpu1_start);
+		DEBUGASSERT(err >= 0);
 
-	/* await for PSCI to report cpu state */
-	do {
-		state = psci_affinity_info(cpu, 0);
-		if (state == AFF_STATE_ON) {
-			break;
+		/* await for PSCI to report cpu state */
+		do {
+			state = psci_affinity_info(cpu, 0);
+			if (state == AFF_STATE_ON) {
+				break;
+			}
+
+			DelayUs(50);
+		} while (count--);
+
+		if (count <= 0) {
+			smplldbg("Secondary core boot timeout affinfo: %d\n", state);
+			return -ETIMEDOUT;
 		}
-
-		DelayUs(50);
-	} while (count--);
-
-	if (count <= 0) {
-		smplldbg("Secondary core boot timeout affinfo: %d\n", state);
-		return -ETIMEDOUT;
 	}
 
 	return OK;

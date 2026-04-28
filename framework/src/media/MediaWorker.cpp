@@ -37,7 +37,7 @@ MediaWorker::MediaWorker() :
 }
 MediaWorker::~MediaWorker()
 {
-	medvdbg("MediaWorker::~MediaWorker()\n");
+	meddbg("MediaWorker::~MediaWorker()\n");
 }
 
 void MediaWorker::startWorker()

@@ -128,32 +128,26 @@ static inline void flash_ll_write_status_reg(flash_hw_t *hw, uint8_t sr_width, u
 	hw->op_ctrl.wp_value = 1;
 	if (sr_width == 1) {
 		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
-	} else if (sr_width == 2) {
-		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR2);
 	} else {
-		if(FLASH_ID_GD25Q32C == flash_ll_get_id(hw) || FLASH_ID_TH25Q64 == flash_ll_get_id(hw)) {
-			flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
+		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
 
-			while (flash_ll_is_busy(hw));
-			hw->config.wrsr_data = (sr_data >> LEN_WRSR_S0_S7);
-			flash_ll_init_wrsr_cmd(hw, CMD_WRSR_S8_S15);
-			// hw->op_ctrl.wp_value = 1;    //  ???
-			flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
+		while (flash_ll_is_busy(hw));
+		hw->config.wrsr_data = (sr_data >> LEN_WRSR_S0_S7);
+		flash_ll_init_wrsr_cmd(hw, CMD_WRSR_S8_S15);
+		// hw->op_ctrl.wp_value = 1;    //  ???
+		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
 
-			#if 0
-			while (flash_ll_is_busy(hw));
-			hw->config.wrsr_data = (sr_data >> LEN_WRSR_S8_S15);
-			flash_ll_init_wrsr_cmd(hw, CMD_WRSR_S16_S24);
-			flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
-			#endif
+		#if 0
+		while (flash_ll_is_busy(hw));
+		hw->config.wrsr_data = (sr_data >> LEN_WRSR_S8_S15);
+		flash_ll_init_wrsr_cmd(hw, CMD_WRSR_S16_S24);
+		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
+		#endif
 
-			while (flash_ll_is_busy(hw));
+		while (flash_ll_is_busy(hw));
 
-			// flash_ll_deinit_wrsr_cmd(hw);
-			hw->cmd_cfg.v = 0;
-		} else {
-			flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR2);
-		}
+		// flash_ll_deinit_wrsr_cmd(hw);
+		hw->cmd_cfg.v = 0;
 	}
 
 	while (flash_ll_is_busy(hw));

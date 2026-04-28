@@ -1211,7 +1211,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 				flags = find_ieee80211_freq_flags(freq, wiphy->bands[band]->channels,wiphy->bands[band]->n_channels);
 				if((flags & IEEE80211_CHAN_DISABLED) && (!(ate_is_enabled() || rwnx_ieee80211_check_conn_instrument(&req->ssid[0], &req->bssid))))
 				{
-					RWNX_LOGW("rw_msg_send_scanu_req:freq %d,CHAN_DISABLED\r\n ",freq);
+					RWNX_LOGW("rw_msg_send_scanu_req:freq %d,CHAN_DISABLED 0x%x\r\n ",freq,flags);
 				    continue;
 				}
 
@@ -1251,7 +1251,8 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 				chan_cnt++;
 			}
 			req->chan_cnt = chan_cnt;
-			RWNX_LOGW("Using specified freqs\n");
+			const struct ieee80211_regdomain *regd = reg_get_regdomain(&g_wiphy);
+			RWNX_LOGW("Using specified freqs, chan_cnt %d, regd %s\n",req->chan_cnt,regd->alpha2);
 		}
 
 		if(0 != scan_param_env.scan_type) {

@@ -534,6 +534,13 @@ trble_result_e bktr_ble_client_write_read_queue_cnt(trble_conn_handle *handle, u
     }
     *write_read_count = hal_ble_con_env.con_dev[*handle].wr_list->length + hal_ble_con_env.con_dev[*handle].rd_list->length;
     LOGD("gattc write&read count %d", *write_read_count);
+
+    if (*write_read_count >= NOTIFY_ASYNC_MAX_COUNT)
+    {
+        LOGE("Client write/read pending queue full, wait a moment to send data again !!!\r\n");
+        return TRBLE_BUSY;
+    }
+
     return TRBLE_SUCCESS;
 }
 
@@ -629,8 +636,7 @@ int32_t bk_tr_ble_client_notice_cb(ble_notice_t notice, void *param)
 
         hal_ble_env.master_count++;
 
-        bk_ble_set_max_mtu(hal_ble_con_env.mtu);
-        bk_ble_gatt_mtu_change(c_ind->conn_idx);
+        bk_ble_gatt_mtu_change(c_ind->conn_idx, hal_ble_con_env.mtu);
 
         if (BLE_HAL_CONN_DEV_STATE_INITIATING == hal_ble_con_env.init_status)
         {
