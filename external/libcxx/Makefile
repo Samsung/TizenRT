@@ -73,21 +73,16 @@ CXXSRCS += regex.cpp atomic.cpp random_shuffle.cpp
 CXXSRCS += legacy_pointer_safety.cpp
 CXXSRCS += new_handler.cpp new_helpers.cpp
 
-# C++17 and later sources (only compiled when CONFIG_CXX_VERSION_17 is enabled)
-ifeq ($(CONFIG_CXX_VERSION_17),y)
+# C++17 and later sources (C++17 is the minimum supported standard)
 CXXSRCS += any.cpp optional.cpp variant.cpp
 CXXSRCS += memory_resource.cpp charconv.cpp barrier.cpp
 CXXSRCS += filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp filesystem/path.cpp
 CXXSRCS += print.cpp
-endif
 
 # Filesystem support (set via Kconfig, _LIBCPP_HAS_NO_FILESYSTEM is in __config_site)
-# Note: Filesystem is a C++17 feature and requires CONFIG_CXX_VERSION_17
-ifeq ($(CONFIG_CXX_VERSION_17),y)
 ifeq ($(CONFIG_LIBCXX_FILESYSTEM),y)
 CXXSRCS += filesystem/directory_entry.cpp filesystem/directory_iterator.cpp
 CXXSRCS += filesystem/operations.cpp filesystem/int128_builtins.cpp
-endif
 endif
 
 # Exception handling logic
