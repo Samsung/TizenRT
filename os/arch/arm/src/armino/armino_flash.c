@@ -77,7 +77,9 @@
 /****************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
-#define SUBSECTOR_SHIFT (12) /* Size of SubSector */
+#define SUBSECTOR_SHIFT (12) /* Size of SubSector, 4K */
+#define SECTOR_SHIFT (15) /* Size of sector 32K */
+#define LARGE_SECTOR_SHIFT (16) /* Size of sector 64K */
 #define PAGE_SHIFT (8) /*Size of programmable page */
 #define FLASH_FS_START CONFIG_BK_FLASH_BASE
 #define BK_NSECTORS (CONFIG_BK_FLASH_CAPACITY / CONFIG_BK_FLASH_SECTOR_SIZE)
@@ -101,7 +103,7 @@ struct bk_dev_s {
  ************************************************************************************/
 
 /* MTD driver methods */
-static ssize_t bk_erase_page(size_t page);
+static ssize_t bk_erase_page(size_t page, bool subsector);
 static int bk_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks);
 static ssize_t bk_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buf);
 static ssize_t bk_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buf);
@@ -125,40 +127,61 @@ static bool get_ota_test_flag(int arg)
 /************************************************************************************
  * Name: bk_erase
  ************************************************************************************/
-static ssize_t bk_erase_page(size_t page)
+static ssize_t bk_erase_page(size_t page, bool subsector)
 {
 	uint32_t addr = (page << SUBSECTOR_SHIFT);
 	ssize_t ret;
 
 	//printf("func :%s, line :%d, addr :%x\n", __func__, __LINE__, addr);
-	#if (!CONFIG_SPE)
+#if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
+		printf("addr is kernel\n");
 		ret = bk_security_flash_erase_sector(addr);
+		if (ret == OK) {
+			return 1;
+		}
 	} else
-	#endif
+#endif
 	{
-		ret = bk_flash_erase_sector(addr);
+		if (subsector) {
+			ret = bk_flash_erase_sector(addr);
+			if (ret == OK) {
+				return 1;
+			}
+		} else {
+			ret = bk_flash_erase_32k(addr);
+			if (ret == OK) {
+				return (1 << (SECTOR_SHIFT - SUBSECTOR_SHIFT));
+			}
+		}
 	}
 
-	if (ret != OK) {
-		ret = -EIO;
-	}
-	return ret;
+	return -EIO;
 }
 
+/* TODO Verification logic after erase must be added */
 static int bk_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 {
 	ssize_t result;
 	startblock += BK_START_SECOTR;
-
-	/* Erase the specified blocks and return status (OK or a negated errno) */
-	while (nblocks > 0) {
-		result = bk_erase_page(startblock);
+	size_t blocksleft = nblocks;
+	size_t blkper = 1 << (SECTOR_SHIFT - SUBSECTOR_SHIFT);
+	size_t sectorboundry;
+	/* Erase the specified blocks and return status(number of erased page or a negated errno) */
+	while (blocksleft > 0) {
+		/* TODO 64KB Also need to be considered, but this will make partition more hard */
+		sectorboundry = (startblock + blkper - 1) / blkper;
+		sectorboundry *= blkper;
+		if (startblock == sectorboundry && blocksleft >= blkper) {
+			result = bk_erase_page(startblock, false);
+		} else {
+			result = bk_erase_page(startblock, true);
+		}
 		if (result < 0) {
 			return (int)result;
 		}
-		startblock++;
-		nblocks--;
+		startblock+=result;
+		blocksleft-=result;
 	}
 	return OK;
 }
