@@ -73,7 +73,8 @@ CXXSRCS += regex.cpp atomic.cpp random_shuffle.cpp
 CXXSRCS += legacy_pointer_safety.cpp
 CXXSRCS += new_handler.cpp new_helpers.cpp
 
-# C++17 and later sources (C++17 is the minimum supported standard)
+# C++17 and later sources
+ifeq ($(CONFIG_CXX_VERSION_17_OR_LATER),y)
 CXXSRCS += any.cpp optional.cpp variant.cpp
 CXXSRCS += memory_resource.cpp charconv.cpp barrier.cpp
 CXXSRCS += filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp filesystem/path.cpp
@@ -84,6 +85,8 @@ ifeq ($(CONFIG_LIBCXX_FILESYSTEM),y)
 CXXSRCS += filesystem/directory_entry.cpp filesystem/directory_iterator.cpp
 CXXSRCS += filesystem/operations.cpp filesystem/int128_builtins.cpp
 endif
+
+endif # CONFIG_CXX_VERSION_17_OR_LATER
 
 # Exception handling logic
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)

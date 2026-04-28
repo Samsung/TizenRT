@@ -34,8 +34,21 @@ config CXX_VERSION_14
 
 config CXX_VERSION_17
 	bool "c++17"
+	select CXX_VERSION_17_OR_LATER
+
+config CXX_VERSION_20
+	bool
+	select CXX_VERSION_17_OR_LATER
+
+config CXX_VERSION_23
+	bool
+	select CXX_VERSION_17_OR_LATER
 
 endchoice
+
+# Hidden symbol for "C++17 or later" - add selects for CXX_VERSION_20, CXX_VERSION_23 when added
+config CXX_VERSION_17_OR_LATER
+	bool
 
 config CXX_NEWLONG
 	bool "size_t is type long"
@@ -71,6 +84,7 @@ config LIBCXX_EXCEPTION
 config LIBCXX_FILESYSTEM
     bool "Enable full filesystem support"
     default n
+    depends on CXX_VERSION_17_OR_LATER
     ---help---
         Enable std::filesystem directory operations, iterators, and file status
         functions. This requires sys/statvfs.h and related system calls, which are not currently available.
@@ -84,6 +98,7 @@ config LIBCXX_FILESYSTEM
 config LIBCXX_TIME_UTC
     bool "Enable C++17 UTC time support"
     default n
+    depends on CXX_VERSION_17_OR_LATER
     ---help---
         Enable std::timespec and std::timespec_get support (C++17).
         Requires TizenRT C library to provide timespec_get() and TIME_UTC.
