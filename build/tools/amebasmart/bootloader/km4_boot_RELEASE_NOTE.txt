@@ -1,5 +1,23 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 0d4526b9d8_2026/04/23-18:00:11 ==
+
+1. Add CRC check retry logic for Kernel and BP
+2. Modify recovery logic
+	- Factory kernel version: 000101
+	- If the active kernel  is invalid, the bootloader will check the kernel at opposite partition
+	- If the kernel opposite partition has version 000101, even if it is valid, the active index must not be changed  -> recover fail, reboot
+	- if both BP invalid, when re-construct BP also check if the selected kernel has version 000101 -> recover fail, reboot.
+	- BP format_ver set to 2 when re-construct BP
+3. Update BP version when modifying kernel active index in bootloader
+	- Modify the logic so that whenever the BP is updated, the bootloader must always: Write the update to the opposite BP partition, and increment the BP version by +1.
+4. Add BP update reason
+	- BP_UPDATE_INITIALIZED = 0,
+	- BP_UPDATE_BOOTLOADER_BP_CRC_FAIL = 1,
+	- BP_UPDATE_BOOTLOADER_KERNEL_CRC_FAIL = 2,
+	- BP_UPDATE_BOOTLOADER_KERNEL_INVALID_SIZE = 3,
+	- BP_UPDATE_BOOTLOADER_KERNEL_FAIL_TO_BOOT = 4,
+
 == version e520f50b6e_2025/10/14-16:23:45 ==
 
 1.	Disable hotfix since hotfix is no longer used

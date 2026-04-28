@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import sys
+import argparse
 from pathlib import Path
 
 from bk_crc import bk_crc16
@@ -77,12 +77,14 @@ class BKFilBinPack:
         parser.set_part_map(self.part_map)
         return parser
 
-    def pack(self):
-        self._pre_handle()
-
+    def pack(self, partition_json_only: bool = False):
+        if not partition_json_only:
+            self._pre_handle()
         parser = self.parser
         pack_json = self.workdir / "partition.json"
         parser.gen_partitions_json(pack_json)
+        if partition_json_only:
+            return
         fs_bin = self.workdir / self.fs_bin_name
         if self.config.get("CONFIG_DUMMY_FS_BIN", "n") == "y" and not fs_bin.exists():
             parser.create_dummy_fs_bin(fs_bin)
@@ -94,9 +96,20 @@ class BKFilBinPack:
         packager.pack()
 
 if __name__ == "__main__":
-    topdir = Path(sys.argv[1])
-    workdir = Path(sys.argv[2])
+    arg_parser = argparse.ArgumentParser(
+        description="Generate partition json and package binaries."
+    )
+    arg_parser.add_argument("topdir", type=Path)
+    arg_parser.add_argument("workdir", type=Path)
+    arg_parser.add_argument(
+        "--partition-json-only",
+        action="store_true",
+        help="Only generate partition.json and skip bin packaging.",
+    )
+    args = arg_parser.parse_args()
+    topdir = args.topdir
+    workdir = args.workdir
     assert topdir.exists()
     assert workdir.exists()
     packer = BKFilBinPack(topdir, workdir)
-    packer.pack()
+    packer.pack(partition_json_only=args.partition_json_only)
