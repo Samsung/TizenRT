@@ -169,9 +169,6 @@ typedef unsigned int wint_t;
     #endif
 #endif
 
-// TizenRT compatibility: Disable nullptr_t constructor for void* to avoid overload conflict
-#define _LIBCPP_HAS_NULLPTR_T_FOR_VOID 0
-
 // TizenRT compatibility: Define _LIBCPP_SAFE_STATIC for thread-safe static initialization
 #define _LIBCPP_SAFE_STATIC _LIBCPP_CONSTEXPR
 

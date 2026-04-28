@@ -51,4 +51,9 @@ Types:
     typedef decltype(nullptr) nullptr_t;
 #endif
 
+// max_align_t is a C++11/C11 feature - provide fallback if not defined by system
+#if !defined(_LIBCPP_CXX03_LANG) && !defined(max_align_t)
+    typedef long double max_align_t;
+#endif
+
 #endif // _LIBCPP_STDDEF_H

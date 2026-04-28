@@ -59,28 +59,12 @@ Types:
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
-#ifdef __cplusplus    
-// SRID Define nullptr_t if not available from system header
-#  ifndef _LIBCPP_HAS_NO_NULLPTR
-#    if defined(nullptr_t)
 using ::nullptr_t;
-#    else
-// Fallback definition for nullptr_t
-typedef void* nullptr_t;
-#    endif
-#  endif
-#endif
-
 using ::ptrdiff_t _LIBCPP_USING_IF_EXISTS;
 using ::size_t _LIBCPP_USING_IF_EXISTS;
 
 #if !defined(_LIBCPP_CXX03_LANG)
-#  if defined(max_align_t)
 using ::max_align_t _LIBCPP_USING_IF_EXISTS;
-#  else
-// Define max_align_t if not available from system header  SRID
-typedef long double max_align_t;
-#  endif
 #endif
 
 _LIBCPP_END_NAMESPACE_STD

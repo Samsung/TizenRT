@@ -185,13 +185,10 @@ public:
   _LIBCPP_INLINE_VISIBILITY
   _LIBCPP_CONSTEXPR unique_ptr() _NOEXCEPT : __ptr_(__value_init_tag(), __value_init_tag()) {}
 
-  // TizenRT compatibility: Disable nullptr_t constructor for void* to avoid overload conflict
-#ifndef _LIBCPP_HAS_NULLPTR_T_FOR_VOID
   template <bool _Dummy = true,
             class = _EnableIfDeleterDefaultConstructible<_Dummy> >
   _LIBCPP_INLINE_VISIBILITY
   _LIBCPP_CONSTEXPR unique_ptr(nullptr_t) _NOEXCEPT : __ptr_(__value_init_tag(), __value_init_tag()) {}
-#endif
 
   template <bool _Dummy = true, class = _EnableIfDeleterDefaultConstructible<_Dummy> >
   _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_SINCE_CXX23 explicit unique_ptr(pointer __p) _NOEXCEPT
