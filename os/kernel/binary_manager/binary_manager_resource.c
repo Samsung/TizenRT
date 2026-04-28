@@ -80,6 +80,49 @@ void binary_manager_register_respart(int part_num, int part_size, uint32_t part_
 }
 
 /****************************************************************************
+ * Name: binary_manager_verify_resource
+ *
+ * Description:
+ *	 This function verifies the resource binary in part_idx.
+ *
+ ****************************************************************************/
+int binary_manager_verify_resource(uint8_t part_idx)
+{
+	int ret;
+	char filepath[BINARY_PATH_LEN];
+	resource_binary_header_t header_data;
+#ifdef CONFIG_RESOURCE_BINARY_SIGNING
+	uint32_t resource_start_address;
+#endif
+
+	if (part_idx >= resource_info.part_count) {
+		bmdbg("Invalid resource part idx %u, part count %u\n", part_idx, resource_info.part_count);
+		return BINMGR_INVALID_PARAM;
+	}
+
+#ifdef CONFIG_RESOURCE_BINARY_SIGNING
+	resource_start_address = resource_info.part_info[part_idx].address;
+	ret = up_verify_usersignature(resource_start_address);
+	if (ret != SIGNATURE_VAILD) {
+		bmdbg("Invalid Resource Signature, part idx %u, address : 0x%x\n", part_idx, resource_start_address);
+		return BINMGR_NOT_FOUND;
+	}
+	bmvdbg("Resource Signature Checking Success, part idx %u, address : 0x%x\n", part_idx, resource_start_address);
+#endif
+
+	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[part_idx].devnum);
+	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, (void *)&header_data, true);
+	if (ret != BINMGR_OK) {
+		bmdbg("Invalid resource candidate, part idx %u, devpath %s, ret %d\n", part_idx, filepath, ret);
+		return ret;
+	}
+
+	bmvdbg("Valid resource candidate [%s], dev %d, version %u\n", GET_PARTNAME(part_idx), resource_info.part_info[part_idx].devnum, header_data.version);
+
+	return BINMGR_OK;
+}
+
+/****************************************************************************
  * Name: binary_manager_mount_resource
  *
  * Description:
@@ -95,7 +138,9 @@ int binary_manager_mount_resource(void)
 	char devpath[BINARY_PATH_LEN];
 	char fs_devpath[BINARY_PATH_LEN];
 	resource_binary_header_t header_data;
+#ifdef CONFIG_RESOURCE_BINARY_SIGNING
 	uint32_t resource_start_address = 0;
+#endif
 
 	if (resource_info.is_mounted) {
 		bmvdbg("RESOURCEFS is already mounted\n");
@@ -271,7 +316,9 @@ int binary_manager_check_resource_update(bool check_updatable)
 	int inactive_partidx;
 	char filepath[BINARY_PATH_LEN];
 	resource_binary_header_t header_data;
+#ifdef CONFIG_RESOURCE_BINARY_SIGNING
 	uint32_t resource_start_address;
+#endif
 
 	inactive_partidx = resource_info.inuse_idx ^ 1;
 

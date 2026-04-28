@@ -63,6 +63,9 @@
 
 #include <tinyara/fs/mksmartfs.h>
 #include <tinyara/board.h>
+#ifdef CONFIG_BINARY_MANAGER
+#include <tinyara/binary_manager.h>
+#endif
 #ifdef CONFIG_FLASH_PARTITION
 #include <tinyara/fs/mtd.h>
 #endif
@@ -331,6 +334,17 @@ void amebasmart_mount_partitions(void)
 	automount_fs_partition(&partinfo);
 #endif
 #endif /* end of CONFIG_SECOND_FLASH_PARTITION */
+
+#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_USE_BP)
+	ret = binary_manager_check_bootparam_set();
+	if (ret != OK) {
+		ret = binary_manager_recover_bootparam_set();
+		if (ret != OK) {
+			lldbg("ERROR: Failed to recover bootparam set mismatch, ret %d\n", ret);
+			return;
+		}
+	}
+#endif
 
 #ifdef CONFIG_RESOURCE_FS
 	if (binary_manager_mount_resource() != OK) {
