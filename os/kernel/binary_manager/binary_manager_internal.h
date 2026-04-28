@@ -196,10 +196,10 @@ enum bp_update_reason_e {
 	BP_UPDATE_BINARY_MANAGER_UPDATE = 9,
 	BP_UPDATE_BINARY_MANAGER_RECOVERY_USER = 10,
 	BP_UPDATE_BINARY_MANAGER_RECOVERY_RESOURCE = 11,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_1 = 12,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_2 = 13,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_3 = 14,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_4 = 15,
+	BP_UPDATE_BINARY_MANAGER_SET_ALIGNMENT = 12,
+	BP_UPDATE_BINARY_MANAGER_SPECIFIC_1 = 13,
+	BP_UPDATE_BINARY_MANAGER_SPECIFIC_2 = 14,
+	BP_UPDATE_BINARY_MANAGER_SPECIFIC_3 = 15,
 	BP_UPDATE_UNKNOWN = 16
 };
 
@@ -243,6 +243,13 @@ struct binmgr_bpinfo_s {
 	binmgr_bpdata_t bp_data;
 };
 typedef struct binmgr_bpinfo_s binmgr_bpinfo_t;
+
+struct binmgr_set_validation_s {
+	bool kbin_valid;
+	uint32_t kbin_version;
+	bool ubin_valid;
+	bool resource_valid;
+};
 
 struct statecb_node_s {
 	struct statecb_node_s *flink;
@@ -342,10 +349,15 @@ int binary_manager_update_kernel_binary(void);
 #ifdef CONFIG_RESOURCE_FS
 binmgr_resinfo_t *binary_manager_get_resdata(void);
 int binary_manager_unmount_resource(void);
+int binary_manager_verify_resource(uint8_t part_idx);
 int binary_manager_check_resource_update(bool check_updatable);
 #endif
+int binary_manager_verify_kbin(uint8_t part_idx);
 int binary_manager_check_kernel_update(bool check_updatable);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+int binary_manager_verify_ubin(int bin_idx, uint8_t part_idx);
 int binary_manager_check_user_update(int bin_idx, bool check_updatable);
+#endif
 
 /****************************************************************************
  * Binary Manager Main Thread

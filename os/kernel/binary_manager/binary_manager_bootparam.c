@@ -36,6 +36,7 @@
 static binmgr_bpinfo_t g_bp_info;
 
 #define BP_SEEK_OFFSET(index)   (index == 0 ? 0 : BOOTPARAM_PARTSIZE / 2)
+#define FACTORY_KBIN_VERSION    101
 
 /****************************************************************************
  * Public Functions
@@ -276,6 +277,280 @@ int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data)
 errout_with_fd:
 	close(fd);
 	kmm_free(bootparam);
+	return BINMGR_OPERATION_FAIL;
+}
+
+static bool binary_manager_is_set_mismatch(binmgr_bpdata_t *bp_data)
+{
+	uint8_t active_idx;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	uint8_t app_idx;
+	uint32_t bp_app_idx;
+	uint32_t max_app_count;
+#endif
+
+	if (!bp_data) {
+		bmdbg("BP data is NULL\n");
+		return true;
+	}
+
+	active_idx = bp_data->head.active_idx;
+	if (active_idx >= PARTS_PER_BIN) {
+		bmdbg("Invalid BP kernel active idx %u\n", active_idx);
+		return true;
+	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	max_app_count = sizeof(bp_data->head.app_data) / sizeof(bp_data->head.app_data[0]);
+	if (bp_data->head.app_count > max_app_count) {
+		bmdbg("Invalid BP app count %u, max %u\n", bp_data->head.app_count, max_app_count);
+		return true;
+	}
+
+	for (bp_app_idx = 0; bp_app_idx < bp_data->head.app_count; bp_app_idx++) {
+		app_idx = bp_data->head.app_data[bp_app_idx].useidx;
+		if (app_idx != active_idx) {
+			bmdbg("BP set mismatch: kernel %u, app[%u:%s] %u\n", active_idx, bp_app_idx, bp_data->head.app_data[bp_app_idx].name, app_idx);
+			return true;
+		}
+	}
+#endif
+
+#ifdef CONFIG_RESOURCE_FS
+	if (bp_data->head.resource_active_idx != active_idx) {
+		bmdbg("BP set mismatch: kernel %u, resource %u\n", active_idx, bp_data->head.resource_active_idx);
+		return true;
+	}
+#endif
+
+	return false;
+}
+
+static int binary_manager_get_kbin_version(uint8_t part_idx, uint32_t *version)
+{
+	int ret;
+	char filepath[BINARY_PATH_LEN];
+	kernel_binary_header_t header_data;
+	binmgr_kinfo_t *kdata;
+
+	if (!version) {
+		bmdbg("Kernel version output is NULL\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	kdata = binary_manager_get_kdata();
+	if (part_idx >= kdata->part_count) {
+		bmdbg("Invalid kernel part idx %u, part count %u\n", part_idx, kdata->part_count);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kdata->part_info[part_idx].devnum);
+	ret = binary_manager_read_header(BINARY_KERNEL, filepath, &header_data, true);
+	if (ret != BINMGR_OK) {
+		bmdbg("Fail to read kernel version, part idx %u, devpath %s, ret %d\n", part_idx, filepath, ret);
+		return ret;
+	}
+
+	*version = header_data.version;
+	return BINMGR_OK;
+}
+
+static int binary_manager_validate_set(binmgr_bpdata_t *bp_data, uint8_t set_idx, struct binmgr_set_validation_s *set_info)
+{
+	int ret;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int bin_idx;
+	uint32_t bp_app_idx;
+	uint32_t max_app_count;
+#endif
+
+	if (!bp_data || !set_info || set_idx >= PARTS_PER_BIN) {
+		bmdbg("Invalid set validation parameter, set idx %u\n", set_idx);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	ret = binary_manager_verify_kbin(set_idx);
+	set_info->kbin_valid = (ret == BINMGR_OK);
+	set_info->kbin_version = 0;
+	if (set_info->kbin_valid) {
+		ret = binary_manager_get_kbin_version(set_idx, &set_info->kbin_version);
+		if (ret != BINMGR_OK) {
+			set_info->kbin_valid = false;
+		}
+	}
+
+	set_info->ubin_valid = true;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	max_app_count = sizeof(bp_data->head.app_data) / sizeof(bp_data->head.app_data[0]);
+	if (bp_data->head.app_count > max_app_count) {
+		bmdbg("Invalid BP app count %u, max %u\n", bp_data->head.app_count, max_app_count);
+		set_info->ubin_valid = false;
+	} else {
+		for (bp_app_idx = 0; bp_app_idx < bp_data->head.app_count; bp_app_idx++) {
+			bin_idx = binary_manager_get_index_with_name(bp_data->head.app_data[bp_app_idx].name);
+			if (bin_idx < 0) {
+				bmdbg("Fail to find matched binary %s in binary table\n", bp_data->head.app_data[bp_app_idx].name);
+				set_info->ubin_valid = false;
+				continue;
+			}
+
+			ret = binary_manager_verify_ubin(bin_idx, set_idx);
+			if (ret != BINMGR_OK) {
+				bmdbg("Set %s app[%u:%s] validation FAIL, ret %d\n", GET_PARTNAME(set_idx), bp_app_idx, bp_data->head.app_data[bp_app_idx].name, ret);
+				set_info->ubin_valid = false;
+				continue;
+			}
+			bmvdbg("Set %s app[%u:%s] validation PASS\n", GET_PARTNAME(set_idx), bp_app_idx, bp_data->head.app_data[bp_app_idx].name);
+		}
+	}
+#endif
+
+	set_info->resource_valid = true;
+#ifdef CONFIG_RESOURCE_FS
+	ret = binary_manager_verify_resource(set_idx);
+	set_info->resource_valid = (ret == BINMGR_OK);
+	if (!set_info->resource_valid) {
+		bmdbg("Set %s resource validation FAIL, ret %d\n", GET_PARTNAME(set_idx), ret);
+	} else {
+		bmvdbg("Set %s resource validation PASS\n", GET_PARTNAME(set_idx));
+	}
+#endif
+
+	bmdbg("Set %s validation: kbin %d version %u, apps %d, resource %d\n", GET_PARTNAME(set_idx), set_info->kbin_valid, set_info->kbin_version, set_info->ubin_valid, set_info->resource_valid);
+
+	return BINMGR_OK;
+}
+
+static int binary_manager_select_recovery_set(uint8_t active_set, struct binmgr_set_validation_s *set_a, struct binmgr_set_validation_s *set_b, uint8_t *target_set)
+{
+	bool set_a_valid;
+	bool set_b_valid;
+	struct binmgr_set_validation_s *target_info;
+
+	if (!set_a || !set_b || !target_set || active_set >= PARTS_PER_BIN) {
+		bmdbg("Invalid recovery set select parameter\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	set_a_valid = set_a->kbin_valid && set_a->ubin_valid && set_a->resource_valid;
+	set_b_valid = set_b->kbin_valid && set_b->ubin_valid && set_b->resource_valid;
+
+	if (set_a_valid && set_b_valid) {
+		*target_set = active_set;
+	} else if (set_a_valid) {
+		*target_set = 0;
+	} else if (set_b_valid) {
+		*target_set = 1;
+	} else {
+		return BINMGR_NOT_FOUND;
+	}
+
+	if (*target_set != active_set) {
+		target_info = (*target_set == 0) ? set_a : set_b;
+		if (target_info->kbin_version == FACTORY_KBIN_VERSION) {
+			bmdbg("Do not switch to set %s because kernel version %u is factory binary\n", GET_PARTNAME(*target_set), target_info->kbin_version);
+			return BINMGR_NOT_FOUND;
+		}
+	}
+
+	return BINMGR_OK;
+}
+
+int binary_manager_check_bootparam_set(void)
+{
+	int ret;
+	binmgr_bpdata_t *bp_data;
+
+	ret = binary_manager_update_bpinfo();
+	if (ret != BINMGR_OK) {
+		bmdbg("Fail to update BP info before set-mismatch recovery, ret %d\n", ret);
+		return ret;
+	}
+
+	bp_data = binary_manager_get_bpdata();
+	if (!bp_data) {
+		bmdbg("BP data is NULL\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	if (binary_manager_is_set_mismatch(bp_data)) {
+		return BINMGR_OPERATION_FAIL;
+	}
+
+	bmdbg("BP set is already aligned, active idx %u\n", bp_data->head.active_idx);
+
+	return BINMGR_OK;
+}
+
+int binary_manager_recover_bootparam_set(void)
+{
+	int ret;
+	uint8_t active_set;
+	uint8_t target_set;
+	binmgr_bpdata_t update_bp_data;
+	binmgr_bpdata_t *bp_data;
+	struct binmgr_set_validation_s set_a;
+	struct binmgr_set_validation_s set_b;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	uint32_t bp_app_idx;
+#endif
+
+	bp_data = binary_manager_get_bpdata();
+	if (!bp_data) {
+		bmdbg("BP data is NULL\n");
+		return BINMGR_INVALID_PARAM;
+	}
+
+	active_set = bp_data->head.active_idx;
+	bmdbg("BP set mismatch detected. active idx %u, BP version %u\n", active_set, bp_data->head.version);
+
+	ret = binary_manager_validate_set(bp_data, 0, &set_a);
+	if (ret != BINMGR_OK) {
+		bmdbg("Fail to validate set A, ret %d\n", ret);
+		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
+		return ret;
+	}
+
+	ret = binary_manager_validate_set(bp_data, 1, &set_b);
+	if (ret != BINMGR_OK) {
+		bmdbg("Fail to validate set B, ret %d\n", ret);
+		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
+		return ret;
+	}
+
+	ret = binary_manager_select_recovery_set(active_set, &set_a, &set_b, &target_set);
+	if (ret != BINMGR_OK) {
+		bmdbg("Fail to select recoverable set. Reboot as recovery fail\n");
+		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
+		return ret;
+	}
+
+	bmdbg("Select set %s for BP set alignment. A valid kbin %d apps %d resource %d, B valid kbin %d apps %d resource %d\n", GET_PARTNAME(target_set), set_a.kbin_valid, set_a.ubin_valid, set_a.resource_valid, set_b.kbin_valid, set_b.ubin_valid, set_b.resource_valid);
+
+	memcpy(&update_bp_data, bp_data, sizeof(binmgr_bpdata_t));
+	update_bp_data.head.version++;
+	update_bp_data.head.active_idx = target_set;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	for (bp_app_idx = 0; bp_app_idx < update_bp_data.head.app_count; bp_app_idx++) {
+		update_bp_data.head.app_data[bp_app_idx].useidx = target_set;
+	}
+#endif
+#ifdef CONFIG_RESOURCE_FS
+	update_bp_data.head.resource_active_idx = target_set;
+#endif
+	update_bp_data.head.format_ver = BOOTPARAM_FORMAT_VERSION_LATEST;
+	update_bp_data.tail.bp_update_reason = BP_UPDATE_BINARY_MANAGER_SET_ALIGNMENT;
+
+	ret = binary_manager_write_bootparam(&update_bp_data);
+	if (ret != BINMGR_OK) {
+		bmdbg("Fail to write aligned BP, ret %d. Reboot as recovery fail\n", ret);
+		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
+		return ret;
+	}
+
+	bmdbg("Aligned BP to set %s, new version %u. Reboot for binary update\n", GET_PARTNAME(target_set), update_bp_data.head.version);
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
+
 	return BINMGR_OPERATION_FAIL;
 }
 

@@ -114,6 +114,45 @@ void binary_manager_register_kpart(int part_num, int part_size, uint32_t part_ad
 }
 
 /****************************************************************************
+ * Name: binary_manager_verify_kbin
+ *
+ * Description:
+ *	 This function verifies the kernel binary in part_idx.
+ *
+ ****************************************************************************/
+int binary_manager_verify_kbin(uint8_t part_idx)
+{
+	int ret;
+	char filepath[BINARY_PATH_LEN];
+	kernel_binary_header_t header_data;
+
+	if (part_idx >= kernel_info.part_count) {
+		bmdbg("Invalid kernel part idx %u, part count %u\n", part_idx, kernel_info.part_count);
+		return BINMGR_INVALID_PARAM;
+	}
+
+#ifdef CONFIG_BINARY_SIGNING
+	ret = up_verify_kernelsignature(kernel_info.part_info[part_idx].address);
+	if (ret != SIGNATURE_VAILD) {
+		bmdbg("Invalid Kernel Signature, part idx %u, address : 0x%x\n", part_idx, kernel_info.part_info[part_idx].address);
+		return BINMGR_NOT_FOUND;
+	}
+	bmvdbg("Kernel Signature Checking Success, part idx %u\n", part_idx);
+#endif
+
+	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[part_idx].devnum);
+	ret = binary_manager_read_header(BINARY_KERNEL, filepath, (void *)&header_data, true);
+	if (ret != BINMGR_OK) {
+		bmdbg("Invalid kernel candidate, part idx %u, devpath %s, ret %d\n", part_idx, filepath, ret);
+		return ret;
+	}
+
+	bmvdbg("Valid kernel candidate [%s], dev %d, version %u\n", GET_PARTNAME(part_idx), kernel_info.part_info[part_idx].devnum, header_data.version);
+
+	return BINMGR_OK;
+}
+
+/****************************************************************************
  * Name: binary_manager_scan_kbin
  *
  * Description:
@@ -386,6 +425,61 @@ void binary_manager_register_upart(char *name, int part_num, int part_size, uint
 	BIN_NAME(bin_idx)[BIN_NAME_MAX - 1] = '\0';
 	sq_init(&BIN_CBLIST(bin_idx));
 	bmdbg("[USER%d : 1] %s size %d num %d, address 0x%x\n", bin_idx, BIN_NAME(bin_idx), BIN_PARTSIZE(bin_idx, 0), BIN_PARTNUM(bin_idx, 0), BIN_PARTADDR(bin_idx, 0));
+}
+
+/****************************************************************************
+ * Name: binary_manager_verify_ubin
+ *
+ * Description:
+ *	 This function verifies the user/common binary candidate.
+ *
+ ****************************************************************************/
+int binary_manager_verify_ubin(int bin_idx, uint8_t part_idx)
+{
+	int ret;
+	char devpath[BINARY_PATH_LEN];
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	common_binary_header_t common_header_data;
+#endif
+	user_binary_header_t user_header_data;
+
+	if (bin_idx < 0 || bin_idx > binary_manager_get_ucount()) {
+		bmdbg("Invalid bin idx %d\n", bin_idx);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	if (part_idx >= BIN_COUNT(bin_idx)) {
+		bmdbg("Invalid %s part idx %u, part count %u\n", BIN_NAME(bin_idx), part_idx, BIN_COUNT(bin_idx));
+		return BINMGR_INVALID_PARAM;
+	}
+
+#ifdef CONFIG_BINARY_SIGNING
+	ret = up_verify_usersignature(BIN_PARTADDR(bin_idx, part_idx));
+	if (ret != SIGNATURE_VAILD) {
+		bmdbg("Invalid Signature, name : %s, part idx %u, address : 0x%x\n", BIN_NAME(bin_idx), part_idx, BIN_PARTADDR(bin_idx, part_idx));
+		return BINMGR_NOT_FOUND;
+	}
+	bmvdbg("%s Signature Checking Success, part idx %u\n", BIN_NAME(bin_idx), part_idx);
+#endif
+
+	snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+	if (bin_idx == BM_CMNLIB_IDX) {
+		ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, true);
+	} else
+#endif
+	{
+		ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, true);
+	}
+
+	if (ret != BINMGR_OK) {
+		bmdbg("Invalid binary candidate, name %s, part idx %u, devpath %s, ret %d\n", BIN_NAME(bin_idx), part_idx, devpath, ret);
+		return ret;
+	}
+
+	bmvdbg("Valid binary candidate %s [%s], dev %d\n", BIN_NAME(bin_idx), GET_PARTNAME(part_idx), BIN_PARTNUM(bin_idx, part_idx));
+
+	return BINMGR_OK;
 }
 
 /****************************************************************************
