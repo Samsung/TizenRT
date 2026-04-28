@@ -63,6 +63,9 @@ void binary_manager_register_bppart(int part_num, int part_size)
 bool is_valid_bootparam(char *bootparam)
 {
 	binmgr_bpdata_head_t *bp_head = (binmgr_bpdata_head_t *)bootparam;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	uint32_t max_app_count;
+#endif
 
 	if (!bp_head) {
 		bmdbg("Boot param is NULL\n");
@@ -71,6 +74,14 @@ bool is_valid_bootparam(char *bootparam)
 		bmdbg("Invalid data. ver: %u, active index: %u, addresses: %x, %x\n", bp_head->version, bp_head->active_idx, bp_head->address[0], bp_head->address[1]);
 		return false;
 	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	max_app_count = sizeof(bp_head->app_data) / sizeof(bp_head->app_data[0]);
+	if (bp_head->app_count > max_app_count) {
+		bmdbg("Invalid app count %u, max %u\n", bp_head->app_count, max_app_count);
+		return false;
+	}
+#endif
 
 	if (bp_head->crc_hash != crc32((uint8_t *)bootparam + CHECKSUM_SIZE, BOOTPARAM_SIZE - CHECKSUM_SIZE)) {
 		bmdbg("Invalid crc32 value, crc32 %u, ver: %u, active index: %u, addresses: %x, %x\n", bp_head->crc_hash, bp_head->version, bp_head->active_idx, bp_head->address[0], bp_head->address[1]);
@@ -116,6 +127,10 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 	char *bootparam;
 	size_t update_reason_offset;
 	binmgr_bpdata_t scanned_bp_data;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	uint32_t bp_app_idx;
+	uint32_t max_app_count;
+#endif
 
 	if (bp_info == NULL) {
 		bmdbg("Invalid input bp_info\n");
@@ -164,7 +179,19 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 			scanned_bp_data.tail.bp_update_reason = ((uint8_t *)bootparam)[update_reason_offset];
 		}
 
-		bmdbg("BP%d is valid. version: %u format: %u reason: %u\n", bp_idx, scanned_bp_data.head.version, scanned_bp_data.head.format_ver, scanned_bp_data.tail.bp_update_reason);
+		bmdbg("BP%d is valid. crc %u, version %u, format %u, reason %u, active idx %u, address[0] 0x%x, address[1] 0x%x\n", bp_idx, scanned_bp_data.head.crc_hash, scanned_bp_data.head.version, scanned_bp_data.head.format_ver, scanned_bp_data.tail.bp_update_reason, scanned_bp_data.head.active_idx, scanned_bp_data.head.address[0], scanned_bp_data.head.address[1]);
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		max_app_count = sizeof(scanned_bp_data.head.app_data) / sizeof(scanned_bp_data.head.app_data[0]);
+		bmdbg("BP%d: app count %u, max %u\n", bp_idx, scanned_bp_data.head.app_count, max_app_count);
+		for (bp_app_idx = 0; bp_app_idx < scanned_bp_data.head.app_count && bp_app_idx < max_app_count; bp_app_idx++) {
+			bmdbg("BP%d: app[%u] name %.*s, useidx %u\n", bp_idx, bp_app_idx, BIN_NAME_MAX, scanned_bp_data.head.app_data[bp_app_idx].name, scanned_bp_data.head.app_data[bp_app_idx].useidx);
+		}
+#endif
+
+#ifdef CONFIG_RESOURCE_FS
+		bmdbg("BP%d: resource active idx %u\n", bp_idx, scanned_bp_data.head.resource_active_idx);
+#endif
 
 		/* Update the latest version and index */
 		if (latest_ver < scanned_bp_data.head.version) {
