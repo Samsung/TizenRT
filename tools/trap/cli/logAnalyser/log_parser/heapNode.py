@@ -21,8 +21,9 @@
 
 from __future__ import print_function
 import os
+import logAnalyser.logUtils as logUtils
 
-closing_log_line = "##########################################################################################################################################"
+closing_log_line = logUtils.closing_log_line
 
 
 class heap_node:
