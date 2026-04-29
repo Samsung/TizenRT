@@ -34,6 +34,7 @@
 
 /* Data for Boot parameters */
 static binmgr_bpinfo_t g_bp_info;
+static binmgr_bp_recovery_info_t g_bp_recovery_info;
 
 #define BP_SEEK_OFFSET(index)   (index == 0 ? 0 : BOOTPARAM_PARTSIZE / 2)
 #define FACTORY_KBIN_VERSION    101
@@ -226,7 +227,7 @@ int binary_manager_update_bpinfo(void)
 	binmgr_bpinfo_t bp_info;
 
 	ret = binary_manager_scan_bootparam(&bp_info);
-	if (ret == BINMGR_OK) {	
+	if (ret == BINMGR_OK) {
 		/* Set scanned bootparam data to g_bp_info */
 		g_bp_info.inuse_idx = bp_info.inuse_idx;
 		g_bp_info.bp_data = bp_info.bp_data;
@@ -237,17 +238,16 @@ int binary_manager_update_bpinfo(void)
 }
 
 /*********************************************************************************
-* Name: binary_manager_update_bootparam
-*
-* Description:
-*	 This function updates input bootparam data, bp_data to inactive bootparam partition.
-*
-********************************************************************************/
-int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data)
+ * Name: binary_manager_write_bootparam_to_slot
+ *
+ * Description:
+ *	 This function writes input bootparam data, bp_data, to the requested BP slot.
+ *
+ ********************************************************************************/
+static int binary_manager_write_bootparam_to_slot(binmgr_bpdata_t *bp_data, uint8_t bp_idx)
 {
 	int fd;
-	int ret;	
-	uint8_t inuse_idx;
+	int ret;
 	char *bootparam;
 	size_t tail_offset;
 
@@ -256,8 +256,8 @@ int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data)
 		return BINMGR_INVALID_PARAM;
 	}
 
-	if (g_bp_info.inuse_idx >= BOOTPARAM_COUNT) {
-		bmdbg("ERROR: Invalid g_bp_info, inuse idx %u\n", g_bp_info.inuse_idx);
+	if (bp_idx >= BOOTPARAM_COUNT) {
+		bmdbg("ERROR: Invalid BP index %u\n", bp_idx);
 		return BINMGR_INVALID_PARAM;
 	}
 
@@ -283,9 +283,8 @@ int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data)
 	/* Update bootparam data : CRC */
 	bp_data->head.crc_hash = crc32((uint8_t *)bootparam + CHECKSUM_SIZE, BOOTPARAM_SIZE - CHECKSUM_SIZE);
 	((binmgr_bpdata_head_t *)bootparam)->crc_hash = bp_data->head.crc_hash;
-	inuse_idx = g_bp_info.inuse_idx ^ 1;
 
-	ret = lseek(fd, BP_SEEK_OFFSET(inuse_idx), SEEK_SET);
+	ret = lseek(fd, BP_SEEK_OFFSET(bp_idx), SEEK_SET);
 	if (ret < 0) {
 		bmdbg("ERROR: Seek Failed, errno %d\n", errno);
 		goto errout_with_fd;
@@ -307,6 +306,31 @@ errout_with_fd:
 	return BINMGR_OPERATION_FAIL;
 }
 
+/*********************************************************************************
+ * Name: binary_manager_write_bootparam
+ *
+ * Description:
+ *	 This function writes input bootparam data, bp_data, to the inactive BP slot.
+ *
+ ********************************************************************************/
+int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data)
+{
+	if (g_bp_info.inuse_idx >= BOOTPARAM_COUNT) {
+		bmdbg("ERROR: Invalid g_bp_info, inuse idx %u\n", g_bp_info.inuse_idx);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	return binary_manager_write_bootparam_to_slot(bp_data, g_bp_info.inuse_idx ^ 1);
+}
+
+/****************************************************************************
+ * Name: binary_manager_is_set_mismatch
+ *
+ * Description:
+ *	 This function checks whether all BP indices match the active kernel set.
+ *   Only AAAA or BBBB can be set as active set.
+ *
+ ****************************************************************************/
 static bool binary_manager_is_set_mismatch(binmgr_bpdata_t *bp_data)
 {
 	uint8_t active_idx;
@@ -353,232 +377,306 @@ static bool binary_manager_is_set_mismatch(binmgr_bpdata_t *bp_data)
 	return false;
 }
 
-static int binary_manager_get_kbin_version(uint8_t part_idx, uint32_t *version)
+/****************************************************************************
+ * Name: binary_manager_make_bootparam_from_partitions
+ *
+ * Description:
+ *	 This function rebuilds bootparam data for given set_idx as active_idx from registered partitions.
+ *   bp_data is updated with the new version and active set.
+ *
+ ****************************************************************************/
+static int binary_manager_make_bootparam_from_partitions(binmgr_bpdata_t *bp_data, uint8_t set_idx, uint32_t version)
 {
-	int ret;
-	char filepath[BINARY_PATH_LEN];
-	kernel_binary_header_t header_data;
+	uint32_t part_idx;
 	binmgr_kinfo_t *kdata;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	int ret;
+	int bin_idx;
+	uint32_t app_count;
+	uint32_t max_app_count;
+	uint32_t bin_count;
+	char devpath[BINARY_PATH_LEN];
+	user_binary_header_t user_header_data;
+#endif
 
-	if (!version) {
-		bmdbg("Kernel version output is NULL\n");
+	if (!bp_data || set_idx >= PARTS_PER_BIN) {
+		bmdbg("Invalid bootparam make parameter, set idx %u\n", set_idx);
 		return BINMGR_INVALID_PARAM;
 	}
+
+	memset(bp_data, 0, sizeof(binmgr_bpdata_t));
+	bp_data->head.version = version;
+	bp_data->head.format_ver = BOOTPARAM_FORMAT_VERSION_LATEST;
+	bp_data->head.active_idx = set_idx;
+	bp_data->tail.bp_update_reason = BP_UPDATE_BINARY_MANAGER_SET_ALIGNMENT;
 
 	kdata = binary_manager_get_kdata();
-	if (part_idx >= kdata->part_count) {
-		bmdbg("Invalid kernel part idx %u, part count %u\n", part_idx, kdata->part_count);
+	if (!kdata) {
+		bmdbg("kernel data is not found\n");
 		return BINMGR_INVALID_PARAM;
 	}
 
-	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kdata->part_info[part_idx].devnum);
-	ret = binary_manager_read_header(BINARY_KERNEL, filepath, &header_data, true);
-	if (ret != BINMGR_OK) {
-		bmdbg("Fail to read kernel version, part idx %u, devpath %s, ret %d\n", part_idx, filepath, ret);
-		return ret;
+	if (kdata->part_count > BOOTPARAM_COUNT) {
+		bmdbg("Invalid kernel part count %u\n", kdata->part_count);
+		return BINMGR_INVALID_PARAM;
 	}
 
-	*version = header_data.version;
+	for (part_idx = 0; part_idx < kdata->part_count; part_idx++) {
+		bp_data->head.address[part_idx] = kdata->part_info[part_idx].address;
+	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	max_app_count = sizeof(bp_data->head.app_data) / sizeof(bp_data->head.app_data[0]);
+	bin_count = binary_manager_get_ucount();
+	app_count = 0;
+	for (bin_idx = 0; bin_idx <= bin_count; bin_idx++) {
+		if (BIN_COUNT(bin_idx) == 0) {
+			continue;
+		}
+
+		if (app_count >= max_app_count) {
+			bmdbg("App count exceeds BP max app count %u\n", max_app_count);
+			return BINMGR_INVALID_PARAM;
+		}
+
+		if (set_idx >= BIN_COUNT(bin_idx)) {
+			bmdbg("Invalid %s part idx %u, part count %u\n", BIN_NAME(bin_idx), set_idx, BIN_COUNT(bin_idx));
+			return BINMGR_INVALID_PARAM;
+		}
+
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		if (bin_idx == BM_CMNLIB_IDX) {
+			strncpy(bp_data->head.app_data[app_count].name, BM_CMNLIB_NAME, BIN_NAME_MAX - 1);
+		} else
+#endif
+		{
+			snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, set_idx));
+			ret = binary_manager_read_header(BINARY_USERAPP, devpath, &user_header_data, false);
+			if (ret != BINMGR_OK) {
+				bmdbg("Fail to read app header, name %s, set %s, ret %d\n", BIN_NAME(bin_idx), GET_PARTNAME(set_idx), ret);
+				return ret;
+			}
+			strncpy(bp_data->head.app_data[app_count].name, user_header_data.bin_name, BIN_NAME_MAX - 1);
+		}
+		bp_data->head.app_data[app_count].name[BIN_NAME_MAX - 1] = '\0';
+		bp_data->head.app_data[app_count].useidx = set_idx;
+		app_count++;
+	}
+	bp_data->head.app_count = app_count;
+#endif
+
+#ifdef CONFIG_RESOURCE_FS
+	bp_data->head.resource_active_idx = set_idx;
+#endif
+
 	return BINMGR_OK;
 }
 
-static int binary_manager_validate_set(binmgr_bpdata_t *bp_data, uint8_t set_idx, struct binmgr_set_validation_s *set_info)
+/****************************************************************************
+ * Name: binary_manager_validate_set
+ *
+ * Description:
+ *	 This function validates all binaries in given set_idx and returns false on the
+ *	 first invalid binary.
+ *
+ ****************************************************************************/
+static bool binary_manager_validate_set(uint8_t set_idx)
 {
 	int ret;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	int bin_idx;
-	uint32_t bp_app_idx;
-	uint32_t max_app_count;
+	uint32_t bin_count;
 #endif
 
-	if (!bp_data || !set_info || set_idx >= PARTS_PER_BIN) {
+	if (set_idx >= PARTS_PER_BIN) {
 		bmdbg("Invalid set validation parameter, set idx %u\n", set_idx);
-		return BINMGR_INVALID_PARAM;
+		return false;
 	}
 
 	ret = binary_manager_verify_kbin(set_idx);
-	set_info->kbin_valid = (ret == BINMGR_OK);
-	set_info->kbin_version = 0;
-	if (set_info->kbin_valid) {
-		ret = binary_manager_get_kbin_version(set_idx, &set_info->kbin_version);
-		if (ret != BINMGR_OK) {
-			set_info->kbin_valid = false;
-		}
+	if (ret != BINMGR_OK) {
+		bmdbg("Set %s kernel validation FAIL, ret %d\n", GET_PARTNAME(set_idx), ret);
+		return false;
 	}
 
-	set_info->ubin_valid = true;
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	max_app_count = sizeof(bp_data->head.app_data) / sizeof(bp_data->head.app_data[0]);
-	if (bp_data->head.app_count > max_app_count) {
-		bmdbg("Invalid BP app count %u, max %u\n", bp_data->head.app_count, max_app_count);
-		set_info->ubin_valid = false;
-	} else {
-		for (bp_app_idx = 0; bp_app_idx < bp_data->head.app_count; bp_app_idx++) {
-			bin_idx = binary_manager_get_index_with_name(bp_data->head.app_data[bp_app_idx].name);
-			if (bin_idx < 0) {
-				bmdbg("Fail to find matched binary %s in binary table\n", bp_data->head.app_data[bp_app_idx].name);
-				set_info->ubin_valid = false;
-				continue;
-			}
-
-			ret = binary_manager_verify_ubin(bin_idx, set_idx);
-			if (ret != BINMGR_OK) {
-				bmdbg("Set %s app[%u:%s] validation FAIL, ret %d\n", GET_PARTNAME(set_idx), bp_app_idx, bp_data->head.app_data[bp_app_idx].name, ret);
-				set_info->ubin_valid = false;
-				continue;
-			}
-			bmvdbg("Set %s app[%u:%s] validation PASS\n", GET_PARTNAME(set_idx), bp_app_idx, bp_data->head.app_data[bp_app_idx].name);
+	bin_count = binary_manager_get_ucount();
+	for (bin_idx = 0; bin_idx <= bin_count; bin_idx++) {
+		if (BIN_COUNT(bin_idx) == 0) {
+			continue;
 		}
+
+		if (set_idx >= BIN_COUNT(bin_idx)) {
+			bmdbg("Set %s app[%d:%s] has no partition, part count %u\n", GET_PARTNAME(set_idx), bin_idx, BIN_NAME(bin_idx), BIN_COUNT(bin_idx));
+			return false;
+		}
+
+		ret = binary_manager_verify_ubin(bin_idx, set_idx);
+		if (ret != BINMGR_OK) {
+			bmdbg("Set %s app[%d:%s] validation FAIL, ret %d\n", GET_PARTNAME(set_idx), bin_idx, BIN_NAME(bin_idx), ret);
+			return false;
+		}
+		bmvdbg("Set %s app[%d:%s] validation PASS\n", GET_PARTNAME(set_idx), bin_idx, BIN_NAME(bin_idx));
 	}
 #endif
 
-	set_info->resource_valid = true;
 #ifdef CONFIG_RESOURCE_FS
 	ret = binary_manager_verify_resource(set_idx);
-	set_info->resource_valid = (ret == BINMGR_OK);
-	if (!set_info->resource_valid) {
+	if (ret != BINMGR_OK) {
 		bmdbg("Set %s resource validation FAIL, ret %d\n", GET_PARTNAME(set_idx), ret);
-	} else {
-		bmvdbg("Set %s resource validation PASS\n", GET_PARTNAME(set_idx));
+		return false;
 	}
+	bmvdbg("Set %s resource validation PASS\n", GET_PARTNAME(set_idx));
 #endif
 
-	bmdbg("Set %s validation: kbin %d version %u, apps %d, resource %d\n", GET_PARTNAME(set_idx), set_info->kbin_valid, set_info->kbin_version, set_info->ubin_valid, set_info->resource_valid);
+	bmdbg("Set %s validation PASS\n", GET_PARTNAME(set_idx));
 
-	return BINMGR_OK;
+	return true;
 }
 
-static int binary_manager_select_recovery_set(uint8_t active_set, struct binmgr_set_validation_s *set_a, struct binmgr_set_validation_s *set_b, uint8_t *target_set)
+/****************************************************************************
+ * Name: binary_manager_get_kbin_version
+ *
+ * Description:
+ *	 This function reads the kernel binary version from the given set.
+ *	 It returns 0 if any step fails.
+ *
+ ****************************************************************************/
+static uint32_t binary_manager_get_kbin_version(uint8_t set_idx)
 {
-	bool set_a_valid;
-	bool set_b_valid;
-	struct binmgr_set_validation_s *target_info;
+	int ret;
+	binmgr_kinfo_t *kdata;
+	kernel_binary_header_t header_data;
+	char filepath[BINARY_PATH_LEN];
 
-	if (!set_a || !set_b || !target_set || active_set >= PARTS_PER_BIN) {
-		bmdbg("Invalid recovery set select parameter\n");
-		return BINMGR_INVALID_PARAM;
+	kdata = binary_manager_get_kdata();
+	if (!kdata || set_idx >= kdata->part_count) {
+		bmdbg("Invalid kernel version request, set idx %u\n", set_idx);
+		return 0;
 	}
 
-	set_a_valid = set_a->kbin_valid && set_a->ubin_valid && set_a->resource_valid;
-	set_b_valid = set_b->kbin_valid && set_b->ubin_valid && set_b->resource_valid;
-
-	if (set_a_valid && set_b_valid) {
-		*target_set = active_set;
-	} else if (set_a_valid) {
-		*target_set = 0;
-	} else if (set_b_valid) {
-		*target_set = 1;
-	} else {
-		return BINMGR_NOT_FOUND;
+	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kdata->part_info[set_idx].devnum);
+	ret = binary_manager_read_header(BINARY_KERNEL, filepath, &header_data, true);
+	if (ret != BINMGR_OK) {
+		bmdbg("Fail to read kernel header, set %s, devpath %s, ret %d\n", GET_PARTNAME(set_idx), filepath, ret);
+		return 0;
 	}
 
-	if (*target_set != active_set) {
-		target_info = (*target_set == 0) ? set_a : set_b;
-		if (target_info->kbin_version == FACTORY_KBIN_VERSION) {
-			bmdbg("Do not switch to set %s because kernel version %u is factory binary\n", GET_PARTNAME(*target_set), target_info->kbin_version);
-			return BINMGR_NOT_FOUND;
-		}
-	}
-
-	return BINMGR_OK;
+	return header_data.version;
 }
 
+/****************************************************************************
+ * Name: binary_manager_check_bootparam_set
+ *
+ * Description:
+ *	 This function checks whether bootparam set recovery is required.
+ *	 It returns BINMGR_OPERATION_FAIL to enter the recovery path.
+ *
+ ****************************************************************************/
 int binary_manager_check_bootparam_set(void)
 {
 	int ret;
 	binmgr_bpdata_t *bp_data;
 
+	g_bp_recovery_info.has_valid_bp = false;
+	g_bp_recovery_info.inuse_idx = -1;
+	g_bp_recovery_info.active_set = -1;
+	g_bp_recovery_info.bp_version = -1;
+
 	ret = binary_manager_update_bpinfo();
 	if (ret != BINMGR_OK) {
-		bmdbg("Fail to update BP info before set-mismatch recovery, ret %d\n", ret);
-		return ret;
-	}
-
-	bp_data = binary_manager_get_bpdata();
-	if (!bp_data) {
-		bmdbg("BP data is NULL\n");
-		return BINMGR_INVALID_PARAM;
-	}
-
-	if (binary_manager_is_set_mismatch(bp_data)) {
+		bmdbg("No valid BP. Run BP recovery from partition information\n");
 		return BINMGR_OPERATION_FAIL;
 	}
 
-	bmdbg("BP set is already aligned, active idx %u\n", bp_data->head.active_idx);
+	bp_data = binary_manager_get_bpdata();
+	if (!bp_data) {
+		bmdbg("BP data is NULL. Run BP recovery from partition information\n");
+		return BINMGR_OPERATION_FAIL;
+	}
 
+	g_bp_recovery_info.has_valid_bp = true;
+	g_bp_recovery_info.inuse_idx = g_bp_info.inuse_idx;
+	g_bp_recovery_info.bp_version = bp_data->head.version;
+	g_bp_recovery_info.active_set = bp_data->head.active_idx;
+
+	if (binary_manager_is_set_mismatch(bp_data)) {
+		bmdbg("BP set mismatch detected. Run BP recovery from partition information\n");
+		return BINMGR_OPERATION_FAIL;
+	}
+
+	bmdbg("BP set is already aligned and active set %s is valid\n", GET_PARTNAME(bp_data->head.active_idx));
 	return BINMGR_OK;
 }
 
+/****************************************************************************
+ * Name: binary_manager_recover_bootparam_set
+ *
+ * Description:
+ *	 This function selects a valid binary set, writes an aligned BP, and reboots.
+ *
+ ****************************************************************************/
 int binary_manager_recover_bootparam_set(void)
 {
 	int ret;
-	uint8_t active_set;
 	uint8_t target_set;
+	uint8_t write_bp_idx;
+	uint32_t new_version;
+	uint32_t set_a_version;
+	uint32_t set_b_version;
+	uint32_t target_version;
 	binmgr_bpdata_t update_bp_data;
-	binmgr_bpdata_t *bp_data;
-	struct binmgr_set_validation_s set_a;
-	struct binmgr_set_validation_s set_b;
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	uint32_t bp_app_idx;
-#endif
+	bool set_a_valid;
+	bool set_b_valid;
 
-	bp_data = binary_manager_get_bpdata();
-	if (!bp_data) {
-		bmdbg("BP data is NULL\n");
-		return BINMGR_INVALID_PARAM;
+	bmdbg("BP set recovery required. valid BP %d, active idx %d, BP version %u\n", g_bp_recovery_info.has_valid_bp, g_bp_recovery_info.active_set, g_bp_recovery_info.bp_version);
+
+	set_a_valid = binary_manager_validate_set(0);
+	set_b_valid = binary_manager_validate_set(1);
+	set_a_version = set_a_valid ? binary_manager_get_kbin_version(0) : 0;
+	set_b_version = set_b_valid ? binary_manager_get_kbin_version(1) : 0;
+
+	bmdbg("Set A valid %d, version %u, Set B valid %d, version %u\n", set_a_valid, set_a_version, set_b_valid, set_b_version);
+
+	if (set_a_valid && set_b_valid) {
+		if (g_bp_recovery_info.has_valid_bp) {
+			target_set = g_bp_recovery_info.active_set;
+		} else {
+			target_set = set_a_version > set_b_version ? 0 : 1;
+		}
+	} else {
+		target_set = set_a_valid ? 0 : 1;
 	}
 
-	active_set = bp_data->head.active_idx;
-	bmdbg("BP set mismatch detected. active idx %u, BP version %u\n", active_set, bp_data->head.version);
+	target_version = target_set == 0 ? set_a_version : set_b_version;
+	if (target_version == 0 || target_version == FACTORY_KBIN_VERSION) {
+		bmdbg("Invalid target kernel version, set %s, version %u. Reboot as recovery fail\n", GET_PARTNAME(target_set), target_version);
+		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
+		return BINMGR_OPERATION_FAIL;
+	}
 
-	ret = binary_manager_validate_set(bp_data, 0, &set_a);
+	bmdbg("Select set %s for BP set alignment.\n", GET_PARTNAME(target_set));
+
+	new_version = g_bp_recovery_info.has_valid_bp ? g_bp_recovery_info.bp_version + 1 : 1;
+	ret = binary_manager_make_bootparam_from_partitions(&update_bp_data, target_set, new_version);
 	if (ret != BINMGR_OK) {
-		bmdbg("Fail to validate set A, ret %d\n", ret);
+		bmdbg("Fail to make recovery BP, ret %d. Reboot as recovery fail\n", ret);
 		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 		return ret;
 	}
 
-	ret = binary_manager_validate_set(bp_data, 1, &set_b);
-	if (ret != BINMGR_OK) {
-		bmdbg("Fail to validate set B, ret %d\n", ret);
-		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
-		return ret;
-	}
-
-	ret = binary_manager_select_recovery_set(active_set, &set_a, &set_b, &target_set);
-	if (ret != BINMGR_OK) {
-		bmdbg("Fail to select recoverable set. Reboot as recovery fail\n");
-		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
-		return ret;
-	}
-
-	bmdbg("Select set %s for BP set alignment. A valid kbin %d apps %d resource %d, B valid kbin %d apps %d resource %d\n", GET_PARTNAME(target_set), set_a.kbin_valid, set_a.ubin_valid, set_a.resource_valid, set_b.kbin_valid, set_b.ubin_valid, set_b.resource_valid);
-
-	memcpy(&update_bp_data, bp_data, sizeof(binmgr_bpdata_t));
-	update_bp_data.head.version++;
-	update_bp_data.head.active_idx = target_set;
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	for (bp_app_idx = 0; bp_app_idx < update_bp_data.head.app_count; bp_app_idx++) {
-		update_bp_data.head.app_data[bp_app_idx].useidx = target_set;
-	}
-#endif
-#ifdef CONFIG_RESOURCE_FS
-	update_bp_data.head.resource_active_idx = target_set;
-#endif
-	update_bp_data.head.format_ver = BOOTPARAM_FORMAT_VERSION_LATEST;
-	update_bp_data.tail.bp_update_reason = BP_UPDATE_BINARY_MANAGER_SET_ALIGNMENT;
-
-	ret = binary_manager_write_bootparam(&update_bp_data);
+	write_bp_idx = g_bp_recovery_info.has_valid_bp ? (g_bp_recovery_info.inuse_idx ^ 1) : 0;
+	ret = binary_manager_write_bootparam_to_slot(&update_bp_data, write_bp_idx);
 	if (ret != BINMGR_OK) {
 		bmdbg("Fail to write aligned BP, ret %d. Reboot as recovery fail\n", ret);
 		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 		return ret;
 	}
 
-	bmdbg("Aligned BP to set %s, new version %u. Reboot for binary update\n", GET_PARTNAME(target_set), update_bp_data.head.version);
+	bmdbg("Aligned BP to set %s, BP slot %u, new version %u. Reboot for binary update\n", GET_PARTNAME(target_set), write_bp_idx, update_bp_data.head.version);
 	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
 
-	return BINMGR_OPERATION_FAIL;
+	return BINMGR_OK;
 }
 
 void binary_manager_update_bootparam(int requester_pid, uint8_t type)
