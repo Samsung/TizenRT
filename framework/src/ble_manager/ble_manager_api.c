@@ -48,6 +48,14 @@ ble_result_e ble_manager_deinit(void)
 	RETURN_RESULT(res, msg);
 }
 
+ble_result_e ble_manager_set_watchdog_reset_handler(ble_watchdog_reset_cb_t reset_cb)
+{
+	blemgr_msg_s msg = {BLE_CMD_SET_WATCHDOG_RESET_HANDLER, BLE_MANAGER_FAIL, (void *)reset_cb, NULL};
+	int res = blemgr_post_message(&msg);
+
+	RETURN_RESULT(res, msg);
+}
+
 ble_result_e ble_manager_get_mac_addr(uint8_t mac[BLE_BD_ADDR_MAX_LEN])
 {
 	blemgr_msg_s msg = {BLE_CMD_GET_MAC, BLE_MANAGER_FAIL, (void *)(mac), NULL};
