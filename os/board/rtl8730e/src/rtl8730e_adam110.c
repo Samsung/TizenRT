@@ -67,7 +67,6 @@
 #include <tinyara/audio/adam110.h>
 #include <tinyara/gpio.h>
 #include "gpio_irq_api.h"
-#include <tinyara/audio/adam110.h>
 
 #include "objects.h"
 #include "PinNames.h"

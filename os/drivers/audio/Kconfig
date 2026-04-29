@@ -180,34 +180,29 @@ config AUDIO_ALC1019
                 NOTE: This driver also depends on both I2C and I2S support although
                 that dependency is not explicit here.
 
+choice
+
+	prompt "DSP(NPU) Chip selection"
+	depends on AUDIO && SPI
+	default AUDIO_NDP120
+	---help---
+		Select to enable support for the DSP chip which include NPU
+		
 config AUDIO_NDP120
 	bool "NDP120 audio rx support"
-	default n
-	depends on NDP120 && AUDIO && SPI
-	---help---
-		Select to enable support for the NDP120 attached mic
+	depends on NDP120
 
 config AUDIO_ADAM110
 	bool "ADAM110 audio rx support"
-	default n
-	depends on AUDIO && SPI
-	---help---
-		Select to enable support for the ADAM110 attached mic
+
+endchoice
 
 if AUDIO_ADAM110
 
 config AUDIO_ADAM110_AEC_SUPPORT
 	bool "ADAM110 Support AEC"
 	default n
-	depends on AUDIO_ADAM110
-	--help--
-        Select to enable support AEC
-
-config AUDIO_ADAM110_AEC_SUPPORT
-	bool "ADAM110 Support AEC"
-	default n
-	depends on AUDIO_ADAM110
-	--help--
+	---help---
         Select to enable support AEC
 
 config AUDIO_ADAM110_ALIVE_CHECK

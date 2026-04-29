@@ -75,7 +75,6 @@
 #define ADAM110_COM_RES_DELAY		1 /* between command and respone imprecise */ 
 
 #define ADAM110_RX_MAX_SIZE			3840
-#define ADAM110_SEAMLESS_DATA_BLK	17
 #define ADAM110_KEYWORD_DATA_SIZE	64000
 #define ADAM110_MODEL_CHUNK_SIZE	256
 #define ADAM110_MODEL_RETRY_CNT		100
@@ -84,11 +83,11 @@
 #define ADAM110_FW_RETRY_CNT		10
 #define ADAM110_FW_HEADER_SIZE		16
 #define ADAM110_FW_VENDOR_ID		0xAB
-#define ADAM110_FW_ERASE_WAITTIME	(2*1000*1000) /* Min 2 sec */
+#define ADAM110_FW_ERASE_WAITTIME	(2 * 1000 * 1000) /* Min 2 sec */
 #define ADAM110_FW_UPDATE_WAITTIME  100 /* Min 100us */
-#define ADAM110_FW_WRITE_WAITTIME   (4*1000) /* Min 4ms */
-#define ADAM110_FW_CHKSUM_WAITTIME  (100*1000) /* Min 100ms */
-#define ADAM110_ALIVENESS_CHECK_PERIOD_US	(3*1000*1000) /* 3 sec */
+#define ADAM110_FW_WRITE_WAITTIME   (4 * 1000) /* Min 4ms */
+#define ADAM110_FW_CHKSUM_WAITTIME  (100 * 1000) /* Min 100ms */
+#define ADAM110_ALIVENESS_CHECK_PERIOD_US	(3 * 1000 * 1000) /* 3 sec */
 #define ADAM110_FW_BOOT_MODE_OK		0xB004C0DE
 #define ADAM110_FW_CHKSUM_FAIL		0xDE
 #define ADAM110_FW_DATA_HEADER		2
@@ -280,8 +279,7 @@ struct adam110_dev_s {
 };
 
 static struct work_s adam110_work; /* workqueen handle */
-static char s_rxsmlbuf[ADAM110_RX_MAX_SIZE*ADAM110_SEAMLESS_DATA_BLK]; /* seamless pre-buffer */
-static uint8_t s_temp_chunk[ADAM110_RX_MAX_SIZE+1]; /* 3840 + 1(checksum) */
+static uint8_t s_temp_chunk[ADAM110_RX_MAX_SIZE + 1]; /* 3840 + 1(checksum) */
 
 static const char *mcu_package = "/res/kernel/audio/mcu_fw";
 static const char *dsp_package = "/res/kernel/audio/dsp_fw";
