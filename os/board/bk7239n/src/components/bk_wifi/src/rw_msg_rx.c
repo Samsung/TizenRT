@@ -1601,6 +1601,9 @@ void rwnx_handle_recv_msg(struct ke_msg *rx_msg)
 #if NX_VERSION > NX_VERSION_PACK(6, 22, 0, 0)
 					rwnx_misc_disconnect_ind(ind);
 #endif
+#if CONFIG_WIFI_REGDOMAIN
+					regulatory_hint_disconnect();
+#endif
 					wpa_ctrl_event_copy(WPA_CTRL_EVENT_DISCONNECT_IND, ind, sizeof(*ind));
 
 #if (!CONFIG_SOC_BK7271)
