@@ -1,37 +1,8 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  HMAC_DRBG implementation (NIST SP 800-90)
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
 /*
@@ -40,13 +11,13 @@
  *  References below are based on rev. 1 (January 2012).
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_HMAC_DRBG_C)
 
-#include "mbedtls/hmac_drbg.h"
+#include "mbedtls/private/hmac_drbg.h"
 #include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
+#include "mbedtls/private/error_common.h"
 
 #include <string.h>
 
@@ -63,7 +34,7 @@ void mbedtls_hmac_drbg_init(mbedtls_hmac_drbg_context *ctx)
 {
     memset(ctx, 0, sizeof(mbedtls_hmac_drbg_context));
 
-    ctx->reseed_interval = MBEDTLS_HMAC_DRBG_RESEED_INTERVAL;
+    ctx->reseed_interval = MBEDTLS_PSA_RNG_RESEED_INTERVAL;
 }
 
 /*
@@ -129,7 +100,10 @@ int mbedtls_hmac_drbg_seed_buf(mbedtls_hmac_drbg_context *ctx,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
 
-    if ((ret = mbedtls_md_setup(&ctx->md_ctx, md_info, 1)) != 0) {
+    if ((ret = mbedtls_md_setup(&ctx->md_ctx, md_info, 0)) != 0) {
+        return ret;
+    }
+    if ((ret = mbedtls_md_hmac_setup(&ctx->md_ctx, md_info)) != 0) {
         return ret;
     }
 
@@ -225,7 +199,7 @@ static int hmac_drbg_reseed_core(mbedtls_hmac_drbg_context *ctx,
     }
 
     /* 3. Reset reseed_counter */
-    ctx->reseed_counter = 1;
+    ctx->reseed_counter = 0;
 
 exit:
     /* 4. Done */
@@ -258,7 +232,10 @@ int mbedtls_hmac_drbg_seed(mbedtls_hmac_drbg_context *ctx,
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t md_size;
 
-    if ((ret = mbedtls_md_setup(&ctx->md_ctx, md_info, 1)) != 0) {
+    if ((ret = mbedtls_md_setup(&ctx->md_ctx, md_info, 0)) != 0) {
+        return ret;
+    }
+    if ((ret = mbedtls_md_hmac_setup(&ctx->md_ctx, md_info)) != 0) {
         return ret;
     }
 
@@ -355,7 +332,7 @@ int mbedtls_hmac_drbg_random_with_add(void *p_rng,
     /* 1. (aka VII and IX) Check reseed counter and PR */
     if (ctx->f_entropy != NULL && /* For no-reseeding instances */
         (ctx->prediction_resistance == MBEDTLS_HMAC_DRBG_PR_ON ||
-         ctx->reseed_counter > ctx->reseed_interval)) {
+         ctx->reseed_counter >= ctx->reseed_interval)) {
         if ((ret = mbedtls_hmac_drbg_reseed(ctx, additional, add_len)) != 0) {
             return ret;
         }
@@ -448,7 +425,7 @@ void mbedtls_hmac_drbg_free(mbedtls_hmac_drbg_context *ctx)
 #endif
     mbedtls_md_free(&ctx->md_ctx);
     mbedtls_platform_zeroize(ctx, sizeof(mbedtls_hmac_drbg_context));
-    ctx->reseed_interval = MBEDTLS_HMAC_DRBG_RESEED_INTERVAL;
+    ctx->reseed_interval = MBEDTLS_PSA_RNG_RESEED_INTERVAL;
 }
 
 #if defined(MBEDTLS_FS_IO)
@@ -527,7 +504,7 @@ exit:
 
 #if defined(MBEDTLS_SELF_TEST)
 
-#if !defined(MBEDTLS_SHA1_C)
+#if !defined(PSA_WANT_ALG_SHA_1)
 /* Dummy checkup routine */
 int mbedtls_hmac_drbg_self_test(int verbose)
 {
@@ -656,7 +633,7 @@ int mbedtls_hmac_drbg_self_test(int verbose)
 
     return 0;
 }
-#endif /* MBEDTLS_SHA1_C */
+#endif /* PSA_WANT_ALG_SHA_1 */
 #endif /* MBEDTLS_SELF_TEST */
 
 #endif /* MBEDTLS_HMAC_DRBG_C */

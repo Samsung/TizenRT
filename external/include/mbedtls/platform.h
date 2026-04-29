@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file platform.h
  *
@@ -38,29 +21,19 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 #ifndef MBEDTLS_PLATFORM_H
 #define MBEDTLS_PLATFORM_H
 #include "mbedtls/private_access.h"
 
-#include "mbedtls/build_info.h"
+#include "tf-psa-crypto/build_info.h"
 
 #if defined(MBEDTLS_HAVE_TIME)
 #include "mbedtls/platform_time.h"
 #endif
+
+#include <psa/crypto_driver_random.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,15 +47,6 @@ extern "C" {
  * \{
  */
 
-/* The older Microsoft Windows common runtime provides non-conforming
- * implementations of some standard library functions, including snprintf
- * and vsnprintf. This affects MSVC and MinGW builds.
- */
-#if defined(__MINGW32__) || (defined(_MSC_VER) && _MSC_VER <= 1900)
-#define MBEDTLS_PLATFORM_HAS_NON_CONFORMING_SNPRINTF
-#define MBEDTLS_PLATFORM_HAS_NON_CONFORMING_VSNPRINTF
-#endif
-
 #if !defined(MBEDTLS_PLATFORM_NO_STD_FUNCTIONS)
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,18 +54,10 @@ extern "C" {
 #include <time.h>
 #endif
 #if !defined(MBEDTLS_PLATFORM_STD_SNPRINTF)
-#if defined(MBEDTLS_PLATFORM_HAS_NON_CONFORMING_SNPRINTF)
-#define MBEDTLS_PLATFORM_STD_SNPRINTF   mbedtls_platform_win32_snprintf /**< The default \c snprintf function to use.  */
-#else
 #define MBEDTLS_PLATFORM_STD_SNPRINTF   snprintf /**< The default \c snprintf function to use.  */
 #endif
-#endif
 #if !defined(MBEDTLS_PLATFORM_STD_VSNPRINTF)
-#if defined(MBEDTLS_PLATFORM_HAS_NON_CONFORMING_VSNPRINTF)
-#define MBEDTLS_PLATFORM_STD_VSNPRINTF   mbedtls_platform_win32_vsnprintf /**< The default \c vsnprintf function to use.  */
-#else
 #define MBEDTLS_PLATFORM_STD_VSNPRINTF   vsnprintf /**< The default \c vsnprintf function to use.  */
-#endif
 #endif
 #if !defined(MBEDTLS_PLATFORM_STD_PRINTF)
 #define MBEDTLS_PLATFORM_STD_PRINTF   printf /**< The default \c printf function to use. */
@@ -147,15 +103,28 @@ extern "C" {
 #endif
 #endif /* MBEDTLS_PLATFORM_NO_STD_FUNCTIONS */
 
+/* Enable certain documented defines only when generating doxygen to avoid
+ * an "unrecognized define" error. */
+#if defined(__DOXYGEN__) && !defined(MBEDTLS_PLATFORM_STD_CALLOC)
+#define MBEDTLS_PLATFORM_STD_CALLOC
+#endif
+
+#if defined(__DOXYGEN__) && !defined(MBEDTLS_PLATFORM_STD_FREE)
+#define MBEDTLS_PLATFORM_STD_FREE
+#endif
 
 /** \} name SECTION: Module settings */
 
 /*
  * The function pointers for calloc and free.
+ * Please see MBEDTLS_PLATFORM_STD_CALLOC and MBEDTLS_PLATFORM_STD_FREE
+ * in mbedtls_config.h for more information about behaviour and requirements.
  */
 #if defined(MBEDTLS_PLATFORM_MEMORY)
 #if defined(MBEDTLS_PLATFORM_FREE_MACRO) && \
     defined(MBEDTLS_PLATFORM_CALLOC_MACRO)
+#undef mbedtls_free
+#undef mbedtls_calloc
 #define mbedtls_free       MBEDTLS_PLATFORM_FREE_MACRO
 #define mbedtls_calloc     MBEDTLS_PLATFORM_CALLOC_MACRO
 #else
@@ -177,6 +146,8 @@ int mbedtls_platform_set_calloc_free(void *(*calloc_func)(size_t, size_t),
                                      void (*free_func)(void *));
 #endif /* MBEDTLS_PLATFORM_FREE_MACRO && MBEDTLS_PLATFORM_CALLOC_MACRO */
 #else /* !MBEDTLS_PLATFORM_MEMORY */
+#undef mbedtls_free
+#undef mbedtls_calloc
 #define mbedtls_free       free
 #define mbedtls_calloc     calloc
 #endif /* MBEDTLS_PLATFORM_MEMORY && !MBEDTLS_PLATFORM_{FREE,CALLOC}_MACRO */
@@ -201,6 +172,7 @@ extern int (*mbedtls_fprintf)(FILE *stream, const char *format, ...);
 int mbedtls_platform_set_fprintf(int (*fprintf_func)(FILE *stream, const char *,
                                                      ...));
 #else
+#undef mbedtls_fprintf
 #if defined(MBEDTLS_PLATFORM_FPRINTF_MACRO)
 #define mbedtls_fprintf    MBEDTLS_PLATFORM_FPRINTF_MACRO
 #else
@@ -219,32 +191,29 @@ extern int (*mbedtls_printf)(const char *format, ...);
  *                      function that is called when the mbedtls_snprintf()
  *                      function is invoked by the library.
  *
+ * \note
+ * The snprintf implementation should conform to C99:
+ * - it *must* always correctly zero-terminate the buffer
+ *   (except when n == 0, then it must leave the buffer untouched)
+ * - however it is acceptable to return -1 instead of the required length when
+ *   the destination buffer is too short.
+ * - It must support common modifiers in formats, including `"%zu"` for a
+ *   `size_t` parameter and `"%lld"` for a `long long` parameter.
+ * - Floating point support is not required.
+ *
  * \param printf_func   The \c printf function implementation.
  *
  * \return              \c 0 on success.
  */
 int mbedtls_platform_set_printf(int (*printf_func)(const char *, ...));
 #else /* !MBEDTLS_PLATFORM_PRINTF_ALT */
+#undef mbedtls_printf
 #if defined(MBEDTLS_PLATFORM_PRINTF_MACRO)
 #define mbedtls_printf     MBEDTLS_PLATFORM_PRINTF_MACRO
 #else
 #define mbedtls_printf     printf
 #endif /* MBEDTLS_PLATFORM_PRINTF_MACRO */
 #endif /* MBEDTLS_PLATFORM_PRINTF_ALT */
-
-/*
- * The function pointers for snprintf
- *
- * The snprintf implementation should conform to C99:
- * - it *must* always correctly zero-terminate the buffer
- *   (except when n == 0, then it must leave the buffer untouched)
- * - however it is acceptable to return -1 instead of the required length when
- *   the destination buffer is too short.
- */
-#if defined(MBEDTLS_PLATFORM_HAS_NON_CONFORMING_SNPRINTF)
-/* For Windows (inc. MSYS2), we provide our own fixed implementation */
-int mbedtls_platform_win32_snprintf(char *s, size_t n, const char *fmt, ...);
-#endif
 
 #if defined(MBEDTLS_PLATFORM_SNPRINTF_ALT)
 extern int (*mbedtls_snprintf)(char *s, size_t n, const char *format, ...);
@@ -260,27 +229,13 @@ extern int (*mbedtls_snprintf)(char *s, size_t n, const char *format, ...);
 int mbedtls_platform_set_snprintf(int (*snprintf_func)(char *s, size_t n,
                                                        const char *format, ...));
 #else /* MBEDTLS_PLATFORM_SNPRINTF_ALT */
+#undef mbedtls_snprintf
 #if defined(MBEDTLS_PLATFORM_SNPRINTF_MACRO)
 #define mbedtls_snprintf   MBEDTLS_PLATFORM_SNPRINTF_MACRO
 #else
 #define mbedtls_snprintf   MBEDTLS_PLATFORM_STD_SNPRINTF
 #endif /* MBEDTLS_PLATFORM_SNPRINTF_MACRO */
 #endif /* MBEDTLS_PLATFORM_SNPRINTF_ALT */
-
-/*
- * The function pointers for vsnprintf
- *
- * The vsnprintf implementation should conform to C99:
- * - it *must* always correctly zero-terminate the buffer
- *   (except when n == 0, then it must leave the buffer untouched)
- * - however it is acceptable to return -1 instead of the required length when
- *   the destination buffer is too short.
- */
-#if defined(MBEDTLS_PLATFORM_HAS_NON_CONFORMING_VSNPRINTF)
-#include <stdarg.h>
-/* For Older Windows (inc. MSYS2), we provide our own fixed implementation */
-int mbedtls_platform_win32_vsnprintf(char *s, size_t n, const char *fmt, va_list arg);
-#endif
 
 #if defined(MBEDTLS_PLATFORM_VSNPRINTF_ALT)
 #include <stdarg.h>
@@ -296,6 +251,7 @@ extern int (*mbedtls_vsnprintf)(char *s, size_t n, const char *format, va_list a
 int mbedtls_platform_set_vsnprintf(int (*vsnprintf_func)(char *s, size_t n,
                                                          const char *format, va_list arg));
 #else /* MBEDTLS_PLATFORM_VSNPRINTF_ALT */
+#undef mbedtls_vsnprintf
 #if defined(MBEDTLS_PLATFORM_VSNPRINTF_MACRO)
 #define mbedtls_vsnprintf   MBEDTLS_PLATFORM_VSNPRINTF_MACRO
 #else
@@ -337,7 +293,9 @@ extern void (*mbedtls_setbuf)(FILE *stream, char *buf);
  */
 int mbedtls_platform_set_setbuf(void (*setbuf_func)(
                                     FILE *stream, char *buf));
-#elif defined(MBEDTLS_PLATFORM_SETBUF_MACRO)
+#else
+#undef mbedtls_setbuf
+#if defined(MBEDTLS_PLATFORM_SETBUF_MACRO)
 /**
  * \brief                  Macro defining the function for the library to
  *                         call for `setbuf` functionality (changing the
@@ -351,7 +309,8 @@ int mbedtls_platform_set_setbuf(void (*setbuf_func)(
 #define mbedtls_setbuf    MBEDTLS_PLATFORM_SETBUF_MACRO
 #else
 #define mbedtls_setbuf    setbuf
-#endif /* MBEDTLS_PLATFORM_SETBUF_ALT / MBEDTLS_PLATFORM_SETBUF_MACRO */
+#endif /* MBEDTLS_PLATFORM_SETBUF_MACRO */
+#endif /* MBEDTLS_PLATFORM_SETBUF_ALT */
 
 /*
  * The function pointers for exit
@@ -370,6 +329,7 @@ extern void (*mbedtls_exit)(int status);
  */
 int mbedtls_platform_set_exit(void (*exit_func)(int status));
 #else
+#undef mbedtls_exit
 #if defined(MBEDTLS_PLATFORM_EXIT_MACRO)
 #define mbedtls_exit   MBEDTLS_PLATFORM_EXIT_MACRO
 #else
@@ -389,6 +349,29 @@ int mbedtls_platform_set_exit(void (*exit_func)(int status));
 #define MBEDTLS_EXIT_FAILURE MBEDTLS_PLATFORM_STD_EXIT_FAILURE
 #else
 #define MBEDTLS_EXIT_FAILURE 1
+#endif
+
+#if defined(MBEDTLS_PSA_BUILTIN_GET_ENTROPY) && \
+    !(defined(_WIN32) && !defined(EFIX64) && !defined(EFI32))
+/* Platforms where MBEDTLS_PLATFORM_DEV_RANDOM is used
+ * unless a dedicated system call is available both at
+ * compile time and at run time. */
+#define MBEDTLS_PLATFORM_HAVE_DEV_RANDOM
+#endif
+
+#if !defined(MBEDTLS_PLATFORM_DEV_RANDOM)
+#define MBEDTLS_PLATFORM_DEV_RANDOM "/dev/random"
+#endif
+
+#if defined(MBEDTLS_PLATFORM_HAVE_DEV_RANDOM)
+/**
+ * Path to a special file that returns cryptographic-quality random bytes
+ * when read.
+ *
+ * The default value is #MBEDTLS_PLATFORM_DEV_RANDOM.
+ * See the documentation of this option for guidance.
+ */
+extern const char *mbedtls_platform_dev_random;
 #endif
 
 /*
@@ -422,6 +405,8 @@ int mbedtls_platform_set_nv_seed(
     int (*nv_seed_write_func)(unsigned char *buf, size_t buf_len)
     );
 #else
+#undef mbedtls_nv_seed_read
+#undef mbedtls_nv_seed_write
 #if defined(MBEDTLS_PLATFORM_NV_SEED_READ_MACRO) && \
     defined(MBEDTLS_PLATFORM_NV_SEED_WRITE_MACRO)
 #define mbedtls_nv_seed_read    MBEDTLS_PLATFORM_NV_SEED_READ_MACRO
@@ -449,6 +434,45 @@ mbedtls_platform_context;
 #else
 #include "platform_alt.h"
 #endif /* !MBEDTLS_PLATFORM_SETUP_TEARDOWN_ALT */
+
+/**
+ * \brief       User defined callback function that is used from the entropy
+ *              module to gather entropy data from some hardware device.
+ *
+ * \param flags                 A mask of `PSA_DRIVER_GET_ENTROPY_xxx` flags.
+ *                              As of TF-PSA-Crypto 1.0, this is always \c 0.
+ * \param[out] estimate_bits    Measure of the entropy content (in bits) of the
+ *                              data written in the \p output buffer.
+ * \param[out] output           Output buffer where the entropy data will be
+ *                              stored.
+ * \param output_size           Size of the \p output buffer in bytes.
+ *
+ * \retval 0
+ *         Success.
+ * \retval #PSA_ERROR_INSUFFICIENT_ENTROPY
+ *         The entropy source failed.
+ * \retval #PSA_ERROR_NOT_SUPPORTED
+ *         The value of \p flags is not supported.
+ *
+ * \warning     For the time being TF-PSA-Crypto only supports implementations
+ *              that return a maximum entropy output on each call, i.e.
+ *              \p estimate_bits = `8 * output_size`. Returning a smaller
+ *              entropy content is the same as returning
+ *              #PSA_ERROR_INSUFFICIENT_ENTROPY so the hardware polling will
+ *              fail.
+ *              In the future TF-PSA-Crypto will be smarter and capable to cope
+ *              with entropy sources with lower entropy content (i.e.
+ *              0 < \p estimate_bits < 8 * output_size) by calling the callback
+ *              function in loop.
+ *
+ * \note        This function is not meant to be called by application code, and
+ *              it is not guaranteed that this function will exist or will behave
+ *              in the same way in future versions of the library. Applications
+ *              should call psa_generate_random() to obtain random data.
+ */
+int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
+                                 size_t *estimate_bits,
+                                 unsigned char *output, size_t output_size);
 
 /**
  * \brief   This function performs any platform-specific initialization
@@ -486,4 +510,4 @@ void mbedtls_platform_teardown(mbedtls_platform_context *ctx);
 }
 #endif
 
-#endif /* platform.h */
+#endif /* MBEDTLS_PLATFORM_H */

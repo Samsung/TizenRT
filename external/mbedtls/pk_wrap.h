@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file pk_wrap.h
  *
@@ -22,31 +5,31 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#ifndef MBEDTLS_PK_WRAP_H
-#define MBEDTLS_PK_WRAP_H
+#ifndef TF_PSA_CRYPTO_PK_WRAP_H
+#define TF_PSA_CRYPTO_PK_WRAP_H
 
-#include "mbedtls/build_info.h"
+#include "tf-psa-crypto/build_info.h"
 
 #include "mbedtls/pk.h"
+#if defined(MBEDTLS_PK_HAVE_PRIVATE_HEADER)
+#include <mbedtls/private/pk_private.h>
+#endif /* MBEDTLS_PK_HAVE_PRIVATE_HEADER */
 
-#if defined(MBEDTLS_PSA_CRYPTO_C)
-#include "mbedtls/psa/crypto.h"
-#endif /* MBEDTLS_PSA_CRYPTO_C */
+#include "psa/crypto.h"
+
+typedef enum {
+    MBEDTLS_PK_RS_OP_VERIFY,
+    MBEDTLS_PK_RS_OP_SIGN,
+} mbedtls_pk_rs_op_t;
+
+typedef struct {
+    mbedtls_pk_rs_op_t op_type;
+    void *op;
+    mbedtls_svc_key_id_t pub_id;
+} mbedtls_pk_psa_restartable_ctx_t;
 
 struct mbedtls_pk_info_t {
     /** Public key type */
@@ -55,131 +38,64 @@ struct mbedtls_pk_info_t {
     /** Type name */
     const char *name;
 
-    /** Get key size in bits */
-    size_t (*get_bitlen)(const void *);
-
     /** Tell if the context implements this type (e.g. ECKEY can do ECDSA) */
     int (*can_do)(mbedtls_pk_type_t type);
 
     /** Verify signature */
-    int (*verify_func)(void *ctx, mbedtls_md_type_t md_alg,
+    int (*verify_func)(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
                        const unsigned char *hash, size_t hash_len,
                        const unsigned char *sig, size_t sig_len);
 
     /** Make signature */
-    int (*sign_func)(void *ctx, mbedtls_md_type_t md_alg,
+    int (*sign_func)(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
                      const unsigned char *hash, size_t hash_len,
-                     unsigned char *sig, size_t sig_size, size_t *sig_len,
-                     int (*f_rng)(void *, unsigned char *, size_t),
-                     void *p_rng);
+                     unsigned char *sig, size_t sig_size, size_t *sig_len);
 
-#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+#if defined(MBEDTLS_ECP_RESTARTABLE)
     /** Verify signature (restartable) */
-    int (*verify_rs_func)(void *ctx, mbedtls_md_type_t md_alg,
+    int (*verify_rs_func)(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
                           const unsigned char *hash, size_t hash_len,
                           const unsigned char *sig, size_t sig_len,
                           void *rs_ctx);
 
     /** Make signature (restartable) */
-    int (*sign_rs_func)(void *ctx, mbedtls_md_type_t md_alg,
+    int (*sign_rs_func)(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
                         const unsigned char *hash, size_t hash_len,
                         unsigned char *sig, size_t sig_size, size_t *sig_len,
-                        int (*f_rng)(void *, unsigned char *, size_t),
-                        void *p_rng, void *rs_ctx);
-#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+                        void *rs_ctx);
+#endif /* MBEDTLS_ECP_RESTARTABLE */
 
-    /** Decrypt message */
-    int (*decrypt_func)(void *ctx, const unsigned char *input, size_t ilen,
-                        unsigned char *output, size_t *olen, size_t osize,
-                        int (*f_rng)(void *, unsigned char *, size_t),
-                        void *p_rng);
-
-    /** Encrypt message */
-    int (*encrypt_func)(void *ctx, const unsigned char *input, size_t ilen,
-                        unsigned char *output, size_t *olen, size_t osize,
-                        int (*f_rng)(void *, unsigned char *, size_t),
-                        void *p_rng);
-
-    /** Check public-private key pair */
-    int (*check_pair_func)(const void *pub, const void *prv,
-                           int (*f_rng)(void *, unsigned char *, size_t),
-                           void *p_rng);
-
-    /** Allocate a new context */
-    void * (*ctx_alloc_func)(void);
-
-    /** Free the given context */
-    void (*ctx_free_func)(void *ctx);
-
-#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+#if defined(MBEDTLS_ECP_RESTARTABLE)
     /** Allocate the restart context */
-    void *(*rs_alloc_func)(void);
+    void *(*rs_alloc_func)(mbedtls_pk_rs_op_t op_type);
 
     /** Free the restart context */
     void (*rs_free_func)(void *rs_ctx);
-#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
-
-    /** Interface with the debug module */
-    void (*debug_func)(const void *ctx, mbedtls_pk_debug_item *items);
+#endif /* MBEDTLS_ECP_RESTARTABLE */
 
 };
-#if defined(MBEDTLS_PK_RSA_ALT_SUPPORT)
-/* Container for RSA-alt */
-typedef struct {
-    void *key;
-    mbedtls_pk_rsa_alt_decrypt_func decrypt_func;
-    mbedtls_pk_rsa_alt_sign_func sign_func;
-    mbedtls_pk_rsa_alt_key_len_func key_len_func;
-} mbedtls_rsa_alt_context;
-#endif
-
-#if defined(MBEDTLS_RSA_C)
+#if defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY)
 extern const mbedtls_pk_info_t mbedtls_rsa_info;
 #endif
 
-#if defined(MBEDTLS_ECP_C)
+#if defined(PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY)
 extern const mbedtls_pk_info_t mbedtls_eckey_info;
 extern const mbedtls_pk_info_t mbedtls_eckeydh_info;
 #endif
 
-#if defined(MBEDTLS_PK_CAN_ECDSA_SOME)
+#if defined(PSA_HAVE_ALG_SOME_ECDSA)
 extern const mbedtls_pk_info_t mbedtls_ecdsa_info;
 #endif
 
-#if defined(MBEDTLS_PK_RSA_ALT_SUPPORT)
-extern const mbedtls_pk_info_t mbedtls_rsa_alt_info;
-#endif
+extern const mbedtls_pk_info_t mbedtls_ecdsa_opaque_info;
+extern const mbedtls_pk_info_t mbedtls_rsa_opaque_info;
 
-#if defined(MBEDTLS_USE_PSA_CRYPTO)
-extern const mbedtls_pk_info_t mbedtls_pk_ecdsa_opaque_info;
-extern const mbedtls_pk_info_t mbedtls_pk_rsa_opaque_info;
-
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-#if defined(PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY)
-int MBEDTLS_DEPRECATED mbedtls_pk_error_from_psa_ecdsa(psa_status_t status);
-#endif
-#endif
-
-#endif /* MBEDTLS_USE_PSA_CRYPTO */
-
-#if defined(MBEDTLS_PSA_CRYPTO_C)
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-int MBEDTLS_DEPRECATED mbedtls_pk_error_from_psa(psa_status_t status);
-
-#if defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY) ||    \
-    defined(PSA_WANT_KEY_TYPE_RSA_KEY_PAIR)
-int MBEDTLS_DEPRECATED mbedtls_pk_error_from_psa_rsa(psa_status_t status);
-#endif /* PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY || PSA_WANT_KEY_TYPE_RSA_KEY_PAIR */
-#endif /* !MBEDTLS_DEPRECATED_REMOVED */
-
-#if defined(MBEDTLS_RSA_C)
+#if defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY)
 int mbedtls_pk_psa_rsa_sign_ext(psa_algorithm_t psa_alg_md,
-                                mbedtls_rsa_context *rsa_ctx,
+                                mbedtls_pk_context *pk,
                                 const unsigned char *hash, size_t hash_len,
                                 unsigned char *sig, size_t sig_size,
                                 size_t *sig_len);
-#endif /* MBEDTLS_RSA_C */
+#endif /* PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY */
 
-#endif /* MBEDTLS_PSA_CRYPTO_C */
-
-#endif /* MBEDTLS_PK_WRAP_H */
+#endif /* TF_PSA_CRYPTO_PK_WRAP_H */

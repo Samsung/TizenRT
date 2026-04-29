@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file x509_crt.h
  *
@@ -22,30 +5,16 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 #ifndef MBEDTLS_X509_CRT_H
 #define MBEDTLS_X509_CRT_H
 #include "mbedtls/private_access.h"
 
 #include "mbedtls/build_info.h"
-#include "mbedtls/legacy_or_psa.h"
 
 #include "mbedtls/x509.h"
 #include "mbedtls/x509_crl.h"
-#include "mbedtls/bignum.h"
 
 /**
  * \addtogroup x509_module
@@ -93,11 +62,9 @@ typedef struct mbedtls_x509_crt {
     mbedtls_x509_buf issuer_id;         /**< Optional X.509 v2/v3 issuer unique identifier. */
     mbedtls_x509_buf subject_id;        /**< Optional X.509 v2/v3 subject unique identifier. */
     mbedtls_x509_buf v3_ext;            /**< Optional X.509 v3 extensions.  */
-#if defined(MBEDTLS_OCF_PATCH) && defined(MBEDTLS_X509_EXPANDED_SUBJECT_ALT_NAME_SUPPORT)
-    mbedtls_x509_general_names subject_alt_names; /**< Optional list of Subject Alternative Names (Only dNSName and directoryName supported). */
-#else
-    mbedtls_x509_sequence subject_alt_names;    /**< Optional list of raw entries of Subject Alternative Names extension (currently only dNSName and OtherName are listed). */
-#endif
+    mbedtls_x509_sequence subject_alt_names; /**< Optional list of raw entries of Subject Alternative Names extension. These can be later parsed by mbedtls_x509_parse_subject_alt_name. */
+    mbedtls_x509_buf subject_key_id;    /**< Optional X.509 v3 extension subject key identifier. */
+    mbedtls_x509_authority authority_key_id;    /**< Optional X.509 v3 extension authority key identifier. */
 
     mbedtls_x509_sequence certificate_policies; /**< Optional list of certificate policies (Only anyPolicy is printed and enforced, however the rest of the policies are still listed). */
 
@@ -113,8 +80,13 @@ typedef struct mbedtls_x509_crt {
 
     mbedtls_x509_buf MBEDTLS_PRIVATE(sig);               /**< Signature: hash of the tbs part signed with the private key. */
     mbedtls_md_type_t MBEDTLS_PRIVATE(sig_md);           /**< Internal representation of the MD algorithm of the signature algorithm, e.g. MBEDTLS_MD_SHA256 */
-    mbedtls_pk_type_t MBEDTLS_PRIVATE(sig_pk);           /**< Internal representation of the Public Key algorithm of the signature algorithm, e.g. MBEDTLS_PK_RSA */
-    void *MBEDTLS_PRIVATE(sig_opts);             /**< Signature options to be passed to mbedtls_pk_verify_ext(), e.g. for RSASSA-PSS */
+    mbedtls_pk_sigalg_t MBEDTLS_PRIVATE(sig_pk);           /**< Internal representation of the Public Key algorithm of the signature algorithm, e.g. MBEDTLS_PK_RSA */
+
+    /* Unused field reserved for future use */
+    union {
+        size_t number;
+        void *ptr;
+    } MBEDTLS_PRIVATE(unused);
 
     /** Next certificate in the linked list that constitutes the CA chain.
      * \p NULL indicates the end of the list.
@@ -262,6 +234,21 @@ typedef struct mbedtls_x509write_cert {
 mbedtls_x509write_cert;
 
 /**
+ * \brief           Set Subject Alternative Name
+ *
+ * \param ctx       Certificate context to use
+ * \param san_list  List of SAN values
+ *
+ * \return          0 if successful, or #PSA_ERROR_INSUFFICIENT_MEMORY
+ *
+ * \note            "dnsName", "uniformResourceIdentifier", "IP address",
+ *                  "otherName", and "DirectoryName", as defined in RFC 5280,
+ *                  are supported.
+ */
+int mbedtls_x509write_crt_set_subject_alternative_name(mbedtls_x509write_cert *ctx,
+                                                       const mbedtls_x509_san_list *san_list);
+
+/**
  * Item in a verification chain: cert and flags for it
  */
 typedef struct {
@@ -290,7 +277,7 @@ typedef struct {
 #endif /* MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK */
 } mbedtls_x509_crt_verify_chain;
 
-#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+#if defined(MBEDTLS_ECP_RESTARTABLE)
 
 /**
  * \brief       Context for resuming X.509 verify operations
@@ -317,12 +304,12 @@ typedef struct {
 
 } mbedtls_x509_crt_restart_ctx;
 
-#else /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+#else /* MBEDTLS_ECP_RESTARTABLE */
 
 /* Now we can declare functions that take a pointer to that */
 typedef void mbedtls_x509_crt_restart_ctx;
 
-#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+#endif /* MBEDTLS_ECP_RESTARTABLE */
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 /**
@@ -362,9 +349,8 @@ extern const mbedtls_x509_crt_profile mbedtls_x509_crt_profile_none;
  * \brief          Parse a single DER formatted certificate and add it
  *                 to the end of the provided chained list.
  *
- * \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
- *                 subsystem must have been initialized by calling
- *                 psa_crypto_init() before calling this function.
+ * \note           The PSA crypto subsystem must have been initialized by
+ *                 calling psa_crypto_init() before calling this function.
  *
  * \param chain    The pointer to the start of the CRT chain to attach to.
  *                 When parsing the first CRT in a chain, this should point
@@ -427,9 +413,8 @@ typedef int (*mbedtls_x509_crt_ext_cb_t)(void *p_ctx,
  * \brief            Parse a single DER formatted certificate and add it
  *                   to the end of the provided chained list.
  *
- * \note             If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
- *                   subsystem must have been initialized by calling
- *                   psa_crypto_init() before calling this function.
+ * \note             The PSA crypto subsystem must have been initialized by
+ *                   calling psa_crypto_init() before calling this function.
  *
  * \param chain      The pointer to the start of the CRT chain to attach to.
  *                   When parsing the first CRT in a chain, this should point
@@ -481,9 +466,8 @@ int mbedtls_x509_crt_parse_der_with_ext_cb(mbedtls_x509_crt *chain,
  *                 temporary ownership of the CRT buffer until the CRT
  *                 is destroyed.
  *
- * \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
- *                 subsystem must have been initialized by calling
- *                 psa_crypto_init() before calling this function.
+ * \note           The PSA crypto subsystem must have been initialized by
+ *                 calling psa_crypto_init() before calling this function.
  *
  * \param chain    The pointer to the start of the CRT chain to attach to.
  *                 When parsing the first CRT in a chain, this should point
@@ -525,9 +509,8 @@ int mbedtls_x509_crt_parse_der_nocopy(mbedtls_x509_crt *chain,
  *                 long as the certificates are enclosed in the PEM specific
  *                 '-----{BEGIN/END} CERTIFICATE-----' delimiters.
  *
- * \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
- *                 subsystem must have been initialized by calling
- *                 psa_crypto_init() before calling this function.
+ * \note           The PSA crypto subsystem must have been initialized by
+ *                 calling psa_crypto_init() before calling this function.
  *
  * \param chain    The chain to which to add the parsed certificates.
  * \param buf      The buffer holding the certificate data in PEM or DER format.
@@ -553,9 +536,8 @@ int mbedtls_x509_crt_parse(mbedtls_x509_crt *chain, const unsigned char *buf, si
  *                 of failed certificates it encountered. If none complete
  *                 correctly, the first error is returned.
  *
- * \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
- *                 subsystem must have been initialized by calling
- *                 psa_crypto_init() before calling this function.
+ * \note           The PSA crypto subsystem must have been initialized by
+ *                 calling psa_crypto_init() before calling this function.
  *
  * \param chain    points to the start of the chain
  * \param path     filename to read the certificates from
@@ -581,6 +563,7 @@ int mbedtls_x509_crt_parse_file(mbedtls_x509_crt *chain, const char *path);
 int mbedtls_x509_crt_parse_path(mbedtls_x509_crt *chain, const char *path);
 
 #endif /* MBEDTLS_FS_IO */
+
 #if !defined(MBEDTLS_X509_REMOVE_INFO)
 /**
  * \brief          Returns an informational string about the
@@ -632,7 +615,7 @@ int mbedtls_x509_crt_verify_info(char *buf, size_t size, const char *prefix,
  *                 other than fatal error, as a non-zero return code
  *                 immediately aborts the verification process. For fatal
  *                 errors, a specific error code should be used (different
- *                 from MBEDTLS_ERR_X509_CERT_VERIFY_FAILED which should not
+ *                 from #MBEDTLS_ERR_X509_CERT_VERIFY_FAILED which should not
  *                 be returned at this point), or MBEDTLS_ERR_X509_FATAL_ERROR
  *                 can be used if no better code is available.
  *
@@ -660,8 +643,12 @@ int mbedtls_x509_crt_verify_info(char *buf, size_t size, const char *prefix,
  * \param cn       The expected Common Name. This will be checked to be
  *                 present in the certificate's subjectAltNames extension or,
  *                 if this extension is absent, as a CN component in its
- *                 Subject name. Currently only DNS names are supported. This
- *                 may be \c NULL if the CN need not be verified.
+ *                 Subject name. DNS names and IP addresses are fully
+ *                 supported, while the URI subtype is partially supported:
+ *                 only exact matching, without any normalization procedures
+ *                 described in 7.4 of RFC5280, will result in a positive
+ *                 URI verification.
+ *                 This may be \c NULL if the CN need not be verified.
  * \param flags    The address at which to store the result of the verification.
  *                 If the verification couldn't be completed, the flag value is
  *                 set to (uint32_t) -1.
@@ -733,7 +720,7 @@ int mbedtls_x509_crt_verify_with_profile(mbedtls_x509_crt *crt,
  *
  * \note           Performs the same job as \c mbedtls_crt_verify_with_profile()
  *                 but can return early and restart according to the limit
- *                 set with \c mbedtls_ecp_set_max_ops() to reduce blocking.
+ *                 set with \c psa_interruptible_set_max_ops() to reduce blocking.
  *
  * \param crt      The certificate chain to be verified.
  * \param trust_ca The list of trusted CAs.
@@ -751,8 +738,8 @@ int mbedtls_x509_crt_verify_with_profile(mbedtls_x509_crt *crt,
  *                 to disable restartable ECC.
  *
  * \return         See \c mbedtls_crt_verify_with_profile(), or
- * \return         #MBEDTLS_ERR_ECP_IN_PROGRESS if maximum number of
- *                 operations was reached: see \c mbedtls_ecp_set_max_ops().
+ * \return         #PSA_OPERATION_INCOMPLETE if maximum number of
+ *                 operations was reached: see \c psa_interruptible_set_max_ops().
  */
 int mbedtls_x509_crt_verify_restartable(mbedtls_x509_crt *crt,
                                         mbedtls_x509_crt *trust_ca,
@@ -844,7 +831,7 @@ int mbedtls_x509_crt_verify_with_ca_cb(mbedtls_x509_crt *crt,
  *                 that bit MAY be set.
  *
  * \return         0 is these uses of the certificate are allowed,
- *                 MBEDTLS_ERR_X509_BAD_INPUT_DATA if the keyUsage extension
+ *                 #MBEDTLS_ERR_X509_BAD_INPUT_DATA if the keyUsage extension
  *                 is present but does not match the usage argument.
  *
  * \note           You should only call this function on leaf certificates, on
@@ -863,7 +850,7 @@ int mbedtls_x509_crt_check_key_usage(const mbedtls_x509_crt *crt,
  * \param usage_len Length of usage_oid (eg given by MBEDTLS_OID_SIZE()).
  *
  * \return          0 if this use of the certificate is allowed,
- *                  MBEDTLS_ERR_X509_BAD_INPUT_DATA if not.
+ *                  #MBEDTLS_ERR_X509_BAD_INPUT_DATA if not.
  *
  * \note            Usually only makes sense on leaf certificates.
  */
@@ -898,7 +885,7 @@ void mbedtls_x509_crt_init(mbedtls_x509_crt *crt);
  */
 void mbedtls_x509_crt_free(mbedtls_x509_crt *crt);
 
-#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+#if defined(MBEDTLS_ECP_RESTARTABLE)
 /**
  * \brief           Initialize a restart context
  */
@@ -908,7 +895,7 @@ void mbedtls_x509_crt_restart_init(mbedtls_x509_crt_restart_ctx *ctx);
  * \brief           Free the components of a restart context
  */
 void mbedtls_x509_crt_restart_free(mbedtls_x509_crt_restart_ctx *ctx);
-#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+#endif /* MBEDTLS_ECP_RESTARTABLE */
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
 /**
@@ -927,6 +914,18 @@ static inline int mbedtls_x509_crt_has_ext_type(const mbedtls_x509_crt *ctx,
 {
     return ctx->MBEDTLS_PRIVATE(ext_types) & ext_type;
 }
+
+/**
+ * \brief               Access the ca_istrue field
+ *
+ * \param[in] crt       Certificate to be queried, must not be \c NULL
+ *
+ * \return              \c 1 if this a CA certificate \c 0 otherwise.
+ * \return              MBEDTLS_ERR_X509_INVALID_EXTENSIONS if the certificate does not contain
+ *                      the Optional Basic Constraint extension.
+ *
+ */
+int mbedtls_x509_crt_get_ca_istrue(const mbedtls_x509_crt *crt);
 
 /** \} name Structures and functions for parsing and writing X.509 certificates */
 
@@ -948,28 +947,6 @@ void mbedtls_x509write_crt_init(mbedtls_x509write_cert *ctx);
  */
 void mbedtls_x509write_crt_set_version(mbedtls_x509write_cert *ctx, int version);
 
-#if defined(MBEDTLS_BIGNUM_C) && !defined(MBEDTLS_DEPRECATED_REMOVED)
-/**
- * \brief           Set the serial number for a Certificate.
- *
- * \deprecated      This function is deprecated and will be removed in a
- *                  future version of the library. Please use
- *                  mbedtls_x509write_crt_set_serial_raw() instead.
- *
- * \note            Even though the MBEDTLS_BIGNUM_C guard looks redundant since
- *                  X509 depends on PK and PK depends on BIGNUM, this emphasizes
- *                  a direct dependency between X509 and BIGNUM which is going
- *                  to be deprecated in the future.
- *
- * \param ctx       CRT context to use
- * \param serial    serial number to set
- *
- * \return          0 if successful
- */
-int MBEDTLS_DEPRECATED mbedtls_x509write_crt_set_serial(
-    mbedtls_x509write_cert *ctx, const mbedtls_mpi *serial);
-#endif // MBEDTLS_BIGNUM_C && !MBEDTLS_DEPRECATED_REMOVED
-
 /**
  * \brief           Set the serial number for a Certificate.
  *
@@ -980,11 +957,11 @@ int MBEDTLS_DEPRECATED mbedtls_x509write_crt_set_serial(
  *                     input buffer
  *
  * \return          0 if successful, or
- *                  MBEDTLS_ERR_X509_BAD_INPUT_DATA if the provided input buffer
+ *                  #MBEDTLS_ERR_X509_BAD_INPUT_DATA if the provided input buffer
  *                  is too big (longer than MBEDTLS_X509_RFC5280_MAX_SERIAL_LEN)
  */
 int mbedtls_x509write_crt_set_serial_raw(mbedtls_x509write_cert *ctx,
-                                         unsigned char *serial, size_t serial_len);
+                                         const unsigned char *serial, size_t serial_len);
 
 /**
  * \brief           Set the validity period for a Certificate
@@ -1007,7 +984,7 @@ int mbedtls_x509write_crt_set_validity(mbedtls_x509write_cert *ctx, const char *
  * \brief           Set the issuer name for a Certificate
  *                  Issuer names should contain a comma-separated list
  *                  of OID types and values:
- *                  e.g. "C=UK,O=ARM,CN=mbed TLS CA"
+ *                  e.g. "C=UK,O=ARM,CN=Mbed TLS CA"
  *
  * \param ctx           CRT context to use
  * \param issuer_name   issuer name to set
@@ -1022,7 +999,7 @@ int mbedtls_x509write_crt_set_issuer_name(mbedtls_x509write_cert *ctx,
  * \brief           Set the subject name for a Certificate
  *                  Subject names should contain a comma-separated list
  *                  of OID types and values:
- *                  e.g. "C=UK,O=ARM,CN=mbed TLS Server 1"
+ *                  e.g. "C=UK,O=ARM,CN=Mbed TLS Server 1"
  *
  * \param ctx           CRT context to use
  * \param subject_name  subject name to set
@@ -1069,7 +1046,7 @@ void mbedtls_x509write_crt_set_md_alg(mbedtls_x509write_cert *ctx, mbedtls_md_ty
  * \param val       value of the extension OCTET STRING
  * \param val_len   length of the value data
  *
- * \return          0 if successful, or a MBEDTLS_ERR_X509_ALLOC_FAILED
+ * \return          0 if successful, or #PSA_ERROR_INSUFFICIENT_MEMORY
  */
 int mbedtls_x509write_crt_set_extension(mbedtls_x509write_cert *ctx,
                                         const char *oid, size_t oid_len,
@@ -1085,12 +1062,12 @@ int mbedtls_x509write_crt_set_extension(mbedtls_x509write_cert *ctx,
  *                      certificate (only for CA certificates, -1 is
  *                      unlimited)
  *
- * \return          0 if successful, or a MBEDTLS_ERR_X509_ALLOC_FAILED
+ * \return          0 if successful, or #PSA_ERROR_INSUFFICIENT_MEMORY
  */
 int mbedtls_x509write_crt_set_basic_constraints(mbedtls_x509write_cert *ctx,
                                                 int is_ca, int max_pathlen);
 
-#if defined(MBEDTLS_HAS_ALG_SHA_1_VIA_LOWLEVEL_OR_PSA)
+#if defined(PSA_WANT_ALG_SHA_1)
 /**
  * \brief           Set the subjectKeyIdentifier extension for a CRT
  *                  Requires that mbedtls_x509write_crt_set_subject_key() has been
@@ -1098,7 +1075,7 @@ int mbedtls_x509write_crt_set_basic_constraints(mbedtls_x509write_cert *ctx,
  *
  * \param ctx       CRT context to use
  *
- * \return          0 if successful, or a MBEDTLS_ERR_X509_ALLOC_FAILED
+ * \return          0 if successful, or #PSA_ERROR_INSUFFICIENT_MEMORY
  */
 int mbedtls_x509write_crt_set_subject_key_identifier(mbedtls_x509write_cert *ctx);
 
@@ -1109,10 +1086,10 @@ int mbedtls_x509write_crt_set_subject_key_identifier(mbedtls_x509write_cert *ctx
  *
  * \param ctx       CRT context to use
  *
- * \return          0 if successful, or a MBEDTLS_ERR_X509_ALLOC_FAILED
+ * \return          0 if successful, or #PSA_ERROR_INSUFFICIENT_MEMORY
  */
 int mbedtls_x509write_crt_set_authority_key_identifier(mbedtls_x509write_cert *ctx);
-#endif /* MBEDTLS_HAS_ALG_SHA_1_VIA_LOWLEVEL_OR_PSA */
+#endif /* PSA_WANT_ALG_SHA_1 */
 
 /**
  * \brief           Set the Key Usage Extension flags
@@ -1121,7 +1098,7 @@ int mbedtls_x509write_crt_set_authority_key_identifier(mbedtls_x509write_cert *c
  * \param ctx       CRT context to use
  * \param key_usage key usage flags to set
  *
- * \return          0 if successful, or MBEDTLS_ERR_X509_ALLOC_FAILED
+ * \return          0 if successful, or #PSA_ERROR_INSUFFICIENT_MEMORY
  */
 int mbedtls_x509write_crt_set_key_usage(mbedtls_x509write_cert *ctx,
                                         unsigned int key_usage);
@@ -1134,7 +1111,7 @@ int mbedtls_x509write_crt_set_key_usage(mbedtls_x509write_cert *ctx,
  * \param exts      extended key usage extensions to set, a sequence of
  *                  MBEDTLS_ASN1_OID objects
  *
- * \return          0 if successful, or MBEDTLS_ERR_X509_ALLOC_FAILED
+ * \return          0 if successful, or #PSA_ERROR_INSUFFICIENT_MEMORY
  */
 int mbedtls_x509write_crt_set_ext_key_usage(mbedtls_x509write_cert *ctx,
                                             const mbedtls_asn1_sequence *exts);
@@ -1146,7 +1123,7 @@ int mbedtls_x509write_crt_set_ext_key_usage(mbedtls_x509write_cert *ctx,
  * \param ctx           CRT context to use
  * \param ns_cert_type  Netscape Cert Type flags to set
  *
- * \return          0 if successful, or MBEDTLS_ERR_X509_ALLOC_FAILED
+ * \return          0 if successful, or #PSA_ERROR_INSUFFICIENT_MEMORY
  */
 int mbedtls_x509write_crt_set_ns_cert_type(mbedtls_x509write_cert *ctx,
                                            unsigned char ns_cert_type);
@@ -1167,17 +1144,11 @@ void mbedtls_x509write_crt_free(mbedtls_x509write_cert *ctx);
  * \param ctx       certificate to write away
  * \param buf       buffer to write to
  * \param size      size of the buffer
- * \param f_rng     RNG function. This must not be \c NULL.
- * \param p_rng     RNG parameter
  *
  * \return          length of data written if successful, or a specific
  *                  error code
- *
- * \note            \p f_rng is used for the signature operation.
  */
-int mbedtls_x509write_crt_der(mbedtls_x509write_cert *ctx, unsigned char *buf, size_t size,
-                              int (*f_rng)(void *, unsigned char *, size_t),
-                              void *p_rng);
+int mbedtls_x509write_crt_der(mbedtls_x509write_cert *ctx, unsigned char *buf, size_t size);
 
 #if defined(MBEDTLS_PEM_WRITE_C)
 /**
@@ -1186,16 +1157,11 @@ int mbedtls_x509write_crt_der(mbedtls_x509write_cert *ctx, unsigned char *buf, s
  * \param ctx       certificate to write away
  * \param buf       buffer to write to
  * \param size      size of the buffer
- * \param f_rng     RNG function. This must not be \c NULL.
- * \param p_rng     RNG parameter
  *
  * \return          0 if successful, or a specific error code
  *
- * \note            \p f_rng is used for the signature operation.
  */
-int mbedtls_x509write_crt_pem(mbedtls_x509write_cert *ctx, unsigned char *buf, size_t size,
-                              int (*f_rng)(void *, unsigned char *, size_t),
-                              void *p_rng);
+int mbedtls_x509write_crt_pem(mbedtls_x509write_cert *ctx, unsigned char *buf, size_t size);
 #endif /* MBEDTLS_PEM_WRITE_C */
 #endif /* MBEDTLS_X509_CRT_WRITE_C */
 

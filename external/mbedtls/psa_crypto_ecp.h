@@ -1,45 +1,16 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  PSA ECP layer on top of Mbed TLS crypto
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#ifndef PSA_CRYPTO_ECP_H
-#define PSA_CRYPTO_ECP_H
+#ifndef TF_PSA_CRYPTO_PSA_CRYPTO_ECP_H
+#define TF_PSA_CRYPTO_PSA_CRYPTO_ECP_H
 
-#include "mbedtls/psa/crypto.h"
-#include <mbedtls/ecp.h>
+#include <psa/crypto.h>
+#include <mbedtls/private/ecp.h>
 
 /** Load the contents of a key buffer into an internal ECP representation
  *
@@ -150,6 +121,80 @@ psa_status_t mbedtls_psa_ecp_export_public_key(
     uint8_t *data, size_t data_size, size_t *data_length);
 
 /**
+ * \brief Get the total number of ops that an export public-key operation has taken
+ *        Since it's start.
+ *
+ * \param[in] operation                 The \c mbedtls_psa_export_public_key_iop_t to use.
+ *
+ * \return Total number of operations.
+ */
+uint32_t mbedtls_psa_ecp_export_public_key_iop_get_num_ops(
+    mbedtls_psa_export_public_key_iop_t *operation);
+
+/**
+ * \brief Setup a new interruptible export public-key operation.
+ *
+ *  \param[in] operation                 The \c mbedtls_psa_export_public_key_iop_t to use.
+ *                                       This must be initialized first.
+ *  \param[in] private_key               pointer to private key.
+ *  \param[in] private_key_len           size of \p private_key in bytes.
+ *  \param[in] private_key_attributes    Key attributes of the private key.
+ *
+ *  \retval #PSA_SUCCESS
+ *         The operation started successfully - call \c mbedtls_psa_ecp_export_public_key_iop_complete()
+ *         with the same operation to complete the operation.
+ * \retval #PSA_ERROR_NOT_SUPPORTED
+ *           Either no internal interruptible operations are
+ *           currently supported, or the key attributes are not unsupported.
+ * \retval #PSA_ERROR_INSUFFICIENT_MEMORY
+ *         There was insufficient memory to load the key representation.
+ * \retval #PSA_ERROR_INVALID_ARGUMENT \emptydescription
+ * \retval #PSA_ERROR_CORRUPTION_DETECTED \emptydescription
+ *
+ */
+psa_status_t mbedtls_psa_ecp_export_public_key_iop_setup(
+    mbedtls_psa_export_public_key_iop_t *operation,
+    uint8_t *private_key,
+    size_t private_key_len,
+    const psa_key_attributes_t *private_key_attributes);
+
+
+/**
+ * \brief Continue and eventually complete an export public-key operation.
+ *
+ * \param[in] operation                  The \c mbedtls_psa_export_public_key_iop_t to use.
+ *                                       This must be initialized first and
+ *                                       had \c mbedtls_psa_ecp_export_public_key_iop_setup()
+ *                                       called successfully.
+ * \param[out] pub_key                   Buffer where the public key data is to be written.
+ * \param[in]  pub_key_size              Size of the \p pub_key buffer in bytes.
+ * \param[out] pub_key_len               On success, the number of bytes that make up the public key data.
+ *
+ * \retval #PSA_SUCCESS
+ *         The key was exported successfully.
+ * \retval #PSA_ERROR_INVALID_ARGUMENT \emptydescription
+ * \retval #PSA_ERROR_BUFFER_TOO_SMALL \emptydescription
+ * \retval #PSA_ERROR_NOT_SUPPORTED \emptydescription
+ *
+ */
+psa_status_t mbedtls_psa_ecp_export_public_key_iop_complete(
+    mbedtls_psa_export_public_key_iop_t *operation,
+    uint8_t *pub_key,
+    size_t pub_key_size,
+    size_t *pub_key_len);
+
+/**
+ * \brief Abort an interruptible export public-key operation.
+ *
+ * \param[in] operation               The \c mbedtls_psa_export_public_key_iop_t to abort.
+ *
+ * \retval #PSA_SUCCESS
+ *         The operation was aborted successfully.
+ */
+psa_status_t mbedtls_psa_ecp_export_public_key_iop_abort(
+    mbedtls_psa_export_public_key_iop_t *operation);
+
+/**
  * \brief Generate an ECP key.
  *
  * \note The signature of the function is that of a PSA driver generate_key
@@ -171,6 +216,181 @@ psa_status_t mbedtls_psa_ecp_export_public_key(
 psa_status_t mbedtls_psa_ecp_generate_key(
     const psa_key_attributes_t *attributes,
     uint8_t *key_buffer, size_t key_buffer_size, size_t *key_buffer_length);
+
+/**
+ * \brief Get the total number of ops that a key generation operation has taken
+ *        Since it's start.
+ *
+ * \param[in] operation                 The \c mbedtls_psa_generate_key_iop_t to use.
+ *                                      This must be initialized first.
+ * \return Total number of operations.
+ */
+uint32_t mbedtls_psa_generate_key_iop_get_num_ops(
+    mbedtls_psa_generate_key_iop_t *operation);
+
+/**
+ * \brief Setup a new interruptible key generation operation.
+ *
+ *  \param[in] operation                 The \c mbedtls_psa_generate_key_iop_t to use.
+ *                                       This must be initialized first.
+ *  \param[in] attributes                The desired attributes of the generated key.
+ *
+ *  \retval #PSA_SUCCESS
+ *         The operation started successfully - call \c mbedtls_psa_ecp_generate_key_iop_complete()
+ *         with the same operation to complete the operation.
+ * * \retval #PSA_ERROR_NOT_SUPPORTED
+ *           Either no internal interruptible operations are
+ *           currently supported, or the key attributes are not unsupported.
+ *  * \retval #PSA_ERROR_INSUFFICIENT_MEMORY
+ *         There was insufficient memory to load the key representation.
+ *
+ */
+psa_status_t mbedtls_psa_ecp_generate_key_iop_setup(
+    mbedtls_psa_generate_key_iop_t *operation,
+    const psa_key_attributes_t *attributes);
+
+/**
+ * \brief Continue and eventually complete a key generation operation.
+ *
+ * \note The signature of this function is that of a PSA driver
+ *       generate_key_complete entry point. This function behaves as a
+ *       generate_key_complete entry point as defined in the PSA driver
+ *       interface specification for transparent drivers.
+ *
+ * \param[in] operation                  The \c mbedtls_psa_generate_key_iop_t to use.
+ *                                       This must be initialized first and
+ *                                       had \c mbedtls_psa_ecp_generate_key_iop_setup()
+ *                                       called successfully.
+ * \param[out] key_output                The buffer to which the generated key
+ *                                       is to be written.
+ * \param[out] key_len                   On success, the number of bytes that make
+ *                                       up the returned key output.
+ * \retval #PSA_SUCCESS
+ *         The key was generated successfully.
+ * \retval #PSA_ERROR_INVALID_ARGUMENT \emptydescription
+ * \retval #PSA_ERROR_INSUFFICIENT_MEMORY \emptydescription
+ *
+ */
+psa_status_t mbedtls_psa_ecp_generate_key_iop_complete(
+    mbedtls_psa_generate_key_iop_t *operation,
+    uint8_t *key_output,
+    size_t key_output_size,
+    size_t *key_len);
+
+/**
+ * \brief Abort a key generation operation.
+ *
+ * \param[in] operation               The \c mbedtls_psa_generate_key_iop_t to abort.
+ *
+ * \retval #PSA_SUCCESS
+ *         The operation was aborted successfully.
+ *
+ */
+psa_status_t mbedtls_psa_ecp_generate_key_iop_abort(
+    mbedtls_psa_generate_key_iop_t *operation);
+
+/**
+ * \brief Get the total number of ops that a key agreement operation has taken
+ *        since its start.
+ *
+ * \note The signature of this function is that of a PSA driver
+ *       key_agreement_get_num_ops entry point. This function behaves as an
+ *       key_agreement_get_num_ops entry point as defined in the PSA driver
+ *       interface specification for transparent drivers.
+ *
+ * \param[in]   operation           The \c mbedtls_psa_key_agreement_interruptible_operation_t to use.
+ *                                  This must be initialized first.
+ *
+ * \return                      Total number of operations.
+ */
+uint32_t mbedtls_psa_key_agreement_iop_get_num_ops(
+    mbedtls_psa_key_agreement_interruptible_operation_t *operation);
+
+/**
+ * \brief  Set up a new interruptible key agreement operation.
+ *
+ * \note The signature of this function is that of a PSA driver
+ *       key_agreement_setup entry point. This function behaves as a
+ *       key_agreement_setup entry point as defined in the PSA driver interface
+ *       specification for transparent drivers.
+ *
+ *  \param[in] operation                 The \c psa_key_agreement_iop_t to use.
+ *                                       This must be initialized first.
+ *  \param[in] private_key_attributes    The attributes of the private key to use for the
+ *                                       operation.
+ *  \param[in] private_key_buffer        The buffer containing the private key
+ *                                       context.
+ *  \param[in] private_key_buffer_len    Size of the \p private_key_buffer buffer in
+ *                                       bytes.
+ *  \param[in] peer_key                  The buffer containing the key context
+ *                                       of the peer's public key.
+ *  \param[in]  peer_key_length          Size of the \p peer_key buffer in
+ *                                       bytes.
+ *  \retval #PSA_SUCCESS
+ *         The operation started successfully - call \c psa_key_agreement_complete()
+ *         with the same context to complete the operation
+ * \retval #PSA_ERROR_INVALID_ARGUMENT
+ *         An unsupported, incorrectly formatted or incorrect type of key was
+ *         used.
+ * \retval #PSA_ERROR_NOT_SUPPORTED Either no internal interruptible operations
+ *         are currently supported, or the key type is currently unsupported.
+ * \retval #PSA_ERROR_INSUFFICIENT_MEMORY
+ *         There was insufficient memory to load the key representation.
+ */
+psa_status_t mbedtls_psa_key_agreement_iop_setup(
+    mbedtls_psa_key_agreement_interruptible_operation_t *operation,
+    const psa_key_attributes_t *private_key_attributes,
+    const uint8_t *private_key_buffer,
+    size_t private_key_buffer_len,
+    const uint8_t *peer_key,
+    size_t peer_key_length);
+
+/**
+ * \brief Continue and eventually complete a key agreement operation.
+ *
+ * \note The signature of this function is that of a PSA driver
+ *       key_agreement_complete entry point. This function behaves as a
+ *       key_agreement_complete entry point as defined in the PSA driver
+ *       interface specification for transparent drivers.
+ *
+ * \param[in] operation                  The \c mbedtls_psa_key_agreement_interruptible_operation_t to use.
+ *                                       This must be initialized first.
+ * \param[out] shared_secret             The buffer to which the shared secret
+ *                                       is to be written.
+ * \param[in]  shared_secret_size        Size of the \p shared_secret buffer in
+ *                                       bytes.
+ * \param[out] shared_secret_length      On success, the number of bytes that make
+ *                                       up the returned shared secret.
+ * \retval #PSA_SUCCESS
+ *         The shared secret was calculated successfully.
+ * \retval #PSA_ERROR_INVALID_ARGUMENT \emptydescription
+ * \retval #PSA_ERROR_CORRUPTION_DETECTED
+ *         Internal interruptible operations are currently not supported.
+ * \retval #PSA_ERROR_BUFFER_TOO_SMALL
+ *         \p shared_secret_size is too small
+ */
+psa_status_t mbedtls_psa_key_agreement_iop_complete(
+    mbedtls_psa_key_agreement_interruptible_operation_t *operation,
+    uint8_t *shared_secret,
+    size_t shared_secret_size,
+    size_t *shared_secret_length);
+
+/**
+ * \brief Abort a key agreement operation.
+ *
+ * \note The signature of this function is that of a PSA driver
+ *       key_agreement_abort entry point. This function behaves as a
+ *       key_agreement_abort entry point as defined in the PSA driver
+ *       interface specification for transparent drivers.
+ *
+ * \param[in] operation                  The \c mbedtls_psa_key_agreement_interruptible_operation_t to abort.
+ *                                       This must be initialized first.
+ *
+ * \retval #PSA_SUCCESS
+ *         The operation was aborted successfully.
+ */
+psa_status_t mbedtls_psa_key_agreement_iop_abort(
+    mbedtls_psa_key_agreement_interruptible_operation_t *operation);
 
 /** Sign an already-calculated hash with ECDSA.
  *
@@ -293,4 +513,4 @@ psa_status_t mbedtls_psa_key_agreement_ecdh(
     psa_algorithm_t alg, const uint8_t *peer_key, size_t peer_key_length,
     uint8_t *shared_secret, size_t shared_secret_size,
     size_t *shared_secret_length);
-#endif /* PSA_CRYPTO_ECP_H */
+#endif /* TF_PSA_CRYPTO_PSA_CRYPTO_ECP_H */

@@ -1,37 +1,8 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  RIPE MD-160 implementation
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
 /*
@@ -40,19 +11,17 @@
  *  http://ehash.iaik.tugraz.at/wiki/RIPEMD-160
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_RIPEMD160_C)
 
-#include "mbedtls/ripemd160.h"
+#include "mbedtls/private/ripemd160.h"
 #include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
+#include "mbedtls/private/error_common.h"
 
 #include <string.h>
 
 #include "mbedtls/platform.h"
-
-#if !defined(MBEDTLS_RIPEMD160_ALT)
 
 void mbedtls_ripemd160_init(mbedtls_ripemd160_context *ctx)
 {
@@ -90,13 +59,11 @@ int mbedtls_ripemd160_starts(mbedtls_ripemd160_context *ctx)
 
     return 0;
 }
-
-#if !defined(MBEDTLS_RIPEMD160_PROCESS_ALT)
 /*
  * Process one block
  */
-int mbedtls_internal_ripemd160_process(mbedtls_ripemd160_context *ctx,
-                                       const unsigned char data[64])
+static int mbedtls_internal_ripemd160_process(mbedtls_ripemd160_context *ctx,
+                                              const unsigned char data[64])
 {
     struct {
         uint32_t A, B, C, D, E, Ap, Bp, Cp, Dp, Ep, X[16];
@@ -287,8 +254,6 @@ int mbedtls_internal_ripemd160_process(mbedtls_ripemd160_context *ctx,
     return 0;
 }
 
-#endif /* !MBEDTLS_RIPEMD160_PROCESS_ALT */
-
 /*
  * RIPEMD-160 process buffer
  */
@@ -373,12 +338,12 @@ int mbedtls_ripemd160_finish(mbedtls_ripemd160_context *ctx,
 
     ret = mbedtls_ripemd160_update(ctx, ripemd160_padding, padn);
     if (ret != 0) {
-        return ret;
+        goto exit;
     }
 
     ret = mbedtls_ripemd160_update(ctx, msglen, 8);
     if (ret != 0) {
-        return ret;
+        goto exit;
     }
 
     MBEDTLS_PUT_UINT32_LE(ctx->state[0], output,  0);
@@ -387,10 +352,12 @@ int mbedtls_ripemd160_finish(mbedtls_ripemd160_context *ctx,
     MBEDTLS_PUT_UINT32_LE(ctx->state[3], output, 12);
     MBEDTLS_PUT_UINT32_LE(ctx->state[4], output, 16);
 
-    return 0;
-}
+    ret = 0;
 
-#endif /* ! MBEDTLS_RIPEMD160_ALT */
+exit:
+    mbedtls_ripemd160_free(ctx);
+    return ret;
+}
 
 /*
  * output = RIPEMD-160( input buffer )

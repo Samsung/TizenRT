@@ -35,8 +35,8 @@
 // headers required for mbed TLS
 #include "mbedtls/platform.h"
 #include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/private/entropy.h"
+#include "mbedtls/private/ctr_drbg.h"
 #include "mbedtls/pkcs12.h"
 #include "mbedtls/ssl_misc.h"
 #include "mbedtls/x509_csr.h"

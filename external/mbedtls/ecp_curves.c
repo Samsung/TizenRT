@@ -1,46 +1,19 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  Elliptic curves over GF(p): curve-specific data and functions
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
-#if defined(MBEDTLS_ECP_C)
+#if !defined(MBEDTLS_ECP_WITH_MPI_UINT)
 
-#include "mbedtls/ecp.h"
+#if defined(MBEDTLS_ECP_LIGHT)
+
+#include "mbedtls/private/ecp.h"
 #include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
+#include "mbedtls/private/error_common.h"
 
 #include "bn_mul.h"
 #include "bignum_core.h"
@@ -48,507 +21,32 @@
 
 #include <string.h>
 
-#if !defined(MBEDTLS_ECP_ALT)
-
-/* Parameter validation macros based on platform_util.h */
-#define ECP_VALIDATE_RET(cond)    \
-    MBEDTLS_INTERNAL_VALIDATE_RET(cond, MBEDTLS_ERR_ECP_BAD_INPUT_DATA)
-#define ECP_VALIDATE(cond)        \
-    MBEDTLS_INTERNAL_VALIDATE(cond)
-
-#define ECP_MPI_INIT(s, n, p) { s, (n), (mbedtls_mpi_uint *) (p) }
+#define ECP_MPI_INIT(_p, _n) { .p = (mbedtls_mpi_uint *) (_p), .s = 1, .n = (_n) }
 
 #define ECP_MPI_INIT_ARRAY(x)   \
-    ECP_MPI_INIT(1, sizeof(x) / sizeof(mbedtls_mpi_uint), x)
+    ECP_MPI_INIT(x, sizeof(x) / sizeof(mbedtls_mpi_uint))
 
 #define ECP_POINT_INIT_XY_Z0(x, y) { \
-        ECP_MPI_INIT_ARRAY(x), ECP_MPI_INIT_ARRAY(y), ECP_MPI_INIT(1, 0, NULL) }
+        ECP_MPI_INIT_ARRAY(x), ECP_MPI_INIT_ARRAY(y), ECP_MPI_INIT(NULL, 0) }
 #define ECP_POINT_INIT_XY_Z1(x, y) { \
-        ECP_MPI_INIT_ARRAY(x), ECP_MPI_INIT_ARRAY(y), ECP_MPI_INIT(1, 1, mpi_one) }
+        ECP_MPI_INIT_ARRAY(x), ECP_MPI_INIT_ARRAY(y), ECP_MPI_INIT(mpi_one, 1) }
 
-#if defined(MBEDTLS_ECP_DP_SECP192R1_ENABLED) ||   \
-    defined(MBEDTLS_ECP_DP_SECP224R1_ENABLED) ||   \
-    defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED) ||   \
+#if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED) ||   \
     defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED) ||   \
     defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED) ||   \
     defined(MBEDTLS_ECP_DP_BP256R1_ENABLED)   ||   \
     defined(MBEDTLS_ECP_DP_BP384R1_ENABLED)   ||   \
     defined(MBEDTLS_ECP_DP_BP512R1_ENABLED)   ||   \
-    defined(MBEDTLS_ECP_DP_SECP192K1_ENABLED) ||   \
-    defined(MBEDTLS_ECP_DP_SECP224K1_ENABLED) ||   \
     defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
 /* For these curves, we build the group parameters dynamically. */
 #define ECP_LOAD_GROUP
-static mbedtls_mpi_uint mpi_one[] = { 1 };
+static const mbedtls_mpi_uint mpi_one[] = { 1 };
 #endif
 
 /*
  * Note: the constants are in little-endian order
  * to be directly usable in MPIs
  */
-
-/*
- * Domain parameters for secp192r1
- */
-#if defined(MBEDTLS_ECP_DP_SECP192R1_ENABLED)
-static const mbedtls_mpi_uint secp192r1_p[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-};
-static const mbedtls_mpi_uint secp192r1_b[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB1, 0xB9, 0x46, 0xC1, 0xEC, 0xDE, 0xB8, 0xFE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x49, 0x30, 0x24, 0x72, 0xAB, 0xE9, 0xA7, 0x0F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE7, 0x80, 0x9C, 0xE5, 0x19, 0x05, 0x21, 0x64),
-};
-static const mbedtls_mpi_uint secp192r1_gx[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x12, 0x10, 0xFF, 0x82, 0xFD, 0x0A, 0xFF, 0xF4),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x00, 0x88, 0xA1, 0x43, 0xEB, 0x20, 0xBF, 0x7C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF6, 0x90, 0x30, 0xB0, 0x0E, 0xA8, 0x8D, 0x18),
-};
-static const mbedtls_mpi_uint secp192r1_gy[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x11, 0x48, 0x79, 0x1E, 0xA1, 0x77, 0xF9, 0x73),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD5, 0xCD, 0x24, 0x6B, 0xED, 0x11, 0x10, 0x63),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x78, 0xDA, 0xC8, 0xFF, 0x95, 0x2B, 0x19, 0x07),
-};
-static const mbedtls_mpi_uint secp192r1_n[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x31, 0x28, 0xD2, 0xB4, 0xB1, 0xC9, 0x6B, 0x14),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x36, 0xF8, 0xDE, 0x99, 0xFF, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-};
-#if MBEDTLS_ECP_FIXED_POINT_OPTIM == 1
-static const mbedtls_mpi_uint secp192r1_T_0_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x12, 0x10, 0xFF, 0x82, 0xFD, 0x0A, 0xFF, 0xF4),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x00, 0x88, 0xA1, 0x43, 0xEB, 0x20, 0xBF, 0x7C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF6, 0x90, 0x30, 0xB0, 0x0E, 0xA8, 0x8D, 0x18),
-};
-static const mbedtls_mpi_uint secp192r1_T_0_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x11, 0x48, 0x79, 0x1E, 0xA1, 0x77, 0xF9, 0x73),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD5, 0xCD, 0x24, 0x6B, 0xED, 0x11, 0x10, 0x63),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x78, 0xDA, 0xC8, 0xFF, 0x95, 0x2B, 0x19, 0x07),
-};
-static const mbedtls_mpi_uint secp192r1_T_1_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x97, 0x9E, 0xE3, 0x60, 0x59, 0xD1, 0xC4, 0xC2),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x91, 0xBD, 0x22, 0xD7, 0x2D, 0x07, 0xBD, 0xB6),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x74, 0x2A, 0xCF, 0x33, 0xF0, 0xBE, 0xD1, 0xED),
-};
-static const mbedtls_mpi_uint secp192r1_T_1_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x88, 0x71, 0x4B, 0xA8, 0xED, 0x7E, 0xC9, 0x1A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x8E, 0x2A, 0xF6, 0xDF, 0x0E, 0xE8, 0x4C, 0x0F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC5, 0x35, 0xF7, 0x8A, 0xC3, 0xEC, 0xDE, 0x1E),
-};
-static const mbedtls_mpi_uint secp192r1_T_2_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x00, 0x67, 0xC2, 0x1D, 0x32, 0x8F, 0x10, 0xFB),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBB, 0x2D, 0x17, 0xF3, 0xE4, 0xFE, 0xD8, 0x13),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x55, 0x45, 0x10, 0x70, 0x2C, 0x3E, 0x52, 0x3E),
-};
-static const mbedtls_mpi_uint secp192r1_T_2_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x61, 0xF1, 0x04, 0x5D, 0xEE, 0xD4, 0x56, 0xE6),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x78, 0xB7, 0x38, 0x27, 0x61, 0xAA, 0x81, 0x87),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x71, 0x37, 0xD7, 0x0E, 0x29, 0x0E, 0x11, 0x14),
-};
-static const mbedtls_mpi_uint secp192r1_T_3_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1E, 0x35, 0x52, 0xC6, 0x31, 0xB7, 0x27, 0xF5),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3D, 0xD4, 0x15, 0x98, 0x0F, 0xE7, 0xF3, 0x6A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD3, 0x31, 0x70, 0x35, 0x09, 0xA0, 0x2B, 0xC2),
-};
-static const mbedtls_mpi_uint secp192r1_T_3_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x21, 0x75, 0xA7, 0x4C, 0x88, 0xCF, 0x5B, 0xE4),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x17, 0x17, 0x48, 0x8D, 0xF2, 0xF0, 0x86, 0xED),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x49, 0xCF, 0xFE, 0x6B, 0xB0, 0xA5, 0x06, 0xAB),
-};
-static const mbedtls_mpi_uint secp192r1_T_4_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x18, 0x6A, 0xDC, 0x9A, 0x6D, 0x7B, 0x47, 0x2E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x12, 0xFC, 0x51, 0x12, 0x62, 0x66, 0x0B, 0x59),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCD, 0x40, 0x93, 0xA0, 0xB5, 0x5A, 0x58, 0xD7),
-};
-static const mbedtls_mpi_uint secp192r1_T_4_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xEF, 0xCB, 0xAF, 0xDC, 0x0B, 0xA1, 0x26, 0xFB),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xDA, 0x36, 0x9D, 0xA3, 0xD7, 0x3B, 0xAD, 0x39),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB4, 0x3B, 0x05, 0x9A, 0xA8, 0xAA, 0x69, 0xB2),
-};
-static const mbedtls_mpi_uint secp192r1_T_5_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6D, 0xD9, 0xD1, 0x4D, 0x4A, 0x6E, 0x96, 0x1E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x17, 0x66, 0x32, 0x39, 0xC6, 0x57, 0x7D, 0xE6),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x92, 0xA0, 0x36, 0xC2, 0x45, 0xF9, 0x00, 0x62),
-};
-static const mbedtls_mpi_uint secp192r1_T_5_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB4, 0xEF, 0x59, 0x46, 0xDC, 0x60, 0xD9, 0x8F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x24, 0xB0, 0xE9, 0x41, 0xA4, 0x87, 0x76, 0x89),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x13, 0xD4, 0x0E, 0xB2, 0xFA, 0x16, 0x56, 0xDC),
-};
-static const mbedtls_mpi_uint secp192r1_T_6_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x0A, 0x62, 0xD2, 0xB1, 0x34, 0xB2, 0xF1, 0x06),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB2, 0xED, 0x55, 0xC5, 0x47, 0xB5, 0x07, 0x15),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x17, 0xF6, 0x2F, 0x94, 0xC3, 0xDD, 0x54, 0x2F),
-};
-static const mbedtls_mpi_uint secp192r1_T_6_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFD, 0xA6, 0xD4, 0x8C, 0xA9, 0xCE, 0x4D, 0x2E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB9, 0x4B, 0x46, 0xCC, 0xB2, 0x55, 0xC8, 0xB2),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3A, 0xAE, 0x31, 0xED, 0x89, 0x65, 0x59, 0x55),
-};
-static const mbedtls_mpi_uint secp192r1_T_7_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCC, 0x0A, 0xD1, 0x1A, 0xC5, 0xF6, 0xEA, 0x43),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x0C, 0xFC, 0x0C, 0x1A, 0xFB, 0xA0, 0xC8, 0x70),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xEA, 0xFD, 0x53, 0x6F, 0x6D, 0xBF, 0xBA, 0xAF),
-};
-static const mbedtls_mpi_uint secp192r1_T_7_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x2D, 0xB0, 0x7D, 0x83, 0x96, 0xE3, 0xCB, 0x9D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6F, 0x6E, 0x55, 0x2C, 0x20, 0x53, 0x2F, 0x46),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA6, 0x66, 0x00, 0x17, 0x08, 0xFE, 0xAC, 0x31),
-};
-static const mbedtls_mpi_uint secp192r1_T_8_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x09, 0x12, 0x97, 0x3A, 0xC7, 0x57, 0x45, 0xCD),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x38, 0x25, 0x99, 0x00, 0xF6, 0x97, 0xB4, 0x64),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9B, 0x74, 0xE6, 0xE6, 0xA3, 0xDF, 0x9C, 0xCC),
-};
-static const mbedtls_mpi_uint secp192r1_T_8_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x32, 0xF4, 0x76, 0xD5, 0x5F, 0x2A, 0xFD, 0x85),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x62, 0x80, 0x7E, 0x3E, 0xE5, 0xE8, 0xD6, 0x63),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE2, 0xAD, 0x1E, 0x70, 0x79, 0x3E, 0x3D, 0x83),
-};
-static const mbedtls_mpi_uint secp192r1_T_9_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x8E, 0x15, 0xBB, 0xB3, 0x42, 0x6A, 0xA1, 0x7C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9B, 0x58, 0xCB, 0x43, 0x25, 0x00, 0x14, 0x68),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x06, 0x4E, 0x93, 0x11, 0xE0, 0x32, 0x54, 0x98),
-};
-static const mbedtls_mpi_uint secp192r1_T_9_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA7, 0x52, 0xA2, 0xB4, 0x57, 0x32, 0xB9, 0x11),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7D, 0x43, 0xA1, 0xB1, 0xFB, 0x01, 0xE1, 0xE7),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA6, 0xFB, 0x5A, 0x11, 0xB8, 0xC2, 0x03, 0xE5),
-};
-static const mbedtls_mpi_uint secp192r1_T_10_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1C, 0x2B, 0x71, 0x26, 0x4E, 0x7C, 0xC5, 0x32),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1F, 0xF5, 0xD3, 0xA8, 0xE4, 0x95, 0x48, 0x65),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x55, 0xAE, 0xD9, 0x5D, 0x9F, 0x6A, 0x22, 0xAD),
-};
-static const mbedtls_mpi_uint secp192r1_T_10_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD9, 0xCC, 0xA3, 0x4D, 0xA0, 0x1C, 0x34, 0xEF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA3, 0x3C, 0x62, 0xF8, 0x5E, 0xA6, 0x58, 0x7D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6D, 0x6E, 0x66, 0x8A, 0x3D, 0x17, 0xFF, 0x0F),
-};
-static const mbedtls_mpi_uint secp192r1_T_11_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF7, 0xCD, 0xA8, 0xDD, 0xD1, 0x20, 0x5C, 0xEA),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBF, 0xFE, 0x17, 0xE2, 0xCF, 0xEA, 0x63, 0xDE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x74, 0x51, 0xC9, 0x16, 0xDE, 0xB4, 0xB2, 0xDD),
-};
-static const mbedtls_mpi_uint secp192r1_T_11_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x59, 0xBE, 0x12, 0xD7, 0xA3, 0x0A, 0x50, 0x33),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x53, 0x87, 0xC5, 0x8A, 0x76, 0x57, 0x07, 0x60),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE5, 0x1F, 0xC6, 0x1B, 0x66, 0xC4, 0x3D, 0x8A),
-};
-static const mbedtls_mpi_uint secp192r1_T_12_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x28, 0xA4, 0x85, 0x13, 0x8F, 0xA7, 0x35, 0x19),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x58, 0x0D, 0xFD, 0xFF, 0x1B, 0xD1, 0xD6, 0xEF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBA, 0x7A, 0xD0, 0xC3, 0xB4, 0xEF, 0x39, 0x66),
-};
-static const mbedtls_mpi_uint secp192r1_T_12_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3A, 0xFE, 0xA5, 0x9C, 0x34, 0x30, 0x49, 0x40),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xDE, 0xC5, 0x39, 0x26, 0x06, 0xE3, 0x01, 0x17),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE2, 0x2B, 0x66, 0xFC, 0x95, 0x5F, 0x35, 0xF7),
-};
-static const mbedtls_mpi_uint secp192r1_T_13_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x58, 0xCF, 0x54, 0x63, 0x99, 0x57, 0x05, 0x45),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x71, 0x6F, 0x00, 0x5F, 0x65, 0x08, 0x47, 0x98),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x62, 0x2A, 0x90, 0x6D, 0x67, 0xC6, 0xBC, 0x45),
-};
-static const mbedtls_mpi_uint secp192r1_T_13_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x8A, 0x4D, 0x88, 0x0A, 0x35, 0x9E, 0x33, 0x9C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7C, 0x17, 0x0C, 0xF8, 0xE1, 0x7A, 0x49, 0x02),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA4, 0x44, 0x06, 0x8F, 0x0B, 0x70, 0x2F, 0x71),
-};
-static const mbedtls_mpi_uint secp192r1_T_14_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x85, 0x4B, 0xCB, 0xF9, 0x8E, 0x6A, 0xDA, 0x1B),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x29, 0x43, 0xA1, 0x3F, 0xCE, 0x17, 0xD2, 0x32),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x5D, 0x0D, 0xD2, 0x6C, 0x82, 0x37, 0xE5, 0xFC),
-};
-static const mbedtls_mpi_uint secp192r1_T_14_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x4A, 0x3C, 0xF4, 0x92, 0xB4, 0x8A, 0x95, 0x85),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x85, 0x96, 0xF1, 0x0A, 0x34, 0x2F, 0x74, 0x7E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7B, 0xA1, 0xAA, 0xBA, 0x86, 0x77, 0x4F, 0xA2),
-};
-static const mbedtls_mpi_uint secp192r1_T_15_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE5, 0x7F, 0xEF, 0x60, 0x50, 0x80, 0xD7, 0xD4),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x31, 0xAC, 0xC9, 0xFE, 0xEC, 0x0A, 0x1A, 0x9F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6B, 0x2F, 0xBE, 0x91, 0xD7, 0xB7, 0x38, 0x48),
-};
-static const mbedtls_mpi_uint secp192r1_T_15_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB1, 0xAE, 0x85, 0x98, 0xFE, 0x05, 0x7F, 0x9F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x91, 0xBE, 0xFD, 0x11, 0x31, 0x3D, 0x14, 0x13),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x59, 0x75, 0xE8, 0x30, 0x01, 0xCB, 0x9B, 0x1C),
-};
-static const mbedtls_ecp_point secp192r1_T[16] = {
-    ECP_POINT_INIT_XY_Z1(secp192r1_T_0_X, secp192r1_T_0_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_1_X, secp192r1_T_1_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_2_X, secp192r1_T_2_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_3_X, secp192r1_T_3_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_4_X, secp192r1_T_4_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_5_X, secp192r1_T_5_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_6_X, secp192r1_T_6_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_7_X, secp192r1_T_7_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_8_X, secp192r1_T_8_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_9_X, secp192r1_T_9_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_10_X, secp192r1_T_10_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_11_X, secp192r1_T_11_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_12_X, secp192r1_T_12_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_13_X, secp192r1_T_13_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_14_X, secp192r1_T_14_Y),
-    ECP_POINT_INIT_XY_Z0(secp192r1_T_15_X, secp192r1_T_15_Y),
-};
-#else
-#define secp192r1_T NULL
-#endif
-#endif /* MBEDTLS_ECP_DP_SECP192R1_ENABLED */
-
-/*
- * Domain parameters for secp224r1
- */
-#if defined(MBEDTLS_ECP_DP_SECP224R1_ENABLED)
-static const mbedtls_mpi_uint secp224r1_p[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_b[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB4, 0xFF, 0x55, 0x23, 0x43, 0x39, 0x0B, 0x27),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBA, 0xD8, 0xBF, 0xD7, 0xB7, 0xB0, 0x44, 0x50),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x56, 0x32, 0x41, 0xF5, 0xAB, 0xB3, 0x04, 0x0C),
-    MBEDTLS_BYTES_TO_T_UINT_4(0x85, 0x0A, 0x05, 0xB4),
-};
-static const mbedtls_mpi_uint secp224r1_gx[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x21, 0x1D, 0x5C, 0x11, 0xD6, 0x80, 0x32, 0x34),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x22, 0x11, 0xC2, 0x56, 0xD3, 0xC1, 0x03, 0x4A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB9, 0x90, 0x13, 0x32, 0x7F, 0xBF, 0xB4, 0x6B),
-    MBEDTLS_BYTES_TO_T_UINT_4(0xBD, 0x0C, 0x0E, 0xB7),
-};
-static const mbedtls_mpi_uint secp224r1_gy[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x34, 0x7E, 0x00, 0x85, 0x99, 0x81, 0xD5, 0x44),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x64, 0x47, 0x07, 0x5A, 0xA0, 0x75, 0x43, 0xCD),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE6, 0xDF, 0x22, 0x4C, 0xFB, 0x23, 0xF7, 0xB5),
-    MBEDTLS_BYTES_TO_T_UINT_4(0x88, 0x63, 0x37, 0xBD),
-};
-static const mbedtls_mpi_uint secp224r1_n[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3D, 0x2A, 0x5C, 0x5C, 0x45, 0x29, 0xDD, 0x13),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3E, 0xF0, 0xB8, 0xE0, 0xA2, 0x16, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_4(0xFF, 0xFF, 0xFF, 0xFF),
-};
-#if MBEDTLS_ECP_FIXED_POINT_OPTIM == 1
-static const mbedtls_mpi_uint secp224r1_T_0_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x21, 0x1D, 0x5C, 0x11, 0xD6, 0x80, 0x32, 0x34),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x22, 0x11, 0xC2, 0x56, 0xD3, 0xC1, 0x03, 0x4A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB9, 0x90, 0x13, 0x32, 0x7F, 0xBF, 0xB4, 0x6B),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBD, 0x0C, 0x0E, 0xB7, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_0_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x34, 0x7E, 0x00, 0x85, 0x99, 0x81, 0xD5, 0x44),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x64, 0x47, 0x07, 0x5A, 0xA0, 0x75, 0x43, 0xCD),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE6, 0xDF, 0x22, 0x4C, 0xFB, 0x23, 0xF7, 0xB5),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x88, 0x63, 0x37, 0xBD, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_1_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE0, 0xF9, 0xB8, 0xD0, 0x3D, 0xD2, 0xD3, 0xFA),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1E, 0xFD, 0x99, 0x26, 0x19, 0xFE, 0x13, 0x6E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1C, 0x0E, 0x4C, 0x48, 0x7C, 0xA2, 0x17, 0x01),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3D, 0xA3, 0x13, 0x57, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_1_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9F, 0x16, 0x5C, 0x8F, 0xAA, 0xED, 0x0F, 0x58),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBF, 0xC5, 0x43, 0x34, 0x93, 0x05, 0x2A, 0x4C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE4, 0xE3, 0x6C, 0xCA, 0xC6, 0x14, 0xC2, 0x25),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD3, 0x43, 0x6C, 0xD7, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_2_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC3, 0x5A, 0x98, 0x1E, 0xC8, 0xA5, 0x42, 0xA3),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x98, 0x49, 0x56, 0x78, 0xF8, 0xEF, 0xED, 0x65),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1B, 0xBB, 0x64, 0xB6, 0x4C, 0x54, 0x5F, 0xD1),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x2F, 0x0C, 0x33, 0xCC, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_2_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFA, 0x79, 0xCB, 0x2E, 0x08, 0xFF, 0xD8, 0xE6),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x2E, 0x1F, 0xD4, 0xD7, 0x57, 0xE9, 0x39, 0x45),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD8, 0xD6, 0x3B, 0x0A, 0x1C, 0x87, 0xB7, 0x6A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xEB, 0x30, 0xD8, 0x05, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_3_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAD, 0x79, 0x74, 0x9A, 0xE6, 0xBB, 0xC2, 0xC2),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB4, 0x5B, 0xA6, 0x67, 0xC1, 0x91, 0xE7, 0x64),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF0, 0xDF, 0x38, 0x82, 0x19, 0x2C, 0x4C, 0xCA),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD1, 0x2E, 0x39, 0xC5, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_3_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x99, 0x36, 0x78, 0x4E, 0xAE, 0x5B, 0x02, 0x76),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x14, 0xF6, 0x8B, 0xF8, 0xF4, 0x92, 0x6B, 0x42),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBA, 0x4D, 0x71, 0x35, 0xE7, 0x0C, 0x2C, 0x98),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9B, 0xA5, 0x1F, 0xAE, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_4_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAF, 0x1C, 0x4B, 0xDF, 0x5B, 0xF2, 0x51, 0xB7),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x05, 0x74, 0xB1, 0x5A, 0xC6, 0x0F, 0x0E, 0x61),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE8, 0x24, 0x09, 0x62, 0xAF, 0xFC, 0xDB, 0x45),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x43, 0xE1, 0x80, 0x55, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_4_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3C, 0x82, 0xFE, 0xAD, 0xC3, 0xE5, 0xCF, 0xD8),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x24, 0xA2, 0x62, 0x17, 0x76, 0xF0, 0x5A, 0xFA),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3E, 0xB8, 0xE5, 0xAC, 0xB7, 0x66, 0x38, 0xAA),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x97, 0xFD, 0x86, 0x05, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_5_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x59, 0xD3, 0x0C, 0x3C, 0xD1, 0x66, 0xB0, 0xF1),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBC, 0x59, 0xB4, 0x8D, 0x90, 0x10, 0xB7, 0xA2),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x96, 0x47, 0x9B, 0xE6, 0x55, 0x8A, 0xE4, 0xEE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB1, 0x49, 0xDB, 0x78, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_5_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x41, 0x97, 0xED, 0xDE, 0xFF, 0xB3, 0xDF, 0x48),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x10, 0xB9, 0x83, 0xB7, 0xEB, 0xBE, 0x40, 0x8D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAF, 0xD3, 0xD3, 0xCD, 0x0E, 0x82, 0x79, 0x3D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9B, 0x83, 0x1B, 0xF0, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_6_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3F, 0x22, 0xBB, 0x54, 0xD3, 0x31, 0x56, 0xFC),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x80, 0x36, 0xE5, 0xE0, 0x89, 0x96, 0x8E, 0x71),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE1, 0xEF, 0x0A, 0xED, 0xD0, 0x11, 0x4A, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x15, 0x00, 0x57, 0x27, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_6_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x13, 0xCA, 0x3D, 0xF7, 0x64, 0x9B, 0x6E, 0x85),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x90, 0xE3, 0x70, 0x6B, 0x41, 0xD7, 0xED, 0x8F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x02, 0x44, 0x44, 0x80, 0xCE, 0x13, 0x37, 0x92),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x94, 0x73, 0x80, 0x79, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_7_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB7, 0x4D, 0x70, 0x7D, 0x31, 0x0F, 0x1C, 0x58),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6D, 0x35, 0x88, 0x47, 0xC4, 0x24, 0x78, 0x3F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBA, 0xF0, 0xCD, 0x91, 0x81, 0xB3, 0xDE, 0xB6),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x04, 0xCE, 0xC6, 0xF7, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_7_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE9, 0x9C, 0x2D, 0xE8, 0xD2, 0x00, 0x8F, 0x10),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD5, 0x5E, 0x7C, 0x0E, 0x0C, 0x6E, 0x58, 0x02),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAE, 0x81, 0x21, 0xCE, 0x43, 0xF4, 0x24, 0x3D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9E, 0xBC, 0xF0, 0xF4, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_8_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD6, 0x10, 0xC2, 0x74, 0x4A, 0x8F, 0x8A, 0xCF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x89, 0x67, 0xF4, 0x2B, 0x38, 0x2B, 0x35, 0x17),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF5, 0xE7, 0x0C, 0xA9, 0xFA, 0x77, 0x5C, 0xBD),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE0, 0x33, 0x19, 0x2B, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_8_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE7, 0x3E, 0x96, 0x22, 0x53, 0xE1, 0xE9, 0xBE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE0, 0x13, 0xBC, 0xA1, 0x16, 0xEC, 0x01, 0x1A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9A, 0x00, 0xC9, 0x7A, 0xC3, 0x73, 0xA5, 0x45),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE1, 0xF4, 0x5E, 0xC1, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_9_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA8, 0x95, 0xD6, 0xD9, 0x32, 0x30, 0x2B, 0xD0),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x77, 0x42, 0x09, 0x05, 0x61, 0x2A, 0x7E, 0x82),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x73, 0x84, 0xA2, 0x05, 0x88, 0x64, 0x65, 0xF9),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x03, 0x2D, 0x90, 0xB3, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_9_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x0A, 0xE7, 0x2E, 0x85, 0x55, 0x80, 0x7C, 0x79),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x0F, 0xC1, 0xAC, 0x78, 0xB4, 0xAF, 0xFB, 0x6E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD3, 0xC3, 0x28, 0x8E, 0x79, 0x18, 0x1F, 0x58),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x34, 0x46, 0xCF, 0x49, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_10_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x63, 0x5F, 0xA8, 0x6C, 0x46, 0x83, 0x43, 0xFA),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFA, 0xA9, 0x93, 0x11, 0xB6, 0x07, 0x57, 0x74),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x77, 0x2A, 0x9D, 0x03, 0x89, 0x7E, 0xD7, 0x3C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7B, 0x8C, 0x62, 0xCF, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_10_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x44, 0x2C, 0x13, 0x59, 0xCC, 0xFA, 0x84, 0x9E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x51, 0xB9, 0x48, 0xBC, 0x57, 0xC7, 0xB3, 0x7C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFC, 0x0A, 0x38, 0x24, 0x2E, 0x3A, 0x28, 0x25),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBC, 0x0A, 0x43, 0xB8, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_11_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x59, 0x25, 0xAB, 0xC1, 0xEE, 0x70, 0x3C, 0xE1),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF3, 0xDB, 0x45, 0x1D, 0x4A, 0x80, 0x75, 0x35),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE8, 0x1F, 0x4D, 0x2D, 0x9A, 0x05, 0xF4, 0xCB),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6B, 0x10, 0xF0, 0x5A, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_11_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x35, 0x95, 0xE1, 0xDC, 0x15, 0x86, 0xC3, 0x7B),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xEC, 0xDC, 0x27, 0xD1, 0x56, 0xA1, 0x14, 0x0D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x59, 0x0B, 0xD6, 0x77, 0x4E, 0x44, 0xA2, 0xF8),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x94, 0x42, 0x71, 0x1F, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_12_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x30, 0x86, 0xB2, 0xB0, 0xC8, 0x2F, 0x7B, 0xFE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x96, 0xEF, 0xCB, 0xDB, 0xBC, 0x9E, 0x3B, 0xC5),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1B, 0x03, 0x86, 0xDD, 0x5B, 0xF5, 0x8D, 0x46),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x58, 0x95, 0x79, 0xD6, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_12_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x84, 0x32, 0x14, 0xDA, 0x9B, 0x4F, 0x07, 0x39),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB5, 0x3E, 0xFB, 0x06, 0xEE, 0xA7, 0x40, 0x40),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x76, 0x1F, 0xDF, 0x71, 0x61, 0xFD, 0x8B, 0xBE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x80, 0x8B, 0xAB, 0x8B, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_13_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC9, 0x34, 0xB3, 0xB4, 0xBC, 0x9F, 0xB0, 0x5E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE6, 0x58, 0x48, 0xA8, 0x77, 0xBB, 0x13, 0x2F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x41, 0xC6, 0xF7, 0x34, 0xCC, 0x89, 0x21, 0x0A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCA, 0x33, 0xDD, 0x1F, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_13_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCC, 0x81, 0xEF, 0xA4, 0xF2, 0x10, 0x0B, 0xCD),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x83, 0xF7, 0x6E, 0x72, 0x4A, 0xDF, 0xDD, 0xE8),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x67, 0x23, 0x0A, 0x53, 0x03, 0x16, 0x62, 0xD2),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x0B, 0x76, 0xFD, 0x3C, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_14_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCB, 0x14, 0xA1, 0xFA, 0xA0, 0x18, 0xBE, 0x07),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x03, 0x2A, 0xE1, 0xD7, 0xB0, 0x6C, 0xA0, 0xDE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD1, 0xC0, 0xB0, 0xC6, 0x63, 0x24, 0xCD, 0x4E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x33, 0x38, 0x2C, 0xB1, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_14_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xEE, 0xCD, 0x7D, 0x20, 0x0C, 0xFE, 0xAC, 0xC3),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x09, 0x97, 0x9F, 0xA2, 0xB6, 0x45, 0xF7, 0x7B),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCA, 0x99, 0xF3, 0xD2, 0x20, 0x02, 0xEB, 0x04),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x43, 0x18, 0x5B, 0x7B, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_15_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x2B, 0xDD, 0x77, 0x91, 0x60, 0xEA, 0xFD, 0xD3),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7D, 0xD3, 0xB5, 0xD6, 0x90, 0x17, 0x0E, 0x1A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x00, 0xF4, 0x28, 0xC1, 0xF2, 0x53, 0xF6, 0x63),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x49, 0x58, 0xDC, 0x61, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224r1_T_15_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA8, 0x20, 0x01, 0xFB, 0xF1, 0xBD, 0x5F, 0x45),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD0, 0x7F, 0x06, 0xDA, 0x11, 0xCB, 0xBA, 0xA6),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA7, 0x41, 0x00, 0xA4, 0x1B, 0x30, 0x33, 0x79),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF4, 0xFF, 0x27, 0xCA, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_ecp_point secp224r1_T[16] = {
-    ECP_POINT_INIT_XY_Z1(secp224r1_T_0_X, secp224r1_T_0_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_1_X, secp224r1_T_1_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_2_X, secp224r1_T_2_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_3_X, secp224r1_T_3_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_4_X, secp224r1_T_4_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_5_X, secp224r1_T_5_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_6_X, secp224r1_T_6_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_7_X, secp224r1_T_7_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_8_X, secp224r1_T_8_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_9_X, secp224r1_T_9_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_10_X, secp224r1_T_10_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_11_X, secp224r1_T_11_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_12_X, secp224r1_T_12_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_13_X, secp224r1_T_13_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_14_X, secp224r1_T_14_Y),
-    ECP_POINT_INIT_XY_Z0(secp224r1_T_15_X, secp224r1_T_15_Y),
-};
-#else
-#define secp224r1_T NULL
-#endif
-#endif /* MBEDTLS_ECP_DP_SECP224R1_ENABLED */
 
 /*
  * Domain parameters for secp256r1
@@ -2200,467 +1698,6 @@ static const mbedtls_ecp_point secp521r1_T[32] = {
 #define secp521r1_T NULL
 #endif
 #endif /* MBEDTLS_ECP_DP_SECP521R1_ENABLED */
-
-#if defined(MBEDTLS_ECP_DP_SECP192K1_ENABLED)
-static const mbedtls_mpi_uint secp192k1_p[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x37, 0xEE, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-};
-static const mbedtls_mpi_uint secp192k1_a[] = {
-    MBEDTLS_BYTES_TO_T_UINT_2(0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp192k1_b[] = {
-    MBEDTLS_BYTES_TO_T_UINT_2(0x03, 0x00),
-};
-static const mbedtls_mpi_uint secp192k1_gx[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7D, 0x6C, 0xE0, 0xEA, 0xB1, 0xD1, 0xA5, 0x1D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x34, 0xF4, 0xB7, 0x80, 0x02, 0x7D, 0xB0, 0x26),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAE, 0xE9, 0x57, 0xC0, 0x0E, 0xF1, 0x4F, 0xDB),
-};
-static const mbedtls_mpi_uint secp192k1_gy[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9D, 0x2F, 0x5E, 0xD9, 0x88, 0xAA, 0x82, 0x40),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x34, 0x86, 0xBE, 0x15, 0xD0, 0x63, 0x41, 0x84),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA7, 0x28, 0x56, 0x9C, 0x6D, 0x2F, 0x2F, 0x9B),
-};
-static const mbedtls_mpi_uint secp192k1_n[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x8D, 0xFD, 0xDE, 0x74, 0x6A, 0x46, 0x69, 0x0F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x17, 0xFC, 0xF2, 0x26, 0xFE, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-};
-
-#if MBEDTLS_ECP_FIXED_POINT_OPTIM == 1
-static const mbedtls_mpi_uint secp192k1_T_0_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7D, 0x6C, 0xE0, 0xEA, 0xB1, 0xD1, 0xA5, 0x1D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x34, 0xF4, 0xB7, 0x80, 0x02, 0x7D, 0xB0, 0x26),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAE, 0xE9, 0x57, 0xC0, 0x0E, 0xF1, 0x4F, 0xDB),
-};
-static const mbedtls_mpi_uint secp192k1_T_0_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9D, 0x2F, 0x5E, 0xD9, 0x88, 0xAA, 0x82, 0x40),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x34, 0x86, 0xBE, 0x15, 0xD0, 0x63, 0x41, 0x84),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA7, 0x28, 0x56, 0x9C, 0x6D, 0x2F, 0x2F, 0x9B),
-};
-static const mbedtls_mpi_uint secp192k1_T_1_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6F, 0x77, 0x3D, 0x0D, 0x85, 0x48, 0xA8, 0xA9),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x62, 0x07, 0xDF, 0x1D, 0xB3, 0xB3, 0x01, 0x54),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x05, 0x86, 0xF6, 0xAF, 0x19, 0x2A, 0x88, 0x2E),
-};
-static const mbedtls_mpi_uint secp192k1_T_1_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x33, 0x90, 0xB6, 0x2F, 0x48, 0x36, 0x4C, 0x5B),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xDB, 0x11, 0x14, 0xA6, 0xCB, 0xBA, 0x15, 0xD9),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7E, 0xB0, 0xF2, 0xD4, 0xC9, 0xDA, 0xBA, 0xD7),
-};
-static const mbedtls_mpi_uint secp192k1_T_2_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE4, 0xC1, 0x9C, 0xE6, 0xBB, 0xFB, 0xCF, 0x23),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x93, 0x19, 0xAC, 0x5A, 0xC9, 0x8A, 0x1C, 0x75),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC1, 0xF6, 0x76, 0x86, 0x89, 0x27, 0x8D, 0x28),
-};
-static const mbedtls_mpi_uint secp192k1_T_2_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x4B, 0xE0, 0x6F, 0x34, 0xBA, 0x5E, 0xD3, 0x96),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6A, 0xDC, 0xA6, 0x87, 0xC9, 0x9D, 0xC0, 0x82),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x09, 0x11, 0x7E, 0xD6, 0xF7, 0x33, 0xFC, 0xE4),
-};
-static const mbedtls_mpi_uint secp192k1_T_3_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC2, 0x37, 0x3E, 0xC0, 0x7F, 0x62, 0xE7, 0x54),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA5, 0x3B, 0x69, 0x9D, 0x44, 0xBC, 0x82, 0x99),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD4, 0x84, 0xB3, 0x5F, 0x2B, 0xA5, 0x9E, 0x2C),
-};
-static const mbedtls_mpi_uint secp192k1_T_3_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1D, 0x95, 0xEB, 0x4C, 0x04, 0xB4, 0xF4, 0x75),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x55, 0xAD, 0x4B, 0xD5, 0x9A, 0xEB, 0xC4, 0x4E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC9, 0xB1, 0xC5, 0x59, 0xE3, 0xD5, 0x16, 0x2A),
-};
-static const mbedtls_mpi_uint secp192k1_T_4_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x48, 0x2A, 0xCC, 0xAC, 0xD0, 0xEE, 0x50, 0xEC),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x99, 0x83, 0xE0, 0x5B, 0x14, 0x44, 0x52, 0x20),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD6, 0x15, 0x2D, 0x78, 0xF6, 0x51, 0x32, 0xCF),
-};
-static const mbedtls_mpi_uint secp192k1_T_4_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x86, 0x36, 0x9B, 0xDD, 0xF8, 0xDD, 0xEF, 0xB2),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x0B, 0xB1, 0x6A, 0x2B, 0xAF, 0xEB, 0x2B, 0xB1),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC9, 0x87, 0x7A, 0x66, 0x5D, 0x5B, 0xDF, 0x8F),
-};
-static const mbedtls_mpi_uint secp192k1_T_5_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x62, 0x45, 0xE5, 0x81, 0x9B, 0xEB, 0x37, 0x23),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB3, 0x29, 0xE2, 0x20, 0x64, 0x23, 0x6B, 0x6E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFE, 0x1D, 0x41, 0xE1, 0x9B, 0x61, 0x7B, 0xD9),
-};
-static const mbedtls_mpi_uint secp192k1_T_5_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x75, 0x57, 0xA3, 0x0A, 0x13, 0xE4, 0x59, 0x15),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x79, 0x6E, 0x4A, 0x48, 0x84, 0x90, 0xAC, 0xC7),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9C, 0xB8, 0xF5, 0xF3, 0xDE, 0xA0, 0xA1, 0x1D),
-};
-static const mbedtls_mpi_uint secp192k1_T_6_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA3, 0x32, 0x81, 0xA9, 0x91, 0x5A, 0x4E, 0x33),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCB, 0xA8, 0x90, 0xBE, 0x0F, 0xEC, 0xC0, 0x85),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x80, 0x30, 0xD7, 0x08, 0xAE, 0xC4, 0x3A, 0xA5),
-};
-static const mbedtls_mpi_uint secp192k1_T_6_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBC, 0x55, 0xE3, 0x76, 0xB3, 0x64, 0x74, 0x9F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3F, 0x75, 0xD4, 0xDB, 0x98, 0xD7, 0x39, 0xAE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD4, 0xEB, 0x8A, 0xAB, 0x16, 0xD9, 0xD4, 0x0B),
-};
-static const mbedtls_mpi_uint secp192k1_T_7_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x41, 0xBE, 0xF9, 0xC7, 0xC7, 0xBA, 0xF3, 0xA1),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC2, 0x85, 0x59, 0xF3, 0x60, 0x41, 0x02, 0xD2),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x46, 0x1C, 0x4A, 0xA4, 0xC7, 0xED, 0x66, 0xBC),
-};
-static const mbedtls_mpi_uint secp192k1_T_7_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC3, 0x9C, 0x2E, 0x46, 0x52, 0x18, 0x87, 0x14),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0x35, 0x5A, 0x75, 0xAC, 0x4D, 0x75, 0x91),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCE, 0x2F, 0xAC, 0xFC, 0xBC, 0xE6, 0x93, 0x5E),
-};
-static const mbedtls_mpi_uint secp192k1_T_8_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x87, 0x4D, 0xC9, 0x18, 0xE9, 0x00, 0xEB, 0x33),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1A, 0x69, 0x72, 0x07, 0x5A, 0x59, 0xA8, 0x26),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB6, 0x65, 0x83, 0x20, 0x10, 0xF9, 0x69, 0x82),
-};
-static const mbedtls_mpi_uint secp192k1_T_8_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x8B, 0x56, 0x7F, 0x9F, 0xBF, 0x46, 0x0C, 0x7E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFC, 0xCF, 0xF0, 0xDC, 0xDF, 0x2D, 0xE6, 0xE5),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x09, 0xF0, 0x72, 0x3A, 0x7A, 0x03, 0xE5, 0x22),
-};
-static const mbedtls_mpi_uint secp192k1_T_9_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3E, 0xAA, 0x57, 0x13, 0x37, 0xA7, 0x2C, 0xD4),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA3, 0xAC, 0xA2, 0x23, 0xF9, 0x84, 0x60, 0xD3),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x32, 0xEB, 0x51, 0x70, 0x64, 0x78, 0xCA, 0x05),
-};
-static const mbedtls_mpi_uint secp192k1_T_9_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x91, 0xCC, 0x30, 0x62, 0x93, 0x46, 0x13, 0xE9),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x21, 0x26, 0xCC, 0x6C, 0x3D, 0x5C, 0xDA, 0x2C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD5, 0xAA, 0xB8, 0x03, 0xA4, 0x1A, 0x00, 0x96),
-};
-static const mbedtls_mpi_uint secp192k1_T_10_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF9, 0x9D, 0xE6, 0xCC, 0x4E, 0x2E, 0xC2, 0xD5),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB4, 0xC3, 0x8A, 0xAE, 0x6F, 0x40, 0x05, 0xEB),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x9D, 0x8F, 0x4A, 0x4D, 0x35, 0xD3, 0x50, 0x9D),
-};
-static const mbedtls_mpi_uint secp192k1_T_10_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1F, 0xFD, 0x98, 0xAB, 0xC7, 0x03, 0xB4, 0x55),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x40, 0x40, 0xD2, 0x9F, 0xCA, 0xD0, 0x53, 0x00),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1A, 0x84, 0x00, 0x6F, 0xC8, 0xAD, 0xED, 0x8D),
-};
-static const mbedtls_mpi_uint secp192k1_T_11_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCE, 0xD3, 0x57, 0xD7, 0xC3, 0x07, 0xBD, 0xD7),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x67, 0xBA, 0x47, 0x1D, 0x3D, 0xEF, 0x98, 0x6C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6D, 0xC0, 0x6C, 0x7F, 0x12, 0xEE, 0x9F, 0x67),
-};
-static const mbedtls_mpi_uint secp192k1_T_11_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCA, 0x02, 0xDA, 0x79, 0xAA, 0xC9, 0x27, 0xC4),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x21, 0x79, 0xC7, 0x71, 0x84, 0xCB, 0xE5, 0x5A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x15, 0x37, 0x06, 0xBA, 0xB5, 0xD5, 0x18, 0x4C),
-};
-static const mbedtls_mpi_uint secp192k1_T_12_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA1, 0x65, 0x72, 0x6C, 0xF2, 0x63, 0x27, 0x6A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x69, 0xBC, 0x71, 0xDF, 0x75, 0xF8, 0x98, 0x4D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x70, 0x70, 0x9B, 0xDC, 0xE7, 0x18, 0x71, 0xFF),
-};
-static const mbedtls_mpi_uint secp192k1_T_12_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x15, 0x5B, 0x9F, 0x00, 0x5A, 0xB6, 0x80, 0x7A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB7, 0xE0, 0xBB, 0xFC, 0x5E, 0x78, 0x9C, 0x89),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x60, 0x03, 0x68, 0x83, 0x3D, 0x2E, 0x4C, 0xDD),
-};
-static const mbedtls_mpi_uint secp192k1_T_13_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3B, 0x49, 0x23, 0xA8, 0xCB, 0x3B, 0x1A, 0xF6),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x8B, 0x3D, 0xA7, 0x46, 0xCF, 0x75, 0xB6, 0x2C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x92, 0xFD, 0x30, 0x01, 0xB6, 0xEF, 0xF9, 0xE8),
-};
-static const mbedtls_mpi_uint secp192k1_T_13_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xDC, 0xFA, 0xDA, 0xB8, 0x29, 0x42, 0xC9, 0xC7),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x06, 0xD7, 0xA0, 0xE6, 0x6B, 0x86, 0x61, 0x39),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xDB, 0xE9, 0xD3, 0x37, 0xD8, 0xE7, 0x35, 0xA9),
-};
-static const mbedtls_mpi_uint secp192k1_T_14_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFD, 0xC8, 0x8E, 0xB1, 0xCB, 0xB1, 0xB5, 0x4D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x16, 0xD7, 0x46, 0x7D, 0xAF, 0xE2, 0xDC, 0xBB),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD0, 0x46, 0xE7, 0xD8, 0x76, 0x31, 0x90, 0x76),
-};
-static const mbedtls_mpi_uint secp192k1_T_14_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xEB, 0xD3, 0xF4, 0x74, 0xE1, 0x67, 0xD8, 0x66),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE7, 0x70, 0x3C, 0xC8, 0xAF, 0x5F, 0xF4, 0x58),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x24, 0x4E, 0xED, 0x5C, 0x43, 0xB3, 0x16, 0x35),
-};
-static const mbedtls_mpi_uint secp192k1_T_15_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x57, 0xAE, 0xD1, 0xDD, 0x31, 0x14, 0xD3, 0xF0),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE8, 0x14, 0x06, 0x13, 0x12, 0x1C, 0x81, 0xF5),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA6, 0xF9, 0x0C, 0x91, 0xF7, 0x67, 0x59, 0x63),
-};
-static const mbedtls_mpi_uint secp192k1_T_15_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAB, 0x91, 0xE2, 0xF4, 0x9D, 0xEB, 0x88, 0x87),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xDB, 0x82, 0x30, 0x9C, 0xAE, 0x18, 0x4D, 0xB7),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x3C, 0x79, 0xCF, 0x17, 0xA5, 0x1E, 0xE8, 0xC8),
-};
-static const mbedtls_ecp_point secp192k1_T[16] = {
-    ECP_POINT_INIT_XY_Z1(secp192k1_T_0_X, secp192k1_T_0_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_1_X, secp192k1_T_1_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_2_X, secp192k1_T_2_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_3_X, secp192k1_T_3_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_4_X, secp192k1_T_4_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_5_X, secp192k1_T_5_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_6_X, secp192k1_T_6_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_7_X, secp192k1_T_7_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_8_X, secp192k1_T_8_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_9_X, secp192k1_T_9_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_10_X, secp192k1_T_10_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_11_X, secp192k1_T_11_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_12_X, secp192k1_T_12_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_13_X, secp192k1_T_13_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_14_X, secp192k1_T_14_Y),
-    ECP_POINT_INIT_XY_Z0(secp192k1_T_15_X, secp192k1_T_15_Y),
-};
-#else
-#define secp192k1_T NULL
-#endif
-
-#endif /* MBEDTLS_ECP_DP_SECP192K1_ENABLED */
-
-#if defined(MBEDTLS_ECP_DP_SECP224K1_ENABLED)
-static const mbedtls_mpi_uint secp224k1_p[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6D, 0xE5, 0xFF, 0xFF, 0xFE, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_4(0xFF, 0xFF, 0xFF, 0xFF),
-};
-static const mbedtls_mpi_uint secp224k1_a[] = {
-    MBEDTLS_BYTES_TO_T_UINT_2(0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_b[] = {
-    MBEDTLS_BYTES_TO_T_UINT_2(0x05, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_gx[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x5C, 0xA4, 0xB7, 0xB6, 0x0E, 0x65, 0x7E, 0x0F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA9, 0x75, 0x70, 0xE4, 0xE9, 0x67, 0xA4, 0x69),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA1, 0x28, 0xFC, 0x30, 0xDF, 0x99, 0xF0, 0x4D),
-    MBEDTLS_BYTES_TO_T_UINT_4(0x33, 0x5B, 0x45, 0xA1),
-};
-static const mbedtls_mpi_uint secp224k1_gy[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA5, 0x61, 0x6D, 0x55, 0xDB, 0x4B, 0xCA, 0xE2),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x59, 0xBD, 0xB0, 0xC0, 0xF7, 0x19, 0xE3, 0xF7),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD6, 0xFB, 0xCA, 0x82, 0x42, 0x34, 0xBA, 0x7F),
-    MBEDTLS_BYTES_TO_T_UINT_4(0xED, 0x9F, 0x08, 0x7E),
-};
-static const mbedtls_mpi_uint secp224k1_n[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF7, 0xB1, 0x9F, 0x76, 0x71, 0xA9, 0xF0, 0xCA),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x84, 0x61, 0xEC, 0xD2, 0xE8, 0xDC, 0x01, 0x00),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00),
-};
-
-#if MBEDTLS_ECP_FIXED_POINT_OPTIM == 1
-static const mbedtls_mpi_uint secp224k1_T_0_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x5C, 0xA4, 0xB7, 0xB6, 0x0E, 0x65, 0x7E, 0x0F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA9, 0x75, 0x70, 0xE4, 0xE9, 0x67, 0xA4, 0x69),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA1, 0x28, 0xFC, 0x30, 0xDF, 0x99, 0xF0, 0x4D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x33, 0x5B, 0x45, 0xA1, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_0_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA5, 0x61, 0x6D, 0x55, 0xDB, 0x4B, 0xCA, 0xE2),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x59, 0xBD, 0xB0, 0xC0, 0xF7, 0x19, 0xE3, 0xF7),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD6, 0xFB, 0xCA, 0x82, 0x42, 0x34, 0xBA, 0x7F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xED, 0x9F, 0x08, 0x7E, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_1_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x99, 0x6C, 0x22, 0x22, 0x40, 0x89, 0xAE, 0x7A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x2F, 0x92, 0xE1, 0x87, 0x56, 0x35, 0xAF, 0x9B),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x88, 0xAF, 0x08, 0x35, 0x27, 0xEA, 0x04, 0xED),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF0, 0x53, 0xFD, 0xCF, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_1_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC1, 0xD0, 0x9F, 0x8D, 0xF3, 0x63, 0x54, 0x30),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x39, 0xDB, 0x0F, 0x61, 0x54, 0x26, 0xD1, 0x98),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF5, 0x21, 0xF7, 0x1B, 0xB5, 0x1D, 0xF6, 0x7E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFF, 0x05, 0xDA, 0x8F, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_2_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x10, 0x26, 0x73, 0xBC, 0xE4, 0x29, 0x62, 0x56),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x37, 0x95, 0x17, 0x8B, 0xC3, 0x9B, 0xAC, 0xCC),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB1, 0xDB, 0x77, 0xDF, 0xDD, 0x13, 0x04, 0x98),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x02, 0xFC, 0x22, 0x93, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_2_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAC, 0x65, 0xF1, 0x5A, 0x37, 0xEF, 0x79, 0xAD),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x99, 0x01, 0x37, 0xAC, 0x9A, 0x5B, 0x51, 0x65),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFA, 0x75, 0x13, 0xA9, 0x4A, 0xAD, 0xFE, 0x9B),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x32, 0x82, 0x6F, 0x66, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_3_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x4D, 0x5E, 0xF0, 0x40, 0xC3, 0xA6, 0xE2, 0x1E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x34, 0x9A, 0x6F, 0xCF, 0x11, 0x26, 0x66, 0x85),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x79, 0x73, 0xA8, 0xCF, 0x2B, 0x12, 0x36, 0x37),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB9, 0xB3, 0x0A, 0x58, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_3_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD3, 0x79, 0x00, 0x55, 0x04, 0x34, 0x90, 0x1A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x0A, 0x54, 0x1C, 0xC2, 0x45, 0x0C, 0x1B, 0x23),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x86, 0x19, 0xAB, 0xA8, 0xFC, 0x73, 0xDC, 0xEE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x72, 0xFB, 0x93, 0xCE, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_4_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF8, 0x75, 0xD0, 0x66, 0x95, 0x86, 0xCA, 0x66),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x17, 0xEA, 0x29, 0x16, 0x6A, 0x38, 0xDF, 0x41),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD8, 0xA2, 0x36, 0x2F, 0xDC, 0xBB, 0x5E, 0xF7),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD4, 0x89, 0x59, 0x49, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_4_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCA, 0xA3, 0x99, 0x9D, 0xB8, 0x77, 0x9D, 0x1D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x0A, 0x93, 0x43, 0x47, 0xC6, 0x5C, 0xF9, 0xFD),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAA, 0x00, 0x79, 0x42, 0x64, 0xB8, 0x25, 0x3E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x29, 0x54, 0xB4, 0x33, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_5_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD9, 0x0C, 0x42, 0x90, 0x83, 0x0B, 0x31, 0x5F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x54, 0x2E, 0xAE, 0xC8, 0xC7, 0x5F, 0xD2, 0x70),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA9, 0xBC, 0xAD, 0x41, 0xE7, 0x32, 0x3A, 0x81),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x8A, 0x97, 0x52, 0x83, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_5_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1A, 0x13, 0x7A, 0xBD, 0xAE, 0x94, 0x60, 0xFD),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x92, 0x9B, 0x95, 0xB4, 0x6E, 0x68, 0xB2, 0x1F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x15, 0x49, 0xBE, 0x51, 0xFE, 0x66, 0x15, 0x74),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE6, 0x37, 0xE4, 0xFE, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_6_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF6, 0x9B, 0xEE, 0x64, 0xC9, 0x1B, 0xBD, 0x77),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xDA, 0x5F, 0x34, 0xA9, 0x0B, 0xB7, 0x25, 0x52),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x90, 0x13, 0xB1, 0x38, 0xFB, 0x9D, 0x78, 0xED),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x39, 0xE7, 0x1B, 0xFA, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_6_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFB, 0xB3, 0xB7, 0x44, 0x92, 0x6B, 0x00, 0x82),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x97, 0x82, 0x44, 0x3E, 0x18, 0x1A, 0x58, 0x6A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x15, 0xF8, 0xC0, 0xE4, 0xEE, 0xC1, 0xBF, 0x44),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7E, 0x32, 0x27, 0xB2, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_7_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF4, 0x9A, 0x42, 0x62, 0x8B, 0x26, 0x54, 0x21),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x24, 0x85, 0x74, 0xA0, 0x79, 0xA8, 0xEE, 0xBE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x80, 0x36, 0x60, 0xB3, 0x28, 0x4D, 0x55, 0xBE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x32, 0x27, 0x82, 0x29, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_7_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x0D, 0xFC, 0x73, 0x77, 0xAF, 0x5C, 0xAC, 0x78),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCC, 0xED, 0xE5, 0xF6, 0x1D, 0xA8, 0x67, 0x43),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xF8, 0xDE, 0x33, 0x1C, 0xF1, 0x80, 0x73, 0xF8),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x2A, 0xE2, 0xDE, 0x3C, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_8_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x57, 0x3E, 0x6B, 0xFE, 0xF0, 0x04, 0x28, 0x01),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBB, 0xB2, 0x14, 0x9D, 0x18, 0x11, 0x7D, 0x9D),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x96, 0xC4, 0xD6, 0x2E, 0x6E, 0x57, 0x4D, 0xE1),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xEA, 0x55, 0x1B, 0xDE, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_8_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x07, 0xF7, 0x17, 0xBC, 0x45, 0xAB, 0x16, 0xAB),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCD, 0xB0, 0xEF, 0x61, 0xE3, 0x20, 0x7C, 0xF8),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6C, 0x85, 0x41, 0x4D, 0xF1, 0x7E, 0x4D, 0x41),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x99, 0xC2, 0x9B, 0x5E, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_9_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x70, 0x2E, 0x49, 0x3D, 0x3E, 0x4B, 0xD3, 0x32),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC8, 0x2B, 0x9D, 0xD5, 0x27, 0xFA, 0xCA, 0xE0),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xB3, 0xB3, 0x6A, 0xE0, 0x79, 0x14, 0x28, 0x0F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6C, 0x1E, 0xDC, 0xF5, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_9_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xCA, 0x44, 0x56, 0xCD, 0xFC, 0x9F, 0x09, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x5C, 0x8C, 0x59, 0xA4, 0x64, 0x2A, 0x3A, 0xED),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x40, 0xA0, 0xB5, 0x86, 0x4E, 0x69, 0xDA, 0x06),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x08, 0x8B, 0x11, 0x38, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_10_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA0, 0x17, 0x16, 0x12, 0x17, 0xDC, 0x00, 0x7E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE7, 0x76, 0x24, 0x6C, 0x97, 0x2C, 0xB5, 0xF9),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x82, 0x71, 0xE3, 0xB0, 0xBB, 0x4E, 0x50, 0x52),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6E, 0x48, 0x26, 0xD5, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_10_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x06, 0x5F, 0x28, 0xF6, 0x01, 0x5A, 0x60, 0x41),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAE, 0x95, 0xFE, 0xD0, 0xAD, 0x15, 0xD4, 0xD9),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xAD, 0x5B, 0x7A, 0xFD, 0x80, 0xF7, 0x9F, 0x64),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x32, 0xBC, 0x1B, 0xDF, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_11_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBB, 0xE6, 0xDF, 0x14, 0x29, 0xF4, 0xD4, 0x14),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE5, 0x12, 0xDD, 0xEC, 0x5B, 0x8A, 0x59, 0xE5),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x26, 0x92, 0x3E, 0x35, 0x08, 0xE9, 0xCF, 0x0E),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE0, 0x35, 0x29, 0x97, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_11_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x11, 0xDB, 0xD6, 0x6A, 0xC5, 0x43, 0xA4, 0xA1),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x61, 0x33, 0x50, 0x61, 0x70, 0xA1, 0xE9, 0xCE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x15, 0x15, 0x6E, 0x5F, 0x01, 0x0C, 0x8C, 0xFA),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x85, 0xA1, 0x9A, 0x9D, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_12_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6E, 0xC6, 0xF7, 0xE2, 0x4A, 0xCD, 0x9B, 0x61),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x34, 0x4D, 0x5A, 0xB8, 0xE2, 0x6D, 0xA6, 0x50),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x32, 0x3F, 0xB6, 0x17, 0xE3, 0x2C, 0x6F, 0x65),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1E, 0xA4, 0x59, 0x51, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_12_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x77, 0x4F, 0x7C, 0x49, 0xCD, 0x6E, 0xEB, 0x3C),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x05, 0xC9, 0x1F, 0xB7, 0x4D, 0x98, 0xC7, 0x67),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x4C, 0xFD, 0x98, 0x20, 0x95, 0xBB, 0x20, 0x3A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE0, 0xF2, 0x73, 0x92, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_13_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE2, 0xEF, 0xFB, 0x30, 0xFA, 0x12, 0x1A, 0xB0),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7A, 0x4C, 0x24, 0xB4, 0x5B, 0xC9, 0x4C, 0x0F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7A, 0xDD, 0x5E, 0x84, 0x95, 0x4D, 0x26, 0xED),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE3, 0xFA, 0xF9, 0x3A, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_13_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x6A, 0xA3, 0x2E, 0x7A, 0xDC, 0xA7, 0x53, 0xA9),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x7C, 0x9F, 0x81, 0x84, 0xB2, 0x0D, 0xFE, 0x31),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x61, 0x89, 0x1B, 0x77, 0x0C, 0x89, 0x71, 0xEC),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xFA, 0xFF, 0x7F, 0xB2, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_14_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x28, 0xE9, 0x2C, 0x79, 0xA6, 0x3C, 0xAD, 0x93),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xD6, 0xE0, 0x23, 0x02, 0x86, 0x0F, 0x77, 0x2A),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x13, 0x93, 0x6D, 0xE9, 0xF9, 0x3C, 0xBE, 0xB9),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x04, 0xE7, 0x24, 0x92, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_14_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xBB, 0x3C, 0x5B, 0x4B, 0x1B, 0x25, 0x37, 0xD6),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC9, 0xE8, 0x38, 0x1B, 0xA1, 0x5A, 0x2E, 0x68),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x03, 0x19, 0xFD, 0xF4, 0x78, 0x01, 0x6B, 0x44),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x0F, 0x69, 0x37, 0x4F, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_15_X[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x1A, 0xE2, 0xBF, 0xD3, 0xEC, 0x95, 0x9C, 0x03),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xC2, 0x7B, 0xFC, 0xD5, 0xD3, 0x25, 0x5E, 0x0F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x39, 0x55, 0x09, 0xA2, 0x58, 0x6A, 0xC9, 0xFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x80, 0xCC, 0x3B, 0xD9, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_mpi_uint secp224k1_T_15_Y[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0x8F, 0x08, 0x65, 0x5E, 0xCB, 0xAB, 0x48, 0xC8),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xEE, 0x79, 0x8B, 0xC0, 0x11, 0xC0, 0x69, 0x38),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xE6, 0xE8, 0x8C, 0x4C, 0xC5, 0x28, 0xE4, 0xAE),
-    MBEDTLS_BYTES_TO_T_UINT_8(0xA5, 0x1F, 0x34, 0x5C, 0x00, 0x00, 0x00, 0x00),
-};
-static const mbedtls_ecp_point secp224k1_T[16] = {
-    ECP_POINT_INIT_XY_Z1(secp224k1_T_0_X, secp224k1_T_0_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_1_X, secp224k1_T_1_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_2_X, secp224k1_T_2_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_3_X, secp224k1_T_3_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_4_X, secp224k1_T_4_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_5_X, secp224k1_T_5_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_6_X, secp224k1_T_6_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_7_X, secp224k1_T_7_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_8_X, secp224k1_T_8_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_9_X, secp224k1_T_9_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_10_X, secp224k1_T_10_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_11_X, secp224k1_T_11_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_12_X, secp224k1_T_12_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_13_X, secp224k1_T_13_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_14_X, secp224k1_T_14_Y),
-    ECP_POINT_INIT_XY_Z0(secp224k1_T_15_X, secp224k1_T_15_Y),
-};
-#else
-#define secp224k1_T NULL
-#endif
-#endif /* MBEDTLS_ECP_DP_SECP224K1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
 static const mbedtls_mpi_uint secp256k1_p[] = {
@@ -4519,9 +3556,7 @@ static const mbedtls_ecp_point brainpoolP512r1_T[32] = {
 #endif
 #endif /* MBEDTLS_ECP_DP_BP512R1_ENABLED */
 
-
-#if defined(ECP_LOAD_GROUP) || defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED) || \
-    defined(MBEDTLS_ECP_DP_CURVE448_ENABLED)
+#if defined(ECP_LOAD_GROUP)
 /*
  * Create an MPI from embedded constants
  * (assumes len is an exact multiple of sizeof(mbedtls_mpi_uint))
@@ -4529,12 +3564,10 @@ static const mbedtls_ecp_point brainpoolP512r1_T[32] = {
 static inline void ecp_mpi_load(mbedtls_mpi *X, const mbedtls_mpi_uint *p, size_t len)
 {
     X->s = 1;
-    X->n = len / sizeof(mbedtls_mpi_uint);
+    X->n = (unsigned short) (len / sizeof(mbedtls_mpi_uint));
     X->p = (mbedtls_mpi_uint *) p;
 }
-#endif
 
-#if defined(ECP_LOAD_GROUP)
 /*
  * Set an MPI to static value 1
  */
@@ -4542,7 +3575,7 @@ static inline void ecp_mpi_set1(mbedtls_mpi *X)
 {
     X->s = 1;
     X->n = 1;
-    X->p = mpi_one;
+    X->p = (mbedtls_mpi_uint *) mpi_one; /* X->p will not be modified so the cast is safe */
 }
 
 /*
@@ -4585,28 +3618,14 @@ static int ecp_group_load(mbedtls_ecp_group *grp,
 
 #if defined(MBEDTLS_ECP_NIST_OPTIM)
 /* Forward declarations */
-#if defined(MBEDTLS_ECP_DP_SECP192R1_ENABLED)
-static int ecp_mod_p192(mbedtls_mpi *);
-MBEDTLS_STATIC_TESTABLE
-int mbedtls_ecp_mod_p192_raw(mbedtls_mpi_uint *Np, size_t Nn);
-#endif
-#if defined(MBEDTLS_ECP_DP_SECP224R1_ENABLED)
-static int ecp_mod_p224(mbedtls_mpi *);
-MBEDTLS_STATIC_TESTABLE
-int mbedtls_ecp_mod_p224_raw(mbedtls_mpi_uint *X, size_t X_limbs);
-#endif
 #if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
 static int ecp_mod_p256(mbedtls_mpi *);
-MBEDTLS_STATIC_TESTABLE
-int mbedtls_ecp_mod_p256_raw(mbedtls_mpi_uint *X, size_t X_limbs);
 #endif
 #if defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
 static int ecp_mod_p384(mbedtls_mpi *);
 #endif
 #if defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED)
 static int ecp_mod_p521(mbedtls_mpi *);
-MBEDTLS_STATIC_TESTABLE
-int mbedtls_ecp_mod_p521_raw(mbedtls_mpi_uint *N_p, size_t N_n);
 #endif
 
 #define NIST_MODP(P)      grp->modp = ecp_mod_ ## P;
@@ -4620,12 +3639,6 @@ static int ecp_mod_p255(mbedtls_mpi *);
 #endif
 #if defined(MBEDTLS_ECP_DP_CURVE448_ENABLED)
 static int ecp_mod_p448(mbedtls_mpi *);
-#endif
-#if defined(MBEDTLS_ECP_DP_SECP192K1_ENABLED)
-static int ecp_mod_p192k1(mbedtls_mpi *);
-#endif
-#if defined(MBEDTLS_ECP_DP_SECP224K1_ENABLED)
-static int ecp_mod_p224k1(mbedtls_mpi *);
 #endif
 #if defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
 static int ecp_mod_p256k1(mbedtls_mpi *);
@@ -4656,21 +3669,9 @@ static int ecp_mod_p256k1(mbedtls_mpi *);
 #if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
 /* Constants used by ecp_use_curve25519() */
 static const mbedtls_mpi_sint curve25519_a24 = 0x01DB42;
-
-/* P = 2^255 - 19 */
-static const mbedtls_mpi_uint curve25519_p[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0xED, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0X7F)
-};
-
-/* N = 2^252 + 27742317777372353535851937790883648493 */
-static const mbedtls_mpi_uint curve25519_n[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0XED, 0XD3, 0XF5, 0X5C, 0X1A, 0X63, 0X12, 0X58),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XD6, 0X9C, 0XF7, 0XA2, 0XDE, 0XF9, 0XDE, 0X14),
-    MBEDTLS_BYTES_TO_T_UINT_8(0X00, 0X00, 0X00, 0X00, 0x00, 0x00, 0x00, 0x00),
-    MBEDTLS_BYTES_TO_T_UINT_8(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10)
+static const unsigned char curve25519_part_of_n[] = {
+    0x14, 0xDE, 0xF9, 0xDE, 0xA2, 0xF7, 0x9C, 0xD6,
+    0x58, 0x12, 0x63, 0x1A, 0x5C, 0xF5, 0xD3, 0xED,
 };
 
 /*
@@ -4683,11 +3684,16 @@ static int ecp_use_curve25519(mbedtls_ecp_group *grp)
     /* Actually ( A + 2 ) / 4 */
     MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&grp->A, curve25519_a24));
 
-    ecp_mpi_load(&grp->P, curve25519_p, sizeof(curve25519_p));
-
+    /* P = 2^255 - 19 */
+    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&grp->P, 1));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_shift_l(&grp->P, 255));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_sub_int(&grp->P, &grp->P, 19));
     grp->pbits = mbedtls_mpi_bitlen(&grp->P);
 
-    ecp_mpi_load(&grp->N, curve25519_n, sizeof(curve25519_n));
+    /* N = 2^252 + 27742317777372353535851937790883648493 */
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&grp->N,
+                                            curve25519_part_of_n, sizeof(curve25519_part_of_n)));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_set_bit(&grp->N, 252, 1));
 
     /* Y intentionally not set, since we use x/z coordinates.
      * This is used as a marker to identify Montgomery curves! */
@@ -4710,29 +3716,11 @@ cleanup:
 #if defined(MBEDTLS_ECP_DP_CURVE448_ENABLED)
 /* Constants used by ecp_use_curve448() */
 static const mbedtls_mpi_sint curve448_a24 = 0x98AA;
-
-/* P = 2^448 - 2^224 - 1 */
-static const mbedtls_mpi_uint curve448_p[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFE, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00)
-};
-
-/* N = 2^446 - 13818066809895115352007386748515426880336692474882178609894547503885 */
-static const mbedtls_mpi_uint curve448_n[] = {
-    MBEDTLS_BYTES_TO_T_UINT_8(0XF3, 0X44, 0X58, 0XAB, 0X92, 0XC2, 0X78, 0X23),
-    MBEDTLS_BYTES_TO_T_UINT_8(0X55, 0X8F, 0XC5, 0X8D, 0X72, 0XC2, 0X6C, 0X21),
-    MBEDTLS_BYTES_TO_T_UINT_8(0X90, 0X36, 0XD6, 0XAE, 0X49, 0XDB, 0X4E, 0XC4),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XE9, 0X23, 0XCA, 0X7C, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF),
-    MBEDTLS_BYTES_TO_T_UINT_8(0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0XFF, 0X3F),
-    MBEDTLS_BYTES_TO_T_UINT_8(0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00, 0X00)
+static const unsigned char curve448_part_of_n[] = {
+    0x83, 0x35, 0xDC, 0x16, 0x3B, 0xB1, 0x24,
+    0xB6, 0x51, 0x29, 0xC9, 0x6F, 0xDE, 0x93,
+    0x3D, 0x8D, 0x72, 0x3A, 0x70, 0xAA, 0xDC,
+    0x87, 0x3D, 0x6D, 0x54, 0xA7, 0xBB, 0x0D,
 };
 
 /*
@@ -4740,12 +3728,20 @@ static const mbedtls_mpi_uint curve448_n[] = {
  */
 static int ecp_use_curve448(mbedtls_ecp_group *grp)
 {
+    mbedtls_mpi Ns;
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+
+    mbedtls_mpi_init(&Ns);
 
     /* Actually ( A + 2 ) / 4 */
     MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&grp->A, curve448_a24));
 
-    ecp_mpi_load(&grp->P, curve448_p, sizeof(curve448_p));
+    /* P = 2^448 - 2^224 - 1 */
+    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&grp->P, 1));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_shift_l(&grp->P, 224));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_sub_int(&grp->P, &grp->P, 1));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_shift_l(&grp->P, 224));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_sub_int(&grp->P, &grp->P, 1));
     grp->pbits = mbedtls_mpi_bitlen(&grp->P);
 
     /* Y intentionally not set, since we use x/z coordinates.
@@ -4754,12 +3750,17 @@ static int ecp_use_curve448(mbedtls_ecp_group *grp)
     MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&grp->G.Z, 1));
     mbedtls_mpi_free(&grp->G.Y);
 
-    ecp_mpi_load(&grp->N, curve448_n, sizeof(curve448_n));
+    /* N = 2^446 - 13818066809895115352007386748515426880336692474882178609894547503885 */
+    MBEDTLS_MPI_CHK(mbedtls_mpi_set_bit(&grp->N, 446, 1));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&Ns,
+                                            curve448_part_of_n, sizeof(curve448_part_of_n)));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(&grp->N, &grp->N, &Ns));
 
     /* Actually, the required msb for private keys */
     grp->nbits = 447;
 
 cleanup:
+    mbedtls_mpi_free(&Ns);
     if (ret != 0) {
         mbedtls_ecp_group_free(grp);
     }
@@ -4773,7 +3774,6 @@ cleanup:
  */
 int mbedtls_ecp_group_load(mbedtls_ecp_group *grp, mbedtls_ecp_group_id id)
 {
-    ECP_VALIDATE_RET(grp != NULL);
     mbedtls_ecp_group_free(grp);
 
     mbedtls_ecp_group_init(grp);
@@ -4781,18 +3781,6 @@ int mbedtls_ecp_group_load(mbedtls_ecp_group *grp, mbedtls_ecp_group_id id)
     grp->id = id;
 
     switch (id) {
-#if defined(MBEDTLS_ECP_DP_SECP192R1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP192R1:
-            NIST_MODP(p192);
-            return LOAD_GROUP(secp192r1);
-#endif /* MBEDTLS_ECP_DP_SECP192R1_ENABLED */
-
-#if defined(MBEDTLS_ECP_DP_SECP224R1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP224R1:
-            NIST_MODP(p224);
-            return LOAD_GROUP(secp224r1);
-#endif /* MBEDTLS_ECP_DP_SECP224R1_ENABLED */
-
 #if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
         case MBEDTLS_ECP_DP_SECP256R1:
             NIST_MODP(p256);
@@ -4810,18 +3798,6 @@ int mbedtls_ecp_group_load(mbedtls_ecp_group *grp, mbedtls_ecp_group_id id)
             NIST_MODP(p521);
             return LOAD_GROUP(secp521r1);
 #endif /* MBEDTLS_ECP_DP_SECP521R1_ENABLED */
-
-#if defined(MBEDTLS_ECP_DP_SECP192K1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP192K1:
-            grp->modp = ecp_mod_p192k1;
-            return LOAD_GROUP_A(secp192k1);
-#endif /* MBEDTLS_ECP_DP_SECP192K1_ENABLED */
-
-#if defined(MBEDTLS_ECP_DP_SECP224K1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP224K1:
-            grp->modp = ecp_mod_p224k1;
-            return LOAD_GROUP_A(secp224k1);
-#endif /* MBEDTLS_ECP_DP_SECP224K1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
         case MBEDTLS_ECP_DP_SECP256K1:
@@ -4873,352 +3849,8 @@ int mbedtls_ecp_group_load(mbedtls_ecp_group *grp, mbedtls_ecp_group_id id)
  * MPI remains loose, since these functions can be deactivated at will.
  */
 
-#if defined(MBEDTLS_ECP_DP_SECP192R1_ENABLED)
-/*
- * Compared to the way things are presented in FIPS 186-3 D.2,
- * we proceed in columns, from right (least significant chunk) to left,
- * adding chunks to N in place, and keeping a carry for the next chunk.
- * This avoids moving things around in memory, and uselessly adding zeros,
- * compared to the more straightforward, line-oriented approach.
- *
- * For this prime we need to handle data in chunks of 64 bits.
- * Since this is always a multiple of our basic mbedtls_mpi_uint, we can
- * use a mbedtls_mpi_uint * to designate such a chunk, and small loops to handle it.
- */
-
-/* Add 64-bit chunks (dst += src) and update carry */
-static inline void add64(mbedtls_mpi_uint *dst, mbedtls_mpi_uint *src, mbedtls_mpi_uint *carry)
-{
-    unsigned char i;
-    mbedtls_mpi_uint c = 0;
-    for (i = 0; i < 8 / sizeof(mbedtls_mpi_uint); i++, dst++, src++) {
-        *dst += c;      c  = (*dst < c);
-        *dst += *src;   c += (*dst < *src);
-    }
-    *carry += c;
-}
-
-/* Add carry to a 64-bit chunk and update carry */
-static inline void carry64(mbedtls_mpi_uint *dst, mbedtls_mpi_uint *carry)
-{
-    unsigned char i;
-    for (i = 0; i < 8 / sizeof(mbedtls_mpi_uint); i++, dst++) {
-        *dst += *carry;
-        *carry  = (*dst < *carry);
-    }
-}
-
-#define WIDTH       8 / sizeof(mbedtls_mpi_uint)
-#define A(i)        Np + (i) * WIDTH
-#define ADD(i)      add64(p, A(i), &c)
-#define NEXT        p += WIDTH; carry64(p, &c)
-#define LAST        p += WIDTH; *p = c; while (++p < end) *p = 0
-#define RESET       last_carry[0] = c; c = 0; p = Np
-#define ADD_LAST    add64(p, last_carry, &c)
-
-/*
- * Fast quasi-reduction modulo p192 (FIPS 186-3 D.2.1)
- */
-static int ecp_mod_p192(mbedtls_mpi *N)
-{
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    size_t expected_width = 2 * ((192 + biL - 1) / biL);
-    MBEDTLS_MPI_CHK(mbedtls_mpi_grow(N, expected_width));
-    ret = mbedtls_ecp_mod_p192_raw(N->p, expected_width);
-
-cleanup:
-    return ret;
-}
-
-MBEDTLS_STATIC_TESTABLE
-int mbedtls_ecp_mod_p192_raw(mbedtls_mpi_uint *Np, size_t Nn)
-{
-    mbedtls_mpi_uint c = 0, last_carry[WIDTH] = { 0 };
-    mbedtls_mpi_uint *p, *end;
-
-    if (Nn != 2*((192 + biL - 1)/biL)) {
-        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    }
-
-    p = Np;
-    end = p + Nn;
-
-    ADD(3); ADD(5);         NEXT;   // A0 += A3 + A5
-    ADD(3); ADD(4); ADD(5); NEXT;   // A1 += A3 + A4 + A5
-    ADD(4); ADD(5);                 // A2 += A4 + A5
-
-    RESET;
-
-    /* Use the reduction for the carry as well:
-     * 2^192 * last_carry = 2^64 * last_carry + last_carry mod P192
-     */
-    ADD_LAST; NEXT;                 // A0 += last_carry
-    ADD_LAST; NEXT;                 // A1 += last_carry
-
-    LAST;                           // A2 += carry
-
-    return 0;
-}
-
-#undef WIDTH
-#undef A
-#undef ADD
-#undef NEXT
-#undef LAST
-#undef RESET
-#undef ADD_LAST
-#endif /* MBEDTLS_ECP_DP_SECP192R1_ENABLED */
-
-#if defined(MBEDTLS_ECP_DP_SECP224R1_ENABLED) ||   \
-    defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED) ||   \
+#if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED) ||   \
     defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
-
-/*
- * The reader is advised to first understand ecp_mod_p192() since the same
- * general structure is used here, but with additional complications:
- * (1) chunks of 32 bits, and (2) subtractions.
- */
-
-/*
- * For these primes, we need to handle data in chunks of 32 bits.
- * This makes it more complicated if we use 64 bits limbs in MPI,
- * which prevents us from using a uniform access method as for p192.
- *
- * So, we define a mini abstraction layer to access 32 bit chunks,
- * load them in 'cur' for work, and store them back from 'cur' when done.
- *
- * While at it, also define the size of N in terms of 32-bit chunks.
- */
-#define LOAD32      cur = A(i);
-
-#if defined(MBEDTLS_HAVE_INT32)  /* 32 bit */
-
-#define MAX32       X_limbs
-#define A(j)        X[j]
-#define STORE32     X[i] = (mbedtls_mpi_uint) cur;
-#define STORE0      X[i] = 0;
-
-#else /* 64 bit */
-
-#define MAX32   X_limbs * 2
-#define A(j)                                                \
-    (j) % 2 ?                                               \
-    (uint32_t) (X[(j) / 2] >> 32) :                         \
-    (uint32_t) (X[(j) / 2])
-#define STORE32                                             \
-    if (i % 2) {                                            \
-        X[i/2] &= 0x00000000FFFFFFFF;                       \
-        X[i/2] |= (uint64_t) (cur) << 32;                   \
-    } else {                                                \
-        X[i/2] &= 0xFFFFFFFF00000000;                       \
-        X[i/2] |= (uint32_t) cur;                           \
-    }
-
-#define STORE0                                              \
-    if (i % 2) {                                            \
-        X[i/2] &= 0x00000000FFFFFFFF;                       \
-    } else {                                                \
-        X[i/2] &= 0xFFFFFFFF00000000;                       \
-    }
-
-#endif
-
-static inline int8_t extract_carry(int64_t cur)
-{
-    return (int8_t) (cur >> 32);
-}
-
-#define ADD(j)    cur += A(j)
-#define SUB(j)    cur -= A(j)
-
-#define ADD_CARRY(cc) cur += (cc)
-#define SUB_CARRY(cc) cur -= (cc)
-
-#define ADD_LAST ADD_CARRY(last_c)
-#define SUB_LAST SUB_CARRY(last_c)
-
-/*
- * Helpers for the main 'loop'
- */
-#define INIT(b)                                         \
-    int8_t c = 0, last_c;                               \
-    int64_t cur;                                        \
-    size_t i = 0;                                       \
-    LOAD32;
-
-#define NEXT                                            \
-    c = extract_carry(cur);                             \
-    STORE32; i++; LOAD32;                               \
-    ADD_CARRY(c);
-
-#define RESET                                           \
-    c = extract_carry(cur);                             \
-    last_c = c;                                         \
-    STORE32; i = 0; LOAD32;                             \
-    c = 0;                                              \
-
-#define LAST                                            \
-    c = extract_carry(cur);                             \
-    STORE32; i++;                                       \
-    if (c != 0)                                         \
-    return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;              \
-    while (i < MAX32) { STORE0; i++; }
-
-#if defined(MBEDTLS_ECP_DP_SECP224R1_ENABLED)
-
-/*
- * Fast quasi-reduction modulo p224 (FIPS 186-3 D.2.2)
- */
-static int ecp_mod_p224(mbedtls_mpi *N)
-{
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    size_t expected_width =  2 * 224 / biL;
-    MBEDTLS_MPI_CHK(mbedtls_mpi_grow(N, expected_width));
-    ret = mbedtls_ecp_mod_p224_raw(N->p, expected_width);
-cleanup:
-    return ret;
-}
-
-MBEDTLS_STATIC_TESTABLE
-int mbedtls_ecp_mod_p224_raw(mbedtls_mpi_uint *X, size_t X_limbs)
-{
-    if (X_limbs != 2 * 224 / biL) {
-        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    }
-
-    INIT(224);
-
-    SUB(7);  SUB(11);           NEXT;   // A0 += -A7  - A11
-    SUB(8);  SUB(12);           NEXT;   // A1 += -A8  - A12
-    SUB(9);  SUB(13);           NEXT;   // A2 += -A9  - A13
-    SUB(10); ADD(7);  ADD(11);  NEXT;   // A3 += -A10 + A7 + A11
-    SUB(11); ADD(8);  ADD(12);  NEXT;   // A4 += -A11 + A8 + A12
-    SUB(12); ADD(9);  ADD(13);  NEXT;   // A5 += -A12 + A9 + A13
-    SUB(13); ADD(10);                   // A6 += -A13 + A10
-
-    RESET;
-
-    /* Use 2^224 = P + 2^96 - 1 to modulo reduce the final carry */
-    SUB_LAST; NEXT;                     // A0 -= last_c
-    ;         NEXT;                     // A1
-    ;         NEXT;                     // A2
-    ADD_LAST; NEXT;                     // A3 += last_c
-    ;         NEXT;                     // A4
-    ;         NEXT;                     // A5
-                                        // A6
-
-    /* The carry reduction cannot generate a carry
-     * (see commit 73e8553 for details)*/
-
-    LAST;
-
-    return 0;
-}
-
-#endif /* MBEDTLS_ECP_DP_SECP224R1_ENABLED */
-
-#if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
-
-/*
- * Fast quasi-reduction modulo p256 (FIPS 186-3 D.2.3)
- */
-static int ecp_mod_p256(mbedtls_mpi *N)
-{
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    size_t expected_width = 2 * 256 / biL;
-    MBEDTLS_MPI_CHK(mbedtls_mpi_grow(N, expected_width));
-    ret = mbedtls_ecp_mod_p256_raw(N->p, expected_width);
-cleanup:
-    return ret;
-}
-
-MBEDTLS_STATIC_TESTABLE
-int mbedtls_ecp_mod_p256_raw(mbedtls_mpi_uint *X, size_t X_limbs)
-{
-    if (X_limbs != 2 * 256 / biL) {
-        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    }
-
-    INIT(256);
-
-    ADD(8);  ADD(9);
-    SUB(11); SUB(12); SUB(13); SUB(14);                   NEXT; // A0
-
-    ADD(9);  ADD(10);
-    SUB(12); SUB(13); SUB(14); SUB(15);                   NEXT; // A1
-
-    ADD(10); ADD(11);
-    SUB(13); SUB(14); SUB(15);                            NEXT; // A2
-
-    ADD(11); ADD(11); ADD(12); ADD(12); ADD(13);
-    SUB(15); SUB(8);  SUB(9);                             NEXT; // A3
-
-    ADD(12); ADD(12); ADD(13); ADD(13); ADD(14);
-    SUB(9);  SUB(10);                                     NEXT; // A4
-
-    ADD(13); ADD(13); ADD(14); ADD(14); ADD(15);
-    SUB(10); SUB(11);                                     NEXT; // A5
-
-    ADD(14); ADD(14); ADD(15); ADD(15); ADD(14); ADD(13);
-    SUB(8);  SUB(9);                                      NEXT; // A6
-
-    ADD(15); ADD(15); ADD(15); ADD(8);
-    SUB(10); SUB(11); SUB(12); SUB(13);                         // A7
-
-    RESET;
-
-    /* Use 2^224 * (2^32 - 1) + 2^192 + 2^96 - 1
-     * to modulo reduce the final carry. */
-    ADD_LAST; NEXT;                                             // A0
-    ;         NEXT;                                             // A1
-    ;         NEXT;                                             // A2
-    SUB_LAST; NEXT;                                             // A3
-    ;         NEXT;                                             // A4
-    ;         NEXT;                                             // A5
-    SUB_LAST; NEXT;                                             // A6
-    ADD_LAST;                                                   // A7
-
-    RESET;
-
-    /* Use 2^224 * (2^32 - 1) + 2^192 + 2^96 - 1
-     * to modulo reduce the carry generated by the previous reduction. */
-    ADD_LAST; NEXT;                                             // A0
-    ;         NEXT;                                             // A1
-    ;         NEXT;                                             // A2
-    SUB_LAST; NEXT;                                             // A3
-    ;         NEXT;                                             // A4
-    ;         NEXT;                                             // A5
-    SUB_LAST; NEXT;                                             // A6
-    ADD_LAST;                                                   // A7
-
-    LAST;
-
-    return 0;
-}
-
-#endif /* MBEDTLS_ECP_DP_SECP256R1_ENABLED */
-
-#undef LOAD32
-#undef MAX32
-#undef A
-#undef STORE32
-#undef STORE0
-#undef ADD
-#undef SUB
-#undef ADD_CARRY
-#undef SUB_CARRY
-#undef ADD_LAST
-#undef SUB_LAST
-#undef INIT
-#undef NEXT
-#undef RESET
-#undef LAST
-
-#endif /* MBEDTLS_ECP_DP_SECP224R1_ENABLED ||
-          MBEDTLS_ECP_DP_SECP256R1_ENABLED ||
-          MBEDTLS_ECP_DP_SECP384R1_ENABLED */
-
-#if defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
 /*
  * The reader is advised to first understand ecp_mod_p192() since the same
  * general structure is used here, but with additional complications:
@@ -5308,8 +3940,7 @@ static inline void sub32(uint32_t *dst, uint32_t src, signed char *carry)
  * If the result is negative, we get it in the form
  * c * 2^bits + N, with c negative and N positive shorter than 'bits'
  */
-MBEDTLS_STATIC_TESTABLE
-void mbedtls_ecp_fix_negative(mbedtls_mpi *N, signed char c, size_t bits)
+static void mbedtls_ecp_fix_negative(mbedtls_mpi *N, signed char c, size_t bits)
 {
     size_t i;
 
@@ -5338,6 +3969,43 @@ void mbedtls_ecp_fix_negative(mbedtls_mpi *N, signed char c, size_t bits)
 #endif
     N->p[bits / 8 / sizeof(mbedtls_mpi_uint)] += msw;
 }
+
+#if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
+/*
+ * Fast quasi-reduction modulo p256 (FIPS 186-3 D.2.3)
+ */
+static int ecp_mod_p256(mbedtls_mpi *N)
+{
+    INIT(256);
+
+    ADD(8); ADD(9);
+    SUB(11); SUB(12); SUB(13); SUB(14);             NEXT;         // A0
+
+    ADD(9); ADD(10);
+    SUB(12); SUB(13); SUB(14); SUB(15);             NEXT;         // A1
+
+    ADD(10); ADD(11);
+    SUB(13); SUB(14); SUB(15);                        NEXT;       // A2
+
+    ADD(11); ADD(11); ADD(12); ADD(12); ADD(13);
+    SUB(15); SUB(8); SUB(9);                        NEXT;         // A3
+
+    ADD(12); ADD(12); ADD(13); ADD(13); ADD(14);
+    SUB(9); SUB(10);                                   NEXT;      // A4
+
+    ADD(13); ADD(13); ADD(14); ADD(14); ADD(15);
+    SUB(10); SUB(11);                                   NEXT;     // A5
+
+    ADD(14); ADD(14); ADD(15); ADD(15); ADD(14); ADD(13);
+    SUB(8); SUB(9);                                   NEXT;       // A6
+
+    ADD(15); ADD(15); ADD(15); ADD(8);
+    SUB(10); SUB(11); SUB(12); SUB(13);             LAST;         // A7
+
+cleanup:
+    return ret;
+}
+#endif /* MBEDTLS_ECP_DP_SECP256R1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
 /*
@@ -5400,6 +4068,11 @@ cleanup:
           MBEDTLS_ECP_DP_SECP384R1_ENABLED */
 
 #if defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED)
+/*
+ * Here we have an actual Mersenne prime, so things are more straightforward.
+ * However, chunks are aligned on a 'weird' boundary (521 bits).
+ */
+
 /* Size of p521 in terms of mbedtls_mpi_uint */
 #define P521_WIDTH      (521 / 8 / sizeof(mbedtls_mpi_uint) + 1)
 
@@ -5407,81 +4080,48 @@ cleanup:
 #define P521_MASK       0x01FF
 
 /*
- * Fast quasi-reduction modulo p521 = 2^521 - 1 (FIPS 186-3 D.2.5)
+ * Fast quasi-reduction modulo p521 (FIPS 186-3 D.2.5)
+ * Write N as A1 + 2^521 A0, return A0 + A1
  */
 static int ecp_mod_p521(mbedtls_mpi *N)
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    size_t expected_width = 2 * P521_WIDTH;
-    MBEDTLS_MPI_CHK(mbedtls_mpi_grow(N, expected_width));
-    ret = mbedtls_ecp_mod_p521_raw(N->p, expected_width);
+    size_t i;
+    mbedtls_mpi M;
+    mbedtls_mpi_uint Mp[P521_WIDTH + 1];
+    /* Worst case for the size of M is when mbedtls_mpi_uint is 16 bits:
+     * we need to hold bits 513 to 1056, which is 34 limbs, that is
+     * P521_WIDTH + 1. Otherwise P521_WIDTH is enough. */
+
+    if (N->n < P521_WIDTH) {
+        return 0;
+    }
+
+    /* M = A1 */
+    M.s = 1;
+    M.n = N->n - (P521_WIDTH - 1);
+    if (M.n > P521_WIDTH + 1) {
+        M.n = P521_WIDTH + 1;
+    }
+    M.p = Mp;
+    memcpy(Mp, N->p + P521_WIDTH - 1, M.n * sizeof(mbedtls_mpi_uint));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_shift_r(&M, 521 % (8 * sizeof(mbedtls_mpi_uint))));
+
+    /* N = A0 */
+    N->p[P521_WIDTH - 1] &= P521_MASK;
+    for (i = P521_WIDTH; i < N->n; i++) {
+        N->p[i] = 0;
+    }
+
+    /* N = A0 + A1 */
+    MBEDTLS_MPI_CHK(mbedtls_mpi_add_abs(N, N, &M));
+
 cleanup:
     return ret;
 }
 
-MBEDTLS_STATIC_TESTABLE
-int mbedtls_ecp_mod_p521_raw(mbedtls_mpi_uint *X, size_t X_limbs)
-{
-    mbedtls_mpi_uint carry = 0;
-
-    if (X_limbs != 2 * P521_WIDTH || X[2 * P521_WIDTH - 1] != 0) {
-        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    }
-
-    /* Step 1: Reduction to P521_WIDTH limbs */
-    /* Helper references for bottom part of X */
-    mbedtls_mpi_uint *X0 = X;
-    size_t X0_limbs = P521_WIDTH;
-    /* Helper references for top part of X */
-    mbedtls_mpi_uint *X1 = X + X0_limbs;
-    size_t X1_limbs = X_limbs - X0_limbs;
-    /* Split X as X0 + 2^P521_WIDTH X1 and compute X0 + 2^(biL - 9) X1.
-     * (We are using that 2^P521_WIDTH = 2^(512 + biL) and that
-     * 2^(512 + biL) X1 = 2^(biL - 9) X1 mod P521.)
-     * The high order limb of the result will be held in carry and the rest
-     * in X0 (that is the result will be represented as
-     * 2^P521_WIDTH carry + X0).
-     *
-     * Also, note that the resulting carry is either 0 or 1:
-     * X0 < 2^P521_WIDTH = 2^(512 + biL) and X1 < 2^(P521_WIDTH-biL) = 2^512
-     * therefore
-     * X0 + 2^(biL - 9) X1 < 2^(512 + biL) + 2^(512 + biL - 9)
-     * which in turn is less than 2 * 2^(512 + biL).
-     */
-    mbedtls_mpi_uint shift = ((mbedtls_mpi_uint) 1u) << (biL - 9);
-    carry = mbedtls_mpi_core_mla(X0, X0_limbs, X1, X1_limbs, shift);
-    /* Set X to X0 (by clearing the top part). */
-    memset(X1, 0, X1_limbs * sizeof(mbedtls_mpi_uint));
-
-    /* Step 2: Reduction modulo P521
-     *
-     * At this point X is reduced to P521_WIDTH limbs. What remains is to add
-     * the carry (that is 2^P521_WIDTH carry) and to reduce mod P521. */
-
-    /* 2^P521_WIDTH carry = 2^(512 + biL) carry = 2^(biL - 9) carry mod P521.
-     * Also, recall that carry is either 0 or 1. */
-    mbedtls_mpi_uint addend = carry << (biL - 9);
-    /* Keep the top 9 bits and reduce the rest, using 2^521 = 1 mod P521. */
-    addend += (X[P521_WIDTH - 1] >> 9);
-    X[P521_WIDTH - 1] &= P521_MASK;
-
-    /* Reuse the top part of X (already zeroed) as a helper array for
-     * carrying out the addition. */
-    mbedtls_mpi_uint *addend_arr = X + P521_WIDTH;
-    addend_arr[0] = addend;
-    (void) mbedtls_mpi_core_add(X, X, addend_arr, P521_WIDTH);
-    /* Both addends were less than P521 therefore X < 2 * P521. (This also means
-     * that the result fit in P521_WIDTH limbs and there won't be any carry.) */
-
-    /* Clear the reused part of X. */
-    addend_arr[0] = 0;
-
-    return 0;
-}
-
 #undef P521_WIDTH
 #undef P521_MASK
-
 #endif /* MBEDTLS_ECP_DP_SECP521R1_ENABLED */
 
 #endif /* MBEDTLS_ECP_NIST_OPTIM */
@@ -5529,8 +4169,9 @@ static int ecp_mod_p255(mbedtls_mpi *N)
 
 /* Number of limbs fully occupied by 2^224 (max), and limbs used by it (min) */
 #define DIV_ROUND_UP(X, Y) (((X) + (Y) -1) / (Y))
-#define P224_WIDTH_MIN   (28 / sizeof(mbedtls_mpi_uint))
-#define P224_WIDTH_MAX   DIV_ROUND_UP(28, sizeof(mbedtls_mpi_uint))
+#define P224_SIZE        (224 / 8)
+#define P224_WIDTH_MIN   (P224_SIZE / sizeof(mbedtls_mpi_uint))
+#define P224_WIDTH_MAX   DIV_ROUND_UP(P224_SIZE, sizeof(mbedtls_mpi_uint))
 #define P224_UNUSED_BITS ((P224_WIDTH_MAX * sizeof(mbedtls_mpi_uint) * 8) - 224)
 
 /*
@@ -5598,9 +4239,7 @@ cleanup:
 }
 #endif /* MBEDTLS_ECP_DP_CURVE448_ENABLED */
 
-#if defined(MBEDTLS_ECP_DP_SECP192K1_ENABLED) ||   \
-    defined(MBEDTLS_ECP_DP_SECP224K1_ENABLED) ||   \
-    defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
+#if defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
 /*
  * Fast quasi-reduction modulo P = 2^s - R,
  * with R about 33 bits, used by the Koblitz curves.
@@ -5610,7 +4249,7 @@ cleanup:
  */
 #define P_KOBLITZ_MAX   (256 / 8 / sizeof(mbedtls_mpi_uint))      // Max limbs in P
 #define P_KOBLITZ_R     (8 / sizeof(mbedtls_mpi_uint))            // Limbs in R
-static inline int ecp_mod_koblitz(mbedtls_mpi *N, mbedtls_mpi_uint *Rp, size_t p_limbs,
+static inline int ecp_mod_koblitz(mbedtls_mpi *N, const mbedtls_mpi_uint *Rp, size_t p_limbs,
                                   size_t adjust, size_t shift, mbedtls_mpi_uint mask)
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
@@ -5624,7 +4263,7 @@ static inline int ecp_mod_koblitz(mbedtls_mpi *N, mbedtls_mpi_uint *Rp, size_t p
 
     /* Init R */
     R.s = 1;
-    R.p = Rp;
+    R.p = (mbedtls_mpi_uint *) Rp; /* R.p will not be modified so the cast is safe */
     R.n = P_KOBLITZ_R;
 
     /* Common setup for M */
@@ -5632,9 +4271,9 @@ static inline int ecp_mod_koblitz(mbedtls_mpi *N, mbedtls_mpi_uint *Rp, size_t p
     M.p = Mp;
 
     /* M = A1 */
-    M.n = N->n - (p_limbs - adjust);
+    M.n = (unsigned short) (N->n - (p_limbs - adjust));
     if (M.n > p_limbs + adjust) {
-        M.n = p_limbs + adjust;
+        M.n = (unsigned short) (p_limbs + adjust);
     }
     memset(Mp, 0, sizeof(Mp));
     memcpy(Mp, N->p + p_limbs - adjust, M.n * sizeof(mbedtls_mpi_uint));
@@ -5658,9 +4297,9 @@ static inline int ecp_mod_koblitz(mbedtls_mpi *N, mbedtls_mpi_uint *Rp, size_t p
     /* Second pass */
 
     /* M = A1 */
-    M.n = N->n - (p_limbs - adjust);
+    M.n = (unsigned short) (N->n - (p_limbs - adjust));
     if (M.n > p_limbs + adjust) {
-        M.n = p_limbs + adjust;
+        M.n = (unsigned short) (p_limbs + adjust);
     }
     memset(Mp, 0, sizeof(Mp));
     memcpy(Mp, N->p + p_limbs - adjust, M.n * sizeof(mbedtls_mpi_uint));
@@ -5684,48 +4323,7 @@ static inline int ecp_mod_koblitz(mbedtls_mpi *N, mbedtls_mpi_uint *Rp, size_t p
 cleanup:
     return ret;
 }
-#endif /* MBEDTLS_ECP_DP_SECP192K1_ENABLED) ||
-          MBEDTLS_ECP_DP_SECP224K1_ENABLED) ||
-          MBEDTLS_ECP_DP_SECP256K1_ENABLED) */
-
-#if defined(MBEDTLS_ECP_DP_SECP192K1_ENABLED)
-/*
- * Fast quasi-reduction modulo p192k1 = 2^192 - R,
- * with R = 2^32 + 2^12 + 2^8 + 2^7 + 2^6 + 2^3 + 1 = 0x0100001119
- */
-static int ecp_mod_p192k1(mbedtls_mpi *N)
-{
-    static mbedtls_mpi_uint Rp[] = {
-        MBEDTLS_BYTES_TO_T_UINT_8(0xC9, 0x11, 0x00, 0x00, 0x01, 0x00, 0x00,
-                                  0x00)
-    };
-
-    return ecp_mod_koblitz(N, Rp, 192 / 8 / sizeof(mbedtls_mpi_uint), 0, 0,
-                           0);
-}
-#endif /* MBEDTLS_ECP_DP_SECP192K1_ENABLED */
-
-#if defined(MBEDTLS_ECP_DP_SECP224K1_ENABLED)
-/*
- * Fast quasi-reduction modulo p224k1 = 2^224 - R,
- * with R = 2^32 + 2^12 + 2^11 + 2^9 + 2^7 + 2^4 + 2 + 1 = 0x0100001A93
- */
-static int ecp_mod_p224k1(mbedtls_mpi *N)
-{
-    static mbedtls_mpi_uint Rp[] = {
-        MBEDTLS_BYTES_TO_T_UINT_8(0x93, 0x1A, 0x00, 0x00, 0x01, 0x00, 0x00,
-                                  0x00)
-    };
-
-#if defined(MBEDTLS_HAVE_INT64)
-    return ecp_mod_koblitz(N, Rp, 4, 1, 32, 0xFFFFFFFF);
-#else
-    return ecp_mod_koblitz(N, Rp, 224 / 8 / sizeof(mbedtls_mpi_uint), 0, 0,
-                           0);
-#endif
-}
-
-#endif /* MBEDTLS_ECP_DP_SECP224K1_ENABLED */
+#endif /* MBEDTLS_ECP_DP_SECP256K1_ENABLED) */
 
 #if defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
 /*
@@ -5734,7 +4332,7 @@ static int ecp_mod_p224k1(mbedtls_mpi *N)
  */
 static int ecp_mod_p256k1(mbedtls_mpi *N)
 {
-    static mbedtls_mpi_uint Rp[] = {
+    static const mbedtls_mpi_uint Rp[] = {
         MBEDTLS_BYTES_TO_T_UINT_8(0xD1, 0x03, 0x00, 0x00, 0x01, 0x00, 0x00,
                                   0x00)
     };
@@ -5744,187 +4342,14 @@ static int ecp_mod_p256k1(mbedtls_mpi *N)
 #endif /* MBEDTLS_ECP_DP_SECP256K1_ENABLED */
 
 #if defined(MBEDTLS_TEST_HOOKS)
+
 MBEDTLS_STATIC_TESTABLE
-int mbedtls_ecp_modulus_setup(mbedtls_mpi_mod_modulus *N,
-                              const mbedtls_ecp_group_id id,
-                              const mbedtls_ecp_curve_type ctype)
+mbedtls_ecp_variant mbedtls_ecp_get_variant(void)
 {
-    mbedtls_mpi_uint *p = NULL;
-    size_t p_limbs;
-
-    if (!(ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE || \
-          ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_SCALAR)) {
-        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    }
-
-    switch (id) {
-#if defined(MBEDTLS_ECP_DP_SECP192R1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP192R1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) secp192r1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp192r1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) secp192r1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp192r1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_SECP224R1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP224R1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) secp224r1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp224r1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) secp224r1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp224r1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_SECP256R1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP256R1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) secp256r1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp256r1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) secp256r1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp256r1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_SECP384R1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP384R1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) secp384r1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp384r1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) secp384r1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp384r1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_SECP521R1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP521R1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) secp521r1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp521r1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) secp521r1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp521r1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_BP256R1_ENABLED)
-        case MBEDTLS_ECP_DP_BP256R1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) brainpoolP256r1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(brainpoolP256r1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) brainpoolP256r1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(brainpoolP256r1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_BP384R1_ENABLED)
-        case MBEDTLS_ECP_DP_BP384R1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) brainpoolP384r1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(brainpoolP384r1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) brainpoolP384r1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(brainpoolP384r1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_BP512R1_ENABLED)
-        case MBEDTLS_ECP_DP_BP512R1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) brainpoolP512r1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(brainpoolP512r1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) brainpoolP512r1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(brainpoolP512r1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
-        case MBEDTLS_ECP_DP_CURVE25519:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) curve25519_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(curve25519_p));
-            } else {
-                p = (mbedtls_mpi_uint *) curve25519_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(curve25519_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_SECP192K1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP192K1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) secp192k1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp192k1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) secp192k1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp192k1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_SECP224K1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP224K1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) secp224k1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp224k1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) secp224k1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp224k1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_SECP256K1_ENABLED)
-        case MBEDTLS_ECP_DP_SECP256K1:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) secp256k1_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp256k1_p));
-            } else {
-                p = (mbedtls_mpi_uint *) secp256k1_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(secp256k1_n));
-            }
-            break;
-#endif
-
-#if defined(MBEDTLS_ECP_DP_CURVE448_ENABLED)
-        case MBEDTLS_ECP_DP_CURVE448:
-            if (ctype == (mbedtls_ecp_curve_type) MBEDTLS_ECP_MOD_COORDINATE) {
-                p = (mbedtls_mpi_uint *) curve448_p;
-                p_limbs = CHARS_TO_LIMBS(sizeof(curve448_p));
-            } else {
-                p = (mbedtls_mpi_uint *) curve448_n;
-                p_limbs = CHARS_TO_LIMBS(sizeof(curve448_n));
-            }
-            break;
-#endif
-
-        default:
-        case MBEDTLS_ECP_DP_NONE:
-            return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    }
-
-    if (mbedtls_mpi_mod_modulus_setup(N, p, p_limbs,
-                                      MBEDTLS_MPI_MOD_REP_MONTGOMERY)) {
-        return MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    }
-    return 0;
+    return MBEDTLS_ECP_VARIANT_WITH_MPI_STRUCT;
 }
+
 #endif /* MBEDTLS_TEST_HOOKS */
-#endif /* !MBEDTLS_ECP_ALT */
-#endif /* MBEDTLS_ECP_C */
+
+#endif /* MBEDTLS_ECP_LIGHT */
+#endif /* MBEDTLS_ECP_WITH_MPI_UINT */

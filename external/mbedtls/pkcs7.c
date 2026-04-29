@@ -1,46 +1,16 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
-#include "mbedtls/common.h"
+#include "x509_internal.h"
 
-#include "mbedtls/build_info.h"
 #if defined(MBEDTLS_PKCS7_C)
 #include "mbedtls/pkcs7.h"
-#include "mbedtls/x509.h"
 #include "mbedtls/asn1.h"
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/x509_crl.h"
 #include "mbedtls/oid.h"
+#include "x509_oid.h"
 #include "mbedtls/error.h"
 
 #if defined(MBEDTLS_FS_IO)
@@ -345,7 +315,7 @@ static int pkcs7_get_signer_info(unsigned char **p, unsigned char *end,
         goto out;
     }
 
-    signer->issuer_raw.len =  *p - signer->issuer_raw.p;
+    signer->issuer_raw.len =  (size_t) (*p - signer->issuer_raw.p);
 
     ret = mbedtls_x509_get_serial(p, end_issuer_and_sn, &signer->serial);
     if (ret != 0) {
@@ -511,7 +481,7 @@ static int pkcs7_get_signed_data(unsigned char *buf, size_t buflen,
         return ret;
     }
 
-    ret = mbedtls_oid_get_md_alg(&signed_data->digest_alg_identifiers, &md_alg);
+    ret = mbedtls_x509_oid_get_md_alg(&signed_data->digest_alg_identifiers, &md_alg);
     if (ret != 0) {
         return MBEDTLS_ERR_PKCS7_INVALID_ALG;
     }
@@ -690,7 +660,7 @@ static int mbedtls_pkcs7_data_or_hash_verify(mbedtls_pkcs7 *pkcs7,
         return MBEDTLS_ERR_PKCS7_CERT_DATE_INVALID;
     }
 
-    ret = mbedtls_oid_get_md_alg(&pkcs7->signed_data.digest_alg_identifiers, &md_alg);
+    ret = mbedtls_x509_oid_get_md_alg(&pkcs7->signed_data.digest_alg_identifiers, &md_alg);
     if (ret != 0) {
         return ret;
     }
@@ -734,9 +704,9 @@ static int mbedtls_pkcs7_data_or_hash_verify(mbedtls_pkcs7 *pkcs7,
      * failed to validate'.
      */
     for (signer = &pkcs7->signed_data.signers; signer; signer = signer->next) {
-        ret = mbedtls_pk_verify(&pk_cxt, md_alg, hash,
-                                mbedtls_md_get_size(md_info),
-                                signer->sig.p, signer->sig.len);
+        ret = mbedtls_pk_verify_ext(cert->sig_pk, &pk_cxt, md_alg, hash,
+                                    mbedtls_md_get_size(md_info),
+                                    signer->sig.p, signer->sig.len);
 
         if (ret == 0) {
             break;

@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file x509_crl.h
  *
@@ -22,19 +5,7 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 #ifndef MBEDTLS_X509_CRL_H
 #define MBEDTLS_X509_CRL_H
@@ -111,8 +82,7 @@ typedef struct mbedtls_x509_crl {
     mbedtls_x509_buf MBEDTLS_PRIVATE(sig_oid2);
     mbedtls_x509_buf MBEDTLS_PRIVATE(sig);
     mbedtls_md_type_t MBEDTLS_PRIVATE(sig_md);           /**< Internal representation of the MD algorithm of the signature algorithm, e.g. MBEDTLS_MD_SHA256 */
-    mbedtls_pk_type_t MBEDTLS_PRIVATE(sig_pk);           /**< Internal representation of the Public Key algorithm of the signature algorithm, e.g. MBEDTLS_PK_RSA */
-    void *MBEDTLS_PRIVATE(sig_opts);             /**< Signature options to be passed to mbedtls_pk_verify_ext(), e.g. for RSASSA-PSS */
+    mbedtls_pk_sigalg_t MBEDTLS_PRIVATE(sig_pk);           /**< Internal representation of the Public Key algorithm of the signature algorithm, e.g. MBEDTLS_PK_RSA */
 
     /** Next element in the linked list of CRL.
      * \p NULL indicates the end of the list.
@@ -124,9 +94,8 @@ mbedtls_x509_crl;
 /**
  * \brief          Parse a DER-encoded CRL and append it to the chained list
  *
- * \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
- *                 subsystem must have been initialized by calling
- *                 psa_crypto_init() before calling this function.
+ * \note           The PSA crypto subsystem must have been initialized by
+ *                 calling psa_crypto_init() before calling this function.
  *
  * \param chain    points to the start of the chain
  * \param buf      buffer holding the CRL data in DER format
@@ -142,9 +111,8 @@ int mbedtls_x509_crl_parse_der(mbedtls_x509_crl *chain,
  *
  * \note           Multiple CRLs are accepted only if using PEM format
  *
- * \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
- *                 subsystem must have been initialized by calling
- *                 psa_crypto_init() before calling this function.
+ * \note           The PSA crypto subsystem must have been initialized by
+ *                 calling psa_crypto_init() before calling this function.
  *
  * \param chain    points to the start of the chain
  * \param buf      buffer holding the CRL data in PEM or DER format
@@ -161,9 +129,8 @@ int mbedtls_x509_crl_parse(mbedtls_x509_crl *chain, const unsigned char *buf, si
  *
  * \note           Multiple CRLs are accepted only if using PEM format
  *
- * \note           If #MBEDTLS_USE_PSA_CRYPTO is enabled, the PSA crypto
- *                 subsystem must have been initialized by calling
- *                 psa_crypto_init() before calling this function.
+ * \note           The PSA crypto subsystem must have been initialized by
+ *                 calling psa_crypto_init() before calling this function.
  *
  * \param chain    points to the start of the chain
  * \param path     filename to read the CRLs from (in PEM or DER encoding)

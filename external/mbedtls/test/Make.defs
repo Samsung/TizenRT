@@ -16,7 +16,8 @@
 #
 ###########################################################################
 
-SRC_TEST_CSRCS = certs.c
+SRC_TEST_CSRCS =
+# certs.c excluded - requires POSIX headers not available on TizenRT
 CFLAGS += -I$(TOPDIR)/../external/mbedtls/
 
 DEPPATH	+= --dep-path test

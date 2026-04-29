@@ -3032,12 +3032,6 @@ static int testCAsetTlsCipherSuite()
         ret += 1;
     }
 
-    status = CAsetTlsCipherSuite(MBEDTLS_TLS_ECDH_ANON_WITH_AES_128_CBC_SHA256);
-    if (SSL_ECDH_ANON_WITH_AES_128_CBC_SHA256 != g_caSslContext->cipher || status != CA_STATUS_OK)
-    {
-        ret += 1;
-    }
-
     status = CAsetTlsCipherSuite(dummyHandler);
     if (CA_STATUS_FAILED != status)
     {

@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file bignum_mod_raw_invasive.h
  *
@@ -23,26 +6,14 @@
  */
 /**
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#ifndef MBEDTLS_BIGNUM_MOD_RAW_INVASIVE_H
-#define MBEDTLS_BIGNUM_MOD_RAW_INVASIVE_H
+#ifndef TF_PSA_CRYPTO_BIGNUM_MOD_RAW_INVASIVE_H
+#define TF_PSA_CRYPTO_BIGNUM_MOD_RAW_INVASIVE_H
 
-#include "mbedtls/common.h"
-#include "mbedtls/bignum.h"
+#include "tf_psa_crypto_common.h"
+#include "mbedtls/private/bignum.h"
 #include "bignum_mod.h"
 
 #if defined(MBEDTLS_TEST_HOOKS)
@@ -60,4 +31,4 @@ void mbedtls_mpi_mod_raw_fix_quasi_reduction(mbedtls_mpi_uint *X,
 
 #endif /* MBEDTLS_TEST_HOOKS */
 
-#endif /* MBEDTLS_BIGNUM_MOD_RAW_INVASIVE_H */
+#endif /* TF_PSA_CRYPTO_BIGNUM_MOD_RAW_INVASIVE_H */

@@ -1,48 +1,19 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /** \file psa_crypto_its.h
  * \brief Interface of trusted storage that crypto is built on.
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#ifndef PSA_CRYPTO_ITS_H
-#define PSA_CRYPTO_ITS_H
+#ifndef TF_PSA_CRYPTO_PSA_CRYPTO_ITS_H
+#define TF_PSA_CRYPTO_PSA_CRYPTO_ITS_H
 
 #include <stddef.h>
 #include <stdint.h>
 
-#include "mbedtls/psa/crypto_types.h"
-#include "mbedtls/psa/crypto_values.h"
+#include <psa/crypto_types.h>
+#include <psa/crypto_values.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -157,4 +128,4 @@ psa_status_t psa_its_remove(psa_storage_uid_t uid);
 }
 #endif
 
-#endif /* PSA_CRYPTO_ITS_H */
+#endif /* TF_PSA_CRYPTO_PSA_CRYPTO_ITS_H */

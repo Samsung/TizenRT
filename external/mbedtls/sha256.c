@@ -1,37 +1,8 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /*
  *  FIPS-180-2 compliant SHA-256 implementation
  *
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 /*
  *  The SHA-256 Secure Hash Standard was published by NIST in 2002.
@@ -39,17 +10,34 @@
  *  http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
  */
 
-#if defined(__aarch64__) && !defined(__ARM_FEATURE_CRYPTO) && \
-    defined(__clang__) && __clang_major__ >= 4
-/* TODO: Re-consider above after https://reviews.llvm.org/D131064 merged.
- *
+/* Ensure that SIG_SETMASK is defined when -std=c99 is used. */
+#if !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
+
+#if defined(__clang__) &&  (__clang_major__ >= 4)
+
+/* Ideally, we would simply use MBEDTLS_ARCH_IS_ARMV8_A in the following #if,
+ * but that is defined by build_info.h, and we need this block to happen first. */
+#if defined(__ARM_ARCH) && (__ARM_ARCH_PROFILE == 'A')
+#if __ARM_ARCH >= 8
+#define MBEDTLS_SHA256_ARCH_IS_ARMV8_A
+#endif
+#endif
+
+#if defined(MBEDTLS_SHA256_ARCH_IS_ARMV8_A) && !defined(__ARM_FEATURE_CRYPTO)
+/*
  * The intrinsic declaration are guarded by predefined ACLE macros in clang:
  * these are normally only enabled by the -march option on the command line.
  * By defining the macros ourselves we gain access to those declarations without
  * requiring -march on the command line.
  *
- * `arm_neon.h` could be included by any header file, so we put these defines
- * at the top of this file, before any includes.
+ * `arm_neon.h` is included by tf_psa_crypto_common.h, so we put these defines
+ * at the top of this file, before any includes but after the intrinsic
+ * declaration. This is necessary with
+ * Clang <=15.x. With Clang 16.0 and above, these macro definitions are
+ * no longer required, but they're harmless. See
+ * https://reviews.llvm.org/D131064
  */
 #define __ARM_FEATURE_CRYPTO 1
 /* See: https://arm-software.github.io/acle/main/acle.html#cryptographic-extensions
@@ -61,26 +49,48 @@
 #define MBEDTLS_ENABLE_ARM_CRYPTO_EXTENSIONS_COMPILER_FLAG
 #endif
 
-#include "mbedtls/common.h"
+#endif /* defined(__clang__) &&  (__clang_major__ >= 4) */
+
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_SHA256_C) || defined(MBEDTLS_SHA224_C)
 
-#include "mbedtls/sha256.h"
+#include "mbedtls/private/sha256.h"
 #include "mbedtls/platform_util.h"
-#include "mbedtls/error.h"
+#include "mbedtls/private/error_common.h"
 
 #include <string.h>
 
 #include "mbedtls/platform.h"
 
-#if defined(__aarch64__)
-#  if defined(MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT) || \
-    defined(MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY)
+#if defined(MBEDTLS_ARCH_IS_ARMV8_A)
+
+#  if defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT) || \
+    defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_ONLY)
+#       if !defined(MBEDTLS_HAVE_NEON_INTRINSICS)
+#           if defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT)
+#               warning "Target does not support NEON instructions"
+#               undef MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT
+#           else
+#               error "Target does not support NEON instructions"
+#           endif
+#       endif
+#   endif
+
+#  if defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT) || \
+    defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_ONLY)
 /* *INDENT-OFF* */
-#    if !defined(__ARM_FEATURE_CRYPTO) || defined(MBEDTLS_ENABLE_ARM_CRYPTO_EXTENSIONS_COMPILER_FLAG)
-#      if defined(__clang__)
+
+#   if !defined(__ARM_FEATURE_CRYPTO) || defined(MBEDTLS_ENABLE_ARM_CRYPTO_EXTENSIONS_COMPILER_FLAG)
+#      if defined(__ARMCOMPILER_VERSION)
+#        if __ARMCOMPILER_VERSION <= 6090000
+#          error "Must use minimum -march=armv8-a+crypto for MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_*"
+#        endif
+#          pragma clang attribute push (__attribute__((target("sha2"))), apply_to=function)
+#          define MBEDTLS_POP_TARGET_PRAGMA
+#      elif defined(__clang__)
 #        if __clang_major__ < 4
-#          error "A more recent Clang is required for MBEDTLS_SHA256_USE_A64_CRYPTO_*"
+#          error "A more recent Clang is required for MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_*"
 #        endif
 #        pragma clang attribute push (__attribute__((target("crypto"))), apply_to=function)
 #        define MBEDTLS_POP_TARGET_PRAGMA
@@ -89,56 +99,65 @@
           *        intrinsics are missing. Missing intrinsics could be worked around.
           */
 #        if __GNUC__ < 6
-#          error "A more recent GCC is required for MBEDTLS_SHA256_USE_A64_CRYPTO_*"
+#          error "A more recent GCC is required for MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_*"
 #        else
 #          pragma GCC push_options
 #          pragma GCC target ("arch=armv8-a+crypto")
 #          define MBEDTLS_POP_TARGET_PRAGMA
 #        endif
 #      else
-#        error "Only GCC and Clang supported for MBEDTLS_SHA256_USE_A64_CRYPTO_*"
+#        error "Only GCC and Clang supported for MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_*"
 #      endif
 #    endif
 /* *INDENT-ON* */
-#    include <arm_neon.h>
+
 #  endif
-#  if defined(MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT)
+#  if defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT)
 #    if defined(__unix__)
 #      if defined(__linux__)
 /* Our preferred method of detection is getauxval() */
 #        include <sys/auxv.h>
+/* These are not always defined via sys/auxv.h */
+#        if !defined(HWCAP_SHA2)
+#          define HWCAP_SHA2  (1 << 6)
+#        endif
+#        if !defined(HWCAP2_SHA2)
+#          define HWCAP2_SHA2 (1 << 3)
+#        endif
 #      endif
 /* Use SIGILL on Unix, and fall back to it on Linux */
 #      include <signal.h>
 #    endif
 #  endif
-#elif defined(_M_ARM64)
-#  if defined(MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT) || \
-    defined(MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY)
-#    include <arm64_neon.h>
-#  endif
-#else
-#  undef MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY
-#  undef MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT
+#elif !defined(MBEDTLS_PLATFORM_IS_WINDOWS_ON_ARM64)
+#  undef MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_ONLY
+#  undef MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT
 #endif
 
-#if defined(MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT)
+#if defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT)
 /*
  * Capability detection code comes early, so we can disable
- * MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT if no detection mechanism found
+ * MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT if no detection mechanism found
  */
-#if defined(HWCAP_SHA2)
+#if defined(MBEDTLS_ARCH_IS_ARM64) && defined(HWCAP_SHA2)
 static int mbedtls_a64_crypto_sha256_determine_support(void)
 {
     return (getauxval(AT_HWCAP) & HWCAP_SHA2) ? 1 : 0;
+}
+#elif defined(MBEDTLS_ARCH_IS_ARM32) && defined(HWCAP2_SHA2)
+static int mbedtls_a64_crypto_sha256_determine_support(void)
+{
+    return (getauxval(AT_HWCAP2) & HWCAP2_SHA2) ? 1 : 0;
 }
 #elif defined(__APPLE__)
 static int mbedtls_a64_crypto_sha256_determine_support(void)
 {
     return 1;
 }
-#elif defined(_M_ARM64)
+#elif defined(MBEDTLS_PLATFORM_IS_WINDOWS_ON_ARM64)
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <Windows.h>
 #include <processthreadsapi.h>
 
@@ -155,7 +174,7 @@ static int mbedtls_a64_crypto_sha256_determine_support(void)
 static jmp_buf return_from_sigill;
 
 /*
- * A64 SHA256 support detection via SIGILL
+ * Armv8-A SHA256 support detection via SIGILL
  */
 static void sigill_handler(int signal)
 {
@@ -182,7 +201,11 @@ static int mbedtls_a64_crypto_sha256_determine_support(void)
 
     if (setjmp(return_from_sigill) == 0) {         /* First return only */
         /* If this traps, we will return a second time from setjmp() with 1 */
-        asm ("sha256h q0, q0, v0.4s" : : : "v0");
+#if defined(MBEDTLS_ARCH_IS_ARM64)
+        asm volatile ("sha256h q0, q0, v0.4s" : : : "v0");
+#else
+        asm volatile ("sha256h.32 q0, q0, q0" : : : "q0");
+#endif
         ret = 1;
     }
 
@@ -192,13 +215,11 @@ static int mbedtls_a64_crypto_sha256_determine_support(void)
     return ret;
 }
 #else
-#warning "No mechanism to detect A64_CRYPTO found, using C code only"
-#undef MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT
+#warning "No mechanism to detect ARMV8_CRYPTO found, using C code only"
+#undef MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT
 #endif  /* HWCAP_SHA2, __APPLE__, __unix__ && SIG_SETMASK */
 
-#endif  /* MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT */
-
-#if !defined(MBEDTLS_SHA256_ALT)
+#endif  /* MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT */
 
 #define SHA256_BLOCK_SIZE 64
 
@@ -275,7 +296,6 @@ int mbedtls_sha256_starts(mbedtls_sha256_context *ctx, int is224)
     return 0;
 }
 
-#if !defined(MBEDTLS_SHA256_PROCESS_ALT)
 static const uint32_t K[] =
 {
     0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
@@ -296,12 +316,10 @@ static const uint32_t K[] =
     0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2,
 };
 
-#endif
+#if defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT) || \
+    defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_ONLY)
 
-#if defined(MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT) || \
-    defined(MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY)
-
-#if defined(MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY)
+#if defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_ONLY)
 #  define mbedtls_internal_sha256_process_many_a64_crypto mbedtls_internal_sha256_process_many
 #  define mbedtls_internal_sha256_process_a64_crypto      mbedtls_internal_sha256_process
 #endif
@@ -324,10 +342,10 @@ static size_t mbedtls_internal_sha256_process_many_a64_crypto(
         uint32x4_t abcd_orig = abcd;
         uint32x4_t efgh_orig = efgh;
 
-        uint32x4_t sched0 = (uint32x4_t) vld1q_u8(msg + 16 * 0);
-        uint32x4_t sched1 = (uint32x4_t) vld1q_u8(msg + 16 * 1);
-        uint32x4_t sched2 = (uint32x4_t) vld1q_u8(msg + 16 * 2);
-        uint32x4_t sched3 = (uint32x4_t) vld1q_u8(msg + 16 * 3);
+        uint32x4_t sched0 = vreinterpretq_u32_u8(vld1q_u8(msg + 16 * 0));
+        uint32x4_t sched1 = vreinterpretq_u32_u8(vld1q_u8(msg + 16 * 1));
+        uint32x4_t sched2 = vreinterpretq_u32_u8(vld1q_u8(msg + 16 * 2));
+        uint32x4_t sched3 = vreinterpretq_u32_u8(vld1q_u8(msg + 16 * 3));
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__  /* Will be true if not defined */
                                                /* Untested on BE */
@@ -401,20 +419,15 @@ static size_t mbedtls_internal_sha256_process_many_a64_crypto(
     return processed;
 }
 
-#if defined(MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT)
-/*
- * This function is for internal use only if we are building both C and A64
- * versions, otherwise it is renamed to be the public mbedtls_internal_sha256_process()
- */
-static
-#endif
-int mbedtls_internal_sha256_process_a64_crypto(mbedtls_sha256_context *ctx,
-                                               const unsigned char data[SHA256_BLOCK_SIZE])
+static int mbedtls_internal_sha256_process_a64_crypto(mbedtls_sha256_context *ctx,
+                                                      const unsigned char data[SHA256_BLOCK_SIZE])
 {
     return (mbedtls_internal_sha256_process_many_a64_crypto(ctx, data,
                                                             SHA256_BLOCK_SIZE) ==
             SHA256_BLOCK_SIZE) ? 0 : -1;
 }
+
+#endif /* MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT || MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_ONLY */
 
 #if defined(MBEDTLS_POP_TARGET_PRAGMA)
 #if defined(__clang__)
@@ -425,16 +438,13 @@ int mbedtls_internal_sha256_process_a64_crypto(mbedtls_sha256_context *ctx,
 #undef MBEDTLS_POP_TARGET_PRAGMA
 #endif
 
-#endif /* MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT || MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY */
-
-#if !defined(MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT)
+#if !defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT)
 #define mbedtls_internal_sha256_process_many_c mbedtls_internal_sha256_process_many
 #define mbedtls_internal_sha256_process_c      mbedtls_internal_sha256_process
 #endif
 
 
-#if !defined(MBEDTLS_SHA256_PROCESS_ALT) && \
-    !defined(MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY)
+#if !defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_ONLY)
 
 #define  SHR(x, n) (((x) & 0xFFFFFFFF) >> (n))
 #define ROTR(x, n) (SHR(x, n) | ((x) << (32 - (n))))
@@ -462,15 +472,8 @@ int mbedtls_internal_sha256_process_a64_crypto(mbedtls_sha256_context *ctx,
         (d) += local.temp1; (h) = local.temp1 + local.temp2;        \
     } while (0)
 
-#if defined(MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT)
-/*
- * This function is for internal use only if we are building both C and A64
- * versions, otherwise it is renamed to be the public mbedtls_internal_sha256_process()
- */
-static
-#endif
-int mbedtls_internal_sha256_process_c(mbedtls_sha256_context *ctx,
-                                      const unsigned char data[SHA256_BLOCK_SIZE])
+static int mbedtls_internal_sha256_process_c(mbedtls_sha256_context *ctx,
+                                             const unsigned char data[SHA256_BLOCK_SIZE])
 {
     struct {
         uint32_t temp1, temp2, W[64];
@@ -554,11 +557,6 @@ int mbedtls_internal_sha256_process_c(mbedtls_sha256_context *ctx,
     return 0;
 }
 
-#endif /* !MBEDTLS_SHA256_PROCESS_ALT && !MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY */
-
-
-#if !defined(MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY)
-
 static size_t mbedtls_internal_sha256_process_many_c(
     mbedtls_sha256_context *ctx, const uint8_t *data, size_t len)
 {
@@ -578,10 +576,10 @@ static size_t mbedtls_internal_sha256_process_many_c(
     return processed;
 }
 
-#endif /* !MBEDTLS_SHA256_USE_A64_CRYPTO_ONLY */
+#endif /* !MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_ONLY */
 
 
-#if defined(MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT)
+#if defined(MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT)
 
 static int mbedtls_a64_crypto_sha256_has_support(void)
 {
@@ -606,8 +604,8 @@ static size_t mbedtls_internal_sha256_process_many(mbedtls_sha256_context *ctx,
     }
 }
 
-int mbedtls_internal_sha256_process(mbedtls_sha256_context *ctx,
-                                    const unsigned char data[SHA256_BLOCK_SIZE])
+static int mbedtls_internal_sha256_process(mbedtls_sha256_context *ctx,
+                                           const unsigned char data[SHA256_BLOCK_SIZE])
 {
     if (mbedtls_a64_crypto_sha256_has_support()) {
         return mbedtls_internal_sha256_process_a64_crypto(ctx, data);
@@ -616,7 +614,7 @@ int mbedtls_internal_sha256_process(mbedtls_sha256_context *ctx,
     }
 }
 
-#endif /* MBEDTLS_SHA256_USE_A64_CRYPTO_IF_PRESENT */
+#endif /* MBEDTLS_SHA256_USE_ARMV8_A_CRYPTO_IF_PRESENT */
 
 
 /*
@@ -683,6 +681,7 @@ int mbedtls_sha256_finish(mbedtls_sha256_context *ctx,
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     uint32_t used;
     uint32_t high, low;
+    int truncated = 0;
 
     /*
      * Add padding: 0x80 then 0x00 until 8 bytes remain for the length
@@ -699,7 +698,7 @@ int mbedtls_sha256_finish(mbedtls_sha256_context *ctx,
         memset(ctx->buffer + used, 0, SHA256_BLOCK_SIZE - used);
 
         if ((ret = mbedtls_internal_sha256_process(ctx, ctx->buffer)) != 0) {
-            return ret;
+            goto exit;
         }
 
         memset(ctx->buffer, 0, 56);
@@ -716,7 +715,7 @@ int mbedtls_sha256_finish(mbedtls_sha256_context *ctx,
     MBEDTLS_PUT_UINT32_BE(low,  ctx->buffer, 60);
 
     if ((ret = mbedtls_internal_sha256_process(ctx, ctx->buffer)) != 0) {
-        return ret;
+        goto exit;
     }
 
     /*
@@ -730,7 +729,6 @@ int mbedtls_sha256_finish(mbedtls_sha256_context *ctx,
     MBEDTLS_PUT_UINT32_BE(ctx->state[5], output, 20);
     MBEDTLS_PUT_UINT32_BE(ctx->state[6], output, 24);
 
-    int truncated = 0;
 #if defined(MBEDTLS_SHA224_C)
     truncated = ctx->is224;
 #endif
@@ -738,10 +736,12 @@ int mbedtls_sha256_finish(mbedtls_sha256_context *ctx,
         MBEDTLS_PUT_UINT32_BE(ctx->state[7], output, 28);
     }
 
-    return 0;
-}
+    ret = 0;
 
-#endif /* !MBEDTLS_SHA256_ALT */
+exit:
+    mbedtls_sha256_free(ctx);
+    return ret;
+}
 
 /*
  * output = SHA-256( input buffer )

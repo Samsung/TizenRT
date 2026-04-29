@@ -16,55 +16,55 @@
  *
  ****************************************************************************/
 
+/**
+ * Hardware entropy source using the Samsung SE (SecLink RNG).
+ * Enabled when CONFIG_HW_RNG=y.
+ */
+
 #include <tinyara/config.h>
+#include <string.h>
 #include <tinyara/security_hal.h>
 #include <tinyara/seclink.h>
 
 #include "mbedtls/build_info.h"
+#include "mbedtls/platform.h"
+#include "psa/crypto_driver_random.h"
 
-#if defined(MBEDTLS_ENTROPY_C)
+#if defined(MBEDTLS_PSA_DRIVER_GET_ENTROPY)
 
-#include "mbedtls/entropy.h"
-#include "entropy_poll.h"
-
-#include "mbedtls/alt/common.h"
-
-#if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
-static int mbedtls_generate_random_alt(unsigned char *data, unsigned int len)
+/**
+ * mbedtls_platform_get_entropy – hardware entropy callback for PSA.
+ *
+ * @param flags        Driver flags (currently unused; pass PSA_DRIVER_GET_ENTROPY_FLAGS_NONE).
+ * @param estimate_bits On success, set to (8 * output_size) indicating full-entropy output.
+ * @param output       Buffer to receive random bytes.
+ * @param output_size  Number of random bytes requested.
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
+                                  size_t *estimate_bits,
+                                  unsigned char *output, size_t output_size)
 {
-	int ret;
-	sl_ctx shnd;
-	hal_data random = {data, len, NULL, 0};
+    (void)flags;
 
-	ret = sl_init(&shnd);
-	if (ret != SECLINK_OK) {
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-	}
+    sl_ctx shnd;
+    hal_data random = {output, output_size, NULL, 0};
 
-	ret = sl_generate_random(shnd, len, &random);
-	if (ret != SECLINK_OK) {
-		sl_deinit(shnd);
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-	}
+    if (sl_init(&shnd) != SECLINK_OK) {
+        return -1;
+    }
 
-	sl_deinit(shnd);
+    if (sl_generate_random(shnd, output_size, &random) != SECLINK_OK) {
+        sl_deinit(shnd);
+        return -1;
+    }
 
-	return HAL_SUCCESS;
+    sl_deinit(shnd);
+
+    /* Full-entropy output: each output byte carries 8 bits of entropy */
+    *estimate_bits = 8 * output_size;
+    return 0;
 }
 
-int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t *olen)
-{
-	unsigned char inbuf[len];
-
-	if (mbedtls_generate_random_alt(inbuf, len) < 0) {
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-	}
-
-	memcpy(output, inbuf, len);
-	*olen = len;
-
-	return 0;
-}
-#endif							/* MBEDTLS_ENTROPY_HARDWARE_ALT */
-
-#endif							/* MBEDTLS_ENTROPY_C */
+#endif /* MBEDTLS_PSA_DRIVER_GET_ENTROPY */

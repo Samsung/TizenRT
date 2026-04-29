@@ -70,7 +70,7 @@
 #include "lwip/sys.h"
 #include "lwip/ip.h"
 #include "lwip/netif/etharp.h"
-#include <mbedtls/sha256.h>
+#include <mbedtls/private/sha256.h>
 
 #if ENABLE_LOOPBACK
 #if LWIP_NETIF_LOOPBACK_MULTITHREADING

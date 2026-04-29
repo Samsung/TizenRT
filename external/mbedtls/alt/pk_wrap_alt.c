@@ -47,16 +47,16 @@
 #include "mbedtls/error.h"
 
 /* Even if RSA not activated, for the sake of RSA-alt */
-#include "mbedtls/rsa.h"
+#include "mbedtls/private/rsa.h"
 
 #include <string.h>
 
 #if defined(MBEDTLS_ECP_C)
-#include "mbedtls/ecp.h"
+#include "mbedtls/private/ecp.h"
 #endif
 
 #if defined(MBEDTLS_ECDSA_C)
-#include "mbedtls/ecdsa.h"
+#include "mbedtls/private/ecdsa.h"
 #include "mbedtls/asn1write.h"
 #endif
 

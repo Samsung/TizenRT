@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2024 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  *  Low-level modular bignum functions
  *
@@ -77,28 +60,16 @@
 
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
-#ifndef MBEDTLS_BIGNUM_MOD_RAW_H
-#define MBEDTLS_BIGNUM_MOD_RAW_H
+#ifndef TF_PSA_CRYPTO_BIGNUM_MOD_RAW_H
+#define TF_PSA_CRYPTO_BIGNUM_MOD_RAW_H
 
-#include "mbedtls/common.h"
+#include "tf_psa_crypto_common.h"
 
 #if defined(MBEDTLS_BIGNUM_C)
-#include "mbedtls/bignum.h"
+#include "mbedtls/private/bignum.h"
 #endif
 
 #include "bignum_mod.h"
@@ -204,12 +175,6 @@ int mbedtls_mpi_mod_raw_write(const mbedtls_mpi_uint *A,
                               size_t output_length,
                               mbedtls_mpi_mod_ext_rep ext_rep);
 
-/* BEGIN MERGE SLOT 1 */
-
-/* END MERGE SLOT 1 */
-
-/* BEGIN MERGE SLOT 2 */
-
 /** \brief  Subtract two MPIs, returning the residue modulo the specified
  *          modulus.
  *
@@ -267,10 +232,6 @@ void mbedtls_mpi_mod_raw_mul(mbedtls_mpi_uint *X,
                              const mbedtls_mpi_mod_modulus *N,
                              mbedtls_mpi_uint *T);
 
-/* END MERGE SLOT 2 */
-
-/* BEGIN MERGE SLOT 3 */
-
 /**
  * \brief          Returns the number of limbs of working memory required for
  *                 a call to `mbedtls_mpi_mod_raw_inv_prime()`.
@@ -320,13 +281,6 @@ void mbedtls_mpi_mod_raw_inv_prime(mbedtls_mpi_uint *X,
                                    const mbedtls_mpi_uint *RR,
                                    mbedtls_mpi_uint *T);
 
-/* END MERGE SLOT 3 */
-
-/* BEGIN MERGE SLOT 4 */
-
-/* END MERGE SLOT 4 */
-
-/* BEGIN MERGE SLOT 5 */
 /**
  * \brief Perform a known-size modular addition.
  *
@@ -349,9 +303,6 @@ void mbedtls_mpi_mod_raw_add(mbedtls_mpi_uint *X,
                              const mbedtls_mpi_uint *A,
                              const mbedtls_mpi_uint *B,
                              const mbedtls_mpi_mod_modulus *N);
-/* END MERGE SLOT 5 */
-
-/* BEGIN MERGE SLOT 6 */
 
 /** Convert an MPI from canonical representation (little-endian limb array)
  * to the representation associated with the modulus.
@@ -421,9 +372,6 @@ int mbedtls_mpi_mod_raw_random(mbedtls_mpi_uint *X,
                                int (*f_rng)(void *, unsigned char *, size_t),
                                void *p_rng);
 
-/* END MERGE SLOT 6 */
-
-/* BEGIN MERGE SLOT 7 */
 /** Convert an MPI into Montgomery form.
  *
  * \param X      The address of the MPI.
@@ -464,18 +412,5 @@ int mbedtls_mpi_mod_raw_from_mont_rep(mbedtls_mpi_uint *X,
 void mbedtls_mpi_mod_raw_neg(mbedtls_mpi_uint *X,
                              const mbedtls_mpi_uint *A,
                              const mbedtls_mpi_mod_modulus *N);
-/* END MERGE SLOT 7 */
 
-/* BEGIN MERGE SLOT 8 */
-
-/* END MERGE SLOT 8 */
-
-/* BEGIN MERGE SLOT 9 */
-
-/* END MERGE SLOT 9 */
-
-/* BEGIN MERGE SLOT 10 */
-
-/* END MERGE SLOT 10 */
-
-#endif /* MBEDTLS_BIGNUM_MOD_RAW_H */
+#endif /* TF_PSA_CRYPTO_BIGNUM_MOD_RAW_H */

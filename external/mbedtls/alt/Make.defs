@@ -16,14 +16,52 @@
 #
 ###########################################################################
 
-SRC_ALT_CSRCS = \
-dhm_alt.c \
-ecdh_alt.c \
-entropy_poll_alt.c \
-pk_wrap_alt.c \
-alt_utils.c \
-aes_alt.c
+# mbedtls 4.1.0 replaced MBEDTLS_*_ALT hooks with the PSA crypto driver model.
+# The new PSA driver files below replace ecdh_alt.c, aes_alt.c, etc.
+# Old alt files (ecdh_alt.c, aes_alt.c, dhm_alt.c, pk_wrap_alt.c) are NOT
+# compiled – they reference mbedtls 3.x APIs that no longer exist.
+
+SRC_ALT_CSRCS =
+
+# mbedtls_ms_time() implementation – always needed on TizenRT because
+# _POSIX_VERSION is not defined, blocking the built-in clock_gettime path.
+SRC_ALT_CSRCS += ms_time_alt.c
+
+# Top-level SE enable: marks TIZENRT_PSA_DRIVER_PRESENT for all driver wrappers
+# and compiles the shared helper utilities.
+ifeq ($(CONFIG_SE),y)
+CFLAGS += -DTIZENRT_PSA_DRIVER_PRESENT
+SRC_ALT_CSRCS += alt_utils.c
+endif
+
+# ECC opaque driver (ECDH and/or ECDSA sign/verify via SSS hardware).
+# Compiled when at least one ECC HW operation is enabled.
+_TIZENRT_ECC_DRV =
+ifeq ($(CONFIG_HW_ECDH_PARAM),y)
+_TIZENRT_ECC_DRV = y
+endif
+ifeq ($(CONFIG_HW_ECDSA_VERIFICATION),y)
+_TIZENRT_ECC_DRV = y
+endif
+ifeq ($(_TIZENRT_ECC_DRV),y)
+SRC_ALT_CSRCS += tizenrt_psa_driver.c
+endif
+
+# AES transparent cipher driver.
+ifeq ($(CONFIG_HW_AES_ENC),y)
+SRC_ALT_CSRCS += tizenrt_psa_cipher_driver.c
+endif
+
+# Hardware entropy source (replaces MBEDTLS_ENTROPY_HARDWARE_ALT).
+ifeq ($(CONFIG_HW_RNG),y)
+SRC_ALT_CSRCS += entropy_poll_alt.c
+CFLAGS += -DMBEDTLS_PSA_DRIVER_GET_ENTROPY
+endif
+
+CFLAGS += -DMBED_TIZENRT
 CFLAGS += -I$(TOPDIR)/../external/mbedtls/
+CFLAGS += -I$(TOPDIR)/../external/include/psa/
+CFLAGS += -I$(TOPDIR)/../external/include/tf-psa-crypto/
 
 DEPPATH	+= --dep-path alt
 VPATH   += :alt

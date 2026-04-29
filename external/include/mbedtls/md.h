@@ -1,20 +1,3 @@
-/****************************************************************************
- *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 /**
  * \file md.h
  *
@@ -25,19 +8,7 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  SPDX-License-Identifier: Apache-2.0
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
  */
 
 #ifndef MBEDTLS_MD_H
@@ -46,104 +17,20 @@
 
 #include <stddef.h>
 
-#include "mbedtls/build_info.h"
+#include "tf-psa-crypto/build_info.h"
 #include "mbedtls/platform_util.h"
-
-#if defined(MBEDTLS_MD_LIGHT)
-
-/*
- * - MBEDTLS_MD_CAN_xxx is defined if the md module can perform xxx.
- * - MBEDTLS_MD_xxx_VIA_PSA is defined if the md module may perform xxx via PSA
- *   (see below).
- * - MBEDTLS_MD_SOME_PSA is defined if at least one algorithm may be performed
- *   via PSA (see below).
- * - MBEDTLS_MD_SOME_LEGACY is defined if at least one algorithm may be performed
- *   via a direct legacy call (see below).
- *
- * The md module performs an algorithm via PSA if there is a PSA hash
- * accelerator and the PSA driver subsytem is initialized at the time the
- * operation is started, and makes a direct legacy call otherwise.
- */
-
-/* PSA accelerated implementations */
-#if defined(MBEDTLS_PSA_CRYPTO_C)
-#if defined(MBEDTLS_PSA_ACCEL_ALG_MD5)
-#define MBEDTLS_MD_CAN_MD5
-#define MBEDTLS_MD_MD5_VIA_PSA
-#define MBEDTLS_MD_SOME_PSA
-#endif
-#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_1)
-#define MBEDTLS_MD_CAN_SHA1
-#define MBEDTLS_MD_SHA1_VIA_PSA
-#define MBEDTLS_MD_SOME_PSA
-#endif
-#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_224)
-#define MBEDTLS_MD_CAN_SHA224
-#define MBEDTLS_MD_SHA224_VIA_PSA
-#define MBEDTLS_MD_SOME_PSA
-#endif
-#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_256)
-#define MBEDTLS_MD_CAN_SHA256
-#define MBEDTLS_MD_SHA256_VIA_PSA
-#define MBEDTLS_MD_SOME_PSA
-#endif
-#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_384)
-#define MBEDTLS_MD_CAN_SHA384
-#define MBEDTLS_MD_SHA384_VIA_PSA
-#define MBEDTLS_MD_SOME_PSA
-#endif
-#if defined(MBEDTLS_PSA_ACCEL_ALG_SHA_512)
-#define MBEDTLS_MD_CAN_SHA512
-#define MBEDTLS_MD_SHA512_VIA_PSA
-#define MBEDTLS_MD_SOME_PSA
-#endif
-#if defined(MBEDTLS_PSA_ACCEL_ALG_RIPEMD160)
-#define MBEDTLS_MD_CAN_RIPEMD160
-#define MBEDTLS_MD_RIPEMD160_VIA_PSA
-#define MBEDTLS_MD_SOME_PSA
-#endif
-#endif /* MBEDTLS_PSA_CRYPTO_C */
-
-/* Built-in implementations */
-#if defined(MBEDTLS_MD5_C)
-#define MBEDTLS_MD_CAN_MD5
-#define MBEDTLS_MD_SOME_LEGACY
-#endif
-#if defined(MBEDTLS_SHA1_C)
-#define MBEDTLS_MD_CAN_SHA1
-#define MBEDTLS_MD_SOME_LEGACY
-#endif
-#if defined(MBEDTLS_SHA224_C)
-#define MBEDTLS_MD_CAN_SHA224
-#define MBEDTLS_MD_SOME_LEGACY
-#endif
-#if defined(MBEDTLS_SHA256_C)
-#define MBEDTLS_MD_CAN_SHA256
-#define MBEDTLS_MD_SOME_LEGACY
-#endif
-#if defined(MBEDTLS_SHA384_C)
-#define MBEDTLS_MD_CAN_SHA384
-#define MBEDTLS_MD_SOME_LEGACY
-#endif
-#if defined(MBEDTLS_SHA512_C)
-#define MBEDTLS_MD_CAN_SHA512
-#define MBEDTLS_MD_SOME_LEGACY
-#endif
-#if defined(MBEDTLS_RIPEMD160_C)
-#define MBEDTLS_MD_CAN_RIPEMD160
-#define MBEDTLS_MD_SOME_LEGACY
-#endif
-
-#endif /* MBEDTLS_MD_LIGHT */
 
 /** The selected feature is not available. */
 #define MBEDTLS_ERR_MD_FEATURE_UNAVAILABLE                -0x5080
 /** Bad input parameters to function. */
-#define MBEDTLS_ERR_MD_BAD_INPUT_DATA                     -0x5100
+#define MBEDTLS_ERR_MD_BAD_INPUT_DATA                     PSA_ERROR_INVALID_ARGUMENT
 /** Failed to allocate memory. */
-#define MBEDTLS_ERR_MD_ALLOC_FAILED                       -0x5180
+#define MBEDTLS_ERR_MD_ALLOC_FAILED                       PSA_ERROR_INSUFFICIENT_MEMORY
+
+#if defined(MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
 /** Opening or reading of file failed. */
 #define MBEDTLS_ERR_MD_FILE_IO_ERROR                      -0x5200
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -157,49 +44,57 @@ extern "C" {
  *            stronger message digests instead.
  *
  */
+/* Note: these are aligned with the definitions of PSA_ALG_ macros for hashes,
+ * in order to enable an efficient implementation of conversion functions.
+ * This is tested by md_to_from_psa() in test_suite_md. */
 typedef enum {
     MBEDTLS_MD_NONE=0,    /**< None. */
-    MBEDTLS_MD_MD5,       /**< The MD5 message digest. */
-    MBEDTLS_MD_SHA1,      /**< The SHA-1 message digest. */
-    MBEDTLS_MD_SHA224,    /**< The SHA-224 message digest. */
-    MBEDTLS_MD_SHA256,    /**< The SHA-256 message digest. */
-    MBEDTLS_MD_SHA384,    /**< The SHA-384 message digest. */
-    MBEDTLS_MD_SHA512,    /**< The SHA-512 message digest. */
-    MBEDTLS_MD_RIPEMD160, /**< The RIPEMD-160 message digest. */
+    MBEDTLS_MD_MD5=0x03,       /**< The MD5 message digest. */
+    MBEDTLS_MD_RIPEMD160=0x04, /**< The RIPEMD-160 message digest. */
+    MBEDTLS_MD_SHA1=0x05,      /**< The SHA-1 message digest. */
+    MBEDTLS_MD_SHA224=0x08,    /**< The SHA-224 message digest. */
+    MBEDTLS_MD_SHA256=0x09,    /**< The SHA-256 message digest. */
+    MBEDTLS_MD_SHA384=0x0a,    /**< The SHA-384 message digest. */
+    MBEDTLS_MD_SHA512=0x0b,    /**< The SHA-512 message digest. */
+    MBEDTLS_MD_SHA3_224=0x10,  /**< The SHA3-224 message digest. */
+    MBEDTLS_MD_SHA3_256=0x11,  /**< The SHA3-256 message digest. */
+    MBEDTLS_MD_SHA3_384=0x12,  /**< The SHA3-384 message digest. */
+    MBEDTLS_MD_SHA3_512=0x13,  /**< The SHA3-512 message digest. */
 } mbedtls_md_type_t;
 
-#if defined(MBEDTLS_MD_CAN_SHA512)
+/* Note: this should always be >= PSA_HASH_MAX_SIZE
+ * in all builds with both CRYPTO_C and MD_LIGHT.
+ *
+ * This is to make things easier for modules such as TLS that may define a
+ * buffer size using MD_MAX_SIZE in a part of the code that's common to PSA
+ * and legacy, then assume the buffer's size is PSA_HASH_MAX_SIZE in another
+ * part of the code based on PSA.
+ */
+#if defined(PSA_WANT_ALG_SHA_512) || defined(PSA_WANT_ALG_SHA3_512)
 #define MBEDTLS_MD_MAX_SIZE         64  /* longest known is SHA512 */
-#elif defined(MBEDTLS_MD_CAN_SHA384)
+#elif defined(PSA_WANT_ALG_SHA_384) || defined(PSA_WANT_ALG_SHA3_384)
 #define MBEDTLS_MD_MAX_SIZE         48  /* longest known is SHA384 */
-#elif defined(MBEDTLS_MD_CAN_SHA256)
+#elif defined(PSA_WANT_ALG_SHA_256) || defined(PSA_WANT_ALG_SHA3_256)
 #define MBEDTLS_MD_MAX_SIZE         32  /* longest known is SHA256 */
-#elif defined(MBEDTLS_MD_CAN_SHA224)
+#elif defined(PSA_WANT_ALG_SHA_224) || defined(PSA_WANT_ALG_SHA3_224)
 #define MBEDTLS_MD_MAX_SIZE         28  /* longest known is SHA224 */
 #else
 #define MBEDTLS_MD_MAX_SIZE         20  /* longest known is SHA1 or RIPE MD-160
                                            or smaller (MD5 and earlier) */
 #endif
 
-#if defined(MBEDTLS_MD_CAN_SHA512)
-#define MBEDTLS_MD_MAX_BLOCK_SIZE         128
-#else
-#define MBEDTLS_MD_MAX_BLOCK_SIZE         64
-#endif
-
 /**
  * Opaque struct.
  *
- * Constructed using either #mbedtls_md_info_from_string or
- * #mbedtls_md_info_from_type.
+ * Constructed using #mbedtls_md_info_from_type.
  *
- * Fields can be accessed with #mbedtls_md_get_size,
- * #mbedtls_md_get_type and #mbedtls_md_get_name.
+ * Fields can be accessed with #mbedtls_md_get_size
+ * and #mbedtls_md_get_type.
  */
 /* Defined internally in library/md_wrap.h. */
 typedef struct mbedtls_md_info_t mbedtls_md_info_t;
 
-/**
+/*
  * Used internally to indicate whether a context uses legacy or PSA.
  *
  * Internal use only.
@@ -280,6 +175,9 @@ void mbedtls_md_free(mbedtls_md_context_t *ctx);
  *                  to use.
  * \param hmac      Defines if HMAC is used. 0: HMAC is not used (saves some memory),
  *                  or non-zero: HMAC is used with this context.
+ * \note            From TF-PSA-Crypto 1.0 and Mbed TLS 4.0 onwards, \p hmac MUST be
+ *                  set to 0. HMAC operations are no longer supported via MD and
+ *                  may only be performed via the psa_mac_ API.
  *
  * \return          \c 0 on success.
  * \return          #MBEDTLS_ERR_MD_BAD_INPUT_DATA on parameter-verification
@@ -326,6 +224,20 @@ int mbedtls_md_clone(mbedtls_md_context_t *dst,
  * \return          The size of the message-digest output in Bytes.
  */
 unsigned char mbedtls_md_get_size(const mbedtls_md_info_t *md_info);
+
+/**
+ * \brief           This function gives the message-digest size associated to
+ *                  message-digest type.
+ *
+ * \param md_type   The message-digest type.
+ *
+ * \return          The size of the message-digest output in Bytes,
+ *                  or 0 if the message-digest type is not known.
+ */
+static inline unsigned char mbedtls_md_get_size_from_type(mbedtls_md_type_t md_type)
+{
+    return mbedtls_md_get_size(mbedtls_md_info_from_type(md_type));
+}
 
 /**
  * \brief           This function extracts the message-digest type from the
@@ -416,6 +328,25 @@ MBEDTLS_CHECK_RETURN_TYPICAL
 int mbedtls_md(const mbedtls_md_info_t *md_info, const unsigned char *input, size_t ilen,
                unsigned char *output);
 
+#if defined(MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
+
+/**
+ * \brief           This function allocates internal structures for HMAC
+ *                  operations.
+ *
+ *                  It should be called after mbedtls_md_setup(). Makes it necessary
+ *                  to call mbedtls_md_free() later.
+ *
+ * \param ctx       The context to set up.
+ * \param md_info   The information structure of the message-digest algorithm
+ *                  to use.
+ *
+ * \return          \c 0 on success.
+ * \return          #MBEDTLS_ERR_MD_ALLOC_FAILED on memory-allocation failure.
+ */
+MBEDTLS_CHECK_RETURN_TYPICAL
+int mbedtls_md_hmac_setup(mbedtls_md_context_t *ctx, const mbedtls_md_info_t *md_info);
+
 /**
  * \brief           This function returns the list of digests supported by the
  *                  generic digest module.
@@ -441,8 +372,8 @@ const int *mbedtls_md_list(void);
 const mbedtls_md_info_t *mbedtls_md_info_from_string(const char *md_name);
 
 /**
- * \brief           This function extracts the message-digest name from the
- *                  message-digest information structure.
+ * \brief           This function returns the name of the message digest for
+ *                  the message-digest information structure given.
  *
  * \param md_info   The information structure of the message-digest algorithm
  *                  to use.
@@ -597,6 +528,8 @@ MBEDTLS_CHECK_RETURN_TYPICAL
 int mbedtls_md_hmac(const mbedtls_md_info_t *md_info, const unsigned char *key, size_t keylen,
                     const unsigned char *input, size_t ilen,
                     unsigned char *output);
+
+#endif /* MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS */
 
 #ifdef __cplusplus
 }

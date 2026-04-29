@@ -19,21 +19,11 @@
 #include <tinyara/seclink.h>
 #include <tinyara/security_hal.h>
 #include <mbedtls/pk.h>
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+#include "mbedtls/build_info.h"
 
 #if defined(MBEDTLS_AES_C)
 #include <string.h>
-#include "mbedtls/aes.h"
-#if defined(MBEDTLS_PADLOCK_C)
-#include "padlock.h"
-#endif
-#if defined(MBEDTLS_AESNI_C)
-#include "mbedtls/aesni.h"
-#endif
+#include "mbedtls/private/aes.h"
 #include "mbedtls/alt/common.h"
 #if defined(MBEDTLS_SELF_TEST)
 #if defined(MBEDTLS_PLATFORM_C)

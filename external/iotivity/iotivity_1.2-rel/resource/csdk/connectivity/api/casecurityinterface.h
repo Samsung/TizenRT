@@ -211,18 +211,6 @@ CAResult_t CAregisterGetCredentialTypesHandler(CAgetCredentialTypesHandler getCr
  */
 CAResult_t CASelectCipherSuite(const uint16_t cipher, CATransportAdapter_t adapter);
 
-/**
- * Enable TLS_ECDH_anon_WITH_AES_128_CBC_SHA cipher suite in dtls.
- *
- * @param[in] enable  TRUE/FALSE enables/disables anonymous cipher suite.
- *
- * @retval  ::CA_STATUS_OK    Successful.
- * @retval  ::CA_STATUS_FAILED Operation failed.
- *
- * @note anonymous cipher suite should only be enabled for 'JustWorks' provisioning.
- */
-CAResult_t CAEnableAnonECDHCipherSuite(const bool enable);
-
 
 /**
  * Generate ownerPSK using PRF.

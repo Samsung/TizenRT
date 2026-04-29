@@ -61,31 +61,39 @@ VPATH   =
 include alt/Make.defs
 include test/Make.defs
 
-SRC_CRYPTO_CSRCS =    	aes.c aesni.c aesce.c aria.c \
+SRC_CRYPTO_CSRCS =      aes.c aesni.c aesce.c aria.c \
                         asn1parse.c asn1write.c base64.c bignum.c \
-                        bignum_core.c bignum_mod.c bignum_mod_raw.c camellia.c ccm.c \
-                        chacha20.c chachapoly.c cipher.c cipher_wrap.c cmac.c \
-                        constant_time.c ctr_drbg.c des.c dhm.c ecdh.c \
-                        ecdsa.c ecjpake.c ecp.c ecp_curves.c entropy.c \
-                        entropy_poll.c error.c gcm.c hash_info.c hkdf.c \
-                        hmac_drbg.c lmots.c lms.c md.c md5.c \
-                        memory_buffer_alloc.c nist_kw.c oid.c padlock.c pem.c \
-                        pk.c pk_wrap.c pkcs12.c pkcs5.c pkparse.c \
+                        bignum_core.c bignum_mod.c bignum_mod_raw.c \
+                        block_cipher.c camellia.c ccm.c \
+                        chacha20.c chacha20_neon.c chachapoly.c cipher.c cipher_wrap.c cmac.c \
+                        constant_time.c ctr_drbg.c \
+                        ecdsa.c ecjpake.c ecp.c ecp_curves.c ecp_curves_new.c entropy.c \
+                        entropy_poll.c error.c gcm.c \
+                        hmac_drbg.c lmots.c lms.c mbedtls_config.c md.c md5.c \
+                        memory_buffer_alloc.c nist_kw.c oid.c pem.c \
+                        pk.c pk_ecc.c pk_rsa.c pk_wrap.c pkcs5.c pkparse.c \
                         pkwrite.c platform.c platform_util.c poly1305.c \
-                        ripemd160.c \
-                        rsa.c rsa_alt_helpers.c sha1.c sha256.c sha512.c \
+                        psa_util_internal.c ripemd160.c \
+                        rsa.c rsa_alt_helpers.c sha1.c sha256.c sha3.c sha512.c \
+                        tf_psa_crypto_config.c tf_psa_crypto_version.c \
                         threading.c timing.c version.c version_features.c
 
-SRC_PSA_CSRCS = 		psa_crypto.c \
-                        psa_crypto_aead.c psa_crypto_cipher.c psa_crypto_client.c psa_crypto_driver_wrappers.c psa_crypto_ecp.c \
-                        psa_crypto_hash.c psa_crypto_mac.c psa_crypto_pake.c psa_crypto_rsa.c psa_crypto_se.c \
-                        psa_crypto_slot_management.c psa_crypto_storage.c psa_its_file.c psa_util.c
+SRC_PSA_CSRCS =         psa_crypto.c \
+                        psa_crypto_aead.c psa_crypto_cipher.c psa_crypto_client.c \
+                        psa_crypto_driver_wrappers_no_static.c \
+                        psa_crypto_ecp.c psa_crypto_ffdh.c \
+                        psa_crypto_hash.c psa_crypto_mac.c psa_crypto_pake.c \
+                        psa_crypto_random.c psa_crypto_rsa.c psa_crypto_xof.c \
+                        psa_crypto_slot_management.c psa_crypto_storage.c \
+                        psa_its_file.c psa_util.c
 
 SRC_X509_CSRCS =  x509.c \
 	   x509_create.c \
 	   x509_crl.c \
 	   x509_crt.c \
 	   x509_csr.c \
+	   x509_oid.c \
+	   x509write.c \
 	   x509write_crt.c \
 	   x509write_csr.c \
 	   pkcs7.c
