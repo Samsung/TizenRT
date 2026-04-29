@@ -98,6 +98,10 @@
 	"\n connectbybestrssi test mode options:\n"					\
 	"	 wm_test connect_by_rssi [SSID_NAME] [SSID_authentication] [SSID_Password] [Repeat Count]\n"\
 
+#define WT_CHANPLAN_USAGE								\
+	"\n set channel plan\n"								\
+	"	 wm_test chan_plan [channel_plan]\n"				\
+
 #define WT_USAGE									\
 	"\n usage: wm_test [options]\n"					\
 	"\n run Wi-Fi Manager:\n"						\

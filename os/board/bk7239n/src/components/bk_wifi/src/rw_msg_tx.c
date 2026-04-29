@@ -1145,6 +1145,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 			}
 			#else
 			scan_freq = req->chan[chan_cnt].freq;
+			#if 0
 			//disable 12/13/14,52/56/60/64 active scan
 			if (scan_freq == 2467 || scan_freq == 2472 || scan_freq == 2484)
 				req->chan[chan_cnt].flags |= CHAN_NO_IR;
@@ -1152,6 +1153,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 			#if CONFIG_WIFI_BAND_5G
 			if (scan_freq == 5260 || scan_freq == 5280 || scan_freq == 5300 || scan_freq == 5320)
 				req->chan[chan_cnt].flags |= CHAN_NO_IR;
+			#endif
 			#endif
 			#endif // CONFIG_WIFI_AUTO_COUNTRY_CODE
 			chan_cnt++;
@@ -1238,6 +1240,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 					req->chan[chan_cnt].flags = 0;
 					#endif // CONFIG_WIFI_REGDOMAIN
 
+					#if 0
 					scan_freq = req->chan[chan_cnt].freq;
 					//disable 12/13/14,52/56/60/64 active scan
 					if (scan_freq == 2467 || scan_freq == 2472 || scan_freq == 2484)
@@ -1246,6 +1249,7 @@ int rw_msg_send_scanu_req(SCAN_PARAM_T *scan_param)
 					#if CONFIG_WIFI_BAND_5G
 					if (scan_freq == 5260 || scan_freq == 5280 || scan_freq == 5300 || scan_freq == 5320)
 						req->chan[chan_cnt].flags |= CHAN_NO_IR;
+					#endif
 					#endif
 				}
 				chan_cnt++;

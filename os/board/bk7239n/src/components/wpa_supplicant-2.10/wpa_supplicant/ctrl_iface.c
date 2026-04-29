@@ -2032,7 +2032,7 @@ int wpa_supplicant_handle_events(wpah_msg_t *msg)
 				data.assoc_info.resp_ies_len = ind->assoc_rsp_ie_len;
 				wpa_supplicant_event_sta(wpa_s, EVENT_ASSOC, &data);
 
-#if CONFIG_WIFI_REGDOMAIN
+#if 0//CONFIG_WIFI_REGDOMAIN
 				// handle dot11d
 				const uint8_t *country_ie = get_ie(data.assoc_info.resp_ies,
 						data.assoc_info.resp_ies_len, WLAN_EID_COUNTRY);

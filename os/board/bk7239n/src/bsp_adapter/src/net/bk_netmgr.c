@@ -1644,8 +1644,8 @@ trwifi_result_e bk_wifi_netmgr_ioctl(struct netdev *dev, trwifi_msg_s *msg)
 
 trwifi_result_e bk_wifi_netmgr_set_chplan(struct netdev *dev, uint8_t chplan)
 {
- 	trwifi_result_e wuret = TRWIFI_SUCCESS;
-
+	trwifi_result_e wuret = TRWIFI_SUCCESS;
+#if 0
  	if (!bk_wifi_check_channel(chplan)) {
  		ndbg("[BK] invalid chplan argument \r\n");
 		wuret = TRWIFI_INVALID_ARGS;
@@ -1663,6 +1663,33 @@ trwifi_result_e bk_wifi_netmgr_set_chplan(struct netdev *dev, uint8_t chplan)
 	}
 
 	bk_wifi_set_ap_channel(chplan);
+#endif
+	char country_code[3] = {0};
+	int region_idx = chplan;
+	bk_err_t ret;
+	ndbg("[BK] chplan %d\r\n", chplan);
+
+	if (region_idx < 1 || region_idx > 50) {
+		ndbg("[BK] invalid chplan argument %d, expected 1~50\r\n", chplan);
+		wuret = TRWIFI_INVALID_ARGS;
+		goto exit_set_chp;
+	}
+
+	if (region_idx <= 26) {
+		country_code[0] = 'A' + (region_idx - 1);
+		country_code[1] = '\0';
+	} else {
+		country_code[0] = 'A';
+		country_code[1] = 'A' + (region_idx - 27);
+		country_code[2] = '\0';
+	}
+
+	ret = bk_wifi_set_country_code(country_code);
+	if (ret != BK_OK) {
+		ndbg("[BK] failed to set country code %s, ret=%d\r\n", country_code, ret);
+		wuret = TRWIFI_FAIL;
+		goto exit_set_chp;
+	}
 
 exit_set_chp:
  	return wuret;

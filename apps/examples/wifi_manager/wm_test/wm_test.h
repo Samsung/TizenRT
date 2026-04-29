@@ -32,6 +32,7 @@ struct wt_options {
 	char *softap_ssid;
 	char *softap_password;
 	int softap_channel;
+	uint8_t channel_plan;
 	int scan_specific;
 	uint32_t stress_tc_idx;
 	uint8_t power_mode;
