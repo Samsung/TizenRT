@@ -450,6 +450,18 @@ include LibTargets.mk
 # is unknown to this makefile unless CONFIG_PASS1_OBJECT is defined.
 
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
+COMMON_BINARY_NAME=common
+OTA_INDEX=0
+MEM_VARS := $(shell python3 $(TOPDIR)/tools/bin_mem_layout.py --binary-name common --ota-index 0)
+$(foreach v,$(MEM_VARS),$(eval $(v)))
+COMMON_LD_DEFS := \
+	--defsym __FLASH_START_ADDRESS__=$(FLASH_ADD) \
+	--defsym __FLASH_SIZE__=$(FLASH_SIZE) \
+	--defsym __RAM_START_ADDRESS__=$(RAM_ADD) \
+	--defsym __RAM_SIZE__=$(RAM_SIZE)
+endif
+
+ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 endif
 
@@ -464,13 +476,12 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 ifeq ($(CONFIG_ELF),y)
 	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps.ld -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
 else
-	$(Q) $(TOPDIR)/tools/mkldscript.py
 	$(Q) $(MAKE) -C userspace CFLAGS="$(CFLAGS)" TOPDIR="$(TOPDIR)" common_obj
 ifneq ($(CONFIG_XIP_ELF_WARCHIVE), y)
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" undefsym KERNEL=n
-	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt) -Map $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).map
+	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(COMMON_LD_DEFS) $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt) -Map $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).map
 else
-	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --whole-archive $(USERLIBS) --no-whole-archive --start-group $(LIBGCC) $(LIBSUPXX) --end-group
+	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(COMMON_LD_DEFS) $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --whole-archive $(USERLIBS) --no-whole-archive --start-group $(LIBGCC) $(LIBSUPXX) --end-group
 endif
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 endif
@@ -617,6 +628,11 @@ ifeq ($(CONFIG_DEBUG_DISPLAY_SYMBOL),y)
 else
 	$(call DELFILE, ${TOOLSDIR}/fs/contents-romfs/System.map)
 endif
+
+	# Delete mem_config_cache.json if it exists
+	@if [ -e $(OUTBIN_DIR)/mem_config_cache.json ]; then \
+		rm -f $(OUTBIN_DIR)/mem_config_cache.json; \
+	fi
 
 # $(BIN)
 #
