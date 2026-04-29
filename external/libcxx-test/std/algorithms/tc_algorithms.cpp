@@ -43,10 +43,10 @@ extern "C"
 		tc_libcxx_algorithms_alg_modifying_operations_alg_partitions_partition_copy();
 		tc_libcxx_algorithms_alg_modifying_operations_alg_partitions_partition_point();
 		tc_libcxx_algorithms_alg_modifying_operations_alg_partitions_stable_partition();
-		// Note: sample.pass.cpp removed - std::sample is C++17 only
-		// tc_libcxx_algorithms_alg_modifying_operations_alg_random_sample_sample();
-		// Note: sample.stable.pass.cpp removed - std::sample is C++17 only
-		// tc_libcxx_algorithms_alg_modifying_operations_alg_random_sample_sample_stable();
+#if TEST_STD_VER > 14
+		tc_libcxx_algorithms_alg_modifying_operations_alg_random_sample_sample();
+		tc_libcxx_algorithms_alg_modifying_operations_alg_random_sample_sample_stable();
+#endif
 		// Note: random_shuffle removed - std::random_shuffle was removed in C++17
 		// Note: random_shuffle_rand removed - std::random_shuffle was removed in C++17
 		tc_libcxx_algorithms_alg_modifying_operations_alg_random_shuffle_random_shuffle_urng();
@@ -89,8 +89,9 @@ extern "C"
 		tc_libcxx_algorithms_alg_nonmodifying_alg_find_end_find_end_pred();
 		tc_libcxx_algorithms_alg_nonmodifying_alg_find_first_of_find_first_of();
 		tc_libcxx_algorithms_alg_nonmodifying_alg_find_first_of_find_first_of_pred();
-		// Note: for_each_n.pass.cpp removed - std::for_each_n is C++17 only
-		// tc_libcxx_algorithms_alg_nonmodifying_alg_foreach_for_each_n();
+#if TEST_STD_VER > 14
+		tc_libcxx_algorithms_alg_nonmodifying_alg_foreach_for_each_n();
+#endif
 		tc_libcxx_algorithms_alg_nonmodifying_alg_foreach_test();
 		tc_libcxx_algorithms_alg_nonmodifying_alg_is_permutation_is_permutation();
 		tc_libcxx_algorithms_alg_nonmodifying_alg_is_permutation_is_permutation_pred();
@@ -112,10 +113,10 @@ extern "C"
 		tc_libcxx_algorithms_alg_sorting_alg_binary_search_lower_bound_lower_bound_comp();
 		tc_libcxx_algorithms_alg_sorting_alg_binary_search_upper_bound_upper_bound();
 		tc_libcxx_algorithms_alg_sorting_alg_binary_search_upper_bound_upper_bound_comp();
-		// Note: clamp.comp.pass.cpp removed - std::clamp is C++17 only
-		// tc_libcxx_algorithms_alg_sorting_alg_clamp_clamp_comp();
-		// Note: clamp.pass.cpp removed - std::clamp is C++17 only
-		// tc_libcxx_algorithms_alg_sorting_alg_clamp_clamp();
+#if TEST_STD_VER > 14
+		tc_libcxx_algorithms_alg_sorting_alg_clamp_clamp_comp();
+		tc_libcxx_algorithms_alg_sorting_alg_clamp_clamp();
+#endif
 		tc_libcxx_algorithms_alg_sorting_alg_heap_operations_is_heap_is_heap();
 		tc_libcxx_algorithms_alg_sorting_alg_heap_operations_is_heap_is_heap_comp();
 		tc_libcxx_algorithms_alg_sorting_alg_heap_operations_is_heap_is_heap_until();

@@ -53,8 +53,10 @@ CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.end/find_end.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.end/find_end_pred.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.first.of/find_first_of.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.first.of/find_first_of_pred.pass.cpp
-# Note: for_each_n.pass.cpp removed - std::for_each_n is C++17 only
-# CXXSRCS += std/algorithms/alg.nonmodifying/alg.foreach/for_each_n.pass.cpp
+# C++17 only: for_each_n
+ifeq ($(CONFIG_CXX_VERSION_17),y)
+CXXSRCS += std/algorithms/alg.nonmodifying/alg.foreach/for_each_n.pass.cpp
+endif
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.foreach/test.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.is_permutation/is_permutation.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.is_permutation/is_permutation_pred.pass.cpp
@@ -84,10 +86,11 @@ CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition.pass
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition_copy.pass.cpp
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition_point.pass.cpp
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/stable_partition.pass.cpp
-# Note: sample.pass.cpp removed - std::sample is C++17 only
-# CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.pass.cpp
-# Note: sample.stable.pass.cpp removed - std::sample is C++17 only
-# CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.stable.pass.cpp
+# C++17 only: std::sample
+ifeq ($(CONFIG_CXX_VERSION_17),y)
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.pass.cpp
+CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.stable.pass.cpp
+endif
 # Note: random_shuffle.pass.cpp removed - std::random_shuffle was removed in C++17
 # Note: random_shuffle_rand.pass.cpp removed - std::random_shuffle was removed in C++17
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.shuffle/random_shuffle_urng.pass.cpp
@@ -124,10 +127,11 @@ CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/lower.bound/lower_bound.
 CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/lower.bound/lower_bound_comp.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/upper.bound/upper_bound.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/upper.bound/upper_bound_comp.pass.cpp
-# Note: clamp.pass.cpp removed - std::clamp is C++17 only
-# CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.pass.cpp
-# Note: clamp.comp.pass.cpp removed - std::clamp is C++17 only
-# CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.comp.pass.cpp
+# C++17 only: std::clamp
+ifeq ($(CONFIG_CXX_VERSION_17),y)
+CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.pass.cpp
+CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.comp.pass.cpp
+endif
 CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/is.heap/is_heap.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/is.heap/is_heap_comp.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.heap.operations/is.heap/is_heap_until.pass.cpp
