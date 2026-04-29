@@ -44,12 +44,12 @@ bk_err_t bk_otp_read_security_flag_nsc(void);
  * This function reads the OTP word (OTP_EFUSE) and checks bit[31],
  * which is used to control the SWD (Serial Wire Debug) functionality.
  *
- * - If bit[31] == 1 → SWD is disabled
- * - If bit[31] == 0 → SWD is enabled
+ * - If bit[31] == 0 -> SWD is enabled
+ * - If bit[31] == 1 -> SWD is disabled
  *
  * @note This function does not modify the original bk_otp_read_nsc(),
  *       but provides a parallel implementation specifically for checking
- *       the SWD enable status.
+ *       the SWD status.
  *
  * @param[out] swd_enabled
  *             Pointer to a bool variable where the result will be stored.
@@ -62,6 +62,9 @@ bk_err_t bk_otp_read_security_flag_nsc(void);
  *         - Other error code: OTP read failure
  */
 bk_err_t bk_otp_read_swd_nsc(bool *swd_enabled);
+
+
+bk_err_t bk_otp_read_download_nsc(bool *download_enabled);
 
 #ifdef __cplusplus
 }
