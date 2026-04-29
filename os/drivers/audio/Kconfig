@@ -187,6 +187,37 @@ config AUDIO_NDP120
 	---help---
 		Select to enable support for the NDP120 attached mic
 
+config AUDIO_ADAM110
+	bool "ADAM110 audio rx support"
+	default n
+	depends on AUDIO && SPI
+	---help---
+		Select to enable support for the ADAM110 attached mic
+
+if AUDIO_ADAM110
+
+config AUDIO_ADAM110_AEC_SUPPORT
+	bool "ADAM110 Support AEC"
+	default n
+	depends on AUDIO_ADAM110
+	--help--
+        Select to enable support AEC
+
+config AUDIO_ADAM110_AEC_SUPPORT
+	bool "ADAM110 Support AEC"
+	default n
+	depends on AUDIO_ADAM110
+	--help--
+        Select to enable support AEC
+
+config AUDIO_ADAM110_ALIVE_CHECK
+	bool "ADAM110 alive check thread"
+	default n
+	---help---
+		Select to enable support Alive check thread
+
+endif
+
 config AUDIO_SYU645B
         bool "SYU645B DAC audio chip"
         default n
