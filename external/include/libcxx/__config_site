@@ -43,9 +43,13 @@
 //ensure that only reentrant/thread-safe versions of functions are available
 #define _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS
 
-//Embedded system generally dont have IO - Disable them
+//TizenRT's C library provides only partial stdio implementation
+// some functions are missing, others are macros only.
 #define _LIBCPP_HAS_NO_STDIN
 #define _LIBCPP_HAS_NO_STDOUT
+// TizenRT needs stdio file only provides macro of `getc` and `putc` 
+// ensure `getc` and `putc` maps to `fgetc`/`fputc` 
+#define _LIBCPP_NEEDS_STDIO_FILE_FUNCTIONS
 
 // 'arm-none-eabi-g++' (10.3.1) cross-compiler does not provide the Clang-specific
 // compiler built-in intrinsics `__is_nothrow_assignable` and `__is_nothrow_constructible`
@@ -172,14 +176,12 @@ typedef unsigned int wint_t;
 // TizenRT compatibility: Define _LIBCPP_SAFE_STATIC for thread-safe static initialization
 #define _LIBCPP_SAFE_STATIC _LIBCPP_CONSTEXPR
 
-// TizenRT compatibility: Disable aligned_alloc as TizenRT C library doesn't provide it
+// TizenRT compatibility: Disable aligned allocation as TizenRT C library doesn't provide it
 #define _LIBCPP_HAS_NO_C11_ALIGNED_ALLOC
-
-// TizenRT compatibility: Disable library aligned allocation as TizenRT C library doesn't provide posix_memalign
 #define _LIBCPP_HAS_NO_LIBRARY_ALIGNED_ALLOCATION
 
-// TizenRT compatibility: Provide locale mask fallback definitions
-// These are needed for locale support but not provided by TizenRT's C library
+// TizenRT compatibility: Provide locale mask fallback definitions needed for locale support
+// (these are not provided by TizenRT's C library)
 #ifndef LC_COLLATE_MASK
 #define LC_COLLATE_MASK (1<<0)
 #endif
@@ -198,13 +200,9 @@ typedef unsigned int wint_t;
 #ifndef LC_MESSAGES_MASK
 #define LC_MESSAGES_MASK (1<<5)
 #endif
-
-// Define LC_ALL_MASK as the combination of all locale masks
 #ifndef LC_ALL_MASK
 #define LC_ALL_MASK (LC_COLLATE_MASK | LC_CTYPE_MASK | LC_MONETARY_MASK | LC_NUMERIC_MASK | LC_TIME_MASK | LC_MESSAGES_MASK)
 #endif
 
-// TizenRT needs stdio file functions for iostream
-#define _LIBCPP_NEEDS_STDIO_FILE_FUNCTIONS
 
 #endif // _LIBCPP_CONFIG_SITE
