@@ -264,7 +264,6 @@ struct adam110_dev_s {
 
 	uint32_t sample_size;
 	volatile bool fw_loaded;
-	uint32_t mcu_fw_ver;
 	uint16_t sensitivity;
 	uint32_t total_size;
 
