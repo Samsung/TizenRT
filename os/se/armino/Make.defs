@@ -22,6 +22,7 @@ SE_PATH = armino
 
 SE_CSRCS += security_armino_wrapper_tz.c
 SE_CSRCS += armino_adapter_common.c
+SE_CSRCS += bk_security_api_wrapper_tz.c
 
 ifeq ($(CONFIG_XIP_KERNEL), y)
 tfm_firmware_dir_name := tfm_xip_build
