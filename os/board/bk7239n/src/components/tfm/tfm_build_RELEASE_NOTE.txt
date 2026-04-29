@@ -6,7 +6,6 @@
      The key read from otp does not perform big-endian conversion
    2. update the flash config of XMC type
 
-
 == version beken_trustzone pr-211 2026/04/22-17:25:00==
 
    1. let the TFM dump log can be controlled by the secure level
@@ -15,7 +14,12 @@ the value of the current secure level.
    2. Optimize the ld file
      Fix the name of a file in ld.
 
+== version beken_trustzone pr-213 2026/04/28-15:58:00==
+   
+   1. Update swd status acquisition implementation
+
 == version beken_trustzone pr-214 2026/04/30-10:39:00==
 
    1. fix the bp crc calculation fail
       Due to Samsung's update to the BP data structure, the CRC verification of BP in the bootloader fails. We now need to fix the issue of BP CRC check failure.
+
