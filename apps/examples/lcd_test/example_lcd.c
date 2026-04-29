@@ -626,11 +626,39 @@ static int lcd_get_info(void)
 	return ret;
 }
 
+static int lcd_get_displayid(void)
+{
+	int ret = OK;
+	int fd = 0;
+	uint32_t display_id;
+	char port[20] = {'\0'};
+
+	snprintf(port, sizeof(port) / sizeof(port[0]), LCD_DEV_PATH, LCD_DEV_PORT);
+	fd = open(port, O_RDWR | O_SYNC, 0666);
+	if (fd < 0) {
+		printf("ERROR: Fail to open lcd port : %s error:%d\n", port, get_errno());
+		return ERROR;
+	}
+
+	ret = ioctl(fd, LCDDEVIO_GETDISPLAYID, (unsigned long)(uintptr_t)&display_id);
+	if (ret != OK) {
+		printf("ERROR: Fail to LCDDEVIO_GETDISPLAYID %s, errno:%d\n", port, get_errno());
+		close(fd);
+		return ERROR;
+	}
+
+	printf("LCD Panel ID: 0x%06X\n", display_id);
+
+	close(fd);
+	return ret;
+}
+
 static void show_usage(void)
 {
 	printf("usage: lcd_test <command args(optional)>\n");
 	printf("    basic             : Execute basic lcd_test\n");
 	printf("    lcdinfo           : Print LCD basic info like width, height, DPI \n");
+	printf("    displayid         : Print LCD display ID (requires power ON)\n");
 	printf("    power <value>     : Sets the brightness to given value\n");
 	printf("    stress_test <start> <mode> | <stop> : Start or stop stress test, <mode>: 0 = power cycle test only, 1 = frame change test only, 2 = both test simultaneously\n");
 	printf("    verification_test   : Execute LCD verification test\n");
@@ -782,6 +810,8 @@ int lcd_test_main(int argc, char *argv[])
 	if (argc == 2) {
 		if (!strncmp(argv[1], "lcdinfo", 8)) {
 			return lcd_get_info();
+		} else if (!strncmp(argv[1], "displayid", 10)) {
+			return lcd_get_displayid();
 		} else if (!strncmp(argv[1], "basic", 6)) {
 			return lcd_basic_test();
 		} else if (!strncmp(argv[1], "verification_test", 18)) {

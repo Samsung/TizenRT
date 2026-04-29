@@ -711,6 +711,63 @@ static int lcd_setcontrast(FAR struct lcd_dev_s *dev, unsigned int contrast)
 	return OK;
 }
 
+/****************************************************************************
+ * Name:  lcd_getdisplayid
+ *
+ * Description:
+ *   Get the LCD display ID (24-bit) via MIPI DSI command 0x04.
+ *
+ ****************************************************************************/
+
+static int lcd_getdisplayid(FAR struct lcd_dev_s *dev, FAR uint32_t *displayid)
+{
+	FAR struct mipi_lcd_dev_s *priv = (FAR struct mipi_lcd_dev_s *)dev;
+	int ret;
+	lcd_mode_t original_mode;
+	lcm_setting_table_t read_id_cmd = {MIPI_DCS_GET_DISPLAY_ID, 0, {0x00}};
+	lcm_setting_table_t block_cmd = {REGFLAG_END_OF_TABLE, 0, {0x00}};
+	uint8_t rxbuf[3];
+	uint8_t length = sizeof(rxbuf) / sizeof(rxbuf[0]);
+
+	if (displayid == NULL) {
+		return -EINVAL;
+	}
+
+	while (sem_wait(&priv->sem) != OK) {
+		DEBUGASSERT(errno == EINTR);
+	}
+
+	if (priv->power == 0) {
+		lcddbg("ERROR: LCD power is OFF. Cannot read Display ID from hardware.\n");
+		sem_post(&priv->sem);
+		return -EIO;
+	}
+
+	original_mode = priv->lcdonoff;
+	// We should switch to CMD mode regardless of the original mode
+	// Because after init sequence, LCD is in CMD mode but CMD is blocked.
+	priv->config->mipi_mode_switch(CMD_MODE);
+	priv->lcdonoff = LCD_OFF;
+
+	ret = set_return_packet_len(priv, length);
+	if (ret == OK) {
+		ret = read_response(priv, read_id_cmd, rxbuf, length);
+		if (ret == OK) {
+			*displayid = (rxbuf[0] << 16) | (rxbuf[1] << 8) | rxbuf[2];
+		}
+	}
+
+	if (original_mode == LCD_ON) {
+		priv->config->mipi_mode_switch(VIDEO_MODE);
+		priv->lcdonoff = LCD_ON;
+	} else {
+		send_init_cmd(priv, &block_cmd);
+	}
+
+	sem_post(&priv->sem);
+	return ret;
+}
+
 static int lcd_render_bmp(FAR struct lcd_dev_s *dev, const char *bmp_filename)
 {
 	int xres = LCD_XRES;
@@ -902,6 +959,7 @@ FAR struct lcd_dev_s *mipi_lcdinitialize(FAR struct mipi_dsi_device *dsi, struct
 	priv->dev.getcontrast = lcd_getcontrast;
 	priv->dev.setcontrast = lcd_setcontrast;
 	priv->dev.init = lcd_init;
+	priv->dev.getdisplayid = lcd_getdisplayid;
 	priv->dsi_dev = dsi;
 	priv->config = config;
 	priv->power = 0;
