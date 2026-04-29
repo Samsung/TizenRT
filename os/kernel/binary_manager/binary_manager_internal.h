@@ -244,12 +244,13 @@ struct binmgr_bpinfo_s {
 };
 typedef struct binmgr_bpinfo_s binmgr_bpinfo_t;
 
-struct binmgr_set_validation_s {
-	bool kbin_valid;
-	uint32_t kbin_version;
-	bool ubin_valid;
-	bool resource_valid;
+struct binmgr_bp_recovery_info_s {
+	bool has_valid_bp;
+	int inuse_idx;
+	int active_set;
+	uint32_t bp_version;
 };
+typedef struct binmgr_bp_recovery_info_s binmgr_bp_recovery_info_t;
 
 struct statecb_node_s {
 	struct statecb_node_s *flink;
