@@ -38,6 +38,7 @@
  ****************************************************************************/
 
 #define CSI_INTERVAL_TO_TRIG_PERIOD 320 /* Conversion factor to convert interval to trig period */
+#define CSI_HEADER_LEN 43 /*CSI packet header length*/
 
 /****************************************************************************
  * Private Type Definitions
@@ -303,6 +304,10 @@ static int rtk_wifi_csi_getcsidata(unsigned char *buffer, size_t buflen) {
 	if (wifi_csi_report(buflen, buffer, &len) == -1) {
 		csidbg("ERROR: wifi csi report call failed\n");
 		len = -EIO;
+	} else {
+		if(len > 0) {
+			len = len + CSI_HEADER_LEN;
+		}
 	}
 	rtk_wifi_csi_givesem(&g_rtk_drv->devsem);
 	return len;
