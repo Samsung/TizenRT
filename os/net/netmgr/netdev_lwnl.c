@@ -27,6 +27,9 @@
 #include <tinyara/net/if/wifi.h>
 #include "netdev_mgr_internal.h"
 #include <tinyara/net/netlog.h>
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
+#include <tinyara/mm/mm.h>
+#endif
 
 #define TAG "[NETMGR]"
 
@@ -83,8 +86,32 @@ static int _handle_common(lwnl_msg *msg)
 
 int netdev_req_handle(const char *msg, size_t msg_len)
 {
+	/* Validate message length */
+	if (!msg || msg_len < sizeof(lwnl_msg)) {
+		NET_LOGKE(TAG, "invalid message or length\n");
+		return -EINVAL;
+	}
+
 	lwnl_msg *lmsg = (lwnl_msg *)msg;
 	struct netdev *dev = NULL;
+
+	/* Validate result pointer to prevent arbitrary kernel memory write */
+	if (!lmsg->result) {
+		NET_LOGKE(TAG, "invalid result pointer\n");
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_MM_KERNEL_HEAP)
+	/* In protected builds, verify pointers are not in kernel memory */
+	if (kmm_heapmember(lmsg->result)) {
+		NET_LOGKE(TAG, "result pointer in kernel memory\n");
+		return -EFAULT;
+	}
+	if (lmsg->data && lmsg->data_len > 0 && kmm_heapmember(lmsg->data)) {
+		NET_LOGKE(TAG, "data pointer in kernel memory\n");
+		return -EFAULT;
+	}
+#endif
 
 	if (!strncmp((const char *)lmsg->name, LWNL_INTF_NAME, strlen(LWNL_INTF_NAME) + 1)) {
 		int *res = (int *)lmsg->result;

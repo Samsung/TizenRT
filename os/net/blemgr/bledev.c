@@ -263,7 +263,12 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_START_SCAN:
 	{
 		/* filter can be NULL */
-		trble_scan_filter *filter = (trble_scan_filter *)data;
+		lwnl_msg_params param = { 0, };
+		trble_scan_filter *filter = NULL;
+		if (data != NULL) {
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			filter = (trble_scan_filter *)param.param[0];
+		}
 		TRBLE_DRV_CALL(ret, dev, start_scan, (dev, filter));
 	}
 	break;
