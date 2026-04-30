@@ -33,10 +33,7 @@
 #include <tinyara/sched.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binary_manager.h>
-
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 #include "libelf/libelf.h"
-#endif
 
 #include "binfmt.h"
 #include "binfmt_arch_apis.h"
@@ -194,6 +191,9 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin->islibrary) {
+#if defined(CONFIG_LIBCXX_EXCEPTION) && defined(CONFIG_ELF)
+		bin->register_exidx = (int (*)(_Unwind_Ptr, _Unwind_Ptr, void *, void *, int))elf_get_lib_symbol((unsigned char *)"up_init_exidx");
+#endif
 		g_umm_app_id = (uint32_t *)(bin->sections[BIN_DATA] + 4);
 
 		/* Update binary table */
