@@ -14,3 +14,8 @@
 the value of the current secure level.
    2. Optimize the ld file
      Fix the name of a file in ld.
+
+== version beken_trustzone pr-214 2026/04/30-10:39:00==
+
+   1. fix the bp crc calculation fail
+      Due to Samsung's update to the BP data structure, the CRC verification of BP in the bootloader fails. We now need to fix the issue of BP CRC check failure.
