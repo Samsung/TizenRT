@@ -113,23 +113,31 @@ extern int i2schar_devinit(void);
 static int up_check_prod(void)
 {
 	uint32_t prod_disable = 0;
-#if defined(CONFIG_SPE) && (CONFIG_SPE == 1)
-    bk_otp_apb_read(OTP_EFUSE, &prod_disable, sizeof(prod_disable));
-    if (prod_disable & (1 << 31)) {
-		return OK;
-	}
-	return ERROR;
-#else
 	bool swd_enabled = true;
+
 	bk_err_t ret = bk_otp_read_swd_nsc(&swd_enabled);
 	if (ret != BK_OK) {
 		return ERROR;
 	}
-	if (!swd_enabled) {
+	if (swd_enabled) {
 		return OK;
 	}
 	return ERROR;
-#endif
+}
+
+int up_check_download(void)
+{
+	uint32_t prod_disable = 0;
+
+	bool download_enabled = true;
+	bk_err_t ret = bk_otp_read_download_nsc(&download_enabled);
+	if (ret != BK_OK) {
+		return ERROR;
+	}
+	if (download_enabled) {
+		return OK;
+	}
+	return ERROR;
 }
 
 int up_check_prodswd(void)
@@ -138,7 +146,7 @@ int up_check_prodswd(void)
 }
 int up_check_proddownload(void)
 {
-	return up_check_prod();
+	return up_check_download();
 }
 #endif
 
