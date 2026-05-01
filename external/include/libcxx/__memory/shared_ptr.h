@@ -992,17 +992,15 @@ private:
     struct __shared_ptr_default_delete<_Yp[_Sz], _Un>
         : default_delete<_Yp[]>
     {
-        // Override operator() to handle fixed-size array pointers correctly.
-        // The base class default_delete<_Yp[]> has an _EnableIfConvertible check
-        // that rejects fixed-size array pointers like _Yp(*)[_Sz], so we need
-        // this override to properly delete fixed-size arrays.
-        // The stored pointer type is _Yp(*)[_Sz] (pointer to array of _Sz elements),
-        // so we must accept that type and cast it to _Yp* for delete[].
+#if defined(LIBCPP_ARM_EABI_GCC10_WORKAROUND)
+        // GCC 10.x workaround: base class rejects _Yp(*)[_Sz] due to SFINAE issues
+        // with bounded-to-unbounded array pointer conversion.
         _LIBCPP_INLINE_VISIBILITY
         void operator()(_Yp (*__ptr)[_Sz]) const _NOEXCEPT {
             static_assert(sizeof(_Yp) >= 0, "cannot delete an incomplete type");
             delete[] __ptr;
         }
+#endif
     };
 
     template <class _Yp, class _Un>

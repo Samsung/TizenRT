@@ -26,13 +26,37 @@
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
-// TizenRT compatibility: Simplified datasizeof for embedded systems
+#if defined(LIBCPP_ARM_EABI_GCC10_WORKAROUND)
+// GCC10 workaround: Use sizeof to avoid template metaprogramming issues.
 template <class _Tp>
 struct __libcpp_datasizeof {
-  // For embedded systems, use sizeof for simplicity
-  // This avoids complex template metaprogramming that older compilers can't handle
   static const size_t value = sizeof(_Tp);
 };
+#else
+template <class _Tp>
+struct __libcpp_datasizeof {
+#  if __has_cpp_attribute(__no_unique_address__)
+  template <class = char>
+  struct _FirstPaddingByte {
+    [[__no_unique_address__]] _Tp __v_;
+    char __first_padding_byte_;
+  };
+#  else
+  template <bool = __libcpp_is_final<_Tp>::value || !is_class<_Tp>::value>
+  struct _FirstPaddingByte : _Tp {
+    char __first_padding_byte_;
+  };
+
+  template <>
+  struct _FirstPaddingByte<true> {
+    _Tp __v_;
+    char __first_padding_byte_;
+  };
+#  endif
+
+  static const size_t value = offsetof(_FirstPaddingByte<>, __first_padding_byte_);
+};
+#endif // LIBCPP_ARM_EABI_GCC10_WORKAROUND
 
 _LIBCPP_END_NAMESPACE_STD
 

@@ -37,7 +37,7 @@
 
 // TizenRT compatibility: Use our mbstate_t definition when wide characters are disabled
 #if defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
-// mbstate_t is defined in __config_site for TizenRT
+// mbstate_t and wint_t are defined in __config_site for TizenRT compatibility
 #else
 #   if defined(_LIBCPP_HAS_MUSL_LIBC)
 #       define __NEED_mbstate_t

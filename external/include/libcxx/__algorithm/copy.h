@@ -29,7 +29,7 @@ _LIBCPP_PUSH_MACROS
 _LIBCPP_BEGIN_NAMESPACE_STD
 
 template <class, class _InIter, class _Sent, class _OutIter>
-_LIBCPP_CONSTEXPR_SINCE_CXX14 pair<_InIter, _OutIter> __copy(_InIter, _Sent, _OutIter);
+inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14 pair<_InIter, _OutIter> __copy(_InIter, _Sent, _OutIter);
 
 template <class _AlgPolicy>
 struct __copy_loop {
@@ -105,7 +105,7 @@ struct __copy_trivial {
 };
 
 template <class _AlgPolicy, class _InIter, class _Sent, class _OutIter>
-_LIBCPP_CONSTEXPR_SINCE_CXX14 pair<_InIter, _OutIter>
+inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14 pair<_InIter, _OutIter>
 __copy(_InIter __first, _Sent __last, _OutIter __result) {
   return std::__dispatch_copy_or_move<_AlgPolicy, __copy_loop<_AlgPolicy>, __copy_trivial>(
       std::move(__first), std::move(__last), std::move(__result));

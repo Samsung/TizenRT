@@ -29,13 +29,10 @@ _LIBCPP_HIDE_FROM_ABI constexpr _Tp __bit_log2(_Tp __t) noexcept {
 
 #elif defined(_LIBCPP_BIT_LOG2_FALLBACK)
 
+// Pre-C++20 fallback: uses __countl_zero (__builtin_clz) for O(1) performance
 template <class _Tp>
-inline constexpr int __bit_log2(_Tp __x) noexcept {
-    // Fallback implementation using bit operations
-    int __result = 0;
-    while ((__x >>= 1) != 0)
-        ++__result;
-    return __result;
+inline _LIBCPP_HIDE_FROM_ABI int __bit_log2(_Tp __t) _NOEXCEPT {
+  return numeric_limits<_Tp>::digits - 1 - std::__countl_zero(static_cast<unsigned long long>(__t));
 }
 
 #endif // _LIBCPP_STD_VER >= 20

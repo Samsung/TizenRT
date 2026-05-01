@@ -137,7 +137,9 @@ template <>
 struct __is_simple_comparator<ranges::greater&> : true_type {};
 #endif
 
-// TizenRT compatibility: Avoid sizeof in template parameters for older compilers
+// TizenRT: GCC 10.x workaround for type alias template evaluation issues in SFINAE contexts.
+// Uses helper struct for GCC < 11, original code for GCC 11+ and Clang. See GCC bug 95834.
+#if defined(_LIBCPP_COMPILER_GCC) && __GNUC__ < 11
 template <class _Compare, class _Iter, class _Tp = typename iterator_traits<_Iter>::value_type>
 struct __use_branchless_sort_helper {
     static const bool value = __libcpp_is_contiguous_iterator<_Iter>::value && 
@@ -148,6 +150,12 @@ struct __use_branchless_sort_helper {
 
 template <class _Compare, class _Iter, class _Tp = typename iterator_traits<_Iter>::value_type>
 using __use_branchless_sort = integral_constant<bool, __use_branchless_sort_helper<_Compare, _Iter, _Tp>::value>;
+#else
+template <class _Compare, class _Iter, class _Tp = typename iterator_traits<_Iter>::value_type>
+using __use_branchless_sort =
+    integral_constant<bool, __libcpp_is_contiguous_iterator<_Iter>::value && sizeof(_Tp) <= sizeof(void*) &&
+                                is_arithmetic<_Tp>::value && __is_simple_comparator<_Compare>::value>;
+#endif
 
 namespace __detail {
 

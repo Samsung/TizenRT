@@ -426,10 +426,12 @@ struct _LIBCPP_TEMPLATE_VIS is_error_code_enum<io_errc::__lx> : public true_type
 
 _LIBCPP_EXPORTED_FROM_ABI const error_category& iostream_category() _NOEXCEPT;
 
-// Specialized constructor to bypass ADL issues with io_errc
+#if defined(LIBCPP_ARM_EABI_GCC10_WORKAROUND)
+// GCC 10.x workaround: Direct constructor bypasses ADL lookup issues with io_errc
 inline _LIBCPP_INLINE_VISIBILITY
 error_code::error_code(io_errc __e) _NOEXCEPT
     : __val_(static_cast<int>(__e)), __cat_(&iostream_category()) {}
+#endif
 
 inline _LIBCPP_INLINE_VISIBILITY
 error_code

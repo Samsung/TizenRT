@@ -43,14 +43,12 @@ Types:
 
 #include <stddef.h>
 
-// SRID revert it after modifieng os/Make.def .  For TizenRT compatibility, comment out the strict header check
-// This allows the header to work even when system headers are found first
 #ifndef _LIBCPP_STDDEF_H
 #   error <cstddef> tried including <stddef.h> but didn't find libc++'s <stddef.h> header. \
-           This usually means that your header search paths are not configured properly. \
-           The header search paths should contain the C++ Standard Library headers before \
-           any C Standard Library, and you are probably using compiler flags that make that \
-           not be the case.
+          This usually means that your header search paths are not configured properly. \
+          The header search paths should contain the C++ Standard Library headers before \
+          any C Standard Library, and you are probably using compiler flags that make that \
+          not be the case.
 #endif
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)

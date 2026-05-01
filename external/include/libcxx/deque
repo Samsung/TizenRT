@@ -449,6 +449,15 @@ public:
   }
 };
 
+#ifdef LIBCPP_ARM_EABI_GCC10_WORKAROUND
+// Mark deque iterator as segmented for GCC10 workaround
+template <class _ValueType, class _Pointer, class _Reference,
+          class _MapPointer, class _DiffType, _DiffType _BlockSize>
+struct __is_segmented_iterator_impl<
+    __deque_iterator<_ValueType, _Pointer, _Reference, _MapPointer, _DiffType, _BlockSize>
+> : true_type {};
+#endif
+
 template <class _ValueType, class _Pointer, class _Reference, class _MapPointer,
           class _DiffType, _DiffType _BlockSize>
 const _DiffType __deque_iterator<_ValueType, _Pointer, _Reference, _MapPointer,

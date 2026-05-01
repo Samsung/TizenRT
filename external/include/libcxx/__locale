@@ -50,6 +50,8 @@
 # include <__support/musl/xlocale.h>
 #elif defined(_LIBCPP_HAS_MUSL_LIBC)
 # include <__support/musl/xlocale.h>
+#elif defined(__TINYARA__)
+# include <__support/tizenrt/xlocale.h>
 #endif
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)

@@ -51,6 +51,13 @@
 // ensure `getc` and `putc` maps to `fgetc`/`fputc` 
 #define _LIBCPP_NEEDS_STDIO_FILE_FUNCTIONS
 
+// arm-none-eabi-g++ 10.x has missing/incomplete C++ standard library features
+// This will auto-detect and enable workarounds. Remove these workarounds when 
+// the compiler is upgraded to a version with full C++ support.
+#if defined(__arm__) && defined(__GNUC__) && __GNUC__ == 10
+#define LIBCPP_ARM_EABI_GCC10_WORKAROUND 1
+#endif
+
 // 'arm-none-eabi-g++' (10.3.1) cross-compiler does not provide the Clang-specific
 // compiler built-in intrinsics `__is_nothrow_assignable` and `__is_nothrow_constructible`
 // Following macros are defined to return `true` for all types (assume nothrow),
@@ -204,5 +211,11 @@ typedef unsigned int wint_t;
 #define LC_ALL_MASK (LC_COLLATE_MASK | LC_CTYPE_MASK | LC_MONETARY_MASK | LC_NUMERIC_MASK | LC_TIME_MASK | LC_MESSAGES_MASK)
 #endif
 
+// TizenRT compatibility: Disable system() function for security/size constraints
+#define _LIBCPP_HAS_NO_SYSTEM
+
+// TizenRT compatibility: TizenRT provides _exit() and _Exit() via macro
+// Define this to disable _Exit function support for consistency
+#define _LIBCPP_HAS_NO_C11_EXIT
 
 #endif // _LIBCPP_CONFIG_SITE

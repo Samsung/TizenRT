@@ -29,7 +29,8 @@ _LIBCPP_NODISCARD_EXT _LIBCPP_HIDE_FROM_ABI constexpr _ToType bit_cast(const _Fr
 #  if __has_builtin(__builtin_bit_cast)
   return __builtin_bit_cast(_ToType, __from);
 #  else
-  _ToType __to;
+  // Fallback for GCC: __builtin_bit_cast is Clang-specific
+  _ToType __to{};
   __builtin_memcpy(&__to, &__from, sizeof(_ToType));
   return __to;
 #  endif
@@ -45,7 +46,8 @@ _LIBCPP_NODISCARD_EXT _LIBCPP_HIDE_FROM_ABI constexpr _ToType bit_cast(const _Fr
 #  if __has_builtin(__builtin_bit_cast)
   return __builtin_bit_cast(_ToType, __from);
 #  else
-  _ToType __to;
+  // Fallback for GCC: __builtin_bit_cast is Clang-specific
+  _ToType __to{};
   __builtin_memcpy(&__to, &__from, sizeof(_ToType));
   return __to;
 #  endif

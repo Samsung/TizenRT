@@ -67,7 +67,9 @@ int tc_libcxx_strings_basic_string_hash_strings(void)
     TC_ASSERT_FUNC((test<std::u16string>()));
     TC_ASSERT_FUNC((test<std::u32string>()));
 #endif  // _LIBCPP_HAS_NO_UNICODE_CHARS
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     TC_ASSERT_FUNC((test<std::wstring>()));
+#endif
     TC_SUCCESS_RESULT();
     return 0;
 }

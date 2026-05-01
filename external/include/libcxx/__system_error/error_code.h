@@ -40,8 +40,11 @@ namespace __adl_only {
 void make_error_code() = delete;
 } // namespace __adl_only
 
-// Forward declaration of io_errc
+#if defined(LIBCPP_ARM_EABI_GCC10_WORKAROUND)
+// GCC 10.x workaround: Forward declaration for specialized constructor
+// to bypass ADL issues with io_errc when using arm-none-eabi-g++
 enum class io_errc;
+#endif
 
 class _LIBCPP_EXPORTED_FROM_ABI error_code {
   int __val_;
@@ -52,8 +55,10 @@ public:
 
   _LIBCPP_HIDE_FROM_ABI error_code(int __val, const error_category& __cat) _NOEXCEPT : __val_(__val), __cat_(&__cat) {}
 
-  // Specialized constructor for io_errc to bypass ADL issues
+#if defined(LIBCPP_ARM_EABI_GCC10_WORKAROUND)
+  // GCC 10.x workaround: Direct constructor bypasses ADL lookup issues with io_errc
   _LIBCPP_HIDE_FROM_ABI error_code(io_errc __e) _NOEXCEPT;
+#endif
 
   template <class _Ep>
   _LIBCPP_HIDE_FROM_ABI
