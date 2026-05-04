@@ -179,6 +179,8 @@ DEPPATH += --dep-path os/board/bk7239n/src/include/os
 DEPPATH += --dep-path middleware/$(driver_path)/i2s
 DEPPATH += --dep-path middleware/$(driver_path)/audio
 DEPPATH += --dep-path middleware/$(driver_path)/deep_lv
+DEPPATH += --dep-path os/board/bk7239n/src/components/psa_mbedtls/mbedtls/include
+DEPPATH += --dep-path os/board/bk7239n/src/components/tfm_mbedtls/mbedtls/include
 
 VPATH += :arch/cm33
 VPATH += :$(driver_path)/rtc
