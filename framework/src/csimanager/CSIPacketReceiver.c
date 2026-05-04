@@ -27,7 +27,8 @@
 #define MAX_CONSECUTIVE_FAILURES 50
 #define RCVR_TH_NAME "csifw_data_receiver_th"
 
-static inline CSIFW_RES open_driver(int *fd) {
+static inline CSIFW_RES open_driver(int *fd) 
+{
   *fd = open(CONFIG_WIFICSI_CUSTOM_DEV_PATH, O_RDONLY);
   if (*fd < 0) {
     CSIFW_LOGE("Failed to open device path : %s errno : %d",
@@ -37,15 +38,20 @@ static inline CSIFW_RES open_driver(int *fd) {
   return CSIFW_OK;
 }
 
-static inline void close_driver(int fd) {
+static inline void close_driver(int fd) 
+{
   close(fd);
 }
 
-static inline unsigned long long get_monotonic_time_us(void)
+static inline u64 get_monotonic_time_ms(void)
 {
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return (unsigned long long)ts.tv_sec * 1000000ULL + ts.tv_nsec / 1000ULL;
+  struct timespec ts;
+  if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
+  	CSIFW_LOGE("Failed to get monotonic time - errno: %d (%s)", 
+  	           get_errno(), strerror(get_errno()));
+  	return 0;
+  }
+  return (u64)ts.tv_sec * 1000ULL + ts.tv_nsec / 1000000ULL;
 }
 
 CSIFW_RES csi_packet_receiver_set_csi_config(csi_config_action_t config_action);
@@ -59,7 +65,7 @@ static int readCSIData(int fd, unsigned char *buf, int size)
 	err = ioctl(fd, CSIIOC_GET_DATA, (unsigned long)&buf_args);
 	if (err <= OK) {
 		CSIFW_LOGE("IOCTL CSIIOC_GET_DATA failed - fd: %d, errno: %d (%s)", 
-			fd, get_errno(), strerror(get_errno()));
+					fd, get_errno(), strerror(get_errno()));
 	}
 	return err;
 }
@@ -74,75 +80,91 @@ static void *dataReceiverThread(void *vargp)
 
 	int len;
 	int prio;
-	size_t size;
+	ssize_t size;
+	u64 current_time;
 	int timeout_count = 0;
 	struct wifi_csi_msg_s msg;
 	int consecutive_failures = 0;
 	struct timespec st_time = {0,};
+	bool last_data_read_status = false;
+	u64 last_data_read_timestamp_ms = 0;
 	int fd = p_csifw_ctx->data_receiver_fd;
 	mqd_t mq_handle = p_csifw_ctx->mq_handle;
 	unsigned char *get_data_buffptr = p_csifw_ctx->get_data_buffptr;
 
 	while (!p_csifw_ctx->data_receiver_thread_stop) {
-		CSIFW_LOGI("Reading from MQ %llu", get_monotonic_time_us());
-		clock_gettime(CLOCK_REALTIME, &st_time);
-		st_time.tv_sec += 1;
-		size = mq_timedreceive(mq_handle, (char *)&msg, sizeof(msg), &prio, &st_time);
-		if (size >= 0) {
-			CSIFW_LOGD("Message received - msgId: %d, data_len: %d, size: %zu: %d", msg.msgId, msg.data_len, size);
-			switch (msg.msgId) {
-			case CSI_MSG_DATA_READY_CB:
-				len = readCSIData(fd, get_data_buffptr, CSIFW_MAX_RAW_BUFF_LEN);
-				CSIFW_LOGI("CSI Data read complete %llu", get_monotonic_time_us());
-				if (len < 0) {
-					consecutive_failures++;
-					CSIFW_LOGE("Skipping packet: error: %d", len);
-					if (consecutive_failures >= MAX_CONSECUTIVE_FAILURES) {
-						CSIFW_LOGE("CRITICAL: %d consecutive readCSIData failures detected!", consecutive_failures);
-						p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL, 0);
-						break;
+		current_time = get_monotonic_time_ms();
+		if ((last_data_read_status == false) ||
+			(last_data_read_timestamp_ms == 0) ||
+			(current_time - last_data_read_timestamp_ms >= p_csifw_ctx->csi_interval)) {
+			last_data_read_status = false;
+			last_data_read_timestamp_ms = current_time;
+			CSIFW_LOGI("Reading event from MQ %llu", current_time);
+			clock_gettime(CLOCK_REALTIME, &st_time);
+			st_time.tv_sec += 1;
+			size = mq_timedreceive(mq_handle, (char *)&msg, sizeof(msg), &prio, &st_time);
+			if (size >= 0) {
+				CSIFW_LOGD("Message received - msgId: %d, data_len: %d, size: %zu: %d", msg.msgId, msg.data_len, size);
+				switch (msg.msgId) {
+				case CSI_MSG_DATA_READY_CB:
+					len = readCSIData(fd, get_data_buffptr, CSIFW_MAX_RAW_BUFF_LEN);
+					CSIFW_LOGI("CSI Data read complete %llu", get_monotonic_time_ms());
+					if (len < 0) {
+						consecutive_failures++;
+						CSIFW_LOGE("Skipping packet: error: %d", len);
+						if (consecutive_failures >= MAX_CONSECUTIVE_FAILURES) {
+							CSIFW_LOGE("CRITICAL: %d consecutive readCSIData failures detected!", consecutive_failures);
+							p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL, 0);
+							break;
+						}
+						continue;
 					}
-					continue;
-				}
-				if ((consecutive_failures > 0) || (timeout_count > 0)) {
-					consecutive_failures = 0;
-					timeout_count = 0;
-				}
-				#if defined(CONFIG_WIFI_CSI_RTL8730E)
-					/* RTL8730E driver returns length without the CSI header*/
-					p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len + CSIFW_RTK_CSI_HEADER_LEN, get_data_buffptr, len);
-				#elif defined(CONFIG_BK_WIFI_CSI_ADAPTER)
-					/* Beken driver already includes the CSI header in the length*/
-					p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len, get_data_buffptr, len);
-				#else
-					CSIFW_LOGE("Unknown CSI board configuration");
-				#endif
-				break;
+					if ((consecutive_failures > 0) || (timeout_count > 0)) {
+						consecutive_failures = 0;
+						timeout_count = 0;
+					}
+					last_data_read_status = true;
+					#if defined(CONFIG_WIFI_CSI_RTL8730E)
+					  /* RTL8730E driver returns length without the CSI header*/
+					  p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len + CSIFW_RTK_CSI_HEADER_LEN, get_data_buffptr, len);
+					#elif defined(CONFIG_BK_WIFI_CSI_ADAPTER)
+					  /* Beken driver already includes the CSI header in the length*/
+					  p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len, get_data_buffptr, len);
+					#else
+					  CSIFW_LOGE("Unknown CSI board configuration");
+					#endif
+					break;
 
-			case CSI_MSG_ERROR:
-				CSIFW_LOGE("CSI_MSG_ERROR received");
-				break;
+				case CSI_MSG_ERROR:
+					CSIFW_LOGE("CSI_MSG_ERROR received");
+					break;
 
-			default:
-				CSIFW_LOGE("Received unknown message ID: %d", msg.msgId);
-				break;
+				default:
+					CSIFW_LOGE("Received unknown message ID: %d", msg.msgId);
+					break;
+				}
+			} else if (size == -1) {
+				CSIFW_LOGE("MQ returned %zd || errno: %d (%s)", size, errno, strerror(errno));
+				if (errno == ETIMEDOUT) {
+					timeout_count++;
+					if (timeout_count >= CONFIG_CSI_DATA_TIMEOUT_SEC) {
+						CSIFW_LOGE("CRITICAL: No CSI data for %d seconds", timeout_count);
+						timeout_count = 0;
+						p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL, 0);
+					}
+				} else {
+					consecutive_failures++;
+					if (consecutive_failures >= MAX_CONSECUTIVE_FAILURES) {
+						CSIFW_LOGE("CRITICAL: %d consecutive failures detected", consecutive_failures);
+						consecutive_failures = 0;
+						p_csifw_ctx->CSI_DataCallback(CSIFW_INTERNAL_ERROR, 0, NULL, 0);
+					}
+				}
 			}
-		} else if (size == -1) {
-			if (errno == ETIMEDOUT) {
-				timeout_count++;
-				if (timeout_count >= CONFIG_CSI_DATA_TIMEOUT_SEC) {
-					 CSIFW_LOGE("CRITICAL: No CSI data for %d seconds", timeout_count);
-					timeout_count = 0;
-					p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL, 0);
-				}
-			} else {
-				CSIFW_LOGE("Message received size error - msgId: %d, data_len: %d, size: %zu, errno: %d (%s)", msg.msgId, msg.data_len, size, errno, strerror(errno));
-				consecutive_failures++;
-				if (consecutive_failures >= MAX_CONSECUTIVE_FAILURES) {
-					CSIFW_LOGE("CRITICAL: %d consecutive failures detected", consecutive_failures);
-					consecutive_failures = 0;
-					p_csifw_ctx->CSI_DataCallback(CSIFW_INTERNAL_ERROR, 0, NULL, 0);
-				}
+		} else {
+			u64 sleep_time = p_csifw_ctx->csi_interval - (current_time - last_data_read_timestamp_ms);
+			if (sleep_time > 0) {
+				usleep(sleep_time * 1000); // Convert ms to microseconds
 			}
 		}
 	}
@@ -210,7 +232,7 @@ CSIFW_RES csi_packet_receiver_change_interval(void)
 		CSIFW_LOGE("Failed to disable CSI configuration - error: %d", res);
 		return res;
 	}
-	usleep(10000);				//10ms sleep
+	usleep(10000);
 	res = csi_packet_receiver_set_csi_config(CSI_CONFIG_ENABLE);
 	if (res != CSIFW_OK) {
 		CSIFW_LOGE("Failed to enable CSI configuration - error: %d", res);
@@ -232,10 +254,10 @@ CSIFW_RES csi_packet_receiver_get_mac_addr(csifw_mac_info *mac_info)
 		return CSIFW_ERROR;
 	}
 	close_driver(fd);
-	CSIFW_LOGD("MAC address from driver: [%02x:%02x:%02x:%02x:%02x:%02x]", 
-		mac_info->mac_addr[0], mac_info->mac_addr[1], 
-		mac_info->mac_addr[2], mac_info->mac_addr[3], 
-		mac_info->mac_addr[4], mac_info->mac_addr[5]);
+	CSIFW_LOGD("MAC address from driver: [%02x:%02x:%02x:%02x:%02x:%02x]",
+				mac_info->mac_addr[0], mac_info->mac_addr[1],
+				mac_info->mac_addr[2], mac_info->mac_addr[3],
+				mac_info->mac_addr[4], mac_info->mac_addr[5]);
 	return CSIFW_OK;
 }
 
@@ -280,7 +302,8 @@ CSIFW_RES csi_packet_receiver_start_collect(void)
 		return CSIFW_ERROR;
 	}
 	if (pthread_attr_setstacksize(&recv_th_attr, (3*1024)) != 0) {
-		CSIFW_LOGE("Failed to set receiver thread stack size to 5KB - errno: %d (%s). Proceeding with default stack size.", get_errno(), strerror(get_errno()));
+		CSIFW_LOGE("Failed to set receiver thread stack size to 3KB - errno: %d (%s). Proceeding with default stack size.", 
+					get_errno(), strerror(get_errno()));
 	}
 	if (pthread_create(&p_csifw_ctx->csi_data_receiver_th, &recv_th_attr, dataReceiverThread, NULL) != 0) {
 		CSIFW_LOGE("Failed to create CSI data receiver thread - errno: %d (%s)", get_errno(), strerror(get_errno()));

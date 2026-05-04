@@ -91,7 +91,7 @@ typedef struct {
   int task_handle;                      /* Task Manager handle */
   int ping_socket;                      /* Ping Socket */
 
-  pthread_mutex_t data_reciever_mutex; /* CSI Data Reciever Mutex */
+  pthread_mutex_t data_receiver_mutex; /* CSI Data Receiver Mutex */
   pthread_t csi_data_receiver_th;      /* CSI Data Receiver Thread Status */
   struct icmp_echo_hdr *p_iecho;       /* Echo Header */
   struct sockaddr *socketAddr;         /* Sokcet Address */
