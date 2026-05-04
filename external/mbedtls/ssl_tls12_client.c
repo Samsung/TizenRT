@@ -1692,6 +1692,86 @@ static int ssl_parse_server_ecdh_params(mbedtls_ssl_context *ssl,
           MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED   ||
           MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED */
 #if defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
+#if defined(MBEDTLS_OCF_PATCH)
+MBEDTLS_CHECK_RETURN_CRITICAL
+static int ssl_parse_server_psk_hint(mbedtls_ssl_context *ssl,
+                                     unsigned char **p,
+                                     unsigned char *end)
+{
+    int ret = 0;
+    size_t n;
+
+    if( ssl->conf->f_psk == NULL &&
+        ( ssl->conf->psk == NULL || ssl->conf->psk_identity == NULL ||
+          ssl->conf->psk_identity_len == 0 || ssl->conf->psk_len == 0 ) )
+    {
+        MBEDTLS_SSL_DEBUG_MSG( 1, ( "got no pre-shared key" ) );
+        return( MBEDTLS_ERR_SSL_PRIVATE_KEY_REQUIRED );
+    }
+
+    /*
+     * PSK parameters:
+     *
+     * opaque psk_identity_hint<0..2^16-1>;
+     */
+    if (end - (*p) < 2) {
+        MBEDTLS_SSL_DEBUG_MSG(1,
+                              ("bad server key exchange message (psk_identity_hint length)"));
+        return MBEDTLS_ERR_SSL_DECODE_ERROR;
+    }
+    n = (*p)[0] << 8 | (*p)[1];
+    *p += 2;
+
+    if( n == 0 )
+    {
+        return ( 0 );
+    }
+    if( n < 1 || n > 65535 || *p + n > end )
+    {
+        MBEDTLS_SSL_DEBUG_MSG(1,
+                              ("bad server key exchange message (psk_identity_hint length)"));
+        return MBEDTLS_ERR_SSL_DECODE_ERROR;
+    }
+
+    /*
+     * Note: we currently ignore the PSK identity hint, as we only allow one
+     * PSK to be provisioned on the client. This could be changed later if
+     * someone needs that feature.
+     */
+    if( ssl->conf->f_psk != NULL )
+    {
+        if( ssl->conf->f_psk( ssl->conf->p_psk, ssl, *p, n ) != 0 )
+            ret = MBEDTLS_ERR_SSL_UNKNOWN_IDENTITY;
+    }
+    else
+    {
+        /* Identity is not a big secret since clients send it in the clear,
+         * but treat it carefully anyway, just in case */
+        if( n != ssl->conf->psk_identity_len ||
+            mbedtls_ct_memcmp( ssl->conf->psk_identity, *p, n ) != 0 )
+        {
+            ret = MBEDTLS_ERR_SSL_UNKNOWN_IDENTITY;
+        }
+    }
+
+    if( ret == MBEDTLS_ERR_SSL_UNKNOWN_IDENTITY )
+    {
+        MBEDTLS_SSL_DEBUG_BUF( 3, "Unknown PSK identity", *p, n );
+        if( ( ret = mbedtls_ssl_send_alert_message( ssl,
+                              MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                              MBEDTLS_SSL_ALERT_MSG_UNKNOWN_PSK_IDENTITY ) ) != 0 )
+        {
+            return( ret );
+        }
+
+        return( MBEDTLS_ERR_SSL_UNKNOWN_IDENTITY );
+    }
+
+    *p += n;
+
+    return( 0 );
+}
+#else
 MBEDTLS_CHECK_RETURN_CRITICAL
 static int ssl_parse_server_psk_hint(mbedtls_ssl_context *ssl,
                                      unsigned char **p,
@@ -1730,6 +1810,7 @@ static int ssl_parse_server_psk_hint(mbedtls_ssl_context *ssl,
 
     return ret;
 }
+#endif /* MBEDTLS_OCF_PATCH */
 #endif /* MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED */
 
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED) ||                     \

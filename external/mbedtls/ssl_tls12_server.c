@@ -2513,8 +2513,15 @@ static int ssl_prepare_server_key_exchange(mbedtls_ssl_context *ssl,
      **/
 #if defined(MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED)
     if (ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_ECDHE_PSK) {
+#if defined(MBEDTLS_OCF_PATCH)            
+        ssl->out_msg[ssl->out_msglen++] = (unsigned char)( ssl->conf->psk_identity_len >> 8 );
+        ssl->out_msg[ssl->out_msglen++] = (unsigned char)( ssl->conf->psk_identity_len      );
+        memcpy(ssl->out_msg+ssl->out_msglen, ssl->conf->psk_identity, ssl->conf->psk_identity_len);
+        ssl->out_msglen += ssl->conf->psk_identity_len;
+#else
         ssl->out_msg[ssl->out_msglen++] = 0x00;
         ssl->out_msg[ssl->out_msglen++] = 0x00;
+#endif /* MBEDTLS_OCF_PATCH */
     }
 #endif /* MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED */
 
