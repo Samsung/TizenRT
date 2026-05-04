@@ -298,9 +298,11 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	// Client
 	case LWNL_REQ_BLE_CLIENT_CONNECT:
 	{
+		lwnl_msg_params param = { 0, };
 		trble_conn_info *conn_info = NULL;
 		if (data != NULL) {
-			conn_info = (trble_conn_info *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			conn_info = (trble_conn_info *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -923,9 +925,11 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	break;
 	case LWNL_REQ_BLE_CMD_COC_INIT:
 	{
+		lwnl_msg_params param = { 0, };
 		trble_le_coc_init_config *t_le_coc = NULL;
 		if (data != NULL) {
-			t_le_coc = (trble_le_coc_init_config *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			t_le_coc = (trble_le_coc_init_config *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}

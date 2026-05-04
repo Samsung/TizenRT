@@ -244,7 +244,8 @@ trble_result_e ble_drv_scan_whitelist_clear_all(void)
 trble_result_e ble_drv_client_connect(trble_conn_info *conn_info)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CLIENT_CONNECT}, sizeof(trble_conn_info), (void *)conn_info, (void *)&res};
+	lwnl_msg_params msg_data = {1, {(void *)conn_info }};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CLIENT_CONNECT}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
@@ -721,7 +722,8 @@ trble_result_e ble_drv_stop_multi_adv(uint8_t adv_handle)
 trble_result_e ble_drv_le_coc_init(trble_le_coc_init_config *le_coc)
 {
 	trble_result_e res = TRBLE_SUCCESS;
-	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_INIT}, sizeof(trble_le_coc_init_config), (void *)le_coc, (void *)&res};
+	lwnl_msg_params msg_data = {1, {(void *)le_coc }};
+	lwnl_msg msg = {BLE_INTF_NAME, {LWNL_REQ_BLE_CMD_COC_INIT}, sizeof(msg_data), (void *)&msg_data, (void *)&res};
 	if (_send_msg(&msg) < 0) {
 		res = TRBLE_FILE_ERROR;
 	}
