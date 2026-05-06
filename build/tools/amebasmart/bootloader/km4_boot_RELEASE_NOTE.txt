@@ -1,5 +1,9 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 701765f39b_2026/05/06-15:27:32 ==
+1. when both BPs are invalid, reconstructed BP will be written to the opposite of BP partition of the valid kernel found
+    - If valid kernel is found in BP1, the recontructed BP will be written to BP2 and vice versa.
+
 == version 0d4526b9d8_2026/04/23-18:00:11 ==
 
 1. Add CRC check retry logic for Kernel and BP
