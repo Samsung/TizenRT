@@ -23,7 +23,6 @@
 #include "RecorderWorker.h"
 #include "PlayerObserverWorker.h"
 #include "RecorderObserverWorker.h"
-#include "FocusManagerWorker.h"
 using namespace media;
 
 int media_init(void)
@@ -34,7 +33,6 @@ int media_init(void)
 	RecorderWorker::getWorker().startWorker();
 	PlayerObserverWorker::getWorker().startWorker();
 	RecorderObserverWorker::getWorker().startWorker();
-	FocusManagerWorker::getWorker().startWorker();
 	return 0;
 }
 
