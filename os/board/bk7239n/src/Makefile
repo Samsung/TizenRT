@@ -292,7 +292,7 @@ PY_LIBS_TGZ := $(TOOL_PATH)/bk_py_libs.tgz
 
 # Flash encrypt enable: read from config if available, otherwise default to 0
 # This parameter controls whether to modify security.csv to set flash_aes_type to FIXED
-FLASH_ENCRYPT_ENABLE := $(if $(CONFIG_FLASH_ENCRYPT),1,0)
+FLASH_ENCRYPT_ENABLE := $(if $(CONFIG_FLASH_ENCRYPT_ENABLE),1,0)
 
 # py_libs target: ensure Python environment is ready
 py_libs:
