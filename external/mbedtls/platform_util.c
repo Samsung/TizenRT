@@ -368,6 +368,19 @@ static int sysctl_arnd_wrapper(unsigned char *buf, size_t buflen)
 
 const char *mbedtls_platform_dev_random = MBEDTLS_PLATFORM_DEV_RANDOM;
 
+#if defined(MBEDTLS_PSA_DRIVER_GET_ENTROPY)
+/* Hardware entropy source takes precedence when enabled */
+#include "mbedtls/alt/entropy_poll_alt.h"
+
+int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
+                                 size_t *estimate_bits,
+                                 unsigned char *output, size_t output_size)
+{
+    return mbedtls_hardware_get_entropy(flags, estimate_bits, output, output_size);
+}
+
+#else /* !MBEDTLS_PSA_DRIVER_GET_ENTROPY */
+
 int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
                                  size_t *estimate_bits,
                                  unsigned char *output, size_t output_size)
@@ -426,3 +439,5 @@ int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
 }
 #endif /* _WIN32 && !EFIX64 && !EFI32 */
 #endif /* MBEDTLS_PSA_BUILTIN_GET_ENTROPY */
+
+#endif /* MBEDTLS_PSA_DRIVER_GET_ENTROPY */

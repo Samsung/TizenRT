@@ -29,6 +29,7 @@
 #include "mbedtls/build_info.h"
 #include "mbedtls/platform.h"
 #include "psa/crypto_driver_random.h"
+#include "mbedtls/alt/entropy_poll_alt.h"
 
 #if defined(MBEDTLS_PSA_DRIVER_GET_ENTROPY)
 
@@ -42,7 +43,7 @@
  *
  * @return 0 on success, non-zero on failure.
  */
-int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
+int mbedtls_hardware_get_entropy(psa_driver_get_entropy_flags_t flags,
                                   size_t *estimate_bits,
                                   unsigned char *output, size_t output_size)
 {
