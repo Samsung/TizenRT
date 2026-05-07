@@ -59,14 +59,19 @@
 #include <tinyara/watchdog.h>
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/wqueue.h>
+#include <tinyara/clock.h>
+#include <tinyara/reboot_reason.h>
+#include <arch/reboot_reason.h>
 #include "wdt.h"
+#include "wdt_hal.h"
 #include "hal_aon_rtc_types.h"
 #include "aon_rtc.h"
-#include "reset_reason.h"
 
 #ifdef CONFIG_WATCHDOG
 
 extern uint32_t sys_hal_nmi_wdt_get_clk_div(void);
+extern void bk_wdt_force_feed(void);
 
 #if !defined(CONFIG_ARMINO_WDG_SLICE_MAX_MS) || (CONFIG_ARMINO_WDG_SLICE_MAX_MS < 1)
 #define ARMINO_WDG_SLICE_CAP_MS 30000u
@@ -80,16 +85,20 @@ extern uint32_t sys_hal_nmi_wdt_get_clk_div(void);
 #define ARMINO_WDG_MAX_SOFT_MS ((uint32_t)CONFIG_ARMINO_WDG_MAX_SOFT_TIMEOUT_MS)
 #endif
 
-#define ARMINO_WDG_NMI_DEBOUNCE_MS 100u
-/* When last slice is <= debounce (incl. 100 ms logical timeout), re-arm HW WDT
- * with this window before PANIC() so assert / stack dump can finish; capped by
- * hw_max. Examples: 30001 ms -> 1 ms tail; 100 ms single-slice.
- */
-#define ARMINO_WDG_PANIC_PREARM_MS 2000u
-
 #define WDT_STOP	0
 #define WDT_START	1
 #define WDT_PAUSE	2
+#define ARMINO_WDG_THREAD_FEED_LONG_MS 15000u
+#define ARMINO_WDG_THREAD_FEED_MS 5000u
+#define ARMINO_WDG_THREAD_FEED_SWITCH_MS 60000u
+#define ARMINO_WDG_PANIC_RESET_FALLBACK_MS 2000u
+
+/* Design boundary:
+ * - NMI reset mode does direct register feed then returns immediately.
+ * - Minute-level timeout strategy and PANIC are thread-side (hpwork).
+ * - Before PANIC, a short HW watchdog window is armed to guarantee reset
+ *   even if reboot flow stalls after dump.
+ */
 
 /****************************************************************************
  * Private Types
@@ -104,14 +113,11 @@ struct armino_wdg_lowerhalf_s {
 	uint32_t timeout_ms;
 	uint32_t timeout_left;		/* Record remaining timeout for PAUSE and RESUME */
 	uint32_t wdt_status;		/* 0: WDT_STOP; 1: WDT_START; 2: WDT_PAUSE */
-	uint32_t start_tick;		/* Use to calculate timeleft before timeout */
-	uint32_t pause_start_tick;	/* Record the start tick of watchdog timer on pause */
-	uint32_t total_pause_duration;	/* Record the total duration of watchdog timer on pause */
-	uint32_t wdg_slice_ms;		/* Body slice (ms) for multi-NMI extension */
-	uint32_t wdg_last_slice_ms;	/* Final slice (ms) */
-	uint32_t wdg_nmi_total;		/* NMIs until logical expiry (>=1 when running) */
-	uint32_t wdg_nmi_seen;		/* NMIs handled in current epoch */
-	uint32_t wdg_hw_armed_ms;	/* Period passed to last bk_wdt_start(); debounce uses this */
+	uint64_t start_tick;		/* 64-bit RTC baseline for elapsed-time calculation */
+	uint32_t hw_feed_period_ms;	/* HW period used for NMI keepalive feed */
+	uint32_t hw_feed_slots;		/* Logical timeout windows split by HW period */
+	struct work_s feed_work;	/* Thread-side keepalive/panic scheduler */
+	volatile bool panic_firing;	/* True once timeout panic path is entered */
 	bool int_mode;				/* True for timeout interrupt mode on */
 };
 
@@ -126,15 +132,19 @@ static int armino_wdg_settimeout(FAR struct watchdog_lowerhalf_s *lower, uint32_
 static xcpt_t armino_wdg_capture(FAR struct watchdog_lowerhalf_s *lower, xcpt_t handler);
 static int armino_wdg_ioctl(FAR struct watchdog_lowerhalf_s *lower, int cmd, unsigned long arg);
 static uint32_t armino_wdt_hw_max_ms(void);
-static void armino_wdg_recalc_segments(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t logical_ms);
-static void armino_wdg_program_first_slice(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t logical_ms);
-static void armino_wdg_panic_arm_slack(FAR struct armino_wdg_lowerhalf_s *priv);
+static uint32_t armino_wdg_ticks_to_ms(uint64_t ticks);
+static uint32_t armino_wdg_elapsed_ms(FAR struct armino_wdg_lowerhalf_s *priv);
+static uint32_t armino_wdg_worker_delay_ms(FAR struct armino_wdg_lowerhalf_s *priv);
+static void armino_wdg_feed_worker(FAR void *arg);
+static void armino_wdg_schedule_feed_worker(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t delay_ms);
+static void armino_wdg_cancel_feed_worker(FAR struct armino_wdg_lowerhalf_s *priv);
+static void armino_wdg_start_hw(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t ms);
+static void armino_wdg_update_hw_feed_plan(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t logical_ms);
+static void armino_wdg_arm_hw_feed_window(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t logical_ms);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-
-static uint64_t g_wdg_nmi_last_ms;
 
 const struct watchdog_ops_s g_wdgops = {
 	.start = armino_wdg_start,
@@ -146,6 +156,38 @@ const struct watchdog_ops_s g_wdgops = {
 	.ioctl = armino_wdg_ioctl,
 };
 
+/* Global gate for NMI direct-feed path.
+ * - true : NMI handler may feed hardware watchdog.
+ * - false: NMI handler must not feed (used by force-reboot paths).
+ */
+static volatile bool g_wdt_nmi_feed_enabled = true;
+
+/* NMI deadman: bound how long NMI alone can keep the HW watchdog alive
+ * if the HPWORK feeder thread is stalled.
+ *
+ * Mechanism:
+ *   - For each logical timeout arm, derive a dynamic credit reload:
+ *       reload = hw_feed_slots - 1
+ *     where hw_feed_slots = ceil(logical_timeout / hw_feed_period).
+ *   - HPWORK replenishes g_wdt_nmi_feed_credit to the reload value after
+ *     every successful direct HW feed (proof that the thread side is alive).
+ *   - NMI consumes one credit per fire; when credit hits zero, NMI stops
+ *     feeding so the hardware watchdog can expire and reset the system.
+ *
+ * Result:
+ *   In HPWORK-hung scenarios, NMI-only keepalive window scales with
+ *   user timeout instead of a fixed constant.
+ *
+ * Concurrency note:
+ *   - HPWORK only does a single 32-bit store (replenish), which is atomic
+ *     on ARMv8-M.
+ *   - NMI's read-decrement-write is uninterruptible because NMI is the
+ *     highest priority exception on this core.
+ *   - No locking is required.
+ */
+static volatile int32_t g_wdt_nmi_feed_credit;
+static volatile int32_t g_wdt_nmi_feed_credit_reload;
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -154,58 +196,150 @@ const struct watchdog_ops_s g_wdgops = {
  * Name: armino_wdt_hw_max_ms
  *
  * Description:
- *   Max milliseconds valid for bk_wdt_start such that wdt_ll_set_period's
+ *   Max milliseconds valid for bk_wdt_start such that hardware period scaling
  *   internal multiply-by-multi does not exceed 16-bit period.
  *
  ****************************************************************************/
 
 static uint32_t armino_wdt_hw_max_ms(void)
 {
-	uint32_t nmi_wdt_clk_div = sys_hal_nmi_wdt_get_clk_div();
-	uint32_t multi = 1;
-
-	switch (nmi_wdt_clk_div) {
+	switch (sys_hal_nmi_wdt_get_clk_div()) {
 	case 0:
-		multi = 16;
-		break;
+		return 0xFFFFu / 16u;
 	case 1:
-		multi = 8;
-		break;
+		return 0xFFFFu / 8u;
 	case 2:
-		multi = 4;
-		break;
+		return 0xFFFFu / 4u;
 	case 3:
-		multi = 2;
-		break;
+		return 0xFFFFu / 2u;
 	default:
-		multi = 1;
-		break;
+		return 0xFFFFu;
+	}
+}
+
+static uint32_t armino_wdg_ticks_to_ms(uint64_t ticks)
+{
+	uint32_t freq = bk_rtc_get_clock_freq();
+
+	if (freq == 0u) {
+		return 0u;
 	}
 
-	return 0xFFFFu / multi;
+	return (uint32_t)((ticks * 1000ULL) / (uint64_t)freq);
+}
+
+static uint32_t armino_wdg_elapsed_ms(FAR struct armino_wdg_lowerhalf_s *priv)
+{
+	uint64_t now_tick = (uint64_t)bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
+	uint64_t elapsed_ticks = now_tick - priv->start_tick;
+	return armino_wdg_ticks_to_ms(elapsed_ticks);
+}
+
+static uint32_t armino_wdg_worker_delay_ms(FAR struct armino_wdg_lowerhalf_s *priv)
+{
+	uint32_t elapsed_ms;
+	uint32_t remaining_ms;
+	uint32_t delay_ms = ARMINO_WDG_THREAD_FEED_MS;
+
+	elapsed_ms = armino_wdg_elapsed_ms(priv);
+	if (elapsed_ms >= priv->timeout_left) {
+		remaining_ms = 0u;
+	} else {
+		remaining_ms = priv->timeout_left - elapsed_ms;
+	}
+
+	/* Two-stage hpwork cadence:
+	 * - Far from timeout: 15 s to reduce scheduling overhead.
+	 * - Within last minute: 5 s to keep timeout reaction responsive.
+	 * Use real-time remaining window instead of static timeout_left.
+	 */
+	if (remaining_ms > ARMINO_WDG_THREAD_FEED_SWITCH_MS) {
+		delay_ms = ARMINO_WDG_THREAD_FEED_LONG_MS;
+	}
+
+	if (remaining_ms > 0u && remaining_ms < delay_ms) {
+		delay_ms = remaining_ms;
+	}
+
+	if (delay_ms == 0u) {
+		delay_ms = 1u;
+	}
+
+	return delay_ms;
+}
+
+static void armino_wdg_feed_worker(FAR void *arg)
+{
+	struct armino_wdg_lowerhalf_s *priv = (struct armino_wdg_lowerhalf_s *)arg;
+	uint32_t elapsed_ms;
+
+	if (!priv || priv->wdt_status != WDT_START || priv->int_mode) {
+		return;
+	}
+
+	elapsed_ms = armino_wdg_elapsed_ms(priv);
+	if (elapsed_ms >= priv->timeout_left) {
+		priv->panic_firing = true;
+		/* Re-arm a short HW watchdog window before PANIC.
+		 * If board reboot flow stalls after dump, HW reset is still guaranteed.
+		 */
+		(void)bk_wdt_start(ARMINO_WDG_PANIC_RESET_FALLBACK_MS);
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+		/* Mark this panic as watchdog timeout before asserting.
+		 * up_assert() writes ASSERT reason only if no reason exists yet.
+		 */
+		up_reboot_reason_write(REBOOT_SYSTEM_WATCHDOG);
+#endif
+		PANIC();
+		return;
+	}
+
+	bk_wdt_force_feed();
+	/* Proof of life for NMI deadman: HPWORK is making progress. */
+	g_wdt_nmi_feed_credit = g_wdt_nmi_feed_credit_reload;
+	armino_wdg_schedule_feed_worker(priv, armino_wdg_worker_delay_ms(priv));
+}
+
+static void armino_wdg_schedule_feed_worker(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t delay_ms)
+{
+	uint32_t ticks = MSEC2TICK(delay_ms);
+
+	if (ticks == 0u) {
+		ticks = 1u;
+	}
+
+	(void)work_queue(HPWORK, &priv->feed_work, armino_wdg_feed_worker, priv, ticks);
+}
+
+static void armino_wdg_cancel_feed_worker(FAR struct armino_wdg_lowerhalf_s *priv)
+{
+	(void)work_cancel(HPWORK, &priv->feed_work);
+}
+
+static void armino_wdg_start_hw(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t ms)
+{
+	g_wdt_nmi_feed_enabled = true;
+	(void)bk_wdt_start(ms);
+	(void)priv;
 }
 
 /****************************************************************************
- * Name: armino_wdg_recalc_segments
+ * Name: armino_wdg_update_hw_feed_plan
  *
  * Description:
- *   Derive slice / last / nmi_total from logical timeout T (milliseconds).
+ *   Derive hw feed period/slots from logical timeout (milliseconds).
  *
  ****************************************************************************/
 
-static void armino_wdg_recalc_segments(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t logical_ms)
+static void armino_wdg_update_hw_feed_plan(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t logical_ms)
 {
 	uint32_t hw_max;
 	uint32_t slice_cap;
 	uint32_t n;
 
 	if (logical_ms == 0) {
-		priv->wdg_slice_ms = 0;
-		priv->wdg_last_slice_ms = 0;
-		priv->wdg_nmi_total = 1;
-		priv->wdg_nmi_seen = 0;
-		priv->wdg_hw_armed_ms = 0;
-		g_wdg_nmi_last_ms = 0;
+		priv->hw_feed_period_ms = 0;
+		priv->hw_feed_slots = 1;
 		return;
 	}
 
@@ -215,78 +349,45 @@ static void armino_wdg_recalc_segments(FAR struct armino_wdg_lowerhalf_s *priv, 
 		slice_cap = hw_max;
 	}
 
-	if (slice_cap > logical_ms) {
-		slice_cap = logical_ms;
-	}
-
 	n = (logical_ms + slice_cap - 1u) / slice_cap;
 	if (n == 0) {
 		n = 1;
 	}
 
-	priv->wdg_slice_ms = slice_cap;
-	priv->wdg_nmi_total = n;
-	priv->wdg_last_slice_ms = logical_ms - (n - 1u) * slice_cap;
-	if (priv->wdg_last_slice_ms == 0) {
-		priv->wdg_last_slice_ms = slice_cap;
-	}
-
-	priv->wdg_nmi_seen = 0;
-	g_wdg_nmi_last_ms = 0;
+	priv->hw_feed_period_ms = slice_cap;
+	priv->hw_feed_slots = n;
 }
 
 /****************************************************************************
- * Name: armino_wdg_program_first_slice
+ * Name: armino_wdg_arm_hw_feed_window
  *
  * Description:
- *   Program hardware for first slice after recalc.
+ *   Program watchdog hardware window from current plan.
  *
  ****************************************************************************/
 
-static void armino_wdg_program_first_slice(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t logical_ms)
+static void armino_wdg_arm_hw_feed_window(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t logical_ms)
 {
-	if (priv->wdg_nmi_total == 1u) {
-		(void)bk_wdt_start(logical_ms);
-		priv->wdg_hw_armed_ms = logical_ms;
+	uint32_t hw_window_ms;
+
+	if (priv->hw_feed_slots == 1u) {
+		hw_window_ms = logical_ms;
 	} else {
-		(void)bk_wdt_start(priv->wdg_slice_ms);
-		priv->wdg_hw_armed_ms = priv->wdg_slice_ms;
+		hw_window_ms = priv->hw_feed_period_ms;
 	}
-}
 
-/****************************************************************************
- * Name: armino_wdg_panic_arm_slack
- *
- * Description:
- *   When the last logical slice is very short, the HW period after the final
- *   NMI is too small for PANIC/assert printing; re-arm with a longer window.
- *
- ****************************************************************************/
-
-static void armino_wdg_panic_arm_slack(FAR struct armino_wdg_lowerhalf_s *priv)
-{
-	uint32_t arm_ms;
-	uint32_t hw_max;
-
-	/* Use > debounce (not >=): logical 100 ms is last_slice_ms==100 and must
-	 * still get a longer HW window before PANIC(), otherwise dump is truncated.
+	/* Dynamic deadman credit: make NMI-only hang window follow timeout.
+	 * credits = number of intermediate HW slices before the final one.
+	 * slots=1 means no intermediate slice => no NMI feed credit.
 	 */
-	if (priv->wdg_last_slice_ms == 0u ||
-	    priv->wdg_last_slice_ms > ARMINO_WDG_NMI_DEBOUNCE_MS) {
-		return;
+	if (priv->hw_feed_slots > 0u) {
+		g_wdt_nmi_feed_credit_reload = (int32_t)(priv->hw_feed_slots - 1u);
+	} else {
+		g_wdt_nmi_feed_credit_reload = 0;
 	}
+	g_wdt_nmi_feed_credit = g_wdt_nmi_feed_credit_reload;
 
-	hw_max = armino_wdt_hw_max_ms();
-	arm_ms = ARMINO_WDG_PANIC_PREARM_MS;
-	if (arm_ms > hw_max) {
-		arm_ms = hw_max;
-	}
-	if (arm_ms < 1u) {
-		return;
-	}
-
-	(void)bk_wdt_start(arm_ms);
-	priv->wdg_hw_armed_ms = arm_ms;
+	armino_wdg_start_hw(priv, hw_window_ms);
 }
 
 /****************************************************************************
@@ -294,6 +395,21 @@ static void armino_wdg_panic_arm_slack(FAR struct armino_wdg_lowerhalf_s *priv)
  *
  * Description:
  *   WDT timeout interrupt
+ *
+ *   NMI context restrictions (must keep this handler minimal):
+ *   - DO NOT call any blocking APIs (sleep/usleep/wait/sem/mutex/queue, etc.)
+ *   - DO NOT call complex OS services (workqueue, memory alloc/free, filesystem,
+ *     or other paths that may depend on scheduler state)
+ *   - DO NOT call normal logging interfaces (printf/lldbg/syslog/BK_LOG*, etc.)
+ *     because logging paths may use locks/buffers/queues and are not NMI-safe
+ *   - Keep operations deterministic and short; prefer direct register access only
+ *
+ *   Deadman in RESET mode:
+ *     The handler will refuse to feed once the HPWORK-supplied credit
+ *     (g_wdt_nmi_feed_credit) is exhausted. This guarantees that a stalled
+ *     HPWORK cannot be hidden by NMI keepalive: after a bounded number of
+ *     NMI cycles without HPWORK progress, NMI stops feeding and the HW
+ *     watchdog is allowed to reset the system.
  *
  * Input Parameters:
  *   Usual interrupt handler arguments.
@@ -306,112 +422,51 @@ static void armino_wdg_panic_arm_slack(FAR struct armino_wdg_lowerhalf_s *priv)
 static int armino_nmi_interrupt(int irq, void *context, FAR void *arg)
 {
 	struct armino_wdg_lowerhalf_s *priv = (struct armino_wdg_lowerhalf_s *)arg;
-	static bool s_nmi_occur = false;
 
 	DEBUGASSERT(priv);
 	if (!priv) {
 		return -ENODEV;
 	}
 
-	if (s_nmi_occur) {
-		aon_pmu_drv_wdt_change_not_rosc_clk();
-		aon_pmu_drv_wdt_rst_dev_enable();
-		while (1) {
-		}
+	(void)irq;
+	(void)context;
+
+	if (!g_wdt_nmi_feed_enabled) {
+		return OK;
 	}
 
-	if (REBOOT_TAG_REQ == sys_get_reboot_tag()) {
-		while (1) {
-		}
-	}
-
-	if (priv->wdt_status == WDT_START && priv->wdg_nmi_total > 0u) {
-		uint64_t now_ms;
-		uint64_t prev_ms;
-
-		now_ms = ((uint64_t)bk_aon_rtc_get_current_tick(AON_RTC_ID_1) * 1000ULL) /
-				 (uint64_t)bk_rtc_get_clock_freq();
-		prev_ms = g_wdg_nmi_last_ms;
-		/* Drop duplicate NMI edges shortly after arming a long slice. The legacy
-		 * debounce below disables itself while 0 < seen < total, so a spurious
-		 * second NMI right after bk_wdt_start(20000) could bump seen twice and
-		 * falsely expire the logical window. If armed slice > debounce window,
-		 * a real timeout cannot occur within debounce_ms; feed and ignore.
-		 * Final slices <= ARMINO_WDG_NMI_DEBOUNCE_MS still rely on the next
-		 * check so legitimate sub-debounce fires are not dropped.
+	if (!priv->int_mode) {
+		/* RESET mode: keepalive by direct register writes only.
+		 * During panic/reboot flow, stop feeding so HW fallback reset can fire.
 		 */
-		if (prev_ms != 0u && (now_ms - prev_ms) < ARMINO_WDG_NMI_DEBOUNCE_MS &&
-		    priv->wdg_hw_armed_ms > ARMINO_WDG_NMI_DEBOUNCE_MS) {
-			g_wdg_nmi_last_ms = now_ms;
-			(void)bk_wdt_feed();
-			s_nmi_occur = false;
+		if (priv->panic_firing) {
 			return OK;
 		}
-		/* Do not debounce legitimate slice-chain NMIs: the next fire can be
-		 * much sooner than ARMINO_WDG_NMI_DEBOUNCE_MS (e.g. last slice 1 ms
-		 * when logical_ms == slice_cap + 1). Treating that as bounce only
-		 * feeds the WDT and breaks multi-slice expiry (possible hard fault).
+
+		/* NMI deadman: HPWORK must replenish credit to keep us feeding.
+		 * If credit is exhausted, the HPWORK feeder thread has not made
+		 * progress for several NMI cycles (likely stalled). Stop feeding
+		 * so the hardware watchdog can expire and reset the system,
+		 * preventing indefinite NMI-only keepalive of a hung system.
 		 */
-		if (prev_ms != 0u && (now_ms - prev_ms) < ARMINO_WDG_NMI_DEBOUNCE_MS &&
-		    !(priv->wdg_nmi_seen > 0u && priv->wdg_nmi_seen < priv->wdg_nmi_total)) {
-			g_wdg_nmi_last_ms = now_ms;
-			(void)bk_wdt_feed();
-			s_nmi_occur = false;
+		if (g_wdt_nmi_feed_credit <= 0) {
 			return OK;
 		}
+		g_wdt_nmi_feed_credit--;
 
-		g_wdg_nmi_last_ms = now_ms;
-		priv->wdg_nmi_seen++;
-
-		if (priv->wdg_nmi_seen < priv->wdg_nmi_total) {
-			uint32_t next_ms;
-
-			if (priv->wdg_nmi_seen < priv->wdg_nmi_total - 1u) {
-				next_ms = priv->wdg_slice_ms;
-			} else {
-				next_ms = priv->wdg_last_slice_ms;
-			}
-
-			(void)bk_wdt_start(next_ms);
-			priv->wdg_hw_armed_ms = next_ms;
-			s_nmi_occur = false;
-			return OK;
-		}
-
-		priv->wdg_nmi_seen = 0;
+		wdt_hal_nmi_direct_feed();
+		return OK;
 	}
 
-	s_nmi_occur = true;
-
-	if (priv->int_mode) {
-		/* Yes... NOTE:  This interrupt service routine (ISR) must reload
-		* the WDT counter to prevent the reset.  Otherwise, we will reset
-		* about 8 ticks.
-		*/
-		bk_misc_set_reset_reason(RESET_SOURCE_WATCHDOG);
-		if (priv->handler) {
-			bk_wdt_feed();
-			priv->handler(irq, context, NULL);
-		}
-
-	} else {
-
-		(void)irqsave();
-		bk_wdt_feed();
-		armino_wdg_panic_arm_slack(priv);
-		if (REBOOT_TAG_REQ != sys_get_reboot_tag()) {
-			bk_misc_set_reset_reason(RESET_SOURCE_WATCHDOG);
-		}
-		aon_pmu_drv_wdt_change_not_rosc_clk();
-		aon_pmu_drv_wdt_rst_dev_enable();
-		PANIC();
-		while (1) {
-		}
+	/* Capture mode compatibility path: feed once then invoke user handler. */
+	if (priv->handler) {
+		wdt_hal_nmi_direct_feed();
+		priv->handler(irq, context, NULL);
 	}
 
 	return OK;
-
 }
+
 /****************************************************************************
  * Name: armino_wdg_start
  *
@@ -433,15 +488,17 @@ static int armino_wdg_start(FAR struct watchdog_lowerhalf_s *lower)
 	if (!priv) {
 		return -ENODEV;
 	}
+
 	if (priv->wdt_status == WDT_STOP) {
 		/* Start watchdog timer */
-		armino_wdg_recalc_segments(priv, priv->timeout_ms);
-		armino_wdg_program_first_slice(priv, priv->timeout_ms);
+		priv->panic_firing = false;
+		armino_wdg_update_hw_feed_plan(priv, priv->timeout_ms);
+		armino_wdg_arm_hw_feed_window(priv, priv->timeout_ms);
 		priv->wdt_status = WDT_START;
 		priv->start_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);	// Record time right after wdt start
-		priv->pause_start_tick = 0;
-		priv->total_pause_duration = 0;
 		priv->timeout_left = priv->timeout_ms;	/* epoch for GETSTATUS timeleft */
+		armino_wdg_cancel_feed_worker(priv);
+		armino_wdg_schedule_feed_worker(priv, armino_wdg_worker_delay_ms(priv));
 		return OK;
 	}
 
@@ -471,11 +528,13 @@ static int armino_wdg_stop(FAR struct watchdog_lowerhalf_s *lower)
 	}
 
 	/* Stop watchdog timer */
+	armino_wdg_cancel_feed_worker(priv);
 	close_wdt();
-	priv->wdg_nmi_total = 0;
-	priv->wdg_nmi_seen = 0;
-	priv->wdg_hw_armed_ms = 0;
-	g_wdg_nmi_last_ms = 0;
+	g_wdt_nmi_feed_enabled = false;
+	g_wdt_nmi_feed_credit = 0;
+	g_wdt_nmi_feed_credit_reload = 0;
+	priv->hw_feed_slots = 0;
+	priv->panic_firing = false;
 	priv->wdt_status = WDT_STOP;
 
 	return OK;
@@ -506,12 +565,13 @@ static int armino_wdg_keepalive(FAR struct watchdog_lowerhalf_s *lower)
 	}
 	if (priv->wdt_status == WDT_START) {
 		/* Petting the dog: restart logical window from full timeout */
+		priv->panic_firing = false;
 		priv->start_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-		priv->pause_start_tick = 0;
-		priv->total_pause_duration = 0;
 		priv->timeout_left = priv->timeout_ms;
-		armino_wdg_recalc_segments(priv, priv->timeout_ms);
-		armino_wdg_program_first_slice(priv, priv->timeout_ms);
+		armino_wdg_update_hw_feed_plan(priv, priv->timeout_ms);
+		armino_wdg_arm_hw_feed_window(priv, priv->timeout_ms);
+		armino_wdg_cancel_feed_worker(priv);
+		armino_wdg_schedule_feed_worker(priv, armino_wdg_worker_delay_ms(priv));
 		return OK;
 	}
 
@@ -562,13 +622,11 @@ static int armino_wdg_getstatus(FAR struct watchdog_lowerhalf_s *lower, FAR stru
 		uint64_t elapsed_ticks;
 
 		/* Remaining in the current arm: timeout_left at last start/resume/keepalive
-		 * minus wall time since start_tick. Do not subtract total_pause_duration here:
-		 * RESUME resets start_tick but used to leave total_pause_duration set, which
-		 * caused unsigned underflow and bogus timeleft.
+		 * minus wall time since start_tick.
 		 */
 		now_tick = (uint64_t)bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-		elapsed_ticks = now_tick - (uint64_t)priv->start_tick;
-		time_elapse_ms = (uint32_t)((elapsed_ticks * 1000ULL) / (uint64_t)bk_rtc_get_clock_freq());
+		elapsed_ticks = now_tick - priv->start_tick;
+		time_elapse_ms = armino_wdg_ticks_to_ms(elapsed_ticks);
 		if (time_elapse_ms > priv->timeout_left) {
 			time_elapse_ms = priv->timeout_left;
 		}
@@ -616,10 +674,13 @@ static int armino_wdg_settimeout(FAR struct watchdog_lowerhalf_s *lower, uint32_
 
 	/* Re-start watchdog only if the status is WDT_START */
 	if (priv->wdt_status == WDT_START) {
-		armino_wdg_recalc_segments(priv, priv->timeout_ms);
-		armino_wdg_program_first_slice(priv, priv->timeout_ms);
+		priv->panic_firing = false;
+		armino_wdg_update_hw_feed_plan(priv, priv->timeout_ms);
+		armino_wdg_arm_hw_feed_window(priv, priv->timeout_ms);
 		priv->start_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);	// Record time right after wdt start
 		priv->timeout_left = priv->timeout_ms;
+		armino_wdg_cancel_feed_worker(priv);
+		armino_wdg_schedule_feed_worker(priv, armino_wdg_worker_delay_ms(priv));
 	}
 
 	return OK;
@@ -664,8 +725,8 @@ static xcpt_t armino_wdg_capture(FAR struct watchdog_lowerhalf_s *lower, xcpt_t 
 	/* Set to default RESET_MODE first */
 	if (priv->wdt_status == WDT_START) {
 		uint64_t now_tick = (uint64_t)bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-		uint64_t elapsed_ticks = now_tick - (uint64_t)priv->start_tick;
-		uint32_t time_elapse_ms = (uint32_t)((elapsed_ticks * 1000ULL) / (uint64_t)bk_rtc_get_clock_freq());
+		uint64_t elapsed_ticks = now_tick - priv->start_tick;
+		uint32_t time_elapse_ms = armino_wdg_ticks_to_ms(elapsed_ticks);
 
 		if (time_elapse_ms > priv->timeout_left) {
 			time_elapse_ms = priv->timeout_left;
@@ -673,7 +734,6 @@ static xcpt_t armino_wdg_capture(FAR struct watchdog_lowerhalf_s *lower, xcpt_t 
 
 		priv->timeout_left -= time_elapse_ms;
 	}
-	// watchdog_init(priv->timeout_left);	// Re-init watchdog with remaining timeout
 	priv->timeout_ms = priv->timeout_left;
 	if (priv->timeout_ms > ARMINO_WDG_MAX_SOFT_MS) {
 		priv->timeout_ms = ARMINO_WDG_MAX_SOFT_MS;
@@ -683,18 +743,20 @@ static xcpt_t armino_wdg_capture(FAR struct watchdog_lowerhalf_s *lower, xcpt_t 
 
 	/* Change to INT_MODE if handler exists */
 	if (handler) {
-		// watchdog_irq_init((void *)priv->handler, (uint32_t)priv);	// INT_MODE enabled
 		priv->int_mode = true;
 	}
 
 	/* Re-start watchdog only if the status is WDT_START */
 	if (priv->wdt_status == WDT_START) {
-		armino_wdg_recalc_segments(priv, priv->timeout_ms);
-		armino_wdg_program_first_slice(priv, priv->timeout_ms);
+		priv->panic_firing = false;
+		armino_wdg_update_hw_feed_plan(priv, priv->timeout_ms);
+		armino_wdg_arm_hw_feed_window(priv, priv->timeout_ms);
 		priv->start_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);	// Record time right after wdt start
-		priv->pause_start_tick = 0;
-		priv->total_pause_duration = 0;
 		priv->timeout_left = priv->timeout_ms;
+		armino_wdg_cancel_feed_worker(priv);
+		armino_wdg_schedule_feed_worker(priv, armino_wdg_worker_delay_ms(priv));
+	} else {
+		armino_wdg_cancel_feed_worker(priv);
 	}
 
 	return oldhandler;
@@ -733,10 +795,15 @@ static int armino_wdg_ioctl(FAR struct watchdog_lowerhalf_s *lower, int cmd, uns
 		uint64_t elapsed_ticks;
 		uint32_t time_elapse_ms;
 
+		/* Pause is valid only while watchdog is running. */
+		if (priv->wdt_status != WDT_START) {
+			return -EPERM;
+		}
+
 		/* Freeze remaining = epoch timeout_left minus time since start_tick */
 		now_tick = (uint64_t)bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-		elapsed_ticks = now_tick - (uint64_t)priv->start_tick;
-		time_elapse_ms = (uint32_t)((elapsed_ticks * 1000ULL) / (uint64_t)bk_rtc_get_clock_freq());
+		elapsed_ticks = now_tick - priv->start_tick;
+		time_elapse_ms = armino_wdg_ticks_to_ms(elapsed_ticks);
 		if (time_elapse_ms > priv->timeout_left) {
 			time_elapse_ms = priv->timeout_left;
 		}
@@ -744,7 +811,6 @@ static int armino_wdg_ioctl(FAR struct watchdog_lowerhalf_s *lower, int cmd, uns
 		priv->timeout_left -= time_elapse_ms;
 
 		armino_wdg_stop((struct watchdog_lowerhalf_s *)priv);
-		priv->pause_start_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
 		priv->wdt_status = WDT_PAUSE;
 	}
 	break;
@@ -752,12 +818,12 @@ static int armino_wdg_ioctl(FAR struct watchdog_lowerhalf_s *lower, int cmd, uns
 	case WDIOC_RESUME: {
 		/* Pre-assumption: the WDIOC_PAUSE can only be resumed by WDIOC_RESUME */
 		if (priv->wdt_status == WDT_PAUSE) {
-			priv->total_pause_duration = 0;
-			priv->pause_start_tick = 0;
 			priv->wdt_status = WDT_START;
-			armino_wdg_recalc_segments(priv, priv->timeout_left);
-			armino_wdg_program_first_slice(priv, priv->timeout_left);
+			armino_wdg_update_hw_feed_plan(priv, priv->timeout_left);
+			armino_wdg_arm_hw_feed_window(priv, priv->timeout_left);
 			priv->start_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
+			armino_wdg_cancel_feed_worker(priv);
+			armino_wdg_schedule_feed_worker(priv, armino_wdg_worker_delay_ms(priv));
 			/* timeout_left unchanged: remaining ms for this arm (GETSTATUS epoch) */
 		}
 	}
@@ -793,10 +859,9 @@ int armino_wdg_initialize(const char *devpath)
 	priv->ops = &g_wdgops;
 	priv->handler = NULL;
 
-	/* Initializes the watchdog, include time setting, mode register */
-	// watchdog_init(timeout_ms);
 	priv->wdt_status = WDT_STOP;
 	priv->int_mode = false;
+	priv->panic_firing = false;
 
 	irq_attach(ARMINO_IRQ_NMI, armino_nmi_interrupt, (void *)priv);
 	up_enable_irq(ARMINO_IRQ_NMI);
@@ -831,6 +896,9 @@ void up_wdog_keepalive(void)
 
 void up_watchdog_disable(void)
 {
+	g_wdt_nmi_feed_enabled = false;
+	g_wdt_nmi_feed_credit = 0;
+	g_wdt_nmi_feed_credit_reload = 0;
 	bk_wdt_stop();
 }
 

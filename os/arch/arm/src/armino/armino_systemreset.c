@@ -57,8 +57,12 @@
 
 #include <stdint.h>
 #include <tinyara/board.h>
+#include <tinyara/config.h>
 #include "up_arch.h"
 #include "system.h"
+#if defined(CONFIG_WATCHDOG)
+extern void up_watchdog_disable(void);
+#endif
 
 /****************************************************************************
  * Name: up_systemreset
@@ -69,6 +73,10 @@
  ****************************************************************************/
 static void up_systemreset(void)
 {
+#if defined(CONFIG_WATCHDOG)
+	/* Stop arch watchdog keepalive sources before force-reboot loop. */
+	up_watchdog_disable();
+#endif
     bk_reboot_reset_reason();
 
 	/* Wait for the reset */
