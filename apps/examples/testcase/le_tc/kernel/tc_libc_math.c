@@ -2368,7 +2368,7 @@ static void tc_libc_math_jn(void)
 {
 	const double in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p302, 0x1p-29, 0x1p-30, 0x1p-40 };
 	const double sol_val[][7] = { {ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO}, { -ZERO, ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO}, {ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO}, { -ZERO, ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO}, {ZERO, ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO}, {ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO}, {ZERO, ZERO, -ZERO, ZERO, -ZERO, ZERO, -ZERO}, {NAN, NAN, NAN, NAN, NAN, NAN, NAN}, {ZERO, -ZERO, -ZERO, ZERO, ZERO, -ZERO, -ZERO}, { -ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO}, { -ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO}, { -ZERO, 1.0, ZERO, ZERO, ZERO, ZERO, ZERO} };
-	double ret_val[SIZE(sol_val, double)][7];
+	double ret_val[SIZE(in_val, double)][7];
 	int jn_idx;
 	int order_idx;
 
@@ -2398,7 +2398,7 @@ static void tc_libc_math_jnf(void)
 	const float in_val[] = { ZERO, VAL1, -VAL1, VAL2, -VAL2, INFINITY, -INFINITY, NAN, 0x1p-10, 0x1p-20, 0x2p-30 };
 	int order[] = { -1, 0, 1, 2, 9 };
 	const float sol_val[][SIZE(order, int)] = { { -ZERO, 1.0, ZERO, ZERO, ZERO}, { -ZERO, ZERO, ZERO, -ZERO, ZERO}, {ZERO, ZERO, -ZERO, -ZERO, -ZERO}, { -ZERO, ZERO, ZERO, -ZERO, ZERO}, {ZERO, ZERO, -ZERO, -ZERO, -ZERO}, { -ZERO, ZERO, ZERO, ZERO, ZERO}, {ZERO, ZERO, -ZERO, ZERO, -ZERO}, {NAN, NAN, NAN, NAN, NAN}, { -0.0004883, 0.9999998, 0.0004883, 0.0000001, ZERO}, { -0.0000005, 1.0, 0.0000005, ZERO, ZERO}, { -ZERO, 1.0, ZERO, ZERO, ZERO} };
-	float ret_val[SIZE(sol_val, float)][SIZE(order, int)];
+	float ret_val[SIZE(in_val, float)][SIZE(order, int)];
 	int jnf_idx;
 	int order_idx;
 
