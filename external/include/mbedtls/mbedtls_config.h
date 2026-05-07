@@ -45,7 +45,7 @@
  *
  * This module provides networking routines.
  */
-// #define MBEDTLS_NET_C  // Disabled for TizenRT - not compatible with embedded platforms
+#define MBEDTLS_NET_C
 
 /**
  * \def MBEDTLS_TIMING_ALT
