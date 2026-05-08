@@ -249,6 +249,8 @@ struct binmgr_bp_recovery_info_s {
 	int inuse_idx;
 	int active_set;
 	uint32_t bp_version;
+	uint32_t highest_version_a;
+	uint32_t highest_version_b;
 };
 typedef struct binmgr_bp_recovery_info_s binmgr_bp_recovery_info_t;
 
@@ -351,12 +353,15 @@ int binary_manager_update_kernel_binary(void);
 binmgr_resinfo_t *binary_manager_get_resdata(void);
 int binary_manager_unmount_resource(void);
 int binary_manager_verify_resource(uint8_t part_idx);
+uint32_t binary_manager_get_resource_version(uint8_t part_idx);
 int binary_manager_check_resource_update(bool check_updatable);
 #endif
 int binary_manager_verify_kbin(uint8_t part_idx);
+uint32_t binary_manager_get_kbin_version(uint8_t part_idx);
 int binary_manager_check_kernel_update(bool check_updatable);
 #ifdef CONFIG_APP_BINARY_SEPARATION
 int binary_manager_verify_ubin(int bin_idx, uint8_t part_idx);
+uint32_t binary_manager_get_ubin_version(int bin_idx, uint8_t part_idx);
 int binary_manager_check_user_update(int bin_idx, bool check_updatable);
 #endif
 

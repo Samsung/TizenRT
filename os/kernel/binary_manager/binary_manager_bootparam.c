@@ -37,7 +37,7 @@ static binmgr_bpinfo_t g_bp_info;
 static binmgr_bp_recovery_info_t g_bp_recovery_info;
 
 #define BP_SEEK_OFFSET(index)   (index == 0 ? 0 : BOOTPARAM_PARTSIZE / 2)
-#define FACTORY_KBIN_VERSION    101
+#define FACTORY_BIN_VERSION     101
 
 /****************************************************************************
  * Public Functions
@@ -473,16 +473,18 @@ static int binary_manager_make_bootparam_from_partitions(binmgr_bpdata_t *bp_dat
 }
 
 /****************************************************************************
- * Name: binary_manager_validate_set
+ * Name: binary_manager_get_valid_set_highest_version
  *
  * Description:
- *	 This function validates all binaries in given set_idx and returns false on the
- *	 first invalid binary.
+ *	 This function validates all binaries in given set_idx and returns the highest
+ *	 binary version. It returns 0 if the set is invalid.
  *
  ****************************************************************************/
-static bool binary_manager_validate_set(uint8_t set_idx)
+static uint32_t binary_manager_get_valid_set_highest_version(uint8_t set_idx)
 {
 	int ret;
+	uint32_t version;
+	uint32_t highest_version = 0;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	int bin_idx;
 	uint32_t bin_count;
@@ -490,14 +492,23 @@ static bool binary_manager_validate_set(uint8_t set_idx)
 
 	if (set_idx >= PARTS_PER_BIN) {
 		bmdbg("Invalid set validation parameter, set idx %u\n", set_idx);
-		return false;
+		return 0;
 	}
 
 	ret = binary_manager_verify_kbin(set_idx);
 	if (ret != BINMGR_OK) {
 		bmdbg("Set %s kernel validation FAIL, ret %d\n", GET_PARTNAME(set_idx), ret);
-		return false;
+		return 0;
 	}
+
+	version = binary_manager_get_kbin_version(set_idx);
+	if (version == 0) {
+		return 0;
+	}
+	if (version > highest_version) {
+		highest_version = version;
+	}
+	bmvdbg("Set %s kernel validation PASS, version %u\n", GET_PARTNAME(set_idx), version);
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	bin_count = binary_manager_get_ucount();
@@ -508,15 +519,23 @@ static bool binary_manager_validate_set(uint8_t set_idx)
 
 		if (set_idx >= BIN_COUNT(bin_idx)) {
 			bmdbg("Set %s app[%d:%s] has no partition, part count %u\n", GET_PARTNAME(set_idx), bin_idx, BIN_NAME(bin_idx), BIN_COUNT(bin_idx));
-			return false;
+			return 0;
 		}
 
 		ret = binary_manager_verify_ubin(bin_idx, set_idx);
 		if (ret != BINMGR_OK) {
 			bmdbg("Set %s app[%d:%s] validation FAIL, ret %d\n", GET_PARTNAME(set_idx), bin_idx, BIN_NAME(bin_idx), ret);
-			return false;
+			return 0;
 		}
-		bmvdbg("Set %s app[%d:%s] validation PASS\n", GET_PARTNAME(set_idx), bin_idx, BIN_NAME(bin_idx));
+
+		version = binary_manager_get_ubin_version(bin_idx, set_idx);
+		if (version == 0) {
+			return 0;
+		}
+		if (version > highest_version) {
+			highest_version = version;
+		}
+		bmvdbg("Set %s app[%d:%s] validation PASS, version %u\n", GET_PARTNAME(set_idx), bin_idx, BIN_NAME(bin_idx), version);
 	}
 #endif
 
@@ -524,45 +543,21 @@ static bool binary_manager_validate_set(uint8_t set_idx)
 	ret = binary_manager_verify_resource(set_idx);
 	if (ret != BINMGR_OK) {
 		bmdbg("Set %s resource validation FAIL, ret %d\n", GET_PARTNAME(set_idx), ret);
-		return false;
+		return 0;
 	}
-	bmvdbg("Set %s resource validation PASS\n", GET_PARTNAME(set_idx));
+	version = binary_manager_get_resource_version(set_idx);
+	if (version == 0) {
+		return 0;
+	}
+	if (version > highest_version) {
+		highest_version = version;
+	}
+	bmvdbg("Set %s resource validation PASS, version %u\n", GET_PARTNAME(set_idx), version);
 #endif
 
-	bmdbg("Set %s validation PASS\n", GET_PARTNAME(set_idx));
+	bmdbg("Set %s validation PASS, highest version %u\n", GET_PARTNAME(set_idx), highest_version);
 
-	return true;
-}
-
-/****************************************************************************
- * Name: binary_manager_get_kbin_version
- *
- * Description:
- *	 This function reads the kernel binary version from the given set.
- *	 It returns 0 if any step fails.
- *
- ****************************************************************************/
-static uint32_t binary_manager_get_kbin_version(uint8_t set_idx)
-{
-	int ret;
-	binmgr_kinfo_t *kdata;
-	kernel_binary_header_t header_data;
-	char filepath[BINARY_PATH_LEN];
-
-	kdata = binary_manager_get_kdata();
-	if (!kdata || set_idx >= kdata->part_count) {
-		bmdbg("Invalid kernel version request, set idx %u\n", set_idx);
-		return 0;
-	}
-
-	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kdata->part_info[set_idx].devnum);
-	ret = binary_manager_read_header(BINARY_KERNEL, filepath, &header_data, true);
-	if (ret != BINMGR_OK) {
-		bmdbg("Fail to read kernel header, set %s, devpath %s, ret %d\n", GET_PARTNAME(set_idx), filepath, ret);
-		return 0;
-	}
-
-	return header_data.version;
+	return highest_version;
 }
 
 /****************************************************************************
@@ -622,40 +617,31 @@ int binary_manager_recover_bootparam_set(void)
 	uint8_t target_set;
 	uint8_t write_bp_idx;
 	uint32_t new_version;
-	uint32_t set_a_version;
-	uint32_t set_b_version;
 	uint32_t target_version;
 	binmgr_bpdata_t update_bp_data;
-	bool set_a_valid;
-	bool set_b_valid;
 
 	bmdbg("BP set recovery required. valid BP %d, active idx %d, BP version %u\n", g_bp_recovery_info.has_valid_bp, g_bp_recovery_info.active_set, g_bp_recovery_info.bp_version);
 
-	set_a_valid = binary_manager_validate_set(0);
-	set_b_valid = binary_manager_validate_set(1);
-	set_a_version = set_a_valid ? binary_manager_get_kbin_version(0) : 0;
-	set_b_version = set_b_valid ? binary_manager_get_kbin_version(1) : 0;
+	g_bp_recovery_info.highest_version_a = binary_manager_get_valid_set_highest_version(0);
+	g_bp_recovery_info.highest_version_b = binary_manager_get_valid_set_highest_version(1);
 
-	bmdbg("Set A valid %d, version %u, Set B valid %d, version %u\n", set_a_valid, set_a_version, set_b_valid, set_b_version);
+	bmdbg("Set A highest version %u, Set B highest version %u\n", g_bp_recovery_info.highest_version_a, g_bp_recovery_info.highest_version_b);
 
-	if (set_a_valid && set_b_valid) {
-		if (g_bp_recovery_info.has_valid_bp) {
-			target_set = g_bp_recovery_info.active_set;
-		} else {
-			target_set = set_a_version > set_b_version ? 0 : 1;
-		}
+	if (g_bp_recovery_info.highest_version_a >= g_bp_recovery_info.highest_version_b) {
+		target_set = 0;
+		target_version = g_bp_recovery_info.highest_version_a;
 	} else {
-		target_set = set_a_valid ? 0 : 1;
+		target_set = 1;
+		target_version = g_bp_recovery_info.highest_version_b;
 	}
 
-	target_version = target_set == 0 ? set_a_version : set_b_version;
-	if (target_version == 0 || target_version == FACTORY_KBIN_VERSION) {
-		bmdbg("Invalid target kernel version, set %s, version %u. Reboot as recovery fail\n", GET_PARTNAME(target_set), target_version);
+	if (target_version == 0 || target_version == FACTORY_BIN_VERSION) {
+		bmdbg("Invalid target binary version, set %s, highest version %u. Reboot as recovery fail\n", GET_PARTNAME(target_set), target_version);
 		binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
 		return BINMGR_OPERATION_FAIL;
 	}
 
-	bmdbg("Select set %s for BP set alignment.\n", GET_PARTNAME(target_set));
+	bmdbg("Select set %s for BP set alignment by highest version %u\n", GET_PARTNAME(target_set), target_version);
 
 	new_version = g_bp_recovery_info.has_valid_bp ? g_bp_recovery_info.bp_version + 1 : 1;
 	ret = binary_manager_make_bootparam_from_partitions(&update_bp_data, target_set, new_version);

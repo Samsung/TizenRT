@@ -123,6 +123,34 @@ int binary_manager_verify_resource(uint8_t part_idx)
 }
 
 /****************************************************************************
+ * Name: binary_manager_get_resource_version
+ *
+ * Description:
+ *	 This function reads the resource binary version from part_idx.
+ *
+ ****************************************************************************/
+uint32_t binary_manager_get_resource_version(uint8_t part_idx)
+{
+	int ret;
+	char filepath[BINARY_PATH_LEN];
+	resource_binary_header_t header_data;
+
+	if (part_idx >= resource_info.part_count) {
+		bmdbg("Invalid resource part idx %u, part count %u\n", part_idx, resource_info.part_count);
+		return 0;
+	}
+
+	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[part_idx].devnum);
+	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, &header_data, false);
+	if (ret != BINMGR_OK) {
+		bmdbg("Fail to read resource header, set %s, devpath %s, ret %d\n", GET_PARTNAME(part_idx), filepath, ret);
+		return 0;
+	}
+
+	return header_data.version;
+}
+
+/****************************************************************************
  * Name: binary_manager_mount_resource
  *
  * Description:
