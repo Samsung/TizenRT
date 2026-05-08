@@ -2442,14 +2442,15 @@
 /** The null key identifier.
  */
 /* *INDENT-OFF* (https://github.com/ARM-software/psa-arch-tests/issues/337) */
-#define PSA_KEY_ID_NULL                         ((psa_key_id_t)0)
+#define PSA_KEY_ID_NULL                         ((psa_key_id_t) 0XFF)
 /* *INDENT-ON* */
 /** The minimum value for a key identifier chosen by the application.
  */
-#define PSA_KEY_ID_USER_MIN                     ((psa_key_id_t) 0x00000001)
+#define PSA_KEY_ID_USER_MIN          ((psa_key_id_t) 0)        // SE slot 0
 /** The maximum value for a key identifier chosen by the application.
+ *  64 slots available (1-63)
  */
-#define PSA_KEY_ID_USER_MAX                     ((psa_key_id_t) 0x3fffffff)
+#define PSA_KEY_ID_USER_MAX          ((psa_key_id_t) 63)       // SE slot 63
 /** The minimum value for a key identifier chosen by the implementation.
  */
 #define PSA_KEY_ID_VENDOR_MIN                   ((psa_key_id_t) 0x40000000)
