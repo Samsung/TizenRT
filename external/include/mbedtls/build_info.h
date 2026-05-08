@@ -59,6 +59,10 @@
 #error "Invalid config version, defined value of MBEDTLS_CONFIG_VERSION is unsupported"
 #endif
 
+#ifdef MBED_TIZENRT
+#include "mbedtls_tizenrt_config.h"
+#endif
+
 /* Target and application specific configurations
  *
  * Allow user to override any previous default.
