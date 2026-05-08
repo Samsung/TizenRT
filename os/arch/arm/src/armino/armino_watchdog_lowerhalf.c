@@ -318,8 +318,18 @@ static void armino_wdg_cancel_feed_worker(FAR struct armino_wdg_lowerhalf_s *pri
 
 static void armino_wdg_start_hw(FAR struct armino_wdg_lowerhalf_s *priv, uint32_t ms)
 {
+	int ret;
+
 	g_wdt_nmi_feed_enabled = true;
-	(void)bk_wdt_start(ms);
+	ret = bk_wdt_start(ms);
+	if (ret != BK_OK) {
+		/* Defensive fallback: if HW arm fails, close NMI feed gate to avoid
+		 * false "watchdog is armed" assumptions in subsequent flow.
+		 */
+		g_wdt_nmi_feed_enabled = false;
+		llvdbg("bk_wdt_start(%u) failed: %d\n", ms, ret);
+		DEBUGASSERT(ret == BK_OK);
+	}
 	(void)priv;
 }
 
