@@ -120,8 +120,10 @@ uint32_t *up_doirq(int irq, uint32_t *regs)
 	 * state of the interrupted user task.  current_regs should, therefor,
 	 * only be modified for outermost interrupt handler (when g_nestlevel == 0)
 	 */
-
-	irqrestore(flags);
+	/* No Need to restore interrupt here because it has already been restored
+	 * in up_exception.S before calling up_doirq
+	*/
+	//irqrestore(flags); 
 #else
 	uint32_t *savestate;
 
