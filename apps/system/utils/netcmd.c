@@ -236,7 +236,7 @@ static int _cmd_ifconfig_dhcp(int argc, char **argv)
 	if (argc == 4) {
 		return _cmd_ifconfig_dhcp_sethostname(argv[1], argv[3]);
 	}
-	return -1;
+	return OK;
 }
 
 static int _cmd_ifconfig_parse(int argc, char **argv, struct ifconfig_cmd_info_s *info)
@@ -254,7 +254,13 @@ static int _cmd_ifconfig_parse(int argc, char **argv, struct ifconfig_cmd_info_s
 	info->intf = argv[1];
 
 	if (strncmp(argv[2], "dhcp", strlen("dhcp") + 1) == 0) {
-		return _cmd_ifconfig_dhcp(argc, argv);
+		ret = _cmd_ifconfig_dhcp(argc, argv);
+		if (ret != OK) {
+			goto endout;
+		}
+
+		info->hostip = argv[2];
+		return OK;
 	}
 
 	for (i = 2; i < argc; i++) {
