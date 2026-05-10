@@ -240,7 +240,8 @@ static_assert(sizeof(binmgr_bpdata_t) <= BOOTPARAM_SIZE, "binmgr_bpdata_t size e
 struct binmgr_bpinfo_s {
 	uint8_t inuse_idx;
 	int part_num;
-	binmgr_bpdata_t bp_data;
+	binmgr_bpdata_t bp_data[BOOTPARAM_COUNT];
+	bool bp_valid[BOOTPARAM_COUNT];
 };
 typedef struct binmgr_bpinfo_s binmgr_bpinfo_t;
 
@@ -341,8 +342,11 @@ int binary_manager_create_entry(int requester_pid, char *bin_name, int version);
 void binary_manager_release_binary_sem(int bin_idx);
 void binary_manager_update_running_state(int bin_id);
 int binary_manager_get_index_with_name(char *bin_name);
+void binary_manager_dump_bpdata(void);
 int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info);
 binmgr_bpdata_t *binary_manager_get_bpdata(void);
+binmgr_bpdata_t *binary_manager_get_slot_bpdata(uint8_t bp_idx);
+bool binary_manager_get_slot_bpvalid(uint8_t bp_idx);
 int binary_manager_set_bpdata(binmgr_bpdata_t *bp_data);
 int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data);
 int binary_manager_get_inactive_path(int requester_pid, char *bin_name);

@@ -302,6 +302,7 @@ int binary_manager_check_update(void)
 	int ret;
 #ifdef CONFIG_USE_BP
 	binmgr_bpinfo_t bp_info;
+	binmgr_bpdata_t *bp_data;
 
 	/* Get the latest bootparam */
 	ret = binary_manager_scan_bootparam(&bp_info);
@@ -309,19 +310,20 @@ int binary_manager_check_update(void)
 		bmdbg("Fail to scan BP %d\n", ret);
 		return ret;
 	}
+	bp_data = &bp_info.bp_data[bp_info.inuse_idx];
 
 	/* Compare bootparam version with current running version */
-	if (binary_manager_get_bpdata()->head.version >= bp_info.bp_data.head.version) {
+	if (binary_manager_get_bpdata()->head.version >= bp_data->head.version) {
 		/* No bootparam update */
 		bmdbg("All binaries are running based on BP\n");
 		return BINMGR_NOT_FOUND;
 	}
 
 	/* Do kernel need to update? */
-	if (binary_manager_get_kdata()->inuse_idx != bp_info.bp_data.head.active_idx) {
+	if (binary_manager_get_kdata()->inuse_idx != bp_data->head.active_idx) {
 		/* Running partition and partition written in the latest BP are different.
 		 * Reboot to switch kernel binary in another partition. */
-		bmvdbg("Need to update to kernel binary in partition %d in the latest BP.\n", binary_manager_get_kdata()->part_info[bp_info.bp_data.head.active_idx].devnum);
+		bmvdbg("Need to update to kernel binary in partition %d in the latest BP.\n", binary_manager_get_kdata()->part_info[bp_data->head.active_idx].devnum);
 		goto reboot;
 	}
 #else
