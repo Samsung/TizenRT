@@ -365,6 +365,41 @@ int binary_manager_write_bootparam(binmgr_bpdata_t *bp_data)
 }
 
 /****************************************************************************
+ * Name: binary_manager_is_bp_kernel_address_valid
+ *
+ * Description:
+ *	 This function checks whether in-use BP kernel addresses are valid
+ *   against registered partition addresses.
+ *
+ ****************************************************************************/
+static bool binary_manager_is_bp_kernel_address_valid(binmgr_bpdata_t *bp_data)
+{
+	uint32_t part_idx;
+	binmgr_kinfo_t *kdata;
+
+	if (!bp_data) {
+		bmdbg("BP data is NULL\n");
+		return false;
+	}
+
+	kdata = binary_manager_get_kdata();
+	if (!kdata || kdata->part_count == 0 || kdata->part_count > BOOTPARAM_COUNT || !kdata->part_info) {
+		bmdbg("Invalid kernel partition data\n");
+		return false;
+	}
+
+	for (part_idx = 0; part_idx < kdata->part_count; part_idx++) {
+		if (bp_data->head.address[part_idx] != kdata->part_info[part_idx].address) {
+			bmdbg("Invalid in-use BP kernel address: part[%u] BP 0x%x, partition 0x%x\n",
+					part_idx, bp_data->head.address[part_idx], kdata->part_info[part_idx].address);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/****************************************************************************
  * Name: binary_manager_is_set_mismatch
  *
  * Description:
@@ -638,6 +673,11 @@ int binary_manager_check_bootparam_set(void)
 
 	if (binary_manager_is_set_mismatch(bp_data)) {
 		bmdbg("BP set mismatch detected. Run BP recovery from partition information\n");
+		return BINMGR_OPERATION_FAIL;
+	}
+
+	if (!binary_manager_is_bp_kernel_address_valid(bp_data)) {
+		bmdbg("Invalid in-use BP kernel address detected. Run BP recovery from partition information\n");
 		return BINMGR_OPERATION_FAIL;
 	}
 
