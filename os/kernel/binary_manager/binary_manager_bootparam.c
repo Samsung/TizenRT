@@ -112,6 +112,48 @@ static int binary_manager_open_bootparam(void)
 	return fd;
 }
 
+/****************************************************************************
+ * Name: binary_manager_dump_bpdata
+ *
+ * Description:
+ *	 This function prints bootparam data.
+ *
+ ****************************************************************************/
+void binary_manager_dump_bpdata(void)
+{
+	int bp_idx;
+	binmgr_bpdata_t *bp_data;
+	bool bp_valid;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	uint32_t bp_app_idx;
+	uint32_t bp_app_count;
+	int bp_app_log_len;
+	char bp_app_log[(CONFIG_NUM_APPS + 1) * 4 + 1];
+#endif
+
+	for (bp_idx = 0; bp_idx < BOOTPARAM_COUNT; bp_idx++) {
+		bp_data = binary_manager_get_slot_bpdata(bp_idx);
+		if (!bp_data) {
+			bmdbg("BP[%d] is NULL\n", bp_idx);
+			continue;
+		}
+		bp_valid = binary_manager_get_slot_bpvalid(bp_idx);
+		bmdbg("BP[%d] valid %d, ver %u, fmt %u, idx %u, addr %08x %08x, reason %u\n", bp_idx, bp_valid, bp_data->head.version, bp_data->head.format_ver, bp_data->head.active_idx, bp_data->head.address[0], bp_data->head.address[1], bp_data->tail.bp_update_reason);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		bp_app_count = sizeof(bp_data->head.app_data) / sizeof(bp_data->head.app_data[0]);
+		bp_app_log_len = 0;
+		for (bp_app_idx = 0; bp_app_idx < bp_app_count; bp_app_idx++) {
+			bp_app_log_len += snprintf(&bp_app_log[bp_app_log_len], sizeof(bp_app_log) - bp_app_log_len, "%u ", bp_data->head.app_data[bp_app_idx].useidx);
+		}
+		bp_app_log[bp_app_log_len] = '\0';
+		bmdbg("BP[%d] APP count %u, idx %s\n", bp_idx, bp_data->head.app_count, bp_app_log);
+#endif
+#ifdef CONFIG_RESOURCE_FS
+		bmdbg("BP[%d] RESOURCE idx %u\n", bp_idx, bp_data->head.resource_active_idx);
+#endif
+	}
+}
+
 /*****************************************************************************************************
  * Name: binary_manager_scan_bootparam
  *
@@ -126,7 +168,7 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 	int bp_idx;
 	uint32_t latest_ver = 0;
 	char *bootparam;
-	size_t update_reason_offset;
+	size_t tail_offset;
 	binmgr_bpdata_t scanned_bp_data;
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	uint32_t bp_app_idx;
@@ -137,6 +179,7 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 		bmdbg("Invalid input bp_info\n");
 		return BINMGR_INVALID_PARAM;
 	}
+	memset(bp_info, 0, sizeof(*bp_info));
 
 	fd = binary_manager_open_bootparam();
 	if (fd < 0) {
@@ -165,33 +208,31 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 		if (ret != BOOTPARAM_SIZE) {
 			bmdbg("Fail to read BP, errno %d\n", errno);
 			continue;
-		} else if (!is_valid_bootparam(bootparam)) {
-			bmdbg("BP%d is invalid\n", bp_idx);
-			continue;
 		}
 
+		tail_offset = BOOTPARAM_SIZE - sizeof(scanned_bp_data.tail);
 		memcpy(&scanned_bp_data.head, bootparam, sizeof(scanned_bp_data.head));
+		memcpy(&scanned_bp_data.tail, &bootparam[tail_offset], sizeof(scanned_bp_data.tail));
+		memcpy(&bp_info->bp_data[bp_idx], &scanned_bp_data, sizeof(binmgr_bpdata_t));
 
-		/* Version 1 has no update reason and leaves the last byte as reserved. */
-		update_reason_offset = BOOTPARAM_SIZE - sizeof(scanned_bp_data.tail.bp_update_reason);
-		if (scanned_bp_data.head.format_ver < BOOTPARAM_FORMAT_VERSION_2 || ((uint8_t *)bootparam)[update_reason_offset] > BP_UPDATE_UNKNOWN) {
-			scanned_bp_data.tail.bp_update_reason = BP_UPDATE_UNKNOWN;
-		} else {
-			scanned_bp_data.tail.bp_update_reason = ((uint8_t *)bootparam)[update_reason_offset];
+		bp_info->bp_valid[bp_idx] = is_valid_bootparam(bootparam);
+		if (!bp_info->bp_valid[bp_idx]) {
+			bmdbg("BP%d is invalid\n", bp_idx);
+			continue;
 		}
 
 		bmdbg("BP%d is valid. crc %u, version %u, format %u, reason %u, active idx %u, address[0] 0x%x, address[1] 0x%x\n", bp_idx, scanned_bp_data.head.crc_hash, scanned_bp_data.head.version, scanned_bp_data.head.format_ver, scanned_bp_data.tail.bp_update_reason, scanned_bp_data.head.active_idx, scanned_bp_data.head.address[0], scanned_bp_data.head.address[1]);
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 		max_app_count = sizeof(scanned_bp_data.head.app_data) / sizeof(scanned_bp_data.head.app_data[0]);
-		bmdbg("BP%d: app count %u, max %u\n", bp_idx, scanned_bp_data.head.app_count, max_app_count);
+		bmvdbg("BP%d: app count %u, max %u\n", bp_idx, scanned_bp_data.head.app_count, max_app_count);
 		for (bp_app_idx = 0; bp_app_idx < scanned_bp_data.head.app_count && bp_app_idx < max_app_count; bp_app_idx++) {
-			bmdbg("BP%d: app[%u] name %.*s, useidx %u\n", bp_idx, bp_app_idx, BIN_NAME_MAX, scanned_bp_data.head.app_data[bp_app_idx].name, scanned_bp_data.head.app_data[bp_app_idx].useidx);
+			bmvdbg("BP%d: app[%u] name %.*s, useidx %u\n", bp_idx, bp_app_idx, BIN_NAME_MAX, scanned_bp_data.head.app_data[bp_app_idx].name, scanned_bp_data.head.app_data[bp_app_idx].useidx);
 		}
 #endif
 
 #ifdef CONFIG_RESOURCE_FS
-		bmdbg("BP%d: resource active idx %u\n", bp_idx, scanned_bp_data.head.resource_active_idx);
+		bmvdbg("BP%d: resource active idx %u\n", bp_idx, scanned_bp_data.head.resource_active_idx);
 #endif
 
 		/* Update the latest version and index */
@@ -199,7 +240,6 @@ int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info)
 			latest_ver = scanned_bp_data.head.version;
 			/* Update bootparam data */
 			bp_info->inuse_idx = bp_idx;
-			memcpy(&bp_info->bp_data, &scanned_bp_data, sizeof(binmgr_bpdata_t));
 		}
 	}
 	close(fd);
@@ -230,8 +270,9 @@ int binary_manager_update_bpinfo(void)
 	if (ret == BINMGR_OK) {
 		/* Set scanned bootparam data to g_bp_info */
 		g_bp_info.inuse_idx = bp_info.inuse_idx;
-		g_bp_info.bp_data = bp_info.bp_data;
-		bmvdbg("BP[%d] ver: %u, format: %u, reason: %u, active index: %u, addresses: %x, %x\n", g_bp_info.inuse_idx, g_bp_info.bp_data.head.version, g_bp_info.bp_data.head.format_ver, g_bp_info.bp_data.tail.bp_update_reason, g_bp_info.bp_data.head.active_idx, g_bp_info.bp_data.head.address[0], g_bp_info.bp_data.head.address[1]);
+		memcpy(g_bp_info.bp_data, bp_info.bp_data, sizeof(g_bp_info.bp_data));
+		memcpy(g_bp_info.bp_valid, bp_info.bp_valid, sizeof(g_bp_info.bp_valid));
+		bmvdbg("BP[%d] ver: %u, format: %u, reason: %u, active index: %u, address: %x %x\n", g_bp_info.inuse_idx, g_bp_info.bp_data[g_bp_info.inuse_idx].head.version, g_bp_info.bp_data[g_bp_info.inuse_idx].head.format_ver, g_bp_info.bp_data[g_bp_info.inuse_idx].tail.bp_update_reason, g_bp_info.bp_data[g_bp_info.inuse_idx].head.active_idx, g_bp_info.bp_data[g_bp_info.inuse_idx].head.address[0], g_bp_info.bp_data[g_bp_info.inuse_idx].head.address[1]);
 	}
 
 	return ret;
@@ -801,7 +842,41 @@ send_response:
  ****************************************************************************/
 binmgr_bpdata_t *binary_manager_get_bpdata(void)
 {
-	return &g_bp_info.bp_data;
+	return &g_bp_info.bp_data[g_bp_info.inuse_idx];
+}
+
+/****************************************************************************
+ * Name: binary_manager_get_slot_bpdata
+ *
+ * Description:
+ *	 This function gets boot parameter data by BP slot index.
+ *
+ ****************************************************************************/
+binmgr_bpdata_t *binary_manager_get_slot_bpdata(uint8_t bp_idx)
+{
+	if (bp_idx >= BOOTPARAM_COUNT) {
+		bmdbg("Invalid BP slot index %d\n", bp_idx);
+		return NULL;
+	}
+
+	return &g_bp_info.bp_data[bp_idx];
+}
+
+/****************************************************************************
+ * Name: binary_manager_get_slot_bpvalid
+ *
+ * Description:
+ *	 This function gets boot parameter valid state by BP slot index.
+ *
+ ****************************************************************************/
+bool binary_manager_get_slot_bpvalid(uint8_t bp_idx)
+{
+	if (bp_idx >= BOOTPARAM_COUNT) {
+		bmdbg("Invalid BP slot index %d\n", bp_idx);
+		return false;
+	}
+
+	return g_bp_info.bp_valid[bp_idx];
 }
 
 /****************************************************************************
@@ -816,7 +891,7 @@ int binary_manager_set_bpdata(binmgr_bpdata_t *bp_data)
 	if (bp_data == NULL) {
 		return ERROR;
 	}
-	memcpy(&g_bp_info.bp_data, bp_data, sizeof(binmgr_bpdata_t));
+	memcpy(&g_bp_info.bp_data[g_bp_info.inuse_idx], bp_data, sizeof(binmgr_bpdata_t));
 
 	return OK;
 }
