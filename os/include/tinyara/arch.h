@@ -1802,6 +1802,19 @@ void up_mdelay(unsigned int milliseconds);
 void up_udelay(useconds_t microseconds);
 
 /****************************************************************************
+ * Name: up_crc32part
+ *
+ * Description:
+ *   CRC32 calculation on a buffer using architecture-specific acceleration.
+ *   This interface is provided only when CONFIG_ARCH_CRC32 is enabled.
+ *
+ ***************************************************************************/
+
+#ifdef CONFIG_ARCH_CRC32
+uint32_t up_crc32part(FAR const uint8_t *src, size_t len, uint32_t crc32val);
+#endif
+
+/****************************************************************************
  * Name: up_cxxinitialize
  *
  * Description:
