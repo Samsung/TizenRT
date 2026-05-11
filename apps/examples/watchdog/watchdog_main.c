@@ -30,6 +30,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#ifdef CONFIG_BUILD_FLAT
+#include <sched.h>
+#include <tinyara/irq.h>
+#endif
 #include <tinyara/watchdog.h>
 
 #ifdef CONFIG_WATCHDOG
@@ -37,7 +41,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define WATCHDOG_DEFAULT_TIMEOUT_MS 30001
+#define WATCHDOG_DEFAULT_TIMEOUT_MS 180000
 #define WATCHDOG_DEFAULT_STATUS_PERIOD_MS 0
 #define WATCHDOG_PAUSE_DEFAULT_MS 1000
 #define WATCHDOG_RESUME_DEFAULT_MS 200
@@ -111,11 +115,18 @@ static void watchdog_help(void)
 	printf("                        Default: %u ms\n", (uint32_t)WATCHDOG_PAUSE_DEFAULT_MS);
 	printf("      resume_ms         Resume duration in milliseconds\n");
 	printf("                        Default: %u ms\n\n", (uint32_t)WATCHDOG_RESUME_DEFAULT_MS);
+	printf("  hang [timeout_ms]\n");
+	printf("      Test watchdog operation in a hang situation\n");
+	printf("      timeout_ms        Watchdog timeout in milliseconds\n");
+	printf("                        Default: %u ms\n", (uint32_t)WATCHDOG_DEFAULT_TIMEOUT_MS);
+	printf("                        Requires FLAT build\n\n");
 	printf("Examples:\n");
 	printf("  watchdog expire\n");
 	printf("  watchdog expire 30001 1000\n");
 	printf("  watchdog pause_resume\n");
-	printf("  watchdog pause_resume 1000 200\n\n");
+	printf("  watchdog pause_resume 1000 200\n");
+	printf("  watchdog hang\n");
+	printf("  watchdog hang 40000\n\n");
 	printf("Notes:\n");
 	printf("  pause_resume timeout = pause_ms * %u\n", (uint32_t)WATCHDOG_PAUSE_TIMEOUT_MULTIPLIER);
 }
@@ -449,6 +460,57 @@ errout:
 	return ret;
 }
 
+#ifndef CONFIG_BUILD_FLAT
+static int watchdog_run_hang(uint32_t timeout_ms)
+{
+	printf("watchdog: hang is only supported in FLAT build\n");
+	return ERROR;
+}
+#else
+static int watchdog_run_hang(uint32_t timeout_ms)
+{
+	volatile uint32_t spin = 0;
+	irqstate_t flags;
+	int fd;
+
+	if (watchdog_validate_sleep_ms(timeout_ms, "timeout_ms", false) != OK) {
+		return ERROR;
+	}
+
+	fd = watchdog_open_device();
+	if (fd < 0) {
+		return ERROR;
+	}
+
+	if (watchdog_start(fd, timeout_ms) != OK) {
+		close(fd);
+		return ERROR;
+	}
+
+	printf("hang test started: timeout=%u ms\n", timeout_ms);
+	printf("No keepalive will be sent. Hardware watchdog reset is expected.\n");
+
+	if (sched_lock() != OK) {
+		printf("watchdog: sched_lock failed before hang test\n");
+		watchdog_stop(fd);
+		close(fd);
+		return ERROR;
+	}
+
+	flags = enter_critical_section();
+
+	for (;;) {
+		spin++;
+	}
+
+	leave_critical_section(flags);
+	sched_unlock();
+	watchdog_stop(fd);
+	close(fd);
+	return ERROR;
+}
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -499,6 +561,20 @@ int watchdog_main(int argc, char *argv[])
 		}
 
 		return watchdog_run_keepalive();
+	}
+
+	if (strncmp(argv[1], "hang", 5) == 0) {
+		timeout_ms = WATCHDOG_DEFAULT_TIMEOUT_MS;
+
+		if (argc >= 3 && watchdog_parse_u32(argv[2], &timeout_ms) != OK) {
+			goto errout_with_help;
+		}
+
+		if (argc > 3) {
+			goto errout_with_help;
+		}
+
+		return watchdog_run_hang(timeout_ms);
 	}
 
 	if (strncmp(argv[1], "status", 7) == 0) {
