@@ -625,3 +625,17 @@ config OTP_NULL
 endif
 
 source drivers/seclink/Kconfig
+
+config ASSERTMODE_DRIVER
+	bool "Assertmode driver support"
+	default n
+	depends on NFILE_DESCRIPTORS != 0
+	depends on BOARD_ASSERT_AUTORESET || BOARD_ASSERT_SYSTEM_HALT
+	---help---
+		Enable the assertmode driver for runtime control of assert behavior.
+		This provides a character driver at /dev/assertmode that can be used
+		to get/set the assert behavior mode (auto-reset, halt, or task exit).
+
+		If enabled, the default behavior is determined by:
+		- BOARD_ASSERT_AUTORESET=y: default is auto-reset
+		- BOARD_ASSERT_SYSTEM_HALT=y: default is halt
