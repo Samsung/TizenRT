@@ -63,14 +63,24 @@
 #include <tinyara/mm/mm.h>
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-#include  <tinyara/sched.h>
+#include <tinyara/sched.h>
 #endif
 #include <tinyara/arch.h>
+#include <sys/prctl.h>
 #include "mm_node.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
+/* Helper macro to get task name by PID, sets to "UNKNOWN" if task not found */
+#define GET_TASK_NAME_BY_PID(name_buf, pid) \
+	do { \
+		if (prctl(PR_GET_NAME_BYPID, (name_buf), (pid)) < 0) { \
+			strncpy((name_buf), "UNKNOWN", CONFIG_TASK_NAME_SIZE); \
+			(name_buf)[CONFIG_TASK_NAME_SIZE] = '\0'; \
+		} \
+	} while (0)
 
 /****************************************************************************
  * Private Functions
@@ -113,6 +123,7 @@ static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddres
 	FAR struct mm_freenode_s *node;
 	FAR struct mm_freenode_s *prev;
 	FAR struct mm_freenode_s *next;
+	char task_name[CONFIG_TASK_NAME_SIZE + 1];
 
 	mvdbg("Freeing %p\n", mem);
 
@@ -160,9 +171,16 @@ static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddres
 		 * 2nd scenario: int *ptr = (int*)0x02069f50; free(ptr);
 		 * 3rd scenario: ptr = malloc(100); free(ptr); if(ptr) { free(ptr); }
 		 */
-		mdbg("Attempt for double freeing a pointer or releasing an unallocated pointer by pid %d at address 0x%08x\n", free_call_pid, free_call_addr);
+		mdbg("WARNING!! Attempt for double freeing a pointer or releasing an unallocated pointer\n");
 #ifdef CONFIG_DEBUG_MM_FREEINFO
-		mdbg("Previous free by pid %d at address 0x%08x\n", node->free_call_pid, node->free_call_addr);
+		GET_TASK_NAME_BY_PID(task_name, node->free_call_pid);
+		mdbg("1st free: released by %s (%d) at addr 0x%08x\n", task_name, node->free_call_pid, node->free_call_addr);
+#endif
+		GET_TASK_NAME_BY_PID(task_name, free_call_pid);
+		mdbg("2nd free (double free): now try to release by %s (%d) at addr 0x%08x\n", task_name, free_call_pid, free_call_addr);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+		GET_TASK_NAME_BY_PID(task_name, node->pid);
+		mdbg("The node was allocated by %s (%d) at addr 0x%08x\n", task_name, node->pid, node->alloc_call_addr);
 #endif
 		mm_givesemaphore(heap);
 		return;
