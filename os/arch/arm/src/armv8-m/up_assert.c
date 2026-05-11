@@ -87,6 +87,7 @@
 #include <tinyara/sched.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/assertmode.h>
 
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include <tinyara/binfmt/elf.h>
@@ -96,9 +97,7 @@
 #include <arch/reboot_reason.h>
 #endif
 #include "sched/sched.h"
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
-#endif
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <stdbool.h>
 #include <unistd.h>
@@ -471,29 +470,9 @@ static void up_dumpstate(void)
 
 static void _up_assert(int errorcode)
 {
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
-	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
-#else
-#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
-	/* Are we in an interrupt handler or the idle task? */
-
-	if (current_regs || (this_task())->pid == 0) {
-#endif
-		(void)irqsave();
-		for (;;) {
-#ifdef CONFIG_ARCH_LEDS
-			//board_led_on(LED_PANIC);
-			up_mdelay(250);
-			//board_led_off(LED_PANIC);
-			up_mdelay(250);
-#endif
-		}
-#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
-	} else {
-		exit(errorcode);
-	}
-#endif
-#endif /* CONFIG_BOARD_ASSERT_AUTORESET */
+	/* Determine if we are in IRQ context or idle task */
+	bool is_irq_or_idle = (current_regs || (this_task())->flink == NULL);
+	apply_assert_action(errorcode, is_irq_or_idle);
 }
 
 /****************************************************************************
