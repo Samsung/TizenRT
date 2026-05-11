@@ -8,18 +8,19 @@ Most of the commands support *--help* option to show how to use.
 ## List of Commands
 | Basic commands     | Kernel Commands                                 | FileSystem Commands     |
 |--------------------|-------------------------------------------------|-------------------------|
-| [exit](#exit)      | [cpuload](#cpuload)                             | [cat](#cat)             |
-| [help](#help)      | [date](#date)                                   | [cd](#cd)               |
-| [history](#history)| [dmesg](#dmesg)                                 | [df](#df)               |
-| [sh](#sh)          | [free](#free)                                   | [echo](#echo)           |
-| [sleep](#sleep)    | [getenv/setenv/unsetenv](#getenvsetenvunsetenv) | [ls](#ls)               |
-|                    | [heapinfo](#heapinfo)                           | [mkdir](#mkdir)         |
-|                    | [irqinfo](#irqinfo)                             | [mv](#mv)               |
-|                    | [kill/killall](#killkillall)                    | [mount](#mount)         |
-|                    | [prodconfig](#prodconfig)                       | [umount](#umount)       |
-|                    | [ps](#ps)                                       | [pwd](#pwd)             |
-|                    | [reboot](#reboot)                               | [rm](#rm)               |
-|                    | [stkmon](#stkmon)                               | [rmdir](#rmdir)         |
+| [exit](#exit)      | [assertmode](#assertmode)                       | [cat](#cat)             |
+| [help](#help)      | [cpuload](#cpuload)                             | [cd](#cd)               |
+| [history](#history)| [date](#date)                                   | [df](#df)               |
+| [sh](#sh)          | [dmesg](#dmesg)                                 | [echo](#echo)           |
+| [sleep](#sleep)    | [free](#free)                                   | [ls](#ls)               |
+|                    | [getenv/setenv/unsetenv](#getenvsetenvunsetenv) | [mkdir](#mkdir)         |
+|                    | [heapinfo](#heapinfo)                           | [mv](#mv)               |
+|                    | [irqinfo](#irqinfo)                             | [mount](#mount)         |
+|                    | [kill/killall](#killkillall)                    | [umount](#umount)       |
+|                    | [prodconfig](#prodconfig)                       | [pwd](#pwd)             |
+|                    | [ps](#ps)                                       | [rm](#rm)               |
+|                    | [reboot](#reboot)                               | [rmdir](#rmdir)         |
+|                    | [stkmon](#stkmon)                               |                         |
 |                    | [uptime](#uptime)                               |                         |
 
 
@@ -125,8 +126,80 @@ Kernel Features -> Disable TinyAra interfaces -> [ ] Disable environment variabl
 Kernel Features -> Files and I/O -> Maximum number of file descriptors per task
 ```
 
+## assertmode
+This command enables the assertmode and allows user to configure the assert mode at runtime.
+```
+Usage:
+  assertmode
+  assertmode [MODE]
+  assertmode --help
+
+Arguments:
+  MODE    0 for AUTO RESET, 1 for SYSTEM HALT, 2 for TASK EXIT/TERMINATE
+
+Options:
+  --help    Display help and mode descriptions
+
+Examples:
+  TASH>>assertmode
+  Current: SYSTEM HALT (mode 1)
+  Usage:
+    assertmode
+    assertmode [MODE]
+    assertmode --help
+  To set board with "AUTO RESET" or "SYSTEM HALT" or "TASK EXIT/TERMINATE" on assert.
+
+  MODE:
+    0     Auto reset on assert
+    1     System halt on assert
+    2     Task exit/terminate on assert
+
+  Notes:
+    Running without arguments shows current status
+    Default depends on configuration:
+      CONFIG_BOARD_ASSERT_AUTORESET=y: default is auto-reset
+      CONFIG_BOARD_ASSERT_SYSTEM_HALT=y: default is halt
+
+  Examples:
+    assertmode
+    assertmode 0
+    assertmode 1
+    assertmode 2
+
+### Assert Modes
+
+#### Mode 0: Auto reset on assert
+- The system automatically reboots when an assert occurs without user intervention.
+- Crash dump may be preserved across the reboot for later analysis if configured.
+- Use case: Production environments where automatic recovery is preferred.
+
+#### Mode 1: System halt on assert
+- The system enters an infinite loop with flashing LEDs, freezing all processing.
+- Full crash dump and register state are preserved for TRAP tool analysis.
+- Use case: Development/debugging where capturing crash state is the priority.
+
+#### Mode 2: Task exit/terminate on assert
+- Only the offending thread/task is terminated while the system continues running.
+- System performs cleanup of resources held by the terminated thread/task.
+- Use case: Environments where system availability is prioritized over crash analysis.
+```
+### How to Enable
+Enable *CONFIG_ENABLE_ASSERTMODE* on menuconfig.
+```
+Application Configuration -> System Libraries and Add-Ons -> [*] assertmode
+```
+#### Dependency
+- Enable *CONFIG_BOARD_ASSERT_AUTORESET* or *CONFIG_BOARD_ASSERT_SYSTEM_HALT*.
+```
+Board Selection -> Common Board Options -> [*] Reset a board on assert status automatically or Enable Board level logging of crash dumps
+```
+- Enable *CONFIG_ASSERTMODE_DRIVER*.
+```
+Device Drivers -> [*] Assertmode driver support
+```
+
 ## cpuload
-This command shows cpuload information per thread periodically. 
+This command shows cpuload information per thread periodically.
 If there are more than one cpu cores in the system, it shows cpuload of thread in each core.
 Also It shows non-zero cpuload only.
 This has arguments which configure the printing information and cpuload daemon.
@@ -240,7 +313,6 @@ Enable *CONFIG_ENABLE_DATE* to use this command on menuconfig as shown below:
 ```
 Application Configuration -> System Libraries and Add-Ons -> [*] Kernel shell commands -> [*] date
 ```
-
 
 ## df
 This shows information about the File System on which each FILE resides, or all File Systems by default.
