@@ -27,7 +27,7 @@
 
 #ifndef _LIBCPP_SUPPORT_IBM_XLOCALE_H
 #define _LIBCPP_SUPPORT_IBM_XLOCALE_H
-#include <support/ibm/locale_mgmt_aix.h>
+#include <__support/ibm/locale_mgmt_aix.h>
 
 #if defined(_AIX)
 #include "cstdlib"

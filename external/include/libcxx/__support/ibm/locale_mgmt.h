@@ -7,27 +7,27 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// Unified IBM platform support header
+// Unified IBM locale management support header
 // Routes to appropriate platform-specific implementation based on platform detection
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef _LIBCPP___SUPPORT_IBM_XLOCALE_H
-#define _LIBCPP___SUPPORT_IBM_XLOCALE_H
+#ifndef _LIBCPP___SUPPORT_IBM_LOCALE_MGMT_H
+#define _LIBCPP___SUPPORT_IBM_LOCALE_MGMT_H
 
 // Platform detection and routing
 #if defined(_AIX)
-#  include <__support/ibm/aix/xlocale.h>
+#  include <__support/ibm/aix/locale_mgmt_aix.h>
 #elif defined(__MVS__)
-#  include <__support/ibm/zos/xlocale.h>
+#  include <__support/ibm/zos/locale_mgmt_zos.h>
 #else
-// Fallback for other IBM platforms - include both for maximum compatibility
+// Fallback for other IBM platforms
 #  if defined(_AIX)
-#    include <__support/ibm/aix/xlocale.h>
+#    include <__support/ibm/aix/locale_mgmt_aix.h>
 #  endif
 #  if defined(__MVS__)
-#    include <__support/ibm/zos/xlocale.h>
+#    include <__support/ibm/zos/locale_mgmt_zos.h>
 #  endif
 #endif
 
-#endif // _LIBCPP___SUPPORT_IBM_XLOCALE_H
+#endif // _LIBCPP___SUPPORT_IBM_LOCALE_MGMT_H

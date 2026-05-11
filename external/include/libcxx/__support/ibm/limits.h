@@ -7,27 +7,27 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// Unified IBM platform support header
+// Unified IBM limits support header
 // Routes to appropriate platform-specific implementation based on platform detection
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef _LIBCPP___SUPPORT_IBM_XLOCALE_H
-#define _LIBCPP___SUPPORT_IBM_XLOCALE_H
+#ifndef _LIBCPP___SUPPORT_IBM_LIMITS_H
+#define _LIBCPP___SUPPORT_IBM_LIMITS_H
 
 // Platform detection and routing
 #if defined(_AIX)
-#  include <__support/ibm/aix/xlocale.h>
+#  include <__support/ibm/aix/limits.h>
 #elif defined(__MVS__)
-#  include <__support/ibm/zos/xlocale.h>
+// z/OS uses system limits.h, no special handling needed
+#  include <limits.h>
+#  include <math.h>
+#  include <float.h>
 #else
-// Fallback for other IBM platforms - include both for maximum compatibility
+// Fallback - include AIX version if available
 #  if defined(_AIX)
-#    include <__support/ibm/aix/xlocale.h>
-#  endif
-#  if defined(__MVS__)
-#    include <__support/ibm/zos/xlocale.h>
+#    include <__support/ibm/aix/limits.h>
 #  endif
 #endif
 
-#endif // _LIBCPP___SUPPORT_IBM_XLOCALE_H
+#endif // _LIBCPP___SUPPORT_IBM_LIMITS_H

@@ -26,7 +26,6 @@
 
 #ifdef __sun__
 
-#include "support/solaris/xlocale.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <sys/localedef.h>
