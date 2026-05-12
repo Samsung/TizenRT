@@ -187,6 +187,12 @@ typedef unsigned int wint_t;
 #define _LIBCPP_HAS_NO_C11_ALIGNED_ALLOC
 #define _LIBCPP_HAS_NO_LIBRARY_ALIGNED_ALLOCATION
 
+// TizenRT errno workaround: TizenRT implements errno as a function call macro rather than an assignable variable.
+// This workaround enables libcxx to function on TizenRT by using platform-appropriate error handling.
+#if defined(__TINYARA__)
+#define _LIBCPP_TIZENRT_ERRNO_WORKAROUND 1
+#endif
+
 // TizenRT compatibility: Provide locale mask fallback definitions needed for locale support
 // (these are not provided by TizenRT's C library)
 #ifndef LC_COLLATE_MASK

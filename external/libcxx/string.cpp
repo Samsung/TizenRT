@@ -77,14 +77,31 @@ template<typename V, typename S, typename F>
 inline V as_integer_helper(const string& func, const S& str, size_t* idx, int base, F f) {
     typename S::value_type* ptr = nullptr;
     const typename S::value_type* const p = str.c_str();
-    // In TizenRT, errno is a macro that expands to a function call, so we cannot assign to it
-    // Call the conversion function directly without clearing errno
+    
+#ifdef _LIBCPP_TIZENRT_ERRNO_WORKAROUND
+    // TizenRT implements errno as a function call macro rather than an assignable variable.
+    // This workaround calls conversion functions directly without errno manipulation,
+    // which may result in reporting stale errno values but maintains functionality.
     V r = f(p, &ptr, base);
-    // Check errno after the function call to detect errors
-    if (errno == ERANGE)
+    // Check errno after the function call to detect errors; also check for conversion failure patterns
+    if (errno == ERANGE || (ptr == p && r == 0 && *p != '\0')) {
+        throw_from_string_out_of_range(func);
+    }
+    if (ptr == p && *p != '\0') {
+        throw_from_string_invalid_arg(func);
+    }
+#else
+    // Standard implementation: preserve errno as per C++ standard requirements
+    __libcpp_remove_reference_t<decltype(errno)> errno_save = errno;
+    errno = 0;
+    V r = f(p, &ptr, base);
+    swap(errno, errno_save);
+    if (errno_save == ERANGE)
         throw_from_string_out_of_range(func);
     if (ptr == p)
         throw_from_string_invalid_arg(func);
+#endif
+    
     if (idx)
         *idx = static_cast<size_t>(ptr - p);
     return r;
@@ -164,14 +181,31 @@ template<typename V, typename S, typename F>
 inline V as_float_helper(const string& func, const S& str, size_t* idx, F f) {
     typename S::value_type* ptr = nullptr;
     const typename S::value_type* const p = str.c_str();
-    // In TizenRT, errno is a macro that expands to a function call, so we cannot assign to it
-    // Call the conversion function directly without clearing errno
+    
+#ifdef _LIBCPP_TIZENRT_ERRNO_WORKAROUND
+    // TizenRT implements errno as a function call macro rather than an assignable variable.
+    // This workaround calls conversion functions directly without errno manipulation,
+    // which may result in reporting stale errno values but maintains functionality.
     V r = f(p, &ptr);
-    // Check errno after the function call to detect errors
-    if (errno == ERANGE)
+    // Check errno after the function call to detect errors; also check for conversion failure patterns
+    if (errno == ERANGE || (ptr == p && r == 0.0 && *p != '\0')) {
+        throw_from_string_out_of_range(func);
+    }
+    if (ptr == p && *p != '\0') {
+        throw_from_string_invalid_arg(func);
+    }
+#else
+    // Standard implementation: preserve errno as per C++ standard requirements
+    __libcpp_remove_reference_t<decltype(errno)> errno_save = errno;
+    errno = 0;
+    V r = f(p, &ptr);
+    swap(errno, errno_save);
+    if (errno_save == ERANGE)
         throw_from_string_out_of_range(func);
     if (ptr == p)
         throw_from_string_invalid_arg(func);
+#endif
+    
     if (idx)
         *idx = static_cast<size_t>(ptr - p);
     return r;

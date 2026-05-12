@@ -114,15 +114,31 @@ handle_strerror_r_return(int strerror_return, char *buffer) {
 // one of the two above functions.
 string do_strerror_r(int ev) {
     char buffer[strerror_buff_size];
-    // In TizenRT, errno is a macro that expands to a function call, so we cannot assign to it
-    // Call strerror_r directly without preserving errno (platform limitation workaround)
+    
+#ifdef _LIBCPP_TIZENRT_ERRNO_WORKAROUND
+    // TizenRT implements errno as a function call macro rather than an assignable variable.
+    // This workaround calls strerror_r directly without errno preservation,
+    // which deviates from C++ standard requirements but maintains functionality.
     const char *error_message = handle_strerror_r_return(
         ::strerror_r(ev, buffer, strerror_buff_size), buffer);
+    // Check for null or empty results
+    if (!error_message || error_message[0] == '\0') {
+        std::snprintf(buffer, strerror_buff_size, "Unknown error %d", ev);
+        error_message = buffer;
+    }
+#else
+    // Standard implementation: preserve errno as required by C++ standard
+    const int old_errno = errno;
+    const char *error_message = handle_strerror_r_return(
+        ::strerror_r(ev, buffer, strerror_buff_size), buffer);
+    errno = old_errno;
     // If we didn't get any message, print one now.
     if (!error_message[0]) {
       std::snprintf(buffer, strerror_buff_size, "Unknown error %d", ev);
       error_message = buffer;
     }
+#endif
+    
     return string(error_message);
 }
 #endif
