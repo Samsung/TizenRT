@@ -110,7 +110,6 @@ struct power_path_template_s {
 
 struct power_path_priv_s {
 	const struct power_path_template_s *template; /* Matched template node */
-	struct pm_domain_s *domain_ptr;               /* Pointer to the domain structure if applicable */
 	char domain_name[CONFIG_PM_DOMAIN_NAME_SIZE]; /* Stable domain name for deferred lookups */
 };
 
@@ -154,7 +153,8 @@ static int power_readdir_domains(struct fs_dirent_s *dir);
 static void power_read_domains_info(FAR struct power_file_s *priv, void (*readprint)(const char *, ...));
 static void power_read_dynamic_domain_info(FAR struct power_file_s *priv, void (*readprint)(const char *, ...));
 static void power_read_state(FAR struct power_file_s *priv, void (*readprint)(const char *, ...));
-static FAR struct pm_domain_s *power_find_domain(FAR const char *domain_name);
+static bool power_domain_exists(FAR const char *domain_name);
+static bool power_read_domain_snapshot(FAR const char *domain_name, FAR char *name, size_t name_size, FAR int *suspend_count);
 
 /****************************************************************************
  * Private Data
@@ -247,38 +247,51 @@ const struct procfs_operations power_procfsoperations = {
  * Private Functions
  ****************************************************************************/
 
-static FAR struct pm_domain_s *power_find_domain(FAR const char *domain_name)
+static bool power_read_domain_snapshot(FAR const char *domain_name, FAR char *name, size_t name_size, FAR int *suspend_count)
 {
 	FAR struct pm_domain_s *domain = NULL;
 	FAR dq_entry_t *entry;
 	irqstate_t flags;
 
 	if (domain_name == NULL || domain_name[0] == '\0') {
-		return NULL;
+		return false;
 	}
 
 	flags = enter_critical_section();
 	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
 		domain = (FAR struct pm_domain_s *)entry;
 		if (strncmp(domain->name, domain_name, CONFIG_PM_DOMAIN_NAME_SIZE) == 0) {
+			if (name && name_size > 0) {
+				strncpy(name, domain->name, name_size - 1);
+				name[name_size - 1] = '\0';
+			}
+
+			if (suspend_count) {
+				*suspend_count = domain->suspend_count;
+			}
+
 			leave_critical_section(flags);
-			return domain;
+			return true;
 		}
 	}
 	leave_critical_section(flags);
 
-	return NULL;
+	return false;
+}
+
+static bool power_domain_exists(FAR const char *domain_name)
+{
+	return power_read_domain_snapshot(domain_name, NULL, 0, NULL);
 }
 
 static void power_read_dynamic_domain_info(FAR struct power_file_s *priv, void (*readprint)(const char *, ...))
 {
-	FAR struct pm_domain_s *domain;
+	char domain_name[CONFIG_PM_DOMAIN_NAME_SIZE];
+	int suspend_count;
 
-	domain = power_find_domain(priv->path_priv.domain_name);
-
-	if (domain) {
-		readprint("%-15s : %s\n", "Domain Name", domain->name);
-		readprint("%-15s : %d\n", "Suspend Count", domain->suspend_count);
+	if (power_read_domain_snapshot(priv->path_priv.domain_name, domain_name, sizeof(domain_name), &suspend_count)) {
+		readprint("%-15s : %s\n", "Domain Name", domain_name);
+		readprint("%-15s : %d\n", "Suspend Count", suspend_count);
 	}
 }
 
@@ -348,10 +361,9 @@ static struct power_path_template_s *power_find_best_match(const char *relpath, 
 				domain_name[domain_len] = '\0'; /* Ensure null termination */
 				strncpy(path_priv->domain_name, domain_name, CONFIG_PM_DOMAIN_NAME_SIZE);
 				path_priv->domain_name[CONFIG_PM_DOMAIN_NAME_SIZE - 1] = '\0';
-				path_priv->domain_ptr = power_find_domain(path_priv->domain_name);
 
 				/* If the domain name from path is not found, it's not a valid match */
-				if (path_priv->domain_ptr) {
+				if (power_domain_exists(path_priv->domain_name)) {
 					candidate = current;
 				}
 			}
@@ -414,7 +426,6 @@ static int power_find_dirref(const char *relpath, struct power_path_priv_s *path
 	FAR const struct power_path_template_s *match = NULL;
 
 	path_priv->template = NULL;
-	path_priv->domain_ptr = NULL;
 	path_priv->domain_name[0] = '\0';
 
 	if (proc_dir) {
@@ -776,7 +787,6 @@ static int power_rewinddir(struct fs_dirent_s *dir)
 	priv = dir->u.procfs;
 
 	priv->base.index = 0;
-	priv->path_priv.domain_ptr = NULL; /* Reset the domain entry pointer */
 	priv->path_priv.domain_name[0] = '\0';
 	priv->domain_position = NULL;     /* Reset the domain position pointer */
 
