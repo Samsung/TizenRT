@@ -24,4 +24,5 @@ void volt_daemon_deinit(void);
 void volt_daemon_polling_handler(void);
 int volt_daemon_restart(void);
 int volt_daemon_stop(void);
+void volt_single_get_vbat_voltage(void);
 

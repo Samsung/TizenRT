@@ -674,6 +674,22 @@ uint32_t  sys_drv_enable_hsu_int(void)
 	return SYS_DRV_SUCCESS;
 }
 
+void sys_drv_set_iobypassen_by_volt_detect(uint32_t v)
+{
+    sys_hal_set_ana_reg_spi_latch1v(1);
+    if (v)
+    {
+        //tenglong20250508: ioldo >= vbat(3.5V) before iobypass change
+        sys_hal_set_ioldo_volt(6);
+        sys_hal_set_ioldo_bypass(1);
+    }
+    else
+    {
+        sys_hal_set_ioldo_bypass(0);
+        sys_hal_set_ioldo_volt(4); //shuguang20250512:vio=3.3V
+    }
+    sys_hal_set_ana_reg_spi_latch1v(0);
+}
 //Yantao Add End
 /**  WIFI End **/
 

@@ -435,4 +435,41 @@ int volt_single_get_current_voltage(UINT32 *volt_value)
 
     return result;
 }
+
+void volt_single_get_vbat_voltage(void)
+{
+    int result;
+    int retry_count = 3;
+    UINT32 volt_adc = 0;
+    float volt = 0.0;
+
+    BK_RETURN_ON_ERR(_volt_detect_init_adc_buffer());
+
+    for (; retry_count > 0; retry_count--)
+    {
+        result = _volt_detect_get_adc_data(ADC_VOLT_SENSER_CHANNEL, s_raw_voltage_data);
+        if (BK_OK != result)
+        {
+            TEMPD_LOGW("get volt_single failed(%d), retry\n", result);
+            continue;
+        }
+
+        volt_adc = _volt_detect_calculate_voltage(s_raw_voltage_data);
+        if ((ADC_TEMP_VAL_MIN < volt_adc)/* && (*volt_value < ADC_TEMP_VAL_MAX)*/)
+        {
+            break;
+        }
+    }
+    volt = volt_detect_calc_voltage(volt_adc);
+
+    if(volt < 3.5)
+    {
+        sys_drv_set_iobypassen_by_volt_detect(1);
+    }
+    else if(volt >= 3.6)
+    {
+        sys_drv_set_iobypassen_by_volt_detect(0);
+    }
+
+}
 #endif
