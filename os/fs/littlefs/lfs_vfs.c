@@ -61,6 +61,7 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
+#define MTDIOC_SYNC            _MTDIOC(0x0008)
 
 struct littlefs_file_s {
 	struct lfs_file file;
@@ -230,7 +231,6 @@ static int littlefs_open(FAR struct file *filep, FAR const char *relpath, int of
 	/* Get the mountpoint inode reference from the file structure and the
 	 * mountpoint private data from the inode structure
 	 */
-
 	inode = filep->f_inode;
 	fs = inode->i_private;
 
@@ -303,7 +303,6 @@ static int littlefs_close(FAR struct file *filep)
 	int ret;
 
 	/* Recover our private data from the struct file instance */
-
 	priv = filep->f_priv;
 	inode = filep->f_inode;
 	fs = inode->i_private;
@@ -471,7 +470,6 @@ static int littlefs_sync(FAR struct file *filep)
 	FAR struct littlefs_file_s *priv;
 	FAR struct inode *inode;
 	int ret;
-
 	/* Recover our private data from the struct file instance */
 
 	priv = filep->f_priv;
@@ -838,6 +836,14 @@ static int littlefs_erase_block(FAR const struct lfs_config *c, lfs_block_t bloc
 
 static int littlefs_sync_block(FAR const struct lfs_config *c)
 {
+	FAR struct littlefs_mountpt_s *fs = c->context;
+	FAR struct mtd_geometry_s *geo = &fs->geo;
+	FAR struct inode *drv = fs->drv;
+	FAR struct little_dev_s *dev = (struct little_dev_s *)drv->i_private;
+	int ret;
+
+	ret = drv->u.i_bops->ioctl(drv, MTDIOC_SYNC, 0);
+
 //  BIOC_FLUSH is not used currently , hence commenting the code
 #if 0
 	FAR struct littlefs_mountpt_s *fs = c->context;
@@ -881,7 +887,6 @@ static int littlefs_unlock(const struct lfs_config *c)
 	sem_post(&fs->sem_ops);
 	return OK;
 }
-#define MTDIOC_SYNC            _MTDIOC(0x0008)
 /****************************************************************************
  * Name: littlefs_bind
  ****************************************************************************/
@@ -971,7 +976,6 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	fs->cfg.block_cycles = 500;
 	fs->cfg.cache_size = fs->geo.blocksize;
 	fs->cfg.lookahead_size = lfs_min(lfs_alignup(fs->cfg.block_count, 64) / 8, fs->cfg.read_size);
-
 	/* Then get information about the littlefs filesystem on the devices
 	 * managed by this driver.
 	 */
