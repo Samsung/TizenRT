@@ -328,7 +328,8 @@ int components_init(void)
 		return BK_FAIL;
 
 #if (defined(CONFIG_TEMP_DETECT) || defined(CONFIG_VOLT_DETECT))
-	bk_sensor_init();
+    bk_sensor_init();
+    volt_single_get_vbat_voltage();
 #endif
 
 	pm_init();
