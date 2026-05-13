@@ -319,7 +319,7 @@ int ftl_nand_initialize(int minor, FAR struct mtd_dev_s *mtd);
  ****************************************************************************/
 
 #ifdef CONFIG_MTD_DHARA
-int dhara_initialize(int minor, FAR struct mtd_dev_s *mtd);
+int dhara_initialize(int minor, FAR struct mtd_dev_s *mtd, const char *pathname);
 #endif
 
 /****************************************************************************

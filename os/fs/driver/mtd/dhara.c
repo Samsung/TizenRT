@@ -608,6 +608,7 @@ static int dhara_geometry(FAR struct inode *inode, FAR struct geometry *geometry
 }
 
 #define MTDIOC_SYNC    _MTDIOC(0x0008)
+
 /****************************************************************************
  * Name: dhara_ioctl
  *
@@ -628,14 +629,16 @@ static int dhara_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 	 * to the MTD driver (unchanged).
 	 */
 	switch (cmd) {
+	case BIOC_BULKERASE:
 	case MTDIOC_BULKERASE:
 		ret = dhara_erase(dev, cmd, arg);
+		ferr("return %d\n",ret);
 		if (ret < 0 && ret != -ENOTTY) {
 			ferr("MTD ioctl(%04x) failed: erase %d\n", cmd, ret);
 		}
 		break;
 	case MTDIOC_SYNC:
-		ret = dhara_map_sync(&dev->map, false,&dhara_err);	
+		ret = dhara_map_sync(&dev->map, false,&dhara_err);
 		if (ret < 0 && ret != -ENOTTY) {
 			ferr("MTD ioctl(%04x) failed: sync %d\n", cmd, ret);
 		}
@@ -948,7 +951,7 @@ err:
  *   mtd   - The MTD device that supports the FLASH interface.
  *
  ****************************************************************************/
-int dhara_initialize(int minor, FAR struct mtd_dev_s *mtd)
+int dhara_initialize(int minor, FAR struct mtd_dev_s *mtd ,const char *partname)
 {
 	char path[PATH_MAX];
 
@@ -961,7 +964,11 @@ int dhara_initialize(int minor, FAR struct mtd_dev_s *mtd)
 #endif
 
 	/* Do the real work by dhara_mtdblock_initialize_by_path */
+	if (partname != NULL) {
+		snprintf(path, 18, "/dev/little%d%s", minor, partname);
+	} else {
+		snprintf(path, 18, "/dev/little%d", minor);
+	}
 
-	snprintf(path, sizeof(path), "/dev/mtdblock%d", minor);
 	return dhara_initialize_by_path(path, mtd);
 }

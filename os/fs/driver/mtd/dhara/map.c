@@ -122,7 +122,6 @@ dhara_sector_t dhara_map_capacity(const struct dhara_map *m)
 	if (reserve + safety_margin >= cap) {
 		return 0;
 	}
-
 	return cap - reserve - safety_margin;
 }
 
@@ -234,7 +233,6 @@ static int raw_gc(struct dhara_map *m, dhara_page_t src, bool format_flag ,dhara
 	dhara_page_t current;
 	dhara_error_t my_err;
 	uint8_t meta[DHARA_META_SIZE];
-
 	if (dhara_journal_read_meta(&m->journal, src, meta, err) < 0) {
 		return -1;
 	}

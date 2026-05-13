@@ -214,7 +214,7 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 		if (minor > 0) {
 			/* Initialize dhara block driver for NAND flash */
 			int dhara_minor = minor;  // Use minor directly for dhara device
-			int ret = dhara_initialize(dhara_minor, mtd_part);
+			int ret = dhara_initialize(dhara_minor, mtd_part, partref);
 			if (ret < 0) {
 				printf("ERROR: dhara_initialize failed for minor %d: %d\n", dhara_minor, ret);
 				return ERROR;
@@ -485,7 +485,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 #ifdef CONFIG_MTD_DHARA
 		if (partinfo->dhara_minor != -1) {
 			/* Mount LittleFS on dhara block device for NAND flash */
-			snprintf(fs_devname, FS_PATH_MAX, "/dev/mtdblock%d", partinfo->dhara_minor);
+			snprintf(fs_devname, FS_PATH_MAX, "/dev/little%dp%d", partinfo->minor, partinfo->littlefs_partno);
 		} else {
 #endif
 			/* Mount LittleFS on direct MTD device for NOR flash */
