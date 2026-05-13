@@ -69,20 +69,8 @@
 #include "lwip/err.h"
 #include "ethernetif_tizenrt.h"
 #include "platform_autoconf.h"
-
 #include "lwip/ethip6.h" //Add for ipv6
-
-#if CONFIG_WLAN
 #include <lwip_intf_tizenrt.h>
-#endif
-
-#if defined(CONFIG_INIC_HOST) && CONFIG_INIC_HOST
-#include "freertos/inic_intf.h"
-#endif
-
-#if defined(CONFIG_WHC_HOST)
-// #include "whc_ipc_host_trx.h"
-#endif
 
 #ifndef CONFIG_ENABLE_HOMELYNK
 /* Check if current mode is softap */
@@ -109,24 +97,12 @@ err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen)
 {
 	struct eth_drv_sg sg_list[MAX_ETH_DRV_SG];
 	int sg_len = 0;
-#if defined(CONFIG_WHC_HOST)
 	int ret = 0;
 	int idx = 0;
 	struct eth_hdr *ethhdr = NULL;
 	u8 is_special_pkt = 0;
 	u8 *addr = data;
-#endif
 
-#if CONFIG_WLAN
-// can remove this? since we will not have situation of tizenrt working as np
-#ifndef CONFIG_WHC_HOST
-	if (!wifi_is_running(netif_get_idx(netif))) {
-		return ERR_IF;
-	}
-#endif
-#endif
-
-#if defined(CONFIG_WHC_HOST)
 	if (dlen >= ETH_HLEN + 24) {
 		ethhdr = (struct eth_hdr *)data;
 		if (ETHTYPE_IP == _htons(ethhdr->type)) {
@@ -138,14 +114,11 @@ err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen)
 			}
 		}
 	}
-#endif
 	if (data != NULL && sg_len < MAX_ETH_DRV_SG) {
 		sg_list[sg_len].buf = (unsigned int)data;
 		sg_list[sg_len++].len = dlen;
 	}
 	if (sg_len) {
-#if CONFIG_WLAN
-#if defined(CONFIG_WHC_HOST)
 #ifdef CONFIG_ENABLE_HOMELYNK
 		/* If concurrent is enabled, get idx based on the two netif */
 		idx = get_idx_from_dev(dev);
@@ -159,16 +132,7 @@ err_t low_level_output(struct netdev *dev, uint8_t *data, uint16_t dlen)
 		if (ret == ERR_IF) {
 			return ret;
 		}
-		if (ret == 0)
-#else
-		if (rltk_wlan_send(netif_get_idx(netif), sg_list, sg_len, p->tot_len) == 0)
-#endif
-#elif CONFIG_INIC_HOST
-		if (rltk_inic_send(sg_list, sg_len, p->tot_len) == 0)
-#else
-		if (1)
-#endif
-		{
+		if (ret == 0) {
 			return ERR_OK;
 		} else {
 			return ERR_BUF;    // return a non-fatal error

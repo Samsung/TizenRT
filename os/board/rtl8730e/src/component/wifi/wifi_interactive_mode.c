@@ -164,7 +164,6 @@ static int _get_ap_security_mode(IN char *ssid, OUT u32 *security_mode, OUT u8 *
 	return ret;
 }
 
-extern struct netif xnetif[NET_IF_NUM]; /* network interface structure */
 static int _netlib_setmacaddr(const char *ifname, const uint8_t *macaddr)
 {
 	int ret = ERROR;
@@ -197,12 +196,6 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	u32 security_type;
 	char *password;
 	struct rtw_softap_info rtw_AP_config = {0};
-#if CONFIG_LWIP_LAYER
-	struct netif *pnetif = &xnetif[STA_WLAN_INDEX];
-	u32 ip_addr;
-	u32 netmask;
-	u32 gw;
-#endif
 	nvdbg("\n\rStarting AP ...");
 
 	switch (softap_config->ap_auth_type) {
@@ -243,13 +236,6 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	rtw_AP_config.channel = softap_config->channel;
 
 
-#if CONFIG_LWIP_LAYER
-	dhcps_stop(pnetif);
-	ip_addr = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	netmask = WIFI_MAKEU32(NETMASK_ADDR0, NETMASK_ADDR1, NETMASK_ADDR2, NETMASK_ADDR3);
-	gw = WIFI_MAKEU32(GW_ADDR0, GW_ADDR1, GW_ADDR2, GW_ADDR3);
-	LwIP_SetIP(STA_WLAN_INDEX, ip_addr, netmask, gw);
-#endif
 
 	wifi_stop_ap();
 	if (wifi_start_ap(&rtw_AP_config) != RTK_SUCCESS) {
@@ -258,19 +244,17 @@ int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config)
 	}
 
 	nvdbg("\r\nap start");
+
+/* If SoftAP is using wlan1, set MAC address here */
+/* MAC address for wlan0 will be set in cmd_wifi_on() */
 #if CONFIG_LWIP_LAYER
-		uint8_t *mac = (uint8_t *)LwIP_GetMAC(1);
+	if (strcmp(CONFIG_WIFIMGR_SOFTAP_IFNAME, "wlan1") == 0) {
+		uint8_t *mac = (uint8_t *)LwIP_GetMAC(SOFTAP_WLAN_INDEX);
 		nvdbg("\n\r  MAC => %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		_netlib_setmacaddr(CONFIG_WIFIMGR_SOFTAP_IFNAME, mac);
+	}
 #endif
 
-#if CONFIG_LWIP_LAYER
-	ip_addr = WIFI_MAKEU32(AP_IP_ADDR0, AP_IP_ADDR1, AP_IP_ADDR2, AP_IP_ADDR3);
-	netmask = WIFI_MAKEU32(AP_NETMASK_ADDR0, AP_NETMASK_ADDR1, AP_NETMASK_ADDR2, AP_NETMASK_ADDR3);
-	gw = WIFI_MAKEU32(AP_GW_ADDR0, AP_GW_ADDR1, AP_GW_ADDR2, AP_GW_ADDR3);
-	LwIP_SetIP(STA_WLAN_INDEX, ip_addr, netmask, gw);
-	dhcps_start(pnetif);
-#endif
 
 	return ret;
 }
@@ -440,7 +424,7 @@ int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id)
 
 int8_t cmd_wifi_off(void)
 {
-/* 8721F doesn't support wifi_off() */
+/* 8730E doesn't support wifi_off() */
 	return 0;
 }
 

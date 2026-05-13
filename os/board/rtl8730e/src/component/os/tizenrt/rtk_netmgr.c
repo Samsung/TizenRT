@@ -27,26 +27,6 @@
 #include "os_wrapper.h"
 /* WLAN CONFIG ---------------------------------------------------------------*/
 
-#define RTK_ERR_NO_MEM          0x101	/*!< Out of memory */
-#define RTK_ERR_INVALID_ARG     0x102	/*!< Invalid argument */
-#define RTK_ERR_INVALID_STATE   0x103	/*!< Invalid state */
-#define RTK_ERR_INVALID_SIZE    0x104	/*!< Invalid size */
-#define RTK_ERR_NOT_FOUND       0x105	/*!< Requested resource not found */
-#define RTK_ERR_NOT_SUPPORTED   0x106	/*!< Operation or feature not supported */
-#define RTK_ERR_TIMEOUT         0x107	/*!< Operation timed out */
-#define RTK_ERR_INVALID_RRTKONSE    0x108	/*!< Received rRTKonse was invalid */
-#define RTK_ERR_INVALID_CRC     0x109	/*!< CRC or checksum was invalid */
-#define RTK_ERR_INVALID_VERSION     0x10A	/*!< Version was invalid */
-#define RTK_ERR_INVALID_MAC     0x10B	/*!< MAC address was invalid */
-
-#define RTK_ERR_WIFI_BASE       0x3000	/*!< Starting number of WiFi error codes */
-#define RTK_ERR_MESH_BASE       0x4000	/*!< Starting number of MESH error codes */
-
-#define vTaskDelay(t)   usleep(t*1000)
-
-/* Private define ------------------------------------------------------------*/
-
-//typedef unsigned char    bool;
 static BOOL g_bridge_on = FALSE;
 static BOOL g_netmgr_init = FALSE;
 #include <tinyara/net/if/wifi.h>
@@ -167,7 +147,7 @@ static int save_scan_list(trwifi_scan_list_s *p_scan_list)
 		return RTK_ERR_NOMEM;
 	}
 
-	while(p_scan_list) {
+	while (p_scan_list) {
 		strncpy(saved_scan_list[scan_number].ssid, p_scan_list->ap_info.ssid, p_scan_list->ap_info.ssid_length);
 		saved_scan_list[scan_number].ssid_length = p_scan_list->ap_info.ssid_length;
 		saved_scan_list[scan_number].channel = p_scan_list->ap_info.channel;
@@ -235,9 +215,6 @@ static s32 app_scan_result_handler(unsigned int scanned_AP_num, void *user_data)
 	app_scan_result_handler_legacy(&scan_result_report);
 
 	rtos_mem_free((void *)scan_buf);
-	// Removed post_scanevent here as it is already done in the previous call to app_scan_result_handler_legacy()
-	// TRWIFI_POST_SCANEVENT(ameba_nm_dev_wlan0, LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
-
 
 	return RTK_SUCCESS;
 }
@@ -393,7 +370,6 @@ trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 	} else {
 		ndbg("[RTK] Failed to stop STA mode\n");
 	}
-	//wlan_deinitialize();
 	return wuret;
 }
 
@@ -412,8 +388,8 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 	scan_param.max_ap_record_num = 100;
 
 	if (config) {
-		for (i = 0; i < valid_ch_list_size; i++){
-			if (config->channel == valid_ch_list[i]){
+		for (i = 0; i < valid_ch_list_size; i++) {
+			if (config->channel == valid_ch_list[i]) {
 				ch_valid = 1;
 				break;
 			}
@@ -446,7 +422,7 @@ trwifi_result_e wifi_netmgr_utils_scan_ap(struct netdev *dev, trwifi_scan_config
 			}
 		}
 
-		if(config->ssid_length > 0 || (ch_valid)) {
+		if (config->ssid_length > 0 || (ch_valid)) {
 			/* Scan with SSID, or Scan with SSID And Channel */
 			scan_param.ssid = (u8 *)config->ssid;
 			if(config->ssid_length > 0 && config->channel == 0) {
@@ -1089,7 +1065,7 @@ static s32 app_scan_result_handler_legacy(rtw_scan_handler_result_t *malloced_sc
 			scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPA_AND_WPA2_PSK_ENT;
 			scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_TKIP_AND_AES_ENT;
 			break;
-		// G2 TODO: WPS is not under security type now
+		// TODO: WPS is not under security type now
 		// case RTW_SECURITY_WPS_OPEN:
 		// scan_list->ap_info.ap_auth_type = TRWIFI_AUTH_WPS;
 		// scan_list->ap_info.ap_crypto_type = TRWIFI_CRYPTO_NONE;
