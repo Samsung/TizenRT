@@ -18,11 +18,20 @@ void __sort(RandomAccessIterator first, RandomAccessIterator last, Comp comp) {
   // Only use bitset partitioning for arithmetic types.  We should also check
   // that the default comparator is in use so that we are sure that there are no
   // branches in the comparator.
+  // Use ranges::less when C++20 or later is enabled, otherwise use __less<>
+#if _LIBCPP_STD_VER >= 20
+  std::__introsort<_ClassicAlgPolicy,
+                   ranges::less,
+                   RandomAccessIterator,
+                   __use_branchless_sort<ranges::less, RandomAccessIterator>::value>(
+      first, last, ranges::less{}, depth_limit);
+#else
   std::__introsort<_ClassicAlgPolicy,
                    __less<>,
                    RandomAccessIterator,
                    __use_branchless_sort<__less<>, RandomAccessIterator>::value>(
       first, last, __less<>{}, depth_limit);
+#endif
 }
 
 // clang-format off

@@ -118,13 +118,13 @@ __shared_weak_count::lock() _NOEXCEPT
                                              object_owners+1))
             return this;
     }
-    return 0;
+    return nullptr;
 }
 
 const void*
 __shared_weak_count::__get_deleter(const type_info&) const _NOEXCEPT
 {
-    return 0;
+    return nullptr;
 }
 
 #if !defined(_LIBCPP_HAS_NO_THREADS)

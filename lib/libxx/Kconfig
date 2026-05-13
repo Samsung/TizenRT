@@ -24,7 +24,7 @@ if HAVE_CXX
 
 choice CXX_VERSION
 	prompt "c++version"
-	default CXX_VERSION_11
+	default CXX_VERSION_17
 
 config CXX_VERSION_11
 	bool "c++11"

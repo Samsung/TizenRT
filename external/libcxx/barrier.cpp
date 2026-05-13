@@ -8,7 +8,7 @@
 
 #include <__config>
 
-#if _LIBCPP_STD_VER >= 17
+#if _LIBCPP_STD_VER >= 20
 
 #ifndef _LIBCPP_HAS_NO_THREADS
 
@@ -98,4 +98,4 @@ _LIBCPP_END_NAMESPACE_STD
 
 #endif //_LIBCPP_HAS_NO_THREADS
 
-#endif // _LIBCPP_STD_VER >= 17
+#endif // _LIBCPP_STD_VER >= 20
