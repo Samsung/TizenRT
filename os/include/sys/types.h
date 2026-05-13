@@ -379,6 +379,7 @@ typedef struct pthread_barrierattr_s pthread_barrierattr_t;
  */
 struct pthread_cond_s {
 	sem_t sem;
+	volatile uint16_t waiters;  /* Explicit counter for threads waiting or preparing to wait */
 };
 typedef struct pthread_cond_s pthread_cond_t;
 

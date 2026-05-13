@@ -108,12 +108,19 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 		ret = EPERM;
 	} else {
 		uint16_t oldstate;
+		irqstate_t flags;
 
 		/* Give up the mutex */
 
 		svdbg("Give up mutex / take cond\n");
 
 		sched_lock();
+
+		/* Increment waiters counter */
+		flags = enter_critical_section();
+		cond->waiters++;
+		leave_critical_section(flags);
+
 		mutex->pid = -1;
 		ret = pthread_mutex_give(mutex);
 
