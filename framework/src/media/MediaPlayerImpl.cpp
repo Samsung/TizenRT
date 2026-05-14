@@ -58,7 +58,7 @@ player_result_t MediaPlayerImpl::create()
 	PlayerWorker &mpw = PlayerWorker::getWorker();
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling createPlayer directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling createPlayer directly. player: %x\n", &mPlayer);
 		createPlayer(ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::createPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
@@ -104,7 +104,7 @@ player_result_t MediaPlayerImpl::destroy()
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling destroyPlayer directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling destroyPlayer directly. player: %x\n", &mPlayer);
 		destroyPlayer(ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::destroyPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
@@ -190,7 +190,7 @@ player_result_t MediaPlayerImpl::prepare()
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling preparePlayer directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling preparePlayer directly. player: %x\n", &mPlayer);
 		preparePlayer(ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::preparePlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
@@ -351,7 +351,7 @@ player_result_t MediaPlayerImpl::unprepare()
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling unpreparePlayer directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling unpreparePlayer directly. player: %x\n", &mPlayer);
 		unpreparePlayer(ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::unpreparePlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
@@ -452,7 +452,7 @@ player_result_t MediaPlayerImpl::start()
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling startPlayer directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling startPlayer directly. player: %x\n", &mPlayer);
 		startPlayer(ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::startPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
@@ -567,7 +567,7 @@ player_result_t MediaPlayerImpl::stop()
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling stopPlayer directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling stopPlayer directly. player: %x\n", &mPlayer);
 		stopPlayer(ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
@@ -669,7 +669,7 @@ player_result_t MediaPlayerImpl::pause()
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling pausePlayer directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling pausePlayer directly. player: %x\n", &mPlayer);
 		pausePlayer(ret, true, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::pausePlayer, shared_from_this(), std::ref(ret), true, std::ref(syncSem));
@@ -774,7 +774,7 @@ player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling getPlayerVolume directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling getPlayerVolume directly. player: %x\n", &mPlayer);
 		getPlayerVolume(vol, ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::getPlayerVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
@@ -824,7 +824,7 @@ player_result_t MediaPlayerImpl::getMaxVolume(uint8_t *vol)
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling getPlayerMaxVolume directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling getPlayerMaxVolume directly. player: %x\n", &mPlayer);
 		getPlayerMaxVolume(vol, ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::getPlayerMaxVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
@@ -874,7 +874,7 @@ player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling setPlayerVolume directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling setPlayerVolume directly. player: %x\n", &mPlayer);
 		setPlayerVolume(vol, ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::setPlayerVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
@@ -926,7 +926,7 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 
 	std::shared_ptr<stream::InputDataSource> sharedDataSource = std::move(source);
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling setPlayerDataSource directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling setPlayerDataSource directly. player: %x\n", &mPlayer);
 		setPlayerDataSource(sharedDataSource, ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::setPlayerDataSource, shared_from_this(), sharedDataSource, std::ref(ret), std::ref(syncSem));
@@ -989,7 +989,7 @@ player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserver
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling setPlayerObserver directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling setPlayerObserver directly. player: %x\n", &mPlayer);
 		setPlayerObserver(observer, ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::setPlayerObserver, shared_from_this(), observer, std::ref(ret), std::ref(syncSem));
@@ -1032,7 +1032,7 @@ player_result_t MediaPlayerImpl::setStreamInfo(std::shared_ptr<stream_info_t> st
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling setPlayerStreamInfo directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling setPlayerStreamInfo directly. player: %x\n", &mPlayer);
 		setPlayerStreamInfo(stream_info, ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::setPlayerStreamInfo, shared_from_this(), stream_info, std::ref(ret), std::ref(syncSem));
@@ -1086,7 +1086,7 @@ bool MediaPlayerImpl::isPlaying()
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, checking state directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, checking state directly. player: %x\n", &mPlayer);
 		if (getState() == PLAYER_STATE_PLAYING || getState() == PLAYER_STATE_COMPLETING) {
 			ret = true;
 		}
@@ -1125,7 +1125,7 @@ player_result_t MediaPlayerImpl::setLooping(bool loop)
 	}
 
 	if (mpw.isSameThread()) {
-		medvdbg("Already on PlayerWorker thread, calling setPlayerLooping directly. player: %x\n", &mPlayer);
+		meddbg("Already on PlayerWorker thread, calling setPlayerLooping directly. player: %x\n", &mPlayer);
 		setPlayerLooping(loop, ret, syncSem);
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::setPlayerLooping, shared_from_this(), loop, std::ref(ret), std::ref(syncSem));

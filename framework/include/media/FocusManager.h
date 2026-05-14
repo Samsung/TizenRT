@@ -182,7 +182,6 @@ private:
 	void insertFocusElement(std::shared_ptr<FocusRequest> focusRequest, focus_state_t focusState);
 	void removeFocusAndNotify(std::shared_ptr<FocusRequest> focusRequest);
 	void removeFocusElement(std::shared_ptr<FocusRequest> focusRequest);
-	//ToDo: Check if it breaks ABI
 	void callFocusLossListener(void);
 	std::list<std::shared_ptr<FocusRequester>> mPlayerFocusList;
 	std::mutex mFocusLock;
