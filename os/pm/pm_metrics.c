@@ -328,13 +328,13 @@ int pm_metrics(int milliseconds)
 
 	start_time = clock_systimer();
 	g_pm_metrics->state_metrics.stime = start_time;
+	g_pm_metrics_running = true;
 
 	/* Initialize metrics for all registered domains */
 	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
 		domain = (FAR struct pm_domain_s *)entry;
-		pm_metrics_update_domain(domain); /* This will set domain->stime */
+		pm_metrics_update_domain(domain);
 	}
-	g_pm_metrics_running = true;
 	leave_critical_section(flags);
 
 	/* Suspend for given time interval */
