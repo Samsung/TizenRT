@@ -35,8 +35,7 @@
 
 #include <driver/flash_types.h>
 #include <driver/flash.h>
-
-#define BK_SECURE_FAULT_REBOOT_REASON   (REBOOT_BOARD_SPECIFIC4) /* TFM watch dog */
+#include "armino_reboot_reason.h"
 
 #define MAX_DUMP_SYS_MEM_COUNT       (8)
 #define SOC_DTCM_DATA_SIZE           (0x4000)
@@ -750,7 +749,7 @@ static void exception_frame_printf (uint32_t *ptr_buff , uint32_t buflen)
 static void panic_secure_fault(void)
 {
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-    up_reboot_reason_write(BK_SECURE_FAULT_REBOOT_REASON);
+    up_reboot_reason_write(REBOOT_SYSTEM_TFM_RESET);
 #endif
     PANIC();
 }

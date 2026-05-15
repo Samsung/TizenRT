@@ -40,6 +40,12 @@
 #include "cache.h"
 #endif
 
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <arch/reboot_reason.h>
+#include "armino_reboot_reason.h"
+#endif
+
+
 #include <driver/aon_rtc.h>
 #define PM_BT_LP_RTC_ALARM_NAME PM_BT_RTC_ALARM_NAME
 
@@ -859,7 +865,10 @@ static uint32_t bt_rf_pll_ctrl_wrapper(uint32_t set)
 
 static void reboot_wrapper(void)
 {
-    bk_reboot();
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+    up_reboot_reason_write(REBOOT_SYSTEM_BT_RESET);
+#endif
+    bk_reboot_reset_reason();
 }
 
 static int uart_read_byte_ex_wrapper(uint8_t id, uint8_t *ch)
