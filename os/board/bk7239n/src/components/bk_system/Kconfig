@@ -81,11 +81,6 @@ menu "BK_system"
 			depends on ASYNC_IRQ_LOG
 			help
 				The buffer size of the async irq log.
-
-		config UART_PRINT_BAUD_RATE
-			depends on SYS_PRINT_DEV_UART
-			int "uart print baud rate"
-			default "115200"
 	endmenu
 
 	menu "System Config"
