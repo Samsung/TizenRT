@@ -46,7 +46,9 @@ void up_flush_console(void)
 		return;
 	}
 
-	lldbg_noarg("Flush Console:\n");
+	/* Mark drained buffered logs so assert-triggered flushes are obvious. */
+	lldbg_noarg("#####################################################################################\n");
+	lldbg_noarg("Print remaining buffered console logs not yet output:\n");
 	while (dev->xmit.head != dev->xmit.tail) {
 		up_lowputc(dev->xmit.buffer[dev->xmit.tail]);
 
@@ -54,5 +56,5 @@ void up_flush_console(void)
 			dev->xmit.tail = 0;
 		}
 	}
-	lldbg_noarg("\n\n");
+	lldbg_noarg("\n#####################################################################################\n\n");
 }
