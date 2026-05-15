@@ -127,8 +127,8 @@ void up_reboot_reason_clear(void)
 	/* Reboot Reason Clear API writes the REBOOT_REASON_INITIALIZED by default.
 	 * If chip vendor needs another thing to do, please change the below.
 	 */
-	up_reboot_reason_write(REBOOT_UNKNOWN);
-	reboot_reason = REBOOT_UNKNOWN;
+	up_reboot_reason_write(REBOOT_REASON_INITIALIZED);
+	reboot_reason = REBOOT_REASON_INITIALIZED;
 }
 
 bool up_reboot_reason_is_written(void)
