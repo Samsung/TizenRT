@@ -85,30 +85,48 @@ struct ConvertibleFrom {
   bool alloc_constructed{false};
 
   constexpr ConvertibleFrom() = default;
+  
+#if _LIBCPP_STD_VER >= 20 && !defined(_LIBCPP_HAS_NO_REQUIRES_EXPR)
   constexpr ConvertibleFrom(T& _v)
     requires(std::is_constructible_v<T, T&>)
   : v(_v) {}
+  
   constexpr ConvertibleFrom(const T& _v)
     requires(std::is_constructible_v<T, const T&> && !std::is_const_v<T>)
   : v(_v) {}
+  
   constexpr ConvertibleFrom(T&& _v)
     requires(std::is_constructible_v<T, T &&>)
   : v(std::move(_v)) {}
+  
   constexpr ConvertibleFrom(const T&& _v)
     requires(std::is_constructible_v<T, const T &&> && !std::is_const_v<T>)
   : v(std::move(_v)) {}
-
+  
   template <class U>
     requires std::is_constructible_v<ConvertibleFrom, U&&>
   constexpr ConvertibleFrom(std::allocator_arg_t, const test_allocator<int>&, U&& _u)
-      : ConvertibleFrom{std::forward<U>(_u)} {
+    : ConvertibleFrom{std::forward<U>(_u)} {
     alloc_constructed = true;
   }
+#else
+  // C++17 and earlier fallback implementations
+  template <class U>
+  constexpr ConvertibleFrom(U&& u)
+    : v(std::forward<U>(u)) {}
+  
+  template <class U>
+  constexpr ConvertibleFrom(std::allocator_arg_t, const test_allocator<int>&, U&& _u)
+    : ConvertibleFrom{std::forward<U>(_u)} {
+    alloc_constructed = true;
+  }
+#endif
 };
 
 template <class T>
 struct std::uses_allocator<ConvertibleFrom<T>, test_allocator<int>> : std::true_type {};
 
+#if _LIBCPP_STD_VER >= 20 && !defined(_LIBCPP_HAS_NO_REQUIRES_EXPR)
 template <class T>
 struct ExplicitConstructibleFrom {
   T v;
@@ -131,10 +149,30 @@ struct ExplicitConstructibleFrom {
   template <class U>
     requires std::is_constructible_v<ExplicitConstructibleFrom, U&&>
   constexpr ExplicitConstructibleFrom(std::allocator_arg_t, const test_allocator<int>&, U&& _u)
-      : ExplicitConstructibleFrom{std::forward<U>(_u)} {
+    : ExplicitConstructibleFrom{std::forward<U>(_u)} {
     alloc_constructed = true;
   }
 };
+#else
+// C++17 and earlier fallback - simpler implementation
+template <class T>
+struct ExplicitConstructibleFrom {
+  T v;
+  bool alloc_constructed{false};
+
+  constexpr explicit ExplicitConstructibleFrom() = default;
+  constexpr explicit ExplicitConstructibleFrom(T& _v) : v(_v) {}
+  constexpr explicit ExplicitConstructibleFrom(const T& _v) : v(_v) {}
+  constexpr explicit ExplicitConstructibleFrom(T&& _v) : v(std::move(_v)) {}
+  constexpr explicit ExplicitConstructibleFrom(const T&& _v) : v(std::move(_v)) {}
+
+  template <class U>
+  constexpr ExplicitConstructibleFrom(std::allocator_arg_t, const test_allocator<int>&, U&& _u)
+    : ExplicitConstructibleFrom{std::forward<U>(_u)} {
+    alloc_constructed = true;
+  }
+};
+#endif
 
 template <class T>
 struct std::uses_allocator<ExplicitConstructibleFrom<T>, test_allocator<int>> : std::true_type {};
@@ -162,12 +200,20 @@ struct TracedCopyMove {
       : nonConstCopy(other.nonConstCopy), constCopy(other.constCopy), nonConstMove(other.nonConstMove),
         constMove(other.constMove + 1) {}
 
+#if _LIBCPP_STD_VER >= 20 && !defined(_LIBCPP_HAS_NO_REQUIRES_EXPR)
   template <class U>
     requires std::is_constructible_v<TracedCopyMove, U&&>
   constexpr TracedCopyMove(std::allocator_arg_t, const test_allocator<int>&, U&& _u)
-      : TracedCopyMove{std::forward<U>(_u)} {
+    : TracedCopyMove{std::forward<U>(_u)} {
     alloc_constructed = true;
   }
+#else
+  template <class U>
+  constexpr TracedCopyMove(std::allocator_arg_t, const test_allocator<int>&, U&& _u)
+    : TracedCopyMove{std::forward<U>(_u)} {
+    alloc_constructed = true;
+  }
+#endif
 };
 
 template <>
@@ -216,8 +262,11 @@ struct ExplicitCtrFromConstTupleRefRef : TracedCopyMove {
 template <class T>
 void conversion_test(T);
 
+// C++20 concept with requires expression, guarded for C++17 compatibility
+#if _LIBCPP_STD_VER >= 20 && !defined(_LIBCPP_HAS_NO_CONCEPTS)
 template <class T, class... Args>
 concept ImplicitlyConstructible = requires(Args&&... args) { conversion_test<T>({std::forward<Args>(args)...}); };
+#endif
 
 struct CopyAssign {
   int val;
@@ -285,9 +334,11 @@ struct AssignableFrom {
 
   template <class U>
   constexpr AssignableFrom(U&& u)
-    requires std::is_constructible_v<T, U&&>
-  : v(std::forward<U>(u)) {}
+    : v(std::forward<U>(u)) {}
 
+#if _LIBCPP_STD_VER >= 20 && !defined(_LIBCPP_HAS_NO_REQUIRES_EXPR)
+  template <class U>
+    requires std::is_constructible_v<T, U&&>
   constexpr AssignableFrom& operator=(const T& t)
     requires std::is_copy_assignable_v<T>
   {
@@ -315,7 +366,11 @@ struct AssignableFrom {
     v = std::move(t);
     return *this;
   }
+#endif
 };
+
+template <class T>
+struct std::uses_allocator<AssignableFrom<T>, test_allocator<int>> : std::true_type {};
 
 struct TracedAssignment {
   int copyAssign = 0;
