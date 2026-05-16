@@ -133,6 +133,7 @@ struct rwnx_hw {
 	u8 avail_idx_map;
 	u8 vif_started;
 	bool adding_sta;
+	bool connected;
 
     /* RoC Management */
     struct rwnx_roc_elem *roc_elem;             /* Information provided by cfg80211 in its remain on channel request */
@@ -162,6 +163,10 @@ struct rwnx_hw {
 	struct hostapd_freq_params freq_params;
 
 	struct bk_work csa_work;
+
+#ifdef CONFIG_WIFI_REGDOMAIN
+	struct mac_chan_op chan;
+#endif
 };
 
 #if CONFIG_RWNX_SW_TXQ

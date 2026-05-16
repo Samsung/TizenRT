@@ -1,0 +1,5 @@
+/* == "version" + "BK git version" + "compile date" + "compile time" == */
+
+== version libwifi_ver_e9097bd09e04e9d7ced6ae6879c05fbefffcd317_2026/06/18-15:15:00 ==
+1.	Resolve the issue of discontinuous CSI data reporting 
+2.             Limit tx power for current working channel
