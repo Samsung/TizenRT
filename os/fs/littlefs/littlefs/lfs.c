@@ -4707,10 +4707,7 @@ int lfs_fs_traverse_(lfs_t *lfs,
         int (*cb)(void *data, lfs_block_t block), void *data,
         bool includeorphans) {
     // iterate over metadata pairs
-	lfs_mdir_t dir;
-
-	dir.tail[0] = 0;
-	dir.tail[1] = 1;
+	lfs_mdir_t dir = {.tail = {0, 1}};
 
 #ifdef LFS_MIGRATE
     // also consider v1 blocks during migration
@@ -6572,7 +6569,7 @@ int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg)
     }
 	err = lfs_init(lfs, cfg);
     if (err) {
-        return err;
+        goto cleanup;
     }
 	lfs_mdir_t dir = {.tail = {0, 1}};
 	struct lfs_tortoise_t tortoise = {
@@ -6582,8 +6579,10 @@ int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg)
 	};
 	//parse_again:
 	while (!lfs_pair_isnull(dir.tail)) {
-		int err = lfs_tortoise_detectcycles(&dir, &tortoise);
+        // TODO: If dir->tail(0, 1) and tortoise->pair(0, 1) are repeated 3 times, it is determined that all blocks are erased
+		err = lfs_tortoise_detectcycles(&dir, &tortoise);
 		if (err < 0) {
+            fdbg("format requested, all blocks are erased\n");
 			goto cleanup;
 		}
 		lfs_stag_t tag;
@@ -6596,7 +6595,7 @@ int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg)
 				lfs_dir_find_match, &(struct lfs_dir_find_match){
 				lfs, "formatfs", 8});
 		if (tag > 0 && !lfs_tag_isdelete(tag)) {
-			err = lfs_format_(lfs, cfg);
+            err = LFS_ERR_EUCLEAN;
 			goto cleanup;
 		}
 
@@ -6607,48 +6606,59 @@ cleanup:
 	return err;
 }
 
-int lfs_reserve_format(lfs_t *lfs)
+int lfs_reserve_format(lfs_t *lfs, const struct lfs_config *cfg)
 {
 	int err;
-	err = LFS_LOCK(lfs->cfg);
+	err = LFS_LOCK(cfg);
     if (err) {
         goto cleanup;
     }
 
-	// create free lookahead
-	memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
-	lfs->lookahead.start = 0;
-	lfs->lookahead.size = lfs_min(8*lfs->cfg->lookahead_size,
-			lfs->block_count);
-	lfs->lookahead.next = 0;
-	lfs_alloc_ckpoint(lfs);
-
-	// create root dir
+	// fetch root dir
 	lfs_mdir_t root;
-	err = lfs_dir_alloc(lfs, &root);
-	if (err) {
-		goto cleanup;
-	}
-	// write one superblock
-	lfs_superblock_t superblock = {
-		.version	 = lfs_fs_disk_version(lfs),
-		.block_size  = lfs->cfg->block_size,
-		.block_count = lfs->block_count,
-		.name_max	 = lfs->name_max,
-		.file_max	 = lfs->file_max,
-		.attr_max	 = lfs->attr_max,
-	};
-	lfs_superblock_tole32(&superblock);
+    err = lfs_dir_fetch(lfs, &root, lfs->root);
+    if (err) {
+        // create root dir for format
+        memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
+        lfs->lookahead.start = 0;
+        lfs->lookahead.size = lfs_min(8*lfs->cfg->lookahead_size,
+                lfs->block_count);
+        lfs->lookahead.next = 0;
+        lfs_alloc_ckpoint(lfs);
+
+        // create root dir
+        lfs_mdir_t root;
+        err = lfs_dir_alloc(lfs, &root);
+        if (err) {
+            goto cleanup;
+        }
+        // write one superblock
+        lfs_superblock_t superblock = {
+            .version	 = lfs_fs_disk_version(lfs),
+            .block_size  = lfs->cfg->block_size,
+            .block_count = lfs->block_count,
+            .name_max	 = lfs->name_max,
+            .file_max	 = lfs->file_max,
+            .attr_max	 = lfs->attr_max,
+        };
+        lfs_superblock_tole32(&superblock);
+        err = lfs_dir_commit(lfs, &root, LFS_MKATTRS(
+                {LFS_MKTAG(LFS_TYPE_CREATE, 0, 0), NULL},
+                {LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8), "formatfs"},
+                {LFS_MKTAG(LFS_TYPE_INLINESTRUCT, 0, sizeof(superblock)),
+                    &superblock}));
+        goto cleanup;
+    }
+
+    // TODO: Consider changing to corrupt and format logic using LFS_TYPE_USERATTR
 	err = lfs_dir_commit(lfs, &root, LFS_MKATTRS(
-			{LFS_MKTAG(LFS_TYPE_CREATE, 0, 0), NULL},
 			{LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8), "formatfs"},
-			{LFS_MKTAG(LFS_TYPE_INLINESTRUCT, 0, sizeof(superblock)),
-				&superblock}));
+                ));
 cleanup:
 	if (err) {
 	    LFS_ERROR("lfs_request_format -> %d", err);
 	}
-    LFS_UNLOCK(lfs->cfg);
+    LFS_UNLOCK(cfg);
     return err;
 }
 
@@ -6656,43 +6666,53 @@ int lfs_reserve_corrupt(lfs_t *lfs)
 {
 	int err;
 	err = LFS_LOCK(lfs->cfg);
-	if (err) {
-		goto cleanup;
-	}
+    if (err) {
+        return err;
+    }
 
-	// create free lookahead
-	memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
-	lfs->lookahead.start = 0;
-	lfs->lookahead.size = lfs_min(8 * lfs->cfg->lookahead_size, lfs->block_count);
-	lfs->lookahead.next = 0;
-	lfs_alloc_ckpoint(lfs);
-
-	// create root dir
+	// fetch root dir
 	lfs_mdir_t root;
-	err = lfs_dir_alloc(lfs, &root);
-	if (err) {
-		goto cleanup;
-	}
+    err = lfs_dir_fetch(lfs, &root, lfs->root);
+    if (err) {
+        // create root dir for corrupt
+        memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
+        lfs->lookahead.start = 0;
+        lfs->lookahead.size = lfs_min(8*lfs->cfg->lookahead_size,
+                lfs->block_count);
+        lfs->lookahead.next = 0;
+        lfs_alloc_ckpoint(lfs);
 
-	// write one superblock
-	lfs_superblock_t superblock = {
-		.version = lfs_fs_disk_version(lfs),
-		.block_size = lfs->cfg->block_size,
-		.block_count = lfs->block_count,
-		.name_max = lfs->name_max,
-		.file_max = lfs->file_max,
-		.attr_max = lfs->attr_max,
-	};
-	lfs_superblock_tole32(&superblock);
+        // create root dir
+        lfs_mdir_t root;
+        err = lfs_dir_alloc(lfs, &root);
+        if (err) {
+            goto cleanup;
+        }
+        // write one superblock
+        lfs_superblock_t superblock = {
+            .version	 = lfs_fs_disk_version(lfs),
+            .block_size  = lfs->cfg->block_size,
+            .block_count = lfs->block_count,
+            .name_max	 = lfs->name_max,
+            .file_max	 = lfs->file_max,
+            .attr_max	 = lfs->attr_max,
+        };
+        lfs_superblock_tole32(&superblock);
+        err = lfs_dir_commit(lfs, &root, LFS_MKATTRS(
+                {LFS_MKTAG(LFS_TYPE_CREATE, 0, 0), NULL},
+                {LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8), "crpt__fs"},
+                {LFS_MKTAG(LFS_TYPE_INLINESTRUCT, 0, sizeof(superblock)),
+                    &superblock}));
+        goto cleanup;
+    }
+
 	err = lfs_dir_commit(lfs, &root, LFS_MKATTRS(
-			{LFS_MKTAG(LFS_TYPE_CREATE, 0, 0), NULL},
 			{LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8), "crpt__fs"},
-			{LFS_MKTAG(LFS_TYPE_INLINESTRUCT, 0, sizeof(superblock)),
-				&superblock}));
+                ));
 cleanup:
 	if (err) {
 		LFS_ERROR("lfs_request_currupt -> %d", err);
 	}
-	LFS_UNLOCK(lfs->cfg);
+    err = LFS_UNLOCK(lfs->cfg);
 	return err;
 }

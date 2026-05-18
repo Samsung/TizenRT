@@ -132,8 +132,6 @@ static const struct block_operations g_dhara_bops = {
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-bool first_format=true;
-
 static int dhara_convert_result(dhara_error_t err)
 {
 	switch (err) {
@@ -281,63 +279,7 @@ static void dhara_update_readcache(FAR dhara_dev_t *dev, dhara_page_t page, FAR 
 		}
 	}
 }
-/****************************************************************************
- * Name: dhara_erase
- *
- * Description:
- *   Centralized function to handle all MTD bulk erase operations.
- *   This function is called from both dhara_journal_resume and dhara_ioctl
- *   to ensure consistent bulk erase handling.
- *
- * Input Parameters:
- *   mtd - MTD device interface
- *   cmd - IOCTL command (should be MTDIOC_BULKERASE)
- *   arg - Argument for different erase scenarios:
- *         0 - Direct bulk erase (from journal resume)
- *         1 - Format reservation (from dhara_ioctl with arg=1)
- *         2 - Application format (from dhara_ioctl with arg=2)
- *         3 - First format or application format (from dhara_ioctl with arg=3)
- *
- * Returned Value:
- *   OK on success; a negated errno value on failure.
- *
- ****************************************************************************/
-int dhara_erase(FAR struct dhara_dev_s *dev, int cmd, unsigned long arg)
-{
-	int ret = OK;
 
- 	switch (arg) {
-	case 1:
-		dhara_map_sync(&dev->map, true, NULL);
-		break;    
-	case 2:
-		ret = MTD_IOCTL(dev->mtd, cmd, 0);
-		if (ret < 0 && ret != -ENOTTY) {
-			ferr("MTD application bulk erase failed: %d\n", ret);
-		}
-		first_format = false;
-		break;
-	case 3:
-		/* Application format - called from dhara_ioctl with arg=2 */
-		if(first_format == true) {
-		ret = MTD_IOCTL(dev->mtd, cmd, 0);
-		if (ret < 0 && ret != -ENOTTY) {
-			ferr("MTD application bulk erase failed: %d\n", ret);
-		}
-		first_format = false;
-		}
-		break;
-
-		default:
-		ret = MTD_IOCTL(dev->mtd, cmd, 0);
-		if (ret < 0 && ret != -ENOTTY) {
-			ferr("MTD unknown arg bulk erase failed: %d\n", ret);
-		}
-        break;
-    }
-
-	return ret;
-}
 /****************************************************************************
  * Name: dhara_open
  *
@@ -438,7 +380,7 @@ static void dhara_update_metadatacache(FAR dhara_dev_t *dev, dhara_page_t page, 
 
 	for (c = dq_peek(q); c; c = dq_next(c)) {
 		cache = (FAR dhara_metadatacache_t *) c;
-			if (cache->page == page) {
+		if (cache->page == page) {
 			cache->page = page;
 			memcpy(cache->buffer, data, dev->geo.blocksize);
 			dq_rem(c, q);
@@ -596,9 +538,9 @@ static int dhara_geometry(FAR struct inode *inode, FAR struct geometry *geometry
 		geometry->geo_available = true;
 		geometry->geo_mediachanged = false;
 		geometry->geo_writeenabled = true;
-		geometry->geo_nsectors = dev->geo.neraseblocks * dev->blkper;
+		geometry->geo_nsectors = dhara_map_capacity(&dev->map);
+		geometry->geo_nsectors -= (geometry->geo_nsectors % dev->blkper);
 		geometry->geo_sectorsize = dev->geo.blocksize;
-
 		strcpy(geometry->geo_model, dev->geo.model);
 		sem_post(&dev->lock);
 		return 0;
@@ -606,8 +548,6 @@ static int dhara_geometry(FAR struct inode *inode, FAR struct geometry *geometry
 
 	return -EINVAL;
 }
-
-#define MTDIOC_SYNC    _MTDIOC(0x0008)
 
 /****************************************************************************
  * Name: dhara_ioctl
@@ -618,6 +558,7 @@ static int dhara_geometry(FAR struct inode *inode, FAR struct geometry *geometry
 static int dhara_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 {
 	FAR dhara_dev_t *dev;
+	FAR struct mtd_geometry_s *geo;
 	int ret;
 
 	DEBUGASSERT(inode->i_private);
@@ -629,33 +570,42 @@ static int dhara_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 	 * to the MTD driver (unchanged).
 	 */
 	switch (cmd) {
-	case BIOC_BULKERASE:
-	case MTDIOC_BULKERASE:
-		ret = dhara_erase(dev, cmd, arg);
-		ferr("return %d\n",ret);
-		if (ret < 0 && ret != -ENOTTY) {
-			ferr("MTD ioctl(%04x) failed: erase %d\n", cmd, ret);
+	case BIOC_FLUSH:
+		ret = dhara_map_sync(&dev->map, &dhara_err);
+		if (ret < 0) {
+			ferr("BIOC ioctl(%04x) failed: sync %d\n", cmd, ret);
 		}
-		break;
-	case MTDIOC_SYNC:
-		ret = dhara_map_sync(&dev->map, false,&dhara_err);
-		if (ret < 0 && ret != -ENOTTY) {
-			ferr("MTD ioctl(%04x) failed: sync %d\n", cmd, ret);
+		goto ok_out;
+	case BIOC_DISCARD:
+		dhara_map_clear(&dev->map);
+		ret = OK;
+		goto ok_out;
+	case BIOC_GEOMETRY:
+	{
+		ret = MTD_IOCTL(dev->mtd, MTDIOC_GEOMETRY, arg);
+		if (ret < 0) {
+			ferr("BIOC ioctl(%04x) failed: default %d\n", cmd, ret);
+			goto ok_out;
 		}
-		break;
-	default:
-		ret = MTD_IOCTL(dev->mtd, cmd, arg);
-		if (ret < 0 && ret != -ENOTTY) {
-			ferr("MTD ioctl(%04x) failed: default %d\n", cmd, ret);
-		}
-		break;
-	}
-		if (cmd == MTDIOC_GEOMETRY) {
 		FAR struct mtd_geometry_s *geo = (FAR struct mtd_geometry_s *)arg;
 		if (geo) {
 			geo->neraseblocks = dhara_map_capacity(&dev->map) / dev->blkper;
 		}
+		goto ok_out;
 	}
+	}
+
+	/* No other block driver ioctl commands are not recognized by this
+	 * driver.  Other possible MTD driver ioctl commands are passed
+	 * to the MTD driver (unchanged).
+	 */
+
+	ret = MTD_IOCTL(dev->mtd, cmd, arg);
+	if (ret < 0) {
+		fdbg("ERROR: MTD ioctl(%04x) failed: %d\n", cmd, ret);
+	}
+
+ok_out:
 	return ret;
 }
 
@@ -773,7 +723,7 @@ int dhara_nand_read(FAR const struct dhara_nand *n, dhara_page_t p, size_t offse
 	/* Check metadata cache */
 	buf = dhara_find_metadatacache(dev, p);
 	if (buf) {
-		memcpy(data, buf+offset, length);
+		memcpy(data, buf + offset, length);
 		return 0;
 	}
 	mcache = dhara_grab_metadatacache(dev);
@@ -782,6 +732,11 @@ int dhara_nand_read(FAR const struct dhara_nand *n, dhara_page_t p, size_t offse
 		ret = 0;
 	}
 	if (ret < 0) {
+		/* TODO: It may not be a ECC error, so you need ECC error check logic.
+			if (is_ecc_error) {
+				dhara_set_error(err, DHARA_E_ECC);
+			}
+		*/
 		dhara_insert_metadatacache(dev, mcache);
 		dhara_set_error(err, DHARA_E_ECC);
 		return ret;
@@ -791,33 +746,33 @@ int dhara_nand_read(FAR const struct dhara_nand *n, dhara_page_t p, size_t offse
 	dhara_insert_metadatacache(dev, mcache);
 
 	} else {
-	/* Check data page cache first */
-	buf = dhara_find_readcache(dev, p);
-	if (buf) {
-		memcpy(data, buf + offset, length);
-		return 0;
-	}
+		/* Check data page cache first */
+		buf = dhara_find_readcache(dev, p);
+		if (buf) {
+			memcpy(data, buf + offset, length);
+			return 0;
+		}
 
-	/* Grab a cache entry */
-	cache = dhara_grab_readcache(dev);
-	/* Read page from flash */
-	ret = MTD_BREAD(dev->mtd, p, 1, cache->buffer);
-	if (ret == -EUCLEAN)
-		ret = 0;  /* Ignore correctable ECC error */
+		/* Grab a cache entry */
+		cache = dhara_grab_readcache(dev);
+		/* Read page from flash */
+		ret = MTD_BREAD(dev->mtd, p, 1, cache->buffer);
+		if (ret == -EUCLEAN)
+			ret = 0;  /* Ignore correctable ECC error */
 
-	if (ret < 0) {
+		if (ret < 0) {
+			dhara_insert_readcache(dev, cache);
+			dhara_set_error(err, DHARA_E_ECC);
+			return ret;
+		}
+
+		/* Copy requested data */
+		memcpy(data, cache->buffer + offset, length);
+		cache->page = p;
 		dhara_insert_readcache(dev, cache);
-		dhara_set_error(err, DHARA_E_ECC);
-		return ret;
+
+		/* Check if this is a metadata page and cache it */
 	}
-
-	/* Copy requested data */
-	memcpy(data, cache->buffer + offset, length);
-	cache->page = p;
-	dhara_insert_readcache(dev, cache);
-
-	/* Check if this is a metadata page and cache it */
-}
 	return ret >= 0 ? OK : ret;
 }
 
@@ -916,7 +871,7 @@ int dhara_initialize_by_path(FAR const char *path, FAR struct mtd_dev_s *mtd)
 	ret = dhara_init_metadatacache(dev);
 	dhara_map_init(&dev->map, &dev->nand, dev->pagebuf + dev->geo.blocksize, CONFIG_DHARA_GC_RATIO);
 
-	dhara_map_resume(&dev->map,dev, NULL);
+	dhara_map_resume(&dev->map, NULL);
 
 	/* Inode private data is a reference to the
 	 * DHARA_MTDBLOCK device structure

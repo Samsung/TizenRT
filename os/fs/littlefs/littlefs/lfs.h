@@ -105,6 +105,7 @@ enum lfs_error {
     LFS_ERR_NOMEM       = -12,  // No more memory available
     LFS_ERR_NOATTR      = -61,  // No data/attr available
     LFS_ERR_NAMETOOLONG = -36,  // File name too long
+    LFS_ERR_EUCLEAN     = -117, // Format tag exist in superblock
 };
 
 // File types
@@ -817,7 +818,7 @@ int lfs_migrate(lfs_t *lfs, const struct lfs_config *cfg);
 #endif
 
 /* Request format file system. flash will be erase during next mount time */
-int lfs_reserve_format(lfs_t *lfs);
+int lfs_reserve_format(lfs_t *lfs, const struct lfs_config *cfg);
 
 int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg);
 

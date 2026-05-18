@@ -93,10 +93,10 @@ void dhara_map_init(struct dhara_map *m, const struct dhara_nand *n, uint8_t *pa
 	dhara_journal_init(&m->journal, n, page_buf);
 	m->gc_ratio = gc_ratio;
 }
-int dhara_map_resume(struct dhara_map *m, FAR struct dhara_dev_s *dev, dhara_error_t *err)
+int dhara_map_resume(struct dhara_map *m, dhara_error_t *err)
 {
 	/* Pass MTD device to journal resume */
-	if (dhara_journal_resume(&m->journal, dev, err) < 0) {
+	if (dhara_journal_resume(&m->journal, err) < 0) {
 		m->count = 0;
 		return -1;
 	}
@@ -227,7 +227,7 @@ int dhara_map_read(struct dhara_map *m, dhara_sector_t s, uint8_t *data, dhara_e
  * it at the front of the map. Return raw errors from the journal (do
  * not perform recovery).
  */
-static int raw_gc(struct dhara_map *m, dhara_page_t src, bool format_flag ,dhara_error_t *err)
+static int raw_gc(struct dhara_map *m, dhara_page_t src, dhara_error_t *err)
 {
 	dhara_sector_t target;
 	dhara_page_t current;
@@ -264,14 +264,14 @@ static int raw_gc(struct dhara_map *m, dhara_page_t src, bool format_flag ,dhara
 
 	/* Rewrite it at the front of the journal with updated metadata */
 	ck_set_count(dhara_journal_cookie(&m->journal), m->count);
-	if (dhara_journal_copy(&m->journal, src, meta, format_flag, err) < 0) {
+	if (dhara_journal_copy(&m->journal, src, meta, err) < 0) {
 		return -1;
 	}
 
 	return 0;
 }
 
-static int pad_queue(struct dhara_map *m,bool format_flag,dhara_error_t *err)
+static int pad_queue(struct dhara_map *m, dhara_error_t *err)
 {
 	dhara_page_t p = dhara_journal_root(&m->journal);
 	uint8_t root_meta[DHARA_META_SIZE];
@@ -279,14 +279,14 @@ static int pad_queue(struct dhara_map *m,bool format_flag,dhara_error_t *err)
 	ck_set_count(dhara_journal_cookie(&m->journal), m->count);
 
 	if (p == DHARA_PAGE_NONE) {
-		return dhara_journal_enqueue(&m->journal, NULL, NULL, format_flag, err);
+		return dhara_journal_enqueue(&m->journal, NULL, NULL, err);
 	}
 
 	if (dhara_journal_read_meta(&m->journal, p, root_meta, err) < 0) {
 		return -1;
 	}
 
-	return dhara_journal_copy(&m->journal, p, root_meta, format_flag, err);
+	return dhara_journal_copy(&m->journal, p, root_meta, err);
 }
 
 /* Attempt to recover the journal */
@@ -305,9 +305,9 @@ static int try_recover(struct dhara_map *m, dhara_error_t cause, dhara_error_t *
 		int ret;
 
 		if (p == DHARA_PAGE_NONE) {
-			ret = pad_queue(m, false,&my_err);
+			ret = pad_queue(m, &my_err);
 		} else {
-			ret = raw_gc(m, p, false, &my_err);
+			ret = raw_gc(m, p, &my_err);
 		}
 
 		if (ret < 0) {
@@ -381,7 +381,7 @@ int dhara_map_write(struct dhara_map *m, dhara_sector_t dst, const uint8_t *data
 			return -1;
 		}
 
-		if (!dhara_journal_enqueue(&m->journal, data, meta, false, &my_err)) {
+		if (!dhara_journal_enqueue(&m->journal, data, meta, &my_err)) {
 			break;
 		}
 
@@ -406,7 +406,7 @@ int dhara_map_copy_page(struct dhara_map *m, dhara_page_t src, dhara_sector_t ds
 			return -1;
 		}
 
-		if (!dhara_journal_copy(&m->journal, src, meta, false,  &my_err)) {
+		if (!dhara_journal_copy(&m->journal, src, meta, &my_err)) {
 			break;
 		}
 
@@ -490,7 +490,7 @@ static int try_delete(struct dhara_map *m, dhara_sector_t s, dhara_error_t *err)
 	meta_set_alt(meta, level, DHARA_PAGE_NONE);
 
 	ck_set_count(dhara_journal_cookie(&m->journal), m->count - 1);
-	if (dhara_journal_copy(&m->journal, alt_page, meta,false, err) < 0) {
+	if (dhara_journal_copy(&m->journal, alt_page, meta, err) < 0) {
 		return -1;
 	}
 
@@ -518,20 +518,17 @@ int dhara_map_trim(struct dhara_map *m, dhara_sector_t s, dhara_error_t *err)
 
 	return 0;
 }
-int dhara_map_sync(struct dhara_map *m, bool format_flag, dhara_error_t *err)
+int dhara_map_sync(struct dhara_map *m, dhara_error_t *err)
 {
-	if (dhara_journal_is_clean(&m->journal) && format_flag) {
-		dhara_journal_enqueue(&m->journal, NULL, NULL, format_flag, err);
-	}
 	while (!dhara_journal_is_clean(&m->journal)) {
 		dhara_page_t p = dhara_journal_peek(&m->journal);
 		dhara_error_t my_err;
 		int ret;
 
 		if (p == DHARA_PAGE_NONE) {
-			ret = pad_queue(m, format_flag,&my_err);
+			ret = pad_queue(m, &my_err);
 		} else {
-			ret = raw_gc(m, p, format_flag, &my_err);
+			ret = raw_gc(m, p, &my_err);
 			if (!ret) {
 				dhara_journal_dequeue(&m->journal);
 			}
@@ -559,7 +556,7 @@ int dhara_map_gc(struct dhara_map *m, dhara_error_t *err)
 			break;
 		}
 
-		if (!raw_gc(m, tail, false, &my_err)) {
+		if (!raw_gc(m, tail, &my_err)) {
 			dhara_journal_dequeue(&m->journal);
 			break;
 		}

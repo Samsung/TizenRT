@@ -49,12 +49,6 @@ static inline void hdr_put_magic(uint8_t *buf)
 	buf[1] = 'h';
 	buf[2] = 'a';
 }
-/* Check if checkpoint page contains format magic at offset 2000 */
-static inline int hdr_has_format_magic(const uint8_t *buf)
-{
-	return	(buf[2001] == 'F') && (buf[2002] == 'O') &&
-			(buf[2003] == 'R') && (buf[2004] == 'M');
-}
 
 /* What epoch is this page? */
 static inline uint8_t hdr_get_epoch(const uint8_t *buf)
@@ -411,7 +405,7 @@ static int find_head(struct dhara_journal *j, dhara_page_t start, dhara_error_t 
 
 	return 0;
 }
-int dhara_journal_resume(struct dhara_journal *j, FAR struct dhara_dev_s *dev, dhara_error_t *err)
+int dhara_journal_resume(struct dhara_journal *j, dhara_error_t *err)
 {
 	dhara_block_t first, last;
 	dhara_page_t last_group;
@@ -431,17 +425,6 @@ int dhara_journal_resume(struct dhara_journal *j, FAR struct dhara_dev_s *dev, d
 
 	/* Perform a linear scan to find the last good checkpoint (root) */
 	if (find_root(j, last_group, err) < 0) {
-		reset_journal(j);
-		return -1;
-	}
-
-	/* Check for format magic at offset 2000 */
-	if (hdr_has_format_magic(j->page_buf)) {
-		/* Perform bulk erase now */
-		ret = dhara_erase(dev, MTDIOC_BULKERASE , 2);
-		if (ret < 0) {
-			printf("MTD bulk erase failed: %d\n", ret);
-		}
 		reset_journal(j);
 		return -1;
 	}
@@ -470,7 +453,7 @@ int dhara_journal_resume(struct dhara_journal *j, FAR struct dhara_dev_s *dev, d
 
 dhara_page_t dhara_journal_capacity(const struct dhara_journal *j)
 {
-	/* Updating bad blocks as 5% of total available blocks */
+	 /* TODO Updating bad blocks as 5% of total available blocks temporarily */
 	const dhara_block_t max_bad = j->nand->num_blocks/20;
 	const dhara_block_t good_blocks = j->nand->num_blocks - max_bad - 1;
 	const int log2_cpb = j->nand->log2_ppb - j->log2_ppc;
@@ -767,7 +750,7 @@ static void finish_recovery(struct dhara_journal *j)
 	/* Was the tail on this page? Skip it forward */
 	clear_recovery(j);
 }
-static int push_meta(struct dhara_journal *j, const uint8_t *meta, bool format_flag, dhara_error_t *err)
+static int push_meta(struct dhara_journal *j, const uint8_t *meta, dhara_error_t *err)
 {
 	const dhara_page_t old_head = j->head;
 	dhara_error_t my_err;
@@ -796,12 +779,7 @@ static int push_meta(struct dhara_journal *j, const uint8_t *meta, bool format_f
 	hdr_set_tail(j->page_buf, j->tail);
 	hdr_set_bb_current(j->page_buf, j->bb_current);
 	hdr_set_bb_last(j->page_buf, j->bb_last);
-	if (format_flag) {
-		j->page_buf[2001] = 'F';
-		j->page_buf[2002] = 'O';
-		j->page_buf[2003] = 'R';
-		j->page_buf[2004] = 'M';
-	}
+
 	if (dhara_nand_prog(j->nand, j->head + 1, j->page_buf, &my_err) < 0) {
 		return recover_from(j, my_err, err);
 	}
@@ -825,14 +803,15 @@ static int push_meta(struct dhara_journal *j, const uint8_t *meta, bool format_f
 
 	return 0;
 }
-int dhara_journal_enqueue(struct dhara_journal *j, const uint8_t *data, const uint8_t *meta ,bool format_flag, dhara_error_t *err)
+
+int dhara_journal_enqueue(struct dhara_journal *j, const uint8_t *data, const uint8_t *meta, dhara_error_t *err)
 {
 	dhara_error_t my_err;
 	int i;
 
 	for (i = 0; i < DHARA_MAX_RETRIES; i++) {
 		if (!(prepare_head(j, &my_err) || (data && dhara_nand_prog(j->nand, j->head, data, &my_err)))) {
-			return push_meta(j, meta, format_flag , err);
+			return push_meta(j, meta, err);
 		}
 
 		if (recover_from(j, my_err, err) < 0) {
@@ -844,14 +823,14 @@ int dhara_journal_enqueue(struct dhara_journal *j, const uint8_t *data, const ui
 	return -1;
 }
 
-int dhara_journal_copy(struct dhara_journal *j, dhara_page_t p, const uint8_t *meta, bool format_flag , dhara_error_t *err)
+int dhara_journal_copy(struct dhara_journal *j, dhara_page_t p, const uint8_t *meta, dhara_error_t *err)
 {
 	dhara_error_t my_err;
 	int i;
 
 	for (i = 0; i < DHARA_MAX_RETRIES; i++) {
 		if (!(prepare_head(j, &my_err) || dhara_nand_copy(j->nand, p, j->head, &my_err))) {
-			return push_meta(j, meta, format_flag , err);
+			return push_meta(j, meta, err);
 		}
 
 		if (recover_from(j, my_err, err) < 0) {
