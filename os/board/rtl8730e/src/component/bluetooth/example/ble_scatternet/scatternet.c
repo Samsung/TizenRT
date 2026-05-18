@@ -805,6 +805,22 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
     return RTK_BT_EVT_CB_OK;
 }
 
+extern trble_result_e trble_netmgr_fw_reset(void);
+static rtk_bt_evt_cb_ret_t tizenrt_scatternet_common_gap_app_callback(uint8_t evt_code, void *param, uint32_t len)
+{
+	(void)param;
+	(void)len;
+
+	switch (evt_code) {
+	case RTK_BT_GAP_EVT_FW_EXCEPTION_IND:
+		trble_netmgr_fw_reset();
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
 static uint16_t app_get_gatts_app_id(uint8_t event, void *data)
 {
 	uint16_t app_id = 0xFFFF;
@@ -1001,6 +1017,7 @@ int ble_tizenrt_scatternet_main(uint8_t enable)
 		BT_APP_PROCESS(rtk_bt_le_gap_set_scan_param(&scan_param));
         BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_LE_GP_GAP,
                                                     (rtk_bt_evt_cb_t)ble_tizenrt_scatternet_gap_app_callback));
+		BT_APP_PROCESS(rtk_bt_evt_register_callback(RTK_BT_COMMON_GP_GAP, tizenrt_scatternet_common_gap_app_callback));
         memcpy(name,(const uint8_t*)RTK_BT_DEV_NAME,strlen((const char *)RTK_BT_DEV_NAME));
 		BT_APP_PROCESS(rtk_bt_le_gap_set_device_name((uint8_t *)name));
         BT_APP_PROCESS(rtk_bt_le_gap_set_appearance(RTK_BT_LE_GAP_APPEARANCE_HEART_RATE_BELT));
