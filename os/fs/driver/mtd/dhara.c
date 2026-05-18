@@ -302,7 +302,7 @@ static void dhara_update_readcache(FAR dhara_dev_t *dev, dhara_page_t page, FAR 
  *   OK on success; a negated errno value on failure.
  *
  ****************************************************************************/
-int dhara_erase(FAR struct dhara_dev_s *dev, int cmd, unsigned long arg)
+int dhara_erase(FAR struct dhara_dev_s *dev, unsigned long arg)
 {
 	int ret = OK;
 
@@ -311,7 +311,7 @@ int dhara_erase(FAR struct dhara_dev_s *dev, int cmd, unsigned long arg)
 		dhara_map_sync(&dev->map, true, NULL);
 		break;    
 	case 2:
-		ret = MTD_IOCTL(dev->mtd, cmd, 0);
+		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
 		if (ret < 0 && ret != -ENOTTY) {
 			ferr("MTD application bulk erase failed: %d\n", ret);
 		}
@@ -320,7 +320,7 @@ int dhara_erase(FAR struct dhara_dev_s *dev, int cmd, unsigned long arg)
 	case 3:
 		/* Application format - called from dhara_ioctl with arg=2 */
 		if(first_format == true) {
-		ret = MTD_IOCTL(dev->mtd, cmd, 0);
+		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
 		if (ret < 0 && ret != -ENOTTY) {
 			ferr("MTD application bulk erase failed: %d\n", ret);
 		}
@@ -329,7 +329,7 @@ int dhara_erase(FAR struct dhara_dev_s *dev, int cmd, unsigned long arg)
 		break;
 
 		default:
-		ret = MTD_IOCTL(dev->mtd, cmd, 0);
+		ret = MTD_IOCTL(dev->mtd, MTDIOC_BULKERASE, 0);
 		if (ret < 0 && ret != -ENOTTY) {
 			ferr("MTD unknown arg bulk erase failed: %d\n", ret);
 		}
@@ -607,8 +607,6 @@ static int dhara_geometry(FAR struct inode *inode, FAR struct geometry *geometry
 	return -EINVAL;
 }
 
-#define MTDIOC_SYNC    _MTDIOC(0x0008)
-
 /****************************************************************************
  * Name: dhara_ioctl
  *
@@ -618,6 +616,7 @@ static int dhara_geometry(FAR struct inode *inode, FAR struct geometry *geometry
 static int dhara_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 {
 	FAR dhara_dev_t *dev;
+	FAR struct mtd_geometry_s *geo;
 	int ret;
 
 	DEBUGASSERT(inode->i_private);
@@ -630,32 +629,44 @@ static int dhara_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 	 */
 	switch (cmd) {
 	case BIOC_BULKERASE:
-	case MTDIOC_BULKERASE:
-		ret = dhara_erase(dev, cmd, arg);
+		ret = dhara_erase(dev, arg);
 		ferr("return %d\n",ret);
 		if (ret < 0 && ret != -ENOTTY) {
-			ferr("MTD ioctl(%04x) failed: erase %d\n", cmd, ret);
+			ferr("BIOC ioctl(%04x) failed: erase %d\n", cmd, ret);
 		}
-		break;
-	case MTDIOC_SYNC:
-		ret = dhara_map_sync(&dev->map, false,&dhara_err);
+		goto ok_out;
+	case BIOC_SYNC:
+		ret = dhara_map_sync(&dev->map, false, &dhara_err);
 		if (ret < 0 && ret != -ENOTTY) {
-			ferr("MTD ioctl(%04x) failed: sync %d\n", cmd, ret);
+			ferr("BIOC ioctl(%04x) failed: sync %d\n", cmd, ret);
 		}
-		break;
-	default:
-		ret = MTD_IOCTL(dev->mtd, cmd, arg);
+		goto ok_out;
+	case BIOC_GEOMETRY:
+	{
+		ret = MTD_IOCTL(dev->mtd, MTDIOC_GEOMETRY, arg);
 		if (ret < 0 && ret != -ENOTTY) {
-			ferr("MTD ioctl(%04x) failed: default %d\n", cmd, ret);
+			ferr("BIOC ioctl(%04x) failed: default %d\n", cmd, ret);
+			goto ok_out;
 		}
-		break;
-	}
-		if (cmd == MTDIOC_GEOMETRY) {
 		FAR struct mtd_geometry_s *geo = (FAR struct mtd_geometry_s *)arg;
 		if (geo) {
 			geo->neraseblocks = dhara_map_capacity(&dev->map) / dev->blkper;
 		}
+		goto ok_out;
 	}
+	}
+
+	/* No other block driver ioctl commands are not recognized by this
+	 * driver.  Other possible MTD driver ioctl commands are passed
+	 * to the MTD driver (unchanged).
+	 */
+
+	ret = MTD_IOCTL(dev->mtd, cmd, arg);
+	if (ret < 0) {
+		fdbg("ERROR: MTD ioctl(%04x) failed: %d\n", cmd, ret);
+	}
+
+ok_out:
 	return ret;
 }
 

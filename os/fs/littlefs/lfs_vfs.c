@@ -61,7 +61,6 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-#define MTDIOC_SYNC            _MTDIOC(0x0008)
 
 struct littlefs_file_s {
 	struct lfs_file file;
@@ -842,7 +841,7 @@ static int littlefs_sync_block(FAR const struct lfs_config *c)
 	FAR struct little_dev_s *dev = (struct little_dev_s *)drv->i_private;
 	int ret;
 
-	ret = drv->u.i_bops->ioctl(drv, MTDIOC_SYNC, 0);
+	ret = drv->u.i_bops->ioctl(drv, BIOC_SYNC, 0);
 
 //  BIOC_FLUSH is not used currently , hence commenting the code
 #if 0
@@ -933,7 +932,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 		/* Try to get FLT MTD geometry first */
 
 		if (driver->u.i_bops->ioctl != NULL) {
-			ret = driver->u.i_bops->ioctl(driver, MTDIOC_GEOMETRY,
+			ret = driver->u.i_bops->ioctl(driver, BIOC_GEOMETRY,
 					(unsigned long)&fs->geo);
 		} else {
 			ret = -ENOTTY;
@@ -1001,7 +1000,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 
 		fdbg("attempting autoformat\n");
 		ret = lfs_format(&fs->lfs, &fs->cfg);
-		ret = driver->u.i_bops->ioctl(driver, MTDIOC_SYNC, 0);
+		ret = driver->u.i_bops->ioctl(driver, BIOC_SYNC, 0);
 		if (ret < 0) {
 			fdbg("autoformat failed ret : %d\n", ret);
 			goto errout_with_fs;

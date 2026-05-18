@@ -71,7 +71,7 @@ struct dhara_nand {
 	/* Total number of eraseblocks */
 	unsigned int	num_blocks;
 };
-int dhara_erase(struct dhara_dev_s *dev, int cmd, unsigned long arg);
+int dhara_erase(struct dhara_dev_s *dev, unsigned long arg);
 
 
 /* Is the given block bad? */

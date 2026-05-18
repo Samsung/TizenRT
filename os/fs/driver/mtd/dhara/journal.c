@@ -438,7 +438,7 @@ int dhara_journal_resume(struct dhara_journal *j, FAR struct dhara_dev_s *dev, d
 	/* Check for format magic at offset 2000 */
 	if (hdr_has_format_magic(j->page_buf)) {
 		/* Perform bulk erase now */
-		ret = dhara_erase(dev, MTDIOC_BULKERASE , 2);
+		ret = dhara_erase(dev, 2);
 		if (ret < 0) {
 			printf("MTD bulk erase failed: %d\n", ret);
 		}

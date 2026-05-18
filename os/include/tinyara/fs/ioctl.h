@@ -261,13 +261,16 @@
 										 *		to reveal physical sector.
 										 * OUT: Physical sector number align with
 										 *		logical sector number */
+#define BIOC_SYNC		_BIOC(0x000E)
+
+#define BIOC_GEOMETRY	_BIOC(0x000F)
+
 #define BIOC_DEBUGCMD   _BIOC(0x00FF)	/* Send driver specific debug command /
 										 * data to the block device.
 										 * IN:  Pointer to a struct defined for
 										 *      the block with specific debug
 										 *      command and data.
 										 * OUT: None.  */
-
 /* TinyAra MTD driver ioctl definitions ***************************************/
 
 #define _MTDIOCVALID(c)   (_IOC_TYPE(c) == _MTDIOCBASE)
