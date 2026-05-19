@@ -979,30 +979,50 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	 * managed by this driver.
 	 */
 	/* Force format the device if -o forceformat */
-	if (data && strcmp(data, "forceformat") == 0) {
-		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 3);
-		ret = lfs_format(&fs->lfs, &fs->cfg);
-		if (ret < 0) {
+	if (data) {
+		if (strcmp(data, "forceformat") == 0) {
+			ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 3);
+			ret = lfs_format(&fs->lfs, &fs->cfg);
+			if (ret < 0) {
+				goto errout_with_fs;
+			}
+		} else if (strcmp(data, "autoformat") == 0) {
+			ret = lfs_reserve_format(&fs->lfs, &fs->cfg);
+			if (ret < 0) {
+				fdbg("lfs_reserve_format failed ret : %d\n", ret);
+				goto errout_with_fs;
+			}
+			fdbg("Update Format Info Finished. after reboot, fs will be formatted\n");
+			ret = -EAGAIN;
 			goto errout_with_fs;
+		} else {
+			ret = lfs_check_format(&fs->lfs, &fs->cfg);
+			if (ret < 0) {
+				goto errout_with_fs;
+			}
+			fdbg("Checked the lfs format tag, if there was format tag, Completed format\n");
 		}
 	}
-
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
 	if (ret < 0) {
 		fdbg("mount failed ret : %d\n", ret);
-		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 3);
+		fdbg("attempting autoformat\n");
 
-		/* Auto format the device if -o autoformat and mount failed */
-		if (!data || strcmp(data, "autoformat") != 0) {
-			fdbg("autoformat not requested, exiting\n");
+		ret = driver->u.i_bops->ioctl(driver, MTDIOC_BULKERASE, 3);
+		if (ret < 0) {
+			fdbg("block erase fail : %d\n", ret);
 			goto errout_with_fs;
 		}
 
-		fdbg("attempting autoformat\n");
 		ret = lfs_format(&fs->lfs, &fs->cfg);
+		if (ret < 0) {
+			fdbg("lfs_format failed ret : %d\n", ret);
+			goto errout_with_fs;
+		}
+
 		ret = driver->u.i_bops->ioctl(driver, BIOC_SYNC, 0);
 		if (ret < 0) {
-			fdbg("autoformat failed ret : %d\n", ret);
+			fdbg("lfs-dhara sync failed ret : %d\n", ret);
 			goto errout_with_fs;
 		}
 

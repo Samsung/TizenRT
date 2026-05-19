@@ -6607,12 +6607,16 @@ cleanup:
 	return err;
 }
 
-int lfs_reserve_format(lfs_t *lfs)
+int lfs_reserve_format(lfs_t *lfs, const struct lfs_config *cfg)
 {
 	int err;
-	err = LFS_LOCK(lfs->cfg);
+	err = LFS_LOCK(cfg);
     if (err) {
         goto cleanup;
+    }
+    err = lfs_init(lfs, cfg);
+    if (err) {
+        return err;
     }
 
 	// create free lookahead
@@ -6648,7 +6652,7 @@ cleanup:
 	if (err) {
 	    LFS_ERROR("lfs_request_format -> %d", err);
 	}
-    LFS_UNLOCK(lfs->cfg);
+    LFS_UNLOCK(cfg);
     return err;
 }
 

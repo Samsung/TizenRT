@@ -480,8 +480,8 @@ void automount_fs_partition(partition_info_t *partinfo)
 #ifdef CONFIG_FS_LITTLEFS
 	if (partinfo->littlefs_partno != -1) {
 		snprintf(fs_devname, FS_PATH_MAX, "/dev/little%dp%d", partinfo->minor, partinfo->littlefs_partno);
-
-		ret = mount(fs_devname, "/mnt", "littlefs", 0, "autoformat");
+		/* If mount fails, try mount again after 1 autoformat (dummy for checkformat not to pass data to NULL) */
+		ret = mount(fs_devname, "/mnt", "littlefs", 0, "checkformat");
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
 		} else {

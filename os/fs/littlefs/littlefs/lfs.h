@@ -817,7 +817,7 @@ int lfs_migrate(lfs_t *lfs, const struct lfs_config *cfg);
 #endif
 
 /* Request format file system. flash will be erase during next mount time */
-int lfs_reserve_format(lfs_t *lfs);
+int lfs_reserve_format(lfs_t *lfs, const struct lfs_config *cfg);
 
 int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg);
 
