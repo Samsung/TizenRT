@@ -34,14 +34,17 @@ config CXX_VERSION_14
 
 config CXX_VERSION_17
 	bool "c++17"
+	select CXX_VERSION_17
 	select CXX_VERSION_17_OR_LATER
 
 config CXX_VERSION_20
 	bool
+	select CXX_VERSION_20
 	select CXX_VERSION_17_OR_LATER
 
 config CXX_VERSION_23
 	bool
+	select CXX_VERSION_23
 	select CXX_VERSION_17_OR_LATER
 
 endchoice

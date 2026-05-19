@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include "libcxx_tc_common.h"
 
+#if _LIBCPP_STD_VER >= 20
+
 // <unordered_map>
 
 // bool contains(const key_type& x) const;
@@ -58,3 +60,4 @@ int tc_containers_unord_unord_map_contains(void) {
 
     return 0;
 }
+#endif // _LIBCPP_STD_VER >= 20

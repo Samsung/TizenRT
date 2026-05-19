@@ -35,9 +35,14 @@
 #  define __CORRECT_ISO_CPP_WCHAR_H_PROTO
 #endif
 
-// TizenRT compatibility: Use our mbstate_t definition when wide characters are disabled
-#if defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
-// mbstate_t and wint_t are defined in __config_site for TizenRT compatibility
+// TizenRT compatibility: When wide characters are disabled, include system's wchar.h for mbstate_t.
+// Use include_next to bypass libcxx's wchar.h wrapper and get the native mbstate_t definition.
+#if defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS) && defined(__TINYARA__)
+# if __has_include_next(<wchar.h>)
+#  include_next <wchar.h>  // System's wchar.h provides mbstate_t
+# endif
+#elif defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
+// mbstate_t already defined in __config_site for non-TizenRT platforms
 #else
 #   if defined(_LIBCPP_HAS_MUSL_LIBC)
 #       define __NEED_mbstate_t

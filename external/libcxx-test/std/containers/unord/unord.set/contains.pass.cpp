@@ -11,6 +11,8 @@
 #include <unordered_set>
 #include "libcxx_tc_common.h"
 
+#if _LIBCPP_STD_VER >= 20
+
 // <unordered_set>
 
 // bool contains(const key_type& x) const;
@@ -40,3 +42,4 @@ int tc_containers_unord_unord_set_contains(void) {
 
     return 0;
 }
+#endif // _LIBCPP_STD_VER >= 20

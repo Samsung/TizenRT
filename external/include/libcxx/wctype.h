@@ -46,13 +46,13 @@ wctrans_t wctrans(const char* property);
 
 #include <__config>
 
-#if defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
-#   error "The <wctype.h> header is not supported since libc++ has been configured with LIBCXX_ENABLE_WIDE_CHARACTERS disabled"
-#endif
-
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #  pragma GCC system_header
 #endif
+
+// TizenRT: When wide characters are disabled, allow header inclusion but provide no functionality.
+// This prevents #error when third-party code includes this header indirectly.
+#if !defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
 
 // TODO:
 // In the future, we should unconditionally include_next <wctype.h> here and instead
@@ -67,6 +67,8 @@ wctrans_t wctrans(const char* property);
 #   include_next <wctype.h>
 #   define _LIBCPP_INCLUDED_C_LIBRARY_WCTYPE_H
 #endif
+
+#endif  // !defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
 
 #ifdef __cplusplus
 

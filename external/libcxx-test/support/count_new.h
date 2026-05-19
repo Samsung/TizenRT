@@ -373,8 +373,11 @@ TEST_DIAGNOSTIC_POP
 
 MemCounter &globalMemCounter = *getGlobalMemCounter();
 
+// Test memory tracking operators conflicts with system libsupc++ operators resulting in multiple definition error.
+// Inline functions allow multiple definitions through ODR relaxation, letting the linker merge them properly.
 #ifndef DISABLE_NEW_COUNT
-void* operator new(std::size_t s) TEST_THROW_SPEC(std::bad_alloc)
+#ifdef CONFIG_LIBCXX_UTC
+inline void* operator new(std::size_t s) TEST_THROW_SPEC(std::bad_alloc)
 {
     getGlobalMemCounter()->newCalled(s);
     void* ret = std::malloc(s);
@@ -383,19 +386,19 @@ void* operator new(std::size_t s) TEST_THROW_SPEC(std::bad_alloc)
     return ret;
 }
 
-void  operator delete(void* p) TEST_NOEXCEPT
+inline void  operator delete(void* p) TEST_NOEXCEPT
 {
     getGlobalMemCounter()->deleteCalled(p);
     std::free(p);
 }
 
-void* operator new[](std::size_t s) TEST_THROW_SPEC(std::bad_alloc)
+inline void* operator new[](std::size_t s) TEST_THROW_SPEC(std::bad_alloc)
 {
     getGlobalMemCounter()->newArrayCalled(s);
     return operator new(s);
 }
 
-void operator delete[](void* p) TEST_NOEXCEPT
+inline void operator delete[](void* p) TEST_NOEXCEPT
 {
     getGlobalMemCounter()->deleteArrayCalled(p);
     operator delete(p);
@@ -407,7 +410,7 @@ void operator delete[](void* p) TEST_NOEXCEPT
 #define USE_ALIGNED_ALLOC
 #endif
 
-void* operator new(std::size_t s, std::align_val_t av) TEST_THROW_SPEC(std::bad_alloc) {
+inline void* operator new(std::size_t s, std::align_val_t av) TEST_THROW_SPEC(std::bad_alloc) {
   const std::size_t a = static_cast<std::size_t>(av);
   getGlobalMemCounter()->alignedNewCalled(s, a);
   void *ret = nullptr;
@@ -421,7 +424,7 @@ void* operator new(std::size_t s, std::align_val_t av) TEST_THROW_SPEC(std::bad_
   return ret;
 }
 
-void operator delete(void *p, std::align_val_t av) TEST_NOEXCEPT {
+inline void operator delete(void *p, std::align_val_t av) TEST_NOEXCEPT {
   const std::size_t a = static_cast<std::size_t>(av);
   getGlobalMemCounter()->alignedDeleteCalled(p, a);
   if (p) {
@@ -433,20 +436,20 @@ void operator delete(void *p, std::align_val_t av) TEST_NOEXCEPT {
   }
 }
 
-void* operator new[](std::size_t s, std::align_val_t av) TEST_THROW_SPEC(std::bad_alloc) {
+inline void* operator new[](std::size_t s, std::align_val_t av) TEST_THROW_SPEC(std::bad_alloc) {
   const std::size_t a = static_cast<std::size_t>(av);
   getGlobalMemCounter()->alignedNewArrayCalled(s, a);
   return operator new(s, av);
 }
 
-void operator delete[](void *p, std::align_val_t av) TEST_NOEXCEPT {
+inline void operator delete[](void *p, std::align_val_t av) TEST_NOEXCEPT {
   const std::size_t a = static_cast<std::size_t>(av);
   getGlobalMemCounter()->alignedDeleteArrayCalled(p, a);
   return operator delete(p, av);
 }
 
 #endif // TEST_HAS_NO_ALIGNED_ALLOCATION
-
+#endif // CONFIG_LIBCXX_UTC
 #endif // DISABLE_NEW_COUNT
 
 struct DisableAllocationGuard {

@@ -15,7 +15,7 @@
 #include <cassert>
 
 #include "test_macros.h"
-#include "../../../test_compare.h"
+#include "test_compare.h"
 #include "test_allocator.h"
 #include "libcxx_tc_common.h"
 

@@ -98,19 +98,25 @@
 #  define _LIBCPP_HAS_NO_REQUIRES_EXPR
 #endif
 
-// TizenRT compatibility: Define mbstate_t when wide characters are disabled
-// This matches TizenRT's definition in os/include/wchar.h
 #if defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
-#ifndef _MBSTATE_T_DEFINED
-#define _MBSTATE_T_DEFINED
-struct mbstate_s {
-    int __fill[6];
-};
+// Google Test/Mock compatibility: Disable wide string functionality
+#define _LIBCPP_HAS_NO_GTEST_WIDE_STRINGS
+
+// TizenRT compatibility: Define mbstate_t and wint_t when not provided by platform.
+// TizenRT already provides these in os/include/wchar.h, so skip for __TINYARA__.
+#if !defined(__TINYARA__)
+
+#ifndef mbstate_t
+struct mbstate_s { int __fill[6]; };
 typedef struct mbstate_s mbstate_t;
+#endif  //mbstate_t
+
+#ifndef wint_t
 // Define wint_t for systems that don't provide it properly
 typedef unsigned int wint_t;
-#endif
-#endif
+#endif  //wint_t
+#endif  //__TINYARA__
+#endif  //_LIBCPP_HAS_NO_WIDE_CHARACTERS
 
 // C++17 feature compatibility fixes for TizenRT
 

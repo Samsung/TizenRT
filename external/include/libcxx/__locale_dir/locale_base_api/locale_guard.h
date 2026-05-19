@@ -13,6 +13,11 @@
 #include <__locale> // for locale_t
 #include <clocale>
 
+// TizenRT: Include xlocale.h for uselocale and *_l function stubs
+#if defined(__TINYARA__)
+#include <__support/tizenrt/xlocale.h>
+#endif
+
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #  pragma GCC system_header
 #endif

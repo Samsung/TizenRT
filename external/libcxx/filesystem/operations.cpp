@@ -9,7 +9,7 @@
 #include <__assert>
 #include <__config>
 
-#if _LIBCPP_STD_VER >= 17
+#if _LIBCPP_STD_VER >= 17 && !defined(_LIBCPP_HAS_NO_FILESYSTEM)
 
 #include <__utility/unreachable.h>
 #include <array>
@@ -977,4 +977,4 @@ path __weakly_canonical(const path& p, error_code* ec) {
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
 
-#endif // _LIBCPP_STD_VER >= 17
+#endif // _LIBCPP_STD_VER >= 17 && !defined(_LIBCPP_HAS_NO_FILESYSTEM)
