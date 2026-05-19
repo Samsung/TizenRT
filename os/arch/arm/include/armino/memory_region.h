@@ -24,8 +24,8 @@ extern uint32_t _sdata;
 extern uint32_t _edata;
 extern uint32_t __psram_bss_start__;
 extern uint32_t __psram_bss_end__;
-extern uint32_t __sdata_ext;
-extern uint32_t __edata_ext;
+extern uint32_t __psram_data_start__;
+extern uint32_t __psram_data_end__;
 
-void *variable_region_start_addr[MEM_VAR_REGION_COUNT] = {&_sbss, &_sdata, &__psram_bss_start__, &__sdata_ext};
-void *variable_region_end_addr[MEM_VAR_REGION_COUNT] = {&_ebss, &_edata, &__psram_bss_end__, &__edata_ext};
+void *variable_region_start_addr[MEM_VAR_REGION_COUNT] = {&_sbss, &_sdata, &__psram_bss_start__, &__psram_data_start__};
+void *variable_region_end_addr[MEM_VAR_REGION_COUNT] = {&_ebss, &_edata, &__psram_bss_end__, &__psram_data_end__};
