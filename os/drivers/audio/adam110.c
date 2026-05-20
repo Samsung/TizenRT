@@ -322,7 +322,7 @@ static uint16_t adam110_calculate_checksum16(int fd)
 static int adam110_verify_packet(t_proto_pkt *pkt) 
 {
 	if (pkt->header != PKT_HEADER_RECV) {
-		auddbg("[E] pkt rxheader: 0x%x\n", pkt->header);
+		auddbg("[E] pkt rxheader is wrong pkt : 0x%x|0x%x|0x%x|0x%x|0x%x|0x%x|0x%x\n", pkt->header, pkt->op, pkt->parm1, pkt->parm2, pkt->parm3, pkt->parm4, pkt->checksum);
 		return -EINVAL;
 	}
 
@@ -810,7 +810,6 @@ static void adam110_work_handler(void *arg)
 
 		uint32_t data_size = 0;
 		int is_final_packet = 0;
-
 		int recvsize = 0;
 		audvdbg("kd left : %d\n", priv->keyword_bytes_left);
 		recvsize = (uint32_t)(rxpkt.parm3 << 8 | rxpkt.parm4);
@@ -1663,7 +1662,7 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 			ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num + 1), false, &rxpkt);
 			if (ret == OK) {
 				priv->kd_num = kd_num;
-				/*and then enable interrupt of changed model */
+				/* and then enable interrupt of changed model */
 				ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num + 1), true, &rxpkt);
 				if (ret != OK) {
 					auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
@@ -1864,8 +1863,7 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	DEBUGASSERT(priv->pm_domain >= 0);
 #endif
 
-
-    g_adam110 = priv;
+   g_adam110 = priv;
 
 #ifdef CONFIG_AUDIO_ADAM110_ALIVE_CHECK
 	pid_t pid = kernel_thread("alive_check", 100, 4096, adam110_app_device_alive_check, NULL);
@@ -1890,6 +1888,7 @@ errout:
 	pm_domain_unregister(priv->pm_domain);
 	g_adam110 = NULL;
 err_with_priv:
+	kmm_free(priv->keyword_buffer);
 	kmm_free(priv);
 	return NULL;
 }
