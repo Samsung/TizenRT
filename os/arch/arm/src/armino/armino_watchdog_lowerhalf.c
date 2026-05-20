@@ -428,8 +428,8 @@ static void armino_wdg_arm_hw_feed_window(FAR struct armino_wdg_lowerhalf_s *pri
  *   Always returns OK.
  *
  ****************************************************************************/
-
-static int armino_nmi_interrupt(int irq, void *context, FAR void *arg)
+static int __attribute__((section(".iram"), noinline))
+armino_nmi_interrupt(int irq, void *context, FAR void *arg)
 {
 	struct armino_wdg_lowerhalf_s *priv = (struct armino_wdg_lowerhalf_s *)arg;
 
