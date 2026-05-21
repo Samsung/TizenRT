@@ -376,7 +376,7 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 ssize_t up_read_decrypted_flash(size_t addr, void *buf, size_t length)
 {
 	// printf("func :%s, line :%d, addr :%x, length :%d\n", __func__, __LINE__, addr, length);
-#ifndef CONFIG_SPE
+#if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
 		bk_security_flash_read_bytes(addr, (uint8_t *)buf, length);
 		SCB_CleanInvalidateDCache();
