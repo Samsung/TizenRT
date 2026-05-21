@@ -221,12 +221,12 @@ static int binary_manager_load(int bin_idx)
 			snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx))));
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 			if (bin_idx == BM_CMNLIB_IDX) {
-				ret = binary_manager_read_header(BINARY_COMMON, devpath, &common_header_data, true);
+				ret = binary_manager_read_header(BINARY_COMMON, devpath, BIN_PARTADDR(bin_idx, BIN_USEIDX(bin_idx)), &common_header_data, true);
 				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = common_header_data.version;
 			} else
 #endif
 			{
-				ret = binary_manager_read_header(BINARY_USERAPP, devpath, &user_header_data, true);
+				ret = binary_manager_read_header(BINARY_USERAPP, devpath, BIN_PARTADDR(bin_idx, BIN_USEIDX(bin_idx)), &user_header_data, true);
 				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = user_header_data.bin_ver;
 			}
 			if (ret == BINMGR_OK) {

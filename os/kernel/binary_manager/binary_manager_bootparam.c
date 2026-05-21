@@ -527,7 +527,7 @@ static int binary_manager_make_bootparam_from_partitions(binmgr_bpdata_t *bp_dat
 #endif
 		{
 			snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, set_idx));
-			ret = binary_manager_read_header(BINARY_USERAPP, devpath, &user_header_data, false);
+			ret = binary_manager_read_header(BINARY_USERAPP, devpath, BIN_PARTADDR(bin_idx, set_idx), &user_header_data, false);
 			if (ret != BINMGR_OK) {
 				bmdbg("Fail to read app header, name %s, set %s, ret %d\n", BIN_NAME(bin_idx), GET_PARTNAME(set_idx), ret);
 				return ret;
