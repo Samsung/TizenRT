@@ -111,7 +111,7 @@ int binary_manager_verify_resource(uint8_t part_idx)
 #endif
 
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[part_idx].devnum);
-	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, (void *)&header_data, true);
+	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, resource_info.part_info[part_idx].address, (void *)&header_data, true);
 	if (ret != BINMGR_OK) {
 		bmdbg("Invalid resource candidate, part idx %u, devpath %s, ret %d\n", part_idx, filepath, ret);
 		return ret;
@@ -141,7 +141,7 @@ uint32_t binary_manager_get_resource_version(uint8_t part_idx)
 	}
 
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[part_idx].devnum);
-	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, &header_data, false);
+	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, resource_info.part_info[part_idx].address, &header_data, false);
 	if (ret != BINMGR_OK) {
 		bmdbg("Fail to read resource header, set %s, devpath %s, ret %d\n", GET_PARTNAME(part_idx), filepath, ret);
 		return 0;
@@ -203,7 +203,7 @@ int binary_manager_mount_resource(void)
 		}
 #endif
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[part_idx].devnum);
-		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, &header_data, true);
+		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, resource_info.part_info[part_idx].address, &header_data, true);
 		if (ret == OK && latest_ver < header_data.version) {
 			/* Update latest version and inuse index */
 			latest_partidx = part_idx;
@@ -244,7 +244,7 @@ int binary_manager_mount_resource(void)
 		/* Read and verify header data */
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum);
 		bmdbg("Checking resource in partition [%d], path %s\n", inuse_idx, devpath);
-		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, &header_data, false);
+		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, resource_info.part_info[inuse_idx].address, &header_data, false);
 		if (ret == BINMGR_OK) {
 			bmvdbg("Resource [%d] Header Checking Success.\n", inuse_idx);
 			snprintf(fs_devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum);
@@ -364,7 +364,7 @@ int binary_manager_check_resource_update(bool check_updatable)
 
 	/* Verify resource binary on the partition without running binary */
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inactive_partidx].devnum);
-	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, (void *)&header_data, check_updatable);
+	ret = binary_manager_read_header(BINARY_RESOURCE, filepath, resource_info.part_info[inactive_partidx].address, (void *)&header_data, check_updatable);
 	if (ret == BINMGR_OK) {
 		if (!check_updatable) {
 			bmvdbg("Found valid resource binary in inactive partition %d\n", resource_info.part_info[inactive_partidx].devnum);
