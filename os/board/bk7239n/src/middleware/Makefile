@@ -136,7 +136,6 @@ CFLAGS += -I$(COMPONENT_DIR)/bk_pm/include
 
 # MbedTLS includes
 CFLAGS += -I$(COMPONENT_DIR)/psa_mbedtls/mbedtls/include
-CFLAGS += -I$(COMPONENT_DIR)/tfm_mbedtls/mbedtls/include
 
 ifeq ($(CONFIG_XIP_KERNEL), y)
 tfm_firmware_dir_name := tfm_xip_build
