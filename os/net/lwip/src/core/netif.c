@@ -1219,6 +1219,13 @@ err_t netif_gen_stable_private_id(struct netif *netif, s8_t addr_idx, ip6_addr_t
 		param.mac[i] = netif->hwaddr[i];
 	}
 
+	/* 
+	 * TAHI IPv6 Test Project (https://www.tahi.org/) 
+	 * SHA-256 is must be used when generating IPv6 stable-private ID (for TAHI certificate)
+	 * If there's a plan to use IPv6, SHA-256 API must be implemented (to replace mbedtls_sha256)
+	 */
+// 	mbedtls_sha256(param.data, sizeof(param.data), rid.val, 0);
+
 	addr->addr[0] = addr->addr[1] = 0;
 	addr->addr[2] = rid.addr[0];
 	addr->addr[3] = rid.addr[1];
