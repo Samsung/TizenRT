@@ -135,8 +135,10 @@ static ssize_t bk_erase_page(size_t page, bool subsector)
 	//printf("func :%s, line :%d, addr :%x\n", __func__, __LINE__, addr);
 #if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
-		printf("addr is kernel\n");
+		irqstate_t flags;
+		flags = irqsave();
 		ret = bk_security_flash_erase_sector(addr);
+		irqrestore(flags);
 		if (ret == OK) {
 			return 1;
 		}
@@ -190,7 +192,10 @@ static ssize_t bk_flash_write(size_t addr, const void *buf, size_t length)
 {
 	#if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
+		irqstate_t flags;
+		flags = irqsave();
 		bk_security_flash_write_bytes(addr, (uint8_t *)buf, length);
+		irqrestore(flags);
 	} else
 	#endif
 	{
