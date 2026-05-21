@@ -25,6 +25,8 @@
 #include <sys/mount.h>
 
 #include <tinyara/binary_manager.h>
+#include <tinyara/fs/fs.h>
+#include <tinyara/fs/mtd.h>
 
 #ifdef CONFIG_RESOURCE_BINARY_SIGNING
 #include <tinyara/signature.h>
@@ -36,9 +38,145 @@
  * Private Definitions
  ****************************************************************************/
 #define RESOURCE_MOUNTPT "/res"
+#define RESOURCE_DEC_DEVNAME_FMT "/dev/mtdblock%d_dec"
+#define RESOURCE_DEC_PATH_LEN 24
+#define RESOURCE_DEC_SECTOR_SIZE 256
 
 /* Data for Resource partitions */
 static binmgr_resinfo_t resource_info;
+
+#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY 
+struct resource_decblk_s {
+	bool is_registered;
+	uint32_t part_addr;
+	uint32_t part_size;
+	char devpath[RESOURCE_DEC_PATH_LEN];
+};
+
+static struct resource_decblk_s g_resource_decblk[RESOURCE_BIN_COUNT];
+
+static ssize_t resource_decblk_read(FAR struct inode *inode, FAR unsigned char *buffer, size_t start_sector, unsigned int nsectors)
+{
+	ssize_t ret;
+	size_t offset;
+	size_t size;
+	struct resource_decblk_s *dev;
+
+	if (!inode || !inode->i_private || !buffer) {
+		return -EINVAL;
+	}
+
+	dev = (struct resource_decblk_s *)inode->i_private;
+	offset = start_sector * RESOURCE_DEC_SECTOR_SIZE;
+	size = nsectors * RESOURCE_DEC_SECTOR_SIZE;
+
+	if (nsectors == 0) {
+		return 0;
+	}
+
+	if (start_sector != offset / RESOURCE_DEC_SECTOR_SIZE ||
+		nsectors != size / RESOURCE_DEC_SECTOR_SIZE ||
+		offset > dev->part_size ||
+		size > dev->part_size - offset) {
+		return -EINVAL;
+	}
+
+	ret = up_read_decrypted_flash(dev->part_addr + offset, (FAR void *)buffer, size);
+	if (ret != OK) {
+		return ret < 0 ? ret : -EIO;
+	}
+
+	return nsectors;
+}
+
+static int resource_decblk_geometry(FAR struct inode *inode, FAR struct geometry *geometry)
+{
+	struct resource_decblk_s *dev;
+
+	if (!inode || !inode->i_private || !geometry) {
+		return -EINVAL;
+	}
+
+	dev = (struct resource_decblk_s *)inode->i_private;
+	geometry->geo_available = true;
+	geometry->geo_mediachanged = false;
+	geometry->geo_writeenabled = false;
+	geometry->geo_nsectors = dev->part_size / RESOURCE_DEC_SECTOR_SIZE;
+	geometry->geo_sectorsize = RESOURCE_DEC_SECTOR_SIZE;
+	geometry->geo_model[0] = '\0';
+
+	return OK;
+}
+
+static const struct block_operations g_resource_decblk_ops = {
+	NULL,
+	NULL,
+	resource_decblk_read,
+	NULL,
+	resource_decblk_geometry,
+	NULL
+#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
+	, 0
+#endif
+};
+
+static int resource_register_decblk(int part_idx, FAR char *devpath, size_t devpath_len)
+{
+	int ret;
+	struct resource_decblk_s *dev;
+
+	if (part_idx < 0 || part_idx >= resource_info.part_count || !devpath || devpath_len == 0) {
+		return -EINVAL;
+	}
+
+	dev = &g_resource_decblk[part_idx];
+	ret = snprintf(devpath, devpath_len, RESOURCE_DEC_DEVNAME_FMT, resource_info.part_info[part_idx].devnum);
+	if (ret < 0 || ret >= (int)devpath_len) {
+		return -ENAMETOOLONG;
+	}
+
+	if (dev->is_registered) {
+		return OK;
+	}
+
+	dev->part_addr = resource_info.part_info[part_idx].address;
+	dev->part_size = resource_info.part_info[part_idx].size;
+	snprintf(dev->devpath, sizeof(dev->devpath), "%s", devpath);
+
+	ret = register_blockdriver(dev->devpath, &g_resource_decblk_ops, 0, dev);
+	if (ret < 0) {
+		bmdbg("Fail to register decrypted resource block %s, ret %d\n", dev->devpath, ret);
+		return ret;
+	}
+
+	dev->is_registered = true;
+	return OK;
+}
+
+static void resource_unregister_decblk(int part_idx)
+{
+	int ret;
+	struct resource_decblk_s *dev;
+
+	if (part_idx < 0 || part_idx >= resource_info.part_count) {
+		return;
+	}
+
+	dev = &g_resource_decblk[part_idx];
+	if (!dev->is_registered) {
+		return;
+	}
+
+	ret = unregister_blockdriver(dev->devpath);
+	if (ret < 0) {
+		bmdbg("Fail to unregister decrypted resource block %s, ret %d\n", dev->devpath, ret);
+		return;
+	}
+
+	dev->is_registered = false;
+	dev->devpath[0] = '\0';
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -164,7 +302,7 @@ int binary_manager_mount_resource(void)
 	int bin_count;
 	bool need_update_bp = false;
 	char devpath[BINARY_PATH_LEN];
-	char fs_devpath[BINARY_PATH_LEN];
+	char fs_devpath[RESOURCE_DEC_PATH_LEN];
 	resource_binary_header_t header_data;
 #ifdef CONFIG_RESOURCE_BINARY_SIGNING
 	uint32_t resource_start_address = 0;
@@ -247,7 +385,15 @@ int binary_manager_mount_resource(void)
 		ret = binary_manager_read_header(BINARY_RESOURCE, devpath, resource_info.part_info[inuse_idx].address, &header_data, false);
 		if (ret == BINMGR_OK) {
 			bmvdbg("Resource [%d] Header Checking Success.\n", inuse_idx);
-			snprintf(fs_devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum);
+#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY 
+			ret = resource_register_decblk(inuse_idx, fs_devpath, sizeof(fs_devpath));
+			if (ret != OK) {
+				bmdbg("Fail to register decrypted resource block, part idx %d, ret %d\n", inuse_idx, ret);
+				return ERROR;
+			}
+#else
+			snprintf(fs_devpath, sizeof(fs_devpath), BINMGR_DEVNAME_FMT, resource_info.part_info[inuse_idx].devnum);
+#endif
 #ifdef CONFIG_RESOURCE_BINARY_SIGNING
 			ret = mount(fs_devpath, RESOURCE_MOUNTPT, "romfs", MS_RDONLY, RESOURCE_HEADER_SIZE + USER_SIGN_PREPEND_SIZE);
 #else
@@ -263,6 +409,9 @@ int binary_manager_mount_resource(void)
 				break;
 			} else {
 				printf("ROMFS ERROR: resourcefs %s mount failed, errno %d\n", fs_devpath, get_errno());
+#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY 
+				resource_unregister_decblk(inuse_idx);
+#endif
 			}
 		}
 
