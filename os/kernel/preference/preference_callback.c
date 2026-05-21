@@ -69,6 +69,32 @@ static key_cb_list_t *preference_get_key_cb_list(int type, const char *key)
 }
 
 /****************************************************************************
+ * Name: preference_find_cb_node
+ *
+ * Description:
+ *   Find a callback node for the given PID in the callback list.
+ *   Returns NULL if not found.
+ *
+ ****************************************************************************/
+static key_cb_node_t *preference_find_cb_node(key_cb_list_t *list, pid_t pid)
+{
+	key_cb_node_t *node;
+
+	if (list == NULL) {
+		return NULL;
+	}
+
+	for (node = (key_cb_node_t *)sq_peek(&list->cb_list); node;
+		 node = (key_cb_node_t *)sq_next((FAR sq_entry_t *)node)) {
+		if (node->pid == pid) {
+			return node;
+		}
+	}
+
+	return NULL;
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 #if !defined(CONFIG_DISABLE_MQUEUE) && !defined(CONFIG_DISABLE_SIGNAL)
@@ -162,10 +188,20 @@ int preference_register_callback(preference_callback_t *data)
 		list->type = data->type;
 		sq_addlast((FAR sq_entry_t *)list, &g_key_cb_list);
 	}
-
+	node = preference_find_cb_node(list, getpid());
+	if (node) {
+		node->cb_func = data->cb_func;
+		node->cb_data = data->cb_data;
+		return OK;
+	}
 	node = (key_cb_node_t *)PREFERENCE_ALLOC(sizeof(key_cb_node_t));
 	if (node == NULL) {
 		prefdbg("Failed to allocate cb node\n");
+		if (sq_empty(&list->cb_list)) {
+			sq_rem((FAR sq_entry_t *)list, &g_key_cb_list);
+			PREFERENCE_FREE(list->key);
+			PREFERENCE_FREE(list);
+		}
 		return PREFERENCE_OUT_OF_MEMORY;
 	}
 	node->pid = getpid();
