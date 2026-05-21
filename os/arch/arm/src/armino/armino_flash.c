@@ -167,7 +167,7 @@ static int bk_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 	size_t blocksleft = nblocks;
 	size_t blkper = 1 << (SECTOR_SHIFT - SUBSECTOR_SHIFT);
 	size_t sectorboundry;
-	/* Erase the specified blocks and return status(number of erased page or a negated errno) */
+	/* Erase the specified blocks and return status(number of erased page or a negated errno) */
 	while (blocksleft > 0) {
 		/* TODO 64KB Also need to be considered, but this will make partition more hard */
 		sectorboundry = (startblock + blkper - 1) / blkper;
@@ -211,11 +211,7 @@ ssize_t bk_flash_read(size_t addr, void *buf, size_t length)
 	#if CONFIG_BUILD_PROTECTED
 	#if CONFIG_FLASH_ENCRYPT_ENABLE
 	else if (bk_addr_is_app_or_common(addr)) {
-		if(s_ota_test_flag) {
-			bk_data_read_app_or_common(addr, (uint8_t *)buf, length);
-		} else {
-			bk_instruction_read_app_or_common(addr, (uint8_t *)buf, length);
-		}
+		bk_data_read_app_or_common(addr, (uint8_t *)buf, length);
 	}
 	#endif
 	#endif
@@ -362,3 +358,41 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 	return NULL;
 }
 
+/**
+* @brief     Read image data from flash with the proper security path.
+*
+* Kernel regions are read as raw/secure data. App, common, and resource
+* regions are read as decrypted data when flash encryption is enabled.
+*
+* @param addr address to read
+* @param buf the buffer to read the data
+* @param length size to read
+*
+* @return
+*    - BK_OK: succeed
+*    - BK_ERR_FLASH_ADDR_OUT_OF_RANGE: flash address is out of range
+*    - others: other errors.
+*/
+ssize_t up_read_decrypted_flash(size_t addr, void *buf, size_t length)
+{
+	// printf("func :%s, line :%d, addr :%x, length :%d\n", __func__, __LINE__, addr, length);
+#ifndef CONFIG_SPE
+	if (bk_addr_is_kernel(addr)) {
+		bk_security_flash_read_bytes(addr, (uint8_t *)buf, length);
+		SCB_CleanInvalidateDCache();
+	}
+#ifdef CONFIG_BUILD_PROTECTED
+#ifdef CONFIG_FLASH_ENCRYPT_ENABLE
+	else if (bk_addr_is_app_or_common(addr)) {
+		bk_instruction_read_app_or_common(addr, (uint8_t *)buf, length);
+	}
+#endif
+#endif
+	else
+#endif
+	{
+		bk_flash_read_bytes(addr, (uint8_t *)buf, length);
+	}
+
+	return BK_OK;
+}

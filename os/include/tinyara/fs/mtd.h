@@ -409,6 +409,16 @@ int little_initialize(int minor, FAR struct mtd_dev_s *mtd, FAR const char *part
 FAR struct mtd_dev_s *up_flashinitialize(void);
 
 /****************************************************************************
+ * Name: up_read_decrypted_flash
+ *
+ * Description:
+ *   Read flash data through the board-specific decrypted read path.
+ *
+ ****************************************************************************/
+
+ssize_t up_read_decrypted_flash(uint32_t address, FAR void *buf, size_t size);
+
+/****************************************************************************
  * Name: rammtd_initialize
  *
  * Description:
