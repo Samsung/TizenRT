@@ -785,7 +785,7 @@ scan_res_finish:
 
 static int bk_trwlan_scan_start(wifi_scan_config_t *scan_config)
 {
-	int err;
+	int err = BK_OK;
 	wifi_scan_result_t scan_result = {0};
 
 	// Release previous cached scan result before starting new scan
@@ -855,8 +855,9 @@ static int bk_trwlan_scan_start(wifi_scan_config_t *scan_config)
 	bk_trwifi_wlan_scan_sema = NULL;
 	return 0;
 error:
-	if(bk_trwifi_wlan_scan_sema != NULL)
+	if (bk_trwifi_wlan_scan_sema != NULL) {
 		rtos_deinit_semaphore(&bk_trwifi_wlan_scan_sema);
+	}
 	bk_trwifi_wlan_scan_sema = NULL;
 	return -1;
 }

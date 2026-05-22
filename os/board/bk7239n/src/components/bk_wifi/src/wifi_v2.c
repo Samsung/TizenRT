@@ -2951,7 +2951,7 @@ bk_err_t bk_wifi_scan_get_result(wifi_scan_result_t *scan_result)
 
 _free_and_exit:
 	os_free(ap_list.ApList);
-	return BK_OK;
+	return ret;
 }
 
 static void wifi_scan_dump_ap(const wifi_scan_ap_info_t *ap)
