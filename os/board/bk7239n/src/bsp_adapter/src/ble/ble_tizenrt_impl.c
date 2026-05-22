@@ -463,124 +463,145 @@ static void hal_ble_evt_thread(void)
 
             case EVT_BLE_PAIRING_NUMBER_COMPARE_REQ_MSG:
             {
-                ble_auth_key_cfm_t *key_cfm_ind = (typeof(key_cfm_ind))msg.u.buf;
-                hal_ble_conn_t *info = (hal_ble_conn_t *)le_get_conn_info_ext(key_cfm_ind->con_idx);
-
-                LOGD("EVT_BLE_PAIRING_NUMBER_COMPARE_REQ_MSG conn_idx:%d, passkey:%06d", key_cfm_ind->con_idx, key_cfm_ind->passkey);
-
-                if (!info)
+                if (msg.u.buf)
                 {
-                    LOGE("can't find conn info by %d", key_cfm_ind->con_idx);
-                    break;
-                }
+                    ble_auth_key_cfm_t *key_cfm_ind = (typeof(key_cfm_ind))msg.u.buf;
+                    hal_ble_conn_t *info = (hal_ble_conn_t *)le_get_conn_info_ext(key_cfm_ind->con_idx);
 
-                if (info->role == LINK_ROLE_MASTER && bktr_ble_client_get_param()->trble_device_passkey_display_cb)
-                {
-                    bktr_ble_client_get_param()->trble_device_passkey_display_cb(key_cfm_ind->passkey, key_cfm_ind->con_idx);
-                }
-                else if (info->role == LINK_ROLE_SLAVE)
-                {
-                    bk_tr_ble_server_report_passkey_evt(key_cfm_ind->con_idx, key_cfm_ind->passkey);
-                }
+                    LOGD("EVT_BLE_PAIRING_NUMBER_COMPARE_REQ_MSG conn_idx:%d, passkey:%06d", key_cfm_ind->con_idx, key_cfm_ind->passkey);
 
-                os_free(key_cfm_ind);
+                    if (!info)
+                    {
+                        LOGE("can't find conn info by %d", key_cfm_ind->con_idx);
+                        break;
+                    }
+
+                    if (info->role == LINK_ROLE_MASTER && bktr_ble_client_get_param()->trble_device_passkey_display_cb)
+                    {
+                        bktr_ble_client_get_param()->trble_device_passkey_display_cb(key_cfm_ind->passkey, key_cfm_ind->con_idx);
+                    }
+                    else if (info->role == LINK_ROLE_SLAVE)
+                    {
+                        bk_tr_ble_server_report_passkey_evt(key_cfm_ind->con_idx, key_cfm_ind->passkey);
+                    }
+
+                    os_free(key_cfm_ind);
+                }
             }
             break;
 
             case EVT_BLE_SERVER_CONNECTED:
             {
-                ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
-
-                if (bktr_ble_server_get_param()->connected_cb)
+                if (msg.u.buf)
                 {
-                    bktr_ble_server_get_param()->connected_cb(elem->server_connect_evt.conn_idx, elem->server_connect_evt.type,
-                            elem->server_connect_evt.peer_addr, elem->server_connect_evt.relate_adv_handle);
+                    ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
+
+                    if (bktr_ble_server_get_param()->connected_cb)
+                    {
+                        bktr_ble_server_get_param()->connected_cb(elem->server_connect_evt.conn_idx, elem->server_connect_evt.type,
+                                elem->server_connect_evt.peer_addr, elem->server_connect_evt.relate_adv_handle);
+                    }
                 }
             }
             break;
 
             case EVT_BLE_SERVER_DISCONNECT:
             {
-                ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
-
-                if (bktr_ble_server_get_param()->disconnected_cb)
+                if (msg.u.buf)
                 {
-                    bktr_ble_server_get_param()->disconnected_cb(elem->server_disconnect_evt.conn_idx, elem->server_disconnect_evt.reason);
+                    ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
+
+                    if (bktr_ble_server_get_param()->disconnected_cb)
+                    {
+                        bktr_ble_server_get_param()->disconnected_cb(elem->server_disconnect_evt.conn_idx, elem->server_disconnect_evt.reason);
+                    }
                 }
             }
             break;
 
             case EVT_BLE_SERVER_MTU_CHANGE:
             {
-                ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
-
-                if (bktr_ble_server_get_param()->mtu_update_cb)
+                if (msg.u.buf)
                 {
-                    bktr_ble_server_get_param()->mtu_update_cb(elem->mtu_change_evt.conn_idx, elem->mtu_change_evt.mtu);
+                    ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
+
+                    if (bktr_ble_server_get_param()->mtu_update_cb)
+                    {
+                        bktr_ble_server_get_param()->mtu_update_cb(elem->mtu_change_evt.conn_idx, elem->mtu_change_evt.mtu);
+                    }
                 }
             }
             break;
 
             case EVT_BLE_SERVER_PASSKEY:
             {
-                ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
-
-                if (bktr_ble_server_get_param()->passkey_display_cb)
+                if (msg.u.buf)
                 {
-                    bktr_ble_server_get_param()->passkey_display_cb(elem->passkey_evt.passkey, elem->passkey_evt.conn_idx);
+                    ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
+
+                    if (bktr_ble_server_get_param()->passkey_display_cb)
+                    {
+                        bktr_ble_server_get_param()->passkey_display_cb(elem->passkey_evt.passkey, elem->passkey_evt.conn_idx);
+                    }
                 }
             }
             break;
 
             case EVT_BLE_SERVER_ATTR_CB:
             {
-                ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
-
-                if (elem->attr_cb_evt.tmp_buffer && elem->attr_cb_evt.tmp_buffer_len)
+                if (msg.u.buf)
                 {
-                    uint8_t *current_buffer = NULL;
-                    uint16_t current_buffer_len = 0;
-                    uint16_t current_buffer_max_len = 0;
+                    ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
 
-                    bk_tr_ble_server_attr_get_data_ptr(elem->attr_cb_evt.handle, &current_buffer, &current_buffer_len, &current_buffer_max_len);
-
-                    if (current_buffer && current_buffer_max_len)
+                    if (elem->attr_cb_evt.tmp_buffer && elem->attr_cb_evt.tmp_buffer_len)
                     {
-                        uint16_t final_len = (current_buffer_max_len < elem->attr_cb_evt.tmp_buffer_len ? current_buffer_max_len : elem->attr_cb_evt.tmp_buffer_len);
-                        os_memcpy(current_buffer, elem->attr_cb_evt.tmp_buffer, final_len);
-                        bk_tr_ble_server_attr_set_data_ptr_private(elem->attr_cb_evt.service_p, elem->attr_cb_evt.att_index,
-                                current_buffer, final_len, current_buffer_max_len);
+                        uint8_t *current_buffer = NULL;
+                        uint16_t current_buffer_len = 0;
+                        uint16_t current_buffer_max_len = 0;
+
+                        bk_tr_ble_server_attr_get_data_ptr(elem->attr_cb_evt.handle, &current_buffer, &current_buffer_len, &current_buffer_max_len);
+
+                        if (current_buffer && current_buffer_max_len)
+                        {
+                            uint16_t final_len = (current_buffer_max_len < elem->attr_cb_evt.tmp_buffer_len ? current_buffer_max_len : elem->attr_cb_evt.tmp_buffer_len);
+                            os_memcpy(current_buffer, elem->attr_cb_evt.tmp_buffer, final_len);
+                            bk_tr_ble_server_attr_set_data_ptr_private(elem->attr_cb_evt.service_p, elem->attr_cb_evt.att_index,
+                                    current_buffer, final_len, current_buffer_max_len);
+                        }
                     }
-                }
 
-                if (elem->attr_cb_evt.tmp_buffer && elem->attr_cb_evt.tmp_buffer_len)
-                {
-                    os_free(elem->attr_cb_evt.tmp_buffer);
-                    elem->attr_cb_evt.tmp_buffer = NULL;
-                    elem->attr_cb_evt.tmp_buffer_len = 0;
-                }
+                    if (elem->attr_cb_evt.tmp_buffer && elem->attr_cb_evt.tmp_buffer_len)
+                    {
+                        os_free(elem->attr_cb_evt.tmp_buffer);
+                        elem->attr_cb_evt.tmp_buffer = NULL;
+                        elem->attr_cb_evt.tmp_buffer_len = 0;
+                    }
 
-                if (elem->attr_cb_evt.cb)
-                {
-                    elem->attr_cb_evt.cb(elem->attr_cb_evt.type,
-                                         elem->attr_cb_evt.con_handle,
-                                         elem->attr_cb_evt.handle,
-                                         elem->attr_cb_evt.arg,
-                                         elem->attr_cb_evt.result,
-                                         elem->attr_cb_evt.pending);
+                    if (elem->attr_cb_evt.cb)
+                    {
+                        elem->attr_cb_evt.cb(elem->attr_cb_evt.type,
+                                             elem->attr_cb_evt.con_handle,
+                                             elem->attr_cb_evt.handle,
+                                             elem->attr_cb_evt.arg,
+                                             elem->attr_cb_evt.result,
+                                             elem->attr_cb_evt.pending);
+                    }
                 }
             }
             break;
 
             case EVT_BLE_SERVER_SET_BUFFER:
             {
-                ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
+                if (msg.u.buf)
+                {
+                    ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
 
-                bk_tr_ble_server_attr_set_data_ptr_private(elem->set_server_buffer_cmd.service_p,
-                        elem->set_server_buffer_cmd.att_index,
-                        elem->set_server_buffer_cmd.buffer,
-                        elem->set_server_buffer_cmd.buffer_len,
-                        elem->set_server_buffer_cmd.buffer_max_len);
+                    bk_tr_ble_server_attr_set_data_ptr_private(elem->set_server_buffer_cmd.service_p,
+                            elem->set_server_buffer_cmd.att_index,
+                            elem->set_server_buffer_cmd.buffer,
+                            elem->set_server_buffer_cmd.buffer_len,
+                            elem->set_server_buffer_cmd.buffer_max_len);
+                }
             }
             break;
 
@@ -762,8 +783,6 @@ void bk_adapter_notify_bt_status(uint16_t sub_type, T_LE_GAP_MSG_DATA *msg_data)
             {
                 hal_ble_conn_t *c_ind = &hal_ble_con_env.con_dev[msg_data->gap_conn_state_change.conn_id];
                 trble_device_connected *connected_dev = os_zalloc(sizeof(trble_device_connected));
-                connected_dev->conn_handle = msg_data->gap_conn_state_change.conn_id;
-                connected_dev->is_bonded = false;
 
                 if (!connected_dev)
                 {
@@ -771,6 +790,8 @@ void bk_adapter_notify_bt_status(uint16_t sub_type, T_LE_GAP_MSG_DATA *msg_data)
                     break;
                 }
 
+                connected_dev->conn_handle = msg_data->gap_conn_state_change.conn_id;
+                connected_dev->is_bonded = false;
                 os_memcpy(connected_dev->conn_info.addr.mac, c_ind->peer_addr, TRBLE_BD_ADDR_MAX_LEN);
                 connected_dev->conn_info.addr.type = bk_adapter_ble_convert_addr_type_2_tr(c_ind->peer_addr_type, c_ind->peer_addr);
                 connected_dev->conn_info.conn_interval = c_ind->intv;
@@ -828,6 +849,13 @@ void bk_adapter_notify_bt_status(uint16_t sub_type, T_LE_GAP_MSG_DATA *msg_data)
                 {
                     trble_device_connected *bonded_dev = os_zalloc(sizeof(trble_device_connected));
                     hal_ble_conn_t *c_ind = &hal_ble_con_env.con_dev[msg_data->gap_authen_state.conn_id];
+
+                    if (!bonded_dev)
+                    {
+                        LOGE("bonded_dev os_zalloc failed");
+                        break;
+                    }
+
                     bonded_dev->conn_handle = msg_data->gap_authen_state.conn_id;
                     bonded_dev->is_bonded = true;
                     os_memcpy(bonded_dev->conn_info.addr.mac, c_ind->peer_addr, TRBLE_BD_ADDR_MAX_LEN);
@@ -912,8 +940,17 @@ static void hal_ble_cmd_thread(void)
             case CMD_BLE_CREATE_ADV:
             {
                 ble_cmd_msg_elem_t *elem = (typeof(elem))msg.param;
-                uint8_t adv_index = bk_ble_get_idle_actv_idx_handle();
+                uint8_t adv_index;
                 int8_t hal_adv_index = -1;
+
+                if (!elem)
+                {
+                    LOGE("CMD_BLE_CREATE_ADV elem null !");
+                    ret_status = -1;
+                    break;
+                }
+
+                adv_index = bk_ble_get_idle_actv_idx_handle();
 
                 if (adv_index == 0xff)
                 {
@@ -1668,20 +1705,20 @@ static void bk_adapter_ble_notice_cb(ble_notice_t notice, void *param)
         ble_smp_ind_t *s_ind = (ble_smp_ind_t *)param;
         LOGI("BLE_5_PARING_NUMBER_COMPARE_REQ_EVENT conn_idx:%d, passkey:%06d ", s_ind->conn_idx, s_ind->num);
         ble_auth_key_cfm_t *key_cfm_ind = os_zalloc(sizeof(ble_auth_key_cfm_t));
+
+        if (!key_cfm_ind)
+        {
+            LOGE("key_cfm_ind malloc fail ");
+            break;
+        }
+
         key_cfm_ind->con_idx = s_ind->conn_idx;
         key_cfm_ind->passkey = s_ind->num;
 
-        if (key_cfm_ind)
+        if (ble_evt_queue_push(EVT_BLE_PAIRING_NUMBER_COMPARE_REQ_MSG, key_cfm_ind) != 0)
         {
-            if (ble_evt_queue_push(EVT_BLE_PAIRING_NUMBER_COMPARE_REQ_MSG, key_cfm_ind) != 0)
-            {
-                LOGE("ble_evt_queue_push failed ");
-                os_free(key_cfm_ind);
-            }
-        }
-        else
-        {
-            LOGE("key_cfm_ind malloc fail ");
+            LOGE("ble_evt_queue_push failed ");
+            os_free(key_cfm_ind);
         }
     }
     break;
