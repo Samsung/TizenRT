@@ -92,8 +92,9 @@ config LIBCXX_UTC_DIAGNOSTICS
 	bool "UTC for Libc++ Diagnostics(stdexcept)"
 	default y
 	depends on LIBCXX_UTC
+	depends on LIBCXX_EXCEPTION
 	---help---
-		UTC for Libc++ Diagnostics(stdexcept)
+		UTC for Libc++ Diagnostics(stdexcept). Requires exception support.
 
 config LIBCXX_UTC_NUMERICS
 	bool "UTC for Libc++ Numerics"

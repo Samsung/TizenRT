@@ -29,6 +29,9 @@ extern "C" int tc_iterators_main(void)
 	tc_libcxx_iterators_insert_iter_op__rv_value();
 	tc_libcxx_iterators_insert_iter_op_astrk_test();
 	tc_libcxx_iterators_inserter_test();
+
+#ifdef CONFIG_LIBCXX_LOCALE
+	// Stream iterator tests (require locale - sstream, iostream)
 	tc_libcxx_iterators_istream_iterator_cons_copy();
 	tc_libcxx_iterators_istream_iterator_cons_default();
 	tc_libcxx_iterators_istream_iterator_cons_istream();
@@ -48,6 +51,7 @@ extern "C" int tc_iterators_main(void)
 	tc_libcxx_iterators_istreambuf_iterator_op_astrk_post_increment();
 	tc_libcxx_iterators_istreambuf_iterator_op_astrk_pre_increment();
 	tc_libcxx_iterators_istreambuf_iterator_proxy_proxy();
+#endif
 	tc_libcxx_iterators_iterator_basic_iterator();
 	tc_libcxx_iterators_iterator_operations_advance();
 	tc_libcxx_iterators_iterator_operations_distance();
@@ -86,6 +90,9 @@ extern "C" int tc_iterators_main(void)
 	tc_libcxx_iterators_move_iter_op_index_difference_type();
 	tc_libcxx_iterators_move_iter_op_ref_op_arrow();
 	tc_libcxx_iterators_move_iter_op_star_op_star();
+
+#ifdef CONFIG_LIBCXX_LOCALE
+	// ostream iterator tests (require locale - iostream)
 	tc_libcxx_iterators_ostream_iterator_cons_des_copy();
 	tc_libcxx_iterators_ostream_iterator_cons_des_ostream();
 	tc_libcxx_iterators_ostream_iterator_ops_assign_t();
@@ -97,6 +104,7 @@ extern "C" int tc_iterators_main(void)
 	tc_libcxx_iterators_ostreambuf_iter_ops_deref();
 	tc_libcxx_iterators_ostreambuf_iter_ops_failed();
 	tc_libcxx_iterators_ostreambuf_iter_ops_increment();
+#endif
 	tc_libcxx_iterators_reverse_iter_cons_default();
 	tc_libcxx_iterators_reverse_iter_cons_iter();
 	tc_libcxx_iterators_reverse_iter_cons_reverse_iterator();

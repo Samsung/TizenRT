@@ -30,6 +30,7 @@ CFLAGS += -I ../../apps/examples/testcase/
 CXXFLAGS += -I ../../apps/examples/testcase/
 
 #Add Support Headers
+CXXFLAGS += -I std/containers/
 CXXFLAGS += -I. -I support/
 
 #Add test llocator initialization code
@@ -254,6 +255,7 @@ CXXSRCS += std/utilities/tc_utilities.cpp
 endif
 
 ifeq ($(CONFIG_LIBCXX_UTC_DIAGNOSTICS),y)
+ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
 #Diagnostics Sources
 CXXSRCS += std/diagnostics/std.exceptions/out.of.range/out_of_range.pass.cpp
 CXXSRCS += std/diagnostics/std.exceptions/overflow.error/overflow_error.pass.cpp
@@ -267,6 +269,7 @@ CXXSRCS += std/diagnostics/std.exceptions/logic.error/logic_error.pass.cpp
 
 #Diagnostics TC Main
 CXXSRCS += std/diagnostics/tc_diagnostics.cpp
+endif
 endif
 
 ifeq ($(CONFIG_LIBCXX_UTC_NUMERICS),y)
@@ -428,6 +431,17 @@ CXXSRCS += std/iterators/iterator.primitives/std.iterator.tags/random_access_ite
 CXXSRCS += std/iterators/iterator.primitives/std.iterator.tags/input_iterator_tag.pass.cpp
 CXXSRCS += std/iterators/iterator.primitives/std.iterator.tags/forward_iterator_tag.pass.cpp
 CXXSRCS += std/iterators/iterator.primitives/std.iterator.tags/output_iterator_tag.pass.cpp
+
+# Iterator range (std::begin/std::end for arrays - no locale required)
+CXXSRCS += std/iterators/stream.iterators/iterator.range/end_array.pass.cpp
+CXXSRCS += std/iterators/stream.iterators/iterator.range/begin_const.pass.cpp
+CXXSRCS += std/iterators/stream.iterators/iterator.range/begin_non_const.pass.cpp
+CXXSRCS += std/iterators/stream.iterators/iterator.range/end_non_const.pass.cpp
+CXXSRCS += std/iterators/stream.iterators/iterator.range/end_const.pass.cpp
+CXXSRCS += std/iterators/stream.iterators/iterator.range/begin_array.pass.cpp
+
+# Stream iterators (require locale - sstream, iostream)
+ifdef CONFIG_LIBCXX_LOCALE
 CXXSRCS += std/iterators/stream.iterators/ostreambuf.iterator/ostreambuf.iter.cons/streambuf.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/ostreambuf.iterator/ostreambuf.iter.cons/ostream.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/ostreambuf.iterator/ostreambuf.iter.ops/increment.pass.cpp
@@ -453,17 +467,12 @@ CXXSRCS += std/iterators/stream.iterators/istream.iterator/istream.iterator.ops/
 CXXSRCS += std/iterators/stream.iterators/istream.iterator/istream.iterator.cons/copy.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/istream.iterator/istream.iterator.cons/istream.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/istream.iterator/istream.iterator.cons/default.pass.cpp
-CXXSRCS += std/iterators/stream.iterators/iterator.range/end_array.pass.cpp
-CXXSRCS += std/iterators/stream.iterators/iterator.range/begin_const.pass.cpp
-CXXSRCS += std/iterators/stream.iterators/iterator.range/begin_non_const.pass.cpp
-CXXSRCS += std/iterators/stream.iterators/iterator.range/end_non_const.pass.cpp
-CXXSRCS += std/iterators/stream.iterators/iterator.range/end_const.pass.cpp
-CXXSRCS += std/iterators/stream.iterators/iterator.range/begin_array.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/ostream.iterator/ostream.iterator.cons.des/copy.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/ostream.iterator/ostream.iterator.cons.des/ostream.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/ostream.iterator/ostream.iterator.ops/increment.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/ostream.iterator/ostream.iterator.ops/assign_t.pass.cpp
 CXXSRCS += std/iterators/stream.iterators/ostream.iterator/ostream.iterator.ops/dereference.pass.cpp
+endif
 
 #Iterators TC Main
 CXXSRCS += std/iterators/tc_iterators.cpp
@@ -548,8 +557,13 @@ CXXSRCS += std/strings/basic.string/string.nonmembers/string_opgt/pointer_string
 CXXSRCS += std/strings/basic.string/string.nonmembers/string_operator==/string_pointer.pass.cpp
 CXXSRCS += std/strings/basic.string/string.nonmembers/string_operator==/string_string.pass.cpp
 CXXSRCS += std/strings/basic.string/string.nonmembers/string_operator==/pointer_string.pass.cpp
+
+# String I/O (require locale - iostream)
+ifdef CONFIG_LIBCXX_LOCALE
 CXXSRCS += std/strings/basic.string/string.nonmembers/string.io/get_line_rv.pass.cpp
 CXXSRCS += std/strings/basic.string/string.nonmembers/string.io/get_line_delim_rv.pass.cpp
+endif
+
 CXXSRCS += std/strings/basic.string/string.nonmembers/string.special/swap_noexcept.pass.cpp
 CXXSRCS += std/strings/basic.string/string.nonmembers/string.special/swap.pass.cpp
 CXXSRCS += std/strings/basic.string/string.ops/string_substr/substr.pass.cpp

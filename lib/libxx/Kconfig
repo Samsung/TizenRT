@@ -69,10 +69,21 @@ config LIBCXX
 	default n
 	select HAVE_CXXINITIALIZE if BUILD_FLAT
 	select BINFMT_CONSTRUCTORS if APP_BINARY_SEPARATION
+	select CONFIG_SCHED_STARTHOOK
 	---help---
 		LLVM libc++ can be built by selecting this option.
+		Enables C++ constructor/destructor execution support.
 
 if LIBCXX
+
+config LIBCXX_LOCALE
+    bool "Enable libcxx locale support"
+    default y
+    select LIBC_LOCALE
+    ---help---
+        Enable locale support in libcxx. This automatically enables
+        LIBC_LOCALE in the C library. If you disable this, locale and iostream
+        (std::cout, std::cin, std::stringstream) functionality will not be available.
 
 config LIBCXX_EXCEPTION
 	bool "Enable Exception Suppport"

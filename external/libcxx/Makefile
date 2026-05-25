@@ -66,27 +66,33 @@ CXXSRCS += future.cpp hash.cpp verbose_abort.cpp bad_alloc.cpp
 CXXSRCS += memory.cpp mutex.cpp mutex_destructor.cpp new.cpp
 CXXSRCS += shared_mutex.cpp string.cpp system_error.cpp
 CXXSRCS += thread.cpp typeinfo.cpp valarray.cpp vector.cpp
-CXXSRCS += ios.cpp iostream.cpp locale.cpp strstream.cpp
 CXXSRCS += ios.instantiations.cpp random.cpp
 CXXSRCS += functional.cpp 
 CXXSRCS += regex.cpp atomic.cpp random_shuffle.cpp
 CXXSRCS += legacy_pointer_safety.cpp
 CXXSRCS += new_handler.cpp new_helpers.cpp
 
+# Locale and iostream support (requires libc locale functions)
+# When disabled: no std::cout, std::cin, std::stringstream, but containers/algorithms work
+ifdef CONFIG_LIBCXX_LOCALE
+CXXSRCS += locale.cpp ios.cpp iostream.cpp strstream.cpp
+endif
+
 # C++17 and later sources
 ifeq ($(CONFIG_CXX_VERSION_17_OR_LATER),y)
 CXXSRCS += any.cpp optional.cpp variant.cpp
 CXXSRCS += memory_resource.cpp charconv.cpp barrier.cpp
 CXXSRCS += filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp filesystem/path.cpp
-CXXSRCS += print.cpp
-
 # Filesystem support (set via Kconfig, _LIBCPP_HAS_NO_FILESYSTEM is in __config_site)
 ifeq ($(CONFIG_LIBCXX_FILESYSTEM),y)
 CXXSRCS += filesystem/directory_entry.cpp filesystem/directory_iterator.cpp
 CXXSRCS += filesystem/operations.cpp filesystem/int128_builtins.cpp
 endif
-
 endif # CONFIG_CXX_VERSION_17_OR_LATER
+
+ifeq ($(CONFIG_CXX_VERSION_20),y)
+CXXSRCS += print.cpp
+endif
 
 # Exception handling logic
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)

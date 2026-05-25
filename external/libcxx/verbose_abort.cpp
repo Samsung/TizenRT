@@ -30,6 +30,13 @@ _LIBCPP_BEGIN_NAMESPACE_STD
 
 _LIBCPP_WEAK
 void __libcpp_verbose_abort(char const* format, ...) {
+#if defined(_LIBCPP_HAS_NO_STDOUT)
+  // When stdout/stderr is not available, skip printing the message.
+  // Just consume the variadic arguments and call abort().
+  va_list list;
+  va_start(list, format);
+  va_end(list);
+#else
   // Write message to stderr. We do this before formatting into a
   // buffer so that we still get some information out if that fails.
   {
@@ -70,6 +77,7 @@ void __libcpp_verbose_abort(char const* format, ...) {
 #  endif // __ANDROID_API__ >= 21
 #endif
   va_end(list);
+#endif  // _LIBCPP_HAS_NO_STDOUT
 
   std::abort();
 }
