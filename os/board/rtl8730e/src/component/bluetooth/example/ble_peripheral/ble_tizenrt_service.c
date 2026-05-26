@@ -90,6 +90,11 @@ T_APP_RESULT ble_tizenrt_srv_callback(uint8_t event, void *p_data)
                 dbg("[APP] BLE tizenrt indicate cccd, indicate bit disable\r\n");
             }
 
+			if (p_cha_info == NULL) {
+				dbg("[APP] p_cha_info is null\r\n");
+				break;
+			}
+
 			if (p_cha_info->cb) 
 			{
 				p_cha_info->cb(TRBLE_ATTR_CB_CCCD, p_cccd_ind->conn_handle, p_cha_info->abs_handle, p_cha_info->arg, p_cccd_ind->value, 0);
