@@ -35,7 +35,9 @@ InputHandler::InputHandler() :
 	mDecoder(nullptr),
 	mIsLooping(0),
 	mState(BUFFER_STATE_EMPTY),
-	mTotalBytes(0)
+	mTotalBytes(0),
+	mProcessBuffer(nullptr),
+	mProcessBufferSize(0)
 {
 	mWorkerStackSize = CONFIG_INPUT_DATASOURCE_STACKSIZE;
 }
@@ -76,11 +78,27 @@ bool InputHandler::doStandBy(size_t buffSize)
 
 bool InputHandler::open(size_t buffSize)
 {
+	// Allocate processBuffer with max possible size BEFORE StreamHandler::open()
+	// because worker thread starts inside StreamHandler::open() and may call processWorker()
+	// The actual size needed will be determined after registerCodec() sets mDecoder/mDemuxer
+	mProcessBufferSize = std::max({CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, CONFIG_DEMUX_BUFFER_SIZE, CONFIG_HANDLER_STREAM_BUFFER_SIZE});
+	mProcessBuffer = new unsigned char[mProcessBufferSize];
+	if (!mProcessBuffer) {
+		meddbg("Buffer allocation fail size: %d\n", mProcessBufferSize);
+		return false;
+	}
+
 	// Open stream handler and start buffering
 	if (!StreamHandler::open(buffSize)) {
 		meddbg("StreamHandler::open failed!\n");
+		delete[] mProcessBuffer;
+		mProcessBuffer = nullptr;
+		mProcessBufferSize = 0;
 		return false;
 	}
+
+	// Update processBuffer size based on decoder/demuxer presence
+	mProcessBufferSize = mDecoder ? CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE : mDemuxer ? CONFIG_DEMUX_BUFFER_SIZE : CONFIG_HANDLER_STREAM_BUFFER_SIZE;
 
 	// Wait buffering done
 	std::unique_lock<std::mutex> lock(mMutex);
@@ -99,6 +117,11 @@ bool InputHandler::close()
 	// Terminate buffering
 	std::unique_lock<std::mutex> lock(mMutex);
 	mCondv.notify_one();
+	if (mProcessBuffer) {
+		delete[] mProcessBuffer;
+		mProcessBuffer = nullptr;
+		mProcessBufferSize = 0;
+	}
 	return ret;
 }
 
@@ -131,25 +154,23 @@ void InputHandler::resetWorker()
 bool InputHandler::processWorker()
 {
 	size_t size = getAvailSpace();
-	if (size > 0) {
-		auto buf = new unsigned char[size];
-		if (!buf) {
-			meddbg("run out of memory! size: 0x%x\n", size);
-			return false;
+	if (size > 0 && mProcessBuffer) {
+		if (size > mProcessBufferSize) {
+			meddbg("Invalid available space\n");
+			size = mProcessBufferSize;
 		}
 
-		ssize_t readLen = readFromSource(buf, size);
+		ssize_t readLen = readFromSource(mProcessBuffer, size);
 		if (readLen <= 0) {
 			// Error occurred, or inputting finished
 			if (!mIsLooping) {
 				mBufferWriter->setEndOfStream();
-				delete[] buf;
 				return false;
 
 			}
 			/* If it is looping mode, then seek to 0 and readFromSource again */
 			if (mInputDataSource->seekTo(0) == OK) {
-				readLen = readFromSource(buf, size);
+				readLen = readFromSource(mProcessBuffer, size);
 			} else {
 				meddbg("seek failed!!\n");
 			}
@@ -160,14 +181,15 @@ bool InputHandler::processWorker()
 			readLen = size;
 		}
 
-		ssize_t writeLen = writeToStreamBuffer(buf, (size_t)readLen);
-		delete[] buf;
+		ssize_t writeLen = writeToStreamBuffer(mProcessBuffer, (size_t)readLen);
 		if (writeLen <= 0) {
 			meddbg("write to stream buffer failed!\n");
 			mBufferWriter->setEndOfStream();
 			return false;
 		}
 	} else {
+		// ToDo: Cross check below. EoS shouldn't be set when available size is 0.
+		// Available size 0 means there is still some data available in buffers that can be read & played.
 		mBufferWriter->setEndOfStream();
 	}
 
