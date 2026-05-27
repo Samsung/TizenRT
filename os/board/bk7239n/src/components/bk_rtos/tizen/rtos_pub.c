@@ -110,12 +110,15 @@ bk_err_t rtos_create_thread( beken_thread_t* thread, uint8_t priority, const cha
                         beken_thread_function_t function, uint32_t stack_size, beken_thread_arg_t arg )
 {
     int func_addr, ctx_addr;
+    int sched_priority;
     pid_t pid;
 	char str_func_addr[9];
 	char str_ctx_addr[9];
 	char *task_info[3];
-    priority = BEKEN_RTOS_DEFAULT_PRIORITY_MIN + (9 - priority);
-	priority = (priority > SCHED_PRIORITY_MAX || priority < SCHED_PRIORITY_MIN) ? SCHED_PRIORITY_DEFAULT:priority;
+
+    sched_priority = BEKEN_RTOS_DEFAULT_PRIORITY_MIN + (9 - (int)priority);
+    sched_priority = (sched_priority > SCHED_PRIORITY_MAX || sched_priority < SCHED_PRIORITY_MIN)
+                     ? SCHED_PRIORITY_DEFAULT : sched_priority;
 
 	func_addr = (int)function;
 	ctx_addr = (int)arg;
@@ -126,7 +129,7 @@ bk_err_t rtos_create_thread( beken_thread_t* thread, uint8_t priority, const cha
     task_info[1] = str_ctx_addr;
 	task_info[2] = NULL;
 
-    pid = kernel_thread(name, priority, stack_size, wrapper_thread, (char * const *)task_info);
+    pid = kernel_thread(name, sched_priority, stack_size, wrapper_thread, (char * const *)task_info);
 	if (pid == ERROR) {
 		return kGeneralErr;
 	}

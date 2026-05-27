@@ -151,7 +151,9 @@ bk_err_t bk_iomx_set_gpio_func(uint32_t gpio_id, IOMX_CODE_T func_code)
 
 void bk_iomx_set_value(gpio_id_t id, uint32_t v)
 {
-	IOMX_RETURN_ON_INVALID_ID(id);
+	if (id >= SOC_GPIO_NUM) {
+		return;
+	}
 	iomx_hal_set_value(id, v);
 }
 
