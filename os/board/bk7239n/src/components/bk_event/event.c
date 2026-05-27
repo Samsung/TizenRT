@@ -439,8 +439,13 @@ static void event_task(beken_thread_arg_t arg)
 	while (1) {
 		rtos_pop_from_queue(&s_event_queue, &msg, BEKEN_WAIT_FOREVER);
 
-		if (msg && msg->msg_type == EVENT_MSG_DEINIT)
+		if (!msg) {
+			continue;
+		}
+
+		if (msg->msg_type == EVENT_MSG_DEINIT) {
 			break;
+		}
 
 		event_ret = event_task_handle_msg(msg);
 
