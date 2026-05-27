@@ -215,7 +215,7 @@ static bk_err_t i2s_init_channel_legacy(i2s_drv_info_t *drv_info, i2s_channel_id
 
     /* Allocate DMA channel */
     txrx_cfg->dma_id = bk_dma_alloc(DMA_DEV_I2S);
-    if ((txrx_cfg->dma_id < DMA_ID_0) || (txrx_cfg->dma_id >= DMA_ID_MAX)) {
+    if (txrx_cfg->dma_id >= DMA_ID_MAX) {
         I2S_LOGE("malloc dma fail\n");
         return BK_FAIL;
     }
@@ -786,7 +786,7 @@ static bk_err_t i2s_configure_dma_for_channel(i2s_chl_cfg_t *chl_cfg, i2s_channe
 
     /* Allocate DMA channel */
     txrx_cfg->dma_id = bk_dma_alloc(DMA_DEV_I2S);
-    if ((txrx_cfg->dma_id < DMA_ID_0) || (txrx_cfg->dma_id >= DMA_ID_MAX)) {
+    if (txrx_cfg->dma_id >= DMA_ID_MAX) {
         I2S_LOGE("malloc dma fail \r\n");
         return BK_FAIL;
     }
@@ -1581,6 +1581,11 @@ bk_err_t bk_i2s_set_samp_rate(i2s_samp_rate_t samp_rate)
             break;
     }
 
+    if (sample_rate == 0) {
+        I2S_LOGE("cannot support sample rate \r\n");
+        return BK_ERR_I2S_PARAM;
+    }
+
 #if (CONFIG_CLK_APLL)
     /* get apll clock according to sample rate */
     if (samp_rate == I2S_SAMP_RATE_8000 ||
@@ -1631,6 +1636,11 @@ bk_err_t bk_i2s_set_samp_rate(i2s_samp_rate_t samp_rate)
 
         default:
             break;
+    }
+
+    if ((smp_ratio + 1) == 0) {
+        I2S_LOGE("invalid smp_ratio, data_length: %d, pcm_chl_num: %d \r\n", data_len, pcm_chl_num);
+        return BK_ERR_I2S_PARAM;
     }
 
 #if CONFIG_CLK_APLL
@@ -2080,12 +2090,13 @@ bk_err_t bk_i2s_chl_deinit(i2s_channel_id_t chl, i2s_txrx_type_t type)
             if (type == I2S_TXRX_TYPE_TX) {
                 if (drv_info->chl1_cfg && drv_info->chl1_cfg->tx_cfg) {
                     bk_dma_stop(drv_info->chl1_cfg->tx_cfg->dma_id);
-                    ring_buffer_clear(drv_info->chl1_cfg->tx_cfg->rb);
                     bk_dma_deinit(drv_info->chl1_cfg->tx_cfg->dma_id);
                     bk_dma_free(DMA_DEV_I2S, drv_info->chl1_cfg->tx_cfg->dma_id);
 
-                    if (drv_info->chl1_cfg->tx_cfg->rb)
+                    if (drv_info->chl1_cfg->tx_cfg->rb) {
+                        ring_buffer_clear(drv_info->chl1_cfg->tx_cfg->rb);
                         i2s_driver_mem_free(drv_info->chl1_cfg->tx_cfg->rb);
+                    }
                     drv_info->chl1_cfg->tx_cfg->rb = NULL;
                     if (drv_info->chl1_cfg->tx_cfg->buff_addr)
                         i2s_driver_mem_free(drv_info->chl1_cfg->tx_cfg->buff_addr);
@@ -2104,9 +2115,10 @@ bk_err_t bk_i2s_chl_deinit(i2s_channel_id_t chl, i2s_txrx_type_t type)
                     bk_dma_deinit(drv_info->chl1_cfg->rx_cfg->dma_id);
                     bk_dma_free(DMA_DEV_I2S, drv_info->chl1_cfg->rx_cfg->dma_id);
 
-                    ring_buffer_clear(drv_info->chl1_cfg->rx_cfg->rb);
-                    if (drv_info->chl1_cfg->rx_cfg->rb)
+                    if (drv_info->chl1_cfg->rx_cfg->rb) {
+                        ring_buffer_clear(drv_info->chl1_cfg->rx_cfg->rb);
                         i2s_driver_mem_free(drv_info->chl1_cfg->rx_cfg->rb);
+                    }
                     drv_info->chl1_cfg->rx_cfg->rb = NULL;
                     if (drv_info->chl1_cfg->rx_cfg->buff_addr)
                         i2s_driver_mem_free(drv_info->chl1_cfg->rx_cfg->buff_addr);
@@ -2120,11 +2132,11 @@ bk_err_t bk_i2s_chl_deinit(i2s_channel_id_t chl, i2s_txrx_type_t type)
                     drv_info->chl1_cfg->rx_cfg = NULL;
                 }
             }
-            if (drv_info->chl1_cfg->tx_cfg == NULL && drv_info->chl1_cfg->rx_cfg == NULL) {
-                if (drv_info->chl1_cfg) {
-                    i2s_driver_mem_free(drv_info->chl1_cfg);
-                    drv_info->chl1_cfg = NULL;
-                }
+            if (drv_info->chl1_cfg &&
+                drv_info->chl1_cfg->tx_cfg == NULL &&
+                drv_info->chl1_cfg->rx_cfg == NULL) {
+                i2s_driver_mem_free(drv_info->chl1_cfg);
+                drv_info->chl1_cfg = NULL;
             }
             break;
 
@@ -2135,9 +2147,10 @@ bk_err_t bk_i2s_chl_deinit(i2s_channel_id_t chl, i2s_txrx_type_t type)
                     bk_dma_deinit(drv_info->chl2_cfg->tx_cfg->dma_id);
                     bk_dma_free(DMA_DEV_I2S, drv_info->chl2_cfg->tx_cfg->dma_id);
 
-                    ring_buffer_clear(drv_info->chl2_cfg->tx_cfg->rb);
-                    if (drv_info->chl2_cfg->tx_cfg->rb)
+                    if (drv_info->chl2_cfg->tx_cfg->rb) {
+                        ring_buffer_clear(drv_info->chl2_cfg->tx_cfg->rb);
                         i2s_driver_mem_free(drv_info->chl2_cfg->tx_cfg->rb);
+                    }
                     drv_info->chl2_cfg->tx_cfg->rb = NULL;
                     if (drv_info->chl2_cfg->tx_cfg->buff_addr)
                         i2s_driver_mem_free(drv_info->chl2_cfg->tx_cfg->buff_addr);
@@ -2156,9 +2169,10 @@ bk_err_t bk_i2s_chl_deinit(i2s_channel_id_t chl, i2s_txrx_type_t type)
                     bk_dma_deinit(drv_info->chl2_cfg->rx_cfg->dma_id);
                     bk_dma_free(DMA_DEV_I2S, drv_info->chl2_cfg->rx_cfg->dma_id);
 
-                    ring_buffer_clear(drv_info->chl2_cfg->rx_cfg->rb);
-                    if (drv_info->chl2_cfg->rx_cfg->rb)
+                    if (drv_info->chl2_cfg->rx_cfg->rb) {
+                        ring_buffer_clear(drv_info->chl2_cfg->rx_cfg->rb);
                         i2s_driver_mem_free(drv_info->chl2_cfg->rx_cfg->rb);
+                    }
                     drv_info->chl2_cfg->rx_cfg->rb = NULL;
                     if (drv_info->chl2_cfg->rx_cfg->buff_addr)
                         i2s_driver_mem_free(drv_info->chl2_cfg->rx_cfg->buff_addr);
@@ -2172,11 +2186,11 @@ bk_err_t bk_i2s_chl_deinit(i2s_channel_id_t chl, i2s_txrx_type_t type)
                     drv_info->chl2_cfg->rx_cfg = NULL;
                 }
             }
-            if (drv_info->chl2_cfg->tx_cfg == NULL && drv_info->chl2_cfg->rx_cfg == NULL) {
-                if (drv_info->chl2_cfg) {
-                    i2s_driver_mem_free(drv_info->chl2_cfg);
-                    drv_info->chl2_cfg = NULL;
-                }
+            if (drv_info->chl2_cfg &&
+                drv_info->chl2_cfg->tx_cfg == NULL &&
+                drv_info->chl2_cfg->rx_cfg == NULL) {
+                i2s_driver_mem_free(drv_info->chl2_cfg);
+                drv_info->chl2_cfg = NULL;
             }
             break;
 
@@ -2187,9 +2201,10 @@ bk_err_t bk_i2s_chl_deinit(i2s_channel_id_t chl, i2s_txrx_type_t type)
                     bk_dma_deinit(drv_info->chl3_cfg->tx_cfg->dma_id);
                     bk_dma_free(DMA_DEV_I2S, drv_info->chl3_cfg->tx_cfg->dma_id);
 
-                    ring_buffer_clear(drv_info->chl3_cfg->tx_cfg->rb);
-                    if (drv_info->chl3_cfg->tx_cfg->rb)
+                    if (drv_info->chl3_cfg->tx_cfg->rb) {
+                        ring_buffer_clear(drv_info->chl3_cfg->tx_cfg->rb);
                         i2s_driver_mem_free(drv_info->chl3_cfg->tx_cfg->rb);
+                    }
                     drv_info->chl3_cfg->tx_cfg->rb = NULL;
                     if (drv_info->chl3_cfg->tx_cfg->buff_addr)
                         i2s_driver_mem_free(drv_info->chl3_cfg->tx_cfg->buff_addr);
@@ -2208,9 +2223,10 @@ bk_err_t bk_i2s_chl_deinit(i2s_channel_id_t chl, i2s_txrx_type_t type)
                     bk_dma_deinit(drv_info->chl3_cfg->rx_cfg->dma_id);
                     bk_dma_free(DMA_DEV_I2S, drv_info->chl3_cfg->rx_cfg->dma_id);
 
-                    ring_buffer_clear(drv_info->chl3_cfg->rx_cfg->rb);
-                    if (drv_info->chl3_cfg->rx_cfg->rb)
+                    if (drv_info->chl3_cfg->rx_cfg->rb) {
+                        ring_buffer_clear(drv_info->chl3_cfg->rx_cfg->rb);
                         i2s_driver_mem_free(drv_info->chl3_cfg->rx_cfg->rb);
+                    }
                     drv_info->chl3_cfg->rx_cfg->rb = NULL;
                     if (drv_info->chl3_cfg->rx_cfg->buff_addr)
                         i2s_driver_mem_free(drv_info->chl3_cfg->rx_cfg->buff_addr);
@@ -2224,11 +2240,11 @@ bk_err_t bk_i2s_chl_deinit(i2s_channel_id_t chl, i2s_txrx_type_t type)
                     drv_info->chl3_cfg->rx_cfg = NULL;
                 }
             }
-            if (drv_info->chl3_cfg->tx_cfg == NULL && drv_info->chl3_cfg->rx_cfg == NULL) {
-                if (drv_info->chl3_cfg) {
-                    i2s_driver_mem_free(drv_info->chl3_cfg);
-                    drv_info->chl3_cfg = NULL;
-                }
+            if (drv_info->chl3_cfg &&
+                drv_info->chl3_cfg->tx_cfg == NULL &&
+                drv_info->chl3_cfg->rx_cfg == NULL) {
+                i2s_driver_mem_free(drv_info->chl3_cfg);
+                drv_info->chl3_cfg = NULL;
             }
             break;
 

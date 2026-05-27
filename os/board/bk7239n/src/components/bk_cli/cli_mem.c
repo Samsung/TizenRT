@@ -86,6 +86,9 @@ void cli_memory_set_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char
 }
 
 #if defined(CONFIG_DEBUG_FIRMWARE)
+
+#define CLI_MEMTEST_WR_COUNT_MAX  10000u
+
 const static uint32_t s_test_data[20] = {
     0x00000000, 0x800102a0, 0x30021e44, 0x30034088,
     0x5f696c63, 0x61727370, 0x616d5f6d, 0x636f6c6c,
@@ -136,7 +139,11 @@ static void cli_memtest_wr_cmd(char *pcWriteBuffer, int xWriteBufferLen, int arg
 
     if (argc >= 3) {
         address = strtol(argv[1], NULL, 16);
-        count = strtol(argv[2], NULL, 16);
+        count = os_strtoul(argv[2], NULL, 16);
+        if (count > CLI_MEMTEST_WR_COUNT_MAX) {
+            CLI_LOGI("memtest_wr: count invalid (max %u)\r\n", CLI_MEMTEST_WR_COUNT_MAX);
+            return;
+        }
         CLI_LOGI("memtest_wr,address: 0x%08X count: 0x%08X\r\n", address, count);
 
         (void)memtest_wr(address, count);
@@ -396,6 +403,7 @@ __maybe_unused volatile uint32_t data = 0;
                 address++;
                 if(address == (base+256) ) address = base;
             }
+            break;
         case 5://multi-mem read&write
             for(uint32_t i=0; i<count; i++)
             {

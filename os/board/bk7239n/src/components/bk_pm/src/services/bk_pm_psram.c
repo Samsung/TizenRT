@@ -95,69 +95,69 @@ bk_err_t pm_cp1_psram_malloc_state_get()
 #define bk_psram_heap_get_used_count() 0
 bk_err_t pm_psram_malloc_state_and_power_ctrl()
 {
-#if CONFIG_PSRAM_AS_SYS_MEMORY
-	uint32_t cp0_psram_malloc_count = 0;
-	uint32_t cp1_psram_malloc_count = 0;
-	/*get the cp1 psram malloc count*/
-	#if (CONFIG_CPU_CNT > 1)
-	cp1_psram_malloc_count = s_pm_cp1_psram_malloc_count_state;
-	if (pm_debug_mode() == 64)
-	{
-		if(s_pm_cp1_psram_malloc_count_state > 0)
-		{
-			LOGI("CP1 psram malloc count[%d] > 0\r\n",cp1_psram_malloc_count);
-			LOGI("Power consumption will get higher,free them\r\n");
+// #if CONFIG_PSRAM_AS_SYS_MEMORY
+// 	uint32_t cp0_psram_malloc_count = 0;
+// 	uint32_t cp1_psram_malloc_count = 0;
+// 	/*get the cp1 psram malloc count*/
+// 	#if (CONFIG_CPU_CNT > 1)
+// 	cp1_psram_malloc_count = s_pm_cp1_psram_malloc_count_state;
+// 	if (pm_debug_mode() == 64)
+// 	{
+// 		if(s_pm_cp1_psram_malloc_count_state > 0)
+// 		{
+// 			LOGI("CP1 psram malloc count[%d] > 0\r\n",cp1_psram_malloc_count);
+// 			LOGI("Power consumption will get higher,free them\r\n");
 
-			bk_pm_dump_cp1_psram_malloc_info();
-		}
-	}
-	#endif
-	/*get the cp0 psram malloc count*/
-	cp0_psram_malloc_count = bk_psram_heap_get_used_count();
-	if (pm_debug_mode() == 64)
-	{
-		if(cp0_psram_malloc_count > 0)
-		{
-			LOGI("CP0 psram malloc count[%d] > 0\r\n",cp0_psram_malloc_count);
-			LOGI("Power consumption will get higher,free them\r\n");
+// 			bk_pm_dump_cp1_psram_malloc_info();
+// 		}
+// 	}
+// 	#endif
+// 	/*get the cp0 psram malloc count*/
+// 	cp0_psram_malloc_count = bk_psram_heap_get_used_count();
+// 	if (pm_debug_mode() == 64)
+// 	{
+// 		if(cp0_psram_malloc_count > 0)
+// 		{
+// 			LOGI("CP0 psram malloc count[%d] > 0\r\n",cp0_psram_malloc_count);
+// 			LOGI("Power consumption will get higher,free them\r\n");
 
-			bk_psram_heap_get_used_state();
-		}
-	}
-	if((cp0_psram_malloc_count == 0)&&(cp1_psram_malloc_count == 0))
-	{
-		//bk_pm_module_vote_psram_ctrl(PM_POWER_PSRAM_MODULE_NAME_AS_MEM,PM_POWER_MODULE_STATE_OFF);
-		//bk_pm_module_vote_power_ctrl(POWER_SUB_MODULE_NAME_BAKP_PSRAM, PM_POWER_MODULE_STATE_OFF);
-	}
+// 			bk_psram_heap_get_used_state();
+// 		}
+// 	}
+// 	if((cp0_psram_malloc_count == 0)&&(cp1_psram_malloc_count == 0))
+// 	{
+// 		//bk_pm_module_vote_psram_ctrl(PM_POWER_PSRAM_MODULE_NAME_AS_MEM,PM_POWER_MODULE_STATE_OFF);
+// 		//bk_pm_module_vote_power_ctrl(POWER_SUB_MODULE_NAME_BAKP_PSRAM, PM_POWER_MODULE_STATE_OFF);
+// 	}
 
-#endif
+// #endif
 	return BK_OK;
 }
 
 void pm_debug_psram()
 {
-	uint32_t cp0_psram_malloc_count = 0;
+	// uint32_t cp0_psram_malloc_count = 0;
 
-	/*get the cp1 psram malloc count*/
-	#if (CONFIG_CPU_CNT > 1)
-	uint32_t cp1_psram_malloc_count = s_pm_cp1_psram_malloc_count_state;
+	// /*get the cp1 psram malloc count*/
+	// #if (CONFIG_CPU_CNT > 1)
+	// uint32_t cp1_psram_malloc_count = s_pm_cp1_psram_malloc_count_state;
 
-	if(cp1_psram_malloc_count > 0)
-	{
-		LOGI("CP1 psram malloc count[%d] > 0\r\n",cp1_psram_malloc_count);
-		LOGI("Power consumption will get higher, please free them\r\n");
-		bk_pm_dump_cp1_psram_malloc_info();
-	}
-	#endif
+	// if(cp1_psram_malloc_count > 0)
+	// {
+	// 	LOGI("CP1 psram malloc count[%d] > 0\r\n",cp1_psram_malloc_count);
+	// 	LOGI("Power consumption will get higher, please free them\r\n");
+	// 	bk_pm_dump_cp1_psram_malloc_info();
+	// }
+	// #endif
 
-	/*get the cp0 psram malloc count*/
-	cp0_psram_malloc_count = bk_psram_heap_get_used_count();
-	if(cp0_psram_malloc_count > 0)
-	{
-		LOGI("CP0 psram malloc count[%d] > 0\r\n",cp0_psram_malloc_count);
-		LOGI("power consumption will get higher,free them\r\n");
-		bk_psram_heap_get_used_state();
-	}
+	// /*get the cp0 psram malloc count*/
+	// cp0_psram_malloc_count = bk_psram_heap_get_used_count();
+	// if(cp0_psram_malloc_count > 0)
+	// {
+	// 	LOGI("CP0 psram malloc count[%d] > 0\r\n",cp0_psram_malloc_count);
+	// 	LOGI("power consumption will get higher,free them\r\n");
+	// 	bk_psram_heap_get_used_state();
+	// }
 }
 
 void pm_debug_psram_state()

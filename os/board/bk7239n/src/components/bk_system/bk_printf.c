@@ -374,15 +374,15 @@ void bk_printf_ext(int level, char *tag, const char *fmt, ...)
 #ifdef CONFIG_LOGM
 	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, final_fmt, args);
 #else
-    if (level >= BK_LOG_ERROR)
+    if (level == BK_LOG_ERROR)
     {
         priority = LOG_ERR;
-    } 
-    else if (level >= BK_LOG_WARN)
+    }
+    else if (level == BK_LOG_WARN)
     {
         priority = LOG_WARNING;
     }
-    else if (level >= BK_LOG_INFO)
+    else if (level == BK_LOG_INFO)
     {
         priority = LOG_INFO;
     }
@@ -430,15 +430,15 @@ void bk_vprintf_ext(int level, char *tag, const char *fmt, va_list args)
 #ifdef CONFIG_LOGM
 	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, final_fmt, args);
 #else
-    if (level >= BK_LOG_ERROR)
+    if (level == BK_LOG_ERROR)
     {
         priority = LOG_ERR;
-    } 
-    else if (level >= BK_LOG_WARN)
+    }
+    else if (level == BK_LOG_WARN)
     {
         priority = LOG_WARNING;
     }
-    else if (level >= BK_LOG_INFO)
+    else if (level == BK_LOG_INFO)
     {
         priority = LOG_INFO;
     }
@@ -476,22 +476,22 @@ void bk_vprintf_raw(int level, char *tag, const char *fmt, va_list args)
 #ifdef CONFIG_LOGM
 	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, fmt, args);
 #else
-    if (level >= BK_LOG_ERROR)
+    if (level == BK_LOG_ERROR)
     {
         priority = LOG_ERR;
-    } 
-    else if (level >= BK_LOG_WARN)
+    }
+    else if (level == BK_LOG_WARN)
     {
         priority = LOG_WARNING;
     }
-    else if (level >= BK_LOG_INFO)
+    else if (level == BK_LOG_INFO)
     {
         priority = LOG_INFO;
     }
     else {
         priority = LOG_DEBUG;
     }
-	ret = vsyslog(LOG_ERR, fmt, args);
+	ret = vsyslog(priority, fmt, args);
 #endif
     }
 
@@ -523,22 +523,22 @@ void bk_printf_raw(int level, char *tag, const char *fmt, ...)
 #ifdef CONFIG_LOGM
 	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, fmt, args);
 #else
-    if (level >= BK_LOG_ERROR)
+    if (level == BK_LOG_ERROR)
     {
         priority = LOG_ERR;
-    } 
-    else if (level >= BK_LOG_WARN)
+    }
+    else if (level == BK_LOG_WARN)
     {
         priority = LOG_WARNING;
     }
-    else if (level >= BK_LOG_INFO)
+    else if (level == BK_LOG_INFO)
     {
         priority = LOG_INFO;
     }
     else {
         priority = LOG_DEBUG;
     }
-	ret = vsyslog(LOG_ERR, fmt, args);
+	ret = vsyslog(priority, fmt, args);
 #endif
     }
 	va_end(args);
@@ -1114,7 +1114,7 @@ static void async_irq_log_task(void *arg)
 		} while (has_data);
 	}
 
-	return 0; /* Should never reach here */
+	return; /* Should never reach here */
 }
 
 /****************************************************************************

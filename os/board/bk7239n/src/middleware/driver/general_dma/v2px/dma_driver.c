@@ -869,7 +869,7 @@ bk_err_t bk_dma_set_pixel_trans_type(dma_id_t id, dma_pixel_trans_type_t type)
     DMA_RETURN_ON_INVALID_ID(id);
 
 
-    dma_hal_set_pixel_trans_type(&s_dma[dma_num].hal, id, type);
+    dma_hal_set_pixel_trans_type(&s_dma[dma_num].hal, dma_channel, type);
     return BK_OK;
 }
 
@@ -882,7 +882,7 @@ uint32_t bk_dma_get_pixel_trans_type(dma_id_t id)
     DMA_RETURN_ON_INVALID_ID(id);
 
 
-    return dma_hal_get_pixel_trans_type(&s_dma[dma_num].hal, id);
+    return dma_hal_get_pixel_trans_type(&s_dma[dma_num].hal, dma_channel);
 }
 
 bk_err_t bk_dma_set_dest_burst_len(dma_id_t id, dma_burst_len_t len)
@@ -1174,7 +1174,7 @@ static void dma_isr_common(dma_unit_t dma_unit_id)
     uint32_t channel = 0;
     for (int id = 0; id < SOC_DMA_CHAN_NUM_PER_UNIT; id++) {
         channel = id + dma_unit_id * SOC_DMA_CHAN_NUM_PER_UNIT;
-        if (((channel) < CONFIG_DMA_LOGIC_CHAN_ID_MIN) || ((channel) >= CONFIG_DMA_LOGIC_CHAN_ID_MIN + CONFIG_DMA_LOGIC_CHAN_CNT)) {
+        if ((channel) >= CONFIG_DMA_LOGIC_CHAN_ID_MIN + CONFIG_DMA_LOGIC_CHAN_CNT) {
             continue;
         }
         if (dma_hal_is_half_finish_interrupt_triggered(hal, id)) {

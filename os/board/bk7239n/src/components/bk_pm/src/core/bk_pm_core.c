@@ -131,14 +131,13 @@ static uint64_t pm_state_machine()
 	#if CONFIG_AON_RTC || CONFIG_ANA_RTC
 	uint64_t exit_tick          = 0ULL;
 	exit_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-	sleep_tick = exit_tick - entry_tick;
-	if(exit_tick - entry_tick < 0)
+	if (exit_tick >= entry_tick)
 	{
-		sleep_tick = 0ULL;
+		sleep_tick = exit_tick - entry_tick;
 	}
 	else
 	{
-		sleep_tick = exit_tick - entry_tick;
+		sleep_tick = 0ULL;
 	}
 	#endif
 	pm_enable_int(int_level);

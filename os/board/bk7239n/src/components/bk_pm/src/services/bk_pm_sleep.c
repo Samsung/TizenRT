@@ -80,13 +80,13 @@ uint64_t pm_cpu_wfi_process()
 	#if CONFIG_AON_RTC || CONFIG_ANA_RTC
 	uint64_t exit_tick          = 0ULL;
 	exit_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-	if(exit_tick - entry_tick < 0)
+	if (exit_tick >= entry_tick)
 	{
-		sleep_tick = 0ULL;
+		sleep_tick = exit_tick - entry_tick;
 	}
 	else
 	{
-		sleep_tick = exit_tick - entry_tick;
+		sleep_tick = 0ULL;
 	}
 
 	#endif
@@ -134,13 +134,13 @@ uint64_t pm_normal_sleep_process()
 	#if CONFIG_AON_RTC || CONFIG_ANA_RTC
 	uint64_t exit_tick          = 0ULL;
 	exit_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-	if(exit_tick - entry_tick < 0)
+	if (exit_tick >= entry_tick)
 	{
-		sleep_tick = 0ULL;
+		sleep_tick = exit_tick - entry_tick;
 	}
 	else
 	{
-		sleep_tick = exit_tick - entry_tick;
+		sleep_tick = 0ULL;
 	}
 	#else
 	sleep_tick = 0ULL;
@@ -196,13 +196,13 @@ uint64_t pm_low_voltage_process()
 #if CONFIG_AON_RTC || CONFIG_ANA_RTC
 	uint64_t exit_tick          = 0ULL;
 	exit_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-	if(exit_tick - entry_tick < 0)
+	if (exit_tick >= entry_tick)
 	{
-		sleep_tick = 0ULL;
+		sleep_tick = exit_tick - entry_tick;
 	}
 	else
 	{
-		sleep_tick = exit_tick - entry_tick;
+		sleep_tick = 0ULL;
 	}
 #endif
 	bk_pm_module_vote_sleep_ctrl(PM_SLEEP_MODULE_NAME_TICK_COMP,0x0,0x0);
@@ -272,13 +272,13 @@ uint64_t pm_deep_sleep_process()
 	#if CONFIG_AON_RTC || CONFIG_ANA_RTC
 	uint64_t exit_tick          = 0ULL;
 	exit_tick = bk_aon_rtc_get_current_tick(AON_RTC_ID_1);
-	if(exit_tick - entry_tick < 0)
+	if (exit_tick >= entry_tick)
 	{
-		sleep_tick = 0ULL;
+		sleep_tick = exit_tick - entry_tick;
 	}
 	else
 	{
-		sleep_tick = exit_tick - entry_tick;
+		sleep_tick = 0ULL;
 	}
 	#else
 		sleep_tick = 0ULL;
@@ -651,7 +651,7 @@ bk_err_t bk_pm_sleep_unregister_cb(pm_sleep_mode_e sleep_mode, pm_dev_id_e dev_i
 			s_pm_lowvol_enter_exit_cb_conf[PM_SLEEP_CB_ENTER_LOWVOL_INDEX][dev_id].args = NULL;
 		}
 
-		if (exit_cb == true)
+		if ((exit_cb == true) && (dev_id < PM_DEV_ID_MAX))
 		{
 			s_pm_lowvol_enter_exit_cb_conf[PM_SLEEP_CB_EXIT_LOWVOL_INDEX][dev_id].cb = NULL;
 			s_pm_lowvol_enter_exit_cb_conf[PM_SLEEP_CB_EXIT_LOWVOL_INDEX][dev_id].args = NULL;

@@ -571,7 +571,7 @@ static void cli_pm_freq(char *pcWriteBuffer, int xWriteBufferLen, int argc, char
 
 	pm_module_id = os_strtoul(argv[1], NULL, 10);
 	pm_freq = os_strtoul(argv[2], NULL, 10);
-	if ((pm_freq > PM_CPU_FRQ_DEFAULT) || (pm_module_id > PM_DEV_ID_MAX))
+	if ((pm_freq > PM_CPU_FRQ_DEFAULT) || (pm_module_id >= PM_DEV_ID_MAX))
 	{
 		CLI_LOGI("set pm freq value invalid %d %d \r\n",pm_freq,pm_module_id);
 		return;
@@ -599,7 +599,7 @@ static void cli_pm_ctrl(char *pcWriteBuffer, int xWriteBufferLen, int argc, char
 	}
 
 	pm_ctrl = os_strtoul(argv[1], NULL, 10);
-	if ((pm_ctrl < 0) || (pm_ctrl > 1))
+	if (pm_ctrl > 1)
 	{
 		CLI_LOGI("set pm ctrl value invalid %d\r\n",pm_ctrl);
 		return;
@@ -619,7 +619,7 @@ static void cli_pm_vol(char *pcWriteBuffer, int xWriteBufferLen, int argc, char 
 	}
 
 	pm_vol = os_strtoul(argv[1], NULL, 10);
-	if ((pm_vol < 0) || (pm_vol > 7))
+	if (pm_vol > 7)
 	{
 		CLI_LOGI("set pm voltage value invalid %d\r\n",pm_vol);
 		return;
@@ -640,7 +640,7 @@ static void cli_pm_clk(char *pcWriteBuffer, int xWriteBufferLen, int argc, char 
 
 	pm_module_id = os_strtoul(argv[1], NULL, 10);
 	pm_clk_state = os_strtoul(argv[2], NULL, 10);
-	if ((pm_clk_state < 0) || (pm_clk_state > 1) || (pm_module_id < 0) || (pm_module_id > 31))
+	if ((pm_clk_state > 1) || (pm_module_id > 31))
 	{
 		CLI_LOGI("set pm clk value invalid %d %d\r\n",pm_clk_state,pm_module_id);
 		return;
@@ -681,7 +681,7 @@ static void cli_pm_lpo(char *pcWriteBuffer, int xWriteBufferLen, int argc, char 
 	}
 
 	pm_lpo = os_strtoul(argv[1], NULL, 10);
-	if ((pm_lpo < 0) || (pm_lpo > 3))
+	if (pm_lpo > 3)
 	{
 		CLI_LOGI("set  pm lpo value invalid %d\r\n",pm_lpo);
 		return;
@@ -702,7 +702,7 @@ static void cli_pm_pwr_state(char *pcWriteBuffer, int xWriteBufferLen, int argc,
 	}
 
 	pm_pwr_module = os_strtoul(argv[1], NULL, 10);
-	if ((pm_pwr_module < 0) || (pm_pwr_module >= PM_POWER_MODULE_NAME_NONE))
+	if (pm_pwr_module >= PM_POWER_MODULE_NAME_NONE)
 	{
 		CLI_LOGI("pm module[%d] not support ,get power state fail\r\n",pm_pwr_module);
 		return;
@@ -722,7 +722,7 @@ static void cli_pm_auto_vote(char *pcWriteBuffer, int xWriteBufferLen, int argc,
 	}
 
 	pm_ctrl = os_strtoul(argv[1], NULL, 10);
-	if ((pm_ctrl < 0) || (pm_ctrl > 1))
+	if (pm_ctrl > 1)
 	{
 		CLI_LOGI("set pm auto vote value invalid %d\r\n",pm_ctrl);
 		return;

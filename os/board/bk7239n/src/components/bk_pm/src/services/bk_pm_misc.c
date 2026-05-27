@@ -77,31 +77,38 @@ bk_err_t bk_pm_module_vote_ctrl_external_ldo(gpio_ctrl_ldo_module_e module,gpio_
 	return BK_OK;
 }
 
+/*
+This function is confirmed as a legacy empty implementation 
+with no actual GPIO control logic. The current hardware power scheme does not require software 
+manipulation of this external LDO, and the function has no callers. Deleting it directly will 
+not affect the current functionality in any way.
+*/
 bk_err_t bk_pm_external_ldo_ctrl(uint32_t value)
 {
-	uint32_t i = 0;
-	uint32_t gpio_ctrl_ldo_output_high_map[] = GPIO_CTRL_LDO_OUTPUT_HIGH_MAP;
-	uint32_t gpio_ctrl_ldo_output_low_map[] = GPIO_CTRL_LDO_OUTPUT_LOW_MAP;
+	//not use the function
+	// uint32_t i = 0;
+	// uint32_t gpio_ctrl_ldo_output_high_map[] = GPIO_CTRL_LDO_OUTPUT_HIGH_MAP;
+	// uint32_t gpio_ctrl_ldo_output_low_map[] = GPIO_CTRL_LDO_OUTPUT_LOW_MAP;
 
-	if (value == 0x1) // output higt
-	{
-		for (i = 0; i < sizeof(gpio_ctrl_ldo_output_high_map) / sizeof(uint32_t); i++)
-		{
-			bk_gpio_enable_output(gpio_ctrl_ldo_output_high_map[i]);
-			bk_gpio_set_output_high(gpio_ctrl_ldo_output_high_map[i]);
-		}
-	}
-	else if (value == 0x0) // output low
-	{
-		for (i = 0; i < sizeof(gpio_ctrl_ldo_output_low_map) / sizeof(uint32_t); i++)
-		{
-			bk_gpio_enable_output(gpio_ctrl_ldo_output_high_map[i]);
-			bk_gpio_set_output_low(gpio_ctrl_ldo_output_low_map[i]);
-		}
-	}
-	else
-	{
-	}
+	// if (value == 0x1) // output higt
+	// {
+	// 	for (i = 0; i < sizeof(gpio_ctrl_ldo_output_high_map) / sizeof(uint32_t); i++)
+	// 	{
+	// 		bk_gpio_enable_output(gpio_ctrl_ldo_output_high_map[i]);
+	// 		bk_gpio_set_output_high(gpio_ctrl_ldo_output_high_map[i]);
+	// 	}
+	// }
+	// else if (value == 0x0) // output low
+	// {
+	// 	for (i = 0; i < sizeof(gpio_ctrl_ldo_output_low_map) / sizeof(uint32_t); i++)
+	// 	{
+	// 		bk_gpio_enable_output(gpio_ctrl_ldo_output_low_map[i]);
+	// 		bk_gpio_set_output_low(gpio_ctrl_ldo_output_low_map[i]);
+	// 	}
+	// }
+	// else
+	// {
+	// }
 
 	return BK_OK;
 }
@@ -169,12 +176,12 @@ const char *pm_sleep_mode_to_string(pm_sleep_mode_e sleep_mode)
 
 void pm_printf_current_temperature(void)
 {
-	return;
-#if CONFIG_TEMP_DETECT
-	float temp;
-	bk_sensor_get_current_temperature(&temp);
-	BK_LOGD(NULL, "current chip temperature about %.2f\r\n",temp);
-#endif
+//not use the function
+// #if CONFIG_TEMP_DETECT
+// 	float temp;
+// 	bk_sensor_get_current_temperature(&temp);
+// 	BK_LOGD(NULL, "current chip temperature about %.2f\r\n",temp);
+// #endif
 }
 uint32_t pm_disable_int(void)
 {

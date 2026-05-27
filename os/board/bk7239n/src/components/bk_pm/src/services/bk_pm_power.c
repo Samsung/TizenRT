@@ -576,7 +576,7 @@ bk_err_t bk_pm_module_vote_analdo_vol(pm_analdo_vote_module_e module, pm_analdo_
 		return BK_OK;
 	}
 
-	ret = (sys_drv_rf_tx_vol_set(vol_max) == 0) ? BK_OK : BK_FAIL;
+	ret = sys_drv_rf_tx_vol_set(vol_max);
 	if (ret == BK_OK) {
 		s_pm_current_analdo_vol = vol_max;
 	}

@@ -192,7 +192,7 @@ const size_t partition_map_size = sizeof(partition_map) / sizeof(partition_map[0
 
 static bool flash_partition_is_valid(bk_partition_t partition)
 {
-	if (partition >= BK_PARTITION_BOOTLOADER) {
+	if ((partition >= BK_PARTITION_BOOTLOADER) && (partition < BK_PARTITION_MAX)) {
 		return true;
 	} else {
 		return false;
