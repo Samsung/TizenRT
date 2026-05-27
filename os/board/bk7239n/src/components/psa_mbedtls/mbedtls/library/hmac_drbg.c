@@ -346,6 +346,11 @@ int mbedtls_hmac_drbg_random_with_add(void *p_rng,
     while (left != 0) {
         size_t use_len = left > md_len ? md_len : left;
 
+        if (use_len > MBEDTLS_MD_MAX_SIZE) {
+            ret = MBEDTLS_ERR_HMAC_DRBG_REQUEST_TOO_BIG;
+            goto exit;
+        }
+
         if ((ret = mbedtls_md_hmac_reset(&ctx->md_ctx)) != 0) {
             goto exit;
         }

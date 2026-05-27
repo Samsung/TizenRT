@@ -3121,17 +3121,12 @@ curve_matching_done:
         /*
          * 2.2: Compute the hash to be signed
          */
-        if (md_alg != MBEDTLS_MD_NONE) {
-            ret = mbedtls_ssl_get_key_exchange_md_tls1_2(ssl, hash, &hashlen,
-                                                         dig_signed,
-                                                         dig_signed_len,
-                                                         md_alg);
-            if (ret != 0) {
-                return ret;
-            }
-        } else {
-            MBEDTLS_SSL_DEBUG_MSG(1, ("should never happen"));
-            return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
+        ret = mbedtls_ssl_get_key_exchange_md_tls1_2(ssl, hash, &hashlen,
+                                                     dig_signed,
+                                                     dig_signed_len,
+                                                     md_alg);
+        if (ret != 0) {
+            return ret;
         }
 
         MBEDTLS_SSL_DEBUG_BUF(3, "parameters hash", hash, hashlen);
