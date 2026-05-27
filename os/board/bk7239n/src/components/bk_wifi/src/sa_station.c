@@ -162,8 +162,11 @@ void sa_reconnect_main(void *arg)
 
 void sa_reconnect_init(void)
 {
+	/* reconnect thread disabled */
+	return;
+#if 0
 	bk_err_t ret;
-	return; // try it;
+
 	if (NULL == reconnect_thread_handle) {
 		ret = rtos_create_thread(&reconnect_thread_handle,
 								 CONFIG_TASK_RECONNECT_PRIO,
@@ -172,8 +175,10 @@ void sa_reconnect_init(void)
 								 (unsigned short)reconnect_stack_size,
 								 (beken_thread_arg_t)0);
 		BK_ASSERT(kNoErr == ret); /* ASSERT VERIFIED */
-	} else
+	} else {
 		WIFI_LOGI("sa_reconnect_init_strange\r\n");
+	}
+#endif
 }
 #endif
 

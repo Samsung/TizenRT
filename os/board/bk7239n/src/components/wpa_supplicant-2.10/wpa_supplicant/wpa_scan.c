@@ -2987,9 +2987,11 @@ wpa_supplicant_get_scan_results(struct wpa_supplicant *wpa_s,
 	}
 
 	wpa_bss_update_start(wpa_s);
-	for (i = 0; i < scan_res->num; i++)
-		wpa_bss_update_scan_res(wpa_s, scan_res->res[i],
-					&scan_res->fetch_time);
+	if (scan_res->res) {
+		for (i = 0; i < scan_res->num; i++)
+			wpa_bss_update_scan_res(wpa_s, scan_res->res[i],
+						&scan_res->fetch_time);
+	}
 	wpa_bss_update_end(wpa_s, info, new_scan);
 
 	return scan_res;

@@ -1225,7 +1225,7 @@ typedef struct
  */
 typedef  struct  _ScanResult
 {
-	char ApNum;       /**< The number of access points found in scanning. */
+	uint8_t ApNum;    /**< The number of access points found in scanning. */
 	struct _ApList
 	{
 		char ssid[33];  /**< The SSID of an access point. */
@@ -1238,7 +1238,7 @@ typedef  struct  _ScanResult
  */
 typedef  struct  _ScanResult_adv
 {
-	char ApNum;       /**< The number of access points found in scanning.*/
+	uint8_t ApNum;    /**< The number of access points found in scanning.*/
 	struct ApListStruct
 	{
 		char ssid[33];    /**< The SSID of an access point.*/
@@ -1275,7 +1275,7 @@ typedef struct sta_scan_res
  */
 typedef struct _network_InitTypeDef_st
 {
-	char wifi_mode;               /**< WiFi mode, BK_SOFT_AP or BK_STATION */
+	uint8_t wifi_mode;            /**< WiFi mode, BK_SOFT_AP or BK_STATION */
 	char wifi_ssid[33];           /**< For station, it's SSID of the AP to be connected, for AP, it's the SSID of our AP */
 	char wifi_key[65];            /**< Security key of the wlan needs to be connected, ignored in an open system.*/
 	char local_ip_addr[16];       /**< Static IP configuration, Local IP address. */
