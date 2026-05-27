@@ -74,30 +74,21 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 		uint32_t read_offset;
 		uint32_t read_addr;
 
-		if (offset < 0) {
-			nbytes = -EINVAL;
-		} else {
-			part_addr = BIN_PARTADDR(binp->binary_idx, BIN_USEIDX(binp->binary_idx));
-			read_offset = (uint32_t)offset;
-			read_addr = part_addr + read_offset;
-			nbytes = up_read_decrypted_flash(read_addr, buffer, readsize);
-			if (nbytes != OK && nbytes != -EINTR) {
-				berr("Failed to read userspace header, addr 0x%x, size %u, ret %d\n", read_addr, (unsigned int)readsize, (int)nbytes);
-				if (nbytes >= 0) {
-					nbytes = -EIO;
-				}
-			} else if (nbytes == OK) {
-				nbytes = readsize;
-			}
+		part_addr = BIN_PARTADDR(binp->binary_idx, BIN_USEIDX(binp->binary_idx));
+		read_offset = (uint32_t)offset;
+		read_addr = part_addr + read_offset;
+		nbytes = up_read_decrypted_flash(read_addr, buffer, readsize);
+		if (nbytes != OK && nbytes != -EINTR) {
+			berr("Failed to read userspace header, addr 0x%x, size %u, ret %d\n", read_addr, (unsigned int)readsize, (int)nbytes);
+		} else if (nbytes == OK) {
+			nbytes = readsize;
 		}
 #else
 		rpos = lseek(filfd, offset, SEEK_SET);
 		if (rpos != offset) {
 			int errval = get_errno();
 			berr("Failed to seek to position %lu: %d\n", (unsigned long)offset, errval);
-			if (filfd >= 0) {
-				close(filfd);
-			}
+			close(filfd);
 			return -errval;
 		}
 
