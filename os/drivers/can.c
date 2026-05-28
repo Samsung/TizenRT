@@ -515,7 +515,28 @@ static ssize_t can_write(FAR struct file *filep, FAR const char *buffer, size_t 
 		 */
 
 		msg = (FAR struct can_msg_s *)&buffer[nsent];
+
+		/* Reject out-of-spec DLC.  ch_dlc is a 4-bit field (0..15) but
+		 * cm_data is only CAN_MAXDATALEN (8) bytes.  Classic CAN DLC > 8
+		 * is out-of-spec and must be rejected, not silently truncated,
+		 * because this is a userspace-facing API.  A DLC > 8 would cause
+		 * memcpy() to overflow the tx_buffer FIFO entry and over-read the
+		 * caller's buffer.
+		*/
+
+		if (msg->cm_hdr.ch_dlc > CAN_MAXDATALEN) {
+			ret = -EINVAL;
+			goto return_with_irqdisabled;
+		}
+
 		msglen = CAN_MSGLEN(msg->cm_hdr.ch_dlc);
+		/* Make sure the caller actually supplied a full message of this length
+		 * before copying, so we never read past the end of the user buffer.
+		*/
+
+		if ((size_t)(buflen - nsent) < (size_t)msglen) {
+			break;
+		}
 		memcpy(&fifo->tx_buffer[fifo->tx_tail], msg, msglen);
 
 		/* Increment the tail of the circular buffer */
@@ -663,7 +684,7 @@ int can_register(FAR const char *path, FAR struct can_dev_s *dev)
 		 * signaling and should not have priority inheritance enabled.
 		 */
 		sem_init(&dev->cd_rtr[i].cr_sem, 0, 0);
-		sem_setprotocol(&dev->cd_rtr[i].cr_sem. SEM_PRIO_NONE);
+		sem_setprotocol(&dev->cd_rtr[i].cr_sem, SEM_PRIO_NONE);
 		dev->cd_rtr[i].cr_msg = NULL;
 		dev->cd_npendrtr--;
 	}
@@ -697,12 +718,21 @@ int can_register(FAR const char *path, FAR struct can_dev_s *dev)
 int can_receive(FAR struct can_dev_s *dev, FAR struct can_hdr_s *hdr, FAR uint8_t *data)
 {
 	FAR struct can_rxfifo_s *fifo = &dev->cd_recv;
-	FAR uint8_t *dest;
 	int nexttail;
 	int err = -ENOMEM;
 	int i;
 
 	canllvdbg("ID: %d DLC: %d\n", hdr->ch_id, hdr->ch_dlc);
+
+	/* The DLC is a 4-bit field that may carry a value of 0..15, but the
+	 * message data buffer (cm_data) is only CAN_MAXDATALEN (8) bytes long.
+	 * Clamp the length here so neither the RTR copy loop nor the FIFO copy
+	 * loop below can write past the end of cm_data.
+	*/
+
+	if (hdr->ch_dlc > CAN_MAXDATALEN) {
+		hdr->ch_dlc = CAN_MAXDATALEN;
+	}
 
 	/* Check if adding this new message would over-run the drivers ability to
 	 * enqueue read data.
@@ -732,11 +762,8 @@ int can_receive(FAR struct can_dev_s *dev, FAR struct can_hdr_s *hdr, FAR uint8_
 
 			if (msg && hdr->ch_id == rtr->cr_id) {
 				/* We have the response... copy the data to the user's buffer */
-
 				memcpy(&msg->cm_hdr, hdr, sizeof(struct can_hdr_s));
-				for (i = 0, dest = msg->cm_data; i < hdr->ch_dlc; i++) {
-					*dest++ = *data++;
-				}
+				memcpy(msg->cm_data, data, hdr->ch_dlc);
 
 				/* Mark the entry unused */
 
@@ -755,9 +782,7 @@ int can_receive(FAR struct can_dev_s *dev, FAR struct can_hdr_s *hdr, FAR uint8_
 		/* Add the new, decoded CAN message at the tail of the FIFO */
 
 		memcpy(&fifo->rx_buffer[fifo->rx_tail].cm_hdr, hdr, sizeof(struct can_hdr_s));
-		for (i = 0, dest = fifo->rx_buffer[fifo->rx_tail].cm_data; i < hdr->ch_dlc; i++) {
-			*dest++ = *data++;
-		}
+		memcpy(fifo->rx_buffer[fifo->rx_tail].cm_data, data, hdr->ch_dlc);
 
 		/* Increment the tail of the circular buffer */
 
