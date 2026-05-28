@@ -645,20 +645,16 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 {
 	int ret = 0;
 	switch(data) {
-	case AI_DATA_TYPE_SEAMLESS_R:
-		ret = ADAM110_GET_SEAMLESS(dev, NULL);
-		break;
 	case AI_DATA_TYPE_AUDIO:
 		ret = ADAM110_GET_AUDIO(dev, NULL);
+		if (ret == OK) {
+			up_udelay(ADAM110_TXRX_DELAY);
+			adam110_spi_exchange(dev, NULL, 0, buffer, size, false);
+		}
 		break;
 	default:
 		auddbg("[E] invalid data type\n");
 		ret = -EINVAL;
-	}
-
-	if (ret == OK) {
-		up_udelay(ADAM110_TXRX_DELAY);
-		adam110_spi_exchange(dev, NULL, 0, buffer, size, false);
 	}
 
 	return ret;
@@ -798,49 +794,81 @@ static void adam110_work_handler(void *arg)
 	audvdbg("parm2 = 0x%x\n", rxpkt.parm2);
 
 	/* TODO if it is invalid event, should we return OK here? */
-	if (rxpkt.parm2 != AI_DATA_TYPE_SEAMLESS_R && rxpkt.parm2 != AI_DATA_TYPE_AUDIO) {
+	if ( rxpkt.parm1 != AI_MODEL_HIBIXBY && rxpkt.parm1 != AI_MODEL_BIXBY && rxpkt.parm2 != AI_DATA_TYPE_AUDIO) {
 		goto out_unlock;
 	}
 
-	if (rxpkt.parm2 == AI_DATA_TYPE_SEAMLESS_R) {
+	auddbg("[I] aparm1 = 0x%x\n", rxpkt.parm1);
+	auddbg("[I] aparm2 = 0x%x\n", rxpkt.parm2);
+
+
+	if (rxpkt.parm1 == AI_MODEL_HIBIXBY || rxpkt.parm1 == AI_MODEL_BIXBY){
 		if (!priv->kd_enabled || priv->recording) {
 			auddbg("It's not possible to handle kd kd_enabled : %d recording : %d\n", priv->kd_enabled, priv->recording);
 			goto out_unlock;
 		}
-
 		uint32_t data_size = 0;
-		int is_final_packet = 0;
 		int recvsize = 0;
-		audvdbg("kd left : %d\n", priv->keyword_bytes_left);
-		recvsize = (uint32_t)(rxpkt.parm3 << 8 | rxpkt.parm4);
+		int retry_remain = 0;
 
-		if (recvsize > 0) {
-			data_size = (recvsize < 3840) ? recvsize : 3840;
-        
-			is_final_packet = (data_size < 3840) ? 1 : 0;
+		//auddbg("kd left : %d\n", priv->keyword_bytes_left);
+		while (priv->keyword_bytes_left < priv->keyword_bytes) {
+			retry_remain = 50000;
+			while (retry_remain > 0) {
+				/* Polling: seamless buffer data size check */
+				ret = ADAM110_GET_SEAMLESS(priv, &rxpkt);
+				if (ret != OK || rxpkt.op != RSLT_SUCCESS) {
+					auddbg("[E] GET_SEAMLESS failed rxpkt.op: %d, ret: %d\n", rxpkt.op, ret);
+					retry_remain--;
+					up_udelay(ADAM110_TXRX_DELAY * 1000);
+					continue;
+				}
 
-			ret = ADAM110_GET_AUDIOBUFFER(priv, rxpkt.parm2, s_temp_chunk, data_size + 1);
-			if (ret == OK) {
+				recvsize = (uint32_t)(rxpkt.parm1 << 8 | rxpkt.parm2);
+				if (recvsize == 0) {
+					retry_remain--;
+					up_udelay(ADAM110_RETRIAL_DELAY * 100);//1ms
+					continue;
+				}
+
+				data_size = (recvsize < 3840) ? recvsize : 3840;
+
+				/* Prevent keyword buffer overflow */
+				int max = priv->keyword_bytes - priv->keyword_bytes_left;
+				if (data_size > max) {
+					data_size = max;
+				}
+
+				up_udelay(ADAM110_TXRX_DELAY);				
+				adam110_spi_exchange(priv, NULL, 0, s_temp_chunk, data_size + 1, false);
+
 				uint8_t cal_sum = adam110_calculate_checksum(s_temp_chunk, data_size);
 				uint8_t recv_sum = s_temp_chunk[data_size];
 
-				if (cal_sum == recv_sum) {
-					int max = priv->keyword_bytes - priv->keyword_bytes_left;
-					if (data_size > max) {
-						data_size = max;
-					}
-					memcpy(&priv->keyword_buffer[priv->keyword_bytes_left], s_temp_chunk, data_size);
-					priv->keyword_bytes_left += data_size;
-				} else {
+				if (cal_sum != recv_sum) {
 					auddbg("[E] KD checksum calc:0x%02x, Recv:0x%02x\n", cal_sum, recv_sum);
-					goto out_unlock;
+					retry_remain--;
+					up_udelay(ADAM110_TXRX_DELAY * 1000);
+					continue;
 				}
+
+				memcpy(&priv->keyword_buffer[priv->keyword_bytes_left],	s_temp_chunk, data_size);
+
+				priv->keyword_bytes_left += data_size;
+
+				audvdbg("KD recv : %d / %d\n", priv->keyword_bytes_left, priv->keyword_bytes);
+				break;
+			}
+
+			if (retry_remain <= 0) {
+				auddbg("[E] KD seamless polling timeout\n");
+				goto out_unlock;
 			}
 		}
 
-		if ((priv->keyword_bytes_left == priv->keyword_bytes) && (priv->dev.process_mq != NULL)) {
+		if ((priv->keyword_bytes_left == priv->keyword_bytes) &&(priv->dev.process_mq != NULL)) {
 			msg.msgId = AUDIO_MSG_KD;
-			int ret_mq = mq_send(priv->dev.process_mq, (FAR const char *)&msg, sizeof(msg), 100);
+			int ret_mq = mq_send(priv->dev.process_mq, (FAR const char *)&msg, sizeof(msg),	100);
 			if (ret_mq < 0) {
 				auddbg("[E] MQ:ret=%d, errno=%d\n", ret_mq, errno);
 			}
@@ -849,6 +877,7 @@ static void adam110_work_handler(void *arg)
 		adam110_givesem(&priv->devsem);
 		priv->lower->irq_enable(true);
 		return;
+	
 	}
 
 	/* Recording Case */
@@ -1659,10 +1688,11 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		}
 		if (ret == OK) {
 			/* Disable interrupt of current model first */
+			priv->kd_num = kd_num;
+			//Hi-Bixby
 			ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num + 1), false, &rxpkt);
-			if (ret == OK) {
-				priv->kd_num = kd_num;
-				/* and then enable interrupt of changed model */
+			if (ret == OK) {				
+				/*and then enable interrupt of changed model */
 				ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num + 1), true, &rxpkt);
 				if (ret != OK) {
 					auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
@@ -1670,6 +1700,19 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 			} else {
 				auddbg("Disable old KD failed. kd_num : %d\n", priv->kd_num);
 			}
+
+			//Bixby
+			ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num + 2), false, &rxpkt);
+			if (ret == OK) {				
+				/*and then enable interrupt of changed model */
+				ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num + 2), true, &rxpkt);
+				if (ret != OK) {
+					auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
+				}
+			} else {
+				auddbg("Disable old KD failed. kd_num : %d\n", priv->kd_num);
+			}
+
 		}
 		adam110_givesem(&priv->devsem);
 	}
