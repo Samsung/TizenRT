@@ -22,7 +22,7 @@
 
 #include <stdint.h>
 #include <stddef.h> /* for size_t */
-
+#include "rtk_status.h"
 #define PLATFORM_LITTLE_ENDIAN                  0
 #define PLATFORM_BIG_ENDIAN                     1
 
@@ -78,6 +78,11 @@
 
 #ifndef UNUSED
 #define UNUSED(X)      (void)X
+#endif
+
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 typedef unsigned int	        uint;
@@ -521,4 +526,8 @@ typedef unsigned char	BOOLEAN, *PBOOLEAN;
 #define	__restrict			/* Ignore */
 #endif
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif// __BASIC_TYPES_H__
