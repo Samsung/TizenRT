@@ -15,16 +15,16 @@
 #include "eap_peer/eap_config.h"
 
 
-static struct wpabuf *eap_tls_msg_alloc(EapType type, size_t payload_len,
+static struct wpabuf *eap_tls_msg_alloc(enum EapType type, size_t payload_len,
 										u8 code, u8 identifier)
 {
 	if (type == EAP_UNAUTH_TLS_TYPE)
 		return eap_msg_alloc(EAP_VENDOR_UNAUTH_TLS,
-							 (EapType)EAP_VENDOR_TYPE_UNAUTH_TLS, payload_len,
+							 (enum EapType)EAP_VENDOR_TYPE_UNAUTH_TLS, payload_len,
 							 code, identifier);
 	if (type == EAP_WFA_UNAUTH_TLS_TYPE)
 		return eap_msg_alloc(EAP_VENDOR_WFA_NEW,
-							 (EapType)EAP_VENDOR_WFA_UNAUTH_TLS, payload_len,
+							 (enum EapType)EAP_VENDOR_WFA_UNAUTH_TLS, payload_len,
 							 code, identifier);
 	return eap_msg_alloc(EAP_VENDOR_IETF, type, payload_len, code,
 						 identifier);
@@ -309,6 +309,7 @@ int eap_peer_tls_ssl_init(struct eap_sm *sm, struct eap_ssl_data *data,
  */
 void eap_peer_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
 {
+	(void)sm;
 	tls_connection_deinit(data->ssl_ctx, data->conn);
 	eap_peer_tls_reset_input(data);
 	eap_peer_tls_reset_output(data);
@@ -332,6 +333,7 @@ void eap_peer_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
 u8 *eap_peer_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 							const char *label, size_t len)
 {
+	(void)sm;
 	u8 *out;
 
 	out = os_malloc(len);
@@ -514,6 +516,7 @@ static int eap_tls_process_input(struct eap_sm *sm, struct eap_ssl_data *data,
 								 const struct wpabuf *in_data,
 								 struct wpabuf **out_data)
 {
+	(void)sm;
 	const struct wpabuf *msg;
 	int need_more_input;
 	struct wpabuf *appl_data;
@@ -562,7 +565,7 @@ static int eap_tls_process_input(struct eap_sm *sm, struct eap_ssl_data *data,
  * @out_data: Buffer for returning the allocated output buffer
  * Returns: ret (0 or 1) on success, -1 on failure
  */
-static int eap_tls_process_output(struct eap_ssl_data *data, EapType eap_type,
+static int eap_tls_process_output(struct eap_ssl_data *data, enum EapType eap_type,
 								  int peap_version, u8 id, int ret,
 								  struct wpabuf **out_data)
 {
@@ -665,7 +668,7 @@ static int eap_tls_process_output(struct eap_ssl_data *data, EapType eap_type,
  * the tunneled data is used.
  */
 int eap_peer_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
-								EapType eap_type, int peap_version,
+								enum EapType eap_type, int peap_version,
 								u8 id, const struct wpabuf *in_data,
 								struct wpabuf **out_data)
 {
@@ -716,7 +719,6 @@ int eap_peer_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
 				   "report error (len=%u)",
 				   (unsigned int) wpabuf_len(data->tls_out));
 		ret = -1;
-		/* TODO: clean pin if engine used? */
 		if (wpabuf_len(data->tls_out) == 0) {
 			wpabuf_free(data->tls_out);
 			data->tls_out = NULL;
@@ -749,7 +751,7 @@ int eap_peer_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
  * @peap_version: Version number for EAP-PEAP/TTLS
  * Returns: Pointer to the allocated ACK frame or %NULL on failure
  */
-struct wpabuf *eap_peer_tls_build_ack(u8 id, EapType eap_type,
+struct wpabuf *eap_peer_tls_build_ack(u8 id, enum EapType eap_type,
 									  int peap_version)
 {
 	struct wpabuf *resp;
@@ -773,6 +775,7 @@ struct wpabuf *eap_peer_tls_build_ack(u8 id, EapType eap_type,
  */
 int eap_peer_tls_reauth_init(struct eap_sm *sm, struct eap_ssl_data *data)
 {
+	(void)sm;
 	eap_peer_tls_reset_input(data);
 	eap_peer_tls_reset_output(data);
 	return tls_connection_shutdown(data->ssl_ctx, data->conn);
@@ -791,6 +794,8 @@ int eap_peer_tls_reauth_init(struct eap_sm *sm, struct eap_ssl_data *data)
 int eap_peer_tls_status(struct eap_sm *sm, struct eap_ssl_data *data,
 						char *buf, size_t buflen, int verbose)
 {
+	(void)sm;
+	(void)verbose;
 	char version[20], name[128];
 	int len = 0, ret;
 
@@ -843,7 +848,7 @@ int eap_peer_tls_status(struct eap_sm *sm, struct eap_ssl_data *data,
  */
 const u8 *eap_peer_tls_process_init(struct eap_sm *sm,
 									struct eap_ssl_data *data,
-									EapType eap_type,
+									enum EapType eap_type,
 									struct eap_method_ret *ret,
 									const struct wpabuf *reqData,
 									size_t *len, u8 *flags)
@@ -860,11 +865,11 @@ const u8 *eap_peer_tls_process_init(struct eap_sm *sm,
 
 	if (eap_type == EAP_UNAUTH_TLS_TYPE)
 		pos = eap_hdr_validate(EAP_VENDOR_UNAUTH_TLS,
-							   (EapType)EAP_VENDOR_TYPE_UNAUTH_TLS, reqData,
+							   (enum EapType)EAP_VENDOR_TYPE_UNAUTH_TLS, reqData,
 							   &left);
 	else if (eap_type == EAP_WFA_UNAUTH_TLS_TYPE)
 		pos = eap_hdr_validate(EAP_VENDOR_WFA_NEW,
-							   (EapType)EAP_VENDOR_WFA_UNAUTH_TLS, reqData,
+							   (enum EapType)EAP_VENDOR_WFA_UNAUTH_TLS, reqData,
 							   &left);
 	else
 		pos = eap_hdr_validate(EAP_VENDOR_IETF, eap_type, reqData,
@@ -971,6 +976,7 @@ int eap_peer_tls_decrypt(struct eap_sm *sm, struct eap_ssl_data *data,
 						 const struct wpabuf *in_data,
 						 struct wpabuf **in_decrypted)
 {
+	(void)sm;
 	const struct wpabuf *msg;
 	int need_more_input;
 
@@ -1001,10 +1007,11 @@ int eap_peer_tls_decrypt(struct eap_sm *sm, struct eap_ssl_data *data,
  * Returns: 0 on success, -1 on failure
  */
 int eap_peer_tls_encrypt(struct eap_sm *sm, struct eap_ssl_data *data,
-						 EapType eap_type, int peap_version, u8 id,
+						 enum EapType eap_type, int peap_version, u8 id,
 						 const struct wpabuf *in_data,
 						 struct wpabuf **out_data)
 {
+	(void)sm;
 	if (in_data) {
 		eap_peer_tls_reset_output(data);
 		data->tls_out = tls_connection_encrypt(data->ssl_ctx,
@@ -1129,7 +1136,6 @@ int eap_peer_tls_phase2_nak(struct eap_method_type *types, size_t num_types,
 #endif
 	size_t i;
 
-	/* TODO: add support for expanded Nak */
 	wpa_printf(MSG_DEBUG, "TLS: Phase 2 Request: Nak type=%d", *pos);
 	wpa_hexdump(MSG_DEBUG, "TLS: Allowed Phase2 EAP types",
 				(u8 *) types, num_types * sizeof(struct eap_method_type));

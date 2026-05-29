@@ -52,7 +52,7 @@ struct eap_wsc_data {
 	//struct wps_context *wps_ctx;	// non-use
 	int ext_reg_timeout; //server must need it?
 	struct wpabuf *last_reqdata;
-	os_timer retrans_timer;
+	struct timer_list retrans_timer;
 	int MaxRetrans;
 };
 struct wpabuf *eap_wsc_build_frag_ack(u8 id, u8 code);

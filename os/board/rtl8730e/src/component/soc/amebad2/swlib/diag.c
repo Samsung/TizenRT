@@ -193,7 +193,7 @@ int DiagVSprintf(char *buf, const char *fmt, va_list ap)
 }
 
 HAL_ROM_TEXT_SECTION
-_LONG_CALL_ u32
+_LONG_CALL_ __weak u32
 DiagPrintf(
 	IN  const char *fmt, ...
 )
@@ -267,6 +267,7 @@ DiagSPrintf(
 
 
 HAL_ROM_TEXT_SECTION
+__weak
 int DiagSnPrintf(char *buf, size_t size, const char *fmt, ...)
 {
 

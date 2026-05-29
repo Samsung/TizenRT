@@ -35,6 +35,11 @@
 #define WPS_OOB_DEVICE_PASSWORD_MIN_LEN (16)
 #define WPS_OOB_DEVICE_PASSWORD_LEN 	(32)
 #define WPS_OOB_PUBKEY_HASH_LEN 	(20)
+#define WPS_DEV_NAME_MAX_LEN		(32)
+#define WPS_MANUFACTURER_MAX_LEN	(64)
+#define WPS_MODEL_NAME_MAX_LEN		(32)
+#define WPS_MODEL_NUMBER_MAX_LEN	(32)
+#define WPS_SERIAL_NUMBER_MAX_LEN	(32)
 
 /* Attribute Types */
 enum wps_attribute {
@@ -146,7 +151,9 @@ enum wps_dev_password_id {
 	DEV_PW_MACHINE_SPECIFIED	= 0x0002,
 	DEV_PW_REKEY 			= 0x0003,
 	DEV_PW_PUSHBUTTON 		= 0x0004,
-	DEV_PW_REGISTRAR_SPECIFIED 	= 0x0005
+	DEV_PW_REGISTRAR_SPECIFIED 	= 0x0005,
+	DEV_PW_NFC_CONNECTION_HANDOVER = 0x0007,
+	DEV_PW_P2PS_DEFAULT = 0x0008
 };
 
 /* Message Type */
@@ -176,8 +183,14 @@ enum wps_msg_type {
 #define WPS_AUTH_WPA 		0x0008
 #define WPS_AUTH_WPA2 		0x0010
 #define WPS_AUTH_WPA2PSK 	0x0020
+/* WPS is not support WPA3 flow, however the certain AP still send
+ * the WPA3 auth type to STA. The workaround is that add the
+ * definition WPS_AUTH_WPA3 to fix this compatibility issues to
+ * prevent the error of validation of Auth_type flow.
+ */
+#define WPS_AUTH_WPA3		0x0040
 #define WPS_AUTH_TYPES (WPS_AUTH_OPEN | WPS_AUTH_WPAPSK | WPS_AUTH_SHARED | \
-			WPS_AUTH_WPA | WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK)
+			WPS_AUTH_WPA | WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK | WPS_AUTH_WPA3)
 
 /* Encryption Type Flags */
 #define WPS_ENCR_NONE 	0x0001
@@ -231,6 +244,7 @@ enum wps_config_error {
 #define WPS_CONFIG_VIRT_DISPLAY 	(0x2008)
 #define WPS_CONFIG_PHY_DISPLAY 		(0x4008)
 #endif /* CONFIG_WPS2 */
+#define WPS_CONFIG_P2PS				(0x1000)
 
 /* Connection Type Flags */
 #define WPS_CONN_ESS 			(0x01)

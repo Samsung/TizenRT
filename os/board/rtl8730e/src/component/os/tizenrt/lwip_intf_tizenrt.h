@@ -21,7 +21,6 @@
 extern "C" {
 #endif
 
-#include "platform_opts.h"
 #include <rtw_skbuff.h>
 
 struct netif;
@@ -29,9 +28,10 @@ struct netif;
 //----- ------------------------------------------------------------------
 // Ethernet Buffer
 //----- ------------------------------------------------------------------
-#if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
-#include "ethernetif_tizenrt.h"  // moved to ethernetif.h by jimmy 12/2/2015
-#endif
+// #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
+// #include "ethernetif_tizenrt.h"  // moved to ethernetif.h by jimmy 12/2/2015
+// #endif
+#include "rtw_wifi_common.h"
 //----- ------------------------------------------------------------------
 // Wlan Interface Provided
 //----- ------------------------------------------------------------------
@@ -50,19 +50,14 @@ void rltk_wlan_recv(int idx, struct eth_drv_sg *sg_list, int sg_len);
 // Network Interface provided
 //----- ------------------------------------------------------------------
 
-int netif_is_valid_IP(int idx, unsigned char *ip_dest);
-int netif_get_idx(struct netif *pnetif);
-int netif_get_hwaddr(int idx_wlan, uint8_t *dev_addr);
-void netif_rx(int idx, unsigned int len);
 #if defined(CONFIG_LWIP_LAYER) && CONFIG_LWIP_LAYER
 extern void ethernetif_recv(struct netif *netif, int total_len);
 #endif //CONFIG_LWIP_LAYER == 1
-
-#ifdef CONFIG_WOWLAN
+void *rltk_pbuf_wrapper(struct sk_buff *skb, uint16_t *len);
+void rltk_wlan_indicate_lwip(int idx_wlan, void *p_buf);
 extern unsigned char *rltk_wlan_get_ip(int idx);
 extern unsigned char *rltk_wlan_get_gw(int idx);
 extern unsigned char *rltk_wlan_get_gwmask(int idx);
-#endif
 
 #ifdef	__cplusplus
 }

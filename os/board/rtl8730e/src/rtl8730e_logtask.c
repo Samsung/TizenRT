@@ -27,9 +27,8 @@
 #include <errno.h>
 
 #include <tinyara/irq.h>
-#include <osdep_service.h>
+#include <os_wrapper.h>
 #include "rtk_km4log.h"
-#include "osif.h"
 
 /* -------------------------------- Defines --------------------------------- */
 #ifndef CONFIG_RTL8730E_KM4_LOGTASK_PRIO
@@ -39,6 +38,12 @@
 #ifndef CONFIG_RTL8730E_KM4_LOGTASK_STACK
 #define CONFIG_RTL8730E_KM4_LOGTASK_STACK 512
 #endif
+
+// static buffer to hold log message
+static u8 g_whc_ipc_logging_buf[CONFIG_KM4_MAX_LOG_QUEUE_SIZE][CONFIG_KM4_MAX_LOG_BUFFER_SIZE] = { 0 };
+static u8 g_whc_ipc_logging_buf_ctr = 0;
+// handle to log queue
+extern void *g_km4_log_queue;
 /* ------------------------------- Data Types ------------------------------- */
 
 /* -------------------------- Function declaration -------------------------- */
@@ -47,22 +52,22 @@
 void * g_km4_log_queue = NULL;
 
 /* --------------------------- Private Variables ---------------------------- */
-static struct task_struct km4_log_task;
+static rtos_task_t km4_log_task;
 
 static void rtl8730e_km4_logtask(void)
 {
 	static km4log_msg_t event = { 0 };
 
 	/* initialize the queue that will hold the messages */
-	if (!osif_msg_queue_create(&g_km4_log_queue, CONFIG_KM4_MAX_LOG_QUEUE_SIZE, sizeof(km4log_msg_t))) {
-		DBG_8195A("Fail to init km4/np log msg queue\n");
+	if (FAIL == rtos_queue_create(&g_km4_log_queue, CONFIG_KM4_MAX_LOG_QUEUE_SIZE, sizeof(km4log_msg_t))) {
+		dbg("Fail to init km4/np log msg queue\n");
 		g_km4_log_queue = NULL;	// ensure that checking against this handle will be NULL
 		return;
 	}
 
 	while (true) {
 		/* loop and consume an item from the queue to print */
-		if (osif_msg_recv(g_km4_log_queue, &event, 0xFFFFFFFF)) {
+		if (SUCCESS == rtos_queue_receive(g_km4_log_queue, &event, RTOS_MAX_TIMEOUT)) {
 			/* prevent accidental buffer overflow when printf */
 			((uint8_t *)event.buffer)[CONFIG_KM4_MAX_LOG_BUFFER_SIZE - 1] = 0;
 			dbg_noarg("%s", event.buffer);
@@ -71,7 +76,7 @@ static void rtl8730e_km4_logtask(void)
 			 * ensure no mixlog due to other task buffering prints by giving some cpu time. 
 			 * setting this too low will bootloop, 1us is unsafe
 			 */
-			rtw_usleep_os(10);										
+			usleep(10);										
 #endif
 			/* set the first byte to null to cause string to print empty in case this buffer slot is accidentally reused */
 			((uint8_t *)event.buffer)[0] = 0;
@@ -85,14 +90,65 @@ void rtl8730e_km4_logtask_initialize(void)
 
 	if (!initialized) {
 		/* create the log consumption task */
-		if (false == rtw_create_task(&km4_log_task, (const char *)"km4_log_task", CONFIG_RTL8730E_KM4_LOGTASK_STACK, CONFIG_RTL8730E_KM4_LOGTASK_PRIO, (void *)rtl8730e_km4_logtask, NULL)) {
-			printf("Fail to create init km4/np logtask\n");
+		if (FAIL == rtos_task_create(&km4_log_task, (const char *)"km4_log_task", (void *)rtl8730e_km4_logtask, NULL, CONFIG_RTL8730E_KM4_LOGTASK_STACK, CONFIG_RTL8730E_KM4_LOGTASK_PRIO)) {
+			dbg("Fail to create init km4/np logtask\n");
 			return;
 		}
 
-		printf("Logtask init ok!\n");
+		dbg("Logtask init ok!\n");
 		initialized = true;
 	}
 
 	return;
 }
+
+void whc_ipc_print_int_hdl(VOID *Data, u32 IrqStatus, u32 ChanNum)
+{
+	/* To avoid gcc warnings */
+	(void) Data;
+	(void) IrqStatus;
+	(void) ChanNum;
+
+	static km4log_msg_t message_event = { 0 };
+
+	/* receive a log message over IPC */
+	PIPC_MSG_STRUCT ipc_recv_msg = (PIPC_MSG_STRUCT)ipc_get_message(IPC_NP_TO_AP, IPC_N2A_NP_LOG_CHN);
+	char *tmp_buffer = (char *)ipc_recv_msg->msg;
+	DCache_Invalidate((u32)tmp_buffer, ipc_recv_msg->msg_len);
+
+	/* fill the buffer only if the first byte is empty, otherwise SKIP and do not increment counter */
+	if ((char)g_whc_ipc_logging_buf[g_whc_ipc_logging_buf_ctr][0] == 0) {
+		strncpy((char *)g_whc_ipc_logging_buf[g_whc_ipc_logging_buf_ctr], tmp_buffer, ipc_recv_msg->msg_len);
+	} else {
+		dbg("WARN: KM4 logbuf full, dropped log!\n");
+		return;
+	}
+	
+	/* fill message struct */
+	message_event.buffer = (void *)g_whc_ipc_logging_buf[g_whc_ipc_logging_buf_ctr];
+	message_event.buffer_len = CONFIG_KM4_MAX_LOG_BUFFER_SIZE;
+
+	/* use mq_send via osif api directly in ISR instead of semaphore-based */
+	if ((NULL == g_km4_log_queue) || (FAIL == rtos_queue_send(g_km4_log_queue, &message_event, 0))) {
+		/* mixlog queue handle was invalid, or sending to queue failed, clear the memory here. */
+		dbg("queue hndl is null or send failed\n");
+
+		/* set the first byte to null to cause string to print empty in case this buffer slot is accidentally reused */
+		g_whc_ipc_logging_buf[g_whc_ipc_logging_buf_ctr][0] = 0;
+		return;
+	}
+
+	/* increment to next buffer */
+	g_whc_ipc_logging_buf_ctr = (g_whc_ipc_logging_buf_ctr + 1) % CONFIG_KM4_MAX_LOG_QUEUE_SIZE;
+}
+
+IPC_TABLE_DATA_SECTION
+const IPC_INIT_TABLE ipc_print_table = {
+	.USER_MSG_TYPE = IPC_USER_POINT,
+	.Rxfunc = whc_ipc_print_int_hdl,
+	.RxIrqData = (void *) NULL,
+	.Txfunc = IPC_TXHandler,
+	.TxIrqData = (void *) NULL,
+	.IPC_Direction = IPC_DIR_MSG_RX,
+	.IPC_Channel = IPC_N2A_NP_LOG_CHN
+};

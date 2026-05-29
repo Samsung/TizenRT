@@ -4,7 +4,7 @@
 
 #include <fcntl.h>
 #include <osif.h>
-#include <osdep_service.h>
+#include <os_wrapper.h>
 #include "../kernel/mqueue/mqueue.h"
 
 #define OSIF_ALIGN 64

@@ -292,7 +292,6 @@ int random_pool_ready(void)
 			   "secure operations");
 	return 0;
 #else /* __linux__ */
-	/* TODO: could do similar checks on non-Linux platforms */
 	return 1;
 #endif /* __linux__ */
 }

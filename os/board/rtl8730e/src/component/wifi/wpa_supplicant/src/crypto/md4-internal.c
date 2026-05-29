@@ -16,21 +16,21 @@
 #define	MD4_BLOCK_LENGTH		64
 #define	MD4_DIGEST_LENGTH		16
 
-typedef struct MD4Context {
+struct MD4Context {
 	u32 state[4];			/* state */
 	u64 count;			/* number of bits, mod 2^64 */
 	u8 buffer[MD4_BLOCK_LENGTH];	/* input buffer */
-} MD4_CTX;
+};
 
 
-static void MD4Init(MD4_CTX *ctx);
-static void MD4Update(MD4_CTX *ctx, const unsigned char *input, size_t len);
-static void MD4Final(unsigned char digest[MD4_DIGEST_LENGTH], MD4_CTX *ctx);
+static void MD4Init(struct MD4Context *ctx);
+static void MD4Update(struct MD4Context *ctx, const unsigned char *input, size_t len);
+static void MD4Final(unsigned char digest[MD4_DIGEST_LENGTH], struct MD4Context *ctx);
 
 
 int md4_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
-	MD4_CTX ctx;
+	struct MD4Context ctx;
 	size_t i;
 
 	MD4Init(&ctx);
@@ -95,7 +95,7 @@ static u8 PADDING[MD4_BLOCK_LENGTH] = {
  * Start MD4 accumulation.
  * Set bit count to 0 and buffer to mysterious initialization constants.
  */
-static void MD4Init(MD4_CTX *ctx)
+static void MD4Init(struct MD4Context *ctx)
 {
 	ctx->count = 0;
 	ctx->state[0] = 0x67452301;
@@ -108,7 +108,7 @@ static void MD4Init(MD4_CTX *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-static void MD4Update(MD4_CTX *ctx, const unsigned char *input, size_t len)
+static void MD4Update(struct MD4Context *ctx, const unsigned char *input, size_t len)
 {
 	size_t have, need;
 
@@ -146,7 +146,7 @@ static void MD4Update(MD4_CTX *ctx, const unsigned char *input, size_t len)
  * Pad pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
-static void MD4Pad(MD4_CTX *ctx)
+static void MD4Pad(struct MD4Context *ctx)
 {
 	u8 count[8];
 	size_t padlen;
@@ -167,7 +167,7 @@ static void MD4Pad(MD4_CTX *ctx)
 /*
  * Final wrapup--call MD4Pad, fill in digest and zero out ctx.
  */
-static void MD4Final(unsigned char digest[MD4_DIGEST_LENGTH], MD4_CTX *ctx)
+static void MD4Final(unsigned char digest[MD4_DIGEST_LENGTH], struct MD4Context *ctx)
 {
 	int i;
 

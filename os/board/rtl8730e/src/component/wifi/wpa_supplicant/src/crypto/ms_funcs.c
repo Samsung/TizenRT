@@ -356,8 +356,8 @@ int get_master_key(const u8 *password_hash_hash, const u8 *nt_response,
  * @master_key: 16-octet MasterKey (IN)
  * @session_key: 8-to-16 octet SessionKey (OUT)
  * @session_key_len: SessionKeyLength (Length of session_key) (IN)
- * @is_send: IsSend (IN, BOOLEAN)
- * @is_server: IsServer (IN, BOOLEAN)
+ * @is_send: IsSend (IN, bool)
+ * @is_server: IsServer (IN, bool)
  * Returns: 0 on success, -1 on failure
  */
 int get_asymetric_start_key(const u8 *master_key, u8 *session_key,

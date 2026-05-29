@@ -26,7 +26,7 @@ static struct eap_method *eap_methods = NULL;
  * @method: EAP type number
  * Returns: Pointer to EAP method or %NULL if not found
  */
-const struct eap_method *eap_peer_get_eap_method(int vendor, EapType method)
+const struct eap_method *eap_peer_get_eap_method(int vendor, enum EapType method)
 {
 	struct eap_method *m;
 	for (m = eap_methods; m; m = m->next) {
@@ -47,7 +47,7 @@ const struct eap_method *eap_peer_get_eap_method(int vendor, EapType method)
  * This function maps EAP type names into EAP type numbers based on the list of
  * EAP methods included in the build.
  */
-EapType eap_peer_get_type(const char *name, int *vendor)
+enum EapType eap_peer_get_type(const char *name, int *vendor)
 {
 	struct eap_method *m;
 	for (m = eap_methods; m; m = m->next) {
@@ -70,7 +70,7 @@ EapType eap_peer_get_type(const char *name, int *vendor)
  * This function maps EAP type numbers into EAP type names based on the list of
  * EAP methods included in the build.
  */
-const char *eap_get_name(int vendor, EapType type)
+const char *eap_get_name(int vendor, enum EapType type)
 {
 	struct eap_method *m;
 	if (vendor == EAP_VENDOR_IETF && type == EAP_TYPE_EXPANDED) {
@@ -292,7 +292,7 @@ int eap_peer_method_unload(struct eap_method *method)
  * is not needed anymore.
  */
 struct eap_method *eap_peer_method_alloc(int version, int vendor,
-		EapType method, const char *name)
+		enum EapType method, const char *name)
 {
 	struct eap_method *eap;
 	eap = os_zalloc(sizeof(*eap));

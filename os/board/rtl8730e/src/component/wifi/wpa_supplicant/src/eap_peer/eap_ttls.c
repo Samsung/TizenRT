@@ -389,7 +389,7 @@ static int eap_ttls_phase2_request_eap_method(struct eap_sm *sm,
 
 	if (data->phase2_priv == NULL) {
 		data->phase2_method = eap_peer_get_eap_method(
-								  EAP_VENDOR_IETF, (EapType)method);
+								  EAP_VENDOR_IETF, (enum EapType)method);
 		if (data->phase2_method) {
 			sm->init_phase2 = 1;
 			data->phase2_priv = data->phase2_method->init(sm);
@@ -456,6 +456,7 @@ static int eap_ttls_phase2_request_mschapv2(struct eap_sm *sm,
 		struct eap_method_ret *ret,
 		struct wpabuf **resp)
 {
+	(void)ret;
 #ifdef CONFIG_FIPS
 	wpa_printf(MSG_ERROR, "EAP-TTLS: MSCHAPV2 not supported in FIPS build");
 	return -1;
@@ -781,6 +782,8 @@ static int eap_ttls_phase2_request(struct eap_sm *sm,
 								   struct eap_hdr *hdr,
 								   struct wpabuf **resp)
 {
+	(void)hdr;
+	(void)resp;
 	int res = 0;
 	size_t len;
 	enum phase2_types phase2_type = data->phase2_type;
@@ -1131,6 +1134,10 @@ static int eap_ttls_process_phase2_mschapv2(struct eap_sm *sm,
 		struct eap_method_ret *ret,
 		struct ttls_parse_avp *parse)
 {
+	(void)sm;
+	(void)data;
+	(void)ret;
+	(void)parse;
 #ifdef EAP_MSCHAPv2
 	if (parse->mschapv2_error) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS/MSCHAPV2: Received "
@@ -1519,30 +1526,33 @@ static void eap_ttls_check_auth_status(struct eap_sm *sm,
 									   struct eap_ttls_data *data,
 									   struct eap_method_ret *ret)
 {
-	if (ret->methodState == METHOD_DONE) {
-		ret->allowNotifications = FALSE;
-		if (ret->decision == DECISION_UNCOND_SUCC ||
-			ret->decision == DECISION_COND_SUCC) {
-			wpa_printf(MSG_DEBUG, "EAP-TTLS: Authentication "
-					   "completed successfully");
-			data->phase2_success = 1;
+	(void)sm;
+	if (ret) {
+		if (ret->methodState == METHOD_DONE) {
+			ret->allowNotifications = FALSE;
+			if (ret->decision == DECISION_UNCOND_SUCC ||
+				ret->decision == DECISION_COND_SUCC) {
+				wpa_printf(MSG_DEBUG, "EAP-TTLS: Authentication "
+						   "completed successfully");
+				data->phase2_success = 1;
 #ifdef EAP_TNC
-			if (!data->ready_for_tnc && !data->tnc_started) {
-				/*
-				 * TNC may be required as the next
-				 * authentication method within the tunnel.
-				 */
-				ret->methodState = METHOD_MAY_CONT;
-				data->ready_for_tnc = 1;
-			}
+				if (!data->ready_for_tnc && !data->tnc_started) {
+					/*
+					* TNC may be required as the next
+					* authentication method within the tunnel.
+					*/
+					ret->methodState = METHOD_MAY_CONT;
+					data->ready_for_tnc = 1;
+				}
 #endif /* EAP_TNC */
+			}
+		} else if (ret->methodState == METHOD_MAY_CONT &&
+				   (ret->decision == DECISION_UNCOND_SUCC ||
+					ret->decision == DECISION_COND_SUCC)) {
+			wpa_printf(MSG_DEBUG, "EAP-TTLS: Authentication "
+					   "completed successfully (MAY_CONT)");
+			data->phase2_success = 1;
 		}
-	} else if (ret->methodState == METHOD_MAY_CONT &&
-			   (ret->decision == DECISION_UNCOND_SUCC ||
-				ret->decision == DECISION_COND_SUCC)) {
-		wpa_printf(MSG_DEBUG, "EAP-TTLS: Authentication "
-				   "completed successfully (MAY_CONT)");
-		data->phase2_success = 1;
 	}
 }
 
@@ -1611,16 +1621,14 @@ static struct wpabuf *eap_ttls_process(struct eap_sm *sm, void *priv,
 	return resp;
 }
 
-#if !EAP_REMOVE_UNUSED_CODE
+#if defined(EAP_REMOVE_UNUSED_CODE) && (EAP_REMOVE_UNUSED_CODE == 0)
 static Boolean eap_ttls_has_reauth_data(struct eap_sm *sm, void *priv)
 {
 	struct eap_ttls_data *data = priv;
 	return (Boolean)(tls_connection_established(sm->ssl_ctx, data->ssl.conn) &&
 					 data->phase2_success);
 }
-#endif /* !EAP_REMOVE_UNUSED_CODE */
 
-#if !EAP_REMOVE_UNUSED_CODE
 static void eap_ttls_deinit_for_reauth(struct eap_sm *sm, void *priv)
 {
 	struct eap_ttls_data *data = priv;
@@ -1631,9 +1639,7 @@ static void eap_ttls_deinit_for_reauth(struct eap_sm *sm, void *priv)
 	data->tnc_started = 0;
 #endif /* EAP_TNC */
 }
-#endif /* !EAP_REMOVE_UNUSED_CODE */
 
-#if !EAP_REMOVE_UNUSED_CODE
 static void *eap_ttls_init_for_reauth(struct eap_sm *sm, void *priv)
 {
 	struct eap_ttls_data *data = priv;
@@ -1654,9 +1660,7 @@ static void *eap_ttls_init_for_reauth(struct eap_sm *sm, void *priv)
 	data->reauth = 1;
 	return priv;
 }
-#endif /* !EAP_REMOVE_UNUSED_CODE */
 
-#if !EAP_REMOVE_UNUSED_CODE
 static int eap_ttls_get_status(struct eap_sm *sm, void *priv, char *buf,
 							   size_t buflen, int verbose)
 {
@@ -1704,12 +1708,14 @@ static int eap_ttls_get_status(struct eap_sm *sm, void *priv, char *buf,
 
 static Boolean eap_ttls_isKeyAvailable(struct eap_sm *sm, void *priv)
 {
+	(void)sm;
 	struct eap_ttls_data *data = priv;
 	return (Boolean)(data->key_data != NULL && data->phase2_success);
 }
 
 static u8 *eap_ttls_getKey(struct eap_sm *sm, void *priv, size_t *len)
 {
+	(void)sm;
 	struct eap_ttls_data *data = priv;
 	u8 *key;
 
@@ -1728,7 +1734,7 @@ static u8 *eap_ttls_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	return key;
 }
 
-#if !EAP_REMOVE_UNUSED_CODE
+#if defined(EAP_REMOVE_UNUSED_CODE) && (EAP_REMOVE_UNUSED_CODE == 0)
 static u8 *eap_ttls_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_ttls_data *data = priv;
@@ -1748,9 +1754,7 @@ static u8 *eap_ttls_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
 
 	return id;
 }
-#endif /* !EAP_REMOVE_UNUSED_CODE */
 
-#if !EAP_REMOVE_UNUSED_CODE
 static u8 *eap_ttls_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
 {
 	struct eap_ttls_data *data = priv;
@@ -1789,7 +1793,7 @@ int eap_peer_ttls_register(void)
 	eap->getKey = eap_ttls_getKey;
 	eap->isKeyAvailable = eap_ttls_isKeyAvailable;
 
-#if !EAP_REMOVE_UNUSED_CODE
+#if defined(EAP_REMOVE_UNUSED_CODE) && (EAP_REMOVE_UNUSED_CODE == 0)
 	eap->getSessionId = eap_ttls_get_session_id;
 	eap->get_status = eap_ttls_get_status;
 	eap->has_reauth_data = eap_ttls_has_reauth_data;
@@ -1804,4 +1808,5 @@ int eap_peer_ttls_register(void)
 	}
 	return ret;
 }
-//#endif /* CONFIG_TTLS */
+//#endif
+/* CONFIG_TTLS */

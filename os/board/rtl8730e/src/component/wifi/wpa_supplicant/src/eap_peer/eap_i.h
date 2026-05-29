@@ -16,19 +16,19 @@
 
 /* RFC 4137 - EAP Peer state machine */
 //#if 0
-typedef enum {
+enum EapDecision {
 	DECISION_FAIL,
 	DECISION_COND_SUCC,
 	DECISION_UNCOND_SUCC
-} EapDecision;
+};
 
-typedef enum {
+enum EapMethodState {
 	METHOD_NONE,
 	METHOD_INIT,
 	METHOD_CONT,
 	METHOD_MAY_CONT,
 	METHOD_DONE
-} EapMethodState;
+};
 
 /**
  * struct eap_method_ret - EAP return values from struct eap_method::process()
@@ -49,12 +49,12 @@ struct eap_method_ret {
 	/**
 	 * methodState - Method-specific state (IN/OUT)
 	 */
-	EapMethodState methodState;
+	enum EapMethodState methodState;
 
 	/**
 	 * decision - Authentication decision (OUT)
 	 */
-	EapDecision decision;
+	enum EapDecision decision;
 
 	/**
 	 * allowNotifications - Whether method allows notifications (OUT)
@@ -79,7 +79,7 @@ struct eap_method {
 	/**
 	 * method - EAP type number (EAP_TYPE_*)
 	 */
-	EapType method;
+	enum EapType method;
 
 	/**
 	 * name - Name of the method (e.g., "TLS")
@@ -299,17 +299,17 @@ struct eap_sm {
 		EAP_FAILURE
 	} EAP_state;
 	/* Long-term local variables */
-	EapType selectedMethod;
-	EapMethodState methodState;
+	enum EapType selectedMethod;
+	enum EapMethodState methodState;
 	int lastId;
 	struct wpabuf *lastRespData;
-	EapDecision decision;
+	enum EapDecision decision;
 	/* Short-term local variables */
 	Boolean rxReq;
 	Boolean rxSuccess;
 	Boolean rxFailure;
 	int reqId;
-	EapType reqMethod;
+	enum EapType reqMethod;
 	int reqVendor;
 	u32 reqVendorMethod;
 	Boolean ignore;

@@ -74,7 +74,7 @@ int eap_hdr_len_valid(const struct wpabuf *msg, size_t min_payload)
  * not.
  */
 // EAP_VENDOR_WFA(0x00372A), EAP_VENDOR_TYPE_WSC(0x00000001)
-const u8 *eap_hdr_validate(int vendor, EapType eap_type,
+const u8 *eap_hdr_validate(int vendor, enum EapType eap_type,
 						   const struct wpabuf *msg, size_t *plen)
 {
 	const struct eap_hdr *hdr;
@@ -121,7 +121,7 @@ const u8 *eap_hdr_validate(int vendor, EapType eap_type,
 	} else {
 		if (vendor != EAP_VENDOR_IETF || *pos != eap_type) {
 			//wpa_printf(MSG_INFO, "EAP: Invalid frame type");
-			printf("EAP: Invalid frame type, please make sure the EAP method is identical with server side\n");
+			DiagPrintf("EAP: Invalid frame type, please make sure the EAP method is identical with server side\n");
 			return NULL;
 		}
 		*plen = len - sizeof(*hdr) - 1;
@@ -147,7 +147,7 @@ const u8 *eap_hdr_validate(int vendor, EapType eap_type,
  * function to allocate the message buffers. The returned buffer has room for
  * payload_len bytes and has the EAP header and Type field already filled in.
  */
-struct wpabuf *eap_msg_alloc(int vendor, EapType type, size_t payload_len,
+struct wpabuf *eap_msg_alloc(int vendor, enum EapType type, size_t payload_len,
 							 u8 code, u8 identifier)
 {
 	struct wpabuf *buf;
@@ -224,13 +224,13 @@ u8 eap_get_id(const struct wpabuf *msg)
  * @msg: Buffer starting with an EAP header
  * Returns: The EAP Type after the EAP header
  */
-EapType eap_get_type(const struct wpabuf *msg)
+enum EapType eap_get_type(const struct wpabuf *msg)
 {
 	if (wpabuf_len(msg) < sizeof(struct eap_hdr) + 1) {
 		return EAP_TYPE_NONE;
 	}
 
-	return (EapType)((const u8 *) wpabuf_head(msg))[sizeof(struct eap_hdr)];
+	return (enum EapType)((const u8 *) wpabuf_head(msg))[sizeof(struct eap_hdr)];
 }
 //#endif
 

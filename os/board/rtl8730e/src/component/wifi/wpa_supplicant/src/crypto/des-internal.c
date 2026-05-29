@@ -393,16 +393,6 @@ static void desfunc(u32 *block, const u32 *keys)
 	block[1] = leftt;
 }
 
-
-/*
-void des_encrypt_polarSSL(const u8 *clear, const u8 *key, u8 *cypher){
-	des_context ctx;
-	des_init( &ctx );
-	des_setkey_enc( &ctx, key );
-	des_crypt_ecb(&ctx, clear, cypher);
-	des_free(&ctx);
-}*/
-
 /* wpa_supplicant/hostapd specific wrapper */
 
 void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
@@ -428,94 +418,9 @@ void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 	WPA_PUT_BE32(cypher, work[0]);
 	WPA_PUT_BE32(cypher + 4, work[1]);
 
-	/*
-		u8* test_cypher;
-		strcpy(test_cypher, cypher);
-		des_encrypt_polarSSL(clear, key, test_cypher);
-
-		printf("test cypher: %s\n", test_cypher);
-		u8 *tmp_c = test_cypher;
-		while(*tmp_c)
-			printf("%X", tmp_c++);
-		printf("\n=====\n");
-
-		printf("cypher: %s\n", cypher);
-		tmp_c = cypher;
-		while(*tmp_c)
-			printf("%X", tmp_c++);
-		printf("=====\n");
-	*/
 	os_memset(pkey, 0, sizeof(pkey));
 	os_memset(ek, 0, sizeof(ek));
 }
 
-/*
-void des_key_setup(const u8 *key, u32 *ek, u32 *dk)
-{
-	deskey(key, 0, ek);
-	deskey(key, 1, dk);
-}
-
-
-void des_block_encrypt(const u8 *plain, const u32 *ek, u8 *crypt)
-{
-	u32 work[2];
-	work[0] = WPA_GET_BE32(plain);
-	work[1] = WPA_GET_BE32(plain + 4);
-	desfunc(work, ek);
-	WPA_PUT_BE32(crypt, work[0]);
-	WPA_PUT_BE32(crypt + 4, work[1]);
-}
-
-
-void des_block_decrypt(const u8 *crypt, const u32 *dk, u8 *plain)
-{
-	u32 work[2];
-	work[0] = WPA_GET_BE32(crypt);
-	work[1] = WPA_GET_BE32(crypt + 4);
-	desfunc(work, dk);
-	WPA_PUT_BE32(plain, work[0]);
-	WPA_PUT_BE32(plain + 4, work[1]);
-}
-
-
-void des3_key_setup(const u8 *key, struct des3_key_s *dkey)
-{
-	deskey(key, 0, dkey->ek[0]);
-	deskey(key + 8, 1, dkey->ek[1]);
-	deskey(key + 16, 0, dkey->ek[2]);
-
-	deskey(key, 1, dkey->dk[2]);
-	deskey(key + 8, 0, dkey->dk[1]);
-	deskey(key + 16, 1, dkey->dk[0]);
-}
-
-
-void des3_encrypt(const u8 *plain, const struct des3_key_s *key, u8 *crypt)
-{
-	u32 work[2];
-
-	work[0] = WPA_GET_BE32(plain);
-	work[1] = WPA_GET_BE32(plain + 4);
-	desfunc(work, key->ek[0]);
-	desfunc(work, key->ek[1]);
-	desfunc(work, key->ek[2]);
-	WPA_PUT_BE32(crypt, work[0]);
-	WPA_PUT_BE32(crypt + 4, work[1]);
-}
-
-
-void des3_decrypt(const u8 *crypt, const struct des3_key_s *key, u8 *plain)
-{
-	u32 work[2];
-
-	work[0] = WPA_GET_BE32(crypt);
-	work[1] = WPA_GET_BE32(crypt + 4);
-	desfunc(work, key->dk[0]);
-	desfunc(work, key->dk[1]);
-	desfunc(work, key->dk[2]);
-	WPA_PUT_BE32(plain, work[0]);
-	WPA_PUT_BE32(plain + 4, work[1]);
-}
-*/
-//#endif /* CONFIG_PEAP || CONFIG_TTLS */
+//#endif
+/* CONFIG_PEAP || CONFIG_TTLS */

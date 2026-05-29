@@ -153,9 +153,9 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
  * @show_errors: Whether to show parsing errors in debug log
  * Returns: Parsing result
  */
-ParseRes ieee802_11_parse_elems(const u8 *start, size_t len,
-								struct ieee802_11_elems *elems,
-								int show_errors)
+enum ParseRes ieee802_11_parse_elems(const u8 *start, size_t len,
+									 struct ieee802_11_elems *elems,
+									 int show_errors)
 {
 	size_t left = len;
 	const u8 *pos = start;

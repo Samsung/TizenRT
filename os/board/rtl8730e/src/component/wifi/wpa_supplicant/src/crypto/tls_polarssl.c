@@ -33,31 +33,6 @@ struct buf_BIO {
 };
 
 
-/* used to test the buffer I/O read write functions
-int test_BIO(struct tls_connection * conn){
-	// test
-	char * a = "abcdefg";
-	printf("p: %d %d\n", conn->buf_out->len, conn->buf_out->len_left);
-	buf_write(conn->buf_out, a, 8);
-	printf("buf: %s\n", conn->buf_out->ptr);
-	char b[5];
-	char c[4];
-	buf_read(conn->buf_out, b, 4);
-	printf("buf: %s\n", conn->buf_out->ptr);
-	b[4] = '\0';
-	printf("%s\n", b);
-	buf_read(conn->buf_out, c, 2);
-	printf("buf: %s\n", conn->buf_out->ptr);
-	c[3] = '\0';
-	printf("%s\n", c);
-	buf_write(conn->buf_out, a, 8);
-	char d[10];
-	buf_read(conn->buf_out, d, 10);
-	d[1] = 'x';
-	printf("%s\n", d);
-}
-*/
-
 static volatile size_t min_heap_size = 0;
 
 
@@ -66,7 +41,7 @@ static int my_random(void *p_rng, unsigned char *output, size_t output_len)
 	/* To avoid gcc warnings */
 	(void) p_rng;
 
-	rtw_get_random_bytes(output, output_len);
+	TRNG_get_random_bytes(output, output_len);
 	return 0;
 }
 
@@ -76,7 +51,7 @@ void my_debug(void *ctx, int level, const char *str)
 	(void) ctx;
 
 	if (level <= DEBUG_LEVEL) {
-		printf("\n\r%s", str);
+		DiagPrintf("\n\r%s", str);
 	}
 }
 
@@ -84,21 +59,10 @@ void my_debug(void *ctx, int level, const char *str)
 #include <mbedtls/debug.h>
 #include <mbedtls/config.h>
 
-#if defined(MBEDTLS_VERSION_NUMBER) && (MBEDTLS_VERSION_NUMBER>=0x03000000)
 #include <mbedtls/net_sockets.h>
-#include <mbedtls/ssl_misc.h>
+#include <ssl_misc.h>
 extern int max_buf_bio_in_size;
 extern int max_buf_bio_out_size;
-#elif (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
-#include <mbedtls/net.h>
-#include <mbedtls/ssl_internal.h>
-extern int max_buf_bio_in_size;
-extern int max_buf_bio_out_size;
-#else
-#include <mbedtls/net.h>
-#include <mbedtls/ssl_internal.h>
-extern int max_buf_bio_size;
-#endif
 
 struct buf_BIO *conn_buf_out, *conn_buf_in;
 
@@ -108,11 +72,7 @@ int buf_init(struct tls_connection *conn)
 	if (conn->buf_in == NULL) {
 		return -1;
 	}
-#if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 	conn->buf_in->ptr = (unsigned char *)os_zalloc(max_buf_bio_in_size);
-#else
-	conn->buf_in->ptr = (unsigned char *)os_zalloc(max_buf_bio_size);
-#endif
 	if (conn->buf_in->ptr == NULL) {
 		return -1;
 	}
@@ -121,24 +81,15 @@ int buf_init(struct tls_connection *conn)
 	if (conn->buf_out == NULL) {
 		return -1;
 	}
-#if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 	conn->buf_out->ptr = (unsigned char *)os_zalloc(max_buf_bio_out_size);
-#else
-	conn->buf_out->ptr = (unsigned char *)os_zalloc(max_buf_bio_size);
-#endif
 	if (conn->buf_out->ptr == NULL) {
 		return -1;
 	}
 
 	conn->buf_in->len = 0;
 	conn->buf_out->len = 0;
-#if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
 	conn->buf_in->len_left = max_buf_bio_in_size;
 	conn->buf_out->len_left = max_buf_bio_out_size;
-#else
-	conn->buf_in->len_left = max_buf_bio_size;
-	conn->buf_out->len_left = max_buf_bio_size;
-#endif
 	conn_buf_out = conn->buf_out;
 	conn_buf_in = conn->buf_in;
 	return 1;
@@ -234,7 +185,7 @@ void buf_clear(void *ctx, int isIn)
 	} else {
 		wpa_printf(MSG_DEBUG, "TLS: clear output buffer, len: %d", bio->len);
 	}
-#if (MBEDTLS_VERSION >= MBEDTLS_VERSION_CONVERT(2,16,9))
+
 	if (isIn == 1) {
 		os_memset(bio->ptr, 0, max_buf_bio_in_size);
 		bio->len = 0;
@@ -244,11 +195,6 @@ void buf_clear(void *ctx, int isIn)
 		bio->len = 0;
 		bio->len_left = max_buf_bio_out_size;
 	}
-#else
-	os_memset(bio->ptr, 0, max_buf_bio_size);
-	bio->len = 0;
-	bio->len_left = max_buf_bio_size;
-#endif
 }
 
 struct eap_tls {
@@ -292,7 +238,6 @@ void tls_deinit(void *ssl_ctx)
 		mbedtls_ssl_free(tls_context->ssl);
 		mbedtls_ssl_config_free(tls_context->conf);
 		os_free(ssl_ctx, 0);
-		ssl_ctx = NULL;
 	}
 }
 
@@ -367,7 +312,6 @@ void tls_connection_deinit(void *tls_ctx, struct tls_connection *conn)
 		os_free(conn->buf_in, 0);
 		os_free(conn->buf_out, 0);
 		os_free(conn, 0);
-		conn = NULL;
 	}
 	ErrorCnt = 0;
 }
@@ -537,7 +481,6 @@ struct wpabuf *tls_connection_handshake(void *tls_ctx,
 
 	while (ssl->state != MBEDTLS_SSL_HANDSHAKE_OVER) {
 		wpa_printf(MSG_INFO, "TLS: connection handshake, state: %d", ssl->state);
-		//printf("\nTLS: connection handshake, state: %d\n", ssl->state);
 
 		ret = mbedtls_ssl_handshake_step(ssl);
 
@@ -568,7 +511,7 @@ struct wpabuf *tls_connection_handshake(void *tls_ctx,
 			// handshake got error
 			else {
 				//wpa_printf(MSG_INFO, "TLS: connection handshake failed, ret: %d", ret);
-				printf("\nTLS: connection handshake failed, ret: %d\n", ret);
+				DiagPrintf("\nTLS: connection handshake failed, ret: %d\n", ret);
 				ErrorCnt = 1;
 				return NULL;
 			}

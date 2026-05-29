@@ -32,7 +32,7 @@
 #define EAP_CLIENT_TIMEOUT_DEFAULT 60
 
 static Boolean eap_sm_allowMethod(struct eap_sm *sm, int vendor,
-								  EapType method);
+								  enum EapType method);
 static struct wpabuf *eap_sm_buildNak(struct eap_sm *sm, int id);
 static void eap_sm_processIdentity(struct eap_sm *sm,
 								   const struct wpabuf *req);
@@ -40,8 +40,8 @@ static void eap_sm_processNotify(struct eap_sm *sm, const struct wpabuf *req);
 static struct wpabuf *eap_sm_buildNotify(int id);
 static void eap_sm_parseEapReq(struct eap_sm *sm, const struct wpabuf *req);
 #if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
-static const char *eap_sm_method_state_txt(EapMethodState state);
-static const char *eap_sm_decision_txt(EapDecision decision);
+static const char *eap_sm_method_state_txt(enum EapMethodState state);
+static const char *eap_sm_decision_txt(enum EapDecision decision);
 #endif /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
 
 
@@ -99,6 +99,7 @@ static void eap_sm_free_key(struct eap_sm *sm)
 
 static void eap_deinit_prev_method(struct eap_sm *sm, const char *txt)
 {
+	(void)txt;
 	//ext_password_free(sm->ext_pw_buf);
 	sm->ext_pw_buf = NULL;
 
@@ -246,13 +247,13 @@ SM_STATE(EAP, RECEIVED)
 SM_STATE(EAP, GET_METHOD)
 {
 	int reinit;
-	EapType method;
+	enum EapType method;
 	const struct eap_method *eap_method;
 
 	SM_ENTRY(EAP, GET_METHOD);
 
 	if (sm->reqMethod == EAP_TYPE_EXPANDED) {
-		method = (EapType)sm->reqVendorMethod;
+		method = (enum EapType)sm->reqVendorMethod;
 	} else {
 		method = sm->reqMethod;
 	}
@@ -475,6 +476,8 @@ void eap_peer_erp_free_keys(struct eap_sm *sm)
 
 	dl_list_for_each_safe(erp, tmp, &sm->erp_keys, struct eap_erp_key, list)
 	eap_peer_erp_free_key(erp);
+#else
+	(void)sm;
 #endif /* CONFIG_ERP */
 }
 
@@ -564,6 +567,8 @@ fail:
 	bin_clear_free(emsk, emsk_len);
 	bin_clear_free(erp, sizeof(*erp));
 	os_free(realm);
+#else
+	(void)sm;
 #endif /* CONFIG_ERP */
 }
 
@@ -593,12 +598,10 @@ static int eap_peer_erp_reauth_start(struct eap_sm *sm,
 		return -1;    /* SEQ has range of 0..65535 */
 	}
 
-	/* TODO: check rRK lifetime expiration */
-
 	wpa_printf(MSG_DEBUG, "EAP: Valid ERP key found %s (SEQ=%u)",
 			   erp->keyname_nai, erp->next_seq);
 
-	msg = eap_msg_alloc(EAP_VENDOR_IETF, (EapType) EAP_ERP_TYPE_REAUTH,
+	msg = eap_msg_alloc(EAP_VENDOR_IETF, (enum EapType) EAP_ERP_TYPE_REAUTH,
 						1 + 2 + 2 + os_strlen(erp->keyname_nai) + 1 + 16,
 						EAP_CODE_INITIATE, hdr->identifier);
 	if (msg == NULL) {
@@ -1129,7 +1132,7 @@ SM_STEP(EAP)
 
 
 static Boolean eap_sm_allowMethod(struct eap_sm *sm, int vendor,
-								  EapType method)
+								  enum EapType method)
 {
 	if (!eap_allowed_method(sm, vendor, method)) {
 		wpa_printf(MSG_DEBUG, "EAP: configuration does not allow: "
@@ -1224,9 +1227,9 @@ static struct wpabuf *eap_sm_buildNak(struct eap_sm *sm, int id)
 	}
 
 #ifndef CONFIG_NO_STDOUT_DEBUG
-	start =
+	start = wpabuf_put(resp, 0);
 #endif
-		wpabuf_put(resp, 0);
+
 	for (m = methods; m; m = m->next) {
 		if (m->vendor == EAP_VENDOR_IETF && m->method == sm->reqMethod) {
 			continue;    /* do not allow the current method again */
@@ -1247,8 +1250,10 @@ static struct wpabuf *eap_sm_buildNak(struct eap_sm *sm, int id)
 	if (!found) {
 		wpabuf_put_u8(resp, EAP_TYPE_NONE);
 	}
-	wpa_hexdump(MSG_DEBUG, "EAP: allowed methods", start, found);
 
+#ifndef CONFIG_NO_STDOUT_DEBUG
+	wpa_hexdump(MSG_DEBUG, "EAP: allowed methods", start, found);
+#endif
 	eap_update_len(resp);
 
 	return resp;
@@ -1277,8 +1282,6 @@ static void eap_sm_processIdentity(struct eap_sm *sm, const struct wpabuf *req)
 	 * displayed. Some EAP implementasitons may piggy-back additional
 	 * options after the NUL.
 	 */
-	/* TODO: could save displayable message so that it can be shown to the
-	 * user in case of interaction is required */
 	wpa_hexdump_ascii(MSG_DEBUG, "EAP: EAP-Request Identity data",
 					  pos, msg_len);
 }
@@ -1288,12 +1291,16 @@ static void eap_sm_processIdentity(struct eap_sm *sm, const struct wpabuf *req)
 static int eap_sm_set_scard_pin(struct eap_sm *sm,
 								struct eap_peer_config *conf)
 {
+	(void)sm;
+	(void)conf;
 	return -1;
 }
 
 static int eap_sm_get_scard_identity(struct eap_sm *sm,
 									 struct eap_peer_config *conf)
 {
+	(void)sm;
+	(void)conf;
 	return -1;
 }
 
@@ -1378,6 +1385,7 @@ struct wpabuf *eap_sm_buildIdentity(struct eap_sm *sm, int id, int encrypted)
 
 static void eap_sm_processNotify(struct eap_sm *sm, const struct wpabuf *req)
 {
+	(void)sm;
 	const u8 *pos;
 	char *msg;
 	size_t i, msg_len;
@@ -1457,7 +1465,6 @@ static void eap_peer_initiate(struct eap_sm *sm, const struct eap_hdr *hdr,
 		wpa_hexdump_ascii(MSG_DEBUG,
 						  "EAP: EAP-Initiate/Re-auth-Start - Domain name",
 						  parse.domain, parse.domain_len);
-		/* TODO: Derivation of domain specific keys for local ER */
 	}
 
 	if (eap_peer_erp_reauth_start(sm, hdr, len) == 0) {
@@ -1465,6 +1472,9 @@ static void eap_peer_initiate(struct eap_sm *sm, const struct eap_hdr *hdr,
 	}
 
 invalid:
+#else
+	(void)hdr;
+	(void)len;
 #endif /* CONFIG_ERP */
 	wpa_printf(MSG_DEBUG,
 			   "EAP: EAP-Initiate/Re-auth-Start - No suitable ERP keys available - try to start full EAP authentication");
@@ -1636,6 +1646,10 @@ no_auth_tag:
 	eapol_set_bool(sm, EAPOL_eapNoResp, TRUE);
 	wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_SUCCESS
 			"EAP re-authentication completed successfully");
+#else
+	(void)sm;
+	(void)hdr;
+	(void)len;
 #endif /* CONFIG_ERP */
 }
 
@@ -1685,7 +1699,7 @@ static void eap_sm_parseEapReq(struct eap_sm *sm, const struct wpabuf *req)
 		}
 		sm->rxReq = TRUE;
 		pos = (const u8 *)(hdr + 1);
-		sm->reqMethod = (EapType) * pos++;
+		sm->reqMethod = (enum EapType) * pos++;
 		if (sm->reqMethod == EAP_TYPE_EXPANDED) {
 			if (plen < sizeof(*hdr) + 8) {
 				wpa_printf(MSG_DEBUG, "EAP: Ignored truncated "
@@ -1716,7 +1730,7 @@ static void eap_sm_parseEapReq(struct eap_sm *sm, const struct wpabuf *req)
 			}
 			sm->rxResp = TRUE;
 			pos = (const u8 *)(hdr + 1);
-			sm->reqMethod = (EapType) * pos;
+			sm->reqMethod = (enum EapType) * pos;
 			wpa_printf(MSG_DEBUG, "EAP: Received EAP-Response for "
 					   "LEAP method=%d id=%d",
 					   sm->reqMethod, sm->reqId);
@@ -1975,7 +1989,7 @@ static const char *eap_sm_state_txt(int state)
 
 
 #if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
-static const char *eap_sm_method_state_txt(EapMethodState state)
+static const char *eap_sm_method_state_txt(enum EapMethodState state)
 {
 	switch (state) {
 	case METHOD_NONE:
@@ -1994,7 +2008,7 @@ static const char *eap_sm_method_state_txt(EapMethodState state)
 }
 
 
-static const char *eap_sm_decision_txt(EapDecision decision)
+static const char *eap_sm_decision_txt(enum EapDecision decision)
 {
 	switch (decision) {
 	case DECISION_FAIL:
@@ -2090,7 +2104,7 @@ int eap_sm_get_status(struct eap_sm *sm, char *buf, size_t buflen, int verbose)
 #endif /* CONFIG_CTRL_IFACE */
 
 
-#define eap_sm_request(sm, type, msg, msglen) do { } while (0)
+#define eap_sm_request(sm, type, msg, msglen) do { (void)sm; } while (0)
 
 const char *eap_sm_get_method_name(struct eap_sm *sm)
 {
@@ -2173,6 +2187,8 @@ void eap_sm_request_pin(struct eap_sm *sm)
  */
 void eap_sm_request_otp(struct eap_sm *sm, const char *msg, size_t msg_len)
 {
+	(void)msg;
+	(void)msg_len;
 	eap_sm_request(sm, WPA_CTRL_REQ_EAP_OTP, msg, msg_len);
 }
 
@@ -2199,6 +2215,7 @@ void eap_sm_request_passphrase(struct eap_sm *sm)
  */
 void eap_sm_request_sim(struct eap_sm *sm, const char *req)
 {
+	(void)req;
 	eap_sm_request(sm, WPA_CTRL_REQ_SIM, req, os_strlen(req));
 }
 
@@ -2384,6 +2401,8 @@ const u8 *eap_get_config_identity(struct eap_sm *sm, size_t *len)
 static int eap_get_ext_password(struct eap_sm *sm,
 								struct eap_peer_config *config)
 {
+	(void)sm;
+	(void)config;
 	return -1;
 	/*
 	        char *name;
@@ -2763,6 +2782,8 @@ void eap_set_force_disabled(struct eap_sm *sm, int disabled)
  */
 void eap_set_external_sim(struct eap_sm *sm, int external_sim)
 {
+	(void)sm;
+	(void)external_sim;
 	//sm->external_sim = external_sim;
 }
 
