@@ -101,6 +101,14 @@ int decompress_block(unsigned char *out_buffer, long unsigned int *writesize, un
 {
 	int ret = ERROR;
 #if CONFIG_COMPRESSION_TYPE == LZMA
+	/* Validate input size before subtracting LZMA_PROPS_SIZE to prevent
+	 * integer underflow (CWE-191) and subsequent out-of-bounds heap
+	 * read (CWE-125) in the LZMA decoder.
+	 */
+	if (*size < LZMA_PROPS_SIZE) {
+		bcmpdbg("decompress_block: input too small (%lu < %d)\n", *size, LZMA_PROPS_SIZE);
+		return -EINVAL;
+	}
 	/* LZMA specific logic for decompression */
 	*size -= (LZMA_PROPS_SIZE);
 	int read_size = *size;
