@@ -1,8 +1,0 @@
-/* == "version" + "Realtek git version" + "compile date" + "compile time" == */
-
-== version 2d0f1be032 2024/04/29-09:50:25 ==
-1.	Change optimization flags from "-O2" to "-Os"
-2.	Change instruction set build "-marm" to "-mthumb"
-
-== version 79e92a3 2023/11/10-17:32:22 ==
-1.	Sync lib_wifi_common.a from version 8.4d SDK
