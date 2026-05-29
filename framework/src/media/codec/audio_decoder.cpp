@@ -189,6 +189,19 @@ static const int kBitrateV2L3[] = {
  * Private Functions
  ****************************************************************************/
 
+static void _free_decoder_context(audio_decoder_p decoder)
+{
+	if (decoder->dec_ext != NULL) {
+		free(decoder->dec_ext);
+		decoder->dec_ext = NULL;
+	}
+
+	if (decoder->dec_mem != NULL) {
+		free(decoder->dec_mem);
+		decoder->dec_mem = NULL;
+	}
+}
+
 static uint32_t _u32_at(const uint8_t *ptr)
 {
 	return ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | ptr[3];
@@ -395,7 +408,10 @@ int mp3_init(audio_decoder_p decoder, void *dec_ext)
 	RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_DECODER_ERROR);
 
 	decoder->dec_mem = calloc(1, pvmp3_decoderMemRequirements());
-	RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_DECODER_ERROR);
+	if (decoder->dec_mem == NULL) {
+		_free_decoder_context(decoder);
+		return AUDIO_DECODER_ERROR;
+	}
 
 	*((tPVMP3DecoderExternal *) decoder->dec_ext) = *((tPVMP3DecoderExternal *) dec_ext);
 
@@ -561,13 +577,19 @@ int aac_init(audio_decoder_p decoder, void *dec_ext)
 	RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_DECODER_ERROR);
 
 	decoder->dec_mem = calloc(1, PVMP4AudioDecoderGetMemRequirements());
-	RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_DECODER_ERROR);
+	if (decoder->dec_mem == NULL) {
+		_free_decoder_context(decoder);
+		return AUDIO_DECODER_ERROR;
+	}
 
 	*((tPVMP4AudioDecoderExternal *) decoder->dec_ext) = *((tPVMP4AudioDecoderExternal *) dec_ext);
 
 	PVMP4AudioDecoderResetBuffer(decoder->dec_mem);
 	Int err = PVMP4AudioDecoderInitLibrary((tPVMP4AudioDecoderExternal *) decoder->dec_ext, decoder->dec_mem);
-	RETURN_VAL_IF_FAIL((err == MP4AUDEC_SUCCESS), AUDIO_DECODER_ERROR);
+	if (err != MP4AUDEC_SUCCESS) {
+		_free_decoder_context(decoder);
+		return AUDIO_DECODER_ERROR;
+	}
 
 	return AUDIO_DECODER_OK;
 }
@@ -718,13 +740,19 @@ int opus_init(audio_decoder_p decoder, void *dec_ext)
 	RETURN_VAL_IF_FAIL((decoder->dec_ext != NULL), AUDIO_DECODER_ERROR);
 
 	decoder->dec_mem = calloc(1, opus_decoderMemRequirements());
-	RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_DECODER_ERROR);
+	if (decoder->dec_mem == NULL) {
+		_free_decoder_context(decoder);
+		return AUDIO_DECODER_ERROR;
+	}
 
 	*((opus_dec_external_t *) decoder->dec_ext) = *((opus_dec_external_t *) dec_ext);
 
 	opus_resetDecoder(decoder->dec_mem);
 	int err = opus_initDecoder((opus_dec_external_t *) decoder->dec_ext, decoder->dec_mem);
-	RETURN_VAL_IF_FAIL((err == OPUS_OK), AUDIO_DECODER_ERROR);
+	if (err != OPUS_OK) {
+		_free_decoder_context(decoder);
+		return AUDIO_DECODER_ERROR;
+	}
 
 	return AUDIO_DECODER_OK;
 }
@@ -1098,6 +1126,13 @@ int audio_decoder_init(audio_decoder_p decoder, size_t rbuf_size)
 {
 	assert(decoder != NULL);
 
+	decoder->audio_type = AUDIO_TYPE_UNKNOWN;
+	decoder->dec_ext = NULL;
+	decoder->dec_mem = NULL;
+	decoder->rbsp = NULL;
+	decoder->priv_data = NULL;
+	memset(&decoder->ringbuffer, 0, sizeof(decoder->ringbuffer));
+
 	priv_data_p priv = (priv_data_p) malloc(sizeof(priv_data_t));
 	RETURN_VAL_IF_FAIL((priv != NULL), AUDIO_DECODER_ERROR);
 
@@ -1106,15 +1141,18 @@ int audio_decoder_init(audio_decoder_p decoder, size_t rbuf_size)
 	priv->mFixedHeader = 0;
 	memset(&(priv->pcm), 0, sizeof(pcm_data_t));
 
-	// init decoder data
-	decoder->dec_ext = NULL;
-	decoder->dec_mem = NULL;
 	decoder->priv_data = priv;
 
 	// init ring-buffer and open it as a stream
-	rb_init(&decoder->ringbuffer, rbuf_size);
+	if (!rb_init(&decoder->ringbuffer, rbuf_size)) {
+		audio_decoder_finish(decoder);
+		return AUDIO_DECODER_ERROR;
+	}
 	decoder->rbsp = rbs_open(&decoder->ringbuffer);
-	RETURN_VAL_IF_FAIL((decoder->rbsp != NULL), AUDIO_DECODER_ERROR);
+	if (decoder->rbsp == NULL) {
+		audio_decoder_finish(decoder);
+		return AUDIO_DECODER_ERROR;
+	}
 
 	rbs_ctrl(decoder->rbsp, OPTION_ALLOW_TO_DEQUEUE, 1);
 	return AUDIO_DECODER_OK;
@@ -1125,8 +1163,10 @@ int audio_decoder_finish(audio_decoder_p decoder)
 	assert(decoder != NULL);
 
 	// close stream
-	rbs_close(decoder->rbsp);
-	decoder->rbsp = NULL;
+	if (decoder->rbsp != NULL) {
+		rbs_close(decoder->rbsp);
+		decoder->rbsp = NULL;
+	}
 
 	// free ring-buffer instance
 	rb_free(&decoder->ringbuffer);
@@ -1140,7 +1180,9 @@ int audio_decoder_finish(audio_decoder_p decoder)
 	// free decoder buffer
 	if (decoder->dec_mem != NULL) {
 		#ifdef CONFIG_CODEC_LIBOPUS
-		opus_uninitDecoder(decoder->dec_mem);
+		if (decoder->audio_type == AUDIO_TYPE_OPUS) {
+			opus_uninitDecoder(decoder->dec_mem);
+		}
 		#endif
 		free(decoder->dec_mem);
 		decoder->dec_mem = NULL;

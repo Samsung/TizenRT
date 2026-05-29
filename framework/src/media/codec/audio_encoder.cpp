@@ -49,6 +49,19 @@ typedef struct priv_data_s *priv_data_p;
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+static void _free_encoder_context(audio_encoder_p encoder)
+{
+	if (encoder->enc_ext != NULL) {
+		free(encoder->enc_ext);
+		encoder->enc_ext = NULL;
+	}
+
+	if (encoder->enc_mem != NULL) {
+		free(encoder->enc_mem);
+		encoder->enc_mem = NULL;
+	}
+}
+
 static int _init_encoder(audio_encoder_p encoder, void *enc_ext)
 {
 	priv_data_p priv = (priv_data_p) encoder->priv_data;
@@ -61,17 +74,25 @@ static int _init_encoder(audio_encoder_p encoder, void *enc_ext)
 		RETURN_VAL_IF_FAIL((encoder->enc_ext != NULL), AUDIO_ENCODER_ERROR);
 
 		encoder->enc_mem = calloc(1, opus_encoderMemRequirements());
-		RETURN_VAL_IF_FAIL((encoder->enc_mem != NULL), AUDIO_ENCODER_ERROR);
+		if (encoder->enc_mem == NULL) {
+			_free_encoder_context(encoder);
+			return AUDIO_ENCODER_ERROR;
+		}
 
 		opus_enc_external_t *opus_ext = (opus_enc_external_t *) encoder->enc_ext;
 		*opus_ext = * ((opus_enc_external_t *) enc_ext);
 
-		RETURN_VAL_IF_FAIL((opus_ext->pInputBuffer != NULL), AUDIO_ENCODER_ERROR);
-		RETURN_VAL_IF_FAIL((opus_ext->pOutputBuffer != NULL), AUDIO_ENCODER_ERROR);
+		if (opus_ext->pInputBuffer == NULL || opus_ext->pOutputBuffer == NULL) {
+			_free_encoder_context(encoder);
+			return AUDIO_ENCODER_ERROR;
+		}
 
 		opus_resetEncoder(encoder->enc_mem);
 		int err = opus_initEncoder((opus_enc_external_t *) encoder->enc_ext, encoder->enc_mem);
-		RETURN_VAL_IF_FAIL((err == OPUS_OK), AUDIO_ENCODER_ERROR);
+		if (err != OPUS_OK) {
+			_free_encoder_context(encoder);
+			return AUDIO_ENCODER_ERROR;
+		}
 
 		priv->mCurrentPos = 0;
 		break;
@@ -179,6 +200,12 @@ int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, int audio_type
 	RETURN_VAL_IF_FAIL(audio_encoder_check_audio_type(audio_type), AUDIO_ENCODER_ERROR);
 
 	encoder->audio_type = audio_type;
+	encoder->enc_ext = NULL;
+	encoder->enc_mem = NULL;
+	encoder->rbsp = NULL;
+	encoder->priv_data = NULL;
+	memset(&encoder->ringbuffer, 0, sizeof(encoder->ringbuffer));
+
 	// init private data
 	priv_data_p priv = (priv_data_p) malloc(sizeof(priv_data_t));
 	RETURN_VAL_IF_FAIL((priv != NULL), AUDIO_ENCODER_ERROR);
@@ -186,12 +213,22 @@ int audio_encoder_init(audio_encoder_p encoder, size_t rbuf_size, int audio_type
 	encoder->priv_data = priv;
 
 	int ret = _init_encoder(encoder, enc_ext);
-	RETURN_VAL_IF_FAIL((ret == AUDIO_ENCODER_OK), AUDIO_ENCODER_ERROR);
+	if (ret != AUDIO_ENCODER_OK) {
+		free(encoder->priv_data);
+		encoder->priv_data = NULL;
+		return AUDIO_ENCODER_ERROR;
+	}
 
 	// init ring-buffer and open it as a stream
-	rb_init(&encoder->ringbuffer, rbuf_size);
+	if (!rb_init(&encoder->ringbuffer, rbuf_size)) {
+		audio_encoder_finish(encoder);
+		return AUDIO_ENCODER_ERROR;
+	}
 	encoder->rbsp = rbs_open(&encoder->ringbuffer);
-	RETURN_VAL_IF_FAIL((encoder->rbsp != NULL), AUDIO_ENCODER_ERROR);
+	if (encoder->rbsp == NULL) {
+		audio_encoder_finish(encoder);
+		return AUDIO_ENCODER_ERROR;
+	}
 
 	rbs_ctrl(encoder->rbsp, OPTION_ALLOW_TO_DEQUEUE, 1);
 	return AUDIO_ENCODER_OK;
@@ -202,8 +239,10 @@ int audio_encoder_finish(audio_encoder_p encoder)
 	assert(encoder != NULL);
 
 	// close stream
-	rbs_close(encoder->rbsp);
-	encoder->rbsp = NULL;
+	if (encoder->rbsp != NULL) {
+		rbs_close(encoder->rbsp);
+		encoder->rbsp = NULL;
+	}
 
 	// free ring-buffer instance
 	rb_free(&encoder->ringbuffer);
@@ -217,7 +256,9 @@ int audio_encoder_finish(audio_encoder_p encoder)
 	// free encoder buffer
 	if (encoder->enc_mem != NULL) {
 		#ifdef CONFIG_CODEC_LIBOPUS
-		opus_uninitEncoder(encoder->enc_mem);
+		if (encoder->audio_type == AUDIO_TYPE_OPUS) {
+			opus_uninitEncoder(encoder->enc_mem);
+		}
 		#endif
 		free(encoder->enc_mem);
 		encoder->enc_mem = NULL;
