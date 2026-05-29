@@ -364,8 +364,7 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 	compress_blocks_to_read(&first_block, &last_block, &no_blocks, offset, readsize);
 	if (first_block < 0 || no_blocks < 0) {
 		bcmpdbg("Incorrect first_block, no_blocks info\n");
-		buffer_index = ERROR;
-		goto error_compress_read;
+		return -EINVAL;
 	}
 
 	index = first_block;
@@ -379,11 +378,18 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 		block_readsize = compress_read_block(filfd, binary_header_size, buffers.read_buffer, index);
 		if (block_readsize < 0) {
 			bcmpdbg("Read for compressed block %d failed\n", index);
-			buffer_index = block_readsize;
-			goto error_compress_read;
+			return -EIO;
 		}
 
 #if CONFIG_COMPRESSION_TYPE == LZMA
+		/* Reject blocks that are too small to contain the LZMA properties
+		 * header (LZMA_PROPS_SIZE = 5). Prevents integer underflow in
+		 * decompress_block() when *size -= LZMA_PROPS_SIZE wraps around.
+		 */
+		if (block_readsize < LZMA_PROPS_SIZE) {
+			bcmpdbg("Compressed block %d too small (%d < %d)\n", index, block_readsize, LZMA_PROPS_SIZE);
+			return -EINVAL;
+		}
 		size = (unsigned int)block_readsize;
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
 		size = (long unsigned int)block_readsize;
@@ -391,10 +397,9 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 		writesize = compression_header->blocksize; 
 		/* Decompress block in read_buffer to out_buffer */
 		ret = decompress_block(buffers.out_buffer, &writesize, buffers.read_buffer, &size);
-		if (ret == ERROR) {
+		if (ret != OK) {
 			bcmpdbg("Failed to decompress %d block of this binary\n", index);
-			buffer_index = ret;
-			goto error_compress_read;
+			return ret;
 		}
 
 		if (index == first_block) {
@@ -426,7 +431,6 @@ int compress_read(int filfd, uint16_t binary_header_size, FAR uint8_t *buffer, s
 		}
 	}
 
-error_compress_read:
 	return buffer_index;
 }
 
