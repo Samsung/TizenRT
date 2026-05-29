@@ -100,7 +100,7 @@ static ssize_t _source_read_at(rbstream_p fp, ssize_t offset, void *data, size_t
 
 static bool _format_parse(void *buffer, uint32_t size, wave_format_extensible_p ext)
 {
-	RETURN_VAL_IF_FAIL((buffer != NULL || size >= 8 + WAVE_FMT_CHUNK_SIZE), false);
+	RETURN_VAL_IF_FAIL((buffer != NULL && size >= 8 + WAVE_FMT_CHUNK_SIZE), false);
 	RETURN_VAL_IF_FAIL((ext != NULL), false);
 
 	RETURN_VAL_IF_FAIL((memcmp(buffer, WAVE_FMT_CHUNK_ID, 4) == OK), false);
@@ -170,7 +170,11 @@ int wav_init(audio_decoder_p decoder, void *dec_ext)
 	*((wav_dec_external_t *)decoder->dec_ext) = *((wav_dec_external_t *)dec_ext);
 
 	decoder->dec_mem = calloc(1, sizeof(wave_format_extensible_t));
-	RETURN_VAL_IF_FAIL((decoder->dec_mem != NULL), AUDIO_DECODER_ERROR);
+	if (decoder->dec_mem == NULL) {
+		free(decoder->dec_ext);
+		decoder->dec_ext = NULL;
+		return AUDIO_DECODER_ERROR;
+	}
 	memset(decoder->dec_mem, 0, sizeof(wave_format_extensible_t));
 
 	return AUDIO_DECODER_OK;
@@ -210,9 +214,12 @@ bool wav_get_frame(rbstream_p mFp, ssize_t *offset, void *dec_mem, void *buffer,
 		uint8_t *fmtChunk = (uint8_t *)malloc(sizeof(uint8_t) * fmtChunkSize);
 		RETURN_VAL_IF_FAIL(fmtChunk, false);
 		n = _source_read_at(mFp, _offset, fmtChunk, fmtChunkSize);
+		if ((size_t)n != fmtChunkSize) {
+			free(fmtChunk);
+			return false;
+		}
 		bool ret_format_parse = _format_parse((void *)fmtChunk, fmtChunkSize, ext);
 		free(fmtChunk);
-		RETURN_VAL_IF_FAIL((size_t)n == fmtChunkSize, false);
 		RETURN_VAL_IF_FAIL(ret_format_parse, false);
 		_offset += (8 + chunkSize);
 
