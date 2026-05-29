@@ -91,7 +91,7 @@ up_signal_handler:
 
 	/* Save some register */
 
-	push		{lr}			/* Save LR on the stack */
+	push		{r12, lr}			/* Save R12 and LR on the stack = 8 byte alignment */
 
 	/* Call the signal handler */
 
@@ -103,8 +103,7 @@ up_signal_handler:
 
 	/* Restore the registers */
 
-	pop		{r2}			/* Recover LR in R2 */
-	mov		lr, r2			/* Restore LR */
+	pop		{r12, lr}			/* Restore R12 and LR */
 
 	/* Execute the SYS_signal_handler_return SVCall (will not return) */
 
