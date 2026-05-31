@@ -83,7 +83,8 @@
 
 /* spi config */
 #define ADAM110_SPI_PORT			0
-#define ADAM110_SPI_FREQ			12500000
+//#define ADAM110_SPI_FREQ			12500000
+#define ADAM110_SPI_FREQ			10000000
 #define ADAM110_SPI_BPW				8
 #define ADAM110_SPI_CS				0
 #define ADAM110_SPI_MODE			SPIDEV_MODE0
@@ -151,7 +152,7 @@ static int rtl8730e_adam110_irq_attach(adam110_handler_t handler, FAR char *arg)
 {
 	g_adam110info.handler = handler;
 	gpio_irq_init(&g_adam110info.data_ready, PA_23, rtl8730e_adam110_irq_handler, (uint32_t)arg);
-	gpio_irq_set(&g_adam110info.data_ready, IRQ_FALL, 1);
+	gpio_irq_set(&g_adam110info.data_ready, HAL_IRQ_RISE, 1);
 	gpio_irq_enable(&g_adam110info.data_ready);
 	return OK;
 }
@@ -178,7 +179,8 @@ static void rtl8730e_adam110_reset(void)
 
 	gpio_mode(&g_adam110info.reset, PullUp);
 	gpio_write(&g_adam110info.reset, 1);
-	up_mdelay(20);
+	
+	up_mdelay(21);
 }
 
 #ifdef CONFIG_PM
