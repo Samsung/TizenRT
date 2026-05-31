@@ -152,7 +152,7 @@ static int rtl8730e_adam110_irq_attach(adam110_handler_t handler, FAR char *arg)
 {
 	g_adam110info.handler = handler;
 	gpio_irq_init(&g_adam110info.data_ready, PA_23, rtl8730e_adam110_irq_handler, (uint32_t)arg);
-	gpio_irq_set(&g_adam110info.data_ready, HAL_IRQ_RISE, 1);
+	gpio_irq_set(&g_adam110info.data_ready, IRQ_FALL, 1);
 	gpio_irq_enable(&g_adam110info.data_ready);
 	return OK;
 }
