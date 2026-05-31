@@ -227,8 +227,8 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 #define ADAM110_SET_FIRMWARE(dev) \
 	adam110_send_firmware(dev)
 
-#define ADAM110_GET_AUDIOBUFFER(dev, type, buf_ptr, size) \
-	adam110_get_audiobuffer(dev, type, buf_ptr, size)
+#define ADAM110_GET_AUDIOBUFFER(dev, type, buf_ptr, size_ptr) \
+	adam110_get_audiobuffer(dev, type, buf_ptr, size_ptr)
 
 #define ADAM110_SET_INTR(dev, data, enable, rx_ptr) \
     adam110_send_cmd(dev, AUD_INT_EN, (uint8_t)(data), (uint8_t)(enable), 0, 0, rx_ptr, false)
@@ -641,22 +641,38 @@ errout_with_fd:
 	return ret;
 }
 
-static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t data, uint8_t *buffer, uint32_t size)
+static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t data, uint8_t *buffer, uint32_t *size_ptr)
 {
 	int ret = 0;
+	uint32_t recvsize = 0;
+	t_proto_pkt rxpkt;
+
 	switch(data) {
+	case AI_DATA_TYPE_SEAMLESS_R:		
+		ret = ADAM110_GET_SEAMLESS(dev, &rxpkt);		
+		if (ret != OK || rxpkt.op != RSLT_SUCCESS) {
+            auddbg("[E] GET_SEAMLESS failed op=%d ret=%d\n", rxpkt.op, ret);
+            return ret != OK ? ret : -EIO;
+        }
+
+		recvsize = (uint32_t)(rxpkt.parm1 << 8 | rxpkt.parm2);
+		if (recvsize == 0) {
+			return -EAGAIN;
+		}
+		*size_ptr = (recvsize < ADAM110_RX_MAX_SIZE) ? recvsize : ADAM110_RX_MAX_SIZE;		
+		break;
 	case AI_DATA_TYPE_AUDIO:
 		ret = ADAM110_GET_AUDIO(dev, NULL);
-		if (ret == OK) {
-			up_udelay(ADAM110_TXRX_DELAY);
-			adam110_spi_exchange(dev, NULL, 0, buffer, size, false);
-		}
 		break;
 	default:
 		auddbg("[E] invalid data type\n");
 		ret = -EINVAL;
 	}
 
+	if (ret == OK) {
+		up_udelay(ADAM110_TXRX_DELAY);
+		adam110_spi_exchange(dev, NULL, 0, buffer, (*size_ptr) + 1, false);
+	}
 	return ret;
 }
 
@@ -811,7 +827,6 @@ static void adam110_work_handler(void *arg)
 		int recvsize = 0;
 		int retry_remain = 0;
 
-		//auddbg("kd left : %d\n", priv->keyword_bytes_left);
 		while (priv->keyword_bytes_left < priv->keyword_bytes) {
 			retry_remain = 50000;
 			while (retry_remain > 0) {
@@ -839,8 +854,8 @@ static void adam110_work_handler(void *arg)
 					data_size = max;
 				}
 
-				up_udelay(ADAM110_TXRX_DELAY);				
-				adam110_spi_exchange(priv, NULL, 0, s_temp_chunk, data_size + 1, false);
+				//up_udelay(ADAM110_TXRX_DELAY);				
+				adam110_spi_exchange(priv, NULL, 0, s_temp_chunk, data_size + 1, true);
 
 				uint8_t cal_sum = adam110_calculate_checksum(s_temp_chunk, data_size);
 				uint8_t recv_sum = s_temp_chunk[data_size];
