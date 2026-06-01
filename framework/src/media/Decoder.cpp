@@ -171,6 +171,7 @@ bool Decoder::mConfig(int audioType)
 		mp3_ext.equalizerType = flat;
 		mp3_ext.crcEnabled = false;
 		mp3_ext.pInputBuffer = mInputBuffer.get();
+		mp3_ext.inputBufferMaxLength = mInputBufferSize * sizeof(uint8_t);
 		mp3_ext.pOutputBuffer = mOutputBuffer.get();
 		mp3_ext.outputFrameSize = mOutputBufferSize;
 
@@ -186,6 +187,7 @@ bool Decoder::mConfig(int audioType)
 		aac_ext.outputFormat = OUTPUTFORMAT_16PCM_INTERLEAVED;
 		aac_ext.desiredChannels = mChannels;
 		aac_ext.pInputBuffer = mInputBuffer.get();
+		aac_ext.inputBufferMaxLength = mInputBufferSize * sizeof(uint8_t);
 		aac_ext.pOutputBuffer = mOutputBuffer.get();
 		aac_ext.aacPlusEnabled = 1;
 
