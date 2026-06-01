@@ -89,8 +89,6 @@ struct rwnx_mod_params rwnx_mod_params = {
 	/* FULLMAC only parameters */
 	PARAM(ant_div, false), // original true
 
-	//.key = {0xabc47fd0, 0x57498892, 0x11320490, 0x10815562},
-
 	PARAM(rx_ampdu_on, true),
 	PARAM(rx_agg_num, 0),
 	PARAM(tx_ampdu_on, true),

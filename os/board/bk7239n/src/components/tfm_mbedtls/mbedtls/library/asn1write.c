@@ -118,7 +118,10 @@ int mbedtls_asn1_write_raw_buffer( unsigned char **p, const unsigned char *start
 
     len = size;
     (*p) -= len;
-    memcpy( *p, buf, len );
+
+    if (len != 0) {
+        memcpy(*p, buf, len);
+    }
 
     return( (int) len );
 }
