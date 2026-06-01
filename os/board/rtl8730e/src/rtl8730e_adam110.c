@@ -83,8 +83,7 @@
 
 /* spi config */
 #define ADAM110_SPI_PORT			0
-//#define ADAM110_SPI_FREQ			12500000
-#define ADAM110_SPI_FREQ			10000000
+#define ADAM110_SPI_FREQ			12500000
 #define ADAM110_SPI_BPW				8
 #define ADAM110_SPI_CS				0
 #define ADAM110_SPI_MODE			SPIDEV_MODE0
