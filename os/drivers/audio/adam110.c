@@ -670,7 +670,6 @@ static int adam110_get_audiobuffer(FAR struct adam110_dev_s *dev, ai_data_type_t
 	}
 
 	if (ret == OK) {
-		up_udelay(ADAM110_TXRX_DELAY);
 		adam110_spi_exchange(dev, NULL, 0, buffer, (*size_ptr) + 1, false);
 	}
 	return ret;
@@ -814,9 +813,6 @@ static void adam110_work_handler(void *arg)
 		goto out_unlock;
 	}
 
-	auddbg("[I] aparm1 = 0x%x\n", rxpkt.parm1);
-	auddbg("[I] aparm2 = 0x%x\n", rxpkt.parm2);
-
 	if (rxpkt.parm1 == AI_MODEL_HIBIXBY || rxpkt.parm1 == AI_MODEL_BIXBY) {
 		if (!priv->kd_enabled || priv->recording) {
 			auddbg("It's not possible to handle kd kd_enabled : %d recording : %d\n", priv->kd_enabled, priv->recording);
@@ -824,13 +820,13 @@ static void adam110_work_handler(void *arg)
 		}
 		uint32_t data_size = 0;
 		int recvsize = 0;
-		int retry_remain = 50000;
+		int retry_remain = 100;
 
 		while ((priv->keyword_bytes_left < priv->keyword_bytes) && (retry_remain > 0)) {
 			ret = ADAM110_GET_AUDIOBUFFER(priv, AI_DATA_TYPE_SEAMLESS_R, s_temp_chunk, &data_size);			
 			if (ret != OK) {
 				retry_remain--;
-				up_udelay(ADAM110_RETRIAL_DELAY * 100);
+				up_udelay(ADAM110_RETRIAL_DELAY * 1000);
 				continue;
 			}
 
@@ -1657,6 +1653,11 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 			return -EBUSY;
 		}
 
+		if (kd_num == AUDIO_NN_MODEL_HI_BIXBY) {
+			kd_num = AI_MODEL_HIBIXBY;
+		} else if (kd_num == AUDIO_NN_MODEL_BIXBY) {
+			kd_num = AI_MODEL_BIXBY;
+		}
 		if (kd_num == priv->kd_num) {
 			audvdbg("already loaded, ignore change kd. kd_num : %d\n", priv->kd_num);
 			return OK;
@@ -1693,7 +1694,7 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		priv->kd_num = kd_num;
 
 		/* and then enable interrupt of changed model */
-		ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num + 1), true, &rxpkt);
+		ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num), true, &rxpkt);
 		if (ret != OK) {
 			auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
 		}			

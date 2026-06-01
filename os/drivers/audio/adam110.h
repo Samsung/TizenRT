@@ -71,8 +71,8 @@
 #define ADAM110_RETRY_CNT			3
 #define ADAM110_FW_LOAD_RETRY_CNT   3
 #define ADAM110_HW_RST_WAIT			(50 * 1000)	/* Almost 30 ~ 50 msec */
-#define ADAM110_TXRX_DELAY			20 /* between tx and rx delay 20usec */ 
-#define ADAM110_COM_RES_DELAY		1  /* between command and respone imprecise */ 
+#define ADAM110_TXRX_DELAY			20 /* between tx and rx delay 20usec */
+#define ADAM110_COM_RES_DELAY		1  /* between command and respone imprecise */
 #define ADAM110_RETRIAL_DELAY		1  /* Seamless buffer polling retry delay */
 
 #define ADAM110_RX_MAX_SIZE			3840
