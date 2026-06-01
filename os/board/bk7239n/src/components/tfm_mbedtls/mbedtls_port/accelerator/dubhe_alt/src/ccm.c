@@ -767,6 +767,11 @@ int sw_compatible_mbedtls_ccm_finish( mbedtls_ccm_context *ctx,
         return MBEDTLS_ERR_CCM_BAD_INPUT;
     }
 
+    /* CVE-2026-34876: validate tag_len against the 16-byte internal auth
+     * buffer (ctx->y) to prevent out-of-bounds read when tag_len > 16. */
+    if (tag != NULL && tag_len > 16) {
+            return MBEDTLS_ERR_CCM_BAD_INPUT;
+        }
     /*
      * Authentication: reset counter and crypt/mask internal tag
      */
