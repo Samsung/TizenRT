@@ -26,22 +26,23 @@ extern "C" {
 #include <tinyara/wifi_csi/wifi_csi_struct.h>
 
 typedef enum _CSIFW_RES {
-	CSIFW_ERROR_MAX_NUM_SERVICE_REGISTERED = -11,		/* ERROR: MAX number of Services is alreay Registered */
-	CSIFW_ERROR_NOT_INITIALIZED = -10,			/* ERROR: Not Initialized */
-	CSIFW_ERROR_INVALID_SERVICE_STATE = -9,			/* ERROR: Invalid Service State */
-	CSIFW_ERROR_ALREADY_INIT_WITH_DIFFERENT_CONFIG = -8,	/* ERROR: Service already initialized with different CSI_Configuration  */
-	CSIFW_ERROR_SERVICE_NOT_REGISTERED = -7,		/* ERROR: Service not registered. Cannot start/stop/deinit */
-	CSIFW_ERROR_WIFI_DIS_CONNECTED = -6,			/* ERROR: WIFI WIFI_DISCONNECTED */
-	CSIFW_INVALID_RAWDATA = -5,				/* Invalid Raw Data */
-	CSIFW_INVALID_ARG = -4,					/* Invalid argument */
-	CSIFW_NOT_ENOUGH_SPACE = -3,				/* read/write/other buffer has empty space less than required size */
-	CSIFW_NO_MEM = -2,					/* Memory allocation (malloc/calloc) failed */
-	CSIFW_ERROR = -1,					/* ERROR: All other types of error not specified by any following enum */
-	CSIFW_OK = 0,						/* OK: Without any error  */
-	CSIFW_OK_WIFI_CONNECTED = 1,				/* OK: Without any error  */
-	CSIFW_OK_ALREADY_STOPPED = 2,				/* CSIFW already stopped by running service, but no error */
-	CSIFW_OK_ALREADY_STARTED = 3,				/* CSIFW already started by running service, but no error */
-	CSIFW_OK_WIFI_NOT_CONNECTED = 4				/* CSIFW already started but WIFI not connected */
+    CSIFW_INTERNAL_ERROR = -12,                          /* ERROR: CSI Internal Error due to unforseen events */
+    CSIFW_ERROR_MAX_NUM_SERVICE_REGISTERED = -11,        /* ERROR: MAX number of Services is alreay Registered */
+    CSIFW_ERROR_NOT_INITIALIZED = -10,                   /* ERROR: Not Initialized */
+    CSIFW_ERROR_INVALID_SERVICE_STATE = -9,              /* ERROR: Invalid Service State */
+    CSIFW_ERROR_ALREADY_INIT_WITH_DIFFERENT_CONFIG = -8, /* ERROR: Service already initialized with different CSI_Configuration*/
+    CSIFW_ERROR_SERVICE_NOT_REGISTERED = -7,             /* ERROR: Service not registered. Cannot start/stop/deinit */
+    CSIFW_ERROR_WIFI_DIS_CONNECTED = -6,                 /* ERROR: WIFI WIFI_DISCONNECTED */
+    CSIFW_ERROR_DATA_NOT_AVAILABLE = -5,                 /* ERROR: CSI Data Not Available */
+    CSIFW_INVALID_ARG = -4,                              /* Invalid argument */
+    CSIFW_NOT_ENOUGH_SPACE = -3,                         /* read/write/other buffer has empty space less than required size */
+    CSIFW_NO_MEM = -2,                                   /* Memory allocation (malloc/calloc) failed */
+    CSIFW_ERROR = -1,                                    /* ERROR: All other types of error not specified by any following enum */
+    CSIFW_OK = 0,                                        /* OK: Without any error  */
+    CSIFW_OK_WIFI_CONNECTED = 1,                         /* OK: Without any error  */
+    CSIFW_OK_ALREADY_STOPPED = 2,                        /* CSIFW already stopped by running service, but no error */
+    CSIFW_OK_ALREADY_STARTED = 3,                        /* CSIFW already started by running service, but no error */
+    CSIFW_OK_WIFI_NOT_CONNECTED = 4                      /* CSIFW already started but WIFI not connected */
 } CSIFW_RES;
 
 typedef int csifw_service_handle;

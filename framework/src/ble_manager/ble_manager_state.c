@@ -38,6 +38,7 @@ static ble_client_ctx_internal g_client_table[BLE_MAX_CONNECTION_COUNT] = { 0, }
 static ble_scan_ctx g_scan_ctx = { 0, };
 static blemgr_state_e g_manager_state = BLEMGR_UNINITIALIZED;
 static ble_scan_whitelist g_scan_whitelist[SCAN_WHITELIST_SIZE] = { 0, };
+static ble_watchdog_reset_cb_t g_watchdog_reset_cb;
 
 #define BLE_STATE_CHECK                                   \
 	do {                                                  \
@@ -171,6 +172,12 @@ static void _event_caller(int evt_pri, void *data) {
 			}
 			callback(state);
 		} break;
+		case BLE_EVT_COMMON_WATCHDOG_RESET: {
+			ble_watchdog_reset_cb_t callback = (ble_watchdog_reset_cb_t)msg->param[0];
+			if (callback) {
+				callback();
+			}
+		} break;
 		default:
 			break;
 		}
@@ -254,6 +261,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			break;
 		}
 
+		g_watchdog_reset_cb = NULL;
 		for (i = 0; i < BLE_MAX_CONNECTION_COUNT; i++) {
 			g_client_table[i].state = BLE_CLIENT_NONE;
 		}
@@ -334,6 +342,12 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 
 		trble_msg_s tmsg = { TRBLE_MSG_GET_VERSION, msg->param };
 		ret = ble_drv_ioctl(&tmsg);
+	} break;
+
+	case BLE_CMD_SET_WATCHDOG_RESET_HANDLER: {
+		BLE_STATE_CHECK;
+		g_watchdog_reset_cb = (ble_watchdog_reset_cb_t)msg->param;
+		ret = TRBLE_SUCCESS;
 	} break;
 
 	// Scanner
@@ -1313,6 +1327,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		if (ctx == NULL) {
 			if (ctx_connecting == NULL) {
 				BLE_LOG_ERROR("[BLEMGR] fail to find disconnected client. (conn_handle : %u)\n", data);
+				free(msg->param);
 				break;
 			}
 			BLE_LOG_INFO("[BLEMGR] client disconnected due to connection failure. (conn_handle : %u)\n", data);
@@ -1360,7 +1375,14 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 				break;
 			}
 		}
-		if (ctx && ctx->callbacks.passkey_display_cb) {
+
+		if (ctx == NULL) {
+			BLE_LOG_ERROR("[BLEMGR] fail to find BLE client context\n");
+			free(msg->param);
+			break;
+		}
+
+		if (ctx->callbacks.passkey_display_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.passkey_display_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
@@ -1380,7 +1402,14 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 				break;
 			}
 		}
-		if (ctx && ctx->callbacks.pair_bond_cb) {
+
+		if (ctx == NULL) {
+			BLE_LOG_ERROR("[BLEMGR] fail to find BLE client context\n");
+			free(msg->param);
+			break;
+		}
+
+		if (ctx->callbacks.pair_bond_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.pair_bond_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
@@ -1401,7 +1430,13 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			}
 		}
 
-		if (ctx && ctx->callbacks.notification_cb) {
+		if (ctx == NULL) {
+			BLE_LOG_ERROR("[BLEMGR] fail to find BLE client context\n");
+			free(msg->param);
+			break;
+		}
+
+		if (ctx->callbacks.notification_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.notification_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
@@ -1422,7 +1457,13 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			}
 		}
 
-		if (ctx && ctx->callbacks.indication_cb) {
+		if (ctx == NULL) {
+			BLE_LOG_ERROR("[BLEMGR] fail to find BLE client context\n");
+			free(msg->param);
+			break;
+		}
+
+		if (ctx->callbacks.indication_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.indication_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
@@ -1436,6 +1477,16 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		g_scan_ctx.state = data;
 		if (g_scan_ctx.callback.state_changed_cb) {
 			memcpy(queue_msg.param, (void*[]){g_scan_ctx.callback.state_changed_cb, NULL, msg->param}, sizeof(void*) * queue_msg.count);
+			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
+		}
+	} break;
+
+	case BLE_EVT_COMMON_WATCHDOG_RESET: {
+		if (msg->param) {
+			free(msg->param);
+		}
+		if (g_watchdog_reset_cb) {
+			memcpy(queue_msg.param, (void*[]){(void *)g_watchdog_reset_cb, NULL, NULL}, sizeof(void *) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
 	} break;

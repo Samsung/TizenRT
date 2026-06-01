@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -87,7 +87,15 @@ class PartitionsParser:
         pack_json = {}
         pack_json["magic"] = "BEKEN"
         pack_json["count"] = len(partitions)
-        pack_json["section"] = [asdict(p) for p in partitions]
+        pack_json["section"] = [
+            {
+                "partition": p.partition,
+                "firmware": p.firmware,
+                "start_addr": hex(p.start_addr),
+                "size": p.size // 1024,
+            }
+            for p in partitions
+        ]
         output_file.write_text(json.dumps(pack_json, indent=4))
         logger.info(f"Save partitions to {output_file}")
 

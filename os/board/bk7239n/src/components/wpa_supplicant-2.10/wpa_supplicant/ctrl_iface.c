@@ -1902,10 +1902,6 @@ int wpa_supplicant_handle_events(wpah_msg_t *msg)
 		union wpa_event_data data;
 		struct disassoc_info *info = (struct disassoc_info *)&data.disassoc_info;
 
-#if CONFIG_WIFI_REGDOMAIN
-		regulatory_hint_disconnect();
-#endif
-
 		os_memset(&data, 0, sizeof(data));
 		/*
 		 * FIXME: IP specified that reason code <= 1 are local generated, but AP still can send us

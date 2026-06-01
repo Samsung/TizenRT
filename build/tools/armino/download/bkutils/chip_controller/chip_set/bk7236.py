@@ -87,9 +87,11 @@ class BK7236(BaseChip):
         flash_control = FlashController(self.ser,self._flash_cfg)
         erase_addr = int(addr/FLASH_SIZE_DEF.SIZE_4K)*FLASH_SIZE_DEF.SIZE_4K
         baudrate_backup = self.ser.baudrate
-        if not self.set_baudrate(read_baudrate):
-            BKLog.e(f"Set baudrate: {read_baudrate} fail.")
-            return False
+        need_switch = baudrate_backup <= 2600000
+        if need_switch:
+            if not self.set_baudrate(read_baudrate):
+                BKLog.e(f"Set baudrate: {read_baudrate} fail.")
+                return False
         time.sleep(0.1)
         cnt = 5
         while cnt>0:
@@ -113,9 +115,10 @@ class BK7236(BaseChip):
         if not res:
             BKLog.e(f"erase_custom_size fail @0x{erase_addr:x}.")
             return False
-        if not self.set_baudrate(baudrate_backup):
-            BKLog.e(f"Set baudrate: {baudrate_backup} fail.")
-            return False
+        if need_switch:
+            if not self.set_baudrate(baudrate_backup):
+                BKLog.e(f"Set baudrate: {baudrate_backup} fail.")
+                return False
         if start_or_end:          
             ret = ret[:addr&0xfff]+content[:(FLASH_SIZE_DEF.SIZE_4K-addr&0xfff)]
         else:                                

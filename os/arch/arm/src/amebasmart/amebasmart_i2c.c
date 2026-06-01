@@ -100,6 +100,7 @@
 #define I2C_MASTER_DEVICE		1
 #define I2C_SLAVE_DEVICE		2
 
+#define I2C_DEFAULT_FREQUENCY 100000
 #define MKI2C_OUTPUT(p) (((p) & GPIO_PADMUX_MASK) | \
 			 IOMUX_OPENDRAIN | IOMUX_DRIVE_33OHM | \
 			 IOMUX_SLEW_SLOW | (5 << GPIO_ALT_SHIFT) | \
@@ -322,6 +323,7 @@ static struct amebasmart_i2c_priv_s amebasmart_i2c0_priv = {
 	.msgc = 0,
 	.msgv = NULL,
 	.ptr = NULL,
+	.frequency = I2C_DEFAULT_FREQUENCY,
 	.dcnt = 0,
 	.flags = 0,
 	.status = 0
@@ -354,6 +356,7 @@ static struct amebasmart_i2c_priv_s amebasmart_i2c1_priv = {
 	.msgc = 0,
 	.msgv = NULL,
 	.ptr = NULL,
+	.frequency = I2C_DEFAULT_FREQUENCY,
 	.dcnt = 0,
 	.flags = 0,
 	.status = 0
@@ -386,6 +389,7 @@ static struct amebasmart_i2c_priv_s amebasmart_i2c2_priv = {
 	.msgc = 0,
 	.msgv = NULL,
 	.ptr = NULL,
+	.frequency = I2C_DEFAULT_FREQUENCY,
 	.dcnt = 0,
 	.flags = 0,
 	.status = 0
@@ -926,7 +930,7 @@ int amebasmart_i2c_init(FAR struct amebasmart_i2c_priv_s *priv)
 	priv->i2c_object->i2c_idx = 0;
 	priv->i2c_object->I2Cx = NULL;
 	i2c_init(priv->i2c_object, priv->config->sda_pin, priv->config->scl_pin);
-
+	i2c_frequency(priv->i2c_object, priv->frequency);
 #ifdef CONFIG_I2C_WRITEREAD
 	i2c_restart_enable(priv->i2c_object);
 #endif

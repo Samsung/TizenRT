@@ -246,14 +246,7 @@ __FLASH_BOOT_CODE bk_err_t bk_psram_init(void)
 	//PSRAM_LOGI("chip_version:%d\r\n", chip_version);
 
 	// psram voltage sel
-	if (chip_version == CHIP_VERSION_D)
-	{
-		bk_psram_set_voltage(PSRAM_OUT_1_90V);
-	}
-	else
-	{
-		bk_psram_set_voltage(PSRAM_OUT_1_90V);
-	}
+	bk_psram_set_voltage(PSRAM_OUT_1_90V);
 
 	// power up and clk config
 	psram_hal_power_clk_enable(1);
@@ -472,8 +465,9 @@ bk_err_t bk_psram_memread(uint8_t *start_addr, uint8_t *data_buf, uint32_t len)
 			}
 			len = 0;
 		} else {
-			*(uint32_t *)(start_addr) = val;
-			*data_buf++ = val;
+			val = *((uint32_t *)(start_addr));
+			*(uint32_t *)data_buf = val;
+			data_buf += 4;
 			start_addr += 4;
 			len -= 4;
 		}

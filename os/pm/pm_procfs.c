@@ -110,7 +110,7 @@ struct power_path_template_s {
 
 struct power_path_priv_s {
 	const struct power_path_template_s *template; /* Matched template node */
-	struct pm_domain_s *domain_ptr;               /* Pointer to the domain structure if applicable */
+	char domain_name[CONFIG_PM_DOMAIN_NAME_SIZE]; /* Stable domain name for deferred lookups */
 };
 
 struct power_dir_s {
@@ -153,6 +153,8 @@ static int power_readdir_domains(struct fs_dirent_s *dir);
 static void power_read_domains_info(FAR struct power_file_s *priv, void (*readprint)(const char *, ...));
 static void power_read_dynamic_domain_info(FAR struct power_file_s *priv, void (*readprint)(const char *, ...));
 static void power_read_state(FAR struct power_file_s *priv, void (*readprint)(const char *, ...));
+static bool power_domain_exists(FAR const char *domain_name);
+static bool power_read_domain_snapshot(FAR const char *domain_name, FAR char *name, size_t name_size, FAR int *suspend_count);
 
 /****************************************************************************
  * Private Data
@@ -245,13 +247,51 @@ const struct procfs_operations power_procfsoperations = {
  * Private Functions
  ****************************************************************************/
 
+static bool power_read_domain_snapshot(FAR const char *domain_name, FAR char *name, size_t name_size, FAR int *suspend_count)
+{
+	FAR struct pm_domain_s *domain = NULL;
+	FAR dq_entry_t *entry;
+	irqstate_t flags;
+
+	if (domain_name == NULL || domain_name[0] == '\0') {
+		return false;
+	}
+
+	flags = enter_critical_section();
+	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
+		domain = (FAR struct pm_domain_s *)entry;
+		if (strncmp(domain->name, domain_name, CONFIG_PM_DOMAIN_NAME_SIZE) == 0) {
+			if (name && name_size > 0) {
+				strncpy(name, domain->name, name_size - 1);
+				name[name_size - 1] = '\0';
+			}
+
+			if (suspend_count) {
+				*suspend_count = domain->suspend_count;
+			}
+
+			leave_critical_section(flags);
+			return true;
+		}
+	}
+	leave_critical_section(flags);
+
+	return false;
+}
+
+static bool power_domain_exists(FAR const char *domain_name)
+{
+	return power_read_domain_snapshot(domain_name, NULL, 0, NULL);
+}
+
 static void power_read_dynamic_domain_info(FAR struct power_file_s *priv, void (*readprint)(const char *, ...))
 {
-	FAR struct pm_domain_s *domain = priv->path_priv.domain_ptr;
+	char domain_name[CONFIG_PM_DOMAIN_NAME_SIZE];
+	int suspend_count;
 
-	if (domain) {
-		readprint("%-15s : %s\n", "Domain Name", domain->name);
-		readprint("%-15s : %d\n", "Suspend Count", domain->suspend_count);
+	if (power_read_domain_snapshot(priv->path_priv.domain_name, domain_name, sizeof(domain_name), &suspend_count)) {
+		readprint("%-15s : %s\n", "Domain Name", domain_name);
+		readprint("%-15s : %d\n", "Suspend Count", suspend_count);
 	}
 }
 
@@ -259,13 +299,16 @@ static void power_read_domains_info(FAR struct power_file_s *priv, void (*readpr
 {
 	FAR struct pm_domain_s *domain;
 	FAR dq_entry_t *entry;
+	irqstate_t flags;
 
 	readprint(" %-33s | %14s \n", "DOMAIN NAME", "SUSPEND COUNTS");
 	readprint("-----------------------------------|----------------\n");
+	flags = enter_critical_section();
 	for (entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
 		domain = (FAR struct pm_domain_s *)entry;
 		readprint(" %33s | %14d \n", domain->name, domain->suspend_count);
 	}
+	leave_critical_section(flags);
 }
 
 static void power_read_state(FAR struct power_file_s *priv, void (*readprint)(const char *, ...))
@@ -286,7 +329,6 @@ static void power_read_state(FAR struct power_file_s *priv, void (*readprint)(co
 
 static struct power_path_template_s *power_find_best_match(const char *relpath, const struct power_path_template_s *templates, struct power_path_priv_s *path_priv, struct procfs_dir_priv_s *proc_dir)
 {
-	irqstate_t flags;
 	char domain_name[CONFIG_PM_DOMAIN_NAME_SIZE];
 	struct power_path_template_s *best_match = NULL;
 	struct power_path_template_s *curr_level_candidate = NULL;
@@ -307,9 +349,9 @@ static struct power_path_template_s *power_find_best_match(const char *relpath, 
 		/* Check for a match with the current template */
 		const char *wildcard = strstr(current->name, "*");
 		if (wildcard) {
-
 			/* Dynamic path: extract the domain name before the first '/' */
 			const char *slash_pos = strchr(relpath, '/');
+
 			/* Calculate the length of the domain name */
 			domain_len = slash_pos ? slash_pos - relpath : relpath_len;
 
@@ -317,34 +359,26 @@ static struct power_path_template_s *power_find_best_match(const char *relpath, 
 			if (domain_len > 0 && domain_len < CONFIG_PM_DOMAIN_NAME_SIZE) {
 				strncpy(domain_name, relpath, domain_len);
 				domain_name[domain_len] = '\0'; /* Ensure null termination */
-				flags = enter_critical_section();
-				path_priv->domain_ptr = NULL;
-				for (dq_entry_t *entry = dq_peek(&g_pmglobals.domains); entry != NULL; entry = dq_next(entry)) {
-					struct pm_domain_s *domain = (struct pm_domain_s *)entry;
-					if (strcmp(domain->name, domain_name) == 0) {
-						path_priv->domain_ptr = domain;
-						break;
-					}
-				}
-				leave_critical_section(flags);
+				strncpy(path_priv->domain_name, domain_name, CONFIG_PM_DOMAIN_NAME_SIZE);
+				path_priv->domain_name[CONFIG_PM_DOMAIN_NAME_SIZE - 1] = '\0';
 
 				/* If the domain name from path is not found, it's not a valid match */
-				if (path_priv->domain_ptr) {
+				if (power_domain_exists(path_priv->domain_name)) {
 					candidate = current;
 				}
 			}
-
 		} else {
 			uint16_t length = strlen(current->name);
+
 			/* Static path: use strcmp for an exact match */
-			if (strncmp(relpath, current->name, length) == 0) {
+			if (strncmp(relpath, current->name, length) == 0 &&
+			    (relpath[length] == '\0' || relpath[length] == '/')) {
 				candidate = current;
 			}
 		}
 
 		/* Is this the best match we've found so far? (Longest pattern wins) */
 		if (candidate && (!curr_level_candidate || strlen(candidate->name) > strlen(curr_level_candidate->name))) {
-
 			curr_level_candidate = candidate;
 
 			/* We have a match. Check if a more specific match exists in its children. */
@@ -359,15 +393,15 @@ static struct power_path_template_s *power_find_best_match(const char *relpath, 
 	}
 
 	if (best_match && proc_dir) {
-		/* Increse path depth level */
+		/* Increase path depth level */
 		proc_dir->level++;
 
 		if (!child_matched_candidate) {
-			/* If this level is highest, Set the nentries */
+			/* If this level is highest, set nentries. */
 			proc_dir->nentries = 0;
 
 			for (struct power_path_template_s *current = best_match->children; current && current->name; current++) {
-				const char *wildcard = strstr(current->name, "%s");
+				const char *wildcard = strstr(current->name, "*");
 				if (wildcard) {
 					proc_dir->nentries += g_pmglobals.ndomains;
 				} else {
@@ -392,7 +426,7 @@ static int power_find_dirref(const char *relpath, struct power_path_priv_s *path
 	FAR const struct power_path_template_s *match = NULL;
 
 	path_priv->template = NULL;
-	path_priv->domain_ptr = NULL;
+	path_priv->domain_name[0] = '\0';
 
 	if (proc_dir) {
 		/* init dir info value to default root */
@@ -504,7 +538,7 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 		/* Overwrite the last read information */
 		if (last_read) {
 			copysize -= last_read;
-			strncpy(buffer, buffer + last_read, copysize);
+			memmove(buffer, buffer + last_read, copysize);
 			last_read = 0;
 		}
 		/* Increment the buffer pointer */
@@ -518,6 +552,10 @@ static ssize_t power_read(FAR struct file *filep, FAR char *buffer, size_t bufle
 	/* Check if a read method is available for this file type */
 	if (!priv || !priv->path_priv.template || !priv->path_priv.template->read) {
 		return -EINVAL;
+	}
+
+	if (buflen == 0) {
+		return 0;
 	}
 
 	totalsize = 0;
@@ -749,7 +787,7 @@ static int power_rewinddir(struct fs_dirent_s *dir)
 	priv = dir->u.procfs;
 
 	priv->base.index = 0;
-	priv->path_priv.domain_ptr = NULL; /* Reset the domain entry pointer */
+	priv->path_priv.domain_name[0] = '\0';
 	priv->domain_position = NULL;     /* Reset the domain position pointer */
 
 	return OK;

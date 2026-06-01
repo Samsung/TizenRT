@@ -218,8 +218,14 @@ typedef size_t mmsize_t;
  * This will show the real owner of the 'mem' even it's allocated through wrapping APIs of malloc.
  */
 #define DEBUG_SET_CALLER_ADDR(mem) heapinfo_set_caller_addr(mem, __builtin_return_address(0))
+/* This macro sets the PID of the memory node.
+ * This is useful when kernel modules allocate memory on behalf of other tasks
+ * and want to attribute the allocation to themselves.
+ */
+#define DEBUG_SET_PID(mem, pid) heapinfo_set_pid(mem, pid)
 #else
 #define DEBUG_SET_CALLER_ADDR(mem)
+#define DEBUG_SET_PID(mem, pid)
 #endif
 
 /* typedef is used for defining size of address space */
@@ -661,6 +667,7 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid);
 /* Funciton to add memory allocation info */
 void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_retaddr);
 void heapinfo_set_caller_addr(void *address, mmaddress_t caller_retaddr);
+void heapinfo_set_pid(void *address, pid_t pid);
 
 void heapinfo_add_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);
 void heapinfo_subtract_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);

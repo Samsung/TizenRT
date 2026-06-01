@@ -28,7 +28,7 @@ uint16_t bt_stack_gap_init(void)
         return RTK_BT_ERR_LOWER_STACK_API;
 #endif
 
-//    gap_register_vendor_cb(bt_stack_vendor_callback);
+    gap_register_vendor_cb(bt_stack_vendor_callback);
 
     return 0;
 }

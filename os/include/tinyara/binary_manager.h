@@ -300,6 +300,10 @@ void binary_manager_register_bppart(int part_num, int part_size);
 void binary_manager_register_upart(char *name, int part_num, int part_size, uint32_t part_addr);
 void binary_manager_register_respart(int part_num, int part_size, uint32_t part_addr);
 int binary_manager_mount_resource(void);
+#ifdef CONFIG_USE_BP
+int binary_manager_check_bootparam_set(void);
+int binary_manager_recover_bootparam_set(void);
+#endif
 void binary_manager_deinit_modules(void);
 
 #ifdef __cplusplus

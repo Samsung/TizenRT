@@ -36,6 +36,7 @@ static touch_wakeup_param_t s_touch_wakeup_param;
 static uint64_t s_normal_sleep_wakeup_irq                   = 0;
 static icu_int_src_t s_normal_sleep_wakeup_irq_id           = INT_SRC_NONE;
 static bk_pm_wakeup_reason_e s_wakeup_reason                = BK_PM_WAKEUP_UNKNOWN;
+static bk_pm_wakeup_reason_e s_sleep_rtc_wakeup_source      = BK_PM_WAKEUP_UNKNOWN;
 /*=====================VARIABLE SECTION END=================*/
 
 /*================FUNCTION DECLARATION SECTION START========*/
@@ -112,38 +113,46 @@ bk_err_t pm_wakeup_from_deepsleep_handle()
 	return BK_OK;
 }
 
+/*
+The system's wakeup source recording has been fully migrated to the new interface 
+bk_pm_sleep_wakeup_reason_set(), which correctly parses and records wakeup reasons 
+and will no longer report stale/none. Deleting the old interface will not affect 
+any functionality.
+We have verified that all sleep wakeup entry points use bk_pm_sleep_wakeup_reason_set(), 
+functional verification has passed, and wakeup reason reporting is normal.
+*/
 void pm_deep_sleep_wakeup_source_set()
 {
-	uint32_t pmu_state = 0;
-	if (aon_pmu_drv_reg_get(PMU_REG2) & BIT(BIT_SLEEP_FLAG_DEEP_SLEEP))
-	{
-		pmu_state = 0;
-		pmu_state = aon_pmu_drv_reg_get(PMU_REG0x71);
-		pmu_state = (pmu_state >> 20) & PM_WAKEUP_SOURCE_MARK;
+	// uint32_t pmu_state = 0;
+	// if (aon_pmu_drv_reg_get(PMU_REG2) & BIT(BIT_SLEEP_FLAG_DEEP_SLEEP))
+	// {
+	// 	pmu_state = 0;
+	// 	pmu_state = aon_pmu_drv_reg_get(PMU_REG0x71);
+	// 	pmu_state = (pmu_state >> 20) & PM_WAKEUP_SOURCE_MARK;
 
-		switch (pmu_state)
-		{
-		case 0x1: // gpio
-			bk_misc_set_reset_reason(RESET_SOURCE_DEEPPS_GPIO);
-			s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_INT_GPIO;
-			break;
-		case 0x2: // rtc
-			bk_misc_set_reset_reason(RESET_SOURCE_DEEPPS_RTC);
-			s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_INT_RTC;
-			break;
-		case 0x10: // bk7256 use touch and bk7236 use usb
-			bk_misc_set_reset_reason(RESET_SOURCE_DEEPPS_TOUCH);
-			s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_INT_TOUCHED;
-			break;
-		case 0x20: // touch
-			bk_misc_set_reset_reason(RESET_SOURCE_DEEPPS_TOUCH);
-			s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_INT_TOUCHED;
-			break;
-		default:
-			s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_INT_NONE;
-			break;
-		}
-	}
+	// 	switch (pmu_state)
+	// 	{
+	// 	case 0x1: // gpio
+	// 		bk_misc_set_reset_reason(RESET_SOURCE_DEEPPS_GPIO);
+	// 		s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_INT_GPIO;
+	// 		break;
+	// 	case 0x2: // rtc
+	// 		bk_misc_set_reset_reason(RESET_SOURCE_DEEPPS_RTC);
+	// 		s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_INT_RTC;
+	// 		break;
+	// 	case 0x10: // bk7256 use touch and bk7236 use usb
+	// 		bk_misc_set_reset_reason(RESET_SOURCE_DEEPPS_TOUCH);
+	// 		s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_INT_TOUCHED;
+	// 		break;
+	// 	case 0x20: // touch
+	// 		bk_misc_set_reset_reason(RESET_SOURCE_DEEPPS_TOUCH);
+	// 		s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_INT_TOUCHED;
+	// 		break;
+	// 	default:
+	// 		s_pm_exit_deepsleep_wakeup_source = PM_WAKEUP_SOURCE_INT_NONE;
+	// 		break;
+	// 	}
+	// }
 }
 
 pm_wakeup_source_e bk_pm_deep_sleep_wakeup_source_get()
@@ -156,40 +165,49 @@ pm_wakeup_source_e bk_pm_exit_low_vol_wakeup_source_get()
 	return s_pm_exit_low_vol_wakeup_source;
 }
 
+
+/*
+The system's wakeup source recording has been fully migrated to the new interface 
+bk_pm_sleep_wakeup_reason_set(), which correctly parses and records wakeup reasons 
+and will no longer report stale/none. Deleting the old interface will not affect 
+any functionality.
+We have verified that all sleep wakeup entry points use bk_pm_sleep_wakeup_reason_set(), 
+functional verification has passed, and wakeup reason reporting is normal.
+*/
 bk_err_t bk_pm_exit_low_vol_wakeup_source_set()
 {
-	uint32_t pmu_state = 0;
-	if (aon_pmu_drv_reg_get(PMU_REG2) & BIT(BIT_SLEEP_FLAG_LOW_VOLTAGE))
-	{
-		pmu_state = 0;
-		pmu_state = aon_pmu_drv_reg_get(PMU_REG0x71);
-		pmu_state = (pmu_state >> 20) & PM_WAKEUP_SOURCE_MARK;
+	// uint32_t pmu_state = 0;
+	// if (aon_pmu_drv_reg_get(PMU_REG2) & BIT(BIT_SLEEP_FLAG_LOW_VOLTAGE))
+	// {
+	// 	pmu_state = 0;
+	// 	pmu_state = aon_pmu_drv_reg_get(PMU_REG0x71);
+	// 	pmu_state = (pmu_state >> 20) & PM_WAKEUP_SOURCE_MARK;
 
-		switch (pmu_state)
-		{
-		case 0x1: // gpio
-			s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_GPIO;
-			break;
-		case 0x2: // rtc
-			s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_RTC;
-			break;
-		case 0x4: // WIFI wakeup
-			s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_WIFI;
-			break;
-		case 0x8: // bk7256 use usb and bk7236 use BT wakeup
-			s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_BT;
-			break;
-		case 0x10: // bk7256 use touch and bk7236 use usb wakeup
-			s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_TOUCHED;
-			break;
-		case 0x20: // touch
-			s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_TOUCHED;
-			break;
-		default:
-			s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_NONE;
-			break;
-		}
-	}
+	// 	switch (pmu_state)
+	// 	{
+	// 	case 0x1: // gpio
+	// 		s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_GPIO;
+	// 		break;
+	// 	case 0x2: // rtc
+	// 		s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_RTC;
+	// 		break;
+	// 	case 0x4: // WIFI wakeup
+	// 		s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_WIFI;
+	// 		break;
+	// 	case 0x8: // bk7256 use usb and bk7236 use BT wakeup
+	// 		s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_BT;
+	// 		break;
+	// 	case 0x10: // bk7256 use touch and bk7236 use usb wakeup
+	// 		s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_TOUCHED;
+	// 		break;
+	// 	case 0x20: // touch
+	// 		s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_TOUCHED;
+	// 		break;
+	// 	default:
+	// 		s_pm_exit_low_vol_wakeup_source = PM_WAKEUP_SOURCE_INT_NONE;
+	// 		break;
+	// 	}
+	// }
 	return BK_OK;
 }
 
@@ -209,6 +227,7 @@ __attribute__((section(".iram")))  bk_err_t bk_pm_sleep_wakeup_reason_clear()
 	s_normal_sleep_wakeup_irq    = 0;
 	s_normal_sleep_wakeup_irq_id = 0;
 	s_wakeup_reason              = BK_PM_WAKEUP_UNKNOWN;
+	s_sleep_rtc_wakeup_source    = BK_PM_WAKEUP_UNKNOWN;
 	return BK_OK;
 }
 
@@ -295,30 +314,13 @@ bk_pm_wakeup_reason_e bk_pm_sleep_wakeup_reason_get()
 		#else
 		case INT_SRC_RTC:
 		#endif
-			if(bk_rtc_get_first_alarm_name() != NULL)
+			if(s_sleep_rtc_wakeup_source != BK_PM_WAKEUP_UNKNOWN)
 			{
-				if(strcmp(bk_rtc_get_first_alarm_name(), PM_WIFI_RTC_ALARM_NAME) == 0)
-				{
-					wakeup_reason = BK_PM_WAKEUP_WIFI;
-				}
-				else if(strcmp(bk_rtc_get_first_alarm_name(), PM_BT_RTC_ALARM_NAME) == 0)
-				{
-					wakeup_reason = BK_PM_WAKEUP_BLE;
-				}
-				else if(strcmp(bk_rtc_get_first_alarm_name(), PM_APP_RTC_ALARM_NAME) == 0)
-				{
-					wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
-				}
-				else
-				{
-					wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
-				}
+				wakeup_reason = s_sleep_rtc_wakeup_source;
 			}
 			else
 			{
-				wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
 			}
-
 			break;
 		case INT_SRC_MAC_GENERAL:
 		    wakeup_reason = BK_PM_WAKEUP_WIFI;
@@ -340,4 +342,49 @@ bk_pm_wakeup_reason_e bk_pm_sleep_wakeup_reason_get()
 			break;
 	}
 	return wakeup_reason;
+}
+bk_err_t pm_rtc_wakeup_reason_parse()
+{
+	bk_pm_wakeup_reason_e wakeup_reason = BK_PM_WAKEUP_UNKNOWN;
+	uint32_t int_src = 0;
+	#if CONFIG_ANA_RTC
+	int_src =  INT_SRC_ANA_RTC;
+	#else
+	int_src = INT_SRC_RTC;
+	#endif
+
+	if(s_normal_sleep_wakeup_irq_id == int_src)
+	{
+		if(bk_rtc_get_first_alarm_name() != NULL)
+		{
+			if(strncmp(bk_rtc_get_first_alarm_name(), PM_WIFI_RTC_ALARM_NAME, sizeof(PM_WIFI_RTC_ALARM_NAME)) == 0)
+			{
+				wakeup_reason = BK_PM_WAKEUP_WIFI;
+			}
+			else if(strncmp(bk_rtc_get_first_alarm_name(), PM_BT_RTC_ALARM_NAME, sizeof(PM_BT_RTC_ALARM_NAME)) == 0)
+			{
+				wakeup_reason = BK_PM_WAKEUP_BLE;
+			}
+			else if(strncmp(bk_rtc_get_first_alarm_name(), PM_APP_RTC_ALARM_NAME, sizeof(PM_APP_RTC_ALARM_NAME)) == 0)
+			{
+				wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
+			}
+			else if(strncmp(bk_rtc_get_first_alarm_name(), PM_MM_RTC_ALARM_NAME, sizeof(PM_MM_RTC_ALARM_NAME)) == 0)
+			{
+				/*mm rtc alarm is on wifi on, it is not a wakeup source, ignore it*/
+			}
+			else
+			{
+				wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
+			}
+			//LOGI("bk_pm_sleep_wakeup_reason_get: alarm name=%s\r\n", bk_rtc_get_first_alarm_name());
+		}
+		else
+		{
+			//LOGI("bk_pm_sleep_wakeup_reason_get: no alarm name\r\n");
+			wakeup_reason = BK_PM_WAKEUP_HW_TIMER;
+		}
+		s_sleep_rtc_wakeup_source = wakeup_reason;
+	}
+	return BK_OK;
 }

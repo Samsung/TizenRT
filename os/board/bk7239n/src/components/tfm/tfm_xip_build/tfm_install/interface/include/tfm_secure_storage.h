@@ -28,7 +28,9 @@
 
 #define HAL_MAX_ECP_KEY_SIZE      (132)
 
-//key and certifications : first 32 stored in Flash, next 32 stored in RAM; data : total 33 slots and stored in flash.
+/* Flash: 8 key slots + 8 cert slots (4KiB each); RAM: key/cert index 32..63 unchanged.
+ * Data: logical indices 0..32 (33 slots), A/B banks on flash.
+ */
 #define CONFIG_SS_KEY_INDEX_MAX   (64)
 #define CONFIG_SS_CERT_INDEX_MAX  (64)
 #define CONFIG_SS_DATA_INDEX_MAX  (33)

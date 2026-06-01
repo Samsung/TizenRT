@@ -264,6 +264,7 @@ typedef struct {
 	char *(*_os_strstr)(const char *haystack, const char *needle);
 	///
 	UINT32 (*_rf_pll_ctrl)(UINT32 cmd, UINT32 param);
+	void (*_bk_reg_reset_rf_reg)(void);
 	void (*_send_udp_bc_pkt)(uint8_t data);
 	void (*_tx_verify_test_call_back)(void);
 	void (*_sys_hal_enter_low_analog)(void);

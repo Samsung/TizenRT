@@ -615,8 +615,8 @@ bk_err_t bk_timer_delay_with_callback(timer_id_t timer_id, uint64_t time_us, tim
     delta_count = timer_hal_cal_end_count(timer_id, time_us, 1, TIMER_UNIT_US);
     end_count = current_count + delta_count;
 
-    if(end_count > 0xFFFFFFFFFFFFFFFF){
-        end_count = 0xFFFFFFFFFFFFFFFF;
+    if (end_count > UINT32_MAX) {
+        end_count = UINT32_MAX;
     }
 
     timer_ll_set_end_count(s_timer.hal.hw, timer_id, (uint32_t)end_count);

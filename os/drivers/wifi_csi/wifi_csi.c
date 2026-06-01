@@ -535,8 +535,9 @@ int wifi_csi_register(FAR const char *name, FAR struct wifi_csi_lowerhalf_s *dev
 	char* path;
 #ifndef CONFIG_WIFICSI_CUSTOM_DEV_PATH
 	path = "/dev/wificsi";
-#endif
+#else
 	path = CONFIG_WIFICSI_CUSTOM_DEV_PATH;
+#endif
 
 	/* Allocate the upper-half data structure */
 	upper = (FAR struct wifi_csi_upperhalf_s *)kmm_zalloc(sizeof(struct wifi_csi_upperhalf_s));

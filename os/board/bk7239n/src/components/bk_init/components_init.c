@@ -52,9 +52,7 @@
 #include <driver/otp.h>
 #endif
 
-#if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE)
 #include "tfm_aes_gcm_nsc.h"
-#endif
 #include "os/mem.h"
 
 #include "cmsis_gcc.h"
@@ -330,7 +328,8 @@ int components_init(void)
 		return BK_FAIL;
 
 #if (defined(CONFIG_TEMP_DETECT) || defined(CONFIG_VOLT_DETECT))
-	bk_sensor_init();
+    bk_sensor_init();
+    volt_single_get_vbat_voltage();
 #endif
 
 	pm_init();
@@ -344,9 +343,7 @@ int components_init(void)
 	//wdt_init();
 #endif
 
-#if defined(CONFIG_TFM_S_TO_NS_DUMP_ENABLE) && defined(CONFIG_SECURITY_LEVEL)
 	extern void bk_security_to_nosecurity_dump_register_callback(void);
 	bk_security_to_nosecurity_dump_register_callback();
-#endif
 	return BK_OK;
 }

@@ -68,7 +68,7 @@ static void bledrv_device_disconnected_cb(trble_conn_handle conn_id, uint16_t ca
 	// Copy cause
 	memcpy(ptr, &cause, sizeof(uint16_t));
 
-	trble_post_event(LWNL_EVT_BLE_CLIENT_DISCONNECT, data, size);
+	trble_post_event(LWNL_EVT_BLE_CLIENT_DISCONNECT, data, -(size));
 
 	return;
 }
@@ -155,7 +155,7 @@ static void bledrv_operation_display_passkey_cb(uint32_t passkey, trble_conn_han
 	// Copy passkey
 	memcpy(ptr, &passkey, sizeof(uint32_t));
 	
-	trble_post_event(LWNL_EVT_BLE_CLIENT_DISPLAY_PASSKEY, data, size);
+	trble_post_event(LWNL_EVT_BLE_CLIENT_DISPLAY_PASSKEY, data, -(size));
 	return;
 }
 
@@ -174,7 +174,7 @@ static void bledrv_operation_pair_bond_cb(uint32_t pair_bond_result, trble_conn_
 	// Copy passkey
 	memcpy(ptr, &pair_bond_result, sizeof(uint32_t));
 
-	trble_post_event(LWNL_EVT_BLE_CLIENT_PAIR_BOND, data, size);
+	trble_post_event(LWNL_EVT_BLE_CLIENT_PAIR_BOND, data, -(size));
 	return;
 }
 

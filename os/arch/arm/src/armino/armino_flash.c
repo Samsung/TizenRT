@@ -77,7 +77,9 @@
 /****************************************************************************
  * Pre-processor Definitions
  ************************************************************************************/
-#define SUBSECTOR_SHIFT (12) /* Size of SubSector */
+#define SUBSECTOR_SHIFT (12) /* Size of SubSector, 4K */
+#define SECTOR_SHIFT (15) /* Size of sector 32K */
+#define LARGE_SECTOR_SHIFT (16) /* Size of sector 64K */
 #define PAGE_SHIFT (8) /*Size of programmable page */
 #define FLASH_FS_START CONFIG_BK_FLASH_BASE
 #define BK_NSECTORS (CONFIG_BK_FLASH_CAPACITY / CONFIG_BK_FLASH_SECTOR_SIZE)
@@ -101,7 +103,7 @@ struct bk_dev_s {
  ************************************************************************************/
 
 /* MTD driver methods */
-static ssize_t bk_erase_page(size_t page);
+static ssize_t bk_erase_page(size_t page, bool subsector);
 static int bk_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks);
 static ssize_t bk_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR uint8_t *buf);
 static ssize_t bk_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, FAR const uint8_t *buf);
@@ -125,40 +127,63 @@ static bool get_ota_test_flag(int arg)
 /************************************************************************************
  * Name: bk_erase
  ************************************************************************************/
-static ssize_t bk_erase_page(size_t page)
+static ssize_t bk_erase_page(size_t page, bool subsector)
 {
 	uint32_t addr = (page << SUBSECTOR_SHIFT);
 	ssize_t ret;
 
 	//printf("func :%s, line :%d, addr :%x\n", __func__, __LINE__, addr);
-	#if (!CONFIG_SPE)
+#if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
+		irqstate_t flags;
+		flags = irqsave();
 		ret = bk_security_flash_erase_sector(addr);
+		irqrestore(flags);
+		if (ret == OK) {
+			return 1;
+		}
 	} else
-	#endif
+#endif
 	{
-		ret = bk_flash_erase_sector(addr);
+		if (subsector) {
+			ret = bk_flash_erase_sector(addr);
+			if (ret == OK) {
+				return 1;
+			}
+		} else {
+			ret = bk_flash_erase_32k(addr);
+			if (ret == OK) {
+				return (1 << (SECTOR_SHIFT - SUBSECTOR_SHIFT));
+			}
+		}
 	}
 
-	if (ret != OK) {
-		ret = -EIO;
-	}
-	return ret;
+	return -EIO;
 }
 
+/* TODO Verification logic after erase must be added */
 static int bk_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 {
 	ssize_t result;
 	startblock += BK_START_SECOTR;
-
-	/* Erase the specified blocks and return status (OK or a negated errno) */
-	while (nblocks > 0) {
-		result = bk_erase_page(startblock);
+	size_t blocksleft = nblocks;
+	size_t blkper = 1 << (SECTOR_SHIFT - SUBSECTOR_SHIFT);
+	size_t sectorboundry;
+	/* Erase the specified blocks and return status(number of erased page or a negated errno) */
+	while (blocksleft > 0) {
+		/* TODO 64KB Also need to be considered, but this will make partition more hard */
+		sectorboundry = (startblock + blkper - 1) / blkper;
+		sectorboundry *= blkper;
+		if (startblock == sectorboundry && blocksleft >= blkper) {
+			result = bk_erase_page(startblock, false);
+		} else {
+			result = bk_erase_page(startblock, true);
+		}
 		if (result < 0) {
 			return (int)result;
 		}
-		startblock++;
-		nblocks--;
+		startblock+=result;
+		blocksleft-=result;
 	}
 	return OK;
 }
@@ -167,7 +192,10 @@ static ssize_t bk_flash_write(size_t addr, const void *buf, size_t length)
 {
 	#if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
+		irqstate_t flags;
+		flags = irqsave();
 		bk_security_flash_write_bytes(addr, (uint8_t *)buf, length);
+		irqrestore(flags);
 	} else
 	#endif
 	{
@@ -188,11 +216,7 @@ ssize_t bk_flash_read(size_t addr, void *buf, size_t length)
 	#if CONFIG_BUILD_PROTECTED
 	#if CONFIG_FLASH_ENCRYPT_ENABLE
 	else if (bk_addr_is_app_or_common(addr)) {
-		if(s_ota_test_flag) {
-			bk_data_read_app_or_common(addr, (uint8_t *)buf, length);
-		} else {
-			bk_instruction_read_app_or_common(addr, (uint8_t *)buf, length);
-		}
+		bk_data_read_app_or_common(addr, (uint8_t *)buf, length);
 	}
 	#endif
 	#endif
@@ -339,3 +363,41 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 	return NULL;
 }
 
+/**
+* @brief     Read image data from flash with the proper security path.
+*
+* Kernel regions are read as raw/secure data. App, common, and resource
+* regions are read as decrypted data when flash encryption is enabled.
+*
+* @param addr address to read
+* @param buf the buffer to read the data
+* @param length size to read
+*
+* @return
+*    - BK_OK: succeed
+*    - BK_ERR_FLASH_ADDR_OUT_OF_RANGE: flash address is out of range
+*    - others: other errors.
+*/
+ssize_t up_read_decrypted_flash(size_t addr, void *buf, size_t length)
+{
+	// printf("func :%s, line :%d, addr :%x, length :%d\n", __func__, __LINE__, addr, length);
+#if (!CONFIG_SPE)
+	if (bk_addr_is_kernel(addr)) {
+		bk_security_flash_read_bytes(addr, (uint8_t *)buf, length);
+		SCB_CleanInvalidateDCache();
+	}
+#ifdef CONFIG_BUILD_PROTECTED
+#ifdef CONFIG_FLASH_ENCRYPT_ENABLE
+	else if (bk_addr_is_app_or_common(addr)) {
+		bk_instruction_read_app_or_common(addr, (uint8_t *)buf, length);
+	}
+#endif
+#endif
+	else
+#endif
+	{
+		bk_flash_read_bytes(addr, (uint8_t *)buf, length);
+	}
+
+	return BK_OK;
+}

@@ -1539,17 +1539,10 @@ int32_t bk_tr_ble_server_add_config(trble_server_init_config *config)
             {
                 tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, UNAUTH);
             }
-            else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_R_PERMIT))
-            {
-                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
-            }
-            else if ((config->profile[input_index].permission & TRBLE_ATTR_PERM_R_PERMIT) == TRBLE_ATTR_PERM_R_PERMIT)
-            {
-                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
-            }
             else
             {
-
+                /* TRBLE_ATTR_PERM_R_PERMIT == 0: no restriction */
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
             }
 
             if (config->profile[input_index].permission & TRBLE_ATTR_PERM_W_BANNED)
@@ -1564,17 +1557,10 @@ int32_t bk_tr_ble_server_add_config(trble_server_init_config *config)
             {
                 tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, UNAUTH);
             }
-            else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_W_PERMIT))
-            {
-                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
-            }
-            else if ((config->profile[input_index].permission & TRBLE_ATTR_PERM_W_PERMIT) == TRBLE_ATTR_PERM_W_PERMIT)
-            {
-                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
-            }
             else
             {
-
+                /* TRBLE_ATTR_PERM_W_PERMIT == 0: no restriction */
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
             }
 
             os_memcpy(tmp_service_array[service_index].cfg.att_db[attr_tmp_index].uuid, config->profile[input_index].uuid, config->profile[input_index].uuid_length);
@@ -1668,17 +1654,10 @@ int32_t bk_tr_ble_server_add_config(trble_server_init_config *config)
             {
                 tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, UNAUTH);
             }
-            else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_R_PERMIT))
-            {
-                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
-            }
-            else if ((config->profile[input_index].permission & TRBLE_ATTR_PERM_R_PERMIT) == TRBLE_ATTR_PERM_R_PERMIT)
-            {
-                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
-            }
             else
             {
-
+                /* TRBLE_ATTR_PERM_R_PERMIT == 0: no restriction */
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(RP, NO_AUTH);
             }
 
             if (config->profile[input_index].permission & TRBLE_ATTR_PERM_W_BANNED)
@@ -1693,17 +1672,10 @@ int32_t bk_tr_ble_server_add_config(trble_server_init_config *config)
             {
                 tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, UNAUTH);
             }
-            else if (config->profile[input_index].permission & (TRBLE_ATTR_PERM_W_PERMIT))
-            {
-                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
-            }
-            else if ((config->profile[input_index].permission & TRBLE_ATTR_PERM_W_PERMIT) == TRBLE_ATTR_PERM_W_PERMIT)
-            {
-                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
-            }
             else
             {
-
+                /* TRBLE_ATTR_PERM_W_PERMIT == 0: no restriction */
+                tmp_service_array[service_index].cfg.att_db[attr_tmp_index].perm |= BK_BLE_PERM_SET(WP, NO_AUTH);
             }
 
             os_memcpy(tmp_service_array[service_index].cfg.att_db[attr_tmp_index].uuid, config->profile[input_index].uuid, config->profile[input_index].uuid_length);

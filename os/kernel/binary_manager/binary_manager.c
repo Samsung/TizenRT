@@ -130,6 +130,7 @@ int binary_manager(int argc, char *argv[])
 		is_found_bootparam = false;
 		goto errout_with_nobinary;
 	}
+	binary_manager_dump_bpdata();
 #endif
 
 	if (binary_manager_get_kcount() <= 0 || !binary_manager_scan_kbin()) {

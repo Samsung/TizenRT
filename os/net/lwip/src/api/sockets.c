@@ -499,8 +499,8 @@ static int alloc_socket(struct netconn *newconn, int accepted)
 			newconn->group = (void *)tcb->group;
 			sock->conn = newconn;
 			sock->sendevent = (NETCONNTYPE_GROUP(newconn->type) == NETCONN_TCP ? (accepted != 0) : 1);
-			sock->pid = getpid();
-			_get_pid_name(sock->pid, sock->pname);
+			sock->pid = (u32_t)getpid();
+			_get_pid_name(getpid(), sock->pname);
 			list->sl_sockets[idx].sock = sock;
 			list->sl_sockets[idx].s_crefs = 1;
 			SYS_ARCH_UNPROTECT(lev);
@@ -937,7 +937,7 @@ int lwip_recvfrom(int s, void *mem, size_t len, int flags, struct sockaddr *from
 		/* Check to see from where the data was. */
 		if (done) {
 			if (from && fromlen) {
-				u16_t port;
+				u16_t port = 0;
 				ip_addr_t tmpaddr;
 				ip_addr_t *fromaddr;
 				union sockaddr_aligned saddr;

@@ -39,6 +39,12 @@ bk_err_t wdt_hal_init(wdt_hal_t *hal);
 bk_err_t wdt_hal_init_wdt(wdt_hal_t *hal, uint32_t timeout);
 void wdt_hal_close(void);
 void wdt_hal_force_feed(void);
+__attribute__((section(".itcm_sec_code"))) static inline void wdt_hal_nmi_direct_feed(void)
+{
+	REG_SET(SOC_WDT_REG_BASE + 4 * 2, 1, 1, 1);
+	REG_WRITE(SOC_WDT_REG_BASE + 4 * 4, 0x5AFFF0);
+	REG_WRITE(SOC_WDT_REG_BASE + 4 * 4, 0xA5FFF0);
+}
 void wdt_hal_force_reboot(void);
 
 #if CFG_HAL_DEBUG_WDT

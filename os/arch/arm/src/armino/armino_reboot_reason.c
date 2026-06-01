@@ -59,6 +59,7 @@
 #include <debug.h>
 #include <tinyara/reboot_reason.h>
 #include "armino_reboot_reason.h"
+#include "system.h"
 /****************************************************************************
  * Public functions
  ****************************************************************************/
@@ -75,7 +76,7 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
     rrvdbg("boot_reason = %d\n", boot_reason);
 
 	/* Check if this is a software-written reboot reason (value >= 50) */
-	if (boot_reason >= REBOOT_REASON_INITIALIZED) {
+	if (boot_reason > REBOOT_REASON_INITIALIZED) {
 		return boot_reason;
 	}
 
@@ -96,6 +97,14 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 		/* WDT reset - NMI interrupt */
 		case RESET_SOURCE_NMI_WDT:
 			return REBOOT_SYSTEM_WATCHDOG;
+
+        /* Brown out -
+		   Since 50 is the initial value, it is written to the 
+		   internal PMU register.When a brownout occurs, the core 
+		   resets, but the value of the PMU register is retained 
+		*/
+        case REBOOT_REASON_INITIALIZED:
+            return REBOOT_SYSTEM_BOR_RESET;
 
 		default:
 			return REBOOT_UNKNOWN;
@@ -127,8 +136,8 @@ void up_reboot_reason_clear(void)
 	/* Reboot Reason Clear API writes the REBOOT_REASON_INITIALIZED by default.
 	 * If chip vendor needs another thing to do, please change the below.
 	 */
-	up_reboot_reason_write(REBOOT_UNKNOWN);
-	reboot_reason = REBOOT_UNKNOWN;
+	up_reboot_reason_write(REBOOT_REASON_INITIALIZED);
+	reboot_reason = REBOOT_REASON_INITIALIZED;
 }
 
 bool up_reboot_reason_is_written(void)

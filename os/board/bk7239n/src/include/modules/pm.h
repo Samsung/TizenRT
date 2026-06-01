@@ -14,6 +14,7 @@ extern "C" {
 #define PM_WIFI_RTC_ALARM_NAME    "bk_wifi"
 #define PM_BT_RTC_ALARM_NAME      "bk_bt"
 #define PM_APP_RTC_ALARM_NAME     "bk_app"
+#define PM_MM_RTC_ALARM_NAME      "mm_rtc"
 
 #define portSVC_DEEP_LV_ENTER      (0x0D)
 #define portSVC_DEEP_LV_EXIT       (0x0E)
@@ -623,7 +624,19 @@ typedef enum {
 #define PM_CP1_AUTO_POWER_DOWN_CTRL      (PM_CP1_AUTO_POWER_DOWN_ENABLE)
 
 /*=====================CONFIG  SECTION  END=======================*/
-
+/**
+ * @brief parse rtc wakeup reason
+ *
+ * @attention
+ * - This API is to parse rtc wakeup reason.
+ *
+ * @param
+ * -void
+ * @return
+ * - BK_OK: succeed
+ * - others: other errors.
+ */
+bk_err_t bk_pm_rtc_wakeup_reason_parse(void);
 /**
  * @brief Get stable time after sleep wake-up (in microseconds).
  *

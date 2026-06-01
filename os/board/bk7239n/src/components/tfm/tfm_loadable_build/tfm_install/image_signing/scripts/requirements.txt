@@ -1,6 +1,0 @@
-cryptography
-pyasn1
-pyyaml
-cbor>=1.0.0
-imgtool>=1.9.0
-click

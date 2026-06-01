@@ -74,6 +74,9 @@
 extern void delay_us(uint32_t us);
 extern void flush_all_dcache(void);
 #define DELAY_US(us)						  delay_us(us)
+__attribute__((section(".iram"))) void pm_delay_us(volatile uint32_t us);
+static __attribute__((section(".iram"))) uint64_t pm_get_current_tick();
+__attribute__((section(".iram"))) void pm_delay_us(volatile uint32_t us);
 
 #if defined(CONFIG_OTA_POSITION_INDEPENDENT_AB)
 #define FLASH_BASE_ADDRESS                    (0x44030000)
@@ -940,6 +943,33 @@ __attribute__((section(".iram"))) void sys_drv_wakeup_source_rtc_clear(void)
 	sys_ana_ll_set_ana_reg8_rst_timerwks1v(0);
 	sys_ana_ll_set_ana_reg8_spi_latch1v(0);
 }
+
+#define PM_VANALDO_STEP_SIZE        (2)
+#define PM_VANALDO_STEP_UP_DELAY_US (10)
+__attribute__((section(".iram"))) int32 sys_hal_vanaldo_set(uint32_t value)
+{
+	uint32_t cur = 0;
+	cur = sys_ana_ll_get_ana_reg7_vanaldosel();
+	if (cur == value) {
+		return 0;
+	}
+
+	if (value < cur) {
+		/* Target is lower or equal: set directly */
+		sys_ana_ll_set_ana_reg7_vanaldosel(value);
+	} else {
+		/* Target is higher: step up by PM_VANALDO_STEP_SIZE, delay PM_VANALDO_STEP_UP_DELAY_US each step */
+		uint32_t v;
+		for (v = cur + PM_VANALDO_STEP_SIZE; v < value; v += PM_VANALDO_STEP_SIZE) {
+			sys_ana_ll_set_ana_reg7_vanaldosel(v);
+			pm_delay_us(PM_VANALDO_STEP_UP_DELAY_US);
+		}
+		sys_ana_ll_set_ana_reg7_vanaldosel(value);
+
+		pm_delay_us(PM_VANALDO_STEP_UP_DELAY_US);
+	}
+	return 0;
+}
 __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 {
 	//TODO: fix it when bring up pm
@@ -1087,6 +1117,12 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 	sys_hal_disable_spi_latch();
 #endif
 	/*step 2: set ana voltage to 0.9V */
+	uint32_t vanaldosel = sys_ana_ll_get_ana_reg7_vanaldosel();
+	uint32_t pwd_regpow = sys_ana_ll_get_ana_reg7_spi_pwd_regpow();
+	uint32_t vbspbuf_lp = sys_ana_ll_get_ana_reg7_vbspbuf_lp();
+	uint32_t envrefh1v = sys_ana_ll_get_ana_reg7_envrefh1v();
+	uint32_t aldohp = sys_ana_ll_get_ana_reg7_aldohp();
+	uint32_t dldohp = sys_ana_ll_get_ana_reg7_dldohp();
 	sys_hal_set_low_voltage(&v_ana_r0, &v_ana_r3, &v_ana_r7, &v_ana_r8, &v_ana_r9, &v_ana_r10);
 
 #if defined(CONFIG_LV_FLASH_ENTER_LP_ENABLE)
@@ -1148,11 +1184,19 @@ __attribute__((section(".iram"))) void sys_hal_enter_low_voltage(void)
 
 /*-----------restore voltage  start----------------*/
 	sys_ana_ll_set_ana_reg8_spi_latch1v(1);
+	/*step 1: restore ana voltage*/
+	sys_hal_vanaldo_set(vanaldosel);
+
+	sys_ana_ll_set_ana_reg7_spi_pwd_regpow(pwd_regpow);
+	sys_ana_ll_set_ana_reg7_vbspbuf_lp(vbspbuf_lp);
+	sys_ana_ll_set_ana_reg7_envrefh1v(envrefh1v);
+	sys_ana_ll_set_ana_reg7_aldohp(aldohp);
+	sys_ana_ll_set_ana_reg7_dldohp(dldohp);
 
 	sys_ana_ll_set_ana_reg0_value(v_ana_r0);
 	sys_ana_ll_set_ana_reg3_value(v_ana_r3);
-	/*step 1: restore ana voltage to 1.1V*/
-	sys_ana_ll_set_ana_reg7_value(v_ana_r7);
+
+	//sys_ana_ll_set_ana_reg7_value(v_ana_r7);
 	/*step 2: restore dig voltage to 0.875V by step */
 #if defined(CONFIG_SOFT_CTRL_VOLT)
 	/*vdddig voltage*/
@@ -1387,7 +1431,7 @@ void sys_hal_enter_cpu_wfi()
 {
 	arch_sleep();
 }
-__attribute__((section(".iram"))) uint64_t pm_get_current_tick()
+static __attribute__((section(".iram"))) uint64_t pm_get_current_tick()
 {
 	uint32_t low_tick   = aon_pmu_hal_rtc_tick_l_get();
 	uint32_t high_tick = aon_pmu_hal_rtc_tick_h_get()&0xF;

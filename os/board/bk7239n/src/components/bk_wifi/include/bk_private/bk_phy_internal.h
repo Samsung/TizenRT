@@ -67,5 +67,5 @@ UINT8 manual_get_epa_flag(void);
 UINT32 rxsens_start_flag_get(void);
 UINT32 tx_evm_mode_get(void);
 void bk_cal_get_txpwr_tabl(uint8_t *cal_array_ptr);
-
+void bk_reg_reset_rf_reg(void);
 #endif

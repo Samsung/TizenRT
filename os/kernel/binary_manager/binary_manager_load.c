@@ -221,12 +221,12 @@ static int binary_manager_load(int bin_idx)
 			snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, (BIN_USEIDX(bin_idx))));
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 			if (bin_idx == BM_CMNLIB_IDX) {
-				ret = binary_manager_read_header(BINARY_COMMON, devpath, &common_header_data, true);
+				ret = binary_manager_read_header(BINARY_COMMON, devpath, BIN_PARTADDR(bin_idx, BIN_USEIDX(bin_idx)), &common_header_data, true);
 				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = common_header_data.version;
 			} else
 #endif
 			{
-				ret = binary_manager_read_header(BINARY_USERAPP, devpath, &user_header_data, true);
+				ret = binary_manager_read_header(BINARY_USERAPP, devpath, BIN_PARTADDR(bin_idx, BIN_USEIDX(bin_idx)), &user_header_data, true);
 				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = user_header_data.bin_ver;
 			}
 			if (ret == BINMGR_OK) {
@@ -287,8 +287,10 @@ static int binary_manager_load(int bin_idx)
 				/* Update boot param data because the binary not written to bootparam is loaded */
 				binmgr_bpdata_t update_bp_data;
 				memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
-				update_bp_data.version++;
-				update_bp_data.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
+				update_bp_data.head.version++;
+				update_bp_data.head.format_ver = BOOTPARAM_FORMAT_VERSION_LATEST;
+				update_bp_data.head.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
+				update_bp_data.tail.bp_update_reason = BP_UPDATE_BINARY_MANAGER_RECOVERY_USER;
 				ret = binary_manager_write_bootparam(&update_bp_data);
 				if (ret == BINMGR_OK) {
 					binary_manager_set_bpdata(&update_bp_data);

@@ -13,6 +13,12 @@ config CSIFW
 
 if CSIFW
 
+config CSI_DATA_TIMEOUT_SEC
+	int "CSI DATA TIMEOUT"
+	default 15
+	---help---
+		CSI DATA TIMEOUT
+
 menu "CSIFW Debug Logs"
 
 config CSIFW_LOGS

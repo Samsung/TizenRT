@@ -78,6 +78,23 @@ ble_result_e ble_manager_init(ble_server_init_config *server_config);
  ****************************************************************************/
 ble_result_e ble_manager_deinit(void);
 
+typedef void (*ble_watchdog_reset_cb_t)(void);
+
+/****************************************************************************
+ * Name: ble_manager_set_watchdog_reset_handler
+ *
+ * Description:
+ *   Set a callback to be run when the ble firmware reports a common watchdog reset.
+ *
+ * Input Parameters:
+ *   reset_cb - Callback with no arguments; NULL removes the handler.
+ *
+ * Returned Value
+ *   BLE_MANAGER_SUCCESS (Zero) - Returned on success; a positive value is returned on failure.
+ *
+ ****************************************************************************/
+ble_result_e ble_manager_set_watchdog_reset_handler(ble_watchdog_reset_cb_t reset_cb);
+
 /****************************************************************************
  * Name: ble_manager_get_mac_addr
  *

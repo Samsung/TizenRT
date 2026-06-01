@@ -187,7 +187,7 @@ static inline void pm_changeall(enum pm_state_e newstate)
  *
  * Description:
  *   This function is used by platform-specific power management logic.  It
- *   will announce the power management power management state change to all
+ *   will announce the power management state change to all
  *   drivers that have registered for power management event callbacks.
  *
  * Input Parameters:
@@ -214,7 +214,7 @@ int pm_changestate(enum pm_state_e newstate)
 	irqstate_t flags;
 	int ret = OK;
 
-	/* Disable interrupts throught this operation... changing driver states
+	/* Disable interrupts throughout this operation... changing driver states
 	 * could cause additional driver activity that might interfere with the
 	 * state change.  When the state change is complete, interrupts will be
 	 * re-enabled.

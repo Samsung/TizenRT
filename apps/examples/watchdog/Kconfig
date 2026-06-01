@@ -1,0 +1,19 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_WATCHDOG
+	bool "\"Watchdog Timer\" example"
+	default n
+	depends on WATCHDOG
+	---help---
+		Enable the watchdog example command.
+		The example supports expire, keepalive, status, stop, pause, resume,
+		and pause_resume commands. expire optionally prints periodic
+		status, keepalive sends WDIOC_KEEPALIVE, and pause_resume runs
+		a parameterized pause/resume timing test.
+
+config USER_ENTRYPOINT
+	string
+	default "watchdog_main" if ENTRY_WATCHDOG

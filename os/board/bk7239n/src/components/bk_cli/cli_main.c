@@ -34,6 +34,7 @@
 
 
 #define TAG "cli"
+#define CLI_ATE_EMPTY_LINE_PROBE_TIMEOUT 20
 
 
 static struct cli_st *pCli = NULL;
@@ -460,6 +461,24 @@ static int get_input(char *inbuf, unsigned int *bp)
 		if ((uint8_t)inbuf[0] > 0x7f) {
 			continue;
 		}
+		if (*bp == 0 && (inbuf[*bp] == RET_CHAR || inbuf[*bp] == END_CHAR)) {
+			char next_ch = 0;
+
+			/* Keep a standalone CR/LF as an empty line, but wait briefly so
+			 * CRLF-prefixed commands are not split.
+			 */
+			while (bk_uart_read_bytes(CLI_UART, &next_ch, 1, CLI_ATE_EMPTY_LINE_PROBE_TIMEOUT) > 0) {
+				inbuf[0] = next_ch;
+				if (next_ch != RET_CHAR && next_ch != END_CHAR) {
+					break;
+				}
+			}
+
+			if (inbuf[0] == RET_CHAR || inbuf[0] == END_CHAR) {
+				inbuf[0] = '\0';
+				return 1;
+			}
+		}
 		if (inbuf[*bp] == RET_CHAR)
 			continue;
 		if (inbuf[*bp] == END_CHAR) {   /* end of input line */
@@ -628,9 +647,12 @@ static void cli_main(uint32_t data)
 }
 
 #endif // CONFIG_ATE_TEST
-static void cli_cmd_rsp(char *buf, u8 cmd_state)
+static void cli_cmd_rsp(char *buf, int buf_len, u8 cmd_state)
 {
-	sprintf(buf, "CMDRsp:%s\r\n", cmd_state ? "OK" : "Fail");
+	if (buf == NULL || buf_len <= 0) {
+		return;
+	}
+	snprintf(buf, (size_t)buf_len, "CMDRsp:%s\r\n", cmd_state ? "OK" : "Fail");
 }
 
 void help_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv);
@@ -724,10 +746,14 @@ static int _cli_name_cmp(const void *a, const void *b)
 {
 	struct cli_command *cli0, *cli1;
 
+	if ((a == NULL) || (b == NULL))
+		return 0;
+
 	cli0 = *(struct cli_command **)a;
 	cli1 = *(struct cli_command **)b;
 
-	if ((NULL == a) || (NULL == b))
+	if ((cli0 == NULL) || (cli1 == NULL) ||
+	    (cli0->name == NULL) || (cli1->name == NULL))
 		return 0;
 
 	return os_strcmp(cli0->name, cli1->name);
@@ -846,7 +872,7 @@ void help_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **arg
 		}
 	}
 
-	//cli_cmd_rsp(&pcWriteBuffer[0], 1);
+	//cli_cmd_rsp(pcWriteBuffer, xWriteBufferLen, 1);
 
 }
 

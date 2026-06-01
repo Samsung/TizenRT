@@ -363,7 +363,7 @@ uint32_t sys_drv_enable_mac_txrx_timer_int(void);
 uint32_t sys_drv_enable_modem_int(void);
 uint32_t sys_drv_enable_modem_rc_int(void);
 uint32_t sys_drv_enable_hsu_int(void);
-
+void sys_drv_set_iobypassen_by_volt_detect(uint32_t v);
 
 //Yantao Add End
 

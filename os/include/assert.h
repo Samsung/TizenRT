@@ -236,6 +236,20 @@ extern char assert_info_str[CONFIG_STDIO_BUFFER_SIZE];
 #define assert ASSERT
 #endif
 
+/* Definition required for C11 compile-time assertion checking.  The
+ * static_assert macro simply expands to the _Static_assert keyword.
+ */
+
+#ifndef __cplusplus
+#if defined(__STDC_VERSION__) && __STDC_VERSION__  > 199901L
+#define static_assert _Static_assert
+#else
+#define static_assert(cond, msg) \
+	extern int (*__static_assert_function (void)) \
+	[!!sizeof (struct { int __error_if_negative: (cond) ? 2 : -1; })]
+#endif
+#endif
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/

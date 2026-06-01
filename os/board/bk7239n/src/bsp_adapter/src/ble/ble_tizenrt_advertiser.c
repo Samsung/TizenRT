@@ -312,8 +312,6 @@ int32_t bk_tr_ble_advertiser_set_adv_type(trble_adv_type_e adv_type, trble_addr 
     case TRBLE_ADV_TYPE_DIRECT:
         LOGE("can't set direct adv because hal api doesn't input peer addr !!!");
         return TRBLE_FAIL;
-        hal_ble_adv_env.static_adv_param.adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_DIRECTED_BIT;
-        break;
 
     case TRBLE_ADV_TYPE_SCAN_IND:
         hal_ble_adv_env.static_adv_param.adv_param.adv_prop = ADV_PROP_SCANNABLE_BIT;
@@ -607,6 +605,13 @@ int32_t bk_tr_ble_advertiser_create_multi_adv(uint8_t adv_event_prop,
         goto end;
     }
 
+    if (tmp_hal_adv_index >= sizeof(hal_ble_adv_env.array) / sizeof(hal_ble_adv_env.array[0]))
+    {
+        LOGE("invalid tmp_hal_adv_index %d", tmp_hal_adv_index);
+        ret = TRBLE_FAIL;
+        goto end;
+    }
+
     if (own_addr_type != BK_EXT_ADV_LE_ADDR_TYPE_PUBLIC && !own_addr_val)
     {
         LOGE("must set addr when type not public !!!");
@@ -664,15 +669,11 @@ int32_t bk_tr_ble_advertiser_create_multi_adv(uint8_t adv_event_prop,
         LOGE("can't set direct adv because hal api doesn't input peer addr !!!");
         ret = TRBLE_FAIL;
         goto end;
-        hal_ble_adv_env.array[tmp_hal_adv_index].adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_DIRECTED_BIT;
-        break;
 
     case BK_EXT_ADV_LEGACY_ADV_CONN_HIGH_DUTY_DIRECTED:
         LOGE("can't set direct adv because hal api doesn't input peer addr !!!");
         ret = TRBLE_FAIL;
         goto end;
-        hal_ble_adv_env.array[tmp_hal_adv_index].adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_HDC_BIT;
-        break;
 
     case BK_EXT_ADV_LEGACY_ADV_SCAN_UNDIRECTED:
         hal_ble_adv_env.array[tmp_hal_adv_index].adv_param.adv_prop = ADV_PROP_SCANNABLE_BIT;
@@ -920,15 +921,11 @@ int32_t bk_tr_ble_advertiser_set_multi_adv_type(uint8_t adv_handle, uint8_t adv_
         LOGE("can't set direct adv because hal api doesn't input peer addr !!!");
         ret = TRBLE_FAIL;
         goto end;
-        hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_DIRECTED_BIT;
-        break;
 
     case BK_EXT_ADV_LEGACY_ADV_CONN_HIGH_DUTY_DIRECTED:
         LOGE("can't set direct adv because hal api doesn't input peer addr !!!");
         ret = TRBLE_FAIL;
         goto end;
-        hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_HDC_BIT;
-        break;
 
     case BK_EXT_ADV_LEGACY_ADV_SCAN_UNDIRECTED:
         hal_ble_adv_env.array[hal_adv_index].adv_param.adv_prop = ADV_PROP_SCANNABLE_BIT;
@@ -1136,8 +1133,6 @@ int32_t bk_tr_ble_advertiser_one_shot_adv_set(uint8_t *adv_id, trble_data *data_
     case TRBLE_ADV_TYPE_DIRECT:
         LOGE("can't set direct adv because hal api doesn't input peer addr !!!");
         return TRBLE_FAIL;
-        hal_ble_adv_env.static_oneshot_adv_param[oneshot_index].adv_param.adv_prop = ADV_PROP_CONNECTABLE_BIT | ADV_PROP_DIRECTED_BIT;
-        break;
 
     case TRBLE_ADV_TYPE_SCAN_IND:
         hal_ble_adv_env.static_oneshot_adv_param[oneshot_index].adv_param.adv_prop = ADV_PROP_SCANNABLE_BIT;

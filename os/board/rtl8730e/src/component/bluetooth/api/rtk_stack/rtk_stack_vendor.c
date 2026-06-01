@@ -10,6 +10,8 @@
 #include <bt_api_config.h>
 #include <bt_vendor_config.h>
 #include <gap_vendor.h>
+#include <rtk_bt_common.h>
+#include <rtk_bt_vendor.h>
 
 #if defined(RTK_BLE_MESH_SUPPORT) && RTK_BLE_MESH_SUPPORT
 #include <trace_app.h>
@@ -73,9 +75,22 @@ void bt_stack_vendor_callback(uint8_t cb_type, void *p_cb_data)
 		}
 		break;
 
-	case GAP_MSG_VENDOR_EVT_INFO:
-		dbg("[bt_vendor_cb] evt info, param_len: %d\r\n", evt_info->param_len);
-		break;
+	case GAP_MSG_VENDOR_EVT_INFO: {
+		uint8_t vendor_evt_code;
+		rtk_bt_evt_t *p_evt = NULL;
+
+		if (!evt_info->param_len) {
+			break;
+		}
+		vendor_evt_code = evt_info->param[0];
+		dbg("[bt_vendor_cb] evt info, param_len: %d, evt_code: 0x%x\r\n", evt_info->param_len, vendor_evt_code);
+
+		if (47 == evt_info->param_len && VENDOR_EVT_FW_EXCEPTION == vendor_evt_code) {
+			p_evt = rtk_bt_event_create(RTK_BT_COMMON_GP_GAP, RTK_BT_GAP_EVT_FW_EXCEPTION_IND, 0);
+			rtk_bt_evt_indicate(p_evt, NULL);
+		}
+	}
+	break;
 
 	default:
 		break;

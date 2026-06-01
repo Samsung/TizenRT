@@ -32,11 +32,7 @@ extern "C" {
 #define UART_BAUDRATE_19200          19200
 #define UART_BAUDRATE_9600           9600
 
-#ifndef CONFIG_UART_PRINT_BAUD_RATE
-#define UART_BAUD_RATE               UART_BAUDRATE_115200
-#else
 #define UART_BAUD_RATE               CONFIG_UART0_BAUD
-#endif
 
 #define UART_CLOCK_FREQ_10M          10000000
 #define UART_CLOCK_FREQ_48M          48000000
