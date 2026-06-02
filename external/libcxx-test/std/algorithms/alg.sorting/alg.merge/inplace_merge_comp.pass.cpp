@@ -1,3 +1,4 @@
+
 //===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -7,12 +8,15 @@
 //===----------------------------------------------------------------------===//
 //
 // <algorithm>
-
+//
 // template<BidirectionalIterator Iter, StrictWeakOrder<auto, Iter::value_type> Compare>
 //   requires ShuffleIterator<Iter>
 //         && CopyConstructible<Compare>
 //   void
 //   inplace_merge(Iter first, Iter middle, Iter last, Compare comp);
+
+// TizenRT: Disable count_new.h memory tracking to prevent libsupc++ conflicts
+#define DISABLE_NEW_COUNT
 
 #include <algorithm>
 #include <functional>
@@ -90,7 +94,7 @@ test_one(unsigned N, unsigned M)
 
 template <class Iter>
 void
-test(unsigned N)
+test_for_size(unsigned N)
 {
     test_one<Iter>(N, 0);
     test_one<Iter>(N, N/4);
@@ -100,23 +104,41 @@ test(unsigned N)
 }
 
 template <class Iter>
-void
-test()
-{
+void test_size_0() {
     test_one<Iter>(0, 0);
+}
+
+template <class Iter>
+void test_size_1() {
     test_one<Iter>(1, 0);
     test_one<Iter>(1, 1);
+}
+
+template <class Iter>
+void test_size_2() {
     test_one<Iter>(2, 0);
     test_one<Iter>(2, 1);
     test_one<Iter>(2, 2);
+}
+
+template <class Iter>
+void test_size_3() {
     test_one<Iter>(3, 0);
     test_one<Iter>(3, 1);
     test_one<Iter>(3, 2);
     test_one<Iter>(3, 3);
-    test<Iter>(4);
-    test<Iter>(20);
-    test<Iter>(100);
-    test<Iter>(1000);
+}
+
+template <class Iter>
+void test_all_sizes() {
+    test_size_0<Iter>();
+    test_size_1<Iter>();
+    test_size_2<Iter>();
+    test_size_3<Iter>();
+    test_for_size<Iter>(4);
+    test_for_size<Iter>(20);
+    test_for_size<Iter>(100);
+    test_for_size<Iter>(1000);
 }
 
 struct less_by_first {
@@ -139,23 +161,18 @@ void test_PR31166 ()
     }
 }
 
-} // namespace
-
-int tc_libcxx_algorithms_alg_sorting_alg_merge_inplace_merge_comp(void) {
-    test<bidirectional_iterator<int*> >();
-    test<random_access_iterator<int*> >();
-    test<int*>();
-
 #if TEST_STD_VER >= 11
-    test<bidirectional_iterator<S*> >();
-    test<random_access_iterator<S*> >();
-    test<S*>();
+void test_S_struct() {
+    test_all_sizes<bidirectional_iterator<S*> >();
+    test_all_sizes<random_access_iterator<S*> >();
+    test_all_sizes<S*>();
+}
 
-    {
-    int N = 100;
+void test_unique_ptr() {
+    unsigned N = 100;
     unsigned M = 50;
     std::unique_ptr<int>* ia = new std::unique_ptr<int>[N];
-    for (int i = 0; i < N; ++i)
+    for (unsigned i = 0; i < N; ++i)
         ia[i].reset(new int(i));
     std::shuffle(ia, ia+N, randomness);
     std::sort(ia, ia+M, indirect_less());
@@ -164,17 +181,32 @@ int tc_libcxx_algorithms_alg_sorting_alg_merge_inplace_merge_comp(void) {
     if(N > 0)
     {
         TC_ASSERT_EXPR(*ia[0] == 0);
-        TC_ASSERT_EXPR(*ia[N-1] == N-1);
+        TC_ASSERT_EXPR(*ia[N-1] == static_cast<int>(N)-1);
         TC_ASSERT_EXPR(std::is_sorted(ia, ia+N, indirect_less()));
     }
     delete [] ia;
-    }
-#endif // TEST_STD_VER >= 11
+}
+#endif
+
+void run_all_inplace_merge_comp_tests() {
+    test_all_sizes<bidirectional_iterator<int*> >();
+    test_all_sizes<random_access_iterator<int*> >();
+    test_all_sizes<int*>();
+
+#if TEST_STD_VER >= 11
+    test_S_struct();
+    test_unique_ptr();
+#endif
 
     test_PR31166();
+}
 
-  TC_SUCCESS_RESULT();
+} // namespace
 
+int tc_libcxx_algorithms_alg_sorting_alg_merge_inplace_merge_comp(void) {
+    run_all_inplace_merge_comp_tests();
 
-  return 0;
+    TC_SUCCESS_RESULT();
+
+    return 0;
 }

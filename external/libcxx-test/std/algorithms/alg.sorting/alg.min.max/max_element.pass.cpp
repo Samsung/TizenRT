@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 //
 // <algorithm>
-
+//
 // template<ForwardIterator Iter>
 //   requires LessThanComparable<Iter::value_type>
 //   Iter
@@ -40,7 +40,7 @@ test(Iter first, Iter last)
 
 template <class Iter>
 void
-test(int N)
+test_for_size(int N)
 {
     int* a = new int[N];
     for (int i = 0; i < N; ++i)
@@ -51,15 +51,43 @@ test(int N)
 }
 
 template <class Iter>
-void
-test()
-{
-    test<Iter>(0);
-    test<Iter>(1);
-    test<Iter>(2);
-    test<Iter>(3);
-    test<Iter>(10);
-    test<Iter>(1000);
+void test_max_element_size_0() {
+    test_for_size<Iter>(0);
+}
+
+template <class Iter>
+void test_max_element_size_1() {
+    test_for_size<Iter>(1);
+}
+
+template <class Iter>
+void test_max_element_size_2() {
+    test_for_size<Iter>(2);
+}
+
+template <class Iter>
+void test_max_element_size_3() {
+    test_for_size<Iter>(3);
+}
+
+template <class Iter>
+void test_max_element_size_10() {
+    test_for_size<Iter>(10);
+}
+
+template <class Iter>
+void test_max_element_size_1000() {
+    test_for_size<Iter>(1000);
+}
+
+template <class Iter>
+void test_all_max_element_sizes() {
+    test_max_element_size_0<Iter>();
+    test_max_element_size_1<Iter>();
+    test_max_element_size_2<Iter>();
+    test_max_element_size_3<Iter>();
+    test_max_element_size_10<Iter>();
+    test_max_element_size_1000<Iter>();
 }
 
 #if TEST_STD_VER >= 14
@@ -74,18 +102,21 @@ void constexpr_test()
 #endif
 }
 
+void run_all_max_element_tests() {
+    test_all_max_element_sizes<forward_iterator<const int*> >();
+    test_all_max_element_sizes<bidirectional_iterator<const int*> >();
+    test_all_max_element_sizes<random_access_iterator<const int*> >();
+    test_all_max_element_sizes<const int*>();
+
+    constexpr_test();
+}
+
 } // namespace
 
 int tc_libcxx_algorithms_alg_sorting_alg_min_max_max_element(void) {
-    test<forward_iterator<const int*> >();
-    test<bidirectional_iterator<const int*> >();
-    test<random_access_iterator<const int*> >();
-    test<const int*>();
+    run_all_max_element_tests();
 
-    constexpr_test ();
+    TC_SUCCESS_RESULT();
 
-  TC_SUCCESS_RESULT();
-
-
-  return 0;
+    return 0;
 }

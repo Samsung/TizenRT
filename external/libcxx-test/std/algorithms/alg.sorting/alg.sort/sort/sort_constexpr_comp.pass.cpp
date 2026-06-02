@@ -23,7 +23,6 @@
 #include "MoveOnly.h"
 #include "libcxx_tc_common.h"
 
-namespace {
 const int LargeN = 128;
 
 template<int N, class T, class Iter>
@@ -62,37 +61,54 @@ TEST_CONSTEXPR_CXX20 bool test_pointers()
     return true;
 }
 
-} // namespace
-
-int tc_libcxx_algorithms_alg_sorting_alg_sort_sort_sort_constexpr_comp(void) {
+// Group functions called internally for stack reduction
+void test_sort_constexpr_comp_small() {
     test<7, int, int*>();
     test<7, int, random_access_iterator<int*> >();
+}
+
+void test_sort_constexpr_comp_large() {
     test<LargeN, int, int*>();
     test<LargeN, int, random_access_iterator<int*> >();
+}
 
-#if TEST_STD_VER >= 11
+void test_sort_constexpr_comp_moveonly_small() {
     test<7, MoveOnly, MoveOnly*>();
     test<7, MoveOnly, random_access_iterator<MoveOnly*> >();
+}
+
+void test_sort_constexpr_comp_moveonly_large() {
     test<LargeN, MoveOnly, MoveOnly*>();
     test<LargeN, MoveOnly, random_access_iterator<MoveOnly*> >();
-#endif
+}
 
+void test_sort_constexpr_comp_pointers() {
     test_pointers<17, char, char**>();
     test_pointers<17, char, random_access_iterator<char**> >();
     test_pointers<17, const char, const char**>();
     test_pointers<17, const char, random_access_iterator<const char**> >();
     test_pointers<17, int, int**>();
     test_pointers<17, int, random_access_iterator<int**> >();
+}
 
 #if TEST_STD_VER >= 20
+void test_sort_constexpr_comp_contiguous_small() {
     test<7, int, contiguous_iterator<int*>>();
-    test<LargeN, int, contiguous_iterator<int*>>();
     test<7, MoveOnly, contiguous_iterator<MoveOnly*>>();
+}
+
+void test_sort_constexpr_comp_contiguous_large() {
+    test<LargeN, int, contiguous_iterator<int*>>();
     test<LargeN, MoveOnly, contiguous_iterator<MoveOnly*>>();
+}
+
+void test_sort_constexpr_comp_pointers_contiguous() {
     test_pointers<17, char, contiguous_iterator<char**>>();
     test_pointers<17, const char, contiguous_iterator<const char**>>();
     test_pointers<17, int, contiguous_iterator<int**>>();
+}
 
+void test_sort_constexpr_comp_static_asserts() {
     static_assert(test<7, int, int*>());
     static_assert(test<7, int, random_access_iterator<int*>>());
     static_assert(test<7, int, contiguous_iterator<int*>>());
@@ -116,7 +132,27 @@ int tc_libcxx_algorithms_alg_sorting_alg_sort_sort_sort_constexpr_comp(void) {
     static_assert(test_pointers<17, int, int**>());
     static_assert(test_pointers<17, int, random_access_iterator<int**>>());
     static_assert(test_pointers<17, int, contiguous_iterator<int**>>());
+}
 #endif
+
+void run_all_sort_constexpr_comp_tests() {
+    test_sort_constexpr_comp_small();
+    test_sort_constexpr_comp_large();
+#if TEST_STD_VER >= 11
+    test_sort_constexpr_comp_moveonly_small();
+    test_sort_constexpr_comp_moveonly_large();
+#endif
+    test_sort_constexpr_comp_pointers();
+#if TEST_STD_VER >= 20
+    test_sort_constexpr_comp_contiguous_small();
+    test_sort_constexpr_comp_contiguous_large();
+    test_sort_constexpr_comp_pointers_contiguous();
+    test_sort_constexpr_comp_static_asserts();
+#endif
+}
+
+int tc_libcxx_algorithms_alg_sorting_alg_sort_sort_sort_constexpr_comp(void) {
+    run_all_sort_constexpr_comp_tests();
 
     TC_SUCCESS_RESULT();
 

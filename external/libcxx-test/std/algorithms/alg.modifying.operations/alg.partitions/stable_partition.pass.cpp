@@ -14,12 +14,14 @@
 //   Iter
 //   stable_partition(Iter first, Iter last, Pred pred);
 
+// TizenRT: Disable count_new.h memory tracking to prevent libsupc++ conflicts
+#define DISABLE_NEW_COUNT
+
 #include <algorithm>
 #include <cassert>
 #include <memory>
 #include <vector>
 
-// Note: count_new.h removed - operator new/delete replacements conflict with libsupc++
 #include "test_iterators.h"
 #include "test_macros.h"
 #include "libcxx_tc_common.h"

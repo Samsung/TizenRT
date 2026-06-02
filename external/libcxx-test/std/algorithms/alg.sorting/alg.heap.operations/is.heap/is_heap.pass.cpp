@@ -30,7 +30,7 @@ TEST_CONSTEXPR bool test_constexpr() {
     }
 #endif
 
-void test()
+void test_size2()
 {
     typedef random_access_iterator<int *> RI;
     int i1[] = {0, 0};
@@ -44,6 +44,10 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i1, i1+2) == (std::is_heap_until(i1, i1+2) == i1+2));
     TC_ASSERT_EXPR(std::is_heap(i2, i2+2) == (std::is_heap_until(i2, i2+2) == i2+2));
     TC_ASSERT_EXPR(std::is_heap(i3, i3+2) == (std::is_heap_until(i3, i3+2) == i3+2));
+}
+
+void test_size3()
+{
     int i4[] = {0, 0, 0};
     int i5[] = {0, 0, 1};
     int i6[] = {0, 1, 0};
@@ -58,6 +62,10 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i8, i8+3) == (std::is_heap_until(i8, i8+3) == i8+3));
     TC_ASSERT_EXPR(std::is_heap(i9, i9+3) == (std::is_heap_until(i9, i9+3) == i9+3));
     TC_ASSERT_EXPR(std::is_heap(i10, i10+3) == (std::is_heap_until(i10, i10+3) == i10+3));
+}
+
+void test_size4()
+{
     int i11[] = {0, 0, 0, 0};
     int i12[] = {0, 0, 0, 1};
     int i13[] = {0, 0, 1, 0};
@@ -88,6 +96,10 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i23, i23+4) == (std::is_heap_until(i23, i23+4) == i23+4));
     TC_ASSERT_EXPR(std::is_heap(i24, i24+4) == (std::is_heap_until(i24, i24+4) == i24+4));
     TC_ASSERT_EXPR(std::is_heap(i25, i25+4) == (std::is_heap_until(i25, i25+4) == i25+4));
+}
+
+void test_size5()
+{
     int i26[] = {0, 0, 0, 0, 0};
     int i27[] = {0, 0, 0, 0, 1};
     int i28[] = {0, 0, 0, 1, 0};
@@ -150,6 +162,10 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i54, i54+5) == (std::is_heap_until(i54, i54+5) == i54+5));
     TC_ASSERT_EXPR(std::is_heap(i55, i55+5) == (std::is_heap_until(i55, i55+5) == i55+5));
     TC_ASSERT_EXPR(std::is_heap(i56, i56+5) == (std::is_heap_until(i56, i56+5) == i56+5));
+}
+
+void test_size6()
+{
     int i57[] = {0, 0, 0, 0, 0, 0};
     int i58[] = {0, 0, 0, 0, 0, 1};
     int i59[] = {0, 0, 0, 0, 1, 0};
@@ -276,6 +292,10 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i117, i117+6) == (std::is_heap_until(i117, i117+6) == i117+6));
     TC_ASSERT_EXPR(std::is_heap(i118, i118+6) == (std::is_heap_until(i118, i118+6) == i118+6));
     TC_ASSERT_EXPR(std::is_heap(i119, i119+6) == (std::is_heap_until(i119, i119+6) == i119+6));
+}
+
+void test_size7()
+{
     int i120[] = {0, 0, 0, 0, 0, 0, 0};
     int i121[] = {0, 0, 0, 0, 0, 0, 1};
     int i122[] = {0, 0, 0, 0, 0, 1, 0};
@@ -532,6 +552,16 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i246, i246+7) == (std::is_heap_until(i246, i246+7) == i246+7));
 }
 
+void test()
+{
+    test_size2();
+    test_size3();
+    test_size4();
+    test_size5();
+    test_size6();
+    test_size7();
+}
+
 } // namespace
 
 int tc_libcxx_algorithms_alg_sorting_alg_heap_operations_is_heap_is_heap(void) {
@@ -542,7 +572,5 @@ int tc_libcxx_algorithms_alg_sorting_alg_heap_operations_is_heap_is_heap(void) {
 #endif
 
   TC_SUCCESS_RESULT();
-
-
   return 0;
 }

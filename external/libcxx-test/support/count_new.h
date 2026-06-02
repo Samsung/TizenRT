@@ -371,11 +371,11 @@ inline MemCounter* getGlobalMemCounter() {
 }
 TEST_DIAGNOSTIC_POP
 
+#ifndef DISABLE_NEW_COUNT
+//Prevent multiple definition errors when DISABLE_NEW_COUNT is enabled
 MemCounter &globalMemCounter = *getGlobalMemCounter();
-
 // Test memory tracking operators conflicts with system libsupc++ operators resulting in multiple definition error.
 // Inline functions allow multiple definitions through ODR relaxation, letting the linker merge them properly.
-#ifndef DISABLE_NEW_COUNT
 #ifdef CONFIG_LIBCXX_UTC
 inline void* operator new(std::size_t s) TEST_THROW_SPEC(std::bad_alloc)
 {

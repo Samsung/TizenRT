@@ -7,12 +7,15 @@
 //===----------------------------------------------------------------------===//
 //
 // <algorithm>
-
+//
 // template<RandomAccessIterator Iter, StrictWeakOrder<auto, Iter::value_type> Compare>
 //   requires ShuffleIterator<Iter>
 //         && CopyConstructible<Compare>
 //   void
 //   stable_sort(Iter first, Iter last, Compare comp);
+
+// TizenRT: Disable count_new.h memory tracking to prevent libsupc++ conflicts
+#define DISABLE_NEW_COUNT
 
 #include <algorithm>
 #include <functional>
@@ -34,7 +37,7 @@ struct indirect_less
         {return *x < *y;}
 };
 
-std::mt19937 randomness;
+static std::mt19937 randomness;
 
 struct first_only
 {
@@ -44,7 +47,7 @@ struct first_only
     }
 };
 
-void test()
+void test_stable_sort_comp_pair_first_only()
 {
     typedef std::pair<int, int> P;
     const int N = 1000;
@@ -69,13 +72,9 @@ void test()
     TC_ASSERT_EXPR(std::is_sorted(v.begin(), v.end()));
 }
 
-} // namespace
-
-int tc_libcxx_algorithms_alg_sorting_alg_sort_stable_sort_stable_sort_comp(void) {
-    test();
-
 #if TEST_STD_VER >= 11
-    {
+void test_stable_sort_comp_unique_ptr_indirect()
+{
     std::vector<std::unique_ptr<int> > v(1000);
     for (int i = 0; static_cast<std::size_t>(i) < v.size(); ++i)
         v[i].reset(new int(i));
@@ -84,11 +83,22 @@ int tc_libcxx_algorithms_alg_sorting_alg_sort_stable_sort_stable_sort_comp(void)
     TC_ASSERT_EXPR(*v[0] == 0);
     TC_ASSERT_EXPR(*v[1] == 1);
     TC_ASSERT_EXPR(*v[2] == 2);
-    }
+}
 #endif
 
-  TC_SUCCESS_RESULT();
+void run_all_stable_sort_comp_tests() {
+    test_stable_sort_comp_pair_first_only();
+#if TEST_STD_VER >= 11
+    test_stable_sort_comp_unique_ptr_indirect();
+#endif
+}
 
+} // namespace
 
-  return 0;
+int tc_libcxx_algorithms_alg_sorting_alg_sort_stable_sort_stable_sort_comp(void) {
+    run_all_stable_sort_comp_tests();
+
+    TC_SUCCESS_RESULT();
+
+    return 0;
 }

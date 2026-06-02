@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 //
 // <algorithm>
-
+//
 // template<RandomAccessIterator Iter>
 //   requires ShuffleIterator<Iter> && LessThanComparable<Iter::value_type>
 //   constexpr void  // constexpr in C++20
@@ -23,7 +23,7 @@
 
 namespace {
 template<class T, class Iter>
-TEST_CONSTEXPR_CXX20 bool test()
+TEST_CONSTEXPR_CXX20 bool test_nth_element_impl()
 {
     int orig[15] = {3,1,4,1,5, 9,2,6,5,3, 5,8,9,7,9};
     T work[15] = {3,1,4,1,5, 9,2,6,5,3, 5,8,9,7,9};
@@ -67,26 +67,41 @@ TEST_CONSTEXPR_CXX20 bool test()
     return true;
 }
 
-} // namespace
+template <class T, class Iter>
+void test_nth_element() {
+    test_nth_element_impl<T, Iter>();
+}
 
-int tc_libcxx_algorithms_alg_sorting_alg_nth_element_nth_element(void) {
-    test<int, random_access_iterator<int*> >();
-    test<int, int*>();
+#if TEST_STD_VER >= 20
+template <class T, class Iter>
+void test_nth_element_constexpr() {
+    static_assert(test_nth_element_impl<T, Iter>());
+}
+#endif
+
+void run_all_nth_element_tests() {
+    test_nth_element<int, random_access_iterator<int*> >();
+    test_nth_element<int, int*>();
 
 #if TEST_STD_VER >= 11
-    test<MoveOnly, random_access_iterator<MoveOnly*>>();
-    test<MoveOnly, MoveOnly*>();
+    test_nth_element<MoveOnly, random_access_iterator<MoveOnly*>>();
+    test_nth_element<MoveOnly, MoveOnly*>();
 #endif
 
 #if TEST_STD_VER >= 20
-    static_assert(test<int, random_access_iterator<int*>>());
-    static_assert(test<int, int*>());
-    static_assert(test<MoveOnly, random_access_iterator<MoveOnly*>>());
-    static_assert(test<MoveOnly, MoveOnly*>());
+    test_nth_element_constexpr<int, random_access_iterator<int*>>();
+    test_nth_element_constexpr<int, int*>();
+    test_nth_element_constexpr<MoveOnly, random_access_iterator<MoveOnly*>>();
+    test_nth_element_constexpr<MoveOnly, MoveOnly*>();
 #endif
+}
+
+} // namespace
+
+int tc_libcxx_algorithms_alg_sorting_alg_nth_element_nth_element(void) {
+    run_all_nth_element_tests();
 
     TC_SUCCESS_RESULT();
-
 
     return 0;
 }

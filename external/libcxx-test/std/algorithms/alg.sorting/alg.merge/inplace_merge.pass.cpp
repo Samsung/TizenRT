@@ -1,3 +1,5 @@
+
+
 //===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -7,7 +9,7 @@
 //===----------------------------------------------------------------------===//
 //
 // <algorithm>
-
+//
 // template<BidirectionalIterator Iter>
 //   requires ShuffleIterator<Iter>
 //         && LessThanComparable<Iter::value_type>
@@ -16,12 +18,14 @@
 
 // XFAIL: LIBCXX-AIX-FIXME
 
+// TizenRT: Disable count_new.h memory tracking to prevent libsupc++ conflicts
+#define DISABLE_NEW_COUNT
+
 #include <algorithm>
 #include <cassert>
 #include <random>
 #include <vector>
 
-// Note: count_new.h removed - operator new/delete replacements conflict with libsupc++
 #include "test_iterators.h"
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
@@ -55,19 +59,20 @@ template <class Iter>
 void
 test_one(unsigned N, unsigned M)
 {
-    typedef typename std::iterator_traits<Iter>::value_type value_type;
-    TC_ASSERT_EXPR(M <= N);
-    value_type* ia = new value_type[N];
+    typedef typename std::iterator_traits<Iter>::value_type value_type;    
+    TC_ASSERT_EXPR(M <= N);    
+    value_type* ia = new value_type[N];    
     for (unsigned i = 0; i < N; ++i)
         ia[i] = i;
-    std::shuffle(ia, ia+N, randomness);
-    std::sort(ia, ia+M);
-    std::sort(ia+M, ia+N);
-    std::inplace_merge(Iter(ia), Iter(ia+M), Iter(ia+N));
+    
+    std::shuffle(ia, ia+N, randomness);    
+    std::sort(ia, ia+M);    
+    std::sort(ia+M, ia+N);    
+    std::inplace_merge(Iter(ia), Iter(ia+M), Iter(ia+N));    
     if(N > 0)
     {
-        TC_ASSERT_EXPR(ia[0] == 0);
-        TC_ASSERT_EXPR(ia[N-1] == static_cast<value_type>(N-1));
+        TC_ASSERT_EXPR(ia[0] == 0);        
+        TC_ASSERT_EXPR(ia[N-1] == static_cast<value_type>(N-1));        
         TC_ASSERT_EXPR(std::is_sorted(ia, ia+N));
     }
     delete [] ia;
@@ -76,7 +81,7 @@ test_one(unsigned N, unsigned M)
 template <class Iter>
 void
 test(unsigned N)
-{
+{    
     test_one<Iter>(N, 0);
     test_one<Iter>(N, N/4);
     test_one<Iter>(N, N/2);

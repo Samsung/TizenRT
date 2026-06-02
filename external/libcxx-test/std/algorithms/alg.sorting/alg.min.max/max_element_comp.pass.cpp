@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 //
 // <algorithm>
-
+//
 // template<ForwardIterator Iter, StrictWeakOrder<auto, Iter::value_type> Compare>
 //   requires CopyConstructible<Compare>
 //   Iter
@@ -41,7 +41,7 @@ test(Iter first, Iter last)
 
 template <class Iter>
 void
-test(int N)
+test_for_size(int N)
 {
     int* a = new int[N];
     for (int i = 0; i < N; ++i)
@@ -52,15 +52,43 @@ test(int N)
 }
 
 template <class Iter>
-void
-test()
-{
-    test<Iter>(0);
-    test<Iter>(1);
-    test<Iter>(2);
-    test<Iter>(3);
-    test<Iter>(10);
-    test<Iter>(1000);
+void test_max_element_comp_size_0() {
+    test_for_size<Iter>(0);
+}
+
+template <class Iter>
+void test_max_element_comp_size_1() {
+    test_for_size<Iter>(1);
+}
+
+template <class Iter>
+void test_max_element_comp_size_2() {
+    test_for_size<Iter>(2);
+}
+
+template <class Iter>
+void test_max_element_comp_size_3() {
+    test_for_size<Iter>(3);
+}
+
+template <class Iter>
+void test_max_element_comp_size_10() {
+    test_for_size<Iter>(10);
+}
+
+template <class Iter>
+void test_max_element_comp_size_1000() {
+    test_for_size<Iter>(1000);
+}
+
+template <class Iter>
+void test_all_max_element_comp_sizes() {
+    test_max_element_comp_size_0<Iter>();
+    test_max_element_comp_size_1<Iter>();
+    test_max_element_comp_size_2<Iter>();
+    test_max_element_comp_size_3<Iter>();
+    test_max_element_comp_size_10<Iter>();
+    test_max_element_comp_size_1000<Iter>();
 }
 
 template <class Iter, class Pred>
@@ -74,7 +102,7 @@ void test_eq()
     const int N = 10;
     int* a = new int[N];
     for (int i = 0; i < N; ++i)
-        a[i] = 10; // all the same
+        a[i] = 10;
     test_eq0(a, a+N, std::less<int>());
     test_eq0(a, a+N, std::greater<int>());
     delete [] a;
@@ -93,19 +121,22 @@ void constexpr_test()
 #endif
 }
 
+void run_all_max_element_comp_tests() {
+    test_all_max_element_comp_sizes<forward_iterator<const int*> >();
+    test_all_max_element_comp_sizes<bidirectional_iterator<const int*> >();
+    test_all_max_element_comp_sizes<random_access_iterator<const int*> >();
+    test_all_max_element_comp_sizes<const int*>();
+
+    test_eq();
+    constexpr_test();
+}
+
 } // namespace
 
 int tc_libcxx_algorithms_alg_sorting_alg_min_max_max_element_comp(void) {
-    test<forward_iterator<const int*> >();
-    test<bidirectional_iterator<const int*> >();
-    test<random_access_iterator<const int*> >();
-    test<const int*>();
-    test_eq();
+    run_all_max_element_comp_tests();
 
-    constexpr_test();
+    TC_SUCCESS_RESULT();
 
-  TC_SUCCESS_RESULT();
-
-
-  return 0;
+    return 0;
 }

@@ -11,7 +11,7 @@
 // template<RandomAccessIterator Iter>
 //   requires LessThanComparable<Iter::value_type>
 //   constexpr bool   // constexpr after C++17
-//   is_heap(Iter first, Iter last);
+//   is_heap(Iter first, Iter last, Compare comp);
 
 #include <algorithm>
 #include <functional>
@@ -31,7 +31,7 @@ TEST_CONSTEXPR bool test_constexpr() {
     }
 #endif
 
-void test()
+void test_size2()
 {
     typedef random_access_iterator<int *> RI;
     int i1[] = {0, 0};
@@ -45,6 +45,10 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i1, i1+2, std::greater<int>()) == (std::is_heap_until(i1, i1+2, std::greater<int>()) == i1+2));
     TC_ASSERT_EXPR(std::is_heap(i2, i2+2, std::greater<int>()) == (std::is_heap_until(i2, i2+2, std::greater<int>()) == i2+2));
     TC_ASSERT_EXPR(std::is_heap(i3, i3+2, std::greater<int>()) == (std::is_heap_until(i3, i3+2, std::greater<int>()) == i3+2));
+}
+
+void test_size3()
+{
     int i4[] = {0, 0, 0};
     int i5[] = {0, 0, 1};
     int i6[] = {0, 1, 0};
@@ -59,6 +63,10 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i8, i8+3, std::greater<int>()) == (std::is_heap_until(i8, i8+3, std::greater<int>()) == i8+3));
     TC_ASSERT_EXPR(std::is_heap(i9, i9+3, std::greater<int>()) == (std::is_heap_until(i9, i9+3, std::greater<int>()) == i9+3));
     TC_ASSERT_EXPR(std::is_heap(i10, i10+3, std::greater<int>()) == (std::is_heap_until(i10, i10+3, std::greater<int>()) == i10+3));
+}
+
+void test_size4()
+{
     int i11[] = {0, 0, 0, 0};
     int i12[] = {0, 0, 0, 1};
     int i13[] = {0, 0, 1, 0};
@@ -89,6 +97,10 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i23, i23+4, std::greater<int>()) == (std::is_heap_until(i23, i23+4, std::greater<int>()) == i23+4));
     TC_ASSERT_EXPR(std::is_heap(i24, i24+4, std::greater<int>()) == (std::is_heap_until(i24, i24+4, std::greater<int>()) == i24+4));
     TC_ASSERT_EXPR(std::is_heap(i25, i25+4, std::greater<int>()) == (std::is_heap_until(i25, i25+4, std::greater<int>()) == i25+4));
+}
+
+void test_size5()
+{
     int i26[] = {0, 0, 0, 0, 0};
     int i27[] = {0, 0, 0, 0, 1};
     int i28[] = {0, 0, 0, 1, 0};
@@ -151,6 +163,10 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i54, i54+5, std::greater<int>()) == (std::is_heap_until(i54, i54+5, std::greater<int>()) == i54+5));
     TC_ASSERT_EXPR(std::is_heap(i55, i55+5, std::greater<int>()) == (std::is_heap_until(i55, i55+5, std::greater<int>()) == i55+5));
     TC_ASSERT_EXPR(std::is_heap(i56, i56+5, std::greater<int>()) == (std::is_heap_until(i56, i56+5, std::greater<int>()) == i56+5));
+}
+
+void test_size6()
+{
     int i57[] = {0, 0, 0, 0, 0, 0};
     int i58[] = {0, 0, 0, 0, 0, 1};
     int i59[] = {0, 0, 0, 0, 1, 0};
@@ -277,6 +293,10 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i117, i117+6, std::greater<int>()) == (std::is_heap_until(i117, i117+6, std::greater<int>()) == i117+6));
     TC_ASSERT_EXPR(std::is_heap(i118, i118+6, std::greater<int>()) == (std::is_heap_until(i118, i118+6, std::greater<int>()) == i118+6));
     TC_ASSERT_EXPR(std::is_heap(i119, i119+6, std::greater<int>()) == (std::is_heap_until(i119, i119+6, std::greater<int>()) == i119+6));
+}
+
+void test_size7()
+{
     int i120[] = {0, 0, 0, 0, 0, 0, 0};
     int i121[] = {0, 0, 0, 0, 0, 0, 1};
     int i122[] = {0, 0, 0, 0, 0, 1, 0};
@@ -531,6 +551,16 @@ void test()
     TC_ASSERT_EXPR(std::is_heap(i244, i244+7, std::greater<int>()) == (std::is_heap_until(i244, i244+7, std::greater<int>()) == i244+7));
     TC_ASSERT_EXPR(std::is_heap(i245, i245+7, std::greater<int>()) == (std::is_heap_until(i245, i245+7, std::greater<int>()) == i245+7));
     TC_ASSERT_EXPR(std::is_heap(i246, i246+7, std::greater<int>()) == (std::is_heap_until(i246, i246+7, std::greater<int>()) == i246+7));
+}
+
+void test()
+{
+    test_size2();
+    test_size3();
+    test_size4();
+    test_size5();
+    test_size6();
+    test_size7();
 }
 
 } // namespace

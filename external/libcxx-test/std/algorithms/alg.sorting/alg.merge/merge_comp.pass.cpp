@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 //
 // <algorithm>
-
+//
 // template<InputIterator InIter1, InputIterator InIter2, typename OutIter,
 //          CopyConstructible Compare>
 //   requires OutputIterator<OutIter, InIter1::reference>
@@ -28,7 +28,7 @@
 
 namespace {
 template<class T, class Iter1, class Iter2, class OutIter>
-TEST_CONSTEXPR_CXX20 void test4()
+TEST_CONSTEXPR_CXX20 void test_merge_comp_single()
 {
     const T a[] = {11, 33, 31, 41};
     const T b[] = {22, 32, 43, 42, 52};
@@ -52,53 +52,300 @@ TEST_CONSTEXPR_CXX20 void test4()
     }
 }
 
-template<class T, class Iter1, class Iter2>
-TEST_CONSTEXPR_CXX20 void test3()
-{
-    test4<T, Iter1, Iter2, cpp17_output_iterator<T*> >();
-    test4<T, Iter1, Iter2, forward_iterator<T*> >();
-    test4<T, Iter1, Iter2, bidirectional_iterator<T*> >();
-    test4<T, Iter1, Iter2, random_access_iterator<T*> >();
-    test4<T, Iter1, Iter2, T*>();
+// ============================================================================
+// TrivialSortableWithComp tests - grouped by output iterator type
+// ============================================================================
+
+// cpp17_output_iterator output
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_cpp17_input_cpp17_output() {
+    test_merge_comp_single<TrivialSortableWithComp, cpp17_input_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, cpp17_output_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_forward_cpp17_output() {
+    test_merge_comp_single<TrivialSortableWithComp, forward_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, cpp17_output_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_bidirectional_cpp17_output() {
+    test_merge_comp_single<TrivialSortableWithComp, bidirectional_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, cpp17_output_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_random_access_cpp17_output() {
+    test_merge_comp_single<TrivialSortableWithComp, random_access_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, cpp17_output_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_pointer_cpp17_output() {
+    test_merge_comp_single<TrivialSortableWithComp, const TrivialSortableWithComp*, cpp17_input_iterator<const TrivialSortableWithComp*>, cpp17_output_iterator<TrivialSortableWithComp*>>();
 }
 
-template<class T, class Iter1>
-TEST_CONSTEXPR_CXX20 void test2()
-{
-    test3<T, Iter1, cpp17_input_iterator<const T*> >();
-    test3<T, Iter1, forward_iterator<const T*> >();
-    test3<T, Iter1, bidirectional_iterator<const T*> >();
-    test3<T, Iter1, random_access_iterator<const T*> >();
-    test3<T, Iter1, const T*>();
+// forward_iterator output
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_cpp17_input_forward_output() {
+    test_merge_comp_single<TrivialSortableWithComp, cpp17_input_iterator<const TrivialSortableWithComp*>, forward_iterator<const TrivialSortableWithComp*>, forward_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_forward_forward_output() {
+    test_merge_comp_single<TrivialSortableWithComp, forward_iterator<const TrivialSortableWithComp*>, forward_iterator<const TrivialSortableWithComp*>, forward_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_bidirectional_forward_output() {
+    test_merge_comp_single<TrivialSortableWithComp, bidirectional_iterator<const TrivialSortableWithComp*>, forward_iterator<const TrivialSortableWithComp*>, forward_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_random_access_forward_output() {
+    test_merge_comp_single<TrivialSortableWithComp, random_access_iterator<const TrivialSortableWithComp*>, forward_iterator<const TrivialSortableWithComp*>, forward_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_pointer_forward_output() {
+    test_merge_comp_single<TrivialSortableWithComp, const TrivialSortableWithComp*, forward_iterator<const TrivialSortableWithComp*>, forward_iterator<TrivialSortableWithComp*>>();
 }
 
-template<class T>
-TEST_CONSTEXPR_CXX20 void test1()
-{
-    test2<T, cpp17_input_iterator<const T*> >();
-    test2<T, forward_iterator<const T*> >();
-    test2<T, bidirectional_iterator<const T*> >();
-    test2<T, random_access_iterator<const T*> >();
-    test2<T, const T*>();
+// bidirectional_iterator output
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_cpp17_input_bidirectional_output() {
+    test_merge_comp_single<TrivialSortableWithComp, cpp17_input_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, bidirectional_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_forward_bidirectional_output() {
+    test_merge_comp_single<TrivialSortableWithComp, forward_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, bidirectional_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_bidirectional_bidirectional_output() {
+    test_merge_comp_single<TrivialSortableWithComp, bidirectional_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, bidirectional_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_random_access_bidirectional_output() {
+    test_merge_comp_single<TrivialSortableWithComp, random_access_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, bidirectional_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_pointer_bidirectional_output() {
+    test_merge_comp_single<TrivialSortableWithComp, const TrivialSortableWithComp*, cpp17_input_iterator<const TrivialSortableWithComp*>, bidirectional_iterator<TrivialSortableWithComp*>>();
 }
 
-TEST_CONSTEXPR_CXX20 bool test()
-{
-    test1<TrivialSortableWithComp>();
-    test1<NonTrivialSortableWithComp>();
+// random_access_iterator output
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_cpp17_input_random_access_output() {
+    test_merge_comp_single<TrivialSortableWithComp, cpp17_input_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, random_access_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_forward_random_access_output() {
+    test_merge_comp_single<TrivialSortableWithComp, forward_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, random_access_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_bidirectional_random_access_output() {
+    test_merge_comp_single<TrivialSortableWithComp, bidirectional_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, random_access_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_random_access_random_access_output() {
+    test_merge_comp_single<TrivialSortableWithComp, random_access_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, random_access_iterator<TrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_pointer_random_access_output() {
+    test_merge_comp_single<TrivialSortableWithComp, const TrivialSortableWithComp*, cpp17_input_iterator<const TrivialSortableWithComp*>, random_access_iterator<TrivialSortableWithComp*>>();
+}
+
+// pointer output
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_cpp17_input_pointer_output() {
+    test_merge_comp_single<TrivialSortableWithComp, cpp17_input_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, TrivialSortableWithComp*>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_forward_pointer_output() {
+    test_merge_comp_single<TrivialSortableWithComp, forward_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, TrivialSortableWithComp*>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_bidirectional_pointer_output() {
+    test_merge_comp_single<TrivialSortableWithComp, bidirectional_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, TrivialSortableWithComp*>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_random_access_pointer_output() {
+    test_merge_comp_single<TrivialSortableWithComp, random_access_iterator<const TrivialSortableWithComp*>, cpp17_input_iterator<const TrivialSortableWithComp*>, TrivialSortableWithComp*>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_trivial_pointer_pointer_output() {
+    test_merge_comp_single<TrivialSortableWithComp, const TrivialSortableWithComp*, cpp17_input_iterator<const TrivialSortableWithComp*>, TrivialSortableWithComp*>();
+}
+
+// ============================================================================
+// NonTrivialSortableWithComp tests - grouped by output iterator type
+// ============================================================================
+
+// cpp17_output_iterator output
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_cpp17_input_cpp17_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, cpp17_input_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, cpp17_output_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_forward_cpp17_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, forward_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, cpp17_output_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_bidirectional_cpp17_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, bidirectional_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, cpp17_output_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_random_access_cpp17_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, random_access_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, cpp17_output_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_pointer_cpp17_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, const NonTrivialSortableWithComp*, cpp17_input_iterator<const NonTrivialSortableWithComp*>, cpp17_output_iterator<NonTrivialSortableWithComp*>>();
+}
+
+// forward_iterator output
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_cpp17_input_forward_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, cpp17_input_iterator<const NonTrivialSortableWithComp*>, forward_iterator<const NonTrivialSortableWithComp*>, forward_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_forward_forward_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, forward_iterator<const NonTrivialSortableWithComp*>, forward_iterator<const NonTrivialSortableWithComp*>, forward_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_bidirectional_forward_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, bidirectional_iterator<const NonTrivialSortableWithComp*>, forward_iterator<const NonTrivialSortableWithComp*>, forward_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_random_access_forward_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, random_access_iterator<const NonTrivialSortableWithComp*>, forward_iterator<const NonTrivialSortableWithComp*>, forward_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_pointer_forward_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, const NonTrivialSortableWithComp*, forward_iterator<const NonTrivialSortableWithComp*>, forward_iterator<NonTrivialSortableWithComp*>>();
+}
+
+// bidirectional_iterator output
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_cpp17_input_bidirectional_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, cpp17_input_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, bidirectional_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_forward_bidirectional_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, forward_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, bidirectional_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_bidirectional_bidirectional_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, bidirectional_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, bidirectional_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_random_access_bidirectional_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, random_access_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, bidirectional_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_pointer_bidirectional_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, const NonTrivialSortableWithComp*, cpp17_input_iterator<const NonTrivialSortableWithComp*>, bidirectional_iterator<NonTrivialSortableWithComp*>>();
+}
+
+// random_access_iterator output
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_cpp17_input_random_access_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, cpp17_input_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, random_access_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_forward_random_access_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, forward_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, random_access_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_bidirectional_random_access_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, bidirectional_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, random_access_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_random_access_random_access_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, random_access_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, random_access_iterator<NonTrivialSortableWithComp*>>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_pointer_random_access_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, const NonTrivialSortableWithComp*, cpp17_input_iterator<const NonTrivialSortableWithComp*>, random_access_iterator<NonTrivialSortableWithComp*>>();
+}
+
+// pointer output
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_cpp17_input_pointer_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, cpp17_input_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, NonTrivialSortableWithComp*>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_forward_pointer_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, forward_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, NonTrivialSortableWithComp*>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_bidirectional_pointer_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, bidirectional_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, NonTrivialSortableWithComp*>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_random_access_pointer_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, random_access_iterator<const NonTrivialSortableWithComp*>, cpp17_input_iterator<const NonTrivialSortableWithComp*>, NonTrivialSortableWithComp*>();
+}
+TEST_CONSTEXPR_CXX20 void test_merge_comp_nontrivial_pointer_pointer_output() {
+    test_merge_comp_single<NonTrivialSortableWithComp, const NonTrivialSortableWithComp*, cpp17_input_iterator<const NonTrivialSortableWithComp*>, NonTrivialSortableWithComp*>();
+}
+
+// ============================================================================
+// Group functions - call all tests for each output iterator type
+// ============================================================================
+
+TEST_CONSTEXPR_CXX20 void test_all_trivial_comp_with_cpp17_output() {
+    test_merge_comp_trivial_cpp17_input_cpp17_output();
+    test_merge_comp_trivial_forward_cpp17_output();
+    test_merge_comp_trivial_bidirectional_cpp17_output();
+    test_merge_comp_trivial_random_access_cpp17_output();
+    test_merge_comp_trivial_pointer_cpp17_output();
+}
+
+TEST_CONSTEXPR_CXX20 void test_all_trivial_comp_with_forward_output() {
+    test_merge_comp_trivial_cpp17_input_forward_output();
+    test_merge_comp_trivial_forward_forward_output();
+    test_merge_comp_trivial_bidirectional_forward_output();
+    test_merge_comp_trivial_random_access_forward_output();
+    test_merge_comp_trivial_pointer_forward_output();
+}
+
+TEST_CONSTEXPR_CXX20 void test_all_trivial_comp_with_bidirectional_output() {
+    test_merge_comp_trivial_cpp17_input_bidirectional_output();
+    test_merge_comp_trivial_forward_bidirectional_output();
+    test_merge_comp_trivial_bidirectional_bidirectional_output();
+    test_merge_comp_trivial_random_access_bidirectional_output();
+    test_merge_comp_trivial_pointer_bidirectional_output();
+}
+
+TEST_CONSTEXPR_CXX20 void test_all_trivial_comp_with_random_access_output() {
+    test_merge_comp_trivial_cpp17_input_random_access_output();
+    test_merge_comp_trivial_forward_random_access_output();
+    test_merge_comp_trivial_bidirectional_random_access_output();
+    test_merge_comp_trivial_random_access_random_access_output();
+    test_merge_comp_trivial_pointer_random_access_output();
+}
+
+TEST_CONSTEXPR_CXX20 void test_all_trivial_comp_with_pointer_output() {
+    test_merge_comp_trivial_cpp17_input_pointer_output();
+    test_merge_comp_trivial_forward_pointer_output();
+    test_merge_comp_trivial_bidirectional_pointer_output();
+    test_merge_comp_trivial_random_access_pointer_output();
+    test_merge_comp_trivial_pointer_pointer_output();
+}
+
+TEST_CONSTEXPR_CXX20 void test_all_nontrivial_comp_with_cpp17_output() {
+    test_merge_comp_nontrivial_cpp17_input_cpp17_output();
+    test_merge_comp_nontrivial_forward_cpp17_output();
+    test_merge_comp_nontrivial_bidirectional_cpp17_output();
+    test_merge_comp_nontrivial_random_access_cpp17_output();
+    test_merge_comp_nontrivial_pointer_cpp17_output();
+}
+
+TEST_CONSTEXPR_CXX20 void test_all_nontrivial_comp_with_forward_output() {
+    test_merge_comp_nontrivial_cpp17_input_forward_output();
+    test_merge_comp_nontrivial_forward_forward_output();
+    test_merge_comp_nontrivial_bidirectional_forward_output();
+    test_merge_comp_nontrivial_random_access_forward_output();
+    test_merge_comp_nontrivial_pointer_forward_output();
+}
+
+TEST_CONSTEXPR_CXX20 void test_all_nontrivial_comp_with_bidirectional_output() {
+    test_merge_comp_nontrivial_cpp17_input_bidirectional_output();
+    test_merge_comp_nontrivial_forward_bidirectional_output();
+    test_merge_comp_nontrivial_bidirectional_bidirectional_output();
+    test_merge_comp_nontrivial_random_access_bidirectional_output();
+    test_merge_comp_nontrivial_pointer_bidirectional_output();
+}
+
+TEST_CONSTEXPR_CXX20 void test_all_nontrivial_comp_with_random_access_output() {
+    test_merge_comp_nontrivial_cpp17_input_random_access_output();
+    test_merge_comp_nontrivial_forward_random_access_output();
+    test_merge_comp_nontrivial_bidirectional_random_access_output();
+    test_merge_comp_nontrivial_random_access_random_access_output();
+    test_merge_comp_nontrivial_pointer_random_access_output();
+}
+
+TEST_CONSTEXPR_CXX20 void test_all_nontrivial_comp_with_pointer_output() {
+    test_merge_comp_nontrivial_cpp17_input_pointer_output();
+    test_merge_comp_nontrivial_forward_pointer_output();
+    test_merge_comp_nontrivial_bidirectional_pointer_output();
+    test_merge_comp_nontrivial_random_access_pointer_output();
+    test_merge_comp_nontrivial_pointer_pointer_output();
+}
+
+// ============================================================================
+// Main test function - calls all test groups
+// ============================================================================
+
+TEST_CONSTEXPR_CXX20 bool run_all_merge_comp_tests() {
+    // TrivialSortableWithComp tests
+    test_all_trivial_comp_with_cpp17_output();
+    test_all_trivial_comp_with_forward_output();
+    test_all_trivial_comp_with_bidirectional_output();
+    test_all_trivial_comp_with_random_access_output();
+    test_all_trivial_comp_with_pointer_output();
+    
+    // NonTrivialSortableWithComp tests
+    test_all_nontrivial_comp_with_cpp17_output();
+    test_all_nontrivial_comp_with_forward_output();
+    test_all_nontrivial_comp_with_bidirectional_output();
+    test_all_nontrivial_comp_with_random_access_output();
+    test_all_nontrivial_comp_with_pointer_output();
+    
     return true;
 }
 
 } // namespace
 
 int tc_libcxx_algorithms_alg_sorting_alg_merge_merge_comp(void) {
-    test();
+    run_all_merge_comp_tests();
+
 #if TEST_STD_VER > 17
-    static_assert(test());
+    static_assert(run_all_merge_comp_tests());
 #endif
 
     TC_SUCCESS_RESULT();
-
 
     return 0;
 }
