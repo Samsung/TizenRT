@@ -111,17 +111,3 @@ void pm_touched_wakeup_deep_sleep(void);
  *
  ****************************************************************************/
 bk_err_t pm_wakeup_from_deepsleep_handle(void);
-
-/****************************************************************************
- * Name: pm_deep_sleep_wakeup_source_set
- *
- * Description:
- *   Configure and set the wakeup sources for deep sleep mode.
- *   Determines which events or peripherals are enabled to wake the
- *   system from deep sleep state.
- *
- * Returns:
- *   None
- *
- ****************************************************************************/
-void pm_deep_sleep_wakeup_source_set(void);

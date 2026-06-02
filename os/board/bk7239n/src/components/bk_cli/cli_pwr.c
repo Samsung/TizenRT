@@ -460,8 +460,6 @@ static void cli_pm_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char 
 
 	bk_pm_sleep_mode_set(pm_sleep_mode);
 
-	pm_printf_current_temperature();
-
 }
 static void cli_pm_debug(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
 {
@@ -546,7 +544,6 @@ static void cli_pm_vote_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, 
 	{
 		;//do something
 	}
-	pm_printf_current_temperature();
 }
 #if defined(CONFIG_DVFS_TEST)
 static void cpu_freq_test_timer_isr(timer_id_t chan)

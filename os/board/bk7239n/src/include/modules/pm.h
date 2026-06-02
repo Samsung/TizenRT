@@ -991,22 +991,6 @@ pm_wakeup_source_e bk_pm_deep_sleep_wakeup_source_get(void);
  */
 bk_err_t bk_pm_exit_low_vol_wakeup_source_clear(void);
 /**
- * @brief set and save wakeup source of exiting low voltage
- *
- * set and save wakeup source of exiting low voltage
- *
- * @attention
- * - This API is used to set and save wakeup source of exiting low voltage
- *
- * @param
- * void
- * @return
- * - BK_OK: succeed
- * - others: other errors.
- *
- */
-bk_err_t bk_pm_exit_low_vol_wakeup_source_set(void);
-/**
  * @brief get wakeup source of exiting low voltage
  *
  * get wakeup source of exiting low voltage
@@ -1112,21 +1096,6 @@ uint32_t bk_pm_cp1_boot_flag_get(void);
  *  - others: other errors.
  */
 bk_err_t bk_pm_rosc_calibration(pm_rosc_cali_mode_e rosc_cali_mode, uint32_t cali_interval);
-/**
- * @brief using the gpio to control the external ldo
- *
- * control the external ldo
- *
- * @attention
- * - This API is used to use the specific gpio(define in  GPIO_CTRL_LDO_OUTPUT_HIGH_MAP or GPIO_CTRL_LDO_OUTPUT_LOW_MAP in gpio_map.h) control the external ldo
- *
- * @param
- * -value:0x1:output high; 0x0:output low
- * @return
- *  - BK_OK: succeed
- *  - others: other errors.
- */
-bk_err_t bk_pm_external_ldo_ctrl(uint32_t value);
 /**
  * @brief get the state of phy calibration
  *

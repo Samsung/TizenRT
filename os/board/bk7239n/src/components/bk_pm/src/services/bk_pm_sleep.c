@@ -334,9 +334,6 @@ static int pm_low_voltage_resource_set()
 {
 	pm_dev_id_e dev_id = 0;
 	#if !CONFIG_PM_CLIENT
-	#if CONFIG_PSRAM
-	pm_psram_malloc_state_and_power_ctrl();
-	#endif
 	pm_lv_enter_time_out_clear();
 	#if CONFIG_PM_LV_WDT_PROTECTION
 		#if CONFIG_AON_WDT
@@ -420,8 +417,6 @@ void pm_low_voltage_bsp_restore(void)
 		bk_aon_wdt_stop();
 	#endif
 #endif
-
-	bk_pm_exit_low_vol_wakeup_source_set();
 }
 
 static void pm_low_voltage_resource_restore()

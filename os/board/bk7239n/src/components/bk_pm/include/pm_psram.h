@@ -45,17 +45,3 @@ bk_err_t pm_cp1_psram_malloc_count_state_set(uint32_t value);
  *
  ****************************************************************************/
 bk_err_t pm_cp1_psram_malloc_state_get(void);
-
-/****************************************************************************
- * Name: pm_psram_malloc_state_and_power_ctrl
- *
- * Description:
- *   Check PSRAM malloc state and control PSRAM power accordingly.
- *   This function monitors PSRAM usage and automatically manages PSRAM
- *   power state based on whether the memory is actively allocated or idle.
- *
- * Returns:
- *   BK_OK on success, or error code on failure
- *
- ****************************************************************************/
-bk_err_t pm_psram_malloc_state_and_power_ctrl(void);
