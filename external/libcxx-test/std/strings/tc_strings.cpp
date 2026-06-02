@@ -1,4 +1,5 @@
 #include "tc_strings.hpp"
+#include <stdio.h>
 
 extern "C" {
 #include <tc_common.h>
@@ -6,6 +7,8 @@ extern "C" {
 
 extern "C" int tc_strings_main(void)
 {
+	printf("\nStarting [STRINGS] Tests\n");
+	fflush(stdout);
 	tc_libcxx_strings_basic_string_hash_strings();
 	tc_libcxx_strings_basic_string_types();
 	tc_libcxx_strings_c_strings_cctype();
@@ -211,4 +214,5 @@ extern "C" int tc_strings_main(void)
 	tc_libcxx_strings_string_special_swap_noexcept();
 	tc_libcxx_strings_string_substr_substr();
 	tc_libcxx_strings_string_swap_swap();
+	return 0;
 }

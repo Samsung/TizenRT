@@ -153,6 +153,13 @@ typedef unsigned int wint_t;
 #define _LIBCPP_BIT_LOG2_FALLBACK
 #endif
 
+// _LIBCPP_CONSTEXPR_SINCE_CXX20: Functions marked with this are constexpr only in C++20 and later
+#if _LIBCPP_STD_VER >= 20
+#define _LIBCPP_CONSTEXPR_SINCE_CXX20 constexpr
+#else
+#define _LIBCPP_CONSTEXPR_SINCE_CXX20
+#endif
+
 // Debug and assertion configuration
 // TizenRT hardening mode via Kconfig (mutually exclusive options)
 // See: https://libcxx.llvm.org/Hardening.html

@@ -1,4 +1,5 @@
 #include "tc_iterators.hpp"
+#include <stdio.h>
 
 extern "C" {
 #include <tc_common.h>
@@ -6,6 +7,8 @@ extern "C" {
 
 extern "C" int tc_iterators_main(void)
 {
+	printf("\nStarting [ITERATORS] Tests\n");
+	fflush(stdout);
 	tc_libcxx_iterators_back_insert_iter_cons_container();
 	tc_libcxx_iterators_back_insert_iter_op___post();
 	tc_libcxx_iterators_back_insert_iter_op___pre();
@@ -130,4 +133,5 @@ extern "C" int tc_iterators_main(void)
 	tc_libcxx_iterators_std_iterator_tags_input_iterator_tag();
 	tc_libcxx_iterators_std_iterator_tags_output_iterator_tag();
 	tc_libcxx_iterators_std_iterator_tags_random_access_iterator_tag();
+	return 0;
 }

@@ -9,10 +9,28 @@
 #ifndef SUPPORT_TEST_ITERATORS_H
 #define SUPPORT_TEST_ITERATORS_H
 
+#ifndef TEST_STD_VER
+#if __cplusplus >= 202302L
+#define TEST_STD_VER 23
+#elif __cplusplus >= 202002L
+#define TEST_STD_VER 20
+#elif __cplusplus >= 201703L
+#define TEST_STD_VER 17
+#elif __cplusplus >= 201402L
+#define TEST_STD_VER 14
+#elif __cplusplus >= 201103L
+#define TEST_STD_VER 11
+#else
+#define TEST_STD_VER 98
+#endif
+#endif
+
 #include <cassert>
+#if TEST_STD_VER > 17
 #include <concepts>
-#include <iterator>
 #include <ranges>
+#endif
+#include <iterator>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -96,11 +114,10 @@ public:
     friend TEST_CONSTEXPR bool operator==(const cpp17_input_iterator& x, const cpp17_input_iterator& y) {return x.it_ == y.it_;}
     friend TEST_CONSTEXPR bool operator!=(const cpp17_input_iterator& x, const cpp17_input_iterator& y) {return x.it_ != y.it_;}
 
-    // Support mixed iterator types
     template <class U, class T>
-    friend TEST_CONSTEXPR bool operator==(const cpp17_input_iterator& x, const cpp17_input_iterator<U, T>& y) {return base(x) == base(y);}
+    friend TEST_CONSTEXPR bool operator==(const cpp17_input_iterator& x, const cpp17_input_iterator<U, T>& y) {return x.it_ == base(y);}
     template <class U, class T>
-    friend TEST_CONSTEXPR bool operator!=(const cpp17_input_iterator& x, const cpp17_input_iterator<U, T>& y) {return base(x) != base(y);}
+    friend TEST_CONSTEXPR bool operator!=(const cpp17_input_iterator& x, const cpp17_input_iterator<U, T>& y) {return x.it_ != base(y);}
 
     friend TEST_CONSTEXPR It base(const cpp17_input_iterator& i) { return i.it_; }
 
@@ -150,11 +167,10 @@ public:
     friend TEST_CONSTEXPR bool operator==(const forward_iterator& x, const forward_iterator& y) {return x.it_ == y.it_;}
     friend TEST_CONSTEXPR bool operator!=(const forward_iterator& x, const forward_iterator& y) {return x.it_ != y.it_;}
 
-    // Support mixed iterator types
     template <class U>
-    friend TEST_CONSTEXPR bool operator==(const forward_iterator& x, const forward_iterator<U>& y) {return base(x) == base(y);}
+    friend TEST_CONSTEXPR bool operator==(const forward_iterator& x, const forward_iterator<U>& y) {return x.it_ == base(y);}
     template <class U>
-    friend TEST_CONSTEXPR bool operator!=(const forward_iterator& x, const forward_iterator<U>& y) {return base(x) != base(y);}
+    friend TEST_CONSTEXPR bool operator!=(const forward_iterator& x, const forward_iterator<U>& y) {return x.it_ != base(y);}
 
     friend TEST_CONSTEXPR It base(const forward_iterator& i) { return i.it_; }
 
@@ -198,11 +214,10 @@ public:
     friend TEST_CONSTEXPR bool operator==(const bidirectional_iterator& x, const bidirectional_iterator& y) {return x.it_ == y.it_;}
     friend TEST_CONSTEXPR bool operator!=(const bidirectional_iterator& x, const bidirectional_iterator& y) {return x.it_ != y.it_;}
 
-    // Support mixed iterator types
     template <class U>
-    friend TEST_CONSTEXPR bool operator==(const bidirectional_iterator& x, const bidirectional_iterator<U>& y) {return base(x) == base(y);}
+    friend TEST_CONSTEXPR bool operator==(const bidirectional_iterator& x, const bidirectional_iterator<U>& y) {return x.it_ == base(y);}
     template <class U>
-    friend TEST_CONSTEXPR bool operator!=(const bidirectional_iterator& x, const bidirectional_iterator<U>& y) {return base(x) != base(y);}
+    friend TEST_CONSTEXPR bool operator!=(const bidirectional_iterator& x, const bidirectional_iterator<U>& y) {return x.it_ != base(y);}
 
     friend TEST_CONSTEXPR It base(const bidirectional_iterator& i) { return i.it_; }
 
@@ -262,11 +277,18 @@ public:
     friend TEST_CONSTEXPR bool operator> (const random_access_iterator& x, const random_access_iterator& y) {return x.it_ >  y.it_;}
     friend TEST_CONSTEXPR bool operator>=(const random_access_iterator& x, const random_access_iterator& y) {return x.it_ >= y.it_;}
 
-    // Support mixed iterator types
     template <class U>
-    friend TEST_CONSTEXPR bool operator==(const random_access_iterator& x, const random_access_iterator<U>& y) {return base(x) == base(y);}
+    friend TEST_CONSTEXPR bool operator==(const random_access_iterator& x, const random_access_iterator<U>& y) {return x.it_ == base(y);}
     template <class U>
-    friend TEST_CONSTEXPR bool operator!=(const random_access_iterator& x, const random_access_iterator<U>& y) {return base(x) != base(y);}
+    friend TEST_CONSTEXPR bool operator!=(const random_access_iterator& x, const random_access_iterator<U>& y) {return x.it_ != base(y);}
+    template <class U>
+    friend TEST_CONSTEXPR bool operator< (const random_access_iterator& x, const random_access_iterator<U>& y) {return x.it_ <  base(y);}
+    template <class U>
+    friend TEST_CONSTEXPR bool operator<=(const random_access_iterator& x, const random_access_iterator<U>& y) {return x.it_ <= base(y);}
+    template <class U>
+    friend TEST_CONSTEXPR bool operator> (const random_access_iterator& x, const random_access_iterator<U>& y) {return x.it_ >  base(y);}
+    template <class U>
+    friend TEST_CONSTEXPR bool operator>=(const random_access_iterator& x, const random_access_iterator<U>& y) {return x.it_ >= base(y);}
 
     friend TEST_CONSTEXPR It base(const random_access_iterator& i) { return i.it_; }
 

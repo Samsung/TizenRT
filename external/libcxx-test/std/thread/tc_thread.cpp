@@ -1,4 +1,5 @@
 #include "tc_thread.hpp"
+#include <stdio.h>
 
 extern "C" {
 #include <tc_common.h>
@@ -6,6 +7,8 @@ extern "C" {
 
 extern "C" int tc_thread_main(void)
 {
+	printf("\nStarting [THREAD] Tests\n");
+	fflush(stdout);
 	tc_libcxx_thread_thread_lock_algorithm_lock();
 	tc_libcxx_thread_thread_lock_algorithm_try_lock();
 	tc_libcxx_thread_thread_lock_guard_adopt_lock();
@@ -51,4 +54,5 @@ extern "C" int tc_thread_main(void)
 	tc_libcxx_thread_thread_timedmutex_recursive_try_lock();
 	tc_libcxx_thread_thread_timedmutex_recursive_try_lock_for();
 	tc_libcxx_thread_thread_timedmutex_recursive_try_lock_until();
+	return 0;
 }

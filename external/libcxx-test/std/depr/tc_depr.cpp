@@ -8,11 +8,14 @@
 
 #include "libcxx_tc_common.h"
 #include "tc_depr.hpp"
+#include <stdio.h>
 
 extern "C"
 {
 	int tc_depr_main(void)
 	{
+		printf("\nStarting [DEPR] Tests\n");
+		fflush(stdout);
 		tc_libcxx_depr_depr_c_headers_stdbool_h();
 		return 0;
 	}

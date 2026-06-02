@@ -1,4 +1,5 @@
 #include "tc_utilities.hpp"
+#include <stdio.h>
 
 extern "C" {
 #include <tc_common.h>
@@ -6,6 +7,8 @@ extern "C" {
 
 extern "C" int tc_utilities_main(void)
 {
+	printf("\nStarting [UTILITIES] Tests\n");
+	fflush(stdout);
 	tc_libcxx_utilities_pair_astuple_get_const();
 	tc_libcxx_utilities_pair_astuple_get_non_const();
 	tc_libcxx_utilities_pair_astuple_get_rv();
@@ -37,4 +40,5 @@ extern "C" int tc_utilities_main(void)
 	tc_libcxx_utilities_util_smartptr_shared_const_shared_ptr_rv();
 	tc_libcxx_utilities_util_smartptr_shared_const_shared_ptr_Y();
 	tc_libcxx_utilities_util_smartptr_shared_const_shared_ptr_Y_rv();
+	return 0;
 }
