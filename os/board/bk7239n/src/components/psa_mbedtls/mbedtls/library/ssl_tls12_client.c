@@ -1431,15 +1431,6 @@ static int ssl_parse_server_hello(mbedtls_ssl_context *ssl)
     }
 #endif
 
-    if (comp != MBEDTLS_SSL_COMPRESS_NULL) {
-        MBEDTLS_SSL_DEBUG_MSG(1, ("bad server hello message"));
-        mbedtls_ssl_send_alert_message(
-            ssl,
-            MBEDTLS_SSL_ALERT_LEVEL_FATAL,
-            MBEDTLS_SSL_ALERT_MSG_ILLEGAL_PARAMETER);
-        return MBEDTLS_ERR_SSL_ILLEGAL_PARAMETER;
-    }
-
     ext = buf + 40 + n;
 
     MBEDTLS_SSL_DEBUG_MSG(2,

@@ -910,19 +910,26 @@ int bk_wifi_softap_init(trwifi_softap_config_s *softap_config)
 			security_type = WIFI_SECURITY_NONE;
 			break;
 		case TRWIFI_AUTH_WPA2_PSK:
-			if(softap_config->ap_crypto_type == TRWIFI_CRYPTO_AES) {
+			if (softap_config->ap_crypto_type == TRWIFI_CRYPTO_AES) {
 				security_type = WIFI_SECURITY_WPA2_AES;
 				os_memcpy(ap_config.password, softap_config->passphrase, softap_config->passphrase_length);
 				break;
 			}
+			ndbg("[BK] AP AUTH type or CRYPTO type is not support (%d, %d)\r\n",
+			     softap_config->ap_auth_type, softap_config->ap_crypto_type);
+			return TRWIFI_INVALID_ARGS;
 		case TRWIFI_AUTH_WPA2_AND_WPA3_PSK:
-			if(softap_config->ap_crypto_type == TRWIFI_CRYPTO_AES) {
+			if (softap_config->ap_crypto_type == TRWIFI_CRYPTO_AES) {
 				security_type = WIFI_SECURITY_WPA3_WPA2_MIXED;
 				os_memcpy(ap_config.password, softap_config->passphrase, softap_config->passphrase_length);
 				break;
 			}
+			ndbg("[BK] AP AUTH type or CRYPTO type is not support (%d, %d)\r\n",
+			     softap_config->ap_auth_type, softap_config->ap_crypto_type);
+			return TRWIFI_INVALID_ARGS;
 		case TRWIFI_AUTH_UNKNOWN:
 			ndbg("[BK] AP AUTH type is unknown %d\r\n", softap_config->ap_auth_type);
+			/* fall through */
 		default:
 			ndbg("[BK] AP AUTH type or CRYPTO type is not support (%d, %d)\r\n", softap_config->ap_auth_type, softap_config->ap_crypto_type);
 			return TRWIFI_INVALID_ARGS;
@@ -1208,7 +1215,7 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 
 		for (i = 0; i < config->scan_ap_config_count; i++) {
 			g_saved_multi_scan_list[i].is_valid = true;
-			if ((config->scan_ap_config[i].ssid_length == 0) || !config->scan_ap_config[i].ssid) {
+			if (config->scan_ap_config[i].ssid_length == 0) {
 				continue;
 			}
 

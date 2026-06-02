@@ -87,13 +87,6 @@ int mbedtls_ctr_drbg_set_nonce_len(mbedtls_ctr_drbg_context *ctx,
         return MBEDTLS_ERR_CTR_DRBG_INPUT_TOO_BIG;
     }
 
-    /* This shouldn't be an issue because
-     * MBEDTLS_CTR_DRBG_MAX_SEED_INPUT < INT_MAX in any sensible
-     * configuration, but make sure anyway. */
-    if (len > INT_MAX) {
-        return MBEDTLS_ERR_CTR_DRBG_INPUT_TOO_BIG;
-    }
-
     /* For backward compatibility with Mbed TLS <= 2.19, store the
      * entropy nonce length in a field that already exists, but isn't
      * used until after the initial seeding. */

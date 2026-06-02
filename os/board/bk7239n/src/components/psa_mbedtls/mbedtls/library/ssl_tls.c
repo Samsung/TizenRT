@@ -5287,27 +5287,27 @@ int mbedtls_ssl_config_defaults(mbedtls_ssl_config *conf,
     conf->tls13_kex_modes = MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_ALL;
 #endif /* MBEDTLS_SSL_PROTO_TLS1_3 */
 
-    if (transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2)
-        conf->min_tls_version = MBEDTLS_SSL_VERSION_TLS1_2;
+    conf->min_tls_version = MBEDTLS_SSL_VERSION_TLS1_2;
+#if defined(MBEDTLS_SSL_PROTO_TLS1_3)
+    if (transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
         conf->max_tls_version = MBEDTLS_SSL_VERSION_TLS1_2;
-#else
-        return MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
-#endif
     } else {
-#if defined(MBEDTLS_SSL_PROTO_TLS1_2) && defined(MBEDTLS_SSL_PROTO_TLS1_3)
-        conf->min_tls_version = MBEDTLS_SSL_VERSION_TLS1_2;
         conf->max_tls_version = MBEDTLS_SSL_VERSION_TLS1_3;
-#elif defined(MBEDTLS_SSL_PROTO_TLS1_3)
-        conf->min_tls_version = MBEDTLS_SSL_VERSION_TLS1_3;
-        conf->max_tls_version = MBEDTLS_SSL_VERSION_TLS1_3;
-#elif defined(MBEDTLS_SSL_PROTO_TLS1_2)
-        conf->min_tls_version = MBEDTLS_SSL_VERSION_TLS1_2;
-        conf->max_tls_version = MBEDTLS_SSL_VERSION_TLS1_2;
-#else
-        return MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
-#endif
     }
+#else
+    conf->max_tls_version = MBEDTLS_SSL_VERSION_TLS1_2;
+    (void) transport;
+#endif /* MBEDTLS_SSL_PROTO_TLS1_3 */
+#elif defined(MBEDTLS_SSL_PROTO_TLS1_3)
+    if (transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+        return MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
+    }
+    conf->min_tls_version = MBEDTLS_SSL_VERSION_TLS1_3;
+    conf->max_tls_version = MBEDTLS_SSL_VERSION_TLS1_3;
+#else
+    return MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE;
+#endif
 
     /*
      * Preset-specific defaults

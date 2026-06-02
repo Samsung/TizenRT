@@ -203,15 +203,8 @@ int bk_net_wlan_remove_netif_wrapper(void *mac)
 //extern uint8_t* dhcp_lookup_mac(uint8_t *chaddr);
 uint32_t bk_lookup_ipaddr_wrapper(void *addr)
 {
-	char *ipstr;
-
-	ipstr = NULL; //(char *)dhcp_lookup_mac(addr);
-	if (ipstr) {
-		ip_addr_t ipaddr,*ptr;
-		ptr = &ipaddr;
-		ipaddr_aton(ipstr, ptr);
-		return ip_addr_get_ip4_u32(ptr);
-	}
+	(void)addr;
+	/* dhcp_lookup_mac() not enabled */
 	return 0;
 }
 
@@ -2176,8 +2169,8 @@ int bk_wifi_set_pwr_limit(wifi_tx_pwr_lmt_t *tx_pwr_lmt)
         if((reg == regulation)&&(rs == ratesection)&&(chnl ==channel))
         {
             array[i+6] = value;
+            flag = 1;
         }
-        flag = 1;
     }
     if(!flag)
     	return -1;

@@ -352,6 +352,9 @@ static int ssl_write_client_hello_cipher_suites(
         const mbedtls_ssl_ciphersuite_t *ciphersuite_info;
 
         ciphersuite_info = mbedtls_ssl_ciphersuite_from_id(cipher_suite);
+        if (ciphersuite_info == NULL) {
+            continue;
+        }
 
         if (mbedtls_ssl_validate_ciphersuite(ssl, ciphersuite_info,
                                              ssl->handshake->min_tls_version,
