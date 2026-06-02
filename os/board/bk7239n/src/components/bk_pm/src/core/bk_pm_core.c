@@ -66,9 +66,6 @@ void pm_hardware_init(void)
 	/*add sleep vote*/
 	pm_sleep_vote_init();
 
-	/*set the wakeup wakeup source to misc module*/
-	pm_deep_sleep_wakeup_source_set();
-
 #if CONFIG_BAKP_POWER_DOMAIN_PM_CONTROL
 	/*pm vote power on ticket for bakp module*/
 	bk_pm_module_vote_power_ctrl(POWER_SUB_MODULE_NAME_BAKP_PM, PM_POWER_MODULE_STATE_ON);

@@ -78,12 +78,6 @@ bk_err_t __attribute__((weak)) bk_pm_exit_low_vol_wakeup_source_clear(void)
 	return BK_OK;
 }
 
-bk_err_t __attribute__((weak)) bk_pm_exit_low_vol_wakeup_source_set(void)
-{
-	LOGD("bk_pm_exit_low_vol_wakeup_source_set: (weak default)\n");
-	return BK_OK;
-}
-
 /* 5. 模块投票控制 */
 bk_err_t __attribute__((weak)) bk_pm_module_vote_sleep_ctrl(pm_sleep_module_name_e module, uint32_t sleep_state, uint32_t sleep_time)
 {
@@ -292,11 +286,6 @@ bk_err_t __attribute__((weak)) bk_pm_mem_auto_power_down_state_set(pm_mem_auto_c
 
 /* 13. 校准和特殊功能 */
 bk_err_t __attribute__((weak)) bk_pm_rosc_calibration(pm_rosc_cali_mode_e rosc_cali_mode, uint32_t cali_interval)
-{
-	return BK_OK;
-}
-
-bk_err_t __attribute__((weak)) bk_pm_external_ldo_ctrl(uint32_t value)
 {
 	return BK_OK;
 }

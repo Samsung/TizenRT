@@ -231,19 +231,6 @@ bk_err_t pm_cp1_psram_malloc_count_state_set(uint32_t value);
 bk_err_t bk_pm_module_check_cp1_shutdown(void);
 
 /****************************************************************************
- * Name: pm_printf_current_temperature
- *
- * Description:
- *   Print the current system temperature reading.
- *   Used for thermal monitoring and power management decisions.
- *
- * Returns:
- *   None
- *
- ****************************************************************************/
-void pm_printf_current_temperature(void);
-
-/****************************************************************************
  * Name: pm_cp1_aon_rtc_counter_get
  *
  * Description:

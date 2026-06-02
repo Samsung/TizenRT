@@ -156,19 +156,6 @@ void pm_power_modules_dump_with_sleep_mode(pm_sleep_mode_e sleep_mode);
 bk_err_t pm_debug_module_state(void);
 
 /****************************************************************************
- * Name: pm_debug_psram
- *
- * Description:
- *   Dump PSRAM (Pseudo-Static RAM) debug information.
- *   Displays PSRAM configuration, usage, and power state.
- *
- * Returns:
- *   None
- *
- ****************************************************************************/
-void pm_debug_psram(void);
-
-/****************************************************************************
  * Name: pm_debug_psram_state
  *
  * Description:
