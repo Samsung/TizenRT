@@ -119,7 +119,8 @@ int tc_libcxx_algorithms_alg_sorting_alg_clamp_clamp_comp(void) {
     TC_ASSERT_EXPR(eq(std::clamp(x, y, z, comp), z));
     TC_ASSERT_EXPR(eq(std::clamp(y, z, x, comp), z));
     }
-
+  
+#if TEST_STD_VER >= 20
     {
     typedef int T;
     constexpr T x = 1;
@@ -128,6 +129,7 @@ int tc_libcxx_algorithms_alg_sorting_alg_clamp_clamp_comp(void) {
     static_assert(std::clamp(x, y, z, std::greater<T>()) == y, "" );
     static_assert(std::clamp(y, x, z, std::greater<T>()) == y, "" );
     }
+#endif
 
   TC_SUCCESS_RESULT();
 

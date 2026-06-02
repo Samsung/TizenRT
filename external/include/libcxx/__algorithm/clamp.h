@@ -26,9 +26,14 @@ _LIBCPP_INLINE_VISIBILITY constexpr
 const _Tp&
 clamp(const _Tp& __v, const _Tp& __lo, const _Tp& __hi, _Compare __comp)
 {
-    _LIBCPP_ASSERT_UNCATEGORIZED(!__comp(__hi, __lo), "Bad bounds passed to std::clamp");
+    // Assertion only at runtime to support constexpr evaluation (C++20+)
+#if defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811L
+    if (!__builtin_is_constant_evaluated())
+#endif
+    {
+        _LIBCPP_ASSERT_UNCATEGORIZED(!__comp(__hi, __lo), "Bad bounds passed to std::clamp");
+    }
     return __comp(__v, __lo) ? __lo : __comp(__hi, __v) ? __hi : __v;
-
 }
 
 template<class _Tp>
