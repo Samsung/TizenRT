@@ -30,16 +30,16 @@ public:
 
 class Derived : public PaddedBase {
 public:
-  TEST_CONSTEXPR Derived(std::int16_t a, std::int8_t b, std::int8_t c) : PaddedBase(a, b), c_(c) {}
+  TEST_CONSTEXPR Derived(std::int16_t a, std::int8_t b, std::int32_t c) : PaddedBase(a, b), c_(c) {}
 
-  std::int8_t c_;
+  std::int32_t c_;
 };
 
 template <class InIter>
 struct Test {
   template <class OutIter>
   TEST_CONSTEXPR_CXX20 void operator()() {
-    const unsigned N = 1000;
+    const unsigned N = TEST_ARRAY_SIZE;
     int ia[N]        = {};
     for (unsigned i = 0; i < N; ++i)
       ia[i] = i;
@@ -85,10 +85,13 @@ TEST_CONSTEXPR_CXX20 bool test() {
 
 } // namespace
 
-int tc_libcxx_algorithms_alg_modifying_operations_alg_copy_copy(void) {
+int tc_libcxx_algorithms_alg_modifying_operations_alg_copy_copy(void) 
+{
+  printf("\nStarting Runtime test\n");
   test();
 
 #if TEST_STD_VER > 17
+  printf("\nStarting static test\n");
   static_assert(test());
 #endif
 

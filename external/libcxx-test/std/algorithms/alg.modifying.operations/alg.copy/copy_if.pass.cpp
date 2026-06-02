@@ -31,7 +31,7 @@ template <class InIter, class OutIter>
 TEST_CONSTEXPR_CXX20 void
 test_copy_if()
 {
-    const unsigned N = 1000;
+    const unsigned N = TEST_ARRAY_SIZE;
     int ia[N] = {};
     for (unsigned i = 0; i < N; ++i)
         ia[i] = i;

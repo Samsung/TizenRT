@@ -51,7 +51,7 @@ template <class Iter>
 void
 test()
 {
-    const unsigned N = 1000;
+    const unsigned N = TEST_ARRAY_SIZE;
     const int M = 10;
     std::vector<int> v(N);
     int x = 0;

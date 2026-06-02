@@ -249,7 +249,7 @@
 
 /* Macros for testing libc++ specific behavior and extensions */
 #if defined(_LIBCPP_VERSION)
-#define LIBCPP_ASSERT(...) assert(__VA_ARGS__)
+#define LIBCPP_ASSERT(...) TC_ASSERT_EXPR(__VA_ARGS__)
 #define LIBCPP_STATIC_ASSERT(...) static_assert(__VA_ARGS__)
 #define LIBCPP_ASSERT_NOEXCEPT(...) ASSERT_NOEXCEPT(__VA_ARGS__)
 #define LIBCPP_ASSERT_NOT_NOEXCEPT(...) ASSERT_NOT_NOEXCEPT(__VA_ARGS__)
@@ -464,6 +464,11 @@ inline void DoNotOptimize(Tp const& value) {
 #  define TEST_WORKAROUND_BUG_109234844_WEAK __attribute__((weak))
 #else
 #  define TEST_WORKAROUND_BUG_109234844_WEAK /* nothing */
+#endif
+
+// Array size for embedded systems with limited stack
+#ifndef TEST_ARRAY_SIZE
+#  define TEST_ARRAY_SIZE 100
 #endif
 
 #endif // SUPPORT_TEST_MACROS_HPP
