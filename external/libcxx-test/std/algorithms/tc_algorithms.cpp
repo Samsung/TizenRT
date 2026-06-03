@@ -8,6 +8,9 @@
 #include "libcxx_tc_common.h"
 #include "tc_algorithms.hpp"
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
 #ifndef TEST_STD_VER
 #if __cplusplus >= 202302L
@@ -237,19 +240,30 @@ extern "C"
 		fflush(stdout);
 		
 		tc_algorithms_Sort_BinarySearch();
+		usleep(1000); 
 		tc_algorithms_Sort_Clamp();
+		usleep(1000); 
 		tc_algorithms_Sort_HeapOperations();
+		usleep(1000); 
 		tc_algorithms_Sort_LexComparison();
+		usleep(1000); 
 		tc_algorithms_Sort_Merge();
+		usleep(1000); 
 		tc_algorithms_Sort_MinMax();
+		usleep(1000); 
 		tc_algorithms_Sort_NthElement();
+		usleep(1000); 
 		tc_algorithms_Sort_PermutationGenerators();
+		usleep(1000); 
 		tc_algorithms_Sort_SetOperations();
+		usleep(1000); 
 		tc_algorithms_Sort_Sort();
+		usleep(1000); 
 		
 		printf("\nCompleted [ALGORITHMS_SORT] Tests\n");
 		fflush(stdout);
 	}
+
 
 	int tc_algorithms_main(void)
 	{
@@ -257,22 +271,117 @@ extern "C"
 		fflush(stdout);
 #ifdef CONFIG_LIBCXX_UTC_ALGORITHMS
 		{ tc_libcxx_algorithms_robust_against_adl_on_new(); }
-		// Note: robust_against_proxy_iterators_lifetime_bugs removed - TC_ASSERT_EXPR incompatible
-		// Note: algorithms.results/ files removed - use std::ranges (C++20)
+		usleep(1000); 
 #endif
 
 #ifdef CONFIG_LIBCXX_UTC_ALGORITHMS_MOD
 		tc_algorithms_mod();
+		usleep(1000); 
 #endif
 
 #ifdef CONFIG_LIBCXX_UTC_ALGORITHMS_NONMOD
 		tc_algorithms_NonMod();
+		usleep(1000); 
 #endif
 
 #ifdef CONFIG_LIBCXX_UTC_ALGORITHMS_SORT
 		tc_algorithms_Sort();
+		usleep(1000); 
 #endif
 
 		return 0;
+	}
+
+	// SORT sub-category handler (called from tc_algorithms_menu)
+	static void tc_algorithms_sort_handler(int argc, char *argv[])
+	{
+		// No sub-argument: run all sort tests
+		if (argc <= 1) {
+			tc_algorithms_Sort();
+			return;
+		}
+
+		if (strcmp(argv[1], "binarysearch") == 0) {
+			printf("\nRunning BinarySearch tests...\n");
+			tc_algorithms_Sort_BinarySearch();
+		}
+		else if (strcmp(argv[1], "clamp") == 0) {
+			printf("\nRunning Clamp tests...\n");
+			tc_algorithms_Sort_Clamp();
+		}
+		else if (strcmp(argv[1], "heap") == 0) {
+			printf("\nRunning HeapOperations tests...\n");
+			tc_algorithms_Sort_HeapOperations();
+		}
+		else if (strcmp(argv[1], "lexcompare") == 0) {
+			printf("\nRunning LexComparison tests...\n");
+			tc_algorithms_Sort_LexComparison();
+		}
+		else if (strcmp(argv[1], "merge") == 0) {
+			printf("\nRunning Merge tests...\n");
+			tc_algorithms_Sort_Merge();
+		}
+		else if (strcmp(argv[1], "minmax") == 0) {
+			printf("\nRunning MinMax tests...\n");
+			tc_algorithms_Sort_MinMax();
+		}
+		else if (strcmp(argv[1], "nthelement") == 0) {
+			printf("\nRunning NthElement tests...\n");
+			tc_algorithms_Sort_NthElement();
+		}
+		else if (strcmp(argv[1], "permutation") == 0) {
+			printf("\nRunning PermutationGenerators tests...\n");
+			tc_algorithms_Sort_PermutationGenerators();
+		}
+		else if (strcmp(argv[1], "setops") == 0) {
+			printf("\nRunning SetOperations tests...\n");
+			tc_algorithms_Sort_SetOperations();
+		}
+		else if (strcmp(argv[1], "sort") == 0) {
+			printf("\nRunning Sort tests...\n");
+			tc_algorithms_Sort_Sort();
+		}
+		else {
+			printf("\nUnknown sort sub-category: %s\n", argv[1]);
+			printf("Available: binarysearch, clamp, heap, lexcompare, merge, minmax, nthelement, permutation, setops, sort\n");
+		}
+	}
+
+	// Menu function for ALGORITHMS sub-tests (called from utc_libcxx.c)
+	void tc_algorithms_menu(int argc, char *argv[])
+	{
+		// No arguments: run all algorithms tests
+		if (argc <= 1) {
+			tc_algorithms_main();
+			return;
+		}
+
+		if (strcmp(argv[1], "mod") == 0) {
+#ifdef CONFIG_LIBCXX_UTC_ALGORITHMS_MOD
+			printf("\nRunning alg.modifying tests...\n");
+			tc_algorithms_mod();
+#else
+			printf("\nALGORITHMS_MOD tests not enabled in config\n");
+#endif
+		}
+		else if (strcmp(argv[1], "nonmod") == 0) {
+#ifdef CONFIG_LIBCXX_UTC_ALGORITHMS_NONMOD
+			printf("\nRunning alg.nonmodifying tests...\n");
+			tc_algorithms_NonMod();
+#else
+			printf("\nALGORITHMS_NONMOD tests not enabled in config\n");
+#endif
+		}
+		else if (strcmp(argv[1], "sort") == 0) {
+#ifdef CONFIG_LIBCXX_UTC_ALGORITHMS_SORT
+			tc_algorithms_sort_handler(argc - 1, &argv[1]);
+#else
+			printf("\nALGORITHMS_SORT tests not enabled in config\n");
+#endif
+		}
+		else {
+			printf("\nUnknown algorithms sub-category: %s\n", argv[1]);
+			printf("Available: mod, nonmod, sort\n");
+		}
 	}
 }
