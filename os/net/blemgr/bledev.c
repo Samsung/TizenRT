@@ -221,8 +221,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_CONN_IS_ANY_ACTIVE:
 	{
 		bool *is_active = NULL;
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			is_active = (bool *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			is_active = (bool *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -330,8 +332,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_CONNECTED_DEV_LIST:
 	{
 		trble_connected_list *list = NULL;
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			list = (trble_connected_list *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			list = (trble_connected_list *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -466,8 +470,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_SET_SERVER_CONFIG:
 	{
 		trble_server_init_config *t_server = NULL;
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			t_server = (trble_server_init_config *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			t_server = (trble_server_init_config *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -477,8 +483,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_GET_PROFILE_COUNT:
 	{
 		uint16_t *count = NULL;
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			count = (uint16_t *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			count = (uint16_t *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -657,8 +665,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_SET_DEVICE_NAME:
 	{
 		uint8_t* name;
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			name = (uint8_t*)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			name = (uint8_t*)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
