@@ -102,6 +102,7 @@ static void tash_security_level(int argc, char **args)
 	} else {
 		printf("Invalid argument (%s).\n", args[1]);
 		show_usage();
+		(void)security_deinit(hnd);
 		return;
 	}
 	
