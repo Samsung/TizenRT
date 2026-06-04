@@ -81,7 +81,7 @@ bool InputHandler::open(size_t buffSize)
 	// Allocate processBuffer with max possible size BEFORE StreamHandler::open()
 	// because worker thread starts inside StreamHandler::open() and may call processWorker()
 	// The actual size needed will be determined after registerCodec() sets mDecoder/mDemuxer
-	mProcessBufferSize = std::max({CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, CONFIG_DEMUX_BUFFER_SIZE, CONFIG_HANDLER_STREAM_BUFFER_SIZE});
+	mProcessBufferSize = std::max(CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, std::max(CONFIG_DEMUX_BUFFER_SIZE, CONFIG_HANDLER_STREAM_BUFFER_SIZE));
 	mProcessBuffer = new unsigned char[mProcessBufferSize];
 	if (!mProcessBuffer) {
 		meddbg("Buffer allocation fail size: %d\n", mProcessBufferSize);
@@ -153,8 +153,15 @@ void InputHandler::resetWorker()
 
 bool InputHandler::processWorker()
 {
+	/* This should not be happened */
+	if (!mProcessBuffer) {
+		meddbg("mProcessBuffer is not allocated\n");
+		mBufferWriter->setEndOfStream();
+		return false;
+	}
+
 	size_t size = getAvailSpace();
-	if (size > 0 && mProcessBuffer) {
+	if (size != 0) {
 		if (size > mProcessBufferSize) {
 			meddbg("Invalid available space\n");
 			size = mProcessBufferSize;
@@ -188,8 +195,10 @@ bool InputHandler::processWorker()
 			return false;
 		}
 	} else {
-		// ToDo: Cross check below. EoS shouldn't be set when available size is 0.
-		// Available size 0 means there is still some data available in buffers that can be read & played.
+		// ToDo: When no valid encoded frame is available in decoder ring buffer, no data is read from it. Consequently,
+		// in the next processWorker cycle, getAvailSpace() returns 0, preventing new data from being read from the source
+		// and causing playback to stall. To resolve this, EOS is set when getAvailSpace() returns 0.
+		// However, check if doing rbs_seek_ext() when resync() fails is better or not.
 		mBufferWriter->setEndOfStream();
 	}
 
