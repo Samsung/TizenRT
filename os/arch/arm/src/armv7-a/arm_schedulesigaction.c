@@ -161,7 +161,14 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 										((uint32_t)CURRENT_REGS - (uint32_t)XCPTCONTEXT_SIZE);
 				memcpy((uint32_t *)CURRENT_REGS, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
 
-				CURRENT_REGS[REG_SP] = (uint32_t)CURRENT_REGS + (uint32_t)XCPTCONTEXT_SIZE;
+				/* AAPCS: the stack pointer must be 8-byte aligned at every public
+				 * function-call boundary.  The duplicated register-save area top
+				 * used as the delivery SP is only word-aligned in the general
+				 * case, so force 8-byte alignment here.  Rounding down stays within
+				 * the already-duplicated context frame and is restored verbatim by
+				 * the signal trampoline, so no live state is disturbed.
+				 */
+				CURRENT_REGS[REG_SP] = (((uint32_t)CURRENT_REGS + (uint32_t)XCPTCONTEXT_SIZE) & ~7);
 
 				/* Then set up to vector to the trampoline with interrupts
 				 * disabled
@@ -201,7 +208,14 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 									((uint32_t)tcb->xcp.regs - (uint32_t)XCPTCONTEXT_SIZE);
 			memcpy(tcb->xcp.regs, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
 
-			tcb->xcp.regs[REG_SP] = (uint32_t)tcb->xcp.regs + (uint32_t)XCPTCONTEXT_SIZE;
+			/* AAPCS: the stack pointer must be 8-byte aligned at every public
+			 * function-call boundary.  The duplicated register-save area top
+			 * used as the delivery SP is only word-aligned in the general
+			 * case, so force 8-byte alignment here.  Rounding down stays within
+			 * the already-duplicated context frame and is restored verbatim by
+			 * the signal trampoline, so no live state is disturbed.
+			 */
+			tcb->xcp.regs[REG_SP] = (((uint32_t)tcb->xcp.regs + (uint32_t)XCPTCONTEXT_SIZE) & ~7);
 
 			/* Then set up to vector to the trampoline with interrupts
 			 * disabled
@@ -296,7 +310,14 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 									((uint32_t)tcb->xcp.regs - (uint32_t)XCPTCONTEXT_SIZE);
 					memcpy(tcb->xcp.regs, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
 
-					tcb->xcp.regs[REG_SP] = (uint32_t)tcb->xcp.regs + (uint32_t)XCPTCONTEXT_SIZE;
+					/* AAPCS: the stack pointer must be 8-byte aligned at every public
+					 * function-call boundary.  The duplicated register-save area top
+					 * used as the delivery SP is only word-aligned in the general
+					 * case, so force 8-byte alignment here.  Rounding down stays within
+					 * the already-duplicated context frame and is restored verbatim by
+					 * the signal trampoline, so no live state is disturbed.
+					 */
+					tcb->xcp.regs[REG_SP] = (((uint32_t)tcb->xcp.regs + (uint32_t)XCPTCONTEXT_SIZE) & ~7);
 
 					/* Then set up to vector to the trampoline with interrupts
 					 * disabled
@@ -333,7 +354,14 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 								   ((uint32_t)CURRENT_REGS - (uint32_t)XCPTCONTEXT_SIZE);
 					memcpy((uint32_t *) CURRENT_REGS, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
 
-					CURRENT_REGS[REG_SP] = (uint32_t)CURRENT_REGS + (uint32_t)XCPTCONTEXT_SIZE;
+					/* AAPCS: the stack pointer must be 8-byte aligned at every public
+					 * function-call boundary.  The duplicated register-save area top
+					 * used as the delivery SP is only word-aligned in the general
+					 * case, so force 8-byte alignment here.  Rounding down stays within
+					 * the already-duplicated context frame and is restored verbatim by
+					 * the signal trampoline, so no live state is disturbed.
+					 */
+					CURRENT_REGS[REG_SP] = (((uint32_t)CURRENT_REGS + (uint32_t)XCPTCONTEXT_SIZE) & ~7);
 
 					/* Then set up vector to the trampoline with interrupts
 					 * disabled.  The kernel-space trampoline must run in
@@ -395,7 +423,14 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 							((uint32_t)tcb->xcp.regs - (uint32_t)XCPTCONTEXT_SIZE);
 			memcpy(tcb->xcp.regs, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
 
-			tcb->xcp.regs[REG_SP] = (uint32_t)tcb->xcp.regs + (uint32_t)XCPTCONTEXT_SIZE;
+			/* AAPCS: the stack pointer must be 8-byte aligned at every public
+			 * function-call boundary.  The duplicated register-save area top
+			 * used as the delivery SP is only word-aligned in the general
+			 * case, so force 8-byte alignment here.  Rounding down stays within
+			 * the already-duplicated context frame and is restored verbatim by
+			 * the signal trampoline, so no live state is disturbed.
+			 */
+			tcb->xcp.regs[REG_SP] = (((uint32_t)tcb->xcp.regs + (uint32_t)XCPTCONTEXT_SIZE) & ~7);
 
 			/* Increment the IRQ lock count so that when the task is restarted,
 			 * it will hold the IRQ spinlock.

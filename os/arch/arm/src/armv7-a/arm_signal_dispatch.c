@@ -84,9 +84,28 @@
 #ifndef CONFIG_DISABLE_SIGNALS
 void up_signal_dispatch(_sa_sigaction_t sighand, int signo, siginfo_t *info, void *ucontext)
 {
+	uint32_t saved_sp;
+
+	/* Save SP, force 8-byte alignment, call syscall4(), then restore SP */
+
+	__asm__ __volatile__ (
+        "mov %0, sp\n"
+        "bic sp, sp, #7\n"
+        : "=r"(saved_sp)
+        :
+        : "memory"
+    );
+
 	/* Let sys_call4() do all of the work */
 
 	sys_call4(SYS_signal_handler, (uintptr_t) sighand, (uintptr_t) signo, (uintptr_t) info, (uintptr_t) ucontext);
+
+	__asm__ __volatile__ (
+        "mov sp, %0\n"
+        :
+        : "r"(saved_sp)
+        : "memory"
+    );
 }
 #endif
 #endif							/* !CONFIG_BUILD_FLAT && __KERNEL__ */
