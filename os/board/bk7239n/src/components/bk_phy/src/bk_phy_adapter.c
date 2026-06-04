@@ -359,7 +359,7 @@ static bk_err_t bk_flash_set_protect_type_protect_none(void)
 #if (CONFIG_OTP && CONFIG_PHY_RFCALI_TO_OTP)
     return BK_ERR_NOT_SUPPORT;
 #else
-    return bk_flash_set_protect_type(FLASH_PROTECT_NONE);
+    return BK_OK;
 #endif
 }
 
@@ -368,7 +368,7 @@ static bk_err_t bk_flash_set_protect_type_unprotect_last_block(void)
 #if (CONFIG_OTP && CONFIG_PHY_RFCALI_TO_OTP)
     return BK_ERR_NOT_SUPPORT;
 #else
-    return bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
+    return BK_OK;
 #endif
 }
 

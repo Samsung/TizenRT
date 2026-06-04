@@ -43,11 +43,9 @@ static void cli_flash_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, ch
 	uint32_t len = os_strtoul(argv[3], NULL, 16);
 
 	if (os_strcmp(argv[1], "erase") == 0) {
-		bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 		for (uint32_t addr = start_addr; addr < (start_addr + len); addr += FLASH_SECTOR_SIZE) {
 			bk_flash_erase_sector(addr);
 		}
-		bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 		msg = CLI_CMD_RSP_SUCCEED;
 	} else if (os_strcmp(argv[1], "read") == 0) {
 		uint8_t buf[FLASH_PAGE_SIZE] = {0};
@@ -70,11 +68,9 @@ static void cli_flash_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, ch
 		for (uint32_t i = 0; i < FLASH_PAGE_SIZE; i++) {
 			buf[i] = i;
 		}
-		bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 		for (uint32_t addr = start_addr; addr < (start_addr + len); addr += FLASH_PAGE_SIZE) {
 			bk_flash_write_bytes(addr, buf, FLASH_PAGE_SIZE);
 		}
-		bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 		msg = CLI_CMD_RSP_SUCCEED;
 	} else if (os_strcmp(argv[1], "get_id") == 0) {
 		uint32_t flash_id = bk_flash_get_id();

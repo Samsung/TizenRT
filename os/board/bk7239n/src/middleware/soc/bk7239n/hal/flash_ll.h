@@ -25,6 +25,12 @@ extern "C" {
 
 #define FLASH_LL_REG_BASE(_flash_unit_id)    (SOC_FLASH_REG_BASE)
 
+/* NOR status register protection bits */
+#define FLASH_SR_SRP0_POS    (7)                        /* SR byte1 bit7 (SRP0) */
+#define FLASH_SR_SRP1_POS    (8)                        /* SR byte2 S8 / bit8 of 16b SR (SRP1) */
+#define FLASH_SR_SRP0        (1u << FLASH_SR_SRP0_POS)
+#define FLASH_SR_SRP1        (1u << FLASH_SR_SRP1_POS)
+
 static inline void flash_ll_soft_reset(flash_hw_t *hw)
 {
 	hw->global_ctrl.soft_reset = 1;
@@ -54,7 +60,7 @@ static inline void flash_ll_set_op_cmd(flash_hw_t *hw, flash_op_cmd_t cmd)
 {
 	hw->op_cmd.op_type_sw = cmd;
 	hw->op_ctrl.op_sw = 1;
-	hw->op_ctrl.wp_value = 1;
+	//hw->op_ctrl.wp_value = 1;    //only pull up wp pin when write status reg
 }
 
 static inline uint32_t flash_ll_get_id(flash_hw_t *hw)
@@ -111,21 +117,30 @@ static inline void flash_ll_set_volatile_status_write(flash_hw_t *hw)
 	while (flash_ll_is_busy(hw));
 	hw->flash_ctrl.susres_cmd_reg = 0x50;
 	hw->flash_ctrl.susres_cmd_sel = 0x1;
-	flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
+	//while (flash_ll_is_busy(hw));
+}
+
+static inline void flash_ll_clear_volatile_status_write(flash_hw_t *hw)
+{
 	while (flash_ll_is_busy(hw));
+	hw->flash_ctrl.susres_cmd_reg = 0x00;
 	hw->flash_ctrl.susres_cmd_sel = 0x0;
+	while (flash_ll_is_busy(hw));
 }
 
 static inline void flash_ll_write_status_reg(flash_hw_t *hw, uint8_t sr_width, uint32_t sr_data)
 {
-	#if CONFIG_FLASH_WRITE_STATUS_VOLATILE
-		flash_ll_set_volatile_status_write(hw);
-	#endif
+	uint32_t v = sr_data;
 
-	while (flash_ll_is_busy(hw));
+	flash_ll_set_volatile_status_write(hw);
+	/* NOR SR: keep SRP0 set, clear SRP1 */
+	v |= FLASH_SR_SRP0;
+	v &= ~FLASH_SR_SRP1;
+
+	//while (flash_ll_is_busy(hw));
 	hw->cmd_cfg.v = 0;
-	hw->config.wrsr_data = sr_data;
 	hw->op_ctrl.wp_value = 1;
+	hw->config.wrsr_data = v;
 	if (sr_width == 1) {
 		flash_ll_set_op_cmd(hw, FLASH_OP_CMD_WRSR);
 	} else {
@@ -150,8 +165,8 @@ static inline void flash_ll_write_status_reg(flash_hw_t *hw, uint8_t sr_width, u
 		hw->cmd_cfg.v = 0;
 	}
 
-	while (flash_ll_is_busy(hw));
 	hw->op_ctrl.wp_value = 0;
+	flash_ll_clear_volatile_status_write(hw);
 }
 
 static inline void flash_ll_set_qe(flash_hw_t *hw, uint8_t qe_bit, uint8_t qe_bit_post)

@@ -124,7 +124,6 @@ static void lcd_cpy_yuv(int width, int height, uint32_t fb_yuv_buffer_size)
 	int length_k = length / 1024;
 	os_printf("offset:%x ... KB:%d \r\n", length, length_k);
 
-	bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 	uint8_t read_buffer[1024];
 
 	for (int j = 0; j < 6; j++)
