@@ -415,17 +415,13 @@ bk_err_t bk_flash_partition_erase(bk_partition_t partition, uint32_t offset, uin
 	start_sector = offset >> FLASH_SECTOR_SIZE_OFFSET; /* offset / FLASH_SECTOR_SIZE */
 	end_sector = (offset + size - 1) >> FLASH_SECTOR_SIZE_OFFSET;
 
-	flash_protect_type_t  partition_type = bk_flash_get_protect_type();
-
 	for (uint32_t i = start_sector; i <= end_sector; i ++) {
 
 		erase_addr = partition_info->partition_start_addr + (i << FLASH_SECTOR_SIZE_OFFSET);
 
 		GLOBAL_INT_DISABLE();
 
-			bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 		bk_flash_erase_sector(erase_addr);
-			bk_flash_set_protect_type(partition_type);
 
 		GLOBAL_INT_RESTORE();
 	}
@@ -573,12 +569,9 @@ bk_err_t bk_flash_partition_write(bk_partition_t partition, const uint8_t *buffe
 
 	GLOBAL_INT_DISABLE();
 
-	flash_protect_type_t  partition_type = bk_flash_get_protect_type();
-	bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 	if((offset + buffer_len) <= partition_info->partition_length) {
 		bk_flash_write_bytes(start_addr, dest_hex, buffer_len);
 	}
-	bk_flash_set_protect_type(partition_type);
 
 	GLOBAL_INT_RESTORE();
 
@@ -806,12 +799,9 @@ PARTITION_IRAM bk_err_t bk_flash_partition_write_enhanced(bk_partition_t partiti
 
 	GLOBAL_INT_DISABLE();
 
-	flash_protect_type_t  partition_type = bk_flash_get_protect_type();
-	bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 	if((offset + buffer_len) <= partition_info->partition_length) {
 		__iram_memcpy((void *)wr_ptr, buffer, buffer_len);
 	}
-	bk_flash_set_protect_type(partition_type);
 
 	GLOBAL_INT_RESTORE();
 

@@ -123,14 +123,7 @@ EfErrCode ef_port_read(uint32_t addr, uint32_t *buf, size_t size)
  */
 static int bk_erase(uint32_t addr, size_t size)
 {
-	flash_protect_type_t protect_type;
-
 	unsigned int _size = size;
-
-	protect_type = bk_flash_get_protect_type();
-	if (FLASH_PROTECT_NONE != protect_type) {
-		bk_flash_set_protect_type(FLASH_PROTECT_NONE);
-	}
 
 	/* Calculate the start address of the flash sector(4kbytes) */
 	addr = addr & 0x00FFF000;
@@ -147,10 +140,6 @@ static int bk_erase(uint32_t addr, size_t size)
 			_size -= 4096;
 
 	} while (_size);
-
-	if (FLASH_PROTECT_NONE != protect_type) {
-		bk_flash_set_protect_type(protect_type);
-	}
 
 	return size; // return true erase size
 }
@@ -190,18 +179,11 @@ EfErrCode ef_port_erase(uint32_t addr, size_t size)
  */
 EfErrCode ef_port_write(uint32_t addr, const uint32_t *buf, size_t size)
 {
-	flash_protect_type_t protect_type;
 	EfErrCode result = EF_NO_ERR;
 
 	EF_ASSERT(size % 4 == 0);
 
-	protect_type = bk_flash_get_protect_type();
-	if (FLASH_PROTECT_NONE != protect_type) {
-		bk_flash_set_protect_type(FLASH_PROTECT_NONE);
-	}
-
 	bk_flash_write_bytes(addr, (const uint8_t *)buf, size);
-	bk_flash_set_protect_type(protect_type);
 
 	return result;
 }

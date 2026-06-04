@@ -26,8 +26,6 @@
 extern "C" {
 #endif
 
-flash_protect_type_t psa_flash_get_protect_type(void);
-int psa_flash_set_protect_type(uint32_t type);
 int psa_flash_erase_sector(uint32_t address);
 int psa_flash_read_bytes(uint32_t address, uint8_t *user_buf, uint32_t size);
 int psa_flash_write_bytes(uint32_t address, const uint8_t *user_buf, uint32_t size);

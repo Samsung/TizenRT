@@ -130,7 +130,6 @@ int32_t iot_flash_erase_sectors(IotFlashHandle_t const pxFlashHandle, uint32_t u
     uint32_t erase_times = 0;
     uint32_t dw_loop = 0;
     uint32_t dw_rtn = 0;
-    flash_protect_type_t project_type;
 
     if ((pxFlashHandle == NULL) || !(prv_is_alligned_4k(ulAddress)) || (lSize % FLASH_SECTOR_SIZE)) {
         return IOT_FLASH_INVALID_VALUE;
@@ -140,19 +139,15 @@ int32_t iot_flash_erase_sectors(IotFlashHandle_t const pxFlashHandle, uint32_t u
     hal_flash_lock();
     bk_flash_write_enable();
 
-    project_type = bk_flash_get_protect_type();
-    bk_flash_set_protect_type(FLASH_PROTECT_NONE);
     for(dw_loop = 0; dw_loop < erase_times; dw_loop++){
         dw_rtn = bk_flash_erase_sector(ulAddress + dw_loop * FLASH_SECTOR_SIZE);
 
         if(dw_rtn != BK_OK){
-            bk_flash_set_protect_type(project_type);
             bk_flash_write_disable();
             hal_flash_unlock();
             return IOT_FLASH_INVALID_VALUE;
         }
     }
-    bk_flash_set_protect_type(project_type);
 
     bk_flash_write_disable();
     hal_flash_unlock();
@@ -170,7 +165,6 @@ int32_t iot_flash_erase_chip(IotFlashHandle_t const pxFlashHandle)
 
 int32_t iot_flash_write_sync(IotFlashHandle_t const pxFlashHandle, uint32_t ulAddress, uint8_t *const pvBuffer, size_t xBytes)
 {
-    flash_protect_type_t project_type;
     if (pxFlashHandle == NULL || (int) ulAddress < 0 || pvBuffer == NULL) {
         return IOT_FLASH_INVALID_VALUE;
     }
@@ -179,10 +173,7 @@ int32_t iot_flash_write_sync(IotFlashHandle_t const pxFlashHandle, uint32_t ulAd
     hal_flash_lock();
     bk_flash_write_enable();
 
-    project_type = bk_flash_get_protect_type();
-    bk_flash_set_protect_type(FLASH_PROTECT_NONE);
     bk_err_t dw_rtn = bk_flash_write_bytes(ulAddress, (const uint8_t *)pvBuffer, xBytes);
-    bk_flash_set_protect_type(project_type);
 
     bk_flash_write_disable();
     hal_flash_unlock();

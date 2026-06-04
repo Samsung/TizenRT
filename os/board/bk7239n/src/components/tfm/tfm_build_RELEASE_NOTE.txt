@@ -28,3 +28,11 @@ the value of the current secure level.
    1. TFM access flash with lock protection
       Operate flash in tfm will set flash controller as security status. If non-secure world operate flash controller at the same time, it will trigger bus fault.
 
+== version beken_trustzone pr-223 2026/06/04-15:53:38==
+
+   1. flash improvement about set protect type within flash erase/write api
+    - The original application-layer operations for adding/de-protecting and erasing/writing are now implemented within the erase/write interface, ensuring atomic operations within the flash driver API;
+    - Configure the WP and flash SRP status registers for hardware protection of the flash status registers;
+    - Write to the status register using volatile mode.
+
+
