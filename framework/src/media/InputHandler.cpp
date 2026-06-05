@@ -78,21 +78,23 @@ bool InputHandler::doStandBy(size_t buffSize)
 
 bool InputHandler::open(size_t buffSize)
 {
-	// Allocate processBuffer with max possible size BEFORE StreamHandler::open()
-	// because worker thread starts inside StreamHandler::open() and may call processWorker()
-	// The actual size needed will be determined after registerCodec() sets mDecoder/mDemuxer
-	mProcessBufferSize = std::max(CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, std::max(CONFIG_DEMUX_BUFFER_SIZE, CONFIG_HANDLER_STREAM_BUFFER_SIZE));
-	mProcessBuffer = new unsigned char[mProcessBufferSize];
+	// No need to allocate if it is already allocated as size is constant.
 	if (!mProcessBuffer) {
-		meddbg("Buffer allocation fail size: %d\n", mProcessBufferSize);
-		return false;
+		// Allocate processBuffer with max possible size BEFORE StreamHandler::open()
+		// because worker thread starts inside StreamHandler::open() and may call processWorker()
+		// The actual size needed will be determined after registerCodec() sets mDecoder/mDemuxer
+		mProcessBufferSize = std::max(CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, std::max(CONFIG_DEMUX_BUFFER_SIZE, CONFIG_HANDLER_STREAM_BUFFER_SIZE));
+		mProcessBuffer = std::make_unique<unsigned char[]>(mProcessBufferSize);
+		if (!mProcessBuffer) {
+			meddbg("Buffer allocation fail size: %d\n", mProcessBufferSize);
+			return false;
+		}
 	}
 
 	// Open stream handler and start buffering
 	if (!StreamHandler::open(buffSize)) {
 		meddbg("StreamHandler::open failed!\n");
-		delete[] mProcessBuffer;
-		mProcessBuffer = nullptr;
+		mProcessBuffer.reset();
 		mProcessBufferSize = 0;
 		return false;
 	}
@@ -117,11 +119,8 @@ bool InputHandler::close()
 	// Terminate buffering
 	std::unique_lock<std::mutex> lock(mMutex);
 	mCondv.notify_one();
-	if (mProcessBuffer) {
-		delete[] mProcessBuffer;
-		mProcessBuffer = nullptr;
-		mProcessBufferSize = 0;
-	}
+	mProcessBuffer.reset();
+	mProcessBufferSize = 0;
 	return ret;
 }
 
@@ -167,7 +166,7 @@ bool InputHandler::processWorker()
 			size = mProcessBufferSize;
 		}
 
-		ssize_t readLen = readFromSource(mProcessBuffer, size);
+		ssize_t readLen = readFromSource(mProcessBuffer.get(), size);
 		if (readLen <= 0) {
 			// Error occurred, or inputting finished
 			if (!mIsLooping) {
@@ -177,7 +176,7 @@ bool InputHandler::processWorker()
 			}
 			/* If it is looping mode, then seek to 0 and readFromSource again */
 			if (mInputDataSource->seekTo(0) == OK) {
-				readLen = readFromSource(mProcessBuffer, size);
+				readLen = readFromSource(mProcessBuffer.get(), size);
 			} else {
 				meddbg("seek failed!!\n");
 			}
@@ -188,7 +187,7 @@ bool InputHandler::processWorker()
 			readLen = size;
 		}
 
-		ssize_t writeLen = writeToStreamBuffer(mProcessBuffer, (size_t)readLen);
+		ssize_t writeLen = writeToStreamBuffer(mProcessBuffer.get(), (size_t)readLen);
 		if (writeLen <= 0) {
 			meddbg("write to stream buffer failed!\n");
 			mBufferWriter->setEndOfStream();

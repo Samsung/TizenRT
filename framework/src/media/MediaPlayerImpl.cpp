@@ -233,6 +233,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 	auto source = mInputHandler.getDataSource();
 	if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
+		// ToDo: Need to do mInputHandler close() in case of further failure in prepare.
 		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		delete[] mBuffer;
