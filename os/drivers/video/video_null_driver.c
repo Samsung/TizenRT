@@ -1583,7 +1583,7 @@ int video_null_initialize(const char *devpath)
 	/* Allocate the null driver priv data */
 	priv = (FAR struct dummy_null_priv_s *)
 		   kmm_zalloc(sizeof(struct dummy_null_priv_s));
-	if (!lower) {
+	if (!priv) {
 		videovdbg("ERROR: Null driver private data allocation failed\n");
 		ret = -ENOMEM;
 		goto errout_with_priv_data;

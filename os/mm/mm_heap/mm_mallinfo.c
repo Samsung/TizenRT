@@ -100,7 +100,7 @@ int mm_mallinfo_aligned(FAR struct mm_heap_s *heap, FAR struct mallinfo *info, s
 #define region 0
 #endif
 
-	DEBUGASSERT(info);
+	DEBUGASSERT(info && heap);
 
 	/* Visit each region */
 

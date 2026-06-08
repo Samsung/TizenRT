@@ -198,7 +198,9 @@ int sigaction(int signo, FAR const struct sigaction *act, FAR struct sigaction *
 
 #ifdef CONFIG_SIGKILL_HANDLER
 	if (signo == SIGKILL) {
-		rtcb->sigkillusrhandler = act->sa_sigaction;
+		if (act) {
+			rtcb->sigkillusrhandler = act->sa_sigaction;
+		}
 		return OK;
 	}
 #endif

@@ -109,7 +109,7 @@ void sched_addblocked(FAR struct tcb_s *btcb, tstate_t task_state)
 {
 	/* Make sure that we received a valid blocked state */
 
-	ASSERT(task_state >= FIRST_BLOCKED_STATE && task_state <= LAST_BLOCKED_STATE);
+	ASSERT(btcb && task_state >= FIRST_BLOCKED_STATE && task_state <= LAST_BLOCKED_STATE);
 
 	/* Add the TCB to the blocked task list associated with this state.
 	 * First, determine if the task is to be added to a prioritized task

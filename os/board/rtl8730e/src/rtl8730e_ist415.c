@@ -92,12 +92,12 @@ static void rtl8730e_ist415_irq_handler(uint32_t id, gpio_irq_event event)
 	 * until we finish this particular interrupt related work
 	 * in the HPWORK thread
 	 */
-	struct ist415_config_s *dev;
+	struct ist415_config_s *dev = NULL;
 	if (id == 0) {
 		dev =  &g_rtl8730e_ist415_0;
 	}
 
-	if (dev->handler != NULL) {
+	if (dev && dev->handler != NULL) {
 		dev->handler(dev);
 	}
 }

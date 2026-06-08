@@ -105,7 +105,8 @@ int sched_migrate_tasks(int offline_cpu)
 	 * Since there's no _foreach_safe macro, we must manually get the next
 	 * pointer before removing the current TCB.
 	 */
-
+	
+	DEBUGASSERT(task_list);
 	tcb = (FAR struct tcb_s *)task_list->tail;
 
 	DEBUGASSERT(tcb && tcb->flink == NULL);
@@ -131,7 +132,7 @@ int sched_migrate_tasks(int offline_cpu)
 	 * The idle task for that CPU would also have been processed.
 	 * We can now mark the CPU as offline in any global masks if not already done.
 	 */
-	DEBUGASSERT((task_list)->head->flink == NULL);	/* Assert if the head of assigned list is not idle */
+	DEBUGASSERT(task_list->head && (task_list)->head->flink == NULL);	/* Assert if the head of assigned list is not idle */
 
 	/* Release critical section and scheduler lock.
 	 * Releasing the scheduler lock (sched_unlock) will process any tasks

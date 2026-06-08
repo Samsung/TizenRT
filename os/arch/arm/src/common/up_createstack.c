@@ -147,6 +147,8 @@ int up_create_stack(FAR struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 {
 	size_t stack_alloc_size = stack_size;
 
+	DEBUGASSERT(tcb);
+
 	/* new thread does not have the uheap value yet, It's added in the task_
 	 * schedsetup function.
 	 * Parent and child threads must have the same uheap value, so we are

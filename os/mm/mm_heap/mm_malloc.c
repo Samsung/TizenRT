@@ -153,6 +153,8 @@ FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_
 	size_t gc_before_size;
 #endif
 
+	DEBUGASSERT(heap);
+
 	/* Free the delay list first */
 	mm_free_delaylist(heap);
 

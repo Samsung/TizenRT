@@ -264,7 +264,18 @@ static void move_to_next_part(const char **par)
 int get_partition_num(char *part)
 {
 	int partno = 0;
-	int name_len = strlen(part);
+	int name_len;
+
+	if (!part) {
+		printf("ERROR: Invalid argument, part is NULL\n");
+		return ERROR;
+	}
+
+	name_len = strlen(part);
+	if (name_len == 0) {
+		printf("ERROR: name_len is 0\n");
+		return ERROR;
+	}
 
 	char *partname = CONFIG_FLASH_PART_NAME;
 	while (*partname) {

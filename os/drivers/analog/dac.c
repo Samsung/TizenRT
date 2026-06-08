@@ -446,6 +446,11 @@ int dac_txdone(FAR struct dac_dev_s *dev)
 {
 	int ret = -ENOENT;
 
+	if (!dev) {
+		lldbg("ERROR: Invalid argument, dev is NULL\n");
+		return -EINVAL;
+	}
+
 	/* Verify that the xmit FIFO is not empty */
 
 	if (dev->ad_xmit.af_head != dev->ad_xmit.af_tail) {
@@ -471,6 +476,11 @@ int dac_txdone(FAR struct dac_dev_s *dev)
 int dac_register(FAR const char *path, FAR struct dac_dev_s *dev)
 {
 	/* Initialize the DAC device structure */
+
+	if (!dev) {
+		lldbg("ERROR: Invalid argument, dev is NULL\n");
+		return -EINVAL;
+	}
 
 	dev->ad_ocount = 0;
 
