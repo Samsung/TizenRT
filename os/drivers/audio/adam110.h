@@ -74,6 +74,7 @@
 #define ADAM110_TXRX_DELAY			20 /* between tx and rx delay 20usec */
 #define ADAM110_COM_RES_DELAY		1  /* between command and respone imprecise */
 #define ADAM110_RETRIAL_DELAY		1  /* Seamless buffer polling retry delay */
+#define SEAMLESS_RETRY_COUNT 		4
 
 #define ADAM110_RX_MAX_SIZE			3840
 #define ADAM110_KEYWORD_DATA_SIZE	64000
@@ -137,6 +138,7 @@
 #define AC_PARA_TUNING				0x64 /* Set AI Model Parameter Tuning */
 #define AC_GET_MODEL_NAME			0x65 /* Get AI model name */
 #define AC_INT_EN					0x66 /* AI model Interrupt Enable/Disable */
+#define AC_GET_THD					0x67 /* Get AI Model Threshold Adjust */
 
 /* Firmware */
 #define FW_GET_VER					0xE0 /* Get FW Version */
@@ -259,6 +261,7 @@ struct adam110_dev_s {
 	uint32_t keyword_bytes_left;
 	bool kd_enabled;
 	uint8_t *keyword_buffer;
+	bool seamless_in_progress;
 #endif
 
 	uint32_t sample_size;

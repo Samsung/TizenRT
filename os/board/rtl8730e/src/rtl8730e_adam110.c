@@ -178,7 +178,6 @@ static void rtl8730e_adam110_reset(void)
 
 	gpio_mode(&g_adam110info.reset, PullUp);
 	gpio_write(&g_adam110info.reset, 1);
-	
 	up_mdelay(21);
 }
 
