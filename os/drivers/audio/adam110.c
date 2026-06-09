@@ -809,7 +809,6 @@ static void adam110_work_handler(void *arg)
 	t_proto_pkt txpkt, rxpkt;
 	int ret = 0;
 
-	bool send_kd_msg = false;
 	bool send_pcm_cb = false;
 	FAR struct ap_buffer_s *pcm_apb = NULL;
 
@@ -885,7 +884,7 @@ static void adam110_work_handler(void *arg)
 	}
 
 	/* Recording Case */
-	uint16_t pcm_size = (uint16_t)(rxpkt.parm3 << 8 | rxpkt.parm4);
+	uint32_t pcm_size = (uint32_t)(rxpkt.parm3 << 8 | rxpkt.parm4);
 	if (!priv->running || !priv->recording) {
 		auddbg("[PCM] drop after stop: running=%d recording=%d size=%u\n",
 			   priv->running, priv->recording, pcm_size);
@@ -1022,7 +1021,7 @@ static int adam110_setMute(FAR struct adam110_dev_s *priv, bool mute)
 
 static int adam110_getcaps(FAR struct audio_lowerhalf_s *dev, int type, FAR struct audio_caps_s *caps)
 {
-
+	int ret = 0;
 	FAR struct adam110_dev_s *priv = (struct adam110_dev_s *)dev;
 	audvdbg("[I] type=%d\n", type);
 
@@ -1264,7 +1263,6 @@ static int adam110_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			break;
 		case AUDIO_PU_KD_SENSITIVITY: {
 			uint16_t sensitivity = caps->ac_controls.w;
-			uint8_t model = AI_MODEL_HIBIXBY;
 			t_proto_pkt rxpkt;
 
 			/* To Do
@@ -1273,7 +1271,7 @@ static int adam110_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			 * ADAM110 (Low/Mid/High)
 			 */
 			adam110_takesem(&priv->devsem);
-			ADAM110_AI_SET_THD(priv, priv->kd_num, (level >> 8) & 0xff, level & 0xff, &rxpkt);
+			ADAM110_AI_SET_THD(priv, priv->kd_num, (sensitivity >> 8) & 0xff, sensitivity & 0xff, &rxpkt);
 			priv->sensitivity = sensitivity;
 			adam110_givesem(&priv->devsem);
 		}
