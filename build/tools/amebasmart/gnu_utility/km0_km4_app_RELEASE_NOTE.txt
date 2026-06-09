@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 6d6b4ada15_2026/06/09-14:02:39 ==
+1. Remove shell register in KM0/KM4
+
 == version 1e26c5fee0_2026/06/09-13:53:19 ==
 1. Enable SW IWDG when HW IWDG is not enabled
 
