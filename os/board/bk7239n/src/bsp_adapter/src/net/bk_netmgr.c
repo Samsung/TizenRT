@@ -1134,6 +1134,7 @@ trwifi_result_e bk_wifi_netmgr_deinit(struct netdev *dev)
     bk_trwifi_clear_scan_chain_list();
     bk_trwifi_clear_multi_scan_cache();
     rtos_unlock_mutex(&scanlistbusy);
+	rtos_deinit_mutex(&scanlistbusy);
 
     /* unregister beken event callback*/
     bk_event_unregister_cb(EVENT_MOD_WIFI, EVENT_ID_ALL, beken_wifi_event_cb);
