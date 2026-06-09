@@ -221,8 +221,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_CONN_IS_ANY_ACTIVE:
 	{
 		bool *is_active = NULL;
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			is_active = (bool *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			is_active = (bool *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -263,7 +265,12 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_START_SCAN:
 	{
 		/* filter can be NULL */
-		trble_scan_filter *filter = (trble_scan_filter *)data;
+		lwnl_msg_params param = { 0, };
+		trble_scan_filter *filter = NULL;
+		if (data != NULL) {
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			filter = (trble_scan_filter *)param.param[0];
+		}
 		TRBLE_DRV_CALL(ret, dev, start_scan, (dev, filter));
 	}
 	break;
@@ -293,9 +300,11 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	// Client
 	case LWNL_REQ_BLE_CLIENT_CONNECT:
 	{
+		lwnl_msg_params param = { 0, };
 		trble_conn_info *conn_info = NULL;
 		if (data != NULL) {
-			conn_info = (trble_conn_info *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			conn_info = (trble_conn_info *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -323,8 +332,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_CONNECTED_DEV_LIST:
 	{
 		trble_connected_list *list = NULL;
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			list = (trble_connected_list *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			list = (trble_connected_list *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -459,8 +470,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_SET_SERVER_CONFIG:
 	{
 		trble_server_init_config *t_server = NULL;
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			t_server = (trble_server_init_config *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			t_server = (trble_server_init_config *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -470,8 +483,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_GET_PROFILE_COUNT:
 	{
 		uint16_t *count = NULL;
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			count = (uint16_t *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			count = (uint16_t *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -650,8 +665,10 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_SET_DEVICE_NAME:
 	{
 		uint8_t* name;
+		lwnl_msg_params param = { 0, };
 		if (data != NULL) {
-			name = (uint8_t*)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			name = (uint8_t*)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
@@ -918,9 +935,11 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	break;
 	case LWNL_REQ_BLE_CMD_COC_INIT:
 	{
+		lwnl_msg_params param = { 0, };
 		trble_le_coc_init_config *t_le_coc = NULL;
 		if (data != NULL) {
-			t_le_coc = (trble_le_coc_init_config *)data;
+			_memcpy_safe(&param, sizeof(lwnl_msg_params), data, data_len);
+			t_le_coc = (trble_le_coc_init_config *)param.param[0];
 		} else {
 			return TRBLE_INVALID_ARGS;
 		}
