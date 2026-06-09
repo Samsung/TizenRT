@@ -122,6 +122,14 @@ static u16_t dns_txid;
 #endif
 #endif
 
+/** DNS source port range (ephemeral ports reserved for DNS queries) */
+#ifndef DNS_PORT_MIN
+#define DNS_PORT_MIN              1024
+#endif
+#ifndef DNS_PORT_MAX
+#define DNS_PORT_MAX              2047
+#endif
+
 /** Limits the source port to be >= 1024 by default */
 #ifndef DNS_PORT_ALLOWED
 #define DNS_PORT_ALLOWED(port) ((port) >= 1024)
@@ -839,7 +847,7 @@ static struct udp_pcb *dns_alloc_random_port(void)
 		return NULL;
 	}
 	do {
-		u16_t port = (u16_t) DNS_RAND_TXID();
+		u16_t port = (u16_t)(DNS_PORT_MIN + (DNS_RAND_TXID() % ((DNS_PORT_MAX - DNS_PORT_MIN) + 1)));
 		if (!DNS_PORT_ALLOWED(port)) {
 			/* this port is not allowed, try again */
 			err = ERR_USE;
