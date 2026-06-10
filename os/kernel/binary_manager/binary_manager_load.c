@@ -165,9 +165,6 @@ static int binary_manager_load(int bin_idx)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp;
 #endif
-#ifdef CONFIG_USE_BP
-	bool need_update_bp = false;
-#endif
 
 	if (bin_idx < 0) {
 		bmdbg("Invalid bin idx %d\n", bin_idx);
@@ -203,11 +200,17 @@ static int binary_manager_load(int bin_idx)
 				bmdbg("%s Signature Checking Success\n", BIN_NAME(bin_idx));
 			} else {
 				bmdbg("Invalid Signature, name : %s, address : %p\n", BIN_NAME(bin_idx), BIN_PARTADDR(bin_idx, (BIN_USEIDX(bin_idx))));
+#ifdef CONFIG_USE_BP
+				/* If bp needs to be updated because either app or common binary is invalid */
+				/* Scan all binaries and set valid binary set in bootparam */
+				ret = binary_manager_recover_bootparam_set();
+				if (ret != BINMGR_OK) {
+					bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
+					return ERROR;
+				}
+#endif
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
-#ifdef CONFIG_USE_BP
-					need_update_bp = true;
-#endif
 					bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
@@ -235,11 +238,19 @@ static int binary_manager_load(int bin_idx)
 				/* Clear version because of invalid binary */
 				BIN_VER(bin_idx, BIN_USEIDX(bin_idx)) = 0;
 				bmdbg("Invalid Header data, name : %s, devpath : %p\n", BIN_NAME(bin_idx), devpath);
+
+#ifdef CONFIG_USE_BP
+				/* If bp needs to be updated because either app or common binary is invalid */
+				/* Scan all binaries and set valid binary set in bootparam */
+				ret = binary_manager_recover_bootparam_set();
+				if (ret != BINMGR_OK) {
+					bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
+					return ERROR;
+				}
+#endif
+
 				if (--bin_count > 0) {
 					BIN_USEIDX(bin_idx) ^= 1;
-#ifdef CONFIG_USE_BP
-					need_update_bp = true;
-#endif
 					bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 					continue;
 				} else {
@@ -282,32 +293,21 @@ static int binary_manager_load(int bin_idx)
 
 		ret = binary_manager_load_binary(bin_idx, devpath, &load_attr);
 		if (ret == OK) {
-#ifdef CONFIG_USE_BP
-			if (need_update_bp) {
-				/* Update boot param data because the binary not written to bootparam is loaded */
-				binmgr_bpdata_t update_bp_data;
-				memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
-				update_bp_data.head.version++;
-				update_bp_data.head.format_ver = BOOTPARAM_FORMAT_VERSION_LATEST;
-				update_bp_data.head.app_data[BIN_BPIDX(bin_idx)].useidx ^= 1;
-				update_bp_data.tail.bp_update_reason = BP_UPDATE_BINARY_MANAGER_RECOVERY_USER;
-				ret = binary_manager_write_bootparam(&update_bp_data);
-				if (ret == BINMGR_OK) {
-					binary_manager_set_bpdata(&update_bp_data);
-					bmvdbg("Update bootparam SUCCESS\n");
-				} else {
-					bmdbg("Fail to update bootparam to recover, %d\n", ret);
-				}
-			}
-#endif
 			return BINMGR_OK;
 		}
+
+#ifdef CONFIG_USE_BP
+		/* If bp needs to be updated because binary load failed */
+		ret = binary_manager_recover_bootparam_set();
+		if (ret != BINMGR_OK) {
+			bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
+			return ERROR;
+		}
+#endif
+
 		if (--bin_count > 0) {
 			/* Change index 0 to 1 and 1 to 0. */
 			BIN_USEIDX(bin_idx) ^= 1;
-#ifdef CONFIG_USE_BP
-			need_update_bp = true;
-#endif
 			bmdbg("Try to read another partition %s\n", GET_PARTNAME(BIN_USEIDX(bin_idx)));
 		} else {
 			bmdbg("No valid binary %s\n", BIN_NAME(bin_idx));

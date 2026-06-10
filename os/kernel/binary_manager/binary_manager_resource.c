@@ -300,7 +300,6 @@ int binary_manager_mount_resource(void)
 	int ret;
 	int inuse_idx;
 	int bin_count;
-	bool need_update_bp = false;
 	char devpath[BINARY_PATH_LEN];
 	char fs_devpath[RESOURCE_DEC_PATH_LEN];
 	resource_binary_header_t header_data;
@@ -365,12 +364,20 @@ int binary_manager_mount_resource(void)
 			bmdbg("Resource Signature Checking Success, address : 0x%x\n", resource_start_address);
 		} else {
 			bmdbg("Invalid Resource Signature, address : 0x%x\n", resource_start_address);
+
+#ifdef CONFIG_USE_BP
+			/* If resource binary is invalid */
+			/* Scan all binaries and set valid binary set in bootparam */
+			ret = binary_manager_recover_bootparam_set();
+			if (ret != BINMGR_OK) {
+				bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
+				return ERROR;
+			}
+#endif
+
 			/* Check if a binary exists in another partition. */
 			if (--bin_count > 0) {
 				inuse_idx ^= 1;
-#ifdef CONFIG_USE_BP
-				need_update_bp = true;
-#endif
 				bmdbg("Try to read another partition %d\n", resource_info.part_info[inuse_idx].devnum);
 				continue;
 			} else {
@@ -417,12 +424,19 @@ int binary_manager_mount_resource(void)
 
 		bmdbg("Invalid Resource header[%d] devpath : %s\n", inuse_idx, devpath);
 
+#ifdef CONFIG_USE_BP
+		/* If resource binary is invalid */
+		/* Scan all binaries and set valid binary set in bootparam */
+		ret = binary_manager_recover_bootparam_set();
+		if (ret != BINMGR_OK) {
+			bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
+			return ERROR;
+		}
+#endif
+
 		/* Check if a binary exists in another partition. */
 		if (--bin_count > 0) {
 			inuse_idx ^= 1;
-#ifdef CONFIG_USE_BP
-			need_update_bp = true;
-#endif
 			bmdbg("Try to read another partition %d\n", resource_info.part_info[inuse_idx].devnum);
 			continue;
 		} else {
@@ -431,25 +445,6 @@ int binary_manager_mount_resource(void)
 		}
 	} while (bin_count > 0);
 
-#ifdef CONFIG_USE_BP
-	if (need_update_bp) {
-		/* Update boot param data because the binary not written to bootparam is loaded */
-		binmgr_bpdata_t update_bp_data;
-		memcpy(&update_bp_data, binary_manager_get_bpdata(), sizeof(binmgr_bpdata_t));
-		update_bp_data.head.version++;
-		update_bp_data.head.format_ver = BOOTPARAM_FORMAT_VERSION_LATEST;
-		update_bp_data.head.resource_active_idx = inuse_idx;
-		update_bp_data.tail.bp_update_reason = BP_UPDATE_BINARY_MANAGER_RECOVERY_RESOURCE;
-		ret = binary_manager_write_bootparam(&update_bp_data);
-		if (ret == BINMGR_OK) {
-			binary_manager_set_bpdata(&update_bp_data);
-			bmvdbg("Update bootparam SUCCESS. Resource index to %d\n", inuse_idx);
-		} else {
-			bmdbg("Fail to update bootparam to recover resource. %d\n", ret);
-			return ERROR;
-		}
-	}
-#endif
 	return OK;
 }
 
