@@ -86,6 +86,10 @@ AIFW_RESULT EPDInferenceHandler::onInferenceFinished(uint16_t idx, void *finalRe
 
 AIFW_RESULT EPDInferenceHandler::clearData(void)
 {
+	if (!mEPDModel) {
+		meddbg("EPD: model is not initialized");
+		return AIFW_SERVICE_NOT_RUNNING;
+	}
 	AIFW_RESULT res = mEPDModel->clearRawData();
 	if (res!= AIFW_OK) {
 		meddbg("clear raw data of EPD model failed. ret: %d", res);
@@ -98,5 +102,9 @@ AIFW_RESULT EPDInferenceHandler::clearData(void)
 
 AIModelAttribute EPDInferenceHandler::getModelAttribute(void)
 {
+	if (!mEPDModel) {
+		meddbg("EPD model is not initialized");
+		return AIModelAttribute();
+	}
 	return mEPDModel->getModelAttribute();
 }

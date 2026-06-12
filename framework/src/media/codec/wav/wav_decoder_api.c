@@ -212,6 +212,7 @@ bool wav_get_frame(rbstream_p mFp, ssize_t *offset, void *dec_mem, void *buffer,
 		n = _source_read_at(mFp, _offset, fmtChunk, fmtChunkSize);
 		bool ret_format_parse = _format_parse((void *)fmtChunk, fmtChunkSize, ext);
 		free(fmtChunk);
+		fmtChunk = NULL;
 		RETURN_VAL_IF_FAIL((size_t)n == fmtChunkSize, false);
 		RETURN_VAL_IF_FAIL(ret_format_parse, false);
 		_offset += (8 + chunkSize);

@@ -311,6 +311,10 @@ bool SpeechDetectorImpl::waitEndPoint(int timeout)
 
 void SpeechDetectorImpl::addListener(std::shared_ptr<SpeechDetectorListenerInterface> listener)
 {
+	if (!listener) {
+		meddbg("listener is nullptr, cannot add to SpeechDetector\n");
+		return;
+	}
 	meddbg("Adding listener %p to SpeechDetector\n", listener.get());
 	std::lock_guard<std::mutex> lock(mSpeechDetectorListenerListMutex);
 	mSpeechDetectorListenerList.push_back(listener);
