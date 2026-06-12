@@ -681,6 +681,11 @@ int binary_manager_check_bootparam_set(void)
 		return BINMGR_OPERATION_FAIL;
 	}
 
+	if (bp_data->tail.bp_update_reason >= BP_UPDATE_BOOTLOADER_BP_CRC_FAIL && bp_data->tail.bp_update_reason <= BP_UPDATE_BOOTLOADER_SPECIFIC_3) {
+		bmdbg("Don't trust the recovery by bootloader, try to recover again.\n");
+		return BINMGR_OPERATION_FAIL;
+	}
+
 	bmdbg("BP set is already aligned and active set %s is valid\n", GET_PARTNAME(bp_data->head.active_idx));
 	return BINMGR_OK;
 }
