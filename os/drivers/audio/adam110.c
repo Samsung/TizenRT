@@ -235,6 +235,7 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 
 #define ADAM110_AI_SET_THD(dev, model, h_thd_level, l_thd_level, rx_ptr) \
     adam110_send_cmd(dev, AC_THD_ADJ, (uint8_t)(model), (uint8_t)(h_thd_level), (uint8_t)(l_thd_level), 0, rx_ptr, false)
+
 #define ADAM110_AI_GET_THD(dev, model, rx_ptr) \
     adam110_send_cmd(dev, AC_GET_THD, (uint8_t)(model), 0, 0, 0, rx_ptr, false)
 
@@ -356,6 +357,7 @@ static int get_spi_command_error(int errcode)
 	}
 	return -EIO;
 }
+
 static int adam110_spi_command_xfer(FAR struct adam110_dev_s *dev, t_proto_pkt *txpkt, t_proto_pkt *rxpkt, bool txrx_delay)
 {
 	int ret = OK;
@@ -802,9 +804,8 @@ static int adam110_app_device_alive_check(int argc, FAR char *argv[])
 }
 #endif
 
-static void adam110_work_handler(void *arg)
+static int adam110_process_event(FAR struct adam110_dev_s *priv)
 {
-	FAR struct adam110_dev_s *priv = (struct adam110_dev_s *)arg;
 	struct audio_msg_s msg;
 	t_proto_pkt txpkt, rxpkt;
 	int ret = 0;
@@ -821,7 +822,9 @@ static void adam110_work_handler(void *arg)
 	ret = ADAM110_GET_EVENT(priv, &rxpkt);
 	if (ret != OK) {
 		auddbg("[E] Get event failed.\n");
-		goto out_err;
+        adam110_givesem(&priv->devsem);
+        priv->lower->irq_enable(true);
+        return ret;
 	}
 	audvdbg("parm2 = 0x%x\n", rxpkt.parm2);
 
@@ -835,9 +838,10 @@ static void adam110_work_handler(void *arg)
 		uint32_t data_size = 0;
 		int retry = SEAMLESS_RETRY_COUNT;
 
+        priv->keyword_bytes_left = 0;
 		priv->seamless_in_progress = true;
 
-		while ((priv->keyword_bytes_left < priv->keyword_bytes) && (retry > 0)) {
+        while ((priv->keyword_bytes_left < ADAM110_KEYWORD_DATA_SIZE) && (retry > 0)) {
 			ret = ADAM110_GET_AUDIOBUFFER(priv, AI_DATA_TYPE_SEAMLESS_R, s_temp_chunk, &data_size);			
 			if (ret != OK) {
 				retry--;
@@ -851,20 +855,21 @@ static void adam110_work_handler(void *arg)
 				auddbg("[E] KD checksum calc:0x%02x, Recv:0x%02x\n", cal_sum, recv_sum);
 				ret = -EIO;
 				priv->seamless_in_progress = false;
-				goto out_err;
+                goto errout_seamless;
 			}
 
 			memcpy(&priv->keyword_buffer[priv->keyword_bytes_left], s_temp_chunk, data_size);
 			priv->keyword_bytes_left += data_size;
 
-			audvdbg("KD recv : %d / %d\n", priv->keyword_bytes_left, priv->keyword_bytes);
+            audvdbg("KD recv : %d / %d\n", priv->keyword_bytes_left, ADAM110_KEYWORD_DATA_SIZE);
 		}
 		
 		priv->seamless_in_progress = false;
-		if (priv->keyword_bytes_left < priv->keyword_bytes) {
-			auddbg("[E] KD seamless polling timeout. recv=%d/%d\n", priv->keyword_bytes_left, priv->keyword_bytes);
+
+        if (priv->keyword_bytes_left < ADAM110_KEYWORD_DATA_SIZE) {
+            auddbg("[E] KD seamless polling timeout. recv=%d/%d\n", priv->keyword_bytes_left, ADAM110_KEYWORD_DATA_SIZE);
 			ret = -EIO;
-            goto out_err;
+            goto errout_seamless;
 		}
 
 		if (priv->dev.process_mq != NULL) {
@@ -877,7 +882,7 @@ static void adam110_work_handler(void *arg)
 
 		adam110_givesem(&priv->devsem);
 		priv->lower->irq_enable(true);
-		return;	
+        return OK;
 	}
 	if (rxpkt.parm2 != AI_DATA_TYPE_AUDIO) {
 		goto out_unlock;
@@ -900,52 +905,66 @@ static void adam110_work_handler(void *arg)
 		ret = ADAM110_GET_AUDIOBUFFER(priv, rxpkt.parm2, s_temp_chunk, &pcm_size);
 		if (ret != OK) {
             auddbg("[E] PCM GET_AUDIOBUFFER failed ret=%d\n", ret);
-            goto out_err;
+            goto errout_record;
         }
-			uint8_t cal_sum = adam110_calculate_checksum(s_temp_chunk, pcm_size);
-			uint8_t recv_sum = s_temp_chunk[pcm_size];
+        
+        uint8_t cal_sum = adam110_calculate_checksum(s_temp_chunk, pcm_size);
+        uint8_t recv_sum = s_temp_chunk[pcm_size];
 
-		if (cal_sum != recv_sum) {
+        if (cal_sum != recv_sum) {
             auddbg("[PCM] checksum mismatch calc=0x%02x recv=0x%02x size=%u\n", cal_sum, recv_sum, pcm_size);
             ret = -EIO;
-            goto out_err;
+            goto errout_record;
         }
-				pcm_apb = pcm_waitq_take_one(priv);
-				if (pcm_apb) {
-					audvdbg("pcm_apb : %p\n", pcm_apb);
-					uint32_t copy_len = (pcm_size < pcm_apb->nmaxbytes) ? pcm_size : pcm_apb->nmaxbytes;
-					memcpy(pcm_apb->samp, s_temp_chunk, copy_len);
-					pcm_apb->curbyte = 0;
-					pcm_apb->nbytes = copy_len;
-					send_pcm_cb = true;
-				} else {
-					auddbg("no waiting pcm_apb, drop pcm=%u\n", pcm_size);
-				}
-			}
+		
+        pcm_apb = pcm_waitq_take_one(priv);
+        if (pcm_apb) {
+            audvdbg("pcm_apb : %p\n", pcm_apb);
+            uint32_t copy_len = (pcm_size < pcm_apb->nmaxbytes) ? pcm_size : pcm_apb->nmaxbytes;
+            memcpy(pcm_apb->samp, s_temp_chunk, copy_len);
+            pcm_apb->curbyte = 0;
+            pcm_apb->nbytes = copy_len;
+            send_pcm_cb = true;
+        } else {
+            auddbg("no waiting pcm_apb, drop pcm=%u\n", pcm_size);
+        }
+    }
 
-	adam110_givesem(&priv->devsem);
-	priv->lower->irq_enable(true);
+    adam110_givesem(&priv->devsem);
+    priv->lower->irq_enable(true);
 
 	if (send_pcm_cb && pcm_apb) {
 #ifdef CONFIG_AUDIO_MULTI_SESSION
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, pcm_apb, OK, NULL);
+       priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, pcm_apb, OK, NULL);
 #else
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, pcm_apb, OK);
+       priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, pcm_apb, OK);
 #endif
 	}
-	return;
-out_err:
+    return OK;
+
+errout_seamless:
     adam110_givesem(&priv->devsem);
     priv->lower->irq_enable(true);
-	if (priv->dev.upper) {
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_IOERR, NULL, ret);
-	}
-	return;
+    return ret;
+
+errout_record:
+    adam110_givesem(&priv->devsem);
+    priv->lower->irq_enable(true);
+    if (priv->dev.upper) {
+        priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_IOERR, NULL, ret);
+    }
+    return ret;
 
 out_unlock:
-	adam110_givesem(&priv->devsem);
-	priv->lower->irq_enable(true);
+    adam110_givesem(&priv->devsem);
+    priv->lower->irq_enable(true);
+    return OK;
+}
 
+static void adam110_work_handler(void *arg)
+{
+    FAR struct adam110_dev_s *priv = (struct adam110_dev_s *)arg;
+    adam110_process_event(priv);
 }
 
 static void adam110_interrupt_dispatch(FAR void *arg)
@@ -1651,12 +1670,11 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
 	case AUDIOIOC_GETKDBUFSIZE: {
-		*(uint32_t *)arg = priv->keyword_bytes;
+		*(uint32_t *)arg = ADAM110_KEYWORD_DATA_SIZE;
 	}
 	break;
 	case AUDIOIOC_GETKDDATA: {
-		memcpy((uint8_t *)arg, priv->keyword_buffer, priv->keyword_bytes);
-		priv->keyword_bytes_left = 0;
+		memcpy((uint8_t *)arg, priv->keyword_buffer, ADAM110_KEYWORD_DATA_SIZE);
 	}
 	break;
 #endif
@@ -1911,8 +1929,7 @@ FAR struct audio_lowerhalf_s *adam110_lowerhalf_initialize(FAR struct spi_dev_s 
 	priv->running = false;
 	priv->kd_num = -1;
 	priv->dev.process_mq = NULL;
-	priv->keyword_bytes = ADAM110_KEYWORD_DATA_SIZE;
-	priv->keyword_buffer = (uint8_t *)kmm_malloc(priv->keyword_bytes);
+	priv->keyword_buffer = (uint8_t *)kmm_malloc(ADAM110_KEYWORD_DATA_SIZE);
 	if (priv->keyword_buffer == NULL) {
 		auddbg("keyword buffer allocation failed\n");
 		goto err_with_priv;

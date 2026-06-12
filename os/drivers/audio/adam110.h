@@ -257,7 +257,6 @@ struct adam110_dev_s {
 	FAR struct spi_dev_s *spi;
 
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
-	uint32_t keyword_bytes;
 	uint32_t keyword_bytes_left;
 	bool kd_enabled;
 	uint8_t *keyword_buffer;
