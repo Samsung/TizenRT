@@ -117,6 +117,8 @@ extern sq_queue_t g_freemsg_list;
 extern uint32_t system_exception_location;
 extern uint32_t user_assert_location;
 extern int g_irq_num[CONFIG_SMP_NCPUS];
+extern int g_last_irq_num[CONFIG_SMP_NCPUS];
+extern clock_t g_last_irq_time[CONFIG_SMP_NCPUS];
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -374,6 +376,8 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 	uint32_t stacksize = 0;
 	uint32_t istackbase;
 	uint32_t istacksize;
+	int cpu = 0;
+	uint32_t *stack_bottom = 0;
 #if CONFIG_ARCH_INTERRUPTSTACK > 3
 	istackbase = 0;
 	istacksize = 0;
@@ -398,13 +402,38 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 	stackbase = (uint32_t)fault_tcb->adj_stack_ptr;
 	stacksize = (uint32_t)fault_tcb->adj_stack_size;
 #if CONFIG_ARCH_INTERRUPTSTACK > 7
+	istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~7);
 #ifdef CONFIG_SMP
 	/* Initialize istackbase based on the interrupt stack size and proper alignment value (~7) */
+	for(cpu = 0; cpu <CONFIG_SMP_NCPUS; ++cpu) {
+		istackbase = ((uint32_t)arm_intstack_alloc_for_cpu(cpu) + (CONFIG_ARCH_INTERRUPTSTACK & ~7));
+		lldbg("CPU%d IRQ stack: base 0x%08x size 0x%08x (0x%08x - 0x%08x)\n",
+	      	cpu, istackbase, istacksize, istackbase - istacksize + 1, istackbase);
+#ifdef CONFIG_STACK_COLORATION
+		stack_bottom = (uint32_t *)(arm_intstack_alloc_for_cpu(cpu));
+		if (*stack_bottom != INTSTACK_COLOR) {
+			lldbg("CPU%d IRQ stack OVERFLOW detected! Bottom color overwritten: 0x%08x (expected 0x%08x)\n",
+				cpu, *stack_bottom, INTSTACK_COLOR);
+		}
+#endif
+		up_stackdump(istackbase - istacksize + 1, istackbase);
+		lldbg("CPU%d Last IRQ: %d at tick %u\n",cpu, g_last_irq_num[cpu], g_last_irq_time[cpu]);
+	}
 	istackbase = ((uint32_t)arm_intstack_alloc() + (CONFIG_ARCH_INTERRUPTSTACK & ~7));
 #else
 	istackbase = (uint32_t)&g_intstackbase,
+	lldbg("IRQ stack: base 0x%08x size 0x%08x (0x%08x - 0x%08x)\n",
+	    istackbase, istacksize, istackbase - istacksize + 1, istackbase);
+#ifdef CONFIG_STACK_COLORATION
+	/* Check for interrupt stack overflow */
+	stack_bottom = (uint32_t *)&g_intstackalloc;
+	if (*stack_bottom != INTSTACK_COLOR) {
+		lldbg("IRQ stack OVERFLOW detected! Bottom color overwritten: 0x%08x (expected 0x%08x)\n",
+		    *stack_bottom, INTSTACK_COLOR);
+	}
+	up_stackdump(istackbase - istacksize + 1, istackbase);
 #endif
-	istacksize = (CONFIG_ARCH_INTERRUPTSTACK & ~7);
+#endif
 #endif
 	bool is_irq_assert = false;
 	bool is_sp_corrupt = false;
@@ -416,6 +445,11 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 
 	/*Print IRQ handler details if required */
 	check_sp_corruption(sp, &stackbase, &stacksize, istackbase, istacksize, is_irq_assert, &is_sp_corrupt);
+
+	/* If SP is corrupt, find which heap node (if any) contains the address in SP */
+	if (is_sp_corrupt) {
+		mm_dump_node_containing((void *)sp);
+	}
 
 	/* Print stack dump */
 	print_stack_dump(sp, stackbase, stacksize, istackbase, istacksize, is_irq_assert, is_sp_corrupt);

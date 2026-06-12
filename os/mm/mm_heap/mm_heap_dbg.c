@@ -142,3 +142,91 @@ void mm_dump_node(struct mm_allocnode_s *node, char *node_type)
 #endif
 #endif
 }
+
+/************************************************************************
+ * Name: mm_dump_node_containing
+ *
+ * Description: Given an arbitrary address, find and print the owner of
+ *              the heap node that contains this address. This is useful
+ *              when a corrupted SP points into the heap and you want to
+ *              know which allocation owns that memory.
+ ************************************************************************/
+void mm_dump_node_containing(void *address)
+{
+	struct mm_allocnode_s *node;
+	struct mm_heap_s *heap;
+	int region;
+	uint32_t target = (uint32_t)address;
+
+	if (!address) {
+		mfdbg("Cannot find node for NULL address\n");
+		return;
+	}
+
+	/* Find which heap this address belongs to */
+	heap = mm_get_heap(address);
+	if (!heap) {
+		mfdbg("Address 0x%08x is not in any heap\n", target);
+		return;
+	}
+
+	mfdbg("===========================================================\n");
+	mfdbg("Finding heap node containing address 0x%08x\n", target);
+	mfdbg("===========================================================\n");
+
+	/* Walk each region of the heap */
+#if CONFIG_KMM_REGIONS > 1
+	for (region = 0; region < heap->mm_nregions; region++)
+#else
+	region = 0;
+#endif
+	{
+		/* Walk nodes forward from heap start */
+		for (node = heap->mm_heapstart[region];
+		     node <= heap->mm_heapend[region];
+		     node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+
+			/* Check if the target address falls within this node's data area.
+			 * The data area starts at (node + SIZEOF_MM_ALLOCNODE) and
+			 * extends to (node + node->size).
+			 */
+			if (target >= (uint32_t)node + SIZEOF_MM_ALLOCNODE &&
+			    target < (uint32_t)node + node->size) {
+
+				mfdbg("Address 0x%08x is inside heap node:\n", target);
+				mm_dump_node(node, "CONTAINING NODE");
+
+				/* Also dump adjacent nodes for context */
+				/*if (node->preceding & MM_ALLOC_BIT) {
+					mmsize_t prev_size = node->preceding & ~MM_ALLOC_BIT;
+					if (prev_size >= SIZEOF_MM_ALLOCNODE) {
+						struct mm_allocnode_s *prev_node =
+							(struct mm_allocnode_s *)((char *)node - prev_size);
+						if ((void *)prev_node >= (void *)heap->mm_heapstart[region] &&
+						    (void *)prev_node < (void *)heap->mm_heapend[region]) {
+							mm_dump_node(prev_node, "PREV ADJACENT NODE");
+						}
+					}
+				}
+
+				struct mm_allocnode_s *next_node =
+					(struct mm_allocnode_s *)((char *)node + node->size);
+				if ((void *)next_node >= (void *)heap->mm_heapstart[region] &&
+				    (void *)next_node <= (void *)heap->mm_heapend[region]) {
+					mm_dump_node(next_node, "NEXT ADJACENT NODE");
+				}*/
+
+				return;  /* Found it, done */
+			}
+
+			/* Safety: if node->size is 0 or corrupted, break to avoid infinite loop */
+			if (node->size < SIZEOF_MM_ALLOCNODE) {
+				mfdbg("Corrupted node at 0x%08x (size=%u), stopping search\n",
+				       node, node->size);
+				break;
+			}
+		}
+	}
+
+	mfdbg("Address 0x%08x not found in any heap node\n", target);
+}
