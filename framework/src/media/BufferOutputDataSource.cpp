@@ -91,12 +91,17 @@ ssize_t BufferOutputDataSource::write(unsigned char *buf, size_t size)
 	}
 
 	auto buffer = new unsigned char[size];
+	if (!buffer) {
+		meddbg("Failed to allocate buffer of size %zu\n", size);
+		return EOF;
+	}
 	memcpy(buffer, buf, size);
 	auto recorder = getRecorder();
 	if (recorder) {
 		recorder->notifyObserver(RECORDER_OBSERVER_COMMAND_BUFFER_DATAREACHED, buffer, size);
 	} else {
 		delete[] buffer;
+		buffer = nullptr;
 	}
 	// DO NOT `delete[]`, `buffer` will be managed in std::shared_ptr<> and released automatically!
 

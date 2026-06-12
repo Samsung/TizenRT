@@ -754,6 +754,7 @@ int pcm_close(struct pcm *pcm)
 
 	if (pcm->fd < 0) {
 		free(pcm);
+		pcm = NULL;
 		return 0;
 	}
 
@@ -780,6 +781,7 @@ int pcm_close(struct pcm *pcm)
 			}
 		}
 		free(pcm->pBuffers);
+		pcm->pBuffers = NULL;
 	}
 
 	mq_unlink(pcm->mqname);
@@ -787,6 +789,7 @@ int pcm_close(struct pcm *pcm)
 	close(pcm->fd);
 
 	free(pcm);
+	pcm = NULL;
 	return 0;
 }
 
@@ -959,6 +962,7 @@ fail_cleanup_buffers:
 		}
 		/* Free the pointers to the buffers */
 		free(pcm->pBuffers);
+		pcm->pBuffers = NULL;
 	}
 
 	pcm->buf_idx = 0;

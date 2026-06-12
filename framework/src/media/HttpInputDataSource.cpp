@@ -155,6 +155,7 @@ bool HttpInputDataSource::open()
 		unsigned int sampleRate;
 		bool ret = utils::buffer_header_parsing(tempbuf, dlen, audioType, &channel, &sampleRate, NULL);
 		delete[] tempbuf;
+		tempbuf = nullptr;
 
 		if (!ret) {
 			meddbg("header parsing failed\n");

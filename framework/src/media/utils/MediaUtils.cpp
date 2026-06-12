@@ -591,6 +591,7 @@ static bool ts_parsing(const unsigned char *buffer, unsigned int bufferSize, aud
 	if (ret < UTILS_ERROR_NONE) {
 		meddbg("Get ES data failed, PID %u, err %d\n", streamInfo.pid, ret);
 		free(audioES);
+		audioES = NULL;
 		return false;
 	}
 	audioESLen = (size_t)ret;
@@ -602,6 +603,7 @@ static bool ts_parsing(const unsigned char *buffer, unsigned int bufferSize, aud
 	}
 	bool parseRet = buffer_header_parsing(audioES, (unsigned int)audioESLen, *audioType, channel, sampleRate, pcmFormat);
 	free(audioES);
+	audioES = NULL;
 	return parseRet;
 }
 
@@ -1075,6 +1077,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 			if (ret != OK) {
 				meddbg("file seek failed errno : %d\n", errno);
 				free(header);
+				header = NULL;
 				return false;
 			}
 
@@ -1082,12 +1085,14 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 			if (ret != MP3_HEADER_LENGTH) {
 				meddbg("read failed ret : %d\n", ret);
 				free(header);
+				header = NULL;
 				return false;
 			}
 
 			if (!mp3_header_parsing(header, channel, sampleRate, NULL)) {
 				meddbg("Header parsing failed\n");
 				free(header);
+				header = NULL;
 				return false;
 			}
 		} else {
@@ -1115,11 +1120,13 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 			if (fseek(fp, -1, SEEK_CUR) != 0) {
 				meddbg("file seek failed error\n");
 				free(header);
+				header = NULL;
 				return false;
 			}
 
 			if ((fread(header, sizeof(unsigned char), AAC_HEADER_LENGTH, fp) != AAC_HEADER_LENGTH) || !aac_header_parsing(header, channel, sampleRate, NULL)) {
 				free(header);
+				header = NULL;
 				return false;
 			}
 		} else {
@@ -1137,6 +1144,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 
 		if ((fread(header, sizeof(unsigned char), WAVE_HEADER_LENGTH, fp) != WAVE_HEADER_LENGTH) || !wave_header_parsing(header, channel, sampleRate, pcmFormat)) {
 			free(header);
+			header = NULL;
 			return false;
 		}
 		break;
@@ -1152,12 +1160,14 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 		size_t readSize = fread(header, sizeof(unsigned char), bufferSize, fp);
 		if (readSize != bufferSize) {
 			free(header);
+			header = NULL;
 			meddbg("can not read enough data for preparsing! read:%u\n", readSize);
 			return false;
 		}
 
 		if (!ts_parsing(header, readSize, &audioType, channel, sampleRate, pcmFormat)) {
 			free(header);
+			header = NULL;
 			meddbg("ts_parsing failed, can not get audio information!\n");
 			return false;
 		}
@@ -1169,6 +1179,7 @@ bool file_header_parsing(FILE *fp, audio_type_t audioType, unsigned int *channel
 
 	if (header != NULL) {
 		free(header);
+		header = NULL;
 	}
 
 	if (fseek(fp, 0, SEEK_SET) != 0) {
@@ -1291,15 +1302,18 @@ bool createWavHeader(FILE *fp)
 	if (ret != WAVE_HEADER_LENGTH) {
 		meddbg("file write failed error %d\n", errno);
 		free(header);
+		header = NULL;
 		return false;
 	}
 	if (fseek(fp, WAVE_HEADER_LENGTH, SEEK_SET) != 0) {
 		meddbg("file seek failed error\n");
 		free(header);
+		header = NULL;
 		return false;
 	}
 
 	free(header);
+	header = NULL;
 	return true;
 }
 
@@ -1368,10 +1382,12 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
 	if (ret != WAVE_HEADER_LENGTH) {
 		meddbg("file write failed error %d\n", errno);
 		free(header);
+		header = NULL;
 		return false;
 	}
 
 	free(header);
+	header = NULL;
 	return true;
 }
 

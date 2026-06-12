@@ -393,10 +393,12 @@ bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, 
 			if (readLen <= 0) {
 				meddbg("Read source failed! error: %d\n", readLen);
 				delete[] buf;
+				buf = nullptr;
 				return false;
 			}
 			demuxer->pushData(buf, (size_t)readLen);
 			delete[] buf;
+			buf = nullptr;
 			int ret = demuxer->prepare();
 			if (ret < 0) {
 				if (ret == DEMUXER_ERROR_WANT_DATA) {
@@ -576,6 +578,7 @@ bool InputHandler::probeDataSource()
 			if (readBytes <= 0) {
 				meddbg("Read data source failed, readBytes : %d totalBytes : %d threshold : %d\n", readBytes, totalBytes, threshold);
 				delete[] bufptr;
+				bufptr = nullptr;
 				return false;
 			}
 			totalBytes += readBytes;
@@ -616,10 +619,12 @@ bool InputHandler::probeDataSource()
 		if (!mPreloadBuffer) {
 			meddbg("Out of memory\n");
 			delete[] bufptr;
+			bufptr = nullptr;
 			return false;
 		}
 		mPreloadBuffer->write(bufptr, totalBytes);
 		delete[] bufptr;
+		bufptr = nullptr;
 		return true;
 	}
 	// No need to preload and probe data

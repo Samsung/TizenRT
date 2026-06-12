@@ -134,8 +134,12 @@ bool HardwareKeywordDetector::stopKeywordDetect(void)
 void HardwareKeywordDetector::detectKeyword(void)
 {
 	uint16_t msgId;
-	audio_manager_result_t result = get_device_process_handler_message(mSdCard, mSdDevice, &msgId);
+	if (!mSpeechResultCallback) {
+		meddbg("mSpeechResultCallback is not registered\n");
+		return;
+	}
 
+	audio_manager_result_t result = get_device_process_handler_message(mSdCard, mSdDevice, &msgId);
 	if (result == AUDIO_MANAGER_SUCCESS) {
 		/* TODO Local Local Command value will be received here */
 		if (msgId == AUDIO_DEVICE_SPEECH_DETECT_KD) {

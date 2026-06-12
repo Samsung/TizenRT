@@ -999,6 +999,7 @@ audio_manager_result_t parse_audio_metadata_json(void)
 	if (fd == -1) {
 		meddbg("Failed to open volume level json. errno: %d", errno);
 		free(buffer);
+		buffer = nullptr;
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
 	ssize_t bytesRead = read(fd, buffer, jsonFileStat.st_size);
@@ -1006,6 +1007,7 @@ audio_manager_result_t parse_audio_metadata_json(void)
 		meddbg("Failed to read from volume level json. errno: %d", errno);
 		close(fd);
 		free(buffer);
+		buffer = nullptr;
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
 	medvdbg("Total bytes read from volume level json: %d\n", bytesRead);
@@ -1014,10 +1016,12 @@ audio_manager_result_t parse_audio_metadata_json(void)
 		meddbg("Failed to parse volume level json file.\n");
 		close(fd);
 		free(buffer);
+		buffer = nullptr;
 		return AUDIO_MANAGER_OPERATION_FAIL;
 	}
 	close(fd);
 	free(buffer);
+	buffer = nullptr;
 	return AUDIO_MANAGER_SUCCESS;
 }
 

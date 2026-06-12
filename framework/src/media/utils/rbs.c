@@ -60,6 +60,7 @@ int rbs_close(rbstream_p rbsp)
 
 	RETURN_VAL_IF_FAIL(rbsp != NULL, ERROR);
 	free(rbsp);
+	rbsp = NULL;
 	return OK;
 }
 

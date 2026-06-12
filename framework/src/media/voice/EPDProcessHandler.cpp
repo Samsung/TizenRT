@@ -42,14 +42,7 @@ AIFW_RESULT EPDProcessHandler::parseData(void *data, uint16_t count, float *pars
 	 * Required raw data values can be selected using features key of json file
 	 * New data values can be created using different raw data values.
 	 */
-	if (!data) {
-		meddbg("raw data from source is NULL");
-		return AIFW_INVALID_ARG;
-	}
-	if (!parsedData) {
-		meddbg("parsed data buffer argument is NULL");
-		return AIFW_INVALID_ARG;
-	}
+
 	/** 
 	 * @todo Parse raw data values and fill values in parsedData buffer 
 	 * Here, we have copied entire raw data into parsedData buffer.
@@ -65,15 +58,6 @@ AIFW_RESULT EPDProcessHandler::parseData(void *data, uint16_t count, float *pars
 
 AIFW_RESULT EPDProcessHandler::preProcessData(std::shared_ptr<aifw::AIDataBuffer> buffer, uint16_t countInputSets, float **invokeInput, AIModelAttribute *modelAttribute)
 {
-	if (!buffer) {
-		meddbg("Invalid argument - input data buffer");
-		return AIFW_INVALID_ARG;
-	}
-	if (!invokeInput) {
-		meddbg("Invalid argument - output data buffer");
-		return AIFW_INVALID_ARG;
-	}
-
 	/* Preprocessing of raw data can be done at this point. Preprocess result save in invokeInput */
 	/* Sample PreProcessing Logic : Filled Invokeinput with zeros and attached sample code for getting data from AIDataBuffer. */
 	/* Sample Preprocessing Logic Start here. */
@@ -89,6 +73,7 @@ AIFW_RESULT EPDProcessHandler::preProcessData(std::shared_ptr<aifw::AIDataBuffer
 	if (res != AIFW_OK) {
 		meddbg("Reading Data from the buffer failed.");
 		delete[] rawData;
+		rawData = nullptr;
 		return res;
 	}
 
@@ -100,6 +85,7 @@ AIFW_RESULT EPDProcessHandler::preProcessData(std::shared_ptr<aifw::AIDataBuffer
 
 	/* Step 4 : Cleanup all local variables. */
 	delete[] rawData;
+	rawData = nullptr;
 	/* Sample Preprocessing Logic Ends here. */
 
 	medvdbg("EPD model pre-process data complete OK");
@@ -108,15 +94,6 @@ AIFW_RESULT EPDProcessHandler::preProcessData(std::shared_ptr<aifw::AIDataBuffer
 
 AIFW_RESULT EPDProcessHandler::postProcessData(std::shared_ptr<aifw::AIDataBuffer> buffer, float *resultData, AIModelAttribute *modelAttribute)
 {
-	if (!buffer) {
-		meddbg("Invalid argument - input data buffer");
-		return AIFW_INVALID_ARG;
-	}
-	if (!resultData) {
-		meddbg("Invalid argument - output buffer");
-		return AIFW_INVALID_ARG;
-	}
-
 	/* Post processing of result can be done at this point. Post Process result save in resultData */
 	/* Sample PostProcessing Logic : Copy the invoke output. */
 	/* Sample PostProcessing Logic Start here. */
@@ -132,6 +109,7 @@ AIFW_RESULT EPDProcessHandler::postProcessData(std::shared_ptr<aifw::AIDataBuffe
 	if (res != AIFW_OK) {
 		meddbg("Reading Data from the buffer failed. error: %d", res);
 		delete[] rawdata_invokeoutput;
+		rawdata_invokeoutput = nullptr;
 		return res;
 	}
 
@@ -142,6 +120,7 @@ AIFW_RESULT EPDProcessHandler::postProcessData(std::shared_ptr<aifw::AIDataBuffe
 
 	/* Step 4 : Cleanup all local variables. */
 	delete[] rawdata_invokeoutput;
+	rawdata_invokeoutput = nullptr;
 	/* Sample Postprocessing Logic Ends here. */
 
 	medvdbg("EPD model post-process data complete OK");
