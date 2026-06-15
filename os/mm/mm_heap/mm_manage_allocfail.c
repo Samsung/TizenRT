@@ -32,7 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <tinyara/mm/mm.h>
-#if defined(CONFIG_MEM_LEAK_CHECKER_RUN_ON_ALLOCFAIL)
+#if defined(CONFIG_MM_RUN_MEM_LEAK_CHECKER_ON_ALLOCFAIL)
 #include <sys/wait.h>
 #include <tinyara/arch.h>
 #include <tinyara/kthread.h>
@@ -57,7 +57,7 @@
 
 extern bool abort_mode;
 
-#ifdef CONFIG_MEM_LEAK_CHECKER_RUN_ON_ALLOCFAIL
+#ifdef CONFIG_MM_RUN_MEM_LEAK_CHECKER_ON_ALLOCFAIL
 extern int mem_leak_checker_internal(int argc, char **argv);
 #endif
 
@@ -215,7 +215,7 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 
 	/* If secure state, do not print memory usage and address infomation */
 	if (!IS_SECURE_STATE()) {
-#ifdef CONFIG_MEM_LEAK_CHECKER_RUN_ON_ALLOCFAIL
+#ifdef CONFIG_MM_RUN_MEM_LEAK_CHECKER_ON_ALLOCFAIL
 		if (up_interrupt_context()) {
 			mfdbg("skip mem leak checker in interrupt context\n");
 		} else {
@@ -227,7 +227,7 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 				(void)waitpid(mem_leak, &status, 0);
 			}
 		}
-#endif /* CONFIG_MEM_LEAK_CHECKER_RUN_ON_ALLOCFAIL */
+#endif /* CONFIG_MM_RUN_MEM_LEAK_CHECKER_ON_ALLOCFAIL */
 
 		mm_manage_alloc_fail_dump(heap, startidx, endidx, size, align, heap_type, caller);
 	}

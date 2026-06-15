@@ -41,10 +41,10 @@
 #define CMN_BIN_IDX 0
 
 #define MEM_ACCESS_UNIT    0x04
-#ifdef CONFIG_MEM_LEAK_CHECKER_STATIC_ALLOC
-#define MAX_ALLOC_COUNT    CONFIG_MEM_LEAK_CHECKER_MAX_ALLOC_COUNT
+#ifdef CONFIG_DEBUG_MEM_LEAK_CHECKER_STATIC_ALLOC
+#define MAX_ALLOC_COUNT    CONFIG_DEBUG_MEM_LEAK_CHECKER_MAX_ALLOC_COUNT
 #endif
-#define HASH_SIZE          CONFIG_MEM_LEAK_CHECKER_HASH_TABLE_SIZE
+#define HASH_SIZE          CONFIG_DEBUG_MEM_LEAK_CHECKER_HASH_TABLE_SIZE
 #define MEM_DUMP_MAX_BYTES 32
 
 #define MM_PREV_NODE_SIZE(x)            ((x)->preceding & ~MM_ALLOC_BIT)
@@ -63,7 +63,7 @@ struct alloc_node_info_s {
 	struct alloc_node_info_s *next;
 };
 
-#ifdef CONFIG_MEM_LEAK_CHECKER_STATIC_ALLOC
+#ifdef CONFIG_DEBUG_MEM_LEAK_CHECKER_STATIC_ALLOC
 static struct alloc_node_info_s *g_hash_table[HASH_SIZE];
 static struct alloc_node_info_s g_node_info[MAX_ALLOC_COUNT];
 #else
@@ -77,7 +77,7 @@ static int hash_init(int node_count)
 {
 	int index;
 
-#ifdef CONFIG_MEM_LEAK_CHECKER_DYNAMIC_ALLOC
+#ifdef CONFIG_DEBUG_MEM_LEAK_CHECKER_DYNAMIC_ALLOC
 	g_hash_table = (struct alloc_node_info_s **)malloc(sizeof(struct alloc_node_info_s *) * HASH_SIZE);
 	if (!g_hash_table) {
 		memleakdbg("hash table memory alloc is failed.\n");
@@ -102,7 +102,7 @@ static int hash_init(int node_count)
 
 static void hash_deinit(void)
 {
-#ifndef CONFIG_MEM_LEAK_CHECKER_STATIC_ALLOC
+#ifdef CONFIG_DEBUG_MEM_LEAK_CHECKER_DYNAMIC_ALLOC
 	free(g_hash_table);
 	free(g_node_info);
 	g_hash_table = NULL;
@@ -514,7 +514,7 @@ int run_all_mem_leak_checker(int checker_pid)
 	return OK;
 }
 
-#if defined(CONFIG_MEM_LEAK_CHECKER_RUN_ON_ALLOCFAIL)
+#if defined(CONFIG_MM_RUN_MEM_LEAK_CHECKER_ON_ALLOCFAIL)
 int mem_leak_checker_internal(int argc, char **argv)
 {
 	int ret = run_all_mem_leak_checker(getpid());
