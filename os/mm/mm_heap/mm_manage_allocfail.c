@@ -32,6 +32,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <tinyara/mm/mm.h>
+#if defined(CONFIG_MEM_LEAK_CHECKER_RUN_ON_ALLOCFAIL)
+#include <sys/wait.h>
+#include <tinyara/arch.h>
+#include <tinyara/kthread.h>
+#endif
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 #include <assert.h>
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
@@ -49,6 +54,12 @@
 
 #define KERNEL_STR "kernel"
 #define USER_STR   "user"
+
+extern bool abort_mode;
+
+#ifdef CONFIG_MEM_LEAK_CHECKER_RUN_ON_ALLOCFAIL
+extern int mem_leak_checker_internal(int argc, char **argv);
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -68,13 +79,13 @@
 #if defined(CONFIG_APP_BINARY_SEPARATION) && !defined(__KERNEL__)
 void mm_ioctl_alloc_fail(size_t size, size_t align, mmaddress_t caller)
 {
-	struct mm_alloc_fail_s arg = {size, align, caller};
+	struct mm_alloc_fail_s arg = { size, align, caller };
 
 	int mmfd = open(MMINFO_DRVPATH, O_RDWR);
 	if (mmfd < 0) {
 		mdbg("Fail to open %s, errno %d\n", MMINFO_DRVPATH, get_errno());
 	} else {
-		int res = ioctl(mmfd, MMINFOIOC_MNG_ALLOCFAIL, &arg);	/* might need ti handle passing of NULL*/
+		int res = ioctl(mmfd, MMINFOIOC_MNG_ALLOCFAIL, &arg);	/* might need ti handle passing of NULL */
 		if (res == ERROR) {
 			mdbg("Fail to call mm_manage_allocfail, errno %d\n", get_errno());
 		}
@@ -192,9 +203,11 @@ void mm_manage_alloc_fail_dump(struct mm_heap_s *heap, int startidx, int endidx,
 
 void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size_t size, size_t align, int heap_type, mmaddress_t caller)
 {
-	irqstate_t flags = enter_critical_section();
+	irqstate_t flags;
 
+	flags = enter_critical_section();
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
+	abort_mode = true;
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
 #endif
@@ -202,6 +215,20 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 
 	/* If secure state, do not print memory usage and address infomation */
 	if (!IS_SECURE_STATE()) {
+#ifdef CONFIG_MEM_LEAK_CHECKER_RUN_ON_ALLOCFAIL
+		if (up_interrupt_context()) {
+			mfdbg("skip mem leak checker in interrupt context\n");
+		} else {
+			pid_t mem_leak = kernel_thread("mem leak", 100, 2048, mem_leak_checker_internal, NULL);
+			if (mem_leak < 0) {
+				mfdbg("mem leak task creation failed\n");
+			} else {
+				int status;
+				(void)waitpid(mem_leak, &status, 0);
+			}
+		}
+#endif /* CONFIG_MEM_LEAK_CHECKER_RUN_ON_ALLOCFAIL */
+
 		mm_manage_alloc_fail_dump(heap, startidx, endidx, size, align, heap_type, caller);
 	}
 
