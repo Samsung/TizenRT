@@ -6,51 +6,6 @@
 config MEM_LEAK_CHECKER
 	bool "Memory Leak Checker"
 	default n
-	depends on DEBUG_MM_HEAPINFO
-	select SAVE_BIN_SECTION_ADDR if APP_BINARY_SEPARATION
+	depends on DEBUG_MEM_LEAK_CHECKER
 	---help---
-		Enable support for Memory Leak Checker. This requires arch/arm/src/<chip>/memory_region.h to work for the selected board.
-
-if MEM_LEAK_CHECKER
-
-choice
-	prompt "Memory leak checker buffer allocation"
-	default MEM_LEAK_CHECKER_DYNAMIC_ALLOC
-	---help---
-		Select how the memory leak checker allocates its internal search buffers.
-		Dynamic allocation uses heap memory at runtime. Static allocation reserves
-		the buffers at build time and can be used from allocation failure handling.
-
-config MEM_LEAK_CHECKER_DYNAMIC_ALLOC
-	bool "Dynamic allocation"
-
-config MEM_LEAK_CHECKER_STATIC_ALLOC
-	bool "Static allocation"
-
-endchoice
-
-config MEM_LEAK_CHECKER_RUN_ON_ALLOCFAIL
-	bool "Run memory leak checker on allocation failure"
-	default n
-	depends on MEM_LEAK_CHECKER_STATIC_ALLOC
-	---help---
-		Run the memory leak checker from the allocation failure path before
-		printing the allocation failure dump. This is available only with static
-		checker buffers because dynamic buffers would allocate memory after an
-		allocation failure.
-
-config MEM_LEAK_CHECKER_HASH_TABLE_SIZE
-	int "size of hash table"
-	default 1007
-	---help---
-		The size of the hash table for searching. It is preferred to have this as a prime number
-
-config MEM_LEAK_CHECKER_MAX_ALLOC_COUNT
-	int "max allocation counts"
-	default 3000
-	depends on MEM_LEAK_CHECKER_STATIC_ALLOC
-	---help---
-		It must be larger than the total number of memory allocations. This is
-		used only when the memory leak checker buffers are statically allocated.
-
-endif
+		Build the user command for Memory Leak Checker. Kernel support is controlled by DEBUG_MEM_LEAK_CHECKER.
