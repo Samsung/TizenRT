@@ -449,6 +449,29 @@ include LibTargets.mk
 # is an archive.  Exactly what is performed during pass1 or what it generates
 # is unknown to this makefile unless CONFIG_PASS1_OBJECT is defined.
 
+ifneq ($(CONFIG_ELF),y)
+ifneq ($(CONFIG_OTA_SUPPORT_SECOND_PARTITION),y)
+ACTIVE_OTA_INDEX:=0
+else
+ACTIVE_OTA_INDEX:=1
+endif
+# Compute all binary memory layouts in a single Python invocation
+ALL_MEM_VARS := $(shell python3 $(TOPDIR)/tools/bin_mem_layout.py --all --ota-index $(ACTIVE_OTA_INDEX))
+$(foreach v,$(ALL_MEM_VARS),$(eval $(v)))
+
+# Export so loadable.mk can read them without re-invoking Python
+export COMMON_FLASH_ADDR APP1_FLASH_ADDR APP2_FLASH_ADDR
+export COMMON_FLASH_SIZE APP1_FLASH_SIZE APP2_FLASH_SIZE
+export COMMON_RAM_ADDR APP1_RAM_ADDR APP2_RAM_ADDR
+export COMMON_RAM_SIZE APP1_RAM_SIZE APP2_RAM_SIZE
+
+COMMON_LD_DEFS := \
+    --defsym __FLASH_START_ADDRESS__=$(COMMON_FLASH_ADDR) \
+    --defsym __FLASH_SIZE__=$(COMMON_FLASH_SIZE) \
+    --defsym __RAM_START_ADDRESS__=$(COMMON_RAM_ADDR) \
+    --defsym __RAM_SIZE__=$(COMMON_RAM_SIZE)
+endif
+
 ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 LIBGCC = "${shell "$(CC)" $(ARCHCPUFLAGS) -print-libgcc-file-name}"
 endif
@@ -464,13 +487,12 @@ ifeq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
 ifeq ($(CONFIG_ELF),y)
 	$(Q) $(LD) -r -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps.ld -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt)
 else
-	$(Q) $(TOPDIR)/tools/mkldscript.py
 	$(Q) $(MAKE) -C userspace CFLAGS="$(CFLAGS)" TOPDIR="$(TOPDIR)" common_obj
 ifneq ($(CONFIG_XIP_ELF_WARCHIVE), y)
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" undefsym KERNEL=n
-	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt) -Map $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).map
+	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps_xip.ld $(COMMON_LD_DEFS) $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --start-group $(USERLIBS) $(LIBGCC) $(LIBSUPXX) --end-group $$(cat $(OUTBIN_DIR)/lib_symbols.txt) -Map $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME).map
 else
-	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(OUTBIN_DIR)/common_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --whole-archive $(USERLIBS) --no-whole-archive --start-group $(LIBGCC) $(LIBSUPXX) --end-group
+	$(Q) $(LD) -o $(OUTBIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) -T $(TOPDIR)/userspace/userspace_apps_xip.ld $(COMMON_LD_DEFS) $(TOPDIR)/userspace/up_userspace_common.o -L $(LIBRARIES_DIR) --whole-archive $(USERLIBS) --no-whole-archive --start-group $(LIBGCC) $(LIBSUPXX) --end-group
 endif
 	$(Q) $(MAKE) -C $(LOADABLE_APPDIR) TOPDIR="$(TOPDIR)" LOADABLEDIR="${LOADABLE_APPDIR}" LIBRARIES_DIR="$(LIBRARIES_DIR)" USERLIBS="$(USERLIBS)" all KERNEL=n
 endif
