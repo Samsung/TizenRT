@@ -36,3 +36,10 @@ the value of the current secure level.
     - Write to the status register using volatile mode.
 
 
+== version beken_trustzone pr-224 2026/06/15-17:44:00==
+
+   1.Bootloader & TFM via BP Partition parse the kernel address
+    - Description of BP Partition Update and Realization of Kernel Address Parsing and Retrieval by Bootloader & TFM via BP Partition
+	- add build version in bootloader
+	- Fix the reason field of test_case3, change its value from 4 to 2.
+   2.Fix GCM AAD padding when plaintext length is zero
