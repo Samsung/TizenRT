@@ -25,7 +25,8 @@
 #include <tinyara/fs/fs_utils.h>
 #include "tash_internal.h"
 
-#define BUFF_SIZE 80
+/* Keep script command buffers aligned with TASH console command buffers. */
+#define BUFF_SIZE TASH_LINEBUFLEN
 #define PATH_ARG_INDEX  1
 
 static void show_usage_tash_script(void)
