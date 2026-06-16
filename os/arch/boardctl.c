@@ -68,6 +68,7 @@
 #include <tinyara/arch.h>
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 #include <tinyara/reboot_reason.h>
+#include <tinyara/sched.h>
 #endif
 
 #ifdef CONFIG_LIB_BOARDCTL
@@ -105,6 +106,10 @@
 int boardctl(unsigned int cmd, uintptr_t arg)
 {
 	int ret;
+	pid_t pid;
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	struct tcb_s *tcb;
+#endif
 
 	switch (cmd) {
 	/*
@@ -154,13 +159,21 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 		sched_lock();
 		/* Add 100ms delay for flushing another logs like printf. */
 		up_mdelay(100);
-		lldbg("Board will Reboot now. pid: %d\n", getpid());
+
+		pid = getpid();
+		lldbg("Board will Reboot now. pid: %d\n", pid);
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 		if (!up_reboot_reason_is_written()) {
 			for (int i = 0; i < 10; i++) {
 				lldbg("\n    VIOLATION!!! YOU MUST SET REBOOT REASON!!!\n\n");
 			}
-			up_reboot_reason_write(REBOOT_SYSTEM_WITHOUT_SET_REASON);
+
+			tcb = sched_gettcb(pid);
+			if (tcb && ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL)) {
+				up_reboot_reason_write(REBOOT_USER_WITHOUT_SET_REASON);
+			} else {
+				up_reboot_reason_write(REBOOT_SYSTEM_WITHOUT_SET_REASON);
+			}
 		}
 #endif
 		/* Add 100ms delay for flushing UART FIFO. */

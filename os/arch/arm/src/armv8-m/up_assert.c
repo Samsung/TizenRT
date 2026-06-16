@@ -144,8 +144,13 @@ extern int g_irq_nums[3];
 #define CONFIG_BOARD_RESET_ON_ASSERT 0
 #endif
 
-#define IS_FAULT_IN_USER_THREAD(fault_tcb)  ((void *)fault_tcb->uheap != NULL)
-#define IS_FAULT_IN_USER_SPACE(asserted_location)   (is_kernel_space((void *)asserted_location) == false)
+#ifdef CONFIG_APP_BINARY_SEPARATION
+#define IS_FAULT_IN_USER_THREAD(fault_tcb)			((void *)fault_tcb->uheap != NULL)
+#define IS_FAULT_IN_USER_SPACE(asserted_location)	(is_kernel_space((void *)asserted_location) == false)
+#else
+#define IS_FAULT_IN_USER_THREAD(fault_tcb)			(false)
+#define IS_FAULT_IN_USER_SPACE(asserted_location)	(false)
+#endif
 
 #define NORMAL_STATE 0
 #define ABORT_STATE 1
@@ -599,10 +604,6 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	board_led_on(LED_ASSERTION);
 
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	reboot_reason_try_write_assert();
-#endif
-
 	uint32_t asserted_location;
 
 	abort_mode = true;
@@ -626,6 +627,10 @@ void up_assert(const uint8_t *filename, int lineno)
 	} else {
 		asserted_location = (uint32_t)GET_RETURN_ADDRESS();
 	}
+
+#ifdef CONFIG_SYSTEM_REBOOT_REASON
+	reboot_reason_try_write_assert(IS_FAULT_IN_USER_SPACE(asserted_location));
+#endif
 
 #ifdef CONFIG_SECURITY_LEVEL
 	lldbg("security level: %d\n", get_security_level());
@@ -664,5 +669,3 @@ void up_assert(const uint8_t *filename, int lineno)
 		_up_assert(EXIT_FAILURE);
 	}
 }
-
-

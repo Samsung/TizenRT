@@ -196,7 +196,11 @@ void mm_manage_alloc_fail(struct mm_heap_s *heap, int startidx, int endidx, size
 
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
+	if (heap_type == KERNEL_HEAP) {
+		WRITE_REBOOT_REASON(REBOOT_SYSTEM_MEMORYALLOCFAIL);
+	} else {
+		WRITE_REBOOT_REASON(REBOOT_USER_MEMORYALLOCFAIL);
+	}
 #endif
 #endif /* CONFIG_MM_ASSERT_ON_FAIL */
 

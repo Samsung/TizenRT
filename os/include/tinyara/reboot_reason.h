@@ -44,6 +44,14 @@ typedef enum {
 	REBOOT_SYSTEM_ASSERT               = 60, /* Reboot from ASSERT or PANIC */
 	REBOOT_SYSTEM_WITHOUT_SET_REASON   = 61, /* Software reboot without setting reboot reason beforehand */
 
+	/* User initiated reboot reasons */
+	REBOOT_USER_DATAABORT              = 71, /* Data abort by User */
+	REBOOT_USER_PREFETCHABORT          = 72, /* Prefetch abort by User */
+	REBOOT_USER_MEMORYALLOCFAIL        = 73, /* Memory allocation failure by User */
+	REBOOT_USER_WATCHDOG               = 74, /* Watchdog timeout by User */
+	REBOOT_USER_ASSERT                 = 75, /* Reboot from ASSERT or PANIC by User */
+	REBOOT_USER_WITHOUT_SET_REASON     = 76, /* Software reboot by User without setting reboot reason beforehand */
+
 	REBOOT_NETWORK_WIFICORE_WATCHDOG   = 80, /* Wi-Fi Core Watchdog Reset */
 	REBOOT_NETWORK_WIFICORE_PANIC      = 81, /* Wi-Fi Core Panic */
 	REBOOT_NETWORK_BTCORE_WATCHDOG     = 90, /* BT Core Watchdog Reset */
