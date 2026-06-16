@@ -1178,11 +1178,13 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 			seglen++;
 			ptr++;
 		}
-		/* Perform a check to avoid bufer overflow */
-		if (seglen >= SMARTFS_MAX_WORKBUFFER_LEN) {
+		/* Validate the segment length against namesize and work buffer limits. */
+		if (seglen > fs->fs_llformat.namesize || seglen >= SMARTFS_MAX_WORKBUFFER_LEN) {
+			fdbg("seglen(%d) is invalid, namesize : %d,  max_workbuffer_len : %d.\n", seglen, fs->fs_llformat.namesize, SMARTFS_MAX_WORKBUFFER_LEN);
 			ret = -ENAMETOOLONG;
 			goto errout;
 		}
+
 		strncpy(fs->fs_workbuffer, segment, seglen);
 		fs->fs_workbuffer[seglen] = '\0';
 
