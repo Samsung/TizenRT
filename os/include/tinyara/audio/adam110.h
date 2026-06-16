@@ -70,6 +70,8 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+#define ADAM110_SPI_FREQ_HIGH		12500000
+#define ADAM110_SPI_FREQ_LOW		1000000
 
 /* Default configuration values */
 
@@ -126,6 +128,8 @@ struct adam110_lower_s {
 	CODE void (*set_pm_state)(bool sleep);
 #endif
 	CODE void (*reset)(void);
+	/* Add SPI delay */
+	CODE void (*set_sample_delay)(FAR struct spi_dev_s *dev, int freq);
 };
 
 /****************************************************************************

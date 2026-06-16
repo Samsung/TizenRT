@@ -83,10 +83,10 @@
 
 /* spi config */
 #define ADAM110_SPI_PORT			0
-#define ADAM110_SPI_FREQ			12500000
 #define ADAM110_SPI_BPW				8
 #define ADAM110_SPI_CS				0
 #define ADAM110_SPI_MODE			SPIDEV_MODE0
+#define ADAM110_SPI_SAMPLE_DELAY	1
 
 #define GPIO_DMIC_EN				PA_25
 
@@ -108,7 +108,7 @@ static struct rtl8730e_adam110_audioinfo_s g_adam110info = {
 	.lower = {
 		.spi_config = {
                         .bpw = ADAM110_SPI_BPW,
-                        .freq = ADAM110_SPI_FREQ,
+                        .freq = ADAM110_SPI_FREQ_HIGH,
                         .cs = ADAM110_SPI_CS,
                         .mode = ADAM110_SPI_MODE,
                 },
@@ -181,6 +181,13 @@ static void rtl8730e_adam110_reset(void)
 	up_mdelay(21);
 }
 
+static void rtl8730e_adam110_set_sample_delay(FAR struct spi_dev_s *dev, int freq)
+{
+	if (freq == ADAM110_SPI_FREQ_HIGH) {
+		up_spi_sample_delay(dev, ADAM110_SPI_SAMPLE_DELAY);
+	}
+}
+
 #ifdef CONFIG_PM
 static void rtl8730e_adam110_pm(bool sleep)
 {	
@@ -234,6 +241,7 @@ int rtl8730e_adam110_initialize(int minor)
 		g_adam110info.lower.attach = rtl8730e_adam110_irq_attach;
 		g_adam110info.lower.irq_enable = rtl8730e_adam110_enable_irq;
 		g_adam110info.lower.set_dmic = rtl8730e_adam110_set_dmic;
+		g_adam110info.lower.set_sample_delay = rtl8730e_adam110_set_sample_delay;
 		gpio_init(&g_adam110info.dmic, GPIO_DMIC_EN);
 		gpio_init(&g_adam110info.reset, PA_24);
 		rtl8730e_adam110_reset();
@@ -250,11 +258,11 @@ int rtl8730e_adam110_initialize(int minor)
 		 * passed to lower level using spi_config in adam110_lower_s.
 		 */
 		FAR struct spi_dev_s *spi = up_spiinitialize(ADAM110_SPI_PORT);
-		
-		SPI_SETMODE(spi, ADAM110_SPI_MODE);
-		SPI_SETFREQUENCY(spi, ADAM110_SPI_FREQ);
-		SPI_SETBITS(spi, ADAM110_SPI_BPW);
-		
+		if (!spi) {
+			auddbg("spi init failed!\n");
+			return ERROR;
+		}
+
 		adam110 = (struct audio_lowerhalf_s *)adam110_lowerhalf_initialize(spi, &g_adam110info.lower);
 		if (adam110 == NULL) {
 			return ERROR;

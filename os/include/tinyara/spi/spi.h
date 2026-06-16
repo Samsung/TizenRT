@@ -497,6 +497,8 @@ FAR struct spi_dev_s *up_spiinitialize(int port);
 
 FAR int spi_uioregister(FAR int bus, FAR struct spi_dev_s *dev);
 
+FAR void up_spi_sample_delay(FAR struct spi_dev_s *dev, uint32_t delay);
+
 #undef EXTERN
 #if defined(__cplusplus)
 }
