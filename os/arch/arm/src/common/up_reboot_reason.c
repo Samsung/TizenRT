@@ -18,6 +18,7 @@
 
 #include <tinyara/config.h>
 #include <arch/reboot_reason.h>
+#include <tinyara/arch.h>
 #include <tinyara/reboot_reason.h>
 
 /****************************************************************************
@@ -28,11 +29,28 @@
  * Name: reboot_reason_trywrite
  ****************************************************************************/
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-void reboot_reason_try_write_assert(void)
+void reboot_reason_try_write_assert(bool is_user_assert)
 {
-	/* Write REBOOT_SYSTEM_ASSERT only when there is no written reason before. */
+	/* Write reboot reason only when there is no written reason before. */
 	if (!up_reboot_reason_is_written()) {
-		up_reboot_reason_write(REBOOT_SYSTEM_ASSERT);
+		if (is_user_assert) {
+			up_reboot_reason_write(REBOOT_USER_ASSERT);
+		} else {
+			up_reboot_reason_write(REBOOT_SYSTEM_ASSERT);
+		}
 	}
+}
+
+void reboot_reason_write_by_addr(uintptr_t addr, reboot_reason_code_t system_reason, reboot_reason_code_t user_reason)
+{
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	if (is_kernel_space((void *)addr)) {
+		up_reboot_reason_write(system_reason);
+	} else {
+		up_reboot_reason_write(user_reason);
+	}
+#else
+	up_reboot_reason_write(system_reason);
+#endif
 }
 #endif

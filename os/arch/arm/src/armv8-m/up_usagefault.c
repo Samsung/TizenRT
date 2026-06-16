@@ -131,7 +131,7 @@ int up_usagefault(int irq, FAR void *context, FAR void *arg)
 	}
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	 up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+	reboot_reason_write_by_addr(system_exception_location, REBOOT_SYSTEM_PREFETCHABORT, REBOOT_USER_PREFETCHABORT);
 #endif
 
 	PANIC();
