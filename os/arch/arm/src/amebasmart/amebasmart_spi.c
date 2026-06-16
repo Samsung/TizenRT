@@ -1540,6 +1540,15 @@ static uint32_t rtk_spi_resume(uint32_t expected_idle_time, void *param)
 }
 #endif
 
+FAR void up_spi_sample_delay(FAR struct spi_dev_s *dev, uint32_t delay)
+{
+	FAR struct amebasmart_spidev_s *priv;
+	DEBUGASSERT(dev);
+	priv = (FAR struct amebasmart_spidev_s *)dev;
+	DEBUGASSERT(&priv->spi_object);
+	spi_set_sample_delay(&priv->spi_object, delay);
+}
+
 /************************************************************************************
  * Name: up_spiinitialize
  *

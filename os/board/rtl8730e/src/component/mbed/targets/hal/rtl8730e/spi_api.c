@@ -631,6 +631,13 @@ void spi_frequency(spi_t *obj, int hz)
 	SSI_SetBaudDiv(ssi_adapter->spi_dev, ClockDivider);
 }
 
+void spi_set_sample_delay(spi_t *obj, uint32_t sample_delay)
+{
+	uint8_t  spi_idx = obj->spi_idx & 0x01;
+	PHAL_SSI_ADAPTOR ssi_adapter = &ssi_adapter_g[spi_idx];
+	SSI_SetSampleDelay(ssi_adapter->spi_dev, sample_delay);
+}
+
 void spi_slave_select(spi_t *obj, ChipSelect slaveindex)
 {
 	uint8_t  spi_idx = obj->spi_idx & 0x01;
