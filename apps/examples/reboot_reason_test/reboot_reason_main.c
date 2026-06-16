@@ -196,14 +196,22 @@ int reboot_reason_main(int argc, char *argv[])
 		case 'M':
 		case 'm':
 			/* Test for Memory Allocation Fail */
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			printf("After Memory Allocation Fail, Expected Reboot reason is %d\n", REBOOT_USER_MEMORYALLOCFAIL);
+#else
 			printf("After Memory Allocation Fail, Expected Reboot reason is %d\n", REBOOT_SYSTEM_MEMORYALLOCFAIL);
+#endif
 			memory_alloc_fail_test();
 			break;
 #endif
 		case 'P':
 		case 'p':
 			/* Test for Prefetch Abort */
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			printf("After Prefetch Abort, Expected Reboot reason is %d\n", REBOOT_USER_PREFETCHABORT);
+#else
 			printf("After Prefetch Abort, Expected Reboot reason is %d\n", REBOOT_SYSTEM_PREFETCHABORT);
+#endif
 			prefetch_abort_test();
 			break;
 		case 'V':
@@ -217,7 +225,11 @@ int reboot_reason_main(int argc, char *argv[])
 		case 'c':
 			/* Clear the previous reboot reason with REBOOT_REASON_INITIALIZED(0) */
 			printf("Will write %d and then will clear.\n", REBOOT_REASON_TEST_VAL);
-			printf("Expected reboot reason after reset is %d, otherwise wrong operation.\n", REBOOT_UNKNOWN);
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			printf("Expected reboot reason after reset is %d, otherwise wrong operation.\n", REBOOT_USER_WITHOUT_SET_REASON);
+#else
+			printf("Expected reboot reason after reset is %d, otherwise wrong operation.\n", REBOOT_SYSTEM_WITHOUT_SET_REASON);
+#endif
 			WRITE_REBOOT_REASON(REBOOT_REASON_TEST_VAL);
 			CLEAR_REBOOT_REASON();
 			reboot_board();
