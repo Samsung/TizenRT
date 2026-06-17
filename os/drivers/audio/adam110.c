@@ -265,7 +265,7 @@ static void adam110_spi_lock(FAR struct adam110_dev_s *dev)
 	(void)SPI_LOCK(dev->spi, true);
 	SPI_SETMODE(dev->spi, dev->lower->spi_config.mode);
 	SPI_SETFREQUENCY(dev->spi, dev->lower->spi_config.freq);
-	dev->lower->set_sample_delay(dev, dev->lower->spi_config.freq);
+	dev->lower->set_sample_delay(dev->spi, dev->lower->spi_config.freq);
 	SPI_SETBITS(dev->spi, dev->lower->spi_config.bpw);
 	SPI_SELECT(dev->spi, dev->lower->spi_config.cs, true);
 }
