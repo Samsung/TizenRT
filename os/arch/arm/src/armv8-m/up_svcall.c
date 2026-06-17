@@ -60,6 +60,7 @@
 #include <string.h>
 #include <assert.h>
 #include <debug.h>
+#include <errno.h>
 
 #include <arch/irq.h>
 #include <tinyara/arch.h>
@@ -77,6 +78,7 @@
 #include "svcall.h"
 #include "exc_return.h"
 #include "up_internal.h"
+#include "task/task.h"
 
 #define INDEX_ERROR (-1)
 /****************************************************************************
@@ -101,6 +103,21 @@
 uint32_t user_assert_location;
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 extern uint32_t *g_umm_app_id;
+#endif
+
+#ifdef CONFIG_BUILD_PROTECTED
+#define IS_UNPRIVILEGED_CALLER(regs) \
+	(((regs)[REG_EXC_RETURN] & EXC_RETURN_UNPRIVTHR) == EXC_RETURN_UNPRIVTHR)
+#else
+#define IS_UNPRIVILEGED_CALLER(regs) (false)
+#endif
+
+#ifdef CONFIG_BUILD_PROTECTED
+static inline void handle_reserved_svc_violation(uint32_t *regs, uint32_t cmd)
+{
+	slldbg("ERROR: Blocked unprivileged context syscall %d\n", cmd);
+	regs[REG_R0] = (uint32_t)-EACCES;
+}
 #endif
 
 /****************************************************************************
@@ -231,6 +248,12 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	 */
 
 	case SYS_save_context: {
+#ifdef CONFIG_BUILD_PROTECTED
+		if (IS_UNPRIVILEGED_CALLER(regs)) {
+			handle_reserved_svc_violation(regs, cmd);
+			return ERROR;
+		}
+#endif
 		DEBUGASSERT(regs[REG_R1] != 0);
 		memcpy((uint32_t *)regs[REG_R1], regs, XCPTCONTEXT_SIZE);
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARM_CMNVECTOR)
@@ -255,6 +278,12 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	 */
 
 	case SYS_restore_context: {
+#ifdef CONFIG_BUILD_PROTECTED
+		if (IS_UNPRIVILEGED_CALLER(regs)) {
+			handle_reserved_svc_violation(regs, cmd);
+			return ERROR;
+		}
+#endif
 		DEBUGASSERT(regs[REG_R1] != 0);
 		current_regs = (uint32_t *)regs[REG_R1];
 
@@ -281,6 +310,12 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 	 */
 
 	case SYS_switch_context: {
+#ifdef CONFIG_BUILD_PROTECTED
+		if (IS_UNPRIVILEGED_CALLER(regs)) {
+			handle_reserved_svc_violation(regs, cmd);
+			return ERROR;
+		}
+#endif
 		DEBUGASSERT(regs[REG_R1] != 0 && regs[REG_R2] != 0);
 		memcpy((uint32_t *)regs[REG_R1], regs, XCPTCONTEXT_SIZE);
 #if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_ARM_CMNVECTOR)
