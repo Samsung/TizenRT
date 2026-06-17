@@ -161,6 +161,11 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 		return ERROR;
 	}
 
+	if (mq_verifydesg(mqdes) != OK) {
+		leave_critical_section(flags);
+		return ERROR;
+	}
+
 	/* Get a pointer to the message queue */
 
 	msgq = mqdes->msgq;
