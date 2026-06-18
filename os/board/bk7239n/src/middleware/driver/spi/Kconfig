@@ -1,8 +1,4 @@
 menu "SPI"
-	config SPI
-		bool "Enable SPI"
-		default y
-
 	config SPI_DMA
 		bool "Enable SPI DMA"
 		default y
@@ -25,9 +21,6 @@ menu "SPI"
 
 	config SPI_PM_CB_SUPPORT
 		bool "SPI PM Support"
-		default n
-	config SPI
-		bool "SPI ENABLE"
 		default n
 
 	config SPI_BYTE_INTERVAL

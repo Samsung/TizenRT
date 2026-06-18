@@ -348,7 +348,6 @@ config RESOURCE_BINARY_SIGNING
 	bool "Enable Resource Binary Signing"
 	default n
 	depends on BINARY_SIGNING && RESOURCE_FS
-	select USER_SIGN_PREPEND_SIZE
 	---help---
 		Enable signing for resource binaries.
 		This option enables signing for resource binaries used in the system.
