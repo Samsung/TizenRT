@@ -74,6 +74,7 @@
 #include <tinyara/tz_context.h>
 #endif
 
+#include <errno.h>
 #include "svcall.h"
 #include "exc_return.h"
 #include "up_internal.h"
@@ -158,12 +159,20 @@ static void dispatch_syscall(void)
 		" str lr, [sp, #12]\n"	/* Save lr in the stack frame */
 		" ldr ip, =g_stublookup\n"	/* R12=The base of the stub lookup table */
 		" ldr ip, [ip, r0, lsl #2]\n"	/* R12=The address of the stub for this syscall */
+		" cmp ip, #0\n"	/* Check if the stub pointer is NULL */
+		" beq 1f\n"	/* If NULL, jump to error handler */
 		" blx ip\n"	/* Call the stub (modifies lr) */
 		" ldr lr, [sp, #12]\n"	/* Restore lr */
 		" add sp, sp, #16\n"	/* Destroy the stack frame */
 		" mov r2, r0\n"	/* R2=Save return value in R2 */
 		" mov r0, #3\n"	/* R0=SYS_syscall_return */
-		" svc 0"	/* Return from the syscall */
+		" svc 0\n"	/* Return from the syscall */
+		"1:\n"	/* NULL stub error handler */
+		" mov r2, #-38\n"	/* R2=-ENOSYS (Function not implemented) */
+		" mov r0, #3\n"	/* R0=SYS_syscall_return */
+		" ldr lr, [sp, #12]\n"	/* Restore lr */
+		" add sp, sp, #16\n"	/* Destroy the stack frame */
+		" svc 0\n"	/* Return from the syscall via SYS_syscall_return */
 	);
 }
 #endif
@@ -530,7 +539,11 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 
 		/* Verify that the SYS call number is within range */
 
-		DEBUGASSERT(cmd >= CONFIG_SYS_RESERVED && cmd < SYS_maxsyscall);
+		if (cmd < CONFIG_SYS_RESERVED || cmd >= SYS_maxsyscall) {
+			slldbg("ERROR: Bad SYS call: %d\n", cmd);
+			regs[REG_R0] = (uint32_t)-ENOSYS;
+			break;
+		}
 
 		/* Make sure that there is a no saved syscall return address.  We
 		 * cannot yet handle nested system calls.
