@@ -156,7 +156,7 @@ int up_memfault(int irq, FAR void *context, FAR void *arg)
 	uint32_t mmfar = getreg32(NVIC_MEMMANAGE_ADDR);
 	system_exception_location = regs[REG_R15];
 	if (cfsr & IACCVIOL) {
-		system_exception_location = regs[REG_R14];	/* The PC value might be invalid, so use LR */
+		system_exception_location = regs[REG_R14] - 4;	/* The PC value might be invalid, so use LR */
 	}
 
 	/* Add new line to distinguish between normal log and assert log.*/

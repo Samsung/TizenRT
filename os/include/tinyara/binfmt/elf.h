@@ -287,6 +287,7 @@ bin_addr_info_t *get_bin_addr_list(void);
 
 void *elf_find_text_section_addr(int bin_idx);
 void elf_show_all_bin_section_addr(void);
+bool elf_is_text_addr(void *addr);
 #endif
 
 #undef EXTERN

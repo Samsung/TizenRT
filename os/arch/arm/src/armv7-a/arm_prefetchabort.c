@@ -60,6 +60,10 @@
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include "mmu.h"
 #endif
+
+#include <tinyara/arch.h>
+#include <tinyara/binfmt/elf.h>
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -80,7 +84,7 @@ static inline void print_prefetchabort_detail(uint32_t *regs, uint32_t ifar, uin
 	lldbg_noarg("\n");
 	_alert("#########################################################################\n");
 	_alert("PANIC!!! Prefetch Abort at instruction : 0x%08x\n",  regs[REG_PC]);
-	_alert("PC: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], ifar, ifsr);
+	_alert("PC: %08x LR: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], regs[REG_LR], ifar, ifsr);
 	_alert("#########################################################################\n\n\n");
 }
 
@@ -178,6 +182,13 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 	CURRENT_REGS = regs;
 
 	system_exception_location = regs[REG_R15];
+	if (!is_kernel_text_space(system_exception_location)
+#ifdef CONFIG_APP_BINARY_SEPARATION
+		&& !elf_is_text_addr(system_exception_location)
+#endif
+		) {
+		system_exception_location = regs[REG_R14] - 4;
+	}
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
