@@ -604,6 +604,7 @@ errout_with_semaphore:
 
 static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t buflen)
 {
+	fvdbg("Entry\n");
 	struct inode *inode;
 	struct smartfs_mountpt_s *fs;
 	struct smartfs_ofile_s *sf;
@@ -613,6 +614,7 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 	uint16_t bytes;
 	size_t size = sizeof(struct smartfs_chain_header_s);
 	int ret;
+	uint16_t m_branch_sector, p_branch_sector, overwrite_start_sector, save_sector;
 
 	/* Sanity checks.  I have seen the following assertion misfire if
 	 * CONFIG_DEBUG_MM is enabled while re-directing output to a
@@ -648,126 +650,221 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 		goto errout_with_semaphore;
 	}
 
-	header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+	if (buflen <= 0) {
+		/* Nothing to write */
+		ret = 0;
+		goto errout_with_semaphore;
+	}
+
 	byteswritten = 0;
+	fvdbg("Starting file write with current sector = %u, current offset = %u, bytes written = %d\n\
+			file length = %u, file pointer position = %u, buflen = %d\n\n",\
+			sf->currsector, sf->curroffset, byteswritten, sf->entry.datalen, sf->filepos, buflen);
 
-	/* First, check if we are overwriting the existing file data or appending more
-	 * As long as the current file pointer position for writing is less than
-	 * the total data length in the file, we are doing an overwrite operation.
-	 * When the file pointer's position surpasses the file's data length,
-	 * it becomes an append operation which will be handled by a separate function
-	 */
-	while ((sf->filepos < sf->entry.datalen) && (buflen > 0)) {
-		/* We will write data up to the current end-of-file and then break,
-		 * allowing the append operation to write the additional data to the end of the file.
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+	if (sf->filepos < sf->entry.datalen) {
+		overwrite_start_sector = sf->currsector;
+		p_branch_sector = overwrite_start_sector;
+		m_branch_sector = overwrite_start_sector;
+
+		/* The first sector's overwrite will be done using the sf->buffer itself */
+		header = (struct smartfs_chain_header_s *)sf->buffer;
+
+		/* The number of bytes that wll be written is limited by
+		 * the minimum of the space in the current sector, the size of the file
+		 * or the buflen passed itself
 		 */
+		bytes = buflen;
 
-		fvdbg("Datalen : %d, sector : %d, offset : %d\nFilepos : %d, bytes written : %d, buflen : %d\n",\
-			 sf->entry.datalen, sf->currsector, sf->curroffset, sf->filepos, byteswritten, buflen);
-		bytes = fs->fs_llformat.availbytes - sf->curroffset;
-
-		/* Limit the write based on available data to write */
-		if (bytes > buflen) {
-			bytes = buflen;
+		if (bytes > (fs->fs_llformat.availbytes - sf->curroffset)) {
+			bytes = fs->fs_llformat.availbytes - sf->curroffset;
 		}
 
-		/* Limit the write based on current file length */
 		if (bytes > sf->entry.datalen - sf->filepos) {
 			bytes = sf->entry.datalen - sf->filepos;
 		}
 
-		/* Now perform the write. */
-		if (bytes > 0) {
+		/* Copy the updated bytes from the passed input buffer to the sf buffer and hold them there */
+		memcpy(&sf->buffer[sf->curroffset], buffer, bytes);
 
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-			/* If sector buffer is enabled and it is full with data, overwrite right now.
-			 * Otherwise, it will be written by sync_internal
-			 */
-			memcpy(&sf->buffer[sf->curroffset], &buffer[byteswritten], bytes);
-			sf->bflags |= SMARTFS_BFLAG_DIRTY;
+		/* Update the offset of the overwrite */
+		sf->curroffset += bytes;
 
-			if (sf->curroffset + bytes == fs->fs_llformat.availbytes)
-#endif				
-			{
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-				smartfs_setbuffer(&readwrite, sf->currsector, size,\
-					 fs->fs_llformat.availbytes - size, (uint8_t *)&sf->buffer[size]);
-#else
-				smartfs_setbuffer(&readwrite, sf->currsector, sf->curroffset,\
-					 fs->fs_llformat.availbytes - sf->curroffset, (uint8_t *)&buffer[byteswritten]);
-#endif
-				/* Only the data bytes of the sector are written,
-				 * we do not re-write/overwrite the header bytes.
-				 */
-				ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
-				if (ret < 0) {
-					fdbg("Error writing sector %d data, ret : %d\n", readwrite.logsector, ret);
-					goto errout_with_semaphore;
-				}
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-				/* Clear the flags, no longer dirty if the buffer content is written to flash */
-				sf->bflags = SMARTFS_BFLAG_UNMOD;
-#endif
-			}
-
-			/* Update our control variables */
-			sf->filepos += bytes;
-			sf->curroffset += bytes;
-			buflen -= bytes;
-			byteswritten += bytes;
-		}
-
-		/* Test if we wrote to the end of the current sector */
-		if (sf->curroffset == fs->fs_llformat.availbytes) {
-			/* Wrote to the end of the sector. Update to point to the
-			 * next sector for additional writes. Read header to get the sector chain info.
-			 */
-			smartfs_setbuffer(&readwrite, sf->currsector, 0, size, (uint8_t *)fs->fs_rwbuffer);
-			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		/* If we know we will have to overwrite more to the following sectors,
+		 * Pre-allocate logical sectors and make a parallel chain
+		 */
+		if ((buflen - bytes) > 0 && (sf->filepos + bytes) < sf->entry.datalen) {
+			ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
 			if (ret < 0) {
-				fdbg("Error reading sector %d header, ret : %d\n", readwrite.logsector, ret);
+				fdbg("Failed to allocate new logical sector, ret : %d\n", ret);
 				goto errout_with_semaphore;
 			}
 
-			/* If file is modified and more data remains to be appended to file,
-			 * but no next sector is available, do not update sf->currsector and curroffset.
-			 * This will be handled when buffer data is synced.
+			/* Set this sector as the next chained sector for the parallel branch
+			 * But before that, we save the next chained sector number of the current branch
+			 * for our reference use
 			 */
-			if (SMARTFS_NEXTSECTOR(header) != 0xFFFF) {
-				/* Now get the chained sector info and reset the offset */
-				sf->currsector = SMARTFS_NEXTSECTOR(header);
-				sf->curroffset = size;
+			m_branch_sector = SMARTFS_NEXTSECTOR(header);
+			*((uint16_t *)header->nextsector) = (uint16_t)ret;
+			p_branch_sector = (uint16_t)ret;
 
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-				/* Read the next sector's data if we have reached the end of the current sector
-				 * AND more data is left to be written.
-				 * The header of the current sector will be read later if required.
-				 */
-				if (buflen > 0) {
-					smartfs_setbuffer(&readwrite, sf->currsector, size,\
-						 fs->fs_llformat.availbytes - size, (uint8_t *)&sf->buffer[size]);
-					ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
-					if (ret < 0) {
-						fdbg("Error %d reading sector %d\n", ret, sf->currsector);
-						goto errout_with_semaphore;
-					}
-				}
-#endif
+			/* We will use this pointer to free the old chain of sectors once the new chain is successfully committed */
+			save_sector = m_branch_sector;
+
+			/* Now we acutally move on to the next sector since this overwrite
+			 * will be committed to flash later.
+			 * Read the contents of the main branch into fs->rwbuffer which
+			 * will be used to commit all subsequent parallel branch sectors.
+			 */
+			smartfs_setbuffer(&readwrite, m_branch_sector, 0,\
+					fs->fs_llformat.availbytes, (uint8_t *)&fs->fs_rwbuffer[0]);
+
+			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+			if (ret < 0) {
+				fdbg("Failed to read sector %u, ret : %d\n", readwrite.logsector, ret);
+				goto errout_with_semaphore;
 			}
+
+			header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
+			/* We work with a parallel branch but we use the tracking variables of the main branch
+			 * for correct referencing wrt to the total length of the file
+			 * This offset update may overwrite the offset update prior, and it is
+			 * correct since we are moving to a new sector
+			 */
+			sf->currsector = readwrite.logsector;
+			sf->curroffset = size;
 		}
+		byteswritten += bytes;
+		buflen -= bytes;
+		sf->filepos += bytes;
+
+		fvdbg("Main Branch -> Main branch sector = %d, offset = %d, datalen = %d, filepos = %d\n", m_branch_sector, sf->curroffset, sf->entry.datalen, sf->filepos);
+		fvdbg("Parallel branch -> Start/Common sector = %u, Parallel branch sector = %d\n\n", overwrite_start_sector, p_branch_sector);
+
+		sf->bflags |= SMARTFS_BFLAG_DIRTY;
 	}
 
-#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
-	/* If there is unsynced data in the sf->buffer and the control is now leaving the
-	 * scope of this function, the correct header should also be present in sf->buffer
-	 * for smartfs_append_data or smartfs_sync_internal. Hence we read the header now.
+	/* Check if we have more to overwrite
+	 * If yes, we will use the fs->rwbuffer while sf buffer holds on to the
+	 * updated contents of the sector from where the overwrite branches out
 	 */
-	if (sf->bflags & SMARTFS_BFLAG_DIRTY && byteswritten > 0) {
-		smartfs_setbuffer(&readwrite, sf->currsector, 0, size, (uint8_t*)sf->buffer);
-		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+	while (buflen > 0 && sf->filepos < sf->entry.datalen) {
+		fvdbg("OVERWRITING MORE, startng at Parallel Branch sector %d, offset %d\n\
+				Main Branch sector %d, buflen = %d\n\n", p_branch_sector, sf->curroffset, sf->currsector, buflen);
+		/* The number of bytes that wll be written is limited by the minimum of
+		 * the space in the current sector, the size of the file or the buflen passed itself
+		 */
+		bytes = buflen;
+
+		if (bytes > (fs->fs_llformat.availbytes - sf->curroffset)) {
+			bytes = fs->fs_llformat.availbytes - sf->curroffset;
+		}
+
+		if (bytes > sf->entry.datalen - sf->filepos) {
+			bytes = sf->entry.datalen - sf->filepos;
+		}
+
+		/* Copy bytes from the input buffer to fs->rwbuffer */
+		memcpy(&fs->fs_rwbuffer[sf->curroffset], buffer, bytes);
+		smartfs_setbuffer(&readwrite, p_branch_sector, 0,\
+				fs->fs_llformat.availbytes, (uint8_t *)&fs->fs_rwbuffer[0]);
+
+		/* Will we be overwriting more bytes to a following sector?
+		 * If yes, pre-allocate a sector in the parallel branch and chain it before writing the current sector.
+		 * However, before this, ssave the next chained sector in the main branch for use later.
+		 */
+		if ((buflen - bytes) > 0 && (sf->filepos + bytes) < sf->entry.datalen) {
+			ret = FS_IOCTL(fs, BIOC_ALLOCSECT, 0xFFFF);
+			if (ret < 0) {
+				fdbg("Failed to allocate new sector, ret : %d\n", ret);
+				goto errout_with_dirty_chain;
+			}
+			m_branch_sector = SMARTFS_NEXTSECTOR(header);
+			*((uint16_t *)header->nextsector) = (uint16_t)ret;
+			p_branch_sector = (uint16_t)ret;
+		}
+
+		/* Now we write the new parallel branch sector to flash along wth the pre allocate next sector, if needed */
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
 		if (ret < 0) {
-			fdbg("Error %d reading sector %d header\n", ret, sf->currsector);
-			goto errout_with_semaphore;
+			fdbg("Failed to write to sector %d, ret : %d\n", readwrite.logsector, ret);
+			goto errout_with_dirty_chain;
+		}
+
+		/* Update control/tracking variables */
+		byteswritten += bytes;
+		buflen -= bytes;
+		sf->filepos += bytes;
+		sf->curroffset += bytes;
+
+		/* If we have more to write and we did not reach the end of the file
+		 * We will be overwriting to the following sectors.
+		 * Read the sectors from the main branch for reference
+		 */
+		if (buflen > 0 && sf->filepos < sf->entry.datalen) {
+			smartfs_setbuffer(&readwrite, m_branch_sector, 0,\
+					fs->fs_llformat.availbytes, (uint8_t *)&fs->fs_rwbuffer[0]);
+			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+			if (ret < 0) {
+				fdbg("Unable to read sector %d, ret : %d\n", readwrite.logsector, ret);
+				goto errout_with_dirty_chain;
+			}
+			sf->currsector = readwrite.logsector;
+			sf->curroffset = size;
+		}
+		fvdbg("OVERWITE DONE\n");
+		fvdbg("Main Branch -> sector = %d, offset = %d, datalen = %d, filepos = %d\n", m_branch_sector, sf->curroffset, sf->entry.datalen, sf->filepos);
+		fvdbg("Parallel branch -> Start/Common sector = %u, current sector = %d\n\n", overwrite_start_sector, p_branch_sector);
+	}
+
+	if (byteswritten > 0) {
+		/* When control reaches this point,
+		 * The parallel chain has been committed to flash except the first sector common between the parallel and main branch
+		 * We will now commit the updated common sector to switch from the main to the parallel branch
+		 */
+		smartfs_setbuffer(&readwrite, overwrite_start_sector, 0, fs->fs_llformat.availbytes, (uint8_t *)&sf->buffer[0]);
+		fvdbg("Committing the held sf->buffer contents to sector %d\n", overwrite_start_sector);
+		ret = FS_IOCTL(fs, BIOC_WRITESECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Failed to write to sector %d, ret : %d\n", readwrite.logsector, ret);
+			goto errout_with_dirty_chain;
+		}
+		sf->bflags = SMARTFS_BFLAG_UNMOD;
+	}
+
+	/* Updated data was committed from the sf buffer to the flash
+	 * However, the buffer has data belonging to the overwrite_start_sector while the file pointer
+	 * position may have moved on to the last sector that was overwritten
+	 * Hence we read the header of the last overwritten sector into sf->buffer now.
+	 * If only one sector was overwritten partially, then sf->buffer has the correct data
+	 * If not, fs->fs_rwbuffer has the last overwritten sector data
+	 */
+	if (byteswritten > 0 && p_branch_sector != overwrite_start_sector) {
+		fvdbg("Overwrite started at sector %d, File pointer currently at sector %d, READING\n", overwrite_start_sector, p_branch_sector);
+		sf->currsector = p_branch_sector;
+
+		/* Updating sf->buffer with the data of the latest sector being accessed */
+		memcpy(&sf->buffer[0], &fs->fs_rwbuffer[0], fs->fs_llformat.availbytes);
+
+		/* We also have to free the main chain of sectors */
+		p_branch_sector = SMARTFS_NEXTSECTOR(header); //This is the sector at which the 2 chains merge again
+		while (save_sector != p_branch_sector) {
+			/* read in the chain header of save sector to get the next chained sector in the main branch */
+			smartfs_setbuffer(&readwrite, save_sector, 0, size, (uint8_t *)&fs->fs_rwbuffer[0]);
+			ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+			if (ret < 0) {
+				fdbg("Failed to read sector %d, ret : %d\n", readwrite.logsector, ret);
+				goto errout_with_semaphore;
+			}
+
+			m_branch_sector = SMARTFS_NEXTSECTOR(header);
+			ret = FS_IOCTL(fs, BIOC_FREESECT, save_sector);
+			if (ret < 0) {
+				fdbg("Failed to release sector %d, ret : %d\n", save_sector, ret);
+				goto errout_with_semaphore;
+			}
+
+			save_sector = m_branch_sector;
 		}
 	}
 #endif
@@ -776,6 +873,53 @@ static ssize_t smartfs_write(FAR struct file *filep, const char *buffer, size_t 
 		byteswritten = smartfs_append_data(fs, sf, buffer, byteswritten, buflen);
 	}
 	ret = byteswritten;
+	goto errout_with_semaphore;
+
+errout_with_dirty_chain:
+	/* We do not want any data in the buffers to be synced now */
+	sf->bflags = SMARTFS_BFLAG_UNMOD;
+	if (byteswritten > 0 && (m_branch_Sector == p_branch_sector)) {
+		/* Changes only done to the common overwrite starting sector, nothing to free and no new sector chained in header */
+		goto errout_with_semaphore;
+	}
+	byteswritten = 0;
+
+	header = (struct smartfs_chain_header_s *)sf->buffer;
+	save_sector = SMARTFS_NEXTSECTOR(header);
+
+	while (save_sector != p_branch_sector) {
+		/* Read the chain header of save_sector to get the next chained sector in the parallel branch */
+		smartfs_setbuffer(&readwrite, save_sector, 0, size, (uint8_t *)&fs->fs_rwbuffer[0]);
+		ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+		if (ret < 0) {
+			fdbg("Failed to read sector %d, ret : %d\n", readwrite.logsector, ret);
+			goto errout_with_semaphore;
+		}
+
+		/* Free the sectors in the parallel branch since the overwrite was not completed */
+		m_branch_sector = SMARTFS_NEXTSECTOR(header);
+		ret = FS_IOCTL(fs, BIOC_FREESECT, save_sector);
+		if (ret < 0) {
+			fdbg("Failed to release sector %d, ret : %d\n", save_sector, ret);
+			goto errout_with_semaphore;
+		}
+
+		save_sector = m_branch_sector;
+	}
+
+	ret = FS_IOCTL(fs, BIOC_FREESECT, save_sector);
+	if (ret < 0) {
+		//TODO Sometimes, the last new sector allocated in the parallel chain may not be written to flash
+		// In this case, freeing it returns an error, but the operation may be considered as successfully completed anyways
+		fdbg("Failed to release sector %d(This might be a temporary allocation), ret : %d\n", save_sector, ret);
+	}
+`
+	/* Read the header from the starting point of overwrite again to maintain the correct chained sector number in buffer */
+	smartfs_setbuffer(&readwrite, overwrite_start_sector, 0, size, (uint8_t *)&sf->buffer[0]);
+	ret = FS_IOCTL(fs, BIOC_READSECT, (unsigned long)&readwrite);
+	if (ret < 0) {
+		fdbg("Failed to read sector %d, ret : %d\n", readwrite.logsector, ret);
+	}
 
 errout_with_semaphore:
 	smartfs_semgive(fs);
