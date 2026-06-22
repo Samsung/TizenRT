@@ -35,6 +35,7 @@ limitations under the License.
 #include "tensorflow/lite/micro/micro_log.h"
 #include "tensorflow/lite/micro/micro_op_resolver.h"
 #include "tensorflow/lite/schema/schema_generated.h"
+#include "tensorflow/lite/micro/kernels/batch_matmul.h"
 
 namespace tflite {
 TfLiteRegistration* Register_DETECTION_POSTPROCESS();
@@ -577,6 +578,12 @@ class MicroMutableOpResolver : public MicroOpResolver {
     return AddBuiltin(BuiltinOperator_ZEROS_LIKE, Register_ZEROS_LIKE(),
                       ParseZerosLike);
   }
+
+  TfLiteStatus AddBatchMatMul() {
+    return AddBuiltin(BuiltinOperator_BATCH_MATMUL, Register_BATCH_MATMUL(),
+                      ParseBatchMatMul);
+  }
+
 
   unsigned int GetRegistrationLength() { return registrations_len_; }
 
