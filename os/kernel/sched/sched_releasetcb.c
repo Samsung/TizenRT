@@ -154,6 +154,10 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 			}
 #endif
 
+#ifdef CONFIG_SCHED_SAVE_DEADTASK
+			sched_savedeadtaskinfo(tcb->pid, tcb->name);
+#endif
+
 			sched_releasepid(tcb->pid);
 		}
 

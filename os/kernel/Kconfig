@@ -481,6 +481,13 @@ config DEBUG_CHILDSTATUS
 
 endif # SCHED_CHILD_STATUS
 
+config SCHED_SAVE_DEADTASK
+	bool "Enable saving and retrieval of dead task names"
+	default n
+	---help---
+	    	If this option is selected, system will save task pid and name, even
+		after a task is dead. This can be used to get the name of a dead task.
+
 config SCHED_WAITPID
 	bool "Enable waitpid() API"
 	default n
