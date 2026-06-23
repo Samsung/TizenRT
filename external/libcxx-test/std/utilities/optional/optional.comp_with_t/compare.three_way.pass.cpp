@@ -98,5 +98,6 @@ constexpr bool test() {
 int tc_utilities_optional_optional_comp_with_t_compare_three_way(void) {
   TC_ASSERT_EXPR(test());
   static_assert(test());
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

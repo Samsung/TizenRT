@@ -37,14 +37,15 @@ struct Y
     constexpr int test() && {return 7;}
 };
 
-constexpr int
-test()
+constexpr int test_inner()
 {
     optional<Y> opt{Y{}};
     return std::move(opt).value().test();
 }
 
-int tc_utilities_optional_optional_object_optional_object_observe_value_rvalue(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
     {
         optional<X> opt; ((void)opt);
         ASSERT_NOT_NOEXCEPT(std::move(opt).value());
@@ -68,7 +69,17 @@ int tc_utilities_optional_optional_object_optional_object_observe_value_rvalue(v
         }
     }
 #endif
-    static_assert(test() == 7, "");
-
-  return 0;
+    static_assert(test_inner() == 7, "");
+    return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_object_optional_object_observe_value_rvalue_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

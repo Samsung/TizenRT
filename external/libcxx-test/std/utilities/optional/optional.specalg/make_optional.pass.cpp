@@ -53,5 +53,6 @@ int tc_utilities_optional_optional_specalg_make_optional(void) {
         TC_ASSERT_EXPR(s == nullptr);
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

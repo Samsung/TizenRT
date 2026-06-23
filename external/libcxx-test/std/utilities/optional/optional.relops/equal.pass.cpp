@@ -85,5 +85,6 @@ int tc_utilities_optional_optional_relops_equal(void) {
     static_assert(!(O2(101) == o1), "");
   }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

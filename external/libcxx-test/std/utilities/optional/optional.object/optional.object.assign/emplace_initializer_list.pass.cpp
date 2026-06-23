@@ -97,7 +97,10 @@ TEST_CONSTEXPR_CXX20 bool check_Y()
     return true;
 }
 
-int tc_utilities_optional_optional_object_optional_object_assign_emplace_initializer_list(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test()
+{
     {
         check_X();
 #if TEST_STD_VER > 17
@@ -138,6 +141,16 @@ int tc_utilities_optional_optional_object_optional_object_assign_emplace_initial
         }
     }
 #endif
-
-  return 0;
+    return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_object_optional_object_assign_emplace_initializer_list_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

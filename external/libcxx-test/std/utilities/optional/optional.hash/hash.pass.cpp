@@ -78,5 +78,6 @@ int tc_utilities_optional_optional_hash_hash(void) {
       test_hash_enabled_for_type<std::optional<const B>>();
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

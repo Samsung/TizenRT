@@ -26,5 +26,6 @@ int tc_utilities_optional_optional_hash_enabled_hash(void) {
 
   }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

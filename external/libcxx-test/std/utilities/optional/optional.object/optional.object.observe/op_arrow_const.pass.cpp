@@ -35,18 +35,12 @@ struct Z
     constexpr int test() const {return 1;}
 };
 
-int tc_utilities_optional_optional_object_optional_object_observe_op_arrow_const(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
     {
         const std::optional<X> opt; ((void)opt);
         ASSERT_SAME_TYPE(decltype(opt.operator->()), X const*);
-        // ASSERT_NOT_NOEXCEPT(opt.operator->());
-        // FIXME: This assertion fails with GCC because it can see that
-        // (A) operator->() is constexpr, and
-        // (B) there is no path through the function that throws.
-        // It's arguable if this is the correct behavior for the noexcept
-        // operator.
-        // Regardless this function should still be noexcept(false) because
-        // it has a narrow contract.
     }
     {
         constexpr optional<X> opt(X{});
@@ -60,6 +54,16 @@ int tc_utilities_optional_optional_object_optional_object_observe_op_arrow_const
         constexpr optional<Z> opt(Z{});
         static_assert(opt->test() == 1, "");
     }
+    return true;
+}
+} // namespace
 
+int tc_utilities_optional_optional_object_optional_object_observe_op_arrow_const_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
     return 0;
 }
+#endif /* TEST_STD_VER >= 17 */

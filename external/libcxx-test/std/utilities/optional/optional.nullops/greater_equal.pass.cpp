@@ -37,5 +37,6 @@ int tc_utilities_optional_optional_nullops_greater_equal(void) {
     static_assert (noexcept(o1 >= nullopt), "");
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

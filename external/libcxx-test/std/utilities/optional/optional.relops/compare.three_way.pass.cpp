@@ -62,8 +62,19 @@ constexpr bool test() {
   return true;
 }
 
-int tc_utilities_optional_optional_relops_compare_three_way(void) {
-  TC_ASSERT_EXPR(test());
+#if TEST_STD_VER >= 20
+TEST_CONSTEXPR_CXX20 bool test_full() {
+  test();
   static_assert(test());
-  return 0;
+  return true;
 }
+
+int tc_utilities_optional_optional_relops_compare_three_way_pass(void) {
+    test_full();
+#if TEST_STD_VER > 20
+    static_assert(test_full());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 20 */

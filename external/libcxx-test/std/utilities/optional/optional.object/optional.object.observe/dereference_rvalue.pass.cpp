@@ -32,32 +32,35 @@ struct Y
     constexpr int test() && {return 7;}
 };
 
-constexpr int
-test()
+constexpr int test_inner()
 {
     optional<Y> opt{Y{}};
     return (*std::move(opt)).test();
 }
 
-int tc_utilities_optional_optional_object_optional_object_observe_dereference_rvalue(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
     {
         optional<X> opt; ((void)opt);
         ASSERT_SAME_TYPE(decltype(*std::move(opt)), X&&);
         LIBCPP_STATIC_ASSERT(noexcept(*opt));
-        // ASSERT_NOT_NOEXCEPT(*std::move(opt));
-        // FIXME: This assertion fails with GCC because it can see that
-        // (A) operator*() is constexpr, and
-        // (B) there is no path through the function that throws.
-        // It's arguable if this is the correct behavior for the noexcept
-        // operator.
-        // Regardless this function should still be noexcept(false) because
-        // it has a narrow contract.
     }
     {
         optional<X> opt(X{});
         TC_ASSERT_EXPR((*std::move(opt)).test() == 6);
     }
-    static_assert(test() == 7, "");
+    static_assert(test_inner() == 7, "");
+    return true;
+}
+} // namespace
 
+int tc_utilities_optional_optional_object_optional_object_observe_dereference_rvalue_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
     return 0;
 }
+#endif /* TEST_STD_VER >= 17 */

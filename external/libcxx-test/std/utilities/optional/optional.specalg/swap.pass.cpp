@@ -21,6 +21,8 @@
 
 using std::optional;
 
+namespace {
+
 class X
 {
     int i_;
@@ -108,6 +110,9 @@ void test_swap_sfinae() {
         TC_ASSERT_EXPR(T::assigned == T::copy_assigned);
     }
 }
+}
+
+
 
 int tc_utilities_optional_optional_specalg_swap(void) {
     test_swap_sfinae();
@@ -348,5 +353,6 @@ int tc_utilities_optional_optional_specalg_swap(void) {
     }
 #endif // TEST_HAS_NO_EXCEPTIONS
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

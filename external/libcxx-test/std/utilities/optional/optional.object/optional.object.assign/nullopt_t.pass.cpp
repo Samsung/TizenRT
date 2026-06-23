@@ -99,5 +99,6 @@ int tc_utilities_optional_optional_object_optional_object_assign_nullopt_t(void)
     TC_ASSERT_EXPR(TT::destroyed == 1);
     TT::reset();
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

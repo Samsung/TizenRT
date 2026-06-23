@@ -24,11 +24,14 @@
 using std::nullopt_t;
 using std::nullopt;
 
+namespace {
+
 constexpr bool test()
 {
     nullopt_t foo{nullopt};
     (void)foo;
     return true;
+}
 }
 
 int tc_utilities_optional_optional_nullopt_nullopt_t(void) {
@@ -38,5 +41,6 @@ int tc_utilities_optional_optional_nullopt_nullopt_t(void) {
     static_assert(std::is_same_v<const nullopt_t, decltype(nullopt)>);
     static_assert(test());
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

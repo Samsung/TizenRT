@@ -70,5 +70,6 @@ constexpr int test()
 int tc_utilities_optional_optional_object_optional_object_observe_value_or(void) {
     static_assert(test() == 0);
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -73,5 +73,6 @@ int tc_utilities_optional_optional_object_optional_object_ctor_deduct(void) {
     TC_ASSERT_EXPR(*opt == *source);
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

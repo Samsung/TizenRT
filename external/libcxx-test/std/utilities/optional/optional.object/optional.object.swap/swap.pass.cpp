@@ -323,5 +323,6 @@ int tc_utilities_optional_optional_object_optional_object_swap_swap(void) {
     }
 #endif
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

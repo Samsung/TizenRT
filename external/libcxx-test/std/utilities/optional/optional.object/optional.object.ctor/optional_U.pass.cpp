@@ -92,5 +92,6 @@ int tc_utilities_optional_optional_object_optional_object_ctor_optional_U(void) 
 
     static_assert(!(std::is_constructible<optional<X>, optional<Z>>::value), "");
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

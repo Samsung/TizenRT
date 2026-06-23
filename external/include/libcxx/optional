@@ -293,7 +293,7 @@ struct __optional_destruct_base<_Tp, false>
     union
     {
         char __null_state_;
-        value_type __val_;
+        __remove_const_t<value_type> __val_;
     };
     bool __engaged_;
 
@@ -301,7 +301,7 @@ struct __optional_destruct_base<_Tp, false>
     _LIBCPP_CONSTEXPR_SINCE_CXX20 ~__optional_destruct_base()
     {
         if (__engaged_)
-            __val_.~value_type();
+            reinterpret_cast<value_type*>(&__val_)->~value_type();
     }
 
     _LIBCPP_INLINE_VISIBILITY
@@ -323,11 +323,11 @@ struct __optional_destruct_base<_Tp, false>
 #endif
 
     _LIBCPP_INLINE_VISIBILITY
-    _LIBCPP_CONSTEXPR_SINCE_CXX20 void reset() noexcept
+    _LIBCPP_CONSTEXPR_SINCE_CXX17 void reset() noexcept
     {
         if (__engaged_)
         {
-            __val_.~value_type();
+            reinterpret_cast<value_type*>(&__val_)->~value_type();
             __engaged_ = false;
         }
     }
@@ -342,7 +342,7 @@ struct __optional_destruct_base<_Tp, true>
     union
     {
         char __null_state_;
-        value_type __val_;
+        __remove_const_t<value_type> __val_;
     };
     bool __engaged_;
 
@@ -365,7 +365,7 @@ struct __optional_destruct_base<_Tp, true>
 #endif
 
     _LIBCPP_INLINE_VISIBILITY
-    _LIBCPP_CONSTEXPR_SINCE_CXX20 void reset() noexcept
+    _LIBCPP_CONSTEXPR_SINCE_CXX17 void reset() noexcept
     {
         if (__engaged_)
         {
@@ -379,6 +379,7 @@ struct __optional_storage_base : __optional_destruct_base<_Tp>
 {
     using __base = __optional_destruct_base<_Tp>;
     using value_type = _Tp;
+    using __raw_value_type = __remove_const_t<value_type>;
     using __base::__base;
 
     _LIBCPP_INLINE_VISIBILITY
@@ -390,22 +391,22 @@ struct __optional_storage_base : __optional_destruct_base<_Tp>
     _LIBCPP_INLINE_VISIBILITY
     constexpr value_type& __get() & noexcept
     {
-        return this->__val_;
+        return const_cast<value_type&>(reinterpret_cast<value_type&>(this->__val_));
     }
     _LIBCPP_INLINE_VISIBILITY
     constexpr const value_type& __get() const& noexcept
     {
-        return this->__val_;
+        return reinterpret_cast<const value_type&>(this->__val_);
     }
     _LIBCPP_INLINE_VISIBILITY
     constexpr value_type&& __get() && noexcept
     {
-        return _VSTD::move(this->__val_);
+        return _VSTD::move(const_cast<value_type&>(reinterpret_cast<value_type&>(this->__val_)));
     }
     _LIBCPP_INLINE_VISIBILITY
     constexpr const value_type&& __get() const&& noexcept
     {
-        return _VSTD::move(this->__val_);
+        return _VSTD::move(reinterpret_cast<const value_type&>(this->__val_));
     }
 
     template <class... _Args>
@@ -414,9 +415,9 @@ struct __optional_storage_base : __optional_destruct_base<_Tp>
     {
         _LIBCPP_ASSERT_INTERNAL(!has_value(), "__construct called for engaged __optional_storage");
 #if _LIBCPP_STD_VER >= 20
-        _VSTD::construct_at(_VSTD::addressof(this->__val_), _VSTD::forward<_Args>(__args)...);
+        _VSTD::construct_at(_VSTD::addressof(reinterpret_cast<__raw_value_type&>(this->__val_)), _VSTD::forward<_Args>(__args)...);
 #else
-        ::new ((void*)_VSTD::addressof(this->__val_)) value_type(_VSTD::forward<_Args>(__args)...);
+        ::new ((void*)_VSTD::addressof(reinterpret_cast<__raw_value_type&>(this->__val_))) value_type(_VSTD::forward<_Args>(__args)...);
 #endif
         this->__engaged_ = true;
     }
@@ -436,7 +437,7 @@ struct __optional_storage_base : __optional_destruct_base<_Tp>
         if (this->__engaged_ == __opt.has_value())
         {
             if (this->__engaged_)
-                this->__val_ = _VSTD::forward<_That>(__opt).__get();
+                reinterpret_cast<__raw_value_type&>(this->__val_) = _VSTD::forward<_That>(__opt).__get();
         }
         else
         {
@@ -942,7 +943,7 @@ public:
                       >
              >
     _LIBCPP_INLINE_VISIBILITY
-    _LIBCPP_CONSTEXPR_SINCE_CXX20 _Tp &
+    _LIBCPP_CONSTEXPR_SINCE_CXX17 _Tp &
     emplace(_Args&&... __args)
     {
         reset();
@@ -957,7 +958,7 @@ public:
                       >
              >
     _LIBCPP_INLINE_VISIBILITY
-    _LIBCPP_CONSTEXPR_SINCE_CXX20 _Tp &
+    _LIBCPP_CONSTEXPR_SINCE_CXX17 _Tp &
     emplace(initializer_list<_Up> __il, _Args&&... __args)
     {
         reset();

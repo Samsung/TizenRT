@@ -20,6 +20,8 @@
 
 using std::optional;
 
+namespace {
+
 template <class T, class U>
 TEST_CONSTEXPR_CXX20 void
 test(const optional<U>& rhs, bool is_going_to_throw = false)
@@ -91,6 +93,8 @@ constexpr bool test_all()
   return true;
 }
 
+} // namespace
+
 int tc_utilities_optional_optional_object_optional_object_ctor_const_optional_U(void) {
     test_all<int, short>();
     test_all<X, int>();
@@ -115,5 +119,6 @@ int tc_utilities_optional_optional_object_optional_object_ctor_const_optional_U(
 
     static_assert(!(std::is_constructible<optional<X>, const optional<Y>&>::value), "");
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

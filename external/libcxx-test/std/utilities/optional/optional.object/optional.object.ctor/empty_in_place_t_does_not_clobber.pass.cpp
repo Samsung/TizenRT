@@ -31,11 +31,23 @@ struct Wrapped {
   std::optional<Inner> inner;
 };
 
-int tc_utilities_optional_optional_object_optional_object_ctor_empty_in_place_t_does_not_clobber(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
   static_assert(std::is_default_constructible<Wrapped::Inner>::value, "");
   Wrapped w;
   w.inner.emplace();
   TC_ASSERT_EXPR(w.inner.has_value());
-
-  return 0;
+  return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_object_optional_object_ctor_empty_in_place_t_does_not_clobber_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

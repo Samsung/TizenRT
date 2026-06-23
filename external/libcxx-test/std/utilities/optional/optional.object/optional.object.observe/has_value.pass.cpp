@@ -33,5 +33,6 @@ int tc_utilities_optional_optional_object_optional_object_observe_has_value(void
         static_assert(opt.has_value(), "");
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

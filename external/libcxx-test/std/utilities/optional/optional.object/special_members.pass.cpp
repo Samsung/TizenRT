@@ -61,5 +61,6 @@ int tc_utilities_optional_optional_object_special_members(void) {
         NonLiteralTypes::ApplyTypes<DoTestsMetafunction>{},
         NonTrivialTypes::ApplyTypes<DoTestsMetafunction>{}
     );
+    TC_SUCCESS_RESULT();
     return 0;
 }

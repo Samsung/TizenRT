@@ -57,5 +57,6 @@ int tc_utilities_optional_optional_object_optional_object_observe_op_arrow(void)
         static_assert(test() == 3, "");
     }
 
+    TC_SUCCESS_RESULT();
     return 0;
 }

@@ -95,5 +95,6 @@ int tc_utilities_optional_optional_object_triviality(void) {
         NonTrivialTypes::ApplyTypes<DoTestsMetafunction>{},
         DoTestsMetafunction<TrivialMoveNonTrivialCopy, TrivialCopyNonTrivialMove>{}
     );
+    TC_SUCCESS_RESULT();
     return 0;
 }

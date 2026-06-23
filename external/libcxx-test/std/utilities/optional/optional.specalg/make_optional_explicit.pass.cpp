@@ -19,7 +19,9 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_optional_optional_specalg_make_optional_explicit(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
     {
         constexpr auto opt = std::make_optional<int>('a');
         static_assert(*opt == int('a'));
@@ -39,6 +41,16 @@ int tc_utilities_optional_optional_specalg_make_optional_explicit(void) {
         auto opt = std::make_optional<std::string>(4u, 'X');
         TC_ASSERT_EXPR(*opt == "XXXX");
     }
-
-  return 0;
+    return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_specalg_make_optional_explicit_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

@@ -9,6 +9,7 @@
 #ifndef LIBCXX_TEST_STD_UTILITIES_TUPLE_CNSTR_TYPES_H
 #define LIBCXX_TEST_STD_UTILITIES_TUPLE_CNSTR_TYPES_H
 
+#include "libcxx_tc_common.h"
 #include "test_allocator.h"
 #include <type_traits>
 #include <tuple>
@@ -19,9 +20,9 @@ struct MutableCopy {
   int val;
   bool alloc_constructed{false};
 
-  constexpr MutableCopy() = default;
+  TEST_CONSTEXPR_CXX20 MutableCopy() = default;
   constexpr MutableCopy(int _val) : val(_val) {}
-  constexpr MutableCopy(MutableCopy&) = default;
+  TEST_CONSTEXPR_CXX20 MutableCopy(MutableCopy&) = default;
   constexpr MutableCopy(const MutableCopy&) = delete;
 
   constexpr MutableCopy(std::allocator_arg_t, const test_allocator<int>&, MutableCopy& o)
@@ -35,9 +36,9 @@ struct ConstCopy {
   int val;
   bool alloc_constructed{false};
 
-  constexpr ConstCopy() = default;
+  TEST_CONSTEXPR_CXX20 ConstCopy() = default;
   constexpr ConstCopy(int _val) : val(_val) {}
-  constexpr ConstCopy(const ConstCopy&) = default;
+  TEST_CONSTEXPR_CXX20 ConstCopy(const ConstCopy&) = default;
   constexpr ConstCopy(ConstCopy&) = delete;
 
   constexpr ConstCopy(std::allocator_arg_t, const test_allocator<int>&, const ConstCopy& o)
@@ -51,9 +52,9 @@ struct MutableMove {
   int val;
   bool alloc_constructed{false};
 
-  constexpr MutableMove() = default;
+  TEST_CONSTEXPR_CXX20 MutableMove() = default;
   constexpr MutableMove(int _val) : val(_val) {}
-  constexpr MutableMove(MutableMove&&) = default;
+  TEST_CONSTEXPR_CXX20 MutableMove(MutableMove&&) = default;
   constexpr MutableMove(const MutableMove&&) = delete;
 
   constexpr MutableMove(std::allocator_arg_t, const test_allocator<int>&, MutableMove&& o)
@@ -67,7 +68,7 @@ struct ConstMove {
   int val;
   bool alloc_constructed{false};
 
-  constexpr ConstMove() = default;
+  TEST_CONSTEXPR_CXX20 ConstMove() = default;
   constexpr ConstMove(int _val) : val(_val) {}
   constexpr ConstMove(const ConstMove&& o) : val(o.val) {}
   constexpr ConstMove(ConstMove&&) = delete;
@@ -271,10 +272,10 @@ concept ImplicitlyConstructible = requires(Args&&... args) { conversion_test<T>(
 struct CopyAssign {
   int val;
 
-  constexpr CopyAssign() = default;
+  TEST_CONSTEXPR_CXX20 CopyAssign() = default;
   constexpr CopyAssign(int v) : val(v) {}
 
-  constexpr CopyAssign& operator=(const CopyAssign&) = default;
+  TEST_CONSTEXPR_CXX20 CopyAssign& operator=(const CopyAssign&) = default;
 
   constexpr const CopyAssign& operator=(const CopyAssign&) const = delete;
   constexpr CopyAssign& operator=(CopyAssign&&) = delete;
@@ -284,7 +285,7 @@ struct CopyAssign {
 struct ConstCopyAssign {
   mutable int val;
 
-  constexpr ConstCopyAssign() = default;
+  TEST_CONSTEXPR_CXX20 ConstCopyAssign() = default;
   constexpr ConstCopyAssign(int v) : val(v) {}
 
   constexpr const ConstCopyAssign& operator=(const ConstCopyAssign& other) const {
@@ -300,10 +301,10 @@ struct ConstCopyAssign {
 struct MoveAssign {
   int val;
 
-  constexpr MoveAssign() = default;
+  TEST_CONSTEXPR_CXX20 MoveAssign() = default;
   constexpr MoveAssign(int v) : val(v) {}
 
-  constexpr MoveAssign& operator=(MoveAssign&&) = default;
+  TEST_CONSTEXPR_CXX20 MoveAssign& operator=(MoveAssign&&) = default;
 
   constexpr MoveAssign& operator=(const MoveAssign&) = delete;
   constexpr const MoveAssign& operator=(const MoveAssign&) const = delete;
@@ -313,7 +314,7 @@ struct MoveAssign {
 struct ConstMoveAssign {
   mutable int val;
 
-  constexpr ConstMoveAssign() = default;
+  TEST_CONSTEXPR_CXX20 ConstMoveAssign() = default;
   constexpr ConstMoveAssign(int v) : val(v) {}
 
   constexpr const ConstMoveAssign& operator=(ConstMoveAssign&& other) const {

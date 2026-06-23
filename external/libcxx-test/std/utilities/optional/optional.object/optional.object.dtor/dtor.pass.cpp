@@ -19,6 +19,8 @@
 
 using std::optional;
 
+namespace {
+
 struct PODType {
   int value;
   int value2;
@@ -35,6 +37,7 @@ public:
 };
 
 bool X::dtor_called = false;
+}
 
 int tc_utilities_optional_optional_object_optional_object_dtor_dtor(void) {
     {
@@ -64,5 +67,6 @@ int tc_utilities_optional_optional_object_optional_object_dtor_dtor(void) {
         TC_ASSERT_EXPR(X::dtor_called == true);
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

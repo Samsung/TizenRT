@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include "libcxx_tc_common.h"
 
 // Forward declarations for test category functions
 #ifdef CONFIG_LIBCXX_UTC_ALGORITHMS
@@ -94,8 +95,15 @@ static void show_usage(void)
 #endif
 #ifdef CONFIG_LIBCXX_UTC_UTILITIES
 	printf("libcxx_utc utilities          Run all utilities tests\n");
-	printf("libcxx_utc utilities pair\n");
-	printf("libcxx_utc utilities smartptr\n");
+	printf("libcxx_utc utilities pair     Run pair tests\n");
+	printf("libcxx_utc utilities smartptr Run smartptr tests\n");
+#ifdef CONFIG_LIBCXX_CXX17
+	printf("libcxx_utc utilities optional Run optional tests (C++17)\n");
+	printf("libcxx_utc utilities variant  Run variant tests (C++17)\n");
+	printf("libcxx_utc utilities any      Run any tests (C++17)\n");
+	printf("libcxx_utc utilities meta     Run meta/type_traits tests\n");
+	printf("libcxx_utc utilities utility  Run utility tests\n");
+#endif
 #endif
 #ifdef CONFIG_LIBCXX_UTC_NUMERICS
 	printf("libcxx_utc numerics           Run numerics tests\n");

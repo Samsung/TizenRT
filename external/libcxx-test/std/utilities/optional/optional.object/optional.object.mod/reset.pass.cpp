@@ -20,6 +20,8 @@
 
 using std::optional;
 
+namespace {
+
 struct X
 {
     static bool dtor_called;
@@ -46,10 +48,11 @@ constexpr bool check_reset()
     }
     return true;
 }
+}
 
 int tc_utilities_optional_optional_object_optional_object_mod_reset(void) {
     check_reset();
-#if TEST_STD_VER >= 20
+#if TEST_STD_VER >= 20 && !defined(LIBCPP_ARM_EABI_GCC10_WORKAROUND)
     static_assert(check_reset());
 #endif
     {
@@ -69,5 +72,6 @@ int tc_utilities_optional_optional_object_optional_object_mod_reset(void) {
         X::dtor_called = false;
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

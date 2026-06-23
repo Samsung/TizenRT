@@ -35,7 +35,9 @@ struct X
     int test() && {return 6;}
 };
 
-int tc_utilities_optional_optional_object_optional_object_observe_value_const_rvalue(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
     {
         const optional<X> opt; ((void)opt);
         ASSERT_NOT_NOEXCEPT(std::move(opt).value());
@@ -62,6 +64,16 @@ int tc_utilities_optional_optional_object_optional_object_observe_value_const_rv
         }
     }
 #endif
-
-  return 0;
+    return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_object_optional_object_observe_value_const_rvalue_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

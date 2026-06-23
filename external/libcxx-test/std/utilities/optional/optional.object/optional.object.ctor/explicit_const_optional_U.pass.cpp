@@ -20,6 +20,8 @@
 
 using std::optional;
 
+namespace {
+
 template <class T, class U>
 TEST_CONSTEXPR_CXX20 void
 test(const optional<U>& rhs, bool is_going_to_throw = false)
@@ -92,14 +94,13 @@ constexpr bool test_all()
   return true;
 }
 
+} // namespace
 
-int tc_utilities_optional_optional_object_optional_object_ctor_explicit_const_optional_U(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test_full() {
     test_all<X, int>();
     test_all<Y, int>();
-#if TEST_STD_VER > 17
-    static_assert(test_all<X, int>());
-    static_assert(test_all<Y, int>());
-#endif
     {
         typedef Z T;
         typedef int U;
@@ -112,6 +113,18 @@ int tc_utilities_optional_optional_object_optional_object_ctor_explicit_const_op
         optional<U> rhs(3);
         test<T>(rhs, true);
     }
-
-  return 0;
+    return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_object_optional_object_ctor_explicit_const_optional_U_pass(void) {
+    test_full();
+#if TEST_STD_VER > 17
+    static_assert(test_all<X, int>());
+    static_assert(test_all<Y, int>());
+    static_assert(test_full());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

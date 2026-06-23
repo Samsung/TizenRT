@@ -25,7 +25,9 @@ struct X {
 
 constexpr bool operator>(const X& lhs, const X& rhs) { return lhs.i_ > rhs.i_; }
 
-int tc_utilities_optional_optional_relops_greater_than(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
   {
     typedef optional<X> O;
 
@@ -79,6 +81,16 @@ int tc_utilities_optional_optional_relops_greater_than(void) {
     static_assert(o1 > O2(1), "");
     static_assert(!(O2(42) > o1), "");
   }
-
-  return 0;
+  return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_relops_greater_than_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

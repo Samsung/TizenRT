@@ -36,5 +36,6 @@ int tc_utilities_optional_optional_object_types(void) {
     test<optional<double>, double>();
     test<optional<const double>, const double>();
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -25,6 +25,8 @@
 
 using std::optional;
 
+namespace {
+
 struct X
 {
     static bool throw_now;
@@ -297,11 +299,11 @@ TEST_CONSTEXPR_CXX20 bool test()
     return true;
 }
 
+} // namespace
 
-int tc_utilities_optional_optional_object_optional_object_assign_optional_U(void) {
-#if TEST_STD_VER > 17
-    static_assert(test());
-#endif
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test_full() {
     test_with_test_type();
     test_ambiguous_assign();
     test();
@@ -332,6 +334,17 @@ int tc_utilities_optional_optional_object_optional_object_assign_optional_U(void
         }
     }
 #endif
-
-  return 0;
+    return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_object_optional_object_assign_optional_U_pass(void) {
+#if TEST_STD_VER > 17
+    static_assert(test());
+    static_assert(test_full());
+#endif
+    test_full();
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

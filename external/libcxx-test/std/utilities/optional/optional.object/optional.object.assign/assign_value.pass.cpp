@@ -21,6 +21,8 @@
 
 using std::optional;
 
+namespace {
+
 struct ThrowAssign {
   static int dtor_called;
   ThrowAssign() = default;
@@ -254,6 +256,7 @@ constexpr T pr38638(T v)
   return *o + 2;
 }
 
+} // namespace
 
 int tc_utilities_optional_optional_object_optional_object_assign_assign_value(void) {
     test_sfinae();
@@ -284,5 +287,6 @@ int tc_utilities_optional_optional_object_optional_object_assign_assign_value(vo
 
     static_assert(pr38638(3) == 5, "");
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

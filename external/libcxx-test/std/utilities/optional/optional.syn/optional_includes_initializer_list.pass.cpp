@@ -15,11 +15,24 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_optional_optional_syn_optional_includes_initializer_list(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
     using std::optional;
 
     std::initializer_list<int> list;
     (void)list;
 
-  return 0;
+    return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_syn_optional_includes_initializer_list_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

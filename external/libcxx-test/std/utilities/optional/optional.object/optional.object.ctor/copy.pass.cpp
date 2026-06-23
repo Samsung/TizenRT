@@ -20,6 +20,8 @@
 
 using std::optional;
 
+namespace {
+
 template <class T, class ...InitArgs>
 void test(InitArgs&&... args)
 {
@@ -113,6 +115,8 @@ void test_reference_extension()
 #endif
 }
 
+} // namespace
+
 int tc_utilities_optional_optional_object_optional_object_ctor_copy(void) {
     test<int>();
     test<int>(3);
@@ -169,5 +173,6 @@ int tc_utilities_optional_optional_object_optional_object_ctor_copy(void) {
         static_assert( *o2 == 4, "" );
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

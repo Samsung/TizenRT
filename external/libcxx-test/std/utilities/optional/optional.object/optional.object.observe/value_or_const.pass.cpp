@@ -37,7 +37,9 @@ struct X
         {return x.i_ == y.i_;}
 };
 
-int tc_utilities_optional_optional_object_optional_object_observe_value_or_const(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
     {
         constexpr optional<X> opt(2);
         constexpr Y y(3);
@@ -74,6 +76,16 @@ int tc_utilities_optional_optional_object_optional_object_observe_value_or_const
         const optional<X> opt;
         TC_ASSERT_EXPR(opt.value_or(Y(3)) == 4);
     }
-
-  return 0;
+    return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_object_optional_object_observe_value_or_const_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

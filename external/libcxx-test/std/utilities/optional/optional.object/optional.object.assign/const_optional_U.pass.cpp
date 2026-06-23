@@ -22,6 +22,8 @@
 
 using std::optional;
 
+namespace {
+
 struct X
 {
     static bool throw_now;
@@ -195,6 +197,7 @@ void test_ambiguous_assign() {
     }
 }
 
+} // namespace
 
 int tc_utilities_optional_optional_object_optional_object_assign_const_optional_U(void) {
     test_with_test_type();
@@ -250,5 +253,6 @@ int tc_utilities_optional_optional_object_optional_object_assign_const_optional_
     }
 #endif
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

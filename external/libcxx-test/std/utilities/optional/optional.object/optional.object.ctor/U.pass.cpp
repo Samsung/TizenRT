@@ -156,5 +156,6 @@ int tc_utilities_optional_optional_object_optional_object_ctor_U(void) {
     test_implicit();
     test_explicit();
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

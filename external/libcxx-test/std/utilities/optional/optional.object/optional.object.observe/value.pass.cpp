@@ -72,5 +72,6 @@ int tc_utilities_optional_optional_object_optional_object_observe_value(void) {
 #endif
     static_assert(test() == 7, "");
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

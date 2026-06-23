@@ -77,5 +77,6 @@ int tc_utilities_optional_optional_object_optional_object_ctor_default(void) {
     test_constexpr<optional<NonLiteralTypes::NoCtors&&>>();
 #endif
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

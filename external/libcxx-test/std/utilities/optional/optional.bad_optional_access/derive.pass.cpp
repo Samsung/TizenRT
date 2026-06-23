@@ -16,13 +16,28 @@
 #include <type_traits>
 
 #include "test_macros.h"
-#include "libcxx_tc_common.h"
+#include "../../libcxx_tc_common.h"
 
-int tc_utilities_optional_optional_bad_optional_access_derive(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
     using std::bad_optional_access;
 
-    static_assert(std::is_base_of<std::exception, bad_optional_access>::value, "");
-    static_assert(std::is_convertible<bad_optional_access*, std::exception*>::value, "");
-
-  return 0;
+    constexpr bool is_base = std::is_base_of<std::exception, bad_optional_access>::value;
+    constexpr bool is_convert = std::is_convertible<bad_optional_access*, std::exception*>::value;
+    TC_ASSERT_MSG(is_base, "bad_optional_access shall be derived from std::exception");
+    TC_ASSERT_MSG(is_convert, "bad_optional_access* shall be convertible to std::exception*");
+    
+    return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_bad_optional_access_derive_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

@@ -49,7 +49,9 @@ constexpr bool test()
   return true;
 }
 
-int tc_utilities_optional_optional_specalg_make_optional_explicit_initializer_list(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test_full() {
   test();
   static_assert(test());
   {
@@ -60,5 +62,16 @@ int tc_utilities_optional_optional_specalg_make_optional_explicit_initializer_li
     auto opt = std::make_optional<std::string>({'a', 'b', 'c'}, std::allocator<char>{});
     TC_ASSERT_EXPR(*opt == "abc");
   }
-  return 0;
+  return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_specalg_make_optional_explicit_initializer_list_pass(void) {
+    test_full();
+#if TEST_STD_VER > 17
+    static_assert(test_full());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

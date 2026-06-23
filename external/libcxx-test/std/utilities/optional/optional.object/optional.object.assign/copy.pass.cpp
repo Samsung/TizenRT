@@ -99,5 +99,6 @@ int tc_utilities_optional_optional_object_optional_object_assign_copy(void) {
     }
 #endif
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

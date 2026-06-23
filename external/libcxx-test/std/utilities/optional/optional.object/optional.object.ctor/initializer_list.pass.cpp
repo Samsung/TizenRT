@@ -67,7 +67,9 @@ public:
         {return x.i_ == y.i_ && x.j_ == y.j_;}
 };
 
-int tc_utilities_optional_optional_object_optional_object_ctor_initializer_list(void) {
+#if TEST_STD_VER >= 17
+namespace {
+TEST_CONSTEXPR_CXX20 bool test() {
     {
         static_assert(!std::is_constructible<X, std::initializer_list<int>&>::value, "");
         static_assert(!std::is_constructible<optional<X>, std::initializer_list<int>&>::value, "");
@@ -112,6 +114,16 @@ int tc_utilities_optional_optional_object_optional_object_ctor_initializer_list(
         }
     }
 #endif
-
-  return 0;
+    return true;
 }
+} // namespace
+
+int tc_utilities_optional_optional_object_optional_object_ctor_initializer_list_pass(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

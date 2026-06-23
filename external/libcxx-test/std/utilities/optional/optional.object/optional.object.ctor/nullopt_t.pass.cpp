@@ -71,5 +71,6 @@ int tc_utilities_optional_optional_object_optional_object_ctor_nullopt_t(void) {
     test_constexpr<optional<NonConstexprTypes::NoCtors>>();
     test<optional<NonLiteralTypes::NoCtors>>();
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

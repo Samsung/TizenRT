@@ -22,5 +22,6 @@ int tc_utilities_optional_optional_bad_optional_access_default(void) {
     using std::bad_optional_access;
     bad_optional_access ex;
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }
