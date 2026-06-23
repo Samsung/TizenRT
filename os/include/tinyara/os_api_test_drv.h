@@ -88,6 +88,24 @@
 #define TESTIOC_GET_FS_PARTNO			_TESTIOC(24)
 #endif
 
+/* Secure storage flash operation ioctl command - always available when driver is enabled */
+#define TESTIOC_NS_FLASH_OP			_TESTIOC(25)
+
+/* Non-secure flash operation types */
+#define NS_FLASH_OP_READ	0
+#define NS_FLASH_OP_WRITE	1
+#define NS_FLASH_OP_ERASE	2
+
+/* Structure for non-secure flash operation */
+struct ns_flash_op_arg {
+	uint32_t op_type;	/* NS_FLASH_OP_READ/WRITE/ERASE */
+	uint32_t slot_index;	/* Slot number (0-31) */
+	uint32_t address;	/* Flash address */
+	uint32_t length;	/* Data length */
+	uint8_t *buffer;	/* Data buffer (for read/write) */
+	uint32_t write_data;	/* Fill value for write */
+};
+
 #define OS_API_TEST_DRVPATH	"/dev/os_api_test"
 
 /****************************************************************************

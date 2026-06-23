@@ -1096,6 +1096,35 @@ bk_err_t bk_flash_write_status_reg(uint16_t status_reg_data)
 	return BK_OK;
 }
 
+flash_protect_type_t bk_flash_get_protect_type(void)
+{
+	uint32_t type = FLASH_PROTECT_NONE;
+#if 0
+	uint16_t protect_value = 0;
+
+	SYS_LOCK_DECLARATION();
+	SYS_LOCK();
+	flash_switch_to_line_mode_two();
+	protect_value = flash_hal_get_protect_value(&s_flash.hal, s_flash.flash_cfg->status_reg_size,
+												s_flash.flash_cfg->protect_post, s_flash.flash_cfg->protect_mask,
+												s_flash.flash_cfg->cmp_post);
+	if (protect_value == s_flash.flash_cfg->protect_all)
+		type = FLASH_PROTECT_ALL;
+	else if (protect_value == s_flash.flash_cfg->protect_none)
+		type = FLASH_PROTECT_NONE;
+	else if (protect_value == s_flash.flash_cfg->protect_half)
+		type = FLASH_PROTECT_HALF;
+	else if (protect_value == s_flash.flash_cfg->unprotect_last_block)
+		type = FLASH_UNPROTECT_LAST_BLOCK;
+	else
+		type = -1;
+
+	flash_restore_line_mode();
+	SYS_UNLOCK();
+#endif
+	return type;
+}
+
 
 /* This API is not used in bk7256xx */
 void flash_ps_pm_init(void)
