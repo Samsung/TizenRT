@@ -108,6 +108,7 @@
 #define _MIPIDSIBASE    (0x3900) 	/* Mipidsi device ioctl commands */
 #define _CSIIOCBASE     (0x3a00) 	/* Wifi CSI ioctl commands */
 #define _SILENTRBCBASE  (0x3b00) 	/* Silent reboot ioctl commands */
+#define _CPUSTATEBASE	(0x3c00)	/* cpu state driver ioctl commands */
 
 
 /* boardctl() commands share the same number space */

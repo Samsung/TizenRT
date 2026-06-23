@@ -1,0 +1,13 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config CPU_DRIVER
+    bool "CPU state driver"
+    default n
+    depends on SMP
+    ---help---
+        Enable /dev/cpuX driver for secondary CPU state control.
+        Provides IOCTL interface to manage CPU state (running, stop and query status).
+
