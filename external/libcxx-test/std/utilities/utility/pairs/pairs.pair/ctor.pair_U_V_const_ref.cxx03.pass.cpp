@@ -27,5 +27,6 @@ int tc_utilities_utility_pairs_pairs_pair_ctor_pair_U_V_const_ref_cxx03(void) {
         TC_ASSERT_EXPR(p2.second == 4);
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

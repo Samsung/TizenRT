@@ -35,5 +35,6 @@ int tc_utilities_utility_pairs_pairs_pair_ctor_copy(void) {
     }
 #endif
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

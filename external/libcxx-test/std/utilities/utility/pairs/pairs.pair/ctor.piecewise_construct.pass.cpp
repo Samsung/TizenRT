@@ -22,6 +22,8 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
+namespace {
+
 TEST_CONSTEXPR_CXX20 bool test() {
   {
     typedef std::pair<int, int*> P1;
@@ -34,6 +36,7 @@ TEST_CONSTEXPR_CXX20 bool test() {
   }
   return true;
 }
+}
 
 int tc_utilities_utility_pairs_pairs_pair_ctor_piecewise_construct(void) {
   test();
@@ -41,5 +44,6 @@ int tc_utilities_utility_pairs_pairs_pair_ctor_piecewise_construct(void) {
   static_assert(test());
 #endif
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

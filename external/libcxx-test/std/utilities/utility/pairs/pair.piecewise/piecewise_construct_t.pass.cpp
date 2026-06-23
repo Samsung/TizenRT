@@ -20,5 +20,6 @@ int tc_utilities_utility_pairs_pair_piecewise_piecewise_construct_t(void) {
     std::piecewise_construct_t x = std::piecewise_construct;
     (void)x;
 
+    TC_SUCCESS_RESULT();
     return 0;
 }

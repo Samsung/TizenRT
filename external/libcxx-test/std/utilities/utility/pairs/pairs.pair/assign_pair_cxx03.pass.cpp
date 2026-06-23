@@ -61,7 +61,8 @@ int tc_utilities_utility_pairs_pairs_pair_assign_pair_cxx03(void) {
       TC_ASSERT_EXPR(p.second == 'x');
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }
 
 struct Incomplete {};

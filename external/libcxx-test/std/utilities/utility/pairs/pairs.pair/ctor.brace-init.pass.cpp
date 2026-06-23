@@ -118,5 +118,6 @@ int tc_utilities_utility_pairs_pairs_pair_ctor_brace_init(void) {
     static_assert(test(), "");
 #endif
 
+    TC_SUCCESS_RESULT();
     return 0;
 }

@@ -21,6 +21,8 @@
 #include "archetypes.h"
 #include "libcxx_tc_common.h"
 
+namespace {
+
 struct CountAssign {
   int copied = 0;
   int moved = 0;
@@ -91,14 +93,17 @@ TEST_CONSTEXPR_CXX20 bool test() {
   return true;
 }
 
+struct Incomplete {};
+Incomplete inc_obj;
+
+}
+
 int tc_utilities_utility_pairs_pairs_pair_assign_pair(void) {
   test();
 #if TEST_STD_VER >= 20
   static_assert(test());
 #endif
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }
-
-struct Incomplete {};
-Incomplete inc_obj;

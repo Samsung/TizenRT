@@ -32,5 +32,6 @@ int tc_utilities_utility_pairs_pairs_pair_dtor(void) {
   static_assert((!std::is_trivially_destructible<
       std::pair<int, std::string> >::value), "");
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

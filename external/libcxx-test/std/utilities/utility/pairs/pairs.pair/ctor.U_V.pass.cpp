@@ -138,5 +138,6 @@ int tc_utilities_utility_pairs_pairs_pair_ctor_U_V(void) {
     }
 #endif // TEST_STD_VER > 20
 
+    TC_SUCCESS_RESULT();
     return 0;
 }

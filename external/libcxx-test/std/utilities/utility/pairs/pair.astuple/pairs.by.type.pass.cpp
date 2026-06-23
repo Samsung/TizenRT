@@ -83,5 +83,6 @@ int tc_utilities_utility_pairs_pair_astuple_pairs_by_type(void) {
     static_assert(std::get<const int>(std::move(p)) == 2, "");
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

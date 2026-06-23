@@ -5,8 +5,11 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+
+#include "libcxx_tc_common.h"
+
 int tc_utilities_utility_pairs_pairs_general_nothing_to_do(void) {
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }
-#include "libcxx_tc_common.h"

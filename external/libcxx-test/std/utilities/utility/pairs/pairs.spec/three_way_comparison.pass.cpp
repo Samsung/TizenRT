@@ -136,5 +136,6 @@ int tc_utilities_utility_pairs_pairs_spec_three_way_comparison(void) {
   test();
   static_assert(test());
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

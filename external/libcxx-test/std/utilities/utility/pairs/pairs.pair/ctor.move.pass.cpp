@@ -72,5 +72,6 @@ int tc_utilities_utility_pairs_pairs_pair_ctor_move(void) {
         }
     }
 
+    TC_SUCCESS_RESULT();
     return 0;
 }

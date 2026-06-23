@@ -70,5 +70,6 @@ int tc_utilities_utility_pairs_pairs_pair_implicit_deduction_guides(void) {
     ASSERT_SAME_TYPE(decltype(p1), std::pair<std::string, E>);
   }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

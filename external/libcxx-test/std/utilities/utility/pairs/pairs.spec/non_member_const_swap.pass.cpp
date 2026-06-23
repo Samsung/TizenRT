@@ -90,5 +90,6 @@ int tc_utilities_utility_pairs_pairs_spec_non_member_const_swap(void) {
   static_assert(test());
 #endif
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

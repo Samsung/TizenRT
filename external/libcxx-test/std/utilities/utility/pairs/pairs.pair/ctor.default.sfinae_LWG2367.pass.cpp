@@ -160,5 +160,6 @@ int tc_utilities_utility_pairs_pairs_pair_ctor_default_sfinae_LWG2367(void) {
         test_is_default_constructible<DefaultSFINAES<int>>();
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

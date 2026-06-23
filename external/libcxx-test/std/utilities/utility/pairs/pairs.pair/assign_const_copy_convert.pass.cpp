@@ -84,5 +84,6 @@ int tc_utilities_utility_pairs_pairs_pair_assign_const_copy_convert(void) {
 #if !defined(TEST_COMPILER_GCC)
   static_assert(test());
 #endif
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

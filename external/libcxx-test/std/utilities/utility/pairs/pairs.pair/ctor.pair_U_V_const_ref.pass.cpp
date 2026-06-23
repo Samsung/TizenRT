@@ -24,6 +24,8 @@
 #include "libcxx_tc_common.h"
 using namespace ImplicitTypes; // Get implicitly archetypes
 
+namespace {
+
 template <class T1, class U1, bool CanCopy = true, bool CanConvert = CanCopy>
 TEST_CONSTEXPR_CXX20 void test_pair_const() {
   using P1 = std::pair<T1, int>;
@@ -191,6 +193,7 @@ TEST_CONSTEXPR_CXX20 bool test() {
 #endif
     return true;
 }
+}
 
 int tc_utilities_utility_pairs_pairs_pair_ctor_pair_U_V_const_ref(void) {
   test();
@@ -198,5 +201,6 @@ int tc_utilities_utility_pairs_pairs_pair_ctor_pair_U_V_const_ref(void) {
   static_assert(test());
 #endif
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

@@ -40,5 +40,6 @@ int tc_utilities_utility_pairs_pairs_pair_ctor_const_first_const_second_cxx03(vo
         TC_ASSERT_EXPR(p.second == 2);
     }
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

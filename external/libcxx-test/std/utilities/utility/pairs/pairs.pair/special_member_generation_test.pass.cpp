@@ -126,5 +126,6 @@ int tc_utilities_utility_pairs_pairs_pair_special_member_generation_test(void) {
   test_constructors_exist();
   test_assignment_operator_exists();
 
-  return 0;
+    TC_SUCCESS_RESULT();
+    return 0;
 }

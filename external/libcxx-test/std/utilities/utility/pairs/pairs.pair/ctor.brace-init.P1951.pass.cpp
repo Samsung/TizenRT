@@ -44,5 +44,6 @@ int tc_utilities_utility_pairs_pairs_pair_ctor_brace_init_P1951(void) {
         (void) []{ std::pair<int, long>({1}, n); };
     }
 
+    TC_SUCCESS_RESULT();
     return 0;
 }
