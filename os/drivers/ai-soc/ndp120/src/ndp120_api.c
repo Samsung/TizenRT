@@ -1068,6 +1068,13 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 	memset(&setup, 0, sizeof(setup));
 
 	add_common_flow(&setup, &src_pcm, &src_func, &src_nn);
+	// TODO Even if the order of dsp flow is changed, it will be modified in sdk 1.68 so that dsp is normally applied
+	if (!dev->dsp_flow_num) {
+		add_host_ext_flow(&setup, &src_pcm, &src_func, &src_nn);
+	} else {
+		add_host_ext_flow_factory(&setup, &src_pcm, &src_func, &src_nn, dev->dsp_flow_num);
+	}
+
 	dsp_flow_e flow;
 	for (int i = 0;	i < MAX_NNETWORKS; i++) {
 		flow = get_dsp_flow_type(dev, i);
@@ -1089,12 +1096,6 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 			break;
 		}
 		idToFlow[i] = flow;
-	}
-	
-	if (!dev->dsp_flow_num) {
-		add_host_ext_flow(&setup, &src_pcm, &src_func, &src_nn);
-	} else {
-		add_host_ext_flow_factory(&setup, &src_pcm, &src_func, &src_nn, dev->dsp_flow_num);
 	}
 	
 	auddbg("Applied flow rules\n");
