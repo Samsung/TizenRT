@@ -56,6 +56,13 @@ config XIP_ELF_WARCHIVE
 	---help---
 		Use --whole-archieve flag for including full libraries
 
+config CONFIG_OTA_SUPPORT_SECOND_PARTITION
+        bool "Enable OTA second partition build"
+        default n
+        ---help---
+                Default OTA index for binaries is 0. Enable this to support build for
+		OTA index 1.
+
 endif
 
 if ELF
