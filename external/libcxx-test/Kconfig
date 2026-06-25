@@ -149,7 +149,7 @@ config LIBCXX_UTC_UTILITIES_OPTIONAL
 	bool "UTC for Libc++ Optional"
 	default n
 	depends on LIBCXX_UTC_UTILITIES
-	depends on CXX_VERSION_17
+	depends on CXX_VERSION_17_OR_LATER
 	---help---
 		UTC for Libc++ Utilities(Optional) - Requires C++17
 
@@ -157,7 +157,7 @@ config LIBCXX_UTC_UTILITIES_VARIANT
 	bool "UTC for Libc++ Variant"
 	default n
 	depends on LIBCXX_UTC_UTILITIES
-	depends on CXX_VERSION_17
+	depends on CXX_VERSION_17_OR_LATER
 	---help---
 		UTC for Libc++ Utilities(Variant) - Requires C++17
 
@@ -165,7 +165,7 @@ config LIBCXX_UTC_UTILITIES_ANY
 	bool "UTC for Libc++ Any"
 	default n
 	depends on LIBCXX_UTC_UTILITIES
-	depends on CXX_VERSION_17
+	depends on CXX_VERSION_17_OR_LATER
 	---help---
 		UTC for Libc++ Utilities(Any) - Requires C++17
 

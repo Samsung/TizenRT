@@ -22,36 +22,57 @@ config HAVE_CXX
 
 if HAVE_CXX
 
+# Hidden symbols for "C++ version or later" - used for >= version guards
+config CXX_VERSION_11_OR_LATER
+	bool
+
+config CXX_VERSION_14_OR_LATER
+	bool
+
+config CXX_VERSION_17_OR_LATER
+	bool
+
+config CXX_VERSION_20_OR_LATER
+	bool
+
+config CXX_VERSION_23_OR_LATER
+	bool
+
 choice CXX_VERSION
 	prompt "c++version"
 	default CXX_VERSION_17
 
 config CXX_VERSION_11
 	bool "c++11"
+	select CXX_VERSION_11_OR_LATER
 
 config CXX_VERSION_14
 	bool "c++14"
+	select CXX_VERSION_11_OR_LATER
+	select CXX_VERSION_14_OR_LATER
 
 config CXX_VERSION_17
 	bool "c++17"
-	select CXX_VERSION_17
+	select CXX_VERSION_11_OR_LATER
+	select CXX_VERSION_14_OR_LATER
 	select CXX_VERSION_17_OR_LATER
 
 config CXX_VERSION_20
-	bool
-	select CXX_VERSION_20
+	bool "c++20"
+	select CXX_VERSION_11_OR_LATER
+	select CXX_VERSION_14_OR_LATER
 	select CXX_VERSION_17_OR_LATER
+	select CXX_VERSION_20_OR_LATER
 
 config CXX_VERSION_23
-	bool
-	select CXX_VERSION_23
+	bool "c++23"
+	select CXX_VERSION_11_OR_LATER
+	select CXX_VERSION_14_OR_LATER
 	select CXX_VERSION_17_OR_LATER
+	select CXX_VERSION_20_OR_LATER
+	select CXX_VERSION_23_OR_LATER
 
 endchoice
-
-# Hidden symbol for "C++17 or later" - add selects for CXX_VERSION_20, CXX_VERSION_23 when added
-config CXX_VERSION_17_OR_LATER
-	bool
 
 config CXX_NEWLONG
 	bool "size_t is type long"
@@ -207,12 +228,26 @@ config LIBCXX_HAVE_LIBSUPCXX
 		Select if your toolchain provides libsupc++.  This option is required
 		at present because the built-in libsupc++ support is incomplete.
 
+config LIBCXX_HAS_NO_INCOMPLETE_PSTL
+	bool "Disable Parallel STL (PSTL) completely"
+	default y
+	---help---
+		When enabled (default), completely disables Parallel STL (PSTL) support.
+		This reduces code size and eliminates any parallel algorithm overhead.
+		
+		When disabled, PSTL becomes available for C++17 parallel algorithms.
+		You must also select a PSTL backend (SERIAL, THREAD, or LIBDISPATCH).
+		
+		Recommended settings:
+		- y (default): Most embedded systems, minimal footprint
+		- n: Systems needing C++17 parallel algorithms with CONFIG_LIBCXX_ENABLE_EXPERIMENTAL
 
 choice LIBCXX_PSTL_BACKEND
 	prompt "Parallel STL CPU Backend"
 	default LIBCXX_PSTL_BACKEND_SERIAL
+	depends on !LIBCXX_HAS_NO_INCOMPLETE_PSTL
 	---help---
-		Select the Parallel STL (PSTL) CPU backend for C++17 parallel algorithms.
+		When PSTL is enabled, select the Parallel STL (PSTL) CPU backend for C++17 parallel algorithms.
 		SERIAL is recommended for embedded systems.
 
 config LIBCXX_PSTL_BACKEND_SERIAL

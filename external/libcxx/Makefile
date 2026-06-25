@@ -90,7 +90,7 @@ CXXSRCS += filesystem/operations.cpp filesystem/int128_builtins.cpp
 endif
 endif # CONFIG_CXX_VERSION_17_OR_LATER
 
-ifeq ($(CONFIG_CXX_VERSION_20),y)
+ifeq ($(CONFIG_CXX_VERSION_20_OR_LATER),y)
 CXXSRCS += print.cpp
 endif
 

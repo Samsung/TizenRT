@@ -54,8 +54,8 @@ CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.end/find_end.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.end/find_end_pred.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.first.of/find_first_of.pass.cpp
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.find.first.of/find_first_of_pred.pass.cpp
-# C++17 only: for_each_n
-ifeq ($(CONFIG_CXX_VERSION_17),y)
+# C++17 and later: for_each_n
+ifeq ($(CONFIG_CXX_VERSION_17_OR_LATER),y)
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.foreach/for_each_n.pass.cpp
 endif
 CXXSRCS += std/algorithms/alg.nonmodifying/alg.foreach/test.pass.cpp
@@ -87,8 +87,8 @@ CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition.pass
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition_copy.pass.cpp
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/partition_point.pass.cpp
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.partitions/stable_partition.pass.cpp
-# C++17 only: std::sample
-ifeq ($(CONFIG_CXX_VERSION_17),y)
+# C++17 and later: std::sample
+ifeq ($(CONFIG_CXX_VERSION_17_OR_LATER),y)
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.pass.cpp
 CXXSRCS += std/algorithms/alg.modifying.operations/alg.random.sample/sample.stable.pass.cpp
 endif
@@ -128,8 +128,8 @@ CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/lower.bound/lower_bound.
 CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/lower.bound/lower_bound_comp.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/upper.bound/upper_bound.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.binary.search/upper.bound/upper_bound_comp.pass.cpp
-# C++17 only: std::clamp
-ifeq ($(CONFIG_CXX_VERSION_17),y)
+# C++17 and later: std::clamp
+ifeq ($(CONFIG_CXX_VERSION_17_OR_LATER),y)
 CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.pass.cpp
 CXXSRCS += std/algorithms/alg.sorting/alg.clamp/clamp.comp.pass.cpp
 endif
@@ -1117,20 +1117,20 @@ CXXSRCS += std/utilities/utility/pairs/pairs.pair/assign_pair.pass.cpp
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/special_member_generation_test.pass.cpp
 
 # C++14+ pair tests
-ifeq ($(CONFIG_CXX_VERSION_14),y)
+ifeq ($(CONFIG_CXX_VERSION_14_OR_LATER),y)
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/ctor.copy.pass.cpp
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/ctor.const_first_const_second_cxx03.pass.cpp
 endif
 
 # C++17+ pair tests
-ifeq ($(CONFIG_CXX_VERSION_17),y)
+ifeq ($(CONFIG_CXX_VERSION_17_OR_LATER),y)
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/ctor.brace-init.P1951.pass.cpp
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/ctor.pair_U_V_const_ref.cxx03.pass.cpp
 CXXSRCS += std/utilities/utility/pairs/pairs.general/nothing_to_do.pass.cpp
 endif
 
 # C++20+ pair tests
-ifeq ($(CONFIG_CXX_VERSION_20),y)
+ifeq ($(CONFIG_CXX_VERSION_20_OR_LATER),y)
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/ctor.brace-init.pass.cpp
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/ctor.pair_U_V_ref.pass.cpp
 CXXSRCS += std/utilities/utility/pairs/pairs.pair/assign_const_copy_pair.pass.cpp
@@ -1328,13 +1328,13 @@ CXXSRCS += std/utilities/optional/optional.specalg/make_optional_explicit_initia
 CXXSRCS += std/utilities/optional/optional.syn/optional_includes_initializer_list.pass.cpp
 
 # C++20 Optional tests (three_way comparison)
-ifeq ($(CONFIG_CXX_VERSION_20),y)
+ifeq ($(CONFIG_CXX_VERSION_20_OR_LATER),y)
 CXXSRCS += std/utilities/optional/optional.nullops/compare.three_way.pass.cpp
 CXXSRCS += std/utilities/optional/optional.relops/compare.three_way.pass.cpp
 endif
 
 # C++23 Optional tests (monadic operations)
-ifeq ($(CONFIG_CXX_VERSION_23),y)
+ifeq ($(CONFIG_CXX_VERSION_23_OR_LATER),y)
 CXXSRCS += std/utilities/optional/optional.monadic/and_then.pass.cpp
 CXXSRCS += std/utilities/optional/optional.monadic/or_else.pass.cpp
 CXXSRCS += std/utilities/optional/optional.monadic/transform.pass.cpp
@@ -1399,7 +1399,7 @@ CXXSRCS += std/utilities/variant/variant.variant/variant.status/valueless_by_exc
 CXXSRCS += std/utilities/variant/variant.visit/robust_against_adl.pass.cpp
 
 # C++20 Variant tests (three_way comparison)
-ifeq ($(CONFIG_CXX_VERSION_20),y)
+ifeq ($(CONFIG_CXX_VERSION_20_OR_LATER),y)
 CXXSRCS += std/utilities/variant/variant.relops/three_way.pass.cpp
 endif
 endif
@@ -1650,8 +1650,8 @@ CXXSRCS += std/utilities/utility/synopsis.pass.cpp
 # utility.inplace
 CXXSRCS += std/utilities/utility/utility.inplace/inplace.pass.cpp
 
-# utility.intcmp (C++20)
-ifeq ($(CONFIG_CXX_VERSION_20),y)
+# utility.intcmp (C++20 and later)
+ifeq ($(CONFIG_CXX_VERSION_20_OR_LATER),y)
 CXXSRCS += std/utilities/utility/utility.intcmp/intcmp.cmp_equal/cmp_equal.pass.cpp
 CXXSRCS += std/utilities/utility/utility.intcmp/intcmp.cmp_greater/cmp_greater.pass.cpp
 CXXSRCS += std/utilities/utility/utility.intcmp/intcmp.cmp_greater_equal/cmp_greater_equal.pass.cpp

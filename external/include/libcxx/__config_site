@@ -142,8 +142,15 @@ typedef unsigned int wint_t;
 #define _LIBCPP_HAS_NO_FILESYSTEM
 #endif
 
-// Parallel STL (PSTL) Backend configuration (set via Kconfig)
-// Default to SERIAL if no backend is explicitly selected
+// Parallel STL (PSTL) configuration (set via Kconfig)
+// _LIBCPP_HAS_NO_INCOMPLETE_PSTL completely disables PSTL when enabled (default)
+// Note: A backend is always defined to satisfy header includes, but _LIBCPP_HAS_NO_INCOMPLETE_PSTL
+// prevents PSTL features from being used
+#if defined(CONFIG_LIBCXX_HAS_NO_INCOMPLETE_PSTL)
+#define _LIBCPP_HAS_NO_INCOMPLETE_PSTL
+#define _LIBCPP_PSTL_CPU_BACKEND_SERIAL  // Default backend to satisfy headers
+#else
+// PSTL is enabled - select backend
 #if defined(CONFIG_LIBCXX_PSTL_BACKEND_THREAD)
 #define _LIBCPP_PSTL_CPU_BACKEND_THREAD
 #elif defined(CONFIG_LIBCXX_PSTL_BACKEND_LIBDISPATCH)
@@ -151,6 +158,7 @@ typedef unsigned int wint_t;
 #else
 // Default: serial backend (CONFIG_LIBCXX_PSTL_BACKEND_SERIAL or no selection)
 #define _LIBCPP_PSTL_CPU_BACKEND_SERIAL
+#endif
 #endif
 
 // <= C++17-: in bit_log2.h, __bit_log2 is undefined without this fallback, breaking algorithm.cpp (introsort)
