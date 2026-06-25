@@ -104,23 +104,25 @@ trble_result_e rtw_ble_combo_init(trble_client_init_config* init_client, trble_s
 
 trble_result_e rtw_ble_combo_deinit(void)
 {
-    ble_tizenrt_scatternet_main(0);
+	ble_tizenrt_scatternet_main(0);
 
-    osif_mem_free(client_init_parm);
-    client_init_parm = NULL;
+	rtw_ble_client_delete_scan_timer();
 
-    osif_mem_free(ble_tizenrt_scatternet_conn_ind);
-    ble_tizenrt_scatternet_conn_ind = NULL;
+	osif_mem_free(client_init_parm);
+	client_init_parm = NULL;
+
+	osif_mem_free(ble_tizenrt_scatternet_conn_ind);
+	ble_tizenrt_scatternet_conn_ind = NULL;
 
 	memset(tizenrt_ble_srv_database, 0, (7 * sizeof(TIZENERT_SRV_DATABASE)));
 	memset(&server_init_parm, 0, sizeof(server_init_parm));
 	tizenrt_ble_srv_count = 0;
-    is_server_init = false;
+	is_server_init = false;
 
 	tizenrt_remove_service();
 
-    attr_counter = 0;
-    return TRBLE_SUCCESS; 
+	attr_counter = 0;
+	return TRBLE_SUCCESS;
 }
 
 trble_result_e rtw_ble_combo_set_server_config(trble_server_init_config* init_server)
