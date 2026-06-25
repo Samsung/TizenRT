@@ -460,6 +460,8 @@ int inic_ipc_api_host_message_send(u32 id, u32 *param_buf, u32 buf_len)
 		}
 		if (cnt == 0) {
 			dbg_noarg("HstMsgSend wait inic ipc done 0x%x, 0x%x\n", g_host_ipc_api_request_info.API_ID, latest_api_id);
+			/* Indicate to KM4 that host IPC is stuck waiting for ACK */
+			BKUP_Write(BKUP_REG2, 0x4);
 		}
 	}
 	ret = g_host_ipc_api_request_info.ret;

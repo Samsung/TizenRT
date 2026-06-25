@@ -81,6 +81,10 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 			BKUP_Write(BKUP_REG2, 0);
 			boot_reason = REBOOT_SYSTEM_NP_LP_FAULT;
 		}
+		else if (boot_reason_reg2 == 0x5) {
+			BKUP_Write(BKUP_REG2, 0);
+			boot_reason = REBOOT_SYSTEM_CA32_IPC_ERROR;
+		}
 		return boot_reason;
 	} else {
 		/* Read AmebaSmart Boot Reason, WDT and HW reset supported */
@@ -141,7 +145,13 @@ static reboot_reason_code_t up_reboot_reason_get_hw_value(void)
 			if (boot_reason & AON_BIT_RSTF_APSYS) {			/* CA32 */
 				lldbg("Reboot reason: APSYS reset\n");
 			} else if (boot_reason & AON_BIT_RSTF_NPSYS) {	/* KM4 */
-				lldbg("Reboot reason: NPSYS reset\n");
+				if (boot_reason_reg2 == 0x4) {
+					BKUP_Write(BKUP_REG2, 0);
+					lldbg("Reboot reason: KM4 IPC error\n");
+				}
+				else {
+					lldbg("Reboot reason: NPSYS reset\n");
+				}
 			} else {										/* (boot_reason & AON_BIT_RSTF_LPSYS) */
 				lldbg("Reboot reason: LPSYS reset\n");
 			}

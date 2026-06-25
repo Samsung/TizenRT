@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 80d413077d 2026/05/15-11:48:03 ==
+1. Add recovery mechanism for IPC dev
+
 == version 1e2f487864 2026/03/13-19:28:22 ==
 1. Fix CSI burst report fail
 
