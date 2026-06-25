@@ -38,13 +38,11 @@ enum {
  * The following macros define the
  * 1. primary manifest version
  * 2. recovery manifest version
- * 3. FOTA version
  * start offset in OTP.
  * Customers can change them to their project configuration
  */
 #define HAL_OTP_PRIM_MNFT_VER_OFFSET (137)
 #define HAL_OTP_RECV_MNFT_VER_OFFSET (136)
-#define HAL_OTP_FOTA_VER_OFFSET (128)
 
 /**
  * Defines all the necessary OTP size for IPSS usage.
@@ -72,15 +70,13 @@ enum {
  * versions
  * 2. recovery manifest version. The default value is 1, which support maximum 8
  * versions.
- * 3. FOTA version. The default value is 4, which support maximum 32 versions.
  * size in Bytes in OTP.
  * Customers can change them to their project configuration.
- * The maximum version in IPSS Secure boot/FOTA solution only supports multiple
+ * The maximum version in IPSS Secure boot solution only supports multiple
  * of 8.
  */
 #define HAL_OTP_PRIM_MNFT_VER_SIZE (4)
 #define HAL_OTP_RECV_MNFT_VER_SIZE (1)
-#define HAL_OTP_FOTA_VER_SIZE (4)
 
 enum {
     HAL_DBH_PUF_OTP_POWER_ON = 1,
