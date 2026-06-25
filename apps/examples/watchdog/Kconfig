@@ -13,6 +13,7 @@ config EXAMPLES_WATCHDOG
 		and pause_resume commands. expire optionally prints periodic
 		status, keepalive sends WDIOC_KEEPALIVE, and pause_resume runs
 		a parameterized pause/resume timing test.
+		In FLAT builds, hang checks watchdog reset in a hang situation.
 
 config USER_ENTRYPOINT
 	string
