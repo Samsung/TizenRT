@@ -82,11 +82,15 @@ static int xmlrpc_insertlength(struct xmlrpc_s *xmlcall)
 {
 	int len, digit, xdigit = 1000, i = 0;
 	char *temp;
+	char *body;
 
-	temp = strstr(xmlcall->response, "<?xml");
-	len = strlen(temp);
-
+	body = strstr(xmlcall->response, "<?xml");
 	temp = strstr(xmlcall->response, "xyza");
+	if (!body || !temp) {
+		return XMLRPC_INTERNAL_ERROR;
+	}
+
+	len = strlen(body);
 
 	do {
 		digit = (len / xdigit);
@@ -101,6 +105,35 @@ static int xmlrpc_insertlength(struct xmlrpc_s *xmlcall)
 	} while (i < 4);
 
 	return 0;
+}
+
+static int xmlrpc_appendresponse(struct xmlrpc_s *xmlcall, const char *format, ...)
+{
+	va_list argp;
+	size_t used;
+	size_t remaining;
+	int written;
+
+	if ((xmlcall == NULL) || (format == NULL)) {
+		return XMLRPC_INTERNAL_ERROR;
+	}
+
+	used = strlen(xmlcall->response);
+	if (used >= MAX_RESPONSE) {
+		return XMLRPC_BAD_RESPONSE_ARG;
+	}
+
+	remaining = MAX_RESPONSE - used;
+	va_start(argp, format);
+	written = vsnprintf(&xmlcall->response[used], remaining, format, argp);
+	va_end(argp);
+
+	if ((written < 0) || ((size_t)written >= remaining)) {
+		xmlcall->response[MAX_RESPONSE - 1] = '\0';
+		return XMLRPC_BAD_RESPONSE_ARG;
+	}
+
+	return XMLRPC_NO_ERROR;
 }
 
 /****************************************************************************
@@ -169,18 +202,35 @@ int xmlrpc_buildresponse(struct xmlrpc_s *xmlcall, char *args, ...)
 	int i, ret = 0, index = 0, close = 0;
 	double d;
 	char *s;
+	char *name;
 	int isStruct = 0;
 
 	if ((xmlcall == NULL) || (args == NULL)) {
 		return -1;
 	}
 
-	strcpy(xmlcall->response, "HTTP/1.1 200 OK\n" "Connection: close\n" "Content-length: xyza\n" "Content-Type: text/xml\n" "Server: Lightweight XMLRPC\n\n" "<?xml version=\"1.0\"?>\n" "<methodResponse>\n");
+	xmlcall->response[0] = '\0';
+	ret = xmlrpc_appendresponse(xmlcall,
+								"HTTP/1.1 200 OK\n"
+								"Connection: close\n"
+								"Content-length: xyza\n"
+								"Content-Type: text/xml\n"
+								"Server: Lightweight XMLRPC\n\n"
+								"<?xml version=\"1.0\"?>\n"
+								"<methodResponse>\n");
+	if (ret != XMLRPC_NO_ERROR) {
+		return ret;
+	}
 
 	if (xmlcall->error) {
-		strcat(&xmlcall->response[strlen(xmlcall->response)], "  <fault>\n");
+		ret = xmlrpc_appendresponse(xmlcall, "  <fault>\n");
 	} else {
-		strcat(&xmlcall->response[strlen(xmlcall->response)], "  <params><param>\n");
+		ret = xmlrpc_appendresponse(xmlcall, "  <params><param>\n");
+	}
+
+	if (ret != XMLRPC_NO_ERROR) {
+		xmlcall->response[0] = 0;
+		return ret;
 	}
 
 	va_start(argp, args);
@@ -188,51 +238,68 @@ int xmlrpc_buildresponse(struct xmlrpc_s *xmlcall, char *args, ...)
 	while (args[index]) {
 		if (isStruct) {
 			if ((args[index] != '{') && (args[index] != '}')) {
-				sprintf(&xmlcall->response[strlen(xmlcall->response)], "  <member>\n");
-				sprintf(&xmlcall->response[strlen(xmlcall->response)], "    <name>%s</name>\n", va_arg(argp, char *));
+				name = va_arg(argp, char *);
+				ret = xmlrpc_appendresponse(xmlcall, "  <member>\n");
+				if (ret != XMLRPC_NO_ERROR) {
+					break;
+				}
+
+				ret = xmlrpc_appendresponse(xmlcall, "    <name>%s</name>\n", name);
+				if (ret != XMLRPC_NO_ERROR) {
+					break;
+				}
+
 				close = 1;
 			}
 		}
 
 		switch (args[index]) {
 		case '{':
-			sprintf(&xmlcall->response[strlen(xmlcall->response)], "  <value><struct>\n");
+			ret = xmlrpc_appendresponse(xmlcall, "  <value><struct>\n");
 			isStruct = 1;
 			break;
 
 		case '}':
-			sprintf(&xmlcall->response[strlen(xmlcall->response)], "  </struct></value>\n");
+			ret = xmlrpc_appendresponse(xmlcall, "  </struct></value>\n");
 			isStruct = 0;
 			break;
 
 		case 'i':
 			i = va_arg(argp, int);
-			sprintf(&xmlcall->response[strlen(xmlcall->response)], "    <value><int>%d</int></value>\r\n", i);
+			ret = xmlrpc_appendresponse(xmlcall, "    <value><int>%d</int></value>\r\n", i);
 			break;
 
 		case 'b':
 			i = va_arg(argp, int);
-			sprintf(&xmlcall->response[strlen(xmlcall->response)], "    <value><boolean>%d</boolean></value>\r\n", i);
+			ret = xmlrpc_appendresponse(xmlcall, "    <value><boolean>%d</boolean></value>\r\n", i);
 			break;
 
 		case 'd':
 			d = va_arg(argp, double);
-			sprintf(&xmlcall->response[strlen(xmlcall->response)], "    <value><double>%f</double></value>\r\n", d);
+			ret = xmlrpc_appendresponse(xmlcall, "    <value><double>%f</double></value>\r\n", d);
 			break;
 
 		case 's':
 			s = va_arg(argp, char *);
-			sprintf(&xmlcall->response[strlen(xmlcall->response)], "    <value><string>%s</string></value>\r\n", s);
+			ret = xmlrpc_appendresponse(xmlcall, "    <value><string>%s</string></value>\r\n", s);
 			break;
 
 		default:
-			return (XMLRPC_BAD_RESPONSE_ARG);
+			ret = XMLRPC_BAD_RESPONSE_ARG;
 			break;
 
 		}
 
+		if (ret != XMLRPC_NO_ERROR) {
+			break;
+		}
+
 		if (close) {
-			sprintf(&xmlcall->response[strlen(xmlcall->response)], "  </member>\n");
+			ret = xmlrpc_appendresponse(xmlcall, "  </member>\n");
+			if (ret != XMLRPC_NO_ERROR) {
+				break;
+			}
+
 			close = 0;
 		}
 
@@ -241,17 +308,23 @@ int xmlrpc_buildresponse(struct xmlrpc_s *xmlcall, char *args, ...)
 
 	va_end(argp);
 
-	if (xmlcall->error) {
-		strcat(&xmlcall->response[strlen(xmlcall->response)], "  </fault>\r\n");
-	} else {
-		strcat(&xmlcall->response[strlen(xmlcall->response)], "  </param></params>\r\n");
+	if (ret == XMLRPC_NO_ERROR) {
+		if (xmlcall->error) {
+			ret = xmlrpc_appendresponse(xmlcall, "  </fault>\r\n");
+		} else {
+			ret = xmlrpc_appendresponse(xmlcall, "  </param></params>\r\n");
+		}
 	}
 
-	if (ret == 0) {
-		strcat(&xmlcall->response[strlen(xmlcall->response)], "</methodResponse>\r\n");
+	if (ret == XMLRPC_NO_ERROR) {
+		ret = xmlrpc_appendresponse(xmlcall, "</methodResponse>\r\n");
+	}
 
-		xmlrpc_insertlength(xmlcall);
-	} else {
+	if (ret == XMLRPC_NO_ERROR) {
+		ret = xmlrpc_insertlength(xmlcall);
+	}
+
+	if (ret != XMLRPC_NO_ERROR) {
 		xmlcall->response[0] = 0;
 	}
 

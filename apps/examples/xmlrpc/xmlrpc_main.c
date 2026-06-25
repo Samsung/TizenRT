@@ -139,6 +139,10 @@ static int xmlrpc_getheader(char *buffer, char *header, char *value, int size)
 	char *temp;
 	int i = 0;
 
+	if (size <= 0) {
+		return -1;
+	}
+
 	temp = strstr(buffer, header);
 	if (temp) {
 		/* Skip the header element */
@@ -153,7 +157,8 @@ static int xmlrpc_getheader(char *buffer, char *header, char *value, int size)
 
 		/* Copy the rest to the value parameter */
 
-		while ((*temp != ' ') && (*temp != '\n') && (i < size)) {
+		while ((*temp != '\0') && (*temp != ' ') && (*temp != '\r') &&
+			   (*temp != '\n') && (i < size - 1)) {
 			value[i++] = *temp++;
 		}
 
@@ -162,6 +167,25 @@ static int xmlrpc_getheader(char *buffer, char *header, char *value, int size)
 	}
 
 	return -1;
+}
+
+static int xmlrpc_parse_content_length(char *value, int *loadlen)
+{
+	char *endptr;
+	long parsed;
+
+	if (!value || !loadlen || !*value) {
+		return -1;
+	}
+
+	parsed = strtol(value, &endptr, 10);
+	if ((endptr == value) || (*endptr != '\0') || (parsed < 0) ||
+		(parsed > XMLRPC_BUFFERSIZE - 1)) {
+		return -1;
+	}
+
+	*loadlen = (int)parsed;
+	return 0;
 }
 
 /****************************************************************************
@@ -177,6 +201,7 @@ static void xmlrpc_handler(int fd)
 	fd_set rfds;
 	struct timeval tv;
 	int ret, len, max = 0, loadlen = -1;
+	int bodylen, complete = 0;
 	char buffer[XMLRPC_BUFFERSIZE] = { 0 };
 	char value[XMLRPC_STRINGSIZE + 1];
 	char *temp;
@@ -196,7 +221,12 @@ static void xmlrpc_handler(int fd)
 
 		if (ret > 0) {
 			if (FD_ISSET(fd, &rfds)) {
-				len = recv(fd, &buffer[max], 1024, 0);
+				if (max >= XMLRPC_BUFFERSIZE - 1) {
+					ret = -1;
+					break;
+				}
+
+				len = recv(fd, &buffer[max], XMLRPC_BUFFERSIZE - max - 1, 0);
 				ndbg("[%d] %d bytes received\n", fd, len);
 
 				if (len > 0) {
@@ -204,9 +234,12 @@ static void xmlrpc_handler(int fd)
 					buffer[max] = 0;
 
 					ret = xmlrpc_getheader(buffer, "Content-Length:", value,
-										   XMLRPC_BUFFERSIZE);
+										   sizeof(value));
 					if (ret > 0) {
-						loadlen = atoi(value);
+						if (xmlrpc_parse_content_length(value, &loadlen) < 0) {
+							ret = -1;
+							break;
+						}
 					}
 				} else {
 					ret = -1;
@@ -224,7 +257,15 @@ static void xmlrpc_handler(int fd)
 		temp = strstr(buffer, separator);
 
 		if (temp) {
-			if (strlen(temp) - 4 == loadlen) {
+			bodylen = max - (int)((temp + 4) - buffer);
+
+			if (bodylen < 0) {
+				ret = -1;
+				break;
+			}
+
+			if (loadlen >= 0 && bodylen >= loadlen) {
+				complete = 1;
 				break;
 			}
 		}
@@ -234,8 +275,12 @@ static void xmlrpc_handler(int fd)
 	/* Determine request */
 
 	if (!strncmp(buffer, "POST", 4)) {
-		temp = xmlrpc_findbody(buffer);
-		xmlrpc_parse(fd, temp);
+		if (complete) {
+			temp = xmlrpc_findbody(buffer);
+			if (temp) {
+				xmlrpc_parse(fd, temp);
+			}
+		}
 	} else {
 		// send 501 error
 		write(fd, notimplemented, strlen(notimplemented));
