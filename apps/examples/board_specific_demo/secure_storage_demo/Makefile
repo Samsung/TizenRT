@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/examples/board_specific_demo/ameba_secure_storage_demo/Makefile
+# apps/examples/board_specific_demo/secure_storage_demo/Makefile
 #
 #   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -65,6 +65,20 @@ THREADEXEC = TASH_EXECMD_ASYNC
 ASRCS =
 CSRCS =
 MAINSRC = secure_storage.c
+
+# Include board-specific headers based on configuration
+# Note: The -include flag includes the file at the beginning of compilation
+# If board-specific headers need to be included at the end, 
+# the source file should be modified instead
+ifeq ($(CONFIG_ARCH_CHIP_BK7239N),y)
+CFLAGS += -include armino.h
+else ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
+CFLAGS += -include ameba.h
+else ifeq ($(CONFIG_AMEBALITE_TRUSTZONE),y)
+CFLAGS += -include ameba.h
+else ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
+CFLAGS += -include ameba.h
+endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
