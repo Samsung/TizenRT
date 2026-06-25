@@ -69,6 +69,7 @@
 
 #include <tinyara/cancelpt.h>
 #include <tinyara/wdog.h>
+#include <tinyara/mm/mm.h>
 
 #include "sched/sched.h"
 #include "pthread/pthread.h"
@@ -202,6 +203,9 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 	uint16_t oldstate;
 	int ret = OK;
 	int status;
+	int incr_result = 1;	/* 1 = pre_alloc NOT consumed (default for error paths) */
+	struct cond_waiter_entry *pre_alloc = NULL;
+	struct cond_waiter_entry *to_free = NULL;
 
 	svdbg("cond=0x%p mutex=0x%p abstime=0x%p\n", cond, mutex, abstime);
 
@@ -239,108 +243,146 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 		} else {
 			svdbg("Give up mutex...\n");
 
-			/* We must disable pre-emption and interrupts here so that
-			 * the time stays valid until the wait begins.   This adds
-			 * complexity because we assure that interrupts and
-			 * pre-emption are re-enabled correctly.
+			/* Pre-allocate waiter entry before entering critical section.
+			 * kmm_malloc() may take the heap semaphore, which must not
+			 * be called with interrupts disabled.
 			 */
 
-			sched_lock();
-			int_state = enter_critical_section();
-
-			/* Convert the timespec to clock ticks.  We must disable pre-emption
-			 * here so that this time stays valid until the wait begins.
-			 */
-
-			ret = clock_abstime2ticks(CLOCK_REALTIME, abstime, &ticks);
-			if (ret) {
-				/* Restore interrupts  (pre-emption will be enabled when
-				 * we fall through the if/then/else)
-				 */
-
-				leave_critical_section(int_state);
+			pre_alloc = (struct cond_waiter_entry *)kmm_malloc(sizeof(struct cond_waiter_entry));
+			if (pre_alloc == NULL) {
+				sdbg("Failed to allocate waiter entry for cond %p\n", cond);
+				DEBUGASSERT(0);
+				ret = ENOMEM;
 			} else {
-				/* Check the absolute time to wait.  If it is now or in the past, then
-				 * just return with the timedout condition.
+				/* We must disable pre-emption and interrupts here so that
+				 * the time stays valid until the wait begins.   This adds
+				 * complexity because we assure that interrupts and
+				 * pre-emption are re-enabled correctly.
 				 */
 
-				if (ticks <= 0) {
-					/* Restore interrupts and indicate that we have already timed out.
-					 * (pre-emption will be enabled when we fall through the
-					 * if/then/else
+				sched_lock();
+				int_state = enter_critical_section();
+
+				/* Convert the timespec to clock ticks.  We must disable pre-emption
+				 * here so that this time stays valid until the wait begins.
+				 */
+
+				ret = clock_abstime2ticks(CLOCK_REALTIME, abstime, &ticks);
+				if (ret) {
+					/* Restore interrupts and pre-emption, free pre_alloc.
+					 * kmm_free() must not be called with interrupts disabled.
 					 */
 
 					leave_critical_section(int_state);
-					ret = ETIMEDOUT;
+					sched_unlock();
+					kmm_free(pre_alloc);
+					pre_alloc = NULL;
 				} else {
-					/* Give up the mutex */
+					/* Check the absolute time to wait.  If it is now or in the past, then
+					 * just return with the timedout condition.
+					 */
 
-					mutex->pid = -1;
-					ret = pthread_mutex_give(mutex);
-					if (ret != 0) {
-						/* Restore interrupts  (pre-emption will be enabled when
-						 * we fall through the if/then/else)
+					if (ticks <= 0) {
+						/* Restore interrupts and indicate that we have already timed out.
+						 * (pre-emption will be enabled when we fall through the
+						 * if/then/else
 						 */
 
 						leave_critical_section(int_state);
+						ret = ETIMEDOUT;
 					} else {
-						/* Start the watchdog */
+						/* Give up the mutex */
 
-						wd_start(rtcb->waitdog, ticks, (wdentry_t)pthread_condtimedout, 2, (uint32_t)mypid, (uint32_t)SIGCONDTIMEDOUT);
-
-						/* Take the condition semaphore.  Do not restore interrupts
-						 * until we return from the wait.  This is necessary to
-						 * make sure that the watchdog timer and the condition wait
-						 * are started atomically.
-						 */
-
-						status = sem_wait((sem_t *)&cond->sem);
-
-						/* Did we get the condition semaphore. */
-
-						if (status != OK) {
-							/* NO.. Handle the special case where the semaphore wait was
-							 * awakened by the receipt of a signal -- presumably the
-							 * signal posted by pthread_condtimedout().
+						mutex->pid = -1;
+						ret = pthread_mutex_give(mutex);
+						if (ret != 0) {
+							/* Restore interrupts  (pre-emption will be enabled when
+							 * we fall through the if/then/else)
 							 */
 
-							if (get_errno() == EINTR) {
-								sdbg("Timedout!\n");
-								ret = ETIMEDOUT;
-							} else {
-								ret = EINVAL;
+							leave_critical_section(int_state);
+						} else {
+							/* Start the watchdog */
+
+							wd_start(rtcb->waitdog, ticks, (wdentry_t)pthread_condtimedout, 2, (uint32_t)mypid, (uint32_t)SIGCONDTIMEDOUT);
+
+							/* Increment waiter count using queue.
+							 * Returns 0 if pre_alloc was consumed, 1 if not.
+							 */
+							incr_result = cond_waiter_increment(cond, pre_alloc);
+
+							/* Take the condition semaphore.  Do not restore interrupts
+							 * until we return from the wait.  This is necessary to
+							 * make sure that the watchdog timer and the condition wait
+							 * are started atomically.
+							 */
+
+							status = sem_wait((sem_t *)&cond->sem);
+
+							/* Decrement waiter count using queue.
+							 * Returns unlinked entry if waiter count reached 0.
+							 */
+							to_free = cond_waiter_decrement(cond);
+
+							/* Did we get the condition semaphore. */
+
+							if (status != OK) {
+								/* NO.. Handle the special case where the semaphore wait was
+								 * awakened by the receipt of a signal -- presumably the
+								 * signal posted by pthread_condtimedout().
+								 */
+
+								if (get_errno() == EINTR) {
+									sdbg("Timedout!\n");
+									ret = ETIMEDOUT;
+								} else {
+									ret = EINVAL;
+								}
+							}
+
+							/* The interrupts stay disabled until after we sample the errno.
+							 * This is because when debug is enabled and the console is used
+							 * for debug output, then the errno can be altered by interrupt
+							 * handling! (bad)
+							 */
+
+							leave_critical_section(int_state);
+
+							/* Reacquire the mutex (retaining the ret). */
+
+							svdbg("Re-locking...\n");
+
+							oldstate = pthread_disable_cancel();
+							status = pthread_mutex_take(mutex);
+							pthread_enable_cancel(oldstate);
+
+							if (status == OK) {
+								mutex->pid = mypid;
+							} else if (ret == 0) {
+								ret = status;
 							}
 						}
-
-						/* The interrupts stay disabled until after we sample the errno.
-						 * This is because when debug is enabled and the console is used
-						 * for debug output, then the errno can be altered by interrupt
-						 * handling! (bad)
-						 */
-
-						leave_critical_section(int_state);
 					}
 
-					/* Reacquire the mutex (retaining the ret). */
+					/* Re-enable pre-emption (It is expected that interrupts
+					 * have already been re-enabled in the above logic)
+					 */
 
-					svdbg("Re-locking...\n");
+					sched_unlock();
 
-					oldstate = pthread_disable_cancel();
-					status = pthread_mutex_take(mutex);
-					pthread_enable_cancel(oldstate);
-
-					if (status == OK) {
-						mutex->pid = mypid;
-					} else if (ret == 0) {
-						ret = status;
+					/* Free memory outside critical section.
+					 * kmm_free() may take the heap semaphore, which must
+					 * not be called with interrupts disabled.
+					 */
+					if (incr_result == 1) {
+						/* pre_alloc was NOT consumed by increment - free it */
+						kmm_free(pre_alloc);
+					}
+					if (to_free != NULL) {
+						/* Entry was unlinked by decrement - free it */
+						kmm_free(to_free);
 					}
 				}
-
-				/* Re-enable pre-emption (It is expected that interrupts
-				 * have already been re-enabled in the above logic)
-				 */
-
-				sched_unlock();
 			}
 
 			/* We no longer need the watchdog */

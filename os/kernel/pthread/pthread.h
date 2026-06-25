@@ -94,6 +94,16 @@ struct join_s {
 	pthread_addr_t exit_value;	/* Returned data */
 };
 
+/* Condition variable waiter tracking - kernel internal
+ * This structure is used to track waiter counts per condition variable
+ * without modifying the public pthread_cond_s structure.
+ */
+struct cond_waiter_entry {
+	FAR struct cond_waiter_entry *next;	/* Next entry in list */
+	FAR pthread_cond_t *cond;			/* Key: condition variable pointer */
+	uint16_t waiters;					/* Value: count of waiting threads */
+};
+
 /****************************************************************************
  * Public Variables
  ****************************************************************************/
@@ -154,6 +164,11 @@ int pthread_mutexattr_verifytype(int type);
 #if defined(CONFIG_NPTHREAD_KEYS) && CONFIG_NPTHREAD_KEYS > 0
 void pthread_key_destroy(struct pthread_tcb_s *tcb);
 #endif
+
+/* Condition variable waiter tracking functions - kernel internal */
+int cond_waiter_increment(FAR pthread_cond_t *cond, FAR struct cond_waiter_entry *pre_alloc);
+FAR struct cond_waiter_entry *cond_waiter_decrement(FAR pthread_cond_t *cond);
+uint16_t cond_waiter_get_count(FAR pthread_cond_t *cond);
 
 #undef EXTERN
 #ifdef __cplusplus

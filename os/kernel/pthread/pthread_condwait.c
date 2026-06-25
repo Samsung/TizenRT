@@ -64,6 +64,7 @@
 #include <debug.h>
 
 #include <tinyara/cancelpt.h>
+#include <tinyara/mm/mm.h>
 #include "pthread/pthread.h"
 
 /****************************************************************************
@@ -90,6 +91,9 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 {
 	int status;
 	int ret;
+	int incr_result;
+	struct cond_waiter_entry *pre_alloc = NULL;
+	struct cond_waiter_entry *to_free = NULL;
 
 	svdbg("cond=0x%p mutex=0x%p\n", cond, mutex);
 
@@ -107,49 +111,84 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 	else if (mutex->pid != (int)getpid()) {
 		ret = EPERM;
 	} else {
+		irqstate_t int_state;
 		uint16_t oldstate;
 
-		/* Give up the mutex */
-
-		svdbg("Give up mutex / take cond\n");
-
-		sched_lock();
-		mutex->pid = -1;
-		ret = pthread_mutex_give(mutex);
-
-		/* Take the semaphore */
-
-		status = pthread_sem_take((FAR sem_t *)&cond->sem);
-		if (ret == OK) {
-			/* Report the first failure that occurs */
-
-			ret = status;
-		}
-
-		sched_unlock();
-
-		/* Reacquire the mutex
-		 * When cancellation points are enabled, we need to
-		 * hold the mutex when the pthread is canceled and
-		 * cleanup handlers, if any, are entered.
+		/* Pre-allocate waiter entry before entering critical section.
+		 * kmm_malloc() may take the heap semaphore, which must not
+		 * be called with interrupts disabled.
 		 */
 
-		svdbg("Reacquire mutex...\n");
+		pre_alloc = (struct cond_waiter_entry *)kmm_malloc(sizeof(struct cond_waiter_entry));
+		if (pre_alloc == NULL) {
+			sdbg("Failed to allocate waiter entry for cond %p\n", cond);
+			DEBUGASSERT(0);
+			ret = ENOMEM;
+		} else {
+			sched_lock();
+			int_state = enter_critical_section();
 
-		oldstate = pthread_disable_cancel();
-		status = pthread_mutex_take(mutex);
-		pthread_enable_cancel(oldstate);
+			/* Increment waiter count using queue.
+			 * Returns 0 if pre_alloc was consumed, 1 if not.
+			 */
+			incr_result = cond_waiter_increment(cond, pre_alloc);
 
-		if (ret == OK) {
-			/* Report the first failure that occurs */
+			/* Give up the mutex */
 
-			ret = status;
-		}
-		
-		/* Was all of the above successful? */
+			svdbg("Give up mutex / take cond\n");
 
-		if (ret == OK) {
-			mutex->pid = getpid();
+			mutex->pid = -1;
+			ret = pthread_mutex_give(mutex);
+
+			/* Take the semaphore */
+
+			status = pthread_sem_take((FAR sem_t *)&cond->sem);
+			if (ret == OK) {
+				/* Report the first failure that occurs */
+
+				ret = status;
+			}
+
+			/* Decrement waiter count using queue.
+			 * Returns unlinked entry if waiter count reached 0.
+			 */
+			to_free = cond_waiter_decrement(cond);
+
+			leave_critical_section(int_state);
+			sched_unlock();
+
+			/* Free memory outside critical section.
+			 * kmm_free() may take the heap semaphore, which must
+			 * not be called with interrupts disabled.
+			 */
+			if (incr_result == 1) {
+				/* pre_alloc was NOT consumed by increment - free it */
+				kmm_free(pre_alloc);
+			}
+			if (to_free != NULL) {
+				/* Entry was unlinked by decrement - free it */
+				kmm_free(to_free);
+			}
+
+			/* Reacquire the mutex
+			 * POSIX requires the mutex to be held on return from
+			 * pthread_cond_wait(), even if an error occurred.
+			 * When cancellation points are enabled, we need to
+			 * hold the mutex when the pthread is canceled and
+			 * cleanup handlers, if any, are entered.
+			 */
+
+			svdbg("Reacquire mutex...\n");
+
+			oldstate = pthread_disable_cancel();
+			status = pthread_mutex_take(mutex);
+			pthread_enable_cancel(oldstate);
+
+			if (status == OK) {
+				mutex->pid = getpid();
+			} else if (ret == OK) {
+				ret = status;
+			}
 		}
 	}
 
