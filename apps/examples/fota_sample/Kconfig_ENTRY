@@ -1,3 +1,0 @@
-config ENTRY_FOTA_SAMPLE
-	bool "FOTA Sample Application"
-	depends on EXAMPLES_FOTA_SAMPLE
