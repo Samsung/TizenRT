@@ -336,13 +336,6 @@ config BOARDCTL_UNIQUEID_SIZE
 
 endif # LIB_BOARDCTL
 
-config BOARD_FOTA_SUPPORT
-	bool "Enable board support for FOTA"
-	default n
-	select FOTA_DRIVER
-	---help---
-		If selected the board provides support for FOTA.
-
 if BOARD_CRASHDUMP
 
 config BOARD_COREDUMP_FLASH

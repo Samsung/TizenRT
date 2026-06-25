@@ -530,12 +530,6 @@ if USBHOST
 source drivers/usbhost/Kconfig
 endif # USBHOST
 
-config FOTA_DRIVER
-	bool "FOTA Device Driver Support"
-	default n
-	---help---
-		FOTA Device Driver
-
 source drivers/syslog/Kconfig
 source drivers/iotdev/Kconfig
 

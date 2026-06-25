@@ -77,7 +77,6 @@ include bch$(DELIM)Make.defs
 include bluetooth$(DELIM)Make.defs
 include compression$(DELIM)Make.defs
 include cpuload$(DELIM)Make.defs
-include fota$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
 include prodconfig$(DELIM)Make.defs
 include memory$(DELIM)Make.defs
