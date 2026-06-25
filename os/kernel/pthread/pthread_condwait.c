@@ -108,6 +108,12 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 		ret = EPERM;
 	} else {
 		uint16_t oldstate;
+		irqstate_t flags;
+
+		/* Increment waiters counter */
+		flags = enter_critical_section();
+		cond->waiters++;
+		leave_critical_section(flags);
 
 		/* Give up the mutex */
 
@@ -127,6 +133,11 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 		}
 
 		sched_unlock();
+
+		/* Decrement waiters counter */
+		flags = enter_critical_section();
+		cond->waiters--;
+		leave_critical_section(flags);
 
 		/* Reacquire the mutex
 		 * When cancellation points are enabled, we need to

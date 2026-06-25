@@ -288,15 +288,21 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 
 						wd_start(rtcb->waitdog, ticks, (wdentry_t)pthread_condtimedout, 2, (uint32_t)mypid, (uint32_t)SIGCONDTIMEDOUT);
 
-						/* Take the condition semaphore.  Do not restore interrupts
-						 * until we return from the wait.  This is necessary to
-						 * make sure that the watchdog timer and the condition wait
-						 * are started atomically.
-						 */
+					/* Increment the waiter count */
+					cond->waiters++;
 
-						status = sem_wait((sem_t *)&cond->sem);
+					/* Take the condition semaphore.  Do not restore interrupts
+					 * until we return from the wait.  This is necessary to
+					 * make sure that the watchdog timer and the condition wait
+					 * are started atomically.
+					 */
 
-						/* Did we get the condition semaphore. */
+					status = sem_wait((sem_t *)&cond->sem);
+
+					/* Decrement the waiter count */
+					cond->waiters--;
+
+					/* Did we get the condition semaphore. */
 
 						if (status != OK) {
 							/* NO.. Handle the special case where the semaphore wait was
