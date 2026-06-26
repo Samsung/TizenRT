@@ -120,6 +120,8 @@ uintptr_t STUB_task_testcancel(int nbr);
 uintptr_t STUB_task_setcancelstate(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_task_setcanceltype(int nbr, uintptr_t parm1, uintptr_t parm2);
 uintptr_t STUB_up_assert(int nbr, uintptr_t parm1, uintptr_t parm2);
+uintptr_t STUB_copy_string_from_userspace(int nbr, uintptr_t parm1, uintptr_t parm2,
+						uintptr_t parm3, uintptr_t parm4, uintptr_t parm5, uintptr_t parm6);
 
 /* The following can be individually enabled */
 

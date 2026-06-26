@@ -14,6 +14,7 @@
 "clock_settime", "time.h", "", "int", "clockid_t", "const struct timespec*"
 "close", "unistd.h", "CONFIG_NSOCKET_DESCRIPTORS > 0 || CONFIG_NFILE_DESCRIPTORS > 0", "int", "int"
 "closedir", "dirent.h", "CONFIG_NFILE_DESCRIPTORS > 0", "int", "FAR DIR*"
+"copy_string_from_userspace", "assert.h", "", "void", "const char*", "..."
 "connect", "sys/socket.h", "CONFIG_NSOCKET_DESCRIPTORS > 0 && defined(CONFIG_NET)", "int", "int", "FAR const struct sockaddr*", "socklen_t"
 "dup", "unistd.h", "CONFIG_NFILE_DESCRIPTORS > 0", "int", "int"
 "dup2", "unistd.h", "CONFIG_NFILE_DESCRIPTORS > 0", "int", "int", "int"
