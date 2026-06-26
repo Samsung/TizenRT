@@ -114,6 +114,7 @@ static int littlefs_mkdir(FAR struct inode *mountpt, FAR const char *relpath, mo
 static int littlefs_rmdir(FAR struct inode *mountpt, FAR const char *relpath);
 static int littlefs_rename(FAR struct inode *mountpt, FAR const char *oldrelpath, FAR const char *newrelpath);
 static int littlefs_stat(FAR struct inode *mountpt, FAR const char *relpath, FAR struct stat *buf);
+static int littlefs_sync_block(FAR const struct lfs_config *c);
 
 /****************************************************************************
  * Public Data
@@ -230,7 +231,6 @@ static int littlefs_open(FAR struct file *filep, FAR const char *relpath, int of
 	/* Get the mountpoint inode reference from the file structure and the
 	 * mountpoint private data from the inode structure
 	 */
-
 	inode = filep->f_inode;
 	fs = inode->i_private;
 
@@ -303,7 +303,6 @@ static int littlefs_close(FAR struct file *filep)
 	int ret;
 
 	/* Recover our private data from the struct file instance */
-
 	priv = filep->f_priv;
 	inode = filep->f_inode;
 	fs = inode->i_private;
@@ -446,7 +445,39 @@ static int littlefs_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 	fs = inode->i_private;
 	drv = fs->drv;
 	DEBUGASSERT(drv && drv->i_private);
-	return MTD_IOCTL((FAR struct mtd_dev_s *)drv->i_private, cmd, arg);
+	if (INODE_IS_MTD(drv)) {
+		ret = MTD_IOCTL(drv->u.i_mtd, cmd, arg);
+	} else {
+		if (drv->u.i_bops->ioctl != NULL){
+			ret = OK;
+			switch (cmd)
+			{
+			case FIOC_RESERVE_FORMAT:
+				fdbg("Update Format Info started\n");
+				ret = lfs_reserve_format(&fs->lfs, &fs->cfg);
+				if (ret < 0) {
+					fdbg("lfs_reserve_format failed ret : %d\n", ret);
+					return ret;
+				}
+				fdbg("Update Format Info Finished. after reboot, fs will be formatted\n");
+				break;
+			case FIOC_RESERVE_CORRUPT:
+				fdbg("Update Corrupt Info started\n");
+				ret = lfs_reserve_corrupt(&fs->lfs);
+				if (ret < 0) {
+					fdbg("lfs_reserve_corrupt failed ret : %d\n", ret);
+					return ret;
+				}
+				fdbg("Update Corrupt Info Finished. after reboot, fs will not be mounted\n");
+				break;
+			default:
+				ret = -ENOTTY;
+				break;
+			}
+		}
+	}
+
+	return ret;
 }
 
 /****************************************************************************
@@ -463,7 +494,6 @@ static int littlefs_sync(FAR struct file *filep)
 	FAR struct littlefs_file_s *priv;
 	FAR struct inode *inode;
 	int ret;
-
 	/* Recover our private data from the struct file instance */
 
 	priv = filep->f_priv;
@@ -753,15 +783,17 @@ static int littlefs_read_block(FAR const struct lfs_config *c, lfs_block_t block
 	size = size / geo->blocksize;
 
 	DEBUGASSERT(drv && drv->i_private);
-	ret = MTD_BREAD((struct mtd_dev_s *)dev->mtd, block, size, buffer);
-	if (ret >= 0) {
-		return OK;
+
+	if (INODE_IS_MTD(drv)) {
+		ret = MTD_BREAD(drv->u.i_mtd, block, size, buffer);
+	} else {
+		ret = drv->u.i_bops->read(drv, buffer, block, size);
 	}
 	/* TODO Mapping table between errno.h & lfs is required */
 	if (ret == -EIO) {
 		ret = LFS_ERR_CORRUPT;
 	}
-	return ret;
+	return ret >= 0 ? OK : ret;
 }
 
 /****************************************************************************
@@ -780,15 +812,18 @@ static int littlefs_write_block(FAR const struct lfs_config *c, lfs_block_t bloc
 	size = size / geo->blocksize;
 
 	DEBUGASSERT(drv && drv->i_private);
-	ret = MTD_BWRITE((struct mtd_dev_s *)dev->mtd, block, size, buffer);
-	if (ret >= 0) {
-		return OK;
+
+	if (INODE_IS_MTD(drv)) {
+		ret = MTD_BWRITE(drv->u.i_mtd, block, size, buffer);
+	} else {
+		ret = drv->u.i_bops->write(drv, buffer, block, size);
 	}
+
 	/* TODO Mapping table between errno.h & lfs is required */
 	if (ret == -EIO) {
 		ret = LFS_ERR_CORRUPT;
 	}
-	return ret;
+	return ret >= 0 ? OK : ret;
 }
 
 /****************************************************************************
@@ -799,24 +834,24 @@ static int littlefs_erase_block(FAR const struct lfs_config *c, lfs_block_t bloc
 {
 	FAR struct littlefs_mountpt_s *fs = c->context;
 	FAR struct inode *drv = fs->drv;
-	FAR struct little_dev_s	*dev = (struct little_dev_s *)drv->i_private;
 	int ret = OK;
 
 	DEBUGASSERT(drv && drv->i_private);
-	FAR struct mtd_geometry_s *geo = &fs->geo;
-	size_t size = c->block_size / geo->erasesize;
-	block = block * c->block_size / geo->erasesize;
-	ret = MTD_ERASE((struct mtd_dev_s *)dev->mtd, block, size);
 
-	if (ret >= 0) {
-		return OK;
+	if (INODE_IS_MTD(drv)) {
+		FAR struct mtd_geometry_s *geo = &fs->geo;
+		size_t size = c->block_size / geo->erasesize;
+
+		block = block * c->block_size / geo->erasesize;
+		ret = MTD_ERASE(drv->u.i_mtd, block, size);
 	}
 
 	/* TODO Mapping table between errno.h & lfs is required */
 	if (ret == -EIO) {
 		ret = LFS_ERR_CORRUPT;
 	}
-	return ret;
+
+	return ret >= 0 ? OK : ret;
 }
 
 /****************************************************************************
@@ -826,16 +861,17 @@ static int littlefs_erase_block(FAR const struct lfs_config *c, lfs_block_t bloc
 static int littlefs_sync_block(FAR const struct lfs_config *c)
 {
 	FAR struct littlefs_mountpt_s *fs = c->context;
+	FAR struct mtd_geometry_s *geo = &fs->geo;
 	FAR struct inode *drv = fs->drv;
+	FAR struct little_dev_s *dev = (struct little_dev_s *)drv->i_private;
 	int ret;
 
-	DEBUGASSERT(drv && drv->i_private);
-	//ret = MTD_IOCTL((struct mtd_dev_s *)drv->i_private, BIOC_FLUSH, 0);
-
-	if (ret == -ENOTTY) {
-		return OK;
+	if (INODE_IS_MTD(drv)) {
+		fdbg("Without dhara ftl, sync is not supported.\n");
+	} else {
+		ret = drv->u.i_bops->ioctl(drv, BIOC_FLUSH, 0);
 	}
-	return ret;
+	return OK;
 }
 
 static int littlefs_lock(FAR const struct lfs_config *c)
@@ -858,16 +894,13 @@ static int littlefs_unlock(const struct lfs_config *c)
 	sem_post(&fs->sem_ops);
 	return OK;
 }
-
 /****************************************************************************
  * Name: littlefs_bind
  ****************************************************************************/
-
 static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR void **handle)
 {
 	FAR struct littlefs_mountpt_s *fs;
 	int ret;
-	struct little_dev_s *dev;
 
 	/* Open the block driver */
 
@@ -893,21 +926,35 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	fs->drv = driver;			/* Save the driver reference */
 	sem_init(&fs->sem, 0, 0);	/* Initialize the access control semaphore */
 	sem_init(&fs->sem_ops, 0, 1);
-	dev = (struct little_dev_s *)fs->drv->i_private;
 
 	/* Get MTD geometry directly */
 
 	DEBUGASSERT(driver && driver->i_private);
-	ret = MTD_IOCTL((FAR struct mtd_dev_s *)dev->mtd, MTDIOC_GEOMETRY, (unsigned long)&fs->geo);
 
+	if (INODE_IS_MTD(driver)) {
+		/* Get MTD geometry directly */
+
+		ret = MTD_IOCTL(driver->u.i_mtd, MTDIOC_GEOMETRY,
+				(unsigned long)&fs->geo);
+	} else {
+	/* Try to get FTL MTD geometry first */
+		struct geometry geometry;
+
+		/* Not FLT MTD device, get normal block geometry */
+
+		ret = driver->u.i_bops->geometry(driver, &geometry);
+		if (ret == 0) {
+			/* And convert to MTD geometry */
+			fs->geo.blocksize    = geometry.geo_sectorsize;
+			fs->geo.erasesize    = geometry.geo_sectorsize;
+			fs->geo.neraseblocks = geometry.geo_nsectors;
+		}
+	}
 	if (ret < 0) {
 		goto errout_with_fs;
 	}
 
-	dev->lfs = &fs->lfs;
-
 	/* Initialize lfs_config structure */
-
 	fs->cfg.context = fs;
 	fs->cfg.read = littlefs_read_block;
 	fs->cfg.prog = littlefs_write_block;
@@ -919,59 +966,82 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 #endif
 	fs->cfg.read_size = fs->geo.blocksize;
 	fs->cfg.prog_size = fs->geo.blocksize;
-	fs->cfg.block_size = fs->geo.erasesize;
+	fs->cfg.block_size = fs->geo.blocksize;
 	fs->cfg.block_count = fs->geo.neraseblocks;
 	fs->cfg.block_cycles = 500;
 	fs->cfg.cache_size = fs->geo.blocksize;
 	fs->cfg.lookahead_size = lfs_min(lfs_alignup(fs->cfg.block_count, 64) / 8, fs->cfg.read_size);
-
 	/* Then get information about the littlefs filesystem on the devices
 	 * managed by this driver.
 	 */
-
 	/* Force format the device if -o forceformat */
-
-	if (data && strcmp(data, "forceformat") == 0) {
-		ret = lfs_format(&fs->lfs, &fs->cfg);
-		if (ret < 0) {
+	if (data) {
+		if (strcmp(data, "forceformat") == 0) {
+			if (!INODE_IS_MTD(driver)) {
+				ret = driver->u.i_bops->ioctl(driver, BIOC_DISCARD, 0);
+				if (ret < 0) {
+					goto errout_with_fs;
+				}
+			}
+			ret = lfs_format(&fs->lfs, &fs->cfg);
+			if (ret < 0) {
+				fdbg("lfs_format failed ret : %d\n", ret);
+				goto errout_with_fs;
+			}
+		} else if (strcmp(data, "autoformat") == 0) {
+			ret = lfs_reserve_format(&fs->lfs, &fs->cfg);
+			if (ret < 0) {
+				fdbg("lfs_reserve_format failed ret : %d\n", ret);
+				goto errout_with_fs;
+			}
+			fdbg("Update Format Info Finished. after reboot, fs will be formatted\n");
+			return ret;
+		}
+	} else {
+		ret = lfs_check_format(&fs->lfs, &fs->cfg);
+		if (ret == LFS_ERR_EUCLEAN || ret == LFS_ERR_CORRUPT) {
+			fdbg("format requested, Data will be erased!!\n");
+			if (!INODE_IS_MTD(driver)) {
+				ret = driver->u.i_bops->ioctl(driver, BIOC_DISCARD, 0);
+				if (ret < 0) {
+					goto errout_with_fs;
+				}
+			}
+			ret = lfs_format(&fs->lfs, &fs->cfg);
+			if (ret < 0) {
+				fdbg("lfs_format failed ret : %d\n", ret);
+				goto errout_with_fs;
+			}		
+		} else if (ret < 0) {
+			fdbg("lfs_check_format failed ret : %d\n", ret);
 			goto errout_with_fs;
 		}
 	}
+	ret = lfs_mount(&fs->lfs, &fs->cfg);
+	if (ret < 0) {
+		fdbg("mount failed ret : %d\n", ret);
+		goto errout_with_fs;
+	} else {
+		fdbg("Check formatfs and mount successful!\n");
+	}
 
-	ret = lfs_check_format(&fs->lfs, &fs->cfg);
-	if (ret != LFS_ERR_OK) {
-		fdbg("Check formatfs failed ret : %d\n", ret);
+	if (ret == LFS_ERR_CORRUPT) {
+		fdbg("ERROR: mount failed: %d\n", ret);
+		ret = -ENODEV;
 		goto errout_with_fs;
 	}
-	fdbg("Check formatfs successfully!\n");
 
-	ret = lfs_mount(&fs->lfs, &fs->cfg);
-	if (ret < 0 && ret != LFS_ERR_CORRUPT) {
-		/* Auto format the device if -o autoformat */
-		fdbg("mount failed ret : %d\n", ret);
-		if (!data || strcmp(data, "autoformat")) {
-			goto errout_with_fs;
-		}
-
-		ret = lfs_format(&fs->lfs, &fs->cfg);
+	if (data && strcmp(data, "reservecorrupt") == 0) {
+		ret = lfs_reserve_corrupt(&fs->lfs);
 		if (ret < 0) {
-			goto errout_with_fs;
-		}
-
-		/* Try to mount the device again */
-
-		ret = lfs_mount(&fs->lfs, &fs->cfg);
-		if (ret < 0) {
+			fdbg("mount succeeded but corrupt reserve failed ret : %d, So Try umount\n", ret);
 			goto errout_with_fs;
 		}
 	}
 
 	*handle = fs;
 	littlefs_semgive(fs);
-	if (ret == LFS_ERR_CORRUPT) {
-		fdbg("ERROR: mount failed: %d\n", ret);
-		return -ENODEV;
-	}
+	
 	return ret;
 
 errout_with_fs:

@@ -36,6 +36,7 @@
 
 #include <stdint.h>
 #include "nand.h"
+#include <tinyara/fs/mtd.h>
 
 /* Number of bytes used by the journal checkpoint header. */
 #define DHARA_HEADER_SIZE		16
@@ -153,6 +154,8 @@ void dhara_journal_init(struct dhara_journal *j, const struct dhara_nand *n, uin
  *
  * If this operation fails, the journal will be reset to an empty state.
  */
+/* Add mtd parameter */
+/* Update function signature to accept dhara_dev_t instead of mtd */
 int dhara_journal_resume(struct dhara_journal *j, dhara_error_t *err);
 
 /* Obtain an upper bound on the number of user pages storable in the

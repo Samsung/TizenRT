@@ -197,7 +197,11 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 		char partref[4];
 
 		snprintf(partref, sizeof(partref), "p%d", g_partno);
-		smart_initialize(minor, mtd_part, partref);
+		int ret = smart_initialize(minor, mtd_part, partref);
+		if (ret < 0) {
+			printf("ERROR: smart_initialize failed for minor %d: %d\n", minor, ret);
+			return ERROR;
+		}
 		partinfo->smartfs_partno = g_partno;
 		mtd_setpartitiontagno(mtd_part, MTD_FS);
 	}
@@ -208,8 +212,23 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 		char partref[4];
 
 		snprintf(partref, sizeof(partref), "p%d", g_partno);
-		little_initialize(minor, mtd_part, partref);
 		partinfo->littlefs_partno = g_partno;
+#ifdef CONFIG_MTD_DHARA
+		int ret = dhara_initialize(minor, mtd_part, partref);
+		if (ret < 0) {
+			printf("ERROR: dhara_initialize failed for minor %d: %d\n", minor, ret);
+			return ERROR;
+		}
+#else
+		return ERROR;
+#endif
+	mtd_setpartitiontagno(mtd_part, MTD_FS);
+	/* If you want to use a FTL other than dhara, you can add it with config. */
+
+	if (partinfo->littlefs_partno == -1) {
+		printf("ERROR: Littlefs must use FTL(Dhara, ...). \n");
+		return ERROR;
+	}
 	}
 #endif
 
@@ -352,6 +371,7 @@ int configure_mtd_partitions(struct mtd_dev_s *mtd, int minor, partition_info_t 
 	partinfo->romfs_partno = -1;
 	partinfo->littlefs_partno = -1;
 	partinfo->timezone_partno = -1;
+	partinfo->dhara_minor = -1;
 
 	partoffset = 0;
 	types = part_data.types;
@@ -462,7 +482,7 @@ void automount_fs_partition(partition_info_t *partinfo)
 #ifdef CONFIG_FS_LITTLEFS
 	if (partinfo->littlefs_partno != -1) {
 		snprintf(fs_devname, FS_PATH_MAX, "/dev/little%dp%d", partinfo->minor, partinfo->littlefs_partno);
-		ret = mount(fs_devname, "/mnt", "littlefs", 0, "autoformat");
+		ret = mount(fs_devname, "/mnt", "littlefs", 0, NULL);
 		if (ret != OK) {
 			lldbg("ERROR: mounting '%s' failed, errno %d\n", fs_devname, get_errno());
 		} else {

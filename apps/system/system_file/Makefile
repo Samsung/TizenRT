@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# fs/driver/Make.defs
+# apps/system/system_file/Makefile
 #
-#   Copyright (C) 2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,101 +50,95 @@
 #
 ############################################################################
 
-# Don't build anything if there are no file descriptors
+-include $(TOPDIR)/.config
+-include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
-ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
+ASRCS =
+CSRCS = system_file.c
+MAINSRC =
 
-CSRCS_DRIVER += block/fs_registerdriver.c block/fs_unregisterdriver.c
+AOBJS = $(ASRCS:.S=$(OBJEXT))
+COBJS = $(CSRCS:.c=$(OBJEXT))
+MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 
-# Don't build-in block driver support if there are no mountpoints
+SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
+OBJS = $(AOBJS) $(COBJS)
 
-ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
-CSRCS_DRIVER += block/fs_registerblockdriver.c block/fs_unregisterblockdriver.c
-CSRCS_DRIVER += block/fs_findblockdriver.c block/fs_openblockdriver.c block/fs_closeblockdriver.c block/ramdisk.c
-
-ifneq ($(CONFIG_DISABLE_PSEUDOFS_OPERATIONS),y)
-ifeq ($(CONFIG_BCH),y)
-CSRCS_DRIVER += block/fs_blockproxy.c
-endif
-endif
-endif
-
-# System logging to a character device (or file)
-
-ifeq ($(CONFIG_SYSLOG),y)
-ifeq ($(CONFIG_SYSLOG_CHAR),y)
-CSRCS_DRIVER += block/fs_devsyslog.c
-endif
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  OBJS += $(MAINOBJ)
 endif
 
-# Include MTD drivers
-
-ifeq ($(CONFIG_MTD),y)
-CSRCS_DRIVER += mtd/mtd_config.c
-CSRCS_DRIVER += mtd/fs_registermtddriver.c mtd/fs_unregistermtddriver.c
-
-
-ifeq ($(CONFIG_MTD_FTL),y)
-CSRCS_DRIVER += mtd/ftl.c
-ifeq ($(CONFIG_MTD_NAND), y)
-CSRCS_DRIVER += mtd/ftl_nand.c
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  BIN = ..\..\libapps$(LIBEXT)
+else
+ifeq ($(WINTOOL),y)
+  BIN = ..\\..\\libapps$(LIBEXT)
+else
+  BIN = ../../libapps$(LIBEXT)
 endif
 endif
 
-ifeq ($(CONFIG_MTD_SMART),y)
-ifeq ($(CONFIG_FS_SMARTFS),y)
-CSRCS_DRIVER += mtd/smart.c
-endif
-endif
-
-ifeq ($(CONFIG_FS_PROCFS),y)
-ifneq ($(CONFIG_FS_PROCFS_EXCLUDE_MTD),y)
-CSRCS_DRIVER += mtd/mtd_procfs.c
-endif
+ifeq ($(WINTOOL),y)
+  INSTALL_DIR = "${shell cygpath -w $(BIN_DIR)}"
+else
+  INSTALL_DIR = $(BIN_DIR)
 endif
 
-ifeq ($(CONFIG_MTD_PARTITION),y)
-CSRCS_DRIVER += mtd/mtd_partition.c
-endif
+PROGNAME =
 
-ifeq ($(CONFIG_RAMMTD),y)
-CSRCS_DRIVER += mtd/rammtd/rammtd.c
-endif
+ROOTDEPPATH = --dep-path .
 
-ifeq ($(CONFIG_MTD_PROGMEM),y)
-CSRCS_DRIVER += mtd/mtd_progmem.c
-endif
+# Common build
 
-ifeq ($(CONFIG_MTD_M25P),y)
-CSRCS_DRIVER += mtd/m25px/m25px.c
-endif
+VPATH =
 
-ifeq ($(CONFIG_MTD_W25),y)
-CSRCS_DRIVER += mtd/w25.c
-endif
+all: .built
+.PHONY: depend clean distclean
 
-ifeq ($(CONFIG_MTD_JEDEC),y)
-CSRCS_DRIVER += mtd/mtd_jedec.c
-endif
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
 
-ifeq ($(CONFIG_MTD_W25N),y)
-CSRCS_DRIVER += mtd/w25n.c
-endif
+$(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
 
-ifeq ($(CONFIG_MTD_NAND), y)
-CSRCS_DRIVER += mtd/mtd_nand.c mtd/mtd_nandscheme.c
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	$(Q) touch .built
 
-ifeq ($(CONFIG_MTD_DHARA), y)
-CSRCS_DRIVER += mtd/dhara.c mtd/dhara/map.c mtd/dhara/error.c mtd/dhara/journal.c
-endif
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+	@echo "LD: $(PROGNAME)"
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
+	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
+
+install: $(BIN_DIR)$(DELIM)$(PROGNAME)
+
+else
+install:
 
 endif
-endif
 
-CSRCS += $(notdir $(CSRCS_DRIVER))
+# Register application
 
-# Include driver build support
-VPATH_DRIVER = driver $(patsubst %,driver/%,$(sort $(dir $(CSRCS_DRIVER))))
-DEPPATH += $(patsubst %,--dep-path %,$(subst :, ,$(VPATH_DRIVER)))
-VPATH += $(VPATH_DRIVER)
-endif
+context:
+
+# Create dependencies
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
+
+clean:
+	$(call DELFILE, .built)
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep
+.PHONY: preconfig
+preconfig:

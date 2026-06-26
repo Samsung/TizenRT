@@ -142,33 +142,45 @@
 #define _FIOCVALID(c)   (_IOC_TYPE(c) == _FIOCBASE)
 #define _FIOC(nr)       _IOC(_FIOCBASE, nr)
 
-#define FIOC_MMAP       _FIOC(0x0001)	/* IN:  Location to return address (void **)
-										 * OUT: If media is directly accessible,
-										 *      return (void*) base address
-										 *      of file
-										 */
-#define FIOC_REFORMAT   _FIOC(0x0002)	/* IN:  None
-										 * OUT: None
-										 */
-#define FIOC_OPTIMIZE   _FIOC(0x0003)	/* IN:  None
-										 * OUT: None
-										 */
-#define FIOC_FILENAME   _FIOC(0x0004)	/* IN:  FAR const char ** pointer
-										 * OUT: Pointer to a persistent file name
-										 *      (Guaranteed to persist while the file
-										 *      is open).
-										 */
+#define FIOC_MMAP       		_FIOC(0x0001)	/* IN:  Location to return address (void **)
+												 * OUT: If media is directly accessible,
+												 *      return (void*) base address
+										 		 *      of file
+												 */
 
-#define FIONREAD        _FIOC(0x0005)	/* IN:  Location to return value (int *)
-										 * OUT: Bytes readable from this fd
-										 */
-#define FIONWRITE       _FIOC(0x0006)	/* IN:  Location to return value (int *)
-										 * OUT: Bytes writable to this fd
-										 */
+#define FIOC_REFORMAT   		_FIOC(0x0002)	/* IN:  None
+												 * OUT: None
+												 */
 
-#define FIONBIO         _FIOC(0x000b)     /* IN:  Boolean option takes an int value.
-										 * OUT: Origin option.
-										 */
+#define FIOC_OPTIMIZE   		_FIOC(0x0003)	/* IN:  None
+												 * OUT: None
+												 */
+
+#define FIOC_FILENAME   		_FIOC(0x0004)	/* IN:  FAR const char ** pointer
+												 * OUT: Pointer to a persistent file name
+												 *      (Guaranteed to persist while the file
+												 *      is open).
+												 */
+
+#define FIONREAD        		_FIOC(0x0005)	/* IN:  Location to return value (int *)
+												 * OUT: Bytes readable from this fd
+												 */
+
+#define FIONWRITE       		_FIOC(0x0006)	/* IN:  Location to return value (int *)
+												 * OUT: Bytes writable to this fd
+												 */
+
+#define FIOC_RESERVE_FORMAT		_FIOC(0x0007)	/* IN:  None
+												 * OUT: None
+												 */
+
+#define FIOC_RESERVE_CORRUPT	_FIOC(0x0008)	/* IN:  None
+												 * OUT: None 
+												 */
+
+#define FIONBIO         		_FIOC(0x000b)     /* IN:  Boolean option takes an int value.
+												 * OUT: Origin option.
+												 */
 
 /* TinyAra file system ioctl definitions **************************************/
 
@@ -180,6 +192,7 @@
 										 *      structure.  May have a reference
 										 *      incremented.
 										 */
+
 #define DIOC_RELPRIV    _DIOC(0x0003)	/* IN:  None
 										 * OUT: None, reference obtained by
 										 *      FIOC_GETPRIV released.
@@ -200,11 +213,13 @@
 										 * OUT: If media is directly accessible,
 										 *      return (void*) base address
 										 *      of device memory */
+
 #define BIOC_PROBE      _BIOC(0x0002)	/* Re-probe and interface; check for media
 										 * in the slot
 										 * IN:  None
 										 * OUT: None (ioctl return value provides
 										 *      success/failure indication). */
+
 #define BIOC_EJECT      _BIOC(0x0003)	/* Eject/disable media in the slot
 										 * IN:  None
 										 * OUT: None (ioctl return value provides
@@ -213,31 +228,37 @@
 										 * IN:  None
 										 * OUT: None (ioctl return value provides
 										 *      success/failure indication). */
+
 #define BIOC_GETFORMAT  _BIOC(0x0005)	/* Returns SMART flash format information
 										 * such as format status, logical sector
 										 * size, total sectors, free sectors, etc.
 										 * IN:  None
 										 * OUT: Pointer to the format information. */
+
 #define BIOC_ALLOCSECT  _BIOC(0x0006)	/* Allocate a logical sector from the block
 										 * device.
 										 * IN:  None
 										 * OUT: Logical sector number allocated. */
+
 #define BIOC_FREESECT   _BIOC(0x0007)	/* Allocate a logical sector from the block
 										 * device.
 										 * IN:  None
 										 * OUT: Logical sector number allocated. */
+
 #define BIOC_READSECT   _BIOC(0x0008)	/* Read a logical sector from the block
 										 * device.
 										 * IN:  Pointer to sector read data (the
 										 *      logical sector number, count and
 										 *      read buffer address
 										 * OUT: Number of bytes read or error */
+
 #define BIOC_WRITESECT  _BIOC(0x0009)	/* Write to data to a logical sector
 										 * IN:  Pointer to sector write data (the
 										 *      logical sector number and write
 										 *      buffer address
 										 * OUT: None (ioctl return value provides
 										 *      success/failure indication). */
+
 #define BIOC_GETPROCFSD _BIOC(0x000A)	/* Get ProcFS data specific to the
 										 * block device.
 										 * IN:  Pointer to a struct defined for
@@ -245,6 +266,7 @@
 										 *      ProcFS data.
 										 * OUT: None (ioctl return value provides
 										 *      success/failure indication). */
+
 #define BIOC_BULKERASE  _BIOC(0x000B)	/* Request Bulk erase to block driver
 										 * IN:	None
 										 * OUT: None (ioctl return value provides
@@ -261,6 +283,27 @@
 										 *		to reveal physical sector.
 										 * OUT: Physical sector number align with
 										 *		logical sector number */
+
+#define BIOC_FLUSH		_BIOC(0x000E)	/* Flush all pending write data to the
+										 * block device's persistent storage.
+										 * IN:  None
+										 * OUT: None (ioctl return value provides
+										 *      success/failure indication). */
+
+#define BIOC_DISCARD	_BIOC(0x000F)	/* Discard/trim specified blocks that are
+										 * no longer in use by the filesystem.
+										 * IN:  None
+										 * OUT: None (ioctl return value provides
+										 *      success/failure indication). */
+
+#define BIOC_GEOMETRY	_BIOC(0x0010)	/* Get geometry information of the block
+										 * device such as block size, erase size,
+										 * and number of erase blocks.
+										 * IN:  Pointer to struct mtd_geometry_s
+										 *      to receive geometry data
+										 * OUT: Geometry structure is populated
+										 *      with device geometry info. */
+
 #define BIOC_DEBUGCMD   _BIOC(0x00FF)	/* Send driver specific debug command /
 										 * data to the block device.
 										 * IN:  Pointer to a struct defined for
@@ -278,18 +321,23 @@
 											 *      receive geometry data (see mtd.h)
 											 * OUT: Geometry structure is populated
 											 *      with data for the MTD */
+
 #define MTDIOC_XIPBASE		_MTDIOC(0x0002)	/* IN:  Pointer to pointer to void in
 											 *      which to received the XIP base.
 											 * OUT: If media is directly accessible,
 											 *      return (void*) base address
 											 *      of device memory */
+
 #define MTDIOC_BULKERASE	_MTDIOC(0x0003)	/* IN:  None
 											 * OUT: None */
+
 #define MTDIOC_SETSPEED		_MTDIOC(0x0004)	/* IN:  New bus speed in Hz
 											 * OUT: None */
+
 #define MTDIOC_ERASESTATE	_MTDIOC(0x0005)	/* IN:  Pointer to uint8_t
 											 * OUT: Byte value that represents the
 											 *      erased state of the MTD cell */
+
 #define MTDIOC_ERASESECTORS	_MTDIOC(0x0006)	/* IN: Pointer to mtd_erase_s structure
 											 * OUT: None */
 

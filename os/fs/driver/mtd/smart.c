@@ -4975,6 +4975,7 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 #endif
 		goto ok_out;
 	case BIOC_CORRUPTION :
+		fdbg("Update Corrupt Info started\n");
 		sector = dev->sMap[SMART_FIRST_DIR_SECTOR];
 		header = (FAR struct smart_sect_header_s *)dev->rwbuffer;
 		ret = MTD_BREAD(dev->mtd, sector * dev->mtdBlksPerSector, dev->mtdBlksPerSector, (FAR uint8_t *)dev->rwbuffer);
@@ -4995,6 +4996,7 @@ static int smart_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 			ret = -EIO;
 		} else {
 			ret = OK;
+			fdbg("Update Corrupt Info Finished. after reboot, fs will not be mounted\n");
 		}
 		goto ok_out;
 

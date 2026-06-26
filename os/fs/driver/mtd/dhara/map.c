@@ -37,7 +37,6 @@
 #include "map.h"
 
 #define DHARA_RADIX_DEPTH	(sizeof(dhara_sector_t) << 3)
-
 static inline dhara_sector_t d_bit(int depth)
 {
 	return ((dhara_sector_t) 1) << (DHARA_RADIX_DEPTH - depth - 1);
@@ -85,7 +84,6 @@ static inline void meta_set_alt(uint8_t *meta, int level, dhara_page_t alt)
 /************************************************************************
  * Public interface
  */
-
 void dhara_map_init(struct dhara_map *m, const struct dhara_nand *n, uint8_t *page_buf, uint8_t gc_ratio)
 {
 	if (!gc_ratio) {
@@ -95,9 +93,9 @@ void dhara_map_init(struct dhara_map *m, const struct dhara_nand *n, uint8_t *pa
 	dhara_journal_init(&m->journal, n, page_buf);
 	m->gc_ratio = gc_ratio;
 }
-
 int dhara_map_resume(struct dhara_map *m, dhara_error_t *err)
 {
+	/* Pass MTD device to journal resume */
 	if (dhara_journal_resume(&m->journal, err) < 0) {
 		m->count = 0;
 		return -1;
@@ -119,12 +117,11 @@ dhara_sector_t dhara_map_capacity(const struct dhara_map *m)
 {
 	const dhara_sector_t cap = dhara_journal_capacity(&m->journal);
 	const dhara_sector_t reserve = cap / (m->gc_ratio + 1);
-	const dhara_sector_t safety_margin = DHARA_MAX_RETRIES << m->journal.nand->log2_ppb;
+	const dhara_sector_t safety_margin = DHARA_MAX_RETRIES;
 
 	if (reserve + safety_margin >= cap) {
 		return 0;
 	}
-
 	return cap - reserve - safety_margin;
 }
 
@@ -236,7 +233,6 @@ static int raw_gc(struct dhara_map *m, dhara_page_t src, dhara_error_t *err)
 	dhara_page_t current;
 	dhara_error_t my_err;
 	uint8_t meta[DHARA_META_SIZE];
-
 	if (dhara_journal_read_meta(&m->journal, src, meta, err) < 0) {
 		return -1;
 	}
@@ -522,7 +518,6 @@ int dhara_map_trim(struct dhara_map *m, dhara_sector_t s, dhara_error_t *err)
 
 	return 0;
 }
-
 int dhara_map_sync(struct dhara_map *m, dhara_error_t *err)
 {
 	while (!dhara_journal_is_clean(&m->journal)) {
