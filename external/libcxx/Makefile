@@ -52,6 +52,10 @@
 
 -include $(TOPDIR)/Make.defs
 
+# Build flags for libc++ library compilation
+CXXFLAGS += -D_LIBCPP_BUILDING_LIBRARY
+CXXFLAGS += -I$(TOPDIR)/../external/libcxx/include
+
 # Sources
 
 ASRCS =
