@@ -42,6 +42,10 @@
 #include "semaphore/semaphore.h"
 #include "binary_manager_internal.h"
 
+#ifdef CONFIG_LOWLOG_DUMP
+#include <tinyara/log_dump/lowlog_dump.h>
+#endif
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -345,6 +349,12 @@ void binary_manager_recovery(int bin_idx)
 		bmlldbg("Failed to deactivate binary, bin idx %d\n", bin_idx);
 		goto reboot_board;
 	}
+#endif
+#ifdef CONFIG_LOWLOG_DUMP
+	lowlog_dump_save();
+#ifdef CONFIG_LOWLOG_DUMP_REBOOT
+	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_RECOVERYFAIL);
+#endif
 #endif
 	/* Create loader to reload binary */
 	ret = binary_manager_execute_loader(LOADCMD_RELOAD, bin_idx);

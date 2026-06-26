@@ -1,0 +1,50 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+
+config LOWLOG_DUMP
+	bool "enable lowlog dump"
+	default n
+    depends on BINMGR_RECOVERY
+	---help---
+        This saves the lowlog.
+
+if LOWLOG_DUMP
+
+config LOWLOG_DUMP_COMPRESS
+    bool "LOWLOG_DUMP_COMPRESS"
+    default y
+    ---help---
+        Controls whether compression is applied.
+        if the value is n compression is not performed.
+
+
+config LOWLOG_DUMP_BUF_SIZE
+    int "LOWLOG_DUMP_BUF_SIZE"
+    default 8192
+    ---help---
+        Determines the size of the buffer where crash logs will be stored.
+        The low log is stored in the data section.
+        
+config LOWLOG_DUMP_REBOOT
+    bool "REBOOT_AFTER_SAVING_LOG"
+    default y
+    ---help---
+        Determines whether to reboot after saving the low log.
+
+config LOWLOG_DUMP_MAX_FILES
+    int "LOWLOG_DUMP_MAX_FILES"
+    default 5
+    ---help---
+        Determine the maximum number of low log files to be stored.
+
+config LOWLOG_DUMP_RECORD_TIME
+    bool "LOWLOG_DUMP_RECORD_TIME"
+    default n
+    ---help---
+        Measure and record the time it takes to save the crash log to a file.
+
+endif # LOWLOG_DUMP
+
