@@ -248,9 +248,11 @@ int rw_msg_send_me_config_req(void)
 		for (i = 0; i < MAC_HE_PPE_THRES_MAX_LEN; i++)
 			req->he_cap.ppe_thres[i] = he_cap->ppe_thres[i];
 		req->he_ul_on = rwnx_hw->mod_params->he_ul_on;
+		req->he_tb_on = rwnx_hw->mod_params->he_tb_on;
 	} else {
 		req->he_supp = false;
 		req->he_ul_on = false;
+		req->he_tb_on = false;
 	}
 
 	req->ps_on = rwnx_hw->mod_params->ps_on;		// TODO: BK7236 fix ps

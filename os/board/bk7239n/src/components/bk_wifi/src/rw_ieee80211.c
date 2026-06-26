@@ -500,8 +500,6 @@ UINT32 rw_ieee80211_init(void)
 	rwnx_hw->wiphy = wiphy;
 	rwnx_hw->mod_params = &rwnx_mod_params;
 
-	rwnx_hw->mod_params->bfmee = false;
-
 	if (ate_is_enabled())
 		rwnx_hw->mod_params->use_2040 = true;
 

@@ -117,6 +117,8 @@ trwifi_result_e bk_wifi_netmgr_get_driver_info(struct netdev *dev, trwifi_driver
 trwifi_result_e bk_wifi_netmgr_get_wpa_supplicant_state(struct netdev *dev, trwifi_wpa_states *wpa_supplicant_state);
 trwifi_result_e bk_wifi_netmgr_disable_11ax_mode(struct netdev *dev, uint8_t disable);
 trwifi_result_e bk_wifi_netmgr_set_bridge(struct netdev *dev, uint8_t control);
+trwifi_result_e bk_wifi_netmgr_disable_bfmee_mode(struct netdev *dev, uint8_t disable);
+trwifi_result_e bk_wifi_netmgr_disable_ofdma_mode(struct netdev *dev, uint8_t disable);
 
 struct trwifi_ops g_trwifi_bk_ops = {
     bk_wifi_netmgr_init,                        /* init */
@@ -1614,6 +1616,34 @@ trwifi_result_e bk_wifi_netmgr_disable_11ax_mode(struct netdev *dev, uint8_t dis
 		return TRWIFI_SUCCESS;
 	}
 }
+trwifi_result_e bk_wifi_netmgr_disable_bfmee_mode(struct netdev *dev, uint8_t disable)
+{
+	uint32_t enable_bfmee = disable ? 0 : 1;
+	int ret = TRWIFI_SUCCESS;
+
+	nvdbg("[BK] Set bfmee mode to %d\n", enable_bfmee);
+	ret = bk_wifi_capa_config(WIFI_CAPA_ID_BEAMFORMEE_EN, enable_bfmee);
+	if (ret != BK_OK) {
+		ndbg("[BK] Failed to set bfmee mode ret: %d\n", ret);
+		return TRWIFI_FAIL;
+	}
+	return TRWIFI_SUCCESS;
+}
+
+trwifi_result_e bk_wifi_netmgr_disable_ofdma_mode(struct netdev *dev, uint8_t disable)
+{
+	uint32_t enable_ofdma = disable ? 0 : 1;
+	int ret = TRWIFI_SUCCESS;
+
+	nvdbg("[BK] Set ofdma mode to %d\n", enable_ofdma);
+	ret = bk_wifi_capa_config(WIFI_CAPA_ID_OFDMA_EN, enable_ofdma);
+	if (ret != BK_OK) {
+		ndbg("[BK] Failed to set ofdma mode ret: %d\n", ret);
+		return TRWIFI_FAIL;
+	}
+	return TRWIFI_SUCCESS;
+}
+
 trwifi_result_e bk_wifi_netmgr_set_bridge(struct netdev *dev, uint8_t control)
 {
     if (control) {

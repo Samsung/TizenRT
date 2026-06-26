@@ -21,7 +21,8 @@ struct rwnx_mod_params {
 	bool he_on;
 	int mcs_map;	// vht mcs map
 	int he_mcs_map;	// he mcs map
-	bool he_ul_on;	// OFDMA UL
+	bool he_ul_on;	// OFDMA UL (AP-side trigger scheduler)
+	bool he_tb_on;	// STA-side TB(UL OFDMA) response switch
 	bool ldpc_on;
 	bool stbc_on;
 	bool gf_rx_on;
@@ -92,6 +93,11 @@ __INLINE void rwnx_update_he_capa(uint32_t he_en)
 {
 	rwnx_mod_params.he_on = he_en;
 	RWNX_LOGI("update HE capa:%d\n", he_en);
+}
+__INLINE void rwnx_update_he_tb(uint32_t he_tb_en)
+{
+	rwnx_mod_params.he_tb_on = he_tb_en;
+	RWNX_LOGI("update HE TB:%d\n", he_tb_en);
 }
 __INLINE void rwnx_update_tx_ampdu_capa(uint32_t tx_ampdu_en)
 {
