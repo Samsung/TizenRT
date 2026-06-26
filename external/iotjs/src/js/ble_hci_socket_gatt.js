@@ -997,15 +997,19 @@ Gatt.prototype.handlePrepareWriteRequest = function(request) {
           if (this._preparedWriteRequest.handle !== handle) {
             response = this.errorResponse(requestType, valueHandle, ATT_ECODE_UNLIKELY);
           } else if (offset === (this._preparedWriteRequest.offset + this._preparedWriteRequest.data.length)) {
-            this._preparedWriteRequest.data = Buffer.concat([
-              this._preparedWriteRequest.data,
-              data
-            ]);
+            if (this._preparedWriteRequest.data.length + data.length > 512) {
+              response = this.errorResponse(requestType, valueHandle, ATT_ECODE_INVALID_ATTR_LEN);
+            } else {
+              this._preparedWriteRequest.data = Buffer.concat([
+                this._preparedWriteRequest.data,
+                data
+              ]);
 
-            response = new Buffer(request.length);
-            request.copy(response);
-            //response[0] = ATT_OP_PREP_WRITE_RESP;
-            response.writeUInt8(ATT_OP_PREP_WRITE_RESP, 0);
+              response = new Buffer(request.length);
+              request.copy(response);
+              //response[0] = ATT_OP_PREP_WRITE_RESP;
+              response.writeUInt8(ATT_OP_PREP_WRITE_RESP, 0);
+            }
           } else {
             response = this.errorResponse(requestType, valueHandle, ATT_ECODE_INVALID_OFFSET);
           }
