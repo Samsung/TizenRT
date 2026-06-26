@@ -31,12 +31,13 @@
 
 // forward declaration
 /**
- * @namespace luci_interpreter
+ * @namespace onert_micro
  * @brief OneRTMicro namespace
  */
-namespace luci_interpreter
+namespace onert_micro
 {
-	class Interpreter;
+	class OMInterpreter;
+	class OMConfig;
 }
 namespace aifw {
 
@@ -63,7 +64,8 @@ private:
 	AIFW_RESULT _loadModel(void);
 
 	char *mBuf;
-	std::shared_ptr<luci_interpreter::Interpreter> mInterpreter;
+	std::shared_ptr<onert_micro::OMInterpreter> mInterpreter;
+	std::shared_ptr<onert_micro::OMConfig> mConfig;
 #ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 	uint16_t mModelInputSize;
 	uint16_t mModelOutputSize;

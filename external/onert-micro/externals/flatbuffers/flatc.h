@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2023 Samsung Electronics Co., Ltd. All Rights Reserved
  * Copyright 2017 Google Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,22 +25,21 @@
 #include "externals/flatbuffers/idl.h"
 #include "externals/flatbuffers/util.h"
 
-namespace flatbuffers
-{
+namespace flatbuffers {
 
 extern void LogCompilerWarn(const std::string &warn);
 extern void LogCompilerError(const std::string &err);
 
-class FlatCompiler
-{
-public:
+class FlatCompiler {
+ public:
   // Output generator for the various programming languages and formats we
   // support.
-  struct Generator
-  {
-    typedef bool (*GenerateFn)(const flatbuffers::Parser &parser, const std::string &path,
+  struct Generator {
+    typedef bool (*GenerateFn)(const flatbuffers::Parser &parser,
+                               const std::string &path,
                                const std::string &file_name);
-    typedef std::string (*MakeRuleFn)(const flatbuffers::Parser &parser, const std::string &path,
+    typedef std::string (*MakeRuleFn)(const flatbuffers::Parser &parser,
+                                      const std::string &path,
                                       const std::string &file_name);
 
     GenerateFn generate;
@@ -55,15 +53,19 @@ public:
     MakeRuleFn make_rule;
   };
 
-  typedef void (*WarnFn)(const FlatCompiler *flatc, const std::string &warn, bool show_exe_name);
+  typedef void (*WarnFn)(const FlatCompiler *flatc, const std::string &warn,
+                         bool show_exe_name);
 
-  typedef void (*ErrorFn)(const FlatCompiler *flatc, const std::string &err, bool usage,
-                          bool show_exe_name);
+  typedef void (*ErrorFn)(const FlatCompiler *flatc, const std::string &err,
+                          bool usage, bool show_exe_name);
 
   // Parameters required to initialize the FlatCompiler.
-  struct InitParams
-  {
-    InitParams() : generators(nullptr), num_generators(0), warn_fn(nullptr), error_fn(nullptr) {}
+  struct InitParams {
+    InitParams()
+        : generators(nullptr),
+          num_generators(0),
+          warn_fn(nullptr),
+          error_fn(nullptr) {}
 
     const Generator *generators;
     size_t num_generators;
@@ -77,19 +79,22 @@ public:
 
   std::string GetUsageString(const char *program_name) const;
 
-private:
+ private:
   void ParseFile(flatbuffers::Parser &parser, const std::string &filename,
-                 const std::string &contents, std::vector<const char *> &include_directories) const;
+                 const std::string &contents,
+                 std::vector<const char *> &include_directories) const;
 
-  void LoadBinarySchema(Parser &parser, const std::string &filename, const std::string &contents);
+  void LoadBinarySchema(Parser &parser, const std::string &filename,
+                        const std::string &contents);
 
   void Warn(const std::string &warn, bool show_exe_name = true) const;
 
-  void Error(const std::string &err, bool usage = true, bool show_exe_name = true) const;
+  void Error(const std::string &err, bool usage = true,
+             bool show_exe_name = true) const;
 
   InitParams params_;
 };
 
-} // namespace flatbuffers
+}  // namespace flatbuffers
 
-#endif // FLATBUFFERS_FLATC_H_
+#endif  // FLATBUFFERS_FLATC_H_
