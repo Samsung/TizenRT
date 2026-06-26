@@ -33,6 +33,10 @@
 //use the standard pthread functions for thread management, synchronization, and condition variables
 #define _LIBCPP_HAS_THREAD_API_PTHREAD
 
+// For static library linking in TizenRT - disable visibility and availability annotations
+#define _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
+#define _LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS
+
 // Embedded system constraints for TizenRT
 // TizenRT compatibility: C library doesn't fully implement wide character functions
 // making wide character and Unicode support impractical
