@@ -237,6 +237,71 @@ KERNEL_START=$(CONFIG_FLASH_START_ADDR)
 BIN_EXE = tinyara$(EXEEXT)
 BIN = $(OUTBIN_DIR)/$(BIN_EXE)
 
+# ============================================================================
+# String Encoding/Decoding Configuration
+# ============================================================================
+
+# Paths to encoder/decoder scripts
+ENCODER_SCRIPT = $(TOPDIR)/../tools/HashLogger/encode_decode_logs/code_encoder_refactored.py
+DECODER_SCRIPT = $(TOPDIR)/../tools/HashLogger/encode_decode_logs/code_decoder.py
+
+# Mapping file location
+MAPPING_FILE = $(BUILD_DIR)/output/mapping/mapping.txt
+
+# Build tracking file for cache
+BUILD_TRACKING_FILE = $(OUTPUT_DIR)/.encoding_tracking
+
+# Cache directory for encoded file timestamps
+CACHE_DIR = $(OUTPUT_DIR)/.encoding_cache
+CACHE_DIR_EXISTS = $(shell mkdir -p $(CACHE_DIR) && echo "exists")
+
+# Configuration flags
+ifeq ($(CONFIG_ENABLE_STRING_ENCODING),y)
+ENCODING_ENABLED = y
+else
+ENCODING_ENABLED = n
+endif
+
+ifeq ($(CONFIG_DECODE_STRINGS),y)
+DECODE_ENABLED = y
+else
+DECODE_ENABLED = n
+endif
+
+ifeq ($(CONFIG_ENCODING_STOP_ON_ERROR),y)
+STOP_ON_ERROR = y
+else
+STOP_ON_ERROR = n
+endif
+
+ifeq ($(CONFIG_ENCODING_VERBOSE),y)
+VERBOSE_FLAG = --verbose
+else
+VERBOSE_FLAG =
+endif
+
+# Build skip directories list based on configuration
+SKIP_DIRS =
+
+ifeq ($(CONFIG_ENCODING_SKIP_APPS),y)
+SKIP_DIRS += ../apps
+endif
+
+ifeq ($(CONFIG_ENCODING_SKIP_EXTERNAL),y)
+SKIP_DIRS += ../external
+endif
+
+ifeq ($(CONFIG_ENCODING_SKIP_THIRDPARTY),y)
+SKIP_DIRS += third-party
+endif
+
+ifeq ($(CONFIG_ENCODING_SKIP_TEST),y)
+SKIP_DIRS += test
+endif
+
+# Create skip-dir flags for encoder/decoder scripts
+SKIP_DIR_FLAGS = $(foreach dir,$(SKIP_DIRS),--skip-dirs $(dir))
+
 memstat: $(BIN) romfs
 
 all: memstat
@@ -381,6 +446,73 @@ ifneq ($(CONFIG_ARCH_CHIP),)
 endif
 
 dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(ARCH_SRC)/chip include/apps
+
+
+# ============================================================================
+# Encoding Target (runs before compilation)
+# ============================================================================
+
+.PHONY: encode_strings
+PYTHON := python3
+
+encode_strings:
+	$(Q) if [ "$(ENCODING_ENABLED)" = "y" ]; then \
+		echo "ENCODE: Encoding string literals in source files"; \
+		echo "$$($(PYTHON) --version)"; \
+		echo $(TOPDIR) ; \
+		echo $(BUILD_DIR) ; \
+		if [ -x "$(ENCODER_SCRIPT)" ]; then \
+			$(PYTHON) $(ENCODER_SCRIPT) \
+				$(TOPDIR)/../ \
+				$(BUILD_DIR)/output/mapping \
+				--use-config \
+				|| { \
+					if [ "$(STOP_ON_ERROR)" = "y" ]; then \
+						echo "ERROR: Encoding failed, stopping build"; \
+						exit 1; \
+					else \
+						echo "WARNING: Encoding failed, continuing..."; \
+					fi \
+				}; \
+		else \
+			echo "Warning: Encoder script not found or not executable, skipping..."; \
+		fi \
+	else \
+		echo "ENCODE: Skipping (CONFIG_ENABLE_STRING_ENCODING=n)"; \
+	fi
+
+# ============================================================================
+# Decoding Target (runs after linking)
+# ============================================================================
+
+.PHONY: decode_strings
+
+decode_strings:
+	$(Q) if [ "$(DECODE_ENABLED)" = "y" ]; then \
+		echo "DECODE: Decoding string literals in source files"; \
+		if [ -f "$(MAPPING_FILE)" ]; then \
+		if [ -x "$(DECODER_SCRIPT)" ]; then \
+			$(PYTHON) $(DECODER_SCRIPT) \
+				$(TOPDIR)/../ \
+				$(BUILD_DIR)/output/mapping/mapping.txt \
+				--use-config \
+				|| { \
+					if [ "$(STOP_ON_ERROR)" = "y" ]; then \
+						echo "ERROR: Decoding failed, stopping build"; \
+						exit 1; \
+					else \
+						echo "WARNING: Decoding failed, continuing..."; \
+					fi \
+				}; \
+			else \
+				echo "Warning: Decoder script not found or not executable, skipping..."; \
+			fi \
+		else \
+			echo "Warning: Mapping file not found, skipping decode..."; \
+		fi \
+	else \
+		echo "DECODE: Skipping (CONFIG_DECODE_STRINGS=n)"; \
+	fi
 
 # context
 #
@@ -546,7 +678,7 @@ define PREPARE_APP
 endef
 endif
 
-post:
+post: decode_strings
 ifeq ($(CONFIG_APP_BINARY_SEPARATION),y)
 	$(Q) mkdir -p $(OUTBIN_DIR)/user
 ifneq ($(CONFIG_SUPPORT_COMMON_BINARY),y)
@@ -626,7 +758,16 @@ endif
 # pass1 dependencies and pass1 first, then build pass2 dependencies and pass2.
 # in that case, execute 'make pass1 pass2' from the command line.
 
-$(BIN): pass1deps pass2deps pass1 pass2 post
+$(BIN):
+	$(Q) echo "BUILD: Starting build process"; \
+	if $(MAKE) pass1deps pass2deps pass1 pass2; then \
+		echo "BUILD: Build succeeded, running post-processing"; \
+		$(MAKE) post; \
+	else \
+		echo "BUILD: Build failed, running decode before exit"; \
+		$(MAKE) decode_strings; \
+		exit 1; \
+	fi
 
 # download
 #
@@ -662,12 +803,12 @@ ota_img:
 # pass1dep: Create pass1 build dependencies
 # pass2dep: Create pass2 build dependencies
 
-pass1dep: context tools/mkdeps$(HOSTEXEEXT) tools/compression/mkcompresstool.sh
+pass1dep: encode_strings context tools/mkdeps$(HOSTEXEEXT) tools/compression/mkcompresstool.sh
 	$(Q) for dir in $(USERDEPDIRS) ; do \
 		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" depend ; \
 	done
 
-pass2dep: context tools/mkdeps$(HOSTEXEEXT)
+pass2dep: encode_strings context tools/mkdeps$(HOSTEXEEXT)
 	$(Q) for dir in $(KERNDEPDIRS) ; do \
 		$(MAKE) -C $$dir TOPDIR="$(TOPDIR)" EXTDIR="$(EXTDIR)" EXTRADEFINES=$(KDEFINE) depend; \
 	done
@@ -731,6 +872,9 @@ subdir_clean:
 
 clean: subdir_clean
 	$(call DELDIR, $(OUTBIN_DIR)/*)
+	$(call DELDIR, $(BUILD_DIR)/output/mapping)
+	$(call DELFILE, $(BUILD_TRACKING_FILE))
+	$(call DELDIR, $(CACHE_DIR))
 	$(call DELFILE, _SAVED_APPS_config)
 	$(call DELFILE, tinyara-export*)
 	$(call DELFILE, tinyara_user*)
@@ -750,7 +894,23 @@ ifneq ($(MEMSTATS),)
 	$(Q) python ./tools/memstats_$(MEMSTATS).py -a -f ../build/output/bin/tinyara.map -o ../build/output/bin/tinyara_memstats.txt
 endif
 
-distclean: clean subdir_distclean clean_context
+# ============================================================================
+# Restore Strings Target
+# ============================================================================
+
+.PHONY: restore_strings
+
+restore_strings:
+	$(Q) if [ -d $(TOPDIR)/.git ]; then \
+		echo "RESTORE: Restoring original source files from git"; \
+		cd $(TOPDIR) && \
+		git checkout -- . 2>/dev/null || \
+		echo "Warning: Failed to restore files from git"; \
+	else \
+		echo "RESTORE: Not a git repository, skipping git restore"; \
+	fi
+
+distclean: clean subdir_distclean clean_context restore_strings
 	$(call DELFILE, Make.defs)
 	$(call DELFILE, setenv.sh)
 	$(call DELFILE, setenv.bat)
