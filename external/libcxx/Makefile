@@ -68,7 +68,7 @@ CXXSRCS = algorithm.cpp bind.cpp chrono.cpp condition_variable.cpp
 CXXSRCS += condition_variable_destructor.cpp
 CXXSRCS += future.cpp hash.cpp verbose_abort.cpp bad_alloc.cpp 
 CXXSRCS += memory.cpp mutex.cpp mutex_destructor.cpp new.cpp
-CXXSRCS += shared_mutex.cpp string.cpp system_error.cpp
+CXXSRCS += string.cpp system_error.cpp
 CXXSRCS += thread.cpp typeinfo.cpp valarray.cpp vector.cpp
 CXXSRCS += ios.instantiations.cpp random.cpp
 CXXSRCS += functional.cpp 
@@ -84,7 +84,7 @@ endif
 
 # C++17 and later sources
 ifeq ($(CONFIG_CXX_VERSION_17_OR_LATER),y)
-CXXSRCS += any.cpp optional.cpp variant.cpp
+CXXSRCS += any.cpp optional.cpp variant.cpp shared_mutex.cpp 
 CXXSRCS += memory_resource.cpp charconv.cpp barrier.cpp
 CXXSRCS += filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp filesystem/path.cpp
 # Filesystem support (set via Kconfig, _LIBCPP_HAS_NO_FILESYSTEM is in __config_site)
