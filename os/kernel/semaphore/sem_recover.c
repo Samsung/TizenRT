@@ -98,15 +98,10 @@
  *
  * Description:
  *   This function is called from task_recover() when a task is deleted via
- *   task_delete() or via pthread_cancel().  It current only checks on the
- *   case where a task is waiting for semaphore at the time that is was
- *   killed.
- *
- *   REVISIT:  A more complete implementation would release counts on all
- *   semaphores held by the thread.  That would, however, require some
- *   significant extension to the semaphore data structures because given
- *   only the task, there is not mechanism to traverse all of the semaphores
- *   with counts held by the task.
+ *   task_delete() or via pthread_cancel().  It handles the case where a task
+ *   is waiting for a semaphore at the time that it was killed, and it also
+ *   releases all of the semaphore holders that the task still holds, using
+ *   the task's list of held semaphores (tcb->holdsem).
  *
  * Inputs:
  *   tcb - The TCB of the terminated task or thread
@@ -172,6 +167,10 @@ void sem_recover(FAR struct tcb_s *tcb)
 #endif
 
 	}
+
+	/* Release all semaphore holders for the task */
+
+	sem_release_all(tcb);
 
 	leave_critical_section(flags);
 }

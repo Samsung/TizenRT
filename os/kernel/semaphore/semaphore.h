@@ -119,6 +119,9 @@ void sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *htcb);
 #if defined(CONFIG_PRIORITY_INHERITANCE)
 void sem_boostpriority(FAR sem_t *sem);
 void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem_t *sem);
+void sem_release_all(FAR struct tcb_s *stcb);
+#else
+#define sem_release_all(stcb)
 #endif
 #ifndef CONFIG_DISABLE_SIGNALS
 void sem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem);
@@ -134,6 +137,7 @@ void sem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem);
 #define sem_releaseholder(sem, htcb)
 #define sem_restorebaseprio(stcb, sem)
 #define sem_canceled(stcb, sem)
+#define sem_release_all(stcb)
 #endif
 
 #undef EXTERN
