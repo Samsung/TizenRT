@@ -561,6 +561,7 @@ struct tcb_s {
 	uint8_t pend_reprios[CONFIG_SEM_NNESTPRIO];
 #endif
 	uint8_t base_priority;		/* "Normal" priority of the thread     */
+	FAR struct semholder_s *holdsem;	/* List of held semaphores     */
 #endif
 
 	uint8_t task_state;			/* Current state of the thread         */
