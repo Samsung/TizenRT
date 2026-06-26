@@ -142,8 +142,6 @@ static inline void timer_free(struct posix_timer_s *timer)
 
 int timer_release(FAR struct posix_timer_s *timer)
 {
-	/* Some sanity checks */
-
 	if (!timer) {
 		return -EINVAL;
 	}
