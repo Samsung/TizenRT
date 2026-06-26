@@ -104,12 +104,13 @@ struct semholder_s {
 #endif
 	FAR struct tcb_s *htcb;		/* Holder TCB */
 	int16_t counts;				/* Number of counts owned by this holder */
+	uint8_t pre_boost_priority;	/* Holder's priority before this sem's first waiter */
 };
 
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
-#define SEMHOLDER_INITIALIZER {NULL, NULL, 0}
+#define SEMHOLDER_INITIALIZER {NULL, NULL, 0, 0}
 #else
-#define SEMHOLDER_INITIALIZER {NULL, 0}
+#define SEMHOLDER_INITIALIZER {NULL, 0, 0}
 #endif
 #endif							/* SAVE_SEM_HOLDER */
 

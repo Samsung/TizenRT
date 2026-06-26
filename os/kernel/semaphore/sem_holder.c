@@ -171,6 +171,7 @@ void sem_freeholder(sem_t *sem, FAR struct semholder_s *pholder)
 
 	pholder->htcb = NULL;
 	pholder->counts = 0;
+	pholder->pre_boost_priority = 0;
 
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 	/* Search the list for the matching holder */
@@ -270,6 +271,10 @@ static int sem_boostholderprio(FAR struct semholder_s *pholder, FAR sem_t *sem, 
 	 */
 
 	else if (rtcb->sched_priority > htcb->base_priority) {
+		if (pholder->pre_boost_priority == 0) {
+			pholder->pre_boost_priority = htcb->sched_priority;
+		}
+
 		/* If the new priority is greater than the current, possibly already
 		 * boosted priority of the holder thread, then we will have to raise
 		 * the holder's priority now.
@@ -411,6 +416,40 @@ static int sem_restoreholderprio(FAR struct semholder_s *pholder, FAR sem_t *sem
 
 	else if (htcb->sched_priority != htcb->base_priority) {
 #if CONFIG_SEM_NNESTPRIO > 0
+		/* When the holder fully releases this semaphore while there are
+		 * still waiters queued on it (semcount < 0), those remaining
+		 * waiters are now behind the new holder — not behind htcb.
+		 * Remove all pend_reprio entries that belong to this semaphore's
+		 * boost chain (values >= pre_boost_priority) and restore htcb
+		 * directly to pre_boost_priority.
+		 *
+		 * semcount is already incremented before sem_unblock_task runs,
+		 * so semcount < 0 means at least one waiter is still blocked.
+		 */
+
+		if (pholder->counts == 0 && sem->semcount < 0 && pholder->pre_boost_priority != 0) {
+			rpriority = pholder->pre_boost_priority;
+			for (i = 0; i < htcb->npend_reprio; ) {
+				if (htcb->pend_reprios[i] >= rpriority) {
+					j = htcb->npend_reprio - 1;
+					if (i < j) {
+						htcb->pend_reprios[i] = htcb->pend_reprios[j];
+					}
+					htcb->npend_reprio = j;
+				} else {
+					i++;
+				}
+			}
+
+			if (rpriority <= htcb->base_priority) {
+				sched_reprioritize(htcb, htcb->base_priority);
+			} else {
+				sched_setpriority(htcb, rpriority);
+			}
+
+			return 0;
+		}
+
 		/* Are there other, pending priority levels to revert to? */
 
 		if (htcb->npend_reprio < 1) {
