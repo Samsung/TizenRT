@@ -23,8 +23,8 @@
 #define _LIBCPP_ELAST ELAST
 #elif defined(_NEWLIB_VERSION)
 #define _LIBCPP_ELAST __ELASTERROR
-#elif defined(__NuttX__)
-// No _LIBCPP_ELAST needed on NuttX
+#elif defined(__NuttX__) || defined(__TINYARA__)
+// No _LIBCPP_ELAST needed on NuttX / TizenRT
 #elif defined(__Fuchsia__)
 // No _LIBCPP_ELAST needed on Fuchsia
 #elif defined(__wasi__)
