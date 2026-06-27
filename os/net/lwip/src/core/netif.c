@@ -70,7 +70,6 @@
 #include "lwip/sys.h"
 #include "lwip/ip.h"
 #include "lwip/netif/etharp.h"
-#include <mbedtls/sha256.h>
 
 #if ENABLE_LOOPBACK
 #if LWIP_NETIF_LOOPBACK_MULTITHREADING
@@ -1219,10 +1218,14 @@ err_t netif_gen_stable_private_id(struct netif *netif, s8_t addr_idx, ip6_addr_t
 	for (i = 0; i < netif->hwaddr_len; i++) {
 		param.mac[i] = netif->hwaddr[i];
 	}
-	// ToDo : mbedTLS is in userspace. so mbedtls_sha256 can't be called.
-#ifndef CONFIG_BUILD_PROTECTED
-	mbedtls_sha256(param.data, sizeof(param.data), rid.val, 0);
-#endif
+
+	/* 
+	 * TAHI IPv6 Test Project (https://www.tahi.org/) 
+	 * SHA-256 is must be used when generating IPv6 stable-private ID (for TAHI certificate)
+	 * If there's a plan to use IPv6, SHA-256 API must be implemented (to replace mbedtls_sha256)
+	 */
+// 	mbedtls_sha256(param.data, sizeof(param.data), rid.val, 0);
+
 	addr->addr[0] = addr->addr[1] = 0;
 	addr->addr[2] = rid.addr[0];
 	addr->addr[3] = rid.addr[1];
