@@ -40,7 +40,7 @@ config CXX_VERSION_23_OR_LATER
 
 choice CXX_VERSION
 	prompt "c++version"
-	default CXX_VERSION_17
+	default CXX_VERSION_11
 
 config CXX_VERSION_11
 	bool "c++11"

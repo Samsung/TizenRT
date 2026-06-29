@@ -51,6 +51,22 @@
 
 include ${TOPDIR}/.config
 include ${TOPDIR}/tools/Config.mk
+
+# Export CONFIG variables needed by external/libcxx/Makefile
+export CONFIG_LIBCXX
+export CONFIG_LIBCXX_LOCALE
+export CONFIG_LIBCXX_FILESYSTEM
+export CONFIG_LIBCXX_EXCEPTION
+export CONFIG_LIBCXX_HAVE_LIBSUPCXX
+export CONFIG_CXX_VERSION_11
+export CONFIG_CXX_VERSION_14
+export CONFIG_CXX_VERSION_17
+export CONFIG_CXX_VERSION_20
+export CONFIG_CXX_VERSION_23
+export CONFIG_CXX_VERSION_17_OR_LATER
+export CONFIG_CXX_VERSION_20_OR_LATER
+export CONFIG_CXX_VERSION_23_OR_LATER
+
 ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
 include ${TOPDIR}/arch/$(CONFIG_ARCH)/src/$(ARCH_FAMILY)/Toolchain.defs
 

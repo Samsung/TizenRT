@@ -17,14 +17,32 @@
 #include <errno.h>
 #endif
 
+// TizenRT/newlib compatibility: Define missing errno values and types
+// This must come BEFORE the _LIBCPP_ELAST logic
+#if defined(__TINYARA__) || defined(_NEWLIB_VERSION)
+// Define ENOTRECOVERABLE and EOWNERDEAD if not provided by system errno.h
+#ifndef ENOTRECOVERABLE
+#define ENOTRECOVERABLE 132
+#endif
+#ifndef EOWNERDEAD
+#define EOWNERDEAD 131
+#endif
+// Provide max_align_t fallback for newlib-based toolchains
+#ifndef _MAX_ALIGN_T_DEFINED
+#define _MAX_ALIGN_T_DEFINED
+typedef long double max_align_t;
+#endif
+// Note: wint_t is provided by system headers (wchar.h), do not redefine
+#endif
+
 // Note: _LIBCPP_ELAST needs to be defined only on platforms
 // where strerror/strerror_r can't handle out-of-range errno values.
 #if defined(ELAST)
 #define _LIBCPP_ELAST ELAST
-#elif defined(_NEWLIB_VERSION)
-#define _LIBCPP_ELAST __ELASTERROR
 #elif defined(__NuttX__) || defined(__TINYARA__)
 // No _LIBCPP_ELAST needed on NuttX / TizenRT
+#elif defined(_NEWLIB_VERSION)
+#define _LIBCPP_ELAST __ELASTERROR
 #elif defined(__Fuchsia__)
 // No _LIBCPP_ELAST needed on Fuchsia
 #elif defined(__wasi__)

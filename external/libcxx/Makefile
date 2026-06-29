@@ -78,7 +78,7 @@ CXXSRCS += new_handler.cpp new_helpers.cpp
 
 # Locale and iostream support (requires libc locale functions)
 # When disabled: no std::cout, std::cin, std::stringstream, but containers/algorithms work
-ifdef CONFIG_LIBCXX_LOCALE
+ifeq ($(CONFIG_LIBCXX_LOCALE),y)
 CXXSRCS += locale.cpp ios.cpp iostream.cpp strstream.cpp
 endif
 

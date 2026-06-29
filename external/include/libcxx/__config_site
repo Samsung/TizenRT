@@ -49,8 +49,8 @@
 
 //TizenRT's C library provides only partial stdio implementation
 // some functions are missing, others are macros only.
-#define _LIBCPP_HAS_NO_STDIN
-#define _LIBCPP_HAS_NO_STDOUT
+//#define _LIBCPP_HAS_NO_STDIN
+//#define _LIBCPP_HAS_NO_STDOUT
 // TizenRT needs stdio file only provides macro of `getc` and `putc` 
 // ensure `getc` and `putc` maps to `fgetc`/`fputc` 
 #define _LIBCPP_NEEDS_STDIO_FILE_FUNCTIONS
