@@ -72,6 +72,7 @@
 #include <tinyara/sched.h>
 
 #include <tinyara/mm/mm.h>
+#include <tinyara/assertmode.h>
 
 #ifdef CONFIG_ARCH_USE_MMU
 #include <tinyara/mmu.h>
@@ -86,9 +87,7 @@
 #include <arch/reboot_reason.h>
 #endif
 #include "sched/sched.h"
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
 #include <sys/boardctl.h>
-#endif
 #ifdef CONFIG_BINMGR_RECOVERY
 #include <stdbool.h>
 #include <unistd.h>
@@ -446,37 +445,9 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 
 static void arm_assert(void)
 {
-#ifdef CONFIG_BOARD_ASSERT_AUTORESET
-	boardctl(BOARDIOC_RESET, EXIT_SUCCESS);
-#else
-#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
-	/* Are we in an interrupt handler or the idle task? */
-
-	if (CURRENT_REGS || (this_task())->flink == NULL) {
-#endif
-		/* Disable interrupts on this CPU */
-		irqsave();
-
-#ifdef CONFIG_SMP
-		/* Try (again) to stop activity on other CPUs */
-		spin_trylock(&g_cpu_irqlock);
-#endif
-
-		for (;;) {
-#ifdef CONFIG_ARCH_LEDS
-			/* FLASH LEDs a 2Hz */
-			board_autoled_on(LED_PANIC);
-			up_mdelay(250);
-			board_autoled_off(LED_PANIC);
-			up_mdelay(250);
-#endif
-		}
-#ifndef CONFIG_BOARD_ASSERT_SYSTEM_HALT
-	} else {
-		exit(errorcode);
-	}
-#endif
-#endif							/* CONFIG_BOARD_ASSERT_AUTORESET */
+	/* Determine if we are in IRQ context or idle task */
+	bool is_irq_or_idle = (CURRENT_REGS || (this_task())->flink == NULL);
+	apply_assert_action(EXIT_FAILURE, is_irq_or_idle);
 }
 
 /****************************************************************************

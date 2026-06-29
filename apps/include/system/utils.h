@@ -101,4 +101,8 @@ int utils_tzselect(int argc, char **args);
 int utils_uptime(int argc, char **args);
 #endif
 
+#if defined(CONFIG_ENABLE_ASSERTMODE)
+int utils_assertmode(int argc, char **args);
+#endif
+
 #endif							/* __APPS_INCLUDE_SYSTEM_UTILS_H */

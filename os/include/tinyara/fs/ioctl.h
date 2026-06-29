@@ -108,6 +108,7 @@
 #define _MIPIDSIBASE    (0x3900) 	/* Mipidsi device ioctl commands */
 #define _CSIIOCBASE     (0x3a00) 	/* Wifi CSI ioctl commands */
 #define _SILENTRBCBASE  (0x3b00) 	/* Silent reboot ioctl commands */
+#define _ASSERTMODEBASE (0x3c00)	/* Assertmode ioctl commands */
 
 
 /* boardctl() commands share the same number space */
@@ -358,6 +359,15 @@
 #define SILENTRBIOC_CHECKMODE      _SILENTRBIOC(0x0004)
 #define SILENTRBIOC_GETSTATUS      _SILENTRBIOC(0x0005)
 #define SILENTRBIOC_FORCE_REBOOT   _SILENTRBIOC(0x0006)
+
+/* Assertmode driver ioctl definitions *************************************/
+/* (see tinyara/assertmode.h) */
+
+#define _ASSERTMODEIOCVALID(c)     (_IOC_TYPE(c) == _ASSERTMODEBASE)
+#define _ASSERTMODEIOC(nr)         _IOC(_ASSERTMODEBASE, nr)
+
+#define ASSERTMODEIOC_GET_MODE     _ASSERTMODEIOC(0x0001)
+#define ASSERTMODEIOC_SET_MODE     _ASSERTMODEIOC(0x0002)
 
 /* Audio driver ioctl definitions *************************************/
 /* (see tinyara/audio/audio.h) */
