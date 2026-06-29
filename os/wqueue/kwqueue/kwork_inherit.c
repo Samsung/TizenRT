@@ -61,6 +61,7 @@
 #include <tinyara/wqueue.h>
 
 #include "sched/sched.h"
+#include "semaphore/semaphore.h"
 #include "wqueue.h"
 
 /****************************************************************************
@@ -96,74 +97,38 @@ static void lpwork_boostworker(pid_t wpid, uint8_t reqprio)
 	wtcb = sched_gettcb(wpid);
 	DEBUGASSERT(wtcb);
 
-#if CONFIG_SEM_NNESTPRIO > 0
-	/* If the priority of the client thread that is greater than the base
-	 * priority of the worker thread, then we may need to adjust the worker
-	 * thread's priority now or later to that priority.
+	/* REVISIT: Priority multi-boost is not supported */
+
+	DEBUGASSERT(wtcb->boost_priority == 0);
+
+	/* If the priority of the client thread is greater than the base priority
+	 * of the worker thread, then we may need to adjust the worker thread's
+	 * priority now or later to that priority.
 	 */
 
 	if (reqprio > wtcb->base_priority) {
-		/* If the new priority is greater than the current, possibly already
-		 * boosted priority of the worker thread, then we will have to raise
-		 * the worker thread's priority now.
+		/* Save the boost priority value as it might be needed in case of
+		 * multiple re-prioritizations; the priority of the thread can't go
+		 * below the boost priority value until the priority boost is canceled.
+		 */
+
+		wtcb->boost_priority = reqprio;
+
+		/* If the priority of the client thread is less than or equal to the
+		 * priority of the worker thread, then do nothing because the thread is
+		 * already running at a sufficient priority.
 		 */
 
 		if (reqprio > wtcb->sched_priority) {
-			/* If the current priority of worker thread has already been
-			 * boosted, then add the boost priority to the list of restoration
-			 * priorities.  When the higher priority waiter thread gets its
-			 * count, then we need to revert the worker thread to this saved
-			 * priority (not to its base priority).
-			 */
-
-			if (wtcb->sched_priority > wtcb->base_priority) {
-				/* Save the current, boosted priority of the worker thread. */
-
-				if (wtcb->npend_reprio < CONFIG_SEM_NNESTPRIO) {
-					wtcb->pend_reprios[wtcb->npend_reprio] = wtcb->sched_priority;
-					wtcb->npend_reprio++;
-				}
-			}
-
-			/* Raise the priority of the worker.  This cannot cause a context
-			 * switch because we have preemption disabled.  The worker thread
-			 * may be marked "pending" and the switch may occur during
-			 * sched_unblock() processing.
+			/* Raise the priority of the worker thread.  This cannot cause a
+			 * context switch because we have preemption disabled.  The task
+			 * will be marked "pending" and the switch will occur during
+			 * sched_unlock() processing.
 			 */
 
 			(void)sched_setpriority(wtcb, reqprio);
-		} else {
-			/* The new priority is above the base priority of the worker,
-			 * but not as high as its current working priority.  Just put it
-			 * in the list of pending restoration priorities so that when the
-			 * higher priority thread gets its count, we can revert to this
-			 * saved priority and not to the base priority.
-			 */
-
-			if (wtcb->npend_reprio < CONFIG_SEM_NNESTPRIO) {
-				wtcb->pend_reprios[wtcb->npend_reprio] = reqprio;
-				wtcb->npend_reprio++;
-			} else {
-				sdbg("Number of threads exceed CONFIG_SEM_NNESTPRIO\n");
-			}
 		}
 	}
-#else
-	/* If the priority of the client thread that is less than of equal to the
-	 * priority of the worker thread, then do nothing because the thread is
-	 * already running at a sufficient priority.
-	 */
-
-	if (reqprio > wtcb->sched_priority) {
-		/* Raise the priority of the worker thread.  This cannot cause
-		 * context switch because we have preemption disabled.  The task
-		 * will be marked "pending" and the switch will occur during
-		 * sched_unlock() processing.
-		 */
-
-		(void)sched_setpriority(wtcb, reqprio);
-	}
-#endif
 }
 
 /****************************************************************************
@@ -187,115 +152,52 @@ static void lpwork_boostworker(pid_t wpid, uint8_t reqprio)
 static void lpwork_restoreworker(pid_t wpid, uint8_t reqprio)
 {
 	FAR struct tcb_s *wtcb;
-#if CONFIG_SEM_NNESTPRIO > 0
-	uint8_t wpriority;
-	int index;
-	int selected;
-#endif
 
 	/* Get the TCB of the low priority worker thread from the process ID. */
 
 	wtcb = sched_gettcb(wpid);
 	DEBUGASSERT(wtcb);
 
+	/* REVISIT: Priority multi-boost is not supported. */
+
+	DEBUGASSERT(wtcb->boost_priority == reqprio);
+
+	/* Clear the thread's boost priority. */
+
+	wtcb->boost_priority = 0;
+
 	/* Was the priority of the worker thread boosted? If so, then drop its
 	 * priority back to the correct level.  What is the correct level?
 	 */
 
 	if (wtcb->sched_priority != wtcb->base_priority) {
-#if CONFIG_SEM_NNESTPRIO > 0
-		/* Are there other, pending priority levels to revert to? */
+		FAR struct semholder_s *pholder;
+		FAR struct tcb_s *stcb;
+		uint8_t wpriority;
 
-		if (wtcb->npend_reprio < 1) {
-			/* No... the worker thread has only been boosted once.
-			 * npend_reprio should be 0 and the boosted priority should be the
-			 * priority of the client task (reqprio)
-			 *
-			 * That latter assumption may not be true if the client's priority
-			 * was also boosted so that it no longer matches the wtcb's
-			 * sched_priority.  Or if CONFIG_SEM_NNESTPRIO is too small (so
-			 * that we do not have a proper record of the reprioritizations).
-			 */
-
-			DEBUGASSERT(/* wtcb->sched_priority == reqprio && */
-				wtcb->npend_reprio == 0);
-
-			/* Reset the worker's priority back to the base priority. */
-
-			sched_reprioritize(wtcb, wtcb->base_priority);
-		}
-
-		/* There are multiple pending priority levels. The worker thread's
-		 * "boosted" priority could greater than or equal to "reqprio" (it could
-		 * be greater if its priority we boosted because it also holds some
-		 * semaphore).
+		/* We attempt to restore the thread's priority to its base priority.
+		 * If there is any task with a higher priority waiting for a semaphore
+		 * held by wtcb, then this value will be overwritten.
 		 */
 
-		else if (wtcb->sched_priority <= reqprio) {
-			/* The worker thread has been boosted to the same priority as the
-			 * waiter thread that just received the count.  We will simply
-			 * reprioritize to the next highest pending priority.
-			 */
+		wpriority = wtcb->base_priority;
 
-			/* Find the highest pending priority and remove it from the list */
-
-			for (index = 1, selected = 0; index < wtcb->npend_reprio; index++) {
-				if (wtcb->pend_reprios[index] > wtcb->pend_reprios[selected]) {
-					selected = index;
-				}
-			}
-
-			/* Remove the highest priority pending priority from the list */
-
-			wpriority = wtcb->pend_reprios[selected];
-			index = wtcb->npend_reprio - 1;
-			if (index > 0) {
-				wtcb->pend_reprios[selected] = wtcb->pend_reprios[index];
-			}
-
-			wtcb->npend_reprio = index;
-
-			/* And apply that priority to the thread (while retaining the
-			 * base_priority)
-			 */
-
-			sched_setpriority(wtcb, wpriority);
-		} else {
-			/* The worker thread has been boosted to a higher priority than the
-			 * waiter task.  The pending priority should be in the list (unless
-			 * it was lost because of of list overflow or because the worker
-			 * was reprioritized again unbeknownst to the priority inheritance
-			 * logic).
-			 *
-			 * Search the list for the matching priority.
-			 */
-
-			for (index = 0; index < wtcb->npend_reprio; index++) {
-				/* Does this pending priority match the priority of the thread
-				 * that just received the count?
-				 */
-
-				if (wtcb->pend_reprios[index] == reqprio) {
-					/* Yes, remove it from the list */
-
-					selected = wtcb->npend_reprio - 1;
-					if (selected > 0) {
-						wtcb->pend_reprios[index] = wtcb->pend_reprios[selected];
-					}
-
-					wtcb->npend_reprio = selected;
-					break;
-				}
-			}
-		}
-#else
-		/* There is no alternative restore priorities, drop the priority
-		 * of the worker thread all the way back to the threads "base"
-		 * priority.
+		/* Try to find the highest priority across all the tasks that are
+		 * waiting for any semaphore held by wtcb.
 		 */
 
-		sched_reprioritize(wtcb, wtcb->base_priority);
-#endif
+		for (pholder = wtcb->holdsem; pholder != NULL; pholder = pholder->tlink) {
+			stcb = sem_findhighestwaiter(pholder->sem, NULL);
+			if (stcb != NULL && stcb->sched_priority > wpriority) {
+				wpriority = stcb->sched_priority;
+			}
+		}
+
+		/* Apply the selected priority to the worker thread (hopefully back to
+		 * the thread's base priority).
+		 */
+
+		sched_setpriority(wtcb, wpriority);
 	}
 }
 

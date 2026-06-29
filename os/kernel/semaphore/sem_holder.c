@@ -275,65 +275,8 @@ static int sem_boostholderprio(FAR struct semholder_s *pholder, FAR sem_t *sem, 
 	FAR struct tcb_s *htcb = (FAR struct tcb_s *)pholder->htcb;
 	FAR struct tcb_s *rtcb = (FAR struct tcb_s *)arg;
 
-#if CONFIG_SEM_NNESTPRIO > 0
-
-	/* If the priority of the thread that is waiting for a count is greater
-	 * than the base priority of the thread holding a count, then we may need
-	 * to adjust the holder's priority now or later to that priority.
-	 */
-
-	if (rtcb->sched_priority > htcb->base_priority) {
-		/* If the new priority is greater than the current, possibly already
-		 * boosted priority of the holder thread, then we will have to raise
-		 * the holder's priority now.
-		 */
-
-		if (rtcb->sched_priority > htcb->sched_priority) {
-			/* If the current priority of holder thread has already been
-			 * boosted, then add the boost priority to the list of restoration
-			 * priorities.  When the higher priority waiter thread gets its
-			 * count, then we need to revert the holder thread to this saved
-			 * priority (not to its base priority).
-			 */
-
-			if (htcb->sched_priority > htcb->base_priority) {
-				/* Save the current, boosted priority of the holder thread. */
-
-				if (htcb->npend_reprio < CONFIG_SEM_NNESTPRIO) {
-					htcb->pend_reprios[htcb->npend_reprio] = htcb->sched_priority;
-					htcb->npend_reprio++;
-				} else {
-					sdbg("CONFIG_SEM_NNESTPRIO exceeded\n");
-				}
-			}
-
-			/* Raise the priority of the thread holding of the semaphore.
-			 * This cannot cause a context switch because we have preemption
-			 * disabled.  The holder thread may be marked "pending" and the
-			 * switch may occur during up_block_task() processing.
-			 */
-
-			(void)sched_setpriority(htcb, rtcb->sched_priority);
-		} else {
-			/* The new priority is above the base priority of the holder,
-			 * but not as high as its current working priority.  Just put it
-			 * in the list of pending restoration priorities so that when the
-			 * higher priority thread gets its count, we can revert to this
-			 * saved priority and not to the base priority.
-			 */
-
-			if (htcb->npend_reprio < CONFIG_SEM_NNESTPRIO) {
-				htcb->pend_reprios[htcb->npend_reprio] = rtcb->sched_priority;
-				htcb->npend_reprio++;
-			} else {
-				sdbg("Number of threads exceed CONFIG_SEM_NNESTPRIO\n");
-			}
-
-		}
-	}
-#else
 	/* If the priority of the thread that is waiting for a count is less than
-	 * of equal to the priority of the thread holding a count, then do nothing
+	 * or equal to the priority of the thread holding a count, then do nothing
 	 * because the thread is already running at a sufficient priority.
 	 */
 
@@ -346,7 +289,6 @@ static int sem_boostholderprio(FAR struct semholder_s *pholder, FAR sem_t *sem, 
 
 		(void)sched_setpriority(htcb, rtcb->sched_priority);
 	}
-#endif
 
 	return 0;
 }
@@ -366,9 +308,6 @@ static int sem_verifyholder(FAR struct semholder_s *pholder, FAR sem_t *sem, FAR
 	 * In this case, the priority of the holder should not be boosted.
 	 */
 
-#if CONFIG_SEM_NNESTPRIO > 0
-	DEBUGASSERT(htcb->npend_reprio == 0);
-#endif
 	DEBUGASSERT(htcb->sched_priority == htcb->base_priority);
 #endif
 	return 0;
@@ -394,119 +333,111 @@ static int sem_dumpholder(FAR struct semholder_s *pholder, FAR sem_t *sem, FAR v
 #ifdef CONFIG_PRIORITY_INHERITANCE
 
 /****************************************************************************
+ * Name: sem_findhighestwaiter
+ *
+ * Description:
+ *   Return the highest priority task that is waiting for the given
+ *   semaphore.  The list of all tasks waiting for a semaphore
+ *   (g_waitingforsemaphore) is prioritized, so the first task whose
+ *   'waitsem' matches the semaphore is the highest priority waiter.
+ *
+ * Parameters:
+ *   sem     - The semaphore whose waiters are to be examined
+ *   exclude - A task to ignore while scanning, or NULL.  This is used to
+ *             skip the task that is leaving the wait (it received the count
+ *             or its wait was canceled) but may still reside on the waiting
+ *             list when the holder priorities are recomputed.
+ *
+ * Return Value:
+ *   The TCB of the highest priority waiter, or NULL if there is none.
+ *
+ ****************************************************************************/
+
+FAR struct tcb_s *sem_findhighestwaiter(FAR sem_t *sem, FAR struct tcb_s *exclude)
+{
+	FAR struct tcb_s *stcb;
+
+	/* A semaphore with priority inheritance disabled never boosts its
+	 * holders, so its waiters must not contribute to the holder priority
+	 * recomputation.  Holders of such a semaphore can still be tracked (and
+	 * hence appear on a task's holdsem list) when CONFIG_BINMGR_RECOVERY is
+	 * enabled, so this must be checked explicitly here.
+	 */
+
+	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) != 0) {
+		return NULL;
+	}
+
+	for (stcb = (FAR struct tcb_s *)g_waitingforsemaphore.head; stcb != NULL; stcb = stcb->flink) {
+		if (stcb->waitsem == sem && stcb != exclude) {
+			break;
+		}
+	}
+
+	return stcb;
+}
+
+/****************************************************************************
  * Name: sem_restoreholderprio
  ****************************************************************************/
 
 static int sem_restoreholderprio(FAR struct semholder_s *pholder, FAR sem_t *sem, FAR void *arg)
 {
 	FAR struct tcb_s *htcb = (FAR struct tcb_s *)pholder->htcb;
-#if CONFIG_SEM_NNESTPRIO > 0
-	FAR struct tcb_s *stcb = (FAR struct tcb_s *)arg;
-	int rpriority;
-	int i;
-	int j;
-#endif
+	FAR struct semholder_s *hpholder;
+	FAR struct tcb_s *stcb;
+	int hpriority;
+
+	/* We will attempt to restore the holder's priority to its base priority.
+	 * If there is any thread with a higher priority waiting for a semaphore
+	 * held by htcb, then this value will be overwritten.
+	 */
+
+	hpriority = htcb->boost_priority > htcb->base_priority ? htcb->boost_priority : htcb->base_priority;
 
 	/* Was the priority of the holder thread boosted? If so, then drop its
 	 * priority back to the correct level.  What is the correct level?
 	 */
 
-	if (htcb->sched_priority != htcb->base_priority) {
-#if CONFIG_SEM_NNESTPRIO > 0
-		/* Are there other, pending priority levels to revert to? */
-
-		if (htcb->npend_reprio < 1) {
-			/* No... the holder thread has only been boosted once.
-			 * npend_reprio should be 0 and the boosted priority should be the
-			 * priority of the task that just got the semaphore
-			 * (stcb->sched_priority)
-			 *
-			 * That latter assumption may not be true if the stcb's priority
-			 * was also boosted so that it no longer matches the htcb's
-			 * sched_priority.  Or if CONFIG_SEM_NNESTPRIO is too small (so
-			 * that we do not have a proper record of the reprioritizations).
-			 */
-
-			DEBUGASSERT(/* htcb->sched_priority == stcb->sched_priority && */
-				htcb->npend_reprio == 0);
-
-			/* Reset the holder's priority back to the base priority. */
-
-			sched_reprioritize(htcb, htcb->base_priority);
-		}
-
-		/* There are multiple pending priority levels. The holder thread's
-		 * "boosted" priority could greater than or equal to
-		 * "stcb->sched_priority" (it could be greater if its priority we
-		 * boosted because it also holds another semaphore).
+	if (htcb->sched_priority != hpriority) {
+		/* Try to find the highest priority across all the threads that are
+		 * waiting for any semaphore held by htcb.
 		 */
 
-		else if (htcb->sched_priority <= stcb->sched_priority) {
-			/* The holder thread has been boosted to the same priority as the
-			 * waiter thread that just received the count.  We will simply
-			 * reprioritize to the next highest priority that we have in
-			 * rpriority.
+		for (hpholder = htcb->holdsem; hpholder != NULL; hpholder = hpholder->tlink) {
+			/* Skip a holder entry whose count has been given up: the holder
+			 * no longer holds this semaphore, so its waiters must not boost
+			 * the holder.  sem_releaseholder() (reached only from sem_post(),
+			 * for the posting task and the semaphore being posted) is the only
+			 * thing that decrements a holder's count, and the entry is unlinked
+			 * shortly after in sem_restorebaseprio() (upstream NuttX frees it at
+			 * the top of this function instead).  A held semaphore can therefore
+			 * reach a zero count only while it is the one being released here;
+			 * assert that, both to document the invariant and to catch any
+			 * holder left stranded on the list with no counts.
 			 */
 
-			/* Find the highest pending priority and remove it from the list */
-
-			for (i = 1, j = 0; i < htcb->npend_reprio; i++) {
-				if (htcb->pend_reprios[i] > htcb->pend_reprios[j]) {
-					j = i;
-				}
+			if (hpholder->counts <= 0) {
+				DEBUGASSERT(hpholder->sem == sem);
+				continue;
 			}
 
-			/* Remove the highest priority pending priority from the list */
-
-			rpriority = htcb->pend_reprios[j];
-			i = htcb->npend_reprio - 1;
-			if (i > 0) {
-				htcb->pend_reprios[j] = htcb->pend_reprios[i];
-			}
-
-			htcb->npend_reprio = i;
-
-			/* And apply that priority to the thread (while retaining the
-			 * base_priority)
+			/* Find the highest priority waiter of this semaphore, ignoring
+			 * the task that is leaving the wait (arg); it may still reside
+			 * on the waiting list at this point.
 			 */
 
-			sched_setpriority(htcb, rpriority);
-		} else {
-			/* The holder thread has been boosted to a higher priority than the
-			 * waiter task.  The pending priority should be in the list (unless
-			 * it was lost because of of list overflow or because the holder
-			 * was reprioritized again unbeknownst to the priority inheritance
-			 * logic).
-			 *
-			 * Search the list for the matching priority.
-			 */
-
-			for (i = 0; i < htcb->npend_reprio; i++) {
-				/* Does this pending priority match the priority of the thread
-				 * that just received the count?
-				 */
-
-				if (htcb->pend_reprios[i] == stcb->sched_priority) {
-					/* Yes, remove it from the list */
-
-					j = htcb->npend_reprio - 1;
-					if (j > 0) {
-						htcb->pend_reprios[i] = htcb->pend_reprios[j];
-					}
-
-					htcb->npend_reprio = j;
-					break;
-				}
+			stcb = sem_findhighestwaiter(hpholder->sem, (FAR struct tcb_s *)arg);
+			if (stcb != NULL && stcb->sched_priority > hpriority) {
+				hpriority = stcb->sched_priority;
 			}
 		}
-#else
-		/* There is no alternative restore priorities, drop the priority
-		 * of the holder thread all the way back to the threads "base"
-		 * priority.
+
+		/* Apply the selected priority to the holder thread (hopefully back
+		 * to the thread's base priority).
 		 */
 
-		sched_reprioritize(htcb, htcb->base_priority);
-#endif
+		sched_setpriority(htcb, hpriority);
 	}
 
 	return 0;
