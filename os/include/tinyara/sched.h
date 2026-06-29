@@ -556,10 +556,7 @@ struct tcb_s {
 	uint8_t sched_priority;		/* Current priority of the thread      */
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
-#if CONFIG_SEM_NNESTPRIO > 0
-	uint8_t npend_reprio;		/* Number of nested reprioritizations  */
-	uint8_t pend_reprios[CONFIG_SEM_NNESTPRIO];
-#endif
+	uint8_t boost_priority;		/* "Boosted" priority of the thread    */
 	uint8_t base_priority;		/* "Normal" priority of the thread     */
 	FAR struct semholder_s *holdsem;	/* List of held semaphores     */
 #endif

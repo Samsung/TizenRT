@@ -87,15 +87,11 @@
 #  define NLOWPRI_THREADS 1
 #endif
 
-#ifndef CONFIG_SEM_NNESTPRIO
-#  define CONFIG_SEM_NNESTPRIO 0
-#endif
-
-/* Where resources configured for lots of waiters?  If so then run 3 high
+/* Were resources configured for lots of holders?  If so then run 3 high
  * priority threads.  Otherwise, just one.
  */
 
-#if CONFIG_SEM_NNESTPRIO > 3
+#if CONFIG_SEM_PREALLOCHOLDERS > 3
 #  define NHIGHPRI_THREADS 3
 #else
 #  define NHIGHPRI_THREADS 1

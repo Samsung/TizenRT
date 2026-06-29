@@ -237,9 +237,7 @@ int task_restart(pid_t pid)
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
 		tcb->cmn.base_priority = tcb->init_priority;
-#if CONFIG_SEM_NNESTPRIO > 0
-		tcb->cmn.npend_reprio = 0;
-#endif
+		tcb->cmn.boost_priority = 0;
 #endif
 
 		/* Re-initialize the processor-specific portion of the TCB

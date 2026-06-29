@@ -120,6 +120,7 @@ void sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *htcb);
 void sem_boostpriority(FAR sem_t *sem);
 void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem_t *sem);
 void sem_release_all(FAR struct tcb_s *stcb);
+FAR struct tcb_s *sem_findhighestwaiter(FAR sem_t *sem, FAR struct tcb_s *exclude);
 #else
 #define sem_release_all(stcb)
 #endif
