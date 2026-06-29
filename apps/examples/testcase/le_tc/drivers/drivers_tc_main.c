@@ -54,6 +54,10 @@ int tc_drivers_main(int argc, char *argv[])
 	watchdog_main();
 #endif
 
+#ifdef CONFIG_TC_DRIVERS_WATCHDOG_SECURITY
+	watchdog_security_main();
+#endif
+
 #ifdef CONFIG_TC_DRIVERS_LOOP
 	loop_main();
 #endif
