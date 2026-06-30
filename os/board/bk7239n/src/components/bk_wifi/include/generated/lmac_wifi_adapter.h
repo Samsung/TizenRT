@@ -39,6 +39,8 @@ typedef enum {
 	BK_PBUF_POOL
 } bk_pbuf_type;
 
+struct mac_chan_op;
+
 typedef struct {
 	int _version;
 	int (*_manual_cal_rfcali)(void);
@@ -82,6 +84,7 @@ typedef struct {
 	void (*_bk7011_cal_dpd)(uint32_t freq, uint32_t connect_mode);
 	void (*_bk7011_cal_pll)(void);
 	void (*_bk7011_update_by_rx)(int8_t rssi, int8_t freq_offset);
+	void (*_bk7011_update_max_tx_power)(struct mac_chan_op *chan);
 	INT32 (*_rwnx_cal_load_trx_rcbekn_reg_val)(void);
 	UINT8 (*_manual_get_epa_flag)(void);
 	UINT32(*_rxsens_start_flag_get)(void);
