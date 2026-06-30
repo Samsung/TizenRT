@@ -154,7 +154,7 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 		CURRENT_REGS = savestate;
 	} else {
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-		up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+		reboot_reason_write_by_addr(regs[REG_R15], REBOOT_SYSTEM_PREFETCHABORT, REBOOT_USER_PREFETCHABORT);
 #endif
 
 		if (!IS_SECURE_STATE()) {
@@ -180,7 +180,7 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 	system_exception_location = regs[REG_R15];
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+	reboot_reason_write_by_addr(regs[REG_R15], REBOOT_SYSTEM_PREFETCHABORT, REBOOT_USER_PREFETCHABORT);
 #endif
 
 	/* Crash -- possibly showing diagnostic debug information. */
