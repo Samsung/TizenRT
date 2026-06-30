@@ -26,6 +26,10 @@ CSRCS += test_timer.c
 CSRCS += test_sem.c
 CSRCS += test_group.c
 
+ifneq ($(CONFIG_ARCH_CHIP_BK7239N)$(CONFIG_AMEBASMART_TRUSTZONE)$(CONFIG_AMEBAD_TRUSTZONE)$(CONFIG_AMEBALITE_TRUSTZONE),)
+CSRCS += test_ns_flash.c
+endif
+
 ifneq ($(CONFIG_DISABLE_SIGNALS),y)
 CSRCS += test_signal.c
 endif

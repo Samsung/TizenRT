@@ -2,7 +2,7 @@
 # Automatically generated file; DO NOT EDIT.
 # TinyAra Configuration
 #
-
+CONFIG_EXAMPLES_SSTORAGE=y
 #
 # Build Setup
 #
@@ -664,7 +664,7 @@ CONFIG_IST415_BIN_PATH="/res/ist415.bin"
 CONFIG_MMINFO=y
 CONFIG_PRODCONFIG=y
 # CONFIG_ANALOG is not set
-# CONFIG_DRIVERS_OS_API_TEST is not set
+CONFIG_DRIVERS_OS_API_TEST=y
 # CONFIG_NETDEVICES is not set
 CONFIG_PIPES=y
 CONFIG_DEV_PIPE_SIZE=1024

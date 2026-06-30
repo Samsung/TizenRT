@@ -6,7 +6,7 @@
 config EXAMPLES_SSTORAGE
 	bool "Secure Storage example"
 	default n
-	depends on SE_AMEBA
+	depends on SE_AMEBA || SE_ARMINO
 	---help---
 		Enable the Secure Storage example
 
