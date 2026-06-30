@@ -1,12 +1,5 @@
 menu "modules::wpa_supplicant-2.10"
 
-	config SELECT_PROPRIETARY_SUPPLICANT
-		depends on WIFI_ENABLE
-		bool "Enable BEKEN Wpa Supplicant 2.10"
-		default y
-		help
-			Enable BEKEN wpa_supplicant-2.10
-
 	menu "Modify Wpa Supplicant 2.10 Config"
 		depends on SELECT_PROPRIETARY_SUPPLICANT
 
