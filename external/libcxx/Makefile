@@ -77,10 +77,8 @@ CXXSRCS += legacy_pointer_safety.cpp
 CXXSRCS += new_handler.cpp new_helpers.cpp
 
 # Locale and iostream support (requires libc locale functions)
-# When disabled: no std::cout, std::cin, std::stringstream, but containers/algorithms work
-ifeq ($(CONFIG_LIBCXX_LOCALE),y)
+# Always include for TizenRT - provides std::cout, std::cin, std::stringstream
 CXXSRCS += locale.cpp ios.cpp iostream.cpp strstream.cpp
-endif
 
 # C++17 and later sources
 ifeq ($(CONFIG_CXX_VERSION_17_OR_LATER),y)
