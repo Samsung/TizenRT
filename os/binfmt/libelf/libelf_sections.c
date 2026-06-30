@@ -235,7 +235,7 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 		binfo("   rodata_addr : %x\n", g_bin_addr_list[bin_idx].rodata_addr);
 #endif
 
-#if defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME) || defined(CONFIG_MEM_LEAK_CHECKER)
+#if defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME) || defined(CONFIG_DEBUG_MEM_LEAK_CHECKER)
 		g_bin_addr_list[bin_idx].data_addr = bin->sections[BIN_DATA];
 		g_bin_addr_list[bin_idx].bss_addr = bin->sections[BIN_BSS];
 		g_bin_addr_list[bin_idx].data_size = bin->sizes[BIN_DATA];

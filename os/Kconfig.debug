@@ -777,6 +777,50 @@ config DEBUG_MM_HEAPINFO
 	---help---
 		Enable task wise malloc debug.
 
+config DEBUG_MEM_LEAK_CHECKER
+	bool "Memory Leak Checker"
+	default n
+	depends on DEBUG_MM_HEAPINFO
+	select SAVE_BIN_SECTION_ADDR if APP_BINARY_SEPARATION
+	---help---
+		Enable kernel support for Memory Leak Checker. This requires
+		arch/arm/src/<chip>/memory_region.h to work for the selected board.
+
+if DEBUG_MEM_LEAK_CHECKER
+
+choice
+	prompt "Memory leak checker buffer allocation"
+	default DEBUG_MEM_LEAK_CHECKER_DYNAMIC_ALLOC
+	---help---
+		Select how the memory leak checker allocates its internal search buffers.
+		Dynamic allocation uses heap memory at runtime. Static allocation reserves
+		the buffers at build time and can be used from allocation failure handling.
+
+config DEBUG_MEM_LEAK_CHECKER_DYNAMIC_ALLOC
+	bool "Dynamic allocation"
+
+config DEBUG_MEM_LEAK_CHECKER_STATIC_ALLOC
+	bool "Static allocation"
+
+endchoice
+
+config DEBUG_MEM_LEAK_CHECKER_MAX_ALLOC_COUNT
+	int "max allocation counts"
+	default 3000
+	depends on DEBUG_MEM_LEAK_CHECKER_STATIC_ALLOC
+	---help---
+		It must be larger than the total number of memory allocations. This is
+		used only when the memory leak checker buffers are statically allocated.
+
+config DEBUG_MEM_LEAK_CHECKER_HASH_TABLE_SIZE
+	int "size of hash table"
+	default 1007
+	---help---
+		The size of the hash table for searching. It is preferred to have this
+		as a prime number.
+
+endif # DEBUG_MEM_LEAK_CHECKER
+
 config DEBUG_CHECK_FRAGMENTATION
 	bool "Show where and how memory is fragmented"
 	default n
