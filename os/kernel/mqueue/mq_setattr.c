@@ -60,6 +60,7 @@
 #include <mqueue.h>
 
 #include <tinyara/mqueue.h>
+#include "mqueue/mqueue.h"
 
 /************************************************************************
  * Definitions
@@ -115,6 +116,10 @@ int mq_setattr(mqd_t mqdes, const struct mq_attr *mq_stat, struct mq_attr *oldst
 	int ret = ERROR;
 
 	if (mqdes && mq_stat) {
+		if (mq_verifydesg(mqdes) != OK) {
+			return ERROR;
+		}
+
 		/* Return the attributes if so requested */
 
 		if (oldstat) {

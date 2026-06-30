@@ -58,6 +58,7 @@
 
 #include <mqueue.h>
 #include <tinyara/mqueue.h>
+#include "mqueue/mqueue.h"
 
 /************************************************************************
  * Definitions
@@ -106,6 +107,10 @@ int mq_getattr(mqd_t mqdes, struct mq_attr *mq_stat)
 	int ret = ERROR;
 
 	if (mqdes && mq_stat) {
+		if (mq_verifydesg(mqdes) != OK) {
+			return ERROR;
+		}
+
 		/* Return the attributes */
 
 		mq_stat->mq_maxmsg = mqdes->msgq->maxmsgs;

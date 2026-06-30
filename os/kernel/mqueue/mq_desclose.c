@@ -153,5 +153,12 @@ void mq_desclose_group(mqd_t mqdes, FAR struct task_group_s *group)
 
 	/* Deallocate the message descriptor */
 
+#ifdef CONFIG_LOG_DUMP
+	/* Clear the cached log_dump descriptor if this is it */
+	if (mq_verifydesg_get_logdump_mqdes() == mqdes) {
+		mq_verifydesg_set_logdump_mqdes(NULL);
+	}
+#endif
+
 	mq_desfree(mqdes);
 }
