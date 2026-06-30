@@ -277,11 +277,17 @@ exception_common:
 	 */
 
 #ifdef CONFIG_ARCH_NESTED_INTERRUPT
-#ifdef CONFIG_ARMv8M_USEBASEPRI
+/* Check if g_nestlevel is CONFIG_ARCH_NESTED_INTERRUPT_LEVEL - 1, if so, do not restore basepri */
+	ldr		r4, =g_nestlevel
+	ldr		r5, [r4]
+	cmp		r5, #(CONFIG_ARCH_NESTED_INTERRUPT_LEVEL - 1) /* 1 level is reserved for NMI */
+	beq		11f
+#ifdef CONFIG_ARMV8M_USEBASEPRI
 	msr		basepri, r3
 #else
 	cpsie	i
 #endif
+11:
 #endif
 
 	push	{r1}					/* Save the MSP on the interrupt stack */

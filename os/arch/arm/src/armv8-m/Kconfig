@@ -205,6 +205,20 @@ config ARMV8M_ITMSYSLOG
 		MCU support in order to be used.  See arch/arm/src/armv8-m/itm_syslog.h
 		for additional initialization information.
 
+config ARCH_NESTED_INTERRUPT_LEVEL
+	int "Nested interrupt level"
+	default 4
+	range 1 10
+	depends on ARCH_NESTED_INTERRUPT
+	---help---
+		Configure the maximum nesting level for interrupts. This setting
+		determines how deep interrupt handlers can be nested. A value of 1
+		means no nesting (only one interrupt can be active at a time),
+		while higher values allow for more deeply nested interrupts.
+		
+		WARNING: Higher nesting levels require more stack space and can
+		increase interrupt latency for lower priority interrupts.
+
 if ARMV8M_ITMSYSLOG
 
 config ARMV8M_ITMSYSLOG_PORT
