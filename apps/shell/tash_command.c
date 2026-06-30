@@ -431,10 +431,21 @@ bool tash_search_cmd(char *cmd, int *cmd_char_ptr, char direction)
 int check_exclam_cmd(char *buff)
 {
 	int hist_idx;
-	int histcmd_size;
+	size_t histcmd_size;
+	size_t prefix_size;
+	size_t suffix_size;
+	size_t expanded_size;
 	char *histcmd_ptr;
+	char *cmd_start;
 	char *exclam_ptr;
 	char *exclam_nextptr;
+
+	if (!buff) {
+		return ERROR;
+	}
+
+	/* Keep the original start to calculate the expanded command length. */
+	cmd_start = buff;
 
 	/* Find the '!' in the input character */
 
@@ -482,17 +493,35 @@ int check_exclam_cmd(char *buff)
 				return ERROR;
 			} else {
 				histcmd_size = strlen(histcmd_ptr);
-				if (histcmd_size != (int)(buff - exclam_ptr)) {
+
+				/* Split the command as [prefix][!number][suffix].
+				 * strtol() leaves buff at the first suffix byte after !number.
+				 * The expanded length excludes the \0, so a value
+				 * equal to TASH_LINEBUFLEN is already too large for this buffer.
+				 */
+				prefix_size = (size_t)(exclam_ptr - cmd_start);
+				suffix_size = strlen(buff);
+				expanded_size = prefix_size + histcmd_size + suffix_size;
+
+				/* Reject in-place expansion that would exceed the fixed TASH line buffer. */
+				if (expanded_size >= TASH_LINEBUFLEN) {
+					printf("TASH: history expansion is too long, maximum length is %d\n", TASH_LINEBUFLEN - 1);
+					return ERROR;
+				}
+
+				if (histcmd_size != (size_t)(buff - exclam_ptr)) {
 					/* "!number" does not have the same size as the command from the history list.
 					 * Let's adjust the location of next string to replace "!number" to real command string.
 					 */
 
-					memmove(exclam_ptr + histcmd_size, buff, strlen(buff));
+					/* Move the suffix with its \0 before copying history text. */
+					memmove(exclam_ptr + histcmd_size, buff, suffix_size + 1);
 					buff = exclam_ptr + histcmd_size;
 				}
 				/* Replace "!number" to real command string in buff */
 
-				strncpy(exclam_ptr, histcmd_ptr, histcmd_size);
+				memcpy(exclam_ptr, histcmd_ptr, histcmd_size);
+				continue;
 			}
 		}
 
