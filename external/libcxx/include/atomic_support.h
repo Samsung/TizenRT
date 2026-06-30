@@ -1,38 +1,21 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 //===----------------------------------------------------------------------===////
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===////
 
 #ifndef ATOMIC_SUPPORT_H
 #define ATOMIC_SUPPORT_H
 
-#include "__config"
-#include "memory" // for __libcpp_relaxed_load
+#include <__config>
+#include <memory> // for __libcpp_relaxed_load
 
 #if defined(__clang__) && __has_builtin(__atomic_load_n)             \
                        && __has_builtin(__atomic_store_n)            \
                        && __has_builtin(__atomic_add_fetch)          \
+                       && __has_builtin(__atomic_exchange_n)         \
                        && __has_builtin(__atomic_compare_exchange_n) \
                        && defined(__ATOMIC_RELAXED)                  \
                        && defined(__ATOMIC_CONSUME)                  \
@@ -41,12 +24,12 @@
                        && defined(__ATOMIC_ACQ_REL)                  \
                        && defined(__ATOMIC_SEQ_CST)
 #   define _LIBCPP_HAS_ATOMIC_BUILTINS
-#elif !defined(__clang__) && defined(_GNUC_VER) && _GNUC_VER >= 407
+#elif defined(_LIBCPP_COMPILER_GCC)
 #   define _LIBCPP_HAS_ATOMIC_BUILTINS
 #endif
 
 #if !defined(_LIBCPP_HAS_ATOMIC_BUILTINS) && !defined(_LIBCPP_HAS_NO_THREADS)
-# if defined(_MSC_VER) && !defined(__clang__)
+# if defined(_LIBCPP_WARNING)
     _LIBCPP_WARNING("Building libc++ without __atomic builtins is unsupported")
 # else
 #   warning Building libc++ without __atomic builtins is unsupported
@@ -101,6 +84,14 @@ _ValueType __libcpp_atomic_add(_ValueType* __val, _AddType __a,
 
 template <class _ValueType>
 inline _LIBCPP_INLINE_VISIBILITY
+_ValueType __libcpp_atomic_exchange(_ValueType* __target,
+                                    _ValueType __value, int __order = _AO_Seq)
+{
+    return __atomic_exchange_n(__target, __value, __order);
+}
+
+template <class _ValueType>
+inline _LIBCPP_INLINE_VISIBILITY
 bool __libcpp_atomic_compare_exchange(_ValueType* __val,
     _ValueType* __expected, _ValueType __after,
     int __success_order = _AO_Seq,
@@ -150,6 +141,16 @@ _ValueType __libcpp_atomic_add(_ValueType* __val, _AddType __a,
                                int = 0)
 {
     return *__val += __a;
+}
+
+template <class _ValueType>
+inline _LIBCPP_INLINE_VISIBILITY
+_ValueType __libcpp_atomic_exchange(_ValueType* __target,
+                                    _ValueType __value, int = _AO_Seq)
+{
+    _ValueType old = *__target;
+    *__target = __value;
+    return old;
 }
 
 template <class _ValueType>

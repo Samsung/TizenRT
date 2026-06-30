@@ -1,29 +1,11 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 //===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-
+//
 // <algorithm>
 
 // template<class T, StrictWeakOrder<auto, T> Compare>
@@ -32,42 +14,44 @@
 //   minmax(const T& a, const T& b, Compare comp);
 
 #include <algorithm>
-#include <functional>
 #include <cassert>
+#include <functional>
+#include <utility>
 
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
+namespace {
 template <class T, class C>
-static int
+void
 test(const T& a, const T& b, C c, const T& x, const T& y)
 {
     std::pair<const T&, const T&> p = std::minmax(a, b, c);
     TC_ASSERT_EXPR(&p.first == &x);
     TC_ASSERT_EXPR(&p.second == &y);
-    return 0;
 }
 
 
-int tc_libcxx_algorithms_alg_min_max_minmax_comp(void)
-{
+} // namespace
+
+int tc_libcxx_algorithms_alg_sorting_alg_min_max_minmax_comp(void) {
     {
     int x = 0;
     int y = 0;
-    TC_ASSERT_FUNC((test(x, y, std::greater<int>(), x, y)));
-    TC_ASSERT_FUNC((test(y, x, std::greater<int>(), y, x)));
+    test(x, y, std::greater<int>(), x, y);
+    test(y, x, std::greater<int>(), y, x);
     }
     {
     int x = 0;
     int y = 1;
-    TC_ASSERT_FUNC((test(x, y, std::greater<int>(), y, x)));
-    TC_ASSERT_FUNC((test(y, x, std::greater<int>(), y, x)));
+    test(x, y, std::greater<int>(), y, x);
+    test(y, x, std::greater<int>(), y, x);
     }
     {
     int x = 1;
     int y = 0;
-    TC_ASSERT_FUNC((test(x, y, std::greater<int>(), x, y)));
-    TC_ASSERT_FUNC((test(y, x, std::greater<int>(), x, y)));
+    test(x, y, std::greater<int>(), x, y);
+    test(y, x, std::greater<int>(), x, y);
     }
 #if TEST_STD_VER >= 14
     {
@@ -83,6 +67,9 @@ int tc_libcxx_algorithms_alg_min_max_minmax_comp(void)
     static_assert(p2.second == y, "");
     }
 #endif
-    TC_SUCCESS_RESULT();
-    return 0;
+
+  TC_SUCCESS_RESULT();
+
+
+  return 0;
 }

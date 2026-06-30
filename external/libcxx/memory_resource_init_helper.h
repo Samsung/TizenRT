@@ -1,0 +1,2 @@
+#pragma GCC system_header
+static _LIBCPP_CONSTINIT ResourceInitHelper res_init _LIBCPP_INIT_PRIORITY_MAX;

@@ -79,8 +79,13 @@ using namespace std;
 //***************************************************************************
 // Definitions
 //***************************************************************************
-// Configuration ************************************************************
+// Configuration
+
+// Enable RTTI test only if RTTI is available (auto-detected from compiler flags or forced on via Kconfig)
+#if defined(__GXX_RTTI) || defined(CONFIG_LIBCXX_RTTI_FORCE_ON)
 #define CXXTEST_RTTI
+#endif
+
 #undef CXXTEST_ISTREAM
 #define CXXTEST_EXCEPTION
 #define THREAD_TEST

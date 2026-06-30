@@ -1,27 +1,9 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 // -*- C++ -*-
-//===--------------------------- float.h ----------------------------------===//
+//===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -41,7 +23,14 @@ Macros:
     DBL_MANT_DIG
     LDBL_MANT_DIG
 
+    FLT_HAS_SUBNORM     // C11
+    DBL_HAS_SUBNORM     // C11
+    LDBL_HAS_SUBNORM    // C11
+
     DECIMAL_DIG         // C99
+    FLT_DECIMAL_DIG     // C11
+    DBL_DECIMAL_DIG     // C11
+    LDBL_DECIMAL_DIG    // C11
 
     FLT_DIG
     DBL_DIG
@@ -75,15 +64,21 @@ Macros:
     DBL_MIN
     LDBL_MIN
 
+    FLT_TRUE_MIN        // C11
+    DBL_TRUE_MIN        // C11
+    LDBL_TRUE_MIN       // C11
+
 */
 
 #include <__config>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
-#pragma GCC system_header
+#  pragma GCC system_header
 #endif
 
-#include_next <float.h>
+#if __has_include_next(<float.h>)
+#  include_next <float.h>
+#endif
 
 #ifdef __cplusplus
 
@@ -97,4 +92,4 @@ Macros:
 
 #endif // __cplusplus
 
-#endif  // _LIBCPP_FLOAT_H
+#endif // _LIBCPP_FLOAT_H

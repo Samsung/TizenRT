@@ -1,31 +1,13 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 //===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-
+//
 // <algorithm>
-
+//
 // template<ForwardIterator Iter>
 //   requires LessThanComparable<Iter::value_type>
 //   Iter
@@ -35,14 +17,15 @@
 #include <random>
 #include <cassert>
 
-#include "test_iterators.h"
 #include "test_macros.h"
+#include "test_iterators.h"
 #include "libcxx_tc_common.h"
 
-static std::mt19937 randomness;
+namespace {
+std::mt19937 randomness;
 
 template <class Iter>
-static int
+void
 test(Iter first, Iter last)
 {
     Iter i = std::max_element(first, last);
@@ -53,41 +36,65 @@ test(Iter first, Iter last)
     }
     else
         TC_ASSERT_EXPR(i == last);
-
-    return 0;
 }
 
 template <class Iter>
-static int
-test(int N)
+void
+test_for_size(int N)
 {
     int* a = new int[N];
     for (int i = 0; i < N; ++i)
         a[i] = i;
     std::shuffle(a, a+N, randomness);
-    TC_ASSERT_FUNC((test(Iter(a), Iter(a+N))));
+    test(Iter(a), Iter(a+N));
     delete [] a;
-    return 0;
 }
 
 template <class Iter>
-static int
-test()
-{
-    TC_ASSERT_FUNC((test<Iter>(0)));
-    TC_ASSERT_FUNC((test<Iter>(1)));
-    TC_ASSERT_FUNC((test<Iter>(2)));
-    TC_ASSERT_FUNC((test<Iter>(3)));
-    TC_ASSERT_FUNC((test<Iter>(10)));
-    TC_ASSERT_FUNC((test<Iter>(1000)));
-    return 0;
+void test_max_element_size_0() {
+    test_for_size<Iter>(0);
+}
+
+template <class Iter>
+void test_max_element_size_1() {
+    test_for_size<Iter>(1);
+}
+
+template <class Iter>
+void test_max_element_size_2() {
+    test_for_size<Iter>(2);
+}
+
+template <class Iter>
+void test_max_element_size_3() {
+    test_for_size<Iter>(3);
+}
+
+template <class Iter>
+void test_max_element_size_10() {
+    test_for_size<Iter>(10);
+}
+
+template <class Iter>
+void test_max_element_size_1000() {
+    test_for_size<Iter>(1000);
+}
+
+template <class Iter>
+void test_all_max_element_sizes() {
+    test_max_element_size_0<Iter>();
+    test_max_element_size_1<Iter>();
+    test_max_element_size_2<Iter>();
+    test_max_element_size_3<Iter>();
+    test_max_element_size_10<Iter>();
+    test_max_element_size_1000<Iter>();
 }
 
 #if TEST_STD_VER >= 14
 constexpr int il[] = { 2, 4, 6, 8, 7, 5, 3, 1 };
 #endif
 
-static void constexpr_test()
+void constexpr_test()
 {
 #if TEST_STD_VER >= 14
     constexpr auto p = std::max_element(il,il+8);
@@ -95,15 +102,21 @@ static void constexpr_test()
 #endif
 }
 
-int tc_libcxx_algorithms_alg_min_max_max_element(void)
-{
-    TC_ASSERT_FUNC((test<forward_iterator<const int*> >()));
-    TC_ASSERT_FUNC((test<bidirectional_iterator<const int*> >()));
-    TC_ASSERT_FUNC((test<random_access_iterator<const int*> >()));
-    TC_ASSERT_FUNC((test<const int*>()));
+void run_all_max_element_tests() {
+    test_all_max_element_sizes<forward_iterator<const int*> >();
+    test_all_max_element_sizes<bidirectional_iterator<const int*> >();
+    test_all_max_element_sizes<random_access_iterator<const int*> >();
+    test_all_max_element_sizes<const int*>();
 
-    constexpr_test ();
+    constexpr_test();
+}
+
+} // namespace
+
+int tc_libcxx_algorithms_alg_sorting_alg_min_max_max_element(void) {
+    run_all_max_element_tests();
 
     TC_SUCCESS_RESULT();
+
     return 0;
 }

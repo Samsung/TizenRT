@@ -52,28 +52,56 @@
 
 -include $(TOPDIR)/Make.defs
 
+# Build flags for libc++ library compilation
+CXXFLAGS += -D_LIBCPP_BUILDING_LIBRARY
+CXXFLAGS += -I$(TOPDIR)/../external/libcxx/include
+
 # Sources
 
 ASRCS =
 CSRCS =
 
 # Add the libcxx sources
+# Common sources (compatible with C++14 and C++17)
 
-CXXSRCS = algorithm.cxx any.cxx bind.cxx chrono.cxx condition_variable.cxx
-CXXSRCS += debug.cxx future.cxx hash.cxx ios.cxx iostream.cxx
-CXXSRCS += memory.cxx mutex.cxx new.cxx optional.cxx random.cxx regex.cxx
-CXXSRCS += shared_mutex.cxx string.cxx strstream.cxx system_error.cxx
-CXXSRCS += thread.cxx typeinfo.cxx utility.cxx valarray.cxx vector.cxx
-CXXSRCS += locale.cxx
+CXXSRCS = algorithm.cpp bind.cpp chrono.cpp condition_variable.cpp
+CXXSRCS += condition_variable_destructor.cpp
+CXXSRCS += future.cpp hash.cpp verbose_abort.cpp bad_alloc.cpp 
+CXXSRCS += memory.cpp mutex.cpp mutex_destructor.cpp new.cpp
+CXXSRCS += string.cpp system_error.cpp
+CXXSRCS += thread.cpp typeinfo.cpp valarray.cpp vector.cpp
+CXXSRCS += ios.instantiations.cpp random.cpp
+CXXSRCS += functional.cpp 
+CXXSRCS += regex.cpp atomic.cpp random_shuffle.cpp
+CXXSRCS += legacy_pointer_safety.cpp
+CXXSRCS += new_handler.cpp new_helpers.cpp
+
+# Locale and iostream support (requires libc locale functions)
+# Always include for TizenRT - provides std::cout, std::cin, std::stringstream
+CXXSRCS += locale.cpp ios.cpp iostream.cpp strstream.cpp
+
+# C++17 and later sources
+ifeq ($(CONFIG_CXX_VERSION_17_OR_LATER),y)
+CXXSRCS += any.cpp optional.cpp variant.cpp shared_mutex.cpp 
+CXXSRCS += memory_resource.cpp charconv.cpp barrier.cpp
+CXXSRCS += filesystem/filesystem_clock.cpp filesystem/filesystem_error.cpp filesystem/path.cpp
+# Filesystem support (set via Kconfig, _LIBCPP_HAS_NO_FILESYSTEM is in __config_site)
+ifeq ($(CONFIG_LIBCXX_FILESYSTEM),y)
+CXXSRCS += filesystem/directory_entry.cpp filesystem/directory_iterator.cpp
+CXXSRCS += filesystem/operations.cpp filesystem/int128_builtins.cpp
+endif
+endif # CONFIG_CXX_VERSION_17_OR_LATER
+
+ifeq ($(CONFIG_CXX_VERSION_20_OR_LATER),y)
+CXXSRCS += print.cpp
+endif
 
 # Exception handling logic
-
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
-CXXSRCS += exception.cxx stdexcept.cxx
+CXXSRCS += exception.cpp stdexcept.cpp
 endif
 
 # libsupc++ replacement
-
 ifneq ($(CONFIG_LIBCXX_HAVE_LIBSUPCXX),y)
 CXXSRCS +=
 endif
@@ -82,7 +110,7 @@ endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
-CXXOBJS = $(CXXSRCS:.cxx=$(OBJEXT))
+CXXOBJS = $(CXXSRCS:.cpp=$(OBJEXT))
 
 SRCS = $(ASRCS) $(CSRCS) $(CXXSRCS)
 OBJS = $(AOBJS) $(COBJS) $(CXXOBJS)
@@ -98,7 +126,7 @@ $(AOBJS): %$(OBJEXT): %.S
 $(COBJS): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-$(CXXOBJS): %$(OBJEXT): %.cxx
+$(CXXOBJS): %$(OBJEXT): %.cpp
 	$(call COMPILEXX, $<, $@)
 
 $(BIN):	$(OBJS)

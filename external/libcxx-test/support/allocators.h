@@ -1,32 +1,17 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 //===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
 #ifndef ALLOCATORS_H
 #define ALLOCATORS_H
 
+#include <cstddef>
+#include <memory>
+#include <new>
 #include <type_traits>
 #include <utility>
 
@@ -203,6 +188,69 @@ bool operator!=(const A3<T>& x, const A3<U>& y)
     return !(x == y);
 }
 
-#endif  // TEST_STD_VER >= 11
+template <class T, bool POCCAValue>
+class MaybePOCCAAllocator {
+    int id_ = 0;
+    bool* copy_assigned_into_ = nullptr;
 
-#endif  // ALLOCATORS_H
+    template<class, bool> friend class MaybePOCCAAllocator;
+
+public:
+    typedef std::integral_constant<bool, POCCAValue> propagate_on_container_copy_assignment;
+    typedef T value_type;
+
+    template <class U>
+    struct rebind {
+        typedef MaybePOCCAAllocator<U, POCCAValue> other;
+    };
+
+    TEST_CONSTEXPR MaybePOCCAAllocator() = default;
+    TEST_CONSTEXPR MaybePOCCAAllocator(int id, bool* copy_assigned_into)
+        : id_(id), copy_assigned_into_(copy_assigned_into) {}
+
+    template <class U>
+    MaybePOCCAAllocator(const MaybePOCCAAllocator<U, POCCAValue>& that)
+        : id_(that.id_), copy_assigned_into_(that.copy_assigned_into_) {}
+
+    MaybePOCCAAllocator(const MaybePOCCAAllocator&) = default;
+    TEST_CONSTEXPR_CXX14 MaybePOCCAAllocator& operator=(const MaybePOCCAAllocator& a)
+    {
+        id_ = a.id();
+        if (copy_assigned_into_)
+            *copy_assigned_into_ = true;
+        return *this;
+    }
+
+    TEST_CONSTEXPR_CXX20 T* allocate(std::size_t n)
+    {
+        return std::allocator<T>().allocate(n);
+    }
+
+    TEST_CONSTEXPR_CXX20 void deallocate(T* ptr, std::size_t n)
+    {
+        std::allocator<T>().deallocate(ptr, n);
+    }
+
+    TEST_CONSTEXPR int id() const { return id_; }
+
+    template <class U>
+    TEST_CONSTEXPR friend bool operator==(const MaybePOCCAAllocator& lhs, const MaybePOCCAAllocator<U, POCCAValue>& rhs)
+    {
+        return lhs.id() == rhs.id();
+    }
+
+    template <class U>
+    TEST_CONSTEXPR friend bool operator!=(const MaybePOCCAAllocator& lhs, const MaybePOCCAAllocator<U, POCCAValue>& rhs)
+    {
+        return !(lhs == rhs);
+    }
+};
+
+template <class T>
+using POCCAAllocator = MaybePOCCAAllocator<T, /*POCCAValue = */true>;
+template <class T>
+using NonPOCCAAllocator = MaybePOCCAAllocator<T, /*POCCAValue = */false>;
+
+#endif // TEST_STD_VER >= 11
+
+#endif // ALLOCATORS_H

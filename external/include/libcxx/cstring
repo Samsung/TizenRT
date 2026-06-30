@@ -1,107 +1,105 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
-//***************************************************************************
-// include/libcxx/cstring
+// -*- C++ -*-
+//===----------------------------------------------------------------------===//
 //
-//   Copyright (C) 2009-2012, 2017 Gregory Nutt. All rights reserved.
-//   Author: Gregory Nutt <gnutt@nuttx.org>
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//
-// 1. Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-// 2. Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in
-//    the documentation and/or other materials provided with the
-//    distribution.
-// 3. Neither the name NuttX nor the names of its contributors may be
-//    used to endorse or promote products derived from this software
-//    without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-// OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-// AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//***************************************************************************
+//===----------------------------------------------------------------------===//
 
-#ifndef __INCLUDE_CXX_CSTRING
-#define __INCLUDE_CXX_CSTRING
+#ifndef _LIBCPP_CSTRING
+#define _LIBCPP_CSTRING
 
-//***************************************************************************
-// Included Files
-//***************************************************************************
+/*
+    cstring synopsis
 
-#include <tinyara/config.h>
-#include <string.h>
-#include <strings.h>
+Macros:
 
-//***************************************************************************
-// Namespace
-//***************************************************************************
+    NULL
 
 namespace std
 {
-  using ::size_t;
 
-  using ::strdup;
-  using ::strndup;
-  using ::strerror;
-  using ::strerror_r;
-  using ::strlen;
-  using ::strnlen;
-  using ::strcat;
-  using ::strncat;
-  using ::strcmp;
-  using ::strncmp;
-  using ::strcasecmp;
-  using ::strncasecmp;
-  using ::strcoll;
-  using ::stpcpy;
-  using ::strcpy;
-  using ::strncpy;
-  using ::strpbrk;
-  using ::strchr;
-  using ::strrchr;
-  using ::strspn;
-  using ::strcspn;
-  using ::strstr;
-  using ::strcasestr;
-  using ::strtok;
-  using ::strtok_r;
-  using ::strxfrm;
+Types:
 
-  using ::memchr;
-  using ::memccpy;
-  using ::memcmp;
-  using ::memcpy;
-  using ::memmove;
-  using ::memset;
-}
+    size_t
 
-#endif // __INCLUDE_CXX_CSTRING
+void* memcpy(void* restrict s1, const void* restrict s2, size_t n);
+void* memmove(void* s1, const void* s2, size_t n);
+char* strcpy (char* restrict s1, const char* restrict s2);
+char* strncpy(char* restrict s1, const char* restrict s2, size_t n);
+char* strcat (char* restrict s1, const char* restrict s2);
+char* strncat(char* restrict s1, const char* restrict s2, size_t n);
+int memcmp(const void* s1, const void* s2, size_t n);
+int strcmp (const char* s1, const char* s2);
+int strncmp(const char* s1, const char* s2, size_t n);
+int strcoll(const char* s1, const char* s2);
+size_t strxfrm(char* restrict s1, const char* restrict s2, size_t n);
+const void* memchr(const void* s, int c, size_t n);
+      void* memchr(      void* s, int c, size_t n);
+const char* strchr(const char* s, int c);
+      char* strchr(      char* s, int c);
+size_t strcspn(const char* s1, const char* s2);
+const char* strpbrk(const char* s1, const char* s2);
+      char* strpbrk(      char* s1, const char* s2);
+const char* strrchr(const char* s, int c);
+      char* strrchr(      char* s, int c);
+size_t strspn(const char* s1, const char* s2);
+const char* strstr(const char* s1, const char* s2);
+      char* strstr(      char* s1, const char* s2);
+char* strtok(char* restrict s1, const char* restrict s2);
+void* memset(void* s, int c, size_t n);
+char* strerror(int errnum);
+size_t strlen(const char* s);
+
+}  // std
+
+*/
+
+#include <__assert> // all public C++ headers provide the assertion handler
+#include <__config>
+#include <__type_traits/is_constant_evaluated.h>
+
+#include <string.h>
+
+#ifndef _LIBCPP_STRING_H
+#   error <cstring> tried including <string.h> but didn't find libc++'s <string.h> header. \
+          This usually means that your header search paths are not configured properly. \
+          The header search paths should contain the C++ Standard Library headers before \
+          any C Standard Library, and you are probably using compiler flags that make that \
+          not be the case.
+#endif
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#  pragma GCC system_header
+#endif
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+using ::size_t _LIBCPP_USING_IF_EXISTS;
+using ::memcpy _LIBCPP_USING_IF_EXISTS;
+using ::memmove _LIBCPP_USING_IF_EXISTS;
+using ::strcpy _LIBCPP_USING_IF_EXISTS;
+using ::strncpy _LIBCPP_USING_IF_EXISTS;
+using ::strcat _LIBCPP_USING_IF_EXISTS;
+using ::strncat _LIBCPP_USING_IF_EXISTS;
+using ::memcmp _LIBCPP_USING_IF_EXISTS;
+using ::strcmp _LIBCPP_USING_IF_EXISTS;
+using ::strncmp _LIBCPP_USING_IF_EXISTS;
+using ::strcoll _LIBCPP_USING_IF_EXISTS;
+using ::strxfrm _LIBCPP_USING_IF_EXISTS;
+using ::memchr _LIBCPP_USING_IF_EXISTS;
+using ::strchr _LIBCPP_USING_IF_EXISTS;
+using ::strcspn _LIBCPP_USING_IF_EXISTS;
+using ::strpbrk _LIBCPP_USING_IF_EXISTS;
+using ::strrchr _LIBCPP_USING_IF_EXISTS;
+using ::strspn _LIBCPP_USING_IF_EXISTS;
+using ::strstr _LIBCPP_USING_IF_EXISTS;
+using ::strtok _LIBCPP_USING_IF_EXISTS;
+using ::memset _LIBCPP_USING_IF_EXISTS;
+using ::strerror _LIBCPP_USING_IF_EXISTS;
+using ::strlen _LIBCPP_USING_IF_EXISTS;
+
+_LIBCPP_END_NAMESPACE_STD
+
+#endif // _LIBCPP_CSTRING

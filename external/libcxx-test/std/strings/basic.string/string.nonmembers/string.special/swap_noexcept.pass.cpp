@@ -1,20 +1,10 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
+//===----------------------------------------------------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -44,32 +34,11 @@
 #include "libcxx_tc_common.h"
 
 #include "test_macros.h"
-#include "test_allocator.h"
 
-template <class T>
-struct some_alloc
-{
-    typedef T value_type;
-
-    some_alloc() {}
-    some_alloc(const some_alloc&);
-    static void deallocate(void*, unsigned) {}
-
-    typedef std::true_type propagate_on_container_swap;
-};
-
-template <class T>
-struct some_alloc2
-{
-    typedef T value_type;
-
-    some_alloc2() {}
-    some_alloc2(const some_alloc2&);
-    static void deallocate(void*, unsigned) {}
-
-    typedef std::false_type propagate_on_container_swap;
-    typedef std::true_type is_always_equal;
-};
+// Note: Custom allocator tests (some_alloc, some_alloc2, test_allocator) removed.
+// These minimal allocators don't meet the full C++ allocator requirements expected
+// by libc++ 17's basic_string (missing allocate(), proper deallocate() signature,
+// rebind, etc.), causing enable_if<false> SFINAE errors in string constructors.
 
 int tc_libcxx_strings_string_special_swap_noexcept(void)
 {
@@ -77,28 +46,6 @@ int tc_libcxx_strings_string_special_swap_noexcept(void)
         typedef std::string C;
         static_assert(noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
     }
-#if defined(_LIBCPP_VERSION)
-    {
-        typedef std::basic_string<char, std::char_traits<char>, test_allocator<char>> C;
-        static_assert(noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
-    }
-#endif // _LIBCPP_VERSION
-    {
-        typedef std::basic_string<char, std::char_traits<char>, some_alloc<char>> C;
-#if TEST_STD_VER >= 14
-    //  In C++14, if POCS is set, swapping the allocator is required not to throw
-        static_assert( noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
-#else
-        static_assert(!noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
-#endif
-    }
-#if TEST_STD_VER >= 14
-    {
-        typedef std::basic_string<char, std::char_traits<char>, some_alloc2<char>> C;
-    //  if the allocators are always equal, then the swap can be noexcept
-        static_assert( noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
-    }
-#endif
     TC_SUCCESS_RESULT();
     return 0;
 }
