@@ -412,6 +412,8 @@ void arm_vectorfiq(void);
 #if defined(CONFIG_SMP) && CONFIG_ARCH_INTERRUPTSTACK > 7
 uintptr_t arm_intstack_alloc(void);
 uintptr_t arm_intstack_top(void);
+uintptr_t arm_intstack_alloc_for_cpu(int cpu);
+uintptr_t arm_intstack_top_for_cpu(int cpu);
 #endif
 
 #ifdef CONFIG_PAGING
