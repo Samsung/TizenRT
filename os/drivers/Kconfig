@@ -377,6 +377,21 @@ config WATCHDOG_DEVPATH
 	string "Watchdog Device Path"
 	default "/dev/watchdog0"
 
+config WATCHDOG_CAPTURE_USER
+	bool "Allow user-space watchdog capture callbacks"
+	default n
+	depends on BUILD_PROTECTED
+	---help---
+		Allow user-space applications to register custom watchdog
+		expiration callbacks via WDIOC_CAPTURE ioctl.
+		
+		WARNING: Setting this to 'y' allows user applications to
+		influence interrupt-context execution flow. This should
+		only be enabled for development/debugging purposes.
+		
+		For production builds, especially protected builds,
+		this should remain disabled (default).
+
 config WATCHDOG_FOR_IRQ
 	bool "Enable watchdog for irq"
 	default n
