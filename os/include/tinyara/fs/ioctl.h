@@ -91,7 +91,6 @@
 #define _AJOYBASE       (0x1600)	/* Analog joystick ioctl commands */
 #define _PIPEBASE       (0x1700)	/* FIFO/pipe ioctl commands */
 #define _RTCBASE        (0x1800)	/* RTC ioctl commands */
-#define _FOTABASE       (0x1900)	/* FOTA ioctl commands */
 #define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
 #define _TMBASE         (0x2100)	/* Task Management ioctl commands */
 #define _MMINFOBASE     (0x2200)	/* Mminfo ioctl commands */
@@ -398,14 +397,6 @@
 
 #define _RTCIOCVALID(c)   (_IOC_TYPE(c) == _RTCBASE)
 #define _RTCIOC(nr)       _IOC(_RTCBASE, nr)
-
-/* FOTA driver ioctl definitions */
-#define _FOTAIOCVALID(c)   (_IOC_TYPE(c) == _FOTABASE)
-#define _FOTAIOC(nr)       _IOC(_FOTABASE, nr)
-#define FOTA_GET_PART      _FOTAIOC(0x0001)
-#define FOTA_SET_PART      _FOTAIOC(0x0002)
-#define FOTA_SET_BIN       _FOTAIOC(0x0003)
-#define FOTA_SET_PARAM     _FOTAIOC(0x0004)
 
 /* GPIO driver ioctl definitions ********************************************/
 /* (see include/tinyara/gpio.h */
