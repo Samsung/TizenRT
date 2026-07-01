@@ -70,19 +70,7 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 
 	while (readsize > 0) {
 #ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY 
-		uint32_t part_addr;
-		uint32_t read_offset;
-		uint32_t read_addr;
-
-		part_addr = BIN_PARTADDR(binp->binary_idx, BIN_USEIDX(binp->binary_idx));
-		read_offset = (uint32_t)offset;
-		read_addr = part_addr + read_offset;
-		nbytes = up_read_decrypted_flash(read_addr, buffer, readsize);
-		if (nbytes != OK && nbytes != -EINTR) {
-			berr("Failed to read userspace header, addr 0x%x, size %u, ret %d\n", read_addr, (unsigned int)readsize, (int)nbytes);
-		} else if (nbytes == OK) {
-			nbytes = readsize;
-		}
+		nbytes = up_read_decrypted_flash(BIN_PARTADDR(binp->binary_idx, BIN_USEIDX(binp->binary_idx)) + offset, buffer, readsize);
 #else
 		rpos = lseek(filfd, offset, SEEK_SET);
 		if (rpos != offset) {
