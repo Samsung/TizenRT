@@ -105,6 +105,10 @@ void rtl8730_st7789_initialize(void)
 	gpio_pins_init();
 
 	FAR struct spi_dev_s *spi = up_spiinitialize(CONFIG_LCD_ST7789_SPI_PORT);
+	if (!spi) {
+		lcddbg("ERROR: Failed to initialize SPI port %d\n", CONFIG_LCD_ST7789_SPI_PORT);
+		return;
+	}
 	struct lcd_dev_s *dev = st7789_lcdinitialize(spi, &g_rtl8730_config_dev_s.lcd_config);
 	if (lcddev_register(dev) < 0) {
 		lcddbg("ERROR: LCD driver register fail\n");

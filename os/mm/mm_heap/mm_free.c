@@ -141,6 +141,7 @@ static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddres
 		return;
 	}
 
+	DEBUGASSERT(heap);
 	/* We need to hold the MM semaphore while we muck with the
 	 * nodelist.
 	 */

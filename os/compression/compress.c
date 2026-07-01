@@ -69,17 +69,23 @@ unsigned char *allocate_compress_buffer(int offset, unsigned int size)
 int compress_block(unsigned char *out_buffer, long unsigned int *writesize, unsigned char *read_buffer, long unsigned int size)
 {
 	int ret;
+
+	if (!out_buffer || !writesize || !read_buffer) {
+		bcmpdbg("ERROR: Invalid Argument, out_buffer: %p, writesize: %p, read_buffer: %p, size: %lu\n", out_buffer, writesize, read_buffer, size);
+		return -EINVAL;
+	}
+
 #if CONFIG_COMPRESSION_TYPE == LZMA
 	unsigned int propsSize = LZMA_PROPS_SIZE;
 	ret = LzmaCompress(&out_buffer[LZMA_PROPS_SIZE], writesize, read_buffer, size, out_buffer, &propsSize, 0, 1 << 13, -1, -1, -1, -1, 1);
 	if (ret == SZ_ERROR_FAIL) {
-		dbg("Failure to compress with LZMACompress API\n");
+		bcmpdbg("ERROR: Failure to compress with LZMACompress API\n");
 		ret = -ret;
 	}
 #elif CONFIG_COMPRESSION_TYPE == MINIZ
 	ret = mz_compress(out_buffer, writesize, read_buffer, size);
 	if (ret != Z_OK) {
-		dbg("Failure to compress with Miniz's compress API; ret = %d\n", ret);
+		bcmpdbg("ERROR: Failure to compress with Miniz's compress API; ret = %d\n", ret);
 		if (ret > 0)
 			ret = -ret;
 	}
@@ -100,6 +106,12 @@ int compress_block(unsigned char *out_buffer, long unsigned int *writesize, unsi
 int decompress_block(unsigned char *out_buffer, long unsigned int *writesize, unsigned char *read_buffer, long unsigned int *size)
 {
 	int ret = ERROR;
+
+	if (!out_buffer || !writesize || !read_buffer || !size) {
+		bcmpdbg("ERROR: Invalid Argument, out_buffer: %p, writesize: %p, read_buffer: %p, size: %p\n", out_buffer, writesize, read_buffer, size);
+		return -EINVAL;
+	}
+
 #if CONFIG_COMPRESSION_TYPE == LZMA
 	/* Validate input size before subtracting LZMA_PROPS_SIZE to prevent
 	 * integer underflow (CWE-191) and subsequent out-of-bounds heap
@@ -116,12 +128,12 @@ int decompress_block(unsigned char *out_buffer, long unsigned int *writesize, un
 	ret = LzmaUncompress(&out_buffer[0], (unsigned int *)writesize, &read_buffer[LZMA_PROPS_SIZE], (unsigned int *)size, &read_buffer[0], LZMA_PROPS_SIZE);
 	if (ret == SZ_OK) {
 		if (*size < read_size) {
-			bcmpdbg("Out buffer allocated is not sufficient, some inputs are still left to be uncompressed\n");
+			bcmpdbg("ERROR: Out buffer allocated is not sufficient, some inputs are still left to be uncompressed\n");
 			return -ENOMEM;
 		}
 		return OK;
 	} else {
-		bcmpdbg("Failure to decompress with LZMA's uncompress API; ret = %d\n", ret);
+		bcmpdbg("ERROR: Failure to decompress with LZMA's uncompress API; ret = %d\n", ret);
 		if (ret == SZ_ERROR_INPUT_EOF) {
 			return OK;
 		}
@@ -131,7 +143,7 @@ int decompress_block(unsigned char *out_buffer, long unsigned int *writesize, un
 	/* Miniz specific logic for decompression */
 	ret = mz_uncompress(out_buffer, writesize, read_buffer, *size);
 	if (ret != Z_OK) {
-		bcmpdbg("Failure to decompress with Miniz's uncompress API; ret = %d\n", ret);
+		bcmpdbg("ERROR: Failure to decompress with Miniz's uncompress API; ret = %d\n", ret);
 		if (ret == Z_BUF_ERROR) {
 			return -ENOMEM;
 		}

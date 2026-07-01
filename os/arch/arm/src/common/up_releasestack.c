@@ -123,6 +123,8 @@ void up_release_stack(FAR struct tcb_s *dtcb, uint8_t ttype)
 {
 	/* Is there a stack allocated? */
 
+	DEBUGASSERT(dtcb);
+
 	if (dtcb->stack_alloc_ptr) {
 #ifdef CONFIG_MPU_STACK_OVERFLOW_PROTECTION
 		/* If this dtcb belongs to running thread, then it's stack

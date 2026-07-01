@@ -130,6 +130,12 @@ int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param)
 #endif
 	int ret;
 
+	if (!param) {
+		sdbg("ERROR: Invalid argument, param is NULL\n");
+		set_errno(EINVAL);
+		return ERROR;
+	}
+
 	/* Check for supported scheduling policy */
 
 #if CONFIG_RR_INTERVAL > 0

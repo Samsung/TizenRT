@@ -1358,6 +1358,11 @@ int uart_register(FAR const char *path, FAR uart_dev_t *dev)
 {
 	int ret;
 
+	if (!dev) {
+		lldbg("ERROR: Invalid argument, dev is NULL\n");
+		return -EINVAL;
+	}
+
 	/* Initialize semaphores */
 	sem_init(&dev->xmit.sem, 0, 1);
 	sem_init(&dev->recv.sem, 0, 1);

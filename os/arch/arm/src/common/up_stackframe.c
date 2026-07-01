@@ -118,6 +118,8 @@ FAR void *up_stack_frame(FAR struct tcb_s *tcb, size_t frame_size)
 {
 	uintptr_t topaddr;
 
+	DEBUGASSERT(tcb);
+
 	/* Align the frame_size */
 
 	frame_size = STACK_ALIGN_UP(frame_size);

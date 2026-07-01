@@ -136,7 +136,7 @@ ssize_t readline_common(FAR struct rl_common_s *vtbl, FAR char *buf, int buflen)
 
 	/* Sanity checks */
 
-	DEBUGASSERT(buf && buflen > 0);
+	DEBUGASSERT(vtbl && buf && buflen > 0);
 
 	if (buflen < 2) {
 		*buf = '\0';

@@ -246,7 +246,7 @@ static int sem_foreachholder(FAR sem_t *sem, holderhandler_t handler, FAR void *
 
 		if (pholder->htcb) {
 			/* Call the handler */
-
+			DEBUGASSERT(handler);
 			ret = handler(pholder, sem, arg);
 		}
 	}

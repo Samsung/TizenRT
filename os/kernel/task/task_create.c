@@ -136,6 +136,12 @@ static int thread_create(FAR const char *name, uint8_t ttype, int priority, int 
 	int errcode;
 	int ret;
 
+	if (stack_size < 0 || !entry) {
+		sdbg("ERROR: Invalid arguments, stack_size=%d, entry=%p\n", stack_size, entry);
+		errcode = EINVAL;
+		goto errout;
+	}
+
 	/* Check whether we are allowed to create new task ? */
 	if (g_alive_taskcount == CONFIG_MAX_TASKS) {
 		sdbg("ERROR: CONFIG_MAX_TASKS(%d) count reached\n", CONFIG_MAX_TASKS);

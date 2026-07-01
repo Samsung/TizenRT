@@ -255,6 +255,8 @@ static unsigned int sched_process_timeslice(int cpu, unsigned int ticks, bool no
 #endif
 	int decr;
 
+	DEBUGASSERT(rtcb);
+
 	/* Check if the currently executing task uses round robin
 	 * scheduling.
 	 */

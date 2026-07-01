@@ -59,6 +59,7 @@
 #include <stdint.h>
 #include <queue.h>
 #include <assert.h>
+#include <debug.h>
 #include <errno.h>
 
 #include <tinyara/arch.h>
@@ -118,13 +119,17 @@
 
 int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, clock_t delay)
 {
-	DEBUGASSERT(work != NULL);
-
 	struct work_s *next_work = NULL;
 	struct work_s *cur_work;
 	clock_t elapsed;
 	clock_t ctick;
 	ctick = clock();
+
+	DEBUGASSERT(wqueue);
+	if (!work) {
+		sdbg("ERROR: Invalid argument, work is NULL\n");
+		return -ENOENT;
+	}
 
 #if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
 	while (work_lock() < 0);
