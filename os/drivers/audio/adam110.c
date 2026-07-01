@@ -1636,7 +1636,9 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		case AUDIO_SD_AEC: {
 #ifdef CONFIG_AUDIO_ADAM110_AEC_SUPPORT
 			/* aec_enable function */
-			ADAM110_SET_AEC(priv, true, &rxpkt);
+			if (priv->dsp_flow == 0) {
+				ADAM110_SET_AEC(priv, true, &rxpkt);
+			}
 #endif
 		}
 		break;
@@ -1996,100 +1998,46 @@ int adam110_change_dsp_flow(FAR struct adam110_dev_s *priv, int flow)
 	int ret = OK;
 	t_proto_pkt rxpkt;
 
-	if (flow != 0 && flow != 1 && flow != 2) {
+	if (flow < 0 || flow > 2) {
 		auddbg("Invalid DSP flow : %d\n", flow);
 		return -EINVAL;
 	}
-	
-	if (flow == 0) {
-		/* Normal operation: stop mic polling, restore KD/seamless */
-		up_mdelay(10); /* wait until mic_poll_thread exits */
 
-		//Disable Real audio interrupt
-		ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, false, &rxpkt);
-		if (ret != OK) {
-			auddbg("Disable Real audio interrupt failed ret : %d\n", ret);
-			return ret;
-		}
-		//Disable Mic debug mode
-		ret = ADAM110_SET_MIC_DEBUG(priv, MIC_DEBUG_MODE_OFF, &rxpkt);
-		if (ret != OK) {
-			auddbg("Disable debug mode failed\n");
-			return ret;
-		}
-		//Enable AI model interrupt
-		ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num), true, &rxpkt);
-		if (ret != OK) {
-			auddbg("Enable KD failed. kd_num : %d\n", priv->kd_num);
-			return ret;
-		}
-		//Enable Seamless interrupt
-		ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, true, &rxpkt);
-		if (ret != OK) {
-			auddbg("Enable seamless interrupt failed ret : %d\n", ret);
-			return ret;
-		}
-		priv->dsp_flow = 0;
+	if (flow == priv->dsp_flow) {
 		return OK;
 	}
 
-	/* Debug mode: flow 1 = right ch, flow 2 = left ch */
-	if(priv->dsp_flow != flow && priv->dsp_flow > 0) {
-		ret = ADAM110_SET_MIC_DEBUG(priv, priv->dsp_flow, &rxpkt);
-		if (ret != OK) {
-			auddbg("Enable debug mode failed\n");
-			return ret;
-		}
-		priv->dsp_flow = (uint8_t)flow;
-		return 0;
+	switch(flow) {
+		case 0:
+			ret = ADAM110_SET_AEC(priv, false, &rxpkt);
+			if (ret != OK) {
+				auddbg("Disable AEC failed : %d\n", ret);
+				return ret;
+			}	
+			ret = ADAM110_SET_MIC_DEBUG(priv, MIC_DEBUG_MODE_OFF, &rxpkt);
+			if (ret != OK) {
+				auddbg("Disable debug mode failed\n");
+				return ret;
+			}
+			break;
+		case 1:
+			ret = ADAM110_SET_MIC_DEBUG(priv, (uint8_t)flow, &rxpkt);
+			if (ret != OK) {
+				auddbg("Disable debug mode failed\n");
+				return ret;
+			}
+			break;
+		case 2:
+			ret = ADAM110_SET_MIC_DEBUG(priv, (uint8_t)flow, &rxpkt);
+			if (ret != OK) {
+				auddbg("Disable debug mode failed\n");
+				return ret;
+			}
+			break;
+		default:
+			/* Nothing to do */
+			auddbg("[I] Default case\n");
 	}
-	else if(priv->dsp_flow == flow) {
-		return 0;
-	}
-	//Disable Real audio interrupt
-	ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, false, &rxpkt);
-	if (ret != OK) {
-		auddbg("Disable Real audio interrupt failed ret : %d\n", ret);
-		return ret;
-	}
-	//Disable AEC 
-	ret = ADAM110_SET_AEC(priv, false, &rxpkt);
-	if (ret != OK) {
-		auddbg("Disable AEC failed : %d\n", ret);
-		return ret;
-	}	
-	//Disable Seamless audio interrupt
-	ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_SEAMLESS_R, false, &rxpkt);
-	if (ret != OK) {
-		auddbg("Disable seamless interrupt failed ret : %d\n", ret);
-		return ret;
-	}
-	//Disable KD interrupt
-	ret = ADAM110_AI_SET_INTR(priv, (priv->kd_num), false, &rxpkt);
-	if (ret != OK) {
-		auddbg("Disable KD failed. kd_num : %d\n", priv->kd_num);
-		return ret;
-	}
-	ret = ADAM110_SET_MIC_DEBUG(priv, flow, &rxpkt);
-	if (ret != OK) {
-		auddbg("Enable debug mode failed\n");
-		return ret;
-	}
-	ret = ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, true, &rxpkt);
-	if (ret != OK) {
-		auddbg("Disable Real audio interrupt failed ret : %d\n", ret);
-		return ret;
-	}
-	/* Debug mode: flow 1 = right ch, flow 2 = left ch */
-	if(priv->dsp_flow != flow && priv->dsp_flow > 0) {
-		ret = ADAM110_SET_MIC_DEBUG(priv, priv->dsp_flow, &rxpkt);
-		if (ret != OK) {
-			auddbg("Enable debug mode failed\n");
-			return ret;
-		}
-		priv->dsp_flow = (uint8_t)flow;
-		return 0;
-	}	
-	priv->dsp_flow = (uint8_t)flow;	
+	priv->dsp_flow = (uint8_t)flow;
 	return ret;
 }
