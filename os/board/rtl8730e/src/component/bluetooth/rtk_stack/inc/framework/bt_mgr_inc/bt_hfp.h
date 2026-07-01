@@ -71,6 +71,23 @@ extern "C" {
 /**
  * bt_hfp.h
  *
+ * \defgroup BT_HFP_HF_SUPPORTED_CODEC_TYPE BT HFP HF supported codec type
+ *
+ * \brief Define BT HFP HF supported codec type.
+ *
+ * \ingroup BT_HFP_AG
+ * @{
+ */
+#define BT_HFP_HF_CODEC_TYPE_CVSD               (1 << 0)
+#define BT_HFP_HF_CODEC_TYPE_MSBC               (1 << 1)
+#define BT_HFP_HF_CODEC_TYPE_LC3                (1 << 2)
+/**
+ * @}ag
+ */
+
+/**
+ * bt_hfp.h
+ *
  * \brief  Define BT HFP call status.
  *
  * \ingroup BT_HFP
@@ -95,6 +112,7 @@ typedef enum t_bt_hfp_call_status
  * \param[in]  rfc_hfp_chann_num       RFCOMM channel num used for hfp.
  * \param[in]  rfc_hsp_chann_num       RFCOMM channel num used for hsp.
  * \param[in]  hf_supported_features   HFP hf supported features \ref BT_HFP_HF_LOCAL_SUPPORTED_FEATURE.
+ * \param[in]  supported_codecs        HF supported codecs \ref BT_HFP_HF_SUPPORTED_CODEC_TYPE.
  *
  * \return          The status of initializing HFP profile.
  * \retval true     HFP profile was initialized successfully.
@@ -105,7 +123,18 @@ typedef enum t_bt_hfp_call_status
 bool bt_hfp_init(uint8_t link_num,
                  uint8_t rfc_hfp_chann_num,
                  uint8_t rfc_hsp_chann_num,
-                 uint16_t hf_supported_features);
+                 uint16_t hf_supported_features,
+                 uint8_t  supported_codecs);
+
+/**
+ * bt_hfp.h
+ *
+ * \brief  De-initialize HFP profile.
+ *
+ *
+ * \ingroup BT_HFP
+ */
+void bt_hfp_deinit(void);
 
 /**
  * bt_hfp.h

@@ -1,70 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    rtl8721d_uart.c
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file contains all the functions prototypes for the UART firmware
-  *             library, including the following functionalities of the Universal Asynchronous
-  *             Receiver/Transmitter (UART) peripheral:
-  *           - Uart DMA mode Initialization
-  *           - Uart DMA mode config
-  *           - Uart DMA mode control(enable or disable)
-  *           - Uart Low Power Rx Initialization
-  *           - Uart Low Power Rx Monitor Function config
-  *           - Low Power Rx Baud Rate Setting
-  *           - Uart IrDA Function Initialization
-  *           - Uart IrDA Function control(enable or disable)
-  *
-  *  @verbatim
-  *
-  *          ===================================================================
-  *                                 How to use this driver
-  *          ===================================================================
-  *          1. Enable peripheral clock using the following functions
-  *              RCC_PeriphClockCmd(APBPeriph_UARTx, APBPeriph_UARTx_CLOCK, ENABLE);
-  *
-  *          2. configure the UART pinmux.
-  *		    Pinmux_Config(Pin_Num, PINMUX_FUNCTION_UART)
-  *
-  *          3. disable uart rx path
-  *
-  *          4. select rx path clock source(XTAL 40M Hz/XTAL 2M Hz/OSC 2M Hz)
-  *
-  *          5. clear rx fifo.
-  *
-  *          6. Program Word Length , Stop Bit, Parity, Hardware flow control and DMA Mode(ENABLE/DISABLE)
-  *              using the UART_Init() function.
-  *
-  *          7. Program the Baud Rate, using function UART_SetBaud().
-  *
-  *          8. Enable the NVIC and the corresponding interrupt using the function
-  *             UART_INTConfig() and register the uart irq handler if you need to use interrupt mode.
-  *
-  *          9. When using the DMA mode
-  *                   - GDMA related configurations(source address/destination address/block size etc.)
-  *                   - Configure the uart DMA burst size using UART_TXDMAConfig()/UART_RXDMAConfig() function
-  *                   - Active the UART TX/RX DMA Request using UART_TXDMACmd()/UART_RXDMACmd() function
-  *
-  *          10. enable uart rx path
-  *
-  *          Refer to related specifications for more details about IrDA function and Low Power Rx Path(monitoring and clock
-  *           swicth).
-  *
-  *          In order to reach higher communication baudrates, high rate rx path can be used.
-  *          Low power rx can be used for saving power.
-  *
-  *  @endverbatim
-  *
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2016, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
 
@@ -91,6 +29,20 @@ const u32 APBPeriph_UARTx_CLOCK[MAX_UART_INDEX] = {
 
 u32 UART_StateTx[MAX_UART_INDEX];
 u32 UART_StateRx[MAX_UART_INDEX];
+
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup UART
+* @brief UART driver modules
+* @{
+*/
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup UART_Exported_Functions UART Exported Functions
+  * @{
+  */
 
 /**
 * @brief Configure UART TX DMA burst size.
@@ -183,9 +135,9 @@ UART_RXDMACmd(UART_TypeDef *UARTx, u32 NewState)
   * @param  CallbackFunc: GDMA callback function.
   * @param  pTxBuf: Tx Buffer.
   * @param  TxCount: Tx Count.
-  * @retval   TRUE/FLASE
+  * @retval   TRUE/FALSE
   */
-BOOL UART_TXGDMA_Init(
+bool UART_TXGDMA_Init(
 	u8 UartIndex,
 	GDMA_InitTypeDef *GDMA_InitStruct,
 	void *CallbackData,
@@ -203,7 +155,7 @@ BOOL UART_TXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		/*  No Available DMA channel */
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -243,7 +195,7 @@ BOOL UART_TXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -255,9 +207,9 @@ BOOL UART_TXGDMA_Init(
   * @param  CallbackFunc: GDMA callback function.
   * @param  pRxBuf: Rx Buffer.
   * @param  RxCount: Rx Count, 0 will use UART as DMA controller.
-  * @retval   TRUE/FLASE
+  * @retval   TRUE/FALSE
   */
-BOOL UART_RXGDMA_Init(
+bool UART_RXGDMA_Init(
 	u8 UartIndex,
 	GDMA_InitTypeDef *GDMA_InitStruct,
 	void *CallbackData,
@@ -276,7 +228,7 @@ BOOL UART_RXGDMA_Init(
 	GdmaChnl = GDMA_ChnlAlloc(0, (IRQ_FUN)CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 	if (GdmaChnl == 0xFF) {
 		/* No Available DMA channel */
-		return _FALSE;
+		return FALSE;
 	}
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -292,7 +244,6 @@ BOOL UART_RXGDMA_Init(
 		UARTx->MISCR &= (~RUART_BIT_RXDMA_OWNER);
 	}
 
-	GDMA_InitStruct->GDMA_ReloadSrc = 0;
 	GDMA_InitStruct->GDMA_SrcHandshakeInterface = UART_DEV_TABLE[UartIndex].Rx_HandshakeInterface;
 	GDMA_InitStruct->GDMA_SrcAddr = (u32)&UART_DEV_TABLE[UartIndex].UARTx->RBR_OR_UART_THR;
 	GDMA_InitStruct->GDMA_Index   = 0;
@@ -305,11 +256,11 @@ BOOL UART_RXGDMA_Init(
 
 	if (((u32)(pRxBuf) & 0x03) == 0) {
 		/*  4-bytes aligned, move 4 bytes each DMA transaction */
-		GDMA_InitStruct->GDMA_DstMsize = MsizeOne;
+		GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
 		GDMA_InitStruct->GDMA_DstDataWidth = TrWidthFourBytes;
 	} else {
 		/*  move 1 byte each DMA transaction */
-		GDMA_InitStruct->GDMA_DstMsize = MsizeFour;
+		GDMA_InitStruct->GDMA_DstMsize = MsizeSixteen;
 		GDMA_InitStruct->GDMA_DstDataWidth = TrWidthOneByte;
 	}
 	GDMA_InitStruct->GDMA_BlockSize = RxCount;
@@ -326,7 +277,7 @@ BOOL UART_RXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -652,4 +603,15 @@ UART_RxDebounceCmd(UART_TypeDef *UARTx, u32 NewState)
 		UARTx->RXDBCR &= (~ RUART_BIT_DBNC_FEN);
 	}
 }
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */

@@ -1,0 +1,1 @@
+const char* g_rtk_diag_format_hash = "@HASH_STRING@";

@@ -1,30 +1,17 @@
-/**
-  ******************************************************************************
-  * @file    ameba_delay.h
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file provides firmware functions to manage the following
-  *          functionalities of the systimer & delay:
-  *           - SYSTIMER_GetPassTime
-  *           - SYSTIMER_TickGet
-  *           - DelayUs
-  *           - DelayMs
-  *           - DelayNop
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2016, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _AMEBA_DELAY_H_
 #define _AMEBA_DELAY_H_
 
-/** @addtogroup AmebaD_Platform
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** @addtogroup Ameba_Periph_Driver
   * @{
   */
 
@@ -64,22 +51,18 @@ _LONG_CALL_ u32 SYSTIMER_GetPassTick(u32 start);
 _LONG_CALL_ u32 SYSTIMER_GetPassTime(u32 start);
 _LONG_CALL_ void DelayUs(u32 us);
 _LONG_CALL_ void DelayMs(u32 ms);
+/** @} */
+
+/** @} */
+/** @} */
 _LONG_CALL_ void DelayNop(u32 count);
 #define HalDelayUs DelayUs
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
 
 extern u32 RBSS_UDELAY_FLAG;
 extern u32 RBSS_UDELAY_CLK;
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif//_AMEBA_DELAY_H_
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

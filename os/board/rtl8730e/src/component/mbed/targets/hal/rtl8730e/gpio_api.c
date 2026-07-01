@@ -168,7 +168,7 @@ void gpio_write(gpio_t *obj, int value)
   * @retval none
   * @note It is the same with function gpio_write();
   */
-void gpio_direct_write(gpio_t *obj, BOOL value)
+void gpio_direct_write(gpio_t *obj, bool value)
 {
 	gpio_write(obj, value);
 }

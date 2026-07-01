@@ -22,11 +22,11 @@
 #include "lwip/inet_chksum.h"
 
 #include "lwip/netif.h"
+#include "lwip/netifapi.h"
 
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
-#include "lwip/debug.h"
 
 #include "lwip/etharp.h"
 #include "lwip/dhcp.h"
@@ -48,15 +48,12 @@
 
 #include "lwip/ethip6.h" /* Add for ipv6 */
 
-#include "lwip/ip_addr.h" 
+#include "lwip/ip_addr.h"
 #if !defined(CONFIG_PLATFORM_TIZENRT_OS)
-#include "lwip/lwip_timers.h"
 
 #include "lwip/apps/sntp.h"
 #include "lwip/apps/sntp_opts.h"
 
-#include "netif/loopif.h"
-#include "netif/etharp.h"
 #include "netif/ppp/ppp_impl.h"
 #include "netif/ppp/pppapi.h"
 #include "netif/ppp/pppoe.h"

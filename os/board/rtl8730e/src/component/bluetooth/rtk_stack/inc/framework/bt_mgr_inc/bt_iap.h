@@ -176,6 +176,15 @@ bool bt_iap_init(uint8_t link_num, uint8_t rfc_iap_chann_num,
 /**
  * bt_iap.h
  *
+ * \brief  De-initialize IAP profile.
+ *
+ * \ingroup BT_IAP
+ */
+void bt_iap_deinit(void);
+
+/**
+ * bt_iap.h
+ *
  * \brief  Send iAP data to remote device.
  *
  * \param[in]  bd_addr        Remote BT address.

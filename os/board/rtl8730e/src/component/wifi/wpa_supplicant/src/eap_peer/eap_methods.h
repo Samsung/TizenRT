@@ -12,32 +12,32 @@
 //#include "../api/wifi/wps/wps_eap_defs.h"
 #include "eap_common/eap_defs.h"
 
-const struct eap_method *eap_peer_get_eap_method(int vendor, EapType method);
+const struct eap_method *eap_peer_get_eap_method(int vendor, enum EapType method);
 const struct eap_method *eap_peer_get_methods(size_t *count);
 
 struct eap_method *eap_peer_method_alloc(int version, int vendor,
-		EapType method, const char *name);
+		enum EapType method, const char *name);
 void eap_peer_method_free(struct eap_method *method);
 int eap_peer_method_register(struct eap_method *method);
 
 
 //#if defined(IEEE8021X_EAPOL)
 
-EapType eap_peer_get_type(const char *name, int *vendor);
-const char *eap_get_name(int vendor, EapType type);
+enum EapType eap_peer_get_type(const char *name, int *vendor);
+const char *eap_get_name(int vendor, enum EapType type);
 size_t eap_get_names(char *buf, size_t buflen);
 char **eap_get_names_as_string_array(size_t *num);
 void eap_peer_unregister_methods(void);
 
 //#else /* IEEE8021X_EAPOL */
 #if 0
-static inline EapType eap_peer_get_type(const char *name, int *vendor)
+static inline enum EapType eap_peer_get_type(const char *name, int *vendor)
 {
 	*vendor = EAP_VENDOR_IETF;
 	return EAP_TYPE_NONE;
 }
 
-static inline const char *eap_get_name(int vendor, EapType type)
+static inline const char *eap_get_name(int vendor, enum EapType type)
 {
 	return NULL;
 }

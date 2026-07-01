@@ -118,6 +118,7 @@
 #define SYSCFG_CUT_VERSION_A				0
 #define SYSCFG_CUT_VERSION_B				1
 #define SYSCFG_CUT_VERSION_C				2
+#define SYSCFG_CUT_VERSION_D				3
 /**
   * @}
   */

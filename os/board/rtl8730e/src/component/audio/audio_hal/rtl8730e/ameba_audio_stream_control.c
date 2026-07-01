@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Realtek, LLC.
+ * Copyright (c) 2025 Realtek, LLC.
  * All rights reserved.
  *
  * Licensed under the Realtek License, Version 1.0 (the "License");
@@ -516,9 +516,9 @@ float ameba_audio_ctl_pll_clock_tune(StreamControl *control, uint32_t rate, floa
 	}
 
 	if (rate % 8000 == 0) {
-		tuned_ppm = PLL_I2S_98P304M_ClkTune(ppm, action);
+		tuned_ppm = PLL_I2S_98P304M_ClkTune(NULL, ppm, action);
 	} else {
-		tuned_ppm = PLL_I2S_45P158M_ClkTune(ppm, action);
+		tuned_ppm = PLL_I2S_45P158M_ClkTune(NULL, ppm, action);
 	}
 
 	return tuned_ppm;

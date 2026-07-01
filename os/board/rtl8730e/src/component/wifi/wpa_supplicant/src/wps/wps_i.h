@@ -194,5 +194,18 @@ void wps_registrar_selected_registrar_changed(struct wps_registrar *reg,
 const u8 *wps_authorized_macs(struct wps_registrar *reg, size_t *count);
 int wps_registrar_pbc_overlap(struct wps_registrar *reg,
 							  const u8 *addr, const u8 *uuid_e);
+void *_wps_registrar_init(void *priv, const void *pcfg);
+void _wps_registrar_deinit(void *priv);
+void *_wps_registrar_alloc(void);
+u32 _wps_registrar_process_msg(void *priv, u32 op_code, const void *pmsg);
+void *_wps_registrar_get_msg(void *priv, u8 *op_code);
+int _wps_registrar_add_pin(void *priv, const u8 *addr,
+						   const u8 *uuid, const u8 *pin, size_t pin_len,
+						   int timeout);
+int _wps_registrar_button_pushed(void *priv,
+								 const u8 *p2p_dev_addr);
+int _wps_registrar_wps_cancel(void *priv);
+
+
 
 #endif /* WPS_I_H */

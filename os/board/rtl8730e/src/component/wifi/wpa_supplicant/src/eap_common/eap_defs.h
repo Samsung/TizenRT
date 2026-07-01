@@ -41,7 +41,7 @@ enum {
  * EAP Method Types as allocated by IANA:
  * http://www.iana.org/assignments/eap-numbers
  */
-typedef enum {
+enum EapType {
 	EAP_TYPE_NONE = 0,
 	EAP_TYPE_IDENTITY = 1 /* RFC 3748 */,
 	EAP_TYPE_NOTIFICATION = 2 /* RFC 3748 */,
@@ -69,7 +69,7 @@ typedef enum {
 	EAP_TYPE_GPSK = 51 /* RFC 5433 */,
 	EAP_TYPE_PWD = 52 /* RFC 5931 */,
 	EAP_TYPE_EXPANDED = 254 /* RFC 3748 */
-} EapType;
+};
 
 
 /* SMI Network Management Private Enterprise Code for vendor specific types */

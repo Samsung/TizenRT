@@ -1,43 +1,21 @@
-/**
-  ******************************************************************************
-  * @file    ameba_pinmap.h
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file provides firmware functions to manage the following
-  *          functionalities of pin control:
-  *           - pinmux
-  *           - active pad pull up & pull down
-  *           - sleep pad pull up & pull down
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2015, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _AMEBA_PINMAP_H_
 #define _AMEBA_PINMAP_H_
 
-/** @addtogroup AmebaD_Platform
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** @addtogroup Ameba_Periph_Driver
   * @{
   */
 
-/** @defgroup PIN
-  * @brief PIN driver modules
-  * @{
-  */
-
-/** @defgroup PINMAP
-  * @brief PINMAP driver modules
-  * @{
-  */
-
-/** @addtogroup PINMAP
-  * @verbatim
+/** @verbatim
   *****************************************************************************************
   * PINMAP
   *****************************************************************************************
@@ -55,6 +33,12 @@
   * @endverbatim
   */
 
+
+/** @defgroup PINMAP
+  * @brief PINMAP driver modules
+  * @{
+  */
+
 /* Exported types ------------------------------------------------------------*/
 
 /** @defgroup PINMAP_Exported_Types PINMAP Exported Types
@@ -69,33 +53,25 @@ typedef struct {
 	u8 FuncPuPd;/*!< Specifies the pin function PU/PD, This parameter can be a value of @ref GPIO_Pull_parameter_definitions */
 	u8 SleepPuPd;/*!< Specifies the pin sleep PU/PD, This parameter can be a value of @ref GPIO_Pull_parameter_definitions */
 } PMAP_TypeDef;
+/** @} */
 
-/**
-  * @}
-  */
 
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup PINMAP_Exported_Functions PINMAP Exported Functions
   * @{
   */
 void pinmap_init(void);
-/**
-  * @}
-  */
+/** @} */
 
-/**
-  * @}
-  */
+/** @} */
 
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
+/** @} */
 
 /* Other definations --------------------------------------------------------*/
 #define GPIO_PuPd_KEEP	0xFF /* keep pupd unchanged */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_AMEBA_PINMAP_H_
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

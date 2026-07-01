@@ -1,10 +1,7 @@
 /*
- *  Routines to access hardware
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
  *
- *  Copyright (c) 2013 Realtek Semiconductor Corp.
- *
- *  This module is a confidential and proprietary property of RealTek and
- *  possession or use of this module requires written permission of RealTek.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _DIAG_H_
@@ -17,10 +14,12 @@
 
 u32 DiagPrintf(const char *fmt, ...);
 u32 DiagPrintfD(const char *fmt, ...);
+int DiagVprintf(const char *fmt, va_list ap);
 int DiagVSprintf(char *buf, const char *fmt, va_list ap);
 u32 DiagSPrintf(u8 *buf, const char *fmt, ...);
 int DiagSnPrintf(char *buf, size_t size, const char *fmt, ...);
-
+u32 DiagPrintfNano(const char *fmt, ...);
+int DiagVprintfNano(const char *fmt, va_list ap);
 
 /** @addtogroup Ameba_Platform
   * @{
@@ -114,9 +113,16 @@ extern u32 ConfigDebug[];
   * DBG_PRINTF(MODULE_BOOT, LEVEL_ERROR, "MODULE_BOOT Error!\n");
   * @endcode
   */
+ /* TizenRT customization: rename as RTK_LOG_MASK as TizenRT syslog.h also uses the macro LOG_MASK */
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 #define RTK_LOG_MASK(level, config) do {\
-		ConfigDebug[level] = config;\
+ConfigDebug[level] = config;\
 } while (0)
+#else
+#define LOG_MASK(level, config) do {\
+    ConfigDebug[level] = config;\
+} while (0)
+#endif //#ifdef CONFIG_PLATFORM_TIZENRT_OS
 
 #define LOG_MASK_MODULE(module, level, new_status) do {\
 	if (new_status == ENABLE) { \
@@ -151,7 +157,7 @@ extern u32 ConfigDebug[];
 #define DBG_INFO_MSG_OFF(x)     (ConfigDebug[LEVEL_INFO] &= ~BIT(x))
 #define DRIVER_PREFIX	"[RTW]: "
 
-#ifdef CONFIG_DEBUG_LOG
+#if 1
 #define DBG_8195A(...)     do {\
     if (unlikely(ConfigDebug[LEVEL_ERROR] & BIT(MODULE_MISC))) \
         DiagPrintf("\r" __VA_ARGS__);\
@@ -162,7 +168,7 @@ extern u32 ConfigDebug[];
         DiagPrintf( __VA_ARGS__);\
 }while(0)
 
-#else   // else of "#if CONFIG_DEBUG_LOG"
+#else
 #define DBG_8195A(...)
 #define MONITOR_LOG(...)
 #endif
@@ -183,5 +189,8 @@ extern u32 ConfigDebugBuffer;
 extern u32 ConfigDebugClose;
 extern u32 ConfigDebug[];
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_DIAG_H_

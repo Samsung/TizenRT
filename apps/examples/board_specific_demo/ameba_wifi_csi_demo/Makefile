@@ -54,6 +54,23 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
+# For rtw_wifi_common.h, rtw_queue.h
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/common
+
+# For rtw_autoconf.h <- rtw_wifi_common.h
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/driver/include
+
+# For platform_autoconf.h <- rtw_autoconf.h
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD2_va0_example/inc/inc_ap
+
+# For wifi_api_event.h
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/wifi/api
+
+# For rtk_status.h <- basic_type.h
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/soc/common/include
+
+# For os_wrapper_task.h, os_wrapper_semaphore.h, os_wrapper_mutex.h, os_wrapper_misc.h
+CFLAGS += -I$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/src/component/os/os_wrapper/include
 
 # WIFI CSI built-in application info
 

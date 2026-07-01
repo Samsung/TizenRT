@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2022 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,8 +49,7 @@
 #
 ############################################################################
 
-CSRCS += hci_h4.c \
-#	 hci_h5.c
+CSRCS += hci_h4.c
 
 DEPPATH += --dep-path component/bluetooth/driver/hci/hci_transport
 VPATH += :component/bluetooth/driver/hci/hci_transport
