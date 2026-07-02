@@ -33,6 +33,8 @@
 
 #define RUNNING 1
 #define STOPPED 0
+#define MAX_COUNT 10
+#define WAIT_TIME 100
 
 const static char **CSIFW_TASK_ARGV = NULL;
 const static char *CSIFW_TASK_NAME = "csifw_task_Main";
@@ -76,7 +78,9 @@ int start_csi_framework(csifw_context_t *p_ctx)
 
 	if (handle < 0) {
 		CSIFW_LOGE("Failed to create csifw task to the task manager! Return: %d", handle);
-		sem_destroy(&p_ctx->csifw_task_sema);
+		if (sem_destroy(&p_ctx->csifw_task_sema) < OK) {
+			CSIFW_LOGE("Semaphore destroy failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
+		}
 		CSIFW_LOGD("Destroyed semaphore for %s after failed create", CSIFW_TASK_NAME);
 		return handle;
 	}
@@ -93,16 +97,27 @@ int start_csi_framework(csifw_context_t *p_ctx)
 			CSIFW_LOGE("Failed to unregister csifw task to the task manager! Return: %d", tm_unregister_return);
 			//To-Do: Error handling logic to be addressed later.
 		}
-		sem_destroy(&p_ctx->csifw_task_sema);
+		if (sem_destroy(&p_ctx->csifw_task_sema) < OK) {
+			CSIFW_LOGE("Semaphore destroy failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
+		}
 		CSIFW_LOGD("Destroyed semaphore for %s after failed start", CSIFW_TASK_NAME);
 	} else {
 		p_ctx->task_handle = handle;
-		sem_wait(&p_ctx->csifw_task_sema);
+		while (sem_wait(&p_ctx->csifw_task_sema) < 0) {
+			if (errno != EINTR) {
+				CSIFW_LOGE("Failed to wait for csifw task semaphore, errno: %d (%s)", errno, strerror(errno));
+				break;
+			} else {
+				CSIFW_LOGE("Failed to wait for csifw task semaphore, errno == EINTR, wait continue");
+			}
+		}
 
 		if (!p_ctx->task_run_success) {
 			CSIFW_LOGE("CSI framework task initialization failed");
 			task_manager_stop_and_unregister(p_ctx->task_handle);
-			sem_destroy(&p_ctx->csifw_task_sema);
+			if (sem_destroy(&p_ctx->csifw_task_sema) < OK) {
+				CSIFW_LOGE("Semaphore destroy failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
+			}
 			return -1;
 		}
 		CSIFW_LOGI("Started %s", CSIFW_TASK_NAME);
@@ -119,10 +134,19 @@ int stop_csi_framework(csifw_context_t *p_ctx)
 	
 	p_ctx->task_run_state = STOPPED;			//stop the main loop of the task
 	CSIFW_LOGD("Waiting for csifw_task to complete...");
-	sem_wait(&p_ctx->csifw_task_sema);
+	while (sem_wait(&p_ctx->csifw_task_sema) < 0) {
+		if (errno != EINTR) {
+			CSIFW_LOGE("Failed to wait for csifw task semaphore, errno: %d (%s)", errno, strerror(errno));
+			break;
+		} else {
+			CSIFW_LOGE("Failed to wait for csifw task semaphore, errno == EINTR, wait continue");
+		}
+	}
 	task_manager_stop_and_unregister(p_ctx->task_handle);
 	CSIFW_LOGD("Destroying semaphore for %s", CSIFW_TASK_NAME);
-	sem_destroy(&p_ctx->csifw_task_sema);
+	if (sem_destroy(&p_ctx->csifw_task_sema) < OK) {
+		CSIFW_LOGE("Semaphore destroy failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
+	}
 	return 0;
 }
 
@@ -133,13 +157,17 @@ int csifw_task_Main(int argc, char *argv[])
 
 	if (csi_packet_receiver_initialize() != CSIFW_OK) {
 		CSIFW_LOGE("csi_packet_receiver_initialize failed - cannot start CSI framework");
-		sem_post(&p_csifw_ctx->csifw_task_sema);
+		if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
+			CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
+		}
 		return -1;
 	}
 	if (csi_packet_receiver_start_collect() != CSIFW_OK) {
 		CSIFW_LOGE("CSI packet receiver start failed");
 		csi_packet_receiver_cleanup();
-		sem_post(&p_csifw_ctx->csifw_task_sema);
+		if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
+			CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
+		}
 		return -1;
 	}
 	if (csi_ping_generator_initialize() != CSIFW_OK) {
@@ -147,7 +175,9 @@ int csifw_task_Main(int argc, char *argv[])
 		csi_packet_receiver_stop_collect();
 		csi_packet_receiver_cleanup();
 		CSIFW_LOGE("CSI packet receiver stopped as Ping Generator failed");
-		sem_post(&p_csifw_ctx->csifw_task_sema);
+		if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
+			CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
+		}
 		return -1;
 	}
 	if (ping_generator_start() != CSIFW_OK) {
@@ -156,13 +186,17 @@ int csifw_task_Main(int argc, char *argv[])
 		csi_packet_receiver_cleanup();
 		csi_ping_generator_cleanup();
 		CSIFW_LOGE("CSI packet receiver stopped as Ping Generator start failed");
-		sem_post(&p_csifw_ctx->csifw_task_sema);
+		if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
+			CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
+		}
 		return -1;
 	}
 	//to unlock start_csi_framework()
 	p_csifw_ctx->task_run_success = 1;
 	p_csifw_ctx->task_run_state = RUNNING;
-	sem_post(&p_csifw_ctx->csifw_task_sema);
+	if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
+		CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
+	}
 
 	while (p_csifw_ctx->task_run_state) {
 		usleep(50 * 1000);		//50 milisecond sleep
@@ -181,20 +215,55 @@ int csifw_task_Main(int argc, char *argv[])
 		CSIFW_LOGE("CSI packet receiver cleanup failed");
 	}
 	//to unlock stop_csi_framework()
-	sem_post(&p_csifw_ctx->csifw_task_sema);
+	if (sem_post(&p_csifw_ctx->csifw_task_sema) < OK) {
+		CSIFW_LOGE("Semaphore post failed, errno: %d (%s)", get_errno(), strerror(get_errno()));
+	}
 	return 0;
 }
 
 static void task_manager_stop_and_unregister(int m_task_handle)
 {
 	CSIFW_LOGD("Stopping task %s (Task_Handle=%d)", CSIFW_TASK_NAME, m_task_handle);
-	int tm_stop_return = task_manager_stop(m_task_handle, TM_RESPONSE_WAIT_INF);
-	if (tm_stop_return == OK) {
-		CSIFW_LOGD("Stopped successfully (Task_Handle=%d). Return: %d.", m_task_handle, tm_stop_return);
-	} else if (tm_stop_return == TM_ALREADY_STOPPED_APP) {
-		CSIFW_LOGD("Task already stopped (Task_Handle=%d)", m_task_handle);
-	} else {
-		CSIFW_LOGE("Failed to stop (Task_Handle=%d). Return: %d.", m_task_handle, tm_stop_return);
+	int retry_count = 0;
+	tm_appinfo_t *info = NULL;
+	const char *status_str;
+	while (retry_count < MAX_COUNT) {
+		info = task_manager_getinfo_with_handle(m_task_handle, TM_RESPONSE_WAIT_INF);
+		if (info == NULL) {
+			CSIFW_LOGE("Failed to get task info for handle %d, proceeding to unregister", m_task_handle);
+			break;
+		}
+		switch (info->status) {
+			case TM_APP_STATE_RUNNING:      	status_str = "RUNNING"; 	break;
+			case TM_APP_STATE_PAUSE:        	status_str = "PAUSE"; 		break;
+			case TM_APP_STATE_STOP:         	status_str = "STOP"; 		break;
+			case TM_APP_STATE_UNREGISTERED: 	status_str = "UNREGISTERED"; 	break;
+			case TM_APP_STATE_CANCELLING:   	status_str = "CANCELLING"; 	break;
+			case TM_APP_STATE_WAIT_UNREGISTER: 	status_str = "WAIT_UNREGISTER"; break;
+			default:                        	status_str = "UNKNOWN"; 	break;
+		}
+		CSIFW_LOGD("Current task status: %s (%d), attempt %d/10", status_str, info->status, retry_count + 1);
+		if (info->status == TM_APP_STATE_STOP) {
+			CSIFW_LOGD("Task state is STOP, proceeding to unregister");
+			break;
+		}
+		retry_count++;
+		if (retry_count < MAX_COUNT) {
+			usleep(WAIT_TIME * 1000); // 100ms
+		}
+	}
+	if (retry_count >= MAX_COUNT) {
+		CSIFW_LOGI("Task did not reach STOP state after 10 attempts (final state: %s)", status_str);
+		info = task_manager_getinfo_with_handle(m_task_handle, TM_RESPONSE_WAIT_INF);
+		if ((info) && (info->status == TM_APP_STATE_RUNNING)) {
+			CSIFW_LOGD("Task state is RUNNING Stopping task %s (Task_Handle=%d)", CSIFW_TASK_NAME, m_task_handle);
+			int tm_stop_return = task_manager_stop(m_task_handle, TM_RESPONSE_WAIT_INF);
+			if (tm_stop_return == OK) {
+				CSIFW_LOGD("Stopped successfully (Task_Handle=%d). Return: %d.", m_task_handle, tm_stop_return);
+			} else {
+				CSIFW_LOGE("Failed to stop (Task_Handle=%d). Return: %d.", m_task_handle, tm_stop_return);
+			}
+		}
 	}
 
 	CSIFW_LOGD("Unregistering task %s (Task_Handle=%d)", CSIFW_TASK_NAME, m_task_handle);
@@ -205,5 +274,6 @@ static void task_manager_stop_and_unregister(int m_task_handle)
 		CSIFW_LOGE("Failed to unregister csifw task to the task manager! Return: %d", tm_unregister_return);
 		//To-Do: Error handling logic to be addressed later.
 	}
+	task_manager_clean_info(&info);
 }
 
