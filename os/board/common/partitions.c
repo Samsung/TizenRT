@@ -197,6 +197,12 @@ static int type_specific_initialize(int minor, FAR struct mtd_dev_s *mtd_part, c
 		char partref[4];
 
 		snprintf(partref, sizeof(partref), "p%d", g_partno);
+#ifdef CONFIG_SMARTFS_DEBUG
+		if (ftl_initialize_ext(minor, mtd_part, partref)) {
+			printf("ERROR: failed to initialise mtd ftl errno :%d\n", errno);
+			return ERROR;
+		}
+#endif
 		smart_initialize(minor, mtd_part, partref);
 		partinfo->smartfs_partno = g_partno;
 		mtd_setpartitiontagno(mtd_part, MTD_FS);

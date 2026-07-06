@@ -65,6 +65,8 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <tinyara/fs/fs_utils.h>
+#include <tinyara/fs/mtd.h>
+#include <tinyara/fs/ioctl.h>
 #ifdef CONFIG_TASH
 #include <apps/shell/tash.h>
 #endif
@@ -994,6 +996,155 @@ static int tash_umount(int argc, char **args)
 #endif
 #endif							/* END OF CONFIG_DISABLE_MOUNTPOINT */
 
+/****************************************************************************
+ * Name: tash_smartfs_dump
+ *
+ * Description:
+ *   Unmount specific file system.
+ *
+ * Usage:
+ *   umount <mounted directory>
+ ****************************************************************************/
+#ifdef CONFIG_SMARTFS_DEBUG
+#ifndef CONFIG_DISABLE_ENVIRON
+static int tash_smartfs_dump(int argc, char **args)
+{
+	int fd;
+	int ret;
+	char device_path[32];
+	struct mtd_geometry_s mtd_geo;
+	uint8_t *buffer;
+	ssize_t nbytes;
+	off_t seekpos;
+	size_t sector_size = 1024;  /* SMARTFS sector size = 1024 bytes */
+	uint16_t BlkperSect;
+	uint16_t SectperEraseBlk;
+	uint16_t total_sectors;
+	uint16_t sector_idx;
+	uint16_t erase_block;
+	uint16_t sector_in_block;
+	uint16_t njournaleraseblocks;
+	
+	int i, j;
+
+	bool found = false;
+	
+	printf("Searching for MTD BLOCK device managed smartfs...\n");
+	for (int minor = 0; minor < 2; minor++) {
+		for (int part = 0; part < 32; part++) {
+			snprintf(device_path, sizeof(device_path), "/dev/mtdblock%dp%d", minor, part);
+
+			fd = open(device_path, O_RDONLY);
+			if (fd >= 0) {
+				printf("Found MTD BLOCK device managed smartfs: %s\n", device_path);
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			break;
+		}
+	}
+
+	if (!found) {
+		printf("Can Not Find MTD BLOCK device managed smartfs\n");
+		return ERROR;
+	}
+
+	ret = ioctl(fd, MTDIOC_GEOMETRY, (unsigned long)&mtd_geo);
+	if (ret < 0) {
+		printf("Failed to get MTD geometry, errno: %d\n", errno);
+		close(fd);
+		return ERROR;
+	}
+
+	printf("\n=== MTD Geometry ===\n");
+	printf("  Block size:       %u bytes\n", mtd_geo.blocksize);
+	printf("  Erase Blocksize:  %u bytes\n", mtd_geo.erasesize);
+	printf("  Num Erase Blocks: %u\n", mtd_geo.neraseblocks);
+
+	BlkperSect = sector_size / mtd_geo.blocksize;
+	SectperEraseBlk = mtd_geo.erasesize / sector_size;
+	total_sectors = mtd_geo.neraseblocks * SectperEraseBlk;
+
+	printf("  Sector size:             %u bytes\n", sector_size);
+	printf("  Sectors per Erase Block: %u\n", SectperEraseBlk);
+	printf("  Total sectors:           %u\n", total_sectors);
+
+
+	uint16_t nsector = (mtd_geo.neraseblocks * SectperEraseBlk * 13) / (sector_size + 13);
+	njournaleraseblocks = nsector / SectperEraseBlk;
+	if (nsector % SectperEraseBlk != 0) {
+		njournaleraseblocks++;
+	}
+	if (njournaleraseblocks % 2 != 0) {
+		njournaleraseblocks++;
+	}
+	njournaleraseblocks *= 3;
+
+	printf("  njournaleraseblocks:     %u\n", njournaleraseblocks);
+
+	buffer = (uint8_t *)malloc(sector_size);
+	if (!buffer) {
+		printf("Failed to allocate buffer\n");
+		close(fd);
+		return ERROR;
+	}
+
+	printf("\n=== Dumping All Sectors (Block 0 ~ %u) ===\n", mtd_geo.neraseblocks - 1);
+
+	sector_idx = 0;
+	for (erase_block = 0; erase_block < mtd_geo.neraseblocks; erase_block++) {
+		for (sector_in_block = 0; sector_in_block < SectperEraseBlk; sector_in_block++) {
+			unsigned int mtd_block = sector_idx * BlkperSect;
+			
+			printf("\n=== Sector %u (block %u) ===\n", sector_idx, erase_block);
+
+			seekpos = (off_t)mtd_block * mtd_geo.blocksize;
+			ret = lseek(fd, seekpos, SEEK_SET);
+			if (ret != seekpos) {
+				printf("Failed to seek to sector %u (offset %ld), errno: %d\n", 
+				       sector_idx, (long)seekpos, errno);
+				sector_idx++;
+				continue;
+			}
+
+			nbytes = read(fd, buffer, sector_size);
+			if (nbytes < 0) {
+				printf("Read failed, errno: %d\n", errno);
+				sector_idx++;
+				continue;
+			} else if (nbytes != (ssize_t)sector_size) {
+				printf("Short read: got %ld bytes, expected %u\n", (long)nbytes, sector_size);
+			}
+
+			int dump_size = nbytes;
+			for (i = 0; i < dump_size; i += 16) {
+				printf("%04X: ", i);
+
+				for (j = 0; j < 16; j++) {
+					if (i + j < dump_size) {
+						printf("%02X ", buffer[i + j]);
+					} else {
+						printf("   ");
+					}
+				}
+				printf("\n");
+			}
+			
+			sector_idx++;
+		}
+	}
+
+	free(buffer);
+	close(fd);
+
+	printf("\n=== Dump Complete ===\n");
+	return OK;
+}
+#endif	
+#endif
+
 #ifndef CONFIG_DISABLE_ENVIRON
 /****************************************************************************
  * Name: tash_pwd
@@ -1555,6 +1706,12 @@ const static tash_cmdlist_t fs_utilcmds[] = {
 
 #ifndef CONFIG_DISABLE_ENVIRON
 	{"rmdir",     tash_rmdir,     TASH_EXECMD_SYNC},
+#endif
+
+#ifdef CONFIG_SMARTFS_DEBUG
+#ifndef CONFIG_DISABLE_ENVIRON
+	{"smartfs_dump", tash_smartfs_dump, TASH_EXECMD_SYNC},
+#endif
 #endif
 
 	{NULL,        NULL,           0}
