@@ -2239,3 +2239,19 @@ int ndp120_change_dsp_flow(struct ndp120_dev_s *dev, uint8_t dsp_flow_num)
 	ndp120_semgive(dev);
 	return s;
 }
+
+void ndp120_set_gpio_drive_strength(struct ndp120_dev_s *dev, unsigned int gpio, int strength)
+{
+    uint32_t v;
+    /* assuming strength parameter is between 0-3,0: 2mA, 3: 8mA */
+    if (gpio < 16) {
+        syntiant_ndp120_read(dev->ndp, 1, NDP120_CHIP_CONFIG_GPIODRIVELO, &v);
+        v = NDP120_CHIP_CONFIG_GPIODRIVELO_DRIVE_MASK_INSERT(v, gpio, strength);
+        syntiant_ndp120_write(dev->ndp, 1, NDP120_CHIP_CONFIG_GPIODRIVELO, v);
+    } else {
+        gpio -= 16;
+        syntiant_ndp120_read(dev->ndp, 1, NDP120_CHIP_CONFIG_GPIODRIVEHI, &v);
+        v = NDP120_CHIP_CONFIG_GPIODRIVEHI_DRIVE_MASK_INSERT(v, gpio, strength);
+        syntiant_ndp120_write(dev->ndp, 1, NDP120_CHIP_CONFIG_GPIODRIVEHI, v);
+    }
+}
