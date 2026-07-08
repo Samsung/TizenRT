@@ -407,14 +407,14 @@ static int sem_restoreholderprio(FAR struct semholder_s *pholder, FAR sem_t *sem
 		for (hpholder = htcb->holdsem; hpholder != NULL; hpholder = hpholder->tlink) {
 			/* Skip a holder entry whose count has been given up: the holder
 			 * no longer holds this semaphore, so its waiters must not boost
-			 * the holder.  sem_releaseholder() (reached only from sem_post(),
-			 * for the posting task and the semaphore being posted) is the only
-			 * thing that decrements a holder's count, and the entry is unlinked
-			 * shortly after in sem_restorebaseprio() (upstream NuttX frees it at
-			 * the top of this function instead).  A held semaphore can therefore
-			 * reach a zero count only while it is the one being released here;
-			 * assert that, both to document the invariant and to catch any
-			 * holder left stranded on the list with no counts.
+			 * the holder.  sem_releaseholder() is the only thing that
+			 * decrements a holder's count, and the zero-count entry is freed
+			 * shortly after in sem_restorebaseprio() -- by both the task path
+			 * (sem_restorebaseprio_task) and the interrupt path
+			 * (sem_restorebaseprio_irq).  A held semaphore can therefore reach
+			 * a zero count only while it is the one being released here; assert
+			 * that, both to document the invariant and to catch any holder left
+			 * stranded on the list with no counts.
 			 */
 
 			if (hpholder->counts <= 0) {
@@ -521,21 +521,9 @@ static inline void sem_restorebaseprio_irq(FAR struct tcb_s *stcb, FAR sem_t *se
 	 * next highest pending priority.
 	 */
 
-	if (stcb) {
-		/* Drop the priority of all holder threads */
+	/* Drop the priority of all holder threads */
 
-		(void)sem_foreachholder(sem, sem_restoreholderprio, stcb);
-	}
-
-	/* If there are no tasks waiting for available counts, then all holders
-	 * should be at their base priority.
-	 */
-
-#ifdef CONFIG_DEBUG
-	else {
-		(void)sem_foreachholder(sem, sem_verifyholder, NULL);
-	}
-#endif
+	(void)sem_foreachholder(sem, sem_restoreholderprio, stcb);
 }
 
 /****************************************************************************
@@ -570,10 +558,8 @@ static inline void sem_restorebaseprio_irq(FAR struct tcb_s *stcb, FAR sem_t *se
  *
  ****************************************************************************/
 
-static inline void sem_restorebaseprio_task(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem_t *sem)
+static inline void sem_restorebaseprio_task(FAR struct tcb_s *stcb, FAR sem_t *sem)
 {
-	FAR struct semholder_s *pholder;
-
 	/* Perform the following actions only if a new thread was given a count.
 	 * The thread that received the count should be the highest priority
 	 * of all threads waiting for a count from the semaphore.  So in that
@@ -581,48 +567,20 @@ static inline void sem_restorebaseprio_task(FAR struct tcb_s *stcb, FAR struct t
 	 * next highest pending priority.
 	 */
 
-	if (stcb) {
-		/* The currently executed thread should be the lower priority
-		 * thread that just posted the count and caused this action.
-		 * However, we cannot drop the priority of the currently running
-		 * thread -- because that will cause it to be suspended.
-		 *
-		 * So, do this in two passes.  First, reprioritizing all holders
-		 * except for the running thread.
-		 */
+	/* The currently executed thread should be the lower priority
+		* thread that just posted the count and caused this action.
+		* However, we cannot drop the priority of the currently running
+		* thread -- because that will cause it to be suspended.
+		*
+		* So, do this in two passes.  First, reprioritizing all holders
+		* except for the running thread.
+		*/
 
-		(void)sem_foreachholder(sem, sem_restoreholderprioA, stcb);
+	(void)sem_foreachholder(sem, sem_restoreholderprioA, stcb);
 
-		/* Now, find an reprioritize only the ready to run task */
+	/* Now, find an reprioritize only the ready to run task */
 
-		(void)sem_foreachholder(sem, sem_restoreholderprioB, stcb);
-	}
-
-	/* If there are no tasks waiting for available counts, then all holders
-	 * should be at their base priority.
-	 */
-
-#ifdef CONFIG_DEBUG
-	else {
-		(void)sem_foreachholder(sem, sem_verifyholder, NULL);
-	}
-#endif
-
-	/* In any case, the currently executing task should have an entry in the
-	 * list.  Its counts were previously decremented; if it now holds no
-	 * counts, then we need to remove it from the list of holders.
-	 */
-
-	pholder = sem_findholder(sem, htcb);
-	if (pholder) {
-		/* When no more counts are held, remove the holder from the list.  The
-		 * count was decremented in sem_releaseholder.
-		 */
-
-		if (pholder->counts <= 0) {
-			sem_freeholder(sem, pholder);
-		}
-	}
+	(void)sem_foreachholder(sem, sem_restoreholderprioB, stcb);
 }
 #endif
 
@@ -909,6 +867,8 @@ void sem_boostpriority(FAR sem_t *sem)
 
 void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem_t *sem)
 {
+	FAR struct semholder_s *pholder;
+
 	/* Check our assumptions */
 
 	DEBUGASSERT((sem->semcount > 0 && stcb == NULL) || (sem->semcount <= 0 && stcb != NULL));
@@ -921,10 +881,38 @@ void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem
 	 * itself.
 	 */
 
-	if (up_interrupt_context()) {
-		sem_restorebaseprio_irq(stcb, sem);
-	} else {
-		sem_restorebaseprio_task(stcb, htcb, sem);
+	if (stcb) {
+		if (up_interrupt_context()) {
+			sem_restorebaseprio_irq(stcb, sem);
+		} else {
+			sem_restorebaseprio_task(stcb, sem);
+		}
+	}
+
+	/* If there are no tasks waiting for available counts, then all holders
+	 * should be at their base priority.
+	 */
+
+#ifdef CONFIG_DEBUG
+	else {
+		(void)sem_foreachholder(sem, sem_verifyholder, NULL);
+	}
+#endif
+
+	/* In any case, the currently executing task should have an entry in the
+	 * list.  Its counts were previously decremented; if it now holds no
+	 * counts, then we need to remove it from the list of holders.
+	 */
+
+	pholder = sem_findholder(sem, htcb);
+	if (pholder) {
+		/* When no more counts are held, remove the holder from the list.  The
+		 * count was decremented in sem_releaseholder.
+		 */
+
+		if (pholder->counts <= 0) {
+			sem_freeholder(sem, pholder);
+		}
 	}
 }
 
