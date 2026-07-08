@@ -241,7 +241,7 @@ int group_signal(FAR struct task_group_s *group, FAR siginfo_t *siginfo)
 	 */
 
 #ifdef CONFIG_SMP
-	irqstate_t flags = enter_critical_section()
+	irqstate_t flags = enter_critical_section();
 #else
 	sched_lock();
 #endif
