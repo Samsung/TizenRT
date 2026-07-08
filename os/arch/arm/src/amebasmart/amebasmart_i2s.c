@@ -41,6 +41,8 @@
 #include <tinyara/wqueue.h>
 #include <tinyara/audio/audio.h>
 #include <tinyara/audio/i2s.h>
+#include <pthread.h>
+#include <semaphore.h>
 #ifdef CONFIG_AUDIO_ALC1019
 #include <tinyara/audio/alc1019.h>
 #endif
@@ -119,7 +121,7 @@
 
 #define OVER_SAMPLE_RATE (384U)
 
-#define I2S_DMA_PAGE_SIZE 8192 	/* 4 ~ 16384, set to a factor of APB size */
+#define I2S_DMA_PAGE_SIZE 4096 	/* 4 ~ 16384, set to a factor of APB size */
 #define I2S_DMA_PAGE_NUM 4	/* Vaild number is 2~4 */
 
 #ifdef CONFIG_PM
@@ -145,6 +147,8 @@ struct amebasmart_transport_s {
 	sq_queue_t done;	/* A queue of completed transfers */
 	struct work_s work; /* Supports worker thread operations */
 	int error_state;	/* Channel error state, 0 - OK*/
+	sem_t sem;			/* Semaphore for thread wakeup */
+	volatile bool running; /* Thread state flag */
 };
 
 /* I2S configuration parameters for i2s_param_config function */
@@ -385,7 +389,7 @@ static void i2s_txdma_timeout(int argc, uint32_t arg)
 	/* Then schedule completion of the transfer to occur on the worker thread.
 	 * Set the result with -ETIMEDOUT.
 	 */
-	i2serr("txdma timeout\n");
+	lldbg("txdma timeout\n");
 	i2s_tx_schedule(priv, -ETIMEDOUT);
 }
 
@@ -439,21 +443,21 @@ static int i2s_tx_start(struct amebasmart_i2s_s *priv)
 	int ret;
 	irqstate_t flags;
 
-	//struct ap_buffer_s *apb;
+	flags = enter_critical_section();
 
 	/* Check if the DMA is IDLE */
 	if (!sq_empty(&priv->tx.act)) {
 		i2sinfo("[TX] actived!\n");
+		leave_critical_section(flags);
 		return OK;
 	}
 
 	/* If there are no pending transfer, then bail returning success */
 	if (sq_empty(&priv->tx.pend)) {
 		i2sinfo("[TX] empty!\n");
+		leave_critical_section(flags);
 		return OK;
 	}
-
-	flags = enter_critical_section();
 
 	/* Remove the pending TX transfer at the head of the TX pending queue. */
 	bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.pend);
@@ -526,6 +530,38 @@ static void i2s_tx_worker(void *arg)
 	}
 }
 
+static void *i2s_tx_worker_thread(int argc, FAR char *argv[])
+{
+	FAR struct amebasmart_i2s_s *priv = NULL;
+	int ret;
+
+	if (argc >= 1 && argv[0]) {
+	    priv = (FAR struct amebasmart_i2s_s *)(uintptr_t)strtoul(argv[1], NULL, 16);
+	}
+
+	DEBUGASSERT(priv);
+
+	i2sinfo("TX worker thread started\n");
+
+	while (true) {
+		/* Wait for ISR signal.  EINTR is the only expected 'failure'
+		 * (meaning that the wait was interrupted by a signal).
+		 */
+		do {
+			ret = sem_wait(&priv->tx.sem);
+			DEBUGASSERT(ret == OK || errno == EINTR);
+		} while (ret != OK);
+
+		/* Only process if playback is active */
+		if (priv->tx.running) {
+			i2s_tx_worker(priv);
+		}
+	}
+
+	i2sinfo("TX worker thread exited\n");
+	return NULL;
+}
+
 static void i2s_tx_schedule(struct amebasmart_i2s_s *priv, int result)
 {
 	struct amebasmart_buffer_s *bfcontainer;
@@ -575,18 +611,11 @@ static void i2s_tx_schedule(struct amebasmart_i2s_s *priv, int result)
 		}
 	}
 
-	/* If the worker has completed running, then reschedule the working thread.
-	 * REVISIT:  There may be a race condition here.  So we do nothing if the
-	 * worker is not available.
-	 */
+	/* Signal the dedicated TX worker thread */
 
-	if (work_available(&priv->tx.work)) {
-		/* Schedule the TX DMA done processing to occur on the worker thread. */
-
-		ret = work_queue(HPWORK, &priv->tx.work, i2s_tx_worker, priv, 0);
-		if (ret != 0) {
-			i2serr("ERROR: Failed to queue TX primary work: %d\n", ret);
-		}
+	if (priv->tx.running) {
+		/* Wake up the dedicated TX worker thread via semaphore */
+		sem_post(&priv->tx.sem);
 	}
 }
 #endif
@@ -708,6 +737,11 @@ static int i2s_send(struct i2s_dev_s *dev, struct ap_buffer_s *apb, i2s_callback
 	flags = enter_critical_section();
 	sq_addlast((sq_entry_t *)bfcontainer, &priv->tx.pend);
 	leave_critical_section(flags);
+
+	/* Activate worker thread if not already running */
+	if (!priv->tx.running) {
+		priv->tx.running = true;
+	}
 
 	ret = i2s_tx_start(priv);
 
@@ -1520,6 +1554,7 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 	if (dir == I2S_TX) {
 		i2s_disable(priv->i2s_object, 0);
 		i2s_tx_enabled = 0;
+
 		i2s_set_dma_buffer(priv->i2s_object, (char *)priv->i2s_tx_buf, NULL, I2S_DMA_PAGE_NUM, I2S_DMA_PAGE_SIZE); /* Allocate DMA Buffer for TX */
 		amebasmart_i2s_isr_initialize(priv);
 		while (sq_peek(&priv->tx.pend) != NULL) {
@@ -1544,12 +1579,16 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 			leave_critical_section(flags);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
+
+		/* Pause TX processing (keep thread alive for restart) */
+		priv->tx.running = false;
+
 #ifdef CONFIG_PM
 	if (i2s_lock_state) {
 		i2s_lock_state = 0;
 		bsp_pm_domain_control(BSP_I2S_DRV, 0);
 	}
-#endif		
+#endif
 	}
 #endif
 
@@ -1876,6 +1915,7 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 		i2serr("I2S initialize: isr fails\n");
 		goto errout_with_alloc;
 	}
+
 	/* Initialize the I2S priv device structure  */
 	sem_init(&priv->exclsem, 0, 1);
 	priv->dev.ops = &g_i2sops;
@@ -1887,6 +1927,30 @@ struct i2s_dev_s *amebasmart_i2s_initialize(uint16_t port)
 	/* Basic settings */
 	//priv->i2s_num = priv->i2s_object->i2s_idx;
 	g_i2sdevice[port] = priv;
+
+#if defined(I2S_HAVE_TX) && (0 < I2S_HAVE_TX)
+	
+	i2sinfo("Creating dedicated TX worker thread\n");
+
+	sem_init(&priv->tx.sem, 0, 0);
+
+	/* The tx.sem semaphore is used for signaling and, hence, should
+	 * not have priority inheritance enabled.
+	 */
+	sem_setprotocol(&priv->tx.sem, SEM_PRIO_NONE);
+	priv->tx.running = true;
+	char argbuf[32];
+	snprintf(argbuf, sizeof(argbuf), "%p", priv);
+	char *argv[] = { argbuf, NULL };
+
+	pid_t pid = kernel_thread("i2s_tx_worker", CONFIG_SCHED_HPWORKPRIORITY, 4096,
+		i2s_tx_worker_thread, (char * const *)argv);
+	if (pid < 0) {
+		i2serr("ERROR: Failed to create TX worker thread: %d\n", pid);
+		sem_destroy(&priv->tx.sem);
+		goto errout_with_alloc;
+	}
+#endif
 
 	/* Success exit */
 	return &priv->dev;
@@ -1992,3 +2056,4 @@ void i2s_pminitialize(void)
 	pmu_register_sleep_callback(PMU_I2S_DEVICE, (PSM_HOOK_FUN)rtk_i2s_suspend, NULL, (PSM_HOOK_FUN)rtk_i2s_resume, NULL);
 }
 #endif
+

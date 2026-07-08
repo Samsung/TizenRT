@@ -63,11 +63,11 @@
  * It's good to match the buffer size with i2s DMA page size
  */
 #ifndef CONFIG_SYU645B_BUFFER_SIZE
-#define CONFIG_SYU645B_BUFFER_SIZE       32768
+#define CONFIG_SYU645B_BUFFER_SIZE       8192
 #endif
 
 #ifndef CONFIG_SYU645B_NUM_BUFFERS
-#define CONFIG_SYU645B_NUM_BUFFERS       2
+#define CONFIG_SYU645B_NUM_BUFFERS       4
 #endif
 
 /****************************************************************************
