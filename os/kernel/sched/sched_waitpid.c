@@ -422,6 +422,7 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 				if (stat_loc != NULL) {
 					*stat_loc = child->ch_status << 8;
 				}
+				pid = child->ch_pid;
 
 				/* Discard the child entry and break out of the loop */
 
