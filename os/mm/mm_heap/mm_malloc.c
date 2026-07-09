@@ -205,6 +205,7 @@ retry_after_gc:
 	 */
 
 	if (node->size) {
+		FAR struct mm_allocnode_s *allocnode = (FAR struct mm_allocnode_s *)node;
 		FAR struct mm_freenode_s *remainder;
 		FAR struct mm_freenode_s *next;
 		size_t remaining;
@@ -228,41 +229,66 @@ retry_after_gc:
 
 			next = (FAR struct mm_freenode_s *)(((char *)node) + node->size);
 
-			/* Create the remainder node */
+#ifdef CONFIG_MM_ALLOC_LARGE_FROM_BACK
+			if (size >= CONFIG_MM_LARGE_ALLOC_THRESHOLD) {
+				/* Allocate from the back of the free node. The node shrinks to
+				* 'remaining' and stays in place, keeping its 'preceding' and
+				* FREEINFO fields unchanged.
+				*/
+				allocnode = (FAR struct mm_allocnode_s *)(((char *)node) + remaining);
+				allocnode->size = size;
+				allocnode->preceding = remaining;
+				/* Adjust the size of the remainder node */
 
-			remainder = (FAR struct mm_freenode_s *)(((char *)node) + size);
-			remainder->size = remaining;
-			remainder->preceding = size;
+				node->size = remaining;
+
+				/* Adjust the 'preceding' size of the (old) next node,
+				 * preserving the allocated flag.
+				 */
+
+				next->preceding = size | (next->preceding & MM_ALLOC_BIT);
+
+				/* Add the shrunk remainder back into the nodelist */
+
+				mm_addfreechunk(heap, node);
+			} else
+#endif
+			{
+				/* Create the remainder node */
+
+				remainder = (FAR struct mm_freenode_s *)(((char *)node) + size);
+				remainder->size = remaining;
+				remainder->preceding = size;
 #ifdef CONFIG_DEBUG_MM_FREEINFO
-			remainder->free_call_addr = MM_REMAINDER_FREE_CALL_ADDR;
-			remainder->free_call_pid = MM_REMAINDER_FREE_CALL_PID;
+				remainder->free_call_addr = MM_REMAINDER_FREE_CALL_ADDR;
+				remainder->free_call_pid = MM_REMAINDER_FREE_CALL_PID;
 #endif
 
-			/* Adjust the size of the node under consideration */
+				/* Adjust the size of the node under consideration */
 
-			node->size = size;
+				node->size = size;
 
-			/* Adjust the 'preceding' size of the (old) next node, preserving
-			 * the allocated flag.
-			 */
+				/* Adjust the 'preceding' size of the (old) next node, preserving
+				* the allocated flag.
+				*/
 
-			next->preceding = remaining | (next->preceding & MM_ALLOC_BIT);
+				next->preceding = remaining | (next->preceding & MM_ALLOC_BIT);
 
-			/* Add the remainder back into the nodelist */
+				/* Add the remainder back into the nodelist */
 
-			mm_addfreechunk(heap, remainder);
+				mm_addfreechunk(heap, remainder);
+			}
 		}
-
 		/* Handle the case of an exact size match */
 
-		node->preceding |= MM_ALLOC_BIT;
+		allocnode->preceding |= MM_ALLOC_BIT;
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_update_node((struct mm_allocnode_s *)node, caller_retaddr);
-		heapinfo_add_size(heap, ((struct mm_allocnode_s *)node)->pid, node->size);
-		heapinfo_update_total_size(heap, node->size, ((struct mm_allocnode_s *)node)->pid);
+		heapinfo_update_node(allocnode, caller_retaddr);
+		heapinfo_add_size(heap, allocnode->pid, allocnode->size);
+		heapinfo_update_total_size(heap, allocnode->size, allocnode->pid);
 #endif
-		ret = (void *)((char *)node + SIZEOF_MM_ALLOCNODE);
+		ret = (void *)((char *)allocnode + SIZEOF_MM_ALLOCNODE);
 	}
 
 	mm_givesemaphore(heap);
