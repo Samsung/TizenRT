@@ -570,7 +570,7 @@ static int w25n_blockerase(FAR struct nand_raw_s *raw, off_t block)
 
 	if (status & W25N_SR_EFAIL) {
 		lldbg("erase failed, status : %02X\n", status);
-		return ERROR;
+		return -EIO;
 	}
 
 	return OK;
@@ -626,7 +626,7 @@ static int w25n_pageread(FAR struct nand_raw_s *raw, off_t block, unsigned int p
 	if (W25N_ECC_STATUS(status) > 1) {
 		lldbg("ecc recovery failed, status : %02x\n", status);
 		w25n_unlock(priv->spi);
-		return ERROR;
+		return -EIO;
 	}
 
 	/*Now we can read the data */
@@ -738,7 +738,7 @@ static int w25n_pagewrite(FAR struct nand_raw_s *raw, off_t block, unsigned int 
 
 	if (status & W25N_SR_PFAIL) {
 		lldbg("program failed, status : %02X\n", status);
-		return ERROR;
+		return -EIO;
 	}
 
 	return OK;

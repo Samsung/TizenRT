@@ -761,14 +761,7 @@ static int littlefs_rewinddir(FAR struct inode *mountpt, FAR struct fs_dirent_s 
 }
 
 /****************************************************************************
- * Name: littlefs_bind
- *
- * Description: This implements a portion of the mount operation. This
- *  function allocates and initializes the mountpoint private data and
- *  binds the driver inode to the filesystem private data. The final
- *  binding of the private data (containing the driver) to the
- *  mountpoint is performed by mount().
- *
+ * Name: littlefs_read_block
  ****************************************************************************/
 
 static int littlefs_read_block(FAR const struct lfs_config *c, lfs_block_t block, lfs_off_t off, FAR void *buffer, lfs_size_t size)
@@ -822,6 +815,11 @@ static int littlefs_write_block(FAR const struct lfs_config *c, lfs_block_t bloc
 	/* TODO Mapping table between errno.h & lfs is required */
 	if (ret == -EIO) {
 		ret = LFS_ERR_CORRUPT;
+	} else if (ret == -EUCLEAN) {
+		/* Data was written, but the FTL consumed a bad block and lost
+		 * usable capacity; lfs shrinks itself via the capacity callback.
+		 */
+		ret = LFS_ERR_EUCLEAN;
 	}
 	return ret >= 0 ? OK : ret;
 }
@@ -870,8 +868,38 @@ static int littlefs_sync_block(FAR const struct lfs_config *c)
 		fdbg("Without dhara ftl, sync is not supported.\n");
 	} else {
 		ret = drv->u.i_bops->ioctl(drv, BIOC_FLUSH, 0);
+		if (ret == -EUCLEAN) {
+			/* Flush succeeded, but the FTL consumed a bad block and lost
+			 * usable capacity; lfs shrinks itself via the capacity callback.
+			 */
+			return LFS_ERR_EUCLEAN;
+		}
 	}
 	return OK;
+}
+
+/****************************************************************************
+ * Name: littlefs_capacity
+ *
+ * Description: Return the current number of usable lfs blocks on the
+ *  underlying device. With an FTL (e.g. dhara) underneath, this shrinks
+ *  at runtime as bad blocks develop.
+ *
+ ****************************************************************************/
+
+static lfs_ssize_t littlefs_capacity(FAR const struct lfs_config *c)
+{
+	FAR struct littlefs_mountpt_s *fs = (FAR struct littlefs_mountpt_s *)c->context;
+	FAR struct inode *drv = fs->drv;
+	struct geometry geometry;
+	int ret;
+
+	ret = drv->u.i_bops->geometry(drv, &geometry);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return (lfs_ssize_t)geometry.geo_nsectors;
 }
 
 static int littlefs_lock(FAR const struct lfs_config *c)
@@ -960,6 +988,12 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	fs->cfg.prog = littlefs_write_block;
 	fs->cfg.erase = littlefs_erase_block;
 	fs->cfg.sync = littlefs_sync_block;
+	if (!INODE_IS_MTD(driver)) {
+		/* FTL-backed block driver (e.g. dhara): capacity shrinks at
+		 * runtime as bad blocks develop, let lfs track it.
+		 */
+		fs->cfg.capacity = littlefs_capacity;
+	}
 #ifdef LFS_THREADSAFE
 	fs->cfg.lock = littlefs_lock;
 	fs->cfg.unlock = littlefs_unlock;
@@ -1016,6 +1050,14 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 			fdbg("lfs_check_format failed ret : %d\n", ret);
 			goto errout_with_fs;
 		}
+	}
+	/* Mount with block_count=0 so lfs adopts the block count stored in the
+	 * superblock. With an FTL underneath, the current device capacity may
+	 * differ from the capacity at format time; lfs shrinks itself after
+	 * mount (and at runtime) through the capacity callback.
+	 */
+	if (fs->cfg.capacity) {
+		fs->cfg.block_count = 0;
 	}
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
 	if (ret < 0) {
@@ -1118,10 +1160,13 @@ static int littlefs_statfs(FAR struct inode *mountpt, FAR struct statfs *buf)
 	memset(buf, 0, sizeof(*buf));
 	buf->f_type = LITTLEFS_SUPER_MAGIC;
 	buf->f_namelen = LFS_NAME_MAX;
+	/* Use the in-memory block count rather than cfg: with an FTL underneath
+	 * the filesystem shrinks at runtime as bad blocks develop.
+	 */
 	buf->f_bsize = fs->cfg.block_size;
-	buf->f_blocks = fs->cfg.block_count;
-	buf->f_bfree = fs->cfg.block_count;
-	buf->f_bavail = fs->cfg.block_count;
+	buf->f_blocks = fs->lfs.block_count;
+	buf->f_bfree = fs->lfs.block_count;
+	buf->f_bavail = fs->lfs.block_count;
 
 	littlefs_semtake(fs);
 
@@ -1265,7 +1310,7 @@ static int littlefs_stat(FAR struct inode *mountpt, FAR const char *relpath, FAR
 
 		buf->st_size = info.size;
 		buf->st_blksize = fs->cfg.prog_size;
-		buf->st_blocks = (fs->cfg.block_size / fs->cfg.prog_size) * fs->cfg.block_count;
+		buf->st_blocks = (fs->cfg.block_size / fs->cfg.prog_size) * fs->lfs.block_count;
 	}
 
 	return ret;

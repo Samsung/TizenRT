@@ -453,8 +453,7 @@ int dhara_journal_resume(struct dhara_journal *j, dhara_error_t *err)
 
 dhara_page_t dhara_journal_capacity(const struct dhara_journal *j)
 {
-	 /* TODO Updating bad blocks as 5% of total available blocks temporarily */
-	const dhara_block_t max_bad = j->nand->num_blocks/20;
+	const dhara_block_t max_bad = j->bb_last > j->bb_current ? j->bb_last : j->bb_current;
 	const dhara_block_t good_blocks = j->nand->num_blocks - max_bad - 1;
 	const int log2_cpb = j->nand->log2_ppb - j->log2_ppc;
 	const dhara_page_t good_cps = good_blocks << log2_cpb;
