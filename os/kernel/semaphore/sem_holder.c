@@ -733,8 +733,18 @@ void sem_addholder_tcb(FAR struct tcb_s *htcb, FAR sem_t *sem)
 		/* Find or allocate a container for this new holder */
 		pholder = sem_findorallocateholder(sem, htcb);
 		if (pholder != NULL) {
-			/* Increment the number of counts held by this holder */
-			pholder->counts++;
+			/* Reaching the maximum means holder accounting has diverged from
+			 * the semaphore state.  Catch it at the acquisition that exposes
+			 * the problem, while retaining the limit check to prevent a signed
+			 * 16-bit wrap in non-debug builds.
+			 */
+
+			DEBUGASSERT(pholder->counts < SEM_VALUE_MAX);
+			if (pholder->counts < SEM_VALUE_MAX) {
+				/* Increment the number of counts held by this holder */
+
+				pholder->counts++;
+			}
 		}
 #if defined(CONFIG_PRIORITY_INHERITANCE) && !defined(CONFIG_BINMGR_RECOVERY)
 	}
@@ -773,33 +783,71 @@ void sem_addholder(FAR sem_t *sem)
  *
  * Parameters:
  *   sem - A reference to the semaphore being posted
+ *   rtcb - TCB of the task posting the semaphore
  *
  * Return Value:
- *   None
+ *   TCB of the holder whose count was released.  This can differ from
+ *   rtcb when a counting semaphore is posted by a non-holder.
  *
  * Assumptions:
  *
  ****************************************************************************/
 
-void sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *rtcb)
+FAR struct tcb_s *sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *rtcb)
 {
 	FAR struct semholder_s *pholder;
+	FAR struct semholder_s *candidate = NULL;
+	unsigned int total = 0;
 
 	if ((sem->flags & FLAGS_SIGSEM) != 0) {
 		/* No saved holder for semaphore used for signaling */
-		return;
+		return rtcb;
 	}
 
-	/* Find the container for this holder */
+	/* Find the container for this holder.  POSIX counting semaphores do not
+	 * require the posting task to be the task that obtained the count.  If
+	 * there is only one recorded holder, it is therefore also the only
+	 * possible holder whose count can be released.
+	 */
 
-	pholder = sem_findholder(sem, rtcb);
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+	for (pholder = sem->hhead; pholder != NULL; pholder = pholder->flink)
+#else
+	pholder = &sem->holder;
+	if (pholder->htcb != NULL)
+#endif
+	{
+		DEBUGASSERT(pholder->counts > 0);
 
-	if (pholder && pholder->counts > 0) {
-		/* Decrement the counts on this holder -- the holder will be freed
-		 * later in sem_restorebaseprio.
+		if (pholder->htcb == rtcb) {
+			/* Decrement the counts on this holder -- the holder will be freed
+			 * later in sem_restorebaseprio.
+			 */
+
+			pholder->counts--;
+			return rtcb;
+		}
+
+		total++;
+		candidate = pholder;
+	}
+
+	if (total == 1) {
+		/* The posting task is not a holder, but the sole holder is
+		 * unambiguous.  Return its TCB so sem_restorebaseprio() removes the
+		 * correct zero-count entry after priority restoration.
 		 */
-		pholder->counts--;
+
+		candidate->counts--;
+		return candidate->htcb;
 	}
+
+	/* With multiple holders there is not enough information to select the
+	 * released holder.  Keep the existing records rather than attributing
+	 * the release to the wrong task.
+	 */
+
+	return rtcb;
 }
 
 #ifdef CONFIG_PRIORITY_INHERITANCE

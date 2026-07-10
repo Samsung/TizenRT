@@ -115,7 +115,7 @@ void sem_destroyholder(FAR sem_t *sem);
 struct semholder_s *sem_findholder(sem_t *sem, FAR struct tcb_s *htcb);
 void sem_addholder(FAR sem_t *sem);
 void sem_addholder_tcb(FAR struct tcb_s *tcb, FAR sem_t *sem);
-void sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *htcb);
+FAR struct tcb_s *sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *htcb);
 #if defined(CONFIG_PRIORITY_INHERITANCE)
 void sem_boostpriority(FAR sem_t *sem);
 void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem_t *sem);
@@ -135,7 +135,7 @@ void sem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem);
 #define sem_addholder(sem)
 #define sem_addholder_tcb(tcb, sem)
 #define sem_boostpriority(sem)
-#define sem_releaseholder(sem, htcb)
+#define sem_releaseholder(sem, htcb) (htcb)
 #define sem_restorebaseprio(stcb, sem)
 #define sem_canceled(stcb, sem)
 #define sem_release_all(stcb)
