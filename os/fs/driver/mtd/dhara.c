@@ -502,6 +502,7 @@ static ssize_t dhara_write(FAR struct inode *inode, FAR const unsigned char *buf
 	dev = inode->i_private;
 
 	sem_wait(&dev->lock);
+	dhara_sector_t cap_before = dhara_map_capacity(&dev->map);
 	while (nsectors-- > 0) {
 		dhara_error_t err;
 		ret = dhara_map_write(&dev->map, start_sector, buffer, &err);
@@ -514,6 +515,15 @@ static ssize_t dhara_write(FAR struct inode *inode, FAR const unsigned char *buf
 		nwrite++;
 		start_sector++;
 		buffer += dev->geo.blocksize;
+	}
+
+	/* All data was written, but a bad block was consumed on the way and
+	 * the usable capacity shrank. Report -EUCLEAN so that the filesystem
+	 * can shrink itself to the new capacity.
+	 */
+	if (ret >= 0 && dhara_map_capacity(&dev->map) < cap_before) {
+		sem_post(&dev->lock);
+		return -EUCLEAN;
 	}
 
 	sem_post(&dev->lock);
@@ -535,6 +545,7 @@ static int dhara_geometry(FAR struct inode *inode, FAR struct geometry *geometry
 	dev = inode->i_private;
 
 	if (geometry) {
+		sem_wait(&dev->lock);
 		geometry->geo_available = true;
 		geometry->geo_mediachanged = false;
 		geometry->geo_writeenabled = true;
@@ -571,11 +582,17 @@ static int dhara_ioctl(FAR struct inode *inode, int cmd, unsigned long arg)
 	 */
 	switch (cmd) {
 	case BIOC_FLUSH:
+	{
+		dhara_sector_t cap_before = dhara_map_capacity(&dev->map);
 		ret = dhara_map_sync(&dev->map, &dhara_err);
 		if (ret < 0) {
 			ferr("BIOC ioctl(%04x) failed: sync %d\n", cmd, ret);
+		} else if (dhara_map_capacity(&dev->map) < cap_before) {
+			/* Sync succeeded but consumed a bad block */
+			ret = -EUCLEAN;
 		}
 		goto ok_out;
+	}
 	case BIOC_DISCARD:
 		dhara_map_clear(&dev->map);
 		ret = OK;
@@ -663,7 +680,8 @@ int dhara_nand_erase(FAR const struct dhara_nand *n, dhara_block_t bno, FAR dhar
 
 	ret = MTD_ERASE(dev->mtd, bno, 1);
 	if (ret < 0) {
-		dhara_set_error(err, DHARA_E_BAD_BLOCK);
+		/* flash driver will return -EIO if it hit bad block, otherwise use DHARA_E_COMMON */
+		dhara_set_error(err, ret == -EIO ? DHARA_E_BAD_BLOCK : DHARA_E_COMMON);
 		return ret;
 	}
 
@@ -681,14 +699,9 @@ int dhara_nand_prog(FAR const struct dhara_nand *n, dhara_page_t p, FAR const ui
 	int pages_per_chunk = 1 << dev->map.journal.log2_ppc;
 	ret = MTD_BWRITE(dev->mtd, p, 1, data);
 	if (ret < 0) {
-		dhara_set_error(err, DHARA_E_BAD_BLOCK);
+		/* flash driver will return -EIO if it hit bad block, otherwise use DHARA_E_COMMON */
+		dhara_set_error(err, ret == -EIO ? DHARA_E_BAD_BLOCK : DHARA_E_COMMON);
 		return ret;
-	}
-	if (ret < 0) {
-		dhara_set_error(err, DHARA_E_BAD_BLOCK);
-		return ret;
-
-
 	}
 	dhara_update_readcache(dev, p, data);
  			if (((p+1) % pages_per_chunk) == 0) {
@@ -732,13 +745,11 @@ int dhara_nand_read(FAR const struct dhara_nand *n, dhara_page_t p, size_t offse
 		ret = 0;
 	}
 	if (ret < 0) {
-		/* TODO: It may not be a ECC error, so you need ECC error check logic.
-			if (is_ecc_error) {
-				dhara_set_error(err, DHARA_E_ECC);
-			}
-		*/
+		/* -EIO from the driver means an uncorrectable ECC error;
+		 * anything else is a generic I/O failure.
+		 */
 		dhara_insert_metadatacache(dev, mcache);
-		dhara_set_error(err, DHARA_E_ECC);
+		dhara_set_error(err, ret == -EIO ? DHARA_E_ECC : DHARA_E_COMMON);
 		return ret;
 	}
 	memcpy(data, mcache->buffer + offset, length);
@@ -761,8 +772,11 @@ int dhara_nand_read(FAR const struct dhara_nand *n, dhara_page_t p, size_t offse
 			ret = 0;  /* Ignore correctable ECC error */
 
 		if (ret < 0) {
+			/* -EIO from the driver means an uncorrectable ECC error;
+			 * anything else is a generic I/O failure.
+			 */
 			dhara_insert_readcache(dev, cache);
-			dhara_set_error(err, DHARA_E_ECC);
+			dhara_set_error(err, ret == -EIO ? DHARA_E_ECC : DHARA_E_COMMON);
 			return ret;
 		}
 

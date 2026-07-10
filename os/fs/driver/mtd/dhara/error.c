@@ -45,7 +45,8 @@ const char *dhara_strerror(dhara_error_t err)
 		[DHARA_E_JOURNAL_FULL] = "Journal is full",
 		[DHARA_E_NOT_FOUND] = "No such sector",
 		[DHARA_E_MAP_FULL] = "Sector map is full",
-		[DHARA_E_CORRUPT_MAP] = "Sector map is corrupted"
+		[DHARA_E_CORRUPT_MAP] = "Sector map is corrupted",
+		[DHARA_E_COMMON] = "Common error"
 	};
 	const char *msg = NULL;
 

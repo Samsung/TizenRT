@@ -204,6 +204,14 @@ struct lfs_config {
     // are propagated to the user.
     int (*sync)(const struct lfs_config *c);
 
+    // Optional. Returns the current number of usable blocks on the underlying
+    // block device, or a negative error code. Block devices backed by an FTL
+    // (e.g. dhara on NAND) lose usable capacity as bad blocks develop; when
+    // the prog/erase/sync callbacks report LFS_ERR_EUCLEAN, littlefs queries
+    // this callback and shrinks the filesystem to the returned block count.
+    // NULL disables capacity reconciliation entirely.
+    lfs_ssize_t (*capacity)(const struct lfs_config *c);
+
 #ifdef LFS_THREADSAFE
     // Lock the underlying block device. Negative error codes
     // are propagated to the user.
@@ -483,6 +491,9 @@ typedef struct lfs {
 
     const struct lfs_config *cfg;
     lfs_size_t block_count;
+    // Set when the block device reported LFS_ERR_EUCLEAN (usable capacity
+    // shrank); cleared once the filesystem is reconciled to the new size.
+    bool cap_dirty;
     lfs_size_t name_max;
     lfs_size_t file_max;
     lfs_size_t attr_max;
