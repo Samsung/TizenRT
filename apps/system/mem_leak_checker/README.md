@@ -7,11 +7,15 @@ This document describes how to enable and use the Leak Checker.
 
 ## How to enable
 
-1. Enable *CONFIG_DEBUG_MM_HEAPINFO* using menuconfig as shown below:
+1. Enable *CONFIG_DEBUG_MEM_LEAK_CHECKER* using menuconfig as shown below:
 ```
-Debug Options -> Enable Debug Output Features -> [*] Heap Info debug option
+Debug Options -> Enable Debug Features -> [*] Memory Leak Checker
 ```
-2. Enable *CONFIG_MEM_LEAK_CHECKER* and set *CONFIG_MEM_LEAK_CHECKER_HASH_TABLE_SIZE* value using menuconfig as shown below:
+2. Set *CONFIG_DEBUG_MEM_LEAK_CHECKER_HASH_TABLE_SIZE* value using menuconfig as shown below:
+```
+Debug Options -> Enable Debug Features -> Memory Leak Checker -> size of hash table
+```
+3. Enable *CONFIG_MEM_LEAK_CHECKER* to build the TASH command.
 ```
 Application Configuration -> System Libraries and Add-Ons -> [*] Memory Leakage Checker
 ```
@@ -21,7 +25,7 @@ Application Configuration -> System Libraries and Add-Ons -> [*] Memory Leakage 
 #### HASH_TABLE_SIZE
 
 The Memory Leak Checker uses hash table to improve searching performance.  
-CONFIG_MEM_LEAK_CHECKER_HASH_TABLE_SIZE represents the  number of hash table indexes.  
+CONFIG_DEBUG_MEM_LEAK_CHECKER_HASH_TABLE_SIZE represents the number of hash table indexes.
 It has a good performance with big size but spends more memory.
 
 Note: We recommand using a prime number. Default value of that configuration is 1007.
@@ -34,13 +38,24 @@ TASH>> mem_leak [target]
        [target] is used only when APP_BINARY_SEPARATION is enabled.
        [target] is one of kernel, app1 or app2.
 
+Kernel :
+*** NO MEMORY LEAK.
 
-Type   |    Addr   |   Size   | Owner
---------------------------------------------
-LEAK   | 0x202e540 |     1248 | 0x40d311c
-LEAK   | 0x2030ec0 |     2352 | 0x40d3124
-LEAK   | 0x2031800 |     3456 | 0x40d312c
-LEAK   | 0x2032590 |     4576 | 0x40d3134
+Below are text addresses of loadable apps (and common binary if enabled) :
+The pc value of the allocation can be obtained by subtracting the text start address of the appropriate binary
+
+[common] Text Addr : 0xe260010, Text Size : 8679424
+[app1] Text Addr : 0xeaa7030, Text Size : 4894720
+
+app1 :
+Type   |    Addr    | Size(byte) |    Owner   | PID
+---------------------------------------------------
+LEAK   | 0x63a93fb0 |        16  |  0xe26bf4b | 29
+[DATA] 48 65 6c 6c 6f 2c 20 57 6f 72 6c 64 31 00 00 00
+LEAK   | 0x63a93fd0 |        32  |  0xe26bf57 | 29
+[DATA] 48 65 6c 6c 6f 2c 20 57 6f 72 6c 64 32 00 00 00
+       00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+*** 2 LEAKS, 0 BROKENS.
 ```
 
 Here are description of result.

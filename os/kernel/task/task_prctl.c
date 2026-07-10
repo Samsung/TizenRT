@@ -356,7 +356,7 @@ int prctl(int option, ...)
 		return ret;
 	}
 #endif
-#ifdef CONFIG_MEM_LEAK_CHECKER
+#ifdef CONFIG_DEBUG_MEM_LEAK_CHECKER
 	case PR_MEM_LEAK_CHECKER:
 	{
 		int ret;

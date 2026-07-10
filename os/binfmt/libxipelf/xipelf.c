@@ -197,12 +197,12 @@ struct bin_addr_info_s {
 	uint32_t text_addr;
 	uint32_t text_size;
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
-#if defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME) || defined(CONFIG_MEM_LEAK_CHECKER)
+#if defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME) || defined(CONFIG_DEBUG_MEM_LEAK_CHECKER)
 	uint32_t rodata_addr;
 	uint32_t data_addr;
 	uint32_t bss_addr;
 #endif
-#ifdef CONFIG_MEM_LEAK_CHECKER
+#ifdef CONFIG_DEBUG_MEM_LEAK_CHECKER
 	uint32_t rodata_size;
 	uint32_t data_size;
 	uint32_t bss_size;
@@ -259,7 +259,7 @@ void elf_save_bin_section_addr(struct binary_s *bin)
 		g_bin_addr_list[bin_idx].text_size = bin->sizes[BIN_TEXT];
 #ifdef CONFIG_SAVE_BIN_SECTION_ADDR
 		binfo("[%s] text_addr : %x\n", bin->bin_name, g_bin_addr_list[bin_idx].text_addr);
-#if defined(CONFIG_MEM_LEAK_CHECKER)
+#if defined(CONFIG_DEBUG_MEM_LEAK_CHECKER)
 		g_bin_addr_list[bin_idx].data_addr = bin->sections[BIN_DATA];
 		g_bin_addr_list[bin_idx].bss_addr = bin->sections[BIN_BSS];
 		g_bin_addr_list[bin_idx].data_size = bin->sizes[BIN_DATA];

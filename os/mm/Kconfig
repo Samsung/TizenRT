@@ -128,10 +128,19 @@ config MM_ASSERT_ON_FAIL
 		When memory allocation fails, make assertion.
 		From the application binary with loadable build, it will be reloaded.
 
+config MM_RUN_MEM_LEAK_CHECKER_ON_ALLOCFAIL
+	bool "Run memory leak checker on allocation failure"
+	default n
+	depends on DEBUG_MEM_LEAK_CHECKER_STATIC_ALLOC
+	---help---
+		Run the memory leak checker from the allocation failure path before
+		printing the allocation failure dump. This is available only with static
+		checker buffers because dynamic buffers would allocate memory after an
+		allocation failure.
+
 config MM_DUMP_CORRPUTED_HEAP
 	bool "Dump the complete corrupted heap"
 	default n
 	---help---
 		When we find a heap corruption, we can dump the entire heap, so that
 		it can be manually analyzed to find more information about the corruption.
-
