@@ -16,7 +16,7 @@
 #include <variant>
 #include "libcxx_tc_common.h"
 
-int tc_utilities_variant_variant_get_holds_alternative(void) {
+int tc_utilities_variant_holds_alternative(void) {
   {
     using V = std::variant<int>;
     constexpr V v;
@@ -34,5 +34,6 @@ int tc_utilities_variant_variant_get_holds_alternative(void) {
     ASSERT_NOEXCEPT(std::holds_alternative<int>(v));
   }
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

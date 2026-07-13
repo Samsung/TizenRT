@@ -21,7 +21,7 @@
 struct Incomplete;
 template<class T> struct Holder { T t; };
 
-constexpr bool test(bool do_it)
+constexpr bool test_visit_robust_adl(bool do_it)
 {
     if (do_it) {
         std::variant<Holder<Incomplete>*, int> v = nullptr;
@@ -35,10 +35,17 @@ constexpr bool test(bool do_it)
     return true;
 }
 
-int tc_utilities_variant_variant_visit_robust_against_adl(void) {
-    test(true);
+#if TEST_STD_VER >= 17
+TEST_CONSTEXPR_CXX20 bool test_variant_visit_full() {
+    return test_visit_robust_adl(true);
+}
+
+int tc_utilities_variant_visit_robust_adl(void) {
+    test_variant_visit_full();
 #if TEST_STD_VER > 17
-    static_assert(test(true));
+    static_assert(test_variant_visit_full());
 #endif
+    TC_SUCCESS_RESULT();
     return 0;
 }
+#endif /* TEST_STD_VER >= 17 */

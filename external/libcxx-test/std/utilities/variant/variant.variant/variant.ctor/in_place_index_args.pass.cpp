@@ -58,7 +58,7 @@ void test_ctor_sfinae() {
   }
 }
 
-void test_ctor_basic() {
+void test_ctor_basic_index() {
   {
     constexpr std::variant<int> v(std::in_place_index<0>, 42);
     static_assert(v.index() == 0, "");
@@ -97,9 +97,10 @@ void test_ctor_basic() {
   }
 }
 
-int tc_utilities_variant_variant_variant_variant_ctor_in_place_index_args(void) {
-  test_ctor_basic();
+int tc_utilities_variant_ctor_in_place_index_args(void) {
+  test_ctor_basic_index();
   test_ctor_sfinae();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

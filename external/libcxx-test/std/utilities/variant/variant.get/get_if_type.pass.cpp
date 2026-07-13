@@ -21,6 +21,8 @@
 #include <variant>
 #include "libcxx_tc_common.h"
 
+namespace {
+  
 void test_const_get_if() {
   {
     using V = std::variant<int>;
@@ -121,10 +123,12 @@ void test_get_if() {
   }
 #endif
 }
+}
 
-int tc_utilities_variant_variant_get_get_if_type(void) {
+int tc_utilities_variant_get_if_type(void) {
   test_const_get_if();
   test_get_if();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

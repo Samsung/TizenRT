@@ -24,7 +24,7 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
-void test_ctor_sfinae() {
+void test_ctor_sfinae_type() {
   {
     using V = std::variant<int>;
     static_assert(
@@ -67,7 +67,7 @@ void test_ctor_sfinae() {
   }
 }
 
-void test_ctor_basic() {
+void test_ctor_basic_type() {
   {
     constexpr std::variant<int> v(std::in_place_type<int>, 42);
     static_assert(v.index() == 0, "");
@@ -107,9 +107,10 @@ void test_ctor_basic() {
   }
 }
 
-int tc_utilities_variant_variant_variant_variant_ctor_in_place_type_args(void) {
-  test_ctor_basic();
-  test_ctor_sfinae();
+int tc_utilities_variant_ctor_in_place_type_args(void) {
+  test_ctor_basic_type();
+  test_ctor_sfinae_type();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

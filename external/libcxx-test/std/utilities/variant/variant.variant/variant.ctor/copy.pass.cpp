@@ -23,6 +23,8 @@
 #include "test_workarounds.h"
 #include "libcxx_tc_common.h"
 
+namespace {
+
 struct NonT {
   NonT(int v) : value(v) {}
   NonT(const NonT &o) : value(o.value) {}
@@ -248,11 +250,13 @@ void test_constexpr_copy_ctor() {
   static_assert(test_constexpr_copy_ctor_imp<1>(V(nullptr)), "");
   static_assert(test_constexpr_copy_ctor_imp<2>(V(101)), "");
 }
+}
 
-int tc_utilities_variant_variant_variant_variant_ctor_copy(void) {
+int tc_utilities_variant_ctor_copy(void) {
   test_copy_ctor_basic();
   test_copy_ctor_valueless_by_exception();
   test_copy_ctor_sfinae();
   test_constexpr_copy_ctor();
+  TC_SUCCESS_RESULT();
   return 0;
 }

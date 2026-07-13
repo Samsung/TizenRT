@@ -23,8 +23,10 @@
 #include "variant_test_helpers.h"
 #include "libcxx_tc_common.h"
 
-
-int tc_utilities_variant_variant_variant_variant_status_valueless_by_exception(void) {
+namespace {
+  
+#if TEST_STD_VER >= 17
+TEST_CONSTEXPR_CXX20 bool test() {
   {
     using V = std::variant<int, long>;
     constexpr V v;
@@ -50,5 +52,16 @@ int tc_utilities_variant_variant_variant_variant_status_valueless_by_exception(v
   }
 #endif
 
-  return 0;
+  return true;
 }
+}
+
+int tc_utilities_variant_status_valueless(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

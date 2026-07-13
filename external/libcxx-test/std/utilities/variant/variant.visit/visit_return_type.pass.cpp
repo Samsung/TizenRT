@@ -13,6 +13,8 @@
 // template <class R, class Visitor, class... Variants>
 // constexpr R visit(Visitor&& vis, Variants&&... vars);
 
+#include "libcxx_tc_common.h"
+
 #include <cassert>
 #include <memory>
 #include <string>
@@ -22,7 +24,8 @@
 
 #include "test_macros.h"
 #include "variant_test_helpers.h"
-#include "libcxx_tc_common.h"
+
+#if TEST_STD_VER >= 20
 
 template <typename ReturnType>
 void test_call_operator_forwarding() {
@@ -501,7 +504,7 @@ void test_sfinae() {
   static_assert(!has_visit<BadVariant>(int()));
 }
 
-int tc_utilities_variant_variant_visit_visit_return_type(void) {
+int tc_utilities_variant_visit_return_type(void) {
   test_call_operator_forwarding<void>();
   test_argument_forwarding<void>();
   test_return_type<void>();
@@ -518,5 +521,9 @@ int tc_utilities_variant_variant_visit_visit_return_type(void) {
   test_derived_from_variant();
   test_sfinae();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }
+
+#endif /* TEST_STD_VER >= 20 */
+

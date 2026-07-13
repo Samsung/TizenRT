@@ -270,9 +270,10 @@ void test_relational() {
 #endif
 }
 
-int tc_utilities_variant_variant_relops_relops(void) {
+int tc_utilities_variant_relops(void) {
   test_equality();
   test_relational();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

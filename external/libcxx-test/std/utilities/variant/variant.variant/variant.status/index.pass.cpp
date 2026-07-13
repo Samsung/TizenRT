@@ -24,7 +24,10 @@
 #include "libcxx_tc_common.h"
 
 
-int tc_utilities_variant_variant_variant_variant_status_index(void) {
+namespace {
+  
+#if TEST_STD_VER >= 17
+TEST_CONSTEXPR_CXX20 bool test() {
   {
     using V = std::variant<int, long>;
     constexpr V v;
@@ -57,5 +60,16 @@ int tc_utilities_variant_variant_variant_variant_status_index(void) {
   }
 #endif
 
-  return 0;
+  return true;
 }
+}
+
+int tc_utilities_variant_status_index(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

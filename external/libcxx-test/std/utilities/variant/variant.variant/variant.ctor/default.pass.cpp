@@ -9,6 +9,9 @@
 
 // XFAIL: availability-bad_variant_access-missing && !no-exceptions
 
+
+#include "libcxx_tc_common.h"
+
 // <variant>
 
 // template <class ...Types> class variant;
@@ -21,7 +24,6 @@
 
 #include "test_macros.h"
 #include "variant_test_helpers.h"
-#include "libcxx_tc_common.h"
 
 struct NonDefaultConstructible {
   constexpr NonDefaultConstructible(int) {}
@@ -57,11 +59,11 @@ void test_default_ctor_sfinae() {
 void test_default_ctor_noexcept() {
   {
     using V = std::variant<int>;
-    static_assert(std::is_nothrow_default_constructible<V>::value, "");
+    TC_ASSERT_EXPR(std::is_nothrow_default_constructible<V>::value);
   }
   {
     using V = std::variant<NotNoexcept>;
-    static_assert(!std::is_nothrow_default_constructible<V>::value, "");
+    TC_ASSERT_EXPR(!std::is_nothrow_default_constructible<V>::value);
   }
 }
 
@@ -117,11 +119,13 @@ void test_default_ctor_basic() {
   }
 }
 
-int tc_utilities_variant_variant_variant_variant_ctor_default(void) {
+int tc_utilities_variant_ctor_default(void) {
   test_default_ctor_basic();
   test_default_ctor_sfinae();
   test_default_ctor_noexcept();
   test_default_ctor_throws();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }
+

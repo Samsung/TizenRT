@@ -13,6 +13,7 @@
 #include <type_traits>
 #include <utility>
 #include <cassert>
+#include <cstdio>
 
 #include "test_macros.h"
 #include "type_id.h"
@@ -34,6 +35,7 @@ constexpr bool VariantAllowsNarrowingConversions = false;
 #endif
 
 #ifndef TEST_HAS_NO_EXCEPTIONS
+
 struct CopyThrows {
   CopyThrows() = default;
   CopyThrows(CopyThrows const&) { throw 42; }
@@ -43,14 +45,14 @@ struct CopyThrows {
 struct MoveThrows {
   static int alive;
   MoveThrows() { ++alive; }
-  MoveThrows(MoveThrows const&) {++alive;}
-  MoveThrows(MoveThrows&&) {  throw 42; }
+  MoveThrows(MoveThrows const&) { ++alive; }
+  MoveThrows(MoveThrows&&) { throw 42; }
   MoveThrows& operator=(MoveThrows const&) { return *this; }
   MoveThrows& operator=(MoveThrows&&) { throw 42; }
   ~MoveThrows() { --alive; }
 };
 
-int MoveThrows::alive = 0;
+inline int MoveThrows::alive = 0;
 
 struct MakeEmptyT {
   static int alive;
@@ -73,7 +75,7 @@ struct MakeEmptyT {
 };
 static_assert(std::is_swappable_v<MakeEmptyT>, ""); // required for test
 
-int MakeEmptyT::alive = 0;
+inline int MakeEmptyT::alive = 0;
 
 template <class Variant>
 void makeEmpty(Variant& v) {
@@ -151,8 +153,8 @@ struct ForwardingCallObject {
   static const TypeID *last_call_args;
 };
 
-CallType ForwardingCallObject::last_call_type = CT_None;
-const TypeID *ForwardingCallObject::last_call_args = nullptr;
+inline CallType ForwardingCallObject::last_call_type = CT_None;
+inline const TypeID *ForwardingCallObject::last_call_args = nullptr;
 
 struct ReturnFirst {
   template <class... Args> constexpr int operator()(int f, Args &&...) const {

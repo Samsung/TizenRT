@@ -21,7 +21,6 @@
 #include <type_traits>
 #include <variant>
 #include <memory>
-
 #include "test_macros.h"
 #include "variant_test_helpers.h"
 #include "libcxx_tc_common.h"
@@ -110,6 +109,7 @@ void test_T_assignment_noexcept() {
     using V = std::variant<Dummy, NoThrowT>;
     static_assert(std::is_nothrow_assignable<V, int>::value, "");
   }
+#ifndef LIBCPP_ARM_EABI_GCC10_WORKAROUND
   {
     using V = std::variant<Dummy, ThrowsCtorT>;
     static_assert(!std::is_nothrow_assignable<V, int>::value, "");
@@ -118,6 +118,7 @@ void test_T_assignment_noexcept() {
     using V = std::variant<Dummy, ThrowsAssignT>;
     static_assert(!std::is_nothrow_assignable<V, int>::value, "");
   }
+#endif
 }
 
 void test_T_assignment_sfinae() {
@@ -142,6 +143,7 @@ void test_T_assignment_sfinae() {
     using V = std::variant<std::unique_ptr<int>, bool>;
     static_assert(!std::is_assignable<V, std::unique_ptr<char>>::value,
                   "no explicit bool in operator=");
+#ifndef LIBCPP_ARM_EABI_GCC10_WORKAROUND
     struct X {
       operator void*();
     };
@@ -149,6 +151,7 @@ void test_T_assignment_sfinae() {
                   "no boolean conversion in operator=");
     static_assert(!std::is_assignable<V, std::false_type>::value,
                   "no converted to bool in operator=");
+#endif
   }
   {
     struct X {};
@@ -221,8 +224,6 @@ void test_T_assignment_basic() {
     v = std::move(x);
     TC_ASSERT_EXPR(v.index() == 1);
     TC_ASSERT_EXPR(&std::get<1>(v) == &x);
-    // 'long' is selected by FUN(const int &) since 'const int &' cannot bind
-    // to 'int&'.
     const int &cx = x;
     v = cx;
     TC_ASSERT_EXPR(v.index() == 2);
@@ -263,16 +264,36 @@ void test_T_assignment_performs_assignment() {
   {
     using V = std::variant<ThrowsCtorT>;
     V v;
+#ifndef _LIBCPP_NO_EXCEPTIONS
+    try {
+      v = 42;
+      TC_ASSERT_EXPR(v.index() == 0);
+      TC_ASSERT_EXPR(std::get<0>(v).value == 42);
+    } catch (...) {
+      TC_ASSERT_EXPR(false);
+    }
+#else
     v = 42;
     TC_ASSERT_EXPR(v.index() == 0);
     TC_ASSERT_EXPR(std::get<0>(v).value == 42);
+#endif
   }
   {
     using V = std::variant<ThrowsCtorT, std::string>;
     V v;
+#ifndef _LIBCPP_NO_EXCEPTIONS
+    try {
+      v = 42;
+      TC_ASSERT_EXPR(v.index() == 0);
+      TC_ASSERT_EXPR(std::get<0>(v).value == 42);
+    } catch (...) {
+      TC_ASSERT_EXPR(false);
+    }
+#else
     v = 42;
     TC_ASSERT_EXPR(v.index() == 0);
     TC_ASSERT_EXPR(std::get<0>(v).value == 42);
+#endif
   }
   {
     using V = std::variant<ThrowsAssignT>;
@@ -303,12 +324,23 @@ void test_T_assignment_performs_assignment() {
 #endif // TEST_HAS_NO_EXCEPTIONS
 }
 
-int tc_utilities_variant_variant_variant_variant_assign_T(void) {
+#if TEST_STD_VER >= 17
+TEST_CONSTEXPR_CXX20 bool test_variant_assign_T() {
   test_T_assignment_basic();
   test_T_assignment_performs_construction();
   test_T_assignment_performs_assignment();
   test_T_assignment_noexcept();
   test_T_assignment_sfinae();
 
-  return 0;
+  return true;
 }
+
+int tc_utilities_variant_assign_T(void) {
+    test_variant_assign_T();
+#if TEST_STD_VER > 17
+    static_assert(test_variant_assign_T());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

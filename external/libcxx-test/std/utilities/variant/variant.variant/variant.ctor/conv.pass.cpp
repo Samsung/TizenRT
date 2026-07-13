@@ -20,7 +20,10 @@
 #include "variant_test_helpers.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_variant_variant_variant_variant_ctor_conv(void) {
+namespace {
+  
+#if TEST_STD_VER >= 17
+TEST_CONSTEXPR_CXX20 bool test_conv() {
   static_assert(!std::is_constructible<std::variant<int, int>, int>::value, "");
   static_assert(!std::is_constructible<std::variant<long, long long>, int>::value, "");
   static_assert(std::is_constructible<std::variant<char>, int>::value == VariantAllowsNarrowingConversions, "");
@@ -37,5 +40,16 @@ int tc_utilities_variant_variant_variant_variant_ctor_conv(void) {
   static_assert(!std::is_constructible<std::variant<bool>, std::unique_ptr<char> >::value, "");
   static_assert(!std::is_constructible<std::variant<bool>, decltype(nullptr)>::value, "");
 
-  return 0;
+  return true;
 }
+}
+
+int tc_utilities_variant_ctor_conv(void) {
+    test_conv();
+#if TEST_STD_VER > 17
+    static_assert(test_conv());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

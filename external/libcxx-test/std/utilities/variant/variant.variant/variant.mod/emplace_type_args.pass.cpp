@@ -26,6 +26,8 @@
 #include "variant_test_helpers.h"
 #include "libcxx_tc_common.h"
 
+namespace {
+  
 template <class Var, class T, class... Args>
 constexpr auto test_emplace_exists_imp(int) -> decltype(
     std::declval<Var>().template emplace<T>(std::declval<Args>()...), true) {
@@ -151,10 +153,12 @@ void test_basic() {
   }
 #endif
 }
+}
 
-int tc_utilities_variant_variant_variant_variant_mod_emplace_type_args(void) {
+int tc_utilities_variant_mod_emplace_type_args(void) {
   test_basic();
   test_emplace_sfinae();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

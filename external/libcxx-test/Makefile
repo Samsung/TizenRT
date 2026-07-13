@@ -1345,62 +1345,73 @@ endif
 # --- Utilities: Variant (C++17) ---
 ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES),y)
 ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES_VARIANT),y)
-# C++17 Variant tests (verify files) 
-# REMOVED: These use LLVM lit framework expected-error directives which are incompatible with TizenRT's UTC framework.
-# The libcxx header correctly rejects invalid types via static_assert, so these tests are redundant.
-# CXXSRCS += std/utilities/variant/variant.helpers/variant_alternative.verify.cpp
-# CXXSRCS += std/utilities/variant/variant.relops/relops_bool_conv.verify.cpp
-# CXXSRCS += std/utilities/variant/variant.variant/variant_array.verify.cpp
-# CXXSRCS += std/utilities/variant/variant.variant/variant_empty.verify.cpp
-# CXXSRCS += std/utilities/variant/variant.variant/variant_reference.verify.cpp
-# CXXSRCS += std/utilities/variant/variant.variant/variant_void.verify.cpp
-# CXXSRCS += std/utilities/variant/variant.variant/variant.assign/copy.verify.cpp
+ifeq ($(CONFIG_CXX_VERSION_17),y)
+# Variant bad_variant_access
+CXXSRCS += std/utilities/variant/variant.bad_variant_access/bad_variant_access.pass.cpp
+# Variant general
+CXXSRCS += std/utilities/variant/variant.general/nothing_to_do.pass.cpp
+# Variant get
 CXXSRCS += std/utilities/variant/variant.get/get_if_index.pass.cpp
 CXXSRCS += std/utilities/variant/variant.get/get_if_type.pass.cpp
 CXXSRCS += std/utilities/variant/variant.get/get_index.pass.cpp
 CXXSRCS += std/utilities/variant/variant.get/get_type.pass.cpp
 CXXSRCS += std/utilities/variant/variant.get/holds_alternative.pass.cpp
+# Variant hash
+CXXSRCS += std/utilities/variant/variant.hash/hash.pass.cpp
+CXXSRCS += std/utilities/variant/variant.hash/enabled_hash.pass.cpp
+# Variant helpers (Note: .verify.cpp files excluded - use LLVM lit framework)
 CXXSRCS += std/utilities/variant/variant.helpers/variant_alternative.pass.cpp
 CXXSRCS += std/utilities/variant/variant.helpers/variant_size.pass.cpp
-CXXSRCS += std/utilities/variant/variant.relops/relops.pass.cpp
+# Variant monostate
 CXXSRCS += std/utilities/variant/variant.monostate/monostate.pass.cpp
-CXXSRCS += std/utilities/variant/variant.bad_variant_access/bad_variant_access.pass.cpp
+# Variant monostate.relops
+CXXSRCS += std/utilities/variant/variant.monostate.relops/relops.pass.cpp
+# Variant relops
+CXXSRCS += std/utilities/variant/variant.relops/relops.pass.cpp
+# Note: relops_bool_conv.verify.cpp excluded - uses LLVM lit framework
+# Variant synopsis
 CXXSRCS += std/utilities/variant/variant.synopsis/variant_npos.pass.cpp
-CXXSRCS += std/utilities/variant/variant.visit/visit.pass.cpp
-CXXSRCS += std/utilities/variant/variant.visit/visit_return_type.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/variant.dtor/dtor.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/variant.mod/emplace_index_args.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/variant.mod/emplace_type_args.pass.cpp
+# Variant variant - main tests (Note: .verify.cpp files excluded - use LLVM lit framework)
+CXXSRCS += std/utilities/variant/variant.variant/implicit_ctad.pass.cpp
+# Variant variant.assign
+CXXSRCS += std/utilities/variant/variant.variant/variant.assign/conv.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.assign/copy.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.assign/move.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/T.pass.cpp
+CXXSRCS += std/utilities/variant/variant.variant/variant.assign/T.pass.cpp
+# Note: copy.verify.cpp excluded - uses LLVM lit framework
+# Variant variant.ctor
+CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/conv.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/copy.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/default.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/in_place_index_args.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/in_place_type_args.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/move.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/variant.swap/swap.pass.cpp
-CXXSRCS += std/utilities/variant/variant.hash/enabled_hash.pass.cpp
-CXXSRCS += std/utilities/variant/variant.hash/hash.pass.cpp
-
-# Additional C++17 Variant tests
-CXXSRCS += std/utilities/variant/variant.general/nothing_to_do.pass.cpp
-CXXSRCS += std/utilities/variant/variant.monostate.relops/relops.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/implicit_ctad.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/variant.assign/conv.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/variant.assign/T.pass.cpp
-CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/conv.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/in_place_index_init_list_args.pass.cpp
+CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/in_place_type_args.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/in_place_type_init_list_args.pass.cpp
+CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/move.pass.cpp
+CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/T.pass.cpp
+# Variant variant.dtor
+CXXSRCS += std/utilities/variant/variant.variant/variant.dtor/dtor.pass.cpp
+# Variant variant.mod
+CXXSRCS += std/utilities/variant/variant.variant/variant.mod/emplace_index_args.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.mod/emplace_index_init_list_args.pass.cpp
+CXXSRCS += std/utilities/variant/variant.variant/variant.mod/emplace_type_args.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.mod/emplace_type_init_list_args.pass.cpp
+# Variant variant.status
 CXXSRCS += std/utilities/variant/variant.variant/variant.status/index.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.status/valueless_by_exception.pass.cpp
+# Variant variant.swap
+CXXSRCS += std/utilities/variant/variant.variant/variant.swap/swap.pass.cpp
+# Variant visit
+CXXSRCS += std/utilities/variant/variant.visit/visit.pass.cpp
 CXXSRCS += std/utilities/variant/variant.visit/robust_against_adl.pass.cpp
-
+# C++20 Variant tests (visit with explicit return type)
+ifeq ($(CONFIG_CXX_VERSION_20_OR_LATER),y)
+CXXSRCS += std/utilities/variant/variant.visit/visit_return_type.pass.cpp
+endif
 # C++20 Variant tests (three_way comparison)
 ifeq ($(CONFIG_CXX_VERSION_20_OR_LATER),y)
 CXXSRCS += std/utilities/variant/variant.relops/three_way.pass.cpp
+endif
 endif
 endif
 endif

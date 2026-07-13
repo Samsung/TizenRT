@@ -425,7 +425,7 @@ void test_sfinae() {
   static_assert(has_visit<GoodVariant2>(0));
 }
 
-int tc_utilities_variant_variant_visit_visit(void) {
+int tc_utilities_variant_visit(void) {
   test_call_operator_forwarding();
   test_argument_forwarding();
   test_return_type();
@@ -435,5 +435,6 @@ int tc_utilities_variant_variant_visit_visit(void) {
   test_derived_from_variant();
   test_sfinae();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

@@ -25,6 +25,8 @@
 #include "variant_test_helpers.h"
 #include "libcxx_tc_common.h"
 
+namespace {
+  
 struct Dummy {
   Dummy() = default;
 };
@@ -198,12 +200,14 @@ void test_construction_with_repeated_types() {
   // be affected by the duplicate types.
   static_assert(std::is_constructible<V, Bar>::value, "");
 }
+}
 
-int tc_utilities_variant_variant_variant_variant_ctor_T(void) {
+int tc_utilities_variant_ctor_T(void) {
   test_T_ctor_basic();
   test_T_ctor_noexcept();
   test_T_ctor_sfinae();
   test_no_narrowing_check_for_class_types();
   test_construction_with_repeated_types();
+  TC_SUCCESS_RESULT();
   return 0;
 }

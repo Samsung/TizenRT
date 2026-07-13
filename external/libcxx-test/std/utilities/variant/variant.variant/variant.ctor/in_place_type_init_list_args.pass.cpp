@@ -38,7 +38,7 @@ struct InitListArg {
       : size(il.size()), value(v) {}
 };
 
-void test_ctor_sfinae() {
+void test_ctor_sfinae_type_init_list() {
   using IL = std::initializer_list<int>;
   { // just init list
     using V = std::variant<InitList, InitListArg, int>;
@@ -88,7 +88,7 @@ void test_ctor_sfinae() {
   }
 }
 
-void test_ctor_basic() {
+void test_ctor_basic_type_init_list() {
   {
     constexpr std::variant<InitList, InitListArg> v(
         std::in_place_type<InitList>, {1, 2, 3});
@@ -104,9 +104,19 @@ void test_ctor_basic() {
   }
 }
 
-int tc_utilities_variant_variant_variant_variant_ctor_in_place_type_init_list_args(void) {
-  test_ctor_basic();
-  test_ctor_sfinae();
-
-  return 0;
+#if TEST_STD_VER >= 17
+TEST_CONSTEXPR_CXX20 bool test_variant_ctor_type_init_list() {
+  test_ctor_basic_type_init_list();
+  test_ctor_sfinae_type_init_list();
+  return true;
 }
+
+int tc_utilities_variant_ctor_in_place_type_init_list_args(void) {
+    test_variant_ctor_type_init_list();
+#if TEST_STD_VER > 17
+    static_assert(test_variant_ctor_type_init_list());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

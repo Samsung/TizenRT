@@ -9,6 +9,8 @@
 
 // XFAIL: availability-bad_variant_access-missing && !no-exceptions
 
+#include "libcxx_tc_common.h"
+
 // <variant>
 
 // template <class ...Types> class variant;
@@ -21,7 +23,8 @@
 #include <variant>
 
 #include "test_macros.h"
-#include "libcxx_tc_common.h"
+
+namespace {
 
 struct NoCopy {
   NoCopy(const NoCopy &) = delete;
@@ -200,11 +203,11 @@ template <class Variant> void makeEmpty(Variant &v) {
 void test_copy_assignment_not_noexcept() {
   {
     using V = std::variant<CopyMaybeThrows>;
-    static_assert(!std::is_nothrow_copy_assignable<V>::value, "");
+    TC_ASSERT_EXPR(!std::is_nothrow_copy_assignable<V>::value);
   }
   {
     using V = std::variant<int, CopyDoesThrow>;
-    static_assert(!std::is_nothrow_copy_assignable<V>::value, "");
+    TC_ASSERT_EXPR(!std::is_nothrow_copy_assignable<V>::value);
   }
 }
 
@@ -576,8 +579,9 @@ void test_constexpr_copy_assignment() {
   static_assert(test_constexpr_assign_imp<1>(V(42l), nullptr), "");
   static_assert(test_constexpr_assign_imp<2>(V(42l), 101), "");
 }
+}
 
-int tc_utilities_variant_variant_variant_variant_assign_copy(void) {
+int tc_utilities_variant_assign_copy(void) {
   test_copy_assignment_empty_empty();
   test_copy_assignment_non_empty_empty();
   test_copy_assignment_empty_non_empty();
@@ -587,5 +591,7 @@ int tc_utilities_variant_variant_variant_variant_assign_copy(void) {
   test_copy_assignment_not_noexcept();
   test_constexpr_copy_assignment();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }
+

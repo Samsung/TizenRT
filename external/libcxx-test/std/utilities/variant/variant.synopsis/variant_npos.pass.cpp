@@ -16,8 +16,9 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_variant_variant_synopsis_variant_npos(void) {
+int tc_utilities_variant_synopsis_npos(void) {
   static_assert(std::variant_npos == static_cast<std::size_t>(-1), "");
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

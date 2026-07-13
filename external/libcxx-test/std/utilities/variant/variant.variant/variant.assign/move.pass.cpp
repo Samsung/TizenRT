@@ -9,6 +9,12 @@
 
 // XFAIL: availability-bad_variant_access-missing && !no-exceptions
 
+
+#include "libcxx_tc_common.h"
+#include <cstdio>
+
+#define DBG_PRINT(fmt, ...) do { printf("[DBG_MOVE] " fmt, ##__VA_ARGS__); fflush(stdout); } while(0)
+
 // <variant>
 
 // template <class ...Types> class variant;
@@ -23,7 +29,6 @@
 
 #include "test_macros.h"
 #include "variant_test_helpers.h"
-#include "libcxx_tc_common.h"
 
 struct NoCopy {
   NoCopy(const NoCopy &) = delete;
@@ -157,11 +162,11 @@ void test_move_assignment_noexcept() {
   }
   {
     using V = std::variant<MoveOnlyNT>;
-    static_assert(!std::is_nothrow_move_assignable<V>::value, "");
+    TC_ASSERT_EXPR(!std::is_nothrow_move_assignable<V>::value);
   }
   {
     using V = std::variant<MoveOnlyOddNothrow>;
-    static_assert(!std::is_nothrow_move_assignable<V>::value, "");
+    TC_ASSERT_EXPR(!std::is_nothrow_move_assignable<V>::value);
   }
 }
 
@@ -490,15 +495,36 @@ void test_constexpr_move_assignment() {
   static_assert(test_constexpr_assign_imp<2>(V(42l), 101), "");
 }
 
-int tc_utilities_variant_variant_variant_variant_assign_move(void) {
+int tc_utilities_variant_assign_move(void) {
+  DBG_PRINT("ENTER: tc_utilities_variant_assign_move\n");
+  DBG_PRINT("Calling test_move_assignment_empty_empty...\n");
   test_move_assignment_empty_empty();
+  DBG_PRINT("test_move_assignment_empty_empty done\n");
+  DBG_PRINT("Calling test_move_assignment_non_empty_empty...\n");
   test_move_assignment_non_empty_empty();
+  DBG_PRINT("test_move_assignment_non_empty_empty done\n");
+  DBG_PRINT("Calling test_move_assignment_empty_non_empty...\n");
   test_move_assignment_empty_non_empty();
+  DBG_PRINT("test_move_assignment_empty_non_empty done\n");
+  DBG_PRINT("Calling test_move_assignment_same_index...\n");
   test_move_assignment_same_index();
+  DBG_PRINT("test_move_assignment_same_index done\n");
+  DBG_PRINT("Calling test_move_assignment_different_index...\n");
   test_move_assignment_different_index();
+  DBG_PRINT("test_move_assignment_different_index done\n");
+  DBG_PRINT("Calling test_move_assignment_sfinae...\n");
   test_move_assignment_sfinae();
+  DBG_PRINT("test_move_assignment_sfinae done\n");
+  DBG_PRINT("Calling test_move_assignment_noexcept...\n");
   test_move_assignment_noexcept();
+  DBG_PRINT("test_move_assignment_noexcept done\n");
+  DBG_PRINT("Calling test_constexpr_move_assignment...\n");
   test_constexpr_move_assignment();
+  DBG_PRINT("test_constexpr_move_assignment done\n");
 
+  DBG_PRINT("Calling TC_SUCCESS_RESULT...\n");
+  TC_SUCCESS_RESULT();
+  DBG_PRINT("EXIT: tc_utilities_variant_assign_move (returning 0)\n");
   return 0;
 }
+

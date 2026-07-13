@@ -27,6 +27,8 @@
 #include "variant_test_helpers.h"
 #include "libcxx_tc_common.h"
 
+namespace {
+  
 template <class V, std::size_t I, class E> void test() {
   static_assert(
       std::is_same_v<typename std::variant_alternative<I, V>::type, E>, "");
@@ -53,8 +55,9 @@ template <class V, std::size_t I, class E> void test() {
                                const volatile E>,
                 "");
 }
+}
 
-int tc_utilities_variant_variant_helpers_variant_alternative(void) {
+int tc_utilities_variant_helper_alternative(void) {
   {
     using V = std::variant<int, void *, const void *, long double>;
     test<V, 0, int>();
@@ -73,5 +76,6 @@ int tc_utilities_variant_variant_helpers_variant_alternative(void) {
   }
 #endif
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

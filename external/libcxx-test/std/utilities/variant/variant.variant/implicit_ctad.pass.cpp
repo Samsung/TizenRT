@@ -23,7 +23,10 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_variant_variant_variant_implicit_ctad(void) {
+namespace {
+  
+#if TEST_STD_VER >= 17
+TEST_CONSTEXPR_CXX20 bool test() {
   // This is the motivating example from P0739R0
   {
     std::variant<int, double> v1(3);
@@ -37,5 +40,16 @@ int tc_utilities_variant_variant_variant_implicit_ctad(void) {
     ASSERT_SAME_TYPE(decltype(v2), std::variant<int, double>);
   }
 
-  return 0;
+  return true;
 }
+}
+
+int tc_utilities_variant_implicit_ctad(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

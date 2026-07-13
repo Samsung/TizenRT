@@ -149,11 +149,12 @@ void test_hash_variant_enabled() {
   }
 }
 
-int tc_utilities_variant_variant_hash_hash(void) {
+int tc_utilities_variant_hash(void) {
   test_hash_variant();
   test_hash_variant_duplicate_elements();
   test_hash_monostate();
   test_hash_variant_enabled();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

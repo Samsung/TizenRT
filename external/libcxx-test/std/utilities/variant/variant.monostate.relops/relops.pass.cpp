@@ -39,9 +39,19 @@ constexpr bool test() {
   return true;
 }
 
-int tc_utilities_variant_variant_monostate_relops_relops(void) {
+#if TEST_STD_VER >= 17
+TEST_CONSTEXPR_CXX20 bool test_monostate_relops_full() {
   test();
   static_assert(test());
-
-  return 0;
+  return true;
 }
+
+int tc_utilities_variant_monostate_relops(void) {
+    test_monostate_relops_full();
+#if TEST_STD_VER > 17
+    static_assert(test_monostate_relops_full());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

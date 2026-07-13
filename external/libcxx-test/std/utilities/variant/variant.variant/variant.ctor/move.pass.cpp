@@ -24,6 +24,8 @@
 #include "test_workarounds.h"
 #include "libcxx_tc_common.h"
 
+namespace {
+
 struct ThrowsMove {
   ThrowsMove(ThrowsMove &&) noexcept(false) {}
 };
@@ -319,13 +321,15 @@ void test_constexpr_move_ctor() {
   static_assert(test_constexpr_ctor_imp<1>(V(nullptr)), "");
   static_assert(test_constexpr_ctor_imp<2>(V(101)), "");
 }
+}
 
-int tc_utilities_variant_variant_variant_variant_ctor_move(void) {
+int tc_utilities_variant_ctor_move(void) {
   test_move_ctor_basic();
   test_move_ctor_valueless_by_exception();
   test_move_noexcept();
   test_move_ctor_sfinae();
   test_constexpr_move_ctor();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

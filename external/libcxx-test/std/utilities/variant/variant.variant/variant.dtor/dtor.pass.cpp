@@ -43,7 +43,7 @@ struct TDtor {
 static_assert(!std::is_trivially_copy_constructible<TDtor>::value, "");
 static_assert(std::is_trivially_destructible<TDtor>::value, "");
 
-int tc_utilities_variant_variant_variant_variant_dtor_dtor(void) {
+int tc_utilities_variant_dtor(void) {
   {
     using V = std::variant<int, long, TDtor>;
     static_assert(std::is_trivially_destructible<V>::value, "");

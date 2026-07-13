@@ -23,6 +23,8 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
+namespace {
+  
 template <class V, std::size_t E> void test() {
   static_assert(std::variant_size<V>::value == E, "");
   static_assert(std::variant_size<const V>::value == E, "");
@@ -36,11 +38,13 @@ template <class V, std::size_t E> void test() {
                                 std::variant_size<V>>::value,
                 "");
 };
+}
 
-int tc_utilities_variant_variant_helpers_variant_size(void) {
+int tc_utilities_variant_helper_size(void) {
   test<std::variant<>, 0>();
   test<std::variant<void *>, 1>();
   test<std::variant<long, long, void *, double>, 4>();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

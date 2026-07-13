@@ -28,7 +28,7 @@ public:
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_variant_variant_bad_variant_access_bad_variant_access(void) {
+int tc_utilities_variant_bad_variant_access(void) {
   static_assert(std::is_base_of<std::exception, std::bad_variant_access>::value,
                 "");
   static_assert(noexcept(std::bad_variant_access{}), "must be noexcept");
@@ -36,5 +36,6 @@ int tc_utilities_variant_variant_bad_variant_access_bad_variant_access(void) {
   std::bad_variant_access ex;
   TC_ASSERT_EXPR(ex.what());
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

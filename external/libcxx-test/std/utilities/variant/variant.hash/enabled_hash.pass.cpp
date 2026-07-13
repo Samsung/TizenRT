@@ -19,8 +19,9 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_variant_variant_hash_enabled_hash(void) {
+int tc_utilities_variant_hash_enabled(void) {
   test_library_hash_specializations_available();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

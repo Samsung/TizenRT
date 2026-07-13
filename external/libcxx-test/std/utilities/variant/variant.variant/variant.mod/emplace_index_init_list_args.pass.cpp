@@ -26,6 +26,8 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
+namespace {
+  
 struct InitList {
   std::size_t size;
   constexpr InitList(std::initializer_list<int> il) : size(il.size()) {}
@@ -85,9 +87,20 @@ void test_basic() {
   TC_ASSERT_EXPR(&ref3 == &std::get<1>(v));
 }
 
-int tc_utilities_variant_variant_variant_variant_mod_emplace_index_init_list_args(void) {
+#if TEST_STD_VER >= 17
+TEST_CONSTEXPR_CXX20 bool test() {
   test_basic();
   test_emplace_sfinae();
-
-  return 0;
+  return true;
 }
+}
+
+int tc_utilities_variant_mod_emplace_index_init_list_args(void) {
+    test();
+#if TEST_STD_VER > 17
+    static_assert(test());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

@@ -17,7 +17,7 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_variant_variant_monostate_monostate(void) {
+int tc_utilities_variant_monostate(void) {
   using M = std::monostate;
   static_assert(std::is_trivially_default_constructible<M>::value, "");
   static_assert(std::is_trivially_copy_constructible<M>::value, "");
@@ -26,5 +26,6 @@ int tc_utilities_variant_variant_monostate_monostate(void) {
   constexpr M m{};
   ((void)m);
 
+  TC_SUCCESS_RESULT();
   return 0;
 }
