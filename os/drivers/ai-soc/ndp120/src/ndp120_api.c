@@ -2044,12 +2044,16 @@ int ndp120_change_kd(struct ndp120_dev_s *dev, uint8_t kd_num)
 	int retry = NDP120_INIT_RETRY_COUNT;
 	while (retry--) {
 		s = ndp120_load_firmware(dev);
-		if (s) {
-			dev->kd_num = temp;
-		} else {
+		if (!s) {
 			break;
 		}
 	}
+
+	if (s) {
+		dev->kd_num = temp;
+		auddbg("ndp120_load_firmware failed! s : %d, kd_num is restored to previous value(%d)\n", s, temp);
+	}
+
 	ndp120_semgive(dev);
 	return s;
 }
@@ -2227,7 +2231,10 @@ int ndp120_kw_sensitivity_get(struct ndp120_dev_s *dev, uint16_t *sensitivity)
 	return s;
 }
 
-/* ndp120_change_dsp_flow api must be called after the ndp120_change_kd api is called. */
+/*
+ * If no KD model has been selected yet, use the default Hi Bixby model so
+ * that the neural package is loaded before applying the requested DSP flow.
+ */
 int ndp120_change_dsp_flow(struct ndp120_dev_s *dev, uint8_t dsp_flow_num)
 {
 #if BT_MIC_SUPPORT == 1
@@ -2236,25 +2243,35 @@ int ndp120_change_dsp_flow(struct ndp120_dev_s *dev, uint8_t dsp_flow_num)
 #endif
 
 	int s = SYNTIANT_NDP_ERROR_NONE;
-	if (dsp_flow_num == dev->dsp_flow_num) {
+	if (dsp_flow_num == dev->dsp_flow_num && dev->kd_num != -1) {
 		auddbg("Same dsp_flow_num, ignore dsp_flow_num : %d dev->dsp_flow_num : %d\n", dsp_flow_num, dev->dsp_flow_num);
 		return SYNTIANT_NDP_ERROR_NONE;
 	}
 	auddbg("Change dsp_flow_num!! flow_num : %d\n", dsp_flow_num);
 	ndp120_semtake(dev);
 	/* Set false to prevent aliveness check during changing kd */
-	int temp = dev->dsp_flow_num;
+	int temp_flow_num = dev->dsp_flow_num;
 	dev->dsp_flow_num = dsp_flow_num;
+
+	int temp_kd_num = dev->kd_num;
+	if (dev->kd_num == -1) {
+		dev->kd_num = AUDIO_NN_MODEL_HI_BIXBY;
+	}
 	
 	int retry = NDP120_INIT_RETRY_COUNT;
 	while (retry--) {
 		s = ndp120_load_firmware(dev);
-		if (s) {
-			dev->dsp_flow_num = temp;
-		} else {
+		if (!s) {
 			break;
 		}
 	}
+
+	if (s) {
+		dev->dsp_flow_num = temp_flow_num;
+		dev->kd_num = temp_kd_num;
+		auddbg("ndp120_load_firmware failed! s : %d, dsp_flow_num and kd_num are restored to their previous values(%d, %d)\n", s, temp_flow_num, temp_kd_num);
+	}
+
 	ndp120_semgive(dev);
 	return s;
 }
