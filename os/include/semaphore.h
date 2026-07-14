@@ -183,22 +183,27 @@ typedef struct sem_s sem_t;
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, NULL} /* flink, semcount, flags, hhead */
 #define MUTEX_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, NULL} /* flink, semcount, flags, hhead */
+#define COND_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, NULL} /* flink, semcount, flags, hhead */
 #else
 #define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
 #define MUTEX_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
+#define COND_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
 #endif
 #else // CONFIG_BINARY_MANAGER
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, NULL} /* semcount, flags, hhead */
 #define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, NULL} /* semcount, flags, hhead */
+#define COND_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, NULL} /* semcount, flags, hhead */
 #else
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
 #define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
+#define COND_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
 #endif
 #endif
 #else
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED}	/* semcount, flags */
 #define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX} /* semcount, flags */
+#define COND_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE} /* semcount, flags */
 #endif
 
 /****************************************************************************

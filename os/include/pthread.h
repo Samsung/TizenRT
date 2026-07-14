@@ -261,7 +261,7 @@ typedef FAR void *pthread_addr_t;
 typedef pthread_addr_t (*pthread_startroutine_t)(pthread_addr_t);
 typedef pthread_startroutine_t pthread_func_t;
 
-#define PTHREAD_COND_INITIALIZER { SEM_INITIALIZER(0) }
+#define PTHREAD_COND_INITIALIZER { COND_SEM_INITIALIZER(0) }
 
 #define __PTHREAD_MUTEX_T_DEFINED 1
 
