@@ -26,8 +26,8 @@
 #ifndef __RTK_WIFI_UTILS_H
 #define __RTK_WIFI_UTILS_H
 
+#include "wifi_api.h"
 #include <sys/types.h>
-#include "rtw_wifi_constants.h"
 #include <tinyara/net/if/wifi.h>
 
 /* rtk return values */
@@ -71,7 +71,7 @@ typedef struct rtk_reason {
 	uint8_t locally_generated;			// Which side cause link down, 1 = locally, 0 = remotely - valid for STA mode only
 	int8_t ssid_len;					// length of ssid - # of valid octets
 	uint8_t ssid[33];	// 802.11 spec defined up to 32 octets of data
-	char bssid[17];	// BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
+	char bssid[18];	// BSS identification, char string e.g. xx:xx:xx:xx:xx:xx
 	WiFi_InterFace_ID_t if_id; // In which interface the reason was set
 } rtk_reason_t;
 
@@ -79,7 +79,7 @@ typedef struct rtk_reason {
   * @brief  The structure is used to describe the data needed by scan result handler function.
   */
 typedef struct rtw_scan_handler_result {
-    rtw_scan_result_t ap_details;
+    struct rtw_scan_result ap_details;
     BOOL        scan_complete;
     void*               user_data;
 } rtw_scan_handler_result_t;
@@ -90,14 +90,14 @@ typedef struct rtw_scan_handler_result {
 typedef void (*rtk_network_link_callback_t)(rtk_reason_t *reason);
 
 //typedef rtw_result_t (*rtw_scan_result_handler_t)(rtw_scan_handler_result_t* malloced_scan_result);
-extern rtw_result_t app_scan_result_handler(unsigned int scanned_AP_num, void *user_data);
+static s32 app_scan_result_handler(unsigned int scanned_AP_num, void *user_data);
 
 extern int8_t WiFiRegisterLinkCallback(rtk_network_link_callback_t link_up, rtk_network_link_callback_t link_down);
 extern int8_t cmd_wifi_on(WiFi_InterFace_ID_t interface_id);
 extern int8_t cmd_wifi_off(void);
-extern int wifi_scan_networks(rtw_scan_param_t *scan_param, unsigned char block);
+extern int wifi_scan_networks(struct rtw_scan_param *scan_param, unsigned char block);
 extern int8_t cmd_wifi_connect(trwifi_ap_config_s *ap_connect_config, void *arg, uint32_t ap_channel);
-extern int wifi_get_mac_address(int idx, rtw_mac_t *mac, u8 efuse);
+extern int wifi_get_mac_address(int idx, struct rtw_mac *mac, u8 efuse);
 extern int wifi_is_connected_to_ap(void);
 extern int wifi_get_rssi(int *pRSSI);
 extern int8_t cmd_wifi_ap(trwifi_softap_config_s *softap_config);

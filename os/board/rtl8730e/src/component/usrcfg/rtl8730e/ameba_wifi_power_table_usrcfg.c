@@ -519,3 +519,6 @@ s8 wifi_get_power_limit_and_limit_ru_by_ch(u8 regulation, u8 chnl, u8 limit_rate
 
 	return val;
 }
+
+// #define TXPWR_TOOL_MAJOR_UPDATE 1       /* since 1.1.15 */
+#define TXPWR_TOOL_MAJOR_UPDATE 2       /* since 1.1.17 */

@@ -18,20 +18,19 @@
 #include <rtk_stack_gatt.h>
 #include <rtk_stack_internal.h>
 #include <gap_conn_le.h>
-extern struct amebad2_uart_t *amebad2_uart;
 
-#if RTK_BLE_MGR_LIB
+#if defined(RTK_BLE_MGR_LIB) && RTK_BLE_MGR_LIB
 #include <bt_gatt_client.h>
 
-#define SPECIFIC_SERVICE_CALLBACK_IMPLEMENT(index)														\
-static T_APP_RESULT _spec_srv_callback##index(uint16_t conn_handle, T_GATT_CLIENT_EVENT type, void *p_data)	\
-{																										\
-	return bt_stack_gattc_common_callback(conn_handle, type, p_data, index);							\
+#define SPECIFIC_SERVICE_CALLBACK_IMPLEMENT(index)                                                      \
+static T_APP_RESULT _spec_srv_callback##index(uint16_t conn_handle, T_GATT_CLIENT_EVENT type, void *p_data) \
+{                                                                                                       \
+    return bt_stack_gattc_common_callback(conn_handle, type, p_data, index);                            \
 }
 
-#define SPECIFIC_SERVICE_CALLBACK_POINTER(index)			_spec_srv_callback##index
+#define SPECIFIC_SERVICE_CALLBACK_POINTER(index)            _spec_srv_callback##index
 
-#define MAX_SPEC_SERVICE_NUM	16
+#define MAX_SPEC_SERVICE_NUM    16
 
 typedef struct {
 	uint16_t id;
@@ -64,7 +63,8 @@ T_APP_RESULT bt_stack_gattc_common_callback(uint16_t conn_handle, T_GATT_CLIENT_
 		break;
 	}
 
-	case GATT_CLIENT_EVENT_READ_RESULT: {
+	case GATT_CLIENT_EVENT_READ_RESULT:
+	case GATT_CLIENT_EVENT_READ_UUID_RESULT: {
 		rtk_bt_gattc_read_ind_t *p_read_ind = NULL;
 		T_GATT_CLIENT_READ_RESULT *p_result = (T_GATT_CLIENT_READ_RESULT *)p_data;
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,
@@ -104,7 +104,13 @@ T_APP_RESULT bt_stack_gattc_common_callback(uint16_t conn_handle, T_GATT_CLIENT_
 			p_write_ind->char_type = (rtk_bt_gattc_char_type_t)p_result->char_type;
 			p_write_ind->srv_instance_id = p_result->srv_instance_id;
 			memcpy(&p_write_ind->char_uuid, &p_result->char_uuid, sizeof(rtk_bt_gattc_uuid_t));
-			p_write_ind->type = (rtk_bt_gattc_write_type_t)p_result->type;
+			if (p_result->type == GATT_WRITE_TYPE_REQ) {
+				p_write_ind->type = RTK_BT_GATT_CHAR_WRITE_REQ;
+			} else if (p_result->type == GATT_WRITE_TYPE_CMD) {
+				p_write_ind->type = RTK_BT_GATT_CHAR_WRITE_NO_RSP;
+			} else if (p_result->type == GATT_WRITE_TYPE_SIGNED_CMD) {
+				p_write_ind->type = RTK_BT_GATT_CHAR_WRITE_NO_RSP_SIGNED;
+			}
 			p_write_ind->handle = p_result->handle;
 			p_write_ind->err_code = p_result->cause;
 			if (p_write_ind->err_code) {
@@ -243,7 +249,7 @@ static uint16_t bt_stack_gattc_register_profile(void *param)
 
 	cause = gatt_client_spec_register((T_ATTR_UUID *)&reg_param->srv_uuid, cb);
 	if (cause) {
-		dbg("gatt_client_spec_register() cause = %d\r\n", cause);
+		BT_LOGE("gatt_client_spec_register() cause = %d\r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -259,8 +265,8 @@ T_APP_RESULT bt_stack_gattc_discover_all_callback(uint16_t conn_handle, T_GATT_C
 	case GATT_CLIENT_EVENT_DIS_ALL_STATE: {
 		rtk_bt_gattc_discover_all_state_ind_t *p_disc_ind = NULL;
 		T_GATT_CLIENT_DIS_ALL_DONE *p_disc = (T_GATT_CLIENT_DIS_ALL_DONE *)p_data;
-		API_PRINT("bt_stack_gattc_discover_all_callback: conn_handle %d, is_success %d, load_from_ftl %d",
-				  conn_handle, p_disc->state, p_disc->load_from_ftl);
+		BT_LOGD("bt_stack_gattc_discover_all_callback: conn_handle %d, is_success %d, load_from_ftl %d",
+				conn_handle, p_disc->state, p_disc->load_from_ftl);
 
 		if (p_disc->state == GATT_CLIENT_STATE_DONE || p_disc->state == GATT_CLIENT_STATE_FAILED) {
 			rtk_bt_evt_t *p_evt;
@@ -319,7 +325,7 @@ static uint16_t bt_stack_gattc_discover_all(void *param)
 
 	cause = gatt_client_start_discovery_all(conn_handle, bt_stack_gattc_discover_all_callback);
 	if (cause) {
-		dbg("gatt_client_start_discovery_all() conn_handle = %d, cause = %d\r\n", conn_handle, cause);
+		BT_LOGE("gatt_client_start_discovery_all() conn_handle = %d, cause = %d\r\n", conn_handle, cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -338,10 +344,11 @@ static uint16_t bt_stack_gattc_find(void *param)
 										   p_find_param->find_char.p_handle);
 	} else if (p_find_param->type == RTK_BT_GATT_FIND_CHARACTERISTIC_DESC_RANGE) {
 		ret = gatt_client_find_char_descriptor_range(p_find_param->conn_handle,
-				(T_ATTR_UUID *)&p_find_param->find_char_range.srv_uuid,
-				(T_ATTR_UUID *)&p_find_param->find_char_range.char_uuid,
-				p_find_param->find_char_range.p_handle_start,
-				p_find_param->find_char_range.p_handle_end);
+													 (T_ATTR_UUID *)&p_find_param->find_char_range.srv_uuid,
+													 (T_ATTR_UUID *)&p_find_param->find_char_range.char_uuid,
+													 p_find_param->find_char_range.p_handle_start,
+													 p_find_param->find_char_range.p_handle_end,
+													 p_find_param->find_char_range.p_cccd_handle);
 	} else if (p_find_param->type == RTK_BT_GATT_FIND_CHARACTERISTIC_CCCD_HANDLE) {
 		uint8_t cccd_prop;
 		ret = gatt_client_find_char_cccd_handle(p_find_param->conn_handle,
@@ -355,9 +362,9 @@ static uint16_t bt_stack_gattc_find(void *param)
 	} else if (p_find_param->type == RTK_BT_GATT_FIND_INCLUDE_SERVICE) {
 		T_ATTR_INSTANCE attr_instance;
 		ret = gatt_client_find_include_srv_by_primary(p_find_param->conn_handle,
-				(T_ATTR_UUID *)&p_find_param->find_include_srv.primary_uuid,
-				(T_ATTR_UUID *)&p_find_param->find_include_srv.include_uuid,
-				&attr_instance);
+													  (T_ATTR_UUID *)&p_find_param->find_include_srv.primary_uuid,
+													  (T_ATTR_UUID *)&p_find_param->find_include_srv.include_uuid,
+													  &attr_instance);
 		if (ret) {
 			*p_find_param->find_include_srv.p_instance_num = attr_instance.instance_num;
 			memcpy(p_find_param->find_include_srv.instance_id, attr_instance.instance_id, sizeof(uint8_t) * ATTR_INSTANCE_NUM_MAX);
@@ -385,7 +392,7 @@ static uint16_t bt_stack_gattc_read(void *param)
 									  p_read_param->by_uuid.end_handle, p_read_param->by_uuid.char_uuid.p.uuid16, NULL);
 
 	if (cause) {
-		dbg("bt_stack_gattc_read() type = %d, cause = %d\r\n", p_read_param->type, cause);
+		BT_LOGE("bt_stack_gattc_read() type = %d, cause = %d\r\n", p_read_param->type, cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -397,6 +404,12 @@ static uint16_t bt_stack_gattc_write(void *param)
 	T_GAP_CAUSE cause;
 	rtk_bt_gattc_write_param_t *p_write_param = (rtk_bt_gattc_write_param_t *)param;
 	T_GATT_WRITE_TYPE write_type = 0;
+	uint16_t credits = 0;
+
+	le_get_gap_param(GAP_PARAM_LE_REMAIN_CREDITS, &credits);
+	if (!credits) {
+		return RTK_BT_ERR_NO_CREDITS;
+	}
 
 	if (p_write_param->type == RTK_BT_GATT_CHAR_WRITE_REQ) {
 		write_type = GATT_WRITE_TYPE_REQ;
@@ -411,7 +424,7 @@ static uint16_t bt_stack_gattc_write(void *param)
 	cause = gatt_client_write(p_write_param->conn_handle, write_type,
 							  p_write_param->handle, p_write_param->length, p_write_param->data, NULL);
 	if (cause) {
-		dbg("bt_stack_gattc_write() cause = %d\r\n", cause);
+		BT_LOGE("bt_stack_gattc_write() cause = %d\r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -441,7 +454,7 @@ static uint16_t bt_stack_gattc_update_cccd(void *param, bool benable)
 											 (T_ATTR_UUID *)&p_cccd_param->char_uuid, cccd_cfg);
 
 	if (cause) {
-		dbg("gatt_client_start_discovery_all() cause = %d\r\n", cause);
+		BT_LOGE("gatt_client_start_discovery_all() cause = %d\r\n", cause);
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -454,7 +467,7 @@ uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd)
 	uint16_t ret = 0;
 
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_GATTC)) {
-		dbg("Error: GATTC profile is not initiated\r\n");
+		BT_LOGE("Error: Gattc profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
@@ -482,7 +495,7 @@ uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_gattc_update_cccd(p_cmd->param, false);
 		break;
 	default:
-		dbg("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}
@@ -497,11 +510,11 @@ uint16_t bt_stack_gattc_init(rtk_bt_app_conf_t *app_conf)
 {
 	int i;
 	(void)app_conf;
-#if GATTC_TBL_STORAGE_SUPPORT
+#if defined(GATTC_TBL_STORAGE_SUPPORT) && GATTC_TBL_STORAGE_SUPPORT
 	gattc_tbl_storage_init(); //store peripheral service information to ftl
 #endif
 
-#if (defined(RTK_BT_5_2_EATT_SUPPORT) && RTK_BT_5_2_EATT_SUPPORT) && F_BT_5_2_EATT_SUPPORT
+#if (defined(RTK_BT_5_2_EATT_SUPPORT) && RTK_BT_5_2_EATT_SUPPORT) && (defined(F_BT_5_2_EATT_SUPPORT) && F_BT_5_2_EATT_SUPPORT)
 	if (!gatt_client_init(GATT_CLIENT_DISCOV_MODE_REG_SVC_BIT |
 						  GATT_CLIENT_DISCOV_MODE_CCCD_STORAGE_BIT |
 						  GATT_CLIENT_DISCOV_MODE_USE_EXT_CLIENT |
@@ -572,10 +585,14 @@ static void bt_stack_gattc_disconnect_cb(uint8_t conn_id);
 static T_APP_RESULT bt_stack_gattc_cccd_notify_indicate_cb(uint8_t conn_id, bool notify, uint16_t handle, uint16_t value_size, uint8_t *p_value);
 static void bt_stack_gattc_cccd_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TYPE type, uint16_t handle, uint16_t cause, uint8_t credits);
 
-#define RTK_BT_GATTC_INDICATE 		BIT1
-#define RTK_BT_GATTC_NOTIFY 		BIT0
+#define RTK_BT_GATTC_INDICATE       BIT1
+#define RTK_BT_GATTC_NOTIFY         BIT0
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 rtk_bt_gattc_app_priv_t *gattc_priv = NULL;
+#else
+static rtk_bt_gattc_app_priv_t *gattc_priv = NULL;
+#endif //#ifdef CONFIG_PLATFORM_TIZENRT_OS
 static T_CLIENT_ID gattc_common_id = CLIENT_PROFILE_GENERAL_ID;
 static T_CLIENT_ID gattc_cccd_id = CLIENT_PROFILE_GENERAL_ID;
 
@@ -640,14 +657,15 @@ static rtk_bt_gattc_req_t *bt_stack_gattc_create_req(rtk_bt_gattc_req_type_t typ
 	memset(p_req, 0, sizeof(rtk_bt_gattc_req_t));
 	p_req->req_type = type;
 
-	if (type == BT_STACK_GATTC_READ_REQ)
+	if (type == BT_STACK_GATTC_READ_REQ) {
 		memcpy(&p_req->read_param, param, sizeof(rtk_bt_gattc_read_param_t));
-	else if (type == BT_STACK_GATTC_WRITE_REQ || type == BT_STACK_GATTC_WRITE_CMD)
+	} else if (type == BT_STACK_GATTC_WRITE_REQ || type == BT_STACK_GATTC_WRITE_CMD) {
 		memcpy(&p_req->write_param, param, sizeof(rtk_bt_gattc_write_param_t));
-	else if (type == BT_STACK_GATTC_DISC_REQ)
+	} else if (type == BT_STACK_GATTC_DISC_REQ) {
 		memcpy(&p_req->disc_param, param, sizeof(rtk_bt_gattc_discover_param_t));
-	else if (type == BT_STACK_GATTC_CCCD_ENABLE_REQ || type == BT_STACK_GATTC_CCCD_DISABLE_REQ)
+	} else if (type == BT_STACK_GATTC_CCCD_ENABLE_REQ || type == BT_STACK_GATTC_CCCD_DISABLE_REQ) {
 		memcpy(&p_req->update_cccd_param, param, sizeof(rtk_bt_gattc_update_cccd_param_t));
+	}
 
 
 	/* some params have 2nd level ptr, need to malloc memory and deep copy */
@@ -688,7 +706,7 @@ static rtk_bt_gattc_req_t *bt_stack_gattc_create_req(rtk_bt_gattc_req_type_t typ
 static void bt_stack_gattc_free_req(rtk_bt_gattc_req_t *p_req)
 {
 	if (NULL == p_req) {
-		dbg("Error: GATTC free req is NULL\r\n");
+		BT_LOGE("Error: gattc free req is NULL\r\n");
 		return;
 	}
 
@@ -736,8 +754,9 @@ static rtk_bt_gattc_req_t *remove_sent_req(rtk_bt_gatt_queue_t *p_queue)
 
 	if (!list_empty(&p_queue->pending_list)) {
 		p_req = (rtk_bt_gattc_req_t *)p_queue->pending_list.next;
-		if (!(p_req->flag & REQ_FLAG_ALREADY_SENT))
+		if (!(p_req->flag & REQ_FLAG_ALREADY_SENT)) {
 			return NULL;
+		}
 		list_del(&p_req->list);
 		p_queue->pending_ele_num--;
 	}
@@ -798,7 +817,7 @@ static uint16_t bt_stack_gattc_send_discover(rtk_bt_gattc_req_t *disc_req)
 		}
 		break;
 	case RTK_BT_GATT_DISCOVER_PRIMARY_BY_UUID: {
-		rtk_bt_uuid_type_t uuid_type = p_disc_param->disc_primary_by_uuid.uuid_type;
+		rtk_bt_uuid_type_t uuid_type = (rtk_bt_uuid_type_t)p_disc_param->disc_primary_by_uuid.uuid_type;
 		uint8_t *uuid = p_disc_param->disc_primary_by_uuid.uuid;
 		switch (uuid_type) {
 		case BT_UUID_TYPE_16:
@@ -807,7 +826,6 @@ static uint16_t bt_stack_gattc_send_discover(rtk_bt_gattc_req_t *disc_req)
 			}
 			break;
 		case BT_UUID_TYPE_32:
-			/* TODO: */
 			return RTK_BT_ERR_UNSUPPORTED;
 			break;
 		case BT_UUID_TYPE_128:
@@ -840,7 +858,7 @@ static uint16_t bt_stack_gattc_send_discover(rtk_bt_gattc_req_t *disc_req)
 	case RTK_BT_GATT_DISCOVER_CHARACTERISTIC_BY_UUID: {
 		uint16_t start_handle = p_disc_param->disc_char_by_uuid.start_handle;
 		uint16_t end_handle = p_disc_param->disc_char_by_uuid.end_handle;
-		rtk_bt_uuid_type_t uuid_type = p_disc_param->disc_char_by_uuid.uuid_type;
+		rtk_bt_uuid_type_t uuid_type = (rtk_bt_uuid_type_t)p_disc_param->disc_char_by_uuid.uuid_type;
 		uint8_t *uuid = p_disc_param->disc_char_by_uuid.uuid;
 		switch (uuid_type) {
 		case BT_UUID_TYPE_16:
@@ -849,7 +867,6 @@ static uint16_t bt_stack_gattc_send_discover(rtk_bt_gattc_req_t *disc_req)
 			}
 			break;
 		case BT_UUID_TYPE_32:
-			/* TODO */
 			return RTK_BT_ERR_UNSUPPORTED;
 			break;
 		case BT_UUID_TYPE_128:
@@ -935,11 +952,11 @@ static uint16_t bt_stack_gattc_send_write(rtk_bt_gattc_req_t *write_req)
 	}
 
 	if (GAP_CAUSE_SUCCESS != client_attr_write(write_req->conn_id,
-			gattc_common_id,
-			write_type,
-			p_write_param->handle,
-			p_write_param->length,
-			(uint8_t *)p_write_param->data)) {
+											   gattc_common_id,
+											   write_type,
+											   p_write_param->handle,
+											   p_write_param->length,
+											   (uint8_t *)p_write_param->data)) {
 		return RTK_BT_ERR_LOWER_STACK_API;
 	}
 
@@ -951,11 +968,11 @@ static uint16_t bt_stack_gattc_send_cccd(rtk_bt_gattc_req_t *p_req)
 	rtk_bt_gattc_cccd_record_t *record = NULL;
 
 	record = bt_stack_gattc_find_cccd_recorder(p_req->conn_id,
-					p_req->update_cccd_param.profile_id, p_req->update_cccd_param.cccd_handle);
+											   p_req->update_cccd_param.profile_id, p_req->update_cccd_param.cccd_handle);
 	if (!record) {
 		record = (rtk_bt_gattc_cccd_record_t *)osif_mem_alloc(
-							RAM_TYPE_DATA_ON,
-							sizeof(rtk_bt_gattc_cccd_record_t));
+					 RAM_TYPE_DATA_ON,
+					 sizeof(rtk_bt_gattc_cccd_record_t));
 		if (!record) {
 			return RTK_BT_ERR_NO_MEMORY;
 		}
@@ -981,7 +998,7 @@ static uint16_t bt_stack_gattc_send_cccd(rtk_bt_gattc_req_t *p_req)
 			p_req->conn_id,
 			gattc_cccd_id, GATT_WRITE_TYPE_REQ,
 			p_req->update_cccd_param.cccd_handle,
-			sizeof(uint16_t), (uint8_t *)&(record->cccd_value))) {
+			sizeof(uint16_t), (uint8_t *) & (record->cccd_value))) {
 		return RTK_BT_OK;
 	}
 
@@ -1088,8 +1105,9 @@ static void bt_stack_gattc_err_indicate(rtk_bt_gattc_req_t *req,
 		break;
 	}
 
-	if (p_evt)
+	if (p_evt) {
 		rtk_bt_evt_indicate(p_evt, NULL);
+	}
 }
 
 /* send cmd to stack, if no credits, it will fail and free the req */
@@ -1101,7 +1119,7 @@ static uint16_t send_cmd_to_stack(rtk_bt_gattc_req_t *req)
 	uint16_t credits = 0;
 
 	le_get_gap_param(GAP_PARAM_LE_REMAIN_CREDITS, &credits);
-	if (!credits) { 
+	if (!credits) {
 		ret = RTK_BT_ERR_NO_CREDITS;
 		goto fail;
 	}
@@ -1160,11 +1178,13 @@ static void bt_stack_gattc_handle_pending_req(uint8_t conn_id)
 
 	for (i = 0; i < RTK_BLE_GAP_MAX_LINKS; i++) {
 		queue = &gattc_priv->request_queue[i];
-		if (list_empty(&queue->pending_list))
+		if (list_empty(&queue->pending_list)) {
 			continue;
+		}
 		req = (rtk_bt_gattc_req_t *)queue->pending_list.next;
-		if (req->flag & REQ_FLAG_ALREADY_SENT)
+		if (req->flag & REQ_FLAG_ALREADY_SENT) {
 			continue;
+		}
 		if (req->seq <= min_seq) {
 			min_seq = req->seq;
 			choosen_connid = i;
@@ -1178,26 +1198,27 @@ static void bt_stack_gattc_handle_pending_req(uint8_t conn_id)
 }
 
 static uint16_t bt_stack_gattc_add_req_to_list(uint8_t conn_id,
-		rtk_bt_gattc_req_t *req)
+											   rtk_bt_gattc_req_t *req)
 {
 	rtk_bt_gatt_queue_t *p_queue;
 
-	if (req->req_type == BT_STACK_GATTC_WRITE_CMD)
+	if (req->req_type == BT_STACK_GATTC_WRITE_CMD) {
 		p_queue = &gattc_priv->cmd_queue[conn_id];
-	else
+	} else {
 		p_queue = &gattc_priv->request_queue[conn_id];
+	}
 
 	/* The number of element in pending queue should be limited, otherwise
-		the write and read request of high frequnce will use up memory */
+	    the write and read request of high frequnce will use up memory */
 	if (p_queue->pending_ele_num >= BT_QUEUE_PENDING_ELEMENT_MAX) {
-		dbg("Error: GATTC pending queue full, wait a moment to send data again !!!\r\n");
+		BT_LOGE("Error: GATTC pending queue full, wait a moment to send data again !!!\r\n");
 		return RTK_BT_ERR_QUEUE_FULL;
 	}
 	list_add_tail(&req->list, &p_queue->pending_list);
 	p_queue->pending_ele_num++;
 	gattc_priv->last_seq++;
 	req->seq = gattc_priv->last_seq;
-	API_PRINT("Pending ele num+++++, num: %d\r\n", p_queue->pending_ele_num);
+	BT_LOGD("Pending ele num+++++, num: %d\r\n", p_queue->pending_ele_num);
 
 	return RTK_BT_OK;
 }
@@ -1216,8 +1237,9 @@ static uint16_t bt_stack_gattc_send(uint16_t conn_handle,
 
 	if (req->req_type == BT_STACK_GATTC_WRITE_CMD) {
 		ret = send_cmd_to_stack(req);
-		if (ret != RTK_BT_OK)
+		if (ret != RTK_BT_OK) {
 			return ret;
+		}
 	}
 
 	if (bt_stack_gattc_add_req_to_list(conn_id, req)) {
@@ -1241,13 +1263,14 @@ static void internal_read_req_add(uint8_t conn_id, rtk_bt_gattc_req_t *read_req)
 	p_queue = &gattc_priv->request_queue[conn_id];
 
 	list_for_each_entry(req, &p_queue->pending_list, list, rtk_bt_gattc_req_t) {
-	/* 	the internal used read_by_handle req shall be put before
-		1. all internal used disc_char_by_uuid req which haven't been sent
-		2. all other normal pending node */
-		if ((req->flag == REQ_FLAG_READ_BY_UUID && req->req_type == BT_STACK_GATTC_DISC_REQ && 
-			req->disc_param.type == RTK_BT_GATT_DISCOVER_CHARACTERISTIC_BY_UUID)  
-			|| !req->flag) 
+		/*  the internal used read_by_handle req shall be put before
+		    1. all internal used disc_char_by_uuid req which haven't been sent
+		    2. all other normal pending node */
+		if ((req->flag == REQ_FLAG_READ_BY_UUID && req->req_type == BT_STACK_GATTC_DISC_REQ &&
+			 req->disc_param.type == RTK_BT_GATT_DISCOVER_CHARACTERISTIC_BY_UUID)
+			|| !req->flag) {
 			break;
+		}
 	}
 
 	read_req->conn_id = conn_id;
@@ -1256,7 +1279,7 @@ static void internal_read_req_add(uint8_t conn_id, rtk_bt_gattc_req_t *read_req)
 	p_queue->pending_ele_num++;
 	gattc_priv->last_seq++;
 	read_req->seq = gattc_priv->last_seq;
-	API_PRINT("Pending ele num+++++, num: %d\r\n", p_queue->pending_ele_num);
+	BT_LOGD("Pending ele num+++++, num: %d\r\n", p_queue->pending_ele_num);
 }
 
 static bool internel_read_req_is_done(uint8_t conn_id)
@@ -1264,28 +1287,29 @@ static bool internel_read_req_is_done(uint8_t conn_id)
 	rtk_bt_gattc_req_t *req;
 
 	list_for_each_entry(req, &gattc_priv->request_queue[conn_id].pending_list, list, rtk_bt_gattc_req_t) {
-		if ((req->flag & REQ_FLAG_READ_BY_UUID) && req->req_type == BT_STACK_GATTC_READ_REQ)
+		if ((req->flag & REQ_FLAG_READ_BY_UUID) && req->req_type == BT_STACK_GATTC_READ_REQ) {
 			return false;
+		}
 	}
 
 	return true;
 }
 
 static void bt_stack_gattc_discover_state_cb(uint8_t conn_id,
-		T_DISCOVERY_STATE discovery_state)
+											 T_DISCOVERY_STATE discovery_state)
 {
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_gattc_discover_ind_t *p_disc_ind = NULL;
 	rtk_bt_gattc_read_ind_t *p_read_ind = NULL;
 	rtk_bt_gatt_queue_t *p_queue = &gattc_priv->request_queue[conn_id];
 	rtk_bt_gattc_req_t *p_req = NULL;
-	uint8_t status = RTK_BT_STATUS_DONE;
+	rtk_bt_status_t status = RTK_BT_STATUS_DONE;
 	uint16_t err_code = 0;
 	uint16_t conn_handle = le_get_conn_handle(conn_id);
 
 	p_req = remove_sent_req(p_queue);
 	if (!p_req || p_req->req_type != BT_STACK_GATTC_DISC_REQ) {
-		dbg("Gattc cb mismatch with req type\r\n");
+		BT_LOGE("Gattc cb mismatch with req type\r\n");
 		goto end;
 	}
 
@@ -1309,10 +1333,9 @@ static void bt_stack_gattc_discover_state_cb(uint8_t conn_id,
 		p_disc_ind->status = status;
 		p_disc_ind->err_code = err_code;
 		rtk_bt_evt_indicate(p_evt, NULL);
-
 	} else {
 		/* if read_by_uuid(internal use discover and read_by_handle) failed or
-			discover out nothing, indicate err here */
+		    discover out nothing, indicate err here */
 		if (DISC_STATE_FAILED == discovery_state ||
 			internel_read_req_is_done(conn_id)) {
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,
@@ -1354,7 +1377,7 @@ static void bt_stack_gattc_discover_result_cb(uint8_t conn_id, T_DISCOVERY_RESUL
 		return;
 	}
 
-	/* 	if the discover is used for read_by_uuid, record the handles, read value by handle */
+	/*  if the discover is used for read_by_uuid, record the handles, read value by handle */
 	if (p_req->flag & REQ_FLAG_READ_BY_UUID) {
 		rtk_bt_gattc_read_param_t read_param = {0};
 		read_param.profile_id = p_req->disc_param.profile_id;
@@ -1383,7 +1406,6 @@ static void bt_stack_gattc_discover_result_cb(uint8_t conn_id, T_DISCOVERY_RESUL
 	p_disc_ind->profile_id = p_req->disc_param.profile_id;
 	p_disc_ind->type = p_req->disc_param.type;
 	p_disc_ind->status = RTK_BT_STATUS_CONTINUE;
-	// p_disc_ind->has_data = 1;
 
 	switch (res_type) {
 	case DISC_RESULT_ALL_SRV_UUID16:
@@ -1463,21 +1485,26 @@ static void bt_stack_gattc_discover_result_cb(uint8_t conn_id, T_DISCOVERY_RESUL
 }
 
 static void bt_stack_gattc_read_result_cb(uint8_t conn_id, uint16_t cause,
-		uint16_t handle, uint16_t value_size, uint8_t *p_value)
+										  uint16_t handle, uint16_t value_size, uint8_t *p_value)
 {
 	rtk_bt_gattc_req_t *p_req = NULL;
 	rtk_bt_gatt_queue_t *p_queue = &gattc_priv->request_queue[conn_id];
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_gattc_read_ind_t *p_read_ind = NULL;
+	uint32_t datalen = 0;
 	uint16_t conn_handle = le_get_conn_handle(conn_id);
 
 	p_req = remove_sent_req(p_queue);
 	if (!p_req || p_req->req_type != BT_STACK_GATTC_READ_REQ) {
-		dbg("Gattc cb mismatch with req type\r\n");
+		BT_LOGE("Gattc cb mismatch with req type\r\n");
 		goto end;
 	}
 
-	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_EVT_READ_RESULT_IND, sizeof(rtk_bt_gattc_read_ind_t));
+	/* before malloc memory according to value_size, need to check if cause has err,
+	    if cause has err, value_size may be invalid and very huge */
+	datalen = cause ? 0 : value_size;
+	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC, RTK_BT_GATTC_EVT_READ_RESULT_IND,
+								sizeof(rtk_bt_gattc_read_ind_t) + datalen);
 	if (!p_evt) {
 		goto end;
 	}
@@ -1488,27 +1515,18 @@ static void bt_stack_gattc_read_result_cb(uint8_t conn_id, uint16_t cause,
 	p_read_ind->type = p_req->read_param.type;
 	p_read_ind->status = cause ? RTK_BT_STATUS_FAIL : RTK_BT_STATUS_CONTINUE;
 	p_read_ind->err_code = cause;
-	/* before malloc memory according to value_size, need to check if cause has err,
-		if cause has err, value_size may be invalid and very huge */
 	if (0 == cause) {
-		p_evt->user_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, value_size);
-		if (!p_evt->user_data) {
-			goto end;
-		}
-
 		switch (p_req->read_param.type) {
 		case RTK_BT_GATT_CHAR_READ_BY_HANDLE:
 			p_read_ind->by_handle.handle = handle;
 			p_read_ind->by_handle.len = value_size;
-			p_read_ind->by_handle.value = p_evt->user_data;
-			// p_read_ind->by_handle.value = p_value;
+			p_read_ind->by_handle.value = BT_STRUCT_TAIL(p_read_ind, rtk_bt_gattc_read_ind_t);
 			memcpy(p_read_ind->by_handle.value, p_value, value_size);
 			break;
 		case RTK_BT_GATT_CHAR_READ_BY_UUID:
 			p_read_ind->by_uuid_per.handle = handle;
 			p_read_ind->by_uuid_per.len = value_size;
-			p_read_ind->by_uuid_per.value = p_evt->user_data;
-			// p_read_ind->by_uuid_per.value = p_value;
+			p_read_ind->by_uuid_per.value = BT_STRUCT_TAIL(p_read_ind, rtk_bt_gattc_read_ind_t);
 			memcpy(p_read_ind->by_uuid_per.value, p_value, value_size);
 			break;
 		case RTK_BT_GATT_CHAR_READ_MULTIPLE:
@@ -1561,25 +1579,25 @@ static void bt_stack_gattc_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TYPE ty
 	rtk_bt_gatt_queue_t *p_queue = NULL;
 	rtk_bt_evt_t *p_evt = NULL;
 	rtk_bt_gattc_write_ind_t *p_write_ind = NULL;
-	rtk_bt_gattc_req_type_t req_type = 0;
+	rtk_bt_gattc_req_type_t req_type = (rtk_bt_gattc_req_type_t) 0;
 	uint16_t conn_handle = le_get_conn_handle(conn_id);
 
 	if (type == GATT_WRITE_TYPE_REQ) {
 		p_queue = &gattc_priv->request_queue[conn_id];
 		p_req = remove_sent_req(p_queue);
 		if (!p_req || p_req->req_type != BT_STACK_GATTC_WRITE_REQ) {
-			dbg("Gattc cb mismatch with req type\r\n");
+			BT_LOGE("Gattc cb mismatch with req type\r\n");
 			goto end;
 		}
 	} else if (GATT_WRITE_TYPE_CMD == type || GATT_WRITE_TYPE_SIGNED_CMD == type) {
 		p_queue = &gattc_priv->cmd_queue[conn_id];
 		p_req = remove_sent_req(p_queue);
 		if (!p_req || p_req->req_type != BT_STACK_GATTC_WRITE_CMD) {
-			dbg("Gattc cb mismatch with req type\r\n");
+			BT_LOGE("Gattc cb mismatch with req type\r\n");
 			goto end;
 		}
 	} else {
-		dbg("bt_stack_gattc_write_result_cb: wrong type \r\n");
+		BT_LOGE("bt_stack_gattc_write_result_cb: wrong type \r\n");
 		goto end;
 	}
 
@@ -1599,14 +1617,11 @@ static void bt_stack_gattc_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TYPE ty
 	rtk_bt_evt_indicate(p_evt, NULL);
 
 end:
-	if (p_req != NULL) {
-		req_type = p_req->req_type;
-		bt_stack_gattc_free_req(p_req);
-		if (req_type != BT_STACK_GATTC_WRITE_CMD) {
-			bt_stack_gattc_handle_pending_req(conn_id);
-		}
+	req_type = p_req->req_type;
+	bt_stack_gattc_free_req(p_req);
+	if (req_type != BT_STACK_GATTC_WRITE_CMD) {
+		bt_stack_gattc_handle_pending_req(conn_id);
 	}
-
 }
 
 static void bt_stack_gattc_disconnect_cb(uint8_t conn_id)
@@ -1618,7 +1633,7 @@ static void bt_stack_gattc_disconnect_cb(uint8_t conn_id)
 }
 
 static void bt_stack_gattc_cccd_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TYPE type,
-		uint16_t cccd_handle, uint16_t cause, uint8_t credits)
+												uint16_t cccd_handle, uint16_t cause, uint8_t credits)
 {
 	(void)type;
 	(void)credits;
@@ -1632,7 +1647,7 @@ static void bt_stack_gattc_cccd_write_result_cb(uint8_t conn_id, T_GATT_WRITE_TY
 
 	p_req = remove_sent_req(p_queue);
 	if (!p_req || (p_req->req_type != BT_STACK_GATTC_CCCD_ENABLE_REQ && p_req->req_type != BT_STACK_GATTC_CCCD_DISABLE_REQ)) {
-		dbg("Gattc cb mismatch with req type\r\n");
+		BT_LOGE("Gattc cb mismatch with req type\r\n");
 		goto end;
 	}
 
@@ -1679,19 +1694,13 @@ static T_APP_RESULT bt_stack_gattc_cccd_notify_indicate_cb(uint8_t conn_id, bool
 	uint16_t conn_handle = le_get_conn_handle(conn_id);
 
 	if (false == bt_stack_gattc_cccd_record_get_profile_id(conn_id, handle, &profile_id)) {
-		return APP_RESULT_REJECT;
+		profile_id = 0;  /* If this character's cccd hasn't been enabled by any client, just send event to default gcs_client(profile_id=0) callback */
 	}
 
 	p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,
 								notify ? RTK_BT_GATTC_EVT_NOTIFY_IND : RTK_BT_GATTC_EVT_INDICATE_IND,
-								sizeof(rtk_bt_gattc_cccd_value_ind_t));
-
+								sizeof(rtk_bt_gattc_cccd_value_ind_t) + value_size);
 	if (!p_evt) {
-		return APP_RESULT_REJECT;
-	}
-
-	p_evt->user_data = (uint8_t *)osif_mem_alloc(RAM_TYPE_DATA_ON, value_size);
-	if (!p_evt->user_data) {
 		return APP_RESULT_REJECT;
 	}
 
@@ -1700,7 +1709,7 @@ static T_APP_RESULT bt_stack_gattc_cccd_notify_indicate_cb(uint8_t conn_id, bool
 	p_value_ind->profile_id = profile_id;
 	p_value_ind->value_handle = handle;
 	p_value_ind->len = value_size;
-	p_value_ind->value = p_evt->user_data;
+	p_value_ind->value = BT_STRUCT_TAIL(p_value_ind, rtk_bt_gattc_cccd_value_ind_t);
 	memcpy(p_value_ind->value, p_value, value_size);
 
 	rtk_bt_evt_indicate(p_evt, NULL);
@@ -1743,7 +1752,7 @@ static uint16_t bt_stack_gattc_read(void *param)
 			return RTK_BT_ERR_NO_MEMORY;
 		}
 		req->flag = REQ_FLAG_READ_BY_UUID;
-		
+
 	} else {
 		req = bt_stack_gattc_create_req(BT_STACK_GATTC_READ_REQ, p_read_param);
 		if (!req) {
@@ -1757,7 +1766,7 @@ static uint16_t bt_stack_gattc_read(void *param)
 static uint16_t bt_stack_gattc_write(void *param)
 {
 	rtk_bt_gattc_write_param_t *p_write_param = (rtk_bt_gattc_write_param_t *)param;
-	rtk_bt_gattc_req_type_t type = 0;
+	rtk_bt_gattc_req_type_t type = (rtk_bt_gattc_req_type_t) 0;
 	rtk_bt_gattc_req_t *req = NULL;
 
 	if (p_write_param->type == RTK_BT_GATT_CHAR_WRITE_REQ) {
@@ -1853,11 +1862,11 @@ uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd)
 	uint16_t ret = 0;
 
 	if (true != bt_stack_profile_check(RTK_BT_PROFILE_GATTC)) {
-		dbg("Error: GATTC profile is not initiated\r\n");
+		BT_LOGE("Error: Gattc profile is not initiated\r\n");
 		ret = RTK_BT_ERR_UNSUPPORTED;
 		goto end;
 	}
-	// dbg("bt_stack_gattc_act_handle: act = %d \r\n", p_cmd->act);
+	// BT_LOGA("bt_stack_gattc_act_handle: act = %d \r\n", p_cmd->act);
 	switch (p_cmd->act) {
 	case RTK_BT_GATTC_ACT_REGISTER_PROFILE:
 		ret = 0;
@@ -1881,7 +1890,7 @@ uint16_t bt_stack_gattc_act_handle(rtk_bt_cmd_t *p_cmd)
 		ret = bt_stack_gattc_update_cccd(p_cmd->param, false);
 		break;
 	default:
-		dbg("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
+		BT_LOGE("bt_stack_le_act_handle:unknown act: %d \r\n", p_cmd->act);
 		ret = RTK_BT_ERR_NO_CASE_ELEMENT;
 		break;
 	}
@@ -1892,7 +1901,7 @@ end:
 	return ret;
 }
 
-#if (UPPER_STACK_VERSION == VERSION_2021) && F_BT_ATT_READ_MULTIPLE_VARIABLE
+#if defined(F_BT_ATT_READ_MULTIPLE_VARIABLE) && F_BT_ATT_READ_MULTIPLE_VARIABLE
 T_APP_RESULT bt_stack_gattc_multiple_read_callback(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data)
 {
 	int i = 0;
@@ -1917,7 +1926,7 @@ T_APP_RESULT bt_stack_gattc_multiple_read_callback(T_CLIENT_ID client_id, uint8_
 
 	p_req = remove_sent_req(p_queue);
 	if (!p_req || p_req->req_type != BT_STACK_GATTC_READ_REQ) {
-		dbg("Gattc cb mismatch with req type\r\n");
+		BT_LOGE("Gattc cb mismatch with req type\r\n");
 		ret = APP_RESULT_REJECT;
 		goto end;
 	}
@@ -1956,21 +1965,13 @@ T_APP_RESULT bt_stack_gattc_multiple_read_callback(T_CLIENT_ID client_id, uint8_
 		for (i = 0; i < res_num_handle; i++) {
 			p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,
 										RTK_BT_GATTC_EVT_READ_RESULT_IND,
-										sizeof(rtk_bt_gattc_read_ind_t));
+										sizeof(rtk_bt_gattc_read_ind_t) + read_mul_data->p_read_tbl[i].read_len);
 			p_read_ind = (rtk_bt_gattc_read_ind_t *)p_evt->data;
 			memcpy(p_read_ind, &read_ind_temp, sizeof(rtk_bt_gattc_read_ind_t));
 			p_read_ind->multiple_variable_per.len = read_mul_data->p_read_tbl[i].read_len;
-			// p_read_ind->multiple_variable_per.value = read_mul_data->p_read_tbl[i].p_data;
-			p_read_ind->multiple_variable_per.value = (uint8_t *)osif_mem_alloc(
-						RAM_TYPE_DATA_ON,
-						p_read_ind->multiple_variable_per.len);
-			if (NULL == p_read_ind->multiple_variable_per.value) {
-				ret = APP_RESULT_REJECT;
-				goto end;
-			}
+			p_read_ind->multiple_variable_per.value = BT_STRUCT_TAIL(p_read_ind, rtk_bt_gattc_read_ind_t);
 			memcpy(p_read_ind->multiple_variable_per.value,
 				   read_mul_data->p_read_tbl[i].p_data, p_read_ind->multiple_variable_per.len);
-			p_evt->user_data = p_read_ind->multiple_variable_per.value;
 			rtk_bt_evt_indicate(p_evt, NULL);
 		}
 		p_evt = rtk_bt_event_create(RTK_BT_LE_GP_GATTC,
@@ -1987,7 +1988,7 @@ end:
 	bt_stack_gattc_handle_pending_req(conn_id);
 	return ret;
 }
-#endif  /* UPPER_STACK_VERSION == VERSION_2021 */
+#endif
 
 uint16_t bt_stack_gattc_init(rtk_bt_app_conf_t *app_conf)
 {
@@ -2006,7 +2007,7 @@ uint16_t bt_stack_gattc_init(rtk_bt_app_conf_t *app_conf)
 	for (i = 0; i < RTK_BLE_GAP_MAX_LINKS; i++) {
 		bt_stack_gattc_queue_init(&gattc_priv->request_queue[i]);
 		bt_stack_gattc_queue_init(&gattc_priv->cmd_queue[i]);
-		
+
 		INIT_LIST_HEAD(&gattc_priv->cccd_record_list[i]);
 	}
 
@@ -2040,7 +2041,7 @@ uint16_t bt_stack_gattc_init(rtk_bt_app_conf_t *app_conf)
 		goto failed;
 	}
 
-#if (UPPER_STACK_VERSION == VERSION_2021) && F_BT_ATT_READ_MULTIPLE_VARIABLE
+#if defined(F_BT_ATT_READ_MULTIPLE_VARIABLE) && F_BT_ATT_READ_MULTIPLE_VARIABLE
 	client_register_general_client_cb(bt_stack_gattc_multiple_read_callback);
 #endif
 

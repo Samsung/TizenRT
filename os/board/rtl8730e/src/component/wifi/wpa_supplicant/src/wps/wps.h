@@ -81,7 +81,6 @@ struct wps_credential {
  * @num_sec_dev_type: Number of secondary device types
  * @os_version: OS Version
  * @rf_bands: RF bands (WPS_RF_24GHZ, WPS_RF_50GHZ flags)
- * @p2p: Whether the device is a P2P device
  */
 // not to use this
 struct wps_device_data {
@@ -100,8 +99,6 @@ struct wps_device_data {
 	u16 config_methods;
 	struct wpabuf *vendor_ext_m1;
 	struct wpabuf *vendor_ext[MAX_WPS_VENDOR_EXTENSIONS];
-
-	int p2p;
 };
 
 /**

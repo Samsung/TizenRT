@@ -34,6 +34,15 @@ bool bt_rdtp_init(void);
 /**
  * bt_rdtp.h
  *
+ * \brief  De-initialize RDTP profile.
+ *
+ * \ingroup BT_RDTP
+ */
+void bt_rdtp_deinit(void);
+
+/**
+ * bt_rdtp.h
+ *
  * \brief   Send a RDTP connection request.
  *
  * \param[in]  bd_addr    Remote BT address.

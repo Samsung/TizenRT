@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2020 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,8 +49,7 @@
 #
 ############################################################################
 
-CSRCS += ble_tizenrt_service.c \
-	 ble_tizenrt_server.c
+CSRCS += ble_tizenrt_server.c
 
 DEPPATH += --dep-path component/bluetooth/example/ble_peripheral
 VPATH += :component/bluetooth/example/ble_peripheral

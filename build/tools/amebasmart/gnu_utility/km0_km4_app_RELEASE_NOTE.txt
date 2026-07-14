@@ -1,5 +1,10 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 8312697dc9 2026/07/14-11:49:23 ==
+1. Sync to v1.2 e2d033c75d
+2. Add support for multi-sta CSI
+3. Add wifi IPC recovery mechanism
+
 == version 1e2f487864 2026/03/13-19:28:22 ==
 1. Fix CSI burst report fail
 

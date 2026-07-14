@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2022 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -54,14 +54,7 @@ CSRCS += rtk_stack_api.c \
 	rtk_stack_gattc.c \
 	rtk_stack_gatts.c \
 	rtk_stack_le_gap.c \
-	rtk_stack_vendor.c \
-	#rtk_stack_avrcp.c \
-	#rtk_stack_br_gap.c \
-	#rtk_stack_hfp.c \
-	#rtk_stack_hid.c \
-	#rtk_stack_iso.c \
-	#rtk_stack_le_audio.c \
-	#rtk_stack_a2dp.c \
+	rtk_stack_vendor.c
 
 DEPPATH += --dep-path component/bluetooth/api/rtk_stack
 VPATH += :component/bluetooth/api/rtk_stack

@@ -88,7 +88,6 @@
 #include "objects.h"
 #include "ameba_uart.h"
 #include "tinyara/kmalloc.h"
-#include "osdep_service.h"
 #include "ameba_vector.h"
 
 /****************************************************************************
@@ -888,7 +887,7 @@ static void rtl8730e_up_shutdown(struct uart_dev_s *dev)
 	DEBUGASSERT(priv);
 	DEBUGASSERT(sdrv[uart_index_get(priv->tx)]);
 	serial_free(sdrv[uart_index_get(priv->tx)]);
-	rtw_free(sdrv[uart_index_get(priv->tx)]);
+	rtos_mem_free(sdrv[uart_index_get(priv->tx)]);
 	sdrv[uart_index_get(priv->tx)] = NULL;
 }
 

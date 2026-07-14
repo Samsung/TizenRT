@@ -10,7 +10,7 @@
 #define WPA_DEBUG_H
 
 #include "utils/wpabuf.h"
-/* Debugging function - conditional printf and hex dump. Driver wrappers can
+/* Debugging function - conditional DiagPrintf and hex dump. Driver wrappers can
  * use these for debugging purposes. */
 
 enum {
@@ -19,8 +19,6 @@ enum {
 
 
 #define wpa_debug_print_timestamp() do { } while (0)
-#define wpa_hexdump(l,t,b,le) do { } while (0)
-#define wpa_hexdump_buf_key(l,t,b) do { } while (0)
 #define wpa_hexdump_ascii_key(l,t,b,le) do { } while (0)
 #define wpa_debug_open_file(p) do { } while (0)
 #define wpa_debug_close_file() do { } while (0)
@@ -33,39 +31,45 @@ static inline int wpa_debug_reopen_file(void)
 	return 0;
 }
 
-
-#define wprintf(fmt, arg...) printf("[%d] "fmt, rtw_get_current_time(),##arg)
-
 #ifdef CONFIG_NO_STDOUT_DEBUG
 #define wpa_printf(args...) do { } while (0)
+#define wpa_hexdump(l,t,b,le) do { } while (0)
 #define wpa_hexdump_buf(l,t,b) do { } while (0)
 #define wpa_hexdump_key(l,t,b,le) do { } while (0)
 #define wpa_hexdump_ascii(l,t,b,le) do { } while (0)
+#define wpa_hexdump_buf_key(l,t,b) do { } while (0)
 #define wpa_msg(args...) do { } while (0)
+#define p2p_dbg(args...) do { } while (0)
+#define p2p_info(args...) do { } while (0)
+#define p2p_err(args...) do { } while (0)
 #else
-//void wpa_printf(int level, const char *fmt, ...);
 #define wpa_printf(level, fmt, arg...)     \
 	do {\
 		if (level >= MSG_INFO) {\
 			{\
-				printf("\r\n%d:", rtw_get_current_time());\
-				printf(fmt, ##arg);\
-				printf("\n\r");\
+				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS, fmt, ##arg);\
+				RTK_LOGS(NOTAG, RTK_LOG_ALWAYS,"\n\r");\
 			} \
 		}\
 	}while(0)
 #define wpa_msg(ctx,level,fmt,arg...) wpa_printf((level),(fmt), ##arg)
+#define p2p_dbg(ctx, fmt, arg...) wpa_printf(MSG_DEBUG, (fmt), ##arg)
+#define p2p_info(ctx, fmt, arg...) wpa_printf(MSG_INFO, (fmt), ##arg)
+#define p2p_err(ctx, fmt, arg...) wpa_printf(MSG_ERROR, (fmt), ##arg)
+
+void wpa_hexdump(int level, const char *title, const void *buf, size_t len);
 void wpa_hexdump_key(int level, const char *title, const void *buf, size_t len);
 void wpa_hexdump_buf(int level, const char *title,
 					 const struct wpabuf *buf);
 void wpa_hexdump_ascii(int level, const char *title, const void *buf,
 					   size_t len);
-
+void wpa_hexdump_buf_key(int level, const char *title,
+						 const struct wpabuf *buf);
 #ifdef EAPOL_TEST
 #define WPA_ASSERT(a)						       \
 	do {							       \
 		if (!(a)) {					       \
-			printf("WPA_ASSERT FAILED '" #a "' "	       \
+			DiagPrintf("WPA_ASSERT FAILED '" #a "' "	       \
 			       "%s %s:%d\n",			       \
 			       __FUNCTION__, __FILE__, __LINE__);      \
 			exit(1);				       \

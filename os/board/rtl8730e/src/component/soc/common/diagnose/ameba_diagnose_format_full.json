@@ -1,0 +1,206 @@
+{
+  "version": "1.0",
+  "hash": {
+    "6292f679": {
+      "compatible": [],
+      "format": {}
+    },
+    "87f57635": {
+      "compatible": [
+        "6292f679"
+      ],
+      "format": {
+        "rtk_event_level": {
+          "RTK_EVENT_LEVEL_ALWAYS": 0,
+          "RTK_EVENT_LEVEL_ERROR": 1,
+          "RTK_EVENT_LEVEL_WARNING": 2,
+          "RTK_EVENT_LEVEL_INFO": 3,
+          "RTK_EVENT_LEVEL_DEBUG": 4
+        },
+        "rtk_event_type": {
+          "RTK_EVENT_TYPE_INTERNAL": 0,
+          "RTK_EVENT_TYPE_DBG_DEMO_1": 1,
+          "RTK_EVENT_TYPE_DBG_DEMO_2": 2,
+          "RTK_EVENT_TYPE_WIFI_BASE": 40000,
+          "RTK_EVENT_TYPE_CUSTOMER": 50000,
+          "RTK_EVENT_TYPE_MAX": 60000
+        },
+        "diag_evt_wifi": {
+          "DIAG_EVT_WIFI_DISCONN": "RTK_EVENT_TYPE_WIFI_BASE + 0x01",
+          "DIAG_EVT_WIFI_NO_RX": "RTK_EVENT_TYPE_WIFI_BASE + 0x02",
+          "DIAG_EVT_WIFI_NO_TX": "RTK_EVENT_TYPE_WIFI_BASE + 0x03",
+          "DIAG_EVT_WIFI_JOIN_FAIL": "RTK_EVENT_TYPE_WIFI_BASE + 0x04"
+        },
+        "RtkDiagDataFrame": {
+          "header": {
+            "type": "u16"
+          },
+          "size": {
+            "type": "u16"
+          },
+          "cmd": {
+            "type": "u8"
+          },
+          "payload": {
+            "type": "u8[0]"
+          }
+        },
+        "RtkDiagEvent": {
+          "evt_type": {
+            "type": "u16"
+          },
+          "evt_len": {
+            "type": "u16"
+          },
+          "evt_time": {
+            "type": "u32"
+          },
+          "evt_level": {
+            "type": "u8"
+          },
+          "rsvd": {
+            "type": "u8[3]"
+          },
+          "evt_info": {
+            "type": "u8[0]"
+          }
+        },
+        "diag_evt_demo_1": {
+          "u8_data": {
+            "type": "u8"
+          },
+          "u16_data": {
+            "type": "u16"
+          },
+          "f_data": {
+            "type": "float"
+          },
+          "ch_data": {
+            "type": "char"
+          },
+          "str_data": {
+            "type": "char[32]"
+          }
+        },
+        "diag_evt_demo_2": {
+          "dm1_data": {
+            "type": "struct diag_evt_demo_1"
+          },
+          "i_data": {
+            "type": "int"
+          }
+        },
+        "diag_evt_wifi_disconn": {
+          "reason": {
+            "type": "u16",
+            "enum_ref": "rtw_disconn_reason",
+            "comment": "enum rtw_disconn_reason in wifi_api_types.h"
+          }
+        },
+        "diag_evt_wifi_join_fail": {
+          "reason": {
+            "type": "u16",
+            "enum_ref": "rtk_error_code",
+            "comment": "enum rtk_error_code in rtk_status.h"
+          },
+          "reason_code": {
+            "type": "u16"
+          }
+        },
+        "diag_evt_wifi_rxbd_t": {
+          "sw_index": {
+            "type": "u8:4"
+          },
+          "hw_index": {
+            "type": "u8:4"
+          }
+        },
+        "diag_evt_wifi_no_rx": {
+          "bb_cca_cck": {
+            "type": "u8[5]"
+          },
+          "bb_cca_ofdm": {
+            "type": "u8[5]"
+          },
+          "bb_rx_cck": {
+            "type": "u8[5]"
+          },
+          "bb_rx_ofdm": {
+            "type": "u8[5]"
+          },
+          "mac_rx_cck": {
+            "type": "u8[5]"
+          },
+          "mac_rx_ofdm": {
+            "type": "u8[5]"
+          },
+          "rxbd": {
+            "type": "diag_evt_wifi_rxbd_t[5]"
+          },
+          "cca_th": {
+            "type": "u8"
+          }
+        },
+        "RtkDiagDataFrame_t": {
+          "header": {
+            "type": "u16"
+          },
+          "size": {
+            "type": "u16"
+          },
+          "cmd": {
+            "type": "u8"
+          },
+          "payload": {
+            "type": "u8[0]"
+          }
+        },
+        "RtkDiagEvent_t": {
+          "evt_type": {
+            "type": "u16"
+          },
+          "evt_len": {
+            "type": "u16"
+          },
+          "evt_time": {
+            "type": "u32"
+          },
+          "evt_level": {
+            "type": "u8"
+          },
+          "rsvd": {
+            "type": "u8[3]"
+          },
+          "evt_info": {
+            "type": "u8[0]"
+          }
+        },
+        "rtw_disconn_reason": {
+          "no rx for a long time": 60001,
+          "AP change": 60002,
+          "by APP": 60101,
+          "disconnect before connecting": 60102
+        },
+        "rtk_error_code": {
+          "Bad Argument": 2,
+          "Busy": 3,
+          "No Memory": 4,
+          "Timeout": 5,
+          "Data exceeds allocated buffer size.": 6,
+          "Invalid key": 4107,
+          "Can't find targrt AP": 4108,
+          "Auth fail": 4109,
+          "Auth fail, password may wrong": 4110,
+          "Assoc fail": 4111,
+          "4 way handshake fail": 4112,
+          "4 way handshake fail, password may wrong": 4113,
+          "Connentting is aborted by application layer to disconnect": 4114,
+          "Wi-Fi is powered off in IPS(Inactive Power Save) mode, unable to access Wi-Fi registers.": 4128,
+          "tx buffer full(hw buffer & skb buffer)": 4129,
+          "wifi not initial": 4130
+        }
+      }
+    }
+  },
+  "latest_hash": "87f57635"
+}

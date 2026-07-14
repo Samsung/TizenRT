@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version 8312697dc9 2026/07/14-11:49:22 ==
+1.	Sync to v1.2 e2d033c75d
+
 == version 2d0f1be032 2024/04/29-09:50:27 ==
 1.	Change optimization flags from "-O2" to "-Os"
 2.	Change instruction set build "-marm" to "-mthumb"

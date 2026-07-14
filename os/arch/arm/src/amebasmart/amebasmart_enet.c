@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2022 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,8 +65,6 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/netmgr/netdev_mgr.h>
 #include <tinyara/ble/ble_manager.h>
-#include "rtw_wifi_constants.h"
-#include "wifi_intf_drv_to_app_basic.h"
 
 #ifdef CONFIG_AMEBASMART_WIFI
 
@@ -108,19 +106,20 @@ static inline void ether_addr_copy(u8 *dst, const u8 *src)
 #define MASK_SIZE 6
 
 int rtk_set_multicast_packet_filters(int dev_index, const u8 *addr){
-	u8 mask[MASK_SIZE]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+	//TODO for Smart
+	// u8 mask[MASK_SIZE]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
 	int ret = 0;
 
-	rtw_packet_filter_pattern_t packet_filter;
-	rtw_packet_filter_rule_t rule;
+	// rtw_packet_filter_pattern_t packet_filter;
+	// rtw_packet_filter_rule_t rule;
 
-	RTK_ETHER_COPY(packet_filter.pattern, addr);
+	// RTK_ETHER_COPY(packet_filter.pattern, addr);
 
-	packet_filter.offset = 0;
-	packet_filter.mask_size = MASK_SIZE;
-	packet_filter.mask = mask;
+	// packet_filter.offset = 0;
+	// packet_filter.mask_size = MASK_SIZE;
+	// packet_filter.mask = mask;
 
-	rule = RTW_POSITIVE_MATCHING;
+	// rule = RTW_POSITIVE_MATCHING;
 
 #ifdef CONFIG_PROMISC
 	wifi_init_packet_filter();
@@ -161,17 +160,19 @@ int rtk_set_multicast_list(struct netdev *dev, const struct in_addr *group, netd
 	u8 addr[6] = MULTICAST_IP_TO_MAC((u8 *)group);
 	int dev_index = get_idx_from_dev(dev);
 
-	if (action == NM_ADD_MAC_FILTER) {
-		vddbg("Add filter for mac address = %p, dev_index =%d\n", addr, dev_index);
-		return rtk_set_multicast_packet_filters(dev_index, addr);
-	} else if (action == NM_DEL_MAC_FILTER){
-		vddbg("Clear filter for mac address = %p, dev_index =%d\n", addr, dev_index);
-		return rtk_clear_packet_filters(dev_index);
-	}
-	else{
-		vddbg("Invalid action: %d\n", action);
-		return -EINVAL;
-	}
+	// TODO for Smart
+	// if (action == NM_ADD_MAC_FILTER) {
+	// 	vddbg("Add filter for mac address = %p, dev_index =%d\n", addr, dev_index);
+	// 	return rtk_set_multicast_packet_filters(dev_index, addr);
+	// } else if (action == NM_DEL_MAC_FILTER){
+	// 	vddbg("Clear filter for mac address = %p, dev_index =%d\n", addr, dev_index);
+	// 	return rtk_clear_packet_filters(dev_index);
+	// }
+	// else{
+	// 	vddbg("Invalid action: %d\n", action);
+	// 	return -EINVAL;
+	// }
+	return 0;
 
 }
 

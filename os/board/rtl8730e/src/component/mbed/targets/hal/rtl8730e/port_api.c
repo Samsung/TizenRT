@@ -21,7 +21,7 @@
 #include "PinNames.h"
 //#include "mbed_error.h"
 
-#define GPIO_PORT_NUM 3
+
 
 /** @addtogroup Ameba_Mbed_API
   * @{
@@ -31,6 +31,14 @@
  *  @brief    MBED_GPIO driver modules.
  *  @{
  */
+
+/** @addtogroup MBED_GPIO_Exported_Constants MBED_GPIO Exported Constants
+  * @{
+  */
+#define GPIO_PORT_NUM 3
+/**
+  * @}
+  */
 
 /** @addtogroup MBED_GPIO_Exported_Functions MBED_GPIO Exported Functions
   * @{

@@ -65,6 +65,15 @@ bool bt_spp_init(uint8_t link_num, uint8_t service_num);
 /**
  * bt_spp.h
  *
+ * \brief  De-initialize SPP profile.
+ *
+ * \ingroup BT_SPP
+ */
+void bt_spp_deinit(void);
+
+/**
+ * bt_spp.h
+ *
  * \brief  Register SPP service.
  *
  * \note   This function shall be used after \ref bt_spp_int() called.

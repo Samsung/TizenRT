@@ -1,5 +1,11 @@
-#ifndef _AMEBAD2_GPIO_H_
-#define _AMEBAD2_GPIO_H_
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef _AMEBA_GPIO_H_
+#define _AMEBA_GPIO_H_
 
 /** @addtogroup GPIO
   * @verbatim
@@ -79,9 +85,9 @@
   */
 
 /** @defgroup GPIO
-  * @brief GPIO driver modules
-  * @{
-  */
+* @brief GPIO driver modules
+* @{
+*/
 
 /* Registers Definitions --------------------------------------------------------*/
 
@@ -90,20 +96,20 @@
  *****************************************************************************/
 
 /** @defgroup GPIO_DR
- * @brief Portx data register
+ * @brief PortA data register
  * @{
  **/
 #define GPIO_MASK_PORTx_DATA            ((u32)0xFFFFFFFF << 0)          /*!<R/W 0  Values written to this register are output on the I/O signals for Portx if the corresponding data direction bits for Portx are set to Output mode and the corresponding control bit for Portx is set to software mode. The value read back is equal to the last value written to this register. */
-#define GPIO_PORTx_DATA(x)              ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_PORTx_DATA(x)              (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_PORTx_DATA(x)          ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
 /** @defgroup GPIO_DDR
- * @brief Portx data direction register
+ * @brief PortA data direction register
  * @{
  **/
 #define GPIO_MASK_PORTx_DATA_DIRECTION  ((u32)0xFFFFFFFF << 0)          /*!<R/W 0  Values written to this register independently control the direction of the corresponding data bit in Portx. The default direction can be configured as input or output after system reset through the GPIO_DFLT_DIR_x parameter. 0: Input (default) 1: Output */
-#define GPIO_PORTx_DATA_DIRECTION(x)    ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_PORTx_DATA_DIRECTION(x)    (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_PORTx_DATA_DIRECTION(x) ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -112,7 +118,7 @@
  * @{
  **/
 #define GPIO_MASK_INT_EN                ((u32)0xFFFFFFFF << 0)          /*!<R/W 0  Allows each bit of Portx to be configured for interrupts. By default, the generation of interrupts is disabled. Whenever a 1 is written to a bit of this register, it configures the corresponding bit on Portx to become an interrupt; otherwise, Portx operates as a normal GPIO signal. Interrupts are disabled on the corresponding bits of Portx if the corresponding data direction register is set to Output or if Portx mode is set to Hardware. 0: Configure Portx bit as normal GPIO signal (default) 1: Configure Portx bit as interrupt */
-#define GPIO_INT_EN(x)                  ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_INT_EN(x)                  (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_INT_EN(x)              ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -121,7 +127,7 @@
  * @{
  **/
 #define GPIO_MASK_INT_MASK              ((u32)0xFFFFFFFF << 0)          /*!<R/W 0  Controls whether an interrupt on Portx can create an interrupt for the interrupt controller by not masking it. By default, all interrupts bits are unmasked. Whenever a 1 is written to a bit in this register, it masks the interrupt generation capability for this signal; otherwise interrupts are allowed through. The unmasked status can be read as well as the resultant status after masking. 0: Interrupt bits are unmasked (default) 1: Mask interrupt */
-#define GPIO_INT_MASK(x)                ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_INT_MASK(x)                (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_INT_MASK(x)            ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -130,7 +136,7 @@
  * @{
  **/
 #define GPIO_MASK_INT_TYPE              ((u32)0xFFFFFFFF << 0)          /*!<R/W 0  Controls the type of interrupt that can occur on Portx. Whenever a 0 is written to a bit of this register, it configures the interrupt type to be level-sensitive; otherwise, it is edge-sensitive. 0: Level-sensitive (default) 1: Edge-sensitive */
-#define GPIO_INT_TYPE(x)                ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_INT_TYPE(x)                (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_INT_TYPE(x)            ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -139,7 +145,7 @@
  * @{
  **/
 #define GPIO_MASK_INT_POLARITY          ((u32)0xFFFFFFFF << 0)          /*!<R/W 0  Controls the polarity of edge or level sensitivity that can occur on input of Portx. Whenever a 0 is written to a bit of this register, it configures the interrupt type to falling-edge or active-low sensitive; otherwise, it is rising-edge or active-high sensitive. 0: Active-low (default) 1: Active-high */
-#define GPIO_INT_POLARITY(x)            ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_INT_POLARITY(x)            (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_INT_POLARITY(x)        ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -148,7 +154,7 @@
  * @{
  **/
 #define GPIO_MASK_INT_STATUS            ((u32)0xFFFFFFFF << 0)          /*!<R 0  Interrupt status of Portx. */
-#define GPIO_INT_STATUS(x)              ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_INT_STATUS(x)              (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_INT_STATUS(x)          ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -157,7 +163,7 @@
  * @{
  **/
 #define GPIO_MASK_RAW_INT_STATUS        ((u32)0xFFFFFFFF << 0)          /*!<R 0  Raw interrupt status of Portx (premasking bits). */
-#define GPIO_RAW_INT_STATUS(x)          ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_RAW_INT_STATUS(x)          (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_RAW_INT_STATUS(x)      ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -166,7 +172,7 @@
  * @{
  **/
 #define GPIO_MASK_DEBOUNCE_EN           ((u32)0xFFFFFFFF << 0)          /*!<R/W 0  Controls whether an external signal that is the source of an interrupt needs to be debounced to remove any spurious glitches. Writing a 1 to a bit in this register enables the debouncing circuitry. A signal must be valid for two periods of an external clock before it is internally processed. 0: No debounce (default) 1: Enable debounce This register is available only if Portx is configured to generate interrupts (GPIO_PORTx_INTR = Include (1)) and when the debounce logic is included (GPIO_DEBOUNCE = Include (1)). */
-#define GPIO_DEBOUNCE_EN(x)             ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_DEBOUNCE_EN(x)             (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_DEBOUNCE_EN(x)         ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -175,7 +181,7 @@
  * @{
  **/
 #define GPIO_MASK_INT_EOI               ((u32)0xFFFFFFFF << 0)          /*!<WA0 0  Controls the clearing of edge type interrupts from Portx. When a 1 is written into a corresponding bit of this register, the interrupt is cleared. All interrupts are cleared when Portx is not configured for interrupts. 0: No interrupt clear (default) 1: Clear interrupt */
-#define GPIO_INT_EOI(x)                 ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_INT_EOI(x)                 (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_INT_EOI(x)             ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -184,7 +190,7 @@
  * @{
  **/
 #define GPIO_MASK_EXT_PORTx             ((u32)0xFFFFFFFF << 0)          /*!<R 0  When Portx is configured as Input, then reading this location reads the values on the signal. When the data direction of Portx is set as Output, reading this location reads the data register for Portx. */
-#define GPIO_EXT_PORTx(x)               ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_EXT_PORTx(x)               (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_EXT_PORTx(x)           ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -200,7 +206,7 @@
  * @{
  **/
 #define GPIO_MASK_ID_CODE               ((u32)0xFFFFFFFF << 0)          /*!<R 32'h1  This register is available only if Portx/B/C is configured to generate interrupts (GPIO_PORTx_INTR = Include (1)) and interrupt detection is configured to generate on both rising and falling edges of external input signal (GPIO_INT_BOTH_EDGE=Include (1)). */
-#define GPIO_ID_CODE(x)                 ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_ID_CODE(x)                 (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_ID_CODE(x)             ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -209,7 +215,7 @@
  * @{
  **/
 #define GPIO_MASK_INT_BOTHEDGE          ((u32)0xFFFFFFFF << 0)          /*!<R/W 0  Controls the edge types of interrupt that can occur on Portx. Whenever a particular bit is programmed to 1, it enables the generation of interrupt on both the rising edge and falling edge of an external input signal corresponding to that bit on PortA. The values programmed in the registers gpio_intype_level and gpio_int_polarity for this particular bit are not considered when the corresponding bit of this register is set to 1. Whenever a particular bit is programmed to 0, the interrupt type depends on the value of the corresponding bits in the gpio_inttype_level and gpio_int_polarity registers. 0: Disabled. Single edge sensitive 1: Enabled. Both edge sensitive */
-#define GPIO_INT_BOTHEDGE(x)            ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_INT_BOTHEDGE(x)            (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_INT_BOTHEDGE(x)        ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -218,7 +224,7 @@
  * @{
  **/
 #define GPIO_MASK_VER_ID_CODE           ((u32)0xFFFFFFFF << 0)          /*!<R 32'h3231302A  ASCII value for each number in the version, followed by *. For example 32_30_31_2A represents the version 2.01*. Reset Value: See the releases table in the Release Notes. */
-#define GPIO_VER_ID_CODE(x)             ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define GPIO_VER_ID_CODE(x)             (((u32)((x) & 0xFFFFFFFF) << 0))
 #define GPIO_GET_VER_ID_CODE(x)         ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -227,7 +233,7 @@
  * @{
  **/
 #define GPIO_MASK_EXT_DB_DIV_CNT        ((u32)0x0000007F << 0)          /*!<R/W 0  Debounce interrupt prescaler of 32.768KHz. de-bounce time = (EXT_DB_DIV_CNT +1) * 2*32μs. */
-#define GPIO_EXT_DB_DIV_CNT(x)          ((u32)(((x) & 0x0000007F) << 0))
+#define GPIO_EXT_DB_DIV_CNT(x)          (((u32)((x) & 0x0000007F) << 0))
 #define GPIO_GET_EXT_DB_DIV_CNT(x)      ((u32)(((x >> 0) & 0x0000007F)))
 /** @} */
 /** @} */
@@ -278,6 +284,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -312,7 +322,7 @@ typedef struct {
 /**
   * @brief  GPIO IRQ Function Definition
   */
-typedef void (*GPIO_IRQ_FUN)(VOID *Data, u32 Id);
+typedef void (*GPIO_IRQ_FUN)(void *Data, u32 Id);
 
 /**
   * @brief  GPIO USER IRQ Function Definition
@@ -432,11 +442,11 @@ typedef void (*GPIO_USER_IRQ_FUN)(u32 Id);
 _LONG_CALL_ void GPIO_WriteBit(u32 GPIO_Pin, u32 BitVal);
 _LONG_CALL_ u32 GPIO_ReadDataBit(u32 GPIO_Pin);
 _LONG_CALL_ void GPIO_DeInit(u32 GPIO_Pin);
-_LONG_CALL_ void GPIO_UserRegIrq(u32 GPIO_Pin, VOID *IrqHandler, VOID *IrqData);
+_LONG_CALL_ void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData);
 _LONG_CALL_ void GPIO_INTMode(u32 GPIO_Pin, u32 NewState, u32 GPIO_ITTrigger, u32 GPIO_ITPolarity, u32 GPIO_ITDebounce);
 _LONG_CALL_ void GPIO_INTConfig(u32 GPIO_Pin, u32 NewState);
 _LONG_CALL_ void GPIO_Init(GPIO_InitTypeDef  *GPIO_InitStruct);
-_LONG_CALL_ u32 GPIO_INTHandler(IN VOID *pData);
+_LONG_CALL_ u32 GPIO_INTHandler(void *pData);
 _LONG_CALL_ void GPIO_Direction(u32 GPIO_Pin, u32 data_direction);
 _LONG_CALL_ u32 GPIO_PortRead(u32 GPIO_Port, u32 GPIO_Mask);
 _LONG_CALL_ void GPIO_PortWrite(u32 GPIO_Port, u32 GPIO_Mask, u32 Port_State);
@@ -447,6 +457,10 @@ _LONG_CALL_ void GPIO_LevelSync(u32 GPIO_Port, u32 NewState);
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

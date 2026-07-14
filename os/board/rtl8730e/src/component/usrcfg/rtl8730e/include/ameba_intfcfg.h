@@ -1,14 +1,22 @@
 /*
- *  Routines to access hardware
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
  *
- *  Copyright (c) 2013 Realtek Semiconductor Corp.
- *
- *  This module is a confidential and proprietary property of RealTek and
- *  possession or use of this module requires written permission of RealTek.
+ * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _AMEBA_INTCFG_H_
-#define _AMEBA_INTCFG_H_
+
+#ifndef _AMEBA_INTFCFG_H_
+#define _AMEBA_INTFCFG_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern SDIOHCFG_TypeDef sdioh_config;
+extern const u8 SDIO_PAD[2][6];
+extern u8 SDH_Pin_Grp;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

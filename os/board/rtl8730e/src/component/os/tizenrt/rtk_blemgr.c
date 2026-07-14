@@ -1,6 +1,6 @@
 /******************************************************************
  *
- * Copyright 2022 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -230,10 +230,10 @@ struct trble_ops g_trble_drv_ops = {
 trble_result_e trble_netmgr_init(struct bledev *dev, trble_client_init_config *client, trble_server_init_config *server)
 {
 	trble_result_e ret = TRBLE_INVALID_ARGS;
-	 if (!wifi_is_running(0)) {
-	 	TRBLE_TEST_ERR("[TRBLE] WiFi is off. Please turn on WiFi first.\n");
-	 	return TRBLE_FAIL;
-	 }
+	if (!wifi_is_running(0)) {
+		TRBLE_TEST_ERR("[TRBLE] WiFi is off. Please turn on WiFi first.\n");
+		return TRBLE_FAIL;
+	}
 #ifdef CONFIG_AMEBASMART_BLE_SCATTERNET
 	if (client != NULL && server != NULL) {
 		ret = rtw_ble_combo_init(client, server);
@@ -277,9 +277,8 @@ trble_result_e trble_netmgr_deinit(struct bledev *dev)
 
 trble_result_e trble_netmgr_get_mac_addr(struct bledev *dev, uint8_t mac[TRBLE_BD_ADDR_MAX_LEN])
 {
-	if (_check_mac_empty(dev->hwaddr)){
-		if (!hci_platform_get_ble_mac_address(mac))
-		{
+	if (_check_mac_empty(dev->hwaddr)) {
+		if (!rtk_bt_le_gap_get_bd_addr(mac)) {
 			return TRBLE_FAIL;
 		}
 	} else {
@@ -348,16 +347,11 @@ trble_result_e trble_netmgr_conn_is_any_active(struct bledev *dev, bool *is_acti
 
 trble_result_e trble_netmgr_conn_param_update(struct bledev *dev, trble_conn_handle *conn_handle, trble_conn_param *conn_param)
 {
-	if (conn_param->role == TRBLE_SLAVE_CONN_PARAM_UPDATE)
-	{
+	if (conn_param->role == TRBLE_SLAVE_CONN_PARAM_UPDATE) {
 		return rtw_ble_server_conn_param_update(conn_handle, conn_param);
-	}
-	else if (conn_param->role == TRBLE_MASTER_CONN_PARAM_UPDATE)
-	{
+	} else if (conn_param->role == TRBLE_MASTER_CONN_PARAM_UPDATE) {
 		return rtw_ble_client_conn_param_update(conn_handle, conn_param);
-	}
-	else
-	{
+	} else {
 		return TRBLE_FAIL;
 	}
 	return TRBLE_SUCCESS;
@@ -366,11 +360,10 @@ trble_result_e trble_netmgr_conn_param_update(struct bledev *dev, trble_conn_han
 trble_result_e trble_netmgr_ioctl(struct bledev *dev, trble_msg_s *msg)
 {
 	trble_result_e ret = TRBLE_UNSUPPORTED;
-	
+
 	if (msg->cmd == TRBLE_MSG_GET_VERSION) {
-		// uint8_t *version = (uint8_t *)msg->data;
-		// temporary remove
-		// ret = rtw_ble_get_version(version);
+		uint8_t *version = (uint8_t *)msg->data;
+		ret = rtw_ble_server_get_version(version);
 	}
 	return ret;
 }
@@ -528,7 +521,7 @@ trble_result_e trble_netmgr_attr_get_data(struct bledev *dev, trble_attr_handle 
 {
 	trble_result_e ret = TRBLE_SUCCESS;
 
-	if (data != NULL && data->data != NULL){
+	if (data != NULL && data->data != NULL) {
 		data->data = rtw_ble_server_att_get_data_ptr(attr_handle);
 		data->length = rtw_ble_server_att_get_length(attr_handle);
 	} else {
@@ -569,7 +562,7 @@ trble_result_e trble_netmgr_get_conn_handle_by_addr(struct bledev *dev, uint8_t 
 	uint8_t addr[TRBLE_BD_ADDR_MAX_LEN];
 	_reverse_mac(bd_addr, addr);
 	*con_handle = rtw_ble_server_get_conn_handle_by_address(addr);
-	if (*con_handle < 16 || *con_handle > 26){
+	if (*con_handle < 16 || *con_handle > 26) {
 		return TRBLE_FAIL;
 	}
 	return TRBLE_SUCCESS;
@@ -616,6 +609,7 @@ trble_result_e trble_netmgr_start_adv(struct bledev *dev)
 {
 	return rtw_ble_server_start_adv();
 }
+
 #if defined (RTK_BLE_5_0_AE_ADV_SUPPORT) && RTK_BLE_5_0_AE_ADV_SUPPORT
 trble_result_e trble_netmgr_create_multi_adv(struct bledev *dev, uint8_t adv_event_prop, uint32_t *primary_adv_interval,
 													uint8_t own_addr_type, uint8_t *own_addr_val, uint8_t *adv_handle)
@@ -655,7 +649,6 @@ trble_result_e trble_netmgr_coc_init(struct bledev *dev, trble_le_coc_init_confi
 {
 	return rtw_ble_le_coc_init(le_coc);
 }
-
 
 trble_result_e trble_netmgr_coc_register_psm(struct bledev *dev, uint8_t is_reg, uint16_t psm)
 {

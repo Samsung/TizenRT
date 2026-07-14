@@ -1,25 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    ameba_lcdc.c
-  * @author
-  * @version V1.0.0
-  * @date    2020-11-04
-  * @brief   This file contains all the functions prototypes for the LCDC firmware
-  *             library, including the following functionalities of LCD controller:
-
-  *           - LCDC Initialization For DSI Vedio Mode
-  *           - write/read data through R-BUS to DSI Command Mode
-  *           - Interrupts and flags management
-  *
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2020, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
 
@@ -271,9 +254,9 @@ u8 LCDC_CheckLCDCReady(LCDC_TypeDef *LCDCx)
 {
 	/*get the LCDC Ready state of LCDC_STATUS*/
 	if (LCDCx->LCDC_STATUS & LCDC_BIT_LCDCREADY) {
-		return _TRUE;
+		return TRUE;
 	} else {
-		return _FALSE;
+		return FALSE;
 	}
 }
 

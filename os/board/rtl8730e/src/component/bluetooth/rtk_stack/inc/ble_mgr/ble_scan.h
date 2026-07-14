@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-/** @defgroup BLE_SCAN Ble Scan magager
-  * @brief Ble scan manager module
+/** @defgroup LE_SCAN LE Scan
+  * @brief LE scan manager module
   * @note Each of other module can independently manage scan policies and actions by scan handle,
   *       and has independent callback to receive and filter reported advertising packets.
   * @{
@@ -24,28 +24,38 @@ extern "C" {
 /*============================================================================*
  *                              Constants
  *============================================================================*/
-
-/** @defgroup BLE_SCAN_FILTER BLE SCAN FILTER
-  * @brief Ble scan filter flags to filter reported advertising packets.
+/** @defgroup LE_SCAN_Exported_Macros LE Scan Exported Macros
   * @{
   */
-#define BLE_SCAN_FILTER_NONE            0x00 /**< Report all advertising packets */
-#define BLE_SCAN_FILTER_EVT_TYPE_BIT    0x01 /**< Flag used to filter reported advertising packets by Advertising Event Properties*/
-#define BLE_SCAN_FILTER_ADV_DATA_BIT    0x02 /**< Flag used to filter reported advertising packets by Advertising Data*/
-#define BLE_SCAN_FILTER_REMOTE_ADDR_BIT 0x04 /**< Flag used to filter reported advertising packets by remote address type and remote address*/
+
+/** @defgroup LE_SCAN_FILTER LE Scan Filter
+  * @brief LE scan filter flags to filter reported advertising packets.
+  * @{
+  */
+#define BLE_SCAN_FILTER_NONE            0x00 /**< Report all advertising packets. */
+#define BLE_SCAN_FILTER_EVT_TYPE_BIT    0x01 /**< Flag used to filter reported advertising packets by Advertising Event Properties. */
+#define BLE_SCAN_FILTER_ADV_DATA_BIT    0x02 /**< Flag used to filter reported advertising packets by Advertising Data. */
+#define BLE_SCAN_FILTER_REMOTE_ADDR_BIT 0x04 /**< Flag used to filter reported advertising packets by remote address type and remote address. */
 /** @} End BLE_SCAN_FILTER */
 
+/** End of LE_SCAN_Exported_Macros
+ * @}
+ */
 
 /*============================================================================*
  *                              Types
  *============================================================================*/
+/** @defgroup LE_SCAN_Exported_Types LE Scan Exported Types
+  * @{
+  */
+
 /**
- * @brief Ble scan handle, which is used to manage a set of scan policy and scan actions.
+ * @brief LE scan handle, which is used to manage a set of scan policy and scan actions.
  */
 typedef void *BLE_SCAN_HDL;
 
 /**
- * @brief Define the ble scan events would be reported to and handled in ble scan callback.
+ * @brief Define the LE scan events that would be reported to and handled in LE scan callback.
  */
 typedef enum
 {
@@ -55,12 +65,12 @@ typedef enum
 } BLE_SCAN_EVT;
 
 /**
- * @brief Used to filter reported adv by remote address type and remote address when @ref BLE_SCAN_FILTER_REMOTE_ADDR_BIT is set.
+ * @brief Used to filter reported ADV by remote address type and remote address when @ref BLE_SCAN_FILTER_REMOTE_ADDR_BIT is set.
  */
 typedef struct
 {
-    uint8_t bd_type; /**< Refer to @ref T_GAP_REMOTE_ADDR_TYPE*/
-    uint8_t bd_addr[6]; /**< Remote address*/
+    uint8_t bd_type; /**< Refer to @ref T_GAP_REMOTE_ADDR_TYPE. */
+    uint8_t bd_addr[6]; /**< Remote address. */
 } BLE_SCAN_ADDR;
 
 /**
@@ -68,17 +78,17 @@ typedef struct
  */
 typedef struct
 {
-    uint16_t filter_flags; /**< Filter falgs @ref BLE_SCAN_FILTER*/
+    uint16_t filter_flags; /**< Filter flags @ref BLE_SCAN_FILTER. */
     uint16_t evt_type; /**< Advertising event properties @ref EXT_ADV_EVT_PROP intended to filter: used when @ref BLE_SCAN_FILTER_EVT_TYPE_BIT
-                           is set in filter_flags*/
+                           is set in filter_flags. */
     uint16_t ad_len; /**< The length of data pointed by @ref ad_struct intended to filter: used when @ref BLE_SCAN_FILTER_ADV_DATA_BIT
-                         is set in filter_flags*/
+                         is set in filter_flags. */
     uint8_t addr_num; /**< Number of address(es) intended to filter, it should be corresponding with address(es) @ref p_scan_addr pointed to: used
-                          when @ref BLE_SCAN_FILTER_REMOTE_ADDR_BIT is set in filter_flags*/
-    uint8_t *ad_struct; /**< Advertising data intended to filter, and the first byte should be @ref ADV_DATA_TYPE : used when
-                            @ref BLE_SCAN_FILTER_ADV_DATA_BIT is set in filter_flags*/
-    BLE_SCAN_ADDR *p_scan_addr; /**< @ref BLE_SCAN_ADDR, Pointer to remote address(es) intended to
-                                     filter: used when @ref BLE_SCAN_FILTER_REMOTE_ADDR_BIT is set in filter_flags*/
+                          when @ref BLE_SCAN_FILTER_REMOTE_ADDR_BIT is set in filter_flags. */
+    uint8_t *ad_struct; /**< Advertising data intended to filter, and the first byte should be @ref ADV_DATA_TYPE: used when
+                            @ref BLE_SCAN_FILTER_ADV_DATA_BIT is set in filter_flags. */
+    BLE_SCAN_ADDR *p_scan_addr; /**< @ref BLE_SCAN_ADDR. Pointer to remote address(es) intended to
+                                     filter: used when @ref BLE_SCAN_FILTER_REMOTE_ADDR_BIT is set in filter_flags. */
 } BLE_SCAN_FILTER;
 
 /**
@@ -86,7 +96,7 @@ typedef struct
  */
 typedef union
 {
-    T_LE_EXT_ADV_REPORT_INFO *report; /**< data of @ref BLE_SCAN_REPORT*/
+    T_LE_EXT_ADV_REPORT_INFO *report; /**< Data of @ref BLE_SCAN_REPORT. */
 } BLE_SCAN_EVT_DATA;
 
 /**
@@ -94,14 +104,14 @@ typedef union
  */
 typedef struct
 {
-    T_GAP_LOCAL_ADDR_TYPE own_addr_type; /**< Local address type @ref T_GAP_LOCAL_ADDR_TYPE*/
-    uint8_t phys; /**< Scan advertisements on the specified PHY: @ref EXT_SCAN_PHY */
-    T_GAP_SCAN_FILTER_POLICY    ext_filter_policy; /**< Used to set scan filter policy */
-    T_GAP_SCAN_FILTER_DUPLICATE ext_filter_duplicate; /**< Used to set scan duplicate filter type */
+    T_GAP_LOCAL_ADDR_TYPE own_addr_type; /**< Local address type @ref T_GAP_LOCAL_ADDR_TYPE. */
+    uint8_t phys; /**< Scan advertisements on the specified PHY: @ref EXT_SCAN_PHY. */
+    T_GAP_SCAN_FILTER_POLICY    ext_filter_policy; /**< Used to set scan filter policy. */
+    T_GAP_SCAN_FILTER_DUPLICATE ext_filter_duplicate; /**< Used to set scan duplicate filter type. */
     T_GAP_LE_EXT_SCAN_PARAM scan_param_1m; /**< Used to set scan param for LE 1M PHY when
-                                                @ref GAP_EXT_SCAN_PHYS_1M_BIT is set in phys */
+                                                @ref GAP_EXT_SCAN_PHYS_1M_BIT is set in phys. */
     T_GAP_LE_EXT_SCAN_PARAM scan_param_coded; /**< Used to set scan param for LE Coded PHY when
-                                                   @ref GAP_EXT_SCAN_PHYS_CODED_BIT is set in phys*/
+                                                   @ref GAP_EXT_SCAN_PHYS_CODED_BIT is set in phys. */
 } BLE_SCAN_PARAM;
 
 /**
@@ -109,13 +119,21 @@ typedef struct
  */
 typedef void (*BLE_SCAN_CB)(BLE_SCAN_EVT evt, BLE_SCAN_EVT_DATA *p_data);
 
+/** End of LE_SCAN_Exported_Types
+ * @}
+ */
+
 /*============================================================================*
- *                              Functisons
+ *                              Functions
  *============================================================================*/
+/** @defgroup LE_SCAN_Exported_Functions LE Scan Exported Functions
+  * @{
+  */
+
 /**
  * @brief Used to get current scan state.
  * @note It is generated according to all of the scan handles' scan states.
- * @return @ref GAP_SCAN_STATE
+ * @return Scan state.  @ref GAP_SCAN_STATE
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -132,9 +150,9 @@ uint8_t ble_scan_get_cur_state(void);
  * @brief Used to get current scan param.
  * @note It is generated according to all of the scan handles' scan param.
  * @param[out] p_scan_param  the current scan param would be filled in p_scan_param.
- * @return    bool
- * @retval    true  succeeded to get current scan param.
- * @retval    false  failed to get current scan param.
+ * @return    Operation result.
+ * @retval    true  Succeeded to get current scan param.
+ * @retval    false Failed to get current scan param.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -152,9 +170,9 @@ bool ble_scan_get_cur_param(BLE_SCAN_PARAM *p_scan_param);
  * @brief Used to get current scan param used by scan handle.
  * @param[in] hdl @ref  BLE_SCAN_HDL
  * @param[out] p_scan_param  if the scan handle is existed, the current scan param used by hdl would be filled in p_scan_param.
- * @return    bool
- * @retval    true  succeeded to get current scan param.
- * @retval    false  failed to get current scan param.
+ * @return    Operation result.
+ * @retval    true  Succeeded to get current scan param.
+ * @retval    false Failed to get current scan param.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -201,9 +219,9 @@ bool ble_scan_get_param_by_hdl(BLE_SCAN_HDL hdl, BLE_SCAN_PARAM *p_scan_param);
  * @brief Used to set current scan param used by scan handle.
  * @param[in] hdl  @ref BLE_SCAN_HDL
  * @param[in] p_scan_param  used to set the hdl's current scan param.
- * @return    bool
- * @retval    true  succeeded to set the hdl's scan param.
- * @retval    false  failed to set the hdl's scan param.
+ * @return    Operation result.
+ * @retval    true  Succeeded to set the hdl's scan param.
+ * @retval    false Failed to set the hdl's scan param.
  *
  * <b>Example usage</b>
  * \code{.c}
@@ -233,12 +251,12 @@ bool ble_scan_set_param_by_hdl(BLE_SCAN_HDL hdl, BLE_SCAN_PARAM *p_scan_param);
 
 /**
  * @brief Used to request to start scan by scan handle.
- * @param[out] hdl  @ref BLE_SCAN_HDL, pointer to the created scan handle.
- * @param[in] cb  @ref BLE_SCAN_CB, used to receive and handle @ref BLE_SCAN_EVT
- * @param[in] p_scan_param  used to set the hdl's scan param.
- * @param[in] p_filter  used to set the hdl's filter policy.
+ * @param[out] p_hdl  @ref BLE_SCAN_HDL, pointer to the created scan handle.
+ * @param[in] cb  @ref BLE_SCAN_CB, used to receive and handle @ref BLE_SCAN_EVT.
+ * @param[in] p_scan_param  Used to set the hdl's scan param.
+ * @param[in] p_filter  Used to set the hdl's filter policy.
  * @return Operation result.
- * @retval true Operation success.
+ * @retval true  Operation success.
  * @retval false Operation failure.
  *
  * <b>Example usage</b>
@@ -290,7 +308,7 @@ bool ble_scan_set_param_by_hdl(BLE_SCAN_HDL hdl, BLE_SCAN_PARAM *p_scan_param);
         scan_filter.addr_num = 2;
         scan_filter.p_scan_addr = scan_addr;
 
-        //filter adv event property
+        //filter ADV event property
         scan_filter.evt_type = LE_EXT_ADV_LEGACY_ADV_NON_SCAN_NON_CONN_UNDIRECTED;
 
         bool rtn = ble_scan_start(&ble_scan_hdl, bud_scan_cb, &param, &scan_filter);
@@ -304,9 +322,9 @@ bool ble_scan_start(BLE_SCAN_HDL *p_hdl, BLE_SCAN_CB cb,
 
 /**
  * @brief Used to request to stop scan by scan handle.
- * @param[in] hdl  @ref BLE_SCAN_HDL
+ * @param[in] p_hdl  @ref BLE_SCAN_HDL.
  * @return Operation result.
- * @retval true Operation success.
+ * @retval true  Operation success.
  * @retval false Operation failure.
  *
  * <b>Example usage</b>
@@ -324,7 +342,7 @@ bool ble_scan_stop(BLE_SCAN_HDL *p_hdl);
  * @note When scan filter policy( @ref T_GAP_SCAN_FILTER_POLICY) is @ref GAP_SCAN_FILTER_WHITE_LIST or
  *       @ref GAP_SCAN_FILTER_WHITE_LIST_RPA, it could be used to pause scan before modifying whitelist.
  * @return Operation result.
- * @retval true Operation success.
+ * @retval true  Operation success.
  * @retval false Operation failure.
  *
  * <b>Example usage</b>
@@ -351,7 +369,7 @@ bool ble_scan_pause(void);
  * @return Operation result.
  * @note When scan filter policy( @ref T_GAP_SCAN_FILTER_POLICY) is @ref GAP_SCAN_FILTER_WHITE_LIST or
  *       @ref GAP_SCAN_FILTER_WHITE_LIST_RPA, it could be used to resume scan after modifying whitelist.
- * @retval true Operation success.
+ * @retval true  Operation success.
  * @retval false Operation failure.
  *
  * <b>Example usage</b>
@@ -373,7 +391,11 @@ bool ble_scan_pause(void);
  */
 bool ble_scan_resume(void);
 
-/** End of BLE_SCAN
+/** End of LE_SCAN_Exported_Functions
+ * @}
+ */
+
+/** End of LE_SCAN
 * @}
 */
 

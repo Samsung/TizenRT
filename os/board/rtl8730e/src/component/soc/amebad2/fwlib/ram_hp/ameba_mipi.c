@@ -1,29 +1,12 @@
-/**
-  ******************************************************************************
-  * @file    ameba_mipi.c
-  * @author
-  * @version V1.0.0
-  * @date    2021-05-27
-  * @brief   This file contains all the functions prototypes for the MIPI firmware
-  *             library, including the following functionalities of DSI/DPHY controller:
-
-  *           - MIPI Initialization For DSI Vedio Mode
-  *           - DSI Command Mode
-  *           - Interrupts and flags management
-  *
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2020, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
 
-static const char *TAG = "MIPI";
+static const char *const TAG = "MIPI";
 
 void MIPI_DPHY_Reset(MIPI_TypeDef *MIPIx)
 {
@@ -112,7 +95,7 @@ void MIPI_DPHY_PLL_Set(MIPI_TypeDef *MIPIx, u32 dataLane_freq)
 	u32 freq_div, Value32;
 
 	if (dataLane_freq < 100 || dataLane_freq > 1000) {
-		RTK_LOGE(TAG, "dataLane_freq %dM is not support\n", dataLane_freq);
+		RTK_LOGE(TAG, "dataLane_freq %luM is not support\n", dataLane_freq);
 		return;
 	} else if (dataLane_freq <= 200) { //100Mbps ~ 200Mbps
 		div_number = 4;
@@ -583,7 +566,7 @@ void MIPI_StructInit(MIPI_InitTypeDef *MIPI_InitStruct)
 
 	MIPI_InitStruct->MIPI_LineTime = 1250 * 3 / MIPI_InitStruct->MIPI_LaneNum;
 	MIPI_InitStruct->MIPI_BllpLen = MIPI_InitStruct->MIPI_LineTime / 2;
-#endif
+#endif /* CONFIG_PLATFORM_TIZENRT_OS */
 
 }
 
@@ -615,4 +598,3 @@ void MIPI_Init(MIPI_TypeDef *MIPIx, MIPI_InitTypeDef *MIPI_InitStruct)
 	MIPI_DPHY_init(MIPIx, MIPI_InitStruct);
 	MIPI_DSI_init(MIPIx, MIPI_InitStruct);
 }
-

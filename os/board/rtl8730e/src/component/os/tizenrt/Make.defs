@@ -52,8 +52,11 @@
 CSRCS += lwip_intf_tizenrt.c \
        ethernetif_tizenrt.c
 
-CSRCS += rtk_blemgr.c \
-	 rtk_netmgr.c \
+CSRCS += rtk_netmgr.c
+
+ifdef CONFIG_AMEBASMART_BLE
+CSRCS += rtk_blemgr.c
+endif
 
 ifeq ($(CONFIG_WIFI_CSI),y)
 CSRCS += rtk_wifi_csi.c

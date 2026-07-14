@@ -78,6 +78,7 @@
 #include "timer_api.h"
 #include "ameba_i2c.h"
 #include "ameba_spi.h"
+#include "os_wrapper.h"
 #ifdef CONFIG_FLASH_PARTITION
 #include "common.h"
 #endif
@@ -86,8 +87,8 @@
 #include "up_internal.h"
 
 #include "ameba_soc.h"
-#include "osdep_service.h"
 #include "platform_opts_bt.h"
+#include "amebasmart_reboot_reason.h"
 
 #ifdef CONFIG_AMEBASMART_BOR
 #include "ameba_bor.h"
@@ -396,7 +397,8 @@ static void np_lp_status_timer_hdl(void)
 {
 	/* Added to inspect the value of BKUP_REG2 */
 	u32 boot_reason_reg2 = BKUP_Read(BKUP_REG2);
-	if (boot_reason_reg2 != 0x0) {
+	/* NP_LP_FAULT indicates hard fault in NP/LP core, IPC_DEV_WAITING indicates IPC dev waiting for ACK from host */
+	if (boot_reason_reg2 == NP_LP_FAULT || boot_reason_reg2 == IPC_DEV_WAITING) {
 		lldbg("boot_reason_reg2 0x%x \n", boot_reason_reg2);
 		ASSERT(boot_reason_reg2 == 0x0);
 	}
@@ -480,17 +482,16 @@ void board_initialize(void)
 	/* Start timer to check KM4/KM0 status */
 	init_np_lp_status_timer();
 #ifdef CONFIG_AMEBASMART_WIFI
-	wlan_initialize();
+	wifi_init();
 #endif
-
+	/* Set delay function & critical function for hw ipc sema */
+	IPC_patch_function(tizenrt_critical_enter, tizenrt_critical_exit);
+	IPC_SEMDelayStub(DelayMs);
 #ifdef CONFIG_WIFI_CSI
 	if (rtl8730e_rtk_csi_initialize(0) != 0) {
 		lldbg("rtl8730e_rtk_csi initialization failed\n");
 	}
-#endif	
-
-	/* Enable IPC buffered print */
-	inic_ipc_buffered_printf_set_np_enable(1);
+#endif
 
 #ifdef CONFIG_AUDIO_ALC1019
 	if (rtl8730e_alc1019_initialize(0) != 0) {
@@ -526,7 +527,7 @@ void board_initialize(void)
 	ipc_msg_loguart.msg_len = 1;
 	ipc_msg_loguart.rsvd = 0; /* for coverity init issue */
 	ipc_send_message(IPC_AP_TO_LP, IPC_A2L_DISLOGUART, &ipc_msg_loguart);
-	
+
 	up_print_iwdg_status();
 }
 #else

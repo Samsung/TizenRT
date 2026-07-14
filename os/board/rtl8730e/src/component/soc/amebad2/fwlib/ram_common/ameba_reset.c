@@ -1,25 +1,9 @@
-/**
-  ******************************************************************************
-  * @file    rtl8721d_chipen.c
-  * @author
-  * @version V1.0.0
-  * @date    2020-10-30
-  * @brief   This file provides firmware functions to manage the following
-  *          functionalities of the Debug Timer peripheral:
-  *           - Initialization
-  *           - Get/Set timer counter
-  *           - switch clock
-  *           - Get/Set atomic value
-   *           - Get/Set Scratch value
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2015, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "ameba_soc.h"
 
 
@@ -40,6 +24,26 @@ void CHIPEN_WorkMode(enum CHIPEN_WORK_MODE mode)
 	Temp &= ~ AON_MASK_CHIPEN_INTR_MODE;
 	Temp |= AON_CHIPEN_INTR_MODE(mode);
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AON_CHIPEN_CTRL, Temp);
+}
+
+/**
+ * @brief  Get CHIPEN work mode
+ * @param  None
+ * @retval mode: Work mode of CHIPEN. This value can be:
+ *    CHIPEN_HW_RESET_MODE ,
+ *    CHIPEN_INT_RESET_MODE,
+ *    CHIPEN_PULSE_RESET_MODE.
+ */
+u8 CHIPEN_WorkModeGet(void)
+{
+	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_CHIPEN_CTRL);
+	u8 Mode = AON_GET_CHIPEN_INTR_MODE(Temp);
+
+	if (Mode >= CHIPEN_PULSE_RESET_MODE) {
+		Mode = CHIPEN_PULSE_RESET_MODE;
+	}
+
+	return Mode;
 }
 
 /**
@@ -75,14 +79,14 @@ void CHIPEN_DebounceSet(u32 Debounce)
   * FALSE: Released
   */
 
-BOOL CHIPEN_IsPress(void)
+bool CHIPEN_IsPress(void)
 {
 	u32 Temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AON_CHIPEN_CTRL);
 
 	if (Temp & AON_BIT_CHIPEN_ST) {
-		return TRUE;
-	} else {
 		return FALSE;
+	} else {
+		return TRUE;
 	}
 }
 
@@ -190,7 +194,7 @@ u32 CHIPEN_GetINT(void)
   */
 u32 BOOT_Reason(void)
 {
-	return (u32) HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW);
+	return (u32)(HAL_READ16(SYSTEM_CTRL_BASE_LP, REG_LSYS_BOOT_REASON_SW) & 0xFFFF);
 }
 
 /**
@@ -215,6 +219,6 @@ void System_Reset(void)
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_CTRL, Trig);
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LSYS_SW_RST_TRIG, SYS_RESET_TRIG);
 
+	/* wait for reset */
+	while (1);
 }
-
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

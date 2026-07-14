@@ -22,5 +22,8 @@ struct eap_wsc_data {
 };
 #endif
 int eap_server_wsc_register(void);
+void *eap_wsc_server_init(char *identity, char identity_len);
+void *eap_wsc_server_process_hdl(void *priv, void *req, u8 id);
+void eap_wsc_server_reset(void *priv);
 
 #endif /* EAP_WSC_H */

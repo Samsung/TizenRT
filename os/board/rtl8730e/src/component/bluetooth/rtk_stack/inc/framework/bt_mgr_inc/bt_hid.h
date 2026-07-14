@@ -65,6 +65,15 @@ bool bt_hid_init(uint8_t link_num, bool boot_proto_mode);
 /**
  * bt_hid.h
  *
+ * \brief  De-initialize HID profile.
+ *
+ * \ingroup BT_HID
+ */
+void bt_hid_deinit(void);
+
+/**
+ * bt_hid.h
+ *
  * \brief  Set HID descriptor.
  *
  * \param[in] descriptor          HID report descriptor.

@@ -184,8 +184,6 @@ enum wps_process_res wps_enrollee_process_msg(struct wps_data *wps,
 		const struct wpabuf *msg);
 /* wps_registrar.c */
 void *wps_registrar_get_msg(void *priv, enum wsc_op_code *op_code);
-u32 wps_registrar_process_msg(void *priv, enum wsc_op_code op_code, const void *pmsg);
-
 int wps_build_cred(struct wps_data *wps, struct wpabuf *msg);
 int wps_device_store(struct wps_registrar *reg,
 					 struct wps_device_data *dev, const u8 *uuid);
@@ -194,5 +192,18 @@ void wps_registrar_selected_registrar_changed(struct wps_registrar *reg,
 const u8 *wps_authorized_macs(struct wps_registrar *reg, size_t *count);
 int wps_registrar_pbc_overlap(struct wps_registrar *reg,
 							  const u8 *addr, const u8 *uuid_e);
+void *wps_registrar_init(void *priv, void *pcfg);
+void wps_registrar_deinit(void *priv);
+void *wps_registrar_alloc(void);
+u32 wps_registrar_process_msg(void *priv, u32 op_code, const void *pmsg);
+void *wps_registrar_get_msg(void *priv, u8 *op_code);
+int wps_registrar_add_pin(void *priv, const u8 *addr,
+						  const u8 *uuid, const u8 *pin, size_t pin_len,
+						  int timeout);
+int wps_registrar_button_pushed(void *priv,
+								const u8 *p2p_dev_addr);
+int wps_registrar_wps_cancel(void *priv);
+
+
 
 #endif /* WPS_I_H */

@@ -1,33 +1,26 @@
-/**
-  ******************************************************************************
-  * @file    rtl8721d_rtc.c
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file provides firmware functions to manage the following
-  *          functionalities of the Real-Time Clock (RTC) peripheral:
-  *           - Initialization
-  *           - Calendar (Time and Date) configuration
-  *           - Alarms configuration
-  *           - WakeUp Timer configuration
-  *           - Daylight Saving configuration
-  *           - Output pin Configuration
-  *           - Smooth digital Calibration configuration
-  *           - TimeStamp configuration
-  *           - Interrupts and flags management
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2015, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "ameba_soc.h"
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup RTC
+* @brief RTC driver modules
+* @{
+*/
+
+/* Exported functions --------------------------------------------------------*/
+/** @defgroup RTC_Exported_Functions RTC Exported Functions
+  * @{
+  */
 
 /**
-  * @brief  Converts a 2 digit decimal to BCD format.
+  * @brief  Convert a 2 digit decimal to BCD format.
   * @param  Value: Byte to be converted.
   * @retval Converted byte
   */
@@ -56,7 +49,7 @@ u8 RTC_Bcd2ToByte(u8 Value)
 }
 
 /**
-  * @brief  Enters the RTC Initialization mode.
+  * @brief  Enter the RTC Initialization mode.
   * @note  the time, date and prescaler registers can be updated in init mode.
   * @param  None
   * @retval status value:
@@ -95,7 +88,7 @@ u32 RTC_EnterInitMode(void)
 }
 
 /**
-  * @brief  Exits the RTC Initialization mode.
+  * @brief  Exit the RTC Initialization mode.
   * @note   When the initialization sequence is complete, the calendar restarts
   *         counting after 4 RTCCLK cycles.
   * @param  None
@@ -111,7 +104,7 @@ void RTC_ExitInitMode(void)
 }
 
 /**
-  * @brief  Waits until the RTC Time register (RTC_TR) is
+  * @brief  Wait until the RTC Time register (RTC_TR) is
   *         synchronized with RTC APB clock.
   * @note   To read the calendar through the shadow registers after Calendar
   *         initialization, calendar update or after wakeup from low power modes
@@ -166,7 +159,7 @@ u32 RTC_WaitForSynchro(void)
 }
 
 /**
-  * @brief  Enables or Disables the Bypass Shadow feature.
+  * @brief  Enable or Disable the Bypass Shadow feature.
   * @note   When the Bypass Shadow is enabled the calendar value are taken
   *         directly from the Calendar counter.
   * @param  NewState: new state of the Bypass Shadow feature.
@@ -211,7 +204,7 @@ u32 RTC_BypassShadowCmd(u32 NewState)
 }
 
 /**
-  * @brief  Fills each RTC_InitStruct member with its default value.
+  * @brief  Fill each RTC_InitStruct member with its default value.
   * @param  RTC_InitStruct: pointer to a RTC_InitTypeDef structure which will be
   *         initialized.
   * @retval None
@@ -232,7 +225,7 @@ void RTC_StructInit(RTC_InitTypeDef *RTC_InitStruct)
 }
 
 /**
-  * @brief  Initializes the RTC registers according to the specified parameters
+  * @brief  Initialize the RTC registers according to the specified parameters
   *         in RTC_InitStruct.
   * @param  RTC_InitStruct: pointer to a RTC_InitTypeDef structure that contains
   *         the configuration information for the RTC peripheral.
@@ -292,7 +285,7 @@ u32 RTC_Init(RTC_InitTypeDef *RTC_InitStruct)
 }
 
 /**
-  * @brief  Fills each RTC_TimeStruct member with its default value
+  * @brief  Fill each RTC_TimeStruct member with its default value
   *         (Time = 00d:00h:00min:00sec).
   * @param  RTC_TimeStruct: pointer to a RTC_TimeTypeDef structure which will be
   *         initialized.
@@ -494,7 +487,7 @@ u32 RTC_SetTimeDayYear(u32 RTC_TimeDay, u32 RTC_TimeYear)
 }
 
 /**
-  * @brief  clear day over threshold pending interrupt.
+  * @brief  Clear day over threshold pending interrupt.
   * @retval None
   */
 void RTC_DayIntClear(void)
@@ -526,7 +519,7 @@ void RTC_DayIntClear(void)
 }
 
 /**
-  * @brief  Enables or disables the RTC day over threshold interrupt.
+  * @brief  Enable or disable the RTC day over threshold interrupt.
   * @param  NewState: new state of the RTC day over threshold interrupt.
   *          This parameter can be: ENABLE or DISABLE.
   */
@@ -734,7 +727,7 @@ u32 RTC_SetAlarm(u32 RTC_Format, RTC_AlarmTypeDef *RTC_AlarmStruct)
 }
 
 /**
-  * @brief  Fills each RTC_AlarmStruct member with its default value
+  * @brief  Fill each RTC_AlarmStruct member with its default value
   *         (Time = 00d:00h:00mn:20sec / Date = 1st day of the month/Mask =
   *         all fields are masked except Alarm Seconds field).
   * @param  RTC_AlarmStruct: pointer to a @ref RTC_AlarmTypeDef structure which
@@ -797,7 +790,7 @@ void RTC_GetAlarm(u32 RTC_Format, RTC_AlarmTypeDef *RTC_AlarmStruct)
 }
 
 /**
-  * @brief  Enables or disables the specified RTC Alarm.
+  * @brief  Enable or disable the specified RTC Alarm.
   * @param  NewState: new state of the specified alarm.
   *          This parameter can be: ENABLE or DISABLE.
   */
@@ -844,7 +837,7 @@ void RTC_AlarmCmd(u32 NewState)
 }
 
 /**
-  * @brief  clear alarm pending interrupt.
+  * @brief  Clear alarm pending interrupt.
   * @retval None
   */
 void RTC_AlarmClear(void)
@@ -876,7 +869,7 @@ void RTC_AlarmClear(void)
 }
 
 /**
-  * @brief  Waits until the RTC Wakeup timer enable bit (WUTE bit) is
+  * @brief  Wait until the RTC Wakeup timer enable bit (WUTE bit) is
   *         synchronized with RTC APB clock.
   * @note   The software must then wait until it is set again before
   *         wakeup timer works, which means that the WUTE bit have
@@ -990,7 +983,7 @@ u32 RTC_GetWakeup(void)
 }
 
 /**
-  * @brief  Enables or disables the specified RTC Alarm.
+  * @brief  Enable or disable the specified RTC Alarm.
   * @param  NewState: new state of the specified alarm.
   *          This parameter can be: ENABLE or DISABLE.
   * @note: wakeup timer starts down counting after 3 to 4 seconds
@@ -1036,7 +1029,7 @@ void RTC_WakeupCmd(u32 NewState)
 }
 
 /**
-  * @brief  clear wakeup pending interrupt.
+  * @brief  Clear wakeup pending interrupt.
   * @retval None
   */
 void RTC_WakeupClear(void)
@@ -1065,7 +1058,7 @@ void RTC_WakeupClear(void)
 }
 
 /**
-  * @brief  Adds or substract one hour from the current time.
+  * @brief  Add or substract one hour from the current time.
   * @param  RTC_DayLightSaving: the value of hour adjustment.
   *          This parameter can be one of the following values:
   *            @arg RTC_DayLightSaving_SUB1H: Substract one hour (winter time)
@@ -1123,7 +1116,7 @@ u32 RTC_DayLightSavingConfig(u32 RTC_DayLightSaving, u32 RTC_StoreOperation)
 }
 
 /**
-  * @brief  Returns the RTC Day Light Saving stored operation.
+  * @brief  Return the RTC Day Light Saving stored operation.
   * @retval RTC Day Light Saving stored operation.
   *          - RTC_StoreOperation_Reset
   *          - RTC_StoreOperation_Set
@@ -1136,7 +1129,7 @@ u32 RTC_GetStoreOperation(void)
 }
 
 /**
-  * @brief  Configures the RTC output.
+  * @brief  Configure the RTC output.
   * @param  RTC_Output: Specifies which signal will be routed to the RTC output.
   *          This parameter can be one of the following values:
   *            @arg RTC_Output_Disable: No output selected
@@ -1188,7 +1181,7 @@ u32 RTC_OutputConfig(u32 RTC_Output)
 }
 
 /**
-  * @brief  Configures the Coarse calibration parameters.
+  * @brief  Configure the Coarse calibration parameters.
   * @param  CalibSign: CalibSign specifies the sign of the coarse calibration value.
   *          This parameter can be  one of the following values:
   *            @arg RTC_CalibSign_Positive: The value sign is positive
@@ -1258,5 +1251,6 @@ u32 RTC_SmoothCalibConfig(u32 CalibSign, u32 Value, u32 CalibPeriod, u32 Calib_E
 
 	return status;
 }
-
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
+/**@}*/
+/**@}*/
+/**@}*/

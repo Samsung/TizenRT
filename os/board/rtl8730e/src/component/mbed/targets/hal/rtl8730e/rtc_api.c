@@ -59,15 +59,15 @@ static inline bool is_leap_year(unsigned int year)
 /**
   * @brief  Calculate total days in a specified month of a specified year.
   * @param  year: Actual year - 1900.
-  * @param  month: Specified month, which can be 0~11.
+  * @param  month: Specified the number of months from  a specified year.
   * @note 0 represents January.
   * @return Number of days in the month of the year.
   */
 static u8 days_in_month(u8 month, u8 year)
 {
-	u8 ret = dim[month];
+	u8 ret = dim[month % 12];
 	if (ret == 0) {
-		ret = is_leap_year(year) ? 29 : 28;
+		ret = is_leap_year(year + month / 12) ? 29 : 28;
 	}
 	return ret;
 }
@@ -240,7 +240,6 @@ time_t rtc_read(void)
 	return t;
 }
 
-
 /**
   * @brief  Disable RTC Alarm.
   * @param  none
@@ -313,7 +312,7 @@ u32 rtc_set_alarm(alarm_t *alrm, alarm_irq_handler alarmHandler)
 	InterruptRegister((IRQ_FUN)rtc_alarm_intr_handler, RTC_IRQ, (u32)alrm, INT_PRI_MIDDLE);
 	InterruptEn(RTC_IRQ, INT_PRI_MIDDLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**

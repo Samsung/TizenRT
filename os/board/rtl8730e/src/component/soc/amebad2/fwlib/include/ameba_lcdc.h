@@ -1,5 +1,11 @@
-#ifndef _AMEBAD2_LCDC_H_
-#define _AMEBAD2_LCDC_H_
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef _AMEBA_LCDC_H_
+#define _AMEBA_LCDC_H_
 
 /** @addtogroup LCDC
   * @verbatim
@@ -46,9 +52,9 @@
   */
 
 /** @defgroup LCDC
-  * @brief LCDC driver modules
-  * @{
-  */
+* @brief LCDC driver modules
+* @{
+*/
 
 /* Registers Definitions --------------------------------------------------------*/
 
@@ -69,10 +75,10 @@
  * @{
  **/
 #define LCDC_MASK_IMAGEHEIGHT             ((u32)0x00000FFF << 16)          /*!<R/W 0x140  The height of image (Y-channel based), the min. value is 0x1. */
-#define LCDC_IMAGEHEIGHT(x)               ((u32)(((x) & 0x00000FFF) << 16))
+#define LCDC_IMAGEHEIGHT(x)               (((u32)((x) & 0x00000FFF) << 16))
 #define LCDC_GET_IMAGEHEIGHT(x)           ((u32)(((x >> 16) & 0x00000FFF)))
 #define LCDC_MASK_IMAGEWIDTH              ((u32)0x00000FFF << 0)          /*!<R/W 0xf0  The width of image (X-channel based), the min. value is 0x1. *For LCD, it means pixel number per line. */
-#define LCDC_IMAGEWIDTH(x)                ((u32)(((x) & 0x00000FFF) << 0))
+#define LCDC_IMAGEWIDTH(x)                (((u32)((x) & 0x00000FFF) << 0))
 #define LCDC_GET_IMAGEWIDTH(x)            ((u32)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
@@ -82,7 +88,7 @@
  **/
 #define LCDC_BIT_DMA_UN_MODE              ((u32)0x00000001 << 24)          /*!<R/W 0x0  *0:Output last data *1:Output erroutdata */
 #define LCDC_MASK_ERROUT_DATA             ((u32)0x00FFFFFF << 0)          /*!<R/W 0x0  Output data when DMA FIFO underflow occurred. (directly mapping to output D[23:0]) */
-#define LCDC_ERROUT_DATA(x)               ((u32)(((x) & 0x00FFFFFF) << 0))
+#define LCDC_ERROUT_DATA(x)               (((u32)((x) & 0x00FFFFFF) << 0))
 #define LCDC_GET_ERROUT_DATA(x)           ((u32)(((x >> 0) & 0x00FFFFFF)))
 /** @} */
 
@@ -91,12 +97,12 @@
  * @{
  **/
 #define LCDC_MASK_DMAINTV                 ((u32)0x00FFFFFF << 8)          /*!<R 0x0  The interval cycle count between two DMA requests. (for debug) Unit: bus clock cycle. */
-#define LCDC_DMAINTV(x)                   ((u32)(((x) & 0x00FFFFFF) << 8))
+#define LCDC_DMAINTV(x)                   (((u32)((x) & 0x00FFFFFF) << 8))
 #define LCDC_GET_DMAINTV(x)               ((u32)(((x >> 8) & 0x00FFFFFF)))
 #define LCDC_BIT_LCD_DMA_OUT              ((u32)0x00000001 << 7)          /*!<R/W 0x0  Secondary RGB output port enabled, the blended data of entire image will be written back to memory. The destination address is defined in LDCD_IMG_DEST_ADDR. (for debug) */
 #define LCDC_BIT_FORCE_WB_EN              ((u32)0x00000001 << 6)          /*!<R/W 0x0  force lcdc write back memory without mipi ask signal, please tie 0 when lcdc function running. (for debug) */
 #define LCDC_MASK_RD_OTSD                 ((u32)0x00000003 << 2)          /*!<R/W 0x3  The value of read outstanding -1, for DMA burst size configuration */
-#define LCDC_RD_OTSD(x)                   ((u32)(((x) & 0x00000003) << 2))
+#define LCDC_RD_OTSD(x)                   (((u32)((x) & 0x00000003) << 2))
 #define LCDC_GET_RD_OTSD(x)               ((u32)(((x >> 2) & 0x00000003)))
 /** @} */
 
@@ -112,13 +118,13 @@
  * @{
  **/
 #define LCDC_MASK_BKG_RED                 ((u32)0x000000FF << 16)          /*!<R/W 0x0  Default Color Red */
-#define LCDC_BKG_RED(x)                   ((u32)(((x) & 0x000000FF) << 16))
+#define LCDC_BKG_RED(x)                   (((u32)((x) & 0x000000FF) << 16))
 #define LCDC_GET_BKG_RED(x)               ((u32)(((x >> 16) & 0x000000FF)))
 #define LCDC_MASK_BKG_GREEN               ((u32)0x000000FF << 8)          /*!<R/W 0x0  Default Color Green */
-#define LCDC_BKG_GREEN(x)                 ((u32)(((x) & 0x000000FF) << 8))
+#define LCDC_BKG_GREEN(x)                 (((u32)((x) & 0x000000FF) << 8))
 #define LCDC_GET_BKG_GREEN(x)             ((u32)(((x >> 8) & 0x000000FF)))
 #define LCDC_MASK_BKG_BLUE                ((u32)0x000000FF << 0)          /*!<R/W 0x0  Default Color Blue */
-#define LCDC_BKG_BLUE(x)                  ((u32)(((x) & 0x000000FF) << 0))
+#define LCDC_BKG_BLUE(x)                  (((u32)((x) & 0x000000FF) << 0))
 #define LCDC_GET_BKG_BLUE(x)              ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
 
@@ -127,7 +133,7 @@
  * @{
  **/
 #define LCDC_MASK_IMG_DEST_ADDR           ((u32)0xFFFFFFFF << 0)          /*!<R/W 0x0  Image DMA destination address. (for debug) */
-#define LCDC_IMG_DEST_ADDR(x)             ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define LCDC_IMG_DEST_ADDR(x)             (((u32)((x) & 0xFFFFFFFF) << 0))
 #define LCDC_GET_IMG_DEST_ADDR(x)         ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -136,7 +142,7 @@
  * @{
  **/
 #define LCDC_MASK_DEBUG_STATES            ((u32)0xFFFFFFFF << 0)          /*!<R 0x0  LCDC critial signal for debug */
-#define LCDC_DEBUG_STATES(x)              ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define LCDC_DEBUG_STATES(x)              (((u32)((x) & 0xFFFFFFFF) << 0))
 #define LCDC_GET_DEBUG_STATES(x)          ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -175,7 +181,7 @@
  * @{
  **/
 #define LCDC_MASK_LINE_INT_POS            ((u32)0x00000FFF << 0)          /*!<R/W 0x0  Line Interrupt Position These bits configure the line interrupt position. */
-#define LCDC_LINE_INT_POS(x)              ((u32)(((x) & 0x00000FFF) << 0))
+#define LCDC_LINE_INT_POS(x)              (((u32)((x) & 0x00000FFF) << 0))
 #define LCDC_GET_LINE_INT_POS(x)          ((u32)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
@@ -184,10 +190,10 @@
  * @{
  **/
 #define LCDC_MASK_CUR_POS_Y               ((u32)0x00000FFF << 16)          /*!<R 0x1  Current Y Position These bits return the current Y position. */
-#define LCDC_CUR_POS_Y(x)                 ((u32)(((x) & 0x00000FFF) << 16))
+#define LCDC_CUR_POS_Y(x)                 (((u32)((x) & 0x00000FFF) << 16))
 #define LCDC_GET_CUR_POS_Y(x)             ((u32)(((x >> 16) & 0x00000FFF)))
 #define LCDC_MASK_CUR_POS_X               ((u32)0x00000FFF << 0)          /*!<R 0x1  Current X Position These bits return the current X position. */
-#define LCDC_CUR_POS_X(x)                 ((u32)(((x) & 0x00000FFF) << 0))
+#define LCDC_CUR_POS_X(x)                 (((u32)((x) & 0x00000FFF) << 0))
 #define LCDC_GET_CUR_POS_X(x)             ((u32)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
@@ -197,7 +203,7 @@
  **/
 #define LCDC_BIT_LCDCREADY                ((u32)0x00000001 << 31)          /*!<R 0x0  LCDC is ready to operate with VO interface after LCDC is enabled. */
 #define LCDC_MASK_DMA_UNINT_CNT           ((u32)0x0000FFFF << 0)          /*!<R 0x0  DMA FIFO underflow interrupt count */
-#define LCDC_DMA_UNINT_CNT(x)             ((u32)(((x) & 0x0000FFFF) << 0))
+#define LCDC_DMA_UNINT_CNT(x)             (((u32)((x) & 0x0000FFFF) << 0))
 #define LCDC_GET_DMA_UNINT_CNT(x)         ((u32)(((x >> 0) & 0x0000FFFF)))
 /** @} */
 
@@ -206,7 +212,7 @@
  * @{
  **/
 #define LCDC_MASK_LAYERx_IMG_FORMAT       ((u32)0x00000007 << 5)          /*!<R/W 0x0  Image layer data format, it supports the following values: *000: ARGB8888 *001: RGB888 *010: RGB565 *011: ARGB1555 *100: ARGB4444 *101: RGB666 *110: ARGB8666 *Others: Reserved */
-#define LCDC_LAYERx_IMG_FORMAT(x)         ((u32)(((x) & 0x00000007) << 5))
+#define LCDC_LAYERx_IMG_FORMAT(x)         (((u32)((x) & 0x00000007) << 5))
 #define LCDC_GET_LAYERx_IMG_FORMAT(x)     ((u32)(((x >> 5) & 0x00000007)))
 #define LCDC_BIT_LAYERx_COLOR_KEYING_EN   ((u32)0x00000001 << 1)          /*!<R/W 0x0  Color Keying Enable *0: Color Keying disable *1: Color Keying enable */
 #define LCDC_BIT_LAYERx_IMG_LAYER_EN      ((u32)0x00000001 << 0)          /*!<R/W 0x0  Image layer enable *0: Disable *1: Enable */
@@ -217,7 +223,7 @@
  * @{
  **/
 #define LCDC_MASK_LAYERx_IMG_BASE_ADDR    ((u32)0xFFFFFFFF << 0)          /*!<R/W 0x0  Image layer DMA source address. After a frame refresh done, hardware loads the newer base address from this register automatically. */
-#define LCDC_LAYERx_IMG_BASE_ADDR(x)      ((u32)(((x) & 0xFFFFFFFF) << 0))
+#define LCDC_LAYERx_IMG_BASE_ADDR(x)      (((u32)((x) & 0xFFFFFFFF) << 0))
 #define LCDC_GET_LAYERx_IMG_BASE_ADDR(x)  ((u32)(((x >> 0) & 0xFFFFFFFF)))
 /** @} */
 
@@ -226,10 +232,10 @@
  * @{
  **/
 #define LCDC_MASK_LAYERx_WIN_X_STOP       ((u32)0x00000FFF << 16)          /*!<R/W 0x0  Window Horizontal Stop Position These bits configure the last visible pixel of a line of the layer window. Please make sure it is in work plane,the min value is 1. Ex:32*32 picture: the x start postion is 1 and x stop postion is 32. */
-#define LCDC_LAYERx_WIN_X_STOP(x)         ((u32)(((x) & 0x00000FFF) << 16))
+#define LCDC_LAYERx_WIN_X_STOP(x)         (((u32)((x) & 0x00000FFF) << 16))
 #define LCDC_GET_LAYERx_WIN_X_STOP(x)     ((u32)(((x >> 16) & 0x00000FFF)))
 #define LCDC_MASK_LAYERx_WIN_X_START      ((u32)0x00000FFF << 0)          /*!<R/W 0x0  Window Horizontal Start Position These bits configure the first visible pixel of a line of the layer window. Please make sure it is in work plane,the min value is 1. Ex:32*32 picture: the x start postion is 1 and x stop postion is 32. Layer size(x*y) must ≥10 pixel */
-#define LCDC_LAYERx_WIN_X_START(x)        ((u32)(((x) & 0x00000FFF) << 0))
+#define LCDC_LAYERx_WIN_X_START(x)        (((u32)((x) & 0x00000FFF) << 0))
 #define LCDC_GET_LAYERx_WIN_X_START(x)    ((u32)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
@@ -238,10 +244,10 @@
  * @{
  **/
 #define LCDC_MASK_LAYERx_WIN_Y_STOP       ((u32)0x00000FFF << 16)          /*!<R/W 0x0  Window Vertical Stop Position These bits configure the last visible line of the layer window. Please make sure it is in work plane,the min value is 1. Ex:32*32 picture: the y start postion is 1 and y stop postion is 32. */
-#define LCDC_LAYERx_WIN_Y_STOP(x)         ((u32)(((x) & 0x00000FFF) << 16))
+#define LCDC_LAYERx_WIN_Y_STOP(x)         (((u32)((x) & 0x00000FFF) << 16))
 #define LCDC_GET_LAYERx_WIN_Y_STOP(x)     ((u32)(((x >> 16) & 0x00000FFF)))
 #define LCDC_MASK_LAYERx_WIN_Y_START      ((u32)0x00000FFF << 0)          /*!<R/W 0x0  Window Vertical Start Position These bits configure the first visible line of the layer window. Please make sure it is in work plane,the min value is 1. Ex:32*32 picture: the y start postion is 1 and y stop postion is 32. Layer size(x*y) must ≥10 pixel */
-#define LCDC_LAYERx_WIN_Y_START(x)        ((u32)(((x) & 0x00000FFF) << 0))
+#define LCDC_LAYERx_WIN_Y_START(x)        (((u32)((x) & 0x00000FFF) << 0))
 #define LCDC_GET_LAYERx_WIN_Y_START(x)    ((u32)(((x >> 0) & 0x00000FFF)))
 /** @} */
 
@@ -250,7 +256,7 @@
  * @{
  **/
 #define LCDC_MASK_LAYERx_COLOR_KEY_VALUE  ((u32)0x00FFFFFF << 0)          /*!<R/W 0x0  Color Key value depends on the selected input color format */
-#define LCDC_LAYERx_COLOR_KEY_VALUE(x)    ((u32)(((x) & 0x00FFFFFF) << 0))
+#define LCDC_LAYERx_COLOR_KEY_VALUE(x)    (((u32)((x) & 0x00FFFFFF) << 0))
 #define LCDC_GET_LAYERx_COLOR_KEY_VALUE(x) ((u32)(((x >> 0) & 0x00FFFFFF)))
 /** @} */
 
@@ -259,10 +265,10 @@
  * @{
  **/
 #define LCDC_MASK_LAYERx_BF1              ((u32)0x00000003 << 8)          /*!<R/W 0x0  Blending factor 1. This field selects the blending factor F1. *00: Constant alpha *01: Pixel alpha x constant alpha *Others : Reserved */
-#define LCDC_LAYERx_BF1(x)                ((u32)(((x) & 0x00000003) << 8))
+#define LCDC_LAYERx_BF1(x)                (((u32)((x) & 0x00000003) << 8))
 #define LCDC_GET_LAYERx_BF1(x)            ((u32)(((x >> 8) & 0x00000003)))
 #define LCDC_MASK_LAYERx_CONSTA           ((u32)0x000000FF << 0)          /*!<R/W 0xff  Constant alpha. This field configures the constant alpha used for blending. The constant alpha is divided by 256 by hardware. The max. value of constant is FF, so when the constant alpha arrives the max. value, it is identified as 1. */
-#define LCDC_LAYERx_CONSTA(x)             ((u32)(((x) & 0x000000FF) << 0))
+#define LCDC_LAYERx_CONSTA(x)             (((u32)((x) & 0x000000FF) << 0))
 #define LCDC_GET_LAYERx_CONSTA(x)         ((u32)(((x >> 0) & 0x000000FF)))
 /** @} */
 /** @} */
@@ -315,6 +321,10 @@ typedef struct {
 /* AUTO_GEN_END */
 
 /* MANUAL_GEN_START */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 //Please add your defination here
 
@@ -484,6 +494,10 @@ _LONG_CALL_ void LCDC_Init(LCDC_TypeDef *LCDCx, LCDC_InitTypeDef *LCDC_InitStruc
 /**
   * @}
   */
+
+#ifdef __cplusplus
+}
+#endif
 
 /* MANUAL_GEN_END */
 

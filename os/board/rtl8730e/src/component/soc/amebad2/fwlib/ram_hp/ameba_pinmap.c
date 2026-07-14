@@ -1,32 +1,29 @@
-/**
-  ******************************************************************************
-  * @file    rtl8721dlp_pinmap.c
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file provides firmware functions to manage the following
-  *          functionalities of pin control:
-  *           - pinmux
-  *           - active pad pull up & pull down
-  *           - sleep pad pull up & pull down
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2015, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
+
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup PINMAP
+* @brief PINMAP driver modules
+* @{
+*/
+
+/** @defgroup PINMAP_Exported_Functions PINMAP Exported Functions
+  * @{
+  */
 
 /**
   *  @brief Config all pins to the right function and pull state based on pmap_func table.
   *  @note should set pmap_func. Function & FuncPuPd corectly based on your board.
   *  @retval None
   */
-
 void pinmap_init(void)
 {
 	int i = 0;
@@ -58,6 +55,6 @@ void pinmap_init(void)
 		i++;
 	}
 }
-
-
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
+/**@}*/
+/**@}*/
+/**@}*/

@@ -1,11 +1,31 @@
 #ifndef __BLE_MGR_H
 #define __BLE_MGR_H
 
+
+/** @defgroup LE_MGR_INIT LE Manager Module Initialization
+  * @brief LE manager module initialization related definitions
+  * @{
+  */
+/*============================================================================*
+ *                              Header Files
+ *============================================================================*/
 #include <stdint.h>
 #include <stdbool.h>
 #include "gap_callback_le.h"
 #include "gap_msg.h"
 
+/*============================================================================*
+ *                         Types
+ *============================================================================*/
+/** @defgroup LE_MGR_INIT_Exported_Types LE Manager Module Initialization Exported Types
+  * @{
+  */
+
+/**
+ * @brief LE manager initialization parameters.
+ *
+ * The initialization parameters for LE manager module.
+ */
 typedef struct
 {
     struct
@@ -40,10 +60,24 @@ typedef struct
 
 typedef void (*BLE_MGR_MSG_CB)(uint8_t subtype, T_LE_GAP_MSG *gap_msg);
 
+/** End of LE_MGR_INIT_Exported_Types
+ * @}
+ */
+
+/*============================================================================*
+ *                              Functions
+ *============================================================================*/
+/** @defgroup LE_MGR_INIT_Exported_Functions LE Manager Module Initialization Exported Functions
+  * @{
+  */
+
 /**
- * @brief ble_mgr_init
- * initialize ble manager module
- * @param p_params
+ * @brief Initialize LE manager module.
+ *
+ * @param[in] p_params   The initialize parameter.
+ * @return void.
+ *
+ * <b>Example usage</b>
  * \code{.c}
     void app_ble_gap_ble_mgr_init(void)
     {
@@ -72,10 +106,13 @@ typedef void (*BLE_MGR_MSG_CB)(uint8_t subtype, T_LE_GAP_MSG *gap_msg);
 void ble_mgr_init(BLE_MGR_PARAMS *p_params);
 
 /**
- * @brief ble_mgr_handle_gap_cb
- * used to handle GAP Callback Message in gap_callback_le.h
- * @param cb_type
- * @param cb_data
+ * @brief Used to handle GAP callback Message in gap_callback_le.h.
+ *
+ * @param[in] cb_type     Callback type.
+ * @param[in] cb_data     Callback data.
+ * @return void.
+ *
+ * <b>Example usage</b>
  * \code{.c}
  *  static T_APP_RESULT app_ble_gap_cb(uint8_t cb_type, void *p_cb_data)
     {
@@ -91,10 +128,37 @@ void ble_mgr_init(BLE_MGR_PARAMS *p_params);
 void ble_mgr_handle_gap_cb(uint8_t cb_type, T_LE_CB_DATA *cb_data);
 
 /**
- * @brief ble_mgr_handle_gap_msg
- * used to handle GAP Message
- * @param subtype
- * @param gap_msg
+ * @brief Used to handle GAP callback Message in gap.h.
+ *
+ * @note When application needs to open GATT_SVC_CLIENT_SUPPORTED_FEATURES_EATT_BEARER_BIT by gatt_client_cfg_client_supported_feature,
+ *       application shall call this function to handle the message of type @ref GAP_COMMON_MSG_TYPE.
+ * \xrefitem Added_API_2_14_1_0 "Added Since 2.14.1.0" "Added API"
+ * @param[in] cb_type Callback msg type @ref GAP_COMMON_MSG_TYPE.
+ * @param[in] p_cb_data Point to callback data @ref T_GAP_CB_DATA.
+ * @return void.
+ *
+ * <b>Example usage</b>
+ * \code{.c}
+    void test(void)
+    {
+       gap_register_app_cb(app_gap_common_callback);
+    }
+    void app_gap_common_callback(uint8_t cb_type, void *p_cb_data)
+    {
+        ble_mgr_handle_gap_common_cb(cb_type, p_cb_data);
+    }
+ * \endcode
+ */
+void ble_mgr_handle_gap_common_cb(uint8_t cb_type, void *p_cb_data);
+
+/**
+ * @brief Used to handle GAP Message.
+ *
+ * @param[in] subtype     GAP message subtype.
+ * @param[in] gap_msg     GAP message data.
+ * @return void.
+ *
+ * <b>Example usage</b>
  * \code{.c}
  *  void app_ble_gap_handle_gap_msg(T_IO_MSG *p_io_msg)
     {
@@ -109,11 +173,15 @@ void ble_mgr_handle_gap_cb(uint8_t cb_type, T_LE_CB_DATA *cb_data);
 void ble_mgr_handle_gap_msg(uint8_t subtype, T_LE_GAP_MSG *gap_msg);
 
 /**
- * @brief ble_mgr_msg_cback_register
- * other module can register callback function to handle GAP Message
- * @param cb
- * @return true
- * @return false
+ * @brief Other modules can register callback functions to handle GAP Messages.
+ *
+ * @param[in] cb      LE manager callback function.
+ * @return Operation result.
+ * @retval true  Operation success.
+ * @retval false Operation failure.
+ *
+ * <b>Example usage</b>
+ * \code{.c}
     void app_device_init(void)
     {
         ble_mgr_msg_cback_register(app_device_ble_cback);
@@ -123,6 +191,13 @@ void ble_mgr_handle_gap_msg(uint8_t subtype, T_LE_GAP_MSG *gap_msg);
  */
 bool ble_mgr_msg_cback_register(BLE_MGR_MSG_CB cb);
 
-
 void ble_mgr_deinit(void);
+
+/** End of LE_MGR_INIT_Exported_Functions
+ * @}
+ */
+
+/** End of LE_MGR_INIT
+ * @}
+ */
 #endif

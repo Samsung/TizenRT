@@ -1,35 +1,13 @@
-/**
-  ******************************************************************************
-  * @file    rtl8721dhp_ssi.c
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file contains all the functions prototypes for Serial peripheral interface (SPI):
-  *		- Initialization
-  *		- Clock polarity and phase setting
-  *		- SPI data frame size setting
-  *		- SPI baud rate setting
-  *		- Receive/Send data interface
-  *		- Get TRx FIFO valid entries
-  *		- check SPI device busy status
-  *		- SPI device pinmux initialization and deinitialization
-  *		- DMA transfers management
-  *		- Interrupts and management
-  *
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2016, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
 
-static const char *TAG = "SPI";
-/** @addtogroup SPI_Exported_Functions
+static const char *const TAG = "SPI";
+/*
 *@verbatim
   *
   *          ===================================================================
@@ -68,12 +46,35 @@ static const char *TAG = "SPI";
   * @endverbatim
   */
 
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
 
+/** @defgroup SPI
+* @brief SPI driver modules
+* @{
+*/
+
+/** @defgroup SPI_Exported_Constants SPI Exported Constants
+  * @{
+  */
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 SPI_DevTable SPI_DEV_TABLE[2] = {
 	{SPI0_DEV, GDMA_HANDSHAKE_INTERFACE_SPI0_TX, GDMA_HANDSHAKE_INTERFACE_SPI0_RX, SPI0_IRQ, MAX_GDMA_CHNL + 1, MAX_GDMA_CHNL + 1},
 	{SPI1_DEV, GDMA_HANDSHAKE_INTERFACE_SPI1_TX, GDMA_HANDSHAKE_INTERFACE_SPI1_RX, SPI1_IRQ, MAX_GDMA_CHNL + 1, MAX_GDMA_CHNL + 1},
 };
+#else /* !CONFIG_PLATFORM_TIZENRT_OS */
+const SPI_DevTable SPI_DEV_TABLE[2] = {
+	{SPI0_DEV, GDMA_HANDSHAKE_INTERFACE_SPI0_TX, GDMA_HANDSHAKE_INTERFACE_SPI0_RX, SPI0_IRQ},
+	{SPI1_DEV, GDMA_HANDSHAKE_INTERFACE_SPI1_TX, GDMA_HANDSHAKE_INTERFACE_SPI1_RX, SPI1_IRQ},
+};
+#endif /* CONFIG_PLATFORM_TIZENRT_OS */
 
+/**@}*/
+
+/** @defgroup SPI_Exported_Functions SPI Exported Functions
+  * @{
+  */
 /**
   * @brief  Fills each SSI_InitStruct member with its default value.
   * @param  SSI_InitStruct: pointer to a SSI_InitTypeDef structure which will be
@@ -182,7 +183,7 @@ void SSI_Cmd(SPI_TypeDef *spi_dev, u32 NewStatus)
   * @retval None
   * @note  BIT_IMR_TXUIM, BIT_IMR_SSRIM are for Slave only.
   */
-VOID
+void
 SSI_INTConfig(SPI_TypeDef *spi_dev, u32 SSI_IT, u32 newState)
 {
 	if (newState == ENABLE) {
@@ -456,7 +457,7 @@ void SSI_SetDmaLevel(SPI_TypeDef *spi_dev, u32 TxLevel, u32 RxLevel)
   * @retval   TRUE/FLASE
   */
 
-BOOL SSI_TXGDMA_Init(
+bool SSI_TXGDMA_Init(
 	u32 Index,
 	PGDMA_InitTypeDef GDMA_InitStruct,
 	void *CallbackData,
@@ -472,14 +473,18 @@ BOOL SSI_TXGDMA_Init(
 	assert_param(GDMA_InitStruct != NULL);
 
 	DCache_CleanInvalidate((u32) pTxData, Length);
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 	if (SPI_DEV_TABLE[Index].tx_channel_allocated > MAX_GDMA_CHNL) {
+#endif /* CONFIG_PLATFORM_TIZENRT_OS */
 		GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 		if (GdmaChnl == 0xFF) {
 			// No Available DMA channel
-			return _FALSE;
+			return FALSE;
 		}
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 		SPI_DEV_TABLE[Index].tx_channel_allocated = GdmaChnl;
 	}
+#endif /* CONFIG_PLATFORM_TIZENRT_OS */
 	GdmaChnl = SPI_DEV_TABLE[Index].tx_channel_allocated;
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
@@ -516,8 +521,8 @@ BOOL SSI_TXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 			GDMA_InitStruct->GDMA_BlockSize = Length >> 1;
 		} else {
-			RTK_LOGE(TAG, "SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%d\n", pTxData, Length);
-			return _FALSE;
+			RTK_LOGE(TAG, "SSI_TXGDMA_Init: Aligment Err: pTxData=%p,  Length=%lu\n", pTxData, Length);
+			return FALSE;
 		}
 	} else {
 		/*  8~4 bits mode */
@@ -543,7 +548,7 @@ BOOL SSI_TXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -558,7 +563,7 @@ BOOL SSI_TXGDMA_Init(
   * @retval   TRUE/FLASE
   */
 
-BOOL
+bool
 SSI_RXGDMA_Init(
 	u8 Index,
 	GDMA_InitTypeDef *GDMA_InitStruct,
@@ -575,16 +580,19 @@ SSI_RXGDMA_Init(
 	assert_param(GDMA_InitStruct != NULL);
 
 	DCache_CleanInvalidate((u32) pRxData, Length);
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 	if (SPI_DEV_TABLE[Index].rx_channel_allocated > MAX_GDMA_CHNL) {
+#endif /* CONFIG_PLATFORM_TIZENRT_OS */
 		GdmaChnl = GDMA_ChnlAlloc(0, CallbackFunc, (u32)CallbackData, INT_PRI_MIDDLE);
 		if (GdmaChnl == 0xFF) {
 		// No Available DMA channel
-		return _FALSE;
+		return FALSE;
 		}
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 		SPI_DEV_TABLE[Index].rx_channel_allocated = GdmaChnl;
 	}
 	GdmaChnl = SPI_DEV_TABLE[Index].rx_channel_allocated;
-
+#endif /* CONFIG_PLATFORM_TIZENRT_OS */
 
 	_memset((void *)GDMA_InitStruct, 0, sizeof(GDMA_InitTypeDef));
 
@@ -619,8 +627,8 @@ SSI_RXGDMA_Init(
 			GDMA_InitStruct->GDMA_DstMsize = MsizeEight;
 			GDMA_InitStruct->GDMA_DstDataWidth = TrWidthTwoBytes;
 		} else {
-			RTK_LOGE(TAG, "SSI_RXGDMA_Init: Aligment Err: pTxData=%p,  Length=%d\n", pRxData, Length);
-			return _FALSE;
+			RTK_LOGE(TAG, "SSI_RXGDMA_Init: Aligment Err: pTxData=%p,  Length=%lu\n", pRxData, Length);
+			return FALSE;
 		}
 	} else {
 		/*  8~4 bits mode */
@@ -645,7 +653,7 @@ SSI_RXGDMA_Init(
 	GDMA_Init(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, GDMA_InitStruct);
 	GDMA_Cmd(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum, ENABLE);
 
-	return _TRUE;
+	return TRUE;
 }
 
 /**
@@ -738,13 +746,14 @@ void SSI_SetTxFifoLevel(SPI_TypeDef *spi_dev, u32 TxThresholdLevel)
 void SSI_SetSlaveEnable(SPI_TypeDef *spi_dev, u32 SlaveIndex)
 {
 	if (SSI_Busy(spi_dev)) {
-		RTK_LOGW(TAG, "SSI%d is busy\n", SlaveIndex);
+		RTK_LOGW(TAG, "SSI%lu is busy\n", SlaveIndex);
 		return;
 	}
 
 	spi_dev->SPI_SER = (1 << SlaveIndex);
 }
 
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
 /**
   * @brief  Detemines whether SPIx transmit FIFO is empty
   * @param  spi_dev: where spi_dev can be SPI0_DEV or SPI1_DEV.
@@ -763,6 +772,7 @@ bool SSI_Empty(SPI_TypeDef *spi_dev)
 
 	return status;
 }
+#endif /* CONFIG_PLATFORM_TIZENRT_OS */
 
 /**
   * @brief  Detemines whether SPIx transmit FIFO is full or not
@@ -836,11 +846,11 @@ u32 SSI_ReceiveData(SPI_TypeDef *spi_dev,
 				if (DataFrameSize > 8) {
 					/*  16~9 bits mode */
 					*((u16 *)(RxData)) = (u16)SSI_ReadData(spi_dev);
-					RxData = (VOID *)(((u16 *)RxData) + 1);
+					RxData = (void *)(((u16 *)RxData) + 1);
 				} else {
 					/*  8~4 bits mode */
 					*((u8 *)(RxData)) = (u8)SSI_ReadData(spi_dev);
-					RxData = (VOID *)(((u8 *)RxData) + 1);
+					RxData = (void *)(((u8 *)RxData) + 1);
 				}
 			} else {
 				/*  for Master mode, doing TX also will got RX data, so drop the dummy data */
@@ -895,7 +905,7 @@ u32 SSI_SendData(SPI_TypeDef *spi_dev,
 				// 16~9 bits mode
 				if (TxData != NULL) {
 					SSI_WriteData(spi_dev, *((u16 *)(TxData)));
-					TxData = (VOID *)(((u16 *)TxData) + 1);
+					TxData = (void *)(((u16 *)TxData) + 1);
 				} else {
 					// For master mode: Push a dummy to TX FIFO for Read
 					if (Role == SSI_MASTER) {
@@ -906,7 +916,7 @@ u32 SSI_SendData(SPI_TypeDef *spi_dev,
 				// 8~4 bits mode
 				if (TxData != NULL) {
 					SSI_WriteData(spi_dev, *((u8 *)(TxData)));
-					TxData = (VOID *)(((u8 *)TxData) + 1);
+					TxData = (void *)(((u8 *)TxData) + 1);
 				} else {
 					// For master mode: Push a dummy to TX FIFO for Read
 					if (Role == SSI_MASTER) {
@@ -1124,5 +1134,6 @@ u32 SSI_GetSlaveEnable(SPI_TypeDef *spi_dev)
 {
 	return spi_dev->SPI_SER;
 }
-
-/******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/
+/**@}*/
+/**@}*/
+/**@}*/

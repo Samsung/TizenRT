@@ -85,40 +85,45 @@ include component/soc/amebad2/fwlib/ap_core/Make.defs
 include component/soc/amebad2/fwlib/rom_common/Make.defs
 include component/soc/amebad2/fwlib/ram_hp/Make.defs
 include component/soc/amebad2/swlib/Make.defs
+include component/soc/common/diagnose/Make.defs
 
 include component/usrcfg/rtl8730e/Make.defs
 include component/lwip/api/Make.defs
-include component/wifi/Make.defs
-include component/wifi/inic/Make.defs
 include component/wifi/common/Make.defs
 include component/mbed/targets/hal/rtl8730e/Make.defs
-include component/os_dep/Make.defs
+include component/os/os_wrapper/Make.defs
 include component/os/tizenrt/Make.defs
 
 ifeq ($(CONFIG_AMEBASMART_WIFI),y)
-include component/wifi/api/Make.defs
+include component/wifi/Make.defs
+include component/wifi/rtk_app/wifi_init/Make.defs
 include component/wifi/wpa_supplicant/wpa_supplicant/Make.defs
+include component/rtk_coex/Make.defs
+endif
+
+ifeq ($(CONFIG_PM),y)
 include component/soc/amebad2/misc/Make.defs
 endif
 
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
 include component/bluetooth/api/Make.defs
-include component/bluetooth/os/tizenrt/Make.defs
-include component/bluetooth/example/utils/Make.defs
-include component/bluetooth/driver/platform/amebad2/hci/Make.defs
 include component/bluetooth/api/rtk_stack/Make.defs
-include component/bluetooth/rtk_stack/platform/amebad2/src/Make.defs
-include component/bluetooth/driver/hci/hci_transport/Make.defs
 include component/bluetooth/driver/hci/Make.defs
 include component/bluetooth/driver/hci/hci_process/Make.defs
+include component/bluetooth/driver/hci/hci_transport/Make.defs
+include component/bluetooth/driver/platform/amebasmart/hci/Make.defs
+include component/bluetooth/example/gatt_service/client/Make.defs
+include component/bluetooth/example/gatt_service/server/Make.defs
+include component/bluetooth/example/utils/Make.defs
+include component/bluetooth/osif/Make.defs
 include component/bluetooth/rtk_coex/Make.defs
+include component/bluetooth/rtk_stack/platform/common/Make.defs
 
 ifeq ($(CONFIG_AMEBASMART_BLE_PERIPHERAL),y)
 include component/bluetooth/example/ble_peripheral/Make.defs
 endif
 ifeq ($(CONFIG_AMEBASMART_BLE_CENTRAL),y)
 include component/bluetooth/example/ble_central/Make.defs
-include component/bluetooth/profile/client/Make.defs
 endif
 ifeq ($(CONFIG_AMEBASMART_BLE_SCATTERNET),y)
 include component/bluetooth/example/ble_scatternet/Make.defs
@@ -132,15 +137,15 @@ include component/usb/device_new/core/Make.defs
 endif
 
 include component/file_system/ftl/Make.defs
-include component/file_system/kv/Make.defs
-include component/file_system/vfs2.0/Make.defs
+# include component/file_system/kv/Make.defs
+# include component/file_system/vfs2.0/Make.defs
 
 ARCH_SRCDIR = 	$(TOPDIR)/arch/$(CONFIG_ARCH)/src
 BOARD_SRCDIR = 	$(TOPDIR)/board
 PROJ_DIR = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/project/realtek_amebaD2_va0_example
 COMPONENT_DIR = $(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component
 DIR_WIFI = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/wifi
-DIR_OSDEP = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os_dep
+DIR_OSDEP = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os/os_wrapper
 DIR_OS = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/os
 DIR_MBED = 	$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/component/mbed/targets/hal/rtl8730e
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
@@ -161,38 +166,56 @@ CFLAGS += -I$(TARGETDIR)/fwlib/ap_core
 CFLAGS += -I$(TARGETDIR)/app/monitor/include
 CFLAGS += -I$(TARGETDIR)/swlib
 CFLAGS += -I$(TARGETDIR)/misc
+CFLAGS += -I$(COMPONENT_DIR)/soc/common/include
 CFLAGS += -I$(COMPONENT_DIR)/stdlib
+CFLAGS += -I$(COMPONENT_DIR)/usrcfg/common
 CFLAGS += -I$(COMPONENT_DIR)/usrcfg/rtl8730e/include
 
-CFLAGS += -I$(COMPONENT_DIR)/wifi/api
-CFLAGS += -I$(COMPONENT_DIR)/wifi/driver/include
-CFLAGS += -I$(COMPONENT_DIR)/wifi/inic
-CFLAGS += -I$(COMPONENT_DIR)/wifi/wpa_supplicant/src/crypto
+CFLAGS += -I$(DIR_WIFI)/api
+CFLAGS += -I$(DIR_WIFI)/common
+CFLAGS += -I$(DIR_WIFI)/driver/halcommon_rom
+CFLAGS += -I$(DIR_WIFI)/driver/include
+CFLAGS += -I$(DIR_WIFI)/driver/intf
+CFLAGS += -I$(DIR_WIFI)/whc
+CFLAGS += -I$(DIR_WIFI)/whc/whc_host_rtos/ipc
+CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/src
 CFLAGS += -I$(COMPONENT_DIR)/lwip/api
 
+CFLAGS += -I$(DIR_OSDEP)/include
 CFLAGS += -I$(COMPONENT_DIR)/os/tizenrt
 CFLAGS += -I$(DIR_MBED)
-CFLAGS += -I$(DIR_OSDEP)/include
 CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/wpa_lite
+CFLAGS += -I$(DIR_WIFI)/wpa_supplicant/wpa_lite/rom
 CFLAGS += -I$(COMPONENT_DIR)/mbed/api
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal
 CFLAGS += -I$(COMPONENT_DIR)/mbed/hal_ext
 CFLAGS += -I$(COMPONENT_DIR)/mbed/targets/hal/rtl8730e
-CFLAGS += -I$(COMPONENT_DIR)/os_dep
 CFLAGS += -I$(TOPDIR)/net/netmgr
 # Temporary keep it, need further check whether the usb needs the filesystem
-CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
+# CFLAGS += -I$(COMPONENT_DIR)/file_system/vfs2.0
 CFLAGS += -I$(COMPONENT_DIR)/file_system/ftl
-CFLAGS += -I$(COMPONENT_DIR)/file_system/kv
+# CFLAGS += -I$(COMPONENT_DIR)/file_system/kv
+CFLAGS += -I$(COMPONENT_DIR)/rtk_coex/
 
 ifeq ($(CONFIG_AMEBASMART_BLE),y)
-CFLAGS += -I$(DIR_BT)/inc
-CFLAGS += -I$(DIR_BT)/profile/client
-CFLAGS += -I$(DIR_BT)/driver/inc
-CFLAGS += -I$(DIR_BT)/driver/inc/hci
+CFLAGS += -I$(BOARD_SRCDIR)/$(CONFIG_ARCH_BOARD)/src/libs
+CFLAGS += -I$(DIR_BT)/api/include
 CFLAGS += -I$(DIR_BT)/api/rtk_stack
-CFLAGS += -I$(DIR_BT)/rtk_stack/inc
-CFLAGS += -I$(DIR_BT)/rtk_stack/platform/amebad2/inc
+CFLAGS += -I$(DIR_BT)/driver/hci
+CFLAGS += -I$(DIR_BT)/driver/inc/hci
+CFLAGS += -I$(DIR_BT)/driver/platform/amebasmart/inc
+CFLAGS += -I$(DIR_BT)/example/gatt_service/client
+CFLAGS += -I$(DIR_BT)/example/gatt_service/server
+CFLAGS += -I$(DIR_BT)/example/utils
+CFLAGS += -I$(DIR_BT)/osif
+CFLAGS += -I$(DIR_BT)/rtk_coex
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/app
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/bluetooth/gap
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/bluetooth/profile
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/os
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/platform
+CFLAGS += -I$(DIR_BT)/rtk_stack/inc/stack
+CFLAGS += -I$(DIR_BT)/rtk_stack/platform/common
 endif
 
 COBJS = $(CSRCS:.c=$(OBJEXT))

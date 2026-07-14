@@ -1,35 +1,35 @@
-/**
-  ******************************************************************************
-  * @file    rtl8721d_gpio_rom.c
-  * @author
-  * @version V1.0.0
-  * @date    2016-05-17
-  * @brief   This file provides firmware functions to manage the following
-  *          functionalities of the General Purpose Input Output (GPIO) peripheral:
-  *           - Initialization and Configuration
-  *           - GPIO Read and Write
-  *           - GPIO Interrupts management
-  ******************************************************************************
-  * @attention
-  *
-  * This module is a confidential and proprietary property of RealTek and
-  * possession or use of this module requires written permission of RealTek.
-  *
-  * Copyright(c) 2016, Realtek Semiconductor Corporation. All rights reserved.
-  ******************************************************************************
-  */
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "ameba_soc.h"
 
-HAL_ROM_BSS_SECTION GPIO_IRQ_FUN PortA_IrqHandler[32]; // The interrupt handler triggered by Port A[x]
-HAL_ROM_BSS_SECTION GPIO_IRQ_FUN PortB_IrqHandler[32]; // The interrupt handler triggered by Port B[x]
-HAL_ROM_BSS_SECTION GPIO_IRQ_FUN PortC_IrqHandler[32]; // The interrupt handler triggered by Port C[x]
-HAL_ROM_BSS_SECTION void *PortA_IrqData[32];
-HAL_ROM_BSS_SECTION void *PortB_IrqData[32];
-HAL_ROM_BSS_SECTION void *PortC_IrqData[32];
+/** @addtogroup Ameba_Periph_Driver
+  * @{
+  */
+
+/** @defgroup GPIO
+  * @{
+  */
+
+/** @defgroup GPIO_Exported_Constants GPIO Exported Constants
+  * @{
+  */
+HAL_ROM_BSS_SECTION GPIO_IRQ_FUN PortA_IrqHandlerTable[32]; // The interrupt handler triggered by Port A[x]
+HAL_ROM_BSS_SECTION GPIO_IRQ_FUN PortB_IrqHandlerTable[32]; // The interrupt handler triggered by Port B[x]
+HAL_ROM_BSS_SECTION GPIO_IRQ_FUN PortC_IrqHandlerTable[32]; // The interrupt handler triggered by Port C[x]
+HAL_ROM_BSS_SECTION void *PortA_IrqDataTable[32];
+HAL_ROM_BSS_SECTION void *PortB_IrqDataTable[32];
+HAL_ROM_BSS_SECTION void *PortC_IrqDataTable[32];
 
 HAL_ROM_DATA_SECTION GPIO_TypeDef *GPIO_PORTx[3] = {GPIOA_BASE, GPIOB_BASE, GPIOC_BASE};
+/**@}*/
 
+/** @defgroup GPIO_Exported_Functions GPIO Exported Functions
+  * @{
+  */
 /**
   * @brief  Config GPIO interrupt mode
   * @param  GPIO_Pin: GPIO pin num from PinName.
@@ -148,7 +148,7 @@ void GPIO_INTConfig(u32 GPIO_Pin, u32 NewState)
   * @retval None
   */
 __weak HAL_ROM_TEXT_SECTION
-u32 GPIO_INTHandler(IN VOID *pData)
+u32 GPIO_INTHandler(void *pData)
 {
 	GPIO_TypeDef *GPIO = (GPIO_TypeDef *)pData;
 	u32 IrqStatus;
@@ -165,39 +165,39 @@ u32 GPIO_INTHandler(IN VOID *pData)
 	if (GPIO == GPIOA_BASE) {
 		for (i = 0; i < 32; i++) {
 			if (IrqStatus & (0x1UL << i)) {
-				if (PortA_IrqHandler[i] != NULL) {
+				if (PortA_IrqHandlerTable[i] != NULL) {
 					if (port_a_in & (0x1UL << i)) {
 						event = HAL_IRQ_RISE | (i << 16); /* (event | port_pin << 16 */
 					} else {
 						event = HAL_IRQ_FALL | (i << 16); /* (event | port_pin << 16 */
 					}
-					PortA_IrqHandler[i](PortA_IrqData[i], event);
+					PortA_IrqHandlerTable[i](PortA_IrqDataTable[i], event);
 				}
 			}
 		}
 	} else if (GPIO == GPIOB_BASE) {
 		for (i = 0; i < 32; i++) {
 			if (IrqStatus & (0x1UL << i)) {
-				if (PortB_IrqHandler[i] != NULL) {
+				if (PortB_IrqHandlerTable[i] != NULL) {
 					if (port_a_in & (0x1UL << i)) {
 						event = HAL_IRQ_RISE | (i << 16) | (0x1UL << 21); /* (event | port_pin << 16 */
 					} else {
 						event = HAL_IRQ_FALL | (i << 16) | (0x1UL << 21); /* (event | port_pin << 16 */
 					}
-					PortB_IrqHandler[i](PortB_IrqData[i], event);
+					PortB_IrqHandlerTable[i](PortB_IrqDataTable[i], event);
 				}
 			}
 		}
 	} else {
 		for (i = 0; i < 32; i++) {
 			if (IrqStatus & (0x1UL << i)) {
-				if (PortC_IrqHandler[i] != NULL) {
+				if (PortC_IrqHandlerTable[i] != NULL) {
 					if (port_a_in & (0x1UL << i)) {
 						event = HAL_IRQ_RISE | (i << 16) | (0x2UL << 21); /* (event | port_pin << 16 */
 					} else {
 						event = HAL_IRQ_FALL | (i << 16) | (0x2UL << 21); /* (event | port_pin << 16 */
 					}
-					PortC_IrqHandler[i](PortC_IrqData[i], event);
+					PortC_IrqHandlerTable[i](PortC_IrqDataTable[i], event);
 				}
 			}
 		}
@@ -250,7 +250,7 @@ void GPIO_Direction(u32 GPIO_Pin, u32 data_direction)
   * @retval None
   */
 __weak HAL_ROM_TEXT_SECTION
-void GPIO_Init(GPIO_InitTypeDef  *GPIO_InitStruct)
+void GPIO_Init(GPIO_InitTypeDef *GPIO_InitStruct)
 {
 	/* open gpio function and clock */
 	//RCC_PeriphClockCmd(APBPeriph_GPIO, APBPeriph_GPIO_CLOCK, ENABLE);
@@ -312,14 +312,14 @@ void GPIO_DeInit(u32 GPIO_Pin)
 
 	/* UnRegister IRQ */
 	if (port_num == GPIO_PORT_A) {
-		PortA_IrqHandler[pin_num] = (GPIO_IRQ_FUN)NULL;
-		PortA_IrqData[pin_num] = NULL;
+		PortA_IrqHandlerTable[pin_num] = (GPIO_IRQ_FUN)NULL;
+		PortA_IrqDataTable[pin_num] = NULL;
 	} else if (port_num == GPIO_PORT_B) {
-		PortB_IrqHandler[pin_num] = (GPIO_IRQ_FUN)NULL;
-		PortB_IrqData[pin_num] = NULL;
+		PortB_IrqHandlerTable[pin_num] = (GPIO_IRQ_FUN)NULL;
+		PortB_IrqDataTable[pin_num] = NULL;
 	} else {
-		PortC_IrqHandler[pin_num] = (GPIO_IRQ_FUN)NULL;
-		PortC_IrqData[pin_num] = NULL;
+		PortC_IrqHandlerTable[pin_num] = (GPIO_IRQ_FUN)NULL;
+		PortC_IrqDataTable[pin_num] = NULL;
 	}
 }
 
@@ -543,7 +543,7 @@ void GPIO_LevelSync(u32 GPIO_Port, u32 NewState)
   * @retval None
   */
 __weak HAL_ROM_TEXT_SECTION
-void GPIO_UserRegIrq(u32 GPIO_Pin, VOID *IrqHandler, VOID *IrqData)
+void GPIO_UserRegIrq(u32 GPIO_Pin, void *IrqHandler, void *IrqData)
 {
 	u8 port_num;
 	u8 pin_num;
@@ -552,14 +552,18 @@ void GPIO_UserRegIrq(u32 GPIO_Pin, VOID *IrqHandler, VOID *IrqData)
 	pin_num = PIN_NUM(GPIO_Pin);
 
 	if (port_num == GPIO_PORT_A) {
-		PortA_IrqHandler[pin_num] = (GPIO_IRQ_FUN)IrqHandler;
-		PortA_IrqData[pin_num] = IrqData;
+		PortA_IrqHandlerTable[pin_num] = (GPIO_IRQ_FUN)IrqHandler;
+		PortA_IrqDataTable[pin_num] = IrqData;
 	} else if (port_num == GPIO_PORT_B) {
-		PortB_IrqHandler[pin_num] = (GPIO_IRQ_FUN)IrqHandler;
-		PortB_IrqData[pin_num] = IrqData;
+		PortB_IrqHandlerTable[pin_num] = (GPIO_IRQ_FUN)IrqHandler;
+		PortB_IrqDataTable[pin_num] = IrqData;
 	} else {
-		PortC_IrqHandler[pin_num] = (GPIO_IRQ_FUN)IrqHandler;
-		PortC_IrqData[pin_num] = IrqData;
+		PortC_IrqHandlerTable[pin_num] = (GPIO_IRQ_FUN)IrqHandler;
+		PortC_IrqDataTable[pin_num] = IrqData;
 	}
 }
+/**@}*/
+/**@}*/
+/**@}*/
+
 /******************* (C) COPYRIGHT 2016 Realtek Semiconductor *****END OF FILE****/

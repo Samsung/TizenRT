@@ -68,6 +68,15 @@ bool bt_att_init(P_BT_ATT_CBACK cback);
 /**
  * bt_att.h
  *
+ * \brief  De-initialize ATT profile.
+ *
+ * \ingroup BT_ATT
+ */
+void bt_att_deinit(void);
+
+/**
+ * bt_att.h
+ *
  * \brief   Send a ATT connection request.
  *
  * \xrefitem Added_API_2_11_1_0 "Added Since 2.11.1.0" "Added API"

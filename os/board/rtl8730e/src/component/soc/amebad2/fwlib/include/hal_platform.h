@@ -258,6 +258,7 @@
  *****************************************************************************/
 #define DDR_BASE                 0x60000000        /* ID:HSLV-2, Inter. Type:AXI-128, Top Address:0x6FFFFFFF, Size(KB):256M, Clk Domain:DDR_CLK */
 #define PSRAM_BASE               0x60000000        /* ID:HSLV-2, Inter. Type:AXI-32(psram_spic_automode), Top Address:0x6FFFFFFF, Size(KB):256M, Clk Domain:PSRAM_CLK */
+#define SRAM_BASE                0x20000000        /* ID:HSLV-3, Inter. Type:AXI-64, Top Address:0x20FFFFFF, Size(KB):16M, Clk Domain:HS_AXI_CLK */
 #define HP_SRAM0_BASE            0x20000000        /* ID:HSLV-3, Inter. Type:AXI-64, Top Address:0x20FFFFFF, Size(KB):16M, Clk Domain:HS_AXI_CLK */
 #define HP_SRAM_EXT_BASE         0x22000000        /* ID:HSLV-5, Inter. Type:AXI, Top Address:0x22FFFFFF, Size(KB):16M, Clk Domain:HS_APB_CLK */
 #define SPI_FLASH_CTRL_BASE      0x44000000        /* ID:HSLV-7, Inter. Type:AXI, Top Address:0x440FFFFF, Size(KB):1M, Clk Domain:SPIC_CLK */
@@ -415,6 +416,13 @@
 #define TIMER7_REG_BASE_S          0x5200BE00
 #define OTPC_REG_BASE_S            0x52000000
 #define PMC_BASE                   0x42008300
+#define IPC_SEMA_BASE              0x420083c0
+#define IPC_IPC_SEMA_BASE          0x420082F4
+
+#define PSRAM_END                  0x60800000
+#define TZ_IDAU_SEC_OFFSET         0x10000000
+#define KBYTES(x)                  ((x) << 10)
+#define MBYTES(x)                  ((x) << 20)
 
 /**************************************************************************//**
  * @defgroup AmebaD_Peripheral_Registers_Structures  AmebaD Peripheral_Registers_Structures
@@ -577,6 +585,24 @@ typedef struct {
 #define LS_SRAM_ADDR_START			LP_SRAM_BASE
 #define LS_SRAM_ADDR_END			(LP_SRAM_BASE + 0x00FFFFFF)
 
+
+#define CA32_FIP_MAX_SIZE				(0x00200000)  /* 2MB */
+
+/*BT share mem with system*/
+#define SHARE_MEM_BT_ADDRESS			 HP_SRAM_EXT_BASE /*Size: 272KB*/
+/*WiFi share mem with system */
+#define SHARE_MEM_WL_ADDRESS			(HP_SRAM_EXT_BASE + 0x100000) /*40KB*/
+
+/* margin 512 for lite and 1024 for CA32 */
+#if defined(CONFIG_RSICV_CORE_KR4)
+#define CONTEXT_SAVE_SIZE	(320)	/* portCONTEXT_SIZE:66*4 = 288 roundup to 64B aligned */
+#elif defined(CONFIG_ARM_CORE_CA32)
+#define CONTEXT_SAVE_SIZE	(320 + 1024) /* 15*4 + 32*8: general reg and floating reg */
+#elif defined(CONFIG_ARM_CORE_CM4)
+#define CONTEXT_SAVE_SIZE	192 /* 15*4 + 16*8: s16~s31 if use float */
+#elif defined(CONFIG_ARM_CORE_CM0)
+#define CONTEXT_SAVE_SIZE	172	/* not support hw float, 15*4 */
+#endif
 
 /** @} End of group AmebaD_Outline */
 #endif //_HAL_PLATFORM_
