@@ -530,13 +530,13 @@ static void i2s_tx_worker(void *arg)
 	}
 }
 
-static void *i2s_tx_worker_thread(int argc, FAR char *argv[])
+static int i2s_tx_worker_thread(int argc, FAR char *argv[])
 {
 	FAR struct amebasmart_i2s_s *priv = NULL;
 	int ret;
 
-	if (argc >= 1 && argv[0]) {
-	    priv = (FAR struct amebasmart_i2s_s *)(uintptr_t)strtoul(argv[1], NULL, 16);
+	if (argc >= 2 && argv[1]) {
+		priv = (FAR struct amebasmart_i2s_s *)(uintptr_t)strtoul(argv[1], NULL, 16);
 	}
 
 	DEBUGASSERT(priv);
@@ -559,7 +559,7 @@ static void *i2s_tx_worker_thread(int argc, FAR char *argv[])
 	}
 
 	i2sinfo("TX worker thread exited\n");
-	return NULL;
+	return 0;
 }
 
 static void i2s_tx_schedule(struct amebasmart_i2s_s *priv, int result)
