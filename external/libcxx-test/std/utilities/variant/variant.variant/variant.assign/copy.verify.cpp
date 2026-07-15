@@ -24,7 +24,7 @@ struct NotCopyConstructible
 };
 
 #if TEST_STD_VER >= 17
-TEST_CONSTEXPR_CXX20 bool test() {
+TEST_CONSTEXPR_CXX20 bool test_variant_assign_copy_verify() {
     constexpr bool not_copy = !std::is_copy_constructible_v<NotCopyConstructible>;
     TC_ASSERT_MSG(not_copy, "NotCopyConstructible shall not be copy constructible");
     
@@ -39,10 +39,10 @@ TEST_CONSTEXPR_CXX20 bool test() {
     return true;
 }
 
-int tc_utilities_variant_variant_variant_assign_copy_verify(void) {
-    test();
+int tc_utilities_variant_assign_copy_verify(void) {
+    test_variant_assign_copy_verify();
 #if TEST_STD_VER > 17
-    static_assert(test());
+    static_assert(test_variant_assign_copy_verify());
 #endif
     TC_SUCCESS_RESULT();
     return 0;

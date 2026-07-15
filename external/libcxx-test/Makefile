@@ -1359,8 +1359,9 @@ CXXSRCS += std/utilities/variant/variant.get/holds_alternative.pass.cpp
 # Variant hash
 CXXSRCS += std/utilities/variant/variant.hash/hash.pass.cpp
 CXXSRCS += std/utilities/variant/variant.hash/enabled_hash.pass.cpp
-# Variant helpers (Note: .verify.cpp files excluded - use LLVM lit framework)
+# Variant helpers
 CXXSRCS += std/utilities/variant/variant.helpers/variant_alternative.pass.cpp
+CXXSRCS += std/utilities/variant/variant.helpers/variant_alternative.verify.cpp
 CXXSRCS += std/utilities/variant/variant.helpers/variant_size.pass.cpp
 # Variant monostate
 CXXSRCS += std/utilities/variant/variant.monostate/monostate.pass.cpp
@@ -1368,17 +1369,23 @@ CXXSRCS += std/utilities/variant/variant.monostate/monostate.pass.cpp
 CXXSRCS += std/utilities/variant/variant.monostate.relops/relops.pass.cpp
 # Variant relops
 CXXSRCS += std/utilities/variant/variant.relops/relops.pass.cpp
-# Note: relops_bool_conv.verify.cpp excluded - uses LLVM lit framework
+# Negative test case: verifies that code should NOT compile (not compiling = pass).
+# CXXSRCS += std/utilities/variant/variant.relops/relops_bool_conv.verify.cpp
 # Variant synopsis
 CXXSRCS += std/utilities/variant/variant.synopsis/variant_npos.pass.cpp
-# Variant variant - main tests (Note: .verify.cpp files excluded - use LLVM lit framework)
+# Variant variant - main tests
 CXXSRCS += std/utilities/variant/variant.variant/implicit_ctad.pass.cpp
+# Negative test case: verifies that code should NOT compile (not compiling = pass).
+# CXXSRCS += std/utilities/variant/variant.variant/variant_array.verify.cpp
+# CXXSRCS += std/utilities/variant/variant.variant/variant_empty.verify.cpp
+# CXXSRCS += std/utilities/variant/variant.variant/variant_reference.verify.cpp
+# CXXSRCS += std/utilities/variant/variant.variant/variant_void.verify.cpp
 # Variant variant.assign
 CXXSRCS += std/utilities/variant/variant.variant/variant.assign/conv.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.assign/copy.pass.cpp
+CXXSRCS += std/utilities/variant/variant.variant/variant.assign/copy.verify.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.assign/move.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.assign/T.pass.cpp
-# Note: copy.verify.cpp excluded - uses LLVM lit framework
 # Variant variant.ctor
 CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/conv.pass.cpp
 CXXSRCS += std/utilities/variant/variant.variant/variant.ctor/copy.pass.cpp

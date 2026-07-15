@@ -275,7 +275,7 @@ extern int tc_utilities_variant_hash(void);
 
 /* variant.helpers */
 extern int tc_utilities_variant_helper_alternative(void);
-// extern int tc_utilities_variant_helper_alternative_verify(void);  // .verify.cpp - compile-time test
+extern int tc_utilities_variant_helper_alternative_verify(void);
 extern int tc_utilities_variant_helper_size(void);
 
 /* variant.monostate */
@@ -285,7 +285,8 @@ extern int tc_utilities_variant_monostate(void);
 extern int tc_utilities_variant_monostate_relops(void);
 
 /* variant.relops */
-// extern int tc_utilities_variant_relops_bool_conv_verify(void);  // .verify.cpp - compile-time test
+// Negative test case: verifies that code should NOT compile (not compiling = pass).
+// extern int tc_utilities_variant_relops_bool_conv_verify(void);
 extern int tc_utilities_variant_relops(void);
 #if TEST_STD_VER > 17
 extern int tc_utilities_variant_relops_three_way(void);
@@ -296,15 +297,16 @@ extern int tc_utilities_variant_synopsis_npos(void);
 
 /* variant.variant */
 extern int tc_utilities_variant_implicit_ctad(void);
-// extern int tc_utilities_variant_array_verify(void);  // .verify.cpp - compile-time test
-// extern int tc_utilities_variant_empty_verify(void);  // .verify.cpp - compile-time test
-// extern int tc_utilities_variant_reference_verify(void);  // .verify.cpp - compile-time test
-// extern int tc_utilities_variant_void_verify(void);  // .verify.cpp - compile-time test
+// Negative test case: verifies that code should NOT compile (not compiling = pass).
+// extern int tc_utilities_variant_array_verify(void);
+// extern int tc_utilities_variant_empty_verify(void);
+// extern int tc_utilities_variant_reference_verify(void);
+// extern int tc_utilities_variant_void_verify(void);
 
 /* variant.variant.assign */
 extern int tc_utilities_variant_assign_conv(void);
 extern int tc_utilities_variant_assign_copy(void);
-// extern int tc_utilities_variant_assign_copy_verify(void);  // .verify.cpp - compile-time test
+extern int tc_utilities_variant_assign_copy_verify(void);
 extern int tc_utilities_variant_assign_move(void);
 extern int tc_utilities_variant_assign_T(void);
 

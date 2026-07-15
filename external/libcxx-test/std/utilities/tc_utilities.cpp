@@ -306,7 +306,7 @@ extern "C" {
 		
 		/* variant.helpers */
 		{ tc_utilities_variant_helper_alternative(); }
-		// { tc_utilities_variant_helper_alternative_verify(); }  // .verify.cpp - compile-time test
+		{ tc_utilities_variant_helper_alternative_verify(); }
 		{ tc_utilities_variant_helper_size(); }
 		
 		/* variant.monostate */
@@ -316,7 +316,8 @@ extern "C" {
 		{ tc_utilities_variant_monostate_relops(); }
 		
 		/* variant.relops */
-		// { tc_utilities_variant_relops_bool_conv_verify(); }  // .verify.cpp - compile-time test
+		// Negative test case: verifies that code should NOT compile (not compiling = pass). 
+		// { tc_utilities_variant_relops_bool_conv_verify(); }
 		{ tc_utilities_variant_relops(); }
 #if TEST_STD_VER > 17
 		{ tc_utilities_variant_relops_three_way(); }
@@ -327,15 +328,16 @@ extern "C" {
 		
 		/* variant.variant */
 		{ tc_utilities_variant_implicit_ctad(); }
-		// { tc_utilities_variant_array_verify(); }  // .verify.cpp - compile-time test
-		// { tc_utilities_variant_empty_verify(); }  // .verify.cpp - compile-time test
-		// { tc_utilities_variant_reference_verify(); }  // .verify.cpp - compile-time test
-		// { tc_utilities_variant_void_verify(); }  // .verify.cpp - compile-time test
+		// Negative test case: verifies that code should NOT compile (not compiling = pass).
+		// { tc_utilities_variant_array_verify(); }
+		// { tc_utilities_variant_empty_verify(); }
+		// { tc_utilities_variant_reference_verify(); }
+		// { tc_utilities_variant_void_verify(); }
 		
 		/* variant.variant.assign */
 		{ tc_utilities_variant_assign_conv(); }
 		//{ tc_utilities_variant_assign_copy(); }
-		// { tc_utilities_variant_assign_copy_verify(); }  // .verify.cpp - compile-time test
+		{ tc_utilities_variant_assign_copy_verify(); }
 #ifndef _LIBCPP_HAS_GCC10_BUGS
 		{ tc_utilities_variant_assign_move(); }
 #endif
@@ -374,11 +376,11 @@ extern "C" {
 		{ tc_utilities_variant_swap(); }
 #endif
 		/* variant.visit */
+		//{ tc_utilities_variant_visit(); } // Commented: causes board crash/reboot during test execution
 		{ tc_utilities_variant_visit_robust_adl(); }
 #if TEST_STD_VER >= 20
 		{ tc_utilities_variant_visit_return_type(); }
 #endif /* TEST_STD_VER >= 20 */
-		//{ tc_utilities_variant_visit(); }
 	}
 	
 // Commented out due to missing test function implementations - temporarily disabled
