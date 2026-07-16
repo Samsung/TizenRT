@@ -986,14 +986,20 @@ void sem_release_all(FAR struct tcb_s *htcb)
 
 	while ((pholder = htcb->holdsem) != NULL) {
 		FAR sem_t *sem = pholder->sem;
+		int16_t counts = pholder->counts;
 
 		sem_freeholder(sem, pholder);
 
-		/* Increment the count on the semaphore to release the count that
-		 * was taken by sem_wait() or sem_post().
+		/* Return every count held by the terminated task.  This must follow
+		 * the same wake-up path as sem_post(): incrementing semcount alone
+		 * leaves an already blocked waiter asleep.
 		 */
 
-		sem->semcount++;
+		while (counts-- > 0) {
+			DEBUGASSERT(sem->semcount < SEM_VALUE_MAX);
+			sem->semcount++;
+			sem_unblock_task(sem, htcb);
+		}
 	}
 }
 #endif

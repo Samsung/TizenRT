@@ -1245,18 +1245,21 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 		return -ENOMEM;
 	}
 
-	/* If the global semaphore hasn't been initialized, then
-	 * initialize it now. */
+	/* If the global semaphore hasn't been initialized, then initialize it
+	 * as an available lock.  Initializing it to zero classifies it as a
+	 * signaling semaphore, which prevents holder tracking and recovery when
+	 * the task holding the SmartFS lock is cancelled.
+	 */
 
 	fs->fs_sem = &g_sem;
 	if (!g_seminitialized) {
-		sem_init(&g_sem, 0, 0);	/* Initialize the semaphore that controls access */
+		sem_init(&g_sem, 0, 1);	/* Initialize the semaphore that controls access */
 		g_seminitialized = TRUE;
-	} else {
-		/* Take the semaphore for the mount */
-
-		smartfs_semtake(fs);
 	}
+
+	/* Serialize every mount, including the first one. */
+
+	smartfs_semtake(fs);
 
 	/* Initialize the allocated mountpt state structure.  The filesystem is
 	 * responsible for one reference on the blkdriver inode and does not
