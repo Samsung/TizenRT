@@ -63,6 +63,7 @@ player_result_t MediaPlayerImpl::create()
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::createPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
 		meddbg("createPlayer enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -109,7 +110,9 @@ player_result_t MediaPlayerImpl::destroy()
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::destroyPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
 		meddbg("destroyPlayer enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
+		lock.lock();
 	}
 	sem_destroy(&syncSem);
 
@@ -195,6 +198,7 @@ player_result_t MediaPlayerImpl::prepare()
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::preparePlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
 		meddbg("preparePlayer enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -356,6 +360,7 @@ player_result_t MediaPlayerImpl::unprepare()
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::unpreparePlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
 		meddbg("unpreparePlayer enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -457,6 +462,7 @@ player_result_t MediaPlayerImpl::start()
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::startPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
 		meddbg("startPlayer enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -572,6 +578,7 @@ player_result_t MediaPlayerImpl::stop()
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::stopPlayer, shared_from_this(), std::ref(ret), std::ref(syncSem));
 		meddbg("stopPlayer enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -674,6 +681,7 @@ player_result_t MediaPlayerImpl::pause()
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::pausePlayer, shared_from_this(), std::ref(ret), true, std::ref(syncSem));
 		meddbg("pausePlayer enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -779,6 +787,7 @@ player_result_t MediaPlayerImpl::getVolume(uint8_t *vol)
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::getPlayerVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
 		meddbg("getPlayerVolume enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -829,6 +838,7 @@ player_result_t MediaPlayerImpl::getMaxVolume(uint8_t *vol)
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::getPlayerMaxVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
 		meddbg("getPlayerMaxVolume enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -879,6 +889,7 @@ player_result_t MediaPlayerImpl::setVolume(uint8_t vol)
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::setPlayerVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
 		meddbg("setPlayerVolume enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -931,6 +942,7 @@ player_result_t MediaPlayerImpl::setDataSource(std::unique_ptr<stream::InputData
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::setPlayerDataSource, shared_from_this(), sharedDataSource, std::ref(ret), std::ref(syncSem));
 		meddbg("setPlayerDataSource enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -994,6 +1006,7 @@ player_result_t MediaPlayerImpl::setObserver(std::shared_ptr<MediaPlayerObserver
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::setPlayerObserver, shared_from_this(), observer, std::ref(ret), std::ref(syncSem));
 		meddbg("setPlayerObserver enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -1037,6 +1050,7 @@ player_result_t MediaPlayerImpl::setStreamInfo(std::shared_ptr<stream_info_t> st
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::setPlayerStreamInfo, shared_from_this(), stream_info, std::ref(ret), std::ref(syncSem));
 		meddbg("setPlayerStreamInfo enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -1099,6 +1113,7 @@ bool MediaPlayerImpl::isPlaying()
 			notifySync(syncSem);
 		});
 		meddbg("getState() enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
@@ -1130,6 +1145,7 @@ player_result_t MediaPlayerImpl::setLooping(bool loop)
 	} else {
 		mpw.enQueue(&MediaPlayerImpl::setPlayerLooping, shared_from_this(), loop, std::ref(ret), std::ref(syncSem));
 		meddbg("setPlayerLooping enqueued. player: %x\n", &mPlayer);
+		lock.unlock();
 		sem_wait(&syncSem);
 	}
 	sem_destroy(&syncSem);
