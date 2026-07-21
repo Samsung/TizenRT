@@ -308,6 +308,7 @@ struct file {
 #if CONFIG_NFILE_DESCRIPTORS > 0
 struct filelist {
 	sem_t fl_sem;				/* Manage access to the file list */
+	int fl_cancelstate;			/* Cancel state of the holder before taking fl_sem */
 	struct file fl_files[CONFIG_NFILE_DESCRIPTORS];
 };
 #endif

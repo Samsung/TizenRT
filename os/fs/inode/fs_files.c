@@ -94,6 +94,15 @@
 
 static void _files_semtake(FAR struct filelist *list)
 {
+	int cancelstate;
+
+	/* A thread that is killed while holding the file list semaphore leaves
+	 * every file descriptor operation of the group deadlocked.  Defer any
+	 * cancellation until _files_semgive() releases the semaphore.
+	 */
+
+	(void)task_setcancelstate(TASK_CANCEL_DISABLE, &cancelstate);
+
 	/* Take the semaphore (perhaps waiting) */
 
 	while (sem_wait(&list->fl_sem) != 0) {
@@ -103,13 +112,27 @@ static void _files_semtake(FAR struct filelist *list)
 
 		ASSERT(get_errno() == EINTR);
 	}
+
+	list->fl_cancelstate = cancelstate;
 }
 
 /****************************************************************************
  * Name: _files_semgive
  ****************************************************************************/
 
-#define _files_semgive(list) sem_post(&list->fl_sem)
+static void _files_semgive(FAR struct filelist *list)
+{
+	int cancelstate;
+
+	/* Restore the cancel state saved by _files_semtake().  A cancellation
+	 * deferred while the semaphore was held is acted upon here, after the
+	 * semaphore has been released.
+	 */
+
+	cancelstate = list->fl_cancelstate;
+	sem_post(&list->fl_sem);
+	(void)task_setcancelstate(cancelstate, NULL);
+}
 
 /****************************************************************************
  * Name: _files_close
