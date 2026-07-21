@@ -191,12 +191,23 @@ int task_terminate(pid_t pid, bool nonblocking)
 	 * After task_recover() operations are complete, we set the invalid state back.
 	 */
 
+	/* Lock the scheduler across the recovery window.  task_recover() may
+	 * wake up tasks that were waiting on semaphores held by the dying task
+	 * (see sem_release_all()).  Without the scheduler lock, such a wake-up
+	 * could switch to the woken task while dtcb still carries its original
+	 * (blocked) task_state although it is in no list anymore, and any code
+	 * inspecting dtcb during that window (e.g. signal delivery calling
+	 * sem_waitirq()) would operate on a half-deleted TCB.
+	 */
+
+	sched_lock();
 	orig_task_state = dtcb->task_state;
 	sched_removereadytorun(dtcb);
 	final_task_state = dtcb->task_state;
 	dtcb->task_state = orig_task_state;
 	task_recover(dtcb);
 	dtcb->task_state = final_task_state;
+	sched_unlock();
 
 	/* At this point, the TCB should no longer be accessible to the system */
 
