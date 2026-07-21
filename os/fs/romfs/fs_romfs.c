@@ -67,6 +67,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sched.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <assert.h>
@@ -914,6 +915,7 @@ static int romfs_rewinddir(FAR struct inode *mountpt, FAR struct fs_dirent_s *di
 static int romfs_bind(FAR struct inode *blkdriver, FAR const void *data, FAR void **handle)
 {
 	struct romfs_mountpt_s *rm;
+	int cancelstate;
 	int ret;
 
 	fvdbg("Entry\n");
@@ -943,8 +945,15 @@ static int romfs_bind(FAR struct inode *blkdriver, FAR const void *data, FAR voi
 	 * have to addref() here (but does have to release in ubind().
 	 */
 
-	sem_init(&rm->rm_sem, 0, 0);	/* Initialize the semaphore that controls access */
+	sem_init(&rm->rm_sem, 0, 1);	/* Initialize the semaphore that controls access */
 	rm->rm_blkdriver = blkdriver;	/* Save the block driver reference */
+
+	/* Take the semaphore for the mount.  The semaphore is always taken
+	 * through romfs_semtake() so that take and give stay strictly paired
+	 * and the holder's cancel state is saved and restored.
+	 */
+
+	romfs_semtake(rm);
 
 	if (data != NULL) {
 		rm->rm_headersize = (uint32_t)data;
@@ -981,8 +990,17 @@ errout_with_buffer:
 	}
 
 errout_with_sem:
+	/* The mountpoint was never published, so no waiter can exist.  Tear
+	 * it down without posting the semaphore and restore the saved cancel
+	 * state only after the mountpoint is freed, so that a pending
+	 * cancellation cannot terminate the thread in the middle of the
+	 * teardown.
+	 */
+
+	cancelstate = rm->rm_cancelstate;
 	sem_destroy(&rm->rm_sem);
 	kmm_free(rm);
+	(void)task_setcancelstate(cancelstate, NULL);
 	return ret;
 }
 
@@ -997,6 +1015,7 @@ errout_with_sem:
 static int romfs_unbind(FAR void *handle, FAR struct inode **blkdriver)
 {
 	FAR struct romfs_mountpt_s *rm = (FAR struct romfs_mountpt_s *)handle;
+	int cancelstate;
 	int ret;
 
 	fvdbg("Entry\n");
@@ -1043,8 +1062,19 @@ static int romfs_unbind(FAR void *handle, FAR struct inode **blkdriver)
 			kmm_free(rm->rm_buffer);
 		}
 
+		/* Tear the mountpoint down WITHOUT posting the semaphore: it is
+		 * about to be freed, so a woken waiter would access freed memory.
+		 * Keeping the semaphore taken through sem_destroy() preserves the
+		 * previous behavior for any late waiter.  The saved cancel state
+		 * is restored only after the mountpoint is freed, so that a
+		 * pending cancellation cannot terminate the thread in the middle
+		 * of the teardown.
+		 */
+
+		cancelstate = rm->rm_cancelstate;
 		sem_destroy(&rm->rm_sem);
 		kmm_free(rm);
+		(void)task_setcancelstate(cancelstate, NULL);
 		return OK;
 	}
 

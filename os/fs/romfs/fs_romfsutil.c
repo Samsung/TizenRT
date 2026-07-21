@@ -50,6 +50,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+#include <sched.h>
 #include <assert.h>
 #include <debug.h>
 
@@ -343,6 +344,15 @@ static inline int romfs_searchdir(struct romfs_mountpt_s *rm, const char *entryn
 
 void romfs_semtake(struct romfs_mountpt_s *rm)
 {
+	int cancelstate;
+
+	/* A thread that is killed while holding the filesystem semaphore
+	 * leaves the mount deadlocked.  Defer any cancellation until
+	 * romfs_semgive() releases the semaphore.
+	 */
+
+	(void)task_setcancelstate(TASK_CANCEL_DISABLE, &cancelstate);
+
 	/* Take the semaphore (perhaps waiting) */
 
 	while (sem_wait(&rm->rm_sem) != 0) {
@@ -352,6 +362,8 @@ void romfs_semtake(struct romfs_mountpt_s *rm)
 
 		ASSERT(*get_errno_ptr() == EINTR);
 	}
+
+	rm->rm_cancelstate = cancelstate;
 }
 
 /****************************************************************************
@@ -360,7 +372,16 @@ void romfs_semtake(struct romfs_mountpt_s *rm)
 
 void romfs_semgive(struct romfs_mountpt_s *rm)
 {
+	int cancelstate;
+
+	/* Restore the cancel state saved by romfs_semtake().  A cancellation
+	 * deferred while the semaphore was held is acted upon here, after the
+	 * semaphore has been released.
+	 */
+
+	cancelstate = rm->rm_cancelstate;
 	sem_post(&rm->rm_sem);
+	(void)task_setcancelstate(cancelstate, NULL);
 }
 
 /****************************************************************************

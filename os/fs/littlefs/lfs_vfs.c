@@ -43,6 +43,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <sched.h>
 #include <string.h>
 
 #include <tinyara/fs/dirent.h>
@@ -75,6 +76,8 @@ struct littlefs_file_s {
 struct littlefs_mountpt_s {
 	sem_t sem;
 	sem_t sem_ops;
+	int sem_cancelstate;		/* Cancel state of the holder before taking sem */
+	int sem_ops_cancelstate;	/* Cancel state of the holder before taking sem_ops */
 	FAR struct inode *drv;
 	struct mtd_geometry_s geo;
 	struct lfs_config cfg;
@@ -164,6 +167,15 @@ const struct mountpt_operations littlefs_operations = {
 
 void littlefs_semtake(FAR struct littlefs_mountpt_s *fs)
 {
+	int cancelstate;
+
+	/* A thread that is killed while holding the filesystem semaphore
+	 * leaves the mount deadlocked.  Defer any cancellation until
+	 * littlefs_semgive() releases the semaphore.
+	 */
+
+	(void)task_setcancelstate(TASK_CANCEL_DISABLE, &cancelstate);
+
 	while (sem_wait(&fs->sem) != 0) {
 		/* The only case that an error should occur here is if
 		 * the wait was awakened by a signal.
@@ -171,6 +183,8 @@ void littlefs_semtake(FAR struct littlefs_mountpt_s *fs)
 
 		ASSERT(*get_errno_ptr() == EINTR);
 	}
+
+	fs->sem_cancelstate = cancelstate;
 }
 
 /****************************************************************************
@@ -179,7 +193,16 @@ void littlefs_semtake(FAR struct littlefs_mountpt_s *fs)
 
 void littlefs_semgive(FAR struct littlefs_mountpt_s *fs)
 {
+	int cancelstate;
+
+	/* Restore the cancel state saved by littlefs_semtake().  A
+	 * cancellation deferred while the semaphore was held is acted upon
+	 * here, after the semaphore has been released.
+	 */
+
+	cancelstate = fs->sem_cancelstate;
 	sem_post(&fs->sem);
+	(void)task_setcancelstate(cancelstate, NULL);
 }
 
 /****************************************************************************
@@ -905,6 +928,14 @@ static lfs_ssize_t littlefs_capacity(FAR const struct lfs_config *c)
 static int littlefs_lock(FAR const struct lfs_config *c)
 {
 	FAR struct littlefs_mountpt_s *fs = (FAR struct littlefs_mountpt_s *)c->context;
+	int cancelstate;
+
+	/* Defer any cancellation until littlefs_unlock() releases the
+	 * semaphore, so that a canceled holder cannot leak it.
+	 */
+
+	(void)task_setcancelstate(TASK_CANCEL_DISABLE, &cancelstate);
+
 	while (sem_wait(&fs->sem_ops) != 0) {
 		/* The only case that an error should occur here is if
 		 * the wait was awakened by a signal.
@@ -913,13 +944,22 @@ static int littlefs_lock(FAR const struct lfs_config *c)
 		ASSERT(*get_errno_ptr() == EINTR);
 	}
 
+	fs->sem_ops_cancelstate = cancelstate;
 	return OK;
 }
 
 static int littlefs_unlock(const struct lfs_config *c)
 {
 	FAR struct littlefs_mountpt_s *fs = (FAR struct littlefs_mountpt_s *)c->context;
+	int cancelstate;
+
+	/* Restore the cancel state saved by littlefs_lock() after posting
+	 * the semaphore.
+	 */
+
+	cancelstate = fs->sem_ops_cancelstate;
 	sem_post(&fs->sem_ops);
+	(void)task_setcancelstate(cancelstate, NULL);
 	return OK;
 }
 /****************************************************************************
@@ -928,6 +968,7 @@ static int littlefs_unlock(const struct lfs_config *c)
 static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR void **handle)
 {
 	FAR struct littlefs_mountpt_s *fs;
+	int cancelstate;
 	int ret;
 
 	/* Open the block driver */
@@ -952,8 +993,15 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	 */
 
 	fs->drv = driver;			/* Save the driver reference */
-	sem_init(&fs->sem, 0, 0);	/* Initialize the access control semaphore */
+	sem_init(&fs->sem, 0, 1);	/* Initialize the access control semaphore */
 	sem_init(&fs->sem_ops, 0, 1);
+
+	/* Take the semaphore for the mount.  The semaphore is always taken
+	 * through littlefs_semtake() so that take and give stay strictly
+	 * paired and the holder's cancel state is saved and restored.
+	 */
+
+	littlefs_semtake(fs);
 
 	/* Get MTD geometry directly */
 
@@ -1029,6 +1077,7 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 				goto errout_with_fs;
 			}
 			fdbg("Update Format Info Finished. after reboot, fs will be formatted\n");
+			littlefs_semgive(fs);
 			return ret;
 		}
 	} else {
@@ -1087,8 +1136,17 @@ static int littlefs_bind(FAR struct inode *driver, FAR const void *data, FAR voi
 	return ret;
 
 errout_with_fs:
+	/* The mountpoint was never published, so no waiter can exist.  Tear
+	 * it down without posting the semaphore and restore the saved cancel
+	 * state only after the mountpoint is freed, so that a pending
+	 * cancellation cannot terminate the thread in the middle of the
+	 * teardown.
+	 */
+
+	cancelstate = fs->sem_cancelstate;
 	sem_destroy(&fs->sem);
 	kmm_free(fs);
+	(void)task_setcancelstate(cancelstate, NULL);
 	return ret;
 }
 
@@ -1104,6 +1162,7 @@ static int littlefs_unbind(FAR void *handle, FAR struct inode **driver, unsigned
 {
 	FAR struct littlefs_mountpt_s *fs = handle;
 	FAR struct inode *drv = fs->drv;
+	int cancelstate;
 	int ret;
 
 	/* Unmount */
@@ -1111,7 +1170,14 @@ static int littlefs_unbind(FAR void *handle, FAR struct inode **driver, unsigned
 	littlefs_semtake(fs);
 
 	ret = lfs_unmount(&fs->lfs);
-	littlefs_semgive(fs);
+
+	/* Post the semaphore but restore the saved cancel state only after
+	 * the teardown below is complete, so that a pending cancellation
+	 * cannot terminate the thread in the middle of the teardown.
+	 */
+
+	cancelstate = fs->sem_cancelstate;
+	sem_post(&fs->sem);
 
 	if (ret >= 0) {
 		/* Close the block driver */
@@ -1136,6 +1202,7 @@ static int littlefs_unbind(FAR void *handle, FAR struct inode **driver, unsigned
 		kmm_free(fs);
 	}
 
+	(void)task_setcancelstate(cancelstate, NULL);
 	return ret;
 }
 
