@@ -62,6 +62,7 @@
 #include <string.h>
 #include <time.h>
 #include <semaphore.h>
+#include <sched.h>
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
@@ -187,6 +188,18 @@ struct sector_recover_info_s {
  ****************************************************************************/
 
 /****************************************************************************
+ * Private Variables
+ ****************************************************************************/
+
+/* fs_sem of every SmartFS mount points to the single global semaphore
+ * (see smartfs_smart.c), so one saved cancel state serves all mounts.  It
+ * is only accessed by the thread currently holding the semaphore, between
+ * smartfs_semtake() and smartfs_semgive().
+ */
+
+static int g_sem_cancelstate;
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -196,6 +209,15 @@ struct sector_recover_info_s {
 
 void smartfs_semtake(struct smartfs_mountpt_s *fs)
 {
+	int cancelstate;
+
+	/* A thread that is killed while holding the filesystem semaphore
+	 * leaves every SmartFS mount deadlocked.  Defer any cancellation
+	 * until smartfs_semgive() releases the semaphore.
+	 */
+
+	(void)task_setcancelstate(TASK_CANCEL_DISABLE, &cancelstate);
+
 	/* Take the semaphore (perhaps waiting) */
 
 	while (sem_wait(fs->fs_sem) != 0) {
@@ -205,6 +227,8 @@ void smartfs_semtake(struct smartfs_mountpt_s *fs)
 
 		ASSERT(*get_errno_ptr() == EINTR);
 	}
+
+	g_sem_cancelstate = cancelstate;
 }
 
 /****************************************************************************
@@ -213,7 +237,16 @@ void smartfs_semtake(struct smartfs_mountpt_s *fs)
 
 void smartfs_semgive(struct smartfs_mountpt_s *fs)
 {
+	int cancelstate;
+
+	/* Restore the cancel state saved by smartfs_semtake().  A cancellation
+	 * deferred while the semaphore was held is acted upon here, after the
+	 * semaphore has been released.
+	 */
+
+	cancelstate = g_sem_cancelstate;
 	sem_post(fs->fs_sem);
+	(void)task_setcancelstate(cancelstate, NULL);
 }
 
 /****************************************************************************

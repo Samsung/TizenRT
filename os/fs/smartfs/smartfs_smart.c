@@ -1250,13 +1250,16 @@ static int smartfs_bind(FAR struct inode *blkdriver, const void *data, void **ha
 
 	fs->fs_sem = &g_sem;
 	if (!g_seminitialized) {
-		sem_init(&g_sem, 0, 0);	/* Initialize the semaphore that controls access */
+		sem_init(&g_sem, 0, 1);	/* Initialize the semaphore that controls access */
 		g_seminitialized = TRUE;
-	} else {
-		/* Take the semaphore for the mount */
-
-		smartfs_semtake(fs);
 	}
+
+	/* Take the semaphore for the mount.  The semaphore is always taken
+	 * through smartfs_semtake() so that take and give stay strictly
+	 * paired and the holder's cancel state is saved and restored.
+	 */
+
+	smartfs_semtake(fs);
 
 	/* Initialize the allocated mountpt state structure.  The filesystem is
 	 * responsible for one reference on the blkdriver inode and does not
