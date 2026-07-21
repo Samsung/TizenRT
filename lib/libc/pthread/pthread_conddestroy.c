@@ -91,6 +91,12 @@ int pthread_cond_destroy(FAR pthread_cond_t *cond)
 		ret = EINVAL;
 	}
 
+	/* NOTE: Destroying a condition variable while threads are waiting
+	 * results in undefined behavior (POSIX). The internal waiter tracking
+	 * entry may not be cleaned up in this case, causing a memory leak.
+	 * Applications must ensure no threads are waiting before destroying.
+	 */
+
 	/* Destroy the semaphore contained in the structure */
 
 	else if (sem_destroy((sem_t *)&cond->sem) != OK) {
