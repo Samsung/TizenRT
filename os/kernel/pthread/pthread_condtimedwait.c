@@ -302,18 +302,14 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 						/* Did we get the condition semaphore. */
 
 						if (status != OK) {
+							/* The wait was not consumed by signal() or broadcast(). */
+							cond->waiters--;
+
 							/* NO.. Handle the special case where the semaphore wait was
 							 * awakened by the receipt of a signal -- presumably the
 							 * signal posted by pthread_condtimedout().
 							 */
-
 							if (get_errno() == EINTR) {
-
-								/* Decrement the waiter count for the timeout case
-								 * because it will not be handled by cond_signal()
-								 * or cond_broadcast()
-								 */
-								cond->waiters--;
 								sdbg("Timedout!\n");
 								ret = ETIMEDOUT;
 							} else {
