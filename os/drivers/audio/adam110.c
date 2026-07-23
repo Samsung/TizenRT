@@ -482,8 +482,8 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 	}
 	close(fd);
 
-	/* A 100 ms delay is required for audio buffer initialization. */
-	up_udelay(100*1000);
+	/* A 10 ms delay is required for audio buffer initialization. */
+	up_udelay(10*1000);
 
 	ret = ADAM110_AI_UPDATE_RSLT(dev, &rxpkt);
 	if (ret != OK) {
