@@ -173,7 +173,8 @@
 #define TCB_FLAG_CPU_LOCKED        (1 << 7) /* Bit 7: Locked to this CPU */
 #define TCB_FLAG_EXIT_PROCESSING   (1 << 8) /* Bit 8: Exitting */
 #define TCB_FLAG_SYSCALL           (1 << 10)                     /* Bit 9: In a system call */
-/* Bits 11-15: Available */
+#define TCB_FLAG_CANCEL_DOOMED     (1 << 11)                     /* Bit 11: Cancellation committed; termination is imminent */
+/* Bits 12-15: Available */
 
 /* Values for struct task_group tg_flags */
 
