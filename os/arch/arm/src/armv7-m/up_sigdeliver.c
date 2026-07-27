@@ -131,6 +131,8 @@ void up_sigdeliver(void)
 	regs[REG_XPSR] = rtcb->xcp.saved_xpsr;
 #ifdef CONFIG_BUILD_PROTECTED
 	regs[REG_LR] = rtcb->xcp.saved_lr;
+#endif
+#if defined(CONFIG_ARM_CMNVECTOR) || defined(CONFIG_BUILD_PROTECTED)
 	regs[REG_EXC_RETURN] = rtcb->xcp.saved_exec_ret;
 #endif
 
