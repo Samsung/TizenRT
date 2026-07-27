@@ -182,7 +182,9 @@ struct xcptcontext {
 #ifdef CONFIG_BUILD_PROTECTED
 	uint32_t saved_lr;
 #endif
+#if defined(CONFIG_ARM_CMNVECTOR) || defined(CONFIG_BUILD_PROTECTED)
 	uint32_t saved_exec_ret;
+#endif
 
 #ifdef CONFIG_BUILD_PROTECTED
 	/* This is the saved address to use when returning from a user-space
