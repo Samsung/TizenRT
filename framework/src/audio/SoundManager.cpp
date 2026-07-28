@@ -243,3 +243,38 @@ bool changeDSPFlow(uint8_t dsp_flow_num)
 	return true;
 }
 
+#ifdef CONFIG_DUMP4CH_SUPPORT
+bool startAudioDebugDumpStream(int duration, int verbose, uint32_t *dev_extract_size)
+{
+	medvdbg("SoundManager : startAudioDebugDumpStream. duration: %d, verbose: %d\n", duration, verbose);
+	audio_manager_result_t res = start_audio_debug_dump_stream(duration, verbose, dev_extract_size);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("startAudioDebugDumpStream failed duration : %d, verbose : %d, res : %d\n", duration, verbose, res);
+		return false;
+	}
+	return true;
+}
+
+bool readAudioDebugDumpStream(uint8_t *buffer, uint32_t *extracted_len)
+{
+	medvdbg("SoundManager : readAudioDebugDumpStream\n");
+	audio_manager_result_t res = read_audio_debug_dump_stream(buffer, extracted_len);
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("readAudioDebugDumpStream failed res : %d\n", res);
+		return false;
+	}
+	return true;
+}
+
+bool stopAudioDebugDumpStream(void)
+{
+	medvdbg("SoundManager : stopAudioDebugDumpStream\n");
+	audio_manager_result_t res = stop_audio_debug_dump_stream();
+	if (res != AUDIO_MANAGER_SUCCESS) {
+		meddbg("stopAudioDebugDumpStream failed res : %d\n", res);
+		return false;
+	}
+	return true;
+}
+#endif
+

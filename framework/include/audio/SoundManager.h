@@ -129,6 +129,33 @@ bool enableDMIC(bool enable);
  */
 bool changeDSPFlow(uint8_t dsp_flow_num);
 
+#ifdef CONFIG_DUMP4CH_SUPPORT
+/**
+ *  Start audio debug dump stream from the active input device.
+ * The stream contains echo-reference, left raw, right raw, and preprocessed audio data.
+ *  duration Streaming duration in seconds. Use -1 for unlimited streaming.
+ *  verbose Verbose log level.
+ *  dev_extract_size Extracted data size from the device.
+ *  true if the operation was successful, false otherwise.
+ */
+bool startAudioDebugDumpStream(int duration, int verbose, uint32_t *dev_extract_size);
+
+/**
+ *  Read audio debug dump stream data from the active input device.
+ * The stream contains echo-reference, left raw, right raw, and preprocessed audio data.
+ *  buffer Buffer to store extracted audio data.
+ *  extracted_len Extracted data length.
+ *  true if the operation was successful, false otherwise.
+ */
+bool readAudioDebugDumpStream(uint8_t *buffer, uint32_t *extracted_len);
+
+/**
+ *  Stop audio debug dump stream.
+ *  true if the operation was successful, false otherwise.
+ */
+bool stopAudioDebugDumpStream(void);
+#endif
+
 #if defined(__cplusplus)
 }
 #endif
