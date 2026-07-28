@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_DUMP4CH_SUPPORT),y)
+ifeq ($(CONFIG_DUMP4CH_SUPPORT)$(CONFIG_EXAMPLES_AUDIO_FILE_TRANSFER),yy)
 CONFIGURED_APPS += examples/dump4ch
 endif

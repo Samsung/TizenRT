@@ -1,0 +1,3 @@
+ifeq ($(CONFIG_EXAMPLES_AUDIO_FILE_TRANSFER),y)
+CONFIGURED_APPS += examples/aft
+endif
