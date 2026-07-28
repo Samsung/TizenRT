@@ -155,6 +155,22 @@
 #define AUDIOIOC_ENABLEDMIC         _AUDIOIOC(27)
 #define AUDIOIOC_CHANGEKD           _AUDIOIOC(28)
 #define AUDIOIOC_CHANGEDSPFLOW      _AUDIOIOC(29)
+#ifdef CONFIG_DUMP4CH_SUPPORT
+#define AUDIOIOC_MULTI_CH_STREAM_INIT   _AUDIOIOC(30)
+#define AUDIOIOC_MULTI_CH_STREAM_READ   _AUDIOIOC(31)
+#define AUDIOIOC_MULTI_CH_STREAM_DEINIT _AUDIOIOC(32)
+
+struct audio_debug_dump_stream_init_s {
+	int duration;
+	int verbose;
+	uint32_t *dev_extract_size;
+};
+
+struct audio_debug_dump_stream_read_s {
+	uint8_t *buffer;
+	uint32_t *extracted_len;
+};
+#endif
 
 /* Audio Device Types *******************************************************/
 /* The audio interface support different types of audio devices for

@@ -765,6 +765,36 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		}
 		break;
 	}
+#ifdef CONFIG_DUMP4CH_SUPPORT
+	case AUDIOIOC_MULTI_CH_STREAM_INIT: {
+		/* stream init */
+		struct audio_debug_dump_stream_init_s *stream_args;
+		stream_args = (FAR struct audio_debug_dump_stream_init_s *)arg;
+		int s = ndp120_utils_stream_init(priv, stream_args->duration, stream_args->verbose, stream_args->dev_extract_size);
+		if (s) {
+			ret = -EINVAL;
+		}
+		break;
+	}
+	case AUDIOIOC_MULTI_CH_STREAM_READ: {
+		/* blocking read */
+		struct audio_debug_dump_stream_read_s *read_args;
+		read_args = (FAR struct audio_debug_dump_stream_read_s *)arg;
+		int s = ndp120_utils_stream_get_data(priv, read_args->buffer, read_args->extracted_len);
+		if (s) {
+			ret = -EINTR;
+		}
+		break;
+	}
+	case AUDIOIOC_MULTI_CH_STREAM_DEINIT: {
+		/* stream deinit */
+		int s = ndp120_utils_stream_deinit(priv);
+		if (s) {
+			ret = -EINVAL;
+		}
+		break;
+	}
+#endif
 	default:
 		audvdbg("ndp120_ioctl received unkown cmd 0x%x\n", cmd);
 		ret = -EINVAL;
