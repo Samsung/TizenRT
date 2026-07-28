@@ -191,6 +191,14 @@ config MEDIA_HARDWARE_KD
 	---help---
 		Enable hardware Keyword Detect
 
+config DUMP4CH_SUPPORT
+	bool "Support 4-channel audio dump"
+	default n
+	depends on MEDIA_HARDWARE_KD && WIFI_MANAGER
+	---help---
+		Enable the media APIs required to capture and stream
+		4-channel audio from the hardware keyword detector.
+
 endmenu
 endif #MEDIA_VOICE_SPEECH_DETECTOR
 
