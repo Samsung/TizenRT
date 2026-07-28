@@ -1,0 +1,7 @@
+config USER_ENTRYPOINT
+	string
+	default "aft_main" if ENTRY_AUDIO_FILE_TRANSFER
+
+config ENTRY_AUDIO_FILE_TRANSFER
+	bool "\"Audio File Transfer!\" example"
+	depends on EXAMPLES_AUDIO_FILE_TRANSFER
