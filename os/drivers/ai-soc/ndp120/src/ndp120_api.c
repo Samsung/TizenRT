@@ -1488,7 +1488,7 @@ int ndp120_load_firmware(struct ndp120_dev_s *dev)
 #endif
 
 	// looks like there is some confusion around in-shift.
-	// inshift=5 should be used with BT-mic, not with AFE runnning
+	// inshift=5 should be used with BT-mic, not with AFE running
 	const unsigned int DMIC_1536KHZ_PDM_IN_SHIFT_FF = 5;
 
 	/* initialize NDP */

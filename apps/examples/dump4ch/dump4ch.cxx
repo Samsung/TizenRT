@@ -50,10 +50,7 @@
 #include <cstdio>
 #include <iostream>
 
-#include <fcntl.h>
 #include <functional>
-#include <tinyara/rtc.h>
-#include <sys/ioctl.h>
 
 using namespace std;
 using namespace media;
@@ -62,34 +59,28 @@ using namespace media::voice;
 
 static media::voice::SpeechDetector *sd;
 
-#define RTC_DEVPATH "/dev/rtc0"
-
+#define DUMP_SAMPLE_RATE_HZ       16000U
+#define DUMP_CHANNEL_COUNT        4U
+#define DUMP_BITS_PER_SAMPLE      16U
+#define DUMP_BYTES_PER_SECOND \
+	(DUMP_SAMPLE_RATE_HZ * DUMP_CHANNEL_COUNT * (DUMP_BITS_PER_SAMPLE / 8U))
 
 
 extern "C" {
 static void stream_multi_channels(int duration, int verbose)
 {
-	time_t start_time, current_time;
-	struct rtc_time start_time_rtc = RTC_TIME_INITIALIZER(1970, 1, 1, 0, 0, 0);
-	struct rtc_time current_time_rtc = RTC_TIME_INITIALIZER(1970, 1, 1, 0, 0, 0);
-	unsigned int elapsed_time_rtc = 0;
-	uint32_t total_bytes = 0;
+	uint64_t total_bytes = 0;
+	uint64_t target_bytes = 0;
 	uint32_t audio_data_len = 0;
 	uint32_t returned_extract_size = 0;
 	uint32_t data_capacity = 0;
-	int rtc_fd = -1;
-	int n_extractions = 0;
-	bool first = true;
 	bool audio_stream_started = false;
 	bool aft_stream_started = false;
 	bool stream_error = false;
 	uint8_t *data = NULL;
 
-	rtc_fd = open(RTC_DEVPATH, O_RDWR);
-	if (rtc_fd < 0) {
-		printf("ERROR: Failed to open RTC\n");
-		stream_error = true;
-		goto cleanup;
+	if (duration != -1) {
+		target_bytes = (uint64_t)duration * DUMP_BYTES_PER_SECOND;
 	}
 
 	if (send_stream_start() != 0) {
@@ -99,7 +90,12 @@ static void stream_multi_channels(int duration, int verbose)
 	}
 	aft_stream_started = true;
 
-	printf("Streaming for %ds...\n", duration);
+	if (duration == -1) {
+		printf("Streaming without a byte limit...\n");
+	} else {
+		printf("Streaming for %ds (%llu bytes)...\n", duration,
+			(unsigned long long)target_bytes);
+	}
 	if (!startAudioDebugDumpStream(duration, verbose, &returned_extract_size)) {
 		printf("ERROR: Failed to start multi-channel stream\n");
 		stream_error = true;
@@ -120,23 +116,13 @@ static void stream_multi_channels(int duration, int verbose)
 		goto cleanup;
 	}
 
-	while ((duration == -1) || elapsed_time_rtc < duration) {
+	while ((duration == -1) || total_bytes < target_bytes) {
 		if (!readAudioDebugDumpStream(data, &audio_data_len)) {
 			printf("ERROR: Failed to read multi-channel stream\n");
 			stream_error = true;
 			break;
 		}
 
-		if (first) {
-			if (ioctl(rtc_fd, RTC_RD_TIME, (unsigned long)&start_time_rtc) < 0) {
-				printf("ERROR: Failed to read RTC time (errno %d)\n", get_errno());
-				stream_error = true;
-				break;
-			}
-			first = false;
-		}
-
-		n_extractions++;
 		if (audio_data_len) {
 			if (audio_data_len > data_capacity) {
 				printf("ERROR: Invalid audio data length %u\n", audio_data_len);
@@ -150,20 +136,11 @@ static void stream_multi_channels(int duration, int verbose)
 			}
 
 			total_bytes += audio_data_len;
-			if ((verbose && audio_data_len > 1932) || (verbose > 2)) {
-				printf("%d - elapsed %u Extracted: %u total %u\n",
-					   n_extractions, elapsed_time_rtc, audio_data_len, total_bytes);
+			if (verbose) {
+				printf("Extracted: %u total: %llu\n", audio_data_len,
+					   (unsigned long long)total_bytes);
 			}
 		}
-
-		if (ioctl(rtc_fd, RTC_RD_TIME, (unsigned long)&current_time_rtc) < 0) {
-			printf("ERROR: Failed to read RTC time (errno %d)\n", get_errno());
-			stream_error = true;
-			break;
-		}
-		start_time = mktime((FAR struct tm *)&start_time_rtc);
-		current_time = mktime((FAR struct tm *)&current_time_rtc);
-		elapsed_time_rtc = difftime(current_time, start_time);
 	}
 
 cleanup:
@@ -176,10 +153,7 @@ cleanup:
 		stream_error = true;
 	}
 	free(data);
-	if (rtc_fd >= 0) {
-		close(rtc_fd);
-	}
-	printf("\nTotal sent: %u\n", total_bytes);
+	printf("\nTotal sent: %llu\n", (unsigned long long)total_bytes);
 	printf(stream_error ? "Streaming stopped due to an error.\n" : "Successfully done.\n");
 }
 
