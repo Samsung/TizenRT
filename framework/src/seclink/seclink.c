@@ -764,6 +764,8 @@ char *sl_strerror(int error)
 		return "Not initialized";
 	case SECLINK_INVALID_SIGN_FORMAT:
 		return "Invalid signature format";
+	case SECLINK_BAD_KEY_TYPE:
+		return "Bad key type";
 	}
 	return "Unknown error(this should be handled carefully)";
 }
