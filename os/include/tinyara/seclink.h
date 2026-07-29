@@ -44,6 +44,8 @@
 #define SECLINK_BUSY -18
 #define SECLINK_NOT_INITIALIZED -19
 #define SECLINK_INVALID_SIGN_FORMAT -20
+/* appended at the end to keep existing error values stable (ABI) */
+#define SECLINK_BAD_KEY_TYPE -21 //the type when key was set and the type to get key are not matched
 
 #define SECLINK_MEM_MAX_SIZE 512
 #define SECLINK_MEM_PRIV_MAX_SIZE 128
