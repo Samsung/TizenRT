@@ -191,7 +191,6 @@ static inline int _sl_convert_res(hal_result_e res)
 			return g_sec_res_table[i];
 		}
 	}
-	assert(0); // shouldn't be happened
 	return SECLINK_ERROR;
 }
 
