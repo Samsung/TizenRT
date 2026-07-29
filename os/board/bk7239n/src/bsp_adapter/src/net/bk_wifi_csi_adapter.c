@@ -695,7 +695,11 @@ void bk_wifi_csi_disable_HE_and_VHT(void)
 	BK_LOG_ON_ERR(bk_wifi_capa_config(WIFI_CAPA_ID_VHT_EN, 0));
 	BK_LOG_ON_ERR(bk_wifi_capa_config(WIFI_CAPA_ID_HE_EN, 0));
 }
-
+void bk_wifi_csi_disable_AMPDU(void)
+{
+	BK_LOG_ON_ERR(bk_wifi_capa_config(WIFI_CAPA_ID_TX_AMPDU_EN, 0));
+	BK_LOG_ON_ERR(bk_wifi_capa_config(WIFI_CAPA_ID_RX_AMPDU_EN, 0));	
+}
 FAR struct wifi_csi_lowerhalf_s *bk_wifi_csi_initialize(void)
 {
 	int err = 0;
@@ -717,7 +721,9 @@ FAR struct wifi_csi_lowerhalf_s *bk_wifi_csi_initialize(void)
 	}
 	bk_wifi_csi_givesem();
 	bk_wifi_csi_disable_HE_and_VHT();
-
+	#if 0
+	bk_wifi_csi_disable_AMPDU();
+	#endif
 	return &g_bk_drv->dev;
 }
 
