@@ -22,18 +22,55 @@ config HAVE_CXX
 
 if HAVE_CXX
 
+# Hidden symbols for "C++ version or later" - used for >= version guards
+config CXX_VERSION_11_OR_LATER
+	bool
+
+config CXX_VERSION_14_OR_LATER
+	bool
+
+config CXX_VERSION_17_OR_LATER
+	bool
+
+config CXX_VERSION_20_OR_LATER
+	bool
+
+config CXX_VERSION_23_OR_LATER
+	bool
+
 choice CXX_VERSION
 	prompt "c++version"
 	default CXX_VERSION_11
 
 config CXX_VERSION_11
 	bool "c++11"
+	select CXX_VERSION_11_OR_LATER
 
 config CXX_VERSION_14
 	bool "c++14"
+	select CXX_VERSION_11_OR_LATER
+	select CXX_VERSION_14_OR_LATER
 
 config CXX_VERSION_17
 	bool "c++17"
+	select CXX_VERSION_11_OR_LATER
+	select CXX_VERSION_14_OR_LATER
+	select CXX_VERSION_17_OR_LATER
+
+config CXX_VERSION_20
+	bool "c++20"
+	select CXX_VERSION_11_OR_LATER
+	select CXX_VERSION_14_OR_LATER
+	select CXX_VERSION_17_OR_LATER
+	select CXX_VERSION_20_OR_LATER
+
+config CXX_VERSION_23
+	bool "c++23"
+	select CXX_VERSION_11_OR_LATER
+	select CXX_VERSION_14_OR_LATER
+	select CXX_VERSION_17_OR_LATER
+	select CXX_VERSION_20_OR_LATER
+	select CXX_VERSION_23_OR_LATER
 
 endchoice
 
@@ -53,10 +90,21 @@ config LIBCXX
 	default n
 	select HAVE_CXXINITIALIZE if BUILD_FLAT
 	select BINFMT_CONSTRUCTORS if APP_BINARY_SEPARATION
+	select CONFIG_SCHED_STARTHOOK
 	---help---
 		LLVM libc++ can be built by selecting this option.
+		Enables C++ constructor/destructor execution support.
 
 if LIBCXX
+
+config LIBCXX_LOCALE
+    bool "Enable libcxx locale support"
+    default y
+    select LIBC_LOCALE
+    ---help---
+        Enable locale support in libcxx. This automatically enables
+        LIBC_LOCALE in the C library. If you disable this, locale and iostream
+        (std::cout, std::cin, std::stringstream) functionality will not be available.
 
 config LIBCXX_EXCEPTION
 	bool "Enable Exception Suppport"
@@ -64,9 +112,110 @@ config LIBCXX_EXCEPTION
 	---help---
 		Enable exception support in libc++.
 
-		NOTE: C++ exception support requires toolchain version 10.3.1. If you
-		are enabling C++ exception then use docker image version 2.0.0. Use
+		NOTE:  Enabling can cause crashes due to cross-compiler 'arm-none-eabi-g++' version (10.3.1).
+		If you are enabling C++ exception then use docker image version 2.0.0. Use
 		menuconfig (Build Setup -> Docker Image Version) to set CONFIG_DOCKER_VERSION=2.0.0
+
+config LIBCXX_FILESYSTEM
+    bool "Enable full filesystem support"
+    default n
+    depends on CXX_VERSION_17_OR_LATER
+    ---help---
+        Enable std::filesystem directory operations, iterators, and file status
+        functions. This requires sys/statvfs.h and related system calls, which are not currently available.
+        Without statvfs.h, enabling this flag will result in build errors.
+
+        When disabled, basic path manipulation support is still available
+        (path, filesystem_error, filesystem_clock).
+
+        Note: Filesystem is a C++17 feature and requires CONFIG_CXX_VERSION_17.
+
+config LIBCXX_TIME_UTC
+    bool "Enable C++17 UTC time support"
+    default n
+    depends on CXX_VERSION_17_OR_LATER
+    ---help---
+        Enable std::timespec and std::timespec_get support (C++17).
+        Requires TizenRT C library to provide timespec_get() and TIME_UTC.
+        Currently TizenRT does not provide these, so this must remain disabled
+        until they are implemented in the C library.
+
+choice LIBCXX_RTTI_MODE
+	prompt "RTTI mode"
+	default LIBCXX_RTTI_AUTO
+	---help---
+		Control RTTI (Run-Time Type Information) behavior in libc++.
+
+		Auto-detect (default): Reads the compiler's __GXX_RTTI macro to
+		determine if -frtti or -fno-rtti was passed from your board config.
+
+		Force enabled: Always enable RTTI regardless of compiler flags.
+		You must ensure -frtti is in your board's CXXFLAGS.
+
+		Force disabled: Always disable RTTI regardless of compiler flags.
+		Useful for minimizing code size even if -frtti is in CXXFLAGS.
+		Disabling RTTI reduces code size.
+
+config LIBCXX_RTTI_AUTO
+	bool "Auto-detect from compiler flags (recommended)"
+
+config LIBCXX_RTTI_FORCE_ON
+	bool "Force RTTI enabled"
+
+config LIBCXX_RTTI_FORCE_OFF
+	bool "Force RTTI disabled"
+
+endchoice
+
+choice LIBCXX_HARDENING_MODE
+	prompt "libc++ hardening mode"
+	default LIBCXX_HARDENING_DISABLED
+	---help---
+		Select the hardening mode for libc++ containers and algorithms.
+		Modes are mutually exclusive.
+
+		- Disabled: No runtime checks (production, minimal code size)
+		- Hardened: Production security (security-critical checks only)
+		- Assertions: Safe mode for development (all checks enabled)
+		- Debug: Testing mode (comprehensive checks, may affect complexity)
+
+config LIBCXX_HARDENING_DISABLED
+	bool "Disabled (recommended for production)"
+	---help---
+		No runtime checks. Optimal performance and minimal code size.
+		Recommended for production builds.
+
+config LIBCXX_HARDENING_HARDENED
+	bool "Hardened Mode"
+	---help---
+		Enable security-critical checks for production.
+		Catches: invalid input ranges, invalid element access.
+		Does NOT catch: overlapping ranges, allocator compatibility.
+
+config LIBCXX_HARDENING_ASSERTIONS
+	bool "Assertions (Safe Mode)"
+	---help---
+		Enable all runtime assertion checks. Good for development.
+		Catches: invalid ranges, out-of-bounds access, overlapping ranges,
+		compatible allocator issues, and internal invariants.
+
+config LIBCXX_HARDENING_DEBUG
+	bool "Debug Mode"
+	---help---
+		Enable comprehensive checks for testing.
+		Includes all hardened checks plus overlapping ranges,
+		allocator compatibility, and internal invariants.
+		May change algorithm complexity (e.g., O(1) to O(n)).
+
+endchoice
+
+config LIBCXX_HARDENING_VERBOSE
+	bool "Enable verbose assertion messages"
+	default y
+	depends on !LIBCXX_HARDENING_DISABLED
+	---help---
+		Include detailed messages in assertion failures.
+		Increases code size due to string storage.
 
 config LIBCXX_IOSTREAM_BUFSIZE
 	int "IO Stream Buffer Size"
@@ -78,6 +227,57 @@ config LIBCXX_HAVE_LIBSUPCXX
 	---help---
 		Select if your toolchain provides libsupc++.  This option is required
 		at present because the built-in libsupc++ support is incomplete.
+
+config LIBCXX_HAS_NO_INCOMPLETE_PSTL
+	bool "Disable Parallel STL (PSTL) completely"
+	default y
+	---help---
+		When enabled (default), completely disables Parallel STL (PSTL) support.
+		This reduces code size and eliminates any parallel algorithm overhead.
+		
+		When disabled, PSTL becomes available for C++17 parallel algorithms.
+		You must also select a PSTL backend (SERIAL, THREAD, or LIBDISPATCH).
+		
+		Recommended settings:
+		- y (default): Most embedded systems, minimal footprint
+		- n: Systems needing C++17 parallel algorithms with CONFIG_LIBCXX_ENABLE_EXPERIMENTAL
+
+choice LIBCXX_PSTL_BACKEND
+	prompt "Parallel STL CPU Backend"
+	default LIBCXX_PSTL_BACKEND_SERIAL
+	depends on !LIBCXX_HAS_NO_INCOMPLETE_PSTL
+	---help---
+		When PSTL is enabled, select the Parallel STL (PSTL) CPU backend for C++17 parallel algorithms.
+		SERIAL is recommended for embedded systems.
+
+config LIBCXX_PSTL_BACKEND_SERIAL
+	bool "Serial (No Parallelism)"
+	---help---
+		Execute all parallel algorithms sequentially.		
+		Recommended for embedded systems:
+		- No threading overhead
+		- Minimal code size
+		- No pthread dependency for parallel algorithms
+		- Deterministic execution		
+		Use this when: No multi-threading support or constrained resources.
+
+config LIBCXX_PSTL_BACKEND_THREAD
+	bool "Thread (std::thread based)"
+	---help---
+		Use std::thread for actual parallel execution.		
+		Requires:
+		- Full pthread implementation
+		- Thread pool infrastructure
+		- Sufficient memory for thread stacks		
+		Use this when: Multi-core CPU with full threading support.
+
+config LIBCXX_PSTL_BACKEND_LIBDISPATCH
+	bool "libdispatch (Apple's Grand Central Dispatch)"
+	---help---
+		Use Apple's Grand Central Dispatch for parallel execution.		
+		NOTE: Not available on TizenRT - requires Apple's libdispatch library.
+
+endchoice
 
 endif
 

@@ -18,9 +18,41 @@
 
 #ifndef __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H
 #define __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H
+
 #include "libcxx_tc_common.h"
 
+// Main test functions
 int tc_algorithms_main(void);
 int tc_numerics_main(void);
 int tc_utilities_main(void);
+int tc_thread_main(void);
+int tc_diagnostics_main(void);
+int tc_atomics_main(void);
+int tc_language_support_main(void);
+
+// Menu functions with argc/argv for command-line based test selection
+#ifdef CONFIG_LIBCXX_UTC_ALGORITHMS
+void tc_algorithms_menu(int argc, char *argv[]);
+#endif
+
+#ifdef CONFIG_LIBCXX_UTC_CONTAINERS
+void tc_containers_menu(int argc, char *argv[]);
+#endif
+
+#ifdef CONFIG_LIBCXX_UTC_STRINGS
+void tc_strings_menu(int argc, char *argv[]);
+#endif
+
+#ifdef CONFIG_LIBCXX_UTC_ITERATORS
+void tc_iterators_menu(int argc, char *argv[]);
+#endif
+
+#ifdef CONFIG_LIBCXX_UTC_UTILITIES
+void tc_utilities_menu(int argc, char *argv[]);
+#endif
+
+#ifdef CONFIG_LIBCXX_UTC_LANGUAGE_SUPPORT
+void tc_language_support_menu(int argc, char *argv[]);
+#endif
+
 #endif /* __EXTERNAL_LIBCXX_TEST_UTC_LIBCXX_H */
