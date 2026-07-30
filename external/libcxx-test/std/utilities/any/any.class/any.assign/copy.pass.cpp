@@ -184,7 +184,7 @@ void test_copy_assign_throws()
 #endif
 }
 
-int tc_utilities_any_any_class_any_assign_copy(void) {
+int tc_any_assign_copy(void) {
     globalMemCounter.reset();
     test_copy_assign<small1, small2>();
     test_copy_assign<large1, large2>();
@@ -196,5 +196,6 @@ int tc_utilities_any_any_class_any_assign_copy(void) {
     test_copy_assign_throws<small_throws_on_copy>();
     test_copy_assign_throws<large_throws_on_copy>();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

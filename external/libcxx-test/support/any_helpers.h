@@ -259,7 +259,8 @@ typedef large_type<2> large2;
 // and 'throws_on_move'.
 struct my_any_exception {};
 
-void throwMyAnyExpression() {
+// Static to avoid multiple definition errors when linking multiple test files
+static void throwMyAnyExpression() {
 #if !defined(TEST_HAS_NO_EXCEPTIONS)
         throw my_any_exception();
 #else
@@ -271,9 +272,9 @@ void throwMyAnyExpression() {
 // this type throws if it is copied.
 struct small_throws_on_copy
 {
-    static int count;
-    static int copied;
-    static int moved;
+    inline static int count = 0;
+    inline static int copied = 0;
+    inline static int moved = 0;
     static void reset() { count = copied = moved = 0; }
     int value;
 
@@ -300,18 +301,14 @@ private:
     small_throws_on_copy& operator=(small_throws_on_copy &&) = delete;
 };
 
-int small_throws_on_copy::count = 0;
-int small_throws_on_copy::copied = 0;
-int small_throws_on_copy::moved = 0;
-
 
 // A test type that will NOT trigger the small object optimization within 'any'.
 // this type throws if it is copied.
 struct large_throws_on_copy
 {
-    static int count;
-    static int copied;
-    static int moved;
+    inline static int count = 0;
+    inline static int copied = 0;
+    inline static int moved = 0;
     static void reset() { count = copied = moved = 0; }
     int value = 0;
 
@@ -342,17 +339,13 @@ private:
     int data[10];
 };
 
-int large_throws_on_copy::count = 0;
-int large_throws_on_copy::copied = 0;
-int large_throws_on_copy::moved = 0;
-
 // A test type that throws when it is moved. This object will NOT trigger
 // the small object optimization in 'any'.
 struct throws_on_move
 {
-    static int count;
-    static int copied;
-    static int moved;
+    inline static int count = 0;
+    inline static int copied = 0;
+    inline static int moved = 0;
     static void reset() { count = copied = moved = 0; }
     int value;
 
@@ -374,10 +367,6 @@ private:
     throws_on_move& operator=(throws_on_move const&) = delete;
     throws_on_move& operator=(throws_on_move &&) = delete;
 };
-
-int throws_on_move::count = 0;
-int throws_on_move::copied = 0;
-int throws_on_move::moved = 0;
 
 struct small_tracked_t {
   small_tracked_t()

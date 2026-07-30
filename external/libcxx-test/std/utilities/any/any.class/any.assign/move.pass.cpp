@@ -92,7 +92,7 @@ void test_move_assign_noexcept() {
     ASSERT_NOEXCEPT(a1 = std::move(a2));
 }
 
-int tc_utilities_any_any_class_any_assign_move(void) {
+int tc_any_assign_move(void) {
     test_move_assign_noexcept();
     test_move_assign<small1, small2>();
     test_move_assign<large1, large2>();
@@ -101,5 +101,6 @@ int tc_utilities_any_any_class_any_assign_move(void) {
     test_move_assign_empty<small>();
     test_move_assign_empty<large>();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

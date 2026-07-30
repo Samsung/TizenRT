@@ -21,7 +21,8 @@
 #include "test_macros.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_any_any_nonmembers_swap(void) {
+#if TEST_STD_VER >= 17
+TEST_CONSTEXPR_CXX20 bool test_swap_any_nonmembers() {
 
     { // test noexcept
         std::any a;
@@ -37,5 +38,15 @@ int tc_utilities_any_any_nonmembers_swap(void) {
         TC_ASSERT_EXPR(std::any_cast<int>(a2) == 1);
     }
 
-  return 0;
+  return true;
 }
+
+int tc_any_swap_nonmember(void) {
+    test_swap_any_nonmembers();
+#if TEST_STD_VER > 17
+    static_assert(test_swap_any_nonmembers());
+#endif
+    TC_SUCCESS_RESULT();
+    return 0;
+}
+#endif /* TEST_STD_VER >= 17 */

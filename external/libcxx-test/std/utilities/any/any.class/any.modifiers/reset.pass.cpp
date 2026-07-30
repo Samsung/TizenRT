@@ -20,7 +20,7 @@
 #include "any_helpers.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_any_any_class_any_modifiers_reset(void) {
+int tc_any_reset(void) {
     // empty
     {
         std::any a;
@@ -55,5 +55,6 @@ int tc_utilities_any_any_class_any_modifiers_reset(void) {
         TC_ASSERT_EXPR(large::count == 0);
     }
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

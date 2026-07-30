@@ -91,12 +91,13 @@ void test_copy()
     TC_ASSERT_EXPR(Type::count == 0);
 }
 
-int tc_utilities_any_any_class_any_cons_copy(void) {
+int tc_any_cons_copy(void) {
     test_copy<small>();
     test_copy<large>();
     test_copy_empty();
     test_copy_throws<small_throws_on_copy>();
     test_copy_throws<large_throws_on_copy>();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

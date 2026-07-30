@@ -18,7 +18,7 @@
 #include "any_helpers.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_any_any_class_any_observers_has_value(void) {
+int tc_any_has_value(void) {
     {
         std::any a;
         ASSERT_NOEXCEPT(a.has_value());
@@ -57,5 +57,6 @@ int tc_utilities_any_any_class_any_observers_has_value(void) {
         TC_ASSERT_EXPR(a.has_value());
     }
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

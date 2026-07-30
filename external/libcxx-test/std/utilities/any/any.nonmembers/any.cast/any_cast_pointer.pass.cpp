@@ -167,7 +167,7 @@ void test_cast_function_pointer() {
     TC_ASSERT_EXPR(fn_ptr == test_fn);
 }
 
-int tc_utilities_any_any_nonmembers_any_cast_any_cast_pointer(void) {
+int tc_any_cast_pointer(void) {
     test_cast_is_noexcept();
     test_cast_return_type();
     test_cast_nullptr();
@@ -178,5 +178,6 @@ int tc_utilities_any_any_nonmembers_any_cast_any_cast_pointer(void) {
     test_cast_array();
     test_cast_function_pointer();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

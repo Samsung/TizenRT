@@ -116,7 +116,7 @@ void test_self_swap() {
     TC_ASSERT_EXPR(large::count == 0);
 }
 
-int tc_utilities_any_any_class_any_modifiers_swap(void) {
+int tc_any_swap_member(void) {
     test_noexcept();
     test_swap_empty<small>();
     test_swap_empty<large>();
@@ -126,5 +126,6 @@ int tc_utilities_any_any_class_any_modifiers_swap(void) {
     test_swap<large, small>();
     test_self_swap();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

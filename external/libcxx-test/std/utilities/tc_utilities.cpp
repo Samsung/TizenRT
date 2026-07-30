@@ -383,50 +383,52 @@ extern "C" {
 #endif /* TEST_STD_VER >= 20 */
 	}
 	
-// Commented out due to missing test function implementations - temporarily disabled
-#if 0
+#if TEST_STD_VER >= 17
 	void tc_utilities_any()
 	{
-		printf("\nStarting [UTILITIES_ANY] Tests (C++17+)\n");
+		printf("\nStarting [UTILITIES : ANY] Tests (C++17+)\n");
 		fflush(stdout);
 		
 		/* any.class.any.assign */
-		{ tc_utilities_any_any_class_any_assign_copy_pass(); }
-		{ tc_utilities_any_any_class_any_assign_move_pass(); }
-		{ tc_utilities_any_any_class_any_assign_value_pass(); }
+		{ tc_any_assign_copy(); }
+		{ tc_any_assign_move(); }
+		{ tc_any_assign_value(); }
 		
 		/* any.class.any.cons */
-		{ tc_utilities_any_any_class_any_cons_copy_pass(); }
-		{ tc_utilities_any_any_class_any_cons_default_pass(); }
-		{ tc_utilities_any_any_class_any_cons_in_place_type_pass(); }
-		{ tc_utilities_any_any_class_any_cons_move_pass(); }
-		{ tc_utilities_any_any_class_any_cons_value_pass(); }
+		{ tc_any_cons_copy(); }
+		{ tc_any_cons_default(); }
+		{ tc_any_cons_in_place_type(); }
+		{ tc_any_cons_move(); }
+		{ tc_any_cons_value(); }
 		
 		/* any.class.any.modifiers */
-		{ tc_utilities_any_any_class_any_modifiers_emplace_pass(); }
-		{ tc_utilities_any_any_class_any_modifiers_reset_pass(); }
-		{ tc_utilities_any_any_class_any_modifiers_swap_pass(); }
+		{ tc_any_emplace(); }
+		{ tc_any_reset(); }
+		{ tc_any_swap_member(); }
 		
 		/* any.class.any.observers */
-		{ tc_utilities_any_any_class_any_observers_has_value_pass(); }
-		{ tc_utilities_any_any_class_any_observers_type_pass(); }
+		{ tc_any_has_value(); }
+		{ tc_any_type(); }
 		
 		/* any.nonmembers */
-		{ tc_utilities_any_any_nonmembers_make_any_pass(); }
-		{ tc_utilities_any_any_nonmembers_swap_pass(); }
+		{ tc_any_make_any(); }
+		{ tc_any_swap_nonmember(); }
 		
 		/* any.nonmembers.any.cast */
-		{ tc_utilities_any_any_nonmembers_any_cast_any_cast_pointer_pass(); }
-		{ tc_utilities_any_any_nonmembers_any_cast_any_cast_reference_pass(); }
-		{ tc_utilities_any_any_nonmembers_any_cast_any_cast_request_invalid_value_category_verify(); }
-		{ tc_utilities_any_any_nonmembers_any_cast_const_correctness_verify(); }
-		{ tc_utilities_any_any_nonmembers_any_cast_not_copy_constructible_verify(); }
-		{ tc_utilities_any_any_nonmembers_any_cast_reference_types_verify(); }
+		{ tc_any_cast_pointer(); }
+		{ tc_any_cast_reference(); }
+		{ tc_any_cast_invalid_value_category_verify(); }
+		{ tc_any_cast_const_correctness_verify(); }
+		{ tc_any_cast_not_copy_constructible_verify(); }
+		{ tc_any_cast_reference_types_verify(); }
 		
 		printf("\nCompleted [UTILITIES_ANY] Tests\n");
 		fflush(stdout);
 	}
 
+#endif /* TEST_STD_VER >= 17 */
+
+#if 0 /* Disabled - missing test function implementations */
 	void tc_utilities_meta()
 	{
 		printf("\nStarting [UTILITIES_META] Tests (Type Traits)\n");
@@ -677,7 +679,7 @@ extern "C" {
 		usleep(1000);
 		tc_utilities_variant();
 		usleep(1000);
-		//tc_utilities_any();
+		tc_utilities_any();
 		usleep(1000);
 		//tc_utilities_meta();
 		usleep(1000);
@@ -715,7 +717,7 @@ extern "C" {
 		}
 		else if (strcmp(argv[1], "any") == 0) {
 			printf("\nRunning any tests (C++17+)...\n");
-			//tc_utilities_any();
+			tc_utilities_any();
 		}
 		else if (strcmp(argv[1], "meta") == 0) {
 			printf("\nRunning meta/type_traits tests...\n");

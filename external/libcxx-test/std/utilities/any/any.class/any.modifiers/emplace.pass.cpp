@@ -276,7 +276,7 @@ void test_emplace_sfinae_constraints() {
     }
 }
 
-int tc_utilities_any_any_class_any_modifiers_emplace(void) {
+int tc_any_emplace(void) {
     test_emplace_type<small>();
     test_emplace_type<large>();
     test_emplace_type<small_throws_on_copy>();
@@ -290,5 +290,6 @@ int tc_utilities_any_any_class_any_modifiers_emplace(void) {
     test_emplace_throws<LargeThrows>();
 #endif
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

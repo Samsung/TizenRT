@@ -358,9 +358,9 @@ public:
 };
 
 #ifdef DISABLE_NEW_COUNT
-  const bool MemCounter::disable_checking = true;
+  inline const bool MemCounter::disable_checking = true;
 #else
-  const bool MemCounter::disable_checking = false;
+  inline const bool MemCounter::disable_checking = false;
 #endif
 
 TEST_DIAGNOSTIC_PUSH
@@ -373,7 +373,7 @@ TEST_DIAGNOSTIC_POP
 
 #ifndef DISABLE_NEW_COUNT
 //Prevent multiple definition errors when DISABLE_NEW_COUNT is enabled
-MemCounter &globalMemCounter = *getGlobalMemCounter();
+inline MemCounter &globalMemCounter = *getGlobalMemCounter();
 // Test memory tracking operators conflicts with system libsupc++ operators resulting in multiple definition error.
 // Inline functions allow multiple definitions through ODR relaxation, letting the linker merge them properly.
 #ifdef CONFIG_LIBCXX_UTC

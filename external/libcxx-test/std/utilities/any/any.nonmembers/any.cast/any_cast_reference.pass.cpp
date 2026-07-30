@@ -38,7 +38,7 @@ void test_cast_is_not_noexcept() {
 }
 
 // Test that the return type of any_cast is correct.
-void test_cast_return_type() {
+void test_cast_return_type_ref() {
     std::any a;
     static_assert(std::is_same<decltype(std::any_cast<int>(a)), int>::value, "");
     static_assert(std::is_same<decltype(std::any_cast<int const>(a)), int>::value, "");
@@ -107,7 +107,7 @@ void checkThrows(std::any& a)
 #endif
 }
 
-void test_cast_empty() {
+void test_cast_empty_ref() {
     // None of these operations should allocate.
     DisableAllocationGuard g; (TEST_IGNORE_NODISCARD g);
     std::any a;
@@ -301,14 +301,15 @@ void test_cast_to_value() {
     TC_ASSERT_EXPR(Type::count == 0);
 }
 
-int tc_utilities_any_any_nonmembers_any_cast_any_cast_reference(void) {
+int tc_any_cast_reference(void) {
     test_cast_is_not_noexcept();
-    test_cast_return_type();
-    test_cast_empty();
+    test_cast_return_type_ref();
+    test_cast_empty_ref();
     test_cast_to_reference<small>();
     test_cast_to_reference<large>();
     test_cast_to_value<small>();
     test_cast_to_value<large>();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

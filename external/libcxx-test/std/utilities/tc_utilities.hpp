@@ -344,44 +344,42 @@ extern int tc_utilities_variant_visit(void);
 #endif /* TEST_STD_VER >= 17 */
 
 /* ============================================================================
- * ANY TESTS (C++17+) - Commented out due to missing implementations
+ * ANY TESTS (C++17+)
  * ============================================================================ */
-#if 0 /* Disabled - missing test function implementations */
 #if TEST_STD_VER >= 17
 /* any.class.any.assign */
-extern int tc_utilities_any_any_class_any_assign_copy_pass(void);
-extern int tc_utilities_any_any_class_any_assign_move_pass(void);
-extern int tc_utilities_any_any_class_any_assign_value_pass(void);
+extern int tc_any_assign_copy(void);
+extern int tc_any_assign_move(void);
+extern int tc_any_assign_value(void);
 
 /* any.class.any.cons */
-extern int tc_utilities_any_any_class_any_cons_copy_pass(void);
-extern int tc_utilities_any_any_class_any_cons_default_pass(void);
-extern int tc_utilities_any_any_class_any_cons_in_place_type_pass(void);
-extern int tc_utilities_any_any_class_any_cons_move_pass(void);
-extern int tc_utilities_any_any_class_any_cons_value_pass(void);
+extern int tc_any_cons_copy(void);
+extern int tc_any_cons_default(void);
+extern int tc_any_cons_in_place_type(void);
+extern int tc_any_cons_move(void);
+extern int tc_any_cons_value(void);
 
 /* any.class.any.modifiers */
-extern int tc_utilities_any_any_class_any_modifiers_emplace_pass(void);
-extern int tc_utilities_any_any_class_any_modifiers_reset_pass(void);
-extern int tc_utilities_any_any_class_any_modifiers_swap_pass(void);
+extern int tc_any_emplace(void);
+extern int tc_any_reset(void);
+extern int tc_any_swap_member(void);
 
 /* any.class.any.observers */
-extern int tc_utilities_any_any_class_any_observers_has_value_pass(void);
-extern int tc_utilities_any_any_class_any_observers_type_pass(void);
+extern int tc_any_has_value(void);
+extern int tc_any_type(void);
 
 /* any.nonmembers */
-extern int tc_utilities_any_any_nonmembers_make_any_pass(void);
-extern int tc_utilities_any_any_nonmembers_swap_pass(void);
+extern int tc_any_make_any(void);
+extern int tc_any_swap_nonmember(void);
 
 /* any.nonmembers.any.cast */
-extern int tc_utilities_any_any_nonmembers_any_cast_any_cast_pointer_pass(void);
-extern int tc_utilities_any_any_nonmembers_any_cast_any_cast_reference_pass(void);
-extern int tc_utilities_any_any_nonmembers_any_cast_any_cast_request_invalid_value_category_verify(void);
-extern int tc_utilities_any_any_nonmembers_any_cast_const_correctness_verify(void);
-extern int tc_utilities_any_any_nonmembers_any_cast_not_copy_constructible_verify(void);
-extern int tc_utilities_any_any_nonmembers_any_cast_reference_types_verify(void);
+extern int tc_any_cast_pointer(void);
+extern int tc_any_cast_reference(void);
+extern int tc_any_cast_invalid_value_category_verify(void);
+extern int tc_any_cast_const_correctness_verify(void);
+extern int tc_any_cast_not_copy_constructible_verify(void);
+extern int tc_any_cast_reference_types_verify(void);
 #endif /* TEST_STD_VER >= 17 */
-#endif /* Disabled - missing test function implementations */
 
 /* ============================================================================
  * META TESTS (Type Traits) - Commented out due to missing implementations

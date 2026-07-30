@@ -171,7 +171,7 @@ void test_assign_throws() {
 // Test that any& operator=(ValueType&&) is *never* selected for:
 // * std::in_place type.
 // * Non-copyable types
-void test_sfinae_constraints() {
+void test_assign_sfinae_constraints() {
     { // Only the constructors are required to SFINAE on in_place_t
         using Tag = std::in_place_type_t<int>;
         using RawTag = std::remove_reference_t<Tag>;
@@ -195,7 +195,7 @@ void test_sfinae_constraints() {
     }
 }
 
-int tc_utilities_any_any_class_any_assign_value(void) {
+int tc_any_assign_value(void) {
     test_assign_value<small1, small2>();
     test_assign_value<large1, large2>();
     test_assign_value<small, large>();
@@ -205,7 +205,8 @@ int tc_utilities_any_any_class_any_assign_value(void) {
     test_assign_throws<small_throws_on_copy>();
     test_assign_throws<large_throws_on_copy>();
     test_assign_throws<throws_on_move, /* Move = */ true>();
-    test_sfinae_constraints();
+    test_assign_sfinae_constraints();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

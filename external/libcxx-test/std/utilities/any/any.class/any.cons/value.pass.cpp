@@ -109,7 +109,7 @@ void test_copy_move_value() {
 }
 
 // Test that any(ValueType&&) is *never* selected for a std::in_place_type_t specialization.
-void test_sfinae_constraints() {
+void test_cons_sfinae_constraints() {
     using BadTag = std::in_place_type_t<int>;
     using OKTag = std::in_place_t;
     // Test that the tag type is properly handled in SFINAE
@@ -146,13 +146,14 @@ void test_sfinae_constraints() {
     }
 }
 
-int tc_utilities_any_any_class_any_cons_value(void) {
+int tc_any_cons_value(void) {
     test_copy_move_value<small>();
     test_copy_move_value<large>();
     test_copy_value_throws<small_throws_on_copy>();
     test_copy_value_throws<large_throws_on_copy>();
     test_move_value_throws();
-    test_sfinae_constraints();
+    test_cons_sfinae_constraints();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

@@ -20,7 +20,7 @@
 #include "count_new.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_any_any_class_any_cons_default(void) {
+int tc_any_cons_default(void) {
     {
         static_assert(
             std::is_nothrow_default_constructible<std::any>::value
@@ -40,5 +40,6 @@ int tc_utilities_any_any_class_any_cons_default(void) {
         assertEmpty(a);
     }
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

@@ -130,7 +130,7 @@ void test_in_place_type_decayed() {
     }
 }
 
-void test_ctor_sfinae() {
+void test_any_ctor_sfinae() {
     {
         // Test that the init-list ctor SFINAE's away properly when
         // construction would be ill-formed.
@@ -178,7 +178,7 @@ void test_constructor_explicit() {
     static_assert(std::is_constructible<std::any, IT, std::initializer_list<int>&, int>::value, "");
 }
 
-int tc_utilities_any_any_class_any_cons_in_place_type(void) {
+int tc_any_cons_in_place_type(void) {
     test_in_place_type<small>();
     test_in_place_type<large>();
     test_in_place_type<small_throws_on_copy>();
@@ -187,8 +187,9 @@ int tc_utilities_any_any_class_any_cons_in_place_type(void) {
     test_in_place_type_tracked<small_tracked_t>();
     test_in_place_type_tracked<large_tracked_t>();
     test_in_place_type_decayed();
-    test_ctor_sfinae();
+    test_any_ctor_sfinae();
     test_constructor_explicit();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

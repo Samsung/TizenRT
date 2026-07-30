@@ -1427,12 +1427,10 @@ endif
 ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES),y)
 ifeq ($(CONFIG_LIBCXX_UTC_UTILITIES_ANY),y)
 # C++17 Any tests (verify files)
-# REMOVED: These use LLVM lit framework expected-error directives which are incompatible with TizenRT's UTC framework.
-# The libcxx header correctly rejects invalid types via static_assert, so these tests are redundant.
-# CXXSRCS += std/utilities/any/any.nonmembers/any.cast/any_cast_request_invalid_value_category.verify.cpp
-# CXXSRCS += std/utilities/any/any.nonmembers/any.cast/const_correctness.verify.cpp
-# CXXSRCS += std/utilities/any/any.nonmembers/any.cast/not_copy_constructible.verify.cpp
-# CXXSRCS += std/utilities/any/any.nonmembers/any.cast/reference_types.verify.cpp
+CXXSRCS += std/utilities/any/any.nonmembers/any.cast/any_cast_request_invalid_value_category.verify.cpp
+CXXSRCS += std/utilities/any/any.nonmembers/any.cast/const_correctness.verify.cpp
+CXXSRCS += std/utilities/any/any.nonmembers/any.cast/not_copy_constructible.verify.cpp
+CXXSRCS += std/utilities/any/any.nonmembers/any.cast/reference_types.verify.cpp
 CXXSRCS += std/utilities/any/any.nonmembers/make_any.pass.cpp
 CXXSRCS += std/utilities/any/any.nonmembers/any.cast/any_cast_pointer.pass.cpp
 CXXSRCS += std/utilities/any/any.nonmembers/any.cast/any_cast_reference.pass.cpp

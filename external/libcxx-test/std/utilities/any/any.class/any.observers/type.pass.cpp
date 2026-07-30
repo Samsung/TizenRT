@@ -20,7 +20,7 @@
 #include "any_helpers.h"
 #include "libcxx_tc_common.h"
 
-int tc_utilities_any_any_class_any_observers_type(void) {
+int tc_any_type(void) {
     {
         const std::any a;
         TC_ASSERT_EXPR(a.type() == typeid(void));
@@ -40,5 +40,6 @@ int tc_utilities_any_any_class_any_observers_type(void) {
         TC_ASSERT_EXPR(a.type() == typeid(int*));  // ensure that it is decayed
     }
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

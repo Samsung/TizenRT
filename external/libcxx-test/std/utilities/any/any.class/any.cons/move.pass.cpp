@@ -88,7 +88,7 @@ void test_move() {
     TC_ASSERT_EXPR(Type::count == 0);
 }
 
-int tc_utilities_any_any_class_any_cons_move(void) {
+int tc_any_cons_move(void) {
     // noexcept test
     static_assert(std::is_nothrow_move_constructible<std::any>::value);
 
@@ -97,5 +97,6 @@ int tc_utilities_any_any_class_any_cons_move(void) {
     test_move_empty();
     test_move_does_not_throw();
 
+  TC_SUCCESS_RESULT();
   return 0;
 }

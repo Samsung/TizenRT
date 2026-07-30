@@ -125,7 +125,7 @@ void test_make_any_throws()
 
 #endif
 
-int tc_utilities_any_any_nonmembers_make_any(void) {
+int tc_any_make_any(void) {
     test_make_any_type<small>();
     test_make_any_type<large>();
     test_make_any_type<small_throws_on_copy>();
@@ -139,5 +139,6 @@ int tc_utilities_any_any_nonmembers_make_any(void) {
 
 #endif
 
+  TC_SUCCESS_RESULT();
   return 0;
 }
