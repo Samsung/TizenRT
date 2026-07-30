@@ -56,14 +56,17 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
 #include <time.h>
-#include <tinyara/version.h>
 
 /****************************************************************************
  * Definitions
  ****************************************************************************/
 
-#define MAX_BUF_SIZE 64
+#define MAX_BUF_SIZE 128
+#define VERSION_INFO_FILE "/proc/version"
 
 /****************************************************************************
  * Public Functions
@@ -71,22 +74,36 @@
 
 void sysinfo(void)
 {
+	int fd;
+	ssize_t nread;
 	time_t now;
 	struct tm *ptm;
+	char *saveptr;
+	char *line;
 	char sysinfo_str[MAX_BUF_SIZE + 1];
 
 	printf("System Information:\n");
 
-	/* Print OS version and Build information */
-	/* just get values defined in version.h */
-#ifdef CONFIG_BOARD_BUILD_DATE
-	printf("\tVersion:\n");
-	printf("\t\tPlatform: " CONFIG_VERSION_STRING "\tBinary: %s\n", CONFIG_BOARD_BUILD_DATE);
-	printf("\tCommit Hash: %s\n", CONFIG_VERSION_BUILD);
-#else
-	printf("\tVersion: " CONFIG_VERSION_STRING "\n\tCommit Hash: %s\n", CONFIG_VERSION_BUILD);
-#endif
-	printf("\tBuild User: " CONFIG_VERSION_BUILD_USER "\n\tBuild Time: %s\n", CONFIG_VERSION_BUILD_TIME);
+	fd = open(VERSION_INFO_FILE, O_RDONLY);
+	if (fd < 0) {
+		printf("ERROR: Fail to open version info\n");
+		return;
+	}
+
+	nread = read(fd, sysinfo_str, MAX_BUF_SIZE);
+	close(fd);
+
+	if (nread <= 0) {
+		printf("ERROR: Fail to read version info\n");
+		return;
+	}
+	sysinfo_str[nread] = '\0';
+
+	line = strtok_r(sysinfo_str, "\n", &saveptr);
+	while (line != NULL) {
+		printf("\t%s\n", line);
+		line = strtok_r(NULL, "\n", &saveptr);
+	}
 
 	/* Get the current time as specific format in the buffer */
 	now = time(NULL);
@@ -101,4 +118,3 @@ void sysinfo(void)
 		   "\n", sysinfo_str);
 
 }
-
