@@ -240,6 +240,18 @@ static ssize_t version_read(FAR struct file *filep, FAR char *buffer, size_t buf
 		goto end;
 	}
 
+#ifdef CONFIG_BOARD_BUILD_DATE
+	linesize = snprintf(attr->line, VERSION_LINELEN, "Binary: %s\n", CONFIG_BOARD_BUILD_DATE);
+	copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);
+	totalsize += copysize;
+	buffer += copysize;
+	remaining -= copysize;
+
+	if (totalsize >= buflen) {
+		goto end;
+	}
+#endif
+
 	linesize = snprintf(attr->line, VERSION_LINELEN, "Commit Hash: %s\n", CONFIG_VERSION_BUILD);
 	copysize = procfs_memcpy(attr->line, linesize, buffer, remaining, &offset);
 	totalsize += copysize;
