@@ -254,7 +254,10 @@ static unsigned int sched_process_timeslice(int cpu, unsigned int ticks, bool no
 	unsigned int ret = 0;
 #endif
 	int decr;
-
+#ifdef CONFIG_SMP
+	FAR struct tcb_s *btcb;
+	bool do_reprioritize_rtr = false;
+#endif
 	/* Check if the currently executing task uses round robin
 	 * scheduling.
 	 */
@@ -298,11 +301,35 @@ static unsigned int sched_process_timeslice(int cpu, unsigned int ticks, bool no
 			if (noswitches) {
 				ret = 1;
 			} else {
-				/* Reset the timeslice. */
-
+#ifdef CONFIG_SMP
+				if (sched_islocked_global() || irq_cpu_locked(this_cpu())) {
+					return ret;
+				}
+#endif
 				rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
 				ret = rtcb->timeslice;
 
+#ifdef CONFIG_SMP
+				/* In SMP configurations, only g_readytorun contains
+				 * schedulable tasks other than the running and idle tasks in
+				 * g_assignedtasks[cpu].  Reprioritize when an equal- or
+				 * higher-priority task in g_readytorun can run on this CPU.
+				 */
+
+				for (btcb = (FAR struct tcb_s *)g_readytorun.head;
+					 btcb && btcb->sched_priority >= rtcb->sched_priority;
+					 btcb = btcb->flink) {
+					/* Check if the task found in ready-to-run list is allowed to run on
+					 * this CPU.
+					 */
+
+					if (CPU_ISSET(cpu, &btcb->affinity)) {
+						do_reprioritize_rtr = true;
+						break;
+					}
+				}
+				if (do_reprioritize_rtr) {
+#else
 				/* We know we are at the head of the ready to run
 				 * prioritized list.  We must be the highest priority
 				 * task eligible for execution.  Check the next task
@@ -317,7 +344,7 @@ static unsigned int sched_process_timeslice(int cpu, unsigned int ticks, bool no
 					 * rescheduled behind any other tasks at the same
 					 * priority.
 					 */
-
+#endif
 					up_reprioritize_rtr(rtcb, rtcb->sched_priority);
 
 					/* We will then need to return timeslice remaining for
