@@ -110,7 +110,9 @@ static inline void sched_process_timeslice(int cpu)
 {
 
 	FAR struct tcb_s *rtcb = current_task(cpu);
-
+#ifdef CONFIG_SMP
+	FAR struct tcb_s *btcb;
+#endif
 	/* Check if the currently executing task uses round robin
 	 * scheduling.
 	 */
@@ -128,10 +130,36 @@ static inline void sched_process_timeslice(int cpu)
 			 */
 
 			if (!rtcb->lockcount) {
-				/* Reset the timeslice in any case. */
+#ifdef CONFIG_SMP
+				if (sched_islocked_global() || irq_cpu_locked(this_cpu())) {
+					return;
+				}
+#endif
+				/* Reset the timeslice */
 
 				rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
 
+#ifdef CONFIG_SMP
+				/* In SMP configurations, only g_readytorun contains
+				 * schedulable tasks other than the running and idle tasks in
+				 * g_assignedtasks[cpu].  Reprioritize when an equal- or
+				 * higher-priority task in g_readytorun can run on this CPU.
+				 */
+
+				for (btcb = (FAR struct tcb_s *)g_readytorun.head;
+					 btcb && btcb->sched_priority >= rtcb->sched_priority;
+					 btcb = btcb->flink) {
+					/* Check if the task found in ready-to-run list is allowed to run on
+					 * this CPU.
+					 */
+
+					if (CPU_ISSET(cpu, &btcb->affinity)) {
+						up_reprioritize_rtr(rtcb, rtcb->sched_priority);
+						break;
+					}
+				}
+
+#else
 				/* We know we are at the head of the ready to run
 				 * prioritized list.  We must be the highest priority
 				 * task eligible for execution.  Check the next task
@@ -149,6 +177,7 @@ static inline void sched_process_timeslice(int cpu)
 
 					up_reprioritize_rtr(rtcb, rtcb->sched_priority);
 				}
+#endif
 			}
 		} else {
 			/* Decrement the timeslice counter */
