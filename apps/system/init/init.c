@@ -36,6 +36,9 @@
 #ifdef CONFIG_SYSTEM_INFORMATION
 #include <apps/system/sysinfo.h>
 #endif
+#ifdef CONFIG_SYSTEM_CPUCONTROL
+#include <apps/system/cpucontrol.h>
+#endif
 #ifdef CONFIG_TASK_MANAGER
 #include <task_manager/task_manager.h>
 #endif
@@ -109,6 +112,10 @@ static void tash_register_cmds(void)
 
 #ifdef CONFIG_DEBUG_SYSTEM_APP
 	sysdbgapp_init();
+#endif
+
+#ifdef CONFIG_SYSTEM_CPUCONTROL
+	cpucontrol_register_cmds();
 #endif
 }
 #endif							/* CONFIG_TASH */
