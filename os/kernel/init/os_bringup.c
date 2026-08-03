@@ -84,6 +84,9 @@
 #ifdef CONFIG_MMINFO
 #include <tinyara/mminfo.h>
 #endif
+#if defined(CONFIG_ASSERTMODE_DRIVER)
+#include <tinyara/assertmode.h>
+#endif
 #ifdef CONFIG_COMPRESSION
 #include <tinyara/compression.h>
 #endif
@@ -317,6 +320,10 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_MMINFO
 	mminfo_register();
+#endif
+
+#if defined(CONFIG_ASSERTMODE_DRIVER)
+	assertmode_register();
 #endif
 
 #ifdef CONFIG_COMPRESSION
