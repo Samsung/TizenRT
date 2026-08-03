@@ -504,7 +504,7 @@ static void i2s_tx_worker(void *arg)
 	i2sinfo("tx.act.head=%p tx.done.head=%p\n", priv->tx.act.head, priv->tx.done.head);
 
 	/* Process each buffer in the tx.done queue */
-	while (sq_peek(&priv->tx.done) != NULL) {
+	while (true) {
 		/* Remove the buffer container from the tx.done queue.  NOTE that
 		 * interrupts must be enabled to do this because the tx.done queue is
 		 * also modified from the interrupt level.
@@ -515,7 +515,11 @@ static void i2s_tx_worker(void *arg)
 		leave_critical_section(flags);
 		/* Perform the TX transfer done callback */
 
-		DEBUGASSERT(bfcontainer && bfcontainer->callback);
+		if (bfcontainer == NULL) {
+			break;
+		}
+
+		DEBUGASSERT(bfcontainer->callback);
 		bfcontainer->callback(&priv->dev, bfcontainer->apb, bfcontainer->arg, bfcontainer->result);
 
 		/* Release our reference on the audio buffer.  This may very likely
@@ -919,7 +923,7 @@ static void i2s_rx_worker(void *arg)
 	i2sinfo("rx.act.head=%p rx.done.head=%p\n", priv->rx.act.head, priv->rx.done.head);
 
 	/* Process each buffer in the rx.done queue */
-	while (sq_peek(&priv->rx.done) != NULL) {
+	while (true) {
 		/* Remove the buffer container from the rx.done queue.  NOTE that
 		 * interrupts must be disabled to do this because the rx.done queue is
 		 * also modified from the interrupt level.
@@ -928,8 +932,12 @@ static void i2s_rx_worker(void *arg)
 		bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.done);
 		leave_critical_section(flags);
 
+		if (bfcontainer == NULL) {
+			break;
+		}
+
 		/* Perform the RX transfer done callback */
-		DEBUGASSERT(bfcontainer && bfcontainer->apb && bfcontainer->callback);
+		DEBUGASSERT(bfcontainer->apb && bfcontainer->callback);
 		apb = bfcontainer->apb;
 
 		/* If the DMA was successful, then update the number of valid bytes in
@@ -1573,10 +1581,15 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
 
-		while (sq_peek(&priv->tx.done) != NULL) {
+		while (true) {
 			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.done);
 			leave_critical_section(flags);
+
+			if (bfcontainer == NULL) {
+				break;
+			}
+
 			apb_free(bfcontainer->apb);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
@@ -1612,10 +1625,15 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 			i2s_buf_rx_free(priv, bfcontainer);
 		}
 
-		while (sq_peek(&priv->rx.done) != NULL) {
+		while (true) {
 			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.done);
 			leave_critical_section(flags);
+
+			if (bfcontainer == NULL) {
+				break;
+			}
+
 			apb_free(bfcontainer->apb);
 			i2s_buf_rx_free(priv, bfcontainer);
 		}
