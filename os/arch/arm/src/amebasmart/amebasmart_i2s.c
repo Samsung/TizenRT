@@ -1577,6 +1577,7 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->tx.done);
 			leave_critical_section(flags);
+			apb_free(bfcontainer->apb);
 			i2s_buf_tx_free(priv, bfcontainer);
 		}
 
@@ -1615,6 +1616,7 @@ static int i2s_stop(struct i2s_dev_s *dev, i2s_ch_dir_t dir)
 			flags = enter_critical_section();
 			bfcontainer = (struct amebasmart_buffer_s *)sq_remfirst(&priv->rx.done);
 			leave_critical_section(flags);
+			apb_free(bfcontainer->apb);
 			i2s_buf_rx_free(priv, bfcontainer);
 		}
 	}
