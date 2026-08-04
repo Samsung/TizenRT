@@ -2573,6 +2573,18 @@ bool is_kernel_data_space(void *addr);
  ****************************************************************************/
 bool is_kernel_space(void *addr);
 
+/****************************************************************************
+ * Name: validate_user_pointer
+ *
+ * Description:
+ *   Validate that a pointer provided by user-space lies in a valid user
+ *   address range and does not point to kernel memory. This function is
+ *   intended to be called from syscall stubs in protected builds to prevent
+ *   unprivileged code from accessing kernel memory through syscall interfaces.
+ *
+ ****************************************************************************/
+int validate_user_pointer(const void *addr, size_t len);
+
 #endif
 
 #undef EXTERN

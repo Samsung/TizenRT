@@ -417,13 +417,15 @@ static void generate_stub(int nparms)
 	fprintf(stream, "#include <tinyara/config.h>\n");
 	fprintf(stream, "#include <stdint.h>\n");
 	
-	if (cond_parm[0] != '\0') {
-		fprintf(stream, "#include <errno.h>\n");
-		fprintf(stream, "#include <sys/types.h>\n");
-	}
+	/* Always include errno.h for validate_user_pointer in protected builds */
+	fprintf(stream, "#include <errno.h>\n");
+	fprintf(stream, "#include <sys/types.h>\n");
 
 	if (get_parm(HEADER_INDEX) && strlen(get_parm(HEADER_INDEX)) > 0)
 		fprintf(stream, "#include <%s>\n", get_parm(HEADER_INDEX));
+
+	/* Include arch.h for validate_user_pointer in protected builds */
+	fprintf(stream, "#include <tinyara/arch.h>\n");
 
 	putc('\n', stream);
 
@@ -453,6 +455,76 @@ static void generate_stub(int nparms)
 	if (cond_parm[0] != '\0') {
 		fprintf(stream, "#if %s\n", cond_parm);
 	}
+
+	/* In protected builds, validate pointer arguments to prevent user-space
+	 * from accessing kernel memory through syscall interfaces.
+	 * Generate validation code for pointer-type parameters.
+	 */
+
+	fprintf(stream, "#ifdef CONFIG_BUILD_PROTECTED\n");
+
+	for (i = 0; i < nparms; i++) {
+		get_formalparmtype(get_parm(PARM1_INDEX + i), formal);
+		get_actualparmtype(get_parm(PARM1_INDEX + i), actual);
+
+		/* Check if this parameter is a pointer type (contains '*' or is an array)
+		 * Skip validation for non-pointer types and function pointers used as callbacks
+		 */
+		if (strchr(actual, '*') != NULL || strchr(actual, '[') != NULL) {
+			/* Generate validation call for this pointer parameter
+			 * NULL is allowed - syscall implementations handle NULL validation
+			 * For buffer parameters, also validate the full range to ensure it doesn't extend into kernel space
+			 */
+			const char *func_name = get_parm(NAME_INDEX);
+			int len_parm = 0;
+
+			/* Determine if this buffer has an associated length parameter
+			 * Pattern: buffer is parm[i], length is parm[i+1]
+			 */
+
+			/* read(fd, buf, nbytes), write(fd, buf, nbytes) - buf is parm2 (i=1), nbytes is parm3 */
+			if ((strcmp(func_name, "read") == 0 || strcmp(func_name, "write") == 0 ||
+			     strcmp(func_name, "pread") == 0 || strcmp(func_name, "pwrite") == 0) && i == 1) {
+				len_parm = 3;
+			}
+			/* recv, send, recvfrom, sendto - buf is parm2 (i=1), len is parm3 */
+			else if ((strcmp(func_name, "recv") == 0 || strcmp(func_name, "send") == 0 ||
+			          strcmp(func_name, "recvfrom") == 0 || strcmp(func_name, "sendto") == 0 ||
+			          strcmp(func_name, "recvmsg") == 0 || strcmp(func_name, "sendmsg") == 0) && i == 1) {
+				len_parm = 3;
+			}
+			/* mq_receive, mq_send, mq_timedreceive, mq_timedsend - buf is parm2, len is parm3 */
+			else if ((strcmp(func_name, "mq_receive") == 0 || strcmp(func_name, "mq_send") == 0 ||
+			          strcmp(func_name, "mq_timedreceive") == 0 || strcmp(func_name, "mq_timedsend") == 0) && i == 1) {
+				len_parm = 3;
+			}
+			/* setsockopt - optval is parm4 (i=3), optlen is parm5 */
+			else if (strcmp(func_name, "setsockopt") == 0 && i == 3) {
+				len_parm = 5;
+			}
+			/* getsockopt - optval is parm4 (i=3), but optlen is FAR socklen_t* (pointer), skip */
+			/* clock_gettime, clock_getres - tp is parm2 (i=1), no length param */
+			/* fstat, stat - buf is parm2 (i=1), struct stat size known to kernel */
+
+			if (len_parm > 0) {
+				fprintf(stream, "  if (validate_user_pointer((const void *)parm%d, (size_t)parm%d) != OK) {\n", i + 1, len_parm);
+			} else {
+				fprintf(stream, "  if (validate_user_pointer((const void *)parm%d, 0) != OK) {\n", i + 1);
+			}
+			fprintf(stream, "    set_errno(EFAULT);\n");
+			/* STUB functions always return uintptr_t, so we must return a value even for void syscalls */
+			if (strcmp(get_parm(RETTYPE_INDEX), "int") == 0 ||
+				strcmp(get_parm(RETTYPE_INDEX), "ssize_t") == 0) {
+				fprintf(stream, "    return (uintptr_t)-1;\n");
+			} else {
+				/* For void and pointer return types, return 0/NULL */
+				fprintf(stream, "    return (uintptr_t)0;\n");
+			}
+			fprintf(stream, "  }\n");
+		}
+	}
+
+	fprintf(stream, "#endif /* CONFIG_BUILD_PROTECTED */\n");
 
 	/* Then call the proxied function.  Functions that have no return value are
 	 * a special case.
