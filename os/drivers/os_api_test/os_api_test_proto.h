@@ -24,6 +24,7 @@ int test_group(int cmd, unsigned long arg);
 int test_clock(int cmd, unsigned long arg);
 int test_timer(int cmd, unsigned long arg);
 int test_sched(int cmd, unsigned long arg);
+int test_ns_flash_op(int cmd, unsigned long arg);
 #ifndef CONFIG_DISABLE_SIGNALS
 int test_signal(int cmd, unsigned long arg);
 #endif

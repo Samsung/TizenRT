@@ -97,6 +97,11 @@ static int os_api_test_drv_ioctl(FAR struct file *filep, int cmd, unsigned long 
 		ret = test_signal(cmd, arg);
 		break;
 #endif
+#if defined(CONFIG_ARCH_CHIP_BK7239N) || defined(CONFIG_AMEBASMART_TRUSTZONE) || defined(CONFIG_AMEBAD_TRUSTZONE) || defined(CONFIG_AMEBALITE_TRUSTZONE)
+	case TESTIOC_NS_FLASH_OP:
+		ret = test_ns_flash_op(cmd, arg);
+		break;
+#endif
 	case TESTIOC_GET_SELF_PID:
 	case TESTIOC_IS_ALIVE_THREAD:
 	case TESTIOC_GET_TCB_ADJ_STACK_SIZE:
