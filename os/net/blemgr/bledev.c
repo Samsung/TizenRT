@@ -269,7 +269,6 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	break;
 	case LWNL_REQ_BLE_START_SCAN:
 	{
-		/* filter can be NULL */
 		lwnl_msg_params param = { 0, };
 		trble_scan_filter *filter = NULL;
 		if (_copy_lwnl_msg_params(&param, data, data_len, 1, 0) != 0) {
@@ -287,12 +286,18 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 	case LWNL_REQ_BLE_WHITELIST_ADD:
 	{
 		trble_addr *addr = (trble_addr *)data;
+		if (addr == NULL) {
+			return TRBLE_INVALID_ARGS;
+		}
 		TRBLE_DRV_CALL(ret, dev, whitelist_add, (dev, addr));
 	}
 	break;
 	case LWNL_REQ_BLE_WHITELIST_DELETE:
 	{
 		trble_addr *addr = (trble_addr *)data;
+		if (addr == NULL) {
+			return TRBLE_INVALID_ARGS;
+		}
 		TRBLE_DRV_CALL(ret, dev, whitelist_delete, (dev, addr));
 	}
 	break;
