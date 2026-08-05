@@ -1096,6 +1096,10 @@ bk_err_t bk_flash_write_status_reg(uint16_t status_reg_data)
 	return BK_OK;
 }
 
+flash_protect_type_t bk_flash_get_protect_type(void)
+{
+	return s_flash_runtime_protect_type;
+}
 
 /* This API is not used in bk7256xx */
 void flash_ps_pm_init(void)
