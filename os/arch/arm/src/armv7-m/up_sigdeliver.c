@@ -131,8 +131,9 @@ void up_sigdeliver(void)
 	regs[REG_XPSR] = rtcb->xcp.saved_xpsr;
 #ifdef CONFIG_BUILD_PROTECTED
 	regs[REG_LR] = rtcb->xcp.saved_lr;
-	regs[REG_EXC_RETURN] = rtcb->xcp.saved_exec_ret;
 #endif
+
+	regs[REG_EXC_RETURN] = rtcb->xcp.saved_exec_ret;
 
 	/* Get a local copy of the sigdeliver function pointer. We do this so that
 	 * we can nullify the sigdeliver function pointer in the TCB and accept
