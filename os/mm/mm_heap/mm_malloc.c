@@ -210,6 +210,10 @@ retry_after_gc:
 		FAR struct mm_freenode_s *next;
 		size_t remaining;
 
+#ifdef CONFIG_DEBUG_MM_UAF
+		mm_uaf_verify(node);
+#endif
+
 		/* Remove the node.  There must be a predecessor, but there may not be
 		 * a successor node.
 		 */
