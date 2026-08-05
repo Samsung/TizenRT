@@ -1,0 +1,58 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_PTHREAD_CLEANUP_TEST
+	bool "Pthread cancellation and cleanup tests"
+	default n
+	depends on !DISABLE_PTHREAD && PTHREAD_CLEANUP
+	---help---
+		Enable comprehensive tests for pthread cancellation
+		and cleanup functionality. Works with both flat and loadable builds.
+
+if EXAMPLES_PTHREAD_CLEANUP_TEST
+
+config EXAMPLES_PTHREAD_CLEANUP_TEST_STACKSIZE
+	int "Test thread stack size"
+	default 8192
+	---help---
+		Size of the stack used to create test threads. Default is 8192.
+		May need to increase for tests with deep nesting.
+
+config EXAMPLES_PTHREAD_CLEANUP_TEST_LOOPS
+	int "Number of test loops"
+	default 1
+	---help---
+		Used to control the number of executions of each test.
+		If undefined, each test executes one time.
+		If defined to be zero, tests run continuously.
+
+config EXAMPLES_PTHREAD_CLEANUP_TEST_THREAD_COUNT
+	int "Number of threads for tests"
+	default 10
+	range 1 100
+	---help---
+		Number of threads to create for multi-threaded tests.
+		Default is 10. Allowed values [1; 100].
+
+config EXAMPLES_PTHREAD_CLEANUP_TEST_NESTING_DEPTH
+	int "Nesting depth for tests"
+	default 50
+	range 1 500
+	---help---
+		Maximum nesting depth for cleanup handler tests.
+		Default is 50. Allowed values [1; 500].
+
+config EXAMPLES_PTHREAD_CLEANUP_TEST_ITERATIONS
+	int "Iterations per test"
+	default 1000
+	---help---
+		Number of iterations for high-frequency tests.
+		Default is 1000.
+
+endif # EXAMPLES_PTHREAD_CLEANUP_TEST
+
+config USER_ENTRYPOINT
+	string
+	default "pthread_cleanup_main" if ENTRY_PTHREAD_CLEANUP_TEST

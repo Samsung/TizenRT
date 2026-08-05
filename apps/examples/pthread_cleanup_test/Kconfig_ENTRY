@@ -1,0 +1,12 @@
+#
+# Kconfig_ENTRY for pthread cleanup test
+#
+
+config ENTRY_PTHREAD_CLEANUP_TEST
+	bool "Pthread cancellation and cleanup tests"
+	depends on EXAMPLES_PTHREAD_CLEANUP_TEST
+	default n
+	---help---
+		Set the pthread cleanup test as the user entry point.
+		When enabled, the pthread_cleanup_main function will be
+		called as the main entry point for the application.
