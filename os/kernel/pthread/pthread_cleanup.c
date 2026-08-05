@@ -176,17 +176,19 @@ void pthread_cleanup_push(pthread_cleanup_t routine, FAR void *arg)
 {
 	FAR struct pthread_tcb_s *tcb = (FAR struct pthread_tcb_s *)this_task();
 
-	/* We don't assert if called from a non-pthread; we just don't do anything */
-
-	DEBUGASSERT(tcb != NULL);
-	DEBUGASSERT(tcb->tos < CONFIG_PTHREAD_CLEANUP_STACKSIZE);
-
 	/* sched_lock() should provide sufficient protection.  We only need to
 	 * have this TCB stationary; the pthread cleanup stack should never be
 	 * modified by interrupt level logic.
 	 */
 
 	sched_lock();
+
+	DEBUGASSERT(tcb != NULL);
+	DEBUGASSERT_INFO(tcb->tos < CONFIG_PTHREAD_CLEANUP_STACKSIZE,
+		"pthread_cleanup_push: Cleanup stack full (limit=%d). "
+		"Increase CONFIG_PTHREAD_CLEANUP_STACKSIZE\n",
+		CONFIG_PTHREAD_CLEANUP_STACKSIZE);
+
 	if ((tcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD &&
 	tcb->tos < CONFIG_PTHREAD_CLEANUP_STACKSIZE) {
 		unsigned int ndx = tcb->tos;
