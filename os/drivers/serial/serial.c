@@ -66,6 +66,7 @@
 #include <errno.h>
 #include <debug.h>
 #include <mqueue.h>
+#include <sched.h>
 
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
@@ -184,7 +185,10 @@ static int uart_takesem(FAR sem_t *sem, bool errout)
 static void uart_pollnotify(FAR uart_dev_t *dev, pollevent_t eventset)
 {
 	int i;
+	irqstate_t flags;
 
+	flags = enter_critical_section();
+	sched_lock();
 	for (i = 0; i < CONFIG_SERIAL_NPOLLWAITERS; i++) {
 		struct pollfd *fds = dev->fds[i];
 		if (fds) {
@@ -194,10 +198,13 @@ static void uart_pollnotify(FAR uart_dev_t *dev, pollevent_t eventset)
 			fds->revents |= (fds->events & eventset);
 #endif
 			if (fds->revents != 0) {
+				fvdbg("Report events: %02x\n", fds->revents);
 				sem_post(fds->sem);
 			}
 		}
 	}
+	sched_unlock();
+	leave_critical_section(flags);
 }
 #else
 #define uart_pollnotify(dev, event)
@@ -1002,6 +1009,7 @@ int uart_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 	FAR struct inode *inode = filep->f_inode;
 	FAR uart_dev_t *dev = inode->i_private;
 	pollevent_t eventset;
+	irqstate_t flags;
 	int ndx;
 	int ret;
 	int i;
@@ -1016,10 +1024,11 @@ int uart_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 
 	/* Are we setting up the poll?  Or tearing it down? */
 
-	ret = uart_takesem(&dev->pollsem, true);
+	ret = uart_takesem(&dev->pollsem, setup);
 	if (ret < 0) {
 		/* A signal received while waiting for access to the poll data
-		 * will abort the operation.
+		 * will abort the operation. Teardown must not be interrupted 
+		 * because the caller can release fds after this function returns.
 		 */
 
 		return ret;
@@ -1030,6 +1039,7 @@ int uart_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 		 * slot for the poll structure reference
 		 */
 
+		flags = enter_critical_section();
 		for (i = 0; i < CONFIG_SERIAL_NPOLLWAITERS; i++) {
 			/* Find an available slot */
 
@@ -1047,8 +1057,10 @@ int uart_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 			fds->priv = NULL;
 			fds->filep = NULL;
 			ret = -EBUSY;
+			leave_critical_section(flags);
 			goto errout;
 		}
+		leave_critical_section(flags);
 
 		/* Should we immediately notify on any of the requested events?
 		 * First, check if the xmit buffer is full.
@@ -1098,16 +1110,20 @@ int uart_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 			uart_pollnotify(dev, eventset);
 		}
 
-	} else if (fds->priv) {
-		/* This is a request to tear down the poll. */
+	} else {
+		flags = enter_critical_section();
+		if (fds->priv) {
+			/* This is a request to tear down the poll. */
 
-		struct pollfd **slot = (struct pollfd **)fds->priv;
+			struct pollfd **slot = (struct pollfd **)fds->priv;
 
-		/* Remove all memory of the poll setup */
+			/* Remove all memory of the poll setup */
 
-		*slot = NULL;
-		fds->priv = NULL;
-		fds->filep = NULL;
+			*slot = NULL;
+			fds->priv = NULL;
+			fds->filep = NULL;
+		}
+		leave_critical_section(flags);
 	}
 
 errout:
@@ -1148,12 +1164,14 @@ static int uart_close(FAR struct file *filep)
 	 * a pollfd of A remains in this list. If it is, it should be cleared.
 	 */
 	(void)uart_takesem(&dev->pollsem, false);
+	flags = enter_critical_section();
 	for (i = 0; i < CONFIG_SERIAL_NPOLLWAITERS; i++) {
 		struct pollfd *fds = dev->fds[i];
 		if (fds && (FAR struct file *)fds->filep == filep) {
 			dev->fds[i] = NULL;
 		}
 	}
+	leave_critical_section(flags);
 	uart_givesem(&dev->pollsem);
 #endif
 
