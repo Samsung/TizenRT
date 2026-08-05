@@ -594,10 +594,15 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 		/* Test if we are at the end of the data in this sector */
 
 		if ((bytestoread == 0) || (sf->curroffset == fs->fs_llformat.availbytes)) {
-			/* Set the next sector as the current sector */
+			/* Do not read anymore */
+			if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
+				break;
+			}
 
+			/* Set the next sector as the current sector */
 			sf->currsector = SMARTFS_NEXTSECTOR(header);
 			sf->curroffset = sizeof(struct smartfs_chain_header_s);
+
 		}
 	}
 
