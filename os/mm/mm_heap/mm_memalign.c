@@ -214,6 +214,10 @@ retry_after_gc:
 		/* Get the next node after the allocation. */
 		FAR struct mm_allocnode_s *next = (FAR struct mm_allocnode_s *)((char *)node + node->size);
 
+#ifdef CONFIG_DEBUG_MM_UAF
+		mm_uaf_verify(node);
+#endif
+
 		/* Remove the node.  There must be a predecessor, but there may not be
 		 * a successor node.
 		 */
