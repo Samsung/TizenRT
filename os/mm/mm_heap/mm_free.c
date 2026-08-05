@@ -202,6 +202,10 @@ static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddres
 	if ((next->preceding & MM_ALLOC_BIT) == 0) {
 		FAR struct mm_allocnode_s *andbeyond;
 
+#ifdef CONFIG_DEBUG_MM_UAF
+		mm_uaf_verify(next);
+#endif
+
 		/* Get the node following the next node (which will
 		 * become the new next node). We know that we can never
 		 * index past the tail chunk because it is always allocated.
@@ -228,6 +232,10 @@ static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddres
 
 	prev = (FAR struct mm_freenode_s *)((char *)node - node->preceding);
 	if ((prev->preceding & MM_ALLOC_BIT) == 0) {
+#ifdef CONFIG_DEBUG_MM_UAF
+		mm_uaf_verify(prev);
+#endif
+
 		/* Remove the node.  There must be a predecessor, but there may
 		 * not be a successor node.
 		 */
