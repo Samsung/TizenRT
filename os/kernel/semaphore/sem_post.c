@@ -151,7 +151,7 @@ void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
 	 */
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+	if ((sem->flags & PRIOINHERIT_FLAGS_ENABLE) != 0) {
 		sem_restorebaseprio(stcb, htcb, sem);
 	} else {
 #endif

@@ -90,9 +90,10 @@
  *    becomes *permanently* a holder of the semaphore and may have its
  *    priority boosted when any other task tries to acquire the semaphore.
  *
- *    The fix is to call sem_setprotocol(SEM_PRIO_NONE) immediately after
- *    the sem_init() call so that there will be no priority inheritance
- *    operations on this semaphore.
+ *    Semaphores initialized by sem_init() have priority inheritance disabled
+ *    by default.  A semaphore used for signaling should retain that default;
+ *    SEM_PRIO_INHERIT should only be selected for a semaphore used for mutual
+ *    exclusion.
  *
  * Parameters:
  *    sem      - A pointer to the semaphore whose attributes are to be
@@ -114,7 +115,7 @@ int sem_setprotocol(FAR sem_t *sem, int protocol)
 		case SEM_PRIO_NONE:
 			/* Disable priority inheritance */
 
-			sem->flags |= PRIOINHERIT_FLAGS_DISABLE;
+			sem->flags &= ~PRIOINHERIT_FLAGS_ENABLE;
 
 #ifndef CONFIG_BINMGR_RECOVERY
 			/* Remove any current holders if only fault recovery is disabled
@@ -127,7 +128,7 @@ int sem_setprotocol(FAR sem_t *sem, int protocol)
 		case SEM_PRIO_INHERIT:
 			/* Enable priority inheritance (dangerous) */
 
-			sem->flags &= ~PRIOINHERIT_FLAGS_DISABLE;
+			sem->flags |= PRIOINHERIT_FLAGS_ENABLE;
 			return OK;
 
 		case SEM_PRIO_PROTECT:

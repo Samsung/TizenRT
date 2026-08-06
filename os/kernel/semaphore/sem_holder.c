@@ -368,7 +368,7 @@ FAR struct tcb_s *sem_findhighestwaiter(FAR sem_t *sem, FAR struct tcb_s *exclud
 	 * enabled, so this must be checked explicitly here.
 	 */
 
-	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) != 0) {
+	if ((sem->flags & PRIOINHERIT_FLAGS_ENABLE) == 0) {
 		return NULL;
 	}
 
@@ -728,11 +728,11 @@ void sem_addholder_tcb(FAR struct tcb_s *htcb, FAR sem_t *sem)
 
 #if defined(CONFIG_PRIORITY_INHERITANCE) && !defined(CONFIG_BINMGR_RECOVERY)
 	/*
-	 * If priority inheritance is disabled for this thread, then do not
+	 * If priority inheritance is disabled for this semaphore, then do not
 	 * add the holder. If there are never holders of the semaphore,
 	 * the priority inheritance is effectively disabled.
 	 */
-	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+	if ((sem->flags & PRIOINHERIT_FLAGS_ENABLE) != 0) {
 #endif
 		/* Find or allocate a container for this new holder */
 		pholder = sem_findorallocateholder(sem, htcb);
@@ -1056,7 +1056,7 @@ void sem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem)
 
 	/* Adjust the priority of every holder as necessary */
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+	if ((sem->flags & PRIOINHERIT_FLAGS_ENABLE) != 0) {
 		(void)sem_foreachholder(sem, sem_restoreholderprio, stcb);
 	}
 #endif

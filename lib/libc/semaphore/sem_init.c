@@ -116,12 +116,6 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 
 		sem->flags = FLAGS_INITIALIZED;
 
-		/* Initialize to support priority inheritance */
-
-#ifdef CONFIG_PRIORITY_INHERITANCE
-		sem->flags &= ~(PRIOINHERIT_FLAGS_DISABLE);
-#endif
-
 #ifdef SAVE_SEM_HOLDER
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 		sem->hhead = NULL;
