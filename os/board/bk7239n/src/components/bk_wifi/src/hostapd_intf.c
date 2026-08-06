@@ -116,9 +116,6 @@ struct mm_bcn_change_req *hadp_intf_get_bcn_change_req(uint8_t vif_id, struct be
 	return req;
 
 exit_get_failed:
-	if (req)
-		os_free(req);
-
 	if (beacon_ptr)
 		os_free(beacon_ptr);
 
@@ -424,7 +421,7 @@ int hapd_intf_del_key(struct prism2_hostapd_param *param, int len)
 {
 	u8 hw_key_idx = 0;
 
-	if ((param->sta_addr == NULL) || is_broadcast_ether_addr(param->sta_addr))
+	if (is_broadcast_ether_addr(param->sta_addr))
 		hw_key_idx = rwm_mgmt_get_hwkeyidx(param->vif_idx, 0xff);
 	else {
 		u8 staid = rwm_mgmt_sta_mac2idx(param->sta_addr);

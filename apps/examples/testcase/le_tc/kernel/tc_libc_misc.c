@@ -40,6 +40,7 @@
 #define USEC_100 100
 #define ARR_NUM 2 // length of input/output array
 #define SRC_LEN 1 // length of input data
+#define CRC32_CHECK_LEN 9
 #define VAL_50 50
 #define VAL_71 71
 #define VAL_100 100
@@ -60,6 +61,11 @@
 #define VAL_CRC32_1 2564639436UL
 #define VAL_CRC32_2 450215437UL
 #define VAL_CRC32_3 3051332929UL
+#define VAL_CRC32_CHECK 0xCBF43926
+#define VAL_CRC32_MULTI_BYTE 0x70e46888UL
+#define CRC32_MULTI_LEN 7
+#define CRC32_WORD_LEN 4
+#define CRC32_HALFWORD_LEN 2
 
 /**
  * @fn                  :tc_libc_misc_crc8
@@ -342,6 +348,7 @@ static void tc_libc_misc_crc32(void)
 {
 	uint32_t ret_chk;
 	uint8_t src_arr[1] = { VAL_100 };
+	uint8_t src_arr2[CRC32_CHECK_LEN] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
 	/* Return value should be 0x4adfa541 as calculated by crc32 */
 
@@ -353,6 +360,13 @@ static void tc_libc_misc_crc32(void)
 	src_arr[0] = VAL_50;
 	ret_chk = crc32(src_arr, SRC_LEN);
 	TC_ASSERT_EQ("crc32", ret_chk, VAL_CRC32_2);
+
+	/* Standard CRC-32 check vector: "123456789" must yield 0xCBF43926.
+	 * This validates the polynomial, reflection, init, and xorout.
+	 */
+
+	ret_chk = crc32(src_arr2, CRC32_CHECK_LEN);
+	TC_ASSERT_EQ("crc32", ret_chk, (uint32_t)VAL_CRC32_CHECK);
 
 	TC_SUCCESS_RESULT();
 }
@@ -382,6 +396,62 @@ static void tc_libc_misc_crc32part(void)
 	crc_32val = VAL_255;
 	ret_chk = (uint32_t)crc32part(src_arr, SRC_LEN, crc_32val);
 	TC_ASSERT_EQ("crc32part", ret_chk, (uint32_t)VAL_CRC32_3);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                  :tc_libc_misc_crc32part_multibyte
+ * @brief               :Continue CRC calculation on a multi-byte buffer.
+ * @scenario            :Continue CRC calculation on a multi-byte buffer.
+ * @API's covered       :crc32part
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_misc_crc32part_multibyte(void)
+{
+	uint32_t ret_chk;
+	uint32_t crc_32val = 0;
+	uint8_t src_arr[CRC32_MULTI_LEN] = { 1, 2, 3, 4, 5, 6, 7 };
+
+	/* Return value should be VAL_CRC32_MULTI_BYTE as calculated by crc32part */
+
+	ret_chk = crc32part(src_arr, CRC32_MULTI_LEN, crc_32val);
+	TC_ASSERT_EQ("crc32part", ret_chk, (uint32_t)VAL_CRC32_MULTI_BYTE);
+
+	/* Chunked accumulation should match the one-shot result */
+
+	crc_32val = crc32part(src_arr, CRC32_WORD_LEN, 0);
+	crc_32val = crc32part(&src_arr[CRC32_WORD_LEN], CRC32_HALFWORD_LEN, crc_32val);
+	crc_32val = crc32part(&src_arr[CRC32_WORD_LEN + CRC32_HALFWORD_LEN], 1, crc_32val);
+	TC_ASSERT_EQ("crc32part", crc_32val, (uint32_t)VAL_CRC32_MULTI_BYTE);
+
+	/* Zero-length input should return the seed unchanged */
+
+	ret_chk = crc32part(src_arr, 0, VAL_CRC32_MULTI_BYTE);
+	TC_ASSERT_EQ("crc32part", ret_chk, (uint32_t)VAL_CRC32_MULTI_BYTE);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                  :tc_libc_misc_crc32_equiv_crc32part
+ * @brief               :Verify crc32() is equivalent to crc32part() with seed 0.
+ * @scenario            :Verify crc32() is equivalent to crc32part() with seed 0.
+ * @API's covered       :crc32, crc32part
+ * @Preconditions       :None
+ * @Postconditions      :None
+ * @Return              :void
+ */
+static void tc_libc_misc_crc32_equiv_crc32part(void)
+{
+	uint8_t src_arr[CRC32_MULTI_LEN] = { 1, 2, 3, 4, 5, 6, 7 };
+	uint32_t ret_crc32     = crc32(src_arr, CRC32_MULTI_LEN);
+	uint32_t ret_crc32part = crc32part(src_arr, CRC32_MULTI_LEN, 0);
+
+	TC_ASSERT_EQ("crc32", ret_crc32, (uint32_t)VAL_CRC32_MULTI_BYTE);
+	TC_ASSERT_EQ("crc32_equiv_crc32part", ret_crc32, ret_crc32part);
 
 	TC_SUCCESS_RESULT();
 }
@@ -606,6 +676,8 @@ int libc_misc_main(void)
 	tc_libc_misc_crc16_ccitt_rev_part();
 	tc_libc_misc_crc32();
 	tc_libc_misc_crc32part();
+	tc_libc_misc_crc32part_multibyte();
+	tc_libc_misc_crc32_equiv_crc32part();
 #ifdef CONFIG_DEBUG
 
 #ifdef CONFIG_DEBUG_ERROR

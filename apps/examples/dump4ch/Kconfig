@@ -1,0 +1,3 @@
+config USER_ENTRYPOINT
+	string
+	default "dump4ch_main" if ENTRY_DUMP4CH

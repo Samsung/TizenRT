@@ -72,7 +72,7 @@ static void print_hex(char *name, uint8_t *data, uint32_t len) {
     }
     sevdbg("%s len %d\r\n", name, len);
     for (size_t i = 0; i < len; i++) {
-        sprintf(s_hex_buff + (2 * i), "%02x", data[i]);
+        snprintf(s_hex_buff + (2 * i), sizeof(s_hex_buff) - (2 * i), "%02x", data[i]);
     }
     s_hex_buff[len * 2] = 0;
     sevdbg("%s\n", s_hex_buff);
@@ -858,8 +858,8 @@ int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_d
 
     // Create and initialize key attributes
     psa_key_attributes_t attributes = psa_key_attributes_init();
-    psa_status_t status;
-    psa_key_id_t imported_key_id;
+    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
+    psa_key_id_t imported_key_id = 0;
     hal_data pubkey, prikey_der;
     int ret;
 
@@ -1044,20 +1044,6 @@ int armino_hal_set_key(hal_key_type mode, uint32_t key_idx, hal_data *key, hal_d
                 psa_reset_key_attributes(&attributes);
                 return HAL_INVALID_ARGS;
             }
-            break;
-        case HAL_KEY_ECC_25519:
-            psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_MONTGOMERY));
-            psa_set_key_bits(&attributes, 255);
-            psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
-            psa_set_key_algorithm(&attributes, PSA_ALG_ECDH);
-            // Import the key
-            status = psa_import_key(&attributes, key->data, key->data_len, &imported_key_id);
-            break;
-        case HAL_KEY_ED_25519:
-            // psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_EDWARDS));
-            // psa_set_key_bits(&attributes, 255);
-            // psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_VERIFY_MESSAGE);
-            // psa_set_key_algorithm(&attributes, PSA_ALG_ED25519);
             break;
         case HAL_KEY_HMAC_MD5:
         case HAL_KEY_HMAC_SHA1:
@@ -1269,7 +1255,7 @@ int armino_hal_remove_key(hal_key_type mode, uint32_t key_idx)
 int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
 {
     HWRAP_ENTER;
-    psa_status_t status;
+    psa_status_t status = PSA_ERROR_GENERIC_ERROR;
 
     if((armino_index_chk(key_idx)) != HAL_SUCCESS){
         return HAL_INVALID_SLOT_RANGE;
@@ -1376,12 +1362,6 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
             psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT);
             psa_set_key_algorithm(&attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_512));
             break;
-        case HAL_KEY_ECC_25519:
-            psa_set_key_type(&attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_MONTGOMERY));
-            psa_set_key_bits(&attributes, 255);
-            psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DERIVE);
-            psa_set_key_algorithm(&attributes, PSA_ALG_ECDH);
-            break;
         case HAL_KEY_HMAC_MD5:
             psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
             psa_set_key_bits(&attributes, 128);
@@ -1443,7 +1423,7 @@ int armino_hal_generate_key(hal_key_type mode, uint32_t key_idx)
     }
 
     // Generate the key
-    psa_key_id_t generated_key_id;
+    psa_key_id_t generated_key_id = 0;
     status = psa_generate_key(&attributes, &generated_key_id);
     psa_reset_key_attributes(&attributes);
     if (status != PSA_SUCCESS) {
@@ -2085,7 +2065,7 @@ int armino_hal_dh_generate_param(uint32_t dh_idx, hal_dh_data *dh_param)
     }
 
     size_t key_bytes = 0;
-    psa_key_id_t key_id;
+    psa_key_id_t key_id = 0;
 
     switch(dh_param->mode) {
         case HAL_DH_1024:

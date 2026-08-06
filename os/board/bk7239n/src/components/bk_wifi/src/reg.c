@@ -838,36 +838,45 @@ unsigned int reg_get_max_bandwidth(const struct ieee80211_regdomain *rd,
 	return bw;
 }
 
+static void regdom_append_flag(char *buf, size_t buf_len, const char *flag)
+{
+	size_t len = os_strlen(buf);
+
+	if (len >= buf_len)
+		return;
+	os_snprintf(buf + len, buf_len - len, "%s", flag);
+}
+
 const char *regdom_flag_str(uint32_t channel_flags)
 {
 	static char regd_flags_buf[128];
-	regd_flags_buf[0] = 0;
+	regd_flags_buf[0] = '\0';
 	if (channel_flags & IEEE80211_CHAN_DISABLED)
-		strcat(regd_flags_buf, "DISABLED,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "DISABLED,");
 	if (channel_flags & IEEE80211_CHAN_NO_IR)
-		strcat(regd_flags_buf, "NO_IR,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "NO_IR,");
 	if (channel_flags & IEEE80211_CHAN_RADAR)
-		strcat(regd_flags_buf, "RADAR,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "RADAR,");
 	if (channel_flags & IEEE80211_CHAN_NO_HT40PLUS)
-		strcat(regd_flags_buf, "NO_HT40PLUS,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "NO_HT40PLUS,");
 	if (channel_flags & IEEE80211_CHAN_NO_HT40MINUS)
-		strcat(regd_flags_buf, "NO_HT40MINUS,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "NO_HT40MINUS,");
 	if (channel_flags & IEEE80211_CHAN_NO_OFDM)
-		strcat(regd_flags_buf, "NO_OFDM,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "NO_OFDM,");
 	if (channel_flags & IEEE80211_CHAN_NO_80MHZ)
-		strcat(regd_flags_buf, "NO_80M,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "NO_80M,");
 	if (channel_flags & IEEE80211_CHAN_NO_160MHZ)
-		strcat(regd_flags_buf, "NO_160M,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "NO_160M,");
 	if (channel_flags & IEEE80211_CHAN_INDOOR_ONLY)
-		strcat(regd_flags_buf, "INDOOR,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "INDOOR,");
 	if (channel_flags & IEEE80211_CHAN_IR_CONCURRENT)
-		strcat(regd_flags_buf, "IR_CON,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "IR_CON,");
 	if (channel_flags & IEEE80211_CHAN_NO_20MHZ)
-		strcat(regd_flags_buf, "NO_20M,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "NO_20M,");
 	if (channel_flags & IEEE80211_CHAN_NO_10MHZ)
-		strcat(regd_flags_buf, "NO_10M,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "NO_10M,");
 	if (channel_flags & IEEE80211_CHAN_NO_HE)
-		strcat(regd_flags_buf, "NO_HE,");
+		regdom_append_flag(regd_flags_buf, sizeof(regd_flags_buf), "NO_HE,");
 
 	return regd_flags_buf;
 }

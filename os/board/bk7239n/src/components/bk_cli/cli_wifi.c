@@ -106,11 +106,9 @@ static int fast_connect_cb(void *arg, event_module_t event_module,
 	} else
 		return -1;
 
-	bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 	bk_flash_erase_sector(pt->partition_start_addr + pt->partition_length -4096);
 	bk_flash_write_bytes(pt->partition_start_addr + pt->partition_length -4096,
 						(uint8_t *)&info_tmp, sizeof(BK_FAST_CONNECT_T));
-	bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 
 	return 0;
 }
@@ -301,11 +299,9 @@ void cli_wifi_ap_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **
 						(uint8_t *)&info_t, sizeof(BK_FAST_CONNECT_T));
 			if (info_t.flag == 0x72l || info_t.flag == 0x73l) {
 				info_t.flag &= ~0x2l;
-				bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 				bk_flash_erase_sector(pt->partition_start_addr + pt->partition_length -4096);
 				bk_flash_write_bytes(pt->partition_start_addr + pt->partition_length -4096,
 									(uint8_t *)&info_t, sizeof(BK_FAST_CONNECT_T));
-				bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 			}
 		}
 #endif
@@ -1088,10 +1084,8 @@ void cli_wifi_sta_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char *
 						(uint8_t *)&info_t, sizeof(BK_FAST_CONNECT_T));
 			if (info_t.flag == 0x71l || info_t.flag == 0x73l) {
 				info_t.flag &= ~0x1l;
-				bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 				bk_flash_write_bytes(pt->partition_start_addr + pt->partition_length -4096,
 									(uint8_t *)&info_t, sizeof(BK_FAST_CONNECT_T));
-				bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 			}
 		}
 #endif

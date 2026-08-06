@@ -28,7 +28,7 @@ extern "C" {
 #define _BK_RAW_PRINTF    bk_printf_raw
 
 
-#define BK_LOG_NONE    0 /*!< No log output */
+#define BK_LOG_NONE    0 /*!< LOG_LEVEL=0: disable leveled BK_LOGx macros; runtime level arg: raw/unleveled output (BK_LOG_RAW) */
 #define BK_LOG_ERROR   1 /*!< Critical errors, software module can not recover on its own */
 #define BK_LOG_WARN    2 /*!< Error conditions from which recovery measures have been taken */
 #define BK_LOG_INFO    3 /*!< Information messages which describe normal flow of events */

@@ -81,7 +81,7 @@ int32_t bk_tr_ble_scanner_notice_cb(ble_notice_t notice, void *param)
 
         if (hal_ble_scan_env.filter_param.enable)
         {
-            if (hal_ble_scan_env.filter_param.p_filter == NULL || hal_ble_scan_env.filter_param.len == 0)
+            if (hal_ble_scan_env.filter_param.len == 0)
             {
                 break;
             }

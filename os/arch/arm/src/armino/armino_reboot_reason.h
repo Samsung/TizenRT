@@ -20,8 +20,11 @@
 #define __ARMINO_REBOOT_REASON_H__
 
 #include <tinyara/reboot_reason.h>
-#include "system.h"
 
-
+enum {
+    REBOOT_SYSTEM_BT_RESET     = REBOOT_BOARD_SPECIFIC2,   /* bluetooth memeory exhausted*/
+	REBOOT_SYSTEM_BOR_RESET    = REBOOT_BOARD_SPECIFIC3,   /* Brownout reset */
+    REBOOT_SYSTEM_TFM_RESET    = REBOOT_BOARD_SPECIFIC4,   /* secure fault  */
+};
 
 #endif /* __ARMINO_REBOOT_REASON_H__ */

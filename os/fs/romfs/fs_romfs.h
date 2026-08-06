@@ -166,6 +166,7 @@ struct romfs_mountpt_s {
 	bool rm_mounted;			/* true: The file system is ready */
 	uint16_t rm_hwsectorsize;	/* HW: Sector size reported by block driver */
 	sem_t rm_sem;				/* Used to assume thread-safe access */
+	int rm_cancelstate;			/* Cancel state of the holder before taking rm_sem */
 	uint32_t rm_headersize;		/* Size of metadata that should not be used for user */
 	uint32_t rm_rootoffset;		/* Saved offset to the first root directory entry */
 	uint32_t rm_hwnsectors;		/* HW: The number of sectors reported by the hardware */

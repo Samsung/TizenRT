@@ -364,7 +364,8 @@ void bk_wlan_ap_init(network_InitTypeDef_st *inNetworkInitPara)
 	if (inNetworkInitPara) {
 		g_ap_param_ptr->ssid.length = MIN(SSID_MAX_LEN, os_strlen(inNetworkInitPara->wifi_ssid));
 		os_memcpy(g_ap_param_ptr->ssid.array, inNetworkInitPara->wifi_ssid, g_ap_param_ptr->ssid.length);
-		g_ap_param_ptr->key_len = os_strlen(inNetworkInitPara->wifi_key);
+		g_ap_param_ptr->key_len = MIN(sizeof(g_ap_param_ptr->key) - 1,
+					      os_strlen(inNetworkInitPara->wifi_key));
 		g_ap_param_ptr->hidden_ssid = inNetworkInitPara->hidden_ssid;
 		if (g_ap_param_ptr->key_len < 8)
 			g_ap_param_ptr->cipher_suite = BK_SECURITY_TYPE_NONE;
@@ -375,6 +376,7 @@ void bk_wlan_ap_init(network_InitTypeDef_st *inNetworkInitPara)
 			g_ap_param_ptr->cipher_suite = BK_SECURITY_TYPE_WPA2_AES;
 #endif
 			os_memcpy(g_ap_param_ptr->key, inNetworkInitPara->wifi_key, g_ap_param_ptr->key_len);
+			g_ap_param_ptr->key[g_ap_param_ptr->key_len] = '\0';
 		}
 
 #if 0//CONFIG_LWIP
@@ -821,10 +823,10 @@ bk_err_t bk_wlan_start(network_InitTypeDef_st *inNetworkInitPara)
 		bk_wlan_start_ap(inNetworkInitPara);
 #pragma GCC diagnostic pop
 	}
-	else if (inNetworkInitPara->wifi_mode == BK_STATION)
+	else if ((unsigned char)inNetworkInitPara->wifi_mode == BK_STATION)
 		bk_wlan_start_sta(inNetworkInitPara);
 #ifdef CONFIG_P2P
-	else if (inNetworkInitPara->wifi_mode == BK_P2P)
+	else if ((unsigned char)inNetworkInitPara->wifi_mode == BK_P2P)
 		bk_wlan_start_p2p(inNetworkInitPara);
 #endif
 	return 0;
@@ -1801,7 +1803,7 @@ void wlan_read_fast_connect_info(struct wlan_fast_connect_info *fci)
 	if(g_is_get_fci_from_flash && g_is_use_fci_from_flash)
 		get_net_info(FAST_CONNECT_ITEM, (UINT8 *)fci, NULL, NULL);
 	else
-		os_memcpy((UINT8 *)fci, &g_fci, sizeof(struct wlan_fast_connect_info));
+		os_memcpy(fci, &g_fci, sizeof(g_fci));
 
 
 #if defined(CONFIG_FAST_CONNECT_INFO_ENC_METHOD) && (CONFIG_FAST_CONNECT_INFO_ENC_METHOD != ENC_METHOD_NULL)
@@ -1832,7 +1834,7 @@ void wlan_write_fast_connect_info(struct wlan_fast_connect_info *fci)
 	if(g_is_get_fci_from_flash && g_is_use_fci_from_flash)
 		save_net_info(FAST_CONNECT_ITEM, (UINT8 *)fci, NULL, NULL);
 	else
-		os_memcpy(&g_fci, (UINT8 *)fci, sizeof(struct wlan_fast_connect_info));
+		os_memcpy(&g_fci, fci, sizeof(g_fci));
 
 	WIFI_LOGD("writed fci to flash\n");
 wr_exit:
@@ -1944,8 +1946,10 @@ void bk_wlan_ap_init_adv(network_InitTypeDef_ap_st *inNetworkInitParaAP)
 
 		g_ap_param_ptr->ssid.length = MIN(SSID_MAX_LEN, os_strlen(inNetworkInitParaAP->wifi_ssid));
 		os_memcpy(g_ap_param_ptr->ssid.array, inNetworkInitParaAP->wifi_ssid, g_ap_param_ptr->ssid.length);
-		g_ap_param_ptr->key_len = os_strlen(inNetworkInitParaAP->wifi_key);
+		g_ap_param_ptr->key_len = MIN(sizeof(g_ap_param_ptr->key) - 1,
+					      os_strlen(inNetworkInitParaAP->wifi_key));
 		os_memcpy(g_ap_param_ptr->key, inNetworkInitParaAP->wifi_key, g_ap_param_ptr->key_len);
+		g_ap_param_ptr->key[g_ap_param_ptr->key_len] = '\0';
 
 		g_ap_param_ptr->cipher_suite = inNetworkInitParaAP->security;
 	}
@@ -2231,7 +2235,7 @@ bk_err_t bk_wifi_scan_start(const wifi_scan_config_t *config)
 		scan_param.scan_cc = !!(config->flag & SCAN_TYPE_CC);
 	}
 
-	if (0 == config->ssid_cnt) {
+	if (!config || config->ssid_cnt == 0) {
 		WIFI_LOGI("scan all APs\n");
 		scan_param.num_ssids = 1;
 		scan_param.ssids[0].ssid_len = 0;
@@ -2413,7 +2417,7 @@ static int wifi_sta_get_global_config(wifi_sta_config_t *sta_config)
 	if (!sta_config)
 		return BK_ERR_NULL_PARAM;
 
-	os_memset(sta_config, 0, sizeof(sta_config));
+	os_memset(sta_config, 0, sizeof(*sta_config));
 	os_memcpy(sta_config->ssid, g_sta_param_ptr->ssid.array, g_sta_param_ptr->ssid.length);
 
 #ifdef CONFIG_CONNECT_THROUGH_PSK_OR_SAE_PASSWORD
@@ -2649,7 +2653,7 @@ bk_err_t bk_wifi_sta_get_config(wifi_sta_config_t *config)
 		return BK_ERR_NULL_PARAM;
 	}
 
-	os_memset(config, 0, sizeof(config));
+	os_memset(config, 0, sizeof(*config));
 
 	if (!wifi_sta_is_configured())
 		return BK_ERR_WIFI_STA_NOT_CONFIG;
@@ -2705,7 +2709,7 @@ bk_err_t bk_wifi_sta_get_link_status(wifi_link_status_t *link_status)
 	if (!link_status)
 		return BK_ERR_NULL_PARAM;
 
-	os_memset(link_status, 0, sizeof(link_status));
+	os_memset(link_status, 0, sizeof(*link_status));
 	link_status->aid = -1;
 	link_status->rssi = -128;
 	if (!wifi_sta_is_connected()) {
@@ -3156,7 +3160,8 @@ static bk_err_t wifi_ap_set_config(const wifi_ap_config_t *ap_config)
 
 	g_ap_param_ptr->ssid.length = MIN(SSID_MAX_LEN, os_strlen(ap_config->ssid));
 	os_memcpy(g_ap_param_ptr->ssid.array, ap_config->ssid, g_ap_param_ptr->ssid.length);
-	g_ap_param_ptr->key_len = os_strlen(ap_config->password);
+	g_ap_param_ptr->key_len = MIN(sizeof(g_ap_param_ptr->key) - 1,
+				      os_strlen(ap_config->password));
 	g_ap_param_ptr->hidden_ssid = ap_config->hidden;
 	if (g_ap_param_ptr->key_len < 8) {
 		g_ap_param_ptr->cipher_suite = BK_SECURITY_TYPE_NONE;
@@ -3195,6 +3200,7 @@ static bk_err_t wifi_ap_set_config(const wifi_ap_config_t *ap_config)
 		}
 		os_memset(g_ap_param_ptr->key, 0, sizeof(g_ap_param_ptr->key));
 		os_memcpy(g_ap_param_ptr->key, ap_config->password, g_ap_param_ptr->key_len);
+		g_ap_param_ptr->key[g_ap_param_ptr->key_len] = '\0';
 	}
 #if CONFIG_AP_VSIE
 	g_ap_param_ptr->vsie_len = ap_config->vsie_len;
@@ -3315,7 +3321,7 @@ bk_err_t bk_wifi_calculate_pmk(const char *ssid, const char *pwd, char *pmk)
 	}
 
 	ret = wpas_calculate_ap_pmk(pwd, (uint8_t *)ssid, tmp_pmk);
-	sprintf(pmk, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+	os_snprintf(pmk, 65, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 				 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 				 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
 		tmp_pmk[0], tmp_pmk[1], tmp_pmk[2], tmp_pmk[3], tmp_pmk[4],

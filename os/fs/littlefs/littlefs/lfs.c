@@ -196,6 +196,12 @@ static int lfs_bd_flush(lfs_t *lfs,
         int err = lfs->cfg->prog(lfs->cfg, pcache->block,
                 pcache->off, pcache->buffer, diff);
         LFS_ASSERT(err <= 0);
+        if (err == LFS_ERR_EUCLEAN) {
+            // data was written successfully, but the device consumed a bad
+            // block and lost usable capacity; reconcile at a safe point
+            lfs->cap_dirty = true;
+            err = 0;
+        }
         if (err) {
             return err;
         }
@@ -234,6 +240,11 @@ static int lfs_bd_sync(lfs_t *lfs,
 
     err = lfs->cfg->sync(lfs->cfg);
     LFS_ASSERT(err <= 0);
+    if (err == LFS_ERR_EUCLEAN) {
+        // sync succeeded but consumed a bad block; see lfs_bd_flush
+        lfs->cap_dirty = true;
+        err = 0;
+    }
     return err;
 }
 #endif
@@ -291,6 +302,11 @@ static int lfs_bd_erase(lfs_t *lfs, lfs_block_t block) {
     LFS_ASSERT(block < lfs->block_count);
     int err = lfs->cfg->erase(lfs->cfg, block);
     LFS_ASSERT(err <= 0);
+    if (err == LFS_ERR_EUCLEAN) {
+        // erase succeeded but consumed a bad block; see lfs_bd_flush
+        lfs->cap_dirty = true;
+        err = 0;
+    }
     return err;
 }
 #endif
@@ -4206,6 +4222,7 @@ static int lfs_removeattr_(lfs_t *lfs, const char *path, uint8_t type) {
 static int lfs_init(lfs_t *lfs, const struct lfs_config *cfg) {
     lfs->cfg = cfg;
     lfs->block_count = cfg->block_count;  // May be 0
+    lfs->cap_dirty = false;
     int err = 0;
 
 #ifdef LFS_MULTIVERSION
@@ -4707,7 +4724,7 @@ int lfs_fs_traverse_(lfs_t *lfs,
         int (*cb)(void *data, lfs_block_t block), void *data,
         bool includeorphans) {
     // iterate over metadata pairs
-    lfs_mdir_t dir = {.tail = {0, 1}};
+	lfs_mdir_t dir = {.tail = {0, 1}};
 
 #ifdef LFS_MIGRATE
     // also consider v1 blocks during migration
@@ -5253,7 +5270,6 @@ static int lfs_fs_gc_(lfs_t *lfs) {
 #endif
 
 #ifndef LFS_READONLY
-#ifdef LFS_SHRINKNONRELOCATING
 static int lfs_shrink_checkblock(void *data, lfs_block_t block) {
     lfs_size_t threshold = *((lfs_size_t*)data);
     if (block >= threshold) {
@@ -5261,7 +5277,6 @@ static int lfs_shrink_checkblock(void *data, lfs_block_t block) {
     }
     return 0;
 }
-#endif
 
 static int lfs_fs_grow_(lfs_t *lfs, lfs_size_t block_count) {
     int err;
@@ -5270,19 +5285,13 @@ static int lfs_fs_grow_(lfs_t *lfs, lfs_size_t block_count) {
         return 0;
     }
 
-    
-#ifndef LFS_SHRINKNONRELOCATING
-    // shrinking is not supported
-    LFS_ASSERT(block_count >= lfs->block_count);
-#endif
-#ifdef LFS_SHRINKNONRELOCATING
+    // shrinking is only possible when no live data sits in the trimmed blocks
     if (block_count < lfs->block_count) {
         err = lfs_fs_traverse_(lfs, lfs_shrink_checkblock, &block_count, true);
         if (err) {
             return err;
         }
     }
-#endif
 
     lfs->block_count = block_count;
 
@@ -5310,6 +5319,44 @@ static int lfs_fs_grow_(lfs_t *lfs, lfs_size_t block_count) {
             {tag, &superblock}));
     if (err) {
         return err;
+    }
+    return 0;
+}
+
+// Reconcile the filesystem size with the underlying device's current
+// capacity. Called at safe points (no operation in flight) after the block
+// device reported LFS_ERR_EUCLEAN. Best-effort: on failure cap_dirty stays
+// set and reconciliation is retried on a later operation.
+static int lfs_fs_reconcile_(lfs_t *lfs) {
+    if (!lfs->cap_dirty || !lfs->cfg->capacity) {
+        return 0;
+    }
+
+    lfs_ssize_t count = lfs->cfg->capacity(lfs->cfg);
+    if (count < 0) {
+        return (int)count;
+    }
+
+    lfs->cap_dirty = false;
+    if ((lfs_size_t)count < lfs->block_count) {
+        int err = lfs_fs_grow_(lfs, (lfs_size_t)count);
+        if (err) {
+            // LFS_ERR_NOTEMPTY means live data currently sits in the blocks
+            // being trimmed; keep cap_dirty set and retry later
+            lfs->cap_dirty = true;
+            if (err != LFS_ERR_NOTEMPTY) {
+                LFS_WARN("Failed to shrink filesystem to %"PRId32" blocks (%d)",
+                        count, err);
+            }
+            return err;
+        }
+
+        // the lookahead bitmap was built against the old block count and
+        // must not be reinterpreted against the new one
+        lfs->lookahead.start = 0;
+        lfs_alloc_drop(lfs);
+
+        LFS_WARN("Shrank filesystem to %"PRIu32" blocks", lfs->block_count);
     }
     return 0;
 }
@@ -6035,6 +6082,15 @@ int lfs_mount(lfs_t *lfs, const struct lfs_config *cfg) {
 
     err = lfs_mount_(lfs, cfg);
 
+#ifndef LFS_READONLY
+    if (!err) {
+        // the device may have lost capacity while we were unmounted
+        // (bad block consumed, then power lost before reconciliation)
+        lfs->cap_dirty = true;
+        lfs_fs_reconcile_(lfs);
+    }
+#endif
+
     LFS_TRACE("lfs_mount -> %d", err);
     LFS_UNLOCK(cfg);
     return err;
@@ -6063,6 +6119,7 @@ int lfs_remove(lfs_t *lfs, const char *path) {
     LFS_TRACE("lfs_remove(%p, \"%s\")", (void*)lfs, path);
 
     err = lfs_remove_(lfs, path);
+    lfs_fs_reconcile_(lfs);
 
     LFS_TRACE("lfs_remove -> %d", err);
     LFS_UNLOCK(lfs->cfg);
@@ -6079,6 +6136,7 @@ int lfs_rename(lfs_t *lfs, const char *oldpath, const char *newpath) {
     LFS_TRACE("lfs_rename(%p, \"%s\", \"%s\")", (void*)lfs, oldpath, newpath);
 
     err = lfs_rename_(lfs, oldpath, newpath);
+    lfs_fs_reconcile_(lfs);
 
     LFS_TRACE("lfs_rename -> %d", err);
     LFS_UNLOCK(lfs->cfg);
@@ -6197,6 +6255,9 @@ int lfs_file_close(lfs_t *lfs, lfs_file_t *file) {
     LFS_ASSERT(lfs_mlist_isopen(lfs->mlist, (struct lfs_mlist*)file));
 
     err = lfs_file_close_(lfs, file);
+#ifndef LFS_READONLY
+    lfs_fs_reconcile_(lfs);
+#endif
 
     LFS_TRACE("lfs_file_close -> %d", err);
     LFS_UNLOCK(lfs->cfg);
@@ -6213,6 +6274,7 @@ int lfs_file_sync(lfs_t *lfs, lfs_file_t *file) {
     LFS_ASSERT(lfs_mlist_isopen(lfs->mlist, (struct lfs_mlist*)file));
 
     err = lfs_file_sync_(lfs, file);
+    lfs_fs_reconcile_(lfs);
 
     LFS_TRACE("lfs_file_sync -> %d", err);
     LFS_UNLOCK(lfs->cfg);
@@ -6249,6 +6311,7 @@ lfs_ssize_t lfs_file_write(lfs_t *lfs, lfs_file_t *file,
     LFS_ASSERT(lfs_mlist_isopen(lfs->mlist, (struct lfs_mlist*)file));
 
     lfs_ssize_t res = lfs_file_write_(lfs, file, buffer, size);
+    lfs_fs_reconcile_(lfs);
 
     LFS_TRACE("lfs_file_write -> %"PRId32, res);
     LFS_UNLOCK(lfs->cfg);
@@ -6284,6 +6347,7 @@ int lfs_file_truncate(lfs_t *lfs, lfs_file_t *file, lfs_off_t size) {
     LFS_ASSERT(lfs_mlist_isopen(lfs->mlist, (struct lfs_mlist*)file));
 
     err = lfs_file_truncate_(lfs, file, size);
+    lfs_fs_reconcile_(lfs);
 
     LFS_TRACE("lfs_file_truncate -> %d", err);
     LFS_UNLOCK(lfs->cfg);
@@ -6344,6 +6408,7 @@ int lfs_mkdir(lfs_t *lfs, const char *path) {
     LFS_TRACE("lfs_mkdir(%p, \"%s\")", (void*)lfs, path);
 
     err = lfs_mkdir_(lfs, path);
+    lfs_fs_reconcile_(lfs);
 
     LFS_TRACE("lfs_mkdir -> %d", err);
     LFS_UNLOCK(lfs->cfg);
@@ -6569,7 +6634,7 @@ int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg)
     }
 	err = lfs_init(lfs, cfg);
     if (err) {
-        return err;
+        goto cleanup;
     }
 	lfs_mdir_t dir = {.tail = {0, 1}};
 	struct lfs_tortoise_t tortoise = {
@@ -6579,8 +6644,10 @@ int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg)
 	};
 	//parse_again:
 	while (!lfs_pair_isnull(dir.tail)) {
-		int err = lfs_tortoise_detectcycles(&dir, &tortoise);
+        // TODO: If dir->tail(0, 1) and tortoise->pair(0, 1) are repeated 3 times, it is determined that all blocks are erased
+		err = lfs_tortoise_detectcycles(&dir, &tortoise);
 		if (err < 0) {
+            fdbg("format requested, all blocks are erased\n");
 			goto cleanup;
 		}
 		lfs_stag_t tag;
@@ -6593,7 +6660,7 @@ int lfs_check_format(lfs_t *lfs, const struct lfs_config *cfg)
 				lfs_dir_find_match, &(struct lfs_dir_find_match){
 				lfs, "formatfs", 8});
 		if (tag > 0 && !lfs_tag_isdelete(tag)) {
-			err = lfs_format_(lfs, cfg);
+            err = LFS_ERR_EUCLEAN;
 			goto cleanup;
 		}
 
@@ -6604,48 +6671,59 @@ cleanup:
 	return err;
 }
 
-int lfs_reserve_format(lfs_t *lfs)
+int lfs_reserve_format(lfs_t *lfs, const struct lfs_config *cfg)
 {
 	int err;
-	err = LFS_LOCK(lfs->cfg);
+	err = LFS_LOCK(cfg);
     if (err) {
         goto cleanup;
     }
 
-	// create free lookahead
-	memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
-	lfs->lookahead.start = 0;
-	lfs->lookahead.size = lfs_min(8*lfs->cfg->lookahead_size,
-			lfs->block_count);
-	lfs->lookahead.next = 0;
-	lfs_alloc_ckpoint(lfs);
-
-	// create root dir
+	// fetch root dir
 	lfs_mdir_t root;
-	err = lfs_dir_alloc(lfs, &root);
-	if (err) {
-		goto cleanup;
-	}
-	// write one superblock
-	lfs_superblock_t superblock = {
-		.version	 = lfs_fs_disk_version(lfs),
-		.block_size  = lfs->cfg->block_size,
-		.block_count = lfs->block_count,
-		.name_max	 = lfs->name_max,
-		.file_max	 = lfs->file_max,
-		.attr_max	 = lfs->attr_max,
-	};
-	lfs_superblock_tole32(&superblock);
+    err = lfs_dir_fetch(lfs, &root, lfs->root);
+    if (err) {
+        // create root dir for format
+        memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
+        lfs->lookahead.start = 0;
+        lfs->lookahead.size = lfs_min(8*lfs->cfg->lookahead_size,
+                lfs->block_count);
+        lfs->lookahead.next = 0;
+        lfs_alloc_ckpoint(lfs);
+
+        // create root dir
+        lfs_mdir_t root;
+        err = lfs_dir_alloc(lfs, &root);
+        if (err) {
+            goto cleanup;
+        }
+        // write one superblock
+        lfs_superblock_t superblock = {
+            .version	 = lfs_fs_disk_version(lfs),
+            .block_size  = lfs->cfg->block_size,
+            .block_count = lfs->block_count,
+            .name_max	 = lfs->name_max,
+            .file_max	 = lfs->file_max,
+            .attr_max	 = lfs->attr_max,
+        };
+        lfs_superblock_tole32(&superblock);
+        err = lfs_dir_commit(lfs, &root, LFS_MKATTRS(
+                {LFS_MKTAG(LFS_TYPE_CREATE, 0, 0), NULL},
+                {LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8), "formatfs"},
+                {LFS_MKTAG(LFS_TYPE_INLINESTRUCT, 0, sizeof(superblock)),
+                    &superblock}));
+        goto cleanup;
+    }
+
+    // TODO: Consider changing to corrupt and format logic using LFS_TYPE_USERATTR
 	err = lfs_dir_commit(lfs, &root, LFS_MKATTRS(
-			{LFS_MKTAG(LFS_TYPE_CREATE, 0, 0), NULL},
 			{LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8), "formatfs"},
-			{LFS_MKTAG(LFS_TYPE_INLINESTRUCT, 0, sizeof(superblock)),
-				&superblock}));
+                ));
 cleanup:
 	if (err) {
 	    LFS_ERROR("lfs_request_format -> %d", err);
 	}
-    LFS_UNLOCK(lfs->cfg);
+    LFS_UNLOCK(cfg);
     return err;
 }
 
@@ -6653,43 +6731,53 @@ int lfs_reserve_corrupt(lfs_t *lfs)
 {
 	int err;
 	err = LFS_LOCK(lfs->cfg);
-	if (err) {
-		goto cleanup;
-	}
+    if (err) {
+        return err;
+    }
 
-	// create free lookahead
-	memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
-	lfs->lookahead.start = 0;
-	lfs->lookahead.size = lfs_min(8 * lfs->cfg->lookahead_size, lfs->block_count);
-	lfs->lookahead.next = 0;
-	lfs_alloc_ckpoint(lfs);
-
-	// create root dir
+	// fetch root dir
 	lfs_mdir_t root;
-	err = lfs_dir_alloc(lfs, &root);
-	if (err) {
-		goto cleanup;
-	}
+    err = lfs_dir_fetch(lfs, &root, lfs->root);
+    if (err) {
+        // create root dir for corrupt
+        memset(lfs->lookahead.buffer, 0, lfs->cfg->lookahead_size);
+        lfs->lookahead.start = 0;
+        lfs->lookahead.size = lfs_min(8*lfs->cfg->lookahead_size,
+                lfs->block_count);
+        lfs->lookahead.next = 0;
+        lfs_alloc_ckpoint(lfs);
 
-	// write one superblock
-	lfs_superblock_t superblock = {
-		.version = lfs_fs_disk_version(lfs),
-		.block_size = lfs->cfg->block_size,
-		.block_count = lfs->block_count,
-		.name_max = lfs->name_max,
-		.file_max = lfs->file_max,
-		.attr_max = lfs->attr_max,
-	};
-	lfs_superblock_tole32(&superblock);
+        // create root dir
+        lfs_mdir_t root;
+        err = lfs_dir_alloc(lfs, &root);
+        if (err) {
+            goto cleanup;
+        }
+        // write one superblock
+        lfs_superblock_t superblock = {
+            .version	 = lfs_fs_disk_version(lfs),
+            .block_size  = lfs->cfg->block_size,
+            .block_count = lfs->block_count,
+            .name_max	 = lfs->name_max,
+            .file_max	 = lfs->file_max,
+            .attr_max	 = lfs->attr_max,
+        };
+        lfs_superblock_tole32(&superblock);
+        err = lfs_dir_commit(lfs, &root, LFS_MKATTRS(
+                {LFS_MKTAG(LFS_TYPE_CREATE, 0, 0), NULL},
+                {LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8), "crpt__fs"},
+                {LFS_MKTAG(LFS_TYPE_INLINESTRUCT, 0, sizeof(superblock)),
+                    &superblock}));
+        goto cleanup;
+    }
+
 	err = lfs_dir_commit(lfs, &root, LFS_MKATTRS(
-			{LFS_MKTAG(LFS_TYPE_CREATE, 0, 0), NULL},
 			{LFS_MKTAG(LFS_TYPE_SUPERBLOCK, 0, 8), "crpt__fs"},
-			{LFS_MKTAG(LFS_TYPE_INLINESTRUCT, 0, sizeof(superblock)),
-				&superblock}));
+                ));
 cleanup:
 	if (err) {
 		LFS_ERROR("lfs_request_currupt -> %d", err);
 	}
-	LFS_UNLOCK(lfs->cfg);
+    err = LFS_UNLOCK(lfs->cfg);
 	return err;
 }

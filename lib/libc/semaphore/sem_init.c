@@ -126,8 +126,7 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 		sem->hhead = NULL;
 #else
-		sem->holder.htcb = NULL;
-		sem->holder.counts = 0;
+		INITIALIZE_SEMHOLDER(&sem->holder);
 #endif
 		if (sem->semcount == 0) {
 			/* The semaphore with zero value is used for signaling */

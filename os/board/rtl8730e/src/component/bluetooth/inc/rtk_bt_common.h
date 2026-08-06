@@ -985,6 +985,7 @@ typedef enum {
 	RTK_BT_GAP_EVT_ECFC_DISCONN_IND,		          /*!< Indicate ECFC disconnect, with msg @ref rtk_bt_ecfc_disconn_ind_t */
 	RTK_BT_GAP_EVT_ECFC_RECONF_REQ_IND,			      /*!< Indicate ECFC reconfiguration request, with msg @ref rtk_bt_ecfc_reconf_req_ind_t. Direct calling, BT api shall not be called in this event case. */
 	RTK_BT_GAP_EVT_ECFC_RECONF_RSP_IND,			      /*!< Indicate ECFC reconfiguration response, with msg @ref rtk_bt_ecfc_reconf_rsp_ind_t */
+	RTK_BT_GAP_EVT_FW_EXCEPTION_IND,                  /*!< Indicate BT firmware exception, with no msg */
 	RTK_BT_GAP_EVT_MAX,
 } rtk_bt_gap_evt_t;
 

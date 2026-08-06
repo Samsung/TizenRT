@@ -59,6 +59,8 @@
 /************************************************************************************************
  * Included Files
  ************************************************************************************************/
+#include <tinyara/config.h>
+#include <tinyara/arch.h>
 
 #include <sys/types.h>
 #include <stdint.h>
@@ -68,6 +70,7 @@
  * Private Data
  ************************************************************************************************/
 
+#ifndef CONFIG_ARCH_CRC32
 static const uint32_t crc32_tab[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
 	0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91,
@@ -102,6 +105,7 @@ static const uint32_t crc32_tab[] = {
 	0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605, 0xcdd70693, 0x54de5729, 0x23d967bf,
 	0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
+#endif
 
 /************************************************************************************************
  * Public Functions
@@ -116,6 +120,9 @@ static const uint32_t crc32_tab[] = {
 
 uint32_t crc32part(FAR const uint8_t *src, size_t len, uint32_t crc32val)
 {
+#ifdef CONFIG_ARCH_CRC32
+	return up_crc32part(src, len, crc32val);
+#else
 	size_t i;
 	uint32_t crc_val = ~crc32val;
 
@@ -123,6 +130,7 @@ uint32_t crc32part(FAR const uint8_t *src, size_t len, uint32_t crc32val)
 		crc_val = crc32_tab[(crc_val ^ src[i]) & 0xff] ^ (crc_val >> 8);
 	}
 	return ~crc_val;
+#endif
 }
 
 /************************************************************************************************

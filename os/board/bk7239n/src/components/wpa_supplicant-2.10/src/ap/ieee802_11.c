@@ -5676,6 +5676,9 @@ static void handle_assoc(struct hostapd_data *hapd,
 		}
 	}
 
+	if (!sta)
+		return;
+
 	if ((fc & WLAN_FC_RETRY) &&
 	    sta->last_seq_ctrl != WLAN_INVALID_MGMT_SEQ &&
 	    sta->last_seq_ctrl == seq_ctrl &&

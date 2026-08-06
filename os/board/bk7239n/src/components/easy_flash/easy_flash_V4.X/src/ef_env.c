@@ -1068,6 +1068,7 @@ static EfErrCode del_env(const char *key, env_node_obj_t old_env, bool complete_
     EfErrCode result = EF_NO_ERR;
     uint32_t dirty_status_addr;
     static bool last_is_complete_del = false;
+    struct env_node_obj local_env;
 
 #if (ENV_STATUS_TABLE_SIZE >= DIRTY_STATUS_TABLE_SIZE)
     uint8_t status_table[ENV_STATUS_TABLE_SIZE];
@@ -1077,10 +1078,9 @@ static EfErrCode del_env(const char *key, env_node_obj_t old_env, bool complete_
 
     /* need find ENV */
     if (!old_env) {
-        struct env_node_obj env;
         /* find ENV */
-        if (find_env(key, &env)) {
-            old_env = &env;
+        if (find_env(key, &local_env)) {
+            old_env = &local_env;
         } else {
             EF_DEBUG("Not found '%s' in ENV.\n", key);
             return EF_ENV_NAME_ERR;
@@ -1558,7 +1558,7 @@ EfErrCode ef_env_set_default(void)
             value_len = default_env_set[i].value_len;
         }
         sector.empty_env = FAILED_ADDR;
-        create_env_blob(&sector, default_env_set[i].key, default_env_set[i].value, value_len);
+        result = create_env_blob(&sector, default_env_set[i].key, default_env_set[i].value, value_len);
         if (result != EF_NO_ERR) {
             goto __exit;
         }

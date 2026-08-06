@@ -59,6 +59,17 @@ config BINMGR_UPDATE_SAME_VERSION
 		Allow same version binary update.
 		If it is disabled, only higher version can be updated.
 
+config BINMGR_READ_DECRYPTED_BINARY 
+	bool "Use decrypted binary read for binary manager"
+	depends on FLASH_ENCRYPT_ENABLE
+	default n
+	---help---
+		Use up_read_decrypted_flash() hook for binary manager
+		validation reads and XIP load metadata reads. The kernel
+		header is still read through the raw mtdblock path because it
+		is stored as plain data. The board must provide
+		decrypt flash read API.
+
 config BINMGR_RELOAD_REBOOT
 	bool "Enable board reset for binary reloading"
 	default n

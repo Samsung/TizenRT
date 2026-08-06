@@ -332,7 +332,8 @@ uint32_t armino_i2c_setclock(FAR struct i2c_dev_s *dev, uint32_t frequency)
 int armino_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgs, int msgc)
 {
 	 struct armino_i2c_priv_s *priv = (struct armino_i2c_priv_s *)dev;
-	 int ret = 0;
+	 int ret = OK;
+	 bk_err_t err;
 	 uint8_t i = 0;
 	 uint16_t addr = msgs->addr;
 	 uint32_t timeout_ms = 2000;
@@ -353,14 +354,15 @@ int armino_i2c_transfer(struct i2c_dev_s *dev, struct i2c_msg_s *msgs, int msgc)
 	 for (i = 0; i < msgc; i++) {
 		if ((msgs[i].flags & I2C_M_READ) != I2C_M_READ) {
 			priv->status = I2C_STATUS_WRITE;
-			bk_i2c_master_write(priv->i2c_num, addr, msgs[i].buffer, msgs[i].length, timeout_ms);
+			err = bk_i2c_master_write(priv->i2c_num, addr, msgs[i].buffer, msgs[i].length, timeout_ms);
 		} else {
 			priv->last_data_count = 0;
 			priv->status = I2C_STATUS_READ;
-			bk_i2c_master_read(priv->i2c_num, addr, msgs[i].buffer, msgs[i].length, timeout_ms);
+			err = bk_i2c_master_read(priv->i2c_num, addr, msgs[i].buffer, msgs[i].length, timeout_ms);
 		}
 
-		if (ret < 0) {
+		if (err != BK_OK) {
+			ret = ERROR;
 			break;
 		}
 	 }

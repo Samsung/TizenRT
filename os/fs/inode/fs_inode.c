@@ -58,6 +58,7 @@
 
 #include <assert.h>
 #include <semaphore.h>
+#include <sched.h>
 #include <errno.h>
 
 #include <tinyara/kmalloc.h>
@@ -86,6 +87,7 @@ struct inode_sem_s {
 	sem_t sem;					/* The semaphore */
 	pid_t holder;				/* The current holder of the semaphore */
 	int16_t count;				/* Number of counts held */
+	int cancelstate;			/* Cancel state of the holder before taking the semaphore */
 };
 
 /****************************************************************************
@@ -212,12 +214,15 @@ void inode_initialize(void)
 void inode_semtake(void)
 {
 	pid_t me;
+	int cancelstate;
 
 	/* Do we already hold the semaphore? */
 
 	me = getpid();
 	if (me == g_inode_sem.holder) {
-		/* Yes... just increment the count */
+		/* Yes... just increment the count.  Cancellation is already
+		 * disabled by the outermost inode_semtake().
+		 */
 
 		g_inode_sem.count++;
 		DEBUGASSERT(g_inode_sem.count > 0);
@@ -226,6 +231,13 @@ void inode_semtake(void)
 	/* Take the semaphore (perhaps waiting) */
 
 	else {
+		/* A thread that is killed while holding the inode semaphore leaves
+		 * the whole VFS deadlocked.  Defer any cancellation until the last
+		 * count is released by inode_semgive().
+		 */
+
+		(void)task_setcancelstate(TASK_CANCEL_DISABLE, &cancelstate);
+
 		while (sem_wait(&g_inode_sem.sem) != 0) {
 			/* The only case that an error should occur here is that
 			 * the wait was awakened by a signal.
@@ -238,6 +250,7 @@ void inode_semtake(void)
 
 		g_inode_sem.holder = me;
 		g_inode_sem.count = 1;
+		g_inode_sem.cancelstate = cancelstate;
 	}
 }
 
@@ -251,6 +264,8 @@ void inode_semtake(void)
 
 void inode_semgive(void)
 {
+	int cancelstate;
+
 	DEBUGASSERT(g_inode_sem.holder == getpid());
 
 	/* Is this our last count on the semaphore? */
@@ -264,9 +279,17 @@ void inode_semgive(void)
 	/* Yes.. then we can really release the semaphore */
 
 	else {
+		cancelstate = g_inode_sem.cancelstate;
 		g_inode_sem.holder = NO_HOLDER;
 		g_inode_sem.count = 0;
 		sem_post(&g_inode_sem.sem);
+
+		/* Restore the cancel state saved by the outermost inode_semtake().
+		 * A cancellation deferred while the semaphore was held is acted
+		 * upon here, after the semaphore has been released.
+		 */
+
+		(void)task_setcancelstate(cancelstate, NULL);
 	}
 }
 

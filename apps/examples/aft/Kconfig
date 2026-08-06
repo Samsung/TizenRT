@@ -1,0 +1,5 @@
+config EXAMPLES_AUDIO_FILE_TRANSFER
+	bool "\"Audio File Transfer\" example"
+	default n
+	---help---
+		Enable the "Audio File Transfer!" example.

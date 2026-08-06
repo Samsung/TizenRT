@@ -26,7 +26,6 @@ extern "C" {
 #include "hal_crypto_hash.h"
 #include "hal_crypto_rsa.h"
 #include "hal_flash.h"
-#include "hal_fota.h"
 #include "hal_otp.h"
 #include "hal_rng.h"
 #include "hal_secure_boot.h"

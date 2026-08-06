@@ -425,7 +425,7 @@ trble_result_e rtw_ble_client_read_connected_info(trble_conn_handle conn_handle,
     }
 
 	rtk_bt_le_conn_info_t conn_info;
-	uint8_t bond_size;
+	uint8_t bond_size = 0;
 	bool is_bonded = false;
 	uint16_t mtu_size = 0;
 	
@@ -490,7 +490,7 @@ trble_result_e rtw_ble_client_delete_bond(trble_addr* addr)
         return TRBLE_INVALID_ARGS;
     }
 	
-	uint16_t device_count;
+	uint16_t device_count = 0;
     trble_result_e ret = TRBLE_FAIL;
     rtk_bt_le_addr_t del_addr;
 	bool bond_addr_found = false;

@@ -443,7 +443,9 @@ void volt_single_get_vbat_voltage(void)
     UINT32 volt_adc = 0;
     float volt = 0.0;
 
-    BK_RETURN_ON_ERR(_volt_detect_init_adc_buffer());
+    if (_volt_detect_init_adc_buffer() != BK_OK) {
+        return;
+    }
 
     for (; retry_count > 0; retry_count--)
     {

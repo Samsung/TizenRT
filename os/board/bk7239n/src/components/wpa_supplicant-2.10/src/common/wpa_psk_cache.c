@@ -40,7 +40,7 @@ void send_psk_to_wpa_s(struct wpa_psk_cache_item *item)
 
 	os_memcpy(param.ssid, item->ssid, item->ssid_len);
 	param.ssid_len = item->ssid_len;
-	os_strcpy(param.passphrase, item->passphrase);  // XXX WARN
+	os_strlcpy(param.passphrase, item->passphrase, sizeof(param.passphrase));
 	os_memcpy(param.psk, item->psk, PMK_LEN);
 
 	wlan_sta_gen_psk(&param);
@@ -369,8 +369,14 @@ int wpa_psk_request(u8 *ssid, size_t ssid_len, char *passphrase, u8 *psk, size_t
 	cache->item.ssid = dup_binstr(ssid, ssid_len);
 	cache->item.ssid_len = ssid_len;
 	cache->item.passphrase = os_strdup(passphrase);
-
-	BK_ASSERT(cache->item.ssid && cache->item.passphrase);
+	if (!cache->item.ssid || !cache->item.passphrase) {
+		os_free(cache->item.ssid);
+		os_free(cache->item.passphrase);
+		cache->item.ssid = NULL;
+		cache->item.passphrase = NULL;
+		rtos_set_semaphore(&cache->sema);
+		return -1;
+	}
 
 	rtos_set_semaphore(&cache->sema);
 

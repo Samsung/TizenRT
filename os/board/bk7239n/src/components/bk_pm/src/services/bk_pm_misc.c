@@ -77,34 +77,6 @@ bk_err_t bk_pm_module_vote_ctrl_external_ldo(gpio_ctrl_ldo_module_e module,gpio_
 	return BK_OK;
 }
 
-bk_err_t bk_pm_external_ldo_ctrl(uint32_t value)
-{
-	uint32_t i = 0;
-	uint32_t gpio_ctrl_ldo_output_high_map[] = GPIO_CTRL_LDO_OUTPUT_HIGH_MAP;
-	uint32_t gpio_ctrl_ldo_output_low_map[] = GPIO_CTRL_LDO_OUTPUT_LOW_MAP;
-
-	if (value == 0x1) // output higt
-	{
-		for (i = 0; i < sizeof(gpio_ctrl_ldo_output_high_map) / sizeof(uint32_t); i++)
-		{
-			bk_gpio_enable_output(gpio_ctrl_ldo_output_high_map[i]);
-			bk_gpio_set_output_high(gpio_ctrl_ldo_output_high_map[i]);
-		}
-	}
-	else if (value == 0x0) // output low
-	{
-		for (i = 0; i < sizeof(gpio_ctrl_ldo_output_low_map) / sizeof(uint32_t); i++)
-		{
-			bk_gpio_enable_output(gpio_ctrl_ldo_output_high_map[i]);
-			bk_gpio_set_output_low(gpio_ctrl_ldo_output_low_map[i]);
-		}
-	}
-	else
-	{
-	}
-
-	return BK_OK;
-}
 /*=========================EXTERNAL LDO CTRL END========================*/
 
 /*=========================POWER/VOLTAGE CTRL START========================*/
@@ -167,15 +139,6 @@ const char *pm_sleep_mode_to_string(pm_sleep_mode_e sleep_mode)
     return sleep_mode_strings[sleep_mode];
 }
 
-void pm_printf_current_temperature(void)
-{
-	return;
-#if CONFIG_TEMP_DETECT
-	float temp;
-	bk_sensor_get_current_temperature(&temp);
-	BK_LOGD(NULL, "current chip temperature about %.2f\r\n",temp);
-#endif
-}
 uint32_t pm_disable_int(void)
 {
 	uint32_t primask = 0;

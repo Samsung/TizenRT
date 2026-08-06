@@ -65,6 +65,7 @@ typedef enum {
 	SECURITY_RSC_BUSY,
 	SECURITY_NOT_SUPPORT,
 	SECURITY_INVALID_SIGN_FORMAT,
+	SECURITY_BAD_KEY_TYPE, //appended at the end to keep existing enum values stable (ABI)
 } security_error;
 
 typedef struct _security_csr {

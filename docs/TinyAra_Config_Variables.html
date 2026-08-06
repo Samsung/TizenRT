@@ -1148,7 +1148,6 @@ function toggle(id, link) {
 </ul>
 <li><a href="#CONFIG_PRIORITY_INHERITANCE">1.5.14 <code>CONFIG_PRIORITY_INHERITANCE</code>: Enable priority inheritance </a></li>
 <li><a href="#CONFIG_SEM_PREALLOCHOLDERS">1.5.15 <code>CONFIG_SEM_PREALLOCHOLDERS</code>: Number of pre-allocated holders</a></li>
-<li><a href="#CONFIG_SEM_NNESTPRIO">1.5.16 <code>CONFIG_SEM_NNESTPRIO</code>: Maximum number of higher priority threads</a></li>
 <li><a name="menu_58_toc"><a href="#menu_58">1.5.17 Menu: RTOS hooks</a></a></li>
 <a href="#menu_58_toc" onclick="toggle('toggle_57', this)">Expand</a>
 <ul id="toggle_57"  style="display:none">
@@ -17956,23 +17955,6 @@ int ret = sigaction(SIGCHLD, &amp;sa, NULL);
 <p>
   This setting is only used if priority inheritance is enabled.  It defines the maximum number of different threads (minus one) that  can take counts on a semaphore with priority inheritance support.  This may be set to zero if priority inheritance is disabled OR if you  are only using semaphores as mutexes (only one holder) OR if no more  than two threads participate using a counting semaphore.</p>
 </ul>
-<h3><a name="CONFIG_SEM_NNESTPRIO">1.5.16 <code>CONFIG_SEM_NNESTPRIO</code>: Maximum number of higher priority threads</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 16
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_PRIORITY_INHERITANCE"><code>CONFIG_PRIORITY_INHERITANCE</code></a></li>
-  <li><i>Kconfig file</i>: <code>./kernel/Kconfig</code>
-<p>
-  If priority inheritance is enabled, then this setting is the  maximum number of higher priority threads (minus 1) than can be  waiting for another thread to release a count on a semaphore.  This value may be set to zero if no more than one thread is  expected to wait for a semaphore.</p>
-</ul>
-
-<h1><a name="menu_58">1.5.17 Menu: RTOS hooks</a></h1>
-<ul>
-  <li><i>Kconfig file</i>: <code>./kernel/Kconfig</code>
-</ul>
-<h3><a name="CONFIG_BOARD_INITIALIZE">1.5.17.1 <code>CONFIG_BOARD_INITIALIZE</code>: Custom board/driver initialization</a></h3>
 <ul>
   <li><i>Type</i>: Boolean</li>
   <li>

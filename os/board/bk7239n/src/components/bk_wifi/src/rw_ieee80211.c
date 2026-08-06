@@ -611,17 +611,17 @@ void rwnx_hw_reinit(void)
 
 	memset(rwnx_hw, 0, sizeof(*rwnx_hw));
 
-	if(txq_temp == NULL){
-		rwnx_hw->txq = os_zalloc(NX_NB_TXQ*sizeof(struct rwnx_txq));
-		if(rwnx_hw->txq == NULL){
+	if (txq_temp == NULL) {
+		rwnx_hw->txq = os_zalloc(NX_NB_TXQ * sizeof(struct rwnx_txq));
+		if (rwnx_hw->txq == NULL) {
 			BK_ASSERT(0);
+			return;
 		}
-	}
-	else{
+	} else {
 		rwnx_hw->txq = txq_temp;
 	}
 
-	memset(rwnx_hw->txq, 0, (NX_NB_TXQ*sizeof(struct rwnx_txq)));
+	memset(rwnx_hw->txq, 0, (NX_NB_TXQ * sizeof(struct rwnx_txq)));
 
 }
 
@@ -860,15 +860,12 @@ int rw_ieee80211_set_country(const wifi_country_t *country)
 	}
 
 	// Validate country code format (should be 2-character string)
-	if (!country->cc) {
+	if (country->cc[0] == '\0') {
 		RWNX_LOGW("set_country: cc is null\r\n");
 		return BK_ERR_NULL_PARAM;
 	}
 #if CONFIG_WIFI_REGDOMAIN
 	char alpha2[4] = {0};
-
-	if (!country)
-		return BK_ERR_NULL_PARAM;
 
 	alpha2[0] = country->cc[0];
 	alpha2[1] = country->cc[1];

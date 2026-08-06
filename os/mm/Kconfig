@@ -135,3 +135,24 @@ config MM_DUMP_CORRPUTED_HEAP
 		When we find a heap corruption, we can dump the entire heap, so that
 		it can be manually analyzed to find more information about the corruption.
 
+config MM_ALLOC_LARGE_FROM_BACK
+	bool "Allocate large chunks from the back of free chunks"
+	default n
+	---help---
+		Reduce heap fragmentation by separating small and large
+		allocations. When enabled, chunks whose total size (requested
+		size + allocation header, aligned to the memory granule) is
+		greater than or equal to MM_LARGE_ALLOC_THRESHOLD are carved
+		from the high-address end of the selected free chunk, while
+		smaller chunks continue to be carved from the low-address end.
+
+config MM_LARGE_ALLOC_THRESHOLD
+	int "Large allocation threshold (bytes)"
+	default 1048576
+	depends on MM_ALLOC_LARGE_FROM_BACK
+	---help---
+		Allocations whose physical chunk size (user requested size +
+		SIZEOF_MM_ALLOCNODE, granule aligned) is greater than or equal
+		to this value are placed at the back of the selected free
+		chunk. Default is 512KB. Must be larger than SIZEOF_MM_FREENODE.
+

@@ -647,9 +647,12 @@ static void cli_main(uint32_t data)
 }
 
 #endif // CONFIG_ATE_TEST
-static void cli_cmd_rsp(char *buf, u8 cmd_state)
+static void cli_cmd_rsp(char *buf, int buf_len, u8 cmd_state)
 {
-	sprintf(buf, "CMDRsp:%s\r\n", cmd_state ? "OK" : "Fail");
+	if (buf == NULL || buf_len <= 0) {
+		return;
+	}
+	snprintf(buf, (size_t)buf_len, "CMDRsp:%s\r\n", cmd_state ? "OK" : "Fail");
 }
 
 void help_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv);
@@ -743,10 +746,14 @@ static int _cli_name_cmp(const void *a, const void *b)
 {
 	struct cli_command *cli0, *cli1;
 
+	if ((a == NULL) || (b == NULL))
+		return 0;
+
 	cli0 = *(struct cli_command **)a;
 	cli1 = *(struct cli_command **)b;
 
-	if ((NULL == a) || (NULL == b))
+	if ((cli0 == NULL) || (cli1 == NULL) ||
+	    (cli0->name == NULL) || (cli1->name == NULL))
 		return 0;
 
 	return os_strcmp(cli0->name, cli1->name);
@@ -865,7 +872,7 @@ void help_command(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **arg
 		}
 	}
 
-	//cli_cmd_rsp(&pcWriteBuffer[0], 1);
+	//cli_cmd_rsp(pcWriteBuffer, xWriteBufferLen, 1);
 
 }
 

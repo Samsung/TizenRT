@@ -619,6 +619,19 @@ int wifi_get_ap_bssid(unsigned char *bssid)
 	return RTW_ERROR;
 }
 
+int wifi_reset(void)
+{
+	int ret = 0;
+	if (wifi_is_connected_to_ap() == RTK_STATUS_SUCCESS) {
+		if (cmd_wifi_disconnect() == -1) {
+			RTW_API_INFO("Wifi disconnect failed!\n");
+			return RTW_ERROR;
+		}
+	}
+	ret = inic_ipc_api_host_message_send(IPC_API_WIFI_RESET, NULL, 0);
+	return ret;
+}
+
 #endif
 
 #endif	//#if CONFIG_WLAN

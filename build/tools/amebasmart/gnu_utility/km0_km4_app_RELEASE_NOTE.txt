@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version b79789fa8b 2026/06/26-13:58:32 ==
+1. Add wifi_reset() feature
+
 == version 1e2f487864 2026/03/13-19:28:22 ==
 1. Fix CSI burst report fail
 

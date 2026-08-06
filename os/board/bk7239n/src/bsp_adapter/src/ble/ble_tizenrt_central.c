@@ -356,15 +356,8 @@ trble_result_e bktr_ble_client_read_connected_info(trble_conn_handle conn_handle
         LOGE("error not in connected state");
         return TRBLE_INVALID_STATE;
     }
-    uint8_t bond_idx = bk_adapter_bt_storage_find_linkkey_info_index(con_info.remote_bd, con_info.remote_bd_type);
-    if(bond_idx >= 0)
-    {
-        out_connected_device->is_bonded = true;
-    }
-    else
-    {
-        out_connected_device->is_bonded = false;
-    }
+    int32_t bond_idx = bk_adapter_bt_storage_find_linkkey_info_index(con_info.remote_bd, con_info.remote_bd_type);
+    out_connected_device->is_bonded = (bond_idx >= 0);
     os_memcpy(out_connected_device->conn_info.addr.mac, con_info.remote_bd, TRBLE_BD_ADDR_MAX_LEN);
     out_connected_device->conn_info.addr.type = bk_adapter_ble_convert_addr_type_2_tr(con_info.remote_bd_type, con_info.remote_bd);
     out_connected_device->conn_info.conn_interval = hal_ble_con_env.con_dev[conn_handle].intv;

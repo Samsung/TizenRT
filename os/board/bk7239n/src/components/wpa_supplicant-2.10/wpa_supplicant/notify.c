@@ -136,7 +136,6 @@ uint8_t s_tk[16];
 void wlan_store_fci(struct wpa_supplicant *wpa_s)
 {
 	struct wlan_fast_connect_info fci;
-	char temp[4];
 	int i;
 	unsigned char *psk;
 	struct wpa_bss *bss;
@@ -174,13 +173,20 @@ void wlan_store_fci(struct wpa_supplicant *wpa_s)
 
 	if (wpa_s->pairwise_cipher > WPA_CIPHER_NONE) {
 		if (ssid->passphrase)
-			os_strcpy((char*)fci.pwd, ssid->passphrase);
+			os_strlcpy((char *) fci.pwd, ssid->passphrase, sizeof(fci.pwd));
 		fci.security = wpa_s->pairwise_cipher;
 		if (ssid->psk_set) {
+			char *psk_hex = (char *) fci.psk;
+			size_t psk_hex_left = sizeof(fci.psk);
+
 			psk = ssid->psk;
-			for (i = 0; i < PMK_LEN; i++) {
-				sprintf(temp, "%02x", psk[i]);
-				strcat((char*)fci.psk, temp);
+			for (i = 0; i < PMK_LEN && psk_hex_left > 2; i++) {
+				int n = os_snprintf(psk_hex, psk_hex_left, "%02x", psk[i]);
+
+				if (n <= 0 || (size_t) n >= psk_hex_left)
+					break;
+				psk_hex += n;
+				psk_hex_left -= n;
 			}
 		}
 	} else {

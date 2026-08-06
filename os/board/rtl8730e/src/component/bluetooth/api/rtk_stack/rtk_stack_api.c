@@ -92,7 +92,8 @@ static void bt_stack_api_taskentry(void *ctx)
 							break;
 
 						case IO_MSG_TYPE_BT_STATUS:
-							bt_stack_le_gap_handle_io_msg(io_msg.subtype, (void *)&io_msg.u.param);
+							/* When le_gap_msg_info_way(false) is called, gap io msg will be excuted in gap callback instead of here. */
+							// bt_stack_le_gap_handle_io_msg(io_msg.subtype, (void *)&io_msg.u.param);
 							break;
 #if defined(RTK_BLE_ISO_SUPPORT) && RTK_BLE_ISO_SUPPORT
 						case IO_MSG_TYPE_LE_MGR:

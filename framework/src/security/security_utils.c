@@ -165,6 +165,8 @@ security_error secutils_convert_error_h2s(int herr)
 		return SECURITY_RSC_BUSY;
 	case SECLINK_INVALID_SIGN_FORMAT:
 		return SECURITY_INVALID_SIGN_FORMAT;
+	case SECLINK_BAD_KEY_TYPE:
+		return SECURITY_BAD_KEY_TYPE;
 	default:
 		return SECURITY_ERROR;
 	}

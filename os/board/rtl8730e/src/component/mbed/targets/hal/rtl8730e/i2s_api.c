@@ -22,6 +22,12 @@
 
 #define SP_MAX_DMA_PAGE_NUM 8
 
+/* Set to 1 to log TX page-ring recovery events (missed page-complete
+ * interrupts after a long CPU stall, e.g. secure-world calls or flash
+ * writes).  Recovery itself always runs; this only controls the log.
+ */
+#define DEBUG_I2S_TX_RESYNC 0
+
 /** @addtogroup Ameba_Mbed_API
   * @{
   */
@@ -187,7 +193,49 @@ static void i2s_tx_isr(void *sp_data)
 	/* Clear Pending ISR */
 	GDMA_ClearINT(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
 
-	i2s_release_tx_page(i2s_index);
+	/* Release completed pages following the actual HW position (SAR)
+	 * instead of a fixed one-page-per-ISR count.  Under long CPU stalls
+	 * (secure-world calls, flash writes) the GDMA keeps cycling the LLI
+	 * ring and several page-complete interrupts collapse into one; the
+	 * one-release-per-ISR bookkeeping then lags the HW position forever,
+	 * making the CPU overwrite the page the GDMA is currently reading.
+	 * Deriving the release count from SAR makes the ring self-healing.
+	 */
+
+	u32 sar = GDMA_GetSrcAddr(GDMA_InitStruct->GDMA_Index, GDMA_InitStruct->GDMA_ChNum);
+	u32 base = sp_tx_info.tx_block[0].tx_addr;
+	u32 span = (u32)sp_tx_info.tx_page_num * sp_tx_info.tx_page_size;
+
+	if ((sar >= base) && (sar < base + span)) {
+		u32 hw_page = (sar - base) / sp_tx_info.tx_page_size;
+		u32 released = 0;
+
+		while ((sp_tx_info.tx_gdma_cnt != hw_page) && (released < sp_tx_info.tx_page_num)) {
+			pTX_BLOCK ptx_block = &(sp_tx_info.tx_block[sp_tx_info.tx_gdma_cnt]);
+
+			if (ptx_block->tx_gdma_own) {
+				memcpy((void *)ptx_block->tx_addr, (void *)sp_tx_info.tx_zero_block.tx_addr, sp_tx_info.tx_page_size);
+				DCache_CleanInvalidate((uint32_t)ptx_block->tx_addr, sp_tx_info.tx_page_size);
+				ptx_block->tx_gdma_own = 0;
+			}
+			sp_tx_info.tx_gdma_cnt++;
+			if (sp_tx_info.tx_gdma_cnt == sp_tx_info.tx_page_num) {
+				sp_tx_info.tx_gdma_cnt = 0;
+			}
+			released++;
+		}
+#if DEBUG_I2S_TX_RESYNC
+		if (released > 1) {
+			DBG_8195A("[I2S TX RESYNC] recovered %d missed pages (hw_page=%d)\n", released - 1, hw_page);
+		}
+#endif
+	} else {
+		/* SAR is in the zero entry block (ring startup): fall back to
+		 * the original single-page release.
+		 */
+		i2s_release_tx_page(i2s_index);
+	}
+
 	pbuf = i2s_get_ready_tx_page(i2s_index);
 	I2SUserCB.TxCCB(I2SUserCB.TxCBId, (char*)pbuf);
 

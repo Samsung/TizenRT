@@ -106,40 +106,22 @@
 int pthread_cond_signal(FAR pthread_cond_t *cond)
 {
 	int ret = OK;
-	int sval;
 
 	svdbg("cond=0x%p\n", cond);
 
 	if (!cond) {
 		ret = EINVAL;
 	} else {
-		/* Get the current value of the semaphore */
+		irqstate_t flags = enter_critical_section();
 
-		if (sem_getvalue((sem_t *)&cond->sem, &sval) != OK) {
-			ret = EINVAL;
+		if (cond->waiters > 0) {
+
+			/* Decrement waiters counter */
+			cond->waiters--;
+			ret = pthread_sem_give((sem_t *)&cond->sem);
 		}
 
-		/* If the value is less than zero (meaning that one or more
-		 * thread is waiting), then post the condition semaphore.
-		 * Only the highest priority waiting thread will get to execute
-		 */
-
-		else {
-			/* One of my objectives in this design was to make pthread_cond_signal
-			 * usable from interrupt handlers.  However, from interrupt handlers,
-			 * you cannot take the associated mutex before signaling the condition.
-			 * As a result, I think that there could be a race condition with
-			 * the following logic which assumes that the if sval < 0 then the
-			 * thread is waiting.  Without the mutex, there is no atomic, protected
-			 * operation that will guarantee this to be so.
-			 */
-
-			svdbg("sval=%d\n", sval);
-			if (sval < 0) {
-				svdbg("Signalling...\n");
-				ret = pthread_sem_give((sem_t *)&cond->sem);
-			}
-		}
+		leave_critical_section(flags);
 	}
 
 	svdbg("Returning %d\n", ret);

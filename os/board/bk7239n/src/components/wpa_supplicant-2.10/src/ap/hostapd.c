@@ -2166,8 +2166,7 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 	}
 
 	if (hapd->iconf->rts_threshold >= -1 &&
-	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold) &&
-	    hapd->iconf->rts_threshold >= -1) {
+	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold)) {
 		wpa_printf(MSG_ERROR, "Could not set RTS threshold for "
 			   "kernel driver");
 		goto fail;

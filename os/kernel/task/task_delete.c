@@ -124,6 +124,7 @@ int task_delete(pid_t pid)
 {
 	FAR struct tcb_s *dtcb;
 	FAR struct tcb_s *rtcb;
+	irqstate_t flags;
 	int ret;
 
 	/* Check if the task to delete is the calling task:  PID=0 means to delete
@@ -155,8 +156,17 @@ int task_delete(pid_t pid)
 	/* Check to see if this task has the non-cancelable bit set in its
 	 * flags. Suppress context changes for a bit so that the flags are stable.
 	 * (the flags should not change in interrupt handling).
+	 *
+	 * sched_lock() alone cannot keep the flags stable: the target task may
+	 * be running on another CPU and change its own cancel state through
+	 * task_setcancelstate() at any time, and even on a single CPU it may run
+	 * and do so once the scheduler is unlocked below, long before
+	 * task_terminate() stops it.  Take the critical section, which
+	 * task_setcancelstate() also takes, so that this decision and the
+	 * target's cancel state transitions are strictly ordered.
 	 */
 
+	flags = enter_critical_section();
 	sched_lock();
 	if ((dtcb->flags & TCB_FLAG_NONCANCELABLE) != 0) {
 		/* Then we cannot cancel the thread now.  Here is how this is
@@ -174,6 +184,7 @@ int task_delete(pid_t pid)
 
 		dtcb->flags |= TCB_FLAG_CANCEL_PENDING;
 		sched_unlock();
+		leave_critical_section(flags);
 		return OK;
 	}
 
@@ -195,13 +206,28 @@ int task_delete(pid_t pid)
 		}
 
 		sched_unlock();
+		leave_critical_section(flags);
 		return OK;
 	}
 #endif
 
-	/* Check if the task to delete is the calling task */
+	/* The task is cancelable right now and will be terminated below.  It
+	 * keeps running until task_terminate() stops it, so mark it as doomed
+	 * while the flags are still stable: task_setcancelstate() exits a
+	 * doomed task instead of letting it become non-cancelable, so it
+	 * cannot enter a region (e.g. a filesystem holding its global lock)
+	 * that the termination would otherwise corrupt or strand.
+	 */
+
+	if (pid != rtcb->pid) {
+		dtcb->flags |= TCB_FLAG_CANCEL_DOOMED;
+	}
 
 	sched_unlock();
+	leave_critical_section(flags);
+
+	/* Check if the task to delete is the calling task */
+
 	if (pid == rtcb->pid) {
 		/* If it is, then what we really wanted to do was exit. Note that we
 		 * don't bother to unlock the TCB since it will be going away.

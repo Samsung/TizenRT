@@ -756,11 +756,7 @@ bk_err_t bk_adc_channel_read(adc_chan_t chan_id, uint16_t *data, uint32_t timeou
         sum += samples[i];
     }
 
-    if ((average_sample_count - num) > 0) {
-        sum = sum / (average_sample_count - num);
-    } else {
-        sum = 0;
-    }
+    sum = sum / (average_sample_count - num);
 
     #if defined(CONFIG_SARADC_RANGE_DIVIDE)
     sum = sum >> 1;

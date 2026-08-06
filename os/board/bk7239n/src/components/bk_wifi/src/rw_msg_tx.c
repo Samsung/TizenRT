@@ -651,7 +651,9 @@ int rw_msg_send_twt_teardown(uint8_t vif_idx, uint8_t flow_id)
 	struct twt_teardown_cfm twt_teardown_cfm;
 
 	twt_teardown = ke_msg_alloc(TWT_TEARDOWN_REQ, TASK_TWT, TASK_API,
-								sizeof(struct twt_teardown_req));
+							sizeof(struct twt_teardown_req));
+	if (!twt_teardown)
+		return -1;
 
 	twt_teardown->id = flow_id;
 	twt_teardown->neg_type = 0; // XXX MAC_TWT_CTRL_NEGOT_INDIV;
@@ -1281,7 +1283,9 @@ int rw_msg_send_scanu_fast_req(FAST_SCAN_PARAM_T *fscan_param)
 
 	/* Build the SCANU_START_REQ message */
 	req = ke_msg_alloc(SCANU_FAST_REQ, TASK_SCANU, TASK_API,
-					   sizeof(struct scanu_fast_req));
+				   sizeof(struct scanu_fast_req));
+	if (!req)
+		return -1;
 
 	req->bssid = fscan_param->bssid;
 	req->ch_nbr = fscan_param->ch_num;
@@ -1297,6 +1301,9 @@ int rw_msg_send_connection_loss_ind(u8 vif_index)
 {
 	struct mm_connection_loss_ind *ind = ke_msg_alloc(MM_CONNECTION_LOSS_IND,
 										 TASK_SM, TASK_API, sizeof(struct mm_connection_loss_ind));
+
+	if (!ind)
+		return -1;
 
 	// Fill-in the indication message parameters
 	ind->inst_nbr = vif_index;

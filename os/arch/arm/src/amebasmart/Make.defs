@@ -65,6 +65,12 @@ CMN_CSRCS += up_checkstackoverflow.c
 ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
 CMN_CSRCS += up_reboot_reason.c
 endif
+ifeq ($(CONFIG_ARCH_CRC32),y)
+CMN_CSRCS += up_crc32.c
+ifeq ($(CONFIG_BUILD_PROTECTED)$(CONFIG_BUILD_KERNEL),y)
+CMN_UCSRCS += up_crc32.c
+endif
+endif
 
 ifneq ($(CONFIG_ALARM_ARCH),y)
   ifneq ($(CONFIG_TIMER_ARCH),y)

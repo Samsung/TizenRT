@@ -170,7 +170,7 @@ int preapp_start(int argc, char *argv[])
 
 #ifdef CONFIG_TASK_MANAGER
 #define TASKMGR_STACK_SIZE 2048
-#define TASKMGR_PRIORITY 200
+#define TASKMGR_PRIORITY 180
 	ret = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char *const *)NULL);
 	if (ret < 0) {
 		printf("Failed to create Task Manager\n");

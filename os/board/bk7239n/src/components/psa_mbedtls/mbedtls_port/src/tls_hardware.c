@@ -18,28 +18,32 @@
  */
 
 #include "mbedtls/build_info.h"
+#include "mbedtls/entropy.h"
 
 #include <sys/types.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <stdint.h>
+#include <driver/trng.h>
 
 #if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
 
 static int os_get_random(unsigned char *buf, size_t len)
 {
-    int i, j;
-    unsigned long tmp;
+    size_t i = 0;
 
-    for (i = 0; i < ((len + 3) & ~3) / 4; i++) {
-        tmp = rand();
+    if (buf == NULL && len != 0)
+        return -1;
 
-        for (j = 0; j < 4; j++) {
-            if ((i * 4 + j) < len) {
-                buf[i * 4 + j] = (unsigned char)(tmp >> (j * 8));
-            } else {
-                break;
-            }
-        }
+    /* Initialize the hardware TRNG driver. */
+    if (bk_trng_driver_init() != 0)
+        return -1;
+
+    while (i < len) {
+        uint32_t rnd = (uint32_t)bk_rand();
+        /* bk_rand() masks the TRNG value with RAND_MAX, so only use 24 full-entropy bits. */
+        size_t copy = (len - i) < 3 ? (len - i) : 3;
+        for (size_t j = 0; j < copy; j++)
+            buf[i + j] = (unsigned char)(rnd >> (j * 8));
+        i += copy;
     }
 
     return 0;
@@ -48,7 +52,17 @@ static int os_get_random(unsigned char *buf, size_t len)
 int mbedtls_hardware_poll( void *data,
                            unsigned char *output, size_t len, size_t *olen )
 {
-    os_get_random(output, len);
+    (void) data;
+
+    if (olen == NULL || output == NULL)
+        return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+
+    *olen = 0;
+
+    if (os_get_random(output, len) != 0) {
+        return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+    }
+
     *olen = len;
 
     return 0;

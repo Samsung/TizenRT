@@ -292,7 +292,7 @@ exception_common:
 	 */
 
 #ifdef CONFIG_ARCH_NESTED_INTERRUPT
-#ifdef CONFIG_ARMv8M_USEBASEPRI
+#ifdef CONFIG_ARMV8M_USEBASEPRI
 	msr		basepri, r3
 #else
 	cpsie	i

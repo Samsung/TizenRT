@@ -413,26 +413,15 @@ trwifi_result_e wifi_netmgr_utils_init(struct netdev *dev)
 trwifi_result_e wifi_netmgr_utils_deinit(struct netdev *dev)
 {
 	trwifi_result_e wuret = TRWIFI_FAIL;
-	int ret = cmd_wifi_off();
-	if (ret == RTK_STATUS_SUCCESS) {
-		wuret = TRWIFI_SUCCESS;
-		rtw_mutex_get(&scanlistbusy);
-		if (scan_timer.timer_hdl != NULL) {
-			rtw_cancel_timer(&(scan_timer));
-			rtw_del_timer(&(scan_timer));
+	/* Reset actions only need to be done for wlan0, wlan1 deinit will be handled in cmd_wifi_stop_ap() */
+	if (!memcmp(dev->ifname, "wlan0", 5)) {
+		int ret = wifi_reset();
+		if (ret != RTK_STATUS_SUCCESS) {
+			ndbg("[RTK] Failed to reset STA mode\n");
+			return wuret;
 		}
-		if (saved_scan_list) {
-			rtw_mfree((unsigned char *)saved_scan_list, sizeof(ap_scan_list_s) * scan_number);
-			saved_scan_list = NULL;
-		}
-		scan_number = 0;
-		rtw_mutex_put(&scanlistbusy);
-		rtw_mutex_free(&scanlistbusy);
-		g_netmgr_init = FALSE;
-	} else {
-		ndbg("[RTK] Failed to stop STA mode\n");
 	}
-	//wlan_deinitialize();
+	wuret = TRWIFI_SUCCESS;
 	return wuret;
 }
 

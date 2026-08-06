@@ -357,9 +357,12 @@ static int nand_eraseblock(FAR struct nand_dev_s *nand, off_t block, bool scrub)
 	if (ret < 0) {
 		fdbg("ERROR: Cannot erase block %d\n", block);
 
-		/* Try to mark the block as BAD */
-
-		ret = nand_markblock(nand, block);
+		/* Try to mark the block as BAD, but still report the erase
+		 * failure to the caller: the block content is NOT erased and
+		 * must not be programmed.
+		 */
+		nand_markblock(nand, block);
+		return -EIO;
 	}
 
 	return ret;
@@ -479,6 +482,7 @@ static int nand_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 {
 	FAR struct nand_dev_s *nand = (FAR struct nand_dev_s *)dev;
 	size_t blocksleft = nblocks;
+	size_t nfailed = 0;
 	int ret;
 
 	fvdbg("startblock: %08lx nblocks: %d\n", (long)startblock, (int)nblocks);
@@ -491,16 +495,24 @@ static int nand_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
 
 		ret = nand_eraseblock(nand, startblock, false);
 		if (ret < 0) {
-			fdbg("ERROR: nand_eraseblock failed on block %ld: %d\n", (long)startblock, ret);
-			sem_post(&nand->lock);
-			return ret;
+			if (ret != -EIO) {
+				fdbg("ERROR: nand_eraseblock failed on block %ld: %d\n", (long)startblock, ret);
+				sem_post(&nand->lock);
+				return ret;
+			}
+
+			/* Bad blocks (-EIO) are skipped so that a multi-block
+			 * erase can proceed past them.
+			 */
+
+			nfailed++;
 		}
 
 		startblock++;
 	}
 
 	sem_post(&nand->lock);
-	return (int)nblocks;
+	return nfailed == nblocks ? -EIO : (int)nblocks;
 }
 
 /****************************************************************************
@@ -588,7 +600,7 @@ static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startpage, size_t npa
 	}
 
 	sem_post(&nand->lock);
-	return fixedecc ? -EUCLEAN : npages;
+	return fixedecc ? -EUCLEAN : npages; 
 
 errout_with_lock:
 	sem_post(&nand->lock);
@@ -757,6 +769,7 @@ static int nand_isbad(FAR struct mtd_dev_s *dev, off_t block)
 	if (ret == GOODBLOCK) {
 		ret = 0;
 	} else if (ret == BADBLOCK) {
+		fdbg("###### bad block #### block : %d\n", block);
 		ret = 1;
 	}
 

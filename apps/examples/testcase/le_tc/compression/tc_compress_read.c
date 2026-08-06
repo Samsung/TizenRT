@@ -307,6 +307,73 @@ static void tc_comp_name(void)
 }
 
 /****************************************************************************
+ * Name: tc_comp_decomp_input_too_small
+ *
+ * Description:
+ *   Regression test for integer underflow (CWE-191) in decompress_block().
+ *   When input_size < LZMA_PROPS_SIZE (5), the unsigned subtraction
+ *   *size -= LZMA_PROPS_SIZE wraps to ~SIZE_MAX, causing an out-of-bounds
+ *   heap read in the LZMA decoder. The fix adds a bounds check that
+ *   returns -EINVAL when input_size < LZMA_PROPS_SIZE.
+ *
+ * Returned Value:
+ *   None
+ ****************************************************************************/
+#if CONFIG_COMPRESSION_TYPE == LZMA
+static void tc_comp_decomp_input_too_small(void)
+{
+	int ret_chk;
+	fd = get_compfd();
+
+	TC_ASSERT_GEQ("get_compfd", fd, OK);
+
+	/* Test with input_size = 0 (less than LZMA_PROPS_SIZE = 5).
+	 * ioctl() returns ERROR (-1) on failure; specific error is in errno.
+	 */
+	struct compress_header decomp_small;
+	unsigned char small_input[1] = {0};
+	unsigned char small_output[1] = {0};
+
+	decomp_small.input_buffer = small_input;
+	decomp_small.input_size = 0;
+	decomp_small.output_buffer = small_output;
+	decomp_small.output_size = 1;
+
+	ret_chk = ioctl(fd, COMPIOC_DECOMPRESS, &decomp_small);
+	TC_ASSERT_EQ_CLEANUP("decompress_block input_size=0 ret", ret_chk, ERROR, );
+	TC_ASSERT_EQ_CLEANUP("decompress_block input_size=0 errno", get_errno(), EINVAL, );
+
+	/* Test with input_size = 3 (less than LZMA_PROPS_SIZE = 5) */
+	unsigned char input3[3] = {0, 0, 0};
+	unsigned char output3[16] = {0};
+
+	decomp_small.input_buffer = input3;
+	decomp_small.input_size = 3;
+	decomp_small.output_buffer = output3;
+	decomp_small.output_size = 16;
+
+	ret_chk = ioctl(fd, COMPIOC_DECOMPRESS, &decomp_small);
+	TC_ASSERT_EQ_CLEANUP("decompress_block input_size=3 ret", ret_chk, ERROR, );
+	TC_ASSERT_EQ_CLEANUP("decompress_block input_size=3 errno", get_errno(), EINVAL, );
+
+	/* Test with input_size = 4 (less than LZMA_PROPS_SIZE = 5) */
+	unsigned char input4[4] = {0, 0, 0, 0};
+	unsigned char output4[16] = {0};
+
+	decomp_small.input_buffer = input4;
+	decomp_small.input_size = 4;
+	decomp_small.output_buffer = output4;
+	decomp_small.output_size = 16;
+
+	ret_chk = ioctl(fd, COMPIOC_DECOMPRESS, &decomp_small);
+	TC_ASSERT_EQ_CLEANUP("decompress_block input_size=4 ret", ret_chk, ERROR, );
+	TC_ASSERT_EQ_CLEANUP("decompress_block input_size=4 errno", get_errno(), EINVAL, );
+
+	TC_SUCCESS_RESULT();
+}
+#endif
+
+/****************************************************************************
  * Name: tc_comp_file_decomp
  *
  * Description:
@@ -356,6 +423,9 @@ int tc_compress_main(void)
 	tc_comp_decomp_buffer_equal_output_size();
 	tc_comp_decomp_buffer_lesser_output_size();
 	tc_comp_decomp_buffer_greater_output_size();
+#if CONFIG_COMPRESSION_TYPE == LZMA
+	tc_comp_decomp_input_too_small();
+#endif
 	tc_compressed_file_read();
 	tc_comp_file_decomp();
 

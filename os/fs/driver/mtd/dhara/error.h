@@ -44,6 +44,7 @@ typedef enum {
 	DHARA_E_NOT_FOUND,
 	DHARA_E_MAP_FULL,
 	DHARA_E_CORRUPT_MAP,
+	DHARA_E_COMMON,
 	DHARA_E_MAX
 } dhara_error_t;
 

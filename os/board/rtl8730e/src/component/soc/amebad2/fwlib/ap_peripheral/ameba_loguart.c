@@ -17,6 +17,9 @@
   */
 
 #include "ameba_soc.h"
+#include <tinyara/spinlock.h>
+
+extern volatile spinlock_t g_loguart_ier_lock;
 
 static LOG_UART_PORT LOG_UART_IDX_FLAG[] = {
 	{1, LOGUART_BIT_TP2F_NOT_FULL, LOGUART_BIT_TP2F_EMPTY, 52125, UART_LOG_IRQ},	/* CM0 IDX NOT_FULL EMPTY TX_TIMEOUT IRQ*/
@@ -284,6 +287,9 @@ void LOGUART_AGGPathCmd(LOGUART_TypeDef *UARTLOG, u8 PathIndex, u32 NewState)
   */
 void LOGUART_INTConfig(LOGUART_TypeDef *UARTLOG, u32 UART_IT, u32 newState)
 {
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	irqstate_t flags = spin_lock_irqsave(&g_loguart_ier_lock);
+#endif
 	if (newState == ENABLE) {
 		/* Enable the selected UARTx interrupts */
 		UARTLOG->LOGUART_UART_IER |= UART_IT;
@@ -291,6 +297,9 @@ void LOGUART_INTConfig(LOGUART_TypeDef *UARTLOG, u32 UART_IT, u32 newState)
 		/* Disable the selected UARTx interrupts */
 		UARTLOG->LOGUART_UART_IER &= (u32)~UART_IT;
 	}
+#ifdef CONFIG_PLATFORM_TIZENRT_OS
+	spin_unlock_irqrestore(&g_loguart_ier_lock, flags);
+#endif
 }
 
 /**

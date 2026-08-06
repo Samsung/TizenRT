@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version lib_wlan_ver_d1ed7d84b_2026/06/16-16:32:41 ==
+1.	Add NULL pointer validation for return value of sta info lookup function to fix potential crash
+
 == version lib_wlan_ver_ef67895beb_2026/05/08-16:13:10 ==
 1.	Add wifi txpause lock to fix hardfault
 2.	Fix km0_application_ver timestamp

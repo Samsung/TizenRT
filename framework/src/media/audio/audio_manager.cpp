@@ -3663,6 +3663,87 @@ audio_manager_result_t change_input_dsp_flow(uint8_t dsp_flow_num)
 	return ret;
 }
 
+#ifdef CONFIG_DUMP4CH_SUPPORT
+audio_manager_result_t start_audio_debug_dump_stream(int duration, int verbose, uint32_t *dev_extract_size)
+{
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	audio_card_info_t *card;
+	audio_manager_result_t ret;
+
+	if (dev_extract_size == NULL) {
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	if (g_actual_audio_in_card_id < 0) {
+		meddbg("Found no active input audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+
+	struct audio_debug_dump_stream_init_s stream_args;
+	stream_args.duration = duration;
+	stream_args.verbose = verbose;
+	stream_args.dev_extract_size = dev_extract_size;
+
+	medvdbg("start_audio_debug_dump_stream\n");
+	get_card_path(path, card->card_id, card->device_id, INPUT);
+	pthread_mutex_lock(&(card->card_mutex));
+
+	ret = control_audio_stream_device(path, AUDIOIOC_MULTI_CH_STREAM_INIT, (unsigned long)&stream_args);
+
+	pthread_mutex_unlock(&(card->card_mutex));
+	return ret;
+}
+
+audio_manager_result_t read_audio_debug_dump_stream(uint8_t *buffer, uint32_t *extracted_len)
+{
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	audio_card_info_t *card;
+	audio_manager_result_t ret;
+
+	if (buffer == NULL || extracted_len == NULL) {
+		return AUDIO_MANAGER_INVALID_PARAM;
+	}
+
+	if (g_actual_audio_in_card_id < 0) {
+		meddbg("Found no active input audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+
+	struct audio_debug_dump_stream_read_s read_args;
+	read_args.buffer = buffer;
+	read_args.extracted_len = extracted_len;
+
+	medvdbg("read_audio_debug_dump_stream\n");
+	get_card_path(path, card->card_id, card->device_id, INPUT);
+	pthread_mutex_lock(&(card->card_mutex));
+	ret = control_audio_stream_device(path, AUDIOIOC_MULTI_CH_STREAM_READ, (unsigned long)&read_args);
+	pthread_mutex_unlock(&(card->card_mutex));
+	return ret;
+}
+
+audio_manager_result_t stop_audio_debug_dump_stream(void)
+{
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	audio_card_info_t *card;
+	audio_manager_result_t ret;
+
+	medvdbg("stop_audio_debug_dump_stream\n");
+	if (g_actual_audio_in_card_id < 0) {
+		meddbg("Found no active input audio card\n");
+		return AUDIO_MANAGER_NO_AVAIL_CARD;
+	}
+	card = &g_audio_in_cards[g_actual_audio_in_card_id];
+
+	get_card_path(path, card->card_id, card->device_id, INPUT);
+	pthread_mutex_lock(&(card->card_mutex));
+	ret = control_audio_stream_device(path, AUDIOIOC_MULTI_CH_STREAM_DEINIT, 0);
+	pthread_mutex_unlock(&(card->card_mutex));
+	return ret;
+}
+#endif
+
 #ifdef CONFIG_DEBUG_MEDIA_INFO
 void dump_audio_card_info()
 {

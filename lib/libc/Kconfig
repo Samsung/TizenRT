@@ -324,6 +324,18 @@ config ARCH_OPTIMIZED_FUNCTIONS
 
 if ARCH_OPTIMIZED_FUNCTIONS
 
+config ARCH_HAVE_CRC32
+	bool
+
+config ARCH_CRC32
+	bool "Support for architecture accelerated CRC32"
+	default n
+	depends on ARCH_HAVE_CRC32
+	---help---
+		If ARCH_CRC32 is selected, then the architecture logic must export
+		the function up_crc32part(). up_crc32part() continues CRC32
+		calculation on a buffer using architecture-specific acceleration.
+
 config ARCH_MEMCPY
 	bool "memcpy()"
 	default n

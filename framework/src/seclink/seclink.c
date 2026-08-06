@@ -191,7 +191,6 @@ static inline int _sl_convert_res(hal_result_e res)
 			return g_sec_res_table[i];
 		}
 	}
-	assert(0); // shouldn't be happened
 	return SECLINK_ERROR;
 }
 
@@ -764,6 +763,8 @@ char *sl_strerror(int error)
 		return "Not initialized";
 	case SECLINK_INVALID_SIGN_FORMAT:
 		return "Invalid signature format";
+	case SECLINK_BAD_KEY_TYPE:
+		return "Bad key type";
 	}
 	return "Unknown error(this should be handled carefully)";
 }

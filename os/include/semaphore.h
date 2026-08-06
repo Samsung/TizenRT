@@ -94,6 +94,7 @@
 
 #ifdef SAVE_SEM_HOLDER
 struct tcb_s;					/* Forward reference */
+struct sem_s;					/* Forward reference */
 /**
  * @ingroup SEMAPHORE_KERNEL
  * @brief Structure of semholder
@@ -102,14 +103,42 @@ struct semholder_s {
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 	struct semholder_s *flink;	/* Implements singly linked list */
 #endif
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	FAR struct semholder_s *tlink;	/* List of task held semaphores */
+	FAR struct sem_s *sem;		/* The corresponding semaphore */
+#endif
 	FAR struct tcb_s *htcb;		/* Holder TCB */
 	int16_t counts;				/* Number of counts owned by this holder */
 };
 
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
+#ifdef CONFIG_PRIORITY_INHERITANCE
+#define SEMHOLDER_INITIALIZER {NULL, NULL, NULL, NULL, 0}
+#else
 #define SEMHOLDER_INITIALIZER {NULL, NULL, 0}
+#endif
+#else
+#ifdef CONFIG_PRIORITY_INHERITANCE
+#define SEMHOLDER_INITIALIZER {NULL, NULL, NULL, 0}
 #else
 #define SEMHOLDER_INITIALIZER {NULL, 0}
+#endif
+#endif
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+#define INITIALIZE_SEMHOLDER(h) \
+	do { \
+		(h)->tlink = NULL; \
+		(h)->sem = NULL; \
+		(h)->htcb = NULL; \
+		(h)->counts = 0; \
+	} while (0)
+#else
+#define INITIALIZE_SEMHOLDER(h) \
+	do { \
+		(h)->htcb = NULL; \
+		(h)->counts = 0; \
+	} while (0)
 #endif
 #endif							/* SAVE_SEM_HOLDER */
 
@@ -154,22 +183,27 @@ typedef struct sem_s sem_t;
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, NULL} /* flink, semcount, flags, hhead */
 #define MUTEX_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, NULL} /* flink, semcount, flags, hhead */
+#define COND_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, NULL} /* flink, semcount, flags, hhead */
 #else
 #define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
 #define MUTEX_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
+#define COND_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
 #endif
 #else // CONFIG_BINARY_MANAGER
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, NULL} /* semcount, flags, hhead */
 #define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, NULL} /* semcount, flags, hhead */
+#define COND_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, NULL} /* semcount, flags, hhead */
 #else
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
 #define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
+#define COND_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
 #endif
 #endif
 #else
 #define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED}	/* semcount, flags */
 #define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX} /* semcount, flags */
+#define COND_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE} /* semcount, flags */
 #endif
 
 /****************************************************************************

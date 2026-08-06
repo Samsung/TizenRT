@@ -77,7 +77,6 @@ include bch$(DELIM)Make.defs
 include bluetooth$(DELIM)Make.defs
 include compression$(DELIM)Make.defs
 include cpuload$(DELIM)Make.defs
-include fota$(DELIM)Make.defs
 include gpio$(DELIM)Make.defs
 include prodconfig$(DELIM)Make.defs
 include memory$(DELIM)Make.defs
@@ -118,10 +117,6 @@ ifeq ($(CONFIG_DRVR_READAHEAD),y)
   CSRCS += rwbuffer.c
 endif
 endif
-endif
-
-ifeq ($(CONFIG_CAN),y)
-  CSRCS += can.c
 endif
 
 ifeq ($(CONFIG_DEV_URANDOM),y)

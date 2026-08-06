@@ -68,6 +68,8 @@
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/config.h>
 
+#include <apps/system/system_file.h>
+
 /* File and Directory paths for testing */
 /* Proper text files */
 #define TEST_SMALL_T            "/mnt/small_text.txt"
@@ -90,6 +92,12 @@
 #define TEST_SMALL_T_BACKUP_DIR   "/mnt/backup_small_text"
 #define TEST_LARGE_T_BACKUP_DIR   "/mnt/backup_large_text"
 
+/* Files for testing system_file api */
+#define TEST_SYSTEM_FILE_SAMPLE	"/mnt/system_file_sample"
+#define TEST_SYSTEM_FILE_SMALL	"/mnt/system_file_small"
+#define TEST_SYSTEM_FILE_RANDOM	"/mnt/system_file_random"
+#define TEST_SYSTEM_FILE_SIZE	256
+
 /* 2 buffer sizes for testing */
 #define TEST_LARGE_BUFSIZE      8192
 int TEST_SMALL_BUFSIZE;
@@ -105,6 +113,8 @@ struct buffer_data_s {
 	char data[TEST_LARGE_BUFSIZE];
 };
 static struct buffer_data_s g_buf;
+
+static char g_sfile_buf[TEST_SYSTEM_FILE_SIZE];
 
 enum file_type_e {
 	FILE_TYPE_RANDOM = 0,
@@ -335,6 +345,85 @@ static int init_main_file(char *path, ssize_t bufsize, file_type_t type)
 	return OK;
 }
 
+static int init_main_system_file(char *path, ssize_t bufsize, file_type_t type)
+{
+	int ret = OK;
+	int file_size;
+	system_file sfile, sfile_sample;
+	bool is_exist, is_crc_correct;
+
+	if (system_file_is_exist(path, &is_exist, &file_size) == SYSTEM_SUCCESS) {
+		if (!is_exist) {
+			goto create_system_file;
+		} else {
+			if (file_size != TEST_SYSTEM_FILE_SIZE) {
+				if (system_file_delete(path) != SYSTEM_SUCCESS) {
+					printf("fail sample system_file_delete() path: %s, errno : %d\n", path, errno);
+					return ERROR;
+				}
+				goto create_system_file;
+			} else {
+				if (system_file_crc_check(path, &is_crc_correct) == SYSTEM_SUCCESS && is_crc_correct) {
+					return OK;
+				} 
+				printf("sample crc is invalid, create system file again, path: %s\n", path);
+				if (system_file_delete(path) != SYSTEM_SUCCESS) {
+					printf("fail sample system_file_delete() path: %s, errno : %d\n", path, errno);
+					return ERROR;
+				}
+				goto create_system_file;
+			}
+		}
+	} else {
+		printf("fail sample system_file_is_exist() path: %s, errno : %d\n", path, errno);
+		return ERROR;
+	}
+
+create_system_file:
+	if (system_file_open(&sfile, path, "w") == SYSTEM_SUCCESS) {
+		memset(g_sfile_buf, 0xff, TEST_SYSTEM_FILE_SIZE);
+
+		if (type == FILE_TYPE_RANDOM) {
+			make_random_chars(g_sfile_buf, TEST_SYSTEM_FILE_SIZE);
+			if (system_file_write(&sfile, (void *)g_sfile_buf, TEST_SYSTEM_FILE_SIZE) != SYSTEM_SUCCESS) {
+				printf("fail sample system_file_write() path: %s, errno : %d\n", path, errno);
+				ret = ERROR;
+				goto error_with_1;
+			}
+		} else if (type == FILE_TYPE_TEXT) {
+			if (system_file_open(&sfile_sample, TEST_SYSTEM_FILE_SAMPLE, "r") != SYSTEM_SUCCESS) {
+				printf("fail sample system_file_open() path: %s, errno : %d\n", path, errno);
+				ret = ERROR;
+				goto error_with_1;
+			}
+
+			if (system_file_read(&sfile_sample, (void *)g_sfile_buf, TEST_SYSTEM_FILE_SIZE) != SYSTEM_SUCCESS) {
+				printf("fail sample system_file_read() path: %s, errno : %d\n", path, errno);
+				ret = ERROR;
+				goto error_with_2;
+			}
+
+			if (system_file_write(&sfile, (void *)g_sfile_buf, TEST_SYSTEM_FILE_SIZE) != SYSTEM_SUCCESS) {
+				printf("fail sample system_file_write() path: %s, errno : %d\n", path, errno);
+				ret = ERROR;
+				goto error_with_2;
+			}
+		}
+	} else {
+		printf("fail sample system_file_open() path: %s, errno : %d\n", path, errno);
+		return ERROR;
+	}
+error_with_2:
+	if (system_file_close(&sfile_sample) != SYSTEM_SUCCESS) {
+		ret = ERROR;
+	}
+error_with_1:
+	if (system_file_close(&sfile) != SYSTEM_SUCCESS) {
+		ret = ERROR;
+	}
+	return ret;
+}
+
 static int create_sample_text_file(void)
 {
 	int ret;
@@ -377,6 +466,60 @@ static int create_sample_text_file(void)
 	ret = OK;
 error_with_fd_sample:
 	close(fd_sample);
+	return ret;
+}
+
+static int create_sample_system_file(char *path, ssize_t bufsize) 
+{
+	int ret = OK;
+	int file_size;
+	system_file sfile;
+	bool is_exist, is_crc_correct;
+
+	if (system_file_is_exist(path, &is_exist, &file_size) == SYSTEM_SUCCESS) {
+		if (!is_exist) {
+			goto create_system_file;
+		} else {
+			if (file_size != TEST_SYSTEM_FILE_SIZE) {
+				if (system_file_delete(path) != SYSTEM_SUCCESS) {
+					printf("fail sample system_file_delete() path: %s, errno : %d\n", path, errno);
+					return ERROR;
+				}
+				goto create_system_file;
+			} else {
+				if (system_file_crc_check(path, &is_crc_correct) == SYSTEM_SUCCESS && is_crc_correct) {
+					return OK;
+				} 
+				printf("sample crc is invalid, create system file again, path: %s\n", path);
+				if (system_file_delete(path) != SYSTEM_SUCCESS) {
+					printf("fail sample system_file_delete() path: %s, errno : %d\n", path, errno);
+					return ERROR;
+				}
+				goto create_system_file;
+			}
+		}
+	} else {
+		printf("fail sample system_file_is_exist() path: %s, errno : %d\n", path, errno);
+		return ERROR;
+	}
+
+create_system_file:
+	if (system_file_open(&sfile, path, "w") == SYSTEM_SUCCESS) {
+		memset(g_sfile_buf, 0xff, TEST_SYSTEM_FILE_SIZE);
+		make_random_chars(g_sfile_buf, TEST_SYSTEM_FILE_SIZE);
+		if (system_file_write(&sfile, (void *)g_sfile_buf, TEST_SYSTEM_FILE_SIZE) != SYSTEM_SUCCESS) {
+			printf("fail sample system_file_write() path: %s, errno : %d\n", path, errno);
+			ret = ERROR;
+		}
+	} else {
+		printf("fail sample system_file_open() path: %s, errno : %d\n", path, errno);
+		return ERROR;
+	}
+
+	if (system_file_close(&sfile) != SYSTEM_SUCCESS) {
+		ret = ERROR;
+	}
+
 	return ret;
 }
 
@@ -675,6 +818,23 @@ int init_test_file(void)
 		return ret;
 	}
 
+	ret = create_sample_system_file(TEST_SYSTEM_FILE_SAMPLE, TEST_SYSTEM_FILE_SIZE);
+	if (ret != OK) {
+		printf("Unable to create sample teext file for testing, ret : %d\n", ret);
+		return ERROR;
+	}
+
+	ret = init_main_system_file(TEST_SYSTEM_FILE_SMALL, TEST_SYSTEM_FILE_SIZE, FILE_TYPE_TEXT);
+	if (ret != OK) {
+		printf("Unable to create sample teext file for testing, ret : %d\n", ret);
+		return ERROR;
+	}
+	ret = init_main_system_file(TEST_SYSTEM_FILE_RANDOM, TEST_SYSTEM_FILE_SIZE, FILE_TYPE_RANDOM);
+	if (ret != OK) {
+		printf("Unable to create sample teext file for testing, ret : %d\n", ret);
+		return ERROR;
+	}
+
 	printf("Initializing test files successful!!\n");
 	return OK;
 }
@@ -728,6 +888,92 @@ static int do_test(char *src, char *backup, char *backupdir, int bufsize, file_t
 	return OK;
 }
 
+static int do_system_file_test(char *src, int bufsize, file_type_t type) {
+	int ret = OK;
+	system_file sfile, sfile_sample;
+	bool is_crc_correct;
+	int crc_val;
+	
+	if (type == FILE_TYPE_TEXT) {
+		if (system_file_open(&sfile_sample, TEST_SYSTEM_FILE_SAMPLE, "r") != SYSTEM_SUCCESS) {
+			printf("system_file_open failed for system file : %s\n", src);
+			return ERROR;
+		}
+
+		if (system_file_read(&sfile_sample, (void *)g_sfile_buf, TEST_SYSTEM_FILE_SIZE) != SYSTEM_SUCCESS) {
+			printf("system_file_read failed for system file : %s\n", src);
+			ret = ERROR;
+			goto error_with_sfile_sample;
+		}
+
+		if (system_file_close(&sfile_sample) != SYSTEM_SUCCESS) {
+			printf("system_file_close failed for system file : %s\n", src);
+			return ERROR;
+		}
+
+		crc_val = crc32(g_sfile_buf);
+
+		if (system_file_open(&sfile, src, "r") != SYSTEM_SUCCESS) {
+			printf("system_file_open failed for system file : %s\n", src);
+			return ERROR;
+		}
+
+		if (system_file_read(&sfile, (void *)g_sfile_buf, TEST_SYSTEM_FILE_SIZE) != SYSTEM_SUCCESS) {
+			printf("system_file_read failed for system file : %s\n", src);
+			ret = ERROR;
+			goto error_with_sfile;
+		}
+		
+		if (system_file_close(&sfile) != SYSTEM_SUCCESS) {
+			return ERROR;
+		}
+
+		if (crc_val != crc32(g_sfile_buf)) {
+			printf("Verification failed for system file : %s\n", src);
+			return ERROR;
+		}
+
+		if (system_file_open(&sfile, src, "w") != SYSTEM_SUCCESS) {
+			printf("system_file_open failed for system file : %s\n", src);
+			return ERROR;
+		}
+
+		if (system_file_write(&sfile, (void *)g_sfile_buf, TEST_SYSTEM_FILE_SIZE) != SYSTEM_SUCCESS) {
+			printf("system_file_write failed for system file : %s\n", src);
+			ret = ERROR;
+			goto error_with_sfile;
+		}		
+
+	} else if (type == FILE_TYPE_RANDOM) {
+		if (system_file_crc_check(src, &is_crc_correct) == SYSTEM_SUCCESS && !is_crc_correct) {
+			printf("Verification failed for system file : %s\n", src);
+			return ERROR;
+		}
+
+		if (system_file_open(&sfile, src, "w") != SYSTEM_SUCCESS) {
+			printf("Verification failed for system file : %s\n", src);
+			return ERROR;
+		}
+
+		memset(g_sfile_buf, 0xff, TEST_SYSTEM_FILE_SIZE);
+		make_random_chars(g_sfile_buf, TEST_SYSTEM_FILE_SIZE);
+		if (system_file_write(&sfile, (void *)g_sfile_buf, TEST_SYSTEM_FILE_SIZE) != SYSTEM_SUCCESS) {
+			ret = ERROR;
+			goto error_with_sfile;
+		}
+	}
+error_with_sfile:
+	if (system_file_close(&sfile) != SYSTEM_SUCCESS) {
+		ret = ERROR;
+	}
+	return ret;
+error_with_sfile_sample:
+	if (system_file_close(&sfile_sample) != SYSTEM_SUCCESS) {
+		ret = ERROR;
+	}
+	return ret;
+}
+
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
@@ -777,6 +1023,21 @@ int smartfs_powercut_main(int argc, char *argv[])
 			printf("Powercut test on large text file failed\n");
 			return ret;
 		}
+
+		printf("do_test system file on %s\n", TEST_SYSTEM_FILE_SMALL);
+		ret = do_system_file_test(TEST_SYSTEM_FILE_SMALL, TEST_SYSTEM_FILE_SIZE, FILE_TYPE_TEXT);
+		if (ret != OK) {
+			printf("Powercut test on large text file failed\n");
+			return ret;
+		}
+
+		printf("do_test system file on %s\n", TEST_SYSTEM_FILE_RANDOM);
+		ret = do_system_file_test(TEST_SYSTEM_FILE_RANDOM, TEST_SYSTEM_FILE_SIZE, FILE_TYPE_RANDOM);
+		if (ret != OK) {
+			printf("Powercut test on large text file failed\n");
+			return ret;
+		}
+	
 	}
 	
 	return OK;

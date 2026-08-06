@@ -104,6 +104,7 @@ int pthread_cond_init(FAR pthread_cond_t *cond, FAR const pthread_condattr_t *at
 		 * should not have priority inheritance enabled.
 		 */
 		sem_setprotocol(&cond->sem, SEM_PRIO_NONE);
+		cond->waiters = 0;
 	}
 
 	svdbg("Returning %d\n", ret);

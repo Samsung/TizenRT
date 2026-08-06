@@ -86,13 +86,12 @@ int ke_sk_recv(SOCKET sk, const unsigned char *buf, int len, int flag)
 	{
 		goto rx_exit;
 	}
-	dl_list_for_each_safe(sk_msg, tmp, &element->sk_tx_msg, SOCKET_MSG, data)
-	{
+	sk_msg = dl_list_first(&element->sk_tx_msg, SOCKET_MSG, data);
+	if (sk_msg) {
 		if (len != 0 && buf != NULL) {
 			count = MIN(sk_msg->len, len);
 
 			BK_ASSERT(count); /* BK_ASSERT VERIFIED */
-			BK_ASSERT(sk_msg); /* BK_ASSERT VERIFIED */
 			WPA_LOGD("r1:%d,buf:0x%x, len:%d\r\n", sk, buf, count);
 			os_memcpy((void *)buf, (void *)sk_msg->msg, count);
 
@@ -107,9 +106,6 @@ int ke_sk_recv(SOCKET sk, const unsigned char *buf, int len, int flag)
 
 		dl_list_del(&sk_msg->data);
 		os_free(sk_msg);
-		sk_msg = 0;
-
-		break;
 	}
 
 rx_exit:
@@ -131,11 +127,9 @@ int ke_sk_recv_peek_next_payload_size(SOCKET sk)
 		goto rx_exit;
 	}
 
-	dl_list_for_each_safe(sk_msg, tmp, &element->sk_tx_msg, SOCKET_MSG, data)
-	{
+	sk_msg = dl_list_first(&element->sk_tx_msg, SOCKET_MSG, data);
+	if (sk_msg)
 		ret = sk_msg->len;
-		break;
-	}
 
 rx_exit:
 	rtos_unlock_mutex(&socket_entity.fs_mutex);
@@ -156,11 +150,9 @@ int ke_sk_send_peek_next_payload_size(SOCKET sk)
 		goto rx_exit;
 	}
 
-	dl_list_for_each_safe(sk_msg, tmp, &element->sk_rx_msg, SOCKET_MSG, data)
-	{
+	sk_msg = dl_list_first(&element->sk_rx_msg, SOCKET_MSG, data);
+	if (sk_msg)
 		ret = sk_msg->len;
-		break;
-	}
 
 rx_exit:
 	rtos_unlock_mutex(&socket_entity.fs_mutex);
@@ -284,17 +276,15 @@ int fsocket_recv(SOCKET sk, const unsigned char *buf, int len, int flag)
 		goto rx_exit;
 	}
 
-	dl_list_for_each_safe(sk_msg, tmp, &element->sk_rx_msg, SOCKET_MSG, data)
-	{
-		if(sk_msg->len > len)
-		{
+	sk_msg = dl_list_first(&element->sk_rx_msg, SOCKET_MSG, data);
+	if (sk_msg) {
+		if (sk_msg->len > len) {
 			WPA_LOGW("recv_buf_small:%d:%d\r\n", sk_msg->len, len);
 		}
 
 		count = MIN(sk_msg->len, len);
 
 		BK_ASSERT(count); /* BK_ASSERT VERIFIED */
-		BK_ASSERT(sk_msg); /* BK_ASSERT VERIFIED */
 
 		os_memcpy((void *)buf, (void *)sk_msg->msg, count);
 		ret = count;
@@ -305,16 +295,12 @@ int fsocket_recv(SOCKET sk, const unsigned char *buf, int len, int flag)
 
 		dl_list_del(&sk_msg->data);
 		os_free(sk_msg);
-		sk_msg = 0;
-
-		break;
 	}
 
 rx_exit:
 	rtos_unlock_mutex(&socket_entity.fs_mutex);
 
 	return ret;
-;
 }
 
 void fsocket_close(SOCKET sk)
@@ -381,11 +367,9 @@ int fsocket_peek_recv_next_payload_size(SOCKET sk)
 		goto rx_exit;
 	}
 
-	dl_list_for_each_safe(sk_msg, tmp, &element->sk_rx_msg, SOCKET_MSG, data)
-	{
+	sk_msg = dl_list_first(&element->sk_rx_msg, SOCKET_MSG, data);
+	if (sk_msg)
 		ret = sk_msg->len;
-		break;
-	}
 
 rx_exit:
 	rtos_unlock_mutex(&socket_entity.fs_mutex);

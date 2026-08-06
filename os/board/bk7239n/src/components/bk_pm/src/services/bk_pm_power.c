@@ -576,7 +576,7 @@ bk_err_t bk_pm_module_vote_analdo_vol(pm_analdo_vote_module_e module, pm_analdo_
 		return BK_OK;
 	}
 
-	ret = (sys_drv_rf_tx_vol_set(vol_max) == 0) ? BK_OK : BK_FAIL;
+	ret = sys_drv_rf_tx_vol_set(vol_max);
 	if (ret == BK_OK) {
 		s_pm_current_analdo_vol = vol_max;
 	}
@@ -682,17 +682,6 @@ bk_err_t pm_debug_module_state(void)
 	{
 		LOGD("Cp1 not PD[state:0x%x]\r\n",bk_pm_module_power_state_get(PM_POWER_MODULE_NAME_CPU1));
 	}
-
-	// TODO: why not using bk_pm_module_power_state_get(PM_POWER_MODULE_NAME_CPU2) ?
-	// if(!(REG_READ(PM_DEBUG_SYS_REG_BASE+0x6*4)&0x2))
-	// {
-	// 	BK_LOGD(NULL, "Cp2 not PD[state:0x%x]\r\n",REG_READ(PM_DEBUG_SYS_REG_BASE+0x6*4));
-	// }
-
-	#if CONFIG_PSRAM && CONFIG_PSRAM_AS_SYS_MEMORY
-	pm_debug_psram();
-	#endif
-
 	return BK_OK;
 }
 /*=========================DEBUG/TEST CTRL END========================*/

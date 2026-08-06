@@ -1146,6 +1146,11 @@ static T_APP_RESULT bt_stack_le_gap_callback(uint8_t type, void *data)
 		}
 		break;
 	}
+	case GAP_MSG_LE_GAP_STATE_MSG: {
+		T_IO_MSG *io_msg = (T_IO_MSG *)p_data->p_gap_state_msg;
+		bt_stack_le_gap_handle_io_msg(io_msg->subtype, &io_msg->u.param);
+		break;
+	}
 	default:
 		break;
 	}
@@ -1338,6 +1343,7 @@ uint16_t bt_stack_le_gap_init(void *gap_conf)
 		return RTK_BT_ERR_NO_RESOURCE;
 	}
 
+	le_gap_msg_info_way(false);
 	bt_stack_le_gap_ext_adv_init();
 
 	bt_stack_le_gap_set_config(gap_conf);

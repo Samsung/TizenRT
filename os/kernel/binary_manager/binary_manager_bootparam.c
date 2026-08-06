@@ -527,7 +527,7 @@ static int binary_manager_make_bootparam_from_partitions(binmgr_bpdata_t *bp_dat
 #endif
 		{
 			snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, set_idx));
-			ret = binary_manager_read_header(BINARY_USERAPP, devpath, &user_header_data, false);
+			ret = binary_manager_read_header(BINARY_USERAPP, devpath, BIN_PARTADDR(bin_idx, set_idx), &user_header_data, false);
 			if (ret != BINMGR_OK) {
 				bmdbg("Fail to read app header, name %s, set %s, ret %d\n", BIN_NAME(bin_idx), GET_PARTNAME(set_idx), ret);
 				return ret;
@@ -678,6 +678,11 @@ int binary_manager_check_bootparam_set(void)
 
 	if (!binary_manager_is_bp_kernel_address_valid(bp_data)) {
 		bmdbg("Invalid in-use BP kernel address detected. Run BP recovery from partition information\n");
+		return BINMGR_OPERATION_FAIL;
+	}
+
+	if (bp_data->tail.bp_update_reason >= BP_UPDATE_BOOTLOADER_BP_CRC_FAIL && bp_data->tail.bp_update_reason <= BP_UPDATE_BOOTLOADER_SPECIFIC_3) {
+		bmdbg("Don't trust the recovery by bootloader, try to recover again.\n");
 		return BINMGR_OPERATION_FAIL;
 	}
 

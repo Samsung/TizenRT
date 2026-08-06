@@ -519,14 +519,16 @@ static int wpas_ctrl_scan(struct wpa_supplicant *wpa_s, wlan_sta_scan_param_t *p
 		wpa_s->known_wps_freq = 0;
 #endif
 #if CONFIG_WIFI_SCAN_COUNTRY_CODE
-		if (params->scan_cc)
-			site_survey_cc = true;
-		else
-			site_survey_cc = false;
+		if (params) {
+			if (params->scan_cc)
+				site_survey_cc = true;
+			else
+				site_survey_cc = false;
+		}
 #endif
 		ret = wpa_supplicant_req_scan(wpa_s, 0, 0);
 		if (wpa_s->manual_scan_use_id) {
-			if (params->id) {
+			if (params && params->id) {
 				wpa_s->manual_scan_id = params->id;
 			} else {
 				wpa_s->manual_scan_id++;
@@ -715,12 +717,12 @@ int wpa_supplicant_ctrl_iface_set_network(struct wpa_supplicant *wpa_s, wlan_sta
 			ssid->ssid = 0;
 			ssid->ssid_len = 0;
 		}
-		if (config->u.ssid.ssid && config->u.ssid.ssid_len) {
+		if (config->u.ssid.ssid_len) {
 			ssid->ssid = (u8 *)dup_binstr(config->u.ssid.ssid, config->u.ssid.ssid_len);
 			ssid->ssid_len = config->u.ssid.ssid_len;
 		}
 		if (bk_feature_bssid_connect_enable()) {
-			if (ssid->bssid) {
+			if (ssid->bssid_set) {
 				WPA_LOGD("clear bssid\r\n");
 				os_memset(ssid->bssid, 0, ETH_ALEN);
 				ssid->bssid_set = 0;

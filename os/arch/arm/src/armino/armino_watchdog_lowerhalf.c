@@ -261,10 +261,6 @@ static uint32_t armino_wdg_worker_delay_ms(FAR struct armino_wdg_lowerhalf_s *pr
 		delay_ms = remaining_ms;
 	}
 
-	if (delay_ms == 0u) {
-		delay_ms = 1u;
-	}
-
 	return delay_ms;
 }
 
@@ -428,8 +424,8 @@ static void armino_wdg_arm_hw_feed_window(FAR struct armino_wdg_lowerhalf_s *pri
  *   Always returns OK.
  *
  ****************************************************************************/
-
-static int armino_nmi_interrupt(int irq, void *context, FAR void *arg)
+static int __attribute__((section(".iram"), noinline))
+armino_nmi_interrupt(int irq, void *context, FAR void *arg)
 {
 	struct armino_wdg_lowerhalf_s *priv = (struct armino_wdg_lowerhalf_s *)arg;
 

@@ -198,6 +198,7 @@ void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
 
 int sem_post(FAR sem_t *sem)
 {
+	FAR struct tcb_s *htcb;
 	irqstate_t saved_state;
 	int ret = ERROR;
 	size_t caller_retaddr = (size_t)GET_RETURN_ADDRESS();
@@ -213,14 +214,15 @@ int sem_post(FAR sem_t *sem)
 
 		/* Perform the semaphore unlock operation. */
 		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x\n", sem, sem->semcount, sem->flags, caller_retaddr);
-		sem_releaseholder(sem, this_task());
+		htcb = this_task();
+		htcb = sem_releaseholder(sem, htcb);
 		sem->semcount++;
 
 		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
 			ASSERT_INFO(sem->semcount < 2, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x\n", sem, sem->semcount, sem->flags, caller_retaddr);
 		}
 
-		sem_unblock_task(sem, this_task());
+		sem_unblock_task(sem, htcb);
 		ret = OK;
 
 		/* Interrupts may now be enabled. */

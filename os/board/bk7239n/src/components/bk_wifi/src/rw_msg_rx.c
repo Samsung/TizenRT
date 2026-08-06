@@ -1488,7 +1488,7 @@ void rwm_msdu_twt_ps_change_ind_handler(void *msg)
 	struct ke_msg *msg_ptr = (struct ke_msg *)msg;
 	struct mm_twt_ps_change_ind *ind;
 
-	if(!msg_ptr || !msg_ptr->param)
+	if (!msg_ptr || msg_ptr->param_len == 0)
 		return;
 
 	ind = (struct mm_twt_ps_change_ind *)msg_ptr->param;

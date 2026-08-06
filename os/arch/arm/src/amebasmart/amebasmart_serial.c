@@ -90,7 +90,7 @@
 #include "tinyara/kmalloc.h"
 #include "osdep_service.h"
 #include "ameba_vector.h"
-
+#include <tinyara/spinlock.h>
 /****************************************************************************
  * Preprocessor Definitions
  ****************************************************************************/
@@ -237,7 +237,9 @@ struct rtl8730e_up_dev_s {
 #endif
 	uint8_t tx_level;
 };
-
+#ifdef CONFIG_SMP
+volatile spinlock_t g_loguart_ier_lock = SP_UNLOCKED;
+#endif
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
@@ -559,8 +561,13 @@ static void rtl8730e_log_up_shutdown(struct uart_dev_s *dev)
 
 static int rtl8730e_log_uart_irq(void *Data)
 {
-
+#ifdef CONFIG_SMP
+	spin_lock(&g_loguart_ier_lock);
+#endif
 	u32 IrqEn = LOGUART_GetIMR();
+#ifdef CONFIG_SMP
+	spin_unlock(&g_loguart_ier_lock);
+#endif
 	u32 reg_lsr = LOGUART_GetStatus(CONSOLE);
 
 	if (reg_lsr & LOGUART_BIT_RXFIFO_INT) {
@@ -1342,10 +1349,19 @@ int up_lowgetc(void)
 {
 	uint8_t rxd;
 #ifdef CONFIG_UART4_SERIAL_CONSOLE
+	/* The save/disable-all/restore of IER below races with rxint()/txint() on
+	 * the other CPU under SMP: a concurrent enable would be lost when IrqEn is
+	 * restored. Serialize the whole sequence (see g_loguart_ier_lock). */
+#ifdef CONFIG_SMP
+	irqstate_t flags = spin_lock_irqsave(&g_loguart_ier_lock);
+#endif
 	u32 IrqEn = LOGUART_GetIMR();
 	LOGUART_SetIMR(0);
 	rxd = LOGUART_GetChar(_FALSE);
 	LOGUART_SetIMR(IrqEn);
+#ifdef CONFIG_SMP
+	spin_unlock_irqrestore(&g_loguart_ier_lock, flags);
+#endif
 #else
 	if (CONSOLE_DEV.isconsole == false)
 		return;

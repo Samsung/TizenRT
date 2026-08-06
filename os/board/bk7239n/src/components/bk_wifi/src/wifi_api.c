@@ -200,7 +200,7 @@ void demo_sta_bssid_app_init(uint8_t *oob_bssid, char *connect_key)
 
 	os_memset(sta_config.ssid, 0, sizeof(sta_config.ssid));
 	os_memcpy(sta_config.bssid, oob_bssid, 6);
-	os_strcpy(sta_config.password, connect_key);
+	os_strlcpy(sta_config.password, connect_key, sizeof(sta_config.password));
 
 	BK_WIFI_LOGI(TAG, "Scan specified BSSID %pm\r\n", sta_config.bssid);
 	BK_LOG_ON_ERR(bk_wifi_sta_set_config(&sta_config));
@@ -228,9 +228,9 @@ int demo_sta_app_init(char *oob_ssid, char *connect_key)
 		os_strlcpy((char *)sta_config.psk, (char *)psk, sizeof(sta_config.psk));
 	}
 #endif
-	os_strcpy(sta_config.ssid, oob_ssid);
+	os_strlcpy(sta_config.ssid, oob_ssid, sizeof(sta_config.ssid));
 	if (connect_key)
-		os_strcpy(sta_config.password, connect_key);
+		os_strlcpy(sta_config.password, connect_key, sizeof(sta_config.password));
 
 	BK_WIFI_LOGI(TAG, "ssid:%s key:%s\r\n", sta_config.ssid, sta_config.password);
 	BK_LOG_ON_ERR(bk_wifi_sta_set_config(&sta_config));
@@ -249,8 +249,8 @@ void demo_sta_adv_app_init(char *oob_ssid, char *connect_key)
 		return;
 	}
 
-	os_strcpy(sta_config.ssid, oob_ssid);
-	os_strcpy(sta_config.password, connect_key);
+	os_strlcpy(sta_config.ssid, oob_ssid, sizeof(sta_config.ssid));
+	os_strlcpy(sta_config.password, connect_key, sizeof(sta_config.password));
 
 	//TODO should NOT use hard-coded BSSID and channel
 	hwaddr_aton("48:ee:0c:48:93:12", (u8 *)sta_config.bssid);

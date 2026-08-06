@@ -723,6 +723,10 @@ void dhcp_hostname(struct netif *netif, char *name)
 	}
 
 	name_heap = (char *)kmm_malloc(strlen(name) + 1);
+	if (name_heap == NULL) {
+		LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_LEVEL_WARNING, ("%s(): could not allocate hostname\n", __func__));
+		return;
+	}
 	strncpy(name_heap, name, strlen(name) + 1);
 	name_heap[strlen(name)] = '\0'; //for safety
 

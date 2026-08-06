@@ -695,3 +695,9 @@ trble_result_e trble_netmgr_coc_send_data(struct bledev *dev, uint16_t cid, uint
 {
 	return rtk_bt_le_gap_coc_send_data(cid, len, data);
 }
+
+trble_result_e trble_netmgr_fw_reset(void)
+{
+	trble_post_event(LWNL_EVT_BLE_COMMON_WATCHDOG_RESET, NULL , 0);
+	return TRBLE_SUCCESS;
+}

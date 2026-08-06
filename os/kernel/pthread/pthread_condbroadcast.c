@@ -107,44 +107,28 @@
 int pthread_cond_broadcast(FAR pthread_cond_t *cond)
 {
 	int ret = OK;
-	int sval;
 
 	svdbg("cond=0x%p\n", cond);
 
 	if (!cond) {
 		ret = EINVAL;
 	} else {
-		/* Disable pre-emption until all of the waiting threads have been
-		 * restarted. This is necessary to assure that the sval behaves as
-		 * expected in the following while loop
-		 */
-
 		sched_lock();
 
-		/* Get the current value of the semaphore */
+		irqstate_t flags = enter_critical_section();
 
-		if (sem_getvalue((sem_t *)&cond->sem, &sval) != OK) {
-			ret = EINVAL;
-		} else {
-			/* Loop until all of the waiting threads have been restarted. */
+		/* Loop to wake up all waiting threads */
+		while (cond->waiters > 0) {
 
-			while (sval < 0) {
-				/* If the value is less than zero (meaning that one or more
-				 * thread is waiting), then post the condition semaphore.
-				 * Only the highest priority waiting thread will get to execute
-				 */
-
-				ret = pthread_sem_give((sem_t *)&cond->sem);
-
-				/* Increment the semaphore count (as was done by the
-				 * above post).
-				 */
-
-				sval++;
+			/* Decrement waiters counter */
+			cond->waiters--;
+			ret = pthread_sem_give((sem_t *)&cond->sem);
+			if (ret != OK) {
+				break;
 			}
 		}
 
-		/* Now we can let the restarted threads run */
+		leave_critical_section(flags);
 
 		sched_unlock();
 	}

@@ -187,6 +187,7 @@ static flash_driver_t s_flash = {0};
 static bool s_flash_is_init = false;
 static beken_mutex_t s_flash_mutex = NULL;
 static PM_STATUS flash_ps_status;
+static flash_protect_type_t s_flash_runtime_protect_type = FLASH_PROTECT_NONE;
 static flash_ps_callback_t s_flash_ps_suspend_cb = NULL;
 static flash_ps_callback_t s_flash_ps_resume_cb = NULL;
 
@@ -831,7 +832,8 @@ bk_err_t bk_flash_driver_init(void)
 	s_flash.flash_id = flash_hal_get_id(&s_flash.hal);
 	FLASH_LOGI("id=0x%x\r\n", s_flash.flash_id);
 	flash_get_current_config();
-	bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
+	s_flash_runtime_protect_type = FLASH_PROTECT_ALL;
+	flash_set_protect_type(FLASH_PROTECT_ALL);
 #if !defined(CONFIG_JTAG) || (0 == CONFIG_JTAG)
 	flash_hal_disable_cpu_data_wr(&s_flash.hal);
 #endif
@@ -916,7 +918,9 @@ static bk_err_t flash_erase_block(uint32_t address, int type)
 #endif
 	uint32_t int_level = flash_enter_critical();
 	flash_ps_suspend(NORMAL_PS);
+	flash_set_protect_type(FLASH_PROTECT_NONE);
 	flash_hal_erase_block(&s_flash.hal, erase_addr, type);
+	flash_set_protect_type(s_flash_runtime_protect_type);
 	flash_ps_resume(NORMAL_PS);
 	flash_exit_critical(int_level);
 
@@ -930,6 +934,26 @@ static bk_err_t flash_erase_block(uint32_t address, int type)
 
 	return BK_OK;
 }
+
+#if defined(CONFIG_FLASH_TEST)
+void test_flash_set_protect_type_none(void)
+{
+	uint32_t int_level = flash_enter_critical();
+	flash_ps_suspend(NORMAL_PS);
+	flash_set_protect_type(FLASH_PROTECT_NONE);
+	flash_ps_resume(NORMAL_PS);
+	flash_exit_critical(int_level);
+}
+
+void test_flash_set_protect_type_all(void)
+{
+	uint32_t int_level = flash_enter_critical();
+	flash_ps_suspend(NORMAL_PS);
+	flash_set_protect_type(FLASH_PROTECT_ALL);
+	flash_ps_resume(NORMAL_PS);
+	flash_exit_critical(int_level);
+}
+#endif
 
 bk_err_t bk_flash_erase_sector(uint32_t address)
 {
@@ -972,7 +996,9 @@ bk_err_t bk_flash_write_bytes(uint32_t address, const uint8_t *user_buf, uint32_
 
 	uint32_t int_level = flash_enter_critical();
 	flash_ps_suspend(NORMAL_PS);
+	flash_set_protect_type(FLASH_PROTECT_NONE);
 	flash_write_common(user_buf, address, size);
+	flash_set_protect_type(s_flash_runtime_protect_type);
 	flash_ps_resume(NORMAL_PS);
 	flash_exit_critical(int_level);
 
@@ -1070,50 +1096,6 @@ bk_err_t bk_flash_write_status_reg(uint16_t status_reg_data)
 	return BK_OK;
 }
 
-flash_protect_type_t bk_flash_get_protect_type(void)
-{
-	uint32_t type = FLASH_PROTECT_NONE;
-#if 0
-	uint16_t protect_value = 0;
-
-	uint32_t int_level = flash_enter_critical();
-	flash_ps_suspend(NORMAL_PS);
-	protect_value = flash_hal_get_protect_value(&s_flash.hal, s_flash.flash_cfg->status_reg_size,
-												s_flash.flash_cfg->protect_post, s_flash.flash_cfg->protect_mask,
-												s_flash.flash_cfg->cmp_post);
-	if (protect_value == s_flash.flash_cfg->protect_all)
-		type = FLASH_PROTECT_ALL;
-	else if (protect_value == s_flash.flash_cfg->protect_none)
-		type = FLASH_PROTECT_NONE;
-	else if (protect_value == s_flash.flash_cfg->protect_half)
-		type = FLASH_PROTECT_HALF;
-	else if (protect_value == s_flash.flash_cfg->unprotect_last_block)
-		type = FLASH_UNPROTECT_LAST_BLOCK;
-	else
-		type = -1;
-
-	flash_ps_resume(NORMAL_PS);
-	flash_exit_critical(int_level);
-#endif
-	return type;
-}
-
-bk_err_t bk_flash_set_protect_type(flash_protect_type_t type)
-{
-	static uint8_t s_flash_is_unlocked = 0;
-	type = FLASH_PROTECT_NONE;
-
-	if (0 == s_flash_is_unlocked) {
-		uint32_t int_level = flash_enter_critical();
-		flash_ps_suspend(NORMAL_PS);
-		flash_set_protect_type(type);
-		s_flash_is_unlocked = 1;
-		flash_ps_resume(NORMAL_PS);
-		flash_exit_critical(int_level);
-	}
-
-	return BK_OK;
-}
 
 /* This API is not used in bk7256xx */
 void flash_ps_pm_init(void)
@@ -1214,7 +1196,6 @@ bk_err_t bk_spec_flash_write_bytes(bk_partition_t partition, const uint8_t *user
 {
 	bk_logic_partition_t *bk_ptr = NULL;
 	u8 *save_flashdata_buff  = NULL;
-	flash_protect_type_t protect_type;
 
 	bk_ptr = bk_flash_partition_get_info(partition);
 	if((size + offset) > FLASH_OPERATE_SIZE_AND_OFFSET)
@@ -1228,13 +1209,9 @@ bk_err_t bk_spec_flash_write_bytes(bk_partition_t partition, const uint8_t *user
 
 	bk_flash_read_bytes((bk_ptr->partition_start_addr),(uint8_t *)save_flashdata_buff, bk_ptr->partition_length);
 
-	protect_type = bk_flash_get_protect_type();
-	bk_flash_set_protect_type(FLASH_PROTECT_NONE);
-
 	bk_flash_erase_sector(bk_ptr->partition_start_addr);
 	os_memcpy((save_flashdata_buff + offset), user_buf, size);
 	bk_flash_write_bytes(bk_ptr->partition_start_addr ,(uint8_t *)save_flashdata_buff, bk_ptr->partition_length);
-    bk_flash_set_protect_type(protect_type);
 
 	os_free(save_flashdata_buff);
 	save_flashdata_buff = NULL;

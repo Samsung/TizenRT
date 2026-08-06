@@ -13,6 +13,7 @@
 #include <tinyara/arch.h>
 #include <tinyara/binfmt/binfmt.h>
 #include <tinyara/binary_manager.h>
+#include <tinyara/fs/mtd.h>
 #include <tinyara/userspace.h>
 
 #include <fcntl.h>
@@ -38,6 +39,7 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 	ssize_t nbytes;
 	off_t uspace_offset;
 	int ret;
+	int filfd = -1;
 
 	/* TODO need to handle binary signing case */
 
@@ -53,21 +55,35 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 
 	uspace_offset = offset;
 
-	int filfd = open(binp->filename, O_RDONLY);
-        if (filfd < 0) {
-                ret = filfd;
-                berr("Failed to open binary %s: %d\n", binp->filename, ret);
-                return ret;
-        }
+#ifndef CONFIG_BINMGR_READ_DECRYPTED_BINARY 
+	filfd = open(binp->filename, O_RDONLY);
+	if (filfd < 0) {
+		ret = filfd;
+		berr("Failed to open binary %s: %d\n", binp->filename, ret);
+		return ret;
+	}
+#endif
 
 	char * buffer = (char *)&uspace;
 
 	size_t readsize = sizeof(struct userspace_s);
 
 	while (readsize > 0) {
-		
-		/* Seek to the next read position */
+#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY 
+		uint32_t part_addr;
+		uint32_t read_offset;
+		uint32_t read_addr;
 
+		part_addr = BIN_PARTADDR(binp->binary_idx, BIN_USEIDX(binp->binary_idx));
+		read_offset = (uint32_t)offset;
+		read_addr = part_addr + read_offset;
+		nbytes = up_read_decrypted_flash(read_addr, buffer, readsize);
+		if (nbytes != OK && nbytes != -EINTR) {
+			berr("Failed to read userspace header, addr 0x%x, size %u, ret %d\n", read_addr, (unsigned int)readsize, (int)nbytes);
+		} else if (nbytes == OK) {
+			nbytes = readsize;
+		}
+#else
 		rpos = lseek(filfd, offset, SEEK_SET);
 		if (rpos != offset) {
 			int errval = get_errno();
@@ -78,18 +94,23 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 
 		/* Read the file data at offset into the user buffer */
 		nbytes = read(filfd, buffer, readsize);
+#endif
 
 		if (nbytes < 0) {
 			/* EINTR just means that we received a signal */
 
 			if (nbytes != -EINTR) {
 				berr("Read from offset %lu failed: %d\n", (unsigned long)offset, (int)nbytes);
-				close(filfd);
+				if (filfd >= 0) {
+					close(filfd);
+				}
 				return nbytes;
 			}
 		} else if (nbytes == 0) {
 			berr("Unexpected end of file\n");
-			close(filfd);
+			if (filfd >= 0) {
+				close(filfd);
+			}
 			return -ENODATA;
 		} else {
 			readsize -= nbytes;
@@ -98,7 +119,9 @@ static int xipelf_loadbinary(FAR struct binary_s *binp)
 		}
 	}
 
-	close(filfd);
+	if (filfd >= 0) {
+		close(filfd);
+	}
 
 	binp->sections[BIN_TEXT] = (uint32_t)uspace.text_start;
 	binp->flash_region_start = (uint32_t)uspace.text_start - uspace_offset + 4;

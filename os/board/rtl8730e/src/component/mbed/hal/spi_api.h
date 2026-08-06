@@ -163,6 +163,14 @@ void spi_enable(spi_t *obj);
   * @retval none
   */
 void spi_disable(spi_t *obj);
+
+/**
+  * @brief  add sample delay.
+  * @param  obj: spi object define in application software.
+  * @param  sample_delay : value of delay.
+  * @retval none
+  */
+void spi_set_sample_delay(spi_t *obj, uint32_t sample_delay);
 ///@}
 
 /*\@}*/

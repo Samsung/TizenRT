@@ -109,11 +109,6 @@ __IRAM2 static bool rwnx_need_retry_tx_frame(struct sk_buff *skb)
 	struct txdesc *txdesc = &skb->ftxdesc->txdesc;
 
 	switch (PP_NTOHS(txdesc->host.ethertype)) {
-	//case ETH_P_ARP:
-		// Don't retry send special frame that doesn't open TD window
-		if (txdesc->host.flags & TXU_CNTRL_IS_SPECIAL_FRAME)
-			return false;
-		return true;
 	case ETH_P_EAPOL:
 	//case ETH_P_RARP:
 		return true;
@@ -137,13 +132,18 @@ __IRAM2 static inline struct pbuf *macif_get_txdesc_pbuf(struct txdesc *txdesc)
 __IRAM2 static void rwnx_tx_confirm(void *param)
 {
 	struct txdesc *txdesc = (struct txdesc *)param;
+	struct sk_buff *skb;
+
+	if (!txdesc)
+		return;
+
 #if NX_VERSION >= NX_VERSION_PACK(6, 22, 0, 0)
-	struct sk_buff *skb = txdesc->host.hostid;
+	skb = txdesc->host.hostid;
 #else
-	struct sk_buff *skb = txdesc->host.buf;
+	skb = txdesc->host.buf;
 #endif
 
-	if (txdesc && skb) {
+	if (skb) {
 		struct fhost_tx_desc_tag *fhost_txdesc =
 				container_of(txdesc, struct fhost_tx_desc_tag, txdesc);
 		//struct tx_cfm_tag *cfm = txl_cfm_tag_get(txdesc);
@@ -674,7 +674,7 @@ void rwnx_start_xmit_mgmt(struct sk_buff *skb)
 	//	sizeof(*fhost_txdesc), sizeof(*txdesc));
 
 	// sanity check
-	if (skb->vif_idx == INVALID_VIF_IDX)
+	if (!skb || skb->vif_idx == INVALID_VIF_IDX)
 		goto tx_exit;
 
 	if (more_pbuf)
@@ -774,7 +774,7 @@ void rwnx_start_xmit_raw_ex(struct sk_buff *skb, raw_tx_cntrl_t *raw_tx_cntrl)
 	bk_wifi_get_tx_raw_timeout(&raw_timeout);
 
 	// sanity check
-	if (skb->vif_idx == INVALID_VIF_IDX)
+	if (!skb || skb->vif_idx == INVALID_VIF_IDX)
 		goto tx_exit;
 
 	if (more_pbuf)

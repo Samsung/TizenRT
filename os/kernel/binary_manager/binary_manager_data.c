@@ -141,7 +141,7 @@ int binary_manager_verify_kbin(uint8_t part_idx)
 #endif
 
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[part_idx].devnum);
-	ret = binary_manager_read_header(BINARY_KERNEL, filepath, (void *)&header_data, true);
+	ret = binary_manager_read_header(BINARY_KERNEL, filepath, kernel_info.part_info[part_idx].address, (void *)&header_data, true);
 	if (ret != BINMGR_OK) {
 		bmdbg("Invalid kernel candidate, part idx %u, devpath %s, ret %d\n", part_idx, filepath, ret);
 		return ret;
@@ -171,7 +171,7 @@ uint32_t binary_manager_get_kbin_version(uint8_t part_idx)
 	}
 
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[part_idx].devnum);
-	ret = binary_manager_read_header(BINARY_KERNEL, filepath, &header_data, false);
+	ret = binary_manager_read_header(BINARY_KERNEL, filepath, kernel_info.part_info[part_idx].address, &header_data, false);
 	if (ret != BINMGR_OK) {
 		bmdbg("Fail to read kernel header, set %s, devpath %s, ret %d\n", GET_PARTNAME(part_idx), filepath, ret);
 		return 0;
@@ -198,7 +198,7 @@ bool binary_manager_scan_kbin(void)
 	bp_data = binary_manager_get_bpdata();
 	/* Verify running kernel binary based on bootparam */
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[bp_data->head.active_idx].devnum);
-	ret = binary_manager_read_header(BINARY_KERNEL, filepath, &header_data, false);
+	ret = binary_manager_read_header(BINARY_KERNEL, filepath, kernel_info.part_info[bp_data->head.active_idx].address, &header_data, false);
 	if (ret == OK) {
 		/* Update inuse index and kernel version */
 		kernel_info.inuse_idx = bp_data->head.active_idx;
@@ -211,7 +211,7 @@ bool binary_manager_scan_kbin(void)
 
 	for (int part_idx = 0; part_idx < kernel_info.part_count; part_idx++) {
 		snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[part_idx].devnum);
-		ret = binary_manager_read_header(BINARY_KERNEL, filepath, &header_data, true); /* do we need to do crc check? */
+		ret = binary_manager_read_header(BINARY_KERNEL, filepath, kernel_info.part_info[part_idx].address, &header_data, true); /* do we need to do crc check? */
 		if (ret == OK && latest_ver < header_data.version) {
 			/* Update latest version and inuse index */
 			kernel_info.version = header_data.version;
@@ -263,7 +263,7 @@ int binary_manager_check_kernel_update(bool check_updatable)
 
 	/* Verify kernel binary on the partition without running binary */
 	snprintf(filepath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, kernel_info.part_info[inactive_partidx].devnum);
-	ret = binary_manager_read_header(BINARY_KERNEL, filepath, (void *)&header_data, check_updatable);
+	ret = binary_manager_read_header(BINARY_KERNEL, filepath, kernel_info.part_info[inactive_partidx].address, (void *)&header_data, check_updatable);
 	if (ret == BINMGR_OK) {
 		if (!check_updatable) {
 			bmvdbg("Found valid kernel binary in inactive partition %d\n", kernel_info.part_info[inactive_partidx].devnum);
@@ -495,11 +495,11 @@ int binary_manager_verify_ubin(int bin_idx, uint8_t part_idx)
 	snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin_idx == BM_CMNLIB_IDX) {
-		ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, true);
+		ret = binary_manager_read_header(BINARY_COMMON, devpath, BIN_PARTADDR(bin_idx, part_idx), (void *)&common_header_data, true);
 	} else
 #endif
 	{
-		ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, true);
+		ret = binary_manager_read_header(BINARY_USERAPP, devpath, BIN_PARTADDR(bin_idx, part_idx), (void *)&user_header_data, true);
 	}
 
 	if (ret != BINMGR_OK) {
@@ -541,7 +541,7 @@ uint32_t binary_manager_get_ubin_version(int bin_idx, uint8_t part_idx)
 	snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 	if (bin_idx == BM_CMNLIB_IDX) {
-		ret = binary_manager_read_header(BINARY_COMMON, devpath, &common_header_data, false);
+		ret = binary_manager_read_header(BINARY_COMMON, devpath, BIN_PARTADDR(bin_idx, part_idx), &common_header_data, false);
 		if (ret != BINMGR_OK) {
 			bmdbg("Fail to read common header, set %s, devpath %s, ret %d\n", GET_PARTNAME(part_idx), devpath, ret);
 			return 0;
@@ -550,7 +550,7 @@ uint32_t binary_manager_get_ubin_version(int bin_idx, uint8_t part_idx)
 	}
 #endif
 
-	ret = binary_manager_read_header(BINARY_USERAPP, devpath, &user_header_data, false);
+	ret = binary_manager_read_header(BINARY_USERAPP, devpath, BIN_PARTADDR(bin_idx, part_idx), &user_header_data, false);
 	if (ret != BINMGR_OK) {
 		bmdbg("Fail to read app header, name %s, set %s, devpath %s, ret %d\n", BIN_NAME(bin_idx), GET_PARTNAME(part_idx), devpath, ret);
 		return 0;
@@ -600,12 +600,12 @@ bool binary_manager_scan_ubin_all(void)
 		bmdbg("Checking user in partition [%d], path %s\n", part_idx, devpath);
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 		if (bin_idx == BM_CMNLIB_IDX) {
-			ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, false);			
+			ret = binary_manager_read_header(BINARY_COMMON, devpath, BIN_PARTADDR(bin_idx, part_idx), (void *)&common_header_data, false);
 			version = common_header_data.version;
 		} else
 #endif
 		{
-			ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, false);			
+			ret = binary_manager_read_header(BINARY_USERAPP, devpath, BIN_PARTADDR(bin_idx, part_idx), (void *)&user_header_data, false);
 			version = user_header_data.bin_ver;
 		}
 		if (ret == OK) {
@@ -630,7 +630,7 @@ bool binary_manager_scan_ubin_all(void)
 	bin_idx = BM_CMNLIB_IDX;
 	for (part_idx = 0; part_idx < PARTS_PER_BIN; part_idx++) {
 		snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
-		ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, false);
+		ret = binary_manager_read_header(BINARY_COMMON, devpath, BIN_PARTADDR(bin_idx, part_idx), (void *)&common_header_data, false);
 		if (ret == OK) {
 			is_found = true;
 			if (latest_ver < common_header_data.version) {
@@ -651,7 +651,7 @@ bool binary_manager_scan_ubin_all(void)
 		latest_ver = 0;
 		for (part_idx = 0; part_idx < PARTS_PER_BIN; part_idx++) {
 			snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
-			ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, false);
+			ret = binary_manager_read_header(BINARY_USERAPP, devpath, BIN_PARTADDR(bin_idx, part_idx), (void *)&user_header_data, false);
 			if (ret == OK) {
 				is_found = true;
 				if (latest_ver < user_header_data.bin_ver) {
@@ -713,10 +713,10 @@ int binary_manager_check_user_update(int bin_idx, bool check_updatable)
 #endif
 	snprintf(devpath, BINARY_PATH_LEN, BINMGR_DEVNAME_FMT, BIN_PARTNUM(bin_idx, part_idx));
 	if (bin_idx == BM_CMNLIB_IDX) {
-		ret = binary_manager_read_header(BINARY_COMMON, devpath, (void *)&common_header_data, check_updatable);
+		ret = binary_manager_read_header(BINARY_COMMON, devpath, BIN_PARTADDR(bin_idx, part_idx), (void *)&common_header_data, check_updatable);
 		version = common_header_data.version;
 	} else {
-		ret = binary_manager_read_header(BINARY_USERAPP, devpath, (void *)&user_header_data, check_updatable);
+		ret = binary_manager_read_header(BINARY_USERAPP, devpath, BIN_PARTADDR(bin_idx, part_idx), (void *)&user_header_data, check_updatable);
 		version = user_header_data.bin_ver;
 	}
 	if (ret == BINMGR_OK) {		

@@ -442,6 +442,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			return 1;
 		}
 		os_memcpy(bss->ssid.ssid, pos, bss->ssid.ssid_len);
+		if (bss->ssid.ssid_len < sizeof(bss->ssid.ssid))
+			bss->ssid.ssid[bss->ssid.ssid_len] = '\0';
 		bss->ssid.ssid_set = 1;
 	} else if (os_strcmp(buf, "utf8_ssid") == 0) {
 		bss->ssid.utf8_ssid = atoi(pos) > 0;

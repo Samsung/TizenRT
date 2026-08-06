@@ -128,6 +128,7 @@ static void _event_caller(int evt_pri, void *data) {
 		case BLE_EVT_CLIENT_DISCONNECT: {
 			ble_client_device_disconnected_cb callback = msg->param[0];
 			trble_conn_handle conn = *(trble_conn_handle *)(msg->param[2]);
+			(void)conn; /* conn_handle was already consumed to resolve msg->param[1] as context */
 			uint16_t error = *(uint16_t *)(msg->param[2] + sizeof(trble_conn_handle));
 			callback(msg->param[1], error);
 		} break;
@@ -1327,6 +1328,7 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		if (ctx == NULL) {
 			if (ctx_connecting == NULL) {
 				BLE_LOG_ERROR("[BLEMGR] fail to find disconnected client. (conn_handle : %u)\n", data);
+				free(msg->param);
 				break;
 			}
 			BLE_LOG_INFO("[BLEMGR] client disconnected due to connection failure. (conn_handle : %u)\n", data);
@@ -1374,7 +1376,14 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 				break;
 			}
 		}
-		if (ctx && ctx->callbacks.passkey_display_cb) {
+
+		if (ctx == NULL) {
+			BLE_LOG_ERROR("[BLEMGR] fail to find BLE client context\n");
+			free(msg->param);
+			break;
+		}
+
+		if (ctx->callbacks.passkey_display_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.passkey_display_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
@@ -1394,7 +1403,14 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 				break;
 			}
 		}
-		if (ctx && ctx->callbacks.pair_bond_cb) {
+
+		if (ctx == NULL) {
+			BLE_LOG_ERROR("[BLEMGR] fail to find BLE client context\n");
+			free(msg->param);
+			break;
+		}
+
+		if (ctx->callbacks.pair_bond_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.pair_bond_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
@@ -1415,7 +1431,13 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			}
 		}
 
-		if (ctx && ctx->callbacks.notification_cb) {
+		if (ctx == NULL) {
+			BLE_LOG_ERROR("[BLEMGR] fail to find BLE client context\n");
+			free(msg->param);
+			break;
+		}
+
+		if (ctx->callbacks.notification_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.notification_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}
@@ -1436,7 +1458,13 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 			}
 		}
 
-		if (ctx && ctx->callbacks.indication_cb) {
+		if (ctx == NULL) {
+			BLE_LOG_ERROR("[BLEMGR] fail to find BLE client context\n");
+			free(msg->param);
+			break;
+		}
+
+		if (ctx->callbacks.indication_cb) {
 			memcpy(queue_msg.param, (void*[]){ctx->callbacks.indication_cb, ctx, msg->param}, sizeof(void*) * queue_msg.count);
 			ble_queue_enque(BLE_QUEUE_EVT_PRI_HIGH, &queue_msg);
 		}

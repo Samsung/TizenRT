@@ -133,7 +133,6 @@ static bk_err_t test_flash_count_time(volatile uint32_t start_addr, uint32_t len
 #endif
 
 	tmp = addr + length;
-	bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 
 	BK_DUMP_OUT("----- FLASH COUNT TIME TEST BEGIN -----\r\n");
 	BK_DUMP_OUT("===============================\r\n");
@@ -204,7 +203,6 @@ for(int i = 0; i <= test_times; i++) {
 	}
 
 	start_tick = riscv_get_mtimer();
-	bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 	end_tick = riscv_get_mtimer();
 	tick_cnt = end_tick - start_tick;
 	if(i % print_cnt == 0) {
@@ -216,8 +214,6 @@ for(int i = 0; i <= test_times; i++) {
 }
 
 	start_tick = riscv_get_mtimer();
-	bk_flash_set_protect_type(FLASH_PROTECT_NONE);
-	bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 	end_tick = riscv_get_mtimer();
 	tick_cnt = end_tick - start_tick;
 	int_level = rtos_enter_critical();
@@ -226,7 +222,6 @@ for(int i = 0; i <= test_times; i++) {
 	BK_DUMP_OUT("----- FLASH COUNT TIME TEST END -----\r\n");
 	rtos_exit_critical(int_level);
 
-	bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 	return kNoErr;
 }
 #else
@@ -240,13 +235,14 @@ static bk_err_t test_flash_count_time(volatile uint32_t start_addr, uint32_t len
 	uint32_t print_cnt = 100;
 	struct timeval rtc_start_time = {0, 0};
 	struct timeval rtc_end_time = {0, 0};
+	void test_flash_set_protect_type_none(void);
+	void test_flash_set_protect_type_all(void);
 
 	bk_wdt_stop();
 #if (defined(CONFIG_TASK_WDT))
 	bk_task_wdt_stop();
 #endif
 	tmp = addr + length;
-	bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 
 	BK_DUMP_OUT("----- FLASH COUNT TIME TEST BEGIN -----\r\n");
 	BK_DUMP_OUT("===============================\r\n");
@@ -311,25 +307,25 @@ static bk_err_t test_flash_count_time(volatile uint32_t start_addr, uint32_t len
 	
 	
 		bk_rtc_gettimeofday(&rtc_start_time, 0);
-		bk_flash_set_protect_type(FLASH_PROTECT_NONE);
+		test_flash_set_protect_type_none();
+		test_flash_set_protect_type_all();
 		bk_rtc_gettimeofday(&rtc_end_time, 0);
 		tick_cnt = 1000000 * (rtc_end_time.tv_sec - rtc_start_time.tv_sec) + rtc_end_time.tv_usec - rtc_start_time.tv_usec;
 		if(i % print_cnt == 0) {
-			BK_DUMP_OUT("[enable security %d time] >>>>> cost time: %d us.\r\n", i, tick_cnt);
+			BK_DUMP_OUT("[en/dis protect type %d time] >>>>> cost time: %d us.\r\n", i, tick_cnt);
 			BK_DUMP_OUT("===============================\r\n");
 		}
 	}
 
 	bk_rtc_gettimeofday(&rtc_start_time, 0);
-	bk_flash_set_protect_type(FLASH_PROTECT_NONE);
-	bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
+	test_flash_set_protect_type_none();
+	test_flash_set_protect_type_all();
 	bk_rtc_gettimeofday(&rtc_end_time, 0);
 	tick_cnt = 1000000 * (rtc_end_time.tv_sec - rtc_start_time.tv_sec) + rtc_end_time.tv_usec - rtc_start_time.tv_usec;
-	BK_DUMP_OUT("[en/dis security 0 time] >>>>> cost time: %d us.\r\n", tick_cnt);
+	BK_DUMP_OUT("[en/dis protect type 0 time] >>>>> cost time: %d us.\r\n", tick_cnt);
 
 	BK_DUMP_OUT("----- FLASH COUNT TIME TEST END -----\r\n");
 
-	bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 	return kNoErr;
 }
 #endif
@@ -421,6 +417,264 @@ static void test_idle_read_psram(void *arg) {
 	}
 }
 #endif
+
+static bk_err_t test_flash_ewr_verify(uint32_t start_addr, uint32_t size,
+	uint32_t test_times, uint32_t erase_yield_ms, uint32_t write_yield_ms)
+{
+	uint32_t addr, end_addr;
+	uint32_t err_cnt = 0;
+	uint32_t i, j;
+	u8 wr_buf[256];
+	u8 rd_buf[256];
+
+	if (start_addr & 0xFFF) {
+		BK_DUMP_OUT("ERROR: start_addr 0x%x is not 4K aligned!\r\n", start_addr);
+		return kGeneralErr;
+	}
+	if (size & 0xFFF) {
+		BK_DUMP_OUT("ERROR: size 0x%x is not 4K aligned!\r\n", size);
+		return kGeneralErr;
+	}
+
+	end_addr = start_addr + size;
+	uint32_t erase_sectors = size >> 12;
+	uint32_t write_blocks = size >> 8;
+
+	bk_wdt_stop();
+#if (CONFIG_TASK_WDT)
+	bk_task_wdt_stop();
+#endif
+
+
+	BK_DUMP_OUT("===== FLASH EWR VERIFY START =====\r\n");
+	BK_DUMP_OUT("  start_addr : 0x%x\r\n", start_addr);
+	BK_DUMP_OUT("  end_addr   : 0x%x\r\n", end_addr);
+	BK_DUMP_OUT("  size       : 0x%x (%d bytes)\r\n", size, size);
+	BK_DUMP_OUT("  times      : %d\r\n", test_times);
+	BK_DUMP_OUT("  erase_yield: %d ms (after each 4K sector erase)\r\n", erase_yield_ms);
+	BK_DUMP_OUT("  write_yield: %d ms (after each 256B block write)\r\n", write_yield_ms);
+	BK_DUMP_OUT("  per round  : erase %d sectors(4K), write %d blocks(256B)\r\n",
+		erase_sectors, write_blocks);
+	BK_DUMP_OUT("==================================\r\n");
+
+	for (i = 0; i < test_times; i++) {
+		uint8_t pattern = (uint8_t)(i & 0xFF);
+		int verbose = ((i % 100) == 0);
+
+		if (verbose)
+			BK_DUMP_OUT("[round %d/%d] erasing 0x%x ~ 0x%x, %d sectors ...\r\n",
+				i, test_times, start_addr, end_addr, erase_sectors);
+
+		for (addr = start_addr; addr < end_addr; addr += 0x1000) {
+			bk_flash_erase_sector(addr);
+			if (erase_yield_ms)
+				rtos_delay_milliseconds(erase_yield_ms);
+		}
+
+		if (verbose)
+			BK_DUMP_OUT("[round %d/%d] read & compare erase data (expect 0xFF) ...\r\n",
+				i, test_times);
+
+		for (addr = start_addr; addr < end_addr; addr += 256) {
+			os_memset(rd_buf, 0, 256);
+			bk_flash_read_bytes(addr, rd_buf, 256);
+			for (j = 0; j < 256; j++) {
+				if (rd_buf[j] != 0xFF) {
+					err_cnt++;
+					BK_DUMP_OUT("[ERR][%d] erase verify fail @ 0x%x: expect 0xFF, got 0x%02x\r\n",
+						i, addr + j, rd_buf[j]);
+					goto next_round;
+				}
+			}
+		}
+
+		if (verbose)
+			BK_DUMP_OUT("[round %d/%d] writing 0x%x ~ 0x%x, pattern 0x%02x ...\r\n",
+				i, test_times, start_addr, end_addr, pattern);
+
+		for (j = 0; j < 256; j++)
+			wr_buf[j] = (uint8_t)((pattern + j) & 0xFF);
+
+		for (addr = start_addr; addr < end_addr; addr += 256) {
+			bk_flash_write_bytes(addr, wr_buf, 256);
+			if (write_yield_ms)
+				rtos_delay_milliseconds(write_yield_ms);
+		}
+
+		if (verbose)
+			BK_DUMP_OUT("[round %d/%d] read & compare write data (pattern 0x%02x) ...\r\n",
+				i, test_times, pattern);
+
+		for (addr = start_addr; addr < end_addr; addr += 256) {
+			os_memset(rd_buf, 0, 256);
+			bk_flash_read_bytes(addr, rd_buf, 256);
+			for (j = 0; j < 256; j++) {
+				uint8_t expect = (uint8_t)((pattern + j) & 0xFF);
+				if (rd_buf[j] != expect) {
+					err_cnt++;
+					BK_DUMP_OUT("[ERR][%d] write verify fail @ 0x%x: expect 0x%02x, got 0x%02x\r\n",
+						i, addr + j, expect, rd_buf[j]);
+					goto next_round;
+				}
+			}
+		}
+
+next_round:
+		if (verbose)
+			BK_DUMP_OUT("[STATUS] round %d/%d done, errors: %d\r\n", i, test_times, err_cnt);
+	}
+
+
+	BK_DUMP_OUT("===== FLASH EWR VERIFY END =====\r\n");
+	BK_DUMP_OUT("total rounds: %d, total errors: %d\r\n", test_times, err_cnt);
+
+	return (err_cnt == 0) ? kNoErr : kGeneralErr;
+}
+
+typedef struct {
+	uint32_t start;
+	uint32_t size;
+	uint32_t rounds;
+	uint8_t tid;
+	uint32_t *err_out;
+} flash_mt_ewr_ctx_t;
+
+static void flash_concurrent_ewr_worker(beken_thread_arg_t arg)
+{
+	flash_mt_ewr_ctx_t *c = (flash_mt_ewr_ctx_t *)arg;
+	uint32_t err = 0;
+	uint32_t end = c->start + c->size;
+	uint8_t base_pat = (c->tid == 0) ? (uint8_t)0xA0 : (uint8_t)0x5A;
+	u8 wr_buf[256];
+	u8 rd_buf[256];
+	uint32_t r, addr;
+	int j;
+
+	for (r = 0; r < c->rounds; r++) {
+		uint8_t pat = (uint8_t)((base_pat + (uint8_t)(r & 0xFF)) & 0xFF);
+
+		for (addr = c->start; addr < end; addr += 0x1000)
+			bk_flash_erase_sector(addr);
+
+		for (addr = c->start; addr < end; addr += 256) {
+			os_memset(rd_buf, 0, 256);
+			bk_flash_read_bytes(addr, rd_buf, 256);
+			for (j = 0; j < 256; j++) {
+				if (rd_buf[j] != 0xFF) {
+					err++;
+					if (err <= 8)
+						BK_DUMP_OUT("[MT T%u R%u] erase chk @0x%x exp FF got %02x\r\n",
+							(unsigned)c->tid, (unsigned)r, addr + (uint32_t)j, rd_buf[j]);
+				}
+			}
+		}
+
+		for (j = 0; j < 256; j++)
+			wr_buf[j] = (uint8_t)((pat + (uint8_t)j) & 0xFF);
+		for (addr = c->start; addr < end; addr += 256)
+			bk_flash_write_bytes(addr, wr_buf, 256);
+
+		for (addr = c->start; addr < end; addr += 256) {
+			os_memset(rd_buf, 0, 256);
+			bk_flash_read_bytes(addr, rd_buf, 256);
+			for (j = 0; j < 256; j++) {
+				uint8_t exp = (uint8_t)((pat + (uint8_t)j) & 0xFF);
+				if (rd_buf[j] != exp) {
+					err++;
+					if (err <= 8)
+						BK_DUMP_OUT("[MT T%u R%u] write chk @0x%x exp %02x got %02x\r\n",
+							(unsigned)c->tid, (unsigned)r, addr + (uint32_t)j, exp, rd_buf[j]);
+				}
+			}
+		}
+
+		if (((r + 1) % 100) == 0)
+			BK_DUMP_OUT("[MT T%u] round %u/%u done, err=%u\r\n",
+				(unsigned)c->tid, (unsigned)(r + 1), (unsigned)c->rounds, (unsigned)err);
+	}
+
+	*(c->err_out) = err;
+	rtos_delete_thread(NULL);
+}
+
+static bk_err_t test_flash_concurrent_2task_verify(uint32_t start_addr, uint32_t total_size, uint32_t rounds)
+{
+	beken_thread_t th0 = NULL;
+	beken_thread_t th1 = NULL;
+	flash_mt_ewr_ctx_t ctx0, ctx1;
+	uint32_t err0 = 0, err1 = 0;
+	uint32_t half;
+	bk_err_t ret;
+
+	if (rounds == 0) {
+		BK_DUMP_OUT("MT: rounds must be > 0\r\n");
+		return kParamErr;
+	}
+	if (start_addr & 0xFFF) {
+		BK_DUMP_OUT("MT: start 0x%x must be 4K aligned\r\n", start_addr);
+		return kGeneralErr;
+	}
+	if (total_size < 0x2000 || (total_size & 0xFFF)) {
+		BK_DUMP_OUT("MT: total_size 0x%x need >= 8KB and 4K aligned\r\n", total_size);
+		return kGeneralErr;
+	}
+	half = total_size / 2;
+	if (half & 0xFFF) {
+		BK_DUMP_OUT("MT: total_size/2 must be 4K aligned (even number of 4K sectors)\r\n");
+		return kGeneralErr;
+	}
+
+	bk_wdt_stop();
+#if (CONFIG_TASK_WDT)
+	bk_task_wdt_stop();
+#endif
+
+	BK_DUMP_OUT("===== FLASH 2-thread concurrent EWR verify =====\r\n");
+	BK_DUMP_OUT("T0: 0x%x ~ 0x%x | T1: 0x%x ~ 0x%x | rounds %u\r\n",
+		start_addr, start_addr + half - 1,
+		start_addr + half, start_addr + total_size - 1, rounds);
+
+	ctx0.start = start_addr;
+	ctx0.size = half;
+	ctx0.rounds = rounds;
+	ctx0.tid = 0;
+	ctx0.err_out = &err0;
+
+	ctx1.start = start_addr + half;
+	ctx1.size = half;
+	ctx1.rounds = rounds;
+	ctx1.tid = 1;
+	ctx1.err_out = &err1;
+
+	ret = rtos_create_thread(&th0, 6, "flash_mt0",
+		(beken_thread_function_t)flash_concurrent_ewr_worker,
+		CONFIG_APP_MAIN_TASK_STACK_SIZE, (beken_thread_arg_t)&ctx0);
+	if (ret != kNoErr) {
+		BK_DUMP_OUT("MT: create flash_mt0 fail %d\r\n", ret);
+		return ret;
+	}
+	ret = rtos_create_thread(&th1, 6, "flash_mt1",
+		(beken_thread_function_t)flash_concurrent_ewr_worker,
+		CONFIG_APP_MAIN_TASK_STACK_SIZE, (beken_thread_arg_t)&ctx1);
+	if (ret != kNoErr) {
+		BK_DUMP_OUT("MT: create flash_mt1 fail %d, join T0\r\n", ret);
+		rtos_thread_join(&th0);
+		return ret;
+	}
+
+	rtos_thread_join(&th0);
+	rtos_thread_join(&th1);
+
+	BK_DUMP_OUT("===== FLASH 2-thread concurrent EWR end =====\r\n");
+	BK_DUMP_OUT("T0 mismatches: %u, T1 mismatches: %u\r\n", err0, err1);
+	if (err0 == 0 && err1 == 0)
+		BK_DUMP_OUT("====== FLASH 2-thread concurrent EWR test PASS ======\r\n");
+	else
+		BK_DUMP_OUT("====== FLASH 2-thread concurrent EWR test FAIL ======\r\n");
+
+	return (err0 == 0 && err1 == 0) ? kNoErr : kGeneralErr;
+}
+
 static void flash_command_test(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
 {
 	char *msg = NULL;
@@ -547,10 +801,8 @@ static void flash_command_test(char *pcWriteBuffer, int xWriteBufferLen, int arg
 #endif
 
 	if (os_strcmp(argv[1], "U") == 0) {
-		bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 		return;
 	} else if (os_strcmp(argv[1], "P") == 0) {
-		bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 		return;
 	} else if (os_strcmp(argv[1], "RSR") == 0) {
 		uint16_t sts_val = bk_flash_read_status_reg();
@@ -566,6 +818,33 @@ static void flash_command_test(char *pcWriteBuffer, int xWriteBufferLen, int arg
 		uint32_t test_times = os_strtoul(argv[4], NULL, 10);
 		test_flash_count_time(addr, len, test_times);
 		return;
+	} else if (os_strcmp(argv[1], "V") == 0) {
+		if (argc < 5) {
+			BK_DUMP_OUT("Usage: flash_test V <addr> <size> <times> [erase_yield_ms] [write_yield_ms]\r\n");
+			BK_DUMP_OUT("  erase_yield_ms: delay(ms) after each sector erase, default 0\r\n");
+			BK_DUMP_OUT("  write_yield_ms: delay(ms) after each block write, default 0\r\n");
+			BK_DUMP_OUT("  WiFi coexist suggest: erase_yield=100 write_yield=2\r\n");
+			return;
+		}
+		addr = os_strtoul(argv[2], NULL, 16);
+		len = os_strtoul(argv[3], NULL, 16);
+		uint32_t test_times = os_strtoul(argv[4], NULL, 10);
+		uint32_t erase_yield = (argc >= 6) ? os_strtoul(argv[5], NULL, 10) : 0;
+		uint32_t write_yield = (argc >= 7) ? os_strtoul(argv[6], NULL, 10) : 0;
+		test_flash_ewr_verify(addr, len, test_times, erase_yield, write_yield);
+		return;
+	} else if (os_strcmp(argv[1], "MT") == 0) {
+		if (argc < 5) {
+			BK_DUMP_OUT("Usage: flash_test MT <start> <total_size> <rounds>\r\n");
+			BK_DUMP_OUT("  Two threads concurrently erase/read/write on two disjoint halves.\r\n");
+			BK_DUMP_OUT("  start: 4K aligned; total_size: >=8KB, 4K aligned, each half >= one 4K sector.\r\n");
+			return;
+		}
+		addr = os_strtoul(argv[2], NULL, 16);
+		len = os_strtoul(argv[3], NULL, 16);
+		uint32_t mt_rounds = os_strtoul(argv[4], NULL, 10);
+		test_flash_concurrent_2task_verify(addr, len, mt_rounds);
+		return;
 	}
 
 	if (argc == 4) {
@@ -575,9 +854,7 @@ static void flash_command_test(char *pcWriteBuffer, int xWriteBufferLen, int arg
 
 		switch (cmd) {
 		case 'E':
-			bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 			test_flash_erase(addr, len);
-			bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 			msg = CLI_CMD_RSP_SUCCEED;
 			break;
 
@@ -586,9 +863,7 @@ static void flash_command_test(char *pcWriteBuffer, int xWriteBufferLen, int arg
 			msg = CLI_CMD_RSP_SUCCEED;
 			break;
 		case 'W':
-			bk_flash_set_protect_type(FLASH_PROTECT_NONE);
 			test_flash_write(addr, len);
-			bk_flash_set_protect_type(FLASH_UNPROTECT_LAST_BLOCK);
 			msg = CLI_CMD_RSP_SUCCEED;
 			break;
 		//to check whether protection mechanism can work
@@ -605,12 +880,16 @@ static void flash_command_test(char *pcWriteBuffer, int xWriteBufferLen, int arg
 			msg = CLI_CMD_RSP_SUCCEED;
 			break;
 		default:
-			BK_DUMP_OUT("flash_test <R/W/E/M/N/T> <start_addr> <len>\r\n");
-			msg = CLI_CMD_RSP_ERROR;
-			break;
+		BK_DUMP_OUT("flash_test <R/W/E/M/N/T> <start_addr> <len>\r\n");
+		BK_DUMP_OUT("flash_test V <addr> <size> <times> [erase_yield] [write_yield]\r\n");
+		BK_DUMP_OUT("flash_test MT <start> <total_size> <rounds>\r\n");
+		msg = CLI_CMD_RSP_ERROR;
+		break;
 		}
 	} else {
 		BK_DUMP_OUT("flash_test <R/W/E/M/N/T> <start_addr> <len>\r\n");
+		BK_DUMP_OUT("flash_test V <addr> <size> <times> [erase_yield] [write_yield]\r\n");
+		BK_DUMP_OUT("flash_test MT <start> <total_size> <rounds>\r\n");
 		msg = CLI_CMD_RSP_ERROR;
 	}
 	os_memcpy(pcWriteBuffer, msg, os_strlen(msg));
@@ -621,7 +900,7 @@ static void partShow_Command(char *pcWriteBuffer, int xWriteBufferLen, int argc,
 	bk_partition_t i;
 	bk_logic_partition_t *partition;
 
-	for (i = BK_PARTITION_BOOTLOADER; i <= BK_PARTITION_MAX; i++) {
+	for (i = BK_PARTITION_BOOTLOADER; i < BK_PARTITION_MAX; i++) {
 		partition = bk_flash_partition_get_info(i);
 		if (partition == NULL)
 			continue;
@@ -636,7 +915,7 @@ static void partShow_Command(char *pcWriteBuffer, int xWriteBufferLen, int argc,
 #define FLASH_CMD_CNT (sizeof(s_flash_commands) / sizeof(struct cli_command))
 static const struct cli_command s_flash_commands[] = {
 	{"fmap_test",    "flash_test memory map",      partShow_Command},
-	{"flash_test",   "flash_test <cmd(R/W/E/N)>", flash_command_test},
+	{"flash_test",   "flash_test <cmd(R/W/E/N/V/MT)>", flash_command_test},
 };
 
 int cli_flash_test_init(void)

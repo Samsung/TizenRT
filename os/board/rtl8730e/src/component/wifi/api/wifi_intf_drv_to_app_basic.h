@@ -951,6 +951,14 @@ unsigned int wifi_get_key_mgmt(void);
  * @return RTW_ERROR : Result if failed to get BSSID
  */
 int wifi_get_ap_bssid(unsigned char *bssid);
+
+/**
+ * @brief  Resets wifi. API will disconnect STA.
+ * @param[in]  void
+ * @return  int: RTW_SUCCESS if successfully reset wifi.
+ * @return  int: RTW_ERROR if failed to reset wifi, could be wifi disconnect failed or driver busy.
+ */
+int wifi_reset(void);
 /**
 * @}
 */

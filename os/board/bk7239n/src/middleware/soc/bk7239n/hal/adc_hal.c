@@ -432,9 +432,6 @@ uint32_t adc_hal_get_mode(adc_hal_t *hal)
 
 	if (adc_mode == 1) {
 		return ADC_CONTINUOUS_MODE;
-	} else if (adc_mode == 0) {
-		return ADC_SINGLE_STEP_MODE;
-	} else {
-		return ADC_CONTINUOUS_MODE;
 	}
+	return ADC_SINGLE_STEP_MODE;
 }

@@ -127,7 +127,7 @@ bk_err_t bk_gpio_ctrl_external_ldo(gpio_ctrl_ldo_module_e module,gpio_id_t gpio_
 	{
 		for(i = 0; i < sizeof(s_gpio_ctrl_ldo_output)/sizeof(gpio_ctrl_ldo_t); i++)
 		{
-			if(s_gpio_ctrl_ldo_output[i].gpio_id >= 0 && s_gpio_ctrl_ldo_output[i].gpio_id < SOC_GPIO_NUM)
+			if(s_gpio_ctrl_ldo_output[i].gpio_id < SOC_GPIO_NUM)
 			{
 				if(gpio_id == s_gpio_ctrl_ldo_output[i].gpio_id)
 				{
@@ -146,7 +146,7 @@ bk_err_t bk_gpio_ctrl_external_ldo(gpio_ctrl_ldo_module_e module,gpio_id_t gpio_
 	{
 		for(i = 0; i < sizeof(s_gpio_ctrl_ldo_output)/sizeof(gpio_ctrl_ldo_t); i++)
 		{
-			if(s_gpio_ctrl_ldo_output[i].gpio_id >= 0 && s_gpio_ctrl_ldo_output[i].gpio_id < SOC_GPIO_NUM)
+			if(s_gpio_ctrl_ldo_output[i].gpio_id < SOC_GPIO_NUM)
 			{
 				if(gpio_id == s_gpio_ctrl_ldo_output[i].gpio_id)
 				{

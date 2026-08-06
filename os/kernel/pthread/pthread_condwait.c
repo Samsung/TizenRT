@@ -108,18 +108,37 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 		ret = EPERM;
 	} else {
 		uint16_t oldstate;
+		irqstate_t flags;
 
 		/* Give up the mutex */
 
 		svdbg("Give up mutex / take cond\n");
 
 		sched_lock();
+
+		/* Increment waiters counter */
+		flags = enter_critical_section();
+		cond->waiters++;
+		leave_critical_section(flags);
+
 		mutex->pid = -1;
 		ret = pthread_mutex_give(mutex);
 
 		/* Take the semaphore */
 
 		status = pthread_sem_take((FAR sem_t *)&cond->sem);
+		/* Adding DEBUGASSERT here because
+		 * possible failure cases of sem_wait() are
+		 * already handled inside pthread_sem_take()
+		 * i.e EINVAL and EINTR
+		 * ETIMEDOUT is not expected in pthread_cond_wait()
+		 * If pthread_sem_take() fails for other than these,
+		 * we trigger an assert.
+		 */
+		DEBUGASSERT_INFO(status == OK,
+		    "pthread_sem_take failed! errno=%d, sem=%p, waiters=%d, semcount=%d",
+		    get_errno(), &cond->sem, cond->waiters, cond->sem.semcount);
+
 		if (ret == OK) {
 			/* Report the first failure that occurs */
 

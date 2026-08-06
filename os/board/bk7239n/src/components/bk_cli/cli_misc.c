@@ -599,6 +599,8 @@ void cli_cache_cmd(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **ar
 
 #endif
 
+#define CLI_CPU_TEST_COUNT_MAX  1000000u
+
 __attribute__ ((__optimize__ ("-fno-tree-loop-distribute-patterns"))) \
 int32_t cpu_test(uint32_t count) {
 #if defined(CONFIG_SOC_BK7236XX) || (defined(CONFIG_SOC_BK7239XX)) || (defined(CONFIG_SOC_BK7286XX))
@@ -629,6 +631,10 @@ static void cli_cpu_test(char *pcWriteBuffer, int xWriteBufferLen, int argc, cha
 		return;
 	}
 	count = os_strtoul(argv[1], NULL, 10);
+	if (count > CLI_CPU_TEST_COUNT_MAX) {
+		CLI_LOGI("cputest: count invalid (max %u)\r\n", CLI_CPU_TEST_COUNT_MAX);
+		return;
+	}
 	cpu_test(count);
 	CLI_LOGI("cputest end.\r\n");
 }

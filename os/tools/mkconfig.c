@@ -161,10 +161,6 @@ int main(int argc, char **argv, char **envp)
 	printf("# undef CONFIG_SEM_PREALLOCHOLDERS\n");
 	printf("# define CONFIG_SEM_PREALLOCHOLDERS 0\n");
 	printf("#endif\n\n");
-	printf("#if !defined(CONFIG_PRIORITY_INHERITANCE) || !defined(CONFIG_SEM_NNESTPRIO)\n");
-	printf("# undef CONFIG_SEM_NNESTPRIO\n");
-	printf("# define CONFIG_SEM_NNESTPRIO 0\n");
-	printf("#endif\n\n");
 	printf("/* If no file descriptors are configured, then make certain no\n");
 	printf(" * streams are configured either.\n");
 	printf(" */\n\n");

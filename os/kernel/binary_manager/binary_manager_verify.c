@@ -28,6 +28,7 @@
 #ifdef CONFIG_BINARY_SIGNING
 #include <tinyara/signature.h>
 #endif
+#include <tinyara/fs/mtd.h>
 #include <tinyara/mm/mm.h>
 #include <tinyara/binary_manager.h>
 
@@ -90,6 +91,54 @@ static int binary_manager_verify_header_data(int type, void *header_input)
 	return OK;
 }
 
+static int binary_manager_read_flash(int type, bool is_header, char *devpath, uint32_t part_addr, uint32_t offset, void *buffer, uint32_t size)
+{
+	ssize_t ret;
+	int fd;
+	off_t pos;
+
+#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY 
+	if (!(type == BINARY_KERNEL && is_header)) {
+		uint32_t read_addr = part_addr + offset;
+
+		if (read_addr < part_addr) {
+			bmdbg("Invalid read address, part addr 0x%x, offset %u\n", part_addr, offset);
+			return BINMGR_OPERATION_FAIL;
+		}
+
+		ret = up_read_decrypted_flash(read_addr, (FAR uint8_t *)buffer, size);
+		if (ret != OK) {
+			bmdbg("Fail to read binary, addr 0x%x, size %u, ret %d\n", read_addr, size, (int)ret);
+			return BINMGR_OPERATION_FAIL;
+		}
+
+		return BINMGR_OK;
+	}
+#endif
+	fd = open(devpath, O_RDONLY);
+	if (fd < 0) {
+		bmdbg("Fail to open %s: errno %d\n", devpath, errno);
+		return BINMGR_OPERATION_FAIL;
+	}
+
+	pos = lseek(fd, offset, SEEK_SET);
+	if (pos < 0 || pos != (off_t)offset) {
+		bmdbg("Fail to set offset to read %s, offset %u, ret %d, errno %d\n", devpath, offset, (int)pos, errno);
+		close(fd);
+		return BINMGR_OPERATION_FAIL;
+	}
+
+	ret = read(fd, (FAR uint8_t *)buffer, size);
+	if (ret != (ssize_t)size) {
+		bmdbg("Fail to read %s, offset %u, ret %d, errno %d\n", devpath, offset, (int)ret, errno);
+		close(fd);
+		return BINMGR_OPERATION_FAIL;
+	}
+	close(fd);
+
+	return BINMGR_OK;
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -100,9 +149,8 @@ static int binary_manager_verify_header_data(int type, void *header_input)
  *  This function reads and verifies header value with CRC checking according to type.
  *
  *****************************************************************************/
-int binary_manager_read_header(int type, char *devpath, void *header_data, bool crc_check)
+int binary_manager_read_header(int type, char *devpath, uint32_t part_addr, void *header_data, bool crc_check)
 {
-	int fd;
 	int ret;
 	uint32_t read_size;
 	uint32_t bin_size = 0;
@@ -111,8 +159,9 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	uint32_t crc_hash;
 	uint32_t crc_bufsize = 0;
 	int header_size = 0;
+	uint32_t read_offset = 0;
 
-	if (type < BINARY_KERNEL || type >= BINARY_TYPE_MAX || !header_data) {
+	if (type < BINARY_KERNEL || type >= BINARY_TYPE_MAX || !devpath || !header_data) {
 		bmdbg("Invalid parameter, type %d\n", type);
 		return BINMGR_INVALID_PARAM;
 	}
@@ -130,47 +179,30 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 	memset(header_data, 0, header_size);
 	crc_buffer = NULL;
 
-	fd = open(devpath, O_RDONLY);
-	if (fd < 0) {
-		bmdbg("Fail to open %s: errno %d\n", devpath, errno);
-		return BINMGR_OPERATION_FAIL;
-	}
-
 #ifdef CONFIG_BINARY_SIGNING
 	if (type == BINARY_USERAPP || type == BINARY_COMMON) {
-		ret = lseek(fd, USER_SIGN_PREPEND_SIZE, SEEK_SET);
-		if (ret < 0) {
-			bmdbg("Fail to set offset to skip signing header, errno : %d\n", errno);
-			ret = BINMGR_OPERATION_FAIL;
-			goto errout_with_fd;
-		}
+		read_offset += USER_SIGN_PREPEND_SIZE;
 	}
 #endif
 
 #ifdef CONFIG_RESOURCE_BINARY_SIGNING
 	if (type == BINARY_RESOURCE) {
-		ret = lseek(fd, USER_SIGN_PREPEND_SIZE, SEEK_SET);
-		if (ret < 0) {
-			bmdbg("Fail to set offset to skip signing header, errno : %d\n", errno);
-			ret = BINMGR_OPERATION_FAIL;
-			goto errout_with_fd;
-		}
+		read_offset += USER_SIGN_PREPEND_SIZE;
 	}
 #endif
 
 	/* Read the binary header */
-	ret = read(fd, (FAR uint8_t *)header_data, header_size);
-	if (ret != header_size) {
-		bmdbg("Fail to read %s, ret %d, errno %d\n", devpath, ret, errno);
-		ret = BINMGR_OPERATION_FAIL;
-		goto errout_with_fd;
+	ret = binary_manager_read_flash(type, true, devpath, part_addr, read_offset, (FAR uint8_t *)header_data, header_size);
+	if (ret != BINMGR_OK) {
+		goto errout;
 	}
+	read_offset += header_size;
 
 	/* Verify header data */
 	ret = binary_manager_verify_header_data(type, header_data);
 	if (ret < 0) {
 		ret = BINMGR_NOT_FOUND;
-		goto errout_with_fd;
+		goto errout;
 	}
 
 	if (crc_check) {
@@ -197,35 +229,31 @@ int binary_manager_read_header(int type, char *devpath, void *header_data, bool 
 		if (!crc_buffer) {
 			bmdbg("Fail to malloc buffer for checking crc, size %u\n", crc_bufsize);
 			ret = BINMGR_OUT_OF_MEMORY;
-			goto errout_with_fd;
+			goto errout;
 		}
 		/* Calculate checksum and Verify it */
 		calculate_crc = crc32part((uint8_t *)header_data + CHECKSUM_SIZE, header_size - CHECKSUM_SIZE, calculate_crc);
 		while (bin_size > 0) {
 			read_size = bin_size < crc_bufsize ? bin_size : crc_bufsize;
-			ret = read(fd, (void *)crc_buffer, read_size);
-			if (ret != read_size) {
-				bmdbg("Fail to read header for checksum : ret %d, errno %d\n", ret, errno);
-				ret = BINMGR_OPERATION_FAIL;
-				goto errout_with_fd;
+			ret = binary_manager_read_flash(type, false, devpath, part_addr, read_offset, (void *)crc_buffer, read_size);
+			if (ret != BINMGR_OK) {
+				goto errout;
 			}
 			calculate_crc = crc32part(crc_buffer, read_size, calculate_crc);
+			read_offset += read_size;
 			bin_size -= read_size;
 		}
 
 		if (calculate_crc != crc_hash) {
 			bmdbg("Fail to crc check : %u != %u\n", calculate_crc, crc_hash);
 			ret = BINMGR_NOT_FOUND;
-			goto errout_with_fd;
+			goto errout;
 		}
 		kmm_free(crc_buffer);
 	}
-	close(fd);
-
 	return BINMGR_OK;
 
-errout_with_fd:
-	close(fd);
+errout:
 	if (crc_buffer) {
 		kmm_free(crc_buffer);
 	}
