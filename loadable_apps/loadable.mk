@@ -62,8 +62,17 @@ endif
 endif
 
 ifeq ($(CONFIG_XIP_ELF),y)
+# Resolve per-binary prefix from exported environment vars set in Makefile.unix
+BIN_UPPER := $(shell echo $(BIN) | tr '[:lower:]' '[:upper:]')
+
+$(BIN)_LD_DEFS := \
+    --defsym __FLASH_START_ADDRESS__=$($(BIN_UPPER)_FLASH_ADDR) \
+    --defsym __FLASH_SIZE__=$($(BIN_UPPER)_FLASH_SIZE) \
+    --defsym __RAM_START_ADDRESS__=$($(BIN_UPPER)_RAM_ADDR) \
+    --defsym __RAM_SIZE__=$($(BIN_UPPER)_RAM_SIZE)
+
 $(BIN): $(OBJS)
-	$(Q) $(LD) -T $(USER_BIN_DIR)/$@_0.ld -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld -e main -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LIBGCC) $(LIBSUPXX) --end-group -R $(USER_BIN_DIR)/$(CONFIG_COMMON_BINARY_NAME)
+	$(Q) $(LD) -T $(TOPDIR)/userspace/userspace_apps_xip.ld -e main -o $@ $(ARCHCRT0OBJ) $^ --start-group $(LIBGCC) $(LIBSUPXX) --end-group -R $(USER_BIN_DIR)/$(CONFIG_COMMON_BINARY_NAME) $($(BIN)_LD_DEFS)
 
 undefsym : $(OBJS)
 	$(Q) $(LD) $(LDELFFLAGS) -o $(USER_BIN_DIR)/$(BIN).relelf $(ARCHCRT0OBJ) $^ --start-group $(LIBGCC) --end-group
