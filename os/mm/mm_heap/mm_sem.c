@@ -198,7 +198,9 @@ void mm_givesemaphore(FAR struct mm_heap_s *heap)
 
 	/* I better be holding at least one reference to the semaphore */
 
-	DEBUGASSERT(heap->mm_holder == my_pid);
+	DEBUGASSERT_INFO(heap->mm_holder == my_pid,
+		"heap=%p, mm_sem_holder_pid=%d, running_pid=%d, mm_sem_holder_cnt=%d",
+		heap, heap->mm_holder, my_pid, heap->mm_counts_held);
 
 	/* Do I hold multiple references to the semphore */
 
