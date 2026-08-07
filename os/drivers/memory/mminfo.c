@@ -131,6 +131,37 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			heap->peak_alloc_size = 0;
 			break;
 		}
+		if (option->mode == HEAPINFO_CAPTURE_START || option->mode == HEAPINFO_CAPTURE_STOP) {
+			/* Capture state lives in each heap struct. START arms the window and
+			 * clears any stale tags; STOP disarms it and reports the blocks that
+			 * were allocated during the window and are still not freed.
+			 */
+#if CONFIG_KMM_NHEAPS > 1
+			if (option->heap_type == HEAPINFO_HEAP_TYPE_KERNEL) {
+				int heap_idx;
+				for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
+					if (option->mode == HEAPINFO_CAPTURE_START) {
+						heapinfo_capture_reset(&heap[heap_idx]);
+						heapinfo_capture_start(&heap[heap_idx], option->pid);
+					} else {
+						heapinfo_capture_stop(&heap[heap_idx]);
+						heapinfo_capture_report(&heap[heap_idx], option->pid);
+					}
+				}
+			} else
+#endif
+			{
+				if (option->mode == HEAPINFO_CAPTURE_START) {
+					heapinfo_capture_reset(heap);
+					heapinfo_capture_start(heap, option->pid);
+				} else {
+					heapinfo_capture_stop(heap);
+					heapinfo_capture_report(heap, option->pid);
+				}
+			}
+			ret = OK;
+			break;
+		}
 #if CONFIG_KMM_NHEAPS > 1
 		if (option->heap_type == HEAPINFO_HEAP_TYPE_KERNEL) {
 			int heap_idx;

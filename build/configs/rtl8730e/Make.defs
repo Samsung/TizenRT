@@ -137,7 +137,7 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
 endif
 
 ARCHCFLAGS += -fno-builtin -fno-common
-ARCHCXXFLAGS = -fno-builtin -fexceptions 
+ARCHCXXFLAGS = -fno-builtin -fexceptions
 ifeq ($(QUICKBUILD),y)
 ARCHWARNINGS = -Wall -Werror -Wstrict-prototypes -Wshadow -Wundef -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable
 ARCHWARNINGSXX = -Wall -Werror -Wshadow -Wundef
@@ -203,10 +203,10 @@ CFLAGS   += -DTF_LITE_STATIC_MEMORY -DTF_LITE_NDEBUG
 endif
 
 ##########################################################################################################################################
-#CFLAGS += -O2 -g 
+#CFLAGS += -O2 -g
 #CFLAGS += -fno-strict-aliasing -fno-strict-overflow -fno-delete-null-pointer-checks
-#CFLAGS += -mcpu=cortex-a32 -mfpu=neon -mfloat-abi=hard 
-#CFLAGS += -marm 
+#CFLAGS += -mcpu=cortex-a32 -mfpu=neon -mfloat-abi=hard
+#CFLAGS += -marm
 #CFLAGS += -save-temps
 
 #CFLAGS += -gdwarf-3
