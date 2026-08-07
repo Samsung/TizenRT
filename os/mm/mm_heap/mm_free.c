@@ -121,8 +121,6 @@ static void mm_add_delaylist(FAR struct mm_heap_s *heap, FAR void *mem)
 static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddress_t free_call_addr, pid_t free_call_pid)
 {
 	FAR struct mm_freenode_s *node;
-	FAR struct mm_freenode_s *prev;
-	FAR struct mm_freenode_s *next;
 	char task_name[CONFIG_TASK_NAME_SIZE + 1];
 
 	mvdbg("Freeing %p\n", mem);
@@ -185,22 +183,82 @@ static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddres
 		mm_givesemaphore(heap);
 		return;
 	}
+#ifdef CONFIG_DEBUG_MM_QUARANTINE
+	if (mm_quarantine_contains(heap, (FAR struct mm_allocnode_s *)node)) {
+		/* The chunk is being held in the quarantine, so it still looks
+		 * allocated and the test above could not catch this. Freeing it again
+		 * is a double free, and unlike the usual case both callers are known.
+		 */
+
+		mdbg("WARNING!! Double free of a pointer which is still in quarantine\n");
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+		GET_TASK_NAME_BY_PID(task_name, node->free_call_pid);
+		mdbg("1st free: released by %s (%d) at addr 0x%08x\n", task_name, node->free_call_pid, node->free_call_addr);
+#endif
+		GET_TASK_NAME_BY_PID(task_name, free_call_pid);
+		mdbg("2nd free (double free): now try to release by %s (%d) at addr 0x%08x\n", task_name, free_call_pid, free_call_addr);
+		mm_dump_node((struct mm_allocnode_s *)node, "QUARANTINED NODE");
+		mm_givesemaphore(heap);
+		return;
+	}
+#endif
+
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	heapinfo_subtract_size(heap, ((struct mm_allocnode_s *)node)->pid, ((struct mm_allocnode_s *)node)->size);
 	heapinfo_update_total_size(heap, ((-1) * ((struct mm_allocnode_s *)node)->size), ((struct mm_allocnode_s *)node)->pid);
 #endif
-	node->preceding &= ~MM_ALLOC_BIT;
 #ifdef CONFIG_DEBUG_MM_FREEINFO
 	/* Record free metadata and quarantine sequence */
 	node->free_call_addr = free_call_addr;
 	node->free_call_pid = free_call_pid;
 #endif
 
+#ifdef CONFIG_DEBUG_MM_QUARANTINE
+	/* Offer the chunk to the quarantine before it becomes reusable. If it is
+	 * taken, MM_ALLOC_BIT deliberately stays set: that keeps the neighbours
+	 * from merging into it and keeps malloc from finding it, so the address
+	 * cannot be handed to anybody else while it is held.
+	 */
+
+	if (mm_quarantine_add(heap, (FAR struct mm_allocnode_s *)node)) {
+		mm_givesemaphore(heap);
+		return;
+	}
+#endif
+
+	node->preceding &= ~MM_ALLOC_BIT;
+
+	mm_free_coalesce(heap, node);
+	mm_givesemaphore(heap);
+}
+
+/****************************************************************************
+ * Name: mm_free_coalesce
+ *
+ * Description:
+ *   Merge 'node' with any free neighbour and put the result on the free list.
+ *
+ *   NOTES:
+ *     (1) MM_ALLOC_BIT must already be cleared in node->preceding.
+ *     (2) the caller must hold the MM semaphore, and still holds it on
+ *         return.
+ *
+ ****************************************************************************/
+
+void mm_free_coalesce(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
+{
+	FAR struct mm_freenode_s *prev;
+	FAR struct mm_freenode_s *next;
+
 	/* Check if the following node is free and, if so, merge it */
 
 	next = (FAR struct mm_freenode_s *)((char *)node + node->size);
 	if ((next->preceding & MM_ALLOC_BIT) == 0) {
 		FAR struct mm_allocnode_s *andbeyond;
+
+#ifdef CONFIG_DEBUG_MM_UAF
+		mm_uaf_verify(next);
+#endif
 
 		/* Get the node following the next node (which will
 		 * become the new next node). We know that we can never
@@ -228,6 +286,10 @@ static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddres
 
 	prev = (FAR struct mm_freenode_s *)((char *)node - node->preceding);
 	if ((prev->preceding & MM_ALLOC_BIT) == 0) {
+#ifdef CONFIG_DEBUG_MM_UAF
+		mm_uaf_verify(prev);
+#endif
+
 		/* Remove the node.  There must be a predecessor, but there may
 		 * not be a successor node.
 		 */
@@ -244,7 +306,6 @@ static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddres
 	/* Add the merged node to the nodelist */
 
 	mm_addfreechunk(heap, node);
-	mm_givesemaphore(heap);
 }
 
 /****************************************************************************

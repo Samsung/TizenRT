@@ -172,6 +172,17 @@
 #define MM_REMAINDER_FREE_CALL_ADDR ((void *)0xFEEEFEEE)
 #define MM_REMAINDER_FREE_CALL_PID 	((pid_t)-1)
 
+#ifdef CONFIG_DEBUG_MM_UAF
+#define MM_UAF_PATTERN	0xA5A5A5A5u
+
+/* Round up to a whole poison word. The window only has to be 32-bit aligned,
+ * so rounding to the allocator granule with MM_ALIGN_UP() would give away
+ * coverage for nothing.
+ */
+
+#define MM_UAF_ALIGN_UP(a)	(((a) + (sizeof(uint32_t) - 1)) & ~(sizeof(uint32_t) - 1))
+#endif
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -400,6 +411,19 @@ struct mm_heap_s {
 
 	FAR struct mm_delaynode_s *mm_delaylist[CONFIG_SMP_NCPUS];
 
+#ifdef CONFIG_DEBUG_MM_QUARANTINE
+	/* Chunks which have been freed but are deliberately not reusable yet, so
+	 * that a write through a stale pointer lands in memory nobody owns and
+	 * can still be recognised. Held out of band, in this array rather than in
+	 * the chunks themselves, so that the very write being hunted cannot
+	 * corrupt the list.
+	 */
+
+	FAR struct mm_allocnode_s *mm_quarantine[CONFIG_DEBUG_MM_QUARANTINE_CHUNKS];
+	uint16_t mm_qhead;			/* Slot of the oldest held chunk */
+	uint16_t mm_qcount;			/* Number of chunks held */
+	size_t mm_qbytes;			/* Total size of the chunks held */
+#endif
 };
 
 /****************************************************************************
@@ -653,9 +677,25 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 
 void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node);
 
+void mm_free_coalesce(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node);
+
+#ifdef CONFIG_DEBUG_MM_QUARANTINE
+void mm_quarantine_init(FAR struct mm_heap_s *heap);
+bool mm_quarantine_contains(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node);
+bool mm_quarantine_add(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node);
+size_t mm_quarantine_flush(FAR struct mm_heap_s *heap);
+#endif
+
 /* Functions contained in mm_size2ndx.c.c ***********************************/
 
 int mm_size2ndx(size_t size);
+
+#ifdef CONFIG_DEBUG_MM_UAF
+void mm_uaf_poison_range(FAR void *start, size_t nbytes);
+void mm_uaf_verify_range(FAR struct mm_allocnode_s *node, FAR void *start, size_t nbytes);
+void mm_uaf_poison(FAR struct mm_freenode_s *node);
+void mm_uaf_verify(FAR struct mm_freenode_s *node);
+#endif
 
 void mm_dump_node(struct mm_allocnode_s *node, char *node_type);
 void mm_dump_heap_region(uint32_t start, uint32_t end);
