@@ -1217,7 +1217,6 @@ int smartfs_finddirentry(struct smartfs_mountpt_s *fs, struct smartfs_entry_s *d
 			ret = -ENAMETOOLONG;
 			goto errout;
 		}
-
 		strncpy(fs->fs_workbuffer, segment, seglen);
 		fs->fs_workbuffer[seglen] = '\0';
 

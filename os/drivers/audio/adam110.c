@@ -616,6 +616,7 @@ static int adam110_send_firmware(FAR struct adam110_dev_s *dev)
 		}
 
 		up_udelay(ADAM110_FW_UPDATE_WAITTIME);
+
 		memset(chunk_buf, 0xff, sizeof(chunk_buf));
 		chunk_buf[0] = PKT_HEADER_SEND;
 		chunk_buf[1] = FW_GET_UPDATE_DATA;
@@ -885,8 +886,8 @@ static int adam110_process_event(FAR struct adam110_dev_s *priv)
 			}
 		}
 
-		adam110_givesem(&priv->devsem);
-		priv->lower->irq_enable(true);
+        adam110_givesem(&priv->devsem);
+        priv->lower->irq_enable(true);
         return OK;
 	}
 	if (rxpkt.parm2 != AI_DATA_TYPE_AUDIO) {
