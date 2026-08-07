@@ -40,18 +40,65 @@
 using namespace std;
 #define SFT_PORT 5555
 #define BUF_SIZE 2048
+#define STREAM_QUEUE_MAX_ITEMS 256U
+#define STREAM_QUEUE_MAX_BYTES (1024U * 1024U)
+
+struct stream_queue_item_s {
+	struct stream_queue_item_s *next;
+	uint64_t sequence;
+	uint32_t length;
+	uint8_t data[0];
+};
+
 static char g_buf[BUF_SIZE] = {0,};
 static char g_name_buf[128];
 static pthread_mutex_t g_stream_lock = PTHREAD_MUTEX_INITIALIZER;
 static sem_t g_stream_request;
 static sem_t g_stream_request_done;
 static bool g_stream_started = false;
-static bool g_stream_request_pending = false;
 static bool g_stream_end_requested = false;
-static const uint8_t *g_stream_buffer = NULL;
-static uint32_t g_stream_length = 0;
+static bool g_stream_failed = false;
+static struct stream_queue_item_s *g_stream_queue_head = NULL;
+static struct stream_queue_item_s *g_stream_queue_tail = NULL;
+static uint32_t g_stream_queue_items = 0;
+static size_t g_stream_queue_bytes = 0;
+static uint64_t g_stream_next_sequence = 1;
 static int g_stream_result = 0;
 int g_aft_soc = -1;
+
+static void stream_queue_clear_locked(void)
+{
+	struct stream_queue_item_s *item = g_stream_queue_head;
+
+	while (item) {
+		struct stream_queue_item_s *next = item->next;
+		free(item);
+		item = next;
+	}
+
+	g_stream_queue_head = NULL;
+	g_stream_queue_tail = NULL;
+	g_stream_queue_items = 0;
+	g_stream_queue_bytes = 0;
+}
+
+static struct stream_queue_item_s *stream_queue_dequeue_locked(void)
+{
+	struct stream_queue_item_s *item = g_stream_queue_head;
+
+	if (item == NULL) {
+		return NULL;
+	}
+
+	g_stream_queue_head = item->next;
+	if (g_stream_queue_head == NULL) {
+		g_stream_queue_tail = NULL;
+	}
+	g_stream_queue_items--;
+	g_stream_queue_bytes -= item->length;
+	item->next = NULL;
+	return item;
+}
 
 static int send_data(int sd, const void *buffer, size_t buf_size)
 {
@@ -266,10 +313,10 @@ int aft_main(int argc, char *argv[])
 		pthread_mutex_lock(&g_stream_lock);
 		g_aft_soc = connfd;
 		g_stream_started = false;
-		g_stream_request_pending = false;
 		g_stream_end_requested = false;
-		g_stream_buffer = NULL;
-		g_stream_length = 0;
+		g_stream_failed = false;
+		stream_queue_clear_locked();
+		g_stream_next_sequence = 1;
 		g_stream_result = 0;
 		pthread_mutex_unlock(&g_stream_lock);
 		close(listenfd);
@@ -277,6 +324,12 @@ int aft_main(int argc, char *argv[])
 
 		int wait_ret = 0;
 		while (true) {
+			struct stream_queue_item_s *item;
+			bool close_stream;
+			bool stream_failed;
+			uint32_t queue_items = 0;
+			size_t queue_bytes = 0;
+
 			do {
 				wait_ret = sem_wait(&g_stream_request);
 			} while (wait_ret < 0 && errno == EINTR);
@@ -285,31 +338,44 @@ int aft_main(int argc, char *argv[])
 			}
 
 			pthread_mutex_lock(&g_stream_lock);
-			bool end_requested = g_stream_end_requested;
-			const uint8_t *buffer = g_stream_buffer;
-			uint32_t length = g_stream_length;
+			item = stream_queue_dequeue_locked();
+			queue_items = g_stream_queue_items;
+			queue_bytes = g_stream_queue_bytes;
+			close_stream = (item == NULL && g_stream_end_requested);
+			stream_failed = g_stream_failed;
 			pthread_mutex_unlock(&g_stream_lock);
 
-			if (end_requested) {
+			if (item) {
+				printf("[AFT][stream] dequeue seq=%llu bytes=%u queued_items=%u queued_bytes=%zu\n",
+					(unsigned long long)item->sequence, item->length,
+					queue_items, queue_bytes);
+				int send_ret = stream_failed ? -1 : send_data(connfd, item->data, item->length);
+				if (send_ret == 0) {
+					printf("[AFT][stream] sent seq=%llu bytes=%u\n",
+						(unsigned long long)item->sequence, item->length);
+				} else {
+					printf("[AFT][stream] send failed seq=%llu bytes=%u\n",
+						(unsigned long long)item->sequence, item->length);
+					pthread_mutex_lock(&g_stream_lock);
+					g_stream_failed = true;
+					g_stream_result = -1;
+					pthread_mutex_unlock(&g_stream_lock);
+				}
+				free(item);
+				continue;
+			}
+
+			if (close_stream) {
 				close(connfd);
 				pthread_mutex_lock(&g_stream_lock);
 				g_aft_soc = -1;
 				g_stream_started = false;
-				g_stream_request_pending = false;
-				g_stream_result = 0;
+				g_stream_result = g_stream_failed ? -1 : 0;
+				stream_queue_clear_locked();
 				pthread_mutex_unlock(&g_stream_lock);
 				sem_post(&g_stream_request_done);
 				break;
 			}
-
-			int send_ret = send_data(connfd, buffer, length);
-			pthread_mutex_lock(&g_stream_lock);
-			g_stream_result = send_ret;
-			g_stream_request_pending = false;
-			g_stream_buffer = NULL;
-			g_stream_length = 0;
-			pthread_mutex_unlock(&g_stream_lock);
-			sem_post(&g_stream_request_done);
 		}
 
 		sem_destroy(&g_stream_request_done);
@@ -324,11 +390,11 @@ int aft_main(int argc, char *argv[])
 	return 0;
 }
 
-/* Raw stream protocol: send_stream_buf transmits only DSP bytes; socket close is EOF. */
+/* Raw stream protocol: send_stream_buf copies DSP bytes into a FIFO; socket close is EOF. */
 int send_stream_start(void)
 {
 	pthread_mutex_lock(&g_stream_lock);
-	if (g_aft_soc < 0 || g_stream_started) {
+	if (g_aft_soc < 0 || g_stream_started || g_stream_end_requested) {
 		pthread_mutex_unlock(&g_stream_lock);
 		return -EINVAL;
 	}
@@ -340,40 +406,66 @@ int send_stream_start(void)
 
 int send_stream_buf(const uint8_t *buffer, uint32_t length)
 {
-	pthread_mutex_lock(&g_stream_lock);
-	if (g_aft_soc < 0 || !g_stream_started || g_stream_request_pending ||
-		buffer == NULL || length == 0) {
-		pthread_mutex_unlock(&g_stream_lock);
+	struct stream_queue_item_s *item;
+	uint32_t queue_items;
+	uint64_t sequence;
+	size_t queue_bytes;
+
+	if (buffer == NULL || length == 0 || length > STREAM_QUEUE_MAX_BYTES ||
+		length > SIZE_MAX - sizeof(*item)) {
 		return -EINVAL;
 	}
 
-	g_stream_buffer = buffer;
-	g_stream_length = length;
-	g_stream_request_pending = true;
-	pthread_mutex_unlock(&g_stream_lock);
-
-	if (sem_post(&g_stream_request) != 0) {
-		return -1;
+	item = (struct stream_queue_item_s *)malloc(sizeof(*item) + length);
+	if (item == NULL) {
+		printf("[AFT][stream] enqueue failed: allocation bytes=%u\n", length);
+		return -ENOMEM;
 	}
-
-	int wait_ret;
-	do {
-		wait_ret = sem_wait(&g_stream_request_done);
-	} while (wait_ret < 0 && errno == EINTR);
-	if (wait_ret < 0) {
-		return -1;
-	}
+	item->next = NULL;
+	item->length = length;
+	memcpy(item->data, buffer, length);
 
 	pthread_mutex_lock(&g_stream_lock);
-	int ret = g_stream_result;
+	if (g_aft_soc < 0 || !g_stream_started || g_stream_end_requested || g_stream_failed) {
+		pthread_mutex_unlock(&g_stream_lock);
+		free(item);
+		return -EINVAL;
+	}
+	if (g_stream_queue_items >= STREAM_QUEUE_MAX_ITEMS ||
+		g_stream_queue_bytes > STREAM_QUEUE_MAX_BYTES - length) {
+		printf("[AFT][stream] enqueue full: bytes=%u queued_items=%u queued_bytes=%zu\n",
+			length, g_stream_queue_items, g_stream_queue_bytes);
+		pthread_mutex_unlock(&g_stream_lock);
+		free(item);
+		return -ENOSPC;
+	}
+
+	sequence = g_stream_next_sequence++;
+	item->sequence = sequence;
+	if (g_stream_queue_tail) {
+		g_stream_queue_tail->next = item;
+	} else {
+		g_stream_queue_head = item;
+	}
+	g_stream_queue_tail = item;
+	g_stream_queue_items++;
+	g_stream_queue_bytes += length;
+	queue_items = g_stream_queue_items;
+	queue_bytes = g_stream_queue_bytes;
 	pthread_mutex_unlock(&g_stream_lock);
-	return ret;
+	printf("[AFT][stream] enqueue seq=%llu bytes=%u queued_items=%u queued_bytes=%zu\n",
+		(unsigned long long)sequence, length, queue_items, queue_bytes);
+	if (sem_post(&g_stream_request) != 0) {
+		printf("[AFT][stream] enqueue notification failed (%d)\n", errno);
+		return -1;
+	}
+	return 0;
 }
 
 int send_stream_end(void)
 {
 	pthread_mutex_lock(&g_stream_lock);
-	if (g_aft_soc < 0 || !g_stream_started) {
+	if (g_aft_soc < 0 || !g_stream_started || g_stream_end_requested) {
 		pthread_mutex_unlock(&g_stream_lock);
 		return -EINVAL;
 	}
@@ -393,9 +485,8 @@ int send_stream_end(void)
 		return -1;
 	}
 
-	int ret;
 	pthread_mutex_lock(&g_stream_lock);
-	ret = g_stream_result;
+	int ret = g_stream_result;
 	pthread_mutex_unlock(&g_stream_lock);
 	return ret;
 }
