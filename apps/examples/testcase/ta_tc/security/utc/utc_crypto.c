@@ -60,6 +60,13 @@ static security_key_type g_aes_key_type_table[] = {
 	KEY_AES_256,
 };
 
+static security_key_type g_rsa_key_type_table[] = {
+	KEY_RSA_1024,
+	KEY_RSA_2048,
+	KEY_RSA_3072,
+	KEY_RSA_4096,
+};
+
 static security_gcm_mode g_gcm_mode_table[] = {
 	GCM_AES,
 };
@@ -462,19 +469,22 @@ static void utc_crypto_rsa_encryption_p(void)
 
 	security_data plain = {plain_text, plain_text_len};
 	security_data enc = {NULL, 0};
+	security_error res = SECURITY_ERROR;
 
-	int i = 0, j = 0, k = 0;
-	for (; i < sizeof(g_rsa_mode_table)/sizeof(security_rsa_mode); i++) {
-		for (; j < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); j++) {
-			for (; k < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); k++) {
-				security_rsa_param param = {g_rsa_mode_table[i], g_hash_mode_table[j],
-										   g_hash_mode_table[k], 0};
-				security_error res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
-														   &plain, &enc);
-
-				TC_ASSERT_EQ("crypto_rsa_encryption_p", res, SECURITY_OK);
-				TC_SUCCESS_RESULT();
+	for (int rsa_mode = 0; rsa_mode < sizeof(g_rsa_mode_table)/sizeof(security_rsa_mode); rsa_mode++) {
+		for (int rsa_key_type = 0; rsa_key_type < sizeof(g_rsa_key_type_table)/sizeof(security_key_type); rsa_key_type++) {
+			res = keymgr_generate_key(g_hnd, g_rsa_key_type_table[rsa_key_type], UTC_CRYPTO_USER_KEY_NAME);
+			
+			for (int hash_t = 0; hash_t < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); hash_t++) {
+				for (int mgf = 0; mgf < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); mgf++) {
+					security_rsa_param param = {g_rsa_mode_table[rsa_mode], g_hash_mode_table[hash_t], g_hash_mode_table[mgf], 0};
+					res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &plain, &enc);
+					TC_ASSERT_EQ("crypto_rsa_encryption_p", res, SECURITY_OK);
+					TC_SUCCESS_RESULT();
+				}
 			}
+
+			res = keymgr_remove_key(g_hnd, g_rsa_key_type_table[rsa_key_type], UTC_CRYPTO_USER_KEY_NAME);
 		}
 	}
 }
@@ -495,11 +505,14 @@ static void utc_crypto_rsa_encryption_hnd_n(void)
 	security_data plain = {plain_text, plain_text_len};
 	security_data enc = {NULL, 0};
 	security_rsa_param param = {RSASSA_PKCS1_V1_5, HASH_MD5, HASH_MD5, 0};
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 
-	security_error res = crypto_rsa_encryption(NULL, &param, UTC_CRYPTO_KEY_NAME, &plain, &enc);
+	res = crypto_rsa_encryption(NULL, &param, UTC_CRYPTO_USER_KEY_NAME, &plain, &enc);
 
 	TC_ASSERT_EQ("crypto_rsa_encryption_hnd_n", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -518,10 +531,14 @@ static void utc_crypto_rsa_encryption_param_n(void)
 	security_data plain = {plain_text, plain_text_len};
 	security_data enc = {NULL, 0};
 	security_rsa_param param = {RSASSA_UNKNOWN, HASH_MD5, HASH_MD5, 0};
-	security_error res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, &plain, &enc);
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
+	
+	res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &plain, &enc);
 
 	TC_ASSERT_EQ("crypto_rsa_encryption_param", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -540,10 +557,13 @@ static void utc_crypto_rsa_encryption_param2_n(void)
 	security_data plain = {plain_text, plain_text_len};
 	security_data enc = {NULL, 0};
 	security_rsa_param param = {RSASSA_PKCS1_V1_5, HASH_UNKNOWN, HASH_MD5, 0};
-	security_error res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, &plain, &enc);
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
+	res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &plain, &enc);
 
 	TC_ASSERT_EQ("crypto_rsa_encryption_param2", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -562,10 +582,13 @@ static void utc_crypto_rsa_encryption_param3_n(void)
 	security_data plain = {plain_text, plain_text_len};
 	security_data enc = {NULL, 0};
 	security_rsa_param param = {RSASSA_PKCS1_V1_5, HASH_MD5, HASH_UNKNOWN, 0};
-	security_error res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, &plain, &enc);
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
+	res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &plain, &enc);
 
 	TC_ASSERT_EQ("crypto_rsa_encryption_param3", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -580,10 +603,14 @@ static void utc_crypto_rsa_encryption_input_n(void)
 {
 	security_data enc = {NULL, 0};
 	security_rsa_param param = {RSASSA_PKCS1_V1_5, HASH_MD5, HASH_MD5, 0};
-	security_error res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, NULL, &enc);
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
+	
+	res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, NULL, &enc);
 
 	TC_ASSERT_EQ("crypto_rsa_encryption_input", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -601,10 +628,14 @@ static void utc_crypto_rsa_encryption_output_n(void)
 
 	security_data plain = {plain_text, plain_text_len};
 	security_rsa_param param = {RSASSA_PKCS1_V1_5, HASH_UNKNOWN, HASH_MD5, 0};
-	security_error res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, &plain, NULL);
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
+	
+	res = crypto_rsa_encryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &plain, NULL);
 
 	TC_ASSERT_EQ("crypto_rsa_encryption_output", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -622,19 +653,24 @@ static void utc_crypto_rsa_decryption_p(void)
 
 	security_data enc = {enc_text, enc_text_len};
 	security_data dec = {NULL, 0};
+	security_error res = SECURITY_ERROR;
 
 	int i = 0, j = 0, k = 0;
-	for (; i < sizeof(g_rsa_mode_table)/sizeof(security_rsa_mode); i++) {
-		for (; j < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); j++) {
-			for (; k < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); k++) {
-				security_rsa_param param = {g_rsa_mode_table[i], g_hash_mode_table[j],
-										   g_hash_mode_table[k], 0};
-				security_error res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME,
-														   &enc, &dec);
+	for (int rsa_mode = 0; rsa_mode < sizeof(g_rsa_mode_table)/sizeof(security_rsa_mode); rsa_mode++) {
+		for (int rsa_key_type = 0; rsa_key_type < sizeof(g_rsa_key_type_table)/sizeof(security_key_type); rsa_key_type++) {
+			res = keymgr_generate_key(g_hnd, g_rsa_key_type_table[rsa_key_type], UTC_CRYPTO_USER_KEY_NAME);
+			
+			for (int hash_t = 0; hash_t < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); hash_t++) {
+				for (int mgf = 0; mgf < sizeof(g_hash_mode_table)/sizeof(security_hash_mode); mgf++) {
+					security_rsa_param param = {g_rsa_mode_table[rsa_mode], g_hash_mode_table[hash_t], g_hash_mode_table[mgf], 0};
+					res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &enc, &dec);
 
-				TC_ASSERT_EQ("crypto_rsa_decryption_p", res, SECURITY_OK);
-				TC_SUCCESS_RESULT();
+					TC_ASSERT_EQ("crypto_rsa_decryption_p", res, SECURITY_OK);
+					TC_SUCCESS_RESULT();
+				}
 			}
+
+			res = keymgr_remove_key(g_hnd, g_rsa_key_type_table[rsa_key_type], UTC_CRYPTO_USER_KEY_NAME);
 		}
 	}
 }
@@ -655,11 +691,14 @@ static void utc_crypto_rsa_decryption_hnd_n(void)
 	security_data enc = {enc_text, enc_text_len};
 	security_data dec = {NULL, 0};
 	security_rsa_param param = {RSASSA_PKCS1_V1_5, HASH_MD5, HASH_MD5, 0};
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 
-	security_error res = crypto_rsa_decryption(NULL, &param, UTC_CRYPTO_KEY_NAME, &enc, &dec);
+	res = crypto_rsa_decryption(NULL, &param, UTC_CRYPTO_USER_KEY_NAME, &enc, &dec);
 
 	TC_ASSERT_EQ("crypto_rsa_decryption_hnd_n", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -678,10 +717,13 @@ static void utc_crypto_rsa_decryption_param_n(void)
 	security_data enc = {enc_text, enc_text_len};
 	security_data dec = {NULL, 0};
 	security_rsa_param param = {RSASSA_UNKNOWN, HASH_MD5, HASH_MD5, 0};
-	security_error res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, &enc, &dec);
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
+	res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &enc, &dec);
 
 	TC_ASSERT_EQ("crypto_rsa_decryption_param", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -700,10 +742,13 @@ static void utc_crypto_rsa_decryption_param2_n(void)
 	security_data enc = {enc_text, enc_text_len};
 	security_data dec = {NULL, 0};
 	security_rsa_param param = {RSASSA_PKCS1_V1_5, HASH_UNKNOWN, HASH_MD5, 0};
-	security_error res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, &enc, &dec);
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
+	res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &enc, &dec);
 
 	TC_ASSERT_EQ("crypto_rsa_decryption_param2", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -722,10 +767,13 @@ static void utc_crypto_rsa_decryption_param3_n(void)
 	security_data enc = {enc_text, enc_text_len};
 	security_data dec = {NULL, 0};
 	security_rsa_param param = {RSASSA_PKCS1_V1_5, HASH_MD5, HASH_UNKNOWN, 0};
-	security_error res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, &enc, &dec);
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
+	res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &enc, &dec);
 
 	TC_ASSERT_EQ("crypto_rsa_decryption_param3", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -740,10 +788,13 @@ static void utc_crypto_rsa_decryption_input_n(void)
 {
 	security_data dec = {NULL, 0};
 	security_rsa_param param = {RSASSA_PKCS1_V1_5, HASH_MD5, HASH_MD5, 0};
-	security_error res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, NULL, &dec);
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
+	res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, NULL, &dec);
 
 	TC_ASSERT_EQ("crypto_rsa_decryption_input", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -761,10 +812,13 @@ static void utc_crypto_rsa_decryption_output_n(void)
 
 	security_data enc = {enc_text, enc_text_len};
 	security_rsa_param param = {RSASSA_PKCS1_V1_5, HASH_UNKNOWN, HASH_MD5, 0};
-	security_error res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_KEY_NAME, &enc, NULL);
+	security_error res = keymgr_generate_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
+	res = crypto_rsa_decryption(g_hnd, &param, UTC_CRYPTO_USER_KEY_NAME, &enc, NULL);
 
 	TC_ASSERT_EQ("crypto_rsa_decryption_output", res, SECURITY_INVALID_INPUT_PARAMS);
 	TC_SUCCESS_RESULT();
+
+	res = keymgr_remove_key(g_hnd, KEY_RSA_2048, UTC_CRYPTO_USER_KEY_NAME);
 }
 
 /**
@@ -1452,7 +1506,7 @@ void utc_crypto_main(void)
 	utc_crypto_aes_decryption_key_n();
 	utc_crypto_aes_decryption_input_n();
 	utc_crypto_aes_decryption_output_n();
-	// /*  RSA */
+	/*  RSA */
 	utc_crypto_rsa_encryption_p();
 	utc_crypto_rsa_encryption_hnd_n();
 	utc_crypto_rsa_encryption_param_n();
