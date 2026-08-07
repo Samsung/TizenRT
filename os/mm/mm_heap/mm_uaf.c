@@ -68,8 +68,8 @@
  *   whole words, so nothing is ever written past the end of the chunk.
  *
  * Returned Value:
- *   The number of poisoned words, 0 if the chunk is too small to hold any.
- *   On a non-zero return, *poison points to the first poisoned word.
+ *   The number of poisoned bytes, 0 if the chunk is too small to hold any.
+ *   On a non-zero return, *poison points to the first poisoned byte.
  *
  ****************************************************************************/
 
@@ -90,7 +90,7 @@ static size_t mm_uaf_area(struct mm_freenode_s *node, uint32_t **poison)
 		nbytes = CONFIG_DEBUG_MM_UAF_POISON_SIZE;
 	}
 
-	return nbytes / sizeof(uint32_t);
+	return nbytes;
 }
 
 /****************************************************************************
@@ -169,7 +169,7 @@ void mm_uaf_verify_range(FAR struct mm_allocnode_s *node, FAR void *start, size_
 	 * the chunk as the bound allows.
 	 */
 
-	dumpsize = (size_t)((FAR char *)start - (FAR char *)node) + nwords * sizeof(uint32_t);
+	dumpsize = (size_t)((FAR char *)start - (FAR char *)node) + nbytes;
 	if (dumpsize < MM_UAF_DUMP_MAX) {
 		dumpsize = MM_UAF_DUMP_MAX;
 	}
@@ -207,10 +207,10 @@ void mm_uaf_verify_range(FAR struct mm_allocnode_s *node, FAR void *start, size_
 void mm_uaf_poison(FAR struct mm_freenode_s *node)
 {
 	uint32_t *poison;
-	size_t nwords;
+	size_t nbytes;
 
-	nwords = mm_uaf_area(node, &poison);
-	mm_uaf_poison_range(poison, nwords * sizeof(uint32_t));
+	nbytes = mm_uaf_area(node, &poison);
+	mm_uaf_poison_range(poison, nbytes);
 }
 
 /****************************************************************************
@@ -233,8 +233,8 @@ void mm_uaf_poison(FAR struct mm_freenode_s *node)
 void mm_uaf_verify(FAR struct mm_freenode_s *node)
 {
 	uint32_t *poison;
-	size_t nwords;
+	size_t nbytes;
 
-	nwords = mm_uaf_area(node, &poison);
-	mm_uaf_verify_range((FAR struct mm_allocnode_s *)node, poison, nwords * sizeof(uint32_t));
+	nbytes = mm_uaf_area(node, &poison);
+	mm_uaf_verify_range((FAR struct mm_allocnode_s *)node, poison, nbytes);
 }

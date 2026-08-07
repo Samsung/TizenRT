@@ -411,6 +411,19 @@ struct mm_heap_s {
 
 	FAR struct mm_delaynode_s *mm_delaylist[CONFIG_SMP_NCPUS];
 
+#ifdef CONFIG_DEBUG_MM_QUARANTINE
+	/* Chunks which have been freed but are deliberately not reusable yet, so
+	 * that a write through a stale pointer lands in memory nobody owns and
+	 * can still be recognised. Held out of band, in this array rather than in
+	 * the chunks themselves, so that the very write being hunted cannot
+	 * corrupt the list.
+	 */
+
+	FAR struct mm_allocnode_s *mm_quarantine[CONFIG_DEBUG_MM_QUARANTINE_CHUNKS];
+	uint16_t mm_qhead;			/* Slot of the oldest held chunk */
+	uint16_t mm_qcount;			/* Number of chunks held */
+	size_t mm_qbytes;			/* Total size of the chunks held */
+#endif
 };
 
 /****************************************************************************
@@ -663,6 +676,15 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 /* Functions contained in mm_addfreechunk.c *********************************/
 
 void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node);
+
+void mm_free_coalesce(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node);
+
+#ifdef CONFIG_DEBUG_MM_QUARANTINE
+void mm_quarantine_init(FAR struct mm_heap_s *heap);
+bool mm_quarantine_contains(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node);
+bool mm_quarantine_add(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node);
+size_t mm_quarantine_flush(FAR struct mm_heap_s *heap);
+#endif
 
 /* Functions contained in mm_size2ndx.c.c ***********************************/
 

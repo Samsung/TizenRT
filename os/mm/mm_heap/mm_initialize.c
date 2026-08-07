@@ -254,6 +254,10 @@ int mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 		heap->mm_delaylist[i] = NULL;
 	}
 
+#ifdef CONFIG_DEBUG_MM_QUARANTINE
+	mm_quarantine_init(heap);
+#endif
+
 	/* Initialize the malloc semaphore to one (to support one-at-
 	 * a-time access to private data sets).
 	 */
