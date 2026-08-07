@@ -75,6 +75,12 @@ void watchdog_stop(void);
 void watchdog_refresh(void);
 
 /**
+ * @brief  Clear the watchdog early interrupt to prevent multiple trigger.
+ * @param  none
+ * @retval none
+ */
+void watchdog_clear_irq(void);
+/**
  * @brief   Switch the watchdog timer to interrupt mode and
  *           register a watchdog timer timeout interrupt handler.
  *           The interrupt handler will be called when the watch-dog

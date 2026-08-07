@@ -421,7 +421,19 @@ static int amebasmart_wdg_ioctl(FAR struct watchdog_lowerhalf_s *lower, int cmd,
 	}
 	return OK;
 }
-
+/****************************************************************************
+ * Name: wdog_irq_handler
+ *
+ * Description:
+ *   early interrupt handler
+ *
+ ****************************************************************************/
+static void wdog_irq_handler(void *id)
+{
+	(void)id;
+	watchdog_clear_irq();
+	lldbg("===Watchdog Early Interrupt===\n");
+}
 /****************************************************************************
  * Name: amebasmart_wdg_initialize
  *
@@ -442,12 +454,12 @@ int amebasmart_wdg_initialize(const char *devpath, uint32_t timeout_ms)
 
 	/* Set the priv to default */
 	priv->ops = &g_wdgops;
-	priv->handler = NULL;
+	priv->handler = (xcpt_t)wdog_irq_handler;
 
 	/* Initializes the watchdog, include time setting, mode register */
 	watchdog_init(timeout_ms);
 	priv->wdt_status = WDT_STOP;
-	priv->int_mode = false;
+	priv->int_mode = true;
 
 	/* Register the watchdog driver as /dev/wdgX. */
 	if (!watchdog_register(devpath, (FAR struct watchdog_lowerhalf_s *)priv)) {
