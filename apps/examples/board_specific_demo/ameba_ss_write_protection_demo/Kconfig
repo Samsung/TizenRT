@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_SSTORAGE
+	bool "Secure Storage Write Protecion example"
+	default n
+	depends on SE_AMEBA && BUILD_FLAT && MTD_BYTE_WRITE
+	---help---
+		Enable the Secure Storage Write Protection example
+
+config USER_ENTRYPOINT
+	string
+	default "sstorage" if ENTRY_SSTORAGE
