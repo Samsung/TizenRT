@@ -173,7 +173,14 @@
 #define MM_REMAINDER_FREE_CALL_PID 	((pid_t)-1)
 
 #ifdef CONFIG_DEBUG_MM_UAF
-#define MM_UAF_PATTERN	0xA5A5A5A5
+#define MM_UAF_PATTERN	0xA5A5A5A5u
+
+/* Round up to a whole poison word. The window only has to be 32-bit aligned,
+ * so rounding to the allocator granule with MM_ALIGN_UP() would give away
+ * coverage for nothing.
+ */
+
+#define MM_UAF_ALIGN_UP(a)	(((a) + (sizeof(uint32_t) - 1)) & ~(sizeof(uint32_t) - 1))
 #endif
 
 /****************************************************************************
@@ -662,6 +669,8 @@ void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 int mm_size2ndx(size_t size);
 
 #ifdef CONFIG_DEBUG_MM_UAF
+void mm_uaf_poison_range(FAR void *start, size_t nbytes);
+void mm_uaf_verify_range(FAR struct mm_allocnode_s *node, FAR void *start, size_t nbytes);
 void mm_uaf_poison(FAR struct mm_freenode_s *node);
 void mm_uaf_verify(FAR struct mm_freenode_s *node);
 #endif

@@ -799,6 +799,14 @@ config DEBUG_MM_UAF
 		chunk is handed out by malloc. A mismatch means somebody wrote into
 		the chunk after it was freed (use-after-free).
 
+		Not covered: the free node bookkeeping at the start of the user data,
+		from offset 0 up to SIZEOF_MM_FREENODE. The allocator reuses that
+		region for flink, blink and the free debug info while the chunk is on
+		the free list, so it cannot hold the pattern. A write there corrupts
+		the free list; DEBUGASSERT_MM_FREE_NODE catches the case where blink
+		is left NULL, but a write of any other value, or a write to flink, is
+		not detected.
+
 if DEBUG_MM_UAF
 
 config DEBUG_MM_UAF_POISON_SIZE
