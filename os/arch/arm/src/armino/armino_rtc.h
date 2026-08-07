@@ -101,6 +101,22 @@ struct rtc_lowerhalf_s;
 FAR struct rtc_lowerhalf_s *armino_rtc_lowerhalf(void);
 #endif
 
+/****************************************************************************
+ * Name: aon_rtc_get_ms
+ *
+ * Description:
+ *   Get the current RTC time in milliseconds (64-bit).
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   The current time in milliseconds (64-bit)
+ *
+ ****************************************************************************/
+
+uint64_t aon_rtc_get_ms(void);
+
 #undef EXTERN
 #if defined(__cplusplus)
 }
