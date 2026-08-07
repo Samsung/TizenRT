@@ -142,6 +142,43 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size, 
 
 	DEBUGASSERT(mm_takesemaphore(heap));
 
+#ifdef CONFIG_DEBUG_MM_QUARANTINE
+	if (mm_quarantine_contains(heap, oldnode)) {
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+		mmaddress_t first_free_addr;
+		pid_t first_free_pid;
+		FAR struct mm_freenode_s *freenode;
+#endif
+
+		/* The chunk is being held in the quarantine. It keeps MM_ALLOC_BIT set
+		 * while it is held, so nothing above this point can tell it apart from
+		 * a live allocation and 'oldmem' is in fact a released pointer.
+		 *
+		 * Carrying on would be worse than the stale pointer itself. Extending
+		 * the chunk into a free neighbour changes node->size behind the back of
+		 * the ring, which still accounts for the old size: the byte budget then
+		 * underflows when the chunk ages out, and the release clears
+		 * MM_ALLOC_BIT on memory which is in use again and merges it into the
+		 * free list. Report it and fail the call instead.
+		 */
+
+		mdbg("WARNING!! Attempt to realloc a pointer which is still in quarantine\n");
+#ifdef CONFIG_DEBUG_MM_FREEINFO
+		/* The free caller info is stored in the free node fields (after the alloc header).
+		 * Cast to mm_freenode_s to access these fields.
+		 */
+		freenode = (FAR struct mm_freenode_s *)oldnode;
+		first_free_addr = freenode->free_call_addr;
+		first_free_pid = freenode->free_call_pid;
+		mdbg("It was released by pid %d at addr 0x%08x\n", first_free_pid, first_free_addr);
+#endif
+		mdbg("Now try to realloc at addr 0x%08x\n", caller_retaddr);
+		mm_dump_node(oldnode, "QUARANTINED NODE");
+		mm_givesemaphore(heap);
+		return NULL;
+	}
+#endif
+
 	/* Check if this is a request to reduce the size of the allocation. */
 
 	oldsize = oldnode->size;
