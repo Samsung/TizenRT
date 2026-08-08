@@ -543,6 +543,18 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 			goto errout_with_semaphore;
 		}
 
+#ifdef CONFIG_SMARTFS_USE_SECTOR_BUFFER
+		/* Sync data to prevent commit old data in sf->bflags.
+		 * Ex. Read->append->sync will commit wrong value of chain header.
+		 */
+		if (sf->bflags & SMARTFS_BFLAG_DIRTY) {
+			/* This must not be happened! */
+			fdbg("BUG!!! Flag is dirty!!\n", sf->currsector);
+		} else {
+			memcpy(sf->buffer, fs->fs_rwbuffer, fs->fs_llformat.availbytes);
+		}
+#endif
+
 		/* Point header to the read data to get used byte count */
 
 		header = (struct smartfs_chain_header_s *)fs->fs_rwbuffer;
@@ -582,10 +594,15 @@ static ssize_t smartfs_read(FAR struct file *filep, char *buffer, size_t buflen)
 		/* Test if we are at the end of the data in this sector */
 
 		if ((bytestoread == 0) || (sf->curroffset == fs->fs_llformat.availbytes)) {
-			/* Set the next sector as the current sector */
+			/* Do not read anymore */
+			if (SMARTFS_NEXTSECTOR(header) == SMARTFS_ERASEDSTATE_16BIT) {
+				break;
+			}
 
+			/* Set the next sector as the current sector */
 			sf->currsector = SMARTFS_NEXTSECTOR(header);
 			sf->curroffset = sizeof(struct smartfs_chain_header_s);
+
 		}
 	}
 
