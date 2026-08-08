@@ -189,7 +189,7 @@ segfault:
 	}
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
+	reboot_reason_write_by_addr(regs[REG_R15], REBOOT_SYSTEM_DATAABORT, REBOOT_USER_DATAABORT);
 #endif
 	PANIC();
 	return regs;				/* To keep the compiler happy */
@@ -207,7 +207,7 @@ SRAMDRAM_ONLY_TEXT_SECTION uint32_t *arm_dataabort(uint32_t *regs, uint32_t dfar
 	CURRENT_REGS = regs;
 	system_exception_location = regs[REG_R15];
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
+	reboot_reason_write_by_addr(regs[REG_R15], REBOOT_SYSTEM_DATAABORT, REBOOT_USER_DATAABORT);
 #endif
 
 	/* Crash -- possibly showing diagnostic debug information. */

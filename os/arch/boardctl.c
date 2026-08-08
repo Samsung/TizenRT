@@ -106,7 +106,7 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 {
 	int ret;
 #ifdef CONFIG_BOARDCTL_RESET
-	FAR struct tcb_s *tcb;
+	struct tcb_s *tcb;
 #endif
 
 	switch (cmd) {
@@ -168,7 +168,12 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 			for (int i = 0; i < 10; i++) {
 				lldbg("\n    VIOLATION!!! YOU MUST SET REBOOT REASON!!!\n\n");
 			}
-			up_reboot_reason_write(REBOOT_SYSTEM_WITHOUT_SET_REASON);
+
+			if (tcb && ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL)) {
+				up_reboot_reason_write(REBOOT_USER_WITHOUT_SET_REASON);
+			} else {
+				up_reboot_reason_write(REBOOT_SYSTEM_WITHOUT_SET_REASON);
+			}
 		}
 #endif
 		/* Add 100ms delay for flushing UART FIFO. */

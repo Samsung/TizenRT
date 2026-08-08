@@ -89,7 +89,7 @@ uint32_t *arm_undefinedinsn(uint32_t *regs)
 	CURRENT_REGS = regs;
 	system_exception_location = regs[REG_R15];
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+	reboot_reason_write_by_addr(regs[REG_R15], REBOOT_SYSTEM_PREFETCHABORT, REBOOT_USER_PREFETCHABORT);
 #endif
 
 	/* Crash -- possibly showing diagnostic debug information. */
