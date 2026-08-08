@@ -262,6 +262,8 @@ void group_freechild(FAR struct child_status_s *child)
 
 void group_addchild(FAR struct task_group_s *group, FAR struct child_status_s *child)
 {
+	DEBUGASSERT(group && child);
+	
 	/* Add the entry into the TCB list of children */
 
 	child->flink = group->tg_children;

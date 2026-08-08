@@ -116,6 +116,8 @@ FAR void *mm_sbrk(FAR struct mm_heap_s *heap, intptr_t incr, uintptr_t maxbreak)
 	size_t bytesize;
 	int err;
 
+	DEBUGASSERT(heap);
+
 	DEBUGASSERT(incr >= 0);
 	if (incr < 0) {
 		err = ENOSYS;

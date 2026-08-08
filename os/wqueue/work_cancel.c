@@ -58,6 +58,7 @@
 
 #include <queue.h>
 #include <assert.h>
+#include <debug.h>
 #include <errno.h>
 
 #include <tinyara/arch.h>
@@ -115,7 +116,11 @@ int work_qcancel(FAR struct wqueue_s *wqueue, FAR struct work_s *work)
 	struct work_s *cur_work;
 	int ret = -ENOENT;
 
-	DEBUGASSERT(work != NULL);
+	DEBUGASSERT(wqueue);
+	if (!work) {
+		sdbg("ERROR: Invalid argument, work is NULL\n");
+		return -ENOENT;
+	}
 
 	/* Cancelling the work is simply a matter of removing the work structure
 	 * from the work queue.  This must be done with interrupts disabled because

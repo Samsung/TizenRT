@@ -130,7 +130,7 @@ int mq_verifysend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 {
 	/* Verify the input parameters */
 
-	if (!msg || !mqdes || prio < 0 || prio > MQ_PRIO_MAX) {
+	if (!msg || !mqdes || !mqdes->msgq || prio < 0 || prio > MQ_PRIO_MAX) {
 		set_errno(EINVAL);
 		return ERROR;
 	}

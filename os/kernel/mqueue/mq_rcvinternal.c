@@ -125,7 +125,7 @@ int mq_verifyreceive(mqd_t mqdes, FAR char *msg, size_t msglen)
 {
 	/* Verify the input parameters */
 
-	if (!msg || !mqdes) {
+	if (!msg || !mqdes || !mqdes->msgq) {
 		set_errno(EINVAL);
 		return ERROR;
 	}

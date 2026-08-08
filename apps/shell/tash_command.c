@@ -690,6 +690,11 @@ int tash_cmd_install(const char *str, TASH_CMD_CALLBACK cb, int thread_exec)
 	int cmd_idx;
 	struct tash_cmd_s *new_cmd_buff;
 
+	if (!str || !cb) {
+		shdbg("ERROR: Invalid arguments, str: %p, cb: %p\n", str, cb);
+		return ERROR;
+	}
+
 	/* Lock mutex */
 	pthread_mutex_lock(&tash_cmds_info.tmutex);
 
@@ -748,6 +753,11 @@ int tash_cmd_install(const char *str, TASH_CMD_CALLBACK cb, int thread_exec)
 void tash_cmdlist_install(const tash_cmdlist_t list[])
 {
 	const tash_cmdlist_t *map;
+
+	if (!list) {
+		shdbg("ERROR: Invalid argument, list is NULL\n");
+		return;
+	}
 
 	for (map = list; map->entry; map++) {
 		tash_cmd_install(map->name, map->entry, map->exectype);

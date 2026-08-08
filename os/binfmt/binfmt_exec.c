@@ -141,6 +141,12 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 	int errcode = OK;
 	int ret;
 
+	if (!filename) {
+		berr("ERROR: Invalid argument, filename is NULL");
+		errcode = EINVAL;
+		goto errout;
+	}
+
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	/* Allocate the RAM partition to load the app into */
 	uint32_t *start_addr;
@@ -224,8 +230,8 @@ errout_with_bin:
 err_free_partition:
 #ifdef CONFIG_APP_BINARY_SEPARATION
 	kmm_free((void *)start_addr);
-errout:
 #endif
+	errout:
 	set_errno(errcode);
 	return ERROR;
 

@@ -425,7 +425,7 @@ static int tash_cd(int argc, char **args)
 {
 	const char *path = args[1];
 	char *temp = NULL;
-	int ret;
+	int ret = ERROR;
 
 	if (argc < 2 || strcmp(path, "~") == 0) {
 		path = CONFIG_LIB_HOMEDIR;
@@ -439,13 +439,15 @@ static int tash_cd(int argc, char **args)
 		temp = get_fullpath(path);
 		path = temp;
 	}
-	ret = chdir(path);
-	if (ret != 0) {
-		FSCMD_OUTPUT(CMD_FAILED, args[0], path);
-		ret = ERROR;
-	}
 
-	fscmd_free(temp);
+	if (path) {
+		ret = chdir(path);
+		if (ret != 0) {
+			FSCMD_OUTPUT(CMD_FAILED, args[0], path);
+			ret = ERROR;
+		}
+		fscmd_free(temp);
+	}
 
 	return ret;
 }
@@ -830,6 +832,11 @@ static int search_mountpoints(const char *dirpath, foreach_mountpoint_t handler)
 
 		/* Call statfs with the given file path */
 		fullpath = get_dirpath(dirpath, entryp->d_name);
+		if (!fullpath) {
+			FSCMD_OUTPUT(OUT_OF_MEMORY, dirpath);
+			closedir(dirp);
+			return ERROR;
+		}
 		ret = statfs(fullpath, &buf);
 		if (ret != OK) {
 			FSCMD_OUTPUT("statfs is failed at %s\n", fullpath);
@@ -1095,6 +1102,10 @@ static int tash_rm(int argc, char **args)
 	int ret = OK;
 	if (argc == 3) {
 		fullpath = get_fullpath(args[2]);
+		if (!fullpath) {
+			FSCMD_OUTPUT(OUT_OF_MEMORY, args[2]);
+			return ERROR;
+		}
 		if (strncmp(args[1], "-r", strlen(args[1])) == 0) {
 			ret = delete_entry(fullpath);
 		} else {
@@ -1102,6 +1113,10 @@ static int tash_rm(int argc, char **args)
 		}
 	} else if (argc == 2) {
 		fullpath = get_fullpath(args[1]);
+		if (!fullpath) {
+			FSCMD_OUTPUT(OUT_OF_MEMORY, args[1]);
+			return ERROR;
+		}
 		ret = unlink(fullpath);
 		if (ret != OK) {
 			FSCMD_OUTPUT(CMD_FAILED, args[0], "unlink");

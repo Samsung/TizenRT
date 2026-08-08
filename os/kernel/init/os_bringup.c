@@ -270,7 +270,8 @@ static inline void os_workqueues(void)
 #if defined(CONFIG_INIT_ENTRYPOINT)
 static inline void os_do_appstart(void)
 {
-	int pid;
+	// Need to initialize pid to positive value to avoid assert when every CONFIG is disabled.
+	int pid = 1;
 
 #ifdef CONFIG_SILENT_REBOOT
 	silent_reboot_initialize();
@@ -384,6 +385,9 @@ static inline void os_do_appstart(void)
 
 #if defined(CONFIG_USER_ENTRYPOINT)
 	pid = task_create("appmain", PRI_USER_MAIN, CONFIG_USERMAIN_STACKSIZE, (main_t)CONFIG_USER_ENTRYPOINT, (FAR char *const *)NULL);
+	if (pid < 0) {
+		sdbg("ERROR: Failed to start appmain");
+	}
 #endif
 #endif // !CONFIG_APP_BINARY_SEPARATION
 
