@@ -286,6 +286,8 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 
 #ifdef CONFIG_DEBUG_CHECK_FRAGMENTATION
 	heap_dbg("\nAvailable fragmented memory segments in heap memory\n");
+	heap_dbg("Idx  | Range              | Count | Size(Bytes)\n");
+	heap_dbg("-----|--------------------|-------|-----------\n");
 
 	DEBUGVERIFY(mm_takesemaphore(heap));
 
@@ -299,7 +301,7 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 	mm_givesemaphore(heap);
 
 	for (ndx = 0; ndx < MM_NNODES; ++ndx) {
-		heap_dbg("Nodelist[%d] ranging [%u, %u] : num %d, size %u [Bytes]\n", ndx, ((ndx > 0 ? (1 << (ndx + MM_MIN_SHIFT)) : 0) + 1), 1 << (ndx + MM_MIN_SHIFT + 1), nodelist_cnt[ndx], nodelist_size[ndx]);
+		heap_dbg("%-4d | %8d, %-8d | %-5d | %u\n", ndx, ((ndx > 0 ? (1 << (ndx + MM_MIN_SHIFT)) : 0) + 1), 1 << (ndx + MM_MIN_SHIFT + 1), nodelist_cnt[ndx], nodelist_size[ndx]);
 	}
 #endif
 
