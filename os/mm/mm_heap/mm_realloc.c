@@ -183,11 +183,17 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size, 
 	next = (FAR struct mm_freenode_s *)((FAR char *)oldnode + oldnode->size);
 	if ((next->preceding & MM_ALLOC_BIT) == 0) {
 		nextsize = next->size;
+#ifdef CONFIG_DEBUG_MM_UAF
+		mm_uaf_verify(next);
+#endif
 	}
 
 	prev = (FAR struct mm_freenode_s *)((FAR char *)oldnode - (oldnode->preceding & ~MM_ALLOC_BIT));
 	if ((prev->preceding & MM_ALLOC_BIT) == 0) {
 		prevsize = prev->size;
+#ifdef CONFIG_DEBUG_MM_UAF
+		mm_uaf_verify(prev);
+#endif
 	}
 
 	/* Now, check if we can extend the current allocation or not */

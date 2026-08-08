@@ -97,6 +97,10 @@ void mm_shrinkchunk(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node,
 		FAR struct mm_allocnode_s *andbeyond;
 		FAR struct mm_freenode_s *newnode;
 
+#ifdef CONFIG_DEBUG_MM_UAF
+		mm_uaf_verify(next);
+#endif
+
 		/* Get the chunk next the next node (which could be the tail chunk) */
 
 		andbeyond = (FAR struct mm_allocnode_s *)((char *)next + next->size);
