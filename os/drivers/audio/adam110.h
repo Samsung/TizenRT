@@ -209,22 +209,22 @@ typedef enum {
 typedef enum {
 	AI_MODEL_HIBIXBY	= 1,	/* Hi-Bixby */
 	AI_MODEL_BIXBY,				/* Bixby */
-	AI_MODEL_ALEAX,				/* Alexa */
-	AI_MODEL_FRIDGE,    		/* Fridge */
-	AI_MODEL_5,
-	AI_MODEL_6,
-	AI_MODEL_7,
+	AI_MODEL_ALEXA,				/* Alexa */
+	AI_MODEL_CUSTOM1,    		/* Custom model 1 */
+	AI_MODEL_CUSTOM2,
+	AI_MODEL_CUSTOM3,
+	AI_MODEL_CUSTOM4,
 	AI_MODEL_MAX
 } ai_model_t;
 
 typedef enum {
 	WWD_HIBIXBY	= 0,		/* Hi-Bixby */
 	WWD_BIXBY,				/* Bixby */
-	WWD_ALEAX,				/* Alexa */
-	WWD_FRIDGE,    			/* Fridge */
-	WWD_MODEL_5,
-	WWD_MODEL_6,
-	WWD_MODEL_7,
+	WWD_ALEXA,				/* Alexa */
+	WWD_CUSTOM_MODEL1,    			/* Custom model 1 */
+	WWD_CUSTOM_MODEL2,
+	WWD_CUSTOM_MODEL3,
+	WWD_CUSTOM_MODEL4,
 	WWD_MODEL_MAX
 } ai_wwd_detec_t;
 
