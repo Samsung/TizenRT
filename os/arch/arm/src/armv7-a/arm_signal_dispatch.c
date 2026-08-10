@@ -90,7 +90,12 @@ void up_signal_dispatch(_sa_sigaction_t sighand, int signo, siginfo_t *info, voi
 
 	__asm__ __volatile__ (
         "mov %0, sp\n"
-        "bic sp, sp, #7\n"
+#ifdef CONFIG_ARCH_CORTEXA32
+		"bic sp, sp, #7\n"
+#else
+        "bic %0, %0, #7\n"
+		"mov sp, %0\n"
+#endif
         : "=r"(saved_sp)
         :
         : "memory"
