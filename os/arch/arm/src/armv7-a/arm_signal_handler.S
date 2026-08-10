@@ -100,7 +100,12 @@ up_signal_handler:
 	 * like DEBUGPANIC().
 	*/
 
+#ifdef CONFIG_ARCH_CORTEXA32
 	tst		sp, #7			/* SP 8-byte aligned? (low 3 bits == 0) */
+#else
+	mov		r12, sp			/* ARMv7-A: TST cannot use SP directly */
+	tst		r12, #7			/* R12 low 3 bits == 0? */
+#endif
 	beq		1f			/* Yes: proceed to the handler */
 	ldr		r0, =.Lsigsp_file	/* up_assert() filename argument - loads address of string */
 	movw		r1, #103			/* up_assert() linenum argument - immediate value */
