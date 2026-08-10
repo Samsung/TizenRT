@@ -55,6 +55,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef CONFIG_WATCHDOG
@@ -80,7 +81,9 @@ static void display_reboot_reason_option(void)
 #ifdef CONFIG_MM_ASSERT_ON_FAIL
 	printf("\t-Press M or m : Memory Allocation Fail Test\n");
 #endif
+	printf("\t-Press D or d : Data Abort Test\n");
 	printf("\t-Press P or p : Prefetch Abort Test\n");
+	printf("\t-Press A or a : Assert Reboot Test\n");
 	printf("\t-Press V or v : Random Value Write-Read Test\n");
 	printf("\t-Press C or c : Clear reboot reason\n");
 #endif
@@ -142,6 +145,12 @@ static void memory_alloc_fail_test(void)
 }
 #endif
 
+static void data_abort_test(void)
+{
+	volatile int *ptr = (volatile int *)0;
+	*ptr = 0;
+}
+
 static void prefetch_abort_test(void)
 {
 	/* The address allocated from heap can't be code. This will lead prefetch abort. */
@@ -200,11 +209,23 @@ int reboot_reason_main(int argc, char *argv[])
 			memory_alloc_fail_test();
 			break;
 #endif
+		case 'D':
+		case 'd':
+			/* Test for Data Abort */
+			printf("After Data Abort, Expected Reboot reason is %d\n", REBOOT_SYSTEM_DATAABORT);
+			data_abort_test();
+			break;
 		case 'P':
 		case 'p':
 			/* Test for Prefetch Abort */
 			printf("After Prefetch Abort, Expected Reboot reason is %d\n", REBOOT_SYSTEM_PREFETCHABORT);
 			prefetch_abort_test();
+			break;
+		case 'A':
+		case 'a':
+			/* Test for Assert */
+			printf("After Assert, Expected Reboot reason is %d\n", REBOOT_SYSTEM_ASSERT);
+			assert(0);
 			break;
 		case 'V':
 		case 'v':
@@ -217,7 +238,7 @@ int reboot_reason_main(int argc, char *argv[])
 		case 'c':
 			/* Clear the previous reboot reason with REBOOT_REASON_INITIALIZED(0) */
 			printf("Will write %d and then will clear.\n", REBOOT_REASON_TEST_VAL);
-			printf("Expected reboot reason after reset is %d, otherwise wrong operation.\n", REBOOT_UNKNOWN);
+			printf("Expected reboot reason after reset is %d, otherwise wrong operation.\n", REBOOT_SYSTEM_WITHOUT_SET_REASON);
 			WRITE_REBOOT_REASON(REBOOT_REASON_TEST_VAL);
 			CLEAR_REBOOT_REASON();
 			reboot_board();
