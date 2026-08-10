@@ -215,6 +215,9 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 #define ADAM110_SET_MIC_GAIN(dev, gain, rx_ptr) \
     adam110_send_cmd(dev, AUD_PDM_SET_GAIN, (uint8_t)(gain), 0, 0, 0, rx_ptr, false)
 
+#define ADAM110_SET_MIC_CLK(dev, conf, rx_ptr) \
+    adam110_send_cmd(dev, AUD_PDM_SET_CLK, (uint8_t)(conf), 0, 0, 0, rx_ptr, false)
+
 #define ADAM110_SET_DEBUG(dev, enable, rx_ptr) \
     adam110_send_cmd(dev, AUD_SET_DEBUG_MODE, (uint8_t)(enable), 0, 0, 0, rx_ptr, false)
 
@@ -1428,7 +1431,6 @@ static int adam110_start(FAR struct audio_lowerhalf_s *dev)
 	priv->recording = true;
 
 	ADAM110_SET_INTR(priv, AI_INTR_TYPE_AUDIO, true, &rxpkt);
-
 	adam110_givesem(&priv->devsem);
 	return 0;
 }
@@ -1800,6 +1802,29 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		}
 		break;
 	}
+	/*
+	//ADAM110 pdm clock change
+	case AUDIOIOC_CHANGEPDMCLK: {
+		if (priv->lower->dbg_pin_toggle) {
+			priv->lower->dbg_pin_toggle(1);
+		}
+
+		uint8_t pdm_clock_sel = (uint8_t)arg;  // 0 : 2Mhz, 1: 1Mhz
+		ret = ADAM110_SET_MIC_CLK(priv, pdm_clock_sel, &rxpkt);
+		if (ret != 0) {
+			auddbg("Change adam110 PDM clock %s Hz failed ret : %d\n",(pdm_clock_sel?"1Mhz":"2Mhz") ,ret);
+			return ret;
+		}
+		else{
+			auddbg("Change adam110 PDM clock %s Hz : %d\n",(pdm_clock_sel?"1Mhz":"2Mhz"));
+		}
+
+		if (priv->lower->dbg_pin_toggle) {
+			priv->lower->dbg_pin_toggle(0);
+		}
+		break;
+	}
+	*/
 	default:
 		audvdbg("[I] adam110_ioctl received unknown cmd 0x%x\n", cmd);
 		ret = -EINVAL;
