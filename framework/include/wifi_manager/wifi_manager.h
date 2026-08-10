@@ -335,6 +335,20 @@ typedef struct {
 wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb);
 
 /**
+ * @brief Reinitialize Wi-Fi Manager WITHOUT re-initializing the Wi-Fi driver.
+ * @details @b #include <wifi_manager/wifi_manager.h>
+ *          Used only for the Wi-Fi reset path. The driver stays initialized
+ *          (deinit performs a driver reset, not a full de-init), so this
+ *         restores framework state without calling
+ *          wifi_utils_init(). Must be called from the UNINITIALIZED state.
+ * @param[in] wmcb callback functions called when wi-fi events happen
+ * @return On success, WIFI_MANAGER_SUCCESS (i.e., 0) is returned. On failure, non-zero value is returned.
+ * @API_type: synchronous
+ * @callback: none
+ */
+wifi_manager_result_e wifi_manager_reinit(wifi_manager_cb_s *wmcb);
+
+/**
  * @brief Deinitialize Wi-Fi Manager including stoping Wi-Fi interface.
  * @details @b #include <wifi_manager/wifi_manager.h>
  * @param[in] none

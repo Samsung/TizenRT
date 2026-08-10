@@ -19,6 +19,7 @@
 /*  str, type, description */
 WIFIMGR_REQUEST_TABLE("CMD_INIT", WIFIMGR_CMD_INIT, "Command to initialize WiFi Manager")
 WIFIMGR_REQUEST_TABLE("CMD_DEINIT", WIFIMGR_CMD_DEINIT, "Command to Deinit WiFi Manager")
+WIFIMGR_REQUEST_TABLE("CMD_REINIT", WIFIMGR_CMD_REINIT, "Command to reinit WiFi Manager without driver init (reset path)")
 WIFIMGR_REQUEST_TABLE("CMD_SET_SOFTAP", WIFIMGR_CMD_SET_SOFTAP, "Command to set SoftAP")
 WIFIMGR_REQUEST_TABLE("CMD_SET_STA", WIFIMGR_CMD_SET_STA, "Command to set STA mode")
 WIFIMGR_REQUEST_TABLE("CMD_CONNECT", WIFIMGR_CMD_CONNECT, "Command to connect to a WiFi AP")
