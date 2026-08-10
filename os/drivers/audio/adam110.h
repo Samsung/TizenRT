@@ -123,6 +123,8 @@
 #define AUD_I2S_SET_STATE			0x21 /* Set Audio Output Enable / Disable */
 #define AUD_I2S_AEC_CTRL			0x22 /* Set AEC On/Off */
 #define AUD_PDM_SET_GAIN			0x30 /* Set PDM Gain */
+#define AUD_PDM_SET_CONFIG			0x31 /* Set PDM Configuration */
+#define AUD_PDM_SET_CLK				0x32 /* Set PDM Clock */
 #define AUD_GET_SEAMLESS_DATA		0x40 /* Get seamless audio data */
 #define AUD_GET_PREP_DATA			0x41 /* Get NPU preprocessed audio data */
 #define AUD_GET_MIC_DATA			0x42 /* Get PCM audio data */
