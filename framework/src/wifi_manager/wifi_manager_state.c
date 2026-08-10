@@ -250,7 +250,7 @@ static void _free_scan_list(trwifi_scan_list_s *scan_list)
 wifi_manager_result_e _wifimgr_deinit(void)
 {
 	WIFIMGR_CHECK_UTILRESULT(wifi_utils_deinit(), TAG, "wifi_utils_deinit fail");
-	wifimgr_unregister_all();
+	//wifimgr_unregister_all();
 
 	return WIFI_MANAGER_SUCCESS;
 }
@@ -426,6 +426,12 @@ wifi_manager_result_e _wifimgr_disable_11ax_mode(void)
 wifi_manager_result_e _handler_on_uninitialized_state(wifimgr_msg_s *msg)
 {
 	wifimgr_evt_e evt = msg->event;
+
+	if (evt == WIFIMGR_CMD_REINIT) {
+		WIFIMGR_SET_STATE(WIFIMGR_STA_DISCONNECTED);
+		return WIFI_MANAGER_SUCCESS;
+	}
+
 	if (evt != WIFIMGR_CMD_INIT) {
 		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_EVENT);
 		return WIFI_MANAGER_FAIL;

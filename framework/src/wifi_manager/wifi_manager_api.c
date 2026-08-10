@@ -114,6 +114,18 @@ wifi_manager_result_e wifi_manager_init(wifi_manager_cb_s *wmcb)
 	RETURN_RESULT(wifimgr_post_message(&msg), msg);
 }
 
+wifi_manager_result_e wifi_manager_reinit(wifi_manager_cb_s *wmcb)
+{
+	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
+	if (!wmcb) {
+		WIFIADD_ERR_RECORD(ERR_WIFIMGR_INVALID_ARGUMENTS);
+		return WIFI_MANAGER_INVALID_ARGS;
+	}
+
+	wifimgr_msg_s msg = {WIFIMGR_CMD_REINIT, WIFI_MANAGER_FAIL, (void *)wmcb, NULL};
+	RETURN_RESULT(wifimgr_post_message(&msg), msg);
+}
+
 wifi_manager_result_e wifi_manager_deinit(void)
 {
 	NET_LOGI(TAG, "--> %s %d\n", __FUNCTION__, __LINE__);
