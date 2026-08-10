@@ -100,7 +100,9 @@ up_signal_handler:
 	 * like DEBUGPANIC().
 	*/
 
-	tst		sp, #7			/* SP 8-byte aligned? (low 3 bits == 0) */
+
+	mov		r12, sp			/* Use saved R12 as a scratch register: Thumb TST cannot test SP directly. */
+	tst		r12, #7			/* SP 8-byte aligned? (low 3 bits == 0) */
 	beq		1f			/* Yes: proceed to the handler */
 	ldr		r0, =.Lsigsp_file	/* up_assert() filename argument - loads address of string */
 	movw		r1, #103			/* up_assert() linenum argument - immediate value */
