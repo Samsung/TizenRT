@@ -52,7 +52,7 @@
 
 # Add the sched C files to the build
 
-CSRCS += sched_getprioritymax.c sched_getprioritymin.c
+CSRCS += sched_getprioritymax.c sched_getprioritymin.c sched_backtrace.c
 
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 CSRCS += task_startup.c

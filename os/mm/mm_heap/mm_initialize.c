@@ -158,14 +158,14 @@ int mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsiz
 	heap->mm_heapstart[IDX]->preceding = MM_ALLOC_BIT;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* fill magic number 0xDEAD as malloc info for head node */
-	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapstart[IDX], (mmaddress_t)0xDEAD);
+	heapinfo_update_node(heap, (FAR struct mm_allocnode_s *)heap->mm_heapstart[IDX], (mmaddress_t)0xDEAD);
 #endif
 
 	node            = (FAR struct mm_freenode_s *)(heapbase + SIZEOF_MM_ALLOCNODE);
 	node->size      = heapsize - 2 * SIZEOF_MM_ALLOCNODE;
 	node->preceding = SIZEOF_MM_ALLOCNODE;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	heapinfo_update_node((FAR struct mm_allocnode_s *)node, (mmaddress_t)0xDEADDEAD);
+	heapinfo_update_node(heap, (FAR struct mm_allocnode_s *)node, (mmaddress_t)0xDEADDEAD);
 #endif
 #ifdef CONFIG_DEBUG_MM_FREEINFO
 	node->free_call_addr = NULL;
@@ -177,7 +177,7 @@ int mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsiz
 	heap->mm_heapend[IDX]->preceding = node->size | MM_ALLOC_BIT;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	/* Fill magic number 0xDEADDEAD as malloc info for tail node */
-	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapend[IDX], (mmaddress_t)0xDEADDEAD);
+	heapinfo_update_node(heap, (FAR struct mm_allocnode_s *)heap->mm_heapend[IDX], (mmaddress_t)0xDEADDEAD);
 #endif
 
 #undef IDX
@@ -262,6 +262,16 @@ int mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsi
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	heap->total_alloc_size = heap->peak_alloc_size = 0;
+	/* No capture window is active until armed via the mminfo ioctl. Initialize
+	 * before mm_addregion() as it stamps the guard nodes via heapinfo_update_node().
+	 */
+	heap->mm_capture_active = false;
+	heap->mm_capture_pid = HEAPINFO_PID_ALL;
+	heap->mm_capture_table = NULL;
+	heap->mm_capture_count = 0;
+	heap->mm_capture_lost = 0;
+	heap->mm_capture_prewindow_freed = 0;
+	heap->mm_capture_start_size = 0;
 #endif
 
 	/* Add the initial region of memory to the heap */

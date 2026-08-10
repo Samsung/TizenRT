@@ -183,6 +183,8 @@
 #define HEAPINFO_DETAIL_SPECIFIC_HEAP 5
 #define HEAPINFO_INIT_PEAK 6
 #define HEAPINFO_DUMP_HEAP 7
+#define HEAPINFO_CAPTURE_START 8
+#define HEAPINFO_CAPTURE_STOP 9
 #define HEAPINFO_PID_ALL -1
 
 #define HEAPINFO_INIT_INFO -1
@@ -232,13 +234,32 @@ typedef size_t mmsize_t;
 typedef void *mmaddress_t;             /* 32 bit address space */
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-#define SIZEOF_MM_MALLOC_DEBUG_INFO (sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
+/* Total malloc caller backtrace levels recorded per allocated node.
+ * Level 0 is the immediate caller (alloc_call_addr); the remaining
+ * (HEAPINFO_BACKTRACE_DEPTH - 1) deeper frames are stored in
+ * alloc_caller_backtrace[]. */
+#define HEAPINFO_BACKTRACE_DEPTH 3
+
+/* Innermost frames to omit so the recorded frames are application callers:
+ * sched_backtrace(), the capture helper, and the mm/malloc wrapper frames
+ * down to the malloc call site (alloc_call_addr already holds that immediate
+ * caller as backtrace level 0). Tune to your product's malloc wrapper depth.
+ * This is the compile-time default; the runtime value is stored in the
+ * global variable g_backtrace_skip in mm_malloc.c and can be changed at
+ * runtime from the heapinfo app (heapinfo -s SKIP).
+ */
+#ifndef HEAPINFO_BACKTRACE_SKIP
+#define HEAPINFO_BACKTRACE_SKIP 3
+#endif
+
+#define SIZEOF_MM_MALLOC_DEBUG_INFO (HEAPINFO_BACKTRACE_DEPTH * sizeof(mmaddress_t) + sizeof(pid_t) + sizeof(uint16_t))
 
 /* Memory state values */
 #define MM_MEMORY_STATE_UNUSED   0  /* Initial state */
 #define MM_MEMORY_STATE_USED     1  /* Memory is referenced */
 #define MM_MEMORY_STATE_LEAK     2  /* Potential memory leak */
 #define MM_MEMORY_STATE_BROKEN   3  /* Heap corruption detected */
+#define MM_MEMORY_STATE_CAPTURED 4  /* Allocated within an active capture window */
 #else
 #define SIZEOF_MM_MALLOC_DEBUG_INFO 0
 #endif
@@ -257,7 +278,8 @@ typedef void *mmaddress_t;             /* 32 bit address space */
 struct mm_allocnode_s {
 	mmsize_t preceding;				/* Size of the preceding chunk */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t alloc_call_addr;			/* malloc call address */
+	mmaddress_t alloc_call_addr;			/* malloc call address (backtrace level 0) */
+	mmaddress_t alloc_caller_backtrace[HEAPINFO_BACKTRACE_DEPTH - 1];	/* deeper malloc caller frames (levels 1..) */
 	pid_t pid;					/* PID info */
 	uint16_t memory_state;				/* Memory state for leak detection. */
 #endif
@@ -278,7 +300,8 @@ struct mm_allocnode_s {
 struct mm_freenode_s {
 	mmsize_t preceding;			/* Size of the preceding chunk */
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	mmaddress_t alloc_call_addr;			/* malloc call address */
+	mmaddress_t alloc_call_addr;			/* malloc call address (backtrace level 0) */
+	mmaddress_t alloc_caller_backtrace[HEAPINFO_BACKTRACE_DEPTH - 1];	/* deeper malloc caller frames (levels 1..) */
 	pid_t pid;					/* PID info */
 	uint16_t memory_state;				/* Memory state for leak detection. */
 #endif
@@ -325,6 +348,30 @@ struct heapinfo_tcb_info_s {
 	int num_alloc_free;
 };
 typedef struct heapinfo_tcb_info_s heapinfo_tcb_info_t;
+
+/* One live window allocation recorded by the heap capture tracker. Entries
+ * are added and removed at the same points the per pid heapinfo counter is
+ * updated, so the tracked totals reconcile with the counter by construction.
+ */
+/* Entry types : how the entry counts in the window delta */
+#define HEAPINFO_CAPTURE_ALLOC   0	/* new allocation, still alive : +size */
+#define HEAPINFO_CAPTURE_FREED   1	/* pre window block freed : -size */
+#define HEAPINFO_CAPTURE_REALLOC 2	/* pre window block realloced : +size -old_size */
+
+struct heapinfo_capture_entry_s {
+	void *addr;			/* node address of the allocation */
+	mmsize_t size;			/* node size, same unit the counter uses */
+	mmsize_t old_size;		/* previous size, realloc entries only */
+	mmaddress_t caller;		/* malloc caller return address */
+	mmaddress_t backtrace[HEAPINFO_BACKTRACE_DEPTH - 1];	/* deeper malloc caller frames (levels 1..) */
+	pid_t pid;			/* owner pid as accounted by the counter */
+	uint8_t type;			/* HEAPINFO_CAPTURE_ALLOC / FREED / REALLOC */
+};
+
+/* Capacity of the capture table, allocated from the target heap at start */
+#ifndef HEAPINFO_CAPTURE_MAX_ENTRIES
+#define HEAPINFO_CAPTURE_MAX_ENTRIES 1024
+#endif
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 struct heapinfo_group_info_s {
 	int pid;
@@ -371,6 +418,21 @@ struct mm_heap_s {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	size_t peak_alloc_size;
 	size_t total_alloc_size;
+	/* Heap capture window state. Stored per-heap (not as a module global) so it
+	 * is shared between the kernel (which arms/reports it via the mminfo ioctl)
+	 * and the allocator (which tags nodes) even in a protected/loadable build
+	 * where the mm code is linked separately into kernel and user binaries.
+	 */
+	bool mm_capture_active;
+	pid_t mm_capture_pid;
+	/* Capture table : live window allocations, maintained inside the counter
+	 * update path. Allocated from this heap at start, freed at stop.
+	 */
+	struct heapinfo_capture_entry_s *mm_capture_table;
+	int mm_capture_count;			/* entries currently in the table */
+	int mm_capture_lost;			/* allocations dropped, table full */
+	size_t mm_capture_prewindow_freed;	/* bytes of pre window blocks freed in window */
+	int mm_capture_start_size;		/* heapinfo counter snapshot at start */
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 	int max_group;
 	struct heapinfo_group_s group[HEAPINFO_USER_GROUP_NUM];
@@ -665,18 +727,24 @@ int heap_dbg(const char *fmt, ...);
 /* Functions contained in kmm_mallinfo.c . Used to display memory allocation details */
 void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid);
 /* Funciton to add memory allocation info */
-void heapinfo_update_node(FAR struct mm_allocnode_s *node, mmaddress_t caller_retaddr);
+void heapinfo_update_node(FAR struct mm_heap_s *heap, FAR struct mm_allocnode_s *node, mmaddress_t caller_retaddr);
 void heapinfo_set_caller_addr(void *address, mmaddress_t caller_retaddr);
 void heapinfo_set_pid(void *address, pid_t pid);
 
-void heapinfo_add_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);
-void heapinfo_subtract_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size);
+void heapinfo_add_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size, FAR struct mm_allocnode_s *node);
+void heapinfo_subtract_size(struct mm_heap_s *heap, pid_t pid, mmsize_t size, FAR struct mm_allocnode_s *node);
 void heapinfo_update_total_size(struct mm_heap_s *heap, mmsize_t size, pid_t pid);
 void heapinfo_set_stack_node(void *stack_ptr, pid_t pid);
 void heapinfo_exclude_stacksize(void *stack_ptr);
 void heapinfo_peak_init(struct mm_heap_s *heap);
 void heapinfo_dealloc_tcbinfo(void *address, pid_t pid);
 void heapinfo_dump_heap(struct mm_heap_s *heap);
+/* Heap capture window : report blocks allocated between start and stop that are still not freed */
+void heapinfo_capture_start(struct mm_heap_s *heap, pid_t pid);
+void heapinfo_capture_stop(struct mm_heap_s *heap);
+void heapinfo_capture_reset(struct mm_heap_s *heap);
+void heapinfo_capture_report(struct mm_heap_s *heap, pid_t pid);
+void heapinfo_capture_note_realloc(struct mm_heap_s *heap, FAR struct mm_allocnode_s *new_node, FAR void *old_node_addr);
 #ifdef CONFIG_HEAPINFO_USER_GROUP
 void heapinfo_update_group(mmsize_t size, pid_t pid);
 void heapinfo_update_group_info(pid_t pid, int group, int type);
