@@ -1313,7 +1313,7 @@ static int adam110_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			adam110_takesem(&priv->devsem);
 
 			/* 1:Hi bixby,2:Bixby,3:Alexa,4:Fridge */
-			if(priv->kd_num >= AI_MODEL_FRIDGE){
+			if(priv->kd_num >= WWD_CUSTOM_MODEL1){
 				sensitivity = (uint16_t)(((uint32_t)sensitivity * 32768) / 1000);				
 			}			
 			ADAM110_AI_SET_THD(priv, priv->kd_num + 1, (sensitivity >> 8) & 0xff, sensitivity & 0xff, &rxpkt);
