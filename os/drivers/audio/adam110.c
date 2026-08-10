@@ -760,8 +760,8 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 		priv->lower->irq_enable(true);
 	}
 
-	//enable AI_MODEL_FRIDGE interrupt
-	ret = ADAM110_AI_SET_INTR(priv, AI_MODEL_FRIDGE, true, &rxpkt);
+	//enable AI_MODEL_CUSTOM1 interrupt
+	ret = ADAM110_AI_SET_INTR(priv, AI_MODEL_CUSTOM1, true, &rxpkt);
 	if (ret != OK) {
 		auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
 	}
@@ -1781,11 +1781,11 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 			goto out_unlock;
 		}
 
-		/* Enable the refrigerator model interrupt. */
-		ret = ADAM110_AI_SET_INTR(priv, AI_MODEL_FRIDGE, true, &rxpkt);
+		/* Enable the custom model interrupt. */
+		ret = ADAM110_AI_SET_INTR(priv, AI_MODEL_CUSTOM1, true, &rxpkt);
 		if (ret != OK) {
 			auddbg("Enable new KD failed. kd_num : %d\n", priv->kd_num);
-		}			
+		}
 	out_unlock:
 		adam110_givesem(&priv->devsem);
 		return ret;
