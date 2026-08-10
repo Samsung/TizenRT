@@ -1804,10 +1804,6 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 	/*
 	//ADAM110 pdm clock change
 	case AUDIOIOC_CHANGEPDMCLK: {
-		if (priv->lower->dbg_pin_toggle) {
-			priv->lower->dbg_pin_toggle(1);
-		}
-
 		uint8_t pdm_clock_sel = (uint8_t)arg;  // 0 : 2Mhz, 1: 1Mhz
 		ret = ADAM110_SET_MIC_CLK(priv, pdm_clock_sel, &rxpkt);
 		if (ret != 0) {
@@ -1816,10 +1812,6 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		}
 		else{
 			auddbg("Change adam110 PDM clock %s Hz : %d\n",(pdm_clock_sel?"1Mhz":"2Mhz"));
-		}
-
-		if (priv->lower->dbg_pin_toggle) {
-			priv->lower->dbg_pin_toggle(0);
 		}
 		break;
 	}
