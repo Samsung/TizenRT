@@ -641,7 +641,7 @@ static int power_opendir(FAR const char *relpath, FAR struct fs_dirent_s *dir)
 	/* The path refers to the 1st level subdirectory.  Allocate the powerdir
 	 * dirent structure.
 	 */
-	powerdir = (FAR struct power_dir_s *)kmm_malloc(sizeof(struct power_dir_s));
+	powerdir = (FAR struct power_dir_s *)kmm_zalloc(sizeof(struct power_dir_s));
 
 	if (!powerdir) {
 		fdbg("ERROR: Failed to allocate the directory structure\n");
