@@ -67,6 +67,7 @@
 #include <tinyara/board.h>
 #include <tinyara/arch.h>
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
+#include <arch/reboot_reason.h>
 #include <tinyara/reboot_reason.h>
 #endif
 
@@ -168,7 +169,16 @@ int boardctl(unsigned int cmd, uintptr_t arg)
 			for (int i = 0; i < 10; i++) {
 				lldbg("\n    VIOLATION!!! YOU MUST SET REBOOT REASON!!!\n\n");
 			}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			if (((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL)) {
+				up_reboot_reason_write(REBOOT_USER_WITHOUT_SET_REASON);
+			} else {
+				up_reboot_reason_write(REBOOT_SYSTEM_WITHOUT_SET_REASON);
+			}
+#else
 			up_reboot_reason_write(REBOOT_SYSTEM_WITHOUT_SET_REASON);
+#endif
 		}
 #endif
 		/* Add 100ms delay for flushing UART FIFO. */

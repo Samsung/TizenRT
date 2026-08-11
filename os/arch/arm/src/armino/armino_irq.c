@@ -169,7 +169,7 @@ static int armino_securefault(int irq, FAR void *context, FAR void *arg)
   (void)irqsave();
   dbg("PANIC!!! secure received\n");
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+  up_reboot_reason_write_by_addr(((uint32_t *)context)[REG_R15], REBOOT_SYSTEM_PREFETCHABORT);
 #endif
   PANIC();
   return 0;
@@ -180,7 +180,7 @@ static int armino_pendsv(int irq, FAR void *context, FAR void *arg)
   (void)irqsave();
   dbg("PANIC!!! PendSV received\n");
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+  up_reboot_reason_write_by_addr(((uint32_t *)context)[REG_R15], REBOOT_SYSTEM_PREFETCHABORT);
 #endif
   PANIC();
   return 0;
@@ -191,7 +191,7 @@ static int armino_dbgmonitor(int irq, FAR void *context, FAR void *arg)
   (void)irqsave();
   dbg("PANIC!!! Debug Monitor received\n");
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+  up_reboot_reason_write_by_addr(((uint32_t *)context)[REG_R15], REBOOT_SYSTEM_PREFETCHABORT);
 #endif
   PANIC();
   return 0;
@@ -202,7 +202,7 @@ static int armino_reserved(int irq, FAR void *context, FAR void *arg)
   (void)irqsave();
   dbg("PANIC!!! Reserved interrupt\n");
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-  up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+  up_reboot_reason_write_by_addr(((uint32_t *)context)[REG_R15], REBOOT_SYSTEM_PREFETCHABORT);
 #endif
   PANIC();
   return 0;

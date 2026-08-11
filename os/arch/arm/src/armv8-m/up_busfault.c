@@ -133,9 +133,9 @@ int up_busfault(int irq, FAR void *context, FAR void *arg)
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	if (cfsr & IBUSERR) {
-		up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+		up_reboot_reason_write_by_addr(system_exception_location, REBOOT_SYSTEM_PREFETCHABORT);
 	} else {
-		up_reboot_reason_write(REBOOT_SYSTEM_DATAABORT);
+		up_reboot_reason_write_by_addr(system_exception_location, REBOOT_SYSTEM_DATAABORT);
 	}
 #endif
 
