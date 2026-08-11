@@ -210,7 +210,7 @@ int up_hardfault(int irq, FAR void *context, FAR void *arg)
 	(void)irqsave();
 
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
-	up_reboot_reason_write(REBOOT_SYSTEM_PREFETCHABORT);
+	up_reboot_reason_write_by_addr(system_exception_location, REBOOT_SYSTEM_PREFETCHABORT);
 #endif
 	PANIC();
 	return OK;

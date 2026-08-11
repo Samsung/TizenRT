@@ -23,6 +23,7 @@
  * Included Files
  ****************************************************************************/
 #include <queue.h>
+#include <stdbool.h>
 
 #ifdef CONFIG_TASK_MONITOR
 
@@ -33,6 +34,9 @@ struct task_monitor_node_s {
 	FAR struct task_monitor_node_s *blink;
 	int pid;				/* tcb's pid */
 	int interval;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+	bool is_kernel_task;
+#endif
 };
 
 typedef struct task_monitor_node_s task_monitor_node_t;
