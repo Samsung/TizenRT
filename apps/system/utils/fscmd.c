@@ -1392,12 +1392,12 @@ static int modify_filesystem(fs_minor_t minor, char *cmd) {
 			}
 			close(fd);
 
-			struct stat st;
-			char path[CONFIG_PATH_MAX];
+			struct statfs fs_stat;
 			/* If lfs mounted properly, then create temp file and use ioctl */
-			if (stat(CONFIG_MOUNT_POINT, &st) == OK) {
-				snprintf(path, sizeof(path), "%s/fs_temp_file_%x", CONFIG_MOUNT_POINT, LITTLEFS_SUPER_MAGIC);
-				fd = open(path, O_RDWR | O_CREAT, 0666);
+			if (statfs(CONFIG_MOUNT_POINT, &fs_stat) == OK &&
+				fs_stat.f_type == LITTLEFS_SUPER_MAGIC) {
+				snprintf(name, sizeof(name), "%s/fs_temp_file_%x", CONFIG_MOUNT_POINT, LITTLEFS_SUPER_MAGIC);
+				fd = open(name, O_RDWR | O_CREAT, 0666);
 				if (fd < 0) {
 					printf("Open Directory /mnt failed errno : %d", errno);
 					return ERROR;
@@ -1413,8 +1413,15 @@ static int modify_filesystem(fs_minor_t minor, char *cmd) {
 				}
 			} else {
 				if (strcmp(cmd, "format") == 0) {
+					/*
+					* When the filesystem is corrupted, CONFIG_MOUNT_POINT may have been created
+					* on the root filesystem. Mount to a temporary path to avoid removing or
+					* replacing the existing mount point.
+					*/
+					char tmp_name[CONFIG_PATH_MAX];
+					snprintf(tmp_name, sizeof(tmp_name), "%.*s_tmp/", (int)sizeof(CONFIG_MOUNT_POINT) - 2, CONFIG_MOUNT_POINT);
+					ret = mount(name, tmp_name, "littlefs", 0, (FAR const void *)"forceformat");
 					/* If mount failed because of broken file system, then use user data of mount */
-					ret = mount(name, CONFIG_MOUNT_POINT, "littlefs", 0, (FAR const void *)"forceformat");
 					if (ret < 0) {
 						return ret;
 					}
