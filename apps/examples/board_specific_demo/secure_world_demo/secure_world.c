@@ -31,11 +31,14 @@
 		-r: run the read test\n \
 		-w: run the write test\n \
 		opt1:\n \
-	        -a secure_world_address: take the address as input, default: 0x735C021\n \
-		Valid Range: 0x7034C020 - 0x7039C000\n ");
+	        -a secure_world_address: take the address as input\n ");
 
 #ifdef  CONFIG_AMEBALITE_TRUSTZONE
 volatile uint32_t  *address = CONFIG_AMEBALITE_SECURE_WORLD_ADDRESS;
+#elif defined (CONFIG_ARCH_CHIP_BK7239N)
+volatile uint32_t  *address = CONFIG_BK_SECURE_WORLD_ADDRESS;
+#else
+volatile uint32_t  *address;
 #endif
 
 /****************************************************************************
@@ -74,6 +77,7 @@ int secure_world_main(int argc, char *argv[])
 	} else if (r_flag) {
                 printf("Trying to read data from %x\n", address);
                 value = *address;
+                printf("Read data from %x is: %x\n", address, value);
         } else {
                 printf("Trying to write data at %x\n", address);
                 *address = 1234;
