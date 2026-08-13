@@ -64,13 +64,6 @@
 #ifdef CONFIG_SEMAPHORE_HISTORY
 #include <tinyara/debug/sysdbg.h>
 #endif
-#if defined(CONFIG_BINMGR_RECOVERY) && defined(__KERNEL__)
-#include <tinyara/semaphore.h>
-#include <tinyara/arch.h>
-
-#define is_kernel_sem(a) is_kernel_space((void *)a)
-#endif
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -116,30 +109,12 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 
 		sem->flags = FLAGS_INITIALIZED;
 
-		/* Initialize to support priority inheritance */
-
-#ifdef CONFIG_PRIORITY_INHERITANCE
-		sem->flags &= ~(PRIOINHERIT_FLAGS_DISABLE);
-#endif
-
 #ifdef SAVE_SEM_HOLDER
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 		sem->hhead = NULL;
 #else
 		INITIALIZE_SEMHOLDER(&sem->holder);
 #endif
-		if (sem->semcount == 0) {
-			/* The semaphore with zero value is used for signaling */
-			sem->flags |= FLAGS_SIGSEM;
-		}
-#endif
-
-#if defined(CONFIG_BINMGR_RECOVERY) && defined(__KERNEL__)
-		/* Register semaphore in kernel region for kernel resource management */
-		
-		if (sem->semcount != 0 && is_kernel_sem(sem)) {
-			sem_register(sem);
-		}
 #endif
 		return OK;
 	} else {
