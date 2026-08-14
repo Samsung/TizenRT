@@ -71,14 +71,14 @@
 #define ADAM110_RETRY_CNT			3
 #define ADAM110_FW_LOAD_RETRY_CNT   3
 #define ADAM110_HW_RST_WAIT			(50 * 1000)	/* Almost 30 ~ 50 msec */
-#define ADAM110_TXRX_DELAY			20 /* between tx and rx delay 20usec */
+#define ADAM110_TXRX_DELAY			10 /* between tx and rx delay 10usec*/ 
 #define ADAM110_COM_RES_DELAY		1  /* between command and respone imprecise */
 #define ADAM110_RETRIAL_DELAY		1  /* Seamless buffer polling retry delay */
 #define SEAMLESS_RETRY_COUNT 		6
 
 #define ADAM110_RX_MAX_SIZE			3840
 #define ADAM110_KEYWORD_DATA_SIZE	64000
-#define ADAM110_MODEL_CHUNK_SIZE	256
+#define ADAM110_MODEL_CHUNK_SIZE	3840
 #define ADAM110_MODEL_RETRY_CNT		100
 
 #define ADAM110_FW_CHUNK_SIZE		128
@@ -152,6 +152,8 @@
 #define FW_GET_UPDATE_DATA			0xE5 /* Firmware data packet */
 #define FW_UPDATE_RSLT_CAL			0xE6 /* Firmware checksum calculation execute */
 #define FW_UPDATE_RSLT				0xE7 /* Firmware checksum read */
+
+#define PDM_CLOCK_PDM_RATE          0x00 /* PDM clock rate: 0 : PDM_CLK = 2MHz, 1 : PDM_CLK = 1MHz */
 
 /* Error code */
 #define RSLT_SUCCESS				0x00 /* Success */

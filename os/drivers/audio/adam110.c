@@ -449,15 +449,8 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 			return -EIO;
 		}
 
-		uint8_t p1, p2;
-		if (nread == ADAM110_MODEL_CHUNK_SIZE) {
-			p1 = 0x01;
-			p2 = 0x00;
-		} else {
-			uint16_t actual_len = (uint16_t)(nread);
-			p1 = (uint8_t)((actual_len >> 8) & 0xFF);
-			p2 = (uint8_t)(actual_len & 0xFF);
-		}
+		uint8_t p1 = (uint8_t)((nread >> 8) & 0xFF);
+		uint8_t p2 = (uint8_t)(nread & 0xFF);
 
 		retry_remain = ADAM110_MODEL_RETRY_CNT;
 		while (retry_remain > 0) {
@@ -465,7 +458,7 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 			if (ret != OK) {
 				retry_remain--;
 				if (ret == -EPIPE) {
-					up_udelay(ADAM110_TXRX_DELAY * 150);
+					up_udelay(ADAM110_TXRX_DELAY * 100);
 				} else {
 					auddbg("[E] model xmit failed ret:%d\n", ret);
 				}
@@ -755,6 +748,16 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 	
 	priv->lower->reset();
 	up_udelay(ADAM110_HW_RST_WAIT);
+
+	/* PDM Clock configuration*/
+	ret = ADAM110_SET_MIC_CLK(priv, PDM_CLOCK_PDM_RATE, &rxpkt);
+	if (ret != 0) {
+		auddbg("Adam110 PDM clock %s Hz failed ret : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz") ,ret);
+		return ret;
+	}
+	else{
+		auddbg("Set Adam110 PDM clock %s Hz : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz"));
+	}
 
 	ret = ADAM110_SET_MODEL(priv);
 	if (ret != OK) {
@@ -1802,21 +1805,6 @@ static int adam110_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lo
 		}
 		break;
 	}
-	/*
-	//ADAM110 pdm clock change
-	case AUDIOIOC_CHANGEPDMCLK: {
-		uint8_t pdm_clock_sel = (uint8_t)arg;  // 0 : 2Mhz, 1: 1Mhz
-		ret = ADAM110_SET_MIC_CLK(priv, pdm_clock_sel, &rxpkt);
-		if (ret != 0) {
-			auddbg("Change adam110 PDM clock %s Hz failed ret : %d\n",(pdm_clock_sel?"1Mhz":"2Mhz") ,ret);
-			return ret;
-		}
-		else{
-			auddbg("Change adam110 PDM clock %s Hz : %d\n",(pdm_clock_sel?"1Mhz":"2Mhz"));
-		}
-		break;
-	}
-	*/
 	default:
 		audvdbg("[I] adam110_ioctl received unknown cmd 0x%x\n", cmd);
 		ret = -EINVAL;
