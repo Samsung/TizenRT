@@ -1,0 +1,3 @@
+config ENTRY_CRASHRPT_TEST
+	bool "Crash diagnostic capture example"
+	depends on EXAMPLES_CRASHRPT_TEST
