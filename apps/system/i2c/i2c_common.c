@@ -98,6 +98,11 @@ int common_args(FAR struct i2ctool_s *i2ctool, FAR char **arg)
 	long value;
 	int ret;
 
+	if (!i2ctool || !ptr) {
+		printf("ERROR: Invalid arguments, i2ctool=%p, arg=%p\n", i2ctool, ptr);
+		return ERROR;
+	}
+
 	if (ptr[0] != '-') {
 		goto invalid_argument;
 	}

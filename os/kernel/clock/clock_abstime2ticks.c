@@ -134,6 +134,11 @@ int clock_abstime2ticks(clockid_t clockid, FAR const struct timespec *abstime, F
 	struct timespec reltime;
 	int             ret;
 
+	if (!abstime || !ticks) {
+		sdbg("ERROR: Invalid arguments, abstime: %p, ticks: %p\n", abstime, ticks);
+		return EINVAL; 
+	}
+
 	/* Convert the timespec to clock ticks.  NOTE: Here we use internal knowledge
 	 * that CLOCK_REALTIME is defined to be zero!
 	 */

@@ -130,6 +130,8 @@ void work_process(FAR struct wqueue_s *wqueue, int wndx)
 	clock_t ctick;
 	clock_t next;
 
+	DEBUGASSERT(wqueue);
+
 	/* Then process queued work.  We need to keep interrupts disabled while
 	 * we process items in the work list.
 	 */

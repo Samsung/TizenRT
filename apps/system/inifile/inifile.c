@@ -550,6 +550,11 @@ FAR char *inifile_read_string(INIHANDLE handle, FAR const char *section, FAR con
 	FAR char *ret = NULL;
 	FAR const char *value;
 
+	if (!handle || !section || !variable) {
+		inivdbg("ERROR: Invalid arguments, handle: %p, section: %p, variable: %p\n", handle, section, variable);
+		return NULL;
+	}
+
 	/* Get a reference to the volatile version of the string */
 
 	value = inifile_find_variable(priv, section, variable);
@@ -590,6 +595,11 @@ long inifile_read_integer(INIHANDLE handle, FAR const char *section, FAR const c
 	FAR struct inifile_state_s *priv = (FAR struct inifile_state_s *)handle;
 	FAR char *value;
 	long ret = defvalue;
+
+	if (!handle || !section || !variable) {
+		inivdbg("Invalid arguments, handle: %p, section: %p, variable: %p\n", handle, section, variable);
+		return ret;
+	}
 
 	/* Assume failure to find the requested value */
 

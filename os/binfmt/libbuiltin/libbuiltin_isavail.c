@@ -63,6 +63,7 @@
 
 #include <tinyara/config.h>
 
+#include <debug.h>
 #include <string.h>
 #include <limits.h>
 #include <errno.h>
@@ -86,6 +87,12 @@ int builtin_isavail(FAR const char *appname)
 {
 	FAR const char *name;
 	int i;
+
+	if (!appname) {
+		berr("ERROR: Invalid argument, appname is NULL\n");
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	for (i = 0; (name = builtin_getname(i)); i++) {
 		if (!strncmp(name, appname, NAME_MAX)) {
