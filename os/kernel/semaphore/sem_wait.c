@@ -127,14 +127,20 @@ int sem_wait(FAR sem_t *sem)
 	size_t caller_retaddr = (size_t)GET_RETURN_ADDRESS();
 	/* This API should not be called from interrupt handlers */
 #if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
-	DEBUGASSERT((sem != NULL && up_interrupt_context() == false) || abort_mode);
+	DEBUGASSERT(up_interrupt_context() == false || abort_mode);
 
 	if (abort_mode && up_interrupt_context() == true) {
 		return OK;
 	}
 #else
-	DEBUGASSERT(sem != NULL && up_interrupt_context() == false);
+	DEBUGASSERT(up_interrupt_context() == false);
 #endif
+
+	/* Return EINVAL for NULL semaphore instead of crashing */
+	if (sem == NULL) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	/* The following operations must be performed with interrupts
 	 * disabled because sem_post() may be called from an interrupt
