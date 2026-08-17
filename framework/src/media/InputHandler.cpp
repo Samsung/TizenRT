@@ -311,7 +311,8 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 		size_t usedES = 0;
 		while (1) {
 			unsigned char *buffPCM = buf;
-			size_t sizePCM = used;
+			// Requested decoded data size is equal to output buffer size
+			size_t sizePCM = mProcessBufferSize;
 			size_t spaces = mBufferWriter->sizeOfSpace();
 			if (spaces == 0) {
 				sleepWorker();
