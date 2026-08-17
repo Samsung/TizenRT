@@ -195,12 +195,10 @@ int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime)
 	 * errno appropriately.
 	 */
 
-#ifdef CONFIG_DEBUG
 	if (!abstime || !sem) {
 		errcode = EINVAL;
 		goto errout;
 	}
-#endif
 
 	/* Create a watchdog.  We will not actually need this watchdog
 	 * unless the semaphore is unavailable, but we will reserve it up
