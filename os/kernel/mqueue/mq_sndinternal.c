@@ -135,6 +135,10 @@ int mq_verifysend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio)
 		return ERROR;
 	}
 
+	if (mq_verifydesg(mqdes) != OK) {
+		return ERROR;
+	}
+
 	if ((mqdes->oflags & O_WROK) == 0) {
 		set_errno(EPERM);
 		return ERROR;
