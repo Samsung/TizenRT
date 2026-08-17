@@ -20,6 +20,18 @@ config ARCH_CHIP_RTL8730E
 
 endchoice
 
+menu "Realtek RTL8730E Debug Support"
+
+config AMEBASMART_TICK_COMPENSATION_DISABLE
+	bool "Disable AmebaSmart tick compensation for debugging"
+	default n
+	---help---
+		Disable elapsed tick compensation in the AmebaSmart system timer ISR.
+		Enable this option for external debugger sessions that need each
+		timer interrupt to process only one system tick.
+
+endmenu
+
 menu "Realtek RTL8730E Peripheral Support"
 
 config BOARD_HAVE_MIPI
