@@ -74,6 +74,7 @@
 #include <tinyara/tz_context.h>
 #endif
 
+#include <errno.h>
 #include "svcall.h"
 #include "exc_return.h"
 #include "up_internal.h"
@@ -433,6 +434,12 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(CONFIG_DISABLE_SIGNALS)
 	case SYS_signal_handler: {
 
+		/* Verify kernel-initiated signal delivery*/
+		if (rtcb->xcp.sigdeliver == NULL) {
+			svcdbg("SVCall: Unauthorized SYS_signal_handler_return from user code!\n");
+			regs[REG_R0] = (uint32_t)-ENOSYS;
+			break;
+		}
 		/* Remember the caller's return address */
 
 		DEBUGASSERT(rtcb->xcp.sigreturn == 0);
@@ -482,6 +489,12 @@ int up_svcall(int irq, FAR void *context, FAR void *arg)
 #if defined(CONFIG_BUILD_PROTECTED) && !defined(CONFIG_DISABLE_SIGNALS)
 	case SYS_signal_handler_return: {
 
+		/* Verify kernel-initiated signal delivery*/
+		if (rtcb->xcp.sigdeliver == NULL) {
+			svcdbg("SVCall: Unauthorized SYS_signal_handler_return from user code!\n");
+			regs[REG_R0] = (uint32_t)-ENOSYS;
+			break;
+		}
 		/* Set up to return to the kernel-mode signal dispatching logic. */
 
 		DEBUGASSERT(rtcb->xcp.sigreturn != 0);
