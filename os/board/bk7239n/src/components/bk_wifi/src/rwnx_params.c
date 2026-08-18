@@ -39,6 +39,11 @@ struct rwnx_mod_params rwnx_mod_params = {
 	PARAM(mcs_map, IEEE80211_VHT_MCS_SUPPORT_0_9),
 	PARAM(he_mcs_map, IEEE80211_HE_MCS_SUPPORT_0_9),
 	PARAM(he_ul_on, false),
+#if CONFIG_WIFI6
+	PARAM(he_tb_on, true),
+#else
+	PARAM(he_tb_on, false),
+#endif
 	/* reopen ldpc on for solve rx throughput */
 #if CONFIG_WIFI6 && (!CONFIG_SOC_BK7236N) && (!CONFIG_SOC_BK7239XX)
 	PARAM(ldpc_on, true),
@@ -63,7 +68,7 @@ struct rwnx_mod_params rwnx_mod_params = {
 #endif
 	PARAM(nss, 1),
 	PARAM(amsdu_rx_max, 0), // max amsdu size 3839
-	PARAM(bfmee, false),
+	PARAM(bfmee, true),
 	PARAM(bfmer, false),
 	//PARAM(mesh, true),
 	PARAM(murx, true),
@@ -862,6 +867,9 @@ void rwnx_udpate_capability(uint32_t capa_id, uint32_t capa_val)
 			break;
 		case WIFI_CAPA_ID_11B_ONLY_EN:
 			rwnx_update_11b_only(capa_val);
+			break;
+		case WIFI_CAPA_ID_OFDMA_EN:
+			rwnx_update_he_tb(capa_val);
 			break;
 		default:
 			break;

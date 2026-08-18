@@ -2537,6 +2537,8 @@ enum
     #if BK_MAC
     /// Bit indicating that ERP is enabled in the local device
     ME_ERP_CAPA = CO_BIT(4),
+    /// Bit indicating that STA-side TB(UL OFDMA) response is enabled in the local device
+    ME_OFDMA_TB_CAPA = CO_BIT(5),
     #endif
 };
 uint8_t me_env_get_capa_flags(void);
@@ -2660,6 +2662,8 @@ struct me_config_req
     bool he_supp;
     /// Boolean indicating if HE OFDMA UL is enabled or not
     bool he_ul_on;
+    /// Boolean indicating if STA-side TB(UL OFDMA) response is enabled or not
+    bool he_tb_on;
     /// Boolean indicating if PS mode shall be enabled or not
     bool ps_on;
     /// Boolean indicating if Antenna Diversity shall be enabled or not
