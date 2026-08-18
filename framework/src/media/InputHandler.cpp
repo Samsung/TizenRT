@@ -317,9 +317,7 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 			if (spaces == 0) {
 				sleepWorker();
 			}
-			if (sizePCM > mBufferWriter->sizeOfSpace()) {
-				sizePCM = mBufferWriter->sizeOfSpace();
-			}
+			sizePCM = std::min(sizePCM, mBufferWriter->sizeOfSpace());
 			ret = getPCM(buffES, sizeES, &usedES, &buffPCM, &sizePCM);
 			if (ret < 0) {
 				meddbg("getPCM failed! error: %d\n", ret);
