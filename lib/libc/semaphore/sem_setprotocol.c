@@ -87,9 +87,10 @@
  *    becomes *permanently* a holder of the semaphore and may have its
  *    priority boosted when any other task tries to acquire the semaphore.
  *
- *    The fix is to call sem_setprotocol(SEM_PRIO_NONE) immediately after
- *    the sem_init() call so that there will be no priority inheritance
- *    operations on this semaphore.
+ *    Semaphores initialized by sem_init() have priority inheritance disabled
+ *    by default.  A semaphore used for signaling should retain that default;
+ *    SEM_PRIO_INHERIT should only be selected for a semaphore used for mutual
+ *    exclusion.
  *
  * Parameters:
  *    sem      - A pointer to the semaphore whose attributes are to be

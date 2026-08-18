@@ -53,14 +53,12 @@
 
 #include "sched/sched.h"
 #include "task/task.h"
-#include "semaphore/semaphore.h"
 
 #include "binary_manager_internal.h"
 
 /****************************************************************************
  * Private Definitions
  ****************************************************************************/
-extern sq_queue_t g_sem_list;
 extern struct binary_s *g_lib_binp;
 
 #ifdef CONFIG_COMPRESSED_BINARY
@@ -102,6 +100,25 @@ static uint8_t binary_manager_get_loader_priority(uint8_t load_priority)
 	bmvdbg("Loader priority : %u\n", loader_priority);
 
 	return loader_priority;
+}
+
+/****************************************************************************
+ * Name: binary_manager_recover_tcb
+ *
+ * Description:
+ *   Recover resources owned by a binary task while preventing a waiter
+ *   released by task_recover() from running against a half-terminated TCB.
+ *
+ ****************************************************************************/
+static void binary_manager_recover_tcb(FAR struct tcb_s *tcb)
+{
+	irqstate_t flags;
+
+	flags = enter_critical_section();
+	sched_lock();
+	task_recover(tcb);
+	sched_unlock();
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -389,8 +406,6 @@ static int binary_manager_terminate_binary(int bin_idx)
 			BIN_STATE(bin_idx) = state;
 			return ERROR;
 		}
-		/* Release all kernel semaphores held by the threads in binary */
-		binary_manager_release_binary_sem(bin_idx);
 	}
 
 	/* Terminate all children created by a binary */
@@ -398,7 +413,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 	while (tcb) {
 		ntcb = tcb->bin_flink;
 		if (need_recovery) {
-			task_recover(tcb);
+			binary_manager_recover_tcb(tcb);
 		}
 		if (tcb != btcb) {
 			ret = task_terminate_unloaded(tcb);
@@ -413,7 +428,7 @@ static int binary_manager_terminate_binary(int bin_idx)
 	while (tcb) {
 		ntcb = tcb->bin_flink;
 		if (need_recovery) {
-			task_recover(tcb);
+			binary_manager_recover_tcb(tcb);
 		}
 		if (tcb != btcb) {
 			ret = task_terminate_unloaded(tcb);
@@ -676,53 +691,6 @@ static int update_thread(int argc, char *argv[])
 	}
 #endif
 	return BINMGR_OK;
-}
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-/****************************************************************************
- * Name: binary_manager_release_binary_sem
- *
- * Description:
- *	 This function releases all kernel semaphores held by the threads in binary.
- *
- ****************************************************************************/
-void binary_manager_release_binary_sem(int bin_idx)
-{
-	sem_t *sem;
-	irqstate_t flags;
-	FAR struct semholder_s *holder;
-
-	flags = enter_critical_section();
-
-	sem = (sem_t *)sq_peek(&g_sem_list);
-	if (sem == NULL) {
-		bmdbg("g_sem_list is empty.\n");
-	} else {
-		do {
-#if CONFIG_SEM_PREALLOCHOLDERS > 0
-			for (holder = sem->hhead; holder; holder = holder->flink)
-#else
-			holder = &sem->holder;
-#endif
-			{
-				if (holder && holder->htcb && holder->htcb->group && holder->htcb->group->tg_binidx == bin_idx) {
-					/* Increase semcount and release itself from holder */
-					sem->semcount++;
-
-					if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
-						DEBUGASSERT(sem->semcount < 2);
-					}
-
-					/* And after releasing the kernel sem, there can be a task which waits that sem. So unblock the waiting task. */
-					sem_unblock_task(sem, holder->htcb);
-				}
-			}
-			sem = sq_next(sem);
-		} while (sem);
-	}
-	leave_critical_section(flags);
 }
 
 /****************************************************************************
