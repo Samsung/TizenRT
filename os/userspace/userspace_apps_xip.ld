@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2025 Samsung Electronics All Rights Reserved.
+ * Copyright 2024 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,14 @@
  *
  ****************************************************************************/
 
+MEMORY
+{
+  uflash (rx) : ORIGIN = __FLASH_START_ADDRESS__, LENGTH = __FLASH_SIZE__
+  usram (rwx)  : ORIGIN = __RAM_START_ADDRESS__,   LENGTH = __RAM_SIZE__
+}
+
 SECTIONS
 {
-  /* Note: Memory regions (uflash, usram) must be defined in the first linker script (app1_0.ld, etc.) */
 
   .text ORIGIN(uflash) :
     {

@@ -258,9 +258,9 @@ LDELFFLAGS = -r -e main
 
 ifeq ($(CONFIG_XIP_ELF),y)
 ifeq ($(WINTOOL),y)
-	LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld}"
+	LDELFFLAGS += -T "${shell cygpath -w $(TOPDIR)/userspace/userspace_apps_xip.ld}"
 else
-	LDELFFLAGS += -T $(TOPDIR)/../build/configs/$(CONFIG_ARCH_BOARD)/scripts/xipelf/userspace_all.ld
+	LDELFFLAGS += -T $(TOPDIR)/userspace/userspace_apps_xip.ld
 endif
 else
 ifeq ($(WINTOOL),y)
