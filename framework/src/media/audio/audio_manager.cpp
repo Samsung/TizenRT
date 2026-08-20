@@ -2297,6 +2297,39 @@ unsigned int get_card_buffer_size(audio_io_direction_t direct)
 	return buf_info.buffer_size;
 }
 
+unsigned int get_card_total_buffer_size(audio_io_direction_t direct)
+{
+	audio_card_info_t *card;
+	struct ap_buffer_info_s buf_info;
+	char path[AUDIO_DEVICE_FULL_PATH_LENGTH];
+	int fd;
+	if (direct == INPUT) {
+		if ((g_actual_audio_in_card_id < 0)) {
+			return 0;
+		}
+		card = &g_audio_in_cards[g_actual_audio_in_card_id];
+	} else {
+		if ((g_actual_audio_out_card_id < 0)) {
+			return 0;
+		}
+		card = &g_audio_out_cards[g_actual_audio_out_card_id];
+	}
+	get_card_path(path, card->card_id, card->device_id, direct);
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		meddbg("card open fail.. path : %s errno : %d\n", path, errno);
+		return 0;
+	}
+	if (ioctl(fd, AUDIOIOC_GETBUFFERINFO, (unsigned long)&buf_info) < 0) {
+		/* Driver doesn't reveal buffer size, so return default value we defined here */
+		meddbg("ioctl failed. errno : %d\n", errno);
+		buf_info.buffer_size = AUDIO_STREAM_VOICE_RECOGNITION_PERIOD_SIZE * (pcm_format_to_bits((enum pcm_format) PCM_FORMAT_S16_LE) >> 3);
+		buf_info.nbuffers = AUDIO_STREAM_VOICE_RECOGNITION_PERIOD_COUNT;
+	}
+	close(fd);
+	return buf_info.buffer_size * buf_info.nbuffers;
+}
+
 unsigned int get_input_card_buffer_size(void)
 {
 	return get_card_buffer_size(INPUT);
@@ -2305,6 +2338,16 @@ unsigned int get_input_card_buffer_size(void)
 unsigned int get_output_card_buffer_size(void)
 {
 	return get_card_buffer_size(OUTPUT);	
+}
+
+unsigned int get_input_card_total_buffer_size(void)
+{
+	return get_card_total_buffer_size(INPUT);
+}
+
+unsigned int get_output_card_total_buffer_size(void)
+{
+	return get_card_total_buffer_size(OUTPUT);
 }
 
 audio_manager_result_t get_max_audio_volume(uint8_t *volume)
@@ -3438,7 +3481,8 @@ std::chrono::milliseconds get_output_read_timeout(void)
 		}
 	}
 
-	frames = get_output_card_buffer_size() / channels / (pcm_format_to_bits(format) >> 3);
+	// ToDo: Calculate timeout as per the exact number of bytes currently enqueued in audio driver.
+	frames = get_output_card_total_buffer_size() / channels / (pcm_format_to_bits(format) >> 3);
 	timeout = (frames * std::chrono::milliseconds(1000)) / sample_rate;
 
 	pthread_mutex_unlock(&(card->card_mutex));

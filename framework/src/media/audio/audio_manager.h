@@ -488,6 +488,28 @@ unsigned int get_output_card_buffer_size(void);
 unsigned int get_input_card_buffer_size(void);
 
 /****************************************************************************
+ * Name: get_output_card_total_buffer_size
+ *
+ * Description:
+ *   Get total bytes size of record buffer of actual output card.
+ *
+ * Return Value:
+ *   On success, the total number of bytes in buffer size of output card. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_output_card_total_buffer_size(void);
+
+/****************************************************************************
+ * Name: get_input_card_total_buffer_size
+ *
+ * Description:
+ *   Get total bytes size of record buffer of actual input card.
+ *
+ * Return Value:
+ *   On success, the total number of bytes in buffer size of input card. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_input_card_total_buffer_size(void);
+
+/****************************************************************************
  * Name: get_max_audio_volume
  *
  * Description:
