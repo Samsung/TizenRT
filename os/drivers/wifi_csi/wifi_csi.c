@@ -478,7 +478,7 @@ static int wifi_csi_mq_open(FAR struct wifi_csi_upperhalf_s *upper)
  * Name: wifi_csi_mq_close
  *
  * Description:
- *   Open message queue for communication with app/framework layers.
+ *  Close and unlink message queue used for communication with app/framework layers.
  *
  ************************************************************************************/
 
@@ -497,6 +497,9 @@ static int wifi_csi_mq_close(FAR struct wifi_csi_upperhalf_s *upper)
 		csidbg("MQ close success\n");
 	}
 	upper->usermq = (mqd_t)ERROR;
+
+	/* Unlink CSI_MQ */
+	mq_unlink(CSI_MQ_NAME);
 	return ret;
 }
 

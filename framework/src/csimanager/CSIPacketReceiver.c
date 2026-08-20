@@ -91,6 +91,10 @@ static void *dataReceiverThread(void *vargp)
 	int fd = p_csifw_ctx->data_receiver_fd;
 	mqd_t mq_handle = p_csifw_ctx->mq_handle;
 	unsigned char *get_data_buffptr = p_csifw_ctx->get_data_buffptr;
+	#ifdef CONFIG_CSI_PACKET_MONITORING
+		unsigned int packets_recv_per_second = 0;
+		u64 prev_time = 0;
+	#endif
 
 	while (!p_csifw_ctx->data_receiver_thread_stop) {
 		current_time = get_monotonic_time_ms();
@@ -99,22 +103,27 @@ static void *dataReceiverThread(void *vargp)
 			(current_time - last_data_read_timestamp_ms >= p_csifw_ctx->csi_interval)) {
 			last_data_read_status = false;
 			last_data_read_timestamp_ms = current_time;
-			CSIFW_LOGI("Reading event from MQ %llu", current_time);
+			#ifdef CONFIG_CSI_PACKET_MONITORING
+				CSIFW_LOGI("Reading event from MQ %llu", current_time);
+			#endif
 			clock_gettime(CLOCK_REALTIME, &st_time);
 			st_time.tv_sec += 1;
 			size = mq_timedreceive(mq_handle, (char *)&msg, sizeof(msg), &prio, &st_time);
 			if (size >= 0) {
-				CSIFW_LOGD("Message received - msgId: %d, data_len: %d, size: %zu: %d", msg.msgId, msg.data_len, size);
+				CSIFW_LOGD("Message received - msgId: %d, data_len: %d, size: %zd", msg.msgId, msg.data_len, size);
 				switch (msg.msgId) {
 				case CSI_MSG_DATA_READY_CB:
 					len = readCSIData(fd, get_data_buffptr, CSIFW_MAX_RAW_BUFF_LEN);
-					CSIFW_LOGI("CSI Data read complete %llu", get_monotonic_time_ms());
+					current_time = get_monotonic_time_ms();
+					#ifdef CONFIG_CSI_PACKET_MONITORING
+						CSIFW_LOGI("CSI Data read complete %llu", current_time);
+					#endif
 					if (len < 0) {
 						consecutive_failures++;
 						CSIFW_LOGE("Skipping packet: error: %d", len);
 						if (consecutive_failures >= MAX_CONSECUTIVE_FAILURES) {
 							CSIFW_LOGE("CRITICAL: %d consecutive readCSIData failures detected!", consecutive_failures);
-							p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL, 0);
+							p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL);
 							break;
 						}
 						continue;
@@ -124,14 +133,26 @@ static void *dataReceiverThread(void *vargp)
 						timeout_count = 0;
 					}
 					last_data_read_status = true;
-					#if defined(CONFIG_WIFI_CSI_RTL8730E)
-					  /* RTL8730E driver returns length without the CSI header*/
-					  p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len + CSIFW_RTK_CSI_HEADER_LEN, get_data_buffptr, len);
-					#elif defined(CONFIG_BK_WIFI_CSI_ADAPTER)
-					  /* Beken driver already includes the CSI header in the length*/
-					  p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len, get_data_buffptr, len);
+
+					#ifdef CONFIG_CSI_PACKET_MONITORING
+						packets_recv_per_second++;
+						if (prev_time == 0) {
+							prev_time = current_time;
+						} else if (current_time - prev_time >= 1000) {
+							CSIFW_LOGD("CSI Packets/sec: %u (interval: %ums, expected: ~%u)", 
+									packets_recv_per_second, p_csifw_ctx->csi_interval,
+									1000 / p_csifw_ctx->csi_interval);
+							packets_recv_per_second = 0;
+							prev_time = current_time;
+						}
+					#endif
+
+					#if defined(CONFIG_BK_WIFI_CSI_ADAPTER)
+						/* Beken driver already includes the CSI header in the length*/
+						p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len, get_data_buffptr);
 					#else
-					  CSIFW_LOGE("Unknown CSI board configuration");
+						/* RTL8730E driver returns length without the CSI header*/
+						p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len + CSIFW_RTK_CSI_HEADER_LEN, get_data_buffptr);
 					#endif
 					break;
 
@@ -150,14 +171,14 @@ static void *dataReceiverThread(void *vargp)
 					if (timeout_count >= CONFIG_CSI_DATA_TIMEOUT_SEC) {
 						CSIFW_LOGE("CRITICAL: No CSI data for %d seconds", timeout_count);
 						timeout_count = 0;
-						p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL, 0);
+						p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL);
 					}
 				} else {
 					consecutive_failures++;
 					if (consecutive_failures >= MAX_CONSECUTIVE_FAILURES) {
 						CSIFW_LOGE("CRITICAL: %d consecutive failures detected", consecutive_failures);
 						consecutive_failures = 0;
-						p_csifw_ctx->CSI_DataCallback(CSIFW_INTERNAL_ERROR, 0, NULL, 0);
+						p_csifw_ctx->CSI_DataCallback(CSIFW_INTERNAL_ERROR, 0, NULL);
 					}
 				}
 			}
