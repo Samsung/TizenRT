@@ -287,11 +287,9 @@ typedef pthread_startroutine_t pthread_func_t;
 #define PTHREAD_MUTEX_INITIALIZER {MUTEX_SEM_INITIALIZER(1), -1}
 #endif
 
-#ifdef CONFIG_PTHREAD_CLEANUP
 /* This type describes the pthread cleanup callback (non-standard) */
 
 typedef CODE void (*pthread_cleanup_t)(FAR void *arg);
-#endif
 
 #define PTHREAD_RWLOCK_INITIALIZER {PTHREAD_MUTEX_INITIALIZER, \
 				    PTHREAD_COND_INITIALIZER, \

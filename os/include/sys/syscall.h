@@ -288,7 +288,9 @@
 #define SYS_pthread_cond_timedwait     (__SYS_pthread_setschedparam + 5)
 #define SYS_pthread_kill               (__SYS_pthread_setschedparam + 6)
 #define SYS_pthread_sigmask            (__SYS_pthread_setschedparam + 7)
-#define __SYS_mqueue                   (__SYS_pthread_setschedparam + 8)
+#define SYS_pthread_cleanup_pop        (__SYS_pthread_setschedparam + 8)
+#define SYS_pthread_cleanup_push       (__SYS_pthread_setschedparam + 9)
+#define __SYS_mqueue                   (__SYS_pthread_setschedparam + 10)
 
 /* The following are defined only if message queues are enabled */
 
