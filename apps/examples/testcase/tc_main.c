@@ -124,6 +124,11 @@ extern int itc_wifimanager_main(int argc, char *argv[]);
 extern int utc_blemanager_main(int argc, char *argv[]);
 extern int itc_blemanager_main(int argc, char *argv[]);
 
+/* OS Test */
+#ifdef CONFIG_TESTING_OSTEST
+extern int ostest_main(int argc, char *argv[]);
+#endif
+
 /* Not yet */
 extern int tc_mpu_main(int argc, char *argv[]);
 
@@ -163,6 +168,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_KERNEL
 	{"kernel_tc", tc_kernel_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_TESTING_OSTEST
+	{"ostest", ostest_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_LIBCXX_UTC
 	{"libcxx_utc", utc_libcxx_main, TASH_EXECMD_ASYNC},

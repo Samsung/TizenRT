@@ -194,13 +194,17 @@ struct result_s
  * Private Data
  ****************************************************************************/
 
+#if defined(CONFIG_TESTING_OSTEST_GETOPT_LONG) || \
+    defined(CONFIG_TESTING_OSTEST_GETOPT_LONG_ONLY)
 static int g_flag;
+#endif
 static const char *g_optstring = "abc::d:";
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
+#ifdef CONFIG_TESTING_OSTEST_GETOPT
 static int getopt_short_test(int noptions, int argc, FAR char **argv,
                              FAR const char *optstring,
                              FAR const struct result_s *expected)
@@ -265,7 +269,9 @@ static int getopt_short_test(int noptions, int argc, FAR char **argv,
 
   return OK;
 }
+#endif
 
+#ifdef CONFIG_TESTING_OSTEST_GETOPT_LONG
 static int getopt_long_test(int noptions, int argc, FAR char **argv,
                             FAR const char *optstring,
                             FAR const struct option *longopts,
@@ -342,7 +348,9 @@ static int getopt_long_test(int noptions, int argc, FAR char **argv,
 
   return OK;
 }
+#endif
 
+#ifdef CONFIG_TESTING_OSTEST_GETOPT_LONG_ONLY
 static int getopt_longonly_test(int noptions, int argc, FAR char **argv,
                                 FAR const char *optstring,
                                 FAR const struct option *longopts,
@@ -419,6 +427,7 @@ static int getopt_longonly_test(int noptions, int argc, FAR char **argv,
 
   return OK;
 }
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -426,10 +435,14 @@ static int getopt_longonly_test(int noptions, int argc, FAR char **argv,
 
 int getopt_test(void)
 {
+#if defined(CONFIG_TESTING_OSTEST_GETOPT_LONG) || \
+    defined(CONFIG_TESTING_OSTEST_GETOPT_LONG_ONLY)
   struct option long_options[5];
+#endif
   struct result_s results[5];
   FAR char *argv[10];
 
+#ifdef CONFIG_TESTING_OSTEST_GETOPT
   printf("getopt():  Simple test\n");
 
   argv[0] = NULL;
@@ -490,7 +503,9 @@ int getopt_test(void)
   SHORT_RESULT_D(3);
 
   getopt_short_test(4, 7, argv, g_optstring, results);
+#endif
 
+#ifdef CONFIG_TESTING_OSTEST_GETOPT_LONG
   printf("getopt_long():  Simple test\n");
 
   argv[0] = NULL;
@@ -651,7 +666,9 @@ int getopt_test(void)
 
   getopt_long_test(4, 6, argv, g_optstring, long_options, NULL,
                    results);
+#endif
 
+#ifdef CONFIG_TESTING_OSTEST_GETOPT_LONG_ONLY
   printf("getopt_long_only():  Mixed long and short options\n");
 
   argv[0] = NULL;
@@ -699,5 +716,6 @@ int getopt_test(void)
 
   getopt_longonly_test(4, 8, argv, g_optstring, long_options, NULL,
                        results);
+#endif
   return OK;
 }
