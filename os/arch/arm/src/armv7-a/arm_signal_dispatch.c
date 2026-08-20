@@ -90,10 +90,11 @@ void up_signal_dispatch(_sa_sigaction_t sighand, int signo, siginfo_t *info, voi
 
 	__asm__ __volatile__ (
         "mov %0, sp\n"
-        "bic sp, sp, #7\n"
+        "bic r12, %0, #7\n"
+        "mov sp, r12\n"
         : "=r"(saved_sp)
         :
-        : "memory"
+        : "r12", "cc", "memory"
     );
 
 	/* Let sys_call4() do all of the work */
