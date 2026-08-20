@@ -212,6 +212,8 @@ int utils_heapinfo(int argc, char **args)
 	int heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
 	bool init_flag = false;
 	bool bin_selected = false;
+	bool capture = false;
+	int capture_mode = HEAPINFO_CAPTURE_START;
 	heapinfo_option_t options;
 	options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
 	options.mode = HEAPINFO_SIMPLE;
@@ -224,7 +226,13 @@ int utils_heapinfo(int argc, char **args)
 		goto usage;
 	}
 
-	while ((opt = getopt(argc, args, "ikb:d:ap:fgr")) != ERROR) {
+	/* Reset getopt's global state so that a previous invocation which returned
+	 * early (e.g. -s) does not leave optind/g_binitialized stale, causing the
+	 * next call to start parsing from the wrong argv position.
+	 */
+	optind = 0;
+
+	while ((opt = getopt(argc, args, "ikb:d:ap:fgrc:s:")) != ERROR) {
 		switch (opt) {
 		/* i : initialize the peak allocated memory size. */
 		case 'i':
@@ -282,6 +290,39 @@ int utils_heapinfo(int argc, char **args)
 			options.mode = HEAPINFO_SIMPLE;
 			heapinfo_display_flag = HEAPINFO_DISPLAY_GROUP;
 			break;
+		/* c : start/stop a heap capture window. The pid filter (if any) comes
+		 * from a preceding -p option; default is all pids.
+		 */
+		case 'c':
+			if (strncmp(optarg, "start", strlen("start") + 1) == 0) {
+				capture_mode = HEAPINFO_CAPTURE_START;
+			} else if (strncmp(optarg, "stop", strlen("stop") + 1) == 0) {
+				capture_mode = HEAPINFO_CAPTURE_STOP;
+			} else {
+				printf("Invalid capture command. Use 'start' or 'stop'.\n");
+				goto usage;
+			}
+			capture = true;
+			heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
+			break;
+		/* s : set the runtime backtrace skip value. */
+		case 's':
+			if (!atoi(optarg) && strncmp(optarg, "0", strlen("0") + 1) != 0) {
+				printf("Invalid skip value.\n");
+				goto usage;
+			}
+			{
+				int skip = atoi(optarg);
+				/* g_backtrace_skip is a non-static global in mm_malloc.c (user space).
+				 * Since the heapinfo command and mm_malloc.c are in the same binary,
+				 * we can set it directly without an ioctl.
+				 */
+				extern int g_backtrace_skip;
+				g_backtrace_skip = skip;
+				printf("Backtrace skip value set to %d\n", skip);
+				return OK;
+			}
+			break;
 		case 'r':
 #if CONFIG_KMM_REGIONS > 1
 			heapinfo_print_regions();
@@ -294,6 +335,13 @@ int utils_heapinfo(int argc, char **args)
 			printf("Invalid option\n");
 			goto usage;
 		}
+	}
+
+	/* A capture request wins over any -p/-a mode set earlier on the command
+	 * line, so the option order (e.g. "-c start -p 5") does not matter.
+	 */
+	if (capture) {
+		options.mode = capture_mode;
 	}
 
 #ifdef CONFIG_BUILD_PROTECTED
@@ -310,8 +358,11 @@ int utils_heapinfo(int argc, char **args)
 		close(heapinfo_fd);
 		return ERROR;		
 	}
-	/* If heapinfo runs without specifying a binary, print both kernel and application heap statistics. */
-	if (!bin_selected) {
+	/* If heapinfo runs without specifying a binary, print both kernel and application heap statistics.
+	 * Skip this for a capture window : the capture ioctl acts on the selected heap only, and
+	 * re-dispatching would toggle the global capture flag again.
+	 */
+	if (!bin_selected && !capture) {
 #ifdef CONFIG_APP1_INFO
 		options.heap_type = HEAPINFO_HEAP_TYPE_BINARY;
 		strncpy(options.app_name, CONFIG_APP1_BIN_NAME, BIN_NAME_MAX - 1);
@@ -341,7 +392,7 @@ int utils_heapinfo(int argc, char **args)
 	}
 	close(heapinfo_fd);
 
-	if (options.mode != HEAPINFO_DUMP_HEAP) {
+	if (!capture && options.mode != HEAPINFO_DUMP_HEAP) {
 		if (init_flag == true) {
 #ifdef CONFIG_BUILD_PROTECTED
 			printf("[%s]", heap_name);
@@ -385,5 +436,9 @@ usage:
 #endif
 	printf(" -i             Initialize the peak allocated size\n");
 	printf(" -d NAME	Dump entire heap. NAME can be either \"kernel\" or the app name\n");
+	printf(" -c start|stop  Start/stop a heap capture window. On stop, print every block\n");
+	printf("                allocated during the window that is still not freed (address,\n");
+	printf("                size, pid, alloc caller). Combine with -p PID to target one task.\n");
+	printf(" -s SKIP        Set the runtime backtrace skip value\n");
 	return ERROR;
 }

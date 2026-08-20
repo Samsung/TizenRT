@@ -186,7 +186,7 @@ static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddres
 		return;
 	}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-	heapinfo_subtract_size(heap, ((struct mm_allocnode_s *)node)->pid, ((struct mm_allocnode_s *)node)->size);
+	heapinfo_subtract_size(heap, ((struct mm_allocnode_s *)node)->pid, ((struct mm_allocnode_s *)node)->size, (struct mm_allocnode_s *)node);
 	heapinfo_update_total_size(heap, ((-1) * ((struct mm_allocnode_s *)node)->size), ((struct mm_allocnode_s *)node)->pid);
 #endif
 	node->preceding &= ~MM_ALLOC_BIT;
