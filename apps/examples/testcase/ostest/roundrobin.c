@@ -85,7 +85,7 @@
  ****************************************************************************/
 
 static uint8_t g_rr_values[CONFIG_TESTING_OSTEST_RR_RUNS * 2];
-static atomic_t g_rr_value_index;
+static int g_rr_value_index;
 static sem_t g_rrsem;
 
 /****************************************************************************
@@ -152,7 +152,9 @@ static FAR void *get_primes_thread(FAR void *parameter)
   for (i = 0; i < CONFIG_TESTING_OSTEST_RR_RUNS; i++)
     {
       get_primes(&count, &last);
-      g_rr_values[atomic_fetch_add(&g_rr_value_index, 1)] = id;
+      sched_lock();
+      g_rr_values[g_rr_value_index++] = id;
+      sched_unlock();
     }
 
   printf("get_primes_thread id=%d finished, found %d primes, "
@@ -237,7 +239,7 @@ void rr_test(void)
   /* This semaphore will prevent anything from running until we are ready */
 
   sched_lock();
-  atomic_set(&g_rr_value_index, 0);
+  g_rr_value_index = 0;
   memset(g_rr_values, 0, sizeof(g_rr_values));
   sem_init(&g_rrsem, 0, 0);
 

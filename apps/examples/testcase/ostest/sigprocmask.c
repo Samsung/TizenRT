@@ -56,7 +56,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define NSIGNALS 5
+#define NSIGNALS 2
 
 /****************************************************************************
  * Private Data
@@ -64,11 +64,8 @@
 
 static int g_some_signals[NSIGNALS] =
 {
-  SIGHUP,
-  SIGQUIT,
-  SIGTRAP,
-  SIGBUS,
-  SIGUSR1
+  SIGUSR1,
+  SIGUSR2
 };
 
 /****************************************************************************
@@ -122,7 +119,11 @@ void sigprocmask_test(void)
 
       /* SIGKILL and SIGSTOP should not be added to signal mask */
 
-      if (signo != SIGKILL && signo != SIGSTOP)
+      if (signo != SIGKILL
+#ifdef SIGSTOP
+          && signo != SIGSTOP
+#endif
+         )
         {
           ret = sigaddset(&newmask, signo);
           if (ret != OK)
@@ -234,6 +235,7 @@ void sigprocmask_test(void)
       goto errout_with_mask;
     }
 
+#ifdef SIGSTOP
   ret = sigdelset(&newmask, SIGSTOP);
   if (ret != OK)
     {
@@ -242,6 +244,7 @@ void sigprocmask_test(void)
       ASSERT(false);
       goto errout_with_mask;
     }
+#endif
 
   ret = sigdelset(&currmask, SIGKILL);
   if (ret != OK)
@@ -252,6 +255,7 @@ void sigprocmask_test(void)
       goto errout_with_mask;
     }
 
+#ifdef SIGSTOP
   ret = sigdelset(&currmask, SIGSTOP);
   if (ret != OK)
     {
@@ -260,6 +264,7 @@ void sigprocmask_test(void)
       ASSERT(false);
       goto errout_with_mask;
     }
+#endif
 
   /* It should be the same as newmask */
 
