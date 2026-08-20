@@ -488,7 +488,7 @@ static int adam110_send_model(FAR struct adam110_dev_s *dev)
 	}
 
 	/* Reconfigure the debug mode using the previous settings after an ADAM110 reset. */
-	if(dev->dsp_flow != 0) {
+	if (dev->dsp_flow != 0) {
 		ret = ADAM110_SET_MIC_DEBUG(dev, (uint8_t)dev->dsp_flow, &rxpkt);
 		if (ret != OK) {
 			auddbg("Disable debug mode failed\n");
