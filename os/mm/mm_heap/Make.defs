@@ -62,6 +62,14 @@ ifeq ($(CONFIG_BUILD_KERNEL),y)
 CSRCS += mm_sbrk.c
 endif
 
+ifeq ($(CONFIG_DEBUG_MM_UAF),y)
+CSRCS += mm_uaf.c
+endif
+
+ifeq ($(CONFIG_DEBUG_MM_QUARANTINE),y)
+CSRCS += mm_quarantine.c
+endif
+
 ifeq ($(CONFIG_DEBUG_MM_HEAPINFO),y)
 CSRCS += mm_heapinfo_parse_heap.c mm_heapinfo_utils.c
 ifeq ($(CONFIG_HEAPINFO_USER_GROUP),y)

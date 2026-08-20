@@ -84,6 +84,10 @@ void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 	FAR struct mm_freenode_s *next;
 	FAR struct mm_freenode_s *prev;
 
+#ifdef CONFIG_DEBUG_MM_UAF
+	mm_uaf_poison(node);
+#endif
+
 	/* Convert the size to a nodelist index */
 
 	int ndx = mm_size2ndx(node->size);

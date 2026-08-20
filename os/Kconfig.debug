@@ -790,6 +790,111 @@ config DEBUG_MM_FREEINFO
 	---help---
 		Enable free debug with free caller information for double free debugging.
 
+config DEBUG_MM_UAF
+	bool "Use-after-free detection option"
+	default n
+	---help---
+		Fill the data area of a chunk with the 0xA5A5A5A5 poison pattern when
+		it is returned to the free list, and verify the pattern again when the
+		chunk is handed out by malloc. A mismatch means somebody wrote into
+		the chunk after it was freed (use-after-free).
+
+		Not covered: the free node bookkeeping at the start of the user data,
+		from offset 0 up to SIZEOF_MM_FREENODE. The allocator reuses that
+		region for flink, blink and the free debug info while the chunk is on
+		the free list, so it cannot hold the pattern. A write there corrupts
+		the free list; DEBUGASSERT_MM_FREE_NODE catches the case where blink
+		is left NULL, but a write of any other value, or a write to flink, is
+		not detected.
+
+if DEBUG_MM_UAF
+
+config DEBUG_MM_UAF_POISON_SIZE
+	int "Poison pattern size (bytes)"
+	default 64
+	---help---
+		Maximum number of bytes of the free chunk data area to fill with the
+		poison pattern. Only the data area which follows the free node
+		bookkeeping fields is poisoned, so chunks smaller than that are not
+		covered. Larger values detect more corruption but slow down every
+		free and every malloc.
+
+config DEBUG_MM_UAF_PANIC
+	bool "Panic when use-after-free is detected"
+	default n
+	---help---
+		Assert as soon as a corrupted poison pattern is found, so that the
+		crash dump is taken close to the allocation which detected it.
+		If disabled, the corruption is only reported and the allocation
+		proceeds.
+
+config DEBUG_MM_QUARANTINE
+	bool "Delay the reuse of freed chunks"
+	default n
+	---help---
+		Hold a freed chunk out of the free list for a while instead of making
+		it reusable straight away, and check its poison pattern when it is
+		finally released.
+
+		This is what makes the case DEBUG_MM_UAF cannot see detectable: one
+		thread frees a block, a second thread allocates the same block, and
+		the first thread then writes through its stale pointer. Without the
+		delay the address already belongs to the second thread by the time the
+		bad write happens, so no check of the contents can tell that write
+		apart from a legitimate one. While the chunk is held, the second
+		thread is given a different one, so the stale write lands in memory
+		nobody owns and the pattern check finds it.
+
+		A held chunk keeps its allocated bit set, so it does not merge with
+		its neighbours. Its owner, allocating address and freeing address
+		therefore survive intact and the report names the right code. Freeing
+		a held chunk a second time is also reported, with both callers.
+
+		malloc releases the whole quarantine before it reports failure, so
+		enabling this does not cause allocation failures which would not
+		happen otherwise.
+
+		This widens the window in which a stale write is detectable, it does
+		not close it. A write which happens after the chunk has aged out and
+		been reallocated is still missed, and reads through a stale pointer
+		are not detected at all. Holding chunks back also costs contiguous
+		free space, which matters most on a small heap, so this is intended
+		for test and soak builds rather than for a product configuration.
+
+if DEBUG_MM_QUARANTINE
+
+config DEBUG_MM_QUARANTINE_CHUNKS
+	int "Maximum number of chunks to hold"
+	default 32
+	range 1 256
+	---help---
+		Size of the quarantine ring. Costs one pointer of static memory per
+		slot per heap. A larger ring keeps addresses out of circulation for
+		longer, which widens the window in which a stale write is still
+		detectable.
+
+config DEBUG_MM_QUARANTINE_BYTES
+	int "Maximum number of bytes to hold"
+	default 4096
+	range 64 65536
+	---help---
+		Total size of the chunks held at any one time. The oldest chunks are
+		released to stay within this budget. Keep it small relative to the
+		heap: the memory is unavailable until it is released.
+
+config DEBUG_MM_QUARANTINE_MAX_SIZE
+	int "Largest chunk to hold (bytes)"
+	default 1024
+	range 32 65536
+	---help---
+		Chunks larger than this go straight back to the free list instead of
+		being held. Holding a large buffer costs more of a small heap than
+		the extra detection is worth.
+
+endif # DEBUG_MM_QUARANTINE
+
+endif # DEBUG_MM_UAF
+
 config DEBUG_IRQ
 	bool "Interrupt Controller Debug Feature"
 	default n
