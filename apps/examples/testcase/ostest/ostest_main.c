@@ -47,7 +47,6 @@
 #include <sys/wait.h>
 #include <assert.h>
 #include <errno.h>
-#include <malloc.h>
 #include <sched.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -252,13 +251,14 @@ static int user_main(int argc, char *argv[])
  * arch/sim".
  */
 
-#if defined(CONFIG_ARCH_HAVE_VFORK) && !defined(CONFIG_ARCH_SIM)
+#if defined(CONFIG_TESTING_OSTEST_VFORK) && \
+    defined(CONFIG_ARCH_HAVE_VFORK) && !defined(CONFIG_ARCH_SIM)
   printf("\nuser_main: vfork() test\n");
   vfork_test();
   check_test_memory_usage();
 #endif
 
-#ifdef CONFIG_ARCH_HAVE_FORK
+#if defined(CONFIG_TESTING_OSTEST_FORK) && defined(CONFIG_ARCH_HAVE_FORK)
   printf("\nuser_main: fork() test\n");
   fork_test();
   check_test_memory_usage();
@@ -294,19 +294,23 @@ static int user_main(int argc, char *argv[])
 
   check_test_memory_usage();
 
-  /* Test additional getopt(), getopt_long(), and getopt_long_only()
-   * features.
-   */
+  /* Test additional getopt features. */
 
-  printf("\nuser_main: getopt() test\n");
+#if defined(CONFIG_TESTING_OSTEST_GETOPT) || \
+    defined(CONFIG_TESTING_OSTEST_GETOPT_LONG) || \
+    defined(CONFIG_TESTING_OSTEST_GETOPT_LONG_ONLY)
+  printf("\nuser_main: getopt test\n");
   getopt_test();
   check_test_memory_usage();
+#endif
 
   /* Test misc libc functions. */
 
+#ifdef CONFIG_TESTING_OSTEST_LIBC_MEMMEM
   printf("\nuser_main: libc tests\n");
   memmem_test();
   check_test_memory_usage();
+#endif
 
   /* If retention of child status is enable, then suppress it for this task.
    * This task may produce many, many children (especially if
@@ -319,7 +323,7 @@ static int user_main(int argc, char *argv[])
    */
 
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS) && \
-    defined(CONFIG_ENABLE_ALL_SIGNALS)
+    !defined(CONFIG_DISABLE_SIGNALS)
     {
       struct sigaction sa;
       int ret;
@@ -349,14 +353,16 @@ static int user_main(int argc, char *argv[])
   check_test_memory_usage();
 #endif
 
-#if defined(CONFIG_TLS_NELEM) && CONFIG_TLS_NELEM > 0
+#if defined(CONFIG_TESTING_OSTEST_TLS) && defined(CONFIG_TLS_NELEM) && \
+    CONFIG_TLS_NELEM > 0
   /* Test TLS */
 
   tls_test();
   check_test_memory_usage();
 #endif
 
-#ifdef CONFIG_SCHED_THREAD_LOCAL
+#if defined(CONFIG_TESTING_OSTEST_SCHED_THREAD_LOCAL) && \
+    defined(CONFIG_SCHED_THREAD_LOCAL)
   /* Test __thread/thread_local keyword */
 
   printf("\nuser_main: sched_thread_local test\n");
@@ -372,7 +378,8 @@ static int user_main(int argc, char *argv[])
   for (; ; )
 #endif
     {
-#ifndef CONFIG_STDIO_DISABLE_BUFFERING
+#if defined(CONFIG_TESTING_OSTEST_SETVBUF) && \
+    !defined(CONFIG_STDIO_DISABLE_BUFFERING)
       /* Checkout setvbuf */
 
       printf("\nuser_main: setvbuf test\n");
@@ -382,7 +389,7 @@ static int user_main(int argc, char *argv[])
 
       /* Checkout /dev/null */
 
-#ifdef CONFIG_DEV_NULL
+#if defined(CONFIG_TESTING_OSTEST_DEV_NULL) && defined(CONFIG_DEV_NULL)
       printf("\nuser_main: /dev/null test\n");
       dev_null_test();
       check_test_memory_usage();
@@ -396,8 +403,8 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#if defined(CONFIG_ARCH_FPU) && !defined(CONFIG_TESTING_OSTEST_FPUTESTDISABLE) && \
-    defined(CONFIG_BUILD_FLAT)
+#if defined(CONFIG_TESTING_OSTEST_FPU) && defined(CONFIG_ARCH_FPU) && \
+    !defined(CONFIG_TESTING_OSTEST_FPUTESTDISABLE) && defined(CONFIG_BUILD_FLAT)
       /* Check that the FPU is properly supported during context switching */
 
       printf("\nuser_main: FPU test\n");
@@ -405,7 +412,7 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#ifndef CONFIG_BUILD_KERNEL
+#if defined(CONFIG_TESTING_OSTEST_RESTART) && !defined(CONFIG_BUILD_KERNEL)
       /* Checkout task_restart() */
 
       printf("\nuser_main: task_restart test\n");
@@ -413,7 +420,8 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#if defined(CONFIG_SCHED_WAITPID) && !defined(CONFIG_BUILD_KERNEL)
+#if defined(CONFIG_TESTING_OSTEST_WAITPID) && defined(CONFIG_SCHED_WAITPID) && \
+    !defined(CONFIG_BUILD_KERNEL)
       /* Check waitpid() and friends */
 
       printf("\nuser_main: waitpid test\n");
@@ -434,7 +442,8 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_BUILD_FLAT) && \
+#if defined(CONFIG_TESTING_OSTEST_WQUEUE) && \
+    !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_BUILD_FLAT) && \
     defined(CONFIG_SCHED_WORKQUEUE)
       /* Check work queues */
 
@@ -443,19 +452,23 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#ifndef CONFIG_DISABLE_PTHREAD
+#if defined(CONFIG_TESTING_OSTEST_MUTEX) && !defined(CONFIG_DISABLE_PTHREAD)
       /* Verify pthreads and pthread mutex */
 
       printf("\nuser_main: mutex test\n");
       mutex_test();
       check_test_memory_usage();
+#endif
 
+#if defined(CONFIG_TESTING_OSTEST_TIMEDMUTEX) && \
+    !defined(CONFIG_DISABLE_PTHREAD)
       printf("\nuser_main: timed mutex test\n");
       timedmutex_test();
       check_test_memory_usage();
 #endif
 
-#if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_PTHREAD_MUTEX_TYPES)
+#if defined(CONFIG_TESTING_OSTEST_RMUTEX) && \
+    !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_PTHREAD_MUTEX_TYPES)
       /* Verify recursive mutexes */
 
       printf("\nuser_main: recursive mutex test\n");
@@ -463,7 +476,8 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#if !defined(CONFIG_DISABLE_PTHREAD) && CONFIG_TLS_NELEM > 0
+#if defined(CONFIG_TESTING_OSTEST_SPECIFIC) && \
+    !defined(CONFIG_DISABLE_PTHREAD) && CONFIG_TLS_NELEM > 0
       /* Verify pthread-specific data */
 
       printf("\nuser_main: pthread-specific data test\n");
@@ -471,40 +485,45 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#ifndef CONFIG_DISABLE_PTHREAD
+#if defined(CONFIG_TESTING_OSTEST_CANCEL) && !defined(CONFIG_DISABLE_PTHREAD)
       /* Verify pthread cancellation */
 
       printf("\nuser_main: cancel test\n");
       cancel_test();
       check_test_memory_usage();
+#endif
 
-#ifndef CONFIG_PTHREAD_MUTEX_UNSAFE
+#if defined(CONFIG_TESTING_OSTEST_ROBUST) && \
+    !defined(CONFIG_DISABLE_PTHREAD) && !defined(CONFIG_PTHREAD_MUTEX_UNSAFE)
       printf("\nuser_main: robust test\n");
       robust_test();
       check_test_memory_usage();
 #endif
-#endif
 
-#ifndef CONFIG_DISABLE_PTHREAD
+#if defined(CONFIG_TESTING_OSTEST_SEM) && !defined(CONFIG_DISABLE_PTHREAD)
       /* Verify pthreads and semaphores */
 
       printf("\nuser_main: semaphore test\n");
       sem_test();
       check_test_memory_usage();
+#endif
 
+#if defined(CONFIG_TESTING_OSTEST_SEMTIMED) && \
+    !defined(CONFIG_DISABLE_PTHREAD)
       printf("\nuser_main: timed semaphore test\n");
       semtimed_test();
       check_test_memory_usage();
+#endif
 
-#ifdef CONFIG_FS_NAMED_SEMAPHORES
+#if defined(CONFIG_TESTING_OSTEST_NSEM) && \
+    !defined(CONFIG_DISABLE_PTHREAD) && \
+    defined(CONFIG_FS_NAMED_SEMAPHORES)
       printf("\nuser_main: Named semaphore test\n");
       nsem_test();
       check_test_memory_usage();
-
-#endif
 #endif
 
-#ifndef CONFIG_DISABLE_PTHREAD
+#if defined(CONFIG_TESTING_OSTEST_COND) && !defined(CONFIG_DISABLE_PTHREAD)
       /* Verify pthreads and condition variables */
 
       printf("\nuser_main: condition variable test\n");
@@ -515,8 +534,10 @@ static int user_main(int argc, char *argv[])
       cond_test();
       check_test_memory_usage();
 #endif
+#endif
 
-#ifdef CONFIG_SCHED_WAITPID
+#if defined(CONFIG_TESTING_OSTEST_PTHREAD_EXIT) && \
+    !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_WAITPID)
       /* Verify pthread_exit() and pthread_self() */
 
       printf("\nuser_main: pthread_exit() test\n");
@@ -524,17 +545,24 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
+#if defined(CONFIG_TESTING_OSTEST_PTHREAD_RWLOCK) && \
+    !defined(CONFIG_DISABLE_PTHREAD)
       /* Verify pthreads rwlock interfaces */
 
       printf("\nuser_main: pthread_rwlock test\n");
       pthread_rwlock_test();
       check_test_memory_usage();
+#endif
 
+#if defined(CONFIG_TESTING_OSTEST_PTHREAD_RWLOCK_CANCEL) && \
+    !defined(CONFIG_DISABLE_PTHREAD)
       printf("\nuser_main: pthread_rwlock_cancel test\n");
       pthread_rwlock_cancel_test();
       check_test_memory_usage();
+#endif
 
-#if CONFIG_TLS_NCLEANUP > 0
+#if defined(CONFIG_TESTING_OSTEST_PTHREAD_CLEANUP) && \
+    !defined(CONFIG_DISABLE_PTHREAD) && CONFIG_TLS_NCLEANUP > 0
       /* Verify pthread cancellation cleanup handlers */
 
       printf("\nuser_main: pthread_cleanup test\n");
@@ -542,14 +570,17 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
+#if defined(CONFIG_TESTING_OSTEST_TIMEDWAIT) && \
+    !defined(CONFIG_DISABLE_PTHREAD)
       /* Verify pthreads and condition variable timed waits */
 
       printf("\nuser_main: timed wait test\n");
       timedwait_test();
       check_test_memory_usage();
-#endif /* !CONFIG_DISABLE_PTHREAD */
+#endif
 
-#if !defined(CONFIG_DISABLE_MQUEUE) && !defined(CONFIG_DISABLE_PTHREAD)
+#if defined(CONFIG_TESTING_OSTEST_TIMEDMQUEUE) && \
+    !defined(CONFIG_DISABLE_MQUEUE) && !defined(CONFIG_DISABLE_PTHREAD)
       /* Verify pthreads and message queues */
 
       printf("\nuser_main: timed message queue test\n");
@@ -557,14 +588,18 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#ifndef CONFIG_DISABLE_ALL_SIGNALS
+#if defined(CONFIG_TESTING_OSTEST_SIGPROCMASK) && \
+    !defined(CONFIG_DISABLE_SIGNALS)
       /* Verify that we can modify the signal mask */
 
       printf("\nuser_main: sigprocmask test\n");
       sigprocmask_test();
       check_test_memory_usage();
+#endif
 
-#if !defined(CONFIG_DISABLE_MQUEUE) && !defined(CONFIG_DISABLE_PTHREAD)
+#if defined(CONFIG_TESTING_OSTEST_MQUEUE) && \
+    !defined(CONFIG_DISABLE_SIGNALS) && !defined(CONFIG_DISABLE_MQUEUE) && \
+    !defined(CONFIG_DISABLE_PTHREAD)
       /* Verify pthreads and message queues */
 
       printf("\nuser_main: message queue test\n");
@@ -572,53 +607,64 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#if defined(CONFIG_SIG_SIGSTOP_ACTION) && defined(CONFIG_SIG_SIGKILL_ACTION) && \
+#if defined(CONFIG_TESTING_OSTEST_SUSPEND) && \
+    !defined(CONFIG_DISABLE_SIGNALS) && \
+    defined(CONFIG_SIG_SIGSTOP_ACTION) && defined(CONFIG_SIG_SIGKILL_ACTION) && \
     !defined(CONFIG_BUILD_KERNEL)
       printf("\nuser_main: signal action test\n");
       suspend_test();
       check_test_memory_usage();
 #endif
-#endif /* !CONFIG_DISABLE_ALL_SIGNALS */
 
-#ifdef CONFIG_ENABLE_ALL_SIGNALS
+#if defined(CONFIG_TESTING_OSTEST_SIGHAND) && \
+    !defined(CONFIG_DISABLE_SIGNALS)
       /* Verify signal handlers */
 
       printf("\nuser_main: signal handler test\n");
       sighand_test();
       check_test_memory_usage();
+#endif
 
+#if defined(CONFIG_TESTING_OSTEST_SIGNEST) && \
+    !defined(CONFIG_DISABLE_SIGNALS)
       printf("\nuser_main: nested signal handler test\n");
       signest_test();
       check_test_memory_usage();
+#endif
 
-#ifndef CONFIG_DISABLE_POSIX_TIMERS
+#if defined(CONFIG_TESTING_OSTEST_POSIXTIMER) && \
+    !defined(CONFIG_DISABLE_SIGNALS) && \
+    !defined(CONFIG_DISABLE_POSIX_TIMERS)
       /* Verify posix timers (with SIGEV_SIGNAL) */
 
       printf("\nuser_main: POSIX timer test\n");
       timer_test();
       check_test_memory_usage();
 #endif
-#endif
 
-#ifdef CONFIG_BUILD_FLAT
+#if defined(CONFIG_TESTING_OSTEST_SPINLOCK) && defined(CONFIG_BUILD_FLAT)
       printf("\nuser_main: spinlock test\n");
       spinlock_test();
       check_test_memory_usage();
+#endif
 
+#if defined(CONFIG_TESTING_OSTEST_WDOG) && defined(CONFIG_BUILD_FLAT)
       printf("\nuser_main: wdog test\n");
       wdog_test();
       check_test_memory_usage();
+#endif
 
+#if defined(CONFIG_TESTING_OSTEST_HRTIMER) && defined(CONFIG_BUILD_FLAT) && \
+    defined(CONFIG_HRTIMER)
       /* Verify hrtimer */
 
-#  ifdef CONFIG_HRTIMER
       printf("\nuser_main: hrtimer test\n");
       hrtimer_test();
       check_test_memory_usage();
-#  endif
 #endif
 
-#if !defined(CONFIG_DISABLE_POSIX_TIMERS) && \
+#if defined(CONFIG_TESTING_OSTEST_SIGEV_THREAD) && \
+    !defined(CONFIG_DISABLE_POSIX_TIMERS) && \
     defined(CONFIG_SIG_EVTHREAD)
       /* Verify posix timers (with SIGEV_THREAD) */
 
@@ -627,7 +673,8 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#if !defined(CONFIG_DISABLE_PTHREAD) && CONFIG_RR_INTERVAL > 0
+#if defined(CONFIG_TESTING_OSTEST_ROUNDROBIN) && \
+    !defined(CONFIG_DISABLE_PTHREAD) && CONFIG_RR_INTERVAL > 0
       /* Verify round robin scheduling */
 
       printf("\nuser_main: round-robin scheduler test\n");
@@ -635,19 +682,23 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_SPORADIC)
+#if defined(CONFIG_TESTING_OSTEST_SPORADIC) && \
+    !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_SPORADIC)
       /* Verify sporadic scheduling */
 
       printf("\nuser_main: sporadic scheduler test\n");
       sporadic_test();
       check_test_memory_usage();
+#endif
 
+#if defined(CONFIG_TESTING_OSTEST_SPORADIC2) && \
+    !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_SPORADIC)
       printf("\nuser_main: Dual sporadic thread test\n");
       sporadic2_test();
       check_test_memory_usage();
 #endif
 
-#ifndef CONFIG_DISABLE_PTHREAD
+#if defined(CONFIG_TESTING_OSTEST_BARRIER) && !defined(CONFIG_DISABLE_PTHREAD)
       /* Verify pthread barriers */
 
       printf("\nuser_main: barrier test\n");
@@ -655,7 +706,7 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#ifdef CONFIG_ARCH_SETJMP_H
+#if defined(CONFIG_TESTING_OSTEST_SETJMP) && defined(CONFIG_ARCH_SETJMP_H)
       /* Verify setjmp/longjmp */
 
       printf("\nuser_main: setjmp test\n");
@@ -663,7 +714,8 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#if defined(CONFIG_PRIORITY_INHERITANCE) && !defined(CONFIG_DISABLE_PTHREAD)
+#if defined(CONFIG_TESTING_OSTEST_PRIOINHERIT) && \
+    defined(CONFIG_PRIORITY_INHERITANCE) && !defined(CONFIG_DISABLE_PTHREAD)
       /* Verify priority inheritance */
 
       printf("\nuser_main: priority inheritance test\n");
@@ -671,18 +723,21 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif /* CONFIG_PRIORITY_INHERITANCE && !CONFIG_DISABLE_PTHREAD */
 
-#ifndef CONFIG_DISABLE_PTHREAD
+#if defined(CONFIG_TESTING_OSTEST_SCHEDLOCK) && \
+    !defined(CONFIG_DISABLE_PTHREAD)
       printf("\nuser_main: scheduler lock test\n");
       sched_lock_test();
       check_test_memory_usage();
 #endif
 
-#if defined(CONFIG_SMP) && defined(CONFIG_BUILD_FLAT)
+#if defined(CONFIG_TESTING_OSTEST_SMP_CALL) && defined(CONFIG_SMP) && \
+    defined(CONFIG_BUILD_FLAT)
       printf("\nuser_main: smp call test\n");
       smp_call_test();
 #endif
 
-#if defined(CONFIG_SCHED_EVENTS) && defined(CONFIG_BUILD_FLAT)
+#if defined(CONFIG_TESTING_OSTEST_NXEVENT) && \
+    defined(CONFIG_SCHED_EVENTS) && defined(CONFIG_BUILD_FLAT)
       /* Verify nxevent */
 
       printf("\nuser_main: nxevent test\n");
@@ -690,7 +745,8 @@ static int user_main(int argc, char *argv[])
       check_test_memory_usage();
 #endif
 
-#if defined(CONFIG_ARCH_PERF_EVENTS) && \
+#if defined(CONFIG_TESTING_OSTEST_PERF_GETTIME) && \
+    defined(CONFIG_ARCH_PERF_EVENTS) && \
     !defined(CONFIG_ARCH_PERF_EVENTS_USER_ACCESS) && defined(CONFIG_BUILD_FLAT)
       /* Verify performance event time counter */
 
@@ -742,7 +798,11 @@ static void stdio_test(void)
  * ostest_main
  ****************************************************************************/
 
+#ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char **argv)
+#else
+int ostest_main(int argc, FAR char **argv)
+#endif
 {
 #ifdef CONFIG_TESTING_OSTEST_WAITRESULT
   int ostest_result = ERROR;
