@@ -754,9 +754,8 @@ static int adam110_load_firmware(FAR struct adam110_dev_s *priv)
 	if (ret != 0) {
 		auddbg("Adam110 PDM clock %s Hz failed ret : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz") ,ret);
 		return ret;
-	}
-	else{
-		auddbg("Set Adam110 PDM clock %s Hz : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz"));
+	} else {
+		auddbg("Set Adam110 PDM clock %s Hz : %d\n",(PDM_CLOCK_PDM_RATE?"1Mhz":"2Mhz"), ret);
 	}
 
 	ret = ADAM110_SET_MODEL(priv);
@@ -1319,8 +1318,8 @@ static int adam110_configure(FAR struct audio_lowerhalf_s *dev, FAR const struct
 			 */
 			adam110_takesem(&priv->devsem);
 
-			/* 1:Hi bixby,2:Bixby,3:Alexa,4:Fridge */
-			if(priv->kd_num >= WWD_CUSTOM_MODEL1){
+			/* 1:Hi bixby, 2:Bixby, 3:Alexa, 4:WWD_CUSTOM_MODEL1 */
+			if (priv->kd_num >= WWD_CUSTOM_MODEL1) {
 				sensitivity = (uint16_t)(((uint32_t)sensitivity * 32768) / 1000);				
 			}			
 			ADAM110_AI_SET_THD(priv, priv->kd_num + 1, (sensitivity >> 8) & 0xff, sensitivity & 0xff, &rxpkt);
