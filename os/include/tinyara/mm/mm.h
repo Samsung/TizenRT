@@ -172,6 +172,10 @@
 #define MM_REMAINDER_FREE_CALL_ADDR ((void *)0xFEEEFEEE)
 #define MM_REMAINDER_FREE_CALL_PID 	((pid_t)-1)
 
+#ifdef CONFIG_DEBUG_MM_UAF
+#define MM_UAF_PATTERN	0xA5A5A5A5
+#endif
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
@@ -656,6 +660,11 @@ void mm_addfreechunk(FAR struct mm_heap_s *heap, FAR struct mm_freenode_s *node)
 /* Functions contained in mm_size2ndx.c.c ***********************************/
 
 int mm_size2ndx(size_t size);
+
+#ifdef CONFIG_DEBUG_MM_UAF
+void mm_uaf_poison(FAR struct mm_freenode_s *node);
+void mm_uaf_verify(FAR struct mm_freenode_s *node);
+#endif
 
 void mm_dump_node(struct mm_allocnode_s *node, char *node_type);
 void mm_dump_heap_region(uint32_t start, uint32_t end);

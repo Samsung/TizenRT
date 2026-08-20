@@ -790,6 +790,38 @@ config DEBUG_MM_FREEINFO
 	---help---
 		Enable free debug with free caller information for double free debugging.
 
+config DEBUG_MM_UAF
+	bool "Use-after-free detection option"
+	default n
+	---help---
+		Fill the data area of a chunk with the 0xA5A5A5A5 poison pattern when
+		it is returned to the free list, and verify the pattern again when the
+		chunk is handed out by malloc. A mismatch means somebody wrote into
+		the chunk after it was freed (use-after-free).
+
+if DEBUG_MM_UAF
+
+config DEBUG_MM_UAF_POISON_SIZE
+	int "Poison pattern size (bytes)"
+	default 64
+	---help---
+		Maximum number of bytes of the free chunk data area to fill with the
+		poison pattern. Only the data area which follows the free node
+		bookkeeping fields is poisoned, so chunks smaller than that are not
+		covered. Larger values detect more corruption but slow down every
+		free and every malloc.
+
+config DEBUG_MM_UAF_PANIC
+	bool "Panic when use-after-free is detected"
+	default n
+	---help---
+		Assert as soon as a corrupted poison pattern is found, so that the
+		crash dump is taken close to the allocation which detected it.
+		If disabled, the corruption is only reported and the allocation
+		proceeds.
+
+endif # DEBUG_MM_UAF
+
 config DEBUG_IRQ
 	bool "Interrupt Controller Debug Feature"
 	default n
