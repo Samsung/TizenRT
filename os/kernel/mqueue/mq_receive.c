@@ -125,6 +125,7 @@
  *            message queue.
  *   EINTR    The call was interrupted by a signal handler.
  *   EINVAL   Invalid 'msg' or 'mqdes'
+ *   EBADF    Mqdes is not present in calling task group's mq list.
  *
  * Assumptions:
  *
@@ -144,6 +145,12 @@ ssize_t mq_receive(mqd_t mqdes, FAR char *msg, size_t msglen, FAR int *prio)
 
 	/* mq_receive() is a cancellation point */
 	(void)enter_cancellation_point();
+
+	if (mq_desc_in_grouplist(mqdes) != OK) {
+		leave_cancellation_point();
+		set_errno(EBADF);
+		return ERROR;
+	}
 
 	if (mq_verifyreceive(mqdes, msg, msglen) != OK) {
 		leave_cancellation_point();

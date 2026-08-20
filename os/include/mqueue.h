@@ -188,6 +188,11 @@ int mq_setattr(mqd_t mqdes, FAR const struct mq_attr *mq_stat, FAR struct mq_att
  * @since TizenRT v1.0
  */
 int mq_getattr(mqd_t mqdes, FAR struct mq_attr *mq_stat);
+/**
+ * @brief check mq descriptor in calling task's group's list of mq descriptors
+ * @details @b #include <mqueue.h> \n
+ */
+int mq_desc_in_grouplist(mqd_t mqdes);
 
 #undef EXTERN
 #ifdef __cplusplus
