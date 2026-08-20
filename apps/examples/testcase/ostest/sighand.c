@@ -92,9 +92,9 @@ static void death_of_child(int signo, siginfo_t *info, void *ucontext)
   if (info)
     {
       printf("death_of_child: PID %d received signal=%d code=%d "
-             "errno=%d pid=%d status=%d\n",
-             getpid(), signo, info->si_code, info->si_errno,
-             info->si_pid, info->si_status);
+             "pid=%d status=%d\n",
+             getpid(), signo, info->si_code, info->si_pid,
+             info->si_status);
     }
   else
     {
@@ -184,8 +184,8 @@ static FAR void *waiter_main(FAR void *arg)
 
 #ifndef SDCC
   printf("waiter_main: oact.sigaction=%p oact.sa_flags=%x "
-         "oact.sa_mask=" SIGSET_FMT "\n",
-          oact.sa_sigaction, oact.sa_flags, SIGSET_ELEM(&oact.sa_mask));
+         "oact.sa_mask=%x\n",
+         oact.sa_sigaction, oact.sa_flags, oact.sa_mask);
 #endif
 
   /* Take the semaphore */

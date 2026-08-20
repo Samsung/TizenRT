@@ -82,8 +82,9 @@
 #define NHIGHPRI_THREADS 1
 
 #define NUMBER_OF_COMPETING_THREADS     3
-#define COMPETING_THREAD_START_PRIORITY 200
+#define COMPETING_THREAD_START_PRIORITY 170
 #define PRIORIY_SPREED                  10
+#define CONFIG_DEFAULT_TASK_STACKSIZE   1024
 
 /****************************************************************************
  * Private Types
@@ -126,7 +127,7 @@ static void sleep_and_display(int n, int us)
 
   do
     {
-      int status = sched_getparam(gettid(), &sparam);
+      int status = sched_getparam(getpid(), &sparam);
 
       if (status != 0)
         {
@@ -529,7 +530,7 @@ void priority_inheritance(void)
   for (i = 0; i < NHIGHPRI_THREADS; i++) g_highstate[i] = NOTSTARTED;
   for (i = 0; i < NLOWPRI_THREADS; i++)  g_lowstate[i]  = NOTSTARTED;
 
-  status = sched_getparam(gettid(), &sparam);
+  status = sched_getparam(getpid(), &sparam);
   if (status != 0)
     {
       printf("priority_inheritance: ERROR sched_getparam failed\n");

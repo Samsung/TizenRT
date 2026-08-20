@@ -100,12 +100,12 @@ static bool signest_catchable(int signo)
     }
 #endif
 
-#ifdef CONFIG_SIG_SIGKILL_ACTION
+// #ifdef CONFIG_SIG_SIGKILL_ACTION
   if (signo == SIGKILL)
     {
       return false;
     }
-#endif
+// #endif
 
   return true;
 }
@@ -270,7 +270,7 @@ static void wait_finish(int pid, int sig)
       ts.tv_sec += 2;
       if (sem_timedwait(&g_sem_signal_finish, &ts) != OK)
         {
-          sinfo("signest_test wait too long");
+          dbg("signest_test wait too long");
           ASSERT(false);
         }
 
