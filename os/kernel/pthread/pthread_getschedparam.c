@@ -133,14 +133,16 @@ int pthread_getschedparam(pthread_t thread, FAR int *policy, FAR struct sched_pa
 
 		ret = sched_getparam((pid_t)thread, param);
 		if (ret != OK) {
-			ret = EINVAL;
-		}
+			/* Thread does not exist - return ESRCH per POSIX */
+			ret = ESRCH;
+		} else {
+			/* Return the policy. */
 
-		/* Return the policy. */
-
-		*policy = sched_getscheduler((pid_t)thread);
-		if (*policy == ERROR) {
-			ret = get_errno();
+			*policy = sched_getscheduler((pid_t)thread);
+			if (*policy == ERROR) {
+				/* Thread disappeared between getparam and getscheduler */
+				ret = ESRCH;
+			}
 		}
 	}
 

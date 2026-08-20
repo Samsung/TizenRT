@@ -123,7 +123,13 @@ int sem_trywait(FAR sem_t *sem)
 
 	/* This API should not be called from interrupt handlers */
 
-	DEBUGASSERT(sem != NULL && up_interrupt_context() == false);
+	DEBUGASSERT(up_interrupt_context() == false);
+
+	/* Return EINVAL for NULL semaphore instead of crashing */
+	if (sem == NULL) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	if ((sem != NULL) && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
 		/* The following operations must be performed with interrupts disabled
