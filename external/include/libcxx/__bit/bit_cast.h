@@ -1,0 +1,60 @@
+// -*- C++ -*-
+//===----------------------------------------------------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef _LIBCPP___BIT_BIT_CAST_H
+#define _LIBCPP___BIT_BIT_CAST_H
+
+#include <__config>
+#include <__type_traits/is_trivially_copyable.h>
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#  pragma GCC system_header
+#endif
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+#if _LIBCPP_STD_VER >= 20
+
+template <class _ToType, class _FromType>
+  requires(sizeof(_ToType) == sizeof(_FromType) &&
+           is_trivially_copyable_v<_ToType> &&
+           is_trivially_copyable_v<_FromType>)
+_LIBCPP_NODISCARD_EXT _LIBCPP_HIDE_FROM_ABI constexpr _ToType bit_cast(const _FromType& __from) noexcept {
+#  if __has_builtin(__builtin_bit_cast)
+  return __builtin_bit_cast(_ToType, __from);
+#  else
+  // Fallback for GCC: __builtin_bit_cast is Clang-specific
+  _ToType __to{};
+  __builtin_memcpy(&__to, &__from, sizeof(_ToType));
+  return __to;
+#  endif
+}
+
+#else // _LIBCPP_STD_VER < 20
+
+template <class _ToType, class _FromType,
+          __enable_if_t<sizeof(_ToType) == sizeof(_FromType) &&
+                        is_trivially_copyable<_ToType>::value &&
+                        is_trivially_copyable<_FromType>::value, int> = 0>
+_LIBCPP_NODISCARD_EXT _LIBCPP_HIDE_FROM_ABI constexpr _ToType bit_cast(const _FromType& __from) noexcept {
+#  if __has_builtin(__builtin_bit_cast)
+  return __builtin_bit_cast(_ToType, __from);
+#  else
+  // Fallback for GCC: __builtin_bit_cast is Clang-specific
+  _ToType __to{};
+  __builtin_memcpy(&__to, &__from, sizeof(_ToType));
+  return __to;
+#  endif
+}
+
+#endif // _LIBCPP_STD_VER >= 20
+
+_LIBCPP_END_NAMESPACE_STD
+
+#endif // _LIBCPP___BIT_BIT_CAST_H

@@ -1,85 +1,129 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
-//***************************************************************************
-// include/libcxx/cctype
+// -*- C++ -*-
+//===----------------------------------------------------------------------===//
 //
-//   Copyright (C) 2009, 2016 Gregory Nutt. All rights reserved.
-//   Author: Gregory Nutt <gnutt@nuttx.org>
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//
-// 1. Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-// 2. Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in
-//    the documentation and/or other materials provided with the
-//    distribution.
-// 3. Neither the name NuttX nor the names of its contributors may be
-//    used to endorse or promote products derived from this software
-//    without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-// OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-// AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//***************************************************************************
+//===----------------------------------------------------------------------===//
 
-#ifndef __INCLUDE_CXX_CCTYPE
-#define __INCLUDE_CXX_CCTYPE
+#ifndef _LIBCPP_CCTYPE
+#define _LIBCPP_CCTYPE
 
-//***************************************************************************
-// Included Files
-//***************************************************************************
-
-#include <ctype.h>
-
-//***************************************************************************
-// Namespace
-//***************************************************************************
+/*
+    cctype synopsis
 
 namespace std
 {
-  using ::isspace;
-  using ::isascii;
-  using ::isprint;
-  using ::isgraph;
-  using ::iscntrl;
-  using ::islower;
-  using ::isupper;
-  using ::isalpha;
-  using ::isblank;
-  using ::isdigit;
-  using ::isalnum;
-  using ::ispunct;
-  using ::isxdigit;
-  using ::toupper;
-  using ::tolower;
-}
 
-#endif // __INCLUDE_CXX_CCTYPE
+int isalnum(int c);
+int isalpha(int c);
+int isblank(int c);  // C99
+int iscntrl(int c);
+int isdigit(int c);
+int isgraph(int c);
+int islower(int c);
+int isprint(int c);
+int ispunct(int c);
+int isspace(int c);
+int isupper(int c);
+int isxdigit(int c);
+int tolower(int c);
+int toupper(int c);
+
+}  // std
+*/
+
+#include <__assert> // all public C++ headers provide the assertion handler
+#include <__config>
+
+#include <ctype.h>
+
+#ifndef _LIBCPP_CTYPE_H
+#   error <cctype> tried including <ctype.h> but didn't find libc++'s <ctype.h> header. \
+          This usually means that your header search paths are not configured properly.  \
+          The header search paths should contain the C++ Standard Library headers before \
+          any C Standard Library.
+#endif
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#  pragma GCC system_header
+#endif
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+#ifdef isalnum
+#undef isalnum
+#endif
+
+#ifdef isalpha
+#undef isalpha
+#endif
+
+#ifdef isblank
+#undef isblank
+#endif
+
+#ifdef iscntrl
+#undef iscntrl
+#endif
+
+#ifdef isdigit
+#undef isdigit
+#endif
+
+#ifdef isgraph
+#undef isgraph
+#endif
+
+#ifdef islower
+#undef islower
+#endif
+
+#ifdef isprint
+#undef isprint
+#endif
+
+#ifdef ispunct
+#undef ispunct
+#endif
+
+#ifdef isspace
+#undef isspace
+#endif
+
+#ifdef isupper
+#undef isupper
+#endif
+
+#ifdef isxdigit
+#undef isxdigit
+#endif
+
+#ifdef tolower
+#undef tolower
+#endif
+
+#ifdef toupper
+#undef toupper
+#endif
+
+
+using ::isalnum _LIBCPP_USING_IF_EXISTS;
+using ::isalpha _LIBCPP_USING_IF_EXISTS;
+using ::isblank _LIBCPP_USING_IF_EXISTS;
+using ::iscntrl _LIBCPP_USING_IF_EXISTS;
+using ::isdigit _LIBCPP_USING_IF_EXISTS;
+using ::isgraph _LIBCPP_USING_IF_EXISTS;
+using ::islower _LIBCPP_USING_IF_EXISTS;
+using ::isprint _LIBCPP_USING_IF_EXISTS;
+using ::ispunct _LIBCPP_USING_IF_EXISTS;
+using ::isspace _LIBCPP_USING_IF_EXISTS;
+using ::isupper _LIBCPP_USING_IF_EXISTS;
+using ::isxdigit _LIBCPP_USING_IF_EXISTS;
+using ::tolower _LIBCPP_USING_IF_EXISTS;
+using ::toupper _LIBCPP_USING_IF_EXISTS;
+
+_LIBCPP_END_NAMESPACE_STD
+
+#endif // _LIBCPP_CCTYPE
