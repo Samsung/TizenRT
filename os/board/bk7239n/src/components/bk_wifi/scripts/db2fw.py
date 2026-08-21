@@ -40,6 +40,12 @@ def be32(output, val):
 def be16(output, val):
     output.write(struct.pack('>H', val))
 
+def dbm_to_mbm_with_roundup(dbm):
+    mbm = int(dbm * 100)
+    if mbm % 100 > 90:
+        mbm = ((mbm // 100) + 1) * 100
+    return mbm
+
 class PTR(object):
     def __init__(self, output):
         self._output = output
@@ -125,7 +131,7 @@ for reg_rule in rules:
         rule_len += 2
     if wmm_rule is not None:
         rule_len += 2
-    output.write(struct.pack('>BBHIII', rule_len, flags, int(power_rule.max_eirp * 100),
+    output.write(struct.pack('>BBHIII', rule_len, flags, dbm_to_mbm_with_roundup(power_rule.max_eirp),
                              int(freq_range.start * 1000), int(freq_range.end * 1000), int(freq_range.maxbw * 1000),
                              ))
     if rule_len > 16:
