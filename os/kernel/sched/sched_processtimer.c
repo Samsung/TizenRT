@@ -110,7 +110,10 @@ static inline void sched_process_timeslice(int cpu)
 {
 
 	FAR struct tcb_s *rtcb = current_task(cpu);
-
+#ifdef CONFIG_SMP
+	FAR struct tcb_s *btcb;
+	bool do_reprioritize = false;
+#endif
 	/* Check if the currently executing task uses round robin
 	 * scheduling.
 	 */
@@ -128,10 +131,50 @@ static inline void sched_process_timeslice(int cpu)
 			 */
 
 			if (!rtcb->lockcount) {
-				/* Reset the timeslice in any case. */
+#ifdef CONFIG_SMP
+				if (sched_islocked_global() || irq_cpu_locked(this_cpu())) {
+					return;
+				}
+#endif
+				/* Reset the timeslice */
 
 				rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
 
+#ifdef CONFIG_SMP
+				/* In SMP configurations, the running task is at the head of
+				 * g_assignedtasks[cpu].  Therefore, checking only rtcb->flink covers
+				 * tasks already assigned to this CPU; it does not cover runnable,
+				 * unassigned tasks in g_readytorun.  Check g_readytorun as well, but
+				 * consider only tasks whose affinity includes this CPU.
+				 */
+				/* Do not reprioritize rtcb solely based on the priority of
+				 * g_readytorun.head.  Removing rtcb can make a lower-priority
+				 * assigned task the head of this CPU.  If that task holds the
+				 * scheduler lock, adding rtcb back will place it on the pending
+				 * list instead of running it.  Reprioritize only when an equal
+				 * or higher priority task can run on this CPU.
+				 */
+
+				for (btcb = (FAR struct tcb_s *)g_readytorun.head;
+					 btcb && btcb->sched_priority >= rtcb->sched_priority;
+					 btcb = btcb->flink) {
+					/* Check if the task found in ready-to-run list is allowed to run on
+					 * this CPU.
+					 */
+
+					if (CPU_ISSET(cpu, &btcb->affinity)) {
+						do_reprioritize = true;
+						break;
+					}
+				}
+				if (rtcb->flink && rtcb->flink->sched_priority >= rtcb->sched_priority) {
+					do_reprioritize = true;
+				}
+				if (do_reprioritize) {
+					up_reprioritize_rtr(rtcb, rtcb->sched_priority);
+				}
+
+#else
 				/* We know we are at the head of the ready to run
 				 * prioritized list.  We must be the highest priority
 				 * task eligible for execution.  Check the next task
@@ -149,6 +192,7 @@ static inline void sched_process_timeslice(int cpu)
 
 					up_reprioritize_rtr(rtcb, rtcb->sched_priority);
 				}
+#endif
 			}
 		} else {
 			/* Decrement the timeslice counter */
