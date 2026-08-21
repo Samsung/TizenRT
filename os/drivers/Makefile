@@ -66,6 +66,10 @@ ifeq ($(CONFIG_TASK_MANAGER),y)
 CFLAGS += -I $(TOPDIR)/kernel
 endif
 
+ifeq ($(CONFIG_CRASH_REPORT),y)
+CFLAGS += -I $(TOPDIR)/kernel
+endif
+
 # Include support for various drivers.  Each Make.defs file will add its
 # files to the source file list, add its DEPPATH info, and will add
 # the appropriate paths to the VPATH variable
@@ -125,6 +129,10 @@ endif
 
 ifeq ($(CONFIG_PWM),y)
   CSRCS += pwm.c
+endif
+
+ifeq ($(CONFIG_CRASH_REPORT),y)
+  CSRCS += crashrpt.c
 endif
 
 ifeq ($(CONFIG_WATCHDOG),y)
