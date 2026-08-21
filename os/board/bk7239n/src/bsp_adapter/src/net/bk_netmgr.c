@@ -85,8 +85,10 @@ static int g_scan_flag = 0;// 0: not scan, 1: scaning, 2: multi scaning
 static trwifi_scan_list_s *g_scan_list;
 static int g_scan_num;
 
+/* Max multi-scan AP configs / directed SSIDs (matches SCAN_SSID_CNT / WIFIMGR_SPECIFIC_SCAN_AP_CNT).
+ * WIFI_SCAN_MAX_SSID_NUM is 7 so scan_all can append one empty/wildcard SSID after up to 6 directed.
+ */
 #define AP_MULTI_SCAN_MAX_NUM  (6)
-#define AP_MULTI_SCAN_MAX_SSID_NUM  (AP_MULTI_SCAN_MAX_NUM - 1)
 
 typedef struct {
 	bool is_valid;
@@ -649,18 +651,27 @@ scan_res_fail:
 
 int bk_wifi_multi_scan_result_handle(const wifi_scan_result_t *scan_result,wifi_scan_config_t *scan_config)
 {
-	trwifi_ap_scan_info_s result_ap;
 	wifi_scan_ap_info_t *ap;
 	int ret = BK_FAIL;
 
-	//int ret;
-	if (bk_trwifi_scan_config_has_empty_ssid(scan_config)) {
-		ret = bk_wifi_scan_result_handle(scan_result);
+	if (!scan_result) {
+		nwdbg("[BK] scan multi doesn't found AP\n");
 		goto scan_res_finish;
 	}
 
-	if (!scan_result) {
-		nwdbg("[BK] scan multi doesn't found AP\n");
+	/*
+	 * scan_all path: config contains empty/wildcard SSID.
+	 * - ap_num == 0: API Success + LWNL_EVT_SCAN_FAILED
+	 * - otherwise  : bk_wifi_scan_result_handle上
+	 */
+	if (bk_trwifi_scan_config_has_empty_ssid(scan_config)) {
+		if (scan_result->ap_num == 0) {
+			nwdbg("[BK] scan_all doesn't found AP\r\n");
+			TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
+			ret = BK_OK;
+			goto scan_res_finish;
+		}
+		ret = bk_wifi_scan_result_handle(scan_result);
 		goto scan_res_finish;
 	}
 
@@ -728,74 +739,7 @@ int bk_wifi_multi_scan_result_handle(const wifi_scan_result_t *scan_result,wifi_
 			g_saved_multi_scan_list[j].scan_num = ap_num_per_ssid;
 		}
 		return BK_OK;
-	} else {
-		int scan_result_sum = 0;
-		if (g_saved_multi_scan_list != NULL) {
-			for(int j = 0; j < AP_MULTI_SCAN_MAX_NUM; j++) {
-				if(g_saved_multi_scan_list[j].is_valid) {
-					scan_result_sum += g_saved_multi_scan_list[j].scan_num;
-				}
-			}
-		}
 
-		g_scan_num = scan_result_sum + scan_result->ap_num;
-		if (g_scan_num == 0) {
-			ndbg("[BK] scan multi doesn't found AP\r\n");
-			TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_FAILED, NULL);
-			ret = TRWIFI_SUCCESS;
-			goto scan_res_finish;
-		}
-
-		g_scan_list = (trwifi_scan_list_s *)os_malloc(sizeof(trwifi_scan_list_s)*g_scan_num);
-		if (g_scan_list == NULL) {
-			ndbg("[BK] Fail to malloc g_scan_list\r\n");
-			goto scan_res_finish;
-		}
-
-		int add_list_idx = 0;
-		if(scan_result_sum > 0 && g_saved_multi_scan_list != NULL){
-			for(int j = 0; j < AP_MULTI_SCAN_MAX_NUM; j++) {
-				if(g_saved_multi_scan_list[j].is_valid) {
-					for(int m = 0; m<g_saved_multi_scan_list[j].scan_num;m++) {
-						os_memcpy(&g_scan_list[add_list_idx].ap_info, &g_saved_multi_scan_list[j].saved_multi_scan_list[m], sizeof(trwifi_ap_scan_info_s));
-						if(add_list_idx > 0) {
-							g_scan_list[add_list_idx-1].next = &g_scan_list[add_list_idx];
-						}
-						g_scan_list[add_list_idx].next = NULL;
-						add_list_idx++;
-					}
-				}
-			}
-		}
-
-		int scan_ssid_result_num = add_list_idx;
-		wifi_scan_ap_info_t *ap_info;
-		for (int i = 0; i < scan_result->ap_num; i++) {
-			ap_info = (wifi_scan_ap_info_t *)(&scan_result->aps[i]);
-			bk_trwifi_scan_result_record(&result_ap, ap_info);
-			// Skip if ap is already existent
-			bool skip = false;
-			for (int n= 0; n < scan_ssid_result_num; n ++) {
-				if (!os_memcmp(g_scan_list[n].ap_info.bssid, result_ap.bssid, TRWIFI_MACADDR_STR_LEN)) {
-					skip = true;
-					break;
-				}
-			}
-			if (skip)
-				continue;
-
-			os_memcpy(&g_scan_list[add_list_idx].ap_info, &result_ap, sizeof(trwifi_ap_scan_info_s));
-			if(add_list_idx > 0) {
-				g_scan_list[add_list_idx-1].next = &g_scan_list[add_list_idx];
-			}
-			g_scan_list[add_list_idx].next = NULL;
-			add_list_idx++;
-		}
-
-		bk_trwifi_scan_dump_result(g_scan_list);
-		TRWIFI_POST_SCANEVENT(armino_dev_wlan0, LWNL_EVT_SCAN_DONE, (void *)g_scan_list);
-		bk_trwifi_clear_scan_chain_list();
-		ret = BK_OK;
 	}
 
 scan_res_finish:
@@ -1211,7 +1155,7 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 		return TRWIFI_FAIL;
 	}
 
-	wifi_scan_config_t scan_config = {0};
+	wifi_scan_config_t scan_config;
 	os_memset(&scan_config,0,sizeof(wifi_scan_config_t));
 
 	if (config) {
@@ -1231,15 +1175,16 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 			}
 		}
 
-		if (ssid_config_count > AP_MULTI_SCAN_MAX_SSID_NUM) {
-			ndbg("[BK] ERROR: SSID count exceeded, maximum allowed:%d given:%d\r\n",
-			     AP_MULTI_SCAN_MAX_SSID_NUM, ssid_config_count);
+		/* scan_all appends one wildcard SSID; keep total within WIFI_SCAN_MAX_SSID_NUM. */
+		if (config->scan_all &&
+		    ((ssid_config_count + 1) > WIFI_SCAN_MAX_SSID_NUM)) {
+			ndbg("[BK] ERROR: scan_all needs directed(%d)+wildcard > max slots(%d)\r\n",
+			     ssid_config_count, WIFI_SCAN_MAX_SSID_NUM);
 			ret = TRWIFI_INVALID_ARGS;
 			goto multi_scan_finish;
 		}
 
 		if (config->scan_all) {
-			os_memset(&scan_config, 0, sizeof(wifi_scan_config_t));
 			for (i = 0; i < config->scan_ap_config_count; i++) {
 				if (config->scan_ap_config[i].ssid_length == 0) {
 					continue;
@@ -1249,7 +1194,11 @@ trwifi_result_e bk_wifi_netmgr_scan_multi_ap(struct netdev *dev, trwifi_scan_mul
 						  config->scan_ap_config[i].ssid_length);
 				scan_config.ssid_cnt++;
 			}
-			/* Add one wildcard SSID so one scan sends directed and NULL probe requests. */
+			/*
+			 * Add one wildcard (empty) SSID slot so one scan sends directed
+			 * ProbeReq plus a NULL ProbeReq. Array was zeroed above, so the
+			 * new slot at ssid[ssid_cnt] is already empty before ++.
+			 */
 			scan_config.ssid_cnt++;
 
 			g_scan_flag = 2;

@@ -325,7 +325,7 @@ struct	iwreq
 /*
  *	Range of parameters
  */
-#define SCAN_SSID_MAX    6 //2
+#define SCAN_SSID_MAX    7
 
 /* Maximum frequencies in the range struct */
 #define IW_MAX_FREQUENCIES	32
