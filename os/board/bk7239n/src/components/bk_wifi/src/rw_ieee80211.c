@@ -1641,50 +1641,66 @@ int get_wiphy_idx(struct wiphy *wiphy)
 	return 1;
 }
 
+#if CONFIG_WIFI_REGDOMAIN
+extern float g_regd_max_tx_power;
+extern UINT8 g_regd_max_tx_power_valid;
+void rwnx_reg_update_max_txpower(struct mac_chan_op *chan)
+{
+	struct wiphy *wiphy = &g_wiphy;
+	struct ieee80211_supported_band *sband;
+	struct ieee80211_channel *channel;
+	struct ieee80211_channel *channel_sec = NULL;
+	//float pwr;
+	int regd_max_pwr = 0;
+
+	// Invalid band
+	if (chan->band >= IEEE80211_NUM_BANDS)
+		return;
+
+	// Support bands
+	sband = wiphy->bands[chan->band];
+	if (!sband)
+		return;
+
+	// Get current channel of supported band
+	channel = ieee80211_get_channel(wiphy, chan->prim20_freq);
+	// Skip disabled channel
+	if (channel->flags & IEEE80211_CHAN_DISABLED) {
+		WIFI_LOGE("chan is disabled while set max tx power\n");
+		return;
+	}
+
+	// TODO: BW80, 160, 80+80
+	if (chan->type == PHY_CHNL_BW_40) {
+		if (chan->center1_freq < chan->prim20_freq)
+			channel_sec = ieee80211_get_channel(wiphy, chan->center1_freq - 10);  // HT40-
+		else
+			channel_sec = ieee80211_get_channel(wiphy, chan->center1_freq + 10);  // HT40+
+		WIFI_LOGD("secondary chan power %d\n", channel_sec->max_power);
+	}
+
+	// regulatory domain's max tx power
+	regd_max_pwr = channel->max_power;
+
+	// If secondary channel's max power less than primary
+	if (channel_sec && (channel_sec->max_power < regd_max_pwr))
+		regd_max_pwr = channel_sec->max_power;
+
+	// Reserve antenna gain because the max power is total device power
+	regd_max_pwr -= 3;
+	g_regd_max_tx_power = regd_max_pwr;
+	g_regd_max_tx_power_valid = 1;
+
+
+}
+
+
 int rwnx_reg_notifier(struct wiphy *wiphy,
 			    struct regulatory_request *request)
 {
-	float pwr;
-	int regd_max_pwr = 0;
-
-	// Iterates all bands
-	for (wifi_band_t band = 0; band < IEEE80211_NUM_BANDS; band++) {
-		struct ieee80211_supported_band *sband = wiphy->bands[band];
-		if (!sband)
-			continue;
-
-		// Iterates all channels
-		for (int i = 0; i < sband->n_channels; i++) {
-			struct ieee80211_channel *channel = &sband->channels[i];
-
-			// Skip disabled channel
-			if (channel->flags & IEEE80211_CHAN_DISABLED)
-				continue;
-
-			// Since we doesn't support different channel use different tx pwr,
-			// save max tx pwr here
-			if (regd_max_pwr == 0)
-				regd_max_pwr = channel->max_power;
-			if (regd_max_pwr > channel->max_power)
-				regd_max_pwr = channel->max_power;
-
-			WIFI_LOGD("band %d, center %d, flags %s, max_power %d/%d, dfs region %d\n",
-					  channel->band, channel->center_freq, regdom_flag_str(channel->flags),
-					  channel->max_power, regd_max_pwr,
-					  reg_get_dfs_region(&g_wiphy));
-
-			for (wifi_standard std = WIFI_STANDARD_11A; std <= WIFI_STANDARD_11AX; std++) {
-				if (manual_cal_get_tx_power(std, &pwr) == BK_OK) {
-					WIFI_LOGD("current txpwr %f\n", pwr);
-					if (pwr > regd_max_pwr) {
-						if (manual_cal_set_tx_power(std, regd_max_pwr) != BK_OK)
-							WIFI_LOGE("set regd txpwr fail, band %d, freq %d\n",
-									  channel->band, channel->freq_offset);
-					}
-				}
-			}
-		}
-	}
+	// After sta connected to AP, set max tx power
+	if (g_rwnx_hw.connected)
+		rwnx_reg_update_max_txpower(&g_rwnx_hw.chan);
 
 	// Reconfig mac channel
 	if (rwm_mgmt_is_vif_first_used()) {
@@ -1706,6 +1722,7 @@ void rwnx_regulatory_hint_11d(int freq, const u8 *country_ie, u8 country_ie_len)
     }
 	regulatory_hint_11d(&g_wiphy, band, country_ie, country_ie_len);
 }
+#endif
 
 /// Instrument discernible ssid & bssid
 bool rwnx_ieee80211_check_conn_instrument(const struct mac_ssid *ssid, const struct mac_addr *bssid)
