@@ -1,0 +1,180 @@
+############################################################################
+# apps/examples/testcase/ostest/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+ifeq ($(CONFIG_TESTING_OSTEST),y)
+CSRCS += ostest_main.c
+ifeq ($(CONFIG_TESTING_OSTEST_AIO),y)
+  CSRCS += aio.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_BARRIER),y)
+  CSRCS += barrier.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_CANCEL),y)
+  CSRCS += cancel.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_COND),y)
+  CSRCS += cond.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_DEV_NULL),y)
+  CSRCS += dev_null.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_FORK),y)
+  CSRCS += fork.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_FPU),y)
+  CSRCS += fpu.c
+endif
+ifneq ($(filter y,$(CONFIG_TESTING_OSTEST_GETOPT) \
+                    $(CONFIG_TESTING_OSTEST_GETOPT_LONG) \
+                    $(CONFIG_TESTING_OSTEST_GETOPT_LONG_ONLY)),)
+  CSRCS += getopt.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_HRTIMER),y)
+  CSRCS += hrtimer.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_LIBC_MEMMEM),y)
+  CSRCS += libc_memmem.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_MQUEUE),y)
+  CSRCS += mqueue.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_MULTIUSER),y)
+  CSRCS += multiuser.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_MUTEX),y)
+  CSRCS += mutex.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_NSEM),y)
+  CSRCS += nsem.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_NXEVENT),y)
+  CSRCS += nxevent.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_PERF_GETTIME),y)
+  CSRCS += perf_gettime.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_POSIXTIMER),y)
+  CSRCS += posixtimer.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_PRIOINHERIT),y)
+  CSRCS += prioinherit.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_PTHREAD_CLEANUP),y)
+  CSRCS += pthread_cleanup.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_PTHREAD_EXIT),y)
+  CSRCS += pthread_exit.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_PTHREAD_RWLOCK),y)
+  CSRCS += pthread_rwlock.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_PTHREAD_RWLOCK_CANCEL),y)
+  CSRCS += pthread_rwlock_cancel.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_RESTART),y)
+  CSRCS += restart.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_RMUTEX),y)
+  CSRCS += rmutex.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_ROBUST),y)
+  CSRCS += robust.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_ROUNDROBIN),y)
+  CSRCS += roundrobin.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SCHED_THREAD_LOCAL),y)
+  CSRCS += sched_thread_local.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SCHEDLOCK),y)
+  CSRCS += schedlock.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SEM),y)
+  CSRCS += sem.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SEMTIMED),y)
+  CSRCS += semtimed.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SETJMP),y)
+  CSRCS += setjmp.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SETVBUF),y)
+  CSRCS += setvbuf.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SIGEV_THREAD),y)
+  CSRCS += sigev_thread.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SIGHAND),y)
+  CSRCS += sighand.c sighelper.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SIGNEST),y)
+  CSRCS += signest.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SIGPROCMASK),y)
+  CSRCS += sigprocmask.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SMP_CALL),y)
+  CSRCS += smp_call.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SPECIFIC),y)
+  CSRCS += specific.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SPINLOCK),y)
+  CSRCS += spinlock.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SPORADIC),y)
+  CSRCS += sporadic.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SPORADIC2),y)
+  CSRCS += sporadic2.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_SUSPEND),y)
+  CSRCS += suspend.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_TIMEDMQUEUE),y)
+  CSRCS += timedmqueue.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_TIMEDMUTEX),y)
+  CSRCS += timedmutex.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_TIMEDWAIT),y)
+  CSRCS += timedwait.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_TLS),y)
+  CSRCS += tls.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_VFORK),y)
+  CSRCS += vfork.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_WAITPID),y)
+  CSRCS += waitpid.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_WDOG),y)
+  CSRCS += wdog.c
+endif
+ifeq ($(CONFIG_TESTING_OSTEST_WQUEUE),y)
+  CSRCS += wqueue.c
+endif
+
+DEPPATH += --dep-path ostest
+VPATH += :ostest
+endif

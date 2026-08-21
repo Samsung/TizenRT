@@ -76,7 +76,8 @@ endif
 
 # BUILDIRS is the list of top-level directories containing Make.defs files
 
-BUILDIRS   := $(dir $(wildcard */*/Make.defs))
+BUILDIRS   := $(dir $(wildcard */Make.defs))
+BUILDIRS   += $(dir $(wildcard */*/Make.defs))
 BUILDIRS   += $(dir $(wildcard */*/*/Make.defs))
 
 define Add_Test
@@ -160,6 +161,9 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_FILESYSTEM),y)
 endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_KERNEL),y)
 	$(Q) $(call REGISTER,kernel_tc,tc_kernel_main,TASH_EXECMD_ASYNC,180,4096)
+endif
+ifeq ($(CONFIG_TESTING_OSTEST),y)
+	$(Q) $(call REGISTER,ostest,ostest_main,TASH_EXECMD_ASYNC,100,8192)
 endif
 ifeq ($(CONFIG_LIBCXX_UTC),y)
 	$(Q) $(call REGISTER,libcxx_utc,utc_libcxx_main,TASH_EXECMD_ASYNC,100,4096)
