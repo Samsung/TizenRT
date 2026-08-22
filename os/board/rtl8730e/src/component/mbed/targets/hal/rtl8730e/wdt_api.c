@@ -135,6 +135,16 @@ void watchdog_refresh(void)
 }
 
 /**
+ * @brief  Clear the watchdog early interrupt to prevent multiple trigger.
+ * @param  none
+ * @retval none
+ */
+void watchdog_clear_irq(void)
+{
+	WDG_ClearINT(WDGDev, WDG_BIT_EIC);
+	WDG_INTConfig(WDGDev, WDG_BIT_EIE, DISABLE);
+}
+/**
  * @brief  Enable eraly interrupt and register a watchdog timer timeout interrupt handler.
  *        The interrupt handler will be called at a programmable time prior to watchdog timeout, for users to prepare for reset
  * @param  handler: WDT timeout interrupt callback function.
