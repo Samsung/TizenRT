@@ -116,6 +116,10 @@ static int armino_cancelalarm(FAR struct rtc_lowerhalf_s *lower, int alarmid);
 static void armino_alarm_callback(aon_rtc_id_t id, uint8_t *name_p, void *param);
 #endif
 
+#ifdef CONFIG_RTC_IOCTL
+static int armino_ioctl(FAR struct rtc_lowerhalf_s *lower, int cmd, unsigned long arg);
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -130,7 +134,7 @@ static const struct rtc_ops_s g_rtc_ops = {
 	.cancelalarm = armino_cancelalarm,
 #endif
 #ifdef CONFIG_RTC_IOCTL
-	.ioctl = NULL,
+	.ioctl = armino_ioctl,
 #endif
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 	.destroy = NULL,
@@ -428,6 +432,51 @@ static int armino_cancelalarm(FAR struct rtc_lowerhalf_s *lower, int alarmid)
 	sem_post(&rtc->devsem);
 	return ret;
 
+}
+#endif
+
+#ifdef CONFIG_RTC_IOCTL
+/****************************************************************************
+ * Name: armino_ioctl
+ *
+ * Description:
+ *   The standard ioctl method.  This is where all of the RTC ioctl commands
+ *   are handled.
+ *
+ * Input Parameters:
+ *   lower - A reference to RTC lower half driver state structure
+ *   cmd   - The ioctl command
+ *   arg   - The argument of the ioctl cmd
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned
+ *   on any failure.
+ *
+ ****************************************************************************/
+
+static int armino_ioctl(FAR struct rtc_lowerhalf_s *lower, int cmd, unsigned long arg)
+{
+	int ret = -ENOTTY;
+
+	switch (cmd) {
+	case RTC_GET_MS: {
+		FAR uint64_t *time_ms = (FAR uint64_t *)((uintptr_t)arg);
+
+		if (time_ms == NULL) {
+			return -EINVAL;
+		}
+
+		*time_ms = aon_rtc_get_ms();
+		ret = OK;
+	}
+	break;
+
+	default:
+		ret = -ENOTTY;
+		break;
+	}
+
+	return ret;
 }
 #endif
 
