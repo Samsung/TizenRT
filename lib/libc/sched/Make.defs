@@ -54,6 +54,10 @@
 
 CSRCS += sched_getprioritymax.c sched_getprioritymin.c
 
+ifeq ($(CONFIG_SCHED_BACKTRACE),y)
+CSRCS += sched_backtrace.c
+endif
+
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 CSRCS += task_startup.c
 endif

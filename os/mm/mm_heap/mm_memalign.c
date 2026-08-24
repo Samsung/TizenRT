@@ -182,8 +182,8 @@ retry_after_gc:
 		for ( ; node; node = node->blink) {
 			/* Search the suitable aligned address in the same node. */
 			for (alignchunk = (FAR struct mm_allocnode_s *)(((size_t)node + SIZEOF_MM_ALLOCNODE + mask) & ~mask);
-				(uintptr_t)(alignchunk + alignment) < (uintptr_t)(node + node->size);
-				alignchunk = alignchunk + alignment) {
+				((size_t)alignchunk + alignment) < ((size_t)node + node->size);
+				alignchunk = (FAR struct mm_allocnode_s *)((size_t)alignchunk + alignment)) {
 
 				size_t alignsize = (size_t)alignchunk - (size_t)node + size;
 				size_t remainsize = (size_t)alignchunk - SIZEOF_MM_ALLOCNODE - (size_t)node;
@@ -263,10 +263,13 @@ retry_after_gc:
 		}
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_update_node((struct mm_allocnode_s *)node, caller_retaddr);
-		heapinfo_add_size(heap, ((struct mm_allocnode_s *)node)->pid, node->size);
+		heapinfo_update_node(heap, (struct mm_allocnode_s *)node, caller_retaddr);
+		heapinfo_add_size(heap, ((struct mm_allocnode_s *)node)->pid, node->size, (struct mm_allocnode_s *)node);
 		heapinfo_update_total_size(heap, node->size, ((struct mm_allocnode_s *)node)->pid);
 #endif
+		/* 'node' is the allocation header of the aligned chunk here ('alignchunk'
+		 * is the user pointer), matching the heapinfo calls above. */
+		MM_ADD_BACKTRACE((FAR struct mm_allocnode_s *)node);
 
 		ret = (void *)alignchunk;
 	}

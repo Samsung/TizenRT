@@ -57,6 +57,7 @@
 #include <tinyara/config.h>
 
 #include <debug.h>
+#include <unistd.h>
 
 #include <tinyara/mm/mm.h>
 
@@ -127,6 +128,13 @@ static void mm_free_delaylist(FAR struct mm_heap_s *heap)
 	}
 #endif
 }
+
+/* The old heapinfo_capture_backtrace() and g_backtrace_skip have been removed.
+ * Backtrace capture is now unified through MM_ADD_BACKTRACE() which uses
+ * sched_backtrace() (user) or up_backtrace() (kernel) and stores the
+ * full call stack in node->backtrace[]. The skip value is now
+ * CONFIG_MM_BACKTRACE_SKIP (compile-time only).
+ */
 
 /****************************************************************************
  * Public Functions
@@ -284,10 +292,12 @@ retry_after_gc:
 		allocnode->preceding |= MM_ALLOC_BIT;
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_update_node(allocnode, caller_retaddr);
-		heapinfo_add_size(heap, allocnode->pid, allocnode->size);
+		heapinfo_update_node(heap, allocnode, caller_retaddr);
+/* Backtrace is captured by MM_ADD_BACKTRACE() below (unified path). */
+		heapinfo_add_size(heap, allocnode->pid, allocnode->size, allocnode);
 		heapinfo_update_total_size(heap, allocnode->size, allocnode->pid);
 #endif
+		MM_ADD_BACKTRACE(allocnode);
 		ret = (void *)((char *)allocnode + SIZEOF_MM_ALLOCNODE);
 	}
 

@@ -69,6 +69,24 @@ CSRCS += mm_heapinfo_group.c
 endif
 endif
 
+# mm.h forces CONFIG_MM_BACKTRACE=3 when CONFIG_DEBUG_MM_HEAPINFO is enabled,
+# so mm_backtrace.c must be compiled in that case too (it provides
+# g_mm_backtrace_skip and the weak up_backtrace stub).
+ifeq ($(CONFIG_DEBUG_MM_HEAPINFO),y)
+CSRCS += mm_backtrace.c mm_heapinfo_backtrace.c
+else
+ifneq ($(CONFIG_MM_BACKTRACE),)
+ifneq ($(CONFIG_MM_BACKTRACE),0)
+ifneq ($(CONFIG_MM_BACKTRACE),-1)
+CSRCS += mm_backtrace.c
+ifeq ($(CONFIG_DEBUG_MM_HEAPINFO),y)
+CSRCS += mm_heapinfo_backtrace.c
+endif
+endif
+endif
+endif
+endif
+
 # Add the core heap directory to the build
 
 DEPPATH += --dep-path mm_heap
