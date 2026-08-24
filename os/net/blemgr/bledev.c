@@ -696,7 +696,7 @@ int bledev_handle(struct bledev *dev, lwnl_req cmd, void *data, uint32_t data_le
 		trble_addr *addr;
 
 		lwnl_msg_params param = { 0, };
-		if (_copy_lwnl_msg_params(&param, data, data_len, 2, 0) != 0) {
+		if (_copy_lwnl_msg_params(&param, data, data_len, 2, 1U << 1) != 0) {
 			return TRBLE_INVALID_ARGS;
 		}
 
