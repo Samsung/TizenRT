@@ -20,6 +20,9 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_STRESS),y)
 ifeq ($(CONFIG_STRESS_TASK_CREATE_TERM),y)
 CSRCS += stress_task_create_term.c
 endif
+ifeq ($(CONFIG_STRESS_SEM_PRIO_INHERIT),y)
+CSRCS += stress_sem_prio_inherit.c
+endif
 
 DEPPATH += --dep-path le_tc/stress
 VPATH += :le_tc/stress
