@@ -17,4 +17,12 @@ config STRESS_TASK_CREATE_TERM
 	---help---
 		Enable task creation and termination stress test
 		Infinite Test
+
+config STRESS_SEM_PRIO_INHERIT
+	bool "Semaphore priority inheritance stress"
+	default n
+	depends on PRIORITY_INHERITANCE
+	---help---
+		Enable semaphore priority inheritance stress test
+		Finite Test
 endif #EXAMPLES_TESTCASE_STRESS
