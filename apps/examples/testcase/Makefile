@@ -227,6 +227,9 @@ endif
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS),y)
 	$(Q) $(call REGISTER,tcp_tls_stress,tc_tcp_tls_main,TASH_EXECMD_ASYNC,100,8192)
 endif
+ifeq ($(CONFIG_STRESS_TASK_CREATE_TERM),y)
+	$(Q) $(call REGISTER,stress_ct,stress_task_create_term_main,TASH_EXECMD_ASYNC,100,2048)
+endif
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_EVENTLOOP_UTC),y)
 	$(Q) $(call REGISTER,eventloop_utc,utc_eventloop_main,TASH_EXECMD_ASYNC,100,2048)

@@ -87,6 +87,9 @@
 #ifdef CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
 #define TC_TCP_TLS_STACK 8192
 #endif
+#ifdef CONFIG_STRESS_TASK_CREATE_TERM
+#define TC_STRESS_TASK_CREATE_TERM_STACK 2048
+#endif
 #endif
 
 sem_t tc_sem;
@@ -101,6 +104,7 @@ extern int tc_filesystem_main(int argc, char *argv[]);
 extern int tc_kernel_main(int argc, char *argv[]);
 extern int tc_network_main(int argc, char *argv[]);
 extern int tc_tcp_tls_main(int agrc, char *agrv[]);
+extern int stress_task_create_term_main(int argc, char *argv[]);
 
 /* TinyAra Public API Test Case as ta_tc */
 extern int utc_arastorage_main(int argc, char *argv[]);
@@ -225,6 +229,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_TCP_TLS_STRESS
 	{"tcp_tls_stress", tc_tcp_tls_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_STRESS_TASK_CREATE_TERM
+	{"stress_ct", stress_task_create_term_main, TASH_EXECMD_ASYNC},
 #endif
 	{NULL, NULL, 0}
 };
@@ -447,6 +454,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("tcptlstc", SCHED_PRIORITY_DEFAULT, TC_TCP_TLS_STACK, tc_tcp_tls_main, argv);
 	if (pid < 0) {
 		printf("TCP TLS STRESS testcase is not started, err %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_STRESS_TASK_CREATE_TERM
+	pid = task_create("stress_ct", SCHED_PRIORITY_DEFAULT, TC_STRESS_TASK_CREATE_TERM_STACK, stress_task_create_term_main, argv);
+	if (pid < 0) {
+		printf("Task stress testcase is not started, err %d\n", pid);
 	}
 #endif
 

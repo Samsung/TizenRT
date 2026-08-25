@@ -1,0 +1,20 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig EXAMPLES_TESTCASE_STRESS
+	bool "Stress TestCase Example"
+	default n
+	depends on EXAMPLES_TESTCASE
+	---help---
+		Enable the Stress TestCase Example
+
+if EXAMPLES_TESTCASE_STRESS
+config STRESS_TASK_CREATE_TERM
+	bool "Task create and terminate stress"
+	default n
+	---help---
+		Enable task creation and termination stress test
+		Infinite Test
+endif #EXAMPLES_TESTCASE_STRESS
