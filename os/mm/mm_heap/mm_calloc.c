@@ -78,6 +78,11 @@ FAR void *mm_calloc(FAR struct mm_heap_s *heap, size_t n, size_t elem_size, mmad
 {
 	FAR void *ret = NULL;
 
+	if (elem_size == 0) {
+		mdbg("ERROR: Invalid argument, elem_size is 0\n");
+		return NULL;
+	}
+
 	if (n > (MMSIZE_MAX / elem_size)) {
 		mdbg("Parameter n(%u) should be smaller than (MMSIZE_MAX / elem_size)(%u), \
 			because multiplication of n and elem_size cannot overflow the size_t.\n", n, (MMSIZE_MAX / elem_size));

@@ -261,6 +261,10 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 	ASSERT((sched_self()->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL);
 #endif
 
+	if (!start_routine) {
+		sdbg("ERROR: start_routine is NULL\n");
+		return EINVAL;
+	}
 
 	/* Check whether we are allowed to create new pthread ? */
 
