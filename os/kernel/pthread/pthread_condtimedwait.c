@@ -103,9 +103,10 @@
  *   the condition is signaled.
  *
  * Parameters:
- *   argc  - the number of arguments (should be 2)
- *   pid   - the task ID of the task to wakeup
- *   signo - The signal to use to wake up the task
+ *   argc      - the number of arguments (should be 3)
+ *   pid       - the task ID of the task to wakeup
+ *   signo     - The signal to use to wake up the task
+ *   cond_ptr  - The condition variable pointer cast to uint32_t
  *
  * Return Value:
  *   None
@@ -114,8 +115,30 @@
  *
  ****************************************************************************/
 
-static void pthread_condtimedout(int argc, uint32_t pid, uint32_t signo)
+static void pthread_condtimedout(int argc, uint32_t pid, uint32_t signo, uint32_t cond_ptr)
 {
+	FAR pthread_cond_t *cond = (FAR pthread_cond_t *)cond_ptr;
+	irqstate_t flags;
+
+	DEBUGASSERT(cond);
+
+	/* Decrement the waiter count under critical section so that it does
+	 * not race with pthread_cond_signal()/pthread_cond_broadcast() which
+	 * also decrement waiters under critical section.  If there are no
+	 * waiters (waiters <= 0), skip both the decrement and the signal
+	 * delivery since there is no thread to wake up.
+	 */
+
+	flags = enter_critical_section();
+	if (cond->waiters > 0) {
+		cond->waiters--;
+	} else {
+		/* No waiter to wake up, skip signal dispatch */
+		leave_critical_section(flags);
+		return;
+	}
+	leave_critical_section(flags);
+
 #ifdef HAVE_GROUP_MEMBERS
 
 	FAR struct tcb_s *tcb;
@@ -286,7 +309,7 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 					} else {
 						/* Start the watchdog */
 
-						wd_start(rtcb->waitdog, ticks, (wdentry_t)pthread_condtimedout, 2, (uint32_t)mypid, (uint32_t)SIGCONDTIMEDOUT);
+						wd_start(rtcb->waitdog, ticks, (wdentry_t)pthread_condtimedout, 3, (uint32_t)mypid, (uint32_t)SIGCONDTIMEDOUT, (uint32_t)cond);
 
 						/* Increment the waiter count */
 						cond->waiters++;
@@ -302,25 +325,12 @@ int pthread_cond_timedwait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex,
 						/* Did we get the condition semaphore. */
 
 						if (status != OK) {
-							/* sem_wait failed */
-							if (cond->waiters > 0) {
-								cond->waiters--;
-							}
-
-							/* NO.. Handle the special case where the semaphore wait was
-							 * awakened by the receipt of a signal -- presumably the
-							 * signal posted by pthread_condtimedout().
+							/* Handle the special case where the semaphore wait
+							 * was awakened by the receipt of a signal --
+							 * presumably the signal posted by
+							 * pthread_condtimedout().
 							 */
 							if (get_errno() == EINTR) {
-								/* If a concurrent signal/broadcast gave the semaphore
-								* after timeout already restored semcount via
-								* sem_waitirq(), there will be a leftover semcount.
-								* Consume it to prevent spurious wakeup on next wait.
-								*/
-								if (cond->sem.semcount > 0) {
-									cond->sem.semcount--;
-								}
-
 								sdbg("Timedout!\n");
 								ret = ETIMEDOUT;
 							} else {
