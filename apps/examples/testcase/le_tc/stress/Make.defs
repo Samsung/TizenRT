@@ -23,6 +23,9 @@ endif
 ifeq ($(CONFIG_STRESS_SEM_PRIO_INHERIT),y)
 CSRCS += stress_sem_prio_inherit.c
 endif
+ifeq ($(CONFIG_STRESS_MM_SEM_SIGNAL),y)
+CSRCS += stress_mm_sem_signal.c
+endif
 
 DEPPATH += --dep-path le_tc/stress
 VPATH += :le_tc/stress

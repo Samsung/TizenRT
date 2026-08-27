@@ -25,4 +25,12 @@ config STRESS_SEM_PRIO_INHERIT
 	---help---
 		Enable semaphore priority inheritance stress test
 		Finite Test
+
+config STRESS_MM_SEM_SIGNAL
+	bool "MM semaphore signal stress"
+	default n
+	depends on !DISABLE_MQUEUE && !DISABLE_SIGNALS && !DISABLE_PTHREAD
+	---help---
+		Enable MM semaphore signal stress test
+		Infinite Test
 endif #EXAMPLES_TESTCASE_STRESS

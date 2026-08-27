@@ -233,6 +233,9 @@ endif
 ifeq ($(CONFIG_STRESS_SEM_PRIO_INHERIT),y)
 	$(Q) $(call REGISTER,stress_pi,stress_sem_prio_inherit_main,TASH_EXECMD_ASYNC,100,2048)
 endif
+ifeq ($(CONFIG_STRESS_MM_SEM_SIGNAL),y)
+	$(Q) $(call REGISTER,stress_mmsem,stress_mm_sem_signal_main,TASH_EXECMD_ASYNC,100,2048)
+endif
 
 ifeq ($(CONFIG_EXAMPLES_TESTCASE_EVENTLOOP_UTC),y)
 	$(Q) $(call REGISTER,eventloop_utc,utc_eventloop_main,TASH_EXECMD_ASYNC,100,2048)
