@@ -126,7 +126,13 @@ ssize_t lib_fwrite(FAR const void *ptr, size_t count, FAR FILE *stream)
 	 */
 
 	if (lib_rdflush(stream) < 0) {
-		goto errout_with_semaphore;
+		goto out_with_semaphore;
+	}
+
+	/* If no stream buffer is configured, write directly to the file. */
+	if (stream->fs_bufstart == NULL) {
+		ret = write(stream->fs_fd, ptr, count);
+		goto out_with_semaphore;
 	}
 
 	/* Loop until all of the bytes have been buffered */
@@ -167,7 +173,7 @@ ssize_t lib_fwrite(FAR const void *ptr, size_t count, FAR FILE *stream)
 
 			int bytes_buffered = lib_fflush(stream, false);
 			if (bytes_buffered < 0) {
-				goto errout_with_semaphore;
+				goto out_with_semaphore;
 			}
 		}
 	}
@@ -176,7 +182,7 @@ ssize_t lib_fwrite(FAR const void *ptr, size_t count, FAR FILE *stream)
 
 	ret = src - start;
 
-errout_with_semaphore:
+out_with_semaphore:
 	lib_give_semaphore(stream);
 
 errout:
