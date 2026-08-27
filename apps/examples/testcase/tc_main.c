@@ -93,6 +93,9 @@
 #ifdef CONFIG_STRESS_SEM_PRIO_INHERIT
 #define TC_STRESS_SEM_PRIO_INHERIT_STACK 2048
 #endif
+#ifdef CONFIG_STRESS_MM_SEM_SIGNAL
+#define TC_STRESS_MM_SEM_SIGNAL_STACK 2048
+#endif
 #endif
 
 sem_t tc_sem;
@@ -109,6 +112,7 @@ extern int tc_network_main(int argc, char *argv[]);
 extern int tc_tcp_tls_main(int agrc, char *agrv[]);
 extern int stress_task_create_term_main(int argc, char *argv[]);
 extern int stress_sem_prio_inherit_main(int argc, char *argv[]);
+extern int stress_mm_sem_signal_main(int argc, char *argv[]);
 
 /* TinyAra Public API Test Case as ta_tc */
 extern int utc_arastorage_main(int argc, char *argv[]);
@@ -239,6 +243,9 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_STRESS_SEM_PRIO_INHERIT
 	{"stress_pi", stress_sem_prio_inherit_main, TASH_EXECMD_ASYNC},
+#endif
+#ifdef CONFIG_STRESS_MM_SEM_SIGNAL
+	{"stress_mmsem", stress_mm_sem_signal_main, TASH_EXECMD_ASYNC},
 #endif
 	{NULL, NULL, 0}
 };
@@ -473,6 +480,12 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("stress_pi", SCHED_PRIORITY_DEFAULT, TC_STRESS_SEM_PRIO_INHERIT_STACK, stress_sem_prio_inherit_main, argv);
 	if (pid < 0) {
 		printf("Semaphore PI stress testcase is not started, err %d\n", pid);
+	}
+#endif
+#ifdef CONFIG_STRESS_MM_SEM_SIGNAL
+	pid = task_create("stress_mmsem", SCHED_PRIORITY_DEFAULT, TC_STRESS_MM_SEM_SIGNAL_STACK, stress_mm_sem_signal_main, argv);
+	if (pid < 0) {
+		printf("MM semaphore signal stress testcase is not started, err %d\n", pid);
 	}
 #endif
 
