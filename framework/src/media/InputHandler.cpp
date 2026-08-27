@@ -78,29 +78,11 @@ bool InputHandler::doStandBy(size_t buffSize)
 
 bool InputHandler::open(size_t buffSize)
 {
-	// No need to allocate if it is already allocated as size is constant.
-	if (!mProcessBuffer) {
-		// Allocate processBuffer with max possible size BEFORE StreamHandler::open()
-		// because worker thread starts inside StreamHandler::open() and may call processWorker()
-		// The actual size needed will be determined after registerCodec() sets mDecoder/mDemuxer
-		mProcessBufferSize = std::max(CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, std::max(CONFIG_DEMUX_BUFFER_SIZE, CONFIG_HANDLER_STREAM_BUFFER_SIZE));
-		mProcessBuffer = std::make_unique<unsigned char[]>(mProcessBufferSize);
-		if (!mProcessBuffer) {
-			meddbg("Buffer allocation fail size: %d\n", mProcessBufferSize);
-			return false;
-		}
-	}
-
 	// Open stream handler and start buffering
 	if (!StreamHandler::open(buffSize)) {
 		meddbg("StreamHandler::open failed!\n");
-		mProcessBuffer.reset();
-		mProcessBufferSize = 0;
 		return false;
 	}
-
-	// Update processBuffer size based on decoder/demuxer presence
-	mProcessBufferSize = mDecoder ? CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE : mDemuxer ? CONFIG_DEMUX_BUFFER_SIZE : CONFIG_HANDLER_STREAM_BUFFER_SIZE;
 
 	// Wait buffering done
 	std::unique_lock<std::mutex> lock(mMutex);
@@ -148,6 +130,27 @@ void InputHandler::resetWorker()
 {
 	mState = BUFFER_STATE_EMPTY;
 	mTotalBytes = 0;
+}
+
+bool InputHandler::start()
+{
+	if (!mProcessBuffer) {
+		mProcessBufferSize = mDecoder ? CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE : mDemuxer ? CONFIG_DEMUX_BUFFER_SIZE : CONFIG_HANDLER_STREAM_BUFFER_SIZE;
+		mProcessBuffer = std::make_unique<unsigned char[]>(mProcessBufferSize);
+		if (!mProcessBuffer) {
+			meddbg("Buffer allocation fail size: %d\n", mProcessBufferSize);
+			mProcessBufferSize = 0;
+			return false;
+		}
+	}
+
+	bool ret = StreamHandler::start();
+	if (!ret) {
+		mProcessBuffer.reset();
+		mProcessBufferSize = 0;
+	}
+
+	return ret;
 }
 
 bool InputHandler::processWorker()
