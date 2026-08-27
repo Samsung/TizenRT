@@ -135,7 +135,7 @@ void InputHandler::resetWorker()
 bool InputHandler::start()
 {
 	if (!mProcessBuffer) {
-		mProcessBufferSize = mDecoder ? CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE : mDemuxer ? CONFIG_DEMUX_BUFFER_SIZE : CONFIG_HANDLER_STREAM_BUFFER_SIZE;
+		mProcessBufferSize = mDecoder ? CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE : mDemuxer ? CONFIG_DEMUX_BUFFER_SIZE : mStreamBuffer->getBufferSize();
 		mProcessBuffer = std::make_unique<unsigned char[]>(mProcessBufferSize);
 		if (!mProcessBuffer) {
 			meddbg("Buffer allocation fail size: %d\n", mProcessBufferSize);
