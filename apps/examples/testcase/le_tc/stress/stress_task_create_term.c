@@ -25,6 +25,12 @@
 #include <unistd.h>
 
 /****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define STRESS_TEST_TASK_STACKSIZE 2048
+
+/****************************************************************************
  * Private Function
  ****************************************************************************/
 
@@ -58,7 +64,7 @@ static int stress_task_create_term_loop(int cpu)
 #endif
 
 	while (1) {
-		pid = task_create("stress_task_create_term_exit", SCHED_PRIORITY_DEFAULT, 1024, stress_task_create_term_exit, NULL);
+		pid = task_create("stress_task_create_term_exit", SCHED_PRIORITY_DEFAULT, STRESS_TEST_TASK_STACKSIZE, stress_task_create_term_exit, NULL);
 		if (pid < 0) {
 			return -1;
 		}
@@ -66,7 +72,7 @@ static int stress_task_create_term_loop(int cpu)
 		sched_yield();
 		task_delete(pid);
 
-		pid = task_create("stress_task_create_term_sleep", SCHED_PRIORITY_DEFAULT, 1024, stress_task_create_term_sleep, NULL);
+		pid = task_create("stress_task_create_term_sleep", SCHED_PRIORITY_DEFAULT, STRESS_TEST_TASK_STACKSIZE, stress_task_create_term_sleep, NULL);
 		if (pid < 0) {
 			return -1;
 		}
@@ -104,13 +110,13 @@ int stress_task_create_term_main(int argc, char *argv[])
 	pid_t cpu1_pid;
 #endif
 
-	cpu0_pid = task_create("stress_task_create_term_cpu0", SCHED_PRIORITY_DEFAULT, 1024, stress_task_create_term_cpu0, NULL);
+	cpu0_pid = task_create("stress_task_create_term_cpu0", SCHED_PRIORITY_DEFAULT, STRESS_TEST_TASK_STACKSIZE, stress_task_create_term_cpu0, NULL);
 	if (cpu0_pid < 0) {
 		return -1;
 	}
 
 #if defined(CONFIG_SMP) && CONFIG_SMP_NCPUS > 1
-	cpu1_pid = task_create("stress_task_create_term_cpu1", SCHED_PRIORITY_DEFAULT, 1024, stress_task_create_term_cpu1, NULL);
+	cpu1_pid = task_create("stress_task_create_term_cpu1", SCHED_PRIORITY_DEFAULT, STRESS_TEST_TASK_STACKSIZE, stress_task_create_term_cpu1, NULL);
 	if (cpu1_pid < 0) {
 		task_delete(cpu0_pid);
 		return -1;
