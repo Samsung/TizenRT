@@ -271,6 +271,11 @@ int getopt(int argc, FAR char *const argv[], FAR const char *optstring)
 		optarg = NULL;
 		optopt = *optchar;
 		optind++;
+
+		/* Two colons mean that the argument is optional. */
+		if (optchar[2] == ':') {
+			return *optchar;
+		}
 		return noarg_ret;
 	}
 
