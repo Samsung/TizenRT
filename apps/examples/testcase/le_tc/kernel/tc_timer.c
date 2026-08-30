@@ -23,7 +23,9 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <tinyara/os_api_test_drv.h>
+#ifndef CONFIG_BUILD_PROTECTED
 #include "../../os/kernel/timer/timer.h"
+#endif
 #include "tc_internal.h"
 
 #define USECINT 10000000
@@ -272,6 +274,196 @@ static void tc_timer_timer_initialize(void)
  * Name: timer
  ****************************************************************************/
 
+#ifndef CONFIG_DISABLE_POSIX_TIMERS
+#ifndef CONFIG_BUILD_PROTECTED
+/**
+ * @fn                   :tc_timer_gethandle_null
+ * @brief                :Test timer_gethandle() with NULL timerid
+ * @scenario             :Pass NULL to timer_gethandle() and verify it returns NULL
+ * API's covered         :timer_gethandle
+ * Preconditions         :none
+ * Postconditions        :none
+ * @return               :void
+ */
+static void tc_timer_gethandle_null(void)
+{
+	struct posix_timer_s *ret;
+
+	ret = timer_gethandle(NULL);
+	TC_ASSERT_EQ("timer_gethandle", ret, NULL);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_timer_gethandle_valid
+ * @brief                :Test timer_gethandle() with valid timerid
+ * @scenario             :Create valid timer, verify timer_gethandle() returns same pointer
+ * API's covered         :timer_create, timer_gethandle, timer_delete
+ * Preconditions         :none
+ * Postconditions        :none
+ * @return               :void
+ */
+static void tc_timer_gethandle_valid(void)
+{
+	int ret_chk;
+	timer_t timer_id;
+	clockid_t clockid = CLOCK_REALTIME;
+	struct sigevent st_sigevent;
+	struct posix_timer_s *ret;
+
+	st_sigevent.sigev_notify = SIGEV_SIGNAL;
+	st_sigevent.sigev_signo = SIGRTMIN;
+	st_sigevent.sigev_value.sival_ptr = &timer_id;
+
+	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
+	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
+	TC_ASSERT_NEQ("timer_create", timer_id, NULL);
+
+	ret = timer_gethandle(timer_id);
+	TC_ASSERT_NEQ("timer_gethandle", ret, NULL);
+	TC_ASSERT_EQ("timer_gethandle", ret, (struct posix_timer_s *)timer_id);
+
+	timer_delete(timer_id);
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_timer_gethandle_forged
+ * @brief                :Test timer_gethandle() with forged handle
+ * @scenario             :Pass stack variable address (forged handle), verify NULL return
+ * API's covered         :timer_gethandle
+ * Preconditions         :none
+ * Postconditions        :none
+ * @return               :void
+ */
+static void tc_timer_gethandle_forged(void)
+{
+	struct posix_timer_s *ret;
+	int stack_var = 0x12345678;
+
+	/* Pass address of stack variable as forged timer handle */
+	ret = timer_gethandle((timer_t)&stack_var);
+	TC_ASSERT_EQ("timer_gethandle", ret, NULL);
+
+	/* Also test with completely random pointer */
+	ret = timer_gethandle((timer_t)0x12345678);
+	TC_ASSERT_EQ("timer_gethandle", ret, NULL);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_timer_gethandle_after_delete
+ * @brief                :Test timer_gethandle() with deleted timer handle
+ * @scenario             :Create timer, delete it, verify timer_gethandle() returns NULL
+ * API's covered         :timer_create, timer_delete, timer_gethandle
+ * Preconditions         :none
+ * Postconditions        :none
+ * @return               :void
+ */
+static void tc_timer_gethandle_after_delete(void)
+{
+	int ret_chk;
+	timer_t timer_id;
+	clockid_t clockid = CLOCK_REALTIME;
+	struct sigevent st_sigevent;
+	struct posix_timer_s *ret;
+
+	st_sigevent.sigev_notify = SIGEV_SIGNAL;
+	st_sigevent.sigev_signo = SIGRTMIN;
+	st_sigevent.sigev_value.sival_ptr = &timer_id;
+
+	ret_chk = timer_create(clockid, &st_sigevent, &timer_id);
+	TC_ASSERT_NEQ("timer_create", ret_chk, ERROR);
+
+	/* Delete the timer */
+	ret_chk = timer_delete(timer_id);
+	TC_ASSERT_EQ("timer_delete", ret_chk, OK);
+
+	/* Verify timer_gethandle returns NULL for deleted timer */
+	ret = timer_gethandle(timer_id);
+	TC_ASSERT_EQ("timer_gethandle", ret, NULL);
+
+	TC_SUCCESS_RESULT();
+}
+#endif /* CONFIG_BUILD_PROTECTED */
+
+/**
+ * @fn                   :tc_timer_delete_forged_handle
+ * @brief                :Test timer_delete() with forged handle
+ * @scenario             :Pass forged handle to timer_delete(), verify ERROR/EINVAL
+ * API's covered         :timer_delete
+ * Preconditions         :none
+ * Postconditions        :none
+ * @return               :void
+ */
+static void tc_timer_delete_forged_handle(void)
+{
+	int ret_chk;
+	int stack_var = 0x12345678;
+
+	ret_chk = timer_delete((timer_t)&stack_var);
+	TC_ASSERT_EQ("timer_delete", ret_chk, ERROR);
+	TC_ASSERT_EQ("timer_delete", errno, EINVAL);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_timer_settime_forged_handle
+ * @brief                :Test timer_settime() with forged handle
+ * @scenario             :Pass forged handle to timer_settime(), verify ERROR/EINVAL
+ * API's covered         :timer_settime
+ * Preconditions         :none
+ * Postconditions        :none
+ * @return               :void
+ */
+static void tc_timer_settime_forged_handle(void)
+{
+	int ret_chk;
+	int stack_var = 0x12345678;
+	struct itimerspec st_timer_spec;
+
+	st_timer_spec.it_value.tv_sec = 1;
+	st_timer_spec.it_value.tv_nsec = 0;
+	st_timer_spec.it_interval.tv_sec = 0;
+	st_timer_spec.it_interval.tv_nsec = 0;
+
+	ret_chk = timer_settime((timer_t)&stack_var, 0, &st_timer_spec, NULL);
+	TC_ASSERT_EQ("timer_settime", ret_chk, ERROR);
+	TC_ASSERT_EQ("timer_settime", errno, EINVAL);
+
+	TC_SUCCESS_RESULT();
+}
+
+/**
+ * @fn                   :tc_timer_gettime_forged_handle
+ * @brief                :Test timer_gettime() with forged handle
+ * @scenario             :Pass forged handle to timer_gettime(), verify ERROR/EINVAL
+ * API's covered         :timer_gettime
+ * Preconditions         :none
+ * Postconditions        :none
+ * @return               :void
+ */
+static void tc_timer_gettime_forged_handle(void)
+{
+	int ret_chk;
+	int stack_var = 0x12345678;
+	struct itimerspec st_timer_spec;
+
+	ret_chk = timer_gettime((timer_t)&stack_var, &st_timer_spec);
+	TC_ASSERT_EQ("timer_gettime", ret_chk, ERROR);
+	TC_ASSERT_EQ("timer_gettime", errno, EINVAL);
+
+	TC_SUCCESS_RESULT();
+}
+#endif /* CONFIG_DISABLE_POSIX_TIMERS */
+
+/****************************************************************************
+ * Name: timer
+ ****************************************************************************/
+
 int timer_tc_main(void)
 {
 #ifndef CONFIG_BUILD_PROTECTED
@@ -280,6 +472,17 @@ int timer_tc_main(void)
 
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
 	tc_timer_timer_getoverrun();
+
+#ifndef CONFIG_BUILD_PROTECTED
+	/* Timer security tests for timer_gethandle() */
+	tc_timer_gethandle_null();
+	tc_timer_gethandle_valid();
+	tc_timer_gethandle_forged();
+	tc_timer_gethandle_after_delete();
+#endif
+	tc_timer_delete_forged_handle();
+	tc_timer_settime_forged_handle();
+	tc_timer_gettime_forged_handle();
 #endif                     /* CONFIG_DISABLE_POSIX_TIMERS */
 	tc_timer_timer_set_get_time();
 	tc_timer_timer_initialize();
