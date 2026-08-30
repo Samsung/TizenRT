@@ -461,8 +461,81 @@ function SELECT_DL
 
 function CONFIGURE()
 {
-	${OSDIR}/tools/configure.sh $1 || exit 1
+	${OSDIR}/tools/configure.sh "$@" || exit 1
 	UPDATE_STATUS
+}
+
+# Ask tools/configure.sh, which owns os/.configured, whether the defconfig or
+# the Make.defs of the current configuration has been updated since it was
+# applied, and offer to apply it. The defconfig is copied to .config at
+# configuration time, so an update of it has no effect until it is copied again.
+#
+# Never re-configure automatically: .config may have been changed on purpose
+# through menuconfig or by hand. The question times out in 5 seconds and falls
+# back to building with the current configuration, so that an unattended build
+# is never blocked.
+function CHECK_DEFCONFIG_UPDATE()
+{
+	unset BOARDCONFIG
+	unset CONFIGURED_DATE
+	unset CHANGED_DEFCONFIG
+	unset CHANGED_MAKEDEFS
+	unset LOCAL_CHANGES
+	unset PROCEED
+
+	# Nothing is reported when there is no configuration to compare with
+	source <(${OSDIR}/tools/configure.sh -c)
+
+	if [ -z "${CHANGED_DEFCONFIG}" -a -z "${CHANGED_MAKEDEFS}" ]; then
+		return
+	fi
+
+	echo ======================================================
+	echo "  \"Configuration source has changed\""
+	echo ======================================================
+	echo "  \"board/config : ${BOARDCONFIG}\""
+	echo "  \"configured   : ${CONFIGURED_DATE}\""
+	if [ "${CHANGED_DEFCONFIG}" == "y" ]; then
+		echo "  \"changed      : configs/${BOARDCONFIG}/defconfig\""
+	fi
+	if [ "${CHANGED_MAKEDEFS}" == "y" ]; then
+		echo "  \"changed      : configs/${BOARDCONFIG%/*}/Make.defs\""
+		echo "  \"               build flags changed, a clean build is recommended\""
+	fi
+	if [ "${LOCAL_CHANGES}" == "y" ]; then
+		echo "  \"WARNING      : os/.config has local changes (menuconfig or manual edit)\""
+		echo "  \"               re-configure DISCARDS them, saved to os/.config.bak\""
+	fi
+	echo ======================================================
+
+	# Do not ask when there is no terminal, just keep the build going
+	if [ ! -t 0 ]; then
+		echo "Not a terminal, build with the current configuration"
+		return
+	fi
+
+	echo -n "Re-configure with the updated source? Press 'y' or 'n' (build in 5 seconds) : "
+	read -t 5 PROCEED
+	READ_RESULT=$?
+	if [ ${READ_RESULT} -ne 0 ]; then
+		echo ""
+	fi
+	if [ ${READ_RESULT} -gt 128 ]; then
+		echo "Timeout, build with the current configuration"
+		return
+	fi
+	if [ "${PROCEED}" != "y" ]; then
+		echo "Build with the current configuration"
+		return
+	fi
+
+	if [ "${LOCAL_CHANGES}" == "y" ]; then
+		rm -f ${CONFIGFILE}.bak
+		cp ${CONFIGFILE} ${CONFIGFILE}.bak
+		echo "Saved os/.config to os/.config.bak"
+	fi
+
+	CONFIGURE -f ${BOARDCONFIG}
 }
 
 function DOWNLOAD()
@@ -492,6 +565,12 @@ function UPDATE_STATUS()
 
 function BUILD()
 {
+	# An empty argument means "build with the current configuration", which is
+	# the only case where the source of the configuration matters.
+	if [ -z "$1" ]; then
+		CHECK_DEFCONFIG_UPDATE
+	fi
+
 	if [ -f build.log ]; then
 		mv build.log build.log.old
 	fi

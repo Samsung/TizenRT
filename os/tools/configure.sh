@@ -53,12 +53,15 @@ WD=`test -d ${0%/*} && cd ${0%/*}; pwd`
 TOPDIR="${WD}/.."
 USAGE="
 
-USAGE: ${0} [-d] [-a <app-dir>] <board-name>/<config-name>
+USAGE: ${0} [-d] [-f] [-a <app-dir>] <board-name>/<config-name>
 
 Where:
   <board-name> is the name of the board in the configs directory
   <config-name> is the name of the board configuration sub-directory
   <app-dir> is the path to the apps/ directory, relative to the tinyara directory
+  -f re-applies the configuration even if it was already configured and compiled
+  -c reports whether the defconfig or Make.defs of the current configuration has
+     been updated since it was applied, as shell assignments, and copies nothing
 
 "
 
@@ -66,11 +69,19 @@ Where:
 
 unset boardconfig
 unset appdir
+unset forced
+unset check_only
 
 while [ ! -z "$1" ]; do
   case "$1" in
     -d )
       set -x
+      ;;
+    -f )
+      forced=y
+      ;;
+    -c )
+      check_only=y
       ;;
     -h )
       echo "$USAGE"
@@ -93,6 +104,138 @@ while [ ! -z "$1" ]; do
   shift
 done
 
+configpath=${TOPDIR}/../build/configs
+
+# ---------------------------------------------------------------------------
+# .configured records which board/config has been installed into .config,
+# together with the hashes of the files it was installed from.  This script is
+# the only writer and the only place which knows the format.  dbuild.sh asks
+# for the outcome with -c and decides on its own whether to prompt the user.
+# ---------------------------------------------------------------------------
+
+configured_file="${TOPDIR}/.configured"
+
+hash_of()
+{
+  if [ -r "$1" ] && which sha256sum > /dev/null 2>&1; then
+    sha256sum "$1" | cut -d' ' -f1
+  fi
+}
+
+# $1 is <board>/<config>, $2 an optional suffix for the recorded date.
+#
+# The file is unlinked before it is written because it may have been created by
+# root inside the Docker container.  Failing to write it only disables the
+# update check, it never fails the configuration.
+
+write_configured()
+{
+  wc_boardconfig=${1%/}
+  wc_board=${wc_boardconfig%/*}
+
+  rm -f "${configured_file}"
+  { echo "CONFIGURED_BOARD=\"${wc_board}\"" ;
+    echo "CONFIGURED_CONFIG=\"${wc_boardconfig##*/}\"" ;
+    echo "CONFIGURED_TIME=\"`date +%s`\"" ;
+    echo "CONFIGURED_DATE=\"`date '+%Y-%m-%d %H:%M:%S'`$2\"" ;
+    echo "CONFIGURED_DEFCONFIG_HASH=\"`hash_of \"${configpath}/${wc_boardconfig}/defconfig\"`\"" ;
+    echo "CONFIGURED_MAKEDEFS_HASH=\"`hash_of \"${configpath}/${wc_board}/Make.defs\"`\"" ;
+    echo "CONFIGURED_DOTCONFIG_HASH=\"`hash_of \"${TOPDIR}/.config\"`\"" ;
+  } > "${configured_file}" 2>/dev/null || \
+    echo "  Warning: cannot create \"${configured_file}\", defconfig update check is disabled"
+}
+
+# A tree which was configured before .configured existed has no record.  Rebuild
+# it by matching .config against every defconfig.  Stay silent unless there is
+# exactly one match, a guess would be worse than no record at all.
+
+recover_configured()
+{
+  unset matched
+
+  current_hash=`hash_of "${TOPDIR}/.config"`
+  if [ -z "${current_hash}" ]; then
+    return
+  fi
+
+  for defconfig_member in `find -L ${configpath} -name defconfig`; do
+    if [ "`hash_of \"${defconfig_member}\"`" = "${current_hash}" ]; then
+      if [ ! -z "${matched}" ]; then
+        return
+      fi
+      matched=`dirname ${defconfig_member} | sed -e "s,${configpath}/,,g"`
+    fi
+  done
+
+  if [ -z "${matched}" ]; then
+    return
+  fi
+
+  write_configured "${matched}" " (recovered)"
+}
+
+# Report the state of the current configuration as shell assignments.  Nothing
+# is printed when there is nothing usable to report, so that a caller which
+# evaluates the output simply sees no change.
+
+report_configured()
+{
+  if [ ! -r "${TOPDIR}/.config" ]; then
+    return
+  fi
+
+  if [ ! -r "${configured_file}" ]; then
+    recover_configured
+    return
+  fi
+
+  unset CONFIGURED_BOARD
+  unset CONFIGURED_CONFIG
+  unset CONFIGURED_DATE
+  unset CONFIGURED_DEFCONFIG_HASH
+  unset CONFIGURED_MAKEDEFS_HASH
+  unset CONFIGURED_DOTCONFIG_HASH
+  . "${configured_file}"
+
+  if [ -z "${CONFIGURED_BOARD}" -o -z "${CONFIGURED_CONFIG}" -o -z "${CONFIGURED_DEFCONFIG_HASH}" ]; then
+    return
+  fi
+
+  rc_boardconfig="${CONFIGURED_BOARD}/${CONFIGURED_CONFIG}"
+  rc_defconfig="${configpath}/${rc_boardconfig}/defconfig"
+
+  # The recorded configuration may not exist on this branch anymore
+  if [ ! -r "${rc_defconfig}" ]; then
+    return
+  fi
+
+  rc_defconfig_hash=`hash_of "${rc_defconfig}"`
+  if [ -z "${rc_defconfig_hash}" ]; then
+    return
+  fi
+  rc_makedefs_hash=`hash_of "${configpath}/${CONFIGURED_BOARD}/Make.defs"`
+
+  echo "BOARDCONFIG=\"${rc_boardconfig}\""
+  echo "CONFIGURED_DATE=\"${CONFIGURED_DATE}\""
+  if [ "${rc_defconfig_hash}" != "${CONFIGURED_DEFCONFIG_HASH}" ]; then
+    echo "CHANGED_DEFCONFIG=\"y\""
+  fi
+  if [ "${rc_makedefs_hash}" != "${CONFIGURED_MAKEDEFS_HASH}" ]; then
+    echo "CHANGED_MAKEDEFS=\"y\""
+  fi
+  if [ ! -z "${CONFIGURED_DOTCONFIG_HASH}" -a \
+       "`hash_of \"${TOPDIR}/.config\"`" != "${CONFIGURED_DOTCONFIG_HASH}" ]; then
+    echo "LOCAL_CHANGES=\"y\""
+  fi
+}
+
+# -c reports only, it needs no <board/config> and copies nothing
+
+if [ "X${check_only}" = "Xy" ]; then
+  report_configured
+  exit 0
+fi
+
 # Sanity checking
 
 if [ -z "${boardconfig}" ]; then
@@ -102,7 +245,6 @@ if [ -z "${boardconfig}" ]; then
   exit 2
 fi
 
-configpath=${TOPDIR}/../build/configs
 boardconfigpath=${configpath}/${boardconfig}
 if [ ! -d "${boardconfigpath}" ]; then
   echo "Directory ${boardconfigpath} does not exist.  Options are:"
@@ -150,10 +292,11 @@ if [ ! -r "${src_config}" ]; then
   exit 6
 fi
 
-if [ -r ${dest_config} ]; then
+if [ -r ${dest_config} -a "X${forced}" != "Xy" ]; then
   if [ -r "${TOPDIR}/.version" ]; then
     echo "Already configured and compiled!"
     echo "Do './dbuild.sh distclean' in a Docker container, otherwise do 'make distclean' and then try again."
+    echo "Use '${0} -f ${boardconfig}' to re-apply the configuration in place."
     exit 7
   fi
 fi
@@ -296,5 +439,7 @@ if [ "${TOOL_CAUTION}" = "y" ]; then
   echo " NOTE!! You can ignore the caution above when you use the docker through the dbuild script. "
   echo " "
 fi
+
+write_configured "${boardconfig}"
 
 echo "  Configuration is Done!"
