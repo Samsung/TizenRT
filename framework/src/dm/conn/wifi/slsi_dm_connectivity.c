@@ -198,11 +198,20 @@ int dm_conn_get_address(char *ipAddr)
 	int i;
 	int numreqs = 3;
 	int num_nic = 0;
+	int ret = DM_ERROR_NO_DATA;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		perror("socket ");
+		return ret;
+	}
 	memset(&ifcfg, 0, sizeof(ifcfg));
 	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
+	if (ifcfg.ifc_buf == NULL) {
+		dmdbg("Failed to allocate ifconf buffer\n");
+		goto DONE;
+	}
 	if (ioctl(fd, SIOCGIFCONF, (unsigned long)&ifcfg) < 0) {
 		perror("SIOCGIFCONF ");
 		goto DONE;
@@ -217,14 +226,15 @@ int dm_conn_get_address(char *ipAddr)
 		} else {
 			strcpy(ipAddr, inet_ntoa(sin->sin_addr));
 			dmdbg("ipAddr : %s\n", ipAddr);
+			ret = DM_ERROR_NONE;
 			break;
 		}
 	}
 
-	return DM_ERROR_NONE;
-
-	DONE: free(ifcfg.ifc_buf);
-	return DM_ERROR_NO_DATA;
+DONE:
+	free(ifcfg.ifc_buf);
+	close(fd);
+	return ret;
 }
 
 int dm_conn_get_interface(char *interface)
@@ -241,11 +251,20 @@ int dm_conn_get_interface(char *interface)
 	int i;
 	int numreqs = 3;
 	int num_nic = 0;
+	int ret = DM_ERROR_NO_DATA;
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		perror("socket ");
+		return ret;
+	}
 	memset(&ifcfg, 0, sizeof(ifcfg));
 	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
+	if (ifcfg.ifc_buf == NULL) {
+		dmdbg("Failed to allocate ifconf buffer\n");
+		goto DONE;
+	}
 	if (ioctl(fd, SIOCGIFCONF, (unsigned long)&ifcfg) < 0) {
 		perror("SIOCGIFCONF ");
 		goto DONE;
@@ -261,14 +280,15 @@ int dm_conn_get_interface(char *interface)
 		} else {
 			strncpy(interface, ifr->ifr_name, IF_NAMESIZE);
 			dmdbg("Interface : %s\n", interface);
+			ret = DM_ERROR_NONE;
 			break;
 		}
 	}
 
-	return DM_ERROR_NONE;
-
-	DONE: free(ifcfg.ifc_buf);
-	return DM_ERROR_NO_DATA;
+DONE:
+	free(ifcfg.ifc_buf);
+	close(fd);
+	return ret;
 }
 
 int dm_conn_register_linkup_cb(conn_cb cb)
