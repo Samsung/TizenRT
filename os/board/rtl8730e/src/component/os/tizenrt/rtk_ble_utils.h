@@ -62,6 +62,7 @@ extern trble_result_e rtw_ble_client_scan_whiltelist_clear_all(void);
 extern trble_result_e rtw_ble_client_start_scan(void);
 extern trble_result_e rtw_ble_client_start_scan_with_filter(trble_scan_filter* scan_parm, bool whitelist_enable);
 extern trble_result_e rtw_ble_client_stop_scan(void);
+extern trble_result_e rtw_ble_client_delete_scan_timer(void);
 extern trble_result_e rtw_ble_client_connect(trble_conn_info* conn_info, bool is_secured_connect);
 extern trble_result_e rtw_ble_client_read_connected_device_list(trble_connected_list* out_connected_list);
 extern trble_result_e rtw_ble_client_read_connected_info(trble_conn_handle conn_handle, trble_device_connected* out_connected_device);
