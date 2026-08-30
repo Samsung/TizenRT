@@ -506,7 +506,10 @@ void mhdr_connect_ind(void *msg, UINT32 len)
 
 	if (!ind->status_code) {
 		RWNX_LOGD("connect ok\n");
-
+		g_rwnx_hw.connected = true;
+#ifdef CONFIG_WIFI_REGDOMAIN
+		g_rwnx_hw.chan = ind->chan;
+#endif
 		bk7011_default_rxsens_setting();
 
 #if NX_VERSION > NX_VERSION_PACK(6, 22, 0, 0)
@@ -1591,7 +1594,7 @@ void rwnx_handle_recv_msg(struct ke_msg *rx_msg)
 
 		msg_ptr = (struct ke_msg *)rx_msg;
 		ind = (struct sm_disconnect_ind *)msg_ptr->param;
-
+		g_rwnx_hw.connected = false;
 		RWNX_LOGD("disconnect\r\n");
 
 #if defined(CONFIG_IEEE80211R) || defined(CONFIG_WNM)
