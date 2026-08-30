@@ -30,6 +30,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#ifdef CONFIG_BUILD_FLAT
+#include <sched.h>
+#include <tinyara/irq.h>
+#endif
 #include <tinyara/watchdog.h>
 
 #ifdef CONFIG_WATCHDOG
@@ -37,10 +41,12 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define WATCHDOG_DEFAULT_TIMEOUT_MS 30001
+#define WATCHDOG_DEFAULT_TIMEOUT_MS 180000
+#define WATCHDOG_DEFAULT_STATUS_PERIOD_MS 0
 #define WATCHDOG_PAUSE_DEFAULT_MS 1000
 #define WATCHDOG_RESUME_DEFAULT_MS 200
 #define WATCHDOG_PAUSE_TIMEOUT_MULTIPLIER 10
+#define WATCHDOG_MAX_SLEEP_MS (UINT32_MAX / 1000)
 
 /****************************************************************************
  * Private Functions
@@ -82,28 +88,62 @@ static void watchdog_print_status(const char *tag, const struct watchdog_status_
 static void watchdog_help(void)
 {
 	printf("Usage:\n");
-	printf("  watchdog\n");
-	printf("  watchdog expire [timeout_ms] [status_period_ms]\n");
-	printf("  watchdog keepalive\n");
-	printf("  watchdog status\n");
-	printf("  watchdog stop\n");
-	printf("  watchdog pause\n");
-	printf("  watchdog resume\n");
-	printf("  watchdog pause_resume [pause_ms] [resume_ms]\n");
-	printf("\n");
+	printf("  watchdog <command> [arguments]\n\n");
+	printf("Commands:\n");
+	printf("  help\n");
+	printf("      Show this help message\n\n");
+	printf("  expire [timeout_ms] [status_period_ms]\n");
+	printf("      Start watchdog expiration test\n");
+	printf("      timeout_ms        Watchdog timeout in milliseconds\n");
+	printf("                        Default: %u ms\n", (uint32_t)WATCHDOG_DEFAULT_TIMEOUT_MS);
+	printf("      status_period_ms  Status print interval in milliseconds\n");
+	printf("                        0 disables periodic status printing\n");
+	printf("                        Default: %u ms\n\n", (uint32_t)WATCHDOG_DEFAULT_STATUS_PERIOD_MS);
+	printf("  keepalive\n");
+	printf("      Send keepalive signal to watchdog\n\n");
+	printf("  status\n");
+	printf("      Show current watchdog status\n\n");
+	printf("  stop\n");
+	printf("      Stop watchdog\n\n");
+	printf("  pause\n");
+	printf("      Pause watchdog\n\n");
+	printf("  resume\n");
+	printf("      Resume watchdog\n\n");
+	printf("  pause_resume [pause_ms] [resume_ms]\n");
+	printf("      Run one watchdog pause/resume test sequence\n");
+	printf("      pause_ms          Pause duration in milliseconds\n");
+	printf("                        Default: %u ms\n", (uint32_t)WATCHDOG_PAUSE_DEFAULT_MS);
+	printf("      resume_ms         Resume duration in milliseconds\n");
+	printf("                        Default: %u ms\n\n", (uint32_t)WATCHDOG_RESUME_DEFAULT_MS);
+	printf("  hang [timeout_ms]\n");
+	printf("      Test watchdog operation in a hang situation\n");
+	printf("      timeout_ms        Watchdog timeout in milliseconds\n");
+	printf("                        Default: %u ms\n", (uint32_t)WATCHDOG_DEFAULT_TIMEOUT_MS);
+	printf("                        Requires FLAT build\n\n");
+	printf("Examples:\n");
+	printf("  watchdog expire\n");
+	printf("  watchdog expire 30001 1000\n");
+	printf("  watchdog pause_resume\n");
+	printf("  watchdog pause_resume 1000 200\n");
+	printf("  watchdog hang\n");
+	printf("  watchdog hang 40000\n\n");
 	printf("Notes:\n");
 	printf("  pause_resume timeout = pause_ms * %u\n", (uint32_t)WATCHDOG_PAUSE_TIMEOUT_MULTIPLIER);
-	printf("  default pause_ms=%u, resume_ms=%u\n", (uint32_t)WATCHDOG_PAUSE_DEFAULT_MS, (uint32_t)WATCHDOG_RESUME_DEFAULT_MS);
-	printf("\n");
-	printf("Examples:\n");
-	printf("  watchdog expire 30001\n");
-	printf("  watchdog expire 30001 1000\n");
-	printf("  watchdog keepalive\n");
-	printf("  watchdog status\n");
-	printf("  watchdog stop\n");
-	printf("  watchdog pause\n");
-	printf("  watchdog resume\n");
-	printf("  watchdog pause_resume 1000 200\n");
+}
+
+static int watchdog_validate_sleep_ms(uint32_t value_ms, const char *name, bool allow_zero)
+{
+	if (value_ms == 0 && !allow_zero) {
+		printf("watchdog: %s must be greater than 0\n", name);
+		return ERROR;
+	}
+
+	if (value_ms > WATCHDOG_MAX_SLEEP_MS) {
+		printf("watchdog: %s is too large: %u\n", name, value_ms);
+		return ERROR;
+	}
+
+	return OK;
 }
 
 static int watchdog_parse_u32(const char *arg, uint32_t *value)
@@ -188,6 +228,10 @@ static int watchdog_wait_loop(int fd, uint32_t status_period_ms)
 		for (;;) {
 			usleep(1000 * 1000);
 		}
+	}
+
+	if (watchdog_validate_sleep_ms(status_period_ms, "status_period_ms", false) != OK) {
+		return ERROR;
 	}
 
 	for (;;) {
@@ -351,8 +395,12 @@ static int watchdog_run_pause_resume(uint32_t pause_ms, uint32_t resume_ms)
 	int fd;
 	int ret;
 
-	if (pause_ms == 0 || pause_ms > UINT32_MAX / WATCHDOG_PAUSE_TIMEOUT_MULTIPLIER) {
-		printf("watchdog: invalid pause_ms %u\n", pause_ms);
+	if (watchdog_validate_sleep_ms(pause_ms, "pause_ms", false) != OK || watchdog_validate_sleep_ms(resume_ms, "resume_ms", false) != OK) {
+		return ERROR;
+	}
+
+	if (pause_ms > UINT32_MAX / WATCHDOG_PAUSE_TIMEOUT_MULTIPLIER) {
+		printf("watchdog: pause_ms is too large for timeout calculation: %u\n", pause_ms);
 		return ERROR;
 	}
 
@@ -412,6 +460,57 @@ errout:
 	return ret;
 }
 
+#ifndef CONFIG_BUILD_FLAT
+static int watchdog_run_hang(uint32_t timeout_ms)
+{
+	printf("watchdog: hang is only supported in FLAT build\n");
+	return ERROR;
+}
+#else
+static int watchdog_run_hang(uint32_t timeout_ms)
+{
+	volatile uint32_t spin = 0;
+	irqstate_t flags;
+	int fd;
+
+	if (watchdog_validate_sleep_ms(timeout_ms, "timeout_ms", false) != OK) {
+		return ERROR;
+	}
+
+	fd = watchdog_open_device();
+	if (fd < 0) {
+		return ERROR;
+	}
+
+	if (watchdog_start(fd, timeout_ms) != OK) {
+		close(fd);
+		return ERROR;
+	}
+
+	printf("hang test started: timeout=%u ms\n", timeout_ms);
+	printf("No keepalive will be sent. Hardware watchdog reset is expected.\n");
+
+	if (sched_lock() != OK) {
+		printf("watchdog: sched_lock failed before hang test\n");
+		watchdog_stop(fd);
+		close(fd);
+		return ERROR;
+	}
+
+	flags = enter_critical_section();
+
+	for (;;) {
+		spin++;
+	}
+
+	leave_critical_section(flags);
+	sched_unlock();
+	watchdog_stop(fd);
+	close(fd);
+	return ERROR;
+}
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -432,100 +531,104 @@ int watchdog_main(int argc, char *argv[])
 		return OK;
 	}
 
-	if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "help") == 0) {
+	if (strncmp(argv[1], "-h", 3) == 0 || strncmp(argv[1], "--help", 7) == 0 || strncmp(argv[1], "help", 5) == 0) {
 		watchdog_help();
 		return OK;
 	}
 
-	if (strcmp(argv[1], "expire") == 0) {
+	if (strncmp(argv[1], "expire", 7) == 0) {
 		timeout_ms = WATCHDOG_DEFAULT_TIMEOUT_MS;
-		status_period_ms = 0;
+		status_period_ms = WATCHDOG_DEFAULT_STATUS_PERIOD_MS;
 
 		if (argc >= 3 && watchdog_parse_u32(argv[2], &timeout_ms) != OK) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		if (argc >= 4 && watchdog_parse_u32(argv[3], &status_period_ms) != OK) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		if (argc > 4) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		return watchdog_run_expire(timeout_ms, status_period_ms);
 	}
 
-	if (strcmp(argv[1], "keepalive") == 0) {
+	if (strncmp(argv[1], "keepalive", 10) == 0) {
 		if (argc != 2) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		return watchdog_run_keepalive();
 	}
 
-	if (strcmp(argv[1], "status") == 0) {
+	if (strncmp(argv[1], "hang", 5) == 0) {
+		timeout_ms = WATCHDOG_DEFAULT_TIMEOUT_MS;
+
+		if (argc >= 3 && watchdog_parse_u32(argv[2], &timeout_ms) != OK) {
+			goto errout_with_help;
+		}
+
+		if (argc > 3) {
+			goto errout_with_help;
+		}
+
+		return watchdog_run_hang(timeout_ms);
+	}
+
+	if (strncmp(argv[1], "status", 7) == 0) {
 		if (argc != 2) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		return watchdog_run_status();
 	}
 
-	if (strcmp(argv[1], "stop") == 0) {
+	if (strncmp(argv[1], "stop", 5) == 0) {
 		if (argc != 2) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		return watchdog_run_stop();
 	}
 
-	if (strcmp(argv[1], "pause") == 0) {
+	if (strncmp(argv[1], "pause", 6) == 0) {
 		if (argc != 2) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		return watchdog_run_pause();
 	}
 
-	if (strcmp(argv[1], "resume") == 0) {
+	if (strncmp(argv[1], "resume", 7) == 0) {
 		if (argc != 2) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		return watchdog_run_resume();
 	}
 
-	if (strcmp(argv[1], "pause_resume") == 0) {
+	if (strncmp(argv[1], "pause_resume", 13) == 0) {
 		pause_ms = WATCHDOG_PAUSE_DEFAULT_MS;
 		resume_ms = WATCHDOG_RESUME_DEFAULT_MS;
 
 		if (argc >= 3 && watchdog_parse_u32(argv[2], &pause_ms) != OK) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		if (argc >= 4 && watchdog_parse_u32(argv[3], &resume_ms) != OK) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		if (argc > 4) {
-			watchdog_help();
-			return ERROR;
+			goto errout_with_help;
 		}
 
 		return watchdog_run_pause_resume(pause_ms, resume_ms);
 	}
 
+errout_with_help:
 	watchdog_help();
 	return ERROR;
 }
