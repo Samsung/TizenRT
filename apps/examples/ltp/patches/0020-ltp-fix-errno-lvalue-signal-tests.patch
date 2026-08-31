@@ -1,0 +1,46 @@
+# ###########################################################################
+# #
+# # Copyright 2026 Samsung Electronics All Rights Reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# # http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing,
+# # software distributed under the License is distributed on an
+# # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# # express or implied. See the License for the specific language
+# # governing permissions and limitations under the License.
+# #
+# # ###########################################################################
+
+diff --git a/testcases/open_posix_testsuite/conformance/interfaces/signal/6-1.c b/testcases/open_posix_testsuite/conformance/interfaces/signal/6-1.c
+--- a/testcases/open_posix_testsuite/conformance/interfaces/signal/6-1.c
++++ b/testcases/open_posix_testsuite/conformance/interfaces/signal/6-1.c
+@@ -27,7 +27,9 @@
+ 
+ int main(void)
+ {
+-	errno = -1;
++	/* On TizenRT, errno may not be an lvalue. Use set_errno() instead. */
++	int saved_errno = errno;
++	set_errno(-1);
+ 
+ 	if (signal(-1, myhandler) != SIG_ERR) {
+ 		printf
+diff --git a/testcases/open_posix_testsuite/conformance/interfaces/signal/7-1.c b/testcases/open_posix_testsuite/conformance/interfaces/signal/7-1.c
+--- a/testcases/open_posix_testsuite/conformance/interfaces/signal/7-1.c
++++ b/testcases/open_posix_testsuite/conformance/interfaces/signal/7-1.c
+@@ -27,7 +27,9 @@
+ 
+ int main(void)
+ {
+-	errno = -1;
++	/* On TizenRT, errno may not be an lvalue. Use set_errno() instead. */
++	int saved_errno = errno;
++	set_errno(-1);
+ 
+ 	if (signal(SIGKILL, myhandler) != SIG_ERR) {
+ 		printf

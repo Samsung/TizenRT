@@ -1,0 +1,84 @@
+# ###########################################################################
+# #
+# # Copyright 2026 Samsung Electronics All Rights Reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# # http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing,
+# # software distributed under the License is distributed on an
+# # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# # express or implied. See the License for the specific language
+# # governing permissions and limitations under the License.
+# #
+# # ###########################################################################
+
+--- original/testcases/open_posix_testsuite/stress/threads/pthread_cancel/stress.c	2023-05-16 10:38:08.000000000 +0530
++++ modified/testcases/open_posix_testsuite/stress/threads/pthread_cancel/stress.c	2026-09-01 14:57:45.137444573 +0530
+@@ -159,6 +159,11 @@
+ /* Main function */
+ int main(int argc, char *argv[])
+ {
++	/*For TizenRT we need to reinitialize the static variables on every run*/
++	do_it = 1;
++	canceled = 0;
++	ended = 0;
++
+ 	int ret = 0, i;
+ 
+ 	struct sigaction sa;
+--- original/testcases/open_posix_testsuite/stress/threads/pthread_getschedparam/stress.c	2023-05-16 10:38:08.000000000 +0530
++++ modified/testcases/open_posix_testsuite/stress/threads/pthread_getschedparam/stress.c	2026-09-01 14:54:05.148718021 +0530
+@@ -148,6 +148,10 @@
+ /* Main function */
+ int main(int argc, char *argv[])
+ {
++	/*For TizenRT we must initialize static variables in every run*/
++	do_it = 1;
++	iterations = 0;
++
+ 	int ret = 0, i;
+ 
+ 	struct sigaction sa;
+--- original/testcases/open_posix_testsuite/stress/threads/pthread_kill/stress.c	2023-05-16 10:38:08.000000000 +0530
++++ modified/testcases/open_posix_testsuite/stress/threads/pthread_kill/stress.c	2026-09-01 14:57:04.761305720 +0530
+@@ -217,6 +217,11 @@
+ /* Main function */
+ int main(int argc, char *argv[])
+ {
++	/*For TizenRT, we must initialize the static variables on every run*/
++	do_it = 1;
++	iterations = 0;
++	sync = 0;
++
+ 	int ret = 0;
+ 
+ 	int flooding = 1;
+--- original/testcases/open_posix_testsuite/stress/threads/pthread_mutex_init/stress.c	2023-05-16 10:38:08.000000000 +0530
++++ modified/testcases/open_posix_testsuite/stress/threads/pthread_mutex_init/stress.c	2026-09-01 14:59:39.273847828 +0530
+@@ -170,6 +170,9 @@
+ /******** Parent thread *************/
+ int main(int argc, char *argv[])
+ {
++	/*For TizenRT, we must reinitialize the static variables on every run*/
++	do_it = 1;
++
+ 	struct sigaction sa;
+ 	pthread_t threads[N * SCALABILITY_FACTOR];
+ 	int i;
+--- original/testcases/open_posix_testsuite/stress/threads/pthread_once/stress.c	2023-05-16 10:38:08.000000000 +0530
++++ modified/testcases/open_posix_testsuite/stress/threads/pthread_once/stress.c	2026-09-01 15:00:49.310102063 +0530
+@@ -136,6 +136,10 @@
+ /* Main function */
+ int main(int argc, char *argv[])
+ {
++	/*For TizenRT, we must reinitialize the static variables on every run*/
++	do_it = 1;
++	iterations = 0;
++
+ 	int ret = 0, i;
+ 
+ 	struct sigaction sa;

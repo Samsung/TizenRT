@@ -1,0 +1,57 @@
+# ###########################################################################
+# #
+# # Copyright 2026 Samsung Electronics All Rights Reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# # http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing,
+# # software distributed under the License is distributed on an
+# # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# # express or implied. See the License for the specific language
+# # governing permissions and limitations under the License.
+# #
+# # ###########################################################################
+
+--- ltp/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_1.c	2023-05-16 10:38:08.000000000 +0530
++++ ltp/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_1.c	2026-08-14 17:33:50.463195067 +0530
+@@ -31,8 +31,8 @@
+ #define AREA "scheduler"
+ #define ERROR_PREFIX "unexpected error: " AREA " " TEST ": "
+ 
+-#define HIGH_PRIORITY 10
+-#define LOW_PRIORITY  5
++#define HIGH_PRIORITY 150
++#define LOW_PRIORITY  120
+ #define RUNTIME       5
+ #define POLICY        SCHED_RR
+ 
+--- ltp/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_2.c	2023-05-16 10:38:08.000000000 +0530
++++ ltp/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_2.c	2026-08-14 17:33:50.463195067 +0530
+@@ -31,8 +31,8 @@
+ #define AREA "scheduler"
+ #define ERROR_PREFIX "unexpected error: " AREA " " TEST ": "
+ 
+-#define HIGH_PRIORITY 10
+-#define LOW_PRIORITY  5
++#define HIGH_PRIORITY 150
++#define LOW_PRIORITY  120
+ #define RUNTIME       5
+ #define POLICY        SCHED_RR
+ 
+--- ltp/testcases/open_posix_testsuite/functional/threads/schedule/1-1.c	2023-05-16 10:38:08.000000000 +0530
++++ ltp/testcases/open_posix_testsuite/functional/threads/schedule/1-1.c	2026-08-14 17:33:50.469195119 +0530
+@@ -32,8 +32,8 @@
+ #define AREA "scheduler"
+ #define ERROR_PREFIX "unexpected error: " AREA " " TEST ": "
+ 
+-#define HIGH_PRIORITY 10
+-#define LOW_PRIORITY 5
++#define HIGH_PRIORITY 150
++#define LOW_PRIORITY 120
+ #define RUNTIME 5
+ 
+ static pthread_barrier_t barrier;
