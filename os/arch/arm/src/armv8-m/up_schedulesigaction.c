@@ -175,7 +175,9 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 #ifdef CONFIG_BUILD_PROTECTED
 				tcb->xcp.saved_lr = current_regs[REG_LR];
 #endif
+#if defined(CONFIG_ARM_CMNVECTOR) || defined(CONFIG_BUILD_PROTECTED)
 				tcb->xcp.saved_exec_ret = current_regs[REG_EXC_RETURN];
+#endif
 
 				/* Then set up to vector to the trampoline with interrupts
 				 * disabled.  The kernel-space trampoline must run in
@@ -191,7 +193,9 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 #ifdef CONFIG_BUILD_PROTECTED
 				current_regs[REG_LR] = EXC_RETURN_PRIVTHR;
 #endif
+#if defined(CONFIG_ARM_CMNVECTOR) || defined(CONFIG_BUILD_PROTECTED)
 				current_regs[REG_EXC_RETURN] = EXC_RETURN_PRIVTHR;
+#endif
 
 				current_regs[REG_XPSR] = ARMV8M_XPSR_T;
 				/* And make sure that the saved context in the TCB is the same
@@ -225,7 +229,9 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 #ifdef CONFIG_BUILD_PROTECTED
 			tcb->xcp.saved_lr = tcb->xcp.regs[REG_LR];
 #endif
+#if defined(CONFIG_ARM_CMNVECTOR) || defined(CONFIG_BUILD_PROTECTED)
 			tcb->xcp.saved_exec_ret = tcb->xcp.regs[REG_EXC_RETURN];
+#endif
 
 			/* Then set up to vector to the trampoline with interrupts
 			 * disabled.  We must already be in privileged thread mode to be
@@ -241,7 +247,9 @@ void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
 #ifdef CONFIG_BUILD_PROTECTED
 			tcb->xcp.regs[REG_LR] = EXC_RETURN_PRIVTHR;
 #endif
+#if defined(CONFIG_ARM_CMNVECTOR) || defined(CONFIG_BUILD_PROTECTED)
 			tcb->xcp.regs[REG_EXC_RETURN] = EXC_RETURN_PRIVTHR;
+#endif
 
 			tcb->xcp.regs[REG_XPSR] = ARMV8M_XPSR_T;
 		}
