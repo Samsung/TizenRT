@@ -557,6 +557,7 @@ $(AOBJS): %$(OBJEXT): %.S
 ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_LTP),yy)
 context:
 	$(Q) if [ ! -d "$(LTP_UNPACK)/testcases" ]; then \
+		rm -f .ltp_patched .ltp_registry_generated; \
 		echo "LTP source not found, downloading v$(LTP_VERSION)..."; \
 		curl -kL --connect-timeout 30 --retry 3 -o /tmp/ltp-$(LTP_VERSION).tar.gz \
 			https://github.com/linux-test-project/ltp/archive/refs/tags/$(LTP_VERSION).tar.gz; \
