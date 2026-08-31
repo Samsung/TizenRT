@@ -112,6 +112,25 @@ void exit(int status)
 {
 	struct tcb_s *tcb = this_task();
 
+	/* Prevent cancellation from re-entering exit during resource cleanup. */
+
+	(void)task_setcancelstate(TASK_CANCEL_DISABLE, NULL);
+
+#ifdef CONFIG_CANCELLATION_POINTS
+	/* task_setcancelstate() only sets TCB_FLAG_NONCANCELABLE, but every
+	 * cancellation point guard reads
+	 * ((NONCANCELABLE == 0 && DEFERRED) || cpcount > 0), so a non-zero
+	 * nesting count bypasses it.  A signal handler that runs between
+	 * enter_cancellation_point() and leave_cancellation_point() and
+	 * terminates the thread gets here with cpcount > 0.  Clear the nesting
+	 * count and any pending cancellation so that the resource cleanup below
+	 * cannot be diverted by cancellation logic.
+	 */
+
+	tcb->flags &= ~TCB_FLAG_CANCEL_PENDING;
+	tcb->cpcount = 0;
+#endif
+
 	/* Only the lower 8-bits of status are used */
 
 	status &= 0xff;
