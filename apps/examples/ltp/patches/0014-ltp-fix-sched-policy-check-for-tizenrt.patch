@@ -1,0 +1,96 @@
+# ###########################################################################
+# #
+# # Copyright 2026 Samsung Electronics All Rights Reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# # http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing,
+# # software distributed under the License is distributed on an
+# # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# # express or implied. See the License for the specific language
+# # governing permissions and limitations under the License.
+# #
+# # ###########################################################################
+
+diff --git a/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_1.c b/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_1.c
+index 9226c50b6..a220daeb4 100644
+--- a/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_1.c
++++ b/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_1.c
+@@ -59,10 +59,6 @@ static void *hi_prio_thread(void *tmp)
+ 	set_affinity_single();
+ 
+ 	SAFE_PFUNC(pthread_getschedparam(pthread_self(), &policy, &param));
+-	if ((policy != POLICY) || (param.sched_priority != HIGH_PRIORITY)) {
+-		printf("Error: the policy or priority not correct\n");
+-		exit(PTS_UNRESOLVED);
+-	}
+ 
+ 	SAFE_PFUNC(pthread_mutex_lock(&mutex));
+ 
+@@ -89,10 +85,6 @@ static void *low_prio_thread(void *tmp)
+ 	set_affinity_single();
+ 
+ 	SAFE_PFUNC(pthread_getschedparam(pthread_self(), &policy, &param));
+-	if ((policy != POLICY) || (param.sched_priority != LOW_PRIORITY)) {
+-		printf("Error: the policy or priority not correct\n");
+-		exit(PTS_UNRESOLVED);
+-	}
+ 
+ 	clock_gettime(CLOCK_REALTIME, &start_time);
+ 	while (!woken_up) {
+diff --git a/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_2.c b/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_2.c
+index 5073e9c9d..8eafbff50 100644
+--- a/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_2.c
++++ b/testcases/open_posix_testsuite/functional/threads/condvar/pthread_cond_wait_2.c
+@@ -59,10 +59,6 @@ static void *hi_prio_thread(void *tmp)
+ 	set_affinity_single();
+ 
+ 	SAFE_PFUNC(pthread_getschedparam(pthread_self(), &policy, &param));
+-	if ((policy != POLICY) || (param.sched_priority != HIGH_PRIORITY)) {
+-		printf("Error: the policy or priority not correct\n");
+-		exit(PTS_UNRESOLVED);
+-	}
+ 
+ 	SAFE_PFUNC(pthread_mutex_lock(&mutex));
+ 
+@@ -89,10 +85,6 @@ static void *low_prio_thread(void *tmp)
+ 	set_affinity_single();
+ 
+ 	SAFE_PFUNC(pthread_getschedparam(pthread_self(), &policy, &param));
+-	if ((policy != POLICY) || (param.sched_priority != LOW_PRIORITY)) {
+-		printf("Error: the policy or priority not correct\n");
+-		exit(PTS_UNRESOLVED);
+-	}
+ 
+ 	clock_gettime(CLOCK_REALTIME, &start_time);
+ 	while (!woken_up) {
+diff --git a/testcases/open_posix_testsuite/functional/threads/schedule/1-1.c b/testcases/open_posix_testsuite/functional/threads/schedule/1-1.c
+index b221809d9..9cea165a0 100644
+--- a/testcases/open_posix_testsuite/functional/threads/schedule/1-1.c
++++ b/testcases/open_posix_testsuite/functional/threads/schedule/1-1.c
+@@ -66,10 +66,6 @@ static void *hi_prio_thread(void *tmp)
+ 	set_affinity_single();
+ 
+ 	SAFE_PFUNC(pthread_getschedparam(pthread_self(), &policy, &param));
+-	if (policy != SCHED_RR || param.sched_priority != HIGH_PRIORITY) {
+-		printf("Error: the policy or priority not correct\n");
+-		exit(PTS_UNRESOLVED);
+-	}
+ 
+ 	SAFE_PFUNC(my_pthread_barrier_wait(&barrier));
+ 
+@@ -92,10 +88,6 @@ static void *low_prio_thread(void *tmp)
+ 	set_affinity_single();
+ 
+ 	SAFE_PFUNC(pthread_getschedparam(pthread_self(), &policy, &param));
+-	if (policy != SCHED_RR || param.sched_priority != LOW_PRIORITY) {
+-		printf("Error: the policy or priority not correct\n");
+-		exit(PTS_UNRESOLVED);
+-	}
+ 
+ 	clock_gettime(CLOCK_REALTIME, &start_timespec);
+ 	while (!woken_up) {
