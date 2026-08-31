@@ -524,11 +524,11 @@ static int thread_schedsetup(FAR struct tcb_s *tcb, int priority, start_t start,
 		tcb->fin_data = NO_FIN_DATA;
 
 		/* Add the task to the inactive task list */
-
-		sched_lock();
+		irqstate_t flags = enter_critical_section();
 		dq_addfirst((FAR dq_entry_t *)tcb, (dq_queue_t *)&g_inactivetasks);
 		tcb->task_state = TSTATE_TASK_INACTIVE;
-		sched_unlock();
+		leave_critical_section(flags);
+
 	}
 
 	return ret;
