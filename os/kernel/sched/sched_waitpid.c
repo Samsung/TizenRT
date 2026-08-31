@@ -309,6 +309,10 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 #endif
 	FAR struct siginfo info;
 	sigset_t sigset;
+#ifndef CONFIG_SCHED_CHILD_STATUS
+	uint16_t nchildren;
+	bool waitable;
+#endif
 	int err;
 	int ret;
 
@@ -384,9 +388,9 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 		ctcb = sched_gettcb(pid);
 #ifdef HAVE_GROUP_MEMBERS
-		if (ctcb == NULL || ctcb->group->tg_pgid != rtcb->group->tg_gid)
+		if (ctcb == NULL || (ctcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0 || ctcb->group->tg_pgid != rtcb->group->tg_gid)
 #else
-		if (ctcb == NULL || ctcb->group->tg_ppid != rtcb->pid)
+		if (ctcb == NULL || (ctcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0 || ctcb->group->tg_ppid != rtcb->pid)
 #endif
 
 		{
@@ -476,13 +480,30 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options)
 
 #else							/* CONFIG_SCHED_CHILD_STATUS */
 
-		/* Check if the task has already died. Signals are not queued in
-		 * TinyAra.  So a possibility is that the child has died and we
-		 * missed the death of child signal (we got some other signal
-		 * instead).
+		/* Check if the task has already died or started exiting. A TCB can
+		 * remain in the PID hash after its SIGCHLD has been dispatched in task_exithook,
+		 * so kill(pid, 0) can report an exiting child as alive and make us wait
+		 * forever for a signal that will not be sent again. The outer critical
+		 * section makes this check atomic with the signal wait: either we see
+		 * EXIT_PROCESSING here or the child sets it after we block and wakes us.
 		 */
 
-		if (rtcb->group->tg_nchildren == 0 || (pid != (pid_t)-1 && (ret = kill(pid, 0)) < 0)) {
+		nchildren = rtcb->group->tg_nchildren;
+		waitable = true;
+		ctcb = NULL;
+		if (nchildren != 0 && pid != (pid_t)-1) {
+			waitable = false;
+			ctcb = sched_gettcb(pid);
+#ifdef HAVE_GROUP_MEMBERS
+			if (ctcb != NULL && (ctcb->flags & TCB_FLAG_EXIT_PROCESSING) == 0 && ctcb->group->tg_pgid == rtcb->group->tg_gid) {
+#else
+			if (ctcb != NULL && (ctcb->flags & TCB_FLAG_EXIT_PROCESSING) == 0 && ctcb->group->tg_ppid == rtcb->pid) {
+#endif
+				waitable = true;
+			}
+		}
+
+		if (nchildren == 0 || !waitable) {
 			/* We know that the child task was running okay we stared,
 			 * so we must have lost the signal.  What can we do?
 			 * Let's return ECHILD.. that is at least informative.
