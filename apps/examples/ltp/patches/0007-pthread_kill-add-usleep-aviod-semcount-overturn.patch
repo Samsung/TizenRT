@@ -1,0 +1,50 @@
+# ###########################################################################
+# #
+# # Copyright 2026 Samsung Electronics All Rights Reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# # http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing,
+# # software distributed under the License is distributed on an
+# # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# # express or implied. See the License for the specific language
+# # governing permissions and limitations under the License.
+# #
+# # ###########################################################################
+
+From 026162a24a0ed7f11c55c22e03501a4f6bb3dc94 Mon Sep 17 00:00:00 2001
+From: anjiahao <anjiahao@xiaomi.com>
+Date: Tue, 10 Jan 2023 11:50:03 +0800
+Subject: [PATCH 14/21] pthread_kill:add usleep aviod semcount overturn
+
+VELAPLATFO-4504
+
+A short-term infinite loop will cause semcount
+to exceed the limit in sem_post
+
+Signed-off-by: anjiahao <anjiahao@xiaomi.com>
+Change-Id: I25c8e10ce4166f0b681f462157a02f8a6add2ebb
+---
+ .../conformance/interfaces/pthread_kill/8-1.c                   | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/testcases/open_posix_testsuite/conformance/interfaces/pthread_kill/8-1.c b/testcases/open_posix_testsuite/conformance/interfaces/pthread_kill/8-1.c
+index f1d05edbe..4a12ee0ab 100644
+--- a/testcases/open_posix_testsuite/conformance/interfaces/pthread_kill/8-1.c
++++ b/testcases/open_posix_testsuite/conformance/interfaces/pthread_kill/8-1.c
+@@ -198,6 +198,8 @@ static void *test(void *arg LTP_ATTRIBUTE_UNUSED)
+ 			UNRESOLVED(ret,
+ 				   "pthread_kill returned an unexpected error");
+ 		}
++
++		usleep(10000);
+ 	}
+ 
+ 	return NULL;
+-- 
+2.40.1
+
