@@ -172,6 +172,10 @@ void pthread_exit(FAR void *exit_value)
 	pthread_mutex_inconsistent((FAR struct pthread_tcb_s *)tcb);
 #endif
 
+	irqstate_t flags = enter_critical_section();
+
+	tcb->flags |= TCB_FLAG_EXIT_PROCESSING;
+
 	/* Perform common task termination logic.  This will get called again later
 	 * through logic kicked off by _exit().  However, we need to call it before
 	 * calling _exit() in order certain operations if this is the last thread
