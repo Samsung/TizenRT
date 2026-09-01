@@ -93,6 +93,7 @@
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 #include "mqueue/mqueue.h"
+#include "signal/signal.h"
 #include "task/task.h"
 
 /****************************************************************************
@@ -314,6 +315,17 @@ void notify_cancellation(FAR struct tcb_s *tcb)
 		if (tcb->task_state == TSTATE_WAIT_MQNOTEMPTY ||
 		tcb->task_state == TSTATE_WAIT_MQNOTFULL) {
 			mq_waitirq(tcb, ECANCELED);
+		}
+#endif
+
+		/* If the thread is blocked waiting for a signal (in
+		 * sigwaitinfo/sigtimedwait), then the thread must be unblocked
+		 * to handle the cancellation.
+		 */
+
+#ifndef CONFIG_DISABLE_SIGNALS
+		if (tcb->task_state == TSTATE_WAIT_SIG) {
+			sig_waitirq(tcb, SIG_WAIT_CANCELED, SI_USER, ECANCELED);
 		}
 #endif
 	}

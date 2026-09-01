@@ -78,11 +78,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* This is a special value of si_signo that means that it was the timeout
- * that awakened the wait... not the receipt of a signal.
- */
-
-#define SIG_WAIT_TIMEOUT 0xff
+/* SIG_WAIT_TIMEOUT and SIG_WAIT_CANCELED are defined in signal.h */
 
 /****************************************************************************
  * Private Type Declarations
@@ -352,13 +348,27 @@ int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *info, FAR const st
 				ret = ERROR;
 			}
 		} else {
-			/* Otherwise, we must have been awakened by the timeout.  Set EGAIN
+			/* Otherwise, we must have been awakened by the timeout or
+			 * by cancellation.  If canceled, the leave_cancellation_point()
+			 * call below will exit the thread.  Otherwise, set EAGAIN
 			 * and return an error.
 			 */
 
-			DEBUGASSERT(rtcb->sigunbinfo.si_signo == SIG_WAIT_TIMEOUT);
-			set_errno(EAGAIN);
-			ret = ERROR;
+			if (rtcb->sigunbinfo.si_signo == SIG_WAIT_CANCELED) {
+				/* Awakened by cancellation; leave_cancellation_point()
+				 * below will call pthread_exit(PTHREAD_CANCELED).
+				 * Set EINTR (not ECANCELED) to comply with POSIX which
+				 * does not allow ECANCELED as a valid errno for
+				 * sigtimedwait().
+				 */
+
+				set_errno(EINTR);
+				ret = ERROR;
+			} else {
+				DEBUGASSERT(rtcb->sigunbinfo.si_signo == SIG_WAIT_TIMEOUT);
+				set_errno(EAGAIN);
+				ret = ERROR;
+			}
 		}
 
 		/* Return the signal info to the caller if so requested */
