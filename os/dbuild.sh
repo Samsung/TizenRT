@@ -475,6 +475,7 @@ function DOWNLOAD()
 }
 
 function UPDATE_STATUS()
+
 {
 	if [ ! -f ${CONFIGFILE} ]; then
 		STATUS=NOT_CONFIGURED
@@ -490,6 +491,7 @@ function UPDATE_STATUS()
 	echo "Docker Image Version : ${DOCKER_IMAGE}:${DOCKER_VERSION}"
 }
 
+
 function BUILD()
 {
 	if [ -f build.log ]; then
@@ -504,8 +506,24 @@ function BUILD()
 
 	HOSTNAME="-h=`git config user.name | tr -d ' '`" # set github username instead of hostname, "-h=`hostname`"
 	LOCALTIME="-v /etc/localtime:/etc/localtime:ro"
-	
-	docker run --rm ${DOCKER_OPT} ${HOSTNAME} ${LOCALTIME} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
+
+	PROXY_OPT=""
+	# For SRI-D developers only, when firewall exception for proxy server
+	# can be avoided for short time. Override proxy settings, but only
+	# when LTP is enabled. The host proxy is not reachable from inside the
+	# Docker container network, so we explicitly clear these variables to
+	# allow direct internet access for downloading LTP sources from within
+	# the Makefile. When LTP is not enabled, we leave proxy settings intact
+	# so that normal builds are unaffected.
+	# UNCOMMENT the following 3 lines if that is the case.
+#	if [ -f "${CONFIGFILE}" ] && grep -q "CONFIG_EXAMPLES_LTP=y" "${CONFIGFILE}"; then
+#		PROXY_OPT="-e http_proxy= -e https_proxy= -e HTTP_PROXY= -e HTTPS_PROXY= -e no_proxy= -e NO_PROXY="
+#	fi
+
+	docker run --rm ${DOCKER_OPT} ${PROXY_OPT} ${HOSTNAME} ${LOCALTIME} -v ${TOPDIR}:/root/tizenrt -w /root/tizenrt/os --privileged ${DOCKER_IMAGE}:${DOCKER_VERSION} ${BUILD_CMD} $1 2>&1 | tee build.log
+
+
+
 	UPDATE_STATUS
 }
 
