@@ -196,6 +196,7 @@ static void tc_umm_heap_realloc(void)
 	int n_alloc;
 	int n_test_iter;
 	size_t alloc_size = ALLOC_SIZE_VAL * sizeof(int);
+	size_t initial_alloc_size = alloc_size + MM_ALIGN_UP(SIZEOF_MM_FREENODE);
 	struct mallinfo prev;
 	struct mallinfo cur;
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
@@ -280,10 +281,11 @@ static void tc_umm_heap_realloc(void)
 	TC_ASSERT_EQ("mallinfo", cur.uordblks - prev.uordblks, 0);
 	TC_ASSERT_EQ("mallinfo", prev.fordblks - cur.fordblks, 0);
 
-	/* Relloc Free by size 0 */
-	mem_ptr[0] = (int *)malloc(alloc_size);
+	/* Reallocate to a smaller size.
+	 * Ensure that the remaining chunk is large enough to hold a free node.
+	 */
+	mem_ptr[0] = (int *)malloc(initial_alloc_size);
 	TC_ASSERT_NEQ("malloc", mem_ptr[0], NULL);
-	alloc_size /= 2;
 	mem_ptr[1] = (int *)realloc(mem_ptr[0], alloc_size);
 	TC_ASSERT_NEQ_CLEANUP("realloc", mem_ptr[1], NULL, free(mem_ptr[0]));
 
