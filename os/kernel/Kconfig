@@ -1135,3 +1135,46 @@ config SILENT_REBOOT
 	depends on BOARDCTL_RESET
 	---help---
 		Enables Silent Reboot.
+
+config MEM_LEAK_CHECKER
+	bool "Memory Leak Checker (Mark-and-Sweep)"
+	default n
+	depends on DEBUG_MM_HEAPINFO
+	---help---
+		Enable the memory leak checker that uses mark-and-sweep
+		from true roots (BSS, DATA, thread stacks) instead of treating
+		all heap blocks as roots. This correctly detects reference cycles.
+		Coexists with the original mem_leak_checker — both can be enabled
+		simultaneously for comparison.
+
+if MEM_LEAK_CHECKER
+
+config MEM_LEAK_CHECKER_V2_HASH_SIZE
+	int "Hash table size for V2 leak checker"
+	default 1007
+	---help---
+		Size of the hash table for block lookup. Preferred to be a prime number.
+
+config MEM_LEAK_CHECKER_V2_MAX_BLOCKS
+	int "Max blocks for V2 leak checker"
+	default 3000
+	---help---
+		Must be larger than the total number of memory allocations.
+
+config MEM_LEAK_CHECKER_V2_WORKLIST_SIZE
+	int "Worklist size for V2 leak checker"
+	default 3000
+	---help---
+		Size of the worklist for transitive marking. Should be >= MAX_BLOCKS.
+
+config MEM_LEAK_CHECKER_V2_DEBUG
+	bool "Enable verbose debug logging in V2 leak checker"
+	default n
+	---help---
+		Enable verbose debug output showing which regions are scanned,
+		which pointers are found, and which blocks are marked reachable.
+		Useful for diagnosing false positives/negatives.
+
+endif # MEM_LEAK_CHECKER
+
+

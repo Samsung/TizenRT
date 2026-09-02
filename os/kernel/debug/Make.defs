@@ -21,8 +21,9 @@ CSRCS += sysdbg.c
 endif
 
 ifeq ($(CONFIG_MEM_LEAK_CHECKER),y)
-CSRCS += mem_leak_checker.c
+CSRCS += mem_leak_checker_v2.c
 endif
+
 
 CSRCS += dbg_termination_info.c
 ifeq ($(CONFIG_DEBUG_MM_WARN),y)

@@ -363,14 +363,19 @@ int prctl(int option, ...)
 		int checker_pid;
 		checker_pid = va_arg(ap, int);
 
-		ret = run_all_mem_leak_checker(checker_pid);
+		int filter_pid = va_arg(ap, int);
+		const char *heap_name = va_arg(ap, const char *);
 		va_end(ap);
+		ret = run_all_mem_leak_checker_v2(checker_pid, filter_pid, heap_name);
 
 		return ret;
 	}
+
+
 #endif
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	case PR_REBOOT_REASON_READ:
+
 	{
 		va_end(ap);
 		return up_reboot_reason_read();
