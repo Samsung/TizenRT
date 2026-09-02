@@ -1,0 +1,20 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_TESTCASE_MEM_LEAK
+	bool "Memory Leak Checker Test Suite"
+	default n
+	depends on DEBUG_MM_HEAPINFO
+	select HAVE_CXX if EXAMPLES_TESTCASE_MEM_LEAK
+	---help---
+		Enable the Memory Leak Checker test suite. This application creates
+		known memory leak scenarios (reference cycles, IPC shared blocks, etc.)
+		to validate the behavior of the memory leak checker tool.
+
+		Includes C++ tests for array cookie interior pointer detection
+		(Category E) which require CXX support.
+
+		After running a test, use 'mem_leak' from TASH to verify
+		whether the leak was detected.

@@ -1,0 +1,42 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_MEM_LEAK),y)
+CSRCS += test_reference_cycle.c
+CSRCS += test_mq_shared.c
+CSRCS += test_workqueue_shared.c
+CSRCS += test_mq_leak.c
+CSRCS += test_work_cancel.c
+CSRCS += test_normal_alloc_free.c
+CSRCS += test_bss_pointer.c
+CSRCS += test_stack_pointer.c
+CSRCS += test_data_pointer.c
+CSRCS += test_multilevel_ref.c
+CSRCS += test_simple_orphan.c
+CSRCS += test_triple_cycle.c
+CSRCS += test_large_alloc.c
+CSRCS += test_many_allocs.c
+CSRCS += test_cross_task.c
+CSRCS += test_kernel_to_app.c
+CSRCS += mem_leak_test_main.c
+
+CXXSRCS += test_cpp_array_cookie.cpp
+
+DEPPATH += --dep-path ta_tc/mem_leak
+VPATH += :ta_tc/mem_leak
+endif
