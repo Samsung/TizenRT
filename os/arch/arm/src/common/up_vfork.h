@@ -99,6 +99,14 @@ struct vfork_s {
 
 	/* Floating point registers (not yet) */
 };
+
+struct up_vfork_stack_s {
+	uintptr_t newsp;      /* Child stack pointer after relocation */
+	uintptr_t newfp;      /* Child frame pointer after relocation */
+	uintptr_t parent_sp;  /* Parent SP for argv relocation, or zero */
+};
+
+int up_vfork_archprepare(struct tcb_s *parent, struct task_tcb_s *child, const struct vfork_s *context, struct up_vfork_stack_s *stack);
 #endif
 
 #endif							/* __ARCH_ARM_SRC_ARM_VFORK_H */
