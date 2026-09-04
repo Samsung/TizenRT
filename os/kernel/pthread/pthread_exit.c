@@ -115,6 +115,25 @@ void pthread_exit(FAR void *exit_value)
 	struct tcb_s *tcb = this_task();
 	int status;
 
+	/* Prevent cancellation from re-entering pthread_exit during cleanup. */
+
+	(void)task_setcancelstate(TASK_CANCEL_DISABLE, NULL);
+
+#ifdef CONFIG_CANCELLATION_POINTS
+	/* task_setcancelstate() only sets TCB_FLAG_NONCANCELABLE, but every
+	 * cancellation point guard reads
+	 * ((NONCANCELABLE == 0 && DEFERRED) || cpcount > 0), so a non-zero
+	 * nesting count bypasses it.  A signal handler that runs between
+	 * enter_cancellation_point() and leave_cancellation_point() and
+	 * terminates the thread gets here with cpcount > 0.  Clear the nesting
+	 * count and any pending cancellation so that the resource cleanup below
+	 * cannot be diverted by cancellation logic.
+	 */
+
+	tcb->flags &= ~TCB_FLAG_CANCEL_PENDING;
+	tcb->cpcount = 0;
+#endif
+
 	svdbg("exit_value=%p\n", exit_value);
 
 	/* Block any signal actions that would awaken us while were
@@ -126,16 +145,6 @@ void pthread_exit(FAR void *exit_value)
 		sigset_t set = ALL_SIGNAL_SET;
 		(void)sigprocmask(SIG_SETMASK, &set, NULL);
 	}
-#endif
-
-#ifdef CONFIG_CANCELLATION_POINTS
-	/* Mark the pthread as non-cancelable to avoid additional calls to
-	 * pthread_exit() due to any cancellation point logic that might get
-	 * kicked off by actions taken during pthread_exit processing.
-	 */
-	tcb->flags |= TCB_FLAG_NONCANCELABLE;
-	tcb->flags &= ~TCB_FLAG_CANCEL_PENDING;
-	tcb->cpcount = 0;
 #endif
 
 #ifdef CONFIG_PTHREAD_CLEANUP
@@ -162,6 +171,10 @@ void pthread_exit(FAR void *exit_value)
 	/* Recover any mutexes still held by the canceled thread */
 	pthread_mutex_inconsistent((FAR struct pthread_tcb_s *)tcb);
 #endif
+
+	irqstate_t flags = enter_critical_section();
+
+	tcb->flags |= TCB_FLAG_EXIT_PROCESSING;
 
 	/* Perform common task termination logic.  This will get called again later
 	 * through logic kicked off by _exit().  However, we need to call it before

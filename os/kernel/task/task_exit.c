@@ -57,6 +57,10 @@
 #include <tinyara/config.h>
 #include <sched.h>
 
+#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
+#include <tinyara/mpu.h>
+#endif
+
 #include  "sched/sched.h"
 
 #ifdef CONFIG_SMP
@@ -67,6 +71,13 @@
 #include "signal/signal.h"
 #endif
 #include "task/task.h"
+
+#ifdef CONFIG_TASK_MONITOR
+#include "task_monitor/task_monitor_internal.h"
+#endif
+#ifdef CONFIG_PREFERENCE
+#include "preference/preference.h"
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -195,6 +206,7 @@ int task_exit(void)
 #endif
 
 	/* Check that exit is ready or not before execution */
+
 	prepare_exit(dtcb);
 
 	/* Remove the TCB of the current task from the ready-to-run list.  A context
@@ -241,14 +253,6 @@ int task_exit(void)
 
 	rtcb->task_state = TSTATE_TASK_READYTORUN;
 
-	/* Move the TCB to the specified blocked task list and delete it.  Calling
-	 * task_terminate with non-blocking true will suppress atexit() and on-exit()
-	 * calls and will cause buffered I/O to fail to be flushed.  The former
-	 * is required _exit() behavior; the latter is optional _exit() behavior.
-	 */
-
-	sched_addblocked(dtcb, TSTATE_TASK_INACTIVE);
-
 #ifdef CONFIG_SMP
 	/* NOTE:
 	 * During nxtask_terminate(), enter_critical_section() will be called
@@ -260,7 +264,42 @@ int task_exit(void)
 	rtcb->irqcount++;
 #endif
 
-	ret = task_terminate(dtcb->pid, true);
+	/* Mark the TCB as inactive and delete it.  This does not go through
+	 * task_terminate(): exit() and pthread_exit() have already run
+	 * task_exithook() for this task, and running it a second time would
+	 * re-enter group cleanup.  Skipping it also gives the required _exit()
+	 * behavior of suppressing atexit() and on_exit() calls and leaving
+	 * buffered I/O unflushed.
+	 */
+
+	dtcb->task_state = TSTATE_TASK_INACTIVE;
+
+#if defined(CONFIG_APP_BINARY_SEPARATION)
+	/* Disable mpu regions when the binary is unloaded if its own mpu registers are set in mpu h/w. */
+	if (IS_BINARY_MAINTASK(dtcb)) {
+#if defined(CONFIG_ARM_MPU)
+		if (up_mpu_check_active(&dtcb->mpu_regs[0])) {
+			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
+				up_mpu_disable_region(&dtcb->mpu_regs[i]);
+			}
+		}
+#elif defined(CONFIG_ARCH_USE_MMU)
+		mmu_clear_app_pgtbl(dtcb->app_id);
+#endif
+	}
+#endif
+
+#ifdef CONFIG_TASK_MONITOR
+	/* Unregister this pid from task monitor */
+	task_monitor_unregester_list(dtcb->pid);
+#endif
+#ifdef CONFIG_PREFERENCE
+	preference_clear_callbacks(dtcb->pid);
+#endif
+
+	/* Deallocate its TCB */
+
+	ret = sched_releasetcb(dtcb, dtcb->flags & TCB_FLAG_TTYPE_MASK);
 
 #ifdef CONFIG_SMP
 	rtcb->irqcount--;
