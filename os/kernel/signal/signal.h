@@ -79,6 +79,16 @@
 #define NUM_SIGNALS_PENDING     16
 #define NUM_INT_SIGNALS_PENDING  8
 
+/* Special values of si_signo used internally to indicate the reason
+ * for unblocking a task from sigwaitinfo/sigtimedwait.
+ *
+ * SIG_WAIT_TIMEOUT  - The wait was awakened by a timeout.
+ * SIG_WAIT_CANCELED - The wait was canceled (e.g. by pthread_cancel).
+ */
+
+#define SIG_WAIT_TIMEOUT   0xff
+#define SIG_WAIT_CANCELED  0xfe
+
 /****************************************************************************
  * Public Type Definitions
  ****************************************************************************/
@@ -210,5 +220,10 @@ void sig_releasependingsigaction(FAR sigq_t *sigq);
 void sig_releasependingsignal(FAR sigpendq_t *sigpend);
 FAR sigpendq_t *sig_removependingsignal(FAR struct tcb_s *stcb, int signo);
 void sig_unmaskpendingsignal(void);
+
+/* sig_waitirq.c */
+
+void sig_waitirq(FAR struct tcb_s *wtcb, uint8_t signo,
+                 uint8_t code, int errcode);
 
 #endif							/* __SCHED_SIGNAL_SIGNAL_H */
