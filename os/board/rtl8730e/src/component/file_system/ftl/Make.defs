@@ -49,8 +49,13 @@
 #
 ############################################################################
 
+# Disable unwind tables for ftl.c to prevent R_ARM_PREL31 overflow in XIP builds
+# This file is placed in .sramdram.only.text section which is far from .ARM.exidx
+ftl_COBJS := -fno-unwind-tables -fno-exceptions
+ftl_crypto_COBJS := -fno-unwind-tables -fno-exceptions
+
 CSRCS += ftl.c \
-	ftl_crypto.c 
+ 	ftl_crypto.c
 
 DEPPATH += --dep-path component/file_system/ftl
 VPATH += :component/file_system/ftl

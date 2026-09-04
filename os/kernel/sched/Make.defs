@@ -117,3 +117,4 @@ endif
 
 DEPPATH += --dep-path sched
 VPATH += :sched
+CSRCS += sched_backtrace.c

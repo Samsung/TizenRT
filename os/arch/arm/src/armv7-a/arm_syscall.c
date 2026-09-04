@@ -62,6 +62,9 @@
 #define INDEX_ERROR (-1)
 
 uint32_t user_assert_location;
+#ifdef CONFIG_APP_BINARY_SEPARATION
+uint32_t user_assert_sp;  /* Save user SP at ASSERT time */
+#endif
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 extern uint32_t *g_umm_app_id;
 #endif
@@ -536,6 +539,19 @@ uint32_t *arm_syscall(uint32_t *regs)
 		if (cmd == SYS_up_assert) {
 			/* get the user assert location from the LR value */
 			user_assert_location = regs[REG_R14];
+
+			/* Save user SP at ASSERT time for backtrace unwinding.
+			 * The syscall entry SP is the actual user SP at crash time.
+			 */
+#ifdef CONFIG_APP_BINARY_SEPARATION
+			user_assert_sp = regs[REG_R13];
+#endif
+
+			/* Save full user context for backtrace unwinding.
+			 * The regs[] array contains the user-mode register state
+			 * at syscall entry, which the EHABI unwinder needs.
+			 */
+			rtcb->xcp.regs = regs;
 		}
 
 		/* Setup to return to dispatch_syscall in privileged mode. */

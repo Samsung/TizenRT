@@ -504,6 +504,62 @@ config MPU_STACK_GUARD_SIZE
 		Setting large stack guard size will be a wastage of memory.
 endif
 
+# Backtrace support - always visible, not conditional
+config SCHED_BACKTRACE
+	bool "Enable stack backtrace support"
+	default n
+	help
+	  Enable stack backtrace support for debugging and crash analysis.
+	  This allows capturing call stacks during asserts, crashes, or
+	  programmatically via sched_backtrace() API.
+
+if SCHED_BACKTRACE
+
+choice
+	prompt "ARM Unwinder Selection"
+	default UNWINDER_ARM if ARCH_CHIP_AMEBASMART
+	default UNWINDER_FRAME_POINTER
+	help
+	  This determines which method will be used for unwinding
+	  TizenRT stack traces for debug.
+
+	  For AMEBASMART (Cortex-A32), ARM EHABI is recommended.
+	  For other platforms, Frame Pointer is the default.
+
+config UNWINDER_FRAME_POINTER
+	bool "Frame pointer unwinder"
+	select FRAME_POINTER
+	help
+	  This option enables the frame pointer unwinder for unwinding
+	  TizenRT stack traces. Requires -fno-omit-frame-pointer compiler flag.
+
+config UNWINDER_STACK_POINTER
+	bool "Stack pointer unwinder"
+	help
+	  This option enables the stack pointer unwinder for unwinding
+	  TizenRT stack traces. Scans stack for branch instructions (BL/BLX).
+	  Does not require special compiler flags but may be less accurate.
+
+config UNWINDER_ARM
+	bool "ARM EHABI stack unwinder"
+	help
+	  This option enables stack unwinding support using the ARM
+	  Exception Handling ABI (.ARM.exidx tables). Requires EABI
+	  toolchain and -funwind-tables compiler flag. This is the most
+	  accurate unwinder and supports C++ exception unwinding.
+
+	  NOTE: Frame pointer support (FRAME_POINTER) is optional.
+	  Enabling FRAME_POINTER provides a fallback unwinding method
+	  and better debugger support, but increases code size slightly.
+
+endchoice
+
+config ARM_UNWIND
+	bool
+	default y if UNWINDER_ARM
+
+endif  # SCHED_BACKTRACE
+
 config SYSTEM_REBOOT_REASON
 	bool "Enable System Reboot Reason Interfaces"
 	default n

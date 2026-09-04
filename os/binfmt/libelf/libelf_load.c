@@ -272,10 +272,12 @@ static inline int elf_loadfile(FAR struct elf_loadinfo_s *loadinfo)
 
 int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 {
-#ifdef CONFIG_CXX_EXCEPTION
+#if defined(CONFIG_LIBCXX_EXCEPTION) || defined(CONFIG_UNWINDER_ARM)
 	int exidx;
 #endif
+
 	int ret;
+
 
 	binfo("loadinfo: %p\n", loadinfo);
 	DEBUGASSERT(loadinfo && loadinfo->filfd >= 0);
@@ -324,14 +326,23 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo)
 	}
 #endif
 
-#ifdef CONFIG_CXX_EXCEPTION
+#if defined(CONFIG_LIBCXX_EXCEPTION) || defined(CONFIG_UNWINDER_ARM)
 	exidx = elf_findsection(loadinfo, CONFIG_ELF_EXIDX_SECTNAME);
 	if (exidx < 0) {
 		binfo("elf_findsection: Exception Index section not found: %d\n", exidx);
 	} else {
+#ifdef CONFIG_LIBCXX_EXCEPTION
 		up_init_exidx(loadinfo->shdr[exidx].sh_addr, loadinfo->shdr[exidx].sh_size);
+#endif
+
+#if defined(CONFIG_UNWINDER_ARM) && defined(CONFIG_APP_BINARY_SEPARATION)
+		/* Save exidx section bounds for kernel-side backtrace registration */
+		loadinfo->binp->exidx_start = (void *)loadinfo->shdr[exidx].sh_addr;
+		loadinfo->binp->exidx_end = (void *)(loadinfo->shdr[exidx].sh_addr + loadinfo->shdr[exidx].sh_size);
+#endif
 	}
 #endif
+
 
 	return OK;
 

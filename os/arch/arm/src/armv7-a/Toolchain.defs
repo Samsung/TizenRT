@@ -138,6 +138,11 @@ else
   ARCHOPTIMIZATION += -fomit-frame-pointer
 endif
 
+# ARM EHABI unwinder support
+ifeq ($(CONFIG_UNWINDER_ARM),y)
+  ARCHOPTIMIZATION += -funwind-tables -fexceptions
+endif
+
 ifeq ($(CONFIG_STACK_CANARIES),y)
   ARCHOPTIMIZATION += -fstack-protector-all
 endif
@@ -167,6 +172,9 @@ ifneq ($(CONFIG_CXX_RTTI),y)
 endif
 
 LDFLAGS += -nostdlib
+
+# Prevent R_ARM_PREL31 overflow in XIP builds by keeping .ARM.exidx entries with their code
+LDFLAGS += --no-merge-exidx-entries
 
 # Optimization of unused sections
 

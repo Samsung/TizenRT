@@ -79,6 +79,15 @@
 #include "sched/sched.h"
 #include "binfmt.h"
 
+#ifdef CONFIG_APP_BINARY_SEPARATION
+/* Declaration for kernel-side exidx registration for backtrace unwinding */
+extern void up_register_exidx(unsigned long exidx_start, unsigned long exidx_size,
+			      unsigned long text_start, unsigned long text_end);
+#endif
+
+
+
+
 #ifdef CONFIG_BINFMT_ENABLE
 
 /****************************************************************************
@@ -141,6 +150,8 @@ static void exec_ctors(FAR void *arg)
 		g_lib_binp->register_exidx(binp->exidx_start, binp->exidx_end, binp->sections[BIN_TEXT], binp->sections[BIN_TEXT] + binp->sizes[BIN_TEXT], binp->binary_idx);
 	}
 #endif
+
+
 
 	ctor = binp->ctors;
 	/* Execute each constructor */
@@ -342,7 +353,22 @@ int exec_module(FAR struct binary_s *binp)
 
 	binfo("%s loaded @ 0x%08x and running with pid = %d\n", binp->filename, binp->sections[BIN_TEXT], pid);
 
+	/* Register the .ARM.exidx section for kernel-side backtrace unwinding.
+	 * This allows the ARM EHABI unwinder to find exception index entries for
+	 * user-mode code when generating backtraces on crashes.
+	 * Register for both app binaries and common binary (library).
+	 */
+	if (binp->exidx_start && binp->exidx_end) {
+		up_register_exidx((unsigned long)binp->exidx_start,
+				  (unsigned long)binp->exidx_end - (unsigned long)binp->exidx_start,
+				  (unsigned long)binp->sections[BIN_TEXT],
+				  (unsigned long)binp->sections[BIN_TEXT] + binp->sizes[BIN_TEXT]);
+	}
+
+
+
 	return (int)pid;
+
 
 errout_with_appheap:
 	mm_remove_app_heap_list(binp->uheap);
