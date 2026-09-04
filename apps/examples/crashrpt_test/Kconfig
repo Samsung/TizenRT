@@ -1,0 +1,47 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_CRASHRPT_TEST
+	bool "Crash diagnostic capture example"
+	default n
+	depends on CRASH_REPORT
+	---help---
+		Demonstrates /dev/crashrpt.
+
+		Holds 500 nodes of 48 bytes and 50 nodes of 64 bytes, each with a
+		message string of up to 255 bytes, and registers a reporter thread
+		that serialises all of it to a file when the system is about to
+		assert.
+
+		The report is written to a temporary file and renamed only once the
+		write has completed and been flushed, so a reader never sees a
+		partial report.
+
+if EXAMPLES_CRASHRPT_TEST
+
+config EXAMPLES_CRASHRPT_TEST_DIR
+	string "Directory for the report"
+	default "/mnt"
+	---help---
+		Where the temporary and final report files are written.  Must be a
+		writable mount point.
+
+config EXAMPLES_CRASHRPT_TEST_PRIORITY
+	int "Reporter thread priority"
+	default 254
+	---help---
+		The reporter must outrank every other runnable thread, otherwise it
+		is not scheduled before the deadline expires and no report is
+		produced.
+
+config EXAMPLES_CRASHRPT_TEST_STACKSIZE
+	int "Reporter thread stack size"
+	default 8192
+
+endif # EXAMPLES_CRASHRPT_TEST
+
+config USER_ENTRYPOINT
+	string
+	default "crashrpt_test_main" if ENTRY_CRASHRPT_TEST
