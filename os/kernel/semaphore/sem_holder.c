@@ -361,14 +361,9 @@ FAR struct tcb_s *sem_findhighestwaiter(FAR sem_t *sem, FAR struct tcb_s *exclud
 {
 	FAR struct tcb_s *stcb;
 
-	/* A semaphore with priority inheritance disabled never boosts its
-	 * holders, so its waiters must not contribute to the holder priority
-	 * recomputation.  Holders of such a semaphore can still be tracked (and
-	 * hence appear on a task's holdsem list) when CONFIG_BINMGR_RECOVERY is
-	 * enabled, so this must be checked explicitly here.
-	 */
+	/* Holders exist only while priority inheritance is enabled. */
 
-	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) != 0) {
+	if ((sem->flags & PRIOINHERIT_FLAGS_ENABLE) == 0) {
 		return NULL;
 	}
 
@@ -413,12 +408,10 @@ static int sem_restoreholderprio(FAR struct semholder_s *pholder, FAR sem_t *sem
 			 * no longer holds this semaphore, so its waiters must not boost
 			 * the holder.  sem_releaseholder() is the only thing that
 			 * decrements a holder's count, and the zero-count entry is freed
-			 * shortly after in sem_restorebaseprio() -- by both the task path
-			 * (sem_restorebaseprio_task) and the interrupt path
-			 * (sem_restorebaseprio_irq).  A held semaphore can therefore reach
-			 * a zero count only while it is the one being released here; assert
-			 * that, both to document the invariant and to catch any holder left
-			 * stranded on the list with no counts.
+			 * shortly after in sem_restorebaseprio_task().  A held semaphore can
+			 * therefore reach a zero count only while it is the one being
+			 * released here; assert that, both to document the invariant and to
+			 * catch any holder left stranded on the list with no counts.
 			 */
 
 			if (hpholder->counts <= 0) {
@@ -482,52 +475,6 @@ static int sem_restoreholderprioB(FAR struct semholder_s *pholder, FAR sem_t *se
 	}
 
 	return 0;
-}
-
-/****************************************************************************
- * Name: sem_restorebaseprio_irq
- *
- * Description:
- *   This function is called after the an interrupt handler posts a count on
- *   the semaphore.  It will check if we need to drop the priority of any
- *   threads holding a count on the semaphore.  Their priority could have
- *   been boosted while they held the count.
- *
- * Parameters:
- *   stcb - The TCB of the task that was just started (if any).  If the
- *     post action caused a count to be given to another thread, then stcb
- *     is the TCB that received the count.  Note, just because stcb received
- *     the count, it does not mean that it it is higher priority than other
- *     threads.
- *   sem - A reference to the semaphore being posted.
- *     - If the semaphore count is <0 then there are still threads waiting
- *       for a count.  stcb should be non-null and will be higher priority
- *       than all of the other threads still waiting.
- *     - If it is ==0 then stcb refers to the thread that got the last count;
- *       no other threads are waiting.
- *     - If it is >0 then there should be no threads waiting for counts and
- *       stcb should be null.
- *
- * Return Value:
- *   None
- *
- * Assumptions:
- *   The scheduler is locked.
- *
- ****************************************************************************/
-
-static inline void sem_restorebaseprio_irq(FAR struct tcb_s *stcb, FAR sem_t *sem)
-{
-	/* Perform the following actions only if a new thread was given a count.
-	 * The thread that received the count should be the highest priority
-	 * of all threads waiting for a count from the semaphore.  So in that
-	 * case, the priority of all holder threads should be dropped to the
-	 * next highest pending priority.
-	 */
-
-	/* Drop the priority of all holder threads */
-
-	(void)sem_foreachholder(sem, sem_restoreholderprio, stcb);
 }
 
 /****************************************************************************
@@ -721,38 +668,27 @@ void sem_addholder_tcb(FAR struct tcb_s *htcb, FAR sem_t *sem)
 {
 	FAR struct semholder_s *pholder;
 
-	/* No needs to save holder for semaphore used for signaling */
-	if ((sem->flags & FLAGS_SIGSEM) != 0) {
+	/* Only P.I. semaphores have ownership records. */
+	if ((sem->flags & PRIOINHERIT_FLAGS_ENABLE) == 0) {
 		return;
 	}
 
-#if defined(CONFIG_PRIORITY_INHERITANCE) && !defined(CONFIG_BINMGR_RECOVERY)
-	/*
-	 * If priority inheritance is disabled for this thread, then do not
-	 * add the holder. If there are never holders of the semaphore,
-	 * the priority inheritance is effectively disabled.
-	 */
-	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
-#endif
-		/* Find or allocate a container for this new holder */
-		pholder = sem_findorallocateholder(sem, htcb);
-		if (pholder != NULL) {
-			/* Reaching the maximum means holder accounting has diverged from
-			 * the semaphore state.  Catch it at the acquisition that exposes
-			 * the problem, while retaining the limit check to prevent a signed
-			 * 16-bit wrap in non-debug builds.
-			 */
+	/* Find or allocate a container for this new holder */
+	pholder = sem_findorallocateholder(sem, htcb);
+	if (pholder != NULL) {
+		/* Reaching the maximum means holder accounting has diverged from
+		 * the semaphore state.  Catch it at the acquisition that exposes
+		 * the problem, while retaining the limit check to prevent a signed
+		 * 16-bit wrap in non-debug builds.
+		 */
 
-			DEBUGASSERT(pholder->counts < SEM_VALUE_MAX);
-			if (pholder->counts < SEM_VALUE_MAX) {
-				/* Increment the number of counts held by this holder */
+		DEBUGASSERT(pholder->counts < SEM_VALUE_MAX);
+		if (pholder->counts < SEM_VALUE_MAX) {
+			/* Increment the number of counts held by this holder */
 
-				pholder->counts++;
-			}
+			pholder->counts++;
 		}
-#if defined(CONFIG_PRIORITY_INHERITANCE) && !defined(CONFIG_BINMGR_RECOVERY)
 	}
-#endif
 }
 
 /****************************************************************************
@@ -790,8 +726,7 @@ void sem_addholder(FAR sem_t *sem)
  *   rtcb - TCB of the task posting the semaphore
  *
  * Return Value:
- *   TCB of the holder whose count was released.  This can differ from
- *   rtcb when a counting semaphore is posted by a non-holder.
+ *   The posting task's TCB.
  *
  * Assumptions:
  *
@@ -800,56 +735,23 @@ void sem_addholder(FAR sem_t *sem)
 FAR struct tcb_s *sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *rtcb)
 {
 	FAR struct semholder_s *pholder;
-	FAR struct semholder_s *candidate = NULL;
-	unsigned int total = 0;
 
-	if ((sem->flags & FLAGS_SIGSEM) != 0) {
-		/* No saved holder for semaphore used for signaling */
+	if ((sem->flags & PRIOINHERIT_FLAGS_ENABLE) == 0) {
 		return rtcb;
 	}
 
-	/* Find the container for this holder.  POSIX counting semaphores do not
-	 * require the posting task to be the task that obtained the count.  If
-	 * there is only one recorded holder, it is therefore also the only
-	 * possible holder whose count can be released.
+	/* P.I. semaphores are ownership semaphores.  An interrupt handler cannot
+	 * own one, and a task must not infer ownership from another holder when it
+	 * posts without holding the semaphore.
 	 */
 
-#if CONFIG_SEM_PREALLOCHOLDERS > 0
-	for (pholder = sem->hhead; pholder != NULL; pholder = pholder->flink)
-#else
-	pholder = &sem->holder;
-	if (pholder->htcb != NULL)
-#endif
-	{
+	DEBUGASSERT(!up_interrupt_context());
+	pholder = sem_findholder(sem, rtcb);
+	DEBUGASSERT(pholder != NULL);
+	if (pholder != NULL) {
 		DEBUGASSERT(pholder->counts > 0);
-
-		if (pholder->htcb == rtcb) {
-			/* Decrement the counts on this holder -- the holder will be freed
-			 * later in sem_restorebaseprio.
-			 */
-
-			pholder->counts--;
-			return rtcb;
-		}
-
-		total++;
-		candidate = pholder;
+		pholder->counts--;
 	}
-
-	if (total == 1) {
-		/* The posting task is not a holder, but the sole holder is
-		 * unambiguous.  Return its TCB so sem_restorebaseprio() removes the
-		 * correct zero-count entry after priority restoration.
-		 */
-
-		candidate->counts--;
-		return candidate->htcb;
-	}
-
-	/* With multiple holders there is not enough information to select the
-	 * released holder.  Keep the existing records rather than attributing
-	 * the release to the wrong task.
-	 */
 
 	return rtcb;
 }
@@ -925,20 +827,15 @@ void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem
 
 	DEBUGASSERT((sem->semcount > 0 && stcb == NULL) || (sem->semcount <= 0 && stcb != NULL));
 
-	/* Handler semaphore counts posed from an interrupt handler differently
-	 * from interrupts posted from threads.  The primary difference is that
-	 * if the semaphore is posted from a thread, then the poster thread is
-	 * a player in the priority inheritance scheme.  The interrupt handler
-	 * externally injects the new count without otherwise participating
-	 * itself.
+	/* P.I. semaphores are ownership semaphores and may be posted only by a
+	 * task that holds a count.  sem_releaseholder() enforces the same
+	 * contract before this function is reached.
 	 */
 
+	DEBUGASSERT(!up_interrupt_context());
+
 	if (stcb) {
-		if (up_interrupt_context()) {
-			sem_restorebaseprio_irq(stcb, sem);
-		} else {
-			sem_restorebaseprio_task(stcb, sem);
-		}
+		sem_restorebaseprio_task(stcb, sem);
 	}
 
 	/* If there are no tasks waiting for available counts, then all holders
@@ -1056,7 +953,7 @@ void sem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem)
 
 	/* Adjust the priority of every holder as necessary */
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+	if ((sem->flags & PRIOINHERIT_FLAGS_ENABLE) != 0) {
 		(void)sem_foreachholder(sem, sem_restoreholderprio, stcb);
 	}
 #endif
