@@ -53,7 +53,7 @@ HEAD_ASRC  =
 # Common ARM files
 
 #include common/Make.defs
-CMN_CSRCS += arm_assert.c up_allocateheap.c arm_blocktask.c
+CMN_CSRCS += up_common_assert.c arm_assert.c up_allocateheap.c arm_blocktask.c
 CMN_CSRCS += up_createstack.c arm_exit.c arm_fullcontextrestore.c
 CMN_CSRCS += arm_initialize.c up_lowputs.c up_flush_console.c
 CMN_CSRCS += arm_modifyreg16.c arm_modifyreg32.c
