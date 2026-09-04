@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2023 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #
 ###########################################################################
 ############################################################################
-# apps/system/mem_leak_checker/Make.defs
+# apps/system/mem_leak_checker_v2/Make.defs
 # Adds selected applications to apps/ build
 #
 #   Copyright (C) 2016 Gregory Nutt. All rights reserved.
@@ -38,8 +38,8 @@
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
 # COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 # INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
 # BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
@@ -51,6 +51,6 @@
 #
 ############################################################################
 
-ifeq ($(CONFIG_MEM_LEAK_CHECKER),y)
-CONFIGURED_APPS += system/mem_leak_checker
+ifeq ($(CONFIG_MEM_LEAK_CHECKER_APP),y)
+CONFIGURED_APPS += system/mem_leak_checker_v2
 endif

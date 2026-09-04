@@ -1,0 +1,20 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_MEM_LEAK_TEST
+	bool "Memory Leak Checker Test Suite"
+	default n
+	depends on DEBUG_MM_HEAPINFO
+	---help---
+		Enable the Memory Leak Checker test suite. This application creates
+		known memory leak scenarios (reference cycles, IPC shared blocks, etc.)
+		to validate the behavior of the memory leak checker tool.
+
+		After running a test, use 'mem_leak_checker' from TASH to verify
+		whether the leak was detected.
+
+config USER_ENTRYPOINT
+	string
+	default "mem_leak_test_main" if ENTRY_MEM_LEAK_TEST

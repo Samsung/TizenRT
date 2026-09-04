@@ -1,0 +1,3 @@
+config ENTRY_MEM_LEAK_TEST
+	bool "Memory Leak Checker Test Suite"
+	depends on EXAMPLES_MEM_LEAK_TEST
