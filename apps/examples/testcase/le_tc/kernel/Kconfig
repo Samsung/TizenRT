@@ -259,6 +259,18 @@ config ITC_KERN_PTHREAD_LOOP_SIZE
 	default 100
 endif
 
+config STC_KERNEL_SCHED
+	bool "STC Sched (scenario)"
+	default n
+	depends on RR_INTERVAL != 0
+	---help---
+		Scenario based scheduling test cases.
+
+		These assert on scheduler behaviour under a controlled workload
+		rather than on API return values, so they measure over windows of
+		seconds rather than milliseconds.  They are deliberately not
+		selected by TC_KN_ALL; enable them for a nightly or on demand run
+		rather than for a per commit gate.
 
 endif #EXAMPLES_TESTCASE_KERNEL
 

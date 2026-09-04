@@ -179,6 +179,14 @@ endif
 ifeq ($(CONFIG_ITC_KERNEL_PTHREAD),y)
   CSRCS += itc_pthread.c
 endif
+ifeq ($(CONFIG_STC_KERNEL_SCHED),y)
+  CSRCS += stc_sched_common.c
+  CSRCS += stc_sched_monitor.c
+  CSRCS += stc_sched_rr.c
+  CSRCS += stc_sched_smp.c
+  CSRCS += stc_sched_priority.c
+  CSRCS += stc_sched_affinity.c
+endif
 
 # Include kernel build support
 
