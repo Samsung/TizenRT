@@ -60,4 +60,84 @@ void mmu_dump_app_pgtbl(void);
 void mmu_clear_app_pgtbl(uint32_t app_id);
 #endif // CONFIG_APP_BINARY_SEPARATION
 
+/********************************************************************************
+ * MMU Page Protection Functions for Use-After-Free Detection
+ * ********************************************************************************/
+
+/****************************************************************************
+ * Name: mmu_split_section_to_l2
+ *
+ * Description:
+ *   Split a 1MB L1 section mapping into 256 × 4KB L2 small page mappings.
+ *   This is necessary before using mmu_set_page_ro() or mmu_set_page_no_access()
+ *   on a specific 4KB page within a 1MB section, otherwise the entire 1MB
+ *   section would be affected.
+ *
+ * Input Parameters:
+ *   vaddr - A virtual address within the 1MB section to split.
+ *
+ ****************************************************************************/
+
+void mmu_split_section_to_l2(uint32_t vaddr);
+
+/****************************************************************************
+ * Name: mmu_save_page_pte
+
+ *
+ * Description:
+ *   Save the current page table entry (L2 PTE or L1 section entry) for a
+ *   given virtual address so it can be restored later.
+ *
+ * Input Parameters:
+ *   vaddr - A virtual address within the page whose PTE should be saved.
+ *
+ ****************************************************************************/
+
+uint32_t mmu_save_page_pte(uint32_t vaddr);
+
+/****************************************************************************
+ * Name: mmu_set_page_no_access
+ *
+ * Description:
+ *   Set a 4KB page (or 1MB section) to No-Access at any privilege level.
+ *   Any subsequent access triggers a Data Abort.  Used for use-after-free
+ *   detection on page-aligned allocations.
+ *
+ * Input Parameters:
+ *   vaddr - A virtual address within the page to protect.
+ *
+ ****************************************************************************/
+
+void mmu_set_page_no_access(uint32_t vaddr);
+
+/****************************************************************************
+ * Name: mmu_set_page_ro
+ *
+ * Description:
+ *   Set a 4KB page (or 1MB section) to Read-Only at privileged level.
+ *   Any write triggers a Data Abort.  Used to protect read-only data
+ *   structures from accidental corruption.
+ *
+ * Input Parameters:
+ *   vaddr - A virtual address within the page to protect.
+ *
+ ****************************************************************************/
+
+void mmu_set_page_ro(uint32_t vaddr);
+
+/****************************************************************************
+ * Name: mmu_restore_page_pte
+ *
+ * Description:
+ *   Restore a previously saved PTE for a given virtual address, reverting
+ *   the page to its original access permissions.
+ *
+ * Input Parameters:
+ *   vaddr     - A virtual address within the page to restore.
+ *   saved_pte - The PTE value previously returned by mmu_save_page_pte().
+ *
+ ****************************************************************************/
+
+void mmu_restore_page_pte(uint32_t vaddr, uint32_t saved_pte);
+
 #endif

@@ -259,11 +259,200 @@ config WDOG_INTRESERVE
 		by interrupt handler.  This setting determines that number of
 		reserved watchdogs.
 
+config WDOG_MMU_PROTECT
+	bool "Watchdog MMU page protection"
+	default n
+	depends on ARCH_USE_MMU
+	---help---
+		Enable MMU page-level protection for watchdog static memory.
+		All watchdog static data (g_wdfreelist, g_wdactivelist, g_wdnfree,
+		and g_wdpool[]) is packed into a single page-aligned 4KB page.
+		After initialization, the page is set to Read-Only.  Any wild
+		pointer write from non-wdog code triggers an immediate Data Abort
+		at the corrupting instruction.
+
+		Wdog code temporarily restores Read-Write permission before
+		modifying its data, then re-protects the page.  A nesting counter
+		handles reentrant calls (e.g. wd_timer -> callback -> wd_start).
+
+		This provides early detection of memory corruption affecting the
+		watchdog subsystem.
+
+		SMP support: The DACR (Domain Access Control Register) is per-CPU.
+		The read-modify-write on DACR uses an atomic ldrex/strex loop on
+		a shared shadow variable to prevent cross-core race conditions
+		that could clobber domain 0 (kernel text) and cause Prefetch Abort.
+		Enable CONFIG_WDOG_MMU_DACR_DEBUG for runtime DACR corruption alerts.
+
+config WDOG_MMU_DACR_DEBUG
+	bool "Watchdog MMU DACR debug logging"
+	default n
+	depends on WDOG_MMU_PROTECT
+	---help---
+		Enable debug logging for DACR (Domain Access Control Register)
+		modifications in the watchdog MMU protection code. When enabled,
+		an alert is printed if domain 0 (kernel text) is ever clobbered
+		to No-Access during wd_mmu_write_begin()/wd_mmu_write_end().
+
+		This helps diagnose SMP Prefetch Abort crashes caused by DACR
+		corruption.
+
+config WDOG_MMU_DEFECT_TEST
+	bool "Watchdog MMU defect reproduction tests"
+	default n
+	depends on WDOG_MMU_PROTECT
+	---help---
+		Enable defect reproduction tests for watchdog MMU protection.
+		Each defect test is controlled by a sub-option below.
+		These tests intentionally trigger defects to verify they
+		exist and to validate fixes.
+
+		All test code is compiled in only when this option is enabled.
+		When disabled, zero code is added.
+
+config WDOG_MMU_DEFECT_TEST_SMP
+	bool "Defect #1: SMP DACR per-core issue"
+	default n
+	depends on WDOG_MMU_DEFECT_TEST
+	---help---
+		Reproduce the SMP safety defect: DACR is per-CPU, so
+		wd_mmu_write_begin() on Core 0 does not update Core 1's DACR.
+		Core 1 accessing wdog pool → Data Abort.
+
+config WDOG_MMU_DEFECT_TEST_DSB
+	bool "Defect #3: Missing dsb after DACR write"
+	default n
+	depends on WDOG_MMU_DEFECT_TEST
+	---help---
+		Reproduce the missing memory barrier defect: without dsb
+		after DACR write, out-of-order cores may use stale DACR
+		value → intermittent Data Abort.
+
+config WDOG_MMU_DEFECT_TEST_DACR_CLOBBER
+	bool "Defect #7: DACR clobbers other domains"
+	default n
+	depends on WDOG_MMU_DEFECT_TEST
+	---help---
+		Reproduce the DACR clobber defect: wd_mmu_write_begin()
+		overwrites the entire DACR, clobbering domains 2-15.
+
+config WDOG_MMU_DEFECT_TEST_HEAP_OVERLAP
+	bool "Defect #8: Heap overlap with wdog pool"
+	default n
+	depends on WDOG_MMU_DEFECT_TEST
+	---help---
+		Reproduce the heap overlap defect: verify heap does not
+		cover the wdog pool region. If it does, heap allocations
+		in the wdog pool region → Data Abort on write.
+
+config WDOG_MMU_DEFECT_TEST_WD_RECOVER
+	bool "Defect #11: wd_recover() missing protection"
+	default n
+	depends on WDOG_MMU_DEFECT_TEST
+	---help---
+		Reproduce the wd_recover() defect: wd_recover() writes to
+		wdog pool without calling wd_mmu_write_begin() → Data Abort.
+
+config WDOG_MMU_DEFECT_TEST_ABORT_HANDLER
+	bool "Defect #12: Data Abort handler guard"
+	default n
+	depends on WDOG_MMU_DEFECT_TEST
+	---help---
+		Reproduce the nested Data Abort defect: if the Data Abort
+		handler itself accesses the wdog pool, a nested abort occurs
+		→ system hang.
+
+config WDOG_MMU_DEFECT_TEST_BOOT_ORDER
+	bool "Defect #13: Boot order issue"
+	default n
+	depends on WDOG_MMU_DEFECT_TEST
+	---help---
+		Reproduce the boot order defect: verify no wdog writes occur
+		between wd_initialize() and the first user wd_start() call.
+
+config WDOG_MMU_DEFECT_TEST_SECTION_SIZE
+	bool "Defect #15: L1 entry cache coherency"
+	default n
+	depends on WDOG_MMU_DEFECT_TEST
+	---help---
+		Reproduce the L1 cache coherency defect: after
+		wd_mmu_protect_init() modifies the L1 entry, stale TLB
+		entry may still allow writes → protection not effective.
+
+config WDOG_MMU_SCENARIO_TEST
+	bool "Watchdog MMU scenario tests"
+	default n
+	depends on WDOG_MMU_PROTECT
+	---help---
+		Enable scenario-based test cases for watchdog MMU protection.
+		These tests exercise normal wdog operations under MMU protection
+		to verify correctness and stability.
+
+config WDOG_MMU_SCENARIO_TEST_NORMAL_OP
+	bool "Scenario: Normal wdog operation (start/cancel 100x)"
+	default n
+	depends on WDOG_MMU_SCENARIO_TEST
+	---help---
+		TC-05: Start and cancel a watchdog 100 times.
+		Verifies that normal wdog operations work correctly
+		under MMU protection without Data Abort.
+
+config WDOG_MMU_SCENARIO_TEST_MULTI_EXPIRE
+	bool "Scenario: Multiple watchdog expiration in same tick"
+	default n
+	depends on WDOG_MMU_SCENARIO_TEST
+	---help---
+		TC-06: Start 5 watchdogs with the same delay.
+		Verifies that multiple watchdogs expiring in the same
+		timer tick do not cause Data Abort.
+
+config WDOG_MMU_SCENARIO_TEST_SMP_CONCURRENT
+	bool "Scenario: SMP concurrent wdog access from multiple cores"
+	default n
+	depends on WDOG_MMU_SCENARIO_TEST
+	---help---
+		TC-08: Multiple cores call wd_start/wd_cancel concurrently.
+		Verifies that concurrent wdog access from multiple cores
+		does not cause Data Abort due to per-core DACR.
+
+config WDOG_MMU_SCENARIO_TEST_SMP_TICK_CB
+	bool "Scenario: SMP timer tick on Core 0, callback on Core 1"
+	default n
+	depends on WDOG_MMU_SCENARIO_TEST
+	---help---
+		TC-09: Timer tick fires on Core 0, but the watchdog callback
+		runs on Core 1. Verifies that the callback can safely access
+		wdog data structures across cores.
+
+config WDOG_MMU_SCENARIO_TEST_NESTING_STRESS
+	bool "Scenario: Nesting counter stress test (1000 reentrant calls)"
+	default n
+	depends on WDOG_MMU_SCENARIO_TEST
+	---help---
+		TC-13: Call wd_mmu_write_begin() 1000 times reentrantly,
+		then wd_mmu_write_end() 1000 times. Verifies that the
+		nesting counter does not overflow or underflow.
+
+config WDOG_MMU_SCENARIO_TEST_LONG_RUN
+	bool "Scenario: 24-hour long-run stability test"
+	default n
+	depends on WDOG_MMU_SCENARIO_TEST
+	---help---
+		TC-15: Run continuous wdog start/cancel operations for
+		a configurable duration (default 60 seconds for testing,
+		extendable to 24 hours for production validation).
+		Verifies no memory leak or Data Abort over time.
+
 config PREALLOC_TIMERS
+
+
+
+
 	int "Number of pre-allocated POSIX timers"
 	default 8 if !DISABLE_POSIX_TIMERS
 	default 0 if DISABLE_POSIX_TIMERS
 	---help---
+
 		The number of pre-allocated POSIX timer structures.  The system manages a
 		pool of preallocated timer structures to minimize dynamic allocations.  Set to
 		zero for all dynamic allocations.

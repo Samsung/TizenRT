@@ -141,10 +141,29 @@ void up_allocate_kheap(FAR void **heap_start, size_t *heap_size)
 		*heap_start = (void *)KREGION_START;
 	}
 
+#ifdef CONFIG_WDOG_MMU_PROTECT
+	/* Place the heap start after the .wdog_pool section (1MB-aligned).
+	 * The .wdog_pool section is set to Read-Only by wd_mmu_protect_init(),
+	 * so the heap must not cover it.  By starting the heap at __wdog_pool_end__,
+	 * we get a single contiguous heap region that never overlaps the RO section.
+	 */
+	{
+		extern uint32_t __wdog_pool_end__[];
+		uint32_t wdog_end = (uint32_t)__wdog_pool_end__;
+		if (wdog_end > (uint32_t)*heap_start && wdog_end < (uint32_t)KREGION_END) {
+			*heap_start = (void *)wdog_end;
+		}
+	}
+#endif
+
 	*heap_size = (void *)KREGION_END - *heap_start;
 
 	lldbg("start = 0x%x size = %d\n", *heap_start, *heap_size);
+
+
+
 }
+
 
 /****************************************************************************
  * Name: up_add_kregion

@@ -1,0 +1,35 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_MMU_PROTECT_TEST
+	bool "MMU page protection UAF detection test"
+	default n
+	---help---
+		Enable the MMU page protection test for use-after-free detection.
+
+		This test exercises the MMU page protection functions added to
+		arm_mmu.c (mmu_save_page_pte, mmu_set_page_no_access,
+		mmu_set_page_ro, mmu_restore_page_pte).
+
+		Safe mode (default) verifies PTE manipulation without triggering
+		any faults.  UAF mode ("mmu_protect_test uaf") creates a real
+		use-after-free scenario: a page is protected via MMU, then
+		accessed.  The MMU triggers a Data Abort, which is the UAF
+		detection.
+
+		Usage from TASH:
+		  mmu_protect_test           Run safe-mode tests (no Data Abort)
+		  mmu_protect_test save      Test mmu_save_page_pte
+		  mmu_protect_test noaccess  Test mmu_set_page_no_access (safe)
+		  mmu_protect_test ro         Test mmu_set_page_ro (safe)
+		  mmu_protect_test restore    Test mmu_restore_page_pte
+		  mmu_protect_test uaf        Trigger a real UAF Data Abort
+
+		NOTE: Requires ARMv7-A with MMU.  The "uaf" subcommand causes
+		a fatal Data Abort (system crash/reboot).
+
+config USER_ENTRYPOINT
+	string
+	default "mmu_protect_test_main" if EXAMPLES_MMU_PROTECT_TEST
