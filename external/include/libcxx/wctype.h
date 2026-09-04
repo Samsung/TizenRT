@@ -1,27 +1,9 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 // -*- C++ -*-
-//===--------------------------- wctype.h ---------------------------------===//
+//===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -65,10 +47,28 @@ wctrans_t wctrans(const char* property);
 #include <__config>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
-#pragma GCC system_header
+#  pragma GCC system_header
 #endif
 
-#include_next <wctype.h>
+// TizenRT: When wide characters are disabled, allow header inclusion but provide no functionality.
+// This prevents #error when third-party code includes this header indirectly.
+#if !defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
+
+// TODO:
+// In the future, we should unconditionally include_next <wctype.h> here and instead
+// have a mode under which the library does not need libc++'s <wctype.h> or <cwctype>
+// at all (i.e. a mode without wchar_t). As it stands, we need to do that to completely
+// bypass the using declarations in <cwctype> when we did not include <wctype.h>.
+// Otherwise, a using declaration like `using ::wint_t` in <cwctype> will refer to
+// nothing (with using_if_exists), and if we include another header that defines one
+// of these declarations (e.g. <wchar.h>), the second `using ::wint_t` with using_if_exists
+// will fail because it does not refer to the same declaration.
+#if __has_include_next(<wctype.h>)
+#   include_next <wctype.h>
+#   define _LIBCPP_INCLUDED_C_LIBRARY_WCTYPE_H
+#endif
+
+#endif  // !defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
 
 #ifdef __cplusplus
 
@@ -91,6 +91,6 @@ wctrans_t wctrans(const char* property);
 #undef towctrans
 #undef wctrans
 
-#endif  // __cplusplus
+#endif // __cplusplus
 
-#endif  // _LIBCPP_WCTYPE_H
+#endif // _LIBCPP_WCTYPE_H

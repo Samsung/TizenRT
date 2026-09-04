@@ -1,20 +1,10 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
+//===----------------------------------------------------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -55,6 +45,7 @@ test(S s0, const typename S::allocator_type& a)
 
 int tc_libcxx_strings_string_cons_move_alloc(void)
 {
+    test_allocator_statistics alloc_stats;
     {
     typedef test_allocator<char> A;
     typedef std::basic_string<char, std::char_traits<char>, A> S;
@@ -63,12 +54,12 @@ int tc_libcxx_strings_string_cons_move_alloc(void)
 #elif TEST_STD_VER >= 11
     static_assert((noexcept(S()) == std::is_nothrow_move_constructible<A>::value), "" );
 #endif
-    TC_ASSERT_FUNC((test(S(), A(3))));
-    TC_ASSERT_FUNC((test(S("1"), A(5))));
-    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890"), A(7))));
+    TC_ASSERT_FUNC((test(S(), A(3, &alloc_stats))));
+    TC_ASSERT_FUNC((test(S("1"), A(5, &alloc_stats))));
+    TC_ASSERT_FUNC((test(S("1234567890123456789012345678901234567890123456789012345678901234567890"), A(7, &alloc_stats))));
     }
 
-    int alloc_count = test_alloc_base::alloc_count;
+    int alloc_count = alloc_stats.alloc_count;
     {
     typedef test_allocator<char> A;
     typedef std::basic_string<char, std::char_traits<char>, A> S;
@@ -77,10 +68,10 @@ int tc_libcxx_strings_string_cons_move_alloc(void)
 #elif TEST_STD_VER >= 11
     static_assert((noexcept(S()) == std::is_nothrow_move_constructible<A>::value), "" );
 #endif
-    S s1 ( "Twas brillig, and the slivy toves did gyre and gymbal in the wabe" );
-    S s2 (std::move(s1), A(1));
+    S s1 ( "Twas brillig, and the slivy toves did gyre and gymbal in the wabe", A(&alloc_stats) );
+    S s2 (std::move(s1), A(1, &alloc_stats));
     }
-    TC_ASSERT_EXPR ( test_alloc_base::alloc_count == alloc_count );
+    TC_ASSERT_EXPR ( alloc_stats.alloc_count == alloc_count );
     TC_SUCCESS_RESULT();
     return 0;
 }

@@ -1,32 +1,19 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 // -*- C++ -*-
-//===---------------------------- stdint.h --------------------------------===//
+//===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
 #ifndef _LIBCPP_STDINT_H
+// AIX system headers need stdint.h to be re-enterable while _STD_TYPES_T
+// is defined until an inclusion of it without _STD_TYPES_T occurs, in which
+// case the header guard macro is defined.
+#if !defined(_AIX) || !defined(_STD_TYPES_T)
 #define _LIBCPP_STDINT_H
+#endif // _STD_TYPES_T
 
 /*
     stdint.h synopsis
@@ -116,10 +103,11 @@ Macros:
 
 */
 
+#include <__tinyara_pthread_guard.h>
 #include <__config>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
-#pragma GCC system_header
+#  pragma GCC system_header
 #endif
 
 /* C99 stdlib (e.g. glibc < 2.18) does not provide macros needed
@@ -133,6 +121,8 @@ Macros:
 #   define __STDC_CONSTANT_MACROS
 #endif
 
-#include_next <stdint.h>
+#if __has_include_next(<stdint.h>)
+#  include_next <stdint.h>
+#endif
 
-#endif  // _LIBCPP_STDINT_H
+#endif // _LIBCPP_STDINT_H

@@ -1,20 +1,10 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
+//===----------------------------------------------------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
@@ -93,7 +83,9 @@ test()
 int tc_libcxx_strings_basic_string_types(void)
 {
     TC_ASSERT_FUNC((test<test_traits<char>, test_allocator<char> >()));
+#ifndef TEST_HAS_NO_WIDE_CHARACTERS
     TC_ASSERT_FUNC((test<std::char_traits<wchar_t>, std::allocator<wchar_t> >()));
+#endif
     static_assert((std::is_same<std::basic_string<char>::traits_type,
                                 std::char_traits<char> >::value), "");
     static_assert((std::is_same<std::basic_string<char>::allocator_type,

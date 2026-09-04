@@ -1,29 +1,11 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 //===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-
+//
 // <algorithm>
 
 // template<ForwardIterator Iter, StrictWeakOrder<auto, Iter::value_type> Compare>
@@ -37,13 +19,14 @@
 #include <cassert>
 
 #include "test_macros.h"
-#include "libcxx_tc_common.h"
 #include "test_iterators.h"
+#include "libcxx_tc_common.h"
 
+namespace {
 std::mt19937 randomness;
 
 template <class Iter>
-static int
+void
 test(Iter first, Iter last)
 {
     typedef std::greater<int> Compare;
@@ -62,32 +45,30 @@ test(Iter first, Iter last)
         TC_ASSERT_EXPR(p.first == last);
         TC_ASSERT_EXPR(p.second == last);
     }
-    return 0;
 }
 
 template <class Iter>
-static int
+void
 test(int N)
 {
     int* a = new int[N];
     for (int i = 0; i < N; ++i)
         a[i] = i;
     std::shuffle(a, a+N, randomness);
-    TC_ASSERT_FUNC((test(Iter(a), Iter(a+N))));
+    test(Iter(a), Iter(a+N));
     delete [] a;
-    return 0;
 }
 
 template <class Iter>
-static int
+void
 test()
 {
-    TC_ASSERT_FUNC((test<Iter>(0)));
-    TC_ASSERT_FUNC((test<Iter>(1)));
-    TC_ASSERT_FUNC((test<Iter>(2)));
-    TC_ASSERT_FUNC((test<Iter>(3)));
-    TC_ASSERT_FUNC((test<Iter>(10)));
-    TC_ASSERT_FUNC((test<Iter>(1000)));
+    test<Iter>(0);
+    test<Iter>(1);
+    test<Iter>(2);
+    test<Iter>(3);
+    test<Iter>(10);
+    test<Iter>(1000);
     {
     const int N = 100;
     int* a = new int[N];
@@ -101,7 +82,6 @@ test()
     TC_ASSERT_EXPR(base(p.second) == a+N-1);
     delete [] a;
     }
-    return 0;
 }
 
 #if TEST_STD_VER >= 14
@@ -109,7 +89,7 @@ constexpr int il[] = { 2, 4, 6, 8, 7, 5, 3, 1 };
 struct less { constexpr bool operator ()( const int &x, const int &y) const { return x < y; }};
 #endif
 
-static void constexpr_test()
+void constexpr_test()
 {
 #if TEST_STD_VER >= 14
     constexpr auto p = std::minmax_element(il, il+8, less());
@@ -118,14 +98,18 @@ static void constexpr_test()
 #endif
 }
 
-int tc_libcxx_algorithms_alg_min_max_minmax_element_comp(void)
-{
-    TC_ASSERT_FUNC((test<forward_iterator<const int*> >()));
-    TC_ASSERT_FUNC((test<bidirectional_iterator<const int*> >()));
-    TC_ASSERT_FUNC((test<random_access_iterator<const int*> >()));
-    TC_ASSERT_FUNC((test<const int*>()));
+} // namespace
+
+int tc_libcxx_algorithms_alg_sorting_alg_min_max_minmax_element_comp(void) {
+    test<forward_iterator<const int*> >();
+    test<bidirectional_iterator<const int*> >();
+    test<random_access_iterator<const int*> >();
+    test<const int*>();
 
     constexpr_test();
-    TC_SUCCESS_RESULT();
-    return 0;
+
+  TC_SUCCESS_RESULT();
+
+
+  return 0;
 }
