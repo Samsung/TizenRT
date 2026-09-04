@@ -366,8 +366,8 @@ handle_req_done:
 	*ret = tmp_ret;
 }
 
-/* Handler for Scanner and Whitelist commands */
-static void blemgr_handle_scanner_whitelist(blemgr_msg_s *msg, trble_result_e *ret)
+/* Handler for Scanner commands */
+static void blemgr_handle_scanner(blemgr_msg_s *msg, trble_result_e *ret)
 {
 	trble_result_e tmp_ret = TRBLE_FAIL;
 	
@@ -441,6 +441,21 @@ static void blemgr_handle_scanner_whitelist(blemgr_msg_s *msg, trble_result_e *r
 		}
 	} break;
 
+	default:
+		tmp_ret = TRBLE_UNKNOWN;
+		break;
+	}
+	
+handle_req_done:
+	*ret = tmp_ret;
+}
+
+/* Handler for Whitelist commands */
+static void blemgr_handle_whitelist(blemgr_msg_s *msg, trble_result_e *ret)
+{
+	trble_result_e tmp_ret = TRBLE_FAIL;
+	
+	switch (msg->event) {
 	case BLE_CMD_WHITELIST_ADD: {
 		BLE_STATE_CHECK;
 
@@ -1612,15 +1627,19 @@ ble_result_e blemgr_handle_request(blemgr_msg_s *msg)
 		blemgr_handle_basic_operations(msg, &ret);
 		break;
 
-	/* Scanner and Whitelist */
+	/* Scanner Operations */
 	case BLE_CMD_SET_SCAN:
 	case BLE_CMD_START_SCAN:
 	case BLE_CMD_STOP_SCAN:
+		blemgr_handle_scanner(msg, &ret);
+		break;
+
+	/* Whitelist Operations */
 	case BLE_CMD_WHITELIST_ADD:
 	case BLE_CMD_WHITELIST_DELETE:
 	case BLE_CMD_WHITELIST_CLEAR_ALL:
 	case BLE_CMD_WHITELIST_LIST:
-		blemgr_handle_scanner_whitelist(msg, &ret);
+		blemgr_handle_whitelist(msg, &ret);
 		break;
 
 	/* Client Operations */
