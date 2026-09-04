@@ -35,7 +35,9 @@ InputHandler::InputHandler() :
 	mDecoder(nullptr),
 	mIsLooping(0),
 	mState(BUFFER_STATE_EMPTY),
-	mTotalBytes(0)
+	mTotalBytes(0),
+	mProcessBuffer(nullptr),
+	mProcessBufferSize(0)
 {
 	mWorkerStackSize = CONFIG_INPUT_DATASOURCE_STACKSIZE;
 }
@@ -76,11 +78,29 @@ bool InputHandler::doStandBy(size_t buffSize)
 
 bool InputHandler::open(size_t buffSize)
 {
+	// No need to allocate if it is already allocated as size is constant.
+	if (!mProcessBuffer) {
+		// Allocate processBuffer with max possible size BEFORE StreamHandler::open()
+		// because worker thread starts inside StreamHandler::open() and may call processWorker()
+		// The actual size needed will be determined after registerCodec() sets mDecoder/mDemuxer
+		mProcessBufferSize = std::max(CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE, std::max(CONFIG_DEMUX_BUFFER_SIZE, CONFIG_HANDLER_STREAM_BUFFER_SIZE));
+		mProcessBuffer = std::make_unique<unsigned char[]>(mProcessBufferSize);
+		if (!mProcessBuffer) {
+			meddbg("Buffer allocation fail size: %d\n", mProcessBufferSize);
+			return false;
+		}
+	}
+
 	// Open stream handler and start buffering
 	if (!StreamHandler::open(buffSize)) {
 		meddbg("StreamHandler::open failed!\n");
+		mProcessBuffer.reset();
+		mProcessBufferSize = 0;
 		return false;
 	}
+
+	// Update processBuffer size based on decoder/demuxer presence
+	mProcessBufferSize = mDecoder ? CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE : mDemuxer ? CONFIG_DEMUX_BUFFER_SIZE : CONFIG_HANDLER_STREAM_BUFFER_SIZE;
 
 	// Wait buffering done
 	std::unique_lock<std::mutex> lock(mMutex);
@@ -99,6 +119,8 @@ bool InputHandler::close()
 	// Terminate buffering
 	std::unique_lock<std::mutex> lock(mMutex);
 	mCondv.notify_one();
+	mProcessBuffer.reset();
+	mProcessBufferSize = 0;
 	return ret;
 }
 
@@ -130,26 +152,31 @@ void InputHandler::resetWorker()
 
 bool InputHandler::processWorker()
 {
+	/* This should not be happened */
+	if (!mProcessBuffer) {
+		meddbg("mProcessBuffer is not allocated\n");
+		mBufferWriter->setEndOfStream();
+		return false;
+	}
+
 	size_t size = getAvailSpace();
-	if (size > 0) {
-		auto buf = new unsigned char[size];
-		if (!buf) {
-			meddbg("run out of memory! size: 0x%x\n", size);
-			return false;
+	if (size != 0) {
+		if (size > mProcessBufferSize) {
+			meddbg("Invalid available space\n");
+			size = mProcessBufferSize;
 		}
 
-		ssize_t readLen = readFromSource(buf, size);
+		ssize_t readLen = readFromSource(mProcessBuffer.get(), size);
 		if (readLen <= 0) {
 			// Error occurred, or inputting finished
 			if (!mIsLooping) {
 				mBufferWriter->setEndOfStream();
-				delete[] buf;
 				return false;
 
 			}
 			/* If it is looping mode, then seek to 0 and readFromSource again */
 			if (mInputDataSource->seekTo(0) == OK) {
-				readLen = readFromSource(buf, size);
+				readLen = readFromSource(mProcessBuffer.get(), size);
 			} else {
 				meddbg("seek failed!!\n");
 			}
@@ -160,14 +187,17 @@ bool InputHandler::processWorker()
 			readLen = size;
 		}
 
-		ssize_t writeLen = writeToStreamBuffer(buf, (size_t)readLen);
-		delete[] buf;
+		ssize_t writeLen = writeToStreamBuffer(mProcessBuffer.get(), (size_t)readLen);
 		if (writeLen <= 0) {
 			meddbg("write to stream buffer failed!\n");
 			mBufferWriter->setEndOfStream();
 			return false;
 		}
 	} else {
+		// ToDo: When no valid encoded frame is available in decoder ring buffer, no data is read from it. Consequently,
+		// in the next processWorker cycle, getAvailSpace() returns 0, preventing new data from being read from the source
+		// and causing playback to stall. To resolve this, EOS is set when getAvailSpace() returns 0.
+		// However, check if doing rbs_seek_ext() when resync() fails is better or not.
 		mBufferWriter->setEndOfStream();
 	}
 
@@ -281,14 +311,13 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 		size_t usedES = 0;
 		while (1) {
 			unsigned char *buffPCM = buf;
-			size_t sizePCM = used;
+			// Requested decoded data size is equal to output buffer size
+			size_t sizePCM = mProcessBufferSize;
 			size_t spaces = mBufferWriter->sizeOfSpace();
 			if (spaces == 0) {
 				sleepWorker();
 			}
-			if (sizePCM > mBufferWriter->sizeOfSpace()) {
-				sizePCM = mBufferWriter->sizeOfSpace();
-			}
+			sizePCM = std::min(sizePCM, mBufferWriter->sizeOfSpace());
 			ret = getPCM(buffES, sizeES, &usedES, &buffPCM, &sizePCM);
 			if (ret < 0) {
 				meddbg("getPCM failed! error: %d\n", ret);
@@ -363,10 +392,12 @@ bool InputHandler::registerCodec(audio_type_t audioType, unsigned int channels, 
 			if (readLen <= 0) {
 				meddbg("Read source failed! error: %d\n", readLen);
 				delete[] buf;
+				buf = nullptr;
 				return false;
 			}
 			demuxer->pushData(buf, (size_t)readLen);
 			delete[] buf;
+			buf = nullptr;
 			int ret = demuxer->prepare();
 			if (ret < 0) {
 				if (ret == DEMUXER_ERROR_WANT_DATA) {
@@ -546,6 +577,7 @@ bool InputHandler::probeDataSource()
 			if (readBytes <= 0) {
 				meddbg("Read data source failed, readBytes : %d totalBytes : %d threshold : %d\n", readBytes, totalBytes, threshold);
 				delete[] bufptr;
+				bufptr = nullptr;
 				return false;
 			}
 			totalBytes += readBytes;
@@ -586,10 +618,12 @@ bool InputHandler::probeDataSource()
 		if (!mPreloadBuffer) {
 			meddbg("Out of memory\n");
 			delete[] bufptr;
+			bufptr = nullptr;
 			return false;
 		}
 		mPreloadBuffer->write(bufptr, totalBytes);
 		delete[] bufptr;
+		bufptr = nullptr;
 		return true;
 	}
 	// No need to preload and probe data

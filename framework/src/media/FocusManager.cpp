@@ -18,7 +18,6 @@
 
 #include <media/FocusManager.h>
 #include <debug.h>
-#include "FocusManagerWorker.h"
 #include "PlayerWorker.h"
 
 namespace media {
@@ -118,8 +117,7 @@ void FocusManager::removeFocusAndNotify(std::shared_ptr<FocusRequest> focusReque
 				mDuckedFocusRequester = nullptr;
 			}
 
-			PlayerWorker& worker = PlayerWorker::getWorker();
-			worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy, mDuckedFocusRequester);
+			callFocusLossListener();
 
 			lock.unlock();
 			focusList->front()->notify(frontFocusState);
@@ -140,12 +138,12 @@ int FocusManager::abandonFocus(std::shared_ptr<FocusRequest> focusRequest)
 	if (focusRequest == nullptr) {
 		return FOCUS_REQUEST_FAIL;
 	}
-	FocusManagerWorker &fmw = FocusManagerWorker::getWorker();
-	if (!fmw.isAlive()) {
-		meddbg("FocusManagerWorker is not alive\n");
+	PlayerWorker &pw = PlayerWorker::getWorker();
+	if (!pw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return FOCUS_REQUEST_FAIL;
 	}
-	fmw.enQueue(&FocusManager::removeFocusAndNotify, this, focusRequest);
+	pw.enQueue(&FocusManager::removeFocusAndNotify, this, focusRequest);
 	/*
 	@ToDo
 	return value FOCUS_REQUEST_SUCCESS means, focusrequest item is removed from queue, however now it is scheduled for removal.
@@ -160,12 +158,12 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest)
 	if (focusRequest == nullptr) {
 		return FOCUS_REQUEST_FAIL;
 	}
-	FocusManagerWorker &fmw = FocusManagerWorker::getWorker();
-	if (!fmw.isAlive()) {
-		meddbg("FocusManagerWorker is not alive\n");
+	PlayerWorker &pw = PlayerWorker::getWorker();
+	if (!pw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return FOCUS_REQUEST_FAIL;
 	}
-	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, FOCUS_GAIN);
+	pw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, FOCUS_GAIN);
 	return FOCUS_REQUEST_SUCCESS;
 }
 
@@ -175,12 +173,12 @@ int FocusManager::requestFocusTransient(std::shared_ptr<FocusRequest> focusReque
 	if (focusRequest == nullptr) {
 		return FOCUS_REQUEST_FAIL;
 	}
-	FocusManagerWorker &fmw = FocusManagerWorker::getWorker();
-	if (!fmw.isAlive()) {
-		meddbg("FocusManagerWorker is not alive\n");
+	PlayerWorker &pw = PlayerWorker::getWorker();
+	if (!pw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return FOCUS_REQUEST_FAIL;
 	}
-	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, FOCUS_GAIN_TRANSIENT);
+	pw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, FOCUS_GAIN_TRANSIENT);
 	return FOCUS_REQUEST_SUCCESS;
 }
 
@@ -196,22 +194,22 @@ int FocusManager::requestFocus(std::shared_ptr<FocusRequest> focusRequest, focus
 		meddbg("Invalid focus state : %d\n", focusState);
 		return FOCUS_REQUEST_FAIL;
 	}
-	FocusManagerWorker &fmw = FocusManagerWorker::getWorker();
-	if (!fmw.isAlive()) {
-		meddbg("FocusManagerWorker is not alive\n");
+	PlayerWorker &pw = PlayerWorker::getWorker();
+	if (!pw.isAlive()) {
+		meddbg("PlayerWorker is not alive\n");
 		return FOCUS_REQUEST_FAIL;
 	}
-	fmw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, focusState);
+	pw.enQueue(&FocusManager::insertFocusElement, this, focusRequest, focusState);
 	return FOCUS_REQUEST_SUCCESS;
 }
 
-void FocusManager::callFocusLossListener(stream_policy_t policy, std::shared_ptr<FocusRequester> duckedFocusRequester)
+void FocusManager::callFocusLossListener(void)
 {
 	// item will be deleted from mPlayerFocusLossListeners map in internal pause.
 	// So to avoid iterator invalidation, copy is required. And, it is not inefficient as map will have at max two elements.
 	auto listeners = mPlayerFocusLossListeners;
 	for (const auto &listener : listeners) {
-		if (duckedFocusRequester && listener.first == duckedFocusRequester->getStreamInfo().id) {
+		if (mDuckedFocusRequester && listener.first == mDuckedFocusRequester->getStreamInfo().id) {
 			continue;
 		}
 		listener.second();
@@ -281,8 +279,7 @@ void FocusManager::insertFocusElement(std::shared_ptr<FocusRequest> focusRequest
 		}
 		focusList->push_front(focusRequester);
 
-		PlayerWorker& worker = PlayerWorker::getWorker();
-		worker.enQueue(&FocusManager::callFocusLossListener, this, focusRequest->getStreamInfo()->policy, mDuckedFocusRequester);
+		callFocusLossListener();
 
 		lock.unlock();
 		focusRequester->notify(focusState);

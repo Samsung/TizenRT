@@ -125,10 +125,15 @@ void OutputHandler::resetWorker()
 void OutputHandler::writeToSource(size_t size)
 {
 	auto buf = new unsigned char[size];
+	if (!buf) {
+		meddbg("Failed to allocate buffer of size %zu\n", size);
+		return;
+	}
 	auto readed = mBufferReader->read(buf, size);
 	if (readed != size) {
 		meddbg("StreamBufferReader::read failed! size : %u, readed : %u\n", size, readed);
 		delete[] buf;
+		buf = nullptr;
 		return;
 	}
 
@@ -140,6 +145,7 @@ void OutputHandler::writeToSource(size_t size)
 	}
 
 	delete[] buf;
+	buf = nullptr;
 }
 
 bool OutputHandler::processWorker()

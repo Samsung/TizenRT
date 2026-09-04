@@ -406,7 +406,7 @@ int mp3_init(audio_decoder_p decoder, void *dec_ext)
 }
 
 // Get the next valid MP3 frame.
-bool mp3_get_frame(rbstream_p mFp, ssize_t *offset, uint32_t *fixed_header, void *buffer, uint32_t *size)
+bool mp3_get_frame(rbstream_p mFp, ssize_t *offset, uint32_t *fixed_header, void *buffer, uint32_t *size, size_t bufferMaxLength)
 {
 	size_t frame_size;
 
@@ -418,7 +418,9 @@ bool mp3_get_frame(rbstream_p mFp, ssize_t *offset, uint32_t *fixed_header, void
 
 		if ((header & MP3_FRAME_HEADER_MASK) == (*fixed_header & MP3_FRAME_HEADER_MASK)
 			&& _parse_header(header, &frame_size)) {
-			break;
+			if (frame_size <= bufferMaxLength) {
+				break;
+			}
 		}
 
 		// Lost sync.
@@ -573,7 +575,7 @@ int aac_init(audio_decoder_p decoder, void *dec_ext)
 }
 
 // Get the next valid aac frame.
-bool aac_get_frame(rbstream_p mFp, ssize_t *offset, void *buffer, uint32_t *size)
+bool aac_get_frame(rbstream_p mFp, ssize_t *offset, void *buffer, uint32_t *size, size_t bufferMaxLength)
 {
 	size_t frame_size = 0;
 	uint8_t *buf = (uint8_t *) buffer;
@@ -584,7 +586,9 @@ bool aac_get_frame(rbstream_p mFp, ssize_t *offset, void *buffer, uint32_t *size
 
 		if (AAC_ADTS_SYNC_VERIFY(buf)) {
 			frame_size = AAC_ADTS_FRAME_GETSIZE(buf);
-			break;
+			if (frame_size <= bufferMaxLength) {
+				break;
+			}
 		}
 
 		// Lost sync.
@@ -730,7 +734,7 @@ int opus_init(audio_decoder_p decoder, void *dec_ext)
 }
 
 // Get the next valid Opus frame.
-bool opus_get_frame(rbstream_p mFp, ssize_t *offset, void *buffer, uint32_t *size)
+bool opus_get_frame(rbstream_p mFp, ssize_t *offset, void *buffer, uint32_t *size, size_t bufferMaxLength)
 {
 	size_t frame_size = 0;
 	uint8_t *buf = (uint8_t *) buffer;
@@ -741,7 +745,9 @@ bool opus_get_frame(rbstream_p mFp, ssize_t *offset, void *buffer, uint32_t *siz
 
 		if (OPUS_PACKET_SYNC_VERIFY(buf)) {
 			frame_size = OPUS_PACKET_GETSIZE(buf);
-			break;
+			if (frame_size <= bufferMaxLength) {
+				break;
+			}
 		}
 
 		// Lost sync.
@@ -809,13 +815,13 @@ bool _get_frame(audio_decoder_p decoder)
 #ifdef CONFIG_CODEC_MP3
 	case AUDIO_TYPE_MP3: {
 		tPVMP3DecoderExternal *mp3_ext = (tPVMP3DecoderExternal *) decoder->dec_ext;
-		return mp3_get_frame(decoder->rbsp, &priv->mCurrentPos, &priv->mFixedHeader, (void *)mp3_ext->pInputBuffer, (uint32_t *)&mp3_ext->inputBufferCurrentLength);
+		return mp3_get_frame(decoder->rbsp, &priv->mCurrentPos, &priv->mFixedHeader, (void *)mp3_ext->pInputBuffer, (uint32_t *)&mp3_ext->inputBufferCurrentLength, (size_t)mp3_ext->inputBufferMaxLength);
 	}
 #endif
 #ifdef CONFIG_CODEC_AAC
 	case AUDIO_TYPE_AAC: {
 		tPVMP4AudioDecoderExternal *aac_ext = (tPVMP4AudioDecoderExternal *) decoder->dec_ext;
-		return aac_get_frame(decoder->rbsp, &priv->mCurrentPos, (void *)aac_ext->pInputBuffer, (uint32_t *)&aac_ext->inputBufferCurrentLength);
+		return aac_get_frame(decoder->rbsp, &priv->mCurrentPos, (void *)aac_ext->pInputBuffer, (uint32_t *)&aac_ext->inputBufferCurrentLength, (size_t)aac_ext->inputBufferMaxLength);
 	}
 #endif
 	case AUDIO_TYPE_WAVE: {
@@ -827,7 +833,7 @@ bool _get_frame(audio_decoder_p decoder)
 #ifdef CONFIG_CODEC_LIBOPUS
 	case AUDIO_TYPE_OPUS: {
 		opus_dec_external_t *opus_ext = (opus_dec_external_t *) decoder->dec_ext;
-		return opus_get_frame(decoder->rbsp, &priv->mCurrentPos, (void *)opus_ext->pInputBuffer, (uint32_t *)&opus_ext->inputBufferCurrentLength);
+		return opus_get_frame(decoder->rbsp, &priv->mCurrentPos, (void *)opus_ext->pInputBuffer, (uint32_t *)&opus_ext->inputBufferCurrentLength, (size_t)opus_ext->inputBufferMaxLength);
 	}
 #endif
 

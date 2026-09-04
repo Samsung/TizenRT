@@ -551,13 +551,18 @@ static int ndp120_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap
 		sq_addlast((sq_entry_t *)&apb->dq_entry, &priv->pendq);
 		audvdbg("enqueue added buf 0x%x\n", apb);
 		ndp120_givesem(&priv->devsem);
-		return 0;
+		return OK;
 	}
 
 	sq_entry_t *tmp;
 
 	int ret = ndp120_extract_audio(priv, apb);
-	
+	if (ret == SYNTIANT_NDP_ERROR_UNINIT) {
+		// notify upper layer to stop capture, hence here just return OK.
+		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_UNREACHABLE, NULL, OK);
+		return OK;
+	}
+
 	for (tmp = (sq_entry_t *)sq_peek(&priv->pendq); tmp; tmp = sq_next(tmp)) {
 		if (tmp == (sq_entry_t *)apb) {
 			sq_rem(tmp, &priv->pendq);
@@ -567,13 +572,7 @@ static int ndp120_enqueuebuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap
 	}
 
 	priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_DEQUEUE, apb, ret);
-
-	if (ret == SYNTIANT_NDP_ERROR_UNINIT) {
-		// notify upper layer to stop capture
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_UNREACHABLE, NULL, OK);
-	}
-
-	return 0;
+	return OK;
 }
 
 static int ndp120_cancelbuffer(FAR struct audio_lowerhalf_s *dev, FAR struct ap_buffer_s *apb)
@@ -984,6 +983,8 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	}
 
 	if (ret != OK) {
+		pm_domain_unregister(priv->pm_domain);
+		g_ndp120 = NULL;
 		free(priv);
 		return NULL;
 	}

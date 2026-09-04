@@ -89,6 +89,8 @@ private:
 	std::atomic<bool> mIsLooping;
 	buffer_state_t mState;
 	size_t mTotalBytes;
+	std::unique_ptr<unsigned char[]> mProcessBuffer;
+	size_t mProcessBufferSize;
 };
 } // namespace stream
 } // namespace media

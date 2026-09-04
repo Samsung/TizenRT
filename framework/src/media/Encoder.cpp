@@ -90,7 +90,18 @@ bool Encoder::init(void)
 		// allocate memory resource
 		size_t inSamples = mSampleRate * mChannels * ext.frameSizeMS / MSEC_PER_SECOND;
 		inputBuf = new signed short[inSamples];
+		if (!inputBuf) {
+			meddbg("Memory allocation failed for inputBuf\n");
+			return false;
+		}
+
 		outputBuf = new unsigned char[MAX_PACKET_SIZE];
+		if (!outputBuf) {
+			meddbg("Memory allocation failed for outputBuf\n");
+			delete[] inputBuf;
+			inputBuf = nullptr;
+			return false;
+		}
 
 		// params for streaming
 		ext.pOutputBuffer = outputBuf;
@@ -127,9 +138,11 @@ Encoder::~Encoder()
 
 	if (inputBuf) {
 		delete[] inputBuf;
+		inputBuf = nullptr;
 	}
 	if (outputBuf) {
 		delete[] outputBuf;
+		outputBuf = nullptr;
 	}
 #endif
 }
