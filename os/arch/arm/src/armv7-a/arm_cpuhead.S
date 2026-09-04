@@ -268,11 +268,17 @@ __cpu3_start:
 
 	ldr		lr, .LCcpu_vstart		/* Abs. virtual address */
 
-	/* Configure the domain access register (see mmu.h).  Only domain 0 is
-	 * supported and it uses the permissions in the TLB.
+	/* Configure the domain access register (see mmu.h).
+	 * Domain 0 = Client (normal kernel code/data)
+	 * Domain 1 = Client (wdog pool = Read-Only, needed for WDOG_MMU_PROTECT)
+	 *
+	 * Without Domain 1 = Client, Core 1 gets Prefetch Abort when accessing
+	 * any memory mapped to Domain 1 (e.g., wdog pool at 0x60400000).
+	 * wd_mmu_protect_init() on Core 0 sets the wdog pool L1 section to
+	 * Domain 1, so all cores must have Domain 1 = Client at boot.
 	 */
 
-	mov		r0, #DACR_CLIENT(0)
+	mov		r0, #(DACR_CLIENT(0) | DACR_CLIENT(1))
 	mcr		CP15_DACR(r0)			/* Set domain access register */
 
 	/* Configure the system control register (see sctrl.h) */

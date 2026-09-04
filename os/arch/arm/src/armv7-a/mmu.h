@@ -1653,6 +1653,73 @@ void mmu_l1_map_regions(const struct section_mapping_s *mappings, size_t count);
 void mmu_invalidate_region(uint32_t vstart, size_t size);
 #endif
 
+/****************************************************************************
+ * Name: mmu_save_page_pte
+ *
+ * Description:
+ *   Save the current page table entry (L2 PTE or L1 section entry) for a
+ *   given virtual address so it can be restored later.
+ *
+ * Input Parameters:
+ *   vaddr - A virtual address within the page whose PTE should be saved.
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_ARCH_ROMPGTABLE
+uint32_t mmu_save_page_pte(uint32_t vaddr);
+#endif
+
+/****************************************************************************
+ * Name: mmu_set_page_no_access
+ *
+ * Description:
+ *   Set a 4KB page (or 1MB section) to No-Access at any privilege level.
+ *   Any subsequent access triggers a Data Abort.  Used for use-after-free
+ *   detection on page-aligned allocations.
+ *
+ * Input Parameters:
+ *   vaddr - A virtual address within the page to protect.
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_ARCH_ROMPGTABLE
+void mmu_set_page_no_access(uint32_t vaddr);
+#endif
+
+/****************************************************************************
+ * Name: mmu_set_page_ro
+ *
+ * Description:
+ *   Set a 4KB page (or 1MB section) to Read-Only at privileged level.
+ *   Any write triggers a Data Abort.  Used to protect read-only data
+ *   structures from accidental corruption.
+ *
+ * Input Parameters:
+ *   vaddr - A virtual address within the page to protect.
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_ARCH_ROMPGTABLE
+void mmu_set_page_ro(uint32_t vaddr);
+#endif
+
+/****************************************************************************
+ * Name: mmu_restore_page_pte
+ *
+ * Description:
+ *   Restore a previously saved PTE for a given virtual address, reverting
+ *   the page to its original access permissions.
+ *
+ * Input Parameters:
+ *   vaddr     - A virtual address within the page to restore.
+ *   saved_pte - The PTE value previously returned by mmu_save_page_pte().
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_ARCH_ROMPGTABLE
+void mmu_restore_page_pte(uint32_t vaddr, uint32_t saved_pte);
+#endif
+
 #undef EXTERN
 #ifdef __cplusplus
 }
