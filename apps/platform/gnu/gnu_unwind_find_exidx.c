@@ -45,6 +45,12 @@
 #include <unwind.h>
 #include <stdint.h>
 
+#ifdef __GNUC__
+#if GCC_VERSION < 100301
+#error "C++ exception support requires toolchain version 10.3.1 or later."
+#endif
+#endif
+
 /****************************************************************************
  * Private Data
  ****************************************************************************/
