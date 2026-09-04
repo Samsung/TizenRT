@@ -297,9 +297,22 @@ int binary_manager_check_kernel_update(bool check_updatable)
 *  Otherwise, it checks whether the binary to update exist in their own inactive partition.
 *
 *************************************************************************************/
-int binary_manager_check_update(void)
+int binary_manager_check_update(int boot_mode)
 {
 	int ret;
+	int reboot_reason;
+
+	if (boot_mode < 0 || boot_mode >= BOOTMODE_MAX) {
+		bmdbg("Invalid boot mode %d\n", boot_mode);
+		return BINMGR_INVALID_PARAM;
+	}
+
+	if (boot_mode == BOOTMODE_SILENT) {
+		reboot_reason = REBOOT_SYSTEM_BINARY_UPDATE;
+	} else {
+		reboot_reason = REBOOT_SYSTEM_BINARY_UPDATE;
+	}
+
 #ifdef CONFIG_USE_BP
 	binmgr_bpinfo_t bp_info;
 	binmgr_bpdata_t *bp_data;
@@ -365,12 +378,15 @@ int binary_manager_check_update(void)
 	}
 #endif
 #endif
+
+#ifndef CONFIG_BINMGR_RELOAD_REBOOT
 	return BINMGR_OK;
+#endif
 
 reboot:
 	/* No, Reboot for kernel update */
-	printf("==> [REBOOT] Board will be rebooted for new binary loading");
-	binary_manager_reset_board(REBOOT_SYSTEM_BINARY_UPDATE);
+	printf("==> [REBOOT] Board will be rebooted for new binary loading with reboot reason %d\n", reboot_reason);
+	binary_manager_reset_board(reboot_reason);
 
 	return BINMGR_OK;
 }

@@ -230,10 +230,10 @@ int binary_manager(int argc, char *argv[])
 			break;
 #endif
 		case BINMGR_UPDATE:
-#ifdef CONFIG_APP_BINARY_SEPARATION
-			binary_manager_execute_loader(LOADCMD_UPDATE, 0);
+#if defined(CONFIG_APP_BINARY_SEPARATION) && !defined (CONFIG_BINMGR_RELOAD_REBOOT)
+			binary_manager_execute_loader(LOADCMD_UPDATE, request_msg.data.type);
 #else
-			binary_manager_check_update();
+			binary_manager_check_update(request_msg.data.type);
 #endif
 			break;
 #ifdef CONFIG_APP_BINARY_SEPARATION
