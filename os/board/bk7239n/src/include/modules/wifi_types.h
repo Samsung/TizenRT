@@ -59,7 +59,7 @@ extern "C" {
 #define WIFI_5G_MAX_CHAN_NUM    177     /**< Maximum supported channel number */
 #endif
 
-#define WIFI_SCAN_MAX_SSID_NUM   6    /**< Maximum number of ssid when scan */
+#define WIFI_SCAN_MAX_SSID_NUM   7    /**< Max SSIDs per scan: up to 6 directed + 1 wildcard (scan_all) */
 #define WIFI_MAX_SCAN_CHAN_DUR    200    /**< scan duration param, need less than 200ms */
 #define WIFI_CHANNEL_NUM_2G4    14    /**< Maximum supported 2.4G channel number */
 #define WIFI_CHANNEL_NUM_5G      28    /**< Maximum supported 5G channel numbe*/

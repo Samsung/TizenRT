@@ -2120,8 +2120,8 @@ uint8_t bk_wifi_get_noise(void);
 #define RX_PHY_INFO_RXPATTERN   0xBBBBBB00
 #define RX_AMSDU_RXPATTERN      0xCCCCCC00
 #endif
-/// Maximum number of SSIDs in a scan request
-#define SCAN_SSID_MAX   6 //2
+/// Maximum number of SSIDs in a scan request (6 directed + 1 wildcard for scan_all)
+#define SCAN_SSID_MAX   7
 
 /// Maximum number of channels in a scan request
 #define SCAN_CHANNEL_MAX (MAC_DOMAINCHANNEL_24G_MAX + MAC_DOMAINCHANNEL_5G_MAX)

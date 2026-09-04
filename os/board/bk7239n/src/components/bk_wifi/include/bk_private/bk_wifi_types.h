@@ -29,7 +29,7 @@ extern "C" {
 /**
  * @brief WLAN SSID and passphrase definition
  */
-#define WLAN_SCAN_SSID_MAX      6 //2  /* max # of SSIDs */
+#define WLAN_SCAN_SSID_MAX      7 /* max # of SSIDs: 6 directed + 1 wildcard for scan_all */
 #define WLAN_SSID_MAX_LEN       32
 #define WLAN_PASSPHRASE_MIN_LEN 8
 #define WLAN_PASSPHRASE_MAX_LEN 63
