@@ -49,6 +49,14 @@ const static char *end_list = CONFIG_HEAPINFO_USER_GROUP_LIST + sizeof(CONFIG_HE
 #endif
 
 #define HEAPINFO_BUFLEN 128
+/* Command line options accepted by heapinfo. The -t (allocation backtrace)
+ * view only exists when the allocator records a backtrace per node. */
+#if CONFIG_MM_BACKTRACE > 0
+#define HEAPINFO_OPTSTRING "ikb:d:ap:fgrc:s:t"
+#else
+#define HEAPINFO_OPTSTRING "ikb:d:ap:fgrc:"
+#endif
+
 #define HEAPINFO_DISPLAY_ALL            0
 #define HEAPINFO_DISPLAY_SPECIFIC_HEAP  1
 #define HEAPINFO_DISPLAY_GROUP          2
@@ -212,6 +220,11 @@ int utils_heapinfo(int argc, char **args)
 	int heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
 	bool init_flag = false;
 	bool bin_selected = false;
+	bool capture = false;
+	int capture_mode = HEAPINFO_CAPTURE_START;
+#if CONFIG_MM_BACKTRACE > 0
+	bool backtrace_dump = false;
+#endif
 	heapinfo_option_t options;
 	options.heap_type = HEAPINFO_HEAP_TYPE_KERNEL;
 	options.mode = HEAPINFO_SIMPLE;
@@ -224,7 +237,13 @@ int utils_heapinfo(int argc, char **args)
 		goto usage;
 	}
 
-	while ((opt = getopt(argc, args, "ikb:d:ap:fgr")) != ERROR) {
+	/* Reset getopt's global state so that a previous invocation which returned
+	 * early (e.g. -s) does not leave optind/g_binitialized stale, causing the
+	 * next call to start parsing from the wrong argv position.
+	 */
+	optind = 0;
+
+	while ((opt = getopt(argc, args, HEAPINFO_OPTSTRING)) != ERROR) {
 		switch (opt) {
 		/* i : initialize the peak allocated memory size. */
 		case 'i':
@@ -282,6 +301,70 @@ int utils_heapinfo(int argc, char **args)
 			options.mode = HEAPINFO_SIMPLE;
 			heapinfo_display_flag = HEAPINFO_DISPLAY_GROUP;
 			break;
+		/* c : start/stop a heap capture window. The pid filter (if any) comes
+		 * from a preceding -p option; default is all pids.
+		 */
+		case 'c':
+			if (strncmp(optarg, "start", strlen("start") + 1) == 0) {
+				capture_mode = HEAPINFO_CAPTURE_START;
+			} else if (strncmp(optarg, "stop", strlen("stop") + 1) == 0) {
+				capture_mode = HEAPINFO_CAPTURE_STOP;
+			} else {
+				printf("Invalid capture command. Use 'start' or 'stop'.\n");
+				goto usage;
+			}
+			capture = true;
+			heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
+			break;
+#if CONFIG_MM_BACKTRACE > 0
+		/* t : dump the malloc call path recorded in every live allocation.
+		 * The pid filter (if any) comes from a preceding -p option.
+		 */
+		case 't':
+			backtrace_dump = true;
+			heapinfo_display_flag = HEAPINFO_DISPLAY_ALL;
+			break;
+#endif
+#if CONFIG_MM_BACKTRACE > 0
+	/* s : set the runtime backtrace skip value. */
+		case 's':
+			{
+				char *endptr;
+				long skipval;
+				int skip;
+				int mminfo_fd;
+
+				/* strtol rather than atoi: the value is used as a frame
+				 * count by the backtrace engine on every allocation, so a
+				 * negative or non-numeric argument has to be rejected here
+				 * and not silently turned into 0.
+				 */
+				skipval = strtol(optarg, &endptr, 0);
+				if (*optarg == '\0' || *endptr != '\0' || skipval < 0 || skipval > HEAPINFO_BACKTRACE_SKIP_MAX) {
+					printf("Invalid skip value. Expected 0..%d\n", HEAPINFO_BACKTRACE_SKIP_MAX);
+					goto usage;
+				}
+				skip = (int)skipval;
+				/* Set the user-side copy directly (same binary in flat build,
+				 * or the common/user binary in protected build).
+				 */
+				extern int g_mm_backtrace_skip;
+				g_mm_backtrace_skip = skip;
+				/* Also set the kernel-side copy via ioctl.  In a
+				 * protected/loadable build the kernel has its own copy
+				 * of g_mm_backtrace_skip that can only be reached via
+				 * the mminfo driver.
+				 */
+				mminfo_fd = open(MMINFO_DRVPATH, O_RDWR);
+				if (mminfo_fd >= 0) {
+					ioctl(mminfo_fd, MMINFOIOC_SET_BACKTRACE_SKIP, (unsigned long)skip);
+					close(mminfo_fd);
+				}
+				printf("Backtrace skip value set to %d\n", skip);
+				return OK;
+			}
+			break;
+#endif
 		case 'r':
 #if CONFIG_KMM_REGIONS > 1
 			heapinfo_print_regions();
@@ -295,6 +378,23 @@ int utils_heapinfo(int argc, char **args)
 			goto usage;
 		}
 	}
+
+	/* A capture request wins over any -p/-a mode set earlier on the command
+	 * line, so the option order (e.g. "-c start -p 5") does not matter.
+	 */
+	if (capture) {
+		options.mode = capture_mode;
+	}
+
+#if CONFIG_MM_BACKTRACE > 0
+	/* Same precedence rule as -c : a backtrace dump request wins over any
+	 * display mode set earlier on the command line, so "-t -p 5" and
+	 * "-p 5 -t" behave identically.
+	 */
+	if (backtrace_dump) {
+		options.mode = HEAPINFO_DETAIL_BACKTRACE;
+	}
+#endif
 
 #ifdef CONFIG_BUILD_PROTECTED
 	heapinfo_show_binname(init_flag, heap_name);
@@ -310,8 +410,11 @@ int utils_heapinfo(int argc, char **args)
 		close(heapinfo_fd);
 		return ERROR;		
 	}
-	/* If heapinfo runs without specifying a binary, print both kernel and application heap statistics. */
-	if (!bin_selected) {
+	/* If heapinfo runs without specifying a binary, print both kernel and application heap statistics.
+	 * Skip this for a capture window : the capture ioctl acts on the selected heap only, and
+	 * re-dispatching would toggle the global capture flag again.
+	 */
+	if (!bin_selected && !capture) {
 #ifdef CONFIG_APP1_INFO
 		options.heap_type = HEAPINFO_HEAP_TYPE_BINARY;
 		strncpy(options.app_name, CONFIG_APP1_BIN_NAME, BIN_NAME_MAX - 1);
@@ -341,7 +444,7 @@ int utils_heapinfo(int argc, char **args)
 	}
 	close(heapinfo_fd);
 
-	if (options.mode != HEAPINFO_DUMP_HEAP) {
+	if (!capture && options.mode != HEAPINFO_DUMP_HEAP && options.mode != HEAPINFO_DETAIL_BACKTRACE) {
 		if (init_flag == true) {
 #ifdef CONFIG_BUILD_PROTECTED
 			printf("[%s]", heap_name);
@@ -385,5 +488,13 @@ usage:
 #endif
 	printf(" -i             Initialize the peak allocated size\n");
 	printf(" -d NAME	Dump entire heap. NAME can be either \"kernel\" or the app name\n");
+	printf(" -c start|stop  Start/stop a heap capture window. On stop, print every block\n");
+	printf("                allocated during the window that is still not freed (address,\n");
+	printf("                size, pid, alloc caller). Combine with -p PID to target one task.\n");
+#if CONFIG_MM_BACKTRACE > 0
+	printf(" -s SKIP        Set the runtime backtrace skip value\n");
+	printf(" -t             Show the malloc call path recorded for every live allocation.\n");
+	printf("                Combine with -p PID to show one task only.\n");
+#endif
 	return ERROR;
 }
