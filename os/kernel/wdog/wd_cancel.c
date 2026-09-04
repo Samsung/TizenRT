@@ -124,6 +124,8 @@ int wd_cancel(WDOG_ID wdog)
 	 */
 
 	if (wdog && WDOG_ISACTIVE(wdog)) {
+		wd_mmu_write_begin();	/* Allow writes to wdog protected page */
+
 		/* Search the g_wdactivelist for the target FCB.  We can't use sq_rem
 		 * to do this because there are additional operations that need to be
 		 * done.
@@ -174,6 +176,8 @@ int wd_cancel(WDOG_ID wdog)
 		wdog->next = NULL;
 		WDOG_CLRACTIVE(wdog);
 
+		wd_mmu_write_end();		/* Re-protect wdog page (Read-Only) */
+
 		/* Return success */
 
 		ret = OK;
@@ -181,4 +185,5 @@ int wd_cancel(WDOG_ID wdog)
 
 	leave_critical_section(state);
 	return ret;
+
 }

@@ -129,12 +129,13 @@ WDOG_ID wd_create(void)
 		 * count of free timers all with interrupts disabled.
 		 */
 
-		wdog = (FAR struct wdog_s *)sq_remfirst(&g_wdfreelist);
+		wd_mmu_write_begin();	/* Allow writes to wdog protected page */
 
-		/* Did we get one? */
+		wdog = (FAR struct wdog_s *)sq_remfirst(&g_wdfreelist);
 
 		if (wdog) {
 			DEBUGASSERT(g_wdnfree > 0);
+
 			g_wdnfree--;
 
 			/* Yes.. Clear the forward link and all flags */
@@ -145,8 +146,10 @@ WDOG_ID wd_create(void)
 			/* If wdog is Null, g_wdnfree must be zero, else assert */
 			DEBUGASSERT(g_wdnfree == 0);
 		}
+		wd_mmu_write_end();		/* Re-protect wdog page (Read-Only) */
 		leave_critical_section(state);
 	}
+
 
 	/* We are in a normal tasking context AND there are not enough unreserved,
 	 * pre-allocated watchdog timers.  We need to allocate one from the kernel

@@ -84,25 +84,22 @@ extern "C" {
 #define EXTERN extern
 #endif
 
-/* The g_wdfreelist data structure is a singly linked list of watchdogs
- * available to the system for delayed function use.
+/* Watchdog data variables.
+ *
+ * g_wdpool is the pre-allocated watchdog array.  When CONFIG_WDOG_MMU_PROTECT
+ * is enabled, g_wdpool is placed in a separate .wdog_pool linker section
+ * (1MB-aligned, in its own L1 section) so it can be individually protected
+ * via L1 section AP bit manipulation — no L2 split needed.
  */
 
 extern sq_queue_t g_wdfreelist;
-
-/* The g_wdactivelist data structure is a singly linked list ordered by
- * watchdog expiration time. When watchdog timers expire,the functions on
- * this linked list are removed and the function is called.
- */
-
 extern sq_queue_t g_wdactivelist;
-
-/* This is the number of free, pre-allocated watchdog structures in the
- * g_wdfreelist.  This value is used to enforce a reserve for interrupt
- * handlers.
- */
-
 extern uint16_t g_wdnfree;
+extern struct wdog_s g_wdpool[];
+
+
+
+
 
 /************************************************************************
  * Public Function Prototypes
@@ -206,7 +203,32 @@ void wd_corruption_dbg(struct wdog_s *wdog);
 struct tcb_s;
 void wd_recover(FAR struct tcb_s *tcb);
 
+/****************************************************************************
+ * MMU Page Protection for Watchdog Static Memory
+ *
+ * When CONFIG_WDOG_MMU_PROTECT is enabled, the wdog pool's 1MB L1 section
+ * is kept Read-Only by setting AP bits (AP2=1, AP[1:0]=11) on the L1
+ * section entry.  Wdog code must call wd_mmu_write_begin() before
+ * modifying any wdog data, and wd_mmu_write_end() afterwards.
+ *
+ * No L2 split is needed — .wdog_pool is in its own 1MB section.
+ *
+ * When disabled, these are no-ops.
+ ****************************************************************************/
+
+
+#ifdef CONFIG_WDOG_MMU_PROTECT
+void wd_mmu_protect_init(void);
+void wd_mmu_write_begin(void);
+void wd_mmu_write_end(void);
+#else
+#define wd_mmu_protect_init()  do { } while (0)
+#define wd_mmu_write_begin()   do { } while (0)
+#define wd_mmu_write_end()     do { } while (0)
+#endif
+
 #undef EXTERN
+
 #ifdef __cplusplus
 }
 #endif

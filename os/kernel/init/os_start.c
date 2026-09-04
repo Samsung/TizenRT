@@ -701,11 +701,18 @@ void os_start(void)
 	{
 		wd_initialize();
 	}
+#ifdef CONFIG_WDOG_MMU_PROTECT
+	lldbg("OS_START: wd_initialize done\n");
+#endif
 
 #if CONFIG_NFILE_DESCRIPTORS > 0
+
 	/* Initialize the file system (needed to support device drivers) */
 
 	fs_initialize();
+#ifdef CONFIG_WDOG_MMU_PROTECT
+	lldbg("OS_START: fs_initialize done\n");
+#endif
 #endif
 
 	/* Initialize the POSIX timer facility (if included in the link) */
@@ -716,6 +723,9 @@ void os_start(void)
 	{
 		clock_initialize();
 	}
+#ifdef CONFIG_WDOG_MMU_PROTECT
+	lldbg("OS_START: clock_initialize done\n");
+#endif
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
 #ifdef CONFIG_HAVE_WEAKFUNCTIONS
 	if (timer_initialize != NULL)
@@ -724,6 +734,7 @@ void os_start(void)
 		timer_initialize();
 	}
 #endif
+
 
 #ifndef CONFIG_DISABLE_SIGNALS
 	/* Initialize the signal facility (if in link) */
@@ -777,11 +788,18 @@ void os_start(void)
 	 * that are different for each  processor and hardware platform.
 	 */
 
+#ifdef CONFIG_WDOG_MMU_PROTECT
+	lldbg("OS_START: calling up_initialize...\n");
+#endif
 	up_initialize();
+#ifdef CONFIG_WDOG_MMU_PROTECT
+	lldbg("OS_START: up_initialize done\n");
+#endif
 
 	/* Auto-mount Arch-independent File Sysytems */
 
 	fs_auto_mount();
+
 
 #ifdef CONFIG_DRIVERS_OS_API_TEST
 	os_api_test_drv_register();
@@ -854,8 +872,15 @@ void os_start(void)
 #endif
 
 	g_os_initstate = OSINIT_OSREADY;
+#ifdef CONFIG_WDOG_MMU_PROTECT
+	lldbg("OS_START: calling os_bringup...\n");
+#endif
 	DEBUGVERIFY(os_bringup());
+#ifdef CONFIG_WDOG_MMU_PROTECT
+	lldbg("OS_START: os_bringup done\n");
+#endif
 	g_os_initstate = OSINIT_IDLELOOP;
+
 
 	sched_unlock();
 

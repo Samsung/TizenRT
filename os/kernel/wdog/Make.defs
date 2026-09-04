@@ -58,6 +58,10 @@ endif
 ifeq ($(CONFIG_DEBUG),y)
 CSRCS += wd_dbg.c
 endif
+ifeq ($(CONFIG_WDOG_MMU_PROTECT),y)
+CSRCS += wd_mmu_protect.c
+endif
+
 
 # Include wdog build support
 
