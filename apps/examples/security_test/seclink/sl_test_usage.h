@@ -47,7 +47,7 @@
 #define SL_USAGE                            \
 	"\n usage: sl_test [options]\n"         \
 	"    run all tests\n"                   \
-	"    TASH> sl_test all\n" \
+	"    TASH> sl_test all [count]\n" \
 	SL_AUTH_USAGE \
 	SL_SS_USAGE\
 	SL_CRYPTO_USAGE\

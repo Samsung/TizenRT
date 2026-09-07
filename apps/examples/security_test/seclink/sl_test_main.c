@@ -27,6 +27,7 @@
 #include <tinyara/seclink.h>
 #include <tinyara/seclink_drv.h>
 #include "sl_test.h"
+#include "sl_test_usage.h"
 
 #ifdef SL_TEST_POOL
 #undef SL_TEST_POOL
@@ -66,10 +67,13 @@ typedef enum {
 
 static int _parse_command(sl_options *opt, int argc, char *argv[])
 {
-	if (argc < 3) {
+	if (argc < 2) {
 		return -1;
 	}
 	if (strncmp(argv[1], "all", strlen("all") + 1) == 0) {
+		if (argc < 3) {
+			return -1;
+		}
 		opt->count = atoi(argv[2]);
 		return SL_TYPE_MAX;
 	}
@@ -100,6 +104,7 @@ int sl_test_main(int argc, char *argv[])
 
 	sl_type_e type = _parse_command(&opt, argc, argv);
 	if (type == SL_TYPE_ERR) {
+		printf("%s\n", SL_USAGE);
 		return -1;
 	} else if (type == SL_TYPE_MAX) {
 		/*  run all test */
