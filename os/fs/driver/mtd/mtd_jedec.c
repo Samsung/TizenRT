@@ -358,6 +358,14 @@ static void jedec_set_4byte_addr_mode(FAR struct jedec_dev_s *priv)
 {
 	jedec_lock(priv->dev);
 
+	/* Wait for any preceding write or erase operation to complete. */
+
+	(void)jedec_waitwritecomplete(priv);
+
+	/* Send "Write enable (WREN)" */
+
+	jedec_writeenable(priv);
+
 	/* Select this FLASH part */
 
 	SPI_SELECT(priv->dev, SPIDEV_FLASH, true);
