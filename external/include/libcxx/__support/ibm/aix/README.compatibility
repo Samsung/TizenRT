@@ -1,0 +1,3 @@
+IBM support has been consolidated and migrated to __support/ibm/
+This includes both AIX and z/OS platform support.
+This directory is maintained for backward compatibility.

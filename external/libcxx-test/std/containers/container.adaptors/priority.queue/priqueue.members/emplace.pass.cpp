@@ -1,0 +1,33 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+// UNSUPPORTED: c++03
+
+// <queue>
+
+// priority_queue();
+
+// template <class... Args> void emplace(Args&&... args);
+
+#include <queue>
+#include <cassert>
+
+#include "test_macros.h"
+#include "../../../Emplaceable.h"
+#include "libcxx_tc_common.h"
+
+int tc_containers_container_adaptors_priority_queue_priqueue_members_emplace(void) {
+    std::priority_queue<Emplaceable> q;
+    q.emplace(1, 2.5);
+    TC_ASSERT_EXPR(q.top() == Emplaceable(1, 2.5));
+    q.emplace(3, 4.5);
+    TC_ASSERT_EXPR(q.top() == Emplaceable(3, 4.5));
+    q.emplace(2, 3.5);
+    TC_ASSERT_EXPR(q.top() == Emplaceable(3, 4.5));
+
+  return 0;
+}

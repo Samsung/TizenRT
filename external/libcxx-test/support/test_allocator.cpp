@@ -20,10 +20,9 @@
 #include "DefaultOnly.h"
 #include "Counter.h"
 
-int test_alloc_base::count = 0;
-int test_alloc_base::time_to_throw = 0;
-int test_alloc_base::alloc_count = 0;
-int test_alloc_base::throw_after = INT_MAX;
-
+// Static member definitions moved from header files to avoid multiple definition errors
 int DefaultOnly::count = 0;
 int Counter_base::gConstructed = 0;
+
+// Global test allocator statistics for tests that need it
+test_allocator_statistics g_test_allocator_stats;

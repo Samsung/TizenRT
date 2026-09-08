@@ -55,10 +55,13 @@
 //***************************************************************************
 
 #include "libxx_cxa_guard.hxx"
+#include <pthread.h>
 
 //***************************************************************************
 // Private Data
 //***************************************************************************
+
+static pthread_mutex_t __cxa_guard_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //***************************************************************************
 // Public Functions
@@ -72,11 +75,16 @@ extern "C"
 
   int __cxa_guard_acquire(FAR __guard *g)
   {
+    pthread_mutex_lock(&__cxa_guard_mutex);
 #ifdef __ARM_EABI__
-    return !(*g & 1);
+    int result = !(__atomic_load_n(g, __ATOMIC_ACQUIRE) & 1);
 #else
-    return !*(char *)g;
+    int result = !*(char *)g;
 #endif
+    if (!result) {
+      pthread_mutex_unlock(&__cxa_guard_mutex);
+    }
+    return result;
   }
 
   //*************************************************************************
@@ -86,10 +94,12 @@ extern "C"
   void __cxa_guard_release(FAR __guard *g)
   {
 #ifdef __ARM_EABI__
-    *g = 1;
+    __atomic_fetch_or(g, 1, __ATOMIC_RELEASE);
 #else
     *(char *)g = 1;
+    __sync_synchronize();
 #endif
+    pthread_mutex_unlock(&__cxa_guard_mutex);
   }
 
   //*************************************************************************
@@ -98,5 +108,6 @@ extern "C"
 
   void __cxa_guard_abort(FAR __guard *)
   {
+    pthread_mutex_unlock(&__cxa_guard_mutex);
   }
 }

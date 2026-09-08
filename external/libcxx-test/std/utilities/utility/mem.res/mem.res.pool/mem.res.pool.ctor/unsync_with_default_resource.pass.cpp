@@ -1,0 +1,42 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+// UNSUPPORTED: c++03, c++11, c++14
+// TODO: Change to XFAIL once https://github.com/llvm/llvm-project/issues/40340 is fixed
+// UNSUPPORTED: availability-pmr-missing
+
+// <memory_resource>
+
+// class unsynchronized_pool_resource
+
+#include <memory_resource>
+#include <cassert>
+#include "libcxx_tc_common.h"
+
+int tc_utilities_utility_mem_res_mem_res_pool_mem_res_pool_ctor_unsync_with_default_resource(void) {
+  std::pmr::memory_resource* expected = std::pmr::null_memory_resource();
+  std::pmr::set_default_resource(expected);
+  {
+    std::pmr::pool_options opts{0, 0};
+    std::pmr::unsynchronized_pool_resource r1;
+    std::pmr::unsynchronized_pool_resource r2(opts);
+    TC_ASSERT_EXPR(r1.upstream_resource() == expected);
+    TC_ASSERT_EXPR(r2.upstream_resource() == expected);
+  }
+
+  expected = std::pmr::new_delete_resource();
+  std::pmr::set_default_resource(expected);
+  {
+    std::pmr::pool_options opts{1024, 2048};
+    std::pmr::unsynchronized_pool_resource r1;
+    std::pmr::unsynchronized_pool_resource r2(opts);
+    TC_ASSERT_EXPR(r1.upstream_resource() == expected);
+    TC_ASSERT_EXPR(r2.upstream_resource() == expected);
+  }
+
+  return 0;
+}

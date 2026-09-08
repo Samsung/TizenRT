@@ -1,27 +1,9 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 // -*- C++ -*-
-//===--------------------------- limits.h ---------------------------------===//
+//===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -55,19 +37,20 @@ Macros:
 
 */
 
+#include <__tinyara_pthread_guard.h>
 #include <__config>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
-#pragma GCC system_header
+#  pragma GCC system_header
 #endif
 
-#ifndef __GNUC__
-#include_next <limits.h>
-#else
+#ifdef _LIBCPP_COMPILER_GCC
+
 // GCC header limits.h recursively includes itself through another header called
 // syslimits.h for some reason. This setup breaks down if we directly
-// #include_next GCC's limits.h (reasons not entirely clear to me). Therefore,
-// we manually re-create the necessary include sequence below:
+// #include_next GCC's limits.h (reasons not entirely clear to me).
+// See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=107795 for more details.
+// Therefore, we manually re-create the necessary include sequence below:
 
 // Get the system limits.h defines (force recurse into the next level)
 #define _GCC_LIMITS_H_
@@ -77,6 +60,13 @@ Macros:
 // Get the ISO C defines
 #undef _GCC_LIMITS_H_
 #include_next <limits.h>
-#endif // __GNUC__
 
-#endif  // _LIBCPP_LIMITS_H
+#else
+
+#  if __has_include_next(<limits.h>)
+#    include_next <limits.h>
+#  endif
+
+#endif // _LIBCPP_COMPILER_GCC
+
+#endif // _LIBCPP_LIMITS_H

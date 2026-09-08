@@ -1,27 +1,9 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 // -*- C++ -*-
-//===--------------------------- cinttypes --------------------------------===//
+//===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -252,24 +234,38 @@ uintmax_t wcstoumax(const wchar_t* restrict nptr, wchar_t** restrict endptr, int
 }  // std
 */
 
+#include <__assert> // all public C++ headers provide the assertion handler
 #include <__config>
+
+// standard-mandated includes
+
+// [cinttypes.syn]
 #include <cstdint>
+
 #include <inttypes.h>
 
+#ifndef _LIBCPP_INTTYPES_H
+#   error <cinttypes> tried including <inttypes.h> but didn't find libc++'s <inttypes.h> header. \
+          This usually means that your header search paths are not configured properly. \
+          The header search paths should contain the C++ Standard Library headers before \
+          any C Standard Library, and you are probably using compiler flags that make that \
+          not be the case.
+#endif
+
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
-#pragma GCC system_header
+#  pragma GCC system_header
 #endif
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
-using::imaxdiv_t;
-using::imaxabs;
-using::imaxdiv;
-using::strtoimax;
-using::strtoumax;
-using::wcstoimax;
-using::wcstoumax;
+using ::imaxdiv_t _LIBCPP_USING_IF_EXISTS;
+using ::imaxabs _LIBCPP_USING_IF_EXISTS;
+using ::imaxdiv _LIBCPP_USING_IF_EXISTS;
+using ::strtoimax _LIBCPP_USING_IF_EXISTS;
+using ::strtoumax _LIBCPP_USING_IF_EXISTS;
+using ::wcstoimax _LIBCPP_USING_IF_EXISTS;
+using ::wcstoumax _LIBCPP_USING_IF_EXISTS;
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif  // _LIBCPP_CINTTYPES
+#endif // _LIBCPP_CINTTYPES

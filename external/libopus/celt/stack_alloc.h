@@ -118,14 +118,23 @@
 #include <memory>
 using namespace std;
 
-#define VARDECL(type, var)      type *var; std::shared_ptr<type> sp_##var
+// Helper template to create a shared_ptr with proper array deletion
+// This handles both simple types (int) and array typedefs (int[5])
+template<typename T>
+inline std::shared_ptr<void> make_shared_array(T* p) {
+    return std::shared_ptr<void>(static_cast<void*>(p), [](void* ptr) {
+        delete[] static_cast<T*>(ptr);
+    });
+}
+
+#define VARDECL(type, var)      type *var; std::shared_ptr<void> sp_##var
 
 #if 0 // Set this to 1 to print 'new'/'delete[]' logs
 #define ALLOC(var, size, type)  var = new type[size], \
 								printf("%s = new %s[%d]\n", #var, #type, size), \
-								sp_##var = std::shared_ptr<type>(var, [](type *p){ printf("delete[] %s\n", #var); delete[] p;})
+								sp_##var = make_shared_array(var)
 #else
-#define ALLOC(var, size, type)  var = new type[size], sp_##var = std::shared_ptr<type>(var)
+#define ALLOC(var, size, type)  var = new type[size], sp_##var = make_shared_array(var)
 #endif
 
 #define SAVE_STACK

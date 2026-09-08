@@ -1,0 +1,60 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+// UNSUPPORTED: c++03, c++11, c++14
+
+// <set>
+
+// class multiset
+
+// iterator insert(const_iterator hint, node_type&&);
+
+#include <set>
+#include "test_macros.h"
+#include "min_allocator.h"
+#include "libcxx_tc_common.h"
+
+template <class Container>
+typename Container::node_type
+node_factory(typename Container::key_type const& key)
+{
+    static Container c;
+    auto it = c.insert(key);
+    return c.extract(it);
+}
+
+template <class Container>
+void test(Container& c)
+{
+    auto* nf = &node_factory<Container>;
+
+    for (int i = 0; i != 10; ++i)
+    {
+        typename Container::node_type node = nf(i);
+        TC_ASSERT_EXPR(!node.empty());
+        std::size_t prev = c.size();
+        auto it = c.insert(c.end(), std::move(node));
+        TC_ASSERT_EXPR(prev + 1 == c.size());
+        TC_ASSERT_EXPR(*it == i);
+    }
+
+    TC_ASSERT_EXPR(c.size() == 10);
+
+    for (int i = 0; i != 10; ++i)
+    {
+        TC_ASSERT_EXPR(c.count(i) == 1);
+    }
+}
+
+int tc_containers_associative_multiset_insert_node_type_hint(void) {
+    std::multiset<int> m;
+    test(m);
+    std::multiset<int, std::less<int>, min_allocator<int>> m2;
+    test(m2);
+
+  return 0;
+}

@@ -1,28 +1,11 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 //===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+
 #ifndef SUPPORT_CONTAINER_TEST_TYPES_H
 #define SUPPORT_CONTAINER_TEST_TYPES_H
 
@@ -67,12 +50,12 @@
 //----------------------------------------------------------------------------
 /*
  * Usage: The following example checks that 'unordered_map::emplace(Args&&...)'
- *        with 'Args = [CopyInsertable<1> const&, CopyInsertible<2>&&]'
+ *        with 'Args = [CopyInsertable<1> const&, CopyInsertable<2>&&]'
  *        calls 'alloc.construct(value_type*, Args&&...)' with the same types.
  *
  * // Typedefs for container
- * using Key = CopyInsertible<1>;
- * using Value = CopyInsertible<2>;
+ * using Key = CopyInsertable<1>;
+ * using Value = CopyInsertable<2>;
  * using ValueTp = std::pair<const Key, Value>;
  * using Alloc = ContainerTestAllocator<ValueTp, ValueTp>;
  * using Map = std::unordered_map<Key, Value, std::hash<Key>, std::equal_to<Key>, Alloc>;
@@ -102,8 +85,11 @@
  *
  */
 
-#include <functional>
 #include <cassert>
+#include <cstddef>
+#include <functional>
+#include <new>
+#include <utility>
 
 #include "test_macros.h"
 
@@ -443,9 +429,9 @@ namespace std {
   template <int ID>
   struct hash< ::CopyInsertable<ID> > {
     typedef ::CopyInsertable<ID> argument_type;
-    typedef size_t result_type;
+    typedef std::size_t result_type;
 
-    size_t operator()(argument_type const& arg) const {
+    std::size_t operator()(argument_type const& arg) const {
       return arg.data;
     }
   };

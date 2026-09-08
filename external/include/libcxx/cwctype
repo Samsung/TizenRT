@@ -1,91 +1,98 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
-//***************************************************************************
-// os/include/libcxx/cwctype
+// -*- C++ -*-
+//===----------------------------------------------------------------------===//
 //
-//   Copyright (C) 2017 Gregory Nutt. All rights reserved.
-//   Author: Gregory Nutt <gnutt@nuttx.org>
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//
-// 1. Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-// 2. Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in
-//    the documentation and/or other materials provided with the
-//    distribution.
-// 3. Neither the name NuttX nor the names of its contributors may be
-//    used to endorse or promote products derived from this software
-//    without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-// OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-// AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-// ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//***************************************************************************
+//===----------------------------------------------------------------------===//
 
-#ifndef __INCLUDE_CXX_CWCTYPE
-#define __INCLUDE_CXX_CWCTYPE
+#ifndef _LIBCPP_CWCTYPE
+#define _LIBCPP_CWCTYPE
 
-//***************************************************************************
-// Included Files
-//***************************************************************************
+/*
+    cwctype synopsis
 
-#include <wctype.h>
+Macros:
 
-//***************************************************************************
-// Namespace
-//***************************************************************************
+    WEOF
 
 namespace std
 {
-  using ::wctrans_t;
 
-  using ::iswalnum;
-  using ::iswalpha;
-  using ::iswblank;
-  using ::iswcntrl;
-  using ::iswctype;
-  using ::iswdigit;
-  using ::iswgraph;
-  using ::iswlower;
-  using ::iswprint;
-  using ::iswpunct;
-  using ::iswspace;
-  using ::iswupper;
-  using ::iswxdigit;
-  using ::towctrans;
-  using ::towlower;
-  using ::towupper;
-  using ::wctrans;
-  using ::iswctype;
-  using ::wctype;
-}
+Types:
 
-#endif // __INCLUDE_CXX_CWCTYPE
+    wint_t
+    wctrans_t
+    wctype_t
+
+int iswalnum(wint_t wc);
+int iswalpha(wint_t wc);
+int iswblank(wint_t wc);  // C99
+int iswcntrl(wint_t wc);
+int iswdigit(wint_t wc);
+int iswgraph(wint_t wc);
+int iswlower(wint_t wc);
+int iswprint(wint_t wc);
+int iswpunct(wint_t wc);
+int iswspace(wint_t wc);
+int iswupper(wint_t wc);
+int iswxdigit(wint_t wc);
+int iswctype(wint_t wc, wctype_t desc);
+wctype_t wctype(const char* property);
+wint_t towlower(wint_t wc);
+wint_t towupper(wint_t wc);
+wint_t towctrans(wint_t wc, wctrans_t desc);
+wctrans_t wctrans(const char* property);
+
+}  // std
+
+*/
+
+#include <__assert> // all public C++ headers provide the assertion handler
+#include <__config>
+#include <cctype>
+
+#include <wctype.h>
+
+#ifndef _LIBCPP_WCTYPE_H
+#   error <cwctype> tried including <wctype.h> but didn't find libc++'s <wctype.h> header. \
+          This usually means that your header search paths are not configured properly. \
+          The header search paths should contain the C++ Standard Library headers before \
+          any C Standard Library, and you are probably using compiler flags that make that \
+          not be the case.
+#endif
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#  pragma GCC system_header
+#endif
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+#if defined(_LIBCPP_INCLUDED_C_LIBRARY_WCTYPE_H)
+using ::wint_t _LIBCPP_USING_IF_EXISTS;
+using ::wctrans_t _LIBCPP_USING_IF_EXISTS;
+using ::wctype_t _LIBCPP_USING_IF_EXISTS;
+using ::iswalnum _LIBCPP_USING_IF_EXISTS;
+using ::iswalpha _LIBCPP_USING_IF_EXISTS;
+using ::iswblank _LIBCPP_USING_IF_EXISTS;
+using ::iswcntrl _LIBCPP_USING_IF_EXISTS;
+using ::iswdigit _LIBCPP_USING_IF_EXISTS;
+using ::iswgraph _LIBCPP_USING_IF_EXISTS;
+using ::iswlower _LIBCPP_USING_IF_EXISTS;
+using ::iswprint _LIBCPP_USING_IF_EXISTS;
+using ::iswpunct _LIBCPP_USING_IF_EXISTS;
+using ::iswspace _LIBCPP_USING_IF_EXISTS;
+using ::iswupper _LIBCPP_USING_IF_EXISTS;
+using ::iswxdigit _LIBCPP_USING_IF_EXISTS;
+using ::iswctype _LIBCPP_USING_IF_EXISTS;
+using ::wctype _LIBCPP_USING_IF_EXISTS;
+using ::towlower _LIBCPP_USING_IF_EXISTS;
+using ::towupper _LIBCPP_USING_IF_EXISTS;
+using ::towctrans _LIBCPP_USING_IF_EXISTS;
+using ::wctrans _LIBCPP_USING_IF_EXISTS;
+#endif // _LIBCPP_INCLUDED_C_LIBRARY_WCTYPE_H
+
+_LIBCPP_END_NAMESPACE_STD
+
+#endif // _LIBCPP_CWCTYPE

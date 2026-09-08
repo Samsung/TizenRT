@@ -1,27 +1,9 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
 // -*- C++ -*-
-//===---------------------------- ctype.h ---------------------------------===//
+//===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -50,21 +32,14 @@ int toupper(int c);
 #include <__config>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
-#pragma GCC system_header
+#  pragma GCC system_header
 #endif
 
-#include_next <ctype.h>
+#if __has_include_next(<ctype.h>)
+#  include_next <ctype.h>
+#endif
 
 #ifdef __cplusplus
-
-#if defined(_LIBCPP_MSVCRT)
-// We support including .h headers inside 'extern "C"' contexts, so switch
-// back to C++ linkage before including these C++ headers.
-extern "C++" {
-  #include "support/win32/support.h"
-  #include "support/win32/locale_win32.h"
-}
-#endif // _LIBCPP_MSVCRT
 
 #undef isalnum
 #undef isalpha
@@ -83,4 +58,4 @@ extern "C++" {
 
 #endif
 
-#endif  // _LIBCPP_CTYPE_H
+#endif // _LIBCPP_CTYPE_H
