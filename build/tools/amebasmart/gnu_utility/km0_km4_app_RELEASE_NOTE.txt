@@ -1,5 +1,8 @@
 /* == "version" + "Realtek git version" + "compile date" + "compile time" == */
 
+== version e032df9122 2026/09/10-10:44:33 ==
+1. Remove shell register in KM0/KM4
+
 == version b79789fa8b 2026/06/26-13:58:32 ==
 1. Add wifi_reset() feature
 
