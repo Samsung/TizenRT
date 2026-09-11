@@ -90,7 +90,9 @@ void StreamBufferWriter::setEndOfStream()
 	mStream->setEndOfStream();
 
 	// Reader may be waiting for more data, so it's necessary to notify.
+	meddbg("before notify\n");
 	mStream->getCondv().notify_one();
+	meddbg("after notify\n");
 }
 
 } // namespace stream

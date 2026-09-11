@@ -68,6 +68,15 @@ enum audio_manager_result_e {
 };
 
 typedef enum audio_manager_result_e audio_manager_result_t;
+struct audio_output_pcm_config_s {
+	unsigned int channels;
+	unsigned int sample_rate;
+	int format;
+	unsigned int period_frames;
+	unsigned int period_bytes;
+};
+
+typedef struct audio_output_pcm_config_s audio_output_pcm_config_t;
 
 /**
  * @brief Type of device
@@ -508,6 +517,18 @@ unsigned int get_output_card_total_buffer_size(void);
  *   On success, the total number of bytes in buffer size of input card. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_input_card_total_buffer_size(void);
+
+/****************************************************************************
+ * Name: get_output_audio_config
+ *
+ * Description:
+ *   Get the actual PCM format and one hardware buffer size of the active
+ *   output card. The output stream must be configured before this call.
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_output_audio_config(audio_output_pcm_config_t *config);
 
 /****************************************************************************
  * Name: get_max_audio_volume

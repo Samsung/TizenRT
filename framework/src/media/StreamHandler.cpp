@@ -179,13 +179,17 @@ void StreamHandler::destroyWorker()
 		mIsWorkerAlive = false;
 
 		// Worker may be blocked in buffer reading.
+		meddbg("before setEndStream\n");
 		mBufferWriter->setEndOfStream();
 
 		// Wake worker up,
+		meddbg("before wakenWorker\n");
 		wakenWorker();
+		meddbg("after wakenWorker\n");
 
 		// Join thread.
 		pthread_join(mWorker, NULL);
+		meddbg("after pthread join\n");
 	}
 }
 
@@ -206,7 +210,7 @@ void StreamHandler::wakenWorker()
 
 void *StreamHandler::workerMain(void *arg)
 {
-	medvdbg("StreamHandler::workerMain()\n");
+	meddbg("StreamHandler::workerMain()\n");
 
 	if (arg == nullptr) {
 		meddbg("%s[line : %d] Fail : arg is nullptr\n", __func__, __LINE__);
@@ -217,15 +221,18 @@ void *StreamHandler::workerMain(void *arg)
 
 	while (stream->mIsWorkerAlive) {
 		// Waken up by a writing/flushing/stopping operation
+		meddbg("inside workerMain before sleep\n");
 		stream->sleepWorker();
+		meddbg("inside workerMain after sleep\n");
 
 		// Worker may be stoped
 		if (!stream->mIsWorkerAlive || !stream->processWorker()) {
+			meddbg("before break\n");
 			break;
 		}
 	}
 
-	medvdbg("StreamHandler exit\n");
+	meddbg("StreamHandler exit\n");
 	return NULL;
 }
 

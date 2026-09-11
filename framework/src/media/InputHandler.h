@@ -26,6 +26,7 @@
 
 #include <media/InputDataSource.h>
 #include "StreamHandler.h"
+#include "PCMSampler.h"
 
 #include "Decoder.h"
 #include "Demuxer.h"
@@ -46,8 +47,8 @@ class InputHandler : public StreamHandler
 public:
 	InputHandler();
 	void setInputDataSource(std::shared_ptr<InputDataSource> source);
-	bool doStandBy(size_t buffSize);
-	bool open(size_t buffSize) override;
+	bool doStandBy(size_t buffSize, unsigned channels, unsigned sampleRate, int format, size_t periodBytes);
+	bool open(size_t buffSize, unsigned channels, unsigned sampleRate, int format, size_t periodBytes);
 	bool start() override;
 	bool close() override;
 	int seekTo(off_t offset);
@@ -79,6 +80,7 @@ private:
 	ssize_t getPCM(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
 	size_t fetchData(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
 	ssize_t readFromSource(unsigned char *buf, size_t size);
+	ssize_t writePcmToStreamBuffer(const unsigned char *buf, size_t size);
 
 	std::mutex mMutex;
 	std::condition_variable mCondv;
@@ -92,6 +94,11 @@ private:
 	size_t mTotalBytes;
 	std::unique_ptr<unsigned char[]> mProcessBuffer;
 	size_t mProcessBufferSize;
+	pcm_stream_format_s mUser;
+	pcm_stream_format_s mOutput;
+	PCMSampler mResampler;
+	size_t mOutputPeriodBytes;
+	size_t mOutputPeriodOffset;
 };
 } // namespace stream
 } // namespace media
