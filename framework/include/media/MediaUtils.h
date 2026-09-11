@@ -140,7 +140,7 @@ unsigned int splitChannel(unsigned int layout, const signed short *stream, unsig
  * @param[in] frames number of frames in buffers
  * @endcond
  */
-void mergeChannel(void *dataL, void *dataR, unsigned int frames);
+void mergeChannel(void *dataL, unsigned int *framesL, void *dataR, unsigned int *framesR);
 #ifdef CONFIG_CODEC_MP3
 /**
  * @cond
