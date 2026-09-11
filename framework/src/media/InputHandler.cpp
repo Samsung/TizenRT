@@ -28,6 +28,28 @@
 #include "Decoder.h"
 #include "Demuxer.h"
 
+#define bytes_per_frame 2
+
+#define AUDIO_FORMAT_TO_BITS(format)	\
+	({									\
+		unsigned int __bits;			\
+		switch (format) {				\
+		case AUDIO_FORMAT_TYPE_S32_LE:	\
+			__bits = 32;				\
+			break;						\
+		case AUDIO_FORMAT_TYPE_S16_LE:	\
+			__bits = 16;				\
+			break;						\
+		case AUDIO_FORMAT_TYPE_S8:		\
+			__bits = 8;					\
+			break;						\
+		default:						\
+			__bits = 0;					\
+			break;						\
+		}								\
+		__bits;							\
+	})
+
 namespace media {
 namespace stream {
 
@@ -37,7 +59,8 @@ InputHandler::InputHandler() :
 	mState(BUFFER_STATE_EMPTY),
 	mTotalBytes(0),
 	mProcessBuffer(nullptr),
-	mProcessBufferSize(0)
+	mProcessBufferSize(0),
+	mResampler(nullptr)
 {
 	mWorkerStackSize = CONFIG_INPUT_DATASOURCE_STACKSIZE;
 }
@@ -63,7 +86,7 @@ bool InputHandler::doStandBy(size_t buffSize)
 	std::thread wk = std::thread([=]() {
 		medvdbg("InputHandler::doStandBy thread enter\n");
 		player_event_t event;
-		if (open(buffSize)) {
+		if (prepare(buffSize)) {
 			event = PLAYER_EVENT_SOURCE_PREPARED;
 		} else {
 			event = PLAYER_EVENT_SOURCE_OPEN_FAILED;
@@ -76,25 +99,6 @@ bool InputHandler::doStandBy(size_t buffSize)
 	return true;
 }
 
-bool InputHandler::open(size_t buffSize)
-{
-	// Open stream handler and start buffering
-	if (!StreamHandler::open(buffSize)) {
-		meddbg("StreamHandler::open failed!\n");
-		return false;
-	}
-
-	// Wait buffering done
-	std::unique_lock<std::mutex> lock(mMutex);
-	if (mState < BUFFER_STATE_BUFFERED) {
-		medvdbg("PCM buffering...\n");
-		mCondv.wait(lock);
-		medvdbg("PCM buffering done!\n");
-	}
-
-	return true;
-}
-
 bool InputHandler::close()
 {
 	bool ret = StreamHandler::close();
@@ -103,12 +107,23 @@ bool InputHandler::close()
 	mCondv.notify_one();
 	mProcessBuffer.reset();
 	mProcessBufferSize = 0;
+	mResampler.reset();
 	return ret;
 }
 
 int InputHandler::seekTo(off_t offset)
 {
-	return mInputDataSource->seekTo(offset);
+	int ret = mInputDataSource->seekTo(offset);
+	if (ret != OK) {
+        meddbg("Source seekTo failed. ret: %d\n", ret);
+        return ret;
+	}
+
+    if (mResampler) {
+        mResampler->reset();
+    }   
+
+	return ret;
 }
 
 ssize_t InputHandler::read(unsigned char *buf, size_t size, std::chrono::milliseconds timeout)
@@ -130,9 +145,10 @@ void InputHandler::resetWorker()
 {
 	mState = BUFFER_STATE_EMPTY;
 	mTotalBytes = 0;
+	mResampler->reset();
 }
 
-bool InputHandler::start()
+bool InputHandler::startBuffering(unsigned int sampleRate, unsigned int channels, unsigned int format, size_t buffSize)
 {
 	if (!mProcessBuffer) {
 		mProcessBufferSize = mDecoder ? CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE : mDemuxer ? CONFIG_DEMUX_BUFFER_SIZE : mStreamBuffer->getBufferSize();
@@ -144,10 +160,36 @@ bool InputHandler::start()
 		}
 	}
 
-	bool ret = StreamHandler::start();
-	if (!ret) {
+	mResampler = std::unique_ptr<Resampler>(new (std::nothrow) Resampler());
+	if (!mResampler) {
+		meddbg("Resampler allocation failed\n");
 		mProcessBuffer.reset();
 		mProcessBufferSize = 0;
+		return false;
+	}
+
+	if (!mResampler->configure(mInputDataSource->getChannels(), mInputDataSource->getSampleRate(), (AUDIO_FORMAT_TO_BITS(mInputDataSource->getPcmFormat()) >> 3), 
+								channels, sampleRate, format, buffSize)) {
+		meddbg("Resampler configuration failed\n");
+		mResampler.reset();
+		mProcessBuffer.reset();
+		mProcessBufferSize = 0;
+		return false;
+	}
+
+	bool ret = StreamHandler::start();
+	if (!ret) {
+		mResampler.reset();
+		mProcessBuffer.reset();
+		mProcessBufferSize = 0;
+	}
+
+	// Wait buffering done
+	std::unique_lock<std::mutex> lock(mMutex);
+	if (mState < BUFFER_STATE_BUFFERED) {
+		medvdbg("PCM buffering...\n");
+		mCondv.wait(lock);
+		medvdbg("PCM buffering done!\n");
 	}
 
 	return ret;
@@ -171,6 +213,38 @@ bool InputHandler::processWorker()
 
 		ssize_t readLen = readFromSource(mProcessBuffer.get(), size);
 		if (readLen <= 0) {
+			switch (mResampler->drain()) {
+			case Resampler::Result::OUTPUT_READY: {
+				Resampler::ConstBufferView output = mResampler->getOutput();
+				size_t tmp = 0;
+				while(tmp < output.size) {
+					if (mBufferWriter->sizeOfSpace() == 0) {
+						sleepWorker();
+					}
+					size_t needToWrite = std::min(output.size - tmp, mBufferWriter->sizeOfSpace());
+					if (needToWrite == 0) {
+						break;
+					}
+					size_t written = mBufferWriter->write(const_cast<unsigned char *>(output.data + tmp), needToWrite);
+					if (written != needToWrite) {
+						meddbg("End of writting\n");
+						return EOF;
+					} 
+					tmp += written;
+				}
+			}
+			case Resampler::Result::NEED_INPUT: {
+				break;				
+			}
+			case Resampler::Result::DRAINED: {
+				meddbg("Resampler already drained\n");
+				break;
+			}
+			case Resampler::Result::ERROR:
+			default:
+				meddbg("Resampler draining failed\n");
+				return false;
+			}
 			// Error occurred, or inputting finished
 			if (!mIsLooping) {
 				mBufferWriter->setEndOfStream();
@@ -314,31 +388,59 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 		size_t usedES = 0;
 		while (1) {
 			unsigned char *buffPCM = buf;
-			// Requested decoded data size is equal to output buffer size
-			size_t sizePCM = mProcessBufferSize;
-			size_t spaces = mBufferWriter->sizeOfSpace();
-			if (spaces == 0) {
-				sleepWorker();
+			size_t writableBytes = mResampler->getRemainingInputBytes();
+
+			if (writableBytes == 0) {
+				meddbg("Invalid Resampler state\n");
+				return EOF;
 			}
-			sizePCM = std::min(sizePCM, mBufferWriter->sizeOfSpace());
+			size_t sizePCM = std::min(mProcessBufferSize, writableBytes);
+
 			ret = getPCM(buffES, sizeES, &usedES, &buffPCM, &sizePCM);
 			if (ret < 0) {
 				meddbg("getPCM failed! error: %d\n", ret);
 				return ret;
 			}
 			if (ret == 0) {
-				// want more data
 				break;
 			}
+			if (mResampler->pushData(buffPCM, sizePCM) != writableBytes) {
+				continue;
+			}
 
-			// write PCM data to stream buffer
-			size_t written = mBufferWriter->write(buffPCM, sizePCM);
-			if (written != sizePCM) {
-				meddbg("End of writting!\n");
+			Resampler::Result state = mResampler->process();
+			if(state == Resampler::Result::ERROR) {
+				meddbg("Error while resampling\n");
 				return EOF;
 			}
-		}
+			if(state == Resampler::Result::NEED_INPUT) {
+				meddbg("Need more data\n");
+				continue;
+			}
+			
+			Resampler::ConstBufferView output = mResampler->getOutput();
+			size_t tmp = 0;
+			while(tmp < output.size) {
+				if (mBufferWriter->sizeOfSpace() == 0) {
+					sleepWorker();
+				}
+				size_t needToWrite = std::min(output.size - tmp, mBufferWriter->sizeOfSpace());
+				if (needToWrite == 0) {
+					break;
+				}
+				size_t written = mBufferWriter->write(const_cast<unsigned char *>(output.data + tmp), needToWrite);
+				if (written != needToWrite) {
+					meddbg("End of writting\n");
+					return EOF;
+				}
+				tmp += written;
+			}
+			if(!mResampler->releaseOutput()) {
+				meddbg("Resampler::consumeOutput failed!\n");
+			}
+ 		}
 	}
+
 	return size;
 }
 
