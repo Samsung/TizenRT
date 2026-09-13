@@ -80,20 +80,28 @@ int http_dispatch_url(struct http_client_t *client, struct http_req_message *req
 	if (http_divide_query_params(req->url, query, params)) {
 		return HTTP_ERROR;
 	}
-	req->url = query;
-	req->query_string = params;
-
-	http_parse_query(query, &dq);
+	if (http_parse_query(query, &dq) == HTTP_ERROR) {
+		return HTTP_ERROR;
+	}
 	if (http_keyvalue_list_init(&params_list) == HTTP_ERROR) {
-		http_keyvalue_list_release(&params_list);
+		if (params_list.head != NULL) {
+			HTTP_FREE(params_list.head);
+		}
+		if (params_list.tail != NULL) {
+			HTTP_FREE(params_list.tail);
+		}
 		http_release_query(&dq);
 		return HTTP_ERROR;
 	}
 
-	/* Parse url params */
-	if (strlen(params) > 0) {
-		http_parse_params(params, &params_list);
+	/* Parse url params; shorter strings were ignored by the parser. */
+	if (strlen(params) >= 3 && http_parse_params(params, &params_list) == HTTP_ERROR) {
+		http_keyvalue_list_release(&params_list);
+		http_release_query(&dq);
+		return HTTP_ERROR;
 	}
+	req->url = query;
+	req->query_string = params;
 
 	for (i = 0; i < HTTP_CONF_MAX_QUERY_HANDLER_COUNT; i++) {
 		struct http_query_handler_t *cur = client->server->query_handlers[i];
@@ -164,7 +172,11 @@ int http_server_register_cb(struct http_server_t *server, int method, const char
 
 	HTTP_MEMSET(cur, 0, sizeof(struct http_query_handler_t));
 
-	http_parse_query(url_format, &cur->dq);
+	if (http_parse_query(url_format, &cur->dq) == HTTP_ERROR) {
+		HTTP_FREE(server->query_handlers[empty_slot]);
+		server->query_handlers[empty_slot] = NULL;
+		return HTTP_ERROR;
+	}
 
 	cur->method = method;
 	cur->func = func;
@@ -192,7 +204,9 @@ int http_server_deregister_cb(struct http_server_t *server, int method, const ch
 		return HTTP_OK;
 	}
 
-	http_parse_query(url_format, &dq);
+	if (http_parse_query(url_format, &dq) == HTTP_ERROR) {
+		return HTTP_ERROR;
+	}
 
 	for (i = 0; i < HTTP_CONF_MAX_QUERY_HANDLER_COUNT; i++) {
 		if (server->query_handlers[i] != NULL) {
@@ -221,12 +235,22 @@ int http_parse_query(const char *query, struct http_divided_query_t *dq)
 
 	for (i = 0; i < query_len; i++) {
 		if (query[i] == '/') {
+			if (dq->slash_count >= HTTP_CONF_MAX_SLASH_COUNT) {
+				return HTTP_ERROR;
+			}
 			slash_position[dq->slash_count++] = i;
 		}
 	}
 
 	/* Set the last slash position as query length. To calculate devided path length */
 	slash_position[dq->slash_count] = query_len;
+
+	/* Each path slot includes the leading slash and a NUL terminator. */
+	for (i = 0; i < dq->slash_count; i++) {
+		if (slash_position[i + 1] - slash_position[i] >= HTTP_CONF_MAX_DIVIDED_PATH_LENGTH) {
+			return HTTP_ERROR;
+		}
+	}
 
 	dq->paths = (char *)HTTP_MALLOC(dq->slash_count * HTTP_CONF_MAX_DIVIDED_PATH_LENGTH);
 	if (!(dq->paths)) {
@@ -263,6 +287,9 @@ int http_parse_params(const char *params, struct http_keyvalue_list_t *params_li
 	reading_position = 0;
 
 	for (i = 0; i < params_len + 1; i++) { /* Consider the last '\0' character */
+		if (is_reading_key && params[i] == '\0') {
+			return HTTP_OK;
+		}
 		if (is_reading_key && params[i] == '=') {
 			key[reading_position++] = '\0';
 			is_reading_key = false;
@@ -277,8 +304,14 @@ int http_parse_params(const char *params, struct http_keyvalue_list_t *params_li
 			http_keyvalue_list_add(params_list, key, value);
 		} else {
 			if (is_reading_key) {
+				if (reading_position >= HTTP_CONF_MAX_KEY_LENGTH - 1) {
+					return HTTP_ERROR;
+				}
 				key[reading_position++] = params[i];
 			} else {
+				if (reading_position >= HTTP_CONF_MAX_VALUE_LENGTH - 1) {
+					return HTTP_ERROR;
+				}
 				value[reading_position++] = params[i];
 			}
 		}
