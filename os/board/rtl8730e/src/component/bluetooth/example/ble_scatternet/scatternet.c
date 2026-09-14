@@ -149,7 +149,12 @@ static uint8_t privacy_irk[RTK_BT_LE_GAP_IRK_LEN] = "abcdef0123456789";
 
 typedef struct {
 	bool is_active;
-    rtk_bt_le_link_role_t role;
+	bool timer_active;
+	void *conn_tmr_handle;
+	void *conn_tmr_cb;
+	rtk_bt_le_link_role_t role;
+	trble_conn_handle conn_handle;
+	trble_device_connected conn_param;
 } app_conn_table_t;
 
 extern bool is_secured;
@@ -166,9 +171,210 @@ rtk_bt_gattc_read_ind_t ble_tizenrt_scatternet_read_results[RTK_BLE_GAP_MAX_LINK
 rtk_bt_gattc_write_ind_t g_scatternet_write_result = {0};
 rtk_bt_gattc_write_ind_t g_scatternet_write_no_rsp_result = {0};
 
+#define BLE_GAP_EVENT		1
+#define BLE_GATTC_EVENT		2
+
 static void ble_tizenrt_dummy_callback(void)
 {
-	dbg("[APP] Application Dummy Callback API\r\n");
+	// dbg("[APP] Application Dummy Callback API\r\n");
+}
+
+static void ble_tizenrt_master_connected_handler(uint8_t conn_id)
+{
+	/* Report the stored connection info to the upper layer */
+	client_init_parm->trble_device_connected_cb(&conn_link[conn_id].conn_param);
+	if (ble_client_connect_is_running) {
+		ble_client_connect_is_running = 0;
+	}
+}
+
+static bool ble_tizenrt_master_disconn_timer_check(uint8_t conn_id)
+{
+	if (conn_id >= RTK_BLE_GAP_MAX_LINKS) {
+		return false;
+	}
+
+	if (conn_link[conn_id].timer_active) {
+		// dbg("[APP] Disconnect while conn timer active at link %d\r\n", conn_id);
+		/* Stop the connected timer */
+		if (!osif_timer_stop(&(conn_link[conn_id].conn_tmr_handle))) {
+			return false;
+		}
+		/* Clear callback */
+		conn_link[conn_id].conn_tmr_cb = NULL;
+		conn_link[conn_id].timer_active = false;
+		/* Delete the connected timer */
+		osif_timer_delete(&(conn_link[conn_id].conn_tmr_handle));
+		return true;
+	}
+
+	return false;
+}
+
+static void ble_tizenrt_master_conn_timer_check(uint8_t evt_type, uint8_t evt_code, void* param)
+{
+	bool timer_trigger = false;
+	trble_conn_handle conn_handle = 0;
+	void (*conn_tmr_cb)(uint8_t) = NULL;
+
+	// dbg("[APP] Connected Timeout Check\r\n");
+	if (BLE_GAP_EVENT == evt_type) {			/* GAP Event */
+		timer_trigger = true;
+		switch (evt_code) {
+		case RTK_BT_LE_GAP_EVT_REMOTE_CONN_UPDATE_REQ_IND:
+		case RTK_BT_LE_GAP_EVT_AUTH_PAIRING_CONFIRM_IND:
+		case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_DISPLAY_IND:
+		case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_INPUT_IND:
+		case RTK_BT_LE_GAP_EVT_AUTH_PASSKEY_CONFIRM_IND: {
+			/* conn_handle is the first field of these ind struct. */
+			rtk_bt_le_remote_conn_update_req_ind_t *remote_update_req = (rtk_bt_le_remote_conn_update_req_ind_t *)param;
+			conn_handle = remote_update_req->conn_handle;
+			break;
+		}
+		case RTK_BT_LE_GAP_EVT_AUTH_COMPLETE_IND: {
+			/* conn_handle is the second field of these ind struct. */
+			rtk_bt_le_auth_complete_ind_t *auth_cplt_ind = (rtk_bt_le_auth_complete_ind_t *)param;
+			conn_handle = auth_cplt_ind->conn_handle;
+			break;
+		}
+		default:
+			/* Other GAP events do not affect the connected timer */
+			timer_trigger = false;
+			break;
+		}
+	} else if (BLE_GATTC_EVENT == evt_type) {	/* GATTC Event */
+		switch (evt_code) {
+		case RTK_BT_GATTC_EVT_DISCOVER_RESULT_IND:
+		case RTK_BT_GATTC_EVT_READ_RESULT_IND:
+		case RTK_BT_GATTC_EVT_WRITE_RESULT_IND:
+		case RTK_BT_GATTC_EVT_NOTIFY_IND:
+		case RTK_BT_GATTC_EVT_INDICATE_IND:
+		case RTK_BT_GATTC_EVT_CCCD_ENABLE_IND:
+		case RTK_BT_GATTC_EVT_CCCD_DISABLE_IND:
+		case RTK_BT_GATTC_EVT_MTU_EXCHANGE:
+		case RTK_BT_GATTC_EVT_DISCOVER_ALL_STATE_IND:
+		case RTK_BT_GATTC_EVT_GATT_SERVICE_INFO_IND: {
+			/* Any GATTC activity proves the link is live, end the timer early.
+			 * conn_handle is the second field of every GATTC ind struct. */
+			rtk_bt_gattc_discover_ind_t *disc_res = (rtk_bt_gattc_discover_ind_t *)param;
+			conn_handle = disc_res->conn_handle;
+			timer_trigger = true;
+			break;
+		}
+		default:
+			// dbg("[APP] Unhandled GATTC event %d \r\n", evt_code);
+			break;
+		}
+	} else {
+		dbg("[APP] Unknown Event \r\n");
+		return;
+	}
+
+	if (timer_trigger) {						/* Trigger Connected Callback now */
+		/* Check conn_handle */
+		for (uint8_t conn_id = 0; conn_id < RTK_BLE_GAP_MAX_LINKS; conn_id++) {
+			if (conn_link[conn_id].timer_active &&
+				conn_link[conn_id].conn_handle == conn_handle) {
+				// dbg("[APP] Matched conn_handle %d at link %d\r\n", conn_handle, conn_id);
+				/* Stop the connected timer */
+				if (!osif_timer_stop(&(conn_link[conn_id].conn_tmr_handle))) {
+					return;
+				}
+				/* Clear callback */
+				conn_tmr_cb = (void (*)(uint8_t))conn_link[conn_id].conn_tmr_cb;
+				conn_link[conn_id].conn_tmr_cb = NULL;
+				conn_link[conn_id].timer_active = false;
+				/* Delete the connected timer */
+				osif_timer_delete(&(conn_link[conn_id].conn_tmr_handle));
+				/* Trigger the connected handler now */
+				if (conn_tmr_cb) {
+					conn_tmr_cb(conn_id);
+				}
+			}
+		}
+	}
+}
+
+static void ble_tizenrt_master_conn_timer_cb(void *arg)
+{
+	uint32_t conn_id = 0;
+	void (*conn_tmr_cb)(uint8_t) = NULL;
+
+	// dbg("[APP] Master Connected Timeout\r\n");
+	/* The timer callback receives the timer handle, conn_id is stored as timer id */
+	if (!osif_timer_id_get(&arg, &conn_id)) {
+		dbg("[APP] Get conn timer id fail!! \n");
+		return;
+	}
+	if (conn_id >= RTK_BLE_GAP_MAX_LINKS) {
+		dbg("[APP] Invalid conn_id %d \n", conn_id);
+		return;
+	}
+	/* If _check already ended the timer early for this link, do nothing */
+	if (!conn_link[conn_id].timer_active) {
+		return;
+	}
+	conn_link[conn_id].timer_active = false;
+	/* One-shot timer has fired; delete it so its resources are released */
+	conn_tmr_cb = (void (*)(uint8_t))conn_link[conn_id].conn_tmr_cb;
+	conn_link[conn_id].conn_tmr_cb = NULL;
+	osif_timer_delete(&(conn_link[conn_id].conn_tmr_handle));
+	/* Report connected on natural timeout */
+	if (conn_tmr_cb) {
+		conn_tmr_cb((uint8_t)conn_id);
+	}
+}
+
+static void ble_tizenrt_master_conn_timer_start(uint8_t conn_id, uint16_t conn_interval)
+{
+	uint32_t max_time_ms = 0;
+	uint32_t transmit_window_delay_us = 1250;
+	uint32_t transmit_window_offset_us = 0;
+	uint32_t transmit_window_size_us = 10000;
+	uint32_t conn_interval_x6_us = 0;
+
+	/*
+		Theoretical Value
+		transmitWindowDelay = fixed 1.25 ms
+		transmitWindowSize  = max 10 ms
+		transmitWindowOffset = max depends on connInterval
+		Max wait time = transmitWindowDelay + transmitWindowOffset + transmitWindowSize + connect interval x 6
+
+		conn_interval * 1.25 ms		Conn_Interval_Min range: 0x0006 to 0x0C80
+
+		All terms are kept in units of (1/1000 ms) and summed before the single
+		final division, so no term is rounded/truncated before the others are added.
+	*/
+	transmit_window_offset_us = (uint32_t)conn_interval * 1250;
+	conn_interval_x6_us = transmit_window_offset_us * 6;
+
+	max_time_ms = (transmit_window_delay_us + transmit_window_offset_us +
+				   transmit_window_size_us + conn_interval_x6_us) / 1000;
+	// dbg("[APP] Master conn_interval: 0x%x, Connected Timer value: %dms\r\n", conn_interval, max_time_ms);
+	/* Store conn_id as the timer id so the callback can recover it via osif_timer_id_get() */
+	if (!osif_timer_create(&(conn_link[conn_id].conn_tmr_handle), "conn_timer", conn_id, max_time_ms, 0, ble_tizenrt_master_conn_timer_cb)) {
+		dbg("[APP] Conn timer creat fail!! \n");
+		/* No timer, report connected immediately */
+		ble_tizenrt_master_connected_handler(conn_id);
+		return;
+	} else {
+		// dbg("[APP] Conn timer creat success \n");
+	}
+	/* Mark active before starting so a timeout can never race ahead of this state */
+	conn_link[conn_id].timer_active = true;
+	conn_link[conn_id].conn_tmr_cb = ble_tizenrt_master_connected_handler;
+	if (!osif_timer_start(&(conn_link[conn_id].conn_tmr_handle))) {
+		dbg("[APP] Conn timer start fail!! \n");
+		/* Timer unusable, clean it up and report connected immediately */
+		conn_link[conn_id].timer_active = false;
+		conn_link[conn_id].conn_tmr_cb = NULL;
+		osif_timer_delete(&(conn_link[conn_id].conn_tmr_handle));
+		ble_tizenrt_master_connected_handler(conn_id);
+		return;
+	} else {
+		// dbg("[APP] Conn timer start success \n");
+	}
+	// dbg("[APP] Start Master Connected Timer\r\n");
 }
 
 static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_code, void* param, uint32_t len)
@@ -178,6 +384,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 #ifdef CONFIG_PM
     struct pm_domain_s *domain;
 #endif
+    ble_tizenrt_master_conn_timer_check(BLE_GAP_EVENT, evt_code, param);
     switch (evt_code) {
     case RTK_BT_LE_GAP_EVT_ADV_START_IND: {
         rtk_bt_le_adv_start_ind_t *adv_start_ind = (rtk_bt_le_adv_start_ind_t *)param;
@@ -338,20 +545,22 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
             }
 			if(RTK_BT_LE_ROLE_MASTER == conn_ind->role)
 			{
-				trble_device_connected connected_dev;
 				uint16_t mtu_size = 0;
-				connected_dev.conn_handle = conn_ind->conn_handle;
-				connected_dev.is_bonded = rtk_bt_le_sm_is_device_bonded(&conn_ind->peer_addr);	/* Check Bond status */
-				connected_dev.conn_info.addr.type = conn_ind->peer_addr.type;
-				memcpy(connected_dev.conn_info.addr.mac, conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
-				connected_dev.conn_info.conn_interval = conn_ind->conn_interval;
-				connected_dev.conn_info.slave_latency = conn_ind->conn_latency;
-				connected_dev.conn_info.scan_timeout = scan_timeout;
-				connected_dev.conn_info.is_secured_connect = is_secured;
-				connected_dev.conn_info.mtu = mtu_size;
-				client_init_parm->trble_device_connected_cb(&connected_dev);
-				if(ble_client_connect_is_running)
-					ble_client_connect_is_running = 0;
+				/* Store all connection info into conn_link; the connected callback is
+				 * deferred and fired from ble_tizenrt_master_connected_handler() once
+				 * the link has settled (timer timeout or early GATTC/auth activity). */
+				conn_link[conn_id].conn_handle = conn_ind->conn_handle;
+				conn_link[conn_id].conn_param.conn_handle = conn_ind->conn_handle;
+				conn_link[conn_id].conn_param.is_bonded = rtk_bt_le_sm_is_device_bonded(&conn_ind->peer_addr);	/* Check Bond status */
+				conn_link[conn_id].conn_param.conn_info.addr.type = conn_ind->peer_addr.type;
+				memcpy(conn_link[conn_id].conn_param.conn_info.addr.mac, conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
+				conn_link[conn_id].conn_param.conn_info.conn_interval = conn_ind->conn_interval;
+				conn_link[conn_id].conn_param.conn_info.slave_latency = conn_ind->conn_latency;
+				conn_link[conn_id].conn_param.conn_info.scan_timeout = scan_timeout;
+				conn_link[conn_id].conn_param.conn_info.is_secured_connect = is_secured;
+				conn_link[conn_id].conn_param.conn_info.mtu = mtu_size;
+				/* Start the settling timer for this master link */
+				ble_tizenrt_master_conn_timer_start(conn_id, conn_ind->conn_interval);
 			} else if (RTK_BT_LE_ROLE_SLAVE == conn_ind->role) {
 				uint8_t adv_handle = 0xff;
 				if (server_init_parm.connected_cb) {
@@ -395,11 +604,12 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 
         uint8_t conn_id;
         rtk_bt_le_gap_get_conn_id(disconn_ind->conn_handle, &conn_id);
-        memset(&conn_link[conn_id], 0, sizeof(app_conn_table_t));
         /* gattc action */
         general_client_detach_conn(disconn_ind->conn_handle);
         /* gap action */
         if (RTK_BT_LE_ROLE_MASTER == disconn_ind->role) {
+            /* Check if connecting timer is running, stop and delete the timer if it's running */
+            ble_tizenrt_master_disconn_timer_check(conn_id);
             client_init_parm->trble_device_disconnected_cb(disconn_ind->conn_handle, disconn_ind->reason);
         } else if (RTK_BT_LE_ROLE_SLAVE == disconn_ind->role) {
             if (server_init_parm.disconnected_cb) {
@@ -408,6 +618,8 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
                 ble_tizenrt_dummy_callback();
             }
         }
+        /* Clear the link state after disconnect handling (disconn_timer_check reads it) */
+        memset(&conn_link[conn_id], 0, sizeof(app_conn_table_t));
         break;
     }
 
@@ -908,6 +1120,8 @@ static uint16_t app_get_gattc_profile_id(uint8_t event, void *data)
 static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gattc_app_callback(uint8_t event, void *data, uint32_t len)
 {
 	uint16_t profile_id = 0xFFFF;
+
+	ble_tizenrt_master_conn_timer_check(BLE_GATTC_EVENT, event, data);
 
 	if (RTK_BT_GATTC_EVT_MTU_EXCHANGE == event) {
 		rtk_bt_gatt_mtu_exchange_ind_t *p_gatt_mtu_ind = (rtk_bt_gatt_mtu_exchange_ind_t *)data;
