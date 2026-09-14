@@ -377,7 +377,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 						if (client) {
 							len->chunked_remain = 0;
 							len->entity_len = 0;
-							entity = HTTP_MALLOC(HTTP_CONF_MAX_ENTITY_LENGTH);
+							entity = HTTP_MALLOC(HTTP_CONF_MAX_ENTITY_LENGTH + 1);
 							if (entity == NULL) {
 								HTTP_LOGE("Error: Fail to alloc memory\n");
 								return HTTP_ERROR;
@@ -495,7 +495,7 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 			}
 			/* Chunked encoding */
 			else {
-				int i, j, cha;
+				int i, cha;
 				if (!len->chunked_remain) {
 					len->content_len = 0;
 					sentence_end = http_find_first_crlf(buf, buf_len, len->sentence_start);
@@ -508,18 +508,25 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 						break;
 					}
 
-					/* calculate chunked size */
-					for (i = 1; sentence_end - i >= len->sentence_start; ++i) {
-						cha = (int)*(buf + sentence_end - i);
-						if (cha > '9') {
-							cha = cha - 'a' + 10;
-						} else {
+					/* Validate the chunk size before accumulating or copying it. */
+					if (sentence_end == len->sentence_start) {
+						return HTTP_ERROR;
+					}
+					for (i = len->sentence_start; i < sentence_end; ++i) {
+						cha = (int)buf[i];
+						if (cha >= '0' && cha <= '9') {
 							cha = cha - '0';
+						} else if (cha >= 'a' && cha <= 'f') {
+							cha = cha - 'a' + 10;
+						} else if (cha >= 'A' && cha <= 'F') {
+							cha = cha - 'A' + 10;
+						} else {
+							return HTTP_ERROR;
 						}
-						for (j = 1; j < i; ++j) {
-							cha *= 16;
+						if (len->content_len > (HTTP_CONF_MAX_ENTITY_LENGTH - cha) / 16) {
+							return HTTP_ERROR;
 						}
-						len->content_len += cha;
+						len->content_len = len->content_len * 16 + cha;
 					}
 					len->chunked_remain = len->content_len;
 					if (!len->chunked_remain) {
@@ -527,7 +534,9 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 						entity[len->entity_len] = '\0';
 						req->entity = entity + len->entity_len;
 						req->entity_len = 0;
-						http_dispatch_url(client, req);
+						if (http_dispatch_url(client, req) == HTTP_ERROR) {
+							return HTTP_ERROR;
+						}
 						read_finish = true;
 						return read_finish;
 					}
@@ -535,6 +544,9 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 				}
 				i = 0;
 				if (len->chunked_remain > 0) {
+					if (len->chunked_remain > HTTP_CONF_MAX_ENTITY_LENGTH - len->entity_len) {
+						return HTTP_ERROR;
+					}
 					for (i = 0; len->chunked_remain > 0; ++i) {
 						if (len->sentence_start >= buf_len + len->message_len
                                                     || i + len->entity_len >= HTTP_CONF_MAX_ENTITY_LENGTH) {
@@ -553,7 +565,9 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 					entity[len->entity_len] = '\0';
 					req->entity = entity + len->entity_len - len->content_len;
 					req->entity_len = len->content_len;
-					http_dispatch_url(client, req);
+					if (http_dispatch_url(client, req) == HTTP_ERROR) {
+						return HTTP_ERROR;
+					}
 
 					// Reset entity length. Next chunk will be processed from begining of entity buffer.
 					len->entity_len = 0;
@@ -576,7 +590,9 @@ int http_parse_message(char *buf, int buf_len, int *method, char *url,
 						entity[len->entity_len] = '\0';
 						req->entity = entity + len->entity_len;
 						req->entity_len = 0;
-						http_dispatch_url(client, req);
+						if (http_dispatch_url(client, req) == HTTP_ERROR) {
+							return HTTP_ERROR;
+						}
 						process_finish = true;
 						read_finish = true;
 
@@ -663,6 +679,8 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 
 		read_finish = http_parse_message(buf, buf_len, &method, url, &body, &enc, &state, &mlen, request_params, client, NULL, &req, &chunk_processed);
 		if (read_finish == HTTP_ERROR) {
+			client->ws_state = 0;
+			http_send_response_with_status_msg(client, 400, "Bad Request", NULL, NULL);
 			goto errout;
 		}
 
@@ -717,7 +735,13 @@ int http_recv_and_handle_request(struct http_client_t *client, struct http_keyva
 
 	if (enc == HTTP_CONTENT_LENGTH) {
 		req.entity = body;
-		http_dispatch_url(client, &req);
+		if (http_dispatch_url(client, &req) == HTTP_ERROR) {
+			client->ws_state = 0;
+			http_send_response_with_status_msg(client, 400, "Bad Request", NULL, NULL);
+			close(client->client_fd);
+			HTTP_FREE(buf);
+			return HTTP_ERROR;
+		}
 	}
 
 #ifdef CONFIG_NETUTILS_WEBSOCKET
