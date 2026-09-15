@@ -80,13 +80,9 @@ ifeq ($(CONFIG_AUDIO_ALC1019),y)
 CSRCS += alc1019.c
 endif
 
-ifeq ($(CONFIG_AUDIO_NDP120),y)
-CSRCS += ndp120_voice.c
-endif
-
 # NDP120 core/vendor library
 ifeq ($(CONFIG_NDP120),y)
-CSRCS += ndp120_api.c
+CSRCS += ndp120_voice.c
 CSRCS += checksum.c
 CSRCS += syntiant_ndp.c
 CSRCS += syntiant_ndp115.c
@@ -98,10 +94,6 @@ CSRCS += syntiant_ndp120_ph.c
 CSRCS += syntiant_ndp_error.c
 CSRCS += syntiant_package.c
 CSRCS += syntiant_portability.c
-
-ifeq ($(CONFIG_DUMP4CH_SUPPORT),y)
-CSRCS += ndp120_debug_utils.c
-endif
 
 # This should be set to the host processor clock frequency value
 CPU_FREQ ?= 1200000000
