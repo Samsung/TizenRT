@@ -82,6 +82,9 @@
 #include <tinyara/binfmt/elf.h>
 #endif
 #include <tinyara/security_level.h>
+#ifdef CONFIG_CRASH_REPORT
+#include <tinyara/crashrpt.h>
+#endif
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 #include <arch/reboot_reason.h>
 #endif
@@ -582,6 +585,31 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 
 void up_assert(const uint8_t *filename, int lineno)
 {
+#ifdef CONFIG_CRASH_REPORT
+	/* Capture application diagnostics before any assert handling begins.
+	 *
+	 * This has to be the very first statement in the function.  Everything
+	 * below - the critical section, up_cpu_pause_all(), the abort state -
+	 * makes it impossible to run an application thread.  Here, for an assert
+	 * raised by the application itself, interrupts are still enabled, the
+	 * scheduler is running and the application's memory context is loaded.
+	 *
+	 * crashrpt_notify() blocks until the reporter is done or the deadline
+	 * expires, then returns and we continue exactly as before.  It takes its
+	 * own re-entry guard, so a fault inside the reporter cannot loop back
+	 * into here.
+	 */
+
+	int crash_reason = CRASHRPT_REASON_KERNEL_ASSERT;
+
+	if (system_exception_location) {
+		crash_reason = CRASHRPT_REASON_HW_FAULT;
+	} else if (user_assert_location) {
+		crash_reason = CRASHRPT_REASON_APP_ASSERT;
+	}
+
+	(void)crashrpt_notify(crash_reason);
+#endif
 
 	irqstate_t flags = enter_critical_section();
 
@@ -589,18 +617,15 @@ void up_assert(const uint8_t *filename, int lineno)
 
 	abort_mode = true;
 
-	/* Check if we are in recursive abort */
 	if (state == ABORT_STATE) {
-		/* treat kernel fault */
 		arm_assert();
 	} else {
 		state = ABORT_STATE;
 	}
-	/* Extract the PC value of instruction which caused the abort/assert */
 
 	if (system_exception_location) {
 		asserted_location = (uint32_t)system_exception_location;
-		system_exception_location = 0x0;	/* reset */
+		system_exception_location = 0x0;
 	} else if (user_assert_location) {
 		asserted_location = (uint32_t)user_assert_location;
 		user_assert_location = 0x0;
@@ -609,13 +634,11 @@ void up_assert(const uint8_t *filename, int lineno)
 	}
 
 #ifdef CONFIG_SMP
-	/* Pause all other CPUs to avoid mix up of logs while printing assert logs */
 	up_cpu_pause_all();
 
 #endif
 
 	struct tcb_s *fault_tcb = this_task();
-	/* Add new line to distinguish between normal log and assert log.*/
 	lldbg_noarg("\n");
 
 	board_autoled_on(LED_ASSERTION);
@@ -627,17 +650,12 @@ void up_assert(const uint8_t *filename, int lineno)
 #ifdef CONFIG_SECURITY_LEVEL
 	lldbg_noarg("security level: %d\n", get_security_level());
 #endif
-	/* Print assert detail information and dump state,
-	 * but if os security level is high, It is not printed.
-	 */
 	if (!IS_SECURE_STATE()) {
 		print_assert_detail(filename, lineno, fault_tcb, asserted_location);
 	}
 
-	/* Heap corruption check */
 	check_heap_corrupt(fault_tcb);
 
-	/* Closing log line */
 	lldbg_noarg("##########################################################################################################################################\n");
 
 #if defined(CONFIG_BOARD_CRASHDUMP)
@@ -648,7 +666,6 @@ void up_assert(const uint8_t *filename, int lineno)
 
 #ifdef CONFIG_BINMGR_RECOVERY
 	if (IS_FAULT_IN_USER_SPACE(asserted_location)) {
-		/* Recover user fault through binary manager */
 		binary_manager_recover_userfault();
 	} else
 #endif
@@ -657,7 +674,6 @@ void up_assert(const uint8_t *filename, int lineno)
 			up_flush_console();
 		}
 
-		/* treat kernel fault */
 		arm_assert();
 	}
 	leave_critical_section(flags);

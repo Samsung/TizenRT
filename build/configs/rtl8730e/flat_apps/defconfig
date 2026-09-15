@@ -2,6 +2,8 @@
 # Automatically generated file; DO NOT EDIT.
 # TinyAra Configuration
 #
+CONFIG_CRASH_REPORT=y
+CONFIG_EXAMPLES_CRASHRPT_TEST=y
 
 #
 # Build Setup

@@ -582,3 +582,38 @@ config OTP_NULL
 endif
 
 source drivers/seclink/Kconfig
+
+config CRASH_REPORT
+	bool "Crash diagnostic capture"
+	default n
+	---help---
+		Allow an application to publish diagnostic information when the
+		system is about to assert.
+
+		The application registers a high priority reporter thread through
+		/dev/crashrpt and parks it in fin_wait().  At the very start of
+		up_assert(), before any crash handling begins, the kernel wakes that
+		thread and waits for it to finish.  Assert handling then proceeds
+		normally.
+
+		At that point, for an assert raised by the application, the system is
+		still healthy - interrupts are enabled and the scheduler is running -
+		so the reporter can use ordinary file operations.
+
+		Hardware faults and asserts raised from interrupt context cannot be
+		served this way and are skipped.
+
+if CRASH_REPORT
+
+config CRASH_REPORT_DEADLINE_MS
+	int "Crash report deadline (msec)"
+	default 3000
+	---help---
+		How long the asserting thread waits for the reporter to finish
+		before giving up and continuing with the reboot.
+
+		This bound relies on a working scheduler.  Boards should also
+		override crashrpt_arm_watchdog() so that a hardware watchdog
+		guarantees the reboot if the reporter hangs.
+
+endif # CRASH_REPORT

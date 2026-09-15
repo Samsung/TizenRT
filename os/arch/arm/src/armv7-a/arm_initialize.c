@@ -43,6 +43,10 @@
 #include <tinyara/board.h>
 #include <arch/board/board.h>
 
+#ifdef CONFIG_CRASH_REPORT
+#include <tinyara/crashrpt.h>
+#endif
+
 #include "up_internal.h"
 
 /****************************************************************************
@@ -159,6 +163,10 @@ void up_initialize(void)
 
 #if defined(CONFIG_DEV_NULL)
 	devnull_register();			/* Standard /dev/null */
+
+#ifdef CONFIG_CRASH_REPORT
+	crashrpt_register();			/* Crash diagnostic capture */
+#endif
 #endif
 
 #ifdef CONFIG_VIDEO_NULL
