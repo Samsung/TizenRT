@@ -1,0 +1,33 @@
+* Tizen Lite 
+** Enable an example app in tizen lite
+** Kconfig
+EXAMPLES_SIMPLE_FILE_TRANSFER
+** Source location
+TizenRT/apps/examples/simple_file_transfer/
+** Precondition
+Wi-Fi should be connected
+** Run sample program
+*** Command
+#+begin_src shell
+TASH> sft
+#+end_src
+
+* PC
+** Precondition
+PC and Tizen Lite board are connected to a same AP.  
+** path: 
+TizenRT/tools/net/readme.org
+** Send a file
+Send a file in PC to Tizen lite.
+*** command
+python simple_file_transfer.py -a [IP address] -s [a file to send in PC] -t [a file location in Tizen lite]  
+#+begin_src shell
+$ python simple_file_transfer.py -a 192.168.1.22 -s ./hello.txt -t /mnt/hello.txt
+#+end_src
+** Receive a file
+Send a file in Tizen lite to a PC.
+*** command
+python simple_file_transfer.py -r -a [IP address] -s [a file name stored in PC] -t [a file location in Tizen lite]
+#+begin_src shell
+$ python simple_file_transfer.py -r -a 192.168.1.22 -s ./hello.txt -t /mnt/hello.txt
+#+end_src
