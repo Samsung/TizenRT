@@ -169,10 +169,6 @@ $(BIN): $(OBJS)
 
 depend: .depend
 
-ifeq ($(CONFIG_NDP120),y)
-context:
-endif
-
 clean:
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)

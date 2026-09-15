@@ -274,8 +274,4 @@ KERNDEPDIRS += se
 endif
 CLEANDIRS += se
 
-ifeq ($(CONFIG_NDP120),y)
-CONTEXTDIRS += drivers
-endif
-
 CLEANDIRS += userspace

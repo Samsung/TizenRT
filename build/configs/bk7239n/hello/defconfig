@@ -1236,7 +1236,6 @@ CONFIG_SPI_CMDDATA=y
 #
 # AI SoC devices
 #
-# CONFIG_NDP120 is not set
 
 #
 # LCD Driver Support
