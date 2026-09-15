@@ -80,7 +80,8 @@
 #define FLASH_FS_START CONFIG_AMEBASMART_FLASH_BASE
 #define AMEBASMART_NSECTORS (CONFIG_AMEBASMART_FLASH_CAPACITY / CONFIG_AMEBASMART_FLASH_BLOCK_SIZE)
 #define AMEBASMART_START_SECOTR (FLASH_FS_START / CONFIG_AMEBASMART_FLASH_BLOCK_SIZE)
-
+#define ERASE_SECTOR_SIZE 0x1000
+#define ERASE_BLOCK_SIZE  0x10000
 /************************************************************************************
  * Private Types
  ************************************************************************************/
@@ -115,14 +116,22 @@ static ssize_t amebasmart_write(FAR struct mtd_dev_s *dev, off_t offset, size_t 
 /**
   * @brief  Verify erased block
   * @param address: address of target page
+  * @param type: type of erase. EraseSector: 4k, EraseBlock: 64k
   * @retval 0 : success or -1 : Failure.
   */
-int amebasmart_flash_erase_verify(u32 address)
+int amebasmart_flash_erase_verify(u32 address, u8 type)
 {
-	int count = 0x1000; //4k, block size
+	int count = 0;
+	u32 value = 0;
+	if (type == EraseSector) {
+		count = ERASE_SECTOR_SIZE; //4k, sector size
+	} else if (type == EraseBlock) {
+		count = ERASE_BLOCK_SIZE; //64k, block size
+	}
 	while (count > 0) {
-		if (HAL_READ32(SPI_FLASH_BASE, address) != 0xffffffff) {
-			dbg("Not erased, address : %u value : %u\n", address, HAL_READ32(SPI_FLASH_BASE, address));
+		value = HAL_READ32(SPI_FLASH_BASE, address);
+		if (value != 0xffffffff) {
+			dbg("Not erased, address : %u value : %u\n", address, value);
 			return -1;
 		}
 		address += sizeof(u32);
@@ -134,13 +143,14 @@ int amebasmart_flash_erase_verify(u32 address)
 /************************************************************************************
  * Name: amebasmart_erase
  ************************************************************************************/
-static ssize_t amebasmart_erase_page(size_t page)
+/* erase sector, 4K*/
+static ssize_t amebasmart_erase_sector(size_t page)
 {
 	uint32_t address;
 	ssize_t ret;
 	
 	if (page > (AMEBASMART_START_SECOTR + AMEBASMART_NSECTORS)) {
-		printf("Invalid page number\n");
+		dbg("Invalid page number\n");
 		return -EFAULT;
 	}
 
@@ -148,7 +158,31 @@ static ssize_t amebasmart_erase_page(size_t page)
 	/* do erase */
 	address = page * CONFIG_AMEBASMART_FLASH_BLOCK_SIZE;
 	flash_erase_sector(NULL, address);
-	ret = amebasmart_flash_erase_verify(address);
+	ret = amebasmart_flash_erase_verify(address, EraseSector);
+	device_mutex_unlock(RT_DEV_LOCK_FLASH);
+
+	if (ret != OK) {
+		ret = -EIO;
+	}
+	return ret;
+}
+
+/* erase block 64K*/
+static ssize_t amebasmart_erase_block(size_t page)
+{
+	uint32_t address;
+	ssize_t ret;
+
+	if (page > (AMEBASMART_START_SECOTR + AMEBASMART_NSECTORS)) {
+		dbg("Invalid page number\n");
+		return -EFAULT;
+	}
+
+	device_mutex_lock(RT_DEV_LOCK_FLASH);
+	/* do erase */
+	address = page * CONFIG_AMEBASMART_FLASH_BLOCK_SIZE;
+	flash_erase_block(NULL, address);
+	ret = amebasmart_flash_erase_verify(address, EraseBlock);
 	device_mutex_unlock(RT_DEV_LOCK_FLASH);
 
 	if (ret != OK) {
@@ -164,12 +198,23 @@ static int amebasmart_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t 
 
 	/* Erase the specified blocks and return status (OK or a negated errno) */
 	while (nblocks > 0) {
-		result = amebasmart_erase_page(startblock);
-		if (result < 0) {
-			return (int)result;
+		if (nblocks >= 16 && (startblock % 16 == 0)) {
+			/*perform 64k block erase (16 pages of 4K) if aligned and enough blocks*/
+			result = amebasmart_erase_block(startblock);
+			if (result < 0) {
+				return (int) result;
+			}
+			startblock += 16;
+			nblocks -= 16;
+		} else {
+			/*perform 4k sector erase otherwise*/
+			result = amebasmart_erase_sector(startblock); //4K
+			if (result < 0) {
+				return (int)result;
+			}
+			startblock++;
+			nblocks--;
 		}
-		startblock++;
-		nblocks--;
 	}
 	return OK;
 }
