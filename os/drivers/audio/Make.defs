@@ -84,6 +84,36 @@ ifeq ($(CONFIG_AUDIO_NDP120),y)
 CSRCS += ndp120_voice.c
 endif
 
+# NDP120 core/vendor library
+ifeq ($(CONFIG_NDP120),y)
+CSRCS += ndp120_api.c
+CSRCS += checksum.c
+CSRCS += syntiant_ndp.c
+CSRCS += syntiant_ndp115.c
+CSRCS += syntiant_ndp120.c
+CSRCS += syntiant_ndp120_config.c
+CSRCS += syntiant_ndp120_config_misc.c
+CSRCS += syntiant_ndp120_mailbox.c
+CSRCS += syntiant_ndp120_ph.c
+CSRCS += syntiant_ndp_error.c
+CSRCS += syntiant_package.c
+CSRCS += syntiant_portability.c
+
+ifeq ($(CONFIG_DUMP4CH_SUPPORT),y)
+CSRCS += ndp120_debug_utils.c
+endif
+
+# This should be set to the host processor clock frequency value
+CPU_FREQ ?= 1200000000
+EXTRACT_WINDOW_UTILIZATION ?= 40
+CFLAGS += -DCPU_FREQUENCY=$(CPU_FREQ)
+CFLAGS += -DEXTRACT_WINDOW_UTILIZATION=$(EXTRACT_WINDOW_UTILIZATION)
+CFLAGS += -I $(TOPDIR)/drivers/audio/ndp120/include -DEXCLUDE_SYNTIANT_CORE_1
+
+DEPPATH += --dep-path audio/ndp120 --dep-path audio/ndp120/src
+VPATH += :audio/ndp120 :audio/ndp120/src
+endif
+
 ifeq ($(CONFIG_AUDIO_ADAM110),y)
 CSRCS += adam110.c
 endif

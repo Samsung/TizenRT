@@ -247,10 +247,6 @@ endif # DRIVERS_VIDEO
 
 source drivers/wifi_csi/Kconfig
 
-menu "AI SoC devices"
-source drivers/ai-soc/Kconfig
-endmenu
-
 source drivers/lcd/Kconfig
 
 menuconfig BCH
