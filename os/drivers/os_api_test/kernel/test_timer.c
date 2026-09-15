@@ -90,6 +90,17 @@ static int test_timer_initialize(unsigned long arg)
 		createfree_cnt++;
 	}
 
+	/* Delete the timer before re-initializing, otherwise timer_gethandle()
+	 * validation (which checks g_alloctimers list membership) will reject
+	 * the handle after timer_initialize() clears the allocated list.
+	 */
+	ret_chk = timer_delete(timer_id);
+
+	if (ret_chk == ERROR) {
+		dbg("timer_delete failed.");
+		return ERROR;
+	}
+
 	/* check the count for g_alloctimers and g_freetimers after timer_initialize now they change to original value */
 	timer_initialize();
 
@@ -101,13 +112,6 @@ static int test_timer_initialize(unsigned long arg)
 	for (timer = (FAR struct posix_timer_s *)g_freetimers.head; timer; timer = next) {
 		next = timer->flink;
 		finalfree_cnt++;
-	}
-
-	ret_chk = timer_delete(timer_id);
-
-	if (ret_chk == ERROR) {
-		dbg("timer_delete failed.");
-		return ERROR;
 	}
 
 	if (initalloc_cnt != finalalloc_cnt) {

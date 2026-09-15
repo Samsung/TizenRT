@@ -117,10 +117,13 @@
 
 int timer_gettime(timer_t timerid, FAR struct itimerspec *value)
 {
-	FAR struct posix_timer_s *timer = (FAR struct posix_timer_s *)timerid;
+	FAR struct posix_timer_s *timer;
 	int ticks;
 
-	if (!PT_ISVALID(timer) || !value) {
+	/* Validate the timer handle by checking list membership */
+
+	timer = timer_gethandle(timerid);
+	if (!timer || !value) {
 		set_errno(EINVAL);
 		return ERROR;
 	}
