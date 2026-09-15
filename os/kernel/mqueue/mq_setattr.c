@@ -58,6 +58,7 @@
 
 #include <fcntl.h>				/* O_NONBLOCK */
 #include <mqueue.h>
+#include <errno.h>
 
 #include <tinyara/mqueue.h>
 
@@ -113,6 +114,11 @@
 int mq_setattr(mqd_t mqdes, const struct mq_attr *mq_stat, struct mq_attr *oldstat)
 {
 	int ret = ERROR;
+
+	if (mq_desc_in_grouplist(mqdes) != OK) {
+		set_errno(EBADF);
+		return ERROR;
+	}
 
 	if (mqdes && mq_stat) {
 		/* Return the attributes if so requested */

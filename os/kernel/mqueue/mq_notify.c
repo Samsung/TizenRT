@@ -161,6 +161,11 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 		return ERROR;
 	}
 
+	if (mq_desc_in_grouplist(mqdes) != OK) {
+		set_errno(EBADF);
+		return ERROR;
+	}
+
 	/* Get a pointer to the message queue */
 
 	msgq = mqdes->msgq;
