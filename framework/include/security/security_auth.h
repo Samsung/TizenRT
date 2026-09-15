@@ -30,8 +30,6 @@ extern "C" {
 
 security_error auth_generate_random(security_handle hnd, unsigned int size, security_data *random);
 
-security_error auth_generate_certificate(security_handle hnd, const char *cert_name, security_csr *csr, security_data *cert);
-
 security_error auth_set_certificate(security_handle hnd, const char *cert_name, security_data *cert);
 
 security_error auth_get_certificate(security_handle hnd, const char *cert_name, security_data *cert);
