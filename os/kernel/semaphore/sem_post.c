@@ -97,9 +97,6 @@
 void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
 {
 	struct tcb_s *stcb = NULL;
-#ifdef SAVE_SEM_HOLDER
-	struct semholder_s *pholder = NULL;
-#endif
 
 #ifdef CONFIG_SEMAPHORE_HISTORY
 	save_semaphore_history(sem, (void *)this_task(), SEM_RELEASE);
@@ -144,27 +141,17 @@ void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
 		}
 	}
 
-#ifdef SAVE_SEM_HOLDER
 	/* Check if we need to drop the priority of any threads holding
 	 * this semaphore.  The priority could have been boosted while they
 	 * held the semaphore.
 	 */
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
-	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+	if ((sem->flags & PRIOINHERIT_FLAGS_ENABLE) != 0) {
 		sem_restorebaseprio(stcb, htcb, sem);
-	} else {
-#endif
-		/* Free a semaphore holder directly. */
-		pholder = sem_findholder(sem, htcb);
-		if (pholder) {
-			sem_freeholder(sem, pholder);
-		}
-#ifdef CONFIG_PRIORITY_INHERITANCE
 	}
 
 	sched_unlock();
-#endif
 #endif
 
 }
@@ -193,6 +180,8 @@ void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
  *
  * Assumptions:
  *   This function may be called from an interrupt handler.
+ *   A semaphore with priority inheritance enabled is an ownership semaphore:
+ *   it must be posted by its holder, never by an interrupt handler.
  *
  ****************************************************************************/
 

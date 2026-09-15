@@ -57,13 +57,28 @@
 #include <tinyara/config.h>
 
 #include <assert.h>
+#include <stdbool.h>
 #include <errno.h>
 
+#include <tinyara/arch.h>
 #include <tinyara/semaphore.h>
 
 #include "semaphore/semaphore.h"
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static bool sem_has_holder(FAR sem_t *sem)
+{
+#if CONFIG_SEM_PREALLOCHOLDERS > 0
+	return sem->hhead != NULL;
+#else
+	return sem->holder.htcb != NULL;
+#endif
+}
 
 /****************************************************************************
  * Public Functions
@@ -75,24 +90,11 @@
  * Description:
  *    Set semaphore protocol attribute.
  *
- *    One particularly important use of this furnction is when a semaphore
- *    is used for inter-task communication like:
- *
- *      TASK A                 TASK B
- *      sem_init(sem, 0, 0);
- *      sem_wait(sem);
- *                             sem_post(sem);
- *      Awakens as holder
- *
- *    In this case priority inheritance can interfere with the operation of
- *    the semaphore.  The problem is that when TASK A is restarted it is a
- *    holder of the semaphore.  However, it never calls sem_post(sem) so it
- *    becomes *permanently* a holder of the semaphore and may have its
- *    priority boosted when any other task tries to acquire the semaphore.
- *
- *    The fix is to call sem_setprotocol(SEM_PRIO_NONE) immediately after
- *    the sem_init() call so that there will be no priority inheritance
- *    operations on this semaphore.
+ *    Semaphores initialized by sem_init() have priority inheritance disabled
+ *    by default.  SEM_PRIO_INHERIT makes a semaphore an ownership semaphore:
+ *    only a task that acquired a count may post that count.  Enabling priority
+ *    inheritance does not validate the current semaphore state; callers must
+ *    ensure that no task already holds a count before enabling it.
  *
  * Parameters:
  *    sem      - A pointer to the semaphore whose attributes are to be
@@ -108,37 +110,56 @@
 int sem_setprotocol(FAR sem_t *sem, int protocol)
 {
 	int errcode = EINVAL;
+	irqstate_t flags;
 
-	if ((sem != NULL) && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
-		switch (protocol) {
-		case SEM_PRIO_NONE:
-			/* Disable priority inheritance */
+	if (sem != NULL) {
+		/* Serialize the holder check and protocol change with semaphore
+		 * acquisition and release.
+		 */
 
-			sem->flags |= PRIOINHERIT_FLAGS_DISABLE;
+		flags = enter_critical_section();
 
-#ifndef CONFIG_BINMGR_RECOVERY
-			/* Remove any current holders if only fault recovery is disabled
-			 * because it is necessasary to keep a list of holders for fault recovery. */
+		if ((sem->flags & FLAGS_INITIALIZED) != 0) {
+			switch (protocol) {
+			case SEM_PRIO_NONE:
+				/* A P.I. semaphore cannot lose its ownership tracking while
+				 * any task still holds a count.
+				 */
 
-			sem_destroyholder(sem);
-#endif
+				if (sem_has_holder(sem)) {
+					errcode = EBUSY;
+					break;
+				}
+
+				sem->flags &= ~PRIOINHERIT_FLAGS_ENABLE;
+				errcode = OK;
+				break;
+
+			case SEM_PRIO_INHERIT:
+				/* The caller is responsible for enabling P.I. only while no
+				 * count is held.  Existing owners cannot be reconstructed.
+				 */
+
+				sem->flags |= PRIOINHERIT_FLAGS_ENABLE;
+				errcode = OK;
+				break;
+
+			case SEM_PRIO_PROTECT:
+				/* Not yet supported */
+
+				errcode = ENOSYS;
+				break;
+
+			default:
+				errcode = EINVAL;
+				break;
+			}
+		}
+
+		leave_critical_section(flags);
+
+		if (errcode == OK) {
 			return OK;
-
-		case SEM_PRIO_INHERIT:
-			/* Enable priority inheritance (dangerous) */
-
-			sem->flags &= ~PRIOINHERIT_FLAGS_DISABLE;
-			return OK;
-
-		case SEM_PRIO_PROTECT:
-			/* Not yet supported */
-
-			errcode = ENOSYS;
-			break;
-
-		default:
-			errcode = EINVAL;
-			break;
 		}
 	}
 

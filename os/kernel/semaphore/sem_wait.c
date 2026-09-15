@@ -214,7 +214,7 @@ int sem_wait(FAR sem_t *sem)
 
 			sched_lock();
 
-			if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
+			if ((sem->flags & PRIOINHERIT_FLAGS_ENABLE) != 0) {
 				/* Boost the priority of any threads holding a count on the
 				 * semaphore.
 				 */

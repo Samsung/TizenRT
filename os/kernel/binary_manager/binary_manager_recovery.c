@@ -26,7 +26,6 @@
 #include <string.h>
 #include <queue.h>
 #include <errno.h>
-#include <semaphore.h>
 #include <sys/types.h>
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
@@ -34,12 +33,10 @@
 #include <tinyara/sched.h>
 #include <tinyara/init.h>
 #include <tinyara/board.h>
-#include <tinyara/wdog.h>
 #include <tinyara/reboot_reason.h>
 
 #include "task/task.h"
 #include "sched/sched.h"
-#include "semaphore/semaphore.h"
 #include "binary_manager_internal.h"
 
 /****************************************************************************
@@ -69,44 +66,6 @@ static faultmsg_t g_prealloc_faultmsg[FAULTMSG_COUNT];
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-/****************************************************************************
- * Name: binary_manager_recover_tcb
- *
- * Description:
- *	 This function recovers resources, semaphores, message queue, and watchdog.
- *
- ****************************************************************************/
-static void binary_manager_recover_tcb(struct tcb_s *tcb)
-{
-	sem_t *sem;
-	int state;
-
-	state = tcb->task_state;
-
-	if (tcb->waitdog) {
-		(void)wd_delete(tcb->waitdog);
-		tcb->waitdog = NULL;
-	}
-
-	if (state == TSTATE_WAIT_SEM) {
-		sem = tcb->waitsem;
-		ASSERT(sem != NULL && sem->semcount < 0);
-		sem_canceled(tcb, sem);
-		sem->semcount++;
-		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
-			DEBUGASSERT(sem->semcount < 2);
-		}
-
-		tcb->waitsem = NULL;
-	} else if (state == TSTATE_WAIT_MQNOTEMPTY) {
-		ASSERT(tcb->msgwaitq && tcb->msgwaitq->nwaitnotempty > 0);
-		tcb->msgwaitq->nwaitnotempty--;
-	} else if (state == TSTATE_WAIT_MQNOTFULL) {
-		ASSERT(tcb->msgwaitq && tcb->msgwaitq->nwaitnotfull > 0);
-		tcb->msgwaitq->nwaitnotfull--;
-	}
-}
-
 /****************************************************************************
  * Name: binary_manager_deactivate_binary
  *
@@ -141,15 +100,18 @@ static int binary_manager_deactivate_binary(int bin_idx)
 	ptr = BIN_NRTLIST(bin_idx);
 	while (ptr) {
 		flags = enter_critical_section();
-		/* Recover semaphores, message queue, and watchdog timer resources.*/
-		binary_manager_recover_tcb(ptr);
+		/* task_recover() can release a held P.I. semaphore and wake a
+		 * waiter.  Keep the TCB stable until it has been moved inactive.
+		 */
+
+		sched_lock();
+		task_recover(ptr);
 		/* Remove the TCB from the task list associated with the state */
 		BM_DEACTIVATE_TASK(ptr);
 		ptr = ptr->bin_flink;
+		sched_unlock();
 		leave_critical_section(flags);
 	}
-	/* Release all kernel semaphores held by the threads in binary */
-	binary_manager_release_binary_sem(bin_idx);
 
 	return BINMGR_OK;
 }
@@ -197,16 +159,20 @@ static void binary_manager_unblock_fault_message_sender(int bin_idx)
  ****************************************************************************/
 void binary_manager_deactivate_rtthreads(int bin_idx)
 {
+	irqstate_t flags;
 	struct tcb_s *ptr;
 
 	if (bin_idx > 0) {
 		ptr = BIN_RTLIST(bin_idx);
 		while (ptr) {
-			/* Recover semaphores, message queue, and watchdog timer resources.*/
-			binary_manager_recover_tcb(ptr);
+			flags = enter_critical_section();
+			sched_lock();
+			task_recover(ptr);
 			/* Remove the TCB from the task list associated with the state */
 			BM_DEACTIVATE_TASK(ptr);
 			ptr = ptr->bin_flink;
+			sched_unlock();
+			leave_critical_section(flags);
 		}
 	}
 }

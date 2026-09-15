@@ -68,7 +68,6 @@ static void tc_libc_semaphore_sem_init(void)
 	TC_ASSERT_EQ("sem_init", sem.semcount, value);
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	sem_flag = FLAGS_INITIALIZED;
-	sem_flag &= ~(PRIOINHERIT_FLAGS_DISABLE);
 	TC_ASSERT_EQ("sem_init", sem.flags, sem_flag);
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
 	TC_ASSERT_EQ("sem_init", sem.hhead, NULL);
