@@ -80,9 +80,10 @@ ifeq ($(CONFIG_AUDIO_ALC1019),y)
 CSRCS += alc1019.c
 endif
 
+ifeq ($(CONFIG_AUDIO_NDP120),y)
+CSRCS += ndp120.c
+
 # NDP120 core/vendor library
-ifeq ($(CONFIG_NDP120),y)
-CSRCS += ndp120_voice.c
 CSRCS += checksum.c
 CSRCS += syntiant_ndp.c
 CSRCS += syntiant_ndp115.c

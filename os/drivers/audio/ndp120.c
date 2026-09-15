@@ -103,7 +103,7 @@
 #include <syntiant_ilib/syntiant_ndp_error.h>
 #include <syntiant_ilib/syntiant_ndp_ilib_version.h>
 
-#include "ndp120_voice.h"
+#include "ndp120.h"
 
 /****************************************************************************
  * Pre-processor Definitions

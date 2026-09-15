@@ -526,10 +526,6 @@ CONFIG_SPI_EXCHANGE=y
 # CONFIG_AUDIO_DEVICES is not set
 # CONFIG_DRIVERS_VIDEO is not set
 
-#
-# AI SoC devices
-#
-# CONFIG_NDP120 is not set
 
 #
 # LCD Driver Support

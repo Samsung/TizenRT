@@ -180,21 +180,20 @@ config AUDIO_ALC1019
                 NOTE: This driver also depends on both I2C and I2S support although
                 that dependency is not explicit here.
 
-config NDP120
-	bool "NDP120 AI soc support"
+config AUDIO_NDP120
+	bool "NDP120 AI SoC audio chip"
 	default n
-	depends on SPI
+	depends on AUDIO && SPI
 	---help---
-		Select to enable support for the NDP120 AI soc
+		Select to enable support for the NDP120 AI SoC audio driver.
 
-if NDP120
+if AUDIO_NDP120
 
 config NDP120_AEC_SUPPORT
 	bool "NDP120 Support AEC"
 	default y
 	---help---
 		Select to enable support AEC
-
 
 config NDP120_ALIVE_CHECK
 	bool "NDP120 alive check thread"
@@ -203,22 +202,10 @@ config NDP120_ALIVE_CHECK
 		Select to enable support Alive check thread
 endif
 
-choice
-
-	prompt "DSP(NPU) Chip selection"
-	depends on AUDIO && SPI
-	default AUDIO_NDP120
-	---help---
-		Select to enable support for the DSP chip which include NPU
-		
-config AUDIO_NDP120
-	bool "NDP120 audio rx support"
-	depends on NDP120
-
 config AUDIO_ADAM110
-	bool "ADAM110 audio rx support"
-
-endchoice
+	bool "ADAM110 AI SoC audio chip"
+	default n
+	depends on AUDIO && SPI
 
 if AUDIO_ADAM110
 
