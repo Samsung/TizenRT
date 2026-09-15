@@ -167,6 +167,14 @@ int mq_verifyreceive(mqd_t mqdes, FAR char *msg, size_t msglen);
 FAR struct mqueue_msg_s *mq_waitreceive(mqd_t mqdes);
 ssize_t mq_doreceive(mqd_t mqdes, FAR struct mqueue_msg_s *mqmsg, FAR char *ubuffer, FAR int *prio);
 
+/* mq_verifydesg.c *********************************************************/
+
+int mq_verifydesg(mqd_t mqdes);
+#ifdef CONFIG_LOG_DUMP
+void mq_verifydesg_set_logdump_mqdes(mqd_t mqdes);
+mqd_t mq_verifydesg_get_logdump_mqdes(void);
+#endif
+
 /* mq_sndinternal.c ********************************************************/
 
 int mq_verifysend(mqd_t mqdes, FAR const char *msg, size_t msglen, int prio);
