@@ -135,6 +135,7 @@ static int xmlrpc_getelement(struct parsebuf_s *pbuf, char *data, int dataSize)
 {
 	int j = 0;
 	int ret = XMLRPC_NO_ERROR;
+	int terminated = 0;
 
 	if (!pbuf || pbuf->len <= pbuf->index) {
 		return XMLRPC_PARSE_ERROR;
@@ -160,11 +161,13 @@ static int xmlrpc_getelement(struct parsebuf_s *pbuf, char *data, int dataSize)
 
 	data[j++] = pbuf->buf[pbuf->index++];
 
-	while (j < dataSize) {
+	while ((j < dataSize) && (pbuf->index < pbuf->len)) {
 		if (pbuf->buf[pbuf->index] == '>') {
 			data[j++] = pbuf->buf[pbuf->index++];
+			terminated = 1;
 			break;
 		} else if ((pbuf->buf[pbuf->index] == '\n') || (pbuf->buf[pbuf->index] == '<')) {
+			terminated = 1;
 			break;
 		} else {
 			data[j++] = pbuf->buf[pbuf->index++];
@@ -172,6 +175,10 @@ static int xmlrpc_getelement(struct parsebuf_s *pbuf, char *data, int dataSize)
 				ret = XMLRPC_PARSE_ERROR;
 			}
 		}
+	}
+
+	if (!terminated && pbuf->index >= pbuf->len) {
+		ret = XMLRPC_PARSE_ERROR;
 	}
 
 	data[j] = 0;
@@ -271,6 +278,10 @@ static int xmlrpc_parseparams(struct parsebuf_s *pbuf)
 
 			type = xmlrpc_getelement(pbuf, g_data, CONFIG_XMLRPC_STRINGSIZE);
 			if ((type == TAG) && (!strncmp(g_data, "<param>", 7))) {
+				if (g_xmlcall.argsize >= MAX_ARGS) {
+					return XMLRPC_PARSE_ERROR;
+				}
+
 				ret = xmlrpc_parseparam(pbuf);
 			} else if ((type == TAG) && (!strncmp(g_data, "</params>", 9))) {
 				return XMLRPC_NO_ERROR;
