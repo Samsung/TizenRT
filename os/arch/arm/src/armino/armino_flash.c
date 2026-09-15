@@ -374,30 +374,32 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 * @param length size to read
 *
 * @return
-*    - BK_OK: succeed
+*    - length: succeed (returns the number of bytes read)
 *    - BK_ERR_FLASH_ADDR_OUT_OF_RANGE: flash address is out of range
 *    - others: other errors.
 */
 ssize_t up_read_decrypted_flash(size_t addr, void *buf, size_t length)
 {
+	ssize_t result;
+
 	// printf("func :%s, line :%d, addr :%x, length :%d\n", __func__, __LINE__, addr, length);
 #if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
-		bk_security_flash_read_bytes(addr, (uint8_t *)buf, length);
+		result = bk_security_flash_read_bytes(addr, (uint8_t *)buf, length);
 		SCB_CleanInvalidateDCache();
 	}
 #ifdef CONFIG_BUILD_PROTECTED
 #ifdef CONFIG_FLASH_ENCRYPT_ENABLE
 	else if (bk_addr_is_app_or_common(addr)) {
-		bk_instruction_read_app_or_common(addr, (uint8_t *)buf, length);
+		result = bk_instruction_read_app_or_common(addr, (uint8_t *)buf, length);
 	}
 #endif
 #endif
 	else
 #endif
 	{
-		bk_flash_read_bytes(addr, (uint8_t *)buf, length);
+		result = bk_flash_read_bytes(addr, (uint8_t *)buf, length);
 	}
 
-	return BK_OK;
+	return result < 0 ? result : length;
 }

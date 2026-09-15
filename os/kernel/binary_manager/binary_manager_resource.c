@@ -82,8 +82,9 @@ static ssize_t resource_decblk_read(FAR struct inode *inode, FAR unsigned char *
 	}
 
 	ret = up_read_decrypted_flash(dev->part_addr + offset, (FAR void *)buffer, size);
-	if (ret != OK) {
-		return ret < 0 ? ret : -EIO;
+	if (ret != (ssize_t)size) {
+		bmdbg("Fail to read binary, part_addr 0x%x, offset %u, %size %u, ret %d\n", dev->part_addr, offset, size, (int)ret);
+		return ret;
 	}
 
 	return nsectors;
