@@ -669,6 +669,7 @@ void mm_uaf_verify(FAR struct mm_freenode_s *node);
 void mm_dump_node(struct mm_allocnode_s *node, char *node_type);
 void mm_dump_heap_region(uint32_t start, uint32_t end);
 void mm_dump_heap_free_node_list(struct mm_heap_s *heap);
+void mm_dump_node_containing(void *address);
 int heap_dbg(const char *fmt, ...);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 /* Functions contained in kmm_mallinfo.c . Used to display memory allocation details */
