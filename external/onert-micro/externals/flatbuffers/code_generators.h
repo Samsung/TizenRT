@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2023 Samsung Electronics Co., Ltd. All Rights Reserved
  * Copyright 2014 Google Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,8 +22,7 @@
 
 #include "externals/flatbuffers/idl.h"
 
-namespace flatbuffers
-{
+namespace flatbuffers {
 
 // Utility class to assist in generating code through use of text templates.
 //
@@ -39,16 +37,13 @@ namespace flatbuffers
 // Output:
 //  void Foo() { printf("%s", "Foo"); }
 //  void Bar() { printf("%s", "Bar"); }
-class CodeWriter
-{
-public:
-  CodeWriter(std::string pad = std::string()) : pad_(pad), cur_ident_lvl_(0), ignore_ident_(false)
-  {
-  }
+class CodeWriter {
+ public:
+  CodeWriter(std::string pad = std::string())
+      : pad_(pad), cur_ident_lvl_(0), ignore_ident_(false) {}
 
   // Clears the current "written" code.
-  void Clear()
-  {
+  void Clear() {
     stream_.str("");
     stream_.clear();
   }
@@ -56,10 +51,11 @@ public:
   // Associates a key with a value.  All subsequent calls to operator+=, where
   // the specified key is contained in {{ and }} delimiters will be replaced by
   // the given value.
-  void SetValue(const std::string &key, const std::string &value) { value_map_[key] = value; }
+  void SetValue(const std::string &key, const std::string &value) {
+    value_map_[key] = value;
+  }
 
-  std::string GetValue(const std::string &key) const
-  {
+  std::string GetValue(const std::string &key) const {
     const auto it = value_map_.find(key);
     return it == value_map_.end() ? "" : it->second;
   }
@@ -76,15 +72,13 @@ public:
   // Increase ident level for writing code
   void IncrementIdentLevel() { cur_ident_lvl_++; }
   // Decrease ident level for writing code
-  void DecrementIdentLevel()
-  {
-    if (cur_ident_lvl_)
-      cur_ident_lvl_--;
+  void DecrementIdentLevel() {
+    if (cur_ident_lvl_) cur_ident_lvl_--;
   }
 
   void SetPadding(const std::string &padding) { pad_ = padding; }
 
-private:
+ private:
   std::map<std::string, std::string> value_map_;
   std::stringstream stream_;
   std::string pad_;
@@ -95,34 +89,38 @@ private:
   void AppendIdent(std::stringstream &stream);
 };
 
-class BaseGenerator
-{
-public:
+class BaseGenerator {
+ public:
   virtual bool generate() = 0;
 
   static std::string NamespaceDir(const Parser &parser, const std::string &path,
-                                  const Namespace &ns, const bool dasherize = false);
+                                  const Namespace &ns,
+                                  const bool dasherize = false);
 
   static std::string ToDasherizedCase(const std::string pascal_case);
 
-  std::string GeneratedFileName(const std::string &path, const std::string &file_name,
+  std::string GeneratedFileName(const std::string &path,
+                                const std::string &file_name,
                                 const IDLOptions &options) const;
 
-protected:
-  BaseGenerator(const Parser &parser, const std::string &path, const std::string &file_name,
-                std::string qualifying_start, std::string qualifying_separator,
-                std::string default_extension)
-    : parser_(parser), path_(path), file_name_(file_name), qualifying_start_(qualifying_start),
-      qualifying_separator_(qualifying_separator), default_extension_(default_extension)
-  {
-  }
+ protected:
+  BaseGenerator(const Parser &parser, const std::string &path,
+                const std::string &file_name, std::string qualifying_start,
+                std::string qualifying_separator, std::string default_extension)
+      : parser_(parser),
+        path_(path),
+        file_name_(file_name),
+        qualifying_start_(qualifying_start),
+        qualifying_separator_(qualifying_separator),
+        default_extension_(default_extension) {}
   virtual ~BaseGenerator() {}
 
   // No copy/assign.
   BaseGenerator &operator=(const BaseGenerator &);
   BaseGenerator(const BaseGenerator &);
 
-  std::string NamespaceDir(const Namespace &ns, const bool dasherize = false) const;
+  std::string NamespaceDir(const Namespace &ns,
+                           const bool dasherize = false) const;
 
   static const char *FlatBuffersGeneratedWarning();
 
@@ -139,7 +137,8 @@ protected:
   // Ensure that a type is prefixed with its namespace even within
   // its own namespace to avoid conflict between generated method
   // names and similarly named classes or structs
-  std::string WrapInNameSpace(const Namespace *ns, const std::string &name) const;
+  std::string WrapInNameSpace(const Namespace *ns,
+                              const std::string &name) const;
 
   std::string WrapInNameSpace(const Definition &def) const;
 
@@ -153,23 +152,22 @@ protected:
   const std::string default_extension_;
 };
 
-struct CommentConfig
-{
+struct CommentConfig {
   const char *first_line;
   const char *content_line_prefix;
   const char *last_line;
 };
 
-extern void GenComment(const std::vector<std::string> &dc, std::string *code_ptr,
-                       const CommentConfig *config, const char *prefix = "");
+extern void GenComment(const std::vector<std::string> &dc,
+                       std::string *code_ptr, const CommentConfig *config,
+                       const char *prefix = "");
 
-class FloatConstantGenerator
-{
-public:
+class FloatConstantGenerator {
+ public:
   virtual ~FloatConstantGenerator() {}
   std::string GenFloatConstant(const FieldDef &field) const;
 
-private:
+ private:
   virtual std::string Value(double v, const std::string &src) const = 0;
   virtual std::string Inf(double v) const = 0;
   virtual std::string NaN(double v) const = 0;
@@ -178,17 +176,19 @@ private:
   virtual std::string Inf(float v) const = 0;
   virtual std::string NaN(float v) const = 0;
 
-  template <typename T> std::string GenFloatConstantImpl(const FieldDef &field) const;
+  template<typename T>
+  std::string GenFloatConstantImpl(const FieldDef &field) const;
 };
 
-class SimpleFloatConstantGenerator : public FloatConstantGenerator
-{
-public:
-  SimpleFloatConstantGenerator(const char *nan_number, const char *pos_inf_number,
+class SimpleFloatConstantGenerator : public FloatConstantGenerator {
+ public:
+  SimpleFloatConstantGenerator(const char *nan_number,
+                               const char *pos_inf_number,
                                const char *neg_inf_number);
 
-private:
-  std::string Value(double v, const std::string &src) const FLATBUFFERS_OVERRIDE;
+ private:
+  std::string Value(double v,
+                    const std::string &src) const FLATBUFFERS_OVERRIDE;
   std::string Inf(double v) const FLATBUFFERS_OVERRIDE;
   std::string NaN(double v) const FLATBUFFERS_OVERRIDE;
 
@@ -202,15 +202,16 @@ private:
 };
 
 // C++, C#, Java like generator.
-class TypedFloatConstantGenerator : public FloatConstantGenerator
-{
-public:
-  TypedFloatConstantGenerator(const char *double_prefix, const char *single_prefix,
-                              const char *nan_number, const char *pos_inf_number,
+class TypedFloatConstantGenerator : public FloatConstantGenerator {
+ public:
+  TypedFloatConstantGenerator(const char *double_prefix,
+                              const char *single_prefix, const char *nan_number,
+                              const char *pos_inf_number,
                               const char *neg_inf_number = "");
 
-private:
-  std::string Value(double v, const std::string &src) const FLATBUFFERS_OVERRIDE;
+ private:
+  std::string Value(double v,
+                    const std::string &src) const FLATBUFFERS_OVERRIDE;
   std::string Inf(double v) const FLATBUFFERS_OVERRIDE;
 
   std::string NaN(double v) const FLATBUFFERS_OVERRIDE;
@@ -229,6 +230,6 @@ private:
   const std::string neg_inf_number_;
 };
 
-} // namespace flatbuffers
+}  // namespace flatbuffers
 
-#endif // FLATBUFFERS_CODE_GENERATORS_H_
+#endif  // FLATBUFFERS_CODE_GENERATORS_H_

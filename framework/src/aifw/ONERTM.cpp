@@ -21,12 +21,12 @@
 #include "tinyara/config.h"
 #include "aifw/aifw_log.h"
 #include "include/ONERTM.h"
-#include "luci_interpreter/Interpreter.h"
+#include "OMInterpreter.h"
 
 namespace aifw {
 
 ONERTM::ONERTM() :
-	mBuf(NULL), mInterpreter(NULL),
+	mBuf(NULL), mInterpreter(NULL), mConfig(NULL),
 #ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 	mModelInputSize(0), mModelOutputSize(0)
 #else
@@ -37,7 +37,7 @@ ONERTM::ONERTM() :
 
 ONERTM::~ONERTM()
 {
-	AIFW_LOGV(":DEINIT:");
+	AIFW_LOGD(":DEINIT:");
 	if (mBuf) {
 		free(mBuf);
 		mBuf = NULL;
@@ -58,26 +58,24 @@ ONERTM::~ONERTM()
 AIFW_RESULT ONERTM::resetInferenceState(void)
 {
 	this->mInterpreter.reset();
-	this->mInterpreter = std::make_shared<luci_interpreter::Interpreter>(this->mBuf, true);
+	this->mInterpreter = std::make_shared<onert_micro::OMInterpreter>();
+	this->mConfig = std::make_shared<onert_micro::OMConfig>();
 	return AIFW_OK;
 }
 
 AIFW_RESULT ONERTM::_loadModel(void)
 {
-	AIFW_LOGV("luci_interpreter::Interpreter _loadModel\n");
-	this->mInterpreter = std::make_shared<luci_interpreter::Interpreter>(
-		this->mBuf,
-		true);
-	AIFW_LOGV("luci_interpreter::Interpreter created\n");
-	sleep(2);
+	this->mInterpreter = std::make_shared<onert_micro::OMInterpreter>();
+	this->mConfig = std::make_shared<onert_micro::OMConfig>();
+	this->mInterpreter->importModel(const_cast<const char *>(this->mBuf), *this->mConfig);
 
 #ifndef CONFIG_AIFW_MULTI_INOUT_SUPPORT
 	// TODO: support multiple input/outputs
-	this->mModelInputSize = this->mInterpreter->getInputDataSizeByIndex(0);
-	this->mModelOutputSize = this->mInterpreter->getOutputDataSizeByIndex(0);
+	this->mModelInputSize = this->mInterpreter->getInputSizeAt(0);
+	this->mModelOutputSize = this->mInterpreter->getOutputSizeAt(0);
 #else
-	this->mInputSetCount = mInterpreter->getNumOfInputTensors();
-	this->mOutputSetCount = mInterpreter->getNumOfOutputTensors();
+	this->mInputSetCount = mInterpreter->getNumberOfInputs();
+	this->mOutputSetCount = mInterpreter->getNumberOfOutputs();
 	this->mInputSizeList = new uint16_t[this->mInputSetCount];
 	if (!this->mInputSizeList) {
 		AIFW_LOGE("Internal memory allocation failed");
@@ -89,29 +87,29 @@ AIFW_RESULT ONERTM::_loadModel(void)
 		return AIFW_NO_MEM;
 	}
 	for (uint16_t i = 0; i < this->mInputSetCount; i++) {
-		this->mInputSizeList[i] = this->mInterpreter->getInputDataSizeByIndex(i) / sizeof(float);
+		this->mInputSizeList[i] = this->mInterpreter->getInputSizeAt(i);
 	}
 	for (uint16_t i = 0; i < this->mOutputSetCount; i++) {
-		this->mOutputSizeList[i] = this->mInterpreter->getOutputDataSizeByIndex(i) / sizeof(float);
+		this->mOutputSizeList[i] = this->mInterpreter->getOutputSizeAt(i);
 	}
-	AIFW_LOGV("number of inputs: %d \n", this->mInputSetCount);
+	AIFW_LOGD("number of inputs: %d \n", this->mInputSetCount);
 	for (uint16_t i = 0; i < this->mInputSetCount; i++) {
-		AIFW_LOGV("Model Input Size [%d] =%d\n", i, this->mInputSizeList[i]);
+		AIFW_LOGD("Model Input Size [%d] =%d\n", i, this->mInputSizeList[i]);
 	}
-	AIFW_LOGV("number of outputs: %d \n", this->mOutputSetCount);
+	AIFW_LOGD("number of outputs: %d \n", this->mOutputSetCount);
 	for (uint16_t i = 0; i < this->mOutputSetCount; i++) {
-		AIFW_LOGV("Model Output Size [%d] = %d\n", i, this->mOutputSizeList[i]);
+		AIFW_LOGD("Model Output Size [%d] = %d\n", i, this->mOutputSizeList[i]);
 	}
 #endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 
-	AIFW_LOGV("Interpreter initialization success.");
+	AIFW_LOGD("Interpreter initialization success.");
 
 	return AIFW_OK;
 }
 
 AIFW_RESULT ONERTM::loadModel(const char *file)
 {
-	AIFW_LOGV("GetModel from File:%s", file);
+	AIFW_LOGD("GetModel from File:%s", file);
 	FILE *fp = fopen(file, "r");
 	if (fp == NULL) {
 		AIFW_LOGE("File %s open operation failed errno : %d", file, errno);
@@ -125,7 +123,7 @@ AIFW_RESULT ONERTM::loadModel(const char *file)
 		AIFW_LOGE("File %s size read as %d is invalid, errno %d", file, size, errno);
 		return AIFW_ERROR_FILE_ACCESS;
 	}
-	AIFW_LOGV("Model File Size: %d", size);
+	AIFW_LOGD("Model File Size: %d", size);
 	this->mBuf = (char *)malloc(size);
 	if (!this->mBuf) {
 		fclose(fp);
@@ -135,9 +133,9 @@ AIFW_RESULT ONERTM::loadModel(const char *file)
 	fread(this->mBuf, 1, size, fp);
 	fclose(fp);
 
-	AIFW_LOGV("GetModel from Model file");
+	AIFW_LOGD("GetModel from Model file");
 
-	AIFW_LOGV("Model read from file %s", file);
+	AIFW_LOGD("Model Loaded from file %s", file);
 	
 	return _loadModel();
 }
@@ -164,37 +162,42 @@ void ONERTM::getModelDimensions(uint16_t *inputSetCount, uint16_t **inputSizeLis
 void *ONERTM::invoke(void *inputData)
 {
 	float *value = (float *)(inputData);
-	auto *data = this->mInterpreter->allocateInputTensor(0);
-	for (uint32_t i = 0; i < this->mModelInputSize/sizeof(float); ++i) {
+	this->mInterpreter->reset();
+	this->mInterpreter->allocateInputs();
+	auto *data = this->mInterpreter->getInputDataAt(0);
+	for (uint32_t i = 0; i < this->mModelInputSize; ++i) {
 		reinterpret_cast<float *>(data)[i] = value[i];
 	}
 	AIFW_START_TIMER
-	this->mInterpreter->interpret();
+	this->mInterpreter->run(*this->mConfig);
 	AIFW_END_TIMER
-	return this->mInterpreter->readOutputTensor(0);
+
+	return this->mInterpreter->getOutputDataAt(0);
 }
 #else
 /* Run inference : with input data "features", store output data in outputData parameter and return AIFW_OK on success */
 AIFW_RESULT ONERTM::invoke(void *inputData, void *outputData)
 {
+	
+	this->mInterpreter->reset();
+	this->mInterpreter->allocateInputs();
 	float **value = (float **)(inputData);
 	float **output = (float **)(outputData);
 	for (uint16_t i = 0; i < this->mInputSetCount; i++) {
-		auto *data = this->mInterpreter->allocateInputTensor(i);
+		auto *data = this->mInterpreter->getInputDataAt(i);
 		for (uint32_t j = 0; j < this->mInputSizeList[i]; j++) {
 			reinterpret_cast<float *>(data)[j] = value[i][j];
 		}
 	}
 
 	AIFW_START_TIMER
-	this->mInterpreter->interpret();
+	this->mInterpreter->run(*this->mConfig);
 	AIFW_END_TIMER
 	for (uint16_t i = 0; i < this->mOutputSetCount; i++) {
-		output[i] = (float *)this->mInterpreter->readOutputTensor(i);
+		output[i] = (float *)this->mInterpreter->getOutputDataAt(i);
 	}
 	return AIFW_OK;
 }
 
 #endif /* CONFIG_AIFW_MULTI_INOUT_SUPPORT */
 } /* namespace aifw */
-
