@@ -109,11 +109,13 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+/* Definitions moved from ndp120_voice.c. */
 #define NDP120_SAMPLE_RX_RATE AUDIO_SAMP_RATE_16K
 #define NDP120_BITS_PER_SAMPLE 16
 #define NDP120_SPI_CHANNEL_NUM 1
 #define NDP120_MIC_GAIN_MAX 10
 #define NDP120_MIC_GAIN_DEFAULT 7
+/* Definitions moved from ndp120_api.c. */
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 #define round_down(x, y) ((x) - ((x) % (y)))
 #define STRING_LEN 256
@@ -135,6 +137,8 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
+/* Private data moved from ndp120_api.c. */
 
 #ifdef CONFIG_NDP120_AEC_SUPPORT
 enum ndp120_state_e {
@@ -183,6 +187,8 @@ static const dsp_flow_t g_flow_types[] = {
 /****************************************************************************
  * Function Prototypes
  ****************************************************************************/
+
+/* Function declarations moved from ndp120_api.c. */
 int ndp120_init(struct ndp120_dev_s *dev);
 int ndp120_load_firmware(struct ndp120_dev_s *dev);
 void ndp120_aec_enable(struct ndp120_dev_s *dev);
@@ -201,6 +207,7 @@ int ndp120_kw_sensitivity_set(struct ndp120_dev_s *dev, uint16_t sensitivity);
 int ndp120_kw_sensitivity_get(struct ndp120_dev_s *dev, uint16_t *sensitivity);
 int ndp120_change_dsp_flow(struct ndp120_dev_s *dev, uint8_t dsp_flow_num);
 #ifdef CONFIG_DUMP4CH_SUPPORT
+/* Function declarations moved from ndp120_debug_utils.c. */
 int ndp120_utils_stream_init(struct ndp120_dev_s *dev, unsigned int duration, int verbose, int *dev_extract_size);
 int ndp120_utils_stream_deinit(struct ndp120_dev_s *dev);
 int ndp120_utils_stream_get_data(struct ndp120_dev_s *dev, uint8_t *data, uint32_t *extracted_size);
@@ -208,6 +215,8 @@ int ndp120_utils_stream_get_data(struct ndp120_dev_s *dev, uint8_t *data, uint32
 
 static void do_ndp120_i2s_setup(struct syntiant_ndp_device_s *ndp);
 static void attach_algo_config_area(struct syntiant_ndp_device_s *ndp, int32_t algo_id, int32_t algo_config_index);
+
+/* Audio lower-half implementation moved from ndp120_voice.c. */
 
 /****************************************************************************
  * Private Function Prototypes
@@ -320,21 +329,13 @@ static inline int ndp120_givesem(sem_t *sem)
 	return sem_post(sem);
 }
 
-static inline int ndp120_get_semvalue(sem_t *sem)
-{
-	int val;
-	int ret;
-	ret = sem_getvalue(sem, &val);
-	if (ret < 0) {
-		auddbg(" could not get semaphore value\n");
-	}
-	return val;
-}
-
 static int ndp120_setMute(FAR struct ndp120_dev_s *priv, bool mute)
 {
 	int ret = 0;
-	audvdbg("mute : %d\n", mute);
+	FAR struct audio_lowerhalf_s *dev = &priv->dev;
+
+	auddbg("mute : %d\n", mute);
+	DEBUGASSERT(priv && dev->upper);
 	/* if NDP has not been initialized, return without doing anything */
 	if (!priv->ndp) {
 		return 0;
@@ -346,9 +347,9 @@ static int ndp120_setMute(FAR struct ndp120_dev_s *priv, bool mute)
 			return ret;
 		}
 #ifdef CONFIG_AUDIO_MULTI_SESSION
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK, NULL);
+		dev->upper(dev->priv, AUDIO_CALLBACK_MICMUTE, NULL, OK, NULL);
 #else
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICMUTE, NULL, OK);
+		dev->upper(dev->priv, AUDIO_CALLBACK_MICMUTE, NULL, OK);
 #endif
 	} else {
 		uint32_t notifications = 0;
@@ -364,9 +365,9 @@ static int ndp120_setMute(FAR struct ndp120_dev_s *priv, bool mute)
 			return ret;
 		}
 #ifdef CONFIG_AUDIO_MULTI_SESSION
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK, NULL);
+		dev->upper(dev->priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK, NULL);
 #else
-		priv->dev.upper(priv->dev.priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK);
+		dev->upper(dev->priv, AUDIO_CALLBACK_MICUNMUTE, NULL, OK);
 #endif
 	}
 	return ret;
@@ -535,6 +536,7 @@ static int ndp120_configure(FAR struct audio_lowerhalf_s *dev,
 			ret = ndp120_setMute(priv, mute);
 			if (ret != 0) {
 				auddbg("ndp120_setMute failed ret : %d\n", ret);
+				ndp120_givesem(&priv->devsem);
 				return ret;
 			}
 			priv->mute = mute;
@@ -1155,6 +1157,9 @@ FAR struct audio_lowerhalf_s *ndp120_lowerhalf_initialize(FAR struct spi_dev_s *
 	priv->lower->attach(ndp120_interrupt_dispatch, priv);
 	return &priv->dev;
 }
+
+/* Core API implementation moved from ndp120_api.c. */
+
 void ndp120_semtake(struct ndp120_dev_s *dev)
 {
 	while (sem_wait(&dev->reset_sem) != 0) {
@@ -1177,20 +1182,6 @@ static int check_status(char *message, int s)
 		auddbg("%s failed: %s\n", message, syntiant_ndp_error_name(s));
 	}
 	return s;
-}
-
-static int check_io(char *message, int expected_len, int len)
-{
-	if (len < expected_len) {
-		if (len < 0) {
-			auddbg("%s failed\n", message);
-		} else {
-			auddbg("%s truncated\n", message);
-		}
-		return SYNTIANT_NDP_ERROR_FAIL;
-	}
-
-	return SYNTIANT_NDP_ERROR_NONE;
 }
 
 static void timer_start(struct timespec *ts)
@@ -3274,6 +3265,8 @@ int ndp120_change_dsp_flow(struct ndp120_dev_s *dev, uint8_t dsp_flow_num)
 }
 
 #ifdef CONFIG_DUMP4CH_SUPPORT
+
+/* Debug utilities moved from ndp120_debug_utils.c. */
 
 static int pdm_clk_en(struct syntiant_ndp_device_s *ndp, uint32_t clk)
 {
