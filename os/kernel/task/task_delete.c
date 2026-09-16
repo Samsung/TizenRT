@@ -211,18 +211,6 @@ int task_delete(pid_t pid)
 	}
 #endif
 
-	/* The task is cancelable right now and will be terminated below.  It
-	 * keeps running until task_terminate() stops it, so mark it as doomed
-	 * while the flags are still stable: task_setcancelstate() exits a
-	 * doomed task instead of letting it become non-cancelable, so it
-	 * cannot enter a region (e.g. a filesystem holding its global lock)
-	 * that the termination would otherwise corrupt or strand.
-	 */
-
-	if (pid != rtcb->pid) {
-		dtcb->flags |= TCB_FLAG_CANCEL_DOOMED;
-	}
-
 	sched_unlock();
 	leave_critical_section(flags);
 
