@@ -161,6 +161,10 @@ ifeq ($(CONFIG_ENABLE_TZSELECT),y)
 CSRCS += utils_tzselect.c
 endif
 
+ifeq ($(CONFIG_ENABLE_ASSERTMODE),y)
+CSRCS += utils_assertmode.c
+endif
+
 ifeq ($(CONFIG_ENABLE_CPULOAD),y)
 CSRCS += utils_proc.c
 else ifeq ($(CONFIG_ENABLE_PS),y)

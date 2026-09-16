@@ -247,3 +247,21 @@ config ENABLE_UPTIME
 	default y
 	---help---
 		print how long the system has been running
+
+config ENABLE_ASSERTMODE
+	bool "assertmode"
+	default n
+	depends on BOARD_ASSERT_AUTORESET || BOARD_ASSERT_SYSTEM_HALT
+	select ASSERTMODE_DRIVER
+	---help---
+		Enable the assertmode TASH command to set or show the
+		assert behavior mode at runtime.
+		Usage: assertmode [MODE]
+		MODE:
+		  0 = auto-reset on assert
+		  1 = halt with watchdog kick on assert
+		  2 = task exit/terminate on assert
+		Running without arguments shows current status.
+		Default behavior depends on configuration:
+		- If BOARD_ASSERT_AUTORESET=y: default is auto-reset (0)
+		- If BOARD_ASSERT_SYSTEM_HALT=y: default is halt (1)
