@@ -63,6 +63,20 @@ void compress_uninit(void);
  *   OK (0) on Success
  *   ERROR (-1) on Failure
  ****************************************************************************/
+
+#ifdef CONFIG_BINMGR_READ_DECRYPTED_BINARY
+/****************************************************************************
+ * Name: compress_set_decrypt_context
+ *
+ * Description:
+ *   Enable/disable on-the-fly decryption of the compressed binary being
+ *   loaded and provide the physical partition address. Must be set before
+ *   compress_init() and cleared once the load completes.
+ *
+ ****************************************************************************/
+void compress_set_decrypt_context(bool enable, uint32_t part_addr);
+#endif
+
 int compress_init(int filfd, uint16_t offset, off_t *filelen);
 
 /****************************************************************************
