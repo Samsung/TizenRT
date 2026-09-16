@@ -20,4 +20,6 @@
 /.bininfo
 /dutils_output_*.txt
 /.download
+/.configured
+/.config.bak
 /app_size_file
