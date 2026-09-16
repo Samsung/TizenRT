@@ -290,9 +290,6 @@ static audio_manager_result_t verify_audio_metadata_json(void);
 static const char *getJSONKey(stream_policy_t stream_policy);
 static inline audio_manager_result_t validate_stream_policy(stream_policy_t stream_policy);
 static int8_t get_stream_index(audio_card_info_t *card, stream_info_id_t stream_id);
-static unsigned int get_output_frame_count(uint8_t idx);
-static unsigned int get_user_output_frames_to_byte(unsigned int frames, uint8_t idx);
-static unsigned int get_user_output_bytes_to_frame(unsigned int bytes, uint8_t idx);
 static uint8_t find_volume_index(uint8_t volume, stream_policy_t stream_policy);
 static audio_manager_result_t set_audio_mixer_gain(audio_io_direction_t direct, uint8_t *gain);
 static audio_manager_result_t get_audio_mixer_gain(audio_io_direction_t direct);
@@ -1481,10 +1478,10 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	card->resample_array[idx].rechannel_buffer = NULL;
 	card->resample_array[idx].speex_resampler = NULL;
 	card->resample_array[idx].rechannel_buffer_size = 0;
-	card->resample_array[idx].user_channel = pcm_get_channels(card->pcm);
-	card->resample_array[idx].user_sample_rate = pcm_get_rate(card->pcm);
+	card->resample_array[idx].user_channel = channels;
+	card->resample_array[idx].user_sample_rate = sample_rate;
 	card->resample_array[idx].user_format = pcm_format_to_bits(pcm_get_format(card->pcm)) >> 3;
-	card->resample_array[idx].ratio = 1.0f;
+	card->resample_array[idx].ratio = (float)config.rate / (float)card->resample_array[idx].user_sample_rate;
 	card->resample_array[idx].buffer_size = pcm_get_buffer_size(card->pcm);
 	card->resample_array[idx].buffer = malloc(card->resample_array[idx].buffer_size);
 	if (!card->resample_array[idx].buffer) {
@@ -1614,10 +1611,6 @@ int start_audio_stream_out(void *data, unsigned int frames, uint8_t playback_idx
 	unsigned int expected_frames;
 	medvdbg("start_audio_stream_out(%u)\n", frames);
 
-	if (!data || frames == 0 || playback_idx >= AUDIO_MAX_DUCKED_STREAMS) {
-		return AUDIO_MANAGER_INVALID_PARAM;
-	}
-
 	if (g_actual_audio_out_card_id < 0) {
 		meddbg("Found no active output audio card\n");
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
@@ -1628,32 +1621,10 @@ int start_audio_stream_out(void *data, unsigned int frames, uint8_t playback_idx
 	pthread_mutex_lock(&(card->card_mutex));
 
 	idx = get_stream_index(card, stream_id);
-	if (idx == INVALID_INDEX || !pcm_is_ready(card->pcm) ||
-		!card->resample_array[idx].buffer) {
-		ret = AUDIO_MANAGER_CARD_NOT_READY;
-		goto error_with_lock;
-	}
-
-	expected_frames = pcm_bytes_to_frames(card->pcm, card->resample_array[idx].buffer_size);
-	if (frames != expected_frames ||
-		pcm_frames_to_bytes(card->pcm, frames) != card->resample_array[idx].buffer_size) {
-		meddbg("Output must be one full hardware period, frames: %u/%u\n", frames, expected_frames);
-		ret = AUDIO_MANAGER_INVALID_PARAM;
-		goto error_with_lock;
-	}
 
 	memcpy(card->resample_array[idx].buffer, data, card->resample_array[idx].buffer_size);
 	data = card->resample_array[idx].buffer;
-
-	if (card->mixing) {
-		if (pcm_get_channels(card->pcm) != AUDIO_STREAM_CHANNEL_STEREO ||
-			card->main_stream_idx < 0 || card->main_stream_idx >= AUDIO_MAX_DUCKED_STREAMS ||
-			!card->resample_array[0].buffer || !card->resample_array[1].buffer) {
-			meddbg("Mixing requires stereo output and two valid stream buffers\n");
-			ret = AUDIO_MANAGER_DEVICE_NOT_SUPPORT;
-			goto error_with_lock;
-		}
-	}
+	card->resample_array[idx].frames = frames;
 
 	card->stream_status[idx] = RUNNING;
 
@@ -1675,7 +1646,7 @@ int start_audio_stream_out(void *data, unsigned int frames, uint8_t playback_idx
 		}
 
 		medvdbg("Mix both streams\n");
-		media::utils::mergeChannel(card->resample_array[card->main_stream_idx].buffer, card->resample_array[1 - card->main_stream_idx].buffer, frames);
+		media::utils::mergeChannel(card->resample_array[card->main_stream_idx].buffer, &card->resample_array[card->main_stream_idx].frames, card->resample_array[1 - card->main_stream_idx].buffer, &card->resample_array[1 - card->main_stream_idx].frames);
 		data = card->resample_array[card->main_stream_idx].buffer;
 	}
 
@@ -2043,110 +2014,6 @@ unsigned int get_user_input_bytes_to_frame(unsigned int bytes)
 	frame_size = bytes / card->resample.user_channel / card->resample.user_format;
 
 	return frame_size;
-}
-
-unsigned int get_output_frame_count(uint8_t idx)
-{
-	if (g_actual_audio_out_card_id < 0) {
-		meddbg("No output audio card is active.\n");
-		return 0;
-	}
-
-	return get_user_output_bytes_to_frame(pcm_get_buffer_size(g_audio_out_cards[g_actual_audio_out_card_id].pcm), idx);
-}
-
-unsigned int get_output_frame_count(stream_info_id_t stream_id)
-{
-	audio_card_info_t *card;
-	int8_t idx;
-
-	if (g_actual_audio_out_card_id < 0) {
-		meddbg("Found no active output audio card\n");
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
-
-	card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	idx = get_stream_index(card, stream_id);
-
-	return get_output_frame_count((uint8_t)idx);
-}
-
-unsigned int get_card_output_frames_to_byte(unsigned int frames)
-{
-	if ((g_actual_audio_out_card_id < 0) || (frames == 0)) {
-		return 0;
-	}
-
-	return pcm_frames_to_bytes(g_audio_out_cards[g_actual_audio_out_card_id].pcm, frames);
-}
-
-unsigned int get_card_output_bytes_to_frame(unsigned int bytes)
-{
-	if ((g_actual_audio_out_card_id < 0) || (bytes == 0)) {
-		return 0;
-	}
-
-	return pcm_bytes_to_frames(g_audio_out_cards[g_actual_audio_out_card_id].pcm, bytes);
-}
-
-unsigned int get_user_output_frames_to_byte(unsigned int frames, uint8_t idx)
-{
-	int byte_size = 0;
-	audio_card_info_t *card;
-
-	if ((g_actual_audio_out_card_id < 0) || (frames == 0)) {
-		return 0;
-	}
-	card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	byte_size = frames * card->resample_array[idx].user_channel * card->resample_array[idx].user_format;
-
-	return byte_size;
-}
-
-unsigned int get_user_output_frames_to_byte(unsigned int frames, stream_info_id_t stream_id)
-{
-	audio_card_info_t *card;
-	int8_t idx;
-
-	if (g_actual_audio_out_card_id < 0) {
-		meddbg("Found no active output audio card\n");
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
-
-	card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	idx = get_stream_index(card, stream_id);
-
-	return get_user_output_frames_to_byte(frames, (uint8_t)idx);
-}
-
-unsigned int get_user_output_bytes_to_frame(unsigned int bytes, uint8_t idx)
-{
-	int frame_size = 0;
-	audio_card_info_t *card;
-
-	if ((g_actual_audio_out_card_id < 0) || (bytes == 0)) {
-		return 0;
-	}
-	card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	frame_size = bytes / card->resample_array[idx].user_channel / card->resample_array[idx].user_format;
-
-	return frame_size;
-}
-
-unsigned int get_user_output_bytes_to_frame(unsigned int bytes, stream_info_id_t stream_id)
-{
-	audio_card_info_t *card;
-	int8_t idx;
-
-	if (g_actual_audio_out_card_id < 0) {
-		meddbg("Found no active output audio card\n");
-		return AUDIO_MANAGER_NO_AVAIL_CARD;
-	}
-
-	card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	idx = get_stream_index(card, stream_id);
-
-	return get_user_output_bytes_to_frame(bytes, (uint8_t)idx);
 }
 
 float get_output_sample_rate_ratio(stream_info_id_t stream_id)

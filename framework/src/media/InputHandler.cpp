@@ -362,6 +362,7 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 			if (sizePCM > sourceCapacity) {
 				sizePCM = sourceCapacity;
 			}
+			meddbg("sizePCM before = %d\n", sizePCM);
 			if (mResampler.isConfigured()) {
 				size_t sourceFrameBytes = mResampler.getSourceFrameBytes();
 				sizePCM -= sizePCM % sourceFrameBytes;
@@ -396,7 +397,6 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 
 ssize_t InputHandler::writePcmToStreamBuffer(const unsigned char *buf, size_t size)
 {
-	meddbg("enter writeToPCMStreamBuffer\n");
 	const unsigned char *output = buf;
 	ssize_t outputBytes = size;
 	if (mResampler.isConfigured()) {
@@ -415,7 +415,6 @@ ssize_t InputHandler::writePcmToStreamBuffer(const unsigned char *buf, size_t si
 	if (mOutputPeriodBytes > 0) {
 		mOutputPeriodOffset = (mOutputPeriodOffset + written % mOutputPeriodBytes) % mOutputPeriodBytes;
 	}
-	meddbg("exit writeToPCMStreamBuffer\n");
 	return outputBytes;
 }
 
