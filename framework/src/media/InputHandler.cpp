@@ -56,7 +56,7 @@ void InputHandler::setInputDataSource(std::shared_ptr<InputDataSource> source)
 	mInputDataSource = source;
 }
 
-bool InputHandler::doStandBy(size_t buffSize, unsigned channels, unsigned sampleRate, int format, size_t periodBytes)
+bool InputHandler::doStandBy(size_t buffSize)
 {
 	auto mp = getPlayer();
 	if (!mp) {
@@ -67,7 +67,7 @@ bool InputHandler::doStandBy(size_t buffSize, unsigned channels, unsigned sample
 	std::thread wk = std::thread([=]() {
 		medvdbg("InputHandler::doStandBy thread enter\n");
 		player_event_t event;
-		if (open(buffSize, channels, sampleRate, format, periodBytes)) {
+		if (prepare(buffSize)) {
 			event = PLAYER_EVENT_SOURCE_PREPARED;
 		} else {
 			event = PLAYER_EVENT_SOURCE_OPEN_FAILED;
@@ -77,33 +77,6 @@ bool InputHandler::doStandBy(size_t buffSize, unsigned channels, unsigned sample
 	});
 
 	wk.detach();
-	return true;
-}
-
-bool InputHandler::open(size_t buffSize, unsigned channels, unsigned sampleRate, int format, size_t periodBytes)
-{
-	pcm_stream_format_t outputFormat = {
-		channels,
-		sampleRate,
-		static_cast<pcm_format>(format)
-	};
-	mOutput = outputFormat;
-	mOutputPeriodBytes = periodBytes;
-
-	// Open stream handler and start buffering
-	if (!StreamHandler::open(buffSize)) {
-		meddbg("StreamHandler::open failed!\n");
-		return false;
-	}
-
-	// Wait buffering done
-	std::unique_lock<std::mutex> lock(mMutex);
-	if (mState < BUFFER_STATE_BUFFERED) {
-		medvdbg("PCM buffering...\n");
-		mCondv.wait(lock);
-		medvdbg("PCM buffering done!\n");
-	}
-
 	return true;
 }
 
@@ -153,7 +126,7 @@ void InputHandler::resetWorker()
 	mResampler.reset();
 }
 
-bool InputHandler::start()
+bool InputHandler::startBuffering()
 {
 	if (!mProcessBuffer) {
 		mProcessBufferSize = mDecoder ? CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE : mDemuxer ? CONFIG_DEMUX_BUFFER_SIZE : mStreamBuffer->getBufferSize();
@@ -183,7 +156,28 @@ bool InputHandler::start()
 		mProcessBufferSize = 0;
 	}
 
+	// Wait buffering done
+	std::unique_lock<std::mutex> lock(mMutex);
+	if (mState < BUFFER_STATE_BUFFERED) {
+		medvdbg("PCM buffering...\n");
+		mCondv.wait(lock);
+		medvdbg("PCM buffering done!\n");
+	}
+
 	return ret;
+}
+
+void InputHandler::set_output_audio_capabilities(unsigned int sampleRate, unsigned int channels, int format)
+{
+	pcm_stream_format_t outputFormat = {
+		channels,
+		sampleRate,
+		static_cast<pcm_format>(format)
+	};
+
+	mOutput = outputFormat;
+	meddbg("channels = %d, sampleRate = %d, format = %d\n", mOutput.channels, mOutput.sampleRate, mOutput.format);
+	return;
 }
 
 bool InputHandler::processWorker()

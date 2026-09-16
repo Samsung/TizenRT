@@ -2111,11 +2111,8 @@ unsigned int get_output_card_total_buffer_size(void)
 	return get_card_total_buffer_size(OUTPUT);
 }
 
-audio_manager_result_t get_output_audio_config(audio_output_pcm_config_t *config)
+audio_manager_result_t get_output_audio_capabilities(unsigned int *sampleRate, unsigned int *channels, int *format)
 {
-	if (!config) {
-		return AUDIO_MANAGER_INVALID_PARAM;
-	}
 	if (g_actual_audio_out_card_id < 0) {
 		return AUDIO_MANAGER_NO_AVAIL_CARD;
 	}
@@ -2127,19 +2124,11 @@ audio_manager_result_t get_output_audio_config(audio_output_pcm_config_t *config
 		return AUDIO_MANAGER_CARD_NOT_READY;
 	}
 
-	config->channels = pcm_get_channels(card->pcm);
-	config->sample_rate = pcm_get_rate(card->pcm);
-	config->format = static_cast<int>(pcm_get_format(card->pcm));
-	config->period_bytes = pcm_get_buffer_size(card->pcm);
-	config->period_frames = pcm_bytes_to_frames(card->pcm, config->period_bytes);
-	bool period_aligned = pcm_frames_to_bytes(card->pcm, config->period_frames) == config->period_bytes;
+	*channels = pcm_get_channels(card->pcm);
+	*sampleRate = pcm_get_rate(card->pcm);
+	*format = static_cast<int>(pcm_get_format(card->pcm));
 	pthread_mutex_unlock(&(card->card_mutex));
 
-	if (config->channels == 0 || config->sample_rate == 0 ||
-		config->period_bytes == 0 || config->period_frames == 0 ||
-		!period_aligned) {
-		return AUDIO_MANAGER_OPERATION_FAIL;
-	}
 	return AUDIO_MANAGER_SUCCESS;
 }
 

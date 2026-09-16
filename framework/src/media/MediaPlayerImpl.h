@@ -150,10 +150,6 @@ private:
 	std::atomic<player_state_t> mCurState;
 	unsigned char *mBuffer;
 	int mBufSize;
-	unsigned int mOutputChannels;
-	unsigned int mOutputSampleRate;
-	int mOutputFormat;
-	unsigned int mOutputPeriodFrames;
 	std::mutex mCmdMtx;
 	std::shared_ptr<stream_info_t> mStreamInfo;
 	std::shared_ptr<MediaPlayerObserverInterface> mPlayerObserver;

@@ -41,10 +41,6 @@ MediaPlayerImpl::MediaPlayerImpl(MediaPlayer &player) : mPlayer(player)
 	mCurState = PLAYER_STATE_NONE;
 	mBuffer = nullptr;
 	mBufSize = 0;
-	mOutputChannels = 0;
-	mOutputSampleRate = 0;
-	mOutputFormat = 0;
-	mOutputPeriodFrames = 0;
 	stream_info_t *info;
 	int ret = stream_info_create(STREAM_TYPE_MEDIA, &info);
 	if (ret != OK) {
@@ -248,6 +244,15 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 		return;
 	}
 
+	if (!mInputHandler.prepare(mBufSize)) {
+		meddbg("MediaPlayer prepare fail : prepare fail\n");
+		ret = PLAYER_ERROR_FILE_OPEN_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		notifySync(syncSem);
+		return;
+	}
+
 	auto source = mInputHandler.getDataSource();
 	if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
@@ -260,24 +265,24 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 		return;
 	}
 
-	audio_output_pcm_config_t outputConfig;
-	if (get_output_audio_config(&outputConfig) != AUDIO_MANAGER_SUCCESS ||
-		outputConfig.period_bytes > INT_MAX) {
-		meddbg("MediaPlayer prepare fail : get_output_audio_config fail\n");
+	unsigned int sampleRate;
+	unsigned int channels;
+	int format;
+
+	if (!get_output_audio_capabilities(&sampleRate, &channels, &format)) {
+		meddbg("MediaPlayer prepare fail : get_output_audio_capabilities fail\n");
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		notifySync(syncSem);
 		return;
 	}
 
-	mOutputChannels = outputConfig.channels;
-	mOutputSampleRate = outputConfig.sample_rate;
-	mOutputFormat = outputConfig.format;
-	mOutputPeriodFrames = outputConfig.period_frames;
+	mInputHandler.set_output_audio_capabilities(sampleRate, channels, format);
 
-	meddbg("channels = %d, sampleRate = %d, foramt = %d, periodFrames = %d\n", mOutputChannels, mOutputSampleRate, mOutputFormat, mOutputPeriodFrames);
-	meddbg("yash yash\n");
-
-	if (!mInputHandler.open(mBufSize, mOutputChannels, mOutputSampleRate, mOutputFormat, static_cast<size_t>(mBufSize))) {
-		meddbg("MediaPlayer prepare fail : open fail\n");
-		ret = PLAYER_ERROR_FILE_OPEN_FAILED;
+	if (!mInputHandler.startBuffering()) {
+		meddbg("MediaPlayer prepare fail : start buffering fail\n");
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		delete[] mBuffer;
 		mBuffer = nullptr;
 		notifySync(syncSem);
@@ -353,19 +358,7 @@ void MediaPlayerImpl::prepareAsyncPlayer()
 
 	mCurState = PLAYER_STATE_PREPARING;
 
-	audio_output_pcm_config_t outputConfig;
-	if (get_output_audio_config(&outputConfig) != AUDIO_MANAGER_SUCCESS ||
-		outputConfig.period_bytes > INT_MAX) {
-		meddbg("MediaPlayer prepare fail : get_output_audio_config fail\n");
-		return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
-	}
-
-	mOutputChannels = outputConfig.channels;
-	mOutputSampleRate = outputConfig.sample_rate;
-	mOutputFormat = outputConfig.format;
-	mOutputPeriodFrames = outputConfig.period_frames;
-
-	if (!mInputHandler.doStandBy(mBufSize, mOutputChannels, mOutputSampleRate, mOutputFormat, static_cast<size_t>(mBufSize))) {
+	if (!mInputHandler.doStandBy(mBufSize)) {
 		meddbg("MediaPlayer prepare fail : doStandBy fail\n");
 		notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		return;
@@ -438,10 +431,6 @@ player_result_t MediaPlayerImpl::unpreparePlayback(void)
 		mBuffer = nullptr;
 	}
 	mBufSize = 0;
-	mOutputChannels = 0;
-	mOutputSampleRate = 0;
-	mOutputFormat = 0;
-	mOutputPeriodFrames = 0;
 	mCurState = PLAYER_STATE_IDLE;
 	mpw.removePlayer(shared_from_this());
 	return ret;
@@ -464,10 +453,6 @@ player_result_t MediaPlayerImpl::reset()
 		}
 		mBufSize = 0;
 	}
-	mOutputChannels = 0;
-	mOutputSampleRate = 0;
-	mOutputFormat = 0;
-	mOutputPeriodFrames = 0;
 
 	mCurState = PLAYER_STATE_IDLE;
 
@@ -1294,6 +1279,22 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		}
 
+		unsigned int sampleRate;
+		unsigned int channels;
+		int format;
+
+		if (!get_output_audio_capabilities(&sampleRate, &channels, &format)) {
+			meddbg("MediaPlayer prepare fail : get_output_audio_capabilities fail\n");
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		}
+
+		mInputHandler.set_output_audio_capabilities(sampleRate, channels, format);
+
+		if (!mInputHandler.startBuffering()) {
+			meddbg("MediaPlayer prepare fail : start buffering fail\n");
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		}
+
 		mCurState = PLAYER_STATE_READY;
 		return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_NONE);
 	}
@@ -1311,11 +1312,7 @@ void MediaPlayerImpl::playback(std::chrono::milliseconds timeout, uint8_t playba
 	ssize_t num_read = mInputHandler.read(mBuffer, static_cast<size_t>(mBufSize), timeout);
 	medvdbg("num_read : %d player : %x\n", num_read, &mPlayer);
 	if (num_read > 0) {
-		if (num_read < mBufSize) {
-			memset(mBuffer + num_read, 0xff, static_cast<size_t>(mBufSize - num_read));
-		}
-		int ret = start_audio_stream_out(mBuffer, mOutputPeriodFrames,
-									 playback_idx, mStreamInfo->id);
+		int ret = start_audio_stream_out(mBuffer, num_read, playback_idx, mStreamInfo->id);
 		if (ret < 0) {
 			PlayerWorker &mpw = PlayerWorker::getWorker();
 			switch (ret) {

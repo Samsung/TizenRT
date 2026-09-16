@@ -444,7 +444,7 @@ unsigned int get_output_card_total_buffer_size(void);
 unsigned int get_input_card_total_buffer_size(void);
 
 /****************************************************************************
- * Name: get_output_audio_config
+ * Name: get_output_audio_capabilities
  *
  * Description:
  *   Get the actual PCM format and one hardware buffer size of the active
@@ -453,7 +453,7 @@ unsigned int get_input_card_total_buffer_size(void);
  * Return Value:
  *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
  ****************************************************************************/
-audio_manager_result_t get_output_audio_config(audio_output_pcm_config_t *config);
+audio_manager_result_t get_output_audio_capabilities(unsigned int *sampleRate, unsigned int *channels, int *format);
 
 /****************************************************************************
  * Name: get_max_audio_volume

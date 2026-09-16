@@ -47,14 +47,14 @@ class InputHandler : public StreamHandler
 public:
 	InputHandler();
 	void setInputDataSource(std::shared_ptr<InputDataSource> source);
-	bool doStandBy(size_t buffSize, unsigned channels, unsigned sampleRate, int format, size_t periodBytes);
-	bool open(size_t buffSize, unsigned channels, unsigned sampleRate, int format, size_t periodBytes);
-	bool start() override;
+	bool doStandBy(size_t buffSize);
 	bool close() override;
 	int seekTo(off_t offset);
 	ssize_t read(unsigned char *buf, size_t size, std::chrono::milliseconds timeout = std::chrono::milliseconds(0));
 	void setLoop(bool loop);
 	void setBufferState(buffer_state_t state);
+	bool startBuffering();
+	void set_output_audio_capabilities(unsigned int sampleRate, unsigned int channels, int format);
 
 	virtual void onBufferOverrun() override;
 	virtual void onBufferUnderrun() override;
