@@ -821,13 +821,13 @@ FAR struct tcb_s *sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *rtcb)
 	if (pholder->htcb != NULL)
 #endif
 	{
-		DEBUGASSERT(pholder->counts > 0);
 
 		if (pholder->htcb == rtcb) {
 			/* Decrement the counts on this holder -- the holder will be freed
 			 * later in sem_restorebaseprio.
 			 */
 
+			DEBUGASSERT(pholder->counts > 0);
 			pholder->counts--;
 			return rtcb;
 		}
