@@ -177,6 +177,10 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 #endif
 			tcb->pid = next_pid;
 
+#ifdef CONFIG_SCHED_SAVE_DEADTASK
+			sched_removedeadtaskinfo(tcb->pid);
+#endif
+
 			/* Increment the task count */
 			g_alive_taskcount++;
 

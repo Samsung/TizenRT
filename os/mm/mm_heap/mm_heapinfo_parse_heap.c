@@ -305,11 +305,20 @@ void heapinfo_parse_heap(FAR struct mm_heap_s *heap, int mode, pid_t pid)
 
 	if (mode != HEAPINFO_SIMPLE) {
 		heap_dbg("\n< by Dead Threads >\n");
+#ifdef CONFIG_SCHED_SAVE_DEADTASK
+		heap_dbg(" Pid | Size  | Name \n");
+		heap_dbg("-----|-------|------\n");
+#else
 		heap_dbg(" Pid | Size \n");
 		heap_dbg("-----|------\n");
+#endif
 		for (nonsched_idx = 0; nonsched_idx < CONFIG_MAX_TASKS; nonsched_idx++) {
 			if (nonsched_list[nonsched_idx] != HEAPINFO_NONSCHED) {
+#ifdef CONFIG_SCHED_SAVE_DEADTASK
+				heap_dbg("%4d | %5u | %s\n", nonsched_list[nonsched_idx], nonsched_size[nonsched_idx], sched_getdeadtaskname(nonsched_list[nonsched_idx]));
+#else
 				heap_dbg("%4d | %5u\n", nonsched_list[nonsched_idx], nonsched_size[nonsched_idx]);
+#endif
 			}
 		}
 	}
