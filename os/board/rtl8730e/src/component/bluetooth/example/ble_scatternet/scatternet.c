@@ -165,7 +165,6 @@ static app_conn_table_t conn_link[RTK_BLE_GAP_MAX_LINKS] = {0};
 rtk_bt_gattc_read_ind_t ble_tizenrt_scatternet_read_results[RTK_BLE_GAP_MAX_LINKS] = {0};
 rtk_bt_gattc_write_ind_t g_scatternet_write_result = {0};
 rtk_bt_gattc_write_ind_t g_scatternet_write_no_rsp_result = {0};
-trble_device_connected ble_tizenrt_scatternet_bond_list[RTK_BLE_GAP_MAX_LINKS] = {0};
 
 static void ble_tizenrt_dummy_callback(void)
 {
@@ -342,7 +341,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 				trble_device_connected connected_dev;
 				uint16_t mtu_size = 0;
 				connected_dev.conn_handle = conn_ind->conn_handle;
-				connected_dev.is_bonded = ble_tizenrt_scatternet_bond_list[conn_id].is_bonded;
+				connected_dev.is_bonded = rtk_bt_le_sm_is_device_bonded(&conn_ind->peer_addr);	/* Check Bond status */
 				connected_dev.conn_info.addr.type = conn_ind->peer_addr.type;
 				memcpy(connected_dev.conn_info.addr.mac, conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
 				connected_dev.conn_info.conn_interval = conn_ind->conn_interval;
@@ -554,16 +553,14 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
 			if(RTK_BT_LE_ROLE_MASTER == ble_tizenrt_scatternet_conn_ind->role)
 			{
 				uint8_t conn_id;
-				rtk_bt_le_gap_get_conn_id(auth_cplt_ind->conn_handle, &conn_id);
-				ble_tizenrt_scatternet_bond_list[conn_id].is_bonded = true;
-				memcpy(ble_tizenrt_scatternet_bond_list[conn_id].conn_info.addr.mac, ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
-				trble_device_connected connected_dev;
 				uint16_t mtu_size = 0;
+				trble_device_connected connected_dev;
+				rtk_bt_le_gap_get_conn_id(auth_cplt_ind->conn_handle, &conn_id);
 				if(RTK_BT_OK != rtk_bt_le_gap_get_mtu_size(auth_cplt_ind->conn_handle, &mtu_size)){
 					dbg("[APP] Get mtu size failed \r\n");
 				}
 				connected_dev.conn_handle = ble_tizenrt_scatternet_conn_ind->conn_handle;
-				connected_dev.is_bonded = ble_tizenrt_scatternet_bond_list[conn_id].is_bonded;
+				connected_dev.is_bonded = true;
 				connected_dev.conn_info.addr.type = ble_tizenrt_scatternet_conn_ind->peer_addr.type;
 				memcpy(connected_dev.conn_info.addr.mac, ble_tizenrt_scatternet_conn_ind->peer_addr.addr_val, RTK_BD_ADDR_LEN);
 				connected_dev.conn_info.conn_interval = ble_tizenrt_scatternet_conn_ind->conn_interval;
@@ -595,23 +592,6 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         rtk_bt_le_bond_modify_ind_t *bond_mdf_ind = 
                                         (rtk_bt_le_bond_modify_ind_t *)param;
 		dbg("[APP] Bond info modified, op: %d \r\n", bond_mdf_ind->op);
-		if(RTK_BT_LE_BOND_DELETE == bond_mdf_ind->op && del_bond_addr){
-			for(int i = 0; i < GAP_MAX_LINKS; i++)
-			{
-				if(!memcmp(ble_tizenrt_scatternet_bond_list[i].conn_info.addr.mac, del_bond_addr, RTK_BD_ADDR_LEN))
-				{
-					ble_tizenrt_scatternet_bond_list[i].is_bonded = false;
-					memset(ble_tizenrt_scatternet_bond_list[i].conn_info.addr.mac, 0, RTK_BD_ADDR_LEN);
-					break;
-				}
-			}
-		}else if(RTK_BT_LE_BOND_CLEAR == bond_mdf_ind->op){
-			for(int i = 0; i < GAP_MAX_LINKS; i++)
-			{
-				ble_tizenrt_scatternet_bond_list[i].is_bonded = false;
-				memset(ble_tizenrt_scatternet_bond_list[i].conn_info.addr.mac, 0, RTK_BD_ADDR_LEN);
-			}				
-		}
         break;
     }
 
