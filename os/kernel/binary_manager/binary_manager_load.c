@@ -203,6 +203,11 @@ static int binary_manager_load(int bin_idx)
 #ifdef CONFIG_USE_BP
 				/* If bp needs to be updated because either app or common binary is invalid */
 				/* Scan all binaries and set valid binary set in bootparam */
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+				binary_manager_set_bp_recovery_reason(bin_idx == BM_CMNLIB_IDX ? BP_UPDATE_BINARY_MANAGER_RECOVERY_COMMON : BP_UPDATE_BINARY_MANAGER_RECOVERY_USER);
+#else
+				binary_manager_set_bp_recovery_reason(BP_UPDATE_BINARY_MANAGER_RECOVERY_USER);
+#endif
 				ret = binary_manager_recover_bootparam_set();
 				if (ret != BINMGR_OK) {
 					bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
@@ -242,6 +247,11 @@ static int binary_manager_load(int bin_idx)
 #ifdef CONFIG_USE_BP
 				/* If bp needs to be updated because either app or common binary is invalid */
 				/* Scan all binaries and set valid binary set in bootparam */
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+				binary_manager_set_bp_recovery_reason(bin_idx == BM_CMNLIB_IDX ? BP_UPDATE_BINARY_MANAGER_RECOVERY_COMMON : BP_UPDATE_BINARY_MANAGER_RECOVERY_USER);
+#else
+				binary_manager_set_bp_recovery_reason(BP_UPDATE_BINARY_MANAGER_RECOVERY_USER);
+#endif
 				ret = binary_manager_recover_bootparam_set();
 				if (ret != BINMGR_OK) {
 					bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
@@ -298,6 +308,11 @@ static int binary_manager_load(int bin_idx)
 
 #ifdef CONFIG_USE_BP
 		/* If bp needs to be updated because binary load failed */
+#ifdef CONFIG_SUPPORT_COMMON_BINARY
+		binary_manager_set_bp_recovery_reason(bin_idx == BM_CMNLIB_IDX ? BP_UPDATE_BINARY_MANAGER_RECOVERY_COMMON : BP_UPDATE_BINARY_MANAGER_RECOVERY_USER);
+#else
+		binary_manager_set_bp_recovery_reason(BP_UPDATE_BINARY_MANAGER_RECOVERY_USER);
+#endif
 		ret = binary_manager_recover_bootparam_set();
 		if (ret != BINMGR_OK) {
 			bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
