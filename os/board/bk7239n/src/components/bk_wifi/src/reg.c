@@ -31,6 +31,8 @@
 
 extern int reg_regdb_size;
 extern const struct ieee80211_regdomain *reg_regdb[];
+extern float g_regd_max_tx_power;
+extern UINT8 g_regd_max_tx_power_valid;
 
 #define CONFIG_WIFI_REGDOMAIN_DEBUG 0
 
@@ -2369,8 +2371,10 @@ void regulatory_hint_11d(struct wiphy *wiphy, wifi_band_t band, const u8 *countr
 	else if (country_ie[2] == 'O')
 		env = ENVIRON_OUTDOOR;
 
-	if (likely(last_request->initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
-	    wiphy_idx_valid(last_request->wiphy_idx)))
+	/* Skip only when duplicate: same alpha2 as last COUNTRY_IE request */
+	if (last_request->initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
+	    alpha2_equal(last_request->alpha2, alpha2) &&
+	    wiphy_idx_valid(last_request->wiphy_idx))
 		goto out;
 
 	request = os_zalloc(sizeof(struct regulatory_request));
@@ -2556,6 +2560,8 @@ static void restore_regulatory_settings(bool reset_user)
 void regulatory_hint_disconnect(void)
 {
 	REG_DBG_PRINT("Restore regulatory settings\n");
+	g_regd_max_tx_power = 0;
+	g_regd_max_tx_power_valid = 0;
 	restore_regulatory_settings(false);
 }
 
@@ -3021,6 +3027,8 @@ void regulatory_exit(void)
 
 bk_err_t bk_wifi_set_country_code(const char *alpha2)
 {
+	g_regd_max_tx_power = 0;
+	g_regd_max_tx_power_valid = 0;
 	return regulatory_hint_user(alpha2, NL80211_USER_REG_HINT_USER);
 }
 
