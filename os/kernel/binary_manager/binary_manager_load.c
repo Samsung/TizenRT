@@ -165,6 +165,9 @@ static int binary_manager_load(int bin_idx)
 #ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
 	struct binary_s *binp;
 #endif
+#ifdef CONFIG_USE_BP
+	binmgr_bp_update_reason_e recovery_reason;
+#endif
 
 	if (bin_idx < 0) {
 		bmdbg("Invalid bin idx %d\n", bin_idx);
@@ -301,7 +304,8 @@ static int binary_manager_load(int bin_idx)
 
 #ifdef CONFIG_USE_BP
 recover_bp:
-	ret = binary_manager_recover_bootparam_set();
+	recovery_reason = bin_idx == BM_CMNLIB_IDX ? BP_UPDATE_BINARY_MANAGER_RECOVERY_COMMON : BP_UPDATE_BINARY_MANAGER_RECOVERY_USER;
+	ret = binary_manager_recover_bootparam_set(recovery_reason);
 	if (ret != BINMGR_OK) {
 		bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
 	}
@@ -477,7 +481,7 @@ static int loadingall_thread(int argc, char *argv[])
 
 	if (!binary_manager_scan_ubin_all()) {
 #ifdef CONFIG_USE_BP
-		binary_manager_recover_bootparam_set();
+		binary_manager_recover_bootparam_set(BP_UPDATE_BINARY_MANAGER_RECOVERY_APP_SCAN);
 #endif
 		return BINMGR_OPERATION_FAIL;
 	}
