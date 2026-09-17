@@ -226,6 +226,13 @@ int tc_kernel_main(int argc, char *argv[])
 	itc_pthread_main();
 #endif
 
+#ifdef CONFIG_STC_KERNEL_SCHED
+	stc_sched_rr_main();
+	stc_sched_smp_main();
+	stc_sched_priority_main();
+	stc_sched_affinity_main();
+#endif
+
 	close(g_tc_fd);
 	g_tc_fd = -1;
 
