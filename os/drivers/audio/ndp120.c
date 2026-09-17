@@ -862,6 +862,7 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 	case AUDIOIOC_STOPPROCESS: {
 		audvdbg("set stop process!!\n");
 #ifdef CONFIG_AUDIO_PROCESSING_FEATURES
+		switch ((uint8_t)arg) {
 #ifdef CONFIG_AUDIO_KEYWORD_DETECT
 		case AUDIO_SD_KEYWORD_DETECT: {
 			if (priv->kd_enabled == true) {
@@ -871,6 +872,9 @@ static int ndp120_ioctl(FAR struct audio_lowerhalf_s *dev, int cmd, unsigned lon
 		}
 		break;
 #endif
+		default:
+			break;
+		}
 #else
 		audvdbg("start Process Failed - Device Doesn't support\n");
 		ret = -EINVAL;
