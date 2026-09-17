@@ -183,7 +183,7 @@ struct binmgr_userbp_s {
 };
 typedef struct binmgr_userbp_s binmgr_userbp_t;
 
-enum bp_update_reason_e {
+enum binmgr_bp_update_reason {
 	BP_UPDATE_INITIALIZED = 0,
 	BP_UPDATE_BOOTLOADER_BP_CRC_FAIL = 1,
 	BP_UPDATE_BOOTLOADER_KERNEL_CRC_FAIL = 2,
@@ -196,12 +196,15 @@ enum bp_update_reason_e {
 	BP_UPDATE_BINARY_MANAGER_UPDATE = 9,
 	BP_UPDATE_BINARY_MANAGER_RECOVERY_USER = 10,
 	BP_UPDATE_BINARY_MANAGER_RECOVERY_RESOURCE = 11,
-	BP_UPDATE_BINARY_MANAGER_SET_ALIGNMENT = 12,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_1 = 13,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_2 = 14,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_3 = 15,
-	BP_UPDATE_UNKNOWN = 16
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_SET_ALIGNMENT = 12,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_NO_VALID_BP = 13,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_KERNEL_ADDR_MISMATCH = 14,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_BOOTLOADER_RECOVERED = 15,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_COMMON = 16,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_APP_SCAN = 17,
+	BP_UPDATE_UNKNOWN = 18
 };
+typedef enum binmgr_bp_update_reason binmgr_bp_update_reason_e;
 
 /* Boot parameter head data, stored at the beginning of each BP. */
 struct binmgr_bpdata_head_s {
@@ -343,6 +346,10 @@ void binary_manager_release_binary_sem(int bin_idx);
 void binary_manager_update_running_state(int bin_id);
 int binary_manager_get_index_with_name(char *bin_name);
 void binary_manager_dump_bpdata(void);
+#ifdef CONFIG_USE_BP
+int binary_manager_check_bootparam_set(binmgr_bp_update_reason_e *update_reason);
+int binary_manager_recover_bootparam_set(binmgr_bp_update_reason_e update_reason);
+#endif
 int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info);
 binmgr_bpdata_t *binary_manager_get_bpdata(void);
 binmgr_bpdata_t *binary_manager_get_slot_bpdata(uint8_t bp_idx);

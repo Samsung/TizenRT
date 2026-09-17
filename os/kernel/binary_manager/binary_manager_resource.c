@@ -437,7 +437,7 @@ int binary_manager_mount_resource(void)
 
 #ifdef CONFIG_USE_BP
 recover_bp:
-	ret = binary_manager_recover_bootparam_set();
+	ret = binary_manager_recover_bootparam_set(BP_UPDATE_BINARY_MANAGER_RECOVERY_RESOURCE);
 	if (ret != BINMGR_OK) {
 		bmdbg("Failed to recover bootparam set mismatch, ret %d\n", ret);
 	}

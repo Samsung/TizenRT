@@ -21,6 +21,10 @@
 #include <debug.h>
 #include <tinyara/binary_manager.h>
 
+#ifdef CONFIG_USE_BP
+#include "binary_manager_internal.h"
+#endif
+
 /****************************************************************************
  * Name: binary_manager_early_initialize
  *
@@ -33,12 +37,13 @@ void binary_manager_early_initialize(void)
 {
 #ifdef CONFIG_USE_BP
 	int ret;
+	binmgr_bp_update_reason_e update_reason;
 
 	/* Check binary set alignment early and recover it if necessary. */
-	ret = binary_manager_check_bootparam_set();
-	if (ret != OK) {
-		ret = binary_manager_recover_bootparam_set();
-		if (ret != OK) {
+	ret = binary_manager_check_bootparam_set(&update_reason);
+	if (ret != BINMGR_OK) {
+		ret = binary_manager_recover_bootparam_set(update_reason);
+		if (ret != BINMGR_OK) {
 			lldbg("ERROR: Failed to recover bootparam set, ret %d\n", ret);
 			return;
 		}
