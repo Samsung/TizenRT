@@ -175,6 +175,28 @@ endif
   CXXFLAGS += -pedantic -D_DEBUG -D_LIBCPP_BUILD_STATIC -ffunction-sections -fdata-sections -D__GLIBCXX__
 endif
 
+# sched_backtrace() walks the EHABI unwind tables (.ARM.exidx) via libgcc's
+# _Unwind_Backtrace.  Without unwind tables a C function gets only an
+# EXIDX_CANTUNWIND entry and the unwinder stops immediately (returns 0).
+#
+# Enable it for USER-space objects ONLY, and only in a two-pass build.  The
+# kernel image spans flash + SRAM + DRAM; unwind tables on RAM-resident kernel
+# code (spinlocks, board .sramdram.only.text, ...) emit .ARM.exidx entries
+# whose R_ARM_PREL31 relocation to the far RAM address overflows at link time.
+#
+# A kernel-pass build carries __KERNEL__ in EXTRADEFINES, a user pass does not,
+# so that test isolates the user pass. It cannot do so in a flat build, where
+# no directory is compiled with __KERNEL__ and the test would therefore match
+# the whole image - hence the explicit CONFIG_BUILD_FLAT exclusion.
+ifeq ($(CONFIG_SCHED_BACKTRACE),y)
+ifneq ($(CONFIG_BUILD_FLAT),y)
+ifeq ($(findstring __KERNEL__,$(EXTRADEFINES)),)
+  ARCHCFLAGS += -funwind-tables
+  ARCHCXXFLAGS += -funwind-tables
+endif
+endif
+endif
+
 ifeq ($(CONFIG_LIBCXX_EXCEPTION),y)
   CXXFLAGS += -fexceptions
 else
