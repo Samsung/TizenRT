@@ -47,6 +47,10 @@ ifeq ($(CONFIG_TC_DRIVERS_I2C),y)
 endif
 
 
+ifeq ($(CONFIG_TC_DRIVERS_RAMMTD),y)
+  CSRCS += tc_rammtd.c
+endif
+
 # Include kernel build support
 
 DEPPATH += --dep-path le_tc/drivers
