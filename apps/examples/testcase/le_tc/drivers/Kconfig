@@ -23,6 +23,7 @@ config TC_DRV_ALL
 	select TC_DRIVERS_ADC if ADC
 	select TC_DRIVERS_BCH if BCH
 	select TC_DRIVERS_I2C if I2C_TRANSFER
+	select TC_DRIVERS_RAMMTD if RAMMTD && BUILD_FLAT
 
 config TC_DRIVERS_NULL
 	bool "Dev Null"
@@ -67,6 +68,11 @@ config TC_DRIVERS_I2C
         bool "Dev I2C"
         default n
         depends on I2C_TRANSFER
+
+config TC_DRIVERS_RAMMTD
+	bool "RAM MTD initialization"
+	default n
+	depends on RAMMTD && BUILD_FLAT
 
 endif #EXAMPLES_TESTCASE_DRIVERS
 

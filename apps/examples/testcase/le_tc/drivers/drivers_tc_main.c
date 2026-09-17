@@ -70,6 +70,10 @@ int tc_drivers_main(int argc, char *argv[])
 	i2c_main();
 #endif
 
+#ifdef CONFIG_TC_DRIVERS_RAMMTD
+	rammtd_main();
+#endif
+
 	(void)testcase_state_handler(TC_END, "Drivers TC");
 
 	return 0;

@@ -60,6 +60,10 @@ void adc_main(void);
 void bch_main(void);
 #endif
 
+#ifdef CONFIG_TC_DRIVERS_RAMMTD
+void rammtd_main(void);
+#endif
+
 #ifdef CONFIG_TC_DRIVERS_I2C
 void i2c_main(void);
 #endif
