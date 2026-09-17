@@ -68,6 +68,15 @@ enum audio_manager_result_e {
 };
 
 typedef enum audio_manager_result_e audio_manager_result_t;
+struct audio_output_pcm_config_s {
+	unsigned int channels;
+	unsigned int sample_rate;
+	int format;
+	unsigned int period_frames;
+	unsigned int period_bytes;
+};
+
+typedef struct audio_output_pcm_config_s audio_output_pcm_config_t;
 
 /**
  * @brief Type of device
@@ -377,81 +386,6 @@ unsigned int get_user_input_frames_to_byte(unsigned int frames);
 unsigned int get_user_input_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
- * Name: get_output_frame_count
- *
- * Description:
- *   Get the frame size of the pcm buffer for the specified stream in the active output audio device.
- *
- * Input parameters:
- *   stream_id: ID of the stream.
- *
- * Return Value:
- *   On success, the size of the pcm buffer for output streams. Otherwise, 0.
- ****************************************************************************/
-unsigned int get_output_frame_count(stream_info_id_t stream_id);
-
-/****************************************************************************
- * Name: get_card_output_frames_to_byte
- *
- * Description:
- *   Get the byte size of the given frame value with the channel value
- *   supported by the card for output stream.
- *
- * Input parameter:
- *   frames: the target of which byte size is returned.
- *
- * Return Value:
- *   On success, the byte size of the frame in output stream. Otherwise, 0.
- ****************************************************************************/
-unsigned int get_card_output_frames_to_byte(unsigned int frames);
-
-/****************************************************************************
- * Name: get_card_output_bytes_to_frame
- *
- * Description:
- *   Get the number of frames for the given byte size with the channel value
- *   supported by the card for output stream.
- *
- * Input parameter:
- *   bytes: the target of which frame count is returned.
- *
- * Return Value:
- *   On success, the number of frames in output stream. Otherwise, 0.
- ****************************************************************************/
-unsigned int get_card_output_bytes_to_frame(unsigned int bytes);
-
-/****************************************************************************
- * Name: get_user_output_frames_to_byte
- *
- * Description:
- *   Get the byte size of the given frame value with the channel value
- *   specified by the user for output stream.
- *
- * Input parameter:
- *   frames: the target of which byte size is returned.
- *
- * Return Value:
- *   On success, the byte size of the frame in output stream. Otherwise, 0.
- ****************************************************************************/
-unsigned int get_user_output_frames_to_byte(unsigned int frames, stream_info_id_t stream_id);
-
-/****************************************************************************
- * Name: get_user_output_bytes_to_frame
- *
- * Description:
- *   Get the number of frames for the given byte size with the channel value
- *   specified by the user for specified output stream.
- *
- * Input parameter:
- *   bytes: the target of which frame count is returned.
- *   stream_id: ID of the stream.
- *
- * Return Value:
- *   On success, the number of frames in output stream. Otherwise, 0.
- ****************************************************************************/
-unsigned int get_user_output_bytes_to_frame(unsigned int bytes, stream_info_id_t stream_id);
-
-/****************************************************************************
  * Name: get_output_sample_rate_ratio
  *
  * Description:
@@ -508,6 +442,18 @@ unsigned int get_output_card_total_buffer_size(void);
  *   On success, the total number of bytes in buffer size of input card. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_input_card_total_buffer_size(void);
+
+/****************************************************************************
+ * Name: get_output_audio_capabilities
+ *
+ * Description:
+ *   Get the actual PCM format and one hardware buffer size of the active
+ *   output card. The output stream must be configured before this call.
+ *
+ * Return Value:
+ *   On success, AUDIO_MANAGER_SUCCESS. Otherwise, a negative value.
+ ****************************************************************************/
+audio_manager_result_t get_output_audio_capabilities(unsigned int *sampleRate, unsigned int *channels, int *format);
 
 /****************************************************************************
  * Name: get_max_audio_volume

@@ -34,51 +34,7 @@ StreamHandler::StreamHandler() :
 {
 }
 
-bool StreamHandler::open()
-{
-	if (!mDataSource) {
-		meddbg("mDataSource is nullptr!\n");
-		return false;
-	}
-
-	if (!getStreamBuffer()) {
-		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_HANDLER_STREAM_BUFFER_SIZE)
-								.setThreshold(CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD)
-								.build();
-
-		if (!streamBuffer) {
-			meddbg("streamBuffer is nullptr!\n");
-			return false;
-		}
-
-		setStreamBuffer(streamBuffer);
-	}
-
-	if (!(mDataSource->isPrepared() || mDataSource->open())) {
-		meddbg("open data source failed!\n");
-		return false;
-	}
-
-	if (!probeDataSource()) {
-		meddbg("probe data source failed!\n");
-		return false;
-	}
-
-	if (!registerCodec(mDataSource->getAudioType(), mDataSource->getChannels(), mDataSource->getSampleRate())) {
-		meddbg("register codec failed!\n");
-		return false;
-	}
-
-	if (!start()) {
-		meddbg("start stream handler failed!\n");
-		return false;
-	}
-
-	return true;
-}
-
-bool StreamHandler::open(size_t buffSize)
+bool StreamHandler::prepare(size_t buffSize)
 {
 	if (!mDataSource) {
 		meddbg("mDataSource is nullptr!\n");
@@ -111,6 +67,31 @@ bool StreamHandler::open(size_t buffSize)
 
 	if (!registerCodec(mDataSource->getAudioType(), mDataSource->getChannels(), mDataSource->getSampleRate())) {
 		meddbg("register codec failed!\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool StreamHandler::open()
+{
+	if (!prepare(CONFIG_HANDLER_STREAM_BUFFER_SIZE)) {
+		meddbg("prepare stream handler failed!");
+		return false;
+	}
+
+	if (!start()) {
+		meddbg("start stream handler failed!\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool StreamHandler::open(size_t buffSize)
+{
+	if (!prepare(buffSize)) {
+		meddbg("prepare stream handler failed!");
 		return false;
 	}
 
@@ -179,13 +160,17 @@ void StreamHandler::destroyWorker()
 		mIsWorkerAlive = false;
 
 		// Worker may be blocked in buffer reading.
+		meddbg("before setEndStream\n");
 		mBufferWriter->setEndOfStream();
 
 		// Wake worker up,
+		meddbg("before wakenWorker\n");
 		wakenWorker();
+		meddbg("after wakenWorker\n");
 
 		// Join thread.
 		pthread_join(mWorker, NULL);
+		meddbg("after pthread join\n");
 	}
 }
 
@@ -206,7 +191,7 @@ void StreamHandler::wakenWorker()
 
 void *StreamHandler::workerMain(void *arg)
 {
-	medvdbg("StreamHandler::workerMain()\n");
+	meddbg("StreamHandler::workerMain()\n");
 
 	if (arg == nullptr) {
 		meddbg("%s[line : %d] Fail : arg is nullptr\n", __func__, __LINE__);
@@ -217,15 +202,18 @@ void *StreamHandler::workerMain(void *arg)
 
 	while (stream->mIsWorkerAlive) {
 		// Waken up by a writing/flushing/stopping operation
+		meddbg("inside workerMain before sleep\n");
 		stream->sleepWorker();
+		meddbg("inside workerMain after sleep\n");
 
 		// Worker may be stoped
 		if (!stream->mIsWorkerAlive || !stream->processWorker()) {
+			meddbg("before break\n");
 			break;
 		}
 	}
 
-	medvdbg("StreamHandler exit\n");
+	meddbg("StreamHandler exit\n");
 	return NULL;
 }
 

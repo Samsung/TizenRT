@@ -52,7 +52,7 @@ CXXSRCS += StreamHandler.cpp
 
 ifeq ($(CONFIG_MEDIA_PLAYER), y)
 CXXSRCS += MediaPlayer.cpp PlayerWorker.cpp MediaPlayerImpl.cpp PlayerObserverWorker.cpp
-CXXSRCS += InputHandler.cpp
+CXXSRCS += InputHandler.cpp PCMSampler.cpp
 CXXSRCS += InputDataSource.cpp FileInputDataSource.cpp
 CXXSRCS += HttpInputDataSource.cpp
 

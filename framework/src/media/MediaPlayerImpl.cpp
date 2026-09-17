@@ -23,6 +23,9 @@
 
 #include <debug.h>
 #include <errno.h>
+#include <cstring>
+#include <limits.h>
+#include <new>
 #include <stdarg.h>
 #include <semaphore.h>
 #include "audio/audio_manager.h"
@@ -241,8 +244,8 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 		return;
 	}
 
-	if (!mInputHandler.open(mBufSize)) {
-		meddbg("MediaPlayer prepare fail : open fail\n");
+	if (!mInputHandler.prepare(mBufSize)) {
+		meddbg("MediaPlayer prepare fail : prepare fail\n");
 		ret = PLAYER_ERROR_FILE_OPEN_FAILED;
 		delete[] mBuffer;
 		mBuffer = nullptr;
@@ -255,6 +258,30 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 		// ToDo: Need to do mInputHandler close() in case of further failure in prepare.
 		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		notifySync(syncSem);
+		return;
+	}
+
+	unsigned int sampleRate;
+	unsigned int channels;
+	int format;
+
+	if (!get_output_audio_capabilities(&sampleRate, &channels, &format)) {
+		meddbg("MediaPlayer prepare fail : get_output_audio_capabilities fail\n");
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		notifySync(syncSem);
+		return;
+	}
+
+	mInputHandler.set_output_audio_capabilities(sampleRate, channels, format);
+
+	if (!mInputHandler.startBuffering()) {
+		meddbg("MediaPlayer prepare fail : start buffering fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		delete[] mBuffer;
 		mBuffer = nullptr;
@@ -397,6 +424,7 @@ player_result_t MediaPlayerImpl::unpreparePlayback(void)
 	}
 
 	mInputHandler.close();
+	meddbg("InputHandler closed\n");
 
 	if (mBuffer) {
 		delete[] mBuffer;
@@ -1251,6 +1279,22 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		}
 
+		unsigned int sampleRate;
+		unsigned int channels;
+		int format;
+
+		if (!get_output_audio_capabilities(&sampleRate, &channels, &format)) {
+			meddbg("MediaPlayer prepare fail : get_output_audio_capabilities fail\n");
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		}
+
+		mInputHandler.set_output_audio_capabilities(sampleRate, channels, format);
+
+		if (!mInputHandler.startBuffering()) {
+			meddbg("MediaPlayer prepare fail : start buffering fail\n");
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		}
+
 		mCurState = PLAYER_STATE_READY;
 		return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_NONE);
 	}
@@ -1263,16 +1307,12 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 void MediaPlayerImpl::playback(std::chrono::milliseconds timeout, uint8_t playback_idx)
 {
 	medvdbg("timeout: %lld, playback_idx: %d\n", timeout, playback_idx);
-	float outputSampleRateRatio = get_output_sample_rate_ratio(mStreamInfo->id);
-	outputSampleRateRatio = (outputSampleRateRatio >= 1.0f ? outputSampleRateRatio : 1);
-	unsigned int framesToRead = get_card_output_bytes_to_frame(mBufSize) / outputSampleRateRatio;
-	unsigned int bufferSize = get_user_output_frames_to_byte(framesToRead, mStreamInfo->id);
 
 	// ToDo: Handle underrun properly in future when we support streaming player
-	ssize_t num_read = mInputHandler.read(mBuffer, (int)bufferSize, timeout);
+	ssize_t num_read = mInputHandler.read(mBuffer, static_cast<size_t>(mBufSize), timeout);
 	medvdbg("num_read : %d player : %x\n", num_read, &mPlayer);
 	if (num_read > 0) {
-		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read, mStreamInfo->id), playback_idx, mStreamInfo->id);
+		int ret = start_audio_stream_out(mBuffer, num_read, playback_idx, mStreamInfo->id);
 		if (ret < 0) {
 			PlayerWorker &mpw = PlayerWorker::getWorker();
 			switch (ret) {
