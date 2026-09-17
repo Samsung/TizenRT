@@ -40,7 +40,7 @@
 #endif
 
 typedef unsigned long long u64;  // for u64
-typedef void (*CSIDataListener)(CSIFW_RES res, int csi_buff_len, unsigned char *csi_buff, int csi_data_len);
+typedef void (*CSIDataListener)(CSIFW_RES res, int csi_data_len, unsigned char *csi_buff);
 
 typedef enum _CSI_FRAMEWORK_STATE {
   CSI_FRAMEWORK_STATE_UNINITIALIZED = -1,                   /* CSI_FRAMEWORK_STATE NOT INITIALIZED  */

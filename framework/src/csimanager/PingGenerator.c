@@ -258,7 +258,9 @@ CSIFW_RES ping_generator_stop(void)
 		return CSIFW_OK;
 	}
 	p_csifw_ctx->ping_thread_stop = true;
-	pthread_join(p_csifw_ctx->csi_ping_thread, NULL);
+	if (pthread_join(p_csifw_ctx->csi_ping_thread, NULL) != 0) {
+		CSIFW_LOGD("Pthread join [Ping Thread] failed, errno=%d (%s)", errno, strerror(errno));
+	}
 	CSIFW_LOGD("[PING Thread] stopped");
 	return CSIFW_OK;
 }

@@ -19,6 +19,12 @@ config CSI_DATA_TIMEOUT_SEC
 	---help---
 		CSI DATA TIMEOUT
 
+config CSI_PACKET_MONITORING
+	bool "CSI PACKET MONITORING"
+	default n
+	---help---
+		CSI PACKET MONITORING
+
 menu "CSIFW Debug Logs"
 
 config CSIFW_LOGS

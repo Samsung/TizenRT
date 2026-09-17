@@ -91,6 +91,10 @@ static void *dataReceiverThread(void *vargp)
 	int fd = p_csifw_ctx->data_receiver_fd;
 	mqd_t mq_handle = p_csifw_ctx->mq_handle;
 	unsigned char *get_data_buffptr = p_csifw_ctx->get_data_buffptr;
+	#ifdef CONFIG_CSI_PACKET_MONITORING
+		unsigned int packets_recv_per_second = 0;
+		u64 prev_time = 0;
+	#endif
 
 	while (!p_csifw_ctx->data_receiver_thread_stop) {
 		current_time = get_monotonic_time_ms();
@@ -99,22 +103,27 @@ static void *dataReceiverThread(void *vargp)
 			(current_time - last_data_read_timestamp_ms >= p_csifw_ctx->csi_interval)) {
 			last_data_read_status = false;
 			last_data_read_timestamp_ms = current_time;
-			CSIFW_LOGI("Reading event from MQ %llu", current_time);
+			#ifdef CONFIG_CSI_PACKET_MONITORING
+				CSIFW_LOGI("Reading event from MQ %llu", current_time);
+			#endif
 			clock_gettime(CLOCK_REALTIME, &st_time);
 			st_time.tv_sec += 1;
 			size = mq_timedreceive(mq_handle, (char *)&msg, sizeof(msg), &prio, &st_time);
 			if (size >= 0) {
-				CSIFW_LOGD("Message received - msgId: %d, data_len: %d, size: %zu: %d", msg.msgId, msg.data_len, size);
+				CSIFW_LOGD("Message received - msgId: %d, data_len: %d, size: %zd", msg.msgId, msg.data_len, size);
 				switch (msg.msgId) {
 				case CSI_MSG_DATA_READY_CB:
 					len = readCSIData(fd, get_data_buffptr, CSIFW_MAX_RAW_BUFF_LEN);
-					CSIFW_LOGI("CSI Data read complete %llu", get_monotonic_time_ms());
+					current_time = get_monotonic_time_ms();
+					#ifdef CONFIG_CSI_PACKET_MONITORING
+						CSIFW_LOGI("CSI Data read complete %llu", current_time);
+					#endif
 					if (len < 0) {
 						consecutive_failures++;
 						CSIFW_LOGE("Skipping packet: error: %d", len);
 						if (consecutive_failures >= MAX_CONSECUTIVE_FAILURES) {
 							CSIFW_LOGE("CRITICAL: %d consecutive readCSIData failures detected!", consecutive_failures);
-							p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL, 0);
+							p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL);
 							break;
 						}
 						continue;
@@ -124,14 +133,26 @@ static void *dataReceiverThread(void *vargp)
 						timeout_count = 0;
 					}
 					last_data_read_status = true;
-					#if defined(CONFIG_WIFI_CSI_RTL8730E)
-					  /* RTL8730E driver returns length without the CSI header*/
-					  p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len + CSIFW_RTK_CSI_HEADER_LEN, get_data_buffptr, len);
-					#elif defined(CONFIG_BK_WIFI_CSI_ADAPTER)
-					  /* Beken driver already includes the CSI header in the length*/
-					  p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len, get_data_buffptr, len);
+
+					#ifdef CONFIG_CSI_PACKET_MONITORING
+						packets_recv_per_second++;
+						if (prev_time == 0) {
+							prev_time = current_time;
+						} else if (current_time - prev_time >= 1000) {
+							CSIFW_LOGD("CSI Packets/sec: %u (interval: %ums, expected: ~%u)", 
+									packets_recv_per_second, p_csifw_ctx->csi_interval,
+									1000 / p_csifw_ctx->csi_interval);
+							packets_recv_per_second = 0;
+							prev_time = current_time;
+						}
+					#endif
+
+					#if defined(CONFIG_BK_WIFI_CSI_ADAPTER)
+						/* Beken driver already includes the CSI header in the length*/
+						p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len, get_data_buffptr);
 					#else
-					  CSIFW_LOGE("Unknown CSI board configuration");
+						/* RTL8730E driver returns length without the CSI header*/
+						p_csifw_ctx->CSI_DataCallback(CSIFW_OK, len + CSIFW_RTK_CSI_HEADER_LEN, get_data_buffptr);
 					#endif
 					break;
 
@@ -150,14 +171,14 @@ static void *dataReceiverThread(void *vargp)
 					if (timeout_count >= CONFIG_CSI_DATA_TIMEOUT_SEC) {
 						CSIFW_LOGE("CRITICAL: No CSI data for %d seconds", timeout_count);
 						timeout_count = 0;
-						p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL, 0);
+						p_csifw_ctx->CSI_DataCallback(CSIFW_ERROR_DATA_NOT_AVAILABLE, 0, NULL);
 					}
 				} else {
 					consecutive_failures++;
 					if (consecutive_failures >= MAX_CONSECUTIVE_FAILURES) {
 						CSIFW_LOGE("CRITICAL: %d consecutive failures detected", consecutive_failures);
 						consecutive_failures = 0;
-						p_csifw_ctx->CSI_DataCallback(CSIFW_INTERNAL_ERROR, 0, NULL, 0);
+						p_csifw_ctx->CSI_DataCallback(CSIFW_INTERNAL_ERROR, 0, NULL);
 					}
 				}
 			}
@@ -374,21 +395,53 @@ CSIFW_RES csi_packet_receiver_cleanup(void)
 		CSIFW_LOGE("Invalid context pointer (NULL)");
 		return CSIFW_ERROR_NOT_INITIALIZED;
 	}
+
+	CSIFW_RES res;
 	int fd = p_csifw_ctx->data_receiver_fd;
-	mq_close(p_csifw_ctx->mq_handle);
-	p_csifw_ctx->mq_handle = (mqd_t) ERROR;
-	CSIFW_LOGD("Data Receiver MQ closed (fd: %d, mq_handle: %p)", 
-		p_csifw_ctx->data_receiver_fd, p_csifw_ctx->mq_handle);
 	int ret = ioctl(fd, CSIIOC_STOP_CSI, NULL);
 	if (ret < OK) {
 		CSIFW_LOGE("IOCTL : CSIIOC_STOP_CSI Failed errno: %d (%s)", get_errno(), strerror(get_errno()));
-		close_driver(fd);
-		return CSIFW_ERROR;
+		res = CSIFW_ERROR;
 	} else {
 		CSIFW_LOGD("Driver data collect stopped");
+		res = CSIFW_OK;
 	}
+
+	if (p_csifw_ctx->mq_handle != (mqd_t)ERROR) {
+        struct mq_attr attr;
+        if (mq_getattr(p_csifw_ctx->mq_handle, &attr) != OK) {
+            CSIFW_LOGE("mq_getattr failed - errno: %d (%s)", get_errno(), strerror(get_errno()));
+        } else {
+            CSIFW_LOGD("Draining %d messages from MQ", attr.mq_curmsgs);
+            attr.mq_flags |= O_NONBLOCK;
+            if (mq_setattr(p_csifw_ctx->mq_handle, &attr, NULL) != OK) {
+				CSIFW_LOGE("mq_setattr failed - errno: %d (%s)", get_errno(), strerror(get_errno()));
+			} else {
+				struct wifi_csi_msg_s msg;
+				int prio;
+				while (attr.mq_curmsgs > 0) {
+					ssize_t size = mq_receive(p_csifw_ctx->mq_handle, (char *)&msg, sizeof(msg), &prio);
+					if (size < 0) {
+						if (get_errno() == EAGAIN) {
+							CSIFW_LOGD("MQ drain complete (queue empty)");
+						} else {
+							CSIFW_LOGE("mq_receive failed during drain - errno: %d (%s)", get_errno(), strerror(get_errno()));
+						}
+						break;
+					}
+					attr.mq_curmsgs--;
+				}
+			}
+		}
+        mq_close(p_csifw_ctx->mq_handle);
+        p_csifw_ctx->mq_handle = (mqd_t)ERROR;
+        CSIFW_LOGD("Data Receiver MQ closed (fd: %d, mq_handle: %p)", p_csifw_ctx->data_receiver_fd, p_csifw_ctx->mq_handle);
+	} else {
+	    CSIFW_LOGD("MQ handle already invalid, skipping drain and close");
+	}
+
 	close_driver(fd);
-	return CSIFW_OK;
+	return res;
 }
 
 CSIFW_RES csi_packet_receiver_stop_collect(void)
@@ -418,7 +471,9 @@ CSIFW_RES csi_packet_receiver_stop_collect(void)
 	} else {
 		CSIFW_LOGE("Failed to close blocking mq as MQ_Discriptor is Invalid");
 	}
-	pthread_join(p_csifw_ctx->csi_data_receiver_th, NULL);
+	if (pthread_join(p_csifw_ctx->csi_data_receiver_th, NULL) != 0) {
+		CSIFW_LOGD("Pthread join [Receiver Thread] failed, errno=%d (%s)", errno, strerror(errno));
+	}
 	CSIFW_LOGD("Receiver thread join done");
 	if (p_csifw_ctx->get_data_buffptr) {
 		free(p_csifw_ctx->get_data_buffptr);
