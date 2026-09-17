@@ -64,6 +64,8 @@
 
 #ifdef __GNUC__
 
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
 /* Pre-processor */
 
 #define CONFIG_CPP_HAVE_VARARGS 1	/* Supports variable argument macros */
