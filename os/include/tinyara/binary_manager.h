@@ -311,7 +311,7 @@ void binary_manager_early_initialize(void);
 int binary_manager_mount_resource(void);
 #ifdef CONFIG_USE_BP
 int binary_manager_check_bootparam_set(void);
-int binary_manager_recover_bootparam_set(void);
+int binary_manager_recover_bootparam_set(uint8_t recovery_reason);
 #endif
 void binary_manager_deinit_modules(void);
 
