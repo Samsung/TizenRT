@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2026 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,25 +16,27 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_DEBUG_SYSTEM),y)
-CSRCS += sysdbg.c
-endif
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_MEM_LEAK),y)
+CSRCS += test_reference_cycle.c
+CSRCS += test_mq_shared.c
+CSRCS += test_workqueue_shared.c
+CSRCS += test_mq_leak.c
+CSRCS += test_work_cancel.c
+CSRCS += test_normal_alloc_free.c
+CSRCS += test_bss_pointer.c
+CSRCS += test_stack_pointer.c
+CSRCS += test_data_pointer.c
+CSRCS += test_multilevel_ref.c
+CSRCS += test_simple_orphan.c
+CSRCS += test_triple_cycle.c
+CSRCS += test_large_alloc.c
+CSRCS += test_many_allocs.c
+CSRCS += test_cross_task.c
+CSRCS += test_kernel_to_app.c
+CSRCS += mem_leak_test_main.c
 
-ifeq ($(CONFIG_MEM_LEAK_CHECKER),y)
-CSRCS += mem_leak_checker.c
-endif
+CXXSRCS += test_cpp_array_cookie.cpp
 
-
-CSRCS += dbg_termination_info.c
-ifeq ($(CONFIG_DEBUG_MM_WARN),y)
-CSRCS += memdbg.c
+DEPPATH += --dep-path ta_tc/mem_leak
+VPATH += :ta_tc/mem_leak
 endif
-
-ifeq ($(CONFIG_ENABLE_STACKMONITOR)$(CONFIG_DEBUG),yy)
-ifneq ($(CONFIG_STACKMONITOR_DISABLE_DEAD_THREAD),y)
-CSRCS += stackinfo_save_terminated.c
-endif
-endif
-
-DEPPATH += --dep-path debug
-VPATH += :debug
