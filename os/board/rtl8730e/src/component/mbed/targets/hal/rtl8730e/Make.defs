@@ -16,6 +16,10 @@
 #
 ############################################################################
 
+# Disable unwind tables for flash_api.c to prevent R_ARM_PREL31 overflow in XIP builds
+# This file is placed in .sramdram.only.text section which is far from .ARM.exidx
+flash_api_COBJS := -fno-unwind-tables -fno-exceptions
+
 CSRCS += flash_api.c \
 		pinmap_common.c \
 		sys_api.c \

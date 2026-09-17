@@ -1,3 +1,7 @@
+/* Disable unwind tables to prevent R_ARM_PREL31 overflow in XIP builds */
+#pragma GCC optimize("no-unwind-tables")
+#pragma GCC optimize("no-exceptions")
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>

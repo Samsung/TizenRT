@@ -62,6 +62,10 @@ CMN_CSRCS += up_releasestack.c arm_reprioritizertr.c arm_saveusercontext.c
 CMN_CSRCS += arm_stackframe.c arm_switchcontext.c
 CMN_CSRCS += arm_vfork.c arm_unblocktask.c up_usestack.c
 CMN_CSRCS += up_checkstackoverflow.c
+
+# Always include arm_backtrace_unwind.c for up_register_exidx() needed by binfmt
+CMN_CSRCS += arm_backtrace_unwind.c
+
 ifeq ($(CONFIG_SYSTEM_REBOOT_REASON),y)
 CMN_CSRCS += up_reboot_reason.c
 endif
@@ -107,14 +111,25 @@ ifeq ($(CONFIG_SCHED_THREAD_LOCAL),y)
 endif
 
 ifeq ($(CONFIG_SCHED_BACKTRACE),y)
-  ifeq ($(CONFIG_FRAME_POINTER),y)
-    ifeq ($(CONFIG_ARM_THUMB),y)
-      CMN_CSRCS += arm_backtrace_thumb.c
+  ifeq ($(CONFIG_UNWINDER_FRAME_POINTER),y)
+    CMN_CSRCS += ../common/arm_backtrace_fp.c
+  endif
+
+  ifeq ($(CONFIG_UNWINDER_STACK_POINTER),y)
+    CMN_CSRCS += ../common/arm_backtrace_sp.c
+  endif
+
+  # Fallback to legacy if no unwinder selected
+  ifeq ($(CONFIG_UNWINDER_FRAME_POINTER)$(CONFIG_UNWINDER_STACK_POINTER)$(CONFIG_UNWINDER_ARM),)
+    ifeq ($(CONFIG_FRAME_POINTER),y)
+      ifeq ($(CONFIG_ARM_THUMB),y)
+        CMN_CSRCS += arm_backtrace_thumb.c
+      else
+        CMN_CSRCS += arm_backtrace_fp.c
+      endif
     else
-      CMN_CSRCS += arm_backtrace_fp.c
+      CMN_CSRCS += arm_backtrace_thumb.c
     endif
-  else
-    CMN_CSRCS += arm_backtrace_thumb.c
   endif
 endif
 

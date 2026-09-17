@@ -1,3 +1,7 @@
+/* Disable unwind tables to prevent R_ARM_PREL31 overflow in XIP builds */
+#pragma GCC optimize("no-unwind-tables")
+#pragma GCC optimize("no-exceptions")
+
 /****************************************************************************
  *
  * Copyright 2023 Samsung Electronics All Rights Reserved.

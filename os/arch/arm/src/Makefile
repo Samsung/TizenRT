@@ -188,10 +188,13 @@ all: $(HEAD_OBJ) $(BIN)
 
 .PHONY: board$(DELIM)libboard$(LIBEXT)
 
+# Ensure common directory exists for object files
 $(AOBJS) $(UAOBJS) $(HEAD_OBJ): %$(OBJEXT): %.S
+	$(Q) mkdir -p $(dir $@)
 	$(call ASSEMBLE, $<, $@)
 
 $(COBJS) $(UCOBJS): %$(OBJEXT): %.c
+	$(Q) mkdir -p $(dir $@)
 	$(call COMPILE, $<, $@)
 
 $(BIN) $(KBIN): $(OBJS)
