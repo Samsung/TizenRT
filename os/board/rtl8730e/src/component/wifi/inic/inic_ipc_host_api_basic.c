@@ -415,7 +415,7 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	reason.if_id = RTK_WIFI_SOFT_AP_IF;
-	if (strlen(buf) >= 17) {			  // bssid is a 17 character string
+	if (buf != NULL && strlen(buf) >= 17) {			  // bssid is a 17 character string
 		memcpy(&(reason.bssid), buf, 17); // Exclude null-termination
 	}
 
@@ -442,7 +442,7 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	reason.if_id = RTK_WIFI_SOFT_AP_IF;
-	if (strlen(buf) >= 17) { // bssid is a 17 character string
+	if (buf != NULL && strlen(buf) >= 17) { // bssid is a 17 character string
 		memcpy(&(reason.bssid), buf, 17);
 	}
 	if (g_link_down) {
