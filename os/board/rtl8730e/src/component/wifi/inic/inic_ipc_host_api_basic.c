@@ -415,9 +415,6 @@ static void wifi_ap_sta_assoc_hdl( char* buf, int buf_len, int flags, void* user
 	rtk_reason_t reason;
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	reason.if_id = RTK_WIFI_SOFT_AP_IF;
-	if (strlen(buf) >= 17) {			  // bssid is a 17 character string
-		memcpy(&(reason.bssid), buf, 17); // Exclude null-termination
-	}
 
 	if (g_link_up) {
 		nvdbg("RTK_API rtk_link_event_handler send link_up\n");
@@ -434,17 +431,8 @@ static void wifi_ap_sta_disassoc_hdl( char* buf, int buf_len, int flags, void* u
 	//USER TODO
 	rtk_reason_t reason;
 
-	/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
-	if (buf != NULL) {
-		/* buf detail: mac addr + disconn_reason, buf_len = ETH_ALEN+2*/
-		deauth_reason =*(u16*)(buf+6);
-	}
-
 	memset(&reason, 0, sizeof(rtk_reason_t));
 	reason.if_id = RTK_WIFI_SOFT_AP_IF;
-	if (strlen(buf) >= 17) { // bssid is a 17 character string
-		memcpy(&(reason.bssid), buf, 17);
-	}
 	if (g_link_down) {
 		nvdbg("RTK_API rtk_handle_disconnect send link_down\n");
 		g_link_down(&reason);
