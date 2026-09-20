@@ -5,7 +5,7 @@
   * @version V1.0.0
   * @date    2016-05-17
   * @brief   This file provides firmware functions to manage the following
-  *          functionalities of the soc power management circut:
+  *          functionalities of the soc power management circuit:
   *           - wakeup timer
   *           - wakeup pin
   *           - sleep option

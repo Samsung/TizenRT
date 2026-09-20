@@ -2,7 +2,7 @@
  * arch/arm/src/stm32l4/stm32l4_rcc.h
  *
  *   Copyright (C) 2009, 2011-2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.orgr>
+ *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -93,7 +93,7 @@ extern uint32_t _vectors[];  /* See stm32l4_vectors.S */
  * Name: stm32l4_mcoconfig
  *
  * Description:
- *   Selects the clock source to output on MC pin (PA8) for stm32f10xxx.
+ *   Selects the clock source to output on MCO pin (PA8) for stm32f10xxx.
  *   PA8 should be configured in alternate function mode.
  *
  * Input Parameters:
@@ -129,7 +129,7 @@ static inline void stm32l4_mcoconfig(uint32_t source)
  * Description:
  *   Called to establish the clock settings based on the values in board.h.  This
  *   function (by default) will reset most everything, enable the PLL, and enable
- *   peripheral clocking for all periperipherals enabled in the NuttX configuration
+ *   peripheral clocking for all peripherals enabled in the NuttX configuration
  *   file.
  *
  *   If CONFIG_ARCH_BOARD_STM32L4_CUSTOM_CLOCKCONFIG is defined, then clocking will
@@ -151,7 +151,7 @@ void stm32l4_clockconfig(void);
  *
  * Description:
  *   Any STM32L4 board may replace the "standard" board clock configuration logic with
- *   its own, custom clock cofiguration logic.
+ *   its own, custom clock configuration logic.
  *
  ************************************************************************************/
 
@@ -168,9 +168,9 @@ void stm32l4_board_clockconfig(void);
  *   re-awakening from deep-sleep modes, it is necessary to re-enable/re-start the
  *   PLL
  *
- *   This functional performs a subset of the operations performed by
+ *   This function performs a subset of the operations performed by
  *   stm32l4_clockconfig():  It does not reset any devices, and it does not reset the
- *   currenlty enabled peripheral clocks.
+ *   currently enabled peripheral clocks.
  *
  *   If CONFIG_ARCH_BOARD_STM32L4_CUSTOM_CLOCKCONFIG is defined, then clocking will
  *   be enabled by an externally provided, board-specific function called
