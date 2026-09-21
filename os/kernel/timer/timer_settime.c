@@ -61,9 +61,12 @@
 #include <string.h>
 #include <errno.h>
 
+#include <tinyara/clock.h>
+
 #include "clock/clock.h"
 #include "signal/signal.h"
 #include "timer/timer.h"
+
 
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
 
@@ -154,10 +157,57 @@ static inline void timer_restart(FAR struct posix_timer_s *timer, uint32_t itime
 	/* If this is a repetitive timer, then restart the watchdog */
 
 	if (timer->pt_delay) {
+		clock_t ticks;
+		clock_t delay;
+		clock_t frame;
+
+		/* Check whether next expected time is reached */
+
+		ticks = clock_systimer();
+		delay = ticks - timer->pt_expected;
+
+		/* Calculate the number of timer overruns and the next expected tick.
+		 * The next expired tick frame can be computed as align up:
+		 * frame <- (elapsed_ticks + pt_delay) / pt_delay
+		 * For instance:
+		 *  |   pt_delay   |   pt_delay   |   pt_delay   | ... |
+		 *  ^ pt_expected                    ^ ticks     ^ next pt_expected
+		 * In this case, frame equals 3.
+		 * Then, pt_overrun <- frame - 1 and
+		 * the next pt_expected <- pt_expected + frame * pt_delay.
+		 * Assumption of correctness:
+		 * (delay + timer->pt_delay) should not overflow.
+		 */
+
+		frame = (delay + timer->pt_delay) / timer->pt_delay;
+
+		/* Add overruns from clock jumps or delayed processing.  For normal
+		 * periodic timers, frame=1 so this adds 0.  For clock jumps where
+		 * multiple intervals were missed, this adds the additional overruns.
+		 * The initial increment was already done in timer_timeout().
+		 */
+
+		timer->pt_overrun += (int)(frame - 1);
+		timer->pt_expected += frame * timer->pt_delay;
+
+		/* Advance the absolute wall clock expiration time by the
+		 * same number of frames so that clock_settime() can still
+		 * correctly detect if the timer should have expired.
+		 */
+
+		timer->pt_abstime.tv_sec += frame * timer->pt_interval.tv_sec;
+		timer->pt_abstime.tv_nsec += frame * timer->pt_interval.tv_nsec;
+		while (timer->pt_abstime.tv_nsec >= NSEC_PER_SEC) {
+			timer->pt_abstime.tv_sec++;
+			timer->pt_abstime.tv_nsec -= NSEC_PER_SEC;
+		}
+
 		timer->pt_last = timer->pt_delay;
 		(void)wd_start(timer->pt_wdog, timer->pt_delay, (wdentry_t)timer_timeout, 1, itimer);
 	}
+
 }
+
 
 /********************************************************************************
  * Name: timer_timeout
@@ -193,6 +243,15 @@ static void timer_timeout(int argc, uint32_t itimer)
 
 	u.itimer = itimer;
 
+	/* Increment the overrun count for each timer expiration.  The first
+	 * expiration corresponds to the signal delivery; subsequent expirations
+	 * that occur while the signal is still pending are overruns.
+	 * timer_getoverrun() will subtract 1 (for the initial signal) and reset
+	 * the count to 0 after the value is read.
+	 */
+
+	u.timer->pt_overrun++;
+
 	/* Send the specified signal to the specified task.   Increment the reference
 	 * count on the timer first so that will not be deleted until after the
 	 * signal handler returns.
@@ -216,6 +275,15 @@ static void timer_timeout(int argc, uint32_t itimer)
 	 */
 
 	FAR struct posix_timer_s *timer = (FAR struct posix_timer_s *)((uintptr_t)itimer);
+
+	/* Increment the overrun count for each timer expiration.  The first
+	 * expiration corresponds to the signal delivery; subsequent expirations
+	 * that occur while the signal is still pending are overruns.
+	 * timer_getoverrun() will subtract 1 (for the initial signal) and reset
+	 * the count to 0 after the value is read.
+	 */
+
+	timer->pt_overrun++;
 
 	/* Send the specified signal to the specified task.   Increment the reference
 	 * count on the timer first so that will not be deleted until after the
@@ -242,7 +310,67 @@ static void timer_timeout(int argc, uint32_t itimer)
  ********************************************************************************/
 
 /********************************************************************************
+ * Name: timer_fire
+ *
+ * Description:
+ *   Force a timer to expire immediately, delivering its signal and restarting
+ *   the watchdog if it is a periodic timer.  This is called by clock_settime()
+ *   when the clock is jumped forward past a timer's absolute expiration time.
+ *
+ * Parameters:
+ *   timerid - The per-thread timer to fire
+ *
+ * Return Value:
+ *   None
+ *
+ ********************************************************************************/
+
+void timer_fire(timer_t timerid)
+{
+	//FAR struct posix_timer_s *timer = (FAR struct posix_timer_s *)timerid;
+	FAR struct posix_timer_s *timer;
+	/* Validate the timer handle by checking list membership */
+
+	timer = timer_gethandle(timerid);
+	if (!timer) {
+		return;
+	}
+
+	/* Cancel the pending watchdog */
+
+	(void)wd_cancel(timer->pt_wdog);
+
+	/* Deliver the signal.  Increment the reference count on the timer
+	 * first so that it will not be deleted until after the signal handler
+	 * returns.
+	 *
+	 * Note: pt_overrun is NOT incremented here.  The overrun count for
+	 * clock jumps is calculated by timer_restart() when the watchdog
+	 * next fires, using the frame calculation based on elapsed time.
+	 */
+
+	timer->pt_crefs++;
+	timer_sigqueue(timer);
+
+	/* Release the reference.  timer_release will return nonzero if the
+	 * timer was not deleted.  Only restart the watchdog if the timer
+	 * is still valid.
+	 */
+
+	if (timer_release(timer)) {
+		/* Restart periodic timer watchdog for the next interval */
+
+		if (timer->pt_delay) {
+			timer->pt_last = timer->pt_delay;
+			(void)wd_start(timer->pt_wdog, timer->pt_delay, (wdentry_t)timer_timeout, 1, (uint32_t)((uintptr_t)timer));
+		}
+	}
+}
+
+
+/********************************************************************************
  * Name: timer_settime
+
  *
  * Description:
  *   The timer_settime() function sets the time until the next expiration of the
@@ -306,23 +434,52 @@ static void timer_timeout(int argc, uint32_t itimer)
 
 int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value, FAR struct itimerspec *ovalue)
 {
-	FAR struct posix_timer_s *timer = (FAR struct posix_timer_s *)timerid;
+	//FAR struct posix_timer_s *timer = (FAR struct posix_timer_s *)timerid;
+	FAR struct posix_timer_s *timer;
 	irqstate_t state;
 	int delay;
 	int ret = OK;
 
-	/* Some sanity checks */
+	/* Validate the timer handle by checking list membership */
 
-	if (!PT_ISVALID(timer) || !value) {
+	timer = timer_gethandle(timerid);
+	if (!timer || !value) {
 		set_errno(EINVAL);
 		return ERROR;
 	}
+
+	/* POSIX requires EINVAL if any nanosecond field is less than zero
+	 * or greater than or equal to 1,000,000,000, or if any second field
+	 * is negative.
+	 */
+
+	if (value->it_value.tv_nsec < 0 || value->it_value.tv_nsec >= 1000000000 ||
+	    value->it_interval.tv_nsec < 0 || value->it_interval.tv_nsec >= 1000000000 ||
+	    value->it_value.tv_sec > INT32_MAX || value->it_interval.tv_sec > INT32_MAX) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
+
+	/* If ovalue is non-NULL, return the previous timer value before
+	 * disarming.  POSIX requires that ovalue contain the amount of time
+	 * before the timer would have expired, or zero if the timer was
+	 * disarmed, together with the previous timer reload value.
+	 */
+
+	if (ovalue) {
+		int ticks;
+		ticks = wd_gettime(timer->pt_wdog);
+		(void)clock_ticks2time(ticks, &ovalue->it_value);
+		(void)clock_ticks2time(timer->pt_delay, &ovalue->it_interval);
+	}
+
 
 	/* Disarm the timer (in case the timer was already armed when timer_settime()
 	 * is called).
 	 */
 
 	(void)wd_cancel(timer->pt_wdog);
+
 
 #ifdef CONFIG_SCHED_WAKEUPSOURCE
 	if (flags & TIMER_WAKEUPSOURCE) {
@@ -332,9 +489,12 @@ int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value
 	}
 #endif
 
-	/* If the it_value member of value is zero, the timer will not be re-armed */
+	/* If the it_value member of value is zero, the timer will not be re-armed.
+	 * Note: Use == 0 instead of <= 0 because negative values were already
+	 * rejected by the validation above.
+	 */
 
-	if (value->it_value.tv_sec <= 0 && value->it_value.tv_nsec <= 0) {
+	if (value->it_value.tv_sec == 0 && value->it_value.tv_nsec == 0) {
 		return OK;
 	}
 
@@ -342,9 +502,13 @@ int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value
 
 	if (value->it_interval.tv_sec > 0 || value->it_interval.tv_nsec > 0) {
 		(void)clock_time2ticks(&value->it_interval, &timer->pt_delay);
+		timer->pt_interval = value->it_interval;
 	} else {
 		timer->pt_delay = 0;
+		timer->pt_interval.tv_sec = 0;
+		timer->pt_interval.tv_nsec = 0;
 	}
+
 
 	/* We need to disable timer interrupts through the following section so
 	 * that the system timer is stable.
@@ -370,6 +534,29 @@ int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value
 		(void)clock_time2ticks(&value->it_value, &delay);
 	}
 
+	/* If an absolute timer is set to a time in the past, POSIX requires
+	 * that the function succeed and the expiration notification be made
+	 * immediately.
+	 */
+
+	if (delay <= 0 && (flags & TIMER_ABSTIME) != 0) {
+		/* Set up timer state for immediate firing */
+
+		timer->pt_overrun = 0;
+		timer->pt_expected = clock_systimer();
+		timer->pt_abstime = value->it_value;
+		timer->pt_last = 0;
+
+		leave_critical_section(state);
+
+		/* Fire the timer immediately - this delivers the signal and
+		 * restarts the watchdog if this is a periodic timer.
+		 */
+
+		timer_fire(timerid);
+		return OK;
+	}
+
 	/* If the time is in the past or now, then set up the next interval
 	 * instead (assuming a repititive timer).
 	 */
@@ -381,12 +568,39 @@ int timer_settime(timer_t timerid, int flags, FAR const struct itimerspec *value
 	/* Then start the watchdog */
 
 	if (delay > 0) {
+		/* Reset the overrun count and store the expected absolute tick
+		 * time for overrun calculation when the timer fires.
+		 */
+
+		timer->pt_overrun = 0;
+		timer->pt_expected = clock_systimer() + delay;
+
+		/* Store the absolute wall clock expiration time so that
+		 * clock_settime() can detect if this timer should have
+		 * expired when the clock is jumped forward.
+		 */
+
+		if ((flags & TIMER_ABSTIME) != 0) {
+			timer->pt_abstime = value->it_value;
+		} else {
+			(void)clock_gettime(CLOCK_REALTIME, &timer->pt_abstime);
+			timer->pt_abstime.tv_sec += value->it_value.tv_sec;
+			timer->pt_abstime.tv_nsec += value->it_value.tv_nsec;
+			if (timer->pt_abstime.tv_nsec >= NSEC_PER_SEC) {
+				timer->pt_abstime.tv_sec++;
+				timer->pt_abstime.tv_nsec -= NSEC_PER_SEC;
+			}
+		}
+
 		timer->pt_last = delay;
 		ret = wd_start(timer->pt_wdog, delay, (wdentry_t)timer_timeout, 1, (uint32_t)((uintptr_t)timer));
 	}
 
 	leave_critical_section(state);
 	return ret;
+
+
+
 }
 
 #endif							/* CONFIG_DISABLE_POSIX_TIMERS */
