@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 
+#include <errno.h>
 #include <tinyara/arch.h>
 
 /************************************************************************
@@ -107,6 +108,7 @@
 int sched_get_priority_min(int policy)
 {
 	if (policy != SCHED_FIFO && policy != SCHED_RR) {
+		set_errno(EINVAL);
 		return ERROR;
 	} else {
 		return SCHED_PRIORITY_MIN;
