@@ -58,6 +58,7 @@
 
 #include <sys/types.h>
 #include <sched.h>
+#include <errno.h>
 
 #include "sched/sched.h"
 
@@ -120,6 +121,7 @@ int sched_getparam(pid_t pid, struct sched_param *param)
 	int ret = OK;
 
 	if (!param) {
+		set_errno(EINVAL);
 		return ERROR;
 	}
 
