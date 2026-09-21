@@ -31,9 +31,9 @@
 #define ERROR -1  // for ERROR
 #define CSIFW_MAX_NUM_APPS 3 // Max number of Services
 #define CSIFW_MIN_INTERVAL_MS 30  // Minimum supported CSI interval in milliseconds
-#define CSIFW_MAX_RAW_BUFF_LEN 1024 // CSI data buffer xax size
-#define CSIFW_RTK_CSI_HEADER_LEN 43 // CSI packet header size
-#define CSIFW_BEKEN_CSI_HEADER_LEN 28 // CSI packet header size
+#define CSIFW_MAX_RAW_BUFF_LEN 1024 // CSI data buffer max size
+#define CSIFW_RTK_CSI_HEADER_LEN 43 // CSI packet header size for Realtek
+#define CSIFW_BEKEN_CSI_HEADER_LEN 28 // CSI packet header size for Beken
 
 #ifndef CONFIG_CSI_DATA_TIMEOUT_SEC /* In case not defined in defconfig, force it to default value*/ 
 #define CONFIG_CSI_DATA_TIMEOUT_SEC 15 
@@ -75,7 +75,7 @@ typedef struct {
   unsigned char *get_data_buffptr; /* Buffer to get data from driver */
   unsigned int task_run_success;   /* Track if csifw_task initialization */
   unsigned int task_run_state;     /* Task Stopped Status */
-  unsigned int ping_Interval;      /* Ping Inetrval */
+  unsigned int ping_Interval;      /* Ping Interval */
   unsigned int csi_interval;       /* Data collection interval (ms) */
   unsigned int ping_count;         /* Ping Count */
 
@@ -94,14 +94,16 @@ typedef struct {
   pthread_mutex_t data_receiver_mutex; /* CSI Data Receiver Mutex */
   pthread_t csi_data_receiver_th;      /* CSI Data Receiver Thread Status */
   struct icmp_echo_hdr *p_iecho;       /* Echo Header */
-  struct sockaddr *socketAddr;         /* Sokcet Address */
+  struct sockaddr *socketAddr;         /* Socket Address */
   pthread_t csi_ping_thread;           /* CSI Ping Thread */
   struct addrinfo *addr_info;          /* Address Information */
   sem_t csifw_task_sema;               /* CSIFW Task Sema */
-  mqd_t mq_handle;                     /* MQ Hanlde */
+  mqd_t mq_handle;                     /* MQ Handle */
 
 } csifw_context_t;
 
+int csifw_register_task(csifw_context_t *p_ctx);
+void csifw_unregister_task(csifw_context_t *p_ctx);
 int start_csi_framework(csifw_context_t *p_con_ctx);
 int stop_csi_framework(csifw_context_t *p_con_ctx);
 csifw_context_t *get_csifw_context(void);
