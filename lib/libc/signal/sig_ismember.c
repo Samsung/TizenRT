@@ -55,7 +55,7 @@
  ****************************************************************************/
 
 #include <signal.h>
-
+#include <errno.h>
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -110,6 +110,8 @@ int sigismember(FAR const sigset_t *set, int signo)
 		/* Check if the signal is in the set */
 
 		ret = ((*set & SIGNO2SET(signo)) != 0);
+	} else {
+	set_errno(EINVAL);
 	}
 
 	return ret;
