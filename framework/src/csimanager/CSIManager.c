@@ -177,6 +177,15 @@ CSIFW_RES csifw_registerService(csifw_service_handle *p_hnd, service_callbacks_t
       goto on_error;
     }
     g_pcsifw_context->csifw_state = CSI_FRAMEWORK_STATE_UNINITIALIZED;
+    g_pcsifw_context->task_handle = -1;
+
+    if (csifw_register_task(g_pcsifw_context) < 0) {
+      CSIFW_LOGE("CSIFW Registration Fail: Task registration failed");
+      pthread_mutex_destroy(&g_pcsifw_context->data_receiver_mutex);
+      destroy_csifw_context();
+      res = CSIFW_ERROR;
+      goto on_error;
+    }
   }
 
   if (g_pcsifw_context->service_count >= CSIFW_MAX_NUM_APPS) {
@@ -374,6 +383,7 @@ CSIFW_RES csifw_unregisterService(csifw_service_handle hnd)
       CSIFW_LOGE("Network monitor deinit failed");
       res = CSIFW_ERROR;
     }
+    csifw_unregister_task(g_pcsifw_context);
     pthread_mutex_destroy(&g_pcsifw_context->data_receiver_mutex);
     destroy_csifw_context();
   }
