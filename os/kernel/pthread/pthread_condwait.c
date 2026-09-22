@@ -65,6 +65,41 @@
 
 #include <tinyara/cancelpt.h>
 #include "pthread/pthread.h"
+#include "sched/sched.h"
+
+
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: cond_wait_cleanup
+ *
+ *
+ * Description:
+ *   Cleanup handler called when a thread is canceled while waiting on
+ *   a condition variable. Decrements the waiter count to prevent
+ *   resource leak.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_CANCELLATION_POINTS) && defined(CONFIG_PTHREAD_CLEANUP)
+void cond_wait_cleanup(void *arg)
+{
+	FAR pthread_cond_t *cond = (FAR pthread_cond_t *)arg;
+
+	irqstate_t flags;
+
+	/* Decrement waiters counter under critical section */
+	flags = enter_critical_section();
+	if (cond->waiters > 0) {
+		cond->waiters--;
+	}
+	leave_critical_section(flags);
+}
+#endif
+
 
 /****************************************************************************
  * Public Functions
@@ -124,9 +159,27 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 		mutex->pid = -1;
 		ret = pthread_mutex_give(mutex);
 
+		/* Register cleanup handler to decrement waiters on cancellation */
+#if defined(CONFIG_CANCELLATION_POINTS) && defined(CONFIG_PTHREAD_CLEANUP)
+		pthread_cleanup_push(cond_wait_cleanup, cond);
+#endif
+
 		/* Take the semaphore */
 
 		status = pthread_sem_take((FAR sem_t *)&cond->sem);
+
+		/* Only pop the cleanup handler if the thread was not canceled.
+		 * sem_wait() treats ECANCELED as "semaphore acquired" (it only
+		 * checks for EINTR/ETIMEDOUT), so status may be OK even when
+		 * canceled. We must check the cancel-pending flag instead.
+		 */
+#if defined(CONFIG_CANCELLATION_POINTS) && defined(CONFIG_PTHREAD_CLEANUP)
+		FAR struct tcb_s *rtcb = this_task();
+		if (((rtcb)->flags & TCB_FLAG_CANCEL_PENDING) == 0) {
+			pthread_cleanup_pop(0);
+		}
+#endif
+
 		/* Adding DEBUGASSERT here because
 		 * possible failure cases of sem_wait() are
 		 * already handled inside pthread_sem_take()
@@ -139,9 +192,9 @@ int pthread_cond_wait(FAR pthread_cond_t *cond, FAR pthread_mutex_t *mutex)
 		    "pthread_sem_take failed! errno=%d, sem=%p, waiters=%d, semcount=%d",
 		    get_errno(), &cond->sem, cond->waiters, cond->sem.semcount);
 
+
 		if (ret == OK) {
 			/* Report the first failure that occurs */
-
 			ret = status;
 		}
 

@@ -736,13 +736,17 @@ struct pthread_tcb_s {
 	/* Clean-up stack ***************************************************/
 
 #ifdef CONFIG_PTHREAD_CLEANUP
-	/* tos   - The index to the next avaiable entry at the top of the stack.
+	/* tos   - The index to the next available entry at the top of the stack.
 	 * stack - The pre-allocated clean-up stack memory.
+	 *
+	 * NOTE: The stack size includes +1 to reserve one slot for internal
+	 * kernel cleanup handlers (e.g., cond_wait_cleanup in pthread_cond_wait).
 	 */
 
 	uint8_t tos;
-	struct pthread_cleanup_s stack[CONFIG_PTHREAD_CLEANUP_STACKSIZE];
+	struct pthread_cleanup_s stack[CONFIG_PTHREAD_CLEANUP_STACKSIZE + 1];
 #endif
+
 
 	/* POSIX Thread Specific Data ************************************************ */
 
