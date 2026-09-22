@@ -201,3 +201,18 @@ int test_case_basic_sequence_with_parameters(int user_interval, int user_config,
 	return 0;
 }
 
+int test_case_register_start_stop_loop(void)
+{
+	int interval = 64;
+	csi_config_type_t config_type = HT_CSI_DATA;
+	printf("CSIFW_TEST_APP: Running register->start->wait 1s->stop->unregister loop infinitely\n");
+	while (1) {
+		initialize_csi_service_1(interval, config_type);
+		start_csi_service(g_CSIServiceInstance_1);
+		sleep(1);
+		stop_csi_service(g_CSIServiceInstance_1);
+		deinitialize_csi_service(&g_CSIServiceInstance_1);
+	}
+	return 0;
+}
+
