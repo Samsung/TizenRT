@@ -61,7 +61,7 @@
 #include <semaphore.h>
 #include <errno.h>
 
-#ifdef CONFIG_SEMAPHORE_HISTORY
+#if defined(CONFIG_SEMAPHORE_HISTORY) && defined(__KERNEL__)
 #include <tinyara/debug/sysdbg.h>
 #endif
 #if defined(CONFIG_BINMGR_RECOVERY) && defined(__KERNEL__)
@@ -110,7 +110,7 @@ int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 		/* Initialize the semaphore count */
 
 		sem->semcount = (int16_t)value;
-#ifdef CONFIG_SEMAPHORE_HISTORY
+#if defined(CONFIG_SEMAPHORE_HISTORY) && defined(__KERNEL__)
 		save_semaphore_history(sem, (void *)NULL, SEM_INIT);
 #endif
 
