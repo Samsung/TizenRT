@@ -1,0 +1,52 @@
+# ###########################################################################
+# #
+# # Copyright 2026 Samsung Electronics All Rights Reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# # http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing,
+# # software distributed under the License is distributed on an
+# # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# # express or implied. See the License for the specific language
+# # governing permissions and limitations under the License.
+# #
+# # ###########################################################################
+
+From 5f15436267648a2edeb945a0e588d3f7675ce668 Mon Sep 17 00:00:00 2001
+From: haopengxiang <haopengxiang@xiaomi.com>
+Date: Thu, 6 Jan 2022 20:09:48 +0800
+Subject: [PATCH 09/21] ltp: update pthread_cond_timedwait testcase
+
+VELAPLATFO-616
+
+add initialization of mutex and cond in pthread_cond_timedwait_4_3
+
+Change-Id: Id15957334955b98210bf96d2d2467919ea730ef9
+Signed-off-by: haopengxiang <haopengxiang@xiaomi.com>
+---
+ .../conformance/interfaces/pthread_cond_timedwait/4-3.c      | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/testcases/open_posix_testsuite/conformance/interfaces/pthread_cond_timedwait/4-3.c b/testcases/open_posix_testsuite/conformance/interfaces/pthread_cond_timedwait/4-3.c
+index 5a49ffc35..305ab0454 100644
+--- a/testcases/open_posix_testsuite/conformance/interfaces/pthread_cond_timedwait/4-3.c
++++ b/testcases/open_posix_testsuite/conformance/interfaces/pthread_cond_timedwait/4-3.c
+@@ -69,7 +69,10 @@ typedef struct {
+ static struct {
+ 	pthread_mutex_t mtx;
+ 	pthread_cond_t cnd;
+-} data;
++} data = {
++	PTHREAD_MUTEX_INITIALIZER,
++	PTHREAD_COND_INITIALIZER
++};
+ 
+ /* the following function keeps on sending the signal to the process */
+ static void *sendsig(void *arg)
+-- 
+2.40.1
+

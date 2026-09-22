@@ -1,0 +1,39 @@
+# ###########################################################################
+# #
+# # Copyright 2026 Samsung Electronics All Rights Reserved.
+# #
+# # Licensed under the Apache License, Version 2.0 (the "License");
+# # you may not use this file except in compliance with the License.
+# # You may obtain a copy of the License at
+# #
+# # http://www.apache.org/licenses/LICENSE-2.0
+# #
+# # Unless required by applicable law or agreed to in writing,
+# # software distributed under the License is distributed on an
+# # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# # express or implied. See the License for the specific language
+# # governing permissions and limitations under the License.
+# #
+# # ###########################################################################
+
+diff --git a/testcases/open_posix_testsuite/conformance/interfaces/mq_timedsend/12-1.c b/testcases/open_posix_testsuite/conformance/interfaces/mq_timedsend/12-1.c
+--- a/testcases/open_posix_testsuite/conformance/interfaces/mq_timedsend/12-1.c
++++ b/testcases/open_posix_testsuite/conformance/interfaces/mq_timedsend/12-1.c
+@@ -42,8 +42,15 @@
+ #define TIMEOUT 10		/* seconds mq_timedsend will block */
+ #define SIGNAL_DELAY_MS 50	/* delay in ms between 2 signals */
+ 
++#ifdef __TIZENRT__
++/* On TizenRT, errno is a macro (*get_errno_ptr()) and not an lvalue.
++ * Use set_errno() to set the errno value. */
+ #define error_and_exit(en, msg) \
+-	do { errno = en; perror(msg); exit(PTS_UNRESOLVED); } while (0)
++	do { set_errno(en); perror(msg); exit(PTS_UNRESOLVED); } while (0)
++#else
++#define error_and_exit(en, msg) \
++	do { errno = en; perror(msg); exit(PTS_UNRESOLVED); } while (0)
++#endif
+ 
+ /* variable to indicate how many times signal handler was called */
+ static volatile int in_handler;
+
