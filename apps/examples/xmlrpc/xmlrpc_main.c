@@ -130,7 +130,7 @@ static char *xmlrpc_findbody(char *buf)
  * Name: xmlrpc_getheader
  *
  * Description:
- *   Find the HTTP header and return it's value.
+ *   Find the HTTP header and return its value.
  *
  ****************************************************************************/
 
