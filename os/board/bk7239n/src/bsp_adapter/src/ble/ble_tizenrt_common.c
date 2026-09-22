@@ -194,7 +194,6 @@ trble_result_e bktr_ble_common_sm_set_security_param(trble_sec_param *sec_param)
     if (hal_ble_env.mitm_flag)
     {
         hal_ble_env.auth_flags |= GAP_AUTH_MITM;
-        hal_ble_env.sec_req = GAP_SEC1_AUTH_PAIR_ENC;
     }
 
     if (hal_ble_env.sec_pair_flag)

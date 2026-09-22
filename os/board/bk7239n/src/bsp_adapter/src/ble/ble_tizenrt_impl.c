@@ -510,10 +510,18 @@ static void hal_ble_evt_thread(void)
                 if (msg.u.buf)
                 {
                     ble_evt_msg_elem_t *elem = (typeof(elem))msg.u.buf;
+                    uint8_t conn_idx = elem->server_disconnect_evt.conn_idx;
 
                     if (bktr_ble_server_get_param()->disconnected_cb)
                     {
-                        bktr_ble_server_get_param()->disconnected_cb(elem->server_disconnect_evt.conn_idx, elem->server_disconnect_evt.reason);
+                        bktr_ble_server_get_param()->disconnected_cb(conn_idx, elem->server_disconnect_evt.reason);
+                    }
+
+                    if (conn_idx < HAL_BLE_CON_NUM &&
+                        hal_ble_con_env.con_dev[conn_idx].con_status == HAL_CONN_STATE_DISCONNECTED)
+                    {
+                        os_memset(hal_ble_con_env.con_dev[conn_idx].peer_addr, 0, sizeof(hal_ble_con_env.con_dev[conn_idx].peer_addr));
+                        hal_ble_con_env.con_dev[conn_idx].role = LINK_ROLE_UNDEFINED;
                     }
                 }
             }
@@ -1652,6 +1660,7 @@ static void bk_adapter_ble_notice_cb(ble_notice_t notice, void *param)
         ble_smp_ind_t *s_ind = (ble_smp_ind_t *)param;
         uint8_t accept = (bktr_ble_server_get_param()->is_secured_connect_allowed ? 1 : 0);
         LOGD("BLE_5_PAIRING_REQ conn_idx:%d accept %d", s_ind->conn_idx, accept);
+        LOGI("auth_flags: 0x%x, auth_io_cap: 0x%x, sec_req: 0x%x, auth_oob: 0x%x", hal_ble_env.auth_flags, hal_ble_env.auth_io_cap, hal_ble_env.sec_req, hal_ble_env.auth_oob);
 
         bk_ble_sec_send_auth_mode_ext(s_ind->conn_idx, hal_ble_env.auth_flags, hal_ble_env.auth_io_cap, hal_ble_env.sec_req, hal_ble_env.auth_oob,
                                       BK_BLE_GAP_KDIST_ENCKEY | BK_BLE_GAP_KDIST_IDKEY,
