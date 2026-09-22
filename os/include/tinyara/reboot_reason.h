@@ -32,19 +32,21 @@ typedef enum {
 	 * Board Specific : 247 ~ 254
 	 */
 	REBOOT_REASON_INITIALIZED          = 50,
-	REBOOT_SYSTEM_DATAABORT            = 51, /* Data abort */
-	REBOOT_SYSTEM_PREFETCHABORT        = 52, /* Prefetch abort */
-	REBOOT_SYSTEM_MEMORYALLOCFAIL      = 53, /* Memory allocation failure */
-	REBOOT_SYSTEM_WATCHDOG             = 54, /* Watchdog timeout */
 	REBOOT_SYSTEM_HW_RESET             = 55, /* HW power reset */
 	REBOOT_SYSTEM_USER_INTENDED        = 56, /* Reboot from user intention */
 	REBOOT_SYSTEM_BINARY_UPDATE        = 57, /* Reboot for Binary Update */
 	REBOOT_SYSTEM_BINARY_RECOVERYFAIL  = 58, /* Binary Recovery Fail */
 	REBOOT_SYSTEM_PERIODIC_REBOOT      = 59, /* Periodic reboot */
-	REBOOT_SYSTEM_ASSERT               = 60, /* Reboot from ASSERT or PANIC */
-	REBOOT_SYSTEM_WITHOUT_SET_REASON   = 61, /* Software reboot without setting reboot reason beforehand */
 
-	/* User initiated reboot reasons */
+	/* System crash reboot reasons (62 ~ 70) */
+	REBOOT_SYSTEM_DATAABORT            = 62, /* Data abort */
+	REBOOT_SYSTEM_PREFETCHABORT        = 63, /* Prefetch abort */
+	REBOOT_SYSTEM_MEMORYALLOCFAIL      = 64, /* Memory allocation failure */
+	REBOOT_SYSTEM_WATCHDOG             = 65, /* Watchdog timeout */
+	REBOOT_SYSTEM_ASSERT               = 66, /* Reboot from ASSERT or PANIC */
+	REBOOT_SYSTEM_WITHOUT_SET_REASON   = 67, /* Software reboot without setting reboot reason beforehand */
+
+	/* User crash reboot reasons (71 ~ 79) */
 	REBOOT_USER_DATAABORT              = 71, /* Data abort by User */
 	REBOOT_USER_PREFETCHABORT          = 72, /* Prefetch abort by User */
 	REBOOT_USER_MEMORYALLOCFAIL        = 73, /* Memory allocation failure by User */
