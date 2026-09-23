@@ -148,15 +148,13 @@ static int task_assignpid(FAR struct tcb_s *tcb)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		/* Last two values(INT16_MAX and INT16_MAX - 1) are used for heapinfo. So pid can be smaller than (INT16_MAX - 1). */
 		if (next_pid == (INT16_MAX - 1)) {
-			g_lastpid = 1;
-			next_pid = 1;
-		}
 #else
 		if (next_pid <= 0) {
+#endif
+			lldbg("PID rollover, reset to 1\n");
 			g_lastpid = 1;
 			next_pid = 1;
 		}
-#endif
 
 		/* Get the hash_ndx associated with the next_pid */
 
