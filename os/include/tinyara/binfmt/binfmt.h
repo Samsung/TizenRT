@@ -153,11 +153,14 @@ struct binary_s {
 	uint16_t ndtors;			/* Number of destructors in the list */
 #endif
 
-#ifdef CONFIG_LIBCXX_EXCEPTION
+#if defined(CONFIG_LIBCXX_EXCEPTION) || defined(CONFIG_UNWINDER_ARM)
 	void *exidx_start;			/* Start of exidx section */
 	void *exidx_end;			/* End of exidx section */
+#ifdef CONFIG_LIBCXX_EXCEPTION
 	int (*register_exidx)(_Unwind_Ptr start, _Unwind_Ptr end, void * text_start, void * text_end, int bin_idx); /* function to register exidx data with common binary */
 #endif
+#endif
+
 
 	/* Start-up information that is provided by the loader, but may be modified
 	 * by the caller between load_module() and exec_module() calls.

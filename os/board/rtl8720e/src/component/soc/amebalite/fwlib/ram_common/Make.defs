@@ -82,3 +82,8 @@ CSRCS += ameba_i2c.c \
 
 DEPPATH += --dep-path component/soc/amebalite/fwlib/ram_common
 VPATH += :component/soc/amebalite/fwlib/ram_common
+
+# Disable unwind tables for DRAM-loaded files to prevent R_ARM_PREL31 overflow
+ifeq ($(CONFIG_ARM_UNWIND),y)
+ameba_flash_ram.o: CFLAGS += -fno-unwind-tables -fno-exceptions
+endif
