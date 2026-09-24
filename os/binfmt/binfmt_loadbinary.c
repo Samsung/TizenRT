@@ -42,6 +42,10 @@
 #include "binfmt_arch_apis.h"
 #include "binary_manager/binary_manager_internal.h"
 
+#if defined(CONFIG_UNWINDER_ARM)
+#include "../arch/arm/src/common/arm_backtrace_unwind.h"
+#endif
+
 #ifdef CONFIG_BINFMT_ENABLE
 
 #include <tinyara/mm/mm.h>
@@ -200,6 +204,19 @@ int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr
 		BIN_STATE(binary_idx) = BINARY_RUNNING;
 		BIN_LOADVER(binary_idx) = bin->bin_ver;
 		BIN_LOADINFO(binary_idx) = bin;
+
+		/* Register the common binary's .ARM.exidx section for kernel-side
+		 * backtrace unwinding. The common binary is loaded as a library
+		 * and does not go through exec_module(), so we register here.
+		 */
+#if defined(CONFIG_UNWINDER_ARM)
+		if (bin->exidx_start && bin->exidx_end) {
+			up_register_exidx((unsigned long)bin->exidx_start,
+					  (unsigned long)bin->exidx_end - (unsigned long)bin->exidx_start,
+					  (unsigned long)bin->sections[BIN_TEXT],
+					  (unsigned long)bin->sections[BIN_TEXT] + bin->sizes[BIN_TEXT]);
+		}
+#endif
 		return OK;
 	}
 	/* If we support common binary, then we need to place a pointer to the app's heap object

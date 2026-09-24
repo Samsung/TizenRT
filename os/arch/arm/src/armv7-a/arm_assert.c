@@ -80,6 +80,7 @@
 #ifdef CONFIG_APP_BINARY_SEPARATION
 #include "binary_manager/binary_manager_internal.h"
 #include <tinyara/binfmt/elf.h>
+#include "../common/arm_backtrace_unwind.h"
 #endif
 #include <tinyara/security_level.h>
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
@@ -384,14 +385,31 @@ static void up_dumpstate(struct tcb_s *fault_tcb, uint32_t asserted_location)
 
 	/* Update the xcp context */
 #ifdef CONFIG_APP_BINARY_SEPARATION
-	if (!IS_FAULT_IN_USER_THREAD(fault_tcb)) {
-#endif
-		if (CURRENT_REGS) {
-			fault_tcb->xcp.regs = (uint32_t *)CURRENT_REGS;
-		} else {
+	if (CURRENT_REGS) {
+		/* CURRENT_REGS has the saved register context - use it for both
+		 * kernel and user thread faults. For user thread faults via syscall,
+		 * CURRENT_REGS contains the user-mode registers saved at syscall entry.
+		 * DO NOT call up_saveusercontext() here - it would overwrite the
+		 * saved user registers with current kernel registers.
+		 */
+		fault_tcb->xcp.regs = (uint32_t *)CURRENT_REGS;
+	} else if (!IS_FAULT_IN_USER_THREAD(fault_tcb)) {
+		/* Direct assert in kernel mode - save context if xcp.regs is valid */
+		if (fault_tcb->xcp.regs != NULL) {
 			up_saveusercontext(fault_tcb->xcp.regs);
 		}
-#ifdef CONFIG_APP_BINARY_SEPARATION
+	}
+#else
+	/* Flat build: Only save context if we're in interrupt/exception context.
+	 * For direct asserts (DEBUGASSERT without exception), CURRENT_REGS is NULL
+	 * and xcp.regs is uninitialized/garbage. Calling up_saveusercontext() with
+	 * garbage pointer causes Data Abort. Skip the save in this case.
+	 */
+	if (CURRENT_REGS) {
+		fault_tcb->xcp.regs = (uint32_t *)CURRENT_REGS;
+	} else {
+		/* Mark xcp.regs as invalid so up_backtrace() knows to use current frame */
+		fault_tcb->xcp.regs = NULL;
 	}
 #endif
 	/* Get the limits for each type of stack */
@@ -563,6 +581,33 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 #endif							/* defined(CONFIG_DEBUG_WORKQUEUE) */
 	up_dumpstate(fault_tcb, asserted_location);
 
+#ifdef CONFIG_UNWINDER_ARM
+	/* Print backtrace using ARM EHABI unwinder */
+	lldbg_noarg("===========================================================\n");
+	lldbg_noarg("Backtrace (using ARM EHABI unwinder)\n");
+	lldbg_noarg("===========================================================\n");
+	{
+		void *buffer[CONFIG_ARCH_BACKTRACE_MAX_FRAMES];
+		int frames = 0;
+		int i;
+
+		/* Use up_backtrace which properly handles TCB context for both user and kernel modes.
+		 * Pass asserted_location for user ASSERT via syscall to get correct PC.
+		 */
+		frames = up_backtrace(fault_tcb, buffer, CONFIG_ARCH_BACKTRACE_MAX_FRAMES, 0, asserted_location);
+
+		for (i = 0; i < frames && i < CONFIG_ARCH_BACKTRACE_MAX_FRAMES; i++) {
+			const char *binary = up_get_binary_region((unsigned long)buffer[i]);
+
+			lldbg("  [%2d]: %p (%s)\n", i, buffer[i], binary);
+		}
+		if (frames == 0) {
+			lldbg("  (No frames captured)\n");
+		}
+	}
+
+	lldbg_noarg("\n");
+#endif
 	/* Dump the state of all tasks (if available) */
 	task_show_alivetask_list();
 
