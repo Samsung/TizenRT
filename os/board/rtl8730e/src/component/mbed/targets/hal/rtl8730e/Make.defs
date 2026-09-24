@@ -16,6 +16,11 @@
 #
 ############################################################################
 
+# Disable unwind tables for DRAM-loaded files to prevent R_ARM_PREL31 overflow
+ifeq ($(CONFIG_ARM_UNWIND),y)
+flash_api.o: CFLAGS += -fno-unwind-tables -fno-exceptions
+endif
+
 CSRCS += flash_api.c \
 		pinmap_common.c \
 		sys_api.c \

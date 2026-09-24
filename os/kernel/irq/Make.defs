@@ -57,6 +57,11 @@ ifeq ($(CONFIG_SMP), y)
 CSRCS += irq_spinlock.c
 endif
 
+# Disable unwind tables for DRAM-loaded files to prevent R_ARM_PREL31 overflow
+ifeq ($(CONFIG_ARM_UNWIND),y)
+irq_spinlock.o: CFLAGS += -fno-unwind-tables -fno-exceptions
+endif
+
 ifeq ($(CONFIG_DEBUG_IRQ_INFO),y)
 CSRCS += irq_procfs.c
 endif

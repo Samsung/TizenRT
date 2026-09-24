@@ -49,8 +49,14 @@
 #
 ############################################################################
 
+# Disable unwind tables for DRAM-loaded files to prevent R_ARM_PREL31 overflow
+ifeq ($(CONFIG_ARM_UNWIND),y)
+ftl.o: CFLAGS += -fno-unwind-tables -fno-exceptions
+ftl_crypto.o: CFLAGS += -fno-unwind-tables -fno-exceptions
+endif
+
 CSRCS += ftl.c \
-	ftl_crypto.c 
+ 	ftl_crypto.c
 
 DEPPATH += --dep-path component/file_system/ftl
 VPATH += :component/file_system/ftl

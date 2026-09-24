@@ -233,6 +233,62 @@ extern "C" {
 #define EXTERN extern
 #endif
 
+#ifdef CONFIG_SCHED_BACKTRACE
+/****************************************************************************
+ * Name: up_backtrace
+ *
+ * Description:
+ *   up_backtrace() returns a backtrace for the TCB, in the array
+ *   pointed to by buffer. A backtrace is the series of currently active
+ *   function calls for the program. Each item in the array pointed to by
+ *   buffer is of type void *, and is the return address from the
+ *   corresponding stack frame. The size argument specifies the maximum
+ *   number of addresses that can be stored in buffer. If the backtrace is
+ *   larger than size, then the addresses corresponding to the size most
+ *   recent function calls are returned; to obtain the complete backtrace,
+ *   make sure that buffer and size are large enough.
+ *
+ * Input Parameters:
+ *   tcb    - Address of the task's TCB
+ *   buffer - Return address from the corresponding stack frame
+ *   size   - Maximum number of addresses that can be stored in buffer
+ *   skip   - number of addresses to be skipped
+ *   asserted_location - PC address of the assert location (for user ASSERT via syscall)
+ *
+ * Returned Value:
+ *   up_backtrace() returns the number of addresses returned in buffer
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SCHED_BACKTRACE
+int up_backtrace(struct tcb_s *tcb, void **buffer, int size, int skip, uint32_t asserted_location);
+#else
+static inline int up_backtrace(struct tcb_s *tcb, void **buffer, int size, int skip, uint32_t asserted_location)
+{
+  return 0;
+}
+#endif
+
+/****************************************************************************
+ * Name: up_backtrace_init_code_regions
+ *
+ * Description:
+ *   The up call up_backtrace_init_code_regions() will set the start
+ *   and end addresses of the customized program sections, this method
+ *   will help the different boards to configure the current text
+ *   sections for some complicated platforms
+ *
+ * Input Parameters:
+ *   regions - The start and end address of the text segment
+ *             This interface supports the input of multiple groups of sections.
+ *             Each set of the sections must be a pair, the end of the area
+ *             must specify two NULL pointers.
+ *
+ ****************************************************************************/
+
+void up_backtrace_init_code_regions(void **regions);
+#endif /* CONFIG_SCHED_BACKTRACE */
+
 #undef EXTERN
 #ifdef __cplusplus
 }

@@ -67,6 +67,11 @@ ifeq ($(CONFIG_SPINLOCK),y)
 CSRCS += spinlock.c
 endif
 
+# Disable unwind tables for DRAM-loaded files to prevent R_ARM_PREL31 overflow
+ifeq ($(CONFIG_ARM_UNWIND),y)
+spinlock.o: CFLAGS += -fno-unwind-tables -fno-exceptions
+endif
+
 # Include semaphore build support
 
 DEPPATH += --dep-path semaphore
