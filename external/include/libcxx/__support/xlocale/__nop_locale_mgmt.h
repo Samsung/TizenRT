@@ -17,7 +17,9 @@ extern "C" {
 #endif
 
 // Patch over lack of extended locale support
+#ifndef locale_t
 typedef void *locale_t;
+#endif
 
 inline _LIBCPP_HIDE_FROM_ABI_C locale_t duplocale(locale_t) { return NULL; }
 

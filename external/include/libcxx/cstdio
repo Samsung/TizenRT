@@ -98,9 +98,17 @@ void perror(const char* s);
 #include <__assert> // all public C++ headers provide the assertion handler
 #include <__config>
 
-// TizenRT compatibility: Include stdio.h without the guard check
-// The _LIBCPP_STDIO_H guard is defined by the libcxx stdio.h wrapper
 #include <stdio.h>
+
+#ifndef _LIBCPP_STDIO_H
+#   ifndef __TINYARA__
+#   error <cstdio> tried including <stdio.h> but didn't find libc++'s <stdio.h> header. \
+          This usually means that your header search paths are not configured properly. \
+          The header search paths should contain the C++ Standard Library headers before \
+          any C Standard Library, and you are probably using compiler flags that make that \
+          not be the case.
+#  endif
+#endif
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #  pragma GCC system_header
@@ -112,21 +120,22 @@ using ::FILE _LIBCPP_USING_IF_EXISTS;
 using ::fpos_t _LIBCPP_USING_IF_EXISTS;
 using ::size_t _LIBCPP_USING_IF_EXISTS;
 
-// TizenRT compatibility: Guard stdio functions
-// Note: TizenRT defines getc, putc, getchar, putchar, rewind as macros only
-// We use the underlying functions (fgetc, fputc, fseek) instead
-
+// TizenRT compatibility: Guard stdio functions for older compilers
 using ::fclose _LIBCPP_USING_IF_EXISTS;
 using ::fflush _LIBCPP_USING_IF_EXISTS;
 using ::setbuf _LIBCPP_USING_IF_EXISTS;
 using ::setvbuf _LIBCPP_USING_IF_EXISTS;
 using ::fprintf _LIBCPP_USING_IF_EXISTS;
-// fscanf not available in TizenRT - skip
+#if !defined(_LIBCPP_HAS_NO_STDIN) && !defined(_LIBCPP_HAS_NO_STDOUT)
+using ::fscanf _LIBCPP_USING_IF_EXISTS;
+#endif
 using ::snprintf _LIBCPP_USING_IF_EXISTS;
 using ::sprintf _LIBCPP_USING_IF_EXISTS;
 using ::sscanf _LIBCPP_USING_IF_EXISTS;
 using ::vfprintf _LIBCPP_USING_IF_EXISTS;
-// vfscanf not available in TizenRT - skip
+#if !defined(_LIBCPP_HAS_NO_STDIN) && !defined(_LIBCPP_HAS_NO_STDOUT)
+using ::vfscanf _LIBCPP_USING_IF_EXISTS;
+#endif
 using ::vsscanf _LIBCPP_USING_IF_EXISTS;
 using ::vsnprintf _LIBCPP_USING_IF_EXISTS;
 using ::vsprintf _LIBCPP_USING_IF_EXISTS;
@@ -134,7 +143,10 @@ using ::fgetc _LIBCPP_USING_IF_EXISTS;
 using ::fgets _LIBCPP_USING_IF_EXISTS;
 using ::fputc _LIBCPP_USING_IF_EXISTS;
 using ::fputs _LIBCPP_USING_IF_EXISTS;
-// getc/putc are macros in TizenRT - use fgetc/fputc instead
+#if !defined(_LIBCPP_HAS_NO_STDIN) && !defined(_LIBCPP_HAS_NO_STDOUT)
+using ::getc _LIBCPP_USING_IF_EXISTS;
+using ::putc _LIBCPP_USING_IF_EXISTS;
+#endif
 using ::ungetc _LIBCPP_USING_IF_EXISTS;
 using ::fread _LIBCPP_USING_IF_EXISTS;
 using ::fwrite _LIBCPP_USING_IF_EXISTS;
@@ -146,7 +158,9 @@ using ::fseek _LIBCPP_USING_IF_EXISTS;
 using ::fsetpos _LIBCPP_USING_IF_EXISTS;
 #endif
 using ::ftell _LIBCPP_USING_IF_EXISTS;
-// rewind is a macro in TizenRT - use fseek instead
+#if !defined(_LIBCPP_HAS_NO_STDIN) && !defined(_LIBCPP_HAS_NO_STDOUT)
+using ::rewind _LIBCPP_USING_IF_EXISTS;
+#endif
 using ::clearerr _LIBCPP_USING_IF_EXISTS;
 using ::feof _LIBCPP_USING_IF_EXISTS;
 using ::ferror _LIBCPP_USING_IF_EXISTS;
@@ -156,15 +170,27 @@ using ::fopen _LIBCPP_USING_IF_EXISTS;
 using ::freopen _LIBCPP_USING_IF_EXISTS;
 using ::remove _LIBCPP_USING_IF_EXISTS;
 using ::rename _LIBCPP_USING_IF_EXISTS;
-// tmpfile not available in TizenRT - skip
+#if !defined(_LIBCPP_HAS_NO_STDIN) && !defined(_LIBCPP_HAS_NO_STDOUT)
+using ::tmpfile _LIBCPP_USING_IF_EXISTS;
+#endif
 using ::tmpnam _LIBCPP_USING_IF_EXISTS;
 
-// getchar is a macro in TizenRT - use fgetc instead
-// scanf/vscanf not available in TizenRT - skip
+#if !defined(_LIBCPP_HAS_NO_STDIN)
+using ::getchar _LIBCPP_USING_IF_EXISTS;
+#endif
+#if _LIBCPP_STD_VER <= 11 && !defined(_LIBCPP_C_HAS_NO_GETS)
+using ::gets _LIBCPP_USING_IF_EXISTS;
+#endif
+#if !defined(_LIBCPP_HAS_NO_STDIN)
+using ::scanf _LIBCPP_USING_IF_EXISTS;
+using ::vscanf _LIBCPP_USING_IF_EXISTS;
+#endif
 
 using ::printf _LIBCPP_USING_IF_EXISTS;
-// putchar is a macro in TizenRT - use fputc instead
+#if !defined(_LIBCPP_HAS_NO_STDOUT)
+using ::putchar _LIBCPP_USING_IF_EXISTS;
 using ::puts _LIBCPP_USING_IF_EXISTS;
+#endif
 using ::vprintf _LIBCPP_USING_IF_EXISTS;
 
 _LIBCPP_END_NAMESPACE_STD

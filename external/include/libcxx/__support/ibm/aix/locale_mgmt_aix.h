@@ -49,7 +49,9 @@ extern "C" {
                                  LC_MESSAGES_MASK | LC_MONETARY_MASK |\
                                  LC_NUMERIC_MASK | LC_TIME_MASK)
 
+#ifndef locale_t
 typedef void* locale_t;
+#endif
 
 // The following are stubs.  They are not supported on AIX 6.1.
 static inline

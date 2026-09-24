@@ -272,7 +272,31 @@ public:
     // 27.7.2.7 Unformatted output:
     basic_ostream& put(char_type __c);
     basic_ostream& write(const char_type* __s, streamsize __n);
-    basic_ostream& flush();
+    _LIBCPP_INLINE_VISIBILITY
+    basic_ostream& flush()
+    {
+#ifndef _LIBCPP_HAS_NO_EXCEPTIONS
+        try
+        {
+#endif // _LIBCPP_HAS_NO_EXCEPTIONS
+            if (this->rdbuf())
+            {
+                sentry __s(*this);
+                if (__s)
+                {
+                    if (this->rdbuf()->pubsync() == -1)
+                        this->setstate(ios_base::badbit);
+                }
+            }
+#ifndef _LIBCPP_HAS_NO_EXCEPTIONS
+        }
+        catch (...)
+        {
+            this->__set_badbit_and_consider_rethrow();
+        }
+#endif // _LIBCPP_HAS_NO_EXCEPTIONS
+        return *this;
+    }
 
     // 27.7.2.5 seeks:
     inline _LIBCPP_HIDE_FROM_ABI_AFTER_V1
@@ -965,33 +989,6 @@ basic_ostream<_CharT, _Traits>::write(const char_type* __s, streamsize __n)
         {
             if (this->rdbuf()->sputn(__s, __n) != __n)
                 this->setstate(ios_base::badbit);
-        }
-#ifndef _LIBCPP_HAS_NO_EXCEPTIONS
-    }
-    catch (...)
-    {
-        this->__set_badbit_and_consider_rethrow();
-    }
-#endif // _LIBCPP_HAS_NO_EXCEPTIONS
-    return *this;
-}
-
-template <class _CharT, class _Traits>
-basic_ostream<_CharT, _Traits>&
-basic_ostream<_CharT, _Traits>::flush()
-{
-#ifndef _LIBCPP_HAS_NO_EXCEPTIONS
-    try
-    {
-#endif // _LIBCPP_HAS_NO_EXCEPTIONS
-        if (this->rdbuf())
-        {
-            sentry __s(*this);
-            if (__s)
-            {
-                if (this->rdbuf()->pubsync() == -1)
-                    this->setstate(ios_base::badbit);
-            }
         }
 #ifndef _LIBCPP_HAS_NO_EXCEPTIONS
     }

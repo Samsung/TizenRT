@@ -316,13 +316,16 @@ constexpr long double lerp(long double a, long double b, long double t) noexcept
 #include <version>
 
 #include <math.h>
+#include <limits>
 
 #ifndef _LIBCPP_MATH_H
-#   error <cmath> tried including <math.h> but didn't find libc++'s <math.h> header. \
-          This usually means that your header search paths are not configured properly. \
-          The header search paths should contain the C++ Standard Library headers before \
-          any C Standard Library, and you are probably using compiler flags that make that \
-          not be the case.
+#   ifndef __TINYARA__
+#       error <cmath> tried including <math.h> but didn't find libc++'s <math.h> header. \
+              This usually means that your header search paths are not configured properly. \
+              The header search paths should contain the C++ Standard Library headers before \
+              any C Standard Library, and you are probably using compiler flags that make that \
+              not be the case.
+#   endif
 #endif
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -332,8 +335,204 @@ constexpr long double lerp(long double a, long double b, long double t) noexcept
 _LIBCPP_PUSH_MACROS
 #include <__undef_macros>
 
+#ifdef __TINYARA__
+// TizenRT: Define math classification macros using GCC builtins
+// These are macros, not functions, so we can't use "using ::" declarations
+
+// FP_* constants for fpclassify
+#ifndef FP_NAN
+#define FP_NAN          0
+#define FP_INFINITE     1
+#define FP_NORMAL       2
+#define FP_SUBNORMAL    3
+#define FP_ZERO         4
+#endif
+
+// Math classification macros using GCC builtins
+#ifndef signbit
+#define signbit(x) __builtin_signbit(x)
+#endif
+#ifndef fpclassify
+#define fpclassify(x) __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, x)
+#endif
+#ifndef isfinite
+#define isfinite(x) __builtin_isfinite(x)
+#endif
+#ifndef isinf
+#define isinf(x) __builtin_isinf(x)
+#endif
+#ifndef isnan
+#define isnan(x) __builtin_isnan(x)
+#endif
+#ifndef isnormal
+#define isnormal(x) __builtin_isnormal(x)
+#endif
+#ifndef isgreater
+#define isgreater(x, y) __builtin_isgreater(x, y)
+#endif
+#ifndef isgreaterequal
+#define isgreaterequal(x, y) __builtin_isgreaterequal(x, y)
+#endif
+#ifndef isless
+#define isless(x, y) __builtin_isless(x, y)
+#endif
+#ifndef islessequal
+#define islessequal(x, y) __builtin_islessequal(x, y)
+#endif
+#ifndef islessgreater
+#define islessgreater(x, y) __builtin_islessgreater(x, y)
+#endif
+#ifndef isunordered
+#define isunordered(x, y) __builtin_isunordered(x, y)
+#endif
+
+// float_t and double_t types
+#ifndef float_t
+typedef float float_t;
+typedef double double_t;
+#endif
+#endif // __TINYARA__
+
 _LIBCPP_BEGIN_NAMESPACE_STD
 
+#ifdef __TINYARA__
+// TizenRT: Provide inline function wrappers that call the GCC builtins directly.
+// This is needed because when code writes std::isnan(x), the macro isn't expanded
+// (macros don't expand after ::). So we provide functions that call the builtins.
+
+// Save the builtin expressions with different names that won't conflict
+#define __TINYARA_BUILTIN_SIGNBIT(x) __builtin_signbit(x)
+#define __TINYARA_BUILTIN_FPCLASSIFY(x) __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, x)
+#define __TINYARA_BUILTIN_ISFINITE(x) __builtin_isfinite(x)
+#define __TINYARA_BUILTIN_ISINF(x) __builtin_isinf(x)
+#define __TINYARA_BUILTIN_ISNAN(x) __builtin_isnan(x)
+#define __TINYARA_BUILTIN_ISNORMAL(x) __builtin_isnormal(x)
+#define __TINYARA_BUILTIN_ISGREATER(x, y) __builtin_isgreater(x, y)
+#define __TINYARA_BUILTIN_ISGREATEREQUAL(x, y) __builtin_isgreaterequal(x, y)
+#define __TINYARA_BUILTIN_ISLESS(x, y) __builtin_isless(x, y)
+#define __TINYARA_BUILTIN_ISLESSEQUAL(x, y) __builtin_islessequal(x, y)
+#define __TINYARA_BUILTIN_ISLESSGREATER(x, y) __builtin_islessgreater(x, y)
+#define __TINYARA_BUILTIN_ISUNORDERED(x, y) __builtin_isunordered(x, y)
+
+// Undef the macros so they don't interfere with function definitions
+#undef signbit
+#undef fpclassify
+#undef isfinite
+#undef isinf
+#undef isnan
+#undef isnormal
+#undef isgreater
+#undef isgreaterequal
+#undef isless
+#undef islessequal
+#undef islessgreater
+#undef isunordered
+
+// Define inline functions in std namespace that call the saved builtin macros
+inline _LIBCPP_INLINE_VISIBILITY bool signbit(float __x) { return __TINYARA_BUILTIN_SIGNBIT(__x); }
+inline _LIBCPP_INLINE_VISIBILITY bool signbit(double __x) { return __TINYARA_BUILTIN_SIGNBIT(__x); }
+inline _LIBCPP_INLINE_VISIBILITY bool signbit(long double __x) { return __TINYARA_BUILTIN_SIGNBIT(__x); }
+template <class _A1>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_integral<_A1>::value, bool>::type
+signbit(_A1 __x) { return __TINYARA_BUILTIN_SIGNBIT(__x); }
+
+inline _LIBCPP_INLINE_VISIBILITY int fpclassify(float __x) { return __TINYARA_BUILTIN_FPCLASSIFY(__x); }
+inline _LIBCPP_INLINE_VISIBILITY int fpclassify(double __x) { return __TINYARA_BUILTIN_FPCLASSIFY(__x); }
+inline _LIBCPP_INLINE_VISIBILITY int fpclassify(long double __x) { return __TINYARA_BUILTIN_FPCLASSIFY(__x); }
+template <class _A1>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_integral<_A1>::value, int>::type
+fpclassify(_A1 __x) { return __TINYARA_BUILTIN_FPCLASSIFY(__x); }
+
+inline _LIBCPP_INLINE_VISIBILITY bool isfinite(float __x) { return __TINYARA_BUILTIN_ISFINITE(__x); }
+inline _LIBCPP_INLINE_VISIBILITY bool isfinite(double __x) { return __TINYARA_BUILTIN_ISFINITE(__x); }
+inline _LIBCPP_INLINE_VISIBILITY bool isfinite(long double __x) { return __TINYARA_BUILTIN_ISFINITE(__x); }
+template <class _A1>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_integral<_A1>::value, bool>::type
+isfinite(_A1 __x) { return __TINYARA_BUILTIN_ISFINITE(__x); }
+
+inline _LIBCPP_INLINE_VISIBILITY bool isinf(float __x) { return __TINYARA_BUILTIN_ISINF(__x); }
+inline _LIBCPP_INLINE_VISIBILITY bool isinf(double __x) { return __TINYARA_BUILTIN_ISINF(__x); }
+inline _LIBCPP_INLINE_VISIBILITY bool isinf(long double __x) { return __TINYARA_BUILTIN_ISINF(__x); }
+template <class _A1>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_integral<_A1>::value, bool>::type
+isinf(_A1 __x) { (void)__x; return false; }
+
+inline _LIBCPP_INLINE_VISIBILITY bool isnan(float __x) { return __TINYARA_BUILTIN_ISNAN(__x); }
+inline _LIBCPP_INLINE_VISIBILITY bool isnan(double __x) { return __TINYARA_BUILTIN_ISNAN(__x); }
+inline _LIBCPP_INLINE_VISIBILITY bool isnan(long double __x) { return __TINYARA_BUILTIN_ISNAN(__x); }
+template <class _A1>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_integral<_A1>::value, bool>::type
+isnan(_A1 __x) { (void)__x; return false; }
+
+inline _LIBCPP_INLINE_VISIBILITY bool isnormal(float __x) { return __TINYARA_BUILTIN_ISNORMAL(__x); }
+inline _LIBCPP_INLINE_VISIBILITY bool isnormal(double __x) { return __TINYARA_BUILTIN_ISNORMAL(__x); }
+inline _LIBCPP_INLINE_VISIBILITY bool isnormal(long double __x) { return __TINYARA_BUILTIN_ISNORMAL(__x); }
+template <class _A1>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_integral<_A1>::value, bool>::type
+isnormal(_A1 __x) { return __TINYARA_BUILTIN_ISNORMAL(__x); }
+
+inline _LIBCPP_INLINE_VISIBILITY bool isgreater(float __x, float __y) { return __TINYARA_BUILTIN_ISGREATER(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool isgreater(double __x, double __y) { return __TINYARA_BUILTIN_ISGREATER(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool isgreater(long double __x, long double __y) { return __TINYARA_BUILTIN_ISGREATER(__x, __y); }
+template <class _A1, class _A2>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_arithmetic<_A1>::value && is_arithmetic<_A2>::value, bool>::type
+isgreater(_A1 __x, _A2 __y) { return __TINYARA_BUILTIN_ISGREATER(__x, __y); }
+
+inline _LIBCPP_INLINE_VISIBILITY bool isgreaterequal(float __x, float __y) { return __TINYARA_BUILTIN_ISGREATEREQUAL(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool isgreaterequal(double __x, double __y) { return __TINYARA_BUILTIN_ISGREATEREQUAL(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool isgreaterequal(long double __x, long double __y) { return __TINYARA_BUILTIN_ISGREATEREQUAL(__x, __y); }
+template <class _A1, class _A2>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_arithmetic<_A1>::value && is_arithmetic<_A2>::value, bool>::type
+isgreaterequal(_A1 __x, _A2 __y) { return __TINYARA_BUILTIN_ISGREATEREQUAL(__x, __y); }
+
+inline _LIBCPP_INLINE_VISIBILITY bool isless(float __x, float __y) { return __TINYARA_BUILTIN_ISLESS(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool isless(double __x, double __y) { return __TINYARA_BUILTIN_ISLESS(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool isless(long double __x, long double __y) { return __TINYARA_BUILTIN_ISLESS(__x, __y); }
+template <class _A1, class _A2>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_arithmetic<_A1>::value && is_arithmetic<_A2>::value, bool>::type
+isless(_A1 __x, _A2 __y) { return __TINYARA_BUILTIN_ISLESS(__x, __y); }
+
+inline _LIBCPP_INLINE_VISIBILITY bool islessequal(float __x, float __y) { return __TINYARA_BUILTIN_ISLESSEQUAL(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool islessequal(double __x, double __y) { return __TINYARA_BUILTIN_ISLESSEQUAL(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool islessequal(long double __x, long double __y) { return __TINYARA_BUILTIN_ISLESSEQUAL(__x, __y); }
+template <class _A1, class _A2>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_arithmetic<_A1>::value && is_arithmetic<_A2>::value, bool>::type
+islessequal(_A1 __x, _A2 __y) { return __TINYARA_BUILTIN_ISLESSEQUAL(__x, __y); }
+
+inline _LIBCPP_INLINE_VISIBILITY bool islessgreater(float __x, float __y) { return __TINYARA_BUILTIN_ISLESSGREATER(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool islessgreater(double __x, double __y) { return __TINYARA_BUILTIN_ISLESSGREATER(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool islessgreater(long double __x, long double __y) { return __TINYARA_BUILTIN_ISLESSGREATER(__x, __y); }
+template <class _A1, class _A2>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_arithmetic<_A1>::value && is_arithmetic<_A2>::value, bool>::type
+islessgreater(_A1 __x, _A2 __y) { return __TINYARA_BUILTIN_ISLESSGREATER(__x, __y); }
+
+inline _LIBCPP_INLINE_VISIBILITY bool isunordered(float __x, float __y) { return __TINYARA_BUILTIN_ISUNORDERED(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool isunordered(double __x, double __y) { return __TINYARA_BUILTIN_ISUNORDERED(__x, __y); }
+inline _LIBCPP_INLINE_VISIBILITY bool isunordered(long double __x, long double __y) { return __TINYARA_BUILTIN_ISUNORDERED(__x, __y); }
+template <class _A1, class _A2>
+inline _LIBCPP_INLINE_VISIBILITY typename enable_if<is_arithmetic<_A1>::value && is_arithmetic<_A2>::value, bool>::type
+isunordered(_A1 __x, _A2 __y) { return __TINYARA_BUILTIN_ISUNORDERED(__x, __y); }
+
+// Restore the macros for global namespace compatibility
+// COMMENTED OUT FOR TESTING - These macros interfere with std::signbit/std::isnan usage in complex header
+// #define signbit(x) __builtin_signbit(x)
+// #define fpclassify(x) __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, x)
+// #define isfinite(x) __builtin_isfinite(x)
+// #define isinf(x) __builtin_isinf(x)
+// #define isnan(x) __builtin_isnan(x)
+// #define isnormal(x) __builtin_isnormal(x)
+// #define isgreater(x, y) __builtin_isgreater(x, y)
+// #define isgreaterequal(x, y) __builtin_isgreaterequal(x, y)
+// #define isless(x, y) __builtin_isless(x, y)
+// #define islessequal(x, y) __builtin_islessequal(x, y)
+// #define islessgreater(x, y) __builtin_islessgreater(x, y)
+// #define isunordered(x, y) __builtin_isunordered(x, y)
+
+// float_t and double_t types need to be imported
+using ::float_t;
+using ::double_t;
+
+#else // !__TINYARA__
 using ::signbit _LIBCPP_USING_IF_EXISTS;
 using ::fpclassify _LIBCPP_USING_IF_EXISTS;
 using ::isfinite _LIBCPP_USING_IF_EXISTS;
@@ -350,8 +549,12 @@ using ::isunordered _LIBCPP_USING_IF_EXISTS;
 
 using ::float_t _LIBCPP_USING_IF_EXISTS;
 using ::double_t _LIBCPP_USING_IF_EXISTS;
+#endif // __TINYARA__
 
+// Regular math functions - always imported (not macros)
+#ifndef __TINYARA__
 using ::abs _LIBCPP_USING_IF_EXISTS;
+#endif
 
 using ::acos _LIBCPP_USING_IF_EXISTS;
 using ::acosf _LIBCPP_USING_IF_EXISTS;
@@ -585,7 +788,7 @@ _LIBCPP_INLINE_VISIBILITY
 _LIBCPP_CONSTEXPR typename enable_if<!is_floating_point<_A1>::value, bool>::type
 __constexpr_isnan(_A1 __lcpp_x) _NOEXCEPT
 {
-    return std::isnan(__lcpp_x);
+    (void)__lcpp_x; return false;
 }
 
 template <class _A1>
@@ -605,7 +808,7 @@ _LIBCPP_INLINE_VISIBILITY
 _LIBCPP_CONSTEXPR typename enable_if<!is_floating_point<_A1>::value, bool>::type
 __constexpr_isinf(_A1 __lcpp_x) _NOEXCEPT
 {
-    return std::isinf(__lcpp_x);
+    (void)__lcpp_x; return false;
 }
 
 template <class _A1>

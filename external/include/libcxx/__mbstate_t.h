@@ -35,30 +35,43 @@
 #  define __CORRECT_ISO_CPP_WCHAR_H_PROTO
 #endif
 
-// TizenRT compatibility: When wide characters are disabled, include system's wchar.h for mbstate_t.
-// Use include_next to bypass libcxx's wchar.h wrapper and get the native mbstate_t definition.
 #if defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS) && defined(__TINYARA__)
-# if __has_include_next(<wchar.h>)
-#  include_next <wchar.h>  // System's wchar.h provides mbstate_t
+# ifndef _WINT_T
+#    define _WINT_T
+     typedef int wint_t;
+# endif
+  typedef void* __gnuc_va_list;  
+# ifndef ___MBSTATE_T_DECLARED
+#  if __has_include_next(<wchar.h>)
+#    include_next <wchar.h>  // System's wchar.h provides mbstate_t (kernel build only)
+#  endif
 # endif
 #elif defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS)
 // mbstate_t already defined in __config_site for non-TizenRT platforms
+#elif defined(_LIBCPP_HAS_MUSL_LIBC)
+#   define __NEED_mbstate_t
+#   include <bits/alltypes.h>
+#   undef __NEED_mbstate_t
+#elif __has_include(<bits/types/mbstate_t.h>)
+#   include <bits/types/mbstate_t.h> // works on most Unixes
+#elif __has_include(<sys/_types/_mbstate_t.h>)
+#   include <sys/_types/_mbstate_t.h> // works on Darwin
+#elif !defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS) && defined(__TINYARA__)
+  // TizenRT with wide-char: define mbstate_t directly to avoid including toolchain's wchar.h which conflicts with TizenRT's wchar.h
+  // (different _mbstate_t struct, getwchar macro, FAR pointer conflicts)
+# ifndef __machine_mbstate_t_defined
+  typedef struct { int __fill[6]; } _mbstate_t;
+#   define __machine_mbstate_t_defined
+# endif
+  typedef _mbstate_t mbstate_t;
+# define _MBSTATE_T_DEFINED
+# define ___MBSTATE_T_DECLARED
+#elif !defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS) && __has_include_next(<wchar.h>)
+#   include_next <wchar.h> // fall back to the C standard provider of mbstate_t
+#elif __has_include_next(<uchar.h>)
+#   include_next <uchar.h> // <uchar.h> is also required to make mbstate_t visible
 #else
-#   if defined(_LIBCPP_HAS_MUSL_LIBC)
-#       define __NEED_mbstate_t
-#       include <bits/alltypes.h>
-#       undef __NEED_mbstate_t
-#   elif __has_include(<bits/types/mbstate_t.h>)
-#       include <bits/types/mbstate_t.h> // works on most Unixes
-#   elif __has_include(<sys/_types/_mbstate_t.h>)
-#       include <sys/_types/_mbstate_t.h> // works on Darwin
-#   elif !defined(_LIBCPP_HAS_NO_WIDE_CHARACTERS) && __has_include_next(<wchar.h>)
-#       include_next <wchar.h> // fall back to the C standard provider of mbstate_t
-#   elif __has_include_next(<uchar.h>)
-#       include_next <uchar.h> // <uchar.h> is also required to make mbstate_t visible
-#   else
-#       error "We don't know how to get the definition of mbstate_t without <wchar.h> on your platform."
-#   endif
+#   error "We don't know how to get the definition of mbstate_t without <wchar.h> on your platform."
 #endif
 
 #endif // _LIBCPP___MBSTATE_T_H

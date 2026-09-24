@@ -288,9 +288,9 @@ public:
     basic_istream& unget();
     int sync();
 
-    pos_type tellg();
-    basic_istream& seekg(pos_type __pos);
-    basic_istream& seekg(off_type __off, ios_base::seekdir __dir);
+    _LIBCPP_INLINE_VISIBILITY pos_type tellg();
+    _LIBCPP_INLINE_VISIBILITY basic_istream& seekg(pos_type __pos);
+    _LIBCPP_INLINE_VISIBILITY basic_istream& seekg(off_type __off, ios_base::seekdir __dir);
 };
 
 template <class _CharT, class _Traits>
@@ -1270,6 +1270,7 @@ basic_istream<_CharT, _Traits>::tellg()
 }
 
 template<class _CharT, class _Traits>
+_LIBCPP_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::seekg(pos_type __pos)
 {
@@ -1302,6 +1303,7 @@ basic_istream<_CharT, _Traits>::seekg(pos_type __pos)
 }
 
 template<class _CharT, class _Traits>
+_LIBCPP_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::seekg(off_type __off, ios_base::seekdir __dir)
 {

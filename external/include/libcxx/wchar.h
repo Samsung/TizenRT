@@ -7,6 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+// TizenRT: Provide wint_t and __gnuc_va_list for arm-none-eabi's wchar.h
+// These types MUST be defined BEFORE any #include_next <wchar.h> to ensure
+// arm-none-eabi's wchar.h has these types available.
+// NO GUARDS - these types must ALWAYS be defined
+typedef int wint_t;
+typedef void* __gnuc_va_list;
+
 #if defined(__need_wint_t) || defined(__need_mbstate_t)
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)

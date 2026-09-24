@@ -27,33 +27,82 @@
 #ifndef _LIBCPP_CONFIG_SITE
 #define _LIBCPP_CONFIG_SITE
 
-// TizenRT specific configurations for __TINYARA__ platform
-#define _LIBCPP_ABI_VERSION 2
+/*
+ * For C compilation (non-C++), provide minimal configuration.
+ * C files should just use the system C library headers.
+ * This prevents errors from C++-specific macros and features.
+ */
+#ifndef __cplusplus
+/* C compilation - minimal config, let system headers handle everything */
 
-//use the standard pthread functions for thread management, synchronization, and condition variables
+/* Define wint_t BEFORE any system headers that use it (sys/_types.h, wchar.h) */
+/* TizenRT already provides wint_t in os/include/wchar.h, so skip for __TINYARA__ */
+#if !defined(__TINYARA__)
+#ifndef wint_t
+typedef int wint_t;
+#endif
+#endif
+
+/* Define basic macros that might be referenced by C++ headers included via #include_next */
+/* Wide-char ENABLED for TizenRT: the C library provides full wide-char support */
+/* #define _LIBCPP_HAS_NO_WIDE_CHARACTERS 
+ #define _LIBCPP_HAS_NO_UNICODE */
+#define _LIBCPP_HAS_NO_STDIN
+#define _LIBCPP_HAS_NO_STDOUT
+#define _LIBCPP_HAS_NO_SYSTEM
+#define _LIBCPP_HAS_NO_C11_EXIT
+#define _LIBCPP_HAS_NO_C11_ALIGNED_ALLOC
+#define _LIBCPP_HAS_NO_LIBRARY_ALIGNED_ALLOCATION
+#define _LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE
+#define _LIBCPP_HAS_NO_FILESYSTEM
+#define _LIBCPP_HAS_NO_TIME_UTC
+#define _LIBCPP_HAS_NO_CONCEPTS
+#define _LIBCPP_HAS_NO_REQUIRES_EXPR
+#define _LIBCPP_HAS_NO_THREAD_API_EXTERNAL
 #define _LIBCPP_HAS_THREAD_API_PTHREAD
-
-// For static library linking in TizenRT - disable visibility and availability annotations
-#define _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
 #define _LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS
+#define _LIBCPP_PSTL_CPU_BACKEND_SERIAL
+#define _LIBCPP_TIZENRT_ERRNO_WORKAROUND 1
+#define _LIBCPP_SAFE_STATIC const
+#define _LIBCPP_INLINE_VISIBILITY inline __attribute__((visibility("default")))
+#define _LIBCPP_NORETURN __attribute__((noreturn))
+// Force default visibility to ensure symbols are exported for the linker
+#define _LIBCPP_EXPORTED_FROM_ABI __attribute__((visibility("default")))
+#define _LIBCPP_BEGIN_NAMESPACE_STD
+#define _LIBCPP_END_NAMESPACE_STD
+#define _LIBCPP_USING_IF_EXISTS
+#define _LIBCPP_OVERRIDABLE_FUNC_VIS
+#define _LIBCPP_ATTRIBUTE_FORMAT(...) __attribute__((__format__(__VA_ARGS__)))
+#define _LIBCPP_AVAILABILITY_VERBOSE_ABORT
+#define _LIBCPP_AVAILABILITY_HAS_NO_VERBOSE_ABORT
 
-// Embedded system constraints for TizenRT
-// TizenRT compatibility: C library doesn't fully implement wide character functions
-// making wide character and Unicode support impractical
-// Disable wide characters (not fully supported)
-#define _LIBCPP_HAS_NO_WIDE_CHARACTERS
-#define _LIBCPP_HAS_NO_UNICODE
+#else /* __cplusplus */
 
-//ensure that only reentrant/thread-safe versions of functions are available
-#define _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS
+// Define _LIBCPP_STD_VER early for TizenRT (before any feature checks)
+// This must be defined before __config_site checks _LIBCPP_STD_VER
+#ifndef _LIBCPP_STD_VER
+#  if __cplusplus <= 201103L
+#    define _LIBCPP_STD_VER 11
+#  elif __cplusplus <= 201402L
+#    define _LIBCPP_STD_VER 14
+#  elif __cplusplus <= 201703L
+#    define _LIBCPP_STD_VER 17
+#  elif __cplusplus <= 202002L
+#    define _LIBCPP_STD_VER 20
+#  elif __cplusplus <= 202302L
+#    define _LIBCPP_STD_VER 23
+#  else
+#    define _LIBCPP_STD_VER 26
+#  endif
+#endif
 
-//TizenRT's C library provides only partial stdio implementation
-// some functions are missing, others are macros only.
-//#define _LIBCPP_HAS_NO_STDIN
-//#define _LIBCPP_HAS_NO_STDOUT
-// TizenRT needs stdio file only provides macro of `getc` and `putc` 
-// ensure `getc` and `putc` maps to `fgetc`/`fputc` 
-#define _LIBCPP_NEEDS_STDIO_FILE_FUNCTIONS
+// wint_t for arm-none-eabi newlib compatibility
+// TizenRT already provides wint_t in os/include/wchar.h, so skip for __TINYARA__
+#if !defined(__TINYARA__)
+#ifndef wint_t
+typedef int wint_t;
+#endif
+#endif
 
 // arm-none-eabi-g++ 10.x has missing/incomplete C++ standard library features
 // This will auto-detect and enable workarounds. Remove these workarounds when 
@@ -61,7 +110,44 @@
 #if defined(__arm__) && !defined(__clang__) && defined(__GNUC__) && __GNUC__ == 10
 #define LIBCPP_ARM_EABI_GCC10_WORKAROUND 1
 #define _LIBCPP_HAS_GCC10_BUGS 1
+
+#undef _LIBCPP_USING_IF_EXISTS
+#define _LIBCPP_USING_IF_EXISTS
 #endif
+
+// TizenRT specific configurations for __TINYARA__ platform
+#define _LIBCPP_ABI_VERSION 2
+
+// Define _LIBCPP_ABI_NAMESPACE as empty to produce clean std:: symbols
+#define _LIBCPP_ABI_NAMESPACE
+
+// Disable GCC ABI tags 
+#define _LIBCPP_ABI_TAG(x)
+
+//use the standard pthread functions for thread management, synchronization, and condition variables
+#define _LIBCPP_HAS_THREAD_API_PTHREAD
+
+// Embedded system constraints for TizenRT
+// Wide-char ENABLED for TizenRT: the C library provides full wide-char support
+// (Kernel/lib/libc/wchar/lib_*.c implementations, gated on CONFIG_LIBC_WCHAR=y)
+// and CONFIG_LIBC_LOCALE=y. ecode_org (libcxx 4.0.0) works this way - it never
+// defines _LIBCPP_HAS_NO_WIDE_CHARACTERS. Enabling std::wstring /
+// std::wstring_convert / codecvt_utf8_utf16 (needed by UI framework Util.h).
+// Previously this was disabled claiming the C library lacks wide-char support,
+// but the implementations ARE present (lib_wcslen.c, lib_wmemcpy.c, lib_mbrtowc.c, ...).
+/* #define _LIBCPP_HAS_NO_WIDE_CHARACTERS */
+/* #define _LIBCPP_HAS_NO_UNICODE */
+
+//ensure that only reentrant/thread-safe versions of functions are available
+#define _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS
+
+//TizenRT's C library provides only partial stdio implementation
+// some functions are missing, others are macros only.
+#define _LIBCPP_HAS_NO_STDIN
+#define _LIBCPP_HAS_NO_STDOUT
+// TizenRT needs stdio file only provides macro of `getc` and `putc` 
+// ensure `getc` and `putc` maps to `fgetc`/`fputc` 
+#define _LIBCPP_NEEDS_STDIO_FILE_FUNCTIONS
 
 // GCC 10.x type traits workarounds
 // 'arm-none-eabi-g++' (10.3.1) cross-compiler does not provide the Clang-specific
@@ -112,19 +198,17 @@
 // Google Test/Mock compatibility: Disable wide string functionality
 #define _LIBCPP_HAS_NO_GTEST_WIDE_STRINGS
 
-// TizenRT compatibility: Define mbstate_t and wint_t when not provided by platform.
+// TizenRT compatibility: Define _mbstate_t and mbstate_t when not provided by platform.
 // TizenRT already provides these in os/include/wchar.h, so skip for __TINYARA__.
+// NOTE: Uses anonymous struct with _mbstate_t typedef to match GCC's expected type name
+// for proper symbol mangling in C++ templates (e.g., std::fpos<_mbstate_t>).
 #if !defined(__TINYARA__)
 
 #ifndef mbstate_t
-struct mbstate_s { int __fill[6]; };
-typedef struct mbstate_s mbstate_t;
+typedef struct { int __fill[6]; } _mbstate_t;
+typedef _mbstate_t mbstate_t;
 #endif  //mbstate_t
 
-#ifndef wint_t
-// Define wint_t for systems that don't provide it properly
-typedef unsigned int wint_t;
-#endif  //wint_t
 #endif  //__TINYARA__
 #endif  //_LIBCPP_HAS_NO_WIDE_CHARACTERS
 
@@ -234,6 +318,11 @@ typedef unsigned int wint_t;
 // TizenRT compatibility: Define _LIBCPP_SAFE_STATIC for thread-safe static initialization
 #define _LIBCPP_SAFE_STATIC _LIBCPP_CONSTEXPR
 
+// Force default visibility to ensure symbols are exported for the linker
+// This is critical for embedded targets compiled with -fvisibility=hidden
+#define _LIBCPP_INLINE_VISIBILITY inline __attribute__((visibility("default")))
+#define _LIBCPP_EXPORTED_FROM_ABI __attribute__((visibility("default")))
+
 // TizenRT compatibility: Disable aligned allocation as TizenRT C library doesn't provide it
 #define _LIBCPP_HAS_NO_C11_ALIGNED_ALLOC
 #define _LIBCPP_HAS_NO_LIBRARY_ALIGNED_ALLOCATION
@@ -274,5 +363,7 @@ typedef unsigned int wint_t;
 // TizenRT compatibility: TizenRT provides _exit() and _Exit() via macro
 // Define this to disable _Exit function support for consistency
 #define _LIBCPP_HAS_NO_C11_EXIT
+
+#endif /* __cplusplus */
 
 #endif // _LIBCPP_CONFIG_SITE

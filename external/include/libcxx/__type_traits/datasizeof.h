@@ -53,12 +53,7 @@ struct __libcpp_datasizeof {
     char __first_padding_byte_;
   };
 #  endif
-
-  // TizenRT/newlib note: this toolchain's <stddef.h> defines offsetof() as the
-  // classic '&(((T*)0)->member)' form, which is not a constant expression on
-  // GCC (errors: "dereferencing a null pointer", "conversion from pointer ...
-  // in a constant expression"). Use __builtin_offsetof directly so the value
-  // is constexpr regardless of how the offsetof macro is defined.
+  
   static const size_t value = __builtin_offsetof(_FirstPaddingByte<>, __first_padding_byte_);
 };
 #endif // LIBCPP_ARM_EABI_GCC10_WORKAROUND

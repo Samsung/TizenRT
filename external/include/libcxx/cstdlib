@@ -151,11 +151,17 @@ using ::lldiv _LIBCPP_USING_IF_EXISTS;
 
 // Wide character functions - conditional based on system support
 #ifndef _LIBCPP_HAS_NO_WIDE_CHARACTERS
+// TizenRT's <stdlib.h> does NOT declare/implement mblen, mbstowcs, or wcstombs.
+// So import only the what TizenRT provides, and guard the rest out
+#if !defined(__TINYARA__)
 using ::mblen _LIBCPP_USING_IF_EXISTS;
+#endif
 using ::mbtowc _LIBCPP_USING_IF_EXISTS;
 using ::wctomb _LIBCPP_USING_IF_EXISTS;
+#if !defined(__TINYARA__)
 using ::mbstowcs _LIBCPP_USING_IF_EXISTS;
 using ::wcstombs _LIBCPP_USING_IF_EXISTS;
+#endif
 #else
 // Fallback for systems without wide character support
 #  if defined(mblen)

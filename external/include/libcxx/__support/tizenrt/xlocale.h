@@ -15,16 +15,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <wchar.h>
+#include <wctype.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// locale_t - TizenRT defines this in os/include/locale.h
 // Define if not already available
-#ifndef _LOCALE_T_DEFINED
+// Skip if toolchain already provided it
+#if !defined(__DEFINED_locale_t) && !defined(_LOCALE_T_DEFINED) && !defined(locale_t)
 typedef void* locale_t;
-#define _LOCALE_T_DEFINED
+#define __DEFINED_locale_t 1
 #endif
 
 // LC_*_MASK definitions (not provided by TizenRT's C library)
@@ -111,6 +113,33 @@ inline _LIBCPP_HIDE_FROM_ABI_C size_t strxfrm_l(char* __dest, const char* __src,
 inline _LIBCPP_HIDE_FROM_ABI_C size_t
 strftime_l(char* __s, size_t __max, const char* __format, const struct tm* __tm, locale_t) {
   return strftime(__s, __max, __format, __tm);
+}
+
+// Wide-character classification *_l functions (TizenRT only supports "C" locale)
+inline _LIBCPP_HIDE_FROM_ABI_C int iswalnum_l(wint_t __c, locale_t) { return iswalnum(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswalpha_l(wint_t __c, locale_t) { return iswalpha(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswblank_l(wint_t __c, locale_t) { return iswblank(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswcntrl_l(wint_t __c, locale_t) { return iswcntrl(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswdigit_l(wint_t __c, locale_t) { return iswdigit(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswgraph_l(wint_t __c, locale_t) { return iswgraph(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswlower_l(wint_t __c, locale_t) { return iswlower(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswprint_l(wint_t __c, locale_t) { return iswprint(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswpunct_l(wint_t __c, locale_t) { return iswpunct(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswspace_l(wint_t __c, locale_t) { return iswspace(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswupper_l(wint_t __c, locale_t) { return iswupper(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C int iswxdigit_l(wint_t __c, locale_t) { return iswxdigit(__c); }
+
+// Wide-character conversion *_l functions
+inline _LIBCPP_HIDE_FROM_ABI_C wint_t towupper_l(wint_t __c, locale_t) { return towupper(__c); }
+inline _LIBCPP_HIDE_FROM_ABI_C wint_t towlower_l(wint_t __c, locale_t) { return towlower(__c); }
+
+// Wide-string collation *_l functions
+inline _LIBCPP_HIDE_FROM_ABI_C int wcscoll_l(const wchar_t* __ws1, const wchar_t* __ws2, locale_t) {
+  return wcscoll(__ws1, __ws2);
+}
+
+inline _LIBCPP_HIDE_FROM_ABI_C size_t wcsxfrm_l(wchar_t* __dest, const wchar_t* __src, size_t __n, locale_t) {
+  return wcsxfrm(__dest, __src, __n);
 }
 
 #ifdef __cplusplus

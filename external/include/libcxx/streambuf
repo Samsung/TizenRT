@@ -167,7 +167,7 @@ public:
                         ios_base::openmode __which = ios_base::in | ios_base::out)
     { return seekpos(__sp, __which); }
 
-    inline _LIBCPP_HIDE_FROM_ABI_AFTER_V1
+    inline _LIBCPP_INLINE_VISIBILITY
     int pubsync() { return sync(); }
 
     // Get and put areas:
@@ -228,7 +228,7 @@ public:
         return traits_type::to_int_type(__c);
     }
 
-    inline _LIBCPP_HIDE_FROM_ABI_AFTER_V1
+    _LIBCPP_INLINE_VISIBILITY
     streamsize sputn(const char_type* __s, streamsize __n)
     { return xsputn(__s, __n); }
 

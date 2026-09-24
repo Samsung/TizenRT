@@ -195,7 +195,7 @@ _LIBCPP_DECLARE_STRONG_ENUM(errc)
     resource_deadlock_would_occur       = EDEADLK,
     resource_unavailable_try_again      = EAGAIN,
     result_out_of_range                 = ERANGE,
-    state_not_recoverable               = ENOTRECOVERABLE,
+    //state_not_recoverable               = ENOTRECOVERABLE,
 #ifdef ETIME
     stream_timeout                      = ETIME,
 #else

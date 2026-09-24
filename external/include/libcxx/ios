@@ -771,6 +771,9 @@ basic_ios<_CharT, _Traits>::imbue(const locale& __loc)
     return __r;
 }
 
+// Explicit specializations for char type are provided in ios.cpp
+// These inline definitions are suppressed when _LIBCPP_NO_INLINE_IOS_CHAR_METHODS is defined
+#ifndef _LIBCPP_NO_INLINE_IOS_CHAR_METHODS
 template <class _CharT, class _Traits>
 inline _LIBCPP_INLINE_VISIBILITY
 char
@@ -808,6 +811,17 @@ basic_ios<_CharT, _Traits>::fill(char_type __ch)
     __fill_ = __ch;
     return __r;
 }
+#else
+// Declarations for explicit specializations (when inline definitions are suppressed)
+template <>
+char basic_ios<char, char_traits<char>>::narrow(char, char) const;
+template <>
+char basic_ios<char, char_traits<char>>::widen(char) const;
+template <>
+char basic_ios<char, char_traits<char>>::fill() const;
+template <>
+char basic_ios<char, char_traits<char>>::fill(char);
+#endif // _LIBCPP_NO_INLINE_IOS_CHAR_METHODS
 
 template <class _CharT, class _Traits>
 basic_ios<_CharT, _Traits>&

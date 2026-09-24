@@ -75,7 +75,13 @@
 
 // Availability markup is disabled when building the library, or when the compiler
 // doesn't support the proper attributes.
-#if defined(_LIBCPP_BUILDING_LIBRARY) ||                                        \
+// Also disabled for C compilation (__has_feature is a Clang/C++ feature)
+#if !defined(__cplusplus)
+/* C compilation - disable availability markup */
+#   if !defined(_LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS)
+#       define _LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS
+#   endif
+#elif defined(_LIBCPP_BUILDING_LIBRARY) ||                                        \
     defined(_LIBCXXABI_BUILDING_LIBRARY) ||                                     \
     !__has_feature(attribute_availability_with_strict) ||                       \
     !__has_feature(attribute_availability_in_templates) ||                      \

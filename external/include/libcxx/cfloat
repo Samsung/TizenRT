@@ -74,12 +74,16 @@ Macros:
 
 #include <float.h>
 
+// TizenRT compatibility: Disable strict header check for embedded system
+// This allows the header to work even when system headers are found first
+#ifndef __TINYARA__
 #ifndef _LIBCPP_FLOAT_H
-#   error <cfloat> tried including <float.h> but didn't find libc++'s <float.h> header. \
+#    error <cfloat> tried including <float.h> but didn't find libc++'s <float.h> header. \
           This usually means that your header search paths are not configured properly. \
           The header search paths should contain the C++ Standard Library headers before \
           any C Standard Library, and you are probably using compiler flags that make that \
           not be the case.
+#  endif
 #endif
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
