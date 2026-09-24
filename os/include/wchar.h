@@ -119,20 +119,31 @@ typedef int wint_t;
 
 typedef int wctype_t;
 
-/* mbstate_t
- * mbstate_t
+/* _mbstate_t
+ * _mbstate_t
  *   An object type other than an array type that can hold the conversion
  *   state information necessary to convert between sequences of (possibly
  *   multibyte) characters and wide-characters. If a codeset is being used
  *   such that an mbstate_t needs to preserve more than 2 levels of reserved
  *   state, the results are unspecified.
+ *
+ * NOTE: Defined as anonymous struct with _mbstate_t typedef to match GCC's
+ * expected type name for proper symbol mangling in C++ templates (e.g., std::fpos).
+ * Set __machine_mbstate_t_defined so toolchain's sys/_types.h will skip its own definition.
  */
 
-struct mbstate_s {
+#ifndef __machine_mbstate_t_defined
+typedef struct {
 	int __fill[6];
-};
+} _mbstate_t;
+#define __machine_mbstate_t_defined
+#endif
 
-typedef struct mbstate_s mbstate_t;
+typedef _mbstate_t mbstate_t;
+
+/* Guard macro to prevent toolchain's wchar.h from being included via #include_next */
+#define _MBSTATE_T_DEFINED
+#define ___MBSTATE_T_DECLARED
 
 /* FILE
  *   As described in <stdio.h>.
