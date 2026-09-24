@@ -122,9 +122,16 @@ static bool __do_getc(FILE *__fp, char *__pbuf) {
 }
 #ifndef _LIBCPP_HAS_NO_WIDE_CHARACTERS
 static bool __do_getc(FILE *__fp, wchar_t *__pbuf) {
+#ifdef __TINYARA__
+    // TizenRT's libc doesn't implement getwc() - use narrow getc() instead
+    int __c = getc(__fp);
+    if (__c == EOF)
+        return false;
+#else
     wint_t __c = getwc(__fp);
     if (__c == WEOF)
         return false;
+#endif
     *__pbuf = static_cast<wchar_t>(__c);
     return true;
 }
@@ -137,8 +144,14 @@ static bool __do_ungetc(int __c, FILE *__fp, char __dummy) {
 }
 #ifndef _LIBCPP_HAS_NO_WIDE_CHARACTERS
 static bool __do_ungetc(std::wint_t __c, FILE *__fp, wchar_t __dummy) {
+#ifdef __TINYARA__
+    // TizenRT's libc doesn't implement ungetwc() - use narrow ungetc() instead
+    if (ungetc(static_cast<int>(__c), __fp) == EOF)
+        return false;
+#else
     if (ungetwc(__c, __fp) == WEOF)
         return false;
+#endif
     return true;
 }
 #endif
@@ -331,11 +344,17 @@ static bool __do_fputc(char __c, FILE* __fp) {
 }
 #ifndef _LIBCPP_HAS_NO_WIDE_CHARACTERS
 static bool __do_fputc(wchar_t __c, FILE* __fp) {
+#ifdef __TINYARA__
+    // TizenRT's libc doesn't implement fputwc() - use fwrite instead
+    if (fwrite(&__c, sizeof(__c), 1, __fp) != 1)
+        return false;
+#else
     // fputwc works regardless of wide/narrow mode of stdout, while
     // fwrite of wchar_t only works if the stream actually has been set
     // into wide mode.
     if (fputwc(__c, __fp) == WEOF)
         return false;
+#endif
     return true;
 }
 #endif

@@ -1,65 +1,34 @@
-/****************************************************************************
- *
- * Copyright 2018 Samsung Electronics All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific
- * language governing permissions and limitations under the License.
- *
- ****************************************************************************/
-//===------------------------ memory.cpp ----------------------------------===//
+//===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
-#define _LIBCPP_BUILDING_MEMORY
-#include "memory"
-#ifndef _LIBCPP_HAS_NO_THREADS
-#include "mutex"
-#include "thread"
+#include <__config>
+#ifdef _LIBCPP_DEPRECATED_ABI_LEGACY_LIBRARY_DEFINITIONS_FOR_INLINE_FUNCTIONS
+#   define _LIBCPP_SHARED_PTR_DEFINE_LEGACY_INLINE_FUNCTIONS
 #endif
+
+#include <memory>
+
+#ifndef _LIBCPP_HAS_NO_THREADS
+#  include <mutex>
+#  include <thread>
+#  if defined(__ELF__) && defined(_LIBCPP_LINK_PTHREAD_LIB)
+#    pragma comment(lib, "pthread")
+#  endif
+#endif
+
 #include "include/atomic_support.h"
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
-namespace
-{
-
-// NOTE: Relaxed and acq/rel atomics (for increment and decrement respectively)
-// should be sufficient for thread safety.
-// See https://llvm.org/bugs/show_bug.cgi?id=22803
-template <class T>
-inline T
-increment(T& t) _NOEXCEPT
-{
-    return __libcpp_atomic_add(&t, 1, _AO_Relaxed);
-}
-
-template <class T>
-inline T
-decrement(T& t) _NOEXCEPT
-{
-    return __libcpp_atomic_add(&t, -1, _AO_Acq_Rel);
-}
-
-}  // namespace
-
-bad_weak_ptr::~bad_weak_ptr() _NOEXCEPT {}
+bad_weak_ptr::~bad_weak_ptr() noexcept {}
 
 const char*
-bad_weak_ptr::what() const _NOEXCEPT
+bad_weak_ptr::what() const noexcept
 {
     return "bad_weak_ptr";
 }
@@ -72,8 +41,46 @@ __shared_weak_count::~__shared_weak_count()
 {
 }
 
+#if defined(_LIBCPP_SHARED_PTR_DEFINE_LEGACY_INLINE_FUNCTIONS)
 void
-__shared_weak_count::__release_weak() _NOEXCEPT
+__shared_count::__add_shared() noexcept
+{
+    __libcpp_atomic_refcount_increment(__shared_owners_);
+}
+
+bool
+__shared_count::__release_shared() noexcept
+{
+    if (__libcpp_atomic_refcount_decrement(__shared_owners_) == -1)
+    {
+        __on_zero_shared();
+        return true;
+    }
+    return false;
+}
+
+void
+__shared_weak_count::__add_shared() noexcept
+{
+    __shared_count::__add_shared();
+}
+
+void
+__shared_weak_count::__add_weak() noexcept
+{
+    __libcpp_atomic_refcount_increment(__shared_weak_owners_);
+}
+
+void
+__shared_weak_count::__release_shared() noexcept
+{
+    if (__shared_count::__release_shared())
+        __release_weak();
+}
+#endif // _LIBCPP_SHARED_PTR_DEFINE_LEGACY_INLINE_FUNCTIONS
+
+void
+__shared_weak_count::__release_weak() noexcept
 {
     // NOTE: The acquire load here is an optimization of the very
     // common case where a shared pointer is being destructed while
@@ -103,12 +110,12 @@ __shared_weak_count::__release_weak() _NOEXCEPT
         //__libcpp_atomic_store(&__shared_weak_owners_, -1, _AO_Release);
         __on_zero_shared_weak();
     }
-    else if (decrement(__shared_weak_owners_) == -1)
+    else if (__libcpp_atomic_refcount_decrement(__shared_weak_owners_) == -1)
         __on_zero_shared_weak();
 }
 
 __shared_weak_count*
-__shared_weak_count::lock() _NOEXCEPT
+__shared_weak_count::lock() noexcept
 {
     long object_owners = __libcpp_atomic_load(&__shared_owners_);
     while (object_owners != -1)
@@ -122,15 +129,15 @@ __shared_weak_count::lock() _NOEXCEPT
 }
 
 const void*
-__shared_weak_count::__get_deleter(const type_info&) const _NOEXCEPT
+__shared_weak_count::__get_deleter(const type_info&) const noexcept
 {
     return nullptr;
 }
 
 #if !defined(_LIBCPP_HAS_NO_THREADS)
 
-_LIBCPP_SAFE_STATIC static const std::size_t __sp_mut_count = 32;
-_LIBCPP_SAFE_STATIC static __libcpp_mutex_t mut_back[__sp_mut_count] =
+static constexpr std::size_t __sp_mut_count = 32;
+static __libcpp_mutex_t mut_back[__sp_mut_count] =
 {
     _LIBCPP_MUTEX_INITIALIZER, _LIBCPP_MUTEX_INITIALIZER, _LIBCPP_MUTEX_INITIALIZER, _LIBCPP_MUTEX_INITIALIZER,
     _LIBCPP_MUTEX_INITIALIZER, _LIBCPP_MUTEX_INITIALIZER, _LIBCPP_MUTEX_INITIALIZER, _LIBCPP_MUTEX_INITIALIZER,
@@ -142,20 +149,20 @@ _LIBCPP_SAFE_STATIC static __libcpp_mutex_t mut_back[__sp_mut_count] =
     _LIBCPP_MUTEX_INITIALIZER, _LIBCPP_MUTEX_INITIALIZER, _LIBCPP_MUTEX_INITIALIZER, _LIBCPP_MUTEX_INITIALIZER
 };
 
-_LIBCPP_CONSTEXPR __sp_mut::__sp_mut(void* p) _NOEXCEPT
+_LIBCPP_CONSTEXPR __sp_mut::__sp_mut(void* p) noexcept
    : __lx_(p)
 {
 }
 
 void
-__sp_mut::lock() _NOEXCEPT
+__sp_mut::lock() noexcept
 {
     auto m = static_cast<__libcpp_mutex_t*>(__lx_);
     __libcpp_mutex_lock(m);
 }
 
 void
-__sp_mut::unlock() _NOEXCEPT
+__sp_mut::unlock() noexcept
 {
     __libcpp_mutex_unlock(static_cast<__libcpp_mutex_t*>(__lx_));
 }
@@ -164,16 +171,16 @@ __sp_mut&
 __get_sp_mut(const void* p)
 {
     static __sp_mut muts[__sp_mut_count] = {
-        const_cast<void*>(static_cast<const void*>(&mut_back[ 0])), const_cast<void*>(static_cast<const void*>(&mut_back[ 1])), const_cast<void*>(static_cast<const void*>(&mut_back[ 2])), const_cast<void*>(static_cast<const void*>(&mut_back[ 3])),
-        const_cast<void*>(static_cast<const void*>(&mut_back[ 4])), const_cast<void*>(static_cast<const void*>(&mut_back[ 5])), const_cast<void*>(static_cast<const void*>(&mut_back[ 6])), const_cast<void*>(static_cast<const void*>(&mut_back[ 7])),
-        const_cast<void*>(static_cast<const void*>(&mut_back[ 8])), const_cast<void*>(static_cast<const void*>(&mut_back[ 9])), const_cast<void*>(static_cast<const void*>(&mut_back[10])), const_cast<void*>(static_cast<const void*>(&mut_back[11])),
-        const_cast<void*>(static_cast<const void*>(&mut_back[12])), const_cast<void*>(static_cast<const void*>(&mut_back[13])), const_cast<void*>(static_cast<const void*>(&mut_back[14])), const_cast<void*>(static_cast<const void*>(&mut_back[15])),
-        const_cast<void*>(static_cast<const void*>(&mut_back[16])), const_cast<void*>(static_cast<const void*>(&mut_back[17])), const_cast<void*>(static_cast<const void*>(&mut_back[18])), const_cast<void*>(static_cast<const void*>(&mut_back[19])),
-        const_cast<void*>(static_cast<const void*>(&mut_back[20])), const_cast<void*>(static_cast<const void*>(&mut_back[21])), const_cast<void*>(static_cast<const void*>(&mut_back[22])), const_cast<void*>(static_cast<const void*>(&mut_back[23])),
-        const_cast<void*>(static_cast<const void*>(&mut_back[24])), const_cast<void*>(static_cast<const void*>(&mut_back[25])), const_cast<void*>(static_cast<const void*>(&mut_back[26])), const_cast<void*>(static_cast<const void*>(&mut_back[27])),
-        const_cast<void*>(static_cast<const void*>(&mut_back[28])), const_cast<void*>(static_cast<const void*>(&mut_back[29])), const_cast<void*>(static_cast<const void*>(&mut_back[30])), const_cast<void*>(static_cast<const void*>(&mut_back[31]))
+        &mut_back[ 0], &mut_back[ 1], &mut_back[ 2], &mut_back[ 3],
+        &mut_back[ 4], &mut_back[ 5], &mut_back[ 6], &mut_back[ 7],
+        &mut_back[ 8], &mut_back[ 9], &mut_back[10], &mut_back[11],
+        &mut_back[12], &mut_back[13], &mut_back[14], &mut_back[15],
+        &mut_back[16], &mut_back[17], &mut_back[18], &mut_back[19],
+        &mut_back[20], &mut_back[21], &mut_back[22], &mut_back[23],
+        &mut_back[24], &mut_back[25], &mut_back[26], &mut_back[27],
+        &mut_back[28], &mut_back[29], &mut_back[30], &mut_back[31]
     };
-    return muts[std::hash<const void*>{}(p) & (__sp_mut_count-1)];
+    return muts[hash<const void*>()(p) & (__sp_mut_count-1)];
 }
 
 #endif // !defined(_LIBCPP_HAS_NO_THREADS)

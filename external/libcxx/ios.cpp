@@ -10,10 +10,13 @@
 #include <__locale>
 #include <algorithm>
 #include <ios>
+#include <istream>
 #include <limits>
 #include <memory>
 #include <new>
+#include <ostream>
 #include <stdlib.h>
+#include <streambuf>
 #include <string>
 
 #include "include/config_elast.h"

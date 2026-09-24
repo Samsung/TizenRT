@@ -391,7 +391,7 @@ S i_to_string(V v) {
     int len = snprintf(buf, bufsize, (numeric_limits<V>::is_signed ? "%lld" : "%llu"),
                         static_cast<typename conditional<numeric_limits<V>::is_signed, long long, unsigned long long>::type>(v));
     _LIBCPP_ASSERT_INTERNAL(len > 0 && static_cast<size_t>(len) < bufsize, "bufsize must be large enough to accomodate the value");
-    return S(buf, static_cast<size_t>(len));
+    return S(buf, buf + len);
 #endif
 }
 

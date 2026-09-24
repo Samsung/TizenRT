@@ -45,6 +45,10 @@
 // lots of noise in the build log, but no bugs that I know of.
 _LIBCPP_CLANG_DIAGNOSTIC_IGNORED("-Wsign-conversion")
 
+#ifndef MB_LEN_MAX
+#  define MB_LEN_MAX 32
+#endif
+
 _LIBCPP_PUSH_MACROS
 #include <__undef_macros>
 
