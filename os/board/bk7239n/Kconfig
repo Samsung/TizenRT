@@ -115,6 +115,13 @@ config BK_FLASH_PAGE_SIZE
         help
             Setting this vaule to configure erase unit size of BK SPI flash.
 
+config BK_SECURE_WORLD_ADDRESS
+     hex "Secure address to read/write"
+     default 0x12010000
+     help
+         Setting this value to a secure address to check whether it can be accessed from non-secure zone.
+
+
 endmenu
 
 endif

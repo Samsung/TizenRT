@@ -6,7 +6,7 @@
 config EXAMPLES_SECURE_WORLD
 	bool "Secure World example"
 	default n
-	depends on ARMV8M_TRUSTZONE && SE_AMEBA
+	depends on ARMV8M_TRUSTZONE && (SE_AMEBA || SE_ARMINO)
 	---help---
 		Enable the Secure World example
 
