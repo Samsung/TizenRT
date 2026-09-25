@@ -130,6 +130,10 @@ int mq_verifyreceive(mqd_t mqdes, FAR char *msg, size_t msglen)
 		return ERROR;
 	}
 
+	if (mq_verifydesg(mqdes) != OK) {
+		return ERROR;
+	}
+
 	if ((mqdes->oflags & O_RDOK) == 0) {
 		set_errno(EPERM);
 		return ERROR;
