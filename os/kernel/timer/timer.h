@@ -95,7 +95,8 @@ struct posix_timer_s {
 	union sigval pt_value;		/* Data passed with notification */
 };
 
-#define PT_ISVALID(x)         (((x) != NULL) && (((struct posix_timer_s *)(x))->pt_flags & PT_FLAGS_INUSE))
+/* timer_gethandle() validates timer handles by checking list membership */
+FAR struct posix_timer_s *timer_gethandle(timer_t timerid);
 
 /********************************************************************************
  * Public Data

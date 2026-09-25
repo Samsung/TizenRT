@@ -179,4 +179,51 @@ void weak_function timer_deleteall(pid_t pid)
 	leave_critical_section(flags);
 }
 
+/********************************************************************************
+ * Name: timer_gethandle
+ *
+ * Description:
+ *   Returns the posix timer in the activity from the corresponding timerid.
+ *   This function validates that the timerid points to a valid timer in the
+ *   allocated timer list, preventing forged or stale handles from being used.
+ *
+ * Parameters:
+ *   timerid - The timer ID returned by timer_create()
+ *
+ * Return Value:
+ *   On success, timer_gethandle() returns pointer to the posix_timer_s;
+ *   On error, NULL is returned.
+ *
+ ********************************************************************************/
+
+FAR struct posix_timer_s *timer_gethandle(timer_t timerid)
+{
+	FAR struct posix_timer_s *timer = NULL;
+	FAR sq_entry_t *entry;
+	irqstate_t flags;
+
+	if (timerid != NULL) {
+		flags = enter_critical_section();
+
+		/* Iterate through all allocated timers to verify the timerid
+		 * is actually in the list. This prevents forged pointers from
+		 * being used as timer handles.
+		 */
+		for (entry = g_alloctimers.head; entry != NULL; entry = entry->flink) {
+			if (entry == (sq_entry_t *)timerid) {
+				/* Verify the timer is marked as in-use */
+				timer = (FAR struct posix_timer_s *)timerid;
+				if (!(timer->pt_flags & PT_FLAGS_INUSE)) {
+					timer = NULL;
+				}
+				break;
+			}
+		}
+
+		leave_critical_section(flags);
+	}
+
+	return timer;
+}
+
 #endif							/* CONFIG_DISABLE_POSIX_TIMERS */

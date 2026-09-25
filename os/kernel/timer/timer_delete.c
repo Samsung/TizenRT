@@ -110,7 +110,18 @@
 
 int timer_delete(timer_t timerid)
 {
-	int ret = timer_release((FAR struct posix_timer_s *)timerid);
+	FAR struct posix_timer_s *timer;
+	int ret;
+
+	/* Validate the timer handle by checking list membership */
+
+	timer = timer_gethandle(timerid);
+	if (!timer) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
+
+	ret = timer_release(timer);
 	if (ret < 0) {
 		set_errno(-ret);
 		return ERROR;
