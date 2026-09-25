@@ -117,12 +117,17 @@ static void nic_display_state(void)
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		NETCMD_LOGE(NTAG, "fail %s:%d\n", __FUNCTION__, __LINE__);
+		netlib_freeifaddrs(ifa);
 		return;
 	}
 	memset(&ifcfg, 0, sizeof(ifcfg));
 	ifcfg.ifc_buf = NULL;
 	ifcfg.ifc_len = sizeof(struct ifreq) * numreqs;
 	ifcfg.ifc_buf = malloc(ifcfg.ifc_len);
+	if (ifcfg.ifc_buf == NULL) {
+		NETCMD_LOGE(NTAG, "fail %s:%d\n", __FUNCTION__, __LINE__);
+		goto DONE;
+	}
 	if (ioctl(fd, SIOCGIFCONF, (unsigned long)&ifcfg) < 0) {
 		perror("SIOCGIFCONF ");
 		goto DONE;
