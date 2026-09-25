@@ -33,6 +33,9 @@ endif
 ifeq ($(CONFIG_TC_DRIVERS_WATCHDOG),y)
   CSRCS += tc_watchdog.c
 endif
+ifeq ($(CONFIG_TC_DRIVERS_WATCHDOG_SECURITY),y)
+  CSRCS += tc_watchdog_security.c
+endif
 ifeq ($(CONFIG_TC_DRIVERS_LOOP),y)
   CSRCS += tc_loop.c
 endif

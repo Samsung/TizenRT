@@ -49,6 +49,15 @@ config TC_DRIVERS_WATCHDOG
 	default n
 	depends on WATCHDOG
 
+config TC_DRIVERS_WATCHDOG_SECURITY
+	bool "Dev Watchdog Security"
+	default y
+	depends on WATCHDOG
+	---help---
+		Security test cases for watchdog driver.
+		Tests for WDIOC_CAPTURE vulnerability (finding-198).
+		Requires CONFIG_BUILD_PROTECTED for full security validation.
+
 config TC_DRIVERS_LOOP
 	bool "Dev Loop"
 	default n
