@@ -43,3 +43,12 @@ the value of the current secure level.
 	- add build version in bootloader
 	- Fix the reason field of test_case3, change its value from 4 to 2.
    2.Fix GCM AAD padding when plaintext length is zero
+
+
+== version beken_trustzone pr-232 2026/08/21-21:38:00==
+
+  1.Persist flash write-protection across reboot via non-volatile status-register writes, and temporarily drop the flash write clock to 40M for winbond/XMC/GT devices.
+  2.Configure early POR thresholds by flash ID in BL2/sys_hal, and refine the flash DBus security layout so region 0 covers low flash below primary_all and region 1 covers the active TFM-S slot.
+  3.Introduce a runtime-relocatable SOC_SYS_FLASH_CLK_REG_BASE for flash-clock accessors only, avoiding BusFault across Secure/Non-Secure transitions without relocating the whole SYSTEM block.
+
+
