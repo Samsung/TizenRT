@@ -16,9 +16,9 @@
 #
 ###########################################################################
 ############################################################################
-# drivers/Makefile
+# apps/examples/hello/Makefile
 #
-#   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -50,135 +50,103 @@
 #
 ############################################################################
 
+-include $(TOPDIR)/.config
 -include $(TOPDIR)/Make.defs
-DELIM ?= $(strip /)
+include $(APPDIR)/Make.defs
 
-ifeq ($(WINTOOL),y)
-INCDIROPT = -w
-endif
+# Hello, World! built-in application info
 
-DEPPATH = --dep-path .
+APPNAME = crashrpt_test
+FUNCNAME = $(APPNAME)_main
+THREADEXEC = TASH_EXECMD_ASYNC
+
+# Hello, World! Example
+
 ASRCS =
 CSRCS =
-VPATH = .
-
-ifeq ($(CONFIG_TASK_MANAGER),y)
-CFLAGS += -I $(TOPDIR)/kernel
-endif
-
-ifeq ($(CONFIG_CRASH_REPORT),y)
-CFLAGS += -I $(TOPDIR)/kernel
-endif
-
-# Include support for various drivers.  Each Make.defs file will add its
-# files to the source file list, add its DEPPATH info, and will add
-# the appropriate paths to the VPATH variable
-
-include analog$(DELIM)Make.defs
-include audio$(DELIM)Make.defs
-include bch$(DELIM)Make.defs
-include bluetooth$(DELIM)Make.defs
-include compression$(DELIM)Make.defs
-include cpuload$(DELIM)Make.defs
-include gpio$(DELIM)Make.defs
-include prodconfig$(DELIM)Make.defs
-include memory$(DELIM)Make.defs
-include i2c$(DELIM)Make.defs
-include iotdev$(DELIM)Make.defs
-include input$(DELIM)Make.defs
-include os_api_test$(DELIM)Make.defs
-include lcd$(DELIM)Make.defs
-include lwnl${DELIM}Make.defs
-include mipidsi${DELIM}Make.defs
-include net$(DELIM)Make.defs
-include otp$(DELIM)Make.defs
-include pipes$(DELIM)Make.defs
-include pm$(DELIM)Make.defs
-include power$(DELIM)Make.defs
-include seclink$(DELIM)Make.defs
-include sensors$(DELIM)Make.defs
-include serial$(DELIM)Make.defs
-include silent_reboot$(DELIM)Make.defs
-include spi$(DELIM)Make.defs
-include syslog$(DELIM)Make.defs
-include task_manager$(DELIM)Make.defs
-include usbdev$(DELIM)Make.defs
-include usbhost$(DELIM)Make.defs
-include video$(DELIM)Make.defs
-include wifi_csi$(DELIM)Make.defs
-include wireless$(DELIM)Make.defs
-
-ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
-  CSRCS += dev_null.c dev_zero.c
-
-ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
-  CSRCS += loop.c
-ifeq ($(CONFIG_DRVR_WRITEBUFFER),y)
-  CSRCS += rwbuffer.c
-else
-ifeq ($(CONFIG_DRVR_READAHEAD),y)
-  CSRCS += rwbuffer.c
-endif
-endif
-endif
-
-ifeq ($(CONFIG_DEV_URANDOM),y)
-  CSRCS += dev_urandom.c
-endif
-
-ifeq ($(CONFIG_PWM),y)
-  CSRCS += pwm.c
-endif
-
-ifeq ($(CONFIG_CRASH_REPORT),y)
-  CSRCS += crashrpt.c
-endif
-
-ifeq ($(CONFIG_WATCHDOG),y)
-  CSRCS += watchdog.c
-endif
-
-ifeq ($(CONFIG_TIMER),y)
-  CSRCS += timer.c
-endif
-
-ifeq ($(CONFIG_RTC),y)
-  CSRCS += rtc.c
-endif
-
-ifeq ($(CONFIG_VIRTKEY),y)
-  CSRCS += virtkey.c
-endif
-endif
+MAINSRC = crashrpt_test_main.c
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
+MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 
-SRCS = $(ASRCS) $(CSRCS)
+SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
 OBJS = $(AOBJS) $(COBJS)
 
-BIN = libdrivers$(LIBEXT)
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  OBJS += $(MAINOBJ)
+endif
 
-all: $(BIN)
-.PHONY: depend clean distclean
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  BIN = $(APPDIR)\libapps$(LIBEXT)
+else
+ifeq ($(WINTOOL),y)
+  BIN = $(APPDIR)\\libapps$(LIBEXT)
+else
+  BIN = $(APPDIR)/libapps$(LIBEXT)
+endif
+endif
+
+ifeq ($(WINTOOL),y)
+  INSTALL_DIR = "${shell cygpath -w $(BIN_DIR)}"
+else
+  INSTALL_DIR = $(BIN_DIR)
+endif
+
+CONFIG_EXAMPLES_CRASHRPT_TEST_PROGNAME ?= crashrpt_test$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_CRASHRPT_TEST_PROGNAME)
+
+ROOTDEPPATH = --dep-path .
+
+# Common build
+
+VPATH =
+
+all: .built
+.PHONY: clean depend distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
-$(COBJS): %$(OBJEXT): %.c
+$(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 
-$(BIN): $(OBJS)
-	$(call ARCHIVE, $@, $(OBJS))
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	@touch .built
+
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+	@echo "LD: $(PROGNAME)"
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
+	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
+
+install: $(BIN_DIR)$(DELIM)$(PROGNAME)
+
+else
+install:
+
+endif
+
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_CRASHRPT_TEST),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
+	$(Q) $(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat
+
+else
+context:
+
+endif
 
 .depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-	$(Q) touch $@
+	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	@touch $@
 
 depend: .depend
 
 clean:
-	$(call DELFILE, $(BIN))
+	$(call DELFILE, .built)
 	$(call CLEAN)
 
 distclean: clean
@@ -186,3 +154,5 @@ distclean: clean
 	$(call DELFILE, .depend)
 
 -include Make.dep
+.PHONY: preconfig
+preconfig:

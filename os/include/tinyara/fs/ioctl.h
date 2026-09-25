@@ -107,6 +107,7 @@
 #define _MIPIDSIBASE    (0x3900) 	/* Mipidsi device ioctl commands */
 #define _CSIIOCBASE     (0x3a00) 	/* Wifi CSI ioctl commands */
 #define _SILENTRBCBASE  (0x3b00) 	/* Silent reboot ioctl commands */
+#define _CRASHRPTIOCBASE (0x3c00)	/* Crash report ioctl commands */
 
 
 /* boardctl() commands share the same number space */
@@ -552,6 +553,11 @@
 
 #define _LWNLIOCVALID(c) (_IOC_TYPE(c) == _LWNLIOCBASE)
 #define _LWNLIOC(nr)     _IOC(_LWNLIOCBASE, nr)
+
+/* TinyAra crash report driver ioctl definitions ****************************/
+
+#define _CRASHRPTIOCVALID(c) (_IOC_TYPE(c) == _CRASHRPTIOCBASE)
+#define _CRASHRPTIOC(nr)     _IOC(_CRASHRPTIOCBASE, nr)
 
 /****************************************************************************
  * Public Type Definitions
