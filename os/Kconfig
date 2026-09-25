@@ -344,6 +344,74 @@ config USER_SIGN_PREPEND_SIZE
 		source board/bk7239n/Kconfig.signing
 	endif
 
+menu "String Encoding/Decoding"
+
+config ENABLE_STRING_ENCODING
+	bool "Enable string literal encoding"
+	default n
+	---help---
+		Encode printf and dbg string literals with hexadecimal references
+		to reduce binary size. Decoding happens after linking to restore
+		original source files.
+
+config DECODE_STRINGS
+	bool "Decode strings after linking"
+	default n
+	depends on ENABLE_STRING_ENCODING
+	---help---
+		Decode encoded strings after linking to restore original source files.
+		Disable to keep source files encoded.
+
+config ENCODING_SKIP_APPS
+	bool "Skip encoding application directory (../apps)"
+	default n
+	depends on ENABLE_STRING_ENCODING
+	---help---
+		Skip encoding strings in the ../apps directory. Applications typically
+		have user-facing messages that should remain readable.
+
+config ENCODING_SKIP_EXTERNAL
+	bool "Skip encoding external directory (../external)"
+	default n
+	depends on ENABLE_STRING_ENCODING
+	---help---
+		Skip encoding strings in the ../external directory. External libraries
+		may have their own string encoding requirements.
+
+config ENCODING_SKIP_THIRDPARTY
+	bool "Skip encoding third-party code"
+	default n
+	depends on ENABLE_STRING_ENCODING
+	---help---
+		Skip encoding strings in third-party code directories. Third-party
+		libraries may have specific requirements for string handling.
+
+config ENCODING_SKIP_TEST
+	bool "Skip encoding test directories"
+	default n
+	depends on ENABLE_STRING_ENCODING
+	---help---
+		Skip encoding strings in test directories. Test files often have
+		debug messages that should remain readable for testing purposes.
+
+config ENCODING_STOP_ON_ERROR
+	bool "Stop build on encoding/decoding errors"
+	default n
+	depends on ENABLE_STRING_ENCODING
+	---help---
+		Immediately stop the build if encoding or decoding encounters an error.
+		Disable to attempt to continue with warnings.
+
+config ENCODING_VERBOSE
+	bool "Verbose encoding/decoding output"
+	default n
+	depends on ENABLE_STRING_ENCODING
+	---help---
+		Print detailed information about encoding/decoding operations.
+		Useful for debugging the encoding system itself.
+
+endmenu # String Encoding/Decoding
+
 config RESOURCE_BINARY_SIGNING
 	bool "Enable Resource Binary Signing"
 	default n
