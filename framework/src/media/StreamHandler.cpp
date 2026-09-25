@@ -34,51 +34,7 @@ StreamHandler::StreamHandler() :
 {
 }
 
-bool StreamHandler::open()
-{
-	if (!mDataSource) {
-		meddbg("mDataSource is nullptr!\n");
-		return false;
-	}
-
-	if (!getStreamBuffer()) {
-		auto streamBuffer = StreamBuffer::Builder()
-								.setBufferSize(CONFIG_HANDLER_STREAM_BUFFER_SIZE)
-								.setThreshold(CONFIG_HANDLER_STREAM_BUFFER_THRESHOLD)
-								.build();
-
-		if (!streamBuffer) {
-			meddbg("streamBuffer is nullptr!\n");
-			return false;
-		}
-
-		setStreamBuffer(streamBuffer);
-	}
-
-	if (!(mDataSource->isPrepared() || mDataSource->open())) {
-		meddbg("open data source failed!\n");
-		return false;
-	}
-
-	if (!probeDataSource()) {
-		meddbg("probe data source failed!\n");
-		return false;
-	}
-
-	if (!registerCodec(mDataSource->getAudioType(), mDataSource->getChannels(), mDataSource->getSampleRate())) {
-		meddbg("register codec failed!\n");
-		return false;
-	}
-
-	if (!start()) {
-		meddbg("start stream handler failed!\n");
-		return false;
-	}
-
-	return true;
-}
-
-bool StreamHandler::open(size_t buffSize)
+bool StreamHandler::prepare(size_t buffSize)
 {
 	if (!mDataSource) {
 		meddbg("mDataSource is nullptr!\n");
@@ -111,6 +67,31 @@ bool StreamHandler::open(size_t buffSize)
 
 	if (!registerCodec(mDataSource->getAudioType(), mDataSource->getChannels(), mDataSource->getSampleRate())) {
 		meddbg("register codec failed!\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool StreamHandler::open()
+{
+	if (!prepare(CONFIG_HANDLER_STREAM_BUFFER_SIZE)) {
+		meddbg("prepare stream handler failed!");
+		return false;
+	}
+
+	if (!start()) {
+		meddbg("start stream handler failed!\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool StreamHandler::open(size_t buffSize)
+{
+	if (!prepare(buffSize)) {
+		meddbg("prepare stream handler failed!");
 		return false;
 	}
 
