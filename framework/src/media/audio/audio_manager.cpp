@@ -1413,7 +1413,6 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	struct pcm_config config;
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
 	unsigned int channel_num;
-	bool pcm_opened_here = false;
 	media::FocusManager &fm = media::FocusManager::getFocusManager();
 	int8_t idx = INVALID_INDEX;
 
@@ -1449,7 +1448,6 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 		meddbg("card is already in use, reuse it!!\n");
 	} else {
 		card->pcm = pcm_open(g_actual_audio_out_card_id, card->device_id, PCM_OUT, &config);
-		pcm_opened_here = true;
 	}
 	/* check reserve state of card again */
 	if (!pcm_is_ready(card->pcm)) {
@@ -1479,8 +1477,8 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	card->resample_array[idx].rechannel_buffer_size = 0;
 	card->resample_array[idx].user_channel = channels;
 	card->resample_array[idx].user_sample_rate = sample_rate;
-	card->resample_array[idx].user_format = pcm_format_to_bits(pcm_get_format(card->pcm)) >> 3;
-	card->resample_array[idx].ratio = (float)config.rate / (float)card->resample_array[idx].user_sample_rate;
+	card->resample_array[idx].user_format = pcm_format_to_bits((enum pcm_format)format) >> 3;
+	card->resample_array[idx].ratio = (float)config.rate / (float)card->resample_array[idx].user_sample_rate; // ratio = card / user
 	card->resample_array[idx].buffer_size = pcm_get_buffer_size(card->pcm);
 	card->resample_array[idx].buffer = malloc(card->resample_array[idx].buffer_size);
 	if (!card->resample_array[idx].buffer) {
@@ -1509,10 +1507,7 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	return ret;
 
 error_with_pcm:
-	if (pcm_opened_here) {
-		pcm_close(card->pcm);
-		card->pcm = NULL;
-	}
+	pcm_close(card->pcm);
 	pthread_mutex_unlock(&(card->card_mutex));
 	return ret;
 }
@@ -1620,15 +1615,10 @@ int start_audio_stream_out(void *data, unsigned int frames, uint8_t playback_idx
 
 	idx = get_stream_index(card, stream_id);
 
-	memcpy(card->resample_array[idx].buffer, data, card->resample_array[idx].buffer_size);
-	data = card->resample_array[idx].buffer;
-	card->resample_array[idx].frames = frames;
-
 	card->stream_status[idx] = RUNNING;
 
 	if (card->mixing) {
 		medvdbg("Mixing is enabled, rechannel stereo audio stream to mono\n");
-		// ToDo: Initialize a separate instance of speex resampler for mono resampling
 		unsigned int rechanneled_frames = rechannel(ch2layout(AUDIO_STREAM_CHANNEL_STEREO), ch2layout(AUDIO_STREAM_CHANNEL_MONO),
 													(const int16_t *)data, frames, (int16_t *)data, 2 * frames);
 		if (rechanneled_frames != frames) {
@@ -1636,6 +1626,10 @@ int start_audio_stream_out(void *data, unsigned int frames, uint8_t playback_idx
 			ret = AUDIO_MANAGER_RESAMPLE_FAIL;
 			goto error_with_lock;
 		}
+
+		memcpy(card->resample_array[idx].buffer, data, card->resample_array[idx].buffer_size);
+		data = card->resample_array[idx].buffer;
+		card->resample_array[idx].frames = frames;
 
 		if (playback_idx + 1 != AUDIO_MAX_DUCKED_STREAMS) {
 			medvdbg("Not the last player, early return\n");
@@ -1646,6 +1640,7 @@ int start_audio_stream_out(void *data, unsigned int frames, uint8_t playback_idx
 		medvdbg("Mix both streams\n");
 		media::utils::mergeChannel(card->resample_array[card->main_stream_idx].buffer, &card->resample_array[card->main_stream_idx].frames, card->resample_array[1 - card->main_stream_idx].buffer, &card->resample_array[1 - card->main_stream_idx].frames);
 		data = card->resample_array[card->main_stream_idx].buffer;
+		frames = card->resample_array[card->main_stream_idx].frames;
 	}
 
 	if (card->config[card->device_id].status == AUDIO_CARD_PAUSE) {
@@ -1918,18 +1913,20 @@ audio_manager_result_t reset_audio_stream_out(stream_info_id_t stream_id)
 	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 	medvdbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
 
-	card->resample_array[idx].necessary = false;
-	if (card->resample_array[idx].buffer) {
-		free(card->resample_array[idx].buffer);
-		card->resample_array[idx].buffer = NULL;
-	}
-	if (card->resample_array[idx].rechannel_buffer) {
-		free(card->resample_array[idx].rechannel_buffer);
-		card->resample_array[idx].rechannel_buffer = NULL;
-	}
-	if (card->resample_array[idx].speex_resampler) {
-		speex_resampler_destroy(card->resample_array[idx].speex_resampler);
-		card->resample_array[idx].speex_resampler = NULL;
+	if (card->resample_array[idx].necessary) {
+		card->resample_array[idx].necessary = false;
+		if (card->resample_array[idx].buffer) {
+			free(card->resample_array[idx].buffer);
+			card->resample_array[idx].buffer = NULL;
+		}
+		if (card->resample_array[idx].rechannel_buffer) {
+			free(card->resample_array[idx].rechannel_buffer);
+			card->resample_array[idx].rechannel_buffer = NULL;
+		}
+		if (card->resample_array[idx].speex_resampler) {
+			speex_resampler_destroy(card->resample_array[idx].speex_resampler);
+			card->resample_array[idx].speex_resampler = NULL;
+		}
 	}
 
 	card->stream_id_array[idx] = INVALID_STREAM_ID;
@@ -2127,59 +2124,46 @@ unsigned int get_output_card_total_buffer_size(void)
 	return get_card_total_buffer_size(OUTPUT);
 }
 
-unsigned int get_output_sampleRate(void)
+unsigned int get_output_card_sample_rate(void)
 {
 	if (g_actual_audio_out_card_id < 0) {
 		return 0;
 	}
 
 	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	pthread_mutex_lock(&(card->card_mutex));
-	if (!pcm_is_ready(card->pcm)) {
-		pthread_mutex_unlock(&(card->card_mutex));
-		return 0;
-	}
 
-	unsigned int sampleRate = pcm_get_rate(card->pcm);
+	pthread_mutex_lock(&(card->card_mutex));
+	unsigned int sample_rate = pcm_get_rate(card->pcm);
 	pthread_mutex_unlock(&(card->card_mutex));
 
-	return sampleRate;
+	return sample_rate;
 }
 
-unsigned int get_output_channels(void)
+unsigned int get_output_card_channels(void)
 {
 	if (g_actual_audio_out_card_id < 0) {
 		return 0;
 	}
 
 	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	pthread_mutex_lock(&(card->card_mutex));
-	if (!pcm_is_ready(card->pcm)) {
-		pthread_mutex_unlock(&(card->card_mutex));
-		return 0;
-	}
 
+	pthread_mutex_lock(&(card->card_mutex));
 	unsigned int channels = pcm_get_channels(card->pcm);
 	pthread_mutex_unlock(&(card->card_mutex));
 
 	return channels;
 }
 
-unsigned int get_output_format(void)
+unsigned int get_output_card_bytes_per_format(void)
 {
 	if (g_actual_audio_out_card_id < 0) {
 		return PCM_FORMAT_NONE;
 	}
 
 	audio_card_info_t *card = &g_audio_out_cards[g_actual_audio_out_card_id];
-	pthread_mutex_lock(&(card->card_mutex));
-	if (!pcm_is_ready(card->pcm)) {
-		pthread_mutex_unlock(&(card->card_mutex));
-		return PCM_FORMAT_NONE;
-	}
 
-	pcm_format format = pcm_get_format(card->pcm);
-	unsigned int bytesPerFormat = pcm_format_to_bits(format) >> 3;
+	pthread_mutex_lock(&(card->card_mutex));
+	unsigned int bytesPerFormat = pcm_format_to_bits(pcm_get_format(card->pcm)) >> 3;
 	pthread_mutex_unlock(&(card->card_mutex));
 
 	return bytesPerFormat;

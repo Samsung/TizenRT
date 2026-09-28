@@ -53,7 +53,7 @@ public:
 	ssize_t read(unsigned char *buf, size_t size, std::chrono::milliseconds timeout = std::chrono::milliseconds(0));
 	void setLoop(bool loop);
 	void setBufferState(buffer_state_t state);
-	bool startBuffering(unsigned int sampleRate, unsigned int channels, unsigned int format, size_t size);
+	bool startBuffering(unsigned int outputSampleRate, unsigned int outputChannel, unsigned int outputBytesPerFormat, size_t size);
 
 	virtual void onBufferOverrun() override;
 	virtual void onBufferUnderrun() override;
@@ -79,6 +79,7 @@ private:
 	ssize_t getPCM(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
 	size_t fetchData(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
 	ssize_t readFromSource(unsigned char *buf, size_t size);
+	bool writeResampledDataToStreamBuffer(void);
 
 	std::mutex mMutex;
 	std::condition_variable mCondv;
@@ -92,7 +93,7 @@ private:
 	size_t mTotalBytes;
 	std::unique_ptr<unsigned char[]> mProcessBuffer;
 	size_t mProcessBufferSize;
-	std::shared_ptr<Resampler> mResampler;
+	std::unique_ptr<Resampler> mResampler;
 };
 } // namespace stream
 } // namespace media

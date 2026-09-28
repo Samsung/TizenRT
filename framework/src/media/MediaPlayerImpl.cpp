@@ -222,6 +222,10 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 		return;
 	}
 
+	unsigned int outputSampleRate;
+	unsigned int outputChannels;
+	unsigned int outputBytesPerFormat;
+
 	mBufSize = get_output_card_buffer_size();
 	if (mBufSize < 0) {
 		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
@@ -265,11 +269,11 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 		return;
 	}
 
-	unsigned int outputSampleRate = get_output_sampleRate();
-	unsigned int outputChannels = get_output_channels();
-	unsigned int outputFormat = get_output_format();
+	outputSampleRate = get_output_card_sample_rate();
+	outputChannels = get_output_card_channels();
+	outputBytesPerFormat = get_output_card_bytes_per_format();
 
-	if (!mInputHandler.startBuffering(outputSampleRate, outputChannels, outputFormat, mBufSize)) {
+	if (!mInputHandler.startBuffering(outputSampleRate, outputChannels, outputBytesPerFormat, mBufSize)) {
 		meddbg("MediaPlayer prepare fail : start buffering fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		delete[] mBuffer;
@@ -1258,6 +1262,10 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 
 	switch (event) {
 	case PLAYER_EVENT_SOURCE_PREPARED: {
+		unsigned int outputSampleRate;
+		unsigned int outputChannels;
+		unsigned int outputBytesPerFormat;
+
 		// Input handler has been opened successfully by InputHandler::doStandBy().
 		// Now setup audio manager and notify player observer the result.
 		auto source = mInputHandler.getDataSource();
@@ -1267,11 +1275,11 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		}
 
-		unsigned int outputSampleRate = get_output_sampleRate();
-		unsigned int outputChannels = get_output_channels();
-		unsigned int outputFormat = get_output_format();
+		outputSampleRate = get_output_card_sample_rate();
+		outputChannels = get_output_card_channels();
+		outputBytesPerFormat = get_output_card_bytes_per_format();
 
-		if (!mInputHandler.startBuffering(outputSampleRate, outputChannels, outputFormat, mBufSize)) {
+		if (!mInputHandler.startBuffering(outputSampleRate, outputChannels, outputBytesPerFormat, mBufSize)) {
 			meddbg("MediaPlayer prepare fail : start buffering fail\n");
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		}

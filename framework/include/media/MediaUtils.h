@@ -135,9 +135,11 @@ unsigned int splitChannel(unsigned int layout, const signed short *stream, unsig
  * @internal
  * @brief main(left channel) and sub(right channel) will be mixed in interleaved manner and mixed audio out will be stored in main buffer
  * @details @b #include <media/MediaUtils.h>
- * @param[in] dataL pointer to the main(left channel) buffer
+ * @pre dataL buffer must be large enough to hold (framesL + framesR) number of frames before calling this function.
+ * @param[in,out] dataL pointer to the main(left channel) buffer; on return, holds the interleaved mixed audio output
+ * @param[in,out] framesL pointer to the number of frames in the main(left channel) buffer; on return, holds the maximum of framesL and framesR
  * @param[in] dataR pointer to the sub(right channel) buffer
- * @param[in] frames number of frames in buffers
+ * @param[in] framesR pointer to the number of frames in the sub(right channel) buffer
  * @endcond
  */
 void mergeChannel(void *dataL, unsigned int *framesL, void *dataR, unsigned int *framesR);

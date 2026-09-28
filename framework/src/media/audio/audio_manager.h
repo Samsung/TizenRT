@@ -465,40 +465,37 @@ unsigned int get_output_card_total_buffer_size(void);
 unsigned int get_input_card_total_buffer_size(void);
 
 /****************************************************************************
- * Name: get_output_sampleRate
+ * Name: get_output_card_sample_rate
  *
  * Description:
- *   Get the actual PCM format and one hardware buffer size of the active
- *   output card. The output stream must be configured before this call.
+ *   Get sample rate of the active output card.
  *
  * Return Value:
- *   On success, the output sampleRate. Otherwise, 0.
+ *   On success, the output sample rate. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_sampleRate(void);
+unsigned int get_output_card_sample_rate(void);
 
 /****************************************************************************
- * Name: get_output_channels
+ * Name: get_output_card_channels
  *
  * Description:
- *   Get the actual PCM format and one hardware buffer size of the active
- *   output card. The output stream must be configured before this call.
+ *   Get number of channels of active output card.
  *
  * Return Value:
  *   On success, the output channels. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_channels(void);
+unsigned int get_output_card_channels(void);
 
 /****************************************************************************
- * Name: get_output_format
+ * Name: get_output_card_bytes_per_format
  *
  * Description:
- *   Get the actual PCM format and one hardware buffer size of the active
- *   output card. The output stream must be configured before this call.
+ *   Get total number of bytes per format of the active output card.
  *
  * Return Value:
  *   On success, the total number of bytes as per output format. Otherwise, 0.
  ****************************************************************************/
-unsigned int get_output_format(void);
+unsigned int get_output_card_bytes_per_format(void);
 
 /****************************************************************************
  * Name: get_max_audio_volume

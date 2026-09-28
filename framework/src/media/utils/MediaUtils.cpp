@@ -22,7 +22,6 @@
 #include <stdarg.h>
 #include <tinyara/config.h>
 #include <cstring>
-#include <algorithm>
 
 namespace media {
 namespace utils {
@@ -1449,13 +1448,10 @@ void mergeChannel(void *dataL, unsigned int *framesL, void *dataR, unsigned int 
 
 	for(int32_t i = (int32_t)maxFrames - 1; i >= 0; i--)
 	{
-		int16_t leftSample = ((unsigned int)i < *framesL) ? main[i] : 0;
-		int16_t rightSample = ((unsigned int)i < *framesR) ? sub[i] : 0;
-		main[2 * i] = leftSample;
-		main[2 * i + 1] = rightSample;
+		main[2 * i] = ((unsigned int)i < *framesL) ? main[i] : 0;
+		main[2 * i + 1] = ((unsigned int)i < *framesR) ? sub[i] : 0;
 	}
 	*framesL = maxFrames;
-	*framesR = maxFrames;
 }
 
 float getSignalToNoiseRatio(const short *buffer, size_t size, int windows, int *index, ...)
