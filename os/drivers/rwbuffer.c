@@ -626,6 +626,10 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 #ifdef CONFIG_DRVR_READAHEAD
 	DEBUGASSERT(rwb->rhreload != NULL);
 	rwb->rhbuffer = NULL;
+	if (rwb->rhmaxblocks > 0) {
+		/* Initialize before write-buffer allocation can fail. */
+		sem_init(&rwb->rhsem, 0, 1);
+	}
 #endif
 
 #ifdef CONFIG_DRVR_WRITEBUFFER
@@ -659,10 +663,6 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 #ifdef CONFIG_DRVR_READAHEAD
 	if (rwb->rhmaxblocks > 0) {
 		fvdbg("Initialize the read-ahead buffer\n");
-
-		/* Initialize the read-ahead buffer access semaphore */
-
-		sem_init(&rwb->rhsem, 0, 1);
 
 		/* Initialize read-ahead buffer parameters */
 
