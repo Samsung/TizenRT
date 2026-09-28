@@ -510,9 +510,9 @@ int ftl_initialize(int minor, FAR struct mtd_dev_s *mtd)
 		return -EINVAL;
 	}
 
-	/* Allocate a FTL device structure */
+	/* Allocate a FTL device structure with inactive buffer/work state */
 
-	dev = (struct ftl_struct_s *)kmm_malloc(sizeof(struct ftl_struct_s));
+	dev = (struct ftl_struct_s *)kmm_zalloc(sizeof(struct ftl_struct_s));
 	if (dev) {
 		/* Initialize the FTL device structure */
 
@@ -566,6 +566,10 @@ int ftl_initialize(int minor, FAR struct mtd_dev_s *mtd)
 		ret = rwb_initialize(&dev->rwb);
 		if (ret < 0) {
 			dbg("ERROR: rwb_initialize failed: %d\n", ret);
+			rwb_uninitialize(&dev->rwb);
+#ifdef CONFIG_FS_WRITABLE
+			kmm_free(dev->eblock);
+#endif
 			kmm_free(dev);
 			return ret;
 		}
@@ -580,6 +584,12 @@ int ftl_initialize(int minor, FAR struct mtd_dev_s *mtd)
 		ret = register_blockdriver(devname, &g_bops, 0, dev);
 		if (ret < 0) {
 			dbg("ERROR: register_blockdriver failed: %d\n", -ret);
+#ifdef FTL_HAVE_RWBUFFER
+			rwb_uninitialize(&dev->rwb);
+#endif
+#ifdef CONFIG_FS_WRITABLE
+			kmm_free(dev->eblock);
+#endif
 			kmm_free(dev);
 		}
 	}

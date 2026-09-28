@@ -576,6 +576,7 @@ int ftl_nand_initialize(int minor, FAR struct mtd_dev_s *mtd)
 		dev->eblock  = (FAR uint8_t *)kmm_malloc(dev->geo.erasesize);
 		if (!dev->eblock) {
 			dbg("ERROR: Failed to allocate an erase block buffer\n");
+			kmm_free(dev->block_map);
 			kmm_free(dev);
 			return -ENOMEM;
 		}
@@ -595,6 +596,10 @@ int ftl_nand_initialize(int minor, FAR struct mtd_dev_s *mtd)
 		ret = register_blockdriver(devname, &g_bops, 0, dev);
 		if (ret < 0) {
 			dbg("ERROR: register_blockdriver failed: %d\n", -ret);
+#ifdef CONFIG_FS_WRITABLE
+			kmm_free(dev->eblock);
+#endif
+			kmm_free(dev->block_map);
 			kmm_free(dev);
 		}
 	}
