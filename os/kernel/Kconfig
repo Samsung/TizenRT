@@ -1135,3 +1135,4 @@ config SILENT_REBOOT
 	depends on BOARDCTL_RESET
 	---help---
 		Enables Silent Reboot.
+

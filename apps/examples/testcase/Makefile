@@ -245,6 +245,10 @@ ifeq ($(CONFIG_EXAMPLES_TESTCASE_SECURITY_FRAMEWORK_UTC),y)
 	$(Q) $(call REGISTER,security_utc,utc_security_main,TASH_EXECMD_ASYNC,100,16384)
 endif
 
+ifeq ($(CONFIG_EXAMPLES_TESTCASE_MEM_LEAK),y)
+	$(Q) $(call REGISTER,mem_leak_test,mem_leak_test_main,TASH_EXECMD_ASYNC,100,8192)
+endif
+
 context: $(BUILTIN_REGISTRY)$(DELIM)testcase.bdat
 
 else
