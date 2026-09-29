@@ -276,7 +276,6 @@ static void tc_memory_safety_with_mqueue(void)
 	void *result;
 	pthread_attr_t attr;
 	struct sched_param sparam;
-	FAR void *expected;
 	int priority1 = CONFIG_SCHED_LPWORKPRIORITY + 1;
 	int priority2 = CONFIG_SCHED_LPWORKPRIORITY + 2;
 	int priority3 = CONFIG_SCHED_LPWORKPRIORITY + 3;
@@ -357,22 +356,22 @@ static void tc_memory_safety_with_mqueue(void)
 	usleep(HALF_SECOND_USEC_USEC);
 #endif
 
-	/* Then cancel the thread and see if it did */
+	/* Then cancel the thread if it has not terminated yet */
 
-	expected = PTHREAD_CANCELED;
 	status = pthread_cancel(receiver);
+	TC_ASSERT("pthread_cancel", status == OK || status == ESRCH);
 	if (status == ESRCH) {
 		tckndbg("receiver has already terminated\n");
-		expected = (FAR void *)0;
 	}
 
-	/* Check the result.  If the pthread was canceled, PTHREAD_CANCELED is the
-	 * correct result.  Zero might be returned if the thread ran to completion
-	 * before it was canceled.
-	 */
-
-	pthread_join(receiver, &result);
-	TC_ASSERT_EQ("pthread_join", result, expected);
+	status = pthread_join(receiver, &result);
+	TC_ASSERT_EQ("pthread_join", status, OK);
+#ifdef CONFIG_DISABLE_SIGNALS
+	/* The receiver may complete normally or process the cancellation request. */
+	TC_ASSERT("pthread_join", result == NULL || result == PTHREAD_CANCELED);
+#else
+	TC_ASSERT_EQ("pthread_join", result, PTHREAD_CANCELED);
+#endif
 
 	/* Message queues are global resources and persist for the life of the
 	 * task group.  The message queue opened by the sender_thread must be closed
