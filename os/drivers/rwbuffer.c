@@ -620,11 +620,11 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 	/* Setup so that rwb_uninitialize can handle a failure */
 
 #ifdef CONFIG_DRVR_WRITEBUFFER
-	DEBUGASSERT(rwb->wrflush != NULL);
+	DEBUGASSERT(rwb->wrmaxblocks == 0 || rwb->wrflush != NULL);
 	rwb->wrbuffer = NULL;
 #endif
 #ifdef CONFIG_DRVR_READAHEAD
-	DEBUGASSERT(rwb->rhreload != NULL);
+	DEBUGASSERT(rwb->rhmaxblocks == 0 || rwb->rhreload != NULL);
 	rwb->rhbuffer = NULL;
 	if (rwb->rhmaxblocks > 0) {
 		/* Initialize before write-buffer allocation can fail. */
@@ -802,6 +802,7 @@ int rwb_read(FAR struct rwbuffer_s *rwb, off_t startblock, uint32_t nblocks, FAR
 		 * the user buffer.
 		 */
 
+		DEBUGASSERT(rwb->rhreload != NULL);
 		ret = rwb->rhreload(rwb->dev, rdbuffer, startblock, nblocks);
 	}
 
@@ -866,6 +867,7 @@ int rwb_write(FAR struct rwbuffer_s *rwb, off_t startblock, size_t nblocks, FAR 
 		 * flush callback.
 		 */
 
+		DEBUGASSERT(rwb->wrflush != NULL);
 		ret = rwb->wrflush(rwb->dev, wrbuffer, startblock, nblocks);
 	}
 
