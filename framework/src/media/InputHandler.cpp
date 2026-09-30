@@ -384,23 +384,29 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 			}
 
 			size_t resampledSize = mResampler->process(buffPCM, sizePCM, mResampleBuffer.get(), mResampleBufferSize);
-			if (resampledSize == 0) {
+			if (resampledSize < 0) {
 				meddbg("Resampler process failed!\n");
 				return EOF;
 			}
+			if (resampledSize == 0) {
+				continue;
+			}
 
 			size_t written = 0;
-			while(written < resampledSize) {
+			while (written < resampledSize) {
 				size_t spaces = mBufferWriter->sizeOfSpace();
 				if (spaces == 0) {
 					sleepWorker();
 				}
 
-				size_t writeSize = std::min(resampledSize - written, spaces);
-				size_t writeBytes = mBufferWriter->write(mResampleBuffer.get() + written, writeSize);
+				size_t writeSize = std::min(resampledSize - written, mBufferWriter->sizeOfSpace());
+				if (writeSize == 0) {
+					break;
+				}
 
-				if(writeBytes != writeSize) {
-					meddbg("Failed to write resampled PCM\n");
+				size_t writeBytes = mBufferWriter->write(mResampleBuffer.get() + written, writeSize);
+				if (writeBytes != writeSize) {
+					meddbg("End of writting\n");
 					return EOF;
 				}
 
