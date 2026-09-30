@@ -43,6 +43,7 @@ public:
 	~SoftwareEndPointDetector();
 	bool init(uint32_t samprate, uint8_t channels) override;
 	void deinit() override;
+	bool startEndPointDetect(int timeout) override;
 	bool startEndPointDetect(void) override;
 	bool stopEndPointDetect(void) override;
 	bool detectEndPoint(std::shared_ptr<unsigned char> sample, int size) override;
