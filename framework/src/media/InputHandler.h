@@ -79,7 +79,6 @@ private:
 	ssize_t getPCM(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
 	size_t fetchData(unsigned char *buf, size_t size, size_t *used, unsigned char **out, size_t *expect);
 	ssize_t readFromSource(unsigned char *buf, size_t size);
-	bool writeResampledDataToStreamBuffer(void);
 
 	std::mutex mMutex;
 	std::condition_variable mCondv;
@@ -93,6 +92,8 @@ private:
 	size_t mTotalBytes;
 	std::unique_ptr<unsigned char[]> mProcessBuffer;
 	size_t mProcessBufferSize;
+	std::unique_ptr<unsigned char[]> mResampleBuffer;
+	size_t mResampleBufferSize;
 	std::unique_ptr<Resampler> mResampler;
 };
 } // namespace stream
