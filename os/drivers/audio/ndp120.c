@@ -1596,7 +1596,7 @@ int save_labels_per_network(struct syntiant_ndp_device_s *ndp,
 
 static int get_versions_and_labels(struct syntiant_ndp_device_s *ndp,
 						char *label_data, unsigned int label_data_length,
-						char **labels, unsigned int *num_labels)
+						char **labels, unsigned int *num_labels, bool *is_wakeupless)
 {
 	char fwver[NDP120_MCU_FW_VER_MAX_LEN] = "";
 	char dspfwver[NDP120_MCU_DSP_FW_VER_MAX_LEN] = "";
@@ -1606,6 +1606,7 @@ static int get_versions_and_labels(struct syntiant_ndp_device_s *ndp,
 	unsigned int i;
 	int s;
 
+	*is_wakeupless = false;
 	memset(&config, 0, sizeof(config));
 	config.firmware_version = fwver;
 	config.firmware_version_len = STRING_LEN;
@@ -1637,6 +1638,9 @@ static int get_versions_and_labels(struct syntiant_ndp_device_s *ndp,
 		auddbg("labels strings too long");
 		return SYNTIANT_NDP_ERROR_FAIL;
 	}
+
+	*is_wakeupless = (strcmp(dspfwver, "ndp120-b0-21.6.17-Samsung-2bca") == 0);
+	auddbg("is_wakeupless: %s\n", *is_wakeupless ? "true" : "false");
 
 	/* get pointers to the labels */
 	num_labels_ = 0;
@@ -1993,6 +1997,16 @@ void add_host_ext_flow_factory(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm
 	auddbg("Added factory flow, dsp_flow_num = %d\n", dsp_flow_num);
 }
 
+static void add_host_extraction_flow(struct ndp120_dev_s *dev,
+	ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int *src_nn)
+{
+	if (!dev->dsp_flow_num) {
+		add_host_ext_flow(setup, src_pcm, src_func, src_nn);
+	} else {
+		add_host_ext_flow_factory(setup, src_pcm, src_func, src_nn, dev->dsp_flow_num);
+	}
+}
+
 void add_bixby_flow(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *src_func, int* src_nn, uint32_t network_id)
 {
 	/* FUNCx->NN */
@@ -2047,7 +2061,7 @@ void add_custom_flow1(ndp120_dsp_data_flow_setup_t *setup, int *src_pcm, int *sr
 }
 
 static
-void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
+void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp, bool is_wakeupless)
 {
 	int s = 0;
 	ndp120_dsp_data_flow_setup_t setup;
@@ -2060,11 +2074,8 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 	memset(&setup, 0, sizeof(setup));
 
 	add_common_flow(&setup, &src_pcm, &src_func, &src_nn);
-	// TODO Even if the order of dsp flow is changed, it will be modified in sdk 1.68 so that dsp is normally applied
-	if (!dev->dsp_flow_num) {
-		add_host_ext_flow(&setup, &src_pcm, &src_func, &src_nn);
-	} else {
-		add_host_ext_flow_factory(&setup, &src_pcm, &src_func, &src_nn, dev->dsp_flow_num);
+	if (is_wakeupless) {
+		add_host_extraction_flow(dev, &setup, &src_pcm, &src_func, &src_nn);
 	}
 
 	dsp_flow_e flow;
@@ -2089,7 +2100,11 @@ void add_dsp_flow_rules(struct syntiant_ndp_device_s *ndp)
 		}
 		idToFlow[i] = flow;
 	}
-	
+
+	if (!is_wakeupless) {
+		add_host_extraction_flow(dev, &setup, &src_pcm, &src_func, &src_nn);
+	}
+
 	auddbg("Applied flow rules\n");
 	s = syntiant_ndp120_dsp_flow_setup_apply(ndp, &setup);
 	check_status("syntiant_ndp120_dsp_flow_setup_apply", s);
@@ -2435,6 +2450,7 @@ errout_mutex_mcu_mb_in:
 int ndp120_load_firmware(struct ndp120_dev_s *dev)
 {
 	int s = SYNTIANT_NDP_ERROR_NONE;
+	bool is_wakeupless = false;
 
 	dev->fw_loaded = false;
 	dev->lower->irq_enable(false);
@@ -2514,7 +2530,7 @@ int ndp120_load_firmware(struct ndp120_dev_s *dev)
 	}
 
 	s_num_labels = 16;
-	s = get_versions_and_labels(dev->ndp, s_label_data, sizeof(s_label_data), s_labels, &s_num_labels);
+	s = get_versions_and_labels(dev->ndp, s_label_data, sizeof(s_label_data), s_labels, &s_num_labels, &is_wakeupless);
 
 	attach_algo_config_area(dev->ndp, FF_ID, 0);
 	auddbg("Attached ALGO id = %d at index 0.\n", FF_ID);
@@ -2531,7 +2547,7 @@ int ndp120_load_firmware(struct ndp120_dev_s *dev)
 	// add special rules for BT-mic
 	add_dsp_flow_rules_btmic(dev->ndp);
 #else
-	add_dsp_flow_rules(dev->ndp);
+	add_dsp_flow_rules(dev->ndp, is_wakeupless);
 #endif
 
 	struct syntiant_ndp120_config_tank_s tank_config;
@@ -2574,7 +2590,7 @@ int ndp120_load_firmware(struct ndp120_dev_s *dev)
 #endif
 
 	s_num_labels = 16;
-	s = get_versions_and_labels(dev->ndp, s_label_data, sizeof(s_label_data), s_labels, &s_num_labels);
+	s = get_versions_and_labels(dev->ndp, s_label_data, sizeof(s_label_data), s_labels, &s_num_labels, &is_wakeupless);
 #ifdef CONFIG_DEBUG_AUDIO_INFO
 	dsp_flow_show(dev->ndp);
 #endif
