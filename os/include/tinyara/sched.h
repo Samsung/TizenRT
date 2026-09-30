@@ -919,20 +919,29 @@ void task_starthook(FAR struct task_tcb_s *tcb, starthook_t starthook, FAR void 
  *
  * 1) User code calls vfork().  vfork() is provided in architecture-specific
  *    code.
- * 2) vfork()and calls task_vforksetup().
+ * 2) vfork() calls task_vforksetup().
  * 3) task_vforksetup() allocates and configures the child task's TCB.  This
  *    consists of:
  *    - Allocation of the child task's TCB.
  *    - Initialization of file descriptors and streams
  *    - Configuration of environment variables
- *    - Setup the intput parameters for the task.
- *    - Initialization of the TCB (including call to up_initial_state()
- * 4) vfork() provides any additional operating context. vfork must:
  *    - Allocate and initialize the stack
+ *    - Setup the intput parameters for the task.
+ *    - Initialization of the TCB (including call to up_initial_state())
+ * 4) vfork() provides any additional operating context. vfork may:
  *    - Initialize special values in any CPU registers that were not
  *      already configured by up_initial_state()
  * 5) vfork() then calls task_vforkstart()
  * 6) task_vforkstart() then executes the child thread.
+ *
+ * task_vforksetup() parameters:
+ *   retaddr - Return address in the child after vfork().
+ *
+ * task_vforkstart() parameters:
+ *   child     - The initialized child task TCB.
+ *   parent_sp - The parent's current stack pointer when the architecture
+ *               cannot use the saved TCB value while the parent is running.
+ *               A zero value preserves the traditional behavior.
  *
  * task_vforkabort() may be called if an error occurs between steps 3 and 6.
  *
@@ -945,7 +954,7 @@ FAR struct task_tcb_s *task_vforksetup(start_t retaddr);
 /**
  * @internal
  */
-pid_t task_vforkstart(FAR struct task_tcb_s *child);
+pid_t task_vforkstart(FAR struct task_tcb_s *child, uintptr_t parent_sp);
 /**
  * @internal
  */
