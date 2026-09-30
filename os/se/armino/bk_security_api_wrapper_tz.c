@@ -54,38 +54,6 @@ void ns_flash_erase(uint32_t address)
 }
 
 /**
-  * @brief  Read the Flash Data.
-  * @param  address: specifies the address to be read.
-  * @param  len: specifies the length of data to be read.
-  * @param  data: pointer to data buffer.
-  * @retval Result of the operation.
-  */
- static int ns_flash_read(uint32_t address, uint32_t len, uint8_t *data)
-{
-	int ret;
-
-	ret = bk_flash_read_bytes(address, data, len);
-
-	return ret;
-}
-
-/**
-  * @brief  Write the Flash Data.
-  * @param  address: specifies the address to be written.
-  * @param  len: specifies the length of data to be written.
-  * @param  data: pointer to data buffer.
-  * @retval Result of the operation.
-  */
-static int ns_flash_write(uint32_t address, uint32_t len, uint8_t *data)
-{
-	int ret;
-
-	ret = bk_flash_write_bytes(address, data, len);
-
-	return ret;
-}
-
-/**
   * @brief  Verify the Flash Data.
   * @param  address: specifies the address to be read.
   * @param  len: specifies the length of data to be read.
@@ -133,26 +101,4 @@ int bk_verify_flash_protect(void)
 	} else {
 		return 0;
 	}
-}
-
-/**
-  * @brief  Set the Flash Status Bits.
-  * @param  NewState: new state of the flash status bits.
-  * @retval None
-  */
-static void ns_setstatusbits(unsigned int NewState)
-{
-	bk_flash_write_enable();
-	bk_flash_write_status_reg(FLASH_STATUS_BITS);
-	bk_flash_write_disable();
-}
-
-/**
-  * @brief  Print the input string.
-  * @param  input: pointer to input string.
-  * @retval None
-  */
-static void ns_printf(const char *input)
-{
-	printf("%s\n", input);
 }
