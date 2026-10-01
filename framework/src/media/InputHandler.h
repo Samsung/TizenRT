@@ -26,6 +26,7 @@
 
 #include <media/InputDataSource.h>
 #include "StreamHandler.h"
+#include "Resampler.h"
 
 #include "Decoder.h"
 #include "Demuxer.h"
@@ -47,13 +48,12 @@ public:
 	InputHandler();
 	void setInputDataSource(std::shared_ptr<InputDataSource> source);
 	bool doStandBy(size_t buffSize);
-	bool open(size_t buffSize) override;
-	bool start() override;
 	bool close() override;
 	int seekTo(off_t offset);
 	ssize_t read(unsigned char *buf, size_t size, std::chrono::milliseconds timeout = std::chrono::milliseconds(0));
 	void setLoop(bool loop);
 	void setBufferState(buffer_state_t state);
+	bool startBuffering(unsigned int outputSampleRate, unsigned int outputChannel, unsigned int outputBytesPerFormat, size_t size);
 
 	virtual void onBufferOverrun() override;
 	virtual void onBufferUnderrun() override;
@@ -92,6 +92,9 @@ private:
 	size_t mTotalBytes;
 	std::unique_ptr<unsigned char[]> mProcessBuffer;
 	size_t mProcessBufferSize;
+	std::unique_ptr<unsigned char[]> mResampleBuffer;
+	size_t mResampleBufferSize;
+	std::unique_ptr<Resampler> mResampler;
 };
 } // namespace stream
 } // namespace media

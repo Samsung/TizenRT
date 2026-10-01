@@ -23,6 +23,9 @@
 
 #include <debug.h>
 #include <errno.h>
+#include <cstring>
+#include <limits.h>
+#include <new>
 #include <stdarg.h>
 #include <semaphore.h>
 #include "audio/audio_manager.h"
@@ -219,6 +222,10 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 		return;
 	}
 
+	unsigned int outputSampleRate;
+	unsigned int outputChannels;
+	unsigned int outputBytesPerFormat;
+
 	mBufSize = get_output_card_buffer_size();
 	if (mBufSize < 0) {
 		meddbg("MediaPlayer prepare fail : get_output_frames_byte_size fail\n");
@@ -241,8 +248,8 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 		return;
 	}
 
-	if (!mInputHandler.open(mBufSize)) {
-		meddbg("MediaPlayer prepare fail : open fail\n");
+	if (!mInputHandler.prepare(mBufSize)) {
+		meddbg("MediaPlayer prepare fail : prepare fail\n");
 		ret = PLAYER_ERROR_FILE_OPEN_FAILED;
 		delete[] mBuffer;
 		mBuffer = nullptr;
@@ -255,6 +262,19 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 		// ToDo: Need to do mInputHandler close() in case of further failure in prepare.
 		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
+		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+		delete[] mBuffer;
+		mBuffer = nullptr;
+		notifySync(syncSem);
+		return;
+	}
+
+	outputSampleRate = get_output_card_sample_rate();
+	outputChannels = get_output_card_channels();
+	outputBytesPerFormat = get_output_card_bytes_per_format();
+
+	if (!mInputHandler.startBuffering(outputSampleRate, outputChannels, outputBytesPerFormat, mBufSize)) {
+		meddbg("MediaPlayer prepare fail : start buffering fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		delete[] mBuffer;
 		mBuffer = nullptr;
@@ -1242,12 +1262,25 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 
 	switch (event) {
 	case PLAYER_EVENT_SOURCE_PREPARED: {
+		unsigned int outputSampleRate;
+		unsigned int outputChannels;
+		unsigned int outputBytesPerFormat;
+
 		// Input handler has been opened successfully by InputHandler::doStandBy().
 		// Now setup audio manager and notify player observer the result.
 		auto source = mInputHandler.getDataSource();
 		if (set_audio_stream_out(source->getChannels(), source->getSampleRate(),
 								 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 			meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		}
+
+		outputSampleRate = get_output_card_sample_rate();
+		outputChannels = get_output_card_channels();
+		outputBytesPerFormat = get_output_card_bytes_per_format();
+
+		if (!mInputHandler.startBuffering(outputSampleRate, outputChannels, outputBytesPerFormat, mBufSize)) {
+			meddbg("MediaPlayer prepare fail : start buffering fail\n");
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		}
 
@@ -1263,16 +1296,12 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 void MediaPlayerImpl::playback(std::chrono::milliseconds timeout, uint8_t playback_idx)
 {
 	medvdbg("timeout: %lld, playback_idx: %d\n", timeout, playback_idx);
-	float outputSampleRateRatio = get_output_sample_rate_ratio(mStreamInfo->id);
-	outputSampleRateRatio = (outputSampleRateRatio >= 1.0f ? outputSampleRateRatio : 1);
-	unsigned int framesToRead = get_card_output_bytes_to_frame(mBufSize) / outputSampleRateRatio;
-	unsigned int bufferSize = get_user_output_frames_to_byte(framesToRead, mStreamInfo->id);
 
 	// ToDo: Handle underrun properly in future when we support streaming player
-	ssize_t num_read = mInputHandler.read(mBuffer, (int)bufferSize, timeout);
+	ssize_t num_read = mInputHandler.read(mBuffer, static_cast<size_t>(mBufSize), timeout);
 	medvdbg("num_read : %d player : %x\n", num_read, &mPlayer);
 	if (num_read > 0) {
-		int ret = start_audio_stream_out(mBuffer, get_user_output_bytes_to_frame((unsigned int)num_read, mStreamInfo->id), playback_idx, mStreamInfo->id);
+		int ret = start_audio_stream_out(mBuffer, get_card_output_bytes_to_frame(num_read), playback_idx, mStreamInfo->id);
 		if (ret < 0) {
 			PlayerWorker &mpw = PlayerWorker::getWorker();
 			switch (ret) {
