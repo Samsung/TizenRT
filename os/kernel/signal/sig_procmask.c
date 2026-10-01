@@ -62,7 +62,7 @@
 #include <assert.h>
 #include <debug.h>
 #include <sched.h>
-
+#include <errno.h>
 #include <tinyara/arch.h>
 #include <tinyara/wdog.h>
 #include <tinyara/kmalloc.h>
@@ -180,6 +180,7 @@ int sigprocmask(int how, FAR const sigset_t *set, FAR sigset_t *oset)
 
 		default:
 			ret = ERROR;
+			set_errno(EINVAL);
 			break;
 		}
 
