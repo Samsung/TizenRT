@@ -797,7 +797,7 @@ bool osif_timer_create(void **pp_handle, const char *p_timer_name, uint32_t time
 	}
 	memset(timer->work_hdl, 0, sizeof(struct work_s));
 
-	memcpy(timer->timer_name, p_timer_name, 16);
+	strncpy((char *)timer->timer_name, p_timer_name, sizeof(timer->timer_name) - 1);
 	timer->timer_id = timer_id;
 	timer->timeout = interval_ms;
 	timer->reload = reload;
