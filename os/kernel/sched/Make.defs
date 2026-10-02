@@ -117,3 +117,7 @@ endif
 
 DEPPATH += --dep-path sched
 VPATH += :sched
+
+ifeq ($(CONFIG_SCHED_BACKTRACE),y)
+CSRCS += sched_backtrace.c
+endif

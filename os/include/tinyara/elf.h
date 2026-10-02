@@ -60,6 +60,24 @@
 #include <elf32.h>
 
 /****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/* ARM Exception Index Table (EIT) entry structure for EHABI unwinding
+ * Reference: ARM EHABI - Exception Handling ABI for the ARM Architecture
+ */
+
+typedef struct __EIT_entry {
+  unsigned long fnoffset;  /* Function offset (prel31) */
+  unsigned long content;   /* Unwind table content (prel31) */
+} __EIT_entry;
+
+/* Exception index table boundaries (defined by linker) */
+
+extern __EIT_entry __exidx_start[];
+extern __EIT_entry __exidx_end[];
+
+/****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
