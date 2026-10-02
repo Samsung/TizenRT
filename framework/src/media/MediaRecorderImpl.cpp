@@ -55,6 +55,7 @@ recorder_result_t MediaRecorderImpl::create()
 	recorder_result_t ret = RECORDER_OK;
 	mrw.enQueue(&MediaRecorderImpl::createRecorder, shared_from_this(), std::ref(ret), std::ref(syncSem));
 	meddbg("createRecorder enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -93,6 +94,7 @@ recorder_result_t MediaRecorderImpl::destroy()
 
 	mrw.enQueue(&MediaRecorderImpl::destroyRecorder, shared_from_this(), std::ref(ret), std::ref(syncSem));
 	meddbg("destroyRecorder enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -163,6 +165,7 @@ recorder_result_t MediaRecorderImpl::prepare()
 	}
 	mrw.enQueue(&MediaRecorderImpl::prepareRecorder, shared_from_this(), std::ref(ret), std::ref(syncSem));
 	meddbg("prepareRecorder enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -243,6 +246,7 @@ recorder_result_t MediaRecorderImpl::unprepare()
 	}
 	mrw.enQueue(&MediaRecorderImpl::unprepareRecorder, shared_from_this(), std::ref(ret), std::ref(syncSem));
 	meddbg("unprepareRecorder enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -332,6 +336,7 @@ recorder_result_t MediaRecorderImpl::start()
 	}
 	mrw.enQueue(&MediaRecorderImpl::startRecorder, shared_from_this(), std::ref(ret), std::ref(syncSem));
 	meddbg("startRecorder enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 	meddbg("%s returned. recorder: %x\n", __func__, &mRecorder);
@@ -388,6 +393,7 @@ recorder_result_t MediaRecorderImpl::stop()
 
 	mrw.enQueue(&MediaRecorderImpl::stopRecorder, shared_from_this(), std::ref(ret), std::ref(syncSem));
 	meddbg("stopRecorder enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 	meddbg("%s returned. recorder: %x\n", __func__, &mRecorder);
@@ -459,6 +465,7 @@ recorder_result_t MediaRecorderImpl::pause()
 	}
 	mrw.enQueue(&MediaRecorderImpl::pauseRecorder, shared_from_this(), std::ref(ret), true, std::ref(syncSem));
 	meddbg("pauseRecorder enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 	meddbg("%s returned. recorder: %x\n", __func__, &mRecorder);
@@ -547,6 +554,7 @@ recorder_result_t MediaRecorderImpl::getVolume(uint8_t *vol)
 
 	mrw.enQueue(&MediaRecorderImpl::getRecorderVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
 	meddbg("getRecorderVolume enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -588,6 +596,7 @@ recorder_result_t MediaRecorderImpl::getMaxVolume(uint8_t *vol)
 
 	mrw.enQueue(&MediaRecorderImpl::getRecorderMaxVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
 	meddbg("getRecorderMaxVolume enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -624,6 +633,7 @@ recorder_result_t MediaRecorderImpl::setVolume(uint8_t vol)
 
 	mrw.enQueue(&MediaRecorderImpl::setRecorderVolume, shared_from_this(), vol, std::ref(ret), std::ref(syncSem));
 	meddbg("setRecorderVolume enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -667,6 +677,7 @@ recorder_result_t MediaRecorderImpl::setDataSource(std::unique_ptr<stream::Outpu
 	std::shared_ptr<stream::OutputDataSource> sharedDataSource = std::move(dataSource);
 	mrw.enQueue(&MediaRecorderImpl::setRecorderDataSource, shared_from_this(), sharedDataSource, std::ref(ret), std::ref(syncSem));
 	meddbg("setRecorderDataSource enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -718,6 +729,7 @@ recorder_result_t MediaRecorderImpl::setObserver(std::shared_ptr<MediaRecorderOb
 
 	mrw.enQueue(&MediaRecorderImpl::setRecorderObserver, shared_from_this(), observer, std::ref(ret), std::ref(syncSem));
 	meddbg("setRecorderObserver enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -758,6 +770,7 @@ bool MediaRecorderImpl::isRecording()
 		notifySync(syncSem);
 	});
 	meddbg("getState() enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -781,6 +794,7 @@ recorder_result_t MediaRecorderImpl::setDuration(int second)
 	recorder_result_t ret = RECORDER_OK;
 	mrw.enQueue(&MediaRecorderImpl::setRecorderDuration, shared_from_this(), second, std::ref(ret), std::ref(syncSem));
 	meddbg("setRecorderDuration enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
@@ -824,6 +838,7 @@ recorder_result_t MediaRecorderImpl::setFileSize(int byte)
 	recorder_result_t ret = RECORDER_OK;
 	mrw.enQueue(&MediaRecorderImpl::setRecorderFileSize, shared_from_this(), byte, std::ref(ret), std::ref(syncSem));
 	meddbg("setRecorderFileSize enqueued. recorder: %x\n", &mRecorder);
+	lock.unlock();
 	sem_wait(&syncSem);
 	sem_destroy(&syncSem);
 
