@@ -336,7 +336,8 @@ static void print_mem_hex_dump(void *addr, size_t alloc_size)
 static void print_info(struct mm_heap_s *heap, int leak_cnt, int broken_cnt)
 {
 	volatile struct mm_allocnode_s *node;
-	uint32_t owner_addr;	
+	uint32_t owner_addr;
+	int bt_idx;
 
 	if (leak_cnt > 0 || broken_cnt > 0) {
 		printf("Type   |    Addr    | Size(byte) |    Owner   | PID \n");
@@ -359,11 +360,11 @@ static void print_info(struct mm_heap_s *heap, int leak_cnt, int broken_cnt)
 			for (node = heap->mm_heapstart[region]; node <  heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 				ASSERT(node->size);
 				if (node->memory_state == MM_MEMORY_STATE_LEAK) {
-					/* alloc_call_addr can be from kernel, app or common binary.
+					/* backtrace[0] can be from kernel, app or common binary.
 					* based on the text addresses printed, user needs to check the
 					* corresponding binaries accordingly
 					*/
-					owner_addr = (uint32_t)node->alloc_call_addr;
+					owner_addr = (uint32_t)(mmaddress_t)node->backtrace[0];
 					pid_t pid = node->pid;
 					if (pid < 0) {
 						/* For stack allocated node, pid is negative value.
@@ -373,6 +374,27 @@ static void print_info(struct mm_heap_s *heap, int leak_cnt, int broken_cnt)
 					}
 					printf("LEAK   | %10p |  %8d  | %10p | %d\n", (void *)((char *)node + SIZEOF_MM_ALLOCNODE), node->size - SIZEOF_MM_ALLOCNODE, owner_addr, pid);
 					print_mem_hex_dump((void *)((char *)node + SIZEOF_MM_ALLOCNODE), node->size - SIZEOF_MM_ALLOCNODE);
+
+					/* Print the full allocation backtrace recorded at malloc time.
+					 * Each entry is a PC value; subtract the appropriate text
+					 * start address (printed above) to resolve within the binary.
+					 */
+#if CONFIG_MM_BACKTRACE > 0
+					printf("       Backtrace: ");
+					for (bt_idx = 0; bt_idx < CONFIG_MM_BACKTRACE && node->backtrace[bt_idx] != NULL; bt_idx++) {
+						if (bt_idx > 0) {
+							printf(" <- ");
+						}
+						printf("%p", node->backtrace[bt_idx]);
+					}
+					if (bt_idx == 0) {
+						printf("(none)");
+					}
+					printf("\n");
+#else
+					printf("       Backtrace: (CONFIG_MM_BACKTRACE not enabled)\n");
+#endif
+					printf("\n");
 				} else if (node->memory_state == MM_MEMORY_STATE_BROKEN) {
 					printf("BROKEN | %p\n", node);
 				}

@@ -131,6 +131,54 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 			heap->peak_alloc_size = 0;
 			break;
 		}
+#if CONFIG_MM_BACKTRACE > 0
+		if (option->mode == HEAPINFO_DETAIL_BACKTRACE) {
+#if CONFIG_KMM_NHEAPS > 1
+			if (option->heap_type == HEAPINFO_HEAP_TYPE_KERNEL) {
+				int heap_idx;
+				for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
+					printf("\n [HEAP %d]\n", heap_idx);
+					heapinfo_dump_backtrace(&heap[heap_idx], option->pid);
+				}
+			} else
+#endif
+			{
+				heapinfo_dump_backtrace(heap, option->pid);
+			}
+			break;
+		}
+#endif
+		if (option->mode == HEAPINFO_CAPTURE_START || option->mode == HEAPINFO_CAPTURE_STOP) {
+			/* Capture state lives in each heap struct. START arms the window and
+			 * clears any stale tags; STOP disarms it and reports the blocks that
+			 * were allocated during the window and are still not freed.
+			 */
+#if CONFIG_KMM_NHEAPS > 1
+			if (option->heap_type == HEAPINFO_HEAP_TYPE_KERNEL) {
+				int heap_idx;
+				for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
+					if (option->mode == HEAPINFO_CAPTURE_START) {
+						heapinfo_capture_reset(&heap[heap_idx]);
+						heapinfo_capture_start(&heap[heap_idx], option->pid);
+					} else {
+						heapinfo_capture_stop(&heap[heap_idx]);
+						heapinfo_capture_report(&heap[heap_idx], option->pid);
+					}
+				}
+			} else
+#endif
+			{
+				if (option->mode == HEAPINFO_CAPTURE_START) {
+					heapinfo_capture_reset(heap);
+					heapinfo_capture_start(heap, option->pid);
+				} else {
+					heapinfo_capture_stop(heap);
+					heapinfo_capture_report(heap, option->pid);
+				}
+			}
+			ret = OK;
+			break;
+		}
 #if CONFIG_KMM_NHEAPS > 1
 		if (option->heap_type == HEAPINFO_HEAP_TYPE_KERNEL) {
 			int heap_idx;
@@ -153,6 +201,28 @@ static int mminfo_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 
 	case MMINFOIOC_GC:
 		sched_garbagecollection();
+		break;
+#endif
+#if CONFIG_MM_BACKTRACE > 0
+	case MMINFOIOC_SET_BACKTRACE_SKIP:
+		/* Set the kernel-side copy of g_mm_backtrace_skip.  In a
+		 * protected/loadable build the user-side copy is set directly
+		 * by utils_heapinfo, but the kernel's copy is in a separate
+		 * address space and can only be reached via this ioctl.
+		 *
+		 * The value reaches the backtrace engine on every allocation, so
+		 * reject anything out of range here rather than letting it through.
+		 */
+		{
+			int skip = (int)arg;
+
+			if (skip < 0 || skip > HEAPINFO_BACKTRACE_SKIP_MAX) {
+				mdbg("Invalid backtrace skip %d, expected 0..%d\n", skip, HEAPINFO_BACKTRACE_SKIP_MAX);
+				ret = -EINVAL;
+				break;
+			}
+			g_mm_backtrace_skip = skip;
+		}
 		break;
 #endif
 	default:
