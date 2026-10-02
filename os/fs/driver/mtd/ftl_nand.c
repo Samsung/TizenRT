@@ -598,8 +598,10 @@ int ftl_nand_initialize(int minor, FAR struct mtd_dev_s *mtd)
 			dbg("ERROR: register_blockdriver failed: %d\n", -ret);
 #ifdef CONFIG_FS_WRITABLE
 			kmm_free(dev->eblock);
+			dev->eblock = NULL;
 #endif
 			kmm_free(dev->block_map);
+			dev->block_map = NULL;
 			kmm_free(dev);
 		}
 	}
