@@ -251,6 +251,10 @@ struct lcd_dev_s {
 
 	int (*getlcdinfo)(struct lcd_dev_s *dev, struct lcd_info_s *lcdinfo);
 
+	/* Get LCD display ID (24-bit ID read via MIPI DSI command) */
+
+	int (*getdisplayid)(struct lcd_dev_s *dev, uint32_t *displayid);
+
 };
 
 /****************************************************************************
