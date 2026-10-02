@@ -617,16 +617,8 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 	DEBUGASSERT(rwb->nblocks > 0);
 	DEBUGASSERT(rwb->dev != NULL);
 
-	/* Initialize buffer pointers before allocation */
-
 #ifdef CONFIG_DRVR_WRITEBUFFER
 	rwb->wrbuffer = NULL;
-#endif
-#ifdef CONFIG_DRVR_READAHEAD
-	rwb->rhbuffer = NULL;
-#endif
-
-#ifdef CONFIG_DRVR_WRITEBUFFER
 	if (rwb->wrmaxblocks > 0) {
 		DEBUGASSERT(rwb->wrflush != NULL);
 		fvdbg("Initialize the write buffer\n");
@@ -637,7 +629,6 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 
 		/* Allocate the write buffer */
 
-		rwb->wrbuffer = NULL;
 		if (rwb->wrmaxblocks > 0) {
 			allocsize = rwb->wrmaxblocks * rwb->blocksize;
 			rwb->wrbuffer = kmm_malloc(allocsize);
@@ -652,6 +643,7 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 #endif							/* CONFIG_DRVR_WRITEBUFFER */
 
 #ifdef CONFIG_DRVR_READAHEAD
+	rwb->rhbuffer = NULL;
 	if (rwb->rhmaxblocks > 0) {
 		DEBUGASSERT(rwb->rhreload != NULL);
 		fvdbg("Initialize the read-ahead buffer\n");
@@ -662,7 +654,6 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 
 		/* Allocate the read-ahead buffer */
 
-		rwb->rhbuffer = NULL;
 		if (rwb->rhmaxblocks > 0) {
 			allocsize = rwb->rhmaxblocks * rwb->blocksize;
 			rwb->rhbuffer = kmm_malloc(allocsize);
