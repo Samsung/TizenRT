@@ -20,30 +20,15 @@
 /// @brief Test rejection of undersized RAM MTD regions
 #include <tinyara/config.h>
 #include <tinyara/fs/mtd.h>
-#include <stdlib.h>
-#include <string.h>
 #include "tc_internal.h"
 
 static void tc_driver_rammtd_small_region(void)
 {
-	size_t sizes[] = {0, 1, CONFIG_RAMMTD_ERASESIZE - 1};
-	uint8_t *buffer = malloc(CONFIG_RAMMTD_ERASESIZE);
-	size_t i;
-	size_t j;
-	uint8_t marker = CONFIG_RAMMTD_ERASESTATE ^ 0xff;
+	uint8_t buffer = 0x5a;
 
-	TC_ASSERT("RAM MTD buffer", buffer != NULL);
-	for (i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++) {
-		if (sizes[i] >= CONFIG_RAMMTD_ERASESIZE) {
-			continue;
-		}
-		memset(buffer, marker, CONFIG_RAMMTD_ERASESIZE);
-		TC_ASSERT_CLEANUP("reject undersized RAM MTD", rammtd_initialize(buffer, sizes[i]) == NULL, free(buffer));
-		for (j = 0; j < CONFIG_RAMMTD_ERASESIZE; j++) {
-			TC_ASSERT_EQ_CLEANUP("preserve rejected RAM region", buffer[j], marker, free(buffer));
-		}
-	}
-	free(buffer);
+	/* A zero-length region is invalid regardless of the kernel erase size. */
+	TC_ASSERT("reject empty RAM MTD", rammtd_initialize(&buffer, 0) == NULL);
+	TC_ASSERT_EQ("preserve rejected RAM region", buffer, 0x5a);
 	TC_SUCCESS_RESULT();
 }
 

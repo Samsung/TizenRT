@@ -440,6 +440,11 @@ FAR struct mtd_dev_s *rammtd_initialize(FAR uint8_t *start, size_t size)
 		return NULL;
 	}
 
+	size_t remain = size % CONFIG_RAMMTD_ERASESIZE;
+	if (remain != 0) {
+		fdbg("%zu bytes cannot be utilized; provide a multiple of %d bytes\n", remain, CONFIG_RAMMTD_ERASESIZE);
+	}
+
 	/* Create an instance of the RAM MTD device state structure */
 
 	priv = (FAR struct ram_dev_s *)kmm_zalloc(sizeof(struct ram_dev_s));
