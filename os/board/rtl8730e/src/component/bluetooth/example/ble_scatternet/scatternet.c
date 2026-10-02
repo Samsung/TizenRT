@@ -532,7 +532,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
             role = conn_ind->role ? "slave" : "master";
             dbg("[APP] Connected, handle: %d, role: %s, remote device: %s\r\n", 
                     conn_ind->conn_handle, role, le_addr);
-            uint8_t conn_id;
+            uint8_t conn_id = 0;
             rtk_bt_le_gap_get_conn_id(conn_ind->conn_handle, &conn_id);
             conn_link[conn_id].is_active = true;
             conn_link[conn_id].role = conn_ind->role;
@@ -602,7 +602,7 @@ static rtk_bt_evt_cb_ret_t ble_tizenrt_scatternet_gap_app_callback(uint8_t evt_c
         if(ble_client_connect_is_running)
             ble_client_connect_is_running = 0;
 
-        uint8_t conn_id;
+        uint8_t conn_id = 0;
         rtk_bt_le_gap_get_conn_id(disconn_ind->conn_handle, &conn_id);
         /* gattc action */
         general_client_detach_conn(disconn_ind->conn_handle);
