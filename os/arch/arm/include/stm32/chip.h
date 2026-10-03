@@ -1874,6 +1874,42 @@
 #define STM32_NRNG                     1	/* Random number generator (RNG) */
 #define STM32_NDCMI                    1	/* Digital camera interface (DCMI) */
 
+#elif defined(CONFIG_ARCH_CHIP_STM32F446RE)
+#undef  CONFIG_STM32_STM32L15XX
+#undef  CONFIG_STM32_ENERGYLITE
+#undef  CONFIG_STM32_STM32F10XX
+#undef  CONFIG_STM32_LOWDENSITY
+#undef  CONFIG_STM32_MEDIUMDENSITY
+#undef  CONFIG_STM32_MEDIUMPLUSDENSITY
+#undef  CONFIG_STM32_HIGHDENSITY
+#undef  CONFIG_STM32_VALUELINE
+#undef  CONFIG_STM32_CONNECTIVITYLINE
+#undef  CONFIG_STM32_STM32F20XX
+#undef  CONFIG_STM32_STM32F30XX
+#define CONFIG_STM32_STM32F40XX        1
+#define STM32_NFSMC                    0
+#define STM32_NATIM                    2
+#define STM32_NGTIM                    4
+#define STM32_NGTIMNDMA                6
+#define STM32_NBTIM                    2
+#define STM32_NDMA                     2
+#define STM32_NSPI                     4
+#define STM32_NI2S                     2
+#define STM32_NUSART                   6
+#define STM32_NI2C                     3
+#define STM32_NCAN                     2
+#define STM32_NSDIO                    1
+#define STM32_NLCD                     0
+#define STM32_NUSBOTG                  1
+#define STM32_NGPIO                    139
+#define STM32_NADC                     3
+#define STM32_NDAC                     2
+#define STM32_NCAPSENSE                0
+#define STM32_NCRC                     1
+#define STM32_NETHERNET                0
+#define STM32_NRNG                     0
+#define STM32_NDCMI                    1
+
 #else
 #error "Unsupported STM32 chip"
 #endif

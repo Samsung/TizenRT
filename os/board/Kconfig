@@ -183,6 +183,16 @@ config ARCH_BOARD_SABRE_6QUAD
 	select ARCH_HAVE_IRQBUTTONS
 	select ARCH_HAVE_RAM_KERNEL_TEXT
  
+config ARCH_BOARD_NUCLEO_F446RE
+	bool "STMicro Nucleo-F446RE board"
+	depends on ARCH_CHIP_STM32F446RE
+	select ARCH_HAVE_LEDS
+	select ARCH_HAVE_BUTTONS
+	select ARCH_HAVE_IRQBUTTONS
+	select ARCH_BOARD_HAVE_FLASH
+	---help---
+		STMicro Nucleo F446RE board based on the STMicro STM32F446RE MCU.
+
 endchoice
 
 config ARCH_BOARD_ARTIK05X_FAMILY
@@ -211,6 +221,7 @@ config ARCH_BOARD
 	default "rtl8721csm"         if ARCH_BOARD_RTL8721CSM
 	default "stm32h745zi-nucleo" if ARCH_BOARD_STM32H745ZI_NUCLEO
 	default "sabre-6quad"	     if ARCH_BOARD_SABRE_6QUAD	
+	default "nucleo-f446re"      if ARCH_BOARD_NUCLEO_F446RE
 comment "Common Board Options"
 
 config ARCH_HAVE_LEDS
@@ -397,6 +408,9 @@ source board/rtl8721csm/Kconfig
 endif
 if ARCH_BOARD_STM32H745ZI_NUCLEO
 source board/stm32h745zi-nucleo/Kconfig
+endif
+if ARCH_BOARD_NUCLEO_F446RE
+source board/nucleo-f446re/Kconfig
 endif
 
 source board/common/Kconfig
