@@ -145,7 +145,7 @@ void InputHandler::resetWorker()
 	}
 }
 
-bool InputHandler::startBuffering(unsigned int outputSampleRate, unsigned int outputChannel, unsigned int outputBytesPerFormat, size_t buffSize)
+bool InputHandler::startBuffering(unsigned int outputSampleRate, unsigned int outputChannel, unsigned int outputBytesPerFormat, size_t outputPeriodBytes)
 {
 	if (!mProcessBuffer) {
 		mProcessBufferSize = mDecoder ? CONFIG_AUDIO_CODEC_RINGBUFFER_SIZE : mDemuxer ? CONFIG_DEMUX_BUFFER_SIZE : mStreamBuffer->getBufferSize();
@@ -157,35 +157,34 @@ bool InputHandler::startBuffering(unsigned int outputSampleRate, unsigned int ou
 		}
 	}
 
-	if (!mResampleBufferSize) {
-		mResampleBufferSize = buffSize;
-		mResampleBuffer = std::make_unique<unsigned char[]>(mResampleBufferSize);
-		if (!mResampleBuffer) {
-			meddbg("ResampleBuffer allocation fail size: %d\n", mResampleBufferSize);
-			mResampleBufferSize = 0;
-			return false;
-		}
-	}
-
 	mResampler = std::make_unique<Resampler>();
 	if (!mResampler) {
 		meddbg("Resampler allocation failed\n");
 		mProcessBuffer.reset();
 		mProcessBufferSize = 0;
-		mResampleBuffer.reset();
-		mResampleBufferSize = 0;
 		return false;
 	}
 
 	if (!mResampler->configure(mInputDataSource->getChannels(), mInputDataSource->getSampleRate(), audioFormatToBits(mInputDataSource->getPcmFormat()) >> 3, 
-								outputChannel, outputSampleRate, outputBytesPerFormat, buffSize)) {
+								outputChannel, outputSampleRate, outputBytesPerFormat, outputPeriodBytes)) {
 		meddbg("Resampler configuration failed\n");
 		mResampler.reset();
 		mProcessBuffer.reset();
-		mResampleBuffer.reset();
-		mResampleBufferSize = 0;
 		mProcessBufferSize = 0;
 		return false;
+	}
+
+	if (!mResampleBuffer) {
+		mResampleBufferSize = outputPeriodBytes;
+		mResampleBuffer = std::make_unique<unsigned char[]>(mResampleBufferSize);
+		if (!mResampleBuffer) {
+			meddbg("ResampleBuffer allocation fail size: %d\n", mResampleBufferSize);
+			mResampler.reset();
+			mProcessBuffer.reset();
+			mProcessBufferSize = 0;
+			mResampleBufferSize = 0;
+			return false;
+		}
 	}
 
 	bool ret = StreamHandler::start();
@@ -383,7 +382,7 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 				break;
 			}
 
-			size_t resampledSize = mResampler->process(buffPCM, sizePCM, mResampleBuffer.get(), mResampleBufferSize);
+			ssize_t resampledSize = mResampler->process(buffPCM, sizePCM, mResampleBuffer.get(), mResampleBufferSize);
 			if (resampledSize < 0) {
 				meddbg("Resampler process failed!\n");
 				return EOF;
@@ -401,7 +400,8 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 
 				size_t writeSize = std::min(resampledSize - written, mBufferWriter->sizeOfSpace());
 				if (writeSize == 0) {
-					break;
+					meddbg("End of writting\n");
+					return EOF;
 				}
 
 				size_t writeBytes = mBufferWriter->write(mResampleBuffer.get() + written, writeSize);

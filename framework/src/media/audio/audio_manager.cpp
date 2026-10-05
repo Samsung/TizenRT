@@ -1480,6 +1480,11 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	card->resample_array[idx].user_format = pcm_format_to_bits((enum pcm_format)format) >> 3;
 	card->resample_array[idx].ratio = (float)config.rate / (float)card->resample_array[idx].user_sample_rate; // ratio = card / user
 	card->resample_array[idx].buffer_size = pcm_get_buffer_size(card->pcm);
+	/**
+	 * ToDo: This buffer is used in case of mixing. But it is allocated for every stream even when mixing is not enabled.
+	 * Allocate this buffer when mixing starts and deallocate when mixing is stopped.
+	 * But since mixing is already a heavy operation, allocation & deallocation would add additional overhead.
+	 */
 	card->resample_array[idx].buffer = malloc(card->resample_array[idx].buffer_size);
 	if (!card->resample_array[idx].buffer) {
 		meddbg("malloc for an output mixing buffer failed, buffer_size = %d\n", card->resample_array[idx].buffer_size);
@@ -1627,7 +1632,7 @@ int start_audio_stream_out(void *data, unsigned int frames, uint8_t playback_idx
 			goto error_with_lock;
 		}
 
-		memcpy(card->resample_array[idx].buffer, data, card->resample_array[idx].buffer_size);
+		memcpy(card->resample_array[idx].buffer, data, frames * sizeof(int16_t));
 		data = card->resample_array[idx].buffer;
 		card->resample_array[idx].frames = frames;
 
@@ -1913,20 +1918,18 @@ audio_manager_result_t reset_audio_stream_out(stream_info_id_t stream_id)
 	pthread_mutex_lock(&(g_audio_out_cards[g_actual_audio_out_card_id].card_mutex));
 	medvdbg("[%s] state : %d\n", __func__, card->config[card->device_id].status);
 
-	if (card->resample_array[idx].necessary) {
-		card->resample_array[idx].necessary = false;
-		if (card->resample_array[idx].buffer) {
-			free(card->resample_array[idx].buffer);
-			card->resample_array[idx].buffer = NULL;
-		}
-		if (card->resample_array[idx].rechannel_buffer) {
-			free(card->resample_array[idx].rechannel_buffer);
-			card->resample_array[idx].rechannel_buffer = NULL;
-		}
-		if (card->resample_array[idx].speex_resampler) {
-			speex_resampler_destroy(card->resample_array[idx].speex_resampler);
-			card->resample_array[idx].speex_resampler = NULL;
-		}
+	card->resample_array[idx].necessary = false;
+	if (card->resample_array[idx].buffer) {
+		free(card->resample_array[idx].buffer);
+		card->resample_array[idx].buffer = NULL;
+	}
+	if (card->resample_array[idx].rechannel_buffer) {
+		free(card->resample_array[idx].rechannel_buffer);
+		card->resample_array[idx].rechannel_buffer = NULL;
+	}
+	if (card->resample_array[idx].speex_resampler) {
+		speex_resampler_destroy(card->resample_array[idx].speex_resampler);
+		card->resample_array[idx].speex_resampler = NULL;
 	}
 
 	card->stream_id_array[idx] = INVALID_STREAM_ID;

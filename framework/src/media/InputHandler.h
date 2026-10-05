@@ -53,7 +53,7 @@ public:
 	ssize_t read(unsigned char *buf, size_t size, std::chrono::milliseconds timeout = std::chrono::milliseconds(0));
 	void setLoop(bool loop);
 	void setBufferState(buffer_state_t state);
-	bool startBuffering(unsigned int outputSampleRate, unsigned int outputChannel, unsigned int outputBytesPerFormat, size_t size);
+	bool startBuffering(unsigned int outputSampleRate, unsigned int outputChannel, unsigned int outputBytesPerFormat, size_t outputPeriodBytes);
 
 	virtual void onBufferOverrun() override;
 	virtual void onBufferUnderrun() override;

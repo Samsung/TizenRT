@@ -225,6 +225,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 	unsigned int outputSampleRate;
 	unsigned int outputChannels;
 	unsigned int outputBytesPerFormat;
+	audio_manager_result_t res;
 
 	mBufSize = get_output_card_buffer_size();
 	if (mBufSize < 0) {
@@ -276,16 +277,28 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 	if (!mInputHandler.startBuffering(outputSampleRate, outputChannels, outputBytesPerFormat, mBufSize)) {
 		meddbg("MediaPlayer prepare fail : start buffering fail\n");
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+
+		res = reset_audio_stream_out(mStreamInfo->id);
+		if (res != AUDIO_MANAGER_SUCCESS) {
+			meddbg("MediaPlayer prepare cleanup fail : reset_audio_stream_out fail, res: %d\n", res);
+		}
+
 		delete[] mBuffer;
 		mBuffer = nullptr;
 		notifySync(syncSem);
 		return;
 	}
 
-	audio_manager_result_t res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
+	res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
 	if (res != AUDIO_MANAGER_SUCCESS) {
 		meddbg("MediaPlayer prepare fail : set_stream_out_policy fail. res: %d\n", res);
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
+
+		res = reset_audio_stream_out(mStreamInfo->id);
+		if (res != AUDIO_MANAGER_SUCCESS) {
+			meddbg("MediaPlayer prepare cleanup fail : reset_audio_stream_out fail, res: %d\n", res);
+		}
+
 		delete[] mBuffer;
 		mBuffer = nullptr;
 		notifySync(syncSem);
@@ -1265,6 +1278,7 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 		unsigned int outputSampleRate;
 		unsigned int outputChannels;
 		unsigned int outputBytesPerFormat;
+		audio_manager_result_t res;
 
 		// Input handler has been opened successfully by InputHandler::doStandBy().
 		// Now setup audio manager and notify player observer the result.
@@ -1281,6 +1295,24 @@ void MediaPlayerImpl::notifyAsync(player_event_t event)
 
 		if (!mInputHandler.startBuffering(outputSampleRate, outputChannels, outputBytesPerFormat, mBufSize)) {
 			meddbg("MediaPlayer prepare fail : start buffering fail\n");
+
+			res = reset_audio_stream_out(mStreamInfo->id);
+			if (res != AUDIO_MANAGER_SUCCESS) {
+				meddbg("MediaPlayer prepare async cleanup fail : reset_audio_stream_out fail, res: %d\n", res);
+			}
+
+			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
+		}
+
+		res = set_stream_out_policy(mStreamInfo->policy, mStreamInfo->id);
+		if (res != AUDIO_MANAGER_SUCCESS) {
+			meddbg("MediaPlayer prepare fail : set_stream_out_policy fail. res: %d\n", res);
+
+			res = reset_audio_stream_out(mStreamInfo->id);
+			if (res != AUDIO_MANAGER_SUCCESS) {
+				meddbg("MediaPlayer prepare async cleanup fail : reset_audio_stream_out fail, res: %d\n", res);
+			}
+
 			return notifyObserver(PLAYER_OBSERVER_COMMAND_ASYNC_PREPARED, PLAYER_ERROR_INTERNAL_OPERATION_FAILED);
 		}
 
