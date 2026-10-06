@@ -2553,7 +2553,8 @@ int mbedtls_rsa_self_test(int verbose)
             mbedtls_printf("failed\n");
         }
 
-        return 1;
+        ret = 1;
+        goto cleanup;
     }
 
     if (mbedtls_rsa_pkcs1_sign(&rsa, myrand, NULL,
