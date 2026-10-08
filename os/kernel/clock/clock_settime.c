@@ -60,10 +60,18 @@
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
+#include <stdint.h>
+
 
 #include <arch/irq.h>
+#include <signal.h>
+#include <tinyara/clock.h>
+#include <queue.h>
 
 #include "clock/clock.h"
+#include "timer/timer.h"
+
+
 
 /************************************************************************
  * Definitions
@@ -158,7 +166,92 @@ int clock_settime(clockid_t clock_id, FAR const struct timespec *tp)
 		leave_critical_section(flags);
 
 		svdbg("basetime=(%ld,%lu) bias=(%ld,%lu)\n", (long)g_basetime.tv_sec, (unsigned long)g_basetime.tv_nsec, (long)bias.tv_sec, (unsigned long)bias.tv_nsec);
+
+#ifndef CONFIG_DISABLE_POSIX_TIMERS
+		/* After changing the clock, check if any active POSIX timers
+		 * should now have expired.  If the clock was set forward past
+		 * a timer's absolute expiration time, that timer should fire
+		 * immediately per POSIX.
+		 */
+
+		{
+			FAR struct posix_timer_s *timer;
+			FAR sq_entry_t *entry;
+			irqstate_t tflags;
+
+			tflags = enter_critical_section();
+
+			for (entry = g_alloctimers.head; entry != NULL; entry = entry->flink) {
+				timer = (FAR struct posix_timer_s *)entry;
+
+				/* Check if the timer is armed (has a non-zero abstime)
+				 * and the new clock time is past the timer's absolute
+				 * expiration time.
+				 */
+
+				if (timer->pt_expected != 0) {
+					if (tp->tv_sec > timer->pt_abstime.tv_sec ||
+						(tp->tv_sec == timer->pt_abstime.tv_sec &&
+						 tp->tv_nsec >= timer->pt_abstime.tv_nsec)) {
+						/* The timer should have expired.  Calculate
+						 * overruns for periodic timers based on how
+						 * many wall clock intervals have passed.
+						 */
+
+						if (timer->pt_delay) {
+							/* Calculate how many intervals have passed
+							 * using wall clock time difference.  Use
+							 * 64-bit arithmetic to avoid overflow with
+							 * large nanosecond values.
+							 */
+
+							int64_t interval_nsec = (int64_t)timer->pt_interval.tv_sec * NSEC_PER_SEC + timer->pt_interval.tv_nsec;
+							int64_t diff_nsec;
+
+							/* Count how many intervals fit between
+							 * pt_abstime and the new clock time tp.
+							 */
+
+							diff_nsec = (int64_t)(tp->tv_sec - timer->pt_abstime.tv_sec) * NSEC_PER_SEC + (tp->tv_nsec - timer->pt_abstime.tv_nsec);
+
+							if (interval_nsec > 0 && diff_nsec > 0) {
+								int frame = (int)(diff_nsec / interval_nsec);
+								timer->pt_overrun = frame;
+							} else {
+								timer->pt_overrun = 0;
+							}
+
+
+							/* Advance abstime past current time for
+							 * the next interval.
+							 */
+
+							while (tp->tv_sec > timer->pt_abstime.tv_sec ||
+								   (tp->tv_sec == timer->pt_abstime.tv_sec &&
+									tp->tv_nsec >= timer->pt_abstime.tv_nsec)) {
+								timer->pt_abstime.tv_sec += timer->pt_interval.tv_sec;
+								timer->pt_abstime.tv_nsec += timer->pt_interval.tv_nsec;
+								if (timer->pt_abstime.tv_nsec >= NSEC_PER_SEC) {
+									timer->pt_abstime.tv_sec++;
+									timer->pt_abstime.tv_nsec -= NSEC_PER_SEC;
+								}
+							}
+						}
+
+						/* Fire the timer (deliver signal + restart) */
+
+						timer_fire((timer_t)timer);
+					}
+				}
+			}
+
+			leave_critical_section(tflags);
+		}
+#endif							/* CONFIG_DISABLE_POSIX_TIMERS */
+
+
 	} else {
+
 		sdbg("Returning ERROR\n");
 		set_errno(EINVAL);
 		ret = ERROR;

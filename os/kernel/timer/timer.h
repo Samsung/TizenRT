@@ -64,10 +64,12 @@
 
 #include <tinyara/compiler.h>
 #include <tinyara/wdog.h>
+#include <time.h>
 
 /********************************************************************************
  * Definitions
  ********************************************************************************/
+
 
 /* PT_FLAGS_* definitions */
 #define PT_FLAGS_ALLOC_MASK   (0)
@@ -91,11 +93,20 @@ struct posix_timer_s {
 	pid_t pt_owner;				/* Creator of timer */
 	int pt_delay;				/* If non-zero, used to reset repetitive timers */
 	int pt_last;				/* Last value used to set watchdog */
+	int pt_overrun;				/* Number of timer overruns since last signal delivery */
+	clock_t pt_expected;		/* Expected absolute tick time for next expiration */
+	struct timespec pt_abstime;	/* Absolute wall clock time for next expiration */
+	struct timespec pt_interval; /* Timer interval in timespec form (for periodic timers) */
 	WDOG_ID pt_wdog;			/* The watchdog that provides the timing */
+
+
 	union sigval pt_value;		/* Data passed with notification */
 };
 
-#define PT_ISVALID(x)         (((x) != NULL) && (((struct posix_timer_s *)(x))->pt_flags & PT_FLAGS_INUSE))
+//#define PT_ISVALID(x)         (((x) != NULL) && (((struct posix_timer_s *)(x))->pt_flags & PT_FLAGS_INUSE))
+
+/* timer_gethandle() validates timer handles by checking list membership */
+FAR struct posix_timer_s *timer_gethandle(timer_t timerid);
 
 /********************************************************************************
  * Public Data
@@ -121,5 +132,9 @@ extern volatile sq_queue_t g_alloctimers;
 void weak_function timer_initialize(void);
 void weak_function timer_deleteall(pid_t pid);
 int timer_release(FAR struct posix_timer_s *timer);
+FAR struct posix_timer_s *timer_gethandle(timer_t timerid);
+void timer_fire(timer_t timerid);
+
+
 
 #endif							/* __SCHED_TIMER_TIMER_H */
