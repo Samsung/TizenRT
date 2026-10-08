@@ -57,7 +57,7 @@
 #include <signal.h>
 #include <assert.h>
 #include <sys/types.h>
-
+#include <errno.h>
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -132,6 +132,6 @@ CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig)
 			return oact.sa_handler;
 		}
 	}
-
+	set_errno(EINVAL);
 	return (_sa_handler_t)SIG_ERR;
 }
