@@ -16,9 +16,9 @@
  *
  ****************************************************************************/
 /************************************************************************************
- * arch/arm/src/stm32/stm32_can.h
+ * os/board/nucleo-f446re/src/stm32_boot.c
  *
- *   Copyright (C) 2009, 2011 Gregory Nutt. All rights reserved.
+ *   Copyright (C) 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,113 +50,106 @@
  *
  ************************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_STM32_STM32_CAN_H
-#define __ARCH_ARM_SRC_STM32_STM32_CAN_H
-
 /************************************************************************************
  * Included Files
  ************************************************************************************/
 
 #include <tinyara/config.h>
 
-#include "chip.h"
-#include "chip/stm32_can.h"
+#include <debug.h>
 
-//#include <tinyara/can.h>
+#include <arch/board/board.h>
+
+#ifdef CONFIG_PRODCONFIG
+#include <tinyara/prodconfig.h>
+#include <sys/types.h>
+#endif
+
+#include "up_arch.h"
+#include "nucleo-f446re.h"
 
 /************************************************************************************
- * Pre-processor Definitions
+ * Definitions
  ************************************************************************************/
-/* Configuration ********************************************************************/
-/* Up to 2 CAN interfaces are supported */
-
-#if STM32_NCAN < 2
-#undef CONFIG_STM32_CAN2
-#endif
-
-#if STM32_NCAN < 1
-#undef CONFIG_STM32_CAN1
-#endif
-
-#if defined(CONFIG_CAN) && (defined(CONFIG_STM32_CAN1) || defined(CONFIG_STM32_CAN2))
-
-/* CAN BAUD */
-
-#if defined(CONFIG_STM32_CAN1) && !defined(CONFIG_CAN1_BAUD)
-#error "CONFIG_CAN1_BAUD is not defined"
-#endif
-
-#if defined(CONFIG_STM32_CAN2) && !defined(CONFIG_CAN2_BAUD)
-#error "CONFIG_CAN2_BAUD is not defined"
-#endif
-
-/* User-defined TSEG1 and TSEG2 settings may be used.
- *
- * CONFIG_CAN_TSEG1 = the number of CAN time quanta in segment 1
- * CONFIG_CAN_TSEG2 = the number of CAN time quanta in segment 2
- * CAN_BIT_QUANTA   = The number of CAN time quanta in on bit time
- */
-
-#ifndef CONFIG_CAN_TSEG1
-#define CONFIG_CAN_TSEG1 6
-#endif
-
-#if CONFIG_CAN_TSEG1 < 1 || CONFIG_CAN_TSEG1 > CAN_BTR_TSEG1_MAX
-#errror "CONFIG_CAN_TSEG1 is out of range"
-#endif
-
-#ifndef CONFIG_CAN_TSEG2
-#define CONFIG_CAN_TSEG2 7
-#endif
-
-#if CONFIG_CAN_TSEG2 < 1 || CONFIG_CAN_TSEG2 > CAN_BTR_TSEG2_MAX
-#errror "CONFIG_CAN_TSEG2 is out of range"
-#endif
 
 /************************************************************************************
- * Public Types
+ * Private Functions
  ************************************************************************************/
-
-#ifndef __ASSEMBLY__
-
-/************************************************************************************
- * Public Data
- ************************************************************************************/
-
-#undef EXTERN
-#if defined(__cplusplus)
-#define EXTERN extern "C"
-extern "C" {
-#else
-#define EXTERN extern
-#endif
 
 /************************************************************************************
  * Public Functions
  ************************************************************************************/
 
-/****************************************************************************
- * Name: stm32_caninitialize
- *
- * Description:
- *   Initialize the selected CAN port
- *
- * Input Parameter:
- *   Port number (for hardware that has multiple CAN interfaces)
- *
- * Returned Value:
- *   Valid CAN device structure reference on succcess; a NULL on failure
- *
- ****************************************************************************/
-
-struct can_dev_s;
-EXTERN FAR struct can_dev_s *stm32_caninitialize(int port);
-
-#undef EXTERN
-#if defined(__cplusplus)
+#ifdef CONFIG_PRODCONFIG
+int up_check_prodswd(void)
+{
+	return OK;
+}
+int up_check_proddownload(void)
+{
+	return OK;
 }
 #endif
 
-#endif							/* __ASSEMBLY__ */
-#endif							/* CONFIG_CAN && (CONFIG_STM32_CAN1 || CONFIG_STM32_CAN2) */
-#endif							/* __ARCH_ARM_SRC_STM32_STM32_CAN_H */
+/************************************************************************************
+ * Name: stm32_boardinitialize
+ *
+ * Description:
+ *   All STM32 architectures must provide the following entry point.  This entry point
+ *   is called early in the initialization -- after all memory has been configured
+ *   and mapped but before any devices have been initialized.
+ *
+ ************************************************************************************/
+
+void stm32_boardinitialize(void)
+{
+#if defined(CONFIG_STM32_SPI1) || defined(CONFIG_STM32_SPI2) || defined(CONFIG_STM32_SPI3)
+	/* Configure SPI chip selects if 1) SPI is not disabled, and 2) the weak function
+	 * stm32_spiinitialize() has been brought into the link.
+	 */
+
+	if (stm32_spiinitialize) {
+		stm32_spiinitialize();
+	}
+#endif
+
+#ifdef CONFIG_STM32_OTGFS
+	/* Initialize USB if the 1) OTG FS controller is in the configuration and 2)
+	 * disabled, and 3) the weak function stm32_usbinitialize() has been brought
+	 * into the build. Presumably either CONFIG_USBDEV or CONFIG_USBHOST is also
+	 * selected.
+	 */
+
+	if (stm32_usbinitialize) {
+		stm32_usbinitialize();
+	}
+#endif
+
+#ifdef CONFIG_ARCH_LEDS
+	/* Configure on-board LEDs if LED support has been selected. */
+
+	board_led_initialize();
+#endif
+}
+
+/****************************************************************************
+ * Name: board_initialize
+ *
+ * Description:
+ *   If CONFIG_BOARD_INITIALIZE is selected, then an additional
+ *   initialization call will be performed in the boot-up sequence to a
+ *   function called board_initialize().  board_initialize() will be
+ *   called immediately after up_initialize() is called and just before the
+ *   initial application is started.  This additional initialization phase
+ *   may be used, for example, to initialize board-specific device drivers.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BOARD_INITIALIZE
+void board_initialize(void)
+{
+	/* Perform board-specific initialization */
+
+	(void)stm32_bringup();
+}
+#endif
