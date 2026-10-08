@@ -158,22 +158,34 @@ int task_terminate(pid_t pid, bool nonblocking)
 {
 	FAR struct tcb_s *dtcb;
 	irqstate_t flags;
-	uint8_t orig_task_state;
-	uint8_t final_task_state;
+	uint8_t task_state;
 
-	/* Find for the TCB associated with matching PID */
+	/* Find the TCB associated with matching PID.  The lookup and the claim
+	 * below must happen under the same critical section so that only one
+	 * caller can start terminating a given task, and so that the task does
+	 * not become ready-to-run while we are futzing with its TCB.
+	 */
+
+	flags = enter_critical_section();
 
 	dtcb = sched_gettcb(pid);
 	if (!dtcb) {
 		/* This PID does not correspond to any known task */
+
+		leave_critical_section(flags);
 		return -ESRCH;
 	}
 
-	/* Make sure the task does not become ready-to-run while we are futzing with
-	 * its TCB by locking ourselves as the executing task.
+	/* If another path is already terminating this task, leave it to that
+	 * path.  Otherwise claim the termination for ourselves.
 	 */
 
-	flags = enter_critical_section();
+	if ((dtcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0) {
+		leave_critical_section(flags);
+		return -ESRCH;
+	}
+
+	dtcb->flags |= TCB_FLAG_EXIT_PROCESSING;
 
 	/* Verify our internal sanity */
 
@@ -184,29 +196,22 @@ int task_terminate(pid_t pid, bool nonblocking)
 	            dtcb->task_state < NUM_TASK_STATES);
 #endif
 
-	/* Remove the task from the task list
-	 * before removing the task from the global tasklist, we are preserving its
-	 * task->state because it is needed for task_recover() operations and
-	 * sched_removereadytorun() sets task state as invalid.
-	 * After task_recover() operations are complete, we set the invalid state back.
-	 */
-
-	/* Lock the scheduler across the recovery window.  task_recover() may
-	 * wake up tasks that were waiting on semaphores held by the dying task
-	 * (see sem_release_all()).  Without the scheduler lock, such a wake-up
-	 * could switch to the woken task while dtcb still carries its original
-	 * (blocked) task_state although it is in no list anymore, and any code
-	 * inspecting dtcb during that window (e.g. signal delivery calling
+	/* Remove the task from the task list.  sched_removereadytorun() marks the
+	 * task state as invalid, so preserve the original state across the call:
+	 * the recovery logic that task_exithook() runs later still needs it (see
+	 * sem_recover(), which keys off TSTATE_WAIT_SEM).
+	 *
+	 * Lock the scheduler across that window.  Without the scheduler lock, a
+	 * wake-up could switch to another task while dtcb still carries its
+	 * original (blocked) task_state although it is in no list anymore, and any
+	 * code inspecting dtcb during that window (e.g. signal delivery calling
 	 * sem_waitirq()) would operate on a half-deleted TCB.
 	 */
 
 	sched_lock();
-	orig_task_state = dtcb->task_state;
+	task_state = dtcb->task_state;
 	sched_removereadytorun(dtcb);
-	final_task_state = dtcb->task_state;
-	dtcb->task_state = orig_task_state;
-	task_recover(dtcb);
-	dtcb->task_state = final_task_state;
+	dtcb->task_state = task_state;
 	sched_unlock();
 
 	/* At this point, the TCB should no longer be accessible to the system */
