@@ -617,24 +617,11 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 	DEBUGASSERT(rwb->nblocks > 0);
 	DEBUGASSERT(rwb->dev != NULL);
 
-	/* Setup so that rwb_uninitialize can handle a failure */
-
 #ifdef CONFIG_DRVR_WRITEBUFFER
-	DEBUGASSERT(rwb->wrflush != NULL);
 	rwb->wrbuffer = NULL;
-#endif
-#ifdef CONFIG_DRVR_READAHEAD
-	DEBUGASSERT(rwb->rhreload != NULL);
-	rwb->rhbuffer = NULL;
-#endif
-
-#ifdef CONFIG_DRVR_WRITEBUFFER
 	if (rwb->wrmaxblocks > 0) {
+		DEBUGASSERT(rwb->wrflush != NULL);
 		fvdbg("Initialize the write buffer\n");
-
-		/* Initialize the write buffer access semaphore */
-
-		sem_init(&rwb->wrsem, 0, 1);
 
 		/* Initialize write buffer parameters */
 
@@ -642,7 +629,6 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 
 		/* Allocate the write buffer */
 
-		rwb->wrbuffer = NULL;
 		if (rwb->wrmaxblocks > 0) {
 			allocsize = rwb->wrmaxblocks * rwb->blocksize;
 			rwb->wrbuffer = kmm_malloc(allocsize);
@@ -657,12 +643,10 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 #endif							/* CONFIG_DRVR_WRITEBUFFER */
 
 #ifdef CONFIG_DRVR_READAHEAD
+	rwb->rhbuffer = NULL;
 	if (rwb->rhmaxblocks > 0) {
+		DEBUGASSERT(rwb->rhreload != NULL);
 		fvdbg("Initialize the read-ahead buffer\n");
-
-		/* Initialize the read-ahead buffer access semaphore */
-
-		sem_init(&rwb->rhsem, 0, 1);
 
 		/* Initialize read-ahead buffer parameters */
 
@@ -670,12 +654,17 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 
 		/* Allocate the read-ahead buffer */
 
-		rwb->rhbuffer = NULL;
 		if (rwb->rhmaxblocks > 0) {
 			allocsize = rwb->rhmaxblocks * rwb->blocksize;
 			rwb->rhbuffer = kmm_malloc(allocsize);
 			if (!rwb->rhbuffer) {
 				fdbg("Read-ahead buffer kmm_malloc(%d) failed\n", allocsize);
+#ifdef CONFIG_DRVR_WRITEBUFFER
+				if (rwb->wrbuffer) {
+					kmm_free(rwb->wrbuffer);
+					rwb->wrbuffer = NULL;
+				}
+#endif
 				return -ENOMEM;
 			}
 		}
@@ -683,6 +672,17 @@ int rwb_initialize(FAR struct rwbuffer_s *rwb)
 		fvdbg("Read-ahead buffer size: %d bytes\n", allocsize);
 	}
 #endif							/* CONFIG_DRVR_READAHEAD */
+
+#ifdef CONFIG_DRVR_WRITEBUFFER
+	if (rwb->wrmaxblocks > 0) {
+		sem_init(&rwb->wrsem, 0, 1);
+	}
+#endif
+#ifdef CONFIG_DRVR_READAHEAD
+	if (rwb->rhmaxblocks > 0) {
+		sem_init(&rwb->rhsem, 0, 1);
+	}
+#endif
 
 	return OK;
 }
