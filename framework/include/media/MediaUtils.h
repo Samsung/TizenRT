@@ -131,16 +131,26 @@ bool writeWavHeader(FILE *fp, unsigned int channel, unsigned int sampleRate, aud
  */
 unsigned int splitChannel(unsigned int layout, const signed short *stream, unsigned int frames, unsigned int channels, ...);
 /**
- * @cond
- * @internal
- * @brief main(left channel) and sub(right channel) will be mixed in interleaved manner and mixed audio out will be stored in main buffer
- * @details @b #include <media/MediaUtils.h>
- * @param[in] dataL pointer to the main(left channel) buffer
- * @param[in] dataR pointer to the sub(right channel) buffer
- * @param[in] frames number of frames in buffers
- * @endcond
+ * @brief Merges two mono audio channels (Left and Right) into an interleaved stereo channel.
+ *
+ * @details This function takes 16-bit PCM audio samples from a Left buffer and a Right buffer
+ *          and interleaves them in-place into the Left buffer (pattern: L R L R ...).
+ *          The loop iterates backward to safely overwrite the `dataL` buffer without losing
+ *          the original left-channel data. If the buffers have different frame counts,
+ *          the shorter channel's missing frames are padded with silence (zeros).
+ *
+ * @warning The operation is performed in-place within the Left buffer (`dataL`).
+ *          The memory allocated for `dataL` MUST be large enough to hold the combined
+ *          stereo frames, which requires at least `max(*framesL, *framesR) * 2 * sizeof(int16_t)` bytes.
+ *
+ * @param[in,out] dataL   Pointer to the Left channel audio buffer (16-bit PCM).
+ *                        This buffer will be overwritten with the merged interleaved stereo output.
+ * @param[in,out] framesL Pointer to the number of frames currently in `dataL`. On return,
+ *                        this is updated to the maximum frame count between the two channels.
+ * @param[in]     dataR   Pointer to the Right channel audio buffer (16-bit PCM).
+ * @param[in]     framesR Pointer to the number of frames currently in `dataR`.
  */
-void mergeChannel(void *dataL, void *dataR, unsigned int frames);
+void mergeChannel(void *dataL, unsigned int *framesL, void *dataR, unsigned int *framesR);
 #ifdef CONFIG_CODEC_MP3
 /**
  * @cond
