@@ -1480,18 +1480,6 @@ audio_manager_result_t set_audio_stream_out(unsigned int channels, unsigned int 
 	card->resample_array[idx].user_format = pcm_format_to_bits((enum pcm_format)format) >> 3;
 	card->resample_array[idx].ratio = (float)config.rate / (float)card->resample_array[idx].user_sample_rate; // ratio = card / user
 	card->resample_array[idx].buffer_size = pcm_get_buffer_size(card->pcm);
-	/**
-	 * ToDo: This buffer is used in case of mixing. But it is allocated for every stream even when mixing is not enabled.
-	 * Allocate this buffer when mixing starts and deallocate when mixing is stopped.
-	 * But since mixing is already a heavy operation, allocation & deallocation would add additional overhead.
-	 */
-	card->resample_array[idx].buffer = malloc(card->resample_array[idx].buffer_size);
-	if (!card->resample_array[idx].buffer) {
-		meddbg("malloc for an output mixing buffer failed, buffer_size = %d\n", card->resample_array[idx].buffer_size);
-		ret = AUDIO_MANAGER_OPERATION_FAIL;
-		goto error_with_pcm;
-	}
-	medvdbg("output mixing buffer 0x%x, buffer_size %u\n", card->resample_array[idx].buffer, card->resample_array[idx].buffer_size);
 
 	if (card_config->status == AUDIO_CARD_IDLE) {
 		card_config->status = AUDIO_CARD_READY;
@@ -3316,6 +3304,8 @@ audio_manager_result_t set_output_audio_mixer(stream_info_id_t stream_id)
 	audio_manager_result_t ret = AUDIO_MANAGER_SUCCESS;
 	audio_card_info_t *card;
 	int8_t idx;
+	// Track allocations made by this call so failure rollback preserves reused buffers.
+	bool allocated[AUDIO_MAX_DUCKED_STREAMS] = {};
 
 	card = &g_audio_out_cards[g_actual_audio_out_card_id];
 	idx = get_stream_index(card, stream_id);
@@ -3326,6 +3316,29 @@ audio_manager_result_t set_output_audio_mixer(stream_info_id_t stream_id)
 	}
 
 	pthread_mutex_lock(&(card->card_mutex));
+
+	// Allocate only when mixing is needed. Keep each buffer until its stream is
+	// reset by reset_audio_stream_out(), allowing later mixing to reuse it without
+	// another allocation when mixing stops temporarily (for example, on pause).
+	for (uint8_t i = 0; i < AUDIO_MAX_DUCKED_STREAMS; ++i) {
+		if (!card->resample_array[i].buffer) {
+			card->resample_array[i].buffer = malloc(card->resample_array[i].buffer_size);
+			if (!card->resample_array[i].buffer) {
+				meddbg("malloc for an output mixing buffer failed, buffer_size = %u\n", card->resample_array[i].buffer_size);
+				// Release only buffers created by this attempt; existing buffers
+				// remain owned by their streams and are still available for reuse.
+				for (uint8_t j = 0; j < i; ++j) {
+					if (allocated[j]) {
+						free(card->resample_array[j].buffer);
+						card->resample_array[j].buffer = NULL;
+					}
+				}
+				pthread_mutex_unlock(&(card->card_mutex));
+				return AUDIO_MANAGER_OPERATION_FAIL;
+			}
+			allocated[i] = true;
+		}
+	}
 
 	do {
 		ret = static_cast<audio_manager_result_t>(pcm_drain(card->pcm));
