@@ -107,14 +107,18 @@ ifeq ($(CONFIG_SCHED_THREAD_LOCAL),y)
 endif
 
 ifeq ($(CONFIG_SCHED_BACKTRACE),y)
-  ifeq ($(CONFIG_FRAME_POINTER),y)
-    ifeq ($(CONFIG_ARM_THUMB),y)
-      CMN_CSRCS += arm_backtrace_thumb.c
-    else
-      CMN_CSRCS += arm_backtrace_fp.c
-    endif
+  ifeq ($(CONFIG_UNWINDER_ARM),y)
+    CMN_CSRCS += arm_backtrace_unwind.c
   else
-    CMN_CSRCS += arm_backtrace_thumb.c
+    ifeq ($(CONFIG_FRAME_POINTER),y)
+      ifeq ($(CONFIG_ARM_THUMB),y)
+        CMN_CSRCS += arm_backtrace_thumb.c
+      else
+        CMN_CSRCS += arm_backtrace_fp.c
+      endif
+    else
+      CMN_CSRCS += arm_backtrace_thumb.c
+    endif
   endif
 endif
 
@@ -311,3 +315,12 @@ else
 endif
 endif
 
+# Disable unwind tables for DRAM-loaded files to prevent R_ARM_PREL31 overflow
+# These files are placed in .code or .sramdram.only.text sections (DRAM),
+# which is too far from .ARM.exidx (XIP) for R_ARM_PREL31 relocations.
+ifeq ($(CONFIG_UNWINDER_ARM),y)
+arm_mmu.o: CFLAGS += -fno-unwind-tables -fno-exceptions
+arm_cpupause.o: CFLAGS += -fno-unwind-tables -fno-exceptions
+arm_dataabort.o: CFLAGS += -fno-unwind-tables -fno-exceptions
+amebasmart_boot.o: CFLAGS += -fno-unwind-tables -fno-exceptions
+endif
