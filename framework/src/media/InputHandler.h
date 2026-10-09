@@ -92,6 +92,7 @@ private:
 	size_t mTotalBytes;
 	std::unique_ptr<unsigned char[]> mProcessBuffer;
 	size_t mProcessBufferSize;
+	size_t mPendingPcmBytes;
 	std::unique_ptr<unsigned char[]> mResampleBuffer;
 	size_t mResampleBufferSize;
 	std::unique_ptr<Resampler> mResampler;

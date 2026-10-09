@@ -51,6 +51,7 @@ InputHandler::InputHandler() :
 	mTotalBytes(0),
 	mProcessBuffer(nullptr),
 	mProcessBufferSize(0),
+	mPendingPcmBytes(0),
 	mResampleBuffer(nullptr),
 	mResampleBufferSize(0),
 	mResampler(nullptr)
@@ -100,6 +101,7 @@ bool InputHandler::close()
 	mCondv.notify_one();
 	mProcessBuffer.reset();
 	mProcessBufferSize = 0;
+	mPendingPcmBytes = 0;
 	mResampleBuffer.reset();
 	mResampleBufferSize = 0;
 	mResampler.reset();
@@ -116,7 +118,9 @@ int InputHandler::seekTo(off_t offset)
 
 	if (mResampler) {
 		mResampler->reset();
-	}   
+	}
+
+	mPendingPcmBytes = 0;
 
 	return ret;
 }
@@ -143,6 +147,7 @@ void InputHandler::resetWorker()
 	if (mResampler) {
 		mResampler->reset();
 	}
+	mPendingPcmBytes = 0;
 }
 
 bool InputHandler::startBuffering(unsigned int outputSampleRate, unsigned int outputChannel, unsigned int outputBytesPerFormat, size_t outputPeriodBytes)
@@ -224,19 +229,32 @@ bool InputHandler::processWorker()
 			size = mProcessBufferSize;
 		}
 
-		ssize_t readLen = readFromSource(mProcessBuffer.get(), size);
+		bool isRawPcm = (mDecoder == nullptr && mDemuxer == nullptr);
+		if (isRawPcm && size > mProcessBufferSize - mPendingPcmBytes) {
+			size = mProcessBufferSize - mPendingPcmBytes;
+		}
+
+		ssize_t readLen = readFromSource(mProcessBuffer.get() + (isRawPcm ? mPendingPcmBytes : 0), size);
 		if (readLen <= 0) {
 			// Error occurred, or inputting finished
 			if (!mIsLooping) {
+				// A final incomplete PCM frame cannot be played.
+				mPendingPcmBytes = 0;
 				mBufferWriter->setEndOfStream();
 				return false;
 
 			}
 			/* If it is looping mode, then seek to 0 and readFromSource again */
 			if (mInputDataSource->seekTo(0) == OK) {
+				mPendingPcmBytes = 0;
 				readLen = readFromSource(mProcessBuffer.get(), size);
 			} else {
 				meddbg("seek failed!!\n");
+			}
+			if (readLen <= 0) {
+				mPendingPcmBytes = 0;
+				mBufferWriter->setEndOfStream();
+				return false;
 			}
 		}
 
@@ -245,11 +263,30 @@ bool InputHandler::processWorker()
 			readLen = size;
 		}
 
-		ssize_t writeLen = writeToStreamBuffer(mProcessBuffer.get(), (size_t)readLen);
-		if (writeLen <= 0) {
-			meddbg("write to stream buffer failed!\n");
-			mBufferWriter->setEndOfStream();
-			return false;
+		// Align raw pcm before writing
+		size_t writeSize = readLen;
+		if (isRawPcm) {
+			size_t totalPcm = mPendingPcmBytes + readLen;
+			size_t frameSize = mInputDataSource->getChannels() * (audioFormatToBits(mInputDataSource->getPcmFormat()) >> 3);
+			size_t remainder = totalPcm % frameSize;
+			
+			writeSize = totalPcm - remainder;
+			mPendingPcmBytes = remainder;
+		}
+
+		// Send ONLY the aligned bytes to StreamBuffer (or the full encoded chunk if not raw)
+		if (writeSize > 0) {
+			ssize_t writeLen = writeToStreamBuffer(mProcessBuffer.get(), writeSize);
+			if (writeLen <= 0) {
+				meddbg("write to stream buffer failed!\n");
+				mBufferWriter->setEndOfStream();
+				return false;
+			}
+		}
+
+		// Move the raw PCM remainder to the start for the next read cycle
+		if (isRawPcm && mPendingPcmBytes > 0) {
+			memmove(mProcessBuffer.get(), mProcessBuffer.get() + writeSize, mPendingPcmBytes);
 		}
 	} else {
 		// ToDo: When no valid encoded frame is available in decoder ring buffer, no data is read from it. Consequently,
@@ -355,7 +392,7 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 	size_t used = 0;
 	while (1) {
 		unsigned char *buffES = nullptr;
-		size_t sizeES = mDecoder ? mDecoder->getAvailSpace() : mBufferWriter->sizeOfSpace();
+		size_t sizeES = mDecoder ? mDecoder->getAvailSpace() : size - used;
 		ssize_t ret = getElementaryStream(buf, size, &used, &buffES, &sizeES);
 		if (ret < 0) {
 			meddbg("getElementaryStream failed! error: %d\n", ret);
@@ -368,10 +405,15 @@ ssize_t InputHandler::writeToStreamBuffer(unsigned char *buf, size_t size)
 
 		size_t usedES = 0;
 		while (1) {
-			unsigned char *buffPCM = buf;
+			unsigned char *buffPCM = mDecoder ? buf : nullptr;
 			// Requested decoded data size is equal to output buffer size
 			size_t sizePCM = mProcessBufferSize;
 			sizePCM = std::min(sizePCM, mResampler->getInputBytesPerProcess());
+
+			// Force input frame alignment on the request
+			size_t frameSize = mInputDataSource->getChannels() * (audioFormatToBits(mInputDataSource->getPcmFormat()) >> 3);
+			sizePCM -= sizePCM % frameSize;
+
 			ret = getPCM(buffES, sizeES, &usedES, &buffPCM, &sizePCM);
 			if (ret < 0) {
 				meddbg("getPCM failed! error: %d\n", ret);
