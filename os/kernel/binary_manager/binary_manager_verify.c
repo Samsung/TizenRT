@@ -107,7 +107,7 @@ static int binary_manager_read_flash(int type, bool is_header, char *devpath, ui
 		}
 
 		ret = up_read_decrypted_flash(read_addr, (FAR uint8_t *)buffer, size);
-		if (ret != OK) {
+		if (ret != (ssize_t)size) {
 			bmdbg("Fail to read binary, addr 0x%x, size %u, ret %d\n", read_addr, size, (int)ret);
 			return BINMGR_OPERATION_FAIL;
 		}
