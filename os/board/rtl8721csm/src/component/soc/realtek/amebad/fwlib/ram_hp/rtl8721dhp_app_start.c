@@ -1042,6 +1042,22 @@ u32 app_mpu_nocache_init(void)
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 
+	/* 
+	 * Make KM0's SRAM + reserved gap (0x0008_0000-0x000C_0000) READ-ONLY
+	 * from KM4: KM4 may still read & execute (MPU_EXEC_ALLOW, MPU_PRIV_R),
+	 * but any write into KM0 SRAM faults immediately (MemManage).  This guards
+	 * against KM4 accidentally corrupting KM0's stack/heap.  The shared
+	 * retention region is left unguarded so both cores keep normal R/W access.
+	 */
+	mpu_entry = mpu_entry_alloc();
+	mpu_cfg.region_base = 0x00080000;
+	mpu_cfg.region_size = 0x000C0000 - 0x00080000; /* 0x40000, power-of-2 */
+	mpu_cfg.xn = MPU_EXEC_ALLOW;   /* KM4 may still execute into KM0 */
+	mpu_cfg.ap = MPU_PRIV_R;       /* read-only: writes fault */
+	mpu_cfg.sh = MPU_NON_SHAREABLE;
+	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_NC;
+	mpu_region_cfg(mpu_entry, &mpu_cfg);
+
 	g_mpu_nregion_allocated = mpu_entry + 1;
 	return 0;
 }
