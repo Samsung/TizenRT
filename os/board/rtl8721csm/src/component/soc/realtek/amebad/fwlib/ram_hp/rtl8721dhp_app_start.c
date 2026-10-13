@@ -1070,6 +1070,7 @@ void app_mpu_s_nocache_init(void)
 }
 
 #ifdef CONFIG_AMEBAD_TRUSTZONE
+IMAGE2_RAM_TEXT_SECTION
 void app_hardfualt_s_prehanlder(uint32_t fault_id)
 {
 	//write reboot reason, TrustZone watchdog
