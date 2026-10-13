@@ -61,6 +61,11 @@ void FLASH_Write_Lock(void)
 {
 	u32 cpu_id = IPC_CPUID();
 	u32 lp_sleep_state;
+	
+	asm volatile ("cpsid i" : : : "memory");
+	cpu_systick = SysTick->CTRL;	//disable systick exception
+	SysTick->CTRL = 0;
+
 	//u32 hp_sleep_state;
 	/*IPC request to let the other CPU sleep*/
 	if (cpu_id == 1) {	
@@ -86,9 +91,6 @@ void FLASH_Write_Lock(void)
 #endif
 	}
 
-	asm volatile ("cpsid i" : : : "memory");
-	cpu_systick = SysTick->CTRL;	//disable systick exception
-	SysTick->CTRL = 0;
 }
 
 /**
@@ -103,9 +105,6 @@ void FLASH_Write_Unlock(void)
 	u32 cpu_id = IPC_CPUID();
 	u32 lp_sleep_state;
 	//u32 hp_sleep_state;
-	asm volatile ("cpsie i" : : : "memory");
-	
-	SysTick->CTRL = cpu_systick;//restore systick exception
 
 	/*send an event using "sev" instruction to let the other CPU wake up*/
 	asm volatile ("sev");
@@ -129,6 +128,8 @@ void FLASH_Write_Unlock(void)
 		}
 #endif
 	}
+	SysTick->CTRL = cpu_systick;//restore systick exception
+	asm volatile ("cpsie i" : : : "memory");
 }
 
   /**
