@@ -465,6 +465,39 @@ unsigned int get_output_card_total_buffer_size(void);
 unsigned int get_input_card_total_buffer_size(void);
 
 /****************************************************************************
+ * Name: get_input_card_sample_rate
+ *
+ * Description:
+ *   Get sample rate of the active input  card.
+ *
+ * Return Value:
+ *   On success, the output sample rate. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_input_card_sample_rate(void);
+
+/****************************************************************************
+ * Name: get_input_card_channels
+ *
+ * Description:
+ *   Get number of channels of active input card.
+ *
+ * Return Value:
+ *   On success, the input channels. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_input_card_channels(void);
+
+/****************************************************************************
+ * Name: get_input_card_bytes_per_format
+ *
+ * Description:
+ *   Get total number of bytes per format of the active input card.
+ *
+ * Return Value:
+ *   On success, the total number of bytes as per input format. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_input_card_bytes_per_format(void);
+
+/****************************************************************************
  * Name: get_output_card_sample_rate
  *
  * Description:
