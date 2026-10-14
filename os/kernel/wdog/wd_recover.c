@@ -122,8 +122,18 @@ void wd_recover(FAR struct tcb_s *tcb)
 
 	flags = enter_critical_section();
 	if (tcb->waitdog) {
+		/* Outer begin/end protects the entire cancel+delete sequence and ensures
+		 * the wdog pool is RW for the full duration. wd_cancel() and wd_delete()
+		 * have their own begin/end internally — the nesting counter handles the
+		 * reentrancy correctly (nest: 1→2→1→2→1→0).
+		 *
+		 * The outer bracket is needed to prevent a brief RO window between
+		 * wd_cancel()'s end() and wd_delete()'s begin() where the pool would
+		 * be RO and wd_delete()'s writes would Data Abort. */
+		wd_mmu_write_begin();
 		(void)wd_cancel(tcb->waitdog);
 		(void)wd_delete(tcb->waitdog);
+		wd_mmu_write_end();
 		tcb->waitdog = NULL;
 	}
 
