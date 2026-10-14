@@ -1,3 +1,7 @@
 config ENTRY_HEAP_PERFORMANCE_TEST
 	bool "Heap performance test"
 	depends on EXAMPLES_HEAP_PERFORMANCE_TEST
+
+config ENTRY_HEAP_BENCH_TEST
+	bool "Heap bench test"
+	depends on EXAMPLES_HEAP_BENCH_TEST
