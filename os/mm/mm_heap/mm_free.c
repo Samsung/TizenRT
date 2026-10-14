@@ -127,20 +127,6 @@ static void mm_free_internal(FAR struct mm_heap_s *heap, FAR void *mem, mmaddres
 
 	mvdbg("Freeing %p\n", mem);
 
-	/* Protect against attempts to free a NULL reference */
-
-	if (!mem) {
-		/* Though it's permitted to attempt for releasing a NULL
-		 * reference in C, it would be good to catch those cases
-		 * atleast in DEBUG MODE as there is no logical reason to
-		 * release a NULL reference.
-		 * It can be a logical bug in sw to make an attempt of double free!
-		 * free(ptr); ptr = NULL; free(ptr);
-		 */
-		mvdbg("Attempt to release a null pointer by pid %d at address 0x%08x\n", free_call_pid, free_call_addr);
-		return;
-	}
-
 	/* We need to hold the MM semaphore while we muck with the
 	 * nodelist.
 	 */

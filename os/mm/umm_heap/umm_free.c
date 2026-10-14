@@ -82,6 +82,11 @@
 void free(FAR void *mem)
 {
 	struct mm_heap_s *heap;
+
+	if (!mem) {
+		return;
+	}
+
 	heap = mm_get_heap(mem);
 	if (heap) {
 		mm_free(heap, mem);
