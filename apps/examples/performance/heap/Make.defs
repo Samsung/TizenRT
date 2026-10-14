@@ -16,6 +16,6 @@
 #
 ###########################################################################
 
-ifeq ($(CONFIG_EXAMPLES_HEAP_PERFORMANCE_TEST),y)
+ifneq ($(filter y,$(CONFIG_EXAMPLES_HEAP_PERFORMANCE_TEST)$(CONFIG_EXAMPLES_HEAP_BENCH_TEST)),)
 CONFIGURED_APPS += examples/performance/heap
 endif
