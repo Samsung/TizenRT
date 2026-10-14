@@ -65,10 +65,10 @@ typedef struct {
   *            10: Read only by privileged code only.
   *            11: Read only by any privilege level.
   */
-#define MPU_PRIV_RW				(0 << 1)
-#define MPU_UN_PRIV_RW				(1 << 1)
-#define MPU_PRIV_R					(2 << 1)
-#define MPU_PRIV_W					(3 << 1)
+#define MPU_PRIV_RW (0 << MPU_RBAR_AP_Pos)
+#define MPU_UN_PRIV_RW (1 << MPU_RBAR_AP_Pos)
+#define MPU_PRIV_RO (2 << MPU_RBAR_AP_Pos)
+#define MPU_UN_PRIV_RO (3 << MPU_RBAR_AP_Pos)
 /**
   * @}
   */
