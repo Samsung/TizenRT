@@ -24,13 +24,23 @@ include $(APPDIR)/Make.defs
 
 APPNAME = heaptest
 FUNCNAME = $(APPNAME)_main
+APPNAME_BENCH = heapbench
+FUNCNAME_BENCH = $(APPNAME_BENCH)_main
 THREADEXEC = TASH_EXECMD_ASYNC
 
 # Example for heap test
 
 ASRCS =
 CSRCS =
+MAINSRC =
+
+ifeq ($(CONFIG_EXAMPLES_HEAP_PERFORMANCE_TEST),y)
 MAINSRC = heap_performance_test.c
+endif
+
+ifeq ($(CONFIG_EXAMPLES_HEAP_BENCH_TEST),y)
+CSRCS += heap_bench_test.c
+endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -97,11 +107,16 @@ $(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME).bdat: $(DEPCONFIG) Makefile
 	$(call REGISTER,$(APPNAME),$(FUNCNAME),$(THREADEXEC))
 
 context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat
-
-else
-context:
-
 endif
+
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_HEAP_BENCH_TEST),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(FUNCNAME_BENCH).bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME_BENCH),$(FUNCNAME_BENCH),$(THREADEXEC))
+
+context: $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME_BENCH)_main.bdat
+endif
+
+context:
 
 .depend: Makefile $(SRCS)
 	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
