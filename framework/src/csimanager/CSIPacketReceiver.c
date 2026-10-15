@@ -118,7 +118,7 @@ static void *dataReceiverThread(void *vargp)
 					#ifdef CONFIG_CSI_PACKET_MONITORING
 						CSIFW_LOGI("CSI Data read complete %llu", current_time);
 					#endif
-					if (len < 0) {
+					if (len <= 0) {
 						consecutive_failures++;
 						CSIFW_LOGE("Skipping packet: error: %d", len);
 						if (consecutive_failures >= MAX_CONSECUTIVE_FAILURES) {
