@@ -67,6 +67,10 @@
  * Definitions
  ********************************************************************************/
 
+#ifndef DELAYTIMER_MAX
+#define DELAYTIMER_MAX 32767
+#endif
+
 /********************************************************************************
  * Private Data
  ********************************************************************************/
@@ -121,8 +125,35 @@
 
 int timer_getoverrun(timer_t timerid)
 {
-	set_errno(ENOSYS);
-	return ERROR;
+	FAR struct posix_timer_s *timer = timer_gethandle(timerid);
+	int ret;
+
+	if (!timer) {
+		lldbg("[timer_getoverrun] Timer not found\n");
+		set_errno(EINVAL);
+		ret = ERROR;
+	} else {
+		lldbg("[timer_getoverrun] Timer found\n");
+
+		/* pt_overrun is incremented on every timer expiration in
+		 * timer_timeout() and timer_fire().  The first increment
+		 * corresponds to the initial signal delivery and is NOT
+		 * an overrun.  Subtract 1 to get the actual overrun count.
+		 * Then reset the count to 0 for the next signal cycle.
+		 */
+
+		ret = timer->pt_overrun - 1;
+		if (ret < 0) {
+			ret = 0;
+		}
+		timer->pt_overrun = 0;
+
+		if (ret > DELAYTIMER_MAX) {
+			ret = DELAYTIMER_MAX;
+		}
+	}
+
+	return ret;
 }
 
 #endif							/* CONFIG_DISABLE_POSIX_TIMERS */
