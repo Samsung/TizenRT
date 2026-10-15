@@ -350,4 +350,3 @@ void stm32_rcc_disablelsi(void);
 }
 #endif
 #endif							/* __ASSEMBLY__ */
-#endif							/* __ARCH_ARM_SRC_STM32_STM32_RRC_H */

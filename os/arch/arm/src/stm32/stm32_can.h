@@ -62,7 +62,7 @@
 #include "chip.h"
 #include "chip/stm32_can.h"
 
-#include <tinyara/can.h>
+//#include <tinyara/can.h>
 
 /************************************************************************************
  * Pre-processor Definitions

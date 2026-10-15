@@ -1,0 +1,20 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_BOARD_NUCLEO_F446RE
+
+config NUCLEO_F446RE_USERLED
+	bool "Nucleo F446RE User LED"
+	default y
+	---help---
+		Enable support for the on-board User LED (LD2).
+
+config NUCLEO_F446RE_USER_BUTTON
+	bool "Nucleo F446RE User Button"
+	default y
+	---help---
+		Enable support for the on-board User Button (B1).
+
+endif
