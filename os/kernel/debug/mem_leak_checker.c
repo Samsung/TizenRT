@@ -21,6 +21,8 @@
 
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <debug.h>
 #include <assert.h>
 #include <stdio.h>
@@ -39,115 +41,171 @@
  ****************************************************************************/
 #define CMN_BIN_IDX 0
 
-#define MEM_ACCESS_UNIT    0x04
+/* Size of a single memory access while scanning for a reference. A reference
+ * is always a pointer sized value, so the scan reads one pointer at a time.
+ */
+#define MEM_PTR_SIZE       ((size_t)sizeof(uintptr_t))
+
 #define MAX_ALLOC_COUNT    CONFIG_MEM_LEAK_CHECKER_MAX_ALLOC_COUNT
-#define HASH_SIZE          CONFIG_MEM_LEAK_CHECKER_HASH_TABLE_SIZE
 #define MEM_DUMP_MAX_BYTES 32
 
 #define MM_PREV_NODE_SIZE(x)            ((x)->preceding & ~MM_ALLOC_BIT)
 
+#if CONFIG_KMM_REGIONS > 1
+#define HEAP_NREGIONS(h)   ((h)->mm_nregions)
+#else
+#define HEAP_NREGIONS(h)   (1)
+#endif
+
 struct alloc_node_info_s {
 	volatile struct mm_allocnode_s *node;
-	struct alloc_node_info_s *next;
 };
 
-static struct alloc_node_info_s **g_hash_table;
+/* Every allocated chunk of the checked heap, sorted by ascending address
+ * within each heap region. The heap is walked from low to high address, so
+ * the array is built already sorted and can be searched by bisection.
+ */
 static struct alloc_node_info_s *g_node_info;
+static int g_node_total;
+static bool g_node_overflow;
 
-static int hash_init(void)
+/* Address bounds of each region of the checked heap and the slice of
+ * g_node_info[] which belongs to it.
+ */
+static uintptr_t g_region_start[CONFIG_KMM_REGIONS];
+static uintptr_t g_region_end[CONFIG_KMM_REGIONS];
+static int g_region_first[CONFIG_KMM_REGIONS];
+static int g_region_count[CONFIG_KMM_REGIONS];
+static int g_region_total;
+
+static int node_info_init(void)
 {
-	int index;
-
-	g_hash_table = (struct alloc_node_info_s **)malloc(sizeof(struct alloc_node_info_s *) * HASH_SIZE);
-	if (!g_hash_table) {
-		return ERROR;
-	}
-
-	g_node_info = (struct alloc_node_info_s*)malloc(sizeof(struct alloc_node_info_s) * MAX_ALLOC_COUNT);
+	g_node_info = (struct alloc_node_info_s *)malloc(sizeof(struct alloc_node_info_s) * MAX_ALLOC_COUNT);
 	if (!g_node_info) {
-		free(g_hash_table);
 		return ERROR;
 	}
 
-	for (index = 0; index < HASH_SIZE; ++index) {
-		g_hash_table[index] = NULL;
-	}
+	g_node_total = 0;
+	g_region_total = 0;
+	g_node_overflow = false;
 
 	return OK;
 }
 
-static void hash_deinit(void)
+static void node_info_deinit(void)
 {
-	free(g_hash_table);
 	free(g_node_info);
-	g_hash_table = NULL;
 	g_node_info = NULL;
+	g_node_total = 0;
+	g_region_total = 0;
 }
 
-static void add_hash(int index)
+/****************************************************************************
+ * Name: mark_if_referenced
+ *
+ * Description:
+ *   Check whether 'addr' refers to any allocated chunk of the checked heap
+ *   and mark that chunk as referenced.
+ *
+ *   Both a base pointer, which is the address returned by malloc, and an
+ *   interior pointer, which is the address of a member of an allocated
+ *   structure, are accepted. Accepting an interior pointer is required
+ *   because a structure is very often kept alive only through a member, for
+ *   example when an embedded sq_entry_t is queued into a list and the base
+ *   pointer itself is dropped. Matching the base pointer alone reports such
+ *   a structure as a leak although it is perfectly reachable.
+ *
+ *   The chunk header must stay outside of the accepted range. g_node_info[]
+ *   holds the header address of every allocated chunk, so a range starting
+ *   at the header would let the book keeping of the checker itself look like
+ *   a reference to every chunk of the heap.
+ *
+ *   Returns true only when the chunk changes from unreferenced to
+ *   referenced, so that a chunk is subtracted from the leak count once.
+ *
+ ****************************************************************************/
+
+static bool mark_if_referenced(uintptr_t addr)
 {
-	long key;
-	struct alloc_node_info_s *cur;
+	int reg;
+	int lo;
+	int hi;
+	int mid;
+	volatile struct mm_allocnode_s *node;
+	uintptr_t payload;
+	uintptr_t tail;
 
-	key = (long)g_node_info[index].node % HASH_SIZE;
-	if (g_hash_table[key] == NULL) {
-		g_hash_table[key] = &g_node_info[index];
-		return;
-	}
+	/* Reject any value which is not an address of the checked heap. Nearly
+	 * every scanned value ends here, so this keeps the scan cheap.
+	 */
 
-	cur = g_hash_table[key];
-	while (cur->next) {
-		cur = cur->next;
-	}
-	cur->next = &g_node_info[index];
-}
-
-static bool search_hash(unsigned long value)
-{
-	long key = value % HASH_SIZE;
-	struct alloc_node_info_s *cur = g_hash_table[key];
-
-	while (cur != NULL) {
-		if ((unsigned long)cur->node == value) {
-			if (cur->node->memory_state == MM_MEMORY_STATE_USED) {
-				return false;
-			}
-			cur->node->memory_state = MM_MEMORY_STATE_USED;
-			return true;
+	for (reg = 0; reg < g_region_total; reg++) {
+		if (addr >= g_region_start[reg] && addr < g_region_end[reg]) {
+			break;
 		}
-		if (cur->next == NULL) {
-			return false;
-		}
-		cur = cur->next;
 	}
-	return false;
+
+	if (reg == g_region_total || g_region_count[reg] == 0) {
+		return false;
+	}
+
+	/* Find the allocated chunk with the greatest header address which is not
+	 * above 'addr'. It is the only chunk which can contain 'addr'.
+	 */
+
+	lo = g_region_first[reg];
+	hi = lo + g_region_count[reg] - 1;
+
+	if (addr < (uintptr_t)g_node_info[lo].node) {
+		return false;
+	}
+
+	while (lo < hi) {
+		mid = lo + ((hi - lo + 1) >> 1);
+		if ((uintptr_t)g_node_info[mid].node <= addr) {
+			lo = mid;
+		} else {
+			hi = mid - 1;
+		}
+	}
+
+	node = g_node_info[lo].node;
+	payload = (uintptr_t)node + (uintptr_t)SIZEOF_MM_ALLOCNODE;
+	tail = (uintptr_t)node + (uintptr_t)node->size;
+
+	if (addr < payload || addr >= tail) {
+		/* 'addr' points into the chunk header, or into a free chunk which
+		 * follows this allocated chunk. Neither is a reference.
+		 */
+		return false;
+	}
+
+	if (node->memory_state == MM_MEMORY_STATE_USED) {
+		return false;
+	}
+
+	node->memory_state = MM_MEMORY_STATE_USED;
+	return true;
 }
 
 static int get_node_cnt(struct mm_heap_s *heap)
 {
 	volatile struct mm_allocnode_s *node;
 	mmsize_t node_size;
-	node_size = SIZEOF_MM_ALLOCNODE;
-
+	int nregions = HEAP_NREGIONS(heap);
+	int reg;
 	int ret = 0;
-	
-#if CONFIG_KMM_REGIONS > 1
-	int region;
-#else
-#define region 0
-#endif
+
+	mm_takesemaphore(heap);
 
 	/* Visit each region */
 
-#if CONFIG_KMM_REGIONS > 1
-	for (region = 0; region < heap->mm_nregions; region++)
-#endif
-	{
+	for (reg = 0; reg < nregions; reg++) {
 		node_size = SIZEOF_MM_ALLOCNODE;
-		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+		for (node = heap->mm_heapstart[reg]; node < heap->mm_heapend[reg]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 			ASSERT(node->size);
 			/* Ignore the heap start checking, because there is a guard node in heap start */
-			if (node == heap->mm_heapstart[region]) {
+			if (node == heap->mm_heapstart[reg]) {
 				continue;
 			}
 			/* Check broken link */
@@ -162,34 +220,36 @@ static int get_node_cnt(struct mm_heap_s *heap)
 		}
 	}
 
+	mm_givesemaphore(heap);
+
 	return ret;
 }
 
-static void fill_hash_table(struct mm_heap_s *heap, int *leak_cnt, int *broken_cnt)
+static void fill_node_info(struct mm_heap_s *heap, int *leak_cnt, int *broken_cnt)
 {
 	volatile struct mm_allocnode_s *node;
 	mmsize_t node_size;
-	node_size = SIZEOF_MM_ALLOCNODE;
+	int nregions = HEAP_NREGIONS(heap);
+	int reg;
 
 	mm_takesemaphore(heap);
 
-#if CONFIG_KMM_REGIONS > 1
-	int region;
-#else
-#define region 0
-#endif
+	g_node_total = 0;
+	g_region_total = nregions;
 
 	/* Visit each region */
 
-#if CONFIG_KMM_REGIONS > 1
-	for (region = 0; region < heap->mm_nregions; region++)
-#endif
-	{
+	for (reg = 0; reg < nregions; reg++) {
+		g_region_start[reg] = (uintptr_t)heap->mm_heapstart[reg];
+		g_region_end[reg] = (uintptr_t)heap->mm_heapend[reg];
+		g_region_first[reg] = g_node_total;
+		g_region_count[reg] = 0;
+
 		node_size = SIZEOF_MM_ALLOCNODE;
-		for (node = heap->mm_heapstart[region]; node < heap->mm_heapend[region]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
+		for (node = heap->mm_heapstart[reg]; node < heap->mm_heapend[reg]; node = (struct mm_allocnode_s *)((char *)node + node->size)) {
 			ASSERT(node->size);
 			/* Ignore the heap start checking, because there is a guard node in heap start */
-			if (node == heap->mm_heapstart[region]) {
+			if (node == heap->mm_heapstart[reg]) {
 				continue;
 			}
 
@@ -200,31 +260,56 @@ static void fill_hash_table(struct mm_heap_s *heap, int *leak_cnt, int *broken_c
 				continue;
 			}
 			node_size = node->size;
-			if ((unsigned long)node + (unsigned long)SIZEOF_MM_ALLOCNODE == (unsigned long)g_node_info || 
-					(unsigned long)node + (unsigned long)SIZEOF_MM_ALLOCNODE == (unsigned long)g_hash_table) {
+			/* The buffer of the checker itself is never a leak */
+			if ((uintptr_t)node + (uintptr_t)SIZEOF_MM_ALLOCNODE == (uintptr_t)g_node_info) {
 				continue;
 			}
 			/* Check if the node corresponds to an allocated memory chunk */
-			if ((node->preceding & MM_ALLOC_BIT) != 0) {
-				g_node_info[*leak_cnt].node = node;
-				g_node_info[*leak_cnt].next = NULL;
-				node->memory_state = MM_MEMORY_STATE_LEAK;
-				add_hash(*leak_cnt);
-				(*leak_cnt)++;
+			if ((node->preceding & MM_ALLOC_BIT) == 0) {
+				continue;
 			}
+			if (g_node_total >= MAX_ALLOC_COUNT) {
+				/* The heap grew after get_node_cnt() counted it. Stop here
+				 * instead of writing past the end of g_node_info[].
+				 */
+				g_node_overflow = true;
+				break;
+			}
+			g_node_info[g_node_total].node = node;
+			node->memory_state = MM_MEMORY_STATE_LEAK;
+			g_node_total++;
+			g_region_count[reg]++;
+			(*leak_cnt)++;
+		}
+
+		if (g_node_overflow) {
+			break;
 		}
 	}
+
 	mm_givesemaphore(heap);
 }
 
 static void search_addr(void *start_addr, void *end_addr, int *leak_cnt)
 {
-	/* This function traverse the memory from start_addr to end_addr for comparing the address based on hash table. */
-	void *leak_chk;
+	/* This function traverses the memory from start_addr to end_addr and
+	 * checks every position for a reference to an allocated chunk.
+	 */
+	char *leak_chk;
+	char *last;
 
-	/* Not to access over its region, subtract 0x04 from the end of the address. */
-	for (leak_chk = start_addr; leak_chk < end_addr - MEM_ACCESS_UNIT; leak_chk++) {
-		if (search_hash(*(unsigned long volatile *)leak_chk - (unsigned long)SIZEOF_MM_ALLOCNODE)) {
+	if ((uintptr_t)end_addr < (uintptr_t)start_addr + MEM_PTR_SIZE) {
+		return;
+	}
+
+	/* The last position which can be read without leaving the region. It has
+	 * to be visited too, otherwise a reference kept in the last word of the
+	 * region is never seen and its chunk is reported as a leak.
+	 */
+	last = (char *)end_addr - MEM_PTR_SIZE;
+
+	for (leak_chk = (char *)start_addr; leak_chk <= last; leak_chk++) {
+		if (mark_if_referenced(*(volatile uintptr_t *)leak_chk)) {
 			(*leak_cnt)--;
 		}
 	}
@@ -232,40 +317,49 @@ static void search_addr(void *start_addr, void *end_addr, int *leak_cnt)
 
 static void heap_check(struct mm_heap_s *heap, int checker_pid, int *leak_cnt)
 {
-	void *leak_chk;
+	char *leak_chk;
+	char *last;
 	struct mm_allocnode_s *visit_node;
 	void *exclude_top;
 	void *exclude_bottom;
+	int nregions = HEAP_NREGIONS(heap);
+	int reg;
 
 	struct tcb_s *ctcb = sched_gettcb(checker_pid);
 	ASSERT(ctcb != NULL);
 	exclude_top = ctcb->adj_stack_ptr;
 	exclude_bottom = ctcb->adj_stack_ptr - ctcb->adj_stack_size;
 
-#if CONFIG_KMM_REGIONS > 1
-	int region;
-#else
-#define region 0
-#endif
-
 	/* Visit each region */
 
-#if CONFIG_KMM_REGIONS > 1
-	for (region = 0; region < heap->mm_nregions; region++)
-#endif
-	{
-		for (visit_node = heap->mm_heapstart[region]; visit_node < heap->mm_heapend[region]; visit_node = (struct mm_allocnode_s *)((char *)visit_node + visit_node->size)) {
-			if ((visit_node->preceding & MM_ALLOC_BIT) != 0) {
-				if ((void *)((char *)visit_node + SIZEOF_MM_ALLOCNODE) == (void *)g_node_info) {
+	for (reg = 0; reg < nregions; reg++) {
+		for (visit_node = heap->mm_heapstart[reg]; visit_node < heap->mm_heapend[reg]; visit_node = (struct mm_allocnode_s *)((char *)visit_node + visit_node->size)) {
+			ASSERT(visit_node->size);
+			if ((visit_node->preceding & MM_ALLOC_BIT) == 0) {
+				continue;
+			}
+			if ((void *)((char *)visit_node + SIZEOF_MM_ALLOCNODE) == (void *)g_node_info) {
+				continue;
+			}
+
+			/* Only the payload of a chunk can hold a reference. Skipping the
+			 * chunk header also keeps its size, pid and caller fields from
+			 * matching an allocated chunk by chance.
+			 */
+			leak_chk = (char *)visit_node + SIZEOF_MM_ALLOCNODE;
+
+			/* Stop at the last position which is still inside this chunk, so
+			 * that the scan never reads into the next chunk header or past
+			 * the end of the region.
+			 */
+			last = (char *)visit_node + visit_node->size - MEM_PTR_SIZE;
+
+			for (; leak_chk <= last; leak_chk++) {
+				if ((void *)leak_chk >= exclude_bottom && (void *)leak_chk <= exclude_top) {
 					continue;
 				}
-				for (leak_chk = (void *)visit_node; leak_chk < (void *)(((char *)visit_node) + visit_node->size); leak_chk++) {
-					if ((leak_chk >= exclude_bottom && leak_chk <= exclude_top)) {
-						continue;
-					}
-					if (search_hash(*(unsigned long volatile *)leak_chk - (unsigned long)SIZEOF_MM_ALLOCNODE)) {
-						(*leak_cnt)--;
-					}
+				if (mark_if_referenced(*(volatile uintptr_t *)leak_chk)) {
+					(*leak_cnt)--;
 				}
 			}
 		}
@@ -414,24 +508,28 @@ int run_mem_leak_checker(int checker_pid, char *bin_name)
 		return ERROR;
 	}
 
-	if (g_hash_table || g_node_info) {
+	if (g_node_info) {
 		printf("mem_leak_checker is already running.\n");
 		return ERROR;
 	}
 
-	if (hash_init() != OK) {
-		printf("hash table memory alloc is failed.\n");
+	if (node_info_init() != OK) {
+		printf("node info memory alloc is failed.\n");
 		return ERROR;
 	}
 
-	fill_hash_table(heap, &leak_cnt, &broken_cnt);
+	fill_node_info(heap, &leak_cnt, &broken_cnt);
+
+	if (g_node_overflow) {
+		printf("Available buffer size (%d) is small, the result is incomplete.\nPlease increase CONFIG_MEM_LEAK_CHECKER_MAX_ALLOC_COUNT value.\n", MAX_ALLOC_COUNT);
+	}
 
 	/* Visit RAM region */
 	ram_check(heap, checker_pid, bin_name, &leak_cnt);
 
 	print_info(heap, leak_cnt, broken_cnt);
 
-	hash_deinit();
+	node_info_deinit();
 	return OK;
 }
 
