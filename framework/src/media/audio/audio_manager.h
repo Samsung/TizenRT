@@ -377,20 +377,6 @@ unsigned int get_user_input_frames_to_byte(unsigned int frames);
 unsigned int get_user_input_bytes_to_frame(unsigned int bytes);
 
 /****************************************************************************
- * Name: get_output_frame_count
- *
- * Description:
- *   Get the frame size of the pcm buffer for the specified stream in the active output audio device.
- *
- * Input parameters:
- *   stream_id: ID of the stream.
- *
- * Return Value:
- *   On success, the size of the pcm buffer for output streams. Otherwise, 0.
- ****************************************************************************/
-unsigned int get_output_frame_count(stream_info_id_t stream_id);
-
-/****************************************************************************
  * Name: get_card_output_frames_to_byte
  *
  * Description:
@@ -419,37 +405,6 @@ unsigned int get_card_output_frames_to_byte(unsigned int frames);
  *   On success, the number of frames in output stream. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_card_output_bytes_to_frame(unsigned int bytes);
-
-/****************************************************************************
- * Name: get_user_output_frames_to_byte
- *
- * Description:
- *   Get the byte size of the given frame value with the channel value
- *   specified by the user for output stream.
- *
- * Input parameter:
- *   frames: the target of which byte size is returned.
- *
- * Return Value:
- *   On success, the byte size of the frame in output stream. Otherwise, 0.
- ****************************************************************************/
-unsigned int get_user_output_frames_to_byte(unsigned int frames, stream_info_id_t stream_id);
-
-/****************************************************************************
- * Name: get_user_output_bytes_to_frame
- *
- * Description:
- *   Get the number of frames for the given byte size with the channel value
- *   specified by the user for specified output stream.
- *
- * Input parameter:
- *   bytes: the target of which frame count is returned.
- *   stream_id: ID of the stream.
- *
- * Return Value:
- *   On success, the number of frames in output stream. Otherwise, 0.
- ****************************************************************************/
-unsigned int get_user_output_bytes_to_frame(unsigned int bytes, stream_info_id_t stream_id);
 
 /****************************************************************************
  * Name: get_output_sample_rate_ratio
@@ -508,6 +463,39 @@ unsigned int get_output_card_total_buffer_size(void);
  *   On success, the total number of bytes in buffer size of input card. Otherwise, 0.
  ****************************************************************************/
 unsigned int get_input_card_total_buffer_size(void);
+
+/****************************************************************************
+ * Name: get_output_card_sample_rate
+ *
+ * Description:
+ *   Get sample rate of the active output card.
+ *
+ * Return Value:
+ *   On success, the output sample rate. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_output_card_sample_rate(void);
+
+/****************************************************************************
+ * Name: get_output_card_channels
+ *
+ * Description:
+ *   Get number of channels of active output card.
+ *
+ * Return Value:
+ *   On success, the output channels. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_output_card_channels(void);
+
+/****************************************************************************
+ * Name: get_output_card_bytes_per_format
+ *
+ * Description:
+ *   Get total number of bytes per format of the active output card.
+ *
+ * Return Value:
+ *   On success, the total number of bytes as per output format. Otherwise, 0.
+ ****************************************************************************/
+unsigned int get_output_card_bytes_per_format(void);
 
 /****************************************************************************
  * Name: get_max_audio_volume
