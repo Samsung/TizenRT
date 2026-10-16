@@ -196,11 +196,12 @@ enum bp_update_reason_e {
 	BP_UPDATE_BINARY_MANAGER_UPDATE = 9,
 	BP_UPDATE_BINARY_MANAGER_RECOVERY_USER = 10,
 	BP_UPDATE_BINARY_MANAGER_RECOVERY_RESOURCE = 11,
-	BP_UPDATE_BINARY_MANAGER_SET_ALIGNMENT = 12,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_1 = 13,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_2 = 14,
-	BP_UPDATE_BINARY_MANAGER_SPECIFIC_3 = 15,
-	BP_UPDATE_UNKNOWN = 16
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_SET_ALIGNMENT = 12,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_NO_VALID_BP = 13,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_KERNEL_ADDR_MISMATCH = 14,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_BOOTLOADER_RECOVERED = 15,
+	BP_UPDATE_BINARY_MANAGER_RECOVERY_COMMON = 16,
+	BP_UPDATE_UNKNOWN = 17
 };
 
 /* Boot parameter head data, stored at the beginning of each BP. */
@@ -252,6 +253,7 @@ struct binmgr_bp_recovery_info_s {
 	uint32_t bp_version;
 	uint32_t highest_version_a;
 	uint32_t highest_version_b;
+	uint8_t recovery_reason;
 };
 typedef struct binmgr_bp_recovery_info_s binmgr_bp_recovery_info_t;
 
@@ -343,6 +345,7 @@ void binary_manager_release_binary_sem(int bin_idx);
 void binary_manager_update_running_state(int bin_id);
 int binary_manager_get_index_with_name(char *bin_name);
 void binary_manager_dump_bpdata(void);
+void binary_manager_set_bp_recovery_reason(uint8_t reason);
 int binary_manager_scan_bootparam(binmgr_bpinfo_t *bp_info);
 binmgr_bpdata_t *binary_manager_get_bpdata(void);
 binmgr_bpdata_t *binary_manager_get_slot_bpdata(uint8_t bp_idx);
