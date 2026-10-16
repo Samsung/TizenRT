@@ -153,7 +153,7 @@ static bool in_code_region(void *pc)
 {
 	int i = 0;
 
-	if ((uintptr_t) pc >= (uintptr_t) _START_TEXT && (uintptr_t) pc < (uintptr_t) _END_TEXT) {
+	if ((uintptr_t) pc >= (uintptr_t) &_stext_flash && (uintptr_t) pc < (uintptr_t) &_etext_flash) {
 		return true;
 	}
 
