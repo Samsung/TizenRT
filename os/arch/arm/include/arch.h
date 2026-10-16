@@ -232,6 +232,18 @@ extern "C" {
 #else
 #define EXTERN extern
 #endif
+#ifdef CONFIG_SCHED_BACKTRACE
+#ifdef CONFIG_UNWINDER_ARM
+int up_backtrace(struct tcb_s *tcb, void **buffer, int size, int skip, uint32_t asserted_location);
+#else
+int up_backtrace(struct tcb_s *tcb, void **buffer, int size, int skip);
+#endif
+#else
+static inline int up_backtrace(struct tcb_s *tcb, void **buffer, int size, int skip, uint32_t asserted_location)
+{
+  return 0;
+}
+#endif							/* CONFIG_SCHED_BACKTRACE */
 
 #undef EXTERN
 #ifdef __cplusplus

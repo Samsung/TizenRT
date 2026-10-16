@@ -60,10 +60,12 @@ extern uint32_t _eapp_ram;
 
 extern int main(int argc, char **argv);
 
-#ifdef CONFIG_LIBCXX_EXCEPTION
+#if defined(CONFIG_LIBCXX_EXCEPTION) || defined(CONFIG_UNWINDER_ARM)
 extern uint32_t __exidx_start;
 extern uint32_t __exidx_end;
+#endif
 
+#ifdef CONFIG_LIBCXX_EXCEPTION
 extern int up_init_exidx(_Unwind_Ptr start, _Unwind_Ptr end, void * text_start, void * text_end, int bin_idx);
 #endif
 #endif
@@ -105,11 +107,13 @@ const struct userspace_s userspace __attribute__((section(".userspace"))) = {
 #ifndef __COMMON_BINARY__
 	.entry = main,
 #endif
-#ifdef CONFIG_LIBCXX_EXCEPTION
+#if defined(CONFIG_LIBCXX_EXCEPTION) || defined(CONFIG_UNWINDER_ARM)
 	.exidx_start = &__exidx_start,
 	.exidx_end = &__exidx_end,
+#ifdef CONFIG_LIBCXX_EXCEPTION
 #ifdef __COMMON_BINARY__
 	.register_exidx = up_init_exidx,
+#endif
 #endif
 #endif
 #endif
