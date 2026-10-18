@@ -220,7 +220,7 @@ void hci_platform_bt_log_init(void)
 	LOGUART_Relay_StructInit(&LOGUART_Relay_InitStruct);
 	LOGUART_Relay_ClearRxFifo(LOGUART_DEV);
 	LOGUART_Relay_SetFormat(LOGUART_DEV, &LOGUART_Relay_InitStruct);
-	LOGUART_Relay_SetBaud(LOGUART_DEV, 115200);
+	LOGUART_Relay_SetBaud(LOGUART_DEV, 833333);
 	LOGUART_Relay_RxCmd(LOGUART_DEV, ENABLE);
 	LOGUART_AGGCmd(LOGUART_DEV, ENABLE);  /* No need on testchip, because AGG is default enable */
 }
