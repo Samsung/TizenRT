@@ -149,16 +149,20 @@ def print_interrupt_handler_data(log_file, bin_path, app_name):
 							print_symbol(0x00000000, node, 1, bin_path, app_name)
 
 # Function to return the address of a Symbol from mapping table
+# Returns None if the symbol is not present in the table (instead of
+# raising an IndexError when the symbol is not found).
 def get_address_of_symbol(symbol, debug=False):
-	i = 0
-	while (ksymbol_lookup_table[i][1] != symbol and i <= len(ksymbol_lookup_table)):
-		i = i+1
-	if (i > len(ksymbol_lookup_table)):
+	if not ksymbol_lookup_table:
 		return None
-	else:
-		if debug:
-			print("Address of symbol {0:x} {1}".format(ksymbol_lookup_table[i][0], symbol))
-		return ksymbol_lookup_table[i][0]
+	i = 0
+	n = len(ksymbol_lookup_table)
+	while i < n and ksymbol_lookup_table[i][1] != symbol:
+		i = i + 1
+	if i >= n:
+		return None
+	if debug:
+		print("Address of symbol {0:x} {1}".format(ksymbol_lookup_table[i][0], symbol))
+	return ksymbol_lookup_table[i][0]
 
 # Function to search for a address from "Address to Symbol" mapping table
 # Apply Generic binary search

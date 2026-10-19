@@ -56,6 +56,7 @@ def usage():
 	print('\t-b, --bin_path                  Enter binary folder path other than default binary')
 	print('\t-c, --config_Path               Enter configuration file path for above binary')
 	print('\t-e, --elf_path                  Enter kernel elf file name')
+	print('\t    --arch=ARCH                 Target architecture (e.g. armv7-r). Fallback for dump parsing when .config is absent')
 	print('\t-h, --help                      Show help')
 	print('Note: Architecture other than arm v7-r don\'t support dump parsing')
 	print('')
@@ -103,22 +104,39 @@ def print_trap_output_header(lparser):
 	print('*************************************************************')
 	print('')
 
-def check_required_config(data):
+def check_required_config(data, arch_arg=None):
 	global have_ram_kernel_text
 	global xip_enabled
 	global arch_family_v7r
 
-	if ('CONFIG_ARCH_FAMILY="armv7-r"' in data):
+	# Determine architecture family (armv7-r). Priority: .config first, then
+	# the --arch command line argument. If neither indicates armv7-r, dump
+	# parsing is not supported (see main()).
+	arch_family_v7r = False
+	if data is not None and ('CONFIG_ARCH_FAMILY="armv7-r"' in data):
 		arch_family_v7r = True
+	elif arch_arg is not None:
+		if arch_arg == 'armv7-r':
+			arch_family_v7r = True
+		else:
+			print('Warning: Unsupported architecture "{0}". TRAP dump parsing supports only armv7-r.'.format(arch_arg))
 
-	# check if CONFIG_XIP_ELF is enabled
-	if 'CONFIG_XIP_ELF=y' in data:
+	# check if CONFIG_XIP_ELF is enabled.
+	# When .config is absent, xip_enabled is left False here and refined
+	# later from the xipelf_initialize symbol presence (see logParser.parse_log).
+	if data is not None and 'CONFIG_XIP_ELF=y' in data:
 		xip_enabled = True
 
-	if 'CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT=y' in data:
+	# check if board has kernel text in RAM region.
+	# When .config is absent, have_ram_kernel_text is left False here and
+	# refined later from the _stext_ram/_etext_ram symbol presence.
+	if data is not None and 'CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT=y' in data:
 		have_ram_kernel_text = True
 
-	if not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
+	# Hint the user to enable CONFIG_DEBUG_MM_HEAPINFO only when .config is
+	# actually available. When .config is absent we cannot tell, so skip the
+	# hint to avoid misleading noise.
+	if data is not None and not 'CONFIG_DEBUG_MM_HEAPINFO=y' in data:
 			print('DEBUG_MM_HEAPINFO is not enable. Enable DEBUG_MM_HEAPINFO to see heap usage')
 
 def check_path(log_file, dump_file, elf_path):
@@ -167,7 +185,7 @@ def main():
 	global arch_family_v7r
 
 	try:
-		opts, args = GetOpt(sys.argv[1:],'r:t:b:c:e:h', ['dump_file=','log_file=','bin_path=','config_path=','elf_path=','help'])
+		opts, args = GetOpt(sys.argv[1:],'r:t:b:c:e:h', ['dump_file=','log_file=','bin_path=','config_path=','elf_path=','help','arch='])
 	except GetoptError as e:
 		print(' ')
 		print(' ')
@@ -175,6 +193,7 @@ def main():
 		print('Usage error:', e)
 		usage()
 
+	arch_arg = None
 	for opt, arg in opts:
 		if opt in ('-r', '--dump_file'):
 			dump_file = arg
@@ -188,17 +207,29 @@ def main():
 			CONFIG_PATH = config_path
 		elif opt in ('-e', '--elf_ext'):
 			elf_path = arg
+		elif opt == '--arch':
+			arch_arg = arg
 		elif opt in ('-h', '--help'):
 			usage()
 
 	elf = check_path(log_file, dump_file, elf_path)
 
-	# Read config information
-	fd = open(CONFIG_PATH, 'r')
-	data = fd.read()
-	fd.close()
+	# Read config information (optional - .config may be absent)
+	# When .config is missing, TRAP continues using symbol-based detection
+	# (for XIP ELF and RAM kernel text) and the --arch argument (for dump
+	# parsing). Heap usage parsing in -r mode additionally requires
+	# CONFIG_MAX_TASKS from .config.
+	data = None
+	try:
+		fd = open(CONFIG_PATH, 'r')
+		data = fd.read()
+		fd.close()
+	except (IOError, OSError):
+		print('Warning: Could not read config file at {0}'.format(CONFIG_PATH))
+		print('         Continuing without .config. Heap usage parsing and')
+		print('         architecture detection may be limited.')
 
-	check_required_config(data)
+	check_required_config(data, arch_arg)
 
 	try:
 		if log_file is not None:
@@ -222,6 +253,9 @@ def main():
 
 		else:
 			# For architecture other than arm v7-r, we don't support dump parsing.
+			print('Warning: Could not determine architecture for dump parsing.')
+			print('         Dump parsing supports only armv7-r. Provide .config (-c)')
+			print('         with CONFIG_ARCH_FAMILY="armv7-r" or use --arch=armv7-r.')
 			usage()
 			return None
 

@@ -88,25 +88,9 @@ def is_kernel_text_address(parser, address):
 
 
 def convert_stateno_statemsg(parser):
-	# Parse configuration to determine enabled features
-	config_smp = False
-	config_disable_signals = False
-	config_disable_mqueue = False
-	config_paging = False
-	
-	# Read configuration file
-	with open(parser.config_path) as configfile:
-		for line in configfile:
-			if "CONFIG_SMP=y" in line:
-				config_smp = True
-			elif "CONFIG_DISABLE_SIGNALS=y" in line:
-				config_disable_signals = True
-			elif "CONFIG_DISABLE_MQUEUE=y" in line:
-				config_disable_mqueue = True
-			elif "CONFIG_PAGING=y" in line:
-				config_paging = True
-	
-	# Build task state mapping
+	# Build task state mapping.
+	# The task state indices are fixed by the TizenRT task scheduler and do
+	# not depend on any configuration option, so no .config read is needed.
 	state_no = 0
 	parser.task_state[str(state_no)] = " Invalid"
 	state_no+=1
