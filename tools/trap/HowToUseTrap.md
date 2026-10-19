@@ -66,6 +66,18 @@ We can use [CUI](#trap-using-cui) or [GUI](#trap-using-gui) for trap. To use any
 
 ### TRAP using CUI
 
+#### .config dependency and the --arch option
+TRAP previously required the build `.config` (default `../../../os/.config`, or the path passed with `-c`). It now tolerates a missing `.config`:
+
+- `-t` (assert log) mode works **without** `.config`. Build features such as XIP ELF (`CONFIG_XIP_ELF`) and RAM kernel text (`CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT`) are detected from the kernel symbol map (`xipelf_initialize`, `_stext_ram`/`_etext_ram`) instead of `.config`.
+- `-r` (RAM/FLASH dump) mode needs the architecture family to know the stack frame register layout. Provide it either through `.config` (`CONFIG_ARCH_FAMILY="armv7-r"`) or the new `--arch` argument. Only `armv7-r` is supported:
+```
+$ python3 trap.py -r <ramdump_file> --arch=armv7-r
+```
+  When `.config` is absent, heap usage parsing (which needs `CONFIG_MAX_TASKS`) is skipped with a warning; the call stack is still parsed.
+
+Priority for the architecture is: `.config` first, then `--arch`, then skip (dump parsing unsupported).
+
 #### To display Debug Symbols/Crash point using default build binary
 1. Change the directory to trap
 ```

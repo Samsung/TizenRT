@@ -70,6 +70,14 @@ class dumpParser:
 		if (have_ram_kernel_text):
 			self.g_stext_ram = utils.get_address_of_symbol("_stext_ram")
 			self.g_etext_ram = utils.get_address_of_symbol("_etext_ram")
+		else:
+			# When .config is absent, CONFIG_ARCH_HAVE_RAM_KERNEL_TEXT cannot be
+			# checked. Refine from the actual presence of the RAM kernel text
+			# symbols in the System map.
+			if utils.get_address_of_symbol("_stext_ram") is not None and utils.get_address_of_symbol("_etext_ram") is not None:
+				self.have_ram_kernel_text = True
+				self.g_stext_ram = utils.get_address_of_symbol("_stext_ram")
+				self.g_etext_ram = utils.get_address_of_symbol("_etext_ram")
 
 
 		# Check for ELF file existence, if exists open the ELF (tinyara) file in binary format
@@ -325,10 +333,16 @@ class dumpParser:
 		LR = 14
 		PC = 15
 
-		# Read config information
-		fd = open(self.config_path, 'r')
-		data = fd.read()
-		fd.close()
+		# Read config information (optional - .config may be absent)
+		# Only heap usage parsing requires CONFIG_MAX_TASKS / CONFIG_IDLETHREAD_STACKSIZE.
+		# The call stack parsing below does not depend on .config.
+		data = None
+		try:
+			fd = open(self.config_path, 'r')
+			data = fd.read()
+			fd.close()
+		except (IOError, OSError):
+			pass
 
 		# Unwind the Callstack by obtaining FP, SP and PC from the proper global variable
 		# task_ctxt_regs is used if SEC_DEBUG is enabled , else current_regs is used
@@ -442,13 +456,22 @@ class dumpParser:
 
 		max_tasks = 0
 		# Get MAX_TASKS num
-		if 'CONFIG_MAX_TASKS=' in data:
+		if data is not None and 'CONFIG_MAX_TASKS=' in data:
 			index = data.find('CONFIG_MAX_TASKS=')
 			index += len('CONFIG_MAX_TASKS=')
 			while data[index] != '\n' :
 				max_tasks *= 10
 				max_tasks += int(data[index])
 				index += 1
+
+		if max_tasks == 0:
+			print('')
+			print('***********************************************************')
+			print('Warning: CONFIG_MAX_TASKS is not available (no .config or value not found).')
+			print('         Heap usage parsing is skipped. The call stack above is unaffected.')
+			print('         Provide .config (-c) to enable heap usage parsing.')
+			print('***********************************************************')
+			return
 
 		HEAP_START_POINT = (ALLOC_LIST_POINT + (max_tasks * SIZE_OF_HEAPINFO_TCB_INFO))
 
@@ -469,7 +492,7 @@ class dumpParser:
 		stack_size = [0 for i in range(max_tasks)]
 
 		idle_stack_size = 0
-		if 'CONFIG_IDLETHREAD_STACKSIZE=' in data:
+		if data is not None and 'CONFIG_IDLETHREAD_STACKSIZE=' in data:
 			index = data.find('CONFIG_IDLETHREAD_STACKSIZE=')
 			index += len('CONFIG_IDLETHREAD_STACKSIZE=')
 			while data[index] != '\n' :
