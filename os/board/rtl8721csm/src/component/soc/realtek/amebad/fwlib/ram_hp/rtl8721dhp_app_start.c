@@ -1042,7 +1042,8 @@ u32 app_mpu_nocache_init(void)
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 
-	/* 
+#ifdef CONFIG_BUILD_FLAT
+	/*
 	 * Make KM0's SRAM + reserved gap (0x0008_0000-0x000C_0000) READ-ONLY
 	 * from KM4: KM4 may still read & execute (MPU_EXEC_ALLOW, MPU_UN_PRIV_RO),
 	 * but any write into KM0 SRAM faults immediately (MemManage).  This guards
@@ -1058,20 +1059,21 @@ u32 app_mpu_nocache_init(void)
 	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
 	mpu_region_cfg(mpu_entry, &mpu_cfg);
 
-    /* 
+	/*
 	 * Make XIP region (0x08000000-0x0FFFFFFF)) READ-ONLY
 	 * from KM4: KM4 may still read & execute (MPU_EXEC_ALLOW, MPU_UN_PRIV_RO),
 	 * but any write into XIP region faults immediately (MemManage).  This guards
 	 * against KM4 accidentally corrupting XIP memory.
 	 */
-    mpu_entry = mpu_entry_alloc();
-    mpu_cfg.region_base = 0x08000000;
-    mpu_cfg.region_size = 0x10000000 - 0x08000000; /* 0x8000000, power-of-2 */
-    mpu_cfg.xn = MPU_EXEC_ALLOW;
-    mpu_cfg.ap = MPU_UN_PRIV_RO;       /* read-only: writes fault */
-    mpu_cfg.sh = MPU_NON_SHAREABLE;
-    mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
-    mpu_region_cfg(mpu_entry, &mpu_cfg);
+	mpu_entry = mpu_entry_alloc();
+	mpu_cfg.region_base = 0x08000000;
+	mpu_cfg.region_size = 0x10000000 - 0x08000000; /* 0x8000000, power-of-2 */
+	mpu_cfg.xn = MPU_EXEC_ALLOW;
+	mpu_cfg.ap = MPU_UN_PRIV_RO;       /* read-only: writes fault */
+	mpu_cfg.sh = MPU_NON_SHAREABLE;
+	mpu_cfg.attr_idx = MPU_MEM_ATTR_IDX_WB_T_RWA;
+	mpu_region_cfg(mpu_entry, &mpu_cfg);
+#endif
 
 	g_mpu_nregion_allocated = mpu_entry + 1;
 	return 0;
