@@ -225,6 +225,11 @@ void display_detailed_usage_examples(void)
 			"    Example: csifw_tc 14 0 64 100\n"
 			"             This runs test case 16 with config_type=0, interval=64ms, run_time=100sec\n"
 			"\n"
+			"15: Run register->start->wait 1s->stop->unregister loop infinitely\n"
+			"    Usage: csifw_tc 15\n"
+			"    Example: csifw_tc 15\n"
+			"             This runs an infinite loop of register, start, wait 1 second, stop, unregister\n"
+			"             Uses default interval=64ms, config_type=0 (HT_CSI_DATA)\n"
 			"\nParameters:\n"
 			" config_type: CSI configuration type (0-3)\n"
 			"              0: HT_CSI_DATA\n"
@@ -324,6 +329,9 @@ int csifw_tc_app_init(int argc, char **args)
 
 	case 14:
 		return test_case_basic_sequence_with_parameters(usr_intrvl, usr_conf, run_time);
+
+	case 15:
+		return test_case_register_start_stop_loop();
 
 	default:
 		printf("CSIFW_TEST_APP: Invalid test case specified: %d\n", test_case);
