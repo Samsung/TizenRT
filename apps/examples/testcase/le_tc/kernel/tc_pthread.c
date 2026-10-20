@@ -1532,7 +1532,7 @@ static void tc_pthread_pthread_setcanceltype(void)
 
 	type = PTHREAD_CANCEL_DEFERRED;
 	ret_chk = pthread_setcanceltype(type, &oldtype);
-	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, ENOSYS);
+	TC_ASSERT_EQ("pthread_setcanceltype", ret_chk, OK);
 	TC_ASSERT_EQ("pthread_setcanceltype", oldtype, PTHREAD_CANCEL_ASYNCHRONOUS);
 
 	TC_SUCCESS_RESULT();
