@@ -248,6 +248,9 @@ static int adam110_send_cmd(FAR struct adam110_dev_s *dev, uint8_t op,
 #define ADAM110_AI_GET_THD(dev, model, rx_ptr) \
     adam110_send_cmd(dev, AC_GET_THD, (uint8_t)(model), 0, 0, 0, rx_ptr, false)
 
+#define ADAM110_AI_SET_INT_HIGHT_TIME(dev, h_time, l_time, rx_ptr) \
+    adam110_send_cmd(dev, AC_SET_INT_HIGH_TIME, (uint8_t)(h_time), (uint8_t)(l_time), 0, 0, rx_ptr, false)
+
 #define ADAM110_AI_SET_INTR(dev, model, enable, rx_ptr) \
     adam110_send_cmd(dev, AC_INT_EN, (uint8_t)(model), (uint8_t)(enable), 0, 0, rx_ptr, false)
 
