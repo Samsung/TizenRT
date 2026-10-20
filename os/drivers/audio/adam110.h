@@ -142,6 +142,7 @@
 #define AC_GET_MODEL_NAME			0x65 /* Get AI model name */
 #define AC_INT_EN					0x66 /* AI model Interrupt Enable/Disable */
 #define AC_GET_THD					0x67 /* Get AI Model Threshold Adjust */
+#define AC_SET_INT_HIGH_TIME        0x68 /* Set AI model interrupt high time 800: 8ms, Max : 100000(1s)*/
 
 /* Firmware */
 #define FW_GET_VER					0xE0 /* Get FW Version */
