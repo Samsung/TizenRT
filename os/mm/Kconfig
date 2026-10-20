@@ -154,5 +154,5 @@ config MM_LARGE_ALLOC_THRESHOLD
 		Allocations whose physical chunk size (user requested size +
 		SIZEOF_MM_ALLOCNODE, granule aligned) is greater than or equal
 		to this value are placed at the back of the selected free
-		chunk. Default is 512KB. Must be larger than SIZEOF_MM_FREENODE.
+		chunk. Default is 1MB. Must be larger than SIZEOF_MM_FREENODE.
 
