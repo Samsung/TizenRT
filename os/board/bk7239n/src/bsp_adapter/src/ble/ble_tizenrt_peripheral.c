@@ -483,7 +483,12 @@ int32_t bk_tr_ble_peripheral_notice_cb(ble_notice_t notice, void *param)
                 elem.attr_cb_evt.result = 0;
             }
 
-            ble_evt_queue_push_ext(EVT_BLE_SERVER_ATTR_CB, &elem, sizeof(ble_evt_msg_elem_t), NULL);
+            if (ble_evt_queue_push_ext(EVT_BLE_SERVER_ATTR_CB, &elem, sizeof(ble_evt_msg_elem_t), NULL))
+            {
+                LOGE("push queue err");
+                os_free(tmp_buffer);
+                tmp_buffer = NULL;
+            }
 
             //note: report data with trble_netmgr_attr_get_data
         }
