@@ -1481,11 +1481,6 @@ CONFIG_BINMGR_RECOVERY=y
 CONFIG_BINMGR_UPDATE=y
 
 #
-# Task Monitor
-#
-# CONFIG_TASK_MONITOR is not set
-
-#
 # Task manager
 #
 # CONFIG_TASK_MANAGER is not set

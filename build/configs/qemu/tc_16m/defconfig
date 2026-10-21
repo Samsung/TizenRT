@@ -1260,10 +1260,6 @@ CONFIG_APP2_MAIN_PRIORITY=220
 #
 
 #
-# Task Monitor
-#
-
-#
 # Task manager
 #
 # CONFIG_TASK_MANAGER is not set

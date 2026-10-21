@@ -1257,11 +1257,6 @@ CONFIG_USE_BP=y
 # CONFIG_BINARY_MANAGER is not set
 
 #
-# Task Monitor
-#
-# CONFIG_TASK_MONITOR is not set
-
-#
 # Task manager
 #
 # CONFIG_TASK_MANAGER is not set
