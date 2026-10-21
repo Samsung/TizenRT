@@ -310,9 +310,13 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 	eloop_cancel_timeout(ap_handle_session_warning_timer, hapd, sta);
 	ap_sta_clear_disconnect_timeouts(hapd, sta);
 	sae_clear_retransmit_timer(hapd, sta);
-#ifdef CONFIG_P2P_GO
-	ieee802_1x_free_station(hapd, sta);
-#endif
+	/* free pending_eapol_rx here instead of calling ieee802_1x_free_station():
+	 * eapol_auth is not linked in this build, and sta->eapol_sm is always NULL */
+	if (sta->pending_eapol_rx) {
+		wpabuf_free(sta->pending_eapol_rx->buf);
+		os_free(sta->pending_eapol_rx);
+		sta->pending_eapol_rx = NULL;
+	}
 	wpa_auth_sta_deinit(sta->wpa_sm);
 	rsn_preauth_free_station(hapd, sta);
 #ifndef CONFIG_NO_RADIUS
