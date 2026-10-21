@@ -279,6 +279,11 @@ static bk_err_t i2s_validate_and_get_drv_info(uint8_t i2s_index, i2s_drv_info_t 
     default:
         return BK_ERR_I2S_PARAM;
     }
+
+    if (*drv_info == NULL) {
+        return BK_ERR_I2S_NOT_INIT;
+    }
+
     return BK_OK;
 }
 
@@ -1103,6 +1108,23 @@ bk_err_t bk_i2s_deinit(void)
         return ret;
     }
 
+    if (drv_info->chl1_cfg) {
+        bk_i2s_chl_deinit(I2S_CHANNEL_1, I2S_TXRX_TYPE_TX);
+        bk_i2s_chl_deinit(I2S_CHANNEL_1, I2S_TXRX_TYPE_RX);
+    }
+
+    if (drv_info->chl2_cfg) {
+        bk_i2s_chl_deinit(I2S_CHANNEL_2, I2S_TXRX_TYPE_TX);
+        bk_i2s_chl_deinit(I2S_CHANNEL_2, I2S_TXRX_TYPE_RX);
+    }
+
+    if (drv_info->chl3_cfg) {
+        bk_i2s_chl_deinit(I2S_CHANNEL_3, I2S_TXRX_TYPE_TX);
+        bk_i2s_chl_deinit(I2S_CHANNEL_3, I2S_TXRX_TYPE_RX);
+    }
+
+    i2s_hal_deconfig();
+
     /* Clear the driver info pointer */
     switch (i2s_index) {
     case 0:
@@ -1118,23 +1140,6 @@ bk_err_t bk_i2s_deinit(void)
         i2s2_drv_info = NULL;
         break;
 #endif
-    }
-
-    i2s_hal_deconfig();
-
-    if (drv_info->chl1_cfg) {
-        bk_i2s_chl_deinit(I2S_CHANNEL_1, I2S_TXRX_TYPE_TX);
-        bk_i2s_chl_deinit(I2S_CHANNEL_1, I2S_TXRX_TYPE_RX);
-    }
-
-    if (drv_info->chl2_cfg) {
-        bk_i2s_chl_deinit(I2S_CHANNEL_2, I2S_TXRX_TYPE_TX);
-        bk_i2s_chl_deinit(I2S_CHANNEL_2, I2S_TXRX_TYPE_RX);
-    }
-
-    if (drv_info->chl3_cfg) {
-        bk_i2s_chl_deinit(I2S_CHANNEL_3, I2S_TXRX_TYPE_TX);
-        bk_i2s_chl_deinit(I2S_CHANNEL_3, I2S_TXRX_TYPE_RX);
     }
 
     if (drv_info) {
