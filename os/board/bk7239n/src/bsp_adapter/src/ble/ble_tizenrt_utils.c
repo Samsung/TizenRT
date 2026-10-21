@@ -260,7 +260,12 @@ int ble_push_read_info(uint8_t conn_id, uint8_t client_id)
     if (rd_info)
     {
         rd_info->client_id = client_id;
-        ble_list_append(hal_ble_con_env.con_dev[conn_id].rd_list, rd_info);
+        if (!ble_list_append(hal_ble_con_env.con_dev[conn_id].rd_list, rd_info))
+        {
+            LOGE("%s, ble_list_append failed!!!\r\n", __func__);
+            os_free(rd_info);
+            ret = -1;
+        }
     }
     else
     {
@@ -295,7 +300,12 @@ int ble_push_write_info(uint8_t conn_id, uint8_t client_id, uint16_t handle)
     {
         wr_info->client_id = client_id;
         wr_info->att_handle = handle;
-        ble_list_append(hal_ble_con_env.con_dev[conn_id].wr_list, wr_info);
+        if (!ble_list_append(hal_ble_con_env.con_dev[conn_id].wr_list, wr_info))
+        {
+            LOGE("%s, ble_list_append failed!!!\r\n", __func__);
+            os_free(wr_info);
+            ret = -1;
+        }
     }
     else
     {
@@ -1021,5 +1031,3 @@ uint8_t le_get_idle_link_num(void)
     }
     return link_num;
 }
-
-
