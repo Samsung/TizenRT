@@ -240,27 +240,6 @@ For example,
 		_sint_heap = ABSOLUTE(.);
 	} > sram
 ```
-2. Idle thread stack and internal heap regions should be set at a different region (other than end of bss) as per the memory layout (`build/configs/rtl8720e/scripts/rlx8720e_img2.ld`):
-```
-	.ram_image2.bss (NOLOAD):
-	{
-		__bss_start__ = .;
-		*(.bss*)
-		*(COMMON)
-		__bss_end__ = .;
-	} > KM4_BD_RAM
-
-	.psram_heap.start (NOLOAD):
-	{
-		/* Heap start address in external RAM */
-		_sext_heap = ABSOLUTE(.);
-	} > KM4_BD_PSRAM
-
-	/* Heap start address in internal RAM */
-	_sint_heap = ABSOLUTE(ORIGIN(KM4_HEAP_EXT));
-	_sidle_stack = ABSOLUTE(ORIGIN(KM4_MSP_RAM_NS) + LENGTH(KM4_MSP_RAM_NS)) - CONFIG_IDLETHREAD_STACKSIZE;
-```
-
 In addition to the above information, export the CONFIG_IDLETHREAD_STACKSIZE to the linker script using below statement in the board `Make.defs` for all configurations (`build/configs/sidk_s5jt200/hello/Make.defs`):  
 ```
 LDFLAGS += --defsym=CONFIG_IDLETHREAD_STACKSIZE=$(CONFIG_IDLETHREAD_STACKSIZE)

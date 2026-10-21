@@ -107,14 +107,6 @@ config ARCH_CHIP_STM32H745
 	---help---
 		STMicro STM32 architectures (ARM Cortex-M7/M4 Dual core).
 
-config ARCH_CHIP_AMEBALITE
-	bool "Realtek AMEBALITE"
-	select ARCH_HAVE_MPU
-	select ARCH_HAVE_I2CRESET
-	select ARCH_HAVE_HEAPCHECK if DEBUG
-	---help---
-		Realtek AMEBALITE architectures (ARM Cortex-M23/33).
-
 config ARCH_CHIP_AMEBASMART
 	bool "Realtek AMEBASMART"
 	select ARCH_CORTEXA32
@@ -147,7 +139,6 @@ config ARCH_CHIP
 	default "stm32l4"	if ARCH_CHIP_STM32L4
 	default "amebad"	if ARCH_CHIP_AMEBAD
 	default "armino"	if ARCH_CHIP_ARMINO
-	default "amebalite"	if ARCH_CHIP_AMEBALITE
 	default "amebasmart"	if ARCH_CHIP_AMEBASMART
 	default "stm32h745"     if ARCH_CHIP_STM32H745
 	default "imx6"		if ARCH_CHIP_IMX6
@@ -548,9 +539,6 @@ source arch/arm/src/stm32l4/Kconfig
 endif
 if ARCH_CHIP_AMEBAD
 source arch/arm/src/amebad/Kconfig
-endif
-if ARCH_CHIP_AMEBALITE
-source arch/arm/src/amebalite/Kconfig
 endif
 if ARCH_CHIP_AMEBASMART
 source arch/arm/src/amebasmart/Kconfig

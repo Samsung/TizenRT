@@ -134,7 +134,7 @@ typedef struct rtw_scan_handler_result {
   * @brief  The structure is used to describe the cfg parameters used for csi report,
   * @note  The mac_addr if not specified, the default value must be 0.
   */
-#if CONFIG_ARCH_CHIP_RTL8720E || CONFIG_ARCH_CHIP_RTL8730E
+#if CONFIG_ARCH_CHIP_RTL8730E
 typedef enum {
 	CSI_ALG_LS = 0,
 	CSI_ALG_SMOTHING,
