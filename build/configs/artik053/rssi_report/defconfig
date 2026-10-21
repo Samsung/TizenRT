@@ -1448,11 +1448,6 @@ CONFIG_DM_AP_SECURITY="wpa2_aes"
 #
 
 #
-# Task Monitor
-#
-# CONFIG_TASK_MONITOR is not set
-
-#
 # Task manager
 #
 # CONFIG_TASK_MANAGER is not set

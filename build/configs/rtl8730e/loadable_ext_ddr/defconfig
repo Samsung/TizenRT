@@ -1874,11 +1874,6 @@ CONFIG_BINMGR_UPDATE_SAME_VERSION=y
 CONFIG_BINMGR_RELOAD_REBOOT=y
 
 #
-# Task Monitor
-#
-# CONFIG_TASK_MONITOR is not set
-
-#
 # Task manager
 #
 # CONFIG_TASK_MANAGER is not set

@@ -1398,11 +1398,6 @@ CONFIG_IOTJS_JERRY_HEAP=128
 #
 
 #
-# Task Monitor
-#
-# CONFIG_TASK_MONITOR is not set
-
-#
 # Task manager
 #
 # CONFIG_TASK_MANAGER is not set

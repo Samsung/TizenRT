@@ -1110,10 +1110,6 @@ CONFIG_ENABLE_UPTIME=y
 #
 
 #
-# Task Monitor
-#
-
-#
 # Task manager
 #
 CONFIG_TASK_MANAGER=y
