@@ -158,9 +158,13 @@ void bmsg_skt_tx_handler(BUS_MSG_T *msg)
 		RWNX_LOGW("hapd_intf_ke_rx_handle resend\r\n");
 		rtos_delay_milliseconds(10);
 		ret = rtos_push_to_queue(&g_wifi_core.io_queue, msg, BEKEN_NO_WAIT);
-		if (kNoErr != ret)
+		if (kNoErr != ret) {
 			RWNX_LOGW("hapd_intf_ke_rx_handle resend fail!\r\n");
-		resend_num++;
+			os_free((void *)(msg->arg));
+			resend_num = 0;
+		} else {
+			resend_num++;
+		}
 	} else {
 		resend_num = 0;
 	}
@@ -372,8 +376,10 @@ exit:
 		uint16_t len = msg->len;
 		skb = alloc_skb(len, PBUF_RAW);
 
-		if (!skb)
+		if (!skb) {
+			os_free(pkt);
 			return;
+		}
 
 		// XXX: copy
 		rwm_tx_mpdu_renew(pkt, len, skb->msdu_ptr);
@@ -559,7 +565,7 @@ int bmsg_special_tx_sender(struct pbuf *p, uint32_t vif_idx)
 	ret = rtos_push_to_queue(&g_wifi_core.io_queue, &msg, 1 * SECONDS);
 	if (kNoErr != ret) {
 		RWNX_LOGW("bmsg_tx_sender failed, ret=%d\r\n", ret);
-		pbuf_ref(p);
+		pbuf_free(p);
 	}
 
 	return ret;

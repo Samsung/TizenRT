@@ -63,8 +63,8 @@ static int eloop_sock_table_add_sock(struct eloop_sock_table *table,
 			       sizeof(struct eloop_sock));
 	if (tmp == NULL) {
 		eloop_trace_sock_add_ref(table);
-		table->table = NULL;
-		table->count = 0;
+		/* realloc failure leaves the original block valid; keep table->table
+		 * and table->count unchanged so the existing array is not leaked */
 		WPA_LOGE("add sock: oom");
 		return -1;
 	}
@@ -497,8 +497,8 @@ int eloop_register_signal(int sig, eloop_signal_handler handler,
 	tmp = os_realloc_array(eloop.signals, eloop.signal_count + 1,
 			       sizeof(struct eloop_signal));
 	if (tmp == NULL) {
-		eloop.signal_count = 0;
-		eloop.signals = NULL;
+		/* realloc failure leaves the original block valid; keep eloop.signals
+		 * and eloop.signal_count unchanged so the existing array is not leaked */
 		GLOBAL_INT_RESTORE();
 		WPA_LOGE("reg sig: oom");
 		return -1;

@@ -183,11 +183,13 @@ struct hostapd_config *hostapd_config_read(const char *fname)
 			bss->ssid.wpa_psk = os_zalloc(sizeof(struct hostapd_wpa_psk));
 			if (!bss->ssid.wpa_psk) {
 				WPA_LOGE("%s: OOM\n", __FUNCTION__);
+				hostapd_config_free(conf);
 				return NULL;
 			}
 			if (hexstr2bin(wpa_key, bss->ssid.wpa_psk->psk, PMK_LEN)) {
 				WPA_LOGE("Key contains non-hex value\n");
 				hostapd_config_clear_wpa_psk(&bss->ssid.wpa_psk);
+				hostapd_config_free(conf);
 				return NULL;
 			}
 			bss->ssid.wpa_psk->group = 1;

@@ -1188,11 +1188,21 @@ static void *hostap_init(struct hostapd_data *hapd,
     ret = wpa_driver_hostap_start_apm(drv);
     if(ret) {
         WPA_LOGD("wpa_driver_hostap_start_apm failed\n");
+        wpa_driver_hostap_deinit_vif(drv);
+        fsocket_close(drv->ioctl_sock);
+        os_free(drv);
+        drv = NULL;
         return NULL;
     }
 
     if (hostap_init_sockets(drv, params->own_addr) ||
             hostap_wireless_event_init(drv)) {
+        if (drv->sock >= 0) {
+            eloop_unregister_read_sock(drv->sock);
+            fsocket_close(drv->sock);
+        }
+        l2_packet_deinit(drv->sock_xmit);
+        drv->sock_xmit = NULL;
         fsocket_close(drv->ioctl_sock);
 
         os_free(drv);
@@ -1238,6 +1248,12 @@ static void hostap_driver_deinit(void *priv)
 
     os_free(drv->wps_ie);
 	drv->wps_ie = NULL;
+
+#ifdef CONFIG_IEEE80211R
+    os_free(drv->ft_ie);
+	drv->ft_ie = NULL;
+	drv->ft_ie_len = 0;
+#endif
 
     os_free(drv);
 	drv = NULL;
@@ -1768,8 +1784,9 @@ static void *wpa_driver_init(void *ctx, const char *ifname)
 	// receive rx mgmt frames, or handle tx status
     if (eloop_register_read_sock(drv->sock, handle_read, drv, NULL))
     {
-        //FIXME need to rollback and release all resources
-        wpa_printf(MSG_ERROR, "Could not register read socket, memory leak!");
+        wpa_printf(MSG_ERROR, "Could not register read socket");
+        fsocket_close(drv->sock);
+        fsocket_close(drv->ioctl_sock);
         os_free(drv);
         return NULL;
     }
@@ -1816,6 +1833,12 @@ static void wpa_driver_deinit(void *priv)
 
     os_free(drv->wps_ie);
 	drv->wps_ie = NULL;
+
+#ifdef CONFIG_IEEE80211R
+    os_free(drv->ft_ie);
+	drv->ft_ie = NULL;
+	drv->ft_ie_len = 0;
+#endif
 
     os_free(drv);
 	drv = NULL;
@@ -2388,8 +2411,10 @@ int wpa_driver_send_action(void *priv, unsigned int freq, unsigned int wait,
 
 	//hostap_send_mlme
     type_ptr = os_zalloc(sizeof(S_TYPE_ST));
-	if (!type_ptr)
+	if (!type_ptr) {
+		os_free(buf);
 		return -1;
+	}
 
     type_ptr->type = HOSTAPD_MGMT_ROBUST;
     type_ptr->vif_index = drv->vif_index;

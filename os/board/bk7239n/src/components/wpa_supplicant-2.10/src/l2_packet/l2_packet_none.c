@@ -101,9 +101,10 @@ int __l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 	type_ptr = os_zalloc(sizeof(S_TYPE_ST));
     if (!type_ptr) {
 		ret = -1;
-        if (type_ptr) {
-            os_free(type_ptr);
-        }
+		if (node) { /* already allocated on the sync path */
+			os_free(node);
+			node = NULL;
+		}
 		goto send_exit;
     }
 
@@ -111,6 +112,12 @@ int __l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 	data_buf = os_zalloc(data_len);
 	if(data_buf == NULL){
 		ret = -1;
+		os_free(type_ptr); /* ownership not yet transferred via fsocket_send */
+		type_ptr = NULL;
+		if (node) {
+			os_free(node);
+			node = NULL;
+		}
 		goto send_exit;
 	}
 

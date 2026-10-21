@@ -3112,8 +3112,8 @@ wpa_scan_clone_params(const struct wpa_driver_scan_params *src)
 			params->ssids[i].ssid = n;
 			params->ssids[i].ssid_len = src->ssids[i].ssid_len;
 		}
+		params->num_ssids++; /* count each copied entry so the failed path frees them all */
 	}
-	params->num_ssids = src->num_ssids;
 
 	if (src->extra_ies) {
 		n = os_memdup(src->extra_ies, src->extra_ies_len);

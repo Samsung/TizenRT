@@ -394,6 +394,8 @@ void crypto_hash_update(struct crypto_hash *ctx, const u8 *data, size_t len)
 
 int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 {
+	int ret = -1;
+
 	if (ctx == NULL)
 		return -2;
 
@@ -407,16 +409,14 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 	case CRYPTO_HASH_ALG_MD5:
 		if (*len < 16) {
 			*len = 16;
-			os_free(ctx);
-			return -1;
+			goto out;
 		}
 		*len = 16;
 		break;
 	case CRYPTO_HASH_ALG_SHA1:
 		if (*len < 20) {
 			*len = 20;
-			os_free(ctx);
-			return -1;
+			goto out;
 		}
 		*len = 20;
 		break;
@@ -424,8 +424,7 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 	case CRYPTO_HASH_ALG_SHA256:
 		if (*len < 32) {
 			*len = 32;
-			os_free(ctx);
-			return -1;
+			goto out;
 		}
 		*len = 32;
 		break;
@@ -433,32 +432,28 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 	case CRYPTO_HASH_ALG_SHA384:
 		if (*len < 48) {
 			*len = 48;
-			os_free(ctx);
-			return -1;
+			goto out;
 		}
 		*len = 48;
 		break;
 	case CRYPTO_HASH_ALG_SHA512:
 		if (*len < 64) {
 			*len = 64;
-			os_free(ctx);
-			return -1;
+			goto out;
 		}
 		*len = 64;
 		break;
 	case CRYPTO_HASH_ALG_HMAC_MD5:
 		if (*len < 16) {
 			*len = 16;
-			os_free(ctx);
-			return -1;
+			goto out;
 		}
 		*len = 16;
 		break;
 	case CRYPTO_HASH_ALG_HMAC_SHA1:
 		if (*len < 20) {
 			*len = 20;
-			os_free(ctx);
-			return -1;
+			goto out;
 		}
 		*len = 20;
 
@@ -467,25 +462,25 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 	case CRYPTO_HASH_ALG_HMAC_SHA256:
 		if (*len < 32) {
 			*len = 32;
-			os_free(ctx);
-			return -1;
+			goto out;
 		}
 		*len = 32;
 		break;
 #endif /* CONFIG_SHA256 */
 	default:
-		os_free(ctx);
-		return -1;
+		goto out;
 	}
 
 	if (ctx->hmac)
 		mbedtls_md_hmac_finish(&ctx->ctx, mac);
 	else
 		mbedtls_md_finish(&ctx->ctx, mac);
+	ret = 0;
+
+out:
 	mbedtls_md_free(&ctx->ctx);
 	bin_clear_free(ctx, sizeof(*ctx));
-
-	return 0;
+	return ret;
 }
 
 
@@ -2585,14 +2580,17 @@ static int crypto_init_cipher_ctx(mbedtls_cipher_context_t *ctx,
 	if (mbedtls_cipher_setkey(ctx, key, cipher_info->MBEDTLS_PRIVATE(key_bitlen),
 				 operation) != 0) {
 		wpa_printf(MSG_ERROR, "mbedtls_cipher_setkey returned error");
+		mbedtls_cipher_free(ctx);
 		return -1;
 	}
 	if (mbedtls_cipher_set_iv(ctx, iv, cipher_info->MBEDTLS_PRIVATE(iv_size)) != 0) {
 		wpa_printf(MSG_ERROR, "mbedtls_cipher_set_iv returned error");
+		mbedtls_cipher_free(ctx);
 		return -1;
 	}
 	if (mbedtls_cipher_reset(ctx) != 0) {
 		wpa_printf(MSG_ERROR, "mbedtls_cipher_reset() returned error");
+		mbedtls_cipher_free(ctx);
 		return -1;
 	}
 
@@ -2668,6 +2666,9 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
 	return ctx;
 
 cleanup:
+	/* mbedtls_cipher_free() is a safe no-op on zeroed / not-yet-setup contexts */
+	mbedtls_cipher_free(&ctx->ctx_enc);
+	mbedtls_cipher_free(&ctx->ctx_dec);
 	os_free(ctx);
 	return NULL;
 }
@@ -2935,6 +2936,7 @@ int rc4_skip(const u8 *key, size_t keylen, size_t skip,
 		if ((ret = mbedtls_arc4_crypt(&ctx, len, skip_buf_in,
 					      skip_buf_out)) != 0) {
 			wpa_printf(MSG_ERROR, "rc4 encryption failed");
+			os_free(obuf);
 			return -1;
 		}
 		os_memcpy(skip_buf_in, skip_buf_out, 16);

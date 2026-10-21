@@ -292,12 +292,12 @@ struct wpa_config *wpa_config_read(const char *name, struct wpa_config *cfgp)
 		tail->next = ssid;
 		tail = ssid;
 	}
+	config->ssid = head;	/* link before add_prio so error cleanup frees ssid */
 	if (wpa_config_add_prio_network(config, ssid)) {
 		errors++;
 		goto error;
 	}
 
-	config->ssid = head;
 	wpa_config_debug_dump_networks(config);
 	config->auth_dur = 3;
 	//config->pmf = MGMT_FRAME_PROTECTION_OPTIONAL;
