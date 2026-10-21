@@ -275,9 +275,6 @@ uint32_t *arm_syscall(uint32_t *regs)
 
 		regs = (uint32_t *)regs[REG_R1];
 		DEBUGASSERT(regs);
-#ifdef CONFIG_TASK_MONITOR
-		rtcb->is_active = true;
-#endif
 	}
 	break;
 #endif

@@ -100,9 +100,6 @@
 #ifdef CONFIG_BINARY_MANAGER
 #include "binary_manager/binary_manager_internal.h"
 #endif
-#ifdef CONFIG_TASK_MONITOR
-#include "task_monitor/task_monitor_internal.h"
-#endif
 #ifdef CONFIG_MESSAGING_IPC
 #include "messaging/message_ctrl.h"
 #endif
@@ -335,13 +332,6 @@ static inline void os_do_appstart(void)
 	pid = kernel_thread(LOG_DUMP_NAME, CONFIG_LOG_DUMP_PRIO, LOG_DUMP_STACKSIZE, log_dump, NULL);
 	if (pid < 0) {
 		sdbg("Failed to start log dump");
-	}
-#endif
-
-#ifdef CONFIG_TASK_MONITOR
-	pid = kernel_thread("taskmonitor", CONFIG_TASK_MONITOR_PRIORITY, 1024, task_monitor, (FAR char *const *)NULL);
-	if (pid < 0) {
-		sdbg("Failed to start task monitor\n");
 	}
 #endif
 

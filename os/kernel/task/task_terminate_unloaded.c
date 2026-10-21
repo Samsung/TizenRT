@@ -70,9 +70,6 @@
 #include "task/task.h"
 #include "sched/sched.h"
 #include "signal/signal.h"
-#ifdef CONFIG_TASK_MONITOR
-#include "task_monitor/task_monitor.h"
-#endif
 #ifdef CONFIG_PREFERENCE
 #include "preference/preference.h"
 #endif
@@ -137,10 +134,6 @@ int task_terminate_unloaded(FAR struct tcb_s *tcb)
 	dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->task_state].list);
 	leave_critical_section(saved_state);
 
-#ifdef CONFIG_TASK_MONITOR
-	/* Unregister this pid from task monitor */
-	task_monitor_unregester_list(tcb->pid);
-#endif
 #ifdef CONFIG_PREFERENCE
 	preference_clear_callbacks(tcb->pid);
 #endif
