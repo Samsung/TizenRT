@@ -49,12 +49,6 @@ static uint32_t SLOT1_START_ADDR = 0x1d000;
 static uint32_t SLOT_AREA_OFFSET = 0x23000;
 #endif
 
-#ifdef CONFIG_AMEBALITE_TRUSTZONE
-static uint32_t SLOT0_START_ADDR = 0x24000;
-static uint32_t SLOT1_START_ADDR = 0x27000;
-static uint32_t SLOT_AREA_OFFSET = 0x23000;
-#endif
-
 #ifdef CONFIG_AMEBASMART_TRUSTZONE
 static uint32_t SLOT0_START_ADDR = 0x2C000;
 static uint32_t SLOT1_START_ADDR = 0x2F000;
