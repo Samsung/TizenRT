@@ -56,6 +56,7 @@
 
 #include <tinyara/config.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <debug.h>
 #include <tinyara/mm/mm.h>
 
@@ -94,19 +95,22 @@ void *realloc_at(int heap_index, void *oldmem, size_t size)
 	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 
-	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
-		mdbg("realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
+	if (size == 0) {
+		if (oldmem) {
+			set_errno(EINVAL);
+		}
 		return NULL;
 	}
 
-	if (size == 0) {
-		mm_free(&BASE_HEAP[heap_index], oldmem);
+	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
+		mdbg("realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
 	}
 
 	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size, caller_retaddr);
 	if (ret == NULL) {
 		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, 0, USER_HEAP, caller_retaddr);
+		set_errno(ENOMEM);
 	}
 	return ret;
 }
@@ -139,15 +143,19 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
 	if (size == 0) {
-		free(oldmem);
+		if (oldmem) {
+			set_errno(EINVAL);
+		}
 		return NULL;
-	}	
+	}
+
+#ifdef CONFIG_APP_BINARY_SEPARATION
 	/* User supports a single heap on app separation */
 	ret = mm_realloc(BASE_HEAP, oldmem, size, caller_retaddr);
 	if (ret == NULL) {
 		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP, caller_retaddr);
+		set_errno(ENOMEM);
 	}
 
 #else /* CONFIG_APP_BINARY_SEPARATION */
@@ -155,11 +163,6 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	heap_idx = mm_get_index_of_heap(oldmem);
 	if (heap_idx < HEAP_START_IDX) {
 		mdbg("Invalid heap index for oldmem %p, heap_idx %d\n", oldmem, heap_idx);
-		return NULL;
-	}
-
-	if (size == 0) {
-		mm_free(&BASE_HEAP[heap_idx], oldmem);
 		return NULL;
 	}
 
@@ -182,6 +185,7 @@ FAR void *realloc(FAR void *oldmem, size_t size)
 	}
 
 	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP, caller_retaddr);
+	set_errno(ENOMEM);
 
 #endif /* CONFIG_APP_BINARY_SEPARATION */
 

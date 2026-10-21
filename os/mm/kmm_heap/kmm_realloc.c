@@ -94,17 +94,17 @@ void *kmm_realloc_at(int heap_index, void *oldmem, size_t size)
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 	caller_retaddr = GET_RETURN_ADDRESS();
 #endif
+
+	if (size == 0) {
+		return NULL;
+	}
+
 	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
 		mdbg("kmm_realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
 		return NULL;
 	}
 
 	kheap = kmm_get_baseheap();
-
-	if (size == 0) {
-		mm_free(&kheap[heap_index], oldmem);
-		return NULL;
-	}
 
 	ret = mm_realloc(&kheap[heap_index], oldmem, size, caller_retaddr);
 	if (ret == NULL) {
@@ -141,6 +141,10 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 	struct mm_heap_s *kheap_origin;
 	struct mm_heap_s *kheap_new;
 
+	if (newsize == 0) {
+		return NULL;
+	}
+
 	if (oldmem) {
 		kheap_origin = mm_get_heap(oldmem);
 
@@ -148,11 +152,6 @@ FAR void *kmm_realloc(FAR void *oldmem, size_t newsize)
 		 * allocated address. This will cause ASSERT like Linux.
 		 */
 		ASSERT(kheap_origin);
-
-		if (newsize == 0) {
-			mm_free(kheap_origin, oldmem);
-			return NULL;
-		}
 
 		ret = mm_realloc(kheap_origin, oldmem, newsize, caller_retaddr);
 		if (ret != NULL) {
