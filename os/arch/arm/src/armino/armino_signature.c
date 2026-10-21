@@ -353,8 +353,11 @@ static psa_status_t kernel_calculate_flash_hash(uint32_t address, uint32_t size,
     status = psa_hash_finish(&operation, hash, SHA256_HASH_SIZE, &hash_length);
     if (status != PSA_SUCCESS) {
         dbg("hash finish failed, status=%d\r\n", status);
+        psa_hash_abort(&operation);
     }
 
+    kmm_free(buffer);
+    buffer = NULL;
     return status;
 }
 
