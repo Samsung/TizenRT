@@ -74,8 +74,6 @@ ifeq ($(CONFIG_ARCH_CHIP_BK7239N),y)
 CFLAGS += -include armino.h
 else ifeq ($(CONFIG_AMEBAD_TRUSTZONE),y)
 CFLAGS += -include ameba.h
-else ifeq ($(CONFIG_AMEBALITE_TRUSTZONE),y)
-CFLAGS += -include ameba.h
 else ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
 CFLAGS += -include ameba.h
 endif
