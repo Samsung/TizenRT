@@ -31,9 +31,6 @@
 #ifdef CONFIG_AMEBAD_TRUSTZONE
 #include <arch/chip/amebad_nsc.h>
 #endif
-#ifdef CONFIG_AMEBALITE_TRUSTZONE
-#include <arch/chip/amebalite_nsc.h>
-#endif
 #include <device_lock.h>
 
 static uint8_t *ns_buf = NULL;
