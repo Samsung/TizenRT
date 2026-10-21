@@ -665,10 +665,6 @@ struct tcb_s {
 #if CONFIG_TASK_NAME_SIZE > 0
 	char name[CONFIG_TASK_NAME_SIZE + 1];	/* Task name (with NUL terminator)     */
 #endif
-#ifdef CONFIG_TASK_MONITOR
-	bool is_active;
-#endif
-
 	int fin_data;			/* Irq notification Data to be handled */
 	int pending_fin_data;		/* Pended irq notification data */
 };

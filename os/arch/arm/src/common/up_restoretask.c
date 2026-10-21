@@ -23,9 +23,6 @@
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 #include <stdint.h>
 #endif
-#ifdef CONFIG_TASK_MONITOR
-#include <stdbool.h>
-#endif
 #ifdef CONFIG_TASK_SCHED_HISTORY
 #include <tinyara/debug/sysdbg.h>
 #endif
@@ -103,11 +100,6 @@ void up_restoretask(struct tcb_s *tcb)
 		up_mpu_set_register(tcb->stack_mpu_regs);
 #endif
 
-#endif
-
-#ifdef CONFIG_TASK_MONITOR
-		/* Update tcb active flag for monitoring. */
-		tcb->is_active = true;
 #endif
 
 #ifdef CONFIG_ARMV8M_TRUSTZONE
