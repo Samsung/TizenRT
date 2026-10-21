@@ -858,9 +858,12 @@ static void bkrt_ble_gattc_sdp_charac_callback(CHAR_TYPE type, uint8_t conidx, u
                     {
                         os_memcpy(noti->noti_data.data, data, len);
                         noti->noti_data.length = len;
-                    }else
+                    }
+                    else
                     {
                         LOGE("os_zalloc noti->noti_data.data failed %d", len);
+                        os_free(noti);
+                        noti = NULL;
                         break;
                     }
                 }
@@ -873,7 +876,8 @@ static void bkrt_ble_gattc_sdp_charac_callback(CHAR_TYPE type, uint8_t conidx, u
                     }
                     os_free(noti);
                 }
-            }else
+            }
+            else
             {
                 LOGE("os_zalloc ble_tizenrt_notification_t failed");
             }
@@ -894,9 +898,12 @@ static void bkrt_ble_gattc_sdp_charac_callback(CHAR_TYPE type, uint8_t conidx, u
                     {
                         os_memcpy(ind->indi_data.data, data, len);
                         ind->indi_data.length = len;
-                    }else
+                    }
+                    else
                     {
-                        LOGE("os_zalloc ind->ind_data.data failed %d", len);
+                        LOGE("os_zalloc ind->indi_data.data failed %d", len);
+                        os_free(ind);
+                        ind = NULL;
                         break;
                     }
                 }
@@ -909,7 +916,8 @@ static void bkrt_ble_gattc_sdp_charac_callback(CHAR_TYPE type, uint8_t conidx, u
                     }
                     os_free(ind);
                 }
-            }else
+            }
+            else
             {
                 LOGE("os_zalloc ble_tizenrt_indication_t failed");
             }
