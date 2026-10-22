@@ -211,38 +211,36 @@ static void up_stackdump(uint32_t sp, uint32_t stack_base)
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_STACKDUMP
-static inline void up_registerdump(void)
+static inline void up_registerdump(const volatile uint32_t *regs)
 {
-	/* Are user registers available from interrupt processing? */
-	if (current_regs) {
-		/* Yes.. dump the interrupt registers */
+	if (regs) {
 		lldbg_noarg("===========================================================\n");
-		lldbg_noarg("Asserted task's register dump\n");
+		lldbg_noarg("Task register dump\n");
 		lldbg_noarg("===========================================================\n");
 		lldbg("R0: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			  current_regs[REG_R0], current_regs[REG_R1],
-			  current_regs[REG_R2], current_regs[REG_R3],
-			  current_regs[REG_R4], current_regs[REG_R5],
-			  current_regs[REG_R6], current_regs[REG_R7]);
+			  regs[REG_R0], regs[REG_R1],
+			  regs[REG_R2], regs[REG_R3],
+			  regs[REG_R4], regs[REG_R5],
+			  regs[REG_R6], regs[REG_R7]);
 		lldbg("R8: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-			  current_regs[REG_R8], current_regs[REG_R9],
-			  current_regs[REG_R10], current_regs[REG_R11],
-			  current_regs[REG_R12], current_regs[REG_R13],
-			  current_regs[REG_R14], current_regs[REG_R15]);
+			  regs[REG_R8], regs[REG_R9],
+			  regs[REG_R10], regs[REG_R11],
+			  regs[REG_R12], regs[REG_R13],
+			  regs[REG_R14], regs[REG_R15]);
 
 #ifdef CONFIG_ARMV8M_USEBASEPRI
-		lldbg("xPSR: %08x BASEPRI: %08x CONTROL: %08x\n", current_regs[REG_XPSR], current_regs[REG_BASEPRI], getcontrol());
+		lldbg("xPSR: %08x BASEPRI: %08x\n", regs[REG_XPSR], regs[REG_BASEPRI]);
 #else
-		lldbg("xPSR: %08x PRIMASK: %08x CONTROL: %08x\n", current_regs[REG_XPSR], current_regs[REG_PRIMASK], getcontrol());
+		lldbg("xPSR: %08x PRIMASK: %08x\n", regs[REG_XPSR], regs[REG_PRIMASK]);
 #endif
 
 #ifdef REG_EXC_RETURN
-		lldbg("EXC_RETURN: %08x\n", current_regs[REG_EXC_RETURN]);
+		lldbg("EXC_RETURN: %08x\n", regs[REG_EXC_RETURN]);
 #endif
 	}
 }
 #else
-#define up_registerdump()
+#define up_registerdump(regs)
 #endif
 
 /****************************************************************************
@@ -447,7 +445,10 @@ static void up_dumpstate(void)
 
 	/* Then dump the registers (if available) */
 
-	up_registerdump();
+	up_registerdump(current_regs);
+	if (current_regs) {
+		lldbg("CONTROL (current CPU): %08x\n", getcontrol());
+	}
 
 	/* Dump the state of all tasks (if available) */
 
@@ -569,6 +570,77 @@ static inline void print_assert_detail(const uint8_t *filename, int lineno, stru
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: up_dump_task_registers
+ *
+ * Description:
+ *   Dump a stopped task's registers without reading its stack or changing context.
+ *   The caller protects the TCB lifetime and stops other CPUs before calling.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_ARCH_STACKDUMP
+void up_dump_task_registers(FAR struct tcb_s *tcb)
+{
+	const volatile uint32_t *regs;
+	const char *source;
+
+	DEBUGASSERT(tcb != NULL);
+	if (IS_SECURE_STATE()) {
+		return;
+	}
+
+	if (tcb == this_task()) {
+		regs = current_regs;
+		source = "current IRQ";
+	} else {
+		regs = tcb->xcp.regs;
+		source = "saved task";
+	}
+	if (regs) {
+		lldbg("Task pid=%d context=%s PC=%08x LR=%08x SP=%08x\n", (int)tcb->pid, source, regs[REG_R15], regs[REG_R14], regs[REG_R13]);
+		up_registerdump(regs);
+	} else {
+		lldbg("Task pid=%d context=%s register context unavailable\n", (int)tcb->pid, source);
+	}
+}
+
+/****************************************************************************
+ * Name: up_dump_task
+ *
+ * Description:
+ *   Dump a stopped task's registers and usable stack without changing context.
+ *   The caller protects the TCB lifetime and stops other CPUs before calling.
+ *
+ ****************************************************************************/
+
+void up_dump_task(FAR struct tcb_s *tcb)
+{
+	uint32_t stack_end;
+	uint32_t stack_start;
+	uint32_t stack_size;
+
+	DEBUGASSERT(tcb != NULL);
+	if (IS_SECURE_STATE()) {
+		return;
+	}
+
+	up_dump_task_registers(tcb);
+
+	/* ARMv8-M adj_stack_ptr addresses the last usable word. */
+	stack_end = (uint32_t)(uintptr_t)tcb->adj_stack_ptr + sizeof(uint32_t);
+	stack_size = tcb->adj_stack_size;
+	if (!tcb->stack_alloc_ptr || stack_size == 0 || stack_size > stack_end ||
+		stack_end - stack_size < (uint32_t)(uintptr_t)tcb->stack_alloc_ptr) {
+		lldbg("Task stack bounds unavailable\n");
+		return;
+	}
+	stack_start = stack_end - stack_size;
+	lldbg("Task stack: [%08x, %08x) size=%u\n", stack_start, stack_end, stack_size);
+	up_stackdump(stack_start, stack_end);
+}
+#endif
 
 /****************************************************************************
  * Name: dump_stack : dumps the stack of current thread
