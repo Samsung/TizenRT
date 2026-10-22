@@ -31,6 +31,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define HEALTH_MONITOR_DEVPATH        "/dev/health_monitor"
 #define HEALTH_MONITOR_MIN_TIMEOUT_MS 1U
 
 /****************************************************************************
@@ -48,10 +49,11 @@ struct health_monitor_s {
  * Public Function Prototypes
  ****************************************************************************/
 
-#ifdef CONFIG_HEALTH_MONITOR
+#if defined(CONFIG_HEALTH_MONITOR) && defined(__KERNEL__)
+void health_monitor_register(void);
 int health_monitor_start(uint32_t timeout_ms);
 int health_monitor_stop(void);
 void health_monitor_kick(void);
-#endif /* CONFIG_HEALTH_MONITOR */
+#endif /* CONFIG_HEALTH_MONITOR && __KERNEL__ */
 
 #endif /* __INCLUDE_TINYARA_HEALTH_MONITOR_H */
