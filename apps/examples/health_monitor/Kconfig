@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config EXAMPLES_HEALTH_MONITOR
+	bool "Health monitor validation example"
+	default n
+	depends on HEALTH_MONITOR && !DISABLE_PTHREAD && !DISABLE_MQUEUE
+	---help---
+		Enable the health_monitor command for start, kick and stop through a
+		worker thread, a periodic run cycle, a two-thread scenario and
+		intentional timeout testing. No thread is monitored until a command
+		explicitly starts monitoring. The expire command deliberately triggers
+		PANIC; reset behavior follows the board watchdog and panic configuration.
