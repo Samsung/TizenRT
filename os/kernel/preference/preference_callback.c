@@ -118,11 +118,22 @@ void preference_send_cb_msg(int type, const char *key)
 		return;
 	}
 
+	/* The key is copied by value into the notification message: the message
+	 * queue transports struct bytes, so a raw pointer would dangle as soon
+	 * as the setter's key buffer is released, and the receiver dereferences
+	 * it only after SIG_PREFERENCE. */
+	if (strlen(key) >= PREFERENCE_KEY_MAX) {
+		prefdbg("Key is too long to notify, skipped\n");
+		return;
+	}
+	memset(&data, 0, sizeof(preference_callback_t));
+	strncpy(data.key, key, PREFERENCE_KEY_MAX - 1);
+	data.key[PREFERENCE_KEY_MAX - 1] = '\0';
+
 	/* Traverse through the list of callbacks */
 	node = (key_cb_node_t *)sq_peek(&list->cb_list);
 	while (node) {
 		/* Create message queue to receive notification messages */
-		data.key = key;
 		data.cb_func = node->cb_func;
 		data.cb_data = node->cb_data;
 		snprintf(q_name, PREFERENCE_CBMQ_LEN, "%s%d", PREFERENCE_CBMSG_MQ, node->pid);
