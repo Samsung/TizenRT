@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <stdint.h>
 
+#include <tinyara/arch.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/health_monitor.h>
@@ -148,4 +149,6 @@ static const struct file_operations g_health_monitor_fops = {
 void health_monitor_register(void)
 {
 	(void)register_driver(HEALTH_MONITOR_DEVPATH, &g_health_monitor_fops, 0666, NULL);
+	up_wdog_init(CONFIG_HEALTH_MONITOR_WATCHDOG_TIMEOUT_MS);
+	up_wdog_start();
 }

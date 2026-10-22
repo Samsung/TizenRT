@@ -448,7 +448,7 @@ void board_initialize(void)
 	rtl8730e_ist415_initialize();
 #endif
 
-#ifdef CONFIG_WATCHDOG
+#if defined(CONFIG_WATCHDOG) && !defined(CONFIG_HEALTH_MONITOR)
 	amebasmart_wdg_initialize(CONFIG_WATCHDOG_DEVPATH, 5000);
 #endif
 #ifdef CONFIG_TIMER
