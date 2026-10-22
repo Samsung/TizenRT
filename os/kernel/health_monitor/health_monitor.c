@@ -25,16 +25,21 @@
 #include <assert.h>
 #include <debug.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/clock.h>
 #include <tinyara/irq.h>
+#include <tinyara/kthread.h>
 #include <tinyara/sched.h>
 #include <tinyara/security_level.h>
 #include <tinyara/spinlock.h>
+#include <tinyara/watchdog.h>
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 #include <arch/reboot_reason.h>
 #endif
@@ -51,6 +56,11 @@
 #define HEALTH_MONITOR_MAX_TIMEOUT_TICKS INT32_MAX
 #define HEALTH_MONITOR_IS_REGISTERED(state) ((state)->timeout != 0)
 
+#define HEALTH_MONITOR_THREAD_NAME                "health_monitor_watchdog"
+#define HEALTH_MONITOR_WATCHDOG_THREAD_TIMEOUT_MS 60000U
+#define HEALTH_MONITOR_WATCHDOG_THREAD_PRIORITY   100
+#define HEALTH_MONITOR_WATCHDOG_THREAD_STACKSIZE  2048
+
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -62,6 +72,8 @@ static spinlock_t g_health_lock;
 static volatile uint32_t g_health_sequence;
 static volatile uint32_t g_health_next_count;
 static volatile clock_t g_health_next_tick;
+/* The HW watchdog is running and health monitoring registration is allowed. */
+static bool g_health_watchdog_started;
 
 /****************************************************************************
  * Private Functions
@@ -146,7 +158,7 @@ static void health_monitor_dump(const struct health_monitor_snapshot_s *expired)
  *   True with the lock held; false with the interrupt state restored.
  *
  * Assumptions:
- *   Called by the timer path. A failed attempt is deferred to a later tick.
+ *   A failed attempt is retried later without refreshing the watchdog.
  *
  ****************************************************************************/
 
@@ -475,6 +487,65 @@ static int health_monitor_check(clock_t now, struct health_monitor_timeout_s *fa
 	return result;
 }
 
+static bool health_monitor_has_overdue(void)
+{
+	irqstate_t flags;
+	bool overdue;
+
+	flags = spin_lock_irqsave(&g_health_lock);
+	overdue = g_health_count > 0 && !health_monitor_is_tick_before(clock_systimer(), health_monitor_get_state(g_health_heap[0])->deadline);
+	spin_unlock_irqrestore(&g_health_lock, flags);
+
+	return overdue;
+}
+
+/****************************************************************************
+ * Name: health_monitor_watchdog
+ *
+ * Description:
+ *   Own watchdog keepalive in thread context and renew the thread's own HM.
+ *   The timer ISR checks task deadlines.
+ ****************************************************************************/
+
+static int health_monitor_watchdog(int argc, char *argv[])
+{
+	uint32_t remaining;
+	int fd;
+	int ret;
+
+	fd = open(CONFIG_WATCHDOG_DEVPATH, O_RDONLY);
+	if (fd < 0) {
+		lldbg("Watchdog thread open failed: %d\n", get_errno());
+		return ERROR;
+	}
+	ret = health_monitor_start(HEALTH_MONITOR_WATCHDOG_THREAD_TIMEOUT_MS);
+	if (ret < 0) {
+		lldbg("Watchdog thread HM registration failed: %d\n", ret);
+		close(fd);
+		return ERROR;
+	}
+
+	for (;;) {
+		ret = health_monitor_kick();
+		if (ret < 0) {
+			lldbg("Watchdog thread HM kick failed: %d\n", ret);
+			close(fd);
+			return ERROR;
+		}
+		if (health_monitor_has_overdue()) {
+			lldbg("Overdue HM target, skip watchdog keepalive\n");
+		} else if (ioctl(fd, WDIOC_KEEPALIVE, 0) < 0) {
+			lldbg("Watchdog keepalive failed: %d\n", get_errno());
+			return ERROR;
+		}
+
+		remaining = CONFIG_HEALTH_MONITOR_WATCHDOG_INTERVAL_SEC;
+		while (remaining > 0) {
+			remaining = sleep(remaining);
+		}
+	}
+}
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -544,8 +615,11 @@ void health_monitor_init_task(struct tcb_s *tcb)
  *   timeout_ms - Requested timeout in milliseconds.
  *
  * Return Value:
- *   OK on success; -EINVAL if timeout is invalid; -EEXIST if already registered;
+ *   OK on success
  *   -EPERM if called from interrupt context
+ *   -ENODEV if the HW watchdog has not started
+ *   -EINVAL if timeout is invalid
+ *   -EEXIST if already registered
  *   -ENOSPC if the heap is full.
  *
  * Assumptions:
@@ -576,7 +650,9 @@ int health_monitor_start(uint32_t timeout_ms)
 
 	tcb = this_task();
 	state = health_monitor_get_state(tcb);
-	if (HEALTH_MONITOR_IS_REGISTERED(state)) {
+	if (!g_health_watchdog_started) {
+		ret = -ENODEV;
+	} else if (HEALTH_MONITOR_IS_REGISTERED(state)) {
 		ret = -EEXIST;
 	} else if (g_health_count >= HEALTH_MONITOR_HEAP_CAPACITY) {
 		ret = -ENOSPC;
@@ -834,26 +910,75 @@ int health_monitor_get_next_check_time(clock_t *check_at)
 	return 1;
 }
 
+/****************************************************************************
+ * Name: health_monitor_initialize
+ *
+ * Description:
+ *   Arm the watchdog device registered by board initialization before creating
+ *   the monitored feeder thread. Closing the device does not stop WDT.
+ *
+ * Assumptions:
+ *   Called on CPU0 after board initialization.
+ ****************************************************************************/
 
+void health_monitor_initialize(void)
+{
+	int fd;
+	int pid;
+	int ret;
+
+	fd = open(CONFIG_WATCHDOG_DEVPATH, O_RDONLY);
+	if (fd < 0) {
+		lldbg("Watchdog open failed: %d\n", get_errno());
+		DEBUGASSERT(fd >= 0);
+		return;
+	}
+
+	ret = ioctl(fd, WDIOC_SETTIMEOUT, CONFIG_HEALTH_MONITOR_WATCHDOG_TIMEOUT_MS);
+	if (ret != OK) {
+		lldbg("Watchdog set timeout failed: %d\n", get_errno());
+		close(fd);
+		DEBUGASSERT(ret == OK);
+		return;
+	}
+
+	ret = ioctl(fd, WDIOC_START, 0);
+	if (ret != OK) {
+		lldbg("Watchdog start failed: %d\n", get_errno());
+		close(fd);
+		DEBUGASSERT(ret == OK);
+		return;
+	}
+	close(fd);
+
+	g_health_watchdog_started = true;
+
+	pid = kernel_thread(HEALTH_MONITOR_THREAD_NAME, HEALTH_MONITOR_WATCHDOG_THREAD_PRIORITY, HEALTH_MONITOR_WATCHDOG_THREAD_STACKSIZE, health_monitor_watchdog, NULL);
+	ASSERT(pid >= 0);
+}
 
 /****************************************************************************
  * Name: health_monitor_timer
  *
  * Description:
- *   Check thread health each tick and report failures synchronously. Return
- *   true only when a successful check permits a hardware watchdog refresh.
+ *   Check thread health each tick and report failures synchronously.
+ *   Hardware watchdog refresh belongs exclusively to the monitored thread.
  *
  * Assumptions:
  *   Called after the clock update and before global locks. CPU0 only on SMP.
  ****************************************************************************/
 
-bool health_monitor_timer(void)
+void health_monitor_timer(void)
 {
 	struct health_monitor_timeout_s failure;
 	int result;
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	reboot_reason_code_t reason;
 #endif
+
+	if (!g_health_watchdog_started) {
+		return;
+	}
 
 	result = health_monitor_check(clock_systimer(), &failure);
 	if (result == -ETIMEDOUT) {
@@ -867,8 +992,6 @@ bool health_monitor_timer(void)
 			(unsigned long)((uint64_t)failure.task.deadline >> 32), (unsigned long)(uint32_t)failure.task.deadline);
 		health_monitor_dump(&failure.task);
 		PANIC();
-		return false;
+		return;
 	}
-
-	return result == 0;
 }
