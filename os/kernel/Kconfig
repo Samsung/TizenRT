@@ -268,6 +268,19 @@ config PREALLOC_TIMERS
 		pool of preallocated timer structures to minimize dynamic allocations.  Set to
 		zero for all dynamic allocations.
 
+config HEALTH_MONITOR
+	bool "Health monitor"
+	default n
+	depends on !SCHED_TICKLESS && !SUPPRESS_INTERRUPTS && !SUPPRESS_TIMER_INTS
+	---help---
+		Monitor threads that register a timeout and periodically kick their
+		deadline. The system timer checks registered threads and enters the
+		existing panic path when a deadline has expired at inspection time.
+
+		The monitor uses per-TCB state and a statically sized timer heap.
+		Applications access it through a dedicated ioctl driver. Normal PM
+		tick suppression is supported; a tickless scheduler is not supported.
+
 endmenu # Clocks and Timers
 
 menu "Tasks and Scheduling"

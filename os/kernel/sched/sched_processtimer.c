@@ -66,6 +66,9 @@
 #include "sched/sched.h"
 #include "wdog/wdog.h"
 #include "clock/clock.h"
+#ifdef CONFIG_HEALTH_MONITOR
+#include "health_monitor/health_monitor.h"
+#endif
 
 /************************************************************************
  * Pre-processor Definitions
@@ -283,6 +286,9 @@ void sched_process_timer(void)
 	{
 		clock_timer();
 	}
+#ifdef CONFIG_HEALTH_MONITOR
+	health_monitor_timer();
+#endif
 #if defined(CONFIG_SCHED_CPULOAD) && !defined(CONFIG_SCHED_CPULOAD_EXTCLK)
 	/* Perform CPU load measurements (before any timer-initiated context
 	 * switches can occur)
