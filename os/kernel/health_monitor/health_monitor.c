@@ -88,6 +88,35 @@ static volatile clock_t g_health_next_tick;
 static struct health_monitor_s *health_monitor_get_state(struct tcb_s *tcb);
 
 /****************************************************************************
+ * Name: health_monitor_ticks_to_ms
+ *
+ * Description:
+ *   Convert a tick count to milliseconds for diagnostics.
+ ****************************************************************************/
+
+static uint64_t health_monitor_ticks_to_ms(uint64_t ticks)
+{
+	return ticks * USEC_PER_TICK / USEC_PER_MSEC;
+}
+
+/****************************************************************************
+ * Name: health_monitor_task_state_name
+ *
+ * Description:
+ *   Return a readable name for a task state.
+ ****************************************************************************/
+
+static const char *health_monitor_task_state_name(uint8_t state)
+{
+	static const char *const names[NUM_TASK_STATES] = {
+		"INVALID", "PENDING", "READYTORUN", "ASSIGNED", "RUNNING", "INACTIVE",
+		"WAIT_SEM", "WAIT_FIN", "WAIT_SIG", "WAIT_MQNOTEMPTY", "WAIT_MQNOTFULL", "WAIT_PAGEFILL"
+	};
+
+	return state < NUM_TASK_STATES ? names[state] : "UNKNOWN";
+}
+
+/****************************************************************************
  * Name: health_monitor_snapshot
  *
  * Description:
@@ -122,20 +151,32 @@ static void health_monitor_snapshot(struct tcb_s *tcb, struct health_monitor_sna
  *   section and paused CPUs are deliberately retained for the fatal path.
  ****************************************************************************/
 
-static void health_monitor_dump(const struct health_monitor_snapshot_s *expired)
+static void health_monitor_dump(const struct health_monitor_snapshot_s *expired, bool dump_stack)
 {
 	struct tcb_s *tcb;
+	clock_t now = clock_systimer();
 	clock_t last_refresh = expired->deadline - expired->timeout;
+	uint64_t now_ms = health_monitor_ticks_to_ms(now);
+	uint64_t refresh_ms = health_monitor_ticks_to_ms(last_refresh);
+	uint64_t deadline_ms = health_monitor_ticks_to_ms(expired->deadline);
+	bool overdue = !health_monitor_is_tick_before(now, expired->deadline);
+	clock_t gap = overdue ? now - expired->deadline : expired->deadline - now;
 
 	if (IS_SECURE_STATE()) {
 		return;
 	}
 #if CONFIG_TASK_NAME_SIZE > 0
-	lldbg("Monitored task name=%s\n", expired->name);
+	lldbg("Monitored task name=%s pid=%d\n", expired->name, (int)expired->pid);
 #endif
-	lldbg("Monitored task state=%u priority=%u cpu=%u timeout_ticks=%lu last_refresh=0x%08lx%08lx\n",
-		(unsigned int)expired->task_state, (unsigned int)expired->priority, (unsigned int)expired->cpu,
-		(unsigned long)expired->timeout, (unsigned long)((uint64_t)last_refresh >> 32), (unsigned long)(uint32_t)last_refresh);
+	lldbg("Monitored task state=%s(%u) priority=%u cpu=%u\n", health_monitor_task_state_name(expired->task_state),
+		(unsigned int)expired->task_state, (unsigned int)expired->priority, (unsigned int)expired->cpu);
+	lldbg("Monitored task timeout=%lu ms last_kick=%lu.%03lu s (%lu ms ago)\n",
+		(unsigned long)health_monitor_ticks_to_ms(expired->timeout), (unsigned long)(refresh_ms / MSEC_PER_SEC),
+		(unsigned long)(refresh_ms % MSEC_PER_SEC), (unsigned long)health_monitor_ticks_to_ms(now - last_refresh));
+	lldbg("Monitored task deadline=%lu.%03lu s (%s %lu ms) now=%lu.%03lu s\n", (unsigned long)(deadline_ms / MSEC_PER_SEC),
+		(unsigned long)(deadline_ms % MSEC_PER_SEC), overdue ? "overdue" : "remaining",
+		(unsigned long)health_monitor_ticks_to_ms(gap), (unsigned long)(now_ms / MSEC_PER_SEC),
+		(unsigned long)(now_ms % MSEC_PER_SEC));
 
 	/* Use the existing ASSERT lock order, after releasing the HM lock. */
 	(void)enter_critical_section();
@@ -148,6 +189,12 @@ static void health_monitor_dump(const struct health_monitor_snapshot_s *expired)
 		return;
 	}
 	task_show_tcbinfo(tcb);
+	if (dump_stack) {
+		up_dump_task(tcb);
+	} else {
+		/* Lifecycle cleanup may already have removed the stack mapping. */
+		up_dump_task_registers(tcb);
+	}
 }
 
 /****************************************************************************
@@ -739,7 +786,7 @@ void health_monitor_deinit_task(struct tcb_s *tcb)
 		lldbg("Scheduler current task name=%s\n", current->name);
 	}
 #endif
-	health_monitor_dump(&info);
+	health_monitor_dump(&info, false);
 	PANIC();
 }
 
@@ -889,10 +936,10 @@ bool health_monitor_timer(void)
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 		up_reboot_reason_write(expired_reason);
 #endif
-		lldbg("HEALTH MONITOR TIMEOUT pid=%d now=0x%08lx%08lx deadline=0x%08lx%08lx\n", (int)timeout_info.pid,
-			(unsigned long)((uint64_t)now >> 32), (unsigned long)(uint32_t)now,
-			(unsigned long)((uint64_t)timeout_info.deadline >> 32), (unsigned long)(uint32_t)timeout_info.deadline);
-		health_monitor_dump(&timeout_info);
+		lldbg("HEALTH MONITOR TIMEOUT pid=%d overdue=%lu ms uptime=%lu ms\n", (int)timeout_info.pid,
+			(unsigned long)health_monitor_ticks_to_ms(now - timeout_info.deadline),
+			(unsigned long)health_monitor_ticks_to_ms(now));
+		health_monitor_dump(&timeout_info, true);
 		PANIC();
 	}
 	return !expired;
