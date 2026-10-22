@@ -24,7 +24,6 @@
 #include <tinyara/bluetooth/bluetooth.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/bluetooth_internal.h>
-//#include <eventloop/eventloop.h>
 #include "bt_unit_test.h"
 
 static bool adapter_enabled = false;
@@ -287,16 +286,6 @@ static void __state_changed_cb(int result, bt_adapter_state_e adapter_state, voi
 	TC_PRT("bt_adapter_le_start_scan() returns %s\n", __bt_get_error_message(ret));
 }
 
-#if 0
-static bool __check_adapter_enabled(void *data)
-{
-	TC_PRT("Waiting adapter enabled...\n");
-	if (adapter_enabled == true)
-		return EVENTLOOP_CALLBACK_STOP;
-	return EVENTLOOP_CALLBACK_CONTINUE;
-}
-#endif
-
 int bt_unit_test_main(int argc, char **argv)
 {
 	int ret = -1;
@@ -312,9 +301,6 @@ int bt_unit_test_main(int argc, char **argv)
 	ret = bt_adapter_enable();
 	TC_PRT("bt_adapter_enable() returns %s\n", __bt_get_error_message(ret));
 
-// TODO: temporarily block the code because if EVENTLOOP feature is enabled, can NOT enter TASH shell.
-//	eventloop_add_timer_async(1000, true, __check_adapter_enabled, NULL);
-//	eventloop_loop_run();
 /*
 	ret = bt_adapter_set_device_discovery_state_changed_cb(__discovery_state_changed_cb, NULL);
 	TC_PRT("returns %s\n", __bt_get_error_message(ret));

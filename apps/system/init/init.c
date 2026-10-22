@@ -39,9 +39,6 @@
 #ifdef CONFIG_TASK_MANAGER
 #include <task_manager/task_manager.h>
 #endif
-#ifdef CONFIG_EVENTLOOP
-#include <tinyara/eventloop.h>
-#endif
 #ifdef CONFIG_MEDIA
 #include <media/media_init.h>
 #endif
@@ -123,7 +120,7 @@ int main(int argc, FAR char *argv[])
 int preapp_start(int argc, char *argv[])
 #endif
 {
-#if defined(CONFIG_SCHED_USRWORK) || defined(CONFIG_TASH) || defined(CONFIG_EVENTLOOP) ||\
+#if defined(CONFIG_SCHED_USRWORK) || defined(CONFIG_TASH) ||\
 	defined(CONFIG_TASK_MANAGER) || defined(CONFIG_MEDIA) || defined(CONFIG_PREFERENCE)
 	int ret;
 #endif
@@ -174,14 +171,6 @@ int preapp_start(int argc, char *argv[])
 	ret = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char *const *)NULL);
 	if (ret < 0) {
 		printf("Failed to create Task Manager\n");
-		return ret;
-	}
-#endif
-
-#ifdef CONFIG_EVENTLOOP
-	ret = eventloop_task_start();
-	if (ret <= 0) {
-		printf("eventloop is failed to start, error code is %d\n", ret);
 		return ret;
 	}
 #endif

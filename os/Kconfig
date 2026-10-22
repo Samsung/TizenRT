@@ -655,10 +655,6 @@ menu "Task manager"
 source "$FRAMEWORK_DIR/src/task_manager/Kconfig"
 endmenu
 
-menu "Event Loop Framework"
-source "$FRAMEWORK_DIR/src/eventloop/Kconfig"
-endmenu
-
 menu "Messaging Framework"
 source "$FRAMEWORK_DIR/src/messaging/Kconfig"
 endmenu
