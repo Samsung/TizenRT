@@ -526,31 +526,6 @@ endif #DEBUG_WIFICSI
 
 comment "Framework Debug Options"
 
-config DEBUG_EVENTLOOP
-	bool "EventLoop Debug Feature"
-	default n
-	depends on EVENTLOOP
-	---help---
-		Enable EventLoop debug feature.
-
-if DEBUG_EVENTLOOP
-
-config DEBUG_EVENTLOOP_ERROR
-	bool "Enable EventLoop Error Debug Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		EventLoop Error Debug Output.
-
-config DEBUG_EVENTLOOP_INFO
-	bool "Enable EventLoop Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		EventLoop Informational Debug Output.
-
-endif #DEBUG_EVENTLOOP
-
 config DEBUG_IOTBUS
 	bool "IoTbus Debug Feature"
 	default n

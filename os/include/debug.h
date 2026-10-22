@@ -721,22 +721,6 @@ int get_errno(void);
 #define dmllvdbg(...)
 #endif
 
-#ifdef CONFIG_DEBUG_EVENTLOOP_ERROR
-#define eldbg(format, ...)      dbg(format, ##__VA_ARGS__)
-#define ellldbg(format, ...)    lldbg(format, ##__VA_ARGS__)
-#else
-#define eldbg(...)
-#define ellldbg(...)
-#endif
-
-#ifdef CONFIG_DEBUG_EVENTLOOP_INFO
-#define elvdbg(format, ...)     vdbg(format, ##__VA_ARGS__)
-#define elllvdbg(format, ...)   llvdbg(format, ##__VA_ARGS__)
-#else
-#define elvdbg(...)
-#define elllvdbg(...)
-#endif
-
 #ifdef CONFIG_DEBUG_MEDIA_ERROR
 #define meddbg(format, ...)    dbg(format, ##__VA_ARGS__)
 #define medlldbg(format, ...)  lldbg(format, ##__VA_ARGS__)
@@ -1602,22 +1586,6 @@ int get_errno(void);
 /****************************************/
 /*        Framework specific debug      */
 /****************************************/
-
-#ifdef CONFIG_DEBUG_EVENTLOOP_ERROR
-#define eldbg      dbg
-#define ellldbg    lldbg
-#else
-#define eldbg      (void)
-#define ellldbg    (void)
-#endif
-
-#ifdef CONFIG_DEBUG_EVENTLOOP_INFO
-#define elvdbg     vdbg
-#define elllvdbg   llvdbg
-#else
-#define elvdbg     (void)
-#define elllvdbg   (void)
-#endif
 
 #ifdef CONFIG_DEBUG_MEDIA_ERROR
 #define meddbg      dbg
