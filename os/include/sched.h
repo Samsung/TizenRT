@@ -474,6 +474,20 @@ int sched_unlock(void);
  */
 int sched_lockcount(void);
 
+#ifdef CONFIG_SCHED_BACKTRACE
+/**
+ * @ingroup SCHED_KERNEL
+ * @brief get the call-stack (return addresses) of a thread
+ * @details @b #include <sched.h> \n
+ *      Fills 'buffer' with up to 'size' return addresses of thread 'tid',
+ *      omitting the innermost 'skip' frames.  Only the calling thread is
+ *      supported.  Uses the EHABI unwind tables via libgcc.
+ * @return Number of addresses stored, or 0 on failure.
+ * @since TizenRT v4.0
+ */
+int sched_backtrace(pid_t tid, FAR void **buffer, int size, int skip);
+#endif
+
 #undef EXTERN
 #if defined(__cplusplus)
 }

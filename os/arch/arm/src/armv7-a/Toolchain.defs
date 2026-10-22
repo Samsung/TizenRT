@@ -138,6 +138,15 @@ else
   ARCHOPTIMIZATION += -fomit-frame-pointer
 endif
 
+ifeq ($(CONFIG_SCHED_BACKTRACE),y)
+ifneq ($(CONFIG_BUILD_FLAT),y)          # <-- add: "no __KERNEL__" != "user space" in flat builds
+ifeq ($(findstring __KERNEL__,$(EXTRADEFINES)),)
+  ARCHCFLAGS += -funwind-tables
+  ARCHCXXFLAGS += -funwind-tables
+endif
+endif
+endif
+
 ifeq ($(CONFIG_STACK_CANARIES),y)
   ARCHOPTIMIZATION += -fstack-protector-all
 endif

@@ -133,12 +133,12 @@ void mm_dump_node(struct mm_allocnode_s *node, char *node_type)
 	}
 #if CONFIG_TASK_NAME_SIZE > 0
 	if (prctl(PR_GET_NAME_BYPID, myname, pid) == OK) {
-		mfdbg("%s owner pid = %d (%s%s), allocated by code at addr = 0x%08x\n", node_type, node->pid, myname, is_stack, node->alloc_call_addr);
+		mfdbg("%s owner pid = %d (%s%s), allocated by code at addr = 0x%08x\n", node_type, node->pid, myname, is_stack, (mmaddress_t)node->backtrace[0]);
 	} else {
-		mfdbg("%s owner pid = %d (Exited Task%s), allocated by code at addr = 0x%08x\n", node_type, node->pid, is_stack, node->alloc_call_addr);
+		mfdbg("%s owner pid = %d (Exited Task%s), allocated by code at addr = 0x%08x\n", node_type, node->pid, is_stack, (mmaddress_t)node->backtrace[0]);
 	}
 #else
-	mfdbg("%s owner pid = %d%s, allocated by code at addr = 0x%08x\n", node_type, node->pid, is_stack, node->alloc_call_addr);
+	mfdbg("%s owner pid = %d%s, allocated by code at addr = 0x%08x\n", node_type, node->pid, is_stack, (mmaddress_t)node->backtrace[0]);
 #endif
 #endif
 }
