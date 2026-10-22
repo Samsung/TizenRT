@@ -66,6 +66,9 @@
 #include "sched/sched.h"
 #include "group/group.h"
 #include "timer/timer.h"
+#ifdef CONFIG_HEALTH_MONITOR
+#include "health_monitor/health_monitor.h"
+#endif
 #ifdef CONFIG_BINARY_MANAGER
 #include "binary_manager/binary_manager_internal.h"
 #endif
@@ -139,6 +142,10 @@ int sched_releasetcb(FAR struct tcb_s *tcb, uint8_t ttype)
 		 * the process ID was never allocated to this TCB.
 		 */
 		if (tcb->pid) {
+#ifdef CONFIG_HEALTH_MONITOR
+			health_monitor_deinit_task(tcb);
+#endif
+
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
 			/* Release any timers that the task might hold.  We do this
 			 * before release the PID because it may still be trying to
