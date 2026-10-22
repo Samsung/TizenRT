@@ -1,0 +1,3 @@
+config ENTRY_SS_PERFORMANCE_TEST
+	bool "Secure storage performance test program"
+	depends on EXAMPLES_SS_PERFORMANCE_TEST
