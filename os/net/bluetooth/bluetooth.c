@@ -402,10 +402,6 @@ int bt_enable(bt_ready_cb_t cb)
 
 static int bt_rand(void *buf, size_t len)
 {
-#ifdef CONFIG_CRYPTO_RANDOM_POOL
-	getrandom(buf, len);
-#endif
-
 	return 0;
 }
 

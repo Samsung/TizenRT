@@ -61,15 +61,9 @@
 #include <tinyara/config.h>
 #include <stddef.h>
 
-#include <sys/random.h>			/* getrandom() */
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-
-/* Size of entropy pool in 32-bit integers, must be power of two */
-
-#define ENTROPY_POOL_SIZE        128
 
 #define add_irq_randomness(x)    up_rngaddint(RND_SRC_IRQ, (x))
 #define add_sensor_randomness(x) up_rngaddint(RND_SRC_SENSOR, (x))
@@ -80,20 +74,12 @@
 
 /* Allow above macros to always exist in source without ifdefs */
 
-#ifndef CONFIG_CRYPTO_RANDOM_POOL
 #define up_rngaddint(k, x)            ((void)(k), (void)(x))
 #define up_rngaddentropy(k, buf, x)   ((void)(k), (void)(buf), (void)(x))
-#endif
 
 /****************************************************************************
  * Public Type Definitions
  ****************************************************************************/
-
-/* Entropy pool structure */
-
-struct entropy_pool_s {
-	volatile uint32_t pool[ENTROPY_POOL_SIZE];
-};
 
 /* Randomness sources */
 
@@ -105,81 +91,5 @@ enum rnd_source_t {
 	RND_SRC_SW,             /* unique per SW version. */
 	RND_SRC_UI              /* buttons etc. user-visible interface elements. */
 };
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-#ifdef CONFIG_BOARD_ENTROPY_POOL
-/* Entropy pool structure can be provided by board source. Use for this is,
- * for example, allocate entropy pool from special area of RAM which content
- * is kept over system reset. */
-
-extern struct entropy_pool_s board_entropy_pool;
-#endif
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-#ifdef CONFIG_CRYPTO_RANDOM_POOL
-
-/****************************************************************************
- * Name: up_rngaddint
- *
- * Description:
- *   Add one integer to entropy pool, contributing a specific kind
- *   of entropy to pool.
- *
- * Parameters:
- *   kindof  - Enumeration constant telling where val came from
- *   val     - Integer to be added
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void up_rngaddint(enum rnd_source_t kindof, int val);
-
-/****************************************************************************
- * Name: up_rngaddentropy
- *
- * Description:
- *   Add buffer of integers to entropy pool.
- *
- * Parameters:
- *   kindof  - Enumeration constant telling where val came from
- *   buf     - Buffer of integers to be added
- *   n       - Number of elements in buf
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void up_rngaddentropy(enum rnd_source_t kindof, FAR const uint32_t *buf, size_t n);
-
-/****************************************************************************
- * Name: up_rngreseed
- *
- * Description:
- *   Force reseeding random number generator from entropy pool
- *
- ****************************************************************************/
-
-void up_rngreseed(void);
-
-/****************************************************************************
- * Name: up_randompool_initialize
- *
- * Description:
- *   Initialize entropy pool and random number generator
- *
- ****************************************************************************/
-
-void up_randompool_initialize(void);
-
-#endif  /* CONFIG_CRYPTO_RANDOM_POOL */
 
 #endif  /* __INCLUDE_TINYARA_RANDOM_H */
