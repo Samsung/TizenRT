@@ -2524,12 +2524,12 @@ void up_puts(FAR const char *str);
  ****************************************************************************/
 void up_flush_console(void);
 
-#ifdef CONFIG_WATCHDOG_FOR_IRQ
+#if defined(CONFIG_WATCHDOG_FOR_IRQ) || defined(CONFIG_HEALTH_MONITOR)
 /****************************************************************************
  * Name: up_wdog_init
  *
  * Description:
- *   Initialize the watchdog for irq
+ *   Initialize the watchdog for irq or the health monitor
  *
  ****************************************************************************/
 void up_wdog_init(uint16_t timeout);
@@ -2542,6 +2542,16 @@ void up_wdog_init(uint16_t timeout);
  *
  ****************************************************************************/
 void up_wdog_keepalive(void);
+
+/****************************************************************************
+ * Name: up_wdog_start
+ *
+ * Description:
+ *   Start the watchdog after up_wdog_init(). It does nothing if
+ *   up_wdog_init() already starts the watchdog.
+ *
+ ****************************************************************************/
+void up_wdog_start(void);
 
 #endif
 

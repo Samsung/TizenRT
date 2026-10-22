@@ -50,6 +50,10 @@
 /* Keep the timeout range valid for both 32-bit and 64-bit system clocks. */
 #define HEALTH_MONITOR_MAX_TIMEOUT_TICKS INT32_MAX
 
+/* Refresh once per second, expressed in system ticks. */
+
+#define HEALTH_MONITOR_WATCHDOG_REFRESH_TICKS SEC2TICK(1)
+
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -63,6 +67,14 @@ static spinlock_t g_health_lock = SP_UNLOCKED;
 static volatile uint32_t g_health_sequence;
 static volatile uint32_t g_health_next_count;
 static volatile clock_t g_health_next_tick;
+
+/* Protect startup with the HM lock. CPU0 caches readiness once and owns the
+ * refresh schedule afterwards, without taking the lock on the normal path.
+ */
+
+static bool g_health_watchdog_started;
+static bool g_health_watchdog_ready;
+static clock_t g_health_watchdog_next_refresh;
 
 /****************************************************************************
  * Private Functions
@@ -544,6 +556,26 @@ static enum health_monitor_check_result_e health_monitor_check(clock_t now, stru
 }
 
 /****************************************************************************
+ * Name: health_monitor_watchdog_maybe_refresh
+ *
+ * Description:
+ *   Refresh only after a successful check and once the interval has elapsed.
+ *   CPU0 owns this schedule after initialization; no HM lock is needed.
+ ****************************************************************************/
+
+static void health_monitor_watchdog_maybe_refresh(void)
+{
+	clock_t now = clock_systimer();
+
+	if (health_monitor_is_tick_before(now, g_health_watchdog_next_refresh)) {
+		return;
+	}
+
+	up_wdog_keepalive();
+	g_health_watchdog_next_refresh = clock_systimer() + HEALTH_MONITOR_WATCHDOG_REFRESH_TICKS;
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -854,31 +886,65 @@ int health_monitor_get_next_check_time(clock_t *check_at)
 }
 
 /****************************************************************************
+ * Name: health_monitor_initialize
+ *
+ * Description:
+ *   Start the hardware watchdog once during bring-up, then publish its refresh
+ *   schedule under the HM lock. Hardware operations run without the lock.
+ ****************************************************************************/
+
+void health_monitor_initialize(void)
+{
+	irqstate_t flags;
+
+	up_wdog_init(CONFIG_HEALTH_MONITOR_WATCHDOG_TIMEOUT_MS);
+	up_wdog_start();
+	flags = health_monitor_lock();
+	g_health_watchdog_next_refresh = clock_systimer() + HEALTH_MONITOR_WATCHDOG_REFRESH_TICKS;
+	g_health_watchdog_started = true;
+	health_monitor_unlock(flags);
+}
+
+/****************************************************************************
  * Name: health_monitor_timer
  *
  * Description:
- *   Check thread health each tick and report failures synchronously. Return
- *   true only when a successful check permits a hardware watchdog refresh.
+ *   Check thread health each tick, report failures synchronously and refresh
+ *   the hardware watchdog only when a successful check permits it.
  *
  * Assumptions:
  *   Called after the clock update and before global locks. CPU0 only on SMP.
  ****************************************************************************/
 
-bool health_monitor_timer(void)
+void health_monitor_timer(void)
 {
 	struct health_monitor_timeout_s failure;
 	enum health_monitor_check_result_e result;
+	irqstate_t flags;
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 	reboot_reason_code_t reason;
 #endif
 
 #ifdef CONFIG_SMP
 	if (this_cpu() != 0) {
-		return false;
+		return;
 	}
 #endif
+	if (!g_health_watchdog_ready) {
+		if (!health_monitor_trylock(&flags)) {
+			return;
+		}
+		g_health_watchdog_ready = g_health_watchdog_started;
+		health_monitor_unlock(flags);
+		if (!g_health_watchdog_ready) {
+			return;
+		}
+	}
 
 	result = health_monitor_check(clock_systimer(), &failure);
+	if (result == HEALTH_MONITOR_CHECK_DEFERRED) {
+		return;
+	}
 	if (result == HEALTH_MONITOR_CHECK_TIMEOUT) {
 #ifdef CONFIG_SYSTEM_REBOOT_REASON
 		reason = failure.task.kernel_task ? REBOOT_SYSTEM_HEALTH_MONITOR_TIMEOUT : REBOOT_USER_HEALTH_MONITOR_TIMEOUT;
@@ -890,8 +956,8 @@ bool health_monitor_timer(void)
 			(unsigned long)((uint64_t)failure.task.deadline >> 32), (unsigned long)(uint32_t)failure.task.deadline);
 		health_monitor_dump(&failure.task);
 		PANIC();
-		return false;
+		return;
 	}
 
-	return result == HEALTH_MONITOR_CHECK_OK;
+	health_monitor_watchdog_maybe_refresh();
 }

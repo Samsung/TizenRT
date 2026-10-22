@@ -85,7 +85,7 @@ struct health_monitor_timeout_s {
 
 bool health_monitor_is_tick_before(clock_t lhs, clock_t rhs);
 
-bool health_monitor_timer(void);
+void health_monitor_timer(void);
 int health_monitor_get_next_check_time(clock_t *check_at);
 void health_monitor_init_task(struct tcb_s *tcb);
 void health_monitor_deinit_task(struct tcb_s *tcb);

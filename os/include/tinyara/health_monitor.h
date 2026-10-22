@@ -51,6 +51,7 @@ struct health_monitor_s {
 
 #ifdef CONFIG_HEALTH_MONITOR
 void health_monitor_register(void);
+void health_monitor_initialize(void);
 int health_monitor_start(uint32_t timeout_ms);
 int health_monitor_stop(void);
 void health_monitor_kick(void);

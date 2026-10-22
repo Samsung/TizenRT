@@ -313,6 +313,7 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_HEALTH_MONITOR
 	health_monitor_register();
+	health_monitor_initialize();
 #endif
 
 #ifdef CONFIG_MESSAGING_IPC
