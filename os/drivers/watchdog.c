@@ -70,6 +70,7 @@
 #include <tinyara/irq.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/watchdog.h>
+#include <tinyara/arch.h>
 
 #ifdef CONFIG_WATCHDOG
 
@@ -364,6 +365,20 @@ static int wdog_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 		if (lower->ops->capture) {	/* Optional */
 			capture = (FAR struct watchdog_capture_s *)((uintptr_t)arg);
 			if (capture) {
+#ifdef CONFIG_BUILD_PROTECTED
+				/* SECURITY FIX: Validate callback pointer is in kernel space (allows - pointer from kernel text, data and bss).
+				 * This prevents user-space code from hijacking interrupt flow.
+				 * Enable CONFIG_WATCHDOG_CAPTURE_USER - to allow legacy user-space callback registration.
+				 */
+#ifdef CONFIG_WATCHDOG_CAPTURE_USER
+				/* User-space callbacks allowed (legacy/development mode) */
+#else
+				if (capture->newhandler && !is_kernel_space((void *)capture->newhandler)) {
+					ret = -EPERM;
+					break;
+				}
+#endif
+#endif
 				capture->oldhandler = lower->ops->capture(lower, capture->newhandler);
 				ret = OK;
 			} else {
@@ -498,8 +513,8 @@ FAR void *watchdog_register(FAR const char *path, FAR struct watchdog_lowerhalf_
 	}
 
 	/* Register the watchdog timer device */
-
 	ret = register_driver(path, &g_wdogops, 0666, upper);
+
 	if (ret < 0) {
 		wddbg("register_driver failed: %d\n", ret);
 		goto errout_with_path;
