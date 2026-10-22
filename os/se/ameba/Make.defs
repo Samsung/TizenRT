@@ -24,11 +24,6 @@ SE_CSRCS += security_ameba_wrapper_tz.c
 SE_CSRCS += rtl_security_api_wrapper_tz.c
 endif
 
-ifeq ($(CONFIG_AMEBALITE_TRUSTZONE),y)
-SE_CSRCS += security_ameba_wrapper_tz.c
-SE_CSRCS += rtl_security_api_wrapper_tz.c
-endif
-
 ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)
 SE_CSRCS += security_ameba_wrapper_tz.c
 SE_CSRCS += rtl_security_api_wrapper_tz.c
@@ -49,19 +44,6 @@ CFLAGS += -I$(TOPDIR)/arch/arm/src/common
 CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/soc/realtek/amebad/misc
 CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/os/os_dep/include
 CFLAGS += -I$(TOPDIR)/board/rtl8721csm/src/component/common/network/ssl/ssl_ram_map/rom
-endif
-
-ifeq ($(CONFIG_AMEBALITE_TRUSTZONE),y)
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/mbed/hal_ext/
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/mbed/targets/hal/rtl8720e
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/soc/amebalite/cmsis
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/soc/amebalite/swlib
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/soc/amebalite/app/monitor/include
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/soc/amebalite/misc
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/project/realtek_amebaLite_va0_example/inc/inc_km4
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/soc/amebalite/fwlib/include
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/ssl/mbedtls_ram_map/rom
-CFLAGS += -I$(TOPDIR)/board/rtl8720e/src/component/os_dep
 endif
 
 ifeq ($(CONFIG_AMEBASMART_TRUSTZONE),y)

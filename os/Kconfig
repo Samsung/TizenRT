@@ -325,7 +325,7 @@ config BOARD_BUILD_DATE
 config BINARY_SIGNING
 	bool "Enable Binary Signing"
 	default n
-	depends on ARCH_BOARD_RTL8721CSM || ARCH_BOARD_RTL8720E || ARCH_BOARD_RTL8730E || ARCH_BOARD_BK7239N
+	depends on ARCH_BOARD_RTL8721CSM || ARCH_BOARD_RTL8730E || ARCH_BOARD_BK7239N
 	---help---
 		Enable Encryption and Secure boot.
 		But this config is set as n and invisible because binary signing is not supported here.
@@ -333,9 +333,6 @@ config BINARY_SIGNING
 config USER_SIGN_PREPEND_SIZE
 	if ARCH_BOARD_RTL8721CSM
 		source board/rtl8721csm/Kconfig.signing
-	endif
-	if ARCH_BOARD_RTL8720E
-		source board/rtl8720e/Kconfig.signing
 	endif
 	if ARCH_BOARD_RTL8730E
 		source board/rtl8730e/Kconfig.signing
