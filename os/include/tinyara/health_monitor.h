@@ -31,6 +31,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define HEALTH_MONITOR_DEVPATH        "/dev/health_monitor"
 #define HEALTH_MONITOR_MIN_TIMEOUT_MS 1U
 
 /****************************************************************************
@@ -49,6 +50,7 @@ struct health_monitor_s {
  ****************************************************************************/
 
 #ifdef CONFIG_HEALTH_MONITOR
+void health_monitor_register(void);
 int health_monitor_start(uint32_t timeout_ms);
 int health_monitor_stop(void);
 void health_monitor_kick(void);

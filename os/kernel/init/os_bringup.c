@@ -93,6 +93,9 @@
 #ifdef CONFIG_TASK_MANAGER
 #include <tinyara/task_manager_drv.h>
 #endif
+#ifdef CONFIG_HEALTH_MONITOR
+#include <tinyara/health_monitor.h>
+#endif
 #include "init/init.h"
 #ifdef CONFIG_PAGING
 #include "paging/paging.h"
@@ -306,6 +309,10 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_TASK_MANAGER
 	task_manager_drv_register();
+#endif
+
+#ifdef CONFIG_HEALTH_MONITOR
+	health_monitor_register();
 #endif
 
 #ifdef CONFIG_MESSAGING_IPC
