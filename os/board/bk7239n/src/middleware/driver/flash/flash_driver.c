@@ -195,6 +195,51 @@ static flash_ps_callback_t s_flash_ps_resume_cb = NULL;
 static flash_wait_callback_t s_flash_wait_cb[FLASH_MAX_WAIT_CB_CNT] = {NULL};
 static volatile flash_op_status_t s_flash_op_status = 0;
 
+/* Flash families that need a slower clock during program/erase/write-status-reg:
+ * winbond(0xEF), XMC(0x20), GT(0x1C71). Their read clock stays 80M (cksel=2/APLL,
+ * ckdiv=0); write actions temporarily drop to 40M (ckdiv=1, i.e. 80M/2). */
+#ifndef FLASH_ManuFacID_POSI
+#define FLASH_ManuFacID_POSI       (16)
+#endif
+#define FLASH_ManuFacID_WINBOND    (0xEF)
+#define FLASH_ManuFacID_XMC        (0x20)
+#define FLASH_MID_GT               (0x1C71)  /* manufacturer(0x1C)+type(0x71), excludes EON 0x1C70/0x1C41 */
+#define FLASH_CLK_SRC_80M          (2)       /* cksel_flash=2 -> 80M (APLL) source */
+#define FLASH_WRITE_CKDIV_SLOW     (1)       /* 80M / 2 = 40M */
+#define FLASH_WRITE_CKDIV_NORMAL   (0)       /* 80M / 1 = 80M */
+
+static bool s_flash_slow_write_clk = false;
+
+static bool flash_is_slow_write_clk_family(uint32_t flash_id)
+{
+	uint32_t mid = flash_id >> FLASH_ManuFacID_POSI;
+
+	if ((mid == FLASH_ManuFacID_WINBOND) || (mid == FLASH_ManuFacID_XMC)) {
+		return true;
+	}
+	if ((flash_id >> 8) == FLASH_MID_GT) {
+		return true;
+	}
+	return false;
+}
+
+static inline void flash_write_clk_enter(void)
+{
+	if (s_flash_slow_write_clk) {
+		flash_hal_wait_op_done(&s_flash.hal);
+		sys_drv_flash_cksel(FLASH_CLK_SRC_80M);            /* slowing: fix source(80M) first */
+		sys_drv_flash_set_clk_div(FLASH_WRITE_CKDIV_SLOW); /* then /2 -> 40M */
+	}
+}
+
+static inline void flash_write_clk_exit(void)
+{
+	if (s_flash_slow_write_clk) {
+		flash_hal_wait_op_done(&s_flash.hal);
+		sys_drv_flash_set_clk_div(FLASH_WRITE_CKDIV_NORMAL); /* speeding: /1 first */
+		sys_drv_flash_cksel(FLASH_CLK_SRC_80M);              /* then keep 80M source */
+	}
+}
 
 unsigned int arch_is_enter_exception(void);
 
@@ -617,7 +662,7 @@ static bool flash_is_need_update_status_reg(uint32_t protect_cfg, uint32_t cmp_c
 	}
 }
 
-static void flash_set_protect_type(flash_protect_type_t type)
+static void flash_set_protect_type_ex(flash_protect_type_t type, bool nonvolatile)
 {
 	uint32_t protect_cfg = flash_get_protect_cfg(type);
 	uint32_t cmp_cfg = flash_get_cmp_cfg(type);
@@ -628,8 +673,23 @@ static void flash_set_protect_type(flash_protect_type_t type)
 		flash_set_cmp_cfg(&status_reg, cmp_cfg);
 
 		//FLASH_LOGD("write status reg:%x, status_reg_size:%d\r\n", status_reg, s_flash.flash_cfg->status_reg_size);
-		flash_hal_write_status_reg(&s_flash.hal, s_flash.flash_cfg->status_reg_size, status_reg);
+		if (nonvolatile) {
+			flash_hal_write_status_reg_nvol(&s_flash.hal, s_flash.flash_cfg->status_reg_size, status_reg);
+		} else {
+			flash_hal_write_status_reg(&s_flash.hal, s_flash.flash_cfg->status_reg_size, status_reg);
+		}
 	}
+}
+
+static void flash_set_protect_type(flash_protect_type_t type)
+{
+	flash_set_protect_type_ex(type, false);
+}
+
+/* Persist the protection setting across power cycles (non-volatile SR write). */
+static void flash_set_protect_type_nvol(flash_protect_type_t type)
+{
+	flash_set_protect_type_ex(type, true);
 }
 
 static void flash_set_qe(void)
@@ -832,8 +892,25 @@ bk_err_t bk_flash_driver_init(void)
 	s_flash.flash_id = flash_hal_get_id(&s_flash.hal);
 	FLASH_LOGI("id=0x%x\r\n", s_flash.flash_id);
 	flash_get_current_config();
+	s_flash_slow_write_clk = flash_is_slow_write_clk_family(s_flash.flash_id);
 	s_flash_runtime_protect_type = FLASH_PROTECT_ALL;
-	flash_set_protect_type(FLASH_PROTECT_ALL);
+
+#if (defined(CONFIG_SOC_BK7239XX))
+	/* winbond/XMC/GT read baseline: cksel=2(APLL/80M), ckdiv=0(/1).
+	 * Establish it before the non-volatile WRSR below so that write no longer
+	 * relies on the boot-time clock source. Read-then-set: skip if matched. */
+	if (s_flash_slow_write_clk) {
+		if ((FLASH_CLK_SRC_80M != sys_drv_flash_get_clk_sel())
+			|| (FLASH_WRITE_CKDIV_NORMAL != sys_drv_flash_get_clk_div())) {
+			sys_drv_flash_set_clk_div(FLASH_WRITE_CKDIV_NORMAL); /* set ckdiv first */
+			sys_drv_flash_cksel(FLASH_CLK_SRC_80M);              /* then clk source */
+		}
+	}
+#endif
+
+	flash_write_clk_enter();
+	flash_set_protect_type_nvol(FLASH_PROTECT_ALL);
+	flash_write_clk_exit();
 #if !defined(CONFIG_JTAG) || (0 == CONFIG_JTAG)
 	flash_hal_disable_cpu_data_wr(&s_flash.hal);
 #endif
@@ -841,22 +918,8 @@ bk_err_t bk_flash_driver_init(void)
 	flash_hal_set_default_clk(&s_flash.hal);
 
 
-#if (defined(CONFIG_SOC_BK7236XX))
-	if((s_flash.flash_id >> FLASH_ManuFacID_POSI) == FLASH_ManuFacID_GD
-	|| (s_flash.flash_id >> FLASH_ManuFacID_POSI) == FLASH_ManuFacID_TH) {
-		if((1 != sys_drv_flash_get_clk_sel()) || (1 != sys_drv_flash_get_clk_div())) {
-			sys_drv_flash_set_clk_div(1); // dpll div 6 = 80M
-			sys_drv_flash_cksel(1);
-		}
-	} else {
-		if((1 != sys_drv_flash_get_clk_sel()) || (3 != sys_drv_flash_get_clk_div())) {
-			sys_drv_flash_set_clk_div(3); // dpll div 10 = 48M
-			sys_drv_flash_cksel(1);
-		}
-	}
-
+#if (defined(CONFIG_SOC_BK7239XX))
 	sys_drv_set_sys2flsh_2wire(1);
-
 #endif
 
 	flash_init_common();
@@ -918,9 +981,11 @@ static bk_err_t flash_erase_block(uint32_t address, int type)
 #endif
 	uint32_t int_level = flash_enter_critical();
 	flash_ps_suspend(NORMAL_PS);
+	flash_write_clk_enter();
 	flash_set_protect_type(FLASH_PROTECT_NONE);
 	flash_hal_erase_block(&s_flash.hal, erase_addr, type);
 	flash_set_protect_type(s_flash_runtime_protect_type);
+	flash_write_clk_exit();
 	flash_ps_resume(NORMAL_PS);
 	flash_exit_critical(int_level);
 
@@ -996,9 +1061,11 @@ bk_err_t bk_flash_write_bytes(uint32_t address, const uint8_t *user_buf, uint32_
 
 	uint32_t int_level = flash_enter_critical();
 	flash_ps_suspend(NORMAL_PS);
+	flash_write_clk_enter();
 	flash_set_protect_type(FLASH_PROTECT_NONE);
 	flash_write_common(user_buf, address, size);
 	flash_set_protect_type(s_flash_runtime_protect_type);
+	flash_write_clk_exit();
 	flash_ps_resume(NORMAL_PS);
 	flash_exit_critical(int_level);
 
@@ -1090,7 +1157,9 @@ bk_err_t bk_flash_write_status_reg(uint16_t status_reg_data)
 {
 	uint32_t int_level = flash_enter_critical();
 	flash_ps_suspend(NORMAL_PS);
+	flash_write_clk_enter();
 	flash_hal_write_status_reg(&s_flash.hal, s_flash.flash_cfg->status_reg_size, status_reg_data);
+	flash_write_clk_exit();
 	flash_ps_resume(NORMAL_PS);
 	flash_exit_critical(int_level);
 	return BK_OK;
