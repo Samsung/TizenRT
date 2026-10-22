@@ -114,12 +114,6 @@ ifeq ($(CONFIG_COMPRESSED_BINARY),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT)
 endif
 
-# Add libraries for crypto module
-
-ifeq ($(CONFIG_CRYPTO),y)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcrypto$(LIBEXT)
-endif
-
 # Add libraries for power management module
 
 ifeq ($(CONFIG_PM),y)

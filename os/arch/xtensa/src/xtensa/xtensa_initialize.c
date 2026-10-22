@@ -234,16 +234,6 @@ void up_initialize(void)
 		syslog_initialize();
 #endif
 
-#if defined(CONFIG_CRYPTO)
-	/* Initialize the HW crypto and /dev/crypto */
-
-	up_cryptoinitialize();
-#endif
-
-#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_CRYPTO_CRYPTODEV)
-	devcrypto_register();
-#endif
-
 #ifndef CONFIG_NETDEV_LATEINIT
 	/* Initialize the network */
 

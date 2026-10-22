@@ -61,34 +61,4 @@
 #include <tinyara/config.h>
 #include <stddef.h>
 
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
-
-#ifdef CONFIG_CRYPTO_RANDOM_POOL
-
-/****************************************************************************
- * Name: getrandom
- *
- * Description:
- *   Fill a buffer of arbitrary length with randomness. This is the
- *   preferred interface for getting random numbers. The traditional
- *   /dev/random approach is susceptible for things like the attacker
- *   exhausting file descriptors on purpose.
- *
- *   Note that this function cannot fail, other than by asserting.
- *
- * Parameters:
- *   bytes  - Buffer for returned random bytes
- *   nbytes - Number of bytes requested.
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void getrandom(FAR void *bytes, size_t nbytes);
-
-#endif /* CONFIG_CRYPTO_RANDOM_POOL */
-
 #endif /* __INCLUDE_SYS_RANDOM_H */

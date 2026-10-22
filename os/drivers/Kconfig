@@ -26,12 +26,6 @@ if DEV_URANDOM
 choice
 	prompt "/dev/urandom Algorithm"
 
-config DEV_URANDOM_RANDOM_POOL
-	bool "Entropy pool"
-	depends on CRYPTO_RANDOM_POOL
-         ---help---
-		Use the entropy pool CPRNG output for urandom algorithm.
-
 config DEV_URANDOM_XORSHIFT128
 	bool "xorshift128"
 	---help---

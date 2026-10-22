@@ -139,12 +139,6 @@ ifeq ($(CONFIG_COMPRESSION),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcompression$(LIBEXT)
 endif
 
-# Add libraries for the Crypto sub-system
-
-ifeq ($(CONFIG_CRYPTO),y)
-TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libcrypto$(LIBEXT)
-endif
-
 ifeq ($(CONFIG_SE),y)
 TINYARALIBS += $(LIBRARIES_DIR)$(DELIM)libse$(LIBEXT)
 endif
