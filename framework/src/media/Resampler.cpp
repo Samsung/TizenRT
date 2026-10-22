@@ -22,7 +22,6 @@
 #include <cstdint>
 #include <cstring>
 #include <new>
-#include <media/media_log.h>
 #include <resample/speex_resampler.h>
 
 #include "utils/remix.h"

@@ -263,6 +263,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 							 source->getPcmFormat(), mStreamInfo->id) != AUDIO_MANAGER_SUCCESS) {
 		// ToDo: Need to do mInputHandler close() in case of further failure in prepare.
 		meddbg("MediaPlayer prepare fail : set_audio_stream_out fail\n");
+		mInputHandler.close();
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 		delete[] mBuffer;
 		mBuffer = nullptr;
@@ -276,6 +277,7 @@ void MediaPlayerImpl::preparePlayer(player_result_t &ret, sem_t &syncSem)
 
 	if (!mInputHandler.startBuffering(outputSampleRate, outputChannels, outputBytesPerFormat, mBufSize)) {
 		meddbg("MediaPlayer prepare fail : start buffering fail\n");
+		mInputHandler.close();
 		ret = PLAYER_ERROR_INTERNAL_OPERATION_FAILED;
 
 		res = reset_audio_stream_out(mStreamInfo->id);
