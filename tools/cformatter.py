@@ -112,7 +112,9 @@ class Tok(object):
 
 _IDENT_RE = re.compile(r'[A-Za-z_]\w*')
 _SPLICE_RE = re.compile(r'\\[ \t\r]*\n')
-_NUM_RE = re.compile(r'\.?\d[\w.]*(?:[eEpP][+-][\w.]*)?')
+# C preprocessing number: an exponent sign belongs to the number
+# ('1e+16', '0x1p-3'), so it is tried before the identifier characters
+_NUM_RE = re.compile(r'\.?\d(?:[eEpP][+-]|[\w.])*')
 
 
 def _directive_end(text, i):
