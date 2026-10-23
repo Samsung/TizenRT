@@ -350,7 +350,7 @@ int board_reset(int status)
 	return 0;
 }
 #endif
-#ifdef CONFIG_WATCHDOG_FOR_IRQ
+#if defined(CONFIG_WATCHDOG_FOR_IRQ) || defined(CONFIG_HEALTH_MONITOR)
 /****************************************************************************
  * Name: up_wdog_init
  *
@@ -360,8 +360,10 @@ int board_reset(int status)
  ****************************************************************************/
 void up_wdog_init(uint16_t timeout)
 {
+#ifdef CONFIG_WATCHDOG_FOR_IRQ
 #if ((CONFIG_WATCHDOG_FOR_IRQ_INTERVAL % 500) != 0) || (CONFIG_WATCHDOG_FOR_IRQ_INTERVAL < 500) || (CONFIG_WATCHDOG_FOR_IRQ_INTERVAL > 128000)
 #error "IMXRT WATCHDOG supports timeout periods from 500ms to 128000ms with a time resolution of 500ms."
+#endif
 #endif
 	wdog_config_t config;
 
@@ -381,6 +383,17 @@ void up_wdog_init(uint16_t timeout)
 void up_wdog_keepalive(void)
 {
 	imxrt_wdog_refresh(WDOG1);
+}
+
+/****************************************************************************
+ * Name: up_wdog_start
+ *
+ * Description:
+ *   imxrt_wdog_init() in up_wdog_init() already enables the watchdog.
+ *
+ ****************************************************************************/
+void up_wdog_start(void)
+{
 }
 #endif
 

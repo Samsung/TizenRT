@@ -89,6 +89,9 @@
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 #include <tinyara/tz_context.h>
 #endif
+#ifdef CONFIG_HEALTH_MONITOR
+#include <tinyara/health_monitor.h>
+#endif
 
 /* Configuration ****************************************************************/
 /* Task groups currently only supported for retention of child status */
@@ -665,6 +668,10 @@ struct tcb_s {
 #if CONFIG_TASK_NAME_SIZE > 0
 	char name[CONFIG_TASK_NAME_SIZE + 1];	/* Task name (with NUL terminator)     */
 #endif
+#ifdef CONFIG_HEALTH_MONITOR
+	struct health_monitor_s health_monitor;
+#endif
+
 	int fin_data;			/* Irq notification Data to be handled */
 	int pending_fin_data;		/* Pended irq notification data */
 };

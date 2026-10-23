@@ -887,12 +887,16 @@ int armino_wdg_initialize(const char *devpath)
 	return OK;
 }
 
-#ifdef CONFIG_WATCHDOG_FOR_IRQ
+#if defined(CONFIG_WATCHDOG_FOR_IRQ) || defined(CONFIG_HEALTH_MONITOR)
 void up_wdog_init(uint16_t timeout)
 {
 	bk_wdt_start(timeout);
 }
 
+void up_wdog_start(void)
+{
+	/* bk_wdt_start() in up_wdog_init() already starts the watchdog. */
+}
 #endif
 
 void up_wdog_keepalive(void)
