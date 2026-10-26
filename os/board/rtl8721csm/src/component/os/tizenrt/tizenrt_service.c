@@ -1227,11 +1227,7 @@ int rtw_printf(const char *format,...)
 	int ret = 0;
 #ifdef CONFIG_DEBUG_LWNL80211_VENDOR_DRV_INFO
 	va_start(ap, format);
-#ifdef CONFIG_LOGM
-	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, format, ap);
-#else
 	ret = vsyslog(LOG_INFO, format, ap);
-#endif
 	va_end(ap);
 #endif
 	return ret;
@@ -1242,11 +1238,7 @@ int rtw_printf_info(const char *format,...)
 	va_list ap;
 	int ret = 0;
 	va_start(ap, format);
-#ifdef CONFIG_LOGM
-	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, format, ap);
-#else
 	ret = vsyslog(LOG_INFO, format, ap);
-#endif
 	va_end(ap);
 	return ret;
 }

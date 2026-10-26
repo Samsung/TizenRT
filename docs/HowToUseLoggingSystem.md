@@ -1,5 +1,5 @@
 # How to use Logging System
-**Debug Messages** is the interface for logging events and **Logging Modules** are modules which process the log messages, LogM and Syslog Devices.
+**Debug Messages** is the interface for logging events and **Logging Modules** are modules which process the log messages, such as Syslog Devices.
 
 ## Contents
 - [Debug Messages](#debug-messages)  
@@ -61,14 +61,8 @@ make menuconfig
 By default, all log output goes to stdout, i.e. console.  
 Using Menuconfig, however, they can be configured to route to other interfaces or devices as well.  
 
-There are three kinds of logging modules, LogM and two Syslog Devices.
- * [LogM](../os/logm/README.md)
+There are two kinds of logging modules, both Syslog Devices.
  * [Syslog Devices](../os/drivers/syslog/README.txt) : Character device, RAM logging device  
-
-LogM takes stronger precedence over syslog, so if LogM and either Syslog Devices are enabled at the same time, all logs will be directed to LogM.
-
-### How to enable LogM
-For details pertaining to LogM, please refer to [README](../os/logm/README.md).
 
 ### How to enable Syslog Devices
 Using Menuconfig, Syslog Devices can be enabled as shown below:

@@ -72,9 +72,6 @@
 #ifdef CONFIG_SCHED_WORKQUEUE
 #include <tinyara/wqueue.h>
 #endif
-#ifdef CONFIG_LOGM
-#include <tinyara/logm.h>
-#endif
 #ifdef CONFIG_SCHED_CPULOAD
 #include <tinyara/cpuload.h>
 #endif
@@ -510,10 +507,6 @@ int os_bringup(void)
 	 */
 
 	os_workqueues();
-
-#ifdef CONFIG_LOGM
-	logm_start();
-#endif
 
 	/* Once the operating system has been initialized, the system must be
 	 * started by spawning the user initialization thread of execution.  This

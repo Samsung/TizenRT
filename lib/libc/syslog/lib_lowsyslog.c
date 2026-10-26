@@ -60,9 +60,6 @@
 #include <syslog.h>
 
 #include <tinyara/streams.h>
-#if defined(CONFIG_LOGM) && defined(CONFIG_SYSLOG2LOGM)
-#include <tinyara/logm.h>
-#endif
 #include "syslog/syslog.h"
 
 #if defined(CONFIG_ARCH_LOWPUTC) || defined(CONFIG_SYSLOG)
@@ -147,16 +144,12 @@ int lowvsyslog(int priority, FAR const char *fmt, va_list ap)
 
 	if ((g_syslog_mask & LOG_MASK(priority)) != 0) {
 		/* Yes.. let vsylog_internal to the deed */
-#if defined(CONFIG_LOGM) && defined(CONFIG_SYSLOG2LOGM)
-		ret = logm_internal(LOGM_LOWPUT, LOGM_UNKNOWN, priority, fmt, ap);
-#else
 #ifdef __KERNEL__
 		irqstate_t flags = enter_critical_section();
 #endif
 		ret = lowvsyslog_internal(fmt, ap);
 #ifdef __KERNEL__
 		leave_critical_section(flags);
-#endif
 #endif
 	}
 	return ret;

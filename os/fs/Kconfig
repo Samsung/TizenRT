@@ -64,7 +64,6 @@ config SYSLOG
 		system logging will still be available and will log to the system
 		console (like printf()).  This setting is required to enable
 		customization of the basic system logging capability.
-		If this is enabled with SYSLOG2LOGM feature, syslog messages will be printed through logm.
 
 config SYSLOG_TIMESTAMP
 	bool "Prepend timestamp to syslog message"
