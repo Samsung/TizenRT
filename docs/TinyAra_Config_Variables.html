@@ -2712,19 +2712,6 @@ function toggle(id, link) {
 <li><a href="#CONFIG_STACK_COLORATION">1.14.94 <code>CONFIG_STACK_COLORATION</code>: Stack coloration</a></li>
 <li><a href="#CONFIG_DEBUG_SYMBOLS">1.14.95 <code>CONFIG_DEBUG_SYMBOLS</code>: Generate Debug Symbols</a></li>
 <li><a href="#CONFIG_FRAME_POINTER">1.14.96 <code>CONFIG_FRAME_POINTER</code>: Enable backtracking using Frame pointer register</a></li>
-<li><a name="menu_139_toc"><a href="#menu_139">1.14.97 Menu: Logger Module</a></a></li>
-<a href="#menu_139_toc" onclick="toggle('toggle_138', this)">Expand</a>
-<ul id="toggle_138"  style="display:none">
-<li><a href="#CONFIG_LOGM">1.14.97.1 <code>CONFIG_LOGM</code>: Logger Module</a></li>
-<li><a href="#CONFIG_PRINTF2LOGM">1.14.97.2 <code>CONFIG_PRINTF2LOGM</code>: Route printf through logm</a></li>
-<li><a href="#CONFIG_SYSLOG2LOGM">1.14.97.3 <code>CONFIG_SYSLOG2LOGM</code>: Route all syslogs through logm</a></li>
-<li><a href="#CONFIG_LOGM_TIMESTAMP">1.14.97.4 <code>CONFIG_LOGM_TIMESTAMP</code>: Prepend timestamp to message</a></li>
-<li><a href="#CONFIG_LOGM_BUFFER_SIZE">1.14.97.5 <code>CONFIG_LOGM_BUFFER_SIZE</code>: Logm Buffer size</a></li>
-<li><a href="#CONFIG_LOGM_PRINT_INTERVAL">1.14.97.6 <code>CONFIG_LOGM_PRINT_INTERVAL</code>: Interval for flusing logm buffer (ms)</a></li>
-<li><a href="#CONFIG_LOGM_TASK_PRIORITY">1.14.97.7 <code>CONFIG_LOGM_TASK_PRIORITY</code>: Logm Task priority</a></li>
-<li><a href="#CONFIG_LOGM_TASK_STACKSIZE">1.14.97.8 <code>CONFIG_LOGM_TASK_STACKSIZE</code>: Logm Task stack size</a></li>
-<li><a href="#CONFIG_LOGM_TEST">1.14.97.9 <code>CONFIG_LOGM_TEST</code>: Test code for logger module </a></li>
-</ul>
 </ul>
 <li><a name="menu_140_toc"><a href="#menu_140">1.15 Menu: System Call</a></a></li>
 <a href="#menu_140_toc" onclick="toggle('toggle_139', this)">Expand</a>
@@ -32565,7 +32552,7 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
   </li>
   <li><i>Kconfig file</i>: <code>./fs/Kconfig</code>
 <p>
-  Enables generic system logging features.  NOTE: This setting is not  required to enable system logging.  If this feature is not enable  system logging will still be available and will log to the system  console (like printf()).  This setting is required to enable  customization of the basic system logging capability.  If this is enabled with SYSLOG2LOGM feature, syslog messages will be printed through logm.</p>
+  Enables generic system logging features.  NOTE: This setting is not  required to enable system logging.  If this feature is not enable  system logging will still be available and will log to the system  console (like printf()).  This setting is required to enable  customization of the basic system logging capability.</p>
 </ul>
 <h3><a name="CONFIG_SYSLOG_TIMESTAMP">1.10.39 <code>CONFIG_SYSLOG_TIMESTAMP</code>: Prepend timestamp to syslog message</a></h3>
 <ul>
@@ -34025,100 +34012,6 @@ off_t firstblock, off_t nblocks, uint16_t tagno);
   <li><i>Kconfig file</i>: <code>././Kconfig.debug</code>
 <p>
   This option uses -fno-omit-frame-pointer flag of gcc. This flag makes  use of frame pointer register to push PC,SP and FP for every function  call in the stack during runtime. If you say N here, the resulting  binary will be slightly smaller amd faster. However, if neither  FRAME_POINTER nor ARM_UNWIND are enabled, the information  reported during system crash is very limited.</p>
-</ul>
-
-<h1><a name="menu_139">1.14.97 Menu: Logger Module</a></h1>
-<ul>
-  <li><i>Dependencies</i>: !<a href="#CONFIG_DISABLE_SIGNALS"><code>CONFIG_DISABLE_SIGNALS</code></a></li>
-  <li><i>Kconfig file</i>: <code>././Kconfig.debug</code>
-</ul>
-<h3><a name="CONFIG_LOGM">1.14.97.1 <code>CONFIG_LOGM</code>: Logger Module</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Kconfig file</i>: <code>./logm/Kconfig</code>
-<p>
-  Logger.</p>
-</ul>
-<h3><a name="CONFIG_PRINTF2LOGM">1.14.97.2 <code>CONFIG_PRINTF2LOGM</code>: Route printf through logm</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: y
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_LOGM"><code>CONFIG_LOGM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./logm/Kconfig</code>
-</ul>
-<h3><a name="CONFIG_SYSLOG2LOGM">1.14.97.3 <code>CONFIG_SYSLOG2LOGM</code>: Route all syslogs through logm</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: y
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_LOGM"><code>CONFIG_LOGM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./logm/Kconfig</code>
-</ul>
-<h3><a name="CONFIG_LOGM_TIMESTAMP">1.14.97.4 <code>CONFIG_LOGM_TIMESTAMP</code>: Prepend timestamp to message</a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_LOGM"><code>CONFIG_LOGM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./logm/Kconfig</code>
-</ul>
-<h3><a name="CONFIG_LOGM_BUFFER_SIZE">1.14.97.5 <code>CONFIG_LOGM_BUFFER_SIZE</code>: Logm Buffer size</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 10240
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_LOGM"><code>CONFIG_LOGM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./logm/Kconfig</code>
-<p>
-  Logm buffer size (default : 10KB)  This value should be sufficient to avoid buffer overflow.  If buffer overflow happens, some messages would be dropped.</p>
-</ul>
-<h3><a name="CONFIG_LOGM_PRINT_INTERVAL">1.14.97.6 <code>CONFIG_LOGM_PRINT_INTERVAL</code>: Interval for flusing logm buffer (ms)</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1000
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_LOGM"><code>CONFIG_LOGM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./logm/Kconfig</code>
-<p>
-  Logm queues messsages for several seconds and then spits out.  This value decides how frequently buffer is flushed.  The smaller this value is, the more frequent messages are shown.</p>
-</ul>
-<h3><a name="CONFIG_LOGM_TASK_PRIORITY">1.14.97.7 <code>CONFIG_LOGM_TASK_PRIORITY</code>: Logm Task priority</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 110
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_LOGM"><code>CONFIG_LOGM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./logm/Kconfig</code>
-</ul>
-<h3><a name="CONFIG_LOGM_TASK_STACKSIZE">1.14.97.8 <code>CONFIG_LOGM_TASK_STACKSIZE</code>: Logm Task stack size</a></h3>
-<ul>
-  <li><i>Type</i>: Integer</li>
-  <li>
-    <i>Default</i>: 1024
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_LOGM"><code>CONFIG_LOGM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./logm/Kconfig</code>
-</ul>
-<h3><a name="CONFIG_LOGM_TEST">1.14.97.9 <code>CONFIG_LOGM_TEST</code>: Test code for logger module </a></h3>
-<ul>
-  <li><i>Type</i>: Boolean</li>
-  <li>
-    <i>Default</i>: n
-  </li>
-  <li><i>Dependencies</i>: <a href="#CONFIG_LOGM"><code>CONFIG_LOGM</code></a></li>
-  <li><i>Kconfig file</i>: <code>./logm/Kconfig</code>
-<p>
-  Test code for logger module</p>
 </ul>
 
 <h1><a name="menu_140">1.15 Menu: System Call</a></h1>

@@ -70,7 +70,6 @@
 #include <tinyara/config.h>
 #ifndef NXFUSE_HOST_BUILD
 #include <tinyara/compiler.h>
-#include <tinyara/logm.h>
 #include <tinyara/security_level.h>
 #endif
 
@@ -143,26 +142,7 @@ int get_errno(void);
 /* C-99 style variadic macros are supported */
 
 #ifdef CONFIG_DEBUG
-/* Temporary LOGM macros to route all dbg messages.
- * Once LOGM is approved, each module should have its own index
- */
-#define LOGM_IDX (0)
-
 #ifdef CONFIG_DEBUG_ERROR
-#ifdef CONFIG_LOGM
-#define dbg(format, ...) \
-	logm(LOGM_NORMAL, LOGM_IDX, LOGM_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-
-#define dbg_noarg(format, ...) \
-	logm(LOGM_NORMAL, LOGM_IDX, LOGM_ERR, format, ##__VA_ARGS__)
-
-#define lldbg(format, ...) \
-	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_ERR, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-
-#define lldbg_noarg(format, ...) \
-	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_ERR, format, ##__VA_ARGS__)
-
-#else
 /**
  * @brief  Error debug
  * @details @b #include <debug.h>
@@ -191,7 +171,6 @@ int get_errno(void);
 #define lldbg(...)
 #define lldbg_noarg(...)
 #endif
-#endif
 
 #else
 #define dbg(...)
@@ -201,20 +180,6 @@ int get_errno(void);
 #endif
 
 #ifdef CONFIG_DEBUG_WARN
-#ifdef CONFIG_LOGM
-#define wdbg(format, ...) \
-	logm(LOGM_NORMAL, LOGM_IDX, LOGM_WRN, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-
-#define wdbg_noarg(format, ...) \
-	logm(LOGM_NORMAL, LOGM_IDX, LOGM_WRN, format, ##__VA_ARGS__)
-
-#define llwdbg(format, ...) \
-	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_WRN, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-
-#define llwdbg_noarg(format, ...) \
-	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_WRN, format, ##__VA_ARGS__)
-
-#else
 /**
  * @brief  Warning debug
  * @details @b #include <debug.h>
@@ -242,7 +207,6 @@ int get_errno(void);
 #define llwdbg(...)
 #define llwdbg_noarg(...)
 #endif
-#endif
 
 #else
 #define wdbg(...)
@@ -252,20 +216,6 @@ int get_errno(void);
 #endif
 
 #ifdef CONFIG_DEBUG_VERBOSE
-#ifdef CONFIG_LOGM
-#define vdbg(format, ...) \
-	logm(LOGM_NORMAL, LOGM_IDX, LOGM_INF, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-
-#define vdbg_noarg(format, ...) \
-	logm(LOGM_NORMAL, LOGM_IDX, LOGM_INF, format, ##__VA_ARGS__)
-
-#define llvdbg(format, ...) \
-	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_INF, EXTRA_FMT format EXTRA_ARG, ##__VA_ARGS__)
-
-#define llvdbg_noarg(format, ...) \
-	logm(LOGM_LOWPUT, LOGM_IDX, LOGM_INF, format, ##__VA_ARGS__)
-
-#else
 /**
  * @brief  Informational(Verbose) debug
  * @details @b #include <debug.h>
@@ -293,7 +243,6 @@ int get_errno(void);
 #else
 #define llvdbg(...)
 #define llvdbg_noarg(...)
-#endif
 #endif
 
 #else

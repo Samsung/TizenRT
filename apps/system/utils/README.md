@@ -41,7 +41,7 @@ cat              cd               date             df
 dhcpd            exit             free             getenv
 heapinfo         hello            help             ifconfig
 ifdown           ifup             iotjs            iperf
-irqinfo          kill             killall          logm
+irqinfo          kill             killall
 ls               mkdir            mkrd             mksmartfs
 mount            netdb            ping             ps
 pwd              ramtest          reboot           rm
@@ -920,7 +920,7 @@ cat              cd               date             df
 dhcpd            exit             free             getenv
 heapinfo         hello            help             ifconfig
 ifdown           ifup             iotjs            iperf
-irqinfo          kill             killall          logm
+irqinfo          kill             killall
 ls               mkdir            mkrd             mksmartfs
 mount            netdb            ping             ps
 pwd              ramtest          reboot           rm

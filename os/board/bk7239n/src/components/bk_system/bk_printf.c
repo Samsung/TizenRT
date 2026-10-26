@@ -285,11 +285,7 @@ void bk_printf(const char *fmt, ...)
     }
     else 
     {
-#ifdef CONFIG_LOGM
-	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, fmt, args);
-#else
 	ret = vsyslog(LOG_INFO, fmt, args);
-#endif
     }
 	va_end(args);
 
@@ -371,9 +367,6 @@ void bk_printf_ext(int level, char *tag, const char *fmt, ...)
     }
     else 
     {
-#ifdef CONFIG_LOGM
-	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, final_fmt, args);
-#else
     if (level == BK_LOG_ERROR)
     {
         priority = LOG_ERR;
@@ -390,7 +383,6 @@ void bk_printf_ext(int level, char *tag, const char *fmt, ...)
         priority = LOG_DEBUG;
     }
 	ret = vsyslog(priority, final_fmt, args);
-#endif
     }
 	va_end(args);
 
@@ -427,9 +419,6 @@ void bk_vprintf_ext(int level, char *tag, const char *fmt, va_list args)
     }
     else 
     {
-#ifdef CONFIG_LOGM
-	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, final_fmt, args);
-#else
     if (level == BK_LOG_ERROR)
     {
         priority = LOG_ERR;
@@ -446,7 +435,6 @@ void bk_vprintf_ext(int level, char *tag, const char *fmt, va_list args)
         priority = LOG_DEBUG;
     }
 	ret = vsyslog(priority, final_fmt, args);
-#endif
     }
 	// va_end(args);
 
@@ -473,9 +461,6 @@ void bk_vprintf_raw(int level, char *tag, const char *fmt, va_list args)
     }
     else 
     {
-#ifdef CONFIG_LOGM
-	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, fmt, args);
-#else
     if (level == BK_LOG_ERROR)
     {
         priority = LOG_ERR;
@@ -492,7 +477,6 @@ void bk_vprintf_raw(int level, char *tag, const char *fmt, va_list args)
         priority = LOG_DEBUG;
     }
 	ret = vsyslog(priority, fmt, args);
-#endif
     }
 
 	return;
@@ -520,9 +504,6 @@ void bk_printf_raw(int level, char *tag, const char *fmt, ...)
     }
     else 
     {
-#ifdef CONFIG_LOGM
-	ret = logm_internal(LOGM_NORMAL, LOGM_IDX, LOGM_INF, fmt, args);
-#else
     if (level == BK_LOG_ERROR)
     {
         priority = LOG_ERR;
@@ -539,7 +520,6 @@ void bk_printf_raw(int level, char *tag, const char *fmt, ...)
         priority = LOG_DEBUG;
     }
 	ret = vsyslog(priority, fmt, args);
-#endif
     }
 	va_end(args);
 
