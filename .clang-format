@@ -1,25 +1,46 @@
 ---
+# TizenRT C++ coding style (docs/CodingStyleGuide.md, C++ section).
+# Used by tools/cxxformatter.sh. Only options available in
+# clang-format 11 and later are used.
 Language:        Cpp
+BasedOnStyle:  LLVM
 ColumnLimit: 0
-# BasedOnStyle:  LLVM
 AccessModifierOffset: -4
-AllowShortFunctionsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortEnumsOnASingleLine: false #[M16]
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false #[M09]
 BreakBeforeBraces: Custom
 BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: true
+  AfterControlStatement: false #[M15]
   AfterEnum: false #[M16]
   AfterFunction: true #[M14]
+  AfterNamespace: false
   AfterStruct: false #[M16]
   AfterUnion: false #[M16]
-  AfterClass: true
-  AfterNamespace: false
+  AfterExternBlock: false
+  BeforeCatch: false
   BeforeElse: false #[M15]
+  BeforeWhile: false #[M15]
+  IndentBraces: false
 IndentCaseLabels: false #[M09]
 IndentWidth:     4 #[M08]
-SpaceBeforeAssignmentOperators: true #[M11]
-SpaceBeforeParens: ControlStatements
 TabWidth:        4 #[M08]
-UseTab:          Always #[M08]
-PointerAlignment: Right
+UseTab:          ForContinuationAndIndentation #[M08]
+IndentPPDirectives: None
+SpaceBeforeAssignmentOperators: true #[M11]
+SpaceAfterCStyleCast: false #[M11]
+SpaceBeforeParens: ControlStatements #[M10]
+SpacesInParentheses: false #[M12]
+SpacesInSquareBrackets: false #[M12]
+SpaceBeforeSquareBrackets: false #[M12]
+PointerAlignment: Right #[M13]
+DerivePointerAlignment: false
 SortIncludes: false
-BreakConstructorInitializers: AfterColon
+BreakConstructorInitializers: AfterColon #[R02]
+ConstructorInitializerIndentWidth: 4 #[R02]
 ...
