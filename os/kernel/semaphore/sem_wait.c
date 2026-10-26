@@ -60,6 +60,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <assert.h>
+#include <debug.h>
 #include <tinyara/arch.h>
 #include <tinyara/cancelpt.h>
 
@@ -164,6 +165,14 @@ int sem_wait(FAR sem_t *sem)
 
 		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
 			ASSERT_INFO(sem->semcount < 2, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x\n", sem, sem->semcount, sem->flags, caller_retaddr);
+#ifdef SAVE_SEM_HOLDER
+			/* Detect self-deadlock before changing the count or wait state. */
+			FAR struct semholder_s *holder = sem_findholder(sem, rtcb);
+			if (holder != NULL && holder->counts > 0) {
+				lldbg("mutex already held: sem = %p, pid = %d, caller address = 0x%lx\n",
+					sem, rtcb->pid, (unsigned long)caller_retaddr);
+			}
+#endif
 		}
 
 		/* Check if the lock is available */
