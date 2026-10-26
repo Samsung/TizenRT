@@ -1,5 +1,4 @@
 #!/bin/bash
-###########################################################################
 #
 # Copyright 2016 Samsung Electronics All Rights Reserved.
 #
@@ -15,44 +14,25 @@
 # either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 #
-###########################################################################
-TARGET=$1
+# ------------------------------------------------------------------
+# Thin wrapper for cformatter.py (kept for backwards compatibility).
+#
+# Applies the C rules of docs/CodingStyleGuide.md to .c/.h files.
+#
+# Usage:
+#   ./tools/cformatter.sh <file_or_directory>        # rewrite in place
+#   ./tools/cformatter.sh --check <target>            # report only
+#   ./tools/cformatter.sh --diff <target>             # show diff only
+#   ./tools/cformatter.sh --backup <target>           # keep *.orig
+#
+# Requires: python3 (no third-party packages)
+# ------------------------------------------------------------------
 
-if ! which indent >/dev/null; then
-    echo "Need to install indent"
-    exit 1
-fi
-if ! which astyle >/dev/null; then
-    echo "Need to install astyle"
-    exit 1
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-function USAGE()
-{
-    echo "usage: $0 TARGET"
-    echo "     TARGET: folder path or target files"
-    echo "Apply TizenRT C coding rule"
-    echo ""
-    echo "example:"
-    echo "    $0 ../kernel"
-    echo "    $0 ../../abc.c"
-}
-
-if [ -z ${TARGET} ]; then
-    USAGE
-    exit 1
-fi
-if [ ${TARGET} == "--help" ]; then
-    USAGE
-    exit 1
+if ! command -v python3 > /dev/null 2>&1; then
+	echo "Error: python3 is required" >&2
+	exit 1
 fi
 
-if [ -d ${TARGET} ]; then
-    find ${TARGET} -name "*.[c,h]" | xargs -I{} indent {} -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i4 -ip0 -l1000 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts4 -il1
-    astyle --style=linux --add-brackets --indent=force-tab=4 --unpad-paren --pad-header --pad-oper --align-pointer=name --recursive "${TARGET}/*.c" "${TARGET}/*.h"
-    find ${TARGET} -name "*.[c,h]" | xargs perl -pi -e 's/ \*\) & / \*\)&/g;s/ \*\) - 1/ \*\)-1/g;s/ \*\) kmm/ \*\)kmm/g;s/ \*\) malloc/ \*\)malloc/g;s/ \*\) realloc/ \*\)realloc/g;s/ \*\) zalloc/ \*\)zalloc/g'
-else
-    indent ${TARGET} -nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -d0 -di1 -nfc1 -i4 -ip0 -l1000 -lp -npcs -nprs -npsl -sai -saf -saw -ncs -nsc -sob -nfca -cp33 -ss -ts4 -il1
-    astyle --style=linux --add-brackets --indent=force-tab=4 --unpad-paren --pad-header --pad-oper --align-pointer=name ${TARGET}
-    perl -pi -e 's/ \*\) & / \*\)&/g;s/ \*\) - 1/ \*\)-1/g;s/ \*\) kmm/ \*\)kmm/g;s/ \*\) malloc/ \*\)malloc/g;s/ \*\) realloc/ \*\)realloc/g;s/ \*\) zalloc/ \*\)zalloc/g' ${TARGET}
-fi
+exec python3 "${SCRIPT_DIR}/cformatter.py" "$@"
