@@ -90,6 +90,7 @@ void mm_seminitialize(FAR struct mm_heap_s *heap)
 	 */
 
 	(void)sem_init(&heap->mm_semaphore, 0, 1);
+	heap->mm_semaphore.flags |= FLAGS_SEM_MUTEX;
 
 	heap->mm_holder      = -1;
 	heap->mm_counts_held = 0;
