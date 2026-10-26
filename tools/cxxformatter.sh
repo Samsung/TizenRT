@@ -37,20 +37,20 @@ function USAGE()
 	echo "    $0 ../../abc.c"
 }
 
-if [ -z $1 ]; then
+if [ -z "$1" ]; then
 	USAGE
 	exit 1
 fi
-if [ $1 == "--help" ]; then
+if [ "$1" == "--help" ]; then
 	USAGE
 	exit 1
 fi
 
 for target in "$@"; do
 	if [ -d "${target}" ]; then
-		find "${target}" -name *.cpp -o -name *.cxx -o -name *.cc -o -name *.h -exec ${CMD} ${OPTION} {} \;
+		find "${target}" \( -name '*.cpp' -o -name '*.cxx' -o -name '*.cc' -o -name '*.h' \) -exec ${CMD} ${OPTION} {} \;
 	else
-		${CMD} ${OPTION} ${target}
+		${CMD} ${OPTION} "${target}"
 	fi
 done
 
