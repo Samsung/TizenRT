@@ -29,6 +29,7 @@
 #include "crc32.h"
 #include "driver/flash.h"
 #include "flash.h"
+#include "tfm_ns_interface.h"
 
 #define FIRMWARE_SIGNATURE_MAGIC    0x5349474E  /* 'SIGN' in ASCII */
 #define SHA256_HASH_SIZE            (32)
@@ -94,6 +95,40 @@ struct kernel_tlv {
 
 /* External function declaration for reading flash instruction data */
 extern int bk_security_flash_read_instruction(uint32_t address, uint8_t *user_buf, uint32_t size, uint32_t offset_flag);
+
+/*
+ * psa_flash_read_instruction() is one of the NSC entries into the Secure world.
+ * TF-M keeps exactly one non-secure call in flight, so an instruction read must
+ * be serialized with psa_call()/tfm_ns_interface_dispatch() as well.  Without
+ * this, a task switch can leave this Secure call suspended while another thread
+ * enters the Secure world, which corrupts the TF-M context (253 SecureFault or
+ * a silent lockup that ends with a 252 watchdog reset).
+ */
+static int signature_read_instruction(uint32_t address, uint8_t *user_buf, uint32_t size, uint32_t offset_flag)
+{
+	int ret;
+	int32_t locked = tfm_ns_interface_lock();
+
+	ret = bk_security_flash_read_instruction(address, user_buf, size, offset_flag);
+	if (locked == BK_OK) {
+		(void)tfm_ns_interface_unlock();
+	}
+
+	return ret;
+}
+
+static int signature_read_app_or_common(uint32_t address, uint8_t *user_buf, uint32_t size)
+{
+	int ret;
+	int32_t locked = tfm_ns_interface_lock();
+
+	ret = bk_instruction_read_app_or_common(address, user_buf, size);
+	if (locked == BK_OK) {
+		(void)tfm_ns_interface_unlock();
+	}
+
+	return ret;
+}
 
 typedef struct {
     uint32_t magic;               /* Magic number, used to verify the structure */
@@ -166,7 +201,7 @@ static int calculate_sha256(const uint8_t *data, size_t data_size, uint8_t *hash
     while (remain_size > 0)
     {
         len_in = remain_size > SHA256_BUFFER_SIZE ? SHA256_BUFFER_SIZE : remain_size;
-        bk_instruction_read_app_or_common(data, buffer, len_in);
+        signature_read_app_or_common(data, buffer, len_in);
         status = psa_hash_update(&operation, buffer, len_in);
         if (status != PSA_SUCCESS) {
             psa_hash_abort(&operation);
@@ -215,7 +250,7 @@ static int verify_firmware_signature(uint32_t address)
     uint8_t calculated_hash[SHA256_HASH_SIZE] = {0x0};
     int result;
 
-    bk_instruction_read_app_or_common(address, (uint8_t *)&sig, sizeof(firmware_signature_t));
+    signature_read_app_or_common(address, (uint8_t *)&sig, sizeof(firmware_signature_t));
     dbg("app signature: line %d magic %x, size %x\r\n", __LINE__, sig.magic, sig.firmware_size);
     if (sig.magic != FIRMWARE_SIGNATURE_MAGIC) {
         return VERIFY_MAGIC_CHECK_FAIL;
@@ -292,7 +327,7 @@ static psa_status_t kernel_calculate_flash_hash(uint32_t address, uint32_t size,
             len_in = remain_size > SHA256_BUFFER_SIZE ? SHA256_BUFFER_SIZE : remain_size;
         }
         
-        rc = bk_security_flash_read_instruction(address + offset, buffer, len_in, flag);
+        rc = signature_read_instruction(address + offset, buffer, len_in, flag);
         if (rc != 0) {
             dbg("flash read failed at offset 0x%x, rc=%d\r\n", offset, rc);
             psa_hash_abort(&operation);
@@ -521,7 +556,7 @@ int up_verify_kernelsignature(uint32_t address)
         return SIGNATURE_INVALID;
     }
 
-    rc = bk_security_flash_read_instruction(address + IMAGE_HEAD_OFFSET, 
+    rc = signature_read_instruction(address + IMAGE_HEAD_OFFSET, 
                                             (uint8_t *)&hdr, sizeof(hdr), flag);
     if (rc != 0) {
         dbg("failed to read image header, rc=%d address = 0x%x = flag %d\r\n", rc, address, flag);
@@ -549,7 +584,7 @@ int up_verify_kernelsignature(uint32_t address)
     prot_tlv_end = tlv_off + hdr.ih_protect_tlv_size;
 
     if (hdr.ih_protect_tlv_size > 0) {
-        rc = bk_security_flash_read_instruction(tlv_off, (uint8_t *)&tlv_info, sizeof(tlv_info), flag);
+        rc = signature_read_instruction(tlv_off, (uint8_t *)&tlv_info, sizeof(tlv_info), flag);
         if (rc != 0 || tlv_info.it_magic != IMAGE_TLV_PROT_INFO_MAGIC) {
             dbg("invalid protected TLV info\r\n");
             return SIGNATURE_INVALID;
@@ -558,7 +593,7 @@ int up_verify_kernelsignature(uint32_t address)
     }
 
     /* Read unprotected TLV info */
-    rc = bk_security_flash_read_instruction(tlv_off, (uint8_t *)&tlv_info, sizeof(tlv_info), flag);
+    rc = signature_read_instruction(tlv_off, (uint8_t *)&tlv_info, sizeof(tlv_info), flag);
     if (rc != 0 || tlv_info.it_magic != IMAGE_TLV_INFO_MAGIC) {
         dbg("invalid TLV info, magic=0x%x\r\n", tlv_info.it_magic);
         return SIGNATURE_INVALID;
@@ -568,7 +603,7 @@ int up_verify_kernelsignature(uint32_t address)
     tlv_off += sizeof(struct kernel_tlv_info);
 
     while (tlv_off < tlv_end) {
-        rc = bk_security_flash_read_instruction(tlv_off, (uint8_t *)&tlv, sizeof(tlv), flag);
+        rc = signature_read_instruction(tlv_off, (uint8_t *)&tlv, sizeof(tlv), flag);
         if (rc != 0) {
             dbg("failed to read TLV at offset 0x%x\r\n", tlv_off);
             return SIGNATURE_INVALID;
@@ -583,7 +618,7 @@ int up_verify_kernelsignature(uint32_t address)
                 dbg("invalid SHA256 TLV length %d\r\n", tlv.it_len);
                 return SIGNATURE_INVALID;
             }
-            rc = bk_security_flash_read_instruction(tlv_off, stored_hash, SHA256_HASH_SIZE, flag);
+            rc = signature_read_instruction(tlv_off, stored_hash, SHA256_HASH_SIZE, flag);
             if (rc != 0) {
                 return SIGNATURE_INVALID;
             }
@@ -601,7 +636,7 @@ int up_verify_kernelsignature(uint32_t address)
                 dbg("public key too large %d\r\n", tlv.it_len);
                 return SIGNATURE_INVALID;
             }
-            rc = bk_security_flash_read_instruction(tlv_off, pubkey_buf, tlv.it_len, flag);
+            rc = signature_read_instruction(tlv_off, pubkey_buf, tlv.it_len, flag);
             if (rc != 0) {
                 return SIGNATURE_INVALID;
             }
@@ -615,7 +650,7 @@ int up_verify_kernelsignature(uint32_t address)
                 dbg("signature too large %d\r\n", tlv.it_len);
                 return SIGNATURE_INVALID;
             }
-            rc = bk_security_flash_read_instruction(tlv_off, sig_buf, tlv.it_len, flag);
+            rc = signature_read_instruction(tlv_off, sig_buf, tlv.it_len, flag);
             if (rc != 0) {
                 return SIGNATURE_INVALID;
             }
