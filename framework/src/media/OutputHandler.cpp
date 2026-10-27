@@ -27,6 +27,19 @@
 namespace media {
 namespace stream {
 
+static inline unsigned int audioFormatToBits(audio_format_type_t format) {
+	switch (format) {
+	case AUDIO_FORMAT_TYPE_S32_LE:
+		return 32;
+	case AUDIO_FORMAT_TYPE_S16_LE:
+		return 16;
+	case AUDIO_FORMAT_TYPE_S8:
+		return 8;
+	default:
+		return 0;
+	}
+}
+
 OutputHandler::OutputHandler() :
 	mIsFlushing(false)
 {
@@ -43,6 +56,43 @@ void OutputHandler::setOutputDataSource(std::shared_ptr<OutputDataSource> source
 	mOutputDataSource = source;
 }
 
+bool OutputHandler::startBuffering(unsigned int outputSampleRate, unsigned int outputChannel, unsigned int outputBytesPerFormat, size_t outputPeriodBytes)
+{
+	mResampler = std::make_unique<Resampler>();
+	if (!mResampler) {
+		meddbg("Resampler allocation failed\n");
+		return false;
+	}
+
+	if (!mResampler->configure(outputChannel, outputSampleRate, outputBytesPerFormat, mOutputDataSource->getChannels(), mOutputDataSource->getSampleRate(), 
+								audioFormatToBits(mOutputDataSource->getPcmFormat()) >> 3, outputPeriodBytes)) {
+		meddbg("Resampler configuration failed\n");
+		mResampler.reset();
+		return false;
+	}
+
+	if (!mResampleBuffer) {
+		mResampleBufferSize = outputPeriodBytes;
+		mResampleBuffer = std::make_unique<unsigned char[]>(mResampleBufferSize);
+		if (!mResampleBuffer) {
+			meddbg("ResampleBuffer allocation fail size: %d\n", mResampleBufferSize);
+			mResampler.reset();
+			mResampleBufferSize = 0;
+			return false;
+		}
+	}
+
+	bool ret = StreamHandler::start();
+	if (!ret) {
+		mResampler.reset();
+		mResampleBuffer.reset();
+		mResampleBufferSize = 0;
+		return false;
+	}
+	
+	return ret;
+}
+
 ssize_t OutputHandler::write(unsigned char *buf, size_t size)
 {
 	medvdbg("OutputHandler::write(), size %u\n", size);
@@ -52,47 +102,11 @@ ssize_t OutputHandler::write(unsigned char *buf, size_t size)
 		return (ssize_t)EOF;
 	}
 
-	std::shared_ptr<Encoder> encoder = mEncoder;
-
 	size_t wlen = 0;
-	while (wlen < size) {
-		// Has an encoder?
-		if (encoder) {
-			// Yes... Push data to encode stream as much as possible.
-			size_t pushed = encoder->pushData(buf + wlen, size - wlen);
-			if (pushed == 0) {
-				meddbg("Can not push any data! Error occurred during encoding!\n");
-				break;
-			}
-			wlen += pushed;
+	wlen += writeToStreamBuffer(buf + wlen, size - wlen);
+	meddbg("written size : %d\n", wlen);
 
-			while (1) {
-				// Encoded data size is usually smaller than origin PCM data size,
-				// So we can reuse 'wlen' bytes free space in 'buf'.
-				// Process encoding and get encoded data.
-				size_t ret = wlen;
-				if (!encoder->getFrame(buf, &ret)) {
-					// Normal case, break and continue to push more PCM data
-					break;
-				}
-
-				// Write encoded data to output stream.
-				ssize_t written = writeToStreamBuffer(buf, ret);
-				medvdbg("written size: %d\n", written);
-				if (written != (ssize_t)ret) {
-					meddbg("Can not write all!\n");
-					break;
-				}
-			}
-		} else {
-			// No... Write original PCM data to output stream.
-			wlen += writeToStreamBuffer(buf + wlen, size - wlen);
-			medvdbg("written size : %d\n", wlen);
-			break;
-		}
-	}
-
-	medvdbg("OutputHandler::write(), written %u\n", size);
+	meddbg("OutputHandler::write(), written %u\n", size);
 	return (ssize_t)wlen;
 }
 
@@ -129,6 +143,10 @@ void OutputHandler::writeToSource(size_t size)
 		meddbg("Failed to allocate buffer of size %zu\n", size);
 		return;
 	}
+	/*
+	frameSize = hardwareChannels * hardwareFormat per bytes
+	size -= size % frameSize 
+	*/
 	auto readed = mBufferReader->read(buf, size);
 	if (readed != size) {
 		meddbg("StreamBufferReader::read failed! size : %u, readed : %u\n", size, readed);
@@ -137,11 +155,52 @@ void OutputHandler::writeToSource(size_t size)
 		return;
 	}
 
-	auto written = mOutputDataSource->write(buf, size);
-	if (written <= 0) {
-		// Error occurred, stop outputting
-		meddbg("OutputDataSource::write returned <= 0! size : %u, written : %d\n", size, written);
-		mBufferWriter->setEndOfStream();
+	ssize_t resampledSize = mResampler->process(buf, readed, mResampleBuffer.get(), mResampleBufferSize);
+	if (resampledSize < 0) {
+		meddbg("Resampler process failed!\n");
+		return;
+	}
+
+	std::shared_ptr<Encoder> encoder = mEncoder;
+
+	size_t wlen = 0;
+	while (wlen < resampledSize) {
+		if (encoder) {
+			size_t pushed = encoder->pushData(mResampleBuffer.get() + wlen, resampledSize - wlen);
+			if (pushed == 0) {
+				meddbg("Can not push any data! Error occurred during encoding!\n");
+				break;
+			}
+
+			wlen += pushed;
+
+			while (1) {
+				size_t ret = wlen;
+				if (!encoder->getFrame(mResampleBuffer.get(), &ret)) {
+					break;
+				}
+
+				auto written = mOutputDataSource->write(mResampleBuffer.get(), ret);
+				medvdbg("written size: %d\n", written);
+				if (written <= 0) {
+					meddbg("OutputDataSource::write returned <= 0! size : %u, written : %d\n", size, written);
+					mBufferWriter->setEndOfStream();
+					break;
+				}			
+				if (written != (ssize_t)ret) {
+					meddbg("Can not write all!\n");
+					break;
+				}
+			}
+		} else {
+			auto written = mOutputDataSource->write(mResampleBuffer.get(), resampledSize);
+			medvdbg("written size : %d\n", wlen);
+			if (written <= 0) {
+				meddbg("OutputDataSource::write returned <= 0! size : %u, written : %d\n", size, written);
+				mBufferWriter->setEndOfStream();
+			}
+			break;
+		}
 	}
 
 	delete[] buf;
