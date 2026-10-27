@@ -70,6 +70,7 @@
 #include "chip.h"
 
 #include "armino_flash.h"
+#include "tfm_ns_interface.h"
 #include <driver/flash.h>
 #include <os/os.h>
 #include "flash_hal.h"
@@ -136,9 +137,19 @@ static ssize_t bk_erase_page(size_t page, bool subsector)
 #if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
 		irqstate_t flags;
+		int32_t locked;
+
+		/* Serialize with the PSA door: TF-M keeps exactly one non-secure
+		 * call in flight.  Entering the Secure world from here while a PSA
+		 * call is suspended would corrupt the Secure context.
+		 */
+		locked = tfm_ns_interface_lock();
 		flags = irqsave();
 		ret = bk_security_flash_erase_sector(addr);
 		irqrestore(flags);
+		if (locked == BK_OK) {
+			(void)tfm_ns_interface_unlock();
+		}
 		if (ret == OK) {
 			return 1;
 		}
@@ -190,14 +201,21 @@ static int bk_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
 
 static ssize_t bk_flash_write(size_t addr, const void *buf, size_t length)
 {
-	#if (!CONFIG_SPE)
+#if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
 		irqstate_t flags;
+		int32_t locked;
+
+		/* Same serialization as the read path: one Secure entry at a time. */
+		locked = tfm_ns_interface_lock();
 		flags = irqsave();
 		bk_security_flash_write_bytes(addr, (uint8_t *)buf, length);
 		irqrestore(flags);
+		if (locked == BK_OK) {
+			(void)tfm_ns_interface_unlock();
+		}
 	} else
-	#endif
+#endif
 	{
 		bk_flash_write_bytes(addr, (uint8_t *)buf, length);
 	}
@@ -207,21 +225,30 @@ static ssize_t bk_flash_write(size_t addr, const void *buf, size_t length)
 
 ssize_t bk_flash_read(size_t addr, void *buf, size_t length)
 {
-	// printf("func :%s, line :%d, addr :%x, length :%d\n", __func__, __LINE__, addr, length);
-	#if (!CONFIG_SPE)
+#if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
+		int32_t locked;
+
+		/* Serialize with the PSA door.  Without this, a task switch can leave
+		 * this Secure call suspended and let another thread enter the Secure
+		 * world through psa_call(), which corrupts the TF-M context.
+		 */
+		locked = tfm_ns_interface_lock();
 		bk_security_flash_read_bytes(addr, (uint8_t *)buf, length);
 		SCB_CleanInvalidateDCache();
+		if (locked == BK_OK) {
+			(void)tfm_ns_interface_unlock();
+		}
 	}
-	#if CONFIG_BUILD_PROTECTED
-	#if CONFIG_FLASH_ENCRYPT_ENABLE
+#if CONFIG_BUILD_PROTECTED
+#if CONFIG_FLASH_ENCRYPT_ENABLE
 	else if (bk_addr_is_app_or_common(addr)) {
 		bk_data_read_app_or_common(addr, (uint8_t *)buf, length);
 	}
-	#endif
-	#endif
+#endif
+#endif
 	else
-	#endif
+#endif
 	{
 		bk_flash_read_bytes(addr, (uint8_t *)buf, length);
 	}
@@ -380,16 +407,31 @@ FAR struct mtd_dev_s *up_flashinitialize(void)
 */
 ssize_t up_read_decrypted_flash(size_t addr, void *buf, size_t length)
 {
-	// printf("func :%s, line :%d, addr :%x, length :%d\n", __func__, __LINE__, addr, length);
 #if (!CONFIG_SPE)
 	if (bk_addr_is_kernel(addr)) {
+		int32_t locked;
+
+		/* Same serialization as bk_flash_read(). */
+		locked = tfm_ns_interface_lock();
 		bk_security_flash_read_bytes(addr, (uint8_t *)buf, length);
 		SCB_CleanInvalidateDCache();
+		if (locked == BK_OK) {
+			(void)tfm_ns_interface_unlock();
+		}
 	}
 #ifdef CONFIG_BUILD_PROTECTED
 #ifdef CONFIG_FLASH_ENCRYPT_ENABLE
 	else if (bk_addr_is_app_or_common(addr)) {
+		int32_t locked;
+
+		/* psa_flash_read_instruction() is the fourth NSC entry into the Secure
+		 * world; serialize it with the PSA door like the other three.
+		 */
+		locked = tfm_ns_interface_lock();
 		bk_instruction_read_app_or_common(addr, (uint8_t *)buf, length);
+		if (locked == BK_OK) {
+			(void)tfm_ns_interface_unlock();
+		}
 	}
 #endif
 #endif
