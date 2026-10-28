@@ -43,3 +43,6 @@ the value of the current secure level.
 	- add build version in bootloader
 	- Fix the reason field of test_case3, change its value from 4 to 2.
    2.Fix GCM AAD padding when plaintext length is zero
+
+== version beken_trustzone pr-232 2026/10/28-22:38:00==
+   1. Provide an API for verifying public key hashes to the kernel.
