@@ -25,6 +25,9 @@
 
 #ifdef CONFIG_SYSTEM_CMDS
 const static tash_cmdlist_t system_cmds[] = {
+#if defined(CONFIG_ENABLE_ASSERTMODE)
+	{"assertmode", utils_assertmode, TASH_EXECMD_SYNC},
+#endif
 #if defined(CONFIG_ENABLE_CPULOAD)
 	{"cpuload",  utils_cpuload,      TASH_EXECMD_SYNC},
 #endif
