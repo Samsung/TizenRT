@@ -444,6 +444,8 @@ static void event_task(beken_thread_arg_t arg)
 		}
 
 		if (msg->msg_type == EVENT_MSG_DEINIT) {
+			os_free(msg);
+			msg = NULL;
 			break;
 		}
 

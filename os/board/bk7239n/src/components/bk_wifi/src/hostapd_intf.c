@@ -461,8 +461,10 @@ int hapd_intf_add_vif(struct prism2_hostapd_param *param, int len)
 	BK_WIFI_LOGD(TAG, "add vif%d, type=%d, status=%d\r\n",
 			cfm->inst_nbr, param->u.add_if.type, cfm->status);
 
-	if (cfm->inst_nbr >= NX_VIRT_DEV_MAX)
+	if (cfm->inst_nbr >= NX_VIRT_DEV_MAX) {
+		os_free(cfm);
 		return BK_ERR_HITF_VIF_ID;
+	}
 
 	*(param->u.add_if.indx_ptr) = cfm->inst_nbr;
 
@@ -1005,8 +1007,10 @@ int wpa_get_bss_info(struct prism2_hostapd_param *param, int len)
 	}
 
 	ret = rw_msg_get_bss_info(param->vif_idx, (void *)cfm);
-	if (ret)
+	if (ret) {
+		os_free(cfm);
 		return -1;
+	}
 
 	os_memcpy(param->u.bss_info.bssid, cfm->bssid, ETH_ALEN);
 	ssid_len = MIN(SSID_MAX_LEN, os_strlen((char *)cfm->ssid));

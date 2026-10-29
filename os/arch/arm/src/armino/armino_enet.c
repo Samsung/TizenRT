@@ -104,7 +104,12 @@ struct netdev* armino_register_dev(int sizeof_priv)
 	}
 	config.priv = priv;
 
-	return netdev_register(&config);
+	struct netdev *dev = netdev_register(&config);
+	if (dev == NULL) {
+		kmm_free(priv);   /* nm_register does not free priv on failure; caller cleans up */
+		return NULL;
+	}
+	return dev;
 }	
 
 void up_netinitialize(void)

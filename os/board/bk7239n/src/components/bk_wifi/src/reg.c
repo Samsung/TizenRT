@@ -2158,6 +2158,7 @@ static int __regulatory_hint(struct wiphy *wiphy,
 	if (!__reg_regdb_search(pending_request->alpha2)) {
 		WIFI_LOGI("Cannot found alpha2 %c%c, initiator %d\n",
 			pending_request->alpha2[0], pending_request->alpha2[1], pending_request->initiator);
+		os_free(pending_request);
 		return -ENOENT;
 	}
 
