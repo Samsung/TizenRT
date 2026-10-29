@@ -651,9 +651,6 @@ menu "Binary manager"
 source kernel/binary_manager/Kconfig
 endmenu
 
-menu "Task manager"
-source "$FRAMEWORK_DIR/src/task_manager/Kconfig"
-endmenu
 
 menu "Messaging Framework"
 source "$FRAMEWORK_DIR/src/messaging/Kconfig"

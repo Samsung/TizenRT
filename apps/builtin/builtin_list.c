@@ -100,8 +100,3 @@ void register_examples_cmds(void)
 		tash_cmd_install(map->name, map->entry, map->exectype);
 	}
 }
-
-unsigned int get_builtin_list_cnt(void)
-{
-	return sizeof(builtin_list) / sizeof(builtin_list[0]) - 1;
-}

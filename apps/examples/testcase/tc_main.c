@@ -75,9 +75,6 @@
 #if defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_ITC)
 #define TC_SYSTEMIO_STACK 2048
 #endif
-#if defined(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC)
-#define TC_TASK_MANAGER_STACK  2048
-#endif
 #if defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC) || defined(CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_ITC)
 #define TC_WIFI_MANAGER_STACK  4096
 #endif
@@ -129,8 +126,6 @@ extern int itc_mqtt_main(int argc, char *argv[]);
 extern int utc_preference_main(int argc, char *argv[]);
 extern int utc_sysio_main(int argc, char *argv[]);
 extern int itc_sysio_main(int argc, char *argv[]);
-extern int utc_taskmanager_main(int argc, char *argv[]);
-extern int itc_taskmanager_main(int argc, char *argv[]);
 extern int utc_wifimanager_main(int argc, char *argv[]);
 extern int itc_wifimanager_main(int argc, char *argv[]);
 extern int utc_blemanager_main(int argc, char *argv[]);
@@ -216,12 +211,6 @@ static const tash_cmdlist_t tc_cmds[] = {
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_SYSTEMIO_ITC
 	{"sysio_itc", itc_sysio_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC
-	{"taskmgr_utc", utc_taskmanager_main, TASH_EXECMD_ASYNC},
-#endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_ITC
-	{"taskmgr_itc", itc_taskmanager_main, TASH_EXECMD_ASYNC},
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC
 	{"wifimgr_utc", utc_wifimanager_main, TASH_EXECMD_ASYNC},
@@ -432,12 +421,6 @@ int tc_main(int argc, char *argv[])
 	pid = task_create("sysioitc", SCHED_PRIORITY_DEFAULT, TC_SYSTEMIO_STACK, itc_sysio_main, argv);
 	if (pid < 0) {
 		printf("System IO itc is not started, err = %d\n", pid);
-	}
-#endif
-#ifdef CONFIG_EXAMPLES_TESTCASE_TASK_MANAGER_UTC
-	pid = task_create("taskmgrutc", SCHED_PRIORITY_DEFAULT, TC_TASK_MANAGER_STACK, utc_taskmanager_main, argv);
-	if (pid < 0) {
-		printf("Task Manager utc is not started, err = %d\n", pid);
 	}
 #endif
 #ifdef CONFIG_EXAMPLES_TESTCASE_WIFI_MANAGER_UTC
