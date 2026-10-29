@@ -60,7 +60,7 @@
 #include <assert.h>
 #include <debug.h>
 #include <sched.h>
-
+#include <errno.h>
 #include <tinyara/arch.h>
 #include <tinyara/cancelpt.h>
 
@@ -192,5 +192,6 @@ int sigsuspend(FAR const sigset_t *set)
 
 	sched_unlock();
 	leave_cancellation_point();
+	set_errno(EINTR);
 	return ERROR;
 }
