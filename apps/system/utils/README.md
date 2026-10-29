@@ -537,11 +537,8 @@ kernel_tc        kill             killall          ls
 mkdir            mount            netdb            netmon
 network_tc       ntpclient        ps               pwd
 reboot           rm               rmdir            setenv
-sleep            start_itc_sampl  stkmon           sysio_itc
-sysio_utc        taskmgr_itc      taskmgr_utc      tm_broadcast1
-tm_broadcast2    tm_broadcast3    tm_itc           tm_sample
-tm_sample_itc    tm_utc           umount           unsetenv
-uptime           wm_test
+sleep            stkmon           sysio_itc        sysio_utc
+umount           unsetenv         uptime           wm_test
 TASH>>
 ```
 

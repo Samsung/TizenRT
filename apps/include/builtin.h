@@ -32,7 +32,6 @@ typedef struct builtin_info_s builtin_info_t;
 
 #ifdef CONFIG_BUILTIN_APPS
 extern const builtin_info_t builtin_list[];
-unsigned int get_builtin_list_cnt(void);
 void register_examples_cmds(void);
 #endif
 

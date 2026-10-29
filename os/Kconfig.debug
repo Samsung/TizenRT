@@ -636,31 +636,6 @@ config DEBUG_ST_THINGS_INFO
 
 endif #DEBUG_ST_THINGS
 
-config DEBUG_TASK_MANAGER
-	bool "Task Manager Debug Feature"
-	default n
-	depends on TASK_MANAGER
-	---help---
-		Enable Task Manager debug feature.
-
-if DEBUG_TASK_MANAGER
-
-config DEBUG_TASK_MANAGER_ERROR
-	bool "Enable Task Manager Error Debug Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Task Manager Error Debug Output.
-
-config DEBUG_TASK_MANAGER_INFO
-	bool "Enable Task Manager Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Task Manager Informational Debug Output.
-
-endif #DEBUG_TASK_MANAGER
-
 config DEBUG_REBOOT_REASON
 	bool "Reboot Reason Debug Feature"
 	default n

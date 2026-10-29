@@ -54,7 +54,6 @@ extern "C" {
  * @internal
  */
 int sig_sethandler(struct tcb_s *tcb, int signo, struct sigaction *act);
-bool sig_is_handler_registered(struct tcb_s *tcb, int signo);
 /**
  * @endcond
  */

@@ -36,9 +36,6 @@
 #ifdef CONFIG_SYSTEM_INFORMATION
 #include <apps/system/sysinfo.h>
 #endif
-#ifdef CONFIG_TASK_MANAGER
-#include <task_manager/task_manager.h>
-#endif
 #ifdef CONFIG_MEDIA
 #include <media/media_init.h>
 #endif
@@ -121,7 +118,7 @@ int preapp_start(int argc, char *argv[])
 #endif
 {
 #if defined(CONFIG_SCHED_USRWORK) || defined(CONFIG_TASH) ||\
-	defined(CONFIG_TASK_MANAGER) || defined(CONFIG_MEDIA) || defined(CONFIG_PREFERENCE)
+	defined(CONFIG_MEDIA) || defined(CONFIG_PREFERENCE)
 	int ret;
 #endif
 
@@ -163,16 +160,6 @@ int preapp_start(int argc, char *argv[])
 	}
 
 	tash_register_cmds();
-#endif
-
-#ifdef CONFIG_TASK_MANAGER
-#define TASKMGR_STACK_SIZE 2048
-#define TASKMGR_PRIORITY 180
-	ret = task_create("task_manager", TASKMGR_PRIORITY, TASKMGR_STACK_SIZE, task_manager, (FAR char *const *)NULL);
-	if (ret < 0) {
-		printf("Failed to create Task Manager\n");
-		return ret;
-	}
 #endif
 
 #ifdef CONFIG_MEDIA

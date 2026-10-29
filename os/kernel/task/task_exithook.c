@@ -74,11 +74,6 @@
 #include "binary_manager/binary_manager_internal.h"
 #endif
 
-#ifdef CONFIG_TASK_MANAGER
-#include <task_manager/task_manager.h>
-#include <tinyara/task_manager_drv.h>
-#endif
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/

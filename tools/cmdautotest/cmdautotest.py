@@ -186,20 +186,6 @@ def cmd_sysio_utc():
     return result
 
 
-def cmd_taskmgr_utc():
-    data = []
-    data.append("End")
-    result = execute_cmd("taskmgr_utc", data, PORT, 10)
-    return result
-
-
-def cmd_taskmgr_itc():
-    data = []
-    data.append("End")
-    result = execute_cmd("taskmgr_itc", data, PORT, 10)
-    return result
-
-
 def cmd_messaging_utc():
     data = []
     data.append("End")
@@ -372,8 +358,6 @@ CMD_LIST = OrderedDict()
 # CMD_LIST['network_tc'] = cmd_network_tc
 # CMD_LIST['sysio_itc'] = cmd_sysio_itc
 # CMD_LIST['sysio_utc'] = cmd_sysio_utc
-# CMD_LIST['taskmgr_utc'] = cmd_taskmgr_utc
-# CMD_LIST['taskmgr_itc'] = cmd_taskmgr_itc
 # CMD_LIST['messaging_utc'] = cmd_messaging_utc
 # CMD_LIST['security_utc'] = cmd_security_utc
 # CMD_LIST['wifimgr_utc'] = cmd_wifimgr_utc

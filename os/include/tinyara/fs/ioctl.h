@@ -92,7 +92,6 @@
 #define _PIPEBASE       (0x1700)	/* FIFO/pipe ioctl commands */
 #define _RTCBASE        (0x1800)	/* RTC ioctl commands */
 #define _GPIOBASE       (0x2000)	/* GPIO ioctl commands */
-#define _TMBASE         (0x2100)	/* Task Management ioctl commands */
 #define _MMINFOBASE     (0x2200)	/* Mminfo ioctl commands */
 #define _SPIBASE        (0x2300)	/* SPI ioctl commands */
 #define _LWNLIOCBASE    (0x2400)	/* LWNL ioctl commands */
@@ -484,23 +483,6 @@
 
 #define _TESTIOCVALID(c) (_IOC_TYPE(c) == _TESTIOCBASE)
 #define _TESTIOC(nr)     _IOC(_TESTIOCBASE, nr)
-
-/* TinyAra Task Management driver ioctl definitions ************************/
-
-#define _TMIOCVALID(c)   (_IOC_TYPE(c) == _TMBASE)
-#define _TMIOC(nr)       _IOC(_TMBASE, nr)
-
-#define TMIOC_START                _TMIOC(0x0001)
-#define TMIOC_PAUSE                _TMIOC(0x0002)
-#define TMIOC_RESUME               _TMIOC(0x0003)
-#define TMIOC_UNICAST              _TMIOC(0x0004)
-#define TMIOC_BROADCAST            _TMIOC(0x0005)
-#define TMIOC_CHECK_ALIVE          _TMIOC(0x0006)
-#define TMIOC_TERMINATE            _TMIOC(0x0007)
-#define TMIOC_EXITCB               _TMIOC(0x0008)
-#if defined(HAVE_TASK_GROUP) && !defined(CONFIG_DISABLE_PTHREAD)
-#define TMIOC_PTHREAD_PARENT       _TMIOC(0x0009)
-#endif
 
 /* Mminfo driver ioctl definitions ******************************************/
 #define _MMINFOIOCVALID(c)   (_IOC_TYPE(c) == _MMINFOBASE)
