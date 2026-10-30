@@ -18,35 +18,22 @@
 /****************************************************************************
  * drivers/usbdev/usbdev_trace.c
  *
- *   Copyright (C) 2008-2010, 2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -55,6 +42,7 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/spinlock.h>
 
 #include <sys/types.h>
 #include <stdarg.h>
@@ -62,8 +50,10 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <arch/irq.h>
+#include <tinyara/irq.h>
+#include <tinyara/syslog/syslog.h>
 #include <tinyara/usb/usbdev_trace.h>
+
 #undef usbtrace
 
 /****************************************************************************
@@ -73,11 +63,11 @@
 /* Configuration ************************************************************/
 
 #ifndef CONFIG_USBDEV_TRACE_NRECORDS
-#define CONFIG_USBDEV_TRACE_NRECORDS 128
+#  define CONFIG_USBDEV_TRACE_NRECORDS 128
 #endif
 
 #ifndef CONFIG_USBDEV_TRACE_INITIALIDSET
-#define CONFIG_USBDEV_TRACE_INITIALIDSET 0
+#  define CONFIG_USBDEV_TRACE_INITIALIDSET 0
 #endif
 
 /****************************************************************************
@@ -98,8 +88,9 @@ static uint16_t g_head = 0;
 static uint16_t g_tail = 0;
 #endif
 
-#if defined(CONFIG_USBDEV_TRACE) || (defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_USB))
+#if defined(CONFIG_USBDEV_TRACE) || (defined(CONFIG_DEBUG_FEATURES) && defined(CONFIG_DEBUG_USB))
 static usbtrace_idset_t g_maskedidset = CONFIG_USBDEV_TRACE_INITIALIDSET;
+static spinlock_t g_lock = SP_UNLOCKED;
 #endif
 
 /****************************************************************************
@@ -111,18 +102,17 @@ static usbtrace_idset_t g_maskedidset = CONFIG_USBDEV_TRACE_INITIALIDSET;
  ****************************************************************************/
 
 #if !defined(CONFIG_USBDEV_TRACE) && \
-	(defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_USB))
-static int usbtrace_syslog(const char *fmt, ...)
+    (defined(CONFIG_DEBUG_FEATURES) && defined(CONFIG_DEBUG_USB))
+static int usbtrace_syslog(FAR const char *fmt, ...)
 {
 	va_list ap;
-	int ret;
 
-	/* Let lowvsyslog do the real work */
+	/* Let vsyslog do the real work */
 
 	va_start(ap, fmt);
-	ret = lowvsyslog(LOG_INFO, fmt, ap);
+	vsyslog(LOG_INFO, fmt, ap);
 	va_end(ap);
-	return ret;
+	return OK;
 }
 #endif
 
@@ -134,11 +124,12 @@ static int usbtrace_syslog(const char *fmt, ...)
  * Name: usbtrace_enable
  *
  * Description:
- *  Enable/disable tracing per trace ID.  The initial state is all IDs enabled.
+ *  Enable/disable tracing per trace ID.  The initial state is all IDs
+ *  enabled.
  *
  * Input Parameters:
- *  idset - The bitset of IDs to be masked.  TRACE_ALLIDS enables all IDS; zero
- *  masks all IDs.
+ *  idset - The bitset of IDs to be masked.  TRACE_ALLIDS enables all IDS;
+ *  zero masks all IDs.
  *
  * Returned Value:
  *  The previous idset value.
@@ -149,7 +140,7 @@ static int usbtrace_syslog(const char *fmt, ...)
  ****************************************************************************/
 
 #if defined(CONFIG_USBDEV_TRACE) || \
-	(defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_USB))
+   (defined(CONFIG_DEBUG_FEATURES) && defined(CONFIG_DEBUG_USB))
 usbtrace_idset_t usbtrace_enable(usbtrace_idset_t idset)
 {
 	irqstate_t flags;
@@ -157,13 +148,13 @@ usbtrace_idset_t usbtrace_enable(usbtrace_idset_t idset)
 
 	/* The following read and write must be atomic */
 
-	flags = enter_critical_section();
-	ret = g_maskedidset;
+	flags         = spin_lock_irqsave(&g_lock);
+	ret           = g_maskedidset;
 	g_maskedidset = idset;
-	leave_critical_section(flags);
+	spin_unlock_irqrestore(&g_lock, flags);
 	return ret;
 }
-#endif							/* CONFIG_USBDEV_TRACE || CONFIG_DEBUG && CONFIG_DEBUG_USB */
+#endif /* CONFIG_USBDEV_TRACE || CONFIG_DEBUG_FEATURES && CONFIG_DEBUG_USB */
 
 /****************************************************************************
  * Name: usbtrace
@@ -176,14 +167,14 @@ usbtrace_idset_t usbtrace_enable(usbtrace_idset_t idset)
  *
  ****************************************************************************/
 
-#if defined(CONFIG_USBDEV_TRACE) || (defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_USB))
+#if defined(CONFIG_USBDEV_TRACE) || (defined(CONFIG_DEBUG_FEATURES) && defined(CONFIG_DEBUG_USB))
 void usbtrace(uint16_t event, uint16_t value)
 {
 	irqstate_t flags;
 
 	/* Check if tracing is enabled for this ID */
 
-	flags = enter_critical_section();
+	flags = spin_lock_irqsave(&g_lock);
 	if ((g_maskedidset & TRACE_ID2BIT(event)) != 0) {
 #ifdef CONFIG_USBDEV_TRACE
 		/* Yes... save the new trace data at the head */
@@ -202,16 +193,19 @@ void usbtrace(uint16_t event, uint16_t value)
 				g_tail = 0;
 			}
 		}
-#else
-		/* Just print the data using lowsyslog */
 
+		spin_unlock_irqrestore(&g_lock, flags);
+#else
+		/* Just print the data using syslog */
+
+		spin_unlock_irqrestore(&g_lock, flags);
 		usbtrace_trprintf(usbtrace_syslog, event, value);
 #endif
+	} else {
+		spin_unlock_irqrestore(&g_lock, flags);
 	}
-
-	leave_critical_section(flags);
 }
-#endif							/* CONFIG_USBDEV_TRACE || CONFIG_DEBUG && CONFIG_DEBUG_USB */
+#endif /* CONFIG_USBDEV_TRACE || CONFIG_DEBUG_FEATURES && CONFIG_DEBUG_USB */
 
 /****************************************************************************
  * Name: usbtrace_enumerate
@@ -260,7 +254,7 @@ int usbtrace_enumerate(trace_callback_t callback, void *arg)
 
 	/* Restore tracing state */
 
-	(void)usbtrace_enable(idset);
+	usbtrace_enable(idset);
 	return ret;
 }
-#endif							/* CONFIG_USBDEV_TRACE */
+#endif /* CONFIG_USBDEV_TRACE */

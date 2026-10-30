@@ -3,6 +3,18 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+config USBHOST_HAVE_ASYNCH
+	bool
+	default n
+
+menuconfig USBHOST
+	bool "USB Host Driver Support"
+	default n
+	---help---
+		USB host drivers.  See also include/nuttx/usb/usbhost.h
+
+if USBHOST
+
 config USBHOST_NPREALLOC
 	int "Number of pre-allocated class instances"
 	default 4
@@ -30,10 +42,6 @@ config USBHOST_ISOC_DISABLE
 		On some architectures, selecting this setting will reduce driver size
 		by disabling isochronous endpoint support
 
-config USBHOST_HAVE_ASYNCH
-	bool
-	default n
-
 config USBHOST_ASYNCH
 	bool "Asynchronous transfer support"
 	default n
@@ -42,6 +50,28 @@ config USBHOST_ASYNCH
 		Select if the host controller driver needs to support asynchronous
 		I/O transfer.  This may be required, for example, to receive
 		infrequent, asynchronous input from an interrupt pipe.
+
+config USBHOST_WAITER
+	bool "USB Host Waiter Support"
+	default n
+	---help---
+		Select this option to build in support for common USB host waiter.
+
+if USBHOST_WAITER
+
+config USBHOST_WAITER_PRIO
+	int "USB Host Waiter Thread Priority"
+	default 100
+	---help---
+		USB Host Waiter thread priority.
+
+config USBHOST_WAITER_STACKSIZE
+	int "USB Host Waiter Thread Stack Size"
+	default DEFAULT_TASK_STACKSIZE
+	---help---
+		USB Host Waiter thread stack size
+
+endif # USBHOST_WAITER
 
 config USBHOST_HUB
 	bool "USB Hub Support"
@@ -77,13 +107,38 @@ config USBHOST_HUB_POLLMSEC
 
 endif # USBHOST_HUB
 
+config USBHOST_COMPOSITE
+	bool "Composite device support"
+	default n
+	---help---
+		Build in USB host support for connected composite devices
+
+config USBHOST_COMPOSITE_STRICT
+	bool "Strict composite membership"
+	default n
+	depends on USBHOST_COMPOSITE
+	---help---
+		If selected, then the composite device will not be enumerated unless
+		every member class in the composite is supported.  If not selected
+		then, for example, you could use the CDC/ACM interface of the device
+		with no support for the other interfaces.
+
 config USBHOST_MSC
 	bool "Mass Storage Class Support"
 	default n
 	depends on !BULK_DISABLE
 	---help---
-		Enable support for the mass storage class driver.  This also depends on
-		NFILE_DESCRIPTORS > 0 && SCHED_WORKQUEUE=y
+		Enable support for the mass storage class driver.
+
+config USBHOST_MSC_NOTIFIER
+	bool "Support USB Mass Storage notifications"
+	default n
+	depends on USBHOST_MSC
+	select WQUEUE_NOTIFIER
+	---help---
+		Enable building of USB MSC notifier logic that will execute a worker
+		function on the low priority work queue when a mass storage device is
+		connected or disconnected.
 
 config USBHOST_CDCACM
 	bool "CDC/ACM support"
@@ -130,7 +185,7 @@ config USBHOST_CDCACM_REDUCED
 		protocol is supported for devices that provide not interrupt IN
 		endpoint.  This option is then most useful for testing purposes or
 		if there are insufficient resources to support the compliant
-		protocol.   The interrupt IN control interface will not be used even
+		protocol.  The interrupt IN control interface will not be used even
 		if it is available in this case.
 
 config USBHOST_CDCACM_BULKONLY
@@ -147,7 +202,7 @@ config USBHOST_CDCACM_BULKONLY
 		By default, both the CDC/ACM compliant protocol and the reduced
 		protocol are supported.  This option is then most useful for testing
 		purposes.  The interrupt IN control interface will not be used even
-		if it is available; nor will EP0 class requestes.
+		if it is available; nor will EP0 class requests.
 
 endchoice # CDC/ACM Protocol
 
@@ -186,7 +241,7 @@ config USBHOST_CDCACM_TXDELAY
 	default 200
 	---help---
 		When the appellation is inactive, the host must poll it at this
-		rate in order to discover if it has serial data to send to to the
+		rate in order to discover if it has serial data to send to the
 		device.
 
 config USBHOST_CDCACM_NPREALLOC
@@ -234,59 +289,345 @@ config USBHOST_CDCACM_TXBUFSIZE
 	default 128
 	---help---
 		This is the size of the serial buffer that will be used to hold
-		data waiting for tranmission.
+		data waiting for transmission.
 
 endif # USBHOST_CDCACM
 
-config USBHOST_RTL8187
-	bool "RTL8187-based wireless LAN"
+config USBHOST_CDCMBIM
+	bool "CDC/MBIM support"
 	default n
-	depends on NET
+	depends on USBHOST_HAVE_ASYNCH && !USBHOST_BULK_DISABLE && !USBHOST_INT_DISABLE && EXPERIMENTAL
+	select USBHOST_ASYNCH
+	select NET_MBIM
+	---help---
+		Select this option to build in host support for CDC/MBIM network
+		devices.
 
-if USBHOST_RTL8187
-
-config RTL8187B
-	bool "RTL8187B chip"
-	default y
-
-config RTL8187_VID
-	hex "RTL8187 VID"
-	default 0x0bda
-
-config RTL8187_PID
-	hex "RTL8187 PID"
-	default 0x8189
-
-endif # USBHOST_RTL8187
-
-config USBHOST_RTL8723D
-	bool "RTL8723D-based wireless LAN"
+menuconfig USBHOST_HID
+	bool "USB Host HID Driver Support"
 	default n
-	depends on NET
+	depends on ALLOW_BSD_COMPONENTS
+	---help---
+		USB host HID drivers.  See also include/nuttx/usb/usbhost.h
 
-if USBHOST_RTL8723D
-
-config RTL8723D
-	bool "RTL8723D chip"
-	default y
-
-config RTL8723D_VID
-	hex "RTL8723D VID"
-	default 0x0bda
-
-config RTL8723D_PID
-	hex "RTL8723D PID"
-	default 0xd723
-
-config RTL8723D_REMOVABLE
-	bool "RTL8723D is removable"
+config USBHOST_HIDKBD
+	bool "HID Keyboard Class Support"
 	default n
+	depends on !INT_DISABLE
+	---help---
+		Enable support for the keyboard class driver.
 
-endif # USBHOST_RTL8723D
+if USBHOST_HIDKBD
+
+config HIDKBD_POLLUSEC
+	int "Keyboard Poll Rate (MSEC)"
+	default 40000
+	---help---
+		Device poll rate in microseconds. Default: 40,000 microseconds.
+
+config HIDKBD_DEFPRIO
+	int "Polling Thread Priority"
+	default 50
+	---help---
+		Priority of the polling thread.  Default: 50.
+
+config HIDKBD_STACKSIZE
+	int "Polling thread stack size"
+	default 1024
+	---help---
+		Stack size for polling thread.  Default: 1024
+
+config HIDKBD_BUFSIZE
+	int "Scancode Buffer Size"
+	default 64
+	---help---
+		Scancode buffer size.  Default: 64.
+
+config HIDKBD_NPOLLWAITERS
+	int "Max Number of Waiters for Poll Event"
+	default 2
+	---help---
+		If the poll() method is enabled, this defines the maximum number
+		of threads that can be waiting for keyboard events.  Default: 2.
+
+config HIDKBD_RAWSCANCODES
+	bool "Use Raw Scan Codes"
+	default n
+	---help---
+		If set to y no conversions will be made on the raw keyboard scan
+		codes.  This option is useful during testing. Default: ASCII conversion.
+
+config HIDKBD_ENCODED
+	bool "Encode Special Keys"
+	default n
+	depends on !HIDKBD_RAWSCANCODES && LIBC_KBDCODEC
+	---help---
+		Encode special key press events in the user buffer.  In this case,
+		the user end must decode the encoded special key values using the
+		interfaces defined in include/nuttx/input/kbd_codec.h.  These
+		special keys include such things as up/down arrows, home and end
+		keys, etc.  If this not defined, only 7-bit print-able and control
+		ASCII characters will be provided to the user.
+
+config HIDKBD_ALLSCANCODES
+	bool "Use All Scancodes"
+	default n
+	---help---
+		If set to y all 231 possible scancodes will be converted to
+		something.  Default:  104 key US keyboard.
+
+config HIDKBD_NODEBOUNCE
+	bool "Disable Debounce"
+	default n
+	---help---
+		If set to y normal debouncing is disabled.  Default:
+		Debounce enabled (No repeat keys).
+
+config HIDKBD_NOGETREPORT
+	bool "Use Interrupt pipe to get keys"
+	default n
+	---help---
+		Use the INTERRUPT IN pipe to get keyboard input reports.
+
+endif
+
+config USBHOST_HIDMOUSE
+	bool "HID Mouse Class Support"
+	default n
+	depends on !INT_DISABLE
+	select INPUT
+	select INPUT_MOUSE
+	---help---
+		Enable support for the mouse class driver.
+
+		NOTE:  This driver checks out on a Labtec and an AOpen mouse, but
+		does not work correctly on a Microsoft mouse.  A little more work
+		would be needed to support the Microsoft mouse.
+
+if USBHOST_HIDMOUSE
+
+config HIDMOUSE_TSCIF
+	bool "Touchscreen Emulation"
+	default n
+	---help---
+		Normally, the HID mouse driver uses the mouse report structure
+		defined in include/nuttx/input/mouse.h.  The mouse driver can,
+		however, be configured to use the touchscreen interface defined in
+		include/nuttx/input/touchcreen.h.  If the touch screen interface is
+		used, only support for the left button will be provided.
+
+		NOTE:  Unlike touchscreen drivers, mouse drivers will report
+		position data even when the "pen is up", i.e., when no buttons are
+		pressed.  This behavior is necessary to provide the positional data
+		would would be needed to drive a cursor.  Without a cursor of some
+		kind, the mouse is not very useful.  So this option may not be useful.
+
+config HIDMOUSE_DEFPRIO
+	int "Polling Thread Priority"
+	default 50
+	---help---
+		Priority of the polling thread.  Default: 50.
+
+config HIDMOUSE_STACKSIZE
+	int "Polling thread stack size"
+	default 1024
+	---help---
+		Stack size for polling thread.  Default: 1024
+
+config HIDMOUSE_BUFSIZE
+	int "Scancode Buffer Size"
+	default 64
+	---help---
+		Scancode buffer size.  Default: 64.
+
+config HIDMOUSE_NPOLLWAITERS
+	int "Max Number of Waiters for Poll Event"
+	default 2
+	---help---
+		If the poll() method is enabled, this defines the maximum number
+		of threads that can be waiting for mouse events.  Default: 2.
+
+config HIDMOUSE_SWAPXY
+	bool "Swap X/Y"
+	default n
+	---help---
+		Reverse the meaning of X and Y to handle different display orientations.
+		NOTE:  All of the following settings apply AFTER X and Y have been swapped.
+
+config HIDMOUSE_XMAX
+	int "Maximum X position"
+	default 320
+	range 0 32767
+	---help---
+		This is the maximum value of the X position that will be reported.
+		Default: 320
+
+config HIDMOUSE_YMAX
+	int "Maximum Y position"
+	default 240
+	range 0 32767
+	---help---
+		This is the maximum value of the Y position that will be reported.
+		Default: 240
+
+config HIDMOUSE_XSCALE
+	hex "X scaling factor"
+	default 0x00010000
+	---help---
+		Mouse positions are accumulated from X/Y displacements reported by
+		the mouse device. This setting provides a scaling value for the X
+		displacement.  This is a fixed precision floating point number with
+		16 bits of fraction.  So a value of 0x00010000 is 1.0, 0x00018000
+		is 1.5, 0x00024000 is 2.25, etc.
+
+		NOTE that a negative value of HIDMOUSE_XSCALE such as 0xffff0000
+		(-1.0) can be used to change the direction of movement.
+
+		Default: 0x00010000 (1.0)
+
+config HIDMOUSE_YSCALE
+	hex "Y scaling factor"
+	default 0x00010000
+	---help---
+		Mouse positions are accumulated from X/Y displacements reported by
+		the mouse device. This setting provides a scaling value for the Y
+		displacement.  This is a fixed precision floating point number with
+		16 bits of fraction.  So a value of 0x00010000 is 1.0, 0x00018000
+		is 1.5, 0x00024000 is 2.25, etc.
+
+		NOTE that a negative value of HIDMOUSE_YSCALE such as 0xffff0000
+		(-1.0) can be used to change the direction of movement.
+
+		Default: 0x00010000 (1.0)
+
+config HIDMOUSE_XTHRESH
+	int "X threshold"
+	default 12
+	---help---
+		New mouse positions will only be reported when the X or Y data changes by these
+		thresholds. This tradeoff reduces data rate for some loss in dragging accuracy.
+		Both X and Y axis thresholding can be disabled by setting this value to zero.
+
+		Default: 12
+
+config HIDMOUSE_THRESHY
+	int "Y threshold"
+	default 12
+	---help---
+		New touch positions will only be reported when the X or Y data changes by these
+		thresholds. This tradeoff reduces data rate for some loss in dragging accuracy.
+		Both X and Y axis thresholding can be disabled by setting this value to zero.
+
+		Default: 12
+
+if INPUT_MOUSE_WHEEL
+
+config HIDMOUSE_WMAX
+	int "Maximum wheel position"
+	default 320
+	range 0 32767
+	---help---
+		This is the maximum value of the wheel position that will be
+		reported. Default: 320
+
+config HIDMOUSE_WSCALE
+	hex "Wheel scaling factor"
+	default 0x00010000
+	---help---
+		Mouse wheel position are accumulated from wheel displacements
+		reported by the mouse device. This setting provides a scaling
+		value for the wheel displacement.  This is a fixed precision
+		floating point number with 16 bits of fraction.  So a value of
+		0x00010000 is 1.0, 0x00018000 is 1.5, 0x00024000 is 2.25, etc.
+
+		NOTE that a negative value of HIDMOUSE_XSCALE such as 0xffff0000
+		(-1.0) can be used to change the direction of wheel output.
+
+		Default: 0x00010000 (1.0)
+
+config HIDMOUSE_WTHRESH
+	int "Wheel threshold"
+	default 1
+	---help---
+		New wheel positions will only be reported when the wheel position
+		changes by these thresholds. This tradeoff reduces data rate for some
+		loss in wheel responsiveness.
+
+		Default: 1
+
+endif # INPUT_MOUSE_WHEEL
+endif # USBHOST_HIDMOUSE
+
+config USBHOST_XBOXCONTROLLER
+	bool "Xbox Controller Support"
+	default n
+	depends on !INT_DISABLE
+	select INPUT
+	---help---
+		Enable support for the Xbox Controller driver.
+
+if USBHOST_XBOXCONTROLLER
+
+config XBOXCONTROLLER_DEFPRIO
+	int "Polling Thread Priority"
+	default 50
+	---help---
+		Priority of the polling thread.  Default: 50.
+
+config XBOXCONTROLLER_STACKSIZE
+	int "Polling thread stack size"
+	default 1024
+	---help---
+		Stack size for polling thread.  Default: 1024
+
+config XBOXCONTROLLER_NPOLLWAITERS
+	int "Max Number of Waiters for Poll Event"
+	default 2
+	---help---
+		If the poll() method is enabled, this defines the maximum number
+		of threads that can be waiting for mouse events.  Default: 2.
+
+endif # USBHOST_XBOXCONTROLLER
+
+config USBHOST_MAX3421E
+	bool "Maxim MAX3421E FS host controller"
+	default n
+	select SPI
+	select SCHED_LPWORK
+	depends on EXPERIMENTAL
+	---help---
+		Enable support for the Maxim MAX3421E FS host controller
+
+if USBHOST_MAX3421E
+
+config MAX3421E_DESCSIZE
+	int "Max descriptor size"
+	default 128
+	---help---
+		Maximum size of a descriptor.  Default: 128
+
+config MAX3421E_USBHOST_REGDEBUG
+	bool "MAX3421 register debug"
+	default n
+	depends on DEBUG_USB_INFO
+	---help---
+		Enable very low-level register access debug.  Depends on
+		CONFIG_DEBUG_USB_INFO.
+
+config MAX3421E_USBHOST_PKTDUMP
+	bool "MAX3421 packet dump"
+	default n
+	depends on DEBUG_USB_INFO
+	---help---
+		Dump all incoming and outgoing USB packets. Depends on
+		CONFIG_DEBUG_USB_INFO.
+
+endif # USBHOST_MAX3421E
 
 config USBHOST_TRACE
 	bool "Enable USB HCD tracing for debug"
 	default n
+	select HAVE_USBTRACE
 	---help---
 		Enables USB tracing for debug.  Only supported for the HCD and,
 		further, no supported by all HCD implementations.
@@ -311,4 +652,123 @@ config USBHOST_TRACE_VERBOSE
 
 endif
 
-source drivers/usbhost/uvc/Kconfig
+config USBHOST_FT232R
+	bool "FTDI FT232R support"
+	default n
+	depends on !USBHOST_BULK_DISABLE && !USBHOST_INT_DISABLE
+	select SERIAL_REMOVABLE
+	---help---
+		Select this option to build in host support for FTDI FT232R
+		serial devices.
+
+if USBHOST_FT232R
+
+config USBHOST_FT232R_RXDELAY
+	int "RX poll delay (MSec)"
+	default 200
+	---help---
+		When the CDC/ACM device is inactive, the host must poll it at this
+		rate in order to discover if it has serial data to send to us.
+
+config USBHOST_FT232R_TXDELAY
+	int "TX poll delay (MSec)"
+	default 200
+	---help---
+		When the appellation is inactive, the host must poll it at this
+		rate in order to discover if it has serial data to send to the
+		device.
+
+config USBHOST_FT232R_NPREALLOC
+	int "Preallocated state"
+	default 0
+	---help---
+		If this setting is zero, the FT232R driver will allocate
+		memory as needed for FT232R device state.  If this value is non-
+		zero, then it provides a number of preallocated FT232R state
+		structures.  This increases the static size of the code image, but
+		eliminates all, direct, run-time allocations by the driver.
+
+config USBHOST_FT232R_BAUD
+	int "Initialize FT232R BAUD"
+	default 115200
+
+config USBHOST_FT232R_PARITY
+	int "Initialize FT232R parity"
+	default 0
+	range 0 2
+	---help---
+		Initialize FT232R parity.  0=None, 1=Odd, 2=Even.  Default: None
+
+config USBHOST_FT232R_BITS
+	int "Initialize FT232R transfer size"
+	default 8
+	range 7 8
+	---help---
+		Initialize FT232R number of bits.  Default: 8
+
+config USBHOST_FT232R_2STOP
+	bool "FT232R use two stop bits"
+	default n
+	---help---
+		False = 1 stop bit, True = Two stop bits.  Default: 1 stop bit
+
+config USBHOST_FT232R_HWFLOWCTRL
+	bool "Use FT232R RTS/CTS"
+	default n
+	---help---
+		Enables the FT232R to use its flow control signals
+
+config USBHOST_FT232R_RXBUFSIZE
+	int "Serial RX buffer size"
+	default 128
+	---help---
+		This is the size of the serial buffer that will be used to hold
+		received data.
+
+config USBHOST_FT232R_TXBUFSIZE
+	int "Serial TX buffer size"
+	default 128
+	---help---
+		This is the size of the serial buffer that will be used to hold
+		data waiting for transmission.
+
+config USBHOST_FT232R_LATENCY
+	int "Latency Timer"
+	default 16
+	range 0 255
+	---help---
+		A timeout for UART to USB packet reception. The FT232R will
+		release its buffer for sending to the USB host once this timeout
+		occurs or the buffer is full. Measured in ms.
+
+endif # USBHOST_FT232R
+
+config USBHOST_BTHCI
+	bool "Bluetooth HCI Driver"
+	default n
+	depends on WIRELESS_BLUETOOTH && USBHOST_HAVE_ASYNCH && !USBHOST_BULK_DISABLE && !USBHOST_INT_DISABLE
+	select USBHOST_ASYNCH
+	select SERIAL_REMOVABLE
+	---help---
+		Select this option to build in support for USB Bluetooth HCI devices.
+
+menuconfig USBHOST_XHCI_PCI
+	bool "USB xHCI PCI Host Driver Support"
+	default n
+	depends on PCI && PCI_MSIX && USBHOST_WAITER && SCHED_HPWORK && SCHED_LPWORK
+	select USBHOST_HAVE_ASYNCH
+	---help---
+		USB xHCI PCI host driver support.
+
+if USBHOST_XHCI_PCI
+
+config USBHOST_XHCI_MAX_DEVS
+	int "xHCI maximum supported devices"
+	default 8
+	range 1 256
+	---help---
+		How many USB devices will be supported by xHCI driver.
+
+endif # USBHOST_XHCI_PCI
+
+endif # USBHOST

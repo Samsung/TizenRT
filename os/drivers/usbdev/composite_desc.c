@@ -18,35 +18,22 @@
 /****************************************************************************
  * drivers/usbdev/composite_desc.c
  *
- *   Copyright (C) 2011-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -56,15 +43,8 @@
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
-
-#include <stdint.h>
-#include <string.h>
-#include <errno.h>
-#include <assert.h>
-#include <debug.h>
-
-#include <tinyara/usb/usbdev_trace.h>
+#include <tinyara/usb/usb.h>
+#include <tinyara/usb/usbdev.h>
 
 #include "composite.h"
 
@@ -74,230 +54,197 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/****************************************************************************
- * Private Types
- ****************************************************************************/
+/* Configuration ************************************************************/
 
-#ifdef CONFIG_USBDEV_DUALSPEED
-typedef int16_t(*mkcfgdesc)(FAR uint8_t *buf, uint8_t speed, uint8_t type);
-#else
-typedef int16_t(*mkcfgdesc)(FAR uint8_t *buf);
+/* Packet sizes */
+
+#ifndef CONFIG_COMPOSITE_EP0MAXPACKET
+#  define CONFIG_COMPOSITE_EP0MAXPACKET 64
 #endif
 
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
+/* Vendor and product IDs and strings */
+
+#ifndef CONFIG_COMPOSITE_VENDORID
+#  warning "CONFIG_COMPOSITE_VENDORID not defined"
+#  define CONFIG_COMPOSITE_VENDORID     0x03eb
+#endif
+
+#ifndef CONFIG_COMPOSITE_PRODUCTID
+#  warning "CONFIG_COMPOSITE_PRODUCTID not defined"
+#  define CONFIG_COMPOSITE_PRODUCTID    0x2022
+#endif
+
+#ifndef CONFIG_COMPOSITE_VERSIONNO
+#  define CONFIG_COMPOSITE_VERSIONNO    (0x0101)
+#endif
+
+#ifndef CONFIG_COMPOSITE_VENDORSTR
+#  warning "No Vendor string specified"
+#  define CONFIG_COMPOSITE_VENDORSTR    "NuttX"
+#endif
+
+#ifndef CONFIG_COMPOSITE_PRODUCTSTR
+#  warning "No Product string specified"
+#  define CONFIG_COMPOSITE_PRODUCTSTR   "Composite Device"
+#endif
+
+#undef CONFIG_COMPOSITE_SERIALSTR
+#define CONFIG_COMPOSITE_SERIALSTR      "0101"
+
+#undef CONFIG_COMPOSITE_CONFIGSTR
+#define CONFIG_COMPOSITE_CONFIGSTR      "Composite"
+
+#ifdef CONFIG_USBDEV_SELFPOWERED
+#  define COMPOSITE_SELFPOWERED         USB_CONFIG_ATTR_SELFPOWER
+#else
+#  define COMPOSITE_SELFPOWERED         (0)
+#endif
+
+#ifdef CONFIG_USBDEV_REMOTEWAKEUP
+#  define COMPOSITE_REMOTEWAKEUP        USB_CONFIG_ATTR_WAKEUP
+#else
+#  define COMPOSITE_REMOTEWAKEUP        (0)
+#endif
+
+/* Descriptors **************************************************************/
+
+/* String language */
+
+#define COMPOSITE_STR_LANGUAGE          (0x0409) /* en-us */
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
+
 /* Device Descriptor */
 
-static const struct usb_devdesc_s g_devdesc = {
-	USB_SIZEOF_DEVDESC,			/* len */
-	USB_DESC_TYPE_DEVICE,		/* type */
-	{							/* usb */
-		LSBYTE(0x0200),
-		MSBYTE(0x0200)
-	},
+static const struct usb_devdesc_s g_devdesc =
+{
+  USB_SIZEOF_DEVDESC,                           /* len */
+  USB_DESC_TYPE_DEVICE,                         /* type */
+  {                                             /* usb */
+    LSBYTE(0x0200),
+    MSBYTE(0x0200)
+  },
 #ifdef CONFIG_COMPOSITE_IAD
-	USB_CLASS_MISC,				/* classid */
-	2,							/* subclass */
-	1,							/* protocol */
+  USB_CLASS_MISC,                               /* classid */
+  2,                                            /* subclass */
+  1,                                            /* protocol */
 #else
-	USB_CLASS_PER_INTERFACE,	/* classid */
-	0,							/* subclass */
-	0,							/* protocol */
+  USB_CLASS_PER_INTERFACE,                      /* classid */
+  0,                                            /* subclass */
+  0,                                            /* protocol */
 #endif
-	CONFIG_COMPOSITE_EP0MAXPACKET,	/* maxpacketsize */
-	{
-		LSBYTE(CONFIG_COMPOSITE_VENDORID),	/* vendor */
-		MSBYTE(CONFIG_COMPOSITE_VENDORID)
-	},
-	{
-		LSBYTE(CONFIG_COMPOSITE_PRODUCTID),	/* product */
-		MSBYTE(CONFIG_COMPOSITE_PRODUCTID)
-	},
-	{
-		LSBYTE(CONFIG_COMPOSITE_VERSIONNO),	/* device */
-		MSBYTE(CONFIG_COMPOSITE_VERSIONNO)
-	},
-	COMPOSITE_MANUFACTURERSTRID,	/* imfgr */
-	COMPOSITE_PRODUCTSTRID,		/* iproduct */
-	COMPOSITE_SERIALSTRID,		/* serno */
-	COMPOSITE_NCONFIGS			/* nconfigs */
+  CONFIG_COMPOSITE_EP0MAXPACKET,                /* maxpacketsize */
+  {
+    LSBYTE(CONFIG_COMPOSITE_VENDORID),          /* vendor */
+    MSBYTE(CONFIG_COMPOSITE_VENDORID)
+  },
+  {
+    LSBYTE(CONFIG_COMPOSITE_PRODUCTID),         /* product */
+    MSBYTE(CONFIG_COMPOSITE_PRODUCTID)
+  },
+  {
+    LSBYTE(CONFIG_COMPOSITE_VERSIONNO),         /* device */
+    MSBYTE(CONFIG_COMPOSITE_VERSIONNO)
+  },
+  COMPOSITE_MANUFACTURERSTRID,                  /* imfgr */
+  COMPOSITE_PRODUCTSTRID,                       /* iproduct */
+  COMPOSITE_SERIALSTRID,                        /* serno */
+  COMPOSITE_NCONFIGS                            /* nconfigs */
 };
 
-/* Configuration descriptor for the composite device */
+static const struct usbdev_strdesc_s g_strdesc[] =
+{
+  {COMPOSITE_MANUFACTURERSTRID, CONFIG_COMPOSITE_VENDORSTR},
+  {COMPOSITE_PRODUCTSTRID,      CONFIG_COMPOSITE_PRODUCTSTR},
+#ifdef CONFIG_COMPOSITE_SERIALSTR
+  {COMPOSITE_SERIALSTRID,       CONFIG_COMPOSITE_SERIALSTR},
+#else
+  {COMPOSITE_SERIALSTRID,       ""},
+#endif
+  {COMPOSITE_CONFIGSTRID,       CONFIG_COMPOSITE_CONFIGSTR},
+  {}
+};
 
-static const struct usb_cfgdesc_s g_cfgdesc = {
-	USB_SIZEOF_CFGDESC,			/* len */
-	USB_DESC_TYPE_CONFIG,		/* type */
-	{
-		LSBYTE(COMPOSITE_CFGDESCSIZE),	/* LS totallen */
-		MSBYTE(COMPOSITE_CFGDESCSIZE)	/* MS totallen */
-	},
-	COMPOSITE_NINTERFACES,		/* ninterfaces */
-	COMPOSITE_CONFIGID,			/* cfgvalue */
-	COMPOSITE_CONFIGSTRID,		/* icfg */
-	USB_CONFIG_ATTR_ONE |		/* attr */
-	COMPOSITE_SELFPOWERED | COMPOSITE_REMOTEWAKEUP,
-	(CONFIG_USBDEV_MAXPOWER + 1) / 2	/* mxpower */
+static const struct usbdev_strdescs_s g_strdescs =
+{
+  .language = COMPOSITE_STR_LANGUAGE,
+  .strdesc  = g_strdesc,
+};
+
+static const struct usb_cfgdesc_s g_cfgdesc =
+{
+  .len      = USB_SIZEOF_CFGDESC,              /* Descriptor length    */
+  .type     = USB_DESC_TYPE_CONFIG,            /* Descriptor type      */
+  .cfgvalue = COMPOSITE_CONFIGID,              /* Configuration value  */
+  .icfg     = COMPOSITE_CONFIGSTRID,           /* Configuration        */
+  .attr     = USB_CONFIG_ATTR_ONE |
+              COMPOSITE_SELFPOWERED |
+              COMPOSITE_REMOTEWAKEUP,          /* Attributes           */
+
+  .mxpower  = (CONFIG_USBDEV_MAXPOWER + 1) / 2 /* Max power (mA/2) */
 };
 
 #ifdef CONFIG_USBDEV_DUALSPEED
-static const struct usb_qualdesc_s g_qualdesc = {
-	USB_SIZEOF_QUALDESC,		/* len */
-	USB_DESC_TYPE_DEVICEQUALIFIER,	/* type */
-	{							/* usb */
-		LSBYTE(0x0200),
-		MSBYTE(0x0200)
-	},
-	USB_CLASS_VENDOR_SPEC,		/* classid */
-	0,							/* subclass */
-	0,							/* protocol */
-	CONFIG_COMPOSITE_EP0MAXPACKET,	/* mxpacketsize */
-	COMPOSITE_NCONFIGS,			/* nconfigs */
-	0,							/* reserved */
+static const struct usb_qualdesc_s g_qualdesc =
+{
+  USB_SIZEOF_QUALDESC,                          /* len */
+  USB_DESC_TYPE_DEVICEQUALIFIER,                /* type */
+  {                                             /* usb */
+     LSBYTE(0x0200),
+     MSBYTE(0x0200)
+  },
+#  ifdef CONFIG_COMPOSITE_IAD
+  USB_CLASS_MISC,                               /* classid */
+  2,                                            /* subclass */
+  1,                                            /* protocol */
+#  else
+  USB_CLASS_VENDOR_SPEC,                        /* classid */
+  0,                                            /* subclass */
+  0,                                            /* protocol */
+#  endif
+  CONFIG_COMPOSITE_EP0MAXPACKET,                /* mxpacketsize */
+  COMPOSITE_NCONFIGS,                           /* nconfigs */
+  0,                                            /* reserved */
 };
 #endif
 
+static const struct usbdev_devdescs_s g_composite_devdescs =
+{
+  &g_cfgdesc,
+  &g_strdescs,
+  &g_devdesc,
+#ifdef CONFIG_USBDEV_DUALSPEED
+  &g_qualdesc,
+#endif
+};
+
 /****************************************************************************
- * Private Functions
+ * Public Data
  ****************************************************************************/
+
+const char g_compvendorstr[]  = CONFIG_COMPOSITE_VENDORSTR;
+const char g_compproductstr[] = CONFIG_COMPOSITE_PRODUCTSTR;
+#ifndef CONFIG_COMPOSITE_BOARD_SERIALSTR
+const char g_compserialstr[]  = CONFIG_COMPOSITE_SERIALSTR;
+#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: composite_mkstrdesc
+ * Name: composite_getdevdescs
  *
  * Description:
- *   Construct a string descriptor
+ *   Return a pointer to the device descriptor
  *
  ****************************************************************************/
 
-int composite_mkstrdesc(uint8_t id, struct usb_strdesc_s *strdesc)
+FAR const struct usbdev_devdescs_s *composite_getdevdescs(void)
 {
-	const char *str;
-	int len;
-	int ndata;
-	int i;
-
-	switch (id) {
-	case 0: {
-		/* Descriptor 0 is the language id */
-
-		strdesc->len = 4;
-		strdesc->type = USB_DESC_TYPE_STRING;
-		strdesc->data[0] = LSBYTE(COMPOSITE_STR_LANGUAGE);
-		strdesc->data[1] = MSBYTE(COMPOSITE_STR_LANGUAGE);
-		return 4;
-	}
-
-	case COMPOSITE_MANUFACTURERSTRID:
-		str = g_compvendorstr;
-		break;
-
-	case COMPOSITE_PRODUCTSTRID:
-		str = g_compproductstr;
-		break;
-
-	case COMPOSITE_SERIALSTRID:
-		str = g_compserialstr;
-		break;
-
-	case COMPOSITE_CONFIGSTRID:
-		str = CONFIG_COMPOSITE_CONFIGSTR;
-		break;
-
-	default:
-		return -EINVAL;
-	}
-
-	/* The string is utf16-le.  The poor man's utf-8 to utf16-le
-	 * conversion below will only handle 7-bit en-us ascii
-	 */
-
-	len = strlen(str);
-	for (i = 0, ndata = 0; i < len; i++, ndata += 2) {
-		strdesc->data[ndata] = str[i];
-		strdesc->data[ndata + 1] = 0;
-	}
-
-	strdesc->len = ndata + 2;
-	strdesc->type = USB_DESC_TYPE_STRING;
-	return strdesc->len;
+	return &g_composite_devdescs;
 }
 
-/****************************************************************************
- * Name: composite_getepdesc
- *
- * Description:
- *   Return a pointer to the raw device descriptor
- *
- ****************************************************************************/
-
-FAR const struct usb_devdesc_s *composite_getdevdesc(void)
-{
-	return &g_devdesc;
-}
-
-/****************************************************************************
- * Name: composite_mkcfgdesc
- *
- * Description:
- *   Construct the configuration descriptor
- *
- ****************************************************************************/
-
-#ifdef CONFIG_USBDEV_DUALSPEED
-int16_t composite_mkcfgdesc(uint8_t *buf, uint8_t speed, uint8_t type)
-#else
-int16_t composite_mkcfgdesc(uint8_t *buf)
-#endif
-{
-	int16_t len;
-	int16_t total;
-
-	/* Configuration descriptor -- Copy the canned configuration descriptor. */
-
-	memcpy(buf, &g_cfgdesc, USB_SIZEOF_CFGDESC);
-	total = USB_SIZEOF_CFGDESC;
-	buf += USB_SIZEOF_CFGDESC;
-
-	/* Copy DEV1/DEV2 interface descriptors */
-
-#ifdef CONFIG_USBDEV_DUALSPEED
-	len = DEV1_MKCFGDESC(buf, speed, type);
-	total += len;
-	buf += len;
-	total += DEV2_MKCFGDESC(buf, speed, type);
-#else
-	len = DEV1_MKCFGDESC(buf);
-	total += len;
-	buf += len;
-	total += DEV2_MKCFGDESC(buf);
-#endif
-
-	DEBUGASSERT(total == COMPOSITE_CFGDESCSIZE);
-	return total;
-}
-
-/****************************************************************************
- * Name: composite_getqualdesc
- *
- * Description:
- *   Return a pointer to the raw qual descriptor
- *
- ****************************************************************************/
-
-#ifdef CONFIG_USBDEV_DUALSPEED
-FAR const struct usb_qualdesc_s *composite_getqualdesc(void)
-{
-	return &g_qualdesc;
-}
-#endif
-
-#endif							/* CONFIG_USBDEV_COMPOSITE */
+#endif /* CONFIG_USBDEV_COMPOSITE */

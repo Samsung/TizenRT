@@ -18,35 +18,22 @@
 /****************************************************************************
  * drivers/usbhost/usbhost_findclass.c
  *
- *   Copyright (C) 2010, 2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -61,27 +48,11 @@
 #include <assert.h>
 #include <debug.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/usb/usb.h>
 #include <tinyara/usb/usbhost.h>
-#include <arch/irq.h>
 
 #include "usbhost_registry.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
 
 /****************************************************************************
  * Private Functions
@@ -97,18 +68,23 @@
  *   classid - ID info for the class under consideration.
  *   devid - ID info reported by the device.
  *
- * Returned Values:
+ * Returned Value:
  *   TRUE - the class will support this device.
  *
  ****************************************************************************/
 
-static bool usbhost_idmatch(const struct usbhost_id_s *classid, const struct usbhost_id_s *devid)
+static bool usbhost_idmatch(const struct usbhost_id_s *classid,
+                            const struct usbhost_id_s *devid)
 {
-	uvdbg("Compare to class:%d subclass:%d protocol:%d vid:%04x pid:%04x\n", classid->base, classid->subclass, classid->proto, classid->vid, classid->pid);
+	uinfo("Compare to class:%d subclass:%d protocol:%d vid:%04x pid:%04x\n",
+	       classid->base, classid->subclass, classid->proto,
+	       classid->vid, classid->pid);
 
 	/* The base class ID, subclass and protocol have to match up in any event */
 
-	if (devid->base == classid->base && devid->subclass == classid->subclass && devid->proto == classid->proto) {
+	if (devid->base == classid->base &&
+	    devid->subclass == classid->subclass &&
+	    devid->proto == classid->proto) {
 		/* If this is a vendor-specific class ID, then the VID and PID have to
 		 * match as well.
 		 */
@@ -150,7 +126,7 @@ static bool usbhost_idmatch(const struct usbhost_id_s *classid, const struct usb
  * Input Parameters:
  *   id - Identifies the USB device class that has connect to the USB host.
  *
- * Returned Values:
+ * Returned Value:
  *   On success this function will return a non-NULL instance of struct
  *   usbhost_registry_s.  NULL will be returned on failure.  This function
  *   can only fail if (1) id is NULL, or (2) no USB host class is registered
@@ -158,14 +134,16 @@ static bool usbhost_idmatch(const struct usbhost_id_s *classid, const struct usb
  *
  ****************************************************************************/
 
-const struct usbhost_registry_s *usbhost_findclass(const struct usbhost_id_s *id)
+const struct usbhost_registry_s *usbhost_findclass(
+                                             const struct usbhost_id_s *id)
 {
 	struct usbhost_registry_s *usbclass;
 	irqstate_t flags;
 	int ndx;
 
 	DEBUGASSERT(id);
-	uvdbg("Looking for class:%d subclass:%d protocol:%d vid:%04x pid:%04x\n", id->base, id->subclass, id->proto, id->vid, id->pid);
+	uinfo("Looking for class:%d subclass:%d protocol:%d vid:%04x pid:%04x\n",
+	      id->base, id->subclass, id->proto, id->vid, id->pid);
 
 	/* g_classregistry is a singly-linked list of class ID information added by
 	 * calls to usbhost_registerclass().  Since this list is accessed from USB
@@ -173,7 +151,7 @@ const struct usbhost_registry_s *usbhost_findclass(const struct usbhost_id_s *id
 	 * protected by disabling interrupts.
 	 */
 
-	flags = enter_critical_section();
+	flags = spin_lock_irqsave_nopreempt(&g_classregistry_lock);
 
 	/* Examine each register class in the linked list */
 
@@ -182,14 +160,14 @@ const struct usbhost_registry_s *usbhost_findclass(const struct usbhost_id_s *id
 		 * protocol, then try each.
 		 */
 
-		uvdbg("Checking class:%p nids:%d\n", usbclass, usbclass->nids);
+		uinfo("Checking class:%p nids:%d\n", usbclass, usbclass->nids);
 		for (ndx = 0; ndx < usbclass->nids; ndx++) {
 			/* Did we find a matching ID? */
 
 			if (usbhost_idmatch(&usbclass->id[ndx], id)) {
 				/* Yes.. restore interrupts and return the class info */
 
-				leave_critical_section(flags);
+				spin_unlock_irqrestore_nopreempt(&g_classregistry_lock, flags);
 				return usbclass;
 			}
 		}
@@ -197,6 +175,6 @@ const struct usbhost_registry_s *usbhost_findclass(const struct usbhost_id_s *id
 
 	/* Not found... restore interrupts and return NULL */
 
-	leave_critical_section(flags);
+	spin_unlock_irqrestore_nopreempt(&g_classregistry_lock, flags);
 	return NULL;
 }
