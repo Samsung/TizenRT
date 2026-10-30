@@ -18,35 +18,22 @@
 /****************************************************************************
  * arch/arm/src/armv7-r/arm_mpu.c
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,17 +45,19 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include <debug.h>
 
 #include "mpu.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 /* Configuration ************************************************************/
 
-#ifndef CONFIG_ARMV7M_MPU_NREGIONS
-#define CONFIG_ARMV7M_MPU_NREGIONS 8
+#ifndef CONFIG_ARM_MPU_NREGIONS
+#  define CONFIG_ARM_MPU_NREGIONS 8
 #endif
 
 /****************************************************************************
@@ -84,8 +73,9 @@
  * all subregions are available (0x00).
  */
 
-static const uint8_t g_ms_regionmask[9] = {
-	0xff, 0xfe, 0xfc, 0xf8, 0xf0, 0xe0, 0xc0, 0x80, 0x00
+static const uint8_t g_ms_regionmask[9] =
+{
+  0xff, 0xfe, 0xfc, 0xf8, 0xf0, 0xe0, 0xc0, 0x80, 0x00
 };
 
 /* The g_ls_regionmask array is indexed by the number of subregions at the
@@ -93,13 +83,14 @@ static const uint8_t g_ms_regionmask[9] = {
  * and 8 means all subregions must be disabled (0xff).
  */
 
-static const uint8_t g_ls_regionmask[9] = {
-	0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff
+static const uint8_t g_ls_regionmask[9] =
+{
+  0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff
 };
 
-/* The next available region number */
+/* The available region bitmap */
 
-static uint8_t g_region;
+static unsigned int g_mpu_region;
 
 /****************************************************************************
  * Private Functions
@@ -117,13 +108,20 @@ static uint8_t g_region;
  *   l2size has the same properties as the return value from
  *   mpu_log2regionceil()
  *
+ * Input Parameters:
+ *   size: The size of the region.
+ *   l2size: The L2 size of the region.
+ *
+ * Returned Value:
+ *   The sub-region bitmask.
+ *
  ****************************************************************************/
 
 static inline uint32_t mpu_subregion_ms(size_t size, uint8_t l2size)
 {
 	unsigned int nsrs;
-	uint32_t asize;
-	uint32_t mask;
+	uint32_t     asize;
+	uint32_t     mask;
 
 	/* Examples with l2size = 12:
 	 *
@@ -135,7 +133,7 @@ static inline uint32_t mpu_subregion_ms(size_t size, uint8_t l2size)
 	 */
 
 	if (l2size < 32) {
-		mask = ((1 << l2size) - 1) >> 3;	/* Shifted mask */
+		mask  = ((1 << l2size) - 1) >> 3; /* Shifted mask */
 	}
 
 	/* The 4Gb region size is a special case */
@@ -145,11 +143,11 @@ static inline uint32_t mpu_subregion_ms(size_t size, uint8_t l2size)
 		 * input.
 		 */
 
-		mask = 0x1fffffff;		/* Shifted mask */
+		mask = 0x1fffffff;         /* Shifted mask */
 	}
 
-	asize = (size + mask) & ~mask;	/* Adjusted size */
-	nsrs = asize >> (l2size - 3);	/* Number of subregions */
+	asize = (size + mask) & ~mask; /* Adjusted size */
+	nsrs  = asize >> (l2size - 3); /* Number of subregions */
 	return g_ms_regionmask[nsrs];
 }
 
@@ -166,13 +164,20 @@ static inline uint32_t mpu_subregion_ms(size_t size, uint8_t l2size)
  *   l2size has the same properties as the return value from
  *   mpu_log2regionceil()
  *
+ * Input Parameters:
+ *   offset: The offset of the region.
+ *   l2size: The L2 size of the region.
+ *
+ * Returned Value:
+ *   The sub-region bitmask.
+ *
  ****************************************************************************/
 
 static inline uint32_t mpu_subregion_ls(size_t offset, uint8_t l2size)
 {
 	unsigned int nsrs;
-	uint32_t aoffset;
-	uint32_t mask;
+	uint32_t     aoffset;
+	uint32_t     mask;
 
 	/* Examples with l2size = 12:
 	 *
@@ -184,7 +189,7 @@ static inline uint32_t mpu_subregion_ls(size_t offset, uint8_t l2size)
 	 */
 
 	if (l2size < 32) {
-		mask = ((1 << l2size) - 1) >> 3;	/* Shifted mask */
+		mask  = ((1 << l2size) - 1) >> 3; /* Shifted mask */
 	}
 
 	/* The 4Gb region size is a special case */
@@ -194,13 +199,45 @@ static inline uint32_t mpu_subregion_ls(size_t offset, uint8_t l2size)
 		 * input.
 		 */
 
-		mask = 0x1fffffff;		/* Shifted mask */
+		mask = 0x1fffffff;           /* Shifted mask */
 	}
 
-	aoffset = offset & ~mask;	/* Adjusted offset */
-	nsrs = aoffset >> (l2size - 3);	/* Number of subregions */
+	aoffset = offset & ~mask;          /* Adjusted offset */
+	nsrs    = aoffset >> (l2size - 3); /* Number of subregions */
 	return g_ls_regionmask[nsrs];
 }
+
+/****************************************************************************
+ * Name: mpu_reset_internal
+ *
+ * Description:
+ *   Resets the MPU to disabled.
+ *
+ * * Input Parameters:
+ *   None.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARM_MPU_RESET) || defined(CONFIG_ARM_MPU_EARLY_RESET)
+static void mpu_reset_internal(void)
+{
+	int region;
+	int regions;
+	regions = (getreg32(MPU_TYPE) & MPU_TYPE_DREGION_MASK)
+	                                >> MPU_TYPE_DREGION_SHIFT;
+
+	for (region = 0; region < regions; region++) {
+		putreg32(region, MPU_RNR);
+		putreg32(0, MPU_RASR);
+		putreg32(0, MPU_RBAR);
+	}
+
+	putreg32(0, MPU_CTRL);
+}
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -212,17 +249,51 @@ static inline uint32_t mpu_subregion_ls(size_t offset, uint8_t l2size)
  * Description:
  *   Allocate the next region
  *
- * Assumptions:
- *   - Regions are never deallocated
- *   - Regions are only allocated early in initialization, so no special
- *     protection against re-entrancy is required;
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   The index of the allocated region.
  *
  ****************************************************************************/
 
 unsigned int mpu_allocregion(void)
 {
-	DEBUGASSERT(g_region < CONFIG_ARMV7M_MPU_NREGIONS);
-	return (unsigned int)g_region++;
+	unsigned int i = ffs(~g_mpu_region) - 1;
+
+	/* There are not enough regions to apply */
+
+	DEBUGASSERT(i < CONFIG_ARM_MPU_NREGIONS);
+	g_mpu_region |= 1 << i;
+	return i;
+}
+
+/****************************************************************************
+ * Name: mpu_freeregion
+ *
+ * Description:
+ *   Free target region.
+ *
+ * Input Parameters:
+ *  region - The index of the region to be freed.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void mpu_freeregion(unsigned int region)
+{
+	DEBUGASSERT(region < CONFIG_ARM_MPU_NREGIONS);
+
+	/* Clear and disable the given MPU Region */
+
+	mpu_set_rgnr(region);
+	mpu_set_drbar(0);
+	mpu_set_dracr(0);
+	mpu_set_drsr(0);
+	g_mpu_region &= ~(1 << region);
+	UP_MB();
 }
 
 /****************************************************************************
@@ -234,6 +305,12 @@ unsigned int mpu_allocregion(void)
  *
  *   size <= (1 << l2size)
  *
+ * Input Parameters:
+ *   size - The size of the region.
+ *
+ * Returned Value:
+ *   The logarithm base 2 of the ceiling value for the MPU region size.
+ *
  ****************************************************************************/
 
 uint8_t mpu_log2regionceil(size_t size)
@@ -242,7 +319,7 @@ uint8_t mpu_log2regionceil(size_t size)
 
 	/* The minimum permitted region size is 32 bytes (log2(32) = 5. */
 
-	for (l2size = 5; l2size < 32 && size > (1 << l2size); l2size++) ;
+	for (l2size = 5; l2size < 32 && size > (1 << l2size); l2size++);
 	return l2size;
 }
 
@@ -254,6 +331,12 @@ uint8_t mpu_log2regionceil(size_t size)
  *   following is true:
  *
  *   size >= (1 << l2size)
+ *
+ * Input Parameters:
+ *   size - The size of the region.
+ *
+ * Returned Value:
+ *   The logarithm base 2 of the floor value for the MPU region size.
  *
  ****************************************************************************/
 
@@ -279,6 +362,14 @@ uint8_t mpu_log2regionfloor(size_t size)
  * Assumption:
  *   l2size has the same properties as the return value from
  *   mpu_log2regionceil()
+ *
+ * Input Parameters:
+ *   base   - The base address of the region.
+ *   size   - The size of the region.
+ *   l2size - Log2 of the actual region size is <= (1 << l2size).
+ *
+ * Returned Value:
+ *   The subregion settings as a 32-bit value.
  *
  ****************************************************************************/
 
@@ -307,7 +398,7 @@ uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size)
 
 	/* Calculate the offset of the base address into the aligned region. */
 
-	mask = (1 << l2size) - 1;
+	mask   = (1 << l2size) - 1;
 	offset = base & mask;
 
 	/* Calculate the mask need to handle disabled subregions at the end of the
@@ -323,3 +414,193 @@ uint32_t mpu_subregion(uintptr_t base, size_t size, uint8_t l2size)
 	ret |= mpu_subregion_ls(offset, l2size);
 	return ret;
 }
+
+/****************************************************************************
+ * Name: mpu_modify_region
+ *
+ * Description:
+ *   Modify a region for privileged, strongly ordered memory
+ *
+ * Input Parameters:
+ *   region - Region number to modify.
+ *   base   - Base address of the region.
+ *   size   - Size of the region.
+ *   flags  - Flags to configure the region.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void mpu_modify_region(unsigned int region, uintptr_t base, size_t size,
+                       uint32_t flags)
+{
+	uint32_t regval;
+	uint8_t l2size;
+	uint8_t subregions;
+
+	/* Check that the region is valid */
+
+	DEBUGASSERT(g_mpu_region & (1 << region));
+
+	/* Select the region */
+
+	mpu_set_rgnr(region);
+
+	/* Select the region base address */
+
+	mpu_set_drbar(base & MPU_RBAR_ADDR_MASK);
+
+	/* Select the region size and the sub-region map */
+
+	l2size = mpu_log2regionceil(size);
+	subregions = mpu_subregion(base, size, l2size);
+
+	/* Configure the Region */
+
+	mpu_set_dracr(flags);
+	regval = MPU_RASR_ENABLE | /* Enable region */
+	         MPU_RASR_RSIZE_LOG2(l2size) | /* Region size   */
+	         (subregions << MPU_RASR_SRD_SHIFT);            /* Sub-regions   */
+	mpu_set_drsr(regval);
+}
+
+/****************************************************************************
+ * Name: mpu_configure_region
+ *
+ * Description:
+ *   Configure a region.
+ *
+ * Input Parameters:
+ *   base - Base address of the region.
+ *   size - Size of the region.
+ *   flags - Flags to configure the region.
+ *
+ * Returned Value:
+ *   The region number allocated for the configured region.
+ *
+ ****************************************************************************/
+
+unsigned int mpu_configure_region(uintptr_t base, size_t size,
+                                  uint32_t flags)
+{
+	unsigned int region = mpu_allocregion();
+	mpu_modify_region(region, base, size, flags);
+	return region;
+}
+
+/****************************************************************************
+ * Name: mpu_initialize
+ *
+ * Description:
+ *   Configure a region for privileged, strongly ordered memory
+ *
+ * Input Parameters:
+ *   table - MPU Initialize table.
+ *   count - Initialize the number of entries in the region table.
+ *
+ * Returned Value:
+ *   NULL.
+ *
+ ****************************************************************************/
+
+void mpu_initialize(const struct mpu_region_s *table, size_t count)
+{
+	const struct mpu_region_s *conf;
+	size_t index;
+
+	mpu_control(false);
+	for (index = 0; index < count; index++) {
+		conf = &table[index];
+		mpu_configure_region(conf->base, conf->size, conf->flags);
+	}
+
+	mpu_control(true);
+}
+
+/****************************************************************************
+ * Name: mpu_dump_region
+ *
+ * Description:
+ *   Dump the region that has been used.
+ *
+ * Input Parameters:
+ *   None.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void mpu_dump_region(void)
+{
+	int i;
+	int count = 0;
+	uint32_t dracr;
+	uint32_t drbar;
+	uint32_t drsr;
+	uint32_t sctrl;
+
+	/* Get free region */
+
+	sctrl = cp15_rdsctlr();
+	_info("MPU-SCTRL Enable:%" PRIu32 "\n", sctrl & SCTLR_M);
+	for (i = 0; i < CONFIG_ARM_MPU_NREGIONS; i++) {
+		mpu_set_rgnr(i);
+		drbar = mpu_get_drbar();
+		dracr = mpu_get_dracr();
+		drsr = mpu_get_drsr();
+		_info("MPU-%d, base=0%08X l2size=%" PRIu32 " bufferable=%u"
+		      "cacheable=%u shareable=%u\n", i, drbar & MPU_RBAR_ADDR_MASK,
+		      drsr & MPU_RASR_RSIZE_MASK, dracr & MPU_RACR_B,
+		      dracr & MPU_RACR_C, dracr & MPU_RACR_S);
+		if (drsr & MPU_RASR_ENABLE) {
+			count++;
+		}
+	}
+
+	_info("Total Use Region:%d, Remaining Available:%d\n", count,
+	      CONFIG_ARM_MPU_NREGIONS - count);
+}
+
+/****************************************************************************
+ * Name: mpu_reset
+ *
+ * Description:
+ *   Conditional public interface that resets the MPU to disabled during
+ *   MPU initialization.
+ *
+ * Input Parameters:
+ *   None.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+#if defined(CONFIG_ARM_MPU_RESET)
+void mpu_reset(void)
+{
+	mpu_reset_internal();
+}
+#endif
+
+/****************************************************************************
+ * Name: mpu_early_reset
+ *
+ * Description:
+ *   Conditional public interface that resets the MPU to disabled immediately
+ *   after reset.
+ *
+ * Input Parameters:
+ *   None.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+#if defined(CONFIG_ARM_MPU_EARLY_RESET)
+void mpu_early_reset(void)
+{
+	mpu_reset_internal();
+}
+#endif

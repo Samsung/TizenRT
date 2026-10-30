@@ -18,35 +18,22 @@
 /****************************************************************************
  * arch/arm/src/arm7-r/arm_vectortab.S
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -65,6 +52,13 @@
 /****************************************************************************
  * Public Symbols
  ****************************************************************************/
+
+#ifdef CONFIG_ARM_TOOLCHAIN_ARMCLANG
+	.eabi_attribute Tag_ABI_align_preserved, 1
+#endif
+
+	.syntax	unified
+	.arm
 
 	.globl		_vector_start
 	.globl		_vector_end
@@ -86,16 +80,16 @@
 /* These will be relocated to VECTOR_BASE. */
 
 _vector_start:
-	ldr		pc, .Lresethandler			/* 0x00: Reset */
+	ldr		pc, .Lresethandler		/* 0x00: Reset */
 	ldr		pc, .Lundefinedhandler		/* 0x04: Undefined instruction */
-	ldr		pc, .Lsvchandler			/* 0x08: Software interrupt */
+	ldr		pc, .Lsvchandler		/* 0x08: Software interrupt */
 	ldr		pc, .Lprefetchaborthandler	/* 0x0c: Prefetch abort */
 	ldr		pc, .Ldataaborthandler		/* 0x10: Data abort */
 	ldr		pc, .Laddrexcptnhandler		/* 0x14: Address exception (reserved) */
-	ldr		pc, .Lirqhandler			/* 0x18: IRQ */
-	ldr		pc, .Lfiqhandler			/* 0x1c: FIQ */
+	ldr		pc, .Lirqhandler		/* 0x18: IRQ */
+	ldr		pc, .Lfiqhandler		/* 0x1c: FIQ */
 
-	.globl   __start
+	.globl	__start
 	.globl	arm_vectorundefinsn
 	.globl	arm_vectorsvc
 	.globl	arm_vectorprefetch
