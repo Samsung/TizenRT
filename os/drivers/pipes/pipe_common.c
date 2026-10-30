@@ -18,35 +18,22 @@
 /****************************************************************************
  * drivers/pipes/pipe_common.c
  *
- *   Copyright (C) 2008-2009, 2011, 2015-2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -59,20 +46,18 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/param.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sched.h>
-#include <semaphore.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <assert.h>
 #include <debug.h>
 
-#ifdef CONFIG_DEBUG
 #include <tinyara/arch.h>
-#endif
 #include <tinyara/kmalloc.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/fs/fs.h>
@@ -80,7 +65,7 @@
 
 #include "pipe_common.h"
 
-#if CONFIG_DEV_PIPE_SIZE > 0
+#ifdef CONFIG_PIPES
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -91,67 +76,29 @@
  */
 
 #ifdef CONFIG_DEV_PIPEDUMP
-#define pipe_dumpbuffer(m, a, n) lib_dumpbuffer(m, a, n)
+#  define pipe_dumpbuffer(m,a,n) lib_dumpbuffer(m,a,n)
 #else
-#define pipe_dumpbuffer(m, a, n)
+#  define pipe_dumpbuffer(m,a,n)
 #endif
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-static void pipecommon_semtake(sem_t *sem);
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pipecommon_semtake
+ * Name: pipecommon_wakeup
  ****************************************************************************/
 
-static void pipecommon_semtake(sem_t *sem)
+static void pipecommon_wakeup(FAR sem_t *sem)
 {
-	while (sem_wait(sem) != 0) {
-		/* The only case that an error should occur here is if the wait was
-		 * awakened by a signal.
-		 */
+	int sval;
 
-		ASSERT(get_errno() == EINTR);
-	}
-}
-
-/****************************************************************************
- * Name: pipecommon_pollnotify
- ****************************************************************************/
-
-#ifndef CONFIG_DISABLE_POLL
-static void pipecommon_pollnotify(FAR struct pipe_dev_s *dev, pollevent_t eventset)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_DEV_PIPE_NPOLLWAITERS; i++) {
-		struct pollfd *fds = dev->d_fds[i];
-		if (fds) {
-			fds->revents |= (fds->events & eventset);
-			if (fds->revents != 0) {
-				fvdbg("Report events: %02x\n", fds->revents);
-				sem_post(fds->sem);
-			}
+	if (nxsem_get_value(sem, &sval) >= 0) {
+		while (sval++ <= 0) {
+			nxsem_post(sem);
 		}
 	}
 }
-#else
-#define pipecommon_pollnotify(dev, event)
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -161,27 +108,22 @@ static void pipecommon_pollnotify(FAR struct pipe_dev_s *dev, pollevent_t events
  * Name: pipecommon_allocdev
  ****************************************************************************/
 
-FAR struct pipe_dev_s *pipecommon_allocdev(void)
+FAR struct pipe_dev_s *pipecommon_allocdev(size_t bufsize)
 {
-	struct pipe_dev_s *dev;
+	FAR struct pipe_dev_s *dev;
+
+	DEBUGASSERT(bufsize <= CONFIG_DEV_PIPE_MAXSIZE);
 
 	/* Allocate a private structure to manage the pipe */
 
-	dev = (struct pipe_dev_s *)kmm_malloc(sizeof(struct pipe_dev_s));
+	dev = kmm_zalloc(sizeof(struct pipe_dev_s));
 	if (dev) {
 		/* Initialize the private structure */
 
-		memset(dev, 0, sizeof(struct pipe_dev_s));
-		sem_init(&dev->d_bfsem, 0, 1);
-		sem_init(&dev->d_rdsem, 0, 0);
-		sem_init(&dev->d_wrsem, 0, 0);
-
-		/*
-		 * The read/write wait semaphores are used for signaling and,
-		 * hence, should not have priority inheritance enabled.
-		 */
-		sem_setprotocol(&dev->d_rdsem, SEM_PRIO_NONE);
-		sem_setprotocol(&dev->d_wrsem, SEM_PRIO_NONE);
+		nxrmutex_init(&dev->d_bflock);
+		nxsem_init(&dev->d_rdsem, 0, 0);
+		nxsem_init(&dev->d_wrsem, 0, 0);
+		dev->d_bufsize = bufsize;
 	}
 
 	return dev;
@@ -193,9 +135,9 @@ FAR struct pipe_dev_s *pipecommon_allocdev(void)
 
 void pipecommon_freedev(FAR struct pipe_dev_s *dev)
 {
-	sem_destroy(&dev->d_bfsem);
-	sem_destroy(&dev->d_rdsem);
-	sem_destroy(&dev->d_wrsem);
+	nxrmutex_destroy(&dev->d_bflock);
+	nxsem_destroy(&dev->d_rdsem);
+	nxsem_destroy(&dev->d_wrsem);
 	kmm_free(dev);
 }
 
@@ -205,68 +147,121 @@ void pipecommon_freedev(FAR struct pipe_dev_s *dev)
 
 int pipecommon_open(FAR struct file *filep)
 {
-	struct inode *inode = filep->f_inode;
-	struct pipe_dev_s *dev = inode->i_private;
-	int sval;
-	int ret;
+	FAR struct inode      *inode = filep->f_inode;
+	FAR struct pipe_dev_s *dev   = inode->i_private;
+	int                    ret;
 
-	DEBUGASSERT(dev);
+	DEBUGASSERT(dev != NULL);
 
-	/* Make sure that we have exclusive access to the device structure. The
-	 * sem_wait() call should fail only if we are awakened by a signal.
+	/* Make sure that we have exclusive access to the device structure.  The
+	 * nxrmutex_lock() call should fail if we are awakened by a signal or if
+	 * the thread was canceled.
 	 */
 
-	ret = sem_wait(&dev->d_bfsem);
-	if (ret != OK) {
-		fdbg("sem_wait failed: %d\n", get_errno());
-		DEBUGASSERT(get_errno() > 0);
-		return -get_errno();
+	ret = nxrmutex_lock(&dev->d_bflock);
+	if (ret < 0) {
+		ferr("ERROR: nxrmutex_lock failed: %d\n", ret);
+		return ret;
 	}
 
-	/* If this the first reference on the device, then allocate the buffer.
-	 * In the case of policy 1, the buffer already be present when the pipe
-	 * is first opened.
-	 */
+	/* If d_buffer is not initialized, init it. */
 
-	if (dev->d_refs == 0 && dev->d_buffer == NULL) {
-		dev->d_buffer = (uint8_t *)kmm_malloc(CONFIG_DEV_PIPE_SIZE);
-		if (!dev->d_buffer) {
-			(void)sem_post(&dev->d_bfsem);
-			return -ENOMEM;
+	if (!circbuf_is_init(&dev->d_buffer)) {
+		ret = circbuf_init(&dev->d_buffer, NULL, dev->d_bufsize);
+		if (ret < 0) {
+			nxrmutex_unlock(&dev->d_bflock);
+			return ret;
 		}
 	}
 
-	/* Increment the reference count on the pipe instance */
+	dev->d_crefs++;
 
-	dev->d_refs++;
-
-	/* If opened for writing, increment the count of writers on on the pipe instance */
+	/* If opened for writing, increment the count of writers on the pipe
+	 * instance.
+	 */
 
 	if ((filep->f_oflags & O_WROK) != 0) {
 		dev->d_nwriters++;
 
-		/* If this this is the first writer, then the read semaphore indicates the
-		 * number of readers waiting for the first writer.  Wake them all up.
+		/* If this is the first writer, then the n-readers semaphore
+		 * indicates the number of readers waiting for the first writer.
+		 * Wake them all up!
 		 */
 
 		if (dev->d_nwriters == 1) {
-			while (sem_getvalue(&dev->d_rdsem, &sval) == 0 && sval < 0) {
-				sem_post(&dev->d_rdsem);
-			}
+			pipecommon_wakeup(&dev->d_rdsem);
 		}
 	}
 
-	/* If opened for read-only, then wait for either (1) at least one writer
-	 * on the pipe (policy == 0), or (2) until there is buffered data to be
-	 * read (policy == 1).
+	while ((filep->f_oflags & O_NONBLOCK) == 0 &&     /* Blocking */
+	       (filep->f_oflags & O_RDWR) == O_WRONLY &&  /* Write-only */
+	       dev->d_nreaders < 1 &&                     /* No readers on the pipe */
+	       circbuf_is_empty(&dev->d_buffer))          /* Buffer is empty */ {
+		/* If opened for write-only, then wait for at least one reader
+		 * on the pipe.
+		 */
+
+		nxrmutex_unlock(&dev->d_bflock);
+
+		/* NOTE: d_wrsem is normally used to check if the write buffer is full
+		 * and wait for it being read and being able to receive more data. But,
+		 * until the first reader has opened the pipe, the meaning is different
+		 * and it is used prevent O_WRONLY open calls from returning until
+		 * there is at least one reader on the pipe.
+		 */
+
+		ret = nxsem_wait(&dev->d_wrsem);
+		if (ret < 0) {
+			ferr("ERROR: nxsem_wait failed: %d\n", ret);
+
+			/* Immediately close the pipe that we just opened */
+
+			pipecommon_close(filep);
+			return ret;
+		}
+
+		/* The nxrmutex_lock() call should fail if we are awakened by a
+		 * signal or if the task is canceled.
+		 */
+
+		ret = nxrmutex_lock(&dev->d_bflock);
+		if (ret < 0) {
+			ferr("ERROR: nxrmutex_lock failed: %d\n", ret);
+
+			/* Immediately close the pipe that we just opened */
+
+			pipecommon_close(filep);
+			return ret;
+		}
+	}
+
+	/* If opened for reading, increment the count of reader on on the pipe
+	 * instance.
 	 */
 
-	sched_lock();
-	(void)sem_post(&dev->d_bfsem);
+	if ((filep->f_oflags & O_RDOK) != 0) {
+		dev->d_nreaders++;
 
-	if ((filep->f_oflags & O_RDWR) == O_RDONLY &&	/* Read-only */
-		dev->d_nwriters < 1 &&	/* No writers on the pipe */
-		dev->d_wrndx == dev->d_rdndx) {	/* Buffer is empty */
+		/* If this is the first reader, then the n-writers semaphore
+		 * indicates the number of writers waiting for the first reader.
+		 * Wake them all up.
+		 */
+
+		if (dev->d_nreaders == 1) {
+			pipecommon_wakeup(&dev->d_wrsem);
+		}
+	}
+
+	while ((filep->f_oflags & O_NONBLOCK) == 0 &&     /* Blocking */
+	       (filep->f_oflags & O_RDWR) == O_RDONLY &&  /* Read-only */
+	       dev->d_nwriters < 1 &&                     /* No writers on the pipe */
+	       circbuf_is_empty(&dev->d_buffer))          /* Buffer is empty */ {
+		/* If opened for read-only, then wait for either at least one writer
+		 * on the pipe.
+		 */
+
+		nxrmutex_unlock(&dev->d_bflock);
+
 		/* NOTE: d_rdsem is normally used when the read logic waits for more
 		 * data to be written.  But until the first writer has opened the
 		 * pipe, the meaning is different: it is used prevent O_RDONLY open
@@ -276,23 +271,32 @@ int pipecommon_open(FAR struct file *filep)
 		 * no writer on the pipe.
 		 */
 
-		ret = sem_wait(&dev->d_rdsem);
-		if (ret != OK) {
-			/* The sem_wait() call should fail only if we are awakened by
-			 * a signal.
-			 */
-
-			fdbg("sem_wait failed: %d\n", get_errno());
-			DEBUGASSERT(get_errno() > 0);
-			ret = -get_errno();
+		ret = nxsem_wait(&dev->d_rdsem);
+		if (ret < 0) {
+			ferr("ERROR: nxsem_wait failed: %d\n", ret);
 
 			/* Immediately close the pipe that we just opened */
 
-			(void)pipecommon_close(filep);
+			pipecommon_close(filep);
+			return ret;
+		}
+
+		/* The nxrmutex_lock() call should fail if we are awakened by a
+		 * signal or if the task is canceled.
+		 */
+
+		ret = nxrmutex_lock(&dev->d_bflock);
+		if (ret < 0) {
+			ferr("ERROR: nxrmutex_lock failed: %d\n", ret);
+
+			/* Immediately close the pipe that we just opened */
+
+			pipecommon_close(filep);
+			return ret;
 		}
 	}
 
-	sched_unlock();
+	nxrmutex_unlock(&dev->d_bflock);
 	return ret;
 }
 
@@ -302,54 +306,62 @@ int pipecommon_open(FAR struct file *filep)
 
 int pipecommon_close(FAR struct file *filep)
 {
-	struct inode *inode = filep->f_inode;
-	struct pipe_dev_s *dev = inode->i_private;
-	int sval;
-#ifndef CONFIG_DISABLE_POLL
-	int i;
-#endif
+	FAR struct inode      *inode = filep->f_inode;
+	FAR struct pipe_dev_s *dev   = inode->i_private;
+	int                    ret;
 
-	DEBUGASSERT(dev && dev->d_refs > 0);
+	DEBUGASSERT(dev && dev->d_crefs > 0);
 
 	/* Make sure that we have exclusive access to the device structure.
 	 * NOTE: close() is supposed to return EINTR if interrupted, however
 	 * I've never seen anyone check that.
 	 */
 
-	pipecommon_semtake(&dev->d_bfsem);
+	ret = nxrmutex_lock(&dev->d_bflock);
+	if (ret < 0) {
+		/* The close will not be performed if the task was canceled */
 
-#ifndef CONFIG_DISABLE_POLL
-	/* Check if this file is registered in a list of waiters for polling.
-	 * For example, when task A is blocked by calling poll and task B try to terminate task A,
-	 * a pollfd of A remains in this list. If it is, it should be cleared.
-	 */
-	for (i = 0; i < CONFIG_DEV_PIPE_NPOLLWAITERS; i++) {
-		struct pollfd *fds = dev->d_fds[i];
-		if (fds && (FAR struct file *)fds->filep == filep) {
-			dev->d_fds[i] = NULL;
-		}
+		return ret;
 	}
-#endif
 
 	/* Decrement the number of references on the pipe.  Check if there are
 	 * still outstanding references to the pipe.
 	 */
 
-	/* Check if the decremented reference count would go to zero */
+	/* Check if the decremented inode reference count would go to zero */
 
-	if (--dev->d_refs > 0) {
-		/* No more references.. If opened for writing, decrement the count of
+	dev->d_crefs--;
+	if (dev->d_crefs > 0) {
+		/* More references.. If opened for writing, decrement the count of
 		 * writers on the pipe instance.
 		 */
 
 		if ((filep->f_oflags & O_WROK) != 0) {
-			/* If there are no longer any writers on the pipe, then notify all of the
-			 * waiting readers that they must return end-of-file.
+			/* If there are no longer any writers on the pipe, then notify all
+			 * of the waiting readers that they must return end-of-file.
 			 */
 
 			if (--dev->d_nwriters <= 0) {
-				while (sem_getvalue(&dev->d_rdsem, &sval) == 0 && sval < 0) {
-					sem_post(&dev->d_rdsem);
+				/* Inform poll readers that other end closed. */
+
+				poll_notify(dev->d_fds, CONFIG_DEV_PIPE_NPOLLWAITERS, POLLHUP);
+
+				pipecommon_wakeup(&dev->d_rdsem);
+			}
+		}
+
+		/* If opened for reading, decrement the count of readers on the pipe
+		 * instance.
+		 */
+
+		if ((filep->f_oflags & O_RDOK) != 0) {
+			if (--dev->d_nreaders <= 0) {
+				if (PIPE_IS_POLICY_0(dev->d_flags)) {
+					/* Inform poll writers that other end closed. */
+
+					poll_notify(dev->d_fds, CONFIG_DEV_PIPE_NPOLLWAITERS,
+					            POLLERR);
+					pipecommon_wakeup(&dev->d_wrsem);
 				}
 			}
 		}
@@ -361,31 +373,30 @@ int pipecommon_close(FAR struct file *filep)
 	 * obtained when the pipe is re-opened.
 	 */
 
-	else if (PIPE_IS_POLICY_0(dev->d_flags) || dev->d_wrndx == dev->d_rdndx) {
+	else if (PIPE_IS_POLICY_0(dev->d_flags) ||
+	         circbuf_is_empty(&dev->d_buffer)) {
 		/* Policy 0 or the buffer is empty ... deallocate the buffer now. */
 
-		kmm_free(dev->d_buffer);
-		dev->d_buffer = NULL;
+		circbuf_uninit(&dev->d_buffer);
 
 		/* And reset all counts and indices */
 
-		dev->d_wrndx = 0;
-		dev->d_rdndx = 0;
-		dev->d_refs = 0;
 		dev->d_nwriters = 0;
+		dev->d_nreaders = 0;
 
+#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 		/* If, in addition, we have been unlinked, then also need to free the
 		 * device structure as well to prevent a memory leak.
 		 */
 
 		if (PIPE_IS_UNLINKED(dev->d_flags)) {
 			pipecommon_freedev(dev);
-			inode->i_private = NULL;
 			return OK;
 		}
+#endif
 	}
 
-	sem_post(&dev->d_bfsem);
+	nxrmutex_unlock(&dev->d_bflock);
 	return OK;
 }
 
@@ -395,14 +406,10 @@ int pipecommon_close(FAR struct file *filep)
 
 ssize_t pipecommon_read(FAR struct file *filep, FAR char *buffer, size_t len)
 {
-	struct inode *inode = filep->f_inode;
-	struct pipe_dev_s *dev = inode->i_private;
-#ifdef CONFIG_DEV_PIPEDUMP
-	FAR uint8_t *start = (uint8_t *)buffer;
-#endif
-	ssize_t nread = 0;
-	int sval;
-	int ret;
+	FAR struct inode      *inode = filep->f_inode;
+	FAR struct pipe_dev_s *dev   = inode->i_private;
+	ssize_t                nread = 0;
+	int                    ret;
 
 	DEBUGASSERT(dev);
 
@@ -412,62 +419,68 @@ ssize_t pipecommon_read(FAR struct file *filep, FAR char *buffer, size_t len)
 
 	/* Make sure that we have exclusive access to the device structure */
 
-	if (sem_wait(&dev->d_bfsem) < 0) {
-		return ERROR;
+	ret = nxrmutex_lock(&dev->d_bflock);
+	if (ret < 0) {
+		/* May fail because a signal was received or if the task was
+		 * canceled.
+		 */
+
+		return ret;
 	}
 
 	/* If the pipe is empty, then wait for something to be written to it */
 
-	while (dev->d_wrndx == dev->d_rdndx) {
+	while (circbuf_is_empty(&dev->d_buffer)) {
+		/* If there are no writers on the pipe, then return end of file */
+
+		if (dev->d_nwriters <= 0 && PIPE_IS_POLICY_0(dev->d_flags)) {
+			nxrmutex_unlock(&dev->d_bflock);
+			return 0;
+		}
+
 		/* If O_NONBLOCK was set, then return EGAIN */
 
 		if (filep->f_oflags & O_NONBLOCK) {
-			sem_post(&dev->d_bfsem);
+			nxrmutex_unlock(&dev->d_bflock);
 			return -EAGAIN;
-		}
-
-		/* If there are no writers on the pipe, then return end of file */
-
-		if (dev->d_nwriters <= 0) {
-			sem_post(&dev->d_bfsem);
-			return 0;
 		}
 
 		/* Otherwise, wait for something to be written to the pipe */
 
-		sched_lock();
-		sem_post(&dev->d_bfsem);
-		ret = sem_wait(&dev->d_rdsem);
-		sched_unlock();
+		nxrmutex_unlock(&dev->d_bflock);
+		ret = nxsem_wait(&dev->d_rdsem);
 
-		if (ret < 0 || sem_wait(&dev->d_bfsem) < 0) {
-			return ERROR;
+		if (ret < 0 || (ret = nxrmutex_lock(&dev->d_bflock)) < 0) {
+			/* May fail because a signal was received or if the task was
+			 * canceled.
+			 */
+
+			return ret;
 		}
 	}
 
-	/* Then return whatever is available in the pipe (which is at least one byte) */
+	/* Then return whatever is available in the pipe (which is at least one
+	 * byte).
+	 */
 
-	nread = 0;
-	while (nread < len && dev->d_wrndx != dev->d_rdndx) {
-		*buffer++ = dev->d_buffer[dev->d_rdndx];
-		if (++dev->d_rdndx >= CONFIG_DEV_PIPE_SIZE) {
-			dev->d_rdndx = 0;
-		}
-		nread++;
+	nread = circbuf_read(&dev->d_buffer, buffer, len);
+
+	/* Notify all poll/select waiters that they can write to the
+	 * FIFO when buffer can accept more than d_polloutthrd bytes.
+	 */
+
+	if (circbuf_used(&dev->d_buffer) <= (dev->d_bufsize - dev->d_polloutthrd)) {
+		poll_notify(dev->d_fds, CONFIG_DEV_PIPE_NPOLLWAITERS, POLLOUT);
 	}
 
-	/* Notify all waiting writers that bytes have been removed from the buffer */
+	/* Notify all waiting writers that bytes have been removed from the
+	 * buffer.
+	 */
 
-	while (sem_getvalue(&dev->d_wrsem, &sval) == 0 && sval < 0) {
-		sem_post(&dev->d_wrsem);
-	}
+	pipecommon_wakeup(&dev->d_wrsem);
 
-	/* Notify all poll/select waiters that they can write to the FIFO */
-
-	pipecommon_pollnotify(dev, POLLOUT);
-
-	sem_post(&dev->d_bfsem);
-	pipe_dumpbuffer("From PIPE:", start, nread);
+	nxrmutex_unlock(&dev->d_bflock);
+	pipe_dumpbuffer("From PIPE:", buffer, nread);
 	return nread;
 }
 
@@ -475,107 +488,141 @@ ssize_t pipecommon_read(FAR struct file *filep, FAR char *buffer, size_t len)
  * Name: pipecommon_write
  ****************************************************************************/
 
-ssize_t pipecommon_write(FAR struct file *filep, FAR const char *buffer, size_t len)
+ssize_t pipecommon_write(FAR struct file *filep, FAR const char *buffer,
+                         size_t len)
 {
-	struct inode *inode = filep->f_inode;
-	struct pipe_dev_s *dev = inode->i_private;
-	ssize_t nwritten = 0;
-	ssize_t last;
-	int nxtwrndx;
-	int sval;
+	FAR struct inode      *inode    = filep->f_inode;
+	FAR struct pipe_dev_s *dev      = inode->i_private;
+	ssize_t                nwritten = 0;
+	ssize_t                last;
+	int                    ret;
 
 	DEBUGASSERT(dev);
-	pipe_dumpbuffer("To PIPE:", (uint8_t *)buffer, len);
+	pipe_dumpbuffer("To PIPE:", (FAR uint8_t *)buffer, len);
+
+	/* Handle zero-length writes */
 
 	if (len == 0) {
 		return 0;
 	}
 
-	/* At present, this method cannot be called from interrupt handlers. That is
-	 * because it calls sem_wait (via pipecommon_semtake below) and sem_wait cannot
-	 * be called from interrupt level.  This actually happens fairly commonly
-	 * IF dbg() is called from interrupt handlers and stdout is being redirected
-	 * via a pipe.  In that case, the debug output will try to go out the pipe
-	 * (interrupt handlers should use the lldbg() APIs).
+	/* At present, this method cannot be called from interrupt handlers.  That
+	 * is because it calls nxrmutex_lock() and nxrmutex_lock() cannot be called
+	 * form interrupt level. This actually happens fairly commonly
+	 * IF [a-z]err() is called from interrupt handlers and stdout is being
+	 * redirected via a pipe.  In that case, the debug output will try to go
+	 * out the pipe (interrupt handlers should use the _err() APIs).
 	 *
 	 * On the other hand, it would be very valuable to be able to feed the pipe
 	 * from an interrupt handler!  TODO:  Consider disabling interrupts instead
-	 * of taking semaphores so that pipes can be written from interupt handlers
+	 * of taking semaphores so that pipes can be written from interrupt
+	 * handlers.
 	 */
 
-	DEBUGASSERT(up_interrupt_context() == false)
+	DEBUGASSERT(up_interrupt_context() == false);
 
 	/* Make sure that we have exclusive access to the device structure */
-	if (sem_wait(&dev->d_bfsem) < 0) {
-		return ERROR;
+
+	ret = nxrmutex_lock(&dev->d_bflock);
+	if (ret < 0) {
+		/* May fail because a signal was received or if the task was
+		 * canceled.
+		 */
+
+		return ret;
 	}
 
 	/* Loop until all of the bytes have been written */
 
 	last = 0;
 	for (;;) {
-		/* Calculate the write index AFTER the next byte is written */
+		/* REVISIT:  "If all file descriptors referring to the read end of a
+		 * pipe have been closed, then a write will cause a SIGPIPE signal to
+		 * be generated for the calling process.  If the calling process is
+		 * ignoring this signal, then write(2) fails with the error EPIPE."
+		 */
 
-		nxtwrndx = dev->d_wrndx + 1;
-		if (nxtwrndx >= CONFIG_DEV_PIPE_SIZE) {
-			nxtwrndx = 0;
+		if (dev->d_nreaders <= 0 && PIPE_IS_POLICY_0(dev->d_flags)) {
+			nxrmutex_unlock(&dev->d_bflock);
+			return nwritten == 0 ? -EPIPE : nwritten;
 		}
 
 		/* Would the next write overflow the circular buffer? */
 
-		if (nxtwrndx != dev->d_rdndx) {
-			/* No... copy the byte */
+		if (!circbuf_is_full(&dev->d_buffer)) {
+			/* Loop until all of the bytes have been written */
 
-			dev->d_buffer[dev->d_wrndx] = *buffer++;
-			dev->d_wrndx = nxtwrndx;
+			nwritten += circbuf_write(&dev->d_buffer,
+			                          buffer + nwritten, len - nwritten);
 
-			/* Is the write complete? */
+			if ((size_t)nwritten == len) {
+				/* Notify all poll/select waiters that they can read from the
+				 * FIFO when buffer used exceeds poll threshold.
+				 */
 
-			if (++nwritten >= len) {
-				/* Yes.. Notify all of the waiting readers that more data is available */
-
-				while (sem_getvalue(&dev->d_rdsem, &sval) == 0 && sval < 0) {
-					sem_post(&dev->d_rdsem);
+				if (circbuf_used(&dev->d_buffer) > dev->d_pollinthrd) {
+					poll_notify(dev->d_fds, CONFIG_DEV_PIPE_NPOLLWAITERS,
+					            POLLIN);
 				}
 
-				/* Notify all poll/select waiters that they can write to the FIFO */
+				/* Yes.. Notify all of the waiting readers that more data is
+				 * available.
+				 */
 
-				pipecommon_pollnotify(dev, POLLIN);
+				pipecommon_wakeup(&dev->d_rdsem);
 
 				/* Return the number of bytes written */
 
-				sem_post(&dev->d_bfsem);
+				nxrmutex_unlock(&dev->d_bflock);
 				return len;
 			}
 		} else {
-			/* There is not enough room for the next byte. Was anything written in this pass? */
+			/* There is not enough room for the next byte.  Was anything
+			 * written in this pass?
+			 */
 
 			if (last < nwritten) {
-				/* Yes.. Notify all of the waiting readers that more data is available */
+				/* Notify all poll/select waiters that they can read from the
+				 * FIFO.
+				 */
 
-				while (sem_getvalue(&dev->d_rdsem, &sval) == 0 && sval < 0) {
-					sem_post(&dev->d_rdsem);
-				}
+				poll_notify(dev->d_fds, CONFIG_DEV_PIPE_NPOLLWAITERS, POLLIN);
+
+				/* Yes.. Notify all of the waiting readers that more data is
+				 * available.
+				 */
+
+				pipecommon_wakeup(&dev->d_rdsem);
 			}
+
 			last = nwritten;
 
-			/* If O_NONBLOCK was set, then return partial bytes written or EGAIN */
+			/* If O_NONBLOCK was set, then return partial bytes written or
+			 * EGAIN.
+			 */
 
 			if (filep->f_oflags & O_NONBLOCK) {
 				if (nwritten == 0) {
 					nwritten = -EAGAIN;
 				}
-				sem_post(&dev->d_bfsem);
+
+				nxrmutex_unlock(&dev->d_bflock);
 				return nwritten;
 			}
 
-			/* There is more to be written.. wait for data to be removed from the pipe */
+			/* There is more to be written.. wait for data to be removed from
+			 * the pipe
+			 */
 
-			sched_lock();
-			sem_post(&dev->d_bfsem);
-			pipecommon_semtake(&dev->d_wrsem);
-			sched_unlock();
-			pipecommon_semtake(&dev->d_bfsem);
+			nxrmutex_unlock(&dev->d_bflock);
+			ret = nxsem_wait(&dev->d_wrsem);
+			if (ret < 0 || (ret = nxrmutex_lock(&dev->d_bflock)) < 0) {
+				/* Either call nxsem_wait may fail because a signal was
+				 * received or if the task was canceled.
+				 */
+
+				return nwritten == 0 ? (ssize_t)ret : nwritten;
+			}
 		}
 	}
 }
@@ -584,23 +631,27 @@ ssize_t pipecommon_write(FAR struct file *filep, FAR const char *buffer, size_t 
  * Name: pipecommon_poll
  ****************************************************************************/
 
-#ifndef CONFIG_DISABLE_POLL
-int pipecommon_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
+int pipecommon_poll(FAR struct file *filep, FAR struct pollfd *fds,
+                    bool setup)
 {
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct pipe_dev_s *dev = inode->i_private;
-	pollevent_t eventset;
-	pipe_ndx_t nbytes;
-	int ret = OK;
-	int i;
+	FAR struct inode      *inode = filep->f_inode;
+	FAR struct pipe_dev_s *dev   = inode->i_private;
+	pollevent_t            eventset;
+	pipe_ndx_t             nbytes;
+	int                    ret;
+	int                    i;
 
 	DEBUGASSERT(dev && fds);
 
-	/* Are we setting up the poll? Or tearing it down? */
+	/* Are we setting up the poll?  Or tearing it down? */
 
-	pipecommon_semtake(&dev->d_bfsem);
+	ret = nxrmutex_lock(&dev->d_bflock);
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (setup) {
-		/* This is a request to set up the poll. Find an available
+		/* This is a request to set up the poll.  Find an available
 		 * slot for the poll structure reference
 		 */
 
@@ -611,16 +662,14 @@ int pipecommon_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 				/* Bind the poll structure and this slot */
 
 				dev->d_fds[i] = fds;
-				fds->priv = &dev->d_fds[i];
-				fds->filep = (void *)filep;
+				fds->priv     = &dev->d_fds[i];
 				break;
 			}
 		}
 
 		if (i >= CONFIG_DEV_PIPE_NPOLLWAITERS) {
 			fds->priv = NULL;
-			fds->filep = NULL;
-			ret = -EBUSY;
+			ret       = -EBUSY;
 			goto errout;
 		}
 
@@ -628,34 +677,50 @@ int pipecommon_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 		 * First, determine how many bytes are in the buffer
 		 */
 
-		if (dev->d_wrndx >= dev->d_rdndx) {
-			nbytes = dev->d_wrndx - dev->d_rdndx;
-		} else {
-			nbytes = (CONFIG_DEV_PIPE_SIZE - 1) + dev->d_wrndx - dev->d_rdndx;
-		}
+		nbytes = circbuf_used(&dev->d_buffer);
 
-		/* Notify the POLLOUT event if the pipe is not full */
+		/* Notify the POLLOUT event if the pipe buffer can accept
+		 * more than d_polloutthrd bytes, but only if
+		 * there is readers.
+		 */
 
 		eventset = 0;
-		if (nbytes < (CONFIG_DEV_PIPE_SIZE - 1)) {
+		if ((filep->f_oflags & O_WROK) &&
+		    nbytes < (dev->d_bufsize - dev->d_polloutthrd)) {
 			eventset |= POLLOUT;
 		}
 
-		/* Notify the POLLIN event if the pipe is not empty */
+		/* Notify the POLLIN event if buffer used exceeds poll threshold */
 
-		if (nbytes > 0) {
+		if ((filep->f_oflags & O_RDOK) && (nbytes > dev->d_pollinthrd)) {
 			eventset |= POLLIN;
 		}
 
-		if (eventset) {
-			pipecommon_pollnotify(dev, eventset);
+		/* Notify the POLLHUP event if the pipe is empty,
+		 * while no writers and policy 0.
+		 */
+
+		if (nbytes == 0 &&
+		    dev->d_nwriters <= 0 &&
+		    PIPE_IS_POLICY_0(dev->d_flags)) {
+			eventset |= POLLHUP;
 		}
+
+		/* Change POLLOUT to POLLERR, if no readers and policy 0. */
+
+		if ((eventset & POLLOUT) &&
+		    PIPE_IS_POLICY_0(dev->d_flags) &&
+		    dev->d_nreaders <= 0) {
+			eventset |= POLLERR;
+		}
+
+		poll_notify(&fds, 1, eventset);
 	} else {
 		/* This is a request to tear down the poll. */
 
-		struct pollfd **slot = (struct pollfd **)fds->priv;
+		FAR struct pollfd **slot = (FAR struct pollfd **)fds->priv;
 
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_DEBUG_FEATURES
 		if (!slot) {
 			ret = -EIO;
 			goto errout;
@@ -664,16 +729,14 @@ int pipecommon_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
 
 		/* Remove all memory of the poll setup */
 
-		*slot = NULL;
+		*slot     = NULL;
 		fds->priv = NULL;
-		fds->filep = NULL;
 	}
 
 errout:
-	sem_post(&dev->d_bfsem);
+	nxrmutex_unlock(&dev->d_bflock);
 	return ret;
 }
-#endif
 
 /****************************************************************************
  * Name: pipecommon_ioctl
@@ -681,54 +744,159 @@ errout:
 
 int pipecommon_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct pipe_dev_s *dev = inode->i_private;
+	FAR struct inode      *inode = filep->f_inode;
+	FAR struct pipe_dev_s *dev   = inode->i_private;
+	int                    ret   = -EINVAL;
 
-	/* Only one command supported */
+#ifdef CONFIG_DEBUG_FEATURES
+	/* Some sanity checking */
 
-	if (cmd == PIPEIOC_POLICY) {
+	if (dev == NULL) {
+		return -EBADF;
+	}
+#endif
+
+	ret = nxrmutex_lock(&dev->d_bflock);
+	if (ret < 0) {
+		return ret;
+	}
+
+	switch (cmd) {
+	case PIPEIOC_POLICY:
+	{
 		if (arg != 0) {
 			PIPE_POLICY_1(dev->d_flags);
 		} else {
 			PIPE_POLICY_0(dev->d_flags);
 		}
 
-		return OK;
+		ret = OK;
+	}
+	break;
+
+	case PIPEIOC_POLLINTHRD:
+	{
+		pipe_ndx_t threshold = (pipe_ndx_t)arg;
+		if (threshold >= dev->d_bufsize) {
+			ret = -EINVAL;
+			break;
+		}
+
+		dev->d_pollinthrd = threshold;
+		ret = OK;
+	}
+	break;
+
+	case PIPEIOC_POLLOUTTHRD:
+	{
+		pipe_ndx_t threshold = (pipe_ndx_t)arg;
+		if (threshold >= dev->d_bufsize) {
+			ret = -EINVAL;
+			break;
+		}
+
+		dev->d_polloutthrd = threshold;
+		ret = OK;
+	}
+	break;
+
+	case PIPEIOC_PEEK:
+	{
+		FAR struct pipe_peek_s *peek = (FAR struct pipe_peek_s *)arg;
+
+		DEBUGASSERT(peek && peek->buf);
+
+		ret = circbuf_peekat(&dev->d_buffer,
+		                     dev->d_buffer.tail + peek->offset,
+		                     peek->buf, peek->size);
+	}
+	break;
+
+	case PIPEIOC_SETSIZE:
+	{
+		size_t size = (size_t)arg;
+		if (size == 0) {
+			ret = -EINVAL;
+			break;
+		}
+
+		size = MIN(size, CONFIG_DEV_PIPE_MAXSIZE);
+		ret = circbuf_resize(&dev->d_buffer, size);
+		if (ret != 0) {
+			break;
+		}
+
+		dev->d_bufsize = size;
+	}
+	break;
+
+	case PIPEIOC_GETSIZE:
+	{
+		ret = dev->d_bufsize;
+	}
+	break;
+
+	case FIONWRITE:  /* Number of bytes waiting in send queue */
+	case FIONREAD:   /* Number of bytes available for reading */
+	{
+		*(FAR int *)((uintptr_t)arg) = circbuf_used(&dev->d_buffer);
+		ret = 0;
+	}
+	break;
+
+	/* Free space in buffer */
+
+	case FIONSPACE:
+	{
+		*(FAR int *)((uintptr_t)arg) = circbuf_space(&dev->d_buffer);
+		ret = 0;
+	}
+	break;
+
+	case BIOC_FLUSH:
+		ret = -EINVAL;
+		break;
+
+	default:
+		ret = -ENOTTY;
+		break;
 	}
 
-	return -ENOTTY;
+	nxrmutex_unlock(&dev->d_bflock);
+	return ret;
 }
 
 /****************************************************************************
  * Name: pipecommon_unlink
  ****************************************************************************/
 
+#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 int pipecommon_unlink(FAR struct inode *inode)
 {
 	FAR struct pipe_dev_s *dev;
+	int ret;
 
-	DEBUGASSERT(inode && inode->i_private);
-	dev = (FAR struct pipe_dev_s *)inode->i_private;
+	DEBUGASSERT(inode->i_private);
+	dev = inode->i_private;
+
+	ret = nxrmutex_lock(&dev->d_bflock);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (dev->d_crefs <= 0) {
+		circbuf_uninit(&dev->d_buffer);
+		pipecommon_freedev(dev);
+		return OK;
+	}
 
 	/* Mark the pipe unlinked */
 
 	PIPE_UNLINK(dev->d_flags);
-
-	/* Are the any open references to the driver? */
-
-	if (dev->d_refs == 0) {
-		/* No.. free the buffer (if there is one) */
-
-		if (dev->d_buffer) {
-			kmm_free(dev->d_buffer);
-		}
-
-		/* And free the device structure. */
-
-		pipecommon_freedev(dev);
-	}
+	nxrmutex_unlock(&dev->d_bflock);
 
 	return OK;
 }
+#endif
 
-#endif							/* CONFIG_DEV_PIPE_SIZE > 0 */
+#endif /* CONFIG_PIPES */

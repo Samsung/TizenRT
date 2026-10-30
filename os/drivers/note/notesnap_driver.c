@@ -1,0 +1,439 @@
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * drivers/note/notesnap_driver.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/atomic.h>
+#include <tinyara/note/note_driver.h>
+#include <tinyara/note/notesnap_driver.h>
+#include <tinyara/panic_notifier.h>
+#include <tinyara/sched_note.h>
+#include <sched/sched.h>
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+struct notesnap_chunk_s {
+	uint8_t type;
+#ifdef CONFIG_SMP
+	uint8_t cpu;
+#endif
+	pid_t pid;
+	clock_t count;
+	uintptr_t args;
+};
+
+struct notesnap_s {
+	struct note_driver_s driver;
+	struct notifier_block nb;
+	atomic_t index;
+	atomic_t dumping;
+	struct notesnap_chunk_s buffer[CONFIG_DRIVERS_NOTESNAP_NBUFFERS];
+};
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+
+static void notesnap_start(FAR struct note_driver_s *drv,
+                           FAR struct tcb_s *tcb);
+static void notesnap_stop(FAR struct note_driver_s *drv,
+                          FAR struct tcb_s *tcb);
+#ifdef CONFIG_SCHED_INSTRUMENTATION_SWITCH
+static void notesnap_suspend(FAR struct note_driver_s *drv,
+                             FAR struct tcb_s *tcb);
+static void notesnap_resume(FAR struct note_driver_s *drv,
+                            FAR struct tcb_s *tcb);
+#endif
+#ifdef CONFIG_SMP
+static void notesnap_cpu_start(FAR struct note_driver_s *drv,
+                               FAR struct tcb_s *tcb, int cpu);
+static void notesnap_cpu_started(FAR struct note_driver_s *drv,
+                                 FAR struct tcb_s *tcb);
+#  ifdef CONFIG_SCHED_INSTRUMENTATION_SWITCH
+static void notesnap_cpu_pause(FAR struct note_driver_s *drv,
+                               FAR struct tcb_s *tcb, int cpu);
+static void notesnap_cpu_paused(FAR struct note_driver_s *drv,
+                                FAR struct tcb_s *tcb);
+static void notesnap_cpu_resume(FAR struct note_driver_s *drv,
+                                FAR struct tcb_s *tcb, int cpu);
+static void notesnap_cpu_resumed(FAR struct note_driver_s *drv,
+                                 FAR struct tcb_s *tcb);
+#  endif
+#endif
+#ifdef CONFIG_SCHED_INSTRUMENTATION_PREEMPTION
+static void notesnap_preemption(FAR struct note_driver_s *drv,
+                                FAR struct tcb_s *tcb, bool locked);
+#endif
+#ifdef CONFIG_SCHED_INSTRUMENTATION_CSECTION
+static void notesnap_csection(FAR struct note_driver_s *drv,
+                              FAR struct tcb_s *tcb, bool enter);
+#endif
+#ifdef CONFIG_SCHED_INSTRUMENTATION_SPINLOCKS
+static void notesnap_spinlock(FAR struct note_driver_s *drv,
+                              FAR struct tcb_s *tcb,
+                              FAR volatile void *spinlock, int type);
+#endif
+#ifdef CONFIG_SCHED_INSTRUMENTATION_SYSCALL
+static void notesnap_syscall_enter(FAR struct note_driver_s *drv, int nr,
+                                   int argc, FAR va_list *ap);
+static void notesnap_syscall_leave(FAR struct note_driver_s *drv, int nr,
+                                   uintptr_t result);
+#endif
+#ifdef CONFIG_SCHED_INSTRUMENTATION_IRQHANDLER
+static void notesnap_irqhandler(FAR struct note_driver_s *drv, int irq,
+                                FAR void *handler, bool enter);
+#endif
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+static const struct note_driver_ops_s g_notesnap_ops =
+{
+  NULL,
+  notesnap_start,
+  notesnap_stop,
+#ifdef CONFIG_SCHED_INSTRUMENTATION_SWITCH
+  notesnap_suspend,
+  notesnap_resume,
+#endif
+#ifdef CONFIG_SMP
+  notesnap_cpu_start,
+  notesnap_cpu_started,
+#  ifdef CONFIG_SCHED_INSTRUMENTATION_SWITCH
+  notesnap_cpu_pause,
+  notesnap_cpu_paused,
+  notesnap_cpu_resume,
+  notesnap_cpu_resumed,
+#  endif
+#endif
+#ifdef CONFIG_SCHED_INSTRUMENTATION_PREEMPTION
+  notesnap_preemption,
+#endif
+#ifdef CONFIG_SCHED_INSTRUMENTATION_CSECTION
+  notesnap_csection,
+#endif
+#ifdef CONFIG_SCHED_INSTRUMENTATION_SPINLOCKS
+  notesnap_spinlock,
+#endif
+#ifdef CONFIG_SCHED_INSTRUMENTATION_SYSCALL
+  notesnap_syscall_enter,
+  notesnap_syscall_leave,
+#endif
+#ifdef CONFIG_SCHED_INSTRUMENTATION_IRQHANDLER
+  notesnap_irqhandler,
+#endif
+};
+
+static struct notesnap_s g_notesnap =
+{
+  {
+#ifdef CONFIG_SCHED_INSTRUMENTATION_FILTER
+    "snap",
+    {
+      {
+        CONFIG_SCHED_INSTRUMENTATION_FILTER_DEFAULT_MODE,
+#  ifdef CONFIG_SMP
+        CONFIG_SCHED_INSTRUMENTATION_CPUSET
+#  endif
+      },
+    },
+#endif
+    &g_notesnap_ops
+  }
+};
+
+static FAR const char *g_notesnap_type[] =
+{
+  "NOTE_START",
+  "NOTE_STOP",
+  "NOTE_SUSPEND",
+  "NOTE_RESUME",
+  "NOTE_CPU_START",
+  "NOTE_CPU_STARTED",
+  "NOTE_CPU_PAUSE",
+  "NOTE_CPU_PAUSED",
+  "NOTE_CPU_RESUME",
+  "NOTE_CPU_RESUMED",
+  "NOTE_PREEMPT_LOCK",
+  "NOTE_PREEMPT_UNLOCK",
+  "NOTE_CSECTION_ENTER",
+  "NOTE_CSECTION_LEAVE",
+  "NOTE_SPINLOCK_LOCK",
+  "NOTE_SPINLOCK_LOCKED",
+  "NOTE_SPINLOCK_UNLOCK",
+  "NOTE_SPINLOCK_ABORT",
+  "NOTE_SYSCALL_ENTER",
+  "NOTE_SYSCALL_LEAVE",
+  "NOTE_IRQ_ENTER",
+  "NOTE_IRQ_LEAVE",
+  "NOTE_DUMP_STRING",
+  "NOTE_DUMP_BINARY"
+};
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: notesnap_common
+ ****************************************************************************/
+
+static inline void notesnap_common(FAR struct note_driver_s *drv,
+                                   FAR struct tcb_s *tcb, uint8_t type,
+                                   uintptr_t args)
+{
+	FAR struct notesnap_s *snap = (FAR struct notesnap_s *)drv;
+	FAR struct notesnap_chunk_s *note;
+	size_t index;
+
+	if (atomic_read(&snap->dumping)) {
+		return;
+	}
+
+	/* Atomic operation, equivalent to snap.index++; */
+
+	index = atomic_fetch_add(&snap->index, 1);
+	note = &snap->buffer[index % CONFIG_DRIVERS_NOTESNAP_NBUFFERS];
+
+	note->type = type;
+#ifdef CONFIG_SMP
+	note->cpu = tcb->cpu;
+#endif
+	note->count = perf_gettime();
+	note->pid = tcb->pid;
+	note->args = args;
+}
+
+/****************************************************************************
+ * Name: notesnap_*
+ ****************************************************************************/
+
+static void notesnap_start(FAR struct note_driver_s *drv,
+                           FAR struct tcb_s *tcb)
+{
+	notesnap_common(drv, tcb, NOTE_START, 0);
+}
+
+static void notesnap_stop(FAR struct note_driver_s *drv,
+                          FAR struct tcb_s *tcb)
+{
+	notesnap_common(drv, tcb, NOTE_STOP, 0);
+}
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION_SWITCH
+static void notesnap_suspend(FAR struct note_driver_s *drv,
+                             FAR struct tcb_s *tcb)
+{
+	notesnap_common(drv, tcb, NOTE_SUSPEND, 0);
+}
+
+static void notesnap_resume(FAR struct note_driver_s *drv,
+                            FAR struct tcb_s *tcb)
+{
+	notesnap_common(drv, tcb, NOTE_RESUME, 0);
+}
+#endif
+
+#ifdef CONFIG_SMP
+static void notesnap_cpu_start(FAR struct note_driver_s *drv,
+                               FAR struct tcb_s *tcb, int cpu)
+{
+	notesnap_common(drv, tcb, NOTE_CPU_START, cpu);
+}
+
+static void notesnap_cpu_started(FAR struct note_driver_s *drv,
+                                 FAR struct tcb_s *tcb)
+{
+	notesnap_common(drv, tcb, NOTE_CPU_STARTED, 0);
+}
+
+#  ifdef CONFIG_SCHED_INSTRUMENTATION_SWITCH
+static void notesnap_cpu_pause(FAR struct note_driver_s *drv,
+                               FAR struct tcb_s *tcb, int cpu)
+{
+	notesnap_common(drv, tcb, NOTE_CPU_PAUSE, cpu);
+}
+
+static void notesnap_cpu_paused(FAR struct note_driver_s *drv,
+                                FAR struct tcb_s *tcb)
+{
+	notesnap_common(drv, tcb, NOTE_CPU_PAUSED, 0);
+}
+
+static void notesnap_cpu_resume(FAR struct note_driver_s *drv,
+                                FAR struct tcb_s *tcb, int cpu)
+{
+	notesnap_common(drv, tcb, NOTE_CPU_RESUME, cpu);
+}
+
+static void notesnap_cpu_resumed(FAR struct note_driver_s *drv,
+                                 FAR struct tcb_s *tcb)
+{
+	notesnap_common(drv, tcb, NOTE_CPU_RESUMED, 0);
+}
+#  endif
+#endif
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION_PREEMPTION
+static void notesnap_preemption(FAR struct note_driver_s *drv,
+                                FAR struct tcb_s *tcb, bool locked)
+{
+	notesnap_common(drv, tcb, locked ? NOTE_PREEMPT_LOCK :
+	                NOTE_PREEMPT_UNLOCK, 0);
+}
+#endif
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION_CSECTION
+static void notesnap_csection(FAR struct note_driver_s *drv,
+                              FAR struct tcb_s *tcb, bool enter)
+{
+	notesnap_common(drv, tcb, enter ? NOTE_CSECTION_ENTER :
+	                NOTE_CSECTION_LEAVE, 0);
+}
+#endif
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION_SPINLOCKS
+static void notesnap_spinlock(FAR struct note_driver_s *drv,
+                              FAR struct tcb_s *tcb,
+                              FAR volatile void *spinlock, int type)
+{
+	notesnap_common(drv, tcb, type, (uintptr_t)spinlock);
+}
+#endif
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION_IRQHANDLER
+static void notesnap_irqhandler(FAR struct note_driver_s *drv, int irq,
+                                FAR void *handler, bool enter)
+{
+	notesnap_common(drv, this_task(), enter ? NOTE_IRQ_ENTER :
+	                NOTE_IRQ_LEAVE, irq);
+}
+#endif
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION_SYSCALL
+static void notesnap_syscall_enter(FAR struct note_driver_s *drv, int nr,
+                                   int argc, FAR va_list *ap)
+{
+	notesnap_common(drv, this_task(), NOTE_SYSCALL_ENTER, nr);
+}
+
+static void notesnap_syscall_leave(FAR struct note_driver_s *drv, int nr,
+                                   uintptr_t result)
+{
+	notesnap_common(drv, this_task(), NOTE_SYSCALL_LEAVE, nr);
+}
+#endif
+
+static int notesnap_notifier(FAR struct notifier_block *nb,
+                             unsigned long action, FAR void *data)
+{
+	if (action == PANIC_KERNEL) {
+		notesnap_dump();
+	}
+
+	return 0;
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: notesnap_register
+ ****************************************************************************/
+
+int notesnap_register(void)
+{
+	g_notesnap.nb.notifier_call = notesnap_notifier;
+	panic_notifier_chain_register(&g_notesnap.nb);
+	return note_driver_register(&g_notesnap.driver);
+}
+
+/****************************************************************************
+ * Name: notesnap_dump_with_stream
+ ****************************************************************************/
+
+void notesnap_dump_with_stream(FAR struct lib_outstream_s *stream)
+{
+	size_t index = g_notesnap.index % CONFIG_DRIVERS_NOTESNAP_NBUFFERS;
+	size_t i;
+
+	/* Stop recording while dumping */
+
+	atomic_set(&g_notesnap.dumping, true);
+
+	for (i = 0; i < CONFIG_DRIVERS_NOTESNAP_NBUFFERS; i++) {
+		FAR struct notesnap_chunk_s *note = &g_notesnap.buffer
+		    [(index + i) % CONFIG_DRIVERS_NOTESNAP_NBUFFERS];
+		struct timespec time;
+
+		perf_convert(note->count, &time);
+		lib_sprintf(stream,
+		            "snapshoot: [%" PRIu64 ".%09u] "
+#ifdef CONFIG_SMP
+		            "[CPU%d] "
+#endif
+		            "[%d] %-16s %#" PRIxPTR "\n",
+		            (uint64_t)time.tv_sec,
+		            (unsigned)time.tv_nsec,
+#ifdef CONFIG_SMP
+		            note->cpu,
+#endif
+		            note->pid, g_notesnap_type[note->type], note->args);
+	}
+
+	atomic_set(&g_notesnap.dumping, false);
+}
+
+/****************************************************************************
+ * Name: notesnap_dump
+ ****************************************************************************/
+
+void notesnap_dump(void)
+{
+	struct lib_syslograwstream_s stream;
+	lib_syslograwstream_open(&stream);
+	notesnap_dump_with_stream(&stream.common);
+	lib_syslograwstream_close(&stream);
+}

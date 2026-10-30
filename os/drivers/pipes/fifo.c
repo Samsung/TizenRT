@@ -18,35 +18,22 @@
 /****************************************************************************
  * drivers/pipes/fifo.c
  *
- *   Copyright (C) 2008-2009, 2014-2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,94 +45,88 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <stdint.h>
-#include <tinyara/fs/fs.h>
 #include <errno.h>
+
+#include <tinyara/fs/fs.h>
 
 #include "pipe_common.h"
 
-#if CONFIG_DEV_PIPE_SIZE > 0
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
+#if CONFIG_DEV_FIFO_SIZE > 0
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations fifo_fops = {
-	pipecommon_open,			/* open */
-	pipecommon_close,			/* close */
-	pipecommon_read,			/* read */
-	pipecommon_write,			/* write */
-	0,							/* seek */
-	pipecommon_ioctl,			/* ioctl */
-#ifndef CONFIG_DISABLE_POLL
-	pipecommon_poll,			/* poll */
+static const struct file_operations g_fifo_fops =
+{
+  pipecommon_open,     /* open */
+  pipecommon_close,    /* close */
+  pipecommon_read,     /* read */
+  pipecommon_write,    /* write */
+  NULL,                /* seek */
+  pipecommon_ioctl,    /* ioctl */
+  NULL,                /* mmap */
+  NULL,                /* truncate */
+  pipecommon_poll,     /* poll */
+  NULL,                /* readv */
+  NULL                 /* writev */
+#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
+  , pipecommon_unlink  /* unlink */
 #endif
-	pipecommon_unlink			/* unlink */
 };
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: mkfifo
+ * Name: nx_mkfifo
  *
  * Description:
- *   mkfifo() makes a FIFO device driver file with name 'pathname.'  Unlike
+ *   nx_mkfifo() makes a FIFO device driver file with name 'pathname'. Unlike
  *   Linux, a NuttX FIFO is not a special file type but simply a device
  *   driver instance.  'mode' specifies the FIFO's permissions.
  *
- *   Once the FIFO has been created by mkfifo(), any thread can open it for
- *   reading or writing, in the same way as an ordinary file. However, it
+ *   Once the FIFO has been created by nx_mkfifo(), any thread can open it
+ *   for reading or writing, in the same way as an ordinary file. However, it
  *   must have been opened from both reading and writing before input or
  *   output can be performed.  This FIFO implementation will block all
  *   attempts to open a FIFO read-only until at least one thread has opened
- *   the FIFO for  writing.
+ *   the FIFO for writing.
  *
  *   If all threads that write to the FIFO have closed, subsequent calls to
  *   read() on the FIFO will return 0 (end-of-file).
  *
- * Inputs:
+ *   NOTE: nx_mkfifo is a special, non-standard, NuttX-only interface.  Since
+ *   the NuttX FIFOs are based in in-memory, circular buffers, the ability
+ *   to control the size of those buffers is critical for system tuning.
+ *
+ * Input Parameters:
  *   pathname - The full path to the FIFO instance to attach to or to create
  *     (if not already created).
  *   mode - Ignored for now
+ *   bufsize - The size of the in-memory, circular buffer in bytes.
  *
- * Return:
- *   0 is returned on success; otherwise, -1 is returned with errno set
- *   appropriately.
+ * Returned Value:
+ *   0 is returned on success; a negated errno value is returned on a
+ *   failure.
  *
  ****************************************************************************/
 
-int mkfifo(FAR const char *pathname, mode_t mode)
+int nx_mkfifo(FAR const char *pathname, mode_t mode, size_t bufsize)
 {
-	struct pipe_dev_s *dev;
+	FAR struct pipe_dev_s *dev;
 	int ret;
 
 	/* Allocate and initialize a new device structure instance */
 
-	dev = pipecommon_allocdev();
+	dev = pipecommon_allocdev(bufsize);
 	if (!dev) {
 		return -ENOMEM;
 	}
 
-	ret = register_driver(pathname, &fifo_fops, mode, (void *)dev);
+	ret = register_pipedriver(pathname, &g_fifo_fops, mode, (FAR void *)dev);
 	if (ret != 0) {
 		pipecommon_freedev(dev);
 	}
@@ -153,4 +134,4 @@ int mkfifo(FAR const char *pathname, mode_t mode)
 	return ret;
 }
 
-#endif							/* CONFIG_DEV_PIPE_SIZE > 0 */
+#endif /* CONFIG_DEV_FIFO_SIZE > 0 */
