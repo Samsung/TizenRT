@@ -23,137 +23,6 @@ config ARCH_ARM
 	---help---
 		The ARM architectures
 
-config ARCH_ARM64
-	bool "ARM64"
-	select ALARM_ARCH
-	select ARCH_64BIT
-	select ARCH_HAVE_BACKTRACE
-	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_FORK if !BUILD_KERNEL && !BUILD_PROTECTED
-	select ARCH_HAVE_STACKCHECK
-	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_HAVE_STDARG_H
-	select ARCH_HAVE_SETJMP
-	select ARCH_HAVE_SYSCALL_HOOKS
-	select ARCH_HAVE_RDWR_MEM_CPU_RUN
-	select ARCH_HAVE_TCBINFO
-	select ARCH_HAVE_THREAD_LOCAL
-	select ARCH_HAVE_PERF_EVENTS
-	select ONESHOT
-	select ONESHOT_COUNT
-	---help---
-		The ARM64 architectures
-
-config ARCH_AVR
-	bool "AVR"
-	select ARCH_NOINTC
-	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_CUSTOMOPT
-	---help---
-		Atmel 8-bit bit AVR and 32-bit AVR32 architectures
-
-config ARCH_HC
-	bool "Freescale HC"
-	select ARCH_NOINTC
-	select ARCH_HAVE_INTERRUPTSTACK
-	---help---
-		Freescale HC architectures (M9S12)
-
-config ARCH_MIPS
-	bool "MIPS"
-	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_CUSTOMOPT
-	---help---
-		MIPS architectures (PIC32)
-
-config ARCH_MISOC
-	bool "MISOC"
-	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_HAVE_STDARG_H
-	---help---
-		MISOC
-
-config ARCH_RENESAS
-	bool "Renesas"
-	select ARCH_NOINTC
-	select ARCH_HAVE_INTERRUPTSTACK
-	---help---
-		Renesas architectures (SH and M16C).
-
-config ARCH_RISCV
-	bool "RISC-V"
-	select ARCH_HAVE_BACKTRACE
-	select ARCH_HAVE_CPUINFO
-	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_STACKCHECK
-	select ARCH_HAVE_FORK
-	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_HAVE_SETJMP
-	select ARCH_HAVE_STDARG_H
-	select ARCH_HAVE_SYSCALL_HOOKS
-	select ARCH_HAVE_RDWR_MEM_CPU_RUN
-	select ARCH_HAVE_TCBINFO
-	select ARCH_HAVE_THREAD_LOCAL
-	select ARCH_HAVE_POWEROFF
-	select ARCH_HAVE_LAZYFPU if ARCH_HAVE_FPU
-	select ARCH_HAVE_CPUID_MAPPING if ARCH_HAVE_MULTICPU
-	---help---
-		RISC-V 32 and 64-bit RV32 / RV64 architectures.
-
-config ARCH_SIM
-	bool "Simulation"
-	select ARCH_HAVE_BACKTRACE
-	select ARCH_HAVE_MULTICPU if !CONFIG_WINDOWS_NATIVE
-	select ARCH_HAVE_RTC_SUBSECONDS
-	select ARCH_HAVE_SERIAL_TERMIOS
-	select ARCH_HAVE_SYSCALL_HOOKS
-	select ARCH_HAVE_TICKLESS
-	select ARCH_HAVE_POWEROFF
-	select ARCH_HAVE_TESTSET
-	select ARCH_HAVE_FORK if !HOST_WINDOWS
-	select ARCH_HAVE_SETJMP
-	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_HAVE_TCBINFO
-	select ARCH_HAVE_TEXT_HEAP
-	select ARCH_SETJMP_H
-	select ALARM_ARCH
-	select ONESHOT
-	select ONESHOT_COUNT
-	select SERIAL_CONSOLE
-	select SERIAL_IFLOWCONTROL
-	select SCHED_HPWORK
-	select ARCH_HAVE_CPUINFO
-	---help---
-		Linux/Cygwin user-mode simulation.
-
-config ARCH_X86
-	bool "x86"
-	select ARCH_HAVE_TCBINFO
-	---help---
-		Intel x86 architectures.
-
-config ARCH_X86_64
-	bool "x86_64"
-	select ARCH_64BIT
-	select ARCH_HAVE_TCBINFO
-	select ARCH_HAVE_FPU
-	select ARCH_HAVE_DPFPU
-	select ARCH_HAVE_MULTICPU
-	select ARCH_HAVE_TESTSET
-	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_HAVE_THREAD_LOCAL
-	select PCI_LATE_DRIVERS_REGISTER if PCI
-	select ARCH_TOOLCHAIN_GNU
-	select ARCH_HAVE_BACKTRACE
-	select ARCH_HAVE_FORK if !BUILD_KERNEL
-	select ARCH_HAVE_SETJMP
-	select ARCH_HAVE_PERF_EVENTS
-	select ARCH_HAVE_POWEROFF
-	---help---
-		x86-64 architectures.
-
 config ARCH_XTENSA
 	bool "Xtensa"
 	select ARCH_HAVE_BACKTRACE
@@ -170,114 +39,18 @@ config ARCH_XTENSA
 	---help---
 		Cadence® Tensilica® Xtensa® actictures.
 
-config ARCH_Z16
-	bool "ZNEO"
-	select ARCH_HAVE_HEAP2
-	---help---
-		ZiLOG ZNEO 16-bit architectures (z16f).
-
-config ARCH_Z80
-	bool "z80"
-	select ARCH_HAVE_HEAP2
-	---help---
-		ZiLOG 8-bit architectures (z80, ez80, z8).
-
-config ARCH_OR1K
-	bool "OpenRISC"
-	---help---
-		OpenRISC architectures.
-
-config ARCH_SPARC
-	bool "SPARC"
-	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_HAVE_TCBINFO
-	---help---
-		SPARC architectures (SPARC V8)
-
-config ARCH_TRICORE
-	bool "Infineon TriCore"
-	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_STACKCHECK
-	select ARCH_HAVE_SYSCALL_HOOKS
-	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_HAVE_TCBINFO
-	select ARCH_HAVE_REGCPY
-	---help---
-		Infineon 32-bit AURIX TriCore architectures
-
 endchoice
 
 config ARCH
 	string
 	default "arm"     if ARCH_ARM
-	default "arm64"   if ARCH_ARM64
-	default "avr"     if ARCH_AVR
-	default "hc"      if ARCH_HC
-	default "mips"    if ARCH_MIPS
-	default "misoc"   if ARCH_MISOC
-	default "renesas" if ARCH_RENESAS
-	default "risc-v"  if ARCH_RISCV
-	default "sim"     if ARCH_SIM
-	default "x86"     if ARCH_X86
-	default "x86_64"  if ARCH_X86_64
 	default "xtensa"  if ARCH_XTENSA
-	default "z16"     if ARCH_Z16
-	default "z80"     if ARCH_Z80
-	default "or1k"    if ARCH_OR1K
-	default "sparc"   if ARCH_SPARC
-	default "tricore" if ARCH_TRICORE
 
 if ARCH_ARM
 source "arch/arm/Kconfig"
 endif
-if ARCH_ARM64
-source "arch/arm64/Kconfig"
-endif
-if ARCH_AVR
-source "arch/avr/Kconfig"
-endif
-if ARCH_HC
-source "arch/hc/Kconfig"
-endif
-if ARCH_MIPS
-source "arch/mips/Kconfig"
-endif
-if ARCH_MISOC
-source "arch/misoc/Kconfig"
-endif
-if ARCH_RENESAS
-source "arch/renesas/Kconfig"
-endif
-if ARCH_RISCV
-source "arch/risc-v/Kconfig"
-endif
-if ARCH_SIM
-source "arch/sim/Kconfig"
-endif
-if ARCH_X86
-source "arch/x86/Kconfig"
-endif
-if ARCH_X86_64
-source "arch/x86_64/Kconfig"
-endif
 if ARCH_XTENSA
 source "arch/xtensa/Kconfig"
-endif
-if ARCH_Z16
-source "arch/z16/Kconfig"
-endif
-if ARCH_Z80
-source "arch/z80/Kconfig"
-endif
-if ARCH_OR1K
-source "arch/or1k/Kconfig"
-endif
-if ARCH_SPARC
-source "arch/sparc/Kconfig"
-endif
-if ARCH_TRICORE
-source "arch/tricore/Kconfig"
 endif
 
 config ARCH_CHIP_CUSTOM
@@ -316,7 +89,6 @@ config ARCH_CHIP_CUSTOM_DIR_RELPATH
 endmenu # Custom Chip Configuration
 endif #ARCH_CHIP_CUSTOM
 
-source "$BINDIR/arch/dummy/Kconfig"
 
 config ARCH_TOOLCHAIN_GNU
 	bool
@@ -1566,5 +1338,208 @@ config BOOT_SDRAM_DATA
 		.bss must be initialized before starting the system.  But in this
 		case SDRAM must be configured by board-specific logic before the
 		.data and .bss sections can be initialized.
+
+endmenu # Boot Memory Configuration
+
+#
+# TizenRT options that NuttX does not have
+#
+
+config ARCH_HAVE_COHERENT_DCACHE
+	bool
+	default n
+
+config ARCH_HAVE_VFORK
+	bool
+	default n
+
+config ARCH_HAVE_DVFS
+	bool
+	default n
+
+config ARCH_MMUDUMP
+	bool "Dump MMU settings on assertions"
+	default n
+	depends on ARCH_USE_MMU
+	---help---
+		Enable to dump the MMU page tables when a crash happens.
+
+config ARCH_TASKDUMP
+	bool "Dump Task info on assertions"
+	default n
+	---help---
+		Enable to dump info about all tasks when a crash happens.
+
+config DEBUG_DISPLAY_SYMBOL
+	bool "Display symbols on call stack dump"
+	default n
+	select DEBUG_SYMBOLS
+	select FRAME_POINTER
+	depends on ARCH_STACKDUMP
+	depends on FS_ROMFS
+	---help---
+		Enable to show symbol on call stack dump
+
+config ARCH_CALIBRATION
+	bool "Calibrate delay loop"
+	default n
+	---help---
+		Enables some built in instrumentation that causes a 100 second delay
+		during boot-up.  This 100 second delay serves no purpose other than it
+		allows you to calibrate BOARD_LOOPSPERMSEC.  You simply use a stop
+		watch to measure the actual delay then adjust BOARD_LOOPSPERMSEC until
+		the actual delay is 100 seconds.
+
+config ARCH_NESTED_IRQ_STACK_SIZE
+	int "Nested IRQ secondary stack size"
+	depends on ARCH_HAVE_INTERRUPTSTACK && ARCH_ARMV8M_FAMILY
+	default 512
+	---help---
+		This is an additional stack which will be used only when nested irq
+		happens with a stale or invalid value of MSP. That is, when the nested
+		IRQ occurs in handler mode, but the MSP value has not yet been updated.
+
+config ARCH_HAVE_NESTED_INTERRUPT
+	bool
+	default n
+
+if ARCH_INTERRUPTSTACK > 7
+config ARCH_NESTED_INTERRUPT
+	bool "Nested interrupt support"
+	depends on ARCH_HAVE_NESTED_INTERRUPT
+	default n
+	---help---
+		Enables the nested interrupt support. If defined, higher priority interrupt
+		can pre-empt the lower priority interrupt.
+
+config ARCH_NESTED_INTERRUPT_STACKCHECK
+	bool "Nested interrupt stack check support"
+	depends on ARCH_NESTED_INTERRUPT && STACK_COLORATION
+	default n
+	---help---
+		Enables the nested interrupt stack check support. It checks every time before
+		serving the interrupt, if the stack overflows, it results in panic()
+endif
+config ARCH_INT_DISABLEALL
+	bool "Disable high priority interrupts"
+	default y
+	depends on ARCH_HIPRI_INTERRUPT && EXPERIMENTAL
+	---help---
+		If ARCH_HIPRI_INTERRUPT is defined, then special high priority
+		interrupts are supported.  These are not "nested" in the normal
+		sense of the word.  These high priority interrupts can interrupt
+		normal processing but execute outside of OS (although they can "get
+		back into the game" via a PendSV interrupt).
+
+		In the normal course of things, interrupts must occasionally be
+		disabled using the irqsave() inline function to prevent contention
+		in use of resources that may be shared between interrupt level and
+		non-interrupt level logic.  Now the question arises, if
+		ARCH_HIPRI_INTERRUPT, do we disable all interrupts (except SVCall),
+		or do we only disable the "normal" interrupts.  Since the high
+		priority interrupts cannot interact with the OS, you may want to
+		permit the high priority interrupts even if interrupts are
+		disabled.  The setting ARCH_INT_DISABLEALL can be used to select
+		either behavior:
+
+		----------------------------+--------------+----------------------------
+		CONFIG_ARCH_HIPRI_INTERRUPT |      NO      |             YES
+		----------------------------+--------------+--------------+-------------
+		CONFIG_ARCH_INT_DISABLEALL  |     N/A      |     YES      |      NO
+		----------------------------+--------------+--------------+-------------
+		                            |              |              |    SVCall
+		                            |    SVCall    |    SVCall    |    HIGH
+		Disable here and below --------> MAXNORMAL ---> HIGH --------> MAXNORMAL
+		                            |              |    MAXNORMAL |
+		----------------------------+--------------+--------------+-------------
+
+		NOTE: This does not work now because interrupts get disabled in the
+		standard interrupt handling, prohibiting nesting.  Fix is simple:  Need
+		to used more priority levels so that we can make a cleaner distinction
+		with the standard interrupt handler.
+
+menu "TizenRT Boot Memory Configuration"
+config RAM_KREGIONx_START
+	string "An address or list of start address for kernel RAM region"
+	default "0x00000000,"
+	---help---
+		The address or address list of the RAM regions.
+		If you want to use more than equal to two RAMs physically, or
+		if you want to divide RAM into multiple heaps,
+		set MM_REGIONS first at memory management, and then
+		set hexa values at RAM_KREGIONx_START and RAM_KREGIONx_SIZE
+		to support several heap regions.
+		If it will be an address list, the addresses should be given
+		by increasing order, and each region is separated by ',' as shown in example.
+		i.e. "0x02000000,0x4000000"
+
+config RAM_KREGIONx_SIZE
+	string "A size or list of size for kernel RAM region"
+	default "0,"
+	---help---
+		The size list of RAM region.
+		Refer RAM_KREGIONx_START content. One different thing is this has
+		decimal values (START has hexa values).
+		This should have same number of list element with RAM_KREGIONx_START's.
+		If it will be an list, each region is separated by ',' as shown in example.
+		i.e. "100,200"
+
+config RAM_KREGIONx_HEAP_INDEX
+	string "List of kernel heap index for RAM region"
+	default "0,"
+	depends on KMM_NHEAPS != 1
+	---help---
+		The heap index list of RAM region.
+		It means that its region can be handled to the index-th heap.
+		Index can be from 0 to (KMM_NHEAPS-1).
+
+config HEAP_INDEX_LOADED_APP
+	int "Heap index for allocating app elf sections and app heap"
+	default 0
+	depends on APP_BINARY_SEPARATION
+	---help---
+		This heap index is used for allocating elf sections and heap area
+		for loadable apps. This value must be set to point to a heap which
+		has sufficient size of contiguous memory to accommodate all the
+		app sections with their alignment requriements.
+
+config RAM_MALLOC_PRIOR_INDEX
+	int "prior region index(0 KMM_NHEAPS-1) of RAM used in malloc"
+	default 0
+	depends on KMM_NHEAPS != 1
+	---help---
+		The prior region index of RAM used in malloc.
+		It means alloc memory from the index-th region with priority.
+		Index can be from 0 to (KMM_NHEAPS-1).
+
+config FS_TMPFS_HEAP_INDEX
+	int "TMPFS Heap index"
+	default 1
+	depends on FS_TMPFS && KMM_NHEAPS != 1
+	---help---
+		when tmpfs uses an independent memory region.
+		Specifies the index of the heap to allocate.
+
+config DDR
+	bool "Use DDR memory"
+	default n
+	---help---
+		If the board uses external DDR RAM memory, enable this.
+
+config RAM_DDR_START
+	hex "DDR RAM start address"
+	default 0x0
+	depends on DDR
+	---help---
+		If the board uses external DDR RAM memory, you need to define
+		the start address of DDR RAM
+
+config RAM_DDR_SIZE
+	hex "DDR RAM size"
+	default 0
+	depends on DDR
+	---help---
+		If the board uses external DDR RAM memory, you need to define
+		the size of DDR RAM
 
 endmenu # Boot Memory Configuration

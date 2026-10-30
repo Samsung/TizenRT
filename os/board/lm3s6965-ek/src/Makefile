@@ -37,7 +37,10 @@
 #
 ############################################################################
 
-include $(TOPDIR)/Make.defs
+-include $(TOPDIR)/Make.defs
+ASRCS =
+DEPPATH = --dep-path .
+VPATH = .
 
 CSRCS = lm_boot.c lm_leds.c lm_ethernet.c lm_ssi.c
 
@@ -55,4 +58,42 @@ else ifeq ($(CONFIG_BOARDCTL),y)
   CSRCS += lm_bringup.c
 endif
 
-include $(TOPDIR)/board/Board.mk
+ARCH_FAMILY = $(patsubst "%",%,$(CONFIG_ARCH_FAMILY))
+CFLAGS += -I$(TOPDIR)/kernel -I$(TOPDIR)/arch/arm/src/common -I$(TOPDIR)/arch/arm/src/chip -I$(TOPDIR)/arch/arm/src/$(ARCH_FAMILY)
+AOBJS = $(ASRCS:.S=$(OBJEXT))
+COBJS = $(CSRCS:.c=$(OBJEXT))
+
+SRCS = $(ASRCS) $(CSRCS)
+OBJS = $(AOBJS) $(COBJS)
+
+BIN = libboard$(LIBEXT)
+
+all: $(BIN)
+.PHONY: context depend clean distclean
+
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+$(BIN): $(OBJS)
+	$(call ARCHIVE, $@, $(OBJS))
+
+.depend: Makefile $(SRCS)
+	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	$(Q) touch $@
+
+depend: .depend
+
+clean:
+	$(call DELFILE, $(BIN))
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep
+
+context:

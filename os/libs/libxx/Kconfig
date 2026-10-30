@@ -44,14 +44,6 @@ config LIBCXX
 		LLVM "libc++" C++ Standard Library
 		https://libcxx.llvm.org/
 
-config UCLIBCXX
-	bool "uClibc++ Standard C++ Library"
-	select HAVE_CXXINITIALIZE
-	depends on ALLOW_GPL_COMPONENTS
-	---help---
-		uClibc++ C++ library
-		https://cxx.uclibc.org/
-
 endchoice
 
 choice
@@ -118,14 +110,6 @@ config CXX_LOCALIZATION
 	depends on LIBC_LOCALE
 
 endchoice
-
-if UCLIBCXX
-
-config UCLIBCXX_BUFSIZE
-	int "IO Stream/Container Buffer Size"
-	default 32
-
-endif
 
 config LIBCXX_VERSION
 	string "Select libcxx version"
