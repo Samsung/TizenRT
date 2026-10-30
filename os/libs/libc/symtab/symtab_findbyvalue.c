@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/symtab/symtab_findbyvalue.c
+ * libs/libc/symtab/symtab_findbyvalue.c
  *
- *   Copyright (C) 2009, 2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -72,24 +59,64 @@
  *
  * Description:
  *   Find the symbol in the symbol table whose value closest (but not greater
- *   than), the provided value. This version assumes that table is not ordered
- *   with respect to symbol name and, hence, access time will be linear with
- *   respect to nsyms.
+ *   than), the provided value. This version assumes that table is not
+ *   ordered with respect to symbol value and, hence, access time will be
+ *   linear with respect to nsyms.
  *
  * Returned Value:
  *   A reference to the symbol table entry if an entry with the matching
- *   name is found; NULL is returned if the entry is not found.
+ *   value is found; NULL is returned if the entry is not found.
  *
  ****************************************************************************/
 
-FAR const struct symtab_s *symtab_findbyvalue(FAR const struct symtab_s *symtab, FAR void *value, int nsyms)
+FAR const struct symtab_s *
+symtab_findbyvalue(FAR const struct symtab_s *symtab,
+                   FAR void *value, int nsyms)
 {
+#ifndef CONFIG_SYMTAB_ORDEREDBYVALUE
 	FAR const struct symtab_s *retval = NULL;
+#else
+	int high = nsyms - 1;
+	int mid  = high >> 1;
+	int low  = 0;
+#endif
+
+	if (symtab == NULL) {
+		DEBUGASSERT(nsyms == 0);
+		return NULL;
+	}
+
+#ifdef CONFIG_SYMTAB_ORDEREDBYVALUE
+
+	while (high >= low) {
+		mid = (low + high) >> 1;
+
+		if (symtab[mid].sym_value == value) {
+			break;
+		} else if (symtab[mid].sym_value > value) {
+			if (symtab[mid - 1].sym_value <= value) {
+				mid -= 1;
+				break;
+			} else {
+				high = mid - 1;
+			}
+		} else if (symtab[mid].sym_value < value) {
+			if (symtab[mid + 1].sym_value > value) {
+				break;
+			} else {
+				low = mid + 1;
+			}
+		}
+	}
+
+	return &symtab[mid];
+
+#else /* CONFIG_SYMTAB_ORDEREDBYVALUE */
 
 	for (; nsyms > 0; symtab++, nsyms--) {
-		DEBUGASSERT(symtab != NULL);
-
-		/* Look for symbols of lesser or equal value (probably address) to value */
+		/* Look for symbols of lesser or equal value (probably address) to
+		 * value
+		 */
 
 		if (symtab->sym_value <= value) {
 			/* Found one.  Is it the largest we have found so far? */
@@ -101,8 +128,9 @@ FAR const struct symtab_s *symtab_findbyvalue(FAR const struct symtab_s *symtab,
 
 				retval = symtab;
 
-				/* If it is exactly equal to the search 'value', then we might as
-				 * well terminate early because we can't do any better than that.
+				/* If it is exactly equal to the search 'value', then we might
+				 * as well terminate early because we can't do any better than
+				 * that.
 				 */
 
 				if (retval->sym_value == value) {
@@ -113,4 +141,5 @@ FAR const struct symtab_s *symtab_findbyvalue(FAR const struct symtab_s *symtab,
 	}
 
 	return retval;
+#endif /* CONFIG_SYMTAB_ORDEREDBYVALUE */
 }

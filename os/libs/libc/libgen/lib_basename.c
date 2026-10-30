@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/libgen/lib_basename.c
+ * libs/libc/libgen/lib_basename.c
  *
- *   Copyright (C) 2007, 2009, 2011-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -60,17 +47,11 @@
 #include <libgen.h>
 
 /****************************************************************************
- * Private Data
- ****************************************************************************/
-
-static char g_retchar[2];
-
-/****************************************************************************
- * Global Functions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Function: basename
+ * Name: basename
  *
  * Description:
  *   basename() extracts the filename component from a null-terminated
@@ -87,25 +68,23 @@ static char g_retchar[2];
  *   basename() may return pointers to statically allocated memory which may
  *   be overwritten by subsequent calls.
  *
- * Parameter:
+ * Input Parameters:
  *   path The null-terminated string referring to the path to be decomposed
  *
- * Return:
+ * Returned Value:
  *   On success the filename component of the path is returned.
  *
  ****************************************************************************/
 
 FAR char *basename(FAR char *path)
 {
-	char *p;
-	int len;
-	int ch;
+	FAR char *p;
+	size_t    len;
 
 	/* Handle some corner cases */
 
 	if (!path || *path == '\0') {
-		ch = '.';
-		goto out_retchar;
+		return ".";
 	}
 
 	/* Check for trailing slash characters */
@@ -113,17 +92,17 @@ FAR char *basename(FAR char *path)
 	len = strlen(path);
 	while (path[len - 1] == '/') {
 		/* Remove trailing '/' UNLESS this would make a zero length string */
+
 		if (len > 1) {
 			path[len - 1] = '\0';
 			len--;
 		} else {
-			ch = '/';
-			goto out_retchar;
+			return path;
 		}
 	}
 
 	/* Get the address of the last '/' which is not at the end of the path and,
-	 * therefor, must be just before the beginning of the filename component.
+	 * therefore, must be just before the beginning of the filename component.
 	 */
 
 	p = strrchr(path, '/');
@@ -134,9 +113,4 @@ FAR char *basename(FAR char *path)
 	/* There is no '/' in the path */
 
 	return path;
-
-out_retchar:
-	g_retchar[0] = ch;
-	g_retchar[1] = '\0';
-	return g_retchar;
 }

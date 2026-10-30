@@ -1,0 +1,75 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+# libs/libc/stream/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+# Add the stdio C files to the build
+# This first group of C files do not depend on having C streams.
+
+CSRCS += lib_meminstream.c lib_memoutstream.c lib_memsistream.c
+CSRCS += lib_memsostream.c lib_lowoutstream.c lib_rawinstream.c
+CSRCS += lib_rawoutstream.c lib_rawsistream.c lib_rawsostream.c
+CSRCS += lib_zeroinstream.c lib_nullinstream.c lib_nulloutstream.c
+CSRCS += lib_mtdoutstream.c lib_libnoflush.c lib_libsnoflush.c
+CSRCS += lib_syslogstream.c lib_syslograwstream.c lib_bufferedoutstream.c
+CSRCS += lib_hexdumpstream.c lib_base64outstream.c lib_mtdsostream.c
+CSRCS += lib_fileinstream.c lib_fileoutstream.c lib_libbsprintf.c
+CSRCS += lib_libvscanf.c lib_libvsprintf.c lib_ultoa_invert.c
+
+ifeq ($(CONFIG_LIBC_FLOATINGPOINT),y)
+CSRCS += lib_dtoa_engine.c lib_dtoa_data.c
+endif
+
+# The remaining sources files depend upon C streams
+
+ifeq ($(CONFIG_FILE_STREAM),y)
+CSRCS += lib_stdinstream.c lib_stdoutstream.c lib_stdsistream.c
+CSRCS += lib_stdsostream.c
+endif
+
+ifeq ($(CONFIG_LIBC_LZF),y)
+CSRCS += lib_lzfcompress.c
+endif
+
+ifeq ($(CONFIG_DISABLE_MOUNTPOINT),)
+CSRCS += lib_blkoutstream.c
+endif
+
+# Add the stdio directory to the build
+
+DEPPATH += --dep-path stream
+VPATH += :stream

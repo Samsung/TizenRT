@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_gets_s.c
+ * libs/libc/stdio/lib_gets_s.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,16 +45,9 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
 
-#include "lib_internal.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#include "libc.h"
 
 /****************************************************************************
  * Public Functions
@@ -81,7 +61,7 @@
  *   either a terminating newline or EOF, which it replaces with '\0'.  Reads
  *   at most n-1 characters from stdin into the array pointed to by str until
  *   new-line character, end-of-file condition, or read error.   The newline
- *   character, if encountered, is not saved in the arraay.  A NUL character
+ *   character, if encountered, is not saved in the array.  A NUL character
  *   is written immediately after the last character read into the array, or
  *   to str[0] if no characters were read.
  *
@@ -94,7 +74,7 @@
  *   characters from stdin until new-line character, end-of-file condition,
  *   or read error.
  *
- **************************************************************************/
+ ****************************************************************************/
 
 FAR char *gets_s(FAR char *s, rsize_t n)
 {
@@ -108,5 +88,9 @@ FAR char *gets_s(FAR char *s, rsize_t n)
 
 	/* Then let lib_fgets() do the heavy lifting */
 
-	return lib_fgets(s, (size_t)n, stdin, false, true);
+#ifdef CONFIG_FILE_STREAM
+	return lib_fgets(s, n, stdin, false, true);
+#else
+	return lib_dgets(s, n, STDIN_FILENO, false, true);
+#endif
 }

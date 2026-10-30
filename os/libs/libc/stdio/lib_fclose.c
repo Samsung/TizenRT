@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_fclose.c
+ * libs/libc/stdio/lib_fclose.c
  *
- *   Copyright (C) 2007-2009, 2011, 3013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -62,16 +49,22 @@
 #include <string.h>
 #include <errno.h>
 
-#include "lib_internal.h"
+#ifdef CONFIG_FDSAN
+#  include <android/fdsan.h>
+#endif
+
+#include <tinyara/queue.h>
+
+#include "libc.h"
 
 /****************************************************************************
- * Global Functions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
  * Name: fclose
  *
- * Description
+ * Description:
  *   The fclose() function will flush the stream pointed to by stream
  *   (writing any buffered output data using lib_fflush()) and close the
  *   underlying file descriptor.
@@ -86,75 +79,108 @@
 
 int fclose(FAR FILE *stream)
 {
-	int err = EINVAL;
+	FAR struct streamlist *slist;
+	int errcode = EINVAL;
 	int ret = ERROR;
 	int status;
 
 	/* Verify that a stream was provided. */
 
 	if (stream) {
-		/* Check that the underlying file descriptor corresponds to an an open
-		 * file.
-		 */
+		bool stdstream = (stream == stdin || stream == stdout ||
+		                  stream == stderr);
+		bool found = stdstream;
+		FAR sq_entry_t *curr;
 
-		ret = OK;
-		if (stream->fs_fd >= 0) {
-			/* If the stream was opened for writing, then flush the stream */
+		slist = lib_get_streams();
 
-			if ((stream->fs_oflags & O_WROK) != 0) {
-				ret = lib_fflush(stream, true);
-				err = errno;
-			}
+		nxmutex_lock(&slist->sl_lock);
 
-			/* Close the underlying file descriptor and save the return status */
+		/* Verify that the stream pointer is valid. */
 
-			status = close(stream->fs_fd);
-
-			/* If close() returns an error but flush() did not then make sure
-			 * that we return the close() error condition.
-			 * Also If flush returns error but storage is full, we return close status.
-			 */
-
-			if (ret == OK || ret == -ENOSPC) {
-				ret = status;
-				err = errno;
+		for (curr = sq_peek(&slist->sl_queue); curr && !found;
+		     curr = sq_next(curr)) {
+			if (stream == (FAR FILE *)curr) {
+				found = true;
 			}
 		}
-#if CONFIG_STDIO_BUFFER_SIZE > 0
-		/* Destroy the semaphore */
 
-		sem_destroy(&stream->fs_sem);
+		if (!found) {
+			nxmutex_unlock(&slist->sl_lock);
+			errcode = EINVAL;
+			goto done;
+		}
+
+		ret = OK;
+
+		/* If the stream was opened for writing, then flush the stream */
+
+		if ((stream->fs_oflags & O_WROK) != 0) {
+			ret = lib_fflush(stream);
+			errcode = get_errno();
+		}
+
+		/* Skip close the builtin streams(stdin, stdout and stderr) */
+
+		if (stdstream) {
+			nxmutex_unlock(&slist->sl_lock);
+			goto done;
+		}
+
+		/* Remove FILE structure from the stream list */
+
+		sq_rem(&stream->fs_entry, &slist->sl_queue);
+
+		nxmutex_unlock(&slist->sl_lock);
+
+		/* Call user custom callback if it is not NULL. */
+
+		if (stream->fs_iofunc.close != NULL) {
+			status = stream->fs_iofunc.close(stream->fs_cookie);
+		} else {
+			int fd = (int)(intptr_t) stream->fs_cookie;
+#ifdef CONFIG_FDSAN
+			uint64_t tag;
+			tag = android_fdsan_create_owner_tag(ANDROID_FDSAN_OWNER_TYPE_FILE,
+			                                     (uintptr_t)stream);
+			status = android_fdsan_close_with_tag(fd, tag);
+#else
+			status = close(fd);
+#endif
+		}
+
+		/* If close() returns an error but flush() did not then make sure
+		 * that we return the close() error condition.
+		 */
+
+		if (ret == OK) {
+			ret = status;
+			errcode = get_errno();
+		}
+
+#ifndef CONFIG_STDIO_DISABLE_BUFFERING
+		/* Destroy the mutex */
+
+		nxrmutex_destroy(&stream->fs_lock);
 
 		/* Release the buffer */
 
-		if (stream->fs_bufstart != NULL && (stream->fs_flags & __FS_FLAG_UBF) == 0) {
+		if (stream->fs_bufstart != NULL &&
+		    (stream->fs_flags & __FS_FLAG_UBF) == 0) {
 			lib_free(stream->fs_bufstart);
 		}
-
-		/* Clear the whole structure */
-
-		memset(stream, 0, sizeof(FILE));
-#else
-#if CONFIG_NUNGET_CHARS > 0
-		/* Reset the number of ungetc characters */
-
-		stream->fs_nungotten = 0;
 #endif
-		/* Reset the flags */
 
-		stream->fs_oflags = 0;
-#endif
-		/* Setting the file descriptor to -1 makes the stream available for reuse */
-
-		stream->fs_fd = -1;
+		lib_free(stream);
 	}
 
+done:
 	/* On an error, reset the errno to the first error encountered and return
 	 * EOF.
 	 */
 
 	if (ret != OK) {
-		set_errno(err);
+		set_errno(errcode);
 		return EOF;
 	}
 

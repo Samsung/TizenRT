@@ -1,0 +1,29 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+# menu "Shared Library Support"
+
+config LIBC_DLFCN
+	bool "Shared library support"
+	default n
+	select MODULES
+	select LIBC_ELF if !BUILD_FLAT
+	select MODULE if BUILD_FLAT
+	---help---
+		Enabled support for user-space shared libraries.
+
+if LIBC_DLFCN
+
+config LDPATH_INITIAL
+	string "Initial LD_LIBRARY_PATH Value"
+	default ""
+	depends on LIBC_ENVPATH
+	---help---
+		The initial value of the LD_LIBRARY_PATH variable.  This is the
+		colon-separated list of absolute paths.  E.g., "/lib:/usr/lib:/system/lib"
+
+endif
+
+# endmenu # Shared Library Support

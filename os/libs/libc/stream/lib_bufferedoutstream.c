@@ -1,0 +1,134 @@
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * libs/libc/stream/lib_bufferedoutstream.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/config.h>
+
+#include <unistd.h>
+#include <assert.h>
+#include <errno.h>
+
+#include <tinyara/fs/fs.h>
+
+#include "libc.h"
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: bufferedoutstream_flush
+ ****************************************************************************/
+
+static int bufferedoutstream_flush(FAR struct lib_outstream_s *self)
+{
+	FAR struct lib_bufferedoutstream_s *stream =
+	  (FAR struct lib_bufferedoutstream_s *)self;
+	int ret = OK;
+
+	ret = lib_stream_puts(stream->backend, stream->buffer,
+	                      stream->pending);
+
+	if (ret >= 0) {
+		stream->pending = 0;
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: bufferedoutstream_puts
+ ****************************************************************************/
+
+static ssize_t bufferedoutstream_puts(FAR struct lib_outstream_s *self,
+                                      FAR const void *buf, size_t len)
+{
+	FAR struct lib_bufferedoutstream_s *stream =
+	  (FAR struct lib_bufferedoutstream_s *)self;
+	size_t ret = len;
+
+	if (stream->pending + len <= CONFIG_STREAM_OUT_BUFFER_SIZE) {
+		/* If buffer is enough to save incoming data, cache it */
+
+		memcpy(stream->buffer + stream->pending, buf, len);
+		stream->pending += len;
+	} else {
+		/* Or, for long data flush buffer and write it directly */
+
+		ret = lib_stream_flush(self);
+		if (ret >= 0) {
+			ret = lib_stream_puts(stream->backend, buf, len);
+		}
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: bufferedoutstream_putc
+ ****************************************************************************/
+
+static void bufferedoutstream_putc(FAR struct lib_outstream_s *self, int ch)
+{
+	char c = ch;
+
+	bufferedoutstream_puts(self, &c, 1);
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: lib_bufferedoutstream
+ ****************************************************************************/
+
+void lib_bufferedoutstream(FAR struct lib_bufferedoutstream_s *stream,
+                           FAR struct lib_outstream_s *backend)
+{
+	stream->common.putc  = bufferedoutstream_putc;
+	stream->common.puts  = bufferedoutstream_puts;
+	stream->common.flush = bufferedoutstream_flush;
+	stream->common.nput  = 0;
+	stream->backend      = backend;
+	stream->pending      = 0;
+}

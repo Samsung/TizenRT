@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_libfwrite.c
+ * libs/libc/stdio/lib_libfwrite.c
  *
- *   Copyright (C) 2007-2009, 2011, 2013-2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -63,35 +50,9 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#include "lib_internal.h"
+#include <tinyara/fs/fs.h>
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Global Constant Data
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Constant Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
+#include "libc.h"
 
 /****************************************************************************
  * Public Functions
@@ -101,51 +62,59 @@
  * Name: lib_fwrite
  ****************************************************************************/
 
-ssize_t lib_fwrite(FAR const void *ptr, size_t count, FAR FILE *stream)
-#if CONFIG_STDIO_BUFFER_SIZE > 0
+ssize_t lib_fwrite_unlocked(FAR const void *ptr, size_t count,
+                            FAR FILE *stream)
+#ifndef CONFIG_STDIO_DISABLE_BUFFERING
 {
-	FAR const unsigned char *start = ptr;
-	FAR const unsigned char *src = ptr;
+	FAR const char *start = ptr;
+	FAR const char *src   = ptr;
 	ssize_t ret = ERROR;
-	unsigned char *dest;
+	size_t gulp_size;
 
 	/* Make sure that writing to this stream is allowed */
 
-	if (!stream || (stream->fs_oflags & O_WROK) == 0) {
+	if (stream == NULL) {
+		set_errno(EBADF);
+		return ret;
+	}
+
+	/* Check if write access is permitted */
+
+	if ((stream->fs_oflags & O_WROK) == 0) {
 		set_errno(EBADF);
 		goto errout;
 	}
 
-	/* Get exclusive access to the stream */
+	/* If there is no I/O buffer, then output data immediately */
 
-	lib_take_semaphore(stream);
+	if (stream->fs_bufstart == NULL) {
+		if (stream->fs_iofunc.write != NULL) {
+			ret = stream->fs_iofunc.write(stream->fs_cookie, ptr, count);
+		} else {
+			ret = _NX_WRITE((int)(intptr_t) stream->fs_cookie, ptr, count);
+		}
+
+		if (ret < 0) {
+			_NX_SETERRNO(ret);
+			ret = ERROR;
+		}
+
+		goto errout;
+	}
 
 	/* If the buffer is currently being used for read access, then
 	 * discard all of the read-ahead data.  We do not support concurrent
 	 * buffered read/write access.
 	 */
 
-	if (lib_rdflush(stream) < 0) {
-		goto out_with_semaphore;
+	if (lib_rdflush_unlocked(stream) < 0) {
+		goto errout;
 	}
 
-	/* If no stream buffer is configured, write directly to the file. */
-	if (stream->fs_bufstart == NULL) {
-		ret = write(stream->fs_fd, ptr, count);
-		goto out_with_semaphore;
-	}
+	/* Determine the number of bytes left in the buffer */
 
-	/* Loop until all of the bytes have been buffered */
-
-	while (count > 0) {
-		/* Determine the number of bytes left in the buffer */
-
-		size_t gulp_size = stream->fs_bufend - stream->fs_bufpos;
-
-		/* Will the user data fit into the amount of buffer space
-		 * that we have left?
-		 */
-
+	gulp_size = stream->fs_bufend - stream->fs_bufpos;
+	if (gulp_size != CONFIG_STDIO_BUFFER_SIZE || count < gulp_size) {
 		if (gulp_size > count) {
 			/* Yes, clip the gulp to the size of the user data */
 
@@ -160,33 +129,48 @@ ssize_t lib_fwrite(FAR const void *ptr, size_t count, FAR FILE *stream)
 
 		/* Transfer the data into the buffer */
 
-		for (dest = stream->fs_bufpos; gulp_size > 0; gulp_size--) {
-			*dest++ = *src++;
-		}
-
-		stream->fs_bufpos = dest;
+		memcpy(stream->fs_bufpos, src, gulp_size);
+		stream->fs_bufpos += gulp_size;
+		src += gulp_size;
 
 		/* Is the buffer full? */
 
-		if (dest >= stream->fs_bufend) {
+		if (stream->fs_bufpos >= stream->fs_bufend) {
 			/* Flush the buffered data to the IO stream */
 
-			int bytes_buffered = lib_fflush(stream, false);
+			int bytes_buffered = lib_fflush_unlocked(stream);
 			if (bytes_buffered < 0) {
-				goto out_with_semaphore;
+				goto errout;
 			}
 		}
 	}
 
+	if (count >= CONFIG_STDIO_BUFFER_SIZE) {
+		if (stream->fs_iofunc.write != NULL) {
+			ret = stream->fs_iofunc.write(stream->fs_cookie, src, count);
+		} else {
+			ret = _NX_WRITE((int)(intptr_t) stream->fs_cookie, src, count);
+		}
+
+		if (ret < 0) {
+			_NX_SETERRNO(ret);
+			ret = ERROR;
+			goto errout;
+		}
+
+		src += ret;
+	} else if (count > 0) {
+		memcpy(stream->fs_bufpos, src, count);
+		stream->fs_bufpos += count;
+		src += count;
+	}
+
 	/* Return the number of bytes written */
 
-	ret = src - start;
-
-out_with_semaphore:
-	lib_give_semaphore(stream);
+	ret = (uintptr_t)src - (uintptr_t)start;
 
 errout:
-	if (stream && (ret < 0)) {
+	if (ret < 0) {
 		stream->fs_flags |= __FS_FLAG_ERROR;
 	}
 
@@ -194,11 +178,29 @@ errout:
 }
 #else
 {
-	ssize_t ret = write(stream->fs_fd, ptr, count);
+	ssize_t ret;
+	if (stream->fs_iofunc.write != NULL) {
+		ret = stream->fs_iofunc.write(stream->fs_cookie, ptr, count);
+	} else {
+		ret = _NX_WRITE((int)(intptr_t) stream->fs_cookie, ptr, count);
+	}
+
 	if (ret < 0) {
 		stream->fs_flags |= __FS_FLAG_ERROR;
+		_NX_SETERRNO(ret);
 	}
 
 	return ret;
 }
-#endif							/* CONFIG_STDIO_BUFFER_SIZE */
+#endif /* CONFIG_STDIO_DISABLE_BUFFERING */
+
+ssize_t lib_fwrite(FAR const void *ptr, size_t count, FAR FILE *stream)
+{
+	ssize_t ret;
+
+	flockfile(stream);
+	ret = lib_fwrite_unlocked(ptr, count, stream);
+	funlockfile(stream);
+
+	return ret;
+}

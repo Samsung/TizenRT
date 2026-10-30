@@ -16,11 +16,12 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_vdprintf.c
+ * libs/libc/stdio/lib_vdprintf.c
  *
- *   Copyright (C) 2012 Andrew Tridgell. All rights reserved.
- *   Authors: Author: Andrew Tridgell <andrew@tridgell.net>
- *            Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2012 Andrew Tridgell. All rights reserved.
+ * SPDX-FileContributor: Andrew Tridgell <andrew@tridgell.net>
+ * SPDX-FileContributor: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -55,30 +56,23 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-
-#include <stdio.h>
-#include <sys/stat.h>
-
-#include "lib_internal.h"
+#include <tinyara/streams.h>
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-int vdprintf(int fd, FAR const char *fmt, va_list ap)
+int vdprintf(int fd, FAR const IPTR char *fmt, va_list ap)
 {
-	struct lib_rawoutstream_s rawoutstream;
 	int ret;
-	struct stat st;
-
-	ret = fstat(fd, &st);
-	if (ret < 0) {
-		return ret;
-	}
+	struct lib_rawoutstream_s rawoutstream;
+	struct lib_bufferedoutstream_s outstream;
 
 	/* Wrap the fd in a stream object and let lib_vsprintf do the work. */
 
 	lib_rawoutstream(&rawoutstream, fd);
-	return lib_vsprintf(&rawoutstream.public, fmt, ap);
+	lib_bufferedoutstream(&outstream, &rawoutstream.common);
+	ret = lib_vsprintf(&outstream.common, fmt, ap);
+	lib_stream_flush(&outstream.common);
+	return ret;
 }

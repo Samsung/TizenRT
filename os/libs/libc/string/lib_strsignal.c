@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/libc/string/lib_strsignal.c
+ * libs/libc/string/lib_strsignal.c
  *
- *   Copyright (C) 2018 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -54,59 +41,31 @@
  * Included Files
  ****************************************************************************/
 
+#include <errno.h>
 #include <signal.h>
+#include <stdio.h>
 #include <string.h>
 
 /****************************************************************************
- * Private Data
+ * Pre-processor Definitions
  ****************************************************************************/
 
-/* We don't know what signals names will be assigned to which signals in
- * advance and we do not want to return a volatile value.  One solution is
- * this silly array of useless names:
- */
-
-static FAR const char *g_default_sigstr[32] = {
-	"Signal 0",
-	"Signal 1",
-	"Signal 2",
-	"Signal 3",
-	"Signal 4",
-	"Signal 5",
-	"Signal 6",
-	"Signal 7",
-	"Signal 8",
-	"Signal 9",
-	"Signal 10",
-	"Signal 11",
-	"Signal 12",
-	"Signal 13",
-	"Signal 14",
-	"Signal 15",
-	"Signal 16",
-	"Signal 17",
-	"Signal 18",
-	"Signal 19",
-	"Signal 20",
-	"Signal 21",
-	"Signal 22",
-	"Signal 23",
-	"Signal 24",
-	"Signal 25",
-	"Signal 26",
-	"Signal 27",
-	"Signal 28",
-	"Signal 29",
-	"Signal 30",
-	"Signal 31",
-};
+#ifdef CONFIG_LIBC_STRSIGNAL_SHORT
+#  define CASE_SIG_STR(sig, msg) \
+    case (sig): \
+      return (FAR char *)#sig
+#else
+#  define CASE_SIG_STR(sig, msg) \
+    case (sig): \
+      return (FAR char *)(msg)
+#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: psignal
+ * Name: strsignal
  *
  * Description:
  *   The strsignal() function will map the signal number in signum to an
@@ -116,6 +75,8 @@ static FAR const char *g_default_sigstr[32] = {
 
 FAR char *strsignal(int signum)
 {
+	static char sigstr[32];
+
 	/* Handle invalid signals */
 
 	if (!GOOD_SIGNO(signum)) {
@@ -125,75 +86,52 @@ FAR char *strsignal(int signum)
 	/* Handle named signals */
 
 	switch (signum) {
+#ifdef CONFIG_LIBC_STRSIGNAL
 		/* Standard signals */
 
-#ifdef SIGUSR1
-	case SIGUSR1:
-		return (FAR char *)"SIGUSR1";
-#endif
+		CASE_SIG_STR(SIGHUP,    "Hangup");
+		CASE_SIG_STR(SIGINT,    "Interrupt");
+		CASE_SIG_STR(SIGQUIT,   "Quit");
+		CASE_SIG_STR(SIGILL,    "Illegal instruction");
+		CASE_SIG_STR(SIGTRAP,   "Trace/breakpoint trap");
+		CASE_SIG_STR(SIGABRT,   "Aborted");
+		CASE_SIG_STR(SIGBUS,    "Bus error");
+		CASE_SIG_STR(SIGFPE,    "Arithmetic exception");
+		CASE_SIG_STR(SIGKILL,   "Killed");
+		CASE_SIG_STR(SIGUSR1,   "User defined signal 1");
+		CASE_SIG_STR(SIGSEGV,   "Invalid memory reference");
+		CASE_SIG_STR(SIGUSR2,   "User defined signal 2");
+		CASE_SIG_STR(SIGPIPE,   "Broken pipe");
+		CASE_SIG_STR(SIGALRM,   "Alarm clock");
+		CASE_SIG_STR(SIGTERM,   "Terminated");
+		CASE_SIG_STR(SIGCHLD,   "Child status changed");
+		CASE_SIG_STR(SIGCONT,   "Continued");
+		CASE_SIG_STR(SIGSTOP,   "Stopped (signal)");
+		CASE_SIG_STR(SIGTSTP,   "Stopped");
+		CASE_SIG_STR(SIGTTIN,   "Stopped (tty input)");
+		CASE_SIG_STR(SIGTTOU,   "Stopped (tty output)");
+		CASE_SIG_STR(SIGURG,    "Urgent I/O condition");
+		CASE_SIG_STR(SIGXCPU,   "CPU time limit exceeded");
+		CASE_SIG_STR(SIGXFSZ,   "File size limit exceeded");
+		CASE_SIG_STR(SIGVTALRM, "Virtual timer expired");
+		CASE_SIG_STR(SIGPROF,   "Profiling timer expired");
+		CASE_SIG_STR(SIGWINCH,  "Window resize signal");
+		CASE_SIG_STR(SIGPOLL,   "Pollable event occurred");
+		CASE_SIG_STR(SIGSYS,    "Bad system call");
 
-#ifdef SIGUSR2
-	case SIGUSR2:
-		return (FAR char *)"SIGUSR2";
-#endif
-
-#ifdef SIGALRM
-	case SIGALRM:
-		return (FAR char *)"SIGALRM";
-#endif
-
-#ifdef SIGCHLD
-	case SIGCHLD:
-		return (FAR char *)"SIGCHLD";
-#endif
-
-#ifdef SIGPOLL
-	case SIGPOLL:
-		return (FAR char *)"SIGPOLL";
-#endif
-
-#ifdef SIGSTOP
-	case SIGSTOP:
-		return (FAR char *)"SIGSTOP";
-#endif
-
-#ifdef SIGSTP
-	case SIGSTP:
-		return (FAR char *)"SIGSTP";
-#endif
-
-#ifdef SIGCONT
-	case SIGCONT:
-		return (FAR char *)"SIGCONT";
-#endif
-
-#ifdef SIGKILL
-	case SIGKILL:
-		return (FAR char *)"SIGKILL";
-#endif
-
-#ifdef SIGINT
-	case SIGINT:
-		return (FAR char *)"SIGINT";
-#endif
-
-	/* Non-standard signals */
-
-#ifdef SIGCONDTIMEDOUT
-	case SIGCONDTIMEDOUT:
-		return (FAR char *)"SIGCONDTIMEDOUT";
-#endif
-
-#ifdef SIGWORK
-	case SIGWORK:
-		return (FAR char *)"SIGWORK";
-#endif
+#endif /* CONFIG_LIBC_STRSIGNAL */
 
 	default:
+		if (signum >= SIGRTMIN && signum <= SIGRTMAX) {
+			snprintf(sigstr, sizeof(sigstr), "Real-time Signal %d",
+			         signum - SIGRTMIN);
+		} else {
+			snprintf(sigstr, sizeof(sigstr), "Signal %d", signum);
+		}
 		break;
 	}
 
 	/* Return a string devoid is meaning */
 
-	return (FAR char *)g_default_sigstr[signum];
+	return sigstr;
 }

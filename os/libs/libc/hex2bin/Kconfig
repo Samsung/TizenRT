@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config LIBC_HEX2BIN
+	bool "Intel HEX to binary conversion library"
+	default n
+	---help---
+		Build in support for conversions from Intel Hex format to binary.
+		This selection enables the interfaces of include/hex2bin.h.

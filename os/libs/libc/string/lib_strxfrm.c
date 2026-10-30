@@ -16,10 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/libc/string/lib_strxfrm.c
+ * libs/libc/string/lib_strxfrm.c
  *
- *   Copyright (c)1999 Citrus Project,
- *   All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
+ * SPDX-FileCopyrightText: 1999 Citrus Project, All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -65,7 +65,7 @@
  *   resulting string into the array pointed to by s1. The transformation is
  *   such that if the strcmp() function is applied to the two transformed
  *   strings, it returns a value greater than, equal to, or less than zero,
- *   correspoinding to the result of a <<strcoll>> function applied to the
+ *   corresponding to the result of a <<strcoll>> function applied to the
  *   same two original strings.
  *   With a C locale, this function just copies.
  *
@@ -82,7 +82,7 @@ size_t strxfrm(FAR char *s1, FAR const char *s2, size_t n)
 			return res;
 		}
 	}
-	while (*s2) {
+	while (*s2 != '\0') {
 		++s2;
 		++res;
 	}

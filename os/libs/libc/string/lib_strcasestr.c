@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/string/lib_strstr.c
+ * libs/libc/string/lib_strcasestr.c
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use str source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions str binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer str
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -64,16 +51,15 @@
  * Private Functions
  ****************************************************************************/
 
+#undef strcasechr
 static FAR char *strcasechr(FAR const char *s, int uc)
 {
 	register char ch;
 
-	if (s) {
-		for (; *s; s++) {
-			ch = *s;
-			if (toupper(ch) == uc) {
-				return (FAR char *)s;
-			}
+	for (; *s != '\0'; s++) {
+		ch = *s;
+		if (toupper(ch) == uc) {
+			return (FAR char *)s;
 		}
 	}
 
@@ -81,32 +67,32 @@ static FAR char *strcasechr(FAR const char *s, int uc)
 }
 
 /****************************************************************************
- * Global Functions
+ * Public Functions
  ****************************************************************************/
 
 FAR char *strcasestr(FAR const char *str, FAR const char *substr)
 {
-	const char *candidate;		/* Candidate in str with matching start character */
-	char ch;					/* First character of the substring */
-	int len;					/* The length of the substring */
+	FAR const char *candidate; /* Candidate in str with matching start character */
+	char ch;                   /* First character of the substring */
+	size_t len;                /* The length of the substring */
 
 	/* Special case the empty substring */
 
 	len = strlen(substr);
-	ch = *substr;
+	ch  = *substr;
 
 	if (!ch) {
 		/* We'll say that an empty substring matches at the beginning of
 		 * the string
 		 */
 
-		return (char *)str;
+		return (FAR char *)str;
 	}
 
 	/* Search for the substring */
 
 	candidate = str;
-	ch = toupper(ch);
+	ch        = toupper(ch);
 
 	for (;;) {
 		/* strcasechr() will return a pointer to the next occurrence of the
@@ -120,17 +106,19 @@ FAR char *strcasestr(FAR const char *str, FAR const char *substr)
 			 * substring.
 			 */
 
-			return NULL;
+			break;
 		}
 
-		/* Check if this is the beginning of a matching substring (ignoring case) */
+		/* Check if this is the beginning of a matching substring
+		 * (ignoring case)
+		 */
 
 		if (strncasecmp(candidate, substr, len) == 0) {
 			/* Yes.. return the pointer to the first occurrence of the matching
 			 * substring.
 			 */
 
-			return (char *)candidate;
+			return (FAR char *)candidate;
 		}
 
 		/* No, find the next candidate after this one */
@@ -138,8 +126,8 @@ FAR char *strcasestr(FAR const char *str, FAR const char *substr)
 		candidate++;
 	}
 
-	/* Won't get here, but some compilers might complain.  Others might complain
-	 * about this code being unreachable too.
+	/* Won't get here, but some compilers might complain.  Others might
+	 * complain about this code being unreachable too.
 	 */
 
 	return NULL;

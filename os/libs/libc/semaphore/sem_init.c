@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/sem/sem_init.c
+ * libs/libc/semaphore/sem_init.c
  *
- *   Copyright (C) 2007-2009, 2011-2012, 2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -57,26 +44,78 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
+#include <assert.h>
 #include <limits.h>
-#include <semaphore.h>
 #include <errno.h>
 
-#if defined(CONFIG_BINMGR_RECOVERY) && defined(__KERNEL__)
 #include <tinyara/semaphore.h>
-#include <tinyara/arch.h>
-
-#define is_kernel_sem(a) is_kernel_space((void *)a)
-#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Function: sem_init
+ * Name: nxsem_init
  *
  * Description:
- *   This function initializes the UNAMED semaphore sem. Following a
+ *   This function initializes the UNNAMED semaphore sem. Following a
+ *   successful call to nxsem_init(), the semaphore may be used in subsequent
+ *   calls to nxsem_wait(), nxsem_post(), and nxsem_trywait().  The semaphore
+ *   remains usable until it is destroyed.
+ *
+ *   Only sem itself may be used for performing synchronization. The result
+ *   of referring to copies of sem in calls to nxsem_wait(), nxsem_trywait(),
+ *   nxsem_post(), and nxsem_destroy() is undefined.
+ *
+ * Input Parameters:
+ *   sem - Semaphore to be initialized
+ *   pshared - Process sharing (not used)
+ *   value - Semaphore initialization value
+ *
+ * Returned Value:
+ *   This is an internal OS interface and should not be used by applications.
+ *   It follows the NuttX internal error return policy:  Zero (OK) is
+ *   returned on success.  A negated errno value is returned on failure.
+ *
+ ****************************************************************************/
+
+int nxsem_init(FAR sem_t *sem, int pshared, int32_t value)
+{
+	UNUSED(pshared);
+
+	DEBUGASSERT(sem != NULL);
+
+	/* Initialize the semaphore count or mutex holder */
+
+	sem->val.semcount = (int32_t)value;
+
+#ifdef CONFIG_CUSTOM_SEMAPHORE_MAXVALUE
+	sem->maxvalue = SEM_VALUE_MAX;
+#endif
+
+	/* Initialize semaphore wait list */
+
+	dq_init(&sem->waitlist);
+
+	/* Initialize to support priority inheritance */
+
+	sem->flags = 0;
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+#  if CONFIG_SEM_PREALLOCHOLDERS > 0
+	sem->hhead = NULL;
+#  else
+	INITIALIZE_SEMHOLDER(&sem->holder);
+#  endif
+#endif
+	return OK;
+}
+
+/****************************************************************************
+ * Name: sem_init
+ *
+ * Description:
+ *   This function initializes the UNNAMED semaphore sem. Following a
  *   successful call to sem_init(), the semaphore may be used in subsequent
  *   calls to sem_wait(), sem_post(), and sem_trywait().  The semaphore
  *   remains usable until it is destroyed.
@@ -85,59 +124,35 @@
  *   of referring to copies of sem in calls to sem_wait(), sem_trywait(),
  *   sem_post(), and sem_destroy() is undefined.
  *
- * Parameters:
+ * Input Parameters:
  *   sem - Semaphore to be initialized
  *   pshared - Process sharing (not used)
  *   value - Semaphore initialization value
  *
- * Return Value:
- *   0 (OK), or -1 (ERROR) if unsuccessful.
- *
- * Assumptions:
+ * Returned Value:
+ *   This returns zero (OK) if successful.  Otherwise, -1 (ERROR) is
+ *   returned and the errno value is set appropriately.
  *
  ****************************************************************************/
 
 int sem_init(FAR sem_t *sem, int pshared, unsigned int value)
 {
+	int ret;
+
 	/* Verify that a semaphore was provided and the count is within the valid
 	 * range.
 	 */
 
-	if (sem && value <= SEM_VALUE_MAX) {
-		/* Initialize the semaphore count */
-
-		sem->semcount = (int16_t)value;
-
-		sem->flags = FLAGS_INITIALIZED;
-
-		/* Initialize to support priority inheritance */
-
-#ifdef CONFIG_PRIORITY_INHERITANCE
-		sem->flags &= ~(PRIOINHERIT_FLAGS_DISABLE);
-#endif
-
-#ifdef SAVE_SEM_HOLDER
-#if CONFIG_SEM_PREALLOCHOLDERS > 0
-		sem->hhead = NULL;
-#else
-		INITIALIZE_SEMHOLDER(&sem->holder);
-#endif
-		if (sem->semcount == 0) {
-			/* The semaphore with zero value is used for signaling */
-			sem->flags |= FLAGS_SIGSEM;
-		}
-#endif
-
-#if defined(CONFIG_BINMGR_RECOVERY) && defined(__KERNEL__)
-		/* Register semaphore in kernel region for kernel resource management */
-		
-		if (sem->semcount != 0 && is_kernel_sem(sem)) {
-			sem_register(sem);
-		}
-#endif
-		return OK;
-	} else {
+	if (sem == NULL || value > SEM_VALUE_MAX) {
 		set_errno(EINVAL);
 		return ERROR;
 	}
+
+	ret = nxsem_init(sem, pshared, value);
+	if (ret < 0) {
+		set_errno(-ret);
+		ret = ERROR;
+	}
+
+	return ret;
 }

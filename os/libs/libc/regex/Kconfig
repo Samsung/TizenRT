@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config LIBC_REGEX
+	bool "Enable regex"
+	depends on ALLOW_MIT_COMPONENTS
+	default y
+	---help---
+		provide the regex related func, include regcomp, regexec.

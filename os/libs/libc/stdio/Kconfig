@@ -1,0 +1,126 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menu "Standard C I/O"
+
+config STDIO_DISABLE_BUFFERING
+	bool "Disable STDIO Buffering"
+	depends on FILE_STREAM
+	default n
+	---help---
+		Tiny systems may need to disable all support for I/O buffering in
+		order to minimize the memory footprint.
+
+		NOTE that even if STDIO buffering is enabled, you can still disable
+		buffering by setting CONFIG_STDIO_BUFFER_SIZE=0 or dynamically
+		through the setvbuf() interface.  In this case, however,  memory
+		used for buffering will be eliminated, of course, but there will be
+		no reduction in static code size.  Only setting
+		CONFIG_STDIO_DISABLE_BUFFERING will reduce static code size.
+
+		The setvbuf() interface is not available if
+		CONFIG_STDIO_DISABLE_BUFFERING is selected.
+
+if !STDIO_DISABLE_BUFFERING
+
+config STDIO_BUFFER_SIZE
+	int "STDIO buffer size"
+	default 64
+	---help---
+		Size of buffers using within the C buffered I/O interfaces (printf,
+		putchar, fwrite, etc.).  This function sets the initial I/O buffer
+		size.  Zero disables I/O buffering initially.  Any buffer size may
+		be subsequently modified using setvbuf().
+
+config STDIO_LINEBUFFER
+	bool "STDIO line buffering"
+	default y
+	---help---
+		Sets the default behavior to flush buffered I/O whenever a newline
+		character is found in the output data stream.  This setting just
+		sets the initial default behavior of all streams.  The behavior of
+		an individual stream can be changed via setvbuf().
+
+endif # !STDIO_DISABLE_BUFFERING
+
+config NUNGET_CHARS
+	int "Number unget() characters"
+	default 2
+	---help---
+		Number of characters that can be buffered by ungetc() (Only if
+		FILE_STREAM equals y)
+
+config LIBC_FLOATINGPOINT
+	bool "Enable floating point in printf"
+	default !DEFAULT_SMALL && ARCH_FPU
+	depends on !LIBM_NONE
+	---help---
+		By default, floating point support in printf, sscanf, etc. is
+		disabled.  This option will enable floating point support.
+
+config LIBC_LONG_LONG
+	bool "Enable long long support in printf"
+	default !DEFAULT_SMALL
+	---help---
+		Enables support for long long formats in printf, sscanf, etc. is
+		enabled.  This is enabled by default but if you are trying to
+		reduce the FLASH footprint, then disabling this feature is one
+		option.  The FLASH saves comes not from disabling the long long
+		formats, but rather from omitting the large long long arithmetic
+		libraries that will be drawn into the build if long long support
+		is enabled.
+
+		NOTE:  This setting has no effect if the underlying architecture
+		cannot support long long types
+
+config LIBC_NUMBERED_ARGS
+	bool "Enable numbered arguments in printf"
+	default n
+	---help---
+		Enables support for numbered arguments in printf.
+
+		  printf("%3$s %3$s %1$s %2$s\n", "1", "2", "3"); --> "3 3 1 2"
+		  printf("%3$*2$.*1$f\n", 4, 8, 1.234567); --> "  1.2346"
+
+		Attention: Mixing of numbered and sequential arguments in one
+		format string is not allowed according to POSIX.
+
+config LIBC_NL_ARGMAX
+	int "Maximum number of numbered arguments for printf"
+	default 9
+	range 9 999999
+	depends on LIBC_NUMBERED_ARGS
+	---help---
+		Applies only if there are numbered arguments in your format string.
+		The number of sequential arguments isn't affected.
+		Will be copied into stdio POSIX macro NL_ARGMAX.
+
+		Attention: Increasing this value will increase stack usage
+		of printf.
+
+config LIBC_SCANSET
+	bool "Scanset support"
+	default n
+	---help---
+		Add scanset support to sscanf().
+
+config LIBC_PRINT_EXTENSION
+	bool
+	default n
+	---help---
+		Enables non-standard "%p*" extensions for the printf family.
+
+		CAVEAT: If your system is using any of the printf C family
+		functions, it's probably unsafe to enable this option because
+		the extension is not compatible with the C standard. Namely,
+		an ordinary character following a "%p" conversion is interpreted
+		in a non-standard way, which might crash the code which expects
+		the standard semantics. For that reason, in the future versions
+		of NuttX, this extension might be removed, or changed in an
+		API-incompatible way to avoid conflicts with the standards.
+		(Eg. use different characters for conversions specifiers,
+		or switch to a completely separate API, say "nuttx_printf".)
+
+endmenu #Standard C I/O

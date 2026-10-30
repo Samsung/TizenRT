@@ -15,16 +15,14 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/stdlib/lib_itoa.c
+/****************************************************************************
+ * libs/libc/stdlib/lib_itoa.c
  *
- *   Copyright (C) 2013 Brooks Automation, Inc. All rights reserved.
- *   Author: Ryan Sundberg <ryan.sundberg@brooks.com>
- *
- * This file is a part of NuttX:
- *
- *   Copyright (C) 2010-2011 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2010-2011 Gregory Nutt
+ * SPDX-FileCopyrightText: 2013 Brooks Automation, Inc. All rights reserved.
+ * SPDX-FileContributor: Ryan Sundberg <ryan.sundberg@brooks.com>
+ * SPDX-FileContributor: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -53,24 +51,27 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 #include <stdlib.h>
 
-/************************************************************************
- * Global Functions
- ************************************************************************/
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
-char *itoa(int val, char *str, int base)
+FAR char *itoa(int val, FAR char *str, int base)
 {
-	static const char *digits = "0123456789abcdefghijklmnopqrstuvwxyz";
-	int intval = abs(val), digit, pos, len;
-	char *buf = str;
+	static FAR const char *digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+	int intval = abs(val);
+	int digit;
+	int pos;
+	int len;
+	FAR char *buf = str;
 	char swap;
 
 	if (base >= 2 && base <= 36) {

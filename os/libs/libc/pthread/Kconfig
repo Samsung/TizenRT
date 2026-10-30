@@ -1,0 +1,23 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menu "pthread support"
+	depends on !DISABLE_PTHREAD
+
+config PTHREAD_SPINLOCKS
+	bool "pthread spinlock support"
+	default n
+	depends on SPINLOCK && (BUILD_FLAT || BOARDCTL)
+	select BOARDCTL_SPINLOCK
+	---help---
+		Enable support for pthread spinlocks.
+
+config PTHREAD_ATFORK
+	bool "pthread_atfork support"
+	default n
+	---help---
+		Enable support for pthread_atfork.
+
+endmenu # pthread support
