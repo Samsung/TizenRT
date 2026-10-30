@@ -1,0 +1,144 @@
+/****************************************************************************
+ *
+ * Copyright 2016 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * arch/arm/src/armv7-m/arm_doirq.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/config.h>
+
+#include <stdint.h>
+#include <assert.h>
+
+#include <tinyara/irq.h>
+#include <tinyara/arch.h>
+#include <tinyara/board.h>
+#include <arch/board/board.h>
+#include <sched/sched.h>
+
+#include "arm_internal.h"
+#include "exc_return.h"
+#include "nvic.h"
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+void exception_direct(void)
+{
+	int irq = getipsr();
+
+	arm_ack_irq(irq);
+	irq_dispatch(irq, NULL);
+
+	if (g_running_tasks[this_cpu()] != this_task()) {
+		up_trigger_irq(NVIC_IRQ_PENDSV, 0);
+	}
+}
+
+uint32_t *arm_doirq(int irq, uint32_t *regs)
+{
+	struct tcb_s **running_task = &g_running_tasks[this_cpu()];
+	struct tcb_s *tcb           = *running_task;
+
+	/* This judgment proves that (*running_task)->xcp.regs
+	 * is invalid, and we can safely overwrite it.
+	 */
+
+	if (!(NVIC_IRQ_SVCALL == irq && regs[REG_R0] == SYS_restore_context)) {
+		tcb->xcp.regs = regs;
+	}
+
+	board_autoled_on(LED_INIRQ);
+#ifdef CONFIG_SUPPRESS_INTERRUPTS
+	PANIC();
+#else
+
+	/* Acknowledge the interrupt */
+
+	arm_ack_irq(irq);
+
+	if (irq == NVIC_IRQ_PENDSV) {
+#ifdef CONFIG_ARCH_HIPRI_INTERRUPT
+		/* Dispatch the PendSV interrupt */
+
+		irq_dispatch(irq, regs);
+#endif
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
+		if (tcb->sigdeliver) {
+			/* Pendsv able to access running tcb with no critical section */
+
+			up_schedule_sigaction(tcb);
+		}
+
+#endif
+
+		up_irq_save();
+	} else {
+		irq_dispatch(irq, regs);
+	}
+
+	tcb = this_task();
+
+	/* Update scheduler parameters.
+	 * The arm-m architecture svc call will trigger an interrupt,
+	 * and the actual context switch is executed after doirq is completed,
+	 * so only the scheduling information needs to be updated in doirq.
+	 */
+
+	nxsched_switch_context(*running_task, tcb);
+
+	/* Record the new "running" task when context switch occurred.
+	 * g_running_tasks[] is only used by assertion logic for reporting
+	 * crashes.
+	 */
+
+	*running_task = tcb;
+	regs = tcb->xcp.regs;
+#endif
+
+	board_autoled_off(LED_INIRQ);
+
+	/* (*running_task)->xcp.regs is about to become invalid
+	 * and will be marked as NULL to avoid misusage.
+	 */
+
+	(*running_task)->xcp.regs = NULL;
+	return regs;
+}
