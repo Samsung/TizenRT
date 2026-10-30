@@ -16,10 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/libc/wchar/lib_wmemcpy.c
+ * libs/libc/wchar/lib_wmemcpy.c
  *
- *   Copyright (c)1999 Citrus Project,
- *   All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
+ * SPDX-FileCopyrightText: 1999 Citrus Project, All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,12 +49,8 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-
 #include <string.h>
 #include <wchar.h>
-
-#ifdef CONFIG_LIBC_WCHAR
 
 /****************************************************************************
  * Public Functions
@@ -72,6 +68,5 @@
 
 FAR wchar_t *wmemcpy(FAR wchar_t *d, FAR const wchar_t *s, size_t n)
 {
-	return (FAR wchar_t *)memcpy(d, s, n * sizeof(wchar_t));
+	return memcpy(d, s, n * sizeof(wchar_t));
 }
-#endif

@@ -16,36 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ * libs/libc/wqueue/work_queue.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -55,33 +43,18 @@
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
 #include <stdint.h>
-#include <queue.h>
+#include <signal.h>
 #include <assert.h>
 #include <errno.h>
 
-#include <tinyara/arch.h>
 #include <tinyara/clock.h>
+#include <tinyara/list.h>
 #include <tinyara/wqueue.h>
 
-#include "wqueue.h"
+#include "wqueue/wqueue.h"
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
+#if defined(CONFIG_LIBC_USRWORK) && !defined(__KERNEL__)
 
 /****************************************************************************
  * Private Functions
@@ -96,80 +69,123 @@
  *
  *   The work structure is allocated by caller, but completely managed by
  *   the work queue logic.  The caller should never modify the contents of
- *   the work queue structure; the caller should not call work_queue()
+ *   the work queue structure; the caller should not call work_qqueue()
  *   again until either (1) the previous work has been performed and removed
  *   from the queue, or (2) work_cancel() has been called to cancel the work
  *   and remove it from the work queue.
  *
- * Input parameters:
- *   qid    - The work queue ID (index)
+ * Input Parameters:
+ *   wqueue - The work queue
  *   work   - The work structure to queue
- *   worker - The worker callback to be invoked.  The callback will invoked
- *            on the worker thread of execution.
- *   arg    - The argument that will be passed to the workder callback when
+ *   worker - The worker callback to be invoked.  The callback will be
+ *            invoked on the worker thread of execution.
+ *   arg    - The argument that will be passed to the worker callback when
  *            int is invoked.
  *   delay  - Delay (in clock ticks) from the time queue until the worker
  *            is invoked. Zero means to perform the work immediately.
  *
  * Returned Value:
- *   Zero (OK) on success, a negated errno on failure.
+ *   Zero on success, a negated errno on failure
  *
  ****************************************************************************/
 
-int work_qqueue(FAR struct wqueue_s *wqueue, FAR struct work_s *work, worker_t worker, FAR void *arg, clock_t delay)
+static int work_qqueue(FAR struct usr_wqueue_s *wqueue,
+                       FAR struct work_s *work, worker_t worker,
+                       FAR void *arg, clock_t delay)
 {
-	DEBUGASSERT(work != NULL);
+	FAR struct work_s *curr;
+	FAR struct work_s *head;
+	int semcount;
 
-	struct work_s *next_work = NULL;
-	struct work_s *cur_work;
-	clock_t elapsed;
-	clock_t ctick;
-	ctick = clock();
+	/* Get exclusive access to the work queue */
 
-#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-	while (work_lock() < 0);
-#else
-	irqstate_t flags;
-	flags = enter_critical_section();
-#endif
+	while (nxmutex_lock(&wqueue->lock) < 0);
 
-	/* check whether requested work is in queue list or not */
-	cur_work = (struct work_s *)wqueue->q.head;
-	while (cur_work != NULL) {
-		if (cur_work == work) {
-#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-			work_unlock();
-#else
-			leave_critical_section(flags);
-#endif
-			return -EALREADY;
+	/* Initialize the work structure */
+
+	work->worker = worker;          /* Work callback. non-NULL means queued */
+	work->arg    = arg;             /* Callback argument */
+	work->qtime  = clock() + delay; /* Delay until work performed */
+
+	/* Insert the work into the wait queue sorted by the expired time. */
+
+	head = list_first_entry(&wqueue->q, struct work_s, node);
+
+	list_for_every_entry(&wqueue->q, curr, struct work_s, node) {
+		if (!clock_compare(curr->qtime, work->qtime)) {
+			break;
 		}
-
-		if (next_work == NULL) {
-			elapsed = ctick - cur_work->qtime;
-			if (cur_work->delay > elapsed && cur_work->delay - elapsed > delay) {
-				next_work = cur_work;
-			}
-		}
-
-		cur_work = (struct work_s *)cur_work->dq.flink;
 	}
 
-	work->worker = worker;		/* Work callback */
-	work->arg = arg;		/* Callback argument */
-	work->delay = delay;		/* Delay until work performed */
-	work->qtime = ctick;		/* Time work queued */
+	/* After the insertion, we do not violate the invariant that
+	 * the wait queue is sorted by the expired time. Because
+	 * curr->qtime > work->qtime.
+	 * In the case of the wqueue is empty, we insert
+	 * the work at the head of the wait queue.
+	 */
 
-	if (next_work) {
-		dq_addbefore((FAR dq_entry_t *)next_work, (FAR dq_entry_t *)work, &wqueue->q);
-	} else {
-		dq_addlast((FAR dq_entry_t *)work, &wqueue->q);
+	list_add_before(&curr->node, &work->node);
+
+	/* If the current work is the head of the wait queue.
+	 * We should wake up the worker thread.
+	 */
+
+	if (curr == head) {
+		nxsem_get_value(&wqueue->wake, &semcount);
+		if (semcount < 1) {
+			nxsem_post(&wqueue->wake);
+		}
 	}
-#if defined(CONFIG_SCHED_USRWORK) && !defined(__KERNEL__)
-	work_unlock();
-#else
-	leave_critical_section(flags);
-#endif
 
+	nxmutex_unlock(&wqueue->lock);
 	return OK;
 }
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: work_queue
+ *
+ * Description:
+ *   Queue user-mode work to be performed at a later time.  All queued work
+ *   will be performed on the worker thread of execution (not the caller's).
+ *
+ *   The work structure is allocated and must be initialized to all zero by
+ *   the caller.  Otherwise, the work structure is completely managed by the
+ *   work queue logic.  The caller should never modify the contents of the
+ *   work queue structure directly.  If work_queue() is called before the
+ *   previous work has been performed and removed from the queue, then any
+ *   pending work will be canceled and lost.
+ *
+ * Input Parameters:
+ *   qid    - The work queue ID (index)
+ *   work   - The work structure to queue
+ *   worker - The worker callback to be invoked.  The callback will be
+ *            invoked on the worker thread of execution.
+ *   arg    - The argument that will be passed to the worker callback when
+ *            int is invoked.
+ *   delay  - Delay (in clock ticks) from the time queue until the worker
+ *            is invoked. Zero means to perform the work immediately.
+ *
+ * Returned Value:
+ *   Zero on success, a negated errno on failure
+ *
+ ****************************************************************************/
+
+int work_queue(int qid, FAR struct work_s *work, worker_t worker,
+               FAR void *arg, clock_t delay)
+{
+	if (qid == USRWORK) {
+		/* Is there already pending work? */
+
+		work_cancel(qid, work);
+
+		return work_qqueue(&g_usrwork, work, worker, arg, delay);
+	} else {
+		return -EINVAL;
+	}
+}
+
+#endif /* CONFIG_LIBC_USRWORK && !__KERNEL__ */

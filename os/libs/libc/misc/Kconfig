@@ -1,0 +1,174 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+comment "Non-standard Library Support"
+
+config LIBC_CRC64_FAST
+	bool "Fast CRC64"
+	default n
+	---help---
+		Enable the CRC64 lookup table to compute the CRC64 faster.
+
+config LIBC_CRC32_SLOW
+	bool "CRC32 not use table to decrease rodata size"
+	default n
+	---help---
+		Optional disable the CRC32 lookup table to decrease rodata usage.
+
+config LIBC_KBDCODEC
+	bool "Keyboard CODEC"
+	default n
+	---help---
+		In NuttX, a keyboard/keypad driver is simply a character driver that
+		may have an (optional) encoding/decoding layer on the data returned
+		by the character driver. A keyboard may return simple text data
+		(alphabetic, numeric, and punctuation) or control characters
+		(enter, control-C, etc.).  However, in addition, most keyboards
+		support actions that cannot be represented as text data. Such
+		actions include things like cursor controls (home, up arrow,
+		page down, etc.), editing functions (insert, delete, etc.), volume
+		controls, (mute, volume up, etc.) and other special functions.
+		Some special encoding may be required to multiplex these two classes
+		of data.
+
+		This option enables the functions that implement the encoding and
+		decoding of keyboard data.  These are the interfaces prototyped in
+		include/nuttx/input/kbd_codec.h.  While not correctly a part of
+		the C library, it is included here because the decoding side of this
+		interface must be accessible by end user programs.
+
+config LIBC_SLCDCODEC
+	bool "Segment LCD CODEC"
+	default n
+	---help---
+		In NuttX, a character-oriented, segment LCD (SLCD) driver is simply
+		a character device that may have an (optional) encoding/decoding
+		layer on the data provided to the SLCD driver.  The application may
+		provide simple text data (alphabetic, numeric, and punctuation) or
+		control characters (enter, control-C, etc.).  However, in addition,
+		most SLCDs support actions that cannot be represented as text data.
+		Such actions include things like cursor controls (home, up arrow,
+		page down, etc.) and other special functions (e.g., blinking).  Some
+		special encoding may be required to multiplex these two classes of
+		data.
+
+		This option enables the functions that implement the encoding and
+		decoding of SLCD data.  These are the interfaces prototyped in
+		include/nuttx/lcd/slcd_codec.h.  While not correctly a part of the C
+		library, it is included here because the encoding side of this
+		interface must be accessible by end user programs.
+
+config LIBC_ENVPATH
+	bool "Support PATH Environment Variable"
+	default n
+	depends on !DISABLE_ENVIRON
+	---help---
+		Use the contents of the common environment variable to locate executable
+		or library files.  Default: n
+
+config FDSAN
+	bool "Enable Fdsan"
+	default n
+	---help---
+		Enable the fdsan support
+
+config FDCHECK
+	bool "Enable fdcheck"
+	default n
+	depends on LIBC_OPEN_MAX <= 256
+	---help---
+		Enable the fdcheck support
+
+config LIBC_FTOK_VFS_PATH
+	string "Relative path to ftok storage"
+	default "/var/ftok"
+	---help---
+		The relative path to where ftok will exist in the root namespace.
+
+config LIBC_UNAME_DISABLE_TIMESTAMP
+	bool "Disable uname timestamp support"
+	default n
+	---help---
+		Currently uname command will print the timestamp
+		when the binary was built, and it generates an issue
+		because two identical built binaries will have different
+		hashes/CRC.
+
+choice
+	prompt "Select memfd implementation"
+
+config LIBC_MEMFD_SHMFS
+	bool "memfd base on shmfs"
+	depends on FS_SHMFS
+
+config LIBC_MEMFD_TMPFS
+	bool "memfd base on tmpfs"
+	depends on FS_TMPFS
+
+config LIBC_MEMFD_ERROR
+	bool "memfd return error"
+
+endchoice
+
+config LIBC_MEM_FD_VFS_PATH
+	string "Relative path to memfd storage"
+	default "memfd"
+	depends on !LIBC_MEMFD_ERROR
+	---help---
+		The relative path to where memfd will exist in the tmpfs namespace.
+
+config LIBC_TEMPBUFFER
+	bool "Enable global temp buffer"
+	default !DEFAULT_SMALL
+	---help---
+		Enable this option to enable the global temp buffer, otherwise use stack variables via alloca().
+		If the current platform does not require a large TEMP_MAX_SIZE size support and toolchain supports alloca(),
+		we could turn off this option to improve performance.
+
+if LIBC_TEMPBUFFER
+
+config LIBC_MAX_TEMPBUFFER
+	int "Maximum size of a temporary file temp buffer array"
+	range 0 32
+	default 2
+	---help---
+		This value is the maximum size of the buffer that will hold the full line.
+
+config LIBC_TEMPBUFFER_MALLOC
+	bool "Enable malloc tempbuffer"
+	default y
+	---help---
+		Enable malloc temp buffer from the heap when tempbuffer is insufficient.
+
+endif # LIBC_TEMPBUFFER
+
+config LIBC_BACKTRACE_BUFFSIZE
+	int "The size of backtrace record buffer"
+	depends on SCHED_BACKTRACE
+	default 0
+	---help---
+		The size of the backtrace buffer.
+
+config LIBC_BACKTRACE_DEPTH
+	int "The depth of backtrace"
+	depends on LIBC_BACKTRACE_BUFFSIZE > 0
+	default 8
+	---help---
+		The depth of the backtrace buffer.
+
+config LIBC_MUTEX_BACKTRACE
+	int "The depth of mutex backtrace"
+	default 0
+	---help---
+		Config the depth of backtrace, dumping the backtrace of thread which
+		last acquired the mutex. Disable mutex backtrace by 0.
+
+config LIBC_MUTEX_BACKTRACE_SKIP
+	int "Number of initial addresses to skip in mutex backtrace"
+	depends on LIBC_MUTEX_BACKTRACE > 0
+	default 2
+	---help---
+		Configure how many initial addresses to skip when dumping mutex backtraces.
+		When generating a backtrace, the first skip addresses will be skipped.

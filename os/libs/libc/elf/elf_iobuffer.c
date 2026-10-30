@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/binfmt/libelf/libelf_iobuffer.c
+ * libs/libc/elf/elf_iobuffer.c
  *
- *   Copyright (C) 2012-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -59,29 +46,17 @@
 #include <debug.h>
 #include <errno.h>
 
-#include <tinyara/kmalloc.h>
-#include <tinyara/binfmt/elf.h>
+#include <tinyara/lib/elf.h>
 
-#include "libelf.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Constant Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#include "libc.h"
+#include "elf/elf.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: elf_allocbuffer
+ * Name: libelf_allocbuffer
  *
  * Description:
  *   Perform the initial allocation of the I/O buffer, if it has not already
@@ -93,27 +68,28 @@
  *
  ****************************************************************************/
 
-int elf_allocbuffer(FAR struct elf_loadinfo_s *loadinfo)
+int libelf_allocbuffer(FAR struct mod_loadinfo_s *loadinfo)
 {
 	/* Has a buffer been allocated> */
 
 	if (!loadinfo->iobuffer) {
 		/* No.. allocate one now */
 
-		loadinfo->iobuffer = (FAR uint8_t *)kmm_malloc(CONFIG_ELF_BUFFERSIZE);
+		loadinfo->iobuffer = (FAR uint8_t *)
+		                     lib_malloc(CONFIG_LIBC_ELF_BUFFERSIZE);
 		if (!loadinfo->iobuffer) {
-			berr("Failed to allocate an I/O buffer\n");
+			berr("ERROR: Failed to allocate an I/O buffer\n");
 			return -ENOMEM;
 		}
 
-		loadinfo->buflen = CONFIG_ELF_BUFFERSIZE;
+		loadinfo->buflen = CONFIG_LIBC_ELF_BUFFERSIZE;
 	}
 
 	return OK;
 }
 
 /****************************************************************************
- * Name: elf_reallocbuffer
+ * Name: libelf_reallocbuffer
  *
  * Description:
  *   Increase the size of I/O buffer by the specified buffer increment.
@@ -124,7 +100,8 @@ int elf_allocbuffer(FAR struct elf_loadinfo_s *loadinfo)
  *
  ****************************************************************************/
 
-int elf_reallocbuffer(FAR struct elf_loadinfo_s *loadinfo, size_t increment)
+int libelf_reallocbuffer(FAR struct mod_loadinfo_s *loadinfo,
+                         size_t increment)
 {
 	FAR void *buffer;
 	size_t newsize;
@@ -135,15 +112,15 @@ int elf_reallocbuffer(FAR struct elf_loadinfo_s *loadinfo, size_t increment)
 
 	/* And perform the reallocation */
 
-	buffer = kmm_realloc((FAR void *)loadinfo->iobuffer, newsize);
+	buffer = lib_realloc(loadinfo->iobuffer, newsize);
 	if (!buffer) {
-		berr("Failed to reallocate the I/O buffer\n");
+		berr("ERROR: Failed to reallocate the I/O buffer\n");
 		return -ENOMEM;
 	}
 
 	/* Save the new buffer info */
 
 	loadinfo->iobuffer = buffer;
-	loadinfo->buflen = newsize;
+	loadinfo->buflen   = newsize;
 	return OK;
 }

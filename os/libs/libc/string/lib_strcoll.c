@@ -16,10 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/libc/string/lib_strcoll.c
+ * libs/libc/string/lib_strcoll.c
  *
- *   Copyright (c)1999 Citrus Project,
- *   All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause
+ * SPDX-FileCopyrightText: 1999 Citrus Project, All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -69,8 +69,8 @@
  *
  ****************************************************************************/
 
-int strcoll(const char *s1, const char *s2)
+int strcoll(FAR const char *a, FAR const char *b)
 {
-	return strcmp(s1, s2);
+	return strcmp(a, b);
 }
 #endif

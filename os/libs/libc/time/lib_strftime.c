@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/time/lib_strftime.c
+ * libs/libc/time/lib_strftime.c
  *
- *   Copyright (C) 2009, 2011, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -57,22 +44,18 @@
 #include <tinyara/config.h>
 #include <sys/types.h>
 
+#include <stdbool.h>
 #include <stdio.h>
-#include <time.h>
 #include <debug.h>
-#ifdef CONFIG_LIBC_LOCALTIME
-#include <string.h>
-#include <stdlib.h>
-#endif
 
-#include <tinyara/time.h>
+#include <tinyara/clock.h>
 
 /****************************************************************************
- * Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
- * Private Type Declarations
+ * Private Types
  ****************************************************************************/
 
 /****************************************************************************
@@ -90,22 +73,28 @@
 /****************************************************************************
  * Private Data
  ****************************************************************************/
-static const char *const g_abbrev_wdayname[7] = {
-	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+
+static const char *const g_abbrev_wdayname[7] =
+{
+  "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
 
-static const char *const g_wdayname[7] = {
-	"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+static const char *const g_wdayname[7] =
+{
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+  "Saturday"
 };
 
-static const char *const g_abbrevmonthname[12] = {
-	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+static const char *const g_abbrev_monthname[12] =
+{
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-static const char *const g_monthname[12] = {
-	"January", "February", "March", "April", "May", "June",
-	"July", "August", "September", "October", "November", "December"
+static const char *const g_monthname[12] =
+{
+  "January", "February", "March",     "April",   "May",      "June",
+  "July",    "August",   "September", "October", "November", "December"
 };
 
 /****************************************************************************
@@ -113,11 +102,111 @@ static const char *const g_monthname[12] = {
  ****************************************************************************/
 
 /****************************************************************************
+ * Name: is_leap
+ *
+ * Description:
+ *  determine if the given year is a leap year or not
+ *
+ * Input Parameters:
+ *  year - a year value
+ *
+ * Returned value:
+ *  true if current is leap year, false is not a leap year
+ */
+
+static bool is_leap(int year)
+{
+	return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+}
+
+/****************************************************************************
+ * Name: get_week_num
+ *
+ * Description:
+ *  get the week number in a year based on iso8601 standard
+ *
+ * Input Parameters:
+ *  time - the specified time
+ *
+ * Returned value:
+ *  the week number in a year
+ */
+
+static int get_week_num(FAR const struct tm *time)
+{
+	/* calculate the total week number in a year */
+
+	int week = (time->tm_yday + DAYSPERWEEK -
+	            (time->tm_wday + 6) % DAYSPERWEEK) / DAYSPERWEEK;
+
+	/* if xxxx-1-1 is just passed 1-3 days after Monday
+	 * then the previous week will calculated into this year
+	 */
+
+	if ((time->tm_wday + 371 - time->tm_yday - 2) % DAYSPERWEEK <= 2) {
+		week++;
+	}
+
+	if (week == 0) {
+		week = 52;
+
+		/* if xxxx-12-31 is Thursday or Friday, and the previous year is
+		 * leap year, then the previous year has 53 weeks
+		 */
+
+		int dec31 = (time->tm_wday + DAYSPERWEEK - time->tm_yday - 1)
+		                % DAYSPERWEEK;
+		if (dec31 == TM_THURSDAY ||
+		    (dec31 == TM_FRIDAY && is_leap(time->tm_year % 400 - 1))) {
+			week++;
+		}
+	} else if (week == 53) {
+		/* If xxxx-1.1 is not a Thursday, and not a Wednesday of a leap year,
+		 * then this year has only 52 weeks
+		 */
+
+		int jan1 = (time->tm_wday + 371 - time->tm_yday) % DAYSPERWEEK;
+		if (jan1 != TM_THURSDAY &&
+		      (jan1 != TM_WEDNESDAY || !is_leap(time->tm_year))) {
+			week = 1;
+		}
+	}
+
+	return week;
+}
+
+/****************************************************************************
+ * Name: get_week_year
+ *
+ * Description:
+ *  get the week year based on iso8601 standard
+ *
+ * Input Parameters:
+ *  time - the specified time
+ *
+ * Returned value:
+ *  the year that calculated based on week number
+ */
+
+static int get_week_year(FAR const struct tm *time)
+{
+	int week_num = get_week_num(time);
+	int week_year = time->tm_year + TM_YEAR_BASE;
+	if (time->tm_yday < 3 && week_num != 1) {
+		week_year--;
+	} else if (time->tm_yday > 360 && week_num == 1) {
+		week_year++;
+	}
+
+	return week_year;
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Function:  strftime
+ * Name:  strftime
  *
  * Description:
  *   The  strftime()  function  formats the broken-down time tm according to
@@ -129,17 +218,23 @@ static const char *const g_monthname[12] = {
  *   ter,  and  terminated  by  a  conversion  specifier  character, and are
  *   replaced in s as follows:
  *
- *   %a     A three-letter abbreviation for the day of the week.
- *   %A     The full name for the day of the week.
+ *   %a     The abbreviated weekday name according to the current locale.
+ *   %A     The full weekday name according to the current locale.
  *   %b     The abbreviated month name according to the current locale.
  *   %B     The full month name according to the current locale.
  *   %C     The century number (year/100) as a 2-digit integer. (SU)
  *   %d     The day of the month as a decimal number (range 01 to 31).
  *   %e     Like %d, the day of the month as a decimal number, but a leading
  *          zero is replaced by a space.
+ *   %F     The full date format but with no time fields
+ *   %g     The last 2 digits of the week-based year as a decimal number
+ *          [00,99]
+ *   %G     The full version of %g, display the full year value
  *   %h     Equivalent to %b.  (SU)
- *   %H     The hour as a decimal number using a 24-hour clock (range 00 to 23).
- *   %I     The  hour as a decimal number using a 12-hour clock (range 01 to 12).
+ *   %H     The hour as a decimal number using a 24-hour clock
+ *          (range 00 to 23).
+ *   %I     The  hour as a decimal number using a 12-hour clock
+ *          (range 01 to 12).
  *   %j     The day of the year as a decimal number (range 001 to 366).
  *   %k     The hour (24-hour clock) as a decimal number (range  0  to  23);
  *          single digits are preceded by a blank.  (See also %H.)  (TZ)
@@ -153,14 +248,25 @@ static const char *const g_monthname[12] = {
  *          as "PM" and midnight as "AM".
  *   %P     Like %p but in lowercase: "am" or "pm" or a corresponding string
  *          for the current locale. (GNU)
+ *   %r     The time in a.m. and p.m. notation
+ *   %R     The time in 24-hour notation ( %H : %M ).
  *   %s     The number of seconds since the Epoch, that is, since 1970-01-01
  *          00:00:00 UTC. (TZ)
  *   %S     The second as a decimal number (range 00 to 60).  (The range is
  *          up to 60 to allow for occasional leap seconds.)
  *   %t     A tab character. (SU)
+ *   %u     The weekday as a decimal number [1,7], with 1 representing
+ *          Monday.
+ *   %U     The week number of the year as a decimal number [00,53].
+ *   %V     The week number of the year
+ *   %w     The weekday as a decimal number (range 0 to 6).
+ *   %W     The week number of the year as a decimal number [00,53].
+ *   %x     The locale's appropriate date representation, but without time.
+ *   %X     The locale's appropriate time representation, but without date.
  *   %y     The year as a decimal number without a century (range 00 to 99).
  *   %Y     The year as a decimal number including the century.
- *   %Z     The timezone name or abbreviation, or by no bytes if no timezone information exists.
+ *   %z     The timezone name or abbreviation, or by no bytes if no timezone
+ *          information exists.
  *   %%     A literal '%' character.
  *
  * Returned Value:
@@ -171,13 +277,14 @@ static const char *const g_monthname[12] = {
  *
  ****************************************************************************/
 
-size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struct tm *tm)
+size_t strftime(FAR char *s, size_t max, FAR const char *format,
+                FAR const struct tm *tm)
 {
 	FAR const char *str;
-	FAR char *dest = s;
-	int chleft = max;
-	int value;
-	int len;
+	FAR char       *dest   = s;
+	int             chleft = max;
+	int             value;
+	int             len;
 
 	while (*format && chleft > 0) {
 		/* Just copy regular characters */
@@ -191,12 +298,14 @@ size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struc
 		/* Handle the format character */
 
 		format++;
-		len = 0;
+		len   = 0;
 
+process_next:
 		switch (*format++) {
 		/* %a: A three-letter abbreviation for the day of the week. */
 
-		case 'a': {
+		case 'a':
+		{
 			if (tm->tm_wday < 7) {
 				str = g_abbrev_wdayname[tm->tm_wday];
 				len = snprintf(dest, chleft, "%s", str);
@@ -205,7 +314,9 @@ size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struc
 		break;
 
 		/* %A: The full name for the day of the week. */
-		case 'A': {
+
+		case 'A':
+		{
 			if (tm->tm_wday < 7) {
 				str = g_wdayname[tm->tm_wday];
 				len = snprintf(dest, chleft, "%s", str);
@@ -217,11 +328,14 @@ size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struc
 
 		case 'h':
 
-		/* %b: The abbreviated month name according to the current locale. */
+		/* %b: The abbreviated month name according to the current
+		 * locale.
+		 */
 
-		case 'b': {
+		case 'b':
+		{
 			if (tm->tm_mon < 12) {
-				str = g_abbrevmonthname[tm->tm_mon];
+				str = g_abbrev_monthname[tm->tm_mon];
 				len = snprintf(dest, chleft, "%s", str);
 			}
 		}
@@ -229,7 +343,8 @@ size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struc
 
 		/* %B: The full month name according to the current locale. */
 
-		case 'B': {
+		case 'B':
+		{
 			if (tm->tm_mon < 12) {
 				str = g_monthname[tm->tm_mon];
 				len = snprintf(dest, chleft, "%s", str);
@@ -237,194 +352,377 @@ size_t strftime(FAR char *s, size_t max, FAR const char *format, FAR const struc
 		}
 		break;
 
-		/* %y: The year as a decimal number without a century (range 00 to 99). */
-
-		case 'y':
-
 		/* %C: The century number (year/100) as a 2-digit integer. */
 
-		case 'C': {
-			len = snprintf(dest, chleft, "%02d", tm->tm_year % 100);
+		case 'C':
+		{
+			len = snprintf(dest, chleft, "%02d", tm->tm_year / 100);
 		}
 		break;
 
-		/* %d: The day of the month as a decimal number (range 01 to 31). */
+		/* %d: The day of the month as a decimal number
+		 * (range 01 to 31).
+		 */
 
-		case 'd': {
+		case 'd':
+		{
 			len = snprintf(dest, chleft, "%02d", tm->tm_mday);
 		}
 		break;
 
-		/* %e: Like %d, the day of the month as a decimal number, but a leading
-		 * zero is replaced by a space.
+		/* The 'E' or 'O' are modifier characters to indicate that an
+		 * alternative format or specification should be used rather than
+		 * the one normally used by unmodified conversion specifier.
+		 * the following are the supported format:
+		 * %Ec %EC %Ex %EX %Ey %EY
+		 * %Od %oe %OH %OI %Om %OM
+		 * %OS %Ou %OU %OV %Ow %OW %Oy
+		 * If the alternative format or specification does not exist for
+		 * current locale, then the behavior shall be same as the
+		 * unmodified conversion specification, i.e the %Ec is same as %c
 		 */
 
-		case 'e': {
+		case 'E':
+		case 'O':
+		{
+			goto process_next;
+		}
+
+		/* %e: Like %d, the day of the month as a decimal number, but
+		 * a leading zero is replaced by a space.
+		 */
+
+		case 'e':
+		{
 			len = snprintf(dest, chleft, "%2d", tm->tm_mday);
 		}
 		break;
 
-		/* %H: The hour as a decimal number using a 24-hour clock (range 00  to 23). */
+		/* %F: ISO 8601 date format: "%Y-%m-%d" */
 
-		case 'H': {
+		case 'F':
+		{
+			len = snprintf(dest, chleft, "%04d-%02d-%02d",
+			              tm->tm_year + TM_YEAR_BASE, tm->tm_mon + 1,
+			              tm->tm_mday);
+		}
+		break;
+
+		/* %g: 2-digit year version of %G, (00-99) */
+
+		case 'g':
+		{
+			value = get_week_year(tm) % 100;
+			len = snprintf(dest, chleft, "%02d", value);
+		}
+		break;
+
+		/* %G: ISO 8601 week based year */
+
+		case 'G':
+		{
+			len = snprintf(dest, chleft, "%04d", get_week_year(tm));
+		}
+		break;
+
+		/* %H: The hour as a decimal number using a 24-hour clock
+		 * (range 00  to 23).
+		 */
+
+		case 'H':
+		{
 			len = snprintf(dest, chleft, "%02d", tm->tm_hour);
 		}
 		break;
 
-		/* %I: The  hour as a decimal number using a 12-hour clock (range 01 to 12). */
+		/* %I: The  hour as a decimal number using a 12-hour clock
+		 * (range 01 to 12).
+		 */
 
-		case 'I': {
-			len = snprintf(dest, chleft, "%02d", tm->tm_hour % 12);
+		case 'I':
+		{
+			len = snprintf(dest, chleft, "%02d", (tm->tm_hour % 12) != 0 ?
+			                                     (tm->tm_hour % 12) : 12);
 		}
 		break;
 
-		/* %j: The day of the year as a decimal number (range 001 to 366). */
+		/* %j: The day of the year as a decimal number
+		 * (range 001 to 366).
+		 */
 
-		case 'j': {
+		case 'j':
+		{
 			if (tm->tm_mon < 12) {
-				value = clock_daysbeforemonth(tm->tm_mon, clock_isleapyear(tm->tm_year)) + tm->tm_mday;
-				len = snprintf(dest, chleft, "%03d", value);
+				value = clock_daysbeforemonth(tm->tm_mon,
+				        clock_isleapyear(tm->tm_year)) + tm->tm_mday;
+				len   = snprintf(dest, chleft, "%03d", value);
 			}
 		}
 		break;
 
-		/* %k: The hour (24-hour clock) as a decimal number (range  0  to  23);
+		/* %k: The hour (24-hour clock) as a decimal number
+		 * (range  0  to  23);
 		 * single digits are preceded by a blank.
 		 */
 
-		case 'k': {
+		case 'k':
+		{
 			len = snprintf(dest, chleft, "%2d", tm->tm_hour);
 		}
 		break;
 
-		/* %l: The  hour  (12-hour  clock) as a decimal number (range 1 to 12);
+		/* %l: The  hour  (12-hour  clock) as a decimal number
+		 * (range 1 to 12);
 		 * single digits are preceded by a blank.
 		 */
 
-		case 'l': {
-			len = snprintf(dest, chleft, "%2d", tm->tm_hour % 12);
+		case 'l':
+		{
+			len = snprintf(dest, chleft, "%2d", (tm->tm_hour % 12) != 0 ?
+			                                    (tm->tm_hour % 12) : 12);
 		}
 		break;
 
 		/* %m: The month as a decimal number (range 01 to 12). */
 
-		case 'm': {
+		case 'm':
+		{
 			len = snprintf(dest, chleft, "%02d", tm->tm_mon + 1);
 		}
 		break;
 
 		/* %M: The minute as a decimal number (range 00 to 59). */
 
-		case 'M': {
+		case 'M':
+		{
 			len = snprintf(dest, chleft, "%02d", tm->tm_min);
 		}
 		break;
 
 		/* %n: A newline character. */
 
-		case 'n': {
+		case 'n':
+		{
 			*dest = '\n';
-			len = 1;
+			len   = 1;
 		}
 		break;
 
 		/* %p: Either "AM" or "PM" according to the given time  value. */
 
-		case 'p': {
+		case 'p':
+		{
 			if (tm->tm_hour >= 12) {
 				str = "PM";
 			} else {
 				str = "AM";
 			}
+
 			len = snprintf(dest, chleft, "%s", str);
 		}
 		break;
 
 		/* %P: Like %p but in lowercase: "am" or "pm" */
 
-		case 'P': {
+		case 'P':
+		{
 			if (tm->tm_hour >= 12) {
 				str = "pm";
 			} else {
 				str = "am";
 			}
+
 			len = snprintf(dest, chleft, "%s", str);
 		}
 		break;
 
-		/* %s: The number of seconds since the Epoch, that is, since 1970-01-01
-		 * 00:00:00 UTC.  Hmmm... mktime argume is not 'const'.
-		 */
+		/* %r: 12-hour clock time */
 
-		case 's': {
-			len = snprintf(dest, chleft, "%d", mktime((FAR struct tm *)tm));
+		case 'r':
+		{
+			if (tm->tm_hour >= 12) {
+				str = "pm";
+			} else {
+				str = "am";
+			}
+
+			value = tm->tm_hour == 12 ?
+			           tm->tm_hour == 12 :
+			           tm->tm_hour % (HOURSPERDAY / 2);
+
+			len = snprintf(dest, chleft, "%02d:%02d:%02d %s",
+			               value, tm->tm_min, tm->tm_sec, str);
 		}
 		break;
 
-		/* %S: The second as a decimal number (range 00 to 60).  (The range  is
-		 * up to 60 to allow for occasional leap seconds.)
+		/* %R: Shortcut for %H:%M. */
+
+		case 'R':
+		{
+			len = snprintf(dest, chleft, "%02d:%02d",
+			               tm->tm_hour, tm->tm_min);
+		}
+		break;
+
+		/* %s: The number of seconds since the Epoch, that is,
+		 * since 1970-01-01 00:00:00 UTC.
+		 * Hmmm... mktime argume is not 'const'.
 		 */
 
-		case 'S': {
+		case 's':
+		{
+			struct tm tmp = *tm;
+			len = snprintf(dest, chleft, "%ju", (uintmax_t)mktime(&tmp));
+		}
+		break;
+
+		/* %S: The second as a decimal number (range 00 to 60).
+		 * (The range is up to 60 to allow for occasional leap seconds.)
+		 */
+
+		case 'S':
+		{
 			len = snprintf(dest, chleft, "%02d", tm->tm_sec);
 		}
 		break;
 
 		/* %t: A tab character. */
 
-		case 't': {
+		case 't':
+		{
 			*dest = '\t';
-			len = 1;
+			len   = 1;
+		}
+		break;
+
+		/* %T: Shortcut for %H:%M:%S. */
+
+		case 'T':
+		{
+			len = snprintf(dest, chleft, "%02d:%02d:%02d",
+			               tm->tm_hour, tm->tm_min, tm->tm_sec);
+		}
+		break;
+
+		/* %u: The day of the week as a decimal, (1-7). Monday being 1,
+		 * Sunday being 0.
+		 */
+
+		case 'u':
+		{
+			value = tm->tm_wday == 0 ? 7 : tm->tm_wday;
+			len = snprintf(dest, chleft, "%d", value);
+		}
+		break;
+
+		/* %U: week number of the current year as a decimal number,
+		 * (00-53). Starting with the first Sunday as the first day
+		 * of week 01.
+		 */
+
+		case 'U':
+		{
+			value = (tm->tm_yday + DAYSPERWEEK - tm->tm_wday)
+			                   / DAYSPERWEEK;
+			len = snprintf(dest, chleft, "%02d", value);
+		}
+		break;
+
+		/* %V: ISO 8601 week number */
+
+		case 'V':
+		{
+			value = get_week_num(tm);
+			len = snprintf(dest, chleft, "%02d", value);
+		}
+		break;
+
+		/* %w: The weekday as a decimal number (range 0 to 6). */
+
+		case 'w':
+		{
+			len = snprintf(dest, chleft, "%d", tm->tm_wday);
+		}
+		break;
+
+		/* %W: Week number of the current year as a decimal number,
+		 * (00-53). Starting with the first Monday as the first day
+		 * of week 01.
+		 */
+
+		case 'W':
+		{
+			value = (tm->tm_yday + DAYSPERWEEK -
+			                  (tm->tm_wday + 6) % DAYSPERWEEK)
+			                   / DAYSPERWEEK;
+			len = snprintf(dest, chleft, "%02d", value);
+		}
+		break;
+
+		/* %x Locale date without time */
+
+		case 'x':
+		{
+			len = snprintf(dest, chleft, "%02d/%02d/%04d",
+			              tm->tm_mon, tm->tm_mday,
+			              tm->tm_year + TM_YEAR_BASE);
+		}
+		break;
+
+		/* %X: Locale time without date */
+
+		case 'X':
+		{
+			len = snprintf(dest, chleft, "%02d:%02d:%02d",
+			               tm->tm_hour, tm->tm_min, tm->tm_sec);
+		}
+		break;
+
+		/* %y: The year as a decimal number without a century
+		 * (range 00 to 99).
+		 */
+
+		case 'y':
+		{
+			len = snprintf(dest, chleft, "%02d", tm->tm_year % 100);
 		}
 		break;
 
 		/* %Y: The year as a decimal number including the century. */
 
-		case 'Y': {
-			len = snprintf(dest, chleft, "%04d", tm->tm_year + TM_YEAR_BASE);
+		case 'Y':
+		{
+			len = snprintf(dest, chleft, "%04d",
+			               tm->tm_year + TM_YEAR_BASE);
 		}
 		break;
 
-		case 'Z': {
-#ifdef CONFIG_LIBC_LOCALTIME
-			char *zoneinfo = getenv("TZ");
-			char *zone = NULL;
-			if (zoneinfo == NULL) {
-				zone = "UTC";
-			} else {
-				int zoneinfo_len;
-				zone = zoneinfo;
-#ifdef CONFIG_LIBC_TZDIR
-				/* If CONFIG_LIBC_TZDIR is enabled, zoneinfo is like "CONFIG_LIBC_TZDIR/XXX". */
-				zoneinfo_len = strlen(CONFIG_LIBC_TZDIR);
-#else
-				/* If CONFIG_LIBC_TZDIR is not enabled, zoneinfo is like "/usr/local/etc/zoneinfo/XXX". */
-				zoneinfo_len = strlen("/usr/local/etc/zoneinfo");
-#endif
-				while (zoneinfo_len != 0) {
-					zone++;
-					zoneinfo_len--;
-				}
-				zone++;
-			}
+		/* %z: Numeric timezone as hour and minute offset from UTC
+		 * "+hhmm" or "-hhmm"
+		 */
 
-			len = snprintf(dest, chleft, "%s", zone);
-#endif
-			break;
+		case 'z':
+		{
+			int hour = tm->tm_gmtoff / 3600;
+			int min = tm->tm_gmtoff % 3600 / 60;
+			int utc_val = hour  * 100 + min;
+			len = snprintf(dest, chleft, "+%04d", utc_val);
 		}
+		break;
 
 		/* %%:  A literal '%' character. */
 
-		case '%': {
+		case '%':
+		{
 			*dest = '%';
-			len = 1;
+			len   = 1;
 		}
 		break;
 		}
 
 		/* Update counts and pointers */
 
-		dest += len;
+		dest   += len;
 		chleft -= len;
 	}
 

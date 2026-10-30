@@ -18,6 +18,8 @@
 /****************************************************************************
  * libs/libc/pthread/pthread_attr_setaffinity.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -51,7 +53,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name:  pthread_attr_setaffinity
+ * Name:  pthread_attr_setaffinity_np
  *
  * Description:
  *
@@ -70,12 +72,12 @@ int pthread_attr_setaffinity_np(FAR pthread_attr_t *attr,
                                 size_t cpusetsize,
                                 FAR const cpu_set_t *cpuset)
 {
-  svdbg("attr=%p cpusetsize=%d cpuset=%p\n",
-         attr, (int)cpusetsize, cpuset);
+	linfo("attr=%p cpusetsize=%d cpuset=%p\n",
+	       attr, (int)cpusetsize, cpuset);
 
-  DEBUGASSERT(attr != NULL && cpusetsize == sizeof(cpu_set_t) &&
-              cpuset != NULL && *cpuset != 0);
+	DEBUGASSERT(attr != NULL && cpusetsize == sizeof(cpu_set_t) &&
+	            cpuset != NULL && *cpuset != 0);
 
-  attr->affinity = *cpuset;
-  return OK;
+	attr->affinity = *cpuset;
+	return OK;
 }

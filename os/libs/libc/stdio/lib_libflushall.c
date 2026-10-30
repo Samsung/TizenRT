@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_libflushall.c
+ * libs/libc/stdio/lib_libflushall.c
  *
- *   Copyright (C) 2007-2009, 2011-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -60,40 +47,13 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include <tinyara/nuttx.h>
 #include <tinyara/fs/fs.h>
 
-#include "lib_internal.h"
+#include "libc.h"
 
 /****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Global Constant Data
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Constant Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Global Functions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
@@ -105,31 +65,83 @@
  *
  ****************************************************************************/
 
-int lib_flushall(FAR struct streamlist *list)
+int lib_flushall_unlocked(FAR struct streamlist *list)
 {
+	FAR sq_entry_t *entry;
 	int lasterrno = OK;
 	int ret;
 
 	/* Make sure that there are streams associated with this thread */
 
-	if (list) {
+	if (list != NULL) {
+		FAR FILE *stream;
 		int i;
 
 		/* Process each stream in the thread's stream list */
 
-		stream_semtake(list);
-		for (i = 0; i < CONFIG_NFILE_STREAMS; i++) {
-			FILE *stream = &list->sl_streams[i];
+		for (i = 0; i < 3; i++) {
+			lib_fflush_unlocked(&list->sl_std[i]);
+		}
 
-			/* If the stream is open (i.e., assigned a non-negative file
-			 * descriptor) and opened for writing, then flush all of the pending
-			 * write data in the stream.
+		sq_for_every(&list->sl_queue, entry) {
+			stream = container_of(entry, struct file_struct, fs_entry);
+
+			/* If the stream is opened for writing, then flush all of
+			 * the pending write data in the stream.
 			 */
 
-			if (stream->fs_fd >= 0 && (stream->fs_oflags & O_WROK) != 0) {
+			if ((stream->fs_oflags & O_WROK) != 0) {
 				/* Flush the writable FILE */
 
-				ret = lib_fflush(stream, true);
+				ret = lib_fflush_unlocked(stream);
+				if (ret < 0) {
+					/* An error occurred during the flush AND/OR we were unable
+					 * to flush all of the buffered write data.  Remember the
+					 * last errcode.
+					 */
+
+					lasterrno = ret;
+				}
+			}
+		}
+	}
+
+	/* If any flush failed, return the errorcode of the last failed flush */
+
+	return lasterrno;
+}
+
+int lib_flushall(FAR struct streamlist *list)
+{
+	FAR sq_entry_t *entry;
+	int lasterrno = OK;
+	int ret;
+
+	/* Make sure that there are streams associated with this thread */
+
+	if (list != NULL) {
+		FAR FILE *stream;
+		int i;
+
+		/* Process each stream in the thread's stream list */
+
+		nxmutex_lock(&list->sl_lock);
+
+		for (i = 0; i < 3; i++) {
+			lib_fflush(&list->sl_std[i]);
+		}
+
+		sq_for_every(&list->sl_queue, entry) {
+			stream = container_of(entry, struct file_struct, fs_entry);
+
+			/* If the stream is opened for writing, then flush all of
+			 * the pending write data in the stream.
+			 */
+
+			if ((stream->fs_oflags & O_WROK) != 0) {
+				/* Flush the writable FILE */
+
+				ret = lib_fflush(stream);
 				if (ret < 0) {
 					/* An error occurred during the flush AND/OR we were unable
 					 * to flush all of the buffered write data.  Remember the
@@ -141,7 +153,7 @@ int lib_flushall(FAR struct streamlist *list)
 			}
 		}
 
-		stream_semgive(list);
+		nxmutex_unlock(&list->sl_lock);
 	}
 
 	/* If any flush failed, return the errorcode of the last failed flush */

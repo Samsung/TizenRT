@@ -1,0 +1,76 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_ARMV8M
+
+config ARMV8M_STRING_FUNCTION
+	bool "Enable optimized ARMv8M specific string function"
+	default n
+	depends on ARCH_TOOLCHAIN_GNU
+	select ARMV8M_MEMCHR
+	select ARMV8M_MEMCPY
+	select ARMV8M_MEMSET
+	select ARMV8M_MEMMOVE
+	select ARMV8M_STRCMP
+	select ARMV8M_STRCPY
+	select ARMV8M_STRLEN
+
+config ARMV8M_MEMCHR
+	bool "Enable optimized memchr() for ARMv8-M"
+	default n
+	select LIBC_ARCH_MEMCHR
+	depends on ARCH_TOOLCHAIN_GNU
+	---help---
+		Enable optimized ARMv8-M specific memchr() library function
+
+config ARMV8M_MEMCPY
+	bool "Enable optimized memcpy() for ARMv8-M"
+	default n
+	select LIBC_ARCH_MEMCPY
+	depends on ARCH_TOOLCHAIN_GNU
+	---help---
+		Enable optimized ARMv8-M specific memcpy() library function
+
+config ARMV8M_MEMSET
+	bool "Enable optimized memset() for ARMv8-M"
+	default n
+	select LIBC_ARCH_MEMSET
+	depends on ARCH_TOOLCHAIN_GNU
+	---help---
+		Enable optimized ARMv8-M specific memset() library function
+
+config ARMV8M_MEMMOVE
+	bool "Enable optimized memmove() for ARMv8-M"
+	default n
+	select LIBC_ARCH_MEMMOVE
+	depends on ARCH_TOOLCHAIN_GNU
+	---help---
+		Enable optimized ARMv8-M specific memmove() library function
+
+config ARMV8M_STRCMP
+	bool "Enable optimized strcmp() for ARMv8-M"
+	default n
+	select LIBC_ARCH_STRCMP
+	depends on ARCH_TOOLCHAIN_GNU
+	---help---
+		Enable optimized ARMv8-M specific strcmp() library function
+
+config ARMV8M_STRCPY
+	bool "Enable optimized strcpy() for ARMv8-M"
+	default n
+	select LIBC_ARCH_STRCPY
+	depends on ARCH_TOOLCHAIN_GNU
+	---help---
+		Enable optimized ARMv8-M specific strcpy() library function
+
+config ARMV8M_STRLEN
+	bool "Enable optimized strlen() for ARMv8-M"
+	default n
+	select LIBC_ARCH_STRLEN
+	depends on ARCH_TOOLCHAIN_GNU
+	---help---
+		Enable optimized ARMv8-M specific strlen() library function
+
+endif

@@ -2,3 +2,14 @@
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
+
+config BUILTIN
+	bool "Support Builtin Applications"
+	default n
+	depends on !BUILD_KERNEL
+	---help---
+		Enable support for builtin applications.  This features assigns a string
+		name to an application and in addition if FS_BINFS is defined, retaining
+		those names in a file system from which they can be executed.  This feature
+		is also the underlying requirement to support built-in applications in the
+		NuttShell (NSH).

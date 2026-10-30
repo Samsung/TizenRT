@@ -1,0 +1,26 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config LIB_GDBSTUB
+	tristate "GDBSTUB"
+	depends on ARCH_HAVE_TCBINFO
+	---help---
+		Enable support for gdbstub.
+
+if LIB_GDBSTUB
+
+config LIB_GDBSTUB_DEBUG
+	bool "Gdbstub Debug Info"
+	default n
+	---help---
+		Add debug info to gdbstub
+
+config LIB_GDBSTUB_PKTSIZE
+	int "Gdbstub packet size"
+	default 32768
+	---help---
+		The size of the gdbstub packet buffer.
+
+endif # LIB_GDBSTUB

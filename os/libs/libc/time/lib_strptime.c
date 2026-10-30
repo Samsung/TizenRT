@@ -16,37 +16,30 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/time/lib_strptime.c
+ * libs/libc/time/lib_strptime.c
  *
- *   Copyright (C) 2011, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * musl as a whole is licensed under the following standard MIT license:
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Copyright © 2005-2020 Rich Felker, et al.
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  ****************************************************************************/
 
@@ -54,391 +47,530 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
+#include <stdlib.h>
+#include <langinfo.h>
+#include <time.h>
+#include <ctype.h>
+#include <stddef.h>
 #include <string.h>
 #include <strings.h>
-#include <ctype.h>
-#include <sys/time.h>
-#include <time.h>
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-#define _ctloc(x) (_DefaultTimeLocale.x)
-/*
- * We do not implement alternate representations. However, we always
- * check whether a given modifier is allowed for a certain conversion.
- */
-#define _ALT_E          0x01
-#define _ALT_O          0x02
-#define _LEGAL_ALT(x)       { if (alt_format & ~(x)) return (0); }
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-static const struct {
-	const char *abday[7];
-	const char *day[7];
-	const char *abmon[12];
-	const char *mon[12];
-	const char *am_pm[2];
-	const char *d_t_fmt;
-	const char *d_fmt;
-	const char *t_fmt;
-	const char *t_fmt_ampm;
-} _DefaultTimeLocale = {
-	{
-		"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
-	}, {
-		"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
-	}, {
-		"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-	}, {
-		"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
-	}, {
-		"AM", "PM"
-	}, "%a %b %d %H:%M:%S %Y", "%m/%d/%y", "%H:%M:%S", "%I:%M:%S %p"
-};
-
-struct century_relyear {
-	int century;
-	int relyear;
-};
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-static int _conv_num(const unsigned char **, int *, int, int);
-
-static unsigned char *_strptime(const unsigned char *, const char *, struct tm *, struct century_relyear *);
-
 /****************************************************************************
- * Function:  strptime
+ * Name:  strptime
  *
  * Description:
+ *    Parses a string representing date and time according to a specified
+ *    format and stores the result in a struct tm structure.
  *
+ * Input Parameters:
+ *    s    - Pointer to the input string to be parsed.
+ *    f    - Pointer to the format string specifying how to parse the input
+ *           string.
+ *    tm   - Pointer to a struct tm structure where the parsed date and time
+ *           will be stored.
  *
- * Parameters:
- *
- *
- * Return Value:
- *
+ * Returned Value:
+ *    Returns a pointer to the character in the input string s immediately
+ *    following the last character processed.
  *
  ****************************************************************************/
 
-char *strptime(const char *buf, const char *fmt, struct tm *tm)
+FAR char *strptime(FAR const char *restrict s, FAR const char *restrict f,
+                   FAR struct tm *restrict tm)
 {
-	struct century_relyear cr;
-	cr.century = TM_YEAR_BASE;
-	cr.relyear = -1;
-	return (char *)(_strptime((const unsigned char *)buf, fmt, tm, &cr));
-}
+	int i;
+	int w;
+	int neg;
+	int adj;
+	int min;
+	int range;
+	FAR int *dest;
+	int dummy;
+	int want_century = 0;
+	int century = 0;
+	int relyear = 0;
+#ifdef CONFIG_LIBC_LOCALE
+	FAR const char *ex;
+#endif
+#if defined(CONFIG_LIBC_LOCALE) || defined(CONFIG_LIBC_LOCALTIME)
+	size_t len;
+#endif
 
-static unsigned char *_strptime(const unsigned char *buf, const char *fmt, struct tm *tm, struct century_relyear *cr)
-{
-	unsigned char c;
-	const unsigned char *bp;
-	size_t len = 0;
-	int alt_format, i;
-	bp = (unsigned char *)buf;
-	while ((c = *fmt) != '\0') {
-		/* Clear `alternate' modifier prior to new conversion. */
-		alt_format = 0;
-		/* Eat up white-space. */
-		if (isspace(c)) {
-			while (isspace(*bp)) {
-				bp++;
+	if (!s || !f || !tm) {
+		return NULL;
+	}
+
+	while (*f) {
+		if (*f != '%') {
+			/* Handle literal characters in the format string */
+
+			if (isspace(*f)) {
+				/* Skip whitespace in the input string */
+
+				for (; *s && isspace(*s); s++);
+			} else if (*s != *f) {
+				/* Mismatch between format string and input string */
+
+				return 0;
+			} else {
+				s++;
 			}
-			fmt++;
+
+			f++;
 			continue;
 		}
 
-		if ((c = *fmt++) != '%') {
-			goto literal;
-		}
-again:
-		switch (c = *fmt++) {
-		case '%':				/* "%%" is converted to "%". */
-literal:
-			if (c != *bp++) {
-				return (NULL);
-			}
-			break;
-		/*
-		 * "Alternative" modifiers. Just set the appropriate flag
-		 * and start over again.
-		 */
-		case 'E':				/* "%E?" alternative conversion modifier. */
-			_LEGAL_ALT(0);
-			alt_format |= _ALT_E;
-			goto again;
-		case 'O':				/* "%O?" alternative conversion modifier. */
-			_LEGAL_ALT(0);
-			alt_format |= _ALT_O;
-			goto again;
+		f++;
 
-		/*
-		 * "Complex" conversion rules, implemented through recursion.
-		 */
-		case 'c':				/* Date and time, using the locale's format. */
-			_LEGAL_ALT(_ALT_E);
-			if (!(bp = _strptime(bp, _ctloc(d_t_fmt), tm, cr))) {
-				return (NULL);
-			}
-			break;
-		case 'D':				/* The date as "%m/%d/%y". */
-			_LEGAL_ALT(0);
-			if (!(bp = _strptime(bp, "%m/%d/%y", tm, cr))) {
-				return (NULL);
-			}
-			break;
+		/* Handle optional width specifier */
 
-		case 'R':				/* The time as "%H:%M". */
-			_LEGAL_ALT(0);
-			if (!(bp = _strptime(bp, "%H:%M", tm, cr))) {
-				return (NULL);
-			}
-			break;
-		case 'r':				/* The time as "%I:%M:%S %p". */
-			_LEGAL_ALT(0);
-			if (!(bp = _strptime(bp, "%I:%M:%S %p", tm, cr))) {
-				return (NULL);
-			}
-			break;
-		case 'T':				/* The time as "%H:%M:%S". */
-			_LEGAL_ALT(0);
-			if (!(bp = _strptime(bp, "%H:%M:%S", tm, cr))) {
-				return (NULL);
-			}
-			break;
-		case 'X':				/* The time, using the locale's format. */
-			_LEGAL_ALT(_ALT_E);
-			if (!(bp = _strptime(bp, _ctloc(t_fmt), tm, cr))) {
-				return (NULL);
-			}
-			break;
-		case 'x':				/* The date, using the locale's format. */
-			_LEGAL_ALT(_ALT_E);
-			if (!(bp = _strptime(bp, _ctloc(d_fmt), tm, cr))) {
-				return (NULL);
-			}
-			break;
-		/*
-		 * "Elementary" conversion rules.
-		 */
-		case 'A':				/* The day of week, using the locale's form. */
-		case 'a':
-			_LEGAL_ALT(0);
-			for (i = 0; i < 7; i++) {
-				/* Full name. */
-				len = strlen(_ctloc(day[i]));
-				if (strncasecmp(_ctloc(day[i]), (const char *)bp, len) == 0) {
-					break;
-				}
-				/* Abbreviated name. */
-				len = strlen(_ctloc(abday[i]));
-				if (strncasecmp(_ctloc(abday[i]), (const char *)bp, len) == 0) {
-					break;
-				}
-			}
-			/* Nothing matched. */
-			if (i == 7) {
-				return (NULL);
-			}
-			tm->tm_wday = i;
-			bp += len;
-			break;
-		case 'B':				/* The month, using the locale's form. */
-		case 'b':
-		case 'h':
-			_LEGAL_ALT(0);
-			for (i = 0; i < 12; i++) {
-				/* Full name. */
-				len = strlen(_ctloc(mon[i]));
-				if (strncasecmp(_ctloc(mon[i]), (const char *)bp, len) == 0) {
-					break;
-				}
-				/* Abbreviated name. */
-				len = strlen(_ctloc(abmon[i]));
-				if (strncasecmp(_ctloc(abmon[i]), (const char *)bp, len) == 0) {
-					break;
-				}
-			}
-			/* Nothing matched. */
-			if (i == 12) {
-				return (NULL);
-			}
-			tm->tm_mon = i;
-			bp += len;
-			break;
-		case 'C':				/* The century number. */
-			_LEGAL_ALT(_ALT_E);
-			if (!(_conv_num(&bp, &i, 0, 99))) {
-				return (NULL);
-			}
-			cr->century = i * 100;
-			break;
-		case 'd':				/* The day of month. */
-		case 'e':
-			_LEGAL_ALT(_ALT_O);
-			if (!(_conv_num(&bp, &tm->tm_mday, 1, 31))) {
-				return (NULL);
-			}
-			break;
-		case 'k':				/* The hour (24-hour clock representation). */
-			_LEGAL_ALT(0);
-		/* FALLTHROUGH */
-		case 'H':
-			_LEGAL_ALT(_ALT_O);
-			if (!(_conv_num(&bp, &tm->tm_hour, 0, 23))) {
-				return (NULL);
-			}
-			break;
-		case 'l':				/* The hour (12-hour clock representation). */
-			_LEGAL_ALT(0);
-		/* FALLTHROUGH */
-		case 'I':
-			_LEGAL_ALT(_ALT_O);
-			if (!(_conv_num(&bp, &tm->tm_hour, 1, 12))) {
-				return (NULL);
-			}
-			break;
-		case 'j':				/* The day of year. */
-			_LEGAL_ALT(0);
-			if (!(_conv_num(&bp, &tm->tm_yday, 1, 366))) {
-				return (NULL);
-			}
-			tm->tm_yday--;
-			break;
-		case 'M':				/* The minute. */
-			_LEGAL_ALT(_ALT_O);
-			if (!(_conv_num(&bp, &tm->tm_min, 0, 59))) {
-				return (NULL);
-			}
-			break;
-		case 'm':				/* The month. */
-			_LEGAL_ALT(_ALT_O);
-			if (!(_conv_num(&bp, &tm->tm_mon, 1, 12))) {
-				return (NULL);
-			}
-			tm->tm_mon--;
-			break;
-		case 'p':				/* The locale's equivalent of AM/PM. */
-			_LEGAL_ALT(0);
-			/* AM? */
-			len = strlen(_ctloc(am_pm[0]));
-			if (strncasecmp(_ctloc(am_pm[0]), (const char *)bp, len) == 0) {
-				if (tm->tm_hour > 12) {	/* i.e., 13:00 AM ?! */
-					return (NULL);
-				} else if (tm->tm_hour == 12) {
-					tm->tm_hour = 0;
-				}
-				bp += len;
-				break;
-			}
-			/* PM? */
-			len = strlen(_ctloc(am_pm[1]));
-			if (strncasecmp(_ctloc(am_pm[1]), (const char *)bp, len) == 0) {
-				if (tm->tm_hour > 12) {	/* i.e., 13:00 PM ?! */
-					return (NULL);
-				} else if (tm->tm_hour < 12) {
-					tm->tm_hour += 12;
-				}
-				bp += len;
-				break;
-			}
-			/* Nothing matched. */
-			return (NULL);
-		case 'S':				/* The seconds. */
-			_LEGAL_ALT(_ALT_O);
-			if (!(_conv_num(&bp, &tm->tm_sec, 0, 61))) {
-				return (NULL);
-			}
-			break;
-		case 'U':				/* The week of year, beginning on sunday. */
-		case 'W':				/* The week of year, beginning on monday. */
-			_LEGAL_ALT(_ALT_O);
-			/*
-			 * XXX This is bogus, as we can not assume any valid
-			 * information present in the tm structure at this
-			 * point to calculate a real value, so just check the
-			 * range for now.
-			 */
-			if (!(_conv_num(&bp, &i, 0, 53))) {
-				return (NULL);
-			}
-			break;
-		case 'w':				/* The day of week, beginning on sunday. */
-			_LEGAL_ALT(_ALT_O);
-			if (!(_conv_num(&bp, &tm->tm_wday, 0, 6))) {
-				return (NULL);
-			}
-			break;
-		case 'Y':				/* The year. */
-			_LEGAL_ALT(_ALT_E);
-			if (!(_conv_num(&bp, &i, 0, 9999))) {
-				return (NULL);
-			}
-			cr->relyear = -1;
-			tm->tm_year = i - TM_YEAR_BASE;
-			break;
-		case 'y':				/* The year within the century (2 digits). */
-			_LEGAL_ALT(_ALT_E | _ALT_O);
-			if (!(_conv_num(&bp, &cr->relyear, 0, 99))) {
-				return (NULL);
-			}
-			break;
-		/*
-		 * Miscellaneous conversions.
-		 */
-		case 'n':				/* Any kind of white-space. */
-		case 't':
-			_LEGAL_ALT(0);
-			while (isspace(*bp)) {
-				bp++;
-			}
-			break;
-		default:				/* Unknown/unsupported conversion. */
-			return (NULL);
+		if (*f == '+') {
+			f++;
 		}
-	}
-	/*
-	 * We need to evaluate the two digit year spec (%y)
-	 * last as we can get a century spec (%C) at any time.
-	 */
-	if (cr->relyear != -1) {
-		if (cr->century == TM_YEAR_BASE) {
-			if (cr->relyear <= 68) {
-				tm->tm_year = cr->relyear + 2000 - TM_YEAR_BASE;
-			} else {
-				tm->tm_year = cr->relyear + 1900 - TM_YEAR_BASE;
-			}
+
+		if (isdigit(*f)) {
+			char *new_f;
+			w = strtoul(f, &new_f, 10);
+			f = new_f;
 		} else {
-			tm->tm_year = cr->relyear + cr->century - TM_YEAR_BASE;
+			w = -1;
+		}
+
+		adj = 0;
+
+		/* Handle format specifiers */
+
+		switch (*f++) {
+		case 'C':
+			dest = &century;
+			if (w < 0) w = 2;
+			want_century |= 2;
+			goto numeric_digits;
+
+		case 'd': case 'e':
+			dest = &tm->tm_mday;
+			min = 1;
+			range = 31;
+			if (!isdigit(*s)) {
+				return NULL;
+			}
+
+			goto numeric_range;
+
+		case 'D':
+
+			/* Date in mm/dd/yy format */
+
+			s = strptime(s, "%m/%d/%y", tm);
+			if (!s) {
+				return NULL;
+			}
+			break;
+
+		case 'F':
+
+			/* Date in yyyy-mm-dd format with width-limitation handling */
+
+			i = 0;
+			char tmp[20];
+			if (*s == '-' || *s == '+') {
+				tmp[i++] = *s++;
+			}
+
+			while (*s == '0' && isdigit(s[1])) {
+				s++;
+			}
+
+			for (; *s && i < (size_t)w && i + 1 < sizeof tmp; i++) {
+				tmp[i] = *s++;
+			}
+
+			tmp[i] = 0;
+			char *p = strptime(tmp, "%12Y-%m-%d", tm);
+			if (!p) {
+				return NULL;
+			}
+
+			s -= tmp + i - p;
+			break;
+
+		case 'H':
+			dest = &tm->tm_hour;
+			min = 0;
+			range = 24;
+			goto numeric_range;
+
+		case 'I':
+			dest = &tm->tm_hour;
+			min = 1;
+			range = 12;
+			goto numeric_range;
+
+		case 'j':
+			dest = &tm->tm_yday;
+			min = 1;
+			range = 366;
+			adj = 1;
+			goto numeric_range;
+
+		case 'm':
+			dest = &tm->tm_mon;
+			min = 1;
+			range = 12;
+			adj = 1;
+			goto numeric_range;
+
+		case 'M':
+			dest = &tm->tm_min;
+			min = 0;
+			range = 60;
+			goto numeric_range;
+
+		case 'n': case 't':
+
+			/* Skip whitespace */
+
+			for (; *s && isspace(*s); s++);
+			break;
+
+		case 'R':
+
+			/* Time in HH:MM format */
+
+			s = strptime(s, "%H:%M", tm);
+			if (!s) {
+				return NULL;
+			}
+
+			break;
+
+		case 's':
+
+			/* Seconds since epoch (effect on tm is unspecified) */
+
+			if (*s == '-') {
+				s++;
+			}
+
+			if (!isdigit(*s)) {
+				return NULL;
+			}
+
+			while (isdigit(*s)) {
+				s++;
+			}
+
+			break;
+
+		case 'S':
+			dest = &tm->tm_sec;
+			min = 0;
+			range = 61;
+			goto numeric_range;
+
+		case 'T':
+
+			/* Time in HH:MM:SS format */
+
+			s = strptime(s, "%H:%M:%S", tm);
+			if (!s) {
+				return NULL;
+			}
+
+			break;
+
+		case 'U': case 'W':
+
+			/* These specifiers are ignored */
+
+			dest = &dummy;
+			min = 0;
+			range = 54;
+			goto numeric_range;
+
+		case 'V':
+			dest = &dummy;
+			min = 1;
+			range = 53;
+			goto numeric_range;
+
+		case 'g':
+			dest = &dummy;
+			w = 2;
+			goto numeric_digits;
+
+		case 'G':
+			dest = &dummy;
+			if (w < 0) {
+				w = 4;
+			}
+
+			goto numeric_digits;
+
+		case 'u':
+			dest = &tm->tm_wday;
+			min = 1;
+			range = 7;
+			goto numeric_range;
+
+		case 'w':
+			dest = &tm->tm_wday;
+			min = 0;
+			range = 7;
+			goto numeric_range;
+
+		case 'y':
+			dest = &relyear;
+			w = 2;
+			want_century |= 1;
+			goto numeric_digits;
+
+		case 'Y':
+			dest = &tm->tm_year;
+			if (w < 0) {
+				w = 4;
+			}
+
+			adj = 1900;
+			want_century = 0;
+			goto numeric_digits;
+
+		case 'z':
+
+			/* Timezone offset from UTC */
+
+			if (*s == '+' || *s == '-') {
+				neg = (*s == '-');
+				s++;
+			} else {
+				return NULL;
+			}
+
+			for (i = 0; i < 4; i++) {
+				if (!isdigit(s[1 + i])) {
+					return 0;
+				}
+			}
+
+			tm->tm_gmtoff = (s[1] - '0') * 36000 + (s[2] - '0') * 3600
+			            + (s[3] - '0') * 600 + (s[4] - '0') * 60;
+			if (neg) {
+				tm->tm_gmtoff = -tm->tm_gmtoff;
+			}
+
+			s += 5;
+			break;
+
+#ifdef CONFIG_LIBC_LOCALTIME
+		case 'Z':
+
+			/* Timezone abbreviation */
+
+			if (!strncmp(s, tzname[0], len = strlen(tzname[0]))) {
+				tm->tm_isdst = 0;
+				s += len;
+			} else if (!strncmp(s, tzname[1], len = strlen(tzname[1]))) {
+				tm->tm_isdst = 1;
+				s += len;
+			} else {
+				/* Skip unknown timezone abbreviations */
+
+				while ((*s | 32) - 'a' <= 'z' - 'a') {
+					s++;
+				}
+			}
+
+			break;
+#endif
+
+		case '%':
+
+			/* Literal '%' character */
+
+			if (*s++ != '%') {
+				return NULL;
+			}
+			break;
+
+		default:
+			return NULL;
+
+numeric_range:
+
+			/* Process numeric values with a range check */
+
+			if (!isdigit(*s)) {
+				return NULL;
+			}
+
+			*dest = 0;
+			for (i = 1; i <= min + range && isdigit(*s); i *= 10) {
+				*dest = *dest * 10 + *s++ - '0';
+			}
+
+			if (*dest < min || *dest > min + range) {
+				return NULL;
+			}
+
+			*dest -= adj;
+			goto update;
+
+numeric_digits:
+
+			/* Process numeric values with a fixed width */
+
+			neg = 0;
+			if (*s == '+') {
+				s++;
+			} else if (*s == '-') {
+				neg = 1;
+				s++;
+			}
+
+			if (!isdigit(*s)) {
+				return NULL;
+			}
+
+			for (*dest = i = 0; i < w && isdigit(*s); i++) {
+				*dest = *dest * 10 + *s++ - '0';
+			}
+
+			if (neg) {
+				*dest = -*dest;
+			}
+
+			*dest -= adj;
+			if (*dest < 0 || (*dest > 99 && w == 2)) {
+				return NULL;
+			}
+
+			goto update;
+
+#ifdef CONFIG_LIBC_LOCALE
+		case 'a': case 'A':
+			dest = &tm->tm_wday;
+			min = ABDAY_1;
+			range = 7;
+			goto symbolic_range;
+
+		case 'b': case 'B': case 'h':
+			dest = &tm->tm_mon;
+			min = ABMON_1;
+			range = 12;
+			goto symbolic_range;
+
+		case 'c':
+
+			/* Locale-specific date and time format */
+
+			s = strptime(s, nl_langinfo(D_T_FMT), tm);
+			if (!s) {
+				return NULL;
+			}
+
+			break;
+
+		case 'p':
+
+			/* AM/PM */
+
+			ex = nl_langinfo(AM_STR);
+			len = strlen(ex);
+			if (!strncasecmp(s, ex, len)) {
+				tm->tm_hour %= 12;
+				s += len;
+				break;
+			}
+
+			ex = nl_langinfo(PM_STR);
+			len = strlen(ex);
+			if (!strncasecmp(s, ex, len)) {
+				tm->tm_hour %= 12;
+				tm->tm_hour += 12;
+				s += len;
+				break;
+			}
+
+			return 0;
+
+		case 'r':
+
+			/* Time in 12-hour format with AM/PM */
+
+			s = strptime(s, nl_langinfo(T_FMT_AMPM), tm);
+			if (!s) {
+				return NULL;
+			}
+
+			break;
+
+		case 'x':
+
+			/* Date in locale-specific format */
+
+			s = strptime(s, nl_langinfo(D_FMT), tm);
+			if (!s) {
+				return NULL;
+			}
+
+			break;
+
+		case 'X':
+
+			/* Time in locale-specific format */
+
+			s = strptime(s, nl_langinfo(T_FMT), tm);
+			if (!s) {
+				return NULL;
+			}
+
+			break;
+
+symbolic_range:
+
+			/* Process symbolic names for days of the week and months */
+
+			for (i = 2 * range - 1; i >= 0; i--) {
+				ex = nl_langinfo(min + i);
+				len = strlen(ex);
+				if (strncasecmp(s, ex, len)) {
+					continue;
+				}
+
+				s += len;
+				*dest = i % range;
+				break;
+			}
+
+			if (i < 0) {
+				return NULL;
+			}
+
+			goto update;
+#endif
+
+update:
+
+			/* Placeholder for additional updates (if needed) */
+
+			;
 		}
 	}
-	return (unsigned char *)bp;
-}
 
-static int _conv_num(const unsigned char **buf, int *dest, int llim, int ulim)
-{
-	int result = 0;
-	int rulim = ulim;
-	if (**buf < '0' || **buf > '9') {
-		return (0);
+	/* Finalize year calculations */
+
+	if (want_century) {
+		tm->tm_year = relyear;
+		if (want_century & 2) {
+			tm->tm_year += century * 100 - 1900;
+		} else if (tm->tm_year <= 68) {
+			tm->tm_year += 100;
+		}
 	}
-	/* we use rulim to break out of the loop when we run out of digits */
-	do {
-		result *= 10;
-		result += *(*buf)++ - '0';
-		rulim /= 10;
-	} while ((result * 10 <= ulim) && rulim && **buf >= '0' && **buf <= '9');
-	if (result < llim || result > ulim) {
-		return (0);
-	}
-	*dest = result;
-	return (1);
+
+	return (FAR char *)s;
 }

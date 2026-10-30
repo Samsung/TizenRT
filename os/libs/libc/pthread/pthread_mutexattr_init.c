@@ -1,0 +1,108 @@
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * libs/libc/pthread/pthread_mutexattr_init.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/config.h>
+
+#include <pthread.h>
+#include <errno.h>
+#include <debug.h>
+#include <sched.h>
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name:  pthread_mutexattr_init
+ *
+ * Description:
+ *    Create mutex attributes.
+ *
+ * Input Parameters:
+ *    attr
+ *
+ * Returned Value:
+ *   0 if successful.  Otherwise, an error code.
+ *
+ ****************************************************************************/
+
+int pthread_mutexattr_init(FAR pthread_mutexattr_t *attr)
+{
+	int ret = OK;
+
+	linfo("attr=%p\n", attr);
+
+	if (!attr) {
+		ret = EINVAL;
+	} else {
+		attr->pshared = 0;
+
+#ifdef CONFIG_PRIORITY_PROTECT
+		attr->proto   = PTHREAD_PRIO_NONE;
+		attr->ceiling = sched_get_priority_min(SCHED_FIFO);
+#endif
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+#  ifdef CONFIG_PTHREAD_MUTEX_DEFAULT_PRIO_INHERIT
+		attr->proto   = PTHREAD_PRIO_INHERIT;
+#  else
+		attr->proto   = PTHREAD_PRIO_NONE;
+#  endif
+#endif /* CONFIG_PRIORITY_INHERITANCE */
+
+#ifdef CONFIG_PTHREAD_MUTEX_TYPES
+		attr->type    = PTHREAD_MUTEX_DEFAULT;
+#endif
+
+#ifdef CONFIG_PTHREAD_MUTEX_BOTH
+#ifdef CONFIG_PTHREAD_MUTEX_DEFAULT_UNSAFE
+		attr->robust  = PTHREAD_MUTEX_STALLED;
+#else
+		attr->robust  = PTHREAD_MUTEX_ROBUST;
+#endif
+#endif
+	}
+
+	linfo("Returning %d\n", ret);
+	return ret;
+}

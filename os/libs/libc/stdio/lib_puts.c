@@ -16,42 +16,25 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_puts.c
+ * libs/libc/stdio/lib_puts.c
  *
- *   Copyright (C) 2007, 2008, 2011-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ****************************************************************************/
-
-/****************************************************************************
- * Compilation Switches
  ****************************************************************************/
 
 /****************************************************************************
@@ -59,39 +42,10 @@
  ****************************************************************************/
 
 #include <stdio.h>
-#include "lib_internal.h"
+#include <unistd.h>
+#include <sys/uio.h>
 
-/****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Global Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Public Constant Data
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Constant Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
+#include "libc.h"
 
 /****************************************************************************
  * Public Functions
@@ -105,8 +59,9 @@
  *
  ****************************************************************************/
 
-int puts(FAR const char *s)
+int puts(FAR const IPTR char *s)
 {
+#ifdef CONFIG_FILE_STREAM
 	FILE *stream = stdout;
 	int nwritten;
 	int nput = EOF;
@@ -114,30 +69,43 @@ int puts(FAR const char *s)
 
 	/* Write the string (the next two steps must be atomic) */
 
-	lib_take_semaphore(stream);
+	flockfile(stream);
 
 	/* Write the string without its trailing '\0' */
 
-	nwritten = fputs(s, stream);
-	if (nwritten > 0) {
+	nwritten = fputs_unlocked(s, stream);
+	if (nwritten >= 0) {
 		/* Followed by a newline */
 
 		char newline = '\n';
-		ret = lib_fwrite(&newline, 1, stream);
+		ret = lib_fwrite_unlocked(&newline, 1, stream);
 		if (ret > 0) {
 			nput = nwritten + 1;
 
-			/* Flush the buffer after the newline is output. */
+			/* Flush the buffer after the newline is output if line buffering
+			 * is enabled.
+			 */
 
-#ifdef CONFIG_STDIO_LINEBUFFER
-			ret = lib_fflush(stream, true);
-			if (ret < 0) {
-				nput = EOF;
+			if ((stream->fs_flags & __FS_FLAG_LBF) != 0) {
+				ret = lib_fflush_unlocked(stream);
+				if (ret < 0) {
+					nput = EOF;
+				}
 			}
-#endif
 		}
 	}
 
-	lib_give_semaphore(stdout);
+	funlockfile(stdout);
 	return nput;
+#else
+	size_t len = strlen(s);
+	struct iovec iov[2];
+
+	iov[0].iov_base = (FAR void *)s;
+	iov[0].iov_len  = len;
+	iov[1].iov_base = "\n";
+	iov[1].iov_len  = 1;
+
+	return writev(STDOUT_FILENO, iov, 2) == ++len ? len : EOF;
+#endif
 }

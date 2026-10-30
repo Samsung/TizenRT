@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/stdio/lib_freopen.c
+ * libs/libc/stdio/lib_freopen.c
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -54,11 +41,18 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
 
-#include "lib_internal.h"
+#ifdef CONFIG_FDSAN
+#  include <android/fdsan.h>
+#endif
+
+#include "libc.h"
 
 /****************************************************************************
  * Public Functions
@@ -74,7 +68,7 @@
  *   If a new path is specified, the function first attempts to close
  *   any file already associated with stream (third parameter) and
  *   disassociates it. Then, independently of whether that stream was
- *   successfuly closed or not, freopen opens the file specified by path
+ *   successfully closed or not, freopen opens the file specified by path
  *   and associates it with the stream just as fopen would do using the
  *   specified mode.
  *
@@ -85,7 +79,7 @@
  *   The error indicator and eof indicator are automatically cleared (as if
  *   clearerr was called).
  *
- * Input Paramters:
+ * Input Parameters:
  *   path   - If non-NULL, refers to the name of the file to be opened.
  *   mode   - String describing the new file access mode
  *   stream - Pointer to the type FILE to be reopened.
@@ -98,7 +92,8 @@
  *
  ****************************************************************************/
 
-FAR FILE *freopen(FAR const char *path, FAR const char *mode, FAR FILE *stream)
+FAR FILE *freopen(FAR const char *path, FAR const char *mode,
+                  FAR FILE *stream)
 {
 	int oflags;
 	int ret;
@@ -107,15 +102,63 @@ FAR FILE *freopen(FAR const char *path, FAR const char *mode, FAR FILE *stream)
 	/* Was a file name provided? */
 
 	if (path != NULL) {
-		/* Yes, close the stream */
+		/* Yes, open the file directly if no stream is opened yet */
 
-		if (stream) {
-			(void)fclose(stream);
+		if (stream == NULL) {
+			return fopen(path, mode);
 		}
 
-		/* And attempt to reopen the file at the provided path */
+		/* Otherwise, open the file */
 
-		return fopen(path, mode);
+		oflags = lib_mode2oflags(mode);
+		if (oflags < 0) {
+			return NULL;
+		}
+
+		/* Make sure that we have exclusive access to the stream */
+
+		flockfile(stream);
+
+		/* Flush the stream and invalidate the read buffer. */
+
+		lib_fflush_unlocked(stream);
+
+#ifndef CONFIG_STDIO_DISABLE_BUFFERING
+		lib_rdflush_unlocked(stream);
+#endif
+
+		funlockfile(stream);
+
+		/* close the old fd */
+
+#ifdef CONFIG_FDSAN
+		android_fdsan_close_with_tag(fileno(stream),
+		        android_fdsan_create_owner_tag(ANDROID_FDSAN_OWNER_TYPE_FILE,
+		                                       (uintptr_t)stream));
+#else
+		close(fileno(stream));
+#endif
+
+		/* Open the new file and reused the fd */
+
+		fd = open(path, oflags, 0666);
+#ifdef CONFIG_FDSAN
+		android_fdsan_exchange_owner_tag(fd, 0,
+		    android_fdsan_create_owner_tag(ANDROID_FDSAN_OWNER_TYPE_FILE,
+		                                  (uintptr_t)stream));
+#endif
+		flockfile(stream);
+		stream->fs_cookie = (FAR void *)(intptr_t) fd;
+		funlockfile(stream);
+
+		/* To clear the stale fd */
+
+		if (fd < 0) {
+			return NULL;
+		}
+
+		clearerr(stream);
+		return stream;
 	}
 
 	/* Otherwise, we are just changing the mode of the current file. */

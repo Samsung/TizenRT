@@ -16,10 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/libc/stdlib/lib_wctomb.c
+ * libs/libc/stdlib/lib_wctomb.c
  *
- * This code is derived from software contributed to Berkeley by
- * Chris Torek.
+ * SPDX-License-Identifier: BSD-3-Clause-UC
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,14 +50,8 @@
  * Included Files
  ****************************************************************************/
 
-#include <tinyara/config.h>
-
-#include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <errno.h>
-
-#ifdef CONFIG_LIBC_WCHAR
 
 /****************************************************************************
  * Public Functions
@@ -74,18 +67,5 @@
 
 int wctomb(FAR char *s, wchar_t wc)
 {
-	if (s == NULL) {
-		return 0;
-	}
-
-	/* Verify that wchar is a valid single-byte character.  */
-
-	if ((size_t)wc >= 0x100) {
-		set_errno(EILSEQ);
-		return -1;
-	}
-
-	*s = (char)wc;
-	return 1;
+	return wcrtomb(s, wc, NULL);
 }
-#endif

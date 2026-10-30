@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/unistd/lib_access.c
+ * libs/libc/unistd/lib_access.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -56,22 +43,26 @@
 
 #include <tinyara/config.h>
 
+#include <errno.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
+#include "libc.h"
+
 /****************************************************************************
- * Preprocessor Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
 
 /****************************************************************************
- * Private Type Definitions
+ * Private Types
  ****************************************************************************/
 
 /****************************************************************************
- * Global Variables
+ * Public Data
  ****************************************************************************/
 
 /****************************************************************************
- * Private Variables
+ * Private Data
  ****************************************************************************/
 
 /****************************************************************************
@@ -88,16 +79,17 @@
  * Description:
  *   The access() function shall check the file named by the pathname pointed
  *   to by the path argument for accessibility according to the bit pattern
- *   contained in amode, using the real user ID in place of the effective user
- *   ID and the real group ID in place of the effective group ID.
+ *   contained in amode, using the real user ID in place of the effective
+ *   user ID and the real group ID in place of the effective group ID.
  *   As there are no users in NuttX, the function always succeeds.
  *
- * Parameters:
+ * Input Parameters:
  *   path - a pointer to the path
  *   amode - the access mode
  *
  * Returned Value:
- *   Always OK (zero)
+ *   Return OK (zero) if the caller can access the file with the required
+ *   permission, otherwise return -1.
  *
  * Assumptions:
  *
@@ -105,5 +97,76 @@
 
 int access(FAR const char *path, int amode)
 {
+	struct stat s;
+
+	if (stat(path, &s)) {
+		return -1;
+	}
+
+	if (s.st_mode & S_IFDIR) {
+		return 0;
+	}
+
+	if (amode & W_OK) {
+		if (s.st_mode & S_IWUSR) {
+			return 0;
+		}
+
+		return -1;
+	}
+
 	return 0;
+}
+
+/****************************************************************************
+ * Name: faccessat
+ *
+ * Description:
+ *   The faccessat() system call operates in exactly the same way as
+ *   access(), except for  the  differences described here.
+ *
+ *   If the pathname given in pathname is relative, then it is interpreted
+ *   relative to the directory referred to by the file descriptor dirfd
+ *   (rather than relative to the current working directory of the calling
+ *    process)
+ *
+ *   If pathname is relative and dirfd is the special value AT_FDCWD, then
+ *   pathname is interpreted relative to the current working directory of
+ *   the calling process (like access()).
+ *
+ *   If pathname is absolute, then dirfd is ignored.
+ *
+ * Input Parameters:
+ *   dirfd - The file descriptor of directory.
+ *   path  - A pointer to the path.
+ *   amode - The access mode.
+ *   flags - Ignored.
+ *
+ * Returned Value:
+ *   Return zero on success, or -1 if an error occurred (in which case,
+ *   errno is set appropriately).
+ *
+ ****************************************************************************/
+
+int faccessat(int dirfd, FAR const char *path, int amode, int flags)
+{
+	FAR char *fullpath;
+	int ret;
+
+	fullpath = lib_get_pathbuffer();
+	if (fullpath == NULL) {
+		set_errno(ENOMEM);
+		return ERROR;
+	}
+
+	ret = lib_getfullpath(dirfd, path, fullpath, PATH_MAX);
+	if (ret < 0) {
+		lib_put_pathbuffer(fullpath);
+		set_errno(-ret);
+		return ERROR;
+	}
+
+	ret = access(fullpath, amode);
+	lib_put_pathbuffer(fullpath);
+	return ret;
 }

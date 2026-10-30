@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/libc/misc/lib_envpath.c
+ * libs/libc/misc/lib_envpath.c
  *
- *   Copyright (C) 2012, 2018 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -65,18 +52,17 @@
 #include <assert.h>
 
 #include <tinyara/envpath.h>
-#include <tinyara/mm/mm.h>
 
 #include "libc.h"
 
-#if defined(CONFIG_LIB_ENVPATH)
+#if defined(CONFIG_LIBC_ENVPATH)
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
 
 struct envpath_s {
-	FAR char *next;				/* Pointer to the next (unterminated) value in the PATH variable */
+	FAR char *next; /* Pointer to the next (unterminated) value in the PATH variable */
 	char path[1];
 };
 
@@ -116,6 +102,7 @@ ENVPATH_HANDLE envpath_init(FAR const char *name)
 {
 	FAR struct envpath_s *envpath;
 	FAR char *path;
+	size_t size;
 
 	/* Get the value of the PATH variable */
 
@@ -124,30 +111,30 @@ ENVPATH_HANDLE envpath_init(FAR const char *name)
 		/* getenv() will return a NULL value if the PATH variable does not
 		 * exist in the environment.
 		 */
-		printf("%s variable does not exist in the environment\n", name);
-		return (ENVPATH_HANDLE) NULL;
+
+		return NULL;
 	}
 
 	/* Allocate a container for the PATH variable contents */
 
+	size = strlen(path) + 1;
 	envpath = (FAR struct envpath_s *)
-			  lib_malloc(SIZEOF_ENVPATH_S(strlen(path) + 1));
+	  lib_malloc(SIZEOF_ENVPATH_S(size));
 
 	if (!envpath) {
 		/* Ooops.. we are out of memory */
 
-		printf("Allocate a container failed\n");
-		return (ENVPATH_HANDLE) NULL;
+		return NULL;
 	}
-	DEBUG_SET_CALLER_ADDR(envpath);
+
 	/* Populate the container */
 
-	strcpy(envpath->path, path);
+	strlcpy(envpath->path, path, size);
 	envpath->next = envpath->path;
 
 	/* And return the containing cast to an opaque handle */
 
-	return (ENVPATH_HANDLE) envpath;
+	return envpath;
 }
 
 /****************************************************************************
@@ -203,18 +190,18 @@ FAR char *envpath_next(ENVPATH_HANDLE handle, FAR const char *relpath)
 
 		path = envpath->next;
 		if (*path == '\0') {
-			/* If it points to a NULL it means that either (1) the PATH varialbe
-			 * is empty, or (2) we have already examined all of the paths in the
-			 * path variable.
+			/* If it points to a NULL it means that either (1) the PATH
+			 * variable is empty, or (2) we have already examined all of the
+			 * paths in the path variable.
 			 */
 
-			printf("PATH variable is empty or all of the paths are examined\n");
-			return (FAR char *)NULL;
+			return NULL;
 		}
 
-		/* Okay... 'path' points to the beginning of the string.  The string may
-		 * be termined either with (1) ':' which separates the path from the
-		 * next path in the list, or (2) NUL which marks the end of the list.
+		/* Okay... 'path' points to the beginning of the string.  The string
+		 * may be terminated either with (1) ':' which separates the path from
+		 * the next path in the list, or (2) NUL which marks the end of the
+		 * list.
 		 */
 
 		endptr = strchr(path, ':');
@@ -233,18 +220,17 @@ FAR char *envpath_next(ENVPATH_HANDLE handle, FAR const char *relpath)
 			*endptr = '\0';
 		}
 
-		pathlen = strlen(path) + strlen(relpath) + 2;
+		pathlen  = strlen(path) + strlen(relpath) + 2;
 		fullpath = (FAR char *)lib_malloc(pathlen);
 		if (fullpath == NULL) {
 			/* Failed to allocate memory */
 
-			printf("Failed to allocate memory\n");
-			return (FAR char *)NULL;
+			return NULL;
 		}
 
 		/* Construct the full path */
 
-		sprintf(fullpath, "%s/%s", path, relpath);
+		snprintf(fullpath, pathlen, "%s/%s", path, relpath);
 
 		/* Verify that a regular file exists at this path */
 
@@ -285,4 +271,4 @@ void envpath_release(ENVPATH_HANDLE handle)
 	lib_free(handle);
 }
 
-#endif							/* CONFIG_LIBC_ENVPATH */
+#endif /* CONFIG_LIBC_ENVPATH */

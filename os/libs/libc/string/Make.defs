@@ -16,65 +16,67 @@
 #
 ###########################################################################
 ############################################################################
-# libc/string/Make.defs
+# libs/libc/string/Make.defs
 #
-#   Copyright (C) 2011-2012, 2014, 2016 Gregory Nutt. All rights reserved.
-#   Author: Gregory Nutt <gnutt@nuttx.org>
+# SPDX-License-Identifier: Apache-2.0
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
 #
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-# 3. Neither the name NuttX nor the names of its contributors may be
-#    used to endorse or promote products derived from this software
-#    without specific prior written permission.
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
 #
 ############################################################################
 
 # Add the string C files to the build
 
-CSRCS += lib_isbasedigit.c lib_memset.c lib_memchr.c lib_memccpy.c
-CSRCS += lib_memcmp.c lib_memmove.c lib_skipspace.c lib_stpcpy.c lib_stpncpy.c
-CSRCS += lib_strcasecmp.c lib_strcat.c lib_strchr.c lib_strcpy.c lib_strlcpy.c
-CSRCS += lib_strcmp.c lib_strcspn.c lib_strdup.c lib_strerror.c lib_strlen.c
-CSRCS += lib_strnlen.c lib_strncasecmp.c lib_strncat.c lib_strncmp.c
-CSRCS += lib_strncpy.c lib_strndup.c lib_strcasestr.c lib_strpbrk.c
-CSRCS += lib_strrchr.c lib_strspn.c lib_strstr.c lib_strtok.c lib_strtokr.c
-CSRCS += lib_strerrorr.c lib_fls.c
+CSRCS += lib_ffs.c lib_ffsl.c lib_ffsll.c lib_fls.c lib_flsl.c
+CSRCS += lib_flsll.c lib_isbasedigit.c lib_memmem.c
+CSRCS += lib_popcount.c lib_popcountl.c lib_popcountll.c
+CSRCS += lib_skipspace.c lib_strcasecmp.c
+CSRCS += lib_strcspn.c lib_strdup.c
+CSRCS += lib_strerror.c lib_strncasecmp.c lib_strncat.c
+CSRCS += lib_strndup.c lib_strcasestr.c lib_strpbrk.c
+CSRCS += lib_strspn.c lib_strstr.c lib_strtok.c lib_strtokr.c
+CSRCS += lib_strsep.c lib_strerrorr.c lib_explicit_bzero.c lib_strsignal.c
+CSRCS += lib_index.c lib_rindex.c lib_timingsafe_bcmp.c lib_strverscmp.c
+CSRCS += lib_mempcpy.c lib_rawmemchr.c
 
-ifneq ($(CONFIG_ARCH_MEMCPY),y)
-ifeq ($(CONFIG_MEMCPY_VIK),y)
+CSRCS += lib_memmove.c
+CSRCS += lib_strlcat.c
+CSRCS += lib_strlcpy.c lib_strnlen.c
+
+ifeq ($(CONFIG_LIBC_MEMCPY_VIK),y)
 CSRCS += lib_vikmemcpy.c
+else ifeq ($(CONFIG_LIBC_NEWLIB_OPTSPEED),y)
+CSRCS += lib_bsdmemcpy.c
 else
 CSRCS += lib_memcpy.c
-endif
 endif
 
 ifeq ($(CONFIG_LIBC_LOCALE),y)
 CSRCS += lib_strcoll.c lib_strxfrm.c
 endif
 
-ifneq ($(CONFIG_DISABLE_SIGNALS),y)
-CSRCS += lib_strsignal.c
+ifeq ($(CONFIG_LIBC_NEWLIB_OPTSPEED),y)
+CSRCS += lib_bsdmemccpy.c lib_bsdmemcmp.c lib_bsdmemrchr.c lib_bsdstpncpy.c
+CSRCS += lib_bsdstrchr.c lib_bsdstrcmp.c lib_bsdstrlen.c lib_bsdstrncpy.c
+CSRCS += lib_bsdmemchr.c  lib_bsdstpcpy.c lib_bsdstrcat.c lib_bsdstrchrnul.c
+CSRCS += lib_bsdstrcpy.c lib_bsdstrncmp.c lib_bsdstrrchr.c lib_memset.c
+else
+CSRCS += lib_memccpy.c lib_memcmp.c lib_memrchr.c lib_stpncpy.c
+CSRCS += lib_strchr.c lib_strcmp.c lib_strlen.c lib_strncpy.c
+CSRCS += lib_memchr.c lib_stpcpy.c lib_strcat.c lib_strchrnul.c
+CSRCS += lib_strcpy.c lib_strncmp.c lib_strrchr.c lib_memset.c
 endif
 
 # Add the string directory to the build

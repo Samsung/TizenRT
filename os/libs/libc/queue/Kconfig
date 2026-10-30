@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config LIBC_INLINE_QUEUE
+	bool "Inline queue list to improve the performance"
+	default !DEFAULT_SMALL
+	---help---
+		Inline queue list to improve the performance

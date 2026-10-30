@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/binfmt/libelf/libelf_symbols.c
+ * libs/libc/elf/elf_symbols.c
  *
- *   Copyright (C) 2012, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -56,71 +43,56 @@
 
 #include <tinyara/config.h>
 
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <debug.h>
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-#include <tinyara/hashmap.h>
-#endif
 
-#include <tinyara/binfmt/elf.h>
-#include <tinyara/binfmt/symtab.h>
-#include <tinyara/kmalloc.h>
+#include <tinyara/symtab.h>
+#include <tinyara/lib/elf.h>
 
-#include "libelf.h"
+#include "libc.h"
+#include "elf/elf.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
+/* Return values search for exported modules */
+
+#define SYM_NOT_FOUND 0
+#define SYM_FOUND     1
+
 /****************************************************************************
- * Private Constant Data
+ * Private Types
  ****************************************************************************/
+
+struct mod_exportinfo_s {
+	FAR const char *name;              /* Symbol name to find */
+	FAR struct module_s *modp;         /* The module that needs the symbol */
+	FAR const struct symtab_s *symbol; /* Symbol info returned (if found) */
+};
+
+struct eptable_s {
+	FAR uint8_t *epname;      /* Name of global symbol */
+	FAR void    *epaddr;      /* Address of global symbol */
+};
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+extern struct eptable_s global_table[];
+extern int nglobals;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: elf_readstrtab
- *
- * Description:
- *   Read the ELF string table into memory.
- *
- * Input Parameters:
- *   loadinfo - Load state information
- *
- ****************************************************************************/
-int elf_readstrtab(FAR struct elf_loadinfo_s *loadinfo)
-{
-	int ret = OK;
-	FAR Elf32_Shdr *strtab = &loadinfo->shdr[loadinfo->strtabidx];
-
-	loadinfo->strtab = (uintptr_t)kmm_malloc(strtab->sh_size);
-
-	if (!loadinfo->strtab) {
-		berr("ERROR: Failed to allocate space for str table. Size = %u\n", strtab->sh_size);
-		return -ENOMEM;
-	}
-
-	ret = elf_read(loadinfo, (FAR uint8_t *)loadinfo->strtab, strtab->sh_size, strtab->sh_offset);
-	if (ret != OK) {
-		berr("ERROR: Failed to load string table into memory\n");
-		kmm_free((void *)loadinfo->strtab);
-		loadinfo->strtab = (uintptr_t)NULL;
-		return ret;
-	}
-
-	return ret;
-}
-
-/****************************************************************************
- * Name: elf_symname
+ * Name: libelf_symname
  *
  * Description:
  *   Get the symbol name in loadinfo->iobuffer[].
@@ -129,14 +101,19 @@ int elf_readstrtab(FAR struct elf_loadinfo_s *loadinfo)
  *   0 (OK) is returned on success and a negated errno is returned on
  *   failure.
  *
- *   EINVAL - There is something inconsistent in the symbol table (should only
- *            happen if the file is corrupted).
+ *   EINVAL - There is something inconsistent in the symbol table (should
+ *            only happen if the file is corrupted).
  *   ESRCH - Symbol has no name
  *
  ****************************************************************************/
 
-int elf_symname(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Sym *sym)
+static int libelf_symname(FAR struct mod_loadinfo_s *loadinfo,
+                          FAR const Elf_Sym *sym, Elf_Off sh_offset)
 {
+	FAR uint8_t *buffer;
+	off_t  offset;
+	size_t readlen;
+	size_t bytesread;
 	int ret;
 
 	/* Get the file offset to the string that is the name of the symbol.  The
@@ -144,31 +121,124 @@ int elf_symname(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Sym *sym)
 	 */
 
 	if (sym->st_name == 0) {
-		berr("Symbol has no name\n");
+		berr("ERROR: Symbol has no name\n");
 		return -ESRCH;
 	}
 
-	if (!loadinfo->strtab) {
-		ret = elf_readstrtab(loadinfo);
+	/* Allocate an I/O buffer.  This buffer is used by mod_symname() to
+	 * accumulate the variable length symbol name.
+	 */
 
-		if (ret != OK) {
-			berr("Error reading str table\n");
+	ret = libelf_allocbuffer(loadinfo);
+	if (ret < 0) {
+		berr("ERROR: libelf_allocbuffer failed: %d\n", ret);
+		return -ENOMEM;
+	}
+
+	offset = sh_offset + sym->st_name;
+
+	/* Loop until we get the entire symbol name into memory */
+
+	bytesread = 0;
+
+	for (;;) {
+		/* Get the number of bytes to read */
+
+		readlen = loadinfo->buflen - bytesread;
+		if (offset + readlen > loadinfo->filelen) {
+			if (loadinfo->filelen <= offset) {
+				berr("ERROR: At end of file\n");
+				return -EINVAL;
+			}
+
+			readlen = loadinfo->filelen - offset;
+		}
+
+		/* Read that number of bytes into the array */
+
+		buffer = &loadinfo->iobuffer[bytesread];
+		ret = libelf_read(loadinfo, buffer, readlen, offset);
+		if (ret < 0) {
+			berr("ERROR: libelf_read failed: %d\n", ret);
 			return ret;
 		}
+
+		bytesread += readlen;
+
+		/* Did we read the NUL terminator? */
+
+		if (memchr(buffer, '\0', readlen) != NULL) {
+			/* Yes, the buffer contains a NUL terminator. */
+
+			return OK;
+		}
+
+		/* No.. then we have to read more */
+
+		ret = libelf_reallocbuffer(loadinfo, CONFIG_LIBC_ELF_BUFFERINCR);
+		if (ret < 0) {
+			berr("ERROR: mod_reallocbuffer failed: %d\n", ret);
+			return ret;
+		}
+
+		offset += readlen;
 	}
 
-	if (sym->st_name >= loadinfo->shdr[loadinfo->strtabidx].sh_size) {
-		berr("At end of strtab\n");
-		return -EINVAL;
-	}
-
-	loadinfo->iobuffer = (uint8_t *)(loadinfo->strtab + sym->st_name);
+	/* We will not get here */
 
 	return OK;
 }
 
 /****************************************************************************
- * Name: elf_findsymtab
+ * Name: libelf_symcallback
+ *
+ * Description:
+ *   libelf_registry_foreach() callback function.  Test if the provided
+ *   module, modp, exports the symbol of interest.  If so, return that symbol
+ *   value and setup the module dependency relationship.
+ *
+ * Returned Value:
+ *   0 (OK) is returned on success and a negated errno is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+
+static int libelf_symcallback(FAR struct module_s *modp, FAR void *arg)
+{
+	FAR struct mod_exportinfo_s *exportinfo = (FAR struct mod_exportinfo_s *)
+	                                          arg;
+
+	/* Check if this module exports a symbol of that name */
+
+	exportinfo->symbol = symtab_findbyname(modp->modinfo.exports,
+	                                       exportinfo->name,
+	                                       modp->modinfo.nexports);
+
+	if (exportinfo->symbol != NULL) {
+		/* Yes.. save the dependency relationship and return SYM_FOUND to
+		 * stop the traversal.
+		 */
+
+#if CONFIG_LIBC_ELF_MAXDEPEND > 0
+		int ret = libelf_depend(exportinfo->modp, modp);
+		if (ret < 0) {
+			berr("ERROR: libelf_depend failed: %d\n", ret);
+			return ret;
+		}
+#endif
+
+		return SYM_FOUND;
+	}
+
+	return SYM_NOT_FOUND;
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: libelf_findsymtab
  *
  * Description:
  *   Find the symbol table section.
@@ -179,7 +249,7 @@ int elf_symname(FAR struct elf_loadinfo_s *loadinfo, FAR const Elf32_Sym *sym)
  *
  ****************************************************************************/
 
-int elf_findsymtab(FAR struct elf_loadinfo_s *loadinfo)
+int libelf_findsymtab(FAR struct mod_loadinfo_s *loadinfo)
 {
 	int i;
 
@@ -196,7 +266,7 @@ int elf_findsymtab(FAR struct elf_loadinfo_s *loadinfo)
 	/* Verify that there is a symbol and string table */
 
 	if (loadinfo->symtabidx == 0) {
-		berr("No symbols in ELF file\n");
+		berr("ERROR: No symbols in ELF file\n");
 		return -EINVAL;
 	}
 
@@ -204,33 +274,7 @@ int elf_findsymtab(FAR struct elf_loadinfo_s *loadinfo)
 }
 
 /****************************************************************************
- * Name: elf_readsymtab
- *
- * Description:
- *   Read the ELF symbol table into memory.
- *
- * Input Parameters:
- *   loadinfo - Load state information
- *
- ****************************************************************************/
-void elf_readsymtab(FAR struct elf_loadinfo_s *loadinfo)
-{
-	FAR Elf32_Shdr *symtab = &loadinfo->shdr[loadinfo->symtabidx];
-
-	loadinfo->symtab = (uintptr_t)kmm_malloc(symtab->sh_size);
-
-	if (!loadinfo->symtab) {
-		berr("ERROR: Failed to allocate space for sym table. Size = %u\n", symtab->sh_size);
-		return;
-	}
-
-	if (elf_read(loadinfo, (FAR uint8_t *)loadinfo->symtab, symtab->sh_size, symtab->sh_offset) < 0) {
-		berr("ERROR: Failed to load symbol table into memory\n");
-	}
-}
-
-/****************************************************************************
- * Name: elf_readsym
+ * Name: libelf_readsym
  *
  * Description:
  *   Read the ELF symbol structure at the specified index into memory.
@@ -246,75 +290,86 @@ void elf_readsymtab(FAR struct elf_loadinfo_s *loadinfo)
  *
  ****************************************************************************/
 
-int elf_readsym(FAR struct elf_loadinfo_s *loadinfo, int index, FAR Elf32_Sym *sym)
+int libelf_readsym(FAR struct mod_loadinfo_s *loadinfo, int index,
+                   FAR Elf_Sym *sym, FAR Elf_Shdr *symtab)
 {
-	FAR Elf32_Shdr *symtab = &loadinfo->shdr[loadinfo->symtabidx];
 	off_t offset;
 
 	/* Verify that the symbol table index lies within symbol table */
 
-	if (index < 0 || index > (symtab->sh_size / sizeof(Elf32_Sym))) {
-		berr("Bad relocation symbol index: %d\n", index);
+	if (index < 0 || index > (symtab->sh_size / sizeof(Elf_Sym))) {
+		berr("ERROR: Bad relocation symbol index: %d\n", index);
 		return -EINVAL;
 	}
 
 	/* Get the file offset to the symbol table entry */
-	offset = symtab->sh_offset + sizeof(Elf32_Sym) * index;
+
+	offset = symtab->sh_offset + sizeof(Elf_Sym) * index;
 
 	/* And, finally, read the symbol table entry into memory */
-	return elf_read(loadinfo, (FAR uint8_t *)sym, sizeof(Elf32_Sym), offset);
+
+	return libelf_read(loadinfo, (FAR uint8_t *)sym, sizeof(Elf_Sym), offset);
 }
 
 /****************************************************************************
- * Name: elf_symvalue
+ * Name: libelf_symvalue
  *
  * Description:
  *   Get the value of a symbol.  The updated value of the symbol is returned
  *   in the st_value field of the symbol table entry.
  *
  * Input Parameters:
- *   loadinfo - Load state information
- *   sym      - Symbol table entry (value might be undefined)
+ *   modp      - Module state information
+ *   loadinfo  - Load state information
+ *   sym       - Symbol table entry (value might be undefined)
+ *   sh_offset - Offset of strtab
+ *   exports   - Pointer to the symbol table
+ *   nexports  - Number of symbols in the symbol table*
  *
  * Returned Value:
  *   0 (OK) is returned on success and a negated errno is returned on
  *   failure.
  *
- *   EINVAL - There is something inconsistent in the symbol table (should only
- *            happen if the file is corrupted).
+ *   EINVAL - There is something inconsistent in the symbol table (should
+ *            only happen if the file is corrupted).
  *   ENOSYS - Symbol lies in common
  *   ESRCH  - Symbol has no name
  *   ENOENT - Symbol undefined and not provided via a symbol table
  *
  ****************************************************************************/
 
-int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR const struct symtab_s *exports, int nexports)
+int libelf_symvalue(FAR struct module_s *modp,
+                    FAR struct mod_loadinfo_s *loadinfo, FAR Elf_Sym *sym,
+                    Elf_Off sh_offset,
+                    FAR const struct symtab_s *exports, int nexports)
 {
-#if !defined(CONFIG_SUPPORT_COMMON_BINARY)
 	FAR const struct symtab_s *symbol;
-#endif
+	struct mod_exportinfo_s exportinfo;
 	uintptr_t secbase;
 	int ret;
 
 	switch (sym->st_shndx) {
-	case SHN_COMMON: {
-		/* ELF modules should be compiled with -fno-common. */
+	case SHN_COMMON:
+	{
+		/* NuttX ELF modules should be compiled with -fno-common. */
 
-		berr("SHN_COMMON: Re-compile with -fno-common\n");
+		berr("ERROR: SHN_COMMON: Re-compile with -fno-common\n");
 		return -ENOSYS;
 	}
 
-	case SHN_ABS: {
+	case SHN_ABS:
+	{
 		/* st_value already holds the correct value */
 
 		binfo("SHN_ABS: st_value=%08lx\n", (long)sym->st_value);
 		return OK;
 	}
 
-	case SHN_UNDEF: {
+	case SHN_UNDEF:
+	{
 		/* Get the name of the undefined symbol */
 
-		ret = elf_symname(loadinfo, sym);
+		ret = libelf_symname(loadinfo, sym, sh_offset);
 		if (ret < 0) {
 			/* There are a few relocations for a few architectures that do
 			 * no depend upon a named symbol.  We don't know if that is the
@@ -322,57 +377,245 @@ int elf_symvalue(FAR struct elf_loadinfo_s *loadinfo, FAR Elf32_Sym *sym, FAR co
 			 * indicate the nameless symbol.
 			 */
 
-			berr("SHN_UNDEF: Failed to get symbol name: %d\n", ret);
+			berr("ERROR: SHN_UNDEF: Failed to get symbol name: %d\n", ret);
 			return ret;
 		}
 
-		/* Check if the base code exports a symbol of this name */
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-		if (!exports) {
-			berr("SHN_UNDEF: Exports not found\n");
+		/* First check if the symbol is exported by an installed module.
+		 * Newest modules are installed at the head of the list.  Therefore,
+		 * if the symbol is exported by numerous modules, then the most
+		 * recently installed will take precedence.
+		 */
+
+		exportinfo.name   = (FAR const char *)loadinfo->iobuffer;
+		exportinfo.modp   = modp;
+		exportinfo.symbol = NULL;
+
+		ret = libelf_registry_foreach(libelf_symcallback,
+		                              (FAR void *)&exportinfo);
+		if (ret < 0) {
+			berr("ERROR: libelf_symcallback failed: %d\n", ret);
+			return ret;
+		}
+
+		symbol = exportinfo.symbol;
+
+		/* If the symbol is not exported by any module, then check if the
+		 * base code exports a symbol of this name.
+		 */
+
+		if (symbol == NULL) {
+			symbol = symtab_findbyname(exports, exportinfo.name,
+			                           nexports);
+		}
+
+		/* Was the symbol found from any exporter? */
+
+		if (symbol == NULL) {
+			berr("ERROR: SHN_UNDEF: Exported symbol \"%s\" not found\n",
+			     loadinfo->iobuffer);
 			return -ENOENT;
 		}
 
-		sym->st_value = (uint32_t)hashmap_get((struct hashmap_s *)exports, hashmap_get_hashval(loadinfo->iobuffer));
+		/* Yes... add the exported symbol value to the ELF symbol tablei
+		 * entry
+		 */
 
-		if (!sym->st_value) {
-			berr("SHN_UNDEF: Exported symbol \"%s\" not found\n", loadinfo->iobuffer);
-			return -ENOENT;
-		}
+		binfo("SHN_UNDEF: name=%s "
+		      "%08" PRIxPTR "+%08" PRIxPTR "=%08" PRIxPTR "\n",
+		      loadinfo->iobuffer,
+		      (uintptr_t)sym->st_value, (uintptr_t)symbol->sym_value,
+		      (uintptr_t)(sym->st_value + (uintptr_t)symbol->sym_value));
 
-#else
-
-#ifdef CONFIG_SYMTAB_ORDEREDBYNAME
-		symbol = symtab_findorderedbyname(exports, (FAR char *)loadinfo->iobuffer, nexports);
-#else
-		symbol = symtab_findbyname(exports, (FAR char *)loadinfo->iobuffer, nexports);
-#endif
-		if (!symbol) {
-			berr("SHN_UNDEF: Exported symbol \"%s\" not found\n", loadinfo->iobuffer);
-			return -ENOENT;
-		}
-
-		/* Yes... add the exported symbol value to the ELF symbol table entry */
-
-		binfo("SHN_UNDEF: name=%s %08x+%08x=%08x\n", loadinfo->iobuffer, sym->st_value, symbol->sym_value, sym->st_value + symbol->sym_value);
-
-		sym->st_value += (Elf32_Word)((uintptr_t)symbol->sym_value);
-#endif
-
-		sym->st_shndx = SHN_ABS;
+		sym->st_value += ((uintptr_t)symbol->sym_value);
 	}
 	break;
 
-	default: {
+	default:
+	{
 		secbase = loadinfo->shdr[sym->st_shndx].sh_addr;
 
-		binfo("Other: %08x+%08x=%08x\n", sym->st_value, secbase, sym->st_value + secbase);
+		binfo("Other[%d]: %08" PRIxPTR "+%08" PRIxPTR "=%08" PRIxPTR "\n",
+		      sym->st_shndx,
+		      (uintptr_t)sym->st_value, secbase,
+		      (uintptr_t)(sym->st_value + secbase));
 
 		sym->st_value += secbase;
-		sym->st_shndx = SHN_ABS;
+		if (loadinfo->gotindex >= 0) {
+			sym->st_value -= loadinfo->shdr[sym->st_shndx].sh_offset;
+		}
 	}
 	break;
 	}
 
 	return OK;
+}
+
+/****************************************************************************
+ * Name: libelf_insertsymtab
+ *
+ * Description:
+ *   Insert a symbol into the modules exportinfo array.
+ *
+ * Input Parameters:
+ *   modp     - Module state information
+ *   loadinfo - Load state information
+ *   shdr     - Symbol table section header
+ *   sym      - Symbol table entry
+ *
+ * Returned Value:
+ *   0 (OK) is returned on success and a negated errno is returned on
+ *   failure.
+ *
+ *   EINVAL - There is something inconsistent in the symbol table
+ *            (should only happen if the file is corrupted).
+ *
+ ****************************************************************************/
+
+int libelf_insertsymtab(FAR struct module_s *modp,
+                        struct mod_loadinfo_s *loadinfo,
+                        FAR Elf_Shdr *shdr, FAR Elf_Sym *sym)
+{
+	FAR struct symtab_s *symbol;
+	FAR Elf_Shdr *strtab = &loadinfo->shdr[shdr->sh_link];
+	int ret = 0;
+	int i;
+	int j;
+	int nsym;
+	int symcount;
+
+	if (modp->modinfo.exports != NULL) {
+		bwarn("Module export information already present - replacing");
+		libelf_freesymtab((FAR void *)modp);
+	}
+
+	/* Count the "live" symbols */
+
+	nsym = shdr->sh_size / sizeof(Elf_Sym);
+	for (i = 0, symcount = 0; i < nsym; i++) {
+		if (sym[i].st_name != 0 &&
+		    ELF_ST_BIND(sym[i].st_info) == STB_GLOBAL &&
+		    ELF_ST_TYPE(sym[i].st_info) != STT_NOTYPE &&
+		    ELF_ST_VISIBILITY(sym[i].st_other) == STV_DEFAULT) {
+			symcount++;
+		}
+	}
+
+	if (symcount > 0) {
+		modp->modinfo.exports = symbol =
+		                        loadinfo->exported =
+		                        lib_malloc(sizeof(*symbol) * symcount);
+		if (modp->modinfo.exports) {
+			/* Build out module's symbol table */
+
+			modp->modinfo.nexports = symcount;
+			for (i = 0, j = 0; i < nsym; i++) {
+				if (sym[i].st_name != 0 &&
+				    ELF_ST_BIND(sym[i].st_info) == STB_GLOBAL &&
+				    ELF_ST_TYPE(sym[i].st_info) != STT_NOTYPE &&
+				    ELF_ST_VISIBILITY(sym[i].st_other) == STV_DEFAULT) {
+					ret = libelf_symname(loadinfo, &sym[i], strtab->sh_offset);
+					if (ret < 0) {
+						lib_free((FAR void *)modp->modinfo.exports);
+						modp->modinfo.exports = NULL;
+						return ret;
+					}
+
+					symbol[j].sym_name =
+					    strdup((FAR char *)loadinfo->iobuffer);
+					symbol[j].sym_value =
+					    (FAR const void *)(uintptr_t) sym[i].st_value;
+					j++;
+				}
+			}
+
+#ifdef CONFIG_SYMTAB_ORDEREDBYNAME
+			symtab_sortbyname(symbol, symcount);
+#endif
+		} else {
+			berr("Unable to get memory for exported symbols table");
+			ret = -ENOMEM;
+		}
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: findep
+ *
+ * Description:
+ *   Binary search comparison function
+ *
+ * Input Parameters:
+ *   c1 - Comparand 1
+ *   c2 - Comparand 2
+ *
+ ****************************************************************************/
+
+static int findep(FAR const void *c1, FAR const void *c2)
+{
+	FAR const struct eptable_s *m1 = (FAR const struct eptable_s *)c1;
+	FAR const struct eptable_s *m2 = (FAR const struct eptable_s *)c2;
+	return strcmp((FAR const char *)m1->epname, (FAR const char *)m2->epname);
+}
+
+/****************************************************************************
+ * Name: libelf_findglobal
+ *
+ * Description:
+ *   Find a symbol in our library entry point table
+ *
+ * Input Parameters:
+ *   modp     - Module state information
+ *
+ ****************************************************************************/
+
+void *libelf_findglobal(FAR struct module_s *modp,
+                        FAR struct mod_loadinfo_s *loadinfo,
+                        FAR Elf_Shdr *shdr, FAR Elf_Sym *sym)
+{
+	FAR Elf_Shdr *strtab = &loadinfo->shdr[shdr->sh_link];
+	int ret;
+	struct eptable_s key;
+	FAR struct eptable_s *res;
+
+	ret = libelf_symname(loadinfo, sym, strtab->sh_offset);
+	if (ret < 0) {
+		return NULL;
+	}
+
+	key.epname = loadinfo->iobuffer;
+	res = bsearch(&key, global_table, nglobals,
+	              sizeof(struct eptable_s), findep);
+	if (res != NULL) {
+		return res->epaddr;
+	} else {
+		return NULL;
+	}
+}
+
+/****************************************************************************
+ * Name: libelf_freesymtab
+ *
+ * Description:
+ *   Free a symbol table
+ *
+ * Input Parameters:
+ *   modp     - Module state information
+ *
+ ****************************************************************************/
+
+void libelf_freesymtab(FAR struct module_s *modp)
+{
+	FAR const struct symtab_s *symbol;
+	int i;
+
+	if ((symbol = modp->modinfo.exports) != NULL) {
+		for (i = 0; i < modp->modinfo.nexports; i++) {
+			lib_free((FAR void *)symbol[i].sym_name);
+		}
+
+		lib_free((FAR void *)symbol);
+	}
 }

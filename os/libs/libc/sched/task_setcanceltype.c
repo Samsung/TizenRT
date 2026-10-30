@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/sched/task_setcanceltype.c
+ * libs/libc/sched/task_setcanceltype.c
  *
- *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -54,37 +41,87 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
+
 #include <sched.h>
+#include <assert.h>
 #include <errno.h>
+#include <pthread.h>
+#include <stdlib.h>
+
+#include <tinyara/cancelpt.h>
+#include <tinyara/tls.h>
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: task_setcancelstate
+ * Name: task_setcanceltype
  *
  * Description:
  *   The task_setcanceltype() function atomically both sets the calling
- *   task's cancelability type to the indicated type and returns the
- *   previous cancelability type at the location referenced by oldtype
+ *   task's cancellability type to the indicated type and returns the
+ *   previous cancellability type at the location referenced by oldtype
  *   Legal values for type are TASK_CANCEL_DEFERRED and
  *   TASK_CANCEL_ASYNCHRONOUS.
  *
- *   The cancelability state and type of any newly created tasks are
+ *   The cancellability state and type of any newly created tasks are
  *   TASK_CANCEL_ENABLE and TASK_CANCEL_DEFERRED respectively.
  *
  ****************************************************************************/
 
 int task_setcanceltype(int type, FAR int *oldtype)
 {
-	/* Return the current type if so requrested */
+	FAR struct tls_info_s *tls = tls_get_info();
+	int ret = OK;
+
+	/* Return the current type if so requested */
 
 	if (oldtype != NULL) {
-		*oldtype = TASK_CANCEL_ASYNCHRONOUS;
+		if ((tls->tl_cpstate & CANCEL_FLAG_CANCEL_ASYNC) != 0u) {
+			*oldtype = TASK_CANCEL_ASYNCHRONOUS;
+		} else {
+			*oldtype = TASK_CANCEL_DEFERRED;
+		}
 	}
 
-	/* Check the requested cancellation type */
+	/* Set the new cancellation type */
 
-	return (type == TASK_CANCEL_ASYNCHRONOUS) ? OK : ENOSYS;
+	if (type == TASK_CANCEL_ASYNCHRONOUS) {
+		/* Set the asynchronous cancellation bit */
+
+		tls->tl_cpstate |= CANCEL_FLAG_CANCEL_ASYNC;
+
+#ifdef CONFIG_CANCELLATION_POINTS
+		/* If we just switched from deferred to asynchronous type and if a
+		 * cancellation is pending, then exit now.
+		 */
+
+		if ((tls->tl_cpstate & CANCEL_FLAG_CANCEL_PENDING) != 0u &&
+		    (tls->tl_cpstate & CANCEL_FLAG_NONCANCELABLE) == 0u) {
+			tls->tl_cpstate &= ~CANCEL_FLAG_CANCEL_PENDING;
+
+			/* Exit according to the type of the thread */
+
+#ifndef CONFIG_DISABLE_PTHREAD
+			pthread_exit(PTHREAD_CANCELED);
+#else
+			exit(EXIT_FAILURE);
+#endif
+		}
+#endif
+	}
+#ifdef CONFIG_CANCELLATION_POINTS
+	else if (type == TASK_CANCEL_DEFERRED) {
+		/* Set the deferred cancellation type */
+
+		tls->tl_cpstate &= ~CANCEL_FLAG_CANCEL_ASYNC;
+	}
+#endif
+	else {
+		ret = EINVAL;
+	}
+
+	return ret;
 }
