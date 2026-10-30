@@ -68,7 +68,9 @@
 #include <tinyara/cancelpt.h>
 #include <tinyara/serial/serial.h>
 #include <tinyara/fs/ioctl.h>
-#include <tinyara/power/pm.h>
+#if defined(CONFIG_PM)
+#  include <tinyara/power/pm.h>
+#endif
 #include <tinyara/wqueue.h>
 #include <tinyara/kthread.h>
 

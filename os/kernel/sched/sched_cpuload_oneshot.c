@@ -50,7 +50,9 @@
 #include <tinyara/arch.h>
 #include <tinyara/clock.h>
 #include <tinyara/lib/xorshift128.h>
-#include <tinyara/power/pm.h>
+#if defined(CONFIG_PM)
+#  include <tinyara/power/pm.h>
+#endif
 #include <tinyara/timers/oneshot.h>
 
 #include "clock/clock.h"
