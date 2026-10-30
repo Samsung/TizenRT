@@ -97,6 +97,19 @@
 
 #define STATUS_LINELEN PATH_MAX
 
+/* The 'stat' entry provides the task/thread status values only, in a
+ * space-separated format that is easily parsed by the system commands
+ * such as ps.  See PROC_STAT_* in apps/system/utils/utils_proc.h.
+ */
+
+#define PROC_STAT_FMT_BASE "%d %d %d %" PRIu32 " %d %d %d %d %d %d"
+#ifdef CONFIG_IRQCOUNT
+#define PROC_STAT_FMT_IRQ  " %d"
+#else
+#define PROC_STAT_FMT_IRQ  " %s"
+#endif
+#define PROC_STAT_FMT PROC_STAT_FMT_BASE PROC_STAT_FMT_IRQ
+
 /****************************************************************************
  * Private Types
  ****************************************************************************/
@@ -107,6 +120,7 @@
 
 enum proc_node_e {
 	PROC_LEVEL0 = 0,                    /* The top-level directory */
+	PROC_STAT,                          /* Task/thread status values */
 	PROC_STATUS,                        /* Task/thread status */
 	PROC_CMDLINE,                       /* Task command line */
 #ifndef CONFIG_SCHED_CPULOAD_NONE
@@ -290,6 +304,11 @@ static const struct proc_node_s g_level0node =
   "",             "",        (uint8_t)PROC_LEVEL0,       DTYPE_DIRECTORY   /* Top-level directory */
 };
 
+static const struct proc_node_s g_stat =
+{
+  "stat",         "stat",    (uint8_t)PROC_STAT,         DTYPE_FILE        /* Task/thread status values */
+};
+
 static const struct proc_node_s g_status =
 {
   "status",       "status",  (uint8_t)PROC_STATUS,       DTYPE_FILE        /* Task/thread status */
@@ -360,6 +379,7 @@ static const struct proc_node_s g_groupenv =
 
 static FAR const struct proc_node_s *const g_nodeinfo[] =
 {
+  &g_stat,         /* Task/thread status values */
   &g_status,       /* Task/thread status */
   &g_cmdline,      /* Task command line */
 #ifndef CONFIG_SCHED_CPULOAD_NONE
@@ -456,6 +476,110 @@ static FAR const struct proc_node_s *proc_findnode(FAR const char *relpath)
 	/* Not found */
 
 	return NULL;
+}
+
+/****************************************************************************
+ * Name: proc_stat
+ *
+ * Description:
+ *   Provides the task/thread status values only, in a space-separated
+ *   format that is easily parsed by the system commands such as ps
+ *   (see PROC_STAT_* in apps/system/utils/utils_proc.h):
+ *
+ *     PID PPID PRIORITY FLAGS STATE TOTALSTACK PEAKSTACK CURRHEAP
+ *     PEAKHEAP CPU IRQCOUNT WAITINFO [NAME]
+ *
+ ****************************************************************************/
+
+static ssize_t proc_entry_stat(FAR struct proc_file_s *procfile,
+                         FAR struct tcb_s *tcb, FAR char *buffer,
+                         size_t buflen, off_t offset)
+{
+	FAR const char *name;
+	size_t remaining;
+	size_t linesize;
+	size_t copysize;
+	size_t totalsize;
+	ssize_t peak_stack;
+	int curr_heap;
+	int peak_heap;
+	pid_t ppid;
+	int cpu;
+
+	remaining = buflen;
+	totalsize = 0;
+
+#ifdef CONFIG_STACK_COLORATION
+	peak_stack = up_check_tcbstack(tcb, tcb->adj_stack_size);
+#else
+	peak_stack = -1;
+#endif
+
+	/* Per-task heap usage is not tracked without the heap instrumentation */
+
+	curr_heap = -1;
+	peak_heap = -1;
+
+#ifdef CONFIG_SCHED_HAVE_PARENT
+	ppid = tcb->group ? tcb->group->tg_ppid : -1;
+#else
+	ppid = -1;
+#endif
+
+#ifdef CONFIG_SMP
+	cpu = tcb->cpu;
+#else
+	cpu = 0;
+#endif
+
+#ifdef CONFIG_IRQCOUNT
+	linesize = procfs_snprintf(procfile->line, STATUS_LINELEN,
+	                           PROC_STAT_FMT,
+	                           tcb->pid, ppid, tcb->sched_priority,
+	                           tcb->flags, tcb->task_state,
+	                           tcb->adj_stack_size, peak_stack,
+	                           curr_heap, peak_heap, cpu,
+	                           tcb->irqcount);
+#else
+	linesize = procfs_snprintf(procfile->line, STATUS_LINELEN,
+	                           PROC_STAT_FMT,
+	                           tcb->pid, ppid, tcb->sched_priority,
+	                           tcb->flags, tcb->task_state,
+	                           tcb->adj_stack_size, peak_stack,
+	                           curr_heap, peak_heap, cpu, "NA");
+#endif
+	copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining,
+	                         &offset);
+	totalsize += copysize;
+	buffer += copysize;
+	remaining -= copysize;
+
+	if (totalsize >= buflen) {
+		return totalsize;
+	}
+
+	/* Show the waiting information, then the task name as the last field */
+
+	name = get_task_name(tcb);
+
+	switch (tcb->task_state) {
+	case TSTATE_WAIT_SIG:
+		linesize = procfs_snprintf(procfile->line, STATUS_LINELEN,
+		                           " " SIGSET_FMT " %s",
+		                           SIGSET_ELEM(&tcb->sigwaitmask), name);
+		break;
+
+	default:
+		linesize = procfs_snprintf(procfile->line, STATUS_LINELEN,
+		                           " - %s", name);
+		break;
+	}
+
+	copysize = procfs_memcpy(procfile->line, linesize, buffer, remaining,
+	                         &offset);
+	totalsize += copysize;
+
+	return totalsize;
 }
 
 /****************************************************************************
@@ -1608,6 +1732,10 @@ static ssize_t proc_read(FAR struct file *filep, FAR char *buffer,
 	/* Provide the requested data */
 
 	switch (procfile->node->node) {
+	case PROC_STAT: /* Task/thread status values */
+		ret = proc_entry_stat(procfile, tcb, buffer, buflen, filep->f_pos);
+		break;
+
 	case PROC_STATUS: /* Task/thread status */
 		ret = proc_status(procfile, tcb, buffer, buflen, filep->f_pos);
 		break;
