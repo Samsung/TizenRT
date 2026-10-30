@@ -18,35 +18,22 @@
 /****************************************************************************
  * mm/umm_heap/umm_realloc.c
  *
- *   Copyright (C) 2007, 2009, 2013-2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -55,143 +42,77 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+
 #include <stdlib.h>
-#include <debug.h>
+#include <unistd.h>
+#include <errno.h>
 #include <tinyara/mm/mm.h>
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#include "umm_heap/umm_heap.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-#ifndef CONFIG_APP_BINARY_SEPARATION
-/************************************************************************
- * Name: realloc_at
- *
- * Description:
- *   realloc to the specific heap.
- *   realloc_at tries to allocate memory for a specific heap which passed by api argument.
- *   If there is no enough space to allocate, it will return NULL.
- *
- * Return Value:
- *   The address of the allocated memory (NULL on failure to allocate)
- *
- ************************************************************************/
 
-#if CONFIG_KMM_NHEAPS > 1
-void *realloc_at(int heap_index, void *oldmem, size_t size)
-{
-	void *ret;
-
-	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_realloc api */
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	caller_retaddr = GET_RETURN_ADDRESS();
-#endif
-
-	if (heap_index > HEAP_END_IDX || heap_index < HEAP_START_IDX) {
-		mdbg("realloc_at failed. Wrong heap index (%d) of (%d)\n", heap_index, HEAP_END_IDX);
-		return NULL;
-	}
-
-	if (size == 0) {
-		if (oldmem) {
-			mm_free(&BASE_HEAP[heap_index], oldmem);
-		}
-		return NULL;
-	}
-
-	ret = mm_realloc(&BASE_HEAP[heap_index], oldmem, size, caller_retaddr);
-	if (ret == NULL) {
-		mm_manage_alloc_fail(&BASE_HEAP[heap_index], heap_index, heap_index, size, 0, USER_HEAP, caller_retaddr);
-	}
-	return ret;
-}
-#endif
-#endif
 /****************************************************************************
  * Name: realloc
  *
  * Description:
  *   Re-allocate memory in the user heap.
  *
- * Parameters:
+ * Input Parameters:
  *   oldmem  - The old memory allocated
  *   newsize - Size (in bytes) of the new memory region to be re-allocated.
  *
- * Return Value:
+ * Returned Value:
  *   The address of the re-allocated memory (NULL on failure to re-allocate)
  *
  ****************************************************************************/
 
+#undef realloc
 FAR void *realloc(FAR void *oldmem, size_t size)
 {
-#ifndef CONFIG_APP_BINARY_SEPARATION
-	int prev_heap_idx ;
-#endif
-	void *ret;
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+	FAR void *brkaddr;
+	FAR void *mem;
 
-	mmaddress_t caller_retaddr = NULL;	/* for generalising the call to mm_realloc api */
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	caller_retaddr = GET_RETURN_ADDRESS();
-#endif
+	/* Initialize the user heap if it wasn't yet */
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	if (size == 0) {
-		if (oldmem) {
-			free(oldmem);
-		}
-		return NULL;
-	}	
-	/* User supports a single heap on app separation */
-	ret = mm_realloc(BASE_HEAP, oldmem, size, caller_retaddr);
-	if (ret == NULL) {
-		mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP, caller_retaddr);
-	}
+	umm_try_initialize();
 
-#else /* CONFIG_APP_BINARY_SEPARATION */
-	int heap_idx;
-	heap_idx = mm_get_index_of_heap(oldmem);
-	if (heap_idx < HEAP_START_IDX) {
-		mdbg("Invalid heap index for oldmem %p, heap_idx %d\n", oldmem, heap_idx);
-		return NULL;
-	}
+	/* Loop until we successfully allocate the memory or until an error
+	 * occurs. If we fail to allocate memory on the first pass, then call
+	 * sbrk to extend the heap by one page.  This may require several
+	 * passes if more the size of the allocation is more than one page.
+	 *
+	 * An alternative would be to increase the size of the heap by the
+	 * full requested allocation in sbrk().  Then the loop should never
+	 * execute more than twice (but more memory than we need may be
+	 * allocated).
+	 */
 
-	if (size == 0) {
-		if (oldmem) {
-			mm_free(&BASE_HEAP[heap_idx], oldmem);
-		}
-		return NULL;
-	}
-
-	/* Try to realloc in previous allocated heap */
-
-	ret = mm_realloc(&BASE_HEAP[heap_idx], oldmem, size, caller_retaddr);
-	if (ret != NULL) {
-		return ret;
-	}
-
-	/* Try to mm_malloc to another heap */
-
-	prev_heap_idx = heap_idx;
-	for (heap_idx = HEAP_START_IDX; heap_idx <= HEAP_END_IDX; heap_idx++) {
-		ret = mm_malloc(&BASE_HEAP[heap_idx], size, caller_retaddr);
-		if (ret != NULL) {
-			if (oldmem) {
-				mm_free(&BASE_HEAP[prev_heap_idx], oldmem);
+	do {
+		mem = mm_realloc(USR_HEAP, oldmem, size);
+		if (!mem) {
+			brkaddr = sbrk(size < 1 ? 1 : size);
+			if (brkaddr == (FAR void *)-1) {
+				return NULL;
 			}
-			return ret;
 		}
+	} while (mem == NULL);
+
+	return mem;
+#else
+	FAR void *ret;
+
+	ret = mm_realloc(USR_HEAP, oldmem, size);
+	if (ret == NULL) {
+		set_errno(ENOMEM);
+	} else {
+		mm_notify_pressure(mm_heapfree(USR_HEAP),
+		                   mm_heapfree_largest(USR_HEAP));
 	}
-
-	mm_manage_alloc_fail(BASE_HEAP, HEAP_START_IDX, HEAP_END_IDX, size, 0, USER_HEAP, caller_retaddr);
-
-#endif /* CONFIG_APP_BINARY_SEPARATION */
 
 	return ret;
+#endif
 }

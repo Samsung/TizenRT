@@ -1,0 +1,126 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menu "Common I/O Buffer Support"
+
+config MM_IOB
+	bool "Enable generic I/O buffer support"
+	default n
+	---help---
+		This setting will build the common I/O buffer (IOB) support
+		library.
+
+if MM_IOB
+
+config IOB_NBUFFERS
+	int "Number of pre-allocated I/O buffers"
+	default 36 if NET_WRITE_BUFFERS
+	default 24 if !NET_WRITE_BUFFERS && NET_READAHEAD
+	default 8 if !NET_WRITE_BUFFERS && !NET_READAHEAD
+	---help---
+		Each packet is represented by a series of small I/O buffers in a
+		chain.  This setting determines the number of preallocated I/O
+		buffers available for packet data.
+
+config IOB_BUFSIZE
+	int "Payload size of one I/O buffer"
+	range 196 65535 if NET_TCP_SELECTIVE_ACK && NET_IPv6 && RNDIS
+	range 128 65535 if NET_TCP_SELECTIVE_ACK && (NET_IPv4 || NET_IPv6)
+	default 196
+	---help---
+		Each packet is represented by a series of small I/O buffers in a
+		chain.  This setting determines the data payload each preallocated
+		I/O buffer.
+
+config IOB_ALIGNMENT
+	int "Alignment size of each I/O buffer"
+	default 4
+	---help---
+		The member io_data of all I/O buffers is aligned to the value
+		specified by this configuration.
+
+config IOB_SECTION
+	string "The section where iob buffer is located"
+	---help---
+		The section where iob buffer is located.
+		The section must be zero-initialized on system boot.
+
+config IOB_NCHAINS
+	int "Number of pre-allocated I/O buffer chain heads"
+	default 0 if !NET_READAHEAD
+	default IOB_NBUFFERS if NET_READAHEAD
+	---help---
+		These tiny nodes are used as "containers" to support queueing of
+		I/O buffer chains.  This will limit the number of I/O transactions
+		that can be "in-flight" at any give time.  The default value of
+		zero disables this features.
+
+		These generic I/O buffer chain containers are not currently used
+		by any logic in NuttX.  That is because their other specialized
+		I/O buffer chain containers that also carry a payload of usage
+		specific information.
+
+		Note: TCP and UDP don't use this.
+		Note: ICMP/ICMPv6 and CAN use this.
+
+config IOB_THROTTLE
+	int "I/O buffer throttle value"
+	default 0 if !NET_WRITE_BUFFERS || !NET_READAHEAD
+	default 8 if NET_WRITE_BUFFERS && NET_READAHEAD
+	---help---
+		TCP write buffering and read-ahead buffer use the same pool of free
+		I/O buffers.  In order to prevent uncontrolled incoming TCP packets
+		from hogging all of the available, pre-allocated I/O buffers, a
+		throttling value is required.  This throttle value assures that
+		I/O buffers will be denied to the read-ahead logic before TCP writes
+		are halted.
+
+config IOB_NOTIFIER
+	bool "Support IOB notifications"
+	default n
+	depends on SCHED_WORKQUEUE
+	select WQUEUE_NOTIFIER
+	---help---
+		Enable building of IOB notifier logic that will execute a worker
+		function on the high priority work queue when an IOB is available.
+		This is is a general purpose notifier, but was developed specifically to
+		support poll() logic where the poll must wait for an IOB to become
+		available.
+
+config IOB_NOTIFIER_DIV
+	int "Notification divider"
+	default 4
+	range 1 64
+	depends on IOB_NOTIFIER
+	---help---
+		IOBs may become available at very high rates and the resulting
+		notification processing can be substantial even if there is nothing
+		waiting for a free IOB.  This divider will reduce that rate of
+		notification.  This must be an even power of two.  Supported values
+		include:  1, 2, 4, 8, 16, 32, 64.  The default value of 4 means that
+		a notification will be sent only when there are a multiple of 4 IOBs
+		available.
+
+config IOB_ALLOC
+	bool "Dynamic I/O buffer allocation"
+	default n
+	---help---
+		This option will enable dynamic I/O buffer allocation
+
+config IOB_DEBUG
+	bool "Force I/O buffer debug"
+	default n
+	depends on DEBUG_FEATURES && !SYSLOG_BUFFER
+	---help---
+		This option will force debug output from I/O buffer logic.  This
+		is not normally something that would want to do but is convenient
+		if you are debugging the I/O buffer logic and do not want to get
+		overloaded with other un-related debug output.
+
+		NOTE that this selection is not available if IOBs are being used
+		to syslog buffering logic (CONFIG_SYSLOG_BUFFER=y)!
+
+endif # MM_IOB
+endmenu # Common I/O buffer support
