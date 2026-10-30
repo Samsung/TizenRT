@@ -196,6 +196,8 @@ depend: .depend
 # Clean most derived files, retaining the configuration
 
 clean:
+	$(call DELFILE, bin$(DELIM)*$(OBJEXT))
+	$(call DELFILE, kbin$(DELIM)*$(OBJEXT))
 	$(call DELFILE, $(BIN))
 	$(call DELFILE, libc$(LIBEXT))
 	$(call DELFILE, $(KBIN))
@@ -213,3 +215,14 @@ distclean: clean
 
 -include bin/Make.dep
 -include kbin/Make.dep
+
+# Configuration-dependent ELF module linker script.
+ifeq ($(CONFIG_LIBC_ELF),y)
+elf/gnu-elf.ld: elf/gnu-elf.ld.in $(TOPDIR)/include/tinyara/config.h
+	$(call PREPROCESS, $<, $@)
+context: elf/gnu-elf.ld
+endif
+
+distclean_elf:
+	$(call DELFILE, elf/gnu-elf.ld)
+distclean: distclean_elf
