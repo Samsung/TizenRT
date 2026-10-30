@@ -76,10 +76,6 @@ ifeq ($(CONFIG_STACK_COLORATION),y)
 CMN_CSRCS += go_os_start.c
 endif
 
-ifeq ($(CONFIG_SCHED_YIELD_OPTIMIZATION),y)
-CMN_CSRCS += up_schedyield.c
-endif
-
 ifeq ($(CONFIG_BUILD_PROTECTED),y)
 CMN_CSRCS += up_mpusavecontext.c up_mpurestorecontext.c up_setupregions.c
 endif
