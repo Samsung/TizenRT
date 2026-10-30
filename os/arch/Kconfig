@@ -9,30 +9,376 @@ choice
 
 config ARCH_ARM
 	bool "ARM"
+	select ARCH_HAVE_BACKTRACE
 	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_VFORK
+	select ARCH_HAVE_FORK
 	select ARCH_HAVE_STACKCHECK
 	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_STDARG_H
+	select ARCH_HAVE_SETJMP if !ARCH_TOOLCHAIN_IAR
+	select ARCH_HAVE_SYSCALL_HOOKS
+	select ARCH_HAVE_RDWR_MEM_CPU_RUN
+	select ARCH_HAVE_TCBINFO
+	select ARCH_HAVE_THREAD_LOCAL
 	---help---
 		The ARM architectures
 
-config ARCH_XTENSA
-	bool "Xtensa"
+config ARCH_ARM64
+	bool "ARM64"
+	select ALARM_ARCH
+	select ARCH_64BIT
+	select ARCH_HAVE_BACKTRACE
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_FORK if !BUILD_KERNEL && !BUILD_PROTECTED
 	select ARCH_HAVE_STACKCHECK
 	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_VECNOTIRQ
+	select ARCH_HAVE_STDARG_H
+	select ARCH_HAVE_SETJMP
+	select ARCH_HAVE_SYSCALL_HOOKS
+	select ARCH_HAVE_RDWR_MEM_CPU_RUN
+	select ARCH_HAVE_TCBINFO
+	select ARCH_HAVE_THREAD_LOCAL
+	select ARCH_HAVE_PERF_EVENTS
+	select ONESHOT
+	select ONESHOT_COUNT
 	---help---
-		Cadence Tensilica Xtensa architectures.
+		The ARM64 architectures
+
+config ARCH_AVR
+	bool "AVR"
+	select ARCH_NOINTC
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_CUSTOMOPT
+	---help---
+		Atmel 8-bit bit AVR and 32-bit AVR32 architectures
+
+config ARCH_HC
+	bool "Freescale HC"
+	select ARCH_NOINTC
+	select ARCH_HAVE_INTERRUPTSTACK
+	---help---
+		Freescale HC architectures (M9S12)
+
+config ARCH_MIPS
+	bool "MIPS"
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_CUSTOMOPT
+	---help---
+		MIPS architectures (PIC32)
+
+config ARCH_MISOC
+	bool "MISOC"
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_STDARG_H
+	---help---
+		MISOC
+
+config ARCH_RENESAS
+	bool "Renesas"
+	select ARCH_NOINTC
+	select ARCH_HAVE_INTERRUPTSTACK
+	---help---
+		Renesas architectures (SH and M16C).
+
+config ARCH_RISCV
+	bool "RISC-V"
+	select ARCH_HAVE_BACKTRACE
+	select ARCH_HAVE_CPUINFO
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_STACKCHECK
+	select ARCH_HAVE_FORK
+	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_SETJMP
+	select ARCH_HAVE_STDARG_H
+	select ARCH_HAVE_SYSCALL_HOOKS
+	select ARCH_HAVE_RDWR_MEM_CPU_RUN
+	select ARCH_HAVE_TCBINFO
+	select ARCH_HAVE_THREAD_LOCAL
+	select ARCH_HAVE_POWEROFF
+	select ARCH_HAVE_LAZYFPU if ARCH_HAVE_FPU
+	select ARCH_HAVE_CPUID_MAPPING if ARCH_HAVE_MULTICPU
+	---help---
+		RISC-V 32 and 64-bit RV32 / RV64 architectures.
+
+config ARCH_SIM
+	bool "Simulation"
+	select ARCH_HAVE_BACKTRACE
+	select ARCH_HAVE_MULTICPU if !CONFIG_WINDOWS_NATIVE
+	select ARCH_HAVE_RTC_SUBSECONDS
+	select ARCH_HAVE_SERIAL_TERMIOS
+	select ARCH_HAVE_SYSCALL_HOOKS
+	select ARCH_HAVE_TICKLESS
+	select ARCH_HAVE_POWEROFF
+	select ARCH_HAVE_TESTSET
+	select ARCH_HAVE_FORK if !HOST_WINDOWS
+	select ARCH_HAVE_SETJMP
+	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_TCBINFO
+	select ARCH_HAVE_TEXT_HEAP
+	select ARCH_SETJMP_H
+	select ALARM_ARCH
+	select ONESHOT
+	select ONESHOT_COUNT
+	select SERIAL_CONSOLE
+	select SERIAL_IFLOWCONTROL
+	select SCHED_HPWORK
+	select ARCH_HAVE_CPUINFO
+	---help---
+		Linux/Cygwin user-mode simulation.
+
+config ARCH_X86
+	bool "x86"
+	select ARCH_HAVE_TCBINFO
+	---help---
+		Intel x86 architectures.
+
+config ARCH_X86_64
+	bool "x86_64"
+	select ARCH_64BIT
+	select ARCH_HAVE_TCBINFO
+	select ARCH_HAVE_FPU
+	select ARCH_HAVE_DPFPU
+	select ARCH_HAVE_MULTICPU
+	select ARCH_HAVE_TESTSET
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_THREAD_LOCAL
+	select PCI_LATE_DRIVERS_REGISTER if PCI
+	select ARCH_TOOLCHAIN_GNU
+	select ARCH_HAVE_BACKTRACE
+	select ARCH_HAVE_FORK if !BUILD_KERNEL
+	select ARCH_HAVE_SETJMP
+	select ARCH_HAVE_PERF_EVENTS
+	select ARCH_HAVE_POWEROFF
+	---help---
+		x86-64 architectures.
+
+config ARCH_XTENSA
+	bool "Xtensa"
+	select ARCH_HAVE_BACKTRACE
+	select ARCH_HAVE_CPUINFO
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_STACKCHECK
+	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_THREAD_LOCAL
+	select ARCH_HAVE_TCBINFO
+	select ARCH_HAVE_STDARG_H
+	select ARCH_HAVE_SETJMP if ARCH_TOOLCHAIN_GNU
+	select ARCH_HAVE_SYSCALL_HOOKS
+	select ARCH_HAVE_PERF_EVENTS
+	---help---
+		Cadence® Tensilica® Xtensa® actictures.
+
+config ARCH_Z16
+	bool "ZNEO"
+	select ARCH_HAVE_HEAP2
+	---help---
+		ZiLOG ZNEO 16-bit architectures (z16f).
+
+config ARCH_Z80
+	bool "z80"
+	select ARCH_HAVE_HEAP2
+	---help---
+		ZiLOG 8-bit architectures (z80, ez80, z8).
+
+config ARCH_OR1K
+	bool "OpenRISC"
+	---help---
+		OpenRISC architectures.
+
+config ARCH_SPARC
+	bool "SPARC"
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_TCBINFO
+	---help---
+		SPARC architectures (SPARC V8)
+
+config ARCH_TRICORE
+	bool "Infineon TriCore"
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_STACKCHECK
+	select ARCH_HAVE_SYSCALL_HOOKS
+	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_TCBINFO
+	select ARCH_HAVE_REGCPY
+	---help---
+		Infineon 32-bit AURIX TriCore architectures
+
 endchoice
 
 config ARCH
 	string
-	default "arm"	if ARCH_ARM
+	default "arm"     if ARCH_ARM
+	default "arm64"   if ARCH_ARM64
+	default "avr"     if ARCH_AVR
+	default "hc"      if ARCH_HC
+	default "mips"    if ARCH_MIPS
+	default "misoc"   if ARCH_MISOC
+	default "renesas" if ARCH_RENESAS
+	default "risc-v"  if ARCH_RISCV
+	default "sim"     if ARCH_SIM
+	default "x86"     if ARCH_X86
+	default "x86_64"  if ARCH_X86_64
 	default "xtensa"  if ARCH_XTENSA
-source arch/arm/Kconfig
-source arch/xtensa/Kconfig
+	default "z16"     if ARCH_Z16
+	default "z80"     if ARCH_Z80
+	default "or1k"    if ARCH_OR1K
+	default "sparc"   if ARCH_SPARC
+	default "tricore" if ARCH_TRICORE
+
+if ARCH_ARM
+source "arch/arm/Kconfig"
+endif
+if ARCH_ARM64
+source "arch/arm64/Kconfig"
+endif
+if ARCH_AVR
+source "arch/avr/Kconfig"
+endif
+if ARCH_HC
+source "arch/hc/Kconfig"
+endif
+if ARCH_MIPS
+source "arch/mips/Kconfig"
+endif
+if ARCH_MISOC
+source "arch/misoc/Kconfig"
+endif
+if ARCH_RENESAS
+source "arch/renesas/Kconfig"
+endif
+if ARCH_RISCV
+source "arch/risc-v/Kconfig"
+endif
+if ARCH_SIM
+source "arch/sim/Kconfig"
+endif
+if ARCH_X86
+source "arch/x86/Kconfig"
+endif
+if ARCH_X86_64
+source "arch/x86_64/Kconfig"
+endif
+if ARCH_XTENSA
+source "arch/xtensa/Kconfig"
+endif
+if ARCH_Z16
+source "arch/z16/Kconfig"
+endif
+if ARCH_Z80
+source "arch/z80/Kconfig"
+endif
+if ARCH_OR1K
+source "arch/or1k/Kconfig"
+endif
+if ARCH_SPARC
+source "arch/sparc/Kconfig"
+endif
+if ARCH_TRICORE
+source "arch/tricore/Kconfig"
+endif
+
+config ARCH_CHIP_CUSTOM
+	bool "Custom Chip Support"
+	default n
+
+if ARCH_CHIP_CUSTOM
+menu "Custom Chip Configuration"
+
+config ARCH_CHIP_CUSTOM_NAME
+	string "Custom chip name"
+	default ""
+	---help---
+		This is a name for the chip.  It is not used except to return the
+		information via the NSH uname command.
+
+config ARCH_CHIP_CUSTOM_DIR
+	string "Custom chip directory"
+	default ""
+	---help---
+		If the custom chip configuration is selected, then it is necessary
+		to also tell the build system where it can find the chip directory
+		for the custom chip.
+
+		In this case, the chip directory is assumed to lie outside the
+		NuttX directory.  The provided path must then be a full, absolute
+		path to some location outside of the NuttX source tree (like
+		"~/projects/mychip").
+
+config ARCH_CHIP_CUSTOM_DIR_RELPATH
+	bool "Relative custom chip directory"
+	default y
+	---help---
+		Specifies that the chip directory is relative to the NuttX directory.
+
+endmenu # Custom Chip Configuration
+endif #ARCH_CHIP_CUSTOM
+
+source "$BINDIR/arch/dummy/Kconfig"
+
+config ARCH_TOOLCHAIN_GNU
+	bool
+	default n
+
+config ARCH_TOOLCHAIN_ARMCLANG
+	bool
+	select ARCH_TOOLCHAIN_GNU
+	default n
+
+config ARCH_TOOLCHAIN_CLANG
+	bool
+	select ARCH_TOOLCHAIN_GNU
+	default n
+
+config ARCH_TOOLCHAIN_GCC
+	bool
+	select ARCH_TOOLCHAIN_GNU
+	default n
+
+config ARCH_TOOLCHAIN_GHS
+	bool
+	select ARCH_TOOLCHAIN_GNU
+	default n
+
+config ARCH_TOOLCHAIN_IAR
+	bool
+	default n
+
+config ARCH_TOOLCHAIN_TASKING
+	bool
+	default n
+
+config ARCH_GNU_NO_WEAKFUNCTIONS
+	bool
+	depends on ARCH_TOOLCHAIN_GNU
+	default n
+	---help---
+		Disable support for weak functions.
+
+config ARCH_SIZET_LONG
+	bool "size_t is type long"
+	default n
+	---help---
+		size_t may be type long or type int.  This matters for some
+		C++ library routines because the NuttX size_t might not have
+		the same underlying type as your toolchain's size_t.
+
+config ARCH_INSTRUMENT_ALL
+	bool "Instrument All"
+	default n
+	---help---
+		Add instrument to all source files. we can use instrument_register
+		to register the instrument function.
 
 comment "Architecture Options"
+
+config ARCH_64BIT
+	bool
+	default n
+	---help---
+		Indicates that the current architecture is 64-bit.
 
 config ARCH_NOINTC
 	bool
@@ -42,7 +388,16 @@ config ARCH_VECNOTIRQ
 	bool
 	default n
 
+config ARCH_HAVE_IRQTRIGGER
+	bool
+	default n
+	depends on !ARCH_NOINTC
+
 config ARCH_DMA
+	bool
+	default n
+
+config ARCH_DMA_NO_FLASH_TRANSFER
 	bool
 	default n
 
@@ -50,11 +405,25 @@ config ARCH_HAVE_IRQPRIO
 	bool
 	default n
 
-config ARCH_L2CACHE
+config ARCH_ICACHE
 	bool
 	default n
 
-config ARCH_HAVE_COHERENT_DCACHE
+config ARCH_ICACHE_LOCK
+	bool
+	depends on ARCH_ICACHE
+	default n
+
+config ARCH_DCACHE
+	bool
+	default n
+
+config ARCH_DCACHE_LOCK
+	bool
+	depends on ARCH_DCACHE
+	default n
+
+config ARCH_L2CACHE
 	bool
 	default n
 
@@ -66,17 +435,79 @@ config ARCH_NEED_ADDRENV_MAPPING
 	bool
 	default n
 
+config ARCH_HAVE_EXTRA_HEAPS
+	bool
+	default n
+	---help---
+		Special memory regions used as separate heaps
+
+config ARCH_HAVE_TEXT_HEAP
+	bool
+	default n
+	---help---
+		Special memory region for dynamic code loading
+
+config ARCH_HAVE_TEXT_HEAP_SEPARATE_DATA_ADDRESS
+	bool
+	default n
+	---help---
+		Textheap might have separate instruction/data mappings
+
+config ARCH_HAVE_TEXT_HEAP_WORD_ALIGNED_READ
+	bool
+	default n
+	---help---
+		Loads from the instruction mapping of textheap need to be word-aligned
+
+config ARCH_HAVE_DATA_HEAP
+	bool
+	default n
+	---help---
+		Special memory region for dynamic data loading
+
+config ARCH_HAVE_COPY_SECTION
+	bool
+	default n
+	---help---
+		Section copying for dynamic code loading
+
 config ARCH_HAVE_MULTICPU
-        bool
-        default n
-
-config ARCH_HAVE_TESTSET
 	bool
 	default n
 
-config ARCH_HAVE_VFORK
+config ARCH_HAVE_CPUID_MAPPING
 	bool
 	default n
+	depends on ARCH_HAVE_MULTICPU
+
+config ARCH_HAVE_FORK
+	bool
+	default n
+
+config ARCH_HAVE_CRC32
+	bool
+	default n
+	---help---
+		Architecture supports CRC32 instruction
+
+config ARCH_HAVE_FPU
+	bool
+	default n
+
+config ARCH_HAVE_DPFPU
+	bool
+	default n
+	select ARCH_HAVE_FPU
+
+config ARCH_HAVE_QPFPU
+	bool
+	default n
+	select ARCH_HAVE_DPFPU
+
+config ARCH_HAVE_LAZYFPU
+	bool
+	default n
+	depends on ARCH_HAVE_FPU
 
 config ARCH_HAVE_MMU
 	bool
@@ -98,62 +529,316 @@ config ARCH_HAVE_POWEROFF
 	bool
 	default n
 
+config ARCH_HAVE_PROGMEM
+	bool
+	default n
+
+config ARCH_HAVE_PROGMEM_READ
+	bool
+	default n
+	depends on ARCH_HAVE_PROGMEM
+
 config ARCH_HAVE_RESET
 	bool
 	default n
 
-config ARCH_HAVE_DVFS
+config ARCH_LDST_16BIT_NOT_ATOMIC
 	bool
 	default n
+	select ARCH_HAVE_8BIT_SERIAL_BUFSIZE
+	---help---
+	This configuration option denotes architecture incapable of loading
+	16-bit values atomically, ie. in a single instruction. If this is set,
+	it means that the architecture needs two (or more) instructions
+	to perform such load AND that a interrupt service routine may run
+	between their execution. The same applies for stores.
+
+	If set, any code running in non-interrupt context that reads 16-bit
+	variable that may be written in interrupt context must disable
+	interrupts or use another method that makes the read atomic.
+	(The same applies for non-interrupt context write and interrupt
+	context read.)
+
+config ARCH_HAVE_TESTSET
+	bool
+	default n
+
+config ARCH_HAVE_CUSTOM_TESTSET
+	bool
+	default n
+	select ARCH_HAVE_TESTSET
+
+config ARCH_HAVE_THREAD_LOCAL
+	bool
+	default n
+
+config ARCH_HAVE_FETCHADD
+	bool
+	default n
+
+config ARCH_HAVE_RTC_SUBSECONDS
+	bool
+	default n
+
+config ARCH_HAVE_SYSCALL_HOOKS
+	bool
+	default n
+	---help---
+		Indicates that the architecture supports the system call hooks as
+		required if CONFIG_SCHED_INSTRUMENTATION_SYSCALL is enabled.  Refer
+		to sched/Kconfig for additional information.
+
+config ARCH_HAVE_BACKTRACE
+	bool
+	default n
+
+config ARCH_HAVE_DEBUG
+	bool "Architecture have debug support"
+	default n
+
+config ARCH_HAVE_MEMTAG
+	bool "Architecture have memory tagging support"
+	default n
+
+config ARCH_HAVE_PERF_EVENTS
+	bool
+	default n
+	---help---
+		The architecture supports hardware performance counting.
+
+config ARCH_HAVE_PERF_EVENTS_USER_ACCESS
+	bool
+	default n
+	select ARCH_HAVE_PERF_EVENTS
+	---help---
+		Select if hardware allows userspace perf counter access.
+
+config ARCH_PERF_EVENTS
+	bool "Configure hardware performance counting"
+	default y if SCHED_CRITMONITOR || SCHED_IRQMONITOR || RPMSG_PING || SEGGER_SYSVIEW
+	default n
+	depends on ARCH_HAVE_PERF_EVENTS
+	---help---
+		Enable hardware performance counter support for perf events. If
+		disabled, perf events will use software events only.
+
+config ARCH_PERF_COUNT_BITWIDTH
+	int "Bit width of the perf count"
+	default 31 if ARCH_TRICORE
+	default 32 if !ARCH_TRICORE
+	depends on PERF_OVERFLOW_CORRECTION
+	---help---
+		Bit width of the perf count. When arch is tricore, the value is 31.
+		When arch is not tricore, the value is 32.
+
+config ARCH_HAVE_BOOTLOADER
+	bool
+	default n
+
+config ARCH_HAVE_CPUINFO
+	bool
+	default n
+
+config ARCH_CPUINFO_FREQ_KHZ
+	int "Default CPU frequency"
+	default 0
+	depends on ARCH_HAVE_CPUINFO
+	---help---
+		Defines the CPU's default maximum frequency. Frequency unit KHZ.
+
+config ARCH_HAVE_TCBINFO
+	bool
+	default n
+
+config ARCH_HAVE_ELF_EXECUTABLE
+	bool
+	default n
+
+config ARCH_HAVE_TRUSTZONE
+	bool
+	default n
+	---help---
+		Automatically selected to indicate that the ARM CPU supports
+		TrustZone.
+
+choice
+	prompt "TrustZone Configuration"
+	default ARCH_TRUSTZONE_DISABLED
+	depends on ARCH_HAVE_TRUSTZONE
+
+config ARCH_TRUSTZONE_DISABLED
+	bool "TrustZone disabled, all CPUs operate in secure state"
+
+config ARCH_TRUSTZONE_SECURE
+	bool "TrustZone enabled, all CPUs operate secure state"
+
+config ARCH_TRUSTZONE_NONSECURE
+	bool "TrustZone enabled, all CPUs operate non-secure state"
+
+endchoice # TrustZone Configuration
+
+config ARCH_FPU
+	bool "FPU support"
+	default y
+	depends on ARCH_HAVE_FPU
+	---help---
+		Build in support for the Floating Point Unit (FPU).
+		Check your chip specifications first; not all chips support the FPU.
+
+config ARCH_DPFPU
+	bool "Double precision FPU support"
+	default y
+	depends on ARCH_FPU && ARCH_HAVE_DPFPU
+	---help---
+		Enable toolchain support for double precision (64-bit) floating
+		point if both the toolchain and the hardware support it.
+
+config ARCH_QPFPU
+	bool "Quad-Precision FPU support"
+	default y
+	depends on ARCH_FPU && ARCH_HAVE_DPFPU && ARCH_HAVE_QPFPU
+	---help---
+		Enable toolchain support for quadruple precision (128 bits or 16 bytes) floating
+		point if both the toolchain and the hardware support it.
+
+config ARCH_LAZYFPU
+	bool "Enable lazy FPU state save / restore"
+	default n
+	depends on ARCH_FPU && ARCH_HAVE_LAZYFPU
+	---help---
+		Enable lazy FPU state save and restore. Normally FPU state is saved
+		and restored with the integer context registers, if the task is using
+		FPU. The state is typically saved into the task's user stack upon
+		exception entry or context switch out, and restored when the
+		exception returns or context switches back in.
+
+		As the kernel does not use FPU, this can be optimized with the help
+		of the FPU hardware status and a bit of code logic inside the kernel.
+		The logic keeps track of the FPU state, which can be "unused",
+		"dirty"	or "clean". A clean state means the FPU has not been used
+		since the last state save, while the dirty state indicates that the
+		FPU has been used.
+
+		The optimization saves / restores FPU registers only if:
+		- A context change has happened, save and restore does not happen
+		  during exception entry / return to the same task
+		- FPU is in use (state is not unused) and
+		- FPU status is dirty, i.e. FPU has been used after the last
+		- FPU restore happens when status is in dirty or clean
+
+		This saves CPU time as the FPU registers do not have to be moved in
+		and out when handling an exception that does not result in a context
+		switch.
+
+		The tradeoff with the lazy FPU feature is that it requires a static
+		memory allocation from the task's TCB to store the FPU registers,
+		while the non-lazy style can use stack memory for storing the FPU
+		registers, saving memory as the stack frame for the FPU registers can
+		be skipped if the FPU is not in use.
 
 config ARCH_USE_MMU
 	bool "Enable MMU"
 	default n
 	depends on ARCH_HAVE_MMU
 	---help---
-		The architecture supports MMU. Enable this option in order to
-		enable use of the MMU. For most architectures, this is not
-		really an option: It is required to use the MMU. In those
+		The architecture supports supports an MMU.  Enable this option in
+		order to enable use of the MMU.  For most architectures, this is
+		not really an option:  It is required to use the MMU.  In those
 		cases, this selection will always be forced.
-
-config ARCH_HAVE_FETCHADD
-        bool
-        default n
 
 config ARCH_USE_MPU
 	bool "Enable MPU"
 	default n
 	depends on ARCH_HAVE_MPU
 	---help---
-		The architecture supports MPU. Enable this option in order to
-		enable use of the MPU. For most architectures, this option is
-		enabled by other, platform-specific logic. In those cases, this
+		The architecture supports supports an MPU.  Enable this option in
+		order to enable use of the MPU.  For most architectures, this option
+		is enabled by other, platform-specific logic.  In those cases, this
 		selection will always be forced.
+
+config ARCH_USE_TEXT_HEAP
+	bool "Enable separate text allocation for dynamic code loading"
+	default n
+	depends on ARCH_HAVE_TEXT_HEAP
+	---help---
+		This option enables architecture-specific memory allocator
+		for dynamic code loading. For example, ESP32 has separate memory
+		regions for instruction and data and the memory region used for
+		usual malloc doesn't work for instruction.
+
+config ARCH_USE_DATA_HEAP
+	bool "Enable separate data allocation for dynamic data loading"
+	default n
+	depends on ARCH_HAVE_DATA_HEAP
+	---help---
+		This option enables architecture-specific memory allocator
+		for dynamic data loading.
+
+config ARCH_USE_SEPARATED_SECTION
+	bool "Enable separate section allocation for dynamic loading"
+	default n
+	depends on ARCH_USE_TEXT_HEAP || ARCH_USE_DATA_HEAP
+	---help---
+		This option enables loading different sections into different
+		memory areas, allowing for different speeds.
 
 menuconfig ARCH_ADDRENV
 	bool "Address environments"
 	default n
-	depends on ARCH_HAVE_ADDRENV
+	depends on ARCH_HAVE_ADDRENV && SCHED_LPWORK
 	---help---
 		Support per-task address environments using the MMU... i.e., support
 		"processes"
+
+config ARCH_USE_COPY_SECTION
+	bool "Enable arch copy section by self for dynamic code loading"
+	default n
+	depends on ARCH_HAVE_COPY_SECTION
+	---help---
+		This option enables architecture-specific memory copy for
+		dynamic code loading. For example, Ambiq has MRAM regions
+		for instruction which can't load by the memcpy directly.
 
 if ARCH_ADDRENV && ARCH_NEED_ADDRENV_MAPPING
 
 config ARCH_TEXT_VBASE
 	hex "Virtual .text base"
+	default 0x0
 	---help---
 		The virtual address of the beginning the .text region
 
 config ARCH_DATA_VBASE
 	hex "Virtual .bss/.data base"
+	default 0x0
 	---help---
 		The virtual address of the beginning of the .bss/.data region.
 
 config ARCH_HEAP_VBASE
 	hex "Virtual heap base"
+	default 0x0
 	---help---
 		The virtual address of the beginning of the heap region.
+
+config ARCH_VMA_MAPPING
+	bool "Support runtime memory mapping into SHM area"
+	default n
+
+config ARCH_KVMA_MAPPING
+	bool
+	default n
+
+config ARCH_SHM_VBASE
+	hex "Shared memory base"
+	depends on ARCH_VMA_MAPPING
+	---help---
+		The virtual address of the beginning of the shared memory region.
+
+config ARCH_KMAP_VBASE
+	hex "Kernel dynamic virtual mappings base"
+	depends on ARCH_KVMA_MAPPING
+	---help---
+		The virtual address of the beginning of the kernel dynamic mapping
+		region.
 
 config ARCH_TEXT_NPAGES
 	int "Max .text pages"
@@ -178,6 +863,34 @@ config ARCH_HEAP_NPAGES
 		The maximum number of pages that can allocated for the heap region.
 		This, along with knowledge of the page size, determines the size of
 		the heap virtual address space. Default is 1.
+
+if ARCH_VMA_MAPPING
+
+config ARCH_SHM_MAXREGIONS
+	int "Max shared memory regions"
+	default 1
+	---help---
+		The maximum number of regions that can be used with SysV shared
+		memory interface. This hard-coded value permits static allocation of
+		the shared memory data structures and serves no other purpose.
+		Default is 1.
+
+config ARCH_SHM_NPAGES
+	int "Max size of userspace VM mapping in pages"
+	default 1
+	---help---
+		The max size of the virtual memory region for shared memory,
+		userspace device mappings etc.
+
+endif # ARCH_VMA_MAPPING
+
+config ARCH_KMAP_NPAGES
+	int "Max kernel dynamic mapping pages"
+	default 1
+	depends on ARCH_KVMA_MAPPING
+	---help---
+		The maximum amount of pages that a kernel can use for dynamically
+		mapping physical pages to itself.
 
 config ARCH_STACK_DYNAMIC
 	bool "Dynamic user stack"
@@ -214,9 +927,8 @@ endif # ARCH_STACK_DYNAMIC
 
 config ARCH_KERNEL_STACK
 	bool "Kernel process stack"
-	default n if !LIBC_EXECFUNCS
-	default y if LIBC_EXECFUNCS
-	depends on BUILD_KERNEL
+	default LIBC_EXECFUNCS
+	depends on BUILD_KERNEL || BUILD_PROTECTED
 	---help---
 		It this option is selected, then every user process will have two
 		stacks:  A large, potentially dynamically sized user stack and small
@@ -241,7 +953,7 @@ config ARCH_KERNEL_STACKSIZE
 	int "Kernel stack size"
 	default 1568
 	---help---
-		The common size of each process' kernel stack
+		The common size of each process's kernel stack
 
 endif # ARCH_KERNEL_STACK
 
@@ -275,7 +987,7 @@ config ARCH_PGPOOL_VBASE
 		environment logic.
 
 config ARCH_PGPOOL_SIZE
-	int "Page pool size (byes)"
+	int "Page pool size (bytes)"
 	default 0
 	---help---
 		The size of the page pool memory in bytes.  This setting is probably
@@ -285,15 +997,34 @@ config ARCH_PGPOOL_SIZE
 endif # ARCH_PGPOOL_MAPPING
 endif # ARCH_ADDRENV && ARCH_NEED_ADDRENV_MAPPING
 
-menuconfig PAGING
+config NCPUS
+	int "Number of CPUs we will use"
+	default SMP_NCPUS if SMP
+	default 1
+	range 1 32
+	---help---
+		Number of CPUs we will use.
+
+config PAGING
 	bool "On-demand paging"
 	default n
-	depends on ARCH_USE_MMU && !ARCH_ROMPGTABLE
+	depends on BUILD_KERNEL && ARCH_USE_MMU && !ARCH_ROMPGTABLE && !LEGACY_PAGING
 	---help---
-		If set =y in your configation file, this setting will enable the on-demand
-		paging feature
+		If set =y in your configuration file, this setting will enable on-demand
+		paging, which relies on a MMU to enable larger virtual memory spaces
+		and map it to physical memory on-demand (usually during a page-fault
+		exception).
 
-if PAGING
+menuconfig LEGACY_PAGING
+	bool "Legacy On-demand paging"
+	default n
+	depends on EXPERIMENTAL && ARCH_USE_MMU && !ARCH_ROMPGTABLE
+	---help---
+		If set =y in your configuration file, this setting will enable lazy loading
+		backed up by the experimental on-demand paging feature as described in
+		https://nuttx.apache.org/docs/latest/components/paging.html.
+
+if LEGACY_PAGING
 
 config PAGING_PAGESIZE
 	int "Page size (bytes)"
@@ -411,7 +1142,7 @@ config PAGING_TIMEOUT_TICKS
 		number if microseconds, then a fatal error will be declared.
 		Default: No timeouts monitored
 
-endif # PAGING
+endif # LEGACY_PAGING
 
 config ARCH_IRQPRIO
 	bool "Prioritized interrupt support"
@@ -426,42 +1157,23 @@ config ARCH_IRQPRIO
 		interrupts with certain configuration options.  So this selection
 		should be used with caution.
 
-config ARCH_MMUDUMP
-	bool "Dump MMU settings on assertions"
-	default n
-	depends on ARCH_USE_MMU
-	---help---
-		Enable to dump the MMU page tables when a crash happens.
-
-config ARCH_TASKDUMP
-	bool "Dump Task info on assertions"
-	default n
-	---help---
-		Enable to dump info about all tasks when a crash happens.
-
 config ARCH_STACKDUMP
 	bool "Dump stack on assertions"
 	default n
-	select DEBUG_SYMBOLS
+	select DEBUG_ALERT
 	---help---
-		Enable to do stack dumps after assertions.
-		To see symbols on call stack dump, please enable DEBUG_DISPLAY_SYMBOL.
-		It is possible to enable it when FS_ROMFS is enabled.
-		
-config ARCH_STACKDUMP_MAX_LENGTH
-        int "The maximum length for dump stack on assertions"
-        depends on ARCH_STACKDUMP
-        default 0
+		Enable to do stack dumps after assertions
 
-config DEBUG_DISPLAY_SYMBOL
-	bool "Display symbols on call stack dump"
+config ARCH_HAVE_REGCPY
+	bool "common copy of cpu regs"
 	default n
-	select DEBUG_SYMBOLS
-	select FRAME_POINTER
-	depends on ARCH_STACKDUMP
-	depends on FS_ROMFS
 	---help---
-		Enable to show symbol on call stack dump
+		Supports context data copying with different architectures
+
+config ARCH_STACKDUMP_MAX_LENGTH
+	int "The maximum length for dump stack on assertions"
+	depends on ARCH_STACKDUMP
+	default 0
 
 config ARCH_USBDUMP
 	bool "Dump USB trace data"
@@ -470,9 +1182,16 @@ config ARCH_USBDUMP
 	---help---
 		Enable to do USB trace after assertions
 
+config ARCH_DEADLOCKDUMP
+	bool "Dump dead lock thread"
+	default "n"
+	---help---
+		This option will dump the dead lock thread when assert happen..
+
 config ENDIAN_BIG
 	bool "Big Endian Architecture"
 	default n
+	depends on !ARCH_RISCV
 	---help---
 		Select if architecture operates using big-endian byte ordering.
 
@@ -486,10 +1205,10 @@ config ARCH_IDLE_CUSTOM
 		a custom IDLE loop may do things like a continuous built-in test or
 		perhaps or IDLE low power operations.
 
-		NOTE: As of this writing, this capability is only supported by the
-		STM32.  However, the implementation is trivial:  If CONFIG_ARCH_IDLE_CUSTOM,
-		then the default IDLE loop file is not included in the MCU-specific
-		Make.defs file.
+		NOTE: As of this writing, this capability is only supported by ARM
+		and MIPS architectures.  However, the implementation is trivial:  If
+		CONFIG_ARCH_IDLE_CUSTOM is defined, then the default IDLE loop file
+		is not included in the MCU-specific Make.defs file.
 
 config ARCH_CUSTOM_PMINIT
 	bool "Custom PM initialization"
@@ -522,6 +1241,13 @@ config ARCH_RAMFUNCS
 		so that FLASH can be reconfigured while the MCU executes out of
 		SRAM.
 
+config ARCH_HAVE_CUSTOM_VECTORS
+	bool
+	default n
+	---help---
+		If ARCH_HAVE_CUSTOM_VECTORS is defined, Chip should provide vectors
+		table as an optimization.
+
 config ARCH_HAVE_RAMVECTORS
 	bool
 	default n
@@ -533,6 +1259,79 @@ config ARCH_RAMVECTORS
 	---help---
 		If ARCH_RAMVECTORS is defined, then the architecture will support
 		modifiable vectors in a RAM-based vector table.
+
+config ARCH_MINIMAL_VECTORTABLE
+	bool "Minimal RAM usage for vector table"
+	default n
+	---help---
+		Use a minimum amount of RAM for the vector table.
+
+		Instead of allowing irq_attach() to work for all interrupt vectors,
+		restrict to only working for a select few (defined in your board
+		configuration). This can dramatically reduce the amount of RAM used
+		be your vector table.
+
+		To use this setting, you must have a file in your board config that
+		provides:
+
+		  #include <tinyara/arch.h>
+		  const irq_mapped_t g_irqmap[NR_IRQS] =
+		  {
+		    ... IRQ to index mapping values ...
+		  };
+
+		This table is index by the hardware IRQ number and provides a value
+		in the range of 0 to CONFIG_ARCH_NUSER_INTERRUPTS that is the new,
+		mapped index into the vector table.  Unused, unmapped interrupts
+		should be set to IRQMAPPED_MAX.  So, for example, if g_irqmap[37]
+		== 24, then the hardware interrupt vector 37 will be mapped to the
+		interrupt vector table at index 24.  if g_irqmap[42] ==
+		IRQMAPPED_MAX, then hardware interrupt vector 42 is not used and
+		if it occurs will result in an unexpected interrupt crash.
+
+config ARCH_MINIMAL_VECTORTABLE_DYNAMIC
+	bool "Dynamic Minimal RAM usage for vector table"
+	default n
+	depends on ARCH_MINIMAL_VECTORTABLE
+	---help---
+		Use a minimum amount of RAM for the vector table.
+
+config ARCH_IRQ_TO_NDX
+	bool "IRQ to index mapping"
+	default n
+	depends on ARCH_MINIMAL_VECTORTABLE_DYNAMIC
+	---help---
+		Use architecture-specific up_irq_to_ndx() interface to map IRQ
+		numbers to vector table indices, instead of using a RAM-based
+		g_irqmap[] array.
+
+		This feature allows architectures to leverage hardware resources
+		(such as registers or other storage) to maintain the IRQ-to-index
+		mapping, significantly reducing RAM usage.
+
+config ARCH_NUSER_INTERRUPTS
+	int "Number of interrupts"
+	default 0
+	depends on ARCH_MINIMAL_VECTORTABLE
+	---help---
+		If CONFIG_ARCH_MINIMAL_VECTORTABLE is defined, then this setting
+		defines the actual number of valid, mapped interrupts in g_irqmap.
+		This number will be the new size of the OS vector table
+
+# Bring-up debug configuration options.  These are only intended for low level
+# bring-up and not part of normal platform configuration.  They should never be
+# selected in a "normal" configuration and, hence, depend on both EXPERIMENTAL
+# and DEBUG_FEATURES.
+
+menu "Bring-Up Options"
+	depends on DEBUG_FEATURES
+
+config SUPPRESS_CLOCK_CONFIG
+	bool "Suppress clock configuration"
+	default n
+	---help---
+		Do not configure clocking.  Instead relies on the reset clock
+		configuration (or clock configuration provided by a bootloader).
 
 config SUPPRESS_INTERRUPTS
 	bool "Suppress all interrupts"
@@ -546,25 +1345,32 @@ config SUPPRESS_TIMER_INTS
 	---help---
 		Do not initialize or enable the system timer
 
+config SUPPRESS_SERIAL_INTS
+	bool "Suppress serial interrupts"
+	default n
+	---help---
+		Console will poll
+
+config SUPPRESS_UART_CONFIG
+	bool "Do no re-configure UART"
+	default n
+	---help---
+		Do not re-configure the serial console UART from its start-up state.
+		This is useful when a boot loader has already initialized the serial
+		port.
+
+endmenu # Bring-Up Options
+
 comment "Board Settings"
 
 config BOARD_LOOPSPERMSEC
 	int "Delay loops per millisecond"
-	default 5000
+	default -1
 	---help---
 		Simple delay loops are used by some logic, especially during boot-up,
-		driver initialization.  These delay loops must be calibrated for each
-		board in order to assure accurate timing by the delay loops.
-
-config ARCH_CALIBRATION
-	bool "Calibrate delay loop"
-	default n
-	---help---
-		Enables some built in instrumentation that causes a 100 second delay
-		during boot-up.  This 100 second delay serves no purpose other than it
-		allows you to calibrate BOARD_LOOPSPERMSEC.  You simply use a stop
-		watch to measure the actual delay then adjust BOARD_LOOPSPERMSEC until
-		the actual delay is 100 seconds.
+		driver initialization. These delay loops must be calibrated for each
+		board in order to assure accurate timing by the delay loops. You can
+		do so with `calib_udelay` (EXAMPLES_CALIB_UDELAY).
 
 comment "Interrupt options"
 
@@ -582,36 +1388,6 @@ config ARCH_INTERRUPTSTACK
 		defined to be zero), the user task stacks will be used during interrupt
 		handling.
 
-config ARCH_NESTED_IRQ_STACK_SIZE
-	int "Nested IRQ secondary stack size"
-	depends on ARCH_HAVE_INTERRUPTSTACK && ARCH_ARMV8M_FAMILY
-	default 512
-	---help---
-		This is an additional stack which will be used only when nested irq
-		happens with a stale or invalid value of MSP. That is, when the nested
-		IRQ occurs in handler mode, but the MSP value has not yet been updated.
-
-config ARCH_HAVE_NESTED_INTERRUPT
-	bool
-	default n
-
-if ARCH_INTERRUPTSTACK > 7
-config ARCH_NESTED_INTERRUPT
-	bool "Nested interrupt support"
-	depends on ARCH_HAVE_NESTED_INTERRUPT
-	default n
-	---help---
-		Enables the nested interrupt support. If defined, higher priority interrupt
-		can pre-empt the lower priority interrupt.
-
-config ARCH_NESTED_INTERRUPT_STACKCHECK
-	bool "Nested interrupt stack check support"
-	depends on ARCH_NESTED_INTERRUPT && STACK_COLORATION
-	default n
-	---help---
-		Enables the nested interrupt stack check support. It checks every time before
-		serving the interrupt, if the stack overflows, it results in panic()
-endif
 config ARCH_HAVE_HIPRI_INTERRUPT
 	bool
 	default n
@@ -620,19 +1396,13 @@ config ARCH_HIPRI_INTERRUPT
 	bool "High priority interrupts"
 	default n
 	depends on ARCH_HAVE_HIPRI_INTERRUPT && ARCH_HAVE_IRQPRIO
-	select ARMV7M_USEBASEPRI
 	select ARCH_IRQPRIO
 	---help---
 		NOTE: This description is currently unique to the Cortex-M family
 		which is the only family that currently supports this feature.  The
-		general feature is not conceptually unique to the Cortex-M but it
+		general feature is not conceptually unique to the Cortex-M but if it
 		is extended to any other family, then this discussion will have to
 		be generalized.
-
-		If ARMV7M_USEBASEPRI is selected, then interrupts will be disabled
-		by setting the BASEPRI register to NVIC_SYSH_DISABLE_PRIORITY so
-		that most interrupts will not have execution priority.  SVCall must
-		have execution priority in all cases.
 
 		In the normal cases, interrupts are not nest-able and all interrupts
 		run at an execution priority between NVIC_SYSH_PRIORITY_MIN and
@@ -686,45 +1456,6 @@ config ARCH_HIPRI_INTERRUPT
 		the nested interrupt, the interrupt stack if no privileged task has
 		run
 
-config ARCH_INT_DISABLEALL
-	bool "Disable high priority interrupts"
-	default y
-	depends on ARCH_HIPRI_INTERRUPT && EXPERIMENTAL
-	---help---
-		If ARCH_HIPRI_INTERRUPT is defined, then special high priority
-		interrupts are supported.  These are not "nested" in the normal
-		sense of the word.  These high priority interrupts can interrupt
-		normal processing but execute outside of OS (although they can "get
-		back into the game" via a PendSV interrupt).
-
-		In the normal course of things, interrupts must occasionally be
-		disabled using the irqsave() inline function to prevent contention
-		in use of resources that may be shared between interrupt level and
-		non-interrupt level logic.  Now the question arises, if
-		ARCH_HIPRI_INTERRUPT, do we disable all interrupts (except SVCall),
-		or do we only disable the "normal" interrupts.  Since the high
-		priority interrupts cannot interact with the OS, you may want to
-		permit the high priority interrupts even if interrupts are
-		disabled.  The setting ARCH_INT_DISABLEALL can be used to select
-		either behavior:
-
-		----------------------------+--------------+----------------------------
-		CONFIG_ARCH_HIPRI_INTERRUPT |      NO      |             YES
-		----------------------------+--------------+--------------+-------------
-		CONFIG_ARCH_INT_DISABLEALL  |     N/A      |     YES      |      NO
-		----------------------------+--------------+--------------+-------------
-		                            |              |              |    SVCall
-		                            |    SVCall    |    SVCall    |    HIGH
-		Disable here and below --------> MAXNORMAL ---> HIGH --------> MAXNORMAL
-		                            |              |    MAXNORMAL |
-		----------------------------+--------------+--------------+-------------
-
-		NOTE: This does not work now because interrupts get disabled in the
-		standard interrupt handling, prohibiting nesting.  Fix is simple:  Need
-		to used more priority levels so that we can make a cleaner distinction
-		with the standard interrupt handler.
-
-
 comment "Boot options"
 
 choice
@@ -758,24 +1489,18 @@ config BOOT_COPYTORAM
 		Some configurations boot in FLASH but copy themselves entirely into
 		RAM for better performance.
 
-config XIP_KERNEL
-	bool "Enable XIP execute for kernel"
-	default y
-	---help---
-		Enable support for kernel to xip execute. 
-
 endchoice
 
 menu "Boot Memory Configuration"
 
 config RAM_START
-        hex "Primary RAM start address (physical)"
-        default 0x0
-        ---help---
-                The physical start address of primary installed RAM.  "Primary" RAM
-                refers to the RAM that you link program code into.  If program code
-                does not execute out of RAM but from FLASH, then you may designate
-                any block of RAM as "primary."
+	hex "Primary RAM start address (physical)"
+	default 0x0
+	---help---
+		The physical start address of primary installed RAM.  "Primary" RAM
+		refers to the RAM that you link program code into.  If program code
+		does not execute out of RAM but from FLASH, then you may designate
+		any block of RAM as "primary."
 
 config RAM_VSTART
 	hex "Primary RAM start address (virtual)"
@@ -788,96 +1513,39 @@ config RAM_VSTART
 		any block of RAM as "primary."
 
 config RAM_SIZE
-        int "Primary RAM size"
-        default 0
-        ---help---
-                The size in bytes of the installed primary RAM. "Primary" RAM
-                refers to the RAM that you link program code into.  If program code
-                does not execute out of RAM but from FLASH, then you may designate
-                any block of RAM as "primary."
-
-config RAM_KREGIONx_START
-	string "An address or list of start address for kernel RAM region"
-	default "0x00000000,"
-	---help---
-		The address or address list of the RAM regions.
-		If you want to use more than equal to two RAMs physically, or
-		if you want to divide RAM into multiple heaps,
-		set MM_REGIONS first at memory management, and then
-		set hexa values at RAM_KREGIONx_START and RAM_KREGIONx_SIZE
-		to support several heap regions.
-		If it will be an address list, the addresses should be given
-		by increasing order, and each region is separated by ',' as shown in example.
-		i.e. "0x02000000,0x4000000"
-
-config RAM_KREGIONx_SIZE
-	string "A size or list of size for kernel RAM region"
-	default "0,"
-	---help---
-		The size list of RAM region.
-		Refer RAM_KREGIONx_START content. One different thing is this has
-		decimal values (START has hexa values).
-		This should have same number of list element with RAM_KREGIONx_START's.
-		If it will be an list, each region is separated by ',' as shown in example.
-		i.e. "100,200"
-
-config RAM_KREGIONx_HEAP_INDEX
-	string "List of kernel heap index for RAM region"
-	default "0,"
-	depends on KMM_NHEAPS != 1
-	---help---
-		The heap index list of RAM region.
-		It means that its region can be handled to the index-th heap.
-		Index can be from 0 to (KMM_NHEAPS-1).
-
-config HEAP_INDEX_LOADED_APP
-	int "Heap index for allocating app elf sections and app heap"
+	int "Primary RAM size"
 	default 0
-	depends on APP_BINARY_SEPARATION
 	---help---
-		This heap index is used for allocating elf sections and heap area
-		for loadable apps. This value must be set to point to a heap which
-		has sufficient size of contiguous memory to accommodate all the
-		app sections with their alignment requriements.
+		The size in bytes of the installed primary RAM. "Primary" RAM
+		refers to the RAM that you link program code into.  If program code
+		does not execute out of RAM but from FLASH, then you may designate
+		any block of RAM as "primary."
 
-config RAM_MALLOC_PRIOR_INDEX
-	int "prior region index(0 KMM_NHEAPS-1) of RAM used in malloc"
-	default 0
-	depends on KMM_NHEAPS != 1
-	---help---
-		The prior region index of RAM used in malloc.
-		It means alloc memory from the index-th region with priority.
-		Index can be from 0 to (KMM_NHEAPS-1).
+if BOOT_RUNFROMFLASH
 
-config FS_TMPFS_HEAP_INDEX
-	int "TMPFS Heap index"
-	default 1
-	depends on FS_TMPFS && KMM_NHEAPS != 1
-	---help---
-		when tmpfs uses an independent memory region.
-		Specifies the index of the heap to allocate.
-
-config DDR
-	bool "Use DDR memory"
-	default n
-	---help---
-		If the board uses external DDR RAM memory, enable this.
-
-config RAM_DDR_START
-	hex "DDR RAM start address"
+config FLASH_START
+	hex "Boot FLASH start address (physical)"
 	default 0x0
-	depends on DDR
 	---help---
-		If the board uses external DDR RAM memory, you need to define
-		the start address of DDR RAM
+		The physical start address of installed boot FLASH.  "Boot" FLASH
+		refers to the FLASH that you link program code into.
 
-config RAM_DDR_SIZE
-	hex "DDR RAM size"
-	default 0
-	depends on DDR
+config FLASH_VSTART
+	hex "Boot FLASH start address (virtual)"
+	default 0x0
+	depends on ARCH_USE_MMU
 	---help---
-		If the board uses external DDR RAM memory, you need to define
-		the size of DDR RAM
+		The virtual start address of installed boot FLASH.  "Boot" FLASH
+		refers to the FLASH that you link program code into.
+
+config FLASH_SIZE
+	int "Boot FLASH size"
+	default 0
+	---help---
+		The size in bytes of the installed boot FLASH.  "Boot" FLASH
+		refers to the FLASH that you link program code into.
+
+endif # BOOT_RUNFROMFLASH
 
 config ARCH_HAVE_SDRAM
 	bool
@@ -891,9 +1559,9 @@ config BOOT_SDRAM_DATA
 		This selection should be set if data lies in SDRAM (vs. SRAM) and if
 		SDRAM was not previously initialized by a loader.  Obviously, this
 		does not apply if we booting from SDRAM because SDRAM must have been
-		initialized priority to loading TinyAra into SDRAM.
+		initialized priority to loading NuttX into SDRAM.
 
-		In the case where SDRAM must be initialized by TinyAra, the
+		In the case where SDRAM must be initialized by NuttX, the
 		initialization sequence is a little different: Normally, .data and
 		.bss must be initialized before starting the system.  But in this
 		case SDRAM must be configured by board-specific logic before the
