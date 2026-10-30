@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/inode/fs_inoderemove.c
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -56,6 +43,7 @@
 
 #include <tinyara/config.h>
 
+#include <assert.h>
 #include <errno.h>
 
 #include <tinyara/kmalloc.h>
@@ -64,23 +52,7 @@
 #include "inode/inode.h"
 
 /****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
  * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
@@ -91,55 +63,73 @@
  *   path refers to.  This is normally done in preparation to removing or
  *   moving an inode.
  *
+ *   In symbolic links in the pseudo file system are enabled, then this
+ *   logic will follow the symbolic links up until the terminal node.  Then
+ *   that link in removed. So if this the terminal node is a symbolic link,
+ *   the symbolic link node will be removed, not the target of the link.
+ *
  * Assumptions/Limitations:
  *   The caller must hold the inode semaphore
  *
  ****************************************************************************/
 
-FAR struct inode *inode_unlink(FAR const char *path)
+static FAR struct inode *inode_unlink(FAR const char *path)
 {
-	const char *name = path;
-	FAR struct inode *node;
-	FAR struct inode *peer;
-	FAR struct inode *parent;
+	struct inode_search_s desc;
+	FAR struct inode *inode = NULL;
+	int ret;
 
-	/* Verify parameters.  Ignore null paths and relative paths */
+	/* Verify parameters.  Ignore null paths */
 
-	if (!path || *path == '\0' || path[0] != '/') {
+	if (path == NULL) {
 		return NULL;
 	}
 
 	/* Find the node to unlink */
 
-	node = inode_search(&name, &peer, &parent, (const char **)NULL);
-	if (node) {
+	SETUP_SEARCH(&desc, path, true);
+
+	ret = inode_search(&desc);
+	if (ret >= 0) {
+		inode = desc.node;
+		DEBUGASSERT(inode != NULL);
+
 		/* If peer is non-null, then remove the node from the right of
 		 * of that peer node.
 		 */
 
-		if (peer) {
-			peer->i_peer = node->i_peer;
+		if (desc.peer != NULL) {
+			desc.peer->i_peer = inode->i_peer;
 		}
 
-		/* If parent is non-null, then remove the node from head of
-		 * of the list of children.
-		 */
-
-		else if (parent) {
-			parent->i_child = node->i_peer;
-		}
-
-		/* Otherwise, we must be removing the root inode. */
+		/* Then remove the node from head of the list of children. */
 
 		else {
-			root_inode = node->i_peer;
+			/* The parent could be null if we are trying to remove the
+			 * root inode. In that case, fail because we cannot remove it.
+			 */
+
+			if (desc.parent == NULL) {
+				inode = NULL;
+				goto errout;
+			}
+
+			desc.parent->i_child = inode->i_peer;
 		}
 
-		node->i_peer = NULL;
+		inode->i_peer   = NULL;
+		inode->i_parent = NULL;
+		atomic_fetch_sub(&inode->i_crefs, 1);
 	}
 
-	return node;
+errout:
+	RELEASE_SEARCH(&desc);
+	return inode;
 }
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
 /****************************************************************************
  * Name: inode_remove
@@ -157,28 +147,26 @@ FAR struct inode *inode_unlink(FAR const char *path)
 
 int inode_remove(FAR const char *path)
 {
-	FAR struct inode *node;
+	FAR struct inode *inode;
 
 	/* Find the inode and unlink it from the in-memory inode tree */
 
-	node = inode_unlink(path);
-	if (node) {
+	inode = inode_unlink(path);
+	if (inode) {
 		/* Found it! But we cannot delete the inode if there are references
 		 * to it
 		 */
 
-		if (node->i_crefs) {
-			/* In that case, we will mark it deleted, when the filesystem
-			 * releases the inode, we will then, finally delete the subtree
-			 */
-
-			node->i_flags |= FSNODEFLAG_DELETED;
+		if (atomic_read(&inode->i_crefs)) {
 			return -EBUSY;
 		} else {
-			/* And delete it now -- recursively to delete all of its children */
+			/* And delete it now -- recursively to delete all of its children.
+			 * Since it has been unlinked, then the peer pointer should be
+			 * NULL.
+			 */
 
-			inode_free(node->i_child);
-			kmm_free(node);
+			DEBUGASSERT(inode->i_peer == NULL);
+			inode_free(inode);
 			return OK;
 		}
 	}

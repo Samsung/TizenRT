@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/vfs/fs_close.c
  *
- *   Copyright (C) 2007-2009, 2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,19 +45,148 @@
 
 #include <unistd.h>
 #include <sched.h>
+#include <assert.h>
 #include <errno.h>
-#include <tinyara/fs/fs.h>
-#include <tinyara/cancelpt.h>
+#include <fcntl.h>
 
-#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-#include <tinyara/net/net.h>
+#include <tinyara/cancelpt.h>
+#include <tinyara/fs/fs.h>
+
+#ifdef CONFIG_FDSAN
+#  include <android/fdsan.h>
 #endif
 
 #include "inode/inode.h"
+#include "sched/sched.h"
+#include "vfs.h"
 
 /****************************************************************************
- * Global Functions
+ * Private Functions
  ****************************************************************************/
+
+#ifdef CONFIG_FS_NOTIFY
+static FAR char *file_get_path(FAR struct file *filep)
+{
+	FAR char *pathbuffer;
+	int ret;
+
+	pathbuffer = lib_get_pathbuffer();
+	if (pathbuffer == NULL) {
+		return NULL;
+	}
+
+	ret = file_fcntl(filep, F_GETPATH, pathbuffer);
+	if (ret < 0) {
+		lib_put_pathbuffer(pathbuffer);
+		return NULL;
+	}
+
+	return pathbuffer;
+}
+#endif
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: file_close
+ *
+ * Description:
+ *   Close a file that was previously opened with file_open().
+ *
+ * Input Parameters:
+ *   filep - A pointer to a user provided memory location containing the
+ *           open file data returned by file_open().
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; A negated errno value is returned on
+ *   any failure to indicate the nature of the failure.
+ *
+ ****************************************************************************/
+
+int file_close(FAR struct file *filep)
+{
+	struct inode *inode;
+#ifdef CONFIG_FS_NOTIFY
+	FAR char *path;
+#endif
+	int ret = OK;
+
+	DEBUGASSERT(filep != NULL);
+	inode = filep->f_inode;
+
+#ifdef CONFIG_FS_NOTIFY
+	/* We lose the path and inode during close and release, so obtain it
+	 * in advance. Then we pass it to notify_close function.
+	 */
+
+	path = file_get_path(filep);
+#endif
+
+	/* Check if the struct file is open (i.e., assigned an inode) */
+
+	if (inode) {
+		file_closelk(filep);
+
+		/* Close the file, driver, or mountpoint. */
+
+		if (inode->u.i_ops && inode->u.i_ops->close) {
+			/* Perform the close operation */
+
+			ret = inode->u.i_ops->close(filep);
+		}
+
+		/* And release the inode */
+
+		if (ret >= 0) {
+#ifdef CONFIG_FS_NOTIFY
+			if (path != NULL) {
+				notify_close(path, filep->f_oflags);
+				lib_put_pathbuffer(path);
+			}
+#endif
+
+			inode_release(inode);
+		}
+#ifdef CONFIG_FS_NOTIFY
+		else if (path != NULL) {
+			lib_put_pathbuffer(path);
+		}
+#endif
+
+		filep->f_inode = NULL;
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: nx_close
+ *
+ * Description:
+ *   nx_close() is similar to the standard 'close' interface except that is
+ *   not a cancellation point and it does not modify the errno variable.
+ *
+ *   nx_close() is an internal NuttX interface and should not be called from
+ *   applications.
+ *
+ *   Close an inode (if open)
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; A negated errno value is returned on
+ *   on any failure.
+ *
+ * Assumptions:
+ *   Caller holds the list mutex because the file descriptor will be
+ *   freed.
+ *
+ ****************************************************************************/
+
+int nx_close(int fd)
+{
+	return fdlist_close(nxsched_get_fdlist_from_tcb(this_task()), fd);
+}
 
 /****************************************************************************
  * Name: close
@@ -78,14 +194,14 @@
  * Description:
  *   close() closes a file descriptor, so that it no longer refers to any
  *   file and may be reused. Any record locks (see fcntl(2)) held on the file
- *   it was associated with, and owned by the process, are removed (regardless
- *   of the file descriptor that was used to obtain the lock).
+ *   it was associated with, and owned by the process, are removed
+ *   (regardless of the file descriptor that was used to obtain the lock).
  *
  *   If fd is the last copy of a particular file descriptor the resources
  *   associated with it are freed; if the descriptor was the last reference
  *   to a file which has been removed using unlink(2) the file is deleted.
  *
- * Parameters:
+ * Input Parameters:
  *   fd   file descriptor to close
  *
  * Returned Value:
@@ -97,58 +213,22 @@
 
 int close(int fd)
 {
-	int err;
-#if (CONFIG_NFILE_DESCRIPTORS > 0) || (CONFIG_NSOCKET_DESCRIPTORS > 0)
 	int ret;
+
+#ifdef CONFIG_FDSAN
+	android_fdsan_exchange_owner_tag(fd, 0, 0);
 #endif
+
 	/* close() is a cancellation point */
-	(void)enter_cancellation_point();
 
-#if CONFIG_NFILE_DESCRIPTORS > 0
-	/* Did we get a valid file descriptor? */
+	enter_cancellation_point();
 
-	if ((unsigned int)fd >= CONFIG_NFILE_DESCRIPTORS)
-#endif
-	{
-		/* Close a socket descriptor */
-
-#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-		if ((unsigned int)fd < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
-			ret = net_close(fd);
-			leave_cancellation_point();
-			return ret;
-		} else
-#endif
-		{
-			err = EBADF;
-			goto errout;
-		}
-	}
-#if CONFIG_NFILE_DESCRIPTORS > 0
-	/* Close the driver or mountpoint.  NOTES: (1) there is no
-	 * exclusion mechanism here , the driver or mountpoint must be
-	 * able to handle concurrent operations internally, (2) The driver
-	 * may have been opened numerous times (for different file
-	 * descriptors) and must also handle being closed numerous times.
-	 * (3) for the case of the mountpoint, we depend on the close
-	 * methods bing identical in signature and position in the operations
-	 * vtable.
-	 */
-
-	ret = files_close(fd);
+	ret = nx_close(fd);
 	if (ret < 0) {
-		/* An error occurred while closing the driver */
-
-		err = -ret;
-		goto errout;
+		set_errno(-ret);
+		ret = ERROR;
 	}
-	leave_cancellation_point();
-	return OK;
 
-#endif
-
-errout:
-	set_errno(err);
 	leave_cancellation_point();
-	return ERROR;
+	return ret;
 }

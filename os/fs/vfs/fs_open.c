@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/vfs/fs_open.c
  *
- *   Copyright (C) 2007-2009, 2011-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -57,22 +44,25 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <stdbool.h>
 #include <fcntl.h>
 #include <sched.h>
 #include <errno.h>
 #include <assert.h>
-#ifdef CONFIG_FILE_MODE
 #include <stdarg.h>
-#endif
 
+#include <tinyara/sched.h>
 #include <tinyara/cancelpt.h>
 #include <tinyara/fs/fs.h>
 
+#include "sched/sched.h"
 #include "inode/inode.h"
-#include "driver/block/driver.h"
+#include "driver/driver.h"
+#include "vfs.h"
 
 /****************************************************************************
- * Public Functions
+ * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
@@ -81,11 +71,33 @@
  * Description:
  *   Check if the access described by 'oflags' is supported on 'inode'
  *
+ *   inode_checkflags() is an internal NuttX interface and should not be
+ *   called from applications.
+ *
+ * Input Parameters:
+ *   inode  - The inode to check
+ *   oflags - open flags.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success.  On failure, a negated errno value is
+ *   returned.
+ *
  ****************************************************************************/
 
-int inode_checkflags(FAR struct inode *inode, int oflags)
+static int inode_checkflags(FAR struct inode *inode, int oflags)
 {
-	if (((oflags & O_RDOK) != 0 && !inode->u.i_ops->read) || ((oflags & O_WROK) != 0 && !inode->u.i_ops->write)) {
+	FAR const struct file_operations *ops = inode->u.i_ops;
+
+	if (INODE_IS_PSEUDODIR(inode)) {
+		return OK;
+	}
+
+	if (ops == NULL) {
+		return -ENXIO;
+	}
+
+	if (((oflags & O_RDOK) != 0 && !ops->readv && !ops->read && !ops->ioctl) ||
+	    ((oflags & O_WROK) != 0 && !ops->writev && !ops->write && !ops->ioctl)) {
 		return -EACCES;
 	} else {
 		return OK;
@@ -93,101 +105,122 @@ int inode_checkflags(FAR struct inode *inode, int oflags)
 }
 
 /****************************************************************************
- * Name: vopen
+ * Name: file_vopen
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: file_vopen
  *
  * Description:
- *   vopen() is identical to 'open' except that it accepts a va_list
- *   as an argument versus taking a variable length list of arguments.
+ *   file_vopen() is similar to the standard 'open' interface except that it
+ *   populates an instance of 'struct file' rather than return a file
+ *   descriptor.  It also is not a cancellation point and does not modify
+ *   the errno variable.
  *
- *   vopen() is an internal TizenRT interface and should not be called from
- *   applications.
+ * Input Parameters:
+ *   filep  - The caller provided location in which to return the 'struct
+ *            file' instance.
+ *   path   - The full path to the file to be opened.
+ *   oflags - open flags.
+ *   umask  - File mode creation mask. Overrides the open flags.
+ *   ap     - Variable argument list, may include 'mode_t mode'
  *
  * Returned Value:
- *   The new file descriptor is returned on success; a negated errno value is
- *   returned on any failure.
+ *   Zero (OK) is returned on success.  On failure, a negated errno value is
+ *   returned.
  *
  ****************************************************************************/
 
-int vopen(FAR const char *path, int oflags, va_list ap)
+static int file_vopen(FAR struct file *filep, FAR const char *path,
+                      int oflags, mode_t umask, va_list ap)
 {
-	FAR struct file *filep;
+	struct inode_search_s desc;
 	FAR struct inode *inode;
-	FAR const char *relpath = NULL;
-#if defined(CONFIG_FILE_MODE) || !defined(CONFIG_DISABLE_MOUNTPOINT)
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) || defined(CONFIG_PSEUDOFS_FILE)
 	mode_t mode = 0666;
 #endif
 	int ret;
-	int fd;
 
 	if (path == NULL) {
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_FILE_MODE
-#ifdef CONFIG_CPP_HAVE_WARNING
-#warning "File creation not implemented"
-#endif
+#ifndef CONFIG_DISABLE_MOUNTPOINT
 
 	/* If the file is opened for creation, then get the mode bits */
 
-	if ((oflags & (O_WRONLY | O_CREAT)) != 0) {
+	if ((oflags & O_CREAT) != 0) {
 		mode = va_arg(ap, mode_t);
 	}
+
+	mode &= ~umask;
 #endif
 
 	/* Get an inode for this file */
 
-	inode = inode_find(path, &relpath);
-	if (!inode) {
-		/* "O_CREAT is not set and the named file does not exist.  Or, a
-		 * directory component in pathname does not exist or is a dangling
-		 * symbolic link."
-		 */
+	SETUP_SEARCH(&desc, path, (oflags & O_NOFOLLOW) != 0);
 
-		ret = -ENOENT;
-		goto errout;
+	ret = inode_find(&desc);
+	if (ret < 0) {
+#ifdef CONFIG_PSEUDOFS_FILE
+		if ((oflags & O_CREAT) != 0) {
+			ret = pseudofile_create(&desc.node, path, mode);
+		}
+#endif
+
+		if (ret < 0) {
+			/* "O_CREAT is not set and the named file does not exist.  Or, a
+			 * directory component in pathname does not exist or is a dangling
+			 * symbolic link."
+			 */
+
+			goto errout_with_search;
+		}
 	}
 
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
-	!defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && defined(CONFIG_BCH)
-	/*
-	 * If the inode is block driver, then we may return a character driver
-	 * proxy for the block driver. block_proxy() will instantiate a BCH
+	/* Get the search results */
+
+	inode = desc.node;
+	DEBUGASSERT(inode != NULL);
+
+	if (desc.nofollow && INODE_IS_SOFTLINK(inode)) {
+		return -ELOOP;
+	}
+
+#if defined(CONFIG_BCH) && \
+    !defined(CONFIG_DISABLE_MOUNTPOINT) && \
+    !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS)
+	/* If the inode is block driver, then we may return a character driver
+	 * proxy for the block driver.  block_proxy() will instantiate a BCH
 	 * character driver wrapper around the block driver, open(), then
-	 * unlink() the character driver. On success, block_proxy() will
-	 * return the file descriptor of the opened character driver.
+	 * unlink() the character driver.
 	 *
 	 * NOTE: This will recurse to open the character driver proxy.
 	 */
-	if (INODE_IS_BLOCK(inode)) {
+
+	if (INODE_IS_BLOCK(inode) || INODE_IS_MTD(inode)) {
 		/* Release the inode reference */
+
 		inode_release(inode);
+		RELEASE_SEARCH(&desc);
 
-		/* Get the file descriptor of the opened character driver proxy */
-		fd = block_proxy(path, oflags);
-		if (fd < 0) {
-			ret = fd;
-			goto errout;
+		/* Get the file structure of the opened character driver proxy */
+
+#ifdef CONFIG_BCH_DEVICE_READONLY
+		oflags &= ~O_RDWR;
+		oflags |= O_RDOK;
+#endif
+
+		ret = block_proxy(filep, path, oflags);
+#ifdef CONFIG_FS_NOTIFY
+		if (ret >= 0) {
+			notify_open(path, filep->f_oflags);
 		}
-
-		return fd;
-	} else
 #endif
 
-	/* Verify that the inode is valid and either a "normal" character driver or a
-	 * mountpoint.  We specifically exclude block drivers and and "special"
-	 * inodes (semaphores, message queues, shared memory).
-	 */
-
-#ifndef CONFIG_DISABLE_MOUNTPOINT
-	if ((!INODE_IS_DRIVER(inode) && !INODE_IS_MOUNTPT(inode)) || !inode->u.i_ops)
-#else
-	if (!INODE_IS_DRIVER(inode) || !inode->u.i_ops)
-#endif
-	{
-		ret = -ENXIO;
-		goto errout_with_inode;
+		return ret;
 	}
+#endif
 
 	/* Make sure that the inode supports the requested access */
 
@@ -198,48 +231,219 @@ int vopen(FAR const char *path, int oflags, va_list ap)
 
 	/* Associate the inode with a file structure */
 
-	fd = files_allocate(inode, oflags, 0, 0);
-	if (fd < 0) {
-		ret = -EMFILE;
-		goto errout_with_inode;
-	}
-
-	/* Get the file structure corresponding to the file descriptor. */
-
-	ret = fs_getfilep(fd, &filep);
-	if (ret < 0) {
-		goto errout_with_inode;
-	}
+	filep->f_oflags = oflags;
+	filep->f_inode  = inode;
 
 	/* Perform the driver open operation.  NOTE that the open method may be
-	 * called many times.  The driver/mountpoint logic should handled this
+	 * called many times.  The driver/mountpoint logic should handle this
 	 * because it may also be closed that many times.
 	 */
 
-	ret = OK;
-	if (inode->u.i_ops->open) {
+	if (oflags & O_DIRECTORY) {
+		ret = dir_allocate(filep, desc.relpath);
+	}
 #ifndef CONFIG_DISABLE_MOUNTPOINT
-		if (INODE_IS_MOUNTPT(inode)) {
-			ret = inode->u.i_mops->open(filep, relpath, oflags, mode);
-		} else
+	else if (INODE_IS_MOUNTPT(inode)) {
+		if (inode->u.i_mops->open != NULL) {
+			ret = inode->u.i_mops->open(filep, desc.relpath, oflags, mode);
+		}
+	}
 #endif
-		{
+	else if (INODE_IS_DRIVER(inode) || INODE_IS_PIPE(inode)) {
+		if (inode->u.i_ops->open != NULL) {
 			ret = inode->u.i_ops->open(filep);
 		}
+	} else {
+		ret = -ENXIO;
+	}
+
+	if (ret == -EISDIR && ((oflags & O_WRONLY) == 0)) {
+		ret = dir_allocate(filep, desc.relpath);
 	}
 
 	if (ret < 0) {
-		goto errout_with_fd;
+		goto errout_with_inode;
+	}
+
+	RELEASE_SEARCH(&desc);
+#ifdef CONFIG_FS_NOTIFY
+	notify_open(path, filep->f_oflags);
+#endif
+	return OK;
+
+errout_with_inode:
+	filep->f_inode = NULL;
+	inode_release(inode);
+
+errout_with_search:
+	RELEASE_SEARCH(&desc);
+	return ret;
+}
+
+/****************************************************************************
+ * Name: nx_vopen
+ *
+ * Description:
+ *   nx_vopen() is similar to the standard 'open' interface except that it
+ *   is not a cancellation point and it does not modify the errno variable.
+ *
+ *   nx_open() is an internal NuttX interface and should not be called from
+ *   applications.
+ *
+ * Input Parameters:
+ *   tcb    - Address of the task's TCB
+ *   path   - The full path to the file to be opened.
+ *   oflags - open flags.
+ *   ap     - Variable argument list, may include 'mode_t mode'
+ *
+ * Returned Value:
+ *   The new file descriptor is returned on success; a negated errno value is
+ *   returned on any failure.
+ *
+ ****************************************************************************/
+
+static int nx_vopen(FAR struct fdlist *list,
+                    FAR const char *path, int oflags, va_list ap)
+{
+	FAR struct file *filep;
+	int ret;
+	int fd;
+
+	filep = file_allocate();
+	if (filep == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = file_vopen(filep, path, oflags, getumask(), ap);
+	if (ret < 0) {
+		file_deallocate(filep);
+		return ret;
+	}
+
+	fd = fdlist_dupfile(list, oflags, 0, filep);
+	if (fd < 0) {
+		file_close(filep);
+		file_deallocate(filep);
 	}
 
 	return fd;
+}
 
-errout_with_fd:
-	files_release(fd);
-errout_with_inode:
-	inode_release(inode);
-errout:
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: file_open
+ *
+ * Description:
+ *   file_open() is similar to the standard 'open' interface except that it
+ *   populates an instance of 'struct file' rather than return a file
+ *   descriptor.  It also is not a cancellation point and does not modify
+ *   the errno variable.
+ *
+ * Input Parameters:
+ *   filep  - The caller provided location in which to return the 'struct
+ *            file' instance.
+ *   path   - The full path to the file to be opened.
+ *   oflags - open flags.
+ *   ...    - Variable number of arguments, may include 'mode_t mode'
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success.  On failure, a negated errno value is
+ *   returned.
+ *
+ ****************************************************************************/
+
+int file_open(FAR struct file *filep, FAR const char *path, int oflags, ...)
+{
+	va_list ap;
+	int ret;
+
+	memset(filep, 0, sizeof(*filep));
+
+	va_start(ap, oflags);
+	ret = file_vopen(filep, path, oflags, 0, ap);
+	va_end(ap);
+
+	if (ret >= OK) {
+		atomic_fetch_add(&filep->f_refs, 1);
+	}
+
 	return ret;
+}
+
+/****************************************************************************
+ * Name: fdlist_open
+ *
+ * Description:
+ *   fdlist_open() is similar to the standard 'open' interface except
+ *   that it is not a cancellation point and it does not modify the errno
+ *   variable.
+ *
+ *   fdlist_open() is an internal NuttX interface and should not be
+ *   called from applications.
+ *
+ * Input Parameters:
+ *   tcb    - Address of the task's TCB
+ *   path   - The full path to the file to be opened.
+ *   oflags - open flags.
+ *   ...    - Variable number of arguments, may include 'mode_t mode'
+ *
+ * Returned Value:
+ *   The new file descriptor is returned on success; a negated errno value is
+ *   returned on any failure.
+ *
+ ****************************************************************************/
+
+int fdlist_open(FAR struct fdlist *list,
+                FAR const char *path, int oflags, ...)
+{
+	va_list ap;
+	int fd;
+
+	/* Let nx_vopen() do all of the work */
+
+	va_start(ap, oflags);
+	fd = nx_vopen(list, path, oflags, ap);
+	va_end(ap);
+
+	return fd;
+}
+
+/****************************************************************************
+ * Name: nx_open
+ *
+ * Description:
+ *   nx_open() is similar to the standard 'open' interface except that it is
+ *   not a cancellation point and it does not modify the errno variable.
+ *
+ *   nx_open() is an internal NuttX interface and should not be called from
+ *   applications.
+ *
+ * Input Parameters:
+ *   path   - The full path to the file to be opened.
+ *   oflags - open flags.
+ *   ...    - Variable number of arguments, may include 'mode_t mode'
+ *
+ * Returned Value:
+ *   The new file descriptor is returned on success; a negated errno value is
+ *   returned on any failure.
+ *
+ ****************************************************************************/
+
+int nx_open(FAR const char *path, int oflags, ...)
+{
+	va_list ap;
+	int fd;
+
+	/* Let nx_vopen() do all of the work */
+
+	va_start(ap, oflags);
+	fd = nx_vopen(nxsched_get_fdlist_from_tcb(this_task()), path, oflags, ap);
+	va_end(ap);
+
+	return fd;
 }
 
 /****************************************************************************
@@ -250,7 +454,7 @@ errout:
  *
  * Returned Value:
  *   The new file descriptor is returned on success; -1 (ERROR) is returned
- *   on any failure the errno value set appropriately.
+ *   on any failure with the errno value set appropriately.
  *
  ****************************************************************************/
 
@@ -261,15 +465,15 @@ int open(FAR const char *path, int oflags, ...)
 
 	/* open() is a cancellation point */
 
-	(void)enter_cancellation_point();
+	enter_cancellation_point();
 
-	/* Let vopen() do most of the work */
+	/* Let nx_vopen() do most of the work */
 
 	va_start(ap, oflags);
-	fd = vopen(path, oflags, ap);
+	fd = nx_vopen(nxsched_get_fdlist_from_tcb(this_task()), path, oflags, ap);
 	va_end(ap);
 
-	/* Set the errno value if any errors were reported by open() */
+	/* Set the errno value if any errors were reported by nx_open() */
 
 	if (fd < 0) {
 		set_errno(-fd);

@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/aio/aio_cancel.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -68,27 +55,6 @@
 #ifdef CONFIG_FS_AIO
 
 /****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-/* Configuration ************************************************************/
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -99,30 +65,30 @@
  *   The aio_cancel() function attempts to cancel one or more asynchronous
  *   I/O requests currently outstanding against file descriptor 'fildes'.
  *   The aiocbp argument points to the asynchronous I/O control block for
- *   a particular request to be cancelled. If aiocbp is NULL, then all
+ *   a particular request to be canceled. If aiocbp is NULL, then all
  *   outstanding cancelable asynchronous I/O requests against fildes will
- *   be cancelled.
+ *   be canceled.
  *
  *   Normal asynchronous notification will occur for asynchronous I/O
- *   operations that are successfully cancelled. If there are requests that
- *   cannot be cancelled, then the normal asynchronous completion process
+ *   operations that are successfully canceled. If there are requests that
+ *   cannot be canceled, then the normal asynchronous completion process
  *   will take place for those requests when they are completed.
  *
- *   For requested operations that are successfully cancelled, the associated
+ *   For requested operations that are successfully canceled, the associated
  *   error status will be set to ECANCELED and the return status will be -1.
- *   For requested operations that are not successfully cancelled, the aiocbp
+ *   For requested operations that are not successfully canceled, the aiocbp
  *   will not be modified by aio_cancel().
  *
  * Input Parameters:
  *   fildes - Not used in this implementation
  *   aiocbp - Points to the asynchronous I/O control block for a particular
- *            request to be cancelled.
+ *            request to be canceled.
  *
  * Returned Value:
  *    The aio_cancel() function will return the value AIO_CANCELED if the
- *    requested operation(s) were cancelled. The value AIO_NOTCANCELED will
+ *    requested operation(s) were canceled. The value AIO_NOTCANCELED will
  *    be returned if at least one of the requested operation(s) cannot be
- *    cancelled because it is in progress. In this case, the state of the
+ *    canceled because it is in progress. In this case, the state of the
  *    other operations, if any, referenced in the call to aio_cancel() is
  *    not indicated by the return value of aio_cancel(). The application
  *    may determine the state of affairs for these operations by using
@@ -134,8 +100,14 @@
 
 int aio_cancel(int fildes, FAR struct aiocb *aiocbp)
 {
+	if (fildes < 0) {
+		set_errno(EBADF);
+		return ERROR;
+	}
+
 	FAR struct aio_container_s *aioc;
 	FAR struct aio_container_s *next;
+	pid_t pid;
 	int status;
 	int ret;
 
@@ -146,7 +118,6 @@ int aio_cancel(int fildes, FAR struct aiocb *aiocbp)
 	 */
 
 	ret = AIO_ALLDONE;
-	sched_lock();
 	aio_lock();
 
 	if (aiocbp) {
@@ -155,10 +126,13 @@ int aio_cancel(int fildes, FAR struct aiocb *aiocbp)
 		if (aiocbp->aio_result == -EINPROGRESS) {
 			/* No.. Find the container for this AIO control block */
 
-			for (aioc = (FAR struct aio_container_s *)g_aio_pending.head; aioc && aioc->aioc_aiocbp != aiocbp; aioc = (FAR struct aio_container_s *)aioc->aioc_link.flink) ;
+			for (aioc = (FAR struct aio_container_s *)g_aio_pending.head;
+			     aioc && aioc->aioc_aiocbp != aiocbp;
+			     aioc = (FAR struct aio_container_s *)aioc->aioc_link.flink);
 
-			/* Did we find a container for this fildes?  We should; the aio_result says
-			 * that the transfer is pending.  If not we return AIO_ALLDONE.
+			/* Did we find a container for this fildes?  We should; the
+			 * aio_result says that the transfer is pending.  If not we return
+			 * AIO_ALLDONE.
 			 */
 
 			if (aioc) {
@@ -166,21 +140,32 @@ int aio_cancel(int fildes, FAR struct aiocb *aiocbp)
 				 * possibilities:* (1) the work has already been started and
 				 * is no longer queued, or (2) the work has not been started
 				 * and is still in the work queue.  Only the second case can
-				 * be cancelled.  work_cancel() will return -ENOENT in the
+				 * be canceled.  work_cancel() will return -ENOENT in the
 				 * first case.
 				 */
 
 				status = work_cancel(LPWORK, &aioc->aioc_work);
 				if (status >= 0) {
+					/* Remove the container from the list of pending
+					 * transfers
+					 */
+
+					pid = aioc->aioc_pid;
+					aioc_decant(aioc);
+
 					aiocbp->aio_result = -ECANCELED;
 					ret = AIO_CANCELED;
+
+					/* Signal the client */
+
+					aio_signal(pid, aiocbp);
 				} else {
 					ret = AIO_NOTCANCELED;
 				}
+			} else {
+				/* Can't cancel, the operation is running */
 
-				/* Remove the container from the list of pending transfers */
-
-				(void)aioc_decant(aioc);
+				ret = AIO_NOTCANCELED;
 			}
 		}
 	} else {
@@ -190,7 +175,9 @@ int aio_cancel(int fildes, FAR struct aiocb *aiocbp)
 		do {
 			/* Find the next container with this AIO control block */
 
-			for (aioc = next; aioc && aioc->aioc_aiocbp->aio_fildes != fildes; aioc = (FAR struct aio_container_s *)aioc->aioc_link.flink) ;
+			for (aioc = next;
+			     aioc && aioc->aioc_aiocbp->aio_fildes != fildes;
+			     aioc = (FAR struct aio_container_s *)aioc->aioc_link.flink);
 
 			/* Did we find the container?  We should; the aio_result says
 			 * that the transfer is pending.  If not we return AIO_ALLDONE.
@@ -201,23 +188,30 @@ int aio_cancel(int fildes, FAR struct aiocb *aiocbp)
 				 * possibilities:* (1) the work has already been started and
 				 * is no longer queued, or (2) the work has not been started
 				 * and is still in the work queue.  Only the second case can
-				 * be cancelled.  work_cancel() will return -ENOENT in the
+				 * be canceled.  work_cancel() will return -ENOENT in the
 				 * first case.
 				 */
 
 				status = work_cancel(LPWORK, &aioc->aioc_work);
-
-				/* Remove the container from the list of pending transfers */
-
-				next = (FAR struct aio_container_s *)aioc->aioc_link.flink;
-				aiocbp = aioc_decant(aioc);
-				DEBUGASSERT(aiocbp);
-
 				if (status >= 0) {
+					/* Remove the container from the list of pending
+					 * transfers
+					 */
+
+					next   =
+					  (FAR struct aio_container_s *)aioc->aioc_link.flink;
+					pid    = aioc->aioc_pid;
+					aiocbp = aioc_decant(aioc);
+					DEBUGASSERT(aiocbp);
+
 					aiocbp->aio_result = -ECANCELED;
 					if (ret != AIO_NOTCANCELED) {
 						ret = AIO_CANCELED;
 					}
+
+					/* Signal the client */
+
+					aio_signal(pid, aiocbp);
 				} else {
 					ret = AIO_NOTCANCELED;
 				}
@@ -226,8 +220,7 @@ int aio_cancel(int fildes, FAR struct aiocb *aiocbp)
 	}
 
 	aio_unlock();
-	sched_unlock();
 	return ret;
 }
 
-#endif							/* CONFIG_FS_AIO */
+#endif /* CONFIG_FS_AIO */

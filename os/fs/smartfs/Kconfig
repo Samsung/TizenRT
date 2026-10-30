@@ -5,21 +5,16 @@
 
 config FS_SMARTFS
 	bool "SMART file system"
-	default y
+	default n
 	depends on !DISABLE_MOUNTPOINT
-	select FS_READABLE
-	select FS_WRITABLE
 	---help---
-		Enable TinyAra SMART Flash file system (SMARTFS) support.
-		Arch-dependent fs automount option can be found at "os/arch/arm/src/<board>/Kconfig"
+		Enable NuttX SMART Flash file system (SMARTFS) support.
 
 if FS_SMARTFS
-
-menu "SMARTFS options"
-
 config SMARTFS_ERASEDSTATE
 	hex "FLASH erased state"
 	default 0xff
+	range 0x00 0xff
 	---help---
 		The erased state of FLASH.
 		This must have one of the values of 0xff or 0x00.
@@ -27,8 +22,8 @@ config SMARTFS_ERASEDSTATE
 
 config SMARTFS_MAXNAMLEN
 	int "Maximum file name length"
-	default 32
-	---help---	
+	default 16
+	---help---
 		The maximum size of a SMARTFS file name at a given
 		directory level.  Overall path name is not restricted
 		by this value, only individual segments in a path,
@@ -57,8 +52,8 @@ config SMARTFS_MULTI_ROOT_DIRS
 		Default: y.
 
 config SMARTFS_ALIGNED_ACCESS
-	bool "Ensure 16 and 32 bit accesses are alined"
-	default y
+	bool "Ensure 16 and 32 bit accesses are aligned"
+	default n
 	---help---
 		Performs little endian byte accesses to 16 and 32 values
 		within the directory list to ensure processors that can't
@@ -66,18 +61,5 @@ config SMARTFS_ALIGNED_ACCESS
 		probably by 'Y', but set to 'N' in case any existing Big
 		Endian instances of SmartFS exist that already have
 		directories with data stored in big endian mode.
-
-config SMARTFS_DYNAMIC_HEADER
-bool "Dynamic Header"
-	default n
-	---help---
-		Using Modified Used Byte Method to Reduce Sector Relocation 
-
-config SMARTFS_ENTRY_TIMESTAMP
-	bool "Enable Timestamp for Smartfs Entry"
-	default n
-	---help---
-		Instead of RTC, Use Time stamp for UTC value of entry.
-endmenu
 
 endif

@@ -1,0 +1,38 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FS_HOSTFS
+	bool "Host File System"
+	default n
+	depends on !DISABLE_MOUNTPOINT
+	---help---
+		The Host file system provides a mechanism to mount directories
+		from the host OS during simulation mode.  The host directory
+		to be "mounted" is specified during the mount command using
+		the -o command line switch, such as:
+
+			mount -t hostfs -o fs=/home/user/nuttx_root /host
+
+		For non-NSH operation, the option "fs=home/user/nuttx_root" would
+		be passed to the 'mount()' routine using the optional 'void *data'
+		parameter.
+
+		The backend implementation is arch-dependent.
+		As of writing this, it's implemented for sim, arm and xtensa.
+
+		Note: depending on the backend implementations, hostfs might
+		only provide very restricted subset of filesystem operations.
+
+		Sim: It's implemented with direct calls to the host OS API.
+		It likely consumes a lot of stack than ordinary NuttX codebase.
+		You likely need to make task stack sizes huge (e.g. 64KB) to
+		avoid stack overrun.
+
+		Arm, xtensa: It's implemented using a special CPU instruction
+		to trigger a trap for a hypervisor.
+		If you are using qemu, it has the `-semihosting` command line
+		option to enable the handling of the trap.
+		Theoretically, it can work for other environments as well.
+		E.g. a real hardware + JTAG + OpenOCD.

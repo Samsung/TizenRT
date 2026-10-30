@@ -1,0 +1,101 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EVENT_FD
+	bool "EventFD"
+	default n
+	---help---
+		Create a file descriptor for event notification
+
+if EVENT_FD
+
+config EVENT_FD_POLL
+	bool "EventFD poll support"
+	default y
+	---help---
+		Poll support for file descriptor based events
+
+config EVENT_FD_NPOLLWAITERS
+	int "Number of eventFD poll waiters"
+	default 2
+	depends on EVENT_FD_POLL
+	---help---
+		Maximum number of threads that can be waiting on poll()
+
+endif # EVENT_FD
+
+config TIMER_FD
+	bool "TimerFD"
+	default n
+	---help---
+		Create a file descriptor for timer notification
+
+if TIMER_FD
+
+config TIMER_FD_POLL
+	bool "TimerFD poll support"
+	default y
+	---help---
+		Poll support for file descriptor based timers
+
+config TIMER_FD_NPOLLWAITERS
+	int "Number of timerFD poll waiters"
+	default 2
+	depends on TIMER_FD_POLL
+	---help---
+		Maximum number of threads that can be waiting on poll()
+
+endif # TIMER_FD
+
+config SIGNAL_FD
+	bool "SignalFD"
+	depends on !DISABLE_ALL_SIGNALS
+	default n
+	---help---
+		Create a file descriptor for accepting signals
+
+if SIGNAL_FD
+
+config SIGNAL_FD_NPOLLWAITERS
+	int "Number of signalFD poll waiters"
+	default 2
+	---help---
+		Maximum number of threads that can be waiting on poll()
+
+endif # SIGNAL_FD
+
+config FS_NOTIFY
+	bool "FS Notify System"
+	default n
+	---help---
+		The Fsnotify System
+
+if FS_NOTIFY
+config FS_NOTIFY_BUCKET_SIZE
+	int "Dir hash bucket size"
+	default 64
+
+config FS_NOTIFY_MAX_EVENTS
+	int "Max events in one notify device"
+	default 1024
+
+config FS_NOTIFY_FD_POLLWAITERS
+	int "Max pollwaiters in one notify device"
+	default 2
+
+endif # FS_NOTIFY
+
+config FS_BACKTRACE
+	int "VFS backtrace"
+	default 0
+	---help---
+		Add backtrace to vfs file open.
+
+config FS_BACKTRACE_SKIP
+	int "Backtrace to skip"
+	default 2
+	depends on FS_BACKTRACE > 0
+	---help---
+		Skip depth of backtrace.

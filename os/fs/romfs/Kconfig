@@ -6,8 +6,31 @@
 config FS_ROMFS
 	bool "ROMFS file system"
 	default n
-	depends on !DISABLE_MOUNTPOINT && MTD_FTL
-	select FS_READABLE
+	depends on !DISABLE_MOUNTPOINT
 	---help---
 		Enable ROMFS filesystem support
-		Arch-dependent fs automount option can be found at "os/arch/arm/src/<board>/Kconfig"
+
+if FS_ROMFS
+
+config FS_ROMFS_CACHE_NODE
+	bool "Enable cache node of ROMFS file system"
+	default !DEFAULT_SMALL
+	---help---
+		All node will be cached to ram when file system
+		is mounted so that we can quick access entry of ROMFS
+		filesystem on emmc/sdcard.
+
+config FS_ROMFS_CACHE_FILE_NSECTORS
+	int "The number of file cache sector"
+	range 1 256
+	default 1
+	---help---
+		The number of file cache sector
+
+config FS_ROMFS_DEBUG
+	bool "ROMFS file system read/write double check"
+	depends on DEBUG_FS_ERROR
+	---help---
+		Enable ROMFS file system read/write double check.
+
+endif

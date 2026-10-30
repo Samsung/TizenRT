@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/vfs/fs_dup2.c
  *
- *   Copyright (C) 2007-2009, 2011, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -55,31 +42,139 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/fs/fs.h>
+#include <tinyara/fs/ioctl.h>
 
 #include <unistd.h>
 #include <sched.h>
+#include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "inode/inode.h"
-
-/* This logic in this applies only when both socket and file descriptors are
- * in that case, this function descriminates which type of dup2 is being
- * performed.
- */
-
-#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
+#include "sched/sched.h"
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Private Functions
+ * Name: file_dup2
+ *
+ * Description:
+ *   Assign an inode to a specific files structure.  This is the heart of
+ *   dup2.
+ *
+ *   Equivalent to the non-standard dup2() function except that it
+ *   accepts struct file instances instead of file descriptors and it does
+ *   not set the errno variable.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is return on
+ *   any failure.
+ *
  ****************************************************************************/
 
+int file_dup2(FAR struct file *filep1, FAR struct file *filep2)
+{
+	FAR struct inode *inode;
+	int ret;
+
+	if (filep1 == NULL || filep1->f_inode == NULL || filep2 == NULL) {
+		return -EBADF;
+	}
+
+	if (filep1 == filep2) {
+		return OK;
+	}
+
+	/* Increment the reference count on the contained inode */
+
+	inode = filep1->f_inode;
+	inode_addref(inode);
+
+	/* Close the second file */
+
+	ret = file_close(filep2);
+	if (ret < 0) {
+		inode_release(inode);
+		return ret;
+	}
+
+	filep2->f_oflags = filep1->f_oflags;
+	filep2->f_priv   = NULL;
+	filep2->f_pos    = filep1->f_pos;
+	filep2->f_inode  = inode;
+
+	/* Call the open method on the file, driver, mountpoint so that it
+	 * can maintain the correct open counts.
+	 */
+
+	if (inode->u.i_ops) {
+#ifndef CONFIG_DISABLE_MOUNTPOINT
+		if (INODE_IS_MOUNTPT(inode)) {
+			/* Dup the open file on the in the new file structure */
+
+			if (inode->u.i_mops->dup) {
+				ret = inode->u.i_mops->dup(filep1, filep2);
+			}
+		} else
+#endif
+		{
+			/* (Re-)open the pseudo file or device driver */
+
+			filep2->f_priv = filep1->f_priv;
+
+			/* Add nonblock flags to avoid happening block when
+			 * calling open()
+			 */
+
+			filep2->f_oflags |= O_NONBLOCK;
+
+			if (inode->u.i_ops->open) {
+				ret = inode->u.i_ops->open(filep2);
+			}
+
+			if (ret >= 0 && (filep1->f_oflags & O_NONBLOCK) == 0) {
+				ret = file_ioctl(filep2, FIONBIO, 0);
+				if (ret < 0 && inode->u.i_ops->close) {
+					inode->u.i_ops->close(filep2);
+				}
+			}
+		}
+
+		/* Handle open failures */
+
+		if (ret < 0) {
+			inode_release(inode);
+		}
+	}
+
+	return ret;
+}
+
 /****************************************************************************
- * Global Functions
+ * Name: nx_dup2
+ *
+ * Description:
+ *   nx_dup2() is similar to the standard 'dup2' interface except that is
+ *   not a cancellation point and it does not modify the errno variable.
+ *
+ *   nx_dup2() is an internal NuttX interface and should not be called from
+ *   applications.
+ *
+ *   Clone a file descriptor to a specific descriptor number.
+ *
+ * Returned Value:
+ *   fd2 is returned on success; a negated errno value is return on
+ *   any failure.
+ *
  ****************************************************************************/
+
+int nx_dup2(int fd1, int fd2)
+{
+	return fdlist_dup2(nxsched_get_fdlist_from_tcb(this_task()), fd1, fd2);
+}
 
 /****************************************************************************
  * Name: dup2
@@ -92,28 +187,13 @@
 
 int dup2(int fd1, int fd2)
 {
-	/* Check the range of the descriptor to see if we got a file or a socket
-	 * descriptor.
-	 */
+	int ret;
 
-	if ((unsigned int)fd1 >= CONFIG_NFILE_DESCRIPTORS) {
-		/* Not a valid file descriptor.  Did we get a valid socket descriptor? */
-
-		if ((unsigned int)fd1 < (CONFIG_NFILE_DESCRIPTORS + CONFIG_NSOCKET_DESCRIPTORS)) {
-			/* Yes.. dup the socket descriptor */
-
-			return net_dupsd2(fd1, fd2);
-		} else {
-			/* No.. then it is a bad descriptor number */
-
-			set_errno(EBADF);
-			return ERROR;
-		}
-	} else {
-		/* Its a valid file descriptor.. dup the file descriptor */
-
-		return fs_dupfd2(fd1, fd2);
+	ret = nx_dup2(fd1, fd2);
+	if (ret < 0) {
+		set_errno(-ret);
+		ret = ERROR;
 	}
-}
 
-#endif							/* CONFIG_NFILE_DESCRIPTORS > 0 ... */
+	return ret;
+}

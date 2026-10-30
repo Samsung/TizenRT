@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/vfs/fs_mkdir.c
  *
- *   Copyright (C) 2007, 2008, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -55,48 +42,28 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <string.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdbool.h>
+#include <assert.h>
 #include <errno.h>
+
 #include <tinyara/fs/fs.h>
-#include <tinyara/kmalloc.h>
 
 #include "inode/inode.h"
+#include "vfs.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#undef FS_HAVE_WRITABLE_MOUNTPOINT
-#if !defined(CONFIG_DISABLE_MOUNTPOINT) && defined(CONFIG_FS_WRITABLE) && \
-	CONFIG_NFILE_STREAMS > 0
-#define FS_HAVE_WRITABLE_MOUNTPOINT 1
-#endif
-
-#undef FS_HAVE_PSEUDOFS_OPERATIONS
-#if !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS) && CONFIG_NFILE_STREAMS > 0
-#define FS_HAVE_PSEUDOFS_OPERATIONS 1
-#endif
-
 #undef FS_HAVE_MKDIR
-#if defined(FS_HAVE_WRITABLE_MOUNTPOINT) || defined(FS_HAVE_PSEUDOFS_OPERATIONS)
-#define FS_HAVE_MKDIR 1
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) || !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS)
+#  define FS_HAVE_MKDIR 1
 #endif
 
 #ifdef FS_HAVE_MKDIR
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
@@ -111,26 +78,30 @@
 
 int mkdir(const char *pathname, mode_t mode)
 {
+	struct inode_search_s desc;
 	FAR struct inode *inode;
-	const char *relpath = NULL;
-	int errcode = 0;
+	int errcode;
 	int ret;
-#ifndef CONFIG_DISABLE_MOUNTPOINT
-	FAR char *parent;
-	const char *ptr;
-	int index;
-	int len;
-	struct stat st;
-#endif
+
+	mode &= ~getumask();
 
 	/* Find the inode that includes this path */
 
-	inode = inode_find(pathname, &relpath);
+	SETUP_SEARCH(&desc, pathname, false);
 
-	if (inode) {
+	ret = inode_find(&desc);
+	if (ret >= 0) {
 		/* An inode was found that includes this path and possibly refers to a
 		 * mountpoint.
 		 */
+
+		inode = desc.node;
+		DEBUGASSERT(inode != NULL);
+
+		if (desc.relpath[0] == '\0') {
+			errcode = EEXIST;
+			goto errout_with_inode;
+		}
 
 #ifndef CONFIG_DISABLE_MOUNTPOINT
 		/* Check if the inode is a valid mountpoint. */
@@ -142,54 +113,12 @@ int mkdir(const char *pathname, mode_t mode)
 			goto errout_with_inode;
 		}
 
-		ptr = relpath;
-		index = 0;
-		len = 0;
-
-		while (ptr != NULL && *ptr != '\0') {
-			/* Search a path of parent directory */
-			if (*ptr == '/') {
-				index = len;
-			}
-			len++;
-			ptr++;
-		}
-
-		if (index > 0) {
-			/* In another directory */
-			parent = (FAR char *)kmm_malloc(index + 1);
-			if (parent == NULL) {
-				ret = ENOMEM;
-				goto errout_with_inode;
-			}
-			memset(parent, 0, index + 1);
-			strncpy(parent, relpath, index);
-
-			if (inode->u.i_mops->stat) {
-				/* Perform the stat() operation */
-
-				ret = inode->u.i_mops->stat(inode, parent, &st);
-				kmm_free(parent);
-				if (ret < 0) {
-					ret = -ret;
-					goto errout_with_inode;
-				} else if ((st.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH)) == 0) {
-					ret = EACCES;
-					goto errout_with_inode;
-				}
-			} else {
-				ret = ENOSYS;
-				kmm_free(parent);
-				goto errout_with_inode;
-			}
-		}
-
 		/* Perform the mkdir operation using the relative path
 		 * at the mountpoint.
 		 */
 
 		if (inode->u.i_mops->mkdir) {
-			ret = inode->u.i_mops->mkdir(inode, relpath, mode);
+			ret = inode->u.i_mops->mkdir(inode, desc.relpath, mode);
 			if (ret < 0) {
 				errcode = -ret;
 				goto errout_with_inode;
@@ -209,38 +138,49 @@ int mkdir(const char *pathname, mode_t mode)
 		goto errout_with_inode;
 #endif
 	}
+
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 	/* No inode exists that contains this path.  Create a new inode in the
 	 * pseudo-filesystem at this location.
 	 */
-	else {
-		/* Create an inode in the pseudo-filesystem at this path */
 
-		inode_semtake();
-		ret = inode_reserve(pathname, &inode);
-		inode_semgive();
+	else {
+		/* Create an inode in the pseudo-filesystem at this path.
+		 * NOTE that the new inode will be created with a reference
+		 * count of zero.
+		 */
+
+		inode_lock();
+		ret = inode_reserve(pathname, mode, &inode);
+		inode_unlock();
 
 		if (ret < 0) {
 			errcode = -ret;
-			goto errout;
+			goto errout_with_search;
 		}
 	}
 #else
 	else {
 		errcode = ENXIO;
-		goto errout;
+		goto errout_with_search;
 	}
 #endif
 
 	/* Directory successfully created */
 
+	RELEASE_SEARCH(&desc);
+#ifdef CONFIG_FS_NOTIFY
+	notify_mkdir(pathname);
+#endif
 	return OK;
 
 errout_with_inode:
 	inode_release(inode);
-errout:
+
+errout_with_search:
+	RELEASE_SEARCH(&desc);
 	set_errno(errcode);
 	return ERROR;
 }
 
-#endif							/* FS_HAVE_MKDIR */
+#endif /* FS_HAVE_MKDIR */

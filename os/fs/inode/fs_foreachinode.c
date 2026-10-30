@@ -18,35 +18,22 @@
 /****************************************************************************
  * fs/inode/fs_foreachinode.c
  *
- *   Copyright (C) 2012-2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -65,10 +52,12 @@
 #include <tinyara/fs/fs.h>
 
 #include "inode/inode.h"
+#include "fs_heap.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 /* Is it better to allocate the struct inode_path_s from the heap? or
  * from the stack?  This decision depends on how often this is down and
  * how much stack space you can afford.
@@ -84,21 +73,14 @@
 
 struct inode_path_s {
 	foreach_inode_t handler;
-	FAR void *arg;
-	char path[CONFIG_PATH_MAX];
+	FAR void       *arg;
+	char            path[PATH_MAX];
 };
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
 /****************************************************************************
  * Name: foreach_inodelevel
  *
@@ -112,19 +94,20 @@ struct inode_path_s {
  *
  ****************************************************************************/
 
-static int foreach_inodelevel(FAR struct inode *node, struct inode_path_s *info)
+static int foreach_inodelevel(FAR struct inode *inode,
+                              FAR struct inode_path_s *info)
 {
 	int ret = OK;
 
 	/* Visit each node at this level */
 
-	for (; node; node = node->i_peer) {
+	for (; inode; inode = inode->i_peer) {
 		/* Give the next inode to the callback */
 
-		ret = info->handler(node, info->path, info->arg);
+		ret = info->handler(inode, info->path, info->arg);
 
-		/* Break out of the looop early if the handler returns a non-zero
-		 * value
+		/* Break out of the loop early if the handler returns a non-zero
+		 * value.
 		 */
 
 		if (ret != 0) {
@@ -135,23 +118,24 @@ static int foreach_inodelevel(FAR struct inode *node, struct inode_path_s *info)
 		 * of the inodes at that level.
 		 */
 
-		if (node->i_child) {
+		if (inode->i_child) {
 			/* Construct the path to the next level */
 
 			int pathlen = strlen(info->path);
-			int namlen = strlen(node->i_name) + 1;
+			int namlen  = strlen(inode->i_name) + 1;
 
 			/* Make sure that this would not exceed the maximum path length */
 
-			if (pathlen + namlen > PATH_MAX) {
+			if (pathlen + namlen >= PATH_MAX) {
 				ret = -ENAMETOOLONG;
 				break;
 			}
 
 			/* Append the path segment to this inode and recurse */
 
-			snprintf(&info->path[pathlen], PATH_MAX - pathlen, "/%s", node->i_name);
-			ret = foreach_inodelevel(node->i_child, info);
+			snprintf(&info->path[pathlen], sizeof(info->path) - pathlen,
+			         "/%s", inode->i_name);
+			ret = foreach_inodelevel(inode->i_child, info);
 
 			/* Truncate the path name back to the correct length */
 
@@ -175,6 +159,7 @@ static int foreach_inodelevel(FAR struct inode *node, struct inode_path_s *info)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /****************************************************************************
  * Name: foreach_inode
  *
@@ -199,7 +184,7 @@ int foreach_inode(foreach_inode_t handler, FAR void *arg)
 
 	/* Allocate the mountpoint info structure */
 
-	info = (FAR struct inode_path_s *)kmm_malloc(sizeof(struct inode_path_s));
+	info = fs_heap_malloc(sizeof(struct inode_path_s));
 	if (!info) {
 		return -ENOMEM;
 	}
@@ -207,18 +192,18 @@ int foreach_inode(foreach_inode_t handler, FAR void *arg)
 	/* Initialize the info structure */
 
 	info->handler = handler;
-	info->arg = arg;
+	info->arg     = arg;
 	info->path[0] = '\0';
 
 	/* Start the recursion at the root inode */
 
-	inode_semtake();
-	ret = foreach_inodelevel(root_inode, info);
-	inode_semgive();
+	inode_rlock();
+	ret = foreach_inodelevel(g_root_inode->i_child, info);
+	inode_runlock();
 
 	/* Free the info structure and return the result */
 
-	kmm_free(info);
+	fs_heap_free(info);
 	return ret;
 
 #else
@@ -228,14 +213,14 @@ int foreach_inode(foreach_inode_t handler, FAR void *arg)
 	/* Initialize the info structure */
 
 	info.handler = handler;
-	info.arg = arg;
+	info.arg     = arg;
 	info.path[0] = '\0';
 
 	/* Start the recursion at the root inode */
 
-	inode_semtake();
-	ret = foreach_inodelevel(root_inode, &info);
-	inode_semgive();
+	inode_rlock();
+	ret = foreach_inodelevel(g_root_inode->i_child, &info);
+	inode_runlock();
 
 	return ret;
 

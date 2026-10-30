@@ -1,0 +1,22 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FS_SHMFS
+	bool "Shared memory support"
+	default n
+	select ARCH_VMA_MAPPING if BUILD_KERNEL
+	---help---
+		Include support for shm_open() and shm_close.
+
+if FS_SHMFS
+
+config FS_SHMFS_VFS_PATH
+	string "Path to shared memory object storage"
+	default "/var/shm"
+	---help---
+		The path to where shared memory objects will exist in the VFS
+		namespace.
+
+endif # FS_SHMFS

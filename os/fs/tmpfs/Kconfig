@@ -7,20 +7,10 @@ config FS_TMPFS
 	bool "TMPFS file system"
 	default n
 	depends on !DISABLE_MOUNTPOINT
-	select FS_READABLE
-	select FS_WRITABLE
 	---help---
 		Enable TMPFS filesystem support
 
 if FS_TMPFS
-menu "TMPFS options"
-
-config FS_AUTOMOUNT_TMPFS
-	bool "AUTOMOUNT TMPFS file system"
-	default n
-	---help---
-		This provides an option to enable auto mounting of
-		TMPFS during File System initialization.
 
 config FS_TMPFS_BLOCKSIZE
 	int "Reported block size"
@@ -38,7 +28,7 @@ config FS_TMPFS_DIRECTORY_ALLOCGUARD
 	---help---
 		In order to avoid frequent reallocations, a little more memory than
 		needed is always allocated.  This permits the directory to grow
-		without so many realloctions.
+		without so many reallocations.
 
 config FS_TMPFS_DIRECTORY_FREEGUARD
 	int "Directory under free"
@@ -47,7 +37,7 @@ config FS_TMPFS_DIRECTORY_FREEGUARD
 		In order to avoid frequent reallocations, a lot of free memory has
 		to be available before a directory entry shrinks (via reallocation)
 		little more memory than needed is always allocated.  This permits
-		the directory to shrink without so many realloctions.
+		the directory to shrink without so many reallocations.
 
 config FS_TMPFS_FILE_ALLOCGUARD
 	int "Directory object over-allocation"
@@ -55,7 +45,7 @@ config FS_TMPFS_FILE_ALLOCGUARD
 	---help---
 		In order to avoid frequent reallocations, a little more memory than
 		needed is always allocated.  This permits the file to grow without
-		so many realloctions.
+		so many reallocations.
 
 		You will probably want to use smaller value than the default on tiny
 		TMFPS systems.
@@ -67,7 +57,6 @@ config FS_TMPFS_FILE_FREEGUARD
 		In order to avoid frequent reallocations, a lot of free memory has
 		to be available before a directory entry shrinks (via reallocation)
 		little more memory than needed is always allocated.  This permits
-		the file to shrink without so many realloctions.
+		the file to shrink without so many reallocations.
 
-endmenu
 endif

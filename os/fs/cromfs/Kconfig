@@ -1,0 +1,15 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config FS_CROMFS
+	bool "CROMFS file system"
+	default n
+	depends on !DISABLE_MOUNTPOINT
+	select LIBC_LZF
+	---help---
+		Enable Compessed Read-Only Filesystem (CROMFS) support
+
+if FS_CROMFS
+endif
