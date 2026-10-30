@@ -3,13 +3,44 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config DEV_LOWCONSOLE
-	bool "Low-level console support"
+config ARCH_HAVE_SERIAL_TERMIOS
+	bool
 	default n
-	depends on ARCH_LOWPUTC
-	depends on DEV_CONSOLE
+
+config ARCH_HAVE_8BIT_SERIAL_BUFSIZE
+	bool
+	default n
 	---help---
-		Use the simple, low-level, write-only serial console driver (minimal support)
+	This is set by ARCH_LDST_16BIT_NOT_ATOMIC if the architecture does
+	not support atomic 16-bit load/store instructions. Receive and transmit
+	buffer sizes are stored in uint8_t (instead of int16_t) variable
+	in such case.
+
+menuconfig SERIAL
+	bool "Serial Driver Support"
+	default y
+	---help---
+		Front-end character drivers for chip-specific UARTs.  This provide
+		some TTY-like functionality and are commonly used (but not required
+		for) the NuttX system console.  See also include/nuttx/serial/serial.h
+
+if SERIAL
+
+config SERIAL_PM_ACTIVITY_DOMAIN
+	int "PM activity domain"
+	default 0
+	depends on PM
+	---help---
+		When characters are received on a console device, pm_activity()
+		will be called with this PM domain.
+
+config SERIAL_PM_ACTIVITY_PRIORITY
+	int "PM activity priority when receive character"
+	default 6
+	depends on PM
+	---help---
+		When characters are received on a console device, pm_activity()
+		will be called with this PM priority.
 
 config SERIAL_REMOVABLE
 	bool
@@ -19,490 +50,114 @@ config SERIAL_CONSOLE
 	bool
 	default n
 
-config 16550_UART
+config SERIAL_GDBSTUB
+	bool "GDBSTUB Serial support"
+	depends on LIB_GDBSTUB
+	default n
+
+config SERIAL_GDBSTUB_PATH
+	string "GDBSTUB Serial path"
+	depends on SERIAL_GDBSTUB
+	default "/dev/ttyS1"
+	---help---
+		The path to the serial device that will be used for GDB stub.
+
+config SERIAL_GDBSTUB_AUTO_ATTACH
+	bool "GDBSTUB Serial Auto attach"
+	depends on SERIAL_GDBSTUB
+	default n
+	---help---
+		Attach the serial port to gdbstub by default.
+		Will cover the GDBSTUB_SERIAL_PATH, that port will only
+		be used for GDB stub.
+
+config SERIAL_GDBSTUB_PANIC_TIMEOUT
+	int "GDBSTUB Serial panic timeout"
+	depends on SERIAL_GDBSTUB
+	default 10
+	---help---
+		Delay the panic timeout for gdbstub to connect.
+		0 will disable the timeout.
+
+config UART_HOSTFS
+	bool "Use hostfs read/write on UART_HOSTFS_DEVPATH as uart console"
+	depends on FS_HOSTFS
+	default n
+	select SERIAL_RXDMA
+	select SERIAL_TXDMA
+
+config UART_HOSTFS_DEVPATH
+	string "The host device node that will be used by"
+	depends on UART_HOSTFS
+	default "/dev/tty"
+
+config UART_HOSTFS_RXBUFSIZE
+	int "Uart hostfs receive buffer size"
+	default 256
+	depends on UART_HOSTFS
+
+config UART_HOSTFS_TXBUFSIZE
+	int "Uart hostfs transmit buffer size"
+	default 256
+	depends on UART_HOSTFS
+
+config UART_HOSTFS_DELAY_USEC
+	int "Uart hostfs polling interval in microseconds"
+	default 1000
+	depends on UART_HOSTFS
+
+menuconfig UART_PL011
+	bool "PL011 Chip support"
+	default n
+
+if UART_PL011
+source "drivers/serial/Kconfig-pl011"
+endif
+
+menuconfig UART_XLNXPS
+	bool "Xilinx UART Peripheral System (XUARTPS) Chip support"
+	default n
+	---help---
+		This option enables support for the Xilinx UART Peripheral System
+		(XUARTPS) controller, which is commonly found in Xilinx Zynq-7000
+		and Zynq UltraScale+ MPSoC platforms.
+
+		The XUARTPS controller provides full-duplex UART functionality with
+		features such as baud rate generation, FIFO buffers, interrupt
+		support, and hardware flow control (RTS/CTS).
+
+		If you are building a kernel for Xilinx Zynq/Zynq MPSoC platforms
+		and need serial communication via the XUARTPS peripheral, say Y here.
+
+if UART_XLNXPS
+source "drivers/serial/Kconfig-xlnxps"
+endif # UART_XLNXPS
+
+menuconfig CMSDK_UART
+	bool "CMSDK UART Chip support"
+	select ARCH_HAVE_SERIAL_TERMIOS
+	default n
+
+if CMSDK_UART
+source "drivers/serial/Kconfig-cmsdk"
+endif # CMSDK_UART
+
+menuconfig 16550_UART
 	bool "16550 UART Chip support"
+	select ARCH_HAVE_SERIAL_TERMIOS
 	default n
 
 if 16550_UART
-config 16550_UART0
-	bool "16550 UART0"
-	default n
-
-if 16550_UART0
-config 16550_UART0_BASE
-	hex "16550 UART0 base address"
-
-config 16550_UART0_CLOCK
-	int "16550 UART0 clock"
-
-config 16550_UART0_IRQ
-	int "16550 UART0 IRQ number"
-
-config 16550_UART0_BAUD
-	int "16550 UART0 BAUD"
-	default 115200
-
-config 16550_UART0_PARITY
-	int "16550 UART0 parity"
-	default 0
-	range 0 2
-	---help---
-		16550 UART0 parity.  0=None, 1=Odd, 2=Even.  Default: None
-
-config 16550_UART0_BITS
-	int "16550 UART0 number of bits"
-	default 8
-	---help---
-		16550 UART0 number of bits.  Default: 8
-
-config 16550_UART0_2STOP
-	int "16550 UART0 two stop bits"
-	default 0
-	---help---
-		0=1 stop bit, 1=Two stop bits.  Default: 1 stop bit
-
-config 16550_UART0_RXBUFSIZE
-	int "16550 UART0 Rx buffer size"
-	default 256
-	---help---
-		16550 UART0 Rx buffer size.  Default: 256
-
-config 16550_UART0_TXBUFSIZE
-	int "16550 UART0 Tx buffer size"
-	default 256
-	---help---
-		16550 UART0 Tx buffer size.  Default: 256
-
-config 16550_UART0_IFLOWCONTROL
-	bool "16550 UART0 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable 16550 UART0 RTS flow control
-
-config 16550_UART0_OFLOWCONTROL
-	bool "16550 UART0 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable 16550 UART0 CTS flow control
-
+source "drivers/serial/Kconfig-16550"
 endif
 
-config 16550_UART1
-	bool "16550 UART1"
-	default n
-
-if 16550_UART1
-config 16550_UART1_BASE
-	hex "16550 UART1 base address"
-
-config 16550_UART1_CLOCK
-	int "16550 UART1 clock"
-
-config 16550_UART1_IRQ
-	int "16550 UART1 IRQ number"
-
-config 16550_UART1_BAUD
-	int "16550 UART1 BAUD"
-	default 115200
-
-config 16550_UART1_PARITY
-	int "16550 UART1 parity"
-	default 0
-	range 0 2
-	---help---
-		16550 UART1 parity.  0=None, 1=Odd, 2=Even.  Default: None
-
-config 16550_UART1_BITS
-	int "16550 UART1 number of bits"
-	default 8
-	---help---
-		16550 UART1 number of bits.  Default: 8
-
-config 16550_UART1_2STOP
-	int "16550 UART1 two stop bits"
-	default 0
-	---help---
-		0=1 stop bit, 1=Two stop bits.  Default: 1 stop bit
-
-config 16550_UART1_RXBUFSIZE
-	int "16550 UART1 Rx buffer size"
-	default 256
-	---help---
-		16550 UART1 Rx buffer size.  Default: 256
-
-config 16550_UART1_TXBUFSIZE
-	int "16550 UART1 Tx buffer size"
-	default 256
-	---help---
-		16550 UART1 Tx buffer size.  Default: 256
-
-config 16550_UART1_IFLOWCONTROL
-	bool "16550 UART1 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable 16550 UART1 RTS flow control
-
-config 16550_UART1_OFLOWCONTROL
-	bool "16550 UART1 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable 16550 UART1 CTS flow control
-
-endif
-
-config 16550_UART2
-	bool "16550 UART2"
-	default n
-
-if 16550_UART2
-config 16550_UART2_BASE
-	hex "16550 UART2 base address"
-
-config 16550_UART2_CLOCK
-	int "16550 UART2 clock"
-
-config 16550_UART2_IRQ
-	int "16550 UART2 IRQ number"
-
-config 16550_UART2_BAUD
-	int "16550 UART2 BAUD"
-	default 115200
-
-config 16550_UART2_PARITY
-	int "16550 UART2 parity"
-	default 0
-	range 0 2
-	---help---
-		16550 UART2 parity.  0=None, 1=Odd, 2=Even.  Default: None
-
-config 16550_UART2_BITS
-	int "16550 UART2 number of bits"
-	default 8
-	---help---
-		16550 UART2 number of bits.  Default: 8
-
-config 16550_UART2_2STOP
-	int "16550 UART2 two stop bits"
-	default 0
-	---help---
-		0=1 stop bit, 1=Two stop bits.  Default: 1 stop bit
-
-config 16550_UART2_RXBUFSIZE
-	int "16550 UART2 Rx buffer size"
-	default 256
-	---help---
-		16550 UART2 Rx buffer size.  Default: 256
-
-config 16550_UART2_TXBUFSIZE
-	int "16550 UART2 Tx buffer size"
-	default 256
-	---help---
-		16550 UART2 Tx buffer size.  Default: 256
-
-config 16550_UART2_IFLOWCONTROL
-	bool "16550 UART2 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable 16550 UART2 RTS flow control
-
-config 16550_UART2_OFLOWCONTROL
-	bool "16550 UART2 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable 16550 UART2 CTS flow control
-
-endif
-
-config 16550_UART3
-	bool "16550 UART3"
-	default n
-
-if 16550_UART3
-config 16550_UART3_BASE
-	hex "16550 UART3 base address"
-
-config 16550_UART3_CLOCK
-	int "16550 UART3 clock"
-
-config 16550_UART3_IRQ
-	int "16550 UART3 IRQ number"
-
-config 16550_UART3_BAUD
-	int "16550 UART3 BAUD"
-	default 115200
-
-config 16550_UART3_PARITY
-	int "16550 UART3 parity"
-	default 0
-	range 0 2
-	---help---
-		16550 UART3 parity.  0=None, 1=Odd, 2=Even.  Default: None
-
-config 16550_UART3_BITS
-	int "16550 UART3 number of bits"
-	default 8
-	---help---
-		16550 UART3 number of bits.  Default: 8
-
-config 16550_UART3_2STOP
-	int "16550 UART3 two stop bits"
-	default 0
-	---help---
-		0=1 stop bit, 1=Two stop bits.  Default: 1 stop bit
-
-config 16550_UART3_RXBUFSIZE
-	int "16550 UART3 Rx buffer size"
-	default 256
-	---help---
-		16550 UART3 Rx buffer size.  Default: 256
-
-config 16550_UART3_TXBUFSIZE
-	int "16550 UART3 Tx buffer size"
-	default 256
-	---help---
-		16550 UART3 Tx buffer size.  Default: 256
-
-config 16550_UART3_IFLOWCONTROL
-	bool "16550 UART3 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable 16550 UART3 RTS flow control
-
-config 16550_UART3_OFLOWCONTROL
-	bool "16550 UART3 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable 16550 UART3 CTS flow control
-
-endif
-
-choice
-	prompt "16550 Serial Console"
-	default 16550_NO_SERIAL_CONSOLE
-	depends on DEV_CONSOLE
-
-config 16550_UART0_SERIAL_CONSOLE
-	bool "16550 UART0 serial console"
-	depends on 16550_UART0
-
-config 16550_UART1_SERIAL_CONSOLE
-	bool "16550 UART1 serial console"
-	depends on 16550_UART1
-
-config 16550_UART2_SERIAL_CONSOLE
-	bool "16550 UART2 serial console"
-	depends on 16550_UART2
-
-config 16550_UART3_SERIAL_CONSOLE
-	bool "16550 UART3 serial console"
-	depends on 16550_UART3
-
-config 16550_NO_SERIAL_CONSOLE
-	bool "No 16550 serial console"
-
-endchoice
-
-config 16550_SUPRESS_CONFIG
-	bool "Suppress 16550 configuration"
-	default n
-	---help---
-		This option is useful, for example, if you are using a bootloader
-		that configures the 16550_UART.  In that case, you may want to
-		just leave the existing console configuration in place.  Default: n
-
-config 16550_REGINCR
-	int "Address increment between 16550 registers"
-	default 1
-	---help---
-		The address increment between 16550 registers.  Options are 1, 2, or 4.
-		Default: 1
-
-config 16550_REGWIDTH
-	int "Bit width of 16550 registers"
-	default 8
-	---help---
-		The bit width of registers.  Options are 8, 16, or 32. Default: 8
-
-config 16550_ADDRWIDTH
-	int "Address width of 16550 registers"
-	default 8
-	---help---
-		The bit width of registers.  Options are 8, 16, or 32. Default: 8
-
+if PCI
+source "drivers/serial/Kconfig-pci"
 endif
 
 #
 # MCU serial peripheral driver?
 #
-
-config ARCH_HAVE_UART
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_UART0
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_UART1
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_UART2
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_UART3
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_UART4
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_UART5
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_UART6
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_UART7
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_UART8
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_SCI0
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_SCI1
-	bool
-	default n
-	select MCU_SERIAL
-
-config ARCH_HAVE_USART0
-	bool
-	default n
-
-config ARCH_HAVE_USART1
-	bool
-	default n
-
-config ARCH_HAVE_USART2
-	bool
-	default n
-
-config ARCH_HAVE_USART3
-	bool
-	default n
-
-config ARCH_HAVE_USART4
-	bool
-	default n
-
-config ARCH_HAVE_USART5
-	bool
-	default n
-
-config ARCH_HAVE_USART6
-	bool
-	default n
-
-config ARCH_HAVE_USART7
-	bool
-	default n
-
-config ARCH_HAVE_USART8
-	bool
-	default n
-
-config ARCH_HAVE_OTHER_UART
-	bool
-	default n
-	select MCU_SERIAL
-
-#
-# USARTn configuration.  Is the USART configured to behave like a UART?
-#
-
-comment "USART Configuration"
-
-config USART0_ISUART
-	bool "USART0 is a UART"
-	default y
-	depends on ARCH_HAVE_USART0
-	select MCU_SERIAL
-
-config USART1_ISUART
-	bool "USART1 is a UART"
-	default y
-	depends on ARCH_HAVE_USART1
-	select MCU_SERIAL
-
-config USART2_ISUART
-	bool "USART2 is a UART"
-	default y
-	depends on ARCH_HAVE_USART2
-	select MCU_SERIAL
-
-config USART3_ISUART
-	bool "USART3 is a UART"
-	default y
-	depends on ARCH_HAVE_USART3
-	select MCU_SERIAL
-
-config USART4_ISUART
-	bool "USART4 is a UART"
-	default y
-	depends on ARCH_HAVE_USART4
-	select MCU_SERIAL
-
-config USART5_ISUART
-	bool "USART5 is a UART"
-	default y
-	depends on ARCH_HAVE_USART5
-	select MCU_SERIAL
-
-config USART6_ISUART
-	bool "USART6 is a UART"
-	default y
-	depends on ARCH_HAVE_USART6
-	select MCU_SERIAL
-
-config USART7_ISUART
-	bool "USART7 is a UART"
-	default y
-	depends on ARCH_HAVE_USART7
-	select MCU_SERIAL
-
-config USART8_ISUART
-	bool "USART8 is a UART"
-	default y
-	depends on ARCH_HAVE_USART8
-	select MCU_SERIAL
 
 config OTHER_UART_SERIALDRIVER
 	bool
@@ -513,31 +168,86 @@ config MCU_SERIAL
 	bool
 	default n
 
+config RPMSG_UART
+	bool "UART RPMSG support"
+	default n
+	depends on RPMSG
+	select ARCH_HAVE_SERIAL_TERMIOS
+	select SERIAL_RXDMA
+	select SERIAL_TXDMA
+	select SERIAL_REMOVABLE
+	select SERIAL_IFLOWCONTROL
+
+config RPMSG_UART_CONSOLE
+	bool "UART RPMSG console support"
+	default n
+	depends on RPMSG_UART
+	---help---
+		Register the UART RPMSG device as /dev/console so that is will be used
+		as the console device.
+		NOTE: support for this option must be implemented in the board logic by
+		setting the \"isconsole\" argument in the uart_rpmsg_init() function to true.
+
+config RPMSG_UART_RAW
+	bool "UART RPMSG RAW support"
+	default n
+	depends on RPMSG
+	select ARCH_HAVE_SERIAL_TERMIOS
+	select SERIAL_RXDMA
+	select SERIAL_TXDMA
+	select SERIAL_REMOVABLE
+	---help---
+		Similar to RPMSG_UART but using data transfer without encapsulation or
+		flow control. This implementation is compatible with the upstream linux
+		implementation of tty_rpmsg. This connects to a static service name
+		(rpmsg-tty), independent from the local name.
+
+config RPMSG_UART_RAW_CONSOLE
+	bool "UART RPMSG RAW console support"
+	default n
+	depends on RPMSG_UART_RAW
+	---help---
+		Register the RAW UART RPMSG device as /dev/console so that is will be used
+		as the console device.
+		NOTE: support for this option must be implemented in the board logic by
+		setting the \"isconsole\" argument in the uart_rpmsg_raw_init() function to true.
+
 #
 # Standard serial driver configuration
 #
 
 config STANDARD_SERIAL
 	bool "Enable standard \"upper-half\" serial driver"
-	default y if MCU_SERIAL
-	default n if !MCU_SERIAL
-	depends on !DEV_LOWCONSOLE
+	default MCU_SERIAL
 	---help---
 		Enable the standard, upper-half serial driver used by most MCU serial peripherals.
 
 config SERIAL_NPOLLWAITERS
 	int "Number of poll threads"
-	default 2
-	depends on !DISABLE_POLL && STANDARD_SERIAL
+	default 4
 	---help---
 		Maximum number of threads than can be waiting for POLL events.
-		Default: 2
+		Default: 4
 
 config SERIAL_IFLOWCONTROL
 	bool
 	default n
 
+config SERIAL_RS485CONTROL
+	bool
+	default n
+	---help---
+		Use RTS pin to control RS485 direction (Asserted while transmitting).
+
 config SERIAL_OFLOWCONTROL
+	bool
+	default n
+
+config SERIAL_TXDMA
+	bool
+	default n
+
+config SERIAL_RXDMA
 	bool
 	default n
 
@@ -557,7 +267,7 @@ if SERIAL_IFLOWCONTROL_WATERMARKS
 config SERIAL_IFLOWCONTROL_LOWER_WATERMARK
 	int "RX lower Watermark (percent)"
 	default 10
-	range 0 100
+	range 1 99
 	---help---
 		Call the rxflowcontrol method then there are this amount (or or less)
 		data buffered in the serial drivers RX buffer.  This is expressed
@@ -567,7 +277,7 @@ config SERIAL_IFLOWCONTROL_LOWER_WATERMARK
 config SERIAL_IFLOWCONTROL_UPPER_WATERMARK
 	int "RX upper Watermark (percent)"
 	default 90
-	range 0 100
+	range 1 99
 	---help---
 		Call the rxflowcontrol method then there are this amount (or more)
 		data buffered in the serial drivers RX buffer.  This is expressed
@@ -576,10 +286,17 @@ config SERIAL_IFLOWCONTROL_UPPER_WATERMARK
 
 endif # SERIAL_IFLOWCONTROL_WATERMARKS
 
+config SERIAL_TIOCGICOUNT
+	bool "Support TIOCGICOUNT (U[S]ART Error Report)"
+	default n
+	---help---
+		The ioctl TIOCGICOUNT is used to collect errors from serial ports
+		such as frame error, overrun, parity, etc.
+
 config SERIAL_TIOCSERGSTRUCT
 	bool "Support TIOCSERGSTRUCT"
 	default n
-	depends on DEBUG && (MCU_SERIAL || 16550_UART)
+	depends on DEBUG_FEATURES && (MCU_SERIAL || 16550_UART)
 	---help---
 		As a debug option, many serial bottom half drivers support the TIOCSERGSTRUCT
 		that allows you to get the internal driver data structure.  By default, this
@@ -587,18 +304,180 @@ config SERIAL_TIOCSERGSTRUCT
 		supports the TIOCSERGSTRUCT ioctl, and (2) this option is selected, then
 		support for the TIOCSERGSTRUCT will be enabled.
 
-config ARCH_HAVE_SERIAL_TERMIOS
-	bool
-	default n
-
 config SERIAL_TERMIOS
 	bool "Serial TERMIOS support"
 	depends on ARCH_HAVE_SERIAL_TERMIOS
 	default n
 	---help---
-		Serial driver supports termios.h interfaces (tcsetattr, tcflush, etc.).
-		If this is not defined, then the terminal settings (baud, parity, etc).
-		are not configurable at runtime; serial streams cannot be flushed, etc..
+		If this is not defined, then the terminal hardware settings
+		(baud, parity, flow control) are not configurable at runtime.
+		Note: other software settings (echo, \r\n<->\n, break, tcflush)
+		are always supported.
+
+config TTY_LAUNCH
+	bool "Enable feature TTY launch program"
+	depends on SCHED_HPWORK
+	default n
+	---help---
+		If select this, then user can launch a program with a special input.
+
+if TTY_LAUNCH
+
+config TTY_LAUNCH_CHAR
+	hex "TTY launch program characters"
+	default 0x12
+	---help---
+		Use Ctrl-R 0x12 inputs to determine whether launch a program
+
+config TTY_LAUNCH_ARGS
+	string "TTY launch argument list"
+	default INIT_ARGS
+	---help---
+		The argument list for user applications. e.g.:
+		  "\"arg1\",\"arg2\",\"arg3\""
+
+config TTY_LAUNCH_PRIORITY
+	int "TTY launch program priority"
+	default INIT_PRIORITY
+
+config TTY_LAUNCH_STACKSIZE
+	int "TTY launch program stack size"
+	default INIT_STACKSIZE
+
+choice
+	prompt "TTY launch method"
+	default TTY_LAUNCH_ENTRY
+
+config TTY_LAUNCH_ENTRY
+	bool "TTY launch program"
+
+config TTY_LAUNCH_FILE
+	bool "TTY launch file"
+	depends on !BINFMT_DISABLE
+
+endchoice
+
+config TTY_LAUNCH_ENTRYPOINT
+	string "TTY launch program entry"
+	depends on TTY_LAUNCH_ENTRY
+	default INIT_ENTRYPOINT
+
+config TTY_LAUNCH_ENTRYNAME
+	string "TTY launch program name"
+	depends on TTY_LAUNCH_ENTRY
+	default TTY_LAUNCH_ENTRYPOINT
+
+config TTY_LAUNCH_FILEPATH
+	string "TTY launch file path"
+	depends on TTY_LAUNCH_FILE
+	default INIT_FILEPATH
+	---help---
+		The name of the entry point for user applications.  For the example
+		applications this is of the form 'app_main' where 'app' is the application
+		name. If not defined, INIT_ENTRYPOINT defaults to "main".
+
+endif # TTY_LAUNCH
+
+config TTY_FORCE_PANIC
+	bool "Enable TTY force crash"
+	default n
+	depends on DEBUG_FEATURES
+	---help---
+		This is for debugging system busyloop or deadlock, when the shell can't run,
+		then use this force crash the system to see the dumplog.
+
+config TTY_FORCE_PANIC_CHAR
+	hex "TTY force crash characters"
+	default 0x1F
+	depends on TTY_FORCE_PANIC
+	---help---
+		Use Ctrl-? 0x1F inputs to determine whether panic system
+
+config TTY_FORCE_PANIC_REPEAT_COUNT
+	int "TTY force crash repeat count"
+	default 1
+	depends on TTY_FORCE_PANIC
+	---help---
+		Repeat how many times the panic char to determine whether panic system
+
+config TTY_SIGINT
+	bool "Support SIGINT"
+	default n
+	---help---
+		Whether support Ctrl-c/x event.  Enabled automatically for console
+		devices.  May be enabled for other serial devices using the ISIG bit
+		in the Termios c_lflag.
+
+		REVISIT:  This implementation is compliant but incomplete.  The
+		c_lflag ISIG bit normally enables/disables INTR, QUIT, SUSP, and
+		DSUSP character processing.  The relationship between these names,
+		standard signals, and typical key presses are as follows:
+
+		  INTR   SIGINT   Ctrl-C  ETX(0x03) Interrupt
+		  KILL   SIGKILL  Ctrl-U  NAK(0x15) Kill
+		  QUIT   SIGQUIT  Ctrl-\  FS (0x1c) Quit
+		  SUSP   SIGTSTP  Ctrl-Z  SUB(0x1a) Suspend
+		  DSUSP  SIGTSTP  Ctrl-Y  EM (0x19) Delayed suspend
+
+		Additional requirements:
+		  - SIGKILL cannot be caught or ignored.  Compared to SIGTERM which
+		    is like SIGKILL but can be caught or ignored.
+		  - SIGQUIT is like SIGINT but causes generation of a core dump
+		  - SIGSTOP cannot be caught or ignored.  SIGTSTP is like SIGSTOP but
+		    can be caught or ignored.
+		  - The delayed suspend (DSUSD) is like suspend (SUPD), except that
+		    the suspension is delayed until the next read operation
+
+		Ctrl-D (EOT 0x04) normally should not generate a signal but, instead,
+		should cause an immediate End-of-File result.
+
+config TTY_SIGINT_CHAR
+	hex "Serial parse SIGINT characters"
+	default 0x03 if SERIAL_CONSOLE
+	default 0x04 if !SERIAL_CONSOLE
+	depends on TTY_SIGINT
+	---help---
+		Use ASCII 0x03 (Ctrl-c) or 0x04 (ctrl-d) inputs to determine whether
+		to send a SIGINT event.  Other characters may also be selected.
+
+		REVISIT:  Traditionally Ctrl-C would generate SIGINT.  Ctrl-D is the
+		End-of-File character that should close the stream.
+
+config TTY_SIGTSTP
+	bool "Support SIGTSTP"
+	default n
+	---help---
+		Whether support Ctrl-z event.  Enabled automatically for console
+		devices.  May be enabled for other serial devices using the ISIG bit
+		in the Termios c_lflag.
+
+		REVISIT:  This implementation is compliant but incomplete.  The
+		c_lflag ISIG bit normally enables/disables INTR, QUIT, SUSP, and
+		DSUSP character processing.  The relationship between these names,
+		standard signals, and typical key presses are as follows:
+
+		  INTR   SIGINT   Ctrl-C  ETX(0x03) Interrupt
+		  KILL   SIGKILL  Ctrl-U  NAK(0x15) Kill
+		  QUIT   SIGQUIT  Ctrl-\  FS (0x1c) Quit
+		  SUSP   SIGTSTP  Ctrl-Z  SUB(0x1a) Suspend
+		  DSUSP  SIGTSTP  Ctrl-Y  EM (0x19) Delayed suspend
+
+		Additional requirements:
+		  - SIGKILL cannot be caught or ignored.  Compared to SIGTERM which
+		    is like SIGKILL but can be caught or ignored.
+		  - SIGQUIT is like SIGINT but causes generation of a core dump
+		  - SIGSTOP cannot be caught or ignored.  SIGTSTP is like SIGSTOP but
+		    can be caught or ignored.
+		  - The delayed suspend (DSUSD) is like suspend (SUPD), except that
+		    the suspension is delayed until the next read operation
+
+config TTY_SIGTSTP_CHAR
+	hex "Serial parse SIGTSTP characters"
+	default 0x1a
+	depends on TTY_SIGTSTP
+	---help---
+		Use ASCII 0x1a (Ctrl-z) input to determine whether to send a SIGTSTP
+		event.  Other characters may also be selected.
 
 #
 # Serial console selection
@@ -606,106 +485,110 @@ config SERIAL_TERMIOS
 
 choice
 	prompt "Serial console"
-	default NO_SERIAL_CONSOLE if !ARCH_HAVE_OTHER_UART && !OTHER_UART_SERIALDRIVER
-	default OTHER_SERIAL_CONSOLE if ARCH_HAVE_OTHER_UART || OTHER_UART_SERIALDRIVER
+	default NO_SERIAL_CONSOLE if !OTHER_UART_SERIALDRIVER
+	default OTHER_SERIAL_CONSOLE if OTHER_UART_SERIALDRIVER
 	depends on MCU_SERIAL
 	#depends on DEV_CONSOLE - We may have serial console with no file system at all
 
 config UART_SERIAL_CONSOLE
 	bool "UART"
-	depends on ARCH_HAVE_UART ||  UART_SERIALDRIVER
+	depends on UART_SERIALDRIVER
 	select SERIAL_CONSOLE
 
 config UART0_SERIAL_CONSOLE
 	bool "UART0"
-	depends on ARCH_HAVE_UART0
+	depends on UART0_SERIALDRIVER
 	select SERIAL_CONSOLE
 
 config USART0_SERIAL_CONSOLE
 	bool "USART0"
-	depends on USART0_ISUART
+	depends on USART0_SERIALDRIVER
 	select SERIAL_CONSOLE
 
 config UART1_SERIAL_CONSOLE
 	bool "UART1"
-	depends on ARCH_HAVE_UART1
+	depends on UART1_SERIALDRIVER
 	select SERIAL_CONSOLE
 
 config USART1_SERIAL_CONSOLE
 	bool "USART1"
-	depends on USART1_ISUART
+	depends on USART1_SERIALDRIVER
 	select SERIAL_CONSOLE
 
 config UART2_SERIAL_CONSOLE
 	bool "UART2"
-	depends on ARCH_HAVE_UART2
+	depends on UART2_SERIALDRIVER
 	select SERIAL_CONSOLE
 
 config USART2_SERIAL_CONSOLE
 	bool "USART2"
-	depends on USART2_ISUART
+	depends on USART2_SERIALDRIVER
 	select SERIAL_CONSOLE
 
 config UART3_SERIAL_CONSOLE
 	bool "UART3"
-	depends on ARCH_HAVE_UART3
+	depends on UART3_SERIALDRIVER
 	select SERIAL_CONSOLE
 
 config USART3_SERIAL_CONSOLE
 	bool "USART3"
-	depends on ARCH_HAVE_USART3
+	depends on USART3_SERIALDRIVER
 	select SERIAL_CONSOLE
 
 config UART4_SERIAL_CONSOLE
 	bool "UART4"
-	depends on ARCH_HAVE_UART4
+	depends on UART4_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config USART4_SERIAL_CONSOLE
 	bool "USART4"
-	depends on USART4_ISUART
+	depends on USART4_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config UART5_SERIAL_CONSOLE
 	bool "UART5"
-	depends on ARCH_HAVE_UART5
+	depends on UART5_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config USART5_SERIAL_CONSOLE
 	bool "USART5"
-	depends on USART5_ISUART
+	depends on USART5_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config UART6_SERIAL_CONSOLE
 	bool "UART6"
-	depends on ARCH_HAVE_UART6
+	depends on UART6_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config USART6_SERIAL_CONSOLE
 	bool "USART6"
-	depends on USART6_ISUART
+	depends on USART6_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config UART7_SERIAL_CONSOLE
 	bool "UART7"
-	depends on ARCH_HAVE_UART7
+	depends on UART7_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config USART7_SERIAL_CONSOLE
 	bool "USART7"
-	depends on USART7_ISUART
+	depends on USART7_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config UART8_SERIAL_CONSOLE
 	bool "UART8"
-	depends on ARCH_HAVE_UART8
+	depends on UART8_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config USART8_SERIAL_CONSOLE
 	bool "USART8"
-	depends on USART8_ISUART
+	depends on USART8_SERIALDRIVER
+	select SERIAL_CONSOLE
 
-config SCI0_SERIAL_CONSOLE
-	bool "SCI0"
-	depends on ARCH_HAVE_SCI0
-
-config SCI1_SERIAL_CONSOLE
-	bool "SCI1"
-	depends on ARCH_HAVE_SCI1
-
-config OTHER_SERIAL_CONSOLE
-	bool "Other serial console"
+config USART9_SERIAL_CONSOLE
+	bool "USART8"
+	depends on USART9_SERIALDRIVER
+	select SERIAL_CONSOLE
 
 config LPUART0_SERIAL_CONSOLE
 	bool "LPUART0"
@@ -727,6 +610,135 @@ config LPUART3_SERIAL_CONSOLE
 	depends on LPUART3_SERIALDRIVER
 	select SERIAL_CONSOLE
 
+config LPUART4_SERIAL_CONSOLE
+	bool "LPUART4"
+	depends on LPUART4_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART5_SERIAL_CONSOLE
+	bool "LPUART5"
+	depends on LPUART5_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART6_SERIAL_CONSOLE
+	bool "LPUART6"
+	depends on LPUART6_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART7_SERIAL_CONSOLE
+	bool "LPUART7"
+	depends on LPUART7_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART8_SERIAL_CONSOLE
+	bool "LPUART8"
+	depends on LPUART8_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART9_SERIAL_CONSOLE
+	bool "LPUART9"
+	depends on LPUART9_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART10_SERIAL_CONSOLE
+	bool "LPUART10"
+	depends on LPUART10_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART11_SERIAL_CONSOLE
+	bool "LPUART11"
+	depends on LPUART11_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART12_SERIAL_CONSOLE
+	bool "LPUART12"
+	depends on LPUART12_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART13_SERIAL_CONSOLE
+	bool "LPUART13"
+	depends on LPUART13_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART14_SERIAL_CONSOLE
+	bool "LPUART14"
+	depends on LPUART14_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config LPUART15_SERIAL_CONSOLE
+	bool "LPUART15"
+	depends on LPUART15_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI0_SERIAL_CONSOLE
+	bool "SCI0"
+	depends on SCI0_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI1_SERIAL_CONSOLE
+	bool "SCI1"
+	depends on SCI1_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI2_SERIAL_CONSOLE
+	bool "SCI2"
+	depends on SCI2_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI3_SERIAL_CONSOLE
+	bool "SCI3"
+	depends on SCI3_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI4_SERIAL_CONSOLE
+	bool "SCI4"
+	depends on SCI4_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI5_SERIAL_CONSOLE
+	bool "SCI5"
+	depends on SCI5_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI6_SERIAL_CONSOLE
+	bool "SCI6"
+	depends on SCI6_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI7_SERIAL_CONSOLE
+	bool "SCI7"
+	depends on SCI7_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI8_SERIAL_CONSOLE
+	bool "SCI8"
+	depends on SCI8_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI9_SERIAL_CONSOLE
+	bool "SCI9"
+	depends on SCI9_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI10_SERIAL_CONSOLE
+	bool "SCI10"
+	depends on SCI10_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI11_SERIAL_CONSOLE
+	bool "SCI11"
+	depends on SCI11_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config SCI12_SERIAL_CONSOLE
+	bool "SCI12"
+	depends on SCI12_SERIALDRIVER
+	select SERIAL_CONSOLE
+
+config OTHER_SERIAL_CONSOLE
+	bool "Other serial console"
+	select SERIAL_CONSOLE
+
 config NO_SERIAL_CONSOLE
 	bool "No serial console"
 
@@ -737,7 +749,7 @@ endchoice
 #
 
 menu "UART Configuration"
-	depends on ARCH_HAVE_UART || UART_SERIALDRIVER
+	depends on UART_SERIALDRIVER
 
 config UART_RXBUFSIZE
 	int "Receive buffer size"
@@ -792,1139 +804,201 @@ config UART_OFLOWCONTROL
 	---help---
 		Enable UART CTS flow control
 
-endmenu
-
-menu "UART0 Configuration"
-	depends on ARCH_HAVE_UART0
-
-config UART0_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config UART0_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config UART0_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the UART.
-
-config UART0_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config UART0_PARITY
-	int "Parity setting"
-	range 0 2
-	default 0
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config UART0_2STOP
-	int "use 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config UART0_IFLOWCONTROL
-	bool "UART0 RTS flow control"
+config UART_TXDMA
+	bool "UART Tx DMA support"
 	default n
-	select SERIAL_IFLOWCONTROL
+	select SERIAL_TXDMA
 	---help---
-		Enable UART0 RTS flow control
+		Enable Tx DMA transfers on UART
 
-config UART0_OFLOWCONTROL
-	bool "UART0 CTS flow control"
+config UART_RXDMA
+	bool "UART Rx DMA support"
 	default n
-	select SERIAL_OFLOWCONTROL
+	select SERIAL_RXDMA
 	---help---
-		Enable UART0 CTS flow control
+		Enable Rx DMA transfers on UART
 
 endmenu
 
-source drivers/serial/Kconfig-uart
-source drivers/serial/Kconfig-lpuart
+source "drivers/serial/Kconfig-uart"
+source "drivers/serial/Kconfig-lpuart"
+source "drivers/serial/Kconfig-usart"
+source "drivers/serial/Kconfig-sci"
 
-menu "USART0 Configuration"
-	depends on USART0_ISUART
-
-config USART0_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config USART0_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config USART0_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the USART.
-
-config USART0_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config USART0_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config USART0_2STOP
-	int "use 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config USART0_IFLOWCONTROL
-	bool "USART0 RTS flow control"
+config RAM_UART
+	bool "RAM uart driver"
+	select SERIAL_RXDMA
+	select SERIAL_TXDMA
 	default n
-	select SERIAL_IFLOWCONTROL
 	---help---
-		Enable USART0 RTS flow control
+		It uses the memory block in the kernel as a communication medium,
+		which can communicate between different processes or different CPUs
 
-config USART0_OFLOWCONTROL
-	bool "USART0 CTS flow control"
+if RAM_UART
+config RAM_UART_POLLING_INTERVAL
+	int "RAM uart buffer check interval"
+	default USEC_PER_TICK
+	---help---
+		Interval in milliseconds to check for new data on uart ram buffer
+
+config RAM_UART_BUFSIZE
+	int "RAM_UART buffer size"
+	default 1024
+	---help---
+		The size of the RAM_UART buffer in bytes
+
+config RAM_UART0
+	bool "RAM uart driver 0"
 	default n
-	select SERIAL_OFLOWCONTROL
 	---help---
-		Enable USART0 CTS flow control
+		RAM_UART device 0
 
-endmenu
-
-menu "UART1 Configuration"
-	depends on ARCH_HAVE_UART1
-
-config UART1_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config UART1_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config UART1_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the UART.
-
-config UART1_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config UART1_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config UART1_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config UART1_IFLOWCONTROL
-	bool "UART1 RTS flow control"
+config RAM_UART0_SLAVE
+	bool "RAM_UART0 is slave"
+	depends on RAM_UART0
 	default n
-	select SERIAL_IFLOWCONTROL
 	---help---
-		Enable UART1 RTS flow control
+		The RAM uart0 is slave
 
-config UART1_OFLOWCONTROL
-	bool "UART1 CTS flow control"
+config RAM_UART1
+	bool "RAM uart driver 1"
 	default n
-	select SERIAL_OFLOWCONTROL
 	---help---
-		Enable UART1 CTS flow control
+		RAM uart device 1
 
-endmenu
-
-menu "USART1 Configuration"
-	depends on USART1_ISUART
-
-config USART1_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config USART1_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config USART1_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the USART.
-
-config USART1_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config USART1_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config USART1_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config USART1_IFLOWCONTROL
-	bool "USART1 RTS flow control"
+config RAM_UART1_SLAVE
+	bool "RAM uart1 is slave"
+	depends on RAM_UART1
 	default n
-	select SERIAL_IFLOWCONTROL
 	---help---
-		Enable USART1 RTS flow control
+		The RAM uart1 is slave
 
-config USART1_OFLOWCONTROL
-	bool "USART1 CTS flow control"
+config RAM_UART2
+	bool "RAM uart driver 2"
 	default n
-	select SERIAL_OFLOWCONTROL
 	---help---
-		Enable USART1 CTS flow control
+		RAM uart device 2
 
-endmenu
-
-menu "UART2 Configuration"
-	depends on ARCH_HAVE_UART2
-
-config UART2_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config UART2_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config UART2_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the UART.
-
-config UART2_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config UART2_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config UART2_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config UART2_IFLOWCONTROL
-	bool "UART2 RTS flow control"
+config RAM_UART2_SLAVE
+	bool "RAM uart2 is slave"
+	depends on RAM_UART2
 	default n
-	select SERIAL_IFLOWCONTROL
 	---help---
-		Enable UART2 RTS flow control
+		The RAM uart2 is slave
 
-config UART2_OFLOWCONTROL
-	bool "UART2 CTS flow control"
+config RAM_UART_BUFFER_SECTION
+	string "RAM uart buffer section name"
+	depends on RAM_UART0 || RAM_UART1 || RAM_UART2
+	---help---
+		The name of the section in the kernel memory block
+
+endif # RAM_UART
+
+menuconfig PSEUDOTERM
+	bool "Pseudo-Terminal (PTY) support"
 	default n
-	select SERIAL_OFLOWCONTROL
+	select PIPES
+	select ARCH_HAVE_SERIAL_TERMIOS
 	---help---
-		Enable UART2 CTS flow control
+		Enable support support for master and slave pseudo-terminal devices.
 
-endmenu
+if PSEUDOTERM
 
-menu "USART2 Configuration"
-	depends on USART2_ISUART
+config PSEUDOTERM_SUSV1
+	bool "SUSv1 style"
+	default y
+	---help---
+		PTYs as specified in the Single Unix Specification (SUSv1).
 
-config USART2_RXBUFSIZE
-	int "Receive buffer size"
+		Master: /dev/ptmx (multiplexor)
+		Slave: /dev/pts/N
+
+		Where N is the minor number
+
+config PSEUDOTERM_RXBUFSIZE
+	int "Pseudo-Terminal Rx buffer size"
 	default 256
 	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
+		Master-to-slave pipe buffer size.  Default: 256
 
-config USART2_TXBUFSIZE
-	int "Transmit buffer size"
+config PSEUDOTERM_TXBUFSIZE
+	int "Pseudo-Terminal Tx buffer size"
 	default 256
 	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
+		Slave-to-master pipe buffer size.  Default: 256
 
-config USART2_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the USART.
+endif # PSEUDOTERM
 
-config USART2_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config USART2_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config USART2_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config USART2_IFLOWCONTROL
-	bool "USART2 RTS flow control"
+menuconfig UART_BTH4
+	bool "BT H4 UART Pseudo Device"
 	default n
-	select SERIAL_IFLOWCONTROL
+	depends on DRIVERS_BLUETOOTH
 	---help---
-		Enable USART2 RTS flow control
+		Enable support for Bluetooth H4 UART Pseudo Device(eg. /dev/ttyHCI).
+		This instantiates a serial-like interface over an existing bluetooth
+		controller via HCI interface. Useful for external Bluetooth
+		stacks working this way instead of the socket based interface.
 
-config USART2_OFLOWCONTROL
-	bool "USART2 CTS flow control"
+if UART_BTH4
+
+config UART_BTH4_TXBUFSIZE
+	int "BT H4 UART TX Buffer Size"
+	default 2048
+	---help---
+		H4 UART TX Buffer Size.  Default: 2048
+
+config UART_BTH4_RXBUFSIZE
+	int "BT H4 UART RX Buffer Size"
+	default 8096
+	---help---
+		H4 UART RX Buffer Size.  Default: 8096
+
+config UART_BTH4_NPOLLWAITERS
+	int "Number Of Poll Threads"
+	default 2
+	---help---
+		Maximum number of threads than can be waiting for POLL events.
+		Default: 2
+
+endif # UART_BTH4
+
+menuconfig UART_BTH5
+	bool "BT H5 UART Pseudo Device"
 	default n
-	select SERIAL_OFLOWCONTROL
+	depends on DRIVERS_BLUETOOTH
 	---help---
-		Enable USART2 CTS flow control
+		Enable support for Bluetooth H5 UART Pseudo Device(eg. /dev/ttyHCI).
+		This instantiates a serial-like interface over an existing bluetooth
+		controller via HCI interface. Useful for external Bluetooth
+		stacks working this way instead of the socket based interface.
 
-endmenu
+if UART_BTH5
 
-menu "UART3 Configuration"
-	depends on ARCH_HAVE_UART3
-
-config UART3_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config UART3_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config UART3_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the UART.
-
-config UART3_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config UART3_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config UART3_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config UART3_IFLOWCONTROL
-	bool "UART3 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable UART3 RTS flow control
-
-config UART3_OFLOWCONTROL
-	bool "UART3 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable UART3 CTS flow control
-
-endmenu
-
-menu "USART3 Configuration"
-	depends on USART3_ISUART
-
-config USART3_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config USART3_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config USART3_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the USART.
-
-config USART3_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config USART3_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config USART3_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config USART3_IFLOWCONTROL
-	bool "USART3 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable USART3 RTS flow control
-
-config USART3_OFLOWCONTROL
-	bool "USART3 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable USART3 CTS flow control
-
-endmenu
-
-menu "UART4 Configuration"
-	depends on ARCH_HAVE_UART4
-
-config UART4_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config UART4_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config UART4_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the UART.
-
-config UART4_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config UART4_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config UART4_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config UART4_IFLOWCONTROL
-	bool "UART4 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable UART4 RTS flow control
-
-config UART4_OFLOWCONTROL
-	bool "UART4 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable UART4 CTS flow control
-
-endmenu
-
-menu "USART4 Configuration"
-	depends on USART4_ISUART
-
-config USART4_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config USART4_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config USART4_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the USART.
-
-config USART4_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config USART4_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config USART4_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config USART4_IFLOWCONTROL
-	bool "USART4 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable USART4 RTS flow control
-
-config USART4_OFLOWCONTROL
-	bool "USART4 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable USART4 CTS flow control
-
-endmenu
-
-menu "UART5 Configuration"
-	depends on ARCH_HAVE_UART5
-
-config UART5_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config UART5_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config UART5_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the UART.
-
-config UART5_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config UART5_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config UART5_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config UART5_IFLOWCONTROL
-	bool "UART5 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable UART5 RTS flow control
-
-config UART5_OFLOWCONTROL
-	bool "UART5 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable UART5 CTS flow control
-
-endmenu
-
-menu "USART5 Configuration"
-	depends on USART5_ISUART
-
-config USART5_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config USART5_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config USART5_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the USART.
-
-config USART5_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config USART5_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config USART5_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config USART5_IFLOWCONTROL
-	bool "USART5 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable USART5 RTS flow control
-
-config USART5_OFLOWCONTROL
-	bool "USART5 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable USART5 CTS flow control
-
-endmenu
-
-menu "USART6 Configuration"
-	depends on USART6_ISUART
-
-config USART6_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config USART6_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config USART6_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the USART.
-
-config USART6_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config USART6_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
+config UART_BTH5_TXBUFSIZE
+	int "BT H5 UART TX Buffer Size"
+	default 2048
 	---help---
-		0=no parity, 1=odd parity, 2=even parity
+		H5 UART TX Buffer Size.  Default: 2048
 
-config USART6_2STOP
-	int "Uses 2 stop bits"
-	default 0
+config UART_BTH5_TXWIN
+	int "BT H5 Uart TX Window Size"
+	default 4
 	---help---
-		1=Two stop bits
+		H5 UART TX Window Size.  Default: 4
 
-config USART6_IFLOWCONTROL
-	bool "UART6 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
+config UART_BTH5_RXBUFSIZE
+	int "BT H5 Uart RX Buffer Size"
+	default 8096
 	---help---
-		Enable USART6 RTS flow control
+		H5 UART RX Buffer Size.  Default: 8096
 
-config USART6_OFLOWCONTROL
-	bool "USART6 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
+config UART_BTH5_NPOLLWAITERS
+	int "Number Of Poll Threads"
+	default 2
 	---help---
-		Enable USART6 CTS flow control
+		Maximum number of threads than can be waiting for POLL events.
+		Default: 2
 
-endmenu
-
-menu "UART6 Configuration"
-	depends on ARCH_HAVE_UART6
-
-config UART6_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config UART6_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config UART6_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the UART.
-
-config UART6_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config UART6_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config UART6_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config UART6_IFLOWCONTROL
-	bool "UART6 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable UART6 RTS flow control
-
-config UART6_OFLOWCONTROL
-	bool "UART6 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable UART6 CTS flow control
-
-endmenu
-
-menu "USART7 Configuration"
-	depends on USART7_ISUART
-
-config USART7_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config USART7_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config USART7_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the USART.
-
-config USART7_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config USART7_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config USART7_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config USART7_IFLOWCONTROL
-	bool "USART7 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable USART7 RTS flow control
-
-config USART7_OFLOWCONTROL
-	bool "USART7 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable USART7 CTS flow control
-
-endmenu
-
-menu "UART7 Configuration"
-	depends on ARCH_HAVE_UART7
-
-config UART7_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config UART7_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config UART7_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the UART.
-
-config UART7_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config UART7_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config UART7_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config UART7_IFLOWCONTROL
-	bool "UART7 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable UART7 RTS flow control
-
-config UART7_OFLOWCONTROL
-	bool "UART7 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable UART7 CTS flow control
-
-endmenu
-
-menu "USART8 Configuration"
-	depends on USART8_ISUART
-
-config USART8_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config USART8_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config USART8_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the USART.
-
-config USART8_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config USART8_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config USART8_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config USART8_IFLOWCONTROL
-	bool "USART8 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable USART8 RTS flow control
-
-config USART8_OFLOWCONTROL
-	bool "USART8 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable USART8 CTS flow control
-
-endmenu
-
-menu "UART8 Configuration"
-	depends on ARCH_HAVE_UART8
-
-config UART8_RXBUFSIZE
-	int "Receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config UART8_TXBUFSIZE
-	int "Transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config UART8_BAUD
-	int "BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the UART.
-
-config UART8_BITS
-	int "Character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config UART8_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config UART8_2STOP
-	int "Uses 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-config UART8_IFLOWCONTROL
-	bool "UART8 RTS flow control"
-	default n
-	select SERIAL_IFLOWCONTROL
-	---help---
-		Enable UART8 RTS flow control
-
-config UART8_OFLOWCONTROL
-	bool "UART8 CTS flow control"
-	default n
-	select SERIAL_OFLOWCONTROL
-	---help---
-		Enable UART8 CTS flow control
-
-endmenu
-
-menu "SCI0 Configuration"
-	depends on ARCH_HAVE_SCI0
-
-config SCI0_RXBUFSIZE
-	int "SCI0 receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config SCI0_TXBUFSIZE
-	int "SCI0 transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config SCI0_BAUD
-	int "SCI0 BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the SCI.
-
-config SCI0_BITS
-	int "SCI0 character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config SCI0_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config SCI0_2STOP
-	int "SCI0 use 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
-
-endmenu # SCI0 Configuration
-
-menu "SCI1 Configuration"
-	depends on ARCH_HAVE_SCI1
-
-config SCI1_RXBUFSIZE
-	int "SCI1 receive buffer size"
-	default 256
-	---help---
-		Characters are buffered as they are received. This specifies
-		the size of the receive buffer.
-
-config SCI1_TXBUFSIZE
-	int "SCI1 transmit buffer size"
-	default 256
-	---help---
-		Characters are buffered before being sent.  This specifies
-		the size of the transmit buffer.
-
-config SCI1_BAUD
-	int "SCI1 BAUD rate"
-	default 115200
-	---help---
-		The configured BAUD of the SCI.
-
-config SCI1_BITS
-	int "SCI1 character size"
-	default 8
-	---help---
-		The number of bits.  Must be either 7 or 8.
-
-config SCI1_PARITY
-	int "Parity setting"
-	default 0
-	range 0 2
-	---help---
-		0=no parity, 1=odd parity, 2=even parity
-
-config SCI1_2STOP
-	int "SCI1 use 2 stop bits"
-	default 0
-	---help---
-		1=Two stop bits
+endif # UART_BTH5
 
-endmenu # SCI1 Configuration
+endif # SERIAL
