@@ -15,6 +15,7 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
+
 /****************************************************************************
  * apps/testing/ostest/ostest_main.c
  *
@@ -695,7 +696,11 @@ static void stdio_test(void)
  * ostest_main
  ****************************************************************************/
 
+#ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char **argv)
+#else
+int ostest_main(int argc, FAR char **argv)
+#endif
 {
 #ifdef CONFIG_TESTING_OSTEST_WAITRESULT
 	int ostest_result = ERROR;
