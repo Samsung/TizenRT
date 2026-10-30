@@ -87,11 +87,7 @@ int utils_free(int argc, char **args)
 		return ERROR;
 	}
 #else
-#ifdef CONFIG_CAN_PASS_STRUCTS
 	data = mallinfo();
-#else
-	(void)mallinfo(&data);
-#endif
 #endif
 	printf("              total       used       free    largest\n");
 	printf(" Mem:	%11d%11d%11d%11d\n", data.arena, data.uordblks, data.fordblks, data.mxordblk);

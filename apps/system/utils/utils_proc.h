@@ -22,6 +22,11 @@
 #include <tinyara/config.h>
 #include <dirent.h>
 
+#ifdef CONFIG_FS_PROCFS
+#define PROCFS_FSTYPE "procfs"
+#define PROCFS_MOUNT_POINT "/proc"
+#endif
+
 enum proc_stat_data_e {
 	PROC_STAT_PID = 0,
 	PROC_STAT_PPID,

@@ -59,7 +59,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include <tinyara/time.h>
+#include <tinyara/clock.h>
 
 /****************************************************************************
  * Definitions
