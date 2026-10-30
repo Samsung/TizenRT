@@ -15,86 +15,46 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
+/****************************************************************************
  * mm/umm_heap/umm_initialize.c
  *
- *   Copyright (C) 2013-2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
+
 #include <assert.h>
+
+#include <tinyara/arch.h>
 #include <tinyara/mm/mm.h>
 
-/************************************************************************
- * Pre-processor definition
- ************************************************************************/
+#include "umm_heap/umm_heap.h"
 
-/************************************************************************
- * Private Types
- ************************************************************************/
-
-/************************************************************************
- * Public Data
- ************************************************************************/
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-/* g_cur_app will contain the id of the currently executing application.
- * It will be used to index into the app_heap_table to get the heap pointer
- * for the currently executing application. This variable will be placed at
- * the first byte of the data section. The value contained in this variable
- * will be used only by the common binary. The cur_app will be updated by
- * the kernel during every context switch.
- */
-uint32_t g_cur_app __attribute__((section(".curapp")));
-
-/* The app_heap_table will contain pointers to the heap of each application.
- * These pointers will be populated by the loader at the time of loading the
- * application and creating its heap.
- */
-struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1] __attribute__((section(".appheaptable")));
-#endif
-
-/************************************************************************
- * Private Functions
- ************************************************************************/
-
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Name: umm_initialize
  *
  * Description:
@@ -102,22 +62,24 @@ struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1] __attribute__((section("
  *   function will initialize the user heap.
  *
  *   CONFIG_BUILD_FLAT:
- *     There is only kernel mode "blob" containing both containing both
- *     kernel and application code.  There is only one heap that use is
- *     used by both the kernel and application logic.
+ *     There is only kernel mode "blob" containing both kernel and
+ *     application code. Depending upon the setting of CONFIG_MM_KERNEL_HEAP
+ *     there may be a single shared heap (used by both the kernel and
+ *     application logic) or there may be separate (although unprotected)
+ *     kernel and user heaps.
  *
- *     In this configuration, this function is called early in os_start()
+ *     In this configuration, this function is called early in nx_start()
  *     to initialize the common heap.
  *
  *   CONFIG_BUILD_PROTECTED
  *     In this configuration, there are two "blobs", one containing
  *     protected kernel logic and one containing unprotected application
  *     logic.  Depending upon the setting of CONFIG_MM_KERNEL_HEAP there
- *     may be only a signal shared heap, much as with CONFIG_BUILD_FLAT.
+ *     may be only a single shared heap, much as with CONFIG_BUILD_FLAT.
  *     Or there may be separate protected/kernel and unprotected/user
  *     heaps.
  *
- *     In either case, this function is still called early in os_start()
+ *     In either case, this function is still called early in nx_start()
  *     to initialize the user heap.
  *
  *   CONFIG_BUILD_KERNEL
@@ -130,16 +92,72 @@ struct mm_heap_s *g_app_heap_table[CONFIG_NUM_APPS + 1] __attribute__((section("
  *     This function is not called at all.  Rather, this function is called
  *     when each user process is created before the first allocation is made.
  *
- * Parameters:
+ * Input Parameters:
  *   heap_start - Address of the beginning of the (initial) memory region
  *   heap_size  - The size (in bytes) if the (initial) memory region.
  *
- * Return Value:
- *   OK on success, negative errno on failure.
+ * Returned Value:
+ *   None
  *
- ************************************************************************/
+ ****************************************************************************/
 
-int umm_initialize(FAR void *heap_start, size_t heap_size)
+void umm_initialize(FAR void *heap_start, size_t heap_size)
 {
-	return mm_initialize(BASE_HEAP, heap_start, heap_size);
+	struct mm_heap_config_s config;
+
+	memset(&config, 0, sizeof(config));
+	config.start = heap_start;
+	config.size  = heap_size;
+#ifdef CONFIG_BUILD_KERNEL
+	USR_HEAP = mm_initialize_pool(&config, NULL);
+#else
+	config.name = "Umem";
+	USR_HEAP = mm_initialize_pool(&config, NULL);
+#endif
 }
+
+/****************************************************************************
+ * Name: umm_try_initialize
+ *
+ * Description:
+ *   Allocate and initialize the user heap if not yet.
+ *
+ * Input Parameters:
+ * None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BUILD_KERNEL
+void umm_try_initialize(void)
+{
+	uintptr_t allocbase;
+	size_t npages = 1;
+
+	/* Return if the user heap is already initialized. */
+
+	if (USR_HEAP != NULL) {
+		return;
+	}
+
+#ifdef CONFIG_MM_KASAN
+	/* we have to commit all memory for the shadow region */
+
+	npages = CONFIG_ARCH_HEAP_NPAGES;
+#endif
+
+	/* If we provide a zero brkaddr to pgalloc(),
+	 * it will create the first block in the correct virtual address
+	 * space and return the start address of that block.
+	 */
+
+	allocbase = pgalloc(0, npages);
+	DEBUGASSERT(allocbase != 0);
+
+	/* Let umm_initialize do the real work. */
+
+	umm_initialize((FAR void *)allocbase, npages * CONFIG_MM_PGSIZE);
+}
+#endif

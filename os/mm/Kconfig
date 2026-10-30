@@ -3,51 +3,253 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config MM_KERNEL_HEAP
-	bool
-	default y
+choice
+	prompt "Build heap manager"
+	default MM_DEFAULT_MANAGER
 
-config REALLOC_DISABLE_NEIGHBOR_EXTENSION
-	bool "Disable Realloc Neighbor Extension"
+config MM_DEFAULT_MANAGER
+	bool "Default heap manager"
+	---help---
+		NuttX original memory manager strategy.
+
+config MM_TLSF_MANAGER
+	bool "TLSF heap manager"
+	---help---
+		TLSF memory manager strategy.
+
+config MM_CUSTOMIZE_MANAGER
+	bool "Customized heap manager"
+	---help---
+		Customized memory manager policy. The build will fail
+		if the MM heap module not defined by customer.
+
+endchoice
+
+config MM_UMM_CUSTOMIZE_MANAGER
+	bool "Customized heap manager"
 	default n
 	---help---
-		If enabled, realloc will not expand from old node to neighbor freenode.
-		Instead, realloc will do "malloc new node, memcpy, free old node" which is safe,
-		but waste of time and memory space. And it will be one of debugging
-		features, especially when you modify existing malloc/free logic.
+		Customized memory manager policy. The build will fail
+		if the umm heap module not defined by customer.
 
-config KMM_REGIONS
-	int "Number of kernel memory regions"
+config MM_KERNEL_HEAP
+	bool "Kernel dedicated heap"
+	default BUILD_PROTECTED || BUILD_KERNEL
+	---help---
+		Under Flat build, this option will enable a separate heap for the kernel.
+		By separating the kernel and userspace heaps, the user is granted more
+		control over the heaps placement within the memory hierarchy, which is
+		specially useful for microcontrollers that provide External RAM.
+		Besides segregating the kernel and userspace allocations, this feature
+		does not prevent the userspace from accessing the kernel heap.
+
+		As for Protected and Kernel builds, this feature partitions heap memory
+		into two parts:
+		(1) a protected, kernel-mode heap accessible only by the NuttX kernel,
+		and (2) an unprotected user-mode heap for use by applications.
+		If you are only interested in protecting the kernel from read access,
+		then this option is not necessary. If you wish to secure the kernel data
+		as well, then this option should be selected.
+
+		The kernel heap size that is used is provided a a platform-specific
+		up_allocate_kheap() interface.  This configuration setting is made
+		available to that platform specific code.  However, the
+		up_allocate_kheap() interface may chose to ignore this setting if it
+		has a more appropriate heap allocation strategy.
+
+config MM_KERNEL_HEAPSIZE
+	int "Kernel heap size"
+	default 8192
+	depends on MM_KERNEL_HEAP
+	---help---
+		This is the size of the a protected, kernel-mode heap (in bytes).
+		The remaining of available memory is given to the unprotected
+		user-mode heap.  This value may need to be aligned to units of the
+		size of the smallest memory protection region.
+
+config MM_DEFAULT_ALIGNMENT
+	int "Memory default alignment in bytes"
+	default 8
+	range 0 64
+	---help---
+		The memory default alignment in bytes, if this value is 0, the real
+		memory default alignment is equal to sizoef(uintptr), if this value
+		is not 0, this value must be 2^n and at least sizeof(uintptr).
+
+config MM_NODE_GUARDSIZE
+	int "Memory node guard size"
+	default 0
+	---help---
+		After it is enabled, the front and rear nodes will maintain a safety
+		distance of at least CONFIG_MM_NODE_GUARDSIZE.
+
+config MM_SMALL
+	bool "Small memory model"
+	default n
+	depends on MM_DEFAULT_MANAGER
+	---help---
+		Each memory allocation has a small allocation overhead.  The size
+		of that overhead is normally determined by the "width" of the
+		address support by the MCU.  MCUs that support 16-bit addressability
+		have smaller overhead than devices that support 32-bit addressability.
+		However, there are many MCUs that support 32-bit addressability *but*
+		have internal SRAM of size less than or equal to 64Kb.  In this case,
+		MM_SMALL can be defined so that those MCUs will also benefit
+		from the smaller, 16-bit-based allocation overhead.
+
+		WARNING:  This selection will also change the alignment of allocated
+		memory.  For example, on ARM memory will have 8-byte alignment by
+		default.  If MM_SMALL is selected, then allocated memory will have
+		only 4-byte alignment.  This may be important on some platforms where
+		64-bit data is in allocated structures and 8-byte alignment is required.
+
+config MM_REGIONS
+	int "Number of memory regions"
 	default 1
 	---help---
 		If the architecture includes multiple, non-contiguous regions of
-		memory to allocate from, KMM_REGIONS should be set to the number of
-		memory. Or if you want to use multiple kernel heap, KMM_REGIONS
-		should be set to the number of heaps.
+		memory to allocate from, this specifies the number of memory regions
+		that the memory manager must handle and enables the API
+		mm_addregion(heap, start, end);
 
-config KMM_NHEAPS
-	int "Number of kernel heaps"
-	default 1
+config MM_MAP_COUNT_MAX
+	int "The maximum number of memory map areas for each task"
+	default 1024
 	---help---
-		A number of kernel heap memory. If KMM_NHEAPS sets more than equal to 2,
-		it can be split for multi kernel heap.
-		You can refer to "https://github.com/Samsung/TizenRT/blob/master/docs/HowToUseMultiHeap.md"
+		The maximum number of memory map areas for each task.
 
-config KMM_FORCE_ALLOC_AT
-	bool "Force to alloc at specific mm heap for kernel"
+config MM_FILL_ALLOCATIONS
+	bool "Fill allocations with debug value"
 	default n
-	depends on KMM_NHEAPS != 1
-	depends on MM_KERNEL_HEAP
 	---help---
-		When Enable multi heap, it's possible that need to alloc memory from
-		specific heap for kernel
+		Fill all malloc() allocations with MM_ALLOC_MAGIC.
+		Fill all add_addregion() with MM_INIT_MAGIC.
+		Fill all free() with MM_FREE_MAGIC.
+		This helps detecting uninitialized variable errors.
 
-config KMM_FORCE_ALLOC_IDX
-	int "Heap index for kernel memory"
-	default 0
-	depends on KMM_FORCE_ALLOC_AT
+config MM_BACKTRACE
+	int "The depth of backtrace"
+	default -1
 	---help---
-		Index of the heap that need to alloc for kernel forcedly
+		Config the depth of backtrace in memory block by specified this
+		config: disable backtrace by -1, only record pid info by zero and
+		enable record backtrace info by 8(fixed depth).
+
+config MM_BACKTRACE_SKIP
+	int "The skip depth of backtrace"
+	depends on MM_BACKTRACE > 0
+	default 3
+
+config MM_BACKTRACE_DEFAULT
+	bool "Enable the backtrace record by default"
+	default n
+	depends on MM_BACKTRACE > 0
+
+config MM_BACKTRACE_SEQNO
+	bool "Record sequence number in memory block"
+	default y
+	depends on MM_BACKTRACE >= 0
+
+config MM_DUMP_ON_FAILURE
+	bool "Dump heap info on allocation failure"
+	default n
+	depends on DEBUG_MM
+
+config MM_DUMP_DETAILS_ON_FAILURE
+	bool "Dump all used memory blocks on allocation failure"
+	default n
+	depends on MM_DUMP_ON_FAILURE
+
+config MM_PANIC_ON_FAILURE
+	bool "Panic on allocation failure"
+	default n
+	depends on DEBUG_MM
+
+config MM_FREE_DELAYCOUNT_MAX
+	int "Maximum memory nodes can be delayed to free"
+	default 0
+	---help---
+		Set to 0 to disable the delayed free mechanism. Otherwise,
+		the value decides the maximum number of memory nodes that
+		will be delayed to free.
+
+config MM_HEAP_BIGGEST_COUNT
+	int "The largest malloc element dump count"
+	default 30
+	---help---
+		The dump support for largest allocated memory.
+		If too big, should take care of stack usage.
+		Define 0 to disable largest allocated element dump feature.
+
+config MM_HEAP_MEMPOOL_THRESHOLD
+	int "Threshold for malloc size to use multi-level mempool"
+	default -1
+	---help---
+		If the size of the memory requested by the user is less
+		than the threshold, the memory will be requested from the
+		multiple mempool by default.
+		 > 0 Enable pool feature, and set umm/kmm pool threshold size.
+		== 0 Enable pool feature, but disable the umm/kmm pool function.
+		 < 0 Disable pool feature.
+
+if MM_HEAP_MEMPOOL_THRESHOLD > 0
+
+config MM_HEAP_MEMPOOL_WAIT_RELEASE
+    bool "If wait for other tasks to release memory"
+    default n
+    ---help---
+        If the macro is set to true, when the memory pool fails to allocate
+        available memory, the current task will block and wait for other tasks
+        to release memory. Once memory is released by other tasks, the blocked
+        task will be awakened and re-attempt to allocate memory from
+        the memory pool.
+
+config MM_HEAP_MEMPOOL_EXPAND_SIZE
+	int "The expand size for each mempool in multiple mempool"
+	default 4096
+	---help---
+		This size describes the size of each expansion of each memory
+		pool with insufficient memory in the multi-level memory pool.
+
+config MM_HEAP_MEMPOOL_DICTIONARY_EXPAND_SIZE
+	int "The expand size for multiple mempool's dictionary"
+	default MM_HEAP_MEMPOOL_EXPAND_SIZE
+	---help---
+		This size describes the multiple mempool dictionary expand.
+
+config MM_HEAP_MEMPOOL_CHUNK_SIZE
+	int "The multiples pool chunk size"
+	default 0
+	---help---
+		This size describes the multiple mempool chunk size.
+
+config MM_MIN_BLKSIZE
+	int "Minimum memory block size"
+	default 0
+	---help---
+		Users can configure the minimum memory block size as needed
+
+endif # MM_HEAP_MEMPOOL_THRESHOLD > 0
+
+config ARCH_HAVE_HEAP2
+	bool
+	default n
+
+if ARCH_HAVE_HEAP2
+
+config HEAP2_BASE
+	hex "Start address of second user heap region"
+	default 0x00000000
+	---help---
+		The base address of the second heap region.
+
+config HEAP2_SIZE
+	int "Size of the second user heap region"
+	default 0
+	---help---
+		The size of the second heap region.
+
+endif # ARCH_HAVE_HEAP2
 
 config GRAN
 	bool "Enable Granule Allocator"
@@ -59,23 +261,14 @@ config GRAN
 		more losses of memory due to alignment and quantization waste.
 
 		NOTE: The current implementation also restricts the maximum
-		allocation size to 32 granaules.  That restriction could be
+		allocation size to 32 granules.  That restriction could be
 		eliminated with some additional coding effort.
 
-config GRAN_SINGLE
-	bool "Single Granule Allocator"
-	default n
-	depends on GRAN
-	---help---
-		Select if there is only one instance of the granule allocator (i.e.,
-		gran_initialize will be called only once. In this case, (1) there
-		are a few optimizations that can can be done and (2) the GRAN_HANDLE
-		is not needed.
+if GRAN
 
 config GRAN_INTR
 	bool "Interrupt level support"
 	default n
-	depends on GRAN
 	---help---
 		Normally mutual exclusive access to granule allocator data is assured
 		using a semaphore.  If this option is set then, instead, mutual
@@ -86,10 +279,12 @@ config GRAN_INTR
 config DEBUG_GRAN
 	bool "Granule Allocator Debug"
 	default n
-	depends on GRAN && DEBUG
+	depends on DEBUG_FEATURES
 	---help---
 		Just like DEBUG_MM, but only generates output from the gran
 		allocation logic.
+
+endif # GRAN
 
 config MM_PGALLOC
 	bool "Enable Page Allocator"
@@ -113,46 +308,89 @@ config MM_PGSIZE
 config DEBUG_PGALLOC
 	bool "Page Allocator Debug"
 	default n
-	depends on DEBUG
+	depends on DEBUG_FEATURES
 	---help---
 		Just like DEBUG_MM, but only generates output from the page
 		allocation logic.
 
 endif # MM_PGALLOC
 
-config MM_ASSERT_ON_FAIL
-	bool "Assertion when Memory allocation fail"
+config MM_SHM
+	bool "Shared memory support"
+	default n
+	depends on MM_PGALLOC && BUILD_KERNEL
+	select ARCH_VMA_MAPPING
+	---help---
+		Build support for mapping physical memory to user-space via
+		shared memory interfaces like shmget(), shmat(), shmctl(),
+		etc, or device mapping interfaces like vm_map_region() etc.
+
+config MM_KMAP
+	bool "Support for dynamic kernel virtual mappings"
+	default n
+	depends on MM_PGALLOC && BUILD_KERNEL
+	select ARCH_KVMA_MAPPING
+	---help---
+		Build support for dynamically mapping pages from the page pool into
+		kernel virtual memory. This includes pages that are already mapped
+		for user.
+
+config MM_HEAP_MEMPOOL_BACKTRACE_SKIP
+	int "The skip depth of backtrace for mempool"
+	default 6
+	depends on MM_BACKTRACE > 0
+	---help---
+		This number is the skipped backtrace depth for mempool.
+
+config FS_PROCFS_EXCLUDE_MEMPOOL
+	bool "Exclude mempool from procfs"
+	default DEFAULT_SMALL
+	depends on FS_PROCFS && MM_HEAP_MEMPOOL_THRESHOLD > 0
+
+source "mm/kasan/Kconfig"
+
+config MM_UBSAN
+	bool "Undefined Behavior Sanitizer"
+	default n
+	---help---
+		UBSan is a fast undefined behavior detector. UBSan modifies
+		the program at compile-time to catch various kinds of
+		undefined behavior during program execution
+
+if MM_UBSAN
+
+config MM_UBSAN_ALL
+	bool "Enable UBSan for the entire image"
 	default y
-	select MMINFO if APP_BINARY_SEPARATION
 	---help---
-		When memory allocation fails, make assertion.
-		From the application binary with loadable build, it will be reloaded.
+		This option activates UBSan instrumentation for the
+		entire image. If you don't enable this option, you have to
+		explicitly specify "-fsanitize=undefined" for
+		the files/directories you want to check. Enabling this option
+		will get image size increased and performance decreased
+		significantly.
 
-config MM_DUMP_CORRPUTED_HEAP
-	bool "Dump the complete corrupted heap"
+config MM_UBSAN_OPTION
+	string "UBSan options"
+	default "-fsanitize=undefined"
+	---help---
+		This option activates specified UBSan instrumentation. Please
+		refer to https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html
+		for available options.
+
+config MM_UBSAN_TRAP_ON_ERROR
+	bool "Enable UBSan trap on error to crash immediately"
 	default n
 	---help---
-		When we find a heap corruption, we can dump the entire heap, so that
-		it can be manually analyzed to find more information about the corruption.
+		The undefined instruction trap should cause your program to crash,
+		save the code space significantly.
 
-config MM_ALLOC_LARGE_FROM_BACK
-	bool "Allocate large chunks from the back of free chunks"
+config MM_UBSAN_DUMMY
+	bool "Bypass Undefined Behaviour Sanitizer Runtime Actions"
 	default n
 	---help---
-		Reduce heap fragmentation by separating small and large
-		allocations. When enabled, chunks whose total size (requested
-		size + allocation header, aligned to the memory granule) is
-		greater than or equal to MM_LARGE_ALLOC_THRESHOLD are carved
-		from the high-address end of the selected free chunk, while
-		smaller chunks continue to be carved from the low-address end.
+		Allow to compile with UBSAN enabled but disables runtime actions.
 
-config MM_LARGE_ALLOC_THRESHOLD
-	int "Large allocation threshold (bytes)"
-	default 1048576
-	depends on MM_ALLOC_LARGE_FROM_BACK
-	---help---
-		Allocations whose physical chunk size (user requested size +
-		SIZEOF_MM_ALLOCNODE, granule aligned) is greater than or equal
-		to this value are placed at the back of the selected free
-		chunk. Default is 512KB. Must be larger than SIZEOF_MM_FREENODE.
+endif # MM_UBSAN
 
+source "mm/iob/Kconfig"

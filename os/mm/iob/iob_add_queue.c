@@ -1,0 +1,183 @@
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * mm/iob/iob_add_queue.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/config.h>
+
+#include <assert.h>
+#include <errno.h>
+#include <debug.h>
+
+#include <tinyara/irq.h>
+#include <tinyara/arch.h>
+#include <tinyara/mm/iob.h>
+
+#include "iob.h"
+
+#if CONFIG_IOB_NCHAINS > 0
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: iob_add_queue_internal
+ *
+ * Description:
+ *   Add one I/O buffer chain to the end of a queue.  May fail due to lack
+ *   of resources.
+ *
+ ****************************************************************************/
+
+static int iob_add_queue_internal(FAR struct iob_s *iob,
+                                  FAR struct iob_queue_s *iobq,
+                                  FAR struct iob_qentry_s *qentry)
+{
+	/* Add the I/O buffer chain to the container */
+
+	qentry->qe_head = iob;
+
+	/* Add the container to the end of the queue */
+
+	qentry->qe_flink = NULL;
+
+	if (!iobq->qh_head) {
+		iobq->qh_head = qentry;
+		iobq->qh_tail = qentry;
+	} else {
+		DEBUGASSERT(iobq->qh_tail);
+		iobq->qh_tail->qe_flink = qentry;
+		iobq->qh_tail = qentry;
+	}
+
+	return 0;
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: iob_add_queue
+ *
+ * Description:
+ *   Add one I/O buffer chain to the end of a queue.  May fail due to lack
+ *   of resources.
+ *
+ ****************************************************************************/
+
+int iob_add_queue(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq)
+{
+	FAR struct iob_qentry_s *qentry;
+
+	/* Allocate a container to hold the I/O buffer chain */
+
+	qentry = iob_alloc_qentry();
+	if (!qentry) {
+		ioberr("ERROR: Failed to allocate a container\n");
+		return -ENOMEM;
+	}
+
+	return iob_add_queue_internal(iob, iobq, qentry);
+}
+
+/****************************************************************************
+ * Name: iob_tryadd_queue
+ *
+ * Description:
+ *   Add one I/O buffer chain to the end of a queue without waiting for
+ *   resources to become free.
+ *
+ ****************************************************************************/
+
+int iob_tryadd_queue(FAR struct iob_s *iob, FAR struct iob_queue_s *iobq)
+{
+	FAR struct iob_qentry_s *qentry;
+
+	/* Allocate a container to hold the I/O buffer chain */
+
+	qentry = iob_tryalloc_qentry();
+	if (!qentry) {
+		ioberr("ERROR: Failed to allocate a container\n");
+		return -ENOMEM;
+	}
+
+	return iob_add_queue_internal(iob, iobq, qentry);
+}
+
+/****************************************************************************
+ * Name: iob_concat_queue
+ *
+ * Description:
+ *   Concatenate iob_s queue src to dest
+ *
+ ****************************************************************************/
+
+int iob_concat_queue(FAR struct iob_queue_s *dest,
+                     FAR struct iob_queue_s *src)
+{
+	FAR struct iob_qentry_s *qentry;
+	FAR struct iob_qentry_s *tailq;
+
+	/* Detach the list from the queue head so first for safety (should be safe
+	 * anyway).
+	 */
+
+	qentry = src->qh_head;
+	tailq = src->qh_tail;
+	src->qh_head = NULL;
+	src->qh_tail = NULL;
+
+	if (qentry) {
+		if (!dest->qh_head) {
+			dest->qh_head = qentry;
+			dest->qh_tail = tailq;
+		} else {
+			DEBUGASSERT(dest->qh_tail);
+			dest->qh_tail->qe_flink = qentry;
+			dest->qh_tail = tailq;
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_IOB_NCHAINS > 0 */

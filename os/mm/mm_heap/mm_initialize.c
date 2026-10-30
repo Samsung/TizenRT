@@ -18,35 +18,22 @@
 /****************************************************************************
  * mm/mm_heap/mm_initialize.c
  *
- *   Copyright (C) 2007, 2009, 2011, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -59,22 +46,53 @@
 #include <string.h>
 #include <assert.h>
 #include <debug.h>
-#include <errno.h>
 
-#include <tinyara/sched.h>
+#include <tinyara/sched_note.h>
 #include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
+
+#include "mm_heap/mm.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
+#if CONFIG_MM_HEAP_MEMPOOL_THRESHOLD > 0
+#  define MEMPOOL_NPOOLS (CONFIG_MM_HEAP_MEMPOOL_THRESHOLD / MM_MIN_CHUNK)
+#endif
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+#if defined(CONFIG_MM_HEAP_MEMPOOL) && CONFIG_MM_BACKTRACE >= 0
+
+/****************************************************************************
+ * Name: mempool_memalign
+ *
+ * Description:
+ *   This function call mm_memalign and set mm_backtrace pid to free pid
+ *   avoid repeated calculation.
+ ****************************************************************************/
+
+static FAR void *mempool_memalign(FAR void *arg, size_t alignment,
+                                  size_t size)
+{
+	FAR struct mm_allocnode_s *node;
+	FAR void *ret;
+
+	ret = mm_memalign(arg, alignment, size);
+	if (ret) {
+		node = (FAR struct mm_allocnode_s *)
+		((uintptr_t)ret - MM_SIZEOF_ALLOCNODE);
+		node->pid = PID_MM_MEMPOOL;
+	}
+
+	return ret;
+}
+#else
+#  define mempool_memalign mm_memalign
+#endif
 
 /****************************************************************************
  * Public Functions
@@ -86,60 +104,88 @@
  * Description:
  *   This function adds a region of contiguous memory to the selected heap.
  *
- * Parameters:
+ * Input Parameters:
  *   heap      - The selected heap
  *   heapstart - Start of the heap region
  *   heapsize  - Size of the heap region
  *
- * Return Value:
- *   OK on success, negative errno on failure.
+ * Returned Value:
+ *   None
  *
  * Assumptions:
  *
  ****************************************************************************/
 
-int mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsize)
+void mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart,
+                  size_t heapsize)
 {
 	FAR struct mm_freenode_s *node;
 	uintptr_t heapbase;
 	uintptr_t heapend;
+#if CONFIG_MM_REGIONS > 1
+	int idx;
 
-	if (!heap || !heapstart || !heapsize) {
-		mdbg("ERROR : Invalid parameter, heap : %x, heapstart : %x, heapsize : %u\n", heap, heapstart, heapsize);
-		return -EINVAL;
+	DEBUGVERIFY(mm_lock(heap));
+	idx = heap->mm_nregions;
+
+	/* Writing past CONFIG_MM_REGIONS would have catastrophic consequences */
+
+	DEBUGASSERT(idx < CONFIG_MM_REGIONS);
+	if (idx >= CONFIG_MM_REGIONS) {
+		mm_unlock(heap);
+		return;
 	}
 
-#if (CONFIG_KMM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
-	int IDX = heap->mm_nregions;
 #else
-#define IDX 0
+#  define idx 0
+	DEBUGVERIFY(mm_lock(heap));
 #endif
 
-	/* Adjust the provide heap start and size so that they are both aligned
-	 * with the MM_MIN_CHUNK size.
+#if defined(CONFIG_MM_SMALL) && !defined(CONFIG_SMALL_MEMORY)
+	/* If the MCU handles wide addresses but the memory manager is configured
+	 * for a small heap, then verify that the caller is  not doing something
+	 * crazy.
 	 */
 
-	heapbase = MM_ALIGN_UP((uintptr_t)heapstart);
-	heapend  = MM_ALIGN_DOWN((uintptr_t)heapstart + (uintptr_t)heapsize);
-	if ((heapbase < (uintptr_t)heapstart)) {
-		/* heapbase cannot be smaller than heapstart.
-		 * If this happens, heapbase can be overflowed from alignment.
-		 */
-		mdbg("ERROR : heapbase(%u) is smaller than heapstart(%u).\n", heapbase, (uintptr_t)heapstart);
-		return -EINVAL;
+	DEBUGASSERT(heapsize <= MMSIZE_MAX + 1);
+#endif
+
+#ifdef CONFIG_MM_FILL_ALLOCATIONS
+	/* Use the fill value to mark uninitialized user memory */
+
+	memset(heapstart, MM_INIT_MAGIC, heapsize);
+#endif
+
+	/* Adjust the provided heap start and size.
+	 *
+	 * Note: (uintptr_t)node + MM_SIZEOF_ALLOCNODE is what's actually
+	 * returned to the malloc user, which should have natural alignment.
+	 * (that is, in this implementation, MM_MIN_CHUNK-alignment.)
+	 */
+
+	heapbase = MM_ALIGN_UP((uintptr_t)heapstart + 2 * MM_SIZEOF_ALLOCNODE) -
+	           2 * MM_SIZEOF_ALLOCNODE;
+	heapsize = heapsize - (heapbase - (uintptr_t)heapstart);
+
+	/* Register KASan for access rights check. We need to register after
+	 * address alignment.
+	 */
+
+	if (!heap->mm_nokasan) {
+		kasan_register((void *)heapbase, &heapsize);
 	}
 
-	if (heapbase >= (uintptr_t)heapend) {
-		/* heapbase is aligned up from heapstart,
-		 * and heapend is the summation of heapstart and heapsize.
-		 * If heapsize is very small, align-up address can be equal to or greater than heapend.
-		 */
-		mdbg("ERROR : heapbase(%u) is greater than equal to heapend(%u).\n", heapbase, heapend);
-		return -EINVAL;
-	}
+	heapend  = MM_ALIGN_DOWN((uintptr_t)heapbase + (uintptr_t)heapsize);
 	heapsize = heapend - heapbase;
 
-	mlldbg("Region %d: base=%p size=%u\n", IDX + 1, heapstart, heapsize);
+#if defined(CONFIG_FS_PROCFS) && \
+    !defined(CONFIG_FS_PROCFS_EXCLUDE_MEMINFO) && \
+    (defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__))
+	minfo("[%s] Region %d: base=%p size=%zu\n",
+	      heap->mm_procfs.name, idx + 1, heapstart, heapsize);
+#else
+	minfo("Region %d: base=%p size=%zu\n", idx + 1, heapstart, heapsize);
+#endif
 
 	/* Add the size of this region to the total size of the heap */
 
@@ -153,130 +199,216 @@ int mm_addregion(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsiz
 	 * all available memory.
 	 */
 
-	heap->mm_heapstart[IDX]            = (FAR struct mm_allocnode_s *)heapbase;
-	heap->mm_heapstart[IDX]->size      = SIZEOF_MM_ALLOCNODE;
-	heap->mm_heapstart[IDX]->preceding = MM_ALLOC_BIT;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	/* fill magic number 0xDEAD as malloc info for head node */
-	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapstart[IDX], (mmaddress_t)0xDEAD);
-#endif
+	heap->mm_heapstart[idx]          = (FAR struct mm_allocnode_s *)heapbase;
+	MM_ADD_BACKTRACE(heap, heap->mm_heapstart[idx]);
+	heap->mm_heapstart[idx]->size    = MM_SIZEOF_ALLOCNODE | MM_ALLOC_BIT;
+	node                             = (FAR struct mm_freenode_s *)
+	                                   (heapbase + MM_SIZEOF_ALLOCNODE);
+	DEBUGASSERT((((uintptr_t)node + MM_SIZEOF_ALLOCNODE) % MM_ALIGN) == 0);
+	node->size                       = heapsize - 2 * MM_SIZEOF_ALLOCNODE;
+	heap->mm_heapend[idx]            = (FAR struct mm_allocnode_s *)
+	                                   (heapend - MM_SIZEOF_ALLOCNODE);
+	heap->mm_heapend[idx]->size      = MM_SIZEOF_ALLOCNODE | MM_ALLOC_BIT |
+	                                   MM_PREVFREE_BIT;
+	heap->mm_heapend[idx]->preceding = node->size;
+	MM_ADD_BACKTRACE(heap, heap->mm_heapend[idx]);
 
-	node            = (FAR struct mm_freenode_s *)(heapbase + SIZEOF_MM_ALLOCNODE);
-	node->size      = heapsize - 2 * SIZEOF_MM_ALLOCNODE;
-	node->preceding = SIZEOF_MM_ALLOCNODE;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	heapinfo_update_node((FAR struct mm_allocnode_s *)node, (mmaddress_t)0xDEADDEAD);
-#endif
-#ifdef CONFIG_DEBUG_MM_FREEINFO
-	node->free_call_addr = NULL;
-	node->free_call_pid = 0;
-#endif
+#undef idx
 
-	heap->mm_heapend[IDX]            = (FAR struct mm_allocnode_s *)(heapend - SIZEOF_MM_ALLOCNODE);
-	heap->mm_heapend[IDX]->size      = SIZEOF_MM_ALLOCNODE;
-	heap->mm_heapend[IDX]->preceding = node->size | MM_ALLOC_BIT;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	/* Fill magic number 0xDEADDEAD as malloc info for tail node */
-	heapinfo_update_node((FAR struct mm_allocnode_s *)heap->mm_heapend[IDX], (mmaddress_t)0xDEADDEAD);
-#endif
-
-#undef IDX
-
-#if (CONFIG_KMM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
+#if CONFIG_MM_REGIONS > 1
 	heap->mm_nregions++;
-#endif
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	/* add guard nodes size to the newly added region as they are considered as allocated*/
-	heap->total_alloc_size += 2 * SIZEOF_MM_ALLOCNODE;
-	if (heap->peak_alloc_size < heap->total_alloc_size) {
-		heap->peak_alloc_size = heap->total_alloc_size;
-	}
 #endif
 
 	/* Add the single, large free node to the nodelist */
 
 	mm_addfreechunk(heap, node);
-	return OK;
+	heap->mm_curused += 2 * MM_SIZEOF_ALLOCNODE;
+	sched_note_heap(NOTE_HEAP_ADD, heap, heapstart, heapsize,
+	                heap->mm_curused);
+	mm_unlock(heap);
 }
 
 /****************************************************************************
- * Name: mm_initialize
+ * Name: mm_initialize_heap
  *
  * Description:
  *   Initialize the selected heap data structures, providing the initial
  *   heap region.
  *
- * Parameters:
- *   heap      - The selected heap
- *   heapstart - Start of the initial heap region
- *   heapsize  - Size of the initial heap region
+ * Input Parameters:
+ *   config - The heap config structure
  *
- * Return Value:
- *   OK on success, negative errno on failure.
+ * Returned Value:
+ *   Return the address of a new heap instance.
  *
  * Assumptions:
  *
  ****************************************************************************/
 
-int mm_initialize(FAR struct mm_heap_s *heap, FAR void *heapstart, size_t heapsize)
+FAR struct mm_heap_s *
+mm_initialize_heap(FAR const struct mm_heap_config_s *config)
 {
-	int ret;
+	FAR struct mm_heap_s *heap = config->heap;
+	FAR const char *name = config->name;
+	FAR void *heapstart = config->start;
+	size_t heapsize = config->size;
 	int i;
 
-	mlldbg("Heap: start=%p size=%u\n", heapstart, heapsize);
+	minfo("Heap: name=%s, start=%p size=%zu\n", name, heapstart, heapsize);
+	if (heap == NULL) {
+		/* First ensure the memory to be used is aligned */
 
-	/* The following two lines have cause problems for some older ZiLog
-	 * compilers in the past (but not the more recent).  Life is easier if we
-	 * just the suppress them altogther for those tools.
-	 */
+		uintptr_t heap_adj = MM_ALIGN_UP((uintptr_t)heapstart);
+		heapsize -= heap_adj - (uintptr_t)heapstart;
 
-#ifndef __ZILOG__
-	CHECK_ALLOCNODE_SIZE;
-	CHECK_FREENODE_SIZE;
-#endif
+		/* Reserve a block space for mm_heap_s context */
+
+		DEBUGASSERT(heapsize > sizeof(struct mm_heap_s));
+		heap = (FAR struct mm_heap_s *)heap_adj;
+		heapsize -= sizeof(struct mm_heap_s);
+		heapstart = (FAR char *)heap_adj + sizeof(struct mm_heap_s);
+
+		DEBUGASSERT(MM_MIN_CHUNK >= MM_SIZEOF_ALLOCNODE);
+	} else {
+		heap = mm_malloc(heap, sizeof(struct mm_heap_s));
+		if (heap == NULL) {
+			return NULL;
+		}
+	}
 
 	/* Set up global variables */
 
-	heap->mm_heapsize = 0;
-
-#if (CONFIG_KMM_REGIONS > 1) || (defined(CONFIG_MM_KERNEL_HEAP) && (CONFIG_KMM_REGIONS > 1))
-	heap->mm_nregions = 0;
-#endif
+	memset(heap, 0, sizeof(struct mm_heap_s));
+	heap->mm_nokasan = config->nokasan;
 
 	/* Initialize the node array */
 
-	memset(heap->mm_nodelist, 0, sizeof(struct mm_freenode_s) * (MM_NNODES + 1));
-
-	/* Initialize delay list to NULL for all cpus */
-
-	for (i = 0; i < CONFIG_SMP_NCPUS; i++) {
-		heap->mm_delaylist[i] = NULL;
+	for (i = 1; i < MM_NNODES; i++) {
+		heap->mm_nodelist[i - 1].flink = &heap->mm_nodelist[i];
+		heap->mm_nodelist[i].blink     = &heap->mm_nodelist[i - 1];
 	}
 
-	/* Initialize the malloc semaphore to one (to support one-at-
+	/* Initialize the malloc mutex to one (to support one-at-
 	 * a-time access to private data sets).
 	 */
 
-	mm_seminitialize(heap);
+	nxmutex_init(&heap->mm_lock);
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	heap->total_alloc_size = heap->peak_alloc_size = 0;
+#if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_MEMINFO)
+#  if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+	heap->mm_procfs.name = name;
+	heap->mm_procfs.heap = heap;
+#    ifdef CONFIG_MM_BACKTRACE_DEFAULT
+	heap->mm_procfs.backtrace = true;
+#    endif
+#  endif
 #endif
 
 	/* Add the initial region of memory to the heap */
 
-	ret = mm_addregion(heap, heapstart, heapsize);
-	if (ret != OK) {
-		return ret;
-	}
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	for (i = 0; i < CONFIG_MAX_TASKS; i++) {
-		heap->alloc_list[i].pid = HEAPINFO_INIT_INFO;
-	}
-#ifdef CONFIG_HEAPINFO_USER_GROUP
-	heapinfo_update_group_info(INVALID_PROCESS_ID, HEAPINFO_INVALID_GROUPID, HEAPINFO_INIT_INFO);
+	heap->mm_curused = sizeof(struct mm_heap_s);
+	mm_addregion(heap, heapstart, heapsize);
+
+#if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_MEMINFO)
+#  if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+	procfs_register_meminfo(&heap->mm_procfs);
+#  endif
 #endif
+
+	return heap;
+}
+
+#ifdef CONFIG_MM_HEAP_MEMPOOL
+FAR struct mm_heap_s *
+mm_initialize_pool(FAR const struct mm_heap_config_s *config,
+                   FAR const struct mempool_init_s *init)
+{
+	FAR struct mm_heap_s *heap;
+#if CONFIG_MM_HEAP_MEMPOOL_THRESHOLD > 0
+	size_t poolsize[MEMPOOL_NPOOLS];
+	struct mempool_init_s def;
+
+	if (init == NULL) {
+		/* Initialize the multiple mempool default parameter */
+
+		int i;
+
+		for (i = 0; i < MEMPOOL_NPOOLS; i++) {
+#  if CONFIG_MM_MIN_BLKSIZE != 0
+			poolsize[i] = (i + 1) * CONFIG_MM_MIN_BLKSIZE;
+#  else
+			poolsize[i] = (i + 1) * MM_MIN_CHUNK;
+#  endif
+		}
+
+		def.poolsize        = poolsize;
+		def.npools          = MEMPOOL_NPOOLS;
+		def.threshold       = CONFIG_MM_HEAP_MEMPOOL_THRESHOLD;
+		def.chunksize       = CONFIG_MM_HEAP_MEMPOOL_CHUNK_SIZE;
+		def.expandsize      = CONFIG_MM_HEAP_MEMPOOL_EXPAND_SIZE;
+		def.dict_expendsize = CONFIG_MM_HEAP_MEMPOOL_DICTIONARY_EXPAND_SIZE;
+
+		init = &def;
+	}
 #endif
-	return OK;
+
+	heap = mm_initialize_heap(config);
+
+	/* Initialize the multiple mempool in heap */
+
+	if (init != NULL && init->poolsize != NULL && init->npools != 0) {
+		heap->mm_threshold = init->threshold;
+		heap->mm_mpool     = mempool_multiple_init(config->name,
+		                         init->poolsize, init->npools,
+		                         (mempool_multiple_alloc_t)mempool_memalign,
+		                         (mempool_multiple_alloc_size_t)mm_malloc_size,
+		                         (mempool_multiple_free_t)mm_free, heap,
+		                         init->chunksize, init->expandsize,
+		                         init->dict_expendsize);
+	}
+
+	return heap;
+}
+#endif
+
+/****************************************************************************
+ * Name: mm_uninitialize
+ *
+ * Description:
+ *   Uninitialize the selected heap data structures.
+ *
+ * Input Parameters:
+ *   heap - The heap to uninitialize
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void mm_uninitialize(FAR struct mm_heap_s *heap)
+{
+	int i;
+
+#ifdef CONFIG_MM_HEAP_MEMPOOL
+	mempool_multiple_deinit(heap->mm_mpool);
+#endif
+
+	mm_free_delaylist(heap);
+
+	for (i = 0; i < CONFIG_MM_REGIONS; i++) {
+		if (!heap->mm_nokasan) {
+			kasan_unregister(heap->mm_heapstart[i]);
+		}
+
+		sched_note_heap(NOTE_HEAP_REMOVE, heap, heap->mm_heapstart[i],
+		                (uintptr_t)heap->mm_heapend[i] -
+		                (uintptr_t)heap->mm_heapstart[i], heap->mm_curused);
+	}
+
+#if defined(CONFIG_FS_PROCFS) && !defined(CONFIG_FS_PROCFS_EXCLUDE_MEMINFO)
+#  if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
+	procfs_unregister_meminfo(&heap->mm_procfs);
+#  endif
+#endif
+	nxmutex_destroy(&heap->mm_lock);
 }

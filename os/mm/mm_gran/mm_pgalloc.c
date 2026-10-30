@@ -18,35 +18,22 @@
 /****************************************************************************
  * mm/mm_gran/mm_pgalloc.c
  *
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -68,7 +55,9 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 /* Configuration ************************************************************/
+
 /* CONFIG_MM_PGALLOC - Enable page allocator support
  * CONFIG_MM_PGSIZE - The page size.  Must be one of {1024, 2048,
  *   4096, 8192, or 16384}.  This is easily extensible, but only those
@@ -81,33 +70,23 @@
 
 /* Debug */
 
-#ifdef CONFIG_CPP_HAVE_VARARGS
 #ifdef CONFIG_DEBUG_PGALLOC
-#define pgadbg(format, ...)       dbg(format, ##__VA_ARGS__)
-#define pgavdbg(format, ...)      vdbg(format, ##__VA_ARGS__)
+#  define pgaerr                    _err
+#  define pgawarn                   _warn
+#  define pgainfo                   _info
 #else
-#define pgadbg(format, ...)       mdbg(format, ##__VA_ARGS__)
-#define pgavdbg(format, ...)      mvdbg(format, ##__VA_ARGS__)
-#endif
-#else
-#ifdef CONFIG_DEBUG_PGALLOC
-#define pgadbg                    dbg
-#define pgavdbg                   vdbg
-#else
-#define pgadbg                    (void)
-#define pgavdbg                   (void)
-#endif
+#  define pgaerr                    merr
+#  define pgawarn                   mwarn
+#  define pgainfo                   minfo
 #endif
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-#ifndef CONFIG_GRAN_SINGLE
 /* The state of the page allocator */
 
 static GRAN_HANDLE g_pgalloc;
-#endif
 
 /****************************************************************************
  * Private Functions
@@ -136,18 +115,8 @@ static GRAN_HANDLE g_pgalloc;
 
 void mm_pginitialize(FAR void *heap_start, size_t heap_size)
 {
-#ifdef CONFIG_GRAN_SINGLE
-	int ret;
-
-	ret = gran_initialize(heap_start, heap_size, MM_PGSHIFT, MM_PGSHIFT);
-	DEBUGASSERT(ret == OK);
-	UNUSED(ret);
-
-#else
 	g_pgalloc = gran_initialize(heap_start, heap_size, MM_PGSHIFT, MM_PGSHIFT);
-	DEBUGASSERT(pg_alloc != NULL);
-
-#endif
+	DEBUGASSERT(g_pgalloc != NULL);
 }
 
 /****************************************************************************
@@ -173,11 +142,8 @@ void mm_pginitialize(FAR void *heap_start, size_t heap_size)
 
 void mm_pgreserve(uintptr_t start, size_t size)
 {
-#ifdef CONFIG_GRAN_SINGLE
-	gran_reserve(start, size);
-#else
-	gran_reserve(g_pgalloc, start, size);
-#endif
+	FAR void *ret = gran_reserve(g_pgalloc, start, size);
+	DEBUGASSERT(ret != NULL);
 }
 
 /****************************************************************************
@@ -198,11 +164,31 @@ void mm_pgreserve(uintptr_t start, size_t size)
 
 uintptr_t mm_pgalloc(unsigned int npages)
 {
-#ifdef CONFIG_GRAN_SINGLE
-	return (uintptr_t)gran_alloc((size_t)1 << MM_PGSHIFT);
-#else
-	return (uintptr_t)gran_alloc(g_pgalloc, (size_t)1 << MM_PGSHIFT);
-#endif
+	return (uintptr_t)gran_alloc(g_pgalloc, (size_t)npages << MM_PGSHIFT);
+}
+
+/****************************************************************************
+ * Name: mm_pgalloc_align
+ *
+ * Description:
+ *   Allocate page memory from the page memory pool.
+ *
+ * Input Parameters:
+ *   npages - The number of pages to allocate, each of size CONFIG_MM_PGSIZE.
+ *   align  - The number of pages to align, each of size CONFIG_MM_PGSIZE.
+ *
+ * Returned Value:
+ *   On success, a non-zero, physical address of the allocated page memory
+ *   is returned.  Zero is returned on failure.  NOTE:  This is an unmapped
+ *   physical address and cannot be used until it is appropriately mapped.
+ *
+ ****************************************************************************/
+
+uintptr_t mm_pgalloc_align(unsigned int npages, unsigned int align)
+{
+	size_t alloc_size = (size_t)npages << MM_PGSHIFT;
+	size_t align_size = (size_t)align << MM_PGSHIFT;
+	return (uintptr_t)gran_alloc_align(g_pgalloc, alloc_size, align_size);
 }
 
 /****************************************************************************
@@ -224,11 +210,35 @@ uintptr_t mm_pgalloc(unsigned int npages)
 
 void mm_pgfree(uintptr_t paddr, unsigned int npages)
 {
-#ifdef CONFIG_GRAN_SINGLE
-	gran_free((FAR void *)paddr, (size_t)npages << MM_PGSHIFT);
-#else
 	gran_free(g_pgalloc, (FAR void *)paddr, (size_t)npages << MM_PGSHIFT);
-#endif
 }
 
-#endif							/* CONFIG_MM_PGALLOC */
+/****************************************************************************
+ * Name: mm_pginfo
+ *
+ * Description:
+ *   Return information about the page allocator.
+ *
+ * Input Parameters:
+ *   handle - The handle previously returned by gran_initialize
+ *   info   - Memory location to return the gran allocator info.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is return on
+ *   any failure.
+ *
+ ****************************************************************************/
+
+void mm_pginfo(FAR struct pginfo_s *info)
+{
+	struct graninfo_s graninfo;
+
+	DEBUGASSERT(info != NULL);
+	gran_info(g_pgalloc, &graninfo);
+
+	info->ntotal = graninfo.ngranules;
+	info->nfree  = graninfo.nfree;
+	info->mxfree = graninfo.mxfree;
+}
+
+#endif /* CONFIG_MM_PGALLOC */

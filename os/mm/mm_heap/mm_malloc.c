@@ -18,35 +18,22 @@
 /****************************************************************************
  * mm/mm_heap/mm_malloc.c
  *
- *   Copyright (C) 2007, 2009, 2013-2014  Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -56,62 +43,73 @@
 
 #include <tinyara/config.h>
 
+#include <assert.h>
 #include <debug.h>
+#include <string.h>
 
-#include <tinyara/mm/mm.h>
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-#include  <tinyara/sched.h>
-#endif
 #include <tinyara/arch.h>
+#include <tinyara/mm/mm.h>
+#include <tinyara/mm/kasan.h>
+#include <tinyara/sched.h>
+#include <tinyara/sched_note.h>
 
-#include "mm_node.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-#ifndef NULL
-#define NULL ((void*)0)
-#endif
-
-/****************************************************************************
- * Type Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Public Data
- ****************************************************************************/
+#include "mm_heap/mm.h"
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-static void mm_free_delaylist(FAR struct mm_heap_s *heap)
+
+/****************************************************************************
+ * Name: free_delaylist
+ *
+ * Description:
+ *  Free the memory in delay list either added because of mm_lock failed or
+ *  added because of CONFIG_MM_FREE_DELAYCOUNT_MAX.
+ *  Set force to true to free all the memory in delay list immediately, set
+ *  to false will only free delaylist when time is up if
+ *  CONFIG_MM_FREE_DELAYCOUNT_MAX is enabled.
+ *
+ *  Return true if there is memory freed.
+ *
+ ****************************************************************************/
+
+static bool free_delaylist(FAR struct mm_heap_s *heap, bool force)
 {
+	bool ret = false;
 #if defined(CONFIG_BUILD_FLAT) || defined(__KERNEL__)
 	FAR struct mm_delaynode_s *tmp;
 	irqstate_t flags;
 
 	/* Move the delay list to local */
 
-	flags = enter_critical_section();
+	flags = mm_lock_irq(heap);
 
-	tmp = heap->mm_delaylist[up_cpu_index()];
-	heap->mm_delaylist[up_cpu_index()] = NULL;
+	tmp = heap->mm_delaylist[this_cpu()];
 
-	leave_critical_section(flags);
+#if CONFIG_MM_FREE_DELAYCOUNT_MAX > 0
+	if (tmp == NULL ||
+	    (!force &&
+	      heap->mm_delaycount[this_cpu()] < CONFIG_MM_FREE_DELAYCOUNT_MAX)) {
+		mm_unlock_irq(heap, flags);
+		return false;
+	}
+
+	heap->mm_delaycount[this_cpu()] = 0;
+#endif
+
+	heap->mm_delaylist[this_cpu()] = NULL;
+
+	mm_unlock_irq(heap, flags);
 
 	/* Test if the delayed is empty */
 
-	while (tmp)
-	{
-		FAR struct mm_delaynode_s *address;
+	ret = tmp != NULL;
+
+	while (tmp) {
+		FAR void *address;
 
 		/* Get the first delayed deallocation */
+
 		address = tmp;
 		tmp = tmp->flink;
 
@@ -119,18 +117,58 @@ static void mm_free_delaylist(FAR struct mm_heap_s *heap)
 		 * 'while' condition above.
 		 */
 
-#ifdef CONFIG_DEBUG_MM_FREEINFO
-		mm_free_withinfo(heap, (void *)address, address->free_call_addr, address->free_call_pid);
-#else
-		mm_free(heap, (void *)address);
-#endif
+		mm_delayfree(heap, address, false);
 	}
+
 #endif
+	return ret;
 }
+
+#if CONFIG_MM_BACKTRACE >= 0
+void mm_dump_handler(FAR struct tcb_s *tcb, FAR void *arg)
+{
+	struct mallinfo_task info;
+	struct malltask task;
+
+	task.pid = tcb ? tcb->pid : PID_MM_LEAK;
+	task.seqmin = 0;
+	task.seqmax = ULONG_MAX;
+	info = mm_mallinfo_task(arg, &task);
+	mwarn("pid:%5d, used:%10d, nused:%10d\n",
+	      task.pid, info.uordblks, info.aordblks);
+}
+#endif
+
+#ifdef CONFIG_MM_HEAP_MEMPOOL
+void mm_mempool_dump_handle(FAR struct mempool_s *pool, FAR void *arg)
+{
+	struct mempoolinfo_s info;
+
+	mempool_info(pool, &info);
+	mwarn("%9lu%11lu%9lu%9lu%9lu%9lu\n",
+	      info.sizeblks, info.arena, info.aordblks,
+	      info.ordblks, info.iordblks, info.nwaiter);
+}
+#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: mm_free_delaylist
+ *
+ * Description:
+ *   force freeing the delaylist of this heap.
+ *
+ ****************************************************************************/
+
+void mm_free_delaylist(FAR struct mm_heap_s *heap)
+{
+	if (heap) {
+		free_delaylist(heap, true);
+	}
+}
 
 /****************************************************************************
  * Name: mm_malloc
@@ -143,182 +181,231 @@ static void mm_free_delaylist(FAR struct mm_heap_s *heap)
  *
  ****************************************************************************/
 
-FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size, mmaddress_t caller_retaddr)
+FAR void *mm_malloc(FAR struct mm_heap_s *heap, size_t size)
 {
 	FAR struct mm_freenode_s *node;
-	void *ret = NULL;
+	size_t alignsize;
+	size_t nodesize;
+	FAR void *ret = NULL;
 	int ndx;
-	bool gc_done = false;
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	size_t gc_before_size;
-#endif
 
 	/* Free the delay list first */
-	mm_free_delaylist(heap);
 
-	/* Handle bad sizes */
+	free_delaylist(heap, false);
 
-	if (size > MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) {
-		mdbg("Because of mm_allocnode, %u cannot be allocated. The maximum \
-			 allocable size is (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE) \
-			 : %u\n.", size, (MM_ALIGN_DOWN(MMSIZE_MAX) - SIZEOF_MM_ALLOCNODE));
+#ifdef CONFIG_MM_HEAP_MEMPOOL
+	if (heap->mm_mpool) {
+		ret = mempool_multiple_alloc(heap->mm_mpool, size);
+		if (ret != NULL) {
+			return ret;
+		}
+	}
+#endif
+
+	/* Adjust the size to account for (1) the size of the allocated node and
+	 * (2) to make sure that it is aligned with MM_ALIGN and its size is at
+	 * least MM_MIN_CHUNK.
+	 */
+
+	if (size < MM_MIN_CHUNK - MM_ALLOCNODE_OVERHEAD) {
+		size = MM_MIN_CHUNK - MM_ALLOCNODE_OVERHEAD;
+	}
+
+	alignsize = MM_ALIGN_UP(size + MM_ALLOCNODE_OVERHEAD);
+	if (alignsize < size) {
+		/* There must have been an integer overflow */
+
 		return NULL;
 	}
 
-	/* Adjust the size to account for (1) the size of the allocated node and
-	 * (2) to make sure that it is an even multiple of our granule size.
+	DEBUGASSERT(alignsize >= MM_ALIGN);
+
+	/* We need to hold the MM mutex while we muck with the nodelist. */
+
+	DEBUGVERIFY(mm_lock(heap));
+
+	/* Convert the request size into a nodelist index */
+
+	ndx = mm_size2ndx(alignsize);
+
+	/* Search for a large enough chunk in the list of nodes. This list is
+	 * ordered by size, but will have occasional zero sized nodes as we visit
+	 * other mm_nodelist[] entries.
 	 */
 
-	size = MM_ALIGN_UP(size + SIZEOF_MM_ALLOCNODE);
-
-retry_after_gc:
-	/* We need to hold the MM semaphore while we muck with the nodelist. */
-
-	mm_takesemaphore(heap);
-
-	/* Get the location in the node list to start the search
-	 * by converting the request size into a nodelist index.
-	 */
-	ndx = mm_size2ndx(size);
-
-	/* Search for a large enough chunk in the list of nodes.
-	 * This list is ordered by size in a descending order.
-	 * If this list does not have free nodes whose size is large enough
-	 * to accommodate the requested size, malloc() will fail due to no more space.
-	 */
-
-	node = heap->mm_nodelist[ndx].flink;
-	if (!(node && node->size >= size)) {
-		while (++ndx < MM_NNODES && !(node = heap->mm_nodelist[ndx].flink)) ;
-	}
-
-	/* If node is not NULL, there exists a free node big enough to allocate. */
-	FAR struct mm_freenode_s *prev = &heap->mm_nodelist[ndx];
-	for ( ; node && node->size > size; prev = node, node = node->flink) ;
-	if (!(node && node->size == size)) {
-		node = prev;
+	for (node = heap->mm_nodelist[ndx].flink; node; node = node->flink) {
+		DEBUGASSERT(node->blink->flink == node);
+		nodesize = MM_SIZEOF_NODE(node);
+		if (nodesize >= alignsize) {
+			break;
+		}
 	}
 
 	/* If we found a node with non-zero size, then this is one to use. Since
-	 * the list is ordered, we know that is must be best fitting chunk
+	 * the list is ordered, we know that it must be the best fitting chunk
 	 * available.
 	 */
 
-	if (node->size) {
-		FAR struct mm_allocnode_s *allocnode = (FAR struct mm_allocnode_s *)node;
+	if (node) {
 		FAR struct mm_freenode_s *remainder;
 		FAR struct mm_freenode_s *next;
 		size_t remaining;
 
-#ifdef CONFIG_DEBUG_MM_UAF
-		mm_uaf_verify(node);
-#endif
-
 		/* Remove the node.  There must be a predecessor, but there may not be
 		 * a successor node.
 		 */
-		DEBUGASSERT_MM_FREE_NODE(heap, node);
-		REMOVE_NODE_FROM_LIST(node);
+
+		DEBUGASSERT(node->blink);
+		node->blink->flink = node->flink;
+		if (node->flink) {
+			node->flink->blink = node->blink;
+		}
+
+		/* Get a pointer to the next node in physical memory */
+
+		next = (FAR struct mm_freenode_s *)(((FAR char *)node) + nodesize);
+
+		/* Node next must be alloced, otherwise it should be merged.
+		 * Its prenode(the founded node) must be free and preceding should
+		 * match with nodesize.
+		 */
+
+		DEBUGASSERT(MM_NODE_IS_ALLOC(next) && MM_PREVNODE_IS_FREE(next) &&
+		            next->preceding == nodesize);
 
 		/* Check if we have to split the free node into one of the allocated
 		 * size and another smaller freenode.  In some cases, the remaining
-		 * bytes can be smaller (they may be SIZEOF_MM_ALLOCNODE).  In that
+		 * bytes can be smaller (they may be MM_SIZEOF_ALLOCNODE).  In that
 		 * case, we will just carry the few wasted bytes at the end of the
 		 * allocation.
 		 */
 
-		remaining = node->size - size;
-		if (remaining >= SIZEOF_MM_FREENODE) {
-			/* Get a pointer to the next node in physical memory */
+		remaining = nodesize - alignsize;
+		if (remaining >= MM_MIN_CHUNK) {
+			/* Create the remainder node */
 
-			next = (FAR struct mm_freenode_s *)(((char *)node) + node->size);
+			remainder = (FAR struct mm_freenode_s *)
+			  (((FAR char *)node) + alignsize);
 
-#ifdef CONFIG_MM_ALLOC_LARGE_FROM_BACK
-			if (size >= CONFIG_MM_LARGE_ALLOC_THRESHOLD) {
-				/* Allocate from the back of the free node. The node shrinks to
-				* 'remaining' and stays in place, keeping its 'preceding' and
-				* FREEINFO fields unchanged.
-				*/
-				allocnode = (FAR struct mm_allocnode_s *)(((char *)node) + remaining);
-				allocnode->size = size;
-				allocnode->preceding = remaining;
-				/* Adjust the size of the remainder node */
+			remainder->size = remaining;
 
-				node->size = remaining;
+			/* Adjust the size of the node under consideration */
 
-				/* Adjust the 'preceding' size of the (old) next node,
-				 * preserving the allocated flag.
-				 */
+			node->size = alignsize | (node->size & MM_MASK_BIT);
 
-				next->preceding = size | (next->preceding & MM_ALLOC_BIT);
+			/* Adjust the 'preceding' size of the (old) next node. */
 
-				/* Add the shrunk remainder back into the nodelist */
+			next->preceding = remaining;
 
-				mm_addfreechunk(heap, node);
-			} else
-#endif
-			{
-				/* Create the remainder node */
+			/* Add the remainder back into the nodelist */
 
-				remainder = (FAR struct mm_freenode_s *)(((char *)node) + size);
-				remainder->size = remaining;
-				remainder->preceding = size;
-#ifdef CONFIG_DEBUG_MM_FREEINFO
-				remainder->free_call_addr = MM_REMAINDER_FREE_CALL_ADDR;
-				remainder->free_call_pid = MM_REMAINDER_FREE_CALL_PID;
-#endif
+			mm_addfreechunk(heap, remainder);
+		} else {
+			/* Previous physical memory node is alloced, so clear the previous
+			 * free bit in next->size.
+			 */
 
-				/* Adjust the size of the node under consideration */
-
-				node->size = size;
-
-				/* Adjust the 'preceding' size of the (old) next node, preserving
-				* the allocated flag.
-				*/
-
-				next->preceding = remaining | (next->preceding & MM_ALLOC_BIT);
-
-				/* Add the remainder back into the nodelist */
-
-				mm_addfreechunk(heap, remainder);
-			}
+			next->size &= ~MM_PREVFREE_BIT;
 		}
+
+		/* Update heap statistics */
+
+		nodesize = MM_SIZEOF_NODE(node);
+		heap->mm_curused += nodesize;
+		if (heap->mm_curused > heap->mm_maxused) {
+			heap->mm_maxused = heap->mm_curused;
+		}
+
 		/* Handle the case of an exact size match */
 
-		allocnode->preceding |= MM_ALLOC_BIT;
-
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		heapinfo_update_node(allocnode, caller_retaddr);
-		heapinfo_add_size(heap, allocnode->pid, allocnode->size);
-		heapinfo_update_total_size(heap, allocnode->size, allocnode->pid);
-#endif
-		ret = (void *)((char *)allocnode + SIZEOF_MM_ALLOCNODE);
+		node->size |= MM_ALLOC_BIT;
+		ret = (FAR void *)((FAR char *)node + MM_SIZEOF_ALLOCNODE);
 	}
 
-	mm_givesemaphore(heap);
-
-	if (!ret && gc_done == false) {
-		mdbg("Allocation failed!!! We dont have enough memory. Try to free dead task stack areas\n");
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		gc_before_size = heap->total_alloc_size;
-#endif
-		sched_garbagecollection();
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-		if (gc_before_size > heap->total_alloc_size) {
-			mdbg("GC freed %u bytes\n", gc_before_size - heap->total_alloc_size);
-		}
-#endif
-		gc_done = true;
-		goto retry_after_gc;
-	}
-
-	/* If CONFIG_DEBUG_MM is defined, then output the result of the allocation
-	 * to the SYSLOG.
-	 */
+	DEBUGASSERT(ret == NULL || mm_heapmember(heap, ret));
 
 	if (ret) {
-		mvdbg("Allocated %p, size %u\n", ret, size);
+		sched_note_heap(NOTE_HEAP_ALLOC, heap, ret, nodesize,
+		                heap->mm_curused);
 	}
 
+	mm_unlock(heap);
+
+	if (ret) {
+		MM_ADD_BACKTRACE(heap, node);
+		ret = kasan_unpoison(ret, nodesize - MM_ALLOCNODE_OVERHEAD);
+#ifdef CONFIG_MM_FILL_ALLOCATIONS
+		memset(ret, MM_ALLOC_MAGIC, alignsize - MM_ALLOCNODE_OVERHEAD);
+#endif
+#ifdef CONFIG_DEBUG_MM
+		minfo("Allocated %p, size %zu\n", ret, alignsize);
+#endif
+	}
+
+#if CONFIG_MM_FREE_DELAYCOUNT_MAX > 0
+	/* Try again after free delay list */
+
+	else if (free_delaylist(heap, true)) {
+		return mm_malloc(heap, size);
+	}
+#endif
+
+#ifdef CONFIG_DEBUG_MM
+	else if (MM_INTERNAL_HEAP(heap)) {
+#ifdef CONFIG_MM_DUMP_ON_FAILURE
+		struct mallinfo minfo;
+#  ifdef CONFIG_MM_DUMP_DETAILS_ON_FAILURE
+		struct mm_memdump_s dump =
+		{
+#if CONFIG_MM_BACKTRACE >= 0
+		  PID_MM_ALLOC, 0, ULONG_MAX
+#else
+		  PID_MM_ALLOC
+#endif
+		};
+#  endif
+#endif
+
+		mwarn("WARNING: Allocation failed, size %zu\n", alignsize);
+#ifdef CONFIG_MM_DUMP_ON_FAILURE
+		minfo = mm_mallinfo(heap);
+		mwarn("Total:%d, used:%d, free:%d, largest:%d, nused:%d, nfree:%d\n",
+		      minfo.arena, minfo.uordblks, minfo.fordblks,
+		      minfo.mxordblk, minfo.aordblks, minfo.ordblks);
+#  if CONFIG_MM_BACKTRACE >= 0
+		nxsched_foreach(mm_dump_handler, heap);
+		mm_dump_handler(NULL, heap);
+#  endif
+#  ifdef CONFIG_MM_HEAP_MEMPOOL
+		mwarn("%11s%9s%9s%9s%9s%9s\n",
+		      "bsize", "total", "nused",
+		      "nfree", "nifree", "nwaiter");
+		mempool_multiple_foreach(heap->mm_mpool,
+		                         mm_mempool_dump_handle, NULL);
+#  endif
+#  ifdef CONFIG_MM_DUMP_DETAILS_ON_FAILURE
+		mm_memdump(heap, &dump);
+		mwarn("Dump leak memory(thread exit, but memory not free):\n");
+		dump.pid = PID_MM_LEAK;
+		mm_memdump(heap, &dump);
+#    ifdef CONFIG_MM_HEAP_MEMPOOL
+		mwarn("Dump block used by mempool expand/trunk:\n");
+		dump.pid = PID_MM_MEMPOOL;
+		mm_memdump(heap, &dump);
+#    endif
+#    if CONFIG_MM_BACKTRACE >= 0
+		mwarn("Dump allocated orphan nodes. (neighbor of free nodes):\n");
+		dump.pid = PID_MM_ORPHAN;
+		mm_memdump(heap, &dump);
+#    endif
+#  endif
+#endif
+#ifdef CONFIG_MM_PANIC_ON_FAILURE
+		PANIC();
+#endif
+	}
+#endif
+
+	DEBUGASSERT(ret == NULL || ((uintptr_t)ret) % MM_ALIGN == 0);
 	return ret;
 }
