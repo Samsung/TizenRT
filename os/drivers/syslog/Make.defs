@@ -17,75 +17,108 @@
 ###########################################################################
 ############################################################################
 # drivers/syslog/Make.defs
-# These drivers support system logging devices
 #
-#   Copyright (C) 2012 Gregory Nutt. All rights reserved.
-#   Author: Gregory Nutt <gnutt@nuttx.org>
+# SPDX-License-Identifier: Apache-2.0
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
 #
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-# 3. Neither the name NuttX nor the names of its contributors may be
-#    used to endorse or promote products derived from this software
-#    without specific prior written permission.
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
 #
 ############################################################################
 
-# Include SYSLOG drivers (only one should be enabled)
+############################################################################
+# Include SYSLOG Infrastructure
+
+ifeq ($(CONFIG_ARCH_LOWPUTC),y)
+  CSRCS += syslog_early.c
+endif
 
 ifeq ($(CONFIG_SYSLOG),y)
 
-# If no special loggin devices are implemented, then the default SYSLOG
-# logic at fs/fs_syslog.c will be used
+ifeq ($(CONFIG_SYSLOG_RFC5424),y)
+  CSRCS += vsyslog_rfc5424.c
+else
+  CSRCS += vsyslog.c
+endif
 
-# (Add other SYSLOG drivers here)
+CSRCS += syslog_channel.c syslog_write.c syslog_flush.c
+endif
+
+ifeq ($(CONFIG_SYSLOG_INTBUFFER),y)
+  CSRCS += syslog_intbuffer.c
+endif
+
+ifeq ($(CONFIG_SYSLOG),y)
+  CSRCS += syslog_initialize.c
+endif
+
+# The RAMLOG device is usable as a system logging device or standalone
 
 ifeq ($(CONFIG_RAMLOG),y)
   CSRCS += ramlog.c
+
+  ifneq ($(CONFIG_RAMLOG_BUFFER_SECTION),"")
+    CFLAGS += ${DEFINE_PREFIX}RAMLOG_BUFFER_SECTION=CONFIG_RAMLOG_BUFFER_SECTION
+  endif
 endif
 
-# (Add other SYSLOG_CONSOLE drivers here)
+############################################################################
+# Include SYSLOG drivers (only one should be enabled)
+
+# System logging to a character device (or file)
+
+ifneq ($(CONFIG_SYSLOG_CONSOLE)$(CONFIG_SYSLOG_CHAR)$(CONFIG_SYSLOG_FILE),)
+  ifeq ($(CONFIG_SYSLOG),y)
+    CSRCS += syslog_device.c
+  endif
+endif
+
+ifeq ($(CONFIG_SYSLOG_CHAR),y)
+CSRCS += syslog_devchannel.c
+endif
 
 ifeq ($(CONFIG_SYSLOG_CONSOLE),y)
+CSRCS += syslog_consolechannel.c
+endif
+
+ifeq ($(CONFIG_SYSLOG_FILE),y)
+CSRCS += syslog_filechannel.c
+endif
+
+ifeq ($(CONFIG_SYSLOG_CHARDEV),y)
+CSRCS += syslog_chardev.c
+endif
+
+ifeq ($(CONFIG_SYSLOG_RPMSG),y)
+  CSRCS += syslog_rpmsg.c
+endif
+
+ifeq ($(CONFIG_SYSLOG_RPMSG_SERVER),y)
+  CSRCS += syslog_rpmsg_server.c
+endif
+
+ifeq ($(CONFIG_CONSOLE_SYSLOG),y)
   CSRCS += syslog_console.c
 endif
+
+ifeq ($(CONFIG_SYSLOG_STREAM),y)
+  CSRCS += syslog_stream.c
+endif
+
+# (Add other SYSLOG drivers here)
 
 # Include SYSLOG build support
 
 DEPPATH += --dep-path syslog
 VPATH += :syslog
-
-else
-
-# The RAMLOG can be used even if system logging is not enabled.
-
-ifeq ($(CONFIG_RAMLOG),y)
-
-# Include RAMLOG build support
-
-CSRCS += ramlog.c
-DEPPATH += --dep-path syslog
-VPATH += :syslog
-
-endif
-endif

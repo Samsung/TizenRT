@@ -18,35 +18,22 @@
 /****************************************************************************
  * drivers/syslog/ramlog.c
  *
- *   Copyright (C) 2012, 2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -69,107 +56,139 @@
 #include <errno.h>
 #include <assert.h>
 #include <debug.h>
+#include <ctype.h>
+#include <sys/boardctl.h>
 
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/spinlock.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/fs/fs.h>
+#include <tinyara/fs/ioctl.h>
 #include <tinyara/syslog/ramlog.h>
-
-#include <arch/irq.h>
+#include <tinyara/compiler.h>
+#include <tinyara/list.h>
+#include <tinyara/irq.h>
 
 #ifdef CONFIG_RAMLOG
 
 /****************************************************************************
- * Private Types
+ * Pre-processor Definitions
  ****************************************************************************/
+
+#define RAMLOG_MAGIC_NUMBER 0x12345678
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
 
-struct ramlog_dev_s {
-#ifndef CONFIG_RAMLOG_NONBLOCKING
-	volatile uint8_t rl_nwaiters;	/* Number of threads waiting for data */
-#endif
-	volatile uint16_t rl_head;	/* The head index (where data is added) */
-	volatile uint16_t rl_tail;	/* The tail index (where data is removed) */
-	sem_t rl_exclsem;			/* Enforces mutually exclusive access */
-#ifndef CONFIG_RAMLOG_NONBLOCKING
-	sem_t rl_waitsem;			/* Used to wait for data */
-#endif
-	size_t rl_bufsize;			/* Size of the RAM buffer */
-	FAR char *rl_buffer;		/* Circular RAM buffer */
+struct ramlog_ratelimit_s {
+	unsigned int  interval; /* The interval in seconds */
+	unsigned int  burst;    /* The max allowed note number during interval */
+	unsigned int  printed;  /* The number of printed note during interval */
+	unsigned long begin;    /* The timestamp in seconds */
+};
 
-	/* The following is a list if poll structures of threads waiting for
-	 * driver events. The 'struct pollfd' reference for each open is also
-	 * retained in the f_priv field of the 'struct file'.
+struct ramlog_header_s {
+	uint32_t          rl_magic;    /* The rl_magic number for ramlog buffer init */
+	volatile uint32_t rl_head;     /* The head index (where data is added,natural growth) */
+	char              rl_buffer[]; /* Circular RAM buffer */
+};
+
+struct ramlog_user_s {
+	struct list_node  rl_node;       /* The list_node of reader */
+	volatile uint32_t rl_tail;       /* The tail index (where data is removed) */
+	uint32_t          rl_threashold; /* The threshold of the reader to read log */
+#ifndef CONFIG_RAMLOG_NONBLOCKING
+	sem_t             rl_waitsem;    /* Used to wait for data */
+#endif
+
+	/* The following the poll structures of threads waiting for driver events.
+	 * The 'struct pollfd' reference for each open is also  retained in the
+	 * f_priv field of the 'struct file'.
 	 */
 
-#ifndef CONFIG_DISABLE_POLL
-	struct pollfd *rl_fds[CONFIG_RAMLOG_NPOLLWAITERS];
-#endif
+	FAR struct pollfd *rl_fds;
+};
+
+struct ramlog_dev_s {
+	/* The following is the header of the RAM buffer,
+	 * Store the RAM BUFFER init rl_magic number,
+	 * and read/write pointers
+	 */
+
+	FAR struct ramlog_header_s *rl_header;
+
+	uint32_t                   rl_bufsize;   /* Size of the circular buffer */
+	struct list_node           rl_list;      /* The list of ramlog_user_s */
+	struct ramlog_ratelimit_s  rl_ratelimit; /* The ratelimit for ramlog */
 };
 
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
+
 /* Helper functions */
 
-#ifndef CONFIG_DISABLE_POLL
-static void ramlog_pollnotify(FAR struct ramlog_dev_s *priv, pollevent_t eventset);
+#ifndef CONFIG_RAMLOG_NONBLOCKING
+static void    ramlog_readnotify(FAR struct ramlog_dev_s *priv);
 #endif
-static ssize_t ramlog_addchar(FAR struct ramlog_dev_s *priv, char ch);
+static void    ramlog_pollnotify(FAR struct ramlog_dev_s *priv);
 
 /* Character driver methods */
 
-static ssize_t ramlog_read(FAR struct file *, FAR char *, size_t);
-static ssize_t ramlog_write(FAR struct file *, FAR const char *, size_t);
-#ifndef CONFIG_DISABLE_POLL
-static int ramlog_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
-#endif
+static int     ramlog_file_open(FAR struct file *filep);
+static int     ramlog_file_close(FAR struct file *filep);
+static ssize_t ramlog_file_read(FAR struct file *filep, FAR char *buffer,
+                                size_t buflen);
+static ssize_t ramlog_file_write(FAR struct file *filep,
+                                 FAR const char *buffer, size_t buflen);
+static int     ramlog_file_ioctl(FAR struct file *filep, int cmd,
+                                 unsigned long arg);
+static int     ramlog_file_poll(FAR struct file *filep,
+                                FAR struct pollfd *fds, bool setup);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations g_ramlogfops = {
-	0,							/* open */
-	0,							/* close */
-	ramlog_read,				/* read */
-	ramlog_write,				/* write */
-	0,							/* seek */
-	0							/* ioctl */
-#ifndef CONFIG_DISABLE_POLL
-	, ramlog_poll			/* poll */
-#endif
+static const struct file_operations g_ramlogfops =
+{
+  ramlog_file_open,  /* open */
+  ramlog_file_close, /* close */
+  ramlog_file_read,  /* read */
+  ramlog_file_write, /* write */
+  NULL,              /* seek */
+  ramlog_file_ioctl, /* ioctl */
+  NULL,              /* mmap */
+  NULL,              /* truncate */
+  ramlog_file_poll   /* poll */
 };
 
 /* This is the pre-allocated buffer used for the console RAM log and/or
  * for the syslogging function.
  */
 
-#if defined(CONFIG_RAMLOG_CONSOLE) || defined(CONFIG_RAMLOG_SYSLOG)
-static char g_sysbuffer[CONFIG_RAMLOG_BUFSIZE];
+#ifdef CONFIG_RAMLOG_SYSLOG
+#  ifdef RAMLOG_BUFFER_SECTION
+static uint32_t g_sysbuffer[CONFIG_RAMLOG_BUFSIZE / 4]
+                       locate_data(RAMLOG_BUFFER_SECTION);
+#  else
+static uint32_t g_sysbuffer[CONFIG_RAMLOG_BUFSIZE / 4];
+#  endif
 
 /* This is the device structure for the console or syslogging function.  It
- * must be statically initialized because the RAMLOG syslog_putc function
+ * must be statically initialized because the RAMLOG ramlog_putc function
  * could be called before the driver initialization logic executes.
  */
 
-static struct ramlog_dev_s g_sysdev = {
-#ifndef CONFIG_RAMLOG_NONBLOCKING
-	0,							/* rl_nwaiters */
-#endif
-	0,							/* rl_head */
-	0,							/* rl_tail */
-	{0},						/* rl_exclsem */
-#ifndef CONFIG_RAMLOG_NONBLOCKING
-	{0},						/* rl_waitsem */
-#endif
-	CONFIG_RAMLOG_BUFSIZE,		/* rl_bufsize */
-	g_sysbuffer					/* rl_buffer */
+static struct ramlog_dev_s g_sysdev =
+{
+  (FAR struct ramlog_header_s *)g_sysbuffer,            /* rl_buffer */
+  sizeof(g_sysbuffer) - sizeof(struct ramlog_header_s), /* rl_bufsize */
+  LIST_INITIAL_VALUE(g_sysdev.rl_list)                  /* rl_list */
 };
+
 #endif
 
 /****************************************************************************
@@ -177,94 +196,245 @@ static struct ramlog_dev_s g_sysdev = {
  ****************************************************************************/
 
 /****************************************************************************
- * Name: ramlog_pollnotify
+ * Name: ramlog_ratelimit
+ *
+ * Description:
+ *   Check whether the log is limited.
+ *
+ * Input Parameters:
+ *   dev - The pointer of ramlog device.
+ *
+ * Returned Value:
+ *   True is returned if the log is limited.
+ *
  ****************************************************************************/
 
-#ifndef CONFIG_DISABLE_POLL
-static void ramlog_pollnotify(FAR struct ramlog_dev_s *priv, pollevent_t eventset)
+static bool ramlog_ratelimit(FAR struct ramlog_dev_s *dev)
 {
-	FAR struct pollfd *fds;
-	irqstate_t flags;
-	int i;
+	bool ret;
+	clock_t ticks;
+	uint32_t seconds;
+	FAR struct ramlog_ratelimit_s *limit;
 
-	/* This function may be called from an interrupt handler */
+	limit = &dev->rl_ratelimit;
 
-	for (i = 0; i < CONFIG_RAMLOG_NPOLLWAITERS; i++) {
-		flags = enter_critical_section();
-		fds = priv->rl_fds[i];
-		if (fds) {
-			fds->revents |= (fds->events & eventset);
-			if (fds->revents != 0) {
-				sem_post(fds->sem);
+	if (limit->interval == 0) {
+		return false;
+	}
+
+	ticks = clock_systime_ticks();
+	seconds = ticks * CONFIG_USEC_PER_TICK / 1000000;
+
+	if (limit->begin == 0) {
+		limit->begin = seconds;
+	}
+
+	/* Reset statistical information */
+
+	if ((seconds - limit->begin) >= limit->interval) {
+		limit->begin = seconds;
+		limit->printed = 0;
+	}
+
+	/* Check if the note is limited */
+
+	if (limit->burst && limit->burst > limit->printed) {
+		limit->printed++;
+		ret = false;
+	} else {
+		ret = true;
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: ramlog_bufferused
+ ****************************************************************************/
+
+static uint32_t ramlog_bufferused(FAR struct ramlog_dev_s *priv,
+                                  FAR struct ramlog_user_s *upriv)
+{
+	uint32_t used = priv->rl_header->rl_head - upriv->rl_tail;
+	return used > priv->rl_bufsize ? priv->rl_bufsize : used;
+}
+
+/****************************************************************************
+ * Name: ramlog_readnotify
+ ****************************************************************************/
+
+#ifndef CONFIG_RAMLOG_NONBLOCKING
+static void ramlog_readnotify(FAR struct ramlog_dev_s *priv)
+{
+	FAR struct ramlog_user_s *upriv;
+
+	/* Notify all waiting readers that they can read from the FIFO */
+
+	list_for_every_entry(&priv->rl_list, upriv, struct ramlog_user_s, rl_node) {
+		for (;;) {
+			int semcount = 0;
+
+			nxsem_get_value(&upriv->rl_waitsem, &semcount);
+			if (semcount >= 0) {
+				break;
 			}
+
+			nxsem_post(&upriv->rl_waitsem);
 		}
-		leave_critical_section(flags);
 	}
 }
-#else
-#define ramlog_pollnotify(priv, event)
 #endif
 
 /****************************************************************************
- * Name: ramlog_addchar
+ * Name: ramlog_pollnotify
  ****************************************************************************/
 
-static int ramlog_addchar(FAR struct ramlog_dev_s *priv, char ch)
+static void ramlog_pollnotify(FAR struct ramlog_dev_s *priv)
 {
+	FAR struct ramlog_user_s *upriv;
+
+	/* This function may be called from an interrupt handler */
+
+	list_for_every_entry(&priv->rl_list, upriv, struct ramlog_user_s, rl_node) {
+		if (ramlog_bufferused(priv, upriv) >= upriv->rl_threashold) {
+			/* Notify all poll/select waiters that they can read from
+			 * the FIFO
+			 */
+
+			poll_notify(&upriv->rl_fds, 1, POLLIN);
+		}
+	}
+}
+
+/****************************************************************************
+ * Name: ramlog_flush
+ ****************************************************************************/
+
+static void ramlog_bufferflush(FAR struct ramlog_dev_s *priv)
+{
+	FAR struct ramlog_user_s *upriv;
+
+	priv->rl_header->rl_head = 0;
+	list_for_every_entry(&priv->rl_list, upriv, struct ramlog_user_s, rl_node) {
+		upriv->rl_tail = 0;
+	}
+}
+
+/****************************************************************************
+ * Name: ramlog_copybuf
+ ****************************************************************************/
+
+static void ramlog_copybuf(FAR struct ramlog_dev_s *priv,
+                          FAR const char *buffer, size_t len)
+{
+	FAR struct ramlog_header_s *header = priv->rl_header;
+	FAR char *buf = header->rl_buffer;
+	uint32_t offset;
+	uint32_t tail;
+
+	if (len <= 0) {
+		return;
+	}
+
+	offset = header->rl_head % priv->rl_bufsize;
+	tail = priv->rl_bufsize - offset;
+
+	if (len > tail) {
+		memcpy(&buf[offset], buffer, tail);
+		memcpy(buf, buffer + tail, len - tail);
+	} else {
+		memcpy(&buf[offset], buffer, len);
+	}
+
+	header->rl_head += len;
+}
+
+/****************************************************************************
+ * Name: ramlog_addbuf
+ ****************************************************************************/
+
+static ssize_t ramlog_addbuf(FAR struct ramlog_dev_s *priv,
+                             FAR const char *buffer, size_t len)
+{
+#ifdef CONFIG_RAMLOG_SYSLOG
+	FAR struct ramlog_header_s *header = priv->rl_header;
+#endif
+	size_t buflen = len;
 	irqstate_t flags;
-	int nexthead;
 
 	/* Disable interrupts (in case we are NOT called from interrupt handler) */
 
 	flags = enter_critical_section();
 
-	/* Calculate the write index AFTER the next byte is written */
-
-	nexthead = priv->rl_head + 1;
-	if (nexthead >= priv->rl_bufsize) {
-		nexthead = 0;
-	}
-
-	/* Would the next write overflow the circular buffer? */
-
-	if (nexthead == priv->rl_tail) {
-		/* Yes... */
-#ifdef CONFIG_RAMLOG_UPDATE_LATEST
-		/* Increment the tail index. It means that a byte in buffer is removed. */
-		if (++priv->rl_tail >= priv->rl_bufsize) {
-			priv->rl_tail = 0;
-		}
-#else
-		/* Return an indication that nothing was saved in the buffer. */
+	if (ramlog_ratelimit(priv)) {
 		leave_critical_section(flags);
-		return -EBUSY;
-#endif
+		return len;
 	}
 
-	/* No... copy the byte and re-enable interrupts */
+#ifdef CONFIG_RAMLOG_SYSLOG
+	if (header->rl_magic != RAMLOG_MAGIC_NUMBER && priv == &g_sysdev) {
+		memset(header, 0, sizeof(g_sysbuffer));
+		header->rl_magic = RAMLOG_MAGIC_NUMBER;
+	}
+#endif
 
-	priv->rl_buffer[priv->rl_head] = ch;
-	priv->rl_head = nexthead;
+	if (buflen > priv->rl_bufsize) {
+		buffer += buflen - priv->rl_bufsize;
+		buflen = priv->rl_bufsize;
+	}
+
+	ramlog_copybuf(priv, buffer, buflen);
+
+	/* Was anything written? */
+
+	if (len > 0) {
+		/* Lock the scheduler do NOT switch out */
+
+		if (!up_interrupt_context()) {
+			sched_lock();
+		}
+
+#ifndef CONFIG_RAMLOG_NONBLOCKING
+		/* Are there threads waiting for read data? */
+
+		ramlog_readnotify(priv);
+#endif
+		/* Notify all poll/select waiters that they can read from the FIFO */
+
+		ramlog_pollnotify(priv);
+
+		/* Unlock the scheduler */
+
+		if (!up_interrupt_context()) {
+			sched_unlock();
+		}
+	}
+
+	/* We always have to return the number of bytes requested and NOT the
+	 * number of bytes that were actually written.  Otherwise, callers
+	 * probably retry, causing same error condition again.
+	 */
+
 	leave_critical_section(flags);
-	return OK;
+	return len;
 }
 
 /****************************************************************************
  * Name: ramlog_read
  ****************************************************************************/
 
-static ssize_t ramlog_read(FAR struct file *filep, FAR char *buffer, size_t len)
+static ssize_t ramlog_file_read(FAR struct file *filep, FAR char *buffer,
+                                size_t len)
 {
-	struct inode *inode = filep->f_inode;
-	struct ramlog_dev_s *priv;
+	FAR struct inode *inode = filep->f_inode;
+	FAR struct ramlog_dev_s *priv = inode->i_private;
+	FAR struct ramlog_header_s *header = priv->rl_header;
+	FAR struct ramlog_user_s *upriv = filep->f_priv;
+	irqstate_t flags;
+	uint32_t ncopy;
 	ssize_t nread;
-	char ch;
-	int ret;
-
-	/* Some sanity checking */
-
-	DEBUGASSERT(inode && inode->i_private);
-	priv = inode->i_private;
+	uint32_t tail;
+	uint32_t pos;
 
 	/* If the circular buffer is empty, then wait for something to be written
 	 * to it.  This function may NOT be called from an interrupt handler.
@@ -274,17 +444,14 @@ static ssize_t ramlog_read(FAR struct file *filep, FAR char *buffer, size_t len)
 
 	/* Get exclusive access to the rl_tail index */
 
-	ret = sem_wait(&priv->rl_exclsem);
-	if (ret < 0) {
-		return ret;
-	}
+	flags = enter_critical_section();
 
 	/* Loop until something is read */
 
-	for (nread = 0; nread < len;) {
+	for (nread = 0; (size_t)nread < len;) {
 		/* Get the next byte from the buffer */
 
-		if (priv->rl_head == priv->rl_tail) {
+		if (header->rl_head == upriv->rl_tail) {
 			/* The circular buffer is empty. */
 
 #ifdef CONFIG_RAMLOG_NONBLOCKING
@@ -292,18 +459,18 @@ static ssize_t ramlog_read(FAR struct file *filep, FAR char *buffer, size_t len)
 
 			break;
 #else
+			int ret;
+
 			/* Did we read anything? */
 
 			if (nread > 0) {
-				/* Yes.. re-enable interrupts and the break out to return what
-				 * we have.
-				 */
+				/* Yes.. break out to return what we have. */
 
 				break;
 			}
 
-			/* If the driver was opened with O_NONBLOCK option, then don't wait.
-			 * Re-enable interrupts and return EGAIN.
+			/* If the driver was opened with O_NONBLOCK option, then don't
+			 * wait.
 			 */
 
 			if (filep->f_oflags & O_NONBLOCK) {
@@ -311,99 +478,57 @@ static ssize_t ramlog_read(FAR struct file *filep, FAR char *buffer, size_t len)
 				break;
 			}
 
-			/* Otherwise, wait for something to be written to the circular
-			 * buffer. Increment the number of waiters so that the ramlog_write()
-			 * will not that it needs to post the semaphore to wake us up.
-			 */
-
-			sched_lock();
-			priv->rl_nwaiters++;
-			sem_post(&priv->rl_exclsem);
-
-			/* We may now be pre-empted!  But that should be okay because we
+			/* We may now be preempted!  But that should be okay because we
 			 * have already incremented nwaiters.  Pre-emptions is disabled
 			 * but will be re-enabled while we are waiting.
 			 */
 
-			ret = sem_wait(&priv->rl_waitsem);
-
-			/* Interrupts will be disabled when we return.  So the decrementing
-			 * rl_nwaiters here is safe.
-			 */
-
-			priv->rl_nwaiters--;
-			sched_unlock();
+			ret = nxsem_wait(&upriv->rl_waitsem);
 
 			/* Did we successfully get the rl_waitsem? */
 
-			if (ret >= 0) {
-				/* Yes... then retake the mutual exclusion semaphore */
-
-				ret = sem_wait(&priv->rl_exclsem);
-			}
-
-			/* Was the semaphore wait successful? Did we successful re-take the
-			 * mutual exclusion semaphore?
-			 */
-
 			if (ret < 0) {
-				/* No.. One of the two sem_wait's failed. */
+				/* No.. nxsem_wait's failed. */
 
-				int errval = errno;
-
-				/* Were we awakened by a signal?  Did we read anything before
-				 * we received the signal?
+				/* Return the error. We did handle the case where we read
+				 * anything already before waiting.
 				 */
 
-				if (errval != EINTR || nread >= 0) {
-					/* Yes.. return the error. */
-
-					nread = -errval;
-				}
-
-				/* Break out to return what we have.  Note, we can't exactly
-				 * "break" out because whichever error occurred, we do not hold
-				 * the exclusion semaphore.
-				 */
-
-				goto errout_without_sem;
+				return ret;
 			}
-#endif							/* CONFIG_RAMLOG_NONBLOCKING */
+#endif /* CONFIG_RAMLOG_NONBLOCKING */
 		} else {
+			/* Determine whether the read pointer is overwritten */
+
+			if (header->rl_head - upriv->rl_tail > priv->rl_bufsize) {
+				upriv->rl_tail = header->rl_head - priv->rl_bufsize;
+			}
+
 			/* The circular buffer is not empty, get the next byte from the
 			 * tail index.
 			 */
 
-			ch = priv->rl_buffer[priv->rl_tail];
+			pos = upriv->rl_tail % priv->rl_bufsize;
+			ncopy = header->rl_head - upriv->rl_tail;
+			tail = priv->rl_bufsize - pos;
 
-			/* Increment the tail index and re-enable interrupts */
-
-			if (++priv->rl_tail >= priv->rl_bufsize) {
-				priv->rl_tail = 0;
+			if (ncopy > len - nread) {
+				ncopy = len - nread;
 			}
 
-			/* Add the character to the user buffer */
+			if (ncopy > tail) {
+				memcpy(&buffer[nread], &header->rl_buffer[pos], tail);
+				memcpy(&buffer[nread + tail], header->rl_buffer, ncopy - tail);
+			} else {
+				memcpy(&buffer[nread], &header->rl_buffer[pos], ncopy);
+			}
 
-			buffer[nread] = ch;
-			nread++;
+			upriv->rl_tail += ncopy;
+			nread += ncopy;
 		}
 	}
 
-	/* Relinquish the mutual exclusion semaphore */
-
-	sem_post(&priv->rl_exclsem);
-
-	/* Notify all poll/select waiters that they can write to the FIFO */
-
-#ifndef CONFIG_RAMLOG_NONBLOCKING
-errout_without_sem:
-#endif
-
-#ifndef CONFIG_DISABLE_POLL
-	if (nread > 0) {
-		ramlog_pollnotify(priv, POLLOUT);
-	}
-#endif
+	leave_critical_section(flags);
 
 	/* Return the number of characters actually read */
 
@@ -411,206 +536,187 @@ errout_without_sem:
 }
 
 /****************************************************************************
- * Name: ramlog_write
+ * Name: ramlog_file_write
  ****************************************************************************/
 
-static ssize_t ramlog_write(FAR struct file *filep, FAR const char *buffer, size_t len)
+static ssize_t ramlog_file_write(FAR struct file *filep,
+                                 FAR const char *buffer, size_t len)
 {
-	struct inode *inode = filep->f_inode;
-	struct ramlog_dev_s *priv;
-	ssize_t nwritten;
-	char ch;
-	int ret;
+	FAR struct inode *inode = filep->f_inode;
+	FAR struct ramlog_dev_s *priv = inode->i_private;
 
-	/* Some sanity checking */
-
-	DEBUGASSERT(inode && inode->i_private);
-	priv = inode->i_private;
-
-	/* Loop until all of the bytes have been written.  This function may be
-	 * called from an interrupt handler!  Semaphores cannot be used!
-	 *
-	 * The write logic only needs to modify the rl_head index.  Therefore,
-	 * there is a difference in the way that rl_head and rl_tail are protected:
-	 * rl_tail is protected with a semaphore; rl_tail is protected by disabling
-	 * interrupts.
-	 */
-
-	for (nwritten = 0; nwritten < len; nwritten++) {
-		/* Get the next character to output */
-
-		ch = buffer[nwritten];
-
-		/* Ignore carriage returns */
-
-#ifdef CONFIG_RAMLOG_CRLF
-		if (ch == '\r') {
-			continue;
-		}
-
-		/* Pre-pend a carriage before a linefeed */
-
-		if (ch == '\n') {
-			ret = ramlog_addchar(priv, '\r');
-			if (ret < 0) {
-				/* The buffer is full and nothing was saved. Break out of the
-				 * loop to return the number of bytes written up to this point.
-				 * The data to be written is dropped on the floor.
-				 */
-
-				break;
-			}
-		}
-#endif
-
-		/* Then output the character */
-
-		ret = ramlog_addchar(priv, ch);
-		if (ret < 0) {
-			/* The buffer is full and nothing was saved. Break out of the
-			 * loop to return the number of bytes written up to this point.
-			 * The data to be written is dropped on the floor.
-			 */
-
-			break;
-		}
-	}
-
-	/* Was anything written? */
-
-#if !defined(CONFIG_RAMLOG_NONBLOCKING) || !defined(CONFIG_DISABLE_POLL)
-	if (nwritten > 0) {
-		irqstate_t flags;
-#ifndef CONFIG_RAMLOG_NONBLOCKING
-		int i;
-#endif
-
-		/* Are there threads waiting for read data? */
-
-		flags = enter_critical_section();
-#ifndef CONFIG_RAMLOG_NONBLOCKING
-		for (i = 0; i < priv->rl_nwaiters; i++) {
-			/* Yes.. Notify all of the waiting readers that more data is available */
-
-			sem_post(&priv->rl_waitsem);
-		}
-#endif
-
-		/* Notify all poll/select waiters that they can write to the FIFO */
-
-		ramlog_pollnotify(priv, POLLIN);
-		leave_critical_section(flags);
-	}
-#endif
-
-	/* We always have to return the number of bytes requested and NOT the
-	 * number of bytes that were actually written.  Otherwise, callers
-	 * will think that this is a short write and probably retry (causing
-	 */
-
-	return len;
+	return ramlog_addbuf(priv, buffer, len);
 }
 
 /****************************************************************************
- * Name: ramlog_poll
+ * Name: ramlog_file_ioctl
  ****************************************************************************/
 
-#ifndef CONFIG_DISABLE_POLL
-int ramlog_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
+static int ramlog_file_ioctl(FAR struct file *filep, int cmd,
+                             unsigned long arg)
 {
 	FAR struct inode *inode = filep->f_inode;
-	FAR struct ramlog_dev_s *priv;
-	pollevent_t eventset;
-	int ndx;
-	int ret;
-	int i;
+	FAR struct ramlog_dev_s *priv = inode->i_private;
+	FAR struct ramlog_user_s *upriv = filep->f_priv;
+	irqstate_t flags;
+	int ret = 0;
 
-	/* Some sanity checking */
+	flags = enter_critical_section();
 
-	DEBUGASSERT(inode && inode->i_private);
-	priv = inode->i_private;
+	switch (cmd) {
+	case FIONREAD:
+		*(FAR int *)((uintptr_t)arg) = ramlog_bufferused(priv, upriv);
+		break;
+	case PIPEIOC_POLLINTHRD:
+		upriv->rl_threashold = (uint32_t)arg;
+		break;
+	case BIOC_FLUSH:
+		ramlog_bufferflush(priv);
+		break;
+
+	case SYSLOGIOC_SETRATELIMIT:
+		if (arg == 0) {
+			ret = -EINVAL;
+		} else {
+			FAR struct syslog_ratelimit_s *limit =
+			  (FAR struct syslog_ratelimit_s *)arg;
+
+			priv->rl_ratelimit.interval = limit->interval;
+			priv->rl_ratelimit.burst = limit->burst;
+			ret = 0;
+		}
+		break;
+
+	case SYSLOGIOC_GETRATELIMIT:
+		if (arg == 0) {
+			ret = -EINVAL;
+		} else {
+			FAR struct syslog_ratelimit_s *limit =
+			  (FAR struct syslog_ratelimit_s *)arg;
+
+			limit->interval = priv->rl_ratelimit.interval;
+			limit->burst = priv->rl_ratelimit.burst;
+			ret = 0;
+		}
+		break;
+
+	default:
+		ret = -ENOTTY;
+		break;
+	}
+
+	leave_critical_section(flags);
+	return ret;
+}
+
+/****************************************************************************
+ * Name: ramlog_file_poll
+ ****************************************************************************/
+
+static int ramlog_file_poll(FAR struct file *filep, FAR struct pollfd *fds,
+                            bool setup)
+{
+	FAR struct inode *inode = filep->f_inode;
+	FAR struct ramlog_dev_s *priv = inode->i_private;
+	FAR struct ramlog_user_s *upriv = filep->f_priv;
+	pollevent_t eventset = POLLOUT;
+	irqstate_t flags;
 
 	/* Get exclusive access to the poll structures */
 
-	ret = sem_wait(&priv->rl_exclsem);
-	if (ret < 0) {
-		int errval = errno;
-		return -errval;
-	}
+	flags = enter_critical_section();
 
 	/* Are we setting up the poll?  Or tearing it down? */
 
 	if (setup) {
 		/* This is a request to set up the poll.  Find an available
-		 * slot for the poll structure reference
+		 * slot for the poll structure reference.
 		 */
 
-		for (i = 0; i < CONFIG_RAMLOG_NPOLLWAITERS; i++) {
-			/* Find an available slot */
-
-			if (!priv->rl_fds[i]) {
-				/* Bind the poll structure and this slot */
-
-				priv->rl_fds[i] = fds;
-				fds->priv = &priv->rl_fds[i];
-				break;
-			}
+		if (!upriv->rl_fds) {
+			upriv->rl_fds = fds;
+			fds->priv     = &upriv->rl_fds;
 		}
 
-		if (i >= CONFIG_RAMLOG_NPOLLWAITERS) {
-			fds->priv = NULL;
-			ret = -EBUSY;
-			goto errout;
-		}
+		/* Should immediately notify on any of the requested events? */
 
-		/* Should immediately notify on any of the requested events?
-		 * First, check if the xmit buffer is full.
-		 */
+		/* Check if the receive buffer is not empty. */
 
-		eventset = 0;
-
-		ndx = priv->rl_head + 1;
-		if (ndx >= priv->rl_bufsize) {
-			ndx = 0;
-		}
-
-		if (ndx != priv->rl_tail) {
-			eventset |= POLLOUT;
-		}
-
-		/* Check if the receive buffer is empty */
-
-		if (priv->rl_head != priv->rl_tail) {
+		if (ramlog_bufferused(priv, upriv) >= upriv->rl_threashold) {
 			eventset |= POLLIN;
 		}
 
-		if (eventset) {
-			ramlog_pollnotify(priv, eventset);
-		}
-
+		poll_notify(&fds, 1, eventset);
 	} else if (fds->priv) {
 		/* This is a request to tear down the poll. */
 
-		struct pollfd **slot = (struct pollfd **)fds->priv;
-
-#ifdef CONFIG_DEBUG
-		if (!slot) {
-			ret = -EIO;
-			goto errout;
-		}
-#endif
+		FAR struct pollfd **slot = (FAR struct pollfd **)fds->priv;
 
 		/* Remove all memory of the poll setup */
 
-		*slot = NULL;
+		*slot     = NULL;
 		fds->priv = NULL;
 	}
 
-errout:
-	sem_post(&priv->rl_exclsem);
-	return ret;
+	leave_critical_section(flags);
+	return 0;
 }
+
+/****************************************************************************
+ * Name: ramlog_file_open
+ ****************************************************************************/
+
+static int ramlog_file_open(FAR struct file *filep)
+{
+	FAR struct inode *inode = filep->f_inode;
+	FAR struct ramlog_dev_s *priv = inode->i_private;
+	FAR struct ramlog_header_s *header = priv->rl_header;
+	FAR struct ramlog_user_s *upriv;
+	irqstate_t flags;
+
+	/* Get exclusive access to the rl_tail index */
+
+	upriv = kmm_zalloc(sizeof(FAR struct ramlog_user_s));
+	if (upriv == NULL) {
+		return -ENOMEM;
+	}
+
+	upriv->rl_threashold = CONFIG_RAMLOG_POLLTHRESHOLD;
+#ifndef CONFIG_RAMLOG_NONBLOCKING
+	nxsem_init(&upriv->rl_waitsem, 0, 0);
 #endif
+
+	flags = enter_critical_section();
+	list_add_tail(&priv->rl_list, &upriv->rl_node);
+	upriv->rl_tail = header->rl_head > priv->rl_bufsize ?
+	                 header->rl_head - priv->rl_bufsize : 0;
+	leave_critical_section(flags);
+
+	filep->f_priv = upriv;
+	return 0;
+}
+
+/****************************************************************************
+ * Name: ramlog_file_close
+ ****************************************************************************/
+
+static int ramlog_file_close(FAR struct file *filep)
+{
+	FAR struct ramlog_user_s *upriv = filep->f_priv;
+	irqstate_t flags;
+
+	/* Get exclusive access to the rl_tail index */
+
+	flags = enter_critical_section();
+	list_delete(&upriv->rl_node);
+	leave_critical_section(flags);
+
+#ifndef CONFIG_RAMLOG_NONBLOCKING
+	nxsem_destroy(&upriv->rl_waitsem);
+#endif
+	kmm_free(upriv);
+	return 0;
+}
 
 /****************************************************************************
  * Public Functions
@@ -624,7 +730,6 @@ errout:
  *
  ****************************************************************************/
 
-#if !defined(CONFIG_RAMLOG_CONSOLE) && !defined(CONFIG_RAMLOG_SYSLOG)
 int ramlog_register(FAR const char *devpath, FAR char *buffer, size_t buflen)
 {
 	FAR struct ramlog_dev_s *priv;
@@ -632,26 +737,17 @@ int ramlog_register(FAR const char *devpath, FAR char *buffer, size_t buflen)
 
 	/* Sanity checking */
 
-	DEBUGASSERT(devpath && buffer && buflen > 1);
+	DEBUGASSERT(devpath && buffer && buflen > sizeof(struct ramlog_header_s));
 
 	/* Allocate a RAM logging device structure */
 
-	priv = (struct ramlog_dev_s *)kmm_zalloc(sizeof(struct ramlog_dev_s));
-	if (priv) {
+	priv = kmm_zalloc(sizeof(struct ramlog_dev_s));
+	if (priv != NULL) {
 		/* Initialize the non-zero values in the RAM logging device structure */
 
-		sem_init(&priv->rl_exclsem, 0, 1);
-#ifndef CONFIG_RAMLOG_NONBLOCKING
-		sem_init(&priv->rl_waitsem, 0, 0);
-
-		/*
-		 * The rl_waitsem semaphore is used for signaling and, hence,
-		 * should not have priority inheritance enabled.
-		 */
-		sem_setprotocol(&priv->rl_waitsem, SEM_PRIO_NONE);
-#endif
-		priv->rl_bufsize = buflen;
-		priv->rl_buffer = buffer;
+		list_initialize(&priv->rl_list);
+		priv->rl_bufsize = buflen - sizeof(struct ramlog_header_s);
+		priv->rl_header = (FAR struct ramlog_header_s *)buffer;
 
 		/* Register the character driver */
 
@@ -663,142 +759,54 @@ int ramlog_register(FAR const char *devpath, FAR char *buffer, size_t buflen)
 
 	return ret;
 }
-#endif
 
 /****************************************************************************
- * Name: ramlog_consoleinit
- *
- * Description:
- *   Use a pre-allocated RAM logging device and register it at /dev/console
- *
- ****************************************************************************/
-
-#ifdef CONFIG_RAMLOG_CONSOLE
-int ramlog_consoleinit(void)
-{
-	FAR struct ramlog_dev_s *priv = &g_sysdev;
-
-	/* Initialize the non-zero values in the RAM logging device structure */
-
-	if ((priv->rl_exclsem.flags & FLAGS_INITIALIZED) == 0) {
-		sem_init(&priv->rl_exclsem, 0, 1);
-	}
-#ifndef CONFIG_RAMLOG_NONBLOCKING
-	if ((priv->rl_waitsem.flags & FLAGS_INITIALIZED) == 0) {
-		sem_init(&priv->rl_waitsem, 0, 0);
-
-		/*
-		 * The rl_waitsem semaphore is used for signaling and, hence,
-		 * should not have priority inheritance enabled.
-		 */
-		sem_setprotocol(&priv->rl_waitsem, SEM_PRIO_NONE);
-	}
-#endif
-
-	/* Register the console character driver */
-
-	return register_driver("/dev/console", &g_ramlogfops, 0666, priv);
-}
-#endif
-
-/****************************************************************************
- * Name: ramlog_sysloginit
+ * Name: ramlog_syslog_register
  *
  * Description:
  *   Use a pre-allocated RAM logging device and register it at the path
  *   specified by CONFIG_RAMLOG_SYSLOG
  *
- *   If CONFIG_RAMLOG_CONSOLE is also defined, then this functionality is
- *   performed when ramlog_consoleinit() is called.
- *
  ****************************************************************************/
 
 #ifdef CONFIG_RAMLOG_SYSLOG
-int ramlog_sysloginit(void)
+void ramlog_syslog_register(void)
 {
-	/* Initialize the non-zero values in the RAM logging device structure */
-
-	if ((g_sysdev.rl_exclsem.flags & FLAGS_INITIALIZED) == 0) {
-		sem_init(&g_sysdev.rl_exclsem, 0, 1);
-	}
-#ifndef CONFIG_RAMLOG_NONBLOCKING
-	if ((g_sysdev.rl_waitsem.flags & FLAGS_INITIALIZED) == 0) {
-		sem_init(&g_sysdev.rl_waitsem, 0, 0);
-
-		/*
-		 * The rl_waitsem semaphore is used for signaling and, hence,
-		 * should not have priority inheritance enabled.
-		 */
-		sem_setprotocol(&g_sysdev.rl_waitsem, SEM_PRIO_NONE);
-
-	}
-#endif
-
 	/* Register the syslog character driver */
 
-	return register_driver(CONFIG_SYSLOG_DEVPATH, &g_ramlogfops, 0666, &g_sysdev);
+	register_driver(CONFIG_SYSLOG_DEVPATH, &g_ramlogfops, 0666, &g_sysdev);
 }
 #endif
 
 /****************************************************************************
- * Name: syslog_putc
+ * Name: ramlog_putc
  *
  * Description:
- *   This is the low-level system logging interface.  The debugging/syslogging
- *   interfaces are syslog() and lowsyslog().  The difference is that
- *   the syslog() internface writes to syslog device (usually fd=1, stdout)
- *   whereas lowsyslog() uses a lower level interface that works from
- *   interrupt handlers.  This function is a a low-level interface used to
- *   implement lowsyslog() when CONFIG_RAMLOG_SYSLOG=y and CONFIG_SYSLOG=y
+ *   This is the low-level system logging interface.
  *
  ****************************************************************************/
 
-#if defined(CONFIG_RAMLOG_CONSOLE) || defined(CONFIG_RAMLOG_SYSLOG)
-#if defined(CONFIG_SYSLOG_CHAR)
-#error (CONFIG_RAMLOG_CONSOLE || CONFIG_RAMLOG_SYSLOG) and (CONFIG_SYSLOG_CHAR) can not be able at same time. It causes multiple definition of syslog_putc().
-#endif
-
-int syslog_putc(int ch)
+#ifdef CONFIG_RAMLOG_SYSLOG
+int ramlog_putc(FAR syslog_channel_t *channel, int ch)
 {
-	FAR struct ramlog_dev_s *priv = &g_sysdev;
-	int ret;
+	char cch = ch;
 
-#ifdef CONFIG_RAMLOG_CRLF
-	/* Ignore carriage returns.  But return success. */
-
-	if (ch == '\r') {
-		return ch;
-	}
-
-	/* Pre-pend a newline with a carriage return */
-
-	if (ch == '\n') {
-		ret = ramlog_addchar(priv, '\r');
-		if (ret < 0) {
-			/* The buffer is full and nothing was saved. */
-
-			goto errout;
-		}
-	}
-#endif
+	UNUSED(channel);
 
 	/* Add the character to the RAMLOG */
 
-	ret = ramlog_addchar(priv, ch);
-	if (ret >= 0) {
-		/* Return the character added on success */
+	ramlog_addbuf(&g_sysdev, &cch, 1);
 
-		return ch;
-	}
+	/* Return the character added on success */
 
-	/* On a failure, we need to return EOF and set the errno so that
-	 * work like all other putc-like functions.
-	 */
+	return ch;
+}
 
-errout:
-	set_errno(-ret);
-	return EOF;
+ssize_t ramlog_write(FAR syslog_channel_t *channel,
+                     FAR const char *buffer, size_t buflen)
+{
+	return ramlog_addbuf(&g_sysdev, buffer, buflen);
 }
 #endif
 
-#endif							/* CONFIG_RAMLOG */
+#endif /* CONFIG_RAMLOG */

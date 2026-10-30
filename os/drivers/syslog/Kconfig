@@ -3,7 +3,74 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-comment "System Logging"
+menu "System Logging"
+
+# Selected if the architecture has its own, built-in SYSLOG enabled
+
+choice
+	prompt "System logging"
+	default SYSLOG
+
+config SYSLOG
+	bool "Enable system logging"
+	---help---
+		Enables the SYSLOG interface.
+
+config ARCH_SYSLOG
+	bool "Architecture-specific SYSLOG support"
+	---help---
+		Architecture-specific SYSLOG support
+
+config SYSLOG_TO_SCHED_NOTE
+	bool "SYSLOG redirected to sched_note"
+	depends on SCHED_INSTRUMENTATION_DUMP
+	---help---
+		If this option is enabled, syslog will be redirected to sched_note,
+		It uses the sched_note_printf macro to replace syslog
+
+config SYSLOG_NONE
+	bool "Disable system logging"
+	---help---
+		System logging is disabled and all calls to syslog() are replaced with
+		an empty function. This option can be useful for small systems when we don't
+		have any logging support, so we can get rid of unused logic.
+		This way the final image also won't contain the strings that are present
+		in syslog().
+
+endchoice
+
+config SYSLOG_CHARDEV
+	bool "SYSLOG character device"
+	default n
+	---help---
+		Enables support for a simple character driver at /dev/log whose
+		write() method will transfer data to the SYSLOG device.  This can be
+		useful if, for example, you want to redirect the output of a program
+		to the SYSLOG.
+
+		NOTE that unlike other syslog output, this data is unformatted raw
+		byte output with no time-stamping or any other SYSLOG features
+		supported.
+
+config SYSLOG_DEFAULT_MASK
+	hex "syslog mask default value"
+	default 0xff
+
+if SYSLOG
+comment "SYSLOG options"
+
+config SYSLOG_CRLF
+	bool "Syslog convert LF to CRLF"
+	default y
+	---help---
+		Prepend a carriage return before every linefeed that goes into the
+		syslog.
+
+config SYSLOG_MAX_CHANNELS
+	int "Maximum SYSLOG channels"
+	default 1
+	---help---
+		Maximum number of supported SYSLOG channels.
 
 config RAMLOG
 	bool "RAM log device support"
@@ -20,49 +87,6 @@ config RAMLOG
 		details as needed to support logging.
 
 if RAMLOG
-config RAMLOG_SYSLOG
-	bool "Use RAMLOG for SYSLOG"
-	default n
-	depends on SYSLOG
-	---help---
-		Use the RAM logging device for the syslogging interface.  If this feature
-		is enabled (along with SYSLOG), then all debug output (only) will be re-directed
-		to the circular buffer in RAM.  This RAM log can be view from TASH using the
-		'dmesg'command.
-
-		Do not enable more than one SYSLOG device.
-
-config RAMLOG_CONSOLE
-	bool "Use RAMLOG for /dev/console"
-	default n
-	depends on DEV_CONSOLE
-	---help---
-		Use the RAM logging device as a system console. If this feature is enabled (along
-		with DEV_CONSOLE), then all console output will be re-directed to a circular
-		buffer in RAM.  This is useful, for example, if the only console is a Telnet
-		console.  Then in that case, console output from non-Telnet threads will go to
-		the circular buffer and can be viewed using the TASH 'dmesg' command.
-
-config RAMLOG_BUFSIZE
-	int "RAMLOG buffer size"
-	default 1024
-	depends on RAMLOG_SYSLOG || RAMLOG_CONSOLE
-	---help---
-		Size of the console RAM log.  Default: 1024
-
-config RAMLOG_UPDATE_LATEST
-	bool "RAMLOG buffer updates(overwrite)"
-	default y
-	depends on RAMLOG_SYSLOG || RAMLOG_CONSOLE
-	---help---
-		Updates the latest contents of circular buffer if write overflow occurs. 
-
-config RAMLOG_CRLF
-	bool "RAMLOG CR/LF"
-	default n
-	---help---
-		Pre-pend a carriage return before every linefeed that goes into the RAM log.
-
 config RAMLOG_NONBLOCKING
 	bool "RAMLOG non-block reads"
 	default y
@@ -70,23 +94,390 @@ config RAMLOG_NONBLOCKING
 		Reading from the RAMLOG will never block if the RAMLOG is empty.  If the RAMLOG
 		is empty, then zero is returned (usually interpreted as end-of-file).
 
-config RAMLOG_NPOLLWAITERS
-	int "RAMLOG number of poll waiters"
-	default 4
-	depends on !DISABLE_POLL
+config RAMLOG_POLLTHRESHOLD
+	int "The threshold value of circular buffer to notify poll waiters"
+	default 1
 	---help---
-		The maximum number of threads that may be waiting on the poll method.
+		When the length of circular buffer exceeds the threshold value, the poll() will
+		return POLLIN to all poll waiters.
+endif
+
+config SYSLOG_BUFFER
+	bool "Use buffered output"
+	default n
+	---help---
+		Enables an buffering logic that will be used to serialize debug
+		output from concurrent tasks. This enables allocation of one buffer
+		per thread, each of size CONFIG_IOB_BUFSIZE.
+
+		The use of SYSLOG buffering is optional.  If not enabled, however,
+		then the output from multiple tasks that attempt to generate SYSLOG
+		output may be interleaved and difficult to read.
+
+if SYSLOG_BUFFER
+
+config SYSLOG_BUFSIZE
+	int "Syslog buffer size"
+	default 64
+	---help---
+		The size of the syslog buffer in bytes.
 
 endif
 
+config SYSLOG_INTBUFFER
+	bool "Use interrupt buffer"
+	default n
+	---help---
+		Enables an interrupt buffer that will be used to serialize debug
+		output from interrupt handlers.
+
+config SYSLOG_INTBUFSIZE
+	int "Interrupt buffer size"
+	default 512
+	depends on SYSLOG_INTBUFFER
+	---help---
+		The size of the interrupt buffer in bytes.
+
+comment "Formatting options"
+
+config SYSLOG_RFC5424
+	bool "Standard syslog format (RFC 5424)"
+	default n
+	---help---
+		Forces syslog logs to follow the RFC 5424 (syslog protocol) standard.
+		This allows for structured data elements, standard severity levels,
+		standard facilities, standard timestamps and other features that allow
+		syslogs to be compatible with other open source programs (such as
+		logging servers).
+
+if SYSLOG_RFC5424
+
+comment "RFC5424 options"
+
+config SYSLOG_RFC5424_HOSTNAME
+	bool "Enable hostname field"
+	default n
+	---help---
+		Adds the HOSTNAME field to the RFC 5424 compatible syslog output.
+
+config SYSLOG_RFC5424_TIMEQUALITY
+	bool "timeQuality structured data"
+	depends on SYSLOG_TIMESTAMP
+	default n
+	---help---
+		Enables the RFC 5424 'timeQuality' structured data element, which describes the
+		quality of the timestamp sent.
+
+endif # SYSLOG_RFC5424
+
+if !SYSLOG_RFC5424
+
+comment "Regular syslog formatting options"
+
+config SYSLOG_TIMESTAMP_MS
+	bool "Use milliseconds for syslog timestamp"
+	default n
+	depends on SYSLOG_TIMESTAMP
+	---help---
+		Use milliseconds for timestamp.  By default,
+		microsecond will be used.
+
+config SYSLOG_TIMESTAMP_REALTIME
+	bool "Use wall-clock for syslog timestamp"
+	default n
+	depends on SYSLOG_TIMESTAMP
+	---help---
+		Use wall-clock (CLOCK_REALTIME) for timestamp.  By default,
+		CLOCK_MONOTONIC will be used.
+
+config SYSLOG_TIMESTAMP_FORMATTED
+	bool "Formatted syslog time"
+	default n
+	depends on SYSLOG_TIMESTAMP_REALTIME
+	---help---
+		Syslog timestamp will be formatted according to the
+		SYSLOG_TIMESTAMP_FORMAT format string.
+
+config SYSLOG_TIMESTAMP_LOCALTIME
+	bool "Use local-time timestamp"
+	default n
+	depends on SYSLOG_TIMESTAMP_FORMATTED
+	---help---
+		If selected local time will be used for the timestamps.
+		Else, timestamps will be in UTC.
+
+config SYSLOG_TIMESTAMP_FORMAT
+	string "Time format"
+	default "%d/%m/%y %H:%M:%S"
+	depends on SYSLOG_TIMESTAMP_FORMATTED
+	---help---
+		Formatter string for syslog timestamp printing.
+		Uses the standard "strftime" format specifiers.
+
+config SYSLOG_TIMESTAMP_FORMAT_MICROSECOND
+	bool "Append microseconds after seconds"
+	default y if SYSLOG_TIMESTAMP_FORMAT = "%d/%m/%y %H:%M:%S"
+	---help---
+		Append microseconds after seconds in syslog timestamp.
+		Suggest SYSLOG_TIMESTAMP_FORMAT end with %S.
+
+config SYSLOG_TIMESTAMP_BUFFER
+	int "Formatted timestamp buffer size"
+	default 64
+	depends on SYSLOG_TIMESTAMP_FORMATTED
+	---help---
+		Buffer size to store syslog formatted timestamps.
+
+config SYSLOG_PRIORITY
+	bool "Prepend priority to syslog message"
+	default n
+	---help---
+		Prepend log priority (severity) to syslog message.
+
+config SYSLOG_PREFIX
+	bool "Prepend prefix to syslog message"
+	default n
+	---help---
+		Prepend prefix to syslog message.
+
+config SYSLOG_PREFIX_STRING
+	string "Prefix string"
+	depends on SYSLOG_PREFIX
+	---help---
+		The prefix string to be prepend.
+
+config SYSLOG_COLOR_OUTPUT
+	bool "Colored syslog output"
+	default n
+	---help---
+		Enables colored output in syslog, according to message priority.
+
+endif # !SYSLOG_RFC5424
+
+config SYSLOG_TIMESTAMP
+	bool "Timestamp in syslog message"
+	default n
+	---help---
+		Prepend timestamp to syslog message, or include the TIMESTAMP field for
+		RFC 5424.
+
+config SYSLOG_PROCESS_NAME
+	bool "Prepend process name to syslog message"
+	default n
+	depends on TASK_NAME_SIZE > 0
+	---help---
+		Prepend Process name to syslog message.
+
+config SYSLOG_PROCESSID
+	bool "Prepend process ID to syslog message"
+	default n
+	---help---
+		Prepend Process ID to syslog message.
+
+comment "SYSLOG channels"
+
+config SYSLOG_DEVPATH
+	string "System log device"
+	default "/dev/kmsg" if RAMLOG_SYSLOG
+	default "/dev/ttyS1" if !RAMLOG_SYSLOG
+	---help---
+		The full path to the system logging device.  For the RAMLOG SYSLOG device,
+		this is normally "/dev/kmsg".  For character SYSLOG devices, it should be
+		some other existing character device (or file) supported by the configuration
+		(such as "/dev/ttyS1")/
+
+if !ARCH_SYSLOG
+config SYSLOG_CHAR
+	bool "Log to a character device"
+	default n
+	select SYSLOG_REGISTER
+	---help---
+		Enable the generic character device for the SYSLOG. The full path to the
+		SYSLOG device is provided by SYSLOG_DEVPATH. A valid character device (or
+		file) must exist at this path.  It will by opened by syslog_initialize.
+
+config RAMLOG_SYSLOG
+	bool "Use RAMLOG for SYSLOG"
+	depends on RAMLOG
+	default n
+	---help---
+		Use the RAM logging device for the syslogging interface.  If this
+		feature is enabled (along with SYSLOG), then all debug output (only)
+		will be re-directed to the circular buffer in RAM.  This RAM log can
+		be viewed from NSH using the 'dmesg' command.
+
+config SYSLOG_RPMSG
+	bool "Log to RPMSG"
+	depends on RPMSG
+	depends on SCHED_WORKQUEUE
+	default n
+	---help---
+		Use the RPMSG as a SYSLOG output device, send message to remote proc.
+
+config SYSLOG_CDCACM
+	bool "Log to CDCACM"
+	depends on CDCACM
+	default n
+	---help---
+		Use the CDCACM as a SYSLOG output device, send message to remote proc.
+
+config SYSLOG_CDCACM_MINOR
+	int "The syslog CDCACM minor number"
+	depends on SYSLOG_CDCACM
+	default 0
+	---help---
+		If there are more than one CDCACM devices, then a device minor number
+		may also need to be provided. Default: 0
+
+config SYSLOG_STREAM
+	bool "Log to stream"
+	default n
+	---help---
+		Enables support to use stream as syslog backend, such as block out stream.
+		It is recommended to implement the backend stream in a way that syslog
+		works in interrupt context.
+
 config SYSLOG_CONSOLE
+	bool "Log to /dev/console"
+	default !ARCH_LOWPUTC && !SYSLOG_CHAR && !RAMLOG_SYSLOG && !SYSLOG_RPMSG && !SYSLOG_RTT && !SYSLOG_CDCACM
+	depends on DEV_CONSOLE
+	select SYSLOG_REGISTER
+	---help---
+		Use the system console as a SYSLOG output device.
+
+config SYSLOG_DEFAULT
+	bool "Default SYSLOG device"
+	default ARCH_LOWPUTC && !SYSLOG_CHAR && !RAMLOG_SYSLOG && !SYSLOG_RPMSG && !SYSLOG_RTT && !SYSLOG_CDCACM && !SYSLOG_CONSOLE
+	---help---
+		syslog() interfaces will be present, but all output will go to the
+		up_putc(ARCH_LOWPUTC == y) or bit-bucket(ARCH_LOWPUTC == n).
+
+endif
+
+if RAMLOG_SYSLOG
+
+config RAMLOG_BUFFER_SECTION
+	string "The section where ramlog buffer is located"
+	---help---
+		The section where ramlog buffer is located.
+		The section shall not be initialized on system boot.
+
+config RAMLOG_BUFSIZE
+	int "RAMLOG buffer size"
+	default 1024
+	---help---
+		Size of the console RAM log.  Default: 1024
+
+endif # RAMLOG_SYSLOG
+
+if SYSLOG_RPMSG
+
+config SYSLOG_RPMSG_SERVER_NAME
+	string "The name of Syslog RPMSG Server"
+	---help---
+		The proc name of RPMSG server. Client sends message to
+		specified name of remote proc.
+
+config SYSLOG_RPMSG_WORK_DELAY
+	int "SYSLOG RPMSG work delay(ms)"
+	default 100
+
+config SYSLOG_RPMSG_CHARDEV
+	bool "SYSLOG RPMSG character device"
+	default SYSLOG_RPMSG_WORK_DELAY != 0
+
+endif # SYSLOG_RPMSG
+
+config SYSLOG_RPMSG_SERVER
+	bool "Enable RPMSG server for SYSLOG"
+	default n
+	depends on RPMSG
+	---help---
+		Use RPMSG to receive message from remote proc.
+
+config SYSLOG_RPMSG_SERVER_CHARDEV
+	bool "SYSLOG RPMSG server character device"
+	default n
+
+menuconfig SYSLOG_FILE
+	bool "Syslog file output"
+	default n
+	select SYSLOG_REGISTER
+	---help---
+		Build in support to use a file to collect SYSLOG output.  File SYSLOG
+		channels differ from other SYSLOG channels in that they cannot be
+		established until after fully booting and mounting the target file
+		system.  The function syslog_file_channel() would need to be called
+		from board-specific bring-up logic AFTER mounting the file system
+		containing 'devpath'.
+
+		NOTE interrupt level SYSLOG output will be lost in this case unless
+		the interrupt buffer is used.
+
+if SYSLOG_FILE
+
+config SYSLOG_FILE_SEPARATE
+	bool "Log file separation"
+	default n
+	---help---
+		If enabled, every time the file logger is re-attached, a separator
+		will be printed in the file.
+
+		This can be useful to easily distinguish between log entries that
+		belong to different log sessions (e.g. system reboot), and to
+		indicate that between the separated lines there may be more logs
+		that were lost.
+
+config SYSLOG_FILE_ROTATIONS
+	int "Log file rotations"
+	default 0
+	---help---
+		If enabled (set to a non-zero number), the log file size will be
+		checked before opening. If it is larger than the specified limit
+		it will be "rotated", i.e. the old file will be kept as a backup,
+		and a new empty	file will be created.
+
+		The number of rotations specifies the number of old log files to
+		keep.
+
+		This option is useful to ensure that log files do not get
+		huge after prolonged periods of system operation.
+
+config SYSLOG_FILE_SIZE_LIMIT
+	int "Log file size limit"
+	default 524288
+	depends on SYSLOG_FILE_ROTATIONS > 0
+	---help---
+		File size limit when the log is rotated automatically.
+		If a log file is found larger than this limit, it will
+		be rotated.
+
+endif # SYSLOG_FILE
+
+config CONSOLE_SYSLOG
 	bool "Use SYSLOG for /dev/console"
 	default n
-	depends on DEV_CONSOLE
+	depends on DEV_CONSOLE && !SYSLOG_CONSOLE
 	---help---
-		Use the syslog logging device as a system console. If this feature is enabled 
-		(along with DEV_CONSOLE), then all console output will be re-directed to syslog
-		output (syslog_putc). This is useful, for example, if the only console is a Telnet
-		console.  Then in that case, console output from non-Telnet threads will go to
-		the syslog output.
+		Use the syslog logging device as a system console. If this feature is
+		enabled (along with DEV_CONSOLE), then all console output will be
+		re-directed to syslog output (syslog_write). This is useful, for
+		example, if the only console is a Telnet console.  Then in that case,
+		console output from non-Telnet threads will go to the syslog output.
 
+config SYSLOG_IOCTL
+	bool "SYSLOG IOCTL support"
+	default n
+	---help---
+		Enables support for the SYSLOG IOCTL command.  This command is used
+		to control the behavior of the SYSLOG device. Currently, the supported
+		commands are SYSLOGIOC_SETFILTER/SYSLOGIOC_GETCHANNELS, which can be
+		used to set the enable status of different channels
+
+config SYSLOG_REGISTER
+	bool "Register syslog channel support"
+	---help---
+		This option will support register the syslog channel dynamically.
+
+endif # SYSLOG
+endmenu # System logging
