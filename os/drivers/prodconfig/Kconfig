@@ -1,0 +1,11 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config PRODCONFIG
+	bool "Product config Driver Support"
+	default n
+	---help---
+		This selection enables building of the "upper-half" prodconfig
+		driver.
