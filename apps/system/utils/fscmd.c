@@ -52,7 +52,6 @@
 /// @file fscmd.c
 /// @brief Cursor functions.
 #include <tinyara/config.h>
-#if CONFIG_NFILE_DESCRIPTORS > 0
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -113,6 +112,12 @@
  * Private Types
  ****************************************************************************/
 typedef int (*direntry_handler_t)(const char *, struct dirent *, void *);
+
+/* Called for each mount point by search_mountpoints().  NuttX keeps its
+ * foreach_mountpoint_t in the OS internal fs/mount/mount.h.
+ */
+
+typedef int (*mountpoint_handler_t)(const char *mountpoint, struct statfs *statbuf, void *arg);
 
 typedef enum {
 	FSCMD_NONE     = 0,
@@ -808,7 +813,7 @@ static int mount_handler(FAR const char *mountpoint, FAR struct statfs *statbuf,
  *    Search all mount points.
  *
  ****************************************************************************/
-static int search_mountpoints(const char *dirpath, foreach_mountpoint_t handler)
+static int search_mountpoints(const char *dirpath, mountpoint_handler_t handler)
 {
 	int ret = OK;
 	DIR *dirp = opendir(dirpath);		/* Open the directory */
@@ -1571,4 +1576,3 @@ void fs_register_utilcmds(void)
 {
 	tash_cmdlist_install(fs_utilcmds);
 }
-#endif							/* END OF CONFIG_NFILE_DESCRIPTORS */
