@@ -16,55 +16,29 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * include/tinyara/scsi.h
+ * include/nuttx/scsi.h
  *
- *   Copyright (C) 2008, 2009 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * References:
- *   "SCSI Primary Commands - 3 (SPC-3),"  American National Standard
- *   for Information Technology, May 4, 2005
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- *   "SCSI Primary Commands - 4 (SPC-4),"  American National Standard
- *   for Information Technology, July 19, 2008
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *   "SCSI Block Commands -2 (SBC-2)," American National Standard
- *   for Information Technology, November 13, 2004
- *
- *   "SCSI Multimedia Commands - 3 (MMC-3),"  American National Standard
- *   for Information Technology, November 12, 2001
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_SCSI_H
-#define __INCLUDE_TINYARA_SCSI_H
+#ifndef __INCLUDE_NUTTX_SCSI_H
+#define __INCLUDE_NUTTX_SCSI_H
 
 /****************************************************************************
  * Included Files
@@ -344,7 +318,7 @@
 /* Illegal Request KCQ values */
 
 #define SCSI_KCQIR_PARMLISTLENGTHERROR           0x051a00  /* Illegal Request - parm list length error */
-#define SCSI_KCQIR_INVALIDCOMMAND                0x052000 /* Illegal Request - invalid/unsupported command code */
+#define SCSI_KCQIR_INVALIDCOMMAND                0x052000  /* Illegal Request - invalid/unsupported command code */
 #define SCSI_KCQIR_LBAOUTOFRANGE                 0x052100  /* Illegal Request - LBA out of range */
 #define SCSI_KCQIR_INVALIDFIELDINCBA             0x052400  /* Illegal Request - invalid field in CDB (Command Descriptor Block) */
 #define SCSI_KCQIR_INVALIDLUN                    0x052500  /* Illegal Request - invalid LUN */
@@ -380,9 +354,9 @@
 #define SCSI_KCQUA_PARAMETERSCHANGED             0x062a00  /* Unit Attention - parameters changed */
 #define SCSI_KCQUA_MODEPARAMETERSCHANGED         0x062a01  /* Unit Attention - mode parameters changed */
 #define SCSI_KCQUA_LOGSELECTPARMSCHANGED         0x062a02  /* Unit Attention - log select parms changed */
-#define SCSI_KCQUA_RESERVATIONSPREEMPTED         0x062a03  /* Unit Attention - Reservations pre-empted */
+#define SCSI_KCQUA_RESERVATIONSPREEMPTED         0x062a03  /* Unit Attention - Reservations preempted */
 #define SCSI_KCQUA_RESERVATIONSRELEASED          0x062a04  /* Unit Attention - Reservations released */
-#define SCSI_KCQUA_REGISTRATIONSPREEMPTED        0x062a05  /* Unit Attention - Registrations pre-empted */
+#define SCSI_KCQUA_REGISTRATIONSPREEMPTED        0x062a05  /* Unit Attention - Registrations preempted */
 #define SCSI_KCQUA_COMMANDSCLEARED               0x062f00  /* Unit Attention - commands cleared by another initiator */
 #define SCSI_KCQUA_OPERATINGCONDITIONSCHANGED    0x063f00  /* Unit Attention - target operating conditions have changed */
 #define SCSI_KCQUA_MICROCODECHANGED              0x063f01  /* Unit Attention - microcode changed */
@@ -438,11 +412,11 @@
 /* Inquiry */
 
 #define SCSICMD_INQUIRYFLAGS_EVPD                0x01  /* Bit 0: EVPD */
-							/* Bits 5-7: Peripheral Qualifier */
+/* Bits 5-7: Peripheral Qualifier */
 #define SCSIRESP_INQUIRYPQ_CONNECTED             0x00  /*   000: Device is connected */
 #define SCSIRESP_INQUIRYPQ_NOTCONNECTED          0x20  /*   001: Device is NOT connected */
 #define SCSIRESP_INQUIRYPQ_NOTCAPABLE            0x60  /*   011: LUN not supported */
-							/* Bits 0-4: Peripheral Device */
+/* Bits 0-4: Peripheral Device */
 #define SCSIRESP_INQUIRYPD_DIRECTACCESS          0x00  /*   Direct-access block device */
 #define SCSIRESP_INQUIRYPD_SEQUENTIALACCESS      0x01  /*   Sequential-access block device */
 #define SCSIRESP_INQUIRYPD_PRINTER               0x02  /*   Printer device */
@@ -492,6 +466,7 @@
 #define SCSIRESP_INQUIRYFLAGS6_IUS               0x01  /* Bit 0: IUS */
 
 /* Sense data */
+
 /* Sense data response codes */
 
 #define SCSIRESP_SENSEDATA_CURRENTFIXED          0x70 /* Byte 1 is always the response code */
@@ -510,9 +485,9 @@
 #define SCSIRESP_SENSEDATA_NOSENSE               0x00 /*   Nothing to be reported */
 #define SCSIRESP_SENSEDATA_RECOVEREDERROR        0x01 /*   Successful after recovery action */
 #define SCSIRESP_SENSEDATA_NOTREADY              0x02 /*   Logical unit is not accessible */
-#define SCSIRESP_SENSEDATA_MEDIUMERROR           0x03 /*   Error posssibly caused by flaw in medium */
+#define SCSIRESP_SENSEDATA_MEDIUMERROR           0x03 /*   Error possibly caused by flaw in medium */
 #define SCSIRESP_SENSEDATA_HARDWAREERROR         0x04 /*   Non-recoverable hardware error */
-#define SCSIRESP_SENSEDATA_ILLEGALREQUEST        0x05 /*   Error in recived request */
+#define SCSIRESP_SENSEDATA_ILLEGALREQUEST        0x05 /*   Error in received request */
 #define SCSIRESP_SENSEDATA_UNITATTENTION         0x06 /*   Unit attention condition */
 #define SCSIRESP_SENSEDATA_DATAPROTECT           0x07 /*   Action failed, medium protected */
 #define SCSIRESP_SENSEDATA_BLANKCHECK            0x08 /*   Encountered blank media */
@@ -538,7 +513,7 @@
 #define SCSICMD_MODESENSE_PGCODEMASK             0x3f /* Bits 0-5: Page code */
 
 #define SCSICMD_MODESENSE6_PCDEFAULT             0x80 /*   Default values */
-						       /* Direct-access device page codes */
+/* Direct-access device page codes */
 #define SCSIRESP_MODESENSE_PGCCODE_VENDOR        0x00 /*   Vendor-specific */
 #define SCSIRESP_MODESENSE_PGCCODE_RWERROR       0x01 /*   Read/Write error recovery mode page */
 #define SCSIRESP_MODESENSE_PGCCODE_RECONNECT     0x02 /*   Disconnect-reconnect mode page */
@@ -559,7 +534,7 @@
 #define SCSIRESP_MODESENSE_PGCCODE_IE            0x1c /*   Informational exceptions control mode page (0x1c/0x00) */
 #define SCSIRESP_MODESENSE_PGCCODE_BC            0x1c /*   Background control mode page (0x1c/0x01) */
 #define SCSIRESP_MODESENSE_PGCCODE_RETURNALL     0x3f /*   Return all mode pages */
-						       /* Direct-access caching mode page */
+/* Direct-access caching mode page */
 #define SCSIRESP_CACHINGMODEPG_PS                0x80 /*   Byte 0, Bit 7: PS */
 #define SCSIRESP_CACHINGMODEPG_SPF               0x60 /*   Byte 0, Bit 6: SPF */
 #define SCSIRESP_CACHINGMODEPG_IC                0x80 /*   Byte 2, Bit 7: IC */
@@ -676,7 +651,7 @@ struct scsiresp_fixedsensedata_s {
 	uint8_t qual2;         /* 13: Additional sense code qualifier */
 	uint8_t fru;           /* 14: Field replacement unit code */
 	uint8_t key[3];        /* 15-17: Sense key specific */
-			       /* 18-: Additional bytes may follow */
+	/* 18-: Additional bytes may follow */
 };
 #define SCSIRESP_FIXEDSENSEDATA_SIZEOF 18 /* Minimum size */
 
@@ -718,7 +693,7 @@ struct scsiresp_inquiry_s {
 	uint8_t version7[2];   /* 70-71: Version Descriptor 7 */
 	uint8_t version8[2];   /* 72-73: Version Descriptor 8 */
 	uint8_t reserved2[22]; /* 74-95: Reserved */
-			       /* 96-: Vendor-specific parameters may follow */
+	/* 96-: Vendor-specific parameters may follow */
 };
 #define SCSIRESP_INQUIRY_SIZEOF 36 /* Minimum size */
 
@@ -792,7 +767,7 @@ struct scsicmd_read6_s {
 	uint8_t opcode;        /* 0: 0x08 */
 	uint8_t mslba;         /* 1: Bits 5-7: reserved; Bits 0-6: MS Logical Block Address (LBA) */
 	uint8_t lslba[2];      /* 2-3: LS Logical Block Address (LBA) */
-	uint8_t xfrlen;        /* 4: Transfer length (in contiguous logical blocks)*/
+	uint8_t xfrlen;        /* 4: Transfer length (in contiguous logical blocks) */
 	uint8_t control;       /* 5: Control */
 };
 #define SCSICMD_READ6_SIZEOF 6
@@ -980,13 +955,14 @@ struct scsicmd_verify12_s {
 #define SCSICMD_VERIFY12_SIZEOF 12
 
 /****************************************************************************
- * Public Functions
+ * Public Functions Definitions
  ****************************************************************************/
 
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
@@ -996,4 +972,4 @@ extern "C" {
 }
 #endif
 
-#endif /* __INCLUDE_TINYARA_SCSI_H */
+#endif /* __INCLUDE_NUTTX_SCSI_H */

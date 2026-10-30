@@ -16,42 +16,29 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * General purpose granule memory allocator.
+ * include/nuttx/mm/gran.h
  *
- *   Copyright (C) 2012, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_MM_GRAN_H
-#define __INCLUDE_MM_GRAN_H
+#ifndef __INCLUDE_NUTTX_MM_GRAN_H
+#define __INCLUDE_NUTTX_MM_GRAN_H
 
 /****************************************************************************
  * Included Files
@@ -65,14 +52,12 @@
 #ifdef CONFIG_GRAN
 
 /****************************************************************************
- * Pre-Processor Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
+
 /* Configuration ************************************************************/
+
 /* CONFIG_GRAN - Enable granule allocator support
- * CONFIG_GRAN_SINGLE - Select if there is only one instance of the
- *   granule allocator (i.e., gran_initialize will be called only once.
- *   In this case, (1) there are a few optimizations that can can be done
- *   and (2) the GRAN_HANDLE is not needed.
  * CONFIG_GRAN_INTR - Normally mutual exclusive access to granule allocator
  *   data is assured using a semaphore.  If this option is set then, instead,
  *   mutual exclusion logic will disable interrupts.  While this options is
@@ -86,9 +71,18 @@
  * Public Types
  ****************************************************************************/
 
-#ifndef CONFIG_GRAN_SINGLE
+/* An opaque reference to an instance of a granule allocator state */
+
 typedef FAR void *GRAN_HANDLE;
-#endif
+
+/* Form in which the state of the granule allocator is returned */
+
+struct graninfo_s {
+	uint8_t   log2gran;  /* Log base 2 of the size of one granule */
+	uint16_t  ngranules; /* The total number of (aligned) granules in the heap */
+	uint16_t  nfree;     /* The number of free granules */
+	uint16_t  mxfree;    /* The longest sequence of free granules */
+};
 
 /****************************************************************************
  * Public Function Prototypes
@@ -96,7 +90,8 @@ typedef FAR void *GRAN_HANDLE;
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
@@ -118,15 +113,14 @@ extern "C" {
  *   attribute to position a DMA heap in memory (logic in the linker script
  *   would assign the section .dmaheap to the DMA memory.
  *
- *     FAR uint32_t g_dmaheap[DMAHEAP_SIZE] __attribute__((section(.dmaheap)));
+ *   FAR uint32_t g_dmaheap[DMAHEAP_SIZE] locate_data(.dmaheap);
  *
  *   The heap is created by calling gran_initialize.  Here the granule size
  *   is set to 64 bytes and the alignment to 16 bytes:
  *
  *     GRAN_HANDLE handle = gran_initialize(g_dmaheap, DMAHEAP_SIZE, 6, 4);
  *
- *   Then the GRAN_HANDLE can be used to allocate memory (There is no
- *   GRAN_HANDLE if CONFIG_GRAN_SINGLE=y):
+ *   Then the GRAN_HANDLE can be used to allocate memory:
  *
  *     FAR uint8_t *dma_memory = (FAR uint8_t *)gran_alloc(handle, 47);
  *
@@ -155,11 +149,8 @@ extern "C" {
  *
  ****************************************************************************/
 
-#ifdef CONFIG_GRAN_SINGLE
-int gran_initialize(FAR void *heapstart, size_t heapsize, uint8_t log2gran, uint8_t log2align);
-#else
-GRAN_HANDLE gran_initialize(FAR void *heapstart, size_t heapsize, uint8_t log2gran, uint8_t log2align);
-#endif
+GRAN_HANDLE gran_initialize(FAR void *heapstart, size_t heapsize,
+                            uint8_t log2gran, uint8_t log2align);
 
 /****************************************************************************
  * Name: gran_release
@@ -176,11 +167,7 @@ GRAN_HANDLE gran_initialize(FAR void *heapstart, size_t heapsize, uint8_t log2gr
  *
  ****************************************************************************/
 
-#ifdef CONFIG_GRAN_SINGLE
-void gran_release(void);
-#else
 void gran_release(GRAN_HANDLE handle);
-#endif
 
 /****************************************************************************
  * Name: gran_reserve
@@ -200,15 +187,12 @@ void gran_release(GRAN_HANDLE handle);
  *   size   - The size of the region to be reserved
  *
  * Returned Value:
- *   None
+ *   On success, a non-NULL pointer to the allocated memory is returned;
+ *   NULL is returned on failure.
  *
  ****************************************************************************/
 
-#ifdef CONFIG_GRAN_SINGLE
-void gran_reserve(uintptr_t start, size_t size);
-#else
-void gran_reserve(GRAN_HANDLE handle, uintptr_t start, size_t size);
-#endif
+FAR void *gran_reserve(GRAN_HANDLE handle, uintptr_t start, size_t size);
 
 /****************************************************************************
  * Name: gran_alloc
@@ -225,16 +209,35 @@ void gran_reserve(GRAN_HANDLE handle, uintptr_t start, size_t size);
  *   size   - The size of the memory region to allocate.
  *
  * Returned Value:
- *   On success, either a non-NULL pointer to the allocated memory (if
- *   CONFIG_GRAN_SINGLE) or zero  (if !CONFIG_GRAN_SINGLE) is returned.
+ *   On success, a non-NULL pointer to the allocated memory is returned;
+ *   NULL is returned on failure.
  *
  ****************************************************************************/
 
-#ifdef CONFIG_GRAN_SINGLE
-FAR void *gran_alloc(size_t size);
-#else
 FAR void *gran_alloc(GRAN_HANDLE handle, size_t size);
-#endif
+
+/****************************************************************************
+ * Name: gran_alloc_align
+ *
+ * Description:
+ *   Allocate memory from the granule heap.
+ *
+ *   NOTE: The current implementation also restricts the maximum allocation
+ *   size to 32 granules.  That restriction could be eliminated with some
+ *   additional coding effort.
+ *
+ * Input Parameters:
+ *   handle - The handle previously returned by gran_initialize
+ *   size   - The size of the memory region to allocate.
+ *   align  - The size of the memory region to align.
+ *
+ * Returned Value:
+ *   On success, a non-NULL pointer to the allocated memory is returned;
+ *   NULL is returned on failure.
+ *
+ ****************************************************************************/
+
+FAR void *gran_alloc_align(GRAN_HANDLE handle, size_t size, size_t align);
 
 /****************************************************************************
  * Name: gran_free
@@ -251,16 +254,30 @@ FAR void *gran_alloc(GRAN_HANDLE handle, size_t size);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_GRAN_SINGLE
-void gran_free(FAR void *memory, size_t size);
-#else
 void gran_free(GRAN_HANDLE handle, FAR void *memory, size_t size);
-#endif
+
+/****************************************************************************
+ * Name: gran_info
+ *
+ * Description:
+ *   Return information about the granule heap.
+ *
+ * Input Parameters:
+ *   handle - The handle previously returned by gran_initialize
+ *   info   - Memory location to return the gran allocator info.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is return on
+ *   any failure.
+ *
+ ****************************************************************************/
+
+void gran_info(GRAN_HANDLE handle, FAR struct graninfo_s *info);
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
 
-#endif							/* CONFIG_GRAN */
-#endif							/* __INCLUDE_MM_GRAN_H */
+#endif /* CONFIG_GRAN */
+#endif /* __INCLUDE_NUTTX_MM_GRAN_H */

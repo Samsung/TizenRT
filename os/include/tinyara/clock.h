@@ -17,51 +17,29 @@
  ****************************************************************************/
 
 /****************************************************************************
+ * include/nuttx/clock.h
  *
- *   Copyright (C) 2007-2009, 2011-2012, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-/**
- * @defgroup CLOCK_KERNEL CLOCK
- * @brief Provides APIs for Clock
- * @ingroup KERNEL
- *
- * @{
- */
-
-///@file tinyara/clock.h
-///@brief Clock APIs
-#ifndef _INCLUDE_CLOCK_H
-#define _INCLUDE_CLOCK_H
+#ifndef __INCLUDE_NUTTX_CLOCK_H
+#define __INCLUDE_NUTTX_CLOCK_H
 
 /****************************************************************************
  * Included Files
@@ -69,16 +47,21 @@
 
 #include <tinyara/config.h>
 
+#include <sys/timex.h>
 #include <sys/types.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
 
 #include <tinyara/compiler.h>
+#include <tinyara/lib/math32.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 /* Configuration ************************************************************/
+
 /* Efficient, direct access to OS global timer variables will be supported
  * if the execution environment has direct access to kernel global data.
  * The code in this execution context can access the kernel global data
@@ -98,15 +81,10 @@
 #if defined(CONFIG_SCHED_TICKLESS)
 /* Case 1: There is no global timer data */
 
-#elif defined(CONFIG_BUILD_PROTECTED) && defined(__KERNEL__)
-/* Case 3: Kernel mode of protected kernel build */
+#elif defined(__KERNEL__)
+/* Case 3: Kernel mode of protected/kernel build */
 
-#define __HAVE_KERNEL_GLOBALS 1
-
-#elif defined(CONFIG_BUILD_KERNEL) && defined(__KERNEL__)
-/* Case 3: Kernel only build */
-
-#define __HAVE_KERNEL_GLOBALS 1
+#  define __HAVE_KERNEL_GLOBALS 1
 
 #elif defined(CONFIG_LIB_SYSCALL)
 /* Case 4: Building with SYSCALLs enabled, but not part of a kernel build */
@@ -114,7 +92,7 @@
 #else
 /* Case 2: Un-protected, non-kernel build */
 
-#define __HAVE_KERNEL_GLOBALS 1
+#  define __HAVE_KERNEL_GLOBALS 1
 #endif
 
 /* If CONFIG_SYSTEM_TIME64 is selected and the CPU supports long long types,
@@ -122,29 +100,75 @@
  */
 
 #ifndef CONFIG_HAVE_LONG_LONG
-#undef CONFIG_SYSTEM_TIME64
+#  undef CONFIG_SYSTEM_TIME64
 #endif
+
+/* The following are the bit fields of the clockid_t
+ * bit 0~2: the clock type
+ * CLOCK_REALTIME           - 0
+ * CLOCK_MONOTONIC          - 1
+ * CLOCK_PROCESS_CPUTIME_ID - 2
+ * CLOCK_THREAD_CPUTIME_ID  - 3
+ * CLOCK_BOOTTIME           - 4
+ * CLOCK_FD                 - 5
+ *
+ * if the clockid value exceeds CLOCK_MASK, it indicates a dynamic clockid.
+ * bit 3~32: the fd, pid or tid value
+ *
+ * The CLOCK_MASK are using to extract the clock_type from the clockid_t
+ */
+
+#define CLOCK_FD              5
+#define CLOCK_MASK            7
+#define CLOCK_SHIFT           3
 
 /* Timing constants *********************************************************/
 
-#define NSEC_PER_SEC          1000000000
-#define USEC_PER_SEC             1000000
-#define MSEC_PER_SEC                1000
-#define DSEC_PER_SEC                  10
-#define NSEC_PER_DSEC          100000000
-#define USEC_PER_DSEC             100000
-#define MSEC_PER_DSEC                100
-#define NSEC_PER_MSEC            1000000
-#define USEC_PER_MSEC               1000
-#define NSEC_PER_USEC               1000
+#define NSEC_PER_SEC          1000000000L /* Seconds */
+#define USEC_PER_SEC             1000000L
+#define MSEC_PER_SEC                1000L
+#define DSEC_PER_SEC                  10L
+#define HSEC_PER_SEC                   2L
+
+#define NSEC_PER_HSEC          500000000L /* Half seconds */
+#define USEC_PER_HSEC             500000L
+#define MSEC_PER_HSEC                500L
+#define DSEC_PER_HSEC                  5L
+
+#define NSEC_PER_DSEC          100000000L /* Deciseconds */
+#define USEC_PER_DSEC             100000L
+#define MSEC_PER_DSEC                100L
+
+#define NSEC_PER_MSEC            1000000L /* Milliseconds */
+#define USEC_PER_MSEC               1000L
+
+#define NSEC_PER_USEC               1000L /* Microseconds */
+
+#define SEC_PER_MIN                   60L
+#define NSEC_PER_MIN           (NSEC_PER_SEC * SEC_PER_MIN)
+#define USEC_PER_MIN           (USEC_PER_SEC * SEC_PER_MIN)
+#define MSEC_PER_MIN           (MSEC_PER_SEC * SEC_PER_MIN)
+#define DSEC_PER_MIN           (DSEC_PER_SEC * SEC_PER_MIN)
+#define HSEC_PER_MIN           (HSEC_PER_SEC * SEC_PER_MIN)
+
+#define MIN_PER_HOUR                  60L
+#define NSEC_PER_HOUR          (NSEC_PER_MIN * MIN_PER_HOUR)
+#define USEC_PER_HOUR          (USEC_PER_MIN * MIN_PER_HOUR)
+#define MSEC_PER_HOUR          (MSEC_PER_MIN * MIN_PER_HOUR)
+#define DSEC_PER_HOUR          (DSEC_PER_MIN * MIN_PER_HOUR)
+#define HSEC_PER_HOUR          (HSEC_PER_MIN * MIN_PER_HOUR)
+#define SEC_PER_HOUR           (SEC_PER_MIN  * MIN_PER_HOUR)
+
+#define HOURS_PER_DAY                 24L
+#define SEC_PER_DAY            (HOURS_PER_DAY * SEC_PER_HOUR)
 
 /* If CONFIG_SCHED_TICKLESS is not defined, then the interrupt interval of
  * the system timer is given by USEC_PER_TICK.  This is the expected number
  * of microseconds between calls from the processor-specific logic to
- * sched_process_timer().  The default value of USEC_PER_TICK is 10000
- * microseconds (100KHz).  However, this default setting can be overridden
+ * nxsched_process_timer().  The default value of USEC_PER_TICK is 10000
+ * microseconds (100 Hz).  However, this default setting can be overridden
  * by defining the interval in microseconds as CONFIG_USEC_PER_TICK in the
- * TinyAra configuration file.
+ * NuttX configuration file.
  *
  * The following calculations are only accurate when (1) there is no
  * truncation involved and (2) the underlying system timer is an even
@@ -153,9 +177,9 @@
  */
 
 #ifdef CONFIG_USEC_PER_TICK
-#define USEC_PER_TICK        (CONFIG_USEC_PER_TICK)
+#  define USEC_PER_TICK       (0L + CONFIG_USEC_PER_TICK)
 #else
-#define USEC_PER_TICK        (10000)
+#  define USEC_PER_TICK       (10000L)
 #endif
 
 /* MSEC_PER_TICK can be very inaccurate if CONFIG_USEC_PER_TICK is not an
@@ -163,52 +187,155 @@
  * preferred for that reason (at the risk of overflow)
  */
 
-#define TICK_PER_DSEC         (USEC_PER_DSEC / USEC_PER_TICK)	/* Truncates! */
-#define TICK_PER_SEC          (USEC_PER_SEC  / USEC_PER_TICK)	/* Truncates! */
-#define TICK_PER_MSEC         (USEC_PER_MSEC / USEC_PER_TICK)	/* Truncates! */
-#define MSEC_PER_TICK         (USEC_PER_TICK / USEC_PER_MSEC)	/* Truncates! */
-#define NSEC_PER_TICK         (USEC_PER_TICK * NSEC_PER_USEC)	/* Exact */
+/* TICK_PER_* truncates! */
 
-#define NSEC2TICK(nsec)       (((nsec)+(NSEC_PER_TICK/2))/NSEC_PER_TICK)	/* Rounds */
-#define USEC2TICK(usec)       (((usec)+(USEC_PER_TICK/2))/USEC_PER_TICK)	/* Rounds */
+#define TICK_PER_HOUR         (USEC_PER_HOUR / USEC_PER_TICK)
+#define TICK_PER_MIN          (USEC_PER_MIN  / USEC_PER_TICK)
+#define TICK_PER_SEC          (USEC_PER_SEC  / USEC_PER_TICK)
+#define TICK_PER_MSEC         (USEC_PER_MSEC / USEC_PER_TICK)
+#define TICK_PER_DSEC         (USEC_PER_DSEC / USEC_PER_TICK)
+#define TICK_PER_HSEC         (USEC_PER_HSEC / USEC_PER_TICK)
 
-#if (MSEC_PER_TICK * USEC_PER_MSEC) == USEC_PER_TICK
-#define MSEC2TICK(msec)     (((msec)+(MSEC_PER_TICK/2))/MSEC_PER_TICK)	/* Rounds */
-#else
-#define MSEC2TICK(msec)     USEC2TICK((msec) * USEC_PER_MSEC)	/* Rounds */
-#endif
+/* MSEC_PER_TICK truncates! */
 
-#define DSEC2TICK(dsec)       MSEC2TICK((dsec) * MSEC_PER_DSEC)	/* Rounds */
-#define SEC2TICK(sec)         MSEC2TICK((sec)  * MSEC_PER_SEC)	/* Rounds */
+#define MSEC_PER_TICK         (USEC_PER_TICK / USEC_PER_MSEC)
+#define NSEC_PER_TICK         (USEC_PER_TICK * NSEC_PER_USEC)
 
-#define TICK2NSEC(tick)       ((tick) * NSEC_PER_TICK)	/* Exact */
-#define TICK2USEC(tick)       ((tick) * USEC_PER_TICK)	/* Exact */
+/* ?SEC2TIC rounds up */
+
+#define NSEC2TICK(nsec)       div_const_roundup(nsec, (uint32_t)NSEC_PER_TICK)
+#define USEC2TICK(usec)       div_const_roundup(usec, (uint32_t)USEC_PER_TICK)
 
 #if (MSEC_PER_TICK * USEC_PER_MSEC) == USEC_PER_TICK
-#define TICK2MSEC(tick)     ((tick)*MSEC_PER_TICK)	/* Exact */
+#  define MSEC2TICK(msec)     div_const_roundup(msec, (uint32_t)MSEC_PER_TICK)
 #else
-#define TICK2MSEC(tick)     (((tick)*USEC_PER_TICK)/USEC_PER_MSEC)	/* Rounds */
+#  define MSEC2TICK(msec)     USEC2TICK((msec) * USEC_PER_MSEC)
 #endif
 
-#define TICK2DSEC(tick)       (((tick)+(TICK_PER_DSEC/2))/TICK_PER_DSEC)	/* Rounds */
-#define TICK2SEC(tick)        (((tick)+(TICK_PER_SEC/2))/TICK_PER_SEC)	/* Rounds */
+#define DSEC2TICK(dsec)       MSEC2TICK((dsec) * MSEC_PER_DSEC)
+#define HSEC2TICK(dsec)       MSEC2TICK((dsec) * MSEC_PER_HSEC)
+#define SEC2TICK(sec)         MSEC2TICK((sec)  * MSEC_PER_SEC)
+
+#define TICK2NSEC(tick)       ((tick) * NSEC_PER_TICK)
+#define TICK2USEC(tick)       ((tick) * USEC_PER_TICK)
+
+#if (MSEC_PER_TICK * USEC_PER_MSEC) == USEC_PER_TICK
+#  define TICK2MSEC(tick)     ((tick) * MSEC_PER_TICK)
+#else
+#  define TICK2MSEC(tick)     div_const(((tick) * USEC_PER_TICK), (uint32_t)USEC_PER_MSEC)
+#endif
+
+/* TIC2?SEC rounds to nearest */
+
+#define TICK2DSEC(tick)       div_const_roundnearest(tick, (uint32_t)TICK_PER_DSEC)
+#define TICK2HSEC(tick)       div_const_roundnearest(tick, (uint32_t)TICK_PER_HSEC)
+#define TICK2SEC(tick)        div_const_roundnearest(tick, (uint32_t)TICK_PER_SEC)
+
+/* MSEC2SEC */
+
+#define MSEC2SEC(usec)        div_const(msec, (uint32_t)MSEC_PER_SEC)
+
+/* USEC2MSEC */
+
+#define USEC2MSEC(usec)       div_const(usec, (uint32_t)USEC_PER_MSEC)
+
+/* USEC2SEC */
+
+#define USEC2SEC(usec)        div_const(usec, (uint32_t)USEC_PER_SEC)
+
+/* NSEC2USEC */
+
+#define NSEC2USEC(nsec)       div_const(nsec, (uint32_t)NSEC_PER_USEC)
+
+/* NSEC2MSEC */
+
+#define NSEC2MSEC(nsec)       div_const(nsec, (uint32_t)NSEC_PER_MSEC)
+
+#if defined(CONFIG_DEBUG_SCHED) && defined(CONFIG_SYSTEM_TIME64) && \
+    !defined(CONFIG_SCHED_TICKLESS)
+/* Initial system timer ticks value close to maximum 32-bit value, to test
+ * 64-bit system-timer after going over 32-bit value. This is to make errors
+ * of casting 64-bit system-timer to 32-bit variables more visible.
+ */
+
+#  define INITIAL_SYSTEM_TIMER_TICKS \
+    ((uint64_t)(UINT32_MAX - (TICK_PER_SEC * 5)))
+#else
+#  define INITIAL_SYSTEM_TIMER_TICKS 0
+#endif
+
+/* If Gregorian time is not supported, then neither is Julian */
+
+#ifndef CONFIG_GREGORIAN_TIME
+#  undef CONFIG_JULIAN_TIME
+#else
+#  define JD_OF_EPOCH         2440588    /* Julian Date of noon, J1970 */
+
+#  ifdef CONFIG_JULIAN_TIME
+#    define GREG_DUTC         -141427    /* Default is October 15, 1582 */
+#    define GREG_YEAR         1582
+#    define GREG_MONTH        10
+#    define GREG_DAY          15
+#  endif /* CONFIG_JULIAN_TIME */
+#endif /* !CONFIG_GREGORIAN_TIME */
+
+#define SECSPERMIN            60
+#define MINSPERHOUR           60
+#define HOURSPERDAY           24
+#define DAYSPERWEEK           7
+#define DAYSPERNYEAR          365
+#define DAYSPERLYEAR          366
+#define MONSPERYEAR           12
+
+#define TM_SUNDAY             0
+#define TM_MONDAY             1
+#define TM_TUESDAY            2
+#define TM_WEDNESDAY          3
+#define TM_THURSDAY           4
+#define TM_FRIDAY             5
+#define TM_SATURDAY           6
+
+#define TM_JANUARY            0
+#define TM_FEBRUARY           1
+#define TM_MARCH              2
+#define TM_APRIL              3
+#define TM_MAY                4
+#define TM_JUNE               5
+#define TM_JULY               6
+#define TM_AUGUST             7
+#define TM_SEPTEMBER          8
+#define TM_OCTOBER            9
+#define TM_NOVEMBER           10
+#define TM_DECEMBER           11
+
+#define TM_YEAR_BASE          (1900)
+#define TM_WDAY_BASE          TM_MONDAY
+
+#define EPOCH_YEAR            1970
+#define EPOCH_WDAY            TM_THURSDAY
 
 /****************************************************************************
  * Public Types
  ****************************************************************************/
+
 /* This structure is used to report CPU usage for a particular thread */
 
-#ifdef CONFIG_SCHED_CPULOAD
+#ifndef CONFIG_SCHED_CPULOAD_NONE
 struct cpuload_s {
-	volatile uint32_t total[CONFIG_SMP_NCPUS];   /* Total number of clock ticks per cpu */
-	volatile uint32_t active[CONFIG_SMP_NCPUS];  /* Number of ticks while this thread was active on the specific cpu */
+	volatile clock_t total;   /* Total number of clock ticks */
+	volatile clock_t active;  /* Number of ticks while this thread was active */
 };
-
-#ifdef CONFIG_SCHED_MULTI_CPULOAD
-#define SCHED_NCPULOAD 3
-#else
-#define SCHED_NCPULOAD 1
 #endif
+
+/* This non-standard type used to hold relative clock ticks that may take
+ * negative values.  Because of its non-portable nature the type sclock_t
+ * should be used only within the OS proper and not by portable applications.
+ */
+
+#ifdef CONFIG_SYSTEM_TIME64
+typedef int64_t sclock_t;
+#else
+typedef int32_t sclock_t;
 #endif
 
 /****************************************************************************
@@ -217,32 +344,310 @@ struct cpuload_s {
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
-#endif
-
-/* Access to raw system clock ***********************************************/
-/* Direct access to the system timer/counter is supported only if (1) the
- * system timer counter is available (i.e., we are not configured to use
- * a hardware periodic timer), and (2) the execution environment has direct
- * access to kernel global data
- */
-
-#ifdef __HAVE_KERNEL_GLOBALS
-EXTERN volatile clock_t g_system_timer;
-
-#ifndef CONFIG_SYSTEM_TIME64
-#define clock_systimer() g_system_timer
-#endif
 #endif
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
+#define clock_ticks2time(ts, tick) \
+  do \
+    { \
+      clock_t _tick = tick; \
+      (ts)->tv_sec = (time_t)div_const(_tick, (uint32_t)TICK_PER_SEC); \
+      _tick -= (clock_t)((ts)->tv_sec * TICK_PER_SEC); \
+      (ts)->tv_nsec = (long)_tick * NSEC_PER_TICK; \
+    } \
+  while (0)
+
+#define clock_time2ticks(ts) \
+  ((clock_t)((ts)->tv_sec * TICK_PER_SEC) + \
+   (clock_t)div_const_roundup((uint64_t)(ts)->tv_nsec, (uint32_t)NSEC_PER_TICK))
+
+#define clock_time2ticks_floor(ts) \
+  ((clock_t)(ts)->tv_sec * TICK_PER_SEC + \
+   div_const((uint32_t)(ts)->tv_nsec, (uint32_t)NSEC_PER_TICK))
+
+#define clock_usec2time(ts, usec) \
+  do \
+    { \
+      uint64_t _usec = (usec); \
+      (ts)->tv_sec = (time_t)div_const(_usec, (uint32_t)USEC_PER_SEC); \
+      _usec -= (uint64_t)(ts)->tv_sec * USEC_PER_SEC; \
+      (ts)->tv_nsec = (long)_usec * NSEC_PER_USEC; \
+    } \
+  while (0)
+
+#define clock_time2usec(ts) \
+  ((uint64_t)(ts)->tv_sec * USEC_PER_SEC + \
+   div_const((uint32_t)(ts)->tv_nsec, (uint32_t)NSEC_PER_USEC))
+
+#define clock_nsec2time(ts, nsec) \
+  do \
+    { \
+      uint64_t _nsec = (nsec); \
+      (ts)->tv_sec = (time_t)div_const(_nsec, (uint32_t)NSEC_PER_SEC); \
+      _nsec -= (uint64_t)(ts)->tv_sec * NSEC_PER_SEC; \
+      (ts)->tv_nsec = (long)_nsec; \
+    } \
+  while (0)
+
+#define clock_time2nsec(ts) \
+  ((uint64_t)(ts)->tv_sec * NSEC_PER_SEC + (uint64_t)(ts)->tv_nsec)
+
+/* Calculate delay+1, forcing the delay into a range that we can handle.
+ *
+ * NOTE that one is added to the delay.  This is correct and must not be
+ * changed:  The contract for the use wdog_start is that the wdog will
+ * delay FOR AT LEAST as long as requested, but may delay longer due to
+ * variety of factors.  The wdog logic has no knowledge of the the phase
+ * of the system timer when it is started:  The next timer interrupt may
+ * occur immediately or may be delayed for almost a full cycle. In order
+ * to meet the contract requirement, the requested time is also always
+ * incremented by one so that the delay is always at least as long as
+ * requested.
+ *
+ * E.g. delay+1 can prevent the insufficient sleep time if we are
+ * currently near the boundary to the next tick.
+ * | current_tick | current_tick + 1 | current_tick + 2 | .... |
+ * |           ^ Here we get the current tick
+ * In this case we delay 1 tick, timer will be triggered at
+ * current_tick + 1, which is not enough for at least 1 tick.
+ */
+
+#define clock_delay2abstick(delay) (clock_systime_ticks() + (delay) + 1u)
+
 /****************************************************************************
- * Function:  clock_synchronize
+ * Name:  clock_timespec_add
+ *
+ * Description:
+ *   Add timespec ts1 to to2 and return the result in ts3
+ *
+ * Input Parameters:
+ *   ts1 and ts2: The two timespecs to be added
+ *   ts3: The location to return the result (may be ts1 or ts2)
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#define clock_timespec_add(ts1, ts2, ts3) \
+  do \
+    { \
+      time_t _sec = (ts1)->tv_sec + (ts2)->tv_sec; \
+      long _nsec = (ts1)->tv_nsec + (ts2)->tv_nsec; \
+      if (_nsec >= NSEC_PER_SEC) \
+          { \
+          _nsec -= NSEC_PER_SEC; \
+          _sec++; \
+          } \
+      (ts3)->tv_sec = _sec; \
+      (ts3)->tv_nsec = _nsec; \
+    }\
+  while (0)
+
+/****************************************************************************
+ * Name:  clock_timespec_subtract
+ *
+ * Description:
+ *   Subtract timespec ts2 from to1 and return the result in ts3.
+ *   Zero is returned if the time difference is negative.
+ *
+ * Input Parameters:
+ *   ts1 and ts2: The two timespecs to be subtracted (ts1 - ts2)
+ *   ts3: The location to return the result (may be ts1 or ts2)
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#define clock_timespec_subtract(ts1, ts2, ts3) \
+  do \
+    { \
+      time_t _sec = (ts1)->tv_sec - (ts2)->tv_sec; \
+      long _nsec = (ts1)->tv_nsec - (ts2)->tv_nsec; \
+      if (_nsec < 0) \
+        { \
+          _nsec += NSEC_PER_SEC; \
+          _sec--; \
+        } \
+      if ((sclock_t)_sec < 0) \
+        { \
+          _sec = 0; \
+          _nsec = 0; \
+        } \
+      (ts3)->tv_sec = _sec; \
+      (ts3)->tv_nsec = _nsec; \
+    }\
+  while (0)
+
+/****************************************************************************
+ * Name: clock_timespec_compare
+ *
+ * Description:
+ *    Return < 0 if time ts1 is before time ts2
+ *    Return > 0 if time ts2 is before time ts1
+ *    Return 0 if time ts1 is the same as time ts2
+ *
+ ****************************************************************************/
+
+#define clock_timespec_compare(ts1, ts2) \
+  (((ts1)->tv_sec < (ts2)->tv_sec) ? -1 : \
+   ((ts1)->tv_sec > (ts2)->tv_sec) ? 1 : \
+   (ts1)->tv_nsec - (ts2)->tv_nsec)
+
+/****************************************************************************
+ * Name: clock_abstime2ticks
+ *
+ * Description:
+ *   Convert an absolute timespec delay to system timer ticks.
+ *
+ * Input Parameters:
+ *   clockid - The timing source to use in the conversion
+ *   abstime - Convert this absolute time to ticks
+ *   ticks - Return the converted number of ticks here.
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
+ *   Interrupts should be disabled so that the time is not changing during
+ *   the calculation
+ *
+ ****************************************************************************/
+
+#define clock_abstime2ticks(clockid, abstime, ticks) \
+  do \
+    { \
+      struct timespec _reltime; \
+      nxclock_gettime(clockid, &_reltime); \
+      clock_timespec_subtract(abstime, &_reltime, &_reltime); \
+      *(ticks) = clock_time2ticks(&_reltime); \
+    } \
+  while (0)
+
+/****************************************************************************
+ * Name: clock_realtime2absticks
+ *
+ * Description:
+ *   Convert real time to monotonic ticks.
+ *
+ * Input Parameters:
+ *   mono - Return the converted time here.
+ *   abstime - Convert this absolute time to ticks
+ *
+ * Returned Value:
+ *   OK (0) on success; a negated errno value on failure.
+ *
+ * Assumptions:
+ *   Interrupts should be disabled so that the time is not changing during
+ *   the calculation
+ *
+ ****************************************************************************/
+
+int clock_realtime2absticks(FAR const struct timespec *reltime,
+                            FAR clock_t *absticks);
+
+/****************************************************************************
+ * Name: clock_compare
+ *
+ * Description:
+ *   This function is used for check whether the expired time is reached.
+ *   It take the ticks wrap-around into consideration.
+ *
+ * Input Parameters:
+ *   tick1 - Expected time in clock ticks
+ *   tick2 - Current time in clock ticks
+ *
+ * Returned Value:
+ *   true          - Expected ticks is timeout.
+ *   false         - Otherwise.
+ *
+ * Assumptions:
+ *   The type of delay value should be sclock_t.
+ *
+ ****************************************************************************/
+
+/* clock_compare considers tick wraparound, discussed as follows:
+ * Assuming clock_t is a 64-bit data type.
+ *
+ * Case 1: If tick2 - tick1 > 2^63, it is considered expired
+ *         or expired after tick2 wraparound.
+ *
+ * Case 2: If tick2 - tick1 <= 2^63,
+ *         it is considered not expired.
+ *
+ * For bit-63 as the sign bit, we can simplify this to:
+ * (sclock_t)(tick2 - tick1) >= 0.
+ *
+ * However, this function requires an assumption to work correctly:
+ * Assumes the timer delay time does not exceed SCLOCK_MAX (2^63 - 1).
+ *
+ * The range of the delay data type sclock_t being
+ * [- (SCLOCK_MAX + 1), SCLOCK_MAX] ensures this assumption holds.
+ */
+
+#define clock_compare(tick1, tick2) ((sclock_t)((tick2) - (tick1)) >= 0)
+
+/****************************************************************************
+ * Name:  clock_isleapyear
+ *
+ * Description:
+ *    Return true if the specified year is a leap year
+ *
+ ****************************************************************************/
+
+int clock_isleapyear(int year);
+
+/****************************************************************************
+ * Name:  clock_daysbeforemonth
+ *
+ * Description:
+ *    Get the number of days that occurred before the beginning of the month.
+ *
+ ****************************************************************************/
+
+int clock_daysbeforemonth(int month, bool leap_year);
+
+/****************************************************************************
+ * Name:  clock_dayoftheweek
+ *
+ * Description:
+ *    Get the day of the week
+ *
+ * Input Parameters:
+ *   mday  - The day of the month 1 - 31
+ *   month - The month of the year 1 - 12
+ *   year  - the year including the 1900
+ *
+ * Returned Value:
+ *   Zero based day of the week 0-6, 0 = Sunday, 1 = Monday... 6 = Saturday
+ *
+ ****************************************************************************/
+
+int clock_dayoftheweek(int mday, int month, int year);
+
+/****************************************************************************
+ * Name:  clock_calendar2utc
+ *
+ * Description:
+ *    Calendar/UTC conversion based on algorithms from p. 604
+ *    of Seidelman, P. K. 1992.  Explanatory Supplement to
+ *    the Astronomical Almanac.  University Science Books,
+ *    Mill Valley.
+ *
+ ****************************************************************************/
+
+time_t clock_calendar2utc(int year, int month, int day);
+
+/****************************************************************************
+ * Name:  clock_synchronize
  *
  * Description:
  *   Synchronize the system timer to a hardware RTC.  This operation is
@@ -259,10 +664,10 @@ EXTERN volatile clock_t g_system_timer;
  *   Time going backward could have bad consequences if there are ongoing
  *   timers and delays.  So use this interface with care.
  *
- * Parameters:
- *   None
+ * Input Parameters:
+ *   tp: rtc time should be synced, set NULL to re-get time
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -270,103 +675,118 @@ EXTERN volatile clock_t g_system_timer;
  ****************************************************************************/
 
 #ifdef CONFIG_RTC
-/**
- * @cond
- * @internal
- */
-void clock_synchronize(void);
-/**
- * @endcond
- */
+void clock_synchronize(FAR const struct timespec *tp);
 #endif
 
 /****************************************************************************
- * Function:  clock_systimer
+ * Name: clock_resynchronize
  *
  * Description:
- *   Return the current value of the 32/64-bit system timer counter.
- *   Indirect access to the system timer counter is required through this
- *   function if the execution environment does not have direct access to
- *   kernel global data.
+ *   Resynchronize the system timer to a hardware RTC.  The user can
+ *   explicitly re-synchronize the system timer to the RTC under certain
+ *   conditions where the system timer is known to be in error.  For example,
+ *   in certain low-power states, the system timer may be stopped but the
+ *   RTC will continue keep correct time.  After recovering from such
+ *   low-power state, this function should be called to restore the correct
+ *   system time. Function also keeps monotonic clock at rate of RTC.
  *
- *   Use of this function is also required to assue atomic access to the
- *   64-bit system timer.
+ *   Calling this function will not result in system time going "backward" in
+ *   time. If setting system time with RTC would result time going "backward"
+ *   then resynchronization is not performed.
  *
- * Parameters:
+ * Input Parameters:
+ *   diff:  amount of time system-time is adjusted forward with RTC
+ *
+ * Returned Value:
  *   None
- *
- * Return Value:
- *   The current value of the system timer counter
  *
  * Assumptions:
  *
  ****************************************************************************/
 
-#if !defined(__HAVE_KERNEL_GLOBALS) || defined(CONFIG_SYSTEM_TIME64)
-/**
- * @ingroup CLOCK_KERNEL
- * @brief Return the current value of the 32/64-bit system timer counter
- * @details @b #include <tinyara/clock.h> \n
- * SYSTEM CALL API
- *
- * @return The current value of the system timer counter is returned.
- * @since TizenRT v1.0
- */
-clock_t clock_systimer(void);
+#if defined(CONFIG_RTC) && !defined(CONFIG_SCHED_TICKLESS)
+void clock_resynchronize(FAR struct timespec *rtc_diff);
 #endif
 
 /****************************************************************************
- * Name: clock_systimespec
+ * Name: clock_systime_ticks
+ *
+ * Description:
+ *   Return the current value of the 32/64-bit system timer counter.
+ *
+ *   Indirect access to the system timer counter is required through this
+ *   function if the execution environment does not have direct access to
+ *   kernel global data.
+ *
+ *   Use of this function is also required to assure atomic access to the
+ *   64-bit system timer.
+ *
+ *   NOTE:  This is an internal OS interface and should not be called from
+ *   application code.  Rather, the functionally equivalent, standard
+ *   interface clock() should be used.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   The current value of the system timer counter
+ *
+ ****************************************************************************/
+
+clock_t clock_systime_ticks(void);
+
+/****************************************************************************
+ * Name: clock_systime_timespec
  *
  * Description:
  *   Return the current value of the system timer counter as a struct
  *   timespec.
  *
- * Parameters:
+ * Input Parameters:
  *   ts - Location to return the time
  *
- * Return Value:
- *   Current version always returns OK
+ * Returned Value:
+ *   None
  *
  * Assumptions:
  *
  ****************************************************************************/
-/**
- * @cond
- * @internal
- */
-int clock_systimespec(FAR struct timespec *ts);
-/**
- * @endcond
- */
+
+void clock_systime_timespec(FAR struct timespec *ts);
 
 /****************************************************************************
- * Name: clock_getinittime
+ * Name: clock_systime_nsec
  *
  * Description:
- *   This function returns initialized system time.
+ *   Return the current value of the system timer counter as
+ *   uint64_t nanoseconds.
  *
- * Parameters:
- *   tp - Location to return the time
+ * Input Parameters:
+ *   ts - Location to return the time
  *
- * Return Value:
- *   OK (0) on success; a negated errno value on failure.
+ * Returned Value:
+ *   The current system time in nanoseconds.
  *
  ****************************************************************************/
 
-int clock_getinittime(struct timespec *tp);
+static inline_function uint64_t clock_systime_nsec(void)
+{
+	struct timespec ts;
+	clock_systime_timespec(&ts);
+	return clock_time2nsec(&ts);
+}
 
 /****************************************************************************
- * Function:  clock_cpuload
+ * Name:  clock_cpuload
  *
  * Description:
  *   Return load measurement data for the select PID.
  *
- * Parameters:
- *   pid - The task ID of the thread of interest.  pid == 0 is the IDLE thread.
+ * Input Parameters:
+ *   pid - The task ID of the thread of interest. pid == 0 is IDLE thread.
  *   cpuload - The location to return the CPU load
  *
- * Return Value:
+ * Returned Value:
  *   OK (0) on success; a negated errno value on failure.  The only reason
  *   that this function can fail is if 'pid' no longer refers to a valid
  *   thread.
@@ -375,15 +795,92 @@ int clock_getinittime(struct timespec *tp);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_SCHED_CPULOAD
-/**
- * @cond
- * @internal
- */
-int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload);
-/**
- * @endcond
- */
+#ifndef CONFIG_SCHED_CPULOAD_NONE
+int clock_cpuload(int pid, FAR struct cpuload_s *cpuload);
+#endif
+
+/****************************************************************************
+ * Name:  nxsched_oneshot_extclk
+ *
+ * Description:
+ *   Configure to use a oneshot timer as described in
+ *   include/nuttx/timers/oneshot.h to provide external clocking to assess
+ *   the CPU load.
+ *
+ * Input Parameters:
+ *   lower - An instance of the oneshot timer interface as defined in
+ *           include/nuttx/timers/oneshot.h
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_CPULOAD_ONESHOT
+struct oneshot_lowerhalf_s;
+void nxsched_oneshot_extclk(FAR struct oneshot_lowerhalf_s *lower);
+#endif
+
+/****************************************************************************
+ * Name:  nxsched_period_extclk
+ *
+ * Description:
+ *   Configure to use a period timer as described in
+ *   include/nuttx/timers/timer.h to provide external clocking to assess
+ *   the CPU load.
+ *
+ * Input Parameters:
+ *   lower - An instance of the period timer interface as defined in
+ *           include/nuttx/timers/timer.h
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_CPULOAD_PERIOD
+struct timer_lowerhalf_s;
+void nxsched_period_extclk(FAR struct timer_lowerhalf_s *lower);
+#endif
+
+/****************************************************************************
+ * perf_gettime
+ ****************************************************************************/
+
+clock_t perf_gettime(void);
+
+/****************************************************************************
+ * perf_convert
+ ****************************************************************************/
+
+void perf_convert(clock_t elapsed, FAR struct timespec *ts);
+
+/****************************************************************************
+ * perf_gettfreq
+ ****************************************************************************/
+
+unsigned long perf_getfreq(void);
+
+/****************************************************************************
+ * Name: nxclock_gettime
+ *
+ * Description:
+ *   Get the current value of the specified time clock.
+ *
+ ****************************************************************************/
+
+int nxclock_gettime(clockid_t clock_id, FAR struct timespec *tp);
+
+/****************************************************************************
+ * Name: nxclock_adjtime
+ *
+ * Description:
+ *   Adjust the frequency and/or phase of a clock.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_CLOCK_ADJTIME
+int nxclock_adjtime(clockid_t clock_id, FAR struct timex *buf);
 #endif
 
 #undef EXTERN
@@ -391,8 +888,4 @@ int clock_cpuload(int pid, int index, FAR struct cpuload_s *cpuload);
 }
 #endif
 
-#endif							/* _INCLUDE_CLOCK_H */
-
-/**
- * @}
- */
+#endif /* __INCLUDE_NUTTX_CLOCK_H */

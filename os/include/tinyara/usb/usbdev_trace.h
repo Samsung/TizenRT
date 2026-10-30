@@ -16,42 +16,29 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * include/tinyara/usb/usbdev_trace.h
+ * include/nuttx/usb/usbdev_trace.h
  *
- *   Copyright (C) 2008, 2009-2010, 2012-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_USB_USBDEV_TRACE_H
-#define __INCLUDE_TINYARA_USB_USBDEV_TRACE_H
+#ifndef __INCLUDE_NUTTX_USB_USBDEV_TRACE_H
+#define __INCLUDE_NUTTX_USB_USBDEV_TRACE_H
 
 /****************************************************************************
  * Included Files
@@ -67,32 +54,32 @@
 
 /* Event encoding/decoding macros *******************************************/
 
-#define TRACE_EVENT(id, data)    ((uint16_t)(id) | (data))
+#define TRACE_EVENT(id,data)     ((uint16_t)(id) | (data))
 #define TRACE_ID(event)          ((event) & 0xff00)
 #define TRACE_DATA(event)        ((event) & 0x00ff)
 
-/* Events ******************************************************************/
+/* Events *******************************************************************/
 
 /* Event class IDs */
 
-#define TRACE_INIT_ID            (0x0000)	/* Initialization events */
-#define TRACE_EP_ID              (0x0100)	/* Endpoint API calls */
-#define TRACE_DEV_ID             (0x0200)	/* USB device API calls */
-#define TRACE_CLASS_ID           (0x0300)	/* USB class driver API calls */
-#define TRACE_CLASSAPI_ID        (0x0400)	/* Other class driver system API calls */
-#define TRACE_CLASSSTATE_ID      (0x0500)	/* Track class driver state changes */
-#define TRACE_INTENTRY_ID        (0x0600)	/* Interrupt handler entry */
-#define TRACE_INTDECODE_ID       (0x0700)	/* Decoded interrupt event */
-#define TRACE_INTEXIT_ID         (0x0800)	/* Interrupt handler exit */
-#define TRACE_OUTREQQUEUED_ID    (0x0900)	/* Request queued for OUT endpoint */
-#define TRACE_INREQQUEUED_ID     (0x0a00)	/* Request queued for IN endpoint */
-#define TRACE_READ_ID            (0x0b00)	/* Read (OUT) action */
-#define TRACE_WRITE_ID           (0x0c00)	/* Write (IN) action */
-#define TRACE_COMPLETE_ID        (0x0d00)	/* Request completed */
-#define TRACE_DEVERROR_ID        (0x0e00)	/* USB controller driver error event */
-#define TRACE_CLSERROR_ID        (0x0f00)	/* USB class driver error event */
+#define TRACE_INIT_ID            (0x0000) /* Initialization events */
+#define TRACE_EP_ID              (0x0100) /* Endpoint API calls */
+#define TRACE_DEV_ID             (0x0200) /* USB device API calls */
+#define TRACE_CLASS_ID           (0x0300) /* USB class driver API calls */
+#define TRACE_CLASSAPI_ID        (0x0400) /* Other class driver system API calls */
+#define TRACE_CLASSSTATE_ID      (0x0500) /* Track class driver state changes */
+#define TRACE_INTENTRY_ID        (0x0600) /* Interrupt handler entry */
+#define TRACE_INTDECODE_ID       (0x0700) /* Decoded interrupt event */
+#define TRACE_INTEXIT_ID         (0x0800) /* Interrupt handler exit */
+#define TRACE_OUTREQQUEUED_ID    (0x0900) /* Request queued for OUT endpoint */
+#define TRACE_INREQQUEUED_ID     (0x0a00) /* Request queued for IN endpoint */
+#define TRACE_READ_ID            (0x0b00) /* Read (OUT) action */
+#define TRACE_WRITE_ID           (0x0c00) /* Write (IN) action */
+#define TRACE_COMPLETE_ID        (0x0d00) /* Request completed */
+#define TRACE_DEVERROR_ID        (0x0e00) /* USB controller driver error event */
+#define TRACE_CLSERROR_ID        (0x0f00) /* USB class driver error event */
 
-#define TRACE_NIDS               16	/* Cannot exceed bits in usbtrace_idset_t */
+#define TRACE_NIDS               16       /* Cannot exceed bits in usbtrace_idset_t */
 
 /* Bit settings for usbtrace_enable */
 
@@ -121,7 +108,7 @@
 #define TRACE_DEVUNINIT          TRACE_EVENT(TRACE_INIT_ID, 0x0002)
 #define TRACE_DEVREGISTER        TRACE_EVENT(TRACE_INIT_ID, 0x0003)
 #define TRACE_DEVUNREGISTER      TRACE_EVENT(TRACE_INIT_ID, 0x0004)
-#define TRACE_DEVINIT_USER       TRACE_EVENT(TRACE_INIT_ID, 0x0005)	/* First user-defined */
+#define TRACE_DEVINIT_USER       TRACE_EVENT(TRACE_INIT_ID, 0x0005) /* First user-defined */
 
 /* API calls (see usbdev.h) */
 
@@ -135,7 +122,7 @@
 #define TRACE_EPCANCEL           TRACE_EVENT(TRACE_EP_ID, 0x0008)
 #define TRACE_EPSTALL            TRACE_EVENT(TRACE_EP_ID, 0x0009)
 #define TRACE_EPRESUME           TRACE_EVENT(TRACE_EP_ID, 0x000a)
-#define TRACE_EPAPI_USER         TRACE_EVENT(TRACE_EP_ID, 0x000b)	/* First user-defined */
+#define TRACE_EPAPI_USER         TRACE_EVENT(TRACE_EP_ID, 0x000b) /* First user-defined */
 
 #define TRACE_DEVALLOCEP         TRACE_EVENT(TRACE_DEV_ID, 0x0001)
 #define TRACE_DEVFREEEP          TRACE_EVENT(TRACE_DEV_ID, 0x0002)
@@ -143,7 +130,7 @@
 #define TRACE_DEVWAKEUP          TRACE_EVENT(TRACE_DEV_ID, 0x0004)
 #define TRACE_DEVSELFPOWERED     TRACE_EVENT(TRACE_DEV_ID, 0x0005)
 #define TRACE_DEVPULLUP          TRACE_EVENT(TRACE_DEV_ID, 0x0006)
-#define TRACE_DEVAPI_USER        TRACE_EVENT(TRACE_DEV_ID, 0x0007)	/* First user-defined */
+#define TRACE_DEVAPI_USER        TRACE_EVENT(TRACE_DEV_ID, 0x0007) /* First user-defined */
 
 #define TRACE_CLASSBIND          TRACE_EVENT(TRACE_CLASS_ID, 0x0001)
 #define TRACE_CLASSUNBIND        TRACE_EVENT(TRACE_CLASS_ID, 0x0002)
@@ -155,13 +142,13 @@
 #define TRACE_CLASSRDCOMPLETE    TRACE_EVENT(TRACE_CLASS_ID, 0x0007)
 #define TRACE_CLASSWRCOMPLETE    TRACE_EVENT(TRACE_CLASS_ID, 0x0008)
 
-#define TRACE_CLASSAPI_USER      TRACE_EVENT(TRACE_CLASS_ID, 0x0009)	/* First user-defined */
+#define TRACE_CLASSAPI_USER      TRACE_EVENT(TRACE_CLASS_ID, 0x0009) /* First user-defined */
 
 #define TRACE_CLASSAPI(id)       TRACE_EVENT(TRACE_CLASSAPI_ID, id)
 
 #define TRACE_CLASSSTATE(id)     TRACE_EVENT(TRACE_CLASSSTATE_ID, id)
 
-/* USB device controller interrupt events.  The 'id' is specific to the driver.
+/* USB device controller interrupt events.The 'id' is specific to the driver.
  * Particular values for 'id' are unique for a given implementation of a
  * controller driver
  */
@@ -192,15 +179,18 @@
 #define TRACE_CLSERROR(id)       TRACE_EVENT(TRACE_CLSERROR_ID, id)
 
 /* Event string descriptions ************************************************/
+
 /* Macros for defining the string arrays for display of the traces. */
 
 #ifdef CONFIG_USBDEV_TRACE_STRINGS
-#define TRACE_STR(id) {id, #id}
-#define TRACE_STR_END {0, NULL}
+#  define TRACE_STR(id) {id, #id}
+#  define TRACE_STR_END {0, NULL}
 #endif
 
 /* USB Serial driver class events *******************************************/
+
 /* Used by both the CDC/ACM and the PL2303 serial class drivers */
+
 /* UART interface API calls */
 
 #define USBSER_TRACECLASSAPI_SETUP                   0x0001
@@ -215,6 +205,8 @@
 #define USBSER_TRACECLASSAPI_TXINT                   0x000a
 #define USBSER_TRACECLASSAPI_TXREADY                 0x000b
 #define USBSER_TRACECLASSAPI_TXEMPTY                 0x000c
+#define USBSER_TRACECLASSAPI_FLOWCONTROL             0x000d
+#define USBSER_TRACECLASSAPI_RELEASE                 0x000e
 
 /* Values of the class error ID used by the USB serial driver */
 
@@ -312,7 +304,7 @@
 #define USBMSC_TRACEERR_CMDREADREADFAIL              0x0094
 #define USBMSC_TRACEERR_CMDREADSUBMIT                0x0095
 #define USBMSC_TRACEERR_CMDREADWRRQEMPTY             0x0096
-#define USBMSC_TRACEERR_CMDSTATUSRDREQLISTEMPTY      0x0097
+#define USBMSC_TRACEERR_CMDSTATUSWRREQLISTEMPTY      0x0097
 #define USBMSC_TRACEERR_CMDUNEVIOLATION              0x0098
 #define USBMSC_TRACEERR_CMDWRITERDSUBMIT             0x0099
 #define USBMSC_TRACEERR_CMDWRITERDRQEMPTY            0x009a
@@ -428,14 +420,14 @@ struct usbtrace_s {
 
 #ifdef CONFIG_USBDEV_TRACE_STRINGS
 struct trace_msg_t {
-	uint16_t id;				/* 8-bit ID value */
-	FAR const char *str;		/* String assoiciated with the ID */
+	uint16_t        id;   /* 8-bit ID value */
+	FAR const char *str;  /* String associated with the ID */
 };
 #endif
 
 /* Enumeration callback function signature */
 
-typedef int (*trace_callback_t)(struct usbtrace_s *trace, void *arg);
+typedef CODE int (*trace_callback_t)(struct usbtrace_s *trace, void *arg);
 
 /* Bit mask input type for usbtrace_enable().  If  TRACE_NIDS grows beyond
  * 16, then this will have to be changed to uint32_t
@@ -445,7 +437,7 @@ typedef uint16_t usbtrace_idset_t;
 
 /* Print routine to use for usbdev_trprint() output */
 
-typedef int (*trprintf_t)(const char *fmt, ...);
+typedef CODE int (*trprintf_t)(FAR const char *fmt, ...) printf_like(1, 2);
 
 /****************************************************************************
  * Public Data
@@ -453,10 +445,11 @@ typedef int (*trprintf_t)(const char *fmt, ...);
 
 #undef EXTERN
 #if defined(__cplusplus)
-#define EXTERN extern "C"
-extern "C" {
+#  define EXTERN extern "C"
+extern "C"
+{
 #else
-#define EXTERN extern
+#  define EXTERN extern
 #endif
 
 /* If CONFIG_USBDEV_TRACE_STRINGS is defined, then the USB class driver and
@@ -476,15 +469,16 @@ EXTERN const struct trace_msg_t g_usb_trace_strings_intdecode[];
  * Public Function Prototypes
  ****************************************************************************/
 
-/*******************************************************************************
+/****************************************************************************
  * Name: usbtrace_enable
  *
  * Description:
- *  Enable/disable tracing per trace ID.  The initial state is all IDs enabled.
+ *  Enable/disable tracing per trace ID.
+ *  The initial state is all IDs enabled.
  *
  * Input Parameters:
- *  idset - The bitset of IDs to be masked.  TRACE_ALLIDS enables all IDS; zero
- *  masks all IDs.
+ *  idset - The bitset of IDs to be masked.
+ *          TRACE_ALLIDS enables all IDS; zero masks all IDs.
  *
  * Returned Value:
  *  The previous idset value.
@@ -492,15 +486,15 @@ EXTERN const struct trace_msg_t g_usb_trace_strings_intdecode[];
  * Assumptions:
  * - May be called from an interrupt handler
  *
- *******************************************************************************/
+ ****************************************************************************/
 
-#if defined(CONFIG_USBDEV_TRACE) || (defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_USB))
+#if defined(CONFIG_USBDEV_TRACE) || (defined(CONFIG_DEBUG_FEATURES) && defined(CONFIG_DEBUG_USB))
 usbtrace_idset_t usbtrace_enable(usbtrace_idset_t idset);
 #else
-#define usbtrace_enable(idset)
+#  define usbtrace_enable(idset)
 #endif
 
-/*******************************************************************************
+/****************************************************************************
  * Name: usbtrace
  *
  * Description:
@@ -509,15 +503,15 @@ usbtrace_idset_t usbtrace_enable(usbtrace_idset_t idset);
  * Assumptions:
  *   May be called from an interrupt handler
  *
- *******************************************************************************/
+ ****************************************************************************/
 
-#if defined(CONFIG_USBDEV_TRACE) || (defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_USB))
+#if defined(CONFIG_USBDEV_TRACE) || (defined(CONFIG_DEBUG_FEATURES) && defined(CONFIG_DEBUG_USB))
 void usbtrace(uint16_t event, uint16_t value);
 #else
-#define usbtrace(event, value)
+#  define usbtrace(event, value)
 #endif
 
-/*******************************************************************************
+/****************************************************************************
  * Name: usbtrace_enumerate
  *
  * Description:
@@ -526,21 +520,21 @@ void usbtrace(uint16_t event, uint16_t value);
  * Assumptions:
  *   NEVER called from an interrupt handler
  *
- *******************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_USBDEV_TRACE
 int usbtrace_enumerate(trace_callback_t callback, void *arg);
 #else
-#define usbtrace_enumerate(event)
+#  define usbtrace_enumerate(callback, arg) (0)
 #endif
 
-/*******************************************************************************
+/****************************************************************************
  * Name: usbtrace_trprint
  *
  * Description:
  *   Print the trace record using the supplied printing function
  *
- *******************************************************************************/
+ ****************************************************************************/
 
 void usbtrace_trprintf(trprintf_t trprintf, uint16_t event, uint16_t value);
 
@@ -549,4 +543,4 @@ void usbtrace_trprintf(trprintf_t trprintf, uint16_t event, uint16_t value);
 }
 #endif
 
-#endif							/* __INCLUDE_TINYARA_USB_USBDEV_TRACE_H */
+#endif /* __INCLUDE_NUTTX_USB_USBDEV_TRACE_H */

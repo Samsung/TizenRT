@@ -15,57 +15,34 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/********************************************************************************
+/****************************************************************************
  * include/signal.h
  *
- *   Copyright (C) 2007-2009, 2011, 2013-2017 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ********************************************************************************/
-/**
- * @defgroup SIGNAL_KERNEL SIGNAL
- * @brief Provides APIs for Signal
- * @ingroup KERNEL
- *
- * @{
- */
-
-/// @file signal.h
-/// @brief Signal APIs
+ ****************************************************************************/
 
 #ifndef __INCLUDE_SIGNAL_H
 #define __INCLUDE_SIGNAL_H
 
-/********************************************************************************
+/****************************************************************************
  * Included Files
- ********************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
@@ -73,27 +50,104 @@
 #include <stdint.h>
 #include <time.h>
 
-/********************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ********************************************************************************/
+ ****************************************************************************/
 
 /* Signal set management definitions and macros. */
 
-#define NULL_SIGNAL_SET ((sigset_t)0x00000000)
-#define ALL_SIGNAL_SET  ((sigset_t)0xffffffff)
-#define MIN_SIGNO       0
-#define MAX_SIGNO       31
-#define GOOD_SIGNO(s)   ((((unsigned)(s)) <= MAX_SIGNO))
-#define SIGNO2SET(s)    ((sigset_t)1 << (s))
+#define MIN_SIGNO       1               /* Lowest valid signal number */
+#define MAX_SIGNO       63              /* Highest valid signal number */
 
-/* All signals are "real time" signals */
+/* Definitions for "standard" signals */
 
-#define SIGRTMIN        MIN_SIGNO	/* First real time signal */
-#define SIGRTMAX        MAX_SIGNO	/* Last real time signal */
+#define SIGSTDMIN       1               /* First standard signal number */
+#define SIGSTDMAX       31              /* Last standard signal number */
+
+/* Definitions for "real time" signals */
+
+#define SIGRTMIN        (SIGSTDMAX + 1) /* First real time signal */
+#define SIGRTMAX        MAX_SIGNO       /* Last real time signal */
+#define _NSIG           (MAX_SIGNO + 1) /* Biggest signal number + 1 */
+#define NSIG            _NSIG           /* _NSIG variant commonly used */
+
+/* sigset_t is represented as an array of 32-b unsigned integers.
+ * _SIGSET_NELEM is the allocated isze of the array
+ */
+
+#define _SIGSET_NELEM   ((_NSIG + 31) >> 5)
+
+/* NuttX does not support all standard signal actions.  NuttX supports what
+ * are referred to as "real time" signals.  The default action of all NuttX
+ * signals is to simply ignore the signal.  Certain signals can be
+ * configured to support there default actions as indicated by NOTEs to the
+ * following table.
+ *
+ * This is not POSIX compliant behavior!  Per OpenGroup.org:  The following
+ * signals and default signal actions must be supported on all
+ * implementations:
+ *
+ *   ---------- ------- ----------------------------------------------------
+ *   Signal     Default Description
+ *   Name       Action
+ *   ---------- ------- ----------------------------------------------------
+ *   SIGABRT    A       Process abort signal
+ *   SIGALRM    T (1)   Alarm clock
+ *   SIGBUS     A       Access to an undefined portion of a memory object
+ *   SIGCHLD    I       Child process terminated, stopped
+ *                      (or continued XSI extension)
+ *   SIGCONT    C (2)   Continue executing, if stopped
+ *   SIGFPE     A       Erroneous arithmetic operation
+ *   SIGHUP     T       Hangup
+ *   SIGILL     A       Illegal instruction
+ *   SIGINT     T (3)   Terminal interrupt signal
+ *   SIGKILL    T (3)   Kill (cannot be caught or ignored)
+ *   SIGPIPE    T (7)   Write on a pipe with no one to read it
+ *   SIGQUIT    A       Terminal quit signal
+ *   SIGSEGV    A       Invalid memory reference
+ *   SIGSTOP    S (2)   Stop executing (cannot be caught or ignored)
+ *   SIGTERM    T       Termination signal
+ *   SIGTSTP    S (2)   Terminal stop signal
+ *   SIGTTIN    S       Background process attempting read
+ *   SIGTTOU    S       Background process attempting write
+ *   SIGUSR1    T (4)   User-defined signal 1
+ *   SIGUSR2    T (5)   User-defined signal 2
+ *   SIGPOLL    T (6)   Poll-able event (XSI extension)
+ *   SIGPROF    T       Profiling timer expired (XSI extension)
+ *   SIGSYS     A       Bad system call (XSI extension)
+ *   SIGTRAP    A       Trace/breakpoint trap (XSI extension)
+ *   SIGURG     I       High bandwidth data is available at a socket
+ *   SIGVTALRM  T       Virtual timer expired (XSI extension)
+ *   SIGXCPU    A       CPU time limit exceeded (XSI extension)
+ *   SIGXFSZ    A       File size limit exceeded (XSI extension)
+ *   ---------- ------- ----------------------------------------------------
+ *
+ * Where default action codes are:
+ *
+ * T  Abnormal termination of the process.  The process is terminated with
+ *    all the consequences of _exit() except that the status made available
+ *    to wait() and waitpid() indicates abnormal termination by the
+ *    specified signal.
+ * A  Abnormal termination of the process.  Additionally with the XSI
+ *    extension, implementation-defined abnormal termination actions, such
+ *    as creation of a core file, may occur.
+ * I  Ignore the signal.
+ * S  Stop the process.
+ * C  Continue the process, if it is stopped; otherwise, ignore the signal.
+ *
+ * NOTES:
+ * (1)  The default action can be enabled with CONFIG_SIG_SIGALRM_ACTION
+ * (2)  The default action can be enabled with CONFIG_SIG_SIGSTOP_ACTION
+ * (3)  The default action can be enabled with CONFIG_SIG_SIGKILL_ACTION
+ * (4)  The default action can be enabled with CONFIG_SIG_SIGUSR1_ACTION
+ * (5)  The default action can be enabled with CONFIG_SIG_SIGUSR2_ACTION
+ * (6)  The default action can be enabled with CONFIG_SIG_SIGPOLL_ACTION
+ * (7)  The default action can be enabled with CONFIG_SIG_SIGPIPE_ACTION
+ */
 
 /* A few of the real time signals are used within the OS.  They have
  * default values that can be overridden from the configuration file. The
- * rest are all user signals.
+ * rest are all standard or user real-time signals.
  *
  * The signal number zero is wasted for the most part.  It is a valid
  * signal number, but has special meaning at many interfaces (e.g., Kill()).
@@ -101,262 +155,280 @@
  * These are the semi-standard signal definitions:
  */
 
-#ifndef CONFIG_SIG_SIGUSR1
-#define SIGUSR1       1			/* User signal 1 */
-#else
-#define SIGUSR1       CONFIG_SIG_SIGUSR1
-#endif
-
-#ifndef CONFIG_SIG_SIGUSR2
-#define SIGUSR2       2			/* User signal 2 */
-#else
-#define SIGUSR2       CONFIG_SIG_SIGUSR2
-#endif
-
-#ifndef CONFIG_SIG_SIGALARM
-#define SIGALRM       3			/* Default signal used with POSIX timers (used only */
+#define SIGHUP          1
+#define SIGINT          2
+#define SIGQUIT         3
+#define SIGILL          4
+#define SIGTRAP         5
+#define SIGABRT         6
+#define SIGBUS          7
+#define SIGFPE          8
+#define SIGKILL         9
+#define SIGUSR1         10  /* User signal 1 */
+#define SIGSEGV         11
+#define SIGUSR2         12  /* User signal 2 */
+#define SIGPIPE         13
+#define SIGALRM         14  /* Default signal used with POSIX timers (used only */
 /* no other signal is provided) */
-#else
-#define SIGALRM       CONFIG_SIG_SIGALARM
-#endif
+#define SIGTERM         15
+#define SIGCHLD         17
+#define SIGCONT         18
+#define SIGSTOP         19
+#define SIGTSTP         20
+#define SIGTTIN         21
+#define SIGTTOU         22
+#define SIGURG          23
+#define SIGXCPU         24
+#define SIGXFSZ         25
+#define SIGVTALRM       26
+#define SIGPROF         27
+#define SIGWINCH        28
+#define SIGPOLL         29
 
-#ifdef CONFIG_SCHED_HAVE_PARENT
-#ifndef CONFIG_SIG_SIGCHLD
-#define SIGCHLD     4			/* Used by child threads to signal parent thread */
-#else
-#define SIGCHLD     CONFIG_SIG_SIGCHLD
-#endif
-#endif
+#define SIGIO           SIGPOLL
 
-#ifdef CONFIG_FS_AIO
-#ifndef CONFIG_SIG_POLL
-#define SIGPOLL     5			/* Sent when an asynchronous I/O event occurs */
-#else
-#define SIGPOLL     CONFIG_SIG_POLL
-#endif
-#endif
+#define SIGSYS          31
 
-/* When SIGKILL is sent, a task/pthread which received signal will be terminated without any garbage collection.
- * For freeing the allocated memory, user's own handler for SIGKILL is needed.
- * CONFIG_SIGKILL_HANDLER should be enabled for user's own handler.
- */		
-#ifndef CONFIG_SIG_SIGKILL
-#define SIGKILL       9			/* Sent to cause process to terminate */
-#else
-#define SIGKILL       CONFIG_SIG_SIGKILL
-#endif
+#define SIGIOT          SIGABRT
 
-/* The following are non-standard signal definitions */
+/* sigprocmask() "how" definitions.
+ * Only one of the following can be specified:
+ */
 
-/* SIG_PREFERENCE is used for preference */
-#ifndef CONFIG_SIG_PREFERENCE
-#define SIG_PREFERENCE	14
-#else
-#define SIG_PREFERENCE	CONFIG_SIG_PREFERENCE
-#endif
-
-/* SIG_SIGBM_STATECB is used in binary Manager */
-#ifndef CONFIG_SIG_SIGBM_STATE
-#define SIGBM_STATE     15
-#else
-#define SIGBM_STATE     CONFIG_SIG_SIGBM_STATE
-#endif
-
-#ifndef CONFIG_DISABLE_PTHREAD
-#ifndef CONFIG_SIG_SIGCONDTIMEDOUT
-#define SIGCONDTIMEDOUT 16		/* Used in the implementation of pthread_cond_timedwait */
-#else
-#define SIGCONDTIMEDOUT CONFIG_SIG_SIGCONDTIMEDOUT
-#endif
-#endif
-
-/* SIGWORK is used to wake up various internal, TinyAra worker thread */
-
-#if defined(CONFIG_SCHED_WORKQUEUE) || defined(CONFIG_PAGING)
-#ifndef CONFIG_SIG_SIGWORK
-#define SIGWORK     17			/* Used to wake up the work queue */
-#else
-#define SIGWORK     CONFIG_SIG_SIGWORK
-#endif
-#endif
-
-/* SIG_MESSAGING is used in Messaging */
-#ifndef CONFIG_SIG_MESSAGING
-#define SIGMSG_MESSAGING    25			/* Messaging signal */
-#else
-#define SIGMSG_MESSAGING    CONFIG_SIG_MESSAGING
-#endif
-
-/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
-#ifndef CONFIG_SIG_IOTBUS_GPIO_FALLING
-#define SIG_IOTBUS_GPIO_FALLING		26
-#else
-#define SIG_IOTBUS_GPIO_FALLING		CONFIG_SIG_IOTBUS_GPIO_FALLING
-#endif
-
-/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
-#ifndef CONFIG_SIG_IOTBUS_GPIO_RISING
-#define SIG_IOTBUS_GPIO_RISING		27
-#else
-#define SIG_IOTBUS_GPIO_RISING		CONFIG_SIG_IOTBUS_GPIO_RISING
-#endif
-
-/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
-#ifndef CONFIG_SIG_IOTBUS_UART_TX_EMPTY
-#define SIG_IOTBUS_UART_TX_EMPTY	28
-#else
-#define SIG_IOTBUS_UART_TX_EMPTY	CONFIG_SIG_IOTBUS_UART_TX_EMPTY
-#endif
-
-/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
-#ifndef CONFIG_SIG_IOTBUS_UART_TX_RDY
-#define SIG_IOTBUS_UART_TX_RDY		29
-#else
-#define SIG_IOTBUS_UART_TX_RDY		CONFIG_SIG_IOTBUS_UART_TX_RDY
-#endif
-
-/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
-#ifndef CONFIG_SIG_IOTBUS_UART_RX_AVAIL
-#define SIG_IOTBUS_UART_RX_AVAIL	30
-#else
-#define SIG_IOTBUS_UART_RX_AVAIL	CONFIG_SIG_IOTBUS_UART_RX_AVAIL
-#endif
-
-/* SIG_IOTBUS_INT is used for iotbus interrupt handling */
-#ifndef CONFIG_SIG_IOTBUS_UART_RECEIVED
-#define SIG_IOTBUS_UART_RECEIVED	31
-#else
-#define SIG_IOTBUS_UART_RECEIVED	CONFIG_SIG_IOTBUS_UART_RECEIVED
-#endif
-
-/** TODO These are added for UART Interrupt, but we can use only 32 types, 
-  * So this should be optimized.(for example use SIGPOLL or something..)
-  */
-#ifndef CONFIG_SIG_UART_RECEIVED
-#define SIG_UART_RECEIVED 26
-#else
-#define SIG_UART_RECEIVED	CONFIG_SIG_UART_RECEIVED
-#endif
-
-#ifndef CONFIG_SIG_UART_SENT
-#define SIG_UART_SENT 27
-#else
-#define SIG_UART_SENT	CONFIG_SIG_UART_SENT
-#endif
-
-/* sigprocmask() "how" definitions. Only one of the following can be specified: */
-
-#define SIG_BLOCK       1		/* Block the given signals */
-#define SIG_UNBLOCK     2		/* Unblock the given signals */
-#define SIG_SETMASK     3		/* Set the signal mask to the current set */
+#define SIG_BLOCK       1  /* Block the given signals */
+#define SIG_UNBLOCK     2  /* Unblock the given signals */
+#define SIG_SETMASK     3  /* Set the signal mask to the current set */
 
 /* struct sigaction flag values */
 
-#define SA_NOCLDSTOP    (1 << 0)	/* Do not generate SIGCHILD when
-									 * children stop (ignored) */
-#define SA_SIGINFO      (1 << 1)	/* Invoke the signal-catching function
-									 * with 3 args instead of 1
-									 * (always assumed) */
-#define SA_NOCLDWAIT    (1 << 2)	/* If signo=SIGCHLD, exit status of child
-									 * processes will be discarded */
+#define SA_NOCLDSTOP    (1 << 0) /* Do not generate SIGCHLD when
+                                  * children stop (ignored) */
+#define SA_SIGINFO      (1 << 1) /* Invoke the signal-catching function
+                                  * with 3 args instead of 1
+                                  * (always assumed) */
+#define SA_NOCLDWAIT    (1 << 2) /* If signo=SIGCHLD, exit status of child
+                                  * processes will be discarded */
+#define SA_ONSTACK      (1 << 3) /* Indicates that a registered stack_t
+                                  * will be used */
+#define SA_RESTART      (1 << 4) /* Flag to get restarting signals
+                                  * (which were the default long ago) */
+#define SA_NODEFER      (1 << 5) /* Prevents the current signal from
+                                  * being masked in the handler */
+#define SA_RESETHAND    (1 << 6) /* Clears the handler when the signal
+                                  * is delivered */
+#define SA_KERNELHAND   (1 << 7) /* Invoke the handler in kernel space directly */
 
-/* These are the possible values of the signfo si_code field */
+/* SA_NOMASK is a nonstandard synonym of SA_NODEFER */
 
-#define SI_USER         0		/* Signal sent from kill, raise, or abort */
-#define SI_QUEUE        1		/* Signal sent from sigqueue */
-#define SI_TIMER        2		/* Signal is result of timer expiration */
-#define SI_ASYNCIO      3		/* Signal is the result of asynch IO completion */
-#define SI_MESGQ        4		/* Signal generated by arrival of a message on an */
+#define SA_NOMASK       SA_NODEFER
+
+/* These are the possible values of the siginfo si_code field */
+
+#define SI_USER         0  /* Signal sent from kill, raise, or abort */
+#define SI_QUEUE        1  /* Signal sent from sigqueue */
+#define SI_TIMER        2  /* Signal is result of timer expiration */
+#define SI_ASYNCIO      3  /* Signal is the result of asynch IO completion */
+#define SI_MESGQ        4  /* Signal generated by arrival of a message on an */
 /* empty message queue */
-#define CLD_EXITED      5		/* Child has exited (SIGCHLD only) */
-#define CLD_KILLED      6		/* Child was killed (SIGCHLD only) */
-#define CLD_DUMPED      7		/* Child terminated abnormally (SIGCHLD only) */
-#define CLD_TRAPPED     8		/* Traced child has trapped (SIGCHLD only) */
-#define CLD_STOPPED     9		/* Child has stopped (SIGCHLD only) */
-#define CLD_CONTINUED   10		/* Stopped child had continued (SIGCHLD only) */
+#define CLD_EXITED      5  /* Child has exited (SIGCHLD only) */
+#define CLD_KILLED      6  /* Child was killed (SIGCHLD only) */
+#define CLD_DUMPED      7  /* Child terminated abnormally (SIGCHLD only) */
+#define CLD_TRAPPED     8  /* Traced child has trapped (SIGCHLD only) */
+#define CLD_STOPPED     9  /* Child has stopped (SIGCHLD only) */
+#define CLD_CONTINUED   10 /* Stopped child had continued (SIGCHLD only) */
+
+/* SIGILL si_codes */
+
+#define ILL_ILLOPC      1 /* Illegal opcode */
+#define ILL_ILLOPN      2 /* Illegal operand */
+#define ILL_ILLADR      3 /* Illegal addressing mode */
+#define ILL_ILLTRP      4 /* Illegal trap */
+#define ILL_PRVOPC      5 /* Privileged opcode */
+#define ILL_PRVREG      6 /* Privileged register */
+#define ILL_COPROC      7 /* Coprocessor error */
+#define ILL_BADSTK      8 /* Internal stack error */
+
+/* SIGFPE si_codes */
+
+#define FPE_INTDIV      1 /* Integer divide by zero */
+#define FPE_INTOVF      2 /* Integer overflow */
+#define FPE_FLTDIV      3 /* Floating point divide by zero */
+#define FPE_FLTOVF      4 /* Floating point overflow */
+#define FPE_FLTUND      5 /* Floating point underflow */
+#define FPE_FLTRES      6 /* Floating point inexact result */
+#define FPE_FLTINV      7 /* Floating point invalid operation */
+#define FPE_FLTSUB      8 /* Subscript out of range */
+
+/* SIGSEGV si_codes */
+
+#define SEGV_MAPERR     1 /* Address not mapped to object */
+#define SEGV_ACCERR     2 /* Invalid permissions for mapped object */
+
+/* SIGBUS si_codes */
+
+#define BUS_ADRALN      1 /* Invalid address alignment */
+#define BUS_ADRERR      2 /* Non-existent physical address */
+#define BUS_OBJERR      3 /* Object specific hardware error */
+
+/* SIGTRAP si_codes */
+
+#define TRAP_BRKPT      1 /* Process breakpoint */
+#define TRAP_TRACE      2 /* Process trace trap */
+
+/* SIGPOLL si_codes */
+
+#define POLL_IN         1 /* Data input available */
+#define POLL_OUT        2 /* Output buffers available */
+#define POLL_MSG        3 /* Input message available */
+#define POLL_ERR        4 /* I/O error */
+#define POLL_PRI        5 /* High priority input available */
+#define POLL_HUP        6 /* Device disconnected */
 
 /* Values for the sigev_notify field of struct sigevent */
 
-#define SIGEV_NONE      0		/* No notification desired */
-#define SIGEV_SIGNAL    1		/* Notify via signal */
-
-/* Special values of sigaction (all treated like NULL) */
-
-#define SIG_ERR         ((_sa_handler_t)-1)
-#define SIG_DFL         ((_sa_handler_t)0)
-#define SIG_IGN         ((_sa_handler_t)0)
-#define SIG_HOLD        ((_sa_handler_t)1)   /* Used only with sigset() */
-
-#define COPY_SIGACTION(t, f) \
-	{ \
-		(t)->sa_sigaction = (f)->sa_sigaction; \
-		(t)->sa_mask      = (f)->sa_mask; \
-		(t)->sa_flags     = (f)->sa_flags; \
-	}
-
-/********************************************************************************
- * Global Type Declarations
- ********************************************************************************/
-
-/* This defines a set of 32 signals (numbered 0 through 31). */
-
-typedef uint32_t sigset_t;		/* Bit set of 32 signals */
-
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief Union for defining the types of the siginfo si_value field
- */
-union sigval {
-	int sival_int;				/* Integer value */
-	FAR void *sival_ptr;		/* Pointer value */
-};
-
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief Structure for elements that define a queue signal. The following is
- * used to attach a signal to a message queue to notify a task when a message is
- * available on a queue
- */
-struct sigevent {
-	uint8_t sigev_notify;		/* Notification method: SIGEV_SIGNAL or SIGEV_NONE */
-	uint8_t sigev_signo;		/* Notification signal */
-	union sigval sigev_value;	/* Data passed with notification */
-};
-
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief Structure for using to pass parameters to/from signal handlers
- */
-struct siginfo {
-	uint8_t si_signo;			/* Identifies signal */
-	uint8_t si_code;			/* Source: SI_USER, SI_QUEUE, SI_TIMER, SI_ASYNCIO, or SI_MESGQ */
-	union sigval si_value;		/* Data passed with signal */
-#ifdef CONFIG_SCHED_HAVE_PARENT
-	pid_t si_pid;				/* Sending task ID */
-	int si_status;				/* Exit value or signal (SIGCHLD only). */
+#define SIGEV_NONE      0 /* No asynchronous notification is delivered */
+#define SIGEV_SIGNAL    1 /* Notify via signal,with an application-defined value */
+#ifdef CONFIG_SIG_EVTHREAD
+#  define SIGEV_THREAD  2 /* A notification function is called */
 #endif
+
+#define SIGEV_THREAD_ID 4 /* Notify a specific thread via signal. */
+
+/* sigaltstack stack size */
+
+#define MINSIGSTKSZ     CONFIG_PTHREAD_STACK_MIN     /* Smallest signal stack size */
+#define SIGSTKSZ        CONFIG_PTHREAD_STACK_DEFAULT /* Default signal stack size */
+
+/* define signal handlers stack on an alternate stack or the current thread */
+
+#define SS_ONSTACK      1
+#define SS_DISABLE      2
+
+/* Special values of sa_handler used by sigaction and sigset.  They are all
+ * treated like NULL for now.  This is okay for SIG_DFL and SIG_IGN because
+ * in NuttX, the default action for all signals is to ignore them.
+ */
+
+#define SIG_ERR         ((_sa_handler_t)-1)  /* And error occurred */
+#define SIG_IGN         ((_sa_handler_t)0)   /* Ignore the signal */
+
+#ifdef CONFIG_SIG_DEFAULT
+#  define SIG_DFL       ((_sa_handler_t)1)   /* Default signal action */
+#  define SIG_HOLD      ((_sa_handler_t)2)   /* Used only with sigset() */
+#else
+#  define SIG_DFL       ((_sa_handler_t)0)   /* Default is SIG_IGN for all signals */
+#  define SIG_HOLD      ((_sa_handler_t)1)   /* Used only with sigset() */
+#endif
+
+#define GOOD_SIGNO(s)     (((unsigned)(s)) <= ((unsigned)(MAX_SIGNO)))
+#define UNCAUGHT_SIGNO(s) ((s) == SIGKILL || (s) == SIGSTOP)
+
+#define tkill(tid, signo) tgkill((pid_t)-1, tid, signo)
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+/* This defines a set of 32 signals (numbered 0 through 31).
+ * REVISIT: Signal 0 is, however, not generally usable since that value has
+ * special meaning in some circumstances (e.g., kill()).
+ */
+
+struct sigset_s {
+	uint32_t _elem[_SIGSET_NELEM];
+};
+
+typedef struct sigset_s sigset_t; /* Bit set of _NSIG signals */
+
+/* Possibly volatile-qualified integer type of an object that can be accessed
+ * as an atomic entity, even in the presence of asynchronous interrupts.
+ */
+
+typedef volatile int sig_atomic_t;
+
+/* This defines the type of the siginfo si_value field */
+
+union sigval {
+	int       sival_int;       /* Integer value */
+	FAR void *sival_ptr;       /* Pointer value */
+};
+
+/* This structure contains elements that define a queue signal.
+ * The following is used to attach a signal to a message queue
+ * to notify a task when a message is available on a queue.
+ */
+
+typedef CODE void (*sigev_notify_function_t)(union sigval value);
+
+typedef struct sigevent {
+	int          sigev_notify; /* Notification method: SIGEV_SIGNAL, SIGEV_NONE, or SIGEV_THREAD */
+	int          sigev_signo;  /* Notification signal */
+	union sigval sigev_value;  /* Data passed with notification */
+
+	union {
+#ifdef CONFIG_SIG_EVTHREAD
+		struct {
+			/* Notification function */
+
+			sigev_notify_function_t _function;
+
+			/* Notification attributes (not used) */
+
+			FAR struct pthread_attr_s *_attribute;
+		} _sigev_thread;
+#endif
+		pid_t _tid; /* ID of thread to signal */
+	} _sigev_un;
+} sigevent_t;
+
+#define sigev_notify_function   _sigev_un._sigev_thread._function
+#define sigev_notify_attributes _sigev_un._sigev_thread._attribute
+#define sigev_notify_thread_id  _sigev_un._tid
+
+/* The following types is used to pass parameters to/from signal handlers */
+
+struct siginfo {
+	uint8_t      si_signo;     /* Identifies signal */
+	uint8_t      si_code;      /* Source: SI_USER, SI_QUEUE, SI_TIMER, SI_ASYNCIO, or SI_MESGQ */
+	uint8_t      si_errno;     /* Zero or errno value associated with signal */
+	union sigval si_value;     /* Data passed with signal */
+#ifdef CONFIG_SCHED_HAVE_PARENT
+	pid_t        si_pid;       /* Sending task ID */
+	int          si_status;    /* Exit value or signal (SIGCHLD only). */
+#endif
+#if 0                        /* Not implemented */
+	FAR void    *si_addr;      /* Report address with SIGFPE, SIGSEGV, or SIGBUS */
+#endif
+	FAR void    *si_user;      /* The User info associated with sigaction */
 };
 
 typedef struct siginfo siginfo_t;
 
 /* Non-standard convenience definition of signal handling function types.
- * These should be used only internally within the TinyAra signal logic.
+ * These should be used only internally within the NuttX signal logic.
  */
 
-typedef CODE void (*_sa_handler_t)(int);
-typedef CODE void (*_sa_sigaction_t)(int, FAR siginfo_t *, FAR void *);
+typedef CODE void (*_sa_handler_t)(int signo);
+typedef CODE void (*_sa_sigaction_t)(int signo, FAR siginfo_t *siginfo,
+                                     FAR void *context);
 
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief Structure for defining the action to take for given signal
- */
+/* glibc definition of signal handling function types */
+
+typedef _sa_handler_t sighandler_t;
+
+/* The following structure defines the action to take for given signal */
+
 struct sigaction {
 	union {
-		_sa_handler_t _sa_handler;
+		_sa_handler_t   _sa_handler;
 		_sa_sigaction_t _sa_sigaction;
 	} sa_u;
-	sigset_t sa_mask;
-	int sa_flags;
+	sigset_t          sa_mask;
+	int               sa_flags;
+	union {
+		CODE void (*sa_restorer)(void);
+		FAR void         *sa_user; /* Passed to siginfo.si_user (non-standard) */
+	};
 };
 
 /* Definitions that adjust the non-standard naming */
@@ -364,274 +436,71 @@ struct sigaction {
 #define sa_handler   sa_u._sa_handler
 #define sa_sigaction sa_u._sa_sigaction
 
-/**
- * @}
- */
-/********************************************************************************
- * Global Variables
- ********************************************************************************/
+/* Structure describing a signal stack.  */
 
-/********************************************************************************
- * Global Function Prototypes
- ********************************************************************************/
+typedef struct {
+	FAR void *ss_sp;
+	int ss_flags;
+	size_t ss_size;
+} stack_t;
+
+typedef CODE void (*sig_t)(int);
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief send a signal to a process or a group of processes
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int kill(pid_t pid, int sig);
 
-/**
- * @cond
- * @internal
- * @brief write signal information to standard error
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.1 PRE
- */
+int  kill(pid_t pid, int signo);
+int  killpg(pid_t pgrp, int signo);
+int  tgkill(pid_t pid, pid_t tid, int signo);
 void psignal(int signum, FAR const char *message);
-/**
- * @endcond
- */
-
-/**
- * @cond
- * @internal
- * @brief write signal information to standard error
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.1 PRE
- */
-void psiginfo(const siginfo_t *pinfo, const char *message);
-/**
- * @endcond
- */
+void psiginfo(FAR const siginfo_t *pinfo, FAR const char *message);
+int  raise(int signo);
+int  sigaction(int signo, FAR const struct sigaction *act,
+               FAR struct sigaction *oact);
+int  sigaddset(FAR sigset_t *set, int signo);
+int  sigandset(FAR sigset_t *dest, FAR const sigset_t *left,
+               FAR const sigset_t *right);
+int  sigdelset(FAR sigset_t *set, int signo);
+int  sigemptyset(FAR sigset_t *set);
+int  sigfillset(FAR sigset_t *set);
+int  sighold(int signo);
+int  sigisemptyset(FAR sigset_t *set);
+int  sigismember(FAR const sigset_t *set, int signo);
+int  sigignore(int signo);
+_sa_handler_t signal(int signo, _sa_handler_t func);
+int  sigorset(FAR sigset_t *dest, FAR const sigset_t *left,
+              FAR const sigset_t *right);
+int  sigpause(int signo);
+int  sigpending(FAR sigset_t *set);
+int  sigprocmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
+int  sigqueue(int pid, int signo, union sigval value);
+int  sigrelse(int signo);
+_sa_handler_t sigset(int signo, _sa_handler_t func);
+int  sigwait(FAR const sigset_t *set, FAR int *sig);
+int  sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *value,
+                  FAR const struct timespec *timeout);
+int  sigsuspend(FAR const sigset_t *sigmask);
+int  sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *value);
+int  sigaltstack(FAR const stack_t *ss, FAR stack_t *oss);
+int  siginterrupt(int signo, int flag);
 
 /* Pthread signal management APIs */
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief send a signal to a pthread
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
+
 int pthread_kill(pthread_t thread, int sig);
-
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief examine and change blocked signals
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
 int pthread_sigmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
-
-/**
- * @addtogroup SIGNAL_KERNEL
- * @{
- */
-/**
- * @brief initialize and empty a signal set
- * @details @b #include <signal.h> \n
- * POSIX APIs (refer to : http://pubs.pengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigemptyset(FAR sigset_t *set);
-/**
- * @brief initialize and fill a signal set
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigfillset(FAR sigset_t *set);
-/**
- * @brief add a signal to a signal set
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigaddset(FAR sigset_t *set, int signo);
-/**
- * @brief delete a signal from a signal set
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigdelset(FAR sigset_t *set, int signo);
-/**
- * @brief test for a signal in a signal set
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigismember(FAR const sigset_t *set, int signo);
-/**
- * @brief signal management
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sighold(int sig);
-/**
- * @brief signal management
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.1
- */
-int sigignore(int sig);
-/**
- * @brief signal management
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.1
- */
-int sigpause(int sig);
-/**
- * @brief send a signal to the executing process
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.1
- */
-int raise(int sig);
-/**
- * @brief signal management
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigrelse(int sig);
-/**
- * @brief signal management
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.1
- */
-CODE void (*sigset(int sig, CODE void (*func)(int sig)))(int sig);
-/**
- * @brief signal management
- * @details @b #include <signal.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.1
- */
-CODE void (*signal(int sig, CODE void (*func)(int sig)))(int sig);
-/**
- * @}
- */
-/*
-	Following changes are work around to resolve build warnings.
-
-	TODO : The build warnings are there because function `sigaction` shadows struct `sigaction`.
-
-	The proper fix for warning issue is below:
-
-		1. Either change struct or function name
-		2. Move functions declaration into separate header file
-*/
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief examine and change a signal action
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigaction(int sig, FAR const struct sigaction *act, FAR struct sigaction *oact);
-
-#pragma GCC diagnostic pop
-
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief examine and change blocked signals
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigprocmask(int how, FAR const sigset_t *set, FAR sigset_t *oset);
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief examine pending signals
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigpending(FAR sigset_t *set);
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief wait for a signal
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigsuspend(FAR const sigset_t *sigmask);
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief wait for queued signals
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigwaitinfo(FAR const sigset_t *set, FAR struct siginfo *value);
-
-/**
- * @cond
- * @internal
- * @ingroup SIGNAL_KERNEL
- * @brief wait for queued signals
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.1 PRE
- */
-int sigwait(FAR const sigset_t *set, FAR int *sig);
-/**
- * @endcond
- */
-
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief wait for queued signals
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sigtimedwait(FAR const sigset_t *set, FAR struct siginfo *value, FAR const struct timespec *timeout);
-/**
- * @ingroup SIGNAL_KERNEL
- * @brief queue a signal to a process
- * @details @b #include <signal.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-#ifdef CONFIG_CAN_PASS_STRUCTS
-int sigqueue(int pid, int signo, union sigval value);
-#else
-int sigqueue(int pid, int signo, FAR void *sival_ptr);
-#endif
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
 
-#endif							/* __INCLUDE_SIGNAL_H */
+#endif /* __INCLUDE_SIGNAL_H */

@@ -18,7 +18,8 @@
 /****************************************************************************
  * include/nuttx/mtd/nand_raw.h
  *
- *   Copyright (c) 2012, Atmel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2012, Atmel Corporation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_MTD_NAND_RAW_H
-#define __INCLUDE_MTD_NAND_RAW_H
+#ifndef __INCLUDE_NUTTX_MTD_NAND_RAW_H
+#define __INCLUDE_NUTTX_MTD_NAND_RAW_H
 
 /****************************************************************************
  * Included Files
@@ -251,35 +252,37 @@
  * after this required header information.
  */
 
-struct nand_raw_s
-{
-  /* NAND data description */
+struct nand_raw_s {
+	/* NAND data description */
 
-  struct nand_model_s model; /* The NAND model storage */
-  uint8_t ecctype;           /* See NANDECC_* definitions */
+	struct nand_model_s model; /* The NAND model storage */
+	uintptr_t cmdaddr;         /* NAND command address base */
+	uintptr_t addraddr;        /* NAND address address base */
+	uintptr_t dataaddr;        /* NAND data address */
+	uint8_t ecctype;           /* See NANDECC_* definitions */
 
-  /* NAND operations */
+	/* NAND operations */
 
-  CODE int (*eraseblock)(FAR struct nand_raw_s *raw, off_t block);
-  CODE int (*rawread)(FAR struct nand_raw_s *raw, off_t block,
-                      unsigned int page, FAR void *data, FAR void *spare);
-  CODE int (*rawwrite)(FAR struct nand_raw_s *raw, off_t block,
-                       unsigned int page, FAR const void *data,
-                       FAR const void *spare);
+	CODE int (*eraseblock)(FAR struct nand_raw_s *raw, off_t block);
+	CODE int (*rawread)(FAR struct nand_raw_s *raw, off_t block,
+	                    unsigned int page, FAR void *data, FAR void *spare);
+	CODE int (*rawwrite)(FAR struct nand_raw_s *raw, off_t block,
+	                     unsigned int page, FAR const void *data,
+	                     FAR const void *spare);
 
 #ifdef CONFIG_MTD_NAND_HWECC
-  CODE int (*readpage)(FAR struct nand_raw_s *raw, off_t block,
-                       unsigned int page, FAR void *data, FAR void *spare);
-  CODE int (*writepage)(FAR struct nand_raw_s *raw, off_t block,
-                        unsigned int page, FAR const void *data,
-                        FAR const void *spare);
+	CODE int (*readpage)(FAR struct nand_raw_s *raw, off_t block,
+	                     unsigned int page, FAR void *data, FAR void *spare);
+	CODE int (*writepage)(FAR struct nand_raw_s *raw, off_t block,
+	                      unsigned int page, FAR const void *data,
+	                      FAR const void *spare);
 #endif
 
 #if defined(CONFIG_MTD_NAND_SWECC) || defined(CONFIG_MTD_NAND_HWECC)
-  /* ECC working buffers */
+	/* ECC working buffers */
 
-  uint8_t spare[CONFIG_MTD_NAND_MAXPAGESPARESIZE];
-  uint8_t ecc[CONFIG_MTD_NAND_MAXSPAREECCBYTES];
+	uint8_t spare[CONFIG_MTD_NAND_MAXPAGESPARESIZE];
+	uint8_t ecc[CONFIG_MTD_NAND_MAXSPAREECCBYTES];
 #endif
 };
 
@@ -307,4 +310,4 @@ extern "C"
 #endif
 
 #endif /* __ASSEMBLY__ */
-#endif /* __INCLUDE_MTD_NAND_RAW_H */
+#endif /* __INCLUDE_NUTTX_MTD_NAND_RAW_H */

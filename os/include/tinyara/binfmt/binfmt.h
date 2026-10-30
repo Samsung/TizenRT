@@ -16,42 +16,29 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * include/tinyara/binfmt/binfmt.h
+ * include/nuttx/binfmt/binfmt.h
  *
- *   Copyright (C) 2009, 2012, 2014, 2017 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_BINFMT_BINFMT_H
-#define __INCLUDE_TINYARA_BINFMT_BINFMT_H
+#ifndef __INCLUDE_NUTTX_BINFMT_BINFMT_H
+#define __INCLUDE_NUTTX_BINFMT_BINFMT_H
 
 /****************************************************************************
  * Included Files
@@ -59,44 +46,31 @@
 
 #include <tinyara/config.h>
 
+#include <spawn.h>
 #include <sys/types.h>
 
-#include <tinyara/arch.h>
 #include <tinyara/sched.h>
-#include <tinyara/mm/mm.h>
-#ifdef CONFIG_BINARY_MANAGER
-#include <tinyara/binary_manager.h>
-#endif
-#ifdef CONFIG_LIBCXX_EXCEPTION
-#include <unwind.h>
-#endif
+#include <tinyara/lib/elf.h>
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
+#define BINFMT_NALLOC     4
+
 /****************************************************************************
  * Public Types
  ****************************************************************************/
-enum {
-	BIN_TEXT,
-	BIN_CTOR,
-	BIN_DTOR,
-	BIN_RO,
-	BIN_DATA,
-	BIN_BSS,
-	BIN_HEAP,
-	BIN_MAX
-};
 
 /* The type of one C++ constructor or destructor */
 
-typedef FAR void (*binfmt_ctor_t)(void);
-typedef FAR void (*binfmt_dtor_t)(void);
+typedef CODE void (*binfmt_ctor_t)(void);
+typedef CODE void (*binfmt_dtor_t)(void);
 
 /* This describes the file to be loaded.
  *
  * NOTE 1: The 'filename' must be the full, absolute path to the file to be
- * executed unless CONFIG_LIB_ENVPATH is defined.  In that case,
+ * executed unless CONFIG_LIBC_ENVPATH is defined.  In that case,
  * 'filename' may be a relative path; a set of candidate absolute paths
  * will be generated using the PATH environment variable and load_module()
  * will attempt to load each file that is found at those absolute paths.
@@ -104,77 +78,53 @@ typedef FAR void (*binfmt_dtor_t)(void);
 
 struct symtab_s;
 struct binary_s {
-	/* Information provided to the loader to load and bind a module */
-
-	FAR const char *filename;		/* Full path to the binary to be loaded (See NOTE 1 above) */
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	struct mm_heap_s *uheap;		/* User heap pointer to allocate memory for sections */
-	uint32_t ramstart;			/* Start address of ram partition */
-	uint32_t ramsize;			/* Size of the RAM paritition */
-#endif
-
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	uint32_t reload;			/* Indicate whether this binary will be reloaded */
-	uint32_t data_backup;			/* Start address of copy of data section */
-#endif
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-	uint8_t islibrary;			/* Is this bin object containing a library */
-#ifdef CONFIG_HAVE_CXX
-	uint8_t run_library_ctors;		/* Flag to check if we need to run ctors for common binary */
-#endif
-#ifdef CONFIG_ARM_MPU							/* MPU register values for common binary only */
-	uint32_t cmn_mpu_regs[MPU_REG_NUMBER * NUM_APP_REGIONS];	/* Common binary MPU is configured during loading and disabled during unload_module */
-#endif
-#endif
-	FAR char *const *argv;			/* Argument list */
-	FAR const struct symtab_s *exports;	/* Table of exported symbols */
-	int nexports;				/* The number of symbols in exports[] */
-
 	/* Information provided from the loader (if successful) describing the
 	 * resources used by the loaded module.
 	 */
 
-	main_t entrypt;				/* Entry point into a program module */
-	FAR uint32_t sections[BIN_MAX];		/* Allocated sections */
-	FAR size_t sizes[BIN_MAX];		/* Size of sections */
+	main_t entrypt;                      /* Entry point into a program module */
+	FAR void *mapped;                    /* Memory-mapped, address space */
 
-#ifdef CONFIG_XIP_ELF
-	FAR uint32_t flash_region_start;	/* Flash partition start */
-	FAR uint32_t flash_region_end;		/* Flash partition end */
-	FAR uint32_t ram_region_start;		/* RAM region start for app */
-	FAR uint32_t ram_region_end;		/* RAM region end for app */
+#ifdef CONFIG_LIBC_ELF
+	struct module_s mod;                 /* Module context */
 #endif
 
-#ifdef CONFIG_BINFMT_CONSTRUCTORS
-	FAR binfmt_ctor_t *ctors;		/* Pointer to a list of constructors */
-	FAR binfmt_dtor_t *dtors;		/* Pointer to a list of destructors */
-	uint16_t nctors;			/* Number of constructors in the list */
-	uint16_t ndtors;			/* Number of destructors in the list */
+#ifdef CONFIG_PIC
+	FAR void *picbase;                   /* Position-independent */
 #endif
 
-#ifdef CONFIG_LIBCXX_EXCEPTION
-	void *exidx_start;			/* Start of exidx section */
-	void *exidx_end;			/* End of exidx section */
-	int (*register_exidx)(_Unwind_Ptr start, _Unwind_Ptr end, void * text_start, void * text_end, int bin_idx); /* function to register exidx data with common binary */
+#ifdef CONFIG_ARCH_ADDRENV
+	/* Address environment.
+	 *
+	 * addrenv - This is the handle created by addrenv_allocate() that can be
+	 *   used to manage the tasks address space.
+	 */
+
+	FAR addrenv_t *addrenv;              /* Address environment */
+	FAR addrenv_t *oldenv;               /* Saved address environment */
 #endif
+
+	size_t mapsize;                      /* Size of the mapped address region (needed for munmap) */
 
 	/* Start-up information that is provided by the loader, but may be modified
 	 * by the caller between load_module() and exec_module() calls.
 	 */
 
-	uint8_t priority;			/* Task execution priority */
-	size_t stacksize;			/* Size of the stack in bytes (unallocated) */
-	size_t filelen;                 /* Size of binary size, used only when underlying is MTD */
-	size_t offset;                  /* Offset of binary from partition start*/
-#ifdef CONFIG_BINARY_MANAGER
-	uint8_t binary_idx;             /* Index of binary in binary table */
-	uint32_t bin_ver;               /* version of binary */
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	char bin_name[BIN_NAME_MAX];    /* Name of binary */
-#else
-	char *bin_name;                 /* Name of binary */
+	uint8_t priority;                    /* Task execution priority */
+	size_t stacksize;                    /* Size of the stack in bytes (unallocated) */
+
+#ifdef CONFIG_BINFMT_STORE_FILENAME
+	char fname[NAME_MAX];
 #endif
+
+#ifdef CONFIG_SCHED_USER_IDENTITY
+	uid_t uid;                           /* File owner user identity */
+	gid_t gid;                           /* File owner group user identity */
+	int mode;                            /* File mode added to */
+#endif
+
+#ifndef CONFIG_BUILD_KERNEL
+	FAR void *stackaddr;                 /* Task stack address */
 #endif
 
 	/* Unload module callback */
@@ -191,7 +141,10 @@ struct binfmt_s {
 
 	/* Verify and load binary into memory */
 
-	CODE int (*load)(FAR struct binary_s *bin);
+	CODE int (*load)(FAR struct binary_s *bin,
+	                 FAR const char *filename,
+	                 FAR const struct symtab_s *exports,
+	                 int nexports);
 
 	/* Unload module callback */
 
@@ -202,13 +155,9 @@ struct binfmt_s {
  * Public Data
  ****************************************************************************/
 
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-/* A binary data of common library */
-extern struct binary_s *g_lib_binp;
-#endif
-
 #if defined(__cplusplus)
-extern "C" {
+extern "C"
+{
 #endif
 
 /****************************************************************************
@@ -263,13 +212,14 @@ int unregister_binfmt(FAR struct binfmt_s *binfmt);
  *   prep the module for execution.
  *
  * Returned Value:
- *   This is a internal function so it follows the convention that
+ *   This is a NuttX internal function so it follows the convention that
  *   0 (OK) is returned on success and a negated errno is returned on
  *   failure.
  *
  ****************************************************************************/
 
-int load_module(FAR struct binary_s *bin);
+int load_module(FAR struct binary_s *bin, FAR const char *filename,
+                FAR const struct symtab_s *exports, int nexports);
 
 /****************************************************************************
  * Name: unload_module
@@ -299,13 +249,18 @@ int unload_module(FAR struct binary_s *bin);
  *   Execute a module that has been loaded into memory by load_module().
  *
  * Returned Value:
- *   This is a internal function so it follows the convention that
+ *   This is a NuttX internal function so it follows the convention that
  *   0 (OK) is returned on success and a negated errno is returned on
  *   failure.
  *
  ****************************************************************************/
 
-int exec_module(FAR struct binary_s *bin);
+int exec_module(FAR struct binary_s *binp,
+                FAR const char *filename, FAR char *const *argv,
+                FAR char *const *envp,
+                FAR const posix_spawn_file_actions_t *actions,
+                FAR const posix_spawnattr_t *attr,
+                bool spawn);
 
 /****************************************************************************
  * Name: exec
@@ -349,17 +304,55 @@ int exec_module(FAR struct binary_s *bin);
  *
  * Input Parameters:
  *   filename - The path to the program to be executed. If
- *              CONFIG_LIB_ENVPATH is defined in the configuration, then
+ *              CONFIG_LIBC_ENVPATH is defined in the configuration, then
  *              this may be a relative path from the current working
  *              directory. Otherwise, path must be the absolute path to the
  *              program.
  *   argv     - A pointer to an array of string arguments. The end of the
  *              array is indicated with a NULL entry.
+ *   envp     - An array of character pointers to null-terminated strings
+ *              that provide the environment for the new process image.
+ *              The environment array is terminated by a null pointer.
  *   exports  - The address of the start of the caller-provided symbol
  *              table. This symbol table contains the addresses of symbols
  *              exported by the caller and made available for linking the
  *              module into the system.
  *   nexports - The number of symbols in the exports table.
+ *
+ * Returned Value:
+ *   It returns the PID of the exec'ed module.  On failure, it returns
+ *   the negative errno value appropriately.
+ *
+ ****************************************************************************/
+
+int exec(FAR const char *filename, FAR char *const *argv,
+         FAR char *const *envp, FAR const struct symtab_s *exports,
+         int nexports);
+
+/****************************************************************************
+ * Name: exec_spawn
+ *
+ * Description:
+ *   exec() configurable version, delivery the spawn attribute if this
+ *   process has special customization.
+ *
+ * Input Parameters:
+ *   filename - The path to the program to be executed. If
+ *              CONFIG_LIBC_ENVPATH is defined in the configuration, then
+ *              this may be a relative path from the current working
+ *              directory. Otherwise, path must be the absolute path to the
+ *              program.
+ *   argv     - A pointer to an array of string arguments. The end of the
+ *              array is indicated with a NULL entry.
+ *   envp     - A pointer to an array of environment strings. Terminated with
+ *              a NULL entry.
+ *   exports  - The address of the start of the caller-provided symbol
+ *              table. This symbol table contains the addresses of symbols
+ *              exported by the caller and made available for linking the
+ *              module into the system.
+ *   nexports - The number of symbols in the exports table.
+ *   actions  - The spawn file actions
+ *   attr     - The spawn attributes.
  *
  * Returned Value:
  *   This is an end-user function, so it follows the normal convention:
@@ -368,7 +361,10 @@ int exec_module(FAR struct binary_s *bin);
  *
  ****************************************************************************/
 
-int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symtab_s *exports, int nexports);
+int exec_spawn(FAR const char *filename, FAR char *const *argv,
+               FAR char *const *envp, FAR const struct symtab_s *exports,
+               int nexports, FAR const posix_spawn_file_actions_t *actions,
+               FAR const posix_spawnattr_t *attr);
 
 /****************************************************************************
  * Name: binfmt_exit
@@ -392,36 +388,10 @@ int exec(FAR const char *filename, FAR char *const *argv, FAR const struct symta
 #ifdef CONFIG_BINFMT_LOADABLE
 int binfmt_exit(FAR struct binary_s *bin);
 #endif
-/****************************************************************************
- * Name: load_binary
- *
- * Description:
- *   This is a convenience function that wraps load_module and exec_module into
- *   one call.  If CONFIG_BINFMT_LOADABLE is defined, this function will
- *   schedule to unload the module when task exits.
- *
- * Input Parameters:
- *   filename - The path to the program to be executed. If
- *              CONFIG_LIB_ENVPATH is defined in the configuration, then
- *              this may be a relative path from the current working
- *              directory. Otherwise, path must be the absolute path to the
- *              program.
- *
- *   load_attr - This structure contains the information that the binary
- *               to be loaded.
- *
- * Returned Value:
- *   This is an end-user function, so it follows the normal convention:
- *   It returns the PID of the exec'ed module.  On failure, it returns
- *   -1 (ERROR) and sets errno appropriately.
- *
- ****************************************************************************/
-#ifdef CONFIG_BINARY_MANAGER
-int load_binary(int binary_idx, FAR const char *filename, load_attr_t *load_attr);
-#endif
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
-#endif							/* __INCLUDE_TINYARA_BINFMT_BINFMT_H */
+
+#endif /* __INCLUDE_NUTTX_BINFMT_BINFMT_H */

@@ -16,42 +16,29 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * include/tinyara/binfmt/elf.h
+ * include/nuttx/binfmt/elf.h
  *
- *   Copyright (C) 2012, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_BINFMT_ELF_H
-#define __INCLUDE_TINYARA_BINFMT_ELF_H
+#ifndef __INCLUDE_NUTTX_BINFMT_ELF_H
+#define __INCLUDE_NUTTX_BINFMT_ELF_H
 
 /****************************************************************************
  * Included Files
@@ -60,44 +47,32 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
-
 #include <stdint.h>
 #include <stdbool.h>
-#include <elf32.h>
+#include <elf.h>
 
-#include <tinyara/arch.h>
 #include <tinyara/binfmt/binfmt.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 /* Configuration ************************************************************/
 
 #ifndef CONFIG_ELF_ALIGN_LOG2
-#define CONFIG_ELF_ALIGN_LOG2 2
+#  define CONFIG_ELF_ALIGN_LOG2 2
 #endif
 
 #ifndef CONFIG_ELF_STACKSIZE
-#define CONFIG_ELF_STACKSIZE 2048
+#  define CONFIG_ELF_STACKSIZE 2048
 #endif
 
 #ifndef CONFIG_ELF_BUFFERSIZE
-#define CONFIG_ELF_BUFFERSIZE 32
+#  define CONFIG_ELF_BUFFERSIZE 32
 #endif
 
 #ifndef CONFIG_ELF_BUFFERINCR
-#define CONFIG_ELF_BUFFERINCR 32
-#endif
-
-/* Allocation array size and indices */
-
-#define LIBELF_ELF_ALLOC     0
-#ifdef CONFIG_BINFMT_CONSTRUCTORS
-#define LIBELF_CTORS_ALLOC 1
-#define LIBELF_CTPRS_ALLOC 2
-#define LIBELF_NALLOC      3
-#else
-#define LIBELF_NALLOC      1
+#  define CONFIG_ELF_BUFFERINCR 32
 #endif
 
 /****************************************************************************
@@ -109,90 +84,79 @@
  */
 
 struct elf_loadinfo_s {
-	int filfd;				/* Descriptor for the file being loaded */
-	off_t filelen;				/* Length of the entire ELF file */
-	uint16_t offset;    		        /* elf offset when binary header is included */
-	Elf32_Ehdr ehdr;			/* Buffered ELF file header */
-	FAR Elf32_Shdr *shdr;			/* Buffered ELF section headers */
-	uint8_t *iobuffer;			/* File I/O buffer */
+	/* elfalloc is the base address of the memory that is allocated to hold the
+	 * ELF program image.
+	 *
+	 * If CONFIG_ARCH_ADDRENV=n, elfalloc will be allocated using kmm_malloc()
+	 * (or kmm_zalloc()).
+	 * If CONFIG_ARCH_ADDRENV=y, then elfalloc will be allocated using
+	 * up_addrenv_create().  In either case, there will be a unique instance
+	 * of elfalloc (and stack) for each instance of a process.
+	 *
+	 * The alloc[] array in struct binary_s will hold memory that persists
+	 * after the ELF module has been loaded.
+	 */
+
+#ifdef CONFIG_ARCH_USE_SEPARATED_SECTION
+	FAR uintptr_t     *sectalloc;   /* All sections memory allocated when ELF file was loaded */
+#endif
+
+	uintptr_t          textalloc;  /* .text memory allocated when ELF file was loaded */
+	uintptr_t          dataalloc;  /* .bss/.data memory allocated when ELF file was loaded */
+	size_t             textsize;   /* Size of the ELF .text memory allocation */
+	size_t             datasize;   /* Size of the ELF .bss/.data memory allocation */
+	size_t             textalign;  /* Necessary alignment of .text */
+	size_t             dataalign;  /* Necessary alignment of .bss/.data */
+	off_t              filelen;    /* Length of the entire ELF file */
+	uid_t              fileuid;    /* Uid of the file system */
+	gid_t              filegid;    /* Gid of the file system */
+	int                filemode;   /* Mode of the file system */
+
+	Elf_Ehdr           ehdr;       /* Buffered ELF file header */
+	FAR Elf_Phdr      *phdr;       /* Buffered ELF program headers */
+	FAR Elf_Shdr      *shdr;       /* Buffered ELF section headers */
+	uint8_t           *iobuffer;   /* File I/O buffer */
+
+	/* Constructors and destructors */
 
 #ifdef CONFIG_BINFMT_CONSTRUCTORS
-	FAR binfmt_ctor_t *ctors;		/* Pointer to a list of constructors */
-	FAR binfmt_dtor_t *dtors;		/* Pointer to a list of destructors */
-	uint16_t nctors;			/* Number of constructors */
-	uint16_t ndtors;			/* Number of destructors */
+	FAR void          *ctoralloc;  /* Memory allocated for ctors */
+	FAR void          *dtoralloc;  /* Memory allocated dtors */
+	FAR binfmt_ctor_t *ctors;      /* Pointer to a list of constructors */
+	FAR binfmt_dtor_t *dtors;      /* Pointer to a list of destructors */
+	uint16_t           nctors;     /* Number of constructors */
+	uint16_t           ndtors;     /* Number of destructors */
 #endif
 
-	uintptr_t symtab;			/* Copy of symbol table */
-	uintptr_t reltab;			/* Copy of relocation table */
-	uintptr_t strtab;			/* Copy of string table */
-	uint16_t symtabidx;			/* Symbol table section index */
-	uint16_t strtabidx;			/* String table section index */
-	uint16_t buflen;			/* size of iobuffer[] */
+	/* Address environment.
+	 *
+	 * addrenv - This is the handle created by addrenv_allocate() that can be
+	 *   used to manage the tasks address space.
+	 */
 
-	struct binary_s *binp;			/* Back pointer to binary object */
+#ifdef CONFIG_ARCH_ADDRENV
+	FAR addrenv_t     *addrenv;    /* Address environment */
+	FAR addrenv_t     *oldenv;     /* Saved address environment */
+#endif
+
+	uint16_t           symtabidx;  /* Symbol table section index */
+	uint16_t           strtabidx;  /* String table section index */
+	uint16_t           buflen;     /* size of iobuffer[] */
+	struct file        file;       /* Descriptor for the file being loaded */
 };
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-struct bin_addr_info_s {
-        uint32_t text_addr;
-        uint32_t text_size;
-#ifdef CONFIG_SAVE_BIN_SECTION_ADDR
-#if defined(CONFIG_OPTIMIZE_APP_RELOAD_TIME) || defined(CONFIG_MEM_LEAK_CHECKER)
-        uint32_t rodata_addr;
-        uint32_t data_addr;
-        uint32_t bss_addr;
-#endif
-#ifdef CONFIG_MEM_LEAK_CHECKER
-        uint32_t rodata_size;
-        uint32_t data_size;
-        uint32_t bss_size;
-#endif
-#endif
-};
-typedef struct bin_addr_info_s bin_addr_info_t;
-#endif
 
 /****************************************************************************
- * Public Functions
+ * Public Function Prototypes
  ****************************************************************************/
 
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
-
-/****************************************************************************
- * Name: elf_initialize
- *
- * Description:
- *   In order to use the ELF binary format, this function must be called
- *   during system initialization to register the ELF binary format.
- *
- * Returned Value:
- *   This is a NuttX internal function so it follows the convention that
- *   0 (OK) is returned on success and a negated errno is returned on
- *   failure.
- *
- ****************************************************************************/
-
-int elf_initialize(void);
-
-/****************************************************************************
- * Name: elf_uninitialize
- *
- * Description:
- *   Unregister the ELF binary loader
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
-
-void elf_uninitialize(void);
 
 /****************************************************************************
  * Name: elf_init
@@ -253,7 +217,8 @@ int elf_load(FAR struct elf_loadinfo_s *loadinfo);
  ****************************************************************************/
 
 struct symtab_s;
-int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exports, int nexports);
+int elf_bind(FAR struct elf_loadinfo_s *loadinfo,
+             FAR const struct symtab_s *exports, int nexports);
 
 /****************************************************************************
  * Name: elf_unload
@@ -269,29 +234,11 @@ int elf_bind(FAR struct elf_loadinfo_s *loadinfo, FAR const struct symtab_s *exp
  *
  ****************************************************************************/
 
-int elf_unload(struct elf_loadinfo_s *loadinfo);
-
-#ifdef CONFIG_APP_BINARY_SEPARATION
-
-/****************************************************************************
- * Name: get_bin_addr_list
- *
- * Description:
- *   Returns the pointer to the bin info address list
- *
- * Returned Value:
- *   Pointer to the bin info address list
- ****************************************************************************/
-
-bin_addr_info_t *get_bin_addr_list(void);
-
-void *elf_find_text_section_addr(int bin_idx);
-void elf_show_all_bin_section_addr(void);
-#endif
+int elf_unload(FAR struct elf_loadinfo_s *loadinfo);
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* __INCLUDE_TINYARA_BINFMT_ELF_H */
+#endif /* __INCLUDE_NUTTX_BINFMT_ELF_H */

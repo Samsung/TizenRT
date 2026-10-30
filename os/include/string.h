@@ -18,47 +18,24 @@
 /****************************************************************************
  * include/string.h
  *
- *   Copyright (C) 2007-2012, 2014, 2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
-/**
- * @defgroup STRING_LIBC STRING
- * @brief Provides APIs for String
- * @ingroup KERNEL
- *
- * @{
- */
-
-///@file string.h
-///@brief String APIs
 
 #ifndef __INCLUDE_STRING_H
 #define __INCLUDE_STRING_H
@@ -68,287 +45,380 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/compiler.h>
 
 #include <stddef.h>
+#include <alloca.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Compatibility definitions */
 
-#ifndef CONFIG_ARCH_BZERO
-#define bzero(s, n) (void)memset(s, 0, n)
-#endif
+#define strcoll_l(s1, s2, l)    strcoll(s1, s2)
+#define strdupa(x)              strcpy(alloca(strlen(x) + 1), x)
+#define strerror_l(e, l)        strerror(e)
+#define strxfrm_l(s1, s2, n, l) strxfrm(s1, s2, n)
 
-#define bcopy(b1, b2, len) (void)memmove(b2, b1, len)
+#define strndupa(x, l) ({ \
+  FAR const char *__old = (x); \
+  size_t __len = strnlen(__old, (l)); \
+  FAR char *__new = alloca(__len + 1); \
+  __new[__len] = '\0'; \
+  (FAR char *)memcpy(__new, __old, __len); \
+})
 
 /****************************************************************************
- * Global Function Prototypes
+ * Public Function Prototypes
  ****************************************************************************/
 
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
 
-/**
- * @brief duplicate a specific number of bytes from a string
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strdup(FAR const char *s);
-/**
- * @brief duplicate a specific number of bytes from a string
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strndup(FAR const char *s, size_t size);
-/**
- * @brief get error message string
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR const char *strerror(int errnum);
-/**
- * @cond
- * @internal
- */
-int strerror_r(int errnum, FAR char *buf, size_t buflen);
-/**
- * @endcond
- */
-/**
- * @brief get length of fixed size string
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-size_t strlen(FAR const char *s);
-/**
- * @brief get length of fixed size string
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-size_t strnlen(FAR const char *s, size_t maxlen);
-/**
- * @brief concatenate two strings
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strcat(FAR char *dest, FAR const char *src);
-/**
- * @brief concatenate a string with part of another
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strncat(FAR char *dest, FAR const char *src, size_t n);
-/**
- * @brief compare two strings
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int strcmp(FAR const char *cs, FAR const char *ct);
-/**
- * @brief compare part of two strings
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int strncmp(FAR const char *cs, FAR const char *ct, size_t nb);
+FAR char  *strdup(FAR const char *s) malloc_like;
+FAR char  *strndup(FAR const char *s, size_t size) malloc_like;
+FAR char  *strerror(int);
+int        strerror_r(int, FAR char *, size_t);
+size_t     strlen(FAR const char *);
+size_t     strnlen(FAR const char *, size_t);
+FAR char  *strcat(FAR char *, FAR const char *);
+size_t     strlcat(FAR char *, FAR const char *, size_t);
+FAR char  *strncat(FAR char *, FAR const char *, size_t);
+int        strcmp(FAR const char *, FAR const char *);
+int        strncmp(FAR const char *, FAR const char *, size_t);
+int        strcoll(FAR const char *, FAR const char *s2);
+FAR char  *strcpy(FAR char *dest, FAR const char *src);
+FAR char  *stpcpy(FAR char *dest, FAR const char *src);
+size_t     strlcpy(FAR char *dst, FAR const char *src, size_t size);
+FAR char  *strncpy(FAR char *, FAR const char *, size_t);
+FAR char  *stpncpy(FAR char *, FAR const char *, size_t);
+FAR char  *strpbrk(FAR const char *, FAR const char *);
+FAR char  *strchr(FAR const char *s, int c);
+FAR char  *strchrnul(FAR const char *s, int c);
+FAR char  *strrchr(FAR const char *s, int c);
+size_t     strspn(FAR const char *, FAR const char *);
+size_t     strcspn(FAR const char *, FAR const char *);
+FAR char  *strstr(FAR const char *, FAR const char *);
+FAR char  *strcasestr(FAR const char *, FAR const char *);
+FAR char  *strsep(FAR char **, FAR const char *);
+FAR char  *strsignal(int signum);
+FAR char  *strtok(FAR char *, FAR const char *);
+FAR char  *strtok_r(FAR char *, FAR const char *, FAR char **);
+size_t     strxfrm(FAR char *, FAR const char *, size_t n);
+int        strverscmp(FAR const char *s1, FAR const char *s2);
 
-/**
- * @cond
- * @internal
- */
-int strcoll(FAR const char *s1, FAR const char *s2);
-/**
- * @endcond
- */
-/**
- * @brief copy a string and return a pointer to the end of the result
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strcpy(char *dest, FAR const char *src);
-/**
- * @cond
- * @internal
- * @brief copy a string and return a pointer to the end of the result
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *stpcpy(FAR char *dest, FAR const char *src);
-/**
- * @endcond
- */
-/**
- * @brief copy fixed length string, returning a pointer to the array end
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.1 PRE
- */
-FAR char *stpncpy(FAR char *dest, FAR const char *src, size_t n);
-/**
- * @brief copy fixed length string, returning a pointer to the array end
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strncpy(FAR char *dest, FAR const char *src, size_t n);
-/**
- * @brief scan a string for a byte
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strpbrk(FAR const char *str, FAR const char *charset);
-/**
- * @brief string scanning operation
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strchr(FAR const char *s, int c);
-/**
- * @brief string scanning operation
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strrchr(FAR const char *s, int c);
-/**
- * @brief get length of a substring
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-size_t strspn(FAR const char *s, FAR const char *accept);
-/**
- * @brief get the length of a complementary substring
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-size_t strcspn(FAR const char *s, FAR const char *reject);
-/**
- * @brief find a substring
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strstr(FAR const char *str, FAR const char *substr);
-/**
- * @cond
- * @internal
- * @brief locate a substring
- * @details @b #include <string.h> \n
- * @param[in] str src string
- * @param[in] substr substring
- * @since TizenRT v1.0
- */
-FAR char *strcasestr(FAR const char *str, FAR const char *substr);
-/**
- * @endcond
- */
-/**
- * @brief get name of signal
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v2.1 PRE
- */
-FAR char *strsignal(int signum);
-/**
- * @brief split string into tokens
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strtok(FAR char *str, FAR const char *delim);
-/**
- * @brief split string into tokens
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR char *strtok_r(FAR char *str, FAR const char *delim, FAR char **saveptr);
-/**
- * @cond
- * @internal
- */
-size_t strxfrm(FAR char *s1, FAR const char *s2, size_t n);
-/**
- * @endcond
- */
-/**
- * @brief find byte in memory
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR void *memchr(FAR const void *s, int c, size_t n);
-/**
- * @brief copy bytes in memory
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR void *memccpy(FAR void *s1, FAR const void *s2, int c, size_t n);
-/**
- * @brief compare bytes in memory
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int memcmp(FAR const void *s1, FAR const void *s2, size_t n);
-/**
- * @brief copy bytes in memory
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR void *memcpy(FAR void *dest, FAR const void *src, size_t n);
-/**
- * @brief copy bytes in memory with overlapping areas
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR void *memmove(FAR void *dest, FAR const void *src, size_t count);
-/**
- * @brief set bytes in memory
- * @details @b #include <string.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR void *memset(FAR void *s, int c, size_t n);
+FAR void  *memchr(FAR const void *s, int c, size_t n);
+FAR void  *memrchr(FAR const void *s, int c, size_t n);
+FAR void  *rawmemchr(FAR const void *s, int c);
+FAR void  *memccpy(FAR void *s1, FAR const void *s2, int c, size_t n);
+int        memcmp(FAR const void *s1, FAR const void *s2, size_t n);
+FAR void  *memcpy(FAR void *dest, FAR const void *src, size_t n) used_code;
+FAR void  *mempcpy(FAR void *dest, FAR const void *src, size_t n);
+FAR void  *memmove(FAR void *dest, FAR const void *src, size_t count);
+FAR void  *memset(FAR void *s, int c, size_t n) used_code;
+FAR void  *memmem(FAR const void *haystack, size_t haystacklen,
+                  FAR const void *needle, size_t needlelen);
 
-/**
- * @brief Copies up to size - 1 characters from the NUL-terminated string src to dst, NUL-terminating the result.
- * @details @b #include <string.h>
- * @param[in] dest A pointer to the destination string.
- * @param[in] src A pointer to the source string.
- * @param[in] size The size of the destination buffer.
- * @return Total length of the string they tried to create.
- * @since TizenRT v1.0
- */
-size_t strlcpy(char *__restrict dest, const char *__restrict src, size_t size);
+void explicit_bzero(FAR void *s, size_t n);
+int timingsafe_bcmp(FAR const void *b1, FAR const void *b2, size_t n);
+
+#ifdef __KERNEL__
+#  define strdup(s)       nx_strdup(s)
+#  define strndup(s,sz)   nx_strndup(s,sz)
+#endif
+
+FAR char *nx_strdup(FAR const char *s) malloc_like;
+FAR char *nx_strndup(FAR const char *s, size_t size) malloc_like;
+
+#if CONFIG_FORTIFY_SOURCE > 0
+fortify_function(strcat) FAR char *strcat(FAR char *dest,
+                                          FAR const char *src)
+{
+	fortify_assert(strlen(dest) + strlen(src) + 1 <= fortify_size(dest, 0));
+	return __real_strcat(dest, src);
+}
+
+fortify_function(strlcat) size_t strlcat(FAR char *dst,
+                                         FAR const char *src,
+                                         size_t dsize)
+{
+	fortify_assert(dsize <= fortify_size(dst, 0));
+	return __real_strlcat(dst, src, dsize);
+}
+
+fortify_function(strncat) FAR char *strncat(FAR char *dest,
+                                            FAR const char *src,
+                                            size_t n)
+{
+	fortify_assert(n <= fortify_size(dest, 0));
+	return __real_strncat(dest, src, n);
+}
+
+fortify_function(strcpy) FAR char *strcpy(FAR char *dest,
+                                          FAR const char *src)
+{
+	fortify_assert(strlen(src) + 1 <= fortify_size(dest, 0));
+	return __real_strcpy(dest, src);
+}
+
+fortify_function(stpcpy) FAR char *stpcpy(FAR char *dest,
+                                          FAR const char *src)
+{
+	fortify_assert(strlen(src) + 1 <= fortify_size(dest, 0));
+	return __real_stpcpy(dest, src);
+}
+
+fortify_function(stpncpy) FAR char *stpncpy(FAR char *dest,
+                                            FAR const char *src,
+                                            size_t n)
+{
+	fortify_assert(n <= fortify_size(dest, 0));
+	return __real_stpncpy(dest, src, n);
+}
+
+fortify_function(strlcpy) size_t strlcpy(FAR char *dst,
+                                         FAR const char *src,
+                                         size_t size)
+{
+	fortify_assert(size <= fortify_size(dst, 0));
+	return __real_strlcpy(dst, src, size);
+}
+
+fortify_function(strncpy) FAR char *strncpy(FAR char *dest,
+                                            FAR const char *src,
+                                            size_t n)
+{
+	fortify_assert(n <= fortify_size(dest, 0));
+	return __real_strncpy(dest, src, n);
+}
+
+fortify_function(memmove) FAR void *memmove(FAR void *dest,
+                                            FAR const void *src,
+                                            size_t count)
+{
+	fortify_assert(count <= fortify_size(dest, 0) &&
+	               count <= fortify_size(src, 0));
+	return __real_memmove(dest, src, count);
+}
+
+fortify_function(memcpy) FAR void *memcpy(FAR void *dest,
+                                          FAR const void *src,
+                                          size_t n)
+{
+	fortify_assert(n <= fortify_size(dest, 0) && n <= fortify_size(src, 0));
+	return __real_memcpy(dest, src, n);
+}
+
+fortify_function(memset) FAR void *memset(FAR void *s, int c, size_t n)
+{
+	fortify_assert(n <= fortify_size(s, 0));
+	return __real_memset(s, c, n);
+}
+
+fortify_function(mempcpy) FAR void *mempcpy(FAR void *dest,
+                                            FAR const void *src,
+                                            size_t n)
+{
+	fortify_assert(n <= fortify_size(dest, 0) && n <= fortify_size(src, 0));
+	return __real_mempcpy(dest, src, n);
+}
+
+fortify_function(explicit_bzero) void explicit_bzero(FAR void *s,
+                                                     size_t n)
+{
+	fortify_assert(n <= fortify_size(s, 0));
+	__real_explicit_bzero(s, n);
+}
+#endif
+
+#ifdef CONFIG_HAVE_BUILTIN
+#  if __has_builtin(__builtin_memcpy)
+builtin_function(memcpy) FAR void *memcpy(FAR void *dest,
+                                          FAR const void *src, size_t n)
+{
+	if (__builtin_constant_p(n)) {
+		return __builtin_memcpy(dest, src, n);
+	} else {
+		return __orig_memcpy(dest, src, n);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_memset)
+builtin_function(memset) FAR void *memset(FAR void *s, int c, size_t n)
+{
+	if (__builtin_constant_p(n)) {
+		return __builtin_memset(s, c, n);
+	} else {
+		return __orig_memset(s, c, n);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_memcmp)
+builtin_function(memcmp) int memcmp(FAR const void *s1,
+                                    FAR const void *s2, size_t n)
+{
+	if (__builtin_constant_p(s1) && __builtin_constant_p(s2)) {
+		return __builtin_memcmp(s1, s2, n);
+	} else {
+		return __orig_memcmp(s1, s2, n);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_memchr)
+builtin_function(memchr) FAR void *memchr(FAR const void *s,
+                                          int c, size_t n)
+{
+	if (__builtin_constant_p(s)) {
+		return __builtin_memchr(s, c, n);
+	} else {
+		return __orig_memchr(s, c, n);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strcat)
+builtin_function(strcat) FAR char *strcat(FAR char *dest,
+                                          FAR const char *src)
+{
+	if (__builtin_constant_p(src)) {
+		return __builtin_strcat(dest, src);
+	} else {
+		return __orig_strcat(dest, src);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strchr)
+builtin_function(strchr) FAR char *strchr(FAR const char *s, int c)
+{
+	if (__builtin_constant_p(s)) {
+		return __builtin_strchr(s, c);
+	} else {
+		return __orig_strchr(s, c);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strcmp)
+builtin_function(strcmp) int strcmp(FAR const char *s1,
+                                    FAR const char *s2)
+{
+	if (__builtin_constant_p(s1) && __builtin_constant_p(s2)) {
+		return __builtin_strcmp(s1, s2);
+	} else {
+		return __orig_strcmp(s1, s2);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strcpy)
+builtin_function(strcpy) FAR char *strcpy(FAR char *dest,
+                                          FAR const char *src)
+{
+	if (__builtin_constant_p(src)) {
+		return __builtin_strcpy(dest, src);
+	} else {
+		return __orig_strcpy(dest, src);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strcspn)
+builtin_function(strcspn) size_t strcspn(FAR const char *s,
+                                         FAR const char *reject)
+{
+	if (__builtin_constant_p(s) && __builtin_constant_p(reject)) {
+		return __builtin_strcspn(s, reject);
+	} else {
+		return __orig_strcspn(s, reject);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strlen)
+builtin_function(strlen) size_t strlen(FAR const char *s)
+{
+	if (__builtin_constant_p(s)) {
+		return __builtin_strlen(s);
+	} else {
+		return __orig_strlen(s);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strncat)
+builtin_function(strncat) FAR char *strncat(FAR char *dest,
+                                            FAR const char *src,
+                                            size_t n)
+{
+	if (__builtin_constant_p(dest)) {
+		return __builtin_strncat(dest, src, n);
+	} else {
+		return __orig_strncat(dest, src, n);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strncmp)
+builtin_function(strncmp) int strncmp(FAR const char *s1,
+                                      FAR const char *s2, size_t n)
+{
+	if (__builtin_constant_p(s1) && __builtin_constant_p(s2)) {
+		return __builtin_strncmp(s1, s2, n);
+	} else {
+		return __orig_strncmp(s1, s2, n);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strncpy)
+builtin_function(strncpy) FAR char *strncpy(FAR char *dest,
+                                            FAR const char *src,
+                                            size_t n)
+{
+	if (__builtin_constant_p(src)) {
+		return __builtin_strncpy(dest, src, n);
+	} else {
+		return __orig_strncpy(dest, src, n);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strpbrk)
+builtin_function(strpbrk) FAR char *strpbrk(FAR const char *s1,
+                                            FAR const char *s2)
+{
+	if (__builtin_constant_p(s1)) {
+		return __builtin_strpbrk(s1, s2);
+	} else {
+		return __orig_strpbrk(s1, s2);
+	}
+}
+#  endif
+
+#  if __has_builtin(__builtin_strrchr)
+builtin_function(strrchr) FAR char *strrchr(FAR const char *s,
+                                            int c)
+{
+	if (__builtin_constant_p(s)) {
+		return __builtin_strrchr(s, c);
+	} else {
+		return __orig_strrchr(s, c);
+	}
+}
+#  endif
+#endif
+
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
-#endif							/* __INCLUDE_STRING_H */
-/**
- * @}
- */
+#endif /* __INCLUDE_STRING_H */

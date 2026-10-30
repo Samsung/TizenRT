@@ -15,149 +15,62 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
+/****************************************************************************
  * include/errno.h
  *
- *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************/
-/**
- * @defgroup ERRNO_KERNEL ERRNO
- * @brief Provides APIs for Error Number
- * @ingroup KERNEL
- *
- * @{
- */
-
-/// @file errno.h
-/// @brief Errno APIs
+ ****************************************************************************/
 
 #ifndef __INCLUDE_ERRNO_H
 #define __INCLUDE_ERRNO_H
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
-#include <tinyara/config.h>
-#ifndef NXFUSE_HOST_BUILD
 #include <tinyara/compiler.h>
-#endif
 
-/************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************/
-/* How can we access the errno variable? */
+ ****************************************************************************/
 
-#if !defined(CONFIG_BUILD_PROTECTED) && !defined(CONFIG_BUILD_KERNEL)
-/* Flat build */
-
-#if defined(CONFIG_LIB_SYSCALL) && !defined(__KERNEL__)
-/* We still might be using system calls in user code.  If so, then
- * user code will have no direct access to the errno variable.
+/* Convenience/compatibility definition.  If the errno is accessed from the
+ * internal OS code, then the OS code should use the set_errno() and
+ * get_errno().  Currently, those are just placeholders but would be needed
+ * in the KERNEL mode build in order to instantiate the process address
+ * environment as necessary to access the TLS-based errno variable.
  */
 
-#undef __DIRECT_ERRNO_ACCESS
-
-#else
-/* Flat build with no system calls OR internal kernel logic... There
- * is direct access.
- */
-
-#define __DIRECT_ERRNO_ACCESS 1
-#endif
-
-#elif defined(CONFIG_BUILD_PROTECTED)
-#if defined(__KERNEL__)
-/* Kernel portion of protected build.  Kernel code has direct access */
-
-#define __DIRECT_ERRNO_ACCESS 1
-
-#else
-/* User portion of protected build.  Application code has only indirect
- * access
- */
-
-#undef __DIRECT_ERRNO_ACCESS
-#endif
-
-#elif defined(CONFIG_BUILD_KERNEL) && !defined(__KERNEL__)
-#if defined(__KERNEL__)
-/* Kernel build.  Kernel code has direct access */
-
-#define __DIRECT_ERRNO_ACCESS 1
-
-#else
-/* User libraries for the kernel.  Only indirect access from user
- * libraries */
-
-#undef __DIRECT_ERRNO_ACCESS
-#endif
-#endif
-
-/* Convenience/compatibility definition.
- *
- * For a flat, all kernel-mode build, the error can be read and written
- * from all code using a simple pointer.
- */
-
-#ifdef __DIRECT_ERRNO_ACCESS
-
-#define errno *get_errno_ptr()
-#define set_errno(e) do { errno = (int)(e); } while (0)
-#define get_errno(e) errno
-
-#else
-
-/* We doing separate user-/kernel-mode builds, then the errno has to be
- * a little differently. In kernel-mode, the TCB errno value can still be
- * read and written using a pointer from code executing within the
- * kernel.
- *
- * But in user-mode, the errno can only be read using the name 'errno'.
- * The non-standard API set_errno() must explicitly be used from user-
- * mode code in order to set the errno value.
- *
- * The same is true of the case where we have syscalls enabled but this
- * is not a kernel build, then we really have no option but to use the
- * set_errno() accessor function explicitly, even from OS logic!
- */
-
-#define errno get_errno()
-
-#endif							/* __DIRECT_ERRNO_ACCESS */
+#define errno *__errno()
+#define set_errno(e) \
+  do \
+    { \
+      errno = (int)(e); \
+    } \
+  while (0)
+#define get_errno() errno
 
 /* Definitions of error numbers and the string that would be
  * returned by strerror().
  */
+
+/* Sync with linux/include/asm-generic/errno-base.h */
 
 #define EPERM               1
 #define EPERM_STR           "Operation not permitted"
@@ -180,13 +93,12 @@
 #define ECHILD              10
 #define ECHILD_STR          "No child processes"
 #define EAGAIN              11
-#define EWOULDBLOCK         EAGAIN
 #define EAGAIN_STR          "Try again"
 #define ENOMEM              12
 #define ENOMEM_STR          "Out of memory"
 #define EACCES              13
 #define EACCES_STR          "Permission denied"
-#define EFAULT              14
+#define EFAULT              14                         /* Linux errno extension */
 #define EFAULT_STR          "Bad address"
 #define ENOTBLK             15
 #define ENOTBLK_STR         "Block device required"
@@ -228,52 +140,58 @@
 #define EDOM_STR            "Math argument out of domain of func"
 #define ERANGE              34
 #define ERANGE_STR          "Math result not representable"
+
+/* Sync with linux/include/asm-generic/errno.h */
+
 #define EDEADLK             35
-#define EDEADLOCK           EDEADLK
 #define EDEADLK_STR         "Resource deadlock would occur"
 #define ENAMETOOLONG        36
 #define ENAMETOOLONG_STR    "File name too long"
 #define ENOLCK              37
 #define ENOLCK_STR          "No record locks available"
 #define ENOSYS              38
-#define ENOSYS_STR          "Function not implemented"
+#define ENOSYS_STR          "Invalid system call number"
 #define ENOTEMPTY           39
 #define ENOTEMPTY_STR       "Directory not empty"
 #define ELOOP               40
 #define ELOOP_STR           "Too many symbolic links encountered"
+#define EWOULDBLOCK         EAGAIN
+#define EWOULDBLOCK_STR     "Operation would block"
 #define ENOMSG              42
 #define ENOMSG_STR          "No message of desired type"
 #define EIDRM               43
 #define EIDRM_STR           "Identifier removed"
-#define ECHRNG              44
+#define ECHRNG              44                         /* Linux errno extension */
 #define ECHRNG_STR          "Channel number out of range"
-#define EL2NSYNC            45
+#define EL2NSYNC            45                         /* Linux errno extension */
 #define EL2NSYNC_STR        "Level 2 not synchronized"
-#define EL3HLT              46
+#define EL3HLT              46                         /* Linux errno extension */
 #define EL3HLT_STR          "Level 3 halted"
-#define EL3RST              47
+#define EL3RST              47                         /* Linux errno extension */
 #define EL3RST_STR          "Level 3 reset"
-#define ELNRNG              48
+#define ELNRNG              48                         /* Linux errno extension */
 #define ELNRNG_STR          "Link number out of range"
-#define EUNATCH             49
+#define EUNATCH             49                         /* Linux errno extension */
 #define EUNATCH_STR         "Protocol driver not attached"
-#define ENOCSI              50
+#define ENOCSI              50                         /* Linux errno extension */
 #define ENOCSI_STR          "No CSI structure available"
-#define EL2HLT              51
+#define EL2HLT              51                         /* Linux errno extension */
 #define EL2HLT_STR          "Level 2 halted"
-#define EBADE               52
+#define EBADE               52                         /* Linux errno extension */
 #define EBADE_STR           "Invalid exchange"
-#define EBADR               53
+#define EBADR               53                         /* Linux errno extension */
 #define EBADR_STR           "Invalid request descriptor"
-#define EXFULL              54
+#define EXFULL              54                         /* Linux errno extension */
 #define EXFULL_STR          "Exchange full"
-#define ENOANO              55
+#define ENOANO              55                         /* Linux errno extension */
 #define ENOANO_STR          "No anode"
-#define EBADRQC             56
+#define EBADRQC             56                         /* Linux errno extension */
 #define EBADRQC_STR         "Invalid request code"
-#define EBADSLT             57
+#define EBADSLT             57                         /* Linux errno extension */
 #define EBADSLT_STR         "Invalid slot"
-#define EBFONT              59
+#define EDEADLOCK           EDEADLK                    /* Linux errno extension */
+#define EDEADLOCK_STR       "File locking deadlock error"
+#define EBFONT              59                         /* Linux errno extension */
 #define EBFONT_STR          "Bad font file format"
 #define ENOSTR              60
 #define ENOSTR_STR          "Device not a stream"
@@ -283,51 +201,51 @@
 #define ETIME_STR           "Timer expired"
 #define ENOSR               63
 #define ENOSR_STR           "Out of streams resources"
-#define ENONET              64
+#define ENONET              64                         /* Linux errno extension */
 #define ENONET_STR          "Machine is not on the network"
-#define ENOPKG              65
+#define ENOPKG              65                         /* Linux errno extension */
 #define ENOPKG_STR          "Package not installed"
-#define EREMOTE             66
+#define EREMOTE             66                         /* Linux errno extension */
 #define EREMOTE_STR         "Object is remote"
 #define ENOLINK             67
 #define ENOLINK_STR         "Link has been severed"
-#define EADV                68
+#define EADV                68                         /* Linux errno extension */
 #define EADV_STR            "Advertise error"
-#define ESRMNT              69
+#define ESRMNT              69                         /* Linux errno extension */
 #define ESRMNT_STR          "Srmount error"
-#define ECOMM               70
+#define ECOMM               70                         /* Linux errno extension */
 #define ECOMM_STR           "Communication error on send"
 #define EPROTO              71
 #define EPROTO_STR          "Protocol error"
 #define EMULTIHOP           72
 #define EMULTIHOP_STR       "Multihop attempted"
-#define EDOTDOT             73
+#define EDOTDOT             73                         /* Linux errno extension */
 #define EDOTDOT_STR         "RFS specific error"
 #define EBADMSG             74
 #define EBADMSG_STR         "Not a data message"
 #define EOVERFLOW           75
 #define EOVERFLOW_STR       "Value too large for defined data type"
-#define ENOTUNIQ            76
+#define ENOTUNIQ            76                         /* Linux errno extension */
 #define ENOTUNIQ_STR        "Name not unique on network"
-#define EBADFD              77
+#define EBADFD              77                         /* Linux errno extension */
 #define EBADFD_STR          "File descriptor in bad state"
-#define EREMCHG             78
+#define EREMCHG             78                         /* Linux errno extension */
 #define EREMCHG_STR         "Remote address changed"
-#define ELIBACC             79
+#define ELIBACC             79                         /* Linux errno extension */
 #define ELIBACC_STR         "Can not access a needed shared library"
-#define ELIBBAD             80
+#define ELIBBAD             80                         /* Linux errno extension */
 #define ELIBBAD_STR         "Accessing a corrupted shared library"
-#define ELIBSCN             81
+#define ELIBSCN             81                         /* Linux errno extension */
 #define ELIBSCN_STR         ".lib section in a.out corrupted"
-#define ELIBMAX             82
+#define ELIBMAX             82                         /* Linux errno extension */
 #define ELIBMAX_STR         "Attempting to link in too many shared libraries"
-#define ELIBEXEC            83
+#define ELIBEXEC            83                         /* Linux errno extension */
 #define ELIBEXEC_STR        "Cannot exec a shared library directly"
 #define EILSEQ              84
 #define EILSEQ_STR          "Illegal byte sequence"
 #define ERESTART            85
 #define ERESTART_STR        "Interrupted system call should be restarted"
-#define ESTRPIPE            86
+#define ESTRPIPE            86                         /* Linux errno extension */
 #define ESTRPIPE_STR        "Streams pipe error"
 #define EUSERS              87
 #define EUSERS_STR          "Too many users"
@@ -341,9 +259,9 @@
 #define EPROTOTYPE_STR      "Protocol wrong type for socket"
 #define ENOPROTOOPT         92
 #define ENOPROTOOPT_STR     "Protocol not available"
-#define EPROTONOSUPPORT      93
+#define EPROTONOSUPPORT     93
 #define EPROTONOSUPPORT_STR "Protocol not supported"
-#define ESOCKTNOSUPPORT     94
+#define ESOCKTNOSUPPORT     94                         /* Linux errno extension */
 #define ESOCKTNOSUPPORT_STR "Socket type not supported"
 #define EOPNOTSUPP          95
 #define EOPNOTSUPP_STR      "Operation not supported on transport endpoint"
@@ -371,7 +289,7 @@
 #define EISCONN_STR         "Transport endpoint is already connected"
 #define ENOTCONN            107
 #define ENOTCONN_STR        "Transport endpoint is not connected"
-#define ESHUTDOWN           108
+#define ESHUTDOWN           108                         /* Linux errno extension */
 #define ESHUTDOWN_STR       "Cannot send after transport endpoint shutdown"
 #define ETOOMANYREFS        109
 #define ETOOMANYREFS_STR    "Too many references: cannot splice"
@@ -388,7 +306,7 @@
 #define EINPROGRESS         115
 #define EINPROGRESS_STR     "Operation now in progress"
 #define ESTALE              116
-#define ESTALE_STR          "Stale NFS file handle"
+#define ESTALE_STR          "Stale file handle"
 #define EUCLEAN             117
 #define EUCLEAN_STR         "Structure needs cleaning"
 #define ENOTNAM             118
@@ -401,7 +319,7 @@
 #define EREMOTEIO_STR       "Remote I/O error"
 #define EDQUOT              122
 #define EDQUOT_STR          "Quota exceeded"
-#define ENOMEDIUM           123
+#define ENOMEDIUM           123                         /* Linux errno extension */
 #define ENOMEDIUM_STR       "No medium found"
 #define EMEDIUMTYPE         124
 #define EMEDIUMTYPE_STR     "Wrong medium type"
@@ -415,71 +333,58 @@
 #define EKEYREVOKED_STR     "Key has been revoked"
 #define EKEYREJECTED        129
 #define EKEYREJECTED_STR    "Key was rejected by service"
-#define EOWNERDEAD          142
+#define EOWNERDEAD          130
 #define EOWNERDEAD_STR      "Previous owner died"
-#define ENOTSUP             252
+#define ENOTRECOVERABLE     131
+#define ENOTRECOVERABLE_STR "State not recoverable"
+#define ERFKILL             132
+#define ERFKILL_STR         "Operation not possible due to RF-kill"
+#define EHWPOISON           133
+#define EHWPOISON_STR       "Memory page has hardware error"
+
+/* NuttX additional error codes */
+
+#define ELBIN               134                         /* Linux errno extension */
+#define ELBIN_STR           "Inode is remote"
+#define EFTYPE              135
+#define EFTYPE_STR          "Inappropriate file type or format"
+#define ENMFILE             136                         /* Cygwin */
+#define ENMFILE_STR         "No more files"
+#define EPROCLIM            137
+#define EPROCLIM_STR        "Limit would be exceeded by attempted fork"
+#define ENOTSUP             138
 #define ENOTSUP_STR         "Not supported"
+#define ENOSHARE            139                         /* Cygwin */
+#define ENOSHARE_STR        "No such host or network path"
+#define ECASECLASH          140                         /* Cygwin */
+#define ECASECLASH_STR      "Filename exists with different case"
 
-/************************************************************************
- * Type Declarations
- ************************************************************************/
+#define __ELASTERROR        2000                        /* Users can add values starting here */
 
-/************************************************************************
- * Global Function Prototypes
- ************************************************************************/
+/****************************************************************************
+ * Public Type Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
 
-/* Return a pointer to the thread specific errno.  NOTE:  When doing a
- * kernel-/user-mode build, this function can only be used within the
- * kernel-mode space.
- *
- * In the user-mode space, set_errno() and get_errno() are always available,
- * either as macros or via syscalls.
- */
+/* Return a pointer to the thread specific errno. */
 
-/**
- * @brief Return a pointer to the thread specific errno.
- * @details @b #include <errno.h>
- * @return A pointer to the per-thread errno variable is returned.
- * @since TizenRT v1.0
- */
-FAR int *get_errno_ptr(void);
-
-#ifndef __DIRECT_ERRNO_ACCESS
-/**
- * @brief Set the value of the thread specific errno.
- * @details @b #include <errno.h> \n
- * SYSTEM CALL API
- * @param[in] errcode The thread specific errno will be set to this error code value.
- * @return none
- * @since TizenRT v1.0
- */
-void set_errno(int errcode);
-
-/**
- * @brief Return the value of the thread specific errno.
- * @details @b #include <errno.h> \n
- * SYSTEM CALL API
- * @return The current value of the thread specific errno is returned.
- * @since TizenRT v1.0
- */
-int get_errno(void);
-#endif
+FAR int *__errno(void);
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* __INCLUDE_ERRNO_H */
-
-/**
- * @}
- */
+#endif /* __INCLUDE_ERRNO_H */

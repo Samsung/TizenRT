@@ -16,43 +16,31 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * include/tinyara/board.h
+ * include/nuttx/board.h
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
+
 /* This header file contains function prototypes for the interfaces between
- * (1) the TinyAra core-code, (2) the microprocessor specific logic that
+ * (1) the nuttx core-code, (2) the microprocessor specific logic that
  * resides under the arch/ sub-directory, and (3) the board-specific logic
- * that resides under configs/
+ * that resides under boards/
  *
  * Naming conventions:
  *
@@ -60,14 +48,15 @@
  *
  *    Any interface that is common across all microprocessors should be
  *    prefixed with up_ and prototyped in this header file. These
- *    definitions provide the common interface between TinyAra and the
+ *    definitions provide the common interface between NuttX and the
  *    architecture-specific implementation in arch/
  *
- *    These definitions are retained in the header file tinyara/include/arch.h
+ *    These definitions are retained in the header file
+ *    nuttx/include/arch.h
  *
  *    NOTE: up_ is supposed to stand for microprocessor; the u is like the
- *    Greek letter micron: µ. So it would be µP which is a common shortening
- *    of the word microprocessor.
+ *    Greek letter micron: µ. So it would be µP which is a common
+ *    shortening of the word microprocessor.
  *
  * 2. Microprocessor-Specific Interfaces.
  *
@@ -91,25 +80,25 @@
  *
  *    Board related declarations are retained in this header file.
  *
- *    There is also a arch/<architecture>/<board>/include/board.h header
+ *    There is also a boards/<arch>/<chip>/<board>/include/board.h header
  *    file that can be used to communicate other board-specific information
- *    between the architecture logic and even application logic.  Any definitions
- *    which are common between a single architecture and several boards
- *    should go in this board.h header file; this file is reserved for
- *    board-related definitions common to all architectures.
+ *    between the architecture logic and even application logic.  Any
+ *    definitions that are common between a single architecture and several
+ *    boards should go in this board.h header file; this file is reserved
+ *    for board-related definitions common to all architectures.
  *
  * 4. Board-Specific Interfaces.
  *
- *    Any interface which is unique to a board should be prefixed with
+ *    Any interface that is unique to a board should be prefixed with
  *    the board name, for example stm32f4discovery_. Sometimes the board
  *    name is too long so stm32_ would be okay too. These should be
- *    prototyped in arch/<architecture>/<board>/src/<board>.h and should not
- *    be used outside of that board directory since board-specific definitions
- *    have no meaning outside of the board directory.
+ *    prototyped in boards/<arch>/<chip>/<board>/src/<board>.h and should
+ *    not be used outside of that board directory since board-specific
+ *    definitions have no meaning outside of the board directory.
  */
 
-#ifndef __INCLUDE_TINYARA_BOARD_H
-#define __INCLUDE_TINYARA_BOARD_H
+#ifndef __INCLUDE_NUTTX_BOARD_H
+#define __INCLUDE_NUTTX_BOARD_H
 
 /****************************************************************************
  * Included Files
@@ -123,7 +112,11 @@
 #include <tinyara/compiler.h>
 
 #ifdef CONFIG_ARCH_IRQBUTTONS
-#include <tinyara/irq.h>
+#  include <tinyara/irq.h>
+#endif
+
+#ifdef CONFIG_BOARDCTL_RESET_CAUSE
+#  include <sys/boardctl.h>
 #endif
 
 /****************************************************************************
@@ -135,21 +128,62 @@
  *
  ****************************************************************************/
 
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
+
 /****************************************************************************
- * Name: board_initialize
+ * Name: board_early_initialize
  *
  * Description:
- *   If CONFIG_BOARD_INITIALIZE is selected, then an additional
+ *   If CONFIG_BOARD_EARLY_INITIALIZE is selected, then an additional
  *   initialization call will be performed in the boot-up sequence to a
- *   function called board_initialize().  board_initialize() will be
- *   called immediately after up_initialize() is called and just before the
- *   initial application is started.  This additional initialization phase
- *   may be used, for example, to initialize board-specific device drivers.
+ *   function called board_early_initialize().  board_early_initialize()
+ *   will be called immediately after up_initialize() and well before
+ *   board_early_initialize() is called and the initial application is
+ *   started.  The context in which board_early_initialize() executes is
+ *   suitable for early initialization of most, simple device drivers and
+ *   is a logical, board-specific extension of up_initialize().
+ *
+ *   board_early_initialize() runs on the startup, initialization thread.
+ *   Some initialization operations cannot be performed on the start-up,
+ *   initialization thread.  That is because the initialization thread
+ *   cannot wait for event.  Waiting may be required, for example, to
+ *   mount a file system or or initialize a device such as an SD card.
+ *   For this reason, such driver initialize must be deferred to
+ *   board_late_initialize().
+
+ ****************************************************************************/
+
+#ifdef CONFIG_BOARD_EARLY_INITIALIZE
+void board_early_initialize(void);
+#endif
+
+/****************************************************************************
+ * Name: board_late_initialize
+ *
+ * Description:
+ *   If CONFIG_BOARD_LATE_INITIALIZE is selected, then an additional
+ *   initialization call will be performed in the boot-up sequence to a
+ *   function called board_late_initialize().  board_late_initialize() will
+ *   be called after up_initialize() and board_early_initialize() and just
+ *   before the initial application is started.  This additional
+ *   initialization phase may be used, for example, to initialize board-
+ *   specific device drivers for which board_early_initialize() is not
+ *   suitable.
+ *
+ *   Waiting for events, use of I2C, SPI, etc are permissible in the context
+ *   of board_late_initialize().  That is because board_late_initialize()
+ *   will run on a temporary, internal kernel thread.
  *
  ****************************************************************************/
 
-#ifdef CONFIG_BOARD_INITIALIZE
-void board_initialize(void);
+#ifdef CONFIG_BOARD_LATE_INITIALIZE
+void board_late_initialize(void);
 #endif
 
 /****************************************************************************
@@ -160,9 +194,46 @@ void board_initialize(void);
  *   called directly from application code, but only indirectly via the
  *   (non-standard) boardctl() interface using the command BOARDIOC_INIT.
  *
+ * Input Parameters:
+ *   arg - The boardctl() argument is passed to the board_app_initialize()
+ *         implementation without modification.  The argument has no
+ *         meaning to NuttX; the meaning of the argument is a contract
+ *         between the board-specific initialization logic and the
+ *         matching application logic.  The value could be such things as a
+ *         mode enumeration value, a set of DIP switch switch settings, a
+ *         pointer to configuration data read from a file or serial FLASH,
+ *         or whatever you would like to do with it.  Every implementation
+ *         should accept zero/NULL as a default configuration.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure to indicate the nature of the failure.
+ *
  ****************************************************************************/
 
-int board_app_initialize(void);
+int board_app_initialize(uintptr_t arg);
+
+/****************************************************************************
+ * Name: board_app_finalinitialize
+ *
+ * Description:
+ *   Perform application specific initialization.  This function is never
+ *   called directly from application code, but only indirectly via the
+ *   (non-standard) boardctl() interface using the command
+ *   BOARDIOC_FINALINIT.
+ *
+ * Input Parameters:
+ *   arg - The argument has no meaning.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure to indicate the nature of the failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BOARDCTL_FINALINIT
+int board_app_finalinitialize(uintptr_t arg);
+#endif
 
 /****************************************************************************
  * Name: board_power_off
@@ -191,13 +262,14 @@ int board_power_off(int status);
  * Name: board_reset
  *
  * Description:
- *   Reset board.  This function may or may not be supported by a
- *   particular board architecture.
+ *   Reset board.  Support for this function is required by board-level
+ *   logic if CONFIG_BOARDCTL_RESET is selected.
  *
  * Input Parameters:
  *   status - Status information provided with the reset event.  This
- *     meaning of this status information is board-specific.  If not used by
- *     a board, the value zero may be provided in calls to board_reset.
+ *            meaning of this status information is board-specific.  If not
+ *            used by a board, the value zero may be provided in calls to
+ *            board_reset().
  *
  * Returned Value:
  *   If this function returns, then it was not possible to power-off the
@@ -227,7 +299,7 @@ int board_reset(int status);
  *     length.
  *
  * Returned Value:
- *   Zero (OK) is returned on success.  Otherwize a negated errno value is
+ *   Zero (OK) is returned on success.  Otherwise a negated errno value is
  *   returned indicating the nature of the failure.
  *
  ****************************************************************************/
@@ -237,46 +309,86 @@ int board_uniqueid(FAR uint8_t *uniqueid);
 #endif
 
 /****************************************************************************
- * Name: board_tsc_setup
+ * Name: board_uniquekey
  *
  * Description:
- *   Each board that supports a touchscreen device must provide this function.
- *   This function is called by application-specific, setup logic to
- *   configure the touchscreen device.  This function will register the driver
- *   as /dev/inputN where N is the minor device number.
- *
- *   This is an internal OS interface but may be invoked indirectly from
- *   application-level touchscreen testing logic (perhaps by
- *   apps/examples/touchscreen).  If CONFIG_LIB_BOARDCTL=y and
- *   CONFIG_BOARDCTL_TSCTEST=y, then this functions will be invoked via the
- *   (non-standard) boardctl() interface using the BOARDIOC_TSCTEST_SETUP
- *   command.
+ *   Return a unique KEY associated with the board.  The meaning of this
+ *   unique KEY is not specified.  It may be a trusted key or a private
+ *   identity, etc.  The only requirement is that the length of the
+ *   unique KEY be exactly CONFIG_BOARDCTL_UNIQUEKEY_SIZE in length.
  *
  * Input Parameters:
- *   minor   - The input device minor number
+ *   uniquekey - A reference to a writable memory location provided by the
+ *     caller to receive the board unique KEY.  The memory memory referenced
+ *     by this pointer must be at least CONFIG_BOARDCTL_UNIQUEKEY_SIZE in
+ *     length.
  *
  * Returned Value:
- *   Zero is returned on success.  Otherwise, a negated errno value is
- *   returned to indicate the nature of the failure.
+ *   Zero (OK) is returned on success.  Otherwise a negated errno value is
+ *   returned indicating the nature of the failure.
  *
  ****************************************************************************/
 
-int board_tsc_setup(int minor);
+#ifdef CONFIG_BOARDCTL_UNIQUEKEY
+int board_uniquekey(FAR uint8_t *uniquekey);
+#endif
 
 /****************************************************************************
- * Name: board_tsc_teardown
+ * Name:  board_switch_boot
  *
  * Description:
- *   Each board that supports a touchscreen device must provide this function.
- *   This function is called by application-specific, setup logic to
- *   uninitialize the touchscreen device.
+ *   BOARDIOC_SWITCH_BOOT is required to communicate the boot partition from
+ *   userspace (OTA subsystem) to board, it can be used to change the system
+ *   boot behavior. It's useful for A/B boot or even in the single boot case.
  *
- *   This is an internal OS interface but may be invoked indirectly from
- *   application-level touchscreen testing logic (perhaps by
- *   apps/examples/touchscreen).  If CONFIG_LIB_BOARDCTL=y and
- *   CONFIG_BOARDCTL_TSCTEST=y, then this functions will be invoked via the
- *   (non-standard) boardctl() interface using the BOARDIOC_TSCTEST_TEARDOWN
- *   command.
+ * Input Parameters:
+ *   system - The boot system updated or specified
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success.  Otherwise a negated errno value is
+ *   returned indicating the nature of the failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BOARDCTL_SWITCH_BOOT
+int board_switch_boot(FAR const char *system);
+#endif
+
+/****************************************************************************
+ * Name:  board_boot_image
+ *
+ * Description:
+ *   Boot a new application firmware image. Execute the required actions for
+ *   booting a new application firmware image (e.g. deinitialize peripherals,
+ *   load the Program Counter register with the application firmware image
+ *   entry point address).
+ *
+ * Input Parameters:
+ *   path     - Path to the new application firmware image to be booted.
+ *   hdr_size - Image header size in bytes. This value may be useful for
+ *              skipping metadata information prepended to the application
+ *              image.
+ *
+ * Returned Value:
+ *   If this function returns, then it was not possible to load the
+ *   application firmware image due to some constraints. The return value in
+ *   this case is a board-specific reason for the failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BOARDCTL_BOOT_IMAGE
+int board_boot_image(FAR const char *path, uint32_t hdr_size);
+#endif
+
+/****************************************************************************
+ * Name:  board_timerhook
+ *
+ * Description:
+ *   If the system is not configured for Tickless operation, then a system
+ *   timer interrupt will be used.  If CONFIG_SYSTEMTICK_HOOK is selected
+ *   then the OS will call out to this user-provided function on every
+ *   timer interrupt.  This permits custom actions that may be performed on
+ *   each by boad-specific, OS internal logic.
  *
  * Input Parameters:
  *   None
@@ -286,41 +398,93 @@ int board_tsc_setup(int minor);
  *
  ****************************************************************************/
 
-void board_tsc_teardown(void);
+#ifdef CONFIG_SYSTEMTICK_HOOK
+void board_timerhook(void);
+#endif
 
 /****************************************************************************
- * Name: board_adc_setup
+ * Name:  board_<usbdev>_initialize
  *
  * Description:
- *   All architectures must provide the following interface in order to
- *   work with examples/adc.
+ *   Initialize the USB device <usbdev> on the specified USB device port.
  *
- *   This is an internal OS interface but may be invoked indirectly from
- *   application-level graphics logic.  If CONFIG_LIB_BOARDCTL=y and
- *   CONFIG_BOARDCTL_ADCTEST=y, then this functions will be invoked via the
- *   (non-standard) boardctl() interface using the BOARDIOC_ADCTEST_SETUP
- *   command.
+ * Input Parameters:
+ *   port- The USB device port.
+ *
+ * Returned Value:
+ *   Zero is returned on success.  Otherwise, a negated errno value is
+ *   returned to indicate the nature of the failure.
  *
  ****************************************************************************/
 
-int board_adc_setup(void);
+#ifdef CONFIG_BOARDCTL_USBDEVCTRL
+#ifdef CONFIG_CDCACM
+#endif
+
+#ifdef CONFIG_USBMSC
+int board_usbmsc_initialize(int port);
+#endif
+
+#ifdef CONFIG_USBDEV_COMPOSITE
+int board_composite_initialize(int port);
+#endif
+#endif
 
 /****************************************************************************
- * Name: board_pwm_setup
+ * Name:  board_composite_connect
  *
  * Description:
- *   All architectures must provide the following interface in order to
- *   work with examples/pwm.
+ *   Connect the USB composite device on the specified USB device port using
+ *   the specified configuration.  The interpretation of the configid is
+ *   board specific.
  *
- *   This is an internal OS interface but may be invoked indirectly from
- *   application-level graphics logic.  If CONFIG_LIB_BOARDCTL=y and
- *   CONFIG_BOARDCTL_PWMTEST=y, then this functions will be invoked via the
- *   (non-standard) boardctl() interface using the commands
- *   BOARDIOC_PWMTEST_SETUP command.
+ * Input Parameters:
+ *   port     - The USB device port.
+ *   configid - The USB composite configuration
+ *
+ * Returned Value:
+ *   A non-NULL handle value is returned on success.  NULL is returned on
+ *   any failure.
  *
  ****************************************************************************/
 
-int board_pwm_setup(void);
+#if defined(CONFIG_BOARDCTL_USBDEVCTRL) && defined(CONFIG_USBDEV_COMPOSITE)
+FAR void *board_composite_connect(int port, int configid);
+#endif
+
+/****************************************************************************
+ * Name:  board_usbdev_serialstr
+ *
+ * Description:
+ *   Use board unique serial number string to iSerialNumber field in the
+ *   device descriptor. This is for determining the board when multiple
+ *   boards on the same host.
+ *
+ * Returned Value:
+ *   The board unique serial number string.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_BOARD_USBDEV_SERIALSTR)
+FAR const char *board_usbdev_serialstr(void);
+#endif
+
+/****************************************************************************
+ * Name:  board_usbdev_pid,board_usbdev_vid
+ *
+ * Description:
+ *   Use board unique pid/vid in the device descriptor. This is for that
+ *   usb can be dynamically configured while the board is running
+ *
+ * Returned Value:
+ *   The board unique pid/vid.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_BOARD_USBDEV_PIDVID)
+uint16_t board_usbdev_pid(void);
+uint16_t board_usbdev_vid(void);
+#endif
 
 /****************************************************************************
  * Name: board_graphics_setup
@@ -329,15 +493,13 @@ int board_pwm_setup(void);
  *   If the driver for the graphics device on the platform some unusual
  *   initialization, then this board interface should be provided.
  *
- *   This is an internal OS interface but may be invoked indirectly from
- *   application-level graphics logic.  If CONFIG_LIB_BOARDCTL=y and
- *   CONFIG_BOARDCTL_GRAPHICS=y, then this functions will be invoked via the
- *   (non-standard) boardctl() interface using the BOARDIOC_GRAPHICS_SETUP
- *   command.
+ *   This is an internal OS interface. It is invoked by graphics sub-system
+ *   initialization logic (nxmu_start()) or from the LCD framebuffer driver
+ *   (when the NX server is not used).
  *
  ****************************************************************************/
 
-#ifdef CONFIG_NX_LCDDRIVER
+#if defined(CONFIG_NX_LCDDRIVER) || defined(CONFIG_LCD_FRAMEBUFFER)
 struct lcd_dev_s;
 FAR struct lcd_dev_s *board_graphics_setup(unsigned int devno);
 #else
@@ -346,29 +508,10 @@ FAR struct fb_vtable_s *board_graphics_setup(unsigned int devno);
 #endif
 
 /****************************************************************************
- * Name: board_can_initialize
- *
- * Description:
- *   Perform one-time CAN initialization.  This is currently only needed for
- *   apps/examples/can.
- *
- *   This is an internal OS interface but may be invoked indirectly from
- *   application-level graphics logic.  If CONFIG_LIB_BOARDCTL=y and
- *   CONFIG_BOARDCTL_CANINIT=y, then this functions will be invoked via the
- *   (non-standard) boardctl() interface using the BOARDIOC_CAN_INITIALIZE
- *   command.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_BOARDCTL_CANINIT
-int board_can_initialize(void);
-#endif
-
-/****************************************************************************
  * Name: board_ioctl
  *
  * Description:
- *   If CONFIG_LIB_BOARDCTL=y, boards may also select CONFIG_BOARDCTL_IOCTL=y
+ *   If CONFIG_BOARDCTL=y, boards may also select CONFIG_BOARDCTL_IOCTL=y
  *   enable board specific commands.  In this case, all commands not
  *   recognized by boardctl() will be forwarded to the board-provided
  *   board_ioctl() function.
@@ -395,10 +538,13 @@ int board_ioctl(unsigned int cmd, uintptr_t arg);
  *                            multiple LCD devices.
  *   board_lcd_uninitialize - Uninitialize the LCD support
  *
+ *  Alternatively, board_graphics_setup() may be used if external graphics
+ *  initialization is configured.
+ *
  ****************************************************************************/
 
 #ifdef CONFIG_LCD
-struct lcd_dev_s;				/* Forward reference */
+struct lcd_dev_s; /* Forward reference */
 
 int board_lcd_initialize(void);
 FAR struct lcd_dev_s *board_lcd_getdev(int lcddev);
@@ -437,7 +583,7 @@ void board_lcd_uninitialize(void);
 #ifdef CONFIG_ARCH_LEDS
 void board_autoled_initialize(void);
 #else
-#define board_autoled_initialize()
+#  define board_autoled_initialize()
 #endif
 
 /****************************************************************************
@@ -447,7 +593,7 @@ void board_autoled_initialize(void);
  *   Set the LED configuration into the ON condition for the state provided
  *   by the led parameter.  This may be one of:
  *
- *     LED_STARTED       TinyAra has been started
+ *     LED_STARTED       NuttX has been started
  *     LED_HEAPALLOCATE  Heap has been allocated
  *     LED_IRQSENABLED   Interrupts enabled
  *     LED_STACKCREATED  Idle stack created
@@ -471,10 +617,8 @@ void board_autoled_initialize(void);
 
 #ifdef CONFIG_ARCH_LEDS
 void board_autoled_on(int led);
-void board_led_on(int led);
 #else
-#define board_autoled_on(led)
-#define board_led_on(led)
+#  define board_autoled_on(led)
 #endif
 
 /****************************************************************************
@@ -505,7 +649,27 @@ void board_led_on(int led);
 #ifdef CONFIG_ARCH_LEDS
 void board_autoled_off(int led);
 #else
-#define board_autoled_off(led)
+#  define board_autoled_off(led)
+#endif
+
+/****************************************************************************
+ * Name: board_macaddr
+ *
+ * Description:
+ *   Get the network driver mac address.
+ *
+ * Input Parameters:
+ *   ifname   - The interface name.
+ *   macaddr  - The mac address.
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success; a negated errno value is returned on
+ *   any failure.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BOARDCTL_MACADDR
+int board_macaddr(FAR const char *ifname, FAR uint8_t *macaddr);
 #endif
 
 /****************************************************************************
@@ -517,19 +681,21 @@ void board_autoled_off(int led);
  *   includes such things as, for example, configure GPIO pins to drive the
  *   LEDs and also putting the LEDs in their correct initial state.
  *
- *   If CONFIG_ARCH_LEDS is defined, then TinyAra will control the on-board
+ *   If CONFIG_ARCH_LEDS is defined, then NuttX will control the on-board
  *   LEDs.  If CONFIG_ARCH_LEDS is not defined, then this interfaces may be
  *   available to control the LEDs directly from user board logic or
- *   indirectly user applications (via the common LED charater driver).
+ *   indirectly user applications (via the common LED character driver).
  *
- *   Most boards have only a few LEDs and in thoses cases all LEDs may be
- *   used by the TinyAra LED logic exclusively and may not be available for
+ *   Most boards have only a few LEDs and in those cases all LEDs may be
+ *   used by the NuttX LED logic exclusively and may not be available for
  *   use by user logic if CONFIG_ARCH_LEDS=y.
+ *
+ *   NOTE: The LED number is returned.
  *
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_HAVE_LEDS
-void board_userled_initialize(void);
+uint32_t board_userled_initialize(void);
 #endif
 
 /****************************************************************************
@@ -543,13 +709,13 @@ void board_userled_initialize(void);
  *
  *     #included <arch/board/board.h>
  *
- *   If CONFIG_ARCH_LEDS is defined, then TinyAra will control the on-board
+ *   If CONFIG_ARCH_LEDS is defined, then NuttX will control the on-board
  *   LEDs.  If CONFIG_ARCH_LEDS is not defined, then this interfaces may be
  *   available to control the LEDs directly from user board logic or
- *   indirectly user applications (via the common LED charater driver).
+ *   indirectly user applications (via the common LED character driver).
  *
- *   Most boards have only a few LEDs and in thoses cases all LEDs may be
- *   used by the TinyAra LED logic exclusively and may not be available for
+ *   Most boards have only a few LEDs and in those cases all LEDs may be
+ *   used by the NuttX LED logic exclusively and may not be available for
  *   use by user logic if CONFIG_ARCH_LEDS=y.
  *
  ****************************************************************************/
@@ -569,19 +735,41 @@ void board_userled(int led, bool ledon);
  *
  *     #included <arch/board/board.h>
  *
- *   If CONFIG_ARCH_LEDS is defined, then TinyAra will control the on-board
+ *   If CONFIG_ARCH_LEDS is defined, then NuttX will control the on-board
  *   LEDs.  If CONFIG_ARCH_LEDS is not defined, then this interfaces may be
  *   available to control the LEDs directly from user board logic or
- *   indirectly user applications (via the common LED charater driver).
+ *   indirectly user applications (via the common LED character driver).
  *
- *   Most boards have only a few LEDs and in thoses cases all LEDs may be
- *   used by the TinyAra LED logic exclusively and may not be available for
+ *   Most boards have only a few LEDs and in those cases all LEDs may be
+ *   used by the NuttX LED logic exclusively and may not be available for
  *   use by user logic if CONFIG_ARCH_LEDS=y.
  *
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_HAVE_LEDS
-void board_userled_all(uint8_t ledset);
+void board_userled_all(uint32_t ledset);
+#endif
+
+/****************************************************************************
+ * Name:  board_userled_getall
+ *
+ * Description:
+ *   This interface may be used by application specific logic to read the
+ *   state of all board LEDs.  Definitions for the led set member
+ *   identification is provided in the board-specific board.h header file
+ *   that may be included like:
+ *
+ *     #included <arch/board/board.h>
+ *
+ *   If CONFIG_ARCH_LEDS is defined, then NuttX will control the on-board
+ *   LEDs.  If CONFIG_ARCH_LEDS is not defined, then this interfaces may be
+ *   available to check the LEDs directly from user board logic or indirectly
+ *   user applications (via the common LED character driver).
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_HAVE_LEDS) && defined(CONFIG_USERLED_LOWER_READSTATE)
+void board_userled_getall(uint32_t *ledset);
 #endif
 
 /****************************************************************************
@@ -589,18 +777,19 @@ void board_userled_all(uint8_t ledset);
  *
  * Description:
  *   board_button_initialize() must be called to initialize button resources.
- *   After that, board_buttons() may be called to collect the current state of
- *   all buttons or board_button_irq() may be called to register button interrupt
- *   handlers.
+ *   After that, board_buttons() may be called to collect the current state
+ *   of all buttons or board_button_irq() may be called to register button
+ *   interrupt handlers.
  *
  *   NOTE: This interface may or may not be supported by board-specific
- *   logic.  If the board supports button interfaces, then CONFIG_ARCH_BUTTONS
+ *   logic. If the board supports button interfaces, then CONFIG_ARCH_BUTTONS
  *   will be defined.
+ *   NOTE: The button number is returned.
  *
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_BUTTONS
-void board_button_initialize(void);
+uint32_t board_button_initialize(void);
 #endif
 
 /****************************************************************************
@@ -609,7 +798,7 @@ void board_button_initialize(void);
  * Description:
  *   After board_button_initialize() has been called, board_buttons() may be
  *   called to collect the state of all buttons.  board_buttons() returns an
- *   8-bit bit set with each bit associated with a button.  A bit set to
+ *   32-bit bit set with each bit associated with a button.  A bit set to
  *   "1" means that the button is depressed; a bit set to "0" means that
  *   the button is released.  The correspondence of the each button bit
  *   and physical buttons is board-specific.
@@ -621,7 +810,7 @@ void board_button_initialize(void);
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_BUTTONS
-uint8_t board_buttons(void);
+uint32_t board_buttons(void);
 #endif
 
 /****************************************************************************
@@ -631,8 +820,6 @@ uint8_t board_buttons(void);
  *   This function may be called to register an interrupt handler that will
  *   be called when a button is depressed or released.  The ID value is a
  *   button enumeration value that uniquely identifies a button resource.
- *   The previous interrupt handler address is returned (so that it may
- *   restored, if so desired).
  *
  *   NOTE: This interface may or may not be supported by board-specific
  *   logic.  If the board supports any button interfaces, then
@@ -642,7 +829,7 @@ uint8_t board_buttons(void);
  ****************************************************************************/
 
 #ifdef CONFIG_ARCH_IRQBUTTONS
-xcpt_t board_button_irq(int id, xcpt_t irqhandler);
+int board_button_irq(int id, xcpt_t irqhandler, FAR void *arg);
 #endif
 
 /****************************************************************************
@@ -650,14 +837,14 @@ xcpt_t board_button_irq(int id, xcpt_t irqhandler);
  *
  * Description:
  *   If CONFIG_BOARD_CRASHDUMP is selected then up_asseert will call out to
- *   board_crashdump prior to calling exit in the case of an assertion failure.
- *   Or in the case of a hardfault looping indefinitely. board_crashdump then
- *   has a chance to save the state of the machine. The provided
- *   board_crashdump should save as much information as it can about the cause
- *   of the fault and then most likely reset the system.
+ *   board_crashdump prior to calling exit in the case of an assertion
+ *   failure. Or in the case of a hardfault looping indefinitely.
+ *   board_crashdump then has a chance to save the state of the machine.
+ *   The provided board_crashdump should save as much information as it can
+ *   about the cause of the fault and then most likely reset the system.
  *
  *   N.B. There are limited system resources that can be used by the provided
- *   board_crashdump function. The tems from the fact that most critical/fatal
+ *   board_crashdump. The tems from the fact that most critical/fatal
  *   crashes are because of a hard fault or during interrupt processing.
  *   In these cases, up_assert is running from the context of an interrupt
  *   handlerand it is impossible to use any device driver in this context.
@@ -670,8 +857,61 @@ xcpt_t board_button_irq(int id, xcpt_t irqhandler);
  *
  ****************************************************************************/
 
-#ifdef CONFIG_BOARD_CRASHDUMP
-void board_crashdump(uint32_t currentsp, void *tcb, uint8_t *filename, int lineno);
+#ifdef CONFIG_BOARD_CRASHDUMP_CUSTOM
+struct tcb_s;
+void board_crashdump(uintptr_t sp, FAR struct tcb_s *tcb,
+                     FAR const char *filename, int lineno,
+                     FAR const char *msg, FAR void *regs);
 #endif
 
-#endif							/* __INCLUDE_TINYARA_BOARD_H */
+/****************************************************************************
+ * Name: board_init_rngseed
+ *
+ * Description:
+ *   If CONFIG_BOARD_INITRNGSEED is selected then board_init_rngseed is
+ *   called at up_randompool_initialize() to feed initial random seed
+ *   to RNG. Implementation of this functions should feed at least
+ *   MIN_SEED_NEW_ENTROPY_WORDS 32-bit random words to entropy-pool using
+ *   up_rngaddentropy() or up_rngaddint().
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BOARD_INITRNGSEED
+void board_init_rngseed(void);
+#endif
+
+/****************************************************************************
+ * Name: board_reset_cause
+ *
+ * Description:
+ *   This interface may be used by application specific logic to get the
+ *   cause of last reset. Support for this function is required by
+ *   board-level logic if CONFIG_BOARDCTL_RESET is selected.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BOARDCTL_RESET_CAUSE
+int board_reset_cause(FAR struct boardioc_reset_cause_s *cause);
+#endif
+
+/****************************************************************************
+ * Name: board_start_cpu
+ *
+ * Description:
+ *   This interface may be used by application specific logic to start
+ *   specified slave cpu core under the pseudo AMP case which is different
+ *   with armv7-a/armv8-a SMP. Support for this function is required by
+ *   board-level logic if CONFIG_BOARDCTL_START_CPU is selected.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_BOARDCTL_START_CPU
+int board_start_cpu(int cpuid);
+#endif
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __INCLUDE_NUTTX_BOARD_H */

@@ -18,47 +18,24 @@
 /****************************************************************************
  * include/sys/ioctl.h
  *
- *   Copyright (C) 2007, 2008, 2012, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
-/**
- * @defgroup IOCTL_KERNEL IOCTL
- * @brief Provides APIs for Input/Output Control
- * @ingroup KERNEL
- *
- * @{
- */
-
-/// @file sys/ioctl.h
-/// @brief I/O control APIs
 
 #ifndef __INCLUDE_SYS_IOCTL_H
 #define __INCLUDE_SYS_IOCTL_H
@@ -67,25 +44,59 @@
  * Included Files
  ****************************************************************************/
 
-/* Get TinyAra configuration and TinyAra-specific IOCTL definitions */
+/* Get NuttX configuration and NuttX-specific IOCTL definitions */
 
 #include <tinyara/config.h>
 #include <tinyara/fs/ioctl.h>
 
-/* Include network ioctls info */
+#ifdef CONFIG_NET
+/* Include network IOCTL definitions */
 
-#if defined(CONFIG_NET) && CONFIG_NSOCKET_DESCRIPTORS > 0
-#include <tinyara/net/ioctl.h>
+#  include <tinyara/net/ioctl.h>
+
+#ifdef CONFIG_NETDEV_WIRELESS_IOCTL
+/* Include wireless network IOCTL definitions */
+
+#  include <tinyara/wireless/wireless.h>
+#endif
+#endif /* CONFIG_NET */
+
+#ifdef CONFIG_INPUT
+/* Include input driver IOCTL definitions */
+
+#  include <tinyara/input/ioctl.h>
 #endif
 
+#ifdef CONFIG_DRIVERS_WIRELESS
+/* Include wireless character driver IOCTL definitions */
+
+#  include <tinyara/wireless/ioctl.h>
+#endif
+
+#ifdef CONFIG_WIRELESS_IEEE802154
+
+/* Include ieee802.15.4 MAC IOCTL definitions */
+
+#  include <tinyara/wireless/ieee802154/ieee802154_mac.h>
+
+#endif /* CONFIG_WIRELESS_IEEE802154 */
+
 /****************************************************************************
- * Pre-Processor Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
+
+/* The compatibility IOCTL definitions */
+
+#define _IO(type,nr)        _IOC((type),(nr))
+
+#define FS_IOC_GETFLAGS     FIOC_GETFLAGS
+#define FS_IOC_SETFLAGS     FIOC_SETFLAGS
 
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
@@ -102,13 +113,13 @@ extern "C" {
  *
  *   ioctl() is a non-standard UNIX-like API
  *
- * Parameters:
+ * Input Parameters:
  *   fd       File/socket descriptor of device
  *   req      The ioctl command
  *   arg      The argument of the ioctl cmd, OR
  *   ...      A third argument of type unsigned long is still expected.
  *
- * Return:
+ * Returned Value:
  *   >=0 on success (positive non-zero values are cmd-specific)
  *   -1 on failure with errno set properly:
  *
@@ -126,25 +137,11 @@ extern "C" {
  *
  ****************************************************************************/
 
-/**
- * @ingroup IOCTL_KERNEL
- * @brief control a STREAMS device
- * @details @b #include <sys/ioctl.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-#ifdef CONFIG_LIBC_IOCTL_VARIADIC
 int ioctl(int fd, int req, ...);
-#else
-int ioctl(int fd, int req, unsigned long arg);
-#endif
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* __INCLUDE_SYS_IOCTL_H */
-/**
- * @} */
+#endif /* __INCLUDE_SYS_IOCTL_H */

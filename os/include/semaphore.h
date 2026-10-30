@@ -18,45 +18,24 @@
 /****************************************************************************
  * include/semaphore.h
  *
- *   Copyright (C) 2007-2009, 2012-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
-/**
- * @defgroup SEMAPHORE_KERNEL SEMAPHORE
- * @brief Provides APIs for Semaphore
- * @ingroup KERNEL
- */
-
-/// @file semaphore.h
-/// @brief Semaphore APIs
 
 #ifndef __INCLUDE_SEMAPHORE_H
 #define __INCLUDE_SEMAPHORE_H
@@ -69,22 +48,29 @@
 
 #include <stdint.h>
 #include <limits.h>
+#include <time.h>
+#include <tinyara/queue.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* Save semaphore holder data when priority inheritance or binary manager is enabled. */
-#if defined(CONFIG_PRIORITY_INHERITANCE) || defined(CONFIG_BINARY_MANAGER)
-#define SAVE_SEM_HOLDER 1
+
+/* Values for protocol attribute */
+
+#define SEM_PRIO_NONE             0
+#define SEM_PRIO_INHERIT          1
+#define SEM_PRIO_PROTECT          2
+#define SEM_PRIO_MASK             3
+
+#define SEM_TYPE_MUTEX            4
+
+/* Value returned by sem_open() in the event of a failure. */
+
+#define SEM_FAILED                NULL
+
+#ifndef CONFIG_SEM_PREALLOCHOLDERS
+#  define CONFIG_SEM_PREALLOCHOLDERS 0
 #endif
-
-/* Bit definitions for the struct sem_s flags field */
-
-#define PRIOINHERIT_FLAGS_DISABLE (1 << 0) /* Bit 0: Priority inheritance
-					    * is disabled for this semaphore */
-#define FLAGS_INITIALIZED         (1 << 1) /* Bit 1: This semaphore initialized */
-#define FLAGS_SIGSEM              (1 << 2) /* Bit 2: The semaphore for signaling */
-#define FLAGS_SEM_MUTEX		  (1 << 3) /* Bit 3: The semaphore is used to implement mutex */
 
 /****************************************************************************
  * Public Type Declarations
@@ -92,122 +78,109 @@
 
 /* This structure contains information about the holder of a semaphore */
 
-#ifdef SAVE_SEM_HOLDER
-struct tcb_s;					/* Forward reference */
-struct sem_s;					/* Forward reference */
-/**
- * @ingroup SEMAPHORE_KERNEL
- * @brief Structure of semholder
- */
+#ifdef CONFIG_PRIORITY_INHERITANCE
+struct tcb_s; /* Forward reference */
+struct sem_s;
+
 struct semholder_s {
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
-	struct semholder_s *flink;	/* Implements singly linked list */
+	FAR struct semholder_s *flink;  /* List of semaphore's holder            */
 #endif
-#ifdef CONFIG_PRIORITY_INHERITANCE
-	FAR struct semholder_s *tlink;	/* List of task held semaphores */
-	FAR struct sem_s *sem;		/* The corresponding semaphore */
-#endif
-	FAR struct tcb_s *htcb;		/* Holder TCB */
-	int16_t counts;				/* Number of counts owned by this holder */
+	FAR struct semholder_s *tlink;  /* List of task held semaphores          */
+	FAR struct sem_s *sem;          /* The corresponding semaphore           */
+	FAR struct tcb_s *htcb;         /* The corresponding TCB                 */
+	int32_t counts;                 /* Number of counts owned by this holder */
 };
 
 #if CONFIG_SEM_PREALLOCHOLDERS > 0
-#ifdef CONFIG_PRIORITY_INHERITANCE
-#define SEMHOLDER_INITIALIZER {NULL, NULL, NULL, NULL, 0}
+#  define SEMHOLDER_INITIALIZER   {NULL, NULL, NULL, NULL, 0}
+#  define INITIALIZE_SEMHOLDER(h) \
+    do { \
+      (h)->flink  = NULL; \
+      (h)->tlink  = NULL; \
+      (h)->sem    = NULL; \
+      (h)->htcb   = NULL; \
+      (h)->counts = 0; \
+    } while (0)
 #else
-#define SEMHOLDER_INITIALIZER {NULL, NULL, 0}
+#  define SEMHOLDER_INITIALIZER   {NULL, NULL, NULL, 0}
+#  define INITIALIZE_SEMHOLDER(h) \
+    do { \
+      (h)->tlink  = NULL; \
+      (h)->sem    = NULL; \
+      (h)->htcb   = NULL; \
+      (h)->counts = 0; \
+    } while (0)
 #endif
-#else
-#ifdef CONFIG_PRIORITY_INHERITANCE
-#define SEMHOLDER_INITIALIZER {NULL, NULL, NULL, 0}
-#else
-#define SEMHOLDER_INITIALIZER {NULL, 0}
-#endif
-#endif
+#endif /* CONFIG_PRIORITY_INHERITANCE */
 
-#ifdef CONFIG_PRIORITY_INHERITANCE
-#define INITIALIZE_SEMHOLDER(h) \
-	do { \
-		(h)->tlink = NULL; \
-		(h)->sem = NULL; \
-		(h)->htcb = NULL; \
-		(h)->counts = 0; \
-	} while (0)
-#else
-#define INITIALIZE_SEMHOLDER(h) \
-	do { \
-		(h)->htcb = NULL; \
-		(h)->counts = 0; \
-	} while (0)
-#endif
-#endif							/* SAVE_SEM_HOLDER */
+#define SEM_WAITLIST_INITIALIZER {NULL, NULL}
 
-/**
- * @ingroup SEMAPHORE_KERNEL
- * @brief Structure of generic semaphore
- */
+/* This is the generic semaphore structure. */
+
 struct sem_s {
-#ifdef CONFIG_BINARY_MANAGER
-	struct sem_s *flink;		/* Support for singly linked lists. */
-#endif
-	int16_t semcount;			/* >0 -> Num counts available */
-	/* <0 -> Num tasks waiting for semaphore */
+	union {
+		volatile int32_t semcount;     /* >0 -> Num counts available */
+		/* <0 -> Num tasks waiting for semaphore */
+		volatile uint32_t mholder;     /* == NXSEM_NO_MHOLDER -> mutex has no holder */
+		/* == NXSEM_RESET -> mutex has been reset */
+		/* Otherwise: */
+		/*   bits[30:0]: TID of the current holder */
+		/*   bit [31]: Mutex is blocking some task */
+	} val;
+
 	/* If priority inheritance is enabled, then we have to keep track of which
 	 * tasks hold references to the semaphore.
 	 */
 
-	uint8_t flags;			/* See definitions for the struct sem_s flags */
-#ifdef SAVE_SEM_HOLDER
-#if CONFIG_SEM_PREALLOCHOLDERS > 0
-	FAR struct semholder_s *hhead;	/* List of holders of semaphore counts */
-#else
-	struct semholder_s holder;	/* Single holder */
+	uint8_t flags;                 /* See SEM_PRIO_* definitions */
+
+	dq_queue_t waitlist;
+
+#ifdef CONFIG_CUSTOM_SEMAPHORE_MAXVALUE
+	int32_t maxvalue;
 #endif
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+#  if CONFIG_SEM_PREALLOCHOLDERS > 0
+	FAR struct semholder_s *hhead; /* List of holders of semaphore counts */
+#  else
+	struct semholder_s holder;     /* Slot for old and new holder */
+#  endif
+#endif
+#ifdef CONFIG_PRIORITY_PROTECT
+	uint8_t ceiling;               /* The priority ceiling owned by mutex  */
+	uint8_t saved;                 /* The saved priority of thread before boost */
 #endif
 };
 
 typedef struct sem_s sem_t;
 
 /* Initializers */
-/* NOTE : It should NOT be used in kernel space because it doesn't call sem_init.
- * In app separtion, all kernel semaphores are registered to a list in sem_init and recoverd when fault occurs.
- * So they should be initialized by sem_init for recovery.
-*/
 
-/**
- * @ingroup SEMAPHORE_KERNEL
- * @brief Sem initializer
- */
-#ifdef SAVE_SEM_HOLDER
-#ifdef CONFIG_BINARY_MANAGER
-#if CONFIG_SEM_PREALLOCHOLDERS > 0
-#define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, NULL} /* flink, semcount, flags, hhead */
-#define MUTEX_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, NULL} /* flink, semcount, flags, hhead */
-#define COND_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, NULL} /* flink, semcount, flags, hhead */
+#ifdef CONFIG_PRIORITY_INHERITANCE
+#  if CONFIG_SEM_PREALLOCHOLDERS > 0
+/* semcount, flags, waitlist, hhead */
+
+#    define SEM_INITIALIZER(c) \
+       {{(c)}, 0, SEM_WAITLIST_INITIALIZER, NULL}
+#  else
+/* semcount, flags, waitlist, holder[2] */
+
+#    define SEM_INITIALIZER(c) \
+       {{(c)}, 0, SEM_WAITLIST_INITIALIZER, SEMHOLDER_INITIALIZER}
+#  endif
 #else
-#define SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
-#define MUTEX_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
-#define COND_SEM_INITIALIZER(c) {NULL, (c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, SEMHOLDER_INITIALIZER} /* flink, semcount, flags, holder */
+/* semcount, flags, waitlist */
+
+#  define SEM_INITIALIZER(c) \
+     {{(c)}, 0, SEM_WAITLIST_INITIALIZER}
 #endif
-#else // CONFIG_BINARY_MANAGER
-#if CONFIG_SEM_PREALLOCHOLDERS > 0
-#define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, NULL} /* semcount, flags, hhead */
-#define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, NULL} /* semcount, flags, hhead */
-#define COND_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, NULL} /* semcount, flags, hhead */
-#else
-#define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
-#define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
-#define COND_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE, SEMHOLDER_INITIALIZER} /* semcount, flags, holder */
-#endif
-#endif
-#else
-#define SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED}	/* semcount, flags */
-#define MUTEX_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SEM_MUTEX} /* semcount, flags */
-#define COND_SEM_INITIALIZER(c) {(c), FLAGS_INITIALIZED | FLAGS_SIGSEM | PRIOINHERIT_FLAGS_DISABLE} /* semcount, flags */
-#endif
+
+#define SEM_WAITLIST(sem)       (&((sem)->waitlist))
 
 /****************************************************************************
- * Public Variables
+ * Public Data
  ****************************************************************************/
 
 #ifdef __cplusplus
@@ -221,98 +194,88 @@ extern "C"
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
-/* Forward references needed by some prototypes */
-
-struct timespec;				/* Defined in time.h */
 
 /* Counting Semaphore Interfaces (based on POSIX APIs) */
-/**
- * @ingroup SEMAPHORE_KERNEL
- * @brief initialize an unnamed semaphore
- * @details @b #include <semaphore.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sem_init(FAR sem_t *sem, int pshared, unsigned int value);
 
-/**
- * @ingroup SEMAPHORE_KERNEL
- * @brief destroy an unnamed semaphore
- * @details @b #include <semaphore.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sem_destroy(FAR sem_t *sem);
-/**
- * @ingroup SEMAPHORE_KERNEL
- * @brief lock a semaphore
- * @details @b #include <semaphore.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sem_wait(FAR sem_t *sem);
-/**
- * @ingroup SEMAPHORE_KERNEL
- * @brief lock a semaphore
- * @details @b #include <semaphore.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime);
-/**
- * @ingroup SEMAPHORE_KERNEL
- * @brief lock a semaphore
- * @details @b #include <semaphore.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sem_trywait(FAR sem_t *sem);
-/**
- * @ingroup SEMAPHORE_KERNEL
- * @brief unlock a semaphore
- * @details @b #include <semaphore.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sem_post(FAR sem_t *sem);
-/**
- * @ingroup SEMAPHORE_KERNEL
- * @brief get the value of a semaphore
- * @details @b #include <semaphore.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int sem_getvalue(FAR sem_t *sem, FAR int *sval);
-
-void sem_timeout(int argc, uint32_t pid);
+int        sem_init(FAR sem_t *sem, int pshared, unsigned int value);
+int        sem_destroy(FAR sem_t *sem);
+int        sem_wait(FAR sem_t *sem);
+int        sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime);
+int        sem_clockwait(FAR sem_t *sem, clockid_t clockid,
+                         FAR const struct timespec *abstime);
+int        sem_trywait(FAR sem_t *sem);
+int        sem_post(FAR sem_t *sem);
+int        sem_getvalue(FAR sem_t *sem, FAR int *sval);
 
 #ifdef CONFIG_FS_NAMED_SEMAPHORES
-/**
- * @cond
- * @internal
- */
 FAR sem_t *sem_open(FAR const char *name, int oflag, ...);
-/**
- * @internal
- */
-int sem_close(FAR sem_t *sem);
-/**
- * @internal
- */
-int sem_unlink(FAR const char *name);
-/**
- * @endcond
- */
+int        sem_close(FAR sem_t *sem);
+int        sem_unlink(FAR const char *name);
 #endif
+
+/****************************************************************************
+ * Name: sem_setprotocol
+ *
+ * Description:
+ *    Set semaphore protocol attribute.
+ *
+ *    One particularly important use of this function is when a semaphore
+ *    is used for inter-task communication like:
+ *
+ *      TASK A                 TASK B
+ *      sem_init(sem, 0, 0);
+ *      sem_wait(sem);
+ *                             sem_post(sem);
+ *      Awakens as holder
+ *
+ *    In this case priority inheritance can interfere with the operation of
+ *    the semaphore.  The problem is that when TASK A is restarted it is a
+ *    holder of the semaphore.  However, it never calls sem_post(sem) so it
+ *    becomes *permanently* a holder of the semaphore and may have its
+ *    priority boosted when any other task tries to acquire the semaphore.
+ *
+ *    The fix is to call sem_setprotocol(SEM_PRIO_NONE) immediately after
+ *    the sem_init() call so that there will be no priority inheritance
+ *    operations on this semaphore.
+ *
+ * Input Parameters:
+ *    sem      - A pointer to the semaphore whose attributes are to be
+ *               modified
+ *    protocol - The new protocol to use
+ *
+ * Returned Value:
+ *   This function is exposed as a non-standard application interface.  It
+ *   returns zero (OK) if successful.  Otherwise, -1 (ERROR) is returned and
+ *   the errno value is set appropriately.
+ *
+ ****************************************************************************/
+
+int sem_setprotocol(FAR sem_t *sem, int protocol);
+
+/****************************************************************************
+ * Name: sem_getprotocol
+ *
+ * Description:
+ *    Return the value of the semaphore protocol attribute.
+ *
+ * Input Parameters:
+ *    sem      - A pointer to the semaphore whose attributes are to be
+ *               queried.
+ *    protocol - The user provided location in which to store the protocol
+ *               value.
+ *
+ * Returned Value:
+ *   This function is exposed as a non-standard application interface.  It
+ *   returns zero (OK) if successful.  Otherwise, -1 (ERROR) is returned and
+ *   the errno value is set appropriately.
+ *
+ ****************************************************************************/
+
+int sem_getprotocol(FAR sem_t *sem, FAR int *protocol);
 
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
 
-#endif							/* __INCLUDE_SEMAPHORE_H */
+#endif /* __INCLUDE_SEMAPHORE_H */

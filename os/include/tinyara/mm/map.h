@@ -1,0 +1,344 @@
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * include/nuttx/mm/map.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+#ifndef __INCLUDE_NUTTX_MM_MAP_H
+#define __INCLUDE_NUTTX_MM_MAP_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/config.h>
+#include <tinyara/queue.h>
+#include <tinyara/mutex.h>
+#include <tinyara/mm/gran.h>
+
+/****************************************************************************
+ * Forward declarations
+ ****************************************************************************/
+
+struct task_group_s;
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+/* A memory mapping list item */
+
+struct mm_map_entry_s {
+	FAR struct mm_map_entry_s *flink;  /* this is used as sq_entry_t */
+	FAR void *vaddr;
+	size_t length;
+	off_t offset;
+	int prot;
+	int flags;
+	union {
+		FAR void *p;
+		int i;
+	} priv;
+
+	int (*msync)(FAR struct mm_map_entry_s *entry, FAR void *start,
+	             size_t length, int flags);
+
+	/* Drivers which register mappings may also
+	 * implement the unmap function to undo anything done in mmap.
+	 * Nb. Implementation must NOT use "this_task()->group" since
+	 * this is not valid during process exit. The argument "group" will be
+	 * NULL in this case.
+	 */
+
+	int (*munmap)(FAR struct task_group_s *group,
+	              FAR struct mm_map_entry_s *entry,
+	              FAR void *start,
+	              size_t length);
+};
+
+/* memory mapping structure for the task group */
+
+struct mm_map_s {
+	sq_queue_t mm_map_sq;         /* mappings list */
+	size_t map_count;             /* mappings list length */
+
+#ifdef CONFIG_ARCH_VMA_MAPPING
+	GRAN_HANDLE mm_map_vpages;    /* SHM virtual zone allocator */
+#endif
+
+	rmutex_t mm_map_mutex;
+};
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: mm_map_lock
+ *
+ * Description:
+ *   Get exclusive access current task_group's mm_map
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   OK on success
+ *   A negated errno value on failure
+ *
+ ****************************************************************************/
+
+int mm_map_lock(void);
+
+/****************************************************************************
+ * Name: mm_map_unlock
+ *
+ * Description:
+ *   Relinquish exclusive access to current task_group's mm_map
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void mm_map_unlock(void);
+
+/****************************************************************************
+ * Name: mm_map_initialize
+ *
+ * Description:
+ *   Initialization function, called only by group_initialize
+ *
+ * Input Parameters:
+ *   mm     - Pointer to the mm_map structure to be initialized
+ *   kernel - Indicates whether we are initializing a kernel task
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void mm_map_initialize(FAR struct mm_map_s *mm, bool kernel);
+
+/****************************************************************************
+ * Name: mm_map_destroy
+ *
+ * Description:
+ *   Uninitialization function, called only by group_release
+ *
+ * Input Parameters:
+ *   mm - Pointer to the mm_map structure to be initialized
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void mm_map_destroy(FAR struct mm_map_s *mm);
+
+#ifdef CONFIG_ARCH_VMA_MAPPING
+
+/****************************************************************************
+ * Name: vm_alloc_region
+ *
+ * Description:
+ *   Allocate virtual memory region from the process virtual memory area.
+ *
+ * Input Parameters:
+ *   mm    - A reference to the process mm_map struct
+ *   vaddr - Virtual start address where the allocation starts, if NULL, will
+ *           seek and return an address that satisfies the 'size' parameter
+ *   size - Size of the area to allocate
+ *
+ * Returned Value:
+ *   Pointer to reserved vaddr, or NULL if out-of-memory
+ *
+ ****************************************************************************/
+
+FAR void *vm_alloc_region(FAR struct mm_map_s *mm, FAR void *vaddr,
+                          size_t size);
+
+/****************************************************************************
+ * Name: vm_release_region
+ *
+ * Description:
+ *   Free a previously allocated virtual memory region
+ *
+ * Input Parameters:
+ *   mm    - A reference to the process' mm_map struct
+ *   vaddr - Virtual start address where the allocation starts.
+ *   size  - Size of the allocated area.
+ *
+ ****************************************************************************/
+
+void vm_release_region(FAR struct mm_map_s *mm, FAR void *vaddr,
+                       size_t size);
+
+#endif
+
+#ifdef CONFIG_ARCH_VMA_MAPPING
+
+/****************************************************************************
+ * Name: vm_map_region
+ *
+ * Description:
+ *   Allocate virtual memory and maps given physical memory into user space
+ *   of the current process. The mapped region can be larger than requested
+ *   if given paddr isn't page-aligned, use with care so that not to create
+ *   unwanted security holes. The returned virtual address has same in-page
+ *   alignment as given paddr.
+ *
+ * Input Parameters:
+ *   paddr - Starting physical address
+ *   size  - Size of the address range
+ *
+ * Returned Value:
+ *   Virtual address if success, or NULL if error
+ *
+ ****************************************************************************/
+
+FAR void *vm_map_region(uintptr_t paddr, size_t size);
+
+/****************************************************************************
+ * Name: vm_unmap_region
+ *
+ * Description:
+ *   Unmap previously mapped userspace device and release the virtual memory.
+ *
+ * Input Parameters:
+ *   vaddr - Starting virtual address of the mapped device
+ *   size - Size of the address range
+ *
+ * Returned Value:
+ *   OK for success or negative value for error
+ *
+ ****************************************************************************/
+
+int vm_unmap_region(FAR void *vaddr, size_t size);
+
+#endif /* CONFIG_ARCH_VMA_MAPPING */
+
+/****************************************************************************
+ * Name: mm_map_add
+ *
+ * Description:
+ *   Adds a virtual memory area into the list of mappings
+ *
+ * Input Parameters:
+ *   mm    - A pointer to mm_map_s, which describes the virtual memory area
+ *   entry - A pointer to mm_map_entry_s, mapping info to be added
+ *
+ * Returned Value:
+ *   OK        Added successfully
+ *   -EINVAL:  Invalid attempt to get the semaphore
+ *   -EINTR:   The wait was interrupted by the receipt of a signal.
+ *   -ENOMEM:  Out of memory
+ *
+ ****************************************************************************/
+
+int mm_map_add(FAR struct mm_map_s *mm, FAR struct mm_map_entry_s *entry);
+
+/****************************************************************************
+ * Name: mm_map_next
+ *
+ * Description:
+ *   Returns the next mapping in the list, following the argument.
+ *   Can be used to iterate through all the mappings. Returns the first
+ *   mapping when the argument "entry" is NULL.
+ *
+ * Input Parameters:
+ *   mm    - A pointer to mm_map_s, which describes the virtual memory area
+ *   entry - Pointer to a single mapping in this task group or NULL to get
+ *           the first one
+ *
+ * Returned Value:
+ *   Pointer to the next mapping
+ *
+ ****************************************************************************/
+
+FAR struct mm_map_entry_s *mm_map_next(FAR struct mm_map_s *mm,
+                           FAR const struct mm_map_entry_s *entry);
+
+/****************************************************************************
+ * Name: mm_map_find
+ *
+ * Description:
+ *   Find the first mapping matching address and length
+ *
+ * Input Parameters:
+ *   mm     - A pointer to mm_map_s, which describes the virtual memory area
+ *   vaddr  - Start address of the mapped area
+ *   length - Length of the mapping
+ *
+ * Returned Value:
+ *   Pointer to the mapping, NULL if not found
+ *
+ ****************************************************************************/
+
+FAR struct mm_map_entry_s *mm_map_find(FAR struct mm_map_s *mm,
+                                       FAR const void *vaddr,
+                                       size_t length);
+
+/****************************************************************************
+ * Name: mm_map_remove
+ *
+ * Description:
+ *   Removes a virtual memory area from the list of mappings
+ *   Sets the given pointer argument to NULL after successful removal
+ *
+ * Input Parameters:
+ *   mm      - Pointer to the list of entries, from which the entry is
+ *             removed. If passed mm is NULL, the function doesn't do
+ *             anything, but just returns OK.
+ *
+ *   entry   - Pointer to the entry to be removed. If the passed entry is
+ *             NULL the function doesn't do anything but just returns OK
+ *
+ * Returned Value:
+ *   OK:       Removed successfully
+ *   -EINVAL:  Invalid attempt to get the semaphore
+ *   -EINTR:   The wait was interrupted by the receipt of a signal.
+ *   -ENOENT:  Memory area not found
+ *
+ ****************************************************************************/
+
+int mm_map_remove(FAR struct mm_map_s *mm,
+                  FAR struct mm_map_entry_s *entry);
+
+#endif /* __INCLUDE_NUTTX_MM_MAP_H */

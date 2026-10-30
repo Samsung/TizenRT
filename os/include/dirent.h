@@ -18,47 +18,24 @@
 /****************************************************************************
  * include/dirent.h
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
-/**
- * @defgroup DIRENT_KERNEL DIRENT
- * @brief Provides APIs for Directory Entries
- * @ingroup KERNEL
- *
- * @{
- */
-
-/// @file dirent.h
-/// @brief Directory entries APIs
 
 #ifndef __INCLUDE_DIRENT_H
 #define __INCLUDE_DIRENT_H
@@ -77,23 +54,66 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* File type code for the d_type field in dirent struct.
- * Note that because of the simplified filesystem organization
- * of TinyAra, an inode can be BOTH a file and a directory
+/* The d_type field of the dirent structure is not specified by POSIX.  It
+ * is a non-standard, 4.5BSD extension that is implemented by most OSs.  A
+ * POSIX compliant OS may not implement the d_type field at all.  Many OS's
+ * (including glibc) may use the following alternative naming for the file
+ * type names:
  */
 
-#define DTYPE_FILE      0x01
-#define DTYPE_CHR       0x02
-#define DTYPE_BLK       0x04
-#define DTYPE_DIRECTORY 0x08
+#define DT_UNKNOWN                0
+#define DT_FIFO                   1
+#define DT_CHR                    2
+#define DT_SEM                    3
+#define DT_DIR                    4
+#define DT_MQ                     5
+#define DT_BLK                    6
+#define DT_SHM                    7
+#define DT_REG                    8
+#define DT_MTD                    9
+#define DT_LNK                    10
+#define DT_SOCK                   12
 
-#define DT_DIR          DTYPE_DIRECTORY
-#define DT_REG          DTYPE_FILE
+/* File type code for the d_type field in dirent structure.
+ * Note that because of the simplified filesystem organization of the NuttX,
+ * top-level, pseudo-file system, an inode can be BOTH a file and a directory
+ */
 
-#define DIRENT_ISFILE(dtype)      (((dtype) & DTYPE_FILE) != 0)
-#define DIRENT_ISCHR(dtype)       (((dtype) & DTYPE_CHR) != 0)
-#define DIRENT_ISBLK(dtype)       (((dtype) & DTYPE_BLK) != 0)
-#define DIRENT_ISDIRECTORY(dtype) (((dtype) & DTYPE_DIRECTORY) != 0)
+#define DTYPE_UNKNOWN             DT_UNKNOWN
+#define DTYPE_FIFO                DT_FIFO
+#define DTYPE_CHR                 DT_CHR
+#define DTYPE_SEM                 DT_SEM
+#define DTYPE_DIRECTORY           DT_DIR
+#define DTYPE_MQ                  DT_MQ
+#define DTYPE_BLK                 DT_BLK
+#define DTYPE_SHM                 DT_SHM
+#define DTYPE_FILE                DT_REG
+#define DTYPE_MTD                 DT_MTD
+#define DTYPE_LINK                DT_LNK
+#define DTYPE_SOCK                DT_SOCK
+
+#define DIRENT_ISUNKNOWN(dtype)   ((dtype) == DTYPE_UNKNOWN)
+#define DIRENT_ISFIFO(dtype)      ((dtype) == DTYPE_FIFO)
+#define DIRENT_ISCHR(dtype)       ((dtype) == DTYPE_CHR)
+#define DIRENT_ISSEM(dtype)       ((dtype) == DTYPE_SEM)
+#define DIRENT_ISDIRECTORY(dtype) ((dtype) == DTYPE_DIRECTORY)
+#define DIRENT_ISMQ(dtype)        ((dtype) == DTYPE_MQ)
+#define DIRENT_ISBLK(dtype)       ((dtype) == DTYPE_BLK)
+#define DIRENT_ISSHM(dtype)       ((dtype) == DTYPE_SHM)
+#define DIRENT_ISFILE(dtype)      ((dtype) == DTYPE_FILE)
+#define DIRENT_ISMTD(dtype)       ((dtype) == DTYPE_MTD)
+#define DIRENT_ISLINK(dtype)      ((dtype) == DTYPE_LINK)
+#define DIRENT_ISSOCK(dtype)      ((dtype) == DTYPE_SOCK)
+
+#if defined(CONFIG_FS_LARGEFILE)
+#  define dirent64                dirent
+#  define readdir64               readdir
+#  define readdir64_r             readdir_r
+#  define scandir64               scandir
+#  define alphasort64             alphasort
+#  define versionsort64           versionsort
+#  define getdents64              getdents
+#endif
 
 /****************************************************************************
  * Public Type Definitions
@@ -102,17 +122,23 @@
 /* The POSIX specification requires that the caller of readdir_r provide
  * storage "large enough for a dirent with the d_name member and an array
  * of char containing at least {NAME_MAX} plus one elements.
+ *
+ * POSIX also requires the field d_ino (type ino_t) that provides the file
+ * serial number.  This functionality is not implemented in NuttX.
  */
 
 struct dirent {
-	uint8_t d_type;				/* type of file */
-	char d_name[NAME_MAX + 1];	/* filename */
+	uint8_t  d_type;                /* Type of file */
+	char     d_name[NAME_MAX + 1];  /* File name */
 };
 
-typedef void DIR;
+typedef struct {
+	int fd;
+	struct dirent entry;
+} DIR;
 
 /****************************************************************************
- * Public Variables
+ * Public Data
  ****************************************************************************/
 
 /****************************************************************************
@@ -122,82 +148,37 @@ typedef void DIR;
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
 
 /* POSIX-like File System Interfaces */
 
-/**
- * @ingroup DIRENT_KERNEL
- * @brief close a directory stream
- * @details @b #include <dirent.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int closedir(FAR DIR *dirp);
-/**
- * @ingroup DIRENT_KERNEL
- * @brief open directory associated with file descriptor
- * @details @b #include <dirent.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-FAR DIR *opendir(FAR const char *path);
-/**
- * @ingroup DIRENT_KERNEL
- * @brief read a directory
- * @details @b #include <dirent.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
+int        closedir(FAR DIR *dirp);
+FAR DIR   *opendir(FAR const char *path);
+FAR DIR   *fdopendir(int fd);
 FAR struct dirent *readdir(FAR DIR *dirp);
-/**
- * @ingroup DIRENT_KERNEL
- * @brief read a directory
- * @details @b #include <dirent.h> \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-int readdir_r(FAR DIR *dirp, FAR struct dirent *entry, FAR struct dirent **result);
-/**
- * @ingroup DIRENT_KERNEL
- * @brief reset the position of a directory stream to the beginning of a directory
- * @details @b #include <dirent.h> \n
- * SYSTEM CALL API \n
- * POSIX API (refer to : http://pubs.opengroup.org/onlinepubs/9699919799/)
- * @since TizenRT v1.0
- */
-void rewinddir(FAR DIR *dirp);
-/**
- * @ingroup DIRENT_KERNEL
- * @brief sets the location in the directory stream from which the next readdir() call will start.
- * @details @b #include <dirent.h>
- * @param[in] dirp An instance of type DIR.
- * @param[in] loc offset to seek.
- * @since TizenRT v1.0
- */
-void seekdir(FAR DIR *dirp, off_t loc);
-/**
- * @ingroup DIRENT_KERNEL
- * @brief gets the current location associated with the directory stream
- * @details @b #include <dirent.h>
- * @param[in] dirp An instance of type DIR
- * @return On success, the current location in the directory stream is returned. On failure, -1 is returned and errno is set appropriately.
- * @since TizenRT v1.0
- */
-off_t telldir(FAR DIR *dirp);
+int        readdir_r(FAR DIR *dirp, FAR struct dirent *entry,
+                     FAR struct dirent **result);
+void       rewinddir(FAR DIR *dirp);
+void       seekdir(FAR DIR *dirp, off_t loc);
+off_t      telldir(FAR DIR *dirp);
+int        scandir(FAR const char *path, FAR struct dirent ***namelist,
+                   CODE int (*filter)(FAR const struct dirent *),
+                   CODE int (*compar)(FAR const struct dirent **,
+                                      FAR const struct dirent **));
+int        alphasort(FAR const struct dirent **a,
+                     FAR const struct dirent **b);
+int        versionsort(FAR const struct dirent **a,
+                       FAR const struct dirent **b);
+
+int        dirfd(FAR DIR *dirp);
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* __INCLUDE_DIRENT_H */
-/**
- * @}
- */
+#endif /* __INCLUDE_DIRENT_H */
