@@ -3,24 +3,83 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config LIBM
-	bool "Standard Math library"
+# These are library functions that may be overridden by architecture-
+# specific implementations.  Not all architectures support implementations
+# for every library function.
+
+# Default settings for C library functions that may be replaced with
+# architecture-specific versions.
+
+config LIBM_ARCH_CEIL
+	bool
 	default n
-	depends on !ARCH_MATH_H
-	---help---
-		By default, no math library will be provided by TinyAra.  In this this case, it
-		is assumed that (1) no math library is required, or (2) you will be using the
-		math.h header file and the libm library provided by your toolchain.
+	depends on LIBM
 
-		This is may be a very good choice is possible because your toolchain may have
-		have a highly optimized version of libm.
+config LIBM_ARCH_FLOOR
+	bool
+	default n
+	depends on LIBM
 
-		Another possibility is that you have a custom, architecture-specific math
-		libary and that the corresponding math.h file resides at arch/<architecture>/include/math.h.
-		The option is selected via ARCH_MATH_H.  If ARCH_MATH_H is selected,then the include/tinyara/math.h
-		header file will be copied to include/math.h where it can be used by your applications.
+config LIBM_ARCH_NEARBYINT
+	bool
+	default n
+	depends on LIBM
 
-		If ARCH_MATH_H is not defined, then this option can be selected to build a generic,
-		math library built into TinyAra.  This math library comes from the Rhombus OS and
-		was written by Nick Johnson.  The Rhombus OS math library port was contributed by
-		Darcy Gong.
+config LIBM_ARCH_RINT
+	bool
+	default n
+	depends on LIBM
+
+config LIBM_ARCH_ROUND
+	bool
+	default n
+	depends on LIBM
+
+config LIBM_ARCH_TRUNC
+	bool
+	default n
+	depends on LIBM
+
+config LIBM_ARCH_CEILF
+	bool
+	default n
+	depends on LIBM
+
+config LIBM_ARCH_FLOORF
+	bool
+	default n
+	depends on LIBM
+
+config LIBM_ARCH_NEARBYINTF
+	bool
+	default n
+	depends on LIBM
+
+config LIBM_ARCH_RINTF
+	bool
+	default n
+	depends on LIBM
+
+config LIBM_ARCH_ROUNDF
+	bool
+	default n
+	depends on LIBM
+
+config LIBM_ARCH_TRUNCF
+	bool
+	default n
+	depends on LIBM
+
+config LIBM_ARCH_FABSF
+	bool
+	default n
+
+config LIBM_ARCH_SQRTF
+	bool
+	default n
+
+# One or more the of above may be selected by architecture specific logic
+
+if ARCH_ARM
+source "libs/libm/libm/arm/Kconfig"
+endif

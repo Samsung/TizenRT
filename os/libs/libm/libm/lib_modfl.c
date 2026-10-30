@@ -15,16 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/math/lib_modfl.c
+/****************************************************************************
+ * libs/libm/libm/lib_modfl.c
  *
- * This file is a part of NuttX:
+ * SPDX-License-Identifier: ISC
+ * SPDX-FileCopyrightText: Copyright (C) 2012 Gregory Nutt.
+ * SPDX-FileContributor: Ported by: Darcy Gong
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Ported by: Darcy Gong
- *
- * It derives from the Rhombs OS math library by Nick Johnson which has
- * a compatibile, MIT-style license:
+ * It derives from the Rhombus OS math library by Nick Johnson which has
+ * a compatible, MIT-style license:
  *
  * Copyright (C) 2009-2011 Nick Johnson <nickbjohnson4224 at gmail.com>
  *
@@ -40,32 +39,33 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <stdint.h>
 #include <math.h>
 
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_HAVE_LONG_DOUBLE
-long double modfl(long double x, long double *iptr)
+long double modfl(long double x, FAR long double *iptr)
 {
 	if (fabsl(x) >= 4503599627370496.0) {
 		*iptr = x;
 		return 0.0;
 	} else if (fabsl(x) < 1.0) {
-		*iptr = (x * 0.0);
+		*iptr = 0.0;
 		return x;
 	} else {
-		*iptr = (long double)(int64_t)x;
+		*iptr = (long double)(int64_t) x;
 		return (x - *iptr);
 	}
 }

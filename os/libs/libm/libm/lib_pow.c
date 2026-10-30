@@ -15,16 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/math/lib_pow.c
+/****************************************************************************
+ * libs/libm/libm/lib_pow.c
  *
- * This file is a part of NuttX:
+ * SPDX-License-Identifier: ISC
+ * SPDX-FileCopyrightText: Copyright (C) 2012 Gregory Nutt.
+ * SPDX-FileContributor: Ported by: Darcy Gong
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Ported by: Darcy Gong
- *
- * It derives from the Rhombs OS math library by Nick Johnson which has
- * a compatibile, MIT-style license:
+ * It derives from the Rhombus OS math library by Nick Johnson which has
+ * a compatible, MIT-style license:
  *
  * Copyright (C) 2009, 2010 Nick Johnson <nickbjohnson4224 at gmail.com>
  *
@@ -40,61 +39,34 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <math.h>
-#include <stdint.h>
 
-static union {
-	double dbl;
-	uint64_t bit;
-} zero;
-
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_HAVE_DOUBLE
-/* since pow get value using exp, result of pow is not a precise value. */
 double pow(double b, double e)
 {
-	double int_part;
-	modf(e, &int_part);
 	if (b > 0.0) {
-		if (b == 1.0) {
-			return b;
-		}
 		return exp(e * log(b));
-	} else if (b == 0.0) {
-		if (e > 0.0) {
-			return b;
-		} else if (e == 0.0) {
-			return NAN;
+	} else if (b < 0.0 && e == (int)e) {
+		if ((int)e % 2 == 0) {
+			return exp(e * log(fabs(b)));
 		} else {
-			if (e == int_part) {
-				if ((int64_t)e % 2) {
-					zero.dbl = b;
-					if (zero.bit != (uint64_t)0x0) {
-						return -INFINITY;
-					}
-				}
-				return INFINITY;
-			}
-		}
-	} else {
-		if (e == int_part) {
-			if ((int64_t)e % 2) {
-				return -exp(e * log(-b));
-			}
-			return exp(e * log(-b));
+			return -exp(e * log(fabs(b)));
 		}
 	}
-	return NAN;
+
+	return 0.0;
 }
 #endif

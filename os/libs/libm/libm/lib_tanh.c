@@ -15,16 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/math/lib_tanh.c
+/****************************************************************************
+ * libs/libm/libm/lib_tanh.c
  *
- * This file is a part of NuttX:
+ * SPDX-License-Identifier: ISC
+ * SPDX-FileCopyrightText: Copyright (C) 2012 Gregory Nutt.
+ * SPDX-FileContributor: Ported by: Darcy Gong
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Ported by: Darcy Gong
- *
- * It derives from the Rhombs OS math library by Nick Johnson which has
- * a compatibile, MIT-style license:
+ * It derives from the Rhombus OS math library by Nick Johnson which has
+ * a compatible, MIT-style license:
  *
  * Copyright (C) 2009, 2010 Nick Johnson <nickbjohnson4224 at gmail.com>
  *
@@ -40,36 +39,26 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <math.h>
 
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_HAVE_DOUBLE
 double tanh(double x)
 {
-	double x0;
-	double x1;
-
-	if (x == INFINITY) {
-		return (1.0);
-	}
-
-	if (x == -INFINITY) {
-		return (-1.0);
-	}
-
-	x0 = exp(x);
-	x1 = 1.0 / x0;
+	double x0 = exp(x);
+	double x1 = 1.0 / x0;
 
 	return ((x0 - x1) / (x0 + x1));
 }

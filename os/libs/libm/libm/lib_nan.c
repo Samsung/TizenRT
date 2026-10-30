@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/math/lib_nan.c
+ * libs/libm/libm/lib_nan.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -39,6 +41,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <math.h>
@@ -48,7 +51,7 @@
  ****************************************************************************/
 
 #ifdef CONFIG_HAVE_DOUBLE
-double nan(const char *tagp)
+double nan(FAR const char *tagp)
 {
 	return (double)NAN;
 }

@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/math/lib_nanl.c
+ * libs/libm/libm/lib_nanl.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -39,6 +41,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <math.h>
@@ -48,7 +51,7 @@
  ****************************************************************************/
 
 #ifdef CONFIG_HAVE_LONG_DOUBLE
-long double nanl(const char *tagp)
+long double nanl(FAR const char *tagp)
 {
 	return (long double)NAN;
 }

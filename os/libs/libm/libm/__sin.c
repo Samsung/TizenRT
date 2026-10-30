@@ -16,11 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/math/__cos.c
+ * libs/libm/libm/__sin.c
  *
- * Ported to NuttX from FreeBSD by Alan Carvalho de Assis:
- *
- *   Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: Copyright (C) 1993 by Sun Microsystems, Inc.
  *
  *   Developed at SunSoft, a Sun Microsystems, Inc. business.
  *   Permission to use, copy, modify, and distribute this
@@ -103,12 +102,12 @@
  * Private Data
  ****************************************************************************/
 
-static const double g_s1 = -1.66666666666666324348e-01;	/* 0xbfc55555, 0x55555549 */
-static const double g_s2 = 8.33333333332248946124e-03;	/* 0x3f811111, 0x1110f8a6 */
-static const double g_s3 = -1.98412698298579493134e-04;	/* 0xbf2a01a0, 0x19c161d5 */
-static const double g_s4 = 2.75573137070700676789e-06;	/* 0x3ec71de3, 0x57b1fe7d */
-static const double g_s5 = -2.50507602534068634195e-08;	/* 0xbe5ae5e6, 0x8a2b9ceb */
-static const double g_s6 = 1.58969099521155010221e-10;	/* 0x3de5d93a, 0x5acfd57c */
+static const double g_s1  = -1.66666666666666324348e-01; /* 0xbfc55555, 0x55555549 */
+static const double g_s2  = 8.33333333332248946124e-03; /* 0x3f811111, 0x1110f8a6 */
+static const double g_s3  = -1.98412698298579493134e-04; /* 0xbf2a01a0, 0x19c161d5 */
+static const double g_s4  = 2.75573137070700676789e-06; /* 0x3ec71de3, 0x57b1fe7d */
+static const double g_s5  = -2.50507602534068634195e-08; /* 0xbe5ae5e6, 0x8a2b9ceb */
+static const double g_s6  = 1.58969099521155010221e-10; /* 0x3de5d93a, 0x5acfd57c */
 
 /****************************************************************************
  * Public Functions

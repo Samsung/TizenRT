@@ -15,16 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/math/lib_sinh.c
+/****************************************************************************
+ * libs/libm/libm/lib_sinh.c
  *
- * This file is a part of NuttX:
+ * SPDX-License-Identifier: ISC
+ * SPDX-FileCopyrightText: Copyright (C) 2012 Gregory Nutt.
+ * SPDX-FileContributor: Ported by: Darcy Gong
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Ported by: Darcy Gong
- *
- * It derives from the Rhombs OS math library by Nick Johnson which has
- * a compatibile, MIT-style license:
+ * It derives from the Rhombus OS math library by Nick Johnson which has
+ * a compatible, MIT-style license:
  *
  * Copyright (C) 2009, 2010 Nick Johnson <nickbjohnson4224 at gmail.com>
  *
@@ -40,24 +39,37 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <math.h>
 
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_HAVE_DOUBLE
 double sinh(double x)
 {
-	x = exp(x);
-	return ((x - (1.0 / x)) / 2.0);
+	double y;
+	double z;
+
+	if (fabs(x) < 1E-5) {
+		/* x + 1/3! * x^3 + 1/5! * x^5 + 1/7! * x^7 + ... */
+
+		z = x * x;
+		y = x * (1.0 + z / 6.0);
+	} else {
+		z = exp(x);
+		y = (z - 1.0 / z) / 2.0;
+	}
+
+	return y;
 }
 #endif

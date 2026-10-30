@@ -16,9 +16,10 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/math/lib_gamma.c
+ * libs/libm/libm/lib_gamma.c
  *
- * Ported to NuttX from FreeBSD by Alan Carvalho de Assis:
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileContributor: Ported by: Alan Carvalho de Assis
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,11 +50,14 @@
  *
  ****************************************************************************/
 
-/* "A Precision Approximation of the Gamma Function" - Cornelius Lanczos (1964)
- * "Lanczos Implementation of the Gamma Function" - Paul Godfrey (2001)
- * "An Analysis of the Lanczos Gamma Approximation" - Glendon Ralph Pugh (2004)
+/* "A Precision Approximation of the Gamma Function"
+ *   - Cornelius Lanczos (1964)
+ * "Lanczos Implementation of the Gamma Function"
+ *   - Paul Godfrey (2001)
+ * "An Analysis of the Lanczos Gamma Approximation"
+ *   - Glendon Ralph Pugh (2004)
  *
- * approximation method:
+ * Approximation method:
  *
  *                         (x - 0.5)         S(x)
  * Gamma(x) = (x + g - 0.5)         *  ----------------
@@ -83,13 +87,35 @@
 #include <sys/types.h>
 #include <math.h>
 
-#include "libm.h"
-
 #ifdef CONFIG_HAVE_DOUBLE
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
+#define FORCE_EVAL(x)                       \
+  do                                        \
+    {                                       \
+      if (sizeof(x) == sizeof(float))       \
+        {                                   \
+          volatile float __x;               \
+          UNUSED(__x);                      \
+          __x = (x);                        \
+        }                                   \
+      else if (sizeof(x) == sizeof(double)) \
+        {                                   \
+          volatile double __x;              \
+          UNUSED(__x);                      \
+          __x = (x);                        \
+        }                                   \
+      else                                  \
+        {                                   \
+          volatile long double __x;         \
+          UNUSED(__x);                      \
+          __x = (x);                        \
+        }                                   \
+    } \
+  while (0)
 
 #define N 12
 
@@ -100,34 +126,38 @@
 static const double pi = 3.141592653589793238462643383279502884;
 
 static const double g_gmhalf = 5.524680040776729583740234375;
-static const double g_snum[N + 1] = {
-	23531376880.410759688572007674451636754734846804940,
-	42919803642.649098768957899047001988850926355848959,
-	35711959237.355668049440185451547166705960488635843,
-	17921034426.037209699919755754458931112671403265390,
-	6039542586.3520280050642916443072979210699388420708,
-	1439720407.3117216736632230727949123939715485786772,
-	248874557.86205415651146038641322942321632125127801,
-	31426415.585400194380614231628318205362874684987640,
-	2876370.6289353724412254090516208496135991145378768,
-	186056.26539522349504029498971604569928220784236328,
-	8071.6720023658162106380029022722506138218516325024,
-	210.82427775157934587250973392071336271166969580291,
-	2.5066282746310002701649081771338373386264310793408,
+static const double g_snum[N + 1] =
+{
+  23531376880.410759688572007674451636754734846804940,
+  42919803642.649098768957899047001988850926355848959,
+  35711959237.355668049440185451547166705960488635843,
+  17921034426.037209699919755754458931112671403265390,
+  6039542586.3520280050642916443072979210699388420708,
+  1439720407.3117216736632230727949123939715485786772,
+  248874557.86205415651146038641322942321632125127801,
+  31426415.585400194380614231628318205362874684987640,
+  2876370.6289353724412254090516208496135991145378768,
+  186056.26539522349504029498971604569928220784236328,
+  8071.6720023658162106380029022722506138218516325024,
+  210.82427775157934587250973392071336271166969580291,
+  2.5066282746310002701649081771338373386264310793408,
 };
 
-static const double g_sden[N + 1] = {
-	0, 39916800, 120543840, 150917976, 105258076, 45995730, 13339535,
-	2637558, 357423, 32670, 1925, 66, 1,
+static const double g_sden[N + 1] =
+{
+  0, 39916800, 120543840, 150917976, 105258076, 45995730, 13339535,
+  2637558, 357423, 32670, 1925, 66, 1,
 };
 
 /* n! for small integer n */
 
-static const double g_fact[] = {
-	1, 1, 2, 6, 24, 120, 720, 5040.0, 40320.0, 362880.0, 3628800.0, 39916800.0,
-	479001600.0, 6227020800.0, 87178291200.0, 1307674368000.0, 20922789888000.0,
-	355687428096000.0, 6402373705728000.0, 121645100408832000.0,
-	2432902008176640000.0, 51090942171709440000.0, 1124000727777607680000.0,
+static const double g_fact[] =
+{
+  1, 1, 2, 6, 24, 120, 720, 5040.0, 40320.0, 362880.0, 3628800.0, 39916800.0,
+  479001600.0, 6227020800.0, 87178291200.0, 1307674368000.0,
+  20922789888000.0, 355687428096000.0, 6402373705728000.0,
+  121645100408832000.0, 2432902008176640000.0, 51090942171709440000.0,
+  1124000727777607680000.0,
 };
 
 /* S(x) rational function for positive x */
@@ -143,6 +173,7 @@ static double sinpi(double x)
 	int n;
 
 	/* argument reduction: x = |x| mod 2 */
+
 	/* spurious inexact when x is odd int */
 
 	x = x * 0.5;
@@ -156,7 +187,7 @@ static double sinpi(double x)
 
 	x *= pi;
 	switch (n) {
-	default:					/* case 4 */
+	default:                   /* case 4 */
 	case 0:
 		return __sin(x, 0, 0);
 
@@ -204,6 +235,7 @@ double tgamma(double x)
 		double f;
 		uint64_t i;
 	} u;
+
 	u.f = x;
 
 	double absx;
@@ -224,33 +256,38 @@ double tgamma(double x)
 
 	if (ix < (0x3ff - 54) << 20) {
 		/* |x| < 2^-54: tgamma(x) ~ 1/x, +-0 raises div-by-zero */
+
 		return 1 / x;
 	}
 
 	/* integer arguments */
+
 	/* raise inexact when non-integer */
 
 	if (x == floor(x)) {
 		if (sign) {
-			return 0 / 0.0;
+			return NAN;
 		}
 
-		if (x <= sizeof g_fact / sizeof * g_fact) {
+		if (x <= sizeof g_fact / sizeof *g_fact) {
 			return g_fact[(int)x - 1];
 		}
 	}
 
 	/* x >= 172: tgamma(x)=inf with overflow */
+
 	/* x =< -184: tgamma(x)=+-0 with underflow */
 
 	if (ix >= 0x40670000) {
 		/* |x| >= 184 */
 
 		if (sign) {
-			FORCE_EVAL((float)(0x1p-126 / x));
+			FORCE_EVAL((float)(ldexp(1.0, -126) / x));
+
 			if (floor(x) * 0.5 == floor(x * 0.5)) {
 				return 0;
 			}
+
 			return -0.0;
 		}
 
@@ -275,6 +312,7 @@ double tgamma(double x)
 	r = s(absx) * exp(-y);
 	if (x < 0) {
 		/* reflection formula for negative x */
+
 		/* sinpi(absx) is not 0, integers are already handled */
 
 		r = -pi / (sinpi(absx) * absx * r);

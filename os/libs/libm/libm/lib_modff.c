@@ -15,16 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/math/lib_modff.c
+/****************************************************************************
+ * libs/libm/libm/lib_modff.c
  *
- * This file is a part of NuttX:
+ * SPDX-License-Identifier: ISC
+ * SPDX-FileCopyrightText: Copyright (C) 2012 Gregory Nutt.
+ * SPDX-FileContributor: Ported by: Darcy Gong
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Ported by: Darcy Gong
- *
- * It derives from the Rhombs OS math library by Nick Johnson which has
- * a compatibile, MIT-style license:
+ * It derives from the Rhombus OS math library by Nick Johnson which has
+ * a compatible, MIT-style license:
  *
  * Copyright (C) 2009-2011 Nick Johnson <nickbjohnson4224 at gmail.com>
  *
@@ -40,28 +39,30 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
+
+#include <tinyara/compiler.h>
 
 #include <math.h>
 
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
-float modff(float x, float *iptr)
+float modff(float x, FAR float *iptr)
 {
-	if (fabsf(x) >= 8388608.0) {
+	if (fabsf(x) >= 8388608.0F) {
 		*iptr = x;
-		return 0.0;
-	} else if (fabsf(x) < 1.0) {
-		*iptr = (x * 0.0);
+		return 0.0F;
+	} else if (fabsf(x) < 1.0F) {
+		*iptr = 0.0F;
 		return x;
 	} else {
-		*iptr = (float)(int)x;
+		*iptr = (float)(int) x;
 		return (x - *iptr);
 	}
 }

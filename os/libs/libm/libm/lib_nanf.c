@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/math/lib_nanf.c
+ * libs/libm/libm/lib_nanf.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -39,13 +41,15 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/compiler.h>
+
 #include <math.h>
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-float nanf(const char *tagp)
+float nanf(FAR const char *tagp)
 {
 	return (float)NAN;
 }

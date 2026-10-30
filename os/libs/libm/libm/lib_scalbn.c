@@ -16,44 +16,44 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ * libs/libm/libm/lib_scalbn.c
+ * get a double number of x*2^n
  *
- * Copyright © 2005-2014 Rich Felker, et al.
+ * This file is copy from musl libc
+ * musl is an implementation of the C standard library built on top of the
+ * Linux system call API, including interfaces defined in the base language
+ * standard, POSIX, and widely agreed-upon extensions.
+ * musl is lightweight, fast, simple, free, and strives to be correct in
+ * the sense of standards-conformance and safety.
  *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
  *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- ***************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
-
-#include <tinyara/compiler.h>
+ ****************************************************************************/
 
 #include <math.h>
 #include <stdint.h>
 
-#ifdef CONFIG_HAVE_DOUBLE
+/****************************************************************************
+ * Pre-processor definitions
+ ****************************************************************************/
 
-/************************************************************************
+#ifdef CONFIG_HAVE_DOUBLE
+#define DOUBLE_MIN (0x1p-1022)
+
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: scalbn
+ *
+ * Description:
+ *   get a double number of x*2^n
+ *
+ ****************************************************************************/
 
 double scalbn(double x, int n)
 {
@@ -61,7 +61,8 @@ double scalbn(double x, int n)
 		double f;
 		uint64_t i;
 	} u;
-	double y = x;
+
+	double_t y = x;
 
 	if (n > 1023) {
 		y *= 0x1p1023;
@@ -74,11 +75,15 @@ double scalbn(double x, int n)
 			}
 		}
 	} else if (n < -1022) {
-		y *= 0x1p-1022;
-		n += 1022;
+		/* make sure final n < -53 to avoid double
+		 * rounding in the subnormal range
+		 */
+
+		y *= DOUBLE_MIN * 0x1p53;
+		n += 1022 - 53;
 		if (n < -1022) {
-			y *= 0x1p-1022;
-			n += 1022;
+			y *= DOUBLE_MIN * 0x1p53;
+			n += 1022 - 53;
 			if (n < -1022) {
 				n = -1022;
 			}
@@ -87,7 +92,6 @@ double scalbn(double x, int n)
 
 	u.i = (uint64_t)(0x3ff + n) << 52;
 	x = y * u.f;
-
 	return x;
 }
-#endif
+#endif /* CONFIG_HAVE_DOUBLE */

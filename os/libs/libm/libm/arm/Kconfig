@@ -1,0 +1,12 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+if ARCH_ARMV7M
+source "libs/libm/libm/arm/armv7-m/Kconfig"
+endif
+
+if ARCH_ARMV8M
+source "libs/libm/libm/arm/armv8-m/Kconfig"
+endif

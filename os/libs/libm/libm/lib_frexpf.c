@@ -15,16 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/math/lib_frexpf.c
+/****************************************************************************
+ * libs/libm/libm/lib_frexpf.c
  *
- * This file is a part of NuttX:
+ * SPDX-License-Identifier: ISC
+ * SPDX-FileCopyrightText: Copyright (C) 2012 Gregory Nutt.
+ * SPDX-FileContributor: Ported by: Darcy Gong
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Ported by: Darcy Gong
- *
- * It derives from the Rhombs OS math library by Nick Johnson which has
- * a compatibile, MIT-style license:
+ * It derives from the Rhombus OS math library by Nick Johnson which has
+ * a compatible, MIT-style license:
  *
  * Copyright (C) 2009-2011 Nick Johnson <nickbjohnson4224 at gmail.com>
  *
@@ -40,35 +39,35 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
+
+#include <tinyara/compiler.h>
 
 #include <math.h>
 
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
-float frexpf(float x, int *exponent)
+float frexpf(float x, FAR int *exponent)
 {
-	if (x == INFINITY) {
-		*exponent = 0;
-		return INFINITY;
+	float res;
+
+	*exponent = (int)ceilf(log2f(fabsf(x)));
+	res = x / ldexpf(1.0F, *exponent);
+	if (res >= 1.0) {
+		res -= 0.5;
+		*exponent += 1;
 	}
 
-	if (x == -INFINITY) {
-		*exponent = 0;
-		return -INFINITY;
+	if (res <= -1.0) {
+		res += 0.5;
+		*exponent += 1;
 	}
 
-	if (x == 0) {
-		*exponent = 0;
-		return 0;
-	}
-
-	*exponent = (int)ceilf(log2f(x));
-	return x / ldexpf(1.0, *exponent);
+	return res;
 }
