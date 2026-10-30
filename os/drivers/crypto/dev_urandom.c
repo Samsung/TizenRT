@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * drivers/dev_urandom.c
+ * drivers/crypto/dev_urandom.c
  *
- *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
- *   Author: David S. Alessio
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -61,16 +48,19 @@
 #include <tinyara/config.h>
 
 #include <sys/types.h>
+#include <sys/param.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <poll.h>
 #include <errno.h>
 #include <assert.h>
-#include <tinyara/xorshift128.h>
 
-#include <tinyara/lib.h>
+#include <tinyara/lib/lib.h>
+#include <tinyara/lib/xorshift128.h>
+#include <tinyara/semaphore.h>
 #include <tinyara/fs/fs.h>
+#include <tinyara/drivers/drivers.h>
 
 #if defined(CONFIG_DEV_URANDOM) && !defined(CONFIG_DEV_URANDOM_ARCH)
 
@@ -78,10 +68,15 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#if !defined(CONFIG_DEV_URANDOM_CONGRUENTIAL) && \
+    !defined(CONFIG_DEV_URANDOM_XORSHIFT128)
+#  define CONFIG_DEV_URANDOM_XORSHIFT128 1
+#endif
+
 #ifdef CONFIG_DEV_URANDOM_XORSHIFT128
-#define PRNG() do_xorshift128()
+#  define PRNG() do_xorshift128()
 #elif defined(CONFIG_DEV_URANDOM_CONGRUENTIAL)
-#define PRNG() do_congruential()
+#  define PRNG() do_congruential()
 #endif
 
 /****************************************************************************
@@ -97,31 +92,28 @@ union xorshift128_state_u {
  * Private Function Prototypes
  ****************************************************************************/
 
-#define min(a, b)   (((a) < (b)) ? (a) : (b))
-
-static ssize_t devurand_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static ssize_t devurand_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
-#ifndef CONFIG_DISABLE_POLL
-static int devurand_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup);
-#endif
+static ssize_t devurand_read(FAR struct file *filep, FAR char *buffer,
+                             size_t buflen);
+static ssize_t devurand_write(FAR struct file *filep, FAR const char *buffer,
+                              size_t buflen);
+static int devurand_poll(FAR struct file *filep, FAR struct pollfd *fds,
+                         bool setup);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations g_urand_fops = {
-	NULL,						/* open */
-	NULL,						/* close */
-	devurand_read,				/* read */
-	devurand_write,				/* write */
-	NULL,						/* seek */
-	NULL						/* ioctl */
-#ifndef CONFIG_DISABLE_POLL
-	, devurand_poll			/* poll */
-#endif
-#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
-	, NULL					/* unlink */
-#endif
+static const struct file_operations g_urand_fops =
+{
+  NULL,                         /* open */
+  NULL,                         /* close */
+  devurand_read,                /* read */
+  devurand_write,               /* write */
+  NULL,                         /* seek */
+  NULL,                         /* ioctl */
+  NULL,                         /* mmap */
+  NULL,                         /* truncate */
+  devurand_poll                 /* poll */
 };
 
 #ifdef CONFIG_DEV_URANDOM_XORSHIFT128
@@ -154,7 +146,7 @@ static inline uint32_t do_congruential(void)
 	 * call to nrand().
 	 */
 
-	return (uint32_t)rand();
+	return (uint32_t)nrand(65536L) << (uint32_t)nrand(65536L);
 }
 #endif
 
@@ -162,14 +154,15 @@ static inline uint32_t do_congruential(void)
  * Name: devurand_read
  ****************************************************************************/
 
-static ssize_t devurand_read(FAR struct file *filep, FAR char *buffer, size_t len)
+static ssize_t devurand_read(FAR struct file *filep, FAR char *buffer,
+                             size_t len)
 {
 	size_t n;
 	uint32_t rnd;
 
 	n = len;
 
-	/* Align buffer pointer to 4-byte boundry */
+	/* Align buffer pointer to 4-byte boundary */
 
 	if (((uintptr_t)buffer & 0x03) != 0) {
 		/* Generate a pseudo random number */
@@ -190,7 +183,7 @@ static ssize_t devurand_read(FAR struct file *filep, FAR char *buffer, size_t le
 	/* Stuff buffer with PRNGs 4 bytes at a time */
 
 	while (n >= 4) {
-		*(uint32_t *)buffer = PRNG();
+		*(FAR uint32_t *)buffer = PRNG();
 		buffer += 4;
 		n -= 4;
 	}
@@ -203,7 +196,7 @@ static ssize_t devurand_read(FAR struct file *filep, FAR char *buffer, size_t le
 		rnd = PRNG();
 
 		do {
-			*buffer++ = rnd & 0xFF;
+			*buffer++ = rnd & 0xff;
 			rnd >>= 8;
 		} while (--n > 0);
 	}
@@ -215,19 +208,21 @@ static ssize_t devurand_read(FAR struct file *filep, FAR char *buffer, size_t le
  * Name: devurand_write
  ****************************************************************************/
 
-static ssize_t devurand_write(FAR struct file *filep, FAR const char *buffer, size_t len)
+static ssize_t devurand_write(FAR struct file *filep, FAR const char *buffer,
+                              size_t len)
 {
 	/* Write can be used to re-seed the PRNG state. */
 
 #ifdef CONFIG_DEV_URANDOM_CONGRUENTIAL
 	unsigned int seed = 0;
 
-	len = min(len, sizeof(unsigned int));
+	len = MIN(len, sizeof(unsigned int));
 	memcpy(&seed, buffer, len);
 	srand(seed);
 	return len;
+
 #else
-	len = min(len, sizeof(g_prng.u));
+	len = MIN(len, sizeof(g_prng.u));
 	memcpy(&g_prng.u, buffer, len);
 	return len;
 #endif
@@ -237,19 +232,15 @@ static ssize_t devurand_write(FAR struct file *filep, FAR const char *buffer, si
  * Name: devurand_poll
  ****************************************************************************/
 
-#ifndef CONFIG_DISABLE_POLL
-static int devurand_poll(FAR struct file *filep, FAR struct pollfd *fds, bool setup)
+static int devurand_poll(FAR struct file *filep, FAR struct pollfd *fds,
+                         bool setup)
 {
 	if (setup) {
-		fds->revents |= (fds->events & (POLLIN | POLLOUT));
-		if (fds->revents != 0) {
-			sem_post(fds->sem);
-		}
+		poll_notify(&fds, 1, POLLIN | POLLOUT);
 	}
 
 	return OK;
 }
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -275,7 +266,8 @@ void devurandom_register(void)
 	g_prng.state.y = g_prng.state.w << 17;
 	g_prng.state.z = g_prng.state.x << 25;
 #endif
-	(void)register_driver("/dev/urandom", &g_urand_fops, 0666, NULL);
+
+	register_driver("/dev/urandom", &g_urand_fops, 0666, NULL);
 }
 
-#endif							/* CONFIG_DEV_URANDOM && CONFIG_DEV_URANDOM_ARCH */
+#endif /* CONFIG_DEV_URANDOM && CONFIG_DEV_URANDOM_ARCH */
