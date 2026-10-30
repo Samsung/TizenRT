@@ -15,112 +15,102 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*	$NetBSD: setjmp.h,v 1.5 2013/01/11 13:56:32 matt Exp $	*/
-/* $FreeBSD$ */
-
-/*
- * machine/setjmp.h: machine dependent setjmp-related information.
- */
-
-#ifndef __ARCH_ARM_INCLUDE_SETJMP_H
-#define __ARCH_ARM_INCLUDE_SETJMP_H
-
 /****************************************************************************
- * Definitions
+ * arch/arm/include/setjmp.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
  ****************************************************************************/
 
-#define	_JBLEN	64		/* size, in longs, of a jmp_buf */
-
-/*
- * NOTE: The internal structure of a jmp_buf is *PRIVATE*
- *       This information is provided as there is software
- *       that fiddles with this with obtain the stack pointer
- *	 (yes really ! and its commercial !).
- *
- * Description of the setjmp buffer
- *
- * word  0	magic number	(dependent on creator)
- *	13	fpscr		vfp status control register
- *	14	r4		register 4
- *	15	r5		register 5
- *	16	r6		register 6
- *	17	r7		register 7
- *	18	r8		register 8
- *	19	r9		register 9
- *	20	r10		register 10 (sl)
- *	21	r11		register 11 (fp)
- *	22	r12		register 12 (ip)
- *	23	r13		register 13 (sp)
- *	24	r14		register 14 (lr)
- *	25	signal mask	(dependent on magic)
- *	26	(con't)
- *	27	(con't)
- *	28	(con't)
- *	32-33	d8		(vfp register d8)
- *	34-35	d9		(vfp register d9)
- *	36-37	d10		(vfp register d10)
- *	38-39	d11		(vfp register d11)
- *	40-41	d12		(vfp register d12)
- *	42-43	d13		(vfp register d13)
- *	44-45	d14		(vfp register d14)
- *	46-47	d15		(vfp register d15)
- *
- * The magic number number identifies the jmp_buf and
- * how the buffer was created as well as providing
- * a sanity check
- *
- * A side note I should mention - Please do not tamper
- * with the floating point fields. While they are
- * always saved and restored at the moment this cannot
- * be garenteed especially if the compiler happens
- * to be generating soft-float code so no fp
- * registers will be used.
- *
- * Whilst this can be seen an encouraging people to
- * use the setjmp buffer in this way I think that it
- * is for the best then if changes occur compiles will
- * break rather than just having new builds falling over
- * mysteriously.
- */
-
-#define _JB_MAGIC_SETJMP		0x4278f501
-#define _JB_MAGIC_SETJMP_VFP	0x4278f503
-
-/* Valid for all jmp_buf's */
-
-#define _JB_MAGIC		 0
-#define _JB_REG_FPSCR		13
-#define _JB_REG_R4		14
-#define _JB_REG_R5		15
-#define _JB_REG_R6		16
-#define _JB_REG_R7		17
-#define _JB_REG_R8		18
-#define _JB_REG_R9		19
-#define _JB_REG_R10		20
-#define _JB_REG_R11		21
-#define _JB_REG_R12		22
-#define _JB_REG_R13		23
-#define _JB_REG_R14		24
-
-/* Only valid with the _JB_MAGIC_SETJMP magic */
-
-#define _JB_SIGMASK		25
-
-#define	_JB_REG_D8		32
-#define	_JB_REG_D9		34
-#define	_JB_REG_D10		36
-#define	_JB_REG_D11		38
-#define	_JB_REG_D12		40
-#define	_JB_REG_D13		42
-#define	_JB_REG_D14		44
-#define	_JB_REG_D15		46
+#ifndef __ARCH_ARM_INCLUDE_SETJUMP_H
+#define __ARCH_ARM_INCLUDE_SETJUMP_H
 
 /****************************************************************************
- * Type Declarations
+ * Included Files
  ****************************************************************************/
 
-#ifndef __ASSEMBLER__
-typedef struct _jmp_buf { int _jb[_JBLEN + 1]; } jmp_buf[1];
+#include <tinyara/config.h>
+#include <tinyara/compiler.h>
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+struct setjmp_buf_s {
+	/* Note: core registers r0-r3 are caller-saved */
+
+	unsigned r4;
+	unsigned r5;
+	unsigned r6;
+	unsigned r7;
+	unsigned r8;
+	unsigned r9;
+	unsigned r10;
+	unsigned r11;
+	unsigned ip; /* this is really sp */
+	unsigned lr;
+
+#ifdef CONFIG_ARCH_FPU
+	/* note: FPU registers s0-s15 are caller-saved */
+
+	float    s16;
+	float    s17;
+	float    s18;
+	float    s19;
+	float    s20;
+	float    s21;
+	float    s22;
+	float    s23;
+	float    s24;
+	float    s25;
+	float    s26;
+	float    s27;
+	float    s28;
+	float    s29;
+	float    s30;
+	float    s31;
+
+	unsigned fpscr;
+#endif
+};
+
+/* Traditional typedef for setjmp_buf */
+
+typedef struct setjmp_buf_s jmp_buf[1];
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
 #endif
 
-#endif							/* __ARCH_ARM_INCLUDE_SETJMP_H */
+int setjmp(jmp_buf env);
+void longjmp(jmp_buf env, int val) noreturn_function;
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __ARCH_ARM_INCLUDE_SETJUMP_H */
