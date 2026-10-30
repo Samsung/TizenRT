@@ -125,6 +125,10 @@ static int binary_manager_deactivate_binary(int bin_idx)
 		return BINMGR_INVALID_PARAM;
 	}
 
+	/* Enter critical section ONCE for entire deactivation operation */
+	/* This prevents race conditions in SMP environments */
+	flags = enter_critical_section();
+
 	/* Update binary state */
 	BIN_STATE(bin_idx) = BINARY_FAULT;
 
@@ -134,20 +138,24 @@ static int binary_manager_deactivate_binary(int bin_idx)
 		 * because all threads of common binary are linked to a list of user binary and they are deactivated by user binary's deactivation.
 		 * So it is enough to update state of common binary to BINARY_FAULT.
 		 */
+		leave_critical_section(flags);
 		return BINMGR_OK;
 	}
 
 	/* Get a tcb of main task */
 	ptr = BIN_NRTLIST(bin_idx);
 	while (ptr) {
-		flags = enter_critical_section();
 		/* Recover semaphores, message queue, and watchdog timer resources.*/
 		binary_manager_recover_tcb(ptr);
+
 		/* Remove the TCB from the task list associated with the state */
 		BM_DEACTIVATE_TASK(ptr);
 		ptr = ptr->bin_flink;
-		leave_critical_section(flags);
 	}
+
+	/* Leave critical section after all tasks processed */
+	leave_critical_section(flags);
+
 	/* Release all kernel semaphores held by the threads in binary */
 	binary_manager_release_binary_sem(bin_idx);
 
