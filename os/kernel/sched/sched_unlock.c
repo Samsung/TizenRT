@@ -15,81 +15,50 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * kernel/sched/sched_unlock.c
+/****************************************************************************
+ * sched/sched/sched_unlock.c
  *
- *   Copyright (C) 2007, 2009, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
+#include <assert.h>
+
+#include <tinyara/irq.h>
 #include <tinyara/clock.h>
 #include <tinyara/arch.h>
+#include <tinyara/sched_note.h>
 
+#include "irq/irq.h"
 #include "sched/sched.h"
+#include "sched/queue.h"
 
-/************************************************************************
- * Pre-processor Definitions
- ************************************************************************/
-
-/************************************************************************
- * Private Type Declarations
- ************************************************************************/
-
-/************************************************************************
- * Global Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Function Prototypes
- ************************************************************************/
-
-/************************************************************************
- * Private Functions
- ************************************************************************/
-
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Name:  sched_unlock
  *
  * Description:
@@ -100,85 +69,51 @@
  *   decremented to zero, any tasks that were eligible to preempt the
  *   current task will execute.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-#ifdef CONFIG_SMP
-int sched_unlock(void)
+void sched_unlock(void)
 {
-	FAR struct tcb_s *rtcb;
+	/* sched_unlock should have no effect if called from the interrupt level. */
 
-	/* This operation is safe because the scheduler is locked and no context
-	 * switch may occur.
-	 */
+	if (!up_interrupt_context()) {
+		FAR struct tcb_s *rtcb = this_task();
 
-	rtcb = this_task();
+		/* rtcb may be NULL only during early boot-up phases */
 
-	/* Check for some special cases:  (1) rtcb may be NULL only during
-	 * early boot-up phases, and (2) sched_unlock() should have no
-	 * effect if called from the interrupt level.
-	 */
+		DEBUGASSERT(rtcb && rtcb->lockcount > 0);
 
-	if (rtcb != NULL && !up_interrupt_context()) {
-		/* Prevent context switches throughout the following. */
-
-		irqstate_t flags = enter_critical_section();
-		int cpu = this_cpu();
-
-		/* Decrement the preemption lock counter */
-		if (rtcb->lockcount > 0) {
-			DEBUGASSERT(g_cpu_schedlock == SP_LOCKED && \
-					(g_cpu_lockset & (1 << cpu)) != 0);
-
-			rtcb->lockcount--;
-		} else {
-			DEBUGASSERT(g_cpu_schedlock == SP_UNLOCKED && \
-					(g_cpu_lockset & (1 << cpu)) == 0);
-		}
-
-		/* Check if the lock counter has decremented to zero.  If so,
+		/* Check if the lock counter has decremented to zero. If so,
 		 * then pre-emption has been re-enabled.
 		 */
 
-		if (rtcb->lockcount <= 0) {
-			/* Set the lock count to zero */
+		if (rtcb->lockcount == 1) {
+			irqstate_t flags = enter_critical_section_notrace();
+			FAR struct tcb_s *ptcb;
+
 			rtcb->lockcount = 0;
 
-			/* The lockcount has decremented to zero and we need to perform
-			 * release our hold on the lock.
-			 */
+			/* Note that we no longer have pre-emption disabled. */
 
-			spin_clrbit(&g_cpu_lockset, cpu, &g_cpu_locksetlock, \
-					&g_cpu_schedlock);
+			nxsched_critmon_preemption(rtcb, false, return_address(0));
+			sched_note_preemption(rtcb, false);
 
 			/* Release any ready-to-run tasks that have collected in
-			 * g_pendingtasks.
+			 * g_pendingtasks (or in g_readytorun for SMP)
 			 *
 			 * NOTE: This operation has a very high likelihood of causing
 			 * this task to be switched out!
 			 */
 
-			/* In the SMP case, the tasks remains pend(1) if we are
-			 * in a critical section, i.e., g_cpu_irqlock is locked by other
-			 * CPUs, or (2) other CPUs still have pre-emption disabled, i.e.,
-			 * g_cpu_schedlock is locked.  In those cases, the release of the
-			 * pending tasks must be deferred until those conditions are met.
-			 *
-			 * There are certain conditions that we must avoid by preventing
-			 * releasing the pending tasks while within the critical section
-			 * of other CPUs.  This logic does that and there is matching
-			 * logic in sched_add_readytorun to avoid starting new tasks
-			 * within the critical section (unless the CPU is the holder of
-			 * the lock).
-			 *
-			 * REVISIT: If this CPU is only one that holds the IRQ lock, then
-			 * we should go ahead and release the pending tasks.  See the logic
-			 * leave_critical_section():  It will call up_release_pending()
-			 * BEFORE it clears IRQ lock.
-			 */
-
-			if (!sched_islocked_global() && !irq_cpu_locked(cpu) \
-					&& g_pendingtasks.head != NULL) {
-				up_release_pending();
+#ifdef CONFIG_SMP
+			ptcb = (FAR struct tcb_s *)dq_peek(list_readytorun());
+			if (ptcb && ptcb->sched_priority > rtcb->sched_priority &&
+			    nxsched_deliver_task(rtcb->cpu, rtcb->cpu, SWITCH_HIGHER))
+#else
+			ptcb = (FAR struct tcb_s *)dq_peek(list_pendingtasks());
+			if (ptcb && nxsched_merge_pending())
+#endif
+			{
+				up_switch_context(this_task(), rtcb);
 			}
 
 #if CONFIG_RR_INTERVAL > 0
@@ -189,99 +124,65 @@ int sched_unlock(void)
 			 * timer for the next time slice.
 			 */
 
-			if ((rtcb->flags & TCB_FLAG_POLICY_MASK) == TCB_FLAG_ROUND_ROBIN && \
-					rtcb->timeslice == 0) {
+			if ((rtcb->flags & TCB_FLAG_POLICY_MASK) == TCB_FLAG_SCHED_RR &&
+			    rtcb->timeslice == 0) {
 				/* Yes.. that is the situation.  But one more thing.  The call
-				 * to up_release_pending() above may have actually replaced
+				 * to nxsched_merge_pending() above may have actually replaced
 				 * the task at the head of the ready-to-run list.  In that
 				 * case, we need only to reset the timeslice value back to the
-				 * maximum.
-				 */
-
-				if (rtcb != current_task(cpu)) {
-					rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
-				}
-#ifdef CONFIG_SCHED_TICKLESS
-				else {
-					sched_timer_reassess();
-				}
-#endif
-			}
-#endif
-		}
-
-		leave_critical_section(flags);
-	}
-
-	return OK;
-}
-
-#else /* CONFIG_SMP */
-int sched_unlock(void)
-{
-	FAR struct tcb_s *rtcb = this_task();
-
-	/* Check for some special cases:  (1) rtcb may be NULL only during
-	 * early boot-up phases, and (2) sched_unlock() should have no
-	 * effect if called from the interrupt level.
-	 */
-
-	if (rtcb && !up_interrupt_context()) {
-		/* Prevent context switches throughout the following */
-
-		irqstate_t flags = enter_critical_section();
-
-		/* Decrement the preemption lock counter */
-
-		if (rtcb->lockcount) {
-			rtcb->lockcount--;
-		}
-
-		/* Check if the lock counter has decremented to zero.  If so,
-		 * then pre-emption has been re-enabled.
-		 */
-
-		if (rtcb->lockcount <= 0) {
-			rtcb->lockcount = 0;
-
-			/* Release any ready-to-run tasks that have collected in
-			 * g_pendingtasks.
-			 */
-
-			if (g_pendingtasks.head) {
-				up_release_pending();
-			}
-#if CONFIG_RR_INTERVAL > 0
-			/* If (1) the task that was running supported round-robin
-			 * scheduling and (2) if its time slice has already expired, but
-			 * (3) it could not slice out because pre-emption was disabled,
-			 * then we need to swap the task out now and reassess the interval
-			 * timer for the next time slice.
-			 */
-
-			if ((rtcb->flags & TCB_FLAG_ROUND_ROBIN) != 0 && rtcb->timeslice == 0) {
-				/* Yes.. that is the situation.  But one more thing.  The call
-				 * to up_release_pending() above may have actually replaced
-				 * the task at the head of the read-to-run list.  In that case,
-				 * we need only to reset the timeslice value back to the
 				 * maximum.
 				 */
 
 				if (rtcb != this_task()) {
 					rtcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
 				}
-#ifdef CONFIG_SCHED_TICKLESS
-				else {
-					sched_timer_reassess();
+#  ifdef CONFIG_SCHED_TICKLESS
+				else if ((rtcb->flags & TCB_FLAG_PREEMPT_SCHED) == 0) {
+					rtcb->flags |= TCB_FLAG_PREEMPT_SCHED;
+					nxsched_reassess_timer();
+					rtcb->flags &= ~TCB_FLAG_PREEMPT_SCHED;
 				}
-#endif
+#  endif
 			}
 #endif
+
+#ifdef CONFIG_SCHED_SPORADIC
+#  if CONFIG_RR_INTERVAL > 0
+			else
+#  endif
+			/* If (1) the task that was running supported sporadic scheduling
+			 * and (2) if its budget slice has already expired, but (3) it
+			 * could not slice out because pre-emption was disabled, then we
+			 * need to swap the task out now and reassess the interval timer
+			 * for the next time slice.
+			 */
+
+			if ((rtcb->flags & TCB_FLAG_POLICY_MASK) == TCB_FLAG_SCHED_SPORADIC
+			    && rtcb->timeslice < 0) {
+				/* Yes.. that is the situation.  Force the low-priority state
+				 * now
+				 */
+
+				nxsched_sporadic_lowpriority(rtcb);
+
+#  ifdef CONFIG_SCHED_TICKLESS
+				/* Make sure that the call to nxsched_merge_pending() did not
+				 * change the currently active task.
+				 */
+
+				if (rtcb == this_task() &&
+				    (rtcb->flags & TCB_FLAG_PREEMPT_SCHED) == 0) {
+					rtcb->flags |= TCB_FLAG_PREEMPT_SCHED;
+					nxsched_reassess_timer();
+					rtcb->flags &= ~TCB_FLAG_PREEMPT_SCHED;
+				}
+#  endif
+			}
+#endif
+
+			leave_critical_section_notrace(flags);
+		} else {
+			rtcb->lockcount--;
 		}
-
-		leave_critical_section(flags);
 	}
-
-	return OK;
 }
-#endif /* CONFIG_SMP */

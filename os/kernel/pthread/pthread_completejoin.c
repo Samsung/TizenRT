@@ -15,50 +15,39 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * kernel/pthread/pthread_completejoin.c
+/****************************************************************************
+ * sched/pthread/pthread_completejoin.c
  *
- *   Copyright (C) 2007, 2009, 2011, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
+#include <tinyara/nuttx.h>
 #include <sys/types.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -66,141 +55,11 @@
 #include "group/group.h"
 #include "pthread/pthread.h"
 
-/************************************************************************
- * Pre-processor Definitions
- ************************************************************************/
-
-/************************************************************************
- * Private Type Declarations
- ************************************************************************/
-
-/************************************************************************
- * Global Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Functions
- ************************************************************************/
-
-/************************************************************************
- * Name: pthread_notifywaiters
- *
- * Description:
- *   Notify all other threads waiting in phread join for this thread's
- *   exit data.  This must  be done by the child at child thread
- *   destruction time.
- *
- ************************************************************************/
-
-static bool pthread_notifywaiters(FAR struct join_s *pjoin)
-{
-	int ntasks_waiting;
-	int status;
-
-	svdbg("pjoin=0x%p\n", pjoin);
-
-	/* Are any tasks waiting for our exit value? */
-
-	status = sem_getvalue(&pjoin->exit_sem, &ntasks_waiting);
-	if (status == OK && ntasks_waiting < 0) {
-		/* Set the data semaphore so that this thread will be
-		 * awakened when all waiting tasks receive the data
-		 */
-
-		(void)sem_init(&pjoin->data_sem, 0, (ntasks_waiting + 1));
-
-		/* Post the semaphore to restart each thread that is waiting
-		 * on the semaphore
-		 */
-
-		do {
-			status = pthread_sem_give(&pjoin->exit_sem);
-			if (status == OK) {
-				status = sem_getvalue(&pjoin->exit_sem, &ntasks_waiting);
-			}
-		} while (ntasks_waiting < 0 && status == OK);
-
-		/* Now wait for all these restarted tasks to obtain the return
-		 * value.
-		 */
-
-		(void)pthread_sem_take(&pjoin->data_sem);
-		return true;
-	}
-
-	return false;
-}
-
-/************************************************************************
- * Name: pthread_removejoininfo
- *
- * Description:
- *   Remove a join structure from the local data set.
- *
- * Parameters:
- *   pid
- *
- * Return Value:
- *   None.
- *
- * Assumptions:
- *   The caller has provided protection from re-entrancy.
- *
- ************************************************************************/
-
-static void pthread_removejoininfo(FAR struct task_group_s *group, pid_t pid)
-{
-	FAR struct join_s *prev;
-	FAR struct join_s *join;
-
-	/* Find the entry with the matching pid */
-
-	for (prev = NULL, join = group->tg_joinhead; (join && (pid_t)join->thread != pid); prev = join, join = join->next) ;
-
-	/* Remove it from the data set. */
-
-	/* First check if this is the entry at the head of the list. */
-
-	if (join) {
-		if (!prev) {
-			/* Check if this is the only entry in the list */
-
-			if (!join->next) {
-				group->tg_joinhead = NULL;
-				group->tg_jointail = NULL;
-			}
-
-			/* Otherwise, remove it from the head of the list */
-
-			else {
-				group->tg_joinhead = join->next;
-			}
-		}
-
-		/* It is not at the head of the list, check if it is at the tail. */
-
-		else if (!join->next) {
-			group->tg_jointail = prev;
-			prev->next = NULL;
-		}
-
-		/* No, remove it from the middle of the list. */
-
-		else {
-			prev->next = join->next;
-		}
-	}
-}
-
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Name: pthread_completejoin
  *
  * Description:
@@ -208,7 +67,7 @@ static void pthread_removejoininfo(FAR struct task_group_s *group, pid_t pid)
  *   pthread_exit(), or through pthread_cancel().  In any event, we must
  *   complete any pending join events.
  *
- * Parameters:
+ * Input Parameters:
  *   exit_value
  *
  * Returned Value:
@@ -218,57 +77,56 @@ static void pthread_removejoininfo(FAR struct task_group_s *group, pid_t pid)
  *
  * Assumptions:
  *
- ************************************************************************/
+ ****************************************************************************/
 
 int pthread_completejoin(pid_t pid, FAR void *exit_value)
 {
-	FAR struct task_group_s *group = task_getgroup(pid);
-	FAR struct join_s *pjoin;
+	FAR struct tcb_s *tcb = nxsched_get_tcb(pid);
+	FAR struct task_group_s *group = tcb->group;
+	FAR struct task_join_s *join;
+	FAR struct tcb_s *wtcb;
+	FAR sq_entry_t *curr;
+	FAR sq_entry_t *next;
+	int ret = OK;
 
-	svdbg("pid=%d exit_value=%p group=%p\n", pid, exit_value, group);
-	DEBUGASSERT(group);
+	sinfo("pid=%d exit_value=%p\n", pid, exit_value);
 
-	/* First, find thread's structure in the private data set. */
+	nxrmutex_lock(&group->tg_mutex);
 
-	(void)pthread_sem_take(&group->tg_joinsem);
-	pjoin = pthread_findjoininfo(group, pid);
-	if (!pjoin) {
-		sdbg("Could not find join info, pid=%d\n", pid);
-		(void)pthread_sem_give(&group->tg_joinsem);
-		return ERROR;
-	} else {
-		bool waiters;
+	if (!sq_empty(&tcb->join_queue)) {
+		sq_for_every_safe(&tcb->join_queue, curr, next) {
+			/* Remove join entry from queue */
 
-		/* Save the return exit value in the thread structure. */
+			sq_rem(curr, &tcb->join_queue);
 
-		pjoin->terminated = true;
-		pjoin->exit_value = exit_value;
+			/* Get tcb entry which waiting for the join */
 
-		/* Notify waiters of the availability of the exit value */
+			wtcb = container_of(curr, struct tcb_s, join_entry);
 
-		waiters = pthread_notifywaiters(pjoin);
+			/* Save the return exit value in the thread structure. */
 
-		/* If there are no waiters and if the thread is marked as detached.
-		 * then discard the join information now.  Otherwise, the pthread
-		 * join logic will call pthread_destroyjoin() when all of the threads
-		 * have sampled the exit value.
-		 */
+			wtcb->join_val = exit_value;
 
-		if (!waiters && pjoin->detached) {
-			pthread_destroyjoin(group, pjoin);
+			/* Notify waiters of the availability of the exit value */
+
+			nxsem_post(&wtcb->join_sem);
 		}
-
-		/* Giving the following semaphore will allow the waiters
-		 * to call pthread_destroyjoin.
-		 */
-
-		(void)pthread_sem_give(&group->tg_joinsem);
+	} else if (!sq_is_singular(&tcb->group->tg_members) &&
+	         (tcb->flags & TCB_FLAG_DETACHED) == 0) {
+		ret = pthread_findjoininfo(tcb->group, pid, &join, true);
+		if (ret == OK) {
+			join->exit_value = exit_value;
+		}
 	}
 
-	return OK;
+	tcb->flags |= TCB_FLAG_JOIN_COMPLETED;
+
+	nxrmutex_unlock(&group->tg_mutex);
+
+	return ret;
 }
 
-/************************************************************************
+/****************************************************************************
  * Name: pthread_destroyjoin
  *
  * Description:
@@ -280,24 +138,22 @@ int pthread_completejoin(pid_t pid, FAR void *exit_value)
  *   no thread ever calls pthread_join.  In case, there is a memory leak!
  *
  * Assumptions:
- *   The caller holds tg_joinsem
+ *   The caller holds tg_mutex
  *
- ************************************************************************/
+ ****************************************************************************/
 
-void pthread_destroyjoin(FAR struct task_group_s *group, FAR struct join_s *pjoin)
+void pthread_destroyjoin(FAR struct task_group_s *group,
+                         FAR struct task_join_s *pjoin)
 {
-	svdbg("pjoin=0x%p\n", pjoin);
+	sinfo("pjoin=%p\n", pjoin);
 
 	/* Remove the join info from the set of joins */
 
-	pthread_removejoininfo(group, (pid_t)pjoin->thread);
-
-	/* Destroy its semaphores */
-
-	(void)sem_destroy(&pjoin->data_sem);
-	(void)sem_destroy(&pjoin->exit_sem);
+	nxrmutex_lock(&group->tg_mutex);
+	sq_rem(&pjoin->entry, &group->tg_joinqueue);
+	nxrmutex_unlock(&group->tg_mutex);
 
 	/* And deallocate the pjoin structure */
 
-	sched_kfree(pjoin);
+	kmm_free(pjoin);
 }

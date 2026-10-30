@@ -15,82 +15,50 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- *  kernel/mqueue/mq_notify.c
+/****************************************************************************
+ * sched/mqueue/mq_notify.c
  *
- *   Copyright (C) 2007, 2009, 2011, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#include <signal.h>
 #include <mqueue.h>
 #include <sched.h>
+#include <string.h>
 #include <errno.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #include "mqueue/mqueue.h"
 
-/************************************************************************
- * Pre-processor Definitions
- ************************************************************************/
-
-/************************************************************************
- * Private Type Declarations
- ************************************************************************/
-
-/************************************************************************
- * Public Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Functions
- ************************************************************************/
-
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Name: mq_notify
  *
  * Description:
@@ -107,14 +75,14 @@
  *   registration will be removed.  The message queue will then be
  *   available for registration.
  *
- * Parameters:
+ * Input Parameters:
  *   mqdes - Message queue descriptor
  *   notification - Real-time signal structure containing:
- *      sigev_notify - Should be SIGEV_SIGNAL (but actually ignored)
+ *      sigev_notify - Should be SIGEV_SIGNAL or SIGEV_THREAD
  *      sigev_signo - The signo to use for the notification
  *      sigev_value - Value associated with the signal
  *
- * Return Value:
+ * Returned Value:
  *   On success mq_notify() returns 0; on error, -1 is returned, with
  *   errno set to indicate the error.
  *
@@ -136,34 +104,43 @@
  *   task is waiting for the message queue to become non-empty.  This is
  *   inconsistent with the POSIX specification which says, "If a process
  *   has registered for notification of message a arrival at a message
- *   queue and some process is blocked in mq_receive() waiting to receive
+ *   queue and some process is blocked in [nx]mq_receive() waiting to receive
  *   a message when a message arrives at the queue, the arriving message
- *   message shall satisfy mq_receive()... The resulting behavior is as if
- *   the message queue remains empty, and no notification shall be sent."
+ *   message shall satisfy [nx]mq_receive()... The resulting behavior is as
+ *   if the message queue remains empty, and no notification shall be sent."
  *
- ************************************************************************/
+ ****************************************************************************/
 
-int mq_notify(mqd_t mqdes, const struct sigevent *notification)
+int mq_notify(mqd_t mqdes, FAR const struct sigevent *notification)
 {
-	struct tcb_s *rtcb;
-	struct mqueue_inode_s *msgq;
-	int errval;
+#ifndef CONFIG_DISABLE_MQUEUE_NOTIFICATION
+	FAR struct mqueue_inode_s *msgq;
+	FAR struct inode *inode;
+	FAR struct file *filep;
+	FAR struct tcb_s *rtcb;
 	irqstate_t flags;
-	
-	flags = enter_critical_section();
+	int errval;
+
+	errval = file_get(mqdes, &filep);
+	if (errval < 0) {
+		errval = -errval;
+		goto errout_without_lock;
+	}
+
+	inode = filep->f_inode;
 
 	/* Was a valid message queue descriptor provided? */
 
-	if (!mqdes) {
+	if (!inode->i_private) {
 		/* No.. return EBADF */
 
-		set_errno(EBADF);
-		return ERROR;
+		errval = EBADF;
+		goto errout_with_filep;
 	}
 
 	/* Get a pointer to the message queue */
 
-	msgq = mqdes->msgq;
+	flags = enter_critical_section();
 
 	/* Get the current process ID */
 
@@ -171,7 +148,8 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 
 	/* Is there already a notification attached */
 
-	if (!msgq->ntmqdes) {
+	msgq = inode->i_private;
+	if (msgq->ntpid == INVALID_PROCESS_ID) {
 		/* No... Have we been asked to establish one? */
 
 		if (notification) {
@@ -186,10 +164,10 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 
 			/* Yes... Assign it to the current task. */
 
-			msgq->ntvalue.sival_ptr = notification->sigev_value.sival_ptr;
-			msgq->ntsigno           = notification->sigev_signo;
-			msgq->ntpid             = rtcb->pid;
-			msgq->ntmqdes           = mqdes;
+			memcpy(&msgq->ntevent, notification,
+			       sizeof(struct sigevent));
+
+			msgq->ntpid = rtcb->pid;
 		}
 	}
 
@@ -197,7 +175,7 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 	 * Is it trying to remove it?
 	 */
 
-	else if ((msgq->ntpid != rtcb->pid) || (notification)) {
+	else if ((msgq->ntpid != rtcb->pid) || (notification != NULL)) {
 		/* This thread does not own the notification OR it is
 		 * not trying to remove it.  Return EBUSY.
 		 */
@@ -209,17 +187,26 @@ int mq_notify(mqd_t mqdes, const struct sigevent *notification)
 		 * thread to detach the notification.
 		 */
 
-		msgq->ntpid             = INVALID_PROCESS_ID;
-		msgq->ntsigno           = 0;
-		msgq->ntvalue.sival_ptr = NULL;
-		msgq->ntmqdes           = NULL;
+		memset(&msgq->ntevent, 0, sizeof(struct sigevent));
+		msgq->ntpid = INVALID_PROCESS_ID;
+		nxsig_cancel_notification(&msgq->ntwork);
 	}
 
 	leave_critical_section(flags);
+	file_put(filep);
 	return OK;
 
 errout:
-	set_errno(errval);
 	leave_critical_section(flags);
+
+errout_with_filep:
+	file_put(filep);
+
+errout_without_lock:
+	set_errno(errval);
 	return ERROR;
+#else
+	set_errno(ENOSYS);
+	return ERROR;
+#endif
 }

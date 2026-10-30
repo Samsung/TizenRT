@@ -15,48 +15,39 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
- * kernel/task/task_reparent.c
+/****************************************************************************
+ * sched/task/task_reparent.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Included Files
- *****************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
+#include <assert.h>
 #include <errno.h>
+
+#include <tinyara/irq.h>
+#include <tinyara/sched.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
@@ -64,29 +55,25 @@
 
 #ifdef CONFIG_SCHED_HAVE_PARENT
 
-/*****************************************************************************
- * Private Functions
- *****************************************************************************/
-
-/*****************************************************************************
+/****************************************************************************
  * Public Functions
- *****************************************************************************/
+ ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Name: task_reparent
  *
  * Description:
  *   Change the parent of a task.
  *
- * Parameters:
+ * Input Parameters:
  *   ppid - PID of the new parent task (0 for grandparent, i.e. the parent
  *     of the current parent task)
  *   chpid  - PID of the child to be reparented.
  *
- * Return Value:
+ * Returned Value:
  *   0 (OK) on success; A negated errno value on failure.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
 #ifdef HAVE_GROUP_MEMBERS
 int task_reparent(pid_t ppid, pid_t chpid)
@@ -97,10 +84,9 @@ int task_reparent(pid_t ppid, pid_t chpid)
 	FAR struct task_group_s *chgrp;
 	FAR struct task_group_s *ogrp;
 	FAR struct task_group_s *pgrp;
-	struct tcb_s *tcb;
-	gid_t ogid;
-	gid_t pgid;
+	FAR struct tcb_s *tcb;
 	irqstate_t flags;
+	pid_t opid;
 	int ret;
 
 	/* Disable interrupts so that nothing can change in the relationship of
@@ -111,7 +97,7 @@ int task_reparent(pid_t ppid, pid_t chpid)
 
 	/* Get the child tasks task group */
 
-	tcb = sched_gettcb(chpid);
+	tcb = nxsched_get_tcb(chpid);
 	if (!tcb) {
 		ret = -ECHILD;
 		goto errout_with_ints;
@@ -120,13 +106,13 @@ int task_reparent(pid_t ppid, pid_t chpid)
 	DEBUGASSERT(tcb->group);
 	chgrp = tcb->group;
 
-	/* Get the GID of the old parent task's task group (ogid) */
+	/* Get the PID of the old parent task's task group (opid) */
 
-	ogid = chgrp->tg_pgid;
+	opid = chgrp->tg_ppid;
 
 	/* Get the old parent task's task group (ogrp) */
 
-	ogrp = group_findbygid(ogid);
+	ogrp = task_getgroup(opid);
 	if (!ogrp) {
 		ret = -ESRCH;
 		goto errout_with_ints;
@@ -140,19 +126,19 @@ int task_reparent(pid_t ppid, pid_t chpid)
 	if (ppid == 0) {
 		/* Get the grandparent task's task group (pgrp) */
 
-		pgid = ogrp->tg_pgid;
-		pgrp = group_findbygid(pgid);
+		ppid = ogrp->tg_ppid;
+		pgrp = task_getgroup(ppid);
 	} else {
 		/* Get the new parent task's task group (pgrp) */
 
-		tcb = sched_gettcb(ppid);
+		tcb = nxsched_get_tcb(ppid);
 		if (!tcb) {
 			ret = -ESRCH;
 			goto errout_with_ints;
 		}
 
 		pgrp = tcb->group;
-		pgid = pgrp->tg_gid;
+		ppid = pgrp->tg_pid;
 	}
 
 	if (!pgrp) {
@@ -165,23 +151,23 @@ int task_reparent(pid_t ppid, pid_t chpid)
 	 * all members of the child's task group.
 	 */
 
-	chgrp->tg_pgid = pgid;
+	chgrp->tg_ppid = ppid;
 
 #ifdef CONFIG_SCHED_CHILD_STATUS
 	/* Remove the child status entry from old parent task group */
 
-	child = group_removechild(ogrp, chpid);
+	child = group_remove_child(ogrp, chpid);
 	if (child) {
-		/* Has the new parent's task group supressed child exit status? */
+		/* Has the new parent's task group suppressed child exit status? */
 
 		if ((pgrp->tg_flags & GROUP_FLAG_NOCLDWAIT) == 0) {
 			/* No.. Add the child status entry to the new parent's task group */
 
-			group_addchild(pgrp, child);
+			group_add_child(pgrp, child);
 		} else {
 			/* Yes.. Discard the child status entry */
 
-			group_freechild(child);
+			group_free_child(child);
 		}
 
 		/* Either case is a success */
@@ -195,15 +181,16 @@ int task_reparent(pid_t ppid, pid_t chpid)
 		ret = ((ogrp->tg_flags & GROUP_FLAG_NOCLDWAIT) == 0) ? -ENOENT : OK;
 	}
 
-#else							/* CONFIG_SCHED_CHILD_STATUS */
+#else /* CONFIG_SCHED_CHILD_STATUS */
+	/* Child task exit status is not retained */
 
 	DEBUGASSERT(ogrp->tg_nchildren > 0);
 
-	ogrp->tg_nchildren--;  /* The orignal parent now has one few children */
+	ogrp->tg_nchildren--;  /* The original parent now has one few children */
 	pgrp->tg_nchildren++;  /* The new parent has one additional child */
 	ret = OK;
 
-#endif							/* CONFIG_SCHED_CHILD_STATUS */
+#endif /* CONFIG_SCHED_CHILD_STATUS */
 
 errout_with_ints:
 	leave_critical_section(flags);
@@ -215,9 +202,9 @@ int task_reparent(pid_t ppid, pid_t chpid)
 #ifdef CONFIG_SCHED_CHILD_STATUS
 	FAR struct child_status_s *child;
 #endif
-	struct tcb_s *ptcb;
-	struct tcb_s *chtcb;
-	struct tcb_s *otcb;
+	FAR struct tcb_s *ptcb;
+	FAR struct tcb_s *chtcb;
+	FAR struct tcb_s *otcb;
 	pid_t opid;
 	irqstate_t flags;
 	int ret;
@@ -230,7 +217,7 @@ int task_reparent(pid_t ppid, pid_t chpid)
 
 	/* Get the child tasks TCB (chtcb) */
 
-	chtcb = sched_gettcb(chpid);
+	chtcb = nxsched_get_tcb(chpid);
 	if (!chtcb) {
 		ret = -ECHILD;
 		goto errout_with_ints;
@@ -242,7 +229,7 @@ int task_reparent(pid_t ppid, pid_t chpid)
 
 	/* Get the TCB of the child task's parent (otcb) */
 
-	otcb = sched_gettcb(opid);
+	otcb = nxsched_get_tcb(opid);
 	if (!otcb) {
 		ret = -ESRCH;
 		goto errout_with_ints;
@@ -259,31 +246,33 @@ int task_reparent(pid_t ppid, pid_t chpid)
 
 	/* Get the new parent task's TCB (ptcb) */
 
-	ptcb = sched_gettcb(ppid);
+	ptcb = nxsched_get_tcb(ppid);
 	if (!ptcb) {
 		ret = -ESRCH;
 		goto errout_with_ints;
 	}
 
-	/* Then reparent the child.  The task specified by ppid is the new parent. */
+	/* Then reparent the child.  The task specified by ppid is the new
+	 * parent.
+	 */
 
 	chtcb->group->tg_ppid = ppid;
 
 #ifdef CONFIG_SCHED_CHILD_STATUS
 	/* Remove the child status entry from old parent TCB */
 
-	child = group_removechild(otcb->group, chpid);
+	child = group_remove_child(otcb->group, chpid);
 	if (child) {
-		/* Has the new parent's task group supressed child exit status? */
+		/* Has the new parent's task group suppressed child exit status? */
 
 		if ((ptcb->group->tg_flags & GROUP_FLAG_NOCLDWAIT) == 0) {
 			/* No.. Add the child status entry to the new parent's task group */
 
-			group_addchild(ptcb->group, child);
+			group_add_child(ptcb->group, child);
 		} else {
 			/* Yes.. Discard the child status entry */
 
-			group_freechild(child);
+			group_free_child(child);
 		}
 
 		/* Either case is a success */
@@ -294,22 +283,24 @@ int task_reparent(pid_t ppid, pid_t chpid)
 		 * suppressed child exit status.
 		 */
 
-		ret = ((otcb->group->tg_flags & GROUP_FLAG_NOCLDWAIT) == 0) ? -ENOENT : OK;
+		ret = ((otcb->group->tg_flags & GROUP_FLAG_NOCLDWAIT) == 0) ?
+		        -ENOENT : OK;
 	}
 
-#else							/* CONFIG_SCHED_CHILD_STATUS */
+#else /* CONFIG_SCHED_CHILD_STATUS */
+	/* Child task exit status is not retained */
 
 	DEBUGASSERT(otcb->group != NULL && otcb->group->tg_nchildren > 0);
 
-	otcb->group->tg_nchildren--;  /* The orignal parent now has one few children */
+	otcb->group->tg_nchildren--;  /* The original parent now has one few children */
 	ptcb->group->tg_nchildren++;  /* The new parent has one additional child */
 	ret = OK;
 
-#endif							/* CONFIG_SCHED_CHILD_STATUS */
+#endif /* CONFIG_SCHED_CHILD_STATUS */
 
 errout_with_ints:
 	leave_critical_section(flags);
 	return ret;
 }
 #endif
-#endif							/* CONFIG_SCHED_HAVE_PARENT */
+#endif /* CONFIG_SCHED_HAVE_PARENT */

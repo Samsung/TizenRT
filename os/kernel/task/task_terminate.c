@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/task/task_terminate.c
+ * sched/task/task_terminate.c
  *
- *   Copyright (C) 2007-2009, 2011-2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,92 +45,81 @@
 
 #include <sys/types.h>
 #include <assert.h>
-#include <queue.h>
 #include <errno.h>
 
+#include <tinyara/queue.h>
 #include <tinyara/sched.h>
-#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARM_MPU)
-#include <tinyara/mpu.h>
-#endif
-
-#ifndef CONFIG_DISABLE_SIGNALS
-#ifndef CONFIG_DISABLE_PTHREAD
-#include <pthread.h>
-#endif
-#include <unistd.h>
-#endif
-#include <arch/irq.h>
+#include <tinyara/irq.h>
+#include <tinyara/sched_note.h>
 
 #include "sched/sched.h"
-#ifndef CONFIG_DISABLE_SIGNALS
 #include "signal/signal.h"
-#endif
 #include "task/task.h"
 
-#ifdef CONFIG_PREFERENCE
-#include "preference/preference.h"
-#endif
 /****************************************************************************
- * Definitions
+ * Private Types
  ****************************************************************************/
 
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
+#ifdef CONFIG_SMP
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+static int terminat_handler(FAR void *cookie)
+{
+	pid_t pid = (pid_t)(uintptr_t) cookie;
+	FAR struct tcb_s *tcb;
+	irqstate_t flags;
+
+	flags = enter_critical_section();
+	tcb = nxsched_get_tcb(pid);
+
+	if (!tcb) {
+		/* There is no TCB with this pid or, if there is, it is not a task. */
+
+		leave_critical_section(flags);
+		return -ESRCH;
+	}
+
+	nxsched_remove_readytorun(tcb);
+
+	leave_critical_section(flags);
+	return OK;
+}
+#endif
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: task_terminate
+ * Name: nxtask_terminate
  *
  * Description:
- *   This function causes a specified task to cease to exist. Its  stack and
+ *   This function causes a specified task to cease to exist.  Its stack and
  *   TCB will be deallocated.  This function is the internal implementation
  *   of the task_delete() function.  It includes and additional parameter
  *   to determine if blocking is permitted or not.
  *
  *   This function is the final function called all task termination
- *   sequences.  task_terminate() is called only from task_delete() (with
- *   nonblocking == false) and from task_exit() (with nonblocking == true).
+ *   sequences.  nxtask_terminate() is called only from task_delete() and
+ *   from nxtask_exit().
  *
- *   The path through task_exit() supports the final stops of the exit(),
+ *   The path through nxtask_exit() supports the final stops of the exit(),
  *   _exit(), and pthread_exit
  *
  *   - pthread_exit().  Calls _exit()
  *   - exit(). Calls _exit()
- *   - _exit().  Calls task_exit() making the currently running task
- *     non-running. task_exit then calls task_terminate() (with nonblocking
- *     == true) to terminate the non-running task.
+ *   - _exit().  Calls nxtask_exit() making the currently running task
+ *     non-running. nxtask_exit then calls nxtask_terminate() to terminate
+ *     the non-running task.
  *
- *   NOTE: that the state of non-blocking is irrelevant when called through
- *   exit() and pthread_exit().  In those cases task_exithook() has already
- *   been called with nonblocking == false;
- *
- * Inputs:
+ * Input Parameters:
  *   pid - The task ID of the task to delete.  A pid of zero
  *         signifies the calling task.
- *   nonblocking - True: The task is an unhealthy, partially torn down
- *         state and is not permitted to block.
  *
- * Return Value:
+ * Returned Value:
  *   OK on success; or ERROR on failure
  *
  *   This function can fail if the provided pid does not correspond to a
@@ -151,148 +127,73 @@
  *
  ****************************************************************************/
 
-int task_terminate(pid_t pid, bool nonblocking)
+int nxtask_terminate(pid_t pid)
 {
 	FAR struct tcb_s *dtcb;
-	irqstate_t flags;
 	uint8_t task_state;
-
-	/* Find the TCB associated with matching PID.  The lookup and the claim
-	 * below must happen under the same critical section so that only one
-	 * caller can start terminating a given task, and so that the task does
-	 * not become ready-to-run while we are futzing with its TCB.
-	 */
+	irqstate_t flags;
 
 	flags = enter_critical_section();
 
-	dtcb = sched_gettcb(pid);
-	if (!dtcb) {
-		/* This PID does not correspond to any known task */
+	/* Find for the TCB associated with matching PID */
 
-		leave_critical_section(flags);
-		return -ESRCH;
-	}
-
-	/* If another path is already terminating this task, leave it to that
-	 * path.  Otherwise claim the termination for ourselves.
-	 */
-
-	if ((dtcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0) {
+	dtcb = nxsched_get_tcb(pid);
+	if (!dtcb || dtcb->flags & TCB_FLAG_EXIT_PROCESSING) {
 		leave_critical_section(flags);
 		return -ESRCH;
 	}
 
 	dtcb->flags |= TCB_FLAG_EXIT_PROCESSING;
 
-	/* Verify our internal sanity */
+	/* Remove dtcb from tasklist, let remove_readtorun() do the job */
 
-#ifdef CONFIG_SMP
-	DEBUGASSERT(dtcb->task_state < NUM_TASK_STATES);
-#else
-	DEBUGASSERT(dtcb->task_state != TSTATE_TASK_RUNNING &&
-	            dtcb->task_state < NUM_TASK_STATES);
-#endif
-
-	/* Remove the task from the task list.  sched_removereadytorun() marks the
-	 * task state as invalid, so preserve the original state across the call:
-	 * the recovery logic that task_exithook() runs later still needs it (see
-	 * sem_recover(), which keys off TSTATE_WAIT_SEM).
-	 *
-	 * Lock the scheduler across that window.  Without the scheduler lock, a
-	 * wake-up could switch to another task while dtcb still carries its
-	 * original (blocked) task_state although it is in no list anymore, and any
-	 * code inspecting dtcb during that window (e.g. signal delivery calling
-	 * sem_waitirq()) would operate on a half-deleted TCB.
-	 */
-
-	sched_lock();
 	task_state = dtcb->task_state;
-	sched_removereadytorun(dtcb);
-	dtcb->task_state = task_state;
-	sched_unlock();
+#ifdef CONFIG_SMP
+	if (task_state == TSTATE_TASK_RUNNING &&
+	    dtcb->cpu != this_cpu()) {
+		uint16_t tcb_flags;
+		int ret;
 
-	/* At this point, the TCB should no longer be accessible to the system */
+		tcb_flags = dtcb->flags;
+		dtcb->flags |= TCB_FLAG_CPU_LOCKED;
 
-	leave_critical_section(flags);
+		ret = nxsched_smp_call_single(dtcb->cpu, terminat_handler,
+		                              (FAR void *)(uintptr_t) pid);
 
-#if defined(CONFIG_APP_BINARY_SEPARATION)
-	/* Disable mpu regions when the binary is unloaded if its own mpu registers are set in mpu h/w. */
-	if (IS_BINARY_MAINTASK(dtcb)) {
-#if defined(CONFIG_ARM_MPU)
-		if (up_mpu_check_active(&dtcb->mpu_regs[0])) {
-			for (int i = 0; i < MPU_REG_NUMBER * NUM_APP_REGIONS; i += MPU_REG_NUMBER) {
-				up_mpu_disable_region(&dtcb->mpu_regs[i]);
-			}
+		if (ret < 0) {
+			/* Already terminate */
+
+			leave_critical_section(flags);
+			return ret;
 		}
-#elif defined(CONFIG_ARCH_USE_MMU)
-		mmu_clear_app_pgtbl(dtcb->app_id);
+
+		dtcb->flags = tcb_flags;
+	} else
 #endif
+	{
+		nxsched_remove_readytorun(dtcb);
 	}
-#endif
 
+	dtcb->task_state = task_state;
 
-#ifdef CONFIG_PREFERENCE
-	preference_clear_callbacks(pid);
-#endif
-
-	/* Perform common task termination logic (flushing streams, calling
-	 * functions registered by at_exit/on_exit, etc.).  We need to do
+	/* Perform common task termination logic.  We need to do
 	 * this as early as possible so that higher level clean-up logic
 	 * can run in a healthy tasking environment.
-	 *
-	 * In the case where the task exits via exit(), task_exithook()
-	 * may be called twice.
 	 *
 	 * I suppose EXIT_SUCCESS is an appropriate return value???
 	 */
 
-	task_exithook(dtcb, EXIT_SUCCESS, nonblocking);
+	nxtask_exithook(dtcb, EXIT_SUCCESS);
+
+	leave_critical_section(flags);
+	/* Since all tasks pass through this function as the final step in their
+	 * exit sequence, this is an appropriate place to inform any
+	 * instrumentation layer that the task no longer exists.
+	 */
+
+	sched_note_stop(dtcb);
 
 	/* Deallocate its TCB */
 
-	return sched_releasetcb(dtcb, dtcb->flags & TCB_FLAG_TTYPE_MASK);
+	return nxsched_release_tcb(dtcb, dtcb->flags & TCB_FLAG_TTYPE_MASK);
 }
-
-/****************************************************************************
- * Name: thread_termination_handler
- *
- * Description:
- *   The handler called when SIGKILL is receive. Terminate the thread
- *   that received the signal immediately.
- *
- * Inputs:
- *   none
- *
- * Return Value:
- *   none
- *
- ****************************************************************************/
-
-#ifndef CONFIG_DISABLE_SIGNALS
-void thread_termination_handler(void)
-{
-	struct tcb_s *rtcb = sched_self();
-	if (!rtcb) {
-		set_errno(ESRCH);
-		return;
-	}
-
-	switch ((rtcb->flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT) {
-	case TCB_FLAG_TTYPE_TASK:
-	case TCB_FLAG_TTYPE_KERNEL:
-		/* tasks and kernel threads has to use this interface */
-		(void)task_delete(rtcb->pid);
-		break;
-#ifndef CONFIG_DISABLE_PTHREAD
-	case TCB_FLAG_TTYPE_PTHREAD:
-		(void)pthread_cancel(rtcb->pid);
-		(void)pthread_join(rtcb->pid, NULL);
-		break;
-#endif
-	default:
-		set_errno(EINVAL);
-		break;
-	}
-	return;
-}
-#endif

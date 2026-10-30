@@ -1,0 +1,371 @@
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * sched/semaphore/sem_rw.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/rwsem.h>
+#include <tinyara/sched.h>
+#include <assert.h>
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static inline void up_wait(FAR rw_semaphore_t *rwsem)
+{
+	int i;
+
+	for (i = 0; i < rwsem->waiter; i++) {
+		/* If there are some waiter for unlock, then post the lock wait queue.
+		 */
+
+		nxsem_post(&rwsem->waiting);
+	}
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: down_read_trylock
+ *
+ * Description:
+ *   Acquire a read lock on a read-write-lock object.
+ *
+ * Input Parameters:
+ *   rwsem  - Pointer to the read-write-lock descriptor.
+ *
+ * Returned Value:
+ *   Return 1 if successful, 0 if failed
+ *
+ ****************************************************************************/
+
+int down_read_trylock(FAR rw_semaphore_t *rwsem)
+{
+	int ret = 1;
+
+	nxmutex_lock(&rwsem->protected);
+
+	/* if the write lock is already held by oneself and since the write lock
+	 * can be recursively held, so, this operation can be converted to a write
+	 * lock to avoid deadlock.
+	 */
+
+	if (rwsem->holder == _SCHED_GETTID()) {
+		rwsem->writer++;
+	} else if (rwsem->writer > 0) {
+		ret = 0;
+	} else {
+		/* In a scenario where there is no write lock, we just need to
+		 * make the read base +1.
+		 */
+
+		rwsem->reader++;
+	}
+
+	nxmutex_unlock(&rwsem->protected);
+	return ret;
+}
+
+/****************************************************************************
+ * Name: down_read
+ *
+ * Description:
+ *   Acquire a read lock on a read-write-lock object.
+ *
+ * Input Parameters:
+ *   rwsem  - Pointer to the read-write-lock descriptor.
+ *
+ ****************************************************************************/
+
+void down_read(FAR rw_semaphore_t *rwsem)
+{
+	/* we have to check if there is a write-lock scenario, if there is then we
+	 * block and wait for the write-lock to be unlocked.
+	 */
+
+	nxmutex_lock(&rwsem->protected);
+
+	/* if the write lock is already held by oneself and since the write lock
+	 * can be recursively held, so, this operation can be converted to a write
+	 * lock to avoid deadlock.
+	 */
+
+	if (rwsem->holder == _SCHED_GETTID()) {
+		rwsem->writer++;
+	} else {
+		while (rwsem->writer > 0) {
+			rwsem->waiter++;
+			nxmutex_unlock(&rwsem->protected);
+			nxsem_wait(&rwsem->waiting);
+			nxmutex_lock(&rwsem->protected);
+			rwsem->waiter--;
+		}
+
+		/* In a scenario where there is no write lock, we just need to make the
+		 * read base +1.
+		 */
+
+		rwsem->reader++;
+	}
+
+	nxmutex_unlock(&rwsem->protected);
+}
+
+/****************************************************************************
+ * Name: up_read
+ *
+ * Description:
+ *   Unlock a read lock on a read-write-lock object.
+ *
+ * Input Parameters:
+ *   rwsem  - Pointer to the read-write-lock descriptor.
+ *
+ ****************************************************************************/
+
+void up_read(FAR rw_semaphore_t *rwsem)
+{
+	nxmutex_lock(&rwsem->protected);
+
+	/* when releasing a read lock and holder is oneself, the read lock is a
+	 * write lock that has been converted, so it should be released according
+	 * to the procedures for releasing a write lock.
+	 */
+
+	if (rwsem->holder == _SCHED_GETTID()) {
+		if (--rwsem->writer <= 0) {
+			rwsem->holder = RWSEM_NO_HOLDER;
+			up_wait(rwsem);
+		}
+	} else {
+		DEBUGASSERT(rwsem->reader > 0);
+
+		if (--rwsem->reader <= 0) {
+			up_wait(rwsem);
+		}
+	}
+
+	nxmutex_unlock(&rwsem->protected);
+}
+
+/****************************************************************************
+ * Name: down_write_trylock
+ *
+ * Description:
+ *   Acquire a write lock on a read-write-lock object.
+ *
+ * Input Parameters:
+ *   rwsem  - Pointer to the read-write-lock descriptor.
+ *
+ * Returned Value:
+ *   Return 1 if successful, 0 if failed
+ *
+ ****************************************************************************/
+
+int down_write_trylock(FAR rw_semaphore_t *rwsem)
+{
+	pid_t tid = _SCHED_GETTID();
+	int ret = 1;
+
+	nxmutex_lock(&rwsem->protected);
+
+	if (rwsem->reader > 0 || (rwsem->writer > 0 && tid != rwsem->holder)) {
+		nxmutex_unlock(&rwsem->protected);
+		ret = 0;
+	} else {
+		/* The check passes, then we just need the writer reference + 1 */
+
+		rwsem->writer++;
+		rwsem->holder = tid;
+
+		nxmutex_unlock(&rwsem->protected);
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: down_write
+ *
+ * Description:
+ *   Acquire a write lock on a read-write-lock object.
+ *
+ * Input Parameters:
+ *   rwsem  - Pointer to the read-write-lock descriptor.
+ *
+ ****************************************************************************/
+
+void down_write(FAR rw_semaphore_t *rwsem)
+{
+	pid_t tid = _SCHED_GETTID();
+
+	nxmutex_lock(&rwsem->protected);
+
+	while (rwsem->reader > 0 || (rwsem->writer > 0 && rwsem->holder != tid)) {
+		rwsem->waiter++;
+		nxmutex_unlock(&rwsem->protected);
+		nxsem_wait(&rwsem->waiting);
+		nxmutex_lock(&rwsem->protected);
+		rwsem->waiter--;
+	}
+
+	/* The check passes, then we just need the writer reference + 1 */
+
+	rwsem->writer++;
+	rwsem->holder = tid;
+
+	nxmutex_unlock(&rwsem->protected);
+}
+
+/****************************************************************************
+ * Name: up_write
+ *
+ * Description:
+ *   Unlock a write lock on a read-write-lock object.
+ *
+ * Input Parameters:
+ *   rwsem  - Pointer to the read-write-lock descriptor.
+ *
+ ****************************************************************************/
+
+void up_write(FAR rw_semaphore_t *rwsem)
+{
+	nxmutex_lock(&rwsem->protected);
+
+	DEBUGASSERT(rwsem->writer > 0);
+	DEBUGASSERT(rwsem->holder == _SCHED_GETTID());
+
+	if (--rwsem->writer <= 0) {
+		rwsem->holder = RWSEM_NO_HOLDER;
+		up_wait(rwsem);
+	}
+
+	nxmutex_unlock(&rwsem->protected);
+}
+
+/****************************************************************************
+ * Name: downgrade_write
+ *
+ * Description:
+ *   Downgrade write lock to read lock on a read-write-lock object.
+ *
+ * Input Parameters:
+ *   rwsem  - Pointer to the read-write-lock descriptor.
+ *
+ ****************************************************************************/
+
+void downgrade_write(FAR rw_semaphore_t *rwsem)
+{
+	nxmutex_lock(&rwsem->protected);
+
+	DEBUGASSERT(rwsem->writer == 1);
+	DEBUGASSERT(rwsem->reader == 0);
+	DEBUGASSERT(rwsem->holder == _SCHED_GETTID());
+
+	rwsem->writer = 0;
+	rwsem->reader++;
+	rwsem->holder = RWSEM_NO_HOLDER;
+
+	up_wait(rwsem);
+	nxmutex_unlock(&rwsem->protected);
+}
+
+/****************************************************************************
+ * Name: init_rwsem
+ *
+ * Description:
+ *   Initialize a read-write-lock object, setting its initial state.
+ *
+ * Input Parameters:
+ *   rwsem  - Pointer to the read-write-lock descriptor.
+ *
+ * Returned Value:
+ *   It follows the NuttX internal error return policy: Zero (OK) is
+ *   returned on success. A negated errno value is returned on failure.
+ *
+ ****************************************************************************/
+
+int init_rwsem(FAR rw_semaphore_t *rwsem)
+{
+	int ret = OK;
+
+	/* Initialize structure information */
+
+	ret = nxmutex_init(&rwsem->protected);
+	if (ret >= 0) {
+		ret = nxsem_init(&rwsem->waiting, 0, 0);
+		if (ret >= 0) {
+			rwsem->reader = 0;
+			rwsem->writer = 0;
+			rwsem->waiter = 0;
+			rwsem->holder = RWSEM_NO_HOLDER;
+			ret = OK;
+		} else {
+			nxmutex_destroy(&rwsem->protected);
+		}
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: destroy_rwsem
+ *
+ * Description:
+ *   Destroy a read-write-lock object, freeing any resources associated with
+ *   it.
+ *
+ * Input Parameters:
+ *   rwsem - Pointer to the read-write-lock descriptor.
+ *
+ ****************************************************************************/
+
+void destroy_rwsem(FAR rw_semaphore_t *rwsem)
+{
+	/* Need to check if there is still an unlocked or waiting state */
+
+	DEBUGASSERT(rwsem->waiter == 0 && rwsem->reader == 0 &&
+	            rwsem->writer == 0 && rwsem->holder == RWSEM_NO_HOLDER);
+
+	nxmutex_destroy(&rwsem->protected);
+	nxsem_destroy(&rwsem->waiting);
+}

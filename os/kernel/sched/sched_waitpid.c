@@ -15,99 +15,492 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
- * kernel/sched/sched_waitpid.c
+/****************************************************************************
+ * sched/sched/sched_waitpid.c
  *
- *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Included Files
- *****************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
 #include <sys/wait.h>
-#include <semaphore.h>
 #include <signal.h>
+#include <assert.h>
 #include <errno.h>
 
 #include <tinyara/sched.h>
+#include <tinyara/signal.h>
 #include <tinyara/cancelpt.h>
+#include <tinyara/semaphore.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
 
 #ifdef CONFIG_SCHED_WAITPID
 
-/*****************************************************************************
+/****************************************************************************
  * Private Functions
- *****************************************************************************/
+ ****************************************************************************/
 
-/*****************************************************************************
+#ifdef CONFIG_SCHED_HAVE_PARENT
+static inline_function
+int waittcb(FAR struct tcb_s *rtcb, pid_t pid, int options,
+            FAR int *stat_loc, bool retains)
+{
+#ifdef CONFIG_SCHED_CHILD_STATUS
+	FAR struct child_status_s *child = NULL;
+#endif
+	struct siginfo info;
+	sigset_t set;
+	int ret = OK;
+
+	/* Create a signal set that contains only SIGCHLD */
+
+	sigemptyset(&set);
+	nxsig_addset(&set, SIGCHLD);
+
+	while (ret >= 0) {
+#ifdef CONFIG_SCHED_CHILD_STATUS
+		/* Check if the task has already died. Signals are not queued in
+		 * NuttX.  So a possibility is that the child has died and we
+		 * missed the death of child signal (we got some other signal
+		 * instead).
+		 */
+
+		if (pid == INVALID_PROCESS_ID) {
+			/* We are waiting for any child, check if there are still
+			 * children.
+			 */
+
+			DEBUGASSERT(!retains || rtcb->group->tg_children);
+			if (retains && (child = group_exit_child(rtcb->group)) != NULL) {
+				/* A child has exited.  Apparently we missed the signal.
+				 * Return the saved exit status.
+				 */
+
+				/* The child has exited. Return the saved exit status */
+
+				if (stat_loc != NULL) {
+					*stat_loc = child->ch_status << 8;
+				}
+
+				ret = child->ch_pid;
+
+				/* Discard the child entry and break out of the loop */
+
+				group_remove_child(rtcb->group, child->ch_pid);
+				group_free_child(child);
+				break;
+			}
+		}
+
+		/* We are waiting for a specific PID. Does this task retain child
+		 * status?
+		 */
+
+		else if (retains) {
+			/* Get the current status of the child task. */
+
+			child = group_find_child(rtcb->group, pid);
+			DEBUGASSERT(child);
+
+			/* Did the child exit? */
+
+			if ((child->ch_flags & CHILD_FLAG_EXITED) != 0) {
+				/* The child has exited. Return the saved exit status */
+
+				if (stat_loc != NULL) {
+					*stat_loc = child->ch_status << 8;
+				}
+
+				/* Discard the child entry and break out of the loop */
+
+				if ((options & WNOWAIT) == 0) {
+					group_remove_child(rtcb->group, pid);
+					group_free_child(child);
+				}
+
+				ret = pid;
+				break;
+			}
+		} else {
+			/* We can use nxsig_kill() with signal number 0 to determine if
+			 * that task is still alive.
+			 */
+
+			ret = nxsig_kill(pid, 0);
+			if (ret < 0) {
+				/* It is no longer running.  We know that the child task
+				 * was running okay when we started, so we must have lost
+				 * the signal.  In this case, we know that the task exit'ed,
+				 * but we do not know its exit status.  It would be better
+				 * to reported ECHILD than bogus status.
+				 */
+
+				ret = -ECHILD;
+				break;
+			}
+		}
+
+#else  /* CONFIG_SCHED_CHILD_STATUS */
+
+		/* Check if the task has already died. Signals are not queued in
+		 * NuttX.  So a possibility is that the child has died and we
+		 * missed the death of child signal (we got some other signal
+		 * instead).
+		 */
+
+		if (rtcb->group->tg_nchildren == 0 ||
+		    (pid != INVALID_PROCESS_ID && nxsig_kill(pid, 0) < 0)) {
+			/* We know that the child task was running okay when we started,
+			 * so we must have lost the signal.  What can we do?
+			 * Let's return ECHILD.. that is at least informative.
+			 */
+
+			ret = -ECHILD;
+			break;
+		}
+
+#endif /* CONFIG_SCHED_CHILD_STATUS */
+
+		if ((options & WNOHANG) != 0) {
+			ret = 0;
+			break;
+		}
+
+		/* Wait for any death-of-child signal */
+
+		ret = nxsig_timedwait(&set, &info, NULL);
+
+		if (ret < 0) {
+			break;
+		}
+
+		/* Was this the death of the thread we were waiting for? In the of
+		 * pid == INVALID_PROCESS_ID, we are waiting for any child thread.
+		 */
+
+		if (info.si_signo == SIGCHLD &&
+		   (pid == INVALID_PROCESS_ID || info.si_pid == pid)) {
+			/* Yes... return the status and PID (in the event it was -1) */
+
+			if (stat_loc != NULL) {
+				*stat_loc = info.si_status << 8;
+			}
+
+			pid = info.si_pid;
+
+#ifdef CONFIG_SCHED_CHILD_STATUS
+			if (retains) {
+				/* Recover the exiting child */
+
+				child = group_find_child(rtcb->group, info.si_pid);
+
+				/* Discard the child entry, if we have one */
+
+				if (child != NULL && (options & WNOWAIT) == 0) {
+					group_remove_child(rtcb->group, child->ch_pid);
+					group_free_child(child);
+				}
+			}
+#endif /* CONFIG_SCHED_CHILD_STATUS */
+
+			ret = pid;
+			break;
+		}
+	}
+
+	return ret;
+}
+#endif
+
+/****************************************************************************
  * Public Functions
- *****************************************************************************/
+ ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
+ * Name: nxsched_waitpid
+ *
+ * Description:
+ *   This functions will obtain status information pertaining to one
+ *   of the caller's child processes. This function will suspend
+ *   execution of the calling thread until status information for one of the
+ *   terminated child processes of the calling process is available, or until
+ *   delivery of a signal whose action is either to execute a signal-catching
+ *   function or to terminate the process. If more than one thread is
+ *   suspended in nxsched_waitpid() awaiting termination of the same process,
+ *   exactly one thread will return the process status at the time of the
+ *   target process termination. If status information is available prior to
+ *   the call to nxsched_waitpid(), return will be immediate.
+ *
+ * Input Parameters:
+ *   pid - The task ID of the thread to waid for
+ *   stat_loc - The location to return the exit status
+ *   options - Modifiable behavior, see sys/wait.h.
+ *
+ * Returned Value:
+ *   If nxsched_waitpid() returns because the status of a child process is
+ *   available, it will return a value equal to the process ID of the child
+ *   process for which status is reported.
+ *
+ *   If nxsched_waitpid() returns due to the delivery of a signal to the
+ *   calling process, -1 will be returned and errno set to EINTR.
+ *
+ *   If nxsched_waitpid() was invoked with WNOHANG set in options, it has
+ *   at least one child process specified by pid for which status is not
+ *   available, and status is not available for any process specified by
+ *   pid, 0 is returned.
+ *
+ *   Otherwise, (pid_t)-1 will be returned, and errno set to indicate the
+ *   error:
+ *
+ *   ECHILD - The process specified by pid does not exist or is not a child
+ *            of the calling process, or the process group specified by pid
+ *            does not exist does not have any member process that is a child
+ *            of the calling process.
+ *   EINTR - The function was interrupted by a signal. The value of the
+ *           location pointed to by stat_loc is undefined.
+ *   EINVAL - The options argument is not valid.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_SCHED_HAVE_PARENT
+/****************************************************************************
+ *
+ * If CONFIG_SCHED_HAVE_PARENT is defined, then waitpid will use the SIGCHLD
+ * signal.  It can also handle the pid == INVALID_PROCESS_ID argument.  This
+ * is slightly more spec-compliant.
+ *
+ * But then I have to be concerned about the fact that NuttX does not queue
+ * signals.  This means that a flurry of signals can cause signals to be
+ * lost (or to have the data in the struct siginfo to be overwritten by
+ * the next signal).
+ *
+ ****************************************************************************/
+
+pid_t nxsched_waitpid(pid_t pid, FAR int *stat_loc, int options)
+{
+	FAR struct tcb_s *rtcb = this_task();
+	FAR struct tcb_s *ctcb;
+	bool retains = false;
+	irqstate_t flags;
+	int ret = OK;
+
+	/* NOTE: sched_lock() is not enough for SMP
+	 * because the child task is running on another CPU
+	 */
+
+	flags = enter_critical_section();
+
+	/* Verify that this task actually has children and that the requested PID
+	 * is actually a child of this task.
+	 */
+
+#ifdef CONFIG_SCHED_CHILD_STATUS
+	/* Does this task retain child status? */
+
+	retains = ((rtcb->group->tg_flags & GROUP_FLAG_NOCLDWAIT) == 0);
+
+	if (rtcb->group->tg_children == NULL && retains) {
+		ret = -ECHILD;
+	} else if (pid != INVALID_PROCESS_ID) {
+		/* Get the TCB corresponding to this PID.  NOTE: If the child has
+		 * already exited, then the PID will not map to a valid TCB.
+		 */
+
+		ctcb = nxsched_get_tcb(pid);
+		if (ctcb && ctcb->group) {
+			/* Make sure that the thread it is our child. */
+
+			if (ctcb->group->tg_ppid != rtcb->group->tg_pid) {
+				ret = -ECHILD;
+			}
+		}
+
+		/* The child task is ours or it is no longer active.  Does the parent
+		 * task retain child status?
+		 */
+
+		if (retains && ret == OK) {
+			/* Yes.. Check if this specific pid has allocated child status? */
+
+			if (group_find_child(rtcb->group, pid) == NULL) {
+				ret = -ECHILD;
+			}
+		}
+	}
+
+#else /* CONFIG_SCHED_CHILD_STATUS */
+
+	if (rtcb->group->tg_nchildren == 0) {
+		/* There are no children */
+
+		ret = -ECHILD;
+	} else if (pid != INVALID_PROCESS_ID) {
+		/* Get the TCB corresponding to this PID and make sure that the
+		 * thread it is our child.
+		 */
+
+		ctcb = nxsched_get_tcb(pid);
+		if (!ctcb || !ctcb->group || ctcb->group->tg_ppid != rtcb->pid ||
+		    (ctcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0) {
+			ret = -ECHILD;
+		}
+	}
+
+#endif /* CONFIG_SCHED_CHILD_STATUS */
+
+	if (ret == OK) {
+		ret = waittcb(rtcb, pid, options, stat_loc, retains);
+	}
+
+	leave_critical_section(flags);
+	return ret;
+}
+#else
+pid_t nxsched_waitpid(pid_t pid, FAR int *stat_loc, int options)
+{
+	FAR struct tcb_s *ctcb;
+	FAR struct task_group_s *group;
+	bool mystat = false;
+	irqstate_t flags;
+	int ret = -ECHILD;
+
+	/* NOTE: sched_lock() is not enough for SMP
+	 * because the child task is running on another CPU
+	 */
+
+	flags = enter_critical_section();
+
+	/* Get the TCB corresponding to this PID */
+
+	ctcb = nxsched_get_tcb(pid);
+	if (ctcb != NULL) {
+		if ((group = ctcb->group) != NULL &&
+		    (ctcb->flags & TCB_FLAG_EXIT_PROCESSING) == 0) {
+			/* Lock this group so that it cannot be
+			 * deleted until the wait completes
+			 */
+
+			group_add_waiter(group);
+
+			/* "If more than one thread is suspended in waitpid() awaiting
+			 * termination of the same process, exactly one thread will
+			 * return the process status at the time of the target process
+			 * termination."  Hmmm.. what do we return to the others?
+			 */
+
+			if (group->tg_waitflags == 0) {
+				/* Save the waitpid() options, setting the non-standard
+				 * WCLAIMED bit to assure that tg_waitflags is non-zero.
+				 */
+
+				group->tg_waitflags = (uint8_t)options | WCLAIMED;
+
+				/* Save the return status location (which may be NULL) */
+
+				group->tg_statloc = stat_loc;
+
+				/* We are the waipid() instance
+				 * that gets the return status
+				 */
+
+				mystat = true;
+			}
+
+			/* Then wait for the task to exit */
+
+			if ((options & WNOHANG) != 0) {
+				/* Don't wait if status is not available */
+
+				ret = nxsem_trywait(&group->tg_exitsem);
+			} else {
+				/* Wait if necessary for status to become available */
+
+				ret = nxsem_wait(&group->tg_exitsem);
+			}
+
+			group_del_waiter(group);
+
+			if (ret < 0) {
+				/* Handle the awkward case of whether or not we
+				 * need to nullify the stat_loc value.
+				 */
+
+				if (mystat) {
+					group->tg_statloc   = NULL;
+					group->tg_waitflags = 0;
+				}
+
+				if ((options & WNOHANG) != 0) {
+					pid = 0;
+				} else {
+					pid = ret;
+				}
+			}
+
+			/* On success, return the PID */
+
+			ret = pid;
+		}
+	}
+
+	leave_critical_section(flags);
+
+	return ret;
+}
+#endif /* CONFIG_SCHED_HAVE_PARENT */
+
+/****************************************************************************
  * Name: waitpid
  *
  * Description:
- *
  *   The waitpid() functions will obtain status information pertaining to one
  *   of the caller's child processes. The waitpid() function will suspend
  *   execution of the calling thread until status information for one of the
  *   terminated child processes of the calling process is available, or until
  *   delivery of a signal whose action is either to execute a signal-catching
- *   function or to terminate the process. If more than one thread is suspended
- *   in waitpid() awaiting termination of the same process, exactly one thread
- *   will return the process status at the time of the target process
- *   termination. If status information is available prior to the call to
- *   waitpid(), return will be immediate.
+ *   function or to terminate the process. If more than one thread is
+ *   suspended in waitpid() awaiting termination of the same process, exactly
+ *   one thread will return the process status at the time of the target
+ *   process termination. If status information is available prior to the
+ *   call to waitpid(), return will be immediate.
  *
  *   The pid argument specifies a set of child processes for which status is
  *   requested. The waitpid() function will only return the status of a child
  *   process from this set:
  *
- *   - If pid is equal to (pid_t)-1, status is requested for any child process.
- *     In this respect, waitpid() is then equivalent to wait().
- *   - If pid is greater than 0, it specifies the process ID of a single child
- *     process for which status is requested.
+ *   - If pid is equal to (pid_t)-1, status is requested for any child
+ *     process. In this respect, waitpid() is then equivalent to wait().
+ *   - If pid is greater than 0, it specifies the process ID of a single
+ *     child process for which status is requested.
  *   - If pid is 0, status is requested for any child process whose process
- *     group ID is equal to that of the calling process.(Not supported yet)
- *   - If pid is less than (pid_t)-1, status is requested for any child process
- *     whose process group ID is equal to the absolute value of pid.(Not supported yet)
+ *     group ID is equal to that of the calling process.
+ *   - If pid is less than (pid_t)-1, status is requested for any child
+ *     process whose process group ID is equal to the absolute value of pid.
  *
- *   The options argument is constructed from the bitwise-inclusive OR of zero
- *   or more of the following flags, defined in the <sys/wait.h> header:
+ *   The options argument is constructed from the bitwise-inclusive OR of
+ *   zero or more of the following flags, defined in the <sys/wait.h> header:
  *
  *   WCONTINUED - The waitpid() function will report the status of any
  *     continued child process specified by pid whose status has not been
@@ -121,21 +514,22 @@
  *
  *   If the calling process has SA_NOCLDWAIT set or has SIGCHLD set to
  *   SIG_IGN, and the process has no unwaited-for children that were
- *   transformed into zombie processes, the calling thread will block until all
- *   of the children of the process containing the calling thread terminate, and
- *   waitpid() will fail and set errno to ECHILD.
+ *   transformed into zombie processes, the calling thread will block until
+ *   all of the children of the process containing the calling thread
+ *   terminate, and waitpid() will fail and set errno to ECHILD.
  *
  *   If waitpid() returns because the status of a child process is available,
  *   these functions will return a value equal to the process ID of the child
  *   process. In this case, if the value of the argument stat_loc is not a
  *   null pointer, information will be stored in the location pointed to by
- *   stat_loc. The value stored at the location pointed to by stat_loc will be
- *   0 if and only if the status returned is from a terminated child process
- *   that terminated by one of the following means:
+ *   stat_loc. The value stored at the location pointed to by stat_loc will
+ *   be 0 if and only if the status returned is from a terminated child
+ *   process that terminated by one of the following means:
  *
  *   1. The process returned 0 from main().
  *   2. The process called _exit() or exit() with a status argument of 0.
- *   3. The process was terminated because the last thread in the process terminated.
+ *   3. The process was terminated because the last thread in the process
+ *      terminated.
  *
  *   Regardless of its value, this information may be interpreted using the
  *   following macros, which are defined in <sys/wait.h> and evaluate to
@@ -160,14 +554,15 @@
  *     this macro evaluates to the number of the signal that caused the child
  *     process to stop.
  *   WIFCONTINUED(stat_val) - Evaluates to a non-zero value if status was
- *    returned for a child process that has continued from a job control stop.
+ *    returned for a child process that has continued from a job control
+ *    stop.
  *
- * Parameters:
+ * Input Parameters:
  *   pid - The task ID of the thread to waid for
  *   stat_loc - The location to return the exit status
- *   options - ignored
+ *   options - Modifiable behavior, see sys/wait.h.
  *
- * Return Value:
+ * Returned Value:
  *   If waitpid() returns because the status of a child process is available,
  *   it will return a value equal to the process ID of the child process for
  *   which status is reported.
@@ -176,16 +571,19 @@
  *   process, -1 will be returned and errno set to EINTR.
  *
  *   If waitpid() was invoked with WNOHANG set in options, it has at least
- *   one child process specified by pid for which status is not available, and
- *   status is not available for any process specified by pid, 0 is returned.
+ *   one child process specified by pid for which status is not available,
+ *   and status is not available for any process specified by pid, 0 is
+ *   returned.
  *
- *   Otherwise, (pid_t)-1 will be returned, and errno set to indicate the error:
+ *   Otherwise, (pid_t)-1 will be returned, and errno set to indicate the
+ *   error:
  *
- *   ECHILD - The process specified by pid does not exist or is not a child of
- *     the calling process, or the process group specified by pid does not exist
- *     or does not have any member process that is a child of the calling process.
- *   EINTR - The function was interrupted by a signal. The value of the location
- *     pointed to by stat_loc is undefined.
+ *   ECHILD - The process specified by pid does not exist or is not a child
+ *            of the calling process, or the process group specified by pid
+ *            does not exist does not have any member process that is a child
+ *            of the calling process.
+ *   EINTR - The function was interrupted by a signal. The value of the
+ *           location pointed to by stat_loc is undefined.
  *   EINVAL - The options argument is not valid.
  *
  * Assumptions:
@@ -195,368 +593,26 @@
  *   defined), then waitpid() is still available, but does not obey the
  *   restriction that the pid be a child of the caller.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-#ifndef CONFIG_SCHED_HAVE_PARENT
-pid_t waitpid(pid_t pid, int *stat_loc, int options)
+pid_t waitpid(pid_t pid, FAR int *stat_loc, int options)
 {
-	FAR struct tcb_s *ctcb;
-	FAR struct task_group_s *group;
-	bool mystat = false;
-	int err;
-	int ret;
-
-	/* None of the options are supported */
-
-	if (options != 0) {
-		set_errno(ENOSYS);
-		return ERROR;
-	}
+	pid_t ret;
 
 	/* waitpid() is a cancellation point */
-	(void)enter_cancellation_point();
 
-	/* Disable pre-emption so that nothing changes in the following tests */
-#ifdef CONFIG_SMP
-	irqstate_t flags = enter_critical_section();
-#else
-	sched_lock();
-#endif
+	enter_cancellation_point();
 
-	/* Get the TCB corresponding to this PID */
+	/* Let nxsched_waitpid() do the work. */
 
-	ctcb = sched_gettcb(pid);
-	if (ctcb == NULL) {
-		err = ECHILD;
-		goto errout_with_errno;
-	}
-
-	/* The the task group corresponding to this PID */
-
-	group = ctcb->group;
-	DEBUGASSERT(group);
-
-	/* "If more than one thread is suspended in waitpid() awaiting termination of
-	 * the same process, exactly one thread will return the process status at the
-	 * time of the target process termination."  Hmmm.. what do we return to the
-	 * others?
-	 */
-
-	if (stat_loc != NULL && group->tg_statloc == NULL) {
-		group->tg_statloc = stat_loc;
-		mystat = true;
-	}
-
-	/* Then wait for the task to exit */
-
-	ret = sem_wait(&group->tg_exitsem);
+	ret = nxsched_waitpid(pid, stat_loc, options);
 	if (ret < 0) {
-		/* Unlock pre-emption and return the ERROR (sem_wait has already set
-		 * the errno).  Handle the awkward case of whether or not we need to
-		 * nullify the stat_loc value.
-		 */
-
-		if (mystat) {
-			group->tg_statloc = NULL;
-		}
-
-		goto errout;
+		set_errno(-ret);
+		ret = ERROR;
 	}
 
-	/* On success, return the PID */
-
 	leave_cancellation_point();
-#ifdef CONFIG_SMP
-	leave_critical_section(flags);
-#else
-	sched_unlock();
-#endif
-	return pid;
-
-errout_with_errno:
-	set_errno(err);
-errout:
-	leave_cancellation_point();
-#ifdef CONFIG_SMP
-	leave_critical_section(flags);
-#else
-	sched_unlock();
-#endif
-	return ERROR;
+	return ret;
 }
 
-/***************************************************************************
- *
- * If CONFIG_SCHED_HAVE_PARENT is defined, then waitpid will use the SIGHCLD
- * signal.  It can also handle the pid == (pid_t)-1 arguement.  This is
- * slightly more spec-compliant.
- *
- * But then I have to be concerned about the fact that TinyAra does not queue
- * signals.  This means that a flurry of signals can cause signals to be
- * lost (or to have the data in the struct siginfo to be overwritten by
- * the next signal).
- *
- ***************************************************************************/
-
-#else
-pid_t waitpid(pid_t pid, int *stat_loc, int options)
-{
-	FAR struct tcb_s *rtcb = this_task();
-	FAR struct tcb_s *ctcb;
-#ifdef CONFIG_SCHED_CHILD_STATUS
-	FAR struct child_status_s *child;
-	bool retains;
-#endif
-	FAR struct siginfo info;
-	sigset_t sigset;
-#ifndef CONFIG_SCHED_CHILD_STATUS
-	uint16_t nchildren;
-	bool waitable;
-#endif
-	int err;
-	int ret;
-
-	/* None of the options are supported */
-
-	if (options != 0) {
-		set_errno(ENOSYS);
-		return ERROR;
-	}
-
-	/* waitpid() is a cancellation point */
-	(void)enter_cancellation_point();
-
-	/* Create a signal set that contains only SIGCHLD */
-
-	(void)sigemptyset(&sigset);
-	(void)sigaddset(&sigset, SIGCHLD);
-
-	/* Disable pre-emption so that nothing changes while the loop executes */
-#ifdef CONFIG_SMP
-	irqstate_t flags = enter_critical_section();
-#else
-	sched_lock();
-#endif
-
-	/* Verify that this task actually has children and that the requested PID
-	 * is actually a child of this task.
-	 */
-
-#ifdef CONFIG_SCHED_CHILD_STATUS
-	/* Does this task retain child status? */
-
-	retains = ((rtcb->group->tg_flags & GROUP_FLAG_NOCLDWAIT) == 0);
-
-	if (rtcb->group->tg_children == NULL && retains) {
-		err = ECHILD;
-		goto errout_with_errno;
-	} else if (pid != (pid_t)-1) {
-		/* Get the TCB corresponding to this PID and make sure that the thread it is our child. */
-
-		ctcb = sched_gettcb(pid);
-#ifdef HAVE_GROUP_MEMBERS
-		if (ctcb == NULL || ctcb->group->tg_pgid != rtcb->group->tg_gid)
-#else
-		if (ctcb == NULL || ctcb->group->tg_ppid != rtcb->pid)
-#endif
-
-		{
-			err = ECHILD;
-			goto errout_with_errno;
-		}
-
-		/* Does this task retain child status? */
-
-		if (retains) {
-			/* Check if this specific pid has allocated child status? */
-
-			if (group_findchild(rtcb->group, pid) == NULL) {
-				err = ECHILD;
-				goto errout_with_errno;
-			}
-		}
-	}
-#else							/* CONFIG_SCHED_CHILD_STATUS */
-
-	if (rtcb->group->tg_nchildren == 0) {
-		/* There are no children */
-
-		err = ECHILD;
-		goto errout_with_errno;
-	} else if (pid != (pid_t)-1) {
-		/* Get the TCB corresponding to this PID and make sure that the thread it is our child. */
-
-		ctcb = sched_gettcb(pid);
-#ifdef HAVE_GROUP_MEMBERS
-		if (ctcb == NULL || (ctcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0 || ctcb->group->tg_pgid != rtcb->group->tg_gid)
-#else
-		if (ctcb == NULL || (ctcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0 || ctcb->group->tg_ppid != rtcb->pid)
-#endif
-
-		{
-			err = ECHILD;
-			goto errout_with_errno;
-		}
-	}
-#endif							/* CONFIG_SCHED_CHILD_STATUS */
-
-	/* Loop until the child that we are waiting for dies */
-
-	for (;;) {
-#ifdef CONFIG_SCHED_CHILD_STATUS
-		/* Check if the task has already died. Signals are not queued in
-		 * TinyAra.  So a possibility is that the child has died and we
-		 * missed the death of child signal (we got some other signal
-		 * instead).
-		 */
-
-		if (pid == (pid_t)-1) {
-			/* We are waiting for any child, check if there are still
-			 * chilren.
-			 */
-
-			DEBUGASSERT(!retains || rtcb->group->tg_children);
-			if (retains && (child = group_exitchild(rtcb->group)) != NULL) {
-				/* A child has exited.  Apparently we missed the signal.
-				 * Return the saved exit status.
-				 */
-
-				/* The child has exited. Return the saved exit status */
-
-				if (stat_loc != NULL) {
-					*stat_loc = child->ch_status << 8;
-				}
-				pid = child->ch_pid;
-
-				/* Discard the child entry and break out of the loop */
-
-				(void)group_removechild(rtcb->group, child->ch_pid);
-				group_freechild(child);
-				break;
-			}
-		}
-
-		/* We are waiting for a specific PID. Does this task retain child status? */
-
-		else if (retains) {
-			/* Get the current status of the child task. */
-
-			child = group_findchild(rtcb->group, pid);
-			DEBUGASSERT(child);
-
-			/* Did the child exit? */
-
-			if ((child->ch_flags & CHILD_FLAG_EXITED) != 0) {
-				/* The child has exited. Return the saved exit status */
-
-				if (stat_loc != NULL) {
-					*stat_loc = child->ch_status << 8;
-				}
-
-				/* Discard the child entry and break out of the loop */
-
-				(void)group_removechild(rtcb->group, pid);
-				group_freechild(child);
-				break;
-			}
-		} else {
-			/* We can use kill() with signal number 0 to determine if that
-			 * task is still alive.
-			 */
-
-			ret = kill(pid, 0);
-			if (ret < 0) {
-				/* It is no longer running.  We know that the child task
-				 * was running okay when we started, so we must have lost
-				 * the signal.  In this case, we know that the task exit'ed,
-				 * but we do not know its exit status.  It would be better
-				 * to reported ECHILD than bogus status.
-				 */
-
-				err = ECHILD;
-				goto errout_with_errno;
-			}
-		}
-
-#else							/* CONFIG_SCHED_CHILD_STATUS */
-
-		/* Check if the task has already died or started exiting. A TCB can
-		 * remain in the PID hash after its SIGCHLD has been dispatched in task_exithook,
-		 * so kill(pid, 0) can report an exiting child as alive and make us wait
-		 * forever for a signal that will not be sent again. The outer critical
-		 * section makes this check atomic with the signal wait: either we see
-		 * EXIT_PROCESSING here or the child sets it after we block and wakes us.
-		 */
-
-		nchildren = rtcb->group->tg_nchildren;
-		waitable = true;
-		ctcb = NULL;
-		if (nchildren != 0 && pid != (pid_t)-1) {
-			waitable = false;
-			ctcb = sched_gettcb(pid);
-#ifdef HAVE_GROUP_MEMBERS
-			if (ctcb != NULL && (ctcb->flags & TCB_FLAG_EXIT_PROCESSING) == 0 && ctcb->group->tg_pgid == rtcb->group->tg_gid) {
-#else
-			if (ctcb != NULL && (ctcb->flags & TCB_FLAG_EXIT_PROCESSING) == 0 && ctcb->group->tg_ppid == rtcb->pid) {
-#endif
-				waitable = true;
-			}
-		}
-
-		if (nchildren == 0 || !waitable) {
-			/* We know that the child task was running okay we stared,
-			 * so we must have lost the signal.  What can we do?
-			 * Let's return ECHILD.. that is at least informative.
-			 */
-
-			err = ECHILD;
-			goto errout_with_errno;
-		}
-#endif							/* CONFIG_SCHED_CHILD_STATUS */
-
-		/* Wait for any death-of-child signal */
-
-		ret = sigwaitinfo(&sigset, &info);
-		if (ret < 0) {
-			goto errout_with_lock;
-		}
-
-		/* Was this the death of the thread we were waiting for? In the of
-		 * pid == (pid_t)-1, we are waiting for any child thread.
-		 */
-
-		if (info.si_signo == SIGCHLD && (pid == (pid_t)-1 || info.si_pid == pid)) {
-			/* Yes... return the status and PID (in the event it was -1) */
-
-			if (stat_loc != NULL) {
-				*stat_loc = info.si_status << 8;
-			}
-
-			pid = info.si_pid;
-			break;
-		}
-	}
-
-	leave_cancellation_point();
-#ifdef CONFIG_SMP
-	leave_critical_section(flags);
-#else
-	sched_unlock();
-#endif
-	return (int)pid;
-
-errout_with_errno:
-	set_errno(err);
-
-errout_with_lock:
-	leave_cancellation_point();
-#ifdef CONFIG_SMP
-	leave_critical_section(flags);
-#else
-	sched_unlock();
-#endif
-	return ERROR;
-}
-#endif							/* CONFIG_SCHED_HAVE_PARENT */
-
-#endif							/* CONFIG_SCHED_WAITPID */
+#endif /* CONFIG_SCHED_WAITPID */

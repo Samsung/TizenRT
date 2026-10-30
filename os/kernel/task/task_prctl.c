@@ -15,44 +15,31 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * kernel/task/task_prctl.c
+/****************************************************************************
+ * sched/task/task_prctl.c
  *
- *   Copyright (C) 2012-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
@@ -64,35 +51,12 @@
 
 #include <tinyara/sched.h>
 
-#ifdef CONFIG_PREFERENCE
-#include <tinyara/preference.h>
-#include "preference/preference.h"
-#endif
-
-#ifdef CONFIG_MESSAGING_IPC
-#include <sys/types.h>
-#include <messaging/messaging.h>
-#include "messaging/message_ctrl.h"
-#endif
 #include "sched/sched.h"
 #include "task/task.h"
 
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-#include <arch/reboot_reason.h>
-#include <tinyara/reboot_reason.h>
-#endif
-
-#ifdef CONFIG_SECURITY_LEVEL
-#include <tinyara/security_level.h>
-#endif
-
-/************************************************************************
- * Private Functions
- ************************************************************************/
-
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
 /****************************************************************************
  * Name: prctl
@@ -103,9 +67,9 @@
  *   the specific command.
  *
  * Returned Value:
- *   The returned value may depend on the specific commnand.  For PR_SET_NAME
+ *   The returned value may depend on the specific command.  For PR_SET_NAME
  *   and PR_GET_NAME, the returned value of 0 indicates successful operation.
- *   On any failure, -1 is returned and the errno value is set appropriately.
+ *   On any failure, -1 is retruend and the errno value is set appropriately.
  *
  *     EINVAL The value of 'option' is not recognized.
  *     EFAULT optional arg1 is not a valid address.
@@ -117,303 +81,97 @@
 int prctl(int option, ...)
 {
 	va_list ap;
-	int err;
+	int errcode;
 
 	va_start(ap, option);
 	switch (option) {
 	case PR_SET_NAME:
-	case PR_SET_NAME_BYPID:
 	case PR_GET_NAME:
-	case PR_GET_NAME_BYPID:
+	case PR_SET_NAME_EXT:
+	case PR_GET_NAME_EXT:
 #if CONFIG_TASK_NAME_SIZE > 0
 	{
 		/* Get the prctl arguments */
 
 		FAR char *name = va_arg(ap, FAR char *);
 		FAR struct tcb_s *tcb;
+		int pid = 0;
 
-		if (option == PR_SET_NAME_BYPID || option == PR_GET_NAME_BYPID) {
-			int pid = va_arg(ap, int);
+		if (option == PR_SET_NAME_EXT ||
+		    option == PR_GET_NAME_EXT) {
+			pid = va_arg(ap, int);
+		}
 
-			/* Get the TCB associated with the PID */
-			tcb = sched_gettcb((pid_t)pid);
+		/* Get the TCB associated with the PID (handling the special case
+		 * of pid==0 meaning "this thread")
+		 */
 
-			/* An invalid pid will be indicated by a NULL TCB returned from
-			 * sched_gettcb()
-			 */
-
-			if (!tcb) {
-				sdbg("Pid does not correspond to a task: %d\n", pid);
-				err = ESRCH;
-				goto errout;
-			}
-		} else {
-			/* Get the current running TCB */
+		if (pid == 0) {
 			tcb = this_task();
+		} else {
+			tcb = nxsched_get_tcb(pid);
+		}
+
+		/* An invalid pid will be indicated by a NULL TCB returned from
+		 * nxsched_get_tcb()
+		 */
+
+		if (tcb == NULL) {
+			serr("ERROR: Pid does not correspond to a task: %d\n", pid);
+			errcode = ESRCH;
+			goto errout;
 		}
 
 		/* A pointer to the task name storage must also be provided */
 
-		if (!name) {
-			sdbg("No name provide\n");
-			err = EFAULT;
+		if (name == NULL) {
+			serr("ERROR: No name provide\n");
+			errcode = EFAULT;
 			goto errout;
 		}
 
 		/* Now get or set the task name */
 
-		if (option == PR_SET_NAME || option == PR_SET_NAME_BYPID) {
-			/* Ensure that tcb->name will be null-terminated, truncating if necessary */
+		if (option == PR_SET_NAME || option == PR_SET_NAME_EXT) {
+			/* Ensure that tcb->name will be null-terminated, truncating if
+			 * necessary.
+			 */
 
-			strncpy(tcb->name, name, CONFIG_TASK_NAME_SIZE);
+			strlcpy(tcb->name, name, sizeof(tcb->name));
 			tcb->name[CONFIG_TASK_NAME_SIZE] = '\0';
-#ifdef CONFIG_HEAPINFO_USER_GROUP
-			heapinfo_check_group_list(tcb->pid, tcb->name);
-#endif
 		} else {
-			/* The returned value will be null-terminated, truncating if necessary */
+			/* The returned value will be null-terminated, truncating if
+			 * necessary.
+			 */
 
-			strncpy(name, tcb->name, CONFIG_TASK_NAME_SIZE - 1);
+			strlcpy(name, tcb->name, sizeof(tcb->name));
 			name[CONFIG_TASK_NAME_SIZE - 1] = '\0';
 		}
 	}
 	break;
 #else
-		sdbg("Option not enabled: %d\n", option);
-		err = ENOSYS;
+		serr("ERROR: Option not enabled: %d\n", option);
+		errcode = ENOSYS;
 		goto errout;
 #endif
-#ifdef CONFIG_MESSAGING_IPC
-	case PR_MSG_SAVE:
-	{
-		int ret;
-		char *port_name = va_arg(ap, char *);
-		pid_t pid = va_arg(ap, int);
-		int prio = va_arg(ap, int);
-		ret = messaging_save_receiver(port_name, pid, prio);
-		if (ret != OK) {
-			va_end(ap);
-			return ERROR;
-		}
-	}
-	break;
-	case PR_MSG_READ:
-	{
-		char *port_name = va_arg(ap, char *);
-		int *recv_arr = va_arg(ap, int *);
-		int *recv_cnt = va_arg(ap, int *);
-		int total_cnt;
-		static int curr_cnt = 0;
-		int ret;
-		ret = messaging_read_list(port_name, recv_arr, &total_cnt);
-		if (ret == ERROR) {
-			va_end(ap);
-			return ret;
-		}
-		curr_cnt += ret;
-		*recv_cnt = curr_cnt;
-		va_end(ap);
-		if (curr_cnt == total_cnt) {
-			/* Read whole receivers information. */
-			curr_cnt = 0;
-			return MSG_READ_ALL;
-		} else {
-			return MSG_READ_YET;
-		}
-	}
-	break;
-	case PR_MSG_REMOVE:
-	{
-		int ret;
-		char *port_name = va_arg(ap, char *);
-		ret = messaging_remove_list(port_name);
-		va_end(ap);
-		return ret;
-	}
-	break;
-#else /* CONFIG_MESSAGING_IPC */
-	case PR_MSG_SAVE:
-	case PR_MSG_READ:
-	case PR_MSG_REMOVE:
-	{
-		sdbg("Not supported.\n");
-		err = ENOSYS;
-		goto errout;
-	}
-#endif /* CONFIG_MESSAGING_IPC */
-	case PR_GET_STKLOG:
-	{
-#if defined(CONFIG_ENABLE_STACKMONITOR) && defined(CONFIG_DEBUG) && !defined(CONFIG_STACKMONITOR_DISABLE_DEAD_THREAD)
-		struct stkmon_save_s *dest_buf = va_arg(ap, struct stkmon_save_s *);
-		stkmon_copy_log(dest_buf);
-#else
-		sdbg("Not supported StackMonitor Logging\n");
-		err = ENOSYS;
-		goto errout;
-#endif
-	}
-	break;
-#ifdef CONFIG_PREFERENCE
-	case PR_SET_PREFERENCE:
-	{
-		int ret;
-		preference_data_t *data;
-		data = va_arg(ap, preference_data_t *);
-		ret = preference_write_key(data);
-		va_end(ap);
-		return ret;
-	}
-	case PR_GET_PREFERENCE:
-	{
-		int ret;
-		preference_data_t *data;
-		data = va_arg(ap, preference_data_t *);
-		ret = preference_read_key(data);
-		va_end(ap);
-		return ret;
-	}
-	case PR_REMOVE_PREFERENCE:
-	{
-		int ret;
-		int type;
-		char *key;
-		type = va_arg(ap, int);
-		key = va_arg(ap, char *);
-		ret = preference_remove_key(type, key);
-		va_end(ap);
-		return ret;
-	}
-	case PR_REMOVEALL_PREFERENCE:
-	{
-		int ret;
-		int type;
-		char *path;
-		type = va_arg(ap, int);
-		path = va_arg(ap, char *);
-		ret = preference_remove_all_key(type, path);
-		va_end(ap);
-		return ret;
-	}
-	case PR_CHECK_PREFERENCE:
-	{
-		int ret;
-		int type;
-		char *key;
-		bool *result;
-		type = va_arg(ap, int);
-		key = va_arg(ap, char *);
-		result = va_arg(ap, bool *);
-		ret = preference_check_key(type, key, result);
-		va_end(ap);
-		return ret;
-	}
-	case PR_SET_PREFERENCE_CB:
-	{
-		int ret;
-		preference_callback_t *data;
-		data = va_arg(ap, preference_callback_t *);
-		ret = preference_register_callback(data);
-		va_end(ap);
-		return ret;
-	}
-	case PR_UNSET_PREFERENCE_CB:
-	{
-		int ret;
-		char *key;
-		int type;
-		type = va_arg(ap, int);
-		key = va_arg(ap, char *);
-		ret = preference_unregister_callback(key, type);
-		va_end(ap);
-		return ret;
-	}
-#endif
-#ifdef CONFIG_MEM_LEAK_CHECKER
-	case PR_MEM_LEAK_CHECKER:
-	{
-		int ret;
-		int checker_pid;
-		checker_pid = va_arg(ap, int);
 
-		ret = run_all_mem_leak_checker(checker_pid);
-		va_end(ap);
-
-		return ret;
-	}
-#endif
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	case PR_REBOOT_REASON_READ:
-	{
-		va_end(ap);
-		return up_reboot_reason_read();
-	}
-	case PR_REBOOT_REASON_WRITE:
-	{
-		reboot_reason_code_t reason = (reboot_reason_code_t)va_arg(ap, int);
-
-		up_reboot_reason_write(reason);
-
-		va_end(ap);
-		return OK;
-	}
-	case PR_REBOOT_REASON_CLEAR:
-	{
-		up_reboot_reason_clear();
-		va_end(ap);
-		return OK;
-	}
-#endif
-#ifdef CONFIG_SECURITY_LEVEL
-	case PR_SET_SECURITY_LEVEL:
-	{
-		int ret = set_security_level();
-		va_end(ap);
-		return ret;
-	}
-	case PR_GET_SECURITY_LEVEL:
-	{
-		int ret = get_security_level();
-		va_end(ap);
-		return ret;
-	}
-#endif
-	case PR_GET_TGTASK:
-	{
-		int *ppid = va_arg(ap, int *);
-#if !defined(CONFIG_DISABLE_PTHREAD) && defined(CONFIG_SCHED_HAVE_PARENT)
-		FAR struct tcb_s *tcb = this_task();
-		if (!tcb) {
-			sdbg("Invalied tcb");
-			err = ESRCH;
-			goto errout;
-		}
-		/* Get ID of the main task in the group */
-		FAR struct task_group_s *group = tcb->group;
-		if (!group) {
-			sdbg("Invalied group");
-			err = ESRCH;
-			goto errout;
-		}
-		*ppid = group->tg_task;
-#else
-		/* Not Support parent-child relationship */
-		*ppid = getpid();
-#endif
-		svdbg("Task group id = %d\n", *ppid);
-		va_end(ap);
-		return OK;
-	}
 	default:
-		sdbg("Unrecognized option: %d\n", option);
-		err = EINVAL;
+		serr("ERROR: Unrecognized option: %d\n", option);
+		errcode = EINVAL;
 		goto errout;
 	}
 
+	/* Not reachable unless CONFIG_TASK_NAME_SIZE is > 0.  NOTE: This might
+	 * change if additional commands are supported.
+	 */
+
+#if CONFIG_TASK_NAME_SIZE > 0
 	va_end(ap);
 	return OK;
+#endif
 
 errout:
 	va_end(ap);
-	set_errno(err);
+	set_errno(errcode);
 	return ERROR;
 }

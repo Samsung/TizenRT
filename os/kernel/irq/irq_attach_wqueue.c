@@ -1,0 +1,218 @@
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * sched/irq/irq_attach_wqueue.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/config.h>
+
+#include <errno.h>
+#include <stdio.h>
+
+#include <tinyara/irq.h>
+#include <tinyara/wqueue.h>
+#include <debug.h>
+
+#include "irq/irq.h"
+#include "sched/sched.h"
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+/* This is the type of the list of interrupt handlers, one for each IRQ.
+ * This type provided all of the information necessary to irq_dispatch to
+ * transfer control to interrupt handlers after the occurrence of an
+ * interrupt.
+ */
+
+struct irq_work_info_s {
+	xcpt_t handler;     /* Address of the interrupt handler */
+	xcpt_t isrwork;     /* Address of the interrupt worked handler */
+	FAR void *arg;      /* The argument provided to the interrupt handler. */
+	int irq;            /* Irq id */
+	struct work_s work; /* Interrupt work to the wq */
+
+	FAR struct kwork_wqueue_s *wqueue;   /* Work queue. */
+};
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static
+inline_function FAR struct kwork_wqueue_s *irq_get_wqueue(int priority)
+{
+#ifdef IRQ_WORK_SECTION
+	static aligned_data(STACK_ALIGNMENT) uint8_t
+	irq_work_stack[CONFIG_IRQ_NWORKS][CONFIG_IRQ_WORK_STACKSIZE]
+	locate_data(CONFIG_IRQ_WORK_SECTION);
+#else
+	static aligned_data(STACK_ALIGNMENT) uint8_t
+	irq_work_stack[CONFIG_IRQ_NWORKS][CONFIG_IRQ_WORK_STACKSIZE];
+#endif
+	static mutex_t irq_wqueue_lock = NXMUTEX_INITIALIZER;
+	static FAR struct kwork_wqueue_s *irq_wqueue[CONFIG_IRQ_NWORKS];
+
+	FAR struct kwork_wqueue_s *queue = NULL;
+	int wqueue_priority;
+	int i;
+
+	nxmutex_lock(&irq_wqueue_lock);
+	for (i = 0; i < CONFIG_IRQ_NWORKS && irq_wqueue[i] != NULL; i++) {
+		wqueue_priority = work_queue_priority_wq(irq_wqueue[i]);
+		DEBUGASSERT(wqueue_priority >= SCHED_PRIORITY_MIN &&
+		            wqueue_priority <= SCHED_PRIORITY_MAX);
+
+		if (wqueue_priority == priority) {
+			nxmutex_unlock(&irq_wqueue_lock);
+			queue = irq_wqueue[i];
+			break;
+		}
+	}
+
+	if (i < CONFIG_IRQ_NWORKS && queue == NULL) {
+		queue = work_queue_create("isrwork", priority, irq_work_stack[i],
+		                          CONFIG_IRQ_WORK_STACKSIZE, 1);
+
+		irq_wqueue[i] = queue;
+		nxmutex_unlock(&irq_wqueue_lock);
+	}
+
+	return queue;
+}
+
+/* Default interrupt handler for worked interrupts.
+ * Useful for oneshot interrupts.
+ */
+
+static void irq_work_handler(FAR void *arg)
+{
+	FAR struct irq_work_info_s *info = arg;
+
+	info->isrwork(info->irq, NULL, info->arg);
+}
+
+static int irq_default_handler(int irq, FAR void *context, FAR void *arg)
+{
+	FAR struct irq_work_info_s *info = arg;
+	int ret = IRQ_WAKE_THREAD;
+
+	if (info->handler != NULL) {
+		ret = info->handler(irq, context, info->arg);
+	}
+
+	if (ret == IRQ_WAKE_THREAD) {
+		work_queue_wq(info->wqueue, &info->work, irq_work_handler, info, 0u);
+		ret = OK;
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: irq_attach_wqueue
+ *
+ * Description:
+ *   Configure the IRQ subsystem so that IRQ number 'irq' is dispatched to
+ *   'wqueue'
+ *
+ * Input Parameters:
+ *   irq - Irq num
+ *   isr - Function to be called when the IRQ occurs, called in interrupt
+ *   context.
+ *   If isr is NULL, isrthread will be called.
+ *   isrwork - called in thread context, If the isrwork is NULL,
+ *   then the ISR is being detached.
+ *   arg - privdate data
+ *   priority - isrwork pri
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+int irq_attach_wqueue(int irq, xcpt_t isr, xcpt_t isrwork,
+                      FAR void *arg, int priority)
+{
+#ifdef CONFIG_ARCH_MINIMAL_VECTORTABLE
+	static struct irq_work_info_s
+	irq_work_vector[CONFIG_ARCH_NUSER_INTERRUPTS];
+#else
+	static struct irq_work_info_s irq_work_vector[NR_IRQS];
+#endif
+
+	FAR struct irq_work_info_s *info;
+	int ret = OK;
+#if NR_IRQS > 0
+	int ndx = IRQ_TO_NDX(irq);
+	if (ndx < 0) {
+		ret = ndx;
+	} else {
+		/* If the isrwork is NULL, then the ISR is being detached. */
+
+		info = &irq_work_vector[ndx];
+
+		if (isrwork == NULL) {
+			irq_detach(irq);
+			info->isrwork = NULL;
+			info->handler = NULL;
+			info->arg     = NULL;
+			info->wqueue  = NULL;
+		} else {
+			info->isrwork = isrwork;
+			info->handler = isr;
+			info->arg     = arg;
+			info->irq     = irq;
+			if (info->wqueue == NULL) {
+				info->wqueue = irq_get_wqueue(priority);
+			}
+
+			irq_attach(irq, irq_default_handler, info);
+		}
+	}
+#endif /* NR_IRQS */
+
+	return ret;
+}

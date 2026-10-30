@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * wqueue/kwqueue/kwork_queue.c
- * 
- *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * sched/wqueue/kwork_queue.c
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * SPDX-License-Identifier: Apache-2.0
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -56,63 +43,39 @@
 
 #include <tinyara/config.h>
 
-#include <sys/types.h>
 #include <stdint.h>
-#include <queue.h>
 #include <assert.h>
 #include <errno.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include <tinyara/clock.h>
+#include <tinyara/list.h>
 #include <tinyara/wqueue.h>
 
-#include "wqueue.h"
+#include "wqueue/wqueue.h"
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#ifdef CONFIG_SCHED_WORKQUEUE
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: work_queue
+ * Name: work_queue_next/work_queue_next_wq
  *
  * Description:
- *   Queue kernel-mode work to be performed at a later time.  All queued work
- *   will be performed on the worker thread of of execution (not the caller's).
+ *   Queue work to be performed at a later time based on the last expiration
+ *   time. This function must be called in the workqueue callback.
  *
- *   The work structure is allocated by caller, but completely managed by
- *   the work queue logic.  The caller should never modify the contents of
- *   the work queue structure; the caller should not call work_queue()
- *   again until either (1) the previous work has been performed and removed
- *   from the queue, or (2) work_cancel() has been called to cancel the work
- *   and remove it from the work queue.
- *
- * Input parameters:
- *   qid    - The work queue ID (index)
+ * Input Parameters:
+ *   qid    - The work queue ID (must be HPWORK or LPWORK)
+ *   wqueue - The work queue handle
  *   work   - The work structure to queue
- *   worker - The worker callback to be invoked.  The callback will invoked
- *            on the worker thread of execution.
- *   arg    - The argument that will be passed to the workder callback when
- *            int is invoked.
+ *   worker - The worker callback to be invoked.  The callback will be
+ *            invoked on the worker thread of execution.
+ *   arg    - The argument that will be passed to the worker callback when
+ *            it is invoked.
  *   delay  - Delay (in clock ticks) from the time queue until the worker
  *            is invoked. Zero means to perform the work immediately.
  *
@@ -121,36 +84,153 @@
  *
  ****************************************************************************/
 
-int work_queue(int qid, FAR struct work_s *work, worker_t worker, FAR void *arg, clock_t delay)
+int work_queue_next_wq(FAR struct kwork_wqueue_s *wqueue,
+                       FAR struct work_s *work, worker_t worker,
+                       FAR void *arg, clock_t delay)
 {
-#if defined(CONFIG_SCHED_HPWORK) || defined(CONFIG_SCHED_LPWORK)
-	int result;
-#endif
-#ifdef CONFIG_SCHED_HPWORK
-	if (qid == HPWORK) {
-		/* Cancel high priority work */
+	irqstate_t flags;
 
-		struct hp_wqueue_s *hwq = get_hpwork();
-		result = work_qqueue((FAR struct wqueue_s *)hwq, work, worker, arg, delay);
-		if (result != OK) {
-			return result;
-		}
-		return work_signal(HPWORK);
-	} else
-#endif
-#ifdef CONFIG_SCHED_LPWORK
-		if (qid == LPWORK) {
-			/* Cancel low priority work */
+	if (wqueue == NULL || work == NULL || worker == NULL ||
+	    delay > WDOG_MAX_DELAY) {
+		return -EINVAL;
+	}
 
-			struct lp_wqueue_s *lwq = get_lpwork();
-			result = work_qqueue((FAR struct wqueue_s *)lwq, work, worker, arg, delay);
-			if (result != OK) {
-				return result;
-			}
-			return work_signal(LPWORK);
-		} else
-#endif
-		{
-			return -EINVAL;
+	/* Initialize the work structure. */
+
+	work->worker = worker; /* Work callback. non-NULL means queued */
+	work->arg    = arg;    /* Callback argument */
+	work->qtime += delay;  /* Expected time based on last expiration time */
+
+	flags = spin_lock_irqsave(&wqueue->lock);
+
+	if (delay) {
+		/* Insert to the pending list of the wqueue. */
+
+		if (work_insert_pending(wqueue, work)) {
+			/* Start the timer if the work is the earliest expired work. */
+
+			wd_start_abstick(&wqueue->timer, work->qtime,
+			                 work_timer_expired, (wdparm_t)wqueue);
 		}
+	} else {
+		/* Insert to the expired list of the wqueue. */
+
+		list_add_tail(&wqueue->expired, &work->node);
+	}
+
+	spin_unlock_irqrestore(&wqueue->lock, flags);
+
+	if (!delay) {
+		/* Immediately wake up the worker thread. */
+
+		nxsem_post(&wqueue->sem);
+	}
+
+	return 0;
 }
+
+int work_queue_next(int qid, FAR struct work_s *work, worker_t worker,
+                    FAR void *arg, clock_t delay)
+{
+	return work_queue_next_wq(work_qid2wq(qid), work, worker, arg, delay);
+}
+
+/****************************************************************************
+ * Name: work_queue/work_queue_wq
+ *
+ * Description:
+ *   Queue work to be performed at a later time.  All queued work will be
+ *   performed on the worker thread of execution (not the caller's).
+ *
+ *   The work structure is allocated and must be initialized to all zero by
+ *   the caller.  Otherwise, the work structure is completely managed by the
+ *   work queue logic.  The caller should never modify the contents of the
+ *   work queue structure directly.  If work_queue() is called before the
+ *   previous work has been performed and removed from the queue, then any
+ *   pending work will be canceled and lost.
+ *
+ * Input Parameters:
+ *   qid    - The work queue ID (must be HPWORK or LPWORK)
+ *   wqueue - The work queue handle
+ *   work   - The work structure to queue
+ *   worker - The worker callback to be invoked.  The callback will be
+ *            invoked on the worker thread of execution.
+ *   arg    - The argument that will be passed to the worker callback when
+ *            it is invoked.
+ *   delay  - Delay (in clock ticks) from the time queue until the worker
+ *            is invoked. Zero means to perform the work immediately.
+ *
+ * Returned Value:
+ *   Zero on success, a negated errno on failure
+ *
+ ****************************************************************************/
+
+int work_queue_wq(FAR struct kwork_wqueue_s *wqueue,
+                  FAR struct work_s *work, worker_t worker,
+                  FAR void *arg, clock_t delay)
+{
+	irqstate_t flags;
+	clock_t expected;
+	bool retimer;
+
+	if (wqueue == NULL || work == NULL || worker == NULL ||
+	    delay > WDOG_MAX_DELAY) {
+		return -EINVAL;
+	}
+
+	expected = clock_delay2abstick(delay);
+
+	/* Interrupts are disabled so that this logic can be called from with
+	 * task logic or from interrupt handling logic.
+	 */
+
+	flags = spin_lock_irqsave(&wqueue->lock);
+
+	/* Ensure the work has been removed. */
+
+	retimer = work_available(work) ? false : work_remove(wqueue, work);
+
+	/* Initialize the work structure. */
+
+	work->worker = worker;   /* Work callback. non-NULL means queued */
+	work->arg    = arg;      /* Callback argument */
+	work->qtime  = expected; /* Expected time */
+
+	if (delay) {
+		/* Insert to the pending list of the wqueue. */
+
+		if (work_insert_pending(wqueue, work)) {
+			/* Start the timer if the work is the earliest expired work. */
+
+			retimer = false;
+			wd_start_abstick(&wqueue->timer, work->qtime,
+			                 work_timer_expired, (wdparm_t)wqueue);
+		}
+	} else {
+		/* Insert to the expired list of the wqueue. */
+
+		list_add_tail(&wqueue->expired, &work->node);
+	}
+
+	if (retimer) {
+		work_timer_reset(wqueue);
+	}
+
+	spin_unlock_irqrestore(&wqueue->lock, flags);
+
+	if (!delay) {
+		/* Immediately wake up the worker thread. */
+
+		nxsem_post(&wqueue->sem);
+	}
+
+	return 0;
+}
+
+int work_queue(int qid, FAR struct work_s *work, worker_t worker,
+               FAR void *arg, clock_t delay)
+{
+	return work_queue_wq(work_qid2wq(qid), work, worker, arg, delay);
+}
+
+#endif /* CONFIG_SCHED_WORKQUEUE */

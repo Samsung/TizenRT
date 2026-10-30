@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/semaphore/sem_setprotocol.c
+ * sched/semaphore/sem_setprotocol.c
  *
- *   Copyright (C) 2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -59,8 +46,6 @@
 #include <assert.h>
 #include <errno.h>
 
-#include <tinyara/semaphore.h>
-
 #include "semaphore/semaphore.h"
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
@@ -70,80 +55,73 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Function: sem_setprotocol
+ * Name: nxsem_set_protocol
  *
  * Description:
  *    Set semaphore protocol attribute.
  *
- *    One particularly important use of this furnction is when a semaphore
+ *    One particularly important use of this function is when a semaphore
  *    is used for inter-task communication like:
  *
  *      TASK A                 TASK B
- *      sem_init(sem, 0, 0);
- *      sem_wait(sem);
- *                             sem_post(sem);
+ *      nxsem_init(sem, 0, 0);
+ *      nxsem_wait(sem);
+ *                             nxsem_post(sem);
  *      Awakens as holder
  *
  *    In this case priority inheritance can interfere with the operation of
  *    the semaphore.  The problem is that when TASK A is restarted it is a
- *    holder of the semaphore.  However, it never calls sem_post(sem) so it
+ *    holder of the semaphore.  However, it never calls nxsem_post(sem) so it
  *    becomes *permanently* a holder of the semaphore and may have its
  *    priority boosted when any other task tries to acquire the semaphore.
  *
- *    The fix is to call sem_setprotocol(SEM_PRIO_NONE) immediately after
+ *    The fix is to call nxsem_set_protocol(SEM_PRIO_NONE) immediately after
  *    the sem_init() call so that there will be no priority inheritance
  *    operations on this semaphore.
  *
- * Parameters:
+ * Input Parameters:
  *    sem      - A pointer to the semaphore whose attributes are to be
  *               modified
  *    protocol - The new protocol to use
  *
- * Return Value:
- *   0 if successful.  Otherwise, -1 is returned and the errno value is set
- *   appropriately.
+ * Returned Value:
+ *   This is an internal OS interface and should not be used by applications.
+ *   It follows the NuttX internal error return policy:  Zero (OK) is
+ *   returned on success.  A negated errno value is returned on failure.
  *
  ****************************************************************************/
 
-int sem_setprotocol(FAR sem_t *sem, int protocol)
+int nxsem_set_protocol(FAR sem_t *sem, int protocol)
 {
-	int errcode = EINVAL;
+	DEBUGASSERT(sem != NULL);
 
-	if ((sem != NULL) && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
-		switch (protocol) {
-		case SEM_PRIO_NONE:
-			/* Disable priority inheritance */
+	switch (protocol & SEM_PRIO_MASK) {
+	case SEM_PRIO_NONE:
 
-			sem->flags |= PRIOINHERIT_FLAGS_DISABLE;
+		/* Remove any current holders */
 
-#ifndef CONFIG_BINMGR_RECOVERY
-			/* Remove any current holders if only fault recovery is disabled
-			 * because it is necessasary to keep a list of holders for fault recovery. */
+		nxsem_destroyholder(sem);
+		break;
 
-			sem_destroyholder(sem);
+	case SEM_PRIO_INHERIT:
+
+		break;
+
+	case SEM_PRIO_PROTECT:
+#ifdef CONFIG_PRIORITY_PROTECT
+		break;
+#else
+		/* Not yet supported */
+
+		return -ENOTSUP;
 #endif
-			return OK;
 
-		case SEM_PRIO_INHERIT:
-			/* Enable priority inheritance (dangerous) */
-
-			sem->flags &= ~PRIOINHERIT_FLAGS_DISABLE;
-			return OK;
-
-		case SEM_PRIO_PROTECT:
-			/* Not yet supported */
-
-			errcode = ENOSYS;
-			break;
-
-		default:
-			errcode = EINVAL;
-			break;
-		}
+	default:
+		return -EINVAL;
 	}
 
-	set_errno(errcode);
-	return ERROR;
+	sem->flags = protocol;
+	return OK;
 }
 
 #endif /* CONFIG_PRIORITY_INHERITANCE */

@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/semaphore/sem_wait.c
+ * sched/semaphore/sem_wait.c
  *
- *   Copyright (C) 2007-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -57,202 +44,251 @@
 #include <tinyara/config.h>
 
 #include <stdbool.h>
-#include <semaphore.h>
 #include <errno.h>
 #include <assert.h>
-#include <debug.h>
+
+#include <tinyara/init.h>
+#include <tinyara/irq.h>
 #include <tinyara/arch.h>
-#include <tinyara/cancelpt.h>
+#include <tinyara/mm/kmap.h>
 
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
-extern bool abort_mode;
-#endif
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: sem_wait
+ * Name: nxsem_wait_slow
  *
  * Description:
- *   This function attempts to lock the semaphore referenced by 'sem'.  If
- *   the semaphore value is (<=) zero, then the calling task will not return
- *   until it successfully acquires the lock.
+ *   This function attempts to lock the semaphore referenced by 'sem' in
+ *   slow mode.
  *
- * Parameters:
+ *   This is an internal OS interface.  It is functionally equivalent to
+ *   sem_wait except that:
+ *
+ *   - It is not a cancellation point, and
+ *   - It does not modify the errno value.
+ *
+ * Input Parameters:
  *   sem - Semaphore descriptor.
  *
- * Return Value:
- *   0 (OK), or -1 (ERROR) is unsuccessful
- *   If this function returns -1 (ERROR), then the cause of the failure will
- *   be reported in 'errno' as:
+ * Returned Value:
+ *   This is an internal OS interface and should not be used by applications.
+ *   It follows the NuttX internal error return policy:  Zero (OK) is
+ *   returned on success.  A negated errno value is returned on failure.
+ *   Possible returned errors:
+ *
  *   - EINVAL:  Invalid attempt to get the semaphore
  *   - EINTR:   The wait was interrupted by the receipt of a signal.
  *
- * Assumptions:
- *
  ****************************************************************************/
 
-int sem_wait(FAR sem_t *sem)
+int nxsem_wait_slow(FAR sem_t *sem)
 {
 	FAR struct tcb_s *rtcb = this_task();
-	irqstate_t saved_state;
-	int ret = ERROR;
-	size_t caller_retaddr = (size_t)GET_RETURN_ADDRESS();
-	/* This API should not be called from interrupt handlers */
-#if defined(CONFIG_DEBUG_DISPLAY_SYMBOL) || defined(CONFIG_BINMGR_RECOVERY)
-	DEBUGASSERT(up_interrupt_context() == false || abort_mode);
-
-	if (abort_mode && up_interrupt_context() == true) {
-		return OK;
-	}
-#else
-	DEBUGASSERT(up_interrupt_context() == false);
-#endif
-
-	/* Return EINVAL for NULL semaphore instead of crashing */
-	if (sem == NULL) {
-		set_errno(EINVAL);
-		return ERROR;
-	}
+	irqstate_t flags;
+	int ret = OK;
+	bool unlocked;
+	FAR struct tcb_s *htcb = NULL;
+	bool mutex = NXSEM_IS_MUTEX(sem);
 
 	/* The following operations must be performed with interrupts
-	 * disabled because sem_post() may be called from an interrupt
+	 * disabled because nxsem_post() may be called from an interrupt
 	 * handler.
 	 */
-	saved_state = enter_critical_section();
 
-	/* sem_wait() is a cancellation point */
-	if (enter_cancellation_point()) {
-		/* If there is a pending cancellation, then do not perform
-		 * the wait. Exit now with ECANCELED.
+	flags = enter_critical_section();
+
+	/* Make sure we were supplied with a valid semaphore. */
+
+	/* Check if the lock is available */
+
+	if (mutex) {
+		uint32_t mholder;
+
+		/* We lock the mutex for us by setting the blocks bit,
+		 * this is all that is needed if we block
 		 */
-		set_errno(ECANCELED);
-		leave_cancellation_point();
-		leave_critical_section(saved_state);
-		return ERROR;
+
+		mholder = atomic_fetch_or(NXSEM_MHOLDER(sem), NXSEM_MBLOCKING_BIT);
+
+		/* Avoid mutex recursion, which is not allowed. */
+
+		DEBUGASSERT((mholder & (~NXSEM_MBLOCKING_BIT)) != nxsched_gettid());
+
+		if (NXSEM_MACQUIRED(mholder)) {
+			/* htcb gets NULL if
+			 * - the only holder did exit (without posting first)
+			 * - the mutex was reset before
+			 * In both cases we simply acquire the mutex, thus recovering
+			 * from these situations.
+			 */
+
+			htcb = nxsched_get_tcb(mholder & (~NXSEM_MBLOCKING_BIT));
+		}
+
+		unlocked = htcb == NULL;
+	} else {
+		unlocked = atomic_fetch_sub(NXSEM_COUNT(sem), 1) > 0;
 	}
 
-	/* Make sure we were supplied with a valid semaphore */
-	if ((sem != NULL) && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
+	if (unlocked) {
+		/* It is, let the task take the semaphore. */
 
-		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
-			ASSERT_INFO(sem->semcount < 2, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x\n", sem, sem->semcount, sem->flags, caller_retaddr);
-#if defined(SAVE_SEM_HOLDER) && defined(CONFIG_DEBUG)
-			/* Detect self-deadlock before changing the count or wait state. */
-			FAR struct semholder_s *holder = sem_findholder(sem, rtcb);
-			DEBUGASSERT_INFO(holder == NULL || holder->counts <= 0, "mutex already held: sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x\n", sem, sem->semcount, sem->flags, caller_retaddr);
+#ifdef CONFIG_PRIORITY_PROTECT
+		ret = nxsem_protect_wait(sem);
+		if (ret < 0) {
+			if (mutex) {
+				atomic_set(NXSEM_MHOLDER(sem), NXSEM_NO_MHOLDER);
+			} else {
+				atomic_fetch_add(NXSEM_COUNT(sem), 1);
+			}
+
+			leave_critical_section(flags);
+			return ret;
+		}
 #endif
-		}
 
-		/* Check if the lock is available */
-
-		if (sem->semcount > 0) {
-			/* It is, let the task take the semaphore. */
-
-			sem->semcount--;
-			sem_addholder(sem);
-			rtcb->waitsem = NULL;
-			ret = OK;
-		}
-
-		/* The semaphore is NOT available, We will have to block the
-		 * current thread of execution.
+		/* For mutexes, we only add the holder to the tasks list at the
+		 * time when a task blocks on the mutex, for priority restoration
 		 */
 
-		else {
-			/* First, verify that the task is not already waiting on a
-			 * semaphore
-			 */
+		if (!mutex) {
+			nxsem_add_holder(sem);
+		}
+	}
 
-			ASSERT(rtcb->waitsem == NULL);
+	/* The semaphore is NOT available, We will have to block the
+	 * current thread of execution.
+	 */
 
-			/* Handle the POSIX semaphore (but don't set the owner yet) */
+	else {
+#ifdef CONFIG_PRIORITY_INHERITANCE
+		uint8_t prioinherit = sem->flags & SEM_PRIO_MASK;
+#endif
 
-			sem->semcount--;
+		/* First, verify that the task is not already waiting on a
+		 * semaphore
+		 */
 
-			/* Save the waited on semaphore in the TCB */
+		DEBUGASSERT(rtcb->waitobj == NULL);
 
-			rtcb->waitsem = sem;
+#ifdef CONFIG_MM_KMAP
+		sem = kmm_map_user(rtcb, sem, sizeof(*sem));
+#endif
 
-			/* If priority inheritance is enabled, then check the priority of
-			 * the holder of the semaphore.
-			 */
+		/* Save the waited on semaphore in the TCB */
+
+		rtcb->waitobj = sem;
+
+		/* In case of a mutex, store the previous holder in the task's list */
+
+		if (mutex) {
+			nxsem_add_holder_tcb(htcb, sem);
+		}
+
+		/* If priority inheritance is enabled, then check the priority of
+		 * the holder of the semaphore.
+		 */
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
+		if (prioinherit == SEM_PRIO_INHERIT) {
 			/* Disable context switching.  The following operations must be
 			 * atomic with regard to the scheduler.
 			 */
 
 			sched_lock();
 
-			if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
-				/* Boost the priority of any threads holding a count on the
-				 * semaphore.
-				 */
-				sem_boostpriority(sem);
-			}
-#endif
-			/* Add the TCB to the prioritized semaphore wait queue */
-
-			set_errno(0);
-			up_block_task(rtcb, TSTATE_WAIT_SEM);
-
-			/* When we resume at this point, either (1) the semaphore has been
-			 * assigned to this thread of execution, or (2) the semaphore wait
-			 * has been interrupted by a signal or a timeout.  We can detect these
-			 * latter cases be examining the errno value.
-			 *
-			 * In the event that the semaphore wait was interrupted by a signal or
-			 * a timeout, certain semaphore clean-up operations like semcount recovery
-			 * have already been performed (see sem_waitirq.c). Specifically:
-			 * - sem_canceled() was called to restore the priority of all threads
-			 *   that hold a reference to the semaphore,
-			 * - The semaphore count was decremented, and
-			 * - tcb->waitsem was nullifed.
-			 *
-			 * It is necesaary to do these things in sem_waitirq.c because a long
-			 * time may elapse between the time that the signal was issued and
-			 * this thread is awakened and this leaves a door open to several
-			 * race conditions.
+			/* Boost the priority of any threads holding a count on the
+			 * semaphore.
 			 */
 
-			if (get_errno() != EINTR && get_errno() != ETIMEDOUT) {
-				/* Not awakened by a signal or a timeout... We hold the semaphore */
-				ret = OK;
-			}
-#ifdef CONFIG_PRIORITY_INHERITANCE
-			sched_unlock();
-#endif
+			nxsem_boost_priority(sem);
 		}
-	} else {
-		set_errno(EINVAL);
+#endif
+
+		/* Set the errno value to zero (preserving the original errno)
+		 * value).  We reuse the per-thread errno to pass information
+		 * between sem_waitirq() and this functions.
+		 */
+
+		rtcb->errcode = OK;
+
+		/* Add the TCB to the prioritized semaphore wait queue, after
+		 * checking this is not the idle task - descheduling that
+		 * isn't going to end well.
+		 */
+
+		DEBUGASSERT(!is_idle_task(rtcb));
+
+		/* Remove the tcb task from the running list. */
+
+		nxsched_remove_self(rtcb);
+
+		/* Add the task to the specified blocked task list */
+
+		rtcb->task_state = TSTATE_WAIT_SEM;
+		nxsched_add_prioritized(rtcb, SEM_WAITLIST(sem));
+
+		/* Now, perform the context switch */
+
+		up_switch_context(this_task(), rtcb);
+
+		/* When we resume at this point, either (1) the semaphore has been
+		 * assigned to this thread of execution, or (2) the semaphore wait
+		 * has been interrupted by a signal or a timeout.  We can detect
+		 * these latter cases be examining the per-thread errno value.
+		 *
+		 * In the event that the semaphore wait was interrupted by a
+		 * signal or a timeout, certain semaphore clean-up operations have
+		 * already been performed (see sem_waitirq.c).  Specifically:
+		 *
+		 * - nxsem_canceled() was called to restore the priority of all
+		 *   threads that hold a reference to the semaphore,
+		 * - The semaphore count was decremented, and
+		 * - tcb->waitobj was nullifed.
+		 *
+		 * It is necessary to do these things in sem_waitirq.c because a
+		 * long time may elapse between the time that the signal was issued
+		 * and this thread is awakened and this leaves a door open to
+		 * several race conditions.
+		 */
+
+		/* Check if an error occurred while we were sleeping.  Expected
+		 * errors include EINTR meaning that we were awakened by a signal
+		 * or ETIMEDOUT meaning that the timer expired for the case of
+		 * sem_timedwait().
+		 *
+		 * If we were not awakened by a signal or a timeout, then
+		 * nxsem_add_holder() was called by logic in sem_wait() fore this
+		 * thread was restarted.
+		 */
+
+		ret = rtcb->errcode != OK ? -rtcb->errcode : OK;
+
+#ifdef CONFIG_MM_KMAP
+		kmm_unmap(sem);
+#endif
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+		if (prioinherit != 0) {
+			sched_unlock();
+		}
+#endif
 	}
 
-	leave_cancellation_point();
-	leave_critical_section(saved_state);
+	/* If this now holds the mutex, set the holder TID and the lock bit */
+
+	if (mutex && ret == OK) {
+		uint32_t blocking_bit =
+		  dq_empty(SEM_WAITLIST(sem)) ? 0 : NXSEM_MBLOCKING_BIT;
+
+		atomic_set(NXSEM_MHOLDER(sem), ((uint32_t)rtcb->pid) | blocking_bit);
+	}
+
+	leave_critical_section(flags);
 	return ret;
 }

@@ -18,67 +18,51 @@
 ############################################################################
 # kernel/Makefile
 #
-#   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
-#   Author: Gregory Nutt <gnutt@nuttx.org>
+# SPDX-License-Identifier: Apache-2.0
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
 #
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-# 3. Neither the name NuttX nor the names of its contributors may be
-#    used to endorse or promote products derived from this software
-#    without specific prior written permission.
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
 #
 ############################################################################
 
--include $(TOPDIR)/Make.defs
+include $(TOPDIR)/Make.defs
 
-ASRCS =
-CSRCS =
-
-VPATH =
-DEPPATH = --dep-path .
-
-include init/Make.defs
-include irq/Make.defs
-include paging/Make.defs
-include group/Make.defs
-include sched/Make.defs
-include task/Make.defs
-include errno/Make.defs
-include wdog/Make.defs
-include semaphore/Make.defs
-include binary_manager/Make.defs
-include signal/Make.defs
-include pthread/Make.defs
-include messaging/Make.defs
-include mqueue/Make.defs
+include addrenv/Make.defs
 include clock/Make.defs
-include timer/Make.defs
 include environ/Make.defs
-include debug/Make.defs
-include preference/Make.defs
-include log_dump/Make.defs
-include silent_reboot/Make.defs
+include event/Make.defs
+include group/Make.defs
+include init/Make.defs
+include instrument/Make.defs
+include irq/Make.defs
+include misc/Make.defs
+include mqueue/Make.defs
+include module/Make.defs
+include paging/Make.defs
+include pthread/Make.defs
+include sched/Make.defs
+include semaphore/Make.defs
+include signal/Make.defs
+include task/Make.defs
+include timer/Make.defs
+include tls/Make.defs
+include wdog/Make.defs
+include wqueue/Make.defs
+include hrtimer/Make.defs
+
+CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)kernel
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
 COBJS = $(CSRCS:.c=$(OBJEXT))
@@ -86,7 +70,7 @@ COBJS = $(CSRCS:.c=$(OBJEXT))
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
 
-BIN = libkernel$(LIBEXT)
+BIN = libsched$(LIBEXT)
 
 all: $(BIN)
 .PHONY: context depend clean distclean
@@ -100,8 +84,12 @@ $(COBJS): %$(OBJEXT): %.c
 $(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
-.depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+makedepfile: $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds)
+	$(call CATFILE, Make.dep, $^)
+	$(call DELFILE, $^)
+
+.depend: Makefile $(SRCS) $(TOPDIR)$(DELIM).config
+	$(Q) $(MAKE) makedepfile
 	$(Q) touch $@
 
 depend: .depend
@@ -111,6 +99,7 @@ clean:
 	$(call CLEAN)
 
 distclean: clean
+	$(call DELFILE, $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds))
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
 

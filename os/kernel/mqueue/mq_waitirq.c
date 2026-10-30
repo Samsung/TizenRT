@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/mqueue/mq_waitirq.c
+ * sched/mqueue/mq_waitirq.c
  *
- *   Copyright (C) 2007-2009, 2011, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -57,101 +44,82 @@
 #include <tinyara/config.h>
 
 #include <sched.h>
+#include <assert.h>
 #include <errno.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include <tinyara/mqueue.h>
 
 #include "mqueue/mqueue.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#include "sched/sched.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: mq_waitirq
+ * Name: nxmq_wait_irq
  *
  * Description:
  *   This function is called when a signal or a timeout is received by a
  *   task that is waiting on a message queue -- either for a queue to
- *   becoming not full (on mq_send) or not empty (on mq_receive).
+ *   becoming not full (on mq_send and friends) or not empty (on mq_receive
+ *   and friends).
+ *   Note: this function should used within critical_section
  *
- * Parameters:
+ * Input Parameters:
  *   wtcb - A pointer to the TCB of the task that is waiting on a message
  *          queue, but has received a signal instead.
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  * Assumptions:
  *
  ****************************************************************************/
 
-void mq_waitirq(FAR struct tcb_s *wtcb, int errcode)
+void nxmq_wait_irq(FAR struct tcb_s *wtcb, int errcode)
 {
+	FAR struct tcb_s *rtcb = this_task();
 	FAR struct mqueue_inode_s *msgq;
-	irqstate_t saved_state;
-
-	/* Disable interrupts.  This is necessary because an interrupt handler may
-	 * attempt to send a message while we are doing this.
-	 */
-
-	saved_state = enter_critical_section();
 
 	/* It is possible that an interrupt/context switch beat us to the punch and
 	 * already changed the task's state.  NOTE:  The operations within the if
-	 * are safe because interrupts are always disabled with the msgwaitq,
+	 * are safe because interrupts are always disabled with the waitobj,
 	 * nwaitnotempty, and nwaitnotfull fields are modified.
 	 */
 
-	if (wtcb->task_state == TSTATE_WAIT_MQNOTEMPTY || wtcb->task_state == TSTATE_WAIT_MQNOTFULL) {
-		/* Get the message queue associated with the waiter from the TCB */
+	/* Get the message queue associated with the waiter from the TCB */
 
-		msgq = wtcb->msgwaitq;
-		DEBUGASSERT(msgq);
+	msgq = wtcb->waitobj;
+	DEBUGASSERT(msgq);
 
-		wtcb->msgwaitq = NULL;
+	/* Decrement the count of waiters and cancel the wait */
 
-		/* Decrement the count of waiters and cancel the wait */
-
-		if (wtcb->task_state == TSTATE_WAIT_MQNOTEMPTY) {
-			DEBUGASSERT(msgq->nwaitnotempty > 0);
-			msgq->nwaitnotempty--;
-		} else {
-			DEBUGASSERT(msgq->nwaitnotfull > 0);
-			msgq->nwaitnotfull--;
-		}
-
-		/* Mark the errno value for the thread. */
-
-		wtcb->pterrno = errcode;
-
-		/* Restart the task. */
-
-		up_unblock_task(wtcb);
+	if (wtcb->task_state == TSTATE_WAIT_MQNOTEMPTY) {
+		DEBUGASSERT(msgq->cmn.nwaitnotempty > 0);
+		msgq->cmn.nwaitnotempty--;
+		dq_rem((FAR dq_entry_t *)wtcb, MQ_WNELIST(msgq->cmn));
+	} else {
+		DEBUGASSERT(msgq->cmn.nwaitnotfull > 0);
+		msgq->cmn.nwaitnotfull--;
+		dq_rem((FAR dq_entry_t *)wtcb, MQ_WNFLIST(msgq->cmn));
 	}
 
-	/* Interrupts may now be enabled. */
+	/* Indicate that the wait is over. */
 
-	leave_critical_section(saved_state);
+	wtcb->waitobj = NULL;
+
+	/* Mark the error value for the thread. */
+
+	wtcb->errcode = errcode;
+
+	/* Add the task to ready-to-run task list and
+	 * perform the context switch if one is needed
+	 */
+
+	if (nxsched_add_readytorun(wtcb)) {
+		up_switch_context(this_task(), rtcb);
+	}
 }

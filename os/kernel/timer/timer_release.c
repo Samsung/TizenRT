@@ -15,81 +15,58 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/********************************************************************************
- * kernel/timer/timer_release.c
+/****************************************************************************
+ * sched/timer/timer_release.c
  *
- *   Copyright (C) 2008 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ********************************************************************************/
+ ****************************************************************************/
 
-/********************************************************************************
+/****************************************************************************
  * Included Files
- ********************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#include <queue.h>
 #include <errno.h>
 
+#include <tinyara/irq.h>
+#include <tinyara/queue.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/spinlock.h>
 
 #include "timer/timer.h"
 
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
 
-/********************************************************************************
- * Definitions
- ********************************************************************************/
-
-/********************************************************************************
- * Private Data
- ********************************************************************************/
-
-/********************************************************************************
- * Public Data
- ********************************************************************************/
-
-/********************************************************************************
+/****************************************************************************
  * Private Functions
- ********************************************************************************/
+ ****************************************************************************/
 
-/********************************************************************************
+/****************************************************************************
  * Name: timer_free
  *
  * Description:
- *   Remove the timer from the allocated timer list and free it or return it to
- *   the free list (depending on whether or not the timer is one of the
+ *   Remove the timer from the allocated timer list and free it or return it
+ *   to the free list (depending on whether or not the timer is one of the
  *   preallocated timers)
  *
- ********************************************************************************/
+ ****************************************************************************/
 
 static inline void timer_free(struct posix_timer_s *timer)
 {
@@ -97,82 +74,82 @@ static inline void timer_free(struct posix_timer_s *timer)
 
 	/* Remove the timer from the allocated list */
 
-	flags = enter_critical_section();
-	sq_rem((FAR sq_entry_t *)timer, (sq_queue_t *)&g_alloctimers);
+	flags = spin_lock_irqsave(&g_locktimers);
+	sq_rem((FAR sq_entry_t *)timer, (FAR sq_queue_t *)&g_alloctimers);
 
 	/* Return it to the free list if it is one of the preallocated timers */
 
 #if CONFIG_PREALLOC_TIMERS > 0
-	if ((timer->pt_flags & PT_FLAGS_PREALLOCATED) != 0) {
+	if ((timer->pt_flags & PT_FLAGS_PREALLOCATED) != 0u) {
 		sq_addlast((FAR sq_entry_t *)timer, (FAR sq_queue_t *)&g_freetimers);
-		leave_critical_section(flags);
+		spin_unlock_irqrestore(&g_locktimers, flags);
 	} else
 #endif
 	{
 		/* Otherwise, return it to the heap */
 
-		leave_critical_section(flags);
-		sched_kfree(timer);
+		spin_unlock_irqrestore(&g_locktimers, flags);
+		kmm_free(timer);
 	}
 }
 
-/********************************************************************************
+/****************************************************************************
  * Public Functions
- ********************************************************************************/
+ ****************************************************************************/
 
-/********************************************************************************
+/****************************************************************************
  * Name: timer_release
  *
  * Description:
- *   timer_release implements the heart of timer_delete.  It is private to the
- *   the OS internals and differs only in that return value of 1 means that the
- *   timer was not actually deleted.
+ *   timer_release implements the heart of timer_delete.  It is private to
+ *   the OS internals and differs only in that return value of 1 means that
+ *   the timer was not actually deleted.
  *
- * Parameters:
+ * Input Parameters:
  *   timer - The per-thread timer, previously created by the call to
  *     timer_create(), to be deleted.
  *
- * Return Value:
- *   If the call succeeds, timer_release() will return 0 (OK) or 1 (meaning that
- *   the timer is still valid).  Otherwise, the function will return a negated errno:
+ * Returned Value:
+ *   If the call succeeds, timer_release() will return 0 (OK) or 1 (meaning
+ *   that the timer is still valid).  Otherwise, the function will return a
+ *   negated errno value:
  *
  *   -EINVAL - The timer specified timerid is not valid.
  *
- ********************************************************************************/
+ ****************************************************************************/
 
 int timer_release(FAR struct posix_timer_s *timer)
 {
+	int ret = OK;
+
 	/* Some sanity checks */
 
-	if (!timer) {
-		return -EINVAL;
+	if (timer == NULL) {
+		ret = -EINVAL;
 	}
 
 	/* Release one reference to timer.  Don't delete the timer until the count
 	 * would decrement to zero.
 	 */
 
-	if (timer->pt_crefs > 1) {
+	else if (timer->pt_crefs > 1u) {
 		timer->pt_crefs--;
-		return 1;
+		ret = 1;
+	} else {
+		/* Cancel the underlying watchdog instance */
+
+		wd_cancel(&timer->pt_wdog);
+
+		/* Cancel any pending notification */
+
+		nxsig_cancel_notification(&timer->pt_work);
+
+		/* Release the timer structure */
+
+		timer_free(timer);
 	}
 
-	/* Free the underlying watchdog instance (the timer will be canceled by the
-	 * watchdog logic before it is actually deleted)
-	 */
-
-	(void)wd_delete(timer->pt_wdog);
-
-	/* Mark this timer is not in use before releasing the timer.
-	 * This prevents returning some value when timer API is called after release
-	 */
-
-	timer->pt_flags &= ~PT_FLAGS_INUSE;
-
-	/* Release the timer structure */
-
-	timer_free(timer);
-	return OK;
+	return ret;
 }
 
-#endif							/* CONFIG_DISABLE_POSIX_TIMERS */
+#endif /* CONFIG_DISABLE_POSIX_TIMERS */

@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/irq/irq_dispatch.c
+ * sched/irq/irq_dispatch.c
  *
- *   Copyright (C) 2007, 2008 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -59,28 +46,57 @@
 #include <debug.h>
 #include <tinyara/arch.h>
 #include <tinyara/irq.h>
+#include <tinyara/mm/mm.h>
+#include <tinyara/random.h>
+#include <tinyara/sched_note.h>
 
 #include "irq/irq.h"
+#include "clock/clock.h"
+#include "sched/sched.h"
 
 /****************************************************************************
- * Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
 
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
+#ifdef CONFIG_ARCH_MINIMAL_VECTORTABLE
+#  define NUSER_IRQS CONFIG_ARCH_NUSER_INTERRUPTS
+#else
+#  define NUSER_IRQS NR_IRQS
+#endif
 
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
+/* CALL_VECTOR - Call the interrupt service routine attached to this
+ * interrupt request
+ */
 
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
+#ifdef CONFIG_SCHED_IRQMONITOR
+#  define CALL_VECTOR(ndx, vector, irq, context, arg) \
+     do \
+       { \
+         clock_t start; \
+         clock_t elapsed; \
+         start = perf_gettime(); \
+         vector(irq, context, arg); \
+         elapsed = perf_gettime() - start; \
+         if (ndx < NUSER_IRQS) \
+           { \
+             g_irqvector[ndx].count++; \
+             if (elapsed > g_irqvector[ndx].time) \
+               { \
+                 g_irqvector[ndx].time = elapsed; \
+               } \
+           } \
+         if (CONFIG_SCHED_CRITMONITOR_MAXTIME_IRQ > 0 && \
+             elapsed > CONFIG_SCHED_CRITMONITOR_MAXTIME_IRQ) \
+           { \
+             CRITMONITOR_PANIC("IRQ %d(%p), execute time too long %ju\n", \
+                               irq, vector, (uintmax_t)elapsed); \
+           } \
+       } \
+     while (0)
+#else
+#  define CALL_VECTOR(ndx, vector, irq, context, arg) \
+     vector(irq, context, arg)
+#endif /* CONFIG_SCHED_IRQMONITOR */
 
 /****************************************************************************
  * Public Functions
@@ -90,35 +106,72 @@
  * Name: irq_dispatch
  *
  * Description:
- *   This function must be called from the achitecture-specific logic in
+ *   This function must be called from the architecture-specific logic in
  *   order to dispatch an interrupt to the appropriate, registered handling
  *   logic.
  *
- ***************************************************************************/
+ ****************************************************************************/
+
 void irq_dispatch(int irq, FAR void *context)
 {
-	xcpt_t vector;
-	FAR void *arg;
-
-	/* Perform some sanity checks */
+#ifdef CONFIG_DEBUG_MM
+	struct tcb_s *rtcb = this_task();
+#endif
+	xcpt_t vector = irq_unexpected_isr;
+	FAR void *arg = NULL;
+	int ndx = IRQ_TO_NDX(irq);
 
 #if NR_IRQS > 0
-	if ((unsigned)irq >= NR_IRQS || g_irqvector[irq].handler == NULL) {
-		vector = irq_unexpected_isr;
-		arg    = NULL;
-	} else {
-		vector = g_irqvector[irq].handler;
-		arg    = g_irqvector[irq].arg;
-#ifdef CONFIG_DEBUG_IRQ_INFO
-		g_irqvector[irq].count++;
+	if (ndx >= 0) {
+#ifdef CONFIG_ARCH_MINIMAL_VECTORTABLE
+		if (ndx < CONFIG_ARCH_NUSER_INTERRUPTS) {
+			if (g_irqvector[ndx].handler) {
+				vector = g_irqvector[ndx].handler;
+				arg    = g_irqvector[ndx].arg;
+			}
+		}
+#else
+		if (g_irqvector[ndx].handler) {
+			vector = g_irqvector[ndx].handler;
+			arg    = g_irqvector[ndx].arg;
+		}
 #endif
 	}
-#else
-	vector = irq_unexpected_isr;
-	arg    = NULL;
+#endif
+
+#ifdef CONFIG_CRYPTO_RANDOM_POOL_COLLECT_IRQ_RANDOMNESS
+	/* Add interrupt timing randomness to entropy pool */
+
+	add_irq_randomness(irq);
+#endif
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION_IRQHANDLER
+	/* Notify that we are entering into the interrupt handler */
+
+	sched_note_irqhandler(irq, vector, true);
 #endif
 
 	/* Then dispatch to the interrupt handler */
 
-	vector(irq, context, arg);
+	CALL_VECTOR(ndx, vector, irq, context, arg);
+	UNUSED(ndx);
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION_IRQHANDLER
+	/* Notify that we are leaving from the interrupt handler */
+
+	sched_note_irqhandler(irq, vector, false);
+#endif
+
+#ifdef CONFIG_DEBUG_MM
+	if ((rtcb->flags & TCB_FLAG_HEAP_CHECK) ||
+	    (this_task()->flags & TCB_FLAG_HEAP_CHECK)) {
+		kmm_checkcorruption();
+	}
+#endif
+
+#if defined(CONFIG_STACKCHECK_MARGIN) && (CONFIG_STACKCHECK_MARGIN > 0) && \
+    defined(CONFIG_ARCH_INTERRUPTSTACK) && (CONFIG_ARCH_INTERRUPTSTACK > 0)
+	DEBUGASSERT(up_check_intstack(this_cpu(),
+	                              CONFIG_STACKCHECK_MARGIN) == 0);
+#endif
 }

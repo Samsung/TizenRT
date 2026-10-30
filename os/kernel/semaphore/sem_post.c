@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/semaphore/sem_post.c
+ * sched/semaphore/sem_post.c
  *
- *   Copyright (C) 2007-2009, 2012-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -57,115 +44,26 @@
 #include <tinyara/config.h>
 
 #include <limits.h>
-#include <semaphore.h>
 #include <errno.h>
 #include <sched.h>
+
+#include <tinyara/irq.h>
 #include <tinyara/arch.h>
-#include <tinyara/sched.h>
-#include <tinyara/mm/mm.h>
 
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
 /****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
-void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
-{
-	struct tcb_s *stcb = NULL;
-#ifdef SAVE_SEM_HOLDER
-	struct semholder_s *pholder = NULL;
-#endif
-
-#ifdef CONFIG_PRIORITY_INHERITANCE
-	/* Don't let any unblocked tasks run until we complete any priority
-	 * restoration steps.  Interrupts are disabled, but we do not want
-	 * the head of the read-to-run list to be modified yet.
-	 *
-	 * NOTE: If this sched_lock is called from an interrupt handler, it
-	 * will do nothing.
-	 */
-
-	sched_lock();
-#endif
-	/* If the result of of semaphore unlock is non-positive, then
-	 * there must be some task waiting for the semaphore.
-	 */
-
-	if (sem->semcount <= 0) {
-		/* Check if there are any tasks in the waiting for semaphore
-		 * task list that are waiting for this semaphore. This is a
-		 * prioritized list so the first one we encounter is the one
-		 * that we want.
-		 */
-
-		for (stcb = (FAR struct tcb_s *)g_waitingforsemaphore.head; (stcb && stcb->waitsem != sem); stcb = stcb->flink) ;
-
-		if (stcb) {
-			sem_addholder_tcb(stcb, sem);
-
-			/* It is, let the task take the semaphore */
-
-			stcb->waitsem = NULL;
-
-			/* Restart the waiting task. */
-
-			up_unblock_task(stcb);
-		}
-	}
-
-#ifdef SAVE_SEM_HOLDER
-	/* Check if we need to drop the priority of any threads holding
-	 * this semaphore.  The priority could have been boosted while they
-	 * held the semaphore.
-	 */
-
-#ifdef CONFIG_PRIORITY_INHERITANCE
-	if ((sem->flags & PRIOINHERIT_FLAGS_DISABLE) == 0) {
-		sem_restorebaseprio(stcb, htcb, sem);
-	} else {
-#endif
-		/* Free a semaphore holder directly. */
-		pholder = sem_findholder(sem, htcb);
-		if (pholder) {
-			sem_freeholder(sem, pholder);
-		}
-#ifdef CONFIG_PRIORITY_INHERITANCE
-	}
-
-	sched_unlock();
-#endif
-#endif
-
-}
 
 /****************************************************************************
- * Name: sem_post
+ * Name: nxsem_post_slow
  *
  * Description:
- *   When a task has finished with a semaphore, it will call sem_post().
- *   This function unlocks the semaphore referenced by sem by performing the
- *   semaphore unlock operation on that semaphore.
+ *   When a kernel thread has finished with a semaphore, it will call
+ *   nxsem_post().  This function unlocks the semaphore referenced by sem
+ *   by performing the semaphore unlock operation on that semaphore.
  *
  *   If the semaphore value resulting from this operation is positive, then
  *   no tasks were blocked waiting for the semaphore to become unlocked; the
@@ -173,55 +71,194 @@ void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
  *
  *   If the value of the semaphore resulting from this operation is zero,
  *   then one of the tasks blocked waiting for the semaphore shall be
- *   allowed to return successfully from its call to sem_wait().
+ *   allowed to return successfully from its call to nxsem_wait().
  *
- * Parameters:
+ * Input Parameters:
  *   sem - Semaphore descriptor
  *
- * Return Value:
- *   0 (OK) or -1 (ERROR) if unsuccessful
+ * Returned Value:
+ *   This is an internal OS interface and should not be used by applications.
+ *   It follows the NuttX internal error return policy:  Zero (OK) is
+ *   returned on success.  A negated errno value is returned on failure.
  *
  * Assumptions:
  *   This function may be called from an interrupt handler.
  *
  ****************************************************************************/
 
-int sem_post(FAR sem_t *sem)
+int nxsem_post_slow(FAR sem_t *sem)
 {
-	FAR struct tcb_s *htcb;
-	irqstate_t saved_state;
-	int ret = ERROR;
-	size_t caller_retaddr = (size_t)GET_RETURN_ADDRESS();
+	FAR struct tcb_s *stcb = NULL;
+	irqstate_t flags;
+#if defined(CONFIG_PRIORITY_INHERITANCE) || defined(CONFIG_PRIORITY_PROTECT)
+	uint8_t proto;
+#endif
+	bool blocking = false;
+	bool mutex = NXSEM_IS_MUTEX(sem);
+	uint32_t mholder = NXSEM_NO_MHOLDER;
+	int ret = OK;
 
-	/* Make sure we were supplied with a valid semaphore. */
-	saved_state = enter_critical_section();
+	/* The following operations must be performed with interrupts
+	 * disabled because sem_post() may be called from an interrupt
+	 * handler.
+	 */
 
-	if (sem && ((sem->flags & FLAGS_INITIALIZED) != 0)) {
-		/* The following operations must be performed with interrupts
-		 * disabled because sem_post() may be called from an interrupt
-		 * handler.
+	flags = enter_critical_section();
+
+	if (mutex) {
+		/* Mutex post from interrupt context is not allowed */
+
+		DEBUGASSERT(!up_interrupt_context());
+
+		/* Lock the mutex for us by setting the blocking bit */
+
+		mholder = atomic_fetch_or(NXSEM_MHOLDER(sem), NXSEM_MBLOCKING_BIT);
+
+		/* Mutex post from another thread is not allowed, unless
+		 * called from nxsem_reset
 		 */
 
-		/* Perform the semaphore unlock operation. */
-		ASSERT_INFO(sem->semcount < SEM_VALUE_MAX, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x\n", sem, sem->semcount, sem->flags, caller_retaddr);
-		htcb = this_task();
-		htcb = sem_releaseholder(sem, htcb);
-		sem->semcount++;
+		DEBUGASSERT(mholder == (NXSEM_MBLOCKING_BIT | NXSEM_MRESET) ||
+		            (mholder & (~NXSEM_MBLOCKING_BIT)) == nxsched_gettid());
 
-		if ((sem->flags & FLAGS_SEM_MUTEX) != 0) {
-			ASSERT_INFO(sem->semcount < 2, "sem = 0x%x, semcount = %d, flags = 0x%x, caller address = 0x%x\n", sem, sem->semcount, sem->flags, caller_retaddr);
+		blocking = NXSEM_MBLOCKING(mholder);
+
+		if (!blocking) {
+			if (mholder != NXSEM_MRESET) {
+				mholder = NXSEM_NO_MHOLDER;
+			}
+
+			atomic_set(NXSEM_MHOLDER(sem), mholder);
 		}
-
-		sem_unblock_task(sem, htcb);
-		ret = OK;
-
-		/* Interrupts may now be enabled. */
-
 	} else {
-		set_errno(EINVAL);
+		int32_t sem_count;
+
+		/* Check the maximum allowable value */
+
+		sem_count = atomic_read(NXSEM_COUNT(sem));
+		do {
+#ifdef CONFIG_CUSTOM_SEMAPHORE_MAXVALUE
+			if (sem_count >= sem->maxvalue)
+#else
+			if (sem_count >= SEM_VALUE_MAX)
+#endif
+			{
+				ret = -EOVERFLOW;
+				break;
+			}
+		} while (!atomic_try_cmpxchg_release(NXSEM_COUNT(sem), &sem_count,
+		                                   sem_count + 1));
+		blocking = sem_count < 0;
 	}
 
-	leave_critical_section(saved_state);
+	if (ret == OK) {
+		/* Perform the semaphore unlock operation, releasing this task as a
+		 * holder then also incrementing the count on the semaphore.
+		 *
+		 * NOTE:  When semaphores are used for signaling purposes, the holder
+		 * of the semaphore may not be this thread!  In this case,
+		 * nxsem_release_holder() will do nothing.
+		 *
+		 * In the case of a mutex this could be simply resolved since there is
+		 * only one holder but for the case of counting semaphores, there may
+		 * be many holders and if the holder is not this thread, then it is
+		 * not possible to know which thread/holder should be released.
+		 *
+		 * For this reason, it is recommended that priority inheritance be
+		 * disabled via nxsem_set_protocol(SEM_PRIO_NONE) when the semaphore is
+		 * initialized if the semaphore is to used for signaling purposes.
+		 */
+
+		if (!mutex || blocking) {
+			nxsem_release_holder(sem);
+		}
+
+#if defined(CONFIG_PRIORITY_INHERITANCE) || defined(CONFIG_PRIORITY_PROTECT)
+		/* Don't let any unblocked tasks run until we complete any priority
+		 * restoration steps.  Interrupts are disabled, but we do not want
+		 * the head of the ready-to-run list to be modified yet.
+		 *
+		 * NOTE: If this sched_lock is called from an interrupt handler, it
+		 * will do nothing.
+		 */
+
+		proto = sem->flags & SEM_PRIO_MASK;
+		if (proto != SEM_PRIO_NONE) {
+			sched_lock();
+		}
+#endif
+
+		/* If the result of semaphore unlock is non-positive, then
+		 * there must be some task waiting for the semaphore.
+		 */
+
+		if (blocking) {
+			/* Check if there are any tasks in the waiting for semaphore
+			 * task list that are waiting for this semaphore.  This is a
+			 * prioritized list so the first one we encounter is the one
+			 * that we want.
+			 */
+
+			stcb = (FAR struct tcb_s *)dq_remfirst(SEM_WAITLIST(sem));
+			if (stcb != NULL) {
+				FAR struct tcb_s *rtcb = this_task();
+
+				/* The task will be the new holder of the semaphore when
+				 * it is awakened.
+				 */
+
+				if (mutex) {
+					uint32_t blocking_bit = dq_empty(SEM_WAITLIST(sem)) ?
+					  0 : NXSEM_MBLOCKING_BIT;
+					atomic_set(NXSEM_MHOLDER(sem),
+					          ((uint32_t)stcb->pid) | blocking_bit);
+				} else {
+					nxsem_add_holder_tcb(stcb, sem);
+				}
+
+				/* Stop the watchdog timer */
+
+				wd_cancel(&stcb->waitdog);
+
+				/* Indicate that the wait is over. */
+
+				stcb->waitobj = NULL;
+
+				/* Add the task to ready-to-run task list and
+				 * perform the context switch if one is needed
+				 */
+
+				if (nxsched_add_readytorun(stcb)) {
+					up_switch_context(this_task(), rtcb);
+				}
+			}
+		}
+
+		/* Check if we need to drop the priority of any threads holding
+		 * this semaphore.  The priority could have been boosted while they
+		 * held the semaphore.
+		 */
+
+#if defined(CONFIG_PRIORITY_INHERITANCE) || defined(CONFIG_PRIORITY_PROTECT)
+		if (proto != SEM_PRIO_NONE) {
+			if (proto == SEM_PRIO_INHERIT) {
+#  ifdef CONFIG_PRIORITY_INHERITANCE
+				nxsem_restore_baseprio(stcb, sem);
+#  endif
+			} else if (proto == SEM_PRIO_PROTECT) {
+#  ifdef CONFIG_PRIORITY_PROTECT
+				nxsem_protect_post(sem);
+#  endif
+			}
+
+			sched_unlock();
+		}
+#endif
+	}
+
+	/* Interrupts may now be enabled. */
+
+	leave_critical_section(flags);
 
 	return ret;
 }

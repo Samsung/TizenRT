@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/environ/env_setenv.c
+ * sched/environ/env_setenv.c
  *
- *   Copyright (C) 2007, 2009, 2011, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -62,16 +49,13 @@
 #include <stdlib.h>
 #include <sched.h>
 #include <string.h>
+#include <assert.h>
 #include <errno.h>
 
 #include <tinyara/kmalloc.h>
 
 #include "sched/sched.h"
 #include "environ/environ.h"
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
@@ -82,17 +66,17 @@
  *
  * Description:
  *   The setenv() function adds the variable name to the environment with the
- *   specified 'value' if the varialbe 'name" does not exist. If the 'name'
+ *   specified 'value' if the variable 'name" does not exist. If the 'name'
  *   does exist in the environment, then its value is changed to 'value' if
  *   'overwrite' is non-zero; if 'overwrite' is zero, then the value of name
  *   unaltered.
  *
- * Parameters:
+ * Input Parameters:
  *   name - The name of the variable to change
  *   value - The new value of the variable
  *   overwrite - Replace any existing value if non-zero.
  *
- * Return Value:
+ * Returned Value:
  *   Zero on success
  *
  * Assumptions:
@@ -105,10 +89,11 @@ int setenv(FAR const char *name, FAR const char *value, int overwrite)
 	FAR struct tcb_s *rtcb;
 	FAR struct task_group_s *group;
 	FAR char *pvar;
-	FAR char *newenvp;
-	int newsize;
+	FAR char **envp;
+	ssize_t envc;
+	ssize_t envpc;
+	ssize_t ret = OK;
 	int varlen;
-	int ret = OK;
 
 	/* Verify input parameter */
 
@@ -122,12 +107,14 @@ int setenv(FAR const char *name, FAR const char *value, int overwrite)
 	 */
 
 	if (!value || *value == '\0') {
-		/* If overwite is set then this is the same as unsetenv */
+		/* If overwrite is set then this is the same as unsetenv */
 
 		if (overwrite) {
 			return unsetenv(name);
 		} else {
-			/* Otherwise, it is a request to remove a variable without altering it? */
+			/* Otherwise, it is a request to remove a variable without
+			 * altering it?
+			 */
 
 			return OK;
 		}
@@ -135,20 +122,21 @@ int setenv(FAR const char *name, FAR const char *value, int overwrite)
 
 	/* Get a reference to the thread-private environ in the TCB. */
 
-	sched_lock();
 	rtcb  = this_task();
 	group = rtcb->group;
 	DEBUGASSERT(group);
 
+	nxrmutex_lock(&group->tg_mutex);
+
 	/* Check if the variable already exists */
 
-	if (group->tg_envp && (pvar = env_findvar(group, name)) != NULL) {
+	if (group->tg_envp && (ret = env_findvar(group, name)) >= 0) {
 		/* It does! Do we have permission to overwrite the existing value? */
 
 		if (!overwrite) {
 			/* No.. then just return success */
 
-			sched_unlock();
+			nxrmutex_unlock(&group->tg_mutex);
 			return OK;
 		}
 
@@ -157,62 +145,72 @@ int setenv(FAR const char *name, FAR const char *value, int overwrite)
 		 * the environment buffer; this will happen below.
 		 */
 
-		(void)env_removevar(group, pvar);
+		env_removevar(group, ret);
 	}
 
-	/* Get the size of the new name=value string.  The +2 is for the '=' and for
-	 * null terminator
+	/* Check current envirments count */
+
+	DEBUGASSERT(group->tg_envc < SSIZE_MAX);
+
+	/* Get the size of the new name=value string.
+	 * The +2 is for the '=' and for null terminator
 	 */
 
 	varlen = strlen(name) + strlen(value) + 2;
 
 	/* Then allocate or reallocate the environment buffer */
 
-	if (group->tg_envp) {
-		newsize = group->tg_envsize + varlen;
-		if (!rtcb->uheap) {
-			newenvp = (FAR char *)kmm_realloc(group->tg_envp, newsize);
-		} else {
-			newenvp = (FAR char *)kumm_realloc(group->tg_envp, newsize);
-		}
-		if (!newenvp) {
-			ret = ENOMEM;
-			goto errout_with_lock;
-		}
-
-		pvar = &newenvp[group->tg_envsize];
-	} else {
-		newsize = varlen;
-		if (!rtcb->uheap) {
-			newenvp = (FAR char *)kmm_malloc(newsize);
-		} else {
-			newenvp = (FAR char *)kumm_malloc(newsize);
-		}
-
-		if (!newenvp) {
-			ret = ENOMEM;
-			goto errout_with_lock;
-		}
-
-		pvar = newenvp;
+	pvar = group_malloc(group, varlen);
+	if (pvar == NULL) {
+		ret = ENOMEM;
+		goto errout_with_lock;
 	}
 
-	/* Save the new buffer and size */
+	envc = group->tg_envc;
 
-	group->tg_envp = newenvp;
-	group->tg_envsize = newsize;
+	if (group->tg_envp == NULL) {
+		envpc = SCHED_ENVIRON_RESERVED + 2;
+
+		envp = group_malloc(group, sizeof(*envp) * envpc);
+		if (envp == NULL) {
+			ret = ENOMEM;
+			goto errout_with_var;
+		}
+
+		group->tg_envp  = envp;
+		group->tg_envpc = envpc;
+	} else if (envc >= group->tg_envpc - 1) {
+		envpc = envc + SCHED_ENVIRON_RESERVED + 2;
+
+		envp = group_realloc(group, group->tg_envp, sizeof(*envp) * envpc);
+		if (envp == NULL) {
+			ret = ENOMEM;
+			goto errout_with_var;
+		}
+
+		group->tg_envp  = envp;
+		group->tg_envpc = envpc;
+	}
+
+	/* Save the new buffer and count */
+
+	group->tg_envp[envc++] = pvar;
+	group->tg_envp[envc]   = NULL;
+	group->tg_envc = envc;
 
 	/* Now, put the new name=value string into the environment buffer */
 
 	snprintf(pvar, varlen, "%s=%s", name, value);
-	sched_unlock();
+	nxrmutex_unlock(&group->tg_mutex);
 	return OK;
 
+errout_with_var:
+	group_free(group, pvar);
 errout_with_lock:
-	sched_unlock();
+	nxrmutex_unlock(&group->tg_mutex);
 errout:
 	set_errno(ret);
 	return ERROR;
 }
 
-#endif							/* CONFIG_DISABLE_ENVIRON */
+#endif /* CONFIG_DISABLE_ENVIRON */

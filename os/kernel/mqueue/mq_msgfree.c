@@ -15,97 +15,66 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- *  kernel/mqueue/mq_msgfree.c
+/****************************************************************************
+ * sched/mqueue/mq_msgfree.c
  *
- *   Copyright (C) 2007, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#include <queue.h>
+#include <assert.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/spinlock.h>
 
 #include "mqueue/mqueue.h"
 
-/************************************************************************
- * Pre-processor Definitions
- ************************************************************************/
-
-/************************************************************************
- * Private Type Declarations
- ************************************************************************/
-
-/************************************************************************
- * Public Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Functions
- ************************************************************************/
-
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
- * Name: mq_msgfree
+/****************************************************************************
+ * Name: nxmq_free_msg
  *
  * Description:
- *   The mq_msgfree function will return a message to the free pool of
+ *   The nxmq_free_msg function will return a message to the free pool of
  *   messages if it was a pre-allocated message. If the message was
  *   allocated dynamically it will be deallocated.
  *
- * Inputs:
+ * Input Parameters:
  *   mqmsg - message to free
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
- ************************************************************************/
+ ****************************************************************************/
 
-void mq_msgfree(FAR struct mqueue_msg_s *mqmsg)
+void nxmq_free_msg(FAR struct mqueue_msg_s *mqmsg)
 {
-	irqstate_t saved_state;
+	irqstate_t flags;
 
 	/* If this is a generally available pre-allocated message,
 	 * then just put it back in the free list.
@@ -116,9 +85,9 @@ void mq_msgfree(FAR struct mqueue_msg_s *mqmsg)
 		 * list from interrupt handlers.
 		 */
 
-		saved_state = enter_critical_section();
-		sq_addlast((FAR sq_entry_t *)mqmsg, &g_msgfree);
-		leave_critical_section(saved_state);
+		flags = spin_lock_irqsave(&g_msgfreelock);
+		list_add_tail(&g_msgfree, &mqmsg->node);
+		spin_unlock_irqrestore(&g_msgfreelock, flags);
 	}
 
 	/* If this is a message pre-allocated for interrupts,
@@ -130,9 +99,9 @@ void mq_msgfree(FAR struct mqueue_msg_s *mqmsg)
 		 * list from interrupt handlers.
 		 */
 
-		saved_state = enter_critical_section();
-		sq_addlast((FAR sq_entry_t *)mqmsg, &g_msgfreeirq);
-		leave_critical_section(saved_state);
+		flags = spin_lock_irqsave(&g_msgfreelock);
+		list_add_tail(&g_msgfreeirq, &mqmsg->node);
+		spin_unlock_irqrestore(&g_msgfreelock, flags);
 	}
 
 	/* Otherwise, deallocate it.  Note:  interrupt handlers
@@ -141,8 +110,8 @@ void mq_msgfree(FAR struct mqueue_msg_s *mqmsg)
 	 */
 
 	else if (mqmsg->type == MQ_ALLOC_DYN) {
-		sched_kfree(mqmsg);
+		kmm_free(mqmsg);
 	} else {
-		PANIC();
+		DEBUGPANIC();
 	}
 }

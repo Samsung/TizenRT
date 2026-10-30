@@ -15,47 +15,34 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/********************************************************************************
- * kernel/timer/timer.h
+/****************************************************************************
+ * sched/timer/timer.h
  *
- *   Copyright (C) 2007-2009, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ********************************************************************************/
+ ****************************************************************************/
 
 #ifndef __SCHED_TIMER_TIMER_H
 #define __SCHED_TIMER_TIMER_H
 
-/********************************************************************************
+/****************************************************************************
  * Included Files
- ********************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
@@ -63,63 +50,68 @@
 #include <stdint.h>
 
 #include <tinyara/compiler.h>
+#include <tinyara/signal.h>
 #include <tinyara/wdog.h>
+#include <tinyara/spinlock.h>
 
-/********************************************************************************
- * Definitions
- ********************************************************************************/
+#ifndef CONFIG_DISABLE_POSIX_TIMERS
 
-/* PT_FLAGS_* definitions */
-#define PT_FLAGS_ALLOC_MASK   (0)
-#define PT_FLAGS_USE_MASK     (1)
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
-#define PT_FLAGS_PREALLOCATED (1 << PT_FLAGS_ALLOC_MASK)    /* Timer comes from a pool of preallocated timers */
-#define PT_FLAGS_INUSE        (1 << PT_FLAGS_USE_MASK)      /* Timer is in use */
+#define PT_FLAGS_PREALLOCATED 0x01u /* Timer comes from a pool of preallocated timers */
 
-/********************************************************************************
+/****************************************************************************
  * Public Types
- ********************************************************************************/
+ ****************************************************************************/
 
 /* This structure represents one POSIX timer */
 
 struct posix_timer_s {
 	FAR struct posix_timer_s *flink;
 
-	uint8_t pt_flags;			/* See PT_FLAGS_* definitions */
-	uint8_t pt_crefs;			/* Reference count */
-	uint8_t pt_signo;			/* Notification signal */
-	pid_t pt_owner;				/* Creator of timer */
-	int pt_delay;				/* If non-zero, used to reset repetitive timers */
-	int pt_last;				/* Last value used to set watchdog */
-	WDOG_ID pt_wdog;			/* The watchdog that provides the timing */
-	union sigval pt_value;		/* Data passed with notification */
+	clockid_t        pt_clock;       /* Specifies the clock to use as the timing base. */
+	uint8_t          pt_flags;       /* See PT_FLAGS_* definitions */
+	uint8_t          pt_crefs;       /* Reference count */
+	pid_t            pt_owner;       /* Creator of timer */
+	int              pt_overrun;     /* Overrun time */
+	clock_t          pt_delay;       /* If non-zero, used to reset repetitive timers */
+	clock_t          pt_expected;    /* Expected absolute time */
+	struct wdog_s    pt_wdog;        /* The watchdog that provides the timing */
+	struct sigevent  pt_event;       /* Notification information */
+#ifdef CONFIG_SIG_EVTHREAD
+	struct sigwork_s pt_work;
+#endif
 };
 
-#define PT_ISVALID(x)         (((x) != NULL) && (((struct posix_timer_s *)(x))->pt_flags & PT_FLAGS_INUSE))
-
-/********************************************************************************
+/****************************************************************************
  * Public Data
- ********************************************************************************/
-
-/* This is a list of free, preallocated timer structures */
+ ****************************************************************************/
 
 #if CONFIG_PREALLOC_TIMERS > 0
+/* This is a list of free, preallocated timer structures */
+
 extern volatile sq_queue_t g_freetimers;
 #endif
 
-/* This is a list of instantiated timer structures -- active and inactive.  The
- * timers are place on this list by timer_create() and removed from the list by
- * timer_delete() or when the owning thread exits.
+/* This is a list of instantiated timer structures -- active and inactive.
+ * The timers are place on this list by timer_create() and removed from the
+ * list by timer_delete() or when the owning thread exits.
  */
 
 extern volatile sq_queue_t g_alloctimers;
 
-/********************************************************************************
+extern spinlock_t g_locktimers;
+
+/****************************************************************************
  * Public Function Prototypes
- ********************************************************************************/
+ ****************************************************************************/
 
-void weak_function timer_initialize(void);
-void weak_function timer_deleteall(pid_t pid);
+void timer_initialize(void);
+void timer_deleteall(pid_t pid);
 int timer_release(FAR struct posix_timer_s *timer);
+FAR struct posix_timer_s *timer_gethandle(timer_t timerid);
 
-#endif							/* __SCHED_TIMER_TIMER_H */
+#endif /* CONFIG_DISABLE_POSIX_TIMERS */
+#endif /* __SCHED_TIMER_TIMER_H */

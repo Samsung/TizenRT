@@ -15,125 +15,80 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * kernel/pthread/pthread_release.c
+/****************************************************************************
+ * sched/pthread/pthread_release.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
 #include <sched.h>
+#include <assert.h>
 #include <debug.h>
 
+#include <tinyara/nuttx.h>
 #include <tinyara/kmalloc.h>
 
 #include "pthread/pthread.h"
 
-/************************************************************************
- * Definitions
- ************************************************************************/
-
-/************************************************************************
- * Private Type Declarations
- ************************************************************************/
-
-/************************************************************************
- * Global Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Functions
- ************************************************************************/
-
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Name: pthread_release
  *
  * Description:
  *   Release pthread resources from the task group with the group
  *   terminated.
  *
- * Parameters:
+ * Input Parameters:
  *   group = The task group containing the pthread resources to be
  *           released.
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  * Assumptions:
  *
  * POSIX Compatibility:
  *
- ************************************************************************/
+ ****************************************************************************/
 
 void pthread_release(FAR struct task_group_s *group)
 {
-	FAR struct join_s *join;
-	DEBUGASSERT(group);
+	FAR sq_entry_t *curr;
+	FAR sq_entry_t *next;
 
 	/* Visit and delete each join structure still in the list.  Since we
 	 * are last exiting thread of the group, no special protection should
 	 * be required.
 	 */
 
-	while (group->tg_joinhead) {
-		/* Remove the join from the head of the list. */
+	sq_for_every_safe(&group->tg_joinqueue, curr, next) {
+		/* Deallocate the join structure */
 
-		join = group->tg_joinhead;
-		group->tg_joinhead = join->next;
-
-		/* Destroy the join semaphores */
-
-		(void)sem_destroy(&join->data_sem);
-		(void)sem_destroy(&join->exit_sem);
-
-		/* And deallocate the join structure */
-
-		sched_kfree(join);
+		kmm_free(container_of(curr, struct task_join_s, entry));
 	}
-
-	/* Destroy the join list semaphore */
-
-	(void)sem_destroy(&group->tg_joinsem);
 }

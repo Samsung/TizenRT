@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/semaphore/semaphore.h
+ * sched/semaphore/semaphore.h
  *
- *   Copyright (C) 2007, 2009-2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -59,23 +46,14 @@
 
 #include <tinyara/config.h>
 #include <tinyara/compiler.h>
+#include <tinyara/semaphore.h>
+#include <tinyara/sched.h>
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <semaphore.h>
-#include <sched.h>
-#include <queue.h>
 
 /****************************************************************************
  * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
  ****************************************************************************/
 
 /****************************************************************************
@@ -84,7 +62,8 @@
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
@@ -92,53 +71,54 @@ extern "C" {
 /* Common semaphore logic */
 
 #ifdef CONFIG_PRIORITY_INHERITANCE
-void sem_initialize(void);
+void nxsem_initialize(void);
 #else
-#define sem_initialize()
+#  define nxsem_initialize()
 #endif
 
-void sem_waitirq(FAR struct tcb_s *wtcb, int errcode);
+/* Wake up a thread that is waiting on semaphore */
 
-/* Recover semaphore resources with a task or thread is destroyed  */
+void nxsem_wait_irq(FAR struct tcb_s *wtcb, int errcode);
 
-void sem_recover(FAR struct tcb_s *tcb);
+/* Handle semaphore timer expiration */
+
+void nxsem_timeout(wdparm_t arg);
+
+/* Recover semaphore resources with a task or thread is destroyed */
+
+void nxsem_recover(FAR struct tcb_s *tcb);
 
 /* Special logic needed only by priority inheritance to manage collections of
  * holders of semaphores.
  */
 
-void sem_unblock_task(sem_t *sem, struct tcb_s *htcb);
-#ifdef SAVE_SEM_HOLDER
-void sem_freeholder(sem_t *sem, FAR struct semholder_s *pholder);
-void sem_initholders(void);
-void sem_destroyholder(FAR sem_t *sem);
-struct semholder_s *sem_findholder(sem_t *sem, FAR struct tcb_s *htcb);
-void sem_addholder(FAR sem_t *sem);
-void sem_addholder_tcb(FAR struct tcb_s *tcb, FAR sem_t *sem);
-FAR struct tcb_s *sem_releaseholder(FAR sem_t *sem, FAR struct tcb_s *htcb);
-#if defined(CONFIG_PRIORITY_INHERITANCE)
-void sem_boostpriority(FAR sem_t *sem);
-void sem_restorebaseprio(FAR struct tcb_s *stcb, FAR struct tcb_s *htcb, FAR sem_t *sem);
-void sem_release_all(FAR struct tcb_s *stcb);
-FAR struct tcb_s *sem_findhighestwaiter(FAR sem_t *sem, FAR struct tcb_s *exclude);
+#ifdef CONFIG_PRIORITY_INHERITANCE
+void nxsem_initialize_holders(void);
+void nxsem_destroyholder(FAR sem_t *sem);
+void nxsem_add_holder(FAR sem_t *sem);
+void nxsem_add_holder_tcb(FAR struct tcb_s *htcb, FAR sem_t *sem);
+void nxsem_boost_priority(FAR sem_t *sem);
+void nxsem_release_holder(FAR sem_t *sem);
+void nxsem_restore_baseprio(FAR struct tcb_s *stcb, FAR sem_t *sem);
+void nxsem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem);
+void nxsem_release_all(FAR struct tcb_s *stcb);
 #else
-#define sem_release_all(stcb)
+#  define nxsem_initialize_holders()
+#  define nxsem_destroyholder(sem)
+#  define nxsem_add_holder(sem)
+#  define nxsem_add_holder_tcb(htcb,sem)
+#  define nxsem_boost_priority(sem)
+#  define nxsem_release_holder(sem)
+#  define nxsem_restore_baseprio(stcb,sem)
+#  define nxsem_canceled(stcb,sem)
+#  define nxsem_release_all(stcb)
 #endif
-#ifndef CONFIG_DISABLE_SIGNALS
-void sem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem);
-#else
-#define sem_canceled(stcb, sem)
-#endif
-#else
-#define sem_initholders()
-#define sem_destroyholder(sem)
-#define sem_addholder(sem)
-#define sem_addholder_tcb(tcb, sem)
-#define sem_boostpriority(sem)
-#define sem_releaseholder(sem, htcb) (htcb)
-#define sem_restorebaseprio(stcb, sem)
-#define sem_canceled(stcb, sem)
-#define sem_release_all(stcb)
+
+/* Special logic needed only by priority protect */
+
+#ifdef CONFIG_PRIORITY_PROTECT
+int nxsem_protect_wait(FAR sem_t *sem);
+void nxsem_protect_post(FAR sem_t *sem);
 #endif
 
 #undef EXTERN
@@ -146,4 +126,4 @@ void sem_canceled(FAR struct tcb_s *stcb, FAR sem_t *sem);
 }
 #endif
 
-#endif							/* __SCHED_SEMAPHORE_SEMAPHORE_H */
+#endif /* __SCHED_SEMAPHORE_SEMAPHORE_H */

@@ -15,44 +15,31 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- *  kernel/mqueue/mq_msgqfree.c
+/****************************************************************************
+ * sched/mqueue/mq_msgqfree.c
  *
- *   Copyright (C) 2007, 2009 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
@@ -60,65 +47,44 @@
 #include <tinyara/kmalloc.h>
 #include "mqueue/mqueue.h"
 
-/************************************************************************
- * Pre-processor Definitions
- ************************************************************************/
-
-/************************************************************************
- * Private Type Declarations
- ************************************************************************/
-
-/************************************************************************
- * Public Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Functions
- ************************************************************************/
-
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
- * Name: mq_msgqfree
+/****************************************************************************
+ * Name: nxmq_free_msgq
  *
  * Description:
  *   This function deallocates an initialized message queue structure.
  *   First, it deallocates all of the queued messages in the message
- *   queue.  It is assumed that this message is fully unlinked and
- *   closed so that no thread will attempt access it while it is being
- *   deleted.
+ *   queue.  It is assumed that this message queue is fully unlinked
+ *   and closed so that no thread will attempt to access it while it
+ *   is being deleted.
  *
- * Inputs:
- *   msgq - Named essage queue to be freed
+ * Input Parameters:
+ *   msgq - Named message queue to be freed
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
- ************************************************************************/
+ ****************************************************************************/
 
-void mq_msgqfree(FAR struct mqueue_inode_s *msgq)
+void nxmq_free_msgq(FAR struct mqueue_inode_s *msgq)
 {
-	FAR struct mqueue_msg_s *curr;
-	FAR struct mqueue_msg_s *next;
+	FAR struct mqueue_msg_s *entry;
+	FAR struct mqueue_msg_s *tmp;
 
 	/* Deallocate any stranded messages in the message queue. */
 
-	curr = (FAR struct mqueue_msg_s *)msgq->msglist.head;
-	while (curr) {
+	list_for_every_entry_safe(&msgq->msglist, entry,
+	                          tmp, struct mqueue_msg_s, node) {
 		/* Deallocate the message structure. */
 
-		next = curr->next;
-		mq_msgfree(curr);
-		curr = next;
+		list_delete(&entry->node);
+		nxmq_free_msg(entry);
 	}
 
 	/* Then deallocate the message queue itself */
 
-	sched_kfree(msgq);
+	kmm_free(msgq);
 }

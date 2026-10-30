@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/sched/sched_addreadytorun.c
+ * sched/sched/sched_addreadytorun.c
  *
- *   Copyright (C) 2007-2009, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -57,105 +44,88 @@
 #include <tinyara/config.h>
 
 #include <stdbool.h>
-#include <queue.h>
 #include <assert.h>
 
-#include <tinyara/arch.h>
-
+#include "irq/irq.h"
+#include "sched/queue.h"
 #include "sched/sched.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name:  sched_addreadytorun
+ * Name:  nxsched_add_readytorun
  *
  * Description:
- *   This function adds a TCB to the ready to run
- *   list.  If the currently active task has preemption disabled
- *   and the new TCB would cause this task to be pre-empted, the
- *   new task is added to the g_pendingtasks list instead.  The
- *   pending tasks will be made ready-to-run when preemption
- *   is unlocked.
+ *   This function adds a TCB to the ready to run list.  If the currently
+ *   active task has preemption disabled and the new TCB would cause this
+ *   task to be preempted, the new task is added to the g_pendingtasks list
+ *   instead.  The pending tasks will be made ready-to-run when preemption is
+ *   unlocked.
  *
- * Inputs:
+ * Input Parameters:
  *   btcb - Points to the blocked TCB that is ready-to-run
  *
- * Return Value:
+ * Returned Value:
  *   true if the currently active task (the head of the ready-to-run list)
  *   has changed.
  *
  * Assumptions:
- * - The caller has established a critical section before
- *   calling this function (calling sched_lock() first is NOT
- *   a good idea -- use enter_critical_section()).
- * - The caller has already removed the input rtcb from
- *   whatever list it was in.
- * - The caller handles the condition that occurs if the
- *   the head of the ready-to-run list is changed.
+ * - The caller has established a critical section before calling this
+ *   function (calling sched_lock() first is NOT a good idea -- use
+ *   enter_critical_section()).
+ * - The caller has already removed the input rtcb from whatever list it
+ *   was in.
+ * - The caller handles the condition that occurs if the head of the
+ *   ready-to-run list is changed.
  *
  ****************************************************************************/
 
 #ifndef CONFIG_SMP
-bool sched_addreadytorun(FAR struct tcb_s *btcb)
+bool nxsched_add_readytorun(FAR struct tcb_s *btcb)
 {
 	FAR struct tcb_s *rtcb = this_task();
 	bool ret;
 
-#ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
-	sched_checkstackoverflow(rtcb);
-#endif
 	/* Check if pre-emption is disabled for the current running task and if
 	 * the new ready-to-run task would cause the current running task to be
-	 * pre-empted.
+	 * preempted.  NOTE that IRQs disabled implies that pre-emption is
+	 * also disabled.
 	 */
 
-	if (rtcb->lockcount && rtcb->sched_priority < btcb->sched_priority) {
+	if (nxsched_islocked_tcb(rtcb) &&
+	    rtcb->sched_priority < btcb->sched_priority) {
 		/* Yes.  Preemption would occur!  Add the new ready-to-run task to the
 		 * g_pendingtasks task list for now.
 		 */
 
-		sched_addprioritized(btcb, (FAR dq_queue_t *)&g_pendingtasks);
+		nxsched_add_prioritized(btcb, list_pendingtasks());
 		btcb->task_state = TSTATE_TASK_PENDING;
 		ret = false;
 	}
 
 	/* Otherwise, add the new task to the ready-to-run task list */
 
-	else if (sched_addprioritized(btcb, (FAR dq_queue_t *)&g_readytorun)) {
+	else if (nxsched_add_prioritized(btcb, list_readytorun())) {
 		/* The new btcb was added at the head of the ready-to-run list.  It
-		 * is now to new active task!
+		 * is now the new active task!
 		 */
 
-		ASSERT(!rtcb->lockcount && btcb->flink != NULL);
+		DEBUGASSERT(!nxsched_islocked_tcb(rtcb) && !is_idle_task(btcb));
 
 		btcb->task_state = TSTATE_TASK_RUNNING;
 		btcb->flink->task_state = TSTATE_TASK_READYTORUN;
+		up_update_task(btcb);
 		ret = true;
 	} else {
-		/* The new btcb was added in the middle of the ready-to-run list */
+		/* The new btcb was added in the middle of the ready-to-run list
+		 * In some cases, such as setaffinity, cpu need to be used.
+		 */
 
+#  ifdef CONFIG_SMP
+		btcb->cpu        = nxsched_select_cpu(btcb->affinity);
+#  endif
 		btcb->task_state = TSTATE_TASK_READYTORUN;
 		ret = false;
 	}
@@ -163,206 +133,152 @@ bool sched_addreadytorun(FAR struct tcb_s *btcb)
 	return ret;
 }
 
-#else /* CONFIG_SMP */
+#else /* !CONFIG_SMP */
 
-bool sched_addreadytorun(FAR struct tcb_s *btcb)
+/****************************************************************************
+ * Name:  nxsched_switch_running
+ *
+ * Description:
+ *   This function switches the head of the current CPU's assigned tasks
+ *   list to the TCB given as parameter. The idle task is not switched out.
+ *   If the running task can't be swapped out, the btcb is pushed to
+ *   the ready-to-run list.
+ *
+ * Input Parameters:
+ *   cpu          - Always this_cpu(). Given as argument only for
+ *                  optimization
+ *   switch_equal - When true, switch away a task of equal priority compared
+ *                  to the pending one
+ *
+ * Returned Value:
+ *   true if the currently active task is switched
+ *
+ * Assumptions:
+ * - The caller has established a critical section
+ * - The caller has already removed the input rtcb from whatever list it
+ *   was in.
+ * - The caller handles the condition that occurs if the head of the
+ *   assigned tasks list has changed.
+ *
+ ****************************************************************************/
+
+bool nxsched_switch_running(int cpu, bool switch_equal)
 {
-	FAR struct tcb_s *rtcb = this_task();
-	FAR dq_queue_t *tasklist;
-	bool switched;
-	bool doswitch;
-	int task_state;
-	int cpu;
+	FAR struct tcb_s *rtcb = current_task(cpu);
+	int sched_priority = rtcb->sched_priority;
+	FAR struct tcb_s *btcb;
+	bool ret = false;
 
-#ifdef CONFIG_SW_STACK_OVERFLOW_DETECTION
-	sched_checkstackoverflow(rtcb);
-#endif
-	/* Check if the blocked TCB is locked to this CPU */
+	DEBUGASSERT(cpu == this_cpu());
 
-	if ((btcb->flags & TCB_FLAG_CPU_LOCKED) != 0) {
-		/* Yes.. that is the CPU we must use */
-
-		cpu = btcb->cpu;
-	} else {
-		/* Otherwise, find the CPU that is executing the lowest priority task
-		 * (possibly its IDLE task).
-		 */
-
-		cpu = sched_select_cpu(btcb->affinity);
+	if (nxsched_islocked_tcb(rtcb)) {
+		return false;
 	}
 
-	/* Get the task currently running on the CPU (may be the IDLE task) */
-
-	rtcb = (FAR struct tcb_s *)g_assignedtasks[cpu].head;
-
-	/* Determine the desired new task state.  First, if the new task priority
-	 * is higher then the priority of the lowest priority, running task, then
-	 * the new task will be running and a context switch switch will be
-	 * required.
-	 */
-
-	if (rtcb->sched_priority < btcb->sched_priority) {
-		task_state = TSTATE_TASK_RUNNING;
-	
-	} else if ((btcb->flags & TCB_FLAG_CPU_LOCKED) != 0) {
-		/* If it will not be running, but is locked to a CPU, then it will be in
-		 * the assigned state.
-		 */
-
-		task_state = TSTATE_TASK_ASSIGNED;
-	} else {
-		/* Otherwise, it will be ready-to-run, but not not yet running */
-		task_state = TSTATE_TASK_READYTORUN;
-		cpu = 0;  /* CPU does not matter */
+	if (switch_equal && sched_priority > 0) {
+		sched_priority--;
 	}
 
-	/* If the selected state is TSTATE_TASK_RUNNING, then we would like to
-	 * start running the task.  Be we cannot do that if pre-emption is
-	 * disabled.  If the selected state is TSTATE_TASK_READYTORUN, then it
-	 * should also go to the pending task list so that it will have a chance
-	 * to be restarted when the scheduler is unlocked.
-	 *
-	 * There is an interaction here with IRQ locking.  Even if the pre-
-	 * emption is enabled, tasks will be forced to pend if the IRQ lock
-	 * is also set UNLESS the CPU starting the thread is also the holder of
-	 * the IRQ lock.  irq_cpu_locked() performs an atomic check for that
-	 * situation.
+	/* If there is a task in readytorun list, which is eglible to run on this
+	 * CPU, and has higher priority than the current task,
+	 * switch the current task to that one.
 	 */
 
-	int me = this_cpu();
-	if ((sched_islocked_global() || irq_cpu_locked(me)) && \
-			task_state != TSTATE_TASK_ASSIGNED) {
-		/* Add the new ready-to-run task to the g_pendingtasks task list for
-		 * now.
+	for (btcb = (FAR struct tcb_s *)dq_peek(list_readytorun());
+	     btcb && btcb->sched_priority > sched_priority;
+	     btcb = btcb->flink) {
+		/* Check if the task found in ready-to-run list is allowed to run on
+		 * this CPU. TCB_FLAG_CPU_LOCKED may be used to override affinity. If
+		 * the flag is set, assume that btcb->cpu is valid, and it is the only
+		 * CPU on which the btcb can run.
 		 */
 
-		sched_addprioritized(btcb, (FAR dq_queue_t *)&g_pendingtasks);
-		btcb->task_state = TSTATE_TASK_PENDING;
-		doswitch = false;
-	} else if (task_state == TSTATE_TASK_READYTORUN) {
-		/* The new btcb was added either (1) in the middle of the assigned
-		 * task list (the btcb->cpu field is already valid) or (2) was
-		 * added to the ready-to-run list (the btcb->cpu field does not
-		 * matter).  Either way, it won't be running.
-		 *
-		 * Add the task to the ready-to-run (but not running) task list
-		 */
-		sched_addprioritized(btcb, (FAR dq_queue_t *)&g_readytorun);
+		if (CPU_ISSET(cpu, &btcb->affinity) &&
+		    ((btcb->flags & TCB_FLAG_CPU_LOCKED) == 0 || btcb->cpu == cpu)) {
+			/* Found a task, remove it from ready-to-run list */
 
-		btcb->task_state = TSTATE_TASK_READYTORUN;
-		doswitch = false;
-	} else {
-		/* (task_state == TSTATE_TASK_ASSIGNED || task_state == TSTATE_TASK_RUNNING) */
-		/* If we are modifying some assigned task list other than our own, we
-		 * will need to stop that CPU.
-		 */
-		if (cpu != me) {
-			DEBUGVERIFY(up_cpu_pause(cpu));
-		}
+			dq_rem((FAR struct dq_entry_s *)btcb, list_readytorun());
 
-		/* Add the task to the list corresponding to the selected state
-		 * and check if a context switch will occur
-		 */
+			if (!is_idle_task(rtcb)) {
+				/* Put currently running task back to ready-to-run list */
 
-		tasklist = (FAR dq_queue_t *)&g_assignedtasks[cpu];
-		switched = sched_addprioritized(btcb, tasklist);
+				rtcb->task_state = TSTATE_TASK_READYTORUN;
+				nxsched_add_prioritized(rtcb, list_readytorun());
+			} else {
+				rtcb->task_state = TSTATE_TASK_ASSIGNED;
+			}
 
-		/* If the selected task list was the g_assignedtasks[] list and if the
-		 * new tasks is the highest priority (RUNNING) task, then a context
-		 * switch will occur.
-		 */
-
-		if (switched) {
-			FAR struct tcb_s *next;
-			/* The new btcb was added at the head of the ready-to-run list.  It
-			 * is now the new active task!
-			 */
-
-			/* Assign the CPU and set the running state */
-
-			DEBUGASSERT(task_state == TSTATE_TASK_RUNNING);
+			g_assignedtasks[cpu] = btcb;
+			up_update_task(btcb);
 
 			btcb->cpu = cpu;
 			btcb->task_state = TSTATE_TASK_RUNNING;
-
-			/* Adjust global pre-emption controls.  If the lockcount is
-			 * greater than zero, then this task/this CPU holds the scheduler
-			 * lock.
-			 */
-
-			if (btcb->lockcount > 0) {
-				spin_setbit(&g_cpu_lockset, cpu, &g_cpu_locksetlock, &g_cpu_schedlock);
-			} else {
-				spin_clrbit(&g_cpu_lockset, cpu, &g_cpu_locksetlock, &g_cpu_schedlock);
-			}
-
-			/* NOTE: If the task runs on another CPU(cpu), adjusting global IRQ
-			 * controls will be done in the pause handler on the new CPU(cpu).
-			 * If the task is scheduled on this CPU(me), do nothing because
-			 * this CPU already has a critical section
-			 */
-
-			/* If the following task is not locked to this CPU, then it must
-			 * be moved to the g_readytorun list.  Since it cannot be at the
-			 * head of the list, we can do this without invoking any heavy
-			 * lifting machinery.
-			 */
-
-			DEBUGASSERT(btcb->flink != NULL);
-			next = (FAR struct tcb_s *)btcb->flink;
-
-			if ((next->flags & TCB_FLAG_CPU_LOCKED) != 0) {
-				DEBUGASSERT(next->cpu == cpu);
-				next->task_state = TSTATE_TASK_ASSIGNED;
-			} else {
-				/* Remove the task from the assigned task list */
-
-				dq_rem((FAR dq_entry_t *)next, tasklist);
-
-				/* Add the task to the g_readytorun or to the g_pendingtasks
-				 * list.  NOTE: That the above operations may cause the
-				 * scheduler to become locked.  It may be assigned to a
-				 * different CPU the next time that it runs.
-				 */
-
-				if (sched_islocked_global()) {
-					next->task_state = TSTATE_TASK_PENDING;
-					tasklist = (FAR dq_queue_t *)&g_pendingtasks;
-				} else {
-					next->task_state = TSTATE_TASK_READYTORUN;
-					tasklist = (FAR dq_queue_t *)&g_readytorun;
-				}
-
-				sched_addprioritized(next, tasklist);
-			}
-
-			doswitch = true;
-		} else {
-			/* No context switch.  Assign the CPU and set the assigned state.
-			 *
-			 * REVISIT: I have seen this assertion fire.  Apparently another
-			 * CPU may add another, higher priority task to the same
-			 * g_assignedtasks[] list sometime after sched_select_cpu() was
-			 * called above, leaving this TCB in the wrong task list if
-			 * task_state is TSTATE_TASK_ASSIGNED).
-			 */
-
-			DEBUGASSERT(task_state == TSTATE_TASK_ASSIGNED);
-
-			btcb->cpu = cpu;
-			btcb->task_state = TSTATE_TASK_ASSIGNED;
-	        }
-
-		/* All done, restart the other CPU (if it was paused). */
-
-		if (cpu != me) {
-			DEBUGVERIFY(up_cpu_resume(cpu));
-			doswitch = false;
+			ret = true;
+			break;
 		}
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name:  nxsched_add_readytorun
+ *
+ * Description:
+ *   This function adds a TCB to one of the ready to run lists. The list
+ *   will be:
+ *
+ *   1. The g_readytorun list if the task is ready-to-run but not running
+ *      and not assigned to a CPU.
+ *   2. The g_assignedtask[cpu] list if the task is running or if has been
+ *      assigned to a CPU.
+ *
+ *   If the currently active task has preemption disabled and the new TCB
+ *   would cause this task to be preempted, the new task is added to the
+ *   g_pendingtasks list instead.  The pending tasks will be made
+ *   ready-to-run when preemption isunlocked.
+ *
+ * Input Parameters:
+ *   btcb - Points to the blocked TCB that is ready-to-run
+ *
+ * Returned Value:
+ *   true if the currently active task (the head of the ready-to-run list)
+ *   has changed.
+ *
+ * Assumptions:
+ * - The caller has established a critical section before calling this
+ *   function (calling sched_lock() first is NOT a good idea -- use
+ *   enter_critical_section()).
+ * - The caller has already removed the input rtcb from whatever list it
+ *   was in.
+ * - The caller handles the condition that occurs if the head of the
+ *   ready-to-run list has changed.
+ *
+ ****************************************************************************/
+
+bool nxsched_add_readytorun(FAR struct tcb_s *btcb)
+{
+	bool doswitch = false;
+	int target_cpu = btcb->flags & TCB_FLAG_CPU_LOCKED ? btcb->cpu :
+	  nxsched_select_cpu(btcb->affinity);
+	FAR struct tcb_s *tcb = current_task(target_cpu);
+
+	/* Add the btcb to the ready to run list, and try to run it on the target
+	 * CPU
+	 */
+
+	btcb->task_state = TSTATE_TASK_READYTORUN;
+	nxsched_add_prioritized(btcb, list_readytorun());
+
+	/* In some cases, such as setaffinity, cpu need to be used. */
+
+	btcb->cpu = target_cpu;
+	if (tcb->sched_priority < btcb->sched_priority) {
+		doswitch = nxsched_deliver_task(this_cpu(), target_cpu,
+		                                SWITCH_HIGHER);
 	}
 
 	return doswitch;
 }
 
 #endif /* CONFIG_SMP */
-

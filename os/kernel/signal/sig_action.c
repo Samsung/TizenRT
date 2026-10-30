@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/signal/sig_action.c
+ * sched/signal/sig_action.c
  *
- *   Copyright (C) 2007-2009, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -57,11 +44,15 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <signal.h>
-#include <queue.h>
 #include <sched.h>
+#include <assert.h>
 #include <errno.h>
 
+#include <tinyara/irq.h>
+#include <tinyara/queue.h>
+#include <tinyara/signal.h>
 #include <tinyara/spinlock.h>
 
 #include "sched/sched.h"
@@ -69,56 +60,89 @@
 #include "signal/signal.h"
 
 /****************************************************************************
- * Definitions
+ * Preprocessor definitions
  ****************************************************************************/
 
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
+/* judges if a sigaction instance is a preallocated one */
+
+#if CONFIG_SIG_PREALLOC_ACTIONS > 0
+#  define IS_PREALLOC_ACTION(x) ( \
+          (uintptr_t)(x) >= (uintptr_t)g_sigactions && \
+          (uintptr_t)(x) < ((uintptr_t)g_sigactions) + sizeof(g_sigactions))
+#else
+#  define IS_PREALLOC_ACTION(x) false
+#endif
 
 /****************************************************************************
- * Global Variables
+ * Private Data
  ****************************************************************************/
 
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-spinlock_t g_sigaction_spin;
+static spinlock_t g_sigaction_spin;
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: sig_allocateaction
+ * Name: nxsig_alloc_actionblock
+ *
+ * Description:
+ *   Allocate a block of signal actions and place them
+ *   on the free list.
+ *
+ ****************************************************************************/
+
+static void nxsig_alloc_actionblock(void)
+{
+	FAR sigactq_t *sigact;
+	irqstate_t flags;
+	int i;
+
+	/* Allocate a block of signal actions */
+
+	sigact = kmm_malloc((sizeof(sigactq_t)) * CONFIG_SIG_ALLOC_ACTIONS);
+	if (sigact != NULL) {
+		flags = spin_lock_irqsave(&g_sigaction_spin);
+
+		for (i = 0; i < CONFIG_SIG_ALLOC_ACTIONS; i++) {
+			sq_addlast((FAR sq_entry_t *)sigact++, &g_sigfreeaction);
+		}
+
+		spin_unlock_irqrestore(&g_sigaction_spin, flags);
+	}
+}
+
+/****************************************************************************
+ * Name: nxsig_alloc_action
  *
  * Description:
  *   Allocate a new element for a sigaction queue
  *
  ****************************************************************************/
 
-FAR sigactq_t *sig_allocateaction(void)
+static FAR sigactq_t *nxsig_alloc_action(void)
 {
 	FAR sigactq_t *sigact;
 	irqstate_t flags;
 
 	/* Try to get the signal action structure from the free list */
+
 	flags = spin_lock_irqsave(&g_sigaction_spin);
 	sigact = (FAR sigactq_t *)sq_remfirst(&g_sigfreeaction);
 	spin_unlock_irqrestore(&g_sigaction_spin, flags);
 
-	/* Check if we got one. */
+	/* Check if we got one via loop as not in critical section now */
 
-	if (!sigact) {
+	while (!sigact) {
 		/* Add another block of signal actions to the list */
 
-		sig_allocateactionblock();
+		nxsig_alloc_actionblock();
 
 		/* And try again */
+
 		flags = spin_lock_irqsave(&g_sigaction_spin);
 		sigact = (FAR sigactq_t *)sq_remfirst(&g_sigfreeaction);
 		spin_unlock_irqrestore(&g_sigaction_spin, flags);
-		ASSERT(sigact);
 	}
 
 	return sigact;
@@ -129,7 +153,7 @@ FAR sigactq_t *sig_allocateaction(void)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: sigaction
+ * Name: nxsig_action and sigaction
  *
  * Description:
  *   This function allows the calling process to examine and/or specify the
@@ -158,91 +182,134 @@ FAR sigactq_t *sig_allocateaction(void)
  *   original signal mask is restored.
  *
  *   Once an action is installed for a specific signal, it remains installed
- *   until another action is explicitly requested by another call to sigaction().
+ *   until another action is explicitly requested by another call to
+ *   sigaction().
  *
- * Parameters:
- *   sig - Signal of interest
- *   act - Location of new handler
- *   oact - Location to store only handler
+ *   nxsig_action() is an internal version of sigaction that adds an
+ *   additional parameter, force, that is used to set default signal actions
+ *   (which may not normally be settable).  nxsig_action() does not alter the
+ *   errno variable.
  *
- * Return Value:
- *   0 (OK), or -1 (ERROR) if the signal number is invalid.
- *   (errno is not set)
+ * Input Parameters:
+ *   sig   - Signal of interest
+ *   act   - Location of new handler
+ *   oact  - Location to store only handler
+ *   force - Force setup of the signal handler, even if it cannot normally
+ *           be caught or ignored (nxsig_action only)
+ *
+ * Returned Value:
+ *   nxsig_action:
+ *     Zero (OK) is returned on success; a negated errno value is returned
+ *     on failure
+ *   sigaction:
+ *     Zero (OK) is returned on success; -1 (ERROR) is returned on any
+ *     failure if the signal number is invalid with the errno set
+ *     appropriately
  *
  * Assumptions:
  *
  * POSIX Compatibility:
- * - There are no default actions so the special value SIG_DFL is treated
- *   like SIG_IGN.
+ * - If CONFIG_SIG_DEFAULT is not defined, then there are no default actions
+ *   so the special value SIG_DFL is treated like SIG_IGN.
  * - All sa_flags in struct sigaction of act input are ignored (all
- *   treated like SA_SIGINFO). The one exception is if CONFIG_SCHED_CHILDSTATUS
- *   is defined; then SA_NOCLDWAIT is supported but only for SIGCHLD
+ *   treated like SA_SIGINFO). The one exception is if
+ *   CONFIG_SCHED_CHILD_STATUS is defined; then SA_NOCLDWAIT is supported but
+ *   only for SIGCHLD
  *
  ****************************************************************************/
 
-int sigaction(int signo, FAR const struct sigaction *act, FAR struct sigaction *oact)
+int nxsig_action(int signo, FAR const struct sigaction *act,
+                 FAR struct sigaction *oact, bool force)
 {
 	FAR struct tcb_s *rtcb = this_task();
+	FAR struct task_group_s *group;
 	FAR sigactq_t *sigact;
+	_sa_handler_t handler;
+	irqstate_t flags;
 
 	/* Since sigactions can only be installed from the running thread of
 	 * execution, no special precautions should be necessary.
 	 */
 
+	DEBUGASSERT(rtcb != NULL);
+
+	group = rtcb->group;
+
+	/* If the value of group is null, the task may have exited */
+
+	if (group == NULL) {
+		return -EINVAL;
+	}
+
 	/* Verify the signal number */
 
 	if (!GOOD_SIGNO(signo)) {
-		set_errno(EINVAL);
-		return ERROR;
+		return -EINVAL;
 	}
 
-#ifdef CONFIG_SIGKILL_HANDLER
-	if (signo == SIGKILL) {
-		rtcb->sigkillusrhandler = act->sa_sigaction;
-		return OK;
+#ifdef CONFIG_SIG_DEFAULT
+	/* Check if the user is trying to catch or ignore a signal that cannot be
+	 * caught or ignored.
+	 */
+
+	if (act != NULL && !force && act->sa_handler != SIG_DFL &&
+	    !nxsig_iscatchable(signo)) {
+		return -EINVAL;
 	}
 #endif
 
-	/* Find the signal in the sigactionq */
+	/* Find the signal in the signal action queue */
 
-	sigact = sig_findaction(rtcb, signo);
+	sigact = nxsig_find_action(group, signo);
 
 	/* Return the old sigaction value if so requested */
 
-	if (oact) {
+	if (oact != NULL) {
+#ifdef CONFIG_SIG_DEFAULT
+		if (nxsig_isdefault(rtcb, signo)) {
+			/* Return SIG_DFL if the default signal is attached */
+
+			oact->sa_handler = SIG_DFL;
+			oact->sa_flags   = SA_SIGINFO;
+			sigemptyset(&oact->sa_mask);
+		} else
+#endif
 		if (sigact) {
-			COPY_SIGACTION(oact, &sigact->act);
+			/* Return the old signal action */
+
+			oact->sa_handler = sigact->act.sa_handler;
+			oact->sa_mask    = sigact->act.sa_mask;
+			oact->sa_flags   = sigact->act.sa_flags;
+			oact->sa_user    = sigact->act.sa_user;
 		} else {
 			/* There isn't an old value */
 
-			oact->sa_u._sa_handler = NULL;
-			oact->sa_mask = NULL_SIGNAL_SET;
-			oact->sa_flags = 0;
+			oact->sa_handler = NULL;
+			oact->sa_flags   = 0;
+			sigemptyset(&oact->sa_mask);
 		}
 	}
 
 	/* If the argument act is a null pointer, signal handling is unchanged;
-	 * thus, the call can be used to enquire about the current handling of
+	 * thus, the call can be used to inquire about the current handling of
 	 * a given signal.
 	 */
 
-	if (!act) {
+	if (act == NULL) {
 		return OK;
 	}
-#if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 
+#if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 	/* Handle a special case.  Retention of child status can be suppressed
 	 * if signo == SIGCHLD and sa_flags == SA_NOCLDWAIT.
 	 *
 	 * POSIX.1 leaves it unspecified whether a SIGCHLD signal is generated
-	 * when a child process terminates.  In TinyAra, a SIGCHLD signal is
+	 * when a child process terminates.  In NuttX, a SIGCHLD signal is
 	 * generated in this case; but in some other implementations, it may not
 	 * be.
 	 */
 
 	if (signo == SIGCHLD && (act->sa_flags & SA_NOCLDWAIT) != 0) {
-		irqstate_t flags;
-
 		/* We do require a critical section to muck with the TCB values that
 		 * can be modified by the child thread.
 		 */
@@ -255,24 +322,44 @@ int sigaction(int signo, FAR const struct sigaction *act, FAR struct sigaction *
 
 		/* Free all pending exit status */
 
-		group_removechildren(rtcb->group);
+		group_remove_children(rtcb->group);
 		leave_critical_section(flags);
+	}
+#endif
+
+	handler = act->sa_handler;
+
+#ifdef CONFIG_SIG_DEFAULT
+	/* If the caller is setting the handler to SIG_DFL, then we need to
+	 * replace this with the correct, internal default signal action handler.
+	 */
+
+	if (handler == SIG_DFL) {
+		/* nxsig_default() may returned SIG_IGN */
+
+		handler = nxsig_default(rtcb, signo, true);
+	} else {
+		/* We will be replacing the default action (or ignoring it) */
+
+		nxsig_default(rtcb, signo, false);
 	}
 #endif
 
 	/* Handle the case where no sigaction is supplied (SIG_IGN) */
 
-	if (act->sa_u._sa_handler == SIG_IGN) {
+	if (handler == SIG_IGN) {
 		/* Do we still have a sigaction container from the previous setting? */
 
 		if (sigact) {
-			/* Yes.. Remove it from sigactionq */
+			/* Yes.. Remove it from signal action queue */
 
-			sq_rem((FAR sq_entry_t *)sigact, &rtcb->sigactionq);
+			flags = spin_lock_irqsave(&group->tg_lock);
+			sq_rem((FAR sq_entry_t *)sigact, &group->tg_sigactionq);
+			spin_unlock_irqrestore(&group->tg_lock, flags);
 
 			/* And deallocate it */
 
-			sig_releaseaction(sigact);
+			nxsig_release_action(sigact);
 		}
 	}
 
@@ -280,52 +367,77 @@ int sigaction(int signo, FAR const struct sigaction *act, FAR struct sigaction *
 
 	else {
 		/* Do we still have a sigaction container from the previous setting?
-		 * If so, then re-use for the new signal action.
+		 * If so, then reuse for the new signal action.
 		 */
 
-		if (!sigact) {
+		if (sigact == NULL) {
 			/* No.. Then we need to allocate one for the new action. */
 
-			sigact = sig_allocateaction();
+			sigact = nxsig_alloc_action();
 
 			/* An error has occurred if we could not allocate the sigaction */
 
 			if (!sigact) {
-				set_errno(ENOMEM);
-				return ERROR;
+				return -ENOMEM;
 			}
 
 			/* Put the signal number in the queue entry */
 
 			sigact->signo = (uint8_t)signo;
 
-			/* Add the new sigaction to sigactionq */
+			/* Add the new sigaction to signal action queue */
 
-			sq_addlast((FAR sq_entry_t *)sigact, &rtcb->sigactionq);
+			flags = spin_lock_irqsave(&group->tg_lock);
+			sq_addlast((FAR sq_entry_t *)sigact, &group->tg_sigactionq);
+			spin_unlock_irqrestore(&group->tg_lock, flags);
 		}
 
 		/* Set the new sigaction */
 
-		COPY_SIGACTION(&sigact->act, act);
+		sigact->act.sa_handler = handler;
+		sigact->act.sa_mask    = act->sa_mask;
+		sigact->act.sa_flags   = act->sa_flags;
+		sigact->act.sa_user    = act->sa_user;
+	}
+
+	return OK;
+}
+
+int sigaction(int signo, FAR const struct sigaction *act,
+              FAR struct sigaction *oact)
+{
+	int ret;
+
+	/* nxsig_action() does all of the work */
+
+	ret = nxsig_action(signo, act, oact, false);
+	if (ret < 0) {
+		set_errno(-ret);
+		return ERROR;
 	}
 
 	return OK;
 }
 
 /****************************************************************************
- * Name: sig_releaseaction
+ * Name: nxsig_release_action
  *
  * Description:
  *   Deallocate a sigaction Q entry
  *
  ****************************************************************************/
 
-void sig_releaseaction(FAR sigactq_t *sigact)
+void nxsig_release_action(FAR sigactq_t *sigact)
 {
 	irqstate_t flags;
-	/* Just put it back on the free list */
 
-	flags = spin_lock_irqsave(&g_sigaction_spin);
-	sq_addlast((FAR sq_entry_t *)sigact, &g_sigfreeaction);
-	spin_unlock_irqrestore(&g_sigaction_spin, flags);
+	if (CONFIG_SIG_ALLOC_ACTIONS > 1 || IS_PREALLOC_ACTION(sigact)) {
+		/* Non-preallocated instances will never return to heap! */
+
+		flags = spin_lock_irqsave(&g_sigaction_spin);
+		sq_addlast((FAR sq_entry_t *)sigact, &g_sigfreeaction);
+		spin_unlock_irqrestore(&g_sigaction_spin, flags);
+	} else {
+		kmm_free(sigact);
+	}
 }

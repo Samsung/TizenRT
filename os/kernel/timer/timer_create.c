@@ -15,44 +15,31 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/********************************************************************************
- * kernel/timer/timer_create.c
+/****************************************************************************
+ * sched/timer/timer_create.c
  *
- *   Copyright (C) 2007-2009, 2011, 2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ********************************************************************************/
+ ****************************************************************************/
 
-/********************************************************************************
+/****************************************************************************
  * Included Files
- ********************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
@@ -62,49 +49,41 @@
 #include <string.h>
 #include <errno.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/wdog.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/spinlock.h>
 
+#include "sched/sched.h"
 #include "timer/timer.h"
 
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
 
-/********************************************************************************
- * Definitions
- ********************************************************************************/
-
-/********************************************************************************
- * Private Data
- ********************************************************************************/
-
-/********************************************************************************
- * Public Data
- ********************************************************************************/
-
-/********************************************************************************
+/****************************************************************************
  * Private Functions
- ********************************************************************************/
+ ****************************************************************************/
 
-/********************************************************************************
+/****************************************************************************
  * Name: timer_allocate
  *
  * Description:
  *   Allocate one POSIX timer and place it into the allocated timer list.
  *
- ********************************************************************************/
+ ****************************************************************************/
 
-static struct posix_timer_s *timer_allocate(void)
+static FAR struct posix_timer_s *timer_allocate(void)
 {
-	struct posix_timer_s *ret;
+	FAR struct posix_timer_s *ret;
 	irqstate_t flags;
 	uint8_t pt_flags;
 
 	/* Try to get a preallocated timer from the free list */
 
 #if CONFIG_PREALLOC_TIMERS > 0
-	flags = enter_critical_section();
-	ret = (struct posix_timer_s *)sq_remfirst((sq_queue_t *)&g_freetimers);
-	leave_critical_section(flags);
+	flags = spin_lock_irqsave(&g_locktimers);
+	ret   = (FAR struct posix_timer_s *)
+	  sq_remfirst((FAR sq_queue_t *)&g_freetimers);
+	spin_unlock_irqrestore(&g_locktimers, flags);
 
 	/* Did we get one? */
 
@@ -115,17 +94,14 @@ static struct posix_timer_s *timer_allocate(void)
 	{
 		/* Allocate a new timer from the heap */
 
-		ret = (struct posix_timer_s *)kmm_malloc(sizeof(struct posix_timer_s));
-		pt_flags = 0;
+		ret = (FAR struct posix_timer_s *)
+		  kmm_malloc(sizeof(struct posix_timer_s));
+		pt_flags = 0u;
 	}
 
 	/* If we have a timer, then put it into the allocated timer list */
 
 	if (ret) {
-		/* Mark this timer is in use */
-
-		pt_flags |= PT_FLAGS_INUSE;
-
 		/* Initialize the timer structure */
 
 		memset(ret, 0, sizeof(struct posix_timer_s));
@@ -133,118 +109,126 @@ static struct posix_timer_s *timer_allocate(void)
 
 		/* And add it to the end of the list of allocated timers */
 
-		flags = enter_critical_section();
-		sq_addlast((sq_entry_t *)ret, (sq_queue_t *)&g_alloctimers);
-		leave_critical_section(flags);
+		flags = spin_lock_irqsave(&g_locktimers);
+		sq_addlast((FAR sq_entry_t *)ret, (FAR sq_queue_t *)&g_alloctimers);
+		spin_unlock_irqrestore(&g_locktimers, flags);
 	}
 
 	return ret;
 }
 
-/********************************************************************************
+/****************************************************************************
  * Public Functions
- ********************************************************************************/
+ ****************************************************************************/
 
-/********************************************************************************
+/****************************************************************************
  * Name: timer_create
  *
  * Description:
- *   The  timer_create() function creates per-thread timer using the specified
- *   clock, clock_id, as the timing base. The timer_create() function returns, in
- *   the location referenced by timerid, a timer ID of type timer_t used to identify
- *   the timer in timer requests. This timer ID is unique until the timer is
- *   deleted. The particular clock, clock_id, is defined in <time.h>. The timer
- *   whose ID is returned will be in a disarmed state upon return from
- *   timer_create().
+ *   The  timer_create() function creates per-thread timer using the
+ *   specified clock, clock_id, as the timing base. The timer_create()
+ *   function returns, in the location referenced by timerid, a timer ID of
+ *   type timer_t used to identify the timer in timer requests. This timer
+ *   ID is unique until the timer is deleted. The particular clock, clock_id,
+ *   is defined in <time.h>. The timer whose ID is returned will be in a
+ *   disarmed state upon return from timer_create().
  *
- *   The evp argument, if non-NULL, points to a sigevent structure. This structure
- *   is allocated by the called and defines the asynchronous notification to occur.
- *   If the evp argument is NULL, the effect is as if the evp argument pointed to
- *   a sigevent structure with the sigev_notify member having the value SIGEV_SIGNAL,
- *   the sigev_signo having a default signal number, and the sigev_value member
- *   having the value of the timer ID.
+ *   The evp argument, if non-NULL, points to a sigevent structure. This
+ *   structure is allocated by the called and defines the asynchronous
+ *   notification to occur.  If the evp argument is NULL, the effect is as
+ *   if the evp argument pointed to a sigevent structure with the
+ *   sigev_notify member having the value SIGEV_SIGNAL, the sigev_signo
+ *   having a default signal number, and the sigev_value member having the
+ *   value of the timer ID.
  *
- *   Each implementation defines a set of clocks that can be used as timing bases
- *   for per-thread timers. All implementations shall support a clock_id of
- *   CLOCK_REALTIME.
+ *   Each implementation defines a set of clocks that can be used as timing
+ *   bases for per-thread timers.
  *
- * Parameters:
+ * Input Parameters:
  *   clockid - Specifies the clock to use as the timing base.
  *   evp - Refers to a user allocated sigevent structure that defines the
  *     asynchronous notification.  evp may be NULL (see above).
  *   timerid - The pre-thread timer created by the call to timer_create().
  *
- * Return Value:
+ * Returned Value:
  *   If the call succeeds, timer_create() will return 0 (OK) and update the
  *   location referenced by timerid to a timer_t, which can be passed to the
- *   other per-thread timer calls.  If an error occurs, the function will return
- *   a value of -1 (ERROR) and set errno to indicate the error.
+ *   other per-thread timer calls.  If an error occurs, the function will
+ *   return a value of -1 (ERROR) and set errno to indicate the error.
  *
- *   EAGAIN - The system lacks sufficient signal queuing resources to honor the
- *    request.
- *   EAGAIN - The calling process has already created all of the timers it is
- *     allowed by this implementation.
+ *   EAGAIN - The system lacks sufficient signal queuing resources to honor
+ *     the request.
+ *   EAGAIN - The calling process has already created all of the timers it
+ *     is allowed by this implementation.
  *   EINVAL - The specified clock ID is not defined.
- *   ENOTSUP - The implementation does not support the creation of a timer attached
- *     to the CPU-time clock that is specified by clock_id and associated with a
- *     thread different thread invoking timer_create().
+ *   ENOTSUP - The implementation does not support the creation of a timer
+ *     attached to the CPU-time clock that is specified by clock_id and
+ *     associated with a thread different thread invoking timer_create().
  *
  * Assumptions:
  *
- ********************************************************************************/
+ ****************************************************************************/
 
-int timer_create(clockid_t clockid, FAR struct sigevent *evp, FAR timer_t *timerid)
+int timer_create(clockid_t clockid, FAR struct sigevent *evp,
+                 FAR timer_t *timerid)
 {
-	struct posix_timer_s *ret;
-	WDOG_ID wdog;
+	FAR struct posix_timer_s *ret = NULL;
+	FAR struct tcb_s *tcb = this_task();
 
-	/* Sanity checks.  Also, we support only CLOCK_REALTIME */
+	/* Sanity checks. */
 
-	if (!timerid || clockid != CLOCK_REALTIME) {
+	if (timerid == NULL || (clockid != CLOCK_REALTIME &&
+	    clockid != CLOCK_MONOTONIC && clockid != CLOCK_BOOTTIME) ||
+	    (evp != NULL && evp->sigev_notify == SIGEV_SIGNAL &&
+	     !GOOD_SIGNO(evp->sigev_signo))) {
 		set_errno(EINVAL);
-		return ERROR;
-	}
-
-	/* Allocate a watchdog to provide the underling CLOCK_REALTIME timer */
-
-	wdog = wd_create();
-	if (!wdog) {
-		set_errno(EAGAIN);
-		return ERROR;
-	}
-
-	/* Allocate a timer instance to contain the watchdog */
-
-	ret = timer_allocate();
-	if (!ret) {
-		wd_delete(wdog);
-		set_errno(EAGAIN);
-		return ERROR;
-	}
-
-	/* Initialize the timer instance */
-
-	ret->pt_crefs = 1;
-	ret->pt_owner = getpid();
-	ret->pt_delay = 0;
-	ret->pt_wdog = wdog;
-
-	if (evp) {
-		ret->pt_signo = evp->sigev_signo;
-#ifdef CONFIG_CAN_PASS_STRUCTS
-		ret->pt_value = evp->sigev_value;
-#else
-		ret->pt_value.sival_ptr = evp->sigev_value.sival_ptr;
-#endif
 	} else {
-		ret->pt_signo = SIGALRM;
-		ret->pt_value.sival_ptr = ret;
+		/* Allocate a timer instance to contain the watchdog */
+
+		ret = timer_allocate();
+		if (!ret) {
+			set_errno(EAGAIN);
+		} else {
+			/* Initialize the timer instance */
+
+			ret->pt_clock = clockid;
+			ret->pt_crefs = 1u;
+			ret->pt_owner = tcb->pid;
+			ret->pt_delay = 0u;
+			ret->pt_expected = 0u;
+
+			/* Was a struct sigevent provided? */
+
+			if (evp) {
+				/* Yes, copy the entire struct sigevent content */
+
+				memcpy(&ret->pt_event, evp, sizeof(struct sigevent));
+			} else {
+				/* "If the evp argument is NULL, the effect is as if the evp
+				 * argument pointed to a sigevent structure with the
+				 * sigev_notify member having the value SIGEV_SIGNAL,
+				 * the sigev_signo having a default signal number,
+				 * and the sigev_value member having the value of the
+				 *  timer ID."
+				 */
+
+				ret->pt_event.sigev_notify            = SIGEV_SIGNAL;
+				ret->pt_event.sigev_signo             = SIGALRM;
+				ret->pt_event.sigev_value.sival_ptr   = ret;
+
+#ifdef CONFIG_SIG_EVTHREAD
+				ret->pt_event.sigev_notify_function   = NULL;
+				ret->pt_event.sigev_notify_attributes = NULL;
+#endif
+			}
+
+			/* Return the timer */
+
+			*timerid = ret;
+		}
 	}
 
-	/* Return the timer */
-
-	*timerid = ret;
-	return OK;
+	return ret ? OK : ERROR;
 }
 
-#endif							/* CONFIG_DISABLE_POSIX_TIMERS */
+#endif /* CONFIG_DISABLE_POSIX_TIMERS */

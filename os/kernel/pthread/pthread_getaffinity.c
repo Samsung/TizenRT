@@ -1,5 +1,24 @@
 /****************************************************************************
+ *
+ * Copyright 2023 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
  * sched/pthread/pthread_getaffinity.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -36,12 +55,14 @@
 
 #include "pthread/pthread.h"
 
+#ifdef CONFIG_SMP
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pthread_getaffinity_np
+ * Name: pthread_getschedparam
  *
  * Description:
  *   The pthread_getaffinity_np() function returns the CPU affinity mask
@@ -62,24 +83,27 @@
  *
  ****************************************************************************/
 
-int pthread_getaffinity_np(pthread_t thread, size_t cpusetsize, FAR cpu_set_t *cpuset)
+int pthread_getaffinity_np(pthread_t thread, size_t cpusetsize,
+                           FAR cpu_set_t *cpuset)
 {
 	int ret;
 
-	if (thread <= 0 || cpusetsize != sizeof(cpu_set_t) || cpuset == NULL) {
-		return EINVAL;
-	}
+	DEBUGASSERT(thread > 0 && cpusetsize == sizeof(cpu_set_t) &&
+	            cpuset != NULL);
 
-	svdbg("thread ID=%d cpusetsize=%zu cpuset=%ju\n", \
-			(int)thread, cpusetsize, (uintmax_t)*cpuset);
+	sinfo("thread ID=%d cpusetsize=%zu cpuset=%ju\n",
+	      (int)thread, cpusetsize, (uintmax_t)*cpuset);
 
-	/* Let sched_getaffinity do all of the work */
-	ret = sched_getaffinity((pid_t)thread, cpusetsize, cpuset);
+	/* Let nxsched_get_affinity do all of the work */
+
+	ret = nxsched_get_affinity((pid_t)thread, cpusetsize, cpuset);
 	if (ret < 0) {
-		/* If sched_getaffinity() fails, return the positive errno */
+		/* If nxsched_get_affinity() fails, return the positive errno */
 
 		ret = -ret;
 	}
 
 	return ret;
 }
+
+#endif /* CONFIG_SMP */
