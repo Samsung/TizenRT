@@ -8,7 +8,7 @@ comment "Tiva/Stellaris Configuration Options"
 choice
 	prompt "Tiva/Stellaris Chip Selection"
 	default ARCH_CHIP_LM3S6965
-	depends on ARCH_CHIP_LM || ARCH_CHIP_TIVA
+	depends on ARCH_CHIP_LM || ARCH_CHIP_TIVA || ARCH_CHIP_SIMPLELINK
 
 config ARCH_CHIP_LM3S6918
 	bool "LM3S6918"
@@ -19,6 +19,18 @@ config ARCH_CHIP_LM3S6918
 	select TIVA_HAVE_SSI1
 	select TIVA_HAVE_TIMER3
 	select TIVA_HAVE_ETHERNET
+
+config ARCH_CHIP_LM3S9B92
+	bool "LM3S9B92"
+	depends on ARCH_CHIP_LM
+	select ARCH_CORTEXM3
+	select ARCH_CHIP_LM3S
+	select TIVA_HAVE_UART3
+	select TIVA_HAVE_I2C1
+	select TIVA_HAVE_SSI1
+	select TIVA_HAVE_TIMER3
+	select TIVA_HAVE_ETHERNET
+	select TIVA_HAVE_GPIOH_IRQS
 
 config ARCH_CHIP_LM3S9B96
 	bool "LM3S9B96"
@@ -70,6 +82,25 @@ config ARCH_CHIP_LM4F120
 	select ARCH_CHIP_LM4F
 	select ARCH_HAVE_FPU
 
+config ARCH_CHIP_TM4C123AH6PM
+	bool "TM4C123AH6PM"
+	depends on ARCH_CHIP_TIVA
+	select ARCH_CHIP_TM4C
+	select ARCH_CHIP_TM4C123
+	select TIVA_HAVE_GPIOA_IRQS
+	select TIVA_HAVE_GPIOB_IRQS
+	select TIVA_HAVE_GPIOC_IRQS
+	select TIVA_HAVE_GPIOD_IRQS
+	select TIVA_HAVE_GPIOE_IRQS
+	select TIVA_HAVE_GPIOF_IRQS
+	select TIVA_HAVE_GPIOG_IRQS
+	select TIVA_HAVE_EEPROM
+	select TIVA_HAVE_I2C4
+	select TIVA_HAVE_I2C5
+	select TIVA_HAVE_CAN1
+	select TIVA_HAVE_QEI0
+	select TIVA_HAVE_QEI1
+
 config ARCH_CHIP_TM4C123GH6ZRB
 	bool "TM4C123GH6ZRB"
 	depends on ARCH_CHIP_TIVA
@@ -79,9 +110,12 @@ config ARCH_CHIP_TM4C123GH6ZRB
 	select TIVA_HAVE_GPIOQ_IRQS
 	select TIVA_HAVE_I2C4
 	select TIVA_HAVE_I2C5
+	select TIVA_HAVE_CAN1
+	select TIVA_HAVE_QEI0
+	select TIVA_HAVE_QEI1
 
-config ARCH_CHIP_TM4C123GH6PMI
-	bool "TM4C123GH6PMI"
+config ARCH_CHIP_TM4C123GH6PM
+	bool "TM4C123GH6PM"
 	depends on ARCH_CHIP_TIVA
 	select ARCH_CHIP_TM4C
 	select ARCH_CHIP_TM4C123
@@ -93,28 +127,169 @@ config ARCH_CHIP_TM4C123GH6PMI
 	select TIVA_HAVE_GPIOF_IRQS
 	select TIVA_HAVE_ADC0
 	select TIVA_HAVE_ADC1
+	select TIVA_HAVE_CAN1
+	select TIVA_HAVE_QEI0
+	select TIVA_HAVE_QEI1
 
-config ARCH_CHIP_TM4C1294NC
-	bool "TM4C1294NC"
+config ARCH_CHIP_TM4C123GH6PZ
+	bool "TM4C123GH6PZ"
+	depends on ARCH_CHIP_TIVA
+	select ARCH_CHIP_TM4C
+	select ARCH_CHIP_TM4C123
+	select TIVA_HAVE_GPIOA_IRQS
+	select TIVA_HAVE_GPIOB_IRQS
+	select TIVA_HAVE_GPIOC_IRQS
+	select TIVA_HAVE_GPIOD_IRQS
+	select TIVA_HAVE_GPIOE_IRQS
+	select TIVA_HAVE_GPIOF_IRQS
+	select TIVA_HAVE_GPIOG_IRQS
+	select TIVA_HAVE_GPIOH_IRQS
+	select TIVA_HAVE_GPIOJ_IRQS
+	select TIVA_HAVE_GPIOK_IRQS
+	select TIVA_HAVE_ADC0
+	select TIVA_HAVE_ADC1
+	select TIVA_HAVE_CAN1
+	select TIVA_HAVE_QEI0
+	select TIVA_HAVE_QEI1
+
+config ARCH_CHIP_TM4C123GH6PGE
+	bool "TM4C123GH6PGE"
+	depends on ARCH_CHIP_TIVA
+	select ARCH_CHIP_TM4C
+	select ARCH_CHIP_TM4C123
+	select TIVA_HAVE_GPIOA_IRQS
+	select TIVA_HAVE_GPIOB_IRQS
+	select TIVA_HAVE_GPIOC_IRQS
+	select TIVA_HAVE_GPIOD_IRQS
+	select TIVA_HAVE_GPIOE_IRQS
+	select TIVA_HAVE_GPIOF_IRQS
+	select TIVA_HAVE_GPIOG_IRQS
+	select TIVA_HAVE_GPIOH_IRQS
+	select TIVA_HAVE_GPIOJ_IRQS
+	select TIVA_HAVE_GPIOK_IRQS
+	select TIVA_HAVE_GPIOL_IRQS
+	select TIVA_HAVE_GPIOM_IRQS
+	select TIVA_HAVE_GPION_IRQS
+	select TIVA_HAVE_GPIOP_IRQS
+	select TIVA_HAVE_ADC0
+	select TIVA_HAVE_ADC1
+	select TIVA_HAVE_CAN1
+	select TIVA_HAVE_QEI0
+	select TIVA_HAVE_QEI1
+
+config ARCH_CHIP_TM4C1294NCPDT
+	bool "TM4C1294NCPDT"
 	depends on ARCH_CHIP_TIVA
 	select ARCH_CHIP_TM4C
 	select ARCH_CHIP_TM4C129
 	select TIVA_HAVE_ETHERNET
+	select TIVA_HAVE_EEPROM
+	select TIVA_HAVE_GPIOG_IRQS
+	select TIVA_HAVE_GPIOH_IRQS
+	select TIVA_HAVE_GPIOJ_IRQS
+	select TIVA_HAVE_GPIOK_IRQS
+	select TIVA_HAVE_GPIOL_IRQS
+	select TIVA_HAVE_GPIOM_IRQS
+	select TIVA_HAVE_GPION_IRQS
+	select TIVA_HAVE_GPIOP_IRQS
+	select TIVA_HAVE_GPIOQ_IRQS
+	select TIVA_HAVE_CAN1
+	select TIVA_HAVE_QEI0
 
-config ARCH_CHIP_TM4C129XNC
-	bool "TM4C129XNC"
+config ARCH_CHIP_TM4C129ENCPDT
+	bool "TM4C129ENCPDT"
 	depends on ARCH_CHIP_TIVA
 	select ARCH_CHIP_TM4C
 	select ARCH_CHIP_TM4C129
 	select TIVA_HAVE_ETHERNET
+	select TIVA_HAVE_EEPROM
+	select TIVA_HAVE_GPIOG_IRQS
+	select TIVA_HAVE_GPIOH_IRQS
+	select TIVA_HAVE_GPIOJ_IRQS
+	select TIVA_HAVE_GPIOK_IRQS
+	select TIVA_HAVE_GPIOL_IRQS
+	select TIVA_HAVE_GPIOM_IRQS
+	select TIVA_HAVE_GPION_IRQS
+	select TIVA_HAVE_GPIOP_IRQS
+	select TIVA_HAVE_GPIOQ_IRQS
+	select TIVA_HAVE_CAN1
+	select TIVA_HAVE_QEI0
 
-config ARCH_CHIP_CC3200
-	bool "CC3200"
+config ARCH_CHIP_TM4C129ENCZAD
+	bool "TM4C129ENCZAD"
 	depends on ARCH_CHIP_TIVA
-	select ARCH_CORTEXM4
-	select TIVA_HAVE_I2C1
+	select ARCH_CHIP_TM4C
+	select ARCH_CHIP_TM4C129
+	select TIVA_HAVE_ETHERNET
+	select TIVA_HAVE_EEPROM
+	select TIVA_HAVE_GPIOG_IRQS
+	select TIVA_HAVE_GPIOH_IRQS
+	select TIVA_HAVE_GPIOJ_IRQS
+	select TIVA_HAVE_GPIOK_IRQS
+	select TIVA_HAVE_GPIOL_IRQS
+	select TIVA_HAVE_GPIOM_IRQS
+	select TIVA_HAVE_GPION_IRQS
+	select TIVA_HAVE_GPIOP_IRQS
+	select TIVA_HAVE_GPIOQ_IRQS
+	select TIVA_HAVE_GPIOR_IRQS
+	select TIVA_HAVE_GPIOS_IRQS
+	select TIVA_HAVE_GPIOT_IRQS
+	select TIVA_HAVE_CAN1
+	select TIVA_HAVE_QEI0
+
+config ARCH_CHIP_TM4C129XNCZAD
+	bool "TM4C129XNCZAD"
+	depends on ARCH_CHIP_TIVA
+	select ARCH_CHIP_TM4C
+	select ARCH_CHIP_TM4C129
+	select TIVA_HAVE_ETHERNET
+	select TIVA_HAVE_GPIOG_IRQS
+	select TIVA_HAVE_GPIOH_IRQS
+	select TIVA_HAVE_GPIOJ_IRQS
+	select TIVA_HAVE_GPIOK_IRQS
+	select TIVA_HAVE_GPIOL_IRQS
+	select TIVA_HAVE_GPIOM_IRQS
+	select TIVA_HAVE_GPION_IRQS
+	select TIVA_HAVE_GPIOP_IRQS
+	select TIVA_HAVE_GPIOQ_IRQS
+	select TIVA_HAVE_GPIOR_IRQS
+	select TIVA_HAVE_GPIOS_IRQS
+	select TIVA_HAVE_GPIOT_IRQS
+	select TIVA_HAVE_CAN1
+	select TIVA_HAVE_QEI0
+
+config ARCH_CHIP_CC1310
+	bool "CC1310 SimpleLink"
+	depends on ARCH_CHIP_SIMPLELINK || EXPERIMENTAL
+	select ARCH_CHIP_CC13X0
+
+config ARCH_CHIP_CC1312R1
+	bool "CC1312R1 SimpleLink"
+	depends on ARCH_CHIP_SIMPLELINK || EXPERIMENTAL
+	select ARCH_CHIP_CC13X2
+
+config ARCH_CHIP_CC1352R1
+	bool "CC1352R1 SimpleLink"
+	depends on ARCH_CHIP_SIMPLELINK || EXPERIMENTAL
+	select ARCH_CHIP_CC13X2
 
 endchoice
+
+# Chip versions
+
+choice
+	prompt "CC13xx Chip Version"
+	default ARCH_CHIP_CC13XX_V1
+	depends on ARCH_CHIP_CC13X0 || ARCH_CHIP_CC13X2
+
+config ARCH_CHIP_CC13XX_V1
+	bool "Version 1"
+	depends on ARCH_CHIP_CC13X2
+
+config ARCH_CHIP_CC13XX_V2
+	bool "Version 2"
+
+endchoice # CC13x2 Chip Version
 
 # Chip families
 
@@ -128,6 +303,9 @@ config ARCH_CHIP_LM3S
 	select TIVA_HAVE_GPIOF_IRQS
 	select TIVA_HAVE_GPIOG_IRQS
 	select TIVA_HAVE_SSI0
+	select TIVA_HAVE_UART1
+	select TIVA_HAVE_UART2
+	select TIVA_HAVE_UART3
 
 config ARCH_CHIP_LM4F
 	bool
@@ -142,6 +320,8 @@ config ARCH_CHIP_LM4F
 	select TIVA_HAVE_I2C1
 	select TIVA_HAVE_I2C2
 	select TIVA_HAVE_I2C3
+	select TIVA_HAVE_UART1
+	select TIVA_HAVE_UART2
 	select TIVA_HAVE_UART3
 	select TIVA_HAVE_UART4
 	select TIVA_HAVE_UART5
@@ -160,8 +340,6 @@ config ARCH_CHIP_TM4C123
 
 config ARCH_CHIP_TM4C129
 	bool
-	select TIVA_HAVE_GPIOP_IRQS
-	select TIVA_HAVE_GPIOQ_IRQS
 	select TIVA_HAVE_I2C4
 	select TIVA_HAVE_I2C5
 	select TIVA_HAVE_I2C6
@@ -170,6 +348,9 @@ config ARCH_CHIP_TM4C129
 	select TIVA_HAVE_I2C9
 	select TIVA_HAVE_TIMER6
 	select TIVA_HAVE_TIMER7
+	select TIVA_HAVE_UART1
+	select TIVA_HAVE_UART2
+	select TIVA_HAVE_UART3
 
 config ARCH_CHIP_TM4C
 	bool
@@ -177,15 +358,10 @@ config ARCH_CHIP_TM4C
 	select ARCH_HAVE_FPU
 	select TIVA_HAVE_ADC0
 	select TIVA_HAVE_ADC1
-	select TIVA_HAVE_GPIOP_IRQS
+	select TIVA_HAVE_CAN0
 	select TIVA_HAVE_I2C1
 	select TIVA_HAVE_I2C2
 	select TIVA_HAVE_I2C3
-	select TIVA_HAVE_UART3
-	select TIVA_HAVE_UART4
-	select TIVA_HAVE_UART5
-	select TIVA_HAVE_UART6
-	select TIVA_HAVE_UART7
 	select TIVA_HAVE_SSI0
 	select TIVA_HAVE_SSI1
 	select TIVA_HAVE_SSI2
@@ -196,6 +372,41 @@ config ARCH_CHIP_TM4C
 	select TIVA_HAVE_TIMER3
 	select TIVA_HAVE_TIMER4
 	select TIVA_HAVE_TIMER5
+	select TIVA_HAVE_UART1
+	select TIVA_HAVE_UART2
+	select TIVA_HAVE_UART3
+	select TIVA_HAVE_UART4
+	select TIVA_HAVE_UART5
+	select TIVA_HAVE_UART6
+	select TIVA_HAVE_UART7
+
+config ARCH_CHIP_CC13X0
+	bool
+	select ARCH_CORTEXM3
+	select TIVA_HAVE_ADC0
+	select TIVA_HAVE_SSI0
+	select TIVA_HAVE_SSI1
+	select TIVA_HAVE_TIMER0
+	select TIVA_HAVE_TIMER1
+	select TIVA_HAVE_TIMER2
+	select TIVA_HAVE_TIMER3
+
+config ARCH_CHIP_CC13X2
+	bool
+	select ARCH_CORTEXM4
+	select ARCH_HAVE_FPU
+	select TIVA_HAVE_ADC0
+	select TIVA_HAVE_I2C1
+	select TIVA_HAVE_SSI0
+	select TIVA_HAVE_SSI1
+	select TIVA_HAVE_TIMER0
+	select TIVA_HAVE_TIMER1
+	select TIVA_HAVE_TIMER2
+	select TIVA_HAVE_TIMER3
+	select TIVA_HAVE_UART1
+
+config ARCH_CHIP_CC26X2
+	bool
 
 config LM_REVA2
 	bool "Rev A2"
@@ -205,11 +416,9 @@ config LM_REVA2
 		Some early silicon returned an increase LDO voltage or 2.75V to work
 		around a PLL bug
 
-config TIVA_BOARD_EARLYINIT
-	bool
-	default n
-
 menu "Tiva/Stellaris Peripheral Support"
+
+# MCU capabilities
 
 config TIVA_ADC
 	bool
@@ -220,6 +429,33 @@ config TIVA_HAVE_ADC0
 	default n
 
 config TIVA_HAVE_ADC1
+	bool
+	default n
+
+config TIVA_CAN
+	bool
+	default n
+	select CAN
+	select CAN_TXREADY
+	select CAN_USE_RTR
+
+config TIVA_HAVE_CAN0
+	bool
+	default n
+
+config TIVA_HAVE_CAN1
+	bool
+	default n
+
+config TIVA_QEI
+	bool
+	default n
+
+config TIVA_HAVE_QEI0
+	bool
+	default n
+
+config TIVA_HAVE_QEI1
 	bool
 	default n
 
@@ -263,6 +499,14 @@ config TIVA_HAVE_I2C9
 	bool
 	default n
 
+config TIVA_HAVE_UART1
+	bool
+	default n
+
+config TIVA_HAVE_UART2
+	bool
+	default n
+
 config TIVA_HAVE_UART3
 	bool
 	default n
@@ -299,15 +543,11 @@ config TIVA_HAVE_SSI3
 	bool
 	default n
 
+config TIVA_HAVE_EEPROM
+	bool
+	default n
+
 config TIVA_HAVE_ETHERNET
-	bool
-	default n
-
-config TIVA_SSI
-	bool
-	default n
-
-config TIVA_TIMER
 	bool
 	default n
 
@@ -343,6 +583,18 @@ config TIVA_HAVE_TIMER7
 	bool
 	default n
 
+# Driver selections
+
+config TIVA_SSI
+	bool
+	default n
+
+config TIVA_TIMER
+	bool
+	default n
+
+# Peripheral Selections
+
 config TIVA_ADC0
 	bool "ADC0"
 	default n
@@ -353,6 +605,29 @@ config TIVA_ADC1
 	default n
 	depends on TIVA_HAVE_ADC0
 	select TIVA_ADC
+
+config TIVA_CAN0
+	bool "CAN0"
+	default n
+	depends on TIVA_HAVE_CAN0
+	select TIVA_CAN
+config TIVA_CAN1
+	bool "CAN1"
+	default n
+	depends on TIVA_HAVE_CAN1
+	select TIVA_CAN
+
+config TIVA_QEI0
+	bool "QEI0"
+	default n
+	depends on TIVA_HAVE_QEI0
+	select TIVA_QEI
+
+config TIVA_QEI1
+	bool "QEI1"
+	default n
+	depends on TIVA_HAVE_QEI1
+	select TIVA_QEI
 
 config TIVA_I2C0
 	bool "I2C0"
@@ -412,50 +687,412 @@ config TIVA_I2C9
 	depends on TIVA_HAVE_I2C9
 	select TIVA_I2C
 
-config TIVA_UART0
-	bool "UART0"
-	select ARCH_HAVE_UART0
+config TIVA_HCIUART
+	bool
 	default n
+
+choice
+	prompt "UART0 Driver Configuration"
+	default TIVA_UART0_NONE
+
+config TIVA_UART0_NONE
+	bool "Not selected"
+
+config TIVA_UART0
+	bool "Standard serial driver"
+	select UART0_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config TIVA_UART0_HCIUART
+	bool "Bluetooth HCI-UART"
+	select TIVA_HCIUART
+	depends on WIRELESS_BLUETOOTH
+
+endchoice # UART0 Driver Configuration
+
+config TIVA_CC26X2_POWERLIB
+	bool "CC26x2 Power Library"
+	default n
+	depends on ARCH_CHIP_CC26X2
+
+if TIVA_UART0_HCIUART
+config TIVA_HCIUART0_RXBUFSIZE
+	int "HCI UART0 Rx buffer size"
+	default 80
+	---help---
+		Characters are buffered as they are received. This specifies
+		the size of the receive buffer.  Ideally this should be at least
+		the size of the largest frame that can be received
+
+config TIVA_HCIUART0_TXBUFSIZE
+	int "HCI UART0 Transmit buffer size"
+	default 80
+	---help---
+		Characters are buffered before being sent.  This specifies
+		the size of the transmit buffer.  Ideally this should be at least
+		the size of the largest frame that can be sent
+
+config TIVA_HCIUART0_BAUD
+	int "HCI UART0 initial BAUD rate"
+	default 115200
+	---help---
+		The configured initial BAUD of the HCI UART used during bringup.
+		In most cases this initial rate can be increased by the upper half
+		HCI UART driver using vendor-specifi HCI UART commands.
+
+endif # TIVA_UART0_HCIUART
+
+choice
+	prompt "UART1 Driver Configuration"
+	default TIVA_UART1_NONE
+
+config TIVA_UART1_NONE
+	bool "Not selected"
 
 config TIVA_UART1
-	bool "UART1"
-	select ARCH_HAVE_UART1
-	default n
+	bool "Standard serial driver"
+	select UART1_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config TIVA_UART1_HCIUART
+	bool "Bluetooth HCI-UART"
+	select TIVA_HCIUART
+	depends on WIRELESS_BLUETOOTH
+
+endchoice # UART1 Driver Configuration
+
+if TIVA_UART1_HCIUART
+config TIVA_HCIUART1_RXBUFSIZE
+	int "HCI UART1 Rx buffer size"
+	default 80
+	---help---
+		Characters are buffered as they are received. This specifies
+		the size of the receive buffer.  Ideally this should be at least
+		the size of the largest frame that can be received
+
+config TIVA_HCIUART1_TXBUFSIZE
+	int "HCI UART1 Transmit buffer size"
+	default 80
+	---help---
+		Characters are buffered before being sent.  This specifies
+		the size of the transmit buffer.  Ideally this should be at least
+		the size of the largest frame that can be sent
+
+config TIVA_HCIUART1_BAUD
+	int "HCI UART1 initial BAUD rate"
+	default 115200
+	---help---
+		The configured initial BAUD of the HCI UART used during bringup.
+		In most cases this initial rate can be increased by the upper half
+		HCI UART driver using vendor-specifi HCI UART commands.
+
+endif # TIVA_UART1_HCIUART
+
+choice
+	prompt "UART2 Driver Configuration"
+	default TIVA_UART2_NONE
+
+config TIVA_UART2_NONE
+	bool "Not selected"
 
 config TIVA_UART2
-	bool "UART2"
-	select ARCH_HAVE_UART2
-	default n
+	bool "Standard serial driver"
+	select UART2_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config TIVA_UART2_HCIUART
+	bool "Bluetooth HCI-UART"
+	select TIVA_HCIUART
+	depends on WIRELESS_BLUETOOTH
+
+endchoice # UART2 Driver Configuration
+
+if TIVA_UART2_HCIUART
+config TIVA_HCIUART2_RXBUFSIZE
+	int "HCI UART2 Rx buffer size"
+	default 80
+	---help---
+		Characters are buffered as they are received. This specifies
+		the size of the receive buffer.  Ideally this should be at least
+		the size of the largest frame that can be received
+
+config TIVA_HCIUART2_TXBUFSIZE
+	int "HCI UART2 Transmit buffer size"
+	default 80
+	---help---
+		Characters are buffered before being sent.  This specifies
+		the size of the transmit buffer.  Ideally this should be at least
+		the size of the largest frame that can be sent
+
+config TIVA_HCIUART2_BAUD
+	int "HCI UART2 initial BAUD rate"
+	default 115200
+	---help---
+		The configured initial BAUD of the HCI UART used during bringup.
+		In most cases this initial rate can be increased by the upper half
+		HCI UART driver using vendor-specifi HCI UART commands.
+
+endif # TIVA_UART2_HCIUART
+
+choice
+	prompt "UART3 Driver Configuration"
+	default TIVA_UART3_NONE
+
+config TIVA_UART3_NONE
+	bool "Not selected"
 
 config TIVA_UART3
-	bool "UART3"
-	default n
-	depends on TIVA_HAVE_UART3
-	select ARCH_HAVE_UART3
+	bool "Standard serial driver"
+	select UART3_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config TIVA_UART3_HCIUART
+	bool "Bluetooth HCI-UART"
+	select TIVA_HCIUART
+	depends on WIRELESS_BLUETOOTH
+
+endchoice # UART3 Driver Configuration
+
+if TIVA_UART3_HCIUART
+config TIVA_HCIUART3_RXBUFSIZE
+	int "HCI UART3 Rx buffer size"
+	default 80
+	---help---
+		Characters are buffered as they are received. This specifies
+		the size of the receive buffer.  Ideally this should be at least
+		the size of the largest frame that can be received
+
+config TIVA_HCIUART3_TXBUFSIZE
+	int "HCI UART3 Transmit buffer size"
+	default 80
+	---help---
+		Characters are buffered before being sent.  This specifies
+		the size of the transmit buffer.  Ideally this should be at least
+		the size of the largest frame that can be sent
+
+config TIVA_HCIUART3_BAUD
+	int "HCI UART3 initial BAUD rate"
+	default 115200
+	---help---
+		The configured initial BAUD of the HCI UART used during bringup.
+		In most cases this initial rate can be increased by the upper half
+		HCI UART driver using vendor-specifi HCI UART commands.
+
+endif # TIVA_UART3_HCIUART
+
+choice
+	prompt "UART4 Driver Configuration"
+	default TIVA_UART4_NONE
+
+config TIVA_UART4_NONE
+	bool "Not selected"
 
 config TIVA_UART4
-	bool "UART4"
-	default n
-	depends on TIVA_HAVE_UART4
-	select ARCH_HAVE_UART4
+	bool "Standard serial driver"
+	select UART4_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config TIVA_UART4_HCIUART
+	bool "Bluetooth HCI-UART"
+	select TIVA_HCIUART
+	depends on WIRELESS_BLUETOOTH
+
+endchoice # UART4 Driver Configuration
+
+if TIVA_UART4_HCIUART
+config TIVA_HCIUART4_RXBUFSIZE
+	int "HCI UART4 Rx buffer size"
+	default 80
+	---help---
+		Characters are buffered as they are received. This specifies
+		the size of the receive buffer.  Ideally this should be at least
+		the size of the largest frame that can be received
+
+config TIVA_HCIUART4_TXBUFSIZE
+	int "HCI UART4 Transmit buffer size"
+	default 80
+	---help---
+		Characters are buffered before being sent.  This specifies
+		the size of the transmit buffer.  Ideally this should be at least
+		the size of the largest frame that can be sent
+
+config TIVA_HCIUART4_BAUD
+	int "HCI UART4 initial BAUD rate"
+	default 115200
+	---help---
+		The configured initial BAUD of the HCI UART used during bringup.
+		In most cases this initial rate can be increased by the upper half
+		HCI UART driver using vendor-specifi HCI UART commands.
+
+endif # TIVA_UART4_HCIUART
+
+choice
+	prompt "UART5 Driver Configuration"
+	default TIVA_UART5_NONE
+
+config TIVA_UART5_NONE
+	bool "Not selected"
 
 config TIVA_UART5
-	bool "UART5"
-	default n
-	depends on TIVA_HAVE_UART5
-	select ARCH_HAVE_UART5
+	bool "Standard serial driver"
+	select UART5_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config TIVA_UART5_HCIUART
+	bool "Bluetooth HCI-UART"
+	select TIVA_HCIUART
+	depends on WIRELESS_BLUETOOTH
+
+endchoice # UART5 Driver Configuration
+
+if TIVA_UART5_HCIUART
+config TIVA_HCIUART5_RXBUFSIZE
+	int "HCI UART5 Rx buffer size"
+	default 80
+	---help---
+		Characters are buffered as they are received. This specifies
+		the size of the receive buffer.  Ideally this should be at least
+		the size of the largest frame that can be received
+
+config TIVA_HCIUART5_TXBUFSIZE
+	int "HCI UART5 Transmit buffer size"
+	default 80
+	---help---
+		Characters are buffered before being sent.  This specifies
+		the size of the transmit buffer.  Ideally this should be at least
+		the size of the largest frame that can be sent
+
+config TIVA_HCIUART5_BAUD
+	int "HCI UART5 initial BAUD rate"
+	default 115200
+	---help---
+		The configured initial BAUD of the HCI UART used during bringup.
+		In most cases this initial rate can be increased by the upper half
+		HCI UART driver using vendor-specifi HCI UART commands.
+
+endif # TIVA_UART5_HCIUART
+
+choice
+	prompt "UART6 Driver Configuration"
+	default TIVA_UART6_NONE
+
+config TIVA_UART6_NONE
+	bool "Not selected"
 
 config TIVA_UART6
-	bool "UART6"
-	default n
-	depends on TIVA_HAVE_UART6
-	select ARCH_HAVE_UART6
+	bool "Standard serial driver"
+	select UART6_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config TIVA_UART6_HCIUART
+	bool "Bluetooth HCI-UART"
+	select TIVA_HCIUART
+	depends on WIRELESS_BLUETOOTH
+
+endchoice # UART6 Driver Configuration
+
+if TIVA_UART6_HCIUART
+config TIVA_HCIUART6_RXBUFSIZE
+	int "HCI UART6 Rx buffer size"
+	default 80
+	---help---
+		Characters are buffered as they are received. This specifies
+		the size of the receive buffer.  Ideally this should be at least
+		the size of the largest frame that can be received
+
+config TIVA_HCIUART6_TXBUFSIZE
+	int "HCI UART6 Transmit buffer size"
+	default 80
+	---help---
+		Characters are buffered before being sent.  This specifies
+		the size of the transmit buffer.  Ideally this should be at least
+		the size of the largest frame that can be sent
+
+config TIVA_HCIUART6_BAUD
+	int "HCI UART6 initial BAUD rate"
+	default 115200
+	---help---
+		The configured initial BAUD of the HCI UART used during bringup.
+		In most cases this initial rate can be increased by the upper half
+		HCI UART driver using vendor-specifi HCI UART commands.
+
+endif # TIVA_UART6_HCIUART
+
+choice
+	prompt "UART7 Driver Configuration"
+	default TIVA_UART7_NONE
+
+config TIVA_UART7_NONE
+	bool "Not selected"
 
 config TIVA_UART7
-	bool "UART7"
+	bool "Standard serial driver"
+	select UART7_SERIALDRIVER
+	select ARCH_HAVE_SERIAL_TERMIOS
+
+config TIVA_UART7_HCIUART
+	bool "Bluetooth HCI-UART"
+	select TIVA_HCIUART
+	depends on WIRELESS_BLUETOOTH
+
+endchoice # UART7 Driver Configuration
+
+if TIVA_UART7_HCIUART
+config TIVA_HCIUART7_RXBUFSIZE
+	int "HCI UART7 Rx buffer size"
+	default 80
+	---help---
+		Characters are buffered as they are received. This specifies
+		the size of the receive buffer.  Ideally this should be at least
+		the size of the largest frame that can be received
+
+config TIVA_HCIUART7_TXBUFSIZE
+	int "HCI UART7 Transmit buffer size"
+	default 80
+	---help---
+		Characters are buffered before being sent.  This specifies
+		the size of the transmit buffer.  Ideally this should be at least
+		the size of the largest frame that can be sent
+
+config TIVA_HCIUART7_BAUD
+	int "HCI UART7 initial BAUD rate"
+	default 115200
+	---help---
+		The configured initial BAUD of the HCI UART used during bringup.
+		In most cases this initial rate can be increased by the upper half
+		HCI UART driver using vendor-specifi HCI UART commands.
+
+endif # TIVA_UART7_HCIUART
+
+menu "HCI UART Driver Configuration"
+	depends on TIVA_HCIUART
+
+config TIVA_HCIUART_SW_RXFLOW
+	bool "Use Software UART RTS flow control"
 	default n
-	depends on TIVA_HAVE_UART7
-	select ARCH_HAVE_UART7
+	---help---
+		Enable UART RTS flow control using Software.
+
+config TIVA_HCIUART_SW_TXFLOW
+	bool "Use Software UART CTS flow control"
+	default n
+	---help---
+		Enable UART CTS flow control using Software.
+
+endmenu # HCI UART Driver Configuration
+
+config TIVA_UART_BREAKS
+	bool "Add TIOxSBRK to support sending Breaks"
+	depends on TIVA_UART0 || TIVA_UART1 || TIVA_UART2 || TIVA_UART3 || TIVA_UART4 || TIVA_UART5 || TIVA_UART6 || TIVA_UART7
+	default n
+	---help---
+		Add TIOCxBRK routines to send a BSD compatible line break.
+		TIOCSBRK will start the break and TIOCCBRK will end the break.
+		This implementation uses the BRK bit (bit 0) of the UART Line
+		Control register (UARTLCRH) to send the break. The break begins
+		after the UART finishes shifting out the current character in
+		progress, if any, including its stop bit(s), and continues
+		indefinitely until stopped by software.
 
 config TIVA_SSI0
 	bool "SSI0"
@@ -533,7 +1170,9 @@ config TIVA_ETHERNET
 	bool "Ethernet"
 	default n
 	depends on TIVA_HAVE_ETHERNET
-	select NETDEVICES if NET
+	select NETDEVICES
+	select ARCH_HAVE_PHY
+	select ARCH_HAVE_NETDEV_STATISTICS if ARCH_CHIP_LM3S || ARCH_CHIP_LM4F
 	---help---
 		This must be set (along with NET) to build the Stellaris Ethernet driver.
 
@@ -543,7 +1182,22 @@ config TIVA_FLASH
 	---help---
 		Enable MTD driver support for internal FLASH.
 
+config TIVA_EEPROM
+	bool "Internal EEPROM driver"
+	default n
+	depends on TIVA_HAVE_EEPROM && EXPERIMENTAL
+	---help---
+		Enable MTD driver support for internal EEPROM.
+
 endmenu
+
+config TIVA_RAMVBAR
+	bool "Set VBAR"
+	default n
+	---help---
+		Set the ARM VBAR register to position interrupt vectors at the
+		beginning of RAM (vs the beginning of FLASH).  The beginning of RAM
+		is that address defined by CONFIG_RAM_START.
 
 menu "Enable GPIO Interrupts"
 
@@ -782,7 +1436,7 @@ config TIVA_I2C_HIGHSPEED
 config TIVA_I2C_REGDEBUG
 	bool "Register level debug"
 	default n
-	depends on DEBUG
+	depends on DEBUG_I2C_INFO
 	---help---
 		Enables extremely detailed register access debug output.
 
@@ -832,14 +1486,18 @@ config TIVA_TIMER16_TIMECAP
 config TIVA_TIMER16_PWM
 	bool "16-bit PWM output support"
 	default n
-	depends on EXPERIMENTAL
+	---help---
+		Enables 24-bit PWM mode using a 16-bit half-timer of a
+		Tiva 16/32-bit General Purpose Timer Module (GPTM) block.
+		The 24-bit resolution is achieved by using the prescaler
+		as the high 8 bits.
 
 endif # TIVA_TIMER_16BIT
 
 config TIVA_TIMER_REGDEBUG
 	bool "Register level debug"
 	default n
-	depends on DEBUG
+	depends on DEBUG_TIMER_INFO
 	---help---
 		Enables extremely detailed register access debug output.
 
@@ -852,12 +1510,152 @@ menu "ADC Configuration"
 config TIVA_ADC_REGDEBUG
 	bool "Register level debug"
 	default n
-	depends on DEBUG
+	depends on DEBUG_ANALOG_INFO
 	---help---
 		Enables extremely detailed register access debug output.
 
 endmenu # Tiva ADC Configuration
 endif # TIVA_ADC
+
+menu "CAN Driver Configuration"
+	depends on TIVA_CAN
+choice
+	prompt "CAN bus driver selection"
+	default TIVA_SOCKET_CAN
+
+config TIVA_SOCKET_CAN
+	bool "Use SocketCAN driver"
+	depends on (TIVA_CAN0 || TIVA_CAN1) && NET_CAN
+	select NET_CAN_HAVE_ERRORS
+
+config TIVA_CHAR_DEV_CAN
+	bool "Character device driver"
+	depends on (TIVA_CAN0 || TIVA_CAN1) && !NET_CAN
+	select ARCH_HAVE_CAN_ERRORS
+
+endchoice # CAN driver selection
+
+config TIVA_CAN0_PRIO
+	int "CAN0 kthread priority"
+	default 300
+	depends on TIVA_CAN0 && TIVA_CHAR_DEV_CAN
+	---help---
+		The Tiva CAN driver retrieves messages using a kthread rather
+		than in the ISR or using a work queue. The ISR signals the
+		kthread, but the kthread can be preempted if needed. This
+		option sets the thread priority for CAN module 0.
+
+config TIVA_CAN0_BAUD
+	int "CAN0 baud rate kb/s"
+	default 125
+	depends on TIVA_CAN0 && TIVA_SOCKET_CAN
+
+config TIVA_CAN1_BAUD
+	int "CAN1 baud rate kb/s"
+	default 125
+	depends on TIVA_CAN1 && TIVA_SOCKET_CAN
+
+config TIVA_CAN1_PRIO
+	int "CAN1 kthread priority"
+	default 300
+	depends on TIVA_CAN1 && TIVA_CHAR_DEV_CAN
+	---help---
+		The Tiva CAN driver retrieves messages using a kthread rather
+		than in the ISR or using a work queue. The ISR signals the
+		kthread, but the kthread can be preempted if needed. This
+		option sets the thread priority for CAN module 1.
+
+config TIVA_CAN_REGDEBUG
+	bool "CAN register level debug"
+	depends on DEBUG_CAN_INFO && TIVA_CHAR_DEV_CAN
+	default n
+	---help---
+		Output detailed register-level CAN device debug information.
+		Requires also CONFIG_DEBUG_CAN_INFO.
+
+config TIVA_CAN_TX_FIFO_DEPTH
+	int "Size of the hardware TX FIFO"
+	range 1 31
+	default 8
+	---help---
+		This number determines the depth of the hardware transmit
+		FIFO, which cannot be resized. Using a transmit FIFO allows
+		the application to transmit messages at maximum speed and
+		reduces jitter caused by excessive interrupts. However, it
+		occupies extra mailboxes that might be used for more fine-
+		grained filtering; hence there is a trade-off.
+
+		Because the mailboxes on the Tiva chips cannot be used as
+		a ring buffer for outbound messages, a larger TX FIFO
+		directly increases the maximum number of messages that
+		can be sent in a "burst" at maximum speed.
+
+		However, the TX FIFO makes implementation of
+		"pre-arbitration" more difficult. Although the classic
+		character device CAN model does not support this anyway,
+		transmission of a higher-priority message would require
+		cancelling and reenqueuing of the low-priority messages
+		already in the hardware.
+
+config TIVA_CAN_DEFAULT_FIFO_DEPTH
+	int "Default CAN message RX FIFO depth"
+	range 1 31
+	default 6
+	---help---
+		This number determines the default depth for all RX
+		hardware FIFOs in the CAN module. The size of a FIFO can be
+		adjusted at any time (and made deeper than this number if
+		needed) via the various CANIOC_TIVA ioctls. However, this
+		option is limited to 31 because the driver must allocate
+		at least one mailbox for outbound (TX) messages. The default
+		RX filter FIFO is set to allow any messages, but is
+		reconfigured as soon as an application uses the
+		CANIOC_ADD_STDFILTER or CANIOC_ADD_EXTFILTER.
+
+config TIVA_CAN_FILTERS_MAX
+	int "Maximum number of CAN RX filters"
+	range 1 31
+	default 4
+	---help---
+		This number applies to both CAN0 and CAN1, if the chip has
+		both. (This is the number of filters for each module, not the
+		total for both CAN modules.)
+		The Tiva CAN modules have 32 message objects. Only one is
+		used for TX, so it is possible to have up to 31 unique
+		RX filters. However, increasing the FIFO depth of a filter
+		uses up message objects and reduces this number. Additionally,
+		since the driver has to keep track of the message objects
+		assigned to each filter, increasing the number of available
+		filters increases the memory footprint even if the filters
+		are not used (internally, it is a statically-allocated array).
+
+config TIVA_CAN_ERR_HANDLER_PER
+	int "Rate-limited error handling period (milliseconds)"
+	range 10 1000
+	default 100
+	depends on CAN_ERRORS || NET_CAN_ERRORS
+	---help---
+		When error messages (CAN_ERRORS) are enabled, the Tiva
+		CAN driver will disable interrupts for individual errors
+		when the application fails to call read() quickly enough
+		to keep up. This can easily happen during testing if no
+		transceiver is connected and the application is trying
+		to print error messages to a serial console.
+
+		When this happens, the driver defers error reporting to
+		a periodic task in the high-priority work queue. The task
+		checks for errors and reports them at the specified
+		interval. It is unlikely that the bus would be disturbed
+		badly enough to cause interrupt overload and yet be usable
+		for real-time communication, so successful transmission or
+		reception of a message will return the driver to the
+		normal interrupt handling mode.
+
+endmenu
+
+config TIVA_WITH_QEMU
+	bool "Run with qemu"
+	default n
 
 if TIVA_ETHERNET
 
@@ -1102,9 +1900,9 @@ config TIVA_EMAC_HWCHECKSUM
 config TIVA_ETHERNET_REGDEBUG
 	bool "Register-Level Debug"
 	default n
-	depends on DEBUG
+	depends on DEBUG_NET_INFO
 	---help---
-		Enable very low-level register access debug.  Depends on DEBUG.
+		Enable very low-level register access debug.  Depends on CONFIG_DEBUG_FEATURES.
 
 endmenu # Tiva Ethernet Configuration
 

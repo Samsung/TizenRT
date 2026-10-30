@@ -15,69 +15,57 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************************
+/****************************************************************************
  * arch/arm/src/tiva/tiva_periphrdy.h
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 #ifndef __ARCH_ARM_SRC_TIVA_TIVAPERIPHRDY_H
 #define __ARCH_ARM_SRC_TIVA_TIVAPERIPHRDY_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#include "up_arch.h"
+#include "arm_internal.h"
 #include "chip.h"
-#include "chip/tiva_syscontrol.h"
+#include "hardware/tiva_sysctrl.h"
 
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
-/* We determine if a peripheral is ready by testing a bit (b) in system control
- * register (a).
+ ****************************************************************************/
+
+/* We determine if a peripheral is ready by testing a bit (b) in system
+ * control register (a).
  */
 
-#define tiva_periphrdy(a, b)       ((getreg32(a) & (b)) != 0)
+#define tiva_periphrdy(a,b)        ((getreg32(a) & (b)) != 0)
 
 /* Watchdog Timer Power Control */
 
 #ifdef TIVA_SYSCON_PRWD
-#define tiva_wdt_periphrdy(p)      tiva_periphrdy(TIVA_SYSCON_PRWD, SYSCON_PRWD(p))
+#  define tiva_wdt_periphrdy(p)    tiva_periphrdy(TIVA_SYSCON_PRWD,SYSCON_PRWD(p))
 #else
-#define tiva_wdt_periphrdy(p)      (true)
+#  define tiva_wdt_periphrdy(p)    (true)
 #endif
 
 #define tiva_wdt0_periphrdy()      tiva_wdt_periphrdy(0)
@@ -86,9 +74,9 @@
 /* 16/32-Bit Timer Power Control */
 
 #ifdef TIVA_SYSCON_PRTIMER
-#define tiva_gptm_periphrdy(p)     tiva_periphrdy(TIVA_SYSCON_PRTIMER, SYSCON_PRTIMER(p))
+#  define tiva_gptm_periphrdy(p)   tiva_periphrdy(TIVA_SYSCON_PRTIMER,SYSCON_PRTIMER(p))
 #else
-#define tiva_gptm_periphrdy(p)     (true)
+#  define tiva_gptm_periphrdy(p)   (true)
 #endif
 
 #define tiva_gptm0_periphrdy()     tiva_gptm_periphrdy(0)
@@ -103,9 +91,9 @@
 /* GPIO Power Control */
 
 #ifdef TIVA_SYSCON_PRGPIO
-#define tiva_gpio_periphrdy(p)     tiva_periphrdy(TIVA_SYSCON_PRGPIO, SYSCON_PRGPIO(p))
+#  define tiva_gpio_periphrdy(p)   tiva_periphrdy(TIVA_SYSCON_PRGPIO,SYSCON_PRGPIO(p))
 #else
-#define tiva_gpio_periphrdy(p)     (true)
+#  define tiva_gpio_periphrdy(p)   (true)
 #endif
 
 #define tiva_gpioa_periphrdy()     tiva_gpio_periphrdy(0)
@@ -130,33 +118,33 @@
 /* μDMA Power Control */
 
 #ifdef TIVA_SYSCON_PRDMA
-#define tiva_udma_periphrdy()      tiva_periphrdy(TIVA_SYSCON_PRDMA, SYSCON_PRDMA_R0)
+#  define tiva_udma_periphrdy()    tiva_periphrdy(TIVA_SYSCON_PRDMA,SYSCON_PRDMA_R0)
 #else
-#define tiva_udma_periphrdy()      (true)
+#  define tiva_udma_periphrdy()    (true)
 #endif
 
 /* EPI Power Control */
 
 #ifdef TIVA_SYSCON_PREPI
-#define tiva_epi_periphrdy()       tiva_periphrdy(TIVA_SYSCON_PREPI, SYSCON_PREPI_R0)
+#  define tiva_epi_periphrdy()     tiva_periphrdy(TIVA_SYSCON_PREPI,SYSCON_PREPI_R0)
 #else
-#define tiva_epi_periphrdy()       (true)
+#  define tiva_epi_periphrdy()     (true)
 #endif
 
 /* Hibernation Power Control */
 
 #ifdef TIVA_SYSCON_PRHIB
-#define tiva_hib_periphrdy()       tiva_periphrdy(TIVA_SYSCON_PRHIB, SYSCON_PRHIB_R0)
+#  define tiva_hib_periphrdy()     tiva_periphrdy(TIVA_SYSCON_PRHIB,SYSCON_PRHIB_R0)
 #else
-#define tiva_hib_periphrdy()       (true)
+#  define tiva_hib_periphrdy()     (true)
 #endif
 
 /* UART Power Control */
 
 #ifdef TIVA_SYSCON_PRUART
-#define tiva_uart_periphrdy(p)     tiva_periphrdy(TIVA_SYSCON_PRUART, SYSCON_PRUART(p))
+#  define tiva_uart_periphrdy(p)   tiva_periphrdy(TIVA_SYSCON_PRUART,SYSCON_PRUART(p))
 #else
-#define tiva_uart_periphrdy(p)     (true)
+#  define tiva_uart_periphrdy(p)   (true)
 #endif
 
 #define tiva_uart0_periphrdy()     tiva_uart_periphrdy(0)
@@ -171,9 +159,9 @@
 /* SSI Power Control */
 
 #ifdef TIVA_SYSCON_PRSSI
-#define tiva_ssi_periphrdy(p)      tiva_periphrdy(TIVA_SYSCON_PRSSI, SYSCON_PRSSI(p))
+#  define tiva_ssi_periphrdy(p)    tiva_periphrdy(TIVA_SYSCON_PRSSI,SYSCON_PRSSI(p))
 #else
-#define tiva_ssi_periphrdy(p)      (true)
+#  define tiva_ssi_periphrdy(p)    (true)
 #endif
 
 #define tiva_ssi0_periphrdy()      tiva_ssi_periphrdy(0)
@@ -184,9 +172,9 @@
 /* I2C Power Control */
 
 #ifdef TIVA_SYSCON_PRI2C
-#define tiva_i2c_periphrdy(p)      tiva_periphrdy(TIVA_SYSCON_PRI2C, SYSCON_PRI2C(p))
+#  define tiva_i2c_periphrdy(p)    tiva_periphrdy(TIVA_SYSCON_PRI2C,SYSCON_PRI2C(p))
 #else
-#define tiva_i2c_periphrdy(p)      (true)
+#  define tiva_i2c_periphrdy(p)    (true)
 #endif
 
 #define tiva_i2c0_periphrdy()      tiva_i2c_periphrdy(0)
@@ -203,25 +191,25 @@
 /* USB Power Control */
 
 #ifdef TIVA_SYSCON_PRUSB
-#define tiva_usb_periphrdy()       tiva_periphrdy(TIVA_SYSCON_PRUSB, SYSCON_PRUSB_R0)
+#  define tiva_usb_periphrdy()     tiva_periphrdy(TIVA_SYSCON_PRUSB,SYSCON_PRUSB_R0)
 #else
-#define tiva_usb_periphrdy()       (true)
+#  define tiva_usb_periphrdy()     (true)
 #endif
 
 /* Ethernet PHY Power Control */
 
 #ifdef TIVA_SYSCON_PREPHY
-#define tiva_ephy_periphrdy()      tiva_periphrdy(TIVA_SYSCON_PREPHY, SYSCON_PREPHY_R0)
+#  define tiva_ephy_periphrdy()    tiva_periphrdy(TIVA_SYSCON_PREPHY,SYSCON_PREPHY_R0)
 #else
-#define tiva_ephy_periphrdy()      (true)
+#  define tiva_ephy_periphrdy()    (true)
 #endif
 
 /* CAN RunMode Clock Gating Control */
 
 #ifdef TIVA_SYSCON_PRCAN
-#define tiva_can_periphrdy(p)      tiva_periphrdy(TIVA_SYSCON_PRCAN, SYSCON_PRCAN(p))
+#  define tiva_can_periphrdy(p)    tiva_periphrdy(TIVA_SYSCON_PRCAN,SYSCON_PRCAN(p))
 #else
-#define tiva_can_periphrdy(p)      (true)
+#  define tiva_can_periphrdy(p)    (true)
 #endif
 
 #define tiva_can0_periphrdy()      tiva_can_periphrdy(0)
@@ -230,9 +218,9 @@
 /* ADC Power Control */
 
 #ifdef TIVA_SYSCON_PRADC
-#define tiva_adc_periphrdy(p)      tiva_periphrdy(TIVA_SYSCON_PRADC, SYSCON_PRADC(p))
+#  define tiva_adc_periphrdy(p)    tiva_periphrdy(TIVA_SYSCON_PRADC,SYSCON_PRADC(p))
 #else
-#define tiva_adc_periphrdy(p)      (true)
+#  define tiva_adc_periphrdy(p)    (true)
 #endif
 
 #define tiva_adc0_periphrdy()      tiva_adc_periphrdy(0)
@@ -241,17 +229,17 @@
 /* ACMP Power Control */
 
 #ifdef TIVA_SYSCON_PRACMP
-#define tiva_acmp_periphrdy()      tiva_periphrdy(TIVA_SYSCON_PRACMP, SYSCON_PRACMP_R0)
+#  define tiva_acmp_periphrdy()    tiva_periphrdy(TIVA_SYSCON_PRACMP,SYSCON_PRACMP_R0)
 #else
-#define tiva_acmp_periphrdy()      (true)
+#  define tiva_acmp_periphrdy()    (true)
 #endif
 
 /* PWM Power Control */
 
 #ifdef TIVA_SYSCON_PRPWM
-#define tiva_pwm_periphrdy(p)      tiva_periphrdy(TIVA_SYSCON_PRPWM, SYSCON_PRPWM(p))
+#  define tiva_pwm_periphrdy(p)    tiva_periphrdy(TIVA_SYSCON_PRPWM,SYSCON_PRPWM(p))
 #else
-#define tiva_pwm_periphrdy(p)      (true)
+#  define tiva_pwm_periphrdy(p)    (true)
 #endif
 
 #define tiva_pwm0_periphrdy()      tiva_pwm_periphrdy(0)
@@ -260,9 +248,9 @@
 /* QE Interface Power Control */
 
 #ifdef TIVA_SYSCON_PRQEI
-#define tiva_qei_periphrdy(p)      tiva_periphrdy(TIVA_SYSCON_PRQEI, SYSCON_PRQEI(p))
+#  define tiva_qei_periphrdy(p)    tiva_periphrdy(TIVA_SYSCON_PRQEI,SYSCON_PRQEI(p))
 #else
-#define tiva_qei_periphrdy(p)      (true)
+#  define tiva_qei_periphrdy(p)    (true)
 #endif
 
 #define tiva_qei0_periphrdy()      tiva_qei_periphrdy(0)
@@ -271,17 +259,17 @@
 /* EEPROM Power Control */
 
 #ifdef TIVA_SYSCON_PREEPROM
-#define tiva_eeprom_periphrdy()     tiva_periphrdy(TIVA_SYSCON_PREEPROM, SYSCON_PREEPROM_R0)
+#  define tiva_eeprom_periphrdy()   tiva_periphrdy(TIVA_SYSCON_PREEPROM,SYSCON_PREEPROM_R0)
 #else
-#define tiva_eeprom_periphrdy()     (true)
+#  define tiva_eeprom_periphrdy()   (true)
 #endif
 
 /* 32/64-Bit Wide Timer Power Control */
 
 #ifdef TIVA_SYSCON_PRWTIMER
-#define tiva_wtm_periphrdy(p)      tiva_periphrdy(TIVA_SYSCON_PRWTIMER, SYSCON_PRWTIMER(p))
+#  define tiva_wtm_periphrdy(p)    tiva_periphrdy(TIVA_SYSCON_PRWTIMER,SYSCON_PRWTIMER(p))
 #else
-#define tiva_wtm_periphrdy(p)      (true)
+#  define tiva_wtm_periphrdy(p)    (true)
 #endif
 
 #define tiva_wtm0_periphrdy()      tiva_wtm_periphrdy(0)
@@ -294,33 +282,33 @@
 /* CRC/Crypto Modules RunMode ClockGating Control */
 
 #ifdef TIVA_SYSCON_PRCCM
-#define tiva_ccm_periphrdy()       tiva_periphrdy(TIVA_SYSCON_PRCCM, SYSCON_PRCCM_R0)
+#  define tiva_ccm_periphrdy()     tiva_periphrdy(TIVA_SYSCON_PRCCM,SYSCON_PRCCM_R0)
 #else
-#define tiva_ccm_periphrdy()       (true)
+#  define tiva_ccm_periphrdy()     (true)
 #endif
 
 /* LCD Controller Power Control */
 
 #ifdef TIVA_SYSCON_PRLCD
-#define tiva_lcd_periphrdy()       tiva_periphrdy(TIVA_SYSCON_PRLCD, SYSCON_PRLCD_R0)
+#  define tiva_lcd_periphrdy()     tiva_periphrdy(TIVA_SYSCON_PRLCD,SYSCON_PRLCD_R0)
 #else
-#define tiva_lcd_periphrdy()       (true)
+#  define tiva_lcd_periphrdy()    (true)
 #endif
 
 /* 1-Wire Power Control */
 
 #ifdef TIVA_SYSCON_PROWIRE
-#define tiva_owire_periphrdy()     tiva_periphrdy(TIVA_SYSCON_PROWIRE, SYSCON_PROWIRE_R0)
+#  define tiva_owire_periphrdy()   tiva_periphrdy(TIVA_SYSCON_PROWIRE,SYSCON_PROWIRE_R0)
 #else
-#define tiva_owire_periphrdy()     (true)
+#  define tiva_owire_periphrdy()   (true)
 #endif
 
 /* Ethernet MAC Power Control */
 
 #ifdef TIVA_SYSCON_PREMAC
-#define tiva_emac_periphrdy()      tiva_periphrdy(TIVA_SYSCON_PREMAC, SYSCON_PREMAC_R0)
+#  define tiva_emac_periphrdy()    tiva_periphrdy(TIVA_SYSCON_PREMAC,SYSCON_PREMAC_R0)
 #else
-#define tiva_emac_periphrdy()      (true)
+#  define tiva_emac_periphrdy()    (true)
 #endif
 
-#endif							/* __ARCH_ARM_SRC_TIVA_TIVAPERIPHRDY_H */
+#endif /* __ARCH_ARM_SRC_TIVA_TIVAPERIPHRDY_H */

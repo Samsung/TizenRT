@@ -15,62 +15,49 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************************
- * configs/lm3s6965-ek/include/board.h
- * include/arch/board/board.h
+/****************************************************************************
+ * boards/arm/tiva/lm3s6965-ek/include/board.h
  *
- *   Copyright (C) 2010 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-#ifndef __ARCH_BOARD_BOARD_H
-#define __ARCH_BOARD_BOARD_H
+#ifndef __BOARDS_ARM_TIVA_LM3S6965_EK_INCLUDE_BOARD_H
+#define __BOARDS_ARM_TIVA_LM3S6965_EK_INCLUDE_BOARD_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************************
- * Definitions
- ************************************************************************************/
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
-/* Clocking *************************************************************************/
+/* Clocking *****************************************************************/
 
 /* RCC settings */
 
-#define SYSCON_RCC_XTAL      SYSCON_RCC_XTAL8000KHZ	/* Eagle100 on-board crystall is 8.00 MHz */
+#define SYSCON_RCC_XTAL      SYSCON_RCC_XTAL8000KHZ /* Eagle100 on-board crystall is 8.00 MHz */
 #define XTAL_FREQUENCY       8000000
 
-/* Oscillator source is the main oscillator (not internal, internal/4, 30KHz or
- * 30KHz from hibernate module) */
+/* Oscillator source is the main oscillator (not internal, internal/4,
+ * 30KHz or 30KHz from hibernate module)
+ */
 
 #define SYSCON_RCC_OSCSRC    SYSCON_RCC_OSCSRC_MOSC
 #define SYSCON_RCC2_OSCSRC   SYSCON_RCC2_OSCSRC2_MOSC
@@ -81,7 +68,19 @@
  */
 
 #define TIVA_SYSDIV          4
-#define SYSCLK_FREQUENCY     50000000	/* 50MHz */
+
+#ifdef CONFIG_TIVA_WITH_QEMU
+#define SYSCLK_FREQUENCY     12500000  /* 12.5MHz */
+#else
+#define SYSCLK_FREQUENCY     50000000  /* 50MHz */
+#endif
+
+/* Peripheral Clock (PCLK)
+ *
+ * Same frequency as the SYSCLK
+ */
+
+#define PCLK_FREQUENCY       SYSCLK_FREQUENCY
 
 /* Other RCC settings:
  *
@@ -102,43 +101,28 @@
 
 #define TIVA_RCC2_VALUE (SYSCON_RCC2_OSCSRC | SYSCON_RCC2_SYSDIV(TIVA_SYSDIV))
 
-/* LED definitions ******************************************************************/
+/* LED definitions **********************************************************/
 
-/* The LMS36965 Eval Kit has only one user LED: Port F, Bit 0.  Below is the mapping of this
- * single LED.  From this single LED, we can get the following information:
+/* The LMS36965 Eval Kit has only one user LED: Port F, Bit 0.
+ * Below is the mapping of this single LED.
+ * From this single LED, we can get the following information:
  *
- *   OFF Steady:    The system has failed to boot to the point of enabling interrupts
- *   ON Steady:     The systems has enabled interrupts, but none have been received
+ *   OFF Steady:    The system has failed to boot to the point of
+ *                  enabling interrupts
+ *   ON Steady:     The systems has enabled interrupts,
+ *                  but none have been received
  *   Dull glow:     The system is taking interrupts
  *   Slow blinking: The system has panicked
+ *                                 ON   OFF
  */
-/* ON   OFF */
-#define LED_STARTED       0		/* OFF  OFF */
-#define LED_HEAPALLOCATE  1		/* OFF  OFF */
-#define LED_IRQSENABLED   2		/* ON   ON */
-#define LED_STACKCREATED  3		/* ON   ON */
-#define LED_INIRQ         4		/* ON   OFF */
-#define LED_SIGNAL        5		/* ON   OFF */
-#define LED_ASSERTION     6		/* ON   OFF */
-#define LED_PANIC         7		/* ON   OFF */
 
-/************************************************************************************
- * Public Function Prototypes
- ************************************************************************************/
+#define LED_STARTED       0     /* OFF  OFF */
+#define LED_HEAPALLOCATE  1     /* OFF  OFF */
+#define LED_IRQSENABLED   2     /* ON   ON */
+#define LED_STACKCREATED  3     /* ON   ON */
+#define LED_INIRQ         4     /* ON   OFF */
+#define LED_SIGNAL        5     /* ON   OFF */
+#define LED_ASSERTION     6     /* ON   OFF */
+#define LED_PANIC         7     /* ON   OFF */
 
-#ifndef __ASSEMBLY__
-
-/************************************************************************************
- * Name: tiva_boardinitialize
- *
- * Description:
- *   All Stellaris architectures must provide the following entry point.  This entry
- *   point is called early in the intitialization -- after all memory has been
- *   configured and mapped but before any devices have been initialized.
- *
- ************************************************************************************/
-
-void tiva_boardinitialize(void);
-
-#endif							/* __ASSEMBLY__ */
-#endif							/* __ARCH_BOARD_BOARD_H */
+#endif /* __BOARDS_ARM_TIVA_LM3S6965_EK_INCLUDE_BOARD_H */
