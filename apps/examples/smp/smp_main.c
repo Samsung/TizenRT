@@ -57,8 +57,6 @@
 #endif
 #define YIELD_MSEC     100
 #define IMPOSSIBLE_CPU -1
-#define CPU_ZERO(s) do { *(s) = 0; } while (0)
-#define CPU_SET(c,s) do { *(s) |= (1 << (c)); } while (0)
 
 /****************************************************************************
  * Private Data
@@ -67,7 +65,9 @@
 static pthread_barrier_t g_smp_barrier;
 static volatile int g_thread_cpu[CONFIG_TESTING_SMP_NBARRIER_THREADS + 1];
 static int g_pid_start = 0;
+#ifdef CONFIG_AMP
 static uint8_t affinity = 0;
+#endif
 
 /****************************************************************************
  * Private Functions
@@ -200,6 +200,7 @@ static pthread_addr_t barrier_thread(pthread_addr_t parameter)
 	return NULL;
 }
 
+#ifdef CONFIG_AMP
 static void set_affinity(void)
 {
 	cpu_set_t cpu_set;
@@ -214,6 +215,7 @@ static void set_affinity(void)
 		affinity = 0;
 	}
 }
+#endif
 
 static int normal_task(int argc, char *argv[])
 {	
