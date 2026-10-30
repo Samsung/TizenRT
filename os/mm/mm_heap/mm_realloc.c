@@ -154,18 +154,20 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size, 
 		if (newsize < oldsize) {
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 			/* modify the current allocated size of old node */
-			heapinfo_subtract_size(heap, oldnode->pid, oldsize);
+			heapinfo_subtract_size(heap, oldnode->pid, oldsize, oldnode);
 			heapinfo_update_total_size(heap, (-1) * oldsize, oldnode->pid);
 #endif
 
 			mm_shrinkchunk(heap, oldnode, newsize);
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 			/* update the chunk to realloc task information */
-			heapinfo_update_node(oldnode, caller_retaddr);
+			heapinfo_update_node(heap, oldnode, caller_retaddr);
 
-			heapinfo_add_size(heap, oldnode->pid, oldnode->size);
+			heapinfo_add_size(heap, oldnode->pid, oldnode->size, oldnode);
 			heapinfo_update_total_size(heap, oldnode->size, oldnode->pid);
+			heapinfo_capture_note_realloc(heap, oldnode, (FAR char *)oldmem - SIZEOF_MM_ALLOCNODE);
 #endif
+			MM_ADD_BACKTRACE(oldnode);
 		}
 
 		/* Then return the original address */
@@ -205,7 +207,7 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size, 
 
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		/* modify the current allocated size of old node */
-		heapinfo_subtract_size(heap, oldnode->pid, oldsize);
+		heapinfo_subtract_size(heap, oldnode->pid, oldsize, oldnode);
 		heapinfo_update_total_size(heap, (-1) * oldsize, oldnode->pid);
 #endif
 
@@ -346,11 +348,13 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size, 
 		}
 #ifdef CONFIG_DEBUG_MM_HEAPINFO
 		/* update the chunk to realloc task information */
-		heapinfo_update_node(oldnode, caller_retaddr);
+		heapinfo_update_node(heap, oldnode, caller_retaddr);
 
-		heapinfo_add_size(heap, oldnode->pid, oldnode->size);
+		heapinfo_add_size(heap, oldnode->pid, oldnode->size, oldnode);
 		heapinfo_update_total_size(heap, oldnode->size, oldnode->pid);
+		heapinfo_capture_note_realloc(heap, oldnode, (FAR char *)oldmem - SIZEOF_MM_ALLOCNODE);
 #endif
+		MM_ADD_BACKTRACE(oldnode);
 
 		mm_givesemaphore(heap);
 		return newmem;
@@ -369,6 +373,9 @@ FAR void *mm_realloc(FAR struct mm_heap_s *heap, FAR void *oldmem, size_t size, 
 		if (newmem) {
 			memcpy(newmem, oldmem, oldsize - SIZEOF_MM_ALLOCNODE);
 			mm_free(heap, oldmem);
+#ifdef CONFIG_DEBUG_MM_HEAPINFO
+			heapinfo_capture_note_realloc(heap, (FAR struct mm_allocnode_s *)((FAR char *)newmem - SIZEOF_MM_ALLOCNODE), (FAR char *)oldmem - SIZEOF_MM_ALLOCNODE);
+#endif
 		}
 
 		return newmem;

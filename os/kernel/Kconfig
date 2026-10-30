@@ -874,6 +874,21 @@ config SCHED_ONEXIT
 	---help---
 		Enables the on_exit() API
 
+config SCHED_BACKTRACE
+	bool "Enable thread backtrace via sched_backtrace()"
+	default n
+	---help---
+		Enables sched_backtrace(), which returns the call-stack (return
+		addresses) of a thread.  On ARM this uses the compiler-generated
+		EHABI unwind tables (.ARM.exidx) through libgcc's _Unwind_Backtrace,
+		so it produces a precise backtrace without frame pointers.
+
+		When enabled, CONFIG_MM_BACKTRACE recording (heap allocation
+		backtrace) uses sched_backtrace() instead of the heuristic stack
+		scan.  Requires the code being unwound to be compiled with unwind
+		tables (-funwind-tables), which this option turns on for the
+		user-space pass of a two-pass (protected/kernel) build.
+
 endmenu # RTOS hooks
 
 menu "Signal Numbers"
