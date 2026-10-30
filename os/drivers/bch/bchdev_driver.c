@@ -18,41 +18,29 @@
 /****************************************************************************
  * drivers/bch/bchdev_driver.c
  *
- *   Copyright (C) 2008-2009, 2014-2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+
 #include <tinyara/config.h>
 
 #include <sys/types.h>
@@ -64,11 +52,13 @@
 #include <fcntl.h>
 #include <sched.h>
 #include <errno.h>
+#include <poll.h>
 #include <assert.h>
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/fs/ioctl.h>
+#include <tinyara/drivers/drivers.h>
 
 #include "bch.h"
 
@@ -79,15 +69,18 @@
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
+
 static int     bch_open(FAR struct file *filep);
 static int     bch_close(FAR struct file *filep);
 static off_t   bch_seek(FAR struct file *filep, off_t offset, int whence);
 static ssize_t bch_read(FAR struct file *filep, FAR char *buffer,
-						size_t buflen);
+                        size_t buflen);
 static ssize_t bch_write(FAR struct file *filep, FAR const char *buffer,
-						 size_t buflen);
+                         size_t buflen);
 static int     bch_ioctl(FAR struct file *filep, int cmd,
-						 unsigned long arg);
+                         unsigned long arg);
+static int     bch_poll(FAR struct file *filep, FAR struct pollfd *fds,
+                        bool setup);
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 static int     bch_unlink(FAR struct inode *inode);
 #endif
@@ -95,49 +88,74 @@ static int     bch_unlink(FAR struct inode *inode);
 /****************************************************************************
  * Public Data
  ****************************************************************************/
-const struct file_operations bch_fops = {
-	bch_open,	/* open */
-	bch_close,	/* close */
-	bch_read,	/* read */
-	bch_write,	/* write */
-	bch_seek,	/* seek */
-	bch_ioctl,	/* ioctl */
-#ifndef CONFIG_DISABLE_POLL
-	0,			/* poll */
-#endif
+
+const struct file_operations g_bch_fops =
+{
+  bch_open,    /* open */
+  bch_close,   /* close */
+  bch_read,    /* read */
+  bch_write,   /* write */
+  bch_seek,    /* seek */
+  bch_ioctl,   /* ioctl */
+  NULL,        /* mmap */
+  NULL,        /* truncate */
+  bch_poll,    /* poll */
+  NULL,        /* readv */
+  NULL         /* writev */
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
-	bch_unlink,	/* unlink */
+  , bch_unlink /* unlink */
 #endif
 };
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: bch_poll
+ ****************************************************************************/
+
+static int bch_poll(FAR struct file *filep, FAR struct pollfd *fds,
+                    bool setup)
+{
+	if (setup) {
+		poll_notify(&fds, 1, POLLIN | POLLOUT);
+	}
+
+	return OK;
+}
+
 /****************************************************************************
  * Name: bch_open
  *
  * Description: Open the block device
  *
  ****************************************************************************/
+
 static int bch_open(FAR struct file *filep)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct bchlib_s *bch;
+	int ret = OK;
 
-	DEBUGASSERT(inode && inode->i_private);
-	bch = (FAR struct bchlib_s *)inode->i_private;
+	DEBUGASSERT(inode->i_private);
+	bch = inode->i_private;
 
 	/* Increment the reference count */
 
-	bchlib_semtake(bch);
+	ret = nxmutex_lock(&bch->lock);
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (bch->refs == MAX_OPENCNT) {
-		return -EMFILE;
+		ret = -EMFILE;
 	} else {
 		bch->refs++;
 	}
 
-	bchlib_semgive(bch);
-	return OK;
+	nxmutex_unlock(&bch->lock);
+	return ret;
 }
 
 /****************************************************************************
@@ -146,70 +164,85 @@ static int bch_open(FAR struct file *filep)
  * Description: close the block device
  *
  ****************************************************************************/
+
 static int bch_close(FAR struct file *filep)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct bchlib_s *bch;
 	int ret = OK;
 
-	DEBUGASSERT(inode && inode->i_private);
-	bch = (FAR struct bchlib_s *)inode->i_private;
+	DEBUGASSERT(inode->i_private);
+	bch = inode->i_private;
+
+	/* Get exclusive access */
+
+	ret = nxmutex_lock(&bch->lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Flush any dirty pages remaining in the cache */
-	bchlib_semtake(bch);
-	(void)bchlib_flushsector(bch);
 
-	/*
-	 * Decrement the reference count (I don't use bchlib_decref() because I
+	bchlib_flushsector(bch, false);
+
+	/* Decrement the reference count (I don't use bchlib_decref() because I
 	 * want the entire close operation to be atomic wrt other driver
 	 * operations.
 	 */
+
 	if (bch->refs == 0) {
 		ret = -EIO;
 	} else {
 		bch->refs--;
 
-		/*
-		 * If the reference count decremented to zero AND if the character
+		/* If the reference count decremented to zero AND if the character
 		 * driver has been unlinked, then teardown the BCH device now.
 		 */
+
 		if (bch->refs == 0 && bch->unlinked) {
 			/* Tear the driver down now. */
+
 			ret = bchlib_teardown((FAR void *)bch);
 
-			/*
-			 * bchlib_teardown() would only fail if there are outstanding
+			/* bchlib_teardown() would only fail if there are outstanding
 			 * references on the device.  Since we know that is not true, it
 			 * should not fail at all.
 			 */
+
 			DEBUGASSERT(ret >= 0);
 			if (ret >= 0) {
 				/* Return without releasing the stale semaphore */
+
 				return OK;
 			}
 		}
 	}
 
-	bchlib_semgive(bch);
+	nxmutex_unlock(&bch->lock);
 	return ret;
 }
 
 /****************************************************************************
  * Name: bch_seek
  ****************************************************************************/
+
 static off_t bch_seek(FAR struct file *filep, off_t offset, int whence)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct bchlib_s *bch;
 	off_t newpos;
-	int ret;
+	off_t ret;
 
-	DEBUGASSERT(inode && inode->i_private);
+	DEBUGASSERT(inode->i_private);
 
-	bch = (FAR struct bchlib_s *)inode->i_private;
-	bchlib_semtake(bch);
+	bch = inode->i_private;
+	ret = nxmutex_lock(&bch->lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Determine the new, requested file position */
+
 	switch (whence) {
 	case SEEK_CUR:
 		newpos = filep->f_pos + offset;
@@ -220,29 +253,31 @@ static off_t bch_seek(FAR struct file *filep, off_t offset, int whence)
 		break;
 
 	case SEEK_END:
-		newpos = bch->sectsize * bch->nsectors + offset;
+		newpos = (off_t)bch->sectsize * bch->nsectors + offset;
 		break;
 
 	default:
+
 		/* Return EINVAL if the whence argument is invalid */
-		bchlib_semgive(bch);
+
+		nxmutex_unlock(&bch->lock);
 		return -EINVAL;
 	}
 
-	/*
-	 * Opengroup.org:
+	/* Opengroup.org:
 	 *
 	 *  "The lseek() function shall allow the file offset to be set beyond the
-	 *  end of the existing data in the file. If data is later written at this
-	 *  point, subsequent reads of data in the gap shall return bytes with the
-	 *  value 0 until data is actually written into the gap."
+	 *   end of the existing data in the file. If data is later written at this
+	 *   point, subsequent reads of data in the gap shall return bytes with the
+	 *   value 0 until data is actually written into the gap."
 	 *
-	 * We can conform to the first part, but not the second. But return EINVAL
-	 * if
+	 * We can conform to the first part, but not the second. But return -EINVAL
+	 * if:
 	 *
 	 *  "...the resulting file offset would be negative for a regular file,
 	 *  block special file, or directory."
 	 */
+
 	if (newpos >= 0) {
 		filep->f_pos = newpos;
 		ret = newpos;
@@ -250,52 +285,63 @@ static off_t bch_seek(FAR struct file *filep, off_t offset, int whence)
 		ret = -EINVAL;
 	}
 
-	bchlib_semgive(bch);
+	nxmutex_unlock(&bch->lock);
 	return ret;
 }
 
 /****************************************************************************
  * Name: bch_read
  ****************************************************************************/
+
 static ssize_t bch_read(FAR struct file *filep, FAR char *buffer, size_t len)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct bchlib_s *bch;
-	int ret;
+	ssize_t ret;
 
-	DEBUGASSERT(inode && inode->i_private);
-	bch = (FAR struct bchlib_s *)inode->i_private;
+	DEBUGASSERT(inode->i_private);
+	bch = inode->i_private;
 
-	bchlib_semtake(bch);
-	ret = bchlib_read(bch, buffer, filep->f_pos, len);
-	if (ret > 0) {
-		filep->f_pos += len;
+	ret = nxmutex_lock(&bch->lock);
+	if (ret < 0) {
+		return ret;
 	}
 
-	bchlib_semgive(bch);
+	ret = bchlib_read(bch, buffer, filep->f_pos, len);
+	if (ret > 0) {
+		filep->f_pos += ret;
+	}
+
+	nxmutex_unlock(&bch->lock);
 	return ret;
 }
 
 /****************************************************************************
- * Name:bch_write
+ * Name: bch_write
  ****************************************************************************/
-static ssize_t bch_write(FAR struct file *filep, FAR const char *buffer, size_t len)
+
+static ssize_t bch_write(FAR struct file *filep, FAR const char *buffer,
+                         size_t len)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct bchlib_s *bch;
-	int ret = -EACCES;
+	ssize_t ret = -EACCES;
 
-	DEBUGASSERT(inode && inode->i_private);
-	bch = (FAR struct bchlib_s *)inode->i_private;
+	DEBUGASSERT(inode->i_private);
+	bch = inode->i_private;
 
 	if (!bch->readonly) {
-		bchlib_semtake(bch);
-		ret = bchlib_write(bch, buffer, filep->f_pos, len);
-		if (ret > 0) {
-			filep->f_pos += len;
+		ret = nxmutex_lock(&bch->lock);
+		if (ret < 0) {
+			return ret;
 		}
 
-		bchlib_semgive(bch);
+		ret = bchlib_write(bch, buffer, filep->f_pos, len);
+		if (ret > 0) {
+			filep->f_pos += ret;
+		}
+
+		nxmutex_unlock(&bch->lock);
 	}
 
 	return ret;
@@ -304,48 +350,120 @@ static ssize_t bch_write(FAR struct file *filep, FAR const char *buffer, size_t 
 /****************************************************************************
  * Name: bch_ioctl
  *
- * Description: Return device geometry
+ * Description:
+ *   Handle IOCTL commands
  *
  ****************************************************************************/
+
 static int bch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
 	FAR struct inode *inode = filep->f_inode;
 	FAR struct bchlib_s *bch;
 	int ret = -ENOTTY;
 
-	DEBUGASSERT(inode && inode->i_private);
-	bch = (FAR struct bchlib_s *)inode->i_private;
+	DEBUGASSERT(inode->i_private);
+	bch = inode->i_private;
 
-	/* Is this a request to get the private data structure */
-	if (cmd == DIOC_GETPRIV) {
-		FAR struct bchlib_s **bchr = (FAR struct bchlib_s **)((uintptr_t)arg);
+	/* Process the call according to the command */
 
-		bchlib_semtake(bch);
+	switch (cmd) {
+	/* This isa request to get the private data structure */
+
+	case DIOC_GETPRIV:
+	{
+		FAR struct bchlib_s **bchr =
+		  (FAR struct bchlib_s **)((uintptr_t)arg);
+
+		ret = nxmutex_lock(&bch->lock);
+		if (ret < 0) {
+			return ret;
+		}
+
 		if (!bchr || bch->refs == MAX_OPENCNT) {
-			ret = -EINVAL;
+			ret   = -EINVAL;
 		} else {
 			bch->refs++;
 			*bchr = bch;
-			ret = OK;
+			ret   = OK;
 		}
 
-		bchlib_semgive(bch);
+		nxmutex_unlock(&bch->lock);
 	}
+	break;
+
+	/* This is a required to return the geometry of the underlying block
+	 * driver.
+	 */
+
+	case BIOC_GEOMETRY:
+	{
+		FAR struct geometry *geo = (FAR struct geometry *)((uintptr_t)arg);
+
+		DEBUGASSERT(geo != NULL && bch->inode && bch->inode->u.i_bops &&
+		            bch->inode->u.i_bops->geometry);
+
+		ret = bch->inode->u.i_bops->geometry(bch->inode, geo);
+		if (ret < 0) {
+			ferr("ERROR: geometry failed: %d\n", -ret);
+		} else if (!geo->geo_available) {
+			ferr("ERROR: geometry failed: %d\n", -ret);
+			ret = -ENODEV;
+		}
+	}
+	break;
+
 #ifdef CONFIG_BCH_ENCRYPTION
-	/* Is this a request to set the encryption key? */
-	else if (cmd == DIOC_SETKEY) {
-			memcpy(bch->key, (FAR void *)arg, CONFIG_BCH_ENCRYPTION_KEY_SIZE);
-			ret = OK;
+	/* This is a request to set the encryption key? */
+
+	case DIOC_SETKEY:
+	{
+		memcpy(bch->key, (FAR void *)arg, CONFIG_BCH_ENCRYPTION_KEY_SIZE);
+		ret = OK;
 	}
+	break;
 #endif
-	/* Otherwise, pass the IOCTL command on to the contained block driver */
-	else {
+
+	case BIOC_DISCARD:
+	{
+		/* Invalidate the sector so next read is from the device- */
+
+		bch->sector = (size_t)-1;
+		goto ioctl_default;
+	}
+
+	case BIOC_FLUSH:
+	{
+		/* Flush any dirty pages remaining in the cache */
+
+		ret = bchlib_flushsector(bch, false);
+		if (ret < 0) {
+			break;
+		}
+
+		/* Go through */
+	}
+
+		/* Pass the IOCTL command on to the contained block driver. */
+
+ioctl_default:
+	default:
+	{
 		FAR struct inode *bchinode = bch->inode;
 
 		/* Does the block driver support the ioctl method? */
+
 		if (bchinode->u.i_bops->ioctl != NULL) {
 			ret = bchinode->u.i_bops->ioctl(bchinode, cmd, arg);
+
+			/* Drivers may not support command BIOC_FLUSH */
+
+			if (ret == -ENOTTY && (cmd == BIOC_FLUSH ||
+			    cmd == BIOC_DISCARD)) {
+				ret = 0;
+			}
 		}
+	}
+	break;
 	}
 
 	return ret;
@@ -357,42 +475,54 @@ static int bch_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
  * Handle unlinking of the BCH device
  *
  ****************************************************************************/
+
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 static int bch_unlink(FAR struct inode *inode)
 {
 	FAR struct bchlib_s *bch;
 	int ret = OK;
 
-	DEBUGASSERT(inode && inode->i_private);
-	bch = (FAR struct bchlib_s *)inode->i_private;
+	DEBUGASSERT(inode->i_private);
+	bch = inode->i_private;
 
 	/* Get exclusive access to the BCH device */
-	bchlib_semtake(bch);
+
+	ret = nxmutex_lock(&bch->lock);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Indicate that the driver has been unlinked */
+
 	bch->unlinked = true;
 
-	/*
-	 * If there are no open references to the drvier then teardown the BCH
+	/* If there are no open references to the driver then teardown the BCH
 	 * device now.
 	 */
+
 	if (bch->refs == 0) {
 		/* Tear the driver down now. */
+
 		ret = bchlib_teardown((FAR void *)bch);
 
-		/*
-		 * bchlib_teardown() would only fail if there are outstanding
+		/* bchlib_teardown() would only fail if there are outstanding
 		 * references on the device.  Since we know that is not true, it
 		 * should not fail at all.
 		 */
+
 		DEBUGASSERT(ret >= 0);
 		if (ret >= 0) {
 			/* Return without releasing the stale semaphore */
+
 			return OK;
 		}
 	}
 
-	bchlib_semgive(bch);
+	nxmutex_unlock(&bch->lock);
 	return ret;
 }
 #endif
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/

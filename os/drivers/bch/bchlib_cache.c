@@ -18,42 +18,31 @@
 /****************************************************************************
  * drivers/bch/bchlib_cache.c
  *
- *   Copyright (C) 2008-2009, 2014, 2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+
 #include <tinyara/config.h>
+#include <tinyara/kmalloc.h>
 
 #include <sys/types.h>
 #include <stdbool.h>
@@ -64,7 +53,7 @@
 #include "bch.h"
 
 #if defined(CONFIG_BCH_ENCRYPTION)
-#  include <crypto/crypto.h>
+#  include <tinyara/crypto/crypto.h>
 #endif
 
 /****************************************************************************
@@ -74,6 +63,7 @@
 /****************************************************************************
  * Name: bch_xor
  ****************************************************************************/
+
 #if defined(CONFIG_BCH_ENCRYPTION)
 static void bch_xor(uint32_t *R, uint32_t *A, uint32_t *B)
 {
@@ -87,6 +77,7 @@ static void bch_xor(uint32_t *R, uint32_t *A, uint32_t *B)
 /****************************************************************************
  * Name: bch_cypher
  ****************************************************************************/
+
 #if defined(CONFIG_BCH_ENCRYPTION)
 static int bch_cypher(FAR struct bchlib_s *bch, int encrypt)
 {
@@ -96,17 +87,19 @@ static int bch_cypher(FAR struct bchlib_s *bch, int encrypt)
 
 	for (i = 0; i < blocks; i++, buffer += 16 / sizeof(uint32_t)) {
 		uint32_t T[4];
-		uint32_t X[4] = {
-			bch->sector, 0, 0, i
+		uint32_t X[4] =
+		{
+		  bch->sector, 0, 0, i
 		};
 
 		aes_cypher(X, X, 16, NULL, bch->key, CONFIG_BCH_ENCRYPTION_KEY_SIZE,
-						AES_MODE_ECB, CYPHER_ENCRYPT);
+		           AES_MODE_ECB, CYPHER_ENCRYPT);
 
 		/* Xor-Encrypt-Xor */
+
 		bch_xor(T, X, buffer);
 		aes_cypher(T, T, 16, NULL, bch->key, CONFIG_BCH_ENCRYPTION_KEY_SIZE,
-						AES_MODE_ECB, encrypt);
+		           AES_MODE_ECB, encrypt);
 		bch_xor(buffer, X, T);
 	}
 
@@ -117,6 +110,7 @@ static int bch_cypher(FAR struct bchlib_s *bch, int encrypt)
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /****************************************************************************
  * Name: bchlib_flushsector
  *
@@ -127,39 +121,48 @@ static int bch_cypher(FAR struct bchlib_s *bch, int encrypt)
  *   Caller must assume mutual exclusion
  *
  ****************************************************************************/
-int bchlib_flushsector(FAR struct bchlib_s *bch)
+
+int bchlib_flushsector(FAR struct bchlib_s *bch, bool discard)
 {
 	FAR struct inode *inode;
 	ssize_t ret = OK;
 
-	/*
-	 * Check if the sector has been modified and is out of sync with the
+	/* Check if the sector has been modified and is out of synch with the
 	 * media.
 	 */
-	if (bch->dirty) {
+
+	if (bch->dirty && bch->buffer != NULL) {
 		inode = bch->inode;
 
 #if defined(CONFIG_BCH_ENCRYPTION)
 		/* Encrypt data as necessary */
+
 		bch_cypher(bch, CYPHER_ENCRYPT);
 #endif
 
 		/* Write the sector to the media */
+
 		ret = inode->u.i_bops->write(inode, bch->buffer, bch->sector, 1);
 		if (ret < 0) {
-			fdbg("Write failed: %d\n");
+			ferr("Write failed: %zd\n", ret);
+			return (int)ret;
 		}
 
 #if defined(CONFIG_BCH_ENCRYPTION)
-		/*
-		 * Computation overhead to save memory for extra sector buffer
+		/* Computation overhead to save memory for extra sector buffer
 		 * TODO: Add configuration switch for extra sector buffer
 		 */
+
 		bch_cypher(bch, CYPHER_DECRYPT);
 #endif
 
 		/* The sector is now in sync with the media */
+
 		bch->dirty = false;
+	}
+
+	if (discard) {
+		bch->sector = (size_t)-1;
 	}
 
 	return (int)ret;
@@ -169,32 +172,50 @@ int bchlib_flushsector(FAR struct bchlib_s *bch)
  * Name: bchlib_readsector
  *
  * Description:
- *   Flush the current contents of the sector buffer (if dirty)
+ *   Read the current sector contents into buffer
  *
  * Assumptions:
  *   Caller must assume mutual exclusion
  *
  ****************************************************************************/
+
 int bchlib_readsector(FAR struct bchlib_s *bch, size_t sector)
 {
 	FAR struct inode *inode;
 	ssize_t ret = OK;
 
+	if (bch->buffer == NULL) {
+#if CONFIG_BCH_BUFFER_ALIGNMENT != 0
+		bch->buffer = kmm_memalign(CONFIG_BCH_BUFFER_ALIGNMENT, bch->sectsize);
+#else
+		bch->buffer = kmm_malloc(bch->sectsize);
+#endif
+		if (bch->buffer == NULL) {
+			ferr("Failed to allocate sector buffer\n");
+			return -ENOMEM;
+		}
+	}
+
 	if (bch->sector != sector) {
 		inode = bch->inode;
 
-		(void)bchlib_flushsector(bch);
-		bch->sector = (size_t)-1;
+		ret = bchlib_flushsector(bch, true);
+		if (ret < 0) {
+			ferr("Flush failed: %zd\n", ret);
+			return (int)ret;
+		}
 
 		ret = inode->u.i_bops->read(inode, bch->buffer, sector, 1);
 		if (ret < 0) {
-			fdbg("Read failed: %d\n");
+			ferr("Read failed: %zd\n", ret);
+			return (int)ret;
 		}
+
 		bch->sector = sector;
 #if defined(CONFIG_BCH_ENCRYPTION)
 		bch_cypher(bch, CYPHER_DECRYPT);
 #endif
 	}
+
 	return (int)ret;
 }
-

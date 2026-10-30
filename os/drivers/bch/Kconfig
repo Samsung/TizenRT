@@ -1,0 +1,46 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig BCH
+	bool "Block-to-Character (BCH) Support"
+	default n
+	---help---
+		Contains logic that may be used to convert a block driver into
+		a character driver.  This is the complementary conversion as that
+		performed by loop.c.  See include/nuttx/drivers/drivers.h for
+		registration information.
+
+if BCH
+
+config BCH_ENCRYPTION
+	bool "Enable BCH encryption"
+	default n
+	depends on CRYPTO_AES
+
+config BCH_ENCRYPTION_KEY_SIZE
+	int "AES key size"
+	default 16
+	depends on BCH_ENCRYPTION
+
+config BCH_BUFFER_ALIGNMENT
+	int "Buffer aligned bytes"
+	default 0
+
+config BCH_DEVICE_READONLY
+	bool "Set BCH device readonly"
+	default n
+	---help---
+		Set bch devices read-only
+
+config BCH_FORCE_INDIRECT
+	bool "Force indirect transfers in BCH"
+	default n
+	---help---
+		Force all data transfers in BCH to be indirect,
+		using an intermediate buffer.
+		This is needed because in some use cases (e.g. when CONFIG_BUILD_KERNEL)
+		it is not possible to write directly from user buffer.
+
+endif # BCH
