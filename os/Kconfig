@@ -17,41 +17,116 @@ config LIBDIR
 	string
 	option env="LIBDIR"
 
+config BINDIR
+	string
+	option env="BINDIR"
+
 config LOADABLEDIR
 	string
 	option env="LOADABLEDIR"
 
+menu "License Setup"
+config ALLOW_BSD_COMPONENTS
+	bool "Use components that have BSD licenses"
+	default n
+	---help---
+		When this option is enabled the project will allow the use
+		of components that have BSD licenses.
+
+		NOTE: Please check that the license for each enabled
+		component matches your project license.
+
+		NOTE: If this option is not set the following components
+		are not included in the setup menu:
+		Crypto
+		    AES cypher support
+		FS
+		    NFS client file system
+		    SPIFFS File System
+		Wireless
+		    Bluetooth LE support
+
+config ALLOW_MIT_COMPONENTS
+	bool "Use components that have MIT licenses"
+	default n
+	---help---
+		When this option is enabled the project will allow the use
+		of components that have MIT licenses.
+
+		NOTE: Please check that the license for each enabled
+		component matches your project license.
+
+config ALLOW_BSDNORDIC_COMPONENTS
+	bool "Use components that have 5-Clause Nordic licenses"
+	depends on ARCH_CHIP_NRF52 || ARCH_CHIP_NRF53 || ARCH_CHIP_NRF91
+	default n
+	---help---
+		When this option is enabled the project will allow the use
+		of components that have 5-Clause Nordic licenses.
+
+		NOTE: Please check that the license for each enabled
+		component matches your project license.
+
+config ALLOW_ECLIPSE_COMPONENTS
+	bool "Use components that have Eclipse Public Licenses"
+	default n
+	---help---
+		When this option is enabled the project will allow the use
+		of components that have EPL licenses.
+
+		NOTE: Please check that the license for each enabled
+		component matches your project license.
+
+config ALLOW_ICS_COMPONENTS
+	bool "Use components that have ICS license"
+	default n
+	---help---
+		When this option is enabled the project will allow the use
+		of components that have ICS licenses.
+
+		NOTE: Please check that the license for each enabled
+		component matches your project license.
+
+config ALLOW_CUSTOM_PERMISSIVE_COMPONENTS
+	bool "Use components that have custom permissive licenses"
+	default n
+	---help---
+		When this option is enabled the project will allow the use
+		of components that have custom permissive licenses which
+		are not covered by the standard license options above.
+
+		This includes components with custom permissive licenses
+		that allow free use, modification, and distribution but
+		may have specific attribution or notice requirements.
+
+		NOTE: Please carefully review the license terms for each
+		enabled component to ensure compliance with your project
+		requirements.
+
+endmenu # License Setup
+
 menu "Build Setup"
 
 config EXPERIMENTAL
-	bool "Prompt for development and/or incomplete code/drivers"
+	bool "Show experimental options"
+	---help---
+		Some features and drivers are considered "experimental" or
+		development/work-in-progress status. By default, these options are
+		hidden in the Kconfig menus. Enabling "Show experimental options"
+		makes these options visible and makes it possible to enable them.
 
 config DEFAULT_SMALL
 	bool "Default to smallest size"
 	default n
 	---help---
 		When options are present, the default value for certain options will
-		be the one the results in the smallest size (at a loss of featurs).
+		be the one the results in the smallest size (at a loss of features).
 		The default is a fuller feature set at a larger size.
 
 		NOTE: This option does not prevent you from overriding the default
 		to select another alternative.  Nor does it affect the settings that
 		have already been selected in your configuration file.  This applies
 		only to new settings that require a default value.
-
-config DOCKER_VERSION
-	string "Docker Image Version"
-	default "1.5.8"
-	---help---
-		This config indicates docker image version. We have developed distinct
-		version of docker images tailored to each toolchain required by different
-		chipset's configs. This approach streamlines development by providing
-		specific environments that align with the chipset's configs.
-
-		NOTE: C++ exception support requires toolchain version 10.3.1. If you are
-		enabling C++ exception then use docker image version 2.0.0.
-
-		Possible Versions: Please check https://hub.docker.com/r/tizenrt/tizenrt
 
 choice
 	prompt "Build Host Platform"
@@ -60,8 +135,8 @@ choice
 config HOST_LINUX
 	bool "Linux"
 
-config HOST_OSX
-	bool "OSX"
+config HOST_MACOS
+	bool "macOS"
 
 config HOST_WINDOWS
 	bool "Windows"
@@ -69,7 +144,23 @@ config HOST_WINDOWS
 config HOST_OTHER
 	bool "Other"
 
-endchoice
+endchoice # Build Host Platform
+
+config TOOLCHAIN_WINDOWS
+	bool
+	default n
+	depends on HOST_WINDOWS
+	---help---
+		Selected internally if the selected Windows environment is compatible
+		with the use of Windows native toolchains.
+
+config CYGWIN_WINTOOL
+	bool
+	default n
+	depends on WINDOWS_CYGWIN
+	---help---
+		Selected internally if Cygwin environment with the use of Windows
+		native toolchains.
 
 choice
 	prompt "Windows Build Environment"
@@ -78,32 +169,46 @@ choice
 
 config WINDOWS_NATIVE
 	bool "Windows Native"
+	select TOOLCHAIN_WINDOWS
+	depends on EXPERIMENTAL
 	---help---
-		Build natively in a CMD.exe environment with Windows style paths (like C:\cgywin\home)
+		Build natively in a CMD.exe environment with Windows style paths
+		(like C:\cygwin\home)
+
+		The Windows native build is complete and available, but not often
+		used or verified.  As a consequence, it cannot be assured to be
+		fully functional at any given time.  Hence, it is marked here as
+		EXPERIMENTAL so that the end user will be aware of this state.
 
 config WINDOWS_CYGWIN
 	bool "Cygwin"
+	select TOOLCHAIN_WINDOWS
 	---help---
-		Build natively in a Cygwin environment with POSIX style paths (like /cygdrive/c/cgywin/home)
+		Build natively in a Cygwin environment with POSIX style paths (like
+		/cygdrive/c/Program Files)
 
 config WINDOWS_MSYS
-	bool "MSYS"
+	bool "MSYS or MSYS2"
+	select TOOLCHAIN_WINDOWS
 	---help---
-		Build natively in a Cygwin environment with POSIX style paths (like /cygdrive/c/cgywin/home)
+		Build natively in a Cygwin environment with POSIX style paths (like
+		/cygdrive/c/cygwin/home)
 
 config WINDOWS_OTHER
 	bool "Windows POSIX-like environment"
+	select TOOLCHAIN_WINDOWS
 	---help---
-		Build natively in another POSIX-like environment.  Additional support may be necessary
+		Build natively in another POSIX-like environment.  Additional
+		support may be necessary
 
-endchoice
+endchoice # Windows Build Environment
 
 config WINDOWS_MKLINK
 	bool "Use mklink"
 	default n
 	depends on WINDOWS_NATIVE
 	---help---
-		Use the mklink command to set up symbolic links when TinyAra is
+		Use the mklink command to set up symbolic links when NuttX is
 		configured.  Otherwise, configuration directories will be copied to
 		establish the configuration.
 
@@ -124,14 +229,14 @@ config APPS_DIR
 	default "..\apps" if WINDOWS_NATIVE
 	---help---
 		Identifies the directory that builds the
-		application to link with TinyAra.  Default: ../apps This symbol must be assigned
-		to the path to the application build directory *relative* to
-		the TinyAra top build directory. If you had an application
-		directory and the TinyAra directory each in separate directory
-		trees like this:
+		application to link with NuttX.  Default: ../apps This symbol must
+		be assigned to the path to the application build directory
+		*relative* to the NuttX top build directory. If you had an
+		application directory and the NuttX directory each in separate
+		directory trees like this:
 
 			build
-			|-tinyara
+			|-nuttx
 			|  |
 			|  `- Makefile
 			`-application
@@ -153,7 +258,7 @@ config APPS_DIR
 		3)distclean. Clean everything -- auto-generated files, symbolic
 		links etc. -- so that the directory contents are the same as
 		the contents in your configuration management system.
-		This is only done when you change the TinyAra configuration.
+		This is only done when you change the NuttX configuration.
 
 		4)depend. Make or update the application build dependencies.
 
@@ -161,10 +266,390 @@ config APPS_DIR
 
 		$(MAKE) -C $(CONFIG_APPS_DIR) TOPDIR="$(TOPDIR)" <target>
 
-		TOPDIR is the full path to the TinyAra directory. It can be used, for
+		TOPDIR is the full path to the NuttX directory. It can be used, for
 		example, to include makefile fragments (e.g., .config or Make.defs)
 		or to set up include file paths.
 
+choice
+	prompt "Memory organization"
+	default BUILD_FLAT
+
+config BUILD_FLAT
+	bool "Flat address space"
+	---help---
+		Build NuttX as one large, executable "blob".  All of the code
+		within the blob can interrupt with all of the other code within
+		the blob.  There are no special privileges, protections, or
+		restraints.
+
+config BUILD_PROTECTED
+	bool "NuttX protected build"
+	depends on ARCH_USE_MPU
+	select LIB_SYSCALL
+	select BUILD_2PASS
+	---help---
+		Builds NuttX and selected applications as two "blobs":  A protected,
+		privileged kernel blob and a separate unprivileged, user blob.  This
+		requires use of the two pass build with each blob being build on
+		each pass.
+
+		NOTE:  This build configuration requires that the platform support
+		a memory protection unit (MPU).  Support, however, may not be
+		implemented on all platforms.
+
+config BUILD_KERNEL
+	bool "NuttX kernel build"
+	depends on ARCH_USE_MMU && ARCH_ADDRENV
+	select LIB_SYSCALL
+	select MODULES
+	---help---
+		Builds NuttX as a separately compiled kernel.  No applications are
+		built.  All user applications must reside in a file system where
+		they can be loaded into memory for execution.
+
+		NOTE:  This build configuration requires that the platform support
+		a memory management unit (MMU) and address environments.  Support,
+		however, may not be implemented on all platforms.
+
+endchoice # Build configuration
+
+config BUILD_PIC
+	bool "NuttX PIC build"
+	default n
+	---help---
+		Builds NuttX with position-independent code (PIC).  This will allow
+		load NuttX into memory at any address and run it.
+
+config BUILD_2PASS
+	bool "Two pass build"
+	default n
+	---help---
+		Enables the two pass build options.
+
+		Two-pass build options.  If the 2 pass build option is selected, then these
+		options configure the make system build a extra link object. This link object
+		is assumed to be an incremental (relative) link object, but could be a static
+		library (archive) (some modification to this Makefile would be required if
+		PASS1_TARGET generates an archive). Pass 1 1ncremental (relative) link
+		objects should be put into the processor-specific source directory (where other
+		link objects will be created).  If the pass1 object is an archive, it could
+		go anywhere.
+
+if BUILD_2PASS
+
+config PASS1_TARGET
+	string "Pass one target"
+	default "all"
+	---help---
+		The name of the first pass build target.  This
+		can be specific build target, a special build target (all, default, etc.)
+		or may just be left undefined.
+
+config PASS1_OBJECT
+	string "Pass one object"
+	default ""
+	---help---
+		May be used to include an extra, pass1 object
+		into the final link.  This would probably be the object generated
+		from the PASS1_TARGET.  It may be available at link time
+		in the arch/<architecture>/src directory.
+
+config NUTTX_USERSPACE
+	hex "Beginning of user-space blob"
+	default 0x0
+	depends on BUILD_PROTECTED
+	---help---
+		In the kernel build, the NuttX kernel and the user-space blob are
+		built separately linked objects.  NUTTX_USERSPACE provides the
+		address where the user-space blob is loaded into memory.  NuttX will
+		expect to find and instance of struct userspace_s at this location.
+
+endif # Build 2-pass
+endmenu # Build Setup
+
+menu "Binary Output Formats"
+
+config INTELHEX_BINARY
+	bool "Intel HEX binary format"
+	default n
+	---help---
+		Create the nuttx.hex in the Intel HEX binary format that is
+		used with many different loaders. This option will use the GNU objcopy
+		program and should not be selected if you are not using the GNU
+		toolchain.
+
+config MOTOROLA_SREC
+	bool "Motorola S-Record binary format"
+	default n
+	---help---
+		Create the nuttx.srec in the Motorola S-Record binary format that is
+		used with many different loaders. This option will use the GNU objcopy
+		program and should not be selected if you are not using the GNU
+		toolchain.
+
+config RAW_BINARY
+	bool "Raw binary format"
+	default n
+	---help---
+		Create the nuttx.bin in the raw binary format that is used with many
+		different loaders using the GNU objcopy program.  This option
+		should not be selected if you are not using the GNU toolchain.
+
+menuconfig UBOOT_UIMAGE
+	bool "U-Boot uImage"
+	select RAW_BINARY
+	depends on !WINDOWS_NATIVE
+	---help---
+		Create the uImage binary used with U-Boot.
+
+if UBOOT_UIMAGE
+
+config UIMAGE_LOAD_ADDRESS
+	hex "uImage load address"
+	default 0x0
+
+config UIMAGE_ENTRY_POINT
+	hex "uImage entry point"
+	default 0x0
+
+endif # UBOOT_UIMAGE
+
+endmenu # Binary Output Formats
+
+menu "Customize Header Files"
+
+config ARCH_HAVE_STDINT_H
+	bool
+	default n
+	---help---
+		Selected by architecture specific logic if the architecture provides
+		a stdint.h header file.
+
+config ARCH_STDINT_H
+	bool "stdint.h"
+	default n
+	depends on ARCH_HAVE_STDINT_H
+	---help---
+		The stdint.h header file can be found at tinyara/include/stdint.h.
+		However, that header includes logic to redirect the inclusion of an
+		architecture specific header file like:
+
+			#ifdef CONFIG_ARCH_STDINT_H
+			#  include <arch/stdint.h>
+			#else
+			...
+			#endif
+
+		Recall that that include path, include/arch, is a symbolic link and
+		will refer to a version of stdint.h at tinyara/arch/<architecture>/include/stdint.h.
+
+config ARCH_HAVE_STDBOOL_H
+	bool
+	default n
+	---help---
+		Selected by architecture specific logic if the architecture provides
+		a stdbool.h header file.
+
+config ARCH_STDBOOL_H
+	bool "stdbool.h"
+	default n
+	depends on ARCH_HAVE_STDBOOL_H
+	---help---
+		The stdbool.h header file can be found at tinyara/include/stdbool.h.
+		However, that header includes logic to redirect the inclusion of an
+		architecture specific header file like:
+
+			#ifdef CONFIG_ARCH_STDBOOL_H
+			#  include <arch/stdbool.h>
+			#else
+			...
+			#endif
+
+		Recall that that include path, include/arch, is a symbolic link and
+		will refer to a version of stdbool.h at tinyara/arch/<architecture>/include/stdbool.h.
+
+config ARCH_HAVE_MATH_H
+	bool
+	default n
+	---help---
+		Selected by architecture specific logic if the architecture provides
+		a math.h header file.
+
+config ARCH_MATH_H
+	bool "math.h"
+	depends on ARCH_HAVE_MATH_H
+	default n
+	---help---
+		There is also a re-directing version of math.h in the source tree.
+		However, it resides out-of-the-way at include/tinyara/lib/math.h because it
+		conflicts too often with the system math.h. If ARCH_MATH_H=y is
+		defined, however, the top-level makefile will copy the redirecting
+		math.h header file from include/tinyara/lib/math.h to include/math.h. math.h
+		will then include the architecture-specific version of math.h that you
+		must provide at tinyara/arch/>architecture</include/math.h.
+
+			#ifdef CONFIG_ARCH_MATH_H
+			#  include <arch/math.h>
+			#endif
+
+		So for the architectures that define ARCH_MATH_H=y, include/math.h
+		will be the redirecting math.h header file; for the architectures
+		that don't select ARCH_MATH_H, the redirecting math.h header file
+		will stay out-of-the-way in include/tinyara/.
+
+config ARCH_FLOAT_H
+	bool "float.h"
+	default n
+	---help---
+		The float.h header file defines the properties of your floating
+		point implementation.  It would always be best to use your
+		toolchain's float.h header file but if none is available, a default
+		float.h header file will provided if this option is selected.  However
+		there is no assurance that the settings in this float.h are actually
+		correct for your platform!
+
+config DISABLE_FLOAT
+	bool "Disable floating point"
+	default n
+	---help---
+		Disable floating point support in the compiler. This will reduce
+		code size and increase performance. This option is only available
+		on some architectures.
+
+config ARCH_HAVE_STDARG_H
+	bool
+	default n
+	---help---
+		Selected by architecture specific logic if the architecture provides
+		a math.h header file.
+
+config ARCH_STDARG_H
+	bool "stdarg.h"
+	depends on ARCH_HAVE_STDARG_H
+	default n
+	---help---
+		There is a redirecting version of stdarg.h in the source tree. It
+		resides out-of-the-way at include/tinyara/lib/stdarg.h.  This is
+		because you should normally use your toolchain's stdarg.h file. But
+		sometimes, your toolchain's stdarg.h file may have other header
+		file dependencies and so may not be usable in the NuttX build
+		environment. In those cases, you may have to create a architecture-
+		specific stdarg.h header file at tinyara/arch/<architecture>/include/stdarg.h
+
+		If ARCH_STDARG_H=y is defined, the top-level makefile will copy the
+		re-directing stdarg.h header file from include/tinyara/lib/stdarg.h to
+		include/stdarg.h. So for the architectures that cannot use their
+		toolchain's stdarg.h file, they can use this alternative by defining
+		ARCH_STDARG_H=y and providing. If ARCH_STDARG_H, is not defined, then
+		the stdarg.h header file will stay out-of-the-way in include/tinyara/.
+
+config ARCH_HAVE_STDBIT_H
+	bool
+	default n
+	---help---
+		Selected by architecture specific logic if the architecture
+		provides a stdbit.h header file.
+
+config ARCH_STDBIT_H
+	bool "stdbit.h"
+	depends on ARCH_HAVE_STDBIT_H
+	default n
+	---help---
+		Redirecting stdbit.h lives at include/tinyara/lib/stdbit.h. When
+		this is set, the build copies it to include/stdbit.h and it
+		includes arch/stdbit.h if the architecture provides one.
+
+config LIBC_STDBIT_GENERIC
+	bool "stdbit.h (generic C23)"
+	default n
+	---help---
+		Use generic C23 stdbit implementation. When set, copy
+		include/tinyara/lib/stdbit.h to include/stdbit.h. No arch
+		header is used; builtins (e.g. __builtin_clz) must be
+		available (see CONFIG_HAVE_BUILTIN_* in compiler.h).
+
+config ARCH_HAVE_SETJMP
+	bool
+	default n
+
+config ARCH_SETJMP_H
+	bool "setjmp.h"
+	default n
+	depends on ARCH_HAVE_SETJMP
+	---help---
+		There is a redirecting version of setjmp.h in the source tree. It
+		resides out-of-the-way at include/tinyara/lib/setjmp.h.  This is
+		because you should normally use your toolchain's setjmp.h file. But
+		sometimes, your toolchain's setjmp.h file may have other header
+		file dependencies and so may not be usable in the NuttX build
+		environment. In those cases, you may have to create a architecture-
+		specific setjmp.h header file at tinyara/arch/<architecture>/include/setjmp.h
+
+		If ARCH_SETJMP_H=y is defined, the top-level makefile will copy the
+		re-directing setjmp.h header file from include/tinyara/lib/setjmp.h to
+		include/setjmp.h. So for the architectures that cannot use their
+		toolchain's setjmp.h file, they can use this alternative by defining
+		ARCH_SETJMP_H=y and providing. If ARCH_SETJMP_H, is not defined, then
+		the setjmp.h header file will stay out-of-the-way in include/tinyara/.
+
+choice
+	prompt "debug.h selection"
+	default ARCH_NONE_DEBUG_H
+
+config ARCH_NONE_DEBUG_H
+	bool "None"
+	---help---
+		No debug.h under include/arch/ and include/arch/chip.
+
+config ARCH_DEBUG_H
+	bool "debug.h"
+	---help---
+		The debug.h under include/arch contains architecture dependent debugging primitives
+
+config ARCH_CHIP_DEBUG_H
+	bool "chip debug.h"
+	---help---
+		The debug.h under include/arch/chip contains architecture dependent debugging primitives
+
+config ARCH_BOARD_DEBUG_H
+	bool "board debug.h"
+	---help---
+		The debug.h under include/arch/board contains board dependent debugging primitives
+
+endchoice # debug.h selection
+
+endmenu # Customize Header Files
+
+
+comment "TizenRT Build Options"
+
+config APP_BINARY_SEPARATION
+	bool "Application binary separation build"
+	depends on BUILD_PROTECTED
+	select BINFMT_LOADABLE
+	---help---
+		Enables application binary separation.
+		This config is tightly coupled to CONFIG_BUILD_PROTECTED. When protected
+		build is selected, then selecting this config generates separate binary for
+		each user space application, apart from a separate kernel binary. Selecting
+		config also applies MPU based memory isolation and protection for each app.
+
+
+config DOCKER_VERSION
+	string "Docker Image Version"
+	default "1.5.8"
+	---help---
+		This config indicates docker image version. We have developed distinct
+		version of docker images tailored to each toolchain required by different
+		chipset's configs. This approach streamlines development by providing
+		specific environments that align with the chipset's configs.
+
+		NOTE: C++ exception support requires toolchain version 10.3.1. If you are
+		enabling C++ exception then use docker image version 2.0.0.
+
+		Possible Versions: Please check https://hub.docker.com/r/tizenrt/tizenrt
+
+menu "Build Configuration"
 config FRAMEWORK_DIR
 	string "FRAMEWORK directory"
 	default "../framework" if !WINDOWS_NATIVE
@@ -185,46 +670,7 @@ config BUILD_PARALLEL_JOBS
 		1-128 = Use specified number of jobs
 		This controls the -j option passed to make.
 
-choice
-	prompt "Memory organization"
-	default BUILD_FLAT
-
-config BUILD_FLAT
-	bool "Flat address space"
-	---help---
-		Build TinyAra as one large, executable "blob".  All of the code
-		within the blob can interrupt with all of the other code within
-		the blob.  There are no special privileges, protections, or
-		restraints.
-
-config APP_BINARY_SEPARATION
-	bool "Application binary separation build"
-	select BUILD_PROTECTED
-	select BINFMT_LOADABLE
-	---help---
-		Enables application binary separation.
-		This config is tightly coupled to CONFIG_BUILD_PROTECTED. When protected
-		build is selected, then selecting this config generates separate binary for
-		each user space application, apart from a separate kernel binary. Selecting
-		config also applies MPU based memory isolation and protection for each app.
-
-config BUILD_KERNEL
-	bool "TinyAra kernel build"
-	depends on ARCH_USE_MMU && ARCH_ADDRENV && EXPERIMENTAL
-	select LIB_SYSCALL
-	---help---
-		Builds TinyAra as a separately compiled kernel.  No applications are
-		built.  All user applications must reside in a file system where
-		they can be loaded into memory for execution.
-
-		NOTE:  This build configuration requires that the platform support
-		a memory management unit (MMU) and address environments.  Support,
-		however, may not be implemented on all platforms.
-
-endchoice # Memory organization
-
 if APP_BINARY_SEPARATION
-
 config NUM_APPS
 	int "Number of application binaries"
 	default 2
@@ -252,7 +698,6 @@ config SUPPORT_COMMON_BINARY
 		applications. The common binary will be stored in the file system.
 
 if SUPPORT_COMMON_BINARY
-
 config COMMON_BINARY_VERSION
 	string "Common binary version (YYMMDD)"
 	default 200204
@@ -275,9 +720,7 @@ config COMMON_BIN_STATIC_RAMSIZE
 		Common Binary static RAM size for data and bss
 
 endif # SUPPORT_COMMON_BINARY
-
 if ARCH_USE_MMU
-
 config NUM_L2_PER_APP
 	int "Number of L2 page tables per app"
 	default 4
@@ -287,33 +730,7 @@ config NUM_L2_PER_APP
 		If the number of L2 page tables required during run time exceeds this value, then 
 		the behavior is UNDEFINED. 
 endif # ARCH_USE_MMU
-
 endif # APP_BINARY_SEPARATION
-
-
-config BUILD_PROTECTED
-	bool
-	depends on ARCH_USE_MPU || ARCH_USE_MMU
-	select LIB_SYSCALL
-	select BUILD_2PASS
-
-config BUILD_2PASS
-	bool
-	default n
-	depends on !BUILD_KERNEL
-
-if BUILD_2PASS
-
-config PASS1_TARGET
-	string
-	default "all"
-
-config PASS1_OBJECT
-	string
-	default ""
-
-endif # Build 2-pass
-
 config BOARD_BUILD_DATE
 	string "Binary Build Date (YYMMDD)"
 	default 200204
@@ -330,17 +747,6 @@ config BINARY_SIGNING
 		Enable Encryption and Secure boot.
 		But this config is set as n and invisible because binary signing is not supported here.
 
-config USER_SIGN_PREPEND_SIZE
-	if ARCH_BOARD_RTL8721CSM
-		source board/rtl8721csm/Kconfig.signing
-	endif
-	if ARCH_BOARD_RTL8730E
-		source board/rtl8730e/Kconfig.signing
-	endif
-	if ARCH_BOARD_BK7239N
-		source board/bk7239n/Kconfig.signing
-	endif
-
 config RESOURCE_BINARY_SIGNING
 	bool "Enable Resource Binary Signing"
 	default n
@@ -351,52 +757,7 @@ config RESOURCE_BINARY_SIGNING
 		This option enables signing for resource binaries used in the system.
 
 endmenu # Build Configuration
-
 menu "Binary Output Formats"
-
-config INTELHEX_BINARY
-	bool "Intel HEX binary format"
-	default n
-	---help---
-		Create the tinyara.hex in the Intel HEX binary format that is
-		used with many different loaders. This option will use the GNU objcopy program
-		and should not be selected if you are not using the GNU toolchain.
-
-config MOTOROLA_SREC
-	bool "Motorola S-Record binary format"
-	default n
-	---help---
-		Create the tinyara.srec in the Motorola S-Record binary format that is
-		used with many different loaders. This option will use the GNU objcopy program
-		and should not be selected if you are not using the GNU toolchain.
-
-config RAW_BINARY
-	bool
-	default y
-	---help---
-		Create the tinyara.bin in the raw binary format that is used with many 
-		different loaders using the GNU objcopy program. 
-		This configuration should always be enabled mandatorily in TizenRT.	
-
-menuconfig UBOOT_UIMAGE
-	bool "U-Boot uImage"
-	select RAW_BINARY
-	depends on !WINDOWS_NATIVE
-	---help---
-		Create the uImage binary used with U-Boot.
-
-if UBOOT_UIMAGE
-
-config UIMAGE_LOAD_ADDRESS
-	hex "uImage load address"
-	default 0x0
-
-config UIMAGE_ENTRY_POINT
-	hex "uImage entry point"
-	default 0x0
-
-endif
-
 config DOWNLOAD_IMAGE
 	bool "Convert RAW binary to download image"
 	select RAW_BINARY
@@ -406,132 +767,8 @@ config DOWNLOAD_IMAGE
 
 endmenu # Binary Output Formats
 
-menu "Customize Header Files"
-
-config ARCH_STDINT_H
-	bool "stdint.h"
-	default n
-	---help---
-		The stdint.h header file can be found at tinyara/include/stdint.h.
-		However, that header includes logic to redirect the inclusion of an
-		architecture specific header file like:
-
-			#ifdef CONFIG_ARCH_STDINT_H
-			#  include <arch/stdint.h>
-			#else
-			...
-			#endif
-
-		Recall that that include path, include/arch, is a symbolic link and
-		will refer to a version of stdint.h at tinyara/arch/<architecture>/include/stdint.h.
-
-config ARCH_STDBOOL_H
-	bool "stdbool.h"
-	default n
-	---help---
-		The stdbool.h header file can be found at tinyara/include/stdbool.h.
-		However, that header includes logic to redirect the inclusion of an
-		architecture specific header file like:
-
-			#ifdef CONFIG_ARCH_STDBOOL_H
-			#  include <arch/stdbool.h>
-			#else
-			...
-			#endif
-
-		Recall that that include path, include/arch, is a symbolic link and
-		will refer to a version of stdbool.h at tinyara/arch/<architecture>/include/stdbool.h.
-
-config ARCH_MATH_H
-	bool "math.h"
-	default n
-	---help---
-		There is also a re-directing version of math.h in the source tree.
-		However, it resides out-of-the-way at include/tinyara/math.h because it
-		conflicts too often with the system math.h. If ARCH_MATH_H=y is
-		defined, however, the top-level makefile will copy the redirecting
-		math.h header file from include/tinyara/math.h to include/math.h. math.h
-		will then include the architecture-specific version of math.h that you
-		must provide at tinyara/arch/>architecture</include/math.h.
-
-			#ifdef CONFIG_ARCH_MATH_H
-			#  include <arch/math.h>
-			#endif
-
-		So for the architectures that define ARCH_MATH_H=y, include/math.h
-		will be the redirecting math.h header file; for the architectures
-		that don't select ARCH_MATH_H, the redirecting math.h header file
-		will stay out-of-the-way in include/tinyara/.
-
-config ARCH_FLOAT_H
-	bool "float.h"
-	default n
-	---help---
-		The float.h header file defines the properties of your floating
-		point implementation.  It would always be best to use your
-		toolchain's float.h header file but if none is available, a default
-		float.h header file will provided if this option is selected.  However
-		there is no assurance that the settings in this float.h are actually
-		correct for your platform!
-
-config ARCH_STDARG_H
-	bool "stdarg.h"
-	default n
-	---help---
-		There is also a redirecting version of stdarg.h in the source tree
-		as well. It also resides out-of-the-way at include/tinyara/stdarg.h.
-		This is because you should normally use your toolchain's stdarg.h
-		file. But sometimes, your toolchain's stdarg.h file may have other
-		header file dependencies and so may not be usable in the TinyAra build
-		environment. In those cases, you may have to create a architecture-
-		specific stdarg.h header file at tinyara/arch/<architecture>/include/stdarg.h
-
-		If ARCH_STDARG_H=y is defined, the top-level makefile will copy the
-		re-directing stdarg.h header file from include/tinyara/stdarg.h to
-		include/stdarg.h. So for the architectures that cannot use their
-		toolchain's stdarg.h file, they can use this alternative by defining
-		ARCH_STDARG_H=y and providing. If ARCH_STDARG_H, is not defined, then
-		the stdarg.h header file will stay out-of-the-way in include/tinyara/.
-
-endmenu # Customize Header Files
-
-config ARCH_HAVE_CUSTOMOPT
-	bool
-	default n
-
-choice
-	prompt "Optimization Level"
-	default DEBUG_NOOPT if DEBUG_SYMBOLS
-	default DEBUG_FULLOPT if !DEBUG_SYMBOLS
-
-config DEBUG_NOOPT
-	bool "Suppress Optimization"
-	---help---
-		Build without optimization.  This is often helpful when debugging code.
-
-config DEBUG_CUSTOMOPT
-	bool "Custom Optimization"
-	depends on ARCH_HAVE_CUSTOMOPT
-	---help---
-		Select a custom debug level.  This is often helpful if you suspect an
-		optimization level error and want to lower the level of optimization.
-
-config DEBUG_FULLOPT
-	bool "Normal, Full optimization"
-	---help---
-		Build full optimization.  This is the normal case for production
-		firmware.
-
-endchoice # Optimization Level
-
-config DEBUG_OPTLEVEL
-	string "Custom Optimization Level"
-	default "-O2"
-	depends on DEBUG_CUSTOMOPT
-	---help---
-		This string represents the custom optimization level that will be used if DEBUG_CUSTOMOPT.
-
 endmenu # Build Setup
+
 
 menu "Chip Selection"
 source arch/Kconfig
@@ -589,11 +826,6 @@ menu "Memory Management"
 source mm/Kconfig
 endmenu
 
-menu "Work Queue Support"
-	depends on !DISABLE_SIGNALS
-source wqueue/Kconfig
-endmenu
-
 menu "Power Management"
 source pm/Kconfig
 endmenu
@@ -608,8 +840,11 @@ source syscall/Kconfig
 endmenu
 
 menu "Built-in Libraries"
-source "$LIBDIR/libc/Kconfig"
-source "$LIBDIR/libxx/Kconfig"
+source libs/libc/Kconfig
+source libs/libm/Kconfig
+source libs/libxx/Kconfig
+source libs/libdsp/Kconfig
+source libs/libbuiltin/Kconfig
 endmenu
 
 menu "External Libraries"
@@ -644,7 +879,6 @@ menu "Binary manager"
 source kernel/binary_manager/Kconfig
 endmenu
 
-
 menu "Messaging Framework"
 source "$FRAMEWORK_DIR/src/messaging/Kconfig"
 endmenu
@@ -664,5 +898,6 @@ endmenu
 menu "Security Framework"
 source "$FRAMEWORK_DIR/src/security/Kconfig"
 endmenu
+
 
 
