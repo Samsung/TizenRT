@@ -16,28 +16,67 @@
 #
 ###########################################################################
 ############################################################################
-# libs/libc/Makefile
+# libc/Makefile
 #
-# SPDX-License-Identifier: Apache-2.0
+#   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
+#   Author: Gregory Nutt <gnutt@nuttx.org>
 #
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.  The
-# ASF licenses this file to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance with the
-# License.  You may obtain a copy of the License at
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name NuttX nor the names of its contributors may be
+#    used to endorse or promote products derived from this software
+#    without specific prior written permission.
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
-# License for the specific language governing permissions and limitations
-# under the License.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 #
 ###########################################################################
 
-include $(TOPDIR)/Make.defs
+-include $(TOPDIR)/Make.defs
+
+# CFLAGS
+
+ifeq ($(CONFIG_BUILD_PROTECTED),y)
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  KDEFINE = ${shell $(TOPDIR)\tools\define.bat "$(CC)" __KERNEL__}
+else
+  KDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __KERNEL__}
+endif
+else
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  KDEFINE = ${shell $(TOPDIR)\tools\define.bat "$(CC)" __KERNEL__}
+else
+  KDEFINE = ${shell $(TOPDIR)/tools/define.sh "$(CC)" __KERNEL__}
+endif
+endif
+endif
+
+# Sources and paths
+
+ASRCS =
+CSRCS =
+
+DEPPATH := --dep-path .
+VPATH := .
 
 include aio/Make.defs
 include assert/Make.defs
@@ -87,71 +126,12 @@ include uuid/Make.defs
 include wchar/Make.defs
 include wctype/Make.defs
 include wqueue/Make.defs
-
-# Use double delim to fix windows native build and give an error:
-# makefile:132: *** target mode do not include“%”. stop.
-#
-# In Windows environment DELIM := $(strip \) but \ has two role:
-# first: \ as directory, and second \ as Escape character, Reference:
-#
-# https://github.com/apache/nuttx/pull/7572#discussion_r1028219229
-
-ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  DELIMS = $(DELIM)$(DELIM)
-else
-  DELIMS = $(DELIM)
-endif
-
-CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)libs$(DELIM)libc
-AFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)libs$(DELIM)libc
-
-# Rule for the symbol table generation
-
-MKSYMTAB = $(TOPDIR)$(DELIM)tools$(DELIM)mksymtab$(HOSTEXEEXT)
-
-$(MKSYMTAB):
-	$(Q) $(MAKE) -C $(TOPDIR)$(DELIM)tools -f Makefile.host mksymtab
-
-# C library and math library symbols should be available in the FLAT
-# and PROTECTED builds.  KERNEL builds are separately linked and so should
-# not need symbol tables.
-
-CSVFILES  = $(TOPDIR)$(DELIM)libs$(DELIM)libc$(DELIM)libc.csv
-CSVFILES += $(TOPDIR)$(DELIM)libs$(DELIM)libm$(DELIM)libm.csv
-
-# In the PROTECTED and KERNEL builds, the applications could link with
-# libproxy which will provide symbol-compatible access to OS functions
-# via a call gate, but the applications which link with these functions
-# directly could remove the repeat proxy code to save the space.
-
-CSVFILES += $(TOPDIR)$(DELIM)syscall$(DELIM)syscall.csv
-
-ifeq ($(CONFIG_EXECFUNCS_SYSTEM_SYMTAB),y)
-
-exec_symtab.c : $(CSVFILES) $(MKSYMTAB)
-	$(Q) cat $(CSVFILES) | LC_ALL=C sort >$@.csv
-	$(Q) $(MKSYMTAB) $@.csv $@ $(CONFIG_EXECFUNCS_SYMTAB_ARRAY) $(CONFIG_EXECFUNCS_NSYMBOLS_VAR)
-	$(Q) rm -f $@.csv
-
-CSRCS += exec_symtab.c
-
-endif
-
-ifeq ($(CONFIG_LIBC_ELF_SYSTEM_SYMTAB),y)
-
-elf_sys_symtab.c : $(CSVFILES) $(MKSYMTAB)
-	$(Q) cat $(CSVFILES) | LC_ALL=C sort >$@.csv
-	$(Q) $(MKSYMTAB) $@.csv $@ $(CONFIG_LIBC_ELF_SYMTAB_ARRAY) $(CONFIG_LIBC_ELF_NSYMBOLS_VAR)
-	$(Q) rm -f $@.csv
-
-CSRCS += elf_sys_symtab.c
-
-endif
-
+# REVISIT: Backslash causes problems in $(COBJS) target
+DELIM := $(strip /)
 BINDIR ?= bin
 
-AOBJS = $(patsubst %.S, $(BINDIR)$(DELIMS)%$(OBJEXT), $(ASRCS))
-COBJS = $(patsubst %.c, $(BINDIR)$(DELIMS)%$(OBJEXT), $(CSRCS))
+AOBJS = $(patsubst %.S, $(BINDIR)$(DELIM)%$(OBJEXT), $(ASRCS))
+COBJS = $(patsubst %.c, $(BINDIR)$(DELIM)%$(OBJEXT), $(CSRCS))
 
 SRCS = $(ASRCS) $(CSRCS)
 OBJS = $(AOBJS) $(COBJS)
@@ -162,88 +142,74 @@ BIN ?= libc$(LIBEXT)
 all: $(BIN)
 .PHONY: clean distclean
 
-$(AOBJS): $(BINDIR)$(DELIMS)%$(OBJEXT): %.S
+$(AOBJS): $(BINDIR)$(DELIM)%$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
+	$(call MOVEOBJ,$(patsubst $(BINDIR)$(DELIM)%$(OBJEXT),%,$@),$(BINDIR))
 
-# REVISIT: Backslash causes problems in $(COBJS) target
-
-$(COBJS): $(BINDIR)$(DELIMS)%$(OBJEXT): %.c
+$(COBJS): $(BINDIR)$(DELIM)%$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
+	$(call MOVEOBJ,$(patsubst $(BINDIR)$(DELIM)%$(OBJEXT),%,$@),$(BINDIR))
 
-# C library for the flat build and
-# the user phase of the two-pass kernel build
+# C library for the flat build
 
 $(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
+
 ifeq ($(CONFIG_LIBC_ZONEINFO_ROMFS),y)
-	$(Q) $(MAKE) -C zoneinfo all BIN=$(BIN)
+	$(Q) $(MAKE) $(JOBS) -C zoneinfo all TOPDIR=$(TOPDIR)
 endif
 
 # C library for the kernel phase of the two-pass kernel build
 
 ifneq ($(BIN),$(KBIN))
-$(KBIN): $(OBJS)
-	$(Q) $(MAKE) $(KBIN) BIN=$(KBIN) EXTRAFLAGS="$(EXTRAFLAGS)"
+$(KBIN):
+	$(Q) $(MAKE) $(JOBS) $(KBIN) BIN=$(KBIN) BINDIR=kbin TOPDIR=$(TOPDIR) EXTRADEFINES=$(EXTRADEFINES)
 endif
 
 # Context
 
-bin:
-	$(Q) mkdir $@
+bin kbin:
+	$(Q) mkdir -p $@
 
-kbin:
-	$(Q) mkdir $@
-
-context:: bin kbin
+context: bin kbin
 ifeq ($(CONFIG_LIBC_ZONEINFO_ROMFS),y)
-	$(Q) $(MAKE) -C zoneinfo context BIN=$(BIN)
-endif
-ifeq ($(CONFIG_LIBC_ELF),y)
-	$(Q) $(MAKE) -C elf context
+	$(Q) $(MAKE) $(JOBS) -C zoneinfo context TOPDIR=$(TOPDIR)
 endif
 
+
+CFLAGS += -I$(TOPDIR)/libs/libc
+AFLAGS += -I$(TOPDIR)/libs/libc
 
 # Dependencies
 
-makedepfile: $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds)
-	$(call CATFILE, bin/Make.dep, $^)
-	$(call DELFILE, $^)
-
-makekdepfile: $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds)
-	$(call CATFILE, kbin/Make.dep, $^)
-	$(call DELFILE, $^)
-
-.depend: Makefile $(SRCS) $(TOPDIR)$(DELIM).config
-	$(Q) $(MAKE) makedepfile OBJPATH="bin"
+.depend: Makefile $(SRCS)
 ifneq ($(CONFIG_BUILD_FLAT),y)
-	$(Q) $(MAKE) makekdepfile CFLAGS="$(CFLAGS) $(KDEFINE)" OBJPATH="kbin"
-endif
-ifeq ($(CONFIG_LIBC_ZONEINFO_ROMFS),y)
-	$(Q) $(MAKE) -C zoneinfo depend BIN=$(BIN)
+	$(Q) $(MKDEP) --obj-path bin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >bin/Make.dep
+	$(Q) $(MKDEP) --obj-path kbin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) $(KDEFINE) -- $(SRCS) >kbin/Make.dep
+else
+	$(Q) $(MKDEP) --obj-path bin --obj-suffix $(OBJEXT) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >bin/Make.dep
 endif
 	$(Q) touch $@
 
-depend:: .depend
+depend: .depend
 
 # Clean most derived files, retaining the configuration
 
-clean::
-	$(Q) $(MAKE) -C zoneinfo clean BIN=$(BIN)
-	$(Q) $(MAKE) -C elf clean
+clean:
 	$(call DELFILE, $(BIN))
+	$(call DELFILE, libc$(LIBEXT))
 	$(call DELFILE, $(KBIN))
 	$(call CLEAN)
 
 # Deep clean -- removes all traces of the configuration
 
-distclean:: clean
-	$(Q) $(MAKE) -C zoneinfo distclean BIN=$(BIN)
-	$(Q) $(MAKE) -C elf distclean
-	$(call DELFILE, exec_symtab.c)
-	$(call DELFILE, $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds))
-	$(call DELFILE, .depend)
+distclean: clean
 	$(call DELDIR, bin)
 	$(call DELDIR, kbin)
+	$(Q) $(MAKE) -C zoneinfo distclean TOPDIR=$(TOPDIR)
+	$(call DELFILE, bin/Make.dep)
+	$(call DELFILE, kbin/Make.dep)
+	$(call DELFILE, .depend)
 
--include bin$(DELIM)Make.dep
--include kbin$(DELIM)Make.dep
+-include bin/Make.dep
+-include kbin/Make.dep
