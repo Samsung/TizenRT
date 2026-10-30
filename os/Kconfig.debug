@@ -3,10 +3,40 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-config DEBUG
+
+config FORTIFY_SOURCE
+	int "Fortify Source"
+	default 0
+	range 0 3
+	---help---
+		Detect overflows of buffers in common string and memory functions
+		where the compiler can determine and validate the buffer sizes.
+		0 does not have any checks.
+		1 will only check for out-of-bounds at compile time.
+		2 will only perform out-of-bounds checks on stack variables.
+		3 On the basis of 2, add an out-of-bounds check for dynamically allocated variables.
+
+config NDEBUG
+	bool "Define NDEBUG globally"
+	default !DEBUG_ASSERTIONS
+
+config ASSERTIONS_FILENAME
+	bool "Enable library call assert(3) show the file name"
+	default DEBUG_ASSERTIONS_FILENAME || !DEFAULT_SMALL
+	depends on !NDEBUG
+	---help---
+		This option can display the file information of the library call assert(3)
+		function when it is enabled. This option maybe will take up a lot
+		of space from applications.
+
+config DEBUG_ALERT
+	bool
+	default n
+
+config DEBUG_FEATURES
 	bool "Enable Debug Features"
 	default n
-	select DEBUG_ERROR
+	select DEBUG_ALERT
 	---help---
 		Enables built-in debug features.  Selecting this option will (1) Enable
 		debug assertions in the code, (2) enable extended parameter testing in
@@ -14,101 +44,1992 @@ config DEBUG
 		Note that enabling this option by itself does not produce debug output.
 		Debug output must also be selected on a subsystem-by-subsystem basis.
 
-if DEBUG
+if DEBUG_FEATURES
+
+comment "Debug SYSLOG Output Controls"
 
 config DEBUG_ERROR
-	bool "Enable Error Debug Output"
-	default n
+	bool "Enable Error Output"
+	default y
 	---help---
-		Enables ERROR debug output (assuming debug features are enabled).
-		If you enable DEBUG_ERROR, debug messages for error will be reported in the
-		debug SYSLOG output.
-		Errors are significant system exceptions that require immediate attention.
+		Enables output from [a-z]err() statements.  Errors are significant system
+		exceptions that require immediate attention.
 
 config DEBUG_WARN
-	bool "Enable Warning Debug Output"
-	default n
+	bool "Enable Warnings Output"
+	default y
+	depends on DEBUG_ERROR
 	---help---
-		Enables Warning debug output (assuming debug features are enabled).
-		If you enable DEBUG_WARN, debug messages for warning will be reported in the
-		debug SYSLOG output.
-		Warnings are considered to be various unexpected conditions, potential errors
-		or errors that will not have serious consequences.
+		Enables output from [a-z]warn() statements.  Warnings are considered to
+		be various unexpected conditions, potential errors or errors that will
+		not have serious consequences.
 
-config DEBUG_VERBOSE
-	bool "Enable Informational(Verbose) Debug Output"
+config DEBUG_INFO
+	bool "Enable Informational Debug Output"
+	default y
+	depends on DEBUG_WARN
+	---help---
+		Enables verbose "informational" debug output.  If you enable
+		CONFIG_DEBUG_INFO, then very chatty (and often annoying) output
+		will be generated.
+
+config DEBUG_ASSERTIONS
+	bool "Enable Debug Assertions"
 	default n
 	---help---
-		Enables Informational debug output (assuming debug features are enabled).
-		If you enable DEBUG_VERBOSE, debug messages for information will be reported in the
-		debug SYSLOG output.
+		Enables the DEBUGASSERT() macro.  When CONFIG_DEBUG_ASSERTIONS is
+		defined, DEBUGASSERT() will cause the system to halt if the
+		assertion fails.  If CONFIG_DEBUG_ASSERTIONS is not defined
+		DEBUGASSERT() compiled out of the system.  In general, you would
+		set CONFIG_DEBUG_ASSERTIONS=y during debug, but disable the
+		assertions on a final, buckled up system.
+
+config DEBUG_ASSERTIONS_EXPRESSION
+	bool "Enable Debug Assertions show expression"
+	default n
+	depends on DEBUG_ASSERTIONS
+	---help---
+		This option can display the content information of the ASSERT()
+		function when it is triggered. This option maybe will take up a lot
+		of space.
+
+config DEBUG_ASSERTIONS_FILENAME
+	bool "Enable Debug Assertions show file name"
+	default !DEFAULT_SMALL
+	depends on DEBUG_ASSERTIONS
+	---help---
+		This option can display the file information of the ASSERT()
+		function when it is enabled. This option maybe will take up a lot
+		of space.
 
 comment "Subsystem Debug Options"
 
 config DEBUG_AUDIO
-	bool "Audio Debug Feature"
+	bool "Audio Device Debug Features"
 	default n
 	depends on AUDIO
 	---help---
-		Enable Audio debug feature.
+		Enable audio device debug features.
+		Enable low level debug features for the audio subsystem and for audio
+		device drivers. (disabled by default).  Support for this debug option
+		is architecture-specific and may not be available for some MCUs.
 
 if DEBUG_AUDIO
 
 config DEBUG_AUDIO_ERROR
-	bool "Audio Error Output"
+	bool "Audio Device Error Output"
 	default n
 	depends on DEBUG_ERROR
 	---help---
-		Enable audio error debug SYSLOG output.
+		Enable audio device error output to SYSLOG.
 
 config DEBUG_AUDIO_WARN
-	bool "Audio Warning Output"
+	bool "Audio Device Warnings Output"
 	default n
 	depends on DEBUG_WARN
 	---help---
-		Enable audio warning debug SYSLOG output.
+		Enable audio device warning output to SYSLOG.
 
 config DEBUG_AUDIO_INFO
-	bool "Audio Infomational Debug Output"
+	bool "Audio Device Informational Output"
 	default n
-	depends on DEBUG_VERBOSE
+	depends on DEBUG_INFO
 	---help---
-		Enable audio informational debug SYSLOG output.
+		Enable audio device informational output to SYSLOG.
 
-endif #DEBUG_AUDIO
+endif # DEBUG_AUDIO
 
 config DEBUG_BINFMT
-        bool "Binary Loader Debug Features"
-        default n
-        depends on BINFMT_ENABLE
-        ---help---
-                Enable binary loader debug features.
+	bool "Binary Loader Debug Features"
+	default n
+	depends on !BINFMT_DISABLE || LIBC_ELF
+	---help---
+		Enable binary loader debug features.
 
 if DEBUG_BINFMT
 
 config DEBUG_BINFMT_ERROR
-        bool "Binary Loader Error Output"
-        default n
-        depends on DEBUG_ERROR
-        ---help---
-                Enable binary loader error output to SYSLOG.
+	bool "Binary Loader Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable binary loader error output to SYSLOG.
 
 config DEBUG_BINFMT_WARN
-        bool "Binary Loader Warnings Output"
-        default n
-        depends on DEBUG_WARN
-        ---help---
-                Enable binary loader warning output to SYSLOG.
+	bool "Binary Loader Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable binary loader warning output to SYSLOG.
 
 config DEBUG_BINFMT_INFO
-        bool "Binary Loader Informational Output"
-        default n
-        depends on DEBUG_VERBOSE
-        ---help---
-                Enable binary loader informational output to SYSLOG.
+	bool "Binary Loader Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable binary loader informational output to SYSLOG.
 
 endif # DEBUG_BINFMT
 
+config DEBUG_CONTACTLESS
+	bool "Contactless Debug Features"
+	default n
+	depends on DRIVERS_CONTACTLESS
+	---help---
+		Enable debug features for contactless (aka RFID) subsystem.
+
+if DEBUG_CONTACTLESS
+
+config DEBUG_CONTACTLESS_ERROR
+	bool "Contactless Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable contactless (aka RFID) subsystem error output to
+		SYSLOG.
+
+config DEBUG_CONTACTLESS_WARN
+	bool "Contactless Warnings Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable contactless (aka RFID) subsystem warning output to
+		SYSLOG.
+
+config DEBUG_CONTACTLESS_INFO
+	bool "Contactless Informational Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable contactless (aka RFID) subsystem informational output
+		to SYSLOG.
+
+endif # DEBUG_CONTACTLESS
+
+config DEBUG_CRYPTO
+	bool "Crypto Debug Features"
+	default n
+	depends on CRYPTO
+	---help---
+		Enable cryptographic debug features.
+
+if DEBUG_CRYPTO
+
+config DEBUG_CRYPTO_ERROR
+	bool "Crypto Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable cryptographic error output to SYSLOG.
+
+config DEBUG_CRYPTO_WARN
+	bool "Crypto Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable cryptographic warning output to SYSLOG.
+
+config DEBUG_CRYPTO_INFO
+	bool "Crypto Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable cryptographic informational output to SYSLOG.
+
+endif # DEBUG_CRYPTO
+
+config DEBUG_FS
+	bool "File System Debug Features"
+	default n
+	---help---
+		Enable file system debug features.
+
+if DEBUG_FS
+
+config DEBUG_FS_ERROR
+	bool "File System Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable file system error output to SYSLOG.
+
+config DEBUG_FS_WARN
+	bool "File System Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable file system warning output to SYSLOG.
+
+config DEBUG_FS_INFO
+	bool "File System Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable file system informational output to SYSLOG.
+
+endif # DEBUG_FS
+
+config DEBUG_GRAPHICS
+	bool "Graphics Debug Features"
+	default n
+	---help---
+		Enable NX graphics subsystem debug features.
+
+if DEBUG_GRAPHICS
+
+config DEBUG_GRAPHICS_ERROR
+	bool "Graphics Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable NX graphics subsystem error output to SYSLOG.
+
+config DEBUG_GRAPHICS_WARN
+	bool "Graphics Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable NX graphics subsystem warning output to SYSLOG.
+
+config DEBUG_GRAPHICS_INFO
+	bool "Graphics Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable NX graphics subsystem informational output to SYSLOG.
+
+endif # DEBUG_GRAPHICS
+
+config DEBUG_LIB
+	bool "C Library Debug Features"
+	default n
+	---help---
+		Enable C library debug features.
+
+if DEBUG_LIB
+
+config DEBUG_LIB_ERROR
+	bool "C Library Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable C library error output to SYSLOG.
+
+config DEBUG_LIB_WARN
+	bool "C Library Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable C library warning output to SYSLOG.
+
+config DEBUG_LIB_INFO
+	bool "C Library Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable C library informational output to SYSLOG.
+
+config DEBUG_SYS_QUEUE
+	bool "Queue Debug option"
+	default n
+	---help---
+		Enable sys queue debug.
+
+endif # DEBUG_LIB
+
+config DEBUG_MM
+	bool "Memory Manager Debug Features"
+	default n
+	---help---
+		Enable memory management debug features.
+
+if DEBUG_MM
+
+config DEBUG_MM_ERROR
+	bool "Memory Manager Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable memory management error output to SYSLOG.
+
+config DEBUG_MM_WARN
+	bool "Memory Manager Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable memory management warning output to SYSLOG.
+
+config DEBUG_MM_INFO
+	bool "Memory Manager Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable memory management informational output to SYSLOG.
+
+endif # DEBUG_MM
+
+config DEBUG_SHM
+	bool "Shared Memory Debug Output"
+	default n
+	depends on MM_SHM
+	---help---
+		Enable shared memory management debug SYSLOG output (disabled by default)
+
+config DEBUG_NET
+	bool "Network Debug Features"
+	default n
+	depends on ARCH_HAVE_NET
+	---help---
+		Enable network debug features.
+
+if DEBUG_NET
+
+config DEBUG_NET_ERROR
+	bool "Network Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable network error output to SYSLOG.
+
+config DEBUG_NET_WARN
+	bool "Network Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable network warning output to SYSLOG.
+
+config DEBUG_NET_INFO
+	bool "Network Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable network informational output to SYSLOG.
+
+endif # DEBUG_NET
+
+config DEBUG_POWER
+	bool "Power-related Debug Features"
+	default n
+	---help---
+		Enable power-related debug features.
+
+if DEBUG_POWER
+
+config DEBUG_POWER_ERROR
+	bool "Power-related Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable power-related error output to SYSLOG.
+
+config DEBUG_POWER_WARN
+	bool "Power-related Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable power-related warning output to SYSLOG.
+
+config DEBUG_POWER_INFO
+	bool "Power-related Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable power-related informational output to SYSLOG.
+
+endif # DEBUG_POWER
+
+config DEBUG_BATTERY
+	bool "Battery-related Debug Features"
+	default n
+	---help---
+		Enable Battery-related debug features.
+
+if DEBUG_BATTERY
+
+config DEBUG_BATTERY_ERROR
+	bool "Battery-related Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable battery-related error output to SYSLOG.
+
+config DEBUG_BATTERY_WARN
+	bool "Battery-related Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable battery-related warning output to SYSLOG.
+
+config DEBUG_BATTERY_INFO
+	bool "Battery-related Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable battery-related informational output to SYSLOG.
+
+endif # DEBUG_BATTERY
+
+config DEBUG_WIRELESS
+	bool "Wireless Debug Features"
+	default n
+	depends on WIRELESS || DRIVERS_WIRELESS
+	---help---
+		Enable wireless debug features.
+
+if DEBUG_WIRELESS
+
+config DEBUG_WIRELESS_ERROR
+	bool "Wireless Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable wireless error output to SYSLOG.
+
+config DEBUG_WIRELESS_WARN
+	bool "Wireless Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable wireless warning output to SYSLOG.
+
+config DEBUG_WIRELESS_INFO
+	bool "Wireless Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable wireless informational output to SYSLOG.
+
+endif # DEBUG_WIRELESS
+
+config DEBUG_SCHED
+	bool "Scheduler Debug Features"
+	default n
+	depends on !SYSLOG_TIMESTAMP
+	---help---
+		Enable OS scheduler debug features.
+
+if DEBUG_SCHED
+
+config DEBUG_SCHED_ERROR
+	bool "Scheduler Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable OS scheduler error output to SYSLOG.
+
+config DEBUG_SCHED_WARN
+	bool "Scheduler Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable OS scheduler warning output to SYSLOG.
+
+config DEBUG_SCHED_INFO
+	bool "Scheduler Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable OS scheduler informational output to SYSLOG.
+
+endif # DEBUG_SCHED
+
+config DEBUG_SYSCALL
+	bool "SYSCALL Debug Features"
+	default n
+	depends on LIB_SYSCALL
+	---help---
+		Enable very low level features related to system calls.  If SYSCAL
+		output is enabled, this gives you basically a poor man's version of
+		strace.
+
+if DEBUG_SYSCALL
+
+config DEBUG_SYSCALL_ERROR
+	bool "SYSCALL Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable OS SYSCALL error output to SYSLOG.
+
+config DEBUG_SYSCALL_WARN
+	bool "SYSCALL Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable OS SYSCALL warning output to SYSLOG.
+
+config DEBUG_SYSCALL_INFO
+	bool "SYSCALL Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable OS SYSCALL informational output to SYSLOG.
+
+endif # DEBUG_SYSCALL
+
+comment "OS Function Debug Options"
+
+config DEBUG_DMA
+	bool "DMA Debug Features"
+	default n
+	depends on ARCH_DMA
+	---help---
+		Enable DMA debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_DMA
+
+config DEBUG_DMA_ERROR
+	bool "DMA Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable DMA error output to SYSLOG.
+
+config DEBUG_DMA_WARN
+	bool "DMA Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable DMA warning output to SYSLOG.
+
+config DEBUG_DMA_INFO
+	bool "DMA Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable DMA informational output to SYSLOG.
+
+endif # DEBUG_DMA
+
+config DEBUG_IRQ
+	bool "Interrupt Controller Debug Features"
+	default n
+	---help---
+		Enable interrupt controller debug features.
+
+		Some (but not all) architectures support debug output to verify
+		interrupt controller logic.  If supported, then option will enable
+		that output.  This may interfere with normal operations!  You
+		should *not* enable interrupt controller debug unless you suspect
+		that here is a problem with that logic.  On some platforms, this
+		option may even cause crashes! Use with care!
+
+if DEBUG_IRQ
+
+config DEBUG_IRQ_ERROR
+	bool "Interrupt Controller Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable interrupt controller error output to SYSLOG.
+
+config DEBUG_IRQ_WARN
+	bool "Interrupt Controller Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable interrupt controller warning output to SYSLOG.
+
+config DEBUG_IRQ_INFO
+	bool "Interrupt Controller Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable interrupt controller informational output to SYSLOG.
+
+endif # DEBUG_IRQ
+
+config DEBUG_PAGING
+	bool "Paging Debug Features"
+	default n
+	depends on PAGING
+	---help---
+		Enable OS demand paging debug features.
+
+if DEBUG_PAGING
+
+config DEBUG_PAGING_ERROR
+	bool "Paging Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable OS demand paging error output to SYSLOG.
+
+config DEBUG_PAGING_WARN
+	bool "Paging Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable OS demand paging warning output to SYSLOG.
+
+config DEBUG_PAGING_INFO
+	bool "Paging Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable OS demand paging informational output to SYSLOG.
+
+endif # DEBUG_PAGING
+
+comment "Driver Debug Options"
+
+config DEBUG_LCD
+	bool "Low-level LCD Debug Features"
+	default n
+	depends on LCD || SLCD
+	---help---
+		Enable LCD driver debug features.
+
+		Support for this debug option is board-specific and may not
+		be available for some boards.
+if DEBUG_LCD
+
+config DEBUG_LCD_ERROR
+	bool "LCD Driver Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable LCD driver error output to SYSLOG.
+
+config DEBUG_LCD_WARN
+	bool "LCD Driver Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable LCD driver warning output to SYSLOG.
+
+config DEBUG_LCD_INFO
+	bool "LCD Driver Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable LCD driver informational output to SYSLOG.
+
+endif # DEBUG_LCD
+
+config DEBUG_LEDS
+	bool "Low-level LED Debug Features"
+	default n
+	depends on ARCH_HAVE_LEDS || WS2812
+	---help---
+		Enable LED driver debug features.
+
+		Support for this debug option is board-specific and may not
+		be available for some boards.
+
+if DEBUG_LEDS
+
+config DEBUG_LEDS_ERROR
+	bool "LED Driver Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable LED driver error output to SYSLOG.
+
+config DEBUG_LEDS_WARN
+	bool "LED Driver Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable LED driver warning output to SYSLOG.
+
+config DEBUG_LEDS_INFO
+	bool "LED Driver Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable LED driver informational output to SYSLOG.
+
+endif # DEBUG_LEDS
+
+config DEBUG_INPUT
+	bool "Input Device Debug Features"
+	default n
+	depends on INPUT
+	---help---
+		Enable input d.
+		Enable low level device debug features for the input device drivers
+		such as mice and touchscreens (disabled by default).  Support for
+		this debug option is board-specific and may not be available for
+		some boards.
+
+if DEBUG_INPUT
+
+config DEBUG_INPUT_ERROR
+	bool "Input Device Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable input device error output to SYSLOG.
+
+config DEBUG_INPUT_WARN
+	bool "Input Device Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable input device warning output to SYSLOG.
+
+config DEBUG_INPUT_INFO
+	bool "Input Device Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable input device informational output to SYSLOG.
+
+endif # DEBUG_INPUT
+
+config DEBUG_ANALOG
+	bool "Analog Device Debug Features"
+	default n
+	depends on ANALOG
+	---help---
+		Enable analog device debug features.
+		Enable low level debug features the analog device drivers such as
+		A/D and D/A converters (disabled by default).  Support for this
+		debug option is architecture-specific and may not be available for
+		some MCUs.
+
+if DEBUG_ANALOG
+
+config DEBUG_ANALOG_ERROR
+	bool "Analog Device Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable analog device error output to SYSLOG.
+
+config DEBUG_ANALOG_WARN
+	bool "Analog Device Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable analog device warning output to SYSLOG.
+
+config DEBUG_ANALOG_INFO
+	bool "Analog Device Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable CAN driver informational output to SYSLOG.
+
+endif # DEBUG_ANALOG
+
+config DEBUG_CAN
+	bool "CAN Debug Features"
+	default n
+	depends on CAN
+	---help---
+		Enable CAN driver debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_CAN
+
+config DEBUG_CAN_ERROR
+	bool "CAN Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable CAN driver error output to SYSLOG.
+
+config DEBUG_CAN_WARN
+	bool "CAN Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable CAN driver warning output to SYSLOG.
+
+config DEBUG_CAN_INFO
+	bool "CAN Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable CAN driver informational output to SYSLOG.
+
+endif # DEBUG_CAN
+
+config DEBUG_GPIO
+	bool "GPIO Debug Features"
+	default n
+	---help---
+		Enable GPIO debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_GPIO
+
+config DEBUG_GPIO_ERROR
+	bool "GPIO Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable GPIO error output to SYSLOG.
+
+config DEBUG_GPIO_WARN
+	bool "GPIO Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable GPIO warning output to SYSLOG.
+
+config DEBUG_GPIO_INFO
+	bool "GPIO Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable GPIO informational output to SYSLOG.
+
+endif # DEBUG_GPIO
+
+config DEBUG_I2C
+	bool "I2C Debug Features"
+	default n
+	depends on I2C
+	---help---
+		Enable I2C debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_I2C
+
+config DEBUG_I2C_ERROR
+	bool "I2C Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable I2C driver error output to SYSLOG.
+
+config DEBUG_I2C_WARN
+	bool "I2C Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable I2C driver warning output to SYSLOG.
+
+config DEBUG_I2C_INFO
+	bool "I2C Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable I2C driver informational output to SYSLOG.
+
+endif # DEBUG_I2C
+
+config DEBUG_I2S
+	bool "I2S Debug Features"
+	default n
+	depends on I2S
+	---help---
+		Enable I2S debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_I2S
+
+config DEBUG_I2S_ERROR
+	bool "I2S Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable I2S driver error output to SYSLOG.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_I2S_WARN
+	bool "I2S Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable I2S driver warning output to SYSLOG.
+
+config DEBUG_I2S_INFO
+	bool "I2S Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable I2S driver informational output to SYSLOG.
+
+endif # DEBUG_I2S
+
+config DEBUG_I3C
+	bool "I3C Debug Features"
+	default n
+	depends on I3C
+	---help---
+		Enable I3C debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_I3C
+
+config DEBUG_I3C_ERROR
+	bool "I3C Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable I3C driver error output to SYSLOG.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_I3C_INFO
+	bool "I3C Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable I3C driver informational output to SYSLOG.
+
+endif # DEBUG_I3C
+
+config DEBUG_PWM
+	bool "PWM Debug Features"
+	default n
+	depends on PWM
+	---help---
+		Enable PWM debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_PWM
+
+config DEBUG_PWM_ERROR
+	bool "PWM Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable PWM driver error output to SYSLOG.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_PWM_WARN
+	bool "PWM Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable PWM driver warning output to SYSLOG.
+
+config DEBUG_PWM_INFO
+	bool "PWM Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable PWM driver informational output to SYSLOG.
+
+endif # DEBUG_PWM
+
+config DEBUG_CAPTURE
+	bool "CAPTURE Debug Features"
+	default n
+	depends on CAPTURE
+	---help---
+		Enable CAPTURE debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_CAPTURE
+
+config DEBUG_CAPTURE_ERROR
+	bool "CAPTURE Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable CAPTURE driver error output to SYSLOG.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_CAPTURE_WARN
+	bool "CAPTURE Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable CAPTURE driver warning output to SYSLOG.
+
+config DEBUG_CAPTURE_INFO
+	bool "CAPTURE Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable CAPTURE driver informational output to SYSLOG.
+
+endif # DEBUG_CAPTURE
+
+config DEBUG_RC
+	bool "RC Debug Features"
+	default n
+	depends on DRIVERS_RC
+	---help---
+		Enable RC debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_RC
+
+config DEBUG_RC_ERROR
+	bool "RC Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable RC driver error output to SYSLOG.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_RC_WARN
+	bool "RC Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable RC driver warning output to SYSLOG.
+
+config DEBUG_RC_INFO
+	bool "RC Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable RC driver informational output to SYSLOG.
+
+endif # DEBUG_RC
+
+config DEBUG_REGMAP
+	bool "REGMAP Debug Features"
+	default n
+	depends on REGMAP
+	---help---
+		Enable REGMAP debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_REGMAP
+
+config DEBUG_REGMAP_ERROR
+	bool "Regmap Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable regmap subsystems error output to SYSLOG.
+
+config DEBUG_REGMAP_WARN
+	bool "Regmap Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable regmap subsystems warning output to SYSLOG.
+
+config DEBUG_REGMAP_INFO
+	bool "Regmap Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable regmap subsystems informational output to SYSLOG.
+
+endif # DEBUG_REGMAP
+
+config DEBUG_RMT
+	bool "RMT Debug Features"
+	default n
+	depends on RMT
+	---help---
+		Enable RMT debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_RMT
+
+config DEBUG_RMT_ERROR
+	bool "RMT Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable RMT driver error output to SYSLOG.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_RMT_WARN
+	bool "RMT Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable RMT driver warning output to SYSLOG.
+
+config DEBUG_RMT_INFO
+	bool "RMT Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable RMT driver informational output to SYSLOG.
+
+endif # DEBUG_RMT
+
+config DEBUG_RTC
+	bool "RTC Debug Features"
+	default n
+	depends on RTC
+	---help---
+		Enable RTC debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_RTC
+
+config DEBUG_RTC_ERROR
+	bool "RTC Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable RTC driver error output to SYSLOG.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_RTC_WARN
+	bool "RTC Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable RTC driver warning output to SYSLOG.
+
+config DEBUG_RTC_INFO
+	bool "RTC Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable RTC driver informational output to SYSLOG.
+
+endif # DEBUG_RTC
+
+config DEBUG_MEMCARD
+	bool "Memory Card Driver Debug Features"
+	default n
+	depends on MMCSD
+	---help---
+		Enable MMC/SD memory card Driver debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_MEMCARD
+
+config DEBUG_MEMCARD_ERROR
+	bool "Memory Card Driver Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable MMC/SD memory card driver error output to SYSLOG.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+config DEBUG_MEMCARD_WARN
+	bool "Memory Card Driver Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable MMC/SD memory card driver warning output to SYSLOG.
+
+config DEBUG_MEMCARD_INFO
+	bool "Memory Card Driver Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable MMC/SD memory card driver informational output to SYSLOG.
+
+endif # DEBUG_MEMCARD
+
+config DEBUG_SENSORS
+	bool "Sensor Debug Features"
+	default n
+	depends on SENSORS
+	---help---
+		Enable sensor driver debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_SENSORS
+
+config DEBUG_SENSORS_ERROR
+	bool "Sensor Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable sensor driver error output to SYSLOG.
+
+config DEBUG_SENSORS_WARN
+	bool "Sensor Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable sensor driver warning output to SYSLOG.
+
+config DEBUG_SENSORS_INFO
+	bool "Sensor Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable sensor driver informational output to SYSLOG.
+
+endif # DEBUG_SENSORS
+
+config DEBUG_SPI
+	bool "SPI Debug Features"
+	default n
+	depends on SPI
+	---help---
+		Enable SPI debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_SPI
+
+config DEBUG_SPI_ERROR
+	bool "SPI Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable SPI error output to SYSLOG.
+
+config DEBUG_SPI_WARN
+	bool "SPI Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable SPI warning output to SYSLOG.
+
+config DEBUG_SPI_INFO
+	bool "SPI Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable SPI informational output to SYSLOG.
+
+endif # DEBUG_SPI
+
+config DEBUG_THERMAL
+	bool "Thermal Debug Features"
+	default n
+	---help---
+		Enable thermal debug features.
+
+if DEBUG_THERMAL
+
+config DEBUG_THERMAL_ERROR
+	bool "Thermal Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable thermal error output to SYSLOG.
+
+config DEBUG_THERMAL_WARN
+	bool "Thermal Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable thermal warning output to SYSLOG.
+
+config DEBUG_THERMAL_INFO
+	bool "Thermal Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable thermal informational output to SYSLOG.
+
+endif # DEBUG_THERMAL
+
+config DEBUG_TIMER
+	bool "Timer Debug Features"
+	default n
+	---help---
+		Enable timer debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_TIMER
+
+config DEBUG_TIMER_ERROR
+	bool "Timer Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable timer error output to SYSLOG.
+
+config DEBUG_TIMER_WARN
+	bool "Timer Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable timer warning output to SYSLOG.
+
+config DEBUG_TIMER_INFO
+	bool "Timer Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable timer informational output to SYSLOG.
+
+endif # DEBUG_TIMER
+
+config DEBUG_USB
+	bool "USB Debug Features"
+	default n
+	depends on USBDEV || USBHOST
+	---help---
+		Enable USB debug features.
+
+if DEBUG_USB
+
+config DEBUG_USB_ERROR
+	bool "USB Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable USB error output to SYSLOG.
+
+config DEBUG_USB_WARN
+	bool "USB Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable USB warning output to SYSLOG.
+
+config DEBUG_USB_INFO
+	bool "USB Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable USB informational output to SYSLOG.
+
+endif # DEBUG_USB
+
+config DEBUG_WATCHDOG
+	bool "Watchdog Timer Debug Features"
+	default n
+	depends on WATCHDOG
+	---help---
+		Enable watchdog timer debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_WATCHDOG
+
+config DEBUG_WATCHDOG_ERROR
+	bool "Watchdog Timer Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable watchdog time error output to SYSLOG.
+
+config DEBUG_WATCHDOG_WARN
+	bool "Watchdog Timer Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable watchdog time warning output to SYSLOG.
+
+config DEBUG_WATCHDOG_INFO
+	bool "Watchdog Timer Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable watchdog time informational output to SYSLOG.
+
+endif # DEBUG_WATCHDOG
+
+config DEBUG_MOTOR
+	bool "Motor Debug Features"
+	default n
+	depends on MOTOR
+	---help---
+		Enable motor debug features.
+
+if DEBUG_MOTOR
+
+config DEBUG_MOTOR_ERROR
+	bool "Motor Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable motor error output to SYSLOG.
+
+config DEBUG_MOTOR_WARN
+	bool "Motor Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable motor warning output to SYSLOG.
+
+config DEBUG_MOTOR_INFO
+	bool "Motor Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable motor informational output to SYSLOG.
+
+endif # DEBUG_MOTOR
+
+config DEBUG_STEPPER
+	bool "Stepper Motor Debug Features"
+	default n
+	depends on STEPPER
+	---help---
+		Enable motor debug features.
+
+if DEBUG_STEPPER
+
+config DEBUG_STEPPER_ERROR
+	bool "Stepper Motor Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable motor error output to SYSLOG.
+
+config DEBUG_STEPPER_WARN
+	bool "Stepper Motor Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable motor warning output to SYSLOG.
+
+config DEBUG_STEPPER_INFO
+	bool "Stepper Motor Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable motor informational output to SYSLOG.
+
+endif # DEBUG_STEPPER
+
+
+config DEBUG_VIDEO
+	bool "Video Debug Features"
+	default n
+	depends on DRIVERS_VIDEO
+	---help---
+		Enable video debug features.
+
+if DEBUG_VIDEO
+
+config DEBUG_VIDEO_ERROR
+	bool "Video Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable video error output to SYSLOG.
+
+config DEBUG_VIDEO_WARN
+	bool "Video Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable video warning output to SYSLOG.
+
+config DEBUG_VIDEO_INFO
+	bool "Video Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable video informational output to SYSLOG.
+
+endif # DEBUG_VIDEO
+
+config DEBUG_VIRTIO
+	bool "Virtio Debug Features"
+	default n
+	depends on DRIVERS_VIRTIO
+	---help---
+		Enable virtio debug features.
+
+if DEBUG_VIRTIO
+
+config DEBUG_VIRTIO_ERROR
+	bool "Virtio Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable virtio error output to SYSLOG.
+
+config DEBUG_VIRTIO_WARN
+	bool "Virtio Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable virtio warning output to SYSLOG.
+
+config DEBUG_VIRTIO_INFO
+	bool "Virtio Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable virtio informational output to SYSLOG.
+
+endif # DEBUG_VIDEO
+
+config DEBUG_VHOST
+	bool "Vhost Debug Features"
+	default n
+	depends on DRIVERS_VHOST
+	---help---
+		Enable vhost debug features.
+
+if DEBUG_VHOST
+
+config DEBUG_VHOST_ERROR
+	bool "Vhost Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable vhost error output to SYSLOG.
+
+config DEBUG_VHOST_WARN
+	bool "Vhost Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable vhost warning output to SYSLOG.
+
+config DEBUG_VHOST_INFO
+	bool "Vhost Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable vhost informational output to SYSLOG.
+
+endif # DEBUG_VHOST
+
+config DEBUG_RESET
+	bool "RESET Debug Features"
+	default n
+	depends on RESET
+	---help---
+		Enable RESET debug features.
+
+if DEBUG_RESET
+
+config DEBUG_RESET_ERROR
+	bool "RESET Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable RESET driver error output to SYSLOG.
+
+config DEBUG_RESET_INFO
+	bool "RESET Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable RESET driver informational output to SYSLOG.
+
+endif # DEBUG_RESET
+
+config DEBUG_IPC
+	bool "IPC (Inter-Process Communication) Debug Features"
+	default n
+	---help---
+		Enable IPC debug features.
+
+if DEBUG_IPC
+
+config DEBUG_IPC_ERROR
+	bool "IPC Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable IPC error output to SYSLOG.
+
+config DEBUG_IPC_WARN
+	bool "IPC Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable IPC warning output to SYSLOG.
+
+config DEBUG_IPC_INFO
+	bool "IPC Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable IPC informational output to SYSLOG.
+
+endif # DEBUG_IPC
+
+config DEBUG_PCI
+	bool "PCI Debug Features"
+	default n
+	depends on PCI
+	---help---
+		Enable PCI driver debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_PCI
+
+config DEBUG_PCI_ERROR
+	bool "PCI Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable PCI driver error output to SYSLOG.
+
+config DEBUG_PCI_WARN
+	bool "PCI Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable PCI driver warning output to SYSLOG.
+
+config DEBUG_PCI_INFO
+	bool "PCI Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable PCI driver informational output to SYSLOG.
+
+endif # DEBUG_PCI
+
+config DEBUG_PTP
+	bool "PTP Debug Features"
+	default n
+	depends on PTP_CLOCK
+	---help---
+		Enable PTP driver debug features.
+
+		Support for this debug option is architecture-specific and may not
+		be available for some MCUs.
+
+if DEBUG_PTP
+
+config DEBUG_PTP_ERROR
+	bool "PTP Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable PTP driver error output to SYSLOG.
+
+config DEBUG_PTP_WARN
+	bool "PTP Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable PTP driver warning output to SYSLOG.
+
+config DEBUG_PTP_INFO
+	bool "PTP Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable PTP driver informational output to SYSLOG.
+
+endif # DEBUG_PTP
+
+config DEBUG_RPMSG
+	bool "RPMSG Debug Features"
+	default n
+	depends on RPMSG
+	---help---
+		Enable RPMSG driver debug features.
+
+if DEBUG_RPMSG
+
+config DEBUG_RPMSG_ERROR
+	bool "RPMSG Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable RPMSG driver error output to SYSLOG.
+
+config DEBUG_RPMSG_WARN
+	bool "RPMSG Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable RPMSG driver warning output to SYSLOG.
+
+config DEBUG_RPMSG_INFO
+	bool "RPMSG Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable RPMSG driver informational output to SYSLOG.
+
+endif # DEBUG_RPMSG
+
+config DEBUG_RPTUN
+	bool "Rptun Debug Features"
+	default n
+	depends on RPTUN
+	---help---
+		Enable rptun debug features.
+
+if DEBUG_RPTUN
+
+config DEBUG_RPTUN_ERROR
+	bool "Rptun Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable rptun error output to SYSLOG.
+
+config DEBUG_RPTUN_WARN
+	bool "Rptun Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable rptun warning output to SYSLOG.
+
+config DEBUG_RPTUN_INFO
+	bool "Rptun Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable rptun informational output to SYSLOG.
+
+endif # DEBUG_RPTUN
+
+config DEBUG_CORESIGHT
+	bool "Coresight Debug Features"
+	default n
+	depends on CORESIGHT
+	---help---
+		Enable coresight debug features.
+
+if DEBUG_CORESIGHT
+
+config DEBUG_CORESIGHT_ERROR
+	bool "Coresight Error Output"
+	default n
+	depends on DEBUG_ERROR
+	---help---
+		Enable coresight driver error output to SYSLOG.
+
+config DEBUG_CORESIGHT_WARN
+	bool "Coresight Warnings Output"
+	default n
+	depends on DEBUG_WARN
+	---help---
+		Enable coresight warning output to SYSLOG.
+
+config DEBUG_CORESIGHT_INFO
+	bool "Coresight Informational Output"
+	default n
+	depends on DEBUG_INFO
+	---help---
+		Enable coresight driver informational output to SYSLOG.
+
+endif # DEBUG_CORESIGHT
+
+endif # DEBUG_FEATURES
+
+config ARCH_PROTECT_ZERO_ADDRESS
+	bool "Protect address zero"
+	depends on ARCH_HAVE_DEBUG
+	default n
+	---help---
+		When the program accesses address 0, it will assert automatically.
+		Hardware support is required, such as ARM V8M DWT watchpoint
+
+config ARCH_HAVE_STACKCHECK
+	bool
+	default n
+
+config STACK_COLORATION
+	bool "Stack coloration"
+	default n
+	depends on ARCH_HAVE_STACKCHECK
+	---help---
+		Enable stack coloration to initialize the stack memory to the value
+		of STACK_COLOR and enable the stack checking APIs that can be used
+		to monitor the level of stack usage.
+
+		Only supported by a few architectures.
+
+config STACKCHECK_MARGIN
+	int "Stack overflow check size (bytes)"
+	depends on DEBUG_ASSERTIONS
+	default -1
+	---help---
+		Specifies the number of bytes at the end of the stack to check for overflow.
+		A value of -1 disables additional checking. Increase this value for stricter
+		overflow detection, at the cost of additional overhead.
+
+config STACK_CANARIES
+	bool "Compiler stack canaries"
+	depends on ARCH_HAVE_STACKCHECK
+	default n
+	---help---
+		This option enables compiler stack canaries.
+		If stack canaries are supported by the compiler, it will emit
+		extra code that inserts a canary value into the stack frame when
+		a function is entered and validates this value upon exit.
+		Stack corruption (such as that caused by buffer overflow) results
+		in a fatal error condition for the running entity.
+		Enabling this option can result in a significant increase
+		in footprint and an associated decrease in performance.
+
+choice STACK_CANARIES_LEVEL
+	prompt "Stack Canaries Level Configuration"
+	default STACK_PROTECTOR_ALL
+	depends on STACK_CANARIES
+	---help---
+		Based on the configuration options, configure the stack Canaries Level.
+
+config STACK_PROTECTOR
+	bool "-fstack-protector"
+	---help---
+		Enable basic stack protection.
+
+config STACK_PROTECTOR_STRONG
+	bool "-fstack-protector-strong"
+	---help---
+		Using stronger stack protection mechanisms may involve more complex
+		security checks.
+
+config STACK_PROTECTOR_ALL
+	bool "-fstack-protector-all"
+	---help---
+		Enable stack protection for all functions, including those that are
+		typically not protected.
+
+config STACK_PROTECTOR_EXPLICIT
+	bool "-fstack-protector-explicit"
+	---help---
+		Enable stack protection only for functions explicitly marked as
+		requiring stack protection.
+
+endchoice # Stack Canaries Level Configuration
+
+config STACK_CANARIES_LEVEL
+	string
+	default "-fstack-protector" if STACK_PROTECTOR
+	default "-fstack-protector-strong" if STACK_PROTECTOR_STRONG
+	default "-fstack-protector-all" if STACK_PROTECTOR_ALL
+	default "-fstack-protector-explicit" if STACK_PROTECTOR_EXPLICIT
+	depends on STACK_CANARIES
+
+config STACK_USAGE
+	bool "Generate stack usage information"
+	---help---
+		Generate an extra file that specifies the maximum amount of stack used,
+		on a per-function basis. Please use https://github.com/HBehrens/puncover
+		or tools/showstack.sh to generate the more useful report.
+
+config STACK_USAGE_WARNING
+	int "Detect use of large stack variables"
+	default 0
+	---help---
+		Set the stack warning threshold, if the stack usage exceeds the
+		threshold, a warning will be generated
+
+config ARCH_HAVE_HEAPCHECK
+	bool
+	default n
+
+config HEAP_COLORATION
+	bool "Heap coloration"
+	default n
+	depends on ARCH_HAVE_HEAPCHECK
+	---help---
+		Enable heap coloration to check heap usage.  Only supported by a few
+		architectures.
+
+config DEBUG_SYMBOLS
+	bool "Generate Debug Symbols"
+	default n
+	---help---
+		Build with debug symbols (needed for use with a debugger).
+
+config DEBUG_SYMBOLS_LEVEL
+	string "Custom symbols level"
+	depends on DEBUG_SYMBOLS
+	default "-g"
+	---help---
+		This string represents the custom symbol level that will be
+		used if DEBUG_SYMBOLS.
+
+config FRAME_POINTER
+	bool "Compile the NuttX with frame pointers"
+	default n
+	---help---
+		If you say Y here the resulting NuttX image will be slightly
+		larger and slower, but it gives very useful debugging information
+		in case of bugs.
+
+config ARCH_HAVE_CUSTOMOPT
+	bool
+	default n
+
+choice
+	prompt "Optimization Level"
+	default DEBUG_NOOPT if DEBUG_SYMBOLS
+	default DEBUG_FULLOPT if !DEBUG_SYMBOLS
+
+config DEBUG_NOOPT
+	bool "Suppress Optimization"
+	---help---
+		Build without optimization.  This is often helpful when debugging code.
+
+config DEBUG_CUSTOMOPT
+	bool "Custom Optimization"
+	depends on ARCH_HAVE_CUSTOMOPT
+	---help---
+		Select a custom debug level.  This is often helpful if you suspect an
+		optimization level error and want to lower the level of optimization.
+
+config DEBUG_FULLOPT
+	bool "Normal, Full optimization"
+	---help---
+		Build full optimization.  This is the normal case for production
+		firmware.
+
+endchoice # Optimization Level
+
+config DEBUG_OPTLEVEL
+	string "Custom Optimization Level"
+	default "/O2" if HOST_WINDOWS
+	default "-O2"
+	depends on DEBUG_CUSTOMOPT
+	---help---
+		This string represents the custom optimization level that will be
+		used if DEBUG_CUSTOMOPT.
+
+
+#
+# TizenRT debug options that NuttX does not have
+#
+
+config DEBUG
+	bool
+	default DEBUG_FEATURES
+	---help---
+		TizenRT name of DEBUG_FEATURES, kept for the TizenRT code.
+
+config DEBUG_VERBOSE
+	bool
+	default DEBUG_INFO
+	---help---
+		TizenRT name of DEBUG_INFO, kept for the TizenRT code.
+
+if DEBUG
 config DEBUG_BINARY_COMPRESSION
 	bool "Binary Compression Debug Features"
 	default n
@@ -117,7 +2038,6 @@ config DEBUG_BINARY_COMPRESSION
 		Enable binary compression debug features
 
 if DEBUG_BINARY_COMPRESSION
-
 config DEBUG_BINARY_COMPRESSION_ERROR
 	bool "Enable Error logs of Binary Compression"
 	default n
@@ -133,7 +2053,6 @@ config DEBUG_BINARY_COMPRESSION_INFO
 		Enables debug logs for Binary Compression interface.
 
 endif # DEBUG_BINARY_COMPRESSION
-
 config DEBUG_BINMGR
         bool "Binary Manager Debug Features"
         default n
@@ -142,7 +2061,6 @@ config DEBUG_BINMGR
                 Enable binary manager debug features.
 
 if DEBUG_BINMGR
-
 config DEBUG_BINMGR_ERROR
 	bool "Enable Error logs of Binary Manager"
 	default n
@@ -158,69 +2076,6 @@ config DEBUG_BINMGR_INFO
 		Enables debug logs for Binary Manager interface.
 
 endif # DEBUG_BINMGR
-
-config DEBUG_FS
-	bool "File System Debug Feature"
-	default n
-	---help---
-		Enable file system debug feature.
-
-if DEBUG_FS
-
-config DEBUG_FS_ERROR
-	bool "File System Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable file system error debug SYSLOG output.
-
-config DEBUG_FS_WARN
-	bool "File System Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable file system warning debug SYSLOG output.
-
-config DEBUG_FS_INFO
-	bool "File System Infomational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable file system informational debug SYSLOG output.
-
-endif #DEBUG_FS
-
-config DEBUG_LIB
-	bool "C Library Debug Feature"
-	default n
-	---help---
-		Enable C library debug feature.
-
-if DEBUG_LIB
-
-config DEBUG_LIB_ERROR
-	bool "C Library Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable C Library error debug SYSLOG output.
-
-config DEBUG_LIB_WARN
-	bool "C Library Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable C Library warning debug SYSLOG output.
-
-config DEBUG_LIB_INFO
-	bool "C Library Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable C Library informational debug SYSLOG output.
-
-endif #DEBUG_LIB
-
 config DEBUG_LOGDUMP
 	bool "logdump Debug Feature"
 	default n
@@ -229,7 +2084,6 @@ config DEBUG_LOGDUMP
 		Enable logdump debug feature.
 
 if DEBUG_LOGDUMP
-
 config DEBUG_LOGDUMP_ERROR
 	bool "logdump Error Output"
 	default n
@@ -252,70 +2106,6 @@ config DEBUG_LOGDUMP_INFO
 		Enable logdump informational debug SYSLOG output.
 
 endif #DEBUG_LOGDUMP
-
-config DEBUG_MM
-	bool "Memory Manager Debug Feature"
-	default n
-	---help---
-		Enable memory management debug feature.
-
-if DEBUG_MM
-
-config DEBUG_MM_ERROR
-	bool "Memory Manager Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable memory management error debug SYSLOG output.
-
-config DEBUG_MM_WARN
-	bool "Memory Manager Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable memory management Warning debug SYSLOG output.
-
-config DEBUG_MM_INFO
-	bool "Memory Manager Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable memory management informational debug SYSLOG output.
-
-endif #DEBUG_MM
-
-config DEBUG_NET
-	bool "Network Debug Feature"
-	default n
-	depends on ARCH_HAVE_NET
-	---help---
-		Enable network debug feature.
-
-if DEBUG_NET
-
-config DEBUG_NET_ERROR
-	bool "Network Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable network error debug SYSLOG output.
-
-config DEBUG_NET_WARN
-	bool "Network Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable network warning debug SYSLOG output.
-
-config DEBUG_NET_INFO
-	bool "Network Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable network informational debug SYSLOG output.
-
-endif #DEBUG_NET
-
 config DEBUG_BLE
 	bool "BLE Debug Feature"
 	default n
@@ -323,7 +2113,6 @@ config DEBUG_BLE
 		Enable BLE debug feature.
 
 if DEBUG_BLE
-
 config DEBUG_BLE_ERROR
 	bool "BLE Error Output"
 	default n
@@ -346,7 +2135,6 @@ config DEBUG_BLE_INFO
 		Enable BLE informational debug SYSLOG output.
 
 endif #DEBUG_BLE
-
 config DEBUG_SMP
         bool "SMP Debug Feature"
         default n
@@ -354,7 +2142,6 @@ config DEBUG_SMP
                 Enable smp debug Feature.
 
 if DEBUG_SMP
-
 config DEBUG_SMP_ERROR
         bool "SMP Error Output"
         default n
@@ -377,7 +2164,6 @@ config DEBUG_SMP_INFO
                 Enable smp informational debug output.
 
 endif #DEBUG_SMP
-
 config DEBUG_PM
 	bool "Power Management Debug Features"
 	default n
@@ -385,7 +2171,6 @@ config DEBUG_PM
 		Enable PM debug feature.
 
 if DEBUG_PM
-
 config DEBUG_PM_ERROR
 	bool "PM Error Output"
 	default n
@@ -408,71 +2193,6 @@ config DEBUG_PM_INFO
 		Enable PM informational debug SYSLOG output.
 
 endif #DEBUG_PM
-
-config DEBUG_SCHED
-	bool "Scheduler Debug Feature"
-	default n
-	---help---
-		Enable OS debug feature.
-
-if DEBUG_SCHED
-
-config DEBUG_SCHED_ERROR
-	bool "Scheduler Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable OS error debug SYSLOG output.
-
-config DEBUG_SCHED_WARN
-	bool "Scheduler Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable OS warning debug SYSLOG output.
-
-config DEBUG_SCHED_INFO
-	bool "Scheduler Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable OS informational debug SYSLOG output.
-
-endif #DEBUG_SCHED
-
-config DEBUG_SYSCALL
-	bool "SYSCALL Debug Feature"
-	default n
-	depends on LIB_SYSCALL
-	---help---
-		Enable very low level output related to system calls.  This gives
-		you basically a poor man's version of strace.
-
-if DEBUG_SYSCALL
-
-config DEBUG_SYSCALL_ERROR
-	bool "SYSCALL Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable system calls error debug SYSLOG output.
-
-config DEBUG_SYSCALL_WARN
-	bool "SYSCALL Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable system calls warning debug SYSLOG output.
-
-config DEBUG_SYSCALL_INFO
-	bool "SYSCALL Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable system calls informational debug SYSLOG output.
-
-endif #DEBUG_SYSCALL
-
 config DEBUG_TASH
 	bool "TASH Debug Feature"
 	default n
@@ -491,7 +2211,6 @@ config DEBUG_TASH_INFO
 	default n
 	depends on DEBUG_VERBOSE
 endif #DEBUG_TASH
-
 config DEBUG_WIFICSI
 	bool "WIFI CSI Debug Feature"
 	default n
@@ -500,7 +2219,6 @@ config DEBUG_WIFICSI
 		Enable WIFI CSI debug feature.
 
 if DEBUG_WIFICSI
-
 config DEBUG_WIFICSI_ERROR
 	bool "WIFI CSI Error Output"
 	default y
@@ -523,9 +2241,6 @@ config DEBUG_WIFICSI_INFO
 		Enable WIFI CSI informational debug SYSLOG output.
 
 endif #DEBUG_WIFICSI
-
-comment "Framework Debug Options"
-
 config DEBUG_IOTBUS
 	bool "IoTbus Debug Feature"
 	default n
@@ -541,7 +2256,6 @@ config DEBUG_MEDIA
 		Enable Media debug feature.
 
 if DEBUG_MEDIA
-
 config DEBUG_MEDIA_ERROR
 	bool "Media Error Output"
 	default n
@@ -564,7 +2278,6 @@ config DEBUG_MEDIA_INFO
 		Enable Media informational SYSLOG output
 
 endif #DEBUG_MEDIA
-
 config DEBUG_MESSAGING_IPC
 	bool "Messaging Framework Debug Feature"
 	default n
@@ -580,7 +2293,6 @@ config DEBUG_PREFERENCE
 		Preference Debug Output.
 
 if DEBUG_PREFERENCE
-
 config DEBUG_PREFERENCE_ERROR
 	bool "Enable Preference Error Debug Output"
 	default y
@@ -596,7 +2308,6 @@ config DEBUG_PREFERENCE_INFO
 		Preference Informational Debug Output.
 
 endif #DEBUG_PREFERENCE
-
 config DEBUG_ST_THINGS
 	bool "ST Things Debug Feature"
 	default y
@@ -605,7 +2316,6 @@ config DEBUG_ST_THINGS
 		Enable st things debug feature.
 
 if DEBUG_ST_THINGS
-
 config DEBUG_ST_THINGS_ERROR
 	bool "ST Things Error Output"
 	default y
@@ -635,7 +2345,6 @@ config DEBUG_ST_THINGS_INFO
 		Enable ST Things informational debug SYSLOG output.
 
 endif #DEBUG_ST_THINGS
-
 config DEBUG_REBOOT_REASON
 	bool "Reboot Reason Debug Feature"
 	default n
@@ -644,7 +2353,6 @@ config DEBUG_REBOOT_REASON
 		Enable Reboot Reason debug feature.
 
 if DEBUG_REBOOT_REASON
-
 config DEBUG_REBOOT_REASON_ERROR
 	bool "Enable Reboot Reason Error Debug Output"
 	default n
@@ -660,7 +2368,6 @@ config DEBUG_REBOOT_REASON_INFO
 		Reboot Reason Informational Debug Output.
 
 endif #DEBUG_REBOOT_REASON
-
 config DEBUG_UI
 	bool "AraUI Debug Feature"
 	default n
@@ -669,7 +2376,6 @@ config DEBUG_UI
 		Enable AraUI debug feature.
 
 if DEBUG_UI
-
 config UI_DEBUG_DRAW
 	bool "Draw debug boxes"
 	default n
@@ -698,22 +2404,6 @@ config DEBUG_UI_INFO
 		Enable UI informational SYSLOG output
 
 endif #DEBUG_UI
-
-comment "OS Function Debug Options"
-
-config DEBUG_DMA
-	bool "DMA Debug Feature"
-	default n
-	depends on ARCH_DMA
-	---help---
-		Enable DMA-releated debug Feature.
-		Support for this debug option is architecture-specific and may not
-		be available for some MCUs.
-
-config ARCH_HAVE_HEAPCHECK
-	bool
-	default n
-
 config DEBUG_HEAP
 	bool "Heap usage debug hooks"
 	default n
@@ -750,7 +2440,6 @@ config DEBUG_MM_UAF
 		the chunk after it was freed (use-after-free).
 
 if DEBUG_MM_UAF
-
 config DEBUG_MM_UAF_POISON_SIZE
 	int "Poison pattern size (bytes)"
 	default 64
@@ -771,100 +2460,6 @@ config DEBUG_MM_UAF_PANIC
 		proceeds.
 
 endif # DEBUG_MM_UAF
-
-config DEBUG_IRQ
-	bool "Interrupt Controller Debug Feature"
-	default n
-	---help---
-		Some (but not all) architectures support debug output to verify
-		interrupt controller logic.  If supported, then option will enable
-		that output.  This may interfere with normal operations!  You
-		should *not* enable interrupt controller debug unless you suspect
-		that here is a problem with that logic.  On some platforms, this
-		option may even cause crashes! Use with care!
-
-if DEBUG_IRQ
-
-config DEBUG_IRQ_INFO
-	bool "Interrupt Debug information"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		List the registered interrupts, it's occurrence count and corresponding isr.
-
-endif #DEBUG_IRQ
-
-config DEBUG_PAGING
-	bool "Demand Paging Debug Feature"
-	default n
-	depends on PAGING
-	---help---
-		Enable demand paging debug Feature.
-
-comment "Driver Debug Options"
-
-config DEBUG_ANALOG
-	bool "Analog Device Driver Debug Feature"
-	default n
-	---help---
-		Enable Analog debug Feature.
-
-if DEBUG_ANALOG
-
-config DEBUG_ANALOG_ERROR
-	bool "Analog Error Output"
-	default y
-	depends on DEBUG_ERROR
-	---help---
-		Enable Analog error debug output.
-
-config DEBUG_ANALOG_WARN
-	bool "Analog Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable Analog warning debug output.
-
-config DEBUG_ANALOG_INFO
-	bool "Analog Infomational Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable Analog informational debug output.
-
-endif #DEBUG_ANALOG
-
-config DEBUG_I2S
-        bool "I2S Device Driver Debug Feature"
-        default n
-        ---help---
-                Enable i2s debug Feature.
-
-if DEBUG_I2S
-
-config DEBUG_I2S_ERROR
-        bool "I2S Error Output"
-        default n
-        depends on DEBUG_ERROR
-        ---help---
-                Enable i2s error debug output.
-
-config DEBUG_I2S_WARN
-        bool "I2S Warning Output"
-        default n
-        depends on DEBUG_WARN
-        ---help---
-                Enable i2s warning debug output.
-
-config DEBUG_I2S_INFO
-        bool "I2S Infomational Debug Output"
-        default n
-        depends on DEBUG_VERBOSE
-        ---help---
-                Enable i2s informational debug output.
-
-endif #DEBUG_I2S
-
 config DEBUG_MIPI_DSI
 	bool "Enable MIPI driver Debug Feature"
 	default n
@@ -873,7 +2468,6 @@ config DEBUG_MIPI_DSI
 		Enable mipi driver debug feature.
 
 if DEBUG_MIPI_DSI
-
 config DEBUG_MIPI_ERROR
 	bool "Enable MIPI Error Debug Output"
 	default n
@@ -896,124 +2490,6 @@ config DEBUG_MIPI_INFO
 		Enable MIPI Informational Debug Output.
 
 endif #DEBUG_MIPI
-
-config DEBUG_LCD
-	bool "LCD driver Debug Feature"
-	default n
-	depends on LCD
-	---help---
-		Enable lcd driver debug feature.
-
-if DEBUG_LCD
-
-config DEBUG_LCD_ERROR
-	bool "Enable LCD Error Debug Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		LCD Error Debug Output.
-
-config DEBUG_LCD_INFO
-	bool "Enable LCD Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		LCD Informational Debug Output.
-
-config DEBUG_GRAPHICS_ERROR
-	bool "Enable Graphics Error Debug Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Graphics Error Debug Output.
-
-config DEBUG_GRAPHICS_INFO
-	bool "Enable Graphics Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Graphics Informational Debug Output.
-
-endif #DEBUG_LCD
-
-config DEBUG_PWM
-	bool "PWM Debug Feature"
-	default n
-	depends on PWM
-	---help---
-		Enable PWM driver debug Feature.
-		Support for this debug option is architecture-specific and may not
-		be available for some MCUs.
-
-config DEBUG_RTC
-	bool "RTC Debug Feature"
-	default n
-	depends on RTC
-	---help---
-		Enable RTC driver debug Feature.
-		Support for this debug option is architecture-specific and may not
-		be available for some MCUs.
-
-config DEBUG_SPI
-	bool "SPI Debug Feature"
-	default n
-	depends on SPI
-	---help---
-		Enable SPI debug Feature.
-		Support for this debug option is architecture-specific and may not
-		be available for some MCUs.
-
-if DEBUG_SPI
-
-config DEBUG_SPI_ERROR
-	bool "SPI Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable SPI error debug SYSLOG output.
-
-config DEBUG_SPI_WARN
-	bool "SPI Warning Output"
-	default n
-	depends on DEBUG_WARN
-	---help---
-		Enable SPI warning debug SYSLOG output.
-
-config DEBUG_SPI_INFO
-	bool "SPI Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable SPI informational debug SYSLOG output.
-
-endif #DEBUG_SPI
-
-config DEBUG_TIMER
-	bool "Timer Debug Feature"
-	default n
-	depends on TIMER
-	---help---
-		Enable timer debug Feature.
-		Support for this debug option is architecture-specific and may not
-		be available for some MCUs.
-
-if DEBUG_TIMER
-
-config DEBUG_TIMER_ERROR
-	bool "TIMER Error Output"
-	default n
-	depends on DEBUG_ERROR
-	---help---
-		Enable TIMER error debug SYSLOG output.
-
-config DEBUG_TIMER_INFO
-	bool "TIMER Informational Debug Output"
-	default n
-	depends on DEBUG_VERBOSE
-	---help---
-		Enable TIMER informational debug SYSLOG output.
-endif #DEBUG_TIMER
-
 config DEBUG_TOUCH
         bool "TOUCH Debug Feature"
         default n
@@ -1024,7 +2500,6 @@ config DEBUG_TOUCH
                 be available for some MCUs.
 
 if DEBUG_TOUCH
-
 config DEBUG_TOUCH_ERROR
         bool "TOUCH Error Output"
         default n
@@ -1047,80 +2522,6 @@ config DEBUG_TOUCH_INFO
                 Enable TOUCH informational debug SYSLOG output.
 
 endif #DEBUG_TOUCH
-
-config DEBUG_USB
-        bool "USB Debug Features"
-        default n
-        depends on USBDEV || USBHOST
-        ---help---
-                Enable USB debug features.
-
-if DEBUG_USB
-
-config DEBUG_USB_ERROR
-        bool "USB Error Output"
-        default n
-        depends on DEBUG_ERROR
-        ---help---
-                Enable USB error output to SYSLOG.
-
-config DEBUG_USB_WARN
-        bool "USB Warnings Output"
-        default n
-        depends on DEBUG_WARN
-        ---help---
-                Enable USB warning output to SYSLOG.
-
-config DEBUG_USB_INFO
-        bool "USB Informational Output"
-        default n
-        depends on DEBUG_VERBOSE
-        ---help---
-                Enable USB informational output to SYSLOG.
-
-endif # DEBUG_USB
-
-config DEBUG_VIDEO
-        bool "Video Debug Features"
-        default n
-        depends on VIDEO_SOURCE
-        ---help---
-                Enable Video debug features.
-
-if DEBUG_VIDEO
-
-config DEBUG_VIDEO_ERROR
-        bool "Video Error Output"
-        default n
-        depends on DEBUG_ERROR
-        ---help---
-                Enable Video error output to SYSLOG.
-
-config DEBUG_VIDEO_WARN
-        bool "Video Warnings Output"
-        default n
-        depends on DEBUG_WARN
-        ---help---
-                Enable Video warning output to SYSLOG.
-
-config DEBUG_VIDEO_INFO
-        bool "Video Informational Output"
-        default n
-        depends on DEBUG_VERBOSE
-        ---help---
-                Enable Video informational output to SYSLOG.
-
-endif # DEBUG_VIDEO
-
-config DEBUG_WATCHDOG
-	bool "Watchdog Timer Debug Feature"
-	default n
-	depends on WATCHDOG
-	---help---
-		Enable watchdog timer debug Feature.
-		Support for this debug option is architecture-specific and may not
-		be available for some MCUs.
-
 config DEBUG_WLAN
 	bool "WLAN Debug Feature"
 	default y
@@ -1132,9 +2533,6 @@ config DEBUG_WLAN
 		Info: Enabling global DEBUG flag will enable ERROR and WARNING log level per default
 
 if DEBUG_WLAN
-
-comment "SLSI WLAN FW Debug Options"
-
 config SCSC_ENABLE_FWFAULT_LOG
 	bool "Enable Firmware Fault logging"
 	default n
@@ -1144,8 +2542,6 @@ config SCSC_ENABLE_FWFAULT_LOG
 # 	slsi wlan driver logging
 #		By enabling global DEBUG flag will enable ERROR and WARNING log level per default
 #		futher logging can be enabled by below flags
-
-comment "SLSI WLAN Driver Debug Options"
 
 config DEBUG_WLAN_DRIVER_ERROR
 	bool "Enable WLAN Driver ERROR Debug Output"
@@ -1173,8 +2569,6 @@ config DEBUG_WLAN_DRIVER_INFO
 	select DEBUG_WLAN_DRIVER_MORE
 	---help---
 		Enable T20 logging with ALL log levels from the SCSC Wifi driver.
-
-comment "SLSI WPA Supplicant Debug Options"
 
 config DEBUG_WLAN_SUPPLICANT_ERROR
 	bool "Enable WLAN Supplicant ERROR Debug Output"
@@ -1209,8 +2603,6 @@ config DEBUG_WLAN_SUPPLICANT_INFO
 	---help---
 		Enables further logging MGS_EXCESSIVE debug output from the SLSI wpa supplicant.
 
-comment "SLSI Wi-Fi API Debug Options"
-
 config DEBUG_WLAN_API_ERROR
 	bool "Enable WLAN API ERROR Debug Output"
 	default y
@@ -1236,41 +2628,4 @@ config DEBUG_WLAN_API_INFO
 		Enables VERBOSE level debug output for SLSI Wi-Fi API.
 
 endif #DEBUG_WLAN
-
 endif #DEBUG
-
-comment "Stack Debug Options"
-
-config ARCH_HAVE_STACKCHECK
-	bool
-	default n
-
-config STACK_COLORATION
-	bool "Stack coloration"
-	default n
-	depends on ARCH_HAVE_STACKCHECK
-	---help---
-		Enable stack coloration to initialize the stack memory to the value
-		of STACK_COLOR and enable the stack checking APIs that can be used
-		to monitor the level of stack usage.
-
-		Only supported by a few architectures.
-
-comment "Build Debug Options"
-
-config DEBUG_SYMBOLS
-	bool "Generate Debug Symbols"
-	default y
-	---help---
-		Build with debug symbols (needed for use with a debugger).
-
-config FRAME_POINTER
-	bool "Enable backtracking using Frame pointer register"
-	default n
-	---help---
-		This option uses -fno-omit-frame-pointer flag of gcc. This flag makes
-		use of frame pointer register to push PC,SP and FP for every function
-		call in the stack during runtime. If you say N here, the resulting
-		binary will be slightly smaller amd faster. However, if neither
-		FRAME_POINTER nor ARM_UNWIND are enabled, the information
-		reported during system crash is very limited.
