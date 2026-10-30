@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_initialstate.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -47,7 +49,7 @@
 #include <tinyara/arch.h>
 
 #include "arm.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 
 /****************************************************************************
  * Public Functions
@@ -71,6 +73,9 @@ void up_initial_state(struct tcb_s *tcb)
 {
 	struct xcptcontext *xcp = &tcb->xcp;
 	uint32_t cpsr;
+#ifdef CONFIG_ARCH_KERNEL_STACK
+	uint32_t *kstack = xcp->kstack;
+#endif
 
 	/* Initialize the initial exception register context structure */
 
@@ -78,10 +83,11 @@ void up_initial_state(struct tcb_s *tcb)
 
 	/* Initialize the idle thread stack */
 
-	if (tcb->pid == 0) {
-		tcb->stack_alloc_ptr = (void *)(g_idle_topstack - CONFIG_IDLETHREAD_STACKSIZE);
-		tcb->stack_base_ptr = tcb->stack_alloc_ptr;
-		tcb->adj_stack_size = CONFIG_IDLETHREAD_STACKSIZE;
+	if (tcb->pid == IDLE_PROCESS_ID) {
+		tcb->stack_alloc_ptr = (void *)(g_idle_topstack -
+		                                CONFIG_IDLETHREAD_STACKSIZE);
+		tcb->stack_base_ptr  = tcb->stack_alloc_ptr;
+		tcb->adj_stack_size  = CONFIG_IDLETHREAD_STACKSIZE;
 
 #ifdef CONFIG_STACK_COLORATION
 		/* If stack debug is enabled, then fill the stack with a
@@ -89,15 +95,21 @@ void up_initial_state(struct tcb_s *tcb)
 		 * water marks.
 		 */
 
-      up_stack_color(tcb->stack_alloc_ptr, (void *)up_getsp());
+		arm_stack_color(tcb->stack_alloc_ptr, 0);
 #endif /* CONFIG_STACK_COLORATION */
 
 		return;
 	}
 
+#ifdef CONFIG_ARCH_KERNEL_STACK
+	xcp->kstack = kstack;
+#endif
+
 	/* Initialize the context registers to stack top */
 
-	xcp->regs = (void *)((uint32_t) tcb->stack_base_ptr + tcb->adj_stack_size - XCPTCONTEXT_SIZE);
+	xcp->regs = (void *)((uint32_t)tcb->stack_base_ptr +
+	                               tcb->adj_stack_size -
+	                               XCPTCONTEXT_SIZE);
 
 	/* Initialize the xcp registers */
 
@@ -105,11 +117,12 @@ void up_initial_state(struct tcb_s *tcb)
 
 	/* Save the initial stack pointer */
 
-	xcp->regs[REG_SP] = (uint32_t) tcb->stack_base_ptr + tcb->adj_stack_size;
+	xcp->regs[REG_SP] = (uint32_t)tcb->stack_base_ptr +
+	                              tcb->adj_stack_size;
 
 	/* Save the task entry point */
 
-	xcp->regs[REG_PC] = (uint32_t) tcb->start;
+	xcp->regs[REG_PC] = (uint32_t)tcb->start;
 
 	/* If this task is running PIC, then set the PIC base register to the
 	 * address of the allocated D-Space region.
@@ -121,7 +134,7 @@ void up_initial_state(struct tcb_s *tcb)
 		 * alloacated D-Space region.
 		 */
 
-		xcp->regs[REG_PIC] = (uint32_t) tcb->dspace->region;
+		xcp->regs[REG_PIC] = (uint32_t)tcb->dspace->region;
 	}
 #endif
 
@@ -141,15 +154,19 @@ void up_initial_state(struct tcb_s *tcb)
 
 	cpsr |= (PSR_I_BIT | PSR_F_BIT);
 
-#else							/* CONFIG_SUPPRESS_INTERRUPTS */
-	/* Leave IRQs enabled (Also FIQs if CONFIG_ARMV7A_DECODEFIQ is selected) */
+#elif defined(CONFIG_ARCH_TRUSTZONE_SECURE)
+	/* In tee, we need to disable the IRQ interrupt to make the A core
+	 * policy consistent with the M core.
+	 */
 
-#ifndef CONFIG_ARMV7A_DECODEFIQ
+	cpsr |= PSR_I_BIT;
+#elif !defined(CONFIG_ARCH_HIPRI_INTERRUPT)
+	/* Leave IRQs enabled (Also FIQs if CONFIG_ARCH_TRUSTZONE_SECURE or
+	 * CONFIG_ARCH_HIPRI_INTERRUPT is selected)
+	 */
 
 	cpsr |= PSR_F_BIT;
-
-#endif							/* !CONFIG_ARMV7A_DECODEFIQ */
-#endif							/* CONFIG_SUPPRESS_INTERRUPTS */
+#endif
 
 #ifdef CONFIG_ARM_THUMB
 	cpsr |= PSR_T_BIT;

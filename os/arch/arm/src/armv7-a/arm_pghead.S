@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_pghead.S
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -42,14 +44,15 @@
 #include <tinyara/config.h>
 #include <tinyara/page.h>
 
+#include <arch/irq.h>
+
 #include "arm.h"
-#include "cp15.h"
 #include "sctlr.h"
 #include "mmu.h"
 #include "chip.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 
-#ifdef CONFIG_PAGING
+#ifdef CONFIG_LEGACY_PAGING
 
 	.file	"arm_pghead.S"
 
@@ -67,7 +70,7 @@
 /* The page table cannot be in ROM if we are going to do pagin! */
 
 #ifndef CONFIG_ARCH_ROMPGTABLE
-#  error CONFIG_PAGING and CONFIG_ARCH_ROMPGTABLE are incompatible options
+#  error CONFIG_LEGACY_PAGING and CONFIG_ARCH_ROMPGTABLE are incompatible options
 #endif
 
 /* There are three operational memory configurations:
@@ -86,11 +89,11 @@
    * beginning of FLASH.
    */
 
-#  if !defined(CONFIG_FLASH_START_ADDR) || !defined(CONFIG_FLASH_VSTART)
-#    error "CONFIG_FLASH_START_ADDR or CONFIG_FLASH_VSTART is not defined"
+#  if !defined(CONFIG_FLASH_START) || !defined(CONFIG_FLASH_VSTART)
+#    error "CONFIG_FLASH_START or CONFIG_FLASH_VSTART is not defined"
 #  endif
 
-#  if CONFIG_FLASH_START_ADDR == CONFIG_FLASH_VSTART
+#  if CONFIG_FLASH_START == CONFIG_FLASH_VSTART
 #    define CONFIG_IDENTITY_TEXTMAP 1
 #  endif
 
@@ -113,11 +116,11 @@
    * beginning of FLASH.
    */
 
-#  if !defined(CONFIG_FLASH_START_ADDR) || !defined(CONFIG_FLASH_VSTART)
-#    error "CONFIG_FLASH_START_ADDR or CONFIG_FLASH_VSTART is not defined"
+#  if !defined(CONFIG_FLASH_START) || !defined(CONFIG_FLASH_VSTART)
+#    error "CONFIG_FLASH_START or CONFIG_FLASH_VSTART is not defined"
 #  endif
 
-#  if CONFIG_FLASH_START_ADDR == CONFIG_FLASH_VSTART
+#  if CONFIG_FLASH_START == CONFIG_FLASH_VSTART
 #    define CONFIG_IDENTITY_TEXTMAP 1
 #  endif
 
@@ -167,10 +170,10 @@
  ****************************************************************************/
 
 /* WR_NSECTIONS determines the number of 1Mb sections to map for the
- * Write/Read/eXecute address region.  This is based on TIZENRT_TEXT_SIZE.
+ * Write/Read/eXecute address region.  This is based on NUTTX_TEXT_SIZE.
  */
 
-#define WR_NSECTIONS ((TIZENRT_RAM_SIZE+0x000fffff) >> 20)
+#define WR_NSECTIONS ((NUTTX_RAM_SIZE+0x000fffff) >> 20)
 
 /****************************************************************************
  * Assembly Macros
@@ -214,6 +217,8 @@
  */
 
 	.text
+	.syntax	unified
+	.arm
 	.global	__start
 	.type	__start, #function
 
@@ -337,6 +342,7 @@ __start:
 	mcr		CP15_TLBIALL(r0,c5)
 	mcr		CP15_BPIALL(r0)		/* Invalidate entire branch prediction array */
 	mcr		CP15_ICIALLU(r0)	/* Invalidate I-cache */
+	isb
 
 	/* Load the page table address.
 	 *
@@ -451,7 +457,7 @@ __start:
 	orr		r0, r0, #(SCTLR_C)
 #endif
 
-#ifndef CPU_ICACHE_DISABLE
+#if !defined(CPU_ICACHE_DISABLE) && !defined(CONFIG_SMP)
 	/* Icache enable
 	 *
 	 *   SCTLR_I    Bit 12: ICache enable
@@ -469,6 +475,15 @@ __start:
 	orr		r0, r0, #(SCTLR_A)
 #endif
 
+#ifdef CONFIG_ENDIAN_BIG
+	/* Big endian mode
+	 *
+	 *   SCTLR_EE   Bit 25: 1=Big endian.
+	 */
+
+	orr		r0, r0, #(SCTLR_EE)
+#endif
+
 #ifdef CPU_AFE_ENABLE
 	/* AP[0:2] Permissions model
 	 *
@@ -484,6 +499,7 @@ __start:
 	/* Then write the configured control register */
 
 	mcr		CP15_SCTLR(r0)			/* Write control reg */
+	isb
 	.rept		12				/* Cortex A8 wants lots of NOPs here */
 	nop
 	.endr
@@ -524,14 +540,14 @@ __start:
 
 	.type	.LCptextbase, %object
 .LCptextbase:
-	.long	TIZENRT_TEXT_PADDR & 0xfff00000
+	.long	NUTTX_TEXT_PADDR & 0xfff00000
 	.size	.LCptextbase, . -.LCptextbase
 
 	/* The aligned, virtual base address of the .text section */
 
 	.type	.LCvtextbase, %object
 .LCvtextbase:
-	.long	TIZENRT_TEXT_VADDR & 0xfff00000
+	.long	NUTTX_TEXT_VADDR & 0xfff00000
 	.size	.LCvtextbase, . -.LCvtextbase
 
 	/* The MMU flags used with the .text mapping */
@@ -640,10 +656,10 @@ __start:
 	add		r3, r3, r1			/* r3=flags + base */
 
 	/* Now setup the page tables for our normal mapped RAM region.
-	 * We round TIZENRT_RAM_VADDR down to the nearest megabyte boundary.
+	 * We round NUTTX_RAM_VADDR down to the nearest megabyte boundary.
 	 */
 
-	add		r0, r4, #(TIZENRT_RAM_VADDR & 0xfff00000) >> 18
+	add		r0, r4, #(NUTTX_RAM_VADDR & 0xfff00000) >> 18
 	str		r3, [r0], #4
 
 	/* Now map the remaining WR_NSECTIONS-1 sections of the RAM memory
@@ -687,7 +703,7 @@ __start:
 	/* Finally branch to the OS entry point */
 
 	mov		lr, #0				/* LR = return address (none) */
-	b		os_start			/* Branch to os_start */
+	b		nx_start			/* Branch to nx_start */
 	.size	.Lvstart, .-.Lvstart
 
 /***************************************************************************

@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_prefetchabort.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -46,43 +48,13 @@
 #include <debug.h>
 
 #include <tinyara/irq.h>
-#ifdef CONFIG_PAGING
-#include <tinyara/page.h>
+#ifdef CONFIG_LEGACY_PAGING
+#  include <tinyara/page.h>
 #endif
 
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-#include <tinyara/reboot_reason.h>
-#include <arch/reboot_reason.h>
-#endif
-
-#include "sched/sched.h"
-#include "up_internal.h"
-#ifdef CONFIG_APP_BINARY_SEPARATION
 #include "mmu.h"
-#endif
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-extern uint32_t system_exception_location;
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: print_prefetchabort_detail
- ****************************************************************************/
-
-static inline void print_prefetchabort_detail(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
-{
-	/* Abort log must always start at a new line.*/
-	lldbg_noarg("\n");
-	_alert("#########################################################################\n");
-	_alert("PANIC!!! Prefetch Abort at instruction : 0x%08x\n",  regs[REG_PC]);
-	_alert("PC: %08x IFAR: %08x IFSR: %08x\n", regs[REG_PC], ifar, ifsr);
-	_alert("#########################################################################\n\n\n");
-}
+#include "sched/sched.h"
+#include "arm_internal.h"
 
 /****************************************************************************
  * Public Functions
@@ -98,18 +70,18 @@ static inline void print_prefetchabort_detail(uint32_t *regs, uint32_t ifar, uin
  *
  ****************************************************************************/
 
-#ifdef CONFIG_PAGING
+#ifdef CONFIG_LEGACY_PAGING
 
 uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 {
-	uint32_t *savestate;
+	struct tcb_s *tcb = this_task();
+	uint32_t *saveregs;
+	bool savestate;
 
-	/* Save the saved processor context in CURRENT_REGS where it can be
-	 * accessed for register dumps and possibly context switching.
-	 */
-
-	savestate = (uint32_t *)CURRENT_REGS;
-	CURRENT_REGS = regs;
+	savestate = up_interrupt_context();
+	saveregs = tcb->xcp.regs;
+	tcb->xcp.regs = regs;
+	up_set_interrupt_context(true);
 
 	/* Get the (virtual) address of instruction that caused the prefetch
 	 * abort. When the exception occurred, this address was provided in the
@@ -120,9 +92,12 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 	 * virtual addresses.
 	 */
 
-	pginfo("VADDR: %08x VBASE: %08x VEND: %08x\n", regs[REG_PC], PG_PAGED_VBASE, PG_PAGED_VEND);
+	pginfo("VADDR: %08x VBASE: %08x VEND: %08x\n",
+	       regs[REG_PC], PG_PAGED_VBASE, PG_PAGED_VEND);
 
-	if (regs[REG_R15] >= PG_PAGED_VBASE && regs[REG_R15] < PG_PAGED_VEND) {
+	if (FSR_FAULT(ifsr) == FSR_FAULT_DEBUG) {
+		arm_dbgmonitor(0, (void *)regs[REG_PC], regs);
+	} else if (regs[REG_R15] >= PG_PAGED_VBASE && regs[REG_R15] < PG_PAGED_VEND) {
 		/* Save the offending PC as the fault address in the TCB of the
 		 * currently executing task.  This value is, of course, already known
 		 * in regs[REG_R15], but saving it in this location will allow common
@@ -130,7 +105,7 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 		 */
 
 		struct tcb_s *tcb = this_task();
-		tcb->xcp.far = regs[REG_R15];
+		tcb->xcp.far  = regs[REG_R15];
 
 		/* Call pg_miss() to schedule the page fill.  A consequences of this
 		 * call are:
@@ -145,54 +120,42 @@ uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 		 */
 
 		pg_miss();
-
-		/* Restore the previous value of CURRENT_REGS.
-		 * NULL would indicate thatwe are no longer in an interrupt handler.
-		 *  It will be non-NULL if we are returning from a nested interrupt.
-		 */
-
-		CURRENT_REGS = savestate;
 	} else {
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-		up_reboot_reason_write_by_addr(regs[REG_R15], REBOOT_SYSTEM_PREFETCHABORT);
-#endif
-
-		if (!IS_SECURE_STATE()) {
-			print_prefetchabort_detail(regs, ifar, ifsr);
-		}
-
-		PANIC();
+		_alert("Prefetch abort. PC: %08" PRIx32 " IFAR: %08" PRIx32
+		       " IFSR: %08" PRIx32 "\n", regs[REG_PC], ifar, ifsr);
+		PANIC_WITH_REGS("panic", regs);
 	}
+
+	/* Restore the previous value of saveregs. */
+
+	up_set_interrupt_context(savestate);
+	tcb->xcp.regs = saveregs;
 
 	return regs;
 }
 
-#else							/* CONFIG_PAGING */
+#else /* CONFIG_LEGACY_PAGING */
 
 uint32_t *arm_prefetchabort(uint32_t *regs, uint32_t ifar, uint32_t ifsr)
 {
-	/* Save the saved processor context in CURRENT_REGS where it can be
-	 * accessed for register dumps and possibly context switching.
-	 */
-	uint32_t *saved_state = (uint32_t *)CURRENT_REGS;
-	CURRENT_REGS = regs;
+	struct tcb_s *tcb = this_task();
 
-	system_exception_location = regs[REG_R15];
-
-#ifdef CONFIG_SYSTEM_REBOOT_REASON
-	up_reboot_reason_write_by_addr(regs[REG_R15], REBOOT_SYSTEM_PREFETCHABORT);
-#endif
+	tcb->xcp.regs = regs;
+	up_set_interrupt_context(true);
 
 	/* Crash -- possibly showing diagnostic debug information. */
 
-	if (!IS_SECURE_STATE()) {
-		print_prefetchabort_detail(regs, ifar, ifsr);
+	_alert("Prefetch abort. PC: %08" PRIx32 " IFAR: %08" PRIx32 " IFSR: %08"
+	       PRIx32 "\n", regs[REG_PC], ifar, ifsr);
+
+	if (FSR_FAULT(ifsr) == FSR_FAULT_DEBUG) {
+		arm_dbgmonitor(0, (void *)regs[REG_PC], regs);
+	} else {
+		PANIC_WITH_REGS("panic", regs);
 	}
 
-	PANIC();
-	regs = (uint32_t *)CURRENT_REGS;
-	CURRENT_REGS = saved_state;
+	up_set_interrupt_context(false);
 	return regs; /* To keep the compiler happy */
 }
 
-#endif							/* CONFIG_PAGING */
+#endif /* CONFIG_LEGACY_PAGING */

@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/pgalloc.h
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -58,6 +60,10 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#ifndef CONFIG_ARCH_PGPOOL_MAPPING
+#  error "ARMv7-A needs CONFIG_ARCH_PGPOOL_MAPPING"
+#endif
+
 /****************************************************************************
  * Public Data
  ****************************************************************************/
@@ -65,39 +71,6 @@
 /****************************************************************************
  * Inline Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: arm_pgmap
- *
- * Description:
- *   Map one page to a temporary, scratch virtual memory address
- *
- ****************************************************************************/
-
-#if !defined(CONFIG_ARCH_PGPOOL_MAPPING) && defined(CONFIG_ARCH_USE_MMU)
-static inline uintptr_t arm_tmpmap(uintptr_t paddr, uint32_t *l1save)
-{
-	*l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
-	mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
-	return ((uintptr_t)ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
-}
-#endif
-
-/****************************************************************************
- * Name: arm_pgrestore
- *
- * Description:
- *  Restore any previous L1 page table mapping that was in place when
- *  arm_tmpmap() was called
- *
- ****************************************************************************/
-
-#if !defined(CONFIG_ARCH_PGPOOL_MAPPING) && defined(CONFIG_ARCH_USE_MMU)
-static inline void arm_tmprestore(uint32_t l1save)
-{
-	mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
-}
-#endif
 
 /****************************************************************************
  * Name: arm_pgvaddr
@@ -109,14 +82,13 @@ static inline void arm_tmprestore(uint32_t l1save)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ARCH_PGPOOL_MAPPING
 static inline uintptr_t arm_pgvaddr(uintptr_t paddr)
 {
-	DEBUGASSERT(paddr >= CONFIG_ARCH_PGPOOL_PBASE && paddr < CONFIG_ARCH_PGPOOL_PEND);
+	DEBUGASSERT(paddr >= CONFIG_ARCH_PGPOOL_PBASE &&
+	            paddr < CONFIG_ARCH_PGPOOL_PEND);
 
 	return paddr - CONFIG_ARCH_PGPOOL_PBASE + CONFIG_ARCH_PGPOOL_VBASE;
 }
-#endif
 
 /****************************************************************************
  * Name: arm_uservaddr
@@ -133,11 +105,16 @@ static inline bool arm_uservaddr(uintptr_t vaddr)
 	 * heap, or stack regions.
 	 */
 
-	return ((vaddr >= CONFIG_ARCH_TEXT_VBASE && vaddr < ARCH_TEXT_VEND) || (vaddr >= CONFIG_ARCH_DATA_VBASE && vaddr < ARCH_DATA_VEND) || (vaddr >= CONFIG_ARCH_HEAP_VBASE && vaddr < ARCH_HEAP_VEND)
+	return ((vaddr >= CONFIG_ARCH_TEXT_VBASE && vaddr < ARCH_TEXT_VEND) ||
+	        (vaddr >= CONFIG_ARCH_DATA_VBASE && vaddr < ARCH_DATA_VEND) ||
+	        (vaddr >= CONFIG_ARCH_HEAP_VBASE && vaddr < ARCH_HEAP_VEND)
 #ifdef CONFIG_ARCH_STACK_DYNAMIC
-			|| (vaddr >= CONFIG_ARCH_STACK_VBASE && vaddr < ARCH_STACK_VEND)
+	     || (vaddr >= CONFIG_ARCH_STACK_VBASE && vaddr < ARCH_STACK_VEND)
 #endif
-		   );
+#ifdef CONFIG_ARCH_VMA_MAPPING
+	     || (vaddr >= CONFIG_ARCH_SHM_VBASE && vaddr < ARCH_SHM_VEND)
+#endif
+	    );
 }
 
 /****************************************************************************
@@ -149,7 +126,8 @@ static inline bool arm_uservaddr(uintptr_t vaddr)
  *
  ****************************************************************************/
 
-static inline void set_l2_entry(uint32_t *l2table, uintptr_t paddr, uintptr_t vaddr, uint32_t mmuflags)
+static inline void set_l2_entry(uintptr_t *l2table, uintptr_t paddr,
+                                uintptr_t vaddr, uint32_t mmuflags)
 {
 	uint32_t index;
 
@@ -173,7 +151,7 @@ static inline void set_l2_entry(uint32_t *l2table, uintptr_t paddr, uintptr_t va
  *
  ****************************************************************************/
 
-static inline void clr_l2_entry(uint32_t *l2table, uintptr_t vaddr)
+static inline void clr_l2_entry(uintptr_t *l2table, uintptr_t vaddr)
 {
 	uint32_t index;
 
@@ -198,7 +176,7 @@ static inline void clr_l2_entry(uint32_t *l2table, uintptr_t vaddr)
  *
  ****************************************************************************/
 
-static inline uintptr_t get_l2_entry(uint32_t *l2table, uintptr_t vaddr)
+static inline uintptr_t get_l2_entry(uintptr_t *l2table, uintptr_t vaddr)
 {
 	uint32_t index;
 
@@ -218,29 +196,5 @@ static inline uintptr_t get_l2_entry(uint32_t *l2table, uintptr_t vaddr)
  * Public Functions Prototypes
  ****************************************************************************/
 
-/****************************************************************************
- * Name: arm_physpgaddr
- *
- * Description:
- *   Check if the virtual address lies in the user data area and, if so
- *   get the mapping to the physical address in the page pool.
- *
- ****************************************************************************/
-
-uintptr_t arm_physpgaddr(uintptr_t vaddr);
-
-/****************************************************************************
- * Name: arm_virtpgaddr
- *
- * Description:
- *   Check if the physical address lies in the page pool and, if so
- *   get the mapping to the virtual address in the user data area.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_ARCH_PGPOOL_MAPPING
-uintptr_t arm_virtpgaddr(uintptr_t paddr);
-#endif
-
-#endif							/* CONFIG_MM_PGALLOC */
-#endif							/* __ARCH_ARM_SRC_ARMV7_A_PGALLOC_H */
+#endif /* CONFIG_MM_PGALLOC */
+#endif /* __ARCH_ARM_SRC_ARMV7_A_PGALLOC_H */

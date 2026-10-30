@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-a/arm_signal_dispatch.c
+ * arch/arm/src/armv7-a/arm_dofiq.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -40,77 +42,41 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
+
+#include <stdint.h>
+#include <assert.h>
+
+#include <tinyara/irq.h>
 #include <tinyara/arch.h>
+#include <tinyara/board.h>
+#include <arch/board/board.h>
 
-#include <arch/syscall.h>
-
-#include "up_internal.h"
-
-#if !defined(CONFIG_BUILD_FLAT) && defined(__KERNEL__)
+#include "gic.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_signal_dispatch
+ * Name: arm_dofiq
  *
  * Description:
- *   In the kernel mode build, this function will be called to execute a
- *   a signal handler in user-space.  When the signal is delivered, a
- *   kernel-mode stub will first run to perform some housekeeping functions.
- *   This kernel-mode stub will then be called transfer control to the user
- *   mode signal handler by calling this function.
- *
- *   Normally the user-mode signaling handling stub will also execute
- *   before the ultimate signal handler is called.  See
- *   arch/arm/src/armvx-y/arm_signal_handler.S.  This function is the
- *   user-space, signal handler trampoline function.  It is called from
- *   up_signal_dispatch() in user-mode.
- *
- * Input Parameters:
- *   sighand - The address user-space signal handling function
- *   signo, info, and ucontext - Standard arguments to be passed to the
- *     signal handling function.
- *
- * Returned Value:
- *   None.  This function does not return in the normal sense.  It returns
- *   via an architecture specific system call made by up_signal_handler().
- *   However, this will look like a normal return by the caller of
- *   up_signal_dispatch.
+ *   Receives the decoded GIC interrupt information and dispatches control
+ *   to the attached fiq handler. It is not allowed to call OS functions
+ *   within a FIQ handler.
  *
  ****************************************************************************/
 
-#ifndef CONFIG_DISABLE_SIGNALS
-void up_signal_dispatch(_sa_sigaction_t sighand, int signo, siginfo_t *info, void *ucontext)
+uint32_t *arm_dofiq(int fiq, uint32_t *regs)
 {
-	uint32_t saved_sp;
+	board_autoled_on(LED_INIRQ);
 
-	/* Save SP, force 8-byte alignment, call syscall4(), then restore SP */
-
-	__asm__ __volatile__ (
-        "mov %0, sp\n"
-#ifdef CONFIG_ARCH_CORTEXA32
-		"bic sp, sp, #7\n"
+#ifdef CONFIG_SUPPRESS_INTERRUPTS
+	PANIC();
 #else
-        "bic %0, %0, #7\n"
-		"mov sp, %0\n"
+	irq_dispatch(fiq, regs);
 #endif
-        : "=r"(saved_sp)
-        :
-        : "memory"
-    );
 
-	/* Let sys_call4() do all of the work */
-
-	sys_call4(SYS_signal_handler, (uintptr_t) sighand, (uintptr_t) signo, (uintptr_t) info, (uintptr_t) ucontext);
-
-	__asm__ __volatile__ (
-        "mov sp, %0\n"
-        :
-        : "r"(saved_sp)
-        : "memory"
-    );
+	board_autoled_off(LED_INIRQ);
+	return regs;
 }
-#endif
-#endif							/* !CONFIG_BUILD_FLAT && __KERNEL__ */

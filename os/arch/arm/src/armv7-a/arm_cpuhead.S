@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_cpuhead.S
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -44,14 +46,11 @@
 #include <arch/irq.h>
 
 #include "arm.h"
-#include "cp15.h"
 #include "sctlr.h"
 #include "mmu.h"
 #include "smp.h"
 #include "chip.h"
-#include "up_internal.h"
-
-#include <tinyara/arch.h>
+#include "arm_internal.h"
 
 #ifdef CONFIG_SMP
 
@@ -60,14 +59,6 @@
 /****************************************************************************
  * Configuration
  ****************************************************************************/
-
-/* Hard-coded options */
-
-#undef CPU_ALIGNMENT_TRAP
-#undef CPU_CACHE_ROUND_ROBIN
-#undef CPU_DCACHE_DISABLE
-#undef CPU_ICACHE_DISABLE
-#undef CPU_AFE_ENABLE
 
 /* Check for the identity mapping:  For this configuration, this would be
  * the case where the virtual beginning of RAM is the same as the physical
@@ -87,6 +78,8 @@
  ****************************************************************************/
 
 	.text
+	.syntax	unified
+	.arm
 
 /****************************************************************************
  * Name: __cpu[n]_start
@@ -108,7 +101,6 @@
 
 #if CONFIG_SMP_NCPUS > 1
 	.global	__cpu1_start
-	.section	.cpu1start, "ax"
 	.type	__cpu1_start, #function
 
 __cpu1_start:
@@ -125,6 +117,12 @@ __cpu1_start:
 	/* Then branch to the common startup logic (PC-relative) */
 
 	b		.Lcpu_start
+
+	.globl	cpu1_start
+	.type	cpu1_start, object
+
+	cpu1_start:
+	.long	__cpu1_start
 
 .Lcpu1_stackpointer:
 	.long	.Lcpu1_stacktop
@@ -149,6 +147,12 @@ __cpu2_start:
 
 	b		.Lcpu_start
 
+	.globl	cpu2_start
+	.type	cpu2_start, object
+
+	cpu2_start:
+	.long	__cpu2_start
+
 .Lcpu2_stackpointer:
 	.long	.Lcpu2_stacktop
 	.size	__cpu2_start, .-__cpu2_start
@@ -171,6 +175,12 @@ __cpu3_start:
 	/* Then branch to the common startup logic (PC-relative) */
 
 	b		.Lcpu_start
+
+	.globl	cpu3_start
+	.type	cpu3_start, object
+
+	cpu3_start:
+	.long	__cpu3_start
 
 .Lcpu3_stackpointer:
 	.long	.Lcpu3_stacktop
@@ -195,7 +205,7 @@ __cpu3_start:
  *   R5 = CPU number
  *
  ****************************************************************************/
-	.section	.cpu1start, "ax"
+
 	.type	.Lcpu_start, #function
 
 .Lcpu_start:
@@ -220,6 +230,7 @@ __cpu3_start:
 	 */
 
 	mov		r0, #0
+	mcr		CP15_TPIDRPRW(r0)	/* Initialize percpu reg TPIDRPRW */
 #ifdef CONFIG_ARM_HAVE_MPCORE
 	mcr		CP15_TLBIALLIS(r0)	/* Invalidate the entire unified TLB */
 	mcr		CP15_BPIALLIS(r0)	/* Invalidate entire branch prediction array */
@@ -231,6 +242,7 @@ __cpu3_start:
 	mcr		CP15_BPIALL(r0)		/* Invalidate entire branch prediction array */
 	mcr		CP15_ICIALLU(r0)	/* Invalidate I-cache */
 #endif
+	isb
 
 	/* Load the page table address.
 	 *
@@ -311,7 +323,7 @@ __cpu3_start:
 	 */
 
 	orr		r0, r0, #(SCTLR_M)
-#if !defined(CONFIG_ARCH_CORTEXA5) && !defined(CONFIG_ARCH_CORTEXA32)
+#ifndef CONFIG_ARCH_CORTEXA5
 	orr		r0, r0, #(SCTLR_Z)
 #endif
 
@@ -324,7 +336,7 @@ __cpu3_start:
 	orr		r0, r0, #(SCTLR_V)
 #endif
 
-#if defined(CPU_CACHE_ROUND_ROBIN) && !defined(CONFIG_ARCH_CORTEXA5)
+#if defined(CONFIG_ARMV7A_CACHE_ROUND_ROBIN) && !defined(CONFIG_ARCH_CORTEXA5)
 	/* Round Robin cache replacement
 	 *
 	 *   SCTLR_RR   Bit 14: The Cortex-A5 processor only supports a fixed random
@@ -338,7 +350,7 @@ __cpu3_start:
 	 * after SMP cache coherency has been setup.
 	 */
 
-#if 0 /* !defined(CPU_DCACHE_DISABLE) && !defined(CONFIG_SMP) */
+#if !defined(CONFIG_ARMV7A_DCACHE_DISABLE) && !defined(CONFIG_SMP)
 	/* Dcache enable
 	 *
 	 *   SCTLR_C    Bit 2:  DCache enable
@@ -347,7 +359,7 @@ __cpu3_start:
 	orr		r0, r0, #(SCTLR_C)
 #endif
 
-#ifndef CPU_ICACHE_DISABLE
+#if !defined(CONFIG_ARMV7A_ICACHE_DISABLE) && !defined(CONFIG_SMP)
 	/* Icache enable
 	 *
 	 *   SCTLR_I    Bit 12: ICache enable
@@ -356,7 +368,7 @@ __cpu3_start:
 	orr		r0, r0, #(SCTLR_I)
 #endif
 
-#ifdef CPU_ALIGNMENT_TRAP
+#ifdef CONFIG_ARMV7A_ALIGNMENT_TRAP
 	/* Alignment abort enable
 	 *
 	 *   SCTLR_A    Bit 1:  Strict alignment enabled
@@ -374,7 +386,7 @@ __cpu3_start:
 	orr		r0, r0, #(SCTLR_EE)
 #endif
 
-#ifdef CPU_AFE_ENABLE
+#ifdef CONFIG_ARMV7A_AFE_ENABLE
 	/* AP[0:2] Permissions model
 	 *
 	 *   SCTLR_AFE  Bit 29: Full, legacy access permissions behavior (reset value).
@@ -387,7 +399,7 @@ __cpu3_start:
 #endif
 
 	/* Then write the configured control register */
-	dsb
+
 	mcr		CP15_SCTLR(r0)			/* Write control reg */
 	isb
 	.rept		12				/* Cortex A8 wants lots of NOPs here */

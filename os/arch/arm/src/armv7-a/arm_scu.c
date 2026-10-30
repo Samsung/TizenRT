@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_scu.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -43,95 +45,14 @@
 
 #include <stdint.h>
 
-#include "up_internal.h"
+#include <arch/barriers.h>
+#include <arch/irq.h>
+#include <sched/sched.h>
+
+#include "arm_internal.h"
 #include "cp15_cacheops.h"
-#include "barriers.h"
 #include "sctlr.h"
 #include "scu.h"
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: arm_get_sctlr
- *
- * Description:
- *   Get the contents of the SCTLR register
- *
- ****************************************************************************/
-
-static inline uint32_t arm_get_sctlr(void)
-{
-	uint32_t sctlr;
-
-	__asm__ __volatile__(
-		"\tmrc   p15, 0, %0, c1, c0, 0\n" /* Read SCTLR */
-		: "=r"(sctlr)
-		:
-		:
-	);
-
-	return sctlr;
-}
-
-/****************************************************************************
- * Name: arm_set_sctlr
- *
- * Description:
- *   Set the contents of the SCTLR register
- *
- ****************************************************************************/
-
-static inline void arm_set_sctlr(uint32_t sctlr)
-{
-	__asm__ __volatile__(
-		"\tmcr  p15, 0, %0, c1, c0, 0\n" /* Write SCTLR */
-		:
-		: "r"(sctlr)
-		:
-	);
-}
-
-/****************************************************************************
- * Name: arm_get_actlr
- *
- * Description:
- *   Get the contents of the ACTLR register
- *
- ****************************************************************************/
-
-static inline uint32_t arm_get_actlr(void)
-{
-	uint32_t actlr;
-
-	__asm__ __volatile__(
-		"\tmrc  p15, 0, %0, c1, c0, 1\n"  /* Read ACTLR */
-		: "=r"(actlr)
-		:
-		:
-	);
-
-	return actlr;
-}
-
-/****************************************************************************
- * Name: arm_set_actlr
- *
- * Description:
- *   Set the contents of the ACTLR register
- *
- ****************************************************************************/
-
-static inline void arm_set_actlr(uint32_t actlr)
-{
-	__asm__ __volatile__(
-		"\tmcr p15, 0, %0, c1, c0, 1\n" /* Write ACTLR */
-		:
-		: "r"(actlr)
-		:
-  	);
-}
 
 /****************************************************************************
  * Public Functions
@@ -157,26 +78,32 @@ void arm_enable_smp(int cpu)
 	/* Handle actions unique to CPU0 which comes up first */
 
 	if (cpu == 0) {
-#ifndef CONFIG_ARCH_CORTEXA32
 		/* Invalidate the SCU duplicate tags for all processors */
 
-		putreg32((SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU0_SHIFT) | (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU1_SHIFT) | (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU2_SHIFT) | (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU3_SHIFT), SCU_INVALIDATE);
-#endif
+		putreg32((SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU0_SHIFT) |
+		         (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU1_SHIFT) |
+		         (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU2_SHIFT) |
+		         (SCU_INVALIDATE_ALL_WAYS << SCU_INVALIDATE_CPU3_SHIFT),
+		         SCU_INVALIDATE);
+
 		/* Invalidate CPUn L1 data cache so that is will we be reloaded from
 		 * coherent L2.
 		 */
-		ARM_DSB();
-		ARM_ISB();
+
 		cp15_invalidate_dcache_all();
+		UP_DSB();
 
 		/* Invalidate the L2C-310 -- Missing logic. */
 
 		/* Enable the SCU */
-#ifndef CONFIG_ARCH_CORTEXA32
-		regval = getreg32(SCU_CTRL);
+
+		regval  = getreg32(SCU_CTRL);
 		regval |= SCU_CTRL_ENABLE;
 		putreg32(regval, SCU_CTRL);
-#endif
+
+		/* Initialize done, kick other cpus which waiting on __start */
+
+		UP_SEV();
 	}
 
 	/* Actions for other CPUs */
@@ -185,21 +112,21 @@ void arm_enable_smp(int cpu)
 		/* Invalidate CPUn L1 data cache so that is will we be reloaded from
 		 * coherent L2.
 		 */
-		ARM_DSB();
-		ARM_ISB();
 
-#ifdef CONFIG_ARCH_CORTEXA32
-		regval = arm_get_sctlr();
-		regval |= SCTLR_C;
-		ARM_DSB();
-		arm_set_sctlr(regval);
-		ARM_ISB();
-#endif
-		cp15_invalidate_dcache_all();
+		cp15_dcache_op_level(0, CP15_CACHE_INVALIDATE);
+		UP_DSB();
 
 		/* Wait for the SCU to be enabled by the primary processor -- should
 		 * not be necessary.
 		 */
+
+		/* We need to confirm that current_task has been initialized. */
+
+		while (!current_task(this_cpu()));
+
+		/* Init idle task to percpu reg */
+
+		up_update_task(current_task(cpu));
 	}
 
 	/* Enable the data cache, set the SMP mode with ACTLR.SMP=1.
@@ -211,16 +138,15 @@ void arm_enable_smp(int cpu)
 	 *
 	 *   FW  - Cache and TLB maintenance broadcast.
 	 */
-#ifndef CONFIG_ARCH_CORTEXA32
-	regval = arm_get_actlr();
+
+	regval  = CP15_GET(ACTLR);
 	regval |= ACTLR_SMP;
 #ifdef CONFIG_ARCH_CORTEXA9
 	regval |= ACTLR_FW;
 #endif
-	arm_set_actlr(regval);
+	CP15_SET(ACTLR, regval);
 
-	regval = arm_get_sctlr();
-	regval |= SCTLR_C;
-	arm_set_sctlr(regval);
-#endif
+	regval  = CP15_GET(SCTLR);
+	regval |= SCTLR_C | SCTLR_I | SCTLR_M;
+	CP15_SET(SCTLR, regval);
 }

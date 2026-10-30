@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-a/arm_tls.c
+ * arch/arm/src/armv7-a/arm_cpustart.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -40,66 +42,107 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/arch.h>
-#include <tinyara/tls.h>
 
-#include "up_internal.h"
+#include <stdint.h>
+#include <assert.h>
+#include <debug.h>
+
+#include <tinyara/arch.h>
+#include <tinyara/sched.h>
+#include <tinyara/sched_note.h>
+
+#include "arm_internal.h"
+#include "cp15_cacheops.h"
+#include "gic.h"
+#include "sched/sched.h"
+
+#ifdef CONFIG_SMP
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_tls_size
+ * Name: arm_start_handler
  *
  * Description:
- *   Get TLS (sizeof(struct tls_info_s) + tdata + tbss) section size.
- *
- * Returned Value:
- *   Size of (sizeof(struct tls_info_s) + tdata + tbss).
- *
- ****************************************************************************/
-
-int up_tls_size(void)
-{
-	/* Extra 8 bytes (2 pointer) according to GCC */
-
-	return sizeof(struct tls_info_s) + sizeof(void *) * 2 + sizeof(uint32_t) * (_END_TBSS - _START_TDATA);
-}
-
-/****************************************************************************
- * Name: up_tls_initialize
- *
- * Description:
- *   Initialize thread local region.
+ *   This is the handler for SGI1.  This handler simply returns from the
+ *   interrupt, restoring the state of the new task at the head of the ready
+ *   to run list.
  *
  * Input Parameters:
- *   info - The TLS structure to initialize.
+ *   Standard interrupt handling
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
  *
  ****************************************************************************/
 
-void up_tls_initialize(struct tls_info_s *info)
+int arm_start_handler(int irq, void *context, void *arg)
 {
-	uint8_t *tls_data = (uint8_t *)(info + 1);
+	struct tcb_s *tcb = this_task();
 
-	uint32_t tdata_len = sizeof(uint32_t) * (_END_TDATA - _START_TDATA);
-	uint32_t tbss_len = sizeof(uint32_t) * (_END_TBSS - _START_TBSS);
+	sinfo("CPU%d Started\n", this_cpu());
 
-	tls_data += sizeof(void *) * 2;
+#ifdef CONFIG_SCHED_INSTRUMENTATION
+	/* Notify that this CPU has started */
 
-	memcpy(tls_data, _START_TDATA, tdata_len);
-	memset(tls_data + tdata_len, 0, tbss_len);
+	sched_note_cpu_started(tcb);
+#endif
+
+	UNUSED(tcb);
+
+	return OK;
 }
 
 /****************************************************************************
- * Name: __aeabi_read_tp
+ * Name: up_cpu_start
  *
  * Description:
- *   Read thread local storage region pointer.
+ *   In an SMP configuration, only one CPU is initially active (CPU 0).
+ *   System initialization occurs on that single thread. At the completion of
+ *   the initialization of the OS, just before beginning normal multitasking,
+ *   the additional CPUs would be started by calling this function.
+ *
+ *   Each CPU is provided the entry point to its IDLE task when started.  A
+ *   TCB for each CPU's IDLE task has been initialized and placed in the
+ *   CPU's g_assignedtasks[cpu] list.  No stack has been allocated or
+ *   initialized.
+ *
+ *   The OS initialization logic calls this function repeatedly until each
+ *   CPU has been started, 1 through (CONFIG_SMP_NCPUS-1).
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU being started.  This will be a numeric
+ *         value in the range of one to (CONFIG_SMP_NCPUS-1).
+ *         (CPU 0 is already active)
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
  *
  ****************************************************************************/
 
-void *__aeabi_read_tp(void)
+int weak_function up_cpu_start(int cpu)
 {
-	return (void *)(tls_get_info() + 1);
+	sinfo("Starting CPU%d\n", cpu);
+
+	DEBUGASSERT(cpu >= 0 && cpu < CONFIG_SMP_NCPUS && cpu != this_cpu());
+
+#ifdef CONFIG_SCHED_INSTRUMENTATION
+	/* Notify of the start event */
+
+	sched_note_cpu_start(this_task(), cpu);
+#endif
+
+	/* Execute SGI1 */
+
+	arm_cpu_sgi(GIC_SMP_CPUSTART, (1 << cpu));
+
+	return OK;
 }
+
+#endif /* CONFIG_SMP */

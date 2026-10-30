@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-a/arm_modifyreg16.c
+ * arch/arm/src/armv7-a/arm_addrenv_pgmap.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -41,32 +43,94 @@
 
 #include <tinyara/config.h>
 
-#include <stdint.h>
-#include <debug.h>
+#include <tinyara/arch.h>
+#include <tinyara/compiler.h>
+#include <tinyara/pgalloc.h>
 
-#include "up_internal.h"
+#include "pgalloc.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: modifyreg16
+ * Name: up_addrenv_find_page
  *
  * Description:
- *   Atomically modify the specified bits in a memory mapped register
+ *   Find physical page mapped to user virtual address from the address
+ *   environment page directory.
+ *
+ * Input Parameters:
+ *   addrenv - The user address environment.
+ *   vaddr   - The user virtual address
+ *
+ * Returned Value:
+ *   Page physical address on success; NULL on failure.
  *
  ****************************************************************************/
 
-void modifyreg16(unsigned int addr, uint16_t clearbits, uint16_t setbits)
+uintptr_t up_addrenv_find_page(arch_addrenv_t *addrenv, uintptr_t vaddr)
 {
-	irqstate_t flags;
-	uint16_t regval;
+	/* Implement it later */
 
-	flags = spin_lock_irqsave(NULL);
-	regval = getreg16(addr);
-	regval &= ~clearbits;
-	regval |= setbits;
-	putreg16(regval, addr);
-	spin_unlock_irqrestore(NULL, flags);
+	return 0;
+}
+
+/****************************************************************************
+ * Name: up_addrenv_user_vaddr
+ *
+ * Description:
+ *   Check if a virtual address is in user virtual address space.
+ *
+ * Input Parameters:
+ *   vaddr - The virtual address.
+ *
+ * Returned Value:
+ *   True if it is; false if it's not
+ *
+ ****************************************************************************/
+
+bool up_addrenv_user_vaddr(uintptr_t vaddr)
+{
+	return arm_uservaddr(vaddr);
+}
+
+/****************************************************************************
+ * Name: up_addrenv_page_vaddr
+ *
+ * Description:
+ *   Find the kernel virtual address associated with physical page.
+ *
+ * Input Parameters:
+ *   page - The page physical address.
+ *
+ * Returned Value:
+ *   Page kernel virtual address on success; NULL on failure.
+ *
+ ****************************************************************************/
+
+uintptr_t up_addrenv_page_vaddr(uintptr_t page)
+{
+	return arm_pgvaddr(page);
+}
+
+/****************************************************************************
+ * Name: up_addrenv_page_wipe
+ *
+ * Description:
+ *   Wipe a page of physical memory, first mapping it into kernel virtual
+ *   memory.
+ *
+ * Input Parameters:
+ *   page - The page physical address.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void up_addrenv_page_wipe(uintptr_t page)
+{
+	uintptr_t vaddr = arm_pgvaddr(page);
+	memset((void *)vaddr, 0, MM_PGSIZE);
 }

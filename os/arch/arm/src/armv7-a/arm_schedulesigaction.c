@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_schedulesigaction.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -51,9 +53,8 @@
 
 #include "arm.h"
 #include "sched/sched.h"
-#include "up_internal.h"
+#include "arm_internal.h"
 #include "irq/irq.h"
-#ifndef CONFIG_DISABLE_SIGNALS
 
 /****************************************************************************
  * Public Functions
@@ -95,365 +96,40 @@
  *
  ****************************************************************************/
 
-#ifndef CONFIG_SMP
-void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
+void up_schedule_sigaction(struct tcb_s *tcb)
 {
-	irqstate_t saved_state;
+	sinfo("tcb=%p, rtcb=%p current_regs=%p\n", tcb, this_task(),
+	      this_task()->xcp.regs);
 
-	svdbg("tcb=%p sigdeliver=%p\n", tcb, sigdeliver);
+	/* Save the return lr and cpsr and one scratch register.  These
+	 * will be restored by the signal trampoline after the signals
+	 * have been delivered.
+	 */
 
-	saved_state = enter_critical_section();
+	/* Save the current register context location */
 
-	/* Refuse to handle nested signal actions */
+	tcb->xcp.saved_regs      = tcb->xcp.regs;
 
-	if (!tcb->xcp.sigdeliver) {
-		/* First, handle some special cases when the signal is being delivered
-		 * to task that is currently executing on this CPU.
-		 */
+	/* Duplicate the register context.  These will be
+	 * restored by the signal trampoline after the signal has been
+	 * delivered.
+	 */
 
-		svdbg("rtcb=%p CURRENT_REGS=%p\n", this_task(), CURRENT_REGS);
+	tcb->xcp.regs            = (void *)
+	                           ((uint32_t)tcb->xcp.regs -
+	                                      XCPTCONTEXT_SIZE);
+	memcpy(tcb->xcp.regs, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
 
-		if (tcb == this_task()) {
-			/* CASE 1:  We are not in an interrupt handler and a task is
-			 * signaling itself for some reason.
-			 */
+	tcb->xcp.regs[REG_SP]    = (uint32_t)tcb->xcp.regs +
+	                                     XCPTCONTEXT_SIZE;
 
-			if (!CURRENT_REGS) {
-				/* In this case just deliver the signal now.
-				 * REVISIT:  Signal handler will run in a critical section!
-				 */
+	/* Then set up to vector to the trampoline with interrupts
+	 * disabled
+	 */
 
-				sigdeliver(tcb);
-			}
-
-			/* CASE 2:  We are in an interrupt handler AND the interrupted
-			 * task is the same as the one that must receive the signal, then
-			 * we will have to modify the return state as well as the state
-			 * in the TCB.
-			 *
-			 * Hmmm... there looks like a latent bug here: The following logic
-			 * would fail in the strange case where we are in an interrupt
-			 * handler, the thread is signaling itself, but a context switch
-			 * to another task has occurred so that CURRENT_REGS does not
-			 * refer to the thread of this_task()!
-			 */
-
-			else {
-				/* Save the return lr and cpsr and one scratch register
-				 * These will be restored by the signal trampoline after
-				 * the signals have been delivered.
-				 */
-
-				tcb->xcp.sigdeliver = sigdeliver;
-
-				/* And make sure that the saved context in the TCB is the same
-				 * as the interrupt return context.
-				 */
-
-				arm_savestate(tcb->xcp.saved_regs);
-
-				/* Duplicate the register context.  These will be
-				 * restored by the signal trampoline after the signal has been
-				 * delivered.
-				 */
-
-				CURRENT_REGS = (void *)
-										((uint32_t)CURRENT_REGS - (uint32_t)XCPTCONTEXT_SIZE);
-				memcpy((uint32_t *)CURRENT_REGS, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
-
-				/* AAPCS: the stack pointer must be 8-byte aligned at every public
-				 * function-call boundary.  The duplicated register-save area top
-				 * used as the delivery SP is only word-aligned in the general
-				 * case, so force 8-byte alignment here.  Rounding down stays within
-				 * the already-duplicated context frame and is restored verbatim by
-				 * the signal trampoline, so no live state is disturbed.
-				 */
-				CURRENT_REGS[REG_SP] = (((uint32_t)CURRENT_REGS + (uint32_t)XCPTCONTEXT_SIZE) & ~7);
-
-				/* Then set up to vector to the trampoline with interrupts
-				 * disabled
-				 */
-
-				CURRENT_REGS[REG_PC] = (uint32_t)arm_sigdeliver;
-				CURRENT_REGS[REG_CPSR] = (PSR_MODE_SYS | PSR_I_BIT | PSR_F_BIT);
+	tcb->xcp.regs[REG_PC]    = (uint32_t)arm_sigdeliver;
+	tcb->xcp.regs[REG_CPSR]  = (PSR_MODE_SYS | PSR_I_BIT | PSR_F_BIT);
 #ifdef CONFIG_ARM_THUMB
-				CURRENT_REGS[REG_CPSR] |= PSR_T_BIT;
+	tcb->xcp.regs[REG_CPSR] |= PSR_T_BIT;
 #endif
-			}
-		}
-
-		/* Otherwise, we are (1) signaling a task is not running from an
-		 * interrupt handler or (2) we are not in an interrupt handler and the
-		 * running task is signaling some other non-running task.
-		 */
-
-		else {
-			/* Save the return lr and cpsr and one scratch register.  These
-			 * will be restored by the signal trampoline after the signals
-			 * have been delivered.
-			 */
-
-			tcb->xcp.sigdeliver = sigdeliver;
-
-			/* Save the current register context location */
-
-			tcb->xcp.saved_regs = tcb->xcp.regs;
-
-			/* Duplicate the register context.  These will be
-			 * restored by the signal trampoline after the signal has been
-			 * delivered.
-			 */
-
-			tcb->xcp.regs = (void *)
-									((uint32_t)tcb->xcp.regs - (uint32_t)XCPTCONTEXT_SIZE);
-			memcpy(tcb->xcp.regs, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
-
-			/* AAPCS: the stack pointer must be 8-byte aligned at every public
-			 * function-call boundary.  The duplicated register-save area top
-			 * used as the delivery SP is only word-aligned in the general
-			 * case, so force 8-byte alignment here.  Rounding down stays within
-			 * the already-duplicated context frame and is restored verbatim by
-			 * the signal trampoline, so no live state is disturbed.
-			 */
-			tcb->xcp.regs[REG_SP] = (((uint32_t)tcb->xcp.regs + (uint32_t)XCPTCONTEXT_SIZE) & ~7);
-
-			/* Then set up to vector to the trampoline with interrupts
-			 * disabled
-			 */
-
-			tcb->xcp.regs[REG_PC] = (uint32_t)arm_sigdeliver;
-			tcb->xcp.regs[REG_CPSR] = (PSR_MODE_SYS | PSR_I_BIT | PSR_F_BIT);
-#ifdef CONFIG_ARM_THUMB
-			tcb->xcp.regs[REG_CPSR] |= PSR_T_BIT;
-#endif
-		}
-	}
-
-	leave_critical_section(saved_state);
-
 }
-#endif							/* !CONFIG_SMP */
-
-#ifdef CONFIG_SMP
-void up_schedule_sigaction(struct tcb_s *tcb, sig_deliver_t sigdeliver)
-{
-	int cpu;
-	int me;
-	irqstate_t saved_state;
-
-	svdbg("tcb=%p sigdeliver=%p\n", tcb, sigdeliver);
-
-	saved_state = enter_critical_section();
-
-	/* Refuse to handle nested signal actions */
-
-	if (!tcb->xcp.sigdeliver) {
-		/* First, handle some special cases when the signal is being delivered
-		 * to task that is currently executing on any CPU.
-		 */
-
-		svdbg("rtcb=%p CURRENT_REGS=%p\n", this_task(), CURRENT_REGS);
-
-		if (tcb->task_state == TSTATE_TASK_RUNNING) {
-			me = this_cpu();
-			cpu = tcb->cpu;
-
-			/* CASE 1:  We are not in an interrupt handler and a task is
-			 * signaling itself for some reason.
-			 */
-
-			if (cpu == me && !CURRENT_REGS) {
-				/* In this case just deliver the signal now.
-				 * REVISIT:  Signal handler will run in a critical section!
-				 */
-
-				sigdeliver(tcb);
-			}
-
-			/* CASE 2:  The task that needs to receive the signal is running.
-			 * This could happen if the task is running on another CPU OR if
-			 * we are in an interrupt handler and the task is running on this
-			 * CPU.  In the former case, we will have to PAUSE the other CPU
-			 * first.  But in either case, we will have to modify the return
-			 * state as well as the state in the TCB.
-			 */
-
-			else {
-				/* If we signaling a task running on the other CPU, we have
-				 * to PAUSE the other CPU.
-				 */
-
-				if (cpu != me) {
-					/* Pause the CPU */
-
-					up_cpu_pause(cpu);
-
-					/* Now tcb on the other CPU can be accessed safely */
-
-					/* Copy tcb->xcp.regs to tcp.xcp.saved. These will be
-					 * restored by the signal trampoline after the signal has
-					 * been delivered.
-					 */
-
-					tcb->xcp.sigdeliver = sigdeliver;
-
-					/* Save the current register context location */
-
-					tcb->xcp.saved_regs = tcb->xcp.regs;
-
-					/* Duplicate the register context.  These will be
-					 * restored by the signal trampoline after the signal has
-					 * been delivered.
-					 */
-
-					tcb->xcp.regs = (void *)
-									((uint32_t)tcb->xcp.regs - (uint32_t)XCPTCONTEXT_SIZE);
-					memcpy(tcb->xcp.regs, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
-
-					/* AAPCS: the stack pointer must be 8-byte aligned at every public
-					 * function-call boundary.  The duplicated register-save area top
-					 * used as the delivery SP is only word-aligned in the general
-					 * case, so force 8-byte alignment here.  Rounding down stays within
-					 * the already-duplicated context frame and is restored verbatim by
-					 * the signal trampoline, so no live state is disturbed.
-					 */
-					tcb->xcp.regs[REG_SP] = (((uint32_t)tcb->xcp.regs + (uint32_t)XCPTCONTEXT_SIZE) & ~7);
-
-					/* Then set up to vector to the trampoline with interrupts
-					 * disabled
-					 */
-
-					tcb->xcp.regs[REG_PC] = (uint32_t)arm_sigdeliver;
-					tcb->xcp.regs[REG_CPSR] = (PSR_MODE_SYS | PSR_I_BIT | PSR_F_BIT);
-#ifdef CONFIG_ARM_THUMB
-					tcb->xcp.regs[REG_CPSR] |= PSR_T_BIT;
-#endif
-				} else {
-					/* tcb is running on the same CPU */
-
-					/* Save the return PC, CPSR and either the BASEPRI or
-					 * PRIMASK registers (and perhaps also the LR).  These will
-					 * be restored by the signal trampoline after the signal
-					 * has been delivered.
-					 */
-
-					tcb->xcp.sigdeliver = (void *)sigdeliver;
-
-					/* And make sure that the saved context in the TCB is the
-					 * same as the interrupt return context.
-					 */
-
-					arm_savestate(tcb->xcp.saved_regs);
-
-					/* Duplicate the register context.  These will be
-					 * restored by the signal trampoline after the signal has
-					 * been delivered.
-					 */
-
-					CURRENT_REGS = (void *)
-								   ((uint32_t)CURRENT_REGS - (uint32_t)XCPTCONTEXT_SIZE);
-					memcpy((uint32_t *) CURRENT_REGS, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
-
-					/* AAPCS: the stack pointer must be 8-byte aligned at every public
-					 * function-call boundary.  The duplicated register-save area top
-					 * used as the delivery SP is only word-aligned in the general
-					 * case, so force 8-byte alignment here.  Rounding down stays within
-					 * the already-duplicated context frame and is restored verbatim by
-					 * the signal trampoline, so no live state is disturbed.
-					 */
-					CURRENT_REGS[REG_SP] = (((uint32_t)CURRENT_REGS + (uint32_t)XCPTCONTEXT_SIZE) & ~7);
-
-					/* Then set up vector to the trampoline with interrupts
-					 * disabled.  The kernel-space trampoline must run in
-					 * privileged thread mode.
-					 */
-
-					CURRENT_REGS[REG_PC] = (uint32_t)arm_sigdeliver;
-					CURRENT_REGS[REG_CPSR] = (PSR_MODE_SYS | PSR_I_BIT | PSR_F_BIT);
-#ifdef CONFIG_ARM_THUMB
-					CURRENT_REGS[REG_CPSR] |= PSR_T_BIT;
-#endif
-				}
-
-				/* Increment the IRQ lock count so that when the task is
-				 * restarted, it will hold the IRQ spinlock.
-				 */
-
-				DEBUGASSERT(tcb->irqcount < INT16_MAX);
-				tcb->irqcount++;
-
-				/* NOTE: If the task runs on another CPU(cpu), adjusting
-				 * global IRQ controls will be done in the pause handler
-				 * on the CPU(cpu) by taking a critical section.
-				 * If the task is scheduled on this CPU(me), do nothing
-				 * because this CPU already took a critical section
-				 */
-
-				/* RESUME the other CPU if it was PAUSED */
-
-				if (cpu != me) {
-					up_cpu_resume(cpu);
-				}
-			}
-		}
-
-		/* Otherwise, we are (1) signaling a task is not running from an
-		 * interrupt handler or (2) we are not in an interrupt handler and the
-		 * running task is signaling some other non-running task.
-		 */
-
-		else {
-			/* Save the return lr and cpsr and one scratch register.  These
-			 * will be restored by the signal trampoline after the signals
-			 * have been delivered.
-			 */
-
-			tcb->xcp.sigdeliver = sigdeliver;
-
-			/* Save the current register context location */
-
-			tcb->xcp.saved_regs = tcb->xcp.regs;
-
-			/* Duplicate the register context.  These will be
-			 * restored by the signal trampoline after the signal has been
-			 * delivered.
-			 */
-
-			tcb->xcp.regs = (void *)
-							((uint32_t)tcb->xcp.regs - (uint32_t)XCPTCONTEXT_SIZE);
-			memcpy(tcb->xcp.regs, tcb->xcp.saved_regs, XCPTCONTEXT_SIZE);
-
-			/* AAPCS: the stack pointer must be 8-byte aligned at every public
-			 * function-call boundary.  The duplicated register-save area top
-			 * used as the delivery SP is only word-aligned in the general
-			 * case, so force 8-byte alignment here.  Rounding down stays within
-			 * the already-duplicated context frame and is restored verbatim by
-			 * the signal trampoline, so no live state is disturbed.
-			 */
-			tcb->xcp.regs[REG_SP] = (((uint32_t)tcb->xcp.regs + (uint32_t)XCPTCONTEXT_SIZE) & ~7);
-
-			/* Increment the IRQ lock count so that when the task is restarted,
-			 * it will hold the IRQ spinlock.
-			 */
-
-			DEBUGASSERT(tcb->irqcount < INT16_MAX);
-			tcb->irqcount++;
-
-			/* Then set up to vector to the trampoline with interrupts
-			 * disabled
-			 */
-
-			tcb->xcp.regs[REG_PC] = (uint32_t)arm_sigdeliver;
-			tcb->xcp.regs[REG_CPSR] = (PSR_MODE_SYS | PSR_I_BIT | PSR_F_BIT);
-#ifdef CONFIG_ARM_THUMB
-			tcb->xcp.regs[REG_CPSR] |= PSR_T_BIT;
-#endif
-		}
-	}
-
-	leave_critical_section(saved_state);
-
-}
-#endif							/* CONFIG_SMP */
-
-#endif							/* !CONFIG_DISABLE_SIGNALS */

@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_sigdeliver.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -52,8 +54,8 @@
 #include <arch/board/board.h>
 
 #include "sched/sched.h"
-#include "up_internal.h"
-#include "arm.h"
+#include "arm_internal.h"
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -68,7 +70,6 @@
  *
  ****************************************************************************/
 
-#ifndef CONFIG_DISABLE_SIGNALS
 void arm_sigdeliver(void)
 {
 	struct tcb_s *rtcb = this_task();
@@ -85,27 +86,28 @@ void arm_sigdeliver(void)
 
 	board_autoled_on(LED_SIGNAL);
 
-	svdbg("rtcb=%p sigdeliver=%p sigpendactionq.head=%p\n", rtcb, rtcb->xcp.sigdeliver, rtcb->sigpendactionq.head);
-	DEBUGASSERT(rtcb->xcp.sigdeliver != NULL);
+	sinfo("rtcb=%p sigdeliver=%p sigpendactionq.head=%p\n",
+	      rtcb, rtcb->sigdeliver, rtcb->sigpendactionq.head);
+	DEBUGASSERT(rtcb->sigdeliver != NULL);
 
+retry:
 #ifdef CONFIG_SMP
 	/* In the SMP case, up_schedule_sigaction(0) will have incremented
 	 * 'irqcount' in order to force us into a critical section.  Save the
 	 * pre-incremented irqcount.
 	 */
 
-	saved_irqcount = rtcb->irqcount - 1;
+	saved_irqcount = rtcb->irqcount;
 	DEBUGASSERT(saved_irqcount >= 0);
 
 	/* Now we need call leave_critical_section() repeatedly to get the irqcount
 	 * to zero, freeing all global spinlocks that enforce the critical section.
 	 */
 
-	do {
-		regs[REG_CPSR] |= PSR_MODE_SYS;
+	while (rtcb->irqcount > 0) {
 		leave_critical_section(regs[REG_CPSR]);
-	} while (rtcb->irqcount > 0);
-#endif							/* CONFIG_SMP */
+	}
+#endif /* CONFIG_SMP */
 
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
 	/* Then make sure that interrupts are enabled.  Signal handlers must always
@@ -117,7 +119,7 @@ void arm_sigdeliver(void)
 
 	/* Deliver the signal */
 
-	((sig_deliver_t)rtcb->xcp.sigdeliver)(rtcb);
+	(rtcb->sigdeliver)(rtcb);
 
 	/* Output any debug messages BEFORE restoring errno (because they may
 	 * alter errno), then disable interrupts again and restore the original
@@ -127,7 +129,7 @@ void arm_sigdeliver(void)
 	 * arm_fullcontextrestore() is called, but that may not be necessary.
 	 */
 
-	svdbg("Resuming\n");
+	sinfo("Resuming\n");
 
 #ifdef CONFIG_SMP
 	/* Restore the saved 'irqcount' and recover the critical section
@@ -135,14 +137,22 @@ void arm_sigdeliver(void)
 	 */
 
 	DEBUGASSERT(rtcb->irqcount == 0);
-	while (rtcb->irqcount < saved_irqcount) {
+	while (rtcb->irqcount < saved_irqcount + 1) {
 		enter_critical_section();
 	}
 #endif
 
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
-	irqsave();
+	up_irq_save();
 #endif
+
+	if (!sq_empty(&rtcb->sigpendactionq) &&
+	    (rtcb->flags & TCB_FLAG_SIGNAL_ACTION) == 0) {
+#ifdef CONFIG_SMP
+		leave_critical_section(regs[REG_CPSR]);
+#endif
+		goto retry;
+	}
 
 	/* Modify the saved return state with the actual saved values in the
 	 * TCB.  This depends on the fact that nested signal handling is
@@ -154,11 +164,18 @@ void arm_sigdeliver(void)
 	 * could be modified by a hostile program.
 	 */
 
-	rtcb->xcp.sigdeliver = NULL;	/* Allows next handler to be scheduled */
+	rtcb->sigdeliver = NULL;  /* Allows next handler to be scheduled */
 
 	/* Then restore the correct state for this thread of execution. */
 
 	board_autoled_off(LED_SIGNAL);
-	arm_fullcontextrestore(regs);
-}
+#ifdef CONFIG_SMP
+	/* We need to keep the IRQ lock until task switching */
+
+	leave_critical_section(up_irq_save());
 #endif
+
+	rtcb->xcp.regs = rtcb->xcp.saved_regs;
+	arm_fullcontextrestore();
+	UNUSED(regs);
+}

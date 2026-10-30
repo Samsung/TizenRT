@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-a/arm_cpuindex.c
+ * arch/arm/src/armv7-a/arm_smpcall.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -42,47 +44,96 @@
 #include <tinyara/config.h>
 
 #include <stdint.h>
+#include <assert.h>
 
 #include <tinyara/arch.h>
+#include <tinyara/sched.h>
+#include <tinyara/spinlock.h>
+#include <tinyara/sched_note.h>
 
-#include "cp15.h"
-#include "sctlr.h"
+#include "arm_internal.h"
+#include "gic.h"
+#include "sched/sched.h"
 
 #ifdef CONFIG_SMP
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: up_cpu_index
+ * Name: arm_smp_sched_handler
  *
  * Description:
- *   Return an index in the range of 0 through (CONFIG_SMP_NCPUS-1) that
- *   corresponds to the currently executing CPU.
+ *   This is the handler for sched.
  *
- *   If TLS is enabled, then the RTOS can get this information from the TLS
- *   info structure.  Otherwise, the MCU-specific logic must provide some
- *   mechanism to provide the CPU index.
+ *   1. It saves the current task state at the head of the current assigned
+ *      task list.
+ *   2. It processes g_delivertasks
+ *   3. Returns from interrupt, restoring the state of the new task at the
+ *      head of the ready to run list.
  *
  * Input Parameters:
- *   None
+ *   Standard interrupt handling
  *
  * Returned Value:
- *   An integer index in the range of 0 through (CONFIG_SMP_NCPUS-1) that
- *   corresponds to the currently executing CPU.
+ *   Zero on success; a negated errno value on failure.
  *
  ****************************************************************************/
 
-int up_cpu_index(void)
+int arm_smp_sched_handler(int irq, void *context, void *arg)
 {
-	/* Read the Multiprocessor Affinity Register (MPIDR) */
-
-	uint32_t mpidr = cp15_rdmpidr();
-
-	/* And return the CPU ID field */
-
-	return (mpidr & MPIDR_CPUID_MASK) >> MPIDR_CPUID_SHIFT;
+	nxsched_process_delivered(this_cpu());
+	return OK;
 }
 
-#endif							/* CONFIG_SMP */
+/****************************************************************************
+ * Name: up_send_smp_sched
+ *
+ * Description:
+ *   pause task execution on the CPU
+ *   check whether there are tasks delivered to specified cpu
+ *   and try to run them.
+ *
+ * Input Parameters:
+ *   cpu - The index of the CPU to be paused.
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ * Assumptions:
+ *   Called from within a critical section;
+ *
+ ****************************************************************************/
+
+int up_send_smp_sched(int cpu)
+{
+	arm_cpu_sgi(GIC_SMP_SCHED, (1 << cpu));
+
+	return OK;
+}
+
+/****************************************************************************
+ * Name: up_send_smp_call
+ *
+ * Description:
+ *   Send smp call to target cpu.
+ *
+ * Input Parameters:
+ *   cpuset - The set of CPUs to receive the SGI.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void up_send_smp_call(cpu_set_t cpuset)
+{
+	up_trigger_irq(GIC_SMP_CALL, cpuset);
+}
+
+#endif /* CONFIG_SMP */

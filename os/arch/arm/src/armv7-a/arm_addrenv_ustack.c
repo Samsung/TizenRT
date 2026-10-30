@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_addrenv_ustack.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -39,7 +41,7 @@
  * Address Environment Interfaces
  *
  * Low-level interfaces used in binfmt/ to instantiate tasks with address
- * environments.  These interfaces all operate on type group_addrenv_t which
+ * environments.  These interfaces all operate on type arch_addrenv_t which
  * is an abstract representation of a task group's address environment and
  * must be defined in arch/arch.h if CONFIG_ARCH_ADDRENV is defined.
  *
@@ -51,7 +53,6 @@
  *                         address environment
  *   up_addrenv_heapsize - Returns the size of the initial heap allocation.
  *   up_addrenv_select   - Instantiate an address environment
- *   up_addrenv_restore  - Restore an address environment
  *   up_addrenv_clone    - Copy an address environment from one location to
  *                         another.
  *
@@ -117,7 +118,7 @@
 /* Configuration */
 
 #if (CONFIG_ARCH_STACK_VBASE & SECTION_MASK) != 0
-#error CONFIG_ARCH_STACK_VBASE not aligned to section boundary
+#  error CONFIG_ARCH_STACK_VBASE not aligned to section boundary
 #endif
 
 /****************************************************************************
@@ -145,29 +146,29 @@
 
 int up_addrenv_ustackalloc(struct tcb_s *tcb, size_t stacksize)
 {
+	arch_addrenv_t *addrenv;
 	int ret;
 
 	binfo("tcb=%p stacksize=%lu\n", tcb, (unsigned long)stacksize);
 
 	DEBUGASSERT(tcb);
 
-	/* Initialize the address environment list to all zeroes */
+	addrenv = tcb->addrenv_own;
 
-	memset(tcb->xcp.ustack, 0, ARCH_STACK_NSECTS * sizeof(uintptr_t *));
-
-	/* Back the allocation up with physical pages and set up the level 2
-	 * mapping (which of course does nothing until the L2 page table is hooked
-	 * into the L1 page table).
+	/* Create a mmu page and store entry in task l1 table.
+	 * Page will be enable once task addrenv/mmu l1 table selected.
 	 */
 
-	/* Allocate .text space pages */
-
-	ret = arm_addrenv_create_region(tcb->xcp.ustack, ARCH_STACK_NSECTS, CONFIG_ARCH_STACK_VBASE, stacksize, MMU_L2_UDATAFLAGS);
+	ret = arm_addrenv_create_region(addrenv->l1table, ARCH_STACK_NSECTS,
+	                                CONFIG_ARCH_STACK_VBASE, stacksize,
+	                                MMU_L2_UDATAFLAGS);
 	if (ret < 0) {
 		berr("ERROR: Failed to create stack region: %d\n", ret);
 		up_addrenv_ustackfree(tcb);
 		return ret;
 	}
+
+	tcb->xcp.ustackbase = CONFIG_ARCH_STACK_VBASE;
 
 	return OK;
 }
@@ -191,14 +192,20 @@ int up_addrenv_ustackalloc(struct tcb_s *tcb, size_t stacksize)
 
 int up_addrenv_ustackfree(struct tcb_s *tcb)
 {
+	arch_addrenv_t *addrenv;
+
 	binfo("tcb=%p\n", tcb);
 	DEBUGASSERT(tcb);
 
+	addrenv = tcb->addrenv_own;
+
 	/* Destroy the stack region */
 
-	arm_addrenv_destroy_region(tcb->xcp.ustack, ARCH_STACK_NSECTS, CONFIG_ARCH_STACK_VBASE, false);
+	arm_addrenv_destroy_region(addrenv->l1table, ARCH_STACK_NSECTS,
+	                           CONFIG_ARCH_STACK_VBASE, false);
 
-	memset(tcb->xcp.ustack, 0, ARCH_STACK_NSECTS * sizeof(uintptr_t *));
+	tcb->xcp.ustackbase = 0;
+
 	return OK;
 }
 
@@ -257,10 +264,12 @@ int up_addrenv_ustackselect(const struct tcb_s *tcb)
 
 	DEBUGASSERT(tcb);
 
-	for (vaddr = CONFIG_ARCH_STACK_VBASE, i = 0; i < ARCH_TEXT_NSECTS; vaddr += ARCH_STACK_NSECTS, i++) {
+	for (vaddr = CONFIG_ARCH_STACK_VBASE, i = 0;
+	     i < ARCH_TEXT_NSECTS;
+	     vaddr += ARCH_STACK_NSECTS, i++) {
 		/* Set (or clear) the new page table entry */
 
-		paddr = (uintptr_t) tcb->xcp.ustack[i];
+		paddr = (uintptr_t)tcb->xcp.ustack[i];
 		if (paddr) {
 			mmu_l1_setentry(paddr, vaddr, MMU_L1_PGTABFLAGS);
 		} else {
@@ -271,4 +280,4 @@ int up_addrenv_ustackselect(const struct tcb_s *tcb)
 	return OK;
 }
 
-#endif							/* CONFIG_ARCH_ADDRENV && CONFIG_ARCH_STACK_DYNAMIC */
+#endif /* CONFIG_ARCH_ADDRENV && CONFIG_ARCH_STACK_DYNAMIC */

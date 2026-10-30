@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/arm7-a/arm_vectortab.S
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -50,6 +52,13 @@
 /****************************************************************************
  * Public Symbols
  ****************************************************************************/
+
+#ifdef CONFIG_ARM_TOOLCHAIN_ARMCLANG
+	.eabi_attribute Tag_ABI_align_preserved, 1
+#endif
+
+	.syntax	unified
+	.arm
 
 	.globl		_vector_start
 	.globl		_vector_end

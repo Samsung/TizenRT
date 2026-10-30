@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-a/arm_switchcontext.c
+ * arch/arm/src/armv7-a/arm_smccc.S
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -38,27 +40,63 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-#include <stdint.h>
-#include <tinyara/config.h>
 
-#include <arch/syscall.h>
-#include "up_internal.h"
+/****************************************************************************
+ * Public Symbols
+ ****************************************************************************/
+
+    .file    "arm_smccc.S"
+
+/****************************************************************************
+ * Assembly Macros
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-/****************************************************************************
- * Name: arm_switchcontext
- *
- * Description:
- *   Save the current thread context and restore the specified context.
- *
- * Returned Value:
- *   None
- *
- ****************************************************************************/
+/* The SMC instruction is used to generate a synchronous exception that is
+ * handled by Secure Monitor code running in EL3.
+ */
 
-void arm_switchcontext(uint32_t **saveregs, uint32_t *restoreregs)
-{
-	sys_call2(SYS_switch_context, (uintptr_t)saveregs, (uintptr_t)restoreregs);
-}
+	.text
+	.syntax	unified
+
+	.global	arm_smccc_smc
+	.type	arm_smccc_smc, function
+
+arm_smccc_smc:
+	mov		r12, sp
+	push		{r4-r7}
+	ldm		r12, {r4-r7}
+	smc		#0
+	pop		{r4-r7}
+	ldr		r12, [sp, #(4 * 4)]
+	stm		r12, {r0-r3}
+	bx 		lr
+
+	.size	arm_smccc_smc, . - arm_smccc_smc
+
+	/* The HVC instruction is used to generate a synchronous exception that is
+	 * handled by a hypervisor running in EL2.
+	 */
+
+	.global	arm_smccc_hvc
+	.type	arm_smccc_hvc, function
+
+arm_smccc_hvc:
+	mov		r12, sp
+	push		{r4-r7}
+	ldm		r12, {r4-r7}
+	hvc		#0
+	pop		{r4-r7}
+	ldr		r12, [sp, #(4 * 4)]
+	stm		r12, {r0-r3}
+	bx		lr
+
+	.size	arm_smccc_hvc, . - arm_smccc_hvc
+	.end
