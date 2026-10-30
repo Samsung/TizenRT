@@ -3,6 +3,14 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+menuconfig SENSOR
+	bool "Sensor Driver Support"
+	default n
+	---help---
+		This selection enables building of the sensor driver.
+
+if SENSOR
+
 config SENSOR_PPD42NS
 	bool "Shinyei PPD42NS Dust Sensor"
 	default n
@@ -24,3 +32,5 @@ config SENSOR_PPD42NS_DEBUG
 		enable PPD42ns dust sensor driver's debug message
 
 endif # SENSOR_PPD42NS
+
+endif # SENSOR

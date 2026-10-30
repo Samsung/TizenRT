@@ -1,3 +1,11 @@
+config INPUT
+	bool "Input Device Support"
+	default n
+	---help---
+		This selection enables the touch support"
+
+if INPUT
+
 menu "Touch Device Support"
 
 menuconfig TOUCH
@@ -81,3 +89,5 @@ endif # TOUCH_IST415
 endif # TOUCH
 
 endmenu # Touch Device Support
+
+endif # INPUT

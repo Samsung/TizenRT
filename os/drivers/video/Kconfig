@@ -3,6 +3,14 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+menuconfig DRIVERS_VIDEO
+	bool "Video Device Support"
+	default n
+	---help---
+		Enable support for video device drivers.
+
+if DRIVERS_VIDEO
+
 config VIDEO_FB
 	bool "Framebuffer character driver"
 	default n
@@ -101,3 +109,5 @@ comment "Actual option selection is to be done at runtime only using the command
 comment "For eg. - camera -L 0 -U 1 -K 2 -n 2"
 
 endif
+
+endif # DRIVERS_VIDEO

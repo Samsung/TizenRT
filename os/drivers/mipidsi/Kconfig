@@ -4,6 +4,14 @@
 #
 
 
+menuconfig MIPI_DSI
+        bool "MIPI Driver Support"
+        default n
+        ---help---
+                This selection enables selection of MIPI upper half driver.  This option
+                should be enabled by all platforms that support MIPI interfaces.
+                See include/tinyara/mipidsi/mipi_dsi.h for further MIPI driver information.
+
 if MIPI_DSI
 
 config MIPI_DSI_DRIVER

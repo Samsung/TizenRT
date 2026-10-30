@@ -3,6 +3,15 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+menuconfig POWER
+	bool "Power Management Support"
+	default n
+	---help---
+		Enable building of power-related devices (battery monitors, chargers,
+		etc).
+
+if POWER
+
 config BATTERY_CHARGER
 	bool "Battery Charger support"
 	default n
@@ -10,3 +19,5 @@ config BATTERY_CHARGER
 config BATTERY_GAUGE
 	bool "Battery Fuel Gauge support"
 	default n
+
+endif # POWER

@@ -2,6 +2,19 @@
 # For a description of the syntax of this configuration file,
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 
+menuconfig AUDIO_DEVICES
+        bool "Audio Device Support"
+        default n
+        ---help---
+                Enable support for audio device drivers.  This includes drivers for
+                MP3, WMA and Ogg Vorbis encoding, decoding, as well as drivers for
+                interfacing with external DSP chips to perform custom audio functions.
+
+                NOTE: All of these drivers depend on support from the audio subsystem
+                enabled with the AUDIO selection.
+
+if AUDIO_DEVICES
+
 config AUDIO_MAX_INPUT_CARD_NUM
 	int "Max # of Input Audio Card"
 	default 2
@@ -259,3 +272,5 @@ config TAS5749_NUM_BUFFERS
 	depends on AUDIO_TAS5749
 	---help---
 		Set buffers number of TAS5749
+
+endif # AUDIO_DEVICES

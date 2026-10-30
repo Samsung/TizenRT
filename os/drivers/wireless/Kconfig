@@ -3,6 +3,12 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+menuconfig DRIVERS_WIRELESS
+	bool "Wireless Device Support"
+	default n
+	---help---
+		Drivers for various wireless devices.
+
 if DRIVERS_WIRELESS && SELECT_SCSC_WLAN
 
 source drivers/wireless/scsc/Kconfig
