@@ -267,8 +267,8 @@ endif
 endif
 
 ifeq ($(NEED_MATH_H),y)
-include/math.h: include/tinyara/math.h
-	$(Q) cp -f include/tinyara/math.h include/math.h
+include/math.h: include/tinyara/lib/math.h
+	$(Q) cp -f include/tinyara/lib/math.h include/math.h
 else
 include/math.h:
 endif
@@ -280,8 +280,8 @@ endif
 # the settings in this float.h are actually correct for your platform!
 
 ifeq ($(CONFIG_ARCH_FLOAT_H),y)
-include/float.h: include/tinyara/float.h
-	$(Q) cp -f include/tinyara/float.h include/float.h
+include/float.h: include/tinyara/lib/float.h
+	$(Q) cp -f include/tinyara/lib/float.h include/float.h
 else
 include/float.h:
 endif
@@ -292,8 +292,8 @@ endif
 # have to copy stdarg.h from include/tinyara/. to include/.
 
 ifeq ($(CONFIG_ARCH_STDARG_H),y)
-include/stdarg.h: include/tinyara/stdarg.h
-	$(Q) cp -f include/tinyara/stdarg.h include/stdarg.h
+include/stdarg.h: include/tinyara/lib/stdarg.h
+	$(Q) cp -f include/tinyara/lib/stdarg.h include/stdarg.h
 else
 include/stdarg.h:
 endif
@@ -326,6 +326,26 @@ include/tinyara/config.h: $(TOPDIR)/.config tools/mkconfig$(HOSTEXEEXT)
 	$(Q) tools/mkconfig $(TOPDIR) > include/tinyara/config.h
 
 # Targets used to create dependencies
+
+# Target used to copy include/tinyara/lib/setjmp.h.  If CONFIG_ARCH_SETJMP_H is
+# defined, then there is an architecture specific setjmp.h header file
+# that will be included indirectly from include/setjmp.h.
+
+ifeq ($(CONFIG_ARCH_SETJMP_H),y)
+include/setjmp.h: include/tinyara/lib/setjmp.h
+	$(Q) cp -f include/tinyara/lib/setjmp.h include/setjmp.h
+else
+include/setjmp.h:
+endif
+
+# Target used to copy include/tinyara/lib/stdbit.h for the C23 bit utilities
+
+ifeq ($(firstword $(filter y, $(CONFIG_ARCH_STDBIT_H) $(CONFIG_LIBC_STDBIT_GENERIC))),y)
+include/stdbit.h: include/tinyara/lib/stdbit.h
+	$(Q) cp -f include/tinyara/lib/stdbit.h include/stdbit.h
+else
+include/stdbit.h:
+endif
 
 tools/mkdeps$(HOSTEXEEXT):
 	$(Q) $(MAKE) -C tools -f Makefile.host TOPDIR="$(TOPDIR)"  mkdeps$(HOSTEXEEXT)
@@ -397,7 +417,7 @@ dirlinks: include/arch include/arch/board include/arch/chip $(ARCH_SRC)/board $(
 # the config.h and version.h header files in the include/tinyara directory and
 # the establishment of symbolic links to configured directories.
 
-context: check_context include/tinyara/config.h include/tinyara/version.h include/math.h include/float.h include/stdarg.h dirlinks
+context: check_context include/tinyara/config.h include/tinyara/version.h include/math.h include/float.h include/stdarg.h include/setjmp.h include/stdbit.h dirlinks
 	$(Q)if [ -e ${BIN} ]; then \
 		echo "Previous Build Outputs - $(OUTBIN_DIR) - are deleted"; \
 		rm -rf ${OUTBIN_DIR}/*; \
@@ -416,7 +436,10 @@ clean_context:
 	$(call DELFILE, include/tinyara/config.h)
 	$(call DELFILE, include/tinyara/version.h)
 	$(call DELFILE, include/math.h)
+	$(call DELFILE, include/float.h)
 	$(call DELFILE, include/stdarg.h)
+	$(call DELFILE, include/setjmp.h)
+	$(call DELFILE, include/stdbit.h)
 	$(Q) $(DIRUNLINK) drivers/platform
 	$(Q) $(DIRUNLINK) include/arch/board
 	$(Q) $(DIRUNLINK) include/arch/chip
