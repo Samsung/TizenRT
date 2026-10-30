@@ -54,14 +54,6 @@ config UCLIBCXX
 
 endchoice
 
-config ETL
-	bool "Embedded Template Library (ETL)"
-	depends on ALLOW_MIT_COMPONENTS
-	---help---
-		ETL A C++ Template library for Embedded applications
-		Implements C++ templates such as containers, string
-		singleton math without C++ STL libraries
-
 choice
 	prompt "C++ low level library select"
 	default LIBMINIABI if LIBCXXNONE
@@ -73,13 +65,6 @@ config LIBMINIABI
 		A fragmentary C++ library that will allow to build only
 		the simplest of C++ applications. Only contain basic C++
 		runtime support function.
-
-config LIBCXXABI
-	bool "LLVM low level C++ Library"
-	---help---
-		LLVM "libc++abi" C++ Standard Library
-		https://libcxxabi.llvm.org/
-		Select if your use libc++abi as lower level c++ library
 
 config LIBSUPCXX
 	bool "GNU compile low level libsupc++"
@@ -94,12 +79,6 @@ config LIBSUPCXX_TOOLCHAIN
 		level c++ library.
 
 endchoice
-
-config LIBCXXABI_VERSION
-	string "Select libcxxabi version"
-	depends on LIBCXXABI
-	default LIBCXX_VERSION if LIBCXX
-	default "17.0.6" if !LIBCXX
 
 config LIBSTDCXX_VERSION
 	string "Select libstdcxx version"

@@ -5,7 +5,6 @@
 
 if ARCH_ARM7TDMI || ARCH_ARM920T || ARCH_ARM926EJS || \
    ARCH_ARM1136J || ARCH_ARM1156T2 || ARCH_ARM1176JZ
-source "libs/libc/machine/arm/arm/Kconfig"
 endif
 
 if ARCH_ARMV7A
@@ -17,7 +16,6 @@ source "libs/libc/machine/arm/armv7-r/Kconfig"
 endif
 
 if ARCH_ARMV6M
-source "libs/libc/machine/arm/armv6-m/Kconfig"
 endif
 
 if ARCH_ARMV7M
@@ -29,7 +27,6 @@ source "libs/libc/machine/arm/armv8-m/Kconfig"
 endif
 
 if ARCH_ARMV8R
-source "libs/libc/machine/arm/armv8-r/Kconfig"
 endif
 
 config LIBC_ARCH_CRC32

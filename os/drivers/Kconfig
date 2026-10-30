@@ -9,60 +9,63 @@ config SPECIFIC_DRIVERS
 
 source "drivers/crypto/Kconfig"
 source "drivers/loop/Kconfig"
-source "drivers/can/Kconfig"
-source "drivers/clk/Kconfig"
 source "drivers/i2c/Kconfig"
-source "drivers/i3c/Kconfig"
 source "drivers/spi/Kconfig"
 source "drivers/i2s/Kconfig"
-source "drivers/ipcc/Kconfig"
 source "drivers/timers/Kconfig"
 source "drivers/analog/Kconfig"
 source "drivers/audio/Kconfig"
-source "drivers/vhost/Kconfig"
 source "drivers/video/Kconfig"
-source "drivers/virtio/Kconfig"
 source "drivers/bch/Kconfig"
 source "drivers/input/Kconfig"
 source "drivers/ioexpander/Kconfig"
 source "drivers/lcd/Kconfig"
-source "drivers/leds/Kconfig"
 source "drivers/misc/Kconfig"
-source "drivers/mmcsd/Kconfig"
-source "drivers/modem/Kconfig"
 source "drivers/mtd/Kconfig"
-source "drivers/eeprom/Kconfig"
-source "drivers/efuse/Kconfig"
 source "drivers/net/Kconfig"
 source "drivers/note/Kconfig"
-source "drivers/pinctrl/Kconfig"
 source "drivers/pipes/Kconfig"
 source "drivers/power/Kconfig"
-source "drivers/regmap/Kconfig"
-source "drivers/rmt/Kconfig"
-source "drivers/rpmsg/Kconfig"
-source "drivers/rptun/Kconfig"
 source "drivers/sensors/Kconfig"
 source "drivers/serial/Kconfig"
-source "drivers/thermal/Kconfig"
 source "drivers/usbdev/Kconfig"
 source "drivers/usbhost/Kconfig"
 source "drivers/usbmisc/Kconfig"
 source "drivers/usbmonitor/Kconfig"
 source "drivers/wireless/Kconfig"
-source "drivers/contactless/Kconfig"
-source "drivers/1wire/Kconfig"
 source "drivers/syslog/Kconfig"
 source "$BINDIR/drivers/platform/Kconfig"
-source "drivers/rf/Kconfig"
-source "drivers/rc/Kconfig"
-source "drivers/motor/Kconfig"
-source "drivers/math/Kconfig"
-source "drivers/segger/Kconfig"
-source "drivers/usrsock/Kconfig"
-source "drivers/dma/Kconfig"
-source "drivers/devicetree/Kconfig"
-source "drivers/reset/Kconfig"
-source "drivers/pci/Kconfig"
-source "drivers/coresight/Kconfig"
-source "drivers/aie/Kconfig"
+
+#
+# TizenRT drivers that NuttX does not have
+#
+
+config VIRTKEY
+	bool "Enable virtual key driver"
+	default n
+	depends on NFILE_DESCRIPTORS != 0
+
+if VIRTKEY
+config VIRTKEY_QUEUE_LEN
+	int "Virtual key event queue length"
+	default 1024
+	---help---
+		Use this to specify length of event queue for virtual keyboard driver,
+		Event generator will write to the queue and receiver will read from it.
+endif
+
+source "drivers/mipidsi/Kconfig"
+
+source drivers/wifi_csi/Kconfig
+
+source "drivers/memory/Kconfig"
+source "drivers/prodconfig/Kconfig"
+
+source drivers/os_api_test/Kconfig
+source drivers/iotdev/Kconfig
+
+source "drivers/bluetooth/Kconfig"
+
+source "drivers/otp/Kconfig"
+
+source drivers/seclink/Kconfig

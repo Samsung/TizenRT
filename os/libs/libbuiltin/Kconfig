@@ -8,22 +8,11 @@ comment "Toolchain Library Support"
 config LIB_BUILTIN
 	bool
 
-config LIB_COMPILER_RT
-	bool
-
 choice
 	prompt "Builtin toolchain support"
 	default BUILTIN_TOOLCHAIN
 	---help---
 		Select the builtin library
-
-config BUILTIN_COMPILER_RT
-	bool "Builtin LLVM libclang_rt.builtins"
-	depends on ARCH_TOOLCHAIN_GNU
-	select LIB_BUILTIN
-	select LIB_COMPILER_RT
-	---help---
-		Compile the LLVM Compiler-rt library into the OS.
 
 config BUILTIN_TOOLCHAIN
 	bool "Link toolchain builtin library to the OS"
@@ -35,15 +24,6 @@ choice
 	default COVERAGE_NONE
 	---help---
 		Select the code coverage analysis library
-
-config COVERAGE_COMPILER_RT
-	bool "Builtin libclang_rt.profile"
-	depends on ARCH_TOOLCHAIN_CLANG
-	select LIB_BUILTIN
-	select LIB_COMPILER_RT
-	---help---
-		Compile the LLVM Compiler-rt library into the OS.
-		Support adding native rich compilation options "-fprofile-xxx"
 
 config COVERAGE_MINI
 	bool "Builtin code coverage analysis mini library"
@@ -131,13 +111,3 @@ config PROFILE_ALL
 		all code, which will cause a large performance penalty for the code.
 		You can add the '-pg' parameter to the specified module in the
 		makefile to only analyze the content of the module.
-
-config LIB_COMPILER_RT_VERSION
-	string "Select LLVM Compiler-rt version"
-	depends on LIB_COMPILER_RT
-	default "17.0.1"
-
-config LIB_COMPILER_RT_HAS_BFLOAT16
-	bool "Enable support for bfloat16 in Compiler-rt"
-	depends on LIB_COMPILER_RT
-	default n

@@ -51,7 +51,6 @@ include eventfd/Make.defs
 include fixedmath/Make.defs
 include gdbstub/Make.defs
 include grp/Make.defs
-include gnssutils/Make.defs
 include hex2bin/Make.defs
 include inttypes/Make.defs
 include libgen/Make.defs
@@ -88,7 +87,6 @@ include uuid/Make.defs
 include wchar/Make.defs
 include wctype/Make.defs
 include wqueue/Make.defs
-include fdt/Make.defs
 
 # Use double delim to fix windows native build and give an error:
 # makefile:132: *** target mode do not include“%”. stop.
