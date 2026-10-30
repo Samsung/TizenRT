@@ -147,6 +147,8 @@ depend: .depend
 # Clean most derived files, retaining the configuration
 
 clean:
+	$(call DELFILE, bin$(DELIM)*$(OBJEXT))
+	$(call DELFILE, kbin$(DELIM)*$(OBJEXT))
 	$(call DELFILE, $(BIN))
 	$(call DELFILE, libmm$(LIBEXT))
 	$(call DELFILE, $(KBIN))
