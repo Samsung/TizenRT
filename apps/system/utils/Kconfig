@@ -31,7 +31,7 @@ config SECURITY_LEVEL_CMDS
 config FS_CMDS
 	bool "FS shell commands"
 	default y
-	depends on TASH && (NFILE_DESCRIPTORS != 0)
+	depends on TASH
 	---help---
 		Disable File System command in TASH.
 		Command including ls, cd, cat, mount, and so on.

@@ -13,7 +13,6 @@ config TASH_TASK_PRIORITY
 config TASH
 	bool "Enable shell"
 	default y
-	depends on NFILE_DESCRIPTORS != 0
 
 if TASH
 config TASH_MAX_STORE_COMMANDS
