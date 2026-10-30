@@ -1,0 +1,166 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+# drivers/timers/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+# Include timer drivers
+
+ifeq ($(CONFIG_WATCHDOG),y)
+  CSRCS += watchdog.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_TIMER),y)
+  CSRCS += timer.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_TIMER_WDOG),y)
+  CSRCS += timer_wdog.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_TIMER_ARCH),y)
+  CSRCS += arch_timer.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_ONESHOT),y)
+  CSRCS += oneshot.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_ALARM_ARCH),y)
+  CSRCS += arch_alarm.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_RTC_DSXXXX),y)
+  CSRCS += ds3231.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_RTC_PCF85263),y)
+  CSRCS += pcf85263.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_RTC_PL031),y)
+  CSRCS += pl031.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_RTC_MCP794XX),y)
+  CSRCS += mcp794xx.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_RTC_RX8010SJ),y)
+  CSRCS += rx8010.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_RTC_RPMSG),y)
+  CSRCS += rpmsg_rtc.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_RTC_ARCH),y)
+  CSRCS += arch_rtc.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_RTC_DRIVER),y)
+  CSRCS += rtc.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_TIMERS_CS2100CP),y)
+  CSRCS += cs2100-cp.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_PWM),y)
+  CSRCS += pwm.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_CAPTURE),y)
+  CSRCS += capture.c
+
+  ifeq ($(CONFIG_FAKE_CAPTURE),y)
+    CSRCS += fake_capture.c
+  endif
+
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_GOLDFISH_TIMER),y)
+  CSRCS += goldfish_timer.c
+  TMRDEPPATH = --dep-path timers
+  TMRVPATH = :timers
+endif
+
+ifeq ($(CONFIG_PTP_CLOCK),y)
+  CSRCS += ptp_clock.c
+endif
+
+ifeq ($(CONFIG_PTP_CLOCK_DUMMY),y)
+  CSRCS += ptp_clock_dummy.c
+endif
+
+# Include timer build support (if any were selected)
+
+DEPPATH += $(TMRDEPPATH)
+VPATH += $(TMRVPATH)
