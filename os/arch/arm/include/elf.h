@@ -18,58 +18,45 @@
 /****************************************************************************
  * arch/arm/include/elf.h
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Reference: "ELF for the ARM® Architecture," ARM IHI 0044D, current through
- *   ABI release 2.08, October 28, 2009, ARM Limited.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
+
+/* Reference: "ELF for the ARM Architecture," ARM IHI 0044D, current through
+ *   ABI release 2.08, October 28, 2009, ARM Limited.
+ */
 
 #ifndef __ARCH_ARM_INCLUDE_ELF_H
 #define __ARCH_ARM_INCLUDE_ELF_H
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Pre-processor Prototypes
  ****************************************************************************/
 
 /* 4.3.1 ELF Identification.  Should have:
  *
  * e_machine         = EM_ARM
  * e_ident[EI_CLASS] = ELFCLASS32
- * e_ident[EI_DATA]  = ELFDATA2LSB (little endian) or ELFDATA2MSB (big endian)
+ * e_ident[EI_DATA]  = ELFDATA2LSB (little endian) or
+ *                     ELFDATA2MSB (big endian)
  */
 
-#if 0 /* Defined in include/elf32.h */
-#define EM_ARM                   40
-#endif
+#define EM_ARCH                  EM_ARM
 
 /* Table 4-2, ARM-specific e_flags */
 
@@ -82,6 +69,21 @@
 #define EF_ARM_EABI_VER5         0x05000000
 
 #define EF_ARM_BE8               0x00800000
+
+#define EF_ARM_ABI_FLOAT_SOFT    0x00000200
+#define EF_ARM_ABI_FLOAT_HARD    0x00000400
+
+#ifdef __VFP_FP__
+#  ifdef __ARM_PCS_VFP
+#    define EF_ARM_ABI_FLOAT     EF_ARM_ABI_FLOAT_HARD
+#  else
+#    define EF_ARM_ABI_FLOAT     EF_ARM_ABI_FLOAT_SOFT
+#  endif
+#else
+#  define EF_ARM_ABI_FLOAT       0
+#endif
+
+#define EF_FLAG                  (EF_ARM_EABI_VER5 | EF_ARM_ABI_FLOAT)
 
 /* Table 4-4, Processor specific section types */
 
@@ -96,9 +98,10 @@
  * S (when used on its own) is the address of the symbol.
  * A is the addend for the relocation.
  * P is the address of the place being relocated (derived from r_offset).
- * Pa is the adjusted address of the place being relocated, defined as (P & 0xFFFFFFFC).
- * T is 1 if the target symbol S has type STT_FUNC and the symbol addresses a Thumb instruction;
- *   it is 0 otherwise.
+ * Pa is the adjusted address of the place being relocated, defined as
+ *    (P & 0xFFFFFFFC).
+ * T is 1 if the target symbol S has type STT_FUNC and the symbol addresses
+ *   a Thumb instruction; it is 0 otherwise.
  * B(S) is the addressing origin of the output segment defining the symbol S.
  * GOT_ORG is the addressing origin of the Global Offset Table
  * GOT(S) is the address of the GOT entry for the symbol S.
@@ -220,6 +223,10 @@
 #define R_ARM_THM_TLS_DESCSEQ16  129           /* Thumb16 */
 #define R_ARM_THM_TLS_DESCSEQ32  130           /* Thumb32 */
 
+/* Processor specific values for the Phdr p_type field.  */
+
+#define PT_ARM_EXIDX             (PT_LOPROC + 1) /* ARM unwind segment.  */
+
 /* 5.2.1 Platform architecture compatibility data */
 
 #define PT_ARM_ARCHEXT_FMTMSK       0xff000000
@@ -256,5 +263,43 @@
 #define DT_ARM_SYMTABSZ          0x70000001
 #define DT_ARM_PREEMPTMAP        0x70000002
 #define DT_ARM_RESERVED2         0x70000003
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+typedef struct __EIT_entry {
+	unsigned long fnoffset;
+	unsigned long content;
+} __EIT_entry;
+
+/* ELF register definitions */
+
+/* Holds the general purpose registers $a1 * through to $pc
+ * at indices 0 to 15.  At index 16 the program status register.
+ * Index 17 should be set to zero.
+ */
+
+typedef unsigned long elf_gregset_t[18];
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
+
+extern __EIT_entry __exidx_start[];
+extern __EIT_entry __exidx_end[];
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ARCH_ARM_INCLUDE_ELF_H */

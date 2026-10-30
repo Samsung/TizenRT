@@ -18,40 +18,27 @@
 /****************************************************************************
  * arch/arm/include/irq.h
  *
- *   Copyright (C) 2007-2009, 2011 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-/* This file should never be included directed but, rather, only indirectly
- * through include/tinyara/irq.h
+/* This file should never be included directly but, rather, only indirectly
+ * through nuttx/irq.h
  */
 
 #ifndef __ARCH_ARM_INCLUDE_IRQ_H
@@ -61,105 +48,95 @@
  * Included Files
  ****************************************************************************/
 
-/* Include TinyAra-specific IRQ definitions */
+#include <sys/types.h>
+#ifndef __ASSEMBLY__
+#  include <stdbool.h>
+#  include <arch/syscall.h>
+#endif
 
-#include <tinyara/irq.h>
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
 /* Include chip-specific IRQ definitions (including IRQ numbers) */
 
 #include <arch/chip/irq.h>
 
+/* Include NuttX-specific IRQ definitions */
+
+#include <tinyara/irq.h>
+
 /* Include ARM architecture-specific IRQ definitions (including register
- * save structure and irqsave()/irqrestore() macros)
+ * save structure and up_irq_save()/up_irq_restore() functions)
  */
 
-#if defined(CONFIG_ARCH_CORTEXM3) || defined(CONFIG_ARCH_CORTEXM4) || defined(CONFIG_ARCH_CORTEXM7)
-#include <arch/armv7-m/irq.h>
-#elif defined(CONFIG_ARCH_CORTEXR4)
-#include <arch/armv7-r/irq.h>
-#elif defined(CONFIG_ARCH_ARMV8M_FAMILY)
-#include <arch/armv8-m/irq.h>
-#elif defined(CONFIG_ARCH_ARMV7A_FAMILY)
-#include <arch/armv7-a/irq.h>
+#if defined(CONFIG_ARCH_ARMV7A)
+#  include <arch/armv7-a/irq.h>
+#elif defined(CONFIG_ARCH_ARMV7R)
+#  include <arch/armv7-r/irq.h>
+#elif defined(CONFIG_ARCH_ARMV8R)
+#  include <arch/armv8-r/irq.h>
+#elif defined(CONFIG_ARCH_ARMV7M)
+#  include <arch/armv7-m/irq.h>
+#elif defined(CONFIG_ARCH_ARMV8M)
+#  include <arch/armv8-m/irq.h>
+#elif defined(CONFIG_ARCH_ARMV6M)
+#  include <arch/armv6-m/irq.h>
 #else
-#include <arch/arm/irq.h>
+#  include <arch/arm/irq.h>
 #endif
 
 /****************************************************************************
- * Definitions
- ****************************************************************************/
-#define CURRENT_REGS (g_current_regs[up_cpu_index()])
-
-/****************************************************************************
- * Public Types
+ * Pre-processor Prototypes
  ****************************************************************************/
 
-/****************************************************************************
- * Inline functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Public Function Prototypes
- ****************************************************************************/
+#if defined(__ghs__) && defined(__ARM_DSP__)
+#  define __ARM_FEATURE_DSP 1
+#endif
 
 #ifndef __ASSEMBLY__
+
+#ifndef up_switch_context
+#define up_switch_context(tcb, rtcb)   \
+  do {                                 \
+    if (!up_interrupt_context())       \
+      {                                \
+        sys_call0(SYS_switch_context); \
+      }                                \
+      UNUSED(rtcb);                    \
+  } while (0)
+#endif
+
+/* For use with EABI and floating point, the stack must be aligned to 8-byte
+ * addresses.
+ */
+
+#define STACKFRAME_ALIGN 8
+
 #ifdef __cplusplus
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
 
-
-EXTERN volatile uint32_t *g_current_regs[CONFIG_SMP_NCPUS];
 /****************************************************************************
- * Public Function Prototypes
+ * Name: up_getusrpc
  ****************************************************************************/
 
-/****************************************************************************
- * Name: up_cpu_index
- *
- * Description:
- *   Return an index in the range of 0 through (CONFIG_SMP_NCPUS-1) that
- *   corresponds to the currently executing CPU.
- *
- * Input Parameters:
- *   None
- *
- * Returned Value:
- *   An integer index in the range of 0 through (CONFIG_SMP_NCPUS-1) that
- *   corresponds to the currently executing CPU.
- *
- ****************************************************************************/
+#define up_getusrpc(regs) \
+    (((uint32_t *)((regs) ? (regs) : running_regs()))[REG_PC])
 
-#ifdef CONFIG_SMP
-int up_cpu_index(void);
-#else
-#define up_cpu_index() (0)
-#endif
+#endif /* __ASSEMBLY__ */
 
-/****************************************************************************
- * Inline functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: up_interrupt_context
- *
- * Description:
- *   Return true is we are currently executing in the interrupt
- *   handler context.
- *
- ****************************************************************************/
-
-bool up_interrupt_context(void);
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
-#endif
 
-#endif							/* __ARCH_ARM_INCLUDE_IRQ_H */
+#endif /* __ARCH_ARM_INCLUDE_IRQ_H */

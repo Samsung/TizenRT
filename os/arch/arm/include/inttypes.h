@@ -18,35 +18,22 @@
 /****************************************************************************
  * arch/arm/include/inttypes.h
  *
- *   Copyright (C) 2016 Omni Hoverboards Inc. All rights reserved.
- *   Author: Paul Alexander Patience <paul-a.patience@polymtl.ca>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,205 +45,149 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Pre-processor Prototypes
  ****************************************************************************/
+
+/* The below definition convert __INT32_TYPE__ from 'int'/'signed int' or
+ * 'long int'/signed long int' to '+2'/'+0 +2' or '+4 +2'/'+0 +4 +2', and
+ * then make the expression of '__INT32_TYPE__ == int' valid.
+ */
+
+#define signed      +0
+#define int         +2
+#define long        +4
 
 #define PRId8       "d"
 #define PRId16      "d"
-#define PRId32      "d"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define PRId32    "d"
+#else
+#  define PRId32    "ld"
+#endif
 #define PRId64      "lld"
-
-#define PRIdLEAST8  "d"
-#define PRIdLEAST16 "d"
-#define PRIdLEAST32 "d"
-#define PRIdLEAST64 "lld"
-
-#define PRIdFAST8   "d"
-#define PRIdFAST16  "d"
-#define PRIdFAST32  "d"
-#define PRIdFAST64  "lld"
-
-#define PRIdMAX     "lld"
 #define PRIdPTR     "d"
 
 #define PRIi8       "i"
 #define PRIi16      "i"
-#define PRIi32      "i"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define PRIi32    "i"
+#else
+#  define PRIi32    "li"
+#endif
 #define PRIi64      "lli"
-
-#define PRIiLEAST8  "i"
-#define PRIiLEAST16 "i"
-#define PRIiLEAST32 "i"
-#define PRIiLEAST64 "lli"
-
-#define PRIiFAST8   "i"
-#define PRIiFAST16  "i"
-#define PRIiFAST32  "i"
-#define PRIiFAST64  "lli"
-
-#define PRIiMAX     "lli"
 #define PRIiPTR     "i"
 
 #define PRIo8       "o"
 #define PRIo16      "o"
-#define PRIo32      "o"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define PRIo32    "o"
+#else
+#  define PRIo32    "lo"
+#endif
 #define PRIo64      "llo"
-
-#define PRIoLEAST8  "o"
-#define PRIoLEAST16 "o"
-#define PRIoLEAST32 "o"
-#define PRIoLEAST64 "llo"
-
-#define PRIoFAST8   "o"
-#define PRIoFAST16  "o"
-#define PRIoFAST32  "o"
-#define PRIoFAST64  "llo"
-
-#define PRIoMAX     "llo"
 #define PRIoPTR     "o"
 
 #define PRIu8       "u"
 #define PRIu16      "u"
-#define PRIu32      "u"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define PRIu32    "u"
+#else
+#  define PRIu32    "lu"
+#endif
 #define PRIu64      "llu"
-
-#define PRIuLEAST8  "u"
-#define PRIuLEAST16 "u"
-#define PRIuLEAST32 "u"
-#define PRIuLEAST64 "llu"
-
-#define PRIuFAST8   "u"
-#define PRIuFAST16  "u"
-#define PRIuFAST32  "u"
-#define PRIuFAST64  "llu"
-
-#define PRIuMAX     "llu"
 #define PRIuPTR     "u"
 
 #define PRIx8       "x"
 #define PRIx16      "x"
-#define PRIx32      "x"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define PRIx32    "x"
+#else
+#  define PRIx32    "lx"
+#endif
 #define PRIx64      "llx"
-
-#define PRIxLEAST8  "x"
-#define PRIxLEAST16 "x"
-#define PRIxLEAST32 "x"
-#define PRIxLEAST64 "llx"
-
-#define PRIxFAST8   "x"
-#define PRIxFAST16  "x"
-#define PRIxFAST32  "x"
-#define PRIxFAST64  "llx"
-
-#define PRIxMAX     "llx"
 #define PRIxPTR     "x"
 
 #define PRIX8       "X"
 #define PRIX16      "X"
-#define PRIX32      "X"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define PRIX32    "X"
+#else
+#  define PRIX32    "lX"
+#endif
 #define PRIX64      "llX"
-
-#define PRIXLEAST8  "X"
-#define PRIXLEAST16 "X"
-#define PRIXLEAST32 "X"
-#define PRIXLEAST64 "llX"
-
-#define PRIXFAST8   "X"
-#define PRIXFAST16  "X"
-#define PRIXFAST32  "X"
-#define PRIXFAST64  "llX"
-
-#define PRIXMAX     "llX"
 #define PRIXPTR     "X"
 
 #define SCNd8       "hhd"
 #define SCNd16      "hd"
-#define SCNd32      "d"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define SCNd32    "d"
+#else
+#  define SCNd32    "ld"
+#endif
 #define SCNd64      "lld"
-
-#define SCNdLEAST8  "hhd"
-#define SCNdLEAST16 "hd"
-#define SCNdLEAST32 "d"
-#define SCNdLEAST64 "lld"
-
-#define SCNdFAST8   "hhd"
-#define SCNdFAST16  "hd"
-#define SCNdFAST32  "d"
-#define SCNdFAST64  "lld"
-
-#define SCNdMAX     "lld"
 #define SCNdPTR     "d"
 
 #define SCNi8       "hhi"
 #define SCNi16      "hi"
-#define SCNi32      "i"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define SCNi32    "i"
+#else
+#  define SCNi32    "li"
+#endif
 #define SCNi64      "lli"
-
-#define SCNiLEAST8  "hhi"
-#define SCNiLEAST16 "hi"
-#define SCNiLEAST32 "i"
-#define SCNiLEAST64 "lli"
-
-#define SCNiFAST8   "hhi"
-#define SCNiFAST16  "hi"
-#define SCNiFAST32  "i"
-#define SCNiFAST64  "lli"
-
-#define SCNiMAX     "lli"
 #define SCNiPTR     "i"
 
 #define SCNo8       "hho"
 #define SCNo16      "ho"
-#define SCNo32      "o"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define SCNo32    "o"
+#else
+#  define SCNo32    "lo"
+#endif
 #define SCNo64      "llo"
-
-#define SCNoLEAST8  "hho"
-#define SCNoLEAST16 "ho"
-#define SCNoLEAST32 "o"
-#define SCNoLEAST64 "llo"
-
-#define SCNoFAST8   "hho"
-#define SCNoFAST16  "ho"
-#define SCNoFAST32  "o"
-#define SCNoFAST64  "llo"
-
-#define SCNoMAX     "llo"
 #define SCNoPTR     "o"
 
 #define SCNu8       "hhu"
 #define SCNu16      "hu"
-#define SCNu32      "u"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define SCNu32    "u"
+#else
+#  define SCNu32    "lu"
+#endif
 #define SCNu64      "llu"
-
-#define SCNuLEAST8  "hhu"
-#define SCNuLEAST16 "hu"
-#define SCNuLEAST32 "u"
-#define SCNuLEAST64 "llu"
-
-#define SCNuFAST8   "hhu"
-#define SCNuFAST16  "hu"
-#define SCNuFAST32  "u"
-#define SCNuFAST64  "llu"
-
-#define SCNuMAX     "llu"
 #define SCNuPTR     "u"
 
 #define SCNx8       "hhx"
 #define SCNx16      "hx"
-#define SCNx32      "x"
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define SCNx32    "x"
+#else
+#  define SCNx32    "lx"
+#endif
 #define SCNx64      "llx"
-
-#define SCNxLEAST8  "hhx"
-#define SCNxLEAST16 "hx"
-#define SCNxLEAST32 "x"
-#define SCNxLEAST64 "llx"
-
-#define SCNxFAST8   "hhx"
-#define SCNxFAST16  "hx"
-#define SCNxFAST32  "x"
-#define SCNxFAST64  "llx"
-
-#define SCNxMAX     "llx"
 #define SCNxPTR     "x"
+
+#define INT8_C(x)   x
+#define INT16_C(x)  x
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define INT32_C(x) x
+#else
+#  define INT32_C(x) x ## l
+#endif
+#define INT64_C(x)  x ## ll
+
+#define UINT8_C(x)  x
+#define UINT16_C(x) x
+#if defined(__INT32_TYPE__) && __INT32_TYPE__ == int
+#  define UINT32_C(x) x ## u
+#else
+#  define UINT32_C(x) x ## ul
+#endif
+#define UINT64_C(x) x ## ull
+
+#undef signed
+#undef unsigned
+#undef int
+#undef long
 
 #endif /* __ARCH_ARM_INCLUDE_INTTYPES_H */

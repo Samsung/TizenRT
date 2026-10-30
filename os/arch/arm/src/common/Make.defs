@@ -1,0 +1,96 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+# arch/arm/src/common/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+STARTUP_OBJS = crt0$(OBJEXT)
+
+# Common ARM files
+
+CMN_CSRCS += arm_allocateheap.c arm_createstack.c arm_exit.c
+CMN_CSRCS += arm_getintstack.c arm_initialize.c arm_lowputs.c
+CMN_CSRCS += arm_nputs.c arm_releasestack.c arm_registerdump.c
+CMN_CSRCS += arm_stackframe.c arm_modifyreg.c
+CMN_CSRCS += arm_usestack.c arm_fork.c arm_poweroff.c
+
+ifeq ($(CONFIG_STACK_COLORATION),y)
+  CMN_CSRCS += arm_checkstack.c
+endif
+
+ifneq ($(CONFIG_ARCH_IDLE_CUSTOM),y)
+  CMN_CSRCS += arm_idle.c
+endif
+
+ifeq ($(CONFIG_BUILD_PROTECTED)$(CONFIG_BUILD_KERNEL),y)
+  CMN_CSRCS += arm_task_start.c arm_pthread_start.c
+  ifeq ($(CONFIG_ENABLE_ALL_SIGNALS),y)
+    CMN_CSRCS += arm_signal_dispatch.c
+    ifeq ($(CONFIG_BUILD_PROTECTED),y)
+      CMN_UASRCS += arm_signal_handler.S
+    endif
+  endif
+endif
+
+ifeq ($(CONFIG_ARM_SEMIHOSTING_SYSLOG),y)
+  CMN_CSRCS += arm_semi_syslog.c
+endif
+
+ifeq ($(CONFIG_ARM_SEMIHOSTING_HOSTFS),y)
+  CMN_CSRCS += arm_hostfs.c
+endif
+
+ifeq ($(CONFIG_SCHED_THREAD_LOCAL),y)
+  CMN_CSRCS += arm_tls.c
+endif
+
+ifeq ($(CONFIG_UNWINDER_FRAME_POINTER),y)
+  CMN_CSRCS += arm_backtrace_fp.c
+endif
+
+ifeq ($(CONFIG_UNWINDER_STACK_POINTER),y)
+  CMN_CSRCS += arm_backtrace_sp.c
+endif
+
+ifeq ($(CONFIG_UNWINDER_ARM),y)
+  CMN_CSRCS += arm_backtrace_unwind.c
+endif
+
+CMN_ASRCS += fork.S
+
+ifeq ($(CONFIG_ARCH_HAVE_FETCHADD),y)
+  CMN_ASRCS += arm_fetchadd.S
+endif
