@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/dev_null.c
+ * apps/testing/ostest/dev_null.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -63,39 +63,36 @@ static FAR char buffer[1024];
 
 int dev_null_test(void)
 {
-  int nbytes;
-  int fd;
+	int nbytes;
+	int fd;
 
-  fd = open("/dev/null", O_RDWR);
-  if (fd < 0)
-    {
-      printf("dev_null: ERROR Failed to open /dev/null\n");
-      ASSERT(false);
-      return -1;
-    }
+	fd = open("/dev/null", O_RDWR);
+	if (fd < 0) {
+		printf("dev_null: ERROR Failed to open /dev/null\n");
+		ASSERT(false);
+		return -1;
+	}
 
-  nbytes = read(fd, buffer, 1024);
-  if (nbytes < 0)
-    {
-      printf("dev_null: ERROR Failed to read from /dev/null\n");
-      ASSERT(false);
-      close(fd);
-      return -1;
-    }
+	nbytes = read(fd, buffer, 1024);
+	if (nbytes < 0) {
+		printf("dev_null: ERROR Failed to read from /dev/null\n");
+		ASSERT(false);
+		close(fd);
+		return -1;
+	}
 
-  printf("dev_null: Read %d bytes from /dev/null\n", nbytes);
+	printf("dev_null: Read %d bytes from /dev/null\n", nbytes);
 
-  nbytes = write(fd, buffer, 1024);
-  if (nbytes < 0)
-    {
-      printf("dev_null: ERROR Failed to write to /dev/null\n");
-      ASSERT(false);
-      close(fd);
-      return -1;
-    }
+	nbytes = write(fd, buffer, 1024);
+	if (nbytes < 0) {
+		printf("dev_null: ERROR Failed to write to /dev/null\n");
+		ASSERT(false);
+		close(fd);
+		return -1;
+	}
 
-  printf("dev_null: Wrote %d bytes to /dev/null\n", nbytes);
+	printf("dev_null: Wrote %d bytes to /dev/null\n", nbytes);
 
-  close(fd);
-  return 0;
+	close(fd);
+	return 0;
 }

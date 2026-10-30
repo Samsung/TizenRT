@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/timedwait.c
+ * apps/testing/ostest/timedwait.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -69,69 +69,60 @@ static pthread_cond_t  cond;
 
 static void *thread_waiter(void *parameter)
 {
-  struct timespec ts;
-  int status;
+	struct timespec ts;
+	int status;
 
-  /* Take the mutex */
+	/* Take the mutex */
 
-  printf("thread_waiter: Taking mutex\n");
-  status = pthread_mutex_lock(&mutex);
-  if (status != 0)
-    {
-      printf("thread_waiter: ERROR pthread_mutex_lock failed, status=%d\n",
-              status);
-      ASSERT(false);
-    }
+	printf("thread_waiter: Taking mutex\n");
+	status = pthread_mutex_lock(&mutex);
+	if (status != 0) {
+		printf("thread_waiter: ERROR pthread_mutex_lock failed, status=%d\n",
+		        status);
+		ASSERT(false);
+	}
 
-  printf("thread_waiter: Starting 5 second wait for condition\n");
+	printf("thread_waiter: Starting 5 second wait for condition\n");
 
-  status = clock_gettime(CLOCK_REALTIME, &ts);
-  if (status != 0)
-    {
-      printf("thread_waiter: ERROR clock_gettime failed\n");
-      ASSERT(false);
-    }
+	status = clock_gettime(CLOCK_REALTIME, &ts);
+	if (status != 0) {
+		printf("thread_waiter: ERROR clock_gettime failed\n");
+		ASSERT(false);
+	}
 
-  ts.tv_sec += 5;
+	ts.tv_sec += 5;
 
-  /* The wait -- no-one is ever going to awaken us */
+	/* The wait -- no-one is ever going to awaken us */
 
-  status = pthread_cond_timedwait(&cond, &mutex, &ts);
-  if (status != 0)
-    {
-      if (status == ETIMEDOUT)
-        {
-          printf("thread_waiter: pthread_cond_timedwait timed out\n");
-        }
-      else
-        {
-          printf("thread_waiter: "
-                 "ERROR pthread_cond_timedwait failed, status=%d\n", status);
-          ASSERT(false);
-        }
-    }
-  else
-    {
-      printf("thread_waiter: ERROR "
-             "pthread_cond_timedwait returned without timeout, status=%d\n",
-              status);
-      ASSERT(false);
-    }
+	status = pthread_cond_timedwait(&cond, &mutex, &ts);
+	if (status != 0) {
+		if (status == ETIMEDOUT) {
+			printf("thread_waiter: pthread_cond_timedwait timed out\n");
+		} else {
+			printf("thread_waiter: "
+			       "ERROR pthread_cond_timedwait failed, status=%d\n", status);
+			ASSERT(false);
+		}
+	} else {
+		printf("thread_waiter: ERROR "
+		       "pthread_cond_timedwait returned without timeout, status=%d\n",
+		        status);
+		ASSERT(false);
+	}
 
-  /* Release the mutex */
+	/* Release the mutex */
 
-  printf("thread_waiter: Releasing mutex\n");
-  status = pthread_mutex_unlock(&mutex);
-  if (status != 0)
-    {
-      printf("thread_waiter: ERROR pthread_mutex_unlock failed, status=%d\n",
-              status);
-      ASSERT(false);
-    }
+	printf("thread_waiter: Releasing mutex\n");
+	status = pthread_mutex_unlock(&mutex);
+	if (status != 0) {
+		printf("thread_waiter: ERROR pthread_mutex_unlock failed, status=%d\n",
+		        status);
+		ASSERT(false);
+	}
 
-  printf("thread_waiter: Exit with status 0x12345678\n");
-  pthread_exit((pthread_addr_t)0x12345678);
-  return NULL;
+	printf("thread_waiter: Exit with status 0x12345678\n");
+	pthread_exit((pthread_addr_t)0x12345678);
+	return NULL;
 }
 
 /****************************************************************************
@@ -140,84 +131,73 @@ static void *thread_waiter(void *parameter)
 
 void timedwait_test(void)
 {
-  pthread_t waiter;
-  pthread_attr_t attr;
-  struct sched_param sparam;
-  void *result;
-  int prio_max;
-  int status;
+	pthread_t waiter;
+	pthread_attr_t attr;
+	struct sched_param sparam;
+	void *result;
+	int prio_max;
+	int status;
 
-  /* Initialize the mutex */
+	/* Initialize the mutex */
 
-  printf("thread_waiter: Initializing mutex\n");
-  status = pthread_mutex_init(&mutex, NULL);
-  if (status != 0)
-    {
-      printf("timedwait_test: ERROR pthread_mutex_init failed, status=%d\n",
-              status);
-      ASSERT(false);
-    }
+	printf("thread_waiter: Initializing mutex\n");
+	status = pthread_mutex_init(&mutex, NULL);
+	if (status != 0) {
+		printf("timedwait_test: ERROR pthread_mutex_init failed, status=%d\n",
+		        status);
+		ASSERT(false);
+	}
 
-  /* Initialize the condition variable */
+	/* Initialize the condition variable */
 
-  printf("timedwait_test: Initializing cond\n");
-  status = pthread_cond_init(&cond, NULL);
-  if (status != 0)
-    {
-      printf("timedwait_test: ERROR pthread_condinit failed, status=%d\n",
-              status);
-      ASSERT(false);
-    }
+	printf("timedwait_test: Initializing cond\n");
+	status = pthread_cond_init(&cond, NULL);
+	if (status != 0) {
+		printf("timedwait_test: ERROR pthread_condinit failed, status=%d\n",
+		        status);
+		ASSERT(false);
+	}
 
-  /* Start the waiter thread at higher priority */
+	/* Start the waiter thread at higher priority */
 
-  printf("timedwait_test: Starting waiter\n");
-  status = pthread_attr_init(&attr);
-  if (status != 0)
-    {
-      printf("timedwait_test: pthread_attr_init failed, status=%d\n",
-              status);
-    }
+	printf("timedwait_test: Starting waiter\n");
+	status = pthread_attr_init(&attr);
+	if (status != 0) {
+		printf("timedwait_test: pthread_attr_init failed, status=%d\n",
+		        status);
+	}
 
-  prio_max = sched_get_priority_max(SCHED_FIFO);
-  status = sched_getparam (getpid(), &sparam);
-  if (status != 0)
-    {
-      printf("timedwait_test: sched_getparam failed\n");
-      sparam.sched_priority = PTHREAD_DEFAULT_PRIORITY;
-    }
+	prio_max = sched_get_priority_max(SCHED_FIFO);
+	status = sched_getparam(gettid(), &sparam);
+	if (status != 0) {
+		printf("timedwait_test: sched_getparam failed\n");
+		sparam.sched_priority = PTHREAD_DEFAULT_PRIORITY;
+	}
 
-  sparam.sched_priority = (prio_max + sparam.sched_priority) / 2;
-  status = pthread_attr_setschedparam(&attr, &sparam);
-  if (status != OK)
-    {
-      printf("timedwait_test: "
-             "pthread_attr_setschedparam failed, status=%d\n",
-              status);
-    }
-  else
-    {
-      printf("timedwait_test: Set thread 2 priority to %d\n",
-              sparam.sched_priority);
-    }
+	sparam.sched_priority = (prio_max + sparam.sched_priority) / 2;
+	status = pthread_attr_setschedparam(&attr, &sparam);
+	if (status != OK) {
+		printf("timedwait_test: "
+		       "pthread_attr_setschedparam failed, status=%d\n",
+		        status);
+	} else {
+		printf("timedwait_test: Set thread 2 priority to %d\n",
+		        sparam.sched_priority);
+	}
 
-  status = pthread_create(&waiter, &attr, thread_waiter, NULL);
-  if (status != 0)
-    {
-      printf("timedwait_test: pthread_create failed, status=%d\n", status);
-    }
+	status = pthread_create(&waiter, &attr, thread_waiter, NULL);
+	if (status != 0) {
+		printf("timedwait_test: pthread_create failed, status=%d\n", status);
+	}
 
-  printf("timedwait_test: Joining\n");
-  FFLUSH();
-  status = pthread_join(waiter, &result);
-  if (status != 0)
-    {
-      printf("timedwait_test: ERROR pthread_join failed, status=%d\n",
-              status);
-      ASSERT(false);
-    }
-  else
-    {
-      printf("timedwait_test: waiter exited with result=%p\n", result);
-    }
+	printf("timedwait_test: Joining\n");
+	FFLUSH();
+	status = pthread_join(waiter, &result);
+	if (status != 0) {
+		printf("timedwait_test: ERROR pthread_join failed, status=%d\n",
+		        status);
+		ASSERT(false);
+	} else {
+		printf("timedwait_test: waiter exited with result=%p\n", result);
+	}
 }

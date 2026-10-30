@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/pthread_cleanup.c
+ * apps/testing/ostest/pthread_cleanup.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -52,10 +52,9 @@
  * Private Types
  ****************************************************************************/
 
-struct sync_s
-{
-  pthread_cond_t cond;
-  pthread_mutex_t lock;
+struct sync_s {
+	pthread_cond_t cond;
+	pthread_mutex_t lock;
 };
 
 /****************************************************************************
@@ -64,122 +63,110 @@ struct sync_s
 
 static void cleanup(FAR void *data)
 {
-  FAR struct sync_s *sync = (FAR struct sync_s *)data;
-  int status;
+	FAR struct sync_s *sync = (FAR struct sync_s *)data;
+	int status;
 
-  /* Note:  The behavior of canceling pthread_cond_wait() with asynchronous
-   * cancellation is not defined. On NuttX we get EPERM here, but application
-   * code must not rely on this.
-   */
+	/* Note:  The behavior of canceling pthread_cond_wait() with asynchronous
+	 * cancellation is not defined. On NuttX we get EPERM here, but application
+	 * code must not rely on this.
+	 */
 
-  status = pthread_mutex_unlock(&sync->lock);
+	status = pthread_mutex_unlock(&sync->lock);
 #ifndef CONFIG_CANCELLATION_POINTS
-  if (status == EPERM)
-    {
-      printf("pthread_cleanup: thread did not have mutex locked: %d\n",
-              status);
-      return;
-    }
+	if (status == EPERM) {
+		printf("pthread_cleanup: thread did not have mutex locked: %d\n",
+		        status);
+		return;
+	}
 #endif
 
-  if (status != 0)
-    {
-      printf("pthread_cleanup:"
-             "ERROR pthread_mutex_unlock in cleanup handler. "
-             "Status: %d\n", status);
-      ASSERT(false);
-    }
+	if (status != 0) {
+		printf("pthread_cleanup:"
+		       "ERROR pthread_mutex_unlock in cleanup handler. "
+		       "Status: %d\n", status);
+		ASSERT(false);
+	}
 }
 
 static void *cleanup_thread(FAR void *data)
 {
-  FAR struct sync_s *sync = (FAR struct sync_s *)data;
-  int status;
+	FAR struct sync_s *sync = (FAR struct sync_s *)data;
+	int status;
 
-  status = pthread_mutex_lock(&sync->lock);
-  if (status != 0)
-    {
-      printf("pthread_cleanup: ERROR pthread_mutex_lock, status=%d\n",
-              status);
-      ASSERT(false);
-      return NULL;
-    }
+	status = pthread_mutex_lock(&sync->lock);
+	if (status != 0) {
+		printf("pthread_cleanup: ERROR pthread_mutex_lock, status=%d\n",
+		        status);
+		ASSERT(false);
+		return NULL;
+	}
 
-  pthread_cleanup_push(&cleanup, sync);
+	pthread_cleanup_push(&cleanup, sync);
 
-  while (1)
-    {
-      status = pthread_cond_wait(&sync->cond, &sync->lock);
-      if (status != 0)
-        {
-          printf("pthread_cleanup: ERROR wait returned. Status: %d\n",
-                 status);
-          ASSERT(false);
-        }
-    }
+	while (1) {
+		status = pthread_cond_wait(&sync->cond, &sync->lock);
+		if (status != 0) {
+			printf("pthread_cleanup: ERROR wait returned. Status: %d\n",
+			       status);
+			ASSERT(false);
+		}
+	}
 
-  pthread_cleanup_pop(1);
-  return NULL;
+	pthread_cleanup_pop(1);
+	return NULL;
 }
 
 static void test_cleanup(void)
 {
-  pthread_t thread1;
-  int status;
-  void *result;
-  struct sync_s sync = {
-    PTHREAD_COND_INITIALIZER,
-    PTHREAD_MUTEX_INITIALIZER
-  };
+	pthread_t thread1;
+	int status;
+	void *result;
+	struct sync_s sync = {
+	  PTHREAD_COND_INITIALIZER,
+	  PTHREAD_MUTEX_INITIALIZER
+	};
 
-  status = pthread_create(&thread1, NULL, cleanup_thread, &sync);
-  if (status != 0)
-    {
-      printf("pthread_cleanup: ERROR pthread_create, status=%d\n", status);
-      ASSERT(false);
-      return;
-    }
+	status = pthread_create(&thread1, NULL, cleanup_thread, &sync);
+	if (status != 0) {
+		printf("pthread_cleanup: ERROR pthread_create, status=%d\n", status);
+		ASSERT(false);
+		return;
+	}
 
-  usleep(500 * 1000);
+	usleep(500 * 1000);
 
-  status = pthread_cancel(thread1);
-  if (status != 0)
-    {
-      printf("pthread_cleanup: ERROR pthread_cancel, status=%d\n", status);
-      ASSERT(false);
-    }
+	status = pthread_cancel(thread1);
+	if (status != 0) {
+		printf("pthread_cleanup: ERROR pthread_cancel, status=%d\n", status);
+		ASSERT(false);
+	}
 
-  status = pthread_join(thread1, &result);
-  if (status != 0)
-    {
-      printf("pthread_cleanup: ERROR pthread_join, status=%d\n", status);
-      ASSERT(false);
-    }
-  else if (result != PTHREAD_CANCELED)
-    {
-      printf("pthread_cleanup: "
-             "ERROR pthread_join returned wrong result: %p\n", result);
-      ASSERT(false);
-    }
+	status = pthread_join(thread1, &result);
+	if (status != 0) {
+		printf("pthread_cleanup: ERROR pthread_join, status=%d\n", status);
+		ASSERT(false);
+	} else if (result != PTHREAD_CANCELED) {
+		printf("pthread_cleanup: "
+		       "ERROR pthread_join returned wrong result: %p\n", result);
+		ASSERT(false);
+	}
 
 #ifdef CONFIG_CANCELLATION_POINTS
-  /* Do some operations on lock in order to check if it is in usable state. */
+	/* Do some operations on lock in order to check if it is in usable state. */
 
-  status = pthread_mutex_trylock(&sync.lock);
-  if (status != 0)
-    {
-      printf("pthread_cleanup: ERROR pthread_mutex_trylock, status=%d\n",
-              status);
-      ASSERT(false);
-    }
+	status = pthread_mutex_trylock(&sync.lock);
+	if (status != 0) {
+		printf("pthread_cleanup: ERROR pthread_mutex_trylock, status=%d\n",
+		        status);
+		ASSERT(false);
+	}
 
-  status = pthread_mutex_unlock(&sync.lock);
-  if (status != 0)
-    {
-      printf("pthread_cleanup: ERROR pthread_mutex_unlock, status=%d\n",
-              status);
-      ASSERT(false);
-    }
+	status = pthread_mutex_unlock(&sync.lock);
+	if (status != 0) {
+		printf("pthread_cleanup: ERROR pthread_mutex_unlock, status=%d\n",
+		        status);
+		ASSERT(false);
+	}
 #endif
 }
 
@@ -189,6 +176,6 @@ static void test_cleanup(void)
 
 void pthread_cleanup_test(void)
 {
-  printf("pthread_cleanup: Starting test\n");
-  test_cleanup();
+	printf("pthread_cleanup: Starting test\n");
+	test_cleanup();
 }

@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/perf_gettime.c
+ * apps/testing/ostest/perf_gettime.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -96,154 +96,140 @@ static int g_iteration_count = 0;
 void perf_gettime_test(void)
 {
 #ifdef CONFIG_ARCH_PERF_EVENTS
-  int i;
-  clock_t curr_time;
-  clock_t time_interval;
-  unsigned long perf_freq;
+	int i;
+	clock_t curr_time;
+	clock_t time_interval;
+	unsigned long perf_freq;
 
-  printf("\nperf_gettime_test: Starting performance event test\n");
+	printf("\nperf_gettime_test: Starting performance event test\n");
 
-  /* Test 1: Get initial time value */
+	/* Test 1: Get initial time value */
 
-  printf("\nTest 1: Getting initial performance time value\n");
-  g_prev_time = perf_gettime();
-  printf("perf_gettime_test: Initial time = %lu\n",
-          (unsigned long)g_prev_time);
+	printf("\nTest 1: Getting initial performance time value\n");
+	g_prev_time = perf_gettime();
+	printf("perf_gettime_test: Initial time = %lu\n",
+	        (unsigned long)g_prev_time);
 
-  /* We expect the counter to not be zero (unless just initialized) */
+	/* We expect the counter to not be zero (unless just initialized) */
 
-  if (g_prev_time == 0)
-    {
-      printf("perf_gettime_test: WARNING - Initial time is zero\n");
-    }
+	if (g_prev_time == 0) {
+		printf("perf_gettime_test: WARNING - Initial time is zero\n");
+	}
 
-  /* Test 2: Verify monotonically increasing time */
+	/* Test 2: Verify monotonically increasing time */
 
-  printf("\nTest 2: Verify monotonically increasing time values\n");
-  g_total_interval = 0;
-  g_min_interval = ULONG_MAX;
-  g_max_interval = 0;
-  g_iteration_count = 0;
+	printf("\nTest 2: Verify monotonically increasing time values\n");
+	g_total_interval = 0;
+	g_min_interval = ULONG_MAX;
+	g_max_interval = 0;
+	g_iteration_count = 0;
 
-  for (i = 0; i < PERF_ITERATIONS; i++)
-    {
-      /* Sleep for a short interval */
+	for (i = 0; i < PERF_ITERATIONS; i++) {
+		/* Sleep for a short interval */
 
-      usleep(SLEEP_INTERVAL_USEC);
+		usleep(SLEEP_INTERVAL_USEC);
 
-      /* Get new time value */
+		/* Get new time value */
 
-      curr_time = perf_gettime();
-      time_interval = curr_time - g_prev_time;
+		curr_time = perf_gettime();
+		time_interval = curr_time - g_prev_time;
 
-      printf("perf_gettime_test [%d]: current=%lu, interval=%lu\n",
-             i, (unsigned long)curr_time, (unsigned long)time_interval);
+		printf("perf_gettime_test [%d]: current=%lu, interval=%lu\n",
+		       i, (unsigned long)curr_time, (unsigned long)time_interval);
 
-      /* Verify time is monotonically increasing */
+		/* Verify time is monotonically increasing */
 
-      if (curr_time <= g_prev_time)
-        {
-          printf("perf_gettime_test: ERROR - Time not monotonically "
-                 "increasing at iteration %d\n", i);
-          printf("  Previous time: %lu, Current time: %lu\n",
-                 (unsigned long)g_prev_time, (unsigned long)curr_time);
-          ASSERT(false);
-        }
+		if (curr_time <= g_prev_time) {
+			printf("perf_gettime_test: ERROR - Time not monotonically "
+			       "increasing at iteration %d\n", i);
+			printf("  Previous time: %lu, Current time: %lu\n",
+			       (unsigned long)g_prev_time, (unsigned long)curr_time);
+			ASSERT(false);
+		}
 
-      /* Track intervals */
+		/* Track intervals */
 
-      if (time_interval < g_min_interval)
-        {
-          g_min_interval = time_interval;
-        }
+		if (time_interval < g_min_interval) {
+			g_min_interval = time_interval;
+		}
 
-      if (time_interval > g_max_interval)
-        {
-          g_max_interval = time_interval;
-        }
+		if (time_interval > g_max_interval) {
+			g_max_interval = time_interval;
+		}
 
-      g_total_interval += time_interval;
-      g_iteration_count++;
+		g_total_interval += time_interval;
+		g_iteration_count++;
 
-      g_prev_time = curr_time;
-    }
+		g_prev_time = curr_time;
+	}
 
-  /* Test 3: Analyze time intervals */
+	/* Test 3: Analyze time intervals */
 
-  printf("\nTest 3: Analyzing time intervals\n");
+	printf("\nTest 3: Analyzing time intervals\n");
 
-  if (g_iteration_count > 0)
-    {
-      unsigned long avg_interval = g_total_interval / g_iteration_count;
+	if (g_iteration_count > 0) {
+		unsigned long avg_interval = g_total_interval / g_iteration_count;
 
-      printf("perf_gettime_test: Interval statistics:\n");
-      printf("  Minimum interval: %lu\n", (unsigned long)g_min_interval);
-      printf("  Maximum interval: %lu\n", (unsigned long)g_max_interval);
-      printf("  Average interval: %lu\n", avg_interval);
-      printf("  Total iterations: %d\n", g_iteration_count);
+		printf("perf_gettime_test: Interval statistics:\n");
+		printf("  Minimum interval: %lu\n", (unsigned long)g_min_interval);
+		printf("  Maximum interval: %lu\n", (unsigned long)g_max_interval);
+		printf("  Average interval: %lu\n", avg_interval);
+		printf("  Total iterations: %d\n", g_iteration_count);
 
-      /* Verify that intervals are within reasonable bounds */
+		/* Verify that intervals are within reasonable bounds */
 
-      if (g_max_interval == 0 || g_min_interval == ULONG_MAX)
-        {
-          printf("perf_gettime_test: WARNING - \
+		if (g_max_interval == 0 || g_min_interval == ULONG_MAX) {
+			printf("perf_gettime_test: WARNING - \
                   No time intervals recorded\n");
-        }
-      else
-        {
-          printf("perf_gettime_test: Time intervals look reasonable\n");
-        }
-    }
+		} else {
+			printf("perf_gettime_test: Time intervals look reasonable\n");
+		}
+	}
 
-  /* Test 4: Test perf_getfreq() if available */
+	/* Test 4: Test perf_getfreq() if available */
 
-  printf("\nTest 4: Getting performance counter frequency\n");
+	printf("\nTest 4: Getting performance counter frequency\n");
 
-  perf_freq = perf_getfreq();
-  printf("perf_gettime_test: Performance frequency = %lu Hz\n", perf_freq);
+	perf_freq = perf_getfreq();
+	printf("perf_gettime_test: Performance frequency = %lu Hz\n", perf_freq);
 
-  if (perf_freq == ULONG_MAX || perf_freq == 0)
-    {
-      printf("perf_gettime_test: WARNING - Performance frequency is " \
-             "invalid or uninitialized\n");
-    }
-  else
-    {
-      printf("perf_gettime_test: Performance frequency is valid\n");
-    }
+	if (perf_freq == ULONG_MAX || perf_freq == 0) {
+		printf("perf_gettime_test: WARNING - Performance frequency is "
+		       "invalid or uninitialized\n");
+	} else {
+		printf("perf_gettime_test: Performance frequency is valid\n");
+	}
 
-  /* Test 5: Multiple rapid calls */
+	/* Test 5: Multiple rapid calls */
 
-  printf("\nTest 5: Testing multiple rapid calls\n");
+	printf("\nTest 5: Testing multiple rapid calls\n");
 
-  curr_time = perf_gettime();
-  printf("perf_gettime_test: Rapid call 1: %lu\n", (unsigned long)curr_time);
+	curr_time = perf_gettime();
+	printf("perf_gettime_test: Rapid call 1: %lu\n", (unsigned long)curr_time);
 
-  /* Make several rapid calls */
+	/* Make several rapid calls */
 
-  for (i = 0; i < 5; i++)
-    {
-      clock_t t = perf_gettime();
-      printf("perf_gettime_test: Rapid call %d: %lu\n", i + 2,
-              (unsigned long)t);
+	for (i = 0; i < 5; i++) {
+		clock_t t = perf_gettime();
+		printf("perf_gettime_test: Rapid call %d: %lu\n", i + 2,
+		        (unsigned long)t);
 
-      /* Verify either monotonic increase or same value (on fast systems) */
+		/* Verify either monotonic increase or same value (on fast systems) */
 
-      if (t < curr_time)
-        {
-          printf("perf_gettime_test: ERROR - Time went backwards!\n");
-          ASSERT(false);
-        }
+		if (t < curr_time) {
+			printf("perf_gettime_test: ERROR - Time went backwards!\n");
+			ASSERT(false);
+		}
 
-      curr_time = t;
-    }
+		curr_time = t;
+	}
 
-  printf("\nperf_gettime_test: All performance event tests PASSED\n");
+	printf("\nperf_gettime_test: All performance event tests PASSED\n");
 
 #else /* CONFIG_ARCH_PERF_EVENTS */
 
-  printf("\nperf_gettime_test: Skipping test - "
-         "CONFIG_ARCH_PERF_EVENTS not enabled\n");
+	printf("\nperf_gettime_test: Skipping test - "
+	       "CONFIG_ARCH_PERF_EVENTS not enabled\n");
 
 #endif /* CONFIG_ARCH_PERF_EVENTS */
 }

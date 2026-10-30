@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/pthread_exit.c
+ * apps/testing/ostest/pthread_exit.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -67,48 +67,47 @@
 
 static FAR void *pthread_exit_thread(FAR void *parameter)
 {
-  unsigned me = (unsigned)pthread_self();
+	unsigned me = (unsigned)pthread_self();
 
-  printf("pthread_exit_thread %u: Sleeping for 10 second\n", me);
-  sleep(5);
-  printf("pthread_exit_thread %u: Still running...\n", me);
-  sleep(5);
-  printf("pthread_exit_thread %u: Exiting\n", me);
-  return NULL;
+	printf("pthread_exit_thread %u: Sleeping for 10 second\n", me);
+	sleep(5);
+	printf("pthread_exit_thread %u: Still running...\n", me);
+	sleep(5);
+	printf("pthread_exit_thread %u: Exiting\n", me);
+	return NULL;
 }
 
 static FAR void *pthread_exit_main(FAR void *arg)
 {
-  pthread_t child;
+	pthread_t child;
 #ifdef SDCC
-  pthread_attr_t attr;
+	pthread_attr_t attr;
 #endif
-  unsigned me = (unsigned)pthread_self();
-  int ret;
+	unsigned me = (unsigned)pthread_self();
+	int ret;
 
-  printf("pthread_exit_main %u: Starting pthread_exit_thread\n", me);
+	printf("pthread_exit_main %u: Starting pthread_exit_thread\n", me);
 #ifdef SDCC
-  pthread_attr_init(&attr);
-  ret = pthread_create(&child, &attr, pthread_exit_thread, NULL);
+	pthread_attr_init(&attr);
+	ret = pthread_create(&child, &attr, pthread_exit_thread, NULL);
 #else
-  ret = pthread_create(&child, NULL, pthread_exit_thread, NULL);
+	ret = pthread_create(&child, NULL, pthread_exit_thread, NULL);
 #endif
-  if (ret != 0)
-    {
-      printf("Thread creation failed, return code %d", ret);
-    }
+	if (ret != 0) {
+		printf("Thread creation failed, return code %d", ret);
+	}
 
-  printf("pthread_exit_main %u: Sleeping for 5 seconds\n", me);
-  fflush(stdout);
-  sleep(5);
+	printf("pthread_exit_main %u: Sleeping for 5 seconds\n", me);
+	fflush(stdout);
+	sleep(5);
 
-  printf("pthread_exit_main %u: Calling pthread_exit()\n", me);
-  pthread_exit(NULL);
+	printf("pthread_exit_main %u: Calling pthread_exit()\n", me);
+	pthread_exit(NULL);
 
-  printf("pthread_exit_main %u: ERROR:  Still running\n", me);
-  exit(0);
+	printf("pthread_exit_main %u: ERROR:  Still running\n", me);
+	exit(0);
 
-  return NULL;
+	return NULL;
 }
 
 /****************************************************************************
@@ -117,30 +116,26 @@ static FAR void *pthread_exit_main(FAR void *arg)
 
 void pthread_exit_test(void)
 {
-  struct sched_param param;
-  pthread_attr_t attr;
-  pid_t pid;
-  int ret;
+	struct sched_param param;
+	pthread_attr_t attr;
+	pid_t pid;
+	int ret;
 
-  pthread_attr_init(&attr);
-  param.sched_priority = PRIORITY;
-  pthread_attr_setschedparam(&attr, &param);
-  pthread_attr_setstacksize(&attr, STACKSIZE);
-  ret = pthread_create(&pid, &attr, pthread_exit_main, NULL);
-  if (ret < 0)
-    {
-      printf("pthread_exit_test:  ERROR pthread_create Failed\n");
-    }
-  else
-    {
-      printf("pthread_exit_test: Started pthread_exit_main at PID=%d\n",
-             pid);
-      if (pthread_join(pid, NULL) != 0)
-        {
-          printf("pthread_exit_test: ERROR Failed to join to terminate\n");
-          ASSERT(false);
-        };
-    }
+	pthread_attr_init(&attr);
+	param.sched_priority = PRIORITY;
+	pthread_attr_setschedparam(&attr, &param);
+	pthread_attr_setstacksize(&attr, STACKSIZE);
+	ret = pthread_create(&pid, &attr, pthread_exit_main, NULL);
+	if (ret < 0) {
+		printf("pthread_exit_test:  ERROR pthread_create Failed\n");
+	} else {
+		printf("pthread_exit_test: Started pthread_exit_main at PID=%d\n",
+		       pid);
+		if (pthread_join(pid, NULL) != 0) {
+			printf("pthread_exit_test: ERROR Failed to join to terminate\n");
+			ASSERT(false);
+		};
+	}
 }
 
 #endif /* CONFIG_SCHED_WAITPID */

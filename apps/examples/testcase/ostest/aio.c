@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/aio.c
+ * apps/testing/ostest/aio.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -86,12 +86,12 @@ static char g_rdbuffer[AIO_RDBUFFER_SIZE];
 static struct aiocb g_aiocbs[AIO_NCTRLBLKS - 1];
 static struct aiocb *g_aiocb[AIO_NCTRLBLKS];
 
-static struct aiocb * const g_aiocb_init[AIO_NCTRLBLKS] =
+static struct aiocb *const g_aiocb_init[AIO_NCTRLBLKS] =
 {
   &g_aiocbs[0], &g_aiocbs[1], &g_aiocbs[2], NULL, &g_aiocbs[3]
 };
 
-static FAR void * const g_buffers[AIO_NCTRLBLKS] =
+static FAR void *const g_buffers[AIO_NCTRLBLKS] =
 {
   (FAR char *)g_wrbuffer1,
   NULL,
@@ -127,170 +127,146 @@ static int g_fildes;
 
 static void init_aiocb(bool signal)
 {
-  FAR struct aiocb *aiocbp;
-  int i;
+	FAR struct aiocb *aiocbp;
+	int i;
 
-  memset(g_aiocbs, 0xff, (AIO_NCTRLBLKS - 1) * sizeof(struct aiocb));
-  memset(g_rdbuffer, 0xff, AIO_RDBUFFER_SIZE);
+	memset(g_aiocbs, 0xff, (AIO_NCTRLBLKS - 1) * sizeof(struct aiocb));
+	memset(g_rdbuffer, 0xff, AIO_RDBUFFER_SIZE);
 
-  for (i = 0; i < AIO_NCTRLBLKS; i++)
-    {
-      aiocbp     = g_aiocb_init[i];
-      g_aiocb[i] = aiocbp;
+	for (i = 0; i < AIO_NCTRLBLKS; i++) {
+		aiocbp     = g_aiocb_init[i];
+		g_aiocb[i] = aiocbp;
 
-      if (aiocbp)
-        {
-          aiocbp->aio_sigevent.sigev_notify =
-                               signal ? SIGEV_SIGNAL : SIGEV_NONE;
-          aiocbp->aio_sigevent.sigev_signo  = SIGUSR1;
+		if (aiocbp) {
+			aiocbp->aio_sigevent.sigev_notify =
+			                     signal ? SIGEV_SIGNAL : SIGEV_NONE;
+			aiocbp->aio_sigevent.sigev_signo  = SIGUSR1;
 #ifdef CONFIG_SIG_EVTHREAD
-          aiocbp->aio_sigevent.sigev_notify_function   = NULL;
-          aiocbp->aio_sigevent.sigev_notify_attributes = NULL;
+			aiocbp->aio_sigevent.sigev_notify_function   = NULL;
+			aiocbp->aio_sigevent.sigev_notify_attributes = NULL;
 #endif
 
-          aiocbp->aio_buf        = g_buffers[i];
-          aiocbp->aio_offset     = (off_t)g_offsets[i];
-          aiocbp->aio_nbytes     = (size_t)g_nbytes[i];
-          aiocbp->aio_fildes     = g_fildes;
-          aiocbp->aio_reqprio    = 0;
-          aiocbp->aio_lio_opcode = g_opcode[i];
-        }
-    }
+			aiocbp->aio_buf        = g_buffers[i];
+			aiocbp->aio_offset     = (off_t)g_offsets[i];
+			aiocbp->aio_nbytes     = (size_t)g_nbytes[i];
+			aiocbp->aio_fildes     = g_fildes;
+			aiocbp->aio_reqprio    = 0;
+			aiocbp->aio_lio_opcode = g_opcode[i];
+		}
+	}
 }
 
 static int check_done(void)
 {
-  FAR struct aiocb *aiocbp;
-  int i;
+	FAR struct aiocb *aiocbp;
+	int i;
 
-  /* Check each entry in the list.  Break out of the loop if any entry
-   * has not completed.
-   */
+	/* Check each entry in the list.  Break out of the loop if any entry
+	 * has not completed.
+	 */
 
-  for (i = 0; i < AIO_NCTRLBLKS; i++)
-    {
-      /* Skip over NULL entries */
+	for (i = 0; i < AIO_NCTRLBLKS; i++) {
+		/* Skip over NULL entries */
 
-      aiocbp = g_aiocb[i];
-      if (aiocbp)
-        {
-          /* Check if the I/O has completed */
+		aiocbp = g_aiocb[i];
+		if (aiocbp) {
+			/* Check if the I/O has completed */
 
-          printf("  list[%d]. result = %zd\n", i, aiocbp->aio_result);
-          if (aiocbp->aio_lio_opcode == LIO_NOP)
-            {
-              printf("     NO operation\n");
-            }
-          else if (aiocbp->aio_result == -EINPROGRESS)
-            {
-              /* No.. return -EINPROGRESS */
+			printf("  list[%d]. result = %zd\n", i, aiocbp->aio_result);
+			if (aiocbp->aio_lio_opcode == LIO_NOP) {
+				printf("     NO operation\n");
+			} else if (aiocbp->aio_result == -EINPROGRESS) {
+				/* No.. return -EINPROGRESS */
 
-              printf("     NOT finished\n");
-              return -EINPROGRESS;
-            }
-          else if (aiocbp->aio_result == -ECANCELED)
-            {
-              /* No.. return -EINPROGRESS */
+				printf("     NOT finished\n");
+				return -EINPROGRESS;
+			} else if (aiocbp->aio_result == -ECANCELED) {
+				/* No.. return -EINPROGRESS */
 
-              printf("     Cancelled\n");
-            }
+				printf("     Cancelled\n");
+			}
 
-          /* Check for an I/O error */
+			/* Check for an I/O error */
 
-          else if (aiocbp->aio_result < 0)
-            {
-              printf("     ERROR: Failed I/O transfer\n");
-              ASSERT(false);
-            }
+			else if (aiocbp->aio_result < 0) {
+				printf("     ERROR: Failed I/O transfer\n");
+				ASSERT(false);
+			}
 
-          /* Successful completion r */
+			/* Successful completion r */
 
-          else
-            {
-              printf("     Successful completion\n");
-            }
-        }
-      else
-        {
-          printf("  list[%d]. NULL\n", i);
-        }
-    }
+			else {
+				printf("     Successful completion\n");
+			}
+		} else {
+			printf("  list[%d]. NULL\n", i);
+		}
+	}
 
-  /* All of the I/Os have completed */
+	/* All of the I/Os have completed */
 
-  return OK;
+	return OK;
 }
 
 static int remove_done(void)
 {
-  FAR struct aiocb *aiocbp;
-  int completed = 0;
-  int i;
+	FAR struct aiocb *aiocbp;
+	int completed = 0;
+	int i;
 
-  /* Check each entry in the list.  Break out of the loop if any entry
-   * has not completed.
-   */
+	/* Check each entry in the list.  Break out of the loop if any entry
+	 * has not completed.
+	 */
 
-  completed = 0;
-  for (i = 0; i < AIO_NCTRLBLKS; i++)
-    {
-      /* Skip over NULL entries */
+	completed = 0;
+	for (i = 0; i < AIO_NCTRLBLKS; i++) {
+		/* Skip over NULL entries */
 
-      aiocbp = g_aiocb[i];
-      if (aiocbp)
-        {
-          /* Check if the I/O has completed */
+		aiocbp = g_aiocb[i];
+		if (aiocbp) {
+			/* Check if the I/O has completed */
 
-          printf("  list[%d]. result = %zd\n", i, aiocbp->aio_result);
-          if (aiocbp->aio_lio_opcode == LIO_NOP)
-            {
-              printf("     NO operation\n");
-              g_aiocb[i] = NULL;
-              completed++;
-            }
-          else if (aiocbp->aio_result == -EINPROGRESS)
-            {
-              /* No.. return -EINPROGRESS */
+			printf("  list[%d]. result = %zd\n", i, aiocbp->aio_result);
+			if (aiocbp->aio_lio_opcode == LIO_NOP) {
+				printf("     NO operation\n");
+				g_aiocb[i] = NULL;
+				completed++;
+			} else if (aiocbp->aio_result == -EINPROGRESS) {
+				/* No.. return -EINPROGRESS */
 
-              printf("     NOT finished\n");
-            }
-          else if (aiocbp->aio_result == -ECANCELED)
-            {
-              /* No.. return -EINPROGRESS */
+				printf("     NOT finished\n");
+			} else if (aiocbp->aio_result == -ECANCELED) {
+				/* No.. return -EINPROGRESS */
 
-              printf("     Cancelled\n");
-              g_aiocb[i] = NULL;
-              completed++;
-            }
+				printf("     Cancelled\n");
+				g_aiocb[i] = NULL;
+				completed++;
+			}
 
-          /* Check for an I/O error */
+			/* Check for an I/O error */
 
-          else if (aiocbp->aio_result < 0)
-            {
-              printf("     ERROR: Failed I/O transfer\n");
-              ASSERT(false);
-              g_aiocb[i] = NULL;
-              completed++;
-            }
+			else if (aiocbp->aio_result < 0) {
+				printf("     ERROR: Failed I/O transfer\n");
+				ASSERT(false);
+				g_aiocb[i] = NULL;
+				completed++;
+			}
 
-          /* Successful completion r */
+			/* Successful completion r */
 
-          else
-            {
-              printf("     Successful completion\n");
-              g_aiocb[i] = NULL;
-              completed++;
-            }
-        }
-      else
-        {
-          printf("  list[%d]. NULL\n", i);
-        }
-    }
+			else {
+				printf("     Successful completion\n");
+				g_aiocb[i] = NULL;
+				completed++;
+			}
+		} else {
+			printf("  list[%d]. NULL\n", i);
+		}
+	}
 
-  /* All of the I/Os have completed */
+	/* All of the I/Os have completed */
 
-  return completed;
+	return completed;
 }
 
 /****************************************************************************
@@ -299,386 +275,342 @@ static int remove_done(void)
 
 void aio_test(void)
 {
-  struct sigevent sig;
-  sigset_t oset;
-  sigset_t set;
-  int completed;
-  int total;
-  int ret;
-  int i;
+	struct sigevent sig;
+	sigset_t oset;
+	sigset_t set;
+	int completed;
+	int total;
+	int ret;
+	int i;
 
-  /* Block all signals except for SIGUSR1 and SIGALRM (for sleep) */
+	/* Block all signals except for SIGUSR1 and SIGALRM (for sleep) */
 
-  sigfillset(&set);
-  sigdelset(&set, SIGUSR1);
-  sigdelset(&set, SIGALRM);
-  sigprocmask(SIG_SETMASK, &set, &oset);
+	sigfillset(&set);
+	sigdelset(&set, SIGUSR1);
+	sigdelset(&set, SIGALRM);
+	sigprocmask(SIG_SETMASK, &set, &oset);
 
-  /* Case 1: Poll for transfer complete */
+	/* Case 1: Poll for transfer complete */
 
-  printf("AIO test case 1: Poll for transfer complete\n");
-  g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC, 0666);
-  if (g_fildes < 0)
-    {
-      printf("aio_test: ERROR: Failed to open %s: %d\n",
-             AIO_FILEPATH, errno);
-      ASSERT(false);
-      goto errout_with_procmask;
-    }
+	printf("AIO test case 1: Poll for transfer complete\n");
+	g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC);
+	if (g_fildes < 0) {
+		printf("aio_test: ERROR: Failed to open %s: %d\n",
+		       AIO_FILEPATH, errno);
+		ASSERT(false);
+		goto errout_with_procmask;
+	}
 
-  init_aiocb(false);
-  ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
-  if (ret < 0)
-    {
-      printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	init_aiocb(false);
+	ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
+	if (ret < 0) {
+		printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  do
-    {
-      usleep(500 * 1000);
-      ret = check_done();
-    }
-  while (ret < 0);
+	do {
+		usleep(500 * 1000);
+		ret = check_done();
+	} while (ret < 0);
 
-  close(g_fildes);
-  g_fildes = -1;
+	close(g_fildes);
+	g_fildes = -1;
 
-  /* Case 2: Wait in lio_listio */
+	/* Case 2: Wait in lio_listio */
 
-  /* Try to assure that this test does not overlap any activity from the
-   * task end of the last test case -- especially the dangling SIGPOLL.
-   */
+	/* Try to assure that this test does not overlap any activity from the
+	 * task end of the last test case -- especially the dangling SIGPOLL.
+	 */
 
-  usleep(500 * 1000);
+	usleep(500 * 1000);
 
-  printf("AIO test case 2: Use LIO_WAIT for transfer complete\n");
-  g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC, 0666);
-  if (g_fildes < 0)
-    {
-      printf("aio_test: ERROR: Failed to open %s: %d\n",
-             AIO_FILEPATH, errno);
-      ASSERT(false);
-      goto errout_with_procmask;
-    }
+	printf("AIO test case 2: Use LIO_WAIT for transfer complete\n");
+	g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC);
+	if (g_fildes < 0) {
+		printf("aio_test: ERROR: Failed to open %s: %d\n",
+		       AIO_FILEPATH, errno);
+		ASSERT(false);
+		goto errout_with_procmask;
+	}
 
-  init_aiocb(false);
-  ret = lio_listio(LIO_WAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
-  if (ret < 0)
-    {
-      printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	init_aiocb(false);
+	ret = lio_listio(LIO_WAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
+	if (ret < 0) {
+		printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  ret = check_done();
-  if (ret < 0)
-    {
-      printf("aio_test: ERROR: Not done\n");
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	ret = check_done();
+	if (ret < 0) {
+		printf("aio_test: ERROR: Not done\n");
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  close(g_fildes);
-  g_fildes = -1;
+	close(g_fildes);
+	g_fildes = -1;
 
-  /* Case 3: Use aio_suspend() until complete */
+	/* Case 3: Use aio_suspend() until complete */
 
-  /* Try to assure that this test does not overlap any activity from the
-   * task end of the last test case -- especially the dangling SIGPOLL.
-   */
+	/* Try to assure that this test does not overlap any activity from the
+	 * task end of the last test case -- especially the dangling SIGPOLL.
+	 */
 
-  usleep(500 * 1000);
+	usleep(500 * 1000);
 
-  printf("AIO test case 3: Use aio_suspend for transfer complete\n");
-  g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC, 0666);
-  if (g_fildes < 0)
-    {
-      printf("aio_test: ERROR: Failed to open %s: %d\n",
-              AIO_FILEPATH, errno);
-      ASSERT(false);
-      goto errout_with_procmask;
-    }
+	printf("AIO test case 3: Use aio_suspend for transfer complete\n");
+	g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC);
+	if (g_fildes < 0) {
+		printf("aio_test: ERROR: Failed to open %s: %d\n",
+		        AIO_FILEPATH, errno);
+		ASSERT(false);
+		goto errout_with_procmask;
+	}
 
-  init_aiocb(false);
-  ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
-  if (ret < 0)
-    {
-      printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	init_aiocb(false);
+	ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
+	if (ret < 0) {
+		printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  total = 1; /* One entry was initially NULL */
-  for (i = 1; i <= AIO_NCTRLBLKS; i++)
-    {
-      printf("  Calling aio_suspend #%d\n", i);
-      ret = aio_suspend((FAR const struct aiocb *const *)g_aiocb,
-                         AIO_NCTRLBLKS, NULL);
-      if (ret < 0)
-        {
-          printf("aio_test: ERROR: aio_suspend failed: %d\n", errno);
-          ASSERT(false);
-          goto errout_with_fildes;
-        }
+	total = 1; /* One entry was initially NULL */
+	for (i = 1; i <= AIO_NCTRLBLKS; i++) {
+		printf("  Calling aio_suspend #%d\n", i);
+		ret = aio_suspend((FAR const struct aiocb *const *)g_aiocb,
+		                   AIO_NCTRLBLKS, NULL);
+		if (ret < 0) {
+			printf("aio_test: ERROR: aio_suspend failed: %d\n", errno);
+			ASSERT(false);
+			goto errout_with_fildes;
+		}
 
-      completed = remove_done();
-      if (completed < 1)
-        {
-          printf("aio_test: ERROR: Signalled, but no I/O completed\n");
-          ASSERT(false);
-          goto errout_with_fildes;
-        }
+		completed = remove_done();
+		if (completed < 1) {
+			printf("aio_test: ERROR: Signalled, but no I/O completed\n");
+			ASSERT(false);
+			goto errout_with_fildes;
+		}
 
-      total += completed;
-      printf("  Completed=%d\n", total);
+		total += completed;
+		printf("  Completed=%d\n", total);
 
-      if (total >= AIO_NCTRLBLKS)
-        {
-          break;
-        }
-    }
+		if (total >= AIO_NCTRLBLKS) {
+			break;
+		}
+	}
 
-  if (total != AIO_NCTRLBLKS)
-    {
-      printf("aio_test: ERROR: Total is %d, should be %d\n",
-              total, AIO_NCTRLBLKS);
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	if (total != AIO_NCTRLBLKS) {
+		printf("aio_test: ERROR: Total is %d, should be %d\n",
+		        total, AIO_NCTRLBLKS);
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  close(g_fildes);
-  g_fildes = -1;
+	close(g_fildes);
+	g_fildes = -1;
 
-  /* Case 4: Use individual signals */
+	/* Case 4: Use individual signals */
 
-  /* Try to assure that this test does not overlap any activity from the
-   * task end of the last test case -- especially the dangling SIGPOLL.
-   */
+	/* Try to assure that this test does not overlap any activity from the
+	 * task end of the last test case -- especially the dangling SIGPOLL.
+	 */
 
-  usleep(500 * 1000);
+	usleep(500 * 1000);
 
-  printf("AIO test case 4: Use individual signals for transfer complete\n");
-  g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC, 0666);
-  if (g_fildes < 0)
-    {
-      printf("aio_test: ERROR: Failed to open %s: %d\n",
-              AIO_FILEPATH, errno);
-      ASSERT(false);
-      goto errout_with_procmask;
-    }
+	printf("AIO test case 4: Use individual signals for transfer complete\n");
+	g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC);
+	if (g_fildes < 0) {
+		printf("aio_test: ERROR: Failed to open %s: %d\n",
+		        AIO_FILEPATH, errno);
+		ASSERT(false);
+		goto errout_with_procmask;
+	}
 
-  init_aiocb(true);
+	init_aiocb(true);
 
-  ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
-  if (ret < 0)
-    {
-      printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
+	if (ret < 0) {
+		printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  sigemptyset(&set);
-  sigaddset(&set, SIGUSR1);
+	sigemptyset(&set);
+	sigaddset(&set, SIGUSR1);
 
-  do
-    {
-      ret = check_done();
-      if (ret < 0)
-        {
-          int status = sigwaitinfo(&set, NULL);
-          if (status < 0)
-            {
-              int errcode = errno;
-              if (errcode == EINTR)
-                {
-                  printf("  Interrupted by a signal)\n");
-                }
-              else
-                {
-                  printf("aio_test: ERROR: sigwaitinfo failed: %d\n",
-                          errcode);
-                  ASSERT(false);
-                  goto errout_with_fildes;
-                }
-            }
-          else
-            {
-              printf("  Received signal %d\n", status);
-            }
-        }
-    }
-  while (ret < 0);
+	do {
+		ret = check_done();
+		if (ret < 0) {
+			int status = sigwaitinfo(&set, NULL);
+			if (status < 0) {
+				int errcode = errno;
+				if (errcode == EINTR) {
+					printf("  Interrupted by a signal)\n");
+				} else {
+					printf("aio_test: ERROR: sigwaitinfo failed: %d\n",
+					        errcode);
+					ASSERT(false);
+					goto errout_with_fildes;
+				}
+			} else {
+				printf("  Received signal %d\n", status);
+			}
+		}
+	} while (ret < 0);
 
-  close(g_fildes);
-  g_fildes = -1;
+	close(g_fildes);
+	g_fildes = -1;
 
-  /* Case 5: Use list complete signal */
+	/* Case 5: Use list complete signal */
 
-  /* Try to assure that this test does not overlap any activity from the
-   * task end of the last test case -- especially the dangling SIGPOLL.
-   */
+	/* Try to assure that this test does not overlap any activity from the
+	 * task end of the last test case -- especially the dangling SIGPOLL.
+	 */
 
-  usleep(500 * 1000);
+	usleep(500 * 1000);
 
-  printf("AIO test case 5:"
-         " Use list complete signal for transfer complete\n");
-  g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC, 0666);
-  if (g_fildes < 0)
-    {
-      printf("aio_test: ERROR: Failed to open %s: %d\n",
-              AIO_FILEPATH, errno);
-      ASSERT(false);
-      goto errout_with_procmask;
-    }
+	printf("AIO test case 5:"
+	       " Use list complete signal for transfer complete\n");
+	g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC);
+	if (g_fildes < 0) {
+		printf("aio_test: ERROR: Failed to open %s: %d\n",
+		        AIO_FILEPATH, errno);
+		ASSERT(false);
+		goto errout_with_procmask;
+	}
 
-  init_aiocb(false);
+	init_aiocb(false);
 
-  sig.sigev_notify = SIGEV_SIGNAL;
-  sig.sigev_signo = SIGUSR1;
-  sig.sigev_value.sival_ptr = NULL;
+	sig.sigev_notify = SIGEV_SIGNAL;
+	sig.sigev_signo = SIGUSR1;
+	sig.sigev_value.sival_ptr = NULL;
 
-  ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, &sig);
-  if (ret < 0)
-    {
-      printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, &sig);
+	if (ret < 0) {
+		printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  sigemptyset(&set);
-  sigaddset(&set, SIGUSR1);
+	sigemptyset(&set);
+	sigaddset(&set, SIGUSR1);
 
-  do
-    {
-      ret = check_done();
-      if (ret < 0)
-        {
-          int status = sigwaitinfo(&set, NULL);
-          if (status < 0)
-            {
-              int errcode = errno;
-              if (errcode == EINTR)
-                {
-                  printf("aio_test: Interrupted by a signal\n");
-                }
-              else
-                {
-                  printf("aio_test: ERROR: sigwaitinfo failed: %d\n",
-                          errcode);
-                  ASSERT(false);
-                  goto errout_with_fildes;
-                }
-            }
-        }
-    }
-  while (ret < 0);
+	do {
+		ret = check_done();
+		if (ret < 0) {
+			int status = sigwaitinfo(&set, NULL);
+			if (status < 0) {
+				int errcode = errno;
+				if (errcode == EINTR) {
+					printf("aio_test: Interrupted by a signal\n");
+				} else {
+					printf("aio_test: ERROR: sigwaitinfo failed: %d\n",
+					        errcode);
+					ASSERT(false);
+					goto errout_with_fildes;
+				}
+			}
+		}
+	} while (ret < 0);
 
-  close(g_fildes);
-  g_fildes = -1;
+	close(g_fildes);
+	g_fildes = -1;
 
-  /* Case 6: Cancel I/O by AIO control block */
+	/* Case 6: Cancel I/O by AIO control block */
 
-  /* Try to assure that this test does not overlap any activity from the
-   * task end of the last test case -- especially the dangling SIGPOLL.
-   */
+	/* Try to assure that this test does not overlap any activity from the
+	 * task end of the last test case -- especially the dangling SIGPOLL.
+	 */
 
-  usleep(500 * 1000);
+	usleep(500 * 1000);
 
-  printf("AIO test case 6: Cancel I/O by AIO control block\n");
-  g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC, 0666);
-  if (g_fildes < 0)
-    {
-      printf("aio_test: ERROR: Failed to open %s: %d\n",
-              AIO_FILEPATH, errno);
-      ASSERT(false);
-      goto errout_with_procmask;
-    }
+	printf("AIO test case 6: Cancel I/O by AIO control block\n");
+	g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC);
+	if (g_fildes < 0) {
+		printf("aio_test: ERROR: Failed to open %s: %d\n",
+		        AIO_FILEPATH, errno);
+		ASSERT(false);
+		goto errout_with_procmask;
+	}
 
-  init_aiocb(false);
-  ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
-  if (ret < 0)
-    {
-      printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	init_aiocb(false);
+	ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
+	if (ret < 0) {
+		printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  ret = aio_cancel(g_fildes, g_aiocb[2]);
-  if (ret < 0)
-    {
-      printf("aio_test: ERROR: aio_cancel failed: %d\n", errno);
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	ret = aio_cancel(g_fildes, g_aiocb[2]);
+	if (ret < 0) {
+		printf("aio_test: ERROR: aio_cancel failed: %d\n", errno);
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  printf("  aio_cancel return %d\n", ret);
+	printf("  aio_cancel return %d\n", ret);
 
-  do
-    {
-      usleep(500 * 1000);
-      ret = check_done();
-    }
-  while (ret < 0);
+	do {
+		usleep(500 * 1000);
+		ret = check_done();
+	} while (ret < 0);
 
-  close(g_fildes);
-  g_fildes = -1;
+	close(g_fildes);
+	g_fildes = -1;
 
-  /* Case 7: Cancel I/O by file descriptor */
+	/* Case 7: Cancel I/O by file descriptor */
 
-  /* Try to assure that this test does not overlap any activity from the
-   * task end of the last test case -- especially the dangling SIGPOLL.
-   */
+	/* Try to assure that this test does not overlap any activity from the
+	 * task end of the last test case -- especially the dangling SIGPOLL.
+	 */
 
-  usleep(500 * 1000);
+	usleep(500 * 1000);
 
-  printf("AIO test case 7:Cancel I/O by file descriptor\n");
-  g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC, 0666);
-  if (g_fildes < 0)
-    {
-      printf("aio_test: ERROR: Failed to open %s: %d\n",
-              AIO_FILEPATH, errno);
-      ASSERT(false);
-      goto errout_with_procmask;
-    }
+	printf("AIO test case 7:Cancel I/O by file descriptor\n");
+	g_fildes = open(AIO_FILEPATH, O_RDWR | O_CREAT | O_TRUNC);
+	if (g_fildes < 0) {
+		printf("aio_test: ERROR: Failed to open %s: %d\n",
+		        AIO_FILEPATH, errno);
+		ASSERT(false);
+		goto errout_with_procmask;
+	}
 
-  init_aiocb(false);
-  ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
-  if (ret < 0)
-    {
-      printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	init_aiocb(false);
+	ret = lio_listio(LIO_NOWAIT, g_aiocb, AIO_NCTRLBLKS, NULL);
+	if (ret < 0) {
+		printf("aio_test: ERROR: lio_listio failed: %d\n", errno);
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  ret = aio_cancel(g_fildes, NULL);
-  if (ret < 0)
-    {
-      printf("aio_test: ERROR: aio_cancel failed: %d\n", errno);
-      ASSERT(false);
-      goto errout_with_fildes;
-    }
+	ret = aio_cancel(g_fildes, NULL);
+	if (ret < 0) {
+		printf("aio_test: ERROR: aio_cancel failed: %d\n", errno);
+		ASSERT(false);
+		goto errout_with_fildes;
+	}
 
-  printf("  aio_cancel return %d\n", ret);
+	printf("  aio_cancel return %d\n", ret);
 
-  do
-    {
-      usleep(500 * 1000);
-      ret = check_done();
-    }
-  while (ret < 0);
+	do {
+		usleep(500 * 1000);
+		ret = check_done();
+	} while (ret < 0);
 
-  sigprocmask(SIG_SETMASK, &oset, NULL);
-  printf("aio_test: Test completed successfully\n");
-  return;
+	sigprocmask(SIG_SETMASK, &oset, NULL);
+	printf("aio_test: Test completed successfully\n");
+	return;
 
 errout_with_fildes:
-  close(g_fildes);
-  g_fildes = -1;
+	close(g_fildes);
+	g_fildes = -1;
 errout_with_procmask:
-  sigprocmask(SIG_SETMASK, &oset, NULL);
-  printf("aio_test: ERROR: Test aborted\n");
+	sigprocmask(SIG_SETMASK, &oset, NULL);
+	printf("aio_test: ERROR: Test aborted\n");
 }
 
 #endif /* CONFIG_FS_AIO */

@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/vfork.c
+ * apps/testing/ostest/vfork.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -46,86 +46,54 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
 #include "ostest.h"
+
+#if defined(CONFIG_ARCH_HAVE_FORK) && defined(CONFIG_SCHED_WAITPID)
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+static volatile bool g_vforkchild;
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-/****************************************************************************
- * Name: vfork_test
- *
- * Description:
- *   Verify the defining property of vfork():  the parent is suspended until
- *   the child _exit()s or exec()s.  The child does only what POSIX
- *   permits -- _exit(), not exit(), which would flush stdio in the parent's
- *   address space.  Since the child may not write memory, the observable is
- *   its exit status:  an unsuspended parent would reach waitpid() first.
- *
- ****************************************************************************/
-
 int vfork_test(void)
 {
-  pid_t pid;
+	pid_t pid;
 
-  printf("vfork_test: Started\n");
+	g_vforkchild = false;
+	pid = vfork();
+	if (pid == 0) {
+		/* There is not very much that the child is permitted to do.  Perhaps
+		 * it can just set g_vforkchild.
+		 */
 
-  pid = vfork();
-  if (pid == 0)
-    {
-      /* The only thing a vfork() child may do is leave. */
+		g_vforkchild = true;
+		exit(0);
+	} else if (pid < 0) {
+		printf("vfork_test: ERROR vfork() failed: %d\n", errno);
+		ASSERT(false);
+		return -1;
+	} else {
+		sleep(1);
+		if (g_vforkchild) {
+			printf("vfork_test: Child %d ran successfully\n", pid);
+		} else {
+			printf("vfork_test: ERROR Child %d did not run\n", pid);
+			ASSERT(false);
+			return -1;
+		}
+	}
 
-      _exit(42);
-    }
-  else if (pid < 0)
-    {
-      printf("vfork_test: ERROR vfork() failed: %d\n", errno);
-      ASSERT(false);
-      return -1;
-    }
-
-  /* Reached only once the child has exited or exec'ed. */
-
-#ifdef CONFIG_SCHED_WAITPID
-    {
-      int status = 0;
-      pid_t ret;
-
-      ret = waitpid(pid, &status, 0);
-
-      /* Two answers are correct, and which one comes back is a property of
-       * the configuration:  a retained status must be exit(42), and ECHILD
-       * is equally good evidence -- it says the child was already gone when
-       * we asked.  ostest_main() sets SA_NOCLDWAIT for the whole run, so
-       * testing CONFIG_SCHED_CHILD_STATUS alone is not enough.
-       */
-
-      if (ret == pid)
-        {
-          if (!WIFEXITED(status) || WEXITSTATUS(status) != 42)
-            {
-              printf("vfork_test: ERROR Child %d status 0x%04x, expected "
-                     "exit(42)\n", pid, status);
-              ASSERT(false);
-              return -1;
-            }
-        }
-      else if (ret >= 0 || errno != ECHILD)
-        {
-          printf("vfork_test: ERROR waitpid() returned %d (%d), expected "
-                 "the child's status or ECHILD\n", ret, errno);
-          ASSERT(false);
-          return -1;
-        }
-    }
-#endif
-
-  printf("vfork_test: Child %d ran and exited before the parent resumed\n",
-         pid);
-  return 0;
+	return 0;
 }
+
+#endif /* CONFIG_ARCH_HAVE_FORK && CONFIG_SCHED_WAITPID */

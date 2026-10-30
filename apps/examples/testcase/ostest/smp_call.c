@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/smp_call.c
+ * apps/testing/ostest/smp_call.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -64,16 +64,16 @@ static cpu_set_t g_cpuset;
 
 static int smp_call_func(void *arg)
 {
-  FAR sem_t *psem = arg;
+	FAR sem_t *psem = arg;
 
-  sem_post(psem);
-  return OK;
+	sem_post(psem);
+	return OK;
 }
 
 static void wdg_wdentry(wdparm_t arg)
 {
-  nxsched_smp_call_init(&g_call_data, smp_call_func, (FAR void *)arg);
-  nxsched_smp_call_async(g_cpuset, &g_call_data);
+	nxsched_smp_call_init(&g_call_data, smp_call_func, (FAR void *)arg);
+	nxsched_smp_call_async(g_cpuset, &g_call_data);
 }
 
 /****************************************************************************
@@ -82,93 +82,85 @@ static void wdg_wdentry(wdparm_t arg)
 
 void smp_call_test(void)
 {
-  struct smp_call_data_s call_data;
-  sem_t sem;
-  int cpucnt;
-  int cpu;
-  int value;
-  int status;
-  struct wdog_s wdog =
-    {
-      0
-    };
+	struct smp_call_data_s call_data;
+	sem_t sem;
+	int cpucnt;
+	int cpu;
+	int value;
+	int status;
+	struct wdog_s wdog =
+	  {
+	    0
+	  };
 
-  printf("smp_call_test: Test start\n");
+	printf("smp_call_test: Test start\n");
 
-  sem_init(&sem, 0, 0);
-  nxsched_smp_call_init(&call_data, smp_call_func, &sem);
+	sem_init(&sem, 0, 0);
+	nxsched_smp_call_init(&call_data, smp_call_func, &sem);
 
-  for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++)
-    {
-      printf("smp_call_test: Call cpu %d, nowait\n", cpu);
+	for (cpu = 0; cpu < CONFIG_SMP_NCPUS; cpu++) {
+		printf("smp_call_test: Call cpu %d, nowait\n", cpu);
 
-      nxsched_smp_call_single_async(cpu, &call_data);
+		nxsched_smp_call_single_async(cpu, &call_data);
 
-      status = sem_wait(&sem);
-      if (status != 0)
-        {
-          printf("smp_call_test: Check smp call error\n");
-          ASSERT(false);
-        }
+		status = sem_wait(&sem);
+		if (status != 0) {
+			printf("smp_call_test: Check smp call error\n");
+			ASSERT(false);
+		}
 
-      printf("smp_call_test: Call cpu %d, wait\n", cpu);
+		printf("smp_call_test: Call cpu %d, wait\n", cpu);
 
-      nxsched_smp_call_single(cpu, smp_call_func, &sem);
+		nxsched_smp_call_single(cpu, smp_call_func, &sem);
 
-      sem_getvalue(&sem, &value);
-      if (value != 1)
-        {
-          printf("smp_call_test: Check smp call wait error\n");
-          ASSERT(false);
-        }
+		sem_getvalue(&sem, &value);
+		if (value != 1) {
+			printf("smp_call_test: Check smp call wait error\n");
+			ASSERT(false);
+		}
 
-      nxsem_reset(&sem, 0);
-    }
+		nxsem_reset(&sem, 0);
+	}
 
-  printf("smp_call_test: Call multi cpu, nowait\n");
+	printf("smp_call_test: Call multi cpu, nowait\n");
 
-  sched_getaffinity(0, sizeof(cpu_set_t), &g_cpuset);
-  cpucnt = CPU_COUNT(&g_cpuset);
+	sched_getaffinity(0, sizeof(cpu_set_t), &g_cpuset);
+	cpucnt = CPU_COUNT(&g_cpuset);
 
-  nxsched_smp_call_async(g_cpuset, &call_data);
+	nxsched_smp_call_async(g_cpuset, &call_data);
 
-  for (cpu = 0; cpu < cpucnt; cpu++)
-    {
-      status = sem_wait(&sem);
-      if (status != 0)
-        {
-          printf("smp_call_test: Check smp call error\n");
-          ASSERT(false);
-        }
-    }
+	for (cpu = 0; cpu < cpucnt; cpu++) {
+		status = sem_wait(&sem);
+		if (status != 0) {
+			printf("smp_call_test: Check smp call error\n");
+			ASSERT(false);
+		}
+	}
 
-  printf("smp_call_test: Call in interrupt, wait\n");
+	printf("smp_call_test: Call in interrupt, wait\n");
 
-  memset(&wdog, 0, sizeof(wdog));
-  wd_start(&wdog, 0, wdg_wdentry, (wdparm_t)&sem);
-  for (cpu = 0; cpu < cpucnt; cpu++)
-    {
-      status = sem_wait(&sem);
-      if (status != 0)
-        {
-          printf("smp_call_test: smp call in interrupt error\n");
-          ASSERT(false);
-        }
-    }
+	memset(&wdog, 0, sizeof(wdog));
+	wd_start(&wdog, 0, wdg_wdentry, (wdparm_t)&sem);
+	for (cpu = 0; cpu < cpucnt; cpu++) {
+		status = sem_wait(&sem);
+		if (status != 0) {
+			printf("smp_call_test: smp call in interrupt error\n");
+			ASSERT(false);
+		}
+	}
 
-  printf("smp_call_test: Call multi cpu, wait\n");
+	printf("smp_call_test: Call multi cpu, wait\n");
 
-  nxsched_smp_call(g_cpuset, smp_call_func, &sem);
+	nxsched_smp_call(g_cpuset, smp_call_func, &sem);
 
-  sem_getvalue(&sem, &value);
-  if (value != cpucnt)
-    {
-      printf("smp_call_test: Check smp call wait error\n");
-      ASSERT(false);
-    }
+	sem_getvalue(&sem, &value);
+	if (value != cpucnt) {
+		printf("smp_call_test: Check smp call wait error\n");
+		ASSERT(false);
+	}
 
-  sem_destroy(&sem);
+	sem_destroy(&sem);
 
-  printf("smp_call_test: Test success\n");
+	printf("smp_call_test: Test success\n");
 }
 #endif
