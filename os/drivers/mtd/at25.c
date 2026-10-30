@@ -1,0 +1,756 @@
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * drivers/mtd/at25.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/config.h>
+
+#include <sys/types.h>
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <debug.h>
+
+#include <tinyara/kmalloc.h>
+#include <tinyara/signal.h>
+#include <tinyara/fs/ioctl.h>
+#include <tinyara/spi/spi.h>
+#include <tinyara/mtd/mtd.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/* Configuration ************************************************************/
+
+#ifndef CONFIG_AT25_SPIMODE
+#  define CONFIG_AT25_SPIMODE SPIDEV_MODE0
+#endif
+
+#ifndef CONFIG_AT25_SPIFREQUENCY
+#  define CONFIG_AT25_SPIFREQUENCY 20000000
+#endif
+
+/* AT25 Registers ***********************************************************/
+
+/* Identification register values */
+
+#define AT25_MANUFACTURER         0x1f
+#define AT25_AT25DF081A_TYPE      0x45 /*  8 M-bit */
+#define AT25_AT25DF321_TYPE       0x47 /* 32 M-bit */
+
+/*  AT25DF081A capacity is 1,048,575 bytes:
+ *  (16 sectors) * (65,536 bytes per sector)
+ *  (4096 pages) * (256 bytes per page)
+ */
+
+#define AT25_AT25DF081A_SECTOR_SHIFT  12    /* Sector size 1 << 12 = 4096 */
+#define AT25_AT25DF081A_NSECTORS      256
+#define AT25_AT25DF081A_PAGE_SHIFT    9     /* Page size 1 << 8 = 256 */
+#define AT25_AT25DF081A_NPAGES        2048
+
+/*  AT25DF321 capacity is 4,194,304 bytes:
+ *  (64 sectors) * (65,536 bytes per sector)
+ *  (16384 pages) * (256 bytes per page)
+ */
+
+#define AT25_AT25DF321_SECTOR_SHIFT  12    /* Sector size 1 << 12 = 4096 */
+#define AT25_AT25DF321_NSECTORS      1024
+#define AT25_AT25DF321_PAGE_SHIFT    9     /* Page size 1 << 9 = 512 */
+#define AT25_AT25DF321_NPAGES        8192
+
+/* Instructions */
+
+/*      Command        Value      N Description             Addr Dummy Data */
+#define AT25_WREN      0x06    /* 1 Write Enable              0   0     0 */
+#define AT25_WRDI      0x04    /* 1 Write Disable             0   0     0 */
+#define AT25_RDID      0x9f    /* 1 Read Identification       0   0     1-3 */
+#define AT25_RDSR      0x05    /* 1 Read Status Register      0   0     >=1 */
+#define AT25_WRSR      0x01    /* 1 Write Status Register     0   0     1 */
+#define AT25_READ      0x03    /* 1 Read Data Bytes           3   0     >=1 */
+#define AT25_FAST_READ 0x0b    /* 1 Higher speed read         3   1     >=1 */
+#define AT25_PP        0x02    /* 1 Page Program              3   0     1-256 */
+#define AT25_SE        0x20    /* 1 Sector Erase              3   0     0 */
+#define AT25_BE        0xc7    /* 1 Bulk Erase                0   0     0 */
+#define AT25_DP        0xb9    /* 2 Deep power down           0   0     0 */
+#define AT25_RES       0xab    /* 2 Read Electronic Signature 0   3     >=1 */
+
+/* Status register bit definitions */
+
+#define AT25_SR_BUSY       (1 << 0)    /* Bit 0: Ready/Busy Status */
+#define AT25_SR_WEL        (1 << 1)    /* Bit 1: Write enable latch bit */
+#define AT25_SR_SWP_SHIFT  (2)         /* Bits 2-3: Software protection */
+#define AT25_SR_SWP_MASK   (3 << AT25_SR_SWP_SHIFT)
+#define AT25_SR_WPP        (1 << 4)    /* Bit 4: Write Protect (/WP) Pin Status */
+#define AT25_SR_EPE        (1 << 5)    /* Bit 5: Erase/program error */
+/* Bit 6: Reserved */
+#define AT25_SR_SPRL       (1 << 7)    /* Bit 7: Sector Protection Registers Locked */
+
+#define AT25_SR_UNPROT 0x00    /* Global unprotect command */
+
+#define AT25_DUMMY     0xa5
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+/* This type represents the state of the MTD device.  The struct mtd_dev_s
+ * must appear at the beginning of the definition so that you can freely
+ * cast between pointers to struct mtd_dev_s and struct at25_dev_s.
+ */
+
+struct at25_dev_s {
+	struct mtd_dev_s mtd;      /* MTD interface */
+	FAR struct spi_dev_s *dev; /* Saved SPI interface instance */
+	uint8_t  sectorshift;      /* 16 or 18 */
+	uint8_t  pageshift;        /* 8 */
+	uint16_t nsectors;         /* 128 or 64 */
+	uint32_t npages;           /* 32,768 or 65,536 */
+};
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+
+/* Helpers */
+
+static void at25_lock(FAR struct spi_dev_s *dev);
+static inline void at25_unlock(FAR struct spi_dev_s *dev);
+static inline int at25_readid(struct at25_dev_s *priv);
+static void at25_waitwritecomplete(struct at25_dev_s *priv);
+static void at25_writeenable(struct at25_dev_s *priv);
+static inline void at25_sectorerase(struct at25_dev_s *priv,
+                                    off_t offset);
+static inline int  at25_bulkerase(struct at25_dev_s *priv);
+static inline void at25_pagewrite(struct at25_dev_s *priv,
+                                  FAR const uint8_t *buffer,
+                                  off_t offset);
+
+/* MTD driver methods */
+
+static int at25_erase(FAR struct mtd_dev_s *dev,
+                      off_t startblock,
+                      size_t nblocks);
+static ssize_t at25_bread(FAR struct mtd_dev_s *dev,
+                          off_t startblock,
+                          size_t nblocks,
+                          FAR uint8_t *buf);
+static ssize_t at25_bwrite(FAR struct mtd_dev_s *dev,
+                           off_t startblock,
+                           size_t nblocks,
+                           FAR const uint8_t *buf);
+static ssize_t at25_read(FAR struct mtd_dev_s *dev,
+                         off_t offset,
+                         size_t nbytes,
+                         FAR uint8_t *buffer);
+static int at25_ioctl(FAR struct mtd_dev_s *dev,
+                      int cmd,
+                      unsigned long arg);
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: at25_lock
+ ****************************************************************************/
+
+static void at25_lock(FAR struct spi_dev_s *dev)
+{
+	/* On SPI buses where there are multiple devices, it will be necessary to
+	 * lock SPI to have exclusive access to the buses for a sequence of
+	 * transfers.  The bus should be locked before the chip is selected.
+	 *
+	 * This is a blocking call and will not return until we have exclusive
+	 * access to the SPI bus.
+	 * We will retain that exclusive access until the bus is unlocked.
+	 */
+
+	SPI_LOCK(dev, true);
+
+	/* After locking the SPI bus, the we also need call the setfrequency,
+	 * setbits, and setmode methods to make sure that the SPI is properly
+	 * configured for the device.
+	 * If the SPI bus is being shared, then it may have been left in an
+	 * incompatible state.
+	 */
+
+	SPI_SETMODE(dev, CONFIG_AT25_SPIMODE);
+	SPI_SETBITS(dev, 8);
+	SPI_HWFEATURES(dev, 0);
+	SPI_SETFREQUENCY(dev, CONFIG_AT25_SPIFREQUENCY);
+}
+
+/****************************************************************************
+ * Name: at25_unlock
+ ****************************************************************************/
+
+static inline void at25_unlock(FAR struct spi_dev_s *dev)
+{
+	SPI_LOCK(dev, false);
+}
+
+/****************************************************************************
+ * Name: at25_readid
+ ****************************************************************************/
+
+static inline int at25_readid(struct at25_dev_s *priv)
+{
+	uint16_t manufacturer;
+	uint16_t memory;
+
+	finfo("priv: %p\n", priv);
+
+	/* Lock the SPI bus, configure the bus, and select this FLASH part. */
+
+	at25_lock(priv->dev);
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+
+	/* Send the "Read ID (RDID)" command and read the first three ID bytes */
+
+	SPI_SEND(priv->dev, AT25_RDID);
+	manufacturer = SPI_SEND(priv->dev, AT25_DUMMY);
+	memory       = SPI_SEND(priv->dev, AT25_DUMMY);
+
+	/* Deselect the FLASH and unlock the bus */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+	at25_unlock(priv->dev);
+
+	finfo("manufacturer: %02x memory: %02x\n",
+	      manufacturer, memory);
+
+	/* Check for a valid manufacturer and memory type */
+
+	if (manufacturer == AT25_MANUFACTURER &&
+	    memory == AT25_AT25DF081A_TYPE) {
+		priv->sectorshift = AT25_AT25DF081A_SECTOR_SHIFT;
+		priv->nsectors    = AT25_AT25DF081A_NSECTORS;
+		priv->pageshift   = AT25_AT25DF081A_PAGE_SHIFT;
+		priv->npages      = AT25_AT25DF081A_NPAGES;
+		return OK;
+	} else if (manufacturer == AT25_MANUFACTURER &&
+	         memory == AT25_AT25DF321_TYPE) {
+		priv->sectorshift = AT25_AT25DF321_SECTOR_SHIFT;
+		priv->nsectors    = AT25_AT25DF321_NSECTORS;
+		priv->pageshift   = AT25_AT25DF321_PAGE_SHIFT;
+		priv->npages      = AT25_AT25DF321_NPAGES;
+		return OK;
+	}
+
+	return -ENODEV;
+}
+
+/****************************************************************************
+ * Name: at25_waitwritecomplete
+ ****************************************************************************/
+
+static void at25_waitwritecomplete(struct at25_dev_s *priv)
+{
+	uint8_t status;
+
+	/* Loop as long as the memory is busy with a write cycle */
+
+	do {
+		/* Select this FLASH part */
+
+		SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+
+		/* Send "Read Status Register (RDSR)" command */
+
+		SPI_SEND(priv->dev, AT25_RDSR);
+
+		/* Send a dummy byte to generate the clock needed to shift out
+		 * the status
+		 */
+
+		status = SPI_SEND(priv->dev, AT25_DUMMY);
+
+		/* Deselect the FLASH */
+
+		SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+
+		/* Given that writing could take up to few tens of milliseconds,
+		 * and erasing could take more.
+		 * The following short delay in the "busy" case will allow other
+		 * peripherals to access the SPI bus.
+		 */
+
+		if ((status & AT25_SR_BUSY) != 0) {
+			at25_unlock(priv->dev);
+			nxsched_usleep(10000);
+			at25_lock(priv->dev);
+		}
+	} while ((status & AT25_SR_BUSY) != 0);
+
+	if (status & AT25_SR_EPE) {
+		ferr("ERROR: Write error, status: 0x%02x\n", status);
+	}
+
+	finfo("Complete, status: 0x%02x\n", status);
+}
+
+/****************************************************************************
+ * Name:  at25_writeenable
+ ****************************************************************************/
+
+static void at25_writeenable(struct at25_dev_s *priv)
+{
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+	SPI_SEND(priv->dev, AT25_WREN);
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+	finfo("Enabled\n");
+}
+
+/****************************************************************************
+ * Name:  at25_sectorerase
+ ****************************************************************************/
+
+static inline void at25_sectorerase(struct at25_dev_s *priv, off_t sector)
+{
+	off_t offset = sector << priv->sectorshift;
+
+	finfo("sector: %08lx\n", (long)sector);
+
+	/* Wait for any preceding write to complete.  We could simplify things by
+	 * perform this wait at the end of each write operation (rather than at
+	 * the beginning of ALL operations), but have the wait first will slightly
+	 * improve performance.
+	 */
+
+	at25_waitwritecomplete(priv);
+
+	/* Send write enable instruction */
+
+	at25_writeenable(priv);
+
+	/* Select this FLASH part */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+
+	/* Send the "Sector Erase (SE)" instruction */
+
+	SPI_SEND(priv->dev, AT25_SE);
+
+	/* Send the sector offset high byte first.  For all of the supported
+	 * parts, the sector number is completely contained in the first byte
+	 * and the values used in the following two bytes don't really matter.
+	 */
+
+	SPI_SEND(priv->dev, (offset >> 16) & 0xff);
+	SPI_SEND(priv->dev, (offset >> 8) & 0xff);
+	SPI_SEND(priv->dev, offset & 0xff);
+
+	/* Deselect the FLASH */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+	finfo("Erased\n");
+}
+
+/****************************************************************************
+ * Name:  at25_bulkerase
+ ****************************************************************************/
+
+static inline int at25_bulkerase(struct at25_dev_s *priv)
+{
+	finfo("priv: %p\n", priv);
+
+	/* Wait for any preceding write to complete.  We could simplify things by
+	 * perform this wait at the end of each write operation (rather than at
+	 * the beginning of ALL operations), but have the wait first will slightly
+	 * improve performance.
+	 */
+
+	at25_waitwritecomplete(priv);
+
+	/* Send write enable instruction */
+
+	at25_writeenable(priv);
+
+	/* Select this FLASH part */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+
+	/* Send the "Bulk Erase (BE)" instruction */
+
+	SPI_SEND(priv->dev, AT25_BE);
+
+	/* Deselect the FLASH */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+	finfo("Return: OK\n");
+	return OK;
+}
+
+/****************************************************************************
+ * Name:  at25_pagewrite
+ ****************************************************************************/
+
+static inline void at25_pagewrite(struct at25_dev_s *priv,
+                                  FAR const uint8_t *buffer,
+                                  off_t page)
+{
+	off_t offset = page << 8;
+
+	finfo("page: %08lx offset: %08lx\n", (long)page, (long)offset);
+
+	/* Wait for any preceding write to complete.  We could simplify things by
+	 * perform this wait at the end of each write operation (rather than at
+	 * the beginning of ALL operations), but have the wait first will slightly
+	 * improve performance.
+	 */
+
+	at25_waitwritecomplete(priv);
+
+	/* Enable the write access to the FLASH */
+
+	at25_writeenable(priv);
+
+	/* Select this FLASH part */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+
+	/* Send "Page Program (PP)" command */
+
+	SPI_SEND(priv->dev, AT25_PP);
+
+	/* Send the page offset high byte first. */
+
+	SPI_SEND(priv->dev, (offset >> 16) & 0xff);
+	SPI_SEND(priv->dev, (offset >> 8) & 0xff);
+	SPI_SEND(priv->dev, offset & 0xff);
+
+	/* Then write the specified number of bytes */
+
+	SPI_SNDBLOCK(priv->dev, buffer, 256);
+
+	/* Deselect the FLASH: Chip Select high */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+	finfo("Written\n");
+}
+
+/****************************************************************************
+ * Name: at25_erase
+ ****************************************************************************/
+
+static int at25_erase(FAR struct mtd_dev_s *dev,
+                      off_t startblock,
+                      size_t nblocks)
+{
+	FAR struct at25_dev_s *priv = (FAR struct at25_dev_s *)dev;
+	size_t blocksleft = nblocks;
+
+	finfo("startblock: %08lx nblocks: %d\n", (long)startblock, (int)nblocks);
+
+	/* Lock access to the SPI bus until we complete the erase */
+
+	at25_lock(priv->dev);
+	while (blocksleft-- > 0) {
+		/* Erase each sector */
+
+		at25_sectorerase(priv, startblock);
+		startblock++;
+	}
+
+	at25_unlock(priv->dev);
+	return (int)nblocks;
+}
+
+/****************************************************************************
+ * Name: at25_bread
+ ****************************************************************************/
+
+static ssize_t at25_bread(FAR struct mtd_dev_s *dev, off_t startblock,
+                          size_t nblocks,
+                          FAR uint8_t *buffer)
+{
+	FAR struct at25_dev_s *priv = (FAR struct at25_dev_s *)dev;
+	ssize_t nbytes;
+
+	finfo("startblock: %08lx nblocks: %d\n", (long)startblock, (int)nblocks);
+
+	/* On this device, we can handle the block read just like the byte-oriented
+	 * read
+	 */
+
+	nbytes = at25_read(dev, startblock << priv->pageshift,
+	                   nblocks << priv->pageshift, buffer);
+	if (nbytes > 0) {
+		return nbytes >> priv->pageshift;
+	}
+
+	return (int)nbytes;
+}
+
+/****************************************************************************
+ * Name: at25_bwrite
+ ****************************************************************************/
+
+static ssize_t at25_bwrite(FAR struct mtd_dev_s *dev, off_t startblock,
+                           size_t nblocks, FAR const uint8_t *buffer)
+{
+	FAR struct at25_dev_s *priv = (FAR struct at25_dev_s *)dev;
+	size_t blocksleft = nblocks;
+
+	finfo("startblock: %08lx nblocks: %d\n", (long)startblock, (int)nblocks);
+
+	/* Lock the SPI bus and write each page to FLASH */
+
+	at25_lock(priv->dev);
+	while (blocksleft-- > 0) {
+		at25_pagewrite(priv, buffer, startblock * 2);
+		at25_pagewrite(priv, buffer + 256, startblock * 2 + 1);
+		buffer += 1 << priv->pageshift;
+		startblock++;
+	}
+
+	at25_unlock(priv->dev);
+	return nblocks;
+}
+
+/****************************************************************************
+ * Name: at25_read
+ ****************************************************************************/
+
+static ssize_t at25_read(FAR struct mtd_dev_s *dev,
+                         off_t offset,
+                         size_t nbytes,
+                         FAR uint8_t *buffer)
+{
+	FAR struct at25_dev_s *priv = (FAR struct at25_dev_s *)dev;
+
+	finfo("offset: %08lx nbytes: %d\n", (long)offset, (int)nbytes);
+
+	/* Lock the SPI bus NOW because the following call must be executed with
+	 * the bus locked.
+	 */
+
+	at25_lock(priv->dev);
+
+	/* Wait for any preceding write to complete.  We could simplify things by
+	 * perform this wait at the end of each write operation (rather than at
+	 * the beginning of ALL operations), but have the wait first will slightly
+	 * improve performance.
+	 */
+
+	at25_waitwritecomplete(priv);
+
+	/* Select this FLASH part */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+
+	/* Send "Read from Memory " instruction */
+
+	SPI_SEND(priv->dev, AT25_READ);
+
+	/* Send the page offset high byte first. */
+
+	SPI_SEND(priv->dev, (offset >> 16) & 0xff);
+	SPI_SEND(priv->dev, (offset >> 8) & 0xff);
+	SPI_SEND(priv->dev, offset & 0xff);
+
+	/* Then read all of the requested bytes */
+
+	SPI_RECVBLOCK(priv->dev, buffer, nbytes);
+
+	/* Deselect the FLASH and unlock the SPI bus */
+
+	SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+	at25_unlock(priv->dev);
+
+	finfo("return nbytes: %d\n", (int)nbytes);
+	return nbytes;
+}
+
+/****************************************************************************
+ * Name: at25_ioctl
+ ****************************************************************************/
+
+static int at25_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
+{
+	FAR struct at25_dev_s *priv = (FAR struct at25_dev_s *)dev;
+	int ret = -EINVAL; /* Assume good command with bad parameters */
+
+	finfo("cmd: %d\n", cmd);
+
+	switch (cmd) {
+	case MTDIOC_GEOMETRY:
+	{
+		FAR struct mtd_geometry_s *geo =
+		  (FAR struct mtd_geometry_s *)((uintptr_t)arg);
+
+		if (geo != NULL) {
+			memset(geo, 0, sizeof(*geo));
+
+			/* Populate the geometry structure with information need to
+			 * know the capacity and how to access the device.
+			 *
+			 * NOTE:
+			 * that the device is treated as though it where just an array
+			 * of fixed size blocks.
+			 * That is most likely not true, but the client will expect the
+			 * device logic to do whatever is necessary to make it appear
+			 * so.
+			 */
+
+			geo->blocksize    = (1 << priv->pageshift);
+			geo->erasesize    = (1 << priv->sectorshift);
+			geo->neraseblocks = priv->nsectors;
+			ret               = OK;
+
+			finfo("blocksize: %" PRId32 " erasesize: %" PRId32
+			      " neraseblocks: %" PRId32 "\n",
+			      geo->blocksize, geo->erasesize, geo->neraseblocks);
+		}
+	}
+	break;
+
+	case BIOC_PARTINFO:
+	{
+		FAR struct partition_info_s *info =
+		  (FAR struct partition_info_s *)arg;
+		if (info != NULL) {
+			info->numsectors  = priv->nsectors <<
+			                    (priv->sectorshift - priv->pageshift);
+			info->sectorsize  = 1 << priv->pageshift;
+			info->startsector = 0;
+			info->parent[0]   = '\0';
+			ret               = OK;
+		}
+	}
+	break;
+
+	case MTDIOC_BULKERASE:
+	{
+		/* Erase the entire device */
+
+		at25_lock(priv->dev);
+		ret = at25_bulkerase(priv);
+		at25_unlock(priv->dev);
+	}
+	break;
+
+	default:
+		ret = -ENOTTY; /* Bad command */
+		break;
+	}
+
+	finfo("return %d\n", ret);
+	return ret;
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: at25_initialize
+ *
+ * Description:
+ *   Create an initialize MTD device instance. MTD devices are not registered
+ *   in the file system, but are created as instances that can be bound to
+ *   other functions (such as a block or character driver front end).
+ *
+ ****************************************************************************/
+
+FAR struct mtd_dev_s *at25_initialize(FAR struct spi_dev_s *dev)
+{
+	FAR struct at25_dev_s *priv;
+	int ret;
+
+	finfo("dev: %p\n", dev);
+
+	/* Allocate a state structure (we allocate the structure instead of using
+	 * a fixed, static allocation so that we can handle multiple FLASH devices.
+	 * The current implementation would handle only one FLASH part per SPI
+	 * device (only because of the SPIDEV_FLASH(0) definition) and so would
+	 * have to be extended to handle multiple FLASH parts on the same SPI bus.
+	 */
+
+	priv = kmm_zalloc(sizeof(struct at25_dev_s));
+	if (priv) {
+		/* Initialize the allocated structure (unsupported methods were
+		 * nullified by kmm_zalloc).
+		 */
+
+		priv->mtd.erase  = at25_erase;
+		priv->mtd.bread  = at25_bread;
+		priv->mtd.bwrite = at25_bwrite;
+		priv->mtd.read   = at25_read;
+		priv->mtd.ioctl  = at25_ioctl;
+		priv->mtd.name   = "at25";
+		priv->dev        = dev;
+
+		/* Deselect the FLASH */
+
+		SPI_SELECT(dev, SPIDEV_FLASH(0), false);
+
+		/* Identify the FLASH chip and get its capacity */
+
+		ret = at25_readid(priv);
+		if (ret != OK) {
+			/* Unrecognized!
+			 * Discard all of that work we just did and return NULL
+			 */
+
+			ferr("ERROR: Unrecognized\n");
+			kmm_free(priv);
+			return NULL;
+		} else {
+			/* Unprotect all sectors */
+
+			at25_writeenable(priv);
+			SPI_SELECT(priv->dev, SPIDEV_FLASH(0), true);
+			SPI_SEND(priv->dev, AT25_WRSR);
+			SPI_SEND(priv->dev, AT25_SR_UNPROT);
+			SPI_SELECT(priv->dev, SPIDEV_FLASH(0), false);
+		}
+	}
+
+	/* Return the implementation-specific state structure as the MTD device */
+
+	finfo("Return %p\n", priv);
+	return (FAR struct mtd_dev_s *)priv;
+}

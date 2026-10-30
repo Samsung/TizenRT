@@ -18,7 +18,8 @@
 /****************************************************************************
  * drivers/mtd/mtd_nand.c
  *
- *   Copyright (c) 2011, 2012, Atmel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: Copyright (c) 2011, 2012, Atmel Corporation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -54,7 +55,6 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <tinyara/fs/mtd.h>
 #include <tinyara/mtd/nand_config.h>
 
 #include <inttypes.h>
@@ -67,6 +67,7 @@
 #include <tinyara/kmalloc.h>
 #include <tinyara/fs/ioctl.h>
 #include <tinyara/mtd/nand.h>
+#include <tinyara/mtd/onfi.h>
 #include <tinyara/mtd/nand_scheme.h>
 #include <tinyara/mtd/nand_ecc.h>
 
@@ -81,8 +82,7 @@
 
 /* Bad block marker */
 
-/* TODO : changed badblock marker from 0xba to 0x00, check if its okay */
-#define NAND_BLOCKSTATUS_BAD 0x00
+#define NAND_BLOCKSTATUS_BAD 0xba
 
 /****************************************************************************
  * Private Types
@@ -94,27 +94,35 @@
 
 /* Bad block checking */
 
-static int nand_markblock(FAR struct nand_dev_s *nand, off_t block);
-static int nand_checkblock(FAR struct nand_dev_s *nand, off_t block);
+static int     nand_markblock(FAR struct nand_dev_s *nand, off_t block);
+static int     nand_checkblock(FAR struct nand_dev_s *nand, off_t block);
 #if defined(CONFIG_MTD_NAND_BLOCKCHECK) && defined(CONFIG_DEBUG_INFO) && \
     defined(CONFIG_DEBUG_FS)
-static int nand_devscan(FAR struct nand_dev_s *nand);
+static int     nand_devscan(FAR struct nand_dev_s *nand);
 #endif
 
 /* Misc. NAND helpers */
 
-static int nand_eraseblock(FAR struct nand_dev_s *nand, off_t block, bool scrub);
-static int nand_readpage(FAR struct nand_dev_s *nand, off_t block, unsigned int page, FAR uint8_t *data);
-static int nand_writepage(FAR struct nand_dev_s *nand, off_t block, unsigned int page, FAR const void *data);
+static uint32_t nand_chipid(FAR struct nand_raw_s *raw);
+static int      nand_eraseblock(FAR struct nand_dev_s *nand,
+                                off_t block, bool scrub);
+static int      nand_readpage(FAR struct nand_dev_s *nand, off_t block,
+                              unsigned int page, FAR uint8_t *data);
+static int      nand_writepage(FAR struct nand_dev_s *nand, off_t block,
+                               unsigned int page, FAR const void *data);
 
 /* MTD driver methods */
 
-static int nand_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks);
-static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, uint8_t *buffer);
-static ssize_t nand_bwrite(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks, const uint8_t *buffer);
-static int nand_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg);
-static int nand_isbad(FAR struct mtd_dev_s *dev, off_t block);
-static int nand_markbad(FAR struct mtd_dev_s *dev, off_t block);
+static int     nand_erase(FAR struct mtd_dev_s *dev, off_t startblock,
+                          size_t nblocks);
+static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startblock,
+                          size_t nblocks, uint8_t *buffer);
+static ssize_t nand_bwrite(FAR struct mtd_dev_s *dev, off_t startblock,
+                           size_t nblocks, const uint8_t *buffer);
+static int     nand_ioctl(FAR struct mtd_dev_s *dev, int cmd,
+                          unsigned long arg);
+static int     nand_isbad(FAR struct mtd_dev_s *dev, off_t block);
+static int     nand_markbad(FAR struct mtd_dev_s *dev, off_t block);
 
 /****************************************************************************
  * Private Data
@@ -149,8 +157,8 @@ static int nand_markblock(FAR struct nand_dev_s *nand, off_t block)
 
 	/* Retrieve the model and scheme */
 
-	raw = nand->raw;
-	model = &raw->model;
+	raw    = nand->raw;
+	model  = &raw->model;
 	scheme = nandmodel_getscheme(model);
 
 	/* Try to mark the block as BAD */
@@ -159,7 +167,7 @@ static int nand_markblock(FAR struct nand_dev_s *nand, off_t block)
 	nandscheme_writebadblockmarker(scheme, spare, NAND_BLOCKSTATUS_BAD);
 	ret = NAND_WRITEPAGE(nand->raw, block, 0, 0, spare);
 	if (ret < 0) {
-		fdbg("ERROR: Failed bo marke block %d as BAD\n", block);
+		ferr("ERROR: Failed bo marke block %" PRIdOFF " as BAD\n", block);
 	}
 
 	return ret;
@@ -195,21 +203,21 @@ static int nand_checkblock(FAR struct nand_dev_s *nand, off_t block)
 
 	/* Retrieve the model and scheme */
 
-	raw = nand->raw;
-	model = &raw->model;
+	raw    = nand->raw;
+	model  = &raw->model;
 	scheme = nandmodel_getscheme(model);
 
 	/* Read spare area of first page of block */
 
 	ret = NAND_RAWREAD(raw, block, 0, 0, spare);
 	if (ret < 0) {
-		fdbg("ERROR: Failed to read page 0 of block %d\n", block);
+		ferr("ERROR: Failed to read page 0 of block %" PRIdOFF "\n", block);
 		return ret;
 	}
 
 	nandscheme_readbadblockmarker(scheme, spare, &marker);
 	if (marker != 0xff) {
-		fvdbg("Page 0 block %d marker=%02x\n", block, marker);
+		finfo("Page 0 block %" PRIdOFF " marker=%02x\n", block, marker);
 		return BADBLOCK;
 	}
 
@@ -217,13 +225,13 @@ static int nand_checkblock(FAR struct nand_dev_s *nand, off_t block)
 
 	ret = NAND_RAWREAD(raw, block, 1, 0, spare);
 	if (ret < 0) {
-		fdbg("ERROR: Failed to read page 1 of block %d\n", block);
+		ferr("ERROR: Failed to read page 1 of block %" PRIdOFF "\n", block);
 		return ret;
 	}
 
 	nandscheme_readbadblockmarker(scheme, spare, &marker);
 	if (marker != 0xff) {
-		fvdbg("Page 1 block %d marker=%02x\n", block, marker);
+		finfo("Page 1 block %" PRIdOFF " marker=%02x\n", block, marker);
 		return BADBLOCK;
 	}
 
@@ -267,14 +275,14 @@ static int nand_devscan(FAR struct nand_dev_s *nand)
 
 	/* Retrieve model information */
 
-	raw = nand->raw;
-	model = &raw->model;
+	raw     = nand->raw;
+	model   = &raw->model;
 
 	nblocks = nandmodel_getdevblocks(model);
 
 	/* Initialize block statuses */
 
-	fvdbg("Retrieving bad block information. nblocks=%d\n", nblocks);
+	finfo("Retrieving bad block information. nblocks=%" PRIdOFF "\n", nblocks);
 
 	/* Retrieve block status from their first page spare area */
 
@@ -285,14 +293,16 @@ static int nand_devscan(FAR struct nand_dev_s *nand)
 		if (ret != GOODBLOCK) {
 #if defined(CONFIG_DEBUG_INFO) && defined(CONFIG_DEBUG_FS)
 			if (ngood > 0) {
-				fvdbg("Good blocks: %u - %u\n", good, good + ngood);
+				finfo("Good blocks: %u - %u\n", good, good + ngood);
 				ngood = 0;
 			}
+
 #endif
 			if (ret == BADBLOCK) {
-				fvdbg("Block %u is bad\n", (unsigned int)block);
+				finfo("Block %u is bad\n", (unsigned int)block);
 			} else {
-				fdbg("ERROR: Cannot retrieve info from block %u: %d\n", (unsigned int)block, ret);
+				ferr("ERROR: Cannot retrieve info from block %u: %d\n",
+				     (unsigned int)block, ret);
 			}
 		}
 #if defined(CONFIG_DEBUG_INFO) && defined(CONFIG_DEBUG_FS)
@@ -308,13 +318,51 @@ static int nand_devscan(FAR struct nand_dev_s *nand)
 
 #if defined(CONFIG_DEBUG_INFO) && defined(CONFIG_DEBUG_FS)
 	if (ngood > 0) {
-		fvdbg("Good blocks: %u - %u\n", good, good + ngood);
+		finfo("Good blocks: %u - %u\n", good, good + ngood);
 	}
 #endif
 
 	return OK;
 }
-#endif							/* CONFIG_MTD_NAND_BLOCKCHECK &&  CONFIG_DEBUG_INFO && CONFIG_DEBUG_FS */
+#endif /* CONFIG_MTD_NAND_BLOCKCHECK &&  CONFIG_DEBUG_INFO && CONFIG_DEBUG_FS */
+
+/****************************************************************************
+ * Name: nand_chipid
+ *
+ * Description:
+ *   Reads and returns the identifiers of a NAND FLASH chip
+ *
+ * Input Parameters:
+ *   raw - Pointer to a struct nand_raw_s instance.
+ *
+ * Returned Value:
+ *   id1|(id2<<8)|(id3<<16)|(id4<<24)
+ *
+ ****************************************************************************/
+
+static uint32_t nand_chipid(FAR struct nand_raw_s *raw)
+{
+	uint8_t id[5];
+
+	DEBUGASSERT(raw);
+
+	WRITE_COMMAND8(raw, COMMAND_READID);
+	WRITE_ADDRESS8(raw, 0);
+
+	id[0] = READ_DATA8(raw);
+	id[1] = READ_DATA8(raw);
+	id[2] = READ_DATA8(raw);
+	id[3] = READ_DATA8(raw);
+	id[4] = READ_DATA8(raw);
+
+	finfo("Chip ID: %02x %02x %02x %02x %02x\n",
+	      id[0], id[1], id[2], id[3], id[4]);
+
+	return (uint32_t)id[0] |
+	       ((uint32_t)id[1] << 8) |
+	       ((uint32_t)id[2] << 16) |
+	       ((uint32_t)id[3] << 24);
+}
 
 /****************************************************************************
  * Name: nand_eraseblock
@@ -332,11 +380,12 @@ static int nand_devscan(FAR struct nand_dev_s *nand)
  *
  ****************************************************************************/
 
-static int nand_eraseblock(FAR struct nand_dev_s *nand, off_t block, bool scrub)
+static int nand_eraseblock(FAR struct nand_dev_s *nand, off_t block,
+                           bool scrub)
 {
 	int ret;
 
-	/* fvdbg("Block %d\n", block); */
+	/* finfo("Block %d\n", block); */
 
 	DEBUGASSERT(nand && nand->raw);
 
@@ -345,8 +394,8 @@ static int nand_eraseblock(FAR struct nand_dev_s *nand, off_t block, bool scrub)
 		/* Check block status */
 
 		if (nand_checkblock(nand, block) != GOODBLOCK) {
-			fdbg("Block is BAD\n");
-			return -EIO;
+			finfo("Block is BAD\n");
+			return -EAGAIN;
 		}
 	}
 #endif
@@ -355,14 +404,11 @@ static int nand_eraseblock(FAR struct nand_dev_s *nand, off_t block, bool scrub)
 
 	ret = NAND_ERASEBLOCK(nand->raw, block);
 	if (ret < 0) {
-		fdbg("ERROR: Cannot erase block %d\n", block);
+		ferr("ERROR: Cannot erase block %" PRIdOFF "\n", block);
 
-		/* Try to mark the block as BAD, but still report the erase
-		 * failure to the caller: the block content is NOT erased and
-		 * must not be programmed.
-		 */
-		nand_markblock(nand, block);
-		return -EIO;
+		/* Try to mark the block as BAD */
+
+		ret = nand_markblock(nand, block);
 	}
 
 	return ret;
@@ -386,16 +432,17 @@ static int nand_eraseblock(FAR struct nand_dev_s *nand, off_t block, bool scrub)
  *
  ****************************************************************************/
 
-static int nand_readpage(FAR struct nand_dev_s *nand, off_t block, unsigned int page, FAR uint8_t *data)
+static int nand_readpage(FAR struct nand_dev_s *nand, off_t block,
+                         unsigned int page, FAR uint8_t *data)
 {
-	fvdbg("block=%d page=%d data=%p\n", (int)block, page, data);
+	finfo("block=%d page=%d data=%p\n", (int)block, page, data);
 
 #ifdef CONFIG_MTD_NAND_BLOCKCHECK
 	/* Check that the block is not BAD if data is requested */
 
 	if (nand_checkblock(nand, block) != GOODBLOCK) {
-		fdbg("ERROR: Block is BAD\n");
-		return -EIO;
+		ferr("ERROR: Block is BAD\n");
+		return -EAGAIN;
 	}
 #endif
 
@@ -438,14 +485,15 @@ static int nand_readpage(FAR struct nand_dev_s *nand, off_t block, unsigned int 
  *
  ****************************************************************************/
 
-static int nand_writepage(FAR struct nand_dev_s *nand, off_t block, unsigned int page, FAR const void *data)
+static int nand_writepage(FAR struct nand_dev_s *nand, off_t block,
+                          unsigned int page, FAR const void *data)
 {
 #ifdef CONFIG_MTD_NAND_BLOCKCHECK
 	/* Check that the block is good */
 
 	if (nand_checkblock(nand, block) != GOODBLOCK) {
-		fdbg("ERROR: Block is BAD\n");
-		return -EIO;
+		ferr("ERROR: Block is BAD\n");
+		return -EAGAIN;
 	}
 #endif
 
@@ -478,41 +526,34 @@ static int nand_writepage(FAR struct nand_dev_s *nand, off_t block, unsigned int
  *
  ****************************************************************************/
 
-static int nand_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblocks)
+static int nand_erase(FAR struct mtd_dev_s *dev, off_t startblock,
+                      size_t nblocks)
 {
 	FAR struct nand_dev_s *nand = (FAR struct nand_dev_s *)dev;
 	size_t blocksleft = nblocks;
-	size_t nfailed = 0;
 	int ret;
 
-	fvdbg("startblock: %08lx nblocks: %d\n", (long)startblock, (int)nblocks);
+	finfo("startblock: %08lx nblocks: %d\n", (long)startblock, (int)nblocks);
 
 	/* Lock access to the NAND until we complete the erase */
 
-	sem_wait(&nand->lock);
+	nxmutex_lock(&nand->lock);
 	while (blocksleft-- > 0) {
 		/* Erase each sector */
 
 		ret = nand_eraseblock(nand, startblock, false);
 		if (ret < 0) {
-			if (ret != -EIO) {
-				fdbg("ERROR: nand_eraseblock failed on block %ld: %d\n", (long)startblock, ret);
-				sem_post(&nand->lock);
-				return ret;
-			}
-
-			/* Bad blocks (-EIO) are skipped so that a multi-block
-			 * erase can proceed past them.
-			 */
-
-			nfailed++;
+			ferr("ERROR: nand_eraseblock failed on block %ld: %d\n",
+			     (long)startblock, ret);
+			nxmutex_unlock(&nand->lock);
+			return ret;
 		}
 
 		startblock++;
 	}
 
-	sem_post(&nand->lock);
-	return nfailed == nblocks ? -EIO : (int)nblocks;
+	nxmutex_unlock(&nand->lock);
+	return (int)nblocks;
 }
 
 /****************************************************************************
@@ -523,7 +564,8 @@ static int nand_erase(FAR struct mtd_dev_s *dev, off_t startblock, size_t nblock
  *
  ****************************************************************************/
 
-static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startpage, size_t npages, FAR uint8_t *buffer)
+static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startpage,
+                          size_t npages, FAR uint8_t *buffer)
 {
 	FAR struct nand_dev_s *nand = (FAR struct nand_dev_s *)dev;
 	FAR struct nand_raw_s *raw;
@@ -537,12 +579,12 @@ static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startpage, size_t npa
 	off_t block;
 	int ret;
 
-	fvdbg("startpage: %d npages: %zu\n", startpage, npages);
+	finfo("startpage: %" PRIdOFF " npages: %zu\n", startpage, npages);
 	DEBUGASSERT(nand && nand->raw);
 
 	/* Retrieve the model */
 
-	raw = nand->raw;
+	raw   = nand->raw;
 	model = &raw->model;
 
 	/* Get the number of pages in one block, the size of one page, and
@@ -550,17 +592,17 @@ static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startpage, size_t npa
 	 */
 
 	pagesperblock = nandmodel_pagesperblock(model);
-	pagesize = nandmodel_getpagesize(model);
-	maxblock = nandmodel_getdevblocks(model);
+	pagesize      = nandmodel_getpagesize(model);
+	maxblock      = nandmodel_getdevblocks(model);
 
 	/* Get the block and page offset associated with the startpage */
 
 	block = startpage / pagesperblock;
-	page = startpage % pagesperblock;
+	page  = startpage % pagesperblock;
 
 	/* Lock access to the NAND until we complete the read */
 
-	sem_wait(&nand->lock);
+	nxmutex_lock(&nand->lock);
 
 	/* Then read every page from NAND */
 
@@ -568,7 +610,8 @@ static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startpage, size_t npa
 		/* Check for attempt to read beyond the end of NAND */
 
 		if (block > maxblock) {
-			fdbg("ERROR: Read beyond the end of FLASH, block=%ld\n", (long)block);
+			ferr("ERROR: Read beyond the end of FLASH, block=%ld\n",
+			     (long)block);
 
 			ret = -ESPIPE;
 			goto errout_with_lock;
@@ -580,7 +623,8 @@ static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startpage, size_t npa
 		if (ret == -EUCLEAN) {
 			fixedecc = true;
 		} else if (ret < 0) {
-			fdbg("ERROR: nand_readpage failed block=%d page=%d: %d\n", block, page, ret);
+			ferr("ERROR: nand_readpage failed block=%" PRIdOFF
+			     " page=%d: %d\n", block, page, ret);
 			goto errout_with_lock;
 		}
 
@@ -599,11 +643,11 @@ static ssize_t nand_bread(FAR struct mtd_dev_s *dev, off_t startpage, size_t npa
 		buffer += pagesize;
 	}
 
-	sem_post(&nand->lock);
-	return fixedecc ? -EUCLEAN : npages; 
+	nxmutex_unlock(&nand->lock);
+	return fixedecc ? -EUCLEAN : npages;
 
 errout_with_lock:
-	sem_post(&nand->lock);
+	nxmutex_unlock(&nand->lock);
 	return ret;
 }
 
@@ -615,7 +659,8 @@ errout_with_lock:
  *
  ****************************************************************************/
 
-static ssize_t nand_bwrite(FAR struct mtd_dev_s *dev, off_t startpage, size_t npages, const uint8_t *buffer)
+static ssize_t nand_bwrite(FAR struct mtd_dev_s *dev, off_t startpage,
+                           size_t npages, const uint8_t *buffer)
 {
 	FAR struct nand_dev_s *nand = (FAR struct nand_dev_s *)dev;
 	FAR struct nand_raw_s *raw;
@@ -628,12 +673,12 @@ static ssize_t nand_bwrite(FAR struct mtd_dev_s *dev, off_t startpage, size_t np
 	off_t block;
 	int ret;
 
-	fvdbg("startpage: %d npages: %zu\n", startpage, npages);
+	finfo("startpage: %" PRIdOFF " npages: %zu\n", startpage, npages);
 	DEBUGASSERT(nand && nand->raw);
 
 	/* Retrieve the model */
 
-	raw = nand->raw;
+	raw   = nand->raw;
 	model = &raw->model;
 
 	/* Get the number of pages in one block, the size of one page, and
@@ -641,17 +686,17 @@ static ssize_t nand_bwrite(FAR struct mtd_dev_s *dev, off_t startpage, size_t np
 	 */
 
 	pagesperblock = nandmodel_pagesperblock(model);
-	pagesize = nandmodel_getpagesize(model);
-	maxblock = nandmodel_getdevblocks(model);
+	pagesize      = nandmodel_getpagesize(model);
+	maxblock      = nandmodel_getdevblocks(model);
 
 	/* Get the block and page offset associated with the startpage */
 
 	block = startpage / pagesperblock;
-	page = startpage % pagesperblock;
+	page  = startpage % pagesperblock;
 
 	/* Lock access to the NAND until we complete the write */
 
-	sem_wait(&nand->lock);
+	nxmutex_lock(&nand->lock);
 
 	/* Then write every page into NAND */
 
@@ -659,7 +704,8 @@ static ssize_t nand_bwrite(FAR struct mtd_dev_s *dev, off_t startpage, size_t np
 		/* Check for attempt to write beyond the end of NAND */
 
 		if (block > maxblock) {
-			fdbg("ERROR: Write beyond the end of FLASH, block=%ld\n", (long)block);
+			ferr("ERROR: Write beyond the end of FLASH, block=%ld\n",
+			     (long)block);
 
 			ret = -ESPIPE;
 			goto errout_with_lock;
@@ -669,7 +715,8 @@ static ssize_t nand_bwrite(FAR struct mtd_dev_s *dev, off_t startpage, size_t np
 
 		ret = nand_writepage(nand, block, page, buffer);
 		if (ret < 0) {
-			fdbg("ERROR: nand_writepage failed block=%ld page=%d: %d\n", (long)block, page, ret);
+			ferr("ERROR: nand_writepage failed block=%ld page=%d: %d\n",
+			     (long)block, page, ret);
 			goto errout_with_lock;
 		}
 
@@ -688,11 +735,11 @@ static ssize_t nand_bwrite(FAR struct mtd_dev_s *dev, off_t startpage, size_t np
 		buffer += pagesize;
 	}
 
-	sem_post(&nand->lock);
+	nxmutex_unlock(&nand->lock);
 	return npages;
 
 errout_with_lock:
-	sem_post(&nand->lock);
+	nxmutex_unlock(&nand->lock);
 	return ret;
 }
 
@@ -705,14 +752,15 @@ static int nand_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 	FAR struct nand_dev_s *nand = (FAR struct nand_dev_s *)dev;
 	FAR struct nand_raw_s *raw;
 	FAR struct nand_model_s *model;
-	int ret = -EINVAL;			/* Assume good command with bad parameters */
+	int ret = -EINVAL; /* Assume good command with bad parameters */
 
 	DEBUGASSERT(nand && nand->raw);
-	raw = nand->raw;
+	raw   = nand->raw;
 	model = &raw->model;
 
 	switch (cmd) {
-	case MTDIOC_GEOMETRY: {
+	case MTDIOC_GEOMETRY:
+	{
 		FAR struct mtd_geometry_s *geo = (FAR struct mtd_geometry_s *)arg;
 		if (geo) {
 			memset(geo, 0, sizeof(*geo));
@@ -725,28 +773,62 @@ static int nand_ioctl(FAR struct mtd_dev_s *dev, int cmd, unsigned long arg)
 			 *   neraseblocks The number of erase blocks in the device
 			 */
 
-			geo->blocksize = model->pagesize;
-			geo->erasesize = nandmodel_getbyteblocksize(model);
+			geo->blocksize    = model->pagesize;
+			geo->erasesize    = nandmodel_getbyteblocksize(model);
 			geo->neraseblocks = nandmodel_getdevblocks(model);
-			ret = OK;
+			ret               = OK;
 		}
 	}
 	break;
-	case MTDIOC_BULKERASE: {
+
+	case BIOC_PARTINFO:
+	{
+		FAR struct partition_info_s *info =
+		  (FAR struct partition_info_s *)arg;
+		if (info != NULL) {
+			info->numsectors  = nandmodel_getdevpagesize(model);
+			info->sectorsize  = model->pagesize;
+			info->startsector = 0;
+			info->parent[0]   = '\0';
+			ret               = OK;
+		}
+	}
+	break;
+
+	case MTDIOC_BULKERASE:
+	{
 		/* Erase the entire device */
 
 		ret = nand_erase(dev, 0, nandmodel_getdevblocks(model));
 	}
 	break;
 
-	case MTDIOC_ERASESTATE: {
-		FAR uint8_t *result = (FAR uint8_t *) arg;
+	case MTDIOC_ERASESTATE:
+	{
+		FAR uint8_t *result = (FAR uint8_t *)arg;
 		*result = 0xff;
 		ret = OK;
 	}
 	break;
+
+	case MTDIOC_ERASESECTORS:
+	{
+		FAR struct mtd_erase_s *erase = (FAR struct mtd_erase_s *)arg;
+		ret = nand_erase(dev, erase->startblock, erase->nblocks);
+	}
+	break;
+
+	case MTDIOC_ISBAD:
+	{
+		FAR struct mtd_bad_block_s *bad_block =
+		                           (FAR struct mtd_bad_block_s *)arg;
+		bad_block->bad_flag = nand_isbad(dev, bad_block->block_num);
+		ret = OK;
+	}
+	break;
+
 	default:
-		ret = -ENOTTY;			/* Bad command */
+		ret = -ENOTTY; /* Bad command */
 		break;
 	}
 
@@ -762,14 +844,13 @@ static int nand_isbad(FAR struct mtd_dev_s *dev, off_t block)
 	FAR struct nand_dev_s *nand = (FAR struct nand_dev_s *)dev;
 	int ret;
 
-	sem_wait(&nand->lock);
+	nxmutex_lock(&nand->lock);
 	ret = nand_checkblock(nand, block);
-	sem_post(&nand->lock);
+	nxmutex_unlock(&nand->lock);
 
 	if (ret == GOODBLOCK) {
 		ret = 0;
 	} else if (ret == BADBLOCK) {
-		fdbg("###### bad block #### block : %d\n", block);
 		ret = 1;
 	}
 
@@ -785,9 +866,9 @@ static int nand_markbad(FAR struct mtd_dev_s *dev, off_t block)
 	FAR struct nand_dev_s *nand = (FAR struct nand_dev_s *)dev;
 	int ret;
 
-	sem_wait(&nand->lock);
+	nxmutex_lock(&nand->lock);
 	ret = nand_markblock(nand, block);
-	sem_post(&nand->lock);
+	nxmutex_unlock(&nand->lock);
 
 	return ret;
 }
@@ -819,21 +900,21 @@ FAR struct mtd_dev_s *nand_raw_initialize(FAR struct nand_raw_s *raw)
 
 	nand = kmm_zalloc(sizeof(struct nand_dev_s));
 	if (!nand) {
-		fdbg("ERROR: Failed to allocate the NAND MTD device structure\n");
+		ferr("ERROR: Failed to allocate the NAND MTD device structure\n");
 		return NULL;
 	}
 
 	/* Initialize the NAND MTD device structure */
 
-	nand->mtd.erase = nand_erase;
-	nand->mtd.bread = nand_bread;
-	nand->mtd.bwrite = nand_bwrite;
-	nand->mtd.ioctl = nand_ioctl;
-	nand->mtd.isbad = nand_isbad;
+	nand->mtd.erase   = nand_erase;
+	nand->mtd.bread   = nand_bread;
+	nand->mtd.bwrite  = nand_bwrite;
+	nand->mtd.ioctl   = nand_ioctl;
+	nand->mtd.isbad   = nand_isbad;
 	nand->mtd.markbad = nand_markbad;
-	nand->raw = raw;
+	nand->raw         = raw;
 
-	sem_init(&nand->lock, 0, 1);
+	nxmutex_init(&nand->lock);
 
 #if defined(CONFIG_MTD_NAND_BLOCKCHECK) && defined(CONFIG_DEBUG_INFO) && \
     defined(CONFIG_DEBUG_FS)
@@ -865,7 +946,90 @@ FAR struct mtd_dev_s *nand_raw_initialize(FAR struct nand_raw_s *raw)
 
 FAR struct mtd_dev_s *nand_initialize(FAR struct nand_raw_s *raw)
 {
+	struct onfi_pgparam_s onfi;
 	int ret;
+
+	finfo("cmdaddr=%p addraddr=%p dataaddr=%p\n",
+	      (FAR void *)raw->cmdaddr, (FAR void *)raw->addraddr,
+	      (FAR void *)raw->dataaddr);
+
+	/* Check if there is NAND connected on the EBI */
+
+	if (!onfi_ebidetect(raw->cmdaddr, raw->addraddr, raw->dataaddr)) {
+		ferr("ERROR: No NAND device detected at: %p %p %p\n",
+		     (FAR void *)raw->cmdaddr, (FAR void *)raw->addraddr,
+		     (FAR void *)raw->dataaddr);
+		return NULL;
+	}
+
+	/* Read the ONFI page parameters from the NAND device */
+
+	ret = onfi_read(raw->cmdaddr, raw->addraddr, raw->dataaddr, &onfi);
+	if (ret < 0) {
+		uint32_t chipid;
+
+		finfo("Failed to get ONFI page parameters: %d\n", ret);
+
+		/* If the ONFI model is not supported, determine the NAND
+		 * model from a lookup of known FLASH parts.
+		 */
+
+		chipid = nand_chipid(raw);
+		if (nandmodel_find(g_nandmodels, NAND_NMODELS, chipid,
+		                   &raw->model)) {
+			ferr("ERROR: Could not determine NAND model\n");
+			return NULL;
+		}
+	} else {
+		FAR struct nand_model_s *model = &raw->model;
+		uint64_t size;
+
+		finfo("Found ONFI compliant NAND FLASH\n");
+
+		/* Construct the NAND model structure */
+
+		model->devid     = onfi.manufacturer;
+		model->options   = onfi.buswidth ? NANDMODEL_DATAWIDTH16 :
+		                                   NANDMODEL_DATAWIDTH8;
+		model->pagesize  = onfi.pagesize;
+		model->sparesize = onfi.sparesize;
+
+		size             = (uint64_t)onfi.pagesperblock *
+		                   (uint64_t)onfi.blocksperlun *
+		                   (uint64_t)onfi.pagesize;
+
+		DEBUGASSERT(size < ((uint64_t)1 << 36));
+		model->devsize   = (uint16_t)(size >> 20);
+
+		size             = (uint64_t)onfi.pagesperblock *
+		                   (uint64_t)onfi.pagesize;
+
+		DEBUGASSERT(size < ((uint64_t)1 << 26));
+		model->blocksize = (uint16_t)(size >> 10);
+
+		switch (onfi.pagesize) {
+		case 256:
+			model->scheme = &g_nand_sparescheme256;
+			break;
+
+		case 512:
+			model->scheme = &g_nand_sparescheme512;
+			break;
+
+		case 2048:
+			model->scheme = &g_nand_sparescheme2048;
+			break;
+
+		case 4096:
+			model->scheme = &g_nand_sparescheme4096;
+			break;
+		}
+
+		/* Enable any internal, embedded ECC function */
+
+		onfi_embeddedecc(&onfi, raw->cmdaddr, raw->addraddr, raw->dataaddr,
+		                                                     true);
+	}
 
 	return nand_raw_initialize(raw);
 }

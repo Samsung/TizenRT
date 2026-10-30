@@ -18,7 +18,8 @@
 /****************************************************************************
  * drivers/mtd/mtd_nandscheme.c
  *
- *   Copyright (c) 2012, Atmel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: Copyright (c) 2012, Atmel Corporation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -67,62 +68,58 @@
 
 /* Spare area placement scheme for 256 byte pages */
 
-const struct nand_scheme_s g_nand_sparescheme256 = {
-	5,							/* Bad block marker is at position #5 */
-	3,							/* 3 ecc bytes */
-	4,							/* 4 extra bytes */
-	{0, 1, 2},					/* Ecc bytes positions */
-	{3, 4, 6, 7},				/* Extra bytes positions */
+const struct nand_scheme_s g_nand_sparescheme256 =
+{
+  5,             /* Bad block marker is at position #5 */
+  3,             /* 3 ecc bytes */
+  4,             /* 4 extra bytes */
+  {0, 1, 2},     /* Ecc bytes positions */
+  {3, 4, 6, 7},  /* Extra bytes positions */
 };
 
 /* Spare area placement scheme for 512 byte pages */
 
-const struct nand_scheme_s g_nand_sparescheme512 = {
-	5,							/* Bad block marker is at position #5 */
-	6,							/* 6 ecc bytes */
-	8,							/* 8 extra bytes */
-	{0, 1, 2, 3, 6, 7},			/* Ecc bytes positions */
-	{8, 9, 10, 11, 12, 13, 14, 15},	/* Extra bytes positions */
+const struct nand_scheme_s g_nand_sparescheme512 =
+{
+  5,                               /* Bad block marker is at position #5 */
+  6,                               /* 6 ecc bytes */
+  8,                               /* 8 extra bytes */
+  {0, 1, 2, 3, 6, 7},              /* Ecc bytes positions */
+  {8, 9, 10, 11, 12, 13, 14, 15},  /* Extra bytes positions */
 };
 
 /* Spare area placement scheme for 2048 byte pages */
 
-const struct nand_scheme_s g_nand_sparescheme2048 = {
-	0,							/* Bad block marker is at position #0 */
-	24,							/* 24 ecc bytes */
-	38,							/* 38 extra bytes */
-	{
-		40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
-		58, 59, 60, 61, 62, 63
-	},	/* Ecc bytes positions */
+const struct nand_scheme_s g_nand_sparescheme2048 =
+{
+  0,                          /* Bad block marker is at position #0 */
+  24,                         /* 24 ecc bytes */
+  38,                         /* 38 extra bytes */
+  {40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
+  58, 59, 60, 61, 62, 63},   /* Ecc bytes positions */
 
-	{
-		2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-		20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
-		38, 39
-	},					/* Extra bytes positions */
+  { 2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+  20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
+  38, 39},                   /* Extra bytes positions */
 };
 
 /* Spare area placement scheme for 4096 byte pages. */
 
-const struct nand_scheme_s g_nand_sparescheme4096 = {
-	0,							/* Bad block marker is at position #0 */
-	48,							/* 48 ecc bytes */
-	78,							/* 78 extra bytes */
-	{
-		80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93,
-		94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107,
-		108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121,
-		122, 123, 124, 125, 126, 127
-	},	/* Ecc bytes positions */
+const struct nand_scheme_s g_nand_sparescheme4096 =
+{
+  0,                              /* Bad block marker is at position #0 */
+  48,                             /* 48 ecc bytes */
+  78,                             /* 78 extra bytes */
+  {80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,  91,  92,  93,
+  94,  95,  96,  97,  98,  99, 100, 101, 102, 103, 104, 105, 106, 107,
+  108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121,
+  122, 123, 124, 125, 126, 127},  /* Ecc bytes positions */
 
-	{
-		2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-		20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
-		38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55,
-		56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73,
-		74, 75, 76, 77, 78, 79
-	},	/* Extra bytes positions */
+  { 2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+  20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
+  38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55,
+  56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73,
+  74, 75, 76, 77, 78, 79},        /* Extra bytes positions */
 };
 
 /****************************************************************************
@@ -146,7 +143,9 @@ const struct nand_scheme_s g_nand_sparescheme4096 = {
  *
  ****************************************************************************/
 
-void nandscheme_readbadblockmarker(FAR const struct nand_scheme_s *scheme, FAR const uint8_t *spare, FAR uint8_t *marker)
+void nandscheme_readbadblockmarker(FAR const struct nand_scheme_s *scheme,
+                                   FAR const uint8_t *spare,
+                                   FAR uint8_t *marker)
 {
 	*marker = spare[scheme->bbpos];
 }
@@ -168,7 +167,8 @@ void nandscheme_readbadblockmarker(FAR const struct nand_scheme_s *scheme, FAR c
  *
  ****************************************************************************/
 
-void nandscheme_writebadblockmarker(FAR const struct nand_scheme_s *scheme, FAR uint8_t *spare, uint8_t marker)
+void nandscheme_writebadblockmarker(FAR const struct nand_scheme_s *scheme,
+                                    FAR uint8_t *spare, uint8_t marker)
 {
 	spare[scheme->bbpos] = marker;
 }
@@ -189,7 +189,8 @@ void nandscheme_writebadblockmarker(FAR const struct nand_scheme_s *scheme, FAR 
  *
  ****************************************************************************/
 
-void nandscheme_readecc(FAR const struct nand_scheme_s *scheme, FAR const uint8_t *spare, FAR uint8_t *ecc)
+void nandscheme_readecc(FAR const struct nand_scheme_s *scheme,
+                        FAR const uint8_t *spare, FAR uint8_t *ecc)
 {
 	int i;
 
@@ -214,7 +215,8 @@ void nandscheme_readecc(FAR const struct nand_scheme_s *scheme, FAR const uint8_
  *
  ****************************************************************************/
 
-void nandscheme_writeecc(FAR const struct nand_scheme_s *scheme, FAR uint8_t *spare, FAR const uint8_t *ecc)
+void nandscheme_writeecc(FAR const struct nand_scheme_s *scheme,
+                         FAR uint8_t *spare, FAR const uint8_t *ecc)
 {
 	int i;
 
@@ -242,14 +244,16 @@ void nandscheme_writeecc(FAR const struct nand_scheme_s *scheme, FAR uint8_t *sp
  *
  ****************************************************************************/
 
-void nandscheme_readextra(FAR const struct nand_scheme_s *scheme, FAR const uint8_t *spare, FAR void *extra, unsigned int size, unsigned int offset)
+void nandscheme_readextra(FAR const struct nand_scheme_s *scheme,
+                          FAR const uint8_t *spare, FAR void *extra,
+                          unsigned int size, unsigned int offset)
 {
 	DEBUGASSERT((size + offset) <= scheme->nxbytes);
 
 	int i;
 
 	for (i = 0; i < size; i++) {
-		((FAR uint8_t *) extra)[i] = spare[scheme->xbytepos[i + offset]];
+		((FAR uint8_t *)extra)[i] = spare[scheme->xbytepos[i + offset]];
 	}
 }
 
@@ -272,13 +276,15 @@ void nandscheme_readextra(FAR const struct nand_scheme_s *scheme, FAR const uint
  *
  ****************************************************************************/
 
-void nandscheme_writeextra(FAR const struct nand_scheme_s *scheme, FAR uint8_t *spare, FAR const void *extra, unsigned int size, unsigned int offset)
+void nandscheme_writeextra(FAR const struct nand_scheme_s *scheme,
+                           FAR uint8_t *spare, FAR const void *extra,
+                           unsigned int size, unsigned int offset)
 {
 	DEBUGASSERT((size + offset) <= scheme->nxbytes);
 
 	uint32_t i;
 	for (i = 0; i < size; i++) {
-		spare[scheme->xbytepos[i + offset]] = ((FAR uint8_t *) extra)[i];
+		spare[scheme->xbytepos[i + offset]] = ((FAR uint8_t *)extra)[i];
 	}
 }
 
@@ -298,7 +304,8 @@ void nandscheme_writeextra(FAR const struct nand_scheme_s *scheme, FAR uint8_t *
  *
  ****************************************************************************/
 
-int nandscheme_build4096(FAR struct nand_scheme_s *scheme, unsigned int sparesize, unsigned int eccoffset)
+int nandscheme_build4096(FAR struct nand_scheme_s *scheme,
+                         unsigned int sparesize, unsigned int eccoffset)
 {
 	uint8_t eccsize = g_nand_sparescheme4096.eccsize;
 	int i;
@@ -307,7 +314,7 @@ int nandscheme_build4096(FAR struct nand_scheme_s *scheme, unsigned int sparesiz
 		return -E2BIG;
 	}
 
-	scheme->bbpos = g_nand_sparescheme4096.bbpos;
+	scheme->bbpos   = g_nand_sparescheme4096.bbpos;
 	scheme->eccsize = eccsize;
 
 	for (i = 0; i < eccsize; i++) {
