@@ -18,6 +18,8 @@
 /****************************************************************************
  * syscall/syscall_names.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -41,7 +43,9 @@
 
 #include <tinyara/config.h>
 
-#if defined(CONFIG_LIB_SYSCALL)
+#ifndef CONFIG_LIB_SYSCALL
+#define CONFIG_LIB_SYSCALL
+#endif
 #include <syscall.h>
 
 /****************************************************************************
@@ -55,10 +59,9 @@
 
 const char *g_funcnames[SYS_nsyscalls] =
 {
+#  define SYSCALL_LOOKUP1(f,n) #f
+#  define SYSCALL_LOOKUP(f,n)  , #f
+#  include <sys/syscall_lookup.h>
 #  undef SYSCALL_LOOKUP1
-#  define SYSCALL_LOOKUP1(f, n, p) #f
 #  undef SYSCALL_LOOKUP
-#  define SYSCALL_LOOKUP(f, n, p)  #f
-#  include "syscall_lookup.h"
 };
-#endif /* CONFIG_LIB_SYSCALL */

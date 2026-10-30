@@ -19,7 +19,7 @@ menuconfig LIB_SYSCALL
 
 		If if there are no privilege issues preventing the call, system
 		calls may also be of value because it can eliminate the need for
-		symbol tables when linking external modules to the TinyAra base code.
+		symbol tables when linking external modules to the NuttX base code.
 		The selection will build libsyscall.  External modules can then link
 		with libsyscall when they are built and they can call into the OS
 		with no knowledge of the actual address in the OS.  In this case,
@@ -28,17 +28,6 @@ menuconfig LIB_SYSCALL
 		to accomplish the interface.
 
 if LIB_SYSCALL
-
-config SYS_RESERVED
-	int "Number of reserved system calls"
-	default 0
-	---help---
-		Kernel system calls may share the same software trapping mechanism
-		as other functions used by architecture port.  Those software traps
-		must be reserved for use exclusively by the architecture.  These
-		value specifies the number of reserved software traps used by the
-		architecture; number of the kernel system calls will begin with this
-		number.
 
 config SYS_NNEST
 	int "Number of nested system calls"
@@ -51,9 +40,8 @@ config SYS_NNEST
 		system call processing cause a call back into the user space code,
 		and (3) the user space code performs another system call.
 
-		In the current design, this can happen only under one condition:
-		When the kernel calls back into user space in order to allocate user
-		space memory.  So it is expected that the maximum nesting level will
-		be only 2.
+		I don't believe that any nested system calls will occur in the
+		current design so the default maximum nesting level of 2 should be
+		more than sufficient.
 
 endif # LIB_SYSCALL
