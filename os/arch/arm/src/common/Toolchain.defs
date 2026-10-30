@@ -622,22 +622,6 @@ endif
 
 LDELFFLAGS += -e _start -T $(call CONVERT_PATH,$(TOPDIR)$(DELIM)libs$(DELIM)libc$(DELIM)elf$(DELIM)gnu-elf.ld)
 
-# Zig toolchain
-
-include $(TOPDIR)/tools/Zig.defs
-
-# Rust toolchain
-
-include $(TOPDIR)/tools/Rust.defs
-
-# LDC (LLVM D Compiler) toolchain
-
-include $(TOPDIR)/tools/D.defs
-
-# Swift 6 toolchain
-
-include $(TOPDIR)/tools/Swift.defs
-
 # Shared library build flags
 
 SHCCFLAGS = -fPIC -fPIE -fvisibility=default
