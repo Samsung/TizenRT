@@ -16,42 +16,29 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * include/tinyara/analog/ioctl.h
+ * include/nuttx/analog/ioctl.h
  *
- *   Copyright (C) 2017 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_ANALOG_IOCTL_H
-#define __INCLUDE_TINYARA_ANALOG_IOCTL_H
+#ifndef __INCLUDE_NUTTX_ANALOG_IOCTL_H
+#define __INCLUDE_NUTTX_ANALOG_IOCTL_H
 
 /****************************************************************************
  * Included Files
@@ -64,34 +51,102 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-/*
- * The analog driver sub-system uses the standard character driver framework.
+/* The analog driver sub-system uses the standard character driver framework.
  * However, since the driver is a devices control interface rather than a
  * data transfer interface, the majority of the functionality is implemented
  * in driver ioctl calls.  Standard ioctl commands are listed below:
  */
 
-/* ADC */
+/* DAC/ADC */
 
-#define ANIOC_TRIGGER		_ANIOC(0x0001)	/* Trigger one conversion
-						 * IN: None
-						 * OUT: None */
+#define ANIOC_TRIGGER           _ANIOC(0x0001)  /* Trigger one conversion
+                                                 * IN: None
+                                                 * OUT: None */
+#define ANIOC_WDOG_UPPER        _ANIOC(0x0002)  /* Set upper threshold for
+                                                 * watchdog
+                                                 * IN: Threshold value
+                                                 * OUT: None */
+#define ANIOC_WDOG_LOWER        _ANIOC(0x0003)  /* Set lower threshold for
+                                                 * watchdog
+                                                 * IN: Threshold value
+                                                 * OUT: None */
+#define ANIOC_GET_NCHANNELS     _ANIOC(0x0004)  /* Get the number of
+                                                 * configured channels
+                                                 * IN: None
+                                                 * OUT: Number of channels */
+#define ANIOC_RESET_FIFO        _ANIOC(0x0005)  /* Clear data receive FIFO
+                                                 * IN: None
+                                                 * OUT: None */
+#define ANIOC_SAMPLES_ON_READ   _ANIOC(0x0006)  /* Get the number of
+                                                 * samples to be read
+                                                 * IN: None
+                                                 * OUT: Number of samples
+                                                 * waiting to be read */
 
-#define AN_FIRST		0x0001		/* First commands */
-#define AN_NCMDS		1		/* Two common commands */
+#define AN_FIRST          0x0001          /* First common command */
+#define AN_NCMDS          6               /* Number of common commands */
 
-/*
- * User defined ioctl commands are also supported. These will be forwarded
- * by the upper-half QE driver to the lower-half QE driver via the ioctl()
- * method of the QE lower-half interface. However, the lower-half driver
+/* User defined ioctl commands are also supported. These will be forwarded
+ * by the upper-half driver to the lower-half driver via the ioctl()
+ * method of the lower-half interface.  However, the lower-half driver
  * must reserve a block of commands as follows in order prevent IOCTL
  * command numbers from overlapping.
  */
 
-/* See include/tinyara/sensors/ads2142.h */
+/* See include/nuttx/analog/ads1242.h */
 
-#define AN_ADS2142_FIRST	(AN_FIRST + AN_NCMDS)
-#define AN_ADS2142_NCMDS	6
+#define AN_ADS2142_FIRST  (AN_FIRST + AN_NCMDS)
+#define AN_ADS2142_NCMDS  6
+
+/* See include/nuttx/analog/lm92001.h */
+
+#define AN_LMP92001_FIRST (AN_ADS2142_FIRST + AN_ADS2142_NCMDS)
+#define AN_LMP92001_NCMDS 7
+
+/* See include/nuttx/analog/ads7828.h */
+
+#define AN_ADS7828_FIRST (AN_LMP92001_FIRST + AN_LMP92001_NCMDS)
+#define AN_ADS7828_NCMDS 6
+
+/* See arch/arm/src/stm32l4/stm32l4_adc.h */
+
+#define AN_STM32L4_FIRST (AN_ADS7828_FIRST + AN_ADS7828_NCMDS)
+#define AN_STM32L4_NCMDS 2
+
+/* See include/nuttx/analog/max1161x.h */
+
+#define AN_MAX1161X_FIRST (AN_STM32L4_FIRST + AN_STM32L4_NCMDS)
+#define AN_MAX1161X_NCMDS 8
+
+/* See include/nuttx/analog/mcp48xx.h */
+
+#define AN_MCP48XX_FIRST (AN_MAX1161X_FIRST + AN_MAX1161X_NCMDS)
+#define AN_MCP48XX_NCMDS 3
+
+/* See arch/arm/src/samv7/sam_afec.h */
+
+#define AN_SAMV7_AFEC_FIRST (AN_MCP48XX_FIRST + AN_MCP48XX_NCMDS)
+#define AN_SAMV7_AFEC_NCMDS 1
+
+/* See include/nuttx/analog/mcp3008.h */
+
+#define AN_MCP3008_FIRST (AN_SAMV7_AFEC_FIRST + AN_SAMV7_AFEC_NCMDS)
+#define AN_MCP3008_NCMDS 1
+
+/* See include/nuttx/analog/ads1115.h */
+
+#define AN_ADS1115_FIRST (AN_MCP3008_FIRST + AN_MCP3008_NCMDS)
+#define AN_ADS1115_NCMDS 10
+
+/* See include/nuttx/analog/mcp47x6.h */
+
+#define AN_MCP47X6_FIRST (AN_ADS1115_FIRST + AN_ADS1115_NCMDS)
+#define AN_MCP47X6_NCMDS 3
+
+/* See include/nuttx/analog/ads7046.h */
+
+#define AN_ADS7046_FIRST  (AN_MCP47X6_FIRST + AN_MCP47X6_NCMDS)
+#define AN_ADS7046_NCMDS  3
 
 /****************************************************************************
  * Public Function Prototypes
@@ -110,4 +165,4 @@ extern "C"
 }
 #endif
 
-#endif /* __INCLUDE_TINYARA_ANALOG_IOCTL_H */
+#endif /* __INCLUDE_NUTTX_ANALOG_IOCTL_H */

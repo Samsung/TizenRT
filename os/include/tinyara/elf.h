@@ -16,52 +16,103 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * include/tinyara/elf.h
+ * include/nuttx/elf.h
  *
- *   Copyright (C) 2019 Pinecone Inc. All rights reserved.
- *   Author: Xiang Xiao <xiaoxiang@pinecone.net>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_ELF_H
-#define __INCLUDE_TINYARA_ELF_H
+#ifndef __INCLUDE_NUTTX_ELF_H
+#define __INCLUDE_NUTTX_ELF_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
-#include <elf32.h>
+#include <elf.h>
+#include <arch/elf.h>
+#include <stdbool.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#define ELF_PRARGSZ    (80)  /* Number of chars for args */
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+#ifdef CONFIG_COREDUMP
+typedef struct elf_prpsinfo_s {
+	char           pr_state;    /* Numeric process state */
+	char           pr_sname;    /* Char for pr_state */
+	char           pr_zomb;     /* Zombie */
+	char           pr_nice;     /* Nice val */
+	unsigned long  pr_flag;     /* Flags */
+	unsigned short pr_uid;
+	unsigned short pr_gid;
+	int            pr_pid;
+	int            pr_ppid;
+	int            pr_pgrp;
+	int            pr_sid;
+	char           pr_fname[16];           /* Filename of executable */
+	char           pr_psargs[ELF_PRARGSZ]; /* Initial part of arg list */
+} elf_prpsinfo_t;
+
+typedef struct elf_siginfo_s {
+	int            si_signo;    /* Signal number */
+	int            si_code;     /* Extra code */
+	int            si_errno;    /* Errno */
+} elf_siginfo_t;
+
+typedef struct elf_timeval_s {
+	long           tv_sec;      /* Seconds */
+	long           tv_usec;     /* Microseconds */
+} elf_timeval_t;
+
+typedef struct elf_prstatus_s {
+	elf_siginfo_t  pr_info;     /* Info associated with signal */
+	short          pr_cursig;   /* Current signal */
+	short          pr_padding;  /* Padding align */
+	unsigned long  pr_sigpend;  /* Set of pending signals */
+	unsigned long  pr_sighold;  /* Set of held signals */
+	int            pr_pid;
+	int            pr_ppid;
+	int            pr_pgrp;
+	int            pr_sid;
+	elf_timeval_t  pr_utime;    /* User time */
+	elf_timeval_t  pr_stime;    /* System time */
+	elf_timeval_t  pr_cutime;   /* Cumulative user time */
+	elf_timeval_t  pr_cstime;   /* Cumulative system time */
+	elf_gregset_t  pr_regs;
+	int            pr_fpvalid;  /* True if math co-processor being used */
+} elf_prstatus_t;
+#endif
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
 
 /****************************************************************************
  * Name: up_checkarch
@@ -80,7 +131,7 @@
  ****************************************************************************/
 
 #ifdef CONFIG_LIBC_ARCH_ELF
-bool up_checkarch(FAR const Elf32_Ehdr *hdr);
+bool up_checkarch(FAR const Elf_Ehdr *hdr);
 #endif
 
 /****************************************************************************
@@ -106,8 +157,10 @@ bool up_checkarch(FAR const Elf32_Ehdr *hdr);
  ****************************************************************************/
 
 #ifdef CONFIG_LIBC_ARCH_ELF
-int up_relocate(FAR const Elf32_Rel *rel, FAR const Elf32_Sym *sym, uintptr_t addr);
-int up_relocateadd(FAR const Elf32_Rela *rel, FAR const Elf32_Sym *sym, uintptr_t addr);
+int up_relocate(FAR const Elf_Rel *rel, FAR const Elf_Sym *sym,
+                uintptr_t addr, FAR void *arch_data);
+int up_relocateadd(FAR const Elf_Rela *rel, FAR const Elf_Sym *sym,
+                   uintptr_t addr, FAR void *arch_data);
 #endif
 
 /****************************************************************************
@@ -121,13 +174,17 @@ int up_relocateadd(FAR const Elf32_Rela *rel, FAR const Elf32_Sym *sym, uintptr_
  *   size    - The exception index section size.
  *
  * Returned Value:
- *   Zero (OK) if the initialization was successful. Otherwise, a negated errno
- *   value indicating the cause of the failure.
+ *   Zero (OK) if the initialization was successful. Otherwise, a negated
+ *   errno value indicating the cause of the failure.
  *
  ****************************************************************************/
 
 #ifdef CONFIG_CXX_EXCEPTION
-int up_init_exidx(Elf32_Addr address, Elf32_Word size);
+int up_init_exidx(Elf_Addr address, Elf_Word size);
 #endif
 
-#endif							/* __INCLUDE_TINYARA_ELF_H */
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* __INCLUDE_NUTTX_ELF_H */

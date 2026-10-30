@@ -18,7 +18,8 @@
 /****************************************************************************
  * include/nuttx/mtd/nand.h
  *
- *   Copyright (c) 2012, Atmel Corporation
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2012, Atmel Corporation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,8 +50,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_MTD_NAND_H
-#define __INCLUDE_MTD_NAND_H
+#ifndef __INCLUDE_NUTTX_MTD_NAND_H
+#define __INCLUDE_NUTTX_MTD_NAND_H
 
 /****************************************************************************
  * Included Files
@@ -61,7 +62,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <tinyara/mtd/mtd.h>
 #include <tinyara/mtd/nand_raw.h>
+#include <tinyara/mutex.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -78,9 +81,9 @@
  */
 
 struct nand_dev_s {
-	struct mtd_dev_s mtd;		/* Externally visible part of the driver */
-	FAR struct nand_raw_s *raw;	/* Retained reference to the lower half */
-	sem_t lock;					/* For exclusive access to the NAND FLASH */
+	struct mtd_dev_s mtd;       /* Externally visible part of the driver */
+	FAR struct nand_raw_s *raw; /* Retained reference to the lower half */
+	mutex_t lock;               /* For exclusive access to the NAND FLASH */
 };
 
 /****************************************************************************
@@ -91,7 +94,8 @@ struct nand_dev_s {
 
 #ifdef __cplusplus
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
@@ -139,5 +143,5 @@ FAR struct mtd_dev_s *nand_initialize(FAR struct nand_raw_s *raw);
 }
 #endif
 
-#endif							/* __ASSEMBLY__ */
-#endif							/* __INCLUDE_MTD_NAND_H */
+#endif /* __ASSEMBLY__ */
+#endif /* __INCLUDE_NUTTX_MTD_NAND_H */

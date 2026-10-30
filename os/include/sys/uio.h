@@ -18,10 +18,11 @@
 /****************************************************************************
  * include/sys/uio.h
  *
- *   Copyright (C) 2017 Grefory Nutt. All rights reserved.
- *   Copyright (C) 2015 Stavros Polymenis. All rights reserved.
- *   Author: Stavros Polymenis <sp@orbitalfox.com>
- *           Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2017 Grefory Nutt. All rights reserved.
+ * SPDX-FileCopyrightText 2015 Stavros Polymenis. All rights reserved.
+ * SPDX-FileContributor: Stavros Polymenis <sp@orbitalfox.com>
+ * SPDX-FileContributor: Gregory Nutt <gnutt@nuttx.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -52,8 +53,8 @@
  *
  ****************************************************************************/
 
-#ifndef __OS_INCLUDE_SYS_UIO_H
-#define __OS_INCLUDE_SYS_UIO_H
+#ifndef __INCLUDE_SYS_UIO_H
+#define __INCLUDE_SYS_UIO_H
 
 /****************************************************************************
  * Included Files
@@ -62,17 +63,35 @@
 #include <sys/types.h>
 
 /****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#if defined(CONFIG_FS_LARGEFILE)
+#  define preadv64  preadv
+#  define pwritev64 pwritev
+#endif
+
+/****************************************************************************
  * Public Types
  ****************************************************************************/
 
 struct iovec {
-	void  *iov_base;  /* Base address of I/O memory region */
-	size_t iov_len;  /* Size of the memory pointed to by iov_base */
+	FAR void *iov_base;  /* Base address of I/O memory region */
+	size_t    iov_len;   /* Size of the memory pointed to by iov_base */
 };
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
+
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
 
 /****************************************************************************
  * Name: readv()
@@ -118,9 +137,9 @@ ssize_t readv(int fildes, FAR const struct iovec *iov, int iovcnt);
  * Description:
  *   The writev() function is equivalent to write(), except as described
  *   below. The writev() function will gather output data from the 'iovcnt'
- *   buffers specified by the members of the 'iov' array: iov[0], iov[1], ...,
- *   iov[iovcnt-1]. The 'iovcnt' argument is valid if greater than 0 and less
- *   than or equal to IOV_MAX, as defined in limits.h.
+ *   buffers specified by the members of the 'iov' array: iov[0], iov[1],
+ *   ..., iov[iovcnt-1]. The 'iovcnt' argument is valid if greater than 0
+ *   and less than or equal to IOV_MAX, as defined in limits.h.
  *
  *   Each iovec entry specifies the base address and length of an area in
  *   memory from which data should be written. The writev() function always
@@ -154,4 +173,15 @@ ssize_t readv(int fildes, FAR const struct iovec *iov, int iovcnt);
 
 ssize_t writev(int fildes, FAR const struct iovec *iov, int iovcnt);
 
-#endif  /* __OS_INCLUDE_SYS_UIO_H */
+ssize_t preadv(int fildes, FAR const struct iovec *iov, int iovcnt,
+               off_t offset);
+
+ssize_t pwritev(int fildes, FAR const struct iovec *iov, int iovcnt,
+                off_t offset);
+
+#undef EXTERN
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* __INCLUDE_SYS_UIO_H */

@@ -1,0 +1,253 @@
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+//***************************************************************************
+// include/cxx/cmath
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.  The
+// ASF licenses this file to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance with the
+// License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+// License for the specific language governing permissions and limitations
+// under the License.
+//
+//***************************************************************************
+
+#ifndef __INCLUDE_CXX_CMATH
+#define __INCLUDE_CXX_CMATH
+
+//***************************************************************************
+// Included Files
+//***************************************************************************
+
+#include <tinyara/config.h>
+#include <tinyara/compiler.h>
+
+#if defined(CONFIG_LIBM_TOOLCHAIN)
+/* In toolchain libm mode, use toolchain <cmath> so it can include_next the
+ * matching C math.h header and populate std::* consistently.
+ */
+
+#  include_next <cmath>
+
+#else
+
+#  include <math.h>
+
+#undef signbit
+#undef fpclassify
+#undef isfinite
+#undef isinf
+#undef isnan
+
+//***************************************************************************
+// Namespace
+//***************************************************************************
+
+namespace std
+{
+#if defined(FLT_EVAL_METHOD) && FLT_EVAL_METHOD == 0
+  using ::float_t;
+  using ::double_t;
+#else
+  typedef float  float_t;
+  typedef double double_t;
+#endif
+
+#if defined(CONFIG_HAVE_FLOAT) && defined(FLT_EVAL_METHOD) && FLT_EVAL_METHOD == 0
+  using ::acosf;
+  using ::asinf;
+  using ::atanf;
+  using ::atan2f;
+  using ::ceilf;
+  using ::cosf;
+  using ::coshf;
+  using ::expf;
+  using ::expm1f;
+  using ::fabsf;
+  using ::floorf;
+  using ::fmodf;
+  using ::frexpf;
+  using ::ldexpf;
+  using ::logf;
+  using ::log1pf;
+  using ::log10f;
+  using ::log2f;
+  using ::modff;
+  using ::rintf;
+  using ::roundf;
+  using ::powf;
+  using ::sinf;
+  using ::sinhf;
+  using ::sqrtf;
+  using ::tanf;
+  using ::tanhf;
+  using ::gamma;
+  using ::lgamma;
+
+  constexpr bool
+  signbit(float __x)
+  { return __builtin_signbit(__x); }
+
+  constexpr int
+  fpclassify(float __x)
+  { return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL,
+				FP_SUBNORMAL, FP_ZERO, __x); }
+
+  constexpr bool
+  isfinite(float __x)
+  { return __builtin_isfinite(__x); }
+
+  constexpr bool
+  isinf(float __x)
+  { return __builtin_isinf(__x); }
+
+  constexpr bool
+  isnan(float __x)
+  { return __builtin_isnan(__x); }
+
+  constexpr float
+  nextafter(float from, float to)
+  { return ::nextafterf(from, to); }
+
+#endif
+
+#if defined(CONFIG_HAVE_DOUBLE) && defined(FLT_EVAL_METHOD) && FLT_EVAL_METHOD == 0
+  using ::acos;
+  using ::asin;
+  using ::atan;
+  using ::atan2;
+  using ::ceil;
+  using ::cos;
+  using ::cosh;
+  using ::exp;
+  using ::expm1;
+  using ::fabs;
+  using ::floor;
+  using ::fmod;
+  using ::frexp;
+  using ::ldexp;
+  using ::log;
+  using ::log1p;
+  using ::log10;
+  using ::log2;
+  using ::modf;
+  using ::rint;
+  using ::round;
+  using ::pow;
+  using ::sin;
+  using ::sinh;
+  using ::sqrt;
+  using ::tan;
+  using ::tanh;
+
+  constexpr bool
+  signbit(double __x)
+  { return __builtin_signbit(__x); }
+
+  constexpr int
+  fpclassify(double __x)
+  { return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL,
+		FP_SUBNORMAL, FP_ZERO, __x); }
+
+  constexpr bool
+  isfinite(double __x)
+  { return __builtin_isfinite(__x); }
+
+  constexpr bool
+  isinf(double __x)
+  { return __builtin_isinf(__x); }
+
+  constexpr bool
+  isnan(double __x)
+  { return __builtin_isnan(__x); }
+
+  constexpr double
+  nextafter(double from, double to)
+  { return ::nextafter(from, to); }
+
+#endif
+
+#if defined(CONFIG_HAVE_LONG_DOUBLE) && defined(FLT_EVAL_METHOD) && FLT_EVAL_METHOD == 0
+  using ::acosl;
+  using ::asinl;
+  using ::atanl;
+  using ::atan2l;
+  using ::ceill;
+  using ::cosl;
+  using ::coshl;
+  using ::expl;
+  using ::fabsl;
+  using ::floorl;
+  using ::fmodl;
+  using ::frexpl;
+  using ::ldexpl;
+  using ::logl;
+  using ::log1pl;
+  using ::log10l;
+  using ::log2l;
+  using ::modfl;
+  using ::roundl;
+  using ::powl;
+  using ::sinl;
+  using ::sinhl;
+  using ::sqrtl;
+  using ::tanl;
+  using ::tanhl;
+
+  constexpr bool
+  signbit(long double __x)
+  { return __builtin_signbit(__x); }
+
+  constexpr int
+  fpclassify(long double __x)
+  { return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL,
+		FP_SUBNORMAL, FP_ZERO, __x); }
+
+  constexpr bool
+  isfinite(long double __x)
+  { return __builtin_isfinite(__x); }
+
+  constexpr bool
+  isinf(long double __x)
+  { return __builtin_isinf(__x); }
+
+  constexpr bool
+  isnan(long double __x)
+  { return __builtin_isnan(__x); }
+
+  constexpr long double
+  nextafter(long double from, long double to)
+  { return ::nextafterl(from, to); }
+
+#endif
+
+}
+
+#endif
+
+#endif // __INCLUDE_CXX_CMATH

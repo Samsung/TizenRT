@@ -15,54 +15,41 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************************
- * include/tinyara/usb/hub.h
+/****************************************************************************
+ * include/nuttx/usb/hub.h
  *
- *   Copyright (C) 2015 Gregory Nutt. All rights reserved.
- *   Author: Kaushal Parikh <kaushal@dspworks.in>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-#ifndef __INCLUDE_TINYARA_USB_HUB_H
-#define __INCLUDE_TINYARA_USB_HUB_H
+#ifndef __INCLUDE_NUTTX_USB_HUB_H
+#define __INCLUDE_NUTTX_USB_HUB_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 #include <stdint.h>
 
-/************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
+ ****************************************************************************/
 
 /* Hub request types */
 
@@ -108,22 +95,22 @@
 
 /* Hub characteristics */
 
-#define USBHUB_CHAR_LPSM_SHIFT         (0)	/* Bits 0-1: Logical Power Switching Mode */
+#define USBHUB_CHAR_LPSM_SHIFT         (0)       /* Bits 0-1: Logical Power Switching Mode */
 #define USBHUB_CHAR_LPSM_MASK          (3 << USBHUB_CHAR_LPSM_SHIFT)
-#define USBHUB_CHAR_LPSM_GANGED      (0 << USBHUB_CHAR_LPSM_SHIFT)
-#define USBHUB_CHAR_LPSM_INDIVIDUAL  (1 << USBHUB_CHAR_LPSM_SHIFT)
-#define USBHUB_CHAR_COMPOUND           (1 << 2)	/* Bit 2: Compound device */
-#define USBHUB_CHAR_OCPM_SHIFT         (3)	/* Bits 3-4: Over-current Protection Mode */
+#  define USBHUB_CHAR_LPSM_GANGED      (0 << USBHUB_CHAR_LPSM_SHIFT)
+#  define USBHUB_CHAR_LPSM_INDIVIDUAL  (1 << USBHUB_CHAR_LPSM_SHIFT)
+#define USBHUB_CHAR_COMPOUND           (1 << 2)  /* Bit 2: Compound device */
+#define USBHUB_CHAR_OCPM_SHIFT         (3)       /* Bits 3-4: Over-current Protection Mode */
 #define USBHUB_CHAR_OCPM_MASK          (3 << USBHUB_CHAR_OCPM_SHIFT)
-#define USBHUB_CHAR_OCPM_GLOBAL      (0 << USBHUB_CHAR_OCPM_SHIFT)
-#define USBHUB_CHAR_OCPM_INDIVIDUAL  (1 << USBHUB_CHAR_OCPM_SHIFT)
-#define USBHUB_CHAR_TTTT_SHIFT         (5)	/* Bits 5-6: TT Think Time */
+#  define USBHUB_CHAR_OCPM_GLOBAL      (0 << USBHUB_CHAR_OCPM_SHIFT)
+#  define USBHUB_CHAR_OCPM_INDIVIDUAL  (1 << USBHUB_CHAR_OCPM_SHIFT)
+#define USBHUB_CHAR_TTTT_SHIFT         (5)       /* Bits 5-6: TT Think Time */
 #define USBHUB_CHAR_TTTT_MASK          (3 << USBHUB_CHAR_TTTT_SHIFT)
-#define USBHUB_CHAR_TTTT_8_BITS      (0 << USBHUB_CHAR_TTTT_SHIFT)
-#define USBHUB_CHAR_TTTT_16_BITS     (1 << USBHUB_CHAR_TTTT_SHIFT)
-#define USBHUB_CHAR_TTTT_24_BITS     (2 << USBHUB_CHAR_TTTT_SHIFT)
-#define USBHUB_CHAR_TTTT_32_BITS     (3 << USBHUB_CHAR_TTTT_SHIFT)
-#define USBHUB_CHAR_PORTIND            (1 << 7)	/* Bit 7: Port Indicators Supported */
+#  define USBHUB_CHAR_TTTT_8_BITS      (0 << USBHUB_CHAR_TTTT_SHIFT)
+#  define USBHUB_CHAR_TTTT_16_BITS     (1 << USBHUB_CHAR_TTTT_SHIFT)
+#  define USBHUB_CHAR_TTTT_24_BITS     (2 << USBHUB_CHAR_TTTT_SHIFT)
+#  define USBHUB_CHAR_TTTT_32_BITS     (3 << USBHUB_CHAR_TTTT_SHIFT)
+#define USBHUB_CHAR_PORTIND            (1 << 7)  /* Bit 7: Port Indicators Supported */
 
 /* Hub status */
 
@@ -167,21 +154,21 @@
 
 #define USBHUB_MAX_PORTS               (7)
 
-/************************************************************************************
+/****************************************************************************
  * Public Types
- ************************************************************************************/
+ ****************************************************************************/
 
 /* Hub descriptor */
 
 struct usb_hubdesc_s {
-	uint8_t len;
-	uint8_t type;
-	uint8_t nports;
-	uint8_t characteristics[2];
-	uint8_t pwrondelay;
-	uint8_t ctrlcurrent;
-	uint8_t devattached;
-	uint8_t pwrctrlmask;
+	uint8_t  len;
+	uint8_t  type;
+	uint8_t  nports;
+	uint8_t  characteristics[2];
+	uint8_t  pwrondelay;
+	uint8_t  ctrlcurrent;
+	uint8_t  devattached;
+	uint8_t  pwrctrlmask;
 };
 #define USB_SIZEOF_HUBDESC 9
 
@@ -213,4 +200,4 @@ struct usb_hubtt_s {
 	uint16_t thinktime;
 };
 
-#endif							/* __INCLUDE_TINYARA_USB_HUB_H */
+#endif /* __INCLUDE_NUTTX_USB_HUB_H */

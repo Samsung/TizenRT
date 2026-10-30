@@ -18,47 +18,24 @@
 /****************************************************************************
  * include/sys/mount.h
  *
- *   Copyright (C) 2007-2009 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
-/**
- * @defgroup MOUNT_KERNEL MOUNT
- * @brief Provides APIs for Mount
- * @ingroup KERNEL
- *
- * @{
- */
-
-/// @file sys/mount.h
-/// @brief mount APIs
 
 #ifndef __INCLUDE_SYS_MOUNT_H
 #define __INCLUDE_SYS_MOUNT_H
@@ -67,13 +44,64 @@
  * Included Files
  ****************************************************************************/
 
+#include <tinyara/compiler.h>
+#include <tinyara/fs/ioctl.h>
+#include <fcntl.h>
+
 /****************************************************************************
- * Pre-Processor Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
+
+#define BLKSSZGET  BIOC_BLKSSZGET
+#define BLKGETSIZE BIOC_BLKGETSIZE
 
 /* Mount flags */
 
-#define MS_RDONLY 1				/* Mount file system read-only */
+#define MS_RDONLY       O_RDONLY    /* Mount file system read-only */
+#define MS_SYNCHRONOUS  O_SYNC      /* Writes are synced at once */
+#define MS_NOSYMFOLLOW  O_NOFOLLOW  /* Do not follow symlinks */
+#define MS_NOATIME      O_NOATIME   /* Do not update access times. */
+#define MS_NOSUID       O_RESERVE14 /* Ignore suid and sgid bits */
+#define MS_NODEV        O_RESERVE15 /* Disallow access to device special files */
+#define MS_DIRSYNC      O_RESERVE16 /* Directory modifications are synchronous */
+#define MS_REMOUNT      O_RESERVE17 /* Alter flags of a mounted FS */
+#define MS_MANDLOCK     O_RESERVE19 /* Allow mandatory locks on an FS */
+#define MS_NOEXEC       O_RESERVE20 /* Disallow program execution */
+
+/* Un-mount flags
+ *
+ * These flags control the behavior of umount2() when there are open file
+ * references through the mountpoint.  umount2() with no flag bits set is
+ * equivalent to umount(), i.e., the umount() will fail with EBUSY if there
+ * are open references on the file.
+ *
+ *   MNT_FORCE - Force unmount even if busy. This can cause data loss.
+ *   MNT_DETACH - Perform a lazy unmount: make the mount point unavailable
+ *     for new accesses, and actually perform the unmount when the mount
+ *     point ceases to be busy.
+ *   MNT_EXPIRE - Mark the mount point as expired. If a mount point is not
+ *     currently in use, then an initial call to umount2() with this flag
+ *     fails with the error EAGAIN, but marks the mount point as expired. The
+ *     mount point remains expired as long as it isn't accessed by any
+ *     process. A second umount2() call specifying MNT_EXPIRE unmounts an
+ *     expired mount point. This flag cannot be specified with either
+ *     MNT_FORCE or MNT_DETACH.
+ *  UMOUNT_NOFOLLOW (- Don't dereference target if it is a symbolic link.
+ *     For Linux, this flag allows security problems to be avoided in
+ *     set-user-ID-root programs that allow unprivileged users to unmount
+ *     file systems.  For NuttX, it is provided only for compatibility
+ *
+ * Not all options are supported on all file systems.
+ */
+
+#define MNT_FORCE       (1 << 0)
+#define MNT_DETACH      (1 << 1)
+#define MNT_EXPIRE      (1 << 2)
+#define UMOUNT_NOFOLLOW (0)
+
+/* umount() is equivalent to umount2() with flags = 0 */
+
+#define umount(t)       umount2(t,0)
 
 /****************************************************************************
  * Public Type Definitions
@@ -86,42 +114,20 @@
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
 
-/**
- * @ingroup MOUNT_KERNEL
- * @brief attaches filesystem to the root filesystem at the target path
- * @details @b #include <sys/mount.h> \n
- * SYSTEM CALL API \n
- * @param[in] source the name of block device to be attached
- * @param[in] target the root path of filesystem
- * @param[in] filesystemtype the type of filesystem
- * @param[in] mountflags the flags for mount
- * @param[in] data mountpoint private data
- * @return On success, Zero is returned. On failure, -1 is returned and errno is set appropriately.
- * @since TizenRT v1.0
- */
-int mount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data);
-/**
- * @ingroup MOUNT_KERNEL
- * @brief detaches the filesystem mounted at the target path
- * @details @b #include <sys/mount.h> \n
- * SYSTEM CALL API \n
- * @param[in] target the root path of filesystem to be detached
- * @return On success, Zero is returned. On failure, -1 is returned and errno is set appropriately.
- * @since TizenRT v1.0
- */
-int umount(const char *target);
+int mount(FAR const char *source, FAR const char *target,
+          FAR const char *filesystemtype, unsigned long mountflags,
+          FAR const void *data);
+int umount2(FAR const char *target, unsigned int flags);
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* __INCLUDE_SYS_MOUNT_H */
-/**
- * @}
- */
+#endif /* __INCLUDE_SYS_MOUNT_H */

@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * include/tinyara/spi/spi_bitbang.c
+ * include/nuttx/spi/spi_bitbang.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -55,14 +42,17 @@
  ****************************************************************************/
 
 #include <tinyara/config.h>
-#include <debug.h>
+
+#include <assert.h>
 
 #include <tinyara/spi/spi_bitbang.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 /* Usage ********************************************************************/
+
 /* To use this logic, you should provide a C file that does the following:
  *
  * - Defines SPI_SETSCK and SPI_CLRSCK to set and clear the SCK signal
@@ -71,29 +61,28 @@
  * - Defines SPI_PERBIT_NSEC which is the minimum time to transfer one bit.
  *   This determines the maximum frequency.
  * - Other configuration options:
- *   SPI_BITBAND_LOOPSPERMSEC - Delay loop calibration
+ *   SPI_BITBANG_LOOPSPERMSEC - Delay loop calibration
  *   SPI_BITBANG_DISABLEMODE0 - Define to disable Mode 0 support
  *   SPI_BITBANG_DISABLEMODE1 - Define to disable Mode 1 support
  *   SPI_BITBANG_DISABLEMODE2 - Define to disable Mode 2 support
  *   SPI_BITBANG_DISABLEMODE3 - Define to disable Mode 3 support
- * - Provide implementations of spi_select(), spi_status(), and spi_cmddata().
+ * - Provide implementations of spi_select(), spi_status() and spi_cmddata().
  * - Then include this file
  * - Provide an initialization function that initializes the GPIO pins used
  *   in the bit bang interface and calls spi_create_bitbang().
  */
 
 /****************************************************************************
- * Private Types
- ****************************************************************************/
-
-/****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
 
-static void spi_delay(uint32_t holdtime);
-static void spi_select(FAR struct spi_bitbang_s *priv, enum spi_dev_e devid, bool selected);
-static uint32_t spi_setfrequency(FAR struct spi_bitbang_s *priv, uint32_t frequency);
-static void spi_setmode(FAR struct spi_bitbang_s *priv, enum spi_mode_e mode);
+static void     spi_delay(uint32_t holdtime);
+static void     spi_select(FAR struct spi_bitbang_s *priv,
+                  uint32_t devid, bool selected);
+static uint32_t spi_setfrequency(FAR struct spi_bitbang_s *priv,
+                  uint32_t frequency);
+static void     spi_setmode(FAR struct spi_bitbang_s *priv,
+                  enum spi_mode_e mode);
 #ifndef SPI_BITBANG_DISABLEMODE0
 static uint16_t spi_bitexchange0(uint16_t dataout, uint32_t holdtime);
 #endif
@@ -106,30 +95,35 @@ static uint16_t spi_bitexchange2(uint16_t dataout, uint32_t holdtime);
 #ifndef SPI_BITBANG_DISABLEMODE3
 static uint16_t spi_bitexchange3(uint16_t dataout, uint32_t holdtime);
 #endif
-static uint16_t spi_exchange(FAR struct spi_bitbang_s *priv, uint16_t dataout);
-static uint8_t spi_status(FAR struct spi_bitbang_s *priv, enum spi_dev_e devid);
+static uint16_t spi_exchange(FAR struct spi_bitbang_s *priv,
+                  uint16_t dataout);
+static uint8_t  spi_status(FAR struct spi_bitbang_s *priv,
+                  uint32_t devid);
 #ifdef CONFIG_SPI_CMDDATA
-static int spi_cmddata(FAR struct spi_bitbang_s *priv, enum spi_dev_e devid, bool cmd);
+static int      spi_cmddata(FAR struct spi_bitbang_s *priv,
+                  uint32_t devid, bool cmd);
 #endif
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct spi_bitbang_ops_s g_spiops = {
-	spi_select,					/* select */
-	spi_setfrequency,			/* setfrequency */
-	spi_setmode,				/* setmode */
-	spi_exchange,				/* exchange */
-	spi_status,					/* status */
+static const struct spi_bitbang_ops_s g_spiops =
+{
+  spi_select,        /* select */
+  spi_setfrequency,  /* setfrequency */
+  spi_setmode,       /* setmode */
+  spi_exchange,      /* exchange */
+  spi_status,        /* status */
 #ifdef CONFIG_SPI_CMDDATA
-	spi_cmddata,				/* cmddata */
+  spi_cmddata,       /* cmddata */
 #endif
 };
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
 /****************************************************************************
  * Name: spi_delay
  *
@@ -137,10 +131,10 @@ static const struct spi_bitbang_ops_s g_spiops = {
  *   Delay for a specified number of loops
  *
  * Input Parameters:
- *   count - The number of loops
+ *   holdtime - The number of loops
  *
  * Returned Value:
- *   Returns the actual frequency selected
+ *   None.
  *
  ****************************************************************************/
 
@@ -148,7 +142,7 @@ static void spi_delay(uint32_t holdtime)
 {
 	volatile int i;
 
-	for (i = 0; i < holdtime; i++) ;
+	for (i = 0; i < holdtime; i++);
 }
 
 /****************************************************************************
@@ -158,7 +152,7 @@ static void spi_delay(uint32_t holdtime)
  *   Set the SPI frequency.
  *
  * Input Parameters:
- *   dev -       Device-specific state data
+ *   priv -      Device-specific state data
  *   frequency - The SPI frequency requested
  *
  * Returned Value:
@@ -166,20 +160,24 @@ static void spi_delay(uint32_t holdtime)
  *
  ****************************************************************************/
 
-static uint32_t spi_setfrequency(FAR struct spi_bitbang_s *priv, uint32_t frequency)
+static uint32_t spi_setfrequency(FAR struct spi_bitbang_s *priv,
+                                 uint32_t frequency)
 {
 	uint32_t pnsec;
 
 	/* SPI frequency cannot be precisely controlled with a bit-bang interface.
-	 * Freqency corresponds to delay in toggle the SPI clock line:  Set high,
+	 * Frequency corresponds to delay in toggle the SPI clock line:  Set high,
 	 * wait, set low, wait, set high, wait, etc.
 	 *
 	 * Here we calcalute the half period of the frequency in nanoseconds (i.e.,
-	 * the amount of time that the clock should remain in the high or low state).
+	 * the amount of time that the clock should remain in the high or low
+	 * state).
 	 *
-	 *   frequency = psec / 1 sec                       psec = full period in seconds
+	 *   frequency = psec / 1 sec
+	 *      psec = full period in seconds
 	 *   psec      = 1 sec / frequency
-	 *   pnsec     = 1000000000 nsec / (2 * frequency)  pnsec = full period in nsec
+	 *   pnsec     = 1000000000 nsec / (2 * frequency)
+	 *      pnsec = full period in nsec
 	 *
 	 * As examples:
 	 * 1) frequency = 400KHz; SPI_PERBIT_NSEC = 100
@@ -202,41 +200,43 @@ static uint32_t spi_setfrequency(FAR struct spi_bitbang_s *priv, uint32_t freque
 
 	pnsec = (pnsec + 1) >> 1;
 
-	/* But what we really want is the hold time in loop counts. We know that
-	 * SPI_BITBAND_LOOPSPERMSEC is the number of times through a delay loop
+	/* But what we really want is the hold time in loop counts.  We know that
+	 * SPI_BITBANG_LOOPSPERMSEC is the number of times through a delay loop
 	 * to get 1 millisecond.
 	 *
-	 * SPI_BITBAND_LOOPSPERMSEC / 1000000 is then the number of counts
+	 * SPI_BITBANG_LOOPSPERMSEC / 1000000 is then the number of counts
 	 * to get 1 nanosecond.  In reality, this is a number less than zero.  But
 	 * then we can use this to calculate:
 	 *
-	 * holdtime loops/hold = pnsec nsec/hold * (SPI_BITBAND_LOOPSPERMSEC / 1000000) loops/nsec
+	 * holdtime loops/hold = pnsec nsec/hold * (SPI_BITBANG_LOOPSPERMSEC /
+	 *                                          1000000) loops/nsec
 	 *
 	 * As examples:
 	 * 1) frequency = 400KHz; SPI_PERBIT_NSEC = 100; pnsec = 1200;
-	 *    SPI_BITBAND_LOOPSPERMSEC = 5000
+	 *    SPI_BITBANG_LOOPSPERMSEC = 5000
 	 *    holdtime  = (1200 * 5000 + 500000) / 1000000 = 6
 	 * 2) frequency = 20MHz;  SPI_PERBIT_NSEC = 100; pnsec = 0;
-	 *    SPI_BITBAND_LOOPSPERMSEC = 5000
+	 *    SPI_BITBANG_LOOPSPERMSEC = 5000
 	 *    holdtime  = (0 * 5000 + 500000) / 1000000 = 0
 	 */
 
-	priv->holdtime = (pnsec * SPI_BITBAND_LOOPSPERMSEC + 500000) / 1000000;
+	priv->holdtime = (pnsec * SPI_BITBANG_LOOPSPERMSEC + 500000) / 1000000;
 
 	/* Let's do our best to calculate the actual frequency
 	 *
 	 * As examples:
 	 * 1) frequency = 400KHz; SPI_PERBIT_NSEC = 100;
-	 *    SPI_BITBAND_LOOPSPERMSEC = 5000; holdtime = 6
+	 *    SPI_BITBANG_LOOPSPERMSEC = 5000; holdtime = 6
 	 *    pnsec     = 2 * 1000000 * 6 / 5000 + 100 = 2500 nsec
 	 *    frequency = 400KHz
 	 * 2) frequency = 20MHz;  SPI_PERBIT_NSEC = 100; holdtime = 0
-	 *    SPI_BITBAND_LOOPSPERMSEC = 5000; holdtime = 0
+	 *    SPI_BITBANG_LOOPSPERMSEC = 5000; holdtime = 0
 	 *    pnsec     = 2 * 0 * 6 / 5000 + 100 = 100 nsec
 	 *    frequency = 10MHz
 	 */
 
-	pnsec = 2 * 1000000 * priv->holdtime / SPI_BITBAND_LOOPSPERMSEC + SPI_PERBIT_NSEC;
+	pnsec = 2 * 1000000 * priv->holdtime / SPI_BITBANG_LOOPSPERMSEC +
+	        SPI_PERBIT_NSEC;
 	frequency = 1000000000ul / pnsec;
 	return frequency;
 }
@@ -248,49 +248,50 @@ static uint32_t spi_setfrequency(FAR struct spi_bitbang_s *priv, uint32_t freque
  *   Select the current SPI mode
  *
  * Input Parameters:
- *   dev  - Device-specific state data
- *   mode - the new SPI mode
+ *   priv - Device-specific state data
+ *   mode - The new SPI mode
  *
  * Returned Value:
  *   None
  *
  ****************************************************************************/
 
-static void spi_setmode(FAR struct spi_bitbang_s *priv, enum spi_mode_e mode)
+static void spi_setmode(FAR struct spi_bitbang_s *priv,
+                        enum spi_mode_e mode)
 {
-	spivdbg("mode=%d\n", mode);
+	spiinfo("mode=%d\n", mode);
 
 	switch (mode) {
-	case SPIDEV_MODE0:			/* CPOL=0; CPHA=0 */
+	case SPIDEV_MODE0: /* CPOL=0; CPHA=0 */
 #ifndef SPI_BITBANG_DISABLEMODE0
-		SPI_CLRSCK;				/* Resting level of the clock is low */
+		SPI_CLRSCK;      /* Resting level of the clock is low */
 		priv->exchange = spi_bitexchange0;
 #else
 		DEBUGPANIC();
 #endif
 		break;
 
-	case SPIDEV_MODE1:			/* CPOL=0; CPHA=1 */
+	case SPIDEV_MODE1: /* CPOL=0; CPHA=1 */
 #ifndef SPI_BITBANG_DISABLEMODE1
-		SPI_CLRSCK;				/* Resting level of the clock is low */
+		SPI_CLRSCK;      /* Resting level of the clock is low */
 		priv->exchange = spi_bitexchange1;
 #else
 		DEBUGPANIC();
 #endif
 		break;
 
-	case SPIDEV_MODE2:			/* CPOL=1; CPHA=0 */
+	case SPIDEV_MODE2: /* CPOL=1; CPHA=0 */
 #ifndef SPI_BITBANG_DISABLEMODE2
-		SPI_SETSCK;				/* Resting level of the clock is high */
+		SPI_SETSCK;      /* Resting level of the clock is high */
 		priv->exchange = spi_bitexchange2;
 #else
 		DEBUGPANIC();
 #endif
 		break;
 
-	case SPIDEV_MODE3:			/* CPOL=1; CPHA=1 */
+	case SPIDEV_MODE3: /* CPOL=1; CPHA=1 */
 #ifndef SPI_BITBANG_DISABLEMODE3
-		SPI_SETSCK;				/* Resting level of the clock is high */
+		SPI_SETSCK;      /* Resting level of the clock is high */
 		priv->exchange = spi_bitexchange3;
 #else
 		DEBUGPANIC();
@@ -470,8 +471,8 @@ static uint16_t spi_bitexchange2(uint16_t dataout, uint32_t holdtime)
 {
 	uint16_t datain;
 
-	/* Here the clock is is in the resting set (high).  Set MOSI output and wait
-	 * for the hold time
+	/* Here the clock is is in the resting set (high).  Set MOSI output and
+	 * wait for the hold time
 	 */
 
 	if (dataout != 0) {
@@ -539,11 +540,11 @@ static uint16_t spi_bitexchange3(uint16_t dataout, uint32_t holdtime)
 	 * low state and set MOSI.
 	 */
 
-	SPI_CLRSCK;					/* Clock transition before setting MOSI */
+	SPI_CLRSCK;                     /* Clock transition before setting MOSI */
 	if (dataout != 0) {
-		SPI_SETMOSI;			/* Set MOSI if the bit is set */
+		SPI_SETMOSI;                /* Set MOSI if the bit is set */
 	} else {
-		SPI_CLRMOSI;			/* Clear MOSI if the bit is not set */
+		SPI_CLRMOSI;                /* Clear MOSI if the bit is not set */
 	}
 
 	/* Wait for the required hold time then put the clock back into the
@@ -566,7 +567,7 @@ static uint16_t spi_bitexchange3(uint16_t dataout, uint32_t holdtime)
  * Name: spi_exchange
  *
  * Description:
- *   Exahange on word of data on SPI
+ *   Exahange one word of data on SPI
  *
  * Input Parameters:
  *   priv     - Device-specific state data
@@ -578,7 +579,8 @@ static uint16_t spi_bitexchange3(uint16_t dataout, uint32_t holdtime)
  ****************************************************************************/
 
 #ifdef CONFIG_SPI_BITBANG_VARWIDTH
-static uint16_t spi_exchange(FAR struct spi_bitbang_s *priv, uint16_t dataout)
+static uint16_t spi_exchange(FAR struct spi_bitbang_s *priv,
+                             uint16_t dataout)
 {
 	bitexchange_t exchange = priv->exchange;
 	uint32_t holdtime = priv->holdtime;
@@ -599,14 +601,15 @@ static uint16_t spi_exchange(FAR struct spi_bitbang_s *priv, uint16_t dataout)
 		 */
 
 		datain <<= 1;
-		datain |= exchange(!!(dataout & bit), holdtime);
+		datain |= exchange(dataout & bit, holdtime);
 	}
 
 	return datain;
 }
 
 #else
-static uint16_t spi_exchange(FAR struct spi_bitbang_s *priv, uint16_t dataout)
+static uint16_t spi_exchange(FAR struct spi_bitbang_s *priv,
+                             uint16_t dataout)
 {
 	bitexchange_t exchange = priv->exchange;
 	uint32_t holdtime = priv->holdtime;
