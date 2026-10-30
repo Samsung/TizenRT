@@ -17,7 +17,6 @@ TizenRT Application Generator
 ======================= v 1.0
 Select Application Type
 1. Hello World Sample
-2. Task Manager Sample
 =============================
 Select application type: 1
 Enter application name: test application

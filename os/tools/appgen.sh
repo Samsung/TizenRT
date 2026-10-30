@@ -12,7 +12,6 @@ echo "${BOLD}TizenRT Application Generator${NORMAL}"
 echo "======================= v 1.0"
 echo "Select Application Type"
 echo "1. Hello World Sample"
-echo "2. Task Manager Sample"
 echo "============================="
 
 read -p "Select application type: " APP_TYPE
@@ -29,9 +28,6 @@ echo "-------------------------------"
 case ${APP_TYPE} in
 	1)
 		echo "* Application Type: ${BOLD}Hello World Sample${NORMAL}"
-		;;
-	2)
-		echo "* Application Type: ${BOLD}Task Manager Sample${NORMAL}"
 		;;
 esac
 echo "* Application Name: ${BOLD}${APP_NAME}${NORMAL}"
@@ -56,10 +52,6 @@ case ${APP_TYPE} in
 	1)
 		cp ${TIZENRT_ROOT}/apps/appgen/template_Kconfig ${KCONFIG_FILENAME}
 		cp ${TIZENRT_ROOT}/apps/appgen/template_main.c_source ${MAIN_FILENAME}
-		;;
-	2)
-		cp ${TIZENRT_ROOT}/apps/appgen/template_Kconfig_task_manager ${KCONFIG_FILENAME}
-		cp ${TIZENRT_ROOT}/apps/appgen/template_task_manager_sample_main.c_source ${MAIN_FILENAME}
 		;;
 esac
 

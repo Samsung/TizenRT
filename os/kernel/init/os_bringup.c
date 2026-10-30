@@ -87,9 +87,6 @@
 #ifdef CONFIG_PM
 #include <tinyara/pm/pm.h>
 #endif
-#ifdef CONFIG_TASK_MANAGER
-#include <tinyara/task_manager_drv.h>
-#endif
 #include "init/init.h"
 #ifdef CONFIG_PAGING
 #include "paging/paging.h"
@@ -299,10 +296,6 @@ static inline void os_do_appstart(void)
 
 #ifdef CONFIG_SCHED_CPULOAD
 	cpuload_initialize();
-#endif
-
-#ifdef CONFIG_TASK_MANAGER
-	task_manager_drv_register();
 #endif
 
 #ifdef CONFIG_MESSAGING_IPC

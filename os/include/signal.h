@@ -180,41 +180,6 @@
 #endif
 #endif
 
-/* SIGTM is used in Task Manager */
-#ifndef CONFIG_SIG_SIGTM_UNICAST
-#define SIGTM_UNICAST       18			/* Taskmgt signal */
-#else
-#define SIGTM_UNICAST       CONFIG_SIG_SIGTM_UNICAST
-#endif
-
-/* SIGTM_PAUSE is used in Task Manager */
-#ifndef CONFIG_SIG_SIGTM_PAUSE
-#define SIGTM_PAUSE       19			/* Taskmgt signal */
-#else
-#define SIGTM_PAUSE       CONFIG_SIG_SIGTM_PAUSE
-#endif
-
-/* SIGTM_RESUME is used in Task Manager */
-#ifndef CONFIG_SIG_SIGTM_RESUME
-#define SIGTM_RESUME       20			/* Taskmgt signal */
-#else
-#define SIGTM_RESUME       CONFIG_SIG_SIGTM_RESUME
-#endif
-
-/* SIGTM_BROADCAST is used in Task Manager */
-#ifndef CONFIG_SIG_SIGTM_BROADCAST
-#define SIGTM_BROADCAST       21			/* Taskmgt signal */
-#else
-#define SIGTM_BROADCAST       CONFIG_SIG_SIGTM_BROADCAST
-#endif
-
-/* SIG_SIGTM_TERMINATION is used in Task Manager */
-#ifndef CONFIG_SIG_SIGTM_TERMINATION
-#define SIGTM_TERMINATION       23			/* Taskmgt signal */
-#else
-#define SIGTM_TERMINATION       CONFIG_SIG_SIGTM_TERMINATION
-#endif
-
 /* SIG_MESSAGING is used in Messaging */
 #ifndef CONFIG_SIG_MESSAGING
 #define SIGMSG_MESSAGING    25			/* Messaging signal */
