@@ -298,3 +298,24 @@ define CLEAN
 	$(Q) rm -f *$(OBJEXT) *$(LIBEXT) *~ .*.swp
 endef
 endif
+
+# Common definitions required by the NuttX ARM toolchain descriptions.
+empty :=
+space := $(empty) $(empty)
+export DEFINE_PREFIX ?= -D
+export INCDIR_PREFIX ?= -I
+export INCSYSDIR_PREFIX ?= -isystem$(space)
+ARCHDEFINES += $(DEFINE_PREFIX)__NuttX__
+ifeq ($(CONFIG_NDEBUG),y)
+ARCHDEFINES += $(DEFINE_PREFIX)NDEBUG
+endif
+ARCHINCLUDES += $(INCSYSDIR_PREFIX)$(TOPDIR)/include
+ARCHXXINCLUDES += $(INCSYSDIR_PREFIX)$(TOPDIR)/include
+ifeq ($(CONFIG_CYGWIN_WINTOOL),y)
+CONVERT_PATH = $(foreach FILE,$1,$(shell cygpath -w $(FILE)))
+else
+CONVERT_PATH = $1
+endif
+
+# Platform driver menu fallback used by the imported drivers Kconfig.
+BOARD_DRIVERS_DIR ?= $(if $(wildcard $(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/drivers),$(TOPDIR)/board/$(CONFIG_ARCH_BOARD)/drivers,$(TOPDIR)/drivers/dummy)
