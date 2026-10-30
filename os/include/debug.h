@@ -1393,6 +1393,320 @@
   while (0)
 
 /****************************************************************************
+ * TizenRT debug macros
+ *
+ * TizenRT code written before the NuttX 12.13.0 sync uses the old NuttX
+ * debug macros ([a-z]dbg, [a-z]lldbg, [a-z]vdbg, ...) and Samsung
+ * subsystem macros.  They are mapped onto the NuttX macros above:
+ *   dbg/lldbg -> _err, wdbg/llwdbg -> _warn, vdbg/llvdbg -> _info
+ *   <sub>dbg/<sub>wdbg/<sub>vdbg -> <sub>err/<sub>warn/<sub>info
+ * The macros of subsystems that NuttX does not have keep their own
+ * CONFIG_DEBUG_<SUB>_<LEVEL> option.
+ ****************************************************************************/
+
+/* Index used by the TizenRT logging manager (logm) */
+
+#define LOGM_IDX (0)
+
+#define mfdbg                  _alert
+#define dbg                    _err
+#define dbg_noarg              _err
+#define lldbg                  _err
+#define lldbg_noarg            _err
+#define wdbg                   _warn
+#define wdbg_noarg             _warn
+#define llwdbg                 _warn
+#define llwdbg_noarg           _warn
+#define vdbg                   _info
+#define vdbg_noarg             _info
+#define llvdbg                 _info
+#define llvdbg_noarg           _info
+#define auddbg                 auderr
+#define audvdbg                audinfo
+#define fdbg                   ferr
+#define flldbg                 ferr
+#define fwdbg                  fwarn
+#define fvdbg                  finfo
+#define mdbg                   merr
+#define mllwdbg                mwarn
+#define ndbg                   nerr
+#define nlldbg                 nerr
+#define nwdbg                  nwarn
+#define nvdbg                  ninfo
+#define nllvdbg                ninfo
+#define sdbg                   serr
+#define slldbg                 serr
+#define svdbg                  sinfo
+#define sllvdbg                sinfo
+#define dmadbg                 dmaerr
+#define dmalldbg               dmaerr
+#define dmavdbg                dmainfo
+#define adbg                   aerr
+#define alldbg                 aerr
+#define avdbg                  ainfo
+#define allvdbg                ainfo
+#define gdbg                   gerr
+#define gvdbg                  ginfo
+#define lcddbg                 lcderr
+#define lcdvdbg                lcdinfo
+#define sndbg                  snerr
+#define snvdbg                 sninfo
+#define spidbg                 spierr
+#define spivdbg                spiinfo
+#define tmrdbg                 tmrerr
+#define tmrvdbg                tmrinfo
+#define udbg                   uerr
+#define ulldbg                 uerr
+#define uvdbg                  uinfo
+#define ullvdbg                uinfo
+#define videodbg               verr
+#define videovdbg              vinfo
+
+#ifdef CONFIG_DEBUG_BINARY_COMPRESSION_ERROR
+#  define bcmpdbg              _err
+#else
+#  define bcmpdbg              _none
+#endif
+
+#ifdef CONFIG_DEBUG_BINARY_COMPRESSION_INFO
+#  define bcmpvdbg             _info
+#else
+#  define bcmpvdbg             _none
+#endif
+
+#ifdef CONFIG_DEBUG_BINMGR_ERROR
+#  define bmdbg                _err
+#  define bmlldbg              _err
+#else
+#  define bmdbg                _none
+#  define bmlldbg              _none
+#endif
+
+#ifdef CONFIG_DEBUG_BINMGR_INFO
+#  define bmvdbg               _info
+#  define bmllvdbg             _info
+#else
+#  define bmvdbg               _none
+#  define bmllvdbg             _none
+#endif
+
+#ifdef CONFIG_DEBUG_ERR_REPORT_ERROR
+#  define nwerrdbg             _err
+#else
+#  define nwerrdbg             _none
+#endif
+
+
+#ifdef CONFIG_DEBUG_ERR_REPORT_INFO
+#  define nwerr_vdbg           _info
+#else
+#  define nwerr_vdbg           _none
+#endif
+
+#ifdef CONFIG_DEBUG_FS
+#  define fsdbg                _err
+#else
+#  define fsdbg                _none
+#endif
+
+#ifdef CONFIG_DEBUG_LOGDUMP_ERROR
+#  define ldpdbg               _err
+#  define ldplldbg             _err
+#else
+#  define ldpdbg               _none
+#  define ldplldbg             _none
+#endif
+
+
+
+
+
+#ifdef CONFIG_DEBUG_BLE_INFO
+#  define blevdbg              _info
+#else
+#  define blevdbg              _none
+#endif
+
+#ifdef CONFIG_DEBUG_SMP_ERROR
+#  define smplldbg             _err
+#else
+#  define smplldbg             _none
+#endif
+
+
+#ifdef CONFIG_DEBUG_SMP_INFO
+#  define smpllvdbg            _info
+#else
+#  define smpllvdbg            _none
+#endif
+
+#ifdef CONFIG_DEBUG_PM_ERROR
+#  define pmdbg                _err
+#  define pmlldbg              _err
+#else
+#  define pmdbg                _none
+#  define pmlldbg              _none
+#endif
+
+
+#ifdef CONFIG_DEBUG_PM_INFO
+#  define pmvdbg               _info
+#  define pmllvdbg             _info
+#else
+#  define pmvdbg               _none
+#  define pmllvdbg             _none
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_ERROR
+#  define sedbg                _err
+#else
+#  define sedbg                _none
+#endif
+
+#ifdef CONFIG_DEBUG_SECURE_ELEMENT_INFO
+#  define sevdbg               _info
+#else
+#  define sevdbg               _none
+#endif
+
+#ifdef CONFIG_DEBUG_WIFICSI_ERROR
+#  define csidbg               _err
+#else
+#  define csidbg               _none
+#endif
+
+
+#ifdef CONFIG_DEBUG_WIFICSI_INFO
+#  define csivdbg              _info
+#else
+#  define csivdbg              _none
+#endif
+
+#ifdef CONFIG_DEBUG_DM_ERROR
+#  define dmdbg                _err
+#else
+#  define dmdbg                _none
+#endif
+
+
+
+#ifdef CONFIG_DEBUG_MEDIA_ERROR
+#  define meddbg               _err
+#else
+#  define meddbg               _none
+#endif
+
+#ifdef CONFIG_DEBUG_MEDIA_WARN
+#  define medwdbg              _warn
+#else
+#  define medwdbg              _none
+#endif
+
+#ifdef CONFIG_DEBUG_MEDIA_INFO
+#  define medvdbg              _info
+#else
+#  define medvdbg              _none
+#endif
+
+#ifdef CONFIG_DEBUG_MESSAGE_IPC
+#  define msgdbg               _err
+#else
+#  define msgdbg               _none
+#endif
+
+#ifdef CONFIG_DEBUG_PREFERENCE_ERROR
+#  define prefdbg              _err
+#else
+#  define prefdbg              _none
+#endif
+
+#ifdef CONFIG_DEBUG_PREFERENCE_INFO
+#  define prefvdbg             _info
+#else
+#  define prefvdbg             _none
+#endif
+
+#ifdef CONFIG_DEBUG_SECURITY_FRAMEWORK_ERROR
+#  define sfdbg                _err
+#else
+#  define sfdbg                _none
+#endif
+
+
+#ifdef CONFIG_DEBUG_REBOOT_REASON_INFO
+#  define rrvdbg               _info
+#else
+#  define rrvdbg               _none
+#endif
+
+#ifdef CONFIG_DEBUG_MIPI_ERROR
+#  define mipidbg              _err
+#  define mipilldbg            _err
+#else
+#  define mipidbg              _none
+#  define mipilldbg            _none
+#endif
+
+
+#ifdef CONFIG_DEBUG_MIPI_INFO
+#  define mipivdbg             _info
+#  define mipillvdbg           _info
+#else
+#  define mipivdbg             _none
+#  define mipillvdbg           _none
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_ERROR
+#  define nllldbg              _err
+#else
+#  define nllldbg              _none
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_INFO
+#  define nlvdbg               _info
+#  define nlllvdbg             _info
+#else
+#  define nlvdbg               _none
+#  define nlllvdbg             _none
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_VENDOR_DRV_ERROR
+#  define vddbg                _err
+#else
+#  define vddbg                _none
+#endif
+
+#ifdef CONFIG_DEBUG_LWNL80211_VENDOR_DRV_INFO
+#  define vdvdbg               _info
+#else
+#  define vdvdbg               _none
+#endif
+
+#ifdef CONFIG_DEBUG_TOUCH_ERROR
+#  define touchdbg             _err
+#else
+#  define touchdbg             _none
+#endif
+
+
+#ifdef CONFIG_DEBUG_TOUCH_INFO
+#  define touchvdbg            _info
+#else
+#  define touchvdbg            _none
+#endif
+
+#ifdef CONFIG_DEBUG_IOTBUS
+#  define ibdbg                _err
+#  define ibvdbg               _info
+#else
+#  define ibdbg                _none
+#  define ibvdbg               _none
+#endif
+
+#define nvdbgdumpbuffer(m,b,n) ninfodumpbuffer(m,b,n)
+
+
+/****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
