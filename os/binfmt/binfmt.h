@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/binfmt/binfmt.h
+ * binfmt/binfmt.h
  *
- *   Copyright (C) 2009 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -72,14 +59,16 @@
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
 
-/* This is a list of registered handlers for different binary formats.  This
- * list should only be accessed by normal user programs.  It should be sufficient
- * protection to simply disable pre-emption when accessing this list.
+/* This is a list of registered handlers for different binary formats.
+ * This list should only be accessed by normal user programs.  It should be
+ * sufficient protection to simply disable pre-emption when accessing this
+ * list.
  */
 
 EXTERN FAR struct binfmt_s *g_binfmts;
@@ -89,23 +78,23 @@ EXTERN FAR struct binfmt_s *g_binfmts;
  ****************************************************************************/
 
 /****************************************************************************
- * Name: dump_module
+ * Name: binfmt_dumpmodule
  *
  * Description:
  *   Dump the contents of struct binary_s.
  *
- * Input Parameter:
+ * Input Parameters:
  *   bin      - Load structure
  *
  * Returned Value:
- *   Zero (OK) on success; a negater errno value on failure
+ *   Zero (OK) on success; a negated errno value on failure
  *
  ****************************************************************************/
 
-#ifdef CONFIG_DEBUG_BINFMT
-int dump_module(FAR const struct binary_s *bin);
+#if defined(CONFIG_DEBUG_FEATURES) && defined(CONFIG_DEBUG_BINFMT)
+int binfmt_dumpmodule(FAR const struct binary_s *bin);
 #else
-#define dump_module(bin)
+#  define binfmt_dumpmodule(bin)
 #endif
 
 /****************************************************************************
@@ -113,20 +102,23 @@ int dump_module(FAR const struct binary_s *bin);
  *
  * Description:
  *   In the kernel build, the argv list will likely lie in the caller's
- *   address environment and, hence, by inaccessible when we swith to the
+ *   address environment and, hence, be inaccessible when we switch to the
  *   address environment of the new process address environment.  So we
  *   do not have any real option other than to copy the callers argv[] list.
  *
- * Input Parameter:
- *   bin      - Load structure
+ * Input Parameters:
  *   argv     - Argument list
  *
  * Returned Value:
- *   Zero (OK) on sucess; a negater erro value on failure.
+ *   A non-zero copy is returned on success.
  *
  ****************************************************************************/
 
-int binfmt_copyargv(FAR struct binary_s *bin, FAR char *const *argv);
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+int binfmt_copyargv(FAR char *const **copy, FAR char *const *argv);
+#else
+#  define binfmt_copyargv(copy, argv) (*(copy) = (argv), 0)
+#endif
 
 /****************************************************************************
  * Name: binfmt_freeargv
@@ -135,7 +127,7 @@ int binfmt_copyargv(FAR struct binary_s *bin, FAR char *const *argv);
  *   Release the copied argv[] list.
  *
  * Input Parameters:
- *   bin      - Load structure
+ *   argv     - Argument list
  *
  * Returned Value:
  *   None
@@ -143,9 +135,193 @@ int binfmt_copyargv(FAR struct binary_s *bin, FAR char *const *argv);
  ****************************************************************************/
 
 #if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
-void binfmt_freeargv(FAR struct binary_s *bin);
+void binfmt_freeargv(FAR char *const *argv);
 #else
-#define binfmt_freeargv(bin)
+#  define binfmt_freeargv(argv)
+#endif
+
+/****************************************************************************
+ * Name: binfmt_copyenv
+ *
+ * Description:
+ *   In the kernel build, the environment exists in the parent's address
+ *   environment and, hence, will be inaccessible when we switch to the
+ *   address environment of the new process. So we do not have any real
+ *   option other than to copy the parents envp list into an intermediate
+ *   buffer that resides in neutral kernel memory.
+ *
+ * Input Parameters:
+ *   envp     - Allocated environment strings
+ *
+ * Returned Value:
+ *   A non-zero copy is returned on success.
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_DISABLE_ENVIRON
+#  define binfmt_copyenv(copy, envp) binfmt_copyargv(copy, envp)
+#else
+#  define binfmt_copyenv(copy, envp) (*(copy) = (envp), 0)
+#endif
+
+/****************************************************************************
+ * Name: binfmt_freeenv
+ *
+ * Description:
+ *   Release the copied envp[] list.
+ *
+ * Input Parameters:
+ *   envp     - Allocated environment strings
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_DISABLE_ENVIRON
+#  define binfmt_freeenv(envp) binfmt_freeargv(envp)
+#else
+#  define binfmt_freeenv(envp)
+#endif
+
+/****************************************************************************
+ * Name: binfmt_copyactions
+ *
+ * Description:
+ *   In the kernel build, the file actions will likely lie in the caller's
+ *   address environment and, hence, be inaccessible when we switch to the
+ *   address environment of the new process address environment.  So we
+ *   do not have any real option other than to copy the callers action list.
+ *
+ * Input Parameters:
+ *   copy     - Pointer of the copied output file actions
+ *   actions  - Pointer of file actions to be copy
+ *
+ * Returned Value:
+ *   A non-zero copy is returned on success.
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+int binfmt_copyactions(FAR const posix_spawn_file_actions_t **copy,
+                       FAR const posix_spawn_file_actions_t *actions);
+#else
+#  define binfmt_copyactions(copy, actp) \
+          (*(copy) = (FAR posix_spawn_file_actions_t *)(actp), 0)
+#endif
+
+/****************************************************************************
+ * Name: binfmt_freeactions
+ *
+ * Description:
+ *   Release the copied file action list.
+ *
+ * Input Parameters:
+ *   copy     - Pointer of file actions
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+void binfmt_freeactions(FAR const posix_spawn_file_actions_t *copy);
+#else
+#  define binfmt_freeactions(copy)
+#endif
+
+#ifdef CONFIG_BUILTIN
+/****************************************************************************
+ * Name: builtin_initialize
+ *
+ * Description:
+ *   In order to use the builtin binary format, this function must be called
+ *   during system initialize to register the builtin binary format.
+ *
+ * Returned Value:
+ *   This is a NuttX internal function so it follows the convention that
+ *   0 (OK) is returned on success and a negated errno is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+
+int builtin_initialize(void);
+
+/****************************************************************************
+ * Name: builtin_uninitialize
+ *
+ * Description:
+ *   Unregister the builtin binary loader
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void builtin_uninitialize(void);
+#endif
+
+#ifdef CONFIG_ELF
+/****************************************************************************
+ * Name: elf_initialize
+ *
+ * Description:
+ *   In order to use the ELF binary format, this function must be called
+ *   during system initialization to register the ELF binary format.
+ *
+ * Returned Value:
+ *   This is a NuttX internal function so it follows the convention that
+ *   0 (OK) is returned on success and a negated errno is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+
+int elf_initialize(void);
+
+/****************************************************************************
+ * Name: elf_uninitialize
+ *
+ * Description:
+ *   Unregister the ELF binary loader
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void elf_uninitialize(void);
+#endif
+
+#ifdef CONFIG_NXFLAT
+/****************************************************************************
+ * Name: nxflat_initialize
+ *
+ * Description:
+ *   In order to use the NxFLAT binary format, this function must be called
+ *   during system initialization to register the NXFLAT binary
+ *   format.
+ *
+ * Returned Value:
+ *   This is a NuttX internal function so it follows the convention that
+ *   0 (OK) is returned on success and a negated errno is returned on
+ *   failure.
+ *
+ ****************************************************************************/
+
+int nxflat_initialize(void);
+
+/****************************************************************************
+ * Name: nxflat_uninitialize
+ *
+ * Description:
+ *   Unregister the NXFLAT binary loader
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void nxflat_uninitialize(void);
 #endif
 
 #undef EXTERN
@@ -153,4 +329,4 @@ void binfmt_freeargv(FAR struct binary_s *bin);
 }
 #endif
 
-#endif							/* __BINFMT_BINFMT_H */
+#endif /* __BINFMT_BINFMT_H */

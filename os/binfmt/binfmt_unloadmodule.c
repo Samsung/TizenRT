@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/binfmt/binfmt_unloadmodule.c
+ * binfmt/binfmt_unloadmodule.c
  *
- *   Copyright (C) 2009, 2012-2013, 2017 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -62,52 +49,18 @@
 #include <debug.h>
 #include <errno.h>
 
+#include <tinyara/arch.h>
+#include <tinyara/addrenv.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/binfmt/binfmt.h>
 
 #include "binfmt.h"
-#include "binfmt_arch_apis.h"
-#include "libelf/libelf.h"
 
-#ifdef CONFIG_BINFMT_ENABLE
+#ifndef CONFIG_BINFMT_DISABLE
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: exec_dtors
- *
- * Description:
- *   Execute C++ static destructors.
- *
- * Input Parameters:
- *   binp - Load state information
- *
- * Returned Value:
- *   0 (OK) is returned on success and a negated errno is returned on
- *   failure.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_BINFMT_CONSTRUCTORS
-static inline int exec_dtors(FAR struct binary_s *binp)
-{
-	binfmt_dtor_t *dtor = binp->dtors;
-	int i;
-
-	/* Execute each destructor */
-
-	for (i = 0; i < binp->ndtors; i++) {
-		binfo("Calling dtor %d at %p\n", i, (FAR void *)dtor);
-
-		(*dtor)();
-		dtor++;
-	}
-
-	return OK;
-}
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -126,7 +79,7 @@ static inline int exec_dtors(FAR struct binary_s *binp)
  *   called by on_exit()?
  *
  * Returned Value:
- *   This is a internal function so it follows the convention that
+ *   This is a NuttX internal function so it follows the convention that
  *   0 (OK) is returned on success and a negated errno is returned on
  *   failure.
  *
@@ -135,9 +88,6 @@ static inline int exec_dtors(FAR struct binary_s *binp)
 int unload_module(FAR struct binary_s *binp)
 {
 	int ret;
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-	int section_idx;
-#endif
 
 	if (binp) {
 		/* Perform any format-specific unload operations */
@@ -149,63 +99,15 @@ int unload_module(FAR struct binary_s *binp)
 				return ret;
 			}
 		}
-#ifdef CONFIG_BINFMT_CONSTRUCTORS
-		/* Execute C++ destructors */
 
-		ret = exec_dtors(binp);
-		if (ret < 0) {
-			berr("exec_ctors() failed: %d\n", ret);
-			return ret;
+		/* Unmap mapped address spaces */
+
+		if (binp->mapped) {
+			binfo("Unmapping address space: %p\n", binp->mapped);
+
+			file_munmap(binp->mapped, binp->mapsize);
 		}
-#endif
 
-		/* Free any allocated argv[] strings */
-
-		binfmt_freeargv(binp);
-
-		/* Free allocated address spaces */
-
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		if (binp->reload != true) {
-		/* If reload is true, reserved loading section information is used for reloading, so there is no need to free each loading section's memory.
-		 * If reload is false, it means normal termination, then free to each section's memory.
-		 */
-
-#ifdef CONFIG_BINFMT_SECTION_UNIFIED_MEMORY
-			/* In this case, binary loader allocates one big memory block enough to contain all sections
-			 * and assigns each sections start address based on the size.
-			 * Hence, we just need to find the start address of big memory block and free it.
-			 */
-			void *start_addr = elf_find_start_section_addr(binp);
-			binfo("Freeing section memory: %p\n", start_addr);
-			kmm_free(start_addr);
-#else
-			/* Each loading section is allocated respectively.
-			 * They need to be freed each.
-			 */
-			
-			for (section_idx = 0; section_idx < BIN_MAX; section_idx++) {
-				if (binp->sections[section_idx]) {
-					binfo("Freeing sections[%d]: %p\n", section_idx, binp->sections[section_idx]);
-					kmm_free((FAR void *)binp->sections[section_idx]);
-				}
-			}
-
-#endif
-			for (section_idx = 0; section_idx < BIN_MAX; section_idx++) {
-				binp->sections[section_idx] = 0;
-			}
-		}
-#else
-#ifndef CONFIG_XIP_ELF
-		/* Whole loading sections are in one memory block, so free the first allocated memory is enough. */
-		binfo("Freeing : %p\n", binp->sections[0]);
-		kmm_free((FAR void *)binp->sections[0]);
-		binp->sections[0] = 0;
-#endif
-#endif
-
-		binfmt_arch_deinit_mem_protect(binp);
 		/* Notice that the address environment is not destroyed.  This should
 		 * happen automatically when the task exits.
 		 */
@@ -214,4 +116,4 @@ int unload_module(FAR struct binary_s *binp)
 	return OK;
 }
 
-#endif							/* CONFIG_BINFMT_ENABLE */
+#endif /* CONFIG_BINFMT_DISABLE */

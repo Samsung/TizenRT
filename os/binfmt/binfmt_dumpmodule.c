@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/binfmt/binfmt_dumpmodule.c
+ * binfmt/binfmt_dumpmodule.c
  *
- *   Copyright (C) 2009, 2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -64,46 +51,40 @@
 
 #include "binfmt.h"
 
-#ifdef CONFIG_DEBUG_BINFMT
+#if defined(CONFIG_DEBUG_FEATURES) && defined(CONFIG_DEBUG_BINFMT) && !defined(CONFIG_BINFMT_DISABLE)
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: dump_module
+ * Name: binfmt_dumpmodule
  *
  * Description:
- *   Load a module into memory and prep it for execution.
+ *   Dump the contents of struct binary_s.
+ *
+ * Input Parameters:
+ *   bin      - Load structure
  *
  * Returned Value:
- *   This is a internal function so it follows the convention that
- *   0 (OK) is returned on success and a negated errno is returned on
- *   failure.
+ *   Zero (OK) on success; a negated errno value on failure
  *
  ****************************************************************************/
 
-int dump_module(FAR const struct binary_s *bin)
+int binfmt_dumpmodule(FAR const struct binary_s *bin)
 {
 	if (bin) {
-		berr("Module:\n");
-		berr("  filename:  %s\n", bin->filename);
-		berr("  argv:      %p\n", bin->argv);
-		berr("  entrypt:   %p\n", bin->entrypt);
-#ifdef CONFIG_OPTIMIZE_APP_RELOAD_TIME
-		berr("  text alloc:     %p\n", bin->sections[BIN_TEXT]);
-		berr("  ro alloc:     %p\n", bin->sections[BIN_RO]);
-		berr("  data alloc:     %p\n", bin->sections[BIN_DATA]);
-#else
-		berr("  start of alloc:     %p\n", bin->sections[0]);
+		binfo("Module:\n");
+		binfo("  entrypt:   %p\n", bin->entrypt);
+		binfo("  mapped:    %p size=%zd\n", bin->mapped, bin->mapsize);
+#ifdef CONFIG_ARCH_ADDRENV
+		binfo("  addrenv:   %p\n", bin->addrenv);
 #endif
-#ifdef CONFIG_BINFMT_CONSTRUCTORS
-		berr("  alloc:     %p %p\n", bin->sections[BIN_CTOR], bin->sections[BIN_DTOR]);
-		berr("  ctors:     %p nctors=%d\n", bin->ctors, bin->nctors);
-		berr("  dtors:     %p ndtors=%d\n", bin->dtors, bin->ndtors);
+		binfo("  stacksize: %zd\n", bin->stacksize);
+#ifndef CONFIG_BUILD_KERNEL
+		binfo("  stackaddr: %p\n", bin->stackaddr);
 #endif
-		berr("  stacksize: %d\n", bin->stacksize);
-		berr("  unload:    %p\n", bin->unload);
+		binfo("  unload:    %p\n", bin->unload);
 	}
 
 	return OK;

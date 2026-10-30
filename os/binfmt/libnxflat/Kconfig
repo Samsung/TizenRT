@@ -1,0 +1,9 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config NXFLAT_DUMPBUFFER
+	bool "Dump NXFLAT buffers"
+	default n
+	depends on DEBUG_INFO

@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * os/binfmt/binfmt_execmodule.c
+ * binfmt/binfmt_execmodule.c
  *
- *   Copyright (C) 2009, 2013-2014, 2017 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -56,6 +43,7 @@
 
 #include <tinyara/config.h>
 
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -63,96 +51,103 @@
 #include <debug.h>
 #include <errno.h>
 
+#include <tinyara/addrenv.h>
 #include <tinyara/arch.h>
+#include <tinyara/fs/fs.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/sched.h>
+#include <sched/sched.h>
+#include <task/spawn.h>
+#include <tinyara/spawn.h>
 #include <tinyara/binfmt/binfmt.h>
-#include <tinyara/mm/mm.h>
-#if defined(CONFIG_APP_BINARY_SEPARATION) && defined(CONFIG_ARCH_USE_MMU)
-#include <tinyara/mmu.h>
-#endif
 
-#ifdef CONFIG_BINARY_MANAGER
-#include <string.h>
-#include "binary_manager/binary_manager_internal.h"
-#endif
-
-#include "sched/sched.h"
 #include "binfmt.h"
 
-#ifdef CONFIG_BINFMT_ENABLE
+#ifndef CONFIG_BINFMT_DISABLE
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-/* If C++ constructors are used, then CONFIG_SCHED_STARTHOOK must also be
- * selected be the start hook is used to schedule execution of the
- * constructors.
- */
-
-#if defined(CONFIG_BINFMT_CONSTRUCTORS) && !defined(CONFIG_SCHED_STARTHOOK)
-#errror "CONFIG_SCHED_STARTHOOK must be defined to use constructors"
-#endif
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: exec_ctors
+ * Name: exec_swap
  *
  * Description:
- *   Execute C++ static constructors.  This function is registered as a
- *   start hook and runs on the thread of the newly created task before
- *   the new task's main function is called.
+ *   swap the pid of tasks, and reverse parent-child relationship.
  *
  * Input Parameters:
- *   arg - Argument is instance of load state info structure cast to void *.
+ *   ptcb  - parent task tcb.
+ *   chtcb - child task tcb.
  *
  * Returned Value:
- *   0 (OK) is returned on success and a negated errno is returned on
- *   failure.
+ *   none
  *
  ****************************************************************************/
 
-#ifdef CONFIG_BINFMT_CONSTRUCTORS
-static void exec_ctors(FAR void *arg)
+static void exec_swap(FAR struct tcb_s *ptcb, FAR struct tcb_s *chtcb)
 {
-	FAR const struct binary_s *binp = (FAR const struct binary_s *)arg;
-	binfmt_ctor_t *ctor;
-	int i;
-
-#ifdef CONFIG_SUPPORT_COMMON_BINARY
-	/* If common binary is enabled, we need to run its constructors first */
-	if (g_lib_binp->run_library_ctors) {
-		ctor = g_lib_binp->ctors;
-		for (i = 0; i < g_lib_binp->nctors; i++) {
-			binfo("Calling ctor %d at %p\n", i, (FAR void *)ctor);
-
-			(*ctor)();
-			ctor++;
-		}
-		/* unset the flag so that common binary constructors are executed only once */
-		g_lib_binp->run_library_ctors = false;
-	}
+	int        pndx;
+	int        chndx;
+	pid_t      pid;
+	irqstate_t flags;
+#ifdef CONFIG_SCHED_HAVE_PARENT
+#  ifdef CONFIG_SCHED_CHILD_STATUS
+	FAR struct child_status_s *tg_children;
+#  else
+	uint16_t   tg_nchildren;
+#  endif
 #endif
 
-#ifdef CONFIG_LIBCXX_EXCEPTION
-	if (!binp->islibrary) {
-		g_lib_binp->register_exidx(binp->exidx_start, binp->exidx_end, binp->sections[BIN_TEXT], binp->sections[BIN_TEXT] + binp->sizes[BIN_TEXT], binp->binary_idx);
-	}
+	DEBUGASSERT(ptcb);
+	DEBUGASSERT(chtcb);
+
+	flags = enter_critical_section();
+
+	pndx  = PIDHASH(ptcb->pid);
+	chndx = PIDHASH(chtcb->pid);
+
+	DEBUGASSERT(g_pidhash[pndx]);
+	DEBUGASSERT(g_pidhash[chndx]);
+
+	/* Exchange g_pidhash index */
+
+	g_pidhash[pndx] = chtcb;
+	g_pidhash[chndx] = ptcb;
+
+	/* Exchange pid */
+
+	pid = chtcb->pid;
+	chtcb->pid = ptcb->pid;
+	ptcb->pid = pid;
+
+	/* Exchange group info. This will reverse parent-child relationship */
+
+	pid = chtcb->group->tg_pid;
+	chtcb->group->tg_pid = ptcb->group->tg_pid;
+	ptcb->group->tg_pid = pid;
+
+	pid = chtcb->group->tg_ppid;
+	chtcb->group->tg_ppid = ptcb->group->tg_ppid;
+	ptcb->group->tg_ppid = pid;
+
+#ifdef CONFIG_SCHED_HAVE_PARENT
+#  ifdef CONFIG_SCHED_CHILD_STATUS
+	tg_children = chtcb->group->tg_children;
+	chtcb->group->tg_children = ptcb->group->tg_children;
+	ptcb->group->tg_children = tg_children;
+#  else
+	tg_nchildren = chtcb->group->tg_nchildren;
+	chtcb->group->tg_nchildren = ptcb->group->tg_nchildren;
+	ptcb->group->tg_nchildren = tg_nchildren;
+#  endif
 #endif
 
-	ctor = binp->ctors;
-	/* Execute each constructor */
-
-	for (i = 0; i < binp->nctors; i++) {
-		binfo("Calling ctor %d at %p\n", i, (FAR void *)ctor);
-
-		(*ctor)();
-		ctor++;
-	}
+	leave_critical_section(flags);
 }
-#endif
 
 /****************************************************************************
  * Public Functions
@@ -165,204 +160,218 @@ static void exec_ctors(FAR void *arg)
  *   Execute a module that has been loaded into memory by load_module().
  *
  * Returned Value:
- *   This is a internal function so it follows the convention that
+ *   This is a NuttX internal function so it follows the convention that
  *   0 (OK) is returned on success and a negated errno is returned on
  *   failure.
  *
  ****************************************************************************/
-int exec_module(FAR struct binary_s *binp)
+
+int exec_module(FAR struct binary_s *binp,
+                FAR const char *filename, FAR char *const *argv,
+                FAR char *const *envp,
+                FAR const posix_spawn_file_actions_t *actions,
+                FAR const posix_spawnattr_t *attr,
+                bool spawn)
 {
-	FAR struct task_tcb_s *newtcb;
-	FAR struct tcb_s *rtcb;
-	FAR uint32_t *stack;
+	FAR struct tcb_s *tcb;
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+	FAR struct arch_addrenv_s *addrenv = &binp->addrenv->addrenv;
+	FAR void *vheap;
+	char name[PATH_MAX];
+#endif
+	FAR void *stackaddr = NULL;
 	pid_t pid;
 	int ret;
-	int binary_idx;
 
 	/* Sanity checking */
 
-#ifdef CONFIG_DEBUG
+#ifdef CONFIG_DEBUG_FEATURES
 	if (!binp || !binp->entrypt || binp->stacksize <= 0) {
 		return -EINVAL;
 	}
 #endif
 
-	binfo("Executing %s\n", binp->filename);
-
-	binary_idx = binp->binary_idx;
-	binp->uheap = (struct mm_heap_s *)binp->sections[BIN_HEAP];
-	ret = mm_initialize(binp->uheap, (void *)binp->sections[BIN_HEAP] + sizeof(struct mm_heap_s), binp->sizes[BIN_HEAP]);
-	if (ret != OK) {
-		berr("ERROR: mm_initialize() failed, %d.\n", ret);
-		return ret;
-	}
-	mm_add_app_heap_list(binp->uheap, binp->bin_name);
-
-	binfo("------------------------%s Binary Heap Information------------------------\n", binp->bin_name);
-	binfo("Start addr = 0x%x, size = %u \n", (void *)binp->sections[BIN_HEAP] + sizeof(struct mm_heap_s), binp->sizes[BIN_HEAP]);
-
-	/* The first 4 bytes of the data section of the application must contain a
-	pointer to the application's mm_heap object. Here we will store the mm_heap
-	pointer to the start of the text section */
-	*(uint32_t *)(binp->sections[BIN_DATA]) = (uint32_t)binp->uheap;
-	rtcb = (struct tcb_s *)sched_self();
-	rtcb->uheap = (uint32_t)binp->uheap;
+	binfo("Executing %s\n", filename);
 
 	/* Allocate a TCB for the new task. */
 
-	newtcb = (FAR struct task_tcb_s *)kmm_zalloc(sizeof(struct task_tcb_s));
-	if (!newtcb) {
-		ret = -ENOMEM;
-		goto errout_with_appheap;
+	tcb = kmm_zalloc(sizeof(struct tcb_s));
+	if (!tcb) {
+		return -ENOMEM;
 	}
 
-	ret = up_create_stack((FAR struct tcb_s *)newtcb, binp->stacksize, TCB_FLAG_TTYPE_TASK);
+	ret = binfmt_copyargv(&argv, argv);
 	if (ret < 0) {
-		berr("ERROR: up_create_stack() failed.\n");
-		goto errout_with_appheap;
+		goto errout_with_tcb;
 	}
-	stack = newtcb->cmn.stack_alloc_ptr;
+
+	/* Make a copy of the environment here */
+
+	if (envp == NULL) {
+		envp = environ;
+	}
+
+	ret = binfmt_copyenv(&envp, envp);
+	if (ret < 0) {
+		goto errout_with_args;
+	}
+
+	ret = binfmt_copyactions(&actions, actions);
+	if (ret < 0) {
+		goto errout_with_envp;
+	}
+
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+	/* If there is no argument vector, the process name must be copied here */
+
+	if (argv == NULL) {
+		strlcpy(name, filename, PATH_MAX);
+		filename = name;
+	}
+
+	/* Instantiate the address environment containing the user heap */
+
+	ret = addrenv_select(binp->addrenv, &binp->oldenv);
+	if (ret < 0) {
+		berr("ERROR: addrenv_select() failed: %d\n", ret);
+		goto errout_with_actions;
+	}
+
+	ret = up_addrenv_vheap(addrenv, &vheap);
+	if (ret < 0) {
+		berr("ERROR: up_addrenv_vheap() failed: %d\n", ret);
+		goto errout_with_addrenv;
+	}
+
+	binfo("Initialize the user heap (heapsize=%zu)\n",
+	      up_addrenv_heapsize(addrenv));
+	umm_initialize(vheap, up_addrenv_heapsize(addrenv));
+#endif
+
+	/* Note that tcb->flags are not modified.  0=normal task */
+
+	/* tcb->flags |= TCB_FLAG_TTYPE_TASK; */
+
+	tcb->flags |= TCB_FLAG_FREE_TCB;
 
 	/* Initialize the task */
 
-	ret = task_init((FAR struct tcb_s *)newtcb, binp->filename, binp->priority, NULL, binp->stacksize, binp->entrypt, binp->argv);
-	if (ret < 0) {
-		ret = -get_errno();
-		berr("task_init() failed: %d\n", ret);
-		goto errout_with_stack;
-	}
-
-#if defined(CONFIG_DEBUG_MM_HEAPINFO)
-	/* Re-initialize the binary heap alloc list information.
-	 * Loading thread uses the binary's heap for loading,
-	 * so it saves the alloc data in binary's heap.
-	 * But loading thread is not in its binary, exclude those data
-	 * for calculating the heap usage per threads.
-	 */
-	int hashpid = PIDHASH(getpid());
-
-	binp->uheap->alloc_list[hashpid].pid = HEAPINFO_INIT_INFO;
-	binp->uheap->alloc_list[hashpid].curr_alloc_size = 0;
-	binp->uheap->alloc_list[hashpid].num_alloc_free = 0;
-
-	/* Exclude a stack node from heap usages of current thread.
-	 * This will be shown separately as stack usages.
-	 */
-	heapinfo_exclude_stacksize(newtcb->cmn.stack_alloc_ptr);
-	/* Update the pid information to set a stack node */
-	heapinfo_set_stack_node(stack, newtcb->cmn.pid);
+#ifndef CONFIG_BUILD_KERNEL
+	stackaddr = binp->stackaddr;
 #endif
 
-	/* We can free the argument buffer now.
-	 * REVISIT:  It is good to free up memory as soon as possible, but
-	 * unfortunately here 'binp' is 'const'.  So to do this properly, we will
-	 * have to make some more extensive changes.
-	 */
+	if (argv && argv[0]) {
+		ret = nxtask_init(tcb, argv[0], binp->priority, stackaddr,
+		                  binp->stacksize, binp->entrypt, &argv[1],
+		                  envp, actions);
+	} else {
+		ret = nxtask_init(tcb, filename, binp->priority, stackaddr,
+		                  binp->stacksize, binp->entrypt, argv,
+		                  envp, actions);
+	}
 
-	binfmt_freeargv((FAR struct binary_s *)binp);
+	if (ret < 0) {
+		berr("nxtask_init() failed: %d\n", ret);
+		goto errout_with_addrenv;
+	}
+
+	/* The copied argv and envp can now be released */
+
+	binfmt_freeactions(actions);
+	binfmt_freeargv(argv);
+	binfmt_freeenv(envp);
 
 #ifdef CONFIG_PIC
 	/* Add the D-Space address as the PIC base address.  By convention, this
 	 * must be the first allocated address space.
 	 */
 
-	newtcb->cmn.dspace = binp->sections[BIN_TEXT];
+	tcb->dspace = binp->picbase;
 
 	/* Re-initialize the task's initial state to account for the new PIC base */
 
-	up_initial_state(&newtcb->cmn);
+	up_initial_state(tcb);
 #endif
 
-#ifdef CONFIG_BINFMT_CONSTRUCTORS
-	/* Setup a start hook that will execute all of the C++ static constructors
-	 * on the newly created thread. Common binary static constructions are also
-	 * executed during the first app's start hook. The struct binary_s must persist
-	 * at least until the new task has been started.
-	 */
+#ifdef CONFIG_ARCH_ADDRENV
+	/* Attach the address environment to the new task */
 
-	task_starthook(newtcb, exec_ctors, (FAR void *)binp);
+	ret = addrenv_attach(tcb, binp->addrenv);
+	if (ret < 0) {
+		berr("ERROR: addrenv_attach() failed: %d\n", ret);
+		goto errout_with_tcbinit;
+	}
 #endif
+
+#ifdef CONFIG_SCHED_USER_IDENTITY
+	if (binp->mode & S_ISUID) {
+		tcb->group->tg_euid = binp->uid;
+	}
+
+	if (binp->mode & S_ISGID) {
+		tcb->group->tg_egid = binp->gid;
+	}
+#endif
+
+	if (!spawn) {
+		exec_swap(this_task(), tcb);
+	}
 
 	/* Get the assigned pid before we start the task */
 
-	pid = newtcb->cmn.pid;
+	pid = tcb->pid;
 
-	/* Parent task rtcb was initialized with uheap and mpu_regs values.
-	 * These values are used for stack allocation and task_init and will
-	 * be passed on to all the child tasks of the user app. Since the user
-	 * app is now created, we will reset these values here
-	 */
-	rtcb->uheap = 0;
-#ifdef CONFIG_ARM_MPU
-	memset(rtcb->mpu_regs, 0, sizeof(rtcb->mpu_regs));
-#endif
-#ifdef CONFIG_ARCH_USE_MMU
-	rtcb->pgtbl = mmu_get_os_l1_pgtbl();
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+	/* Restore the address environment of the caller */
+
+	ret = addrenv_restore(binp->oldenv);
+	if (ret < 0) {
+		berr("ERROR: addrenv_restore() failed: %d\n", ret);
+		goto errout_with_tcbinit;
+	}
 #endif
 
-	/* Store the address of the applications userspace object in the newtcb  */
-	/* The app's userspace object will be found at an offset of 4 bytes from the start of the binary */
-	newtcb->cmn.uspace = binp->sections[BIN_TEXT] + 4;
-	newtcb->cmn.uheap = (uint32_t)binp->uheap;
+	/* Set the attributes */
 
-#ifdef CONFIG_BINARY_MANAGER
-	newtcb->cmn.app_id = binp->binary_idx;
+	if (attr) {
+		ret = spawn_execattrs(pid, attr);
+		if (ret < 0) {
+			goto errout_with_tcbinit;
+		}
+	}
 
-	/* Set task name as binary name */
-	strncpy(newtcb->cmn.name, binp->bin_name, CONFIG_TASK_NAME_SIZE);
-	newtcb->cmn.name[CONFIG_TASK_NAME_SIZE] = '\0';
-
-	newtcb->cmn.group->tg_binidx = binary_idx;
-	binary_manager_add_binlist(&newtcb->cmn);
-
-	/* Update id and state in binary table */
-	BIN_ID(binary_idx) = pid;
-	BIN_STATE(binary_idx) = BINARY_LOADED;
-	BIN_LOADVER(binary_idx) = binp->bin_ver;
-	BIN_LOADINFO(binary_idx) = binp;
+#ifdef CONFIG_BINFMT_LOADABLE
+	tcb->group->tg_bininfo = binp;
 #endif
-
-#ifndef CONFIG_DISABLE_SIGNALS
-	/* Clean the signal mask of loaded task because it inherits signal mask from parent task, binary manager. */
-	newtcb->cmn.sigprocmask = NULL_SIGNAL_SET;
-#endif
-
-	/* Set up to unload the module when the task exists. */
-
-	newtcb->bininfo = binp;
 
 	/* Then activate the task at the provided priority */
 
-	ret = task_activate((FAR struct tcb_s *)newtcb);
-	if (ret < 0) {
-		ret = -get_errno();
-		berr("task_activate() failed: %d\n", ret);
-		goto errout_with_tcbinit;
-	}
+	nxtask_activate(tcb);
 
-	binfo("%s loaded @ 0x%08x and running with pid = %d\n", binp->filename, binp->sections[BIN_TEXT], pid);
+	return pid;
 
-	return (int)pid;
-
-errout_with_appheap:
-	mm_remove_app_heap_list(binp->uheap);
 errout_with_tcbinit:
-	if (newtcb != NULL) {
-#ifdef CONFIG_BINARY_MANAGER
-		BIN_ID(binary_idx) = -1;
-		BIN_STATE(binary_idx) = BINARY_INACTIVE;
-		BIN_LOADVER(binary_idx) = 0;
-		BIN_LOADINFO(binary_idx) = NULL;
-		binary_manager_remove_binlist(&newtcb->cmn);
-#endif
-		sched_releasetcb(&newtcb->cmn, TCB_FLAG_TTYPE_TASK);
+#ifndef CONFIG_BUILD_KERNEL
+	if (binp->stackaddr != NULL) {
+		tcb->stack_alloc_ptr = NULL;
 	}
-	return ret;
+#endif
 
-errout_with_stack:
-	kumm_free(stack);
-	kmm_free(newtcb);
+	nxtask_uninit(tcb);
+
+errout_with_addrenv:
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_BUILD_KERNEL)
+	addrenv_restore(binp->oldenv);
+errout_with_actions:
+	binfmt_freeactions(actions);
+#endif
+errout_with_envp:
+	binfmt_freeenv(envp);
+errout_with_args:
+	binfmt_freeargv(argv);
+errout_with_tcb:
+	kmm_free(tcb);
 	return ret;
 }
 
-#endif							/* CONFIG_BINFMT_ENABLE */
+#endif /* CONFIG_BINFMT_DISABLE */
