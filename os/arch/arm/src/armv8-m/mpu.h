@@ -15,227 +15,290 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************************
- * os/arch/arm/src/armv8-m/mpu.h
+/****************************************************************************
+ * arch/arm/src/armv8-m/mpu.h
  *
- *   Copyright (C) 2011, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_COMMON_CORTEXM_MPU_H
-#define __ARCH_ARM_SRC_COMMON_CORTEXM_MPU_H
+#ifndef __ARCH_ARM_SRC_ARMV8_M_MPU_H
+#define __ARCH_ARM_SRC_ARMV8_M_MPU_H
 
-/************************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
-#ifdef CONFIG_ARMV8M_MPU
 #ifndef __ASSEMBLY__
-#include <sys/types.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <debug.h>
-#ifdef CONFIG_BUILD_PROTECTED
-#include "mpu-reg.h"
+#  include <sys/types.h>
+#  include <stdint.h>
+#  include <stdbool.h>
+#  include <assert.h>
+#  include <debug.h>
 #endif
-#include "up_arch.h"
-#endif
-#include <sched.h>
-/************************************************************************************
+
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************************/
+ ****************************************************************************/
+
+/* MPU Register Bases */
+
+#define MPU_BASE                0xe000ed90
+#define MPU_BASE_NS             0xe002ed90
+
+/* MPU Register Offsets */
+
+#define MPU_TYPE_OFFSET         0x0000 /* MPU Type Register */
+#define MPU_CTRL_OFFSET         0x0004 /* MPU Control Register */
+#define MPU_RNR_OFFSET          0x0008 /* MPU Region Number Register */
+#define MPU_RBAR_OFFSET         0x000c /* MPU Region Base Address Register */
+#define MPU_RLAR_OFFSET         0x0010 /* MPU Region Limit Address Register */
+
+#define MPU_RBAR_A1_OFFSET      0x0014 /* MPU alias registers */
+#define MPU_RLAR_A1_OFFSET      0x0018
+#define MPU_RBAR_A2_OFFSET      0x001c
+#define MPU_RLAR_A2_OFFSET      0x0020
+#define MPU_RBAR_A3_OFFSET      0x0024
+#define MPU_RLAR_A3_OFFSET      0x0028
+
+#define MPU_MAIR_OFFSET(n)      (0x0030 + 4 * ((n) >> 2))
+#define MPU_MAIR0_OFFSET        0x0030 /* MPU Memory Attribute Indirection Register 0 */
+#define MPU_MAIR1_OFFSET        0x0034 /* MPU Memory Attribute Indirection Register 1 */
 
 /* MPU Register Addresses */
 
-#define MPU_TYPE                0xe000ed90	/* MPU Type Register */
-#define MPU_CTRL                0xe000ed94	/* MPU Control Register */
-#define MPU_RNR                 0xe000ed98	/* MPU Region Number Register */
-#define MPU_RBAR                0xe000ed9c	/* MPU Region Base Address Register */
-#define MPU_RLAR                0xe000eda0	/* MPU Region Attribute and Size Register */
+#define MPU_TYPE                (MPU_BASE + MPU_TYPE_OFFSET)
+#define MPU_CTRL                (MPU_BASE + MPU_CTRL_OFFSET)
+#define MPU_RNR                 (MPU_BASE + MPU_RNR_OFFSET)
+#define MPU_RBAR                (MPU_BASE + MPU_RBAR_OFFSET)
+#define MPU_RLAR                (MPU_BASE + MPU_RLAR_OFFSET)
 
-#define MPU_RBAR_A1             0xe000eda4	/* MPU alias registers */
-#define MPU_RLAR_A1             0xe000eda8
-#define MPU_RBAR_A2             0xe000edac
-#define MPU_RLAR_A2             0xe000edb0
-#define MPU_RBAR_A3             0xe000edb4
-#define MPU_RLAR_A3             0xe000edb8
+#define MPU_RBAR_A1             (MPU_BASE + MPU_RBAR_A1_OFFSET)
+#define MPU_RLAR_A1             (MPU_BASE + MPU_RLAR_A1_OFFSET)
+#define MPU_RBAR_A2             (MPU_BASE + MPU_RBAR_A2_OFFSET)
+#define MPU_RLAR_A2             (MPU_BASE + MPU_RLAR_A2_OFFSET)
+#define MPU_RBAR_A3             (MPU_BASE + MPU_RBAR_A3_OFFSET)
+#define MPU_RLAR_A3             (MPU_BASE + MPU_RLAR_A3_OFFSET)
 
-#define MPU_MAIR0		0xe000edc0	/* MPU attribute indirection registers */
-#define MPU_MAIR1		0xe000edc4
-
+#define MPU_MAIR(n)             (MPU_BASE + MPU_MAIR_OFFSET(n))
+#define MPU_MAIR0               (MPU_BASE + MPU_MAIR0_OFFSET)
+#define MPU_MAIR1               (MPU_BASE + MPU_MAIR1_OFFSET)
 
 /* MPU Type Register Bit Definitions */
 
-#define MPU_TYPE_SEPARATE       (1 << 0)	/* Bit 0: 0:unified or 1:separate memory maps */
-#define MPU_TYPE_DREGION_SHIFT  (8)		/* Bits 8-15: Number MPU data regions */
+#define MPU_TYPE_SEPARATE       (1 << 0) /* Bit 0: 0:unified or 1:separate memory maps */
+#define MPU_TYPE_DREGION_SHIFT  (8)      /* Bits 8-15: Number MPU data regions */
 #define MPU_TYPE_DREGION_MASK   (0xff << MPU_TYPE_DREGION_SHIFT)
-#define MPU_TYPE_IREGION_SHIFT  (16)		/* Bits 16-23: Number MPU instruction regions */
+#define MPU_TYPE_IREGION_SHIFT  (16)     /* Bits 16-23: Number MPU instruction regions */
 #define MPU_TYPE_IREGION_MASK   (0xff << MPU_TYPE_IREGION_SHIFT)
 
 /* MPU Control Register Bit Definitions */
 
-#define MPU_CTRL_ENABLE         (1 << 0)	/* Bit 0: Enable the MPU */
-#define MPU_CTRL_HFNMIENA       (1 << 1)	/* Bit 1: Enable MPU during hard fault, NMI, and FAULTMAS */
-#define MPU_CTRL_PRIVDEFENA     (1 << 2)	/* Bit 2: Enable privileged access to default memory map */
+#define MPU_CTRL_ENABLE         (1 << 0)  /* Bit 0: Enable the MPU */
+#define MPU_CTRL_HFNMIENA       (1 << 1)  /* Bit 1: Enable MPU during hard fault, NMI, and FAULTMAS */
+#define MPU_CTRL_PRIVDEFENA     (1 << 2)  /* Bit 2: Enable privileged access to default memory map */
 
 /* MPU Region Number Register Bit Definitions */
 
-#if defined(CONFIG_ARMV8M_MPU_NREGIONS)
-#if CONFIG_ARMV8M_MPU_NREGIONS <= 8
-#define MPU_RNR_MASK            (0x00000007)
-#elif CONFIG_ARMV8M_MPU_NREGIONS <= 16
-#define MPU_RNR_MASK            (0x0000000f)
-#elif CONFIG_ARMV8M_MPU_NREGIONS <= 32
-#define MPU_RNR_MASK            (0x0000001f)
-#else
-#error "FIXME: Unsupported number of MPU regions"
-#endif
+#if defined(CONFIG_ARM_MPU_NREGIONS) && defined(CONFIG_ARM_MPU)
+#  if CONFIG_ARM_MPU_NREGIONS <= 8
+#    define MPU_RNR_MASK            (0x00000007)
+#  elif CONFIG_ARM_MPU_NREGIONS <= 16
+#    define MPU_RNR_MASK            (0x0000000f)
+#  elif CONFIG_ARM_MPU_NREGIONS <= 32
+#    define MPU_RNR_MASK            (0x0000001f)
+#  else
+#    error "FIXME: Unsupported number of MPU regions"
+#  endif
 #endif
 
 /* MPU Region Base Address Register Bit Definitions */
 
-#define MPU_RBAR_XN		(1 << 0)			/* Bits 0: MPU region */
-#define MPU_RBAR_AP_SHIFT	(1)				/* Bits 1-2 */
-#define MPU_RBAR_AP_MASK	(3 << MPU_RBAR_AP_SHIFT)
-#define MPU_RBAR_SH_SHIFT	(3)
-#define MPU_RBAR_SH_MASK	(3 << MPU_RBAR_SH_SHIFT)
-#define MPU_RBAR_ADDR_MASK      0xffffffe0			/* Bits N-31:  Region base addrese */
+#define MPU_RBAR_XN             (1 << 0)                    /* Bit 0: Execute never */
+#define MPU_RBAR_AP_SHIFT       (1)                         /* Bits 1-2: Access permission */
+#define MPU_RBAR_AP_MASK        (3 << MPU_RBAR_AP_SHIFT)
+#  define MPU_RBAR_AP_RWNO      (0 << MPU_RBAR_AP_SHIFT)    /* P:RW U:None */
+#  define MPU_RBAR_AP_RWRW      (1 << MPU_RBAR_AP_SHIFT)    /* P:RW U:RW   */
+#  define MPU_RBAR_AP_RONO      (2 << MPU_RBAR_AP_SHIFT)    /* P:RO U:None */
+#  define MPU_RBAR_AP_RORO      (3 << MPU_RBAR_AP_SHIFT)    /* P:RO U:RO   */
+#define MPU_RBAR_SH_SHIFT       (3)                         /* Bits 3-4: Shareability */
+#define MPU_RBAR_SH_MASK        (3 << MPU_RBAR_SH_SHIFT)
+#  define MPU_RBAR_SH_NO        (0 << MPU_RBAR_SH_SHIFT)    /* Non-shareable */
+#  define MPU_RBAR_SH_OUTER     (2 << MPU_RBAR_SH_SHIFT)    /* Outer shareable */
+#  define MPU_RBAR_SH_INNER     (3 << MPU_RBAR_SH_SHIFT)    /* Inner shareable */
+#define MPU_RBAR_BASE_MASK      0xffffffe0                  /* Bits 5-31: Region base addrese */
 
-#define MPU_RBAR_SH_NON		(0 << MPU_RBAR_SH_SHIFT)
-#define MPU_RBAR_SH_OUT		(1 << MPU_RBAR_SH_SHIFT)
-#define MPU_RBAR_SH_IN		(2 << MPU_RBAR_SH_SHIFT)
+/* MPU Region Region Limit Address Register Bit Definitions */
 
-#define MPU_RBAR_AP_RWNO	(0 << MPU_RBAR_AP_SHIFT)	/* P:RW   U:None */
-#define MPU_RBAR_AP_RWRW	(1 << MPU_RBAR_AP_SHIFT)	/* P:RW   U:RW   */
-#define MPU_RBAR_AP_RONO	(2 << MPU_RBAR_AP_SHIFT)	/* P:RO   U:None */
-#define MPU_RBAR_AP_RORO	(3 << MPU_RBAR_AP_SHIFT)	/* P:RO   U:RO   */
+#define MPU_RLAR_ENABLE         (1 << 0)                    /* Bit 0: Region enable */
+#define MPU_RLAR_INDX_SHIFT     (1)                         /* Bits 1-3: Attribute index */
+#define MPU_RLAR_INDX_MASK      (7 << MPU_RLAR_INDX_SHIFT)
+#define MPU_RLAR_STRONGLY_ORDER (0 << MPU_RLAR_INDX_SHIFT)
+#define MPU_RLAR_DEVICE         (1 << MPU_RLAR_INDX_SHIFT)
+#define MPU_RLAR_NONCACHEABLE   (2 << MPU_RLAR_INDX_SHIFT)
+#define MPU_RLAR_WRITE_THROUGH  (3 << MPU_RLAR_INDX_SHIFT)
+#define MPU_RLAR_WRITE_BACK     (4 << MPU_RLAR_INDX_SHIFT)
+#define MPU_RLAR_PXN            (1 << 4)                    /* Bit 4: Privileged execute never */
+#define MPU_RLAR_LIMIT_MASK     0xffffffe0                  /* Bits 5-31: Region limit address */
 
-/* MPU Region Limit Address Register Bit Definitions */
+/* MPU Memory Attribute Indirection Register Bit Definitions */
 
-#define MPU_RLAR_ENABLE         (1 << 0)			/* Bit 0: Region enable */
-#define MPU_RLAR_ATTR_SHIFT	(1)
-#define MPU_RLAR_ATTR_MASK	(7 << MPU_RLAR_ATTR_SHIFT)
-#define MPU_RLAR_LIMIT_MASK	0xffffffe0
+#define MPU_MAIR_INNER_WA       (1 << 0) /* Bit 0: Inner write allocation */
+#define MPU_MAIR_INNER_RA       (1 << 1) /* Bit 1: Inner read allocation */
+#define MPU_MAIR_INNER_WB       (1 << 2) /* Bit 2: Inner write back */
+#define MPU_MAIR_INNER_NT       (1 << 3) /* Bit 3: Inner non-transient */
+#define MPU_MAIR_INNER_NC       (4 << 0) /* Bit 0-3: Inner non-cacheable */
+#define MPU_MAIR_INNER_NGNRNE   (0 << 2) /* Bit 2-3: Inner nGnRnE */
+#define MPU_MAIR_INNER_NGNRE    (1 << 2) /* Bit 2-3: Inner nGnRE */
+#define MPU_MAIR_INNER_NGRE     (2 << 2) /* Bit 2-3: Inner nGRE */
+#define MPU_MAIR_INNER_GRE      (3 << 2) /* Bit 2-3: Inner GRE */
 
-/* MPU Memory Attribute Index Register Definitions */
+#define MPU_MAIR_OUTER_WA       (1 << 4) /* Bit 4: Outer write allocation */
+#define MPU_MAIR_OUTER_RA       (1 << 5) /* Bit 5: Outer read allocation */
+#define MPU_MAIR_OUTER_WB       (1 << 6) /* Bit 6: Outer write back */
+#define MPU_MAIR_OUTER_NT       (1 << 7) /* Bit 7: Outer non-transient */
+#define MPU_MAIR_OUTER_DEVICE   (0 << 4) /* Bit 4-7: Outer device */
+#define MPU_MAIR_OUTER_NC       (4 << 4) /* Bit 4-7: Outer non-cacheable */
 
-#define MPU_MAIR_SHIFT			(1)
-#define MPU_MAIR_IDX(idx)		((idx & 7) << MPU_MAIR_SHIFT)
+#define MPU_MAIR_STRONGLY_ORDER (MPU_MAIR_OUTER_DEVICE | MPU_MAIR_INNER_NGNRNE)
+#define MPU_MAIR_DEVICE         (MPU_MAIR_OUTER_DEVICE | MPU_MAIR_INNER_NGNRE)
+#define MPU_MAIR_NONCACHEABLE   (MPU_MAIR_OUTER_NC | MPU_MAIR_INNER_NC)
+#define MPU_MAIR_WRITE_THROUGH  (MPU_MAIR_OUTER_NT | MPU_MAIR_OUTER_RA | \
+                                 MPU_MAIR_OUTER_WA | MPU_MAIR_INNER_NT | \
+                                 MPU_MAIR_INNER_RA | MPU_MAIR_INNER_WA)
+#define MPU_MAIR_WRITE_BACK     (MPU_MAIR_OUTER_NT | MPU_MAIR_OUTER_WB | \
+                                 MPU_MAIR_OUTER_RA | MPU_MAIR_OUTER_WA | \
+                                 MPU_MAIR_INNER_NT | MPU_MAIR_INNER_WB | \
+                                 MPU_MAIR_INNER_RA | MPU_MAIR_INNER_WA)
+struct mpu_region_s {
+	/* Region Base Address */
 
-/* define memory attribute of Normal memory with  write-through transient,  write allocation */
-#define NORMAL_WT_T_WA			(0x01)
+	uintptr_t base;
 
-/* define memory attribute of Normal memory with  write-through transient,  read allocation */
-#define NORMAL_WT_T_RA			(0x02)
+	/* Region Size */
 
-/* define memory attribute of Normal memory with  write-through transient,  read & write allocation */
-#define NORMAL_WT_T_RWA			(0x03)
+	size_t size;
 
-/* define memory attribute of Normal memory with  non-cacheable */
-#define NORMAL_NC			(0x04)
+	/* Region Attributes */
 
-/* define memory attribute of Normal memory with  write-back transient,  write allocation */
-#define NORMAL_WB_T_WA			(0x05)
+	uint32_t flags1;
+	uint32_t flags2;
+};
 
-/* define memory attribute of Normal memory with  write-back transient,  read allocation */
-#define NORMAL_WB_T_RA			(0x06)
+/****************************************************************************
+ * Name: mpu_reset
+ *
+ * Description:
+ *   Conditional public interface that resets the MPU to disabled during
+ *   MPU initialization.
+ *
+ ****************************************************************************/
 
-/* define memory attribute of Normal memory with  write-back transient,  read and write allocation */
-#define NORMAL_WB_T_RWA			(0x07)
+#if defined(CONFIG_ARM_MPU_RESET)
+void mpu_reset(void);
+#else
+#  define mpu_reset() do { } while (0)
+#endif
 
-/* define memory attribute of Normal memory with  write-through non-transient, no  allocation */
-#define NORMAL_WT_NT			(0x08)
+/****************************************************************************
+ * Name: mpu_early_reset
+ *
+ * Description:
+ *   Conditional public interface that resets the MPU to disabled immediately
+ *   after reset.
+ *
+ ****************************************************************************/
 
-/* define memory attribute of Normal memory with  write-through non-transient,  write allocation */
-#define NORMAL_WT_NT_WA			(0x09)
+#if defined(CONFIG_ARM_MPU_EARLY_RESET)
+void mpu_early_reset(void);
+#else
+#  define mpu_early_reset() do { } while (0)
+#endif
 
-/* define memory attribute of Normal memory with  write-through non-transient,  read allocation */
-#define NORMAL_WT_NT_RA			(0x0A)
+#ifdef CONFIG_ARM_MPU
 
-/* define memory attribute of Normal memory with  write-through non-transient,  read and write allocation */
-#define NORMAL_WT_NT_RWA		(0x0B)
-
-/* define memory attribute of Normal memory with  write-back non-transient, no  allocation */
-#define NORMAL_WB_NT			(0x0C)
-
-/* define memory attribute of Normal memory with  write-back non-transient,  write allocation */
-#define NORMAL_WB_NT_WA			(0x0D)
-
-/* define memory attribute of Normal memory with  write-back non-transient,  read allocation */
-#define NORMAL_WB_NT_RA			(0x0E)
-
-/* define memory attribute of Normal memory with  write-back non-transient,  read and write allocation */
-#define NORMAL_WB_NT_RWA		(0x0F)
-
-/* define memory attribute of Device memory with non-gathering, non-reording, non-Early Write Acknowledge */
-#define DEVICE_NG_NR_NE			((0<<4)|(0<<2))
-
-/* define memory attribute of Device memory with non-gathering, non-reording, Early Write Acknowledge */
-#define DEVICE_NG_NR_E			((0<<4)|(1<<2))
-
-/* define memory attribute of Device memory with non-gathering, reording, Early Write Acknowledge */
-#define DEVICE_NG_R_E			((0<<4)|(2<<2))
-
-/* define memory attribute of Device memory with gathering, reording, Early Write Acknowledge */
-#define DEVICE_G_R_E			((0<<4)|(3<<2))
-
-#define MPU_MEM_ATTR0                   ((NORMAL_NC << 4) | NORMAL_NC)
-#define MPU_MEM_ATTR1                   ((NORMAL_WT_T_RA << 4)  | NORMAL_WT_T_RA)
-#define MPU_MEM_ATTR2                   ((NORMAL_WB_T_RWA << 4)  | NORMAL_WB_T_RWA)
-#define MPU_MEM_ATTR3                   (DEVICE_NG_NR_NE)
-#define MPU_MEM_ATTR4                   (DEVICE_NG_NR_NE)
-#define MPU_MEM_ATTR5                   (DEVICE_NG_NR_NE)
-#define MPU_MEM_ATTR6                   (DEVICE_NG_NR_NE)
-#define MPU_MEM_ATTR7                   (DEVICE_NG_NR_NE)
-
-#define MPU_MEM_ATTR_IDX_NC		0
-#define MPU_MEM_ATTR_IDX_WT_T_RA	1
-#define MPU_MEM_ATTR_IDX_WB_T_RWA	2
-#define MPU_MEM_ATTR_IDX_DEVICE		3
-
-
-/************************************************************************************
- * Global Function Prototypes
- ************************************************************************************/
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 #ifndef __ASSEMBLY__
 #undef EXTERN
 #if defined(__cplusplus)
 #define EXTERN extern "C"
-extern "C" {
+extern "C"
+{
 #else
 #define EXTERN extern
 #endif
+
+/****************************************************************************
+ * Name: mpu_allocregion
+ *
+ * Description:
+ *   Allocate the next region
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   The index of the allocated region.
+ *
+ ****************************************************************************/
+
+unsigned int mpu_allocregion(void);
+
+/****************************************************************************
+ * Name: mpu_freeregion
+ *
+ * Description:
+ *   Free target region.
+ *
+ * Input Parameters:
+ *  region - The index of the region to be freed.
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void mpu_freeregion(unsigned int region);
+
+/****************************************************************************
+ * Name: mpu_control
+ *
+ * Description:
+ *   Configure and enable (or disable) the MPU
+ *
+ * Input Parameters:
+ *   enable     - Flag indicating whether to enable the MPU.
+ *   hfnmiena   - Flag indicating whether to enable the MPU during hard
+ *                fult, NMI, and FAULTMAS.
+ *   privdefena - Flag indicating whether to enable privileged access to
+ *                the default memory map.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void mpu_control(bool enable, bool hfnmiena, bool privdefena);
 
 /****************************************************************************
  * Name: mpu_log2regionceil
@@ -244,11 +307,17 @@ extern "C" {
  *   Determine the smallest value of l2size (log base 2 size) such that the
  *   following is true:
  *
- *   (base & ((1 << l2size) - 1)) + size <= (1 << l2size)
+ *   size <= (1 << l2size)
+ *
+ * Input Parameters:
+ *   size - The size of the region.
+ *
+ * Returned Value:
+ *   The logarithm base 2 of the ceiling value for the MPU region size.
  *
  ****************************************************************************/
 
-uint8_t mpu_log2regionceil(uintptr_t base, size_t size);
+uint8_t mpu_log2regionceil(size_t size);
 
 /****************************************************************************
  * Name: mpu_log2regionfloor
@@ -257,15 +326,100 @@ uint8_t mpu_log2regionceil(uintptr_t base, size_t size);
  *   Determine the largest value of l2size (log base 2 size) such that the
  *   following is true:
  *
- *   (base & ((1 << l2size) - 1)) + size >= (1 << l2size)
+ *   size >= (1 << l2size)
+ *
+ * Input Parameters:
+ *   size - The size of the region.
+ *
+ * Returned Value:
+ *   The logarithm base 2 of the floor value for the MPU region size.
  *
  ****************************************************************************/
 
-uint8_t mpu_log2regionfloor(uintptr_t base, size_t size);
+uint8_t mpu_log2regionfloor(size_t size);
 
-/************************************************************************************
+/****************************************************************************
+ * Name: mpu_dump_region
+ *
+ * Description:
+ *   Dump the region that has been used.
+ *
+ * Input Parameters:
+ *   None.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void mpu_dump_region(void);
+
+/****************************************************************************
+ * Name: mpu_modify_region
+ *
+ * Description:
+ *   Modify a region for privileged, strongly ordered memory
+ *
+ * Input Parameters:
+ *   region - The index of the MPU region to modify.
+ *   base   - The base address of the region.
+ *   size   - The size of the region.
+ *   flags1 - Additional flags for the region.
+ *   flags2 - Additional flags for the region.
+ *
+ * Returned Value:
+ *   None.
+ *
+ ****************************************************************************/
+
+void mpu_modify_region(unsigned int region, uintptr_t base, size_t size,
+                       uint32_t flags1, uint32_t flags2);
+
+/****************************************************************************
+ * Name: mpu_configure_region
+ *
+ * Description:
+ *   Configure a region for privileged, strongly ordered memory
+ *
+ * Input Parameters:
+ *   base   - The base address of the region.
+ *   size   - The size of the region.
+ *   flags1 - Additional flags for the region.
+ *   flags2 - Additional flags for the region.
+ *
+ * Returned Value:
+ *   The region number allocated for the configured region.
+ *
+ ****************************************************************************/
+
+unsigned int mpu_configure_region(uintptr_t base, size_t size,
+                                  uint32_t flags1, uint32_t flags2);
+
+/****************************************************************************
+ * Name: mpu_initialize
+ *
+ * Description:
+ *   Configure a region for privileged, strongly ordered memory
+ *
+ * Input Parameters:
+ *   table      - MPU initialization table.
+ *   count      - Initialize the number of entries in the region table.
+ *   hfnmiena   - A boolean indicating whether the MPU should enable the
+ *                HFNMIENA bit.
+ *   privdefena - A boolean indicating whether the MPU should enable the
+ *                PRIVDEFENA bit.
+ *
+ * Returned Value:
+ *   NULL.
+ *
+ ****************************************************************************/
+
+void mpu_initialize(const struct mpu_region_s *table, size_t count,
+                    bool hfnmiena, bool privdefena);
+
+/****************************************************************************
  * Inline Functions
- ************************************************************************************/
+ ****************************************************************************/
 
 /****************************************************************************
  * Name: mpu_showtype
@@ -275,119 +429,19 @@ uint8_t mpu_log2regionfloor(uintptr_t base, size_t size);
  *
  ****************************************************************************/
 
-static inline void mpu_showtype(void)
-{
-#if defined(CONFIG_DEBUG) && defined(CONFIG_DEBUG_ERROR)
-	uint32_t regval = getreg32(MPU_TYPE);
-	lldbg("%s MPU Regions: data=%d instr=%d\n",
-		(regval & MPU_TYPE_SEPARATE) != 0 ? "Separate" : "Unified",
-		(regval & MPU_TYPE_DREGION_MASK) >> MPU_TYPE_DREGION_SHIFT,
-		(regval & MPU_TYPE_IREGION_MASK) >> MPU_TYPE_IREGION_SHIFT);
+#ifdef CONFIG_DEBUG_SCHED_INFO
+#  define mpu_showtype() \
+    do \
+      { \
+        uint32_t regval = getreg32(MPU_TYPE); \
+        sinfo("%s MPU Regions: data=%d instr=%d\n", \
+          (regval & MPU_TYPE_SEPARATE) != 0 ? "Separate" : "Unified", \
+          (regval & MPU_TYPE_DREGION_MASK) >> MPU_TYPE_DREGION_SHIFT, \
+          (regval & MPU_TYPE_IREGION_MASK) >> MPU_TYPE_IREGION_SHIFT); \
+    } while (0)
+#else
+#  define mpu_showtype() do { } while (0)
 #endif
-}
-
-/****************************************************************************
- * Name: mpu_get_access_type_str
- *
- * Description:
- *   Get the mpu region access type string
- *
- ****************************************************************************/
-
-static inline char *mpu_get_access_type_str(uint32_t rbar)
-{
-	uint32_t val = rbar & MPU_RBAR_AP_MASK;
-	if (val == MPU_RBAR_AP_RWNO) {
-		return "RW/NO";
-	} else if (val == MPU_RBAR_AP_RWRW) {
-		return "RW/RW";
-	} else if (val == MPU_RBAR_AP_RONO) {
-		return "RO/NO";
-	} else if (val == MPU_RBAR_AP_RORO) {
-		return "RO/RO";
-	} else {
-		return "XX/XX";
-	}
-}
-
-/****************************************************************************
- * Name: mpu_show_regioninfo
- *
- * Description:
- *   Show the current mpu region setting
- *
- ****************************************************************************/
-
-static inline void mpu_show_regioninfo(void)
-{
-#ifdef CONFIG_DEBUG
-	int idx, temp;
-	uint32_t rbar, rlar;
-
-	/* save the current region before printing the information */
-	temp = getreg32(MPU_RNR);
-	lldbg_noarg("===========================================================\n");
-	lldbg_noarg("List of MPU regions and permissions\n");
-	lldbg_noarg("===========================================================\n");
-	lldbg("********************************************************************************************\n");
-	lldbg("%-12s\t%-12s\t%-12s\t%-12s\t%-12s\t%-12s\n", "REGION_NO.", "BASE_ADDRESS", "SIZE", "STATUS", "ACCESS (P/U)", "EXECUTE");
-	lldbg("********************************************************************************************\n");
-	for (idx = 0; idx < CONFIG_ARMV8M_MPU_NREGIONS; idx++) {
-		putreg32(idx, MPU_RNR);
-		rbar = getreg32(MPU_RBAR);
-		rlar = getreg32(MPU_RLAR);
-		lldbg("%-12d\t0x%-10X\t0x%-10X\t%-12s\t%-12s\t%-12s\n",
-			idx,
-			(rbar & MPU_RBAR_ADDR_MASK),
-			(((rlar & MPU_RLAR_LIMIT_MASK) - (rbar & MPU_RBAR_ADDR_MASK)) | 0x1f) + 1,
-			(rlar & MPU_RLAR_ENABLE) ? "ENABLED" : "DISABLED",
-			mpu_get_access_type_str(rbar),
-			(rbar & MPU_RBAR_XN) ? "XN" : "X");
-	}
-	lldbg("********************************************************************************************\n");
-	/* restore the previous region */
-	putreg32(temp, MPU_RNR);
-#endif
-}
-
-/****************************************************************************
- * Name: mpu_control
- *
- * Description:
- *   Configure and enable (or disable) the MPU
- *
- ****************************************************************************/
-
-static inline void mpu_control(bool enable, bool hfnmiena, bool privdefena)
-{
-	uint32_t regval = 0;
-
-	if (enable) {
-		regval |= MPU_CTRL_ENABLE;	/* Enable the MPU */
-		/* save the current region before printing the information */
-		if (hfnmiena) {
-			regval |= MPU_CTRL_HFNMIENA;	/* Enable MPU during hard fault, NMI, and FAULTMAS */
-		}
-
-		if (privdefena) {
-			regval |= MPU_CTRL_PRIVDEFENA;	/* Enable privileged access to default memory map */
-		}
-	}
-	/* restore the previous region */
-	putreg32(regval, MPU_CTRL);
-
-	/* Set attribute registers */
-	regval = MPU_MEM_ATTR0;
-	regval |= MPU_MEM_ATTR1 << 8;
-	regval |= MPU_MEM_ATTR2 << 16;
-	regval |= MPU_MEM_ATTR3 << 24;
-	putreg32(regval, MPU_MAIR0);
-	regval = MPU_MEM_ATTR4;
-	regval |= MPU_MEM_ATTR5 << 8;
-	regval |= MPU_MEM_ATTR6 << 16;
-	regval |= MPU_MEM_ATTR7 << 24;
-	putreg32(regval, MPU_MAIR1);
-}
 
 /****************************************************************************
  * Name: mpu_priv_stronglyordered
@@ -397,32 +451,12 @@ static inline void mpu_control(bool enable, bool hfnmiena, bool privdefena)
  *
  ****************************************************************************/
 
-#if defined(CONFIG_ARMV8M_HAVE_ICACHE) || defined(CONFIG_ARMV8M_DCACHE)
-static inline void mpu_priv_stronglyordered(uint32_t region, uintptr_t base, size_t size)
-{
-	uint32_t regval;
-
-	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
-	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
-
-	/* Select the region */
-
-	putreg32(region, MPU_RNR);
-
-	/* Select the region base address */
-	regval = (base & MPU_RBAR_ADDR_MASK);
-	regval |= MPU_RBAR_SH_OUT;
-	regval |= MPU_RBAR_AP_RWNO;
-	putreg32(regval, MPU_RBAR);
-
-	/* The configure the region */
-	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
-	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
-	regval |= MPU_RLAR_ENABLE;
-	putreg32(regval, MPU_RLAR);
-}
-#endif
+#define mpu_priv_stronglyordered(base, size) \
+  /* The configure the region */ \
+  mpu_configure_region(base, size, \
+                       MPU_RBAR_AP_RWNO, \
+                       MPU_RLAR_STRONGLY_ORDER | \
+                       MPU_RLAR_PXN)
 
 /****************************************************************************
  * Name: mpu_user_flash
@@ -432,266 +466,142 @@ static inline void mpu_priv_stronglyordered(uint32_t region, uintptr_t base, siz
  *
  ****************************************************************************/
 
-static inline void mpu_userflash(uint32_t region, uintptr_t base, size_t size)
-{
-	uint32_t regval;
-
-	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
-	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
-
-	/* Select the region */
-
-	putreg32(region, MPU_RNR);
-
-	/* Select the region base address */
-	regval = (base & MPU_RBAR_ADDR_MASK);
-	regval |= MPU_RBAR_SH_NON;
-	regval |= MPU_RBAR_AP_RORO;
-	putreg32(regval, MPU_RBAR);
-
-	/* The configure the region */
-	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
-	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
-	regval |= MPU_RLAR_ENABLE;
-	putreg32(regval, MPU_RLAR);
-}
+#define mpu_user_flash(base, size) \
+  /* The configure the region */ \
+  mpu_configure_region(base, size, \
+                       MPU_RBAR_AP_RORO, \
+                       MPU_RLAR_WRITE_BACK)
 
 /****************************************************************************
- * Name: mpu_privflash
+ * Name: mpu_priv_flash
  *
  * Description:
  *   Configure a region for privileged program flash
  *
  ****************************************************************************/
 
-static inline void mpu_privflash(uint32_t region, uintptr_t base, size_t size)
-{
-	uint32_t regval;
-
-	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
-	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
-
-	/* Select the region */
-
-	putreg32(region, MPU_RNR);
-
-	/* Select the region base address */
-	regval = (base & MPU_RBAR_ADDR_MASK);
-	regval |= MPU_RBAR_SH_NON;
-	regval |= MPU_RBAR_AP_RONO;
-	putreg32(regval, MPU_RBAR);
-
-	/* The configure the region */
-	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
-	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
-	regval |= MPU_RLAR_ENABLE;
-	putreg32(regval, MPU_RLAR);
-}
+#define mpu_priv_flash(base, size) \
+  /* The configure the region */ \
+  mpu_configure_region(base, size, \
+                       MPU_RBAR_AP_RONO, \
+                       MPU_RLAR_WRITE_BACK)
 
 /****************************************************************************
- * Name: mpu_userintsram
+ * Name: mpu_user_intsram
  *
  * Description:
  *   Configure a region as user internal SRAM
  *
  ****************************************************************************/
 
-static inline void mpu_userintsram(uint32_t region, uintptr_t base, size_t size)
-{
-	uint32_t regval;
-
-	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
-	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
-
-	/* Select the region */
-
-	putreg32(region, MPU_RNR);
-
-	/* Select the region base address */
-	regval = (base & MPU_RBAR_ADDR_MASK);
-	regval |= MPU_RBAR_SH_OUT;
-	regval |= MPU_RBAR_AP_RWRW;
-	putreg32(regval, MPU_RBAR);
-
-	/* The configure the region */
-	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
-	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
-	regval |= MPU_RLAR_ENABLE;
-	putreg32(regval, MPU_RLAR);
-}
+#define mpu_user_intsram(base, size) \
+  /* The configure the region */ \
+  mpu_configure_region(base, size, \
+                       MPU_RBAR_XN | \
+                       MPU_RBAR_AP_RWRW, \
+                       MPU_RLAR_NONCACHEABLE | \
+                       MPU_RLAR_PXN)
 
 /****************************************************************************
- * Name: mpu_userintsram_wb
- *
- * Description:
- *   Configure a region as user internal SRAM
- *
- ****************************************************************************/
-
-static inline void mpu_userintsram_wb(uint32_t region, uintptr_t base, size_t size)
-{
-	uint32_t regval;
-
-	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
-	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
-
-	/* Select the region */
-
-	putreg32(region, MPU_RNR);
-
-	/* Select the region base address */
-	regval = (base & MPU_RBAR_ADDR_MASK);
-	regval |= MPU_RBAR_SH_NON;
-	regval |= MPU_RBAR_AP_RWRW;
-	putreg32(regval, MPU_RBAR);
-
-	/* The configure the region */
-	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
-	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_NC);
-	regval |= MPU_RLAR_ENABLE;
-	putreg32(regval, MPU_RLAR);
-}
-
-/****************************************************************************
- * Name: mpu_privintsram
+ * Name: mpu_priv_intsram
  *
  * Description:
  *   Configure a region as privileged internal SRAM
  *
  ****************************************************************************/
 
-static inline void mpu_privintsram(uint32_t region, uintptr_t base, size_t size)
-{
-	uint32_t regval;
-
-	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
-	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
-
-	/* Select the region */
-
-	putreg32(region, MPU_RNR);
-
-	/* Select the region base address */
-	regval = (base & MPU_RBAR_ADDR_MASK);
-	regval |= MPU_RBAR_SH_OUT;
-	regval |= MPU_RBAR_AP_RWNO;
-	putreg32(regval, MPU_RBAR);
-
-	/* The configure the region */
-	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
-	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
-	regval |= MPU_RLAR_ENABLE;
-	putreg32(regval, MPU_RLAR);
-}
+#define mpu_priv_intsram(base, size) \
+  /* The configure the region */ \
+  mpu_configure_region(base, size, \
+                       MPU_RBAR_AP_RWNO, \
+                       MPU_RLAR_NONCACHEABLE | \
+                       MPU_RLAR_PXN)
 
 /****************************************************************************
- * Name: mpu_userextsram
+ * Name: mpu_priv_shmem
+ *
+ * Description:
+ *   Configure a region as privileged shared memory
+ *
+ ****************************************************************************/
+
+#define mpu_priv_shmem(base, size) \
+  /* The configure the region */ \
+  mpu_configure_region(base, size, \
+                       MPU_RBAR_AP_RWNO, \
+                       MPU_RLAR_NONCACHEABLE | \
+                       MPU_RBAR_SH_INNER | \
+                       MPU_RLAR_PXN)
+
+/****************************************************************************
+ * Name: mpu_user_extsram
  *
  * Description:
  *   Configure a region as user external SRAM
  *
  ****************************************************************************/
 
-static inline void mpu_userextsram(uint32_t region, uintptr_t base, size_t size)
-{
-	uint32_t regval;
-
-	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
-	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
-
-	/* Select the region */
-
-	putreg32(region, MPU_RNR);
-
-	/* Select the region base address */
-	regval = (base & MPU_RBAR_ADDR_MASK);
-	regval |= MPU_RBAR_SH_OUT;
-	regval |= MPU_RBAR_AP_RWRW;
-	putreg32(regval, MPU_RBAR);
-
-	/* The configure the region */
-	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
-	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
-	regval |= MPU_RLAR_ENABLE;
-	putreg32(regval, MPU_RLAR);
-}
+#define mpu_user_extsram(base, size) \
+  /* The configure the region */ \
+  mpu_configure_region(base, size, \
+                       MPU_RBAR_XN | \
+                       MPU_RBAR_AP_RWRW | \
+                       MPU_RBAR_SH_OUTER, \
+                       MPU_RLAR_WRITE_BACK | \
+                       MPU_RLAR_PXN)
 
 /****************************************************************************
- * Name: mpu_privextsram
+ * Name: mpu_priv_extsram
  *
  * Description:
  *   Configure a region as privileged external SRAM
  *
  ****************************************************************************/
 
-static inline void mpu_privextsram(uint32_t region, uintptr_t base, size_t size)
-{
-	uint32_t regval;
-
-	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
-	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
-
-	/* Select the region */
-	putreg32(region, MPU_RNR);
-
-	/* Select the region base address */
-	regval = (base & MPU_RBAR_ADDR_MASK);
-	regval |= MPU_RBAR_SH_OUT;
-	regval |= MPU_RBAR_AP_RWNO;
-	putreg32(regval, MPU_RBAR);
-
-	/* The configure the region */
-	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
-	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_WT_T_RA);
-	regval |= MPU_RLAR_ENABLE;
-	putreg32(regval, MPU_RLAR);
-}
+#define mpu_priv_extsram(base, size) \
+  /* The configure the region */ \
+  mpu_configure_region(base, size, \
+                       MPU_RBAR_AP_RWNO | \
+                       MPU_RBAR_SH_OUTER, \
+                       MPU_RLAR_WRITE_BACK | \
+                       MPU_RLAR_PXN)
 
 /****************************************************************************
  * Name: mpu_peripheral
  *
  * Description:
- *   Configure a region as privileged periperal address space
+ *   Configure a region as privileged peripheral address space
  *
  ****************************************************************************/
 
-static inline void mpu_peripheral(uint32_t region, uintptr_t base, size_t size)
-{
-	uint32_t regval;
+#define mpu_peripheral(base, size) \
+  /* Then configure the region */ \
+  mpu_configure_region(base, size, \
+                       MPU_RBAR_AP_RWNO, \
+                       MPU_RLAR_DEVICE | \
+                       MPU_RLAR_PXN)
 
-	DEBUGASSERT(region < CONFIG_ARMV8M_MPU_NREGIONS);
-	DEBUGASSERT(!(base & ~MPU_RBAR_ADDR_MASK));
-	DEBUGASSERT(!(size & ~MPU_RLAR_LIMIT_MASK));
+/****************************************************************************
+ * Name: mpu_user_peripheral
+ *
+ * Description:
+ *   Configure a region as user peripheral address space
+ *
+ ****************************************************************************/
 
-	/* Select the region */
-	putreg32(region, MPU_RNR);
-
-	/* Select the region base address */
-	regval = (base & MPU_RBAR_ADDR_MASK);
-	regval |= MPU_RBAR_SH_OUT;
-	regval |= MPU_RBAR_AP_RWNO;
-	regval |= MPU_RBAR_XN;
-	putreg32(regval, MPU_RBAR);
-
-	/* The configure the region */
-	regval = (base + size) & MPU_RLAR_LIMIT_MASK;
-	regval |= MPU_MAIR_IDX(MPU_MEM_ATTR_IDX_DEVICE);
-	regval |= MPU_RLAR_ENABLE;
-	putreg32(regval, MPU_RLAR);
-}
+#define mpu_user_peripheral(base, size) \
+  /* Then configure the region */ \
+  mpu_configure_region(base, size, \
+                       MPU_RBAR_XN | \
+                       MPU_RBAR_AP_RWRW, \
+                       MPU_RLAR_DEVICE | \
+                       MPU_RLAR_PXN)
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif							/* __ASSEMBLY__ */
-#endif							/* __ARCH_ARM_SRC_COMMON_CORTEXM_MPU_H */
-#endif
+#endif /* __ASSEMBLY__ */
+#endif /* CONFIG_ARM_MPU */
+#endif /* __ARCH_ARM_SRC_ARMV8_M_MPU_H */
