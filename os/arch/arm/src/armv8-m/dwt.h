@@ -15,14 +15,18 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/***********************************************************************************************
+/****************************************************************************
  * arch/arm/src/armv8-m/dwt.h
  *
- *   Copyright (c) 2009 - 2013 ARM LIMITED
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SPDX-FileCopyrightText: 2014 Pierre-noel Bouteville. All rights reserved.
+ * SPDX-FileCopyrightText: 2009 - 2013 ARM LIMITED
+ * SPDX-FileContributor: Pierre-noel Bouteville <pnb990@gmail.com>
  *
- *  All rights reserved.
  *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions are met:
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
  *  - Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  *  - Redistributions in binary form must reproduce the above copyright
@@ -31,21 +35,18 @@
  *  - Neither the name of ARM nor the names of its contributors may be used
  *    to endorse or promote products derived from this software without
  *    specific prior written permission.
- *  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- *  ARE DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDERS AND CONTRIBUTORS BE
- *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
  *
- *   Copyright (C) 2014 Pierre-noel Bouteville . All rights reserved.
- *   Author: Pierre-noel Bouteville <pnb990@gmail.com>
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ *  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ *  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDERS
+ *  AND CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ *  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ *  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,117 +75,176 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- ***********************************************************************************************/
+ ****************************************************************************/
 
 #ifndef __ARCH_ARM_SRC_ARMV8_M_DWT_H
 #define __ARCH_ARM_SRC_ARMV8_M_DWT_H
 
-/***********************************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ***********************************************************************************************/
+ ****************************************************************************/
 
-/* Data Watchpoint and Trace Register (DWT) Definitions ****************************************/
-/* DWT Register Base Address *******************************************************************/
+/* Data Watchpoint and Trace Register (DWT) Definitions *********************/
 
-#define DWT_BASE                    (0xe0001000ul)
+/* DWT Register Base Address ************************************************/
 
-/* DWT Register Addresses **********************************************************************/
+#define DWT_BASE                     (0xe0001000ul)
 
-#define DWT_CTRL                    (DWT_BASE+0x0000)	/* Control Register */
-#define DWT_CYCCNT                  (DWT_BASE+0x0004)	/* Cycle Count Register */
-#define DWT_CPICNT                  (DWT_BASE+0x0008)	/* CPI Count Register */
-#define DWT_EXCCNT                  (DWT_BASE+0x000c)	/* Exception Overhead Count Register */
-#define DWT_SLEEPCNT                (DWT_BASE+0x0010)	/* Sleep Count Register */
-#define DWT_LSUCNT                  (DWT_BASE+0x0014)	/* LSU Count Register */
-#define DWT_FOLDCNT                 (DWT_BASE+0x0018)	/* Folded-instruction Count Register */
-#define DWT_PCSR                    (DWT_BASE+0x001c)	/* Program Counter Sample Register */
-#define DWT_COMP0                   (DWT_BASE+0x0020)	/* Comparator Register 0 */
-#define DWT_MASK0                   (DWT_BASE+0x0024)	/* Mask Register 0 */
-#define DWT_FUNCTION0               (DWT_BASE+0x0028)	/* Function Register 0 */
-#define DWT_COMP1                   (DWT_BASE+0x0030)	/* Comparator Register 1 */
-#define DWT_MASK1                   (DWT_BASE+0x0034)	/* Mask Register 1 */
-#define DWT_FUNCTION1               (DWT_BASE+0x0038)	/* Function Register 1 */
-#define DWT_COMP2                   (DWT_BASE+0x0040)	/* Comparator Register 2 */
-#define DWT_MASK2                   (DWT_BASE+0x0044)	/* Mask Register 2 */
-#define DWT_FUNCTION2               (DWT_BASE+0x0048)	/* Function Register 2 */
-#define DWT_COMP3                   (DWT_BASE+0x0050)	/* Comparator Register 3 */
-#define DWT_MASK3                   (DWT_BASE+0x0054)	/* Mask Register 3 */
-#define DWT_FUNCTION3               (DWT_BASE+0x0058)	/* Function Register 3 */
+/* DWT Register Addresses ***************************************************/
 
-/* DWT Register Bit Field Definitions **********************************************************/
+#define DWT_CTRL                     (DWT_BASE + 0x0000)  /* Control Register */
+#define DWT_CYCCNT                   (DWT_BASE + 0x0004)  /* Cycle Count Register */
+#define DWT_CPICNT                   (DWT_BASE + 0x0008)  /* CPI Count Register */
+#define DWT_EXCCNT                   (DWT_BASE + 0x000c)  /* Exception Overhead Count Register */
+#define DWT_SLEEPCNT                 (DWT_BASE + 0x0010)  /* Sleep Count Register */
+#define DWT_LSUCNT                   (DWT_BASE + 0x0014)  /* LSU Count Register */
+#define DWT_FOLDCNT                  (DWT_BASE + 0x0018)  /* Folded-instruction Count Register */
+#define DWT_PCSR                     (DWT_BASE + 0x001c)  /* Program Counter Sample Register */
+#define DWT_COMP0                    (DWT_BASE + 0x0020)  /* Comparator Register 0 */
+#define DWT_FUNCTION0                (DWT_BASE + 0x0028)  /* Function Register 0 */
+#define DWT_MASK0                    (DWT_BASE + 0x002c)  /* Mask Register 0 */
+#define DWT_COMP1                    (DWT_BASE + 0x0030)  /* Comparator Register 1 */
+#define DWT_FUNCTION1                (DWT_BASE + 0x0038)  /* Function Register 1 */
+#define DWT_MASK1                    (DWT_BASE + 0x003c)  /* Mask Register 1 */
+#define DWT_COMP2                    (DWT_BASE + 0x0040)  /* Comparator Register 2 */
+#define DWT_FUNCTION2                (DWT_BASE + 0x0048)  /* Function Register 2 */
+#define DWT_MASK2                    (DWT_BASE + 0x004c)  /* Mask Register 2 */
+#define DWT_COMP3                    (DWT_BASE + 0x0050)  /* Comparator Register 3 */
+#define DWT_FUNCTION3                (DWT_BASE + 0x0058)  /* Function Register 3 */
+#define DWT_MASK3                    (DWT_BASE + 0x005c)  /* Mask Register 3 */
+#define DWT_COMP4                    (DWT_BASE + 0x0060)  /* Comparator Register 4 */
+#define DWT_FUNCTION4                (DWT_BASE + 0x0068)  /* Function Register 4 */
+#define DWT_MASK4                    (DWT_BASE + 0x006c)  /* Mask Register 4 */
+#define DWT_COMP5                    (DWT_BASE + 0x0070)  /* Comparator Register 5 */
+#define DWT_FUNCTION5                (DWT_BASE + 0x0078)  /* Function Register 5 */
+#define DWT_MASK5                    (DWT_BASE + 0x007c)  /* Mask Register 5 */
+#define DWT_COMP6                    (DWT_BASE + 0x0080)  /* Comparator Register 6 */
+#define DWT_FUNCTION6                (DWT_BASE + 0x0088)  /* Function Register 6 */
+#define DWT_MASK6                    (DWT_BASE + 0x008c)  /* Mask Register 6 */
+#define DWT_COMP7                    (DWT_BASE + 0x0090)  /* Comparator Register 7 */
+#define DWT_FUNCTION7                (DWT_BASE + 0x0098)  /* Function Register 7 */
+#define DWT_MASK7                    (DWT_BASE + 0x009c)  /* Mask Register 7 */
+#define DWT_COMP8                    (DWT_BASE + 0x00a0)  /* Comparator Register 8 */
+#define DWT_FUNCTION8                (DWT_BASE + 0x00a8)  /* Function Register 8 */
+#define DWT_MASK8                    (DWT_BASE + 0x00ac)  /* Mask Register 8 */
+#define DWT_COMP9                    (DWT_BASE + 0x00b0)  /* Comparator Register 9 */
+#define DWT_FUNCTION9                (DWT_BASE + 0x00b8)  /* Function Register 9 */
+#define DWT_MASK9                    (DWT_BASE + 0x00bc)  /* Mask Register 9 */
+#define DWT_COMP10                   (DWT_BASE + 0x00c0)  /* Comparator Register 10 */
+#define DWT_FUNCTION10               (DWT_BASE + 0x00c8)  /* Function Register 10 */
+#define DWT_MASK10                   (DWT_BASE + 0x00cc)  /* Mask Register 10 */
+#define DWT_COMP11                   (DWT_BASE + 0x00d0)  /* Comparator Register 11 */
+#define DWT_FUNCTION11               (DWT_BASE + 0x00d8)  /* Function Register 11 */
+#define DWT_MASK11                   (DWT_BASE + 0x00dc)  /* Mask Register 11 */
+#define DWT_COMP12                   (DWT_BASE + 0x00e0)  /* Comparator Register 12 */
+#define DWT_FUNCTION12               (DWT_BASE + 0x00e8)  /* Function Register 12 */
+#define DWT_MASK12                   (DWT_BASE + 0x00ec)  /* Mask Register 12 */
+#define DWT_COMP13                   (DWT_BASE + 0x00f0)  /* Comparator Register 13 */
+#define DWT_FUNCTION13               (DWT_BASE + 0x00f8)  /* Function Register 13 */
+#define DWT_MASK13                   (DWT_BASE + 0x00fc)  /* Mask Register 13 */
+#define DWT_COMP14                   (DWT_BASE + 0x0100)  /* Comparator Register 14 */
+#define DWT_FUNCTION14               (DWT_BASE + 0x0108)  /* Function Register 14 */
+#define DWT_MASK14                   (DWT_BASE + 0x010c)  /* Mask Register 14 */
 
-#define DWT_CTRL_NUMCOMP_Pos        28	/* DWT CTRL: NUMCOMP Position */
-#define DWT_CTRL_NUMCOMP_Msk        (0xFul << DWT_CTRL_NUMCOMP_Pos)	/* DWT CTRL: NUMCOMP Mask */
-#define DWT_CTRL_NOTRCPKT_Pos       27	/* DWT CTRL: NOTRCPKT Position */
-#define DWT_CTRL_NOTRCPKT_Msk       (0x1ul << DWT_CTRL_NOTRCPKT_Pos)	/* DWT CTRL: NOTRCPKT Mask */
-#define DWT_CTRL_NOEXTTRIG_Pos      26	/* DWT CTRL: NOEXTTRIG Position */
-#define DWT_CTRL_NOEXTTRIG_Msk      (0x1ul << DWT_CTRL_NOEXTTRIG_Pos)	/* DWT CTRL: NOEXTTRIG Mask */
-#define DWT_CTRL_NOCYCCNT_Pos       25	/* DWT CTRL: NOCYCCNT Position */
-#define DWT_CTRL_NOCYCCNT_Msk       (0x1ul << DWT_CTRL_NOCYCCNT_Pos)	/* DWT CTRL: NOCYCCNT Mask */
-#define DWT_CTRL_NOPRFCNT_Pos       24	/* DWT CTRL: NOPRFCNT Position */
-#define DWT_CTRL_NOPRFCNT_Msk       (0x1ul << DWT_CTRL_NOPRFCNT_Pos)	/* DWT CTRL: NOPRFCNT Mask */
-#define DWT_CTRL_CYCEVTENA_Pos      22	/* DWT CTRL: CYCEVTENA Position */
-#define DWT_CTRL_CYCEVTENA_Msk      (0x1ul << DWT_CTRL_CYCEVTENA_Pos)	/* DWT CTRL: CYCEVTENA Mask */
-#define DWT_CTRL_FOLDEVTENA_Pos     21	/* DWT CTRL: FOLDEVTENA Position */
-#define DWT_CTRL_FOLDEVTENA_Msk     (0x1ul << DWT_CTRL_FOLDEVTENA_Pos)	/* DWT CTRL: FOLDEVTENA Mask */
-#define DWT_CTRL_LSUEVTENA_Pos      20	/* DWT CTRL: LSUEVTENA Position */
-#define DWT_CTRL_LSUEVTENA_Msk      (0x1ul << DWT_CTRL_LSUEVTENA_Pos)	/* DWT CTRL: LSUEVTENA Mask */
-#define DWT_CTRL_SLEEPEVTENA_Pos    19	/* DWT CTRL: SLEEPEVTENA Position */
-#define DWT_CTRL_SLEEPEVTENA_Msk    (0x1ul << DWT_CTRL_SLEEPEVTENA_Pos)	/* DWT CTRL: SLEEPEVTENA Mask */
-#define DWT_CTRL_EXCEVTENA_Pos      18	/* DWT CTRL: EXCEVTENA Position */
-#define DWT_CTRL_EXCEVTENA_Msk      (0x1ul << DWT_CTRL_EXCEVTENA_Pos)	/* DWT CTRL: EXCEVTENA Mask */
-#define DWT_CTRL_CPIEVTENA_Pos      17	/* DWT CTRL: CPIEVTENA Position */
-#define DWT_CTRL_CPIEVTENA_Msk      (0x1ul << DWT_CTRL_CPIEVTENA_Pos)	/* DWT CTRL: CPIEVTENA Mask */
-#define DWT_CTRL_EXCTRCENA_Pos      16	/* DWT CTRL: EXCTRCENA Position */
-#define DWT_CTRL_EXCTRCENA_Msk      (0x1ul << DWT_CTRL_EXCTRCENA_Pos)	/* DWT CTRL: EXCTRCENA Mask */
-#define DWT_CTRL_PCSAMPLENA_Pos     12	/* DWT CTRL: PCSAMPLENA Position */
-#define DWT_CTRL_PCSAMPLENA_Msk     (0x1ul << DWT_CTRL_PCSAMPLENA_Pos)	/* DWT CTRL: PCSAMPLENA Mask */
-#define DWT_CTRL_SYNCTAP_Pos        10	/* DWT CTRL: SYNCTAP Position */
-#define DWT_CTRL_SYNCTAP_Msk        (0x3ul << DWT_CTRL_SYNCTAP_Pos)	/* DWT CTRL: SYNCTAP Mask */
-#define DWT_CTRL_CYCTAP_Pos         9	/* DWT CTRL: CYCTAP Position */
-#define DWT_CTRL_CYCTAP_Msk         (0x1ul << DWT_CTRL_CYCTAP_Pos)	/* DWT CTRL: CYCTAP Mask */
-#define DWT_CTRL_POSTINIT_Pos       5	/* DWT CTRL: POSTINIT Position */
-#define DWT_CTRL_POSTINIT_Msk       (0xful << DWT_CTRL_POSTINIT_Pos)	/* DWT CTRL: POSTINIT Mask */
-#define DWT_CTRL_POSTPRESET_Pos     1	/* DWT CTRL: POSTPRESET Position */
-#define DWT_CTRL_POSTPRESET_Msk     (0xful << DWT_CTRL_POSTPRESET_Pos)	/* DWT CTRL: POSTPRESET Mask */
-#define DWT_CTRL_CYCCNTENA_Pos      0	/* DWT CTRL: CYCCNTENA Position */
-#define DWT_CTRL_CYCCNTENA_Msk      (0x1ul << DWT_CTRL_CYCCNTENA_Pos)	/* DWT CTRL: CYCCNTENA Mask */
+/* DWT Register Bit Field Definitions ***************************************/
 
-#define DWT_CPICNT_CPICNT_Pos       0	/* DWT CPICNT: CPICNT Position */
-#define DWT_CPICNT_CPICNT_Msk       (0xfful << DWT_CPICNT_CPICNT_Pos)	/* DWT CPICNT: CPICNT Mask */
+/* DWT CTRL */
 
-#define DWT_EXCCNT_EXCCNT_Pos       0	/* DWT EXCCNT: EXCCNT Position */
-#define DWT_EXCCNT_EXCCNT_Msk       (0xfful << DWT_EXCCNT_EXCCNT_Pos)	/* DWT EXCCNT: EXCCNT Mask */
+#define DWT_CTRL_NUMCOMP_SHIFT        28
+#define DWT_CTRL_NUMCOMP_MASK         (0xFul << DWT_CTRL_NUMCOMP_SHIFT)
+#define DWT_CTRL_NOTRCPKT_SHIFT       27
+#define DWT_CTRL_NOTRCPKT_MASK        (0x1ul << DWT_CTRL_NOTRCPKT_SHIFT)
+#define DWT_CTRL_NOEXTTRIG_SHIFT      26
+#define DWT_CTRL_NOEXTTRIG_MASK       (0x1ul << DWT_CTRL_NOEXTTRIG_SHIFT)
+#define DWT_CTRL_NOCYCCNT_SHIFT       25
+#define DWT_CTRL_NOCYCCNT_MASK        (0x1ul << DWT_CTRL_NOCYCCNT_SHIFT)
+#define DWT_CTRL_NOPRFCNT_SHIFT       24
+#define DWT_CTRL_NOPRFCNT_MASK        (0x1ul << DWT_CTRL_NOPRFCNT_SHIFT)
+#define DWT_CTRL_CYCDISS_SHIFT        23
+#define DWT_CTRL_CYCDISS_MASK         (0x1ul << DWT_CTRL_CYCDISS_SHIFT)
+#define DWT_CTRL_CYCEVTENA_SHIFT      22
+#define DWT_CTRL_CYCEVTENA_MASK       (0x1ul << DWT_CTRL_CYCEVTENA_SHIFT)
+#define DWT_CTRL_FOLDEVTENA_SHIFT     21
+#define DWT_CTRL_FOLDEVTENA_MASK      (0x1ul << DWT_CTRL_FOLDEVTENA_SHIFT)
+#define DWT_CTRL_LSUEVTENA_SHIFT      20
+#define DWT_CTRL_LSUEVTENA_MASK       (0x1ul << DWT_CTRL_LSUEVTENA_SHIFT)
+#define DWT_CTRL_SLEEPEVTENA_SHIFT    19
+#define DWT_CTRL_SLEEPEVTENA_MASK     (0x1ul << DWT_CTRL_SLEEPEVTENA_SHIFT)
+#define DWT_CTRL_EXCEVTENA_SHIFT      18
+#define DWT_CTRL_EXCEVTENA_MASK       (0x1ul << DWT_CTRL_EXCEVTENA_SHIFT)
+#define DWT_CTRL_CPIEVTENA_SHIFT      17
+#define DWT_CTRL_CPIEVTENA_MASK       (0x1ul << DWT_CTRL_CPIEVTENA_SHIFT)
+#define DWT_CTRL_EXCTRCENA_SHIFT      16
+#define DWT_CTRL_EXCTRCENA_MASK       (0x1ul << DWT_CTRL_EXCTRCENA_SHIFT)
+#define DWT_CTRL_PCSAMPLENA_SHIFT     12
+#define DWT_CTRL_PCSAMPLENA_MASK      (0x1ul << DWT_CTRL_PCSAMPLENA_SHIFT)
+#define DWT_CTRL_SYNCTAP_SHIFT        10
+#define DWT_CTRL_SYNCTAP_MASK         (0x3ul << DWT_CTRL_SYNCTAP_SHIFT)
+#define DWT_CTRL_CYCTAP_SHIFT         9
+#define DWT_CTRL_CYCTAP_MASK          (0x1ul << DWT_CTRL_CYCTAP_SHIFT)
+#define DWT_CTRL_POSTINIT_SHIFT       5
+#define DWT_CTRL_POSTINIT_MASK        (0xful << DWT_CTRL_POSTINIT_SHIFT)
+#define DWT_CTRL_POSTPRESET_SHIFT     1
+#define DWT_CTRL_POSTPRESET_MASK      (0xful << DWT_CTRL_POSTPRESET_SHIFT)
+#define DWT_CTRL_CYCCNTENA_SHIFT      0
+#define DWT_CTRL_CYCCNTENA_MASK       (0x1ul << DWT_CTRL_CYCCNTENA_SHIFT)
 
-#define DWT_SLEEPCNT_SLEEPCNT_Pos   0	/* DWT SLEEPCNT: SLEEPCNT Position */
-#define DWT_SLEEPCNT_SLEEPCNT_Msk   (0xfful << DWT_SLEEPCNT_SLEEPCNT_Pos)	/* DWT SLEEPCNT: SLEEPCNT Mask */
+/* DWT CPICNT */
 
-#define DWT_LSUCNT_LSUCNT_Pos       0	/* DWT LSUCNT: LSUCNT Position */
-#define DWT_LSUCNT_LSUCNT_Msk       (0xfful << DWT_LSUCNT_LSUCNT_Pos)	/* DWT LSUCNT: LSUCNT Mask */
+#define DWT_CPICNT_CPICNT_SHIFT       0
+#define DWT_CPICNT_CPICNT_MASK        (0xfful << DWT_CPICNT_CPICNT_SHIFT)
 
-#define DWT_FOLDCNT_FOLDCNT_Pos     0	/* DWT FOLDCNT: FOLDCNT Position */
-#define DWT_FOLDCNT_FOLDCNT_Msk     (0xfful << DWT_FOLDCNT_FOLDCNT_Pos)	/* DWT FOLDCNT: FOLDCNT Mask */
+/* DWT EXCCNT */
 
-#define DWT_MASK_MASK_Pos           0	/* DWT MASK: MASK Position */
-#define DWT_MASK_MASK_Msk           (0x1ful << DWT_MASK_MASK_Pos)	/* DWT MASK: MASK Mask */
+#define DWT_EXCCNT_EXCCNT_SHIFT       0
+#define DWT_EXCCNT_EXCCNT_MASK        (0xfful << DWT_EXCCNT_EXCCNT_SHIFT)
 
-#define DWT_FUNCTION_MATCHED_Pos    24	/* DWT FUNCTION: MATCHED Position */
-#define DWT_FUNCTION_MATCHED_Msk    (0x1ul << DWT_FUNCTION_MATCHED_Pos)	/* DWT FUNCTION: MATCHED Mask */
-#define DWT_FUNCTION_DATAVADDR1_Pos 16	/* DWT FUNCTION: DATAVADDR1 Position */
-#define DWT_FUNCTION_DATAVADDR1_Msk (0xful << DWT_FUNCTION_DATAVADDR1_Pos)	/* DWT FUNCTION: DATAVADDR1 Mask */
-#define DWT_FUNCTION_DATAVADDR0_Pos 12	/* DWT FUNCTION: DATAVADDR0 Position */
-#define DWT_FUNCTION_DATAVADDR0_Msk (0xful << DWT_FUNCTION_DATAVADDR0_Pos)	/* DWT FUNCTION: DATAVADDR0 Mask */
-#define DWT_FUNCTION_DATAVSIZE_Pos  10	/* DWT FUNCTION: DATAVSIZE Position */
-#define DWT_FUNCTION_DATAVSIZE_Msk  (0x3ul << DWT_FUNCTION_DATAVSIZE_Pos)	/* DWT FUNCTION: DATAVSIZE Mask */
-#define DWT_FUNCTION_LNK1ENA_Pos    9	/* DWT FUNCTION: LNK1ENA Position */
-#define DWT_FUNCTION_LNK1ENA_Msk    (0x1ul << DWT_FUNCTION_LNK1ENA_Pos)	/* DWT FUNCTION: LNK1ENA Mask */
-#define DWT_FUNCTION_DATAVMATCH_Pos 8	/* DWT FUNCTION: DATAVMATCH Position */
-#define DWT_FUNCTION_DATAVMATCH_Msk (0x1ul << DWT_FUNCTION_DATAVMATCH_Pos)	/* DWT FUNCTION: DATAVMATCH Mask */
-#define DWT_FUNCTION_CYCMATCH_Pos   7	/* DWT FUNCTION: CYCMATCH Position */
-#define DWT_FUNCTION_CYCMATCH_Msk   0x1ul << DWT_FUNCTION_CYCMATCH_Pos)	/* DWT FUNCTION: CYCMATCH Mask */
-#define DWT_FUNCTION_EMITRANGE_Pos  5	/* DWT FUNCTION: EMITRANGE Position */
-#define DWT_FUNCTION_EMITRANGE_Msk  (0x1ul << DWT_FUNCTION_EMITRANGE_Pos)	/* DWT FUNCTION: EMITRANGE Mask */
-#define DWT_FUNCTION_FUNCTION_Pos   0	/* DWT FUNCTION: FUNCTION Position */
-#define DWT_FUNCTION_FUNCTION_Msk   (0xful << DWT_FUNCTION_FUNCTION_Pos)	/* DWT FUNCTION: FUNCTION Mask */
+/* DWT SLEEPCNT */
 
-#endif							/* __ARCH_ARM_SRC_ARMV8_M_DWT_H */
+#define DWT_SLEEPCNT_SLEEPCNT_SHIFT   0
+#define DWT_SLEEPCNT_SLEEPCNT_MASK    (0xfful << DWT_SLEEPCNT_SLEEPCNT_SHIFT)
+
+/* DWT LSUCNT */
+
+#define DWT_LSUCNT_LSUCNT_SHIFT       0
+#define DWT_LSUCNT_LSUCNT_MASK        (0xfful << DWT_LSUCNT_LSUCNT_SHIFT)
+
+/* DWT FOLDCNT */
+
+#define DWT_FOLDCNT_FOLDCNT_SHIFT     0
+#define DWT_FOLDCNT_FOLDCNT_MASK      (0xfful << DWT_FOLDCNT_FOLDCNT_SHIFT)
+
+/* DWT MASK */
+
+#define DWT_MASK_MASK_SHIFT           0
+#define DWT_MASK_MASK_MASK            (0x1ful << DWT_MASK_MASK_SHIFT)
+
+/* DWT FUNCTION */
+
+#define DWT_FUNCTION_MATCHED_SHIFT    24
+#define DWT_FUNCTION_MATCHED_MASK     (0x1ul << DWT_FUNCTION_MATCHED_SHIFT)
+#define DWT_FUNCTION_DATAVADDR1_SHIFT 16
+#define DWT_FUNCTION_DATAVADDR1_MASK  (0xful << DWT_FUNCTION_DATAVADDR1_SHIFT)
+#define DWT_FUNCTION_DATAVADDR0_SHIFT 12
+#define DWT_FUNCTION_DATAVADDR0_MASK  (0xful << DWT_FUNCTION_DATAVADDR0_SHIFT)
+#define DWT_FUNCTION_DATAVSIZE_SHIFT  10
+#define DWT_FUNCTION_DATAVSIZE_MASK   (0x3ul << DWT_FUNCTION_DATAVSIZE_SHIFT)
+#define DWT_FUNCTION_LNK1ENA_SHIFT    9
+#define DWT_FUNCTION_LNK1ENA_MASK     (0x1ul << DWT_FUNCTION_LNK1ENA_SHIFT)
+#define DWT_FUNCTION_DATAVMATCH_SHIFT 8
+#define DWT_FUNCTION_DATAVMATCH_MASK  (0x1ul << DWT_FUNCTION_DATAVMATCH_SHIFT)
+#define DWT_FUNCTION_CYCMATCH_SHIFT   7
+#define DWT_FUNCTION_CYCMATCH_MASK    0x1ul << DWT_FUNCTION_CYCMATCH_SHIFT)
+#define DWT_FUNCTION_EMITRANGE_SHIFT  5
+#define DWT_FUNCTION_EMITRANGE_MASK   (0x1ul << DWT_FUNCTION_EMITRANGE_SHIFT)
+#define DWT_FUNCTION_FUNCTION_SHIFT   0
+#define DWT_FUNCTION_FUNCTION_MASK    (0x1ful << DWT_FUNCTION_FUNCTION_SHIFT)
+
+/* Two comparator are consecutive flags */
+
+#define DWT_FUNCTION_WATCHPOINT_CO    (0x17ul << DWT_FUNCTION_FUNCTION_SHIFT)
+#define DWT_FUNCTION_WATCHPOINT_RO    (0x16ul << DWT_FUNCTION_FUNCTION_SHIFT)
+#define DWT_FUNCTION_WATCHPOINT_WO    (0x15ul << DWT_FUNCTION_FUNCTION_SHIFT)
+#define DWT_FUNCTION_WATCHPOINT_RW    (0x14ul << DWT_FUNCTION_FUNCTION_SHIFT)
+
+#endif /* __ARCH_ARM_SRC_ARMV8_M_DWT_H */
