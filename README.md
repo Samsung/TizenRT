@@ -214,4 +214,4 @@ STM32F429I-DISCO [[details]](build/configs/stm32f429i-disco/README.md)
 
 STM32L4R9AI-DISCO [[details]](build/configs/stm32l4r9ai-disco/README.md)
 
-QEMU [[details]](build/configs/qemu/README.md)
+QEMU [[details]](build/configs/lm3s6965-ek/README.md)

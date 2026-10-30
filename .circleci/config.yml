@@ -71,7 +71,7 @@ jobs:
       image: default
     working_directory: ~/TizenRT
     environment:
-      CONFIG_PATH: qemu/build_test
+      CONFIG_PATH: lm3s6965-ek/build_test
     steps:
       - attach_workspace:
           at: ~/TizenRT
