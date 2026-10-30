@@ -18,124 +18,94 @@
 ############################################################################
 # drivers/Makefile
 #
-#   Copyright (C) 2007-2014 Gregory Nutt. All rights reserved.
-#   Author: Gregory Nutt <gnutt@nuttx.org>
+# SPDX-License-Identifier: Apache-2.0
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
 #
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in
-#    the documentation and/or other materials provided with the
-#    distribution.
-# 3. Neither the name NuttX nor the names of its contributors may be
-#    used to endorse or promote products derived from this software
-#    without specific prior written permission.
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-# OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
 #
 ############################################################################
 
--include $(TOPDIR)/Make.defs
-DELIM ?= $(strip /)
+include $(TOPDIR)/Make.defs
 
-ifeq ($(WINTOOL),y)
-INCDIROPT = -w
-endif
-
-DEPPATH = --dep-path .
-ASRCS =
-CSRCS =
-VPATH = .
+CSRCS = drivers_initialize.c
 
 # Include support for various drivers.  Each Make.defs file will add its
 # files to the source file list, add its DEPPATH info, and will add
 # the appropriate paths to the VPATH variable
 
-include analog$(DELIM)Make.defs
-include audio$(DELIM)Make.defs
-include bch$(DELIM)Make.defs
-include bluetooth$(DELIM)Make.defs
-include compression$(DELIM)Make.defs
-include cpuload$(DELIM)Make.defs
-include gpio$(DELIM)Make.defs
-include prodconfig$(DELIM)Make.defs
-include memory$(DELIM)Make.defs
-include i2c$(DELIM)Make.defs
-include iotdev$(DELIM)Make.defs
-include input$(DELIM)Make.defs
-include os_api_test$(DELIM)Make.defs
-include lcd$(DELIM)Make.defs
-include lwnl${DELIM}Make.defs
-include mipidsi${DELIM}Make.defs
-include net$(DELIM)Make.defs
-include otp$(DELIM)Make.defs
-include pipes$(DELIM)Make.defs
-include pm$(DELIM)Make.defs
-include power$(DELIM)Make.defs
-include seclink$(DELIM)Make.defs
-include sensors$(DELIM)Make.defs
-include serial$(DELIM)Make.defs
-include silent_reboot$(DELIM)Make.defs
-include spi$(DELIM)Make.defs
-include syslog$(DELIM)Make.defs
-include usbdev$(DELIM)Make.defs
-include usbhost$(DELIM)Make.defs
-include video$(DELIM)Make.defs
-include wifi_csi$(DELIM)Make.defs
-include wireless$(DELIM)Make.defs
+include analog/Make.defs
+include audio/Make.defs
+include bch/Make.defs
+include can/Make.defs
+include clk/Make.defs
+include crypto/Make.defs
+include devicetree/Make.defs
+include dma/Make.defs
+include math/Make.defs
+include motor/Make.defs
+include i2c/Make.defs
+include i2s/Make.defs
+include i3c/Make.defs
+include ipcc/Make.defs
+include input/Make.defs
+include ioexpander/Make.defs
+include lcd/Make.defs
+include leds/Make.defs
+include loop/Make.defs
+include misc/Make.defs
+include mmcsd/Make.defs
+include modem/Make.defs
+include mtd/Make.defs
+include eeprom/Make.defs
+include efuse/Make.defs
+include net/Make.defs
+include note/Make.defs
+include pinctrl/Make.defs
+include pipes/Make.defs
+include power/Make.defs
+include regmap/Make.defs
+include rmt/Make.defs
+include rpmsg/Make.defs
+include rptun/Make.defs
+include sensors/Make.defs
+include serial/Make.defs
+include spi/Make.defs
+include syslog/Make.defs
+include thermal/Make.defs
+include timers/Make.defs
+include usbdev/Make.defs
+include usbhost/Make.defs
+include usbmisc/Make.defs
+include usbmonitor/Make.defs
+include vhost/Make.defs
+include video/Make.defs
+include virtio/Make.defs
+include wireless/Make.defs
+include contactless/Make.defs
+include 1wire/Make.defs
+include rf/Make.defs
+include rc/Make.defs
+include segger/Make.defs
+include usrsock/Make.defs
+include reset/Make.defs
+include pci/Make.defs
+include coresight/Make.defs
+include aie/Make.defs
 
-ifneq ($(CONFIG_NFILE_DESCRIPTORS),0)
-  CSRCS += dev_null.c dev_zero.c
-
-ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
-  CSRCS += loop.c
-ifeq ($(CONFIG_DRVR_WRITEBUFFER),y)
-  CSRCS += rwbuffer.c
-else
-ifeq ($(CONFIG_DRVR_READAHEAD),y)
-  CSRCS += rwbuffer.c
-endif
-endif
-endif
-
-ifeq ($(CONFIG_DEV_URANDOM),y)
-  CSRCS += dev_urandom.c
-endif
-
-ifeq ($(CONFIG_PWM),y)
-  CSRCS += pwm.c
-endif
-
-ifeq ($(CONFIG_WATCHDOG),y)
-  CSRCS += watchdog.c
-endif
-
-ifeq ($(CONFIG_TIMER),y)
-  CSRCS += timer.c
-endif
-
-ifeq ($(CONFIG_RTC),y)
-  CSRCS += rtc.c
-endif
-
-ifeq ($(CONFIG_VIRTKEY),y)
-  CSRCS += virtkey.c
-endif
+ifeq ($(CONFIG_SPECIFIC_DRIVERS),y)
+-include platform/Make.defs
 endif
 
 AOBJS = $(ASRCS:.S=$(OBJEXT))
@@ -147,7 +117,7 @@ OBJS = $(AOBJS) $(COBJS)
 BIN = libdrivers$(LIBEXT)
 
 all: $(BIN)
-.PHONY: depend clean distclean
+.PHONY: context depend clean distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -158,8 +128,14 @@ $(COBJS): %$(OBJEXT): %.c
 $(BIN): $(OBJS)
 	$(call ARCHIVE, $@, $(OBJS))
 
-.depend: Makefile $(SRCS)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+context::
+
+makedepfile: $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds)
+	$(call CATFILE, Make.dep, $^)
+	$(call DELFILE, $^)
+
+.depend: Makefile $(SRCS) $(TOPDIR)$(DELIM).config
+	$(Q) $(MAKE) makedepfile
 	$(Q) touch $@
 
 depend: .depend
@@ -168,7 +144,8 @@ clean:
 	$(call DELFILE, $(BIN))
 	$(call CLEAN)
 
-distclean: clean
+distclean:: clean
+	$(call DELFILE, $(CSRCS:.c=.ddc) $(ASRCS:.S=.dds))
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
 
