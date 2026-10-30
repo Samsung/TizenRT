@@ -202,6 +202,10 @@ int task_exit(void)
 	dtcb = this_task();
 #endif
 
+#ifdef CONFIG_PREFERENCE
+	preference_clear_callbacks(dtcb->pid);
+#endif
+
 	/* Check that exit is ready or not before execution */
 
 	prepare_exit(dtcb);
@@ -284,10 +288,6 @@ int task_exit(void)
 		mmu_clear_app_pgtbl(dtcb->app_id);
 #endif
 	}
-#endif
-
-#ifdef CONFIG_PREFERENCE
-	preference_clear_callbacks(dtcb->pid);
 #endif
 
 	/* Deallocate its TCB */
