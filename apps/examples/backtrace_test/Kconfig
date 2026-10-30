@@ -1,0 +1,23 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config EXAMPLES_BACKTRACE_TEST
+	bool "Backtrace test application"
+	default n
+	depends on SCHED_BACKTRACE
+	---help---
+		Enable the backtrace test application
+
+if EXAMPLES_BACKTRACE_TEST
+
+config EXAMPLES_BACKTRACE_TEST_PRIORITY
+	int "Backtrace test task priority"
+	default 100
+
+config EXAMPLES_BACKTRACE_TEST_STACKSIZE
+	int "Backtrace test stack size"
+	default 4096
+
+endif

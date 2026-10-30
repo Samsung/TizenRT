@@ -79,6 +79,10 @@
 #include "sched/sched.h"
 #include "binfmt.h"
 
+#if defined(CONFIG_UNWINDER_ARM)
+#include "../arch/arm/src/common/arm_backtrace_unwind.h"
+#endif
+
 #ifdef CONFIG_BINFMT_ENABLE
 
 /****************************************************************************
@@ -342,6 +346,19 @@ int exec_module(FAR struct binary_s *binp)
 
 	binfo("%s loaded @ 0x%08x and running with pid = %d\n", binp->filename, binp->sections[BIN_TEXT], pid);
 
+	/* Register the .ARM.exidx section for kernel-side backtrace unwinding.
+	 * This allows the ARM EHABI unwinder to find exception index entries for
+	 * user-mode code when generating backtraces on crashes.
+	 * Register for both app binaries and common binary (library).
+	 */
+#if defined(CONFIG_UNWINDER_ARM)
+	if (binp->exidx_start && binp->exidx_end) {
+		up_register_exidx((unsigned long)binp->exidx_start,
+				  (unsigned long)binp->exidx_end - (unsigned long)binp->exidx_start,
+				  (unsigned long)binp->sections[BIN_TEXT],
+				  (unsigned long)binp->sections[BIN_TEXT] + binp->sizes[BIN_TEXT]);
+	}
+#endif
 	return (int)pid;
 
 errout_with_appheap:
