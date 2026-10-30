@@ -57,7 +57,9 @@
 #include <tinyara/irq.h>
 #include <tinyara/lib/lib.h>
 #include <tinyara/panic_notifier.h>
-#include <tinyara/power/pm.h>
+#if defined(CONFIG_PM)
+#  include <tinyara/power/pm.h>
+#endif
 #include <tinyara/mutex.h>
 #include <tinyara/wdog.h>
 #include <tinyara/wqueue.h>
