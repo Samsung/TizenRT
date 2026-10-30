@@ -12,6 +12,6 @@ config EXAMPLES_CONNECT_TEST
 	---help---
 		 Connect Test program
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "connect_test_main" if ENTRY_CONNECT_TEST

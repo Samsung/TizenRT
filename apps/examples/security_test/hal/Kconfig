@@ -18,6 +18,6 @@ config EXAMPLES_SECURITY_HAL_TEST_PROGNAME
 
 endif # EXAMPLES_SECURITY_HAL_TEST
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "security_hal_test_main" if ENTRY_SECURITY_HAL_TEST

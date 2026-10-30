@@ -12,7 +12,7 @@ config EXAMPLES_WIFIMANAGER_TEST
 	---help---
 		Wi-Fi Manager sample program
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "wm_test_main" if ENTRY_WIFIMANAGER_TEST
 

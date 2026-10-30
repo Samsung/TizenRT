@@ -9,6 +9,6 @@ config EXAMPLES_KERNEL_UPDATE
 	---help---
 		Enable the \"kernel update test\" example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "kernel_update_main" if ENTRY_KERNEL_UPDATE

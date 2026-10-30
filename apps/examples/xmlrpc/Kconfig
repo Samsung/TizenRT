@@ -10,6 +10,6 @@ config EXAMPLES_XMLRPC
 	---help---
 		Enable the XML RPC example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "xmlrpc_main" if ENTRY_XMLRPC

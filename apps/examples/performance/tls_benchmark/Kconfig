@@ -17,6 +17,6 @@ config EXAMPLES_TLS_BENCHMARK_PROGNAME
 
 endif # EXAMPLE_TLS_BENCHMARK
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "tls_benchmark_main" if ENTRY_TLS_BENCHMARK

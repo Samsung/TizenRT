@@ -9,6 +9,6 @@ config APP_##APP_NAME_UPPER##
 	---help---
 		Enable the \"##APP_NAME##\" Application
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "##ENTRY_FUNC##" if ENTRY_##APP_NAME_UPPER##

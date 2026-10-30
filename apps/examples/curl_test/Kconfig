@@ -10,6 +10,6 @@ config EXAMPLES_CURLTEST
 	---help---
 		Enable the curl example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "curl_main" if ENTRY_CURLTEST

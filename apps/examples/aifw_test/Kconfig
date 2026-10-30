@@ -18,7 +18,7 @@ config PRODUCT_AI_MODEL_FILE_SUPPORT
 		Support file based AI Model
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "aifw_test_main" if ENTRY_AIFW_TEST
 

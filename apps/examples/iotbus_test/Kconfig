@@ -27,6 +27,6 @@ config EXAMPLES_IOTBUS_TEST_RIGHT_BUTTON_GPIO_NUM
 	default 44
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "iotbus_test_main" if ENTRY_IOTBUS_TEST

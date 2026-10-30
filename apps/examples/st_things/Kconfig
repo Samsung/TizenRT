@@ -75,6 +75,6 @@ config EXAMPLES_ST_THINGS_RED_LED_GPIO_NUM
 
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "st_things_sample_main" if EXAMPLES_ST_THINGS

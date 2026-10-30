@@ -9,6 +9,6 @@ config EXAMPLES_RSSI_REPORT
 	---help---
 		Enable the network test API's
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "rreport_main" if ENTRY_RSSI_REPORT

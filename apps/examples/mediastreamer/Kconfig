@@ -51,6 +51,6 @@ config EXAMPLES_MEDIASTREAMER_CRYPTO
 
 endif # EXAMPLES_MEDIASTREAMER
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "mediastreamer_main" if ENTRY_MEDIASTREAMER

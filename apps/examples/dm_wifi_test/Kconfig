@@ -13,6 +13,6 @@ config EXAMPLES_DM_WIFI_TEST
 		of DM API calls to start WiFi, connect to an Access Point,
 		perform DHCP, as well as channel scanning.
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "wifi_test_main" if ENTRY_DM_WIFI_TEST

@@ -83,6 +83,6 @@ config EXAMPLES_IOTJS_STARTUP_WIFI_CRYPTO
 
 endif # EXAMPLES_IOTJS_STARTUP
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "iotjs_startup_main" if ENTRY_IOTJS_STARTUP

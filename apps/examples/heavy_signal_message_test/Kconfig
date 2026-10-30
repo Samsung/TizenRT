@@ -11,6 +11,6 @@ config EXAMPLES_HEAVY_SIGNAL_MESSAGE_TEST
 		Aging test in case of heavy signal/message scenarios. Check whether 
 		signal and message work normally while many context switches occur.
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "heavy_signal_message_test_main" if ENTRY_HEAVY_SIGNAL_MESSAGE_TEST

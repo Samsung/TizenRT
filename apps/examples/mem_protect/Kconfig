@@ -10,6 +10,6 @@ config EXAMPLES_MEM_PROTECT_TEST
 	---help---
 		Enable the Memory protection TestCase Example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "mem_protect_tc_main" if ENTRY_MEM_PROTECT_TEST

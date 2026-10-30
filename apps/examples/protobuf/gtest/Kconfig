@@ -10,6 +10,6 @@ config EXAMPLES_PROTOBUF_GTEST
 	---help---
 		Enable the Protocol Buffers gtest
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "gtest_main" if ENTRY_PROTOBUF_GTEST

@@ -10,7 +10,7 @@ config  EXAMPLES_TOUCH_VISUAL
 	---help---
 		Enable Touch visual test
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "touch_visual_test_main" if ENTRY_EXAMPLES_TOUCH_VISUAL
 

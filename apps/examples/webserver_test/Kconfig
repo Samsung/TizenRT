@@ -11,6 +11,6 @@ config EXAMPLES_WEBSERVER_TEST
 	---help---
 		Enable the TizenRT Webserver test
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "webserver_test_main" if ENTRY_WEBSERVER_TEST

@@ -12,6 +12,6 @@ config EXAMPLES_CTX_SWITCH_PERFORMANCE
 		They call sched_yield() 1,000,000 * 2 times, measuring the time through clock_gettime(CLOCK_MONOTONIC, ..).
 		This test is meaningful only when there is no irq or other highest priority tasks.
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "ctx_switch_main" if ENTRY_CTX_SWITCH

@@ -10,6 +10,6 @@ config EXAMPLES_FS_PERFORMANCE
 	---help---
 		Enable the \"Filesystem Performance Test\" example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "fs_performance_main" if ENTRY_FS_PERFORMANCE

@@ -14,6 +14,6 @@ config EXAMPLES_WATCHDOG
 		status, keepalive sends WDIOC_KEEPALIVE, and pause_resume runs
 		a parameterized pause/resume timing test.
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "watchdog_main" if ENTRY_WATCHDOG

@@ -17,6 +17,6 @@ config EXAMPLES_LED_PIN
 		Defines LED pin number				
 endif 
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "led_test" if ENTRY_LED

@@ -10,6 +10,6 @@ config EXAMPLES_BT_UNIT_TEST
 	---help---
 		Enable bt_unit_test
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "bt_unit_test_main" if ENTRY_BT_UNIT_TEST

@@ -10,6 +10,6 @@ config EXAMPLES_WAKEREC
 	---help---
 		Enable bixby wakeup test code
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "wakerec_main" if ENTRY_WAKEREC

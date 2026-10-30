@@ -10,6 +10,6 @@ config EXAMPLES_CMSIS_DSP
 	---help---
 		Enable the CMSIS DSP example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "cmsis_dsp" if ENTRY_CMSIS_DSP

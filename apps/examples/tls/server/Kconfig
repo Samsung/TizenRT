@@ -17,6 +17,6 @@ config EXAMPLES_TLS_SERVER_PROGNAME
 
 endif # EXAMPLE_TLS_SERVER
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "tls_server_main" if ENTRY_TLS_SERVER

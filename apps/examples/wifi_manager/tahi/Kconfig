@@ -9,6 +9,6 @@ config EXAMPLES_TAHI
 	---help---
 		Enable the TAHI Self Test App
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "tahi_main" if ENTRY_TAHI

@@ -18,7 +18,7 @@ config <APP_NAME>
 	---help---
 		<Write Details>
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "<APP_MAIN_FUNCTION>" if ENTRY_<APP_NAME>
 ```

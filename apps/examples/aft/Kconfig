@@ -3,3 +3,7 @@ config EXAMPLES_AUDIO_FILE_TRANSFER
 	default n
 	---help---
 		Enable the "Audio File Transfer!" example.
+
+config INIT_ENTRYPOINT
+	string
+	default "aft_main" if ENTRY_AUDIO_FILE_TRANSFER
