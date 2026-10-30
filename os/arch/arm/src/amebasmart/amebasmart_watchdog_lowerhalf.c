@@ -464,7 +464,7 @@ int amebasmart_wdg_initialize(const char *devpath, uint32_t timeout_ms)
 	return OK;
 }
 
-#ifdef CONFIG_WATCHDOG_FOR_IRQ
+#if defined(CONFIG_WATCHDOG_FOR_IRQ) || defined(CONFIG_HEALTH_MONITOR)
 void up_wdog_init(uint16_t timeout)
 {
 	watchdog_init(timeout);
@@ -473,6 +473,11 @@ void up_wdog_init(uint16_t timeout)
 void up_wdog_keepalive(void)
 {
 	watchdog_refresh();
+}
+
+void up_wdog_start(void)
+{
+	watchdog_start();
 }
 #endif
 

@@ -268,6 +268,40 @@ config PREALLOC_TIMERS
 		pool of preallocated timer structures to minimize dynamic allocations.  Set to
 		zero for all dynamic allocations.
 
+config HEALTH_MONITOR
+	bool "Health monitor"
+	default n
+	depends on WATCHDOG && !WATCHDOG_FOR_IRQ && !SCHED_TICKLESS && !SUPPRESS_INTERRUPTS && !SUPPRESS_TIMER_INTS && !SYSTEMTICK_EXTCLK
+	---help---
+		Monitor threads that register a timeout and periodically kick their
+		deadline. The system timer checks registered threads and enters the
+		existing panic path when a deadline has expired at inspection time.
+
+		The monitor uses per-TCB state and a statically sized timer heap.
+		Applications access it through a dedicated ioctl driver. Normal PM
+		tick suppression is supported; a tickless scheduler is not supported.
+
+		System bring-up initializes and starts the hardware watchdog. It is
+		refreshed from the tick handler only after a successful CPU0 monitor
+		check and once the fixed one-second refresh interval has elapsed.
+		The board must implement up_wdog_init(),
+		up_wdog_start() and up_wdog_keepalive(). This cannot be combined with
+		WATCHDOG_FOR_IRQ, which refreshes on every tick.
+
+		The health monitor owns the hardware watchdog, so boards that support it
+		do not register the watchdog driver (CONFIG_WATCHDOG_DEVPATH) when it is
+		enabled. Applications cannot use that device in this configuration.
+
+config HEALTH_MONITOR_WATCHDOG_TIMEOUT_MS
+	int "Health monitor hardware watchdog timeout (ms)"
+	default 30000
+	range 1 65535
+	depends on HEALTH_MONITOR
+	---help---
+		Hardware watchdog timeout in milliseconds. The watchdog resets the
+		system if the tick handler does not refresh it within this time.
+		The board watchdog must support the selected value.
+
 endmenu # Clocks and Timers
 
 menu "Tasks and Scheduling"

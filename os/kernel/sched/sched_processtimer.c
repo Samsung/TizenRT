@@ -66,6 +66,9 @@
 #include "sched/sched.h"
 #include "wdog/wdog.h"
 #include "clock/clock.h"
+#ifdef CONFIG_HEALTH_MONITOR
+#include "health_monitor/health_monitor.h"
+#endif
 
 /************************************************************************
  * Pre-processor Definitions
@@ -272,9 +275,6 @@ static inline void sched_process_scheduler(void)
 
 void sched_process_timer(void)
 {
-#ifdef CONFIG_WATCHDOG_FOR_IRQ
-	up_wdog_keepalive();
-#endif
 	/* Increment the system time (if in the link) */
 
 #ifdef CONFIG_HAVE_WEAKFUNCTIONS
@@ -283,6 +283,11 @@ void sched_process_timer(void)
 	{
 		clock_timer();
 	}
+#ifdef CONFIG_HEALTH_MONITOR
+	health_monitor_timer();
+#elif defined(CONFIG_WATCHDOG_FOR_IRQ)
+	up_wdog_keepalive();
+#endif
 #if defined(CONFIG_SCHED_CPULOAD) && !defined(CONFIG_SCHED_CPULOAD_EXTCLK)
 	/* Perform CPU load measurements (before any timer-initiated context
 	 * switches can occur)

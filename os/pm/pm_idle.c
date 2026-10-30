@@ -27,6 +27,9 @@
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include "../kernel/sched/sched.h"
+#ifdef CONFIG_HEALTH_MONITOR
+#include "../kernel/health_monitor/health_monitor.h"
+#endif
 
 #include "pm.h"
 
@@ -265,12 +268,12 @@ enable_timer:
 	(void)up_timer_enable();
 }
 
-#ifdef CONFIG_PM_TIMEDWAKEUP
+#if defined(CONFIG_PM_TIMEDWAKEUP) || defined(CONFIG_HEALTH_MONITOR)
 /****************************************************************************
  * Name: get_next_wakeup_time
  *
  * Description:
- *   This function gets the next wakeup time from the watchdog timer.
+ *   Select the earliest SW watchdog or health monitor wakeup.
  *   If the delay is too short (less than SLEEP_ENTRY_WAIT), it returns ERROR
  *   to abort sleep.
  *
@@ -283,18 +286,58 @@ enable_timer:
  ****************************************************************************/
 static int get_next_wakeup_time(void)
 {
-	clock_t delay;
+	clock_t delay = 0;
+#ifdef CONFIG_HEALTH_MONITOR
+	int status;
+	clock_t check_at;
+#if defined(CONFIG_PM_TIMEDWAKEUP) && defined(CONFIG_PM_TICKSUPPRESS)
+	clock_t now;
+	clock_t remaining;
+#endif
+#endif
 
+#ifdef CONFIG_PM_TIMEDWAKEUP
 	/* get wakeup timer */
 	delay = wd_getwakeupdelay();
+#endif
+#ifdef CONFIG_HEALTH_MONITOR
+	status = health_monitor_get_next_check_time(&check_at);
+
+	/* Read the snapshot without taking the registry lock. */
+	if (status < 0) {
+		return ERROR;
+	}
+#if defined(CONFIG_PM_TIMEDWAKEUP) && defined(CONFIG_PM_TICKSUPPRESS)
+	if (status > 0) {
+		now = clock_systimer();
+
+		if (!health_monitor_is_tick_before(now, check_at)) {
+			return ERROR;
+		}
+		remaining = check_at - now;
+		if (delay == 0 || remaining < delay) {
+			delay = remaining;
+		}
+	}
+#else
+	return ERROR;
+#endif /* CONFIG_PM_TIMEDWAKEUP && CONFIG_PM_TICKSUPPRESS */
+#endif /* CONFIG_HEALTH_MONITOR */
+
+#ifdef CONFIG_PM_TIMEDWAKEUP
 	if ((delay > 0) && (delay < MSEC2TICK(CONFIG_PM_SLEEP_ENTRY_WAIT_MS))) {
 		pmllvdbg("Wdog Timer Delay: %ldms is less than SLEEP_ENTRY_WAIT: %ldms\n", TICK2MSEC(delay), CONFIG_PM_SLEEP_ENTRY_WAIT_MS);
 		return ERROR;
 	}
+#endif
 
 	return delay;
 }
+#else
+#define get_next_wakeup_time() (0)
+#endif
 
+#ifdef CONFIG_PM_TIMEDWAKEUP
 /****************************************************************************
  * Name: set_pm_wakeup_timer
  *
@@ -320,7 +363,6 @@ static int set_pm_wakeup_timer(int delay)
 	return OK;
 }
 #else
-#define get_next_wakeup_time()       (0)
 #define set_pm_wakeup_timer(delay)  (OK)
 #endif
 

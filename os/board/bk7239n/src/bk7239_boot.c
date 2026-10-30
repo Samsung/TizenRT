@@ -330,7 +330,7 @@ void board_initialize(void)
 	async_irq_log_init();
 #endif
 
-#if defined(CONFIG_WATCHDOG)
+#if defined(CONFIG_WATCHDOG) && !defined(CONFIG_HEALTH_MONITOR)
 	armino_wdg_initialize(CONFIG_WATCHDOG_DEVPATH);
 #endif
 
