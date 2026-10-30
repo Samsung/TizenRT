@@ -17,94 +17,80 @@
  ****************************************************************************/
 
 /****************************************************************************
+ * drivers/ioexpander/gpio.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
  * Included Files
  ****************************************************************************/
+
 #include <tinyara/config.h>
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
-#include <semaphore.h>
-#include <poll.h>
-#include <errno.h>
+#include <signal.h>
+#include <assert.h>
 #include <debug.h>
+#include <errno.h>
+#include <unistd.h>
+#include <poll.h>
 
-#include <tinyara/kmalloc.h>
-#include <tinyara/gpio.h>
+#include <tinyara/fs/fs.h>
+#include <tinyara/spinlock.h>
+#include <tinyara/ioexpander/gpio.h>
 
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Types
- ****************************************************************************/
-struct gpio_upperhalf_s {
-	/* Saved binding to the lower-half GPIO driver */
-	FAR struct gpio_lowerhalf_s *gu_lower; /* Arch-specific operations */
-
-	sem_t gu_exclsem;	/* Supports exclusive access to the device */
-	bool gu_sample;		/* Last sampled GPIO states */
-
-	/*
-	 * The following is a singly linked list of open references to the
-	 * GPIO device.
-	 */
-	struct gpio_open_s *gu_open;
-};
+#ifdef CONFIG_DEV_GPIO
 
 /****************************************************************************
  * Private Function Prototypes
  ****************************************************************************/
+
+static int     gpio_handler(FAR struct gpio_dev_s *dev, uint8_t pin);
 static int     gpio_open(FAR struct file *filep);
-static int     gpio_close(FAR struct file *filep);
 static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
-			 size_t buflen);
+                         size_t buflen);
 static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
-			  size_t buflen);
+                          size_t buflen);
+static off_t   gpio_seek(FAR struct file *filep, off_t offset, int whence);
 static int     gpio_ioctl(FAR struct file *filep, int cmd,
-			  unsigned long arg);
-#ifndef CONFIG_DISABLE_POLL
-static int     gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
-			 bool setup);
-#endif
+                          unsigned long arg);
+static int     gpio_poll(FAR struct file *filep,
+                         FAR struct pollfd *fds, bool setup);
 
 /****************************************************************************
- * Private Variables
+ * Private Data
  ****************************************************************************/
-static const struct file_operations g_gpioops = {
-	gpio_open,	/* open  */
-	gpio_close,	/* close */
-	gpio_read,	/* read  */
-	gpio_write,	/* write */
-	NULL,		/* seek  */
-	gpio_ioctl,	/* ioctl */
-#ifndef CONFIG_DISABLE_POLL
-	gpio_poll	/* poll  */
-#endif
-};
 
-struct gpio_open_s {
-	FAR struct gpio_open_s *go_flink;
-
-	/* The following will be treu if we are closing */
-	volatile bool go_closing;
-
-#ifndef CONFIG_DISABLE_SIGNALS
-	/* GPIO event notification information */
-	pid_t go_pid;
-	struct gpio_notify_s go_notify;
-#endif
-
-#ifndef CONFIG_DISABLE_POLL
-	/* Poll event information */
-	struct gpio_pollevents_s go_pollevents;
-
-	/*
-	 * The following is a list if poll structures of threads waiting
-	 * for driver events
-	 */
-	FAR struct pollfd *go_fds[CONFIG_GPIO_NPOLLWAITERS];
-#endif
+static const struct file_operations g_gpio_drvrops =
+{
+  gpio_open,   /* open */
+  NULL,        /* close */
+  gpio_read,   /* read */
+  gpio_write,  /* write */
+  gpio_seek,   /* seek */
+  gpio_ioctl,  /* ioctl */
+  NULL,        /* mmap */
+  NULL,        /* truncate */
+  gpio_poll,   /* poll */
 };
 
 /****************************************************************************
@@ -112,361 +98,489 @@ struct gpio_open_s {
  ****************************************************************************/
 
 /****************************************************************************
- * Name: gpio_takesem
+ * Name: gpio_handler
  *
  * Description:
- *    Take the lock, waiting as necessary
+ *   GPIO interrupt callback function.
  *
  ****************************************************************************/
-static inline int gpio_takesem(FAR sem_t *sem)
+
+static int gpio_handler(FAR struct gpio_dev_s *dev, uint8_t pin)
 {
-	/* Take a count from the semaphore, possibly waiting */
-	if (sem_wait(sem) < 0) {
-		/* EINTR is the only error that we expect */
-		int errcode = get_errno();
-		DEBUGASSERT(errcode == EINTR);
-		return errcode;
+#if CONFIG_DEV_GPIO_NSIGNALS > 0
+	int i;
+#endif
+
+	DEBUGASSERT(dev != NULL);
+
+	dev->int_count++;
+
+#if CONFIG_DEV_GPIO_NPOLLWAITERS > 0
+	poll_notify(dev->fds, CONFIG_DEV_GPIO_NPOLLWAITERS, POLLIN);
+#endif
+
+#if CONFIG_DEV_GPIO_NSIGNALS > 0
+	for (i = 0; i < CONFIG_DEV_GPIO_NSIGNALS; i++) {
+		FAR struct gpio_signal_s *signal = &dev->gp_signals[i];
+
+		if (signal->gp_pid == 0) {
+			break;
+		}
+
+		nxsig_notification(signal->gp_pid, &signal->gp_event,
+		                   SI_QUEUE, &signal->gp_work);
 	}
+#endif
 
 	return OK;
 }
 
 /****************************************************************************
- * Name: gpio_givesem
+ * Name: gpio_open
  *
  * Description:
- *    release the lock
+ *   Standard character driver open method.
  *
  ****************************************************************************/
-static inline void gpio_givesem(sem_t *sem)
+
+static int gpio_open(FAR struct file *filep)
 {
-	sem_post(sem);
-}
+	FAR struct inode *inode;
+	FAR struct gpio_dev_s *dev;
 
-static void gpio_sample(FAR struct gpio_upperhalf_s *priv)
-{
-	FAR struct gpio_lowerhalf_s *lower;
-	FAR struct gpio_open_s *opriv;
-#if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
-	bool sample, change, falling, rising;
-#endif
-	irqstate_t flags;
-#ifndef CONFIG_DISABLE_POLL
-	int i;
-#endif
+	inode = filep->f_inode;
+	DEBUGASSERT(inode->i_private != NULL);
+	dev = inode->i_private;
 
-	DEBUGASSERT(priv && priv->gu_lower);
-	lower = priv->gu_lower;
-
-	/*
-	 * This routine is called both task level and interrupt level,
-	 * so interrupts must be disabled.
-	 */
-	flags = enter_critical_section();
-
-	/* Sample the new GPIO state */
-	DEBUGASSERT(lower->ops && lower->ops->get);
-	sample = lower->ops->get(lower);
-
-#if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
-	change  = sample ^ priv->gu_sample;
-	rising  = (change && sample);
-	falling = (change && !sample);
-
-	/* Visit each opened reference to the device */
-	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
-#ifndef CONFIG_DISABLE_POLL
-		/* Have any poll events occurred? */
-		if ((rising  & opriv->go_pollevents.gp_rising) != 0 ||
-			(falling & opriv->go_pollevents.gp_falling) != 0) {
-			for (i = 0; i < CONFIG_GPIO_NPOLLWAITERS; i++) {
-				FAR struct pollfd *fds = opriv->go_fds[i];
-				if (fds) {
-					fds->revents |= (fds->events & POLLIN);
-					if (fds->revents != 0) {
-						sem_post(fds->sem);
-					}
-				}
-			}
-		}
-#endif
-
-#ifndef CONFIG_DISABLE_SIGNALS
-		/* Have any signal events occurred? */
-		if ((rising && opriv->go_notify.gn_rising) ||
-				(falling && opriv->go_notify.gn_falling)) {
-#ifdef CONFIG_CAN_PASS_STRUCTS
-			union sigval value;
-			value.sival_int = (int)sample;
-			sigqueue(opriv->go_pid, opriv->go_notify.gn_signo, value);
-#else
-			sigqueue(opriv->go_pid, opriv->go_notify.gn_signo, sample);
-#endif
-		}
-#endif
-	}
-#endif
-
-	priv->gu_sample = sample;
-	leave_critical_section(flags);
-}
-
-#if !defined(CONFIG_DISABLE_POLL) || !defined(CONFIG_DISABLE_SIGNALS)
-/****************************************************************************
- * Name: gpio_interrupt
- *
- * Description:
- *    notify file descriptor. It is necessary to handle async I/O.
- *
- ****************************************************************************/
-static void gpio_interrupt(FAR struct gpio_upperhalf_s *upper)
-{
-	DEBUGASSERT(upper);
-	gpio_sample(upper);
-}
-
-static void gpio_enable(FAR struct gpio_upperhalf_s *priv)
-{
-	FAR struct gpio_lowerhalf_s *lower;
-	FAR struct gpio_open_s *opriv;
-	bool rising;
-	bool falling;
-	irqstate_t flags;
-#ifndef CONFIG_DISABLE_POLL
-	int i;
-#endif
-
-	DEBUGASSERT(priv && priv->gu_lower);
-	lower = priv->gu_lower;
-
-	/*
-	 * This routine is called both task level and interrupt level, so
-	 * interrupts must be disabled.
-	 */
-	flags = enter_critical_section();
-
-	/* Visit each opened reference to the device */
-	rising  = 0;
-	falling = 0;
-
-	for (opriv = priv->gu_open; opriv; opriv = opriv->go_flink) {
-#ifndef CONFIG_DISABLE_POLL
-		for (i = 0; i < CONFIG_GPIO_NPOLLWAITERS; i++) {
-			if (opriv->go_fds[i]) {
-				rising  |= opriv->go_pollevents.gp_rising;
-				falling |= opriv->go_pollevents.gp_falling;
-				break;
-			}
-		}
-#endif
-
-#ifndef CONFIG_DISABLE_SIGNALS
-		/* OR in the signal events */
-		rising  |= opriv->go_notify.gn_rising;
-		falling |= opriv->go_notify.gn_falling;
-#endif
-	}
-
-	/* Enable/disable GPIO interrupts */
-	DEBUGASSERT(lower->ops->enable);
-	if (rising || falling) {
-		/*
-		  * gu_sample saved the old status for GPIO, it used when interrupt coming to compare
-		  * current status to gu_sample.
-		  * It update on system startup during gpio_register().
-		  * But, device driver init always after gpio init.
-		  * If GPIO status changed after gpio_register(), it will not record.
-		  * So, we update gu_sample before enable gpio irq.
-		  */
-		priv->gu_sample = lower->ops->get(lower);
-		lower->ops->enable(lower, falling, rising, gpio_interrupt);
-	} else {
-		/* Disable further interrupts */
-		lower->ops->enable(lower, false, false, NULL);
-	}
-
-	leave_critical_section(flags);
-}
-#endif
-
-#ifdef CONFIG_IOTDEV
-static int gpio_enable_interrupt(FAR struct gpio_upperhalf_s *priv, unsigned long arg)
-{
-	FAR struct gpio_lowerhalf_s *lower;
-	
-	DEBUGASSERT(priv && priv->gu_lower);
-	lower = priv->gu_lower;
-
-	bool rising;
-	bool falling;
-	int ret;
-	irqstate_t flags;
-
-	flags = enter_critical_section();
-
-	switch (arg) {
-	case GPIO_EDGE_NONE:
-		rising = false;
-		falling = false;
-		break;
-	case GPIO_EDGE_BOTH:
-		rising = true;
-		falling = true;
-		break;
-	case GPIO_EDGE_RISING:
-		rising = true;
-		falling = false;
-		break;
-	case GPIO_EDGE_FALLING:
-		rising = false;
-		falling = true;
-		break;
-	default:
-		lldbg("Interrupt value is invalid\n");
-		leave_critical_section(flags);
-		return ERROR;
-		break;
-	}
-
-	DEBUGASSERT(lower->ops->enable);
-	if (rising || falling) {
-		ret = lower->ops->enable(lower, falling, rising, gpio_interrupt);
-	} else {
-		/* Disable further interrupts */
-		ret = lower->ops->enable(lower, false, false, NULL);
-	}
-	leave_critical_section(flags);
-
-	return ret;
-}
-#endif
-/****************************************************************************
- * Name: gpio_write
- *
- * Description:
- *    This function is called when you handle the write() API in
- *    File system.
- *
- ****************************************************************************/
-static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
-			  size_t buflen)
-{
-	ssize_t ret;
-	int32_t value;
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct gpio_upperhalf_s *priv = inode->i_private;
-	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
-
-	ret = sscanf(buffer, "%d", &value);
-	if (ret) {
-		lower->ops->set(lower, value != 0);
-	}
-
-	return ret;
+	filep->f_priv = (FAR void *)dev->int_count;
+	return OK;
 }
 
 /****************************************************************************
  * Name: gpio_read
  *
  * Description:
- *    This function is automatically called when you handle the read() API in
- *    File system.
+ *   Standard character driver read method.
  *
  ****************************************************************************/
-static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
-			 size_t buflen)
-{
-	int ret = 0;
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct gpio_upperhalf_s *priv = inode->i_private;
-	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
 
-	if (filep->f_pos == 0) {
-		int value = lower->ops->get(lower);
-		ret = snprintf(buffer, buflen, "%d", value);
+static ssize_t gpio_read(FAR struct file *filep, FAR char *buffer,
+                         size_t buflen)
+{
+	FAR struct inode *inode;
+	FAR struct gpio_dev_s *dev;
+	int ret;
+
+	inode = filep->f_inode;
+	DEBUGASSERT(inode->i_private != NULL);
+	dev = inode->i_private;
+
+	DEBUGASSERT(buffer != NULL);
+	if (buflen == 0) {
+		return 0;  /* Zero will be interpreted as the End-of-File. */
 	}
 
-	filep->f_pos += ret;
+	/* Check for End-of-File.
+	 *
+	 * REVISIT:  Returning End-of-File after one byte has been written permits
+	 * you to cat or echo the GPIO.  This, however, is an un-natural use of a
+	 * file position since there is no file position associated with a GPIO.
+	 * It also makes the read() method difficult to use programmatically.
+	 */
 
-	return ret;
+	if (filep->f_pos > 0) {
+		return 0;
+	}
+
+	/* Update interrupt count and read the GPIO value */
+
+	filep->f_priv = (FAR void *)dev->int_count;
+
+	ret = dev->gp_ops->go_read(dev, (FAR bool *)&buffer[0]);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Convert the GPIO value to ASCII and increment the file position */
+
+	buffer[0]    += '0';
+	filep->f_pos  = 1;
+	return 1;
+}
+
+/****************************************************************************
+ * Name: gpio_write
+ *
+ * Description:
+ *   Standard character driver write method.
+ *
+ *   REVISIT:  The read() method obeys the semantics of a file position and
+ *   requires re-opening the driver or seeking to address 0.  The write()
+ *   method does not.  This is an inconsistency.
+ *
+ ****************************************************************************/
+
+static ssize_t gpio_write(FAR struct file *filep, FAR const char *buffer,
+                          size_t buflen)
+{
+	FAR struct inode *inode;
+	FAR struct gpio_dev_s *dev;
+	int ret;
+	bool val;
+
+	inode = filep->f_inode;
+	DEBUGASSERT(inode->i_private != NULL);
+	dev = inode->i_private;
+
+	DEBUGASSERT(buffer != NULL);
+
+	/* Check if this pin is write-able */
+
+	if (dev->gp_pintype != GPIO_OUTPUT_PIN &&
+	    dev->gp_pintype != GPIO_OUTPUT_PIN_OPENDRAIN) {
+		return -EACCES;
+	}
+
+	/* Verify that a buffer containing data was provided */
+
+	DEBUGASSERT(buffer != NULL);
+	if (buflen != 0) {
+		/* Only values '0' and '1' can be written */
+
+		if (buffer[0] == '0') {
+			val = 0;
+		} else if (buffer[0] == '1') {
+			val = 1;
+		} else {
+			return -EINVAL;
+		}
+
+		/* Write the GPIO value */
+
+		ret = dev->gp_ops->go_write(dev, val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* One byte written */
+
+		return 1;
+	}
+
+	return 0;
+}
+
+/****************************************************************************
+ * Name: gpio_seek
+ *
+ * Description:
+ *   Reset read flag on seek to 0
+ *
+ *   REVISIT:  Seeking address zero is required to return addition GPIO
+ *   values from read().  This, however, is an un-natural use of a file
+ *   position since there is no file position associated with a GPIO.  It
+ *   also makes the read() method difficult to use programmatically.
+ *
+ ****************************************************************************/
+
+static off_t gpio_seek(FAR struct file *filep, off_t offset, int whence)
+{
+	/* Only SEEK_SET is supported, return ENOSYS for other valid options */
+
+	if (whence == SEEK_CUR || whence == SEEK_END) {
+		return -ENOSYS;
+	}
+
+	/* Only Offset zero makes sense,  POSIX permits setting the file position
+	 * beyond the end of the file, but that makes little sense here.
+	 */
+
+	if (whence == SEEK_SET && offset == 0) {
+		filep->f_pos = 0;
+		return 0;
+	}
+
+	return -EINVAL;
 }
 
 /****************************************************************************
  * Name: gpio_ioctl
  *
  * Description:
- *    This function is allow you to control the event.
+ *   Standard character driver ioctl method.
  *
  ****************************************************************************/
+
 static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
+	FAR struct inode *inode;
+	FAR struct gpio_dev_s *dev;
+	irqstate_t flags;
 	int ret = OK;
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct gpio_upperhalf_s *priv = inode->i_private;
-	FAR struct gpio_open_s *opriv = filep->f_priv;
-	FAR struct gpio_lowerhalf_s *lower = priv->gu_lower;
+#if CONFIG_DEV_GPIO_NSIGNALS > 0
+	pid_t pid;
+	int i;
+	int j;
+#endif
+
+	inode = filep->f_inode;
+	DEBUGASSERT(inode->i_private != NULL);
+	dev = inode->i_private;
+	DEBUGASSERT(dev->gp_ops != NULL);
 
 	switch (cmd) {
-	case GPIOIOC_SET_DIRECTION:
-		ret = lower->ops->setdir(lower, arg);
-#ifndef CONFIG_DISABLE_POLL
-		opriv->go_pollevents.gp_rising  = false;
-		opriv->go_pollevents.gp_falling = false;
-#endif /* CONFIG_DISABLE_POLL */
-		break;
+	/* Command:     GPIOC_WRITE
+	 * Description: Set the value of an output GPIO
+	 * Argument:    0=output a low value; 1=output a high value
+	 */
 
-	case GPIOIOC_SET_DRIVE:
-		ret = lower->ops->pull(lower, arg);
-		break;
-
-#ifndef CONFIG_DISABLE_POLL
-	case GPIOIOC_POLLEVENTS: {
-		FAR struct gpio_pollevents_s *pollevents =
-			(FAR struct gpio_pollevents_s *)((uintptr_t)arg);
-
-		if (pollevents) {
-			/* Save the poll events */
-			opriv->go_pollevents.gp_rising  = pollevents->gp_rising;
-			opriv->go_pollevents.gp_falling = pollevents->gp_falling;
-
-			/* Enable/disable interrupt handling */
-			gpio_enable(priv);
-			ret = OK;
+	case GPIOC_WRITE:
+		if (dev->gp_pintype == GPIO_OUTPUT_PIN ||
+		    dev->gp_pintype == GPIO_OUTPUT_PIN_OPENDRAIN) {
+			DEBUGASSERT(arg == 0ul || arg == 1ul);
+			DEBUGASSERT(dev->gp_ops->go_write != NULL);
+			ret = dev->gp_ops->go_write(dev, (bool)arg);
+		} else {
+			ret = -EACCES;
 		}
 		break;
-	}
-#endif /* CONFIG_DISABLE_POLL */
 
-#ifndef CONFIG_DISABLE_SIGNALS
-	case GPIOIOC_REGISTER: {
-		FAR struct gpio_notify_s *notify =
-			(FAR struct gpio_notify_s *)((uintptr_t)arg);
+	/* Command:     GPIOC_READ
+	 * Description: Read the value of an input or output GPIO
+	 * Argument:    A pointer to an bool value to receive the result:
+	 *              false=low value; true=high value.
+	 */
 
-		if (notify) {
-			/* Save the notification events */
-			opriv->go_notify.gn_rising  = notify->gn_rising;
-			opriv->go_notify.gn_falling = notify->gn_falling;
-			opriv->go_notify.gn_signo   = notify->gn_signo;
-			opriv->go_pid               = getpid();
+	case GPIOC_READ:
+	{
+		FAR bool *ptr = (FAR bool *)((uintptr_t)arg);
+		DEBUGASSERT(ptr != NULL);
 
-			/* Enable/disable interrupt handling */
-			gpio_enable(priv);
-			ret = OK;
-		}
-		break;
+		filep->f_priv = (FAR void *)dev->int_count;
+
+		DEBUGASSERT(dev->gp_ops->go_read != NULL);
+		ret = dev->gp_ops->go_read(dev, ptr);
+		DEBUGASSERT(ret < 0 || *ptr == 0 || *ptr == 1);
 	}
-#endif /* CONFIG_DISABLE_SIGNALS */
-#ifdef CONFIG_IOTDEV
-	case GPIOIOC_SET_INTERRUPT: {
-		ret = gpio_enable_interrupt(priv, arg);
-		break;
+	break;
+
+	/* Command:     GPIOC_PINTYPE
+	 * Description: Return the GPIO pin type.
+	 * Argument:    A pointer to an instance of type enum gpio_pintype_e
+	 */
+
+	case GPIOC_PINTYPE:
+	{
+		FAR enum gpio_pintype_e *ptr =
+		  (FAR enum gpio_pintype_e *)((uintptr_t)arg);
+		DEBUGASSERT(ptr != NULL);
+
+		*ptr = (enum gpio_pintype_e)dev->gp_pintype;
 	}
+	break;
+
+	/* Command:     GPIOC_REGISTER
+	 * Description: Register to receive a signal whenever there an
+	 *              interrupt is received on an input gpio pin.  This
+	 *              feature, of course, depends upon interrupt GPIO
+	 *              support from the platform.
+	 * Argument:    The number of signal to be generated when the
+	 *              interrupt occurs.
+	 */
+
+	case GPIOC_REGISTER:
+		if (dev->gp_pintype >= GPIO_INTERRUPT_PIN) {
+			flags = enter_critical_section();
+#if CONFIG_DEV_GPIO_NSIGNALS > 0
+			if (arg) {
+				pid = nxsched_getpid();
+				for (i = 0; i < CONFIG_DEV_GPIO_NSIGNALS; i++) {
+					FAR struct gpio_signal_s *signal = &dev->gp_signals[i];
+
+					if (signal->gp_pid == 0 || signal->gp_pid == pid) {
+						memcpy(&signal->gp_event, (FAR void *)arg,
+						       sizeof(signal->gp_event));
+						signal->gp_pid = pid;
+						break;
+					}
+				}
+
+				if (i == CONFIG_DEV_GPIO_NSIGNALS) {
+					leave_critical_section(flags);
+					ret = -EBUSY;
+					break;
+				}
+			}
 #endif
+
+			if (dev->register_count++ > 0) {
+				leave_critical_section(flags);
+				break;
+			}
+
+			leave_critical_section(flags);
+
+			/* Register our handler */
+
+			DEBUGASSERT(dev->gp_ops->go_attach != NULL);
+			ret = dev->gp_ops->go_attach(dev,
+			                             (pin_interrupt_t)gpio_handler);
+			if (ret >= 0) {
+				/* Enable pin interrupts */
+
+				DEBUGASSERT(dev->gp_ops->go_enable != NULL);
+				ret = dev->gp_ops->go_enable(dev, true);
+			}
+		} else {
+			ret = -EACCES;
+		}
+		break;
+
+	/* Command:     GPIOC_UNREGISTER
+	 * Description: Stop receiving signals for pin interrupts.
+	 * Argument:    None.
+	 */
+
+	case GPIOC_UNREGISTER:
+		if (dev->gp_pintype >= GPIO_INTERRUPT_PIN) {
+			flags = enter_critical_section();
+#if CONFIG_DEV_GPIO_NSIGNALS > 0
+			pid = nxsched_getpid();
+			for (i = 0; i < CONFIG_DEV_GPIO_NSIGNALS; i++) {
+				if (pid == dev->gp_signals[i].gp_pid) {
+					for (j = i + 1; j < CONFIG_DEV_GPIO_NSIGNALS; j++) {
+						if (dev->gp_signals[j].gp_pid == 0) {
+							break;
+						}
+					}
+
+					if (i != --j) {
+						memcpy(&dev->gp_signals[i], &dev->gp_signals[j],
+						       sizeof(dev->gp_signals[i]));
+					}
+
+					dev->gp_signals[j].gp_pid = 0;
+					nxsig_cancel_notification(&dev->gp_signals[j].gp_work);
+					break;
+				}
+			}
+#endif
+
+			if (--dev->register_count > 0) {
+				leave_critical_section(flags);
+				break;
+			}
+
+			leave_critical_section(flags);
+
+			/* Make sure that the pin interrupt is disabled */
+
+			DEBUGASSERT(dev->gp_ops->go_enable != NULL);
+			ret = dev->gp_ops->go_enable(dev, false);
+			if (ret >= 0) {
+				/* Detach the handler */
+
+				DEBUGASSERT(dev->gp_ops->go_attach != NULL);
+				ret = dev->gp_ops->go_attach(dev, NULL);
+			}
+		} else {
+			ret = -EACCES;
+		}
+		break;
+
+	/* Command:     GPIOC_SETPINTYPE
+	 * Description: Set the GPIO pin type.
+	 * Argument:    The enum gpio_pintype_e type.
+	 */
+
+	case GPIOC_SETPINTYPE:
+	{
+		enum gpio_pintype_e pintype = (enum gpio_pintype_e)arg;
+
+		/* Check if the argument is a valid pintype */
+
+		if (pintype >= GPIO_NPINTYPES) {
+			ret = -EINVAL;
+			break;
+		}
+
+		/* Check if the pintype actually needs to be changed */
+
+		if (dev->gp_pintype == pintype) {
+			/* Pintype remains the same, no need to change anything */
+
+			break;
+		}
+
+		/* Disable interrupt if pin had an interrupt pintype previously */
+
+		if (dev->gp_pintype >= GPIO_INTERRUPT_PIN) {
+			DEBUGASSERT(dev->gp_ops->go_enable != NULL);
+			ret = dev->gp_ops->go_enable(dev, false);
+			if (ret < 0) {
+				break;
+			}
+		}
+
+		/* Change pintype */
+
+		DEBUGASSERT(dev->gp_ops->go_setpintype != NULL);
+		ret = dev->gp_ops->go_setpintype(dev, pintype);
+		if (ret < 0) {
+			break;
+		}
+
+		/* Additional DEBUGASSERTs to make sure the right operations are
+		 * available after the pintype has been changed.
+		 */
+
+		DEBUGASSERT(dev->gp_pintype == pintype);
+		DEBUGASSERT(dev->gp_ops != NULL);
+		DEBUGASSERT(dev->gp_ops->go_read != NULL);
+		DEBUGASSERT(dev->gp_ops->go_setpintype != NULL);
+
+		if (pintype >= GPIO_OUTPUT_PIN && pintype < GPIO_INTERRUPT_PIN) {
+			DEBUGASSERT(dev->gp_ops->go_write != NULL);
+		} else if (pintype >= GPIO_INTERRUPT_PIN) {
+			DEBUGASSERT(dev->gp_ops->go_attach != NULL);
+			DEBUGASSERT(dev->gp_ops->go_enable != NULL);
+		}
+	}
+	break;
+
+	/* Command:     GPIOC_SETDEBOUNCE
+	 * Description: Set the GPIO pin debounce duration.
+	 * Argument:    The duration of the channel debounce, uint is ns.
+	 */
+
+	case GPIOC_SETDEBOUNCE:
+	{
+		DEBUGASSERT(dev->gp_ops->go_setdebounce != NULL);
+		ret = dev->gp_ops->go_setdebounce(dev, arg);
+		break;
+	}
+
+	/* Command:     GPIOC_SETMASK
+	 * Description: Mask or unmask the GPIO interrupt without disabling it.
+	 *              When masked, the interrupt is suppressed but the
+	 *              interrupt source remains enabled.
+	 * Argument:    true to mask the interrupt;
+	 *              false to unmask the interrupt.
+	 */
+
+	case GPIOC_IRQ_SETMASK:
+	{
+		bool mask = (bool)arg;
+		DEBUGASSERT(dev->gp_ops->go_setmask != NULL);
+		ret = dev->gp_ops->go_setmask(dev, mask);
+		break;
+	}
+
+	/* Unrecognized command */
+
 	default:
 		ret = -ENOTTY;
-		if (lower->ops->ioctl) {
-			ret = lower->ops->ioctl(lower, cmd, arg);
-		}
+		break;
 	}
 
 	return ret;
@@ -476,213 +590,68 @@ static int gpio_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
  * Name: gpio_poll
  *
  * Description:
- *    This function is called when you want to wait for events.
- *    You don't know when the event will be occured.
+ *   Poll method for gpio device.
  *
  ****************************************************************************/
-#ifndef CONFIG_DISABLE_POLL
-static int gpio_poll(FAR struct file *filep, FAR struct pollfd *fds,
-		     bool setup)
+
+static int gpio_poll(FAR struct file *filep,
+                     FAR struct pollfd *fds, bool setup)
 {
-	FAR struct inode *inode;
-	FAR struct gpio_upperhalf_s *priv;
-	FAR struct gpio_open_s *opriv;
-	int ret;
+#if CONFIG_DEV_GPIO_NPOLLWAITERS > 0
+	FAR struct inode *inode = filep->f_inode;
+	FAR struct gpio_dev_s *dev = inode->i_private;
 	int i;
+#endif
 
-	DEBUGASSERT(filep && filep->f_priv && filep->f_inode);
-	opriv = filep->f_priv;
-	inode = filep->f_inode;
-	DEBUGASSERT(inode->i_private);
-	priv  = (FAR struct gpio_upperhalf_s *)inode->i_private;
+	irqstate_t flags;
+	int ret = OK;
 
-	/* Get exclusive access to the driver structure */
-	ret = gpio_takesem(&priv->gu_exclsem);
-	if (ret < 0) {
-		lldbg("ERROR: gpio_takesem failed: %d\n", ret);
-		return ret;
-	}
+	/* Are we setting up the poll?  Or tearing it down? */
 
-	/* Are we setting up the poll? Or tearing it down? */
+	flags = enter_critical_section();
 	if (setup) {
-		/*
-		 * This is a request to set up the poll. Find an available
+#if CONFIG_DEV_GPIO_NPOLLWAITERS > 0
+		/* This is a request to set up the poll.  Find an available
 		 * slot for the poll structure reference
 		 */
-		for (i = 0; i < CONFIG_GPIO_NPOLLWAITERS; i++) {
+
+		for (i = 0; i < CONFIG_DEV_GPIO_NPOLLWAITERS; i++) {
 			/* Find an available slot */
-			if (!opriv->go_fds[i]) {
+
+			if (dev->fds[i] == NULL) {
 				/* Bind the poll structure and this slot */
-				opriv->go_fds[i] = fds;
-				fds->priv = &opriv->go_fds[i];
-				fds->filep = (void *)filep;
+
+				dev->fds[i] = fds;
+				fds->priv   = &dev->fds[i];
+
+				/* Report if a event is pending */
+
+				if (dev->int_count != (uintptr_t)(filep->f_priv)) {
+					poll_notify(&fds, 1, POLLIN);
+				}
+
 				break;
 			}
 		}
 
-		if (i >= CONFIG_GPIO_NPOLLWAITERS) {
-			lldbg("ERROR: Too many poll waiters\n");
+		if (i >= CONFIG_DEV_GPIO_NPOLLWAITERS)
+#endif
+		{
 			fds->priv = NULL;
 			ret       = -EBUSY;
-			goto errout_with_dusem;
 		}
-	} else if (fds->priv) {
+	} else if (fds->priv != NULL) {
 		/* This is a request to tear down the poll. */
+
 		FAR struct pollfd **slot = (FAR struct pollfd **)fds->priv;
 
 		/* Remove all memory of the poll setup */
-		*slot = NULL;
+
+		*slot     = NULL;
 		fds->priv = NULL;
 	}
 
-	gpio_enable(priv);
-
-errout_with_dusem:
-	gpio_givesem(&priv->gu_exclsem);
-	return ret;
-}
-#endif /* CONFIG_DISABLE_POLL */
-
-/****************************************************************************
- * Name: gpio_close
- *
- * Description:
- *   This routine is called when the gpio gets closed.
- *
- ****************************************************************************/
-static int gpio_close(FAR struct file *filep)
-{
-	FAR struct inode *inode;
-	FAR struct gpio_upperhalf_s *priv;
-	FAR struct gpio_open_s *opriv;
-	FAR struct gpio_open_s *curr;
-	FAR struct gpio_open_s *prev;
-	irqstate_t flags;
-	bool closing;
-	int ret;
-#ifndef CONFIG_DISABLE_POLL
-	int waiter_idx;
-#endif
-
-	DEBUGASSERT(filep && filep->f_priv && filep->f_inode);
-	opriv = filep->f_priv;
-	inode = filep->f_inode;
-	DEBUGASSERT(inode->i_private);
-	priv = (FAR struct gpio_upperhalf_s *)inode->i_private;
-
-	flags = enter_critical_section();
-	closing = opriv->go_closing;
-	opriv->go_closing = true;
 	leave_critical_section(flags);
-
-	if (closing) {
-		/* Another thread is doing the close */
-		return OK;
-	}
-
-	/* Get exclusive access to the driver structure */
-	ret = gpio_takesem(&priv->gu_exclsem);
-	if (ret < 0) {
-		lldbg("ERROR: gpio_takesem failed: %d\n", ret);
-		return ret;
-	}
-
-#ifndef CONFIG_DISABLE_POLL
-	/*
-	 * Check if this file is registered in a list of waiters for polling.
-	 * If it is, the used slot should be cleared.
-	 * Otherwise, an invalid pollfd remains in a list and this slot is not available forever.
-	 */
-	for (waiter_idx = 0; waiter_idx < CONFIG_GPIO_NPOLLWAITERS; waiter_idx++) {
-		struct pollfd *fds = opriv->go_fds[waiter_idx];
-		if (fds && (FAR struct file *)fds->filep == filep) {
-			opriv->go_fds[waiter_idx] = NULL;
-		}
-	}
-#endif
-
-	/* Find the open structure in the list of open structures for the device */
-	for (prev = NULL, curr = priv->gu_open; curr && curr != opriv;
-			prev = curr, curr = curr->go_flink);
-
-	DEBUGASSERT(curr);
-	if (!curr) {
-		lldbg("ERROR: Failed to find open entry\n");
-		ret = -ENOENT;
-		goto errout_with_exclsem;
-	}
-
-	/* Remove the structure from the device */
-	if (prev) {
-		prev->go_flink = opriv->go_flink;
-	} else {
-		priv->gu_open = opriv->go_flink;
-	}
-
-	/* And free the open structure */
-	kmm_free(opriv);
-	filep->f_priv = NULL;
-
-	ret = OK;
-
-errout_with_exclsem:
-	gpio_givesem(&priv->gu_exclsem);
-
-	return ret;
-}
-
-/*****************************************************************************
- * Name: gpio_open
- *
- * Description:
- *   This routine is called whenever gpio is opened.
- *
- ****************************************************************************/
-static int gpio_open(FAR struct file *filep)
-{
-	int ret;
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct gpio_upperhalf_s *priv = inode->i_private;
-	FAR struct gpio_open_s *opriv;
-
-	/*
-	 * If the port is the middle of closing, wait until the close is
-	 * finished. If a signal is received while we are waiting, then
-	 * return EINTR.
-	 */
-	ret = gpio_takesem(&priv->gu_exclsem);
-	if (ret < 0) {
-		/*
-		 * A signal received while waiting for the last close
-		 * operation.
-		 */
-		return ret;
-	}
-
-	/* Allocate a new open structure */
-	opriv = (FAR struct gpio_open_s *)kmm_zalloc(sizeof(struct gpio_open_s));
-	if (!opriv) {
-		lldbg("ERROR: Failed to allocate open structure\n");
-		ret = -ENOMEM;
-		goto errout_with_sem;
-	}
-
-	/* Initialize the open structure */
-#ifndef CONFIG_DISABLE_POLL
-	opriv->go_pollevents.gp_falling = true;
-	opriv->go_pollevents.gp_rising  = true;
-#endif
-
-	/* Attach the open structure to the device */
-	opriv->go_flink = priv->gu_open;
-	priv->gu_open = opriv;
-
-	/* Attach the open structure to the file structure */
-	filep->f_priv = (FAR void *)opriv;
-	ret = OK;
-
-errout_with_sem:
-	gpio_givesem(&priv->gu_exclsem);
 	return ret;
 }
 
@@ -691,65 +660,162 @@ errout_with_sem:
  ****************************************************************************/
 
 /****************************************************************************
- * Name: gpio_register
+ * Name: gpio_pin_register
  *
  * Description:
- *   Register GPIO device.
+ *   Register GPIO pin device driver at /dev/gpioN, where N is the provided
+ *   minor number.
+ *
+ * Input Parameters:
+ *   dev    - A pointer to a gpio_dev_s
+ *   minor  - An integer value to be concatenated with '/dev/gpio'
+ *            to form the device name.
+ *
+ * Returned Value:
+ *   Zero on success; A negated errno value is returned on a failure
+ *   all error values returned by inode_reserve:
+ *
+ *   EINVAL - 'path' is invalid for this operation
+ *   EEXIST - An inode already exists at 'path'
+ *   ENOMEM - Failed to allocate in-memory resources for the operation
  *
  ****************************************************************************/
-int gpio_register(unsigned int minor, FAR struct gpio_lowerhalf_s *lower)
+
+int gpio_pin_register(FAR struct gpio_dev_s *dev, int minor)
 {
-	int ret;
-	char devpath[16];
-	FAR struct gpio_upperhalf_s *priv;
+	char devname[16];
 
-	DEBUGASSERT(lower);
-
-	/* Allocate a new GPIO driver instance */
-	priv = (FAR struct gpio_upperhalf_s *)
-			kmm_zalloc(sizeof(struct gpio_upperhalf_s));
-	if (!priv) {
-		lldbg("ERROR: Failed to allocate device structure\n");
-		return -ENOMEM;
-	}
-
-	/* Make sure that all button interrupts are disabled */
-	DEBUGASSERT(lower->ops->enable);
-	lower->ops->enable(lower, 0, 0, NULL);
-
-	/* Initiailize the new GPIO driver instance */
-	priv->gu_lower = lower;
-	lower->parent = priv;
-	sem_init(&priv->gu_exclsem, 0, 1);
-
-	DEBUGASSERT(lower->ops && lower->ops->get);
-	priv->gu_sample = lower->ops->get(lower);
-
-	snprintf(devpath, 16, "/dev/gpio%d", minor);
-
-	/* And register the GPIO driver */
-	ret = register_driver(devpath, &g_gpioops, 0666, priv);
-	if (ret < 0) {
-		lldbg("ERROR: register driver failed: %d\n", ret);
-		goto errout_with_priv;
-	}
-
-	return OK;
-
-errout_with_priv:
-	sem_destroy(&priv->gu_exclsem);
-	kmm_free(priv);
-	return ret;
+	snprintf(devname, sizeof(devname), "gpio%u", (unsigned int)minor);
+	return gpio_pin_register_byname(dev, devname);
 }
 
 /****************************************************************************
- * Name: gpio_unregister
+ * Name: gpio_pin_register_byname
  *
  * Description:
- *   unregister GPIO device.
+ *   Register GPIO pin device driver with it's pin name.
+ *
+ * Input Parameters:
+ *   dev      - A pointer to a gpio_dev_s
+ *   pinname  - A pointer to the name to be concatenated with '/dev/'
+ *              to form the device name.
+ *
+ * Returned Value:
+ *   Zero on success; A negated errno value is returned on a failure
+ *   all error values returned by inode_reserve:
+ *
+ *   EINVAL - 'path' is invalid for this operation
+ *   EEXIST - An inode already exists at 'path'
+ *   ENOMEM - Failed to allocate in-memory resources for the operation
  *
  ****************************************************************************/
-int gpio_unregister(FAR const char *path)
+
+int gpio_pin_register_byname(FAR struct gpio_dev_s *dev,
+                             FAR const char *pinname)
 {
-	return unregister_driver(path);
+	char devname[32];
+	int ret;
+
+	DEBUGASSERT(dev != NULL && dev->gp_ops != NULL && pinname != NULL);
+
+	switch (dev->gp_pintype) {
+	case GPIO_INPUT_PIN:
+	case GPIO_INPUT_PIN_PULLUP:
+	case GPIO_INPUT_PIN_PULLDOWN:
+	{
+		DEBUGASSERT(dev->gp_ops->go_read != NULL);
+	}
+	break;
+
+	case GPIO_OUTPUT_PIN:
+	case GPIO_OUTPUT_PIN_OPENDRAIN:
+	{
+		DEBUGASSERT(dev->gp_ops->go_read != NULL &&
+		            dev->gp_ops->go_write != NULL);
+	}
+	break;
+
+	default:
+	{
+		DEBUGASSERT(dev->gp_ops->go_read != NULL &&
+		            dev->gp_ops->go_attach != NULL &&
+		            dev->gp_ops->go_enable != NULL);
+
+		/* Make sure that the pin interrupt is disabled */
+
+		ret = dev->gp_ops->go_enable(dev, false);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	break;
+	}
+
+	snprintf(devname, sizeof(devname), "/dev/%s", pinname);
+
+	gpioinfo("Registering %s\n", devname);
+
+	return register_driver(devname, &g_gpio_drvrops, 0666, dev);
 }
+
+/****************************************************************************
+ * Name: gpio_pin_unregister
+ *
+ * Description:
+ *   Unregister GPIO pin device driver at /dev/gpioN, where N is the provided
+ *   minor number.
+ *
+ * Input Parameters:
+ *   dev    - A pointer to a gpio_dev_s
+ *   minor  - An integer value to be concatenated with '/dev/gpio'
+ *            to form the device name.
+ *
+ * Returned Value:
+ *   Zero on success; A negated value is returned on a failure
+ *   (all error values returned by inode_remove):
+ *
+ *   ENOENT - path does not exist.
+ *   EBUSY  - Ref count is not 0;
+ *
+ ****************************************************************************/
+
+int gpio_pin_unregister(FAR struct gpio_dev_s *dev, int minor)
+{
+	char devname[16];
+	snprintf(devname, sizeof(devname), "gpio%u", (unsigned int)minor);
+	return gpio_pin_unregister_byname(dev, devname);
+}
+
+/****************************************************************************
+ * Name: gpio_pin_unregister_byname
+ *
+ * Description:
+ *   Unregister GPIO pin device driver at /dev/pinname.
+ *
+ * Input Parameters:
+ *   dev      - A pointer to a gpio_dev_s
+ *   pinname  - A pointer to the name to be concatenated with '/dev/'
+ *              to form the device name.
+ *
+ *
+ * Returned Value:
+ *   Zero on success; A negated value is returned on a failure
+ *   (all error values returned by inode_remove):
+ *
+ *   ENOENT - path does not exist.
+ *   EBUSY  - Ref count is not 0;
+ ****************************************************************************/
+
+int gpio_pin_unregister_byname(FAR struct gpio_dev_s *dev,
+                               FAR const char *pinname)
+{
+	char devname[32];
+
+	snprintf(devname, sizeof(devname), "/dev/%s", pinname);
+
+	gpioinfo("Unregistering %s\n", devname);
+
+	return unregister_driver(devname);
+}
+
+#endif /* CONFIG_DEV_GPIO */
