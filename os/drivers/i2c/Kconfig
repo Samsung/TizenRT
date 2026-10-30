@@ -3,23 +3,66 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+config ARCH_HAVE_I2CRESET
+	bool
+	default n
+
+config BOARD_HAVE_I2CMUX
+	bool
+	default n
+
+menuconfig I2C
+	bool "I2C Driver Support"
+	default n
+	---help---
+		This selection enables building of the "upper-half" I2C driver.
+		See include/nuttx/i2c/i2c_master.h for further I2C driver information.
+
 if I2C
 
 config I2C_SLAVE
 	bool "I2C Slave"
 	default n
 
-config I2C_USERIO
-	bool "Support the I2C User/IO mode"
-	default y
+menu "I2C Slave Support"
 
-config I2C_TRANSFER
-	bool "Support the I2C transfer() method"
-	default y
+config I2C_SLAVE_DRIVER
+	bool "I2C Slave driver"
+	default n
+	---help---
+		Enable I2C Slave driver
+
+config I2C_SLAVE_READBUFSIZE
+	int "I2C Slave driver read buffer size"
+	default 32
+	depends on I2C_SLAVE_DRIVER
+	---help---
+		I2C Slave read buffer size
+
+config I2C_SLAVE_WRITEBUFSIZE
+	int "I2C Slave driver write buffer size"
+	default 32
+	depends on I2C_SLAVE_DRIVER
+	---help---
+		I2C Slave write buffer size
+
+config I2C_SLAVE_NPOLLWAITERS
+	int "Number of i2c slave poll waiters"
+	default 1
+	depends on I2C_SLAVE_DRIVER
+	---help---
+		Number of waiters to i2c slave poll
+
+endmenu # I2C Slave Support
 
 config I2C_POLLED
 	bool "Polled I2C (no interrupts)"
-	default y
+	default n
+
+config I2C_RESET
+	bool "Support I2C reset interface method"
+	default n
+	depends on ARCH_HAVE_I2CRESET
 
 config I2C_TRACE
 	bool "Enable I2C trace debug"
@@ -30,13 +73,83 @@ config I2C_NTRACE
 	default 32
 	depends on I2C_TRACE
 
-config I2C_RESET
-	bool "Support up_i2creset"
+config I2C_BITBANG
+	bool "I2C bitbang implementation"
 	default n
-	depends on ARCH_HAVE_I2CRESET
+	---help---
+		Enable support for a bitbang implementation of I2C
 
-config I2C_WRITEREAD
-	bool "Support the I2C writeread() method"
+if I2C_BITBANG
+
+config I2C_BITBANG_NO_DELAY
+	bool "Do not add delay"
 	default n
+	---help---
+		If you want to go full speed (depending on how fast pins can be toggled)
+		you can enable this option. This will not respect the desired frequency
+		set during the I2C transfer operation.
 
-endif # I2C
+config I2C_BITBANG_GPIO_OVERHEAD
+	int "GPIO overhead"
+	depends on !I2C_BITBANG_NO_DELAY
+	default 0
+	---help---
+		Overhead of GPIO toggling operation to consider when computing
+		delays. This overhead will be subtracted from sleep times to achieve
+		desired frequency.
+
+config I2C_BITBANG_TIMEOUT
+	int "I2C timeout"
+	default 1000
+	---help---
+		Timeout (microseconds) to abort wait on slave.
+
+config I2C_BITBANG_CLOCK_STRETCHING
+	bool "Support clock stretching"
+	default n
+	---help---
+		This enables I2C clock stretching. This requires the hardware to set
+		the pin into open-collector mode (master sets SCL high and waits until
+		slave stops holding it low).
+
+config I2C_BITBANG_IOEXPANDER
+	bool "Support the ioexpander lower half of i2c bitbang"
+	default n
+	depends on IOEXPANDER
+	---help---
+		Using ioexpander to control gpio to implement i2c bitbang function.
+
+endif # I2C_BITBANG
+
+config I2C_DRIVER
+	bool "I2C character driver"
+	default n
+	---help---
+		Build in support for a character driver at /dev/i2c[N] that may be
+		used to perform I2C bus transfers from applications.  The intent of
+		this driver is to support I2C testing.  It is not suitable for use
+		in any real driver application.
+
+menu "I2C Multiplexer Support"
+
+config I2CMULTIPLEXER_PCA9540BDP
+	bool "PCA9540BDP NXP multiplexer"
+	default n
+	depends on I2C
+	select BOARD_HAVE_I2CMUX
+	---help---
+		Enable support for the NXP PCA9540BDP i2c multiplexer
+
+config I2CMULTIPLEXER_TCA9548A
+	bool "TCA9548A TI multiplexer"
+	default n
+	depends on I2C
+	select BOARD_HAVE_I2CMUX
+	---help---
+		Enable support for the TI TCA9548A i2c multiplexer
+
+# put more i2c mux devices here
+
+endmenu # I2C Multiplexer Support
+
+endif

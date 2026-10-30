@@ -3,19 +3,112 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-if SPI
+config ARCH_HAVE_SPI_CRCGENERATION
+	bool
+	default n
 
-config SPI_USERIO
-	bool "Support the SPI User/IO mode"
-	default y
+config ARCH_HAVE_SPI_CS_CONTROL
+	bool
+	default n
 
-config SPI_OWNBUS
-	bool "SPI single device"
+config ARCH_HAVE_SPI_BITORDER
+	bool
+	default n
+
+config ARCH_HAVE_QSPI_BITORDER
+	bool
+	default n
+
+config ARCH_HAVE_QSPI_WORD_REVERSE
+	bool
+	default n
+
+menuconfig SPI
+	bool "SPI Driver Support"
 	default n
 	---help---
-		Set if there is only one active device on the SPI bus.  No locking or
-		SPI configuration will be performed. It is not necessary for clients to
-		lock, re-configure, etc.
+		This selection enables selection of common SPI options.  This option
+		should be enabled by all platforms that support SPI interfaces.
+		See include/nuttx/spi/spi.h for further SPI driver information.
+
+if SPI
+
+config SPI_SLAVE
+	bool "SPI Slave"
+	default n
+	---help---
+		Enable support for SPI Slave features
+
+if SPI_SLAVE
+
+config SPI_SLAVE_DRIVER
+	bool "SPI Slave character driver"
+	default n
+	---help---
+		Built-in support for a character driver at /dev/spislv[N] that may be
+		used to perform SPI bus transfers from applications.
+		The intent of this driver is to support SPI Slave testing.
+
+if SPI_SLAVE_DRIVER
+
+config SPI_SLAVE_DRIVER_MODE
+	int "SPI Slave character driver default mode"
+	default 0
+	---help---
+		Default SPI Slave character driver mode, where:
+		0 = CPOL=0, CPHA=0
+		1 = CPOL=0, CPHA=1
+		2 = CPOL=1, CPHA=0
+		3 = CPOL=1, CPHA=1
+
+config SPI_SLAVE_DRIVER_WIDTH
+	int "SPI Slave character driver default bit width"
+	default 8
+	---help---
+		Number of bits per SPI Slave transfer (default 8).
+
+config SPI_SLAVE_DRIVER_BUFFER_SIZE
+	int "SPI Slave character driver TX and RX buffer sizes"
+	default 128
+	---help---
+		Size of the internal TX and RX buffers of the SPI Slave
+		character driver.
+
+config SPI_SLAVE_DRIVER_COLORIZE_TX_BUFFER
+	bool "SPI Slave character driver colorize TX buffer"
+	default n
+	---help---
+		Initialize entries of the TX buffer with a given pattern.
+		If the SPI Slave controller performs a call to "getdata" API during
+		the "bind" operation, the colorized buffer may be sent as part of the
+		first TX transfer of the SPI Slave controller.
+		This feature might be useful for a quick communication test between
+		Master and Slave.
+
+config SPI_SLAVE_DRIVER_COLORIZE_PATTERN
+	hex "SPI Slave character driver colorize pattern"
+	default 0xa5
+	depends on SPI_SLAVE_DRIVER_COLORIZE_TX_BUFFER
+	---help---
+		Pattern to be used as the coloration of the TX buffer.
+
+config SPI_SLAVE_DRIVER_COLORIZE_NUM_BYTES
+	int "SPI Slave character driver colorize number of bytes"
+	default 4
+	depends on SPI_SLAVE_DRIVER_COLORIZE_TX_BUFFER
+	---help---
+		Number of bytes of the TX buffer to be colorized.
+
+endif # SPI_SLAVE_DRIVER
+
+config SPI_SLAVE_DMA
+	bool "SPI Slave DMA"
+	default n
+	depends on ARCH_DMA && EXPERIMENTAL
+	---help---
+		Enable support for DMA data transfers (not yet implemented).
+
+endif # SPI_SLAVE
 
 config SPI_EXCHANGE
 	bool "SPI exchange"
@@ -33,12 +126,128 @@ config SPI_CMDDATA
 		either 9-bit SPI (yech) or 8-bit SPI and a GPIO output that selects
 		between command and data.
 
+config SPI_CALLBACK
+	bool "Media change callbacks"
+	default MMCSD_SPI
+	---help---
+		Support the callback method in the SPI interface.  This will allow
+		the SPI-based MMC/SD driver to get a notification of changes in the
+		card status when an SD card is inserted or removed.
+
+config SPI_HWFEATURES
+	bool
+	default n
+	---help---
+		Selected only if a specific H/W feature is selected.  This is
+		basically the OR of any specific hardware feature and enables
+		the SPI hwfeatures() interface method.
+
+config SPI_CRCGENERATION
+	bool
+	default n
+	select SPI_HWFEATURES
+	depends on ARCH_HAVE_SPI_CRCGENERATION
+	---help---
+		Selected by MCU Kconfig logic if implementation supports automatic
+		generation of SPI CRCs.  Enables the HWFEAT_CRCGENERATION option
+		as well as the hwfeartures() interface method.
+
+config SPI_CS_CONTROL
+	bool "SPI CS Behavior Control"
+	default n
+	select SPI_HWFEATURES
+	depends on ARCH_HAVE_SPI_CS_CONTROL
+	---help---
+		Enables possibilities to define the behavior of CS.
+		Also enables the hwfeatures() interface method.
+
+config SPI_BITORDER
+	bool "SPI Bit Order Control"
+	default n
+	select SPI_HWFEATURES
+	depends on ARCH_HAVE_SPI_BITORDER
+	---help---
+		Enables capability to select MSB- or LSB-first hardware feature for
+		data transfers.
+
+config QSPI_HWFEATURES
+	bool
+	default n
+	---help---
+		Selected only if a specific H/W feature is selected.  This is
+		basically the OR of any specific hardware feature and enables
+		the QSPI hwfeatures() interface method.
+
+config QSPI_BITORDER
+	bool "QSPI Bit Order Control"
+	default n
+	select QSPI_HWFEATURES
+	depends on ARCH_HAVE_QSPI_BITORDER
+	---help---
+		Enables capability to select MSB- or LSB-first hardware feature for
+		data transfers.
+
+config QSPI_WORD_REVERSE
+	bool "QSPI word reverse Control"
+	default n
+	select QSPI_HWFEATURES
+	depends on ARCH_HAVE_QSPI_WORD_REVERSE
+	---help---
+		Enables capability to word reverse hardware feature for
+		data transfers.
+
+config SPI_DELAY_CONTROL
+	bool "SPI Delay Control"
+	default n
+	---help---
+		Enables possibilities to define the SPI Delays such as
+		SPI-ChipSelect-Delays and inter frame delays.
+
+		SPI-ChipSelect-Delays: are the delay between ChipSelect assertion
+		and first Data-Bit, the delay between the last Data-Bit and the
+		de-assertion and the minimum delay between two ChipSelects.
+
+		The inter-frame delays also know as Inter-Data Idleness, controls the
+		delay between frames. (one transaction of nbits as configured with
+		SPI_SETBITS).
+
+		This option enables the setdelay() interface method.
+
+config SPI_TRIGGER
+	bool "SPI DMA trigger"
+	default n
+	select SPI_HWFEATURES
+	depends on SPI_EXCHANGE
+	---help---
+		Some architectures benefit from delaying the start of DMA from the
+		DMA setup.  If this option is selected, then an SPI_TRIGGER() method
+		is supported:  The DMA is setup with in in SPI_EXCHANGE() but does
+		not actually begin until SPI_TRIGGER() is called.
+
+config SPI_DRIVER
+	bool "SPI character driver"
+	default n
+	depends on SPI_EXCHANGE
+	---help---
+		Build in support for a character driver at /dev/spi[N] that may be
+		used to perform SPI bus transfers from applications.  The intent of
+		this driver is to support SPI testing.  It is not suitable for use
+		in any real driver application.
+
+config SPI_ICE40
+	bool "SPI iCE40 driver"
+	default n
+	depends on SPI_EXCHANGE
+	---help---
+		Enable support for a character driver at /dev/ice40-[N] for the iCE40 FPGA.
+		This driver is intended for uploading the bitsream to the FPGA.
+
 config SPI_BITBANG
 	bool "SPI bit-bang device"
 	default n
 	---help---
 		Enable support for a generic SPI bit-bang device.
-		See include/tinyara/spi/spi_bitbang.h for further information.
+		See include/nuttx/spi/spi_bitbang.h for further information.
 
 if SPI_BITBANG
 
@@ -49,5 +258,177 @@ config SPI_BITBANG_VARWIDTH
 		Enable support for a variable data width transfers.  Default: 8-bit
 		only.
 
-endif
-endif
+endif # SPI_BITBANG
+
+config SPI_FLASH
+	bool "Simulated SPI FLASH with SMARTFS"
+	default n
+	---help---
+		Adds a simulated SPI FLASH that responds to standard M25 style
+		commands on the SPI bus.
+
+if SPI_FLASH
+
+choice
+	prompt "Simulated SPI FLASH Size"
+	default SPI_FLASH_1M
+
+config SPI_FLASH_1M
+	bool "1 MBit (128K Byte)"
+
+config SPI_FLASH_8M
+	bool "8 MBit (1M Byte)"
+
+config SPI_FLASH_32M
+	bool "32 MBit (4M Byte)"
+
+config SPI_FLASH_64M
+	bool "64 MBit (8M Byte)"
+
+config SPI_FLASH_128M
+	bool "128 MBit (16M Byte)"
+
+endchoice
+
+config SPI_FLASH_SECTORSIZE
+	int "FLASH Sector Erase Size"
+	default 65536
+	---help---
+		Sets the large sector erase size that the part simulates.
+		This driver simulates SPI devices that have both a large
+		sector erase as well as a "sub-sector" (per the datasheet)
+		erase size (typically 4K bytes).
+
+config SPI_FLASH_SUBSECTORSIZE
+	int "FLASH Sub-Sector Erase Size"
+	default 4096
+	---help---
+		Sets the smaller sub-sector erase size supported by the
+		FLASH emulation
+
+config SPI_FLASH_M25P
+	bool "Enable M25Pxx FLASH"
+	---help---
+		Enables simulation of an M25P type FLASH
+
+config SPI_FLASH_SST26
+	bool "Enable SST26 FLASH"
+	---help---
+		Enables simulation of an SST26 type FLASH
+
+config SPI_FLASH_W25
+	bool "Enable W25 FLASH"
+	---help---
+		Enables simulation of a W25 type FLASH
+
+config SPI_FLASH_CUSTOM
+	bool "Enable Emulation of a Custom Manufacturer / ID FLASH"
+	---help---
+		Enables simulation of FLASH with a custom Manufacturer, ID and Capacity
+
+config SPI_FLASH_MANUFACTURER
+	hex "Hex ID of the FLASH manufacturer code"
+	default 0x20
+	depends on SPI_FLASH_CUSTOM
+	---help---
+		Allows the simulated FLASH Manufacturer ID to be set.
+
+config SPI_FLASH_MEMORY_TYPE
+	hex "Hex ID of the FLASH Memory Type code"
+	default 0x20
+	depends on SPI_FLASH_CUSTOM
+	---help---
+		Allows the simulated FLASH Memory Type code to be set.
+
+config SPI_FLASH_CAPACITY
+	hex "Hex ID of the FLASH capacity code"
+	default 0x14
+	depends on SPI_FLASH_CUSTOM
+	---help---
+		Allows the simulated FLASH Memory Capacity code to be set.
+
+config SPI_FLASH_PAGESIZE
+	int "FLASH Write / Program Page Size"
+	default 256
+	---help---
+		Sets the size of a page program operation.  The page size
+		represents the maximum number of bytes that can be sent
+		for a program operation.  If more bytes than this are
+		sent on a single Page Program, then the address will
+		"wrap" causing the initial data sent to be overwritten.
+		This is consistent with standard SPI FLASH operation.
+
+endif # SPI_FLASH
+
+config QSPI_FLASH
+	bool "Simulated QSPI FLASH with SMARTFS"
+	default n
+	---help---
+		Adds a simulated QSPI FLASH that responds to N25QXXX style
+		commands on the QSPI bus.
+
+if QSPI_FLASH
+
+choice
+	prompt "Simulated QSPI FLASH Size"
+	default QSPI_FLASH_1M
+
+config QSPI_FLASH_1M
+	bool "1 MBit (128K Byte)"
+
+config QSPI_FLASH_8M
+	bool "8 MBit (1M Byte)"
+
+config QSPI_FLASH_32M
+	bool "32 MBit (4M Byte)"
+
+config QSPI_FLASH_64M
+	bool "64 MBit (8M Byte)"
+
+config QSPI_FLASH_128M
+	bool "128 MBit (16M Byte)"
+
+endchoice
+
+config QSPI_FLASH_MANUFACTURER
+	hex "Hex ID of the FLASH manufacturer code"
+	default 0x20
+	---help---
+		Allows the simulated FLASH Manufacturer ID to be set.
+
+config QSPI_FLASH_MEMORY_TYPE
+	hex "Hex ID of the FLASH Memory Type code"
+	default 0xba
+	---help---
+		Allows the simulated FLASH Memory Type code to be set.
+
+config QSPI_FLASH_SECTORSIZE
+	int "FLASH Sector Erase Size"
+	default 65536
+	---help---
+		Sets the large sector erase size that the part simulates.
+		This driver simulates QSPI devices that have both a large
+		sector erase as well as a "sub-sector" (per the datasheet)
+		erase size (typically 4K bytes).
+
+config QSPI_FLASH_SUBSECTORSIZE
+	int "FLASH Sub-Sector Erase Size"
+	default 4096
+	---help---
+		Sets the smaller sub-sector erase size supported by the
+		FLASH emulation
+
+config QSPI_FLASH_PAGESIZE
+	int "FLASH Write / Program Page Size"
+	default 256
+	---help---
+		Sets the size of a page program operation.  The page size
+		represents the maximum number of bytes that can be sent
+		for a program operation.  If more bytes than this are
+		sent on a single Page Program, then the address will
+		"wrap" causing the initial data sent to be overwritten.
+		This is consistent with standard SPI FLASH operation.
+
+endif # QSPI_FLASH
+
+endif # SPI
