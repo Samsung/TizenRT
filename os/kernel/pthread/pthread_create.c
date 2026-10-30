@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/pthread/pthread_create.c
+ * sched/pthread/pthread_create.c
  *
- *   Copyright (C) 2007-2009, 2011, 2013-2016 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -64,24 +51,20 @@
 #include <debug.h>
 #include <assert.h>
 #include <errno.h>
-#include <queue.h>
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-#include <tinyara/mm/mm.h>
-#endif
-
+#include <tinyara/queue.h>
+#include <tinyara/sched.h>
 #include <tinyara/arch.h>
 #include <tinyara/semaphore.h>
 #include <tinyara/kmalloc.h>
 #include <tinyara/pthread.h>
 
+#include "task/task.h"
 #include "sched/sched.h"
 #include "group/group.h"
 #include "clock/clock.h"
 #include "pthread/pthread.h"
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-#include "binary_manager/binary_manager_internal.h"
-#endif
+#include "tls/tls.h"
 
 /****************************************************************************
  * Public Data
@@ -96,81 +79,50 @@
 const pthread_attr_t g_default_pthread_attr = PTHREAD_ATTR_INITIALIZER;
 
 /****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/* This is the name for name-less pthreads */
-
-static const char g_pthreadname[] = "<pthread>";
-
-/****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: pthread_argsetup
+ * Name: pthread_tcb_setup
  *
  * Description:
- *   This functions sets up parameters in the Task Control Block (TCB) in
+ *   This function sets up parameters in the Task Control Block (TCB) in
  *   preparation for starting a new thread.
  *
- *   pthread_argsetup() is called from task_init() and task_start() to create
- *   a new task (with arguments cloned via strdup) or pthread_create() which
- *   has one argument passed by value (distinguished by the pthread boolean
- *   argument).
+ *   pthread_tcb_setup() is called from nxtask_init() and nxtask_start() to
+ *   create a new task (with arguments cloned via strdup) or pthread_create()
+ *   which has one argument passed by value (distinguished by the pthread
+ *   boolean argument).
  *
  * Input Parameters:
  *   tcb        - Address of the new task's TCB
+ *   trampoline - User space pthread startup function
  *   arg        - The argument to provide to the pthread on startup.
  *
- * Return Value:
+ * Returned Value:
  *  None
  *
  ****************************************************************************/
 
-static inline void pthread_argsetup(FAR struct pthread_tcb_s *tcb, pthread_addr_t arg)
+static inline void pthread_tcb_setup(FAR struct tcb_s *ptcb,
+                                     FAR struct tcb_s *parent,
+                                     pthread_trampoline_t trampoline,
+                                     pthread_addr_t arg)
 {
+	FAR struct pthread_entry_s *entry;
 #if CONFIG_TASK_NAME_SIZE > 0
 	/* Copy the pthread name into the TCB */
 
-	strncpy(tcb->cmn.name, g_pthreadname, CONFIG_TASK_NAME_SIZE);
-	tcb->cmn.name[CONFIG_TASK_NAME_SIZE] = '\0';
-#endif							/* CONFIG_TASK_NAME_SIZE */
+	strlcpy(ptcb->name, parent->name, CONFIG_TASK_NAME_SIZE);
+#endif /* CONFIG_TASK_NAME_SIZE */
 
 	/* For pthreads, args are strictly pass-by-value; that actual
 	 * type wrapped by pthread_addr_t is unknown.
 	 */
 
-	tcb->arg = arg;
-}
-
-/****************************************************************************
- * Name: pthread_addjoininfo
- *
- * Description:
- *   Add a join structure to the local data set.
- *
- * Parameters:
- *   pjoin
- *
- * Return Value:
- *   None
- *
- * Assumptions:
- *   The caller has provided protection from re-entrancy.
- *
- ****************************************************************************/
-
-static inline void pthread_addjoininfo(FAR struct task_group_s *group, FAR struct join_s *pjoin)
-{
-	pjoin->next = NULL;
-	if (!group->tg_jointail) {
-		group->tg_joinhead = pjoin;
-	} else {
-		group->tg_jointail->next = pjoin;
-	}
-
-	group->tg_jointail = pjoin;
+	entry             = (FAR struct pthread_entry_s *)(ptcb + 1);
+	entry->trampoline = trampoline;
+	entry->arg        = arg;
 }
 
 /****************************************************************************
@@ -179,46 +131,43 @@ static inline void pthread_addjoininfo(FAR struct task_group_s *group, FAR struc
  * Description:
  *   This function is the low level entry point into the pthread
  *
- * Parameters:
+ * Input Parameters:
  * None
  *
  ****************************************************************************/
 
 static void pthread_start(void)
 {
-	FAR struct pthread_tcb_s *ptcb = (FAR struct pthread_tcb_s *)this_task();
-	FAR struct task_group_s *group = ptcb->cmn.group;
-	FAR struct join_s *pjoin = (FAR struct join_s *)ptcb->joininfo;
-	pthread_addr_t exit_status;
+	FAR struct tcb_s *ptcb = this_task();
+	FAR struct pthread_entry_s *entry =
+	  (FAR struct pthread_entry_s *)(ptcb + 1);
 
-	DEBUGASSERT(group && pjoin);
+	/* The priority of this thread may have been boosted to avoid priority
+	 * inversion problems.  If that is the case, then drop to the correct
+	 * execution priority.
+	 */
 
-	/* Sucessfully spawned, add the pjoin to our data set. */
-
-	(void)pthread_sem_take(&group->tg_joinsem);
-	pthread_addjoininfo(group, pjoin);
-	(void)pthread_sem_give(&group->tg_joinsem);
-
-	/* Report to the spawner that we successfully started. */
-
-	pjoin->started = true;
-	(void)pthread_sem_give(&pjoin->data_sem);
+	if (ptcb->sched_priority > ptcb->init_priority) {
+		DEBUGVERIFY(nxsched_set_priority(ptcb, ptcb->init_priority));
+	}
 
 	/* Pass control to the thread entry point. In the kernel build this has to
 	 * be handled differently if we are starting a user-space pthread; we have
 	 * to switch to user-mode before calling into the pthread.
 	 */
 
-#if defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)
-	up_pthread_start(ptcb->cmn.entry.pthread, ptcb->arg);
-	exit_status = NULL;
+	DEBUGASSERT(entry->trampoline != NULL && ptcb->entry.pthread != NULL);
+
+#ifdef CONFIG_BUILD_FLAT
+	entry->trampoline(ptcb->entry.pthread, entry->arg);
 #else
-	exit_status = (*ptcb->cmn.entry.pthread)(ptcb->arg);
+	up_pthread_start(entry->trampoline, ptcb->entry.pthread, entry->arg);
 #endif
 
-	/* The thread has returned (should never happen in the kernel mode case) */
+	/* The thread has returned (should never happen) */
 
-	pthread_exit(exit_status);
+	DEBUGPANIC();
+	pthread_exit(NULL);
 }
 
 /****************************************************************************
@@ -226,115 +175,115 @@ static void pthread_start(void)
  ****************************************************************************/
 
 /****************************************************************************
- * Name:  pthread_create
+ * Name:  nx_pthread_create
  *
  * Description:
- *   This function creates and activates a new thread with a specified
+ *   This function creates and activates a new thread with specified
  *   attributes.
  *
  * Input Parameters:
- *    thread
- *    attr
- *    start_routine
- *    arg
+ *    trampoline - The user space startup function
+ *    thread     - The pthread handle to be used
+ *    attr       - It points to a pthread_attr_t structure whose contents are
+ *                 used at thread creation time to determine attributes
+ *                 for the new thread
+ *    entry      - The new thread starts execution by invoking entry
+ *    arg        - It is passed as the sole argument of entry
  *
- * Returned value:
+ * Returned Value:
  *   OK (0) on success; a (non-negated) errno value on failure. The errno
  *   variable is not set.
  *
  ****************************************************************************/
 
-int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthread_startroutine_t start_routine, pthread_addr_t arg)
+int nx_pthread_create(pthread_trampoline_t trampoline, FAR pthread_t *thread,
+                      FAR const pthread_attr_t *attr,
+                      pthread_startroutine_t entry, pthread_addr_t arg)
 {
-	FAR struct pthread_tcb_s *ptcb;
-	FAR struct join_s *pjoin;
+	pthread_attr_t default_attr = g_default_pthread_attr;
+	FAR struct tcb_s *ptcb;
 	struct sched_param param;
+	FAR struct tcb_s *parent;
 	int policy;
 	int errcode;
-	pid_t pid;
 	int ret;
-#ifdef HAVE_TASK_GROUP
-	bool group_joined = false;
-#endif
 
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	ASSERT((sched_self()->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL);
-#endif
+	DEBUGASSERT(trampoline != NULL);
 
-
-	/* Check whether we are allowed to create new pthread ? */
-
-	if (g_alive_taskcount == CONFIG_MAX_TASKS) {
-		sdbg("ERROR: CONFIG_MAX_TASKS(%d) count reached\n", CONFIG_MAX_TASKS);
-		return EBUSY;
-	}
+	parent = this_task();
+	DEBUGASSERT(parent != NULL);
 
 	/* If attributes were not supplied, use the default attributes */
 
 	if (!attr) {
-		attr = &g_default_pthread_attr;
-	}
+		/* Inherit parent priority by default. except idle */
 
-#ifndef CONFIG_SMP
-	if (attr->affinity != 0) {
-		sdbg("WARNING: Non zero affinity value not allowed when CONFIG_SMP is disabled\n");
-	}
-#endif
+		if (!is_idle_task(parent)) {
+			default_attr.priority = parent->sched_priority;
+		}
 
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-	if (BM_PRIORITY_MIN - 1 < attr->priority && attr->priority < BM_PRIORITY_MAX + 1) {
-		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", attr->priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);
-		return EPERM;
+		attr = &default_attr;
 	}
-#endif
 
 	/* Allocate a TCB for the new task. */
 
-	ptcb = (FAR struct pthread_tcb_s *)kmm_zalloc(sizeof(struct pthread_tcb_s));
+	ptcb = kmm_zalloc(sizeof(struct tcb_s) + sizeof(struct pthread_entry_s));
 	if (!ptcb) {
-		sdbg("ERROR: Failed to allocate TCB\n");
+		serr("ERROR: Failed to allocate TCB\n");
 		return ENOMEM;
 	}
-#ifdef HAVE_TASK_GROUP
+
+	ptcb->flags |= TCB_FLAG_FREE_TCB;
+
+	/* Initialize the task join */
+
+	nxtask_joininit(ptcb);
+
 	/* Bind the parent's group to the new TCB (we have not yet joined the
 	 * group).
 	 */
 
-	ret = group_bind(ptcb);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout_with_tcb;
-	}
-#endif
+	group_bind(ptcb);
 
 #ifdef CONFIG_ARCH_ADDRENV
 	/* Share the address environment of the parent task group. */
 
-	ret = up_addrenv_attach(ptcb->cmn.group, this_task());
+	ret = addrenv_join(this_task(), ptcb);
 	if (ret < 0) {
 		errcode = -ret;
 		goto errout_with_tcb;
 	}
 #endif
 
-	/* Allocate a detachable structure to support pthread_join logic */
+	if (attr->detachstate == PTHREAD_CREATE_DETACHED) {
+		ptcb->flags |= TCB_FLAG_DETACHED;
+	}
 
-	pjoin = (FAR struct join_s *)kmm_zalloc(sizeof(struct join_s));
-	if (!pjoin) {
-		sdbg("ERROR: Failed to allocate join\n");
+	if (attr->stackaddr) {
+		/* Use pre-allocated stack */
+
+		ret = up_use_stack(ptcb, attr->stackaddr, attr->stacksize);
+	} else {
+		/* Allocate the stack for the TCB */
+
+		ret = up_create_stack(ptcb,
+		                      attr->stacksize + attr->guardsize,
+		                      TCB_FLAG_TTYPE_PTHREAD);
+	}
+
+	if (ret != OK) {
 		errcode = ENOMEM;
 		goto errout_with_tcb;
 	}
 
-	/* Allocate the stack for the TCB */
+#if defined(CONFIG_ARCH_ADDRENV) && defined(CONFIG_ARCH_KERNEL_STACK)
+	/* Allocate the kernel stack */
 
-	ret = up_create_stack((FAR struct tcb_s *)ptcb, attr->stacksize, TCB_FLAG_TTYPE_PTHREAD);
-	if (ret != OK) {
-		errcode = -ret;
-		goto errout_with_join;
+	ret = up_addrenv_kstackalloc(ptcb);
+	if (ret < 0) {
+		errcode = ENOMEM;
+		goto errout_with_tcb;
 	}
-#if defined(CONFIG_BUILD_PROTECTED)
-	ptcb->region = (struct pthread_region_s *)attr->region;
 #endif
 
 	/* Should we use the priority and scheduler specified in the pthread
@@ -347,54 +296,111 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 		 * thread.
 		 */
 
-		ret = sched_getparam(0, &param);
-		if (ret == ERROR) {
-			errcode = get_errno();
-			goto errout_with_join;
+		ret = nxsched_get_param(0, &param);
+		if (ret < 0) {
+			errcode = -ret;
+			goto errout_with_tcb;
 		}
 
 		/* Get the scheduler policy for this thread */
 
-		policy = sched_getscheduler(0);
-		if (policy == ERROR) {
-			errcode = get_errno();
-			goto errout_with_join;
+		policy = nxsched_get_scheduler(0);
+		if (policy < 0) {
+			errcode = -policy;
+			goto errout_with_tcb;
 		}
 	} else {
 		/* Use the scheduler policy and policy the attributes */
 
-		policy = attr->policy;
-		param.sched_priority = attr->priority;
+		policy                             = attr->policy;
+		param.sched_priority               = attr->priority;
 
+#ifdef CONFIG_SCHED_SPORADIC
+		param.sched_ss_low_priority        = attr->low_priority;
+		param.sched_ss_max_repl            = attr->max_repl;
+		param.sched_ss_repl_period.tv_sec  = attr->repl_period.tv_sec;
+		param.sched_ss_repl_period.tv_nsec = attr->repl_period.tv_nsec;
+		param.sched_ss_init_budget.tv_sec  = attr->budget.tv_sec;
+		param.sched_ss_init_budget.tv_nsec = attr->budget.tv_nsec;
+#endif
 	}
+
+#ifdef CONFIG_SCHED_SPORADIC
+	if (policy == SCHED_SPORADIC) {
+		FAR struct sporadic_s *sporadic;
+		sclock_t repl_ticks;
+		sclock_t budget_ticks;
+
+		/* Convert timespec values to system clock ticks */
+
+		repl_ticks = clock_time2ticks(&param.sched_ss_repl_period);
+		budget_ticks = clock_time2ticks(&param.sched_ss_init_budget);
+
+		/* The replenishment period must be greater than or equal to the
+		 * budget period.
+		 */
+
+		if (repl_ticks < budget_ticks) {
+			errcode = EINVAL;
+			goto errout_with_tcb;
+		}
+
+		/* Initialize the sporadic policy */
+
+		ret = nxsched_initialize_sporadic(ptcb);
+		if (ret >= 0) {
+			sporadic               = ptcb->sporadic;
+			DEBUGASSERT(sporadic != NULL);
+
+			/* Save the sporadic scheduling parameters */
+
+			sporadic->hi_priority  = param.sched_priority;
+			sporadic->low_priority = param.sched_ss_low_priority;
+			sporadic->max_repl     = param.sched_ss_max_repl;
+			sporadic->repl_period  = repl_ticks;
+			sporadic->budget       = budget_ticks;
+
+			/* And start the first replenishment interval */
+
+			ret = nxsched_start_sporadic(ptcb);
+		}
+
+		/* Handle any failures */
+
+		if (ret < 0) {
+			errcode = -ret;
+			goto errout_with_tcb;
+		}
+	}
+#endif
 
 	/* Initialize the task control block */
 
-	ret = pthread_schedsetup(ptcb, param.sched_priority, pthread_start, start_routine);
+	ret = pthread_setup_scheduler(ptcb, param.sched_priority, pthread_start,
+	                              entry);
 	if (ret != OK) {
-		errcode = get_errno();
-		goto errout_with_join;
+		errcode = EBUSY;
+		goto errout_with_tcb;
 	}
 
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	/* Exclude a stack node from heap usages of current thread.
-	 * This will be shown separately as stack usages.
-	 */
-	heapinfo_exclude_stacksize(ptcb->cmn.stack_alloc_ptr);
-	/* Update the pid information to set a stack node */
-	heapinfo_set_stack_node(ptcb->cmn.stack_alloc_ptr, ptcb->cmn.pid);
-#endif
+	/* Initialize thread local storage */
+
+	ret = tls_init_info(ptcb);
+	if (ret != OK) {
+		errcode = -ret;
+		goto errout_with_tcb;
+	}
 
 #ifdef CONFIG_SMP
-	/* pthread_schedsetup() will set the affinity mask by inheriting the
-	 * setting from the parent task. We need to override this setting
+	/* pthread_setup_scheduler() will set the affinity mask by inheriting the
+	 * setting from the parent task.  We need to override this setting
 	 * with the value from the pthread attributes unless that value is
-	 * zero: Zero is the default value and simply means yo inherit the
-	 * parent thread's affinity mask
+	 * zero:  Zero is the default value and simply means to inherit the
+	 * parent thread's affinity mask.
 	 */
 
 	if (attr->affinity != 0) {
-		ptcb->cmn.affinity = attr->affinity;
+		ptcb->affinity = attr->affinity;
 	}
 #endif
 
@@ -402,127 +408,54 @@ int pthread_create(FAR pthread_t *thread, FAR const pthread_attr_t *attr, pthrea
 	 * passed by value
 	 */
 
-	pthread_argsetup(ptcb, arg);
+	pthread_tcb_setup(ptcb, parent, trampoline, arg);
 
-#ifdef HAVE_TASK_GROUP
 	/* Join the parent's task group */
 
-	ret = group_join(ptcb);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout_with_join;
-	}
-
-	group_joined = true;
-#endif
-
-	/* Attach the join info to the TCB. */
-
-	ptcb->joininfo = (FAR void *)pjoin;
+	group_join(ptcb);
 
 	/* Set the appropriate scheduling policy in the TCB */
 
+	ptcb->flags &= ~TCB_FLAG_POLICY_MASK;
 	switch (policy) {
+	default:
 	case SCHED_FIFO:
-		ptcb->cmn.flags &= ~TCB_FLAG_ROUND_ROBIN;
+		ptcb->flags    |= TCB_FLAG_SCHED_FIFO;
 		break;
 
 #if CONFIG_RR_INTERVAL > 0
+	case SCHED_OTHER:
 	case SCHED_RR:
-		ptcb->cmn.flags |= TCB_FLAG_ROUND_ROBIN;
-		ptcb->cmn.timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
+		ptcb->flags    |= TCB_FLAG_SCHED_RR;
+		ptcb->timeslice = MSEC2TICK(CONFIG_RR_INTERVAL);
 		break;
 #endif
-	default:
-		DEBUGPANIC();
-	}
 
-#ifdef CONFIG_CANCELLATION_POINTS
-	/* Set the deferred cancellation types */
-	ptcb->cmn.flags |= TCB_FLAG_CANCEL_DEFERRED;
+#ifdef CONFIG_SCHED_SPORADIC
+	case SCHED_SPORADIC:
+		ptcb->flags    |= TCB_FLAG_SCHED_SPORADIC;
+		break;
 #endif
-	/* Get the assigned pid before we start the task (who knows what
-	 * could happen to ptcb after this!).  Copy this ID into the join structure
-	 * as well.
-	 */
-
-	pid = (int)ptcb->cmn.pid;
-	pjoin->thread = (pthread_t)pid;
-
-	/* Initialize the semaphores in the join structure to zero. */
-
-	ret = sem_init(&pjoin->data_sem, 0, 0);
-	if (ret == OK) {
-		ret = sem_init(&pjoin->exit_sem, 0, 0);
 	}
 
-	/*
-	 * These semapohres are used for signaling and, hence, should not have
-	 * priority inheritance enabled.
-	 */
-	if (ret == OK) {
-		ret = sem_setprotocol(&pjoin->data_sem, SEM_PRIO_NONE);
+	/* Return the thread information to the caller */
+
+	if (thread != NULL) {
+		*thread = (pthread_t)ptcb->pid;
 	}
 
-	if (ret == OK) {
-		ret = sem_setprotocol(&pjoin->exit_sem, SEM_PRIO_NONE);
-	}
+	/* Then activate the task */
 
-	/* Activate the task */
+	nxtask_activate(ptcb);
 
-	sched_lock();
-	if (ret == OK) {
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-		/* Add tcb to binary thread list */
-
-		binary_manager_add_binlist(&ptcb->cmn);
-#endif
-		ret = task_activate((FAR struct tcb_s *)ptcb);
-	}
-
-	if (ret == OK) {
-		/* Wait for the task to actually get running and to register
-		 * its join structure.
-		 */
-
-		(void)pthread_sem_take(&pjoin->data_sem);
-
-		/* Return the thread information to the caller */
-
-		if (thread) {
-			*thread = (pthread_t)pid;
-		}
-
-		if (!pjoin->started) {
-			ret = EINVAL;
-		}
-		sched_unlock();
-		(void)sem_destroy(&pjoin->data_sem);
-	} else {
-		sched_unlock();
-		dq_rem((FAR dq_entry_t *)ptcb, (FAR dq_queue_t *)&g_inactivetasks);
-		(void)sem_destroy(&pjoin->data_sem);
-		(void)sem_destroy(&pjoin->exit_sem);
-
-		errcode = EIO;
-		goto errout_with_join;
-	}
-
-	return ret;
-
-errout_with_join:
-	sched_kfree(pjoin);
-	ptcb->joininfo = NULL;
+	return OK;
 
 errout_with_tcb:
-#ifdef HAVE_TASK_GROUP
-	/* Clear group binding */
 
-	if (ptcb && !group_joined) {
-		ptcb->cmn.group = NULL;
-	}
-#endif
+	/* Since we do not join the group, assign group to NULL to clear binding */
 
-	sched_releasetcb((FAR struct tcb_s *)ptcb, TCB_FLAG_TTYPE_PTHREAD);
+	ptcb->group = NULL;
+
+	nxsched_release_tcb(ptcb, TCB_FLAG_TTYPE_PTHREAD);
 	return errcode;
 }

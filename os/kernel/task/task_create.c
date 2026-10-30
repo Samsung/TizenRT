@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/task/task_create.c
+ * sched/task/task_create.c
  *
- *   Copyright (C) 2007-2010, 2013-2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -63,187 +50,135 @@
 
 #include <tinyara/arch.h>
 #include <tinyara/kmalloc.h>
-#include <tinyara/kthread.h>
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-#include <tinyara/mm/mm.h>
-#ifdef CONFIG_HEAPINFO_USER_GROUP
 #include <tinyara/sched.h>
-#include <string.h>
-#endif
-#endif
+#include <tinyara/kthread.h>
+#include <tinyara/fs/fs.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
 #include "task/task.h"
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-#include "binary_manager/binary_manager_internal.h"
-#endif
 
 /****************************************************************************
- * Preprocessor Definitions
+ * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: thread_create
+ * Name: nxthread_create
  *
  * Description:
  *   This function creates and activates a new thread of the specified type
  *   with a specified priority and returns its system-assigned ID.  It is the
- *   internal, common implementation of task_create() and kernel_thread().
+ *   internal, common implementation of task_create() and kthread_create().
  *   See comments with task_create() for further information.
  *
  * Input Parameters:
  *   name       - Name of the new task
  *   ttype      - Type of the new task
  *   priority   - Priority of the new task
- *   stack_size - size (in bytes) of the stack needed
+ *   stack_addr - Address of the stack needed
+ *   stack_size - Size (in bytes) of the stack needed
  *   entry      - Entry point of a new task
- *   arg        - A pointer to an array of input parameters. The array
+ *   arg        - A pointer to an array of input parameters.  The array
  *                should be terminated with a NULL argv[] value. If no
  *                parameters are required, argv may be NULL.
+ *   envp       - A pointer to an array of environment strings. Terminated
+ *                with a NULL entry.
  *
- * Return Value:
- *   Returns the non-zero process ID of the new task on success
- *   ERROR on failure. The errno will be set to indicate the nature of the error.
- *
- *   This function can fail for three reasons.
- *   1) If the memory is insufficient, errno = ENOMEM
- *   2) If requested priority is beyond the allowed range, errno = EINVAL
- *   3) If it is unable to assign a new, unique task ID to the TCB. errno = EBUSY
+ * Returned Value:
+ *   Returns the positive, non-zero process ID of the new task or a negated
+ *   errno value to indicate the nature of any failure.  If memory is
+ *   insufficient or the task cannot be created -ENOMEM will be returned.
  *
  ****************************************************************************/
 
-static int thread_create(FAR const char *name, uint8_t ttype, int priority, int stack_size, main_t entry, FAR char *const argv[])
+int nxthread_create(FAR const char *name, uint8_t ttype, int priority,
+                    FAR void *stack_addr, int stack_size, main_t entry,
+                    FAR char *const argv[], FAR char *const envp[])
 {
-	FAR struct task_tcb_s *tcb;
+	FAR struct tcb_s *tcb;
 	pid_t pid;
-	int errcode;
 	int ret;
-
-	/* Check whether we are allowed to create new task ? */
-	if (g_alive_taskcount == CONFIG_MAX_TASKS) {
-		sdbg("ERROR: CONFIG_MAX_TASKS(%d) count reached\n", CONFIG_MAX_TASKS);
-		errcode = EBUSY;
-		goto errout;
-	}
 
 	/* Allocate a TCB for the new task. */
 
-	tcb = (FAR struct task_tcb_s *)kmm_zalloc(sizeof(struct task_tcb_s));
+	tcb = kmm_zalloc(sizeof(struct tcb_s));
 	if (!tcb) {
-		sdbg("ERROR: Failed to allocate TCB\n");
-		errcode = ENOMEM;
-		goto errout;
+		serr("ERROR: Failed to allocate TCB\n");
+		return -ENOMEM;
 	}
 
-	/* Allocate a new task group with privileges appropriate for the parent
-	 * thread type.
-	 */
+	/* Setup the task type */
 
-#ifdef HAVE_TASK_GROUP
-	ret = group_allocate(tcb, ttype);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout_with_tcb;
-	}
-#endif
+	tcb->flags = ttype | TCB_FLAG_FREE_TCB;
 
-	/* Associate file descriptors with the new task */
+	/* Initialize the task */
 
-#if CONFIG_NFILE_DESCRIPTORS > 0 || CONFIG_NSOCKET_DESCRIPTORS > 0
-	ret = group_setuptaskfiles(tcb);
+	ret = nxtask_init(tcb, name, priority,
+	                  stack_addr, stack_size, entry, argv, envp, NULL);
 	if (ret < OK) {
-		errcode = -ret;
-		goto errout_with_tcb;
+		kmm_free(tcb);
+		return ret;
 	}
-#endif
-
-	/* Allocate the stack for the TCB */
-
-	ret = up_create_stack((FAR struct tcb_s *)tcb, stack_size, ttype);
-	if (ret < OK) {
-		errcode = -ret;
-		goto errout_with_tcb;
-	}
-
-	/* Initialize the task control block */
-
-	ret = task_schedsetup(tcb, priority, task_start, entry, ttype);
-	if (ret < OK) {
-		errcode = get_errno();
-		goto errout_with_tcb;
-	}
-#ifdef CONFIG_DEBUG_MM_HEAPINFO
-	/* Exclude a stack node from heap usages of current thread.
-	 * This will be shown separately as stack usages.
-	 */
-	heapinfo_exclude_stacksize(tcb->cmn.stack_alloc_ptr);
-	/* Update the pid information to set a stack node */
-	heapinfo_set_stack_node(tcb->cmn.stack_alloc_ptr, tcb->cmn.pid);
-#endif
-
-	/* Setup to pass parameters to the new task */
-
-	(void)task_argsetup(tcb, name, argv);
-
-	/* Now we have enough in place that we can join the group */
-
-#ifdef HAVE_TASK_GROUP
-	ret = group_initialize(tcb);
-	if (ret < 0) {
-		errcode = -ret;
-		goto errout_with_tcb;
-	}
-#endif
 
 	/* Get the assigned pid before we start the task */
 
-	pid = (int)tcb->cmn.pid;
-
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-	FAR struct tcb_s *rtcb = this_task();
-	tcb->cmn.group->tg_binidx = rtcb->group->tg_binidx;
-	/* Add tcb to binary thread list */
-	binary_manager_add_binlist(&tcb->cmn);
-#endif
-
-#ifdef CONFIG_HEAPINFO_USER_GROUP
-	heapinfo_check_group_list(pid, tcb->cmn.name);
-#endif
+	pid = tcb->pid;
 
 	/* Activate the task */
 
-	(void)task_activate((FAR struct tcb_s *)tcb);
+	nxtask_activate(tcb);
 
 	return pid;
-
-errout_with_tcb:
-	sched_releasetcb((FAR struct tcb_s *)tcb, ttype);
-
-errout:
-	set_errno(errcode);
-	return ERROR;
 }
 
 /****************************************************************************
- * Public Functions
+ * Name: nxtask_create
+ *
+ * Description:
+ *   This function creates and activates a new task with a specified
+ *   priority and returns its system-assigned ID.
+ *
+ *   The entry address entry is the address of the "main" function of the
+ *   task.  This function will be called once the C environment has been
+ *   set up.  The specified function will be called with four arguments.
+ *   Should the specified routine return, a call to exit() will
+ *   automatically be made.
+ *
+ *   Note that four (and only four) arguments must be passed for the spawned
+ *   functions.
+ *
+ *   nxtask_create() is identical to the function task_create(), differing
+ *   only in its return value:  This function does not modify the errno
+ *   variable.  This is a non-standard, internal OS function and is not
+ *   intended for use by application logic.  Applications should use
+ *   task_create().
+ *
+ * Input Parameters:
+ *   name       - Name of the new task
+ *   priority   - Priority of the new task
+ *   stack_addr - Address of the stack needed
+ *   stack_size - Size (in bytes) of the stack needed
+ *   entry      - Entry point of a new task
+ *   arg        - A pointer to an array of input parameters.  The array
+ *                should be terminated with a NULL argv[] value. If no
+ *                parameters are required, argv may be NULL.
+ *   envp       - A pointer to an array of environment strings. Terminated
+ *                with a NULL entry.
+ *
+ * Returned Value:
+ *   Returns the positive, non-zero process ID of the new task or a negated
+ *   errno value to indicate the nature of any failure.  If memory is
+ *   insufficient or the task cannot be created -ENOMEM will be returned.
+ *
  ****************************************************************************/
+
+int nxtask_create(FAR const char *name, int priority,
+                  FAR void *stack_addr, int stack_size, main_t entry,
+                  FAR char *const argv[], FAR char *const envp[])
+{
+	return nxthread_create(name, TCB_FLAG_TTYPE_TASK, priority, stack_addr,
+	                       stack_size, entry, argv, envp ? envp : environ);
+}
 
 /****************************************************************************
  * Name: task_create
@@ -266,41 +201,75 @@ errout:
  *   priority   - Priority of the new task
  *   stack_size - size (in bytes) of the stack needed
  *   entry      - Entry point of a new task
- *   arg        - A pointer to an array of input parameters. The array
+ *   arg        - A pointer to an array of input parameters.  The array
  *                should be terminated with a NULL argv[] value. If no
  *                parameters are required, argv may be NULL.
  *
- * Return Value:
- *   Returns the non-zero process ID of the new task on success
- *   ERROR on failure. The errno will be set to indicate the nature of the error.
- *
- *   This function can fail for three reasons.
- *   1) If the memory is insufficient, errno = ENOMEM
- *   2) If requested priority is beyond the allowed range, errno = EINVAL
- *   3) If it is unable to assign a new, unique task ID to the TCB. errno = EBUSY
+ * Returned Value:
+ *   Returns the non-zero process ID of the new task or ERROR if memory is
+ *   insufficient or the task cannot be created.  The errno will be set in
+ *   the failure case to indicate the nature of the error.
  *
  ****************************************************************************/
 
 #ifndef CONFIG_BUILD_KERNEL
-int task_create(FAR const char *name, int priority, int stack_size, main_t entry, FAR char *const argv[])
+int task_create_with_stack(FAR const char *name, int priority,
+                           FAR void *stack_addr, int stack_size,
+                           main_t entry, FAR char *const argv[])
 {
-#ifdef CONFIG_APP_BINARY_SEPARATION
-	ASSERT((sched_self()->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL);
-#endif
-
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-	if (BM_PRIORITY_MIN - 1 < priority && priority < BM_PRIORITY_MAX + 1) {
-		sdbg("Invalid priority %d, it should be lower than %d or higher than %d\n", priority, BM_PRIORITY_MIN, BM_PRIORITY_MAX);
-		set_errno(EPERM);
-		return ERROR;
+	int ret = nxtask_create(name, priority, stack_addr,
+	                        stack_size, entry, argv, NULL);
+	if (ret < 0) {
+		set_errno(-ret);
+		ret = ERROR;
 	}
-#endif
-	return thread_create(name, TCB_FLAG_TTYPE_TASK, priority, stack_size, entry, argv);
+
+	return ret;
+}
+
+int task_create(FAR const char *name, int priority,
+                int stack_size, main_t entry, FAR char *const argv[])
+{
+	return task_create_with_stack(name, priority, NULL,
+	                              stack_size, entry, argv);
 }
 #endif
 
 /****************************************************************************
- * Name: kernel_thread
+ * Name: kthread_create_with_stack
+ *
+ * Description:
+ *   This function creates and activates a kernel thread task with
+ *   kernel-mode privileges. It is identical to kthread_create() except
+ *   that it get the stack memory from caller.
+ *
+ * Input Parameters:
+ *   name       - Name of the new task
+ *   priority   - Priority of the new task
+ *   stack_addr - Stack buffer of the new task
+ *   stack_size - Stack size of the new task
+ *   entry      - Entry point of a new task
+ *   arg        - A pointer to an array of input parameters.  The array
+ *                should be terminated with a NULL argv[] value. If no
+ *                parameters are required, argv may be NULL.
+ *
+ * Returned Value:
+ *   Returns the positive, non-zero process ID of the new task or a negated
+ *   errno value to indicate the nature of any failure.  If memory is
+ *   insufficient or the task cannot be created -ENOMEM will be returned.
+ *
+ ****************************************************************************/
+
+int kthread_create_with_stack(FAR const char *name, int priority,
+                              FAR void *stack_addr, int stack_size,
+                              main_t entry, FAR char *const argv[])
+{
+	return nxthread_create(name, TCB_FLAG_TTYPE_KERNEL, priority,
+	                       stack_addr, stack_size, entry, argv, NULL);
+}
+
+/****************************************************************************
+ * Name: kthread_create
  *
  * Description:
  *   This function creates and activates a kernel thread task with kernel-
@@ -308,14 +277,24 @@ int task_create(FAR const char *name, int priority, int stack_size, main_t entry
  *   configures the newly started thread to run in kernel model.
  *
  * Input Parameters:
- *   (same as task_create())
+ *   name       - Name of the new task
+ *   priority   - Priority of the new task
+ *   stack_size - size (in bytes) of the stack needed
+ *   entry      - Entry point of a new task
+ *   arg        - A pointer to an array of input parameters.  The array
+ *                should be terminated with a NULL argv[] value. If no
+ *                parameters are required, argv may be NULL.
  *
- * Return Value:
- *   (same as task_create())
+ * Returned Value:
+ *   Returns the positive, non-zero process ID of the new task or a negated
+ *   errno value to indicate the nature of any failure.  If memory is
+ *   insufficient or the task cannot be created -ENOMEM will be returned.
  *
  ****************************************************************************/
 
-int kernel_thread(FAR const char *name, int priority, int stack_size, main_t entry, FAR char *const argv[])
+int kthread_create(FAR const char *name, int priority,
+                   int stack_size, main_t entry, FAR char *const argv[])
 {
-	return thread_create(name, TCB_FLAG_TTYPE_KERNEL, priority, stack_size, entry, argv);
+	return kthread_create_with_stack(name, priority,
+	                                 NULL, stack_size, entry, argv);
 }

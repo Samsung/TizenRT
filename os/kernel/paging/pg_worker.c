@@ -16,38 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/paging/pg_worker.c
- * Page fill worker thread implementation.
+ * sched/paging/pg_worker.c
  *
- *   Copyright (C) 2010-2011 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -60,47 +46,36 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <queue.h>
 #include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
+#include <tinyara/queue.h>
+#include <tinyara/sched.h>
 #include <tinyara/arch.h>
+#include <tinyara/signal.h>
 #include <tinyara/page.h>
 #include <tinyara/clock.h>
 
 #include "sched/sched.h"
 #include "paging/paging.h"
 
-#ifdef CONFIG_PAGING
+#ifdef CONFIG_LEGACY_PAGING
 
 /****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/* Configuration ************************************************************/
-
-#ifdef CONFIG_DISABLE_SIGNALS
-#warning "Signals needed by this function (CONFIG_DISABLE_SIGNALS=n)"
-#endif
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Public Variables
+ * Public Data
  ****************************************************************************/
 
 /* This is the task ID of the page fill worker thread.  This value was set in
- * os_start when the page fill worker thread was started.
+ * nx_start when the page fill worker thread was started.
  */
 
 pid_t g_pgworker;
 
 /* The page fill worker thread maintains a static variable called g_pftcb.
  * If no fill is in progress, g_pftcb will be NULL. Otherwise, g_pftcb will
- * point to the TCB of the task which is receiving the fill that is in progess.
+ * point to the TCB of the task which is receiving the fill that is in
+ * progress.
  *
  * NOTE: I think that this is the only state in which a TCB does not reside
  * in some list.  Here is it in limbo, outside of the normally queuing while
@@ -111,7 +86,7 @@ pid_t g_pgworker;
 FAR struct tcb_s *g_pftcb;
 
 /****************************************************************************
- * Private Variables
+ * Private Data
  ****************************************************************************/
 
 #ifndef CONFIG_PAGING_BLOCKINGFILL
@@ -127,7 +102,7 @@ static int g_fillresult;
  */
 
 #ifdef CONFIG_PAGING_TIMEOUT_TICKS
-status clock_t g_starttime;
+static clock_t g_starttime;
 #endif
 #endif
 
@@ -159,7 +134,7 @@ status clock_t g_starttime;
  *   task that is waiting for a fill.
  * - Signal the page fill worker thread.
  *
- * Input parameters:
+ * Input Parameters:
  *   tcb    - The TCB of the task that just received the fill.
  *   result - The result of the page fill operation.
  *
@@ -176,10 +151,11 @@ static void pg_callback(FAR struct tcb_s *tcb, int result)
 {
 	/* Verify that g_pftcb is non-NULL */
 
-	pgllvdbg("g_pftcb: %p\n", g_pftcb);
+	pginfo("g_pftcb: %p\n", g_pftcb);
 	if (g_pftcb) {
-		FAR struct tcb_s *htcb = (FAR struct tcb_s *)g_waitingforfill.head;
-		FAR struct tcb_s *wtcb = sched_gettcb(g_pgworker);
+		FAR struct tcb_s *htcb = (FAR struct tcb_s *)
+		                         list_waitingforfill()->head;
+		FAR struct tcb_s *wtcb = nxsched_get_tcb(g_pgworker);
 
 		/* Find the higher priority between the task waiting for the fill to
 		 * complete in g_pftcb and the task waiting at the head of the
@@ -199,8 +175,9 @@ static void pg_callback(FAR struct tcb_s *tcb, int result)
 		 */
 
 		if (priority > wtcb->sched_priority) {
-			pgllvdbg("New worker priority. %d->%d\n", wtcb->sched_priority, priority);
-			sched_setpriority(wtcb, priority);
+			pginfo("New worker priority. %d->%d\n",
+			       wtcb->sched_priority, priority);
+			nxsched_set_priority(wtcb, priority);
 		}
 
 		/* Save the page fill result (don't permit the value -EBUSY) */
@@ -214,8 +191,8 @@ static void pg_callback(FAR struct tcb_s *tcb, int result)
 
 	/* Signal the page fill worker thread (in any event) */
 
-	pgllvdbg("Signaling worker. PID: %d\n", g_pgworker);
-	kill(g_pgworker, SIGWORK);
+	pginfo("Signaling worker. PID: %d\n", g_pgworker);
+	nxsig_kill(g_pgworker, SIGPAGING);
 }
 #endif
 
@@ -236,7 +213,7 @@ static void pg_callback(FAR struct tcb_s *tcb, int result)
  *   The result (NULL or a TCB pointer) will be returned in the global
  *   variable, g_pftcb.
  *
- * Input parameters:
+ * Input Parameters:
  *   None
  *
  * Returned Value:
@@ -253,21 +230,23 @@ static void pg_callback(FAR struct tcb_s *tcb, int result)
 
 static inline bool pg_dequeue(void)
 {
-	/* Loop until either (1) the TCB of a task that requires a fill is found, OR
-	 * (2) the g_watingforfill list becomes empty.
+	FAR struct tcb_s *wtcb = this_task();
+
+	/* Loop until either (1) the TCB of a task that requires a fill is found,
+	 * OR (2) the g_watingforfill list becomes empty.
 	 */
 
 	do {
 		/* Remove the TCB from the head of the list (if any) */
 
-		g_pftcb = (FAR struct tcb_s *)dq_remfirst((dq_queue_t *)&g_waitingforfill);
-		pgllvdbg("g_pftcb: %p\n", g_pftcb);
+		g_pftcb = (FAR struct tcb_s *)dq_remfirst(list_waitingforfill());
+		pginfo("g_pftcb: %p\n", g_pftcb);
 		if (g_pftcb != NULL) {
-			/* Call the architecture-specific function up_checkmapping() to see if
-			 * the page fill still needs to be performed. In certain conditions,
-			 * the page fault may occur on several threads for the same page and
-			 * be queues multiple times. In this corner case, the blocked task will
-			 * simply be restarted.
+			/* Call the architecture-specific function up_checkmapping() to see
+			 * if the page fill still needs to be performed. In certain
+			 * conditions, the page fault may occur on several threads for the
+			 * same page and be queues multiple times. In this corner case, the
+			 * blocked task will simply be restarted.
 			 */
 
 			if (!up_checkmapping(g_pftcb)) {
@@ -288,8 +267,8 @@ static inline bool pg_dequeue(void)
 				 * if a new higher priority fill is required).
 				 */
 
-				FAR struct tcb_s *wtcb = this_task();
-				if (wtcb->sched_priority > CONFIG_PAGING_DEFPRIO && wtcb->sched_priority > g_pftcb->sched_priority) {
+				if (wtcb->sched_priority > CONFIG_PAGING_DEFPRIO &&
+				    wtcb->sched_priority > g_pftcb->sched_priority) {
 					/* Don't reduce the priority of the page fill
 					 * worker thread lower than the configured
 					 * minimum.
@@ -302,8 +281,9 @@ static inline bool pg_dequeue(void)
 
 					/* Reduce the priority of the page fill worker thread */
 
-					pgllvdbg("New worker priority. %d->%d\n", wtcb->sched_priority, priority);
-					sched_setpriority(wtcb, priority);
+					pginfo("New worker priority. %d->%d\n",
+					       wtcb->sched_priority, priority);
+					nxsched_set_priority(wtcb, priority);
 				}
 
 				/* Return with g_pftcb holding the pointer to
@@ -317,8 +297,15 @@ static inline bool pg_dequeue(void)
 			 * virtual address space -- just restart it.
 			 */
 
-			pgllvdbg("Restarting TCB: %p\n", g_pftcb);
-			up_unblock_task(g_pftcb);
+			pginfo("Restarting TCB: %p\n", g_pftcb);
+
+			/* Add the task to ready-to-run task list and
+			 * perform the context switch if one is needed
+			 */
+
+			if (nxsched_add_readytorun(g_pftcb)) {
+				up_switch_context(this_task(), wtcb);
+			}
 		}
 	} while (g_pftcb != NULL);
 
@@ -339,7 +326,7 @@ static inline bool pg_dequeue(void)
  *   prioritized list, or (2) when a page fill completes and there are more
  *   pages to be filled in g_waitingforfill list.
  *
- * Input parameters:
+ * Input Parameters:
  *   None
  *
  * Returned Value:
@@ -361,75 +348,80 @@ static inline bool pg_startfill(void)
 
 	/* Remove the TCB at the head of the g_waitfor fill list and check if there
 	 * is any task waiting for a page fill. pg_dequeue will handle this (plus
-	 * some cornercases) and will true if the next page TCB was successfully
+	 * some corner cases) and will true if the next page TCB was successfully
 	 * dequeued.
 	 */
 
 	if (pg_dequeue()) {
-		/* Call up_allocpage(tcb, &vpage). This architecture-specific function will
-		 * set aside page in memory and map to virtual address (vpage). If all
-		 * available pages are in-use (the typical case), this function will select
-		 * a page in-use, un-map it, and make it available.
+		/* Call up_allocpage(tcb, &vpage). This architecture-specific function
+		 * will set aside page in memory and map to virtual address (vpage). If
+		 * all available pages are in-use (the typical case), this function
+		 * will select a page in-use, un-map it, and make it available.
 		 */
 
-		pgllvdbg("Call up_allocpage(%p)\n", g_pftcb);
+		pginfo("Call up_allocpage(%p)\n", g_pftcb);
 		result = up_allocpage(g_pftcb, &vpage);
 		DEBUGASSERT(result == OK);
 
 		/* Start the fill.  The exact way that the fill is started depends upon
-		 * the nature of the architecture-specific up_fillpage() function -- Is it
-		 * a blocking or a non-blocking call?
-		 */
-#ifdef CONFIG_PAGING_BLOCKINGFILL
-		/* If CONFIG_PAGING_BLOCKINGFILL is defined, then up_fillpage is blocking
-		 * call. In this case, up_fillpage() will accept only (1) a reference to
-		 * the TCB that requires the fill. Architecture-specific context information
-		 * within the TCB will be sufficient to perform the fill. And (2) the
-		 * (virtual) address of the allocated page to be filled. The resulting
-		 * status of the fill will be provided by return value from up_fillpage().
+		 * the nature of the architecture-specific up_fillpage() function -- Is
+		 * it a blocking or a non-blocking call?
 		 */
 
-		pgllvdbg("Call up_fillpage(%p)\n", g_pftcb);
+#ifdef CONFIG_PAGING_BLOCKINGFILL
+		/* If CONFIG_PAGING_BLOCKINGFILL is defined, then up_fillpage is
+		 * blocking call. In this case, up_fillpage() will accept only (1) a
+		 * reference to the TCB that requires the fill. Architecture-specific
+		 * context information within the TCB will be sufficient to perform the
+		 * fill. And (2) the (virtual) address of the allocated page to be
+		 * filled. The resulting status of the fill will be provided by return
+		 * value from up_fillpage().
+		 */
+
+		pginfo("Call up_fillpage(%p)\n", g_pftcb);
 		result = up_fillpage(g_pftcb, vpage);
 		DEBUGASSERT(result == OK);
 #else
-		/* If CONFIG_PAGING_BLOCKINGFILL is defined, then up_fillpage is non-blocking
-		 * call. In this case up_fillpage() will accept an additional argument: The page
-		 * fill worker thread will provide a callback function, pg_callback.
-		 *
-		 * Calling up_fillpage will start an asynchronous page fill. pg_callback
-		 * ill be called when the page fill is finished (or an error occurs). This
+		/* If CONFIG_PAGING_BLOCKINGFILL is defined, then up_fillpage is non-
+		 * blocking call. In this case up_fillpage() will accept an additional
+		 * argument: The page fill worker thread will provide a callback
+		 * function, pg_callback.
+		 * up_fillpage will start an asynchronous page fill. pg_callback
+		 * will be called when the page fill is finished (or an error occurs).
 		 * This callback will probably from interrupt level.
 		 */
 
-		pgllvdbg("Call up_fillpage(%p)\n", g_pftcb);
+		pginfo("Call up_fillpage(%p)\n", g_pftcb);
 		result = up_fillpage(g_pftcb, vpage, pg_callback);
 		DEBUGASSERT(result == OK);
 
-		/* Save the time that the fill was started.  These will be used to check for
-		 * timeouts.
+		/* Save the time that the fill was started.  These will be used to
+		 * check for timeouts.
 		 */
 
 #ifdef CONFIG_PAGING_TIMEOUT_TICKS
-		g_starttime = clock_systimer();
+		g_starttime = clock_systime_ticks();
 #endif
 
-		/* Return and wait to be signaled for the next event -- the fill completion
-		 * event. While the fill is in progress, other tasks may execute. If
-		 * another page fault occurs during this time, the faulting task will be
-		 * blocked, its TCB will be added (in priority order) to g_waitingforfill
-		 * and the priority of the page worker task may be boosted. But no action
-		 * will be taken until the current page fill completes. NOTE: The IDLE task
-		 * must also be fully locked in memory. The IDLE task cannot be blocked. It
-		 * the case where all tasks are blocked waiting for a page fill, the IDLE
-		 * task must still be available to run.
+		/* Return and wait to be signaled for the next event -- the fill
+		 * completion event. While the fill is in progress, other tasks may
+		 * execute. If another page fault occurs during this time, the faulting
+		 * task will be blocked, its TCB will be added (in priority order) to
+		 * g_waitingforfill and the priority of the page worker task may be
+		 * boosted. But no action will be taken until the current page fill
+		 * completes. NOTE: The IDLE task must also be fully locked in memory.
+		 * The IDLE task cannot be blocked. It the case where all tasks are
+		 * blocked waiting for a page fill, the IDLE task must still be
+		 * available to run.
 		 */
-#endif							/* CONFIG_PAGING_BLOCKINGFILL */
+
+#endif /* CONFIG_PAGING_BLOCKINGFILL */
 
 		return true;
 	}
 
-	pgllvdbg("Queue empty\n");
+	pginfo("Queue empty\n");
+	UNUSED(result);
 	return false;
 }
 
@@ -440,12 +432,12 @@ static inline bool pg_startfill(void)
  *   Called by the page fill worker thread when all pending page fill
  *   operations have been completed and the g_waitingforfill list is empty.
  *
- *   This functin will perform the following operations:
+ *   This function will perform the following operations:
  *
  *   - Set g_pftcb to NULL.
  *   - Restore the default priority of the page fill worker thread.
  *
- * Input parameters:
+ * Input Parameters:
  *   None.
  *
  * Returned Value:
@@ -461,8 +453,9 @@ static inline void pg_alldone(void)
 {
 	FAR struct tcb_s *wtcb = this_task();
 	g_pftcb = NULL;
-	pgllvdbg("New worker priority. %d->%d\n", wtcb->sched_priority, CONFIG_PAGING_DEFPRIO);
-	sched_setpriority(wtcb, CONFIG_PAGING_DEFPRIO);
+	pginfo("New worker priority. %d->%d\n",
+	       wtcb->sched_priority, CONFIG_PAGING_DEFPRIO);
+	nxsched_set_priority(wtcb, CONFIG_PAGING_DEFPRIO);
 }
 
 /****************************************************************************
@@ -472,13 +465,13 @@ static inline void pg_alldone(void)
  *   Called by the page fill worker thread when a page fill completes.
  *   Either (1) in the non-blocking up_fillpage(), after the architecture-
  *   specific driver call the pg_callback() to wake up the page fill worker
- *   thread, or (2) after the blocking up_fillpage() returens (when
+ *   thread, or (2) after the blocking up_fillpage() returns (when
  *   CONFIG_PAGING_BLOCKINGFILL is defined).
  *
  *   This function is just a dumb wrapper around up_unblocktask().  This
  *   function simply makes the task that just received the fill ready-to-run.
  *
- * Input parameters:
+ * Input Parameters:
  *   None.
  *
  * Returned Value:
@@ -492,17 +485,27 @@ static inline void pg_alldone(void)
 
 static inline void pg_fillcomplete(void)
 {
+	FAR struct tcb_s *wtcb = this_task();
+
 	/* Call up_unblocktask(g_pftcb) to make the task that just
 	 * received the fill ready-to-run.
 	 */
 
-	pgllvdbg("Restarting TCB: %p\n", g_pftcb);
-	up_unblock_task(g_pftcb);
+	pginfo("Restarting TCB: %p\n", g_pftcb);
+
+	/* Add the task to ready-to-run task list and
+	 * perform the context switch if one is needed
+	 */
+
+	if (nxsched_add_readytorun(g_pftcb)) {
+		up_switch_context(this_task(), wtcb);
+	}
 }
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
+
 /****************************************************************************
  * Name: pg_worker
  *
@@ -513,12 +516,12 @@ static inline void pg_fillcomplete(void)
  *
  *   The page fill worker thread will be awakened on one of three conditions:
  *   - When signaled by pg_miss(), the page fill worker thread will be
- *     awakenend, or
+ *     awakened, or
  *   - if CONFIG_PAGING_BLOCKINGFILL is not defined, from pg_callback()
  *     after completing a page fill.
  *   - A configurable timeout with no activity.
  *
- * Input parameters:
+ * Input Parameters:
  *   argc, argv (not used)
  *
  * Returned Value:
@@ -526,10 +529,12 @@ static inline void pg_fillcomplete(void)
  *
  ****************************************************************************/
 
-int pg_worker(int argc, char *argv[])
+int pg_worker(int argc, FAR char *argv[])
 {
-	/* Loop forever -- Notice that interrupts will be disabled at all times that
-	 * this thread runs.  That is so that we can't lose signals or have
+	FAR struct tcb_s *wtcb = this_task();
+
+	/* Loop forever -- Notice that interrupts will be disabled at all times
+	 * that this thread runs.  That is so that we can't lose signals or have
 	 * asynchronous page faults.
 	 *
 	 * All interrupt logic as well as all page fill worker thread logic must
@@ -538,24 +543,25 @@ int pg_worker(int argc, char *argv[])
 	 * fill completions should occur while this thread sleeps.
 	 */
 
-	pgllvdbg("Started\n");
-	(void)irqsave();
+	pginfo("Started\n");
+	up_irq_save();
 	for (;;) {
-		/* Wait awhile.  We will wait here until either the configurable timeout
-		 * elapses or until we are awakened by a signal (which terminates the
-		 * usleep with an EINTR error).  Note that interrupts will be re-enabled
-		 * while this task sleeps.
+		/* Wait awhile.  We will wait here until either the configurable
+		 * timeout elapses or until we are awakened by a signal (which
+		 * terminates the nxsched_usleep with an EINTR error).  Note that
+		 * interrupts will be re- enabled while this task sleeps.
 		 *
 		 * The timeout is a failsafe that will handle any cases where a single
 		 * is lost (that would really be a bug and shouldn't happen!) and also
 		 * supports timeouts for case of non-blocking, asynchronous fills.
 		 */
 
-		usleep(CONFIG_PAGING_WORKPERIOD);
+		nxsched_usleep(CONFIG_PAGING_WORKPERIOD);
 
-		/* The page fill worker thread will be awakened on one of three conditions:
+		/* The page fill worker thread will be awakened on one of 3 conditions:
 		 *
-		 *   - When signaled by pg_miss(), the page fill worker thread will be awakenend,
+		 *   - When signaled by pg_miss(), the page fill worker thread will be
+		 *     awakened,
 		 *   - if CONFIG_PAGING_BLOCKINGFILL is not defined, from pg_callback()
 		 *     after completing a page fill, or
 		 *   - On a configurable timeout expires with no activity.
@@ -564,53 +570,62 @@ int pg_worker(int argc, char *argv[])
 		 */
 
 #ifndef CONFIG_PAGING_BLOCKINGFILL
-		/* For the non-blocking up_fillpage(), the page fill worker thread will detect
-		 * that the page fill is complete when it is awakened with g_pftcb non-NULL
-		 * and fill completion status from pg_callback.
+		/* For the non-blocking up_fillpage(), the page fill worker thread will
+		 * detect that the page fill is complete when it is awakened with
+		 * g_pftcb non-NULL and fill completion status from pg_callback.
 		 */
 
 		if (g_pftcb != NULL) {
-			/* If it is a real page fill completion event, then the result of the page
-			 * fill will be in g_fillresult and will not be equal to -EBUSY.
+			/* If it is a real page fill completion event, then the result of
+			 * the page fill will be in g_fillresult and will not be equal to
+			 * -EBUSY.
 			 */
 
 			if (g_fillresult != -EBUSY) {
 				/* Any value other than OK, brings the system down */
 
-				ASSERT(g_fillresult == OK);
+				DEBUGASSERT(g_fillresult == OK);
 
-				/* Handle the successful page fill complete event by restarting the
-				 * task that was blocked waiting for this page fill.
+				/* Handle the successful page fill complete event by restarting
+				 * the task that was blocked waiting for this page fill.
 				 */
 
-				pgllvdbg("Restarting TCB: %p\n", g_pftcb);
-				up_unblock_task(g_pftcb);;
+				pginfo("Restarting TCB: %p\n", g_pftcb);
+
+				/* Add the task to ready-to-run task list and
+				 * perform the context switch if one is needed
+				 */
+
+				if (nxsched_add_readytorun(g_pftcb)) {
+					up_switch_context(this_task(), wtcb);
+				}
 
 				/* Yes .. Start the next asynchronous fill.  Check the return
 				 * value to see a fill was actually started (false means that
 				 * no fill was started).
 				 */
 
-				pgllvdbg("Calling pg_startfill\n");
+				pginfo("Calling pg_startfill\n");
 				if (!pg_startfill()) {
 					/* No fill was started.  This can mean only that all queued
 					 * page fill actions have and been completed and there is
 					 * nothing more to do.
 					 */
 
-					pgllvdbg("Call pg_alldone()\n");
+					pginfo("Call pg_alldone()\n");
 					pg_alldone();
 				}
 			}
 
-			/* If a configurable timeout period expires with no page fill completion
-			 * event, then declare a failure.
+			/* If a configurable timeout period expires with no page fill
+			 * completion event, then declare a failure.
 			 */
 
 #ifdef CONFIG_PAGING_TIMEOUT_TICKS
 			else {
-				lldbg("Timeout!\n");
-				ASSERT(clock_systimer() - g_starttime < CONFIG_PAGING_TIMEOUT_TICKS);
+				pgerr("ERROR: Timeout!\n");
+				DEBUGASSERT(clock_systime_ticks() - g_starttime <
+				            CONFIG_PAGING_TIMEOUT_TICKS);
 			}
 #endif
 		}
@@ -626,8 +641,8 @@ int pg_worker(int argc, char *argv[])
 			 * g_pftcb).
 			 */
 
-			pgllvdbg("Calling pg_startfill\n");
-			(void)pg_startfill();
+			pginfo("Calling pg_startfill\n");
+			pg_startfill();
 		}
 #else
 		/* Are there tasks blocked and waiting for a fill?  Loop until all
@@ -637,10 +652,10 @@ int pg_worker(int argc, char *argv[])
 		for (;;) {
 			/* Yes .. Start the fill and block until the fill completes.
 			 * Check the return value to see a fill was actually performed.
-			 * (false means that no fill was perforemd).
+			 * (false means that no fill was performed).
 			 */
 
-			pgllvdbg("Calling pg_startfill\n");
+			pginfo("Calling pg_startfill\n");
 			if (!pg_startfill()) {
 				/* Break out of the loop -- there is nothing more to do */
 
@@ -654,17 +669,24 @@ int pg_worker(int argc, char *argv[])
 			 * returns true.
 			 */
 
-			pgllvdbg("Restarting TCB: %p\n", g_pftcb);
-			up_unblock_task(g_pftcb);;
+			pginfo("Restarting TCB: %p\n", g_pftcb);
+
+			/* Add the task to ready-to-run task list and
+			 * perform the context switch if one is needed
+			 */
+
+			if (nxsched_add_readytorun(g_pftcb)) {
+				up_switch_context(this_task(), wtcb);
+			}
 		}
 
 		/* All queued fills have been processed */
 
-		pgllvdbg("Call pg_alldone()\n");
+		pginfo("Call pg_alldone()\n");
 		pg_alldone();
 #endif
 	}
 
-	return OK;					/* To keep some compilers happy */
+	return OK; /* To keep some compilers happy */
 }
-#endif							/* CONFIG_PAGING */
+#endif /* CONFIG_LEGACY_PAGING */

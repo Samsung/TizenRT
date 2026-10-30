@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/task/task_restart.c
+ * sched/task/task_restart.c
  *
- *   Copyright (C) 2007, 2009, 2012-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,11 +45,9 @@
 
 #include <sys/types.h>
 #include <sched.h>
-#if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
-#include <stdlib.h>
-#endif
 #include <errno.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/arch.h>
 
 #include "sched/sched.h"
@@ -70,29 +55,235 @@
 #include "signal/signal.h"
 #include "task/task.h"
 
-/****************************************************************************
- * Definitions
- ****************************************************************************/
+#ifndef CONFIG_BUILD_KERNEL
 
 /****************************************************************************
- * Private Type Declarations
+ * Private Types
  ****************************************************************************/
 
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
+#ifdef CONFIG_SMP
+struct restart_arg_s {
+	pid_t pid;
+	bool need_restore;
+};
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+static int restart_handler(FAR void *cookie)
+{
+	FAR struct restart_arg_s *arg = cookie;
+	FAR struct tcb_s *tcb;
+	irqstate_t flags;
+
+	flags = enter_critical_section();
+
+	/* tcb that we want restart */
+
+	tcb = nxsched_get_tcb(arg->pid);
+	if (!tcb || tcb->task_state == TSTATE_TASK_INVALID ||
+	    (tcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0) {
+		/* There is no TCB with this pid or, if there is, it is not a task. */
+
+		leave_critical_section(flags);
+		return -ESRCH;
+	}
+
+	if (arg->need_restore) {
+		tcb->flags &= ~TCB_FLAG_CPU_LOCKED;
+	}
+
+	nxsched_remove_readytorun(tcb);
+
+	leave_critical_section(flags);
+
+	return OK;
+}
+#endif
+
+/****************************************************************************
+ * Name: nxtask_reset_task
+ *
+ * Description:
+ *   We use this function to reset tcb
+ *
+ ****************************************************************************/
+
+static void nxtask_reset_task(FAR struct tcb_s *tcb, bool remove)
+{
+	/* Try to recover from any bad states */
+
+	nxtask_recover(tcb);
+
+	/* Kill any children of this thread */
+
+#ifdef HAVE_GROUP_MEMBERS
+	group_kill_children(tcb);
+#endif
+
+	/* Remove the TCB from whatever list it is in.  After this point, the TCB
+	 * should no longer be accessible to the system
+	 */
+
+	if (remove) {
+		nxsched_remove_readytorun(tcb);
+	}
+
+	/* Deallocate anything left in the TCB's signal queues */
+
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
+	nxsig_cleanup(tcb);             /* Deallocate Signal lists */
+#endif
+#ifndef CONFIG_DISABLE_ALL_SIGNALS
+	sigemptyset(&tcb->sigprocmask); /* Reset sigprocmask */
+#endif
+
+	/* Reset the current task priority  */
+
+	tcb->sched_priority = tcb->init_priority;
+
+	/* The task should restart with pre-emption disabled and not in a critical
+	 * section.
+	 */
+
+	tcb->lockcount = 0;
+#ifdef CONFIG_SMP
+	tcb->irqcount  = 0;
+#endif
+
+	/* Reset the base task priority and the number of pending
+	 * reprioritizations.
+	 */
+
+#ifdef CONFIG_PRIORITY_INHERITANCE
+	tcb->base_priority = tcb->init_priority;
+	tcb->boost_priority = 0;
+#endif
+
+	/* Re-initialize the processor-specific portion of the TCB.  This will
+	 * reset the entry point and the start-up parameters
+	 */
+
+	up_initial_state(tcb);
+
+	/* Add the task to the inactive task list */
+
+	dq_addfirst((FAR dq_entry_t *)tcb, list_inactivetasks());
+	tcb->task_state = TSTATE_TASK_INACTIVE;
+}
+
+/****************************************************************************
+ * Name: nxtask_restart
+ *
+ * Description:
+ *   This function "restarts" a task.  The task is first terminated and then
+ *   reinitialized with same ID, priority, original entry point, stack size,
+ *   and parameters it had when it was first started.
+ *
+ * Input Parameters:
+ *   pid - The task ID of the task to delete.  An ID of zero signifies the
+ *         calling task.
+ *
+ * Returned Value:
+ *   Zero (OK) on success; or negated errno on failure
+ *
+ *   This function can fail if:
+ *   (1) A pid of zero or the pid of the calling task is provided
+ *      (functionality not implemented)
+ *   (2) The pid is not associated with any task known to the system.
+ *
+ ****************************************************************************/
+
+static int nxtask_restart(pid_t pid)
+{
+	FAR struct tcb_s *rtcb;
+	FAR struct tcb_s *tcb;
+	irqstate_t flags;
+	int ret;
+
+	/* We are restarting some other task than ourselves.  Make sure that the
+	 * task does not change its state while we are executing.  In the single
+	 * CPU state this could be done by disabling pre-emption.  But we will
+	 * a little stronger medicine on the SMP case:  The task make be running
+	 * on another CPU.
+	 */
+
+	flags = enter_critical_section();
+
+	/* Check if the task to restart is the calling task */
+
+	rtcb = this_task();
+	if (pid == 0 || pid == rtcb->pid) {
+		/* Not implemented */
+
+		ret = -ENOSYS;
+		goto errout_with_lock;
+	}
+
+	/* Find for the TCB associated with matching pid  */
+
+	tcb = nxsched_get_tcb(pid);
+#ifndef CONFIG_DISABLE_PTHREAD
+	if (!tcb || (tcb->flags & TCB_FLAG_TTYPE_MASK) ==
+	    TCB_FLAG_TTYPE_PTHREAD)
+#else
+	if (!tcb)
+#endif
+	{
+		/* There is no TCB with this pid or, if there is, it is not a task. */
+
+		ret = -ESRCH;
+		goto errout_with_lock;
+	}
+
+#ifdef CONFIG_SMP
+	if (tcb->task_state == TSTATE_TASK_RUNNING &&
+	    tcb->cpu != this_cpu()) {
+		struct restart_arg_s arg;
+
+		if ((tcb->flags & TCB_FLAG_CPU_LOCKED) != 0) {
+			arg.pid = tcb->pid;
+			arg.need_restore = false;
+		} else {
+			arg.pid = tcb->pid;
+			arg.need_restore = true;
+			tcb->flags |= TCB_FLAG_CPU_LOCKED;
+		}
+
+		nxsched_smp_call_single(tcb->cpu, restart_handler, &arg);
+
+		tcb = nxsched_get_tcb(pid);
+		if (!tcb || tcb->task_state != TSTATE_TASK_INVALID ||
+		    (tcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0) {
+			ret = -ESRCH;
+			goto errout_with_lock;
+		}
+
+		DEBUGASSERT(tcb->task_state != TSTATE_TASK_RUNNING);
+		nxtask_reset_task(tcb, false);
+		leave_critical_section(flags);
+
+		/* Activate the task. */
+
+		nxtask_activate(tcb);
+
+		return OK;
+	}
+#endif /* CONFIG_SMP */
+
+	nxtask_reset_task(tcb, true);
+	leave_critical_section(flags);
+
+	/* Activate the task. */
+
+	nxtask_activate(tcb);
+	return OK;
+
+errout_with_lock:
+	leave_critical_section(flags);
+	return ret;
+}
 
 /****************************************************************************
  * Public Functions
@@ -104,15 +295,15 @@
  * Description:
  *   This function "restarts" a task.  The task is first terminated and then
  *   reinitialized with same ID, priority, original entry point, stack size,
- *   and parameters it had when it was first started. This function supports 
- *   to register a function through atexit or on_exit to run at process termination.
+ *   and parameters it had when it was first started.
  *
- * Inputs:
+ * Input Parameters:
  *   pid - The task ID of the task to delete.  An ID of zero signifies the
  *         calling task.
  *
- * Return Value:
- *   OK on sucess; ERROR on failure.
+ * Returned Value:
+ *   Zero (OK) on success; -1 (ERROR) on failure with the errno variable set
+ *   appropriately.
  *
  *   This function can fail if:
  *   (1) A pid of zero or the pid of the calling task is provided
@@ -123,151 +314,12 @@
 
 int task_restart(pid_t pid)
 {
-	FAR struct tcb_s *rtcb;
-	FAR struct task_tcb_s *tcb;
-#ifdef CONFIG_SMP
-	int cpu;
-#endif
-	int ret = OK;
-
-	/* Make sure this task does not become ready-to-run while
-	 * we are futzing with its TCB
-	 */
-
-	/* NOTE: sched_lock() is not enough for SMP
-	 * because tcb->group will be accessed from the child tasks
-	 */
-	irqstate_t flags = enter_critical_section();
-	/* Lock the scheduler so that there this thread will not lose priority
-	 * until all of its children are suspended.
-	 */
-	sched_lock();
-
-	/* Check if the task to restart is the calling task */
-
-	rtcb = this_task();
-	if ((pid == 0) || (pid == rtcb->pid)) {
-		/* Not implemented */
-
-		set_errno(ENOSYS);
+	int ret = nxtask_restart(pid);
+	if (ret < 0) {
+		set_errno(-ret);
 		ret = ERROR;
-		goto ret_with_lock;
 	}
 
-	/* We are restarting some other task than ourselves */
-
-	else {
-		/* Find for the TCB associated with matching pid  */
-
-		tcb = (FAR struct task_tcb_s *)sched_gettcb(pid);
-#ifndef CONFIG_DISABLE_PTHREAD
-		if (!tcb || (tcb->cmn.flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_PTHREAD)
-#else
-		if (!tcb)
-#endif
-		{
-			/* There is no TCB with this pid or, if there is, it is not a
-			 * task.
-			 */
-
-			set_errno(ESRCH);
-			ret = ERROR;
-			goto ret_with_lock;
-		}
-
-#if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
-		/* If exit function(s) were registered, call them now before we do any un-
-		 * initialization.
-		 */
-
-		task_atexit((FAR struct tcb_s *)tcb);
-
-		/* Call any registered on_exit function(s) */
-
-		task_onexit((FAR struct tcb_s *)tcb, EXIT_SUCCESS);
-#endif
-
-#ifdef CONFIG_SMP
-		/* If the task is running on another CPU, then pause that CPU.
-		 * We can then manipulate the TCB of the restarted task and when
-		 * we resume that CPU, the restart can take effect.
-		 */
-
-		cpu = sched_pause_cpu(&tcb->cmn);
-#endif
-
-		/* Try to recover from any bad states */
-
-		task_recover((FAR struct tcb_s *)tcb);
-
-		/* Kill any children of this thread */
-
-#ifdef HAVE_GROUP_MEMBERS
-		(void)group_killchildren(tcb);
-#endif
-
-		/* Remove the TCB from whatever list it is in.  At this point, the
-		 * TCB should no longer be accessible to the system
-		 */
-
-#ifdef CONFIG_SMP
-		FAR dq_queue_t *tasklist = TLIST_HEAD(tcb->cmn.task_state, tcb->cmn.cpu);
-		dq_rem((FAR dq_entry_t *)tcb, tasklist);
-#else
-		dq_rem((FAR dq_entry_t *)tcb, (dq_queue_t *)g_tasklisttable[tcb->cmn.task_state].list);
-#endif
-		tcb->cmn.task_state = TSTATE_TASK_INVALID;
-
-#ifndef CONFIG_DISABLE_SIGNALS
-		/* Deallocate anything left in the TCB's queues */
-
-		sig_cleanup((FAR struct tcb_s *)tcb);	/* Deallocate Signal lists */
-		tcb->cmn.sigprocmask = NULL_SIGNAL_SET;
-#endif
-
-		/* Reset the current task priority  */
-
-		tcb->cmn.sched_priority = tcb->init_priority;
-
-		/* Reset the base task priority and the number of pending reprioritizations */
-
-#ifdef CONFIG_SMP
-		tcb->cmn.irqcount = 0;
-#endif
-
-#ifdef CONFIG_PRIORITY_INHERITANCE
-		tcb->cmn.base_priority = tcb->init_priority;
-		tcb->cmn.boost_priority = 0;
-#endif
-
-		/* Re-initialize the processor-specific portion of the TCB
-		 * This will reset the entry point and the start-up parameters
-		 */
-
-		up_initial_state((FAR struct tcb_s *)tcb);
-
-		/* Add the task to the inactive task list */
-
-		dq_addfirst((FAR dq_entry_t *)tcb, (dq_queue_t *)&g_inactivetasks);
-		tcb->cmn.task_state = TSTATE_TASK_INACTIVE;
-
-#ifdef CONFIG_SMP
-		/* Resume the paused CPU (if any) */
-		if (cpu >= 0) {
-			ret = up_cpu_resume(cpu);
-			if (ret < 0) {
-				goto ret_with_lock;
-			}
-		}
-#endif
-
-		/* Activate the task */
-
-		(void)task_activate((FAR struct tcb_s *)tcb);
-	}
-
-ret_with_lock:
-	leave_critical_section(flags);
-	sched_unlock();
 	return ret;
 }
+#endif

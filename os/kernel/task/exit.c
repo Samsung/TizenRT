@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/task/exit.c
+ * sched/task/exit.c
  *
- *   Copyright (C) 2007-2008, 2011-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -61,93 +48,69 @@
 #include <debug.h>
 #include <errno.h>
 
+#include <tinyara/irq.h>
 #include <tinyara/fs/fs.h>
 
 #include "task/task.h"
+#include "group/group.h"
 #include "sched/sched.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: exit
+ * Name: _exit
  *
  * Description:
- *   The exit() function causes normal process termination and the value of
- *   status & 0377 to be returned to the parent.
- *
- *   All functions registered with atexit() and on_exit() are called, in the
- *   reverse order of their registration.
- *
- *   All open streams are flushed and closed.
+ *   This function causes the currently executing task to cease
+ *   to exist.  This is a special case of task_delete() where the task to
+ *   be deleted is the currently executing task.  It is more complex because
+ *   a context switch must be perform to the next ready to run task.
  *
  ****************************************************************************/
 
-void exit(int status)
+void _exit(int status)
 {
-	struct tcb_s *tcb = this_task();
-
-	/* Prevent cancellation from re-entering exit during resource cleanup. */
-
-	(void)task_setcancelstate(TASK_CANCEL_DISABLE, NULL);
-
-#ifdef CONFIG_CANCELLATION_POINTS
-	/* task_setcancelstate() only sets TCB_FLAG_NONCANCELABLE, but every
-	 * cancellation point guard reads
-	 * ((NONCANCELABLE == 0 && DEFERRED) || cpcount > 0), so a non-zero
-	 * nesting count bypasses it.  A signal handler that runs between
-	 * enter_cancellation_point() and leave_cancellation_point() and
-	 * terminates the thread gets here with cpcount > 0.  Clear the nesting
-	 * count and any pending cancellation so that the resource cleanup below
-	 * cannot be diverted by cancellation logic.
-	 */
-
-	tcb->flags &= ~TCB_FLAG_CANCEL_PENDING;
-	tcb->cpcount = 0;
-#endif
+	FAR struct tcb_s *tcb = this_task();
 
 	/* Only the lower 8-bits of status are used */
 
 	status &= 0xff;
 
-	(void)enter_critical_section();
+#ifdef HAVE_GROUP_MEMBERS
+	/* Kill all of the children of the group, preserving only this thread.
+	 * exit() is normally called from the main thread of the task.  pthreads
+	 * exit through a different mechanism.
+	 */
+
+	if ((tcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) {
+		group_kill_children(tcb);
+	}
+
+#endif
+
+	/* Make sure that we are in a critical section with local interrupts.
+	 * The IRQ state will be restored when the next task is started.
+	 */
+
+	enter_critical_section();
+
+	/* Perform common task termination logic.  This will get called again later
+	 * through logic kicked off by up_exit().
+	 *
+	 * REVISIT: Tt should not be necessary to call this here, but releasing the
+	 * task group (especially the group file list) requires that it is done
+	 * here.
+	 *
+	 * The reason? up_exit removes the current process from the ready-to-run
+	 * list and trying to execute code that depends on this_task() crashes at
+	 * once, or does something very naughty.
+	 */
 
 	tcb->flags |= TCB_FLAG_EXIT_PROCESSING;
 
-	/* Perform common task termination logic.  This will get called again later
-	 * through logic kicked off by _exit().  However, we need to call it before
-	 * calling _exit() in order to handle atexit() and on_exit() callbacks and
-	 * so that we can flush buffered I/O (both of which may required suspending).
-	 */
+	nxtask_exithook(tcb, status);
 
-	task_exithook(tcb, status, false);
-
-	/* Then "really" exit.  Only the lower 8 bits of the exit status are used. */
-
-	_exit(status);
+	up_exit(status);
 }

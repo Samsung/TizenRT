@@ -15,87 +15,56 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * kernel/signal/sig_unmaskpendingsignal.c
+/****************************************************************************
+ * sched/signal/sig_unmaskpendingsignal.c
  *
- *   Copyright (C) 2007, 2009, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
 #include <sched.h>
 
+#include <tinyara/signal.h>
+
 #include "sched/sched.h"
 #include "signal/signal.h"
 
-/************************************************************************
- * Definitions
- ************************************************************************/
-
-/************************************************************************
- * Private Type Declarations
- ************************************************************************/
-
-/************************************************************************
- * Global Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Variables
- ************************************************************************/
-
-/************************************************************************
- * Private Function Prototypes
- ************************************************************************/
-
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
- * Name: sig_unmaskpendingsignal
+/****************************************************************************
+ * Name: nxsig_unmask_pendingsignal
  *
  * Description:
  *   Based upon the current setting of the sigprocmask, this function
  *   unmasks and processes any pending signals.  This function should
  *   be called whenever the sigprocmask is changed.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-void sig_unmaskpendingsignal(void)
+bool nxsig_unmask_pendingsignal(void)
 {
 	FAR struct tcb_s *rtcb = this_task();
 	sigset_t unmaskedset;
@@ -115,27 +84,32 @@ void sig_unmaskpendingsignal(void)
 	 * can only be changed on this thread of execution.
 	 */
 
-	unmaskedset = ~(rtcb->sigprocmask) & sig_pendingset(rtcb);
+	unmaskedset = nxsig_pendingset(rtcb);
+	nxsig_nandset(&unmaskedset, &unmaskedset, &rtcb->sigprocmask);
+	if (sigisemptyset(&unmaskedset)) {
+		sched_unlock();
+		return false;
+	}
 
 	/* Loop while there are unmasked pending signals to be processed. */
 
-	while (unmaskedset != NULL_SIGNAL_SET) {
+	do {
 		/* Pending signals will be processed from lowest numbered signal
 		 * to highest
 		 */
 
-		signo = sig_lowest(&unmaskedset);
+		signo = nxsig_lowest(&unmaskedset);
 		if (signo != ERROR) {
 			/* Remove the signal from the set of unmasked signals.  NOTE:
 			 * this implicitly assumes that only one instance for a given
 			 * signal number is pending.
 			 */
 
-			sigdelset(&unmaskedset, signo);
+			nxsig_delset(&unmaskedset, signo);
 
 			/* Remove the pending signal from the list of pending signals */
 
-			if ((pendingsig = sig_removependingsignal(rtcb, signo)) != NULL) {
+			if ((pendingsig = nxsig_remove_pendingsignal(rtcb, signo)) != NULL) {
 				/* If there is one, then process it like a normal signal.
 				 * Since the signal was pending, then unblocked on this
 				 * thread, we can skip the normal group signal dispatching
@@ -143,14 +117,16 @@ void sig_unmaskpendingsignal(void)
 				 * other than this thread.
 				 */
 
-				sig_tcbdispatch(rtcb, &pendingsig->info);
+				nxsig_tcbdispatch(rtcb, &pendingsig->info,
+				                  pendingsig->tcb == NULL);
 
 				/* Then remove it from the pending signal list */
 
-				sig_releasependingsignal(pendingsig);
+				nxsig_release_pendingsignal(pendingsig);
 			}
 		}
-	}
+	} while (!sigisemptyset(&unmaskedset));
 
 	sched_unlock();
+	return true;
 }

@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/environ/env_unsetenv.c
+ * sched/environ/env_unsetenv.c
  *
- *   Copyright (C) 2007, 2009, 2011, 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -60,16 +47,13 @@
 
 #include <sched.h>
 #include <string.h>
+#include <assert.h>
 #include <errno.h>
 
 #include <tinyara/kmalloc.h>
 
 #include "sched/sched.h"
 #include "environ/environ.h"
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
@@ -81,10 +65,10 @@
  * Description:
  *   The unsetenv() function deletes the variable name from the environment.
  *
- * Parameters:
+ * Input Parameters:
  *   name - The name of the variable to delete
  *
- * Return Value:
+ * Returned Value:
  *   Zero on success
  *
  * Assumptions:
@@ -96,44 +80,28 @@ int unsetenv(FAR const char *name)
 {
 	FAR struct tcb_s *rtcb = this_task();
 	FAR struct task_group_s *group = rtcb->group;
-	FAR char *pvar;
-	FAR char *newenvp;
-	int newsize;
-	int ret = OK;
+	ssize_t idx;
 
-	DEBUGASSERT(name && group);
+	DEBUGASSERT(group);
+
+	/* Check the incoming parameter */
+
+	if (name == NULL || *name == '\0' || strchr(name, '=') != NULL) {
+		set_errno(EINVAL);
+		return ERROR;
+	}
 
 	/* Check if the variable exists */
 
-	sched_lock();
-	if (group && (pvar = env_findvar(group, name)) != NULL) {
+	nxrmutex_lock(&group->tg_mutex);
+	if (group && (idx = env_findvar(group, name)) >= 0) {
 		/* It does!  Remove the name=value pair from the environment. */
 
-		(void)env_removevar(group, pvar);
-
-		/* Reallocate the new environment buffer */
-
-		newsize = group->tg_envsize;
-		if (!rtcb->uheap) {
-			newenvp = (FAR char *)kmm_realloc(group->tg_envp, newsize);
-		} else {
-			newenvp = (FAR char *)kumm_realloc(group->tg_envp, newsize);
-		}
-
-		if (!newenvp && (newsize != 0)) {
-			set_errno(ENOMEM);
-			ret = ERROR;
-		} else {
-			/* Save the new environment pointer (it might have changed due to
-			 * reallocation.
-			 */
-
-			group->tg_envp = newenvp;
-		}
+		env_removevar(group, idx);
 	}
 
-	sched_unlock();
-	return ret;
+	nxrmutex_unlock(&group->tg_mutex);
+	return OK;
 }
 
-#endif							/* CONFIG_DISABLE_ENVIRON */
+#endif /* CONFIG_DISABLE_ENVIRON */

@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/clock/clock_initialize.c
+ * sched/clock/clock_initialize.c
  *
- *   Copyright (C) 2007, 2009, 2011-2012 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -58,63 +45,38 @@
 #include <tinyara/compiler.h>
 
 #include <stdint.h>
-#include <string.h>
 #include <time.h>
 #include <errno.h>
 #include <debug.h>
 
 #ifdef CONFIG_RTC
-#include <arch/irq.h>
+#  include <tinyara/irq.h>
 #endif
 
 #include <tinyara/arch.h>
 #include <tinyara/clock.h>
-#include <tinyara/time.h>
-#include <tinyara/rtc.h>
-#ifdef CONFIG_INIT_SYSTEM_TIME
-#include <tinyara/version.h>
-#endif
+#include <tinyara/clock_notifier.h>
+#include <tinyara/trace.h>
+
+#include <tinyara/spinlock.h>
 
 #include "clock/clock.h"
-
-/****************************************************************************
- * Definitions
- ****************************************************************************/
-/* Standard time definitions (in units of seconds) */
-
-#define SEC_PER_MIN  ((time_t)60)
-#define SEC_PER_HOUR ((time_t)60 * SEC_PER_MIN)
-#define SEC_PER_DAY  ((time_t)24 * SEC_PER_HOUR)
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/**************************************************************************
- * Public Constant Data
- **************************************************************************/
-
-/****************************************************************************
- * Public Variables
- ****************************************************************************/
-
-#ifndef CONFIG_SCHED_TICKLESS
-volatile clock_t g_system_timer;
+#ifdef CONFIG_CLOCK_TIMEKEEPING
+#  include "clock/clock_timekeeping.h"
 #endif
 
-struct timespec g_basetime;
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
 
-/**************************************************************************
- * Private Variables
- **************************************************************************/
+#ifndef CONFIG_CLOCK_TIMEKEEPING
+struct timespec   g_basetime;
+spinlock_t g_basetime_lock = SP_UNLOCKED;
+#endif
 
-/**************************************************************************
+/****************************************************************************
  * Private Functions
- **************************************************************************/
+ ****************************************************************************/
 
 /****************************************************************************
  * Name: clock_basetime
@@ -128,46 +90,57 @@ struct timespec g_basetime;
 #if defined(CONFIG_RTC_DATETIME)
 /* Initialize the system time using a broken out date/time structure */
 
-static inline void clock_basetime(FAR struct timespec *tp)
+int clock_basetime(FAR struct timespec *tp)
 {
 	struct tm rtctime;
+	long nsecs = 0;
+	int ret;
 
 	/* Get the broken-out time from the date/time RTC. */
-	(void)up_rtc_getdatetime(&rtctime);
 
-	/* And use the broken-out time to initialize the system time */
+#ifdef CONFIG_ARCH_HAVE_RTC_SUBSECONDS
+	ret = up_rtc_getdatetime_with_subseconds(&rtctime, &nsecs);
+#else
+	ret = up_rtc_getdatetime(&rtctime);
+#endif
+	if (ret >= 0) {
+		/* And use the broken-out time to initialize the system time */
 
-	tp->tv_sec  = mktime(&rtctime);
-	tp->tv_nsec = 0;
+		tp->tv_sec  = timegm(&rtctime);
+		tp->tv_nsec = nsecs;
+	}
+
+	return ret;
 }
 
 #elif defined(CONFIG_RTC_HIRES)
 
 /* Initialize the system time using a high-resolution structure */
 
-static inline void clock_basetime(FAR struct timespec *tp)
+int clock_basetime(FAR struct timespec *tp)
 {
 	/* Get the complete time from the hi-res RTC. */
 
-	(void)up_rtc_gettime(tp);
+	return up_rtc_gettime(tp);
 }
 
 #else
 
 /* Initialize the system time using seconds only */
 
-static inline void clock_basetime(FAR struct timespec *tp)
+int clock_basetime(FAR struct timespec *tp)
 {
 	/* Get the seconds (only) from the lo-resolution RTC */
 
 	tp->tv_sec  = up_rtc_time();
 	tp->tv_nsec = 0;
+	return OK;
 }
 
-#endif							/* CONFIG_RTC_HIRES */
-#else							/* CONFIG_RTC */
+#endif /* CONFIG_RTC_HIRES */
+#else /* CONFIG_RTC */
 
-static inline void clock_basetime(FAR struct timespec *tp)
+int clock_basetime(FAR struct timespec *tp)
 {
 	time_t jdn = 0;
 
@@ -175,15 +148,17 @@ static inline void clock_basetime(FAR struct timespec *tp)
 	 * month, and date
 	 */
 
-	jdn = clock_calendar2utc(CONFIG_START_YEAR, CONFIG_START_MONTH - 1, CONFIG_START_DAY);
+	jdn = clock_calendar2utc(CONFIG_START_YEAR, CONFIG_START_MONTH - 1,
+	                         CONFIG_START_DAY);
 
 	/* Set the base time as seconds into this julian day. */
 
-	tp->tv_sec  = jdn * SEC_PER_DAY;
+	tp->tv_sec  = jdn * (time_t)SEC_PER_DAY;
 	tp->tv_nsec = 0;
+	return OK;
 }
 
-#endif							/* CONFIG_RTC */
+#endif /* CONFIG_RTC */
 
 /****************************************************************************
  * Name: clock_inittime
@@ -193,106 +168,42 @@ static inline void clock_basetime(FAR struct timespec *tp)
  *
  ****************************************************************************/
 
-static void clock_inittime(void)
+static void clock_inittime(FAR const struct timespec *tp)
 {
 	/* (Re-)initialize the time value to match the RTC */
 
-	clock_basetime(&g_basetime);
-#ifndef CONFIG_SCHED_TICKLESS
-	g_system_timer = 0;
-#endif
-}
-
-/****************************************************************************
- * Name: initialize_system_time
- *
- * Description:
- *   Initialize the system time based on VERSION_BUILD_TIME.
- *
- ****************************************************************************/
-
-#ifdef CONFIG_INIT_SYSTEM_TIME
-static void initialize_system_time(void)
-{
+#ifndef CONFIG_CLOCK_TIMEKEEPING
 	struct timespec ts;
+	irqstate_t flags;
 
-	DEBUGASSERT(clock_getinittime(&ts) == OK);
+	clock_systime_timespec(&ts);
 
-	/* Set system init time for rtc */
+	flags = spin_lock_irqsave(&g_basetime_lock);
+	if (tp) {
+		memcpy(&g_basetime, tp, sizeof(struct timespec));
+	} else {
+		clock_basetime(&g_basetime);
+	}
 
-	(void)up_rtc_settime(&ts);
-}
+	/* Adjust base time to hide initial timer ticks. */
+
+	g_basetime.tv_sec  -= ts.tv_sec;
+	g_basetime.tv_nsec -= ts.tv_nsec;
+	while (g_basetime.tv_nsec < 0) {
+		g_basetime.tv_nsec += NSEC_PER_SEC;
+		g_basetime.tv_sec--;
+	}
+
+	spin_unlock_irqrestore(&g_basetime_lock, flags);
+	clock_notifier_call_chain(CLOCK_REALTIME, &g_basetime);
+#else
+	clock_inittimekeeping(tp);
 #endif
+}
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
-
-/****************************************************************************
- * Name: clock_getinittime
- *
- * Description:
- *   This function returns initialized system time.
- *
- * Parameters:
- *   tp - Location to return the time
- *
- * Return Value:
- *   OK (0) on success; a negated errno value on failure.
- *
- ****************************************************************************/
-#ifdef CONFIG_INIT_SYSTEM_TIME
-#ifdef CONFIG_INIT_SYSTEM_TIME_WITH_MIDNIGHT
-#define SYSTIME_INIT_TIME_FORMAT "%Y-%m-%d"
-#else
-#define SYSTIME_INIT_TIME_FORMAT "%Y-%m-%d %T"
-#endif
-#endif
-
-int clock_getinittime(struct timespec *tp)
-{
-#ifdef CONFIG_RTC
-#ifdef CONFIG_INIT_SYSTEM_TIME
-	struct tm init_time;
-	char *ret;
-
-#endif
-#endif
-	if (!tp) {
-		return -EINVAL;
-	}
-#ifdef CONFIG_RTC
-#ifdef CONFIG_INIT_SYSTEM_TIME
-	/* Initialize the members not used in strptime */
-
-#ifdef CONFIG_INIT_SYSTEM_TIME_WITH_MIDNIGHT
-	init_time.tm_sec = 0;
-	init_time.tm_min = 0;
-	init_time.tm_hour = 0;
-#endif
-	init_time.tm_wday = 0;
-	init_time.tm_yday = 0;
-	init_time.tm_isdst = 0;
-
-	/* Get build date */
-
-	ret = strptime(CONFIG_VERSION_BUILD_TIME, SYSTIME_INIT_TIME_FORMAT, &init_time);
-	if (ret == NULL) {
-		return ERROR;
-	}
-
-	/* Convert struct tm to struct timespec */
-	tp->tv_sec = mktime(&init_time);
-	tp->tv_nsec = 0;
-#else
-	tp->tv_sec = 0;
-	tp->tv_nsec = 0;
-#endif
-#else
-	clock_basetime(tp);
-#endif
-	return OK;
-}
 
 /****************************************************************************
  * Name: clock_initialize
@@ -300,25 +211,41 @@ int clock_getinittime(struct timespec *tp)
  * Description:
  *   Perform one-time initialization of the timing facilities.
  *
- * Parameters:
- *   ts - Location to return the time
- *
  ****************************************************************************/
 
 void clock_initialize(void)
 {
-	/* Initialize the RTC hardware */
+	sched_trace_begin();
+
+#if !defined(CONFIG_SUPPRESS_INTERRUPTS) && \
+    !defined(CONFIG_SUPPRESS_TIMER_INTS) && \
+    !defined(CONFIG_SYSTEMTICK_EXTCLK)
+	/* Initialize the system timer interrupt */
+
+	up_timer_initialize();
+#endif
 
 #if defined(CONFIG_RTC)
+	/* Initialize the internal RTC hardware.  Initialization of external RTC
+	 * must be deferred until the system has booted.
+	 */
+
 	up_rtc_initialize();
-#ifdef CONFIG_INIT_SYSTEM_TIME
-	initialize_system_time();
-#endif
+
 #endif
 
+#if !defined(CONFIG_RTC_EXTERNAL) || \
+    !defined(CONFIG_RTC)
 	/* Initialize the time value to match the RTC */
 
-	clock_inittime();
+	clock_inittime(NULL);
+#endif
+
+#ifdef CONFIG_SCHED_CPULOAD_SYSCLK
+	cpuload_init();
+#endif
+
+	sched_trace_end();
 }
 
 /****************************************************************************
@@ -339,10 +266,10 @@ void clock_initialize(void)
  *   Time going backward could have bad consequences if there are ongoing
  *   timers and delays.  So use this interface with care.
  *
- * Parameters:
- *   None
+ * Input Parameters:
+ *   tp: rtc time should be synced, set NULL to re-get time
  *
- * Return Value:
+ * Returned Value:
  *   None
  *
  * Assumptions:
@@ -350,40 +277,110 @@ void clock_initialize(void)
  ****************************************************************************/
 
 #ifdef CONFIG_RTC
-void clock_synchronize(void)
+void clock_synchronize(FAR const struct timespec *tp)
 {
-	irqstate_t flags;
-
 	/* Re-initialize the time value to match the RTC */
 
-	flags = enter_critical_section();
-	clock_inittime();
-	leave_critical_section(flags);
+	clock_inittime(tp);
 }
 #endif
 
 /****************************************************************************
- * Name: clock_timer
+ * Name: clock_resynchronize
  *
  * Description:
- *   This function must be called once every time the real time clock
- *   interrupt occurs.  The interval of this clock interrupt must be
- *   USEC_PER_TICK
+ *   Resynchronize the system timer to a hardware RTC.  The user can
+ *   explicitly re-synchronize the system timer to the RTC under certain
+ *   conditions where the system timer is known to be in error.  For example,
+ *   in certain low-power states, the system timer may be stopped but the
+ *   RTC will continue keep correct time.  After recovering from such
+ *   low-power state, this function should be called to restore the correct
+ *   system time. Function also keeps monotonic clock at rate of RTC.
+ *
+ *   Calling this function will not result in system time going "backward" in
+ *   time. If setting system time with RTC would result time going "backward"
+ *   then resynchronization is not performed.
+ *
+ * Input Parameters:
+ *   rtc_diff:  amount of time system-time is adjusted forward with RTC
+ *
+ * Returned Value:
+ *   None
+ *
+ * Assumptions:
  *
  ****************************************************************************/
 
-#ifndef CONFIG_SCHED_TICKLESS
-void clock_timer(void)
+#if defined(CONFIG_RTC) && !defined(CONFIG_SCHED_TICKLESS) && \
+    !defined(CONFIG_CLOCK_TIMEKEEPING) && !defined(CONFIG_ALARM_ARCH) && \
+    !defined(CONFIG_TIMER_ARCH)
+void clock_resynchronize(FAR struct timespec *rtc_diff)
 {
-	/* Increment the per-tick system counter */
+	struct timespec rtc_time;
+	struct timespec bias;
+	struct timespec curr_ts;
+	struct timespec rtc_diff_tmp;
+	irqstate_t flags;
+	int ret;
 
-	g_system_timer++;
-}
+	if (rtc_diff == NULL) {
+		rtc_diff = &rtc_diff_tmp;
+	}
 
-#ifdef CONFIG_SCHED_TICKSUPPRESS
-void clock_timer_nohz(clock_t ticks)
-{
-	g_system_timer += ticks;
+	/* Get RTC time */
+
+	ret = clock_basetime(&rtc_time);
+	if (ret < 0) {
+		/* Error reading RTC, skip resynchronization. */
+
+		sinfo("rtc error %d, skip resync\n", ret);
+
+		rtc_diff->tv_sec = 0;
+		rtc_diff->tv_nsec = 0;
+		return;
+	}
+
+	/* Set the time value to match the RTC */
+
+	/* Get the elapsed time since power up (in milliseconds).  This is a
+	 * bias value that we need to use to correct the base time.
+	 */
+
+	clock_systime_timespec(&bias);
+
+	/* Add the base time to this.  The base time is the time-of-day
+	 * setting.  When added to the elapsed time since the time-of-day
+	 * was last set, this gives us the current time.
+	 */
+
+	flags = spin_lock_irqsave(&g_basetime_lock);
+	clock_timespec_add(&bias, &g_basetime, &curr_ts);
+	spin_unlock_irqrestore(&g_basetime_lock, flags);
+
+	/* Check if RTC has advanced past system time. */
+
+	if (curr_ts.tv_sec > rtc_time.tv_sec ||
+	    (curr_ts.tv_sec == rtc_time.tv_sec &&
+	     curr_ts.tv_nsec >= rtc_time.tv_nsec)) {
+		/* Setting system time with RTC now would result time going
+		 * backwards. Skip resynchronization.
+		 */
+
+		sinfo("skip resync\n");
+
+		rtc_diff->tv_sec = 0;
+		rtc_diff->tv_nsec = 0;
+	} else {
+		/* Output difference between time at entry and new current time. */
+
+		clock_timespec_subtract(&rtc_time, &curr_ts, rtc_diff);
+
+		/* Add the sleep time to correct system timer */
+
+		clock_t diff_ticks = SEC2TICK(rtc_diff->tv_sec) +
+		                     NSEC2TICK(rtc_diff->tv_nsec);
+
+		clock_increase_sched_ticks(diff_ticks);
+	}
 }
-#endif
 #endif

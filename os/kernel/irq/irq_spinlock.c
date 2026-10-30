@@ -1,5 +1,24 @@
 /****************************************************************************
- * kernel/irq/irq_spinlock.c
+ *
+ * Copyright 2023 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * sched/irq/irq_spinlock.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -31,122 +50,145 @@
 
 #include "sched/sched.h"
 
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SPINLOCK)
 
 /****************************************************************************
  * Public Data
  ****************************************************************************/
 
-/* Used for access control */
-
-static volatile spinlock_t g_irq_spin = SP_UNLOCKED;
-
-/* Handles nested calls to spin_lock_enter_critical_section and spin_unlock_irqrestore */
-
-static volatile uint8_t g_irq_spin_count[CONFIG_SMP_NCPUS];
-
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
+#ifdef CONFIG_RW_SPINLOCK
+
 /****************************************************************************
- * Name: spin_lock_irqsave
+ * Name: read_lock_irqsave
  *
  * Description:
  *   If SMP is enabled:
- *     If the argument lock is not specified (i.e. NULL),
- *     disable local interrupts and take the global spinlock (g_irq_spin)
- *     if the call counter (g_irq_spin_count[cpu]) equals to 0. Then the
- *     counter on the CPU is incremented to allow nested call and return
+ *     The argument lock should be specified,
+ *     disable local interrupts and take the lock spinlock and return
  *     the interrupt state.
  *
- *     If the argument lock is specified,
- *     disable local interrupts and take the given lock and return the
- *     interrupt state.
- *
  *     NOTE: This API is very simple to protect data (e.g. H/W register
- *     or internal data structure) in SMP mode. But do not use this API
+ *     or internal data structure) in SMP mode. Do not use this API
  *     with kernel APIs which suspend a caller thread. (e.g. nxsem_wait)
  *
  *   If SMP is not enabled:
- *     This function is equivalent to irqsave().
+ *     This function is equivalent to up_irq_save().
  *
  * Input Parameters:
- *   lock - Caller specific spinlock. If specified NULL, g_irq_spin is used
- *          and can be nested. Otherwise, nested call for the same lock
- *          would cause a deadlock
+ *   lock - Caller specific spinlock, not NULL.
  *
  * Returned Value:
  *   An opaque, architecture-specific value that represents the state of
- *   the interrupts prior to the call to spin_lock_irqsave(lock);
+ *   the interrupts prior to the call to write_lock_irqsave(lock);
  *
  ****************************************************************************/
 
-irqstate_t spin_lock_irqsave(spinlock_t *lock)
+irqstate_t read_lock_irqsave(FAR rwlock_t *lock)
 {
 	irqstate_t ret;
-	ret = irqsave();
+	ret = up_irq_save();
 
-	if (NULL == lock) {
-		int me = this_cpu();
-		if (0 == g_irq_spin_count[me]) {
-			spin_lock(&g_irq_spin);
-		}
-
-	  	g_irq_spin_count[me]++;
-		DEBUGASSERT(0 != g_irq_spin_count[me]);
-	} else {
-		spin_lock(lock);
-	}
+	read_lock(lock);
 
 	return ret;
 }
 
 /****************************************************************************
- * Name: spin_unlock_irqrestore
+ * Name: read_unlock_irqrestore
  *
  * Description:
  *   If SMP is enabled:
- *     If the argument lock is not specified (i.e. NULL),
- *     decrement the call counter (g_irq_spin_count[cpu]) and if it
- *     decrements to zero then release the spinlock (g_irq_spin) and
+ *     The argument lock should be specified, release the lock and
  *     restore the interrupt state as it was prior to the previous call to
- *     spin_lock_irqsave(NULL).
- *
- *     If the argument lock is specified, release the lock and restore
- *     the interrupt state as it was prior to the previous call to
- *     spin_lock_irqsave(lock).
+ *     read_lock_irqsave(lock).
  *
  *   If SMP is not enabled:
- *     This function is equivalent to irqrestore().
+ *     This function is equivalent to up_irq_restore().
  *
  * Input Parameters:
- *   lock - Caller specific spinlock. If specified NULL, g_irq_spin is used.
+ *   lock - Caller specific spinlock, not NULL.
  *
  *   flags - The architecture-specific value that represents the state of
- *           the interrupts prior to the call to spin_lock_irqsave(lock);
+ *           the interrupts prior to the call to read_lock_irqsave(lock);
  *
  * Returned Value:
  *   None
  *
  ****************************************************************************/
 
-void spin_unlock_irqrestore(spinlock_t *lock, irqstate_t flags)
+void read_unlock_irqrestore(rwlock_t *lock, irqstate_t flags)
 {
-	int me = this_cpu();
-
-	if (NULL == lock) {
-		DEBUGASSERT(0 < g_irq_spin_count[me]);
-		g_irq_spin_count[me]--;
-
-	  	if (0 == g_irq_spin_count[me]) {
-			spin_unlock(&g_irq_spin);
-		}
-	} else {
-		spin_unlock(lock);
-	}
-
-	irqrestore(flags);
+	read_unlock(lock);
+	up_irq_restore(flags);
 }
 
-#endif /* CONFIG_SMP */
+/****************************************************************************
+ * Name: write_lock_irqsave
+ *
+ * Description:
+ *   If SMP is enabled:
+ *     The argument lock should be specified,
+ *     disable local interrupts and take the lock spinlock and return
+ *     the interrupt state.
+ *
+ *     NOTE: This API is very simple to protect data (e.g. H/W register
+ *     or internal data structure) in SMP mode. But do not use this API
+ *     with kernel APIs which suspend a caller thread. (e.g. nxsem_wait)
+ *
+ *   If SMP is not enabled:
+ *     This function is equivalent to up_irq_save().
+ *
+ * Input Parameters:
+ *   lock - Caller specific spinlock, not NULL.
+ *
+ * Returned Value:
+ *   An opaque, architecture-specific value that represents the state of
+ *   the interrupts prior to the call to write_lock_irqsave(lock);
+ *
+ ****************************************************************************/
+
+irqstate_t write_lock_irqsave(rwlock_t *lock)
+{
+	irqstate_t ret;
+	ret = up_irq_save();
+
+	write_lock(lock);
+
+	return ret;
+}
+
+/****************************************************************************
+ * Name: write_unlock_irqrestore
+ *
+ * Description:
+ *   If SMP is enabled:
+ *     The argument lock should be specified, release the lock and
+ *     restore the interrupt state as it was prior to the previous call to
+ *     write_lock_irqsave(lock).
+ *
+ *   If SMP is not enabled:
+ *     This function is equivalent to up_irq_restore().
+ *
+ * Input Parameters:
+ *   lock - Caller specific spinlock, not NULL.
+ *
+ *   flags - The architecture-specific value that represents the state of
+ *           the interrupts prior to the call to write_lock_irqsave(lock);
+ *
+ * Returned Value:
+ *   None
+ *
+ ****************************************************************************/
+
+void write_unlock_irqrestore(rwlock_t *lock, irqstate_t flags)
+{
+	write_unlock(lock);
+
+	up_irq_restore(flags);
+}
+#endif /* CONFIG_RW_SPINLOCK */
+#endif /* CONFIG_SPINLOCK */

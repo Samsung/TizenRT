@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/task/task_delete.c
+ * sched/task/task_delete.c
  *
- *   Copyright (C) 2007-2009, 2011-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -57,6 +44,7 @@
 #include <tinyara/config.h>
 
 #include <stdlib.h>
+#include <assert.h>
 #include <errno.h>
 
 #include <tinyara/sched.h>
@@ -65,67 +53,38 @@
 #include "task/task.h"
 
 /****************************************************************************
- * Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Type Declarations
- ****************************************************************************/
-
-/****************************************************************************
- * Global Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Variables
- ****************************************************************************/
-
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: task_delete
+ * Name: nxtask_delete
  *
  * Description:
- *   This function causes a specified task to cease to exist. Its  stack and
- *   TCB will be deallocated.  This function is the companion to task_create().
- *   This is the version of the function exposed to the user; it is simply
- *   a wrapper around the internal, task_terminate function.
+ *   This function causes a specified task to cease to exist.  Its stack and
+ *   TCB will be deallocated.
  *
- *   The logic in this function only deletes non-running tasks.  If the 'pid'
- *   parameter refers to to the currently runing task, then processing is
- *   redirected to exit().  This can only happen if a task calls task_delete()
- *   in order to delete itself.
+ *   The logic in this function only deletes non-running tasks.  If the
+ *   'pid' parameter refers to the currently running task, then processing
+ *   is redirected to exit(). This can only happen if a task calls
+ *   nxtask_delete() in order to delete itself.
  *
- *   This function obeys the semantics of pthread cancellation: task
- *  deletion is deferred if cancellation is disabled or if deferred
- *  cancellation is supported (with cancellation points enabled).
+ *   This function obeys the semantics of pthread cancellation:  task
+ *   deletion is deferred if cancellation is disabled or if deferred
+ *   cancellation is supported (with cancellation points enabled).
  *
- * Inputs:
+ * Input Parameters:
  *   pid - The task ID of the task to delete.  A pid of zero
  *         signifies the calling task.
  *
- * Return Value:
- *  OK on success; or ERROR on failure with the errno variable set
- *  appropriately.
+ * Returned Value:
+ *   OK on success; or negated errno on failure
  *
  ****************************************************************************/
 
-int task_delete(pid_t pid)
+int nxtask_delete(pid_t pid)
 {
 	FAR struct tcb_s *dtcb;
 	FAR struct tcb_s *rtcb;
-	irqstate_t flags;
-	int ret;
 
 	/* Check if the task to delete is the calling task:  PID=0 means to delete
 	 * the calling task.  In this case, task_delete() is much like exit()
@@ -139,80 +98,32 @@ int task_delete(pid_t pid)
 
 	/* Get the TCB of the task to be deleted */
 
-	dtcb = (FAR struct tcb_s *)sched_gettcb(pid);
+	dtcb = nxsched_get_tcb(pid);
 	if (dtcb == NULL) {
 		/* The pid does not correspond to any known thread.  The task
 		 * has probably already exited.
 		 */
 
-		set_errno(ESRCH);
-		return ERROR;
+		return -ESRCH;
 	}
 
-	/* Only tasks and kernel threads should use this interface */
+	/* Only tasks and kernel threads can be deleted with this interface
+	 * (The semantics of the call should be sufficient to prohibit this).
+	 */
 
 	DEBUGASSERT((dtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_PTHREAD);
 
-	/* Check to see if this task has the non-cancelable bit set in its
-	 * flags. Suppress context changes for a bit so that the flags are stable.
-	 * (the flags should not change in interrupt handling).
+	/* Non-privileged tasks and pthreads may not delete privileged kernel
+	 * threads.
 	 *
-	 * sched_lock() alone cannot keep the flags stable: the target task may
-	 * be running on another CPU and change its own cancel state through
-	 * task_setcancelstate() at any time, and even on a single CPU it may run
-	 * and do so once the scheduler is unlocked below, long before
-	 * task_terminate() stops it.  Take the critical section, which
-	 * task_setcancelstate() also takes, so that this decision and the
-	 * target's cancel state transitions are strictly ordered.
+	 * REVISIT: We will need to look at this again in the future if/when
+	 * permissions are supported and a user task might also be privileged.
 	 */
 
-	flags = enter_critical_section();
-	sched_lock();
-	if ((dtcb->flags & TCB_FLAG_NONCANCELABLE) != 0) {
-		/* Then we cannot cancel the thread now.  Here is how this is
-		 * supposed to work:
-		 *
-		 * "When cancelability is disabled, all cancels are held pending
-		 *  in the target thread until the thread changes the cancelability.
-		 *  When cancelability is deferred, all cancels are held pending in
-		 *  the target thread until the thread changes the cancelability, calls
-		 *  a function which is a cancellation point or calls pthread_testcancel(),
-		 *  thus creating a cancellation point. When cancelability is asynchronous,
-		 *  all cancels are acted upon immediately, interrupting the thread with its
-		 *  processing."
-		 */
-
-		dtcb->flags |= TCB_FLAG_CANCEL_PENDING;
-		sched_unlock();
-		leave_critical_section(flags);
-		return OK;
+	if (((rtcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_KERNEL) &&
+	    ((dtcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_KERNEL)) {
+		return -EACCES;
 	}
-
-#ifdef CONFIG_CANCELLATION_POINTS
-	/* Check if this task supports deferred cancellation */
-
-	if ((dtcb->flags & TCB_FLAG_CANCEL_DEFERRED) != 0) {
-
-		/* If the task is waiting at a cancellation point, then notify of the
-		 * cancellation thereby waking the task up with an ECANCELED error.
-		 *
-		 * REVISIT: is locking the scheduler sufficent in SMP mode?
-		 */
-
-		dtcb->flags |= TCB_FLAG_CANCEL_PENDING;
-
-		if (dtcb->cpcount > 0) {
-			notify_cancellation(dtcb);
-		}
-
-		sched_unlock();
-		leave_critical_section(flags);
-		return OK;
-	}
-#endif
-
-	sched_unlock();
-	leave_critical_section(flags);
 
 	/* Check if the task to delete is the calling task */
 
@@ -221,18 +132,60 @@ int task_delete(pid_t pid)
 		 * don't bother to unlock the TCB since it will be going away.
 		 */
 
-		exit(EXIT_SUCCESS);
+		_exit(EXIT_SUCCESS);
+	}
+
+	/* Notify the target if the non-cancelable or deferred cancellation set */
+
+	if (nxnotify_cancellation(dtcb)) {
+		return OK;
 	}
 
 	/* Otherwise, perform the asynchronous cancellation, letting
-	 * task_terminate() do all of the heavy lifting.
+	 * nxtask_terminate() do all of the heavy lifting.
 	 */
 
-	ret = task_terminate(pid, false);
+	return nxtask_terminate(pid);
+}
+
+/****************************************************************************
+ * Name: task_delete
+ *
+ * Description:
+ *   This function causes a specified task to cease to exist.  Its stack and
+ *   TCB will be deallocated.  This function is the companion to
+ *   task_create().  This is the version of the function exposed to the
+ *   user; it is simply a wrapper around the internal, nxtask_terminate
+ *   function.
+ *
+ *   The logic in this function only deletes non-running tasks.  If the
+ *   'pid' parameter refers to the currently running task, then processing
+ *   is redirected to exit().  This can only happen if a task calls
+ *   task_delete()in order to delete itself.
+ *
+ *   This function obeys the semantics of pthread cancellation:  task
+ *   deletion is deferred if cancellation is disabled or if deferred
+ *   cancellation is supported (with cancellation points enabled).
+ *
+ * Input Parameters:
+ *   pid - The task ID of the task to delete.  A pid of zero
+ *         signifies the calling task.
+ *
+ * Returned Value:
+ *   OK on success; or ERROR on failure with the errno variable set
+ *   appropriately.
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_BUILD_KERNEL
+int task_delete(pid_t pid)
+{
+	int ret = nxtask_delete(pid);
 	if (ret < 0) {
 		set_errno(-ret);
-		return ERROR;
+		ret = ERROR;
 	}
 
-	return OK;
+	return ret;
 }
+#endif

@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/group/group.h
+ * sched/group/group.h
  *
- *   Copyright (C) 2007-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -61,18 +48,10 @@
 
 #include <sys/types.h>
 #include <stdbool.h>
-#include <queue.h>
 #include <sched.h>
 
 #include <tinyara/kmalloc.h>
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-/* Any negative GID is invalid. */
-
-#define INVALID_GROUP_ID    (pid_t)-1
-#define IS_INVALID_GID(gid) ((int)(gid) < 0)
+#include <tinyara/sched.h>
 
 /****************************************************************************
  * Public Type Definitions
@@ -84,56 +63,39 @@ typedef int (*foreachchild_t)(pid_t pid, FAR void *arg);
  * Public Data
  ****************************************************************************/
 
-#if defined(HAVE_GROUP_MEMBERS) || defined(CONFIG_ARCH_ADDRENV)
-/* This is the head of a list of all group members */
-
-extern FAR struct task_group_s *g_grouphead;
-#endif
-
-#ifdef CONFIG_ARCH_ADDRENV
-/* This variable holds the group ID of the current task group.  This ID is
- * zero if the current task is a kernel thread that has no address
- * environment (other than the kernel context).
- *
- * This must only be accessed with interrupts disabled.
- */
-
-extern gid_t g_gid_current;
-#endif
-
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
 #ifdef CONFIG_SCHED_CHILD_STATUS
-void weak_function task_initialize(void);
+void task_initialize(void);
+#else
+#  define task_initialize()
 #endif
 
 /* Task group data structure management */
 
-#ifdef HAVE_TASK_GROUP
-int group_allocate(FAR struct task_tcb_s *tcb, uint8_t ttype);
-int group_initialize(FAR struct task_tcb_s *tcb);
+int  group_allocate(FAR struct tcb_s *tcb, uint8_t ttype);
+void group_initialize(FAR struct tcb_s *tcb);
 #ifndef CONFIG_DISABLE_PTHREAD
-int group_bind(FAR struct pthread_tcb_s *tcb);
-int group_join(FAR struct pthread_tcb_s *tcb);
+void group_bind(FAR struct tcb_s *tcb);
+void group_join(FAR struct tcb_s *tcb);
 #endif
 void group_leave(FAR struct tcb_s *tcb);
-
-#if defined(HAVE_GROUP_MEMBERS) || defined(CONFIG_ARCH_ADDRENV)
-FAR struct task_group_s *group_findbygid(gid_t gid);
+void group_drop(FAR struct task_group_s *group);
+#if defined(CONFIG_SCHED_WAITPID) && !defined(CONFIG_SCHED_HAVE_PARENT)
+void group_add_waiter(FAR struct task_group_s *group);
+void group_del_waiter(FAR struct task_group_s *group);
 #endif
 
 #ifdef HAVE_GROUP_MEMBERS
-FAR struct task_group_s *group_findbypid(pid_t pid);
-int group_foreachchild(FAR struct task_group_s *group, foreachchild_t handler, FAR void *arg);
-int group_killchildren(FAR struct task_tcb_s *tcb);
+int group_foreachchild(FAR struct task_group_s *group,
+                       foreachchild_t handler, FAR void *arg);
+int group_kill_children(FAR struct tcb_s *tcb);
+#ifdef CONFIG_SIG_SIGSTOP_ACTION
+int group_suspend_children(FAR struct tcb_s *tcb);
+int group_continue(FAR struct tcb_s *tcb);
 #endif
-
-#ifdef CONFIG_ARCH_ADDRENV
-/* Group address environment management */
-
-int group_addrenv(FAR struct tcb_s *tcb);
 #endif
 
 /* Convenience functions */
@@ -142,10 +104,7 @@ FAR struct task_group_s *task_getgroup(pid_t pid);
 
 /* Signaling group members */
 
-#ifndef CONFIG_DISABLE_SIGNALS
 int group_signal(FAR struct task_group_s *group, FAR siginfo_t *siginfo);
-#endif
-#endif							/* HAVE_TASK_GROUP */
 
 /* Parent/child data management */
 
@@ -153,25 +112,25 @@ int group_signal(FAR struct task_group_s *group, FAR siginfo_t *siginfo);
 int task_reparent(pid_t ppid, pid_t chpid);
 
 #ifdef CONFIG_SCHED_CHILD_STATUS
-FAR struct child_status_s *group_allocchild(void);
-void group_freechild(FAR struct child_status_s *status);
-void group_addchild(FAR struct task_group_s *group, FAR struct child_status_s *child);
-FAR struct child_status_s *group_exitchild(FAR struct task_group_s *group);
-FAR struct child_status_s *group_findchild(FAR struct task_group_s *group, pid_t pid);
-FAR struct child_status_s *group_removechild(FAR struct task_group_s *group, pid_t pid);
-void group_removechildren(FAR struct task_group_s *group);
+FAR struct child_status_s *group_alloc_child(void);
+void group_free_child(FAR struct child_status_s *status);
+void group_add_child(FAR struct task_group_s *group,
+                     FAR struct child_status_s *child);
+FAR struct child_status_s *group_exit_child(FAR struct task_group_s *group);
+FAR struct child_status_s *group_find_child(FAR struct task_group_s *group,
+                                            pid_t pid);
+FAR struct child_status_s *group_remove_child(FAR struct task_group_s *group,
+                                              pid_t pid);
+void group_remove_children(FAR struct task_group_s *group);
 
-#endif							/* CONFIG_SCHED_CHILD_STATUS */
-#endif							/* CONFIG_SCHED_HAVE_PARENT */
+#endif /* CONFIG_SCHED_CHILD_STATUS */
+#endif /* CONFIG_SCHED_HAVE_PARENT */
 
 /* Group data resource configuration */
 
-#if CONFIG_NFILE_DESCRIPTORS > 0 || CONFIG_NSOCKET_DESCRIPTORS > 0
-int group_setupidlefiles(FAR struct task_tcb_s *tcb);
-int group_setuptaskfiles(FAR struct task_tcb_s *tcb);
-#if CONFIG_NFILE_STREAMS > 0
-int group_setupstreams(FAR struct task_tcb_s *tcb);
-#endif
-#endif
+int  group_setupidlefiles(void);
+int  group_setuptaskfiles(FAR struct tcb_s *tcb,
+                          FAR const posix_spawn_file_actions_t *actions,
+                          bool cloexec);
 
-#endif							/* __SCHED_GROUP_GROUP_H */
+#endif /* __SCHED_GROUP_GROUP_H */

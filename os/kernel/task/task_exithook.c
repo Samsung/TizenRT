@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/task/task_exithook.c
+ * sched/task/task_exithook.c
  *
- *   Copyright (C) 2011-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -59,99 +46,25 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <assert.h>
 #include <debug.h>
 #include <errno.h>
 
 #include <tinyara/sched.h>
 #include <tinyara/fs/fs.h>
+#include <tinyara/mm/mm.h>
 
 #include "sched/sched.h"
 #include "group/group.h"
 #include "signal/signal.h"
 #include "task/task.h"
-#include "debug/debug.h"
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-#include "binary_manager/binary_manager_internal.h"
-#endif
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: task_atexit
- *
- * Description:
- *   Call any registered atexit function(s)
- *
- ****************************************************************************/
-
-#if defined(CONFIG_SCHED_ATEXIT) && !defined(CONFIG_SCHED_ONEXIT)
-inline void task_atexit(FAR struct tcb_s *tcb)
-{
-	FAR struct task_group_s *group = tcb->group;
-	struct atexit_s *patexit;
-
-	/* Make sure that we have not already left the group.  Only the final
-	 * exiting thread in the task group should trigger the atexit()
-	 * callbacks.
-	 */
-
-	if (group && group->tg_nmembers == 1) {
-
-		/* Call each atexit function in the reverse order of registration */
-
-		while (!(sq_empty(&(group->tg_atexitfunc)))) {
-			patexit = (struct atexit_s *)sq_remfirst(&(group->tg_atexitfunc));
-
-			(*patexit->atexitfunc)();
-
-			sched_kfree(patexit);
-		}
-	}
-}
-#else
-#define task_atexit(tcb)
-#endif
-
-/****************************************************************************
- * Name: task_onexit
- *
- * Description:
- *   Call any registered on_exit function(s)
- *
- ****************************************************************************/
-
-#ifdef CONFIG_SCHED_ONEXIT
-inline void task_onexit(FAR struct tcb_s *tcb, int status)
-{
-	FAR struct task_group_s *group = tcb->group;
-	struct onexit_s *ponexit;
-
-	/* Make sure that we have not already left the group.  Only the final
-	 * exiting thread in the task group should trigger the atexit()
-	 * callbacks.
-	 */
-
-	if (group && group->tg_nmembers == 1) {
-
-		/* Call each on_exit function in the reverse order of registration */
-
-		while (!(sq_empty(&(group->tg_onexitfunc)))) {
-			ponexit = (struct onexit_s *)sq_remfirst(&(group->tg_onexitfunc));
-
-			(*ponexit->onexitfunc)(status, ponexit->onexitarg);
-
-			sched_kfree(ponexit);
-		}
-	}
-}
-#else
-#define task_onexit(tcb, status)
-#endif
-
-/****************************************************************************
- * Name: task_exitstatus
+ * Name: nxtask_exitstatus
  *
  * Description:
  *   Report exit status when main task of a task group exits
@@ -159,7 +72,8 @@ inline void task_onexit(FAR struct tcb_s *tcb, int status)
  ****************************************************************************/
 
 #ifdef CONFIG_SCHED_CHILD_STATUS
-static inline void task_exitstatus(FAR struct task_group_s *group, int status)
+static inline void nxtask_exitstatus(FAR struct task_group_s *group,
+                                     int status)
 {
 	FAR struct child_status_s *child;
 
@@ -170,13 +84,8 @@ static inline void task_exitstatus(FAR struct task_group_s *group, int status)
 	if ((group->tg_flags & GROUP_FLAG_NOCLDWAIT) == 0) {
 		/* No.. Find the exit status entry for this task in the parent TCB */
 
-		child = group_findchild(group, getpid());
+		child = group_find_child(group, nxsched_getpid());
 		if (child) {
-#ifndef HAVE_GROUP_MEMBERS
-			/* No group members? Save the exit status */
-
-			child->ch_status = status;
-#endif
 			/* Save the exit status..  For the case of HAVE_GROUP_MEMBERS,
 			 * the child status will be as exited until the last member
 			 * of the task group exits.
@@ -185,15 +94,17 @@ static inline void task_exitstatus(FAR struct task_group_s *group, int status)
 			child->ch_status = status;
 		}
 	}
+
+	group->tg_exitcode = status;
 }
 #else
 
-#define task_exitstatus(group, status)
+#  define nxtask_exitstatus(group,status) (group)->tg_exitcode = (status);
 
-#endif							/* CONFIG_SCHED_CHILD_STATUS */
+#endif /* CONFIG_SCHED_CHILD_STATUS */
 
 /****************************************************************************
- * Name: task_groupexit
+ * Name: nxtask_groupexit
  *
  * Description:
  *   Mark that the final thread of a child task group as exited.
@@ -201,7 +112,7 @@ static inline void task_exitstatus(FAR struct task_group_s *group, int status)
  ****************************************************************************/
 
 #ifdef CONFIG_SCHED_CHILD_STATUS
-static inline void task_groupexit(FAR struct task_group_s *group)
+static inline void nxtask_groupexit(FAR struct task_group_s *group)
 {
 	FAR struct child_status_s *child;
 
@@ -212,7 +123,7 @@ static inline void task_groupexit(FAR struct task_group_s *group)
 	if ((group->tg_flags & GROUP_FLAG_NOCLDWAIT) == 0) {
 		/* No.. Find the exit status entry for this task in the parent TCB */
 
-		child = group_findchild(group, getpid());
+		child = group_find_child(group, nxsched_getpid());
 		if (child) {
 			/* Mark that all members of the child task group has exited */
 
@@ -223,21 +134,22 @@ static inline void task_groupexit(FAR struct task_group_s *group)
 
 #else
 
-#define task_groupexit(group)
+#  define nxtask_groupexit(group)
 
-#endif							/* CONFIG_SCHED_CHILD_STATUS */
+#endif /* CONFIG_SCHED_CHILD_STATUS */
 
 /****************************************************************************
- * Name: task_sigchild
+ * Name: nxtask_sigchild
  *
  * Description:
- *   Send the SIGCHILD signal to the parent thread
+ *   Send the SIGCHLD signal to the parent thread
  *
  ****************************************************************************/
 
-#if defined(CONFIG_SCHED_HAVE_PARENT) && !defined(CONFIG_DISABLE_SIGNALS)
+#ifdef CONFIG_SCHED_HAVE_PARENT
 #ifdef HAVE_GROUP_MEMBERS
-static inline void task_sigchild(gid_t pgid, FAR struct tcb_s *ctcb, int status)
+static inline void nxtask_sigchild(pid_t ppid, FAR struct tcb_s *ctcb,
+                                   int status)
 {
 	FAR struct task_group_s *chgrp = ctcb->group;
 	FAR struct task_group_s *pgrp;
@@ -250,13 +162,13 @@ static inline void task_sigchild(gid_t pgid, FAR struct tcb_s *ctcb, int status)
 	 * this case, the child task group has been orphaned.
 	 */
 
-	pgrp = group_findbygid(pgid);
+	pgrp = task_getgroup(ppid);
 	if (!pgrp) {
 		/* Set the task group ID to an invalid group ID.  The dead parent
 		 * task group ID could get reused some time in the future.
 		 */
 
-		chgrp->tg_pgid = INVALID_GROUP_ID;
+		chgrp->tg_ppid = INVALID_PROCESS_ID;
 		return;
 	}
 
@@ -269,42 +181,40 @@ static inline void task_sigchild(gid_t pgid, FAR struct tcb_s *ctcb, int status)
 	if ((ctcb->flags & TCB_FLAG_TTYPE_MASK) != TCB_FLAG_TTYPE_PTHREAD)
 #endif
 	{
-		task_exitstatus(pgrp, status);
+		nxtask_exitstatus(pgrp, status);
 	}
 
 	/* But only the final exiting thread in a task group, whatever it is,
 	 * should generate SIGCHLD.
 	 */
 
-	if (chgrp->tg_nmembers == 1) {
+	if (sq_is_singular(&chgrp->tg_members)) {
 		/* Mark that all of the threads in the task group have exited */
 
-		task_groupexit(pgrp);
+		nxtask_groupexit(pgrp);
 
 		/* Create the siginfo structure.  We don't actually know the cause.
 		 * That is a bug. Let's just say that the child task just exited
 		 * for now.
 		 */
 
-		info.si_signo = SIGCHLD;
-		info.si_code = CLD_EXITED;
+		info.si_signo           = SIGCHLD;
+		info.si_code            = CLD_EXITED;
+		info.si_errno           = OK;
 		info.si_value.sival_ptr = NULL;
-#ifndef CONFIG_DISABLE_PTHREAD
-		info.si_pid = chgrp->tg_task;
-#else
-		info.si_pid = ctcb->pid;
-#endif
-		info.si_status = status;
+		info.si_pid             = chgrp->tg_pid;
+		info.si_status          = pgrp->tg_exitcode;
 
 		/* Send the signal to one thread in the group */
 
-		(void)group_signal(pgrp, &info);
+		group_signal(pgrp, &info);
 	}
 }
 
-#else							/* HAVE_GROUP_MEMBERS */
+#else /* HAVE_GROUP_MEMBERS */
 
-static inline void task_sigchild(FAR struct tcb_s *ptcb, FAR struct tcb_s *ctcb, int status)
+static inline void nxtask_sigchild(FAR struct tcb_s *ptcb,
+                                   FAR struct tcb_s *ctcb, int status)
 {
 	siginfo_t info;
 
@@ -320,9 +230,9 @@ static inline void task_sigchild(FAR struct tcb_s *ptcb, FAR struct tcb_s *ctcb,
 #ifdef CONFIG_SCHED_CHILD_STATUS
 		/* Save the exit status now of the main thread */
 
-		task_exitstatus(ptcb->group, status);
+		nxtask_exitstatus(ptcb->group, status);
 
-#else							/* CONFIG_SCHED_CHILD_STATUS */
+#else /* CONFIG_SCHED_CHILD_STATUS */
 		/* Exit status is not retained.  Just decrement the number of
 		 * children from this parent.
 		 */
@@ -330,98 +240,81 @@ static inline void task_sigchild(FAR struct tcb_s *ptcb, FAR struct tcb_s *ctcb,
 		DEBUGASSERT(ptcb->group != NULL && ptcb->group->tg_nchildren > 0);
 		ptcb->group->tg_nchildren--;
 
-#endif							/* CONFIG_SCHED_CHILD_STATUS */
+#endif /* CONFIG_SCHED_CHILD_STATUS */
 
 		/* Create the siginfo structure.  We don't actually know the cause.
 		 * That is a bug. Let's just say that the child task just exited
 		 * for now.
 		 */
 
-		info.si_signo = SIGCHLD;
-		info.si_code = CLD_EXITED;
+		info.si_signo           = SIGCHLD;
+		info.si_code            = CLD_EXITED;
+		info.si_errno           = OK;
 		info.si_value.sival_ptr = NULL;
-#ifndef CONFIG_DISABLE_PTHREAD
-		info.si_pid = ctcb->group->tg_task;
-#else
-		info.si_pid = ctcb->pid;
-#endif
-		info.si_status = status;
+		info.si_pid             = ctcb->group->tg_pid;
+		info.si_status          = status;
 
 		/* Send the signal.  We need to use this internal interface so that we
 		 * can provide the correct si_code value with the signal.
 		 */
 
-		(void)sig_tcbdispatch(ptcb, &info);
+		nxsig_tcbdispatch(ptcb, &info);
 	}
 }
 
-#endif							/* HAVE_GROUP_MEMBERS */
-#else							/* CONFIG_SCHED_HAVE_PARENT && !CONFIG_DISABLE_SIGNALS */
+#endif /* HAVE_GROUP_MEMBERS */
+#else /* CONFIG_SCHED_HAVE_PARENT */
 
-#define task_sigchild(x, ctcb, status)
+#  define nxtask_sigchild(x,ctcb,status)
 
-#endif							/* CONFIG_SCHED_HAVE_PARENT && !CONFIG_DISABLE_SIGNALS */
+#endif /* CONFIG_SCHED_HAVE_PARENT */
 
 /****************************************************************************
- * Name: task_signalparent
+ * Name: nxtask_signalparent
  *
  * Description:
- *   Send the SIGCHILD signal to the parent task group
+ *   Send the SIGCHLD signal to the parent task group
  *
  ****************************************************************************/
 
 #ifdef CONFIG_SCHED_HAVE_PARENT
-static inline void task_signalparent(FAR struct tcb_s *ctcb, int status)
+static inline void nxtask_signalparent(FAR struct tcb_s *ctcb, int status)
 {
 #ifdef HAVE_GROUP_MEMBERS
 	DEBUGASSERT(ctcb && ctcb->group);
 
-	/* Keep things stationary throughout the following */
-
-	sched_lock();
-
 	/* Send SIGCHLD to all members of the parent's task group */
 
-	task_sigchild(ctcb->group->tg_pgid, ctcb, status);
-	sched_unlock();
+	nxtask_sigchild(ctcb->group->tg_ppid, ctcb, status);
 #else
 	FAR struct tcb_s *ptcb;
 
-	/* Keep things stationary throughout the following */
-
-	sched_lock();
-
 	/* Get the TCB of the receiving, parent task.  We do this early to
-	 * handle multiple calls to task_signalparent.  ctcb->group->tg_ppid is
-	 * set to an invalid value below and the following call will fail if we
-	 * are called again.
+	 * handle multiple calls to nxtask_signalparent.
 	 */
 
-	ptcb = sched_gettcb(ctcb->group->tg_ppid);
+	ptcb = nxsched_get_tcb(ctcb->group->tg_ppid);
 	if (ptcb == NULL) {
 		/* The parent no longer exists... bail */
 
-		sched_unlock();
 		return;
 	}
 
-	/* If ptcb is not ctcb, send SIGCHLD to all members of the parent's task group.
-	 * If ptcb is same as ctcb, calling task_sigchild is not needed.
-	 * Because ctcb is the last exit task.
+	/* Send SIGCHLD to all members of the parent's task group.  NOTE that the
+	 * SIGCHLD signal is only sent once either (1) if this is the final thread
+	 * of the task group that is exiting (HAVE_GROUP_MEMBERS) or (2) if the
+	 * main thread of the group is exiting (!HAVE_GROUP_MEMBERS).
 	 */
-	if (ptcb->pid != ctcb->pid) {
-		task_sigchild(ptcb, ctcb, status);
-	}
 
-	sched_unlock();
+	nxtask_sigchild(ptcb, ctcb, status);
 #endif
 }
 #else
-#define task_signalparent(ctcb, status)
+#  define nxtask_signalparent(ctcb,status)
 #endif
 
 /****************************************************************************
- * Name: task_exitwakeup
+ * Name: nxtask_exitwakeup
  *
  * Description:
  *   Wakeup any tasks waiting for this task to exit
@@ -429,9 +322,10 @@ static inline void task_signalparent(FAR struct tcb_s *ctcb, int status)
  ****************************************************************************/
 
 #if defined(CONFIG_SCHED_WAITPID) && !defined(CONFIG_SCHED_HAVE_PARENT)
-static inline void task_exitwakeup(FAR struct tcb_s *tcb, int status)
+static inline void nxtask_exitwakeup(FAR struct tcb_s *tcb, int status)
 {
 	FAR struct task_group_s *group = tcb->group;
+	int semvalue;
 
 	/* Have we already left the group? */
 
@@ -459,55 +353,34 @@ static inline void task_exitwakeup(FAR struct tcb_s *tcb, int status)
 			 *  Hmmm.. what do we return to the others?
 			 */
 
-			if (group->tg_statloc) {
+			if (group->tg_statloc != NULL) {
 				*group->tg_statloc = status << 8;
 			}
 		}
 
 		/* Is this the last thread in the group? */
 
-		if (group->tg_nmembers == 1) {
+#ifndef CONFIG_DISABLE_PTHREAD
+		if (sq_is_singular(&group->tg_members))
+#endif
+		{
 			/* Yes.. Wakeup any tasks waiting for this task to exit */
 
-			group->tg_statloc = NULL;
-			while (group->tg_exitsem.semcount < 0) {
+			group->tg_statloc   = NULL;
+			group->tg_waitflags = 0;
+
+			nxsem_get_value(&group->tg_exitsem, &semvalue);
+			while (semvalue < 0) {
 				/* Wake up the thread */
 
-				sem_post(&group->tg_exitsem);
+				nxsem_post(&group->tg_exitsem);
+				nxsem_get_value(&group->tg_exitsem, &semvalue);
 			}
 		}
 	}
 }
 #else
-#define task_exitwakeup(tcb, status)
-#endif
-
-/****************************************************************************
- * Name: task_flushstreams
- *
- * Description:
- *   Flush all streams when the final thread of a group exits.
- *
- ****************************************************************************/
-
-#if CONFIG_NFILE_STREAMS > 0
-static inline void task_flushstreams(FAR struct tcb_s *tcb)
-{
-	FAR struct task_group_s *group = tcb->group;
-
-	/* Have we already left the group?  Are we the last thread in the group? */
-
-	if (group && group->tg_nmembers == 1) {
-#if (defined(CONFIG_BUILD_PROTECTED) || defined(CONFIG_BUILD_KERNEL)) && \
-	 defined(CONFIG_MM_KERNEL_HEAP)
-		(void)lib_flushall(tcb->group->tg_streamlist);
-#else
-		(void)lib_flushall(&tcb->group->tg_streamlist);
-#endif
-	}
-}
-#else
-#define task_flushstreams(tcb)
+#  define nxtask_exitwakeup(tcb, status)
 #endif
 
 /****************************************************************************
@@ -515,7 +388,7 @@ static inline void task_flushstreams(FAR struct tcb_s *tcb)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: task_exithook
+ * Name: nxtask_exithook
  *
  * Description:
  *   This function implements some of the internal logic of exit() and
@@ -530,109 +403,74 @@ static inline void task_flushstreams(FAR struct tcb_s *tcb)
  *   to-run list.  The following logic is safe because we will not be
  *   returning from the exit() call.
  *
- *   When called from task_terminate() we are operating on a different thread;
- *   on the thread that called task_delete().  In this case, task_delete
- *   will have already removed the tcb from the ready-to-run list to prevent
- *   any further action on this task.
- *
- *   nonblocking will be set true only when we are called from task_terminate()
- *   via _exit().  In that case, we must be careful to do nothing that can
- *   cause the cause the thread to block.
+ *   When called from nxtask_terminate() we are operating on a different
+ *   thread; on the thread that called task_delete().  In this case,
+ *   task_delete will have already removed the tcb from the ready-to-run
+ *   list to prevent any further action on this task.
  *
  ****************************************************************************/
 
-void task_exithook(FAR struct tcb_s *tcb, int status, bool nonblocking)
+void nxtask_exithook(FAR struct tcb_s *tcb, int status)
 {
-	/* The caller claims the termination by setting TCB_FLAG_EXIT_PROCESSING
-	 * before it enters here, so this logic runs only once per TCB.
-	 */
+#ifdef CONFIG_SCHED_DUMP_LEAK
+	struct mm_memdump_s dump =
+	{
+	  tcb->pid,
+#  if CONFIG_MM_BACKTRACE >= 0
+	  0,
+	  ULONG_MAX
+#  endif
+	};
+#endif
 
-	irqstate_t flags;
+	/* Under certain conditions, nxtask_exithook() can be called multiple
+	 * times.  A bit in the TCB was set the first time this function was
+	 * called.  If that bit is set, then just exit doing nothing more..
+	 */
 
 	DEBUGASSERT((tcb->flags & TCB_FLAG_EXIT_PROCESSING) != 0);
 
-#ifdef CONFIG_DEBUG
-	/* Save the terminated task/pthread's information for stack monitor and heapinfo. */
-	dbg_save_termination_info(tcb);
-#endif
-
-#if defined(CONFIG_SCHED_ATEXIT) || defined(CONFIG_SCHED_ONEXIT)
-	/* If exit function(s) were registered, call them now before we do any un-
-	 * initialization.
-	 *
-	 * NOTES:
-	 *
-	 * 1. In the case of task_delete(), the exit function will *not* be called
-	 *    on the thread execution of the task being deleted!  That is probably
-	 *    a bug.
-	 * 2. We cannot call the exit functions if nonblocking is requested:  These
-	 *    functions might block.
-	 * 3. This function will only be called with with non-blocking == true
-	 *    only when called through _exit(). _exit() behaviors requires that
-	 *    the exit functions *not* be called.
-	 */
-
-	if (!nonblocking) {
-		task_atexit(tcb);
-
-		/* Call any registered on_exit function(s) */
-
-		task_onexit(tcb, status);
-	}
-#endif
+	nxsched_dumponexit();
 
 	/* If the task was terminated by another task, it may be in an unknown
 	 * state.  Make some feeble effort to recover the state.
 	 */
 
-	task_recover(tcb);
+	nxtask_recover(tcb);
 
-	/* NOTE: signal handling needs to be done in a critical section. */
-
-	flags = enter_critical_section();
-
-	/* If this is the last thread in the group, then flush all streams (File
-	 * descriptors will be closed when the TCB is deallocated).
-	 *
-	 * NOTES:
-	 * 1. We cannot flush the buffered I/O if nonblocking is requested.
-	 *    that might cause this logic to block.
-	 * 2. This function will only be called with with non-blocking == true
-	 *    only when called through _exit(). _exit() behavior does not
-	 *    require that the streams be flushed
+	/* Disable the scheduling function to prevent other tasks from
+	 * being deleted after they are awakened
 	 */
 
-	if (!nonblocking) {
-		task_flushstreams(tcb);
-	}
+	sched_lock();
 
-	/* Send the SIGCHILD signal to the parent task group */
+	/* Send the SIGCHLD signal to the parent task group */
 
-	task_signalparent(tcb, status);
+	nxtask_signalparent(tcb, status);
 
 	/* Wakeup any tasks waiting for this task to exit */
 
-	task_exitwakeup(tcb, status);
+	nxtask_exitwakeup(tcb, status);
 
+	sched_unlock();
 
-#if defined(CONFIG_BINARY_MANAGER) && defined(CONFIG_APP_BINARY_SEPARATION)
-	/* Remove a tcb from binary list */
-	binary_manager_remove_binlist(tcb);
-#endif
-
-#ifdef HAVE_TASK_GROUP
 	/* Leave the task group.  Perhaps discarding any un-reaped child
 	 * status (no zombies here!)
 	 */
 
 	group_leave(tcb);
-#endif
 
-#ifndef CONFIG_DISABLE_SIGNALS
 	/* Deallocate anything left in the TCB's queues */
 
-	sig_cleanup(tcb);			/* Deallocate Signal lists */
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
+	nxsig_cleanup(tcb); /* Deallocate Signal lists */
 #endif
 
-	leave_critical_section(flags);
+#ifdef CONFIG_SCHED_DUMP_LEAK
+	if ((tcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_KERNEL) {
+		kmm_memdump(&dump);
+	} else {
+		umm_memdump(&dump);
+	}
+#endif
 }

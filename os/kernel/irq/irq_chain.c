@@ -1,0 +1,258 @@
+/****************************************************************************
+ *
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * sched/irq/irq_chain.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <tinyara/config.h>
+
+#include <assert.h>
+
+#include "irq/irq.h"
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+struct irqchain_s {
+	FAR struct irqchain_s *next;
+
+	xcpt_t handler;    /* Address of the interrupt handler */
+	FAR void *arg;     /* The argument provided to the interrupt handler. */
+};
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/* The g_irqchainfreelist data structure is a single linked list of irqchains
+ * available to the system for delayed function use.
+ */
+
+static sq_queue_t g_irqchainfreelist;
+static spinlock_t g_irqchainlock = SP_UNLOCKED;
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+static void irqchain_detach_all(int ndx)
+{
+	FAR struct irqchain_s *curr;
+	FAR struct irqchain_s *prev;
+
+	g_irqvector[ndx].handler = irq_unexpected_isr;
+
+	curr = g_irqvector[ndx].arg;
+	while (curr != NULL) {
+		prev = curr;
+		curr = curr->next;
+		sq_addlast((FAR struct sq_entry_s *)prev, &g_irqchainfreelist);
+	}
+}
+
+static int irqchain_dispatch(int irq, FAR void *context, FAR void *arg)
+{
+	FAR struct irqchain_s *curr;
+	FAR struct irqchain_s *prev;
+	int ndx = IRQ_TO_NDX(irq);
+	int ret = 0;
+
+	if (ndx < 0) {
+		ret = ndx;
+	} else {
+		curr = g_irqvector[ndx].arg;
+		while (curr != NULL) {
+			prev = curr;
+			curr = curr->next;
+			ret |= prev->handler(irq, context, prev->arg);
+		}
+	}
+
+	return ret;
+}
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+void irqchain_initialize(void)
+{
+	/* irqchainpool is a list of pre-allocated irq chain. The number of irq
+	 * chains in the pool is a configuration item.
+	 */
+
+	static struct irqchain_s irqchainpool[CONFIG_PREALLOC_IRQCHAIN];
+
+	FAR struct irqchain_s *irqchain = irqchainpool;
+	int i;
+
+	/* Initialize irqchain free lists */
+
+	sq_init(&g_irqchainfreelist);
+
+	/* The g_irqchainfreelist must be loaded at initialization time to hold the
+	 * configured number of irqchain.
+	 */
+
+	for (i = 0; i < CONFIG_PREALLOC_IRQCHAIN; i++) {
+		sq_addlast((FAR struct sq_entry_s *)irqchain++, &g_irqchainfreelist);
+	}
+}
+
+bool is_irqchain(int ndx, xcpt_t isr)
+{
+	bool ret;
+
+	if (g_irqvector[ndx].handler == irq_unexpected_isr ||
+	    g_irqvector[ndx].handler == NULL) {
+		ret = false;
+	} else if (g_irqvector[ndx].handler == irqchain_dispatch) {
+		ret = true;
+	} else {
+		ret = isr != irq_unexpected_isr;
+	}
+
+	return ret;
+}
+
+int irqchain_attach(int ndx, xcpt_t isr, FAR void *arg)
+{
+	FAR struct irqchain_s *node;
+	FAR struct irqchain_s *curr;
+	irqstate_t flags;
+	int ret = 0;
+
+	flags = spin_lock_irqsave(&g_irqchainlock);
+	if (isr != irq_unexpected_isr) {
+		if (g_irqvector[ndx].handler != irqchain_dispatch) {
+			if (sq_count(&g_irqchainfreelist) < 2u) {
+				ret = -ENOMEM;
+			} else {
+				node = (FAR struct irqchain_s *)
+				       sq_remfirst(&g_irqchainfreelist);
+				DEBUGASSERT(node != NULL);
+
+				node->handler = g_irqvector[ndx].handler;
+				node->arg     = g_irqvector[ndx].arg;
+				node->next    = NULL;
+
+				g_irqvector[ndx].handler = irqchain_dispatch;
+				g_irqvector[ndx].arg     = node;
+
+				node = (FAR struct irqchain_s *)
+				       sq_remfirst(&g_irqchainfreelist);
+				if (node == NULL) {
+					ret = -ENOMEM;
+				} else {
+					node->handler = isr;
+					node->arg     = arg;
+					node->next    = NULL;
+
+					curr = g_irqvector[ndx].arg;
+					while (curr->next != NULL) {
+						curr = curr->next;
+					}
+
+					curr->next = node;
+				}
+			}
+		}
+	} else {
+		irqchain_detach_all(ndx);
+	}
+
+	spin_unlock_irqrestore(&g_irqchainlock, flags);
+	return ret;
+}
+
+int irqchain_detach(int irq, xcpt_t isr, FAR void *arg)
+{
+	int ret = OK;
+#if NR_IRQS > 0
+	FAR struct irqchain_s *prev;
+	FAR struct irqchain_s *curr;
+	FAR struct irqchain_s *first;
+	int ndx = IRQ_TO_NDX(irq);
+	if (ndx < 0) {
+		ret = ndx;
+	} else {
+		irqstate_t flags = spin_lock_irqsave(&g_irqchainlock);
+
+		if (g_irqvector[ndx].handler == irqchain_dispatch) {
+			first = g_irqvector[ndx].arg;
+			for (prev = NULL, curr = first;
+			     curr != NULL;
+			     prev = curr, curr = curr->next) {
+				if (curr->handler == isr && curr->arg == arg) {
+					if (curr == first) {
+						g_irqvector[ndx].arg = curr->next;
+					} else if (curr->next == NULL) {
+						prev->next = NULL;
+					} else {
+						prev->next = curr->next;
+					}
+
+					sq_addlast((FAR struct sq_entry_s *)curr,
+					           &g_irqchainfreelist);
+
+					first = g_irqvector[ndx].arg;
+					if (first->next == NULL) {
+						g_irqvector[ndx].handler = first->handler;
+						g_irqvector[ndx].arg     = first->arg;
+						sq_addlast((FAR struct sq_entry_s *)first,
+						           &g_irqchainfreelist);
+					}
+
+					ret = OK;
+					break;
+				}
+			}
+
+			spin_unlock_irqrestore(&g_irqchainlock, flags);
+		} else {
+			spin_unlock_irqrestore(&g_irqchainlock, flags);
+			ret = irq_detach(irq);
+		}
+	}
+#endif
+
+	return ret;
+}

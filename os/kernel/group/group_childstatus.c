@@ -15,48 +15,36 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/*****************************************************************************
- *  kernel/group/group_childstatus.c
+/****************************************************************************
+ * sched/group/group_childstatus.c
  *
- *   Copyright (C) 2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Included Files
- *****************************************************************************/
+ ****************************************************************************/
 
 #include <tinyara/config.h>
 
 #include <sched.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -65,31 +53,23 @@
 
 #if defined(CONFIG_SCHED_HAVE_PARENT) && defined(CONFIG_SCHED_CHILD_STATUS)
 
-/*****************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- *****************************************************************************/
-/* Note that there cannot be more that CONFIG_MAX_TASKS tasks in total.
- * However, the number of child status structures may need to be significantly
- * larger because this number includes the maximum number of tasks that are
- * running PLUS the number of tasks that have exit'ed without having their
- * exit status reaped (via wait(), waitid(), or waitpid()).
- *
- * Obviously, if tasks spawn children indefinitely and never have the exit
- * status reaped, then you have a memory leak!
- */
+ ****************************************************************************/
 
 #if !defined(CONFIG_PREALLOC_CHILDSTATUS) || CONFIG_PREALLOC_CHILDSTATUS == 0
-#undef  CONFIG_PREALLOC_CHILDSTATUS
-#define CONFIG_PREALLOC_CHILDSTATUS (2*CONFIG_MAX_TASKS)
+#  undef  CONFIG_PREALLOC_CHILDSTATUS
+#  define CONFIG_PREALLOC_CHILDSTATUS 16
 #endif
 
-#ifndef CONFIG_DEBUG
-#undef CONFIG_DEBUG_CHILDSTATUS
+#ifndef CONFIG_DEBUG_INFO
+#  undef CONFIG_DEBUG_CHILDSTATUS
 #endif
 
-/*****************************************************************************
+/****************************************************************************
  * Private Types
- *****************************************************************************/
+ ****************************************************************************/
+
 /* Globals are maintained in a structure to minimize name collisions. */
 
 struct child_pool_s {
@@ -97,69 +77,72 @@ struct child_pool_s {
 	FAR struct child_status_s *freelist;
 };
 
-/*****************************************************************************
+/****************************************************************************
  * Private Data
- *****************************************************************************/
+ ****************************************************************************/
 
 static struct child_pool_s g_child_pool;
+static spinlock_t g_child_pool_lock = SP_UNLOCKED;
 
-/*****************************************************************************
+/****************************************************************************
  * Private Functions
- *****************************************************************************/
+ ****************************************************************************/
 
-/*****************************************************************************
- * Name: group_dumpchildren
+/****************************************************************************
+ * Name: group_dump_children
  *
  * Description:
  *   Dump all of the children when the part TCB list is modified.
  *
- * Parameters:
+ * Input Parameters:
  *   group - The task group containing the child status.
  *
- * Return Value:
+ * Returned Value:
  *   None.
  *
  * Assumptions:
  *   Called early in initialization.  No special precautions are required.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_DEBUG_CHILDSTATUS
-static void group_dumpchildren(FAR struct task_group_s *group, FAR const char *msg)
+static void group_dump_children(FAR struct task_group_s *group,
+                                FAR const char *msg)
 {
 	FAR struct child_status_s *child;
 	int i;
 
-	dbg("Task group=%p: %s\n", group, msg);
+	_info("Task group=%p: %s\n", group, msg);
 	for (i = 0, child = group->tg_children; child; i++, child = child->flink) {
-		dbg("  %d. ch_flags=%02x ch_pid=%d ch_status=%d\n", i, child->ch_flags, child->ch_pid, child->ch_status);
+		_info("  %d. ch_flags=%02x ch_pid=%d ch_status=%d\n",
+		      i, child->ch_flags, child->ch_pid, child->ch_status);
 	}
 }
 #else
-#define group_dumpchildren(t, m)
+#  define group_dump_children(t,m)
 #endif
 
-/*****************************************************************************
+/****************************************************************************
  * Public Functions
- *****************************************************************************/
+ ****************************************************************************/
 
-/*****************************************************************************
+/****************************************************************************
  * Name: task_initialize
  *
  * Description:
  *   Initialize task related status.  At present, this includes only the
  *   initialize of the child status pool.
  *
- * Parameters:
+ * Input Parameters:
  *   None.
  *
- * Return Value:
+ * Returned Value:
  *   None.
  *
  * Assumptions:
  *   Called early in initialization.  No special precautions are required.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
 void task_initialize(void)
 {
@@ -178,203 +161,228 @@ void task_initialize(void)
 	}
 }
 
-/*****************************************************************************
- * Name: group_allocchild
+/****************************************************************************
+ * Name: group_alloc_child
  *
  * Description:
  *   Allocate a child status structure by removing the next entry from a
  *   free list.
  *
- * Parameters:
+ * Input Parameters:
  *   None.
  *
- * Return Value:
+ * Returned Value:
  *   On success, a non-NULL pointer to a child status structure.  NULL is
- *   returned if there are no remaining, pre-allocated child status structures.
+ *   returned when memory allocation fails.
  *
  * Assumptions:
  *   Called during task creation in a safe context.  No special precautions
  *   are required here.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-FAR struct child_status_s *group_allocchild(void)
+FAR struct child_status_s *group_alloc_child(void)
 {
 	FAR struct child_status_s *ret;
+	irqstate_t flags;
 
 	/* Return the status block at the head of the free list */
 
+	flags = spin_lock_irqsave(&g_child_pool_lock);
 	ret = g_child_pool.freelist;
 	if (ret) {
 		g_child_pool.freelist = ret->flink;
 		ret->flink            = NULL;
+		spin_unlock_irqrestore(&g_child_pool_lock, flags);
+	} else {
+		spin_unlock_irqrestore(&g_child_pool_lock, flags);
+		ret = kmm_zalloc(sizeof(*ret));
 	}
 
 	return ret;
 }
 
-/*****************************************************************************
- * Name: group_freechild
+/****************************************************************************
+ * Name: group_free_child
  *
  * Description:
  *   Release a child status structure by returning it to a free list.
  *
- * Parameters:
+ * Input Parameters:
  *   status - The child status structure to be freed.
  *
- * Return Value:
+ * Returned Value:
  *   None.
  *
  * Assumptions:
  *   Called during task creation in a safe context.  No special precautions
  *   are required here.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-void group_freechild(FAR struct child_status_s *child)
+void group_free_child(FAR struct child_status_s *child)
 {
+	irqstate_t flags;
+
 	/* Return the child status structure to the free list  */
 
 	if (child) {
+		flags = spin_lock_irqsave(&g_child_pool_lock);
 		child->flink          = g_child_pool.freelist;
 		g_child_pool.freelist = child;
+		spin_unlock_irqrestore(&g_child_pool_lock, flags);
 	}
 }
 
-/*****************************************************************************
- * Name: group_addchild
+/****************************************************************************
+ * Name: group_add_child
  *
  * Description:
  *   Add a child status structure in the given TCB.
  *
- * Parameters:
+ * Input Parameters:
  *   group  - The task group for the child status.
  *   child  - The structure to be added
  *
- * Return Value:
+ * Returned Value:
  *   N
  *
  * Assumptions:
  *   Called during task creation processing in a safe context.  No special
  *   precautions are required here.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-void group_addchild(FAR struct task_group_s *group, FAR struct child_status_s *child)
+void group_add_child(FAR struct task_group_s *group,
+                     FAR struct child_status_s *child)
 {
 	/* Add the entry into the TCB list of children */
 
-	child->flink = group->tg_children;
+	child->flink  = group->tg_children;
 	group->tg_children = child;
 
-	group_dumpchildren(group, "group_addchild");
+	group_dump_children(group, "group_add_child");
 }
 
-/*****************************************************************************
- * Name: group_findchild
+/****************************************************************************
+ * Name: group_find_child
  *
  * Description:
  *   Find a child status structure in the given task group.  A reference to
  *   the child structure is returned, but the child remains in the group's
  *   list of children.
  *
- * Parameters:
+ * Input Parameters:
  *   group - The ID of the parent task group to containing the child status.
  *   pid - The ID of the child to find.
  *
- * Return Value:
+ * Returned Value:
  *   On success, a non-NULL pointer to a child status structure.  NULL is
  *   returned if there is child status structure for that pid in the TCB.
  *
  * Assumptions:
- *   Called during SIGCHLD processing in a safe context.  No special precautions
- *   are required here.
+ *   Called during SIGCHLD processing in a safe context.  No special
+ *   precautions are required here.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-FAR struct child_status_s *group_findchild(FAR struct task_group_s *group, pid_t pid)
+FAR struct child_status_s *group_find_child(FAR struct task_group_s *group,
+                                            pid_t pid)
 {
 	FAR struct child_status_s *child;
+	irqstate_t flags;
 
 	DEBUGASSERT(group);
 
 	/* Find the status structure with the matching PID  */
 
+	flags = spin_lock_irqsave(&group->tg_lock);
 	for (child = group->tg_children; child; child = child->flink) {
 		if (child->ch_pid == pid) {
+			spin_unlock_irqrestore(&group->tg_lock, flags);
 			return child;
 		}
 	}
 
+	spin_unlock_irqrestore(&group->tg_lock, flags);
 	return NULL;
 }
 
-/*****************************************************************************
- * Name: group_exitchild
+/****************************************************************************
+ * Name: group_exit_child
  *
  * Description:
- *   Search for any child that has exitted.
+ *   Search for any child that has exited.
  *
- * Parameters:
+ * Input Parameters:
  *   tcb - The TCB of the parent task to containing the child status.
  *
- * Return Value:
+ * Returned Value:
  *   On success, a non-NULL pointer to a child status structure for the
  *   exited child.  NULL is returned if not child has exited.
  *
  * Assumptions:
- *   Called during SIGCHLD processing in a safe context.  No special precautions
- *   are required here.
+ *   Called during SIGCHLD processing in a safe context.  No special
+ *   precautions are required here.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-FAR struct child_status_s *group_exitchild(FAR struct task_group_s *group)
+FAR struct child_status_s *group_exit_child(FAR struct task_group_s *group)
 {
 	FAR struct child_status_s *child;
+	irqstate_t flags;
 
-	/* Find the status structure of any child task that has exitted. */
+	/* Find the status structure of any child task that has exited. */
 
+	flags = spin_lock_irqsave(&group->tg_lock);
 	for (child = group->tg_children; child; child = child->flink) {
 		if ((child->ch_flags & CHILD_FLAG_EXITED) != 0) {
+			spin_unlock_irqrestore(&group->tg_lock, flags);
 			return child;
 		}
 	}
 
+	spin_unlock_irqrestore(&group->tg_lock, flags);
 	return NULL;
 }
 
-/*****************************************************************************
- * Name: group_removechild
+/****************************************************************************
+ * Name: group_remove_child
  *
  * Description:
  *   Remove one child structure from a task group.  The child is removed, but
- *   is not yet freed.  group_freechild must be called in order to free the
+ *   is not yet freed.  group_free_child must be called in order to free the
  *   child status structure.
  *
- * Parameters:
+ * Input Parameters:
  *   group - The task group containing the child status.
  *   pid - The ID of the child to find.
  *
- * Return Value:
+ * Returned Value:
  *   On success, a non-NULL pointer to a child status structure.  NULL is
  *   returned if there is child status structure for that pid in the TCB.
  *
  * Assumptions:
- *   Called during SIGCHLD processing in a safe context.  No special precautions
- *   are required here.
+ *   Called during SIGCHLD processing in a safe context.  No special
+ *   precautionsare required here.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-FAR struct child_status_s *group_removechild(FAR struct task_group_s *group, pid_t pid)
+FAR struct child_status_s *group_remove_child(FAR struct task_group_s *group,
+                                              pid_t pid)
 {
 	FAR struct child_status_s *curr;
 	FAR struct child_status_s *prev;
+	irqstate_t flags;
 
 	DEBUGASSERT(group);
 
 	/* Find the status structure with the matching PID */
 
-	for (prev = NULL, curr = group->tg_children; curr; prev = curr, curr = curr->flink) {
+	flags = spin_lock_irqsave(&group->tg_lock);
+	for (prev = NULL, curr = group->tg_children;
+	     curr;
+	     prev = curr, curr = curr->flink) {
 		if (curr->ch_pid == pid) {
 			break;
 		}
@@ -392,44 +400,53 @@ FAR struct child_status_s *group_removechild(FAR struct task_group_s *group, pid
 		}
 
 		curr->flink = NULL;
-		group_dumpchildren(group, "group_removechild");
+		spin_unlock_irqrestore(&group->tg_lock, flags);
+		group_dump_children(group, "group_remove_child");
+		return curr;
 	}
 
+	spin_unlock_irqrestore(&group->tg_lock, flags);
 	return curr;
 }
 
-/*****************************************************************************
- * Name: group_removechildren
+/****************************************************************************
+ * Name: group_remove_children
  *
  * Description:
  *   Remove and free all child structure from the task group.
  *
- * Parameters:
+ * Input Parameters:
  *   group - The task group containing the child status.
  *
- * Return Value:
+ * Returned Value:
  *   None.
  *
  * Assumptions:
  *   Called during task exit processing in a safe context.  No special
  *   precautions are required here.
  *
- *****************************************************************************/
+ ****************************************************************************/
 
-void group_removechildren(FAR struct task_group_s *group)
+void group_remove_children(FAR struct task_group_s *group)
 {
 	FAR struct child_status_s *curr;
 	FAR struct child_status_s *next;
+	irqstate_t flags;
 
-	/* Remove all child structures for the TCB and return them to the freelist  */
+	/* Remove all child structures for the TCB and return them to the
+	 * freelist.
+	 */
 
+	flags = spin_lock_irqsave(&group->tg_lock);
 	for (curr = group->tg_children; curr; curr = next) {
 		next = curr->flink;
-		group_freechild(curr);
+		group_free_child(curr);
 	}
 
 	group->tg_children = NULL;
-	group_dumpchildren(group, "group_removechildren");
+	spin_unlock_irqrestore(&group->tg_lock, flags);
+
+	group_dump_children(group, "group_remove_children");
 }
 
-#endif							/* CONFIG_SCHED_HAVE_PARENT && CONFIG_SCHED_CHILD_STATUS */
+#endif /* CONFIG_SCHED_HAVE_PARENT && CONFIG_SCHED_CHILD_STATUS */

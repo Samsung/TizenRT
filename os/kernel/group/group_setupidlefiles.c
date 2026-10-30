@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- *  kernel/group/group_setupidlefiles.c
+ * sched/group/group_setupidlefiles.c
  *
- *   Copyright (C) 2007-2010, 2012-2013 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -60,19 +47,15 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sched.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
 #include <tinyara/fs/fs.h>
 #include <tinyara/net/net.h>
+#include <tinyara/trace.h>
 
 #include "group/group.h"
-
-#if CONFIG_NFILE_DESCRIPTORS > 0 || CONFIG_NSOCKET_DESCRIPTORS > 0
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
@@ -84,75 +67,65 @@
  * Description:
  *   Configure the idle thread's TCB.
  *
- * Parameters:
- *   tcb - tcb of the idle task.
+ * Input Parameters:
+ *   None.
  *
- * Return Value:
- *   None
- *
- * Assumptions:
+ * Returned Value:
+ *   0 is returned on success; a negated errno value is returned on a
+ *   failure.
  *
  ****************************************************************************/
 
-int group_setupidlefiles(FAR struct task_tcb_s *tcb)
+int group_setupidlefiles(void)
 {
-#if CONFIG_NFILE_DESCRIPTORS > 0 || CONFIG_NSOCKET_DESCRIPTORS > 0
-	FAR struct task_group_s *group = tcb->cmn.group;
-#endif
-#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_DEV_CONSOLE)
+#if defined(CONFIG_DEV_CONSOLE) || defined(CONFIG_DEV_NULL)
 	int fd;
 #endif
 
-#if CONFIG_NFILE_DESCRIPTORS > 0 || CONFIG_NSOCKET_DESCRIPTORS > 0
-	DEBUGASSERT(group);
-#endif
-
-#if CONFIG_NFILE_DESCRIPTORS > 0
-	/* Initialize file descriptors for the TCB */
-
-	files_initlist(&group->tg_filelist);
-#endif
-
-#if CONFIG_NSOCKET_DESCRIPTORS > 0
-	/* Allocate socket descriptors for the TCB */
-
-	net_initlist(&group->tg_socketlist);
-#endif
+	sched_trace_begin();
 
 	/* Open stdin, dup to get stdout and stderr. This should always
 	 * be the first file opened and, hence, should always get file
 	 * descriptor 0.
 	 */
 
-#if CONFIG_NFILE_DESCRIPTORS > 0 && defined(CONFIG_DEV_CONSOLE)
-	fd = open("/dev/console", O_RDWR);
+#if defined(CONFIG_DEV_CONSOLE) || defined(CONFIG_DEV_NULL)
+#  ifdef CONFIG_DEV_CONSOLE
+	fd = nx_open("/dev/console", O_RDWR);
+#  else
+	fd = nx_open("/dev/null", O_RDWR);
+#  endif
 	if (fd == 0) {
-		/* Successfully opened /dev/console as stdin (fd == 0) */
+		/* Successfully opened stdin (fd == 0) */
 
-		(void)fs_dupfd2(0, 1);
-		(void)fs_dupfd2(0, 2);
+		nx_dup2(0, 1);
+		nx_dup2(0, 2);
 	} else {
-		/* We failed to open /dev/console OR for some reason, we opened
+		/* We failed to open stdin OR for some reason, we opened
 		 * it and got some file descriptor other than 0.
 		 */
 
 		if (fd > 0) {
-			sllvdbg("Open /dev/console fd: %d\n", fd);
-			(void)close(fd);
+			sinfo("Open stdin fd: %d\n", fd);
+			nx_close(fd);
 		} else {
-			slldbg("Failed to open /dev/console: %d\n", errno);
+			serr("ERROR: Failed to open stdin: %d\n", fd);
 		}
+
+		sched_trace_end();
 		return -ENFILE;
 	}
-#endif
-
-	/* Allocate file/socket streams for the TCB */
-
-#if CONFIG_NFILE_STREAMS > 0
-	return group_setupstreams(tcb);
 #else
-	return OK;
-#endif
-}
+	/* This configuration can confuse user programs and libraries.
+	 * Eg. a program which opens a file and then prints something to
+	 * STDERR_FILENO (2) can end up with something undesirable if the
+	 * file descriptor for the file happens to be 2.
+	 * It's a common practice to keep 0-2 always open even if they are
+	 * /dev/null to avoid that kind of problems. Thus the following warning.
+	 */
+#  warning file descriptors 0-2 are not opened
+#endif /* defined(CONFIG_DEV_CONSOLE) || defined(CONFIG_DEV_NULL) */
 
-#endif							/* CONFIG_NFILE_DESCRIPTORS || CONFIG_NSOCKET_DESCRIPTORS */
+	sched_trace_end();
+	return OK;
+}

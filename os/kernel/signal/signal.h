@@ -16,37 +16,24 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * kernel/signal/signal.h
+ * sched/signal/signal.h
  *
- *   Copyright (C) 2007-2009, 2013-2014 Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -60,54 +47,52 @@
 #include <tinyara/compiler.h>
 
 #include <stdint.h>
-#include <queue.h>
+#include <stdbool.h>
 #include <sched.h>
 
+#include <tinyara/sched.h>
 #include <tinyara/kmalloc.h>
+#include <tinyara/queue.h>
 
 /****************************************************************************
- * Definitions
+ * Pre-processor Definitions
  ****************************************************************************/
+
+/* These are special values of si_signo that mean that either the wait was
+ * awakened with a timeout, or the wait was canceled... not the receipt of a
+ * signal.
+ */
+
+#define SIG_CANCEL_TIMEOUT 0xfe
+#define SIG_WAIT_TIMEOUT   0xff
 
 /* The following definition determines the number of signal structures to
  * allocate in a block
  */
 
-#define NUM_SIGNAL_ACTIONS      16
-#define NUM_PENDING_ACTIONS     16
-#define NUM_PENDING_INT_ACTIONS  8
-#define NUM_SIGNALS_PENDING     16
-#define NUM_INT_SIGNALS_PENDING  8
-
-/* Special values of si_signo used internally to indicate the reason
- * for unblocking a task from sigwaitinfo/sigtimedwait.
- *
- * SIG_WAIT_TIMEOUT  - The wait was awakened by a timeout.
- * SIG_WAIT_CANCELED - The wait was canceled (e.g. by pthread_cancel).
- */
-
-#define SIG_WAIT_TIMEOUT   0xff
-#define SIG_WAIT_CANCELED  0xfe
+#define NUM_PENDING_ACTIONS      4
+#define NUM_SIGNALS_PENDING      4
 
 /****************************************************************************
  * Public Type Definitions
  ****************************************************************************/
 
+/* This enumeration identifies the type of signal data allocation */
+
 enum sigalloc_e {
-	SIG_ALLOC_FIXED = 0,		/* pre-allocated; never freed */
-	SIG_ALLOC_DYN,				/* dynamically allocated; free when unused */
-	SIG_ALLOC_IRQ				/* Preallocated, reserved for interrupt handling */
+	SIG_ALLOC_FIXED = 0,  /* pre-allocated; never freed */
+	SIG_ALLOC_DYN,        /* dynamically allocated; free when unused */
+	SIG_ALLOC_IRQ         /* Preallocated, reserved for interrupt handling */
 };
-typedef enum sigalloc_e sigalloc_t;
 
 /* The following defines the sigaction queue entry */
 
 struct sigactq {
-	FAR struct sigactq *flink;	/* Forward link */
-	struct sigaction act;		/* Sigaction data */
-	uint8_t signo;				/* Signal associated with action */
+	FAR struct sigactq *flink;     /* Forward link */
+	struct sigaction act;          /* Sigaction data */
+	uint8_t   signo;               /* Signal associated with action */
 };
-typedef struct sigactq sigactq_t;
+typedef struct sigactq  sigactq_t;
 
 /* The following defines the queue structure within each TCB to hold pending
  * signals received by the task.  These are signals that cannot be processed
@@ -116,9 +101,10 @@ typedef struct sigactq sigactq_t;
  */
 
 struct sigpendq {
-	FAR struct sigpendq *flink;	/* Forward link */
-	siginfo_t info;				/* Signal information */
-	uint8_t type;				/* (Used to manage allocations) */
+	FAR struct sigpendq *flink;    /* Forward link */
+	FAR struct tcb_s *tcb;         /* TCB of thread to deliver to */
+	siginfo_t info;                /* Signal information */
+	uint8_t   type;                /* (Used to manage allocations) */
 };
 typedef struct sigpendq sigpendq_t;
 
@@ -127,103 +113,120 @@ typedef struct sigpendq sigpendq_t;
  */
 
 struct sigq_s {
-	FAR struct sigq_s *flink;	/* Forward link */
+	FAR struct sigq_s *flink;      /* Forward link */
 	union {
 		void (*sighandler)(int signo, siginfo_t *info, void *context);
-	} action;					/* Signal action */
-	sigset_t mask;				/* Additional signals to mask while the
-								 * the signal-catching function executes */
-	siginfo_t info;				/* Signal information */
-	uint8_t type;				/* (Used to manage allocations) */
+	} action;                      /* Signal action */
+	sigset_t  mask;                /* Additional signals to mask while the
+                                  * the signal-catching function executes */
+	siginfo_t info;                /* Signal information */
+	uint8_t   type;                /* (Used to manage allocations) */
 };
 typedef struct sigq_s sigq_t;
 
 /****************************************************************************
- * Global Variables
+ * Public Data
  ****************************************************************************/
+
+/* The g_sigactions data structure a pool of pre-allocated signal action
+ * structures buffers structures.
+ */
+
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
+extern  sigactq_t  g_sigactions[CONFIG_SIG_PREALLOC_ACTIONS];
+#endif
 
 /* The g_sigfreeaction data structure is a list of available signal action
  * structures.
  */
 
-extern sq_queue_t g_sigfreeaction;
+extern sq_queue_t  g_sigfreeaction;
 
 /* The g_sigpendingaction data structure is a list of available pending
  * signal action structures.
  */
 
-extern sq_queue_t g_sigpendingaction;
+extern sq_queue_t  g_sigpendingaction;
 
 /* The g_sigpendingirqaction is a list of available pending signal actions
  * that are reserved for use by interrupt handlers.
  */
 
-extern sq_queue_t g_sigpendingirqaction;
+extern sq_queue_t  g_sigpendingirqaction;
 
 /* The g_sigpendingsignal data structure is a list of available pending
  * signal structures.
  */
 
-extern sq_queue_t g_sigpendingsignal;
+extern sq_queue_t  g_sigpendingsignal;
 
 /* The g_sigpendingirqsignal data structure is a list of available pending
  * signal structures that are reserved for use by interrupt handlers.
  */
 
-extern sq_queue_t g_sigpendingirqsignal;
+extern sq_queue_t  g_sigpendingirqsignal;
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
 /* Internal signal-related interfaces ***************************************/
+
 /* Forward references */
 
 struct task_group_s;
 
 /* sig_initializee.c */
 
-void weak_function sig_initialize(void);
-void sig_allocateactionblock(void);
-sigactq_t *sig_allocateaction(void);
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
+void               nxsig_initialize(void);
+#endif
 
 /* sig_action.c */
 
-void sig_releaseaction(FAR sigactq_t *sigact);
+void               nxsig_release_action(FAR sigactq_t *sigact);
 
-/* sig_pending.c */
+/* sig_default.c */
 
-sigset_t sig_pendingset(FAR struct tcb_s *stcb);
+#ifdef CONFIG_SIG_DEFAULT
+bool               nxsig_isdefault(FAR struct tcb_s *tcb, int signo);
+bool               nxsig_iscatchable(int signo);
+_sa_handler_t      nxsig_default(FAR struct tcb_s *tcb, int signo,
+                                 bool defaction);
+int                nxsig_default_initialize(FAR struct tcb_s *tcb);
+#endif
 
 /* sig_dispatch.c */
 
-int sig_tcbdispatch(FAR struct tcb_s *stcb, FAR siginfo_t *info);
-int sig_dispatch(pid_t pid, FAR siginfo_t *info);
+int                nxsig_tcbdispatch(FAR struct tcb_s *stcb,
+                                     FAR siginfo_t *info,
+                                     bool group_dispatch);
+int                nxsig_dispatch(pid_t pid, FAR siginfo_t *info,
+                                  bool thread);
 
 /* sig_cleanup.c */
 
-void sig_cleanup(FAR struct tcb_s *stcb);
-void sig_release(FAR struct task_group_s *group);
+#ifdef CONFIG_ENABLE_ALL_SIGNALS
+void               nxsig_cleanup(FAR struct tcb_s *stcb);
+void               nxsig_release(FAR struct task_group_s *group);
+#endif
+
+/* sig_timedwait.c */
+
+void nxsig_wait_irq(FAR struct tcb_s *wtcb, uint8_t signo,
+                    uint8_t code, int errcode);
 
 /* In files of the same name */
 
-FAR sigq_t *sig_allocatependingsigaction(void);
-void sig_deliver(FAR struct tcb_s *stcb);
-FAR sigactq_t *sig_findaction(FAR struct tcb_s *stcb, int signo);
-int sig_lowest(FAR sigset_t *set);
-#ifdef CONFIG_CAN_PASS_STRUCTS
-int sig_mqnotempty(int tid, int signo, union sigval value);
-#else
-int sig_mqnotempty(int tid, int signo, FAR void *sival_ptr);
-#endif
-void sig_releasependingsigaction(FAR sigq_t *sigq);
-void sig_releasependingsignal(FAR sigpendq_t *sigpend);
-FAR sigpendq_t *sig_removependingsignal(FAR struct tcb_s *stcb, int signo);
-void sig_unmaskpendingsignal(void);
+FAR sigq_t        *nxsig_alloc_pendingsigaction(void);
+void               nxsig_deliver(FAR struct tcb_s *stcb);
+FAR sigactq_t     *nxsig_find_action(FAR struct task_group_s *group,
+                                     int signo);
+int                nxsig_lowest(FAR sigset_t *set);
+void               nxsig_release_pendingsigaction(FAR sigq_t *sigq);
+void               nxsig_release_pendingsignal(FAR sigpendq_t *sigpend);
+FAR sigpendq_t    *nxsig_remove_pendingsignal(FAR struct tcb_s *stcb,
+                                              int signo);
+bool               nxsig_unmask_pendingsignal(void);
 
-/* sig_waitirq.c */
-
-void sig_waitirq(FAR struct tcb_s *wtcb, uint8_t signo,
-                 uint8_t code, int errcode);
-
-#endif							/* __SCHED_SIGNAL_SIGNAL_H */
+#endif /* __SCHED_SIGNAL_SIGNAL_H */
