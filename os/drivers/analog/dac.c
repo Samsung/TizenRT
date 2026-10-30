@@ -18,41 +18,22 @@
 /****************************************************************************
  * drivers/analog/dac.c
  *
- *   Copyright (C) 2011 Li Zhuoyi. All rights reserved.
- *   Author: Li Zhuoyi <lzyy.cn@gmail.com>
- *   History: 0.1 2011-08-04 initial version
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Derived from drivers/can.c
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
  *
- *   Copyright (C) 2008-2009Gregory Nutt. All rights reserved.
- *   Author: Gregory Nutt <gnutt@nuttx.org>
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name NuttX nor the names of its contributors may be
- *    used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
- * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  ****************************************************************************/
 
@@ -67,17 +48,16 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
-#include <semaphore.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <debug.h>
 
 #include <tinyara/arch.h>
-#include <tinyara/semaphore.h>
+#include <tinyara/signal.h>
 #include <tinyara/fs/fs.h>
 #include <tinyara/analog/dac.h>
 
-#include <arch/irq.h>
+#include <tinyara/irq.h>
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -90,54 +70,54 @@
  * Private Function Prototypes
  ****************************************************************************/
 
-static int dac_open(FAR struct file *filep);
-static int dac_close(FAR struct file *filep);
-static ssize_t dac_read(FAR struct file *filep, FAR char *buffer, size_t buflen);
-static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer, size_t buflen);
-static int dac_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
+static int     dac_open(FAR struct file *filep);
+static int     dac_close(FAR struct file *filep);
+static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer,
+                         size_t buflen);
+static int     dac_ioctl(FAR struct file *filep, int cmd, unsigned long arg);
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static const struct file_operations dac_fops = {
-	dac_open,
-	dac_close,
-	dac_read,
-	dac_write,
-	0,
-	dac_ioctl
-#ifndef CONFIG_DISABLE_POLL
-	, 0
-#endif
+static const struct file_operations g_dac_fops =
+{
+  dac_open,       /* open */
+  dac_close,      /* close */
+  NULL,           /* read */
+  dac_write,      /* write */
+  NULL,           /* seek */
+  dac_ioctl,      /* ioctl */
 };
 
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
-/************************************************************************************
+
+/****************************************************************************
  * Name: dac_open
  *
  * Description:
  *   This function is called whenever the DAC device is opened.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 static int dac_open(FAR struct file *filep)
 {
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct dac_dev_s *dev = inode->i_private;
-	uint8_t tmp;
-	int ret = OK;
+	FAR struct inode     *inode = filep->f_inode;
+	FAR struct dac_dev_s *dev   = inode->i_private;
+	uint8_t               tmp;
+	int                   ret;
 
-	/* If the port is the middle of closing, wait until the close is finished */
+	/* If the port is in the middle of closing, wait until the close is
+	 * finished.
+	 */
 
-	if (sem_wait(&dev->ad_closesem) != OK) {
-		ret = -errno;
-	} else {
-		/* Increment the count of references to the device.  If this the first
-		 * time that the driver has been opened for this device, then initialize
-		 * the device.
+	ret = nxmutex_lock(&dev->ad_closelock);
+	if (ret >= 0) {
+		/* Increment the count of references to the device.  If this is the
+		 * first time that the driver has been opened for this device, then
+		 * initialize the device.
 		 */
 
 		tmp = dev->ad_ocount + 1;
@@ -146,7 +126,9 @@ static int dac_open(FAR struct file *filep)
 
 			ret = -EMFILE;
 		} else {
-			/* Check if this is the first time that the driver has been opened. */
+			/* Check if this is the first time that the driver has been
+			 * opened.
+			 */
 
 			if (tmp == 1) {
 				/* Yes.. perform one time hardware initialization. */
@@ -168,38 +150,37 @@ static int dac_open(FAR struct file *filep)
 			}
 		}
 
-		sem_post(&dev->ad_closesem);
+		nxmutex_unlock(&dev->ad_closelock);
 	}
 
 	return ret;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: dac_close
  *
  * Description:
  *   This routine is called when the DAC device is closed.
  *   It waits for the last remaining data to be sent.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 static int dac_close(FAR struct file *filep)
 {
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct dac_dev_s *dev = inode->i_private;
-	irqstate_t flags;
-	int ret = OK;
+	FAR struct inode     *inode = filep->f_inode;
+	FAR struct dac_dev_s *dev   = inode->i_private;
+	irqstate_t            flags;
+	int                   ret;
 
-	if (sem_wait(&dev->ad_closesem) != OK) {
-		ret = -errno;
-	} else {
+	ret = nxmutex_lock(&dev->ad_closelock);
+	if (ret >= 0) {
 		/* Decrement the references to the driver.  If the reference count will
 		 * decrement to 0, then uninitialize the driver.
 		 */
 
 		if (dev->ad_ocount > 1) {
 			dev->ad_ocount--;
-			sem_post(&dev->ad_closesem);
+			nxmutex_unlock(&dev->ad_closelock);
 		} else {
 			/* There are no more references to the port */
 
@@ -208,20 +189,16 @@ static int dac_close(FAR struct file *filep)
 			/* Now we wait for the transmit FIFO to clear */
 
 			while (dev->ad_xmit.af_head != dev->ad_xmit.af_tail) {
-#ifndef CONFIG_DISABLE_SIGNALS
-				usleep(HALF_SECOND_USEC);
-#else
-				up_mdelay(HALF_SECOND_MSEC);
-#endif
+				nxsched_usleep(HALF_SECOND_USEC);
 			}
 
 			/* Free the IRQ and disable the DAC device */
 
-			flags = enter_critical_section();	/* Disable interrupts */
-			dev->ad_ops->ao_shutdown(dev);	/* Disable the DAC */
+			flags = enter_critical_section();    /* Disable interrupts */
+			dev->ad_ops->ao_shutdown(dev);       /* Disable the DAC */
 			leave_critical_section(flags);
 
-			sem_post(&dev->ad_closesem);
+			nxmutex_unlock(&dev->ad_closelock);
 		}
 	}
 
@@ -229,15 +206,6 @@ static int dac_close(FAR struct file *filep)
 }
 
 /****************************************************************************
- * Name: dac_read
- ****************************************************************************/
-
-static ssize_t dac_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
-{
-	return 0;
-}
-
-/************************************************************************************
  * Name: dac_xmit
  *
  * Description:
@@ -246,7 +214,7 @@ static ssize_t dac_read(FAR struct file *filep, FAR char *buffer, size_t buflen)
  * Assumptions:
  *   Called with interrupts disabled
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 static int dac_xmit(FAR struct dac_dev_s *dev)
 {
@@ -258,7 +226,8 @@ static int dac_xmit(FAR struct dac_dev_s *dev)
 	if (dev->ad_xmit.af_head != dev->ad_xmit.af_tail) {
 		/* Send the next message at the head of the FIFO */
 
-		ret = dev->ad_ops->ao_send(dev, &dev->ad_xmit.af_buffer[dev->ad_xmit.af_head]);
+		ret = dev->ad_ops->ao_send(dev,
+		  &dev->ad_xmit.af_buffer[dev->ad_xmit.af_head]);
 
 		/* Make sure the TX done interrupts are enabled */
 
@@ -269,29 +238,30 @@ static int dac_xmit(FAR struct dac_dev_s *dev)
 	return ret;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: dac_write
- ************************************************************************************/
+ ****************************************************************************/
 
-static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer, size_t buflen)
+static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer,
+                         size_t buflen)
 {
-	FAR struct inode *inode = filep->f_inode;
-	FAR struct dac_dev_s *dev = inode->i_private;
-	FAR struct dac_fifo_s *fifo = &dev->ad_xmit;
-	FAR struct dac_msg_s *msg;
-	bool empty;
-	ssize_t nsent = 0;
-	irqstate_t flags;
-	int nexttail;
-	int msglen;
-	int ret = 0;
+	FAR struct inode      *inode = filep->f_inode;
+	FAR struct dac_dev_s  *dev   = inode->i_private;
+	FAR struct dac_fifo_s *fifo  = &dev->ad_xmit;
+	FAR struct dac_msg_s  *msg;
+	bool                   empty;
+	ssize_t                nsent = 0;
+	irqstate_t             flags;
+	int                    nexttail;
+	int                    msglen;
+	int                    ret   = 0;
 
-	/* Interrupts must disabled throughout the following */
+	/* Interrupts must be disabled throughout the following */
 
 	flags = enter_critical_section();
 
-	/* Check if the TX FIFO was empty when we started.  That is a clue that we have
-	 * to kick off a new TX sequence.
+	/* Check if the TX FIFO was empty when we started.  That is a clue that we
+	 * have to kick off a new TX sequence.
 	 */
 
 	empty = (fifo->af_head == fifo->af_tail);
@@ -315,8 +285,8 @@ static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer, size_t 
 	}
 
 	while ((buflen - nsent) >= msglen) {
-		/* Check if adding this new message would over-run the drivers ability to enqueue
-		 * xmit data.
+		/* Check if adding this new message would over-run the drivers ability
+		 * to enqueue xmit data.
 		 */
 
 		nexttail = fifo->af_tail + 1;
@@ -324,10 +294,12 @@ static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer, size_t 
 			nexttail = 0;
 		}
 
-		/* If the XMIT fifo becomes full, then wait for space to become available */
+		/* If the XMIT FIFO becomes full, then wait for space to become
+		 * available.
+		 */
 
 		while (nexttail == fifo->af_head) {
-			/* The transmit FIFO is full  -- was non-blocking mode selected? */
+			/* The transmit FIFO is full -- was non-blocking mode selected? */
 
 			if (filep->f_oflags & O_NONBLOCK) {
 				if (nsent == 0) {
@@ -339,7 +311,7 @@ static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer, size_t 
 				goto return_with_irqdisabled;
 			}
 
-			/* If the FIFO was empty when we started, then we will have
+			/* If the FIFO was empty when we started, then we will have to
 			 * start the XMIT sequence to clear the FIFO.
 			 */
 
@@ -349,13 +321,10 @@ static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer, size_t 
 
 			/* Wait for a message to be sent */
 
-			do {
-				ret = sem_wait(&fifo->af_sem);
-				if (ret < 0 && errno != EINTR) {
-					ret = -errno;
-					goto return_with_irqdisabled;
-				}
-			} while (ret < 0);
+			ret = nxsem_wait_uninterruptible(&fifo->af_sem);
+			if (ret < 0) {
+				goto return_with_irqdisabled;
+			}
 
 			/* Re-check the FIFO state */
 
@@ -363,7 +332,7 @@ static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer, size_t 
 		}
 
 		/* We get here if there is space at the end of the FIFO.  Add the new
-		 * CAN message at the tail of the FIFO.
+		 * DAC message at the tail of the FIFO.
 		 */
 
 		if (msglen == 5) {
@@ -371,20 +340,23 @@ static ssize_t dac_write(FAR struct file *filep, FAR const char *buffer, size_t 
 			memcpy(&fifo->af_buffer[fifo->af_tail], msg, msglen);
 		} else if (msglen == 4) {
 			fifo->af_buffer[fifo->af_tail].am_channel = buffer[nsent];
-			fifo->af_buffer[fifo->af_tail].am_data = *(uint32_t *)&buffer[nsent];
+			fifo->af_buffer[fifo->af_tail].am_data =
+			  *(FAR uint32_t *)&buffer[nsent];
 			fifo->af_buffer[fifo->af_tail].am_data &= 0xffffff00;
 		} else if (msglen == 3) {
 			fifo->af_buffer[fifo->af_tail].am_channel = buffer[nsent];
-			fifo->af_buffer[fifo->af_tail].am_data = (*(uint16_t *)&buffer[nsent + 1]);
+			fifo->af_buffer[fifo->af_tail].am_data =
+			  (*(FAR uint16_t *)&buffer[nsent + 1]);
 			fifo->af_buffer[fifo->af_tail].am_data <<= 16;
 		} else if (msglen == 2) {
 			fifo->af_buffer[fifo->af_tail].am_channel = 0;
-			fifo->af_buffer[fifo->af_tail].am_data = (*(uint16_t *)&buffer[nsent]);
+			fifo->af_buffer[fifo->af_tail].am_data =
+			  (*(FAR uint16_t *)&buffer[nsent]);
 			fifo->af_buffer[fifo->af_tail].am_data <<= 16;
 		} else if (msglen == 1) {
 			fifo->af_buffer[fifo->af_tail].am_channel = 0;
-			fifo->af_buffer[fifo->af_tail].am_data = buffer[nsent];
-			fifo->af_buffer[fifo->af_tail].am_data <<= 24;
+			fifo->af_buffer[fifo->af_tail].am_data    = buffer[nsent];
+			fifo->af_buffer[fifo->af_tail].am_data  <<= 24;
 		}
 
 		/* Increment the tail of the circular buffer */
@@ -413,9 +385,9 @@ return_with_irqdisabled:
 	return ret;
 }
 
-/************************************************************************************
+/****************************************************************************
  * Name: dac_ioctl
- ************************************************************************************/
+ ****************************************************************************/
 
 static int dac_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
 {
@@ -431,20 +403,22 @@ static int dac_ioctl(FAR struct file *filep, int cmd, unsigned long arg)
  * Public Functions
  ****************************************************************************/
 
-/************************************************************************************
+/****************************************************************************
  * Name: dac_txdone
  *
  * Description:
- *   Called from the DAC interrupt handler at the completion of a send operation.
+ *   Called from the DAC interrupt handler at the completion of a send
+ *   operation.
  *
- * Return:
+ * Returned Value:
  *   OK on success; a negated errno on failure.
  *
- ************************************************************************************/
+ ****************************************************************************/
 
 int dac_txdone(FAR struct dac_dev_s *dev)
 {
 	int ret = -ENOENT;
+	int sval;
 
 	/* Verify that the xmit FIFO is not empty */
 
@@ -461,12 +435,31 @@ int dac_txdone(FAR struct dac_dev_s *dev)
 		if (ret == OK) {
 			/* Inform any waiting threads that new xmit space is available */
 
-			ret = sem_post(&dev->ad_xmit.af_sem);
+			ret = nxsem_get_value(&dev->ad_xmit.af_sem, &sval);
+			if (ret == OK && sval <= 0) {
+				ret = nxsem_post(&dev->ad_xmit.af_sem);
+			}
 		}
 	}
 
 	return ret;
 }
+
+/****************************************************************************
+ * Name: dac_register
+ *
+ * Description:
+ *   Register a dac driver.
+ *
+ * Input Parameters:
+ *    path - The full path to the DAC device to be registered.  This could
+ *      be, as an example, "/dev/dac0"
+ *    dev - An instance of the device-specific DAC interface
+ *
+ * Returned Value:
+ *    Zero on success; A negated errno value on failure.
+ *
+ ****************************************************************************/
 
 int dac_register(FAR const char *path, FAR struct dac_dev_s *dev)
 {
@@ -474,17 +467,12 @@ int dac_register(FAR const char *path, FAR struct dac_dev_s *dev)
 
 	dev->ad_ocount = 0;
 
-	/* Initialize semaphores */
-	sem_init(&dev->ad_xmit.af_sem, 0, 0);
-	sem_init(&dev->ad_closesem, 0, 1);
+	/* Initialize semaphores & mutex */
 
-	/*
-	 * The transmit semaphore is used for signaling and, hence, should
-	 * not have priority inheritance enabled.
-	 */
-	sem_setprotocol(&dev->ad_xmit.af_sem, SEM_PRIO_NONE);
+	nxsem_init(&dev->ad_xmit.af_sem, 0, 0);
+	nxmutex_init(&dev->ad_closelock);
 
 	dev->ad_ops->ao_reset(dev);
 
-	return register_driver(path, &dac_fops, 0555, dev);
+	return register_driver(path, &g_dac_fops, 0222, dev);
 }

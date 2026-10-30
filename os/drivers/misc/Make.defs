@@ -1,0 +1,115 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+# drivers/misc/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+ifeq ($(CONFIG_DEV_SIMPLE_ADDRENV),y)
+  CSRCS += addrenv.c
+endif
+
+ifeq ($(CONFIG_DEV_NULL),y)
+  CSRCS += dev_null.c
+endif
+
+ifeq ($(CONFIG_DEV_ZERO),y)
+  CSRCS += dev_zero.c
+endif
+
+ifeq ($(CONFIG_DEV_MEM),y)
+  CSRCS += dev_mem.c
+endif
+
+ifeq ($(CONFIG_DEV_ASCII),y)
+  CSRCS += dev_ascii.c
+endif
+
+ifeq ($(CONFIG_LWL_CONSOLE),y)
+  CSRCS += lwl_console.c
+endif
+
+ifneq ($(CONFIG_DISABLE_MOUNTPOINT),y)
+  CSRCS += ramdisk.c
+ifeq ($(CONFIG_DRVR_MKRD),y)
+  CSRCS += mkrd.c
+endif
+endif
+
+ifeq ($(CONFIG_DRVR_WRITEBUFFER),y)
+  CSRCS += rwbuffer.c
+else ifeq ($(CONFIG_DRVR_READAHEAD),y)
+  CSRCS += rwbuffer.c
+endif
+
+ifeq ($(CONFIG_DEV_RPMSG),y)
+  CSRCS += rpmsgdev.c
+endif
+
+ifeq ($(CONFIG_DEV_RPMSG_SERVER),y)
+  CSRCS += rpmsgdev_server.c
+endif
+
+ifeq ($(CONFIG_BLK_RPMSG),y)
+  CSRCS += rpmsgblk.c
+endif
+
+ifeq ($(CONFIG_BLK_RPMSG_SERVER),y)
+  CSRCS += rpmsgblk_server.c
+  CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)fs$(DELIM)inode
+  CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)fs
+endif
+
+ifneq ($(CONFIG_DEV_OPTEE_NONE),y)
+  CSRCS += optee.c
+  ifeq ($(CONFIG_DEV_OPTEE_SMC),y)
+    CSRCS += optee_smc.c
+    CSRCS += optee_rpc.c
+    ifeq ($(CONFIG_DEV_OPTEE_SUPPLICANT),y)
+      CSRCS += optee_supplicant.c
+    endif
+  else
+    CSRCS += optee_socket.c
+  endif
+endif
+
+ifeq ($(CONFIG_GOLDFISH_PIPE),y)
+  CSRCS += goldfish_pipe.c
+endif
+
+# Include build support
+
+DEPPATH += --dep-path misc
+VPATH += :misc

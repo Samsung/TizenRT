@@ -16,10 +16,121 @@
 #
 ###########################################################################
 
-# Include gpio drivers
-ifeq ($(CONFIG_GPIO),y)
-	CSRCS += gpio.c
+############################################################################
+# drivers/ioexpander/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+# Check if I/O expander support is enabled
+
+ifeq ($(CONFIG_IOEXPANDER),y)
+
+# Include the selected I/O expander drivers
+
+ifeq ($(CONFIG_IOEXPANDER_RPMSG),y)
+  CSRCS += ioe_rpmsg.c
 endif
 
-DEPPATH += --dep-path gpio
-VPATH += :gpio
+ifeq ($(CONFIG_IOEXPANDER_DUMMY),y)
+  CSRCS += ioe_dummy.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_ICJX),y)
+  CSRCS += icjx.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_ISO1H812G),y)
+  CSRCS += iso1h812g.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_ISO1I813T),y)
+  CSRCS += iso1i813t.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_PCA9555),y)
+  CSRCS += pca9555.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_PCA9538),y)
+  CSRCS += pca9538.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_PCA9557),y)
+  CSRCS += pca9557.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_TCA64XX),y)
+  CSRCS += tca64xx.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_PCF8574),y)
+  CSRCS += pcf8574.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_PCF8575),y)
+  CSRCS += pcf8575.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_MCP23X08),y)
+  CSRCS += mcp23x08.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_MCP23X17),y)
+  CSRCS += mcp23x17.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_SX1509),y)
+  CSRCS += sx1509.c
+endif
+
+ifeq ($(CONFIG_IOEXPANDER_AW9523B),y)
+  CSRCS += aw9523b.c
+endif
+
+endif # CONFIG_IOEXPANDER
+
+# GPIO test device driver (independent of IOEXPANDERS)
+
+ifeq ($(CONFIG_DEV_GPIO),y)
+  CSRCS += gpio.c
+ifeq ($(CONFIG_GPIO_LOWER_HALF),y)
+  CSRCS += gpio_lower_half.c
+endif
+endif
+
+# The following implements an awkward OR
+
+ifeq ($(CONFIG_IOEXPANDER),y)
+
+# Include ioexpander I/O device driver build support
+
+DEPPATH += --dep-path ioexpander
+VPATH += :ioexpander
+CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)drivers$(DELIM)ioexpander
+
+else ifeq ($(CONFIG_DEV_GPIO),y)
+
+# Include ioexpander I/O device driver build support
+
+DEPPATH += --dep-path ioexpander
+VPATH += :ioexpander
+CFLAGS += ${INCDIR_PREFIX}$(TOPDIR)$(DELIM)drivers$(DELIM)ioexpander
+
+endif

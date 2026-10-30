@@ -3,6 +3,17 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
+menuconfig ANALOG
+	bool "Analog Device(ADC/DAC) Support"
+	default n
+	---help---
+		This directory holds implementations of analog device drivers.
+		This includes drivers for Analog to Digital Conversion (ADC) as
+		well as drivers for Digital to Analog Conversion (DAC).
+		See include/nuttx/analog/*.h for registration information.
+
+if ANALOG
+
 config ADC
 	bool "Analog-to-Digital Conversion"
 	default n
@@ -36,14 +47,461 @@ config ADC_FIFOSIZE
 config ADC_NPOLLWAITERS
 	int "Number of poll waiters"
 	default 2
-	depends on !DISABLE_POLL
 	---help---
 		Maximum number of threads that can be waiting on poll.
 
+config ADC_ADS1242
+	bool "TI ADS1242 support"
+	default n
+	select SPI
+	---help---
+		Enable driver support for the ADS1242 24-Bit SPI powered ADC.
+
+		This driver supports reading the ADC conversion result as well as
+		configuring the ADC, setting the input channel, etc. is implemented
+		via ioctl calls. However, it does not yet implement the standard ADC
+		interface.
+
+config ADC_ADS125X
+	bool "TI ADS1255/ADS1256 support"
+	default n
+	select SPI
+	select SCHED_HPWORK
+	depends on ALLOW_BSD_COMPONENTS
+
+if ADC_ADS125X
+
+config ADS1255_FREQUENCY
+	int "ADS1255/ADS1256 SPI frequency"
+	default 1000000
+
+endif # ADC_ADS125X
+
+config ADC_LTC1867L
+	bool "LTC 1863L/1867L support"
+	default n
+	select SPI
+	---help---
+		Enable driver support for the LTC 1863L (12 bit) and LTC 1867L (16 bit) SPI powered ADC.
+
+		Note that the ADC conversion is started via the ANIOC_TRIGGER iotcl.
+
+if ADC_LTC1867L
+
+config LTC1867L_FREQUENCY
+	int "LTC 1863L/1867L SPI frequency"
+	default 1000000
+	---help---
+		LTC 1863L/1867L SPI frequency. Maximum is 20 MHz.
+
+endif # ADC_LTC1867L
+
+config ADC_PGA11X
+	bool "TI PGA112/3/6/7 support"
+	default n
+	select SPI
+	---help---
+		Enables support for the  PGA112, PGA113, PGA116, PGA117 Zero-Drift
+		PROGRAMMABLE GAIN AMPLIFIER with MUX
+
+if ADC_PGA11X
+
+config PGA11X_SPIFREQUENCY
+	int "TI PGA112/3/6/7 SPI frequency"
+	default 1000000
+	---help---
+		PGA11x SPI frequency.
+
+config PGA11X_SPIMODE
+	int "TI PGA112/3/6/7 SPI mode"
+	default 0
+	---help---
+		PGA11x SPI mode.  The specification says that the device operates in Mode 0 or
+		Mode 3.  But sometimes you need to tinker with this to get things to work
+		correctly. Default:  Mode 0
+
+config PGA11X_DAISYCHAIN
+	bool "TI PGA112/3/6/7 daisy chain mode"
+	default n
+	---help---
+		Enable support to use two PGA116/7's in Daisy Chain configuration.
+
+config PGA11X_MULTIPLE
+	bool "Multiple TI PGA112/3/6/7 support"
+	default n
+	depends on !PGA11X_DAISYCHAIN
+	---help---
+		Can be defined to support multiple PGA11X devices on board with separate
+		chip selects (not daisy chained).  Each device will require a customized
+		SPI interface to distinguish them when SPI_SELECT is called with
+		devid=SPIDEV_MUX(n).
+
+endif # if ADC_PGA11X
+
+config ADC_ADS7828
+	bool "TI ADS7828 support"
+	default n
+	select I2C
+	---help---
+		Enable driver support for the ADS7828 12-Bit I2C powered ADC.
+
+		This driver supports reading single or multiple ADC conversion result
+		as well as onfiguring the ADC, via ioctl calls.
+
+if ADC_ADS7828
+
+config ADS7828_FREQUENCY
+	int "TI ADS7828 I2C frequency"
+	default 100000
+	---help---
+		ADS7828 supports standard, fast, and high-speed I2C modes.
+
+endif # ADC_ADS7828
+
+config ADC_MAX1161X
+	bool "Maxim MAX11612-11617 support"
+	default n
+	select I2C
+	---help---
+		Enable driver support for the MAX1161X 12-Bit I2C powered ADC Family.
+
+		This driver supports reading single or multiple ADC conversion result
+		as well as onfiguring the ADC, via ioctl calls.
+
+if ADC_MAX1161X
+
+config MAX1161X_FREQUENCY
+	int "Maxim MAX1161X I2C frequency"
+	default 100000
+	---help---
+		MAX1161X supports standard, fast, and high-speed I2C modes.
+
+choice
+	prompt "Maxim MAX1161X Chip Type"
+
+config MAX1161X_4CHAN
+	bool "MAX11612/MAX11613 4 Channels"
+
+config MAX1161X_8CHAN
+	bool "MAX11614/MAX11615 8 Channels"
+
+config MAX1161X_12CHAN
+	bool "MAX11616/MAX11617 12 Channels"
+
+endchoice
+
+endif # ADC_MAX1161X
+
+config ADC_HX711
+	bool "Avia Semiconductor HX711 support"
+	default n
+	---help---
+		Enable driver to support Avia Semiconductor HX711 ADC
+		designed for weight scales.
+
+		Driver supports both 'a' and 'b' channels with 32, 64
+		and 128 gain.
+
+		Driver does not support continuous read and is not buffered.
+		Driver uses interrupts to not hog the CPU while waiting
+		for hx711 to be ready.
+
+if ADC_HX711
+
+config ADC_HA711_ADD_DELAY
+	bool "Add 1us delay between clock pulses"
+	default y if BOARD_LOOPSPERMSEC >= 15000
+	---help---
+		HX711 requires about 1us between clock pulses to work.
+		This is not an issue on slower chips, but faster chips
+		will most likely try to clock HX711 too fast, which
+		will result in data lose.
+
+		If this is enabled, code will insert 1us of delay to each
+		clock change. Enable this only if you get data lose, or
+		else you will just introduce unnecessary delay to your
+		program.
+
+		Best way to know if you need this, is to compile
+		HX711 demo program and run it. If there are no errors
+		reported during runtime, you can turn this of. If you
+		see communication errors, then you should enable this.
+
+endif # ADC_HX711
+
+config ADC_MCP3008
+	bool "MCP3008 support"
+	default n
+	select SPI
+	---help---
+		Enable driver support for the Microchip MCP3008 8-channel, 10-bit ADC.
+
+if ADC_MCP3008
+
+config ADC_MCP3008_SPI_FREQUENCY
+	int "Frequency in Hz"
+	default 2340000
+	range 0 3600000
+	---help---
+		The frequency of SPI communications to the MCP3008, which also has an
+		effect on sample frequency. 3.6MHz is recommended for VDD >= 4V, 2.34MHz
+		for VDD >= 3.3V and 1.35MHz for VDD = 2.7V.
+
+config ADC_MCP3008_DIFFERENTIAL
+	bool "Differential mode"
+	default n
+	---help---
+		If yes, MCP3008 will be used in differential mode, which uses channel pairs
+		to measure differential signals. Otherwise, single-ended mode is used which
+		measures the voltage on each channel individually.
+
+endif # ADC_MCP3008
+
+config ADC_ADS7046
+	bool "TI ADS7046 support"
+	default n
+	select SPI
+	---help---
+		Enable driver support for the Texas Instruments ADS7046 12-bit ADC.
+
+if ADC_ADS7046
+
+config ADS7046_FREQUENCY
+	int "TI ADS7046 SPI frequency"
+	default 1000000
+	---help---
+		ADS7046 SPI frequency. Maximum is 60 MHz.
+
+endif # ADC_ADS7046
+
+config ADC_ADS1115
+	bool "ADS1115 support"
+	default n
+	select I2C
+	---help---
+		Enable driver support for the Texas Instruments ADS1115 16-bit ADC.
+		Currently support is experimental, especially the comparator and ALRT/RDY
+		pin functions.
+
+if ADC_ADS1115
+
+config ADC_ADS1115_I2C_FREQUENCY
+	int "ADS1115 I2C frequency"
+	default 100000
+	---help---
+		ADS1115 I2C frequency.
+
+config ADC_ADS1115_ADDR
+	hex "ADS1115 I2C address"
+	default 0x48
+	---help---
+		ADS1115 I2C address. Default is 0x48.
+
+config ADC_ADS1115_CHANNEL
+	int "ADS1115 channel"
+	default 0
+	range 0 7
+	---help---
+		Default ADS1115 channel/mux configuration.
+		0-3 are the differential channels.
+		4-7 are the single ended channels for A0 to A3
+		See the datasheet or ads1115.h for more info.
+
+config ADC_ADS1115_PGA
+	int "ADS1115 PGA"
+	default 2
+	range 0 7
+	---help---
+		ADS1115 PGA configuration.
+		0 is +/-6.144V, 1 is +/-4.096V, 2 is +/-2.048V, 3 is +/-1.024V,
+		4 is +/-0.512V, 5 is +/-0.256V, 6 is +/-0.256V, 7 is +/-0.256V.
+
+config ADC_ADS1115_CONTINOUS
+	bool "ADS1115 continuous mode"
+	default n
+	---help---
+		ADS1115 continuous mode. The ADS1115 will repeatedly take conversions.
+		If changing channels in this mode, there is a chance of old data being
+		read. To avoid this, use one shot mode or use the ALERT/RDY pin.
+
+config ADC_ADS1115_DR
+	int "ADS1115 data rate"
+	default 4
+	range 0 7
+	---help---
+		ADS1115 data rate.
+		0 is 8sps, 1 is 16sps, 2 is 32sps, 3 is 64sps,
+		4 is 128sps, 5 is 250sps, 6 is 475sps, 7 is 860sps.
+
+config ADC_ADS1115_COMP_MODE
+	bool "ADS1115 window comparator mode"
+	default n
+	---help---
+		ADS1115 window comparator mode.
+
+config ADC_ADS1115_COMP_POL
+	bool "ADS1115 comparator polarity"
+	default n
+	---help---
+		ADS1115 comparator polarity. n is active low, y is active high.
+
+config ADC_ADS1115_COMP_LAT
+	bool "ADS1115 comparator latching"
+	default n
+	---help---
+		ADS1115 comparator latching. n is non-latching, y is latching.
+		Note that this is cleared when reading from the conversion register.
+
+config ADC_ADS1115_COMP_QUE
+	int "ADS1115 comparator queue"
+	default 3
+	range 0 3
+	---help---
+		ADS1115 comparator queue. 0 is assert after 1 conversion, 1, is
+		assert after 2 conversions, 2 is assert after 4 conversions, 3
+		is disable comparator, and set ALERT/RDY to high-impedence.
+
+config ADC_ADS1115_HI_THRESH
+	int "ADS1115 high threshold"
+	default 32767
+	range 0 65536
+	---help---
+		ADS1115 high threshold.
+
+config ADC_ADS1115_LO_THRESH
+	int "ADS1115 low threshold"
+	range 0 65536
+	default 32768
+	---help---
+		ADS1115 low threshold.
+
+endif # ADC_ADS1115
+
 endif # ADC
+
+config COMP
+	bool "Analog Comparator"
+	default n
+	---help---
+		Select to enable support for Analog Comparators (COMPs).
 
 config DAC
 	bool "Digital-to-Analog Conversion"
 	default n
 	---help---
 		Select to enable support for Digital-to-Analog Converters (DACs).
+
+if DAC
+
+config DAC_FIFOSIZE
+	int "DAC buffer size"
+	default 8
+	range 1 255
+	---help---
+		This variable defines the size of the DAC ring buffer that is used
+		to queue sent DAC data until they can be retrieved by the
+		controller. This size is limited to 255 to fit uint8_t type used
+		in DAC driver.
+
+config DAC_AD5410
+	bool "AD5410 support"
+	default n
+	depends on ALLOW_BSD_COMPONENTS
+	select SPI
+
+config DAC7571
+	bool "DAC7571 support"
+	default n
+	select I2C
+	---help---
+		Enable driver support for the Texas Instruments DAC7571 dac.
+
+config DAC7571_I2C_FREQUENCY
+	int "DAC7571 I2C frequency"
+	default 400000
+	depends on DAC7571
+
+config DAC7554
+	bool "DAC7554 support"
+	default n
+	select SPI
+	---help---
+		Enable driver support for the Texas Instruments DAC7554 dac.
+
+config MCP47X6
+	bool "MCP4706/4716/4726 support"
+	default n
+	select I2C
+	---help---
+		Enable driver support for the Microchip MCP4706/4716/4726 DAC.
+
+choice
+	prompt "MCP47X6 variant"
+	default MCP4706
+	depends on MCP47X6
+
+config MCP4706
+	bool "MCP4706 (8-bit) DAC"
+
+config MCP4716
+	bool "MCP4716 (10-bit) DAC"
+
+config MCP4726
+	bool "MCP4726 (12-bit) DAC"
+
+endchoice # MCP47X6 variant
+
+config MCP47X6_I2C_FREQUENCY
+	int "MCP47X6 I2C frequency"
+	default 400000
+	depends on MCP47X6
+
+config MCP48XX
+	bool "MCP4802/4812/4822 support"
+	default n
+	select SPI
+	---help---
+		Enable driver support for the Microchip MCP4802/4812/4822 dac.
+
+choice
+	prompt "MCP48XX variant"
+	default MCP4802
+	depends on MCP48XX
+
+config MCP4802
+	bool "MCP4802 (8-bit) dac"
+
+config MCP4812
+	bool "MCP4812 (10-bit) dac"
+
+config MCP4822
+	bool "MCP4822 (12-bit) dac"
+
+endchoice # MCP48XX variant
+
+config MCP48XX_SPI_FREQUENCY
+	int "MCP48XX SPI frequency"
+	default 4000000
+	depends on MCP48XX
+
+endif # DAC
+
+config OPAMP
+	bool "Operational Amplifier"
+	default n
+	---help---
+		Select to enable support for Operational Amplifiers (OPAMPs).
+
+config LMP92001
+	bool "LMP92001 support"
+	default n
+	select I2C
+	---help---
+		Enable driver support for the Texas Instruments LMP92001.
+
+config LMP92001_I2C_FREQUENCY
+	int "LMP92001 I2C frequency"
+	default 400000
+	depends on LMP92001
+
+endif # ANALOG
