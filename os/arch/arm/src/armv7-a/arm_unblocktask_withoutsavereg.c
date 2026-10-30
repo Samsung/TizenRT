@@ -66,9 +66,6 @@
 #include "group/group.h"
 #include "clock/clock.h"
 #include "up_internal.h"
-#ifdef CONFIG_TASK_SCHED_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -154,10 +151,6 @@ void up_unblock_task_without_savereg(struct tcb_s *tcb)
 			 */
 
 			struct tcb_s *nexttcb = this_task();
-#ifdef CONFIG_TASK_SCHED_HISTORY
-			/* Save the task name which will be scheduled */
-			save_task_scheduling_status(nexttcb);
-#endif
 			/* Then switch contexts */
 
 			arm_fullcontextrestore(nexttcb->xcp.regs);

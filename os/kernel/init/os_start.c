@@ -72,9 +72,6 @@
 #include  <tinyara/init.h>
 #include  <tinyara/pm/pm.h>
 #include  <tinyara/mm/heap_regioninfo.h>
-#ifdef CONFIG_DEBUG_SYSTEM
-#include  <tinyara/debug/sysdbg.h>
-#endif
 #ifdef CONFIG_DRIVERS_OS_API_TEST
 #include  <tinyara/os_api_test_drv.h>
 #endif
@@ -785,10 +782,6 @@ void os_start(void)
 
 #ifdef CONFIG_DRIVERS_OS_API_TEST
 	os_api_test_drv_register();
-#endif
-
-#if defined(CONFIG_DEBUG_SYSTEM)
-	sysdbg_init();
 #endif
 
 	/* Initialize the C libraries.  This is done last because the libraries

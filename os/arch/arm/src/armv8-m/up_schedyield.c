@@ -30,9 +30,6 @@
 #if CONFIG_RR_INTERVAL > 0
 #include <tinyara/clock.h>
 #endif
-#ifdef CONFIG_TASK_SCHED_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
 
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 #include <tinyara/tz_context.h>
@@ -147,11 +144,6 @@ void up_schedyield(void)
 		/* No, then we will need to perform the user context switch */
 
 		else {
-#ifdef CONFIG_TASK_SCHED_HISTORY
-			/* Save the task name which will be scheduled */
-
-			save_task_scheduling_status(ntcb);
-#endif
 			up_switchcontext(rtcb->xcp.regs, ntcb->xcp.regs);
 
 			/* up_switchcontext forces a context switch to the task at the

@@ -65,10 +65,6 @@
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
-#ifdef CONFIG_SEMAPHORE_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -150,9 +146,6 @@ int sem_trywait(FAR sem_t *sem)
 			sem->semcount--;
 			sem_addholder(sem);
 			rtcb->waitsem = NULL;
-#ifdef CONFIG_SEMAPHORE_HISTORY
-			save_semaphore_history(sem, (void *)rtcb, SEM_ACQUIRE);
-#endif
 			ret = OK;
 		} else {
 			/* Semaphore is not available */

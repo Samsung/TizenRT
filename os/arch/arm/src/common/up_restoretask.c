@@ -23,9 +23,6 @@
 #ifdef CONFIG_SUPPORT_COMMON_BINARY
 #include <stdint.h>
 #endif
-#ifdef CONFIG_TASK_SCHED_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
 #ifdef CONFIG_ARMV8M_TRUSTZONE
 #include <tinyara/tz_context.h>
 #endif
@@ -65,11 +62,6 @@ extern uint32_t *g_umm_app_id;
 void up_restoretask(struct tcb_s *tcb)
 {
 	if (tcb) {
-#ifdef CONFIG_TASK_SCHED_HISTORY
-		/* Save the task name which will be scheduled */
-		save_task_scheduling_status(tcb);
-#endif
-
 		/* Restore the MPU registers in case we are switching to an application task */
 #ifdef CONFIG_APP_BINARY_SEPARATION
 

@@ -67,10 +67,6 @@
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
-#ifdef CONFIG_SEMAPHORE_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
-
 /****************************************************************************
  * Definitions
  ****************************************************************************/
@@ -101,9 +97,6 @@ void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
 	struct semholder_s *pholder = NULL;
 #endif
 
-#ifdef CONFIG_SEMAPHORE_HISTORY
-	save_semaphore_history(sem, (void *)this_task(), SEM_RELEASE);
-#endif
 #ifdef CONFIG_PRIORITY_INHERITANCE
 	/* Don't let any unblocked tasks run until we complete any priority
 	 * restoration steps.  Interrupts are disabled, but we do not want
@@ -135,9 +128,6 @@ void sem_unblock_task(sem_t *sem, struct tcb_s *htcb)
 
 			stcb->waitsem = NULL;
 
-#ifdef CONFIG_SEMAPHORE_HISTORY
-			save_semaphore_history(sem, (void *)stcb, SEM_ACQUIRE);
-#endif
 			/* Restart the waiting task. */
 
 			up_unblock_task(stcb);
