@@ -68,19 +68,36 @@
 #define STATENAMES_ARRAY_SIZE (sizeof(utils_statenames) / sizeof(utils_statenames[0]))
 #define PS_BUFLEN 128
 
+#ifdef CONFIG_SMP
+#define PS_NCPUS CONFIG_SMP_NCPUS
+#else
+#define PS_NCPUS 1
+#endif
+
 static const char *utils_statenames[] = {
 	"INVALID ",
 	"PENDING ",
 	"READY   ",
+#ifdef CONFIG_SMP
 	"ASSIGNED",
+#endif
 	"RUNNING ",
 	"INACTIVE",
 	"WAITSEM ",
-	"WAITUNBLOCK",
 	"WAITSIG ",
+#ifdef CONFIG_SCHED_EVENTS
+	"WAITEVENT",
+#endif
+#if !defined(CONFIG_DISABLE_MQUEUE) || !defined(CONFIG_DISABLE_MQUEUE_SYSV)
 	"MQNEMPTY",
 	"MQNFULL ",
-	"WAITPAGEFILL "
+#endif
+#ifdef CONFIG_LEGACY_PAGING
+	"WAITPAGEFILL",
+#endif
+#ifdef CONFIG_SIG_SIGSTOP_ACTION
+	"STOPPED  "
+#endif
 };
 
 static const char *utils_ttypenames[4] = {
@@ -98,7 +115,7 @@ static void ps_print_values(char *buf, void *arg)
 	int flags;
 	int state;
 	stat_data stat_info[PROC_STAT_MAX];
-	int ncpus = sched_getcpucount();
+	int ncpus = PS_NCPUS;
 
 	stat_info[0] = buf;
 
@@ -123,8 +140,8 @@ static void ps_print_values(char *buf, void *arg)
 	}
 
 	printf("%5s | %4s | %4s | %7s | %c%c | %8s", stat_info[PROC_STAT_PID], stat_info[PROC_STAT_PRIORITY], \
-		flags & TCB_FLAG_ROUND_ROBIN ? "RR  " : "FIFO", utils_ttypenames[(flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], \
-		flags & TCB_FLAG_NONCANCELABLE ? 'N' : ' ', flags & TCB_FLAG_CANCEL_PENDING ? 'P' : ' ', \
+		(flags & TCB_FLAG_POLICY_MASK) == TCB_FLAG_SCHED_RR ? "RR  " : "FIFO", utils_ttypenames[(flags & TCB_FLAG_TTYPE_MASK) >> TCB_FLAG_TTYPE_SHIFT], \
+		' ', ' ', \
 		utils_statenames[state]);
 
 	printf(" | %10s | %3s | %8s", stat_info[PROC_STAT_WAITINFO], stat_info[PROC_STAT_CPU], stat_info[PROC_STAT_IRQCOUNT]);
@@ -156,7 +173,7 @@ static int ps_read_proc(FAR struct dirent *entryp, FAR void *arg)
 
 int utils_ps(int argc, char **args)
 {
-	int ncpus = sched_getcpucount();
+	int ncpus = PS_NCPUS;
 #if !defined(CONFIG_FS_AUTOMOUNT_PROCFS)
 	int ret;
 	bool is_mounted;

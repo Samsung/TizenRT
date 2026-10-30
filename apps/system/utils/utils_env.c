@@ -75,19 +75,17 @@ int utils_env_get(int argc, char **args)
 {
 	char *env_ptr;
 #ifndef CONFIG_BUILD_PROTECTED
-	size_t env_size = 0;
-	char *env_end;
+	char **envp;
 #endif
 	int ret = OK;
 
 #ifndef CONFIG_BUILD_PROTECTED
 	/* get_environ_ptr is not supported in protected build */
 	if (argc == 1) {
-		env_ptr = get_environ_ptr(&env_size);
-		if (env_ptr != NULL) {
-			env_end = &env_ptr[env_size];
-			for (; env_ptr < env_end; env_ptr += (strlen(env_ptr) + 1)) {
-				printf("%s\n", env_ptr);
+		envp = get_environ_ptr();
+		if (envp != NULL) {
+			for (; *envp != NULL; envp++) {
+				printf("%s\n", *envp);
 			}
 		} else {
 			printf("There is no env in this task group\n");

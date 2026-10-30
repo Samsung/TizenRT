@@ -129,6 +129,8 @@ static void stkmon_print_title(void)
 #endif
 	printf("\n");
 }
+
+#if !defined(CONFIG_STACKMONITOR_DISABLE_DEAD_THREAD)
 static void stkmon_print_inactive_list(void)
 {
 	int inactive_idx;
@@ -172,6 +174,7 @@ static void stkmon_print_inactive_list(void)
 
 	free(terminated_infos);
 }
+#endif /* !CONFIG_STACKMONITOR_DISABLE_DEAD_THREAD */
 
 static void stkmon_print_active_values(char *buf, void *arg)
 {
