@@ -9,6 +9,6 @@ config EXAMPLES_BLE_TESTER
 	---help---
 		Enable BLE spec tester
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "ble_tester_main" if ENTRY_BLE_TESTER

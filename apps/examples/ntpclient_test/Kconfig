@@ -20,6 +20,6 @@ config EXAMPLES_NTPCLIENT_TEST_SERVER_PORT
 
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "ntpclient_main" if ENTRY_NTPCLIENT_TEST

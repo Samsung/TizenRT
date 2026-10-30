@@ -21,6 +21,6 @@ config EXAMPLES_DNSCLIENT_TEST_PROGNAME
 		program is installed.
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "dnsclient_main" if ENTRY_DNSCLIENT_TEST

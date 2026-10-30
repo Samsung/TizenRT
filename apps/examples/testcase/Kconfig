@@ -44,6 +44,6 @@ source "$APPSDIR/examples/testcase/ostest/Kconfig"
 source "$EXTERNALDIR/libcxx-test/Kconfig"
 endif #EXAMPLES_TESTCASE
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "tc_main" if ENTRY_TESTCASE

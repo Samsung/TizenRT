@@ -11,6 +11,6 @@ config EXAMPLES_PROTOBUF_MSGTYPE_TEST
 	---help---
 		Test the Protocol Buffers Serialize/Deserialize by Type
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "prototest_main" if ENTRY_PROTOBUF_MSGTYPE_TEST

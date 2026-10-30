@@ -10,6 +10,6 @@ config EXAMPLES_MEDIAPLAYER
 	---help---
 		Enable the MediaPlayer example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "mediaplayer_main" if ENTRY_MEDIAPLAYER

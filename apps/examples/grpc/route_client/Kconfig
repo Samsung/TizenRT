@@ -11,6 +11,6 @@ config EXAMPLES_ROUTE_CLIENT
 	---help---
 		Enable the grpc client example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "route_client_main" if ENTRY_ROUTE_CLIENT

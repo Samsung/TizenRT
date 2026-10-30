@@ -10,6 +10,6 @@ config EXAMPLES_AMEBA_MIPI
 	---help---
 		Enable AMEBA_MIPI Example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "ameba_mipi" if ENTRY_AMEBA_MIPI

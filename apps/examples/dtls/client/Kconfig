@@ -17,6 +17,6 @@ config EXAMPLES_DTLS_CLIENT_PROGNAME
 
 endif # EXAMPLE_DTLS_CLIENT
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "dtls_client_main" if ENTRY_DTLS_CLIENT

@@ -3,7 +3,7 @@
 # see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 #
 
-if INIT_ENTRYPOINT
+if INIT_ENTRY
 comment "Application entry point list"
 choice
 	prompt "Application entry point"
@@ -16,9 +16,9 @@ config ENTRY_MANUAL
 source "$APPSDIR/Kconfig_ENTRY"
 endchoice
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string "Entry point function name" if ENTRY_MANUAL
 	---help---
 		The name of the entry point for user applications.
-endif # INIT_ENTRYPOINT
+endif # INIT_ENTRY
 

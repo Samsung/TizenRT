@@ -11,6 +11,6 @@ config EXAMPLES_SOUNDPLAYER
 	---help---
 		Enable Sound Player application
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "soundplayer_main" if ENTRY_SOUNDPLAYER

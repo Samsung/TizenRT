@@ -9,6 +9,6 @@ config EXAMPLES_HELLO
 	---help---
 		Enable the \"Hello, World!\" example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "hello_main" if ENTRY_HELLO

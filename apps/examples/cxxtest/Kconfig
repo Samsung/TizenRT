@@ -10,6 +10,6 @@ config EXAMPLES_CXXTEST
 	---help---
 		Enable the C++ Test program
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "cxxtest_main" if ENTRY_CXXTEST

@@ -21,7 +21,7 @@ config IOTJS_STACKSIZE
 
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
         string
         default "iotjs_main" if ENTRY_IOTJS
 

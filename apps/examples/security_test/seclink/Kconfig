@@ -8,6 +8,6 @@ config EXAMPLES_SECLINK_TEST
 	select STRESS_TOOL
 	default n
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "sl_test_main" if ENTRY_SECLINK_TEST

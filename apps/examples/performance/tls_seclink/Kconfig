@@ -41,6 +41,6 @@ endif # TLS_SECLINK_DEBUG
 
 endif # EXAMPLES_TLS_SECLINK
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "tls_seclink_main" if ENTRY_TLS_SECLINK

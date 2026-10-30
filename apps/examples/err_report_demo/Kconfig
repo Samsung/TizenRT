@@ -22,6 +22,6 @@ config EXAMPLES_ERR_REPORT_PROGNAME
 
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "error_report_main" if ENTRY_ERR_REPORT

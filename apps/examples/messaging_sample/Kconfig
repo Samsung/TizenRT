@@ -10,6 +10,6 @@ config EXAMPLES_MESSAGING_SAMPLE
 	---help---
 		Enable the Messaging Framework sample
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "messaging_main" if ENTRY_MESSAGING_SAMPLE

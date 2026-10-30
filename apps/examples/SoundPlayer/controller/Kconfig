@@ -10,6 +10,6 @@ config EXAMPLES_PLAYERCONTROLLER
 	---help---
 		Enable Media Player Controller application
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "playercontroller_main" if ENTRY_PLAYERCONTROLLER

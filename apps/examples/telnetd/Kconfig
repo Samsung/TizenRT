@@ -63,6 +63,6 @@ config EXAMPLES_TELNETD_CLIENTSTACKSIZE
 
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "telnetd_main" if ENTRY_TELNETD

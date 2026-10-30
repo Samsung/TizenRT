@@ -9,6 +9,6 @@ config EXAMPLES_WIFICSI
 	---help---
 		Enable WIFI CSI Example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "wificsi" if ENTRY_WIFICSI

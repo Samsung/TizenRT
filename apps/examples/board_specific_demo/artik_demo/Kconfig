@@ -34,6 +34,6 @@ config ARTIK_CLOUD_DID
 
 endif #EXAMPLES_ARTIK_DEMO
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "artik_demo_main" if ENTRY_ARTIK_DEMO

@@ -33,7 +33,7 @@ config EXAMPLES_HEAP_STRESS_MAX_BLOCKS
 		frag modes) will track. This is independent of the memory leak
 		checker's CONFIG_MEM_LEAK_CHECKER_MAX_BLOCKS.
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "heaptest_main" if ENTRY_HEAP_PERFORMANCE_TEST
 	default "heapbench_main" if ENTRY_HEAP_BENCH_TEST

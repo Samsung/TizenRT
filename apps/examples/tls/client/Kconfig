@@ -24,6 +24,6 @@ endmenu
 
 endif # EXAMPLE_TLS_CLIENT
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "tls_client_main" if ENTRY_TLS_CLIENT

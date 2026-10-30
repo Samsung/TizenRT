@@ -17,6 +17,6 @@ config EXAMPLES_WAKAAMA_CLIENT_PROGNAME
 
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "wakaamaclient_main" if ENTRY_WAKAAMA_CLIENT

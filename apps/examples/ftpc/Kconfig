@@ -10,6 +10,6 @@ config EXAMPLES_FTPC
 	---help---
 		Enable the FTP client example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "ftpc_main" if ENTRY_FTPC

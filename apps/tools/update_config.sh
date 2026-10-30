@@ -26,8 +26,8 @@ function write_config(){
 	config_path=`find $OSDIR -name "$DOTCONFIG"`
 	# update .config's user entry point from metafile;
 
-	UPDATED_ENTRYPOINT=`sed -n '/USER_ENTRYPOINT/p' $file_path | sed -n 's/.*=//p'`
-	sed -i "s/CONFIG_USER_ENTRYPOINT.*/CONFIG_USER_ENTRYPOINT=$UPDATED_ENTRYPOINT/" $config_path
+	UPDATED_ENTRYPOINT=`sed -n '/INIT_ENTRYPOINT/p' $file_path | sed -n 's/.*=//p'`
+	sed -i "s/CONFIG_INIT_ENTRYPOINT.*/CONFIG_INIT_ENTRYPOINT=$UPDATED_ENTRYPOINT/" $config_path
 
 	CONFIG_ENTRY_LIST=`sed -n '/^CONFIG_ENTRY_/p' $config_path`
 	if [ "$CONFIG_ENTRY_LIST" != "CONFIG_ENTRY_MANUAL" ]; then
@@ -75,7 +75,7 @@ function set_entrypoint(){
 	file_path=`find $OSDIR -name "$METAFILE"`
 	SELECTED_APP=`sed -n "/$1,/p" $file_path`
 	SELECTED_APP_ENTRY=`echo "$SELECTED_APP" | awk 'BEGIN {FS=","} {print$2}' | sed -n 's/ //p'`
-	sed -i "s/USER_ENTRYPOINT=.*/USER_ENTRYPOINT=$SELECTED_APP_ENTRY/" $file_path
+	sed -i "s/INIT_ENTRYPOINT=.*/INIT_ENTRYPOINT=$SELECTED_APP_ENTRY/" $file_path
 }
 
 while getopts ws opt

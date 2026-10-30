@@ -9,6 +9,6 @@ config EXAMPLES_SMARTFS_POWERCUT
 	---help---
 		Enable the \"Smartfs Powercut Test\" example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "smartfs_powercut_main" if ENTRY_SMARTFS_POWERCUT

@@ -9,6 +9,6 @@ config EXAMPLES_SIMPLE_FILE_TRANSFER
 	---help---
 		Enable the \"Simple File Transfer!\" example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "sft_main" if ENTRY_SIMPLE_FILE_TRANSFER

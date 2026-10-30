@@ -16,6 +16,6 @@ config EXAMPLES_TLS_HANDSHAKE_PROGNAME
 
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "tls_handshake_main" if ENTRY_TLS_HANDSHAKE

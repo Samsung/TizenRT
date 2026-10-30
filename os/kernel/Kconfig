@@ -442,12 +442,12 @@ config INIT_PRIORITY
 
 if INIT_ENTRY
 config INIT_ENTRYPOINT
-	string "Application entry point"
-	default "main"
+	string
 	---help---
 		The name of the entry point for user applications.  For the example
 		applications this is of the form 'app_main' where 'app' is the application
-		name. If not defined, INIT_ENTRYPOINT defaults to "main".
+		name. TizenRT sets it from the application entry point list
+		(apps/apps_entry/Kconfig).
 
 		Note that main must take "argc" and "argv" arguments:
 

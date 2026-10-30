@@ -10,6 +10,6 @@ config EXAMPLES_TICK
 	---help---
 		This application is testing whether the tick compensation works correctly or not.
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "tick_compensation_test" if ENTRY_TICK

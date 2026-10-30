@@ -49,6 +49,6 @@ config EXAMPLES_AVS_TEST_CRYPTO
 
 endif # EXAMPLES_AVS_TEST
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "avs_test_main" if ENTRY_AVS_TEST

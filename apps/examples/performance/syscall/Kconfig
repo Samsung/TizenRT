@@ -9,6 +9,6 @@ config EXAMPLES_SYSCALL_PERFORMANCE
 	---help---
 		Enable the Syscall Performance Example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "syscall_performance_main" if ENTRY_SYSCALL_PERFORMANCE

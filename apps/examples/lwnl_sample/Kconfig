@@ -9,6 +9,6 @@ config EXAMPLES_LWNL_SAMPLE
 	---help---
 		Enable the lwnl example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "lwnl_sample_main" if ENTRY_LWNL_SAMPLE

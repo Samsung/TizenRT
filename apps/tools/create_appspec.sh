@@ -31,8 +31,8 @@ if [ -f $OSDIR$METAFILE ]; then
 	rm $OSDIR$METAFILE
 fi
 
-USER_ENTRYPOINT=`sed -n '/CONFIG_USER_ENTRYPOINT/p' $DOTCONFIG | sed -n 's/.*=//p'`
-echo -e "USER_ENTRYPOINT=$USER_ENTRYPOINT\n" >> $OSDIR$METAFILE
+INIT_ENTRYPOINT=`sed -n '/CONFIG_INIT_ENTRYPOINT/p' $DOTCONFIG | sed -n 's/.*=//p'`
+echo -e "INIT_ENTRYPOINT=$INIT_ENTRYPOINT\n" >> $OSDIR$METAFILE
 
 # get app's info from Kconfig & Kconfig_ENTRY;
 # find CONFIG_NAME from Kconfig_ENTRY and search SELECTABLE(find select & depends on);
@@ -40,7 +40,7 @@ echo -e "USER_ENTRYPOINT=$USER_ENTRYPOINT\n" >> $OSDIR$METAFILE
 for FILE in $TARGET_DIR_LIST
 do
 	APPNAME=`sed -n '/^APPNAME/p' $APPDIR$FILE$MAKEFILE | sed -n 's/APPNAME = //p'`
-	FUNCTION=`grep -A 3 'config USER_ENTRYPOINT' $APPDIR$FILE$KCONFIG | sed -n 's/\tdefault "\(\w*\)".*/\1/p'`
+	FUNCTION=`grep -A 3 'config INIT_ENTRYPOINT' $APPDIR$FILE$KCONFIG | sed -n 's/\tdefault "\(\w*\)".*/\1/p'`
 	CONFIG_NAME=`sed -n '/depends/p' $APPDIR$FILE$KCONFIG_ENTRY | sed -n 's/.*depends on //p'`
 	if [ "$CONFIG_NAME" = "" ]; then
 		continue

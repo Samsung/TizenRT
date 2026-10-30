@@ -10,6 +10,6 @@ config EXAMPLES_TOUCHSCREEN
 	---help---
 		Enable touchscreen example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "touchscreen_main" if ENTRY_TOUCHSCREEN

@@ -10,6 +10,6 @@ config EXAMPLES_LOG_DUMP
 	---help---
 		Enable the Log dump example
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "log_dump_main" if ENTRY_LOG_DUMP

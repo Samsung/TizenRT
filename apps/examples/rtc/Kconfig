@@ -11,6 +11,6 @@ config EXAMPLES_RTC
 	---help---
 		Enable the RTC Accuracy Test
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "rtc_main" if ENTRY_RTC

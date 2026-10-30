@@ -10,6 +10,6 @@ config EXAMPLES_NETTEST
 	---help---
 		Enable the network test API's
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "nettest_main" if ENTRY_NETTEST

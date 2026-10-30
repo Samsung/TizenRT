@@ -17,6 +17,6 @@ config EXAMPLE_LCD_FPS_TEST
 		Enter number of frames to execute to test FPS
 endif
 
-config USER_ENTRYPOINT
+config INIT_ENTRYPOINT
 	string
 	default "lcd_test" if ENTRY_LCD
