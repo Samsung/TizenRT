@@ -131,7 +131,7 @@ endef
 
 define COMPILE
 	@echo "CC: $1"
-	$(Q) $(CC) -c $(CFLAGS) $1 -o $2
+	$(Q) $(CC) -c $(CFLAGS) $3 $($(strip $1)_CFLAGS) $1 -o $2
 endef
 
 # COMPILEXX - Default macro to compile one C++ file
