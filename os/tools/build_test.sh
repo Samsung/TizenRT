@@ -29,7 +29,7 @@ build_targets=(
 	"artik055s/audio"
 	"artik053/st_things"
 	"artik053/tc"
-	"qemu/build_test"
+	"lm3s6965-ek/build_test"
 	"esp_wrover_kit/hello_with_tash"
 	"imxrt1020-evk/loadable_elf_apps"
 	"rtl8721csm/hello"

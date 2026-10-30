@@ -1,0 +1,73 @@
+###########################################################################
+#
+# Copyright 2026 Samsung Electronics All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
+#
+###########################################################################
+############################################################################
+# build/configs/mps2-an521/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+# Based on boards/arm/mps/mps2-an521/scripts/Make.defs of NuttX 12.13.0.
+# The compiler settings come from arch/arm/src/armv8-m/Toolchain.defs; the
+# TizenRT specific parts are the location of the linker script, the
+# framework and external include directories and the link map.
+
+include $(TOPDIR)/.config
+include $(TOPDIR)/tools/Config.mk
+include $(TOPDIR)/arch/arm/src/armv8-m/Toolchain.defs
+
+LDSCRIPT = flash.ld
+ARCHSCRIPT += -T$(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)configs$(DELIM)$(CONFIG_ARCH_BOARD)$(DELIM)scripts$(DELIM)$(LDSCRIPT)
+
+# TizenRT framework and external headers
+
+ARCHINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)framework$(DELIM)include
+ARCHINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)external$(DELIM)include
+ARCHXXINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)framework$(DELIM)include
+ARCHXXINCLUDES += ${INCSYSDIR_PREFIX}$(TOPDIR)$(DELIM)..$(DELIM)external$(DELIM)include
+
+# EXTRADEFINES is used by the TizenRT build system to pass __KERNEL__ to the
+# kernel libraries (EXTRAFLAGS in NuttX).
+
+CFLAGS := $(ARCHCFLAGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) $(EXTRADEFINES)
+CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
+CXXFLAGS := $(ARCHCXXFLAGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) $(EXTRADEFINES)
+CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
+CPPFLAGS := $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) $(EXTRADEFINES)
+AFLAGS := $(CFLAGS) -D__ASSEMBLY__
+
+LDFLAGS += -Map=$(TOPDIR)$(DELIM)..$(DELIM)build$(DELIM)output$(DELIM)bin$(DELIM)tinyara.map
+
+NXFLATLDFLAGS1 = -r -d -warn-common
+NXFLATLDFLAGS2 = $(NXFLATLDFLAGS1) -T$(TOPDIR)$(DELIM)binfmt$(DELIM)libnxflat$(DELIM)gnu-nxflat-pcrel.ld -no-check-sections
+LDNXFLATFLAGS = -e main -s 2048
