@@ -67,7 +67,7 @@ FAR const char *getwd(const char *wd)
 	const char *path;
 	path = getenv(wd);
 	if (!path) {
-		path = CONFIG_LIB_HOMEDIR;
+		path = CONFIG_LIBC_HOMEDIR;
 	}
 	return path;
 }
@@ -79,7 +79,7 @@ FAR char *get_fullpath(FAR const char *relpath)
 	/* Handle some special cases */
 	if (!relpath || relpath[0] == '\0') {
 		/* No relative path provided */
-		return strdup(CONFIG_LIB_HOMEDIR);
+		return strdup(CONFIG_LIBC_HOMEDIR);
 	} else if (relpath[0] == '/') {
 		return strdup(relpath);
 	}

@@ -428,7 +428,7 @@ static int tash_cd(int argc, char **args)
 	int ret;
 
 	if (argc < 2 || strcmp(path, "~") == 0) {
-		path = CONFIG_LIB_HOMEDIR;
+		path = CONFIG_LIBC_HOMEDIR;
 	} else if (strcmp(path, "-") == 0) {
 		temp = strdup(getwd(OLD_PWD));
 		path = temp;
@@ -861,7 +861,7 @@ static int search_mountpoints(const char *dirpath, foreach_mountpoint_t handler)
 
 int mount_show(void)
 {
-	return search_mountpoints(CONFIG_LIB_HOMEDIR, mount_handler);
+	return search_mountpoints(CONFIG_LIBC_HOMEDIR, mount_handler);
 }
 
 /****************************************************************************
@@ -1342,11 +1342,11 @@ static int tash_df(int argc, char **args)
 {
 	if (argc > 1 && strcmp(args[1], "-h") == 0) {
 		printf("Filesystem    Size      Used  Available Mounted on\n");
-		return search_mountpoints(CONFIG_LIB_HOMEDIR, df_man_readable_handler);
+		return search_mountpoints(CONFIG_LIBC_HOMEDIR, df_man_readable_handler);
 	} else {
 		printf("  Block  Number\n");
 		printf("  Size   Blocks     Used Available Mounted on\n");
-		return search_mountpoints(CONFIG_LIB_HOMEDIR, df_handler);
+		return search_mountpoints(CONFIG_LIBC_HOMEDIR, df_handler);
 	}
 
 	return 0;
