@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2023 Samsung Electronics All Rights Reserved.
+ * Copyright 2026 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * arch/arm/src/armv7-a/arm_vfork.h
+ * arch/arm/src/armv7-a/arm_timer.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -35,55 +37,62 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_ARM_SRC_COMMON_ARM_VFORK_H
-#define __ARCH_ARM_SRC_COMMON_ARM_VFORK_H
+#ifndef __ARCH_ARM_SRC_ARMV7_A_ARM_TIMER_H
+#define __ARCH_ARM_SRC_ARMV7_A_ARM_TIMER_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <tinyara/config.h>
+#include <tinyara/timers/oneshot.h>
+
+#include <arch/armv7-a/cp15.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define VFORK_R4_OFFSET  (0*4)	/* Volatile register r4 */
-#define VFORK_R5_OFFSET  (1*4)	/* Volatile register r5 */
-#define VFORK_R6_OFFSET  (2*4)	/* Volatile register r6 */
-#define VFORK_R7_OFFSET  (3*4)	/* Volatile register r7 */
-#define VFORK_R8_OFFSET  (4*4)	/* Volatile register r8 */
-#define VFORK_R9_OFFSET  (5*4)	/* Volatile register r9 */
-#define VFORK_R10_OFFSET (6*4)	/* Volatile register r10 */
-
-#define VFORK_FP_OFFSET  (7*4)	/* Frame pointer */
-#define VFORK_SP_OFFSET  (8*4)	/* Stack pointer */
-#define VFORK_LR_OFFSET  (9*4)	/* Return address */
-
-#define VFORK_SIZEOF     (10*4)
+#define arm_timer_get_freq() CP15_GET(CNTFRQ)
 
 /****************************************************************************
- * Public Types
+ * Public Function Prototypes
  ****************************************************************************/
 
-#ifndef __ASSEMBLY__
-struct vfork_s {
-	/* CPU registers */
-
-	uint32_t r4;				/* Volatile register r4 */
-	uint32_t r5;				/* Volatile register r5 */
-	uint32_t r6;				/* Volatile register r6 */
-	uint32_t r7;				/* Volatile register r7 */
-	uint32_t r8;				/* Volatile register r8 */
-	uint32_t r9;				/* Volatile register r9 */
-	uint32_t r10;				/* Volatile register r10 */
-
-	uint32_t fp;				/* Frame pointer */
-	uint32_t sp;				/* Stack pointer */
-	uint32_t lr;				/* Return address */
-
-	/* Floating point registers (not yet) */
-};
+#ifdef __cplusplus
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
 #endif
 
-#endif							/* __ARCH_ARM_SRC_COMMON_ARM_VFORK_H */
+/****************************************************************************
+ * Name: arm_timer_initialize
+ *
+ * Description:
+ *   This function initialize generic timer hardware module
+ *   and return an instance of a "lower half" timer interface.
+ *
+ * Input parameters:
+ *   freq - The clock frequency in Hz. If freq is zero, get the value
+ *     from CNTFRQ register.
+ *
+ * Returned Value:
+ *   On success, a non-NULL oneshot_lowerhalf_s is returned to the caller.
+ *   In the event of any failure, a NULL value is returned.
+ *
+ ****************************************************************************/
+
+#ifdef CONFIG_ARMV7A_HAVE_PTM
+struct oneshot_lowerhalf_s *arm_timer_initialize(unsigned int freq);
+#else
+#  define arm_timer_initialize(freq) NULL
+#endif
+
+#undef EXTERN
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __ARCH_ARM_SRC_ARMV7_A_ARM_TIMER_H */

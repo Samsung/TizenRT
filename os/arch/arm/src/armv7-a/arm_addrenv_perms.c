@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_addrenv_perms.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -67,7 +69,8 @@
  *
  ****************************************************************************/
 
-int up_addrenv_mprot(group_addrenv_t *addrenv, uintptr_t addr, size_t len, int prot)
+int up_addrenv_mprot(arch_addrenv_t *addrenv, uintptr_t addr, size_t len,
+                     int prot)
 {
 	/* Nothing needs to be done */
 

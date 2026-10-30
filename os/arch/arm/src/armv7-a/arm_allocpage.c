@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_allocpage.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -49,18 +51,18 @@
 
 #include <tinyara/sched.h>
 
-#ifdef CONFIG_PAGING
+#ifdef CONFIG_LEGACY_PAGING
 
 #include <tinyara/page.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
 
 /****************************************************************************
  * Private Types
  ****************************************************************************/
 
 #if CONFIG_PAGING_NPPAGED < 256
-typedef uint8_t pgndx_t;
+typedef uint8_t  pgndx_t;
 #elif CONFIG_PAGING_NPPAGED < 65536
 typedef uint16_t pgndx_t;
 #else
@@ -68,7 +70,7 @@ typedef uint32_t pgndx_t;
 #endif
 
 #if PG_POOL_MAXL1NDX < 256
-typedef uint8_t l1ndx_t;
+typedef uint8_t  l1ndx_t;
 #elif PG_POOL_MAXL1NDX < 65536
 typedef uint16_t l1ndx_t;
 #else
@@ -82,15 +84,15 @@ typedef uint32_t l1ndx_t;
 /* Free pages in memory are managed by indices ranging from up to
  * CONFIG_PAGING_NPAGED.  Initially all pages are free so the page can be
  * simply allocated in order: 0, 1, 2, ... .  After all CONFIG_PAGING_NPAGED
- * pages have be filled, then they are blindly freed and re-used in the
+ * pages have be filled, then they are blindly freed and reused in the
  * same order 0, 1, 2, ... because we don't know any better.  No smart "least
  * recently used" kind of logic is supported.
  */
 
 static pgndx_t g_pgndx;
 
-/* After CONFIG_PAGING_NPAGED have been allocated, the pages will be re-used.
- * In order to re-used the page, we will have un-map the page from its
+/* After CONFIG_PAGING_NPAGED have been allocated, the pages will be reused.
+ * In order to reused the page, we will have un-map the page from its
  * previous mapping.  In order to that, we need to be able to map a physical
  * address to to an index into the PTE where it was mapped.  The following
  * table supports this backward lookup - it is indexed by the page number
@@ -180,8 +182,8 @@ int arm_allocpage(struct tcb_s *tcb, void **vpage)
 	 */
 
 	pgndx = g_pgndx++;
-	if (g_pgndx >= CONFIG_PAGING) {
-		g_pgndx = 0;
+	if (g_pgndx >= CONFIG_LEGACY_PAGING) {
+		g_pgndx  = 0;
 		g_pgwrap = true;
 	}
 
@@ -234,4 +236,4 @@ int arm_allocpage(struct tcb_s *tcb, void **vpage)
 	return OK;
 }
 
-#endif							/* CONFIG_PAGING */
+#endif /* CONFIG_LEGACY_PAGING */

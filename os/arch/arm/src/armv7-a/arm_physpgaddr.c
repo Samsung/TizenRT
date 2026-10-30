@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_physpgaddr.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -61,7 +63,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name: arm_physpgaddr
+ * Name: up_addrenv_va_to_pa
  *
  * Description:
  *   Check if the virtual address lies in the user data area and, if so
@@ -69,14 +71,11 @@
  *
  ****************************************************************************/
 
-uintptr_t arm_physpgaddr(uintptr_t vaddr)
+uintptr_t arm_addrenv_va_to_pa(uintptr_t *l1table, uintptr_t vaddr)
 {
-	uint32_t *l2table;
+	uintptr_t *l2table;
 	uintptr_t paddr;
-	uint32_t l1entry;
-#ifndef CONFIG_ARCH_PGPOOL_MAPPING
-	uint32_t l1save;
-#endif
+	uintptr_t l1entry;
 	int index;
 
 	/* Check if this address is within the range of one of the virtualized user
@@ -88,45 +87,34 @@ uintptr_t arm_physpgaddr(uintptr_t vaddr)
 		 * address.
 		 */
 
-		l1entry = mmu_l1_getentry(vaddr);
+		l1entry = mmu_l1table_getentry(l1table, vaddr);
 		if ((l1entry & PMD_TYPE_MASK) == PMD_TYPE_PTE) {
 			/* Get the physical address of the level 2 page table from the
 			 * level 1 page table entry.
 			 */
 
-			paddr = ((uintptr_t)l1entry & PMD_PTE_PADDR_MASK);
+			paddr = (l1entry & PMD_PTE_PADDR_MASK);
 
-#ifdef CONFIG_ARCH_PGPOOL_MAPPING
 			/* Get the virtual address of the base of level 2 page table */
 
-			l2table = (uint32_t *)arm_pgvaddr(paddr);
-#else
-			/* Temporarily map the page into the virtual address space */
+			l2table = (uintptr_t *)arm_pgvaddr(paddr);
 
-			l1save = mmu_l1_getentry(ARCH_SCRATCH_VBASE);
-			mmu_l1_setentry(paddr & ~SECTION_MASK, ARCH_SCRATCH_VBASE, MMU_MEMFLAGS);
-			l2table = (uint32_t *)(ARCH_SCRATCH_VBASE | (paddr & SECTION_MASK));
-#endif
 			if (l2table) {
 				/* Invalidate D-Cache line containing this virtual address so
 				 * that we re-read from physical memory
 				 */
 
 				index = (vaddr & SECTION_MASK) >> MM_PGSHIFT;
-				up_invalidate_dcache((uintptr_t)&l2table[index], (uintptr_t)&l2table[index] + sizeof(uint32_t));
+				up_invalidate_dcache((uintptr_t)&l2table[index],
+				                     (uintptr_t)&l2table[index] +
+				                      sizeof(uint32_t));
 
 				/* Get the Level 2 page table entry corresponding to this
 				 * virtual address.  Extract the physical address of the page
 				 * containing the mapping of the virtual address.
 				 */
 
-				paddr = ((uintptr_t)l2table[index] & PTE_SMALL_PADDR_MASK);
-
-#ifndef CONFIG_ARCH_PGPOOL_MAPPING
-				/* Restore the scratch section L1 page table entry */
-
-				mmu_l1_restore(ARCH_SCRATCH_VBASE, l1save);
-#endif
+				paddr = l2table[index] & PTE_SMALL_PADDR_MASK;
 
 				/* Add the correct offset and return the physical address
 				 * corresponding to the virtual address.
@@ -139,7 +127,12 @@ uintptr_t arm_physpgaddr(uintptr_t vaddr)
 
 	/* No mapping available */
 
-	return 0;
+	return vaddr;
 }
 
-#endif							/* CONFIG_MM_PGALLOC */
+uintptr_t up_addrenv_va_to_pa(void *va)
+{
+	return arm_addrenv_va_to_pa(mmu_l1_getpgtable(), (uintptr_t)va);
+}
+
+#endif /* CONFIG_MM_PGALLOC */

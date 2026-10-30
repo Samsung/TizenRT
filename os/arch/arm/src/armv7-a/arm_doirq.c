@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_doirq.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -45,20 +47,20 @@
 #include <assert.h>
 #include <debug.h>
 
+#include <tinyara/addrenv.h>
 #include <tinyara/irq.h>
 #include <tinyara/arch.h>
 #include <tinyara/board.h>
 #include <arch/board/board.h>
+#include <sched/sched.h>
 
-#include "up_internal.h"
-#include "group/group.h"
+#include "arm_internal.h"
 #include "gic.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-int g_irq_num[CONFIG_SMP_NCPUS] = {-1, };				/* Array to store the last three interrupt numbers */
 /****************************************************************************
  * Name: arm_doirq
  *
@@ -70,8 +72,7 @@ int g_irq_num[CONFIG_SMP_NCPUS] = {-1, };				/* Array to store the last three in
 
 uint32_t *arm_doirq(int irq, uint32_t *regs)
 {
-	/* Store the interrupt number for reference during assert */
-	g_irq_num[up_cpu_index()] = irq;
+	struct tcb_s *tcb = this_task();
 
 	board_autoled_on(LED_INIRQ);
 #ifdef CONFIG_SUPPRESS_INTERRUPTS
@@ -79,49 +80,67 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
 #else
 	/* Nested interrupts are not supported */
 
-	DEBUGASSERT(CURRENT_REGS == NULL);
+	DEBUGASSERT(!up_interrupt_context());
 
-	/* Current regs non-zero indicates that we are processing an interrupt;
-	 * CURRENT_REGS is also used to manage interrupt level context switches.
+	/* if irq == GIC_SMP_CPUSTART
+	 * We are initiating the multi-core jumping state to up_idle,
+	 * and we will use this_task(). Therefore, it cannot be overridden.
 	 */
 
-	CURRENT_REGS = regs;
+#ifdef CONFIG_SMP
+	if (irq != GIC_SMP_CPUSTART)
+#endif
+	{
+		tcb->xcp.regs = regs;
+	}
+
+	/* Set irq flag */
+
+	up_set_interrupt_context(true);
 
 	/* Deliver the IRQ */
 
 	irq_dispatch(irq, regs);
+	tcb = this_task();
 
-  if (regs != CURRENT_REGS)
-    {
+	if (regs != tcb->xcp.regs) {
+		struct tcb_s **running_task = &g_running_tasks[this_cpu()];
+
 #ifdef CONFIG_ARCH_ADDRENV
-	/* Check for a context switch.  If a context switch occurred, then
-	 * CURRENT_REGS will have a different value than it did on entry.  If an
-	 * interrupt level context switch has occurred, then establish the correct
-	 * address environment before returning from the interrupt.
-	 */
+		/* Make sure that the address environment for the previously
+		 * running task is closed down gracefully (data caches dump,
+		 * MMU flushed) and set up the address environment for the new
+		 * thread at the head of the ready-to-run list.
+		 */
 
-      /* Make sure that the address environment for the previously
-       * running task is closed down gracefully (data caches dump,
-       * MMU flushed) and set up the address environment for the new
-       * thread at the head of the ready-to-run list.
-       */
-
-      group_addrenv(NULL);
+		addrenv_switch(tcb);
+		tcb = this_task();
 #endif
 
-      restore_critical_section();
-      regs = (uint32_t *)CURRENT_REGS;    
-    }
+		/* Update scheduler parameters */
 
-  /* Set CURRENT_REGS to NULL to indicate that we are no longer in an
-   * interrupt handler.
-   */
+		nxsched_switch_context(*running_task, tcb);
 
-  CURRENT_REGS = NULL;
+		/* Record the new "running" task when context switch occurred.
+		 * g_running_tasks[] is only used by assertion logic for reporting
+		 * crashes.
+		 */
+
+		*running_task = tcb;
+		regs = tcb->xcp.regs;
+	}
+
+	/* Set irq flag */
+
+	up_set_interrupt_context(false);
 #endif
-	/* Reset the interrupt number values */
-	g_irq_num[up_cpu_index()] = -1;
 
 	board_autoled_off(LED_INIRQ);
+
+	/* (*running_task)->xcp.regs is about to become invalid
+	 * and will be marked as NULL to avoid misusage.
+	 */
+
+	tcb->xcp.regs = NULL;
 	return regs;
 }

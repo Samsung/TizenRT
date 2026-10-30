@@ -18,6 +18,8 @@
 /****************************************************************************
  * arch/arm/src/armv7-a/arm_perf.c
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.  The
@@ -42,14 +44,17 @@
 #include <tinyara/arch.h>
 #include <tinyara/clock.h>
 
-#include "up_internal.h"
+#include "arm_internal.h"
+#include "arm_timer.h"
 #include "sctlr.h"
+
+#ifdef CONFIG_ARCH_HAVE_PERF_EVENTS
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-static uint32_t g_cpu_freq;
+static unsigned long g_cpu_freq = ULONG_MAX;
 
 /****************************************************************************
  * Public Functions
@@ -77,28 +82,35 @@ static uint32_t g_cpu_freq;
 
 void up_perf_init(void *arg)
 {
-	g_cpu_freq = (uint32_t)(uintptr_t) arg;
+	g_cpu_freq = (unsigned long)(uintptr_t) arg;
+
+#ifdef CONFIG_ARMV7A_HAVE_PTM
+	if (g_cpu_freq == ULONG_MAX || g_cpu_freq == 0) {
+		g_cpu_freq = arm_timer_get_freq();
+	}
+#endif
 
 	cp15_pmu_uer(PMUER_UME);
 	cp15_pmu_pmcr(PMCR_E);
 	cp15_pmu_cesr(PMCESR_CCES);
 }
 
-uint32_t up_perf_getfreq(void)
+unsigned long up_perf_getfreq(void)
 {
 	return g_cpu_freq;
 }
 
-uint32_t up_perf_gettime(void)
+clock_t up_perf_gettime(void)
 {
 	return cp15_pmu_rdccr();
 }
 
-void up_perf_convert(uint32_t elapsed, struct timespec *ts)
+void up_perf_convert(clock_t elapsed, struct timespec *ts)
 {
-	uint32_t left;
+	clock_t left;
 
-	ts->tv_sec = elapsed / g_cpu_freq;
-	left = elapsed - ts->tv_sec * g_cpu_freq;
+	ts->tv_sec  = elapsed / g_cpu_freq;
+	left        = elapsed - ts->tv_sec * g_cpu_freq;
 	ts->tv_nsec = NSEC_PER_SEC * (uint64_t)left / g_cpu_freq;
 }
+#endif
