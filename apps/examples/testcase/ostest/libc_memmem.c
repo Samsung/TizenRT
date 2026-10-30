@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/libc_memmem.c
+ * apps/testing/ostest/libc_memmem.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -54,37 +54,37 @@
 
 int memmem_test(void)
 {
-  char *haystack = "hello";
-  char *s;
+	char *haystack = "hello";
+	char *s;
 
-  s = memmem(haystack, 5, "hel", 3);
-  ASSERT(s == haystack);
+	s = memmem(haystack, 5, "hel", 3);
+	ASSERT(s == haystack);
 
-  s = memmem(haystack, 5, "lo", 2);
-  ASSERT(s == haystack + 3);
+	s = memmem(haystack, 5, "lo", 2);
+	ASSERT(s == haystack + 3);
 
-  s = memmem(haystack, 5, "hello", 5);
-  ASSERT(s == haystack);
+	s = memmem(haystack, 5, "hello", 5);
+	ASSERT(s == haystack);
 
-  /* Compare '\0' bytes at string ends. */
+	/* Compare '\0' bytes at string ends. */
 
-  s = memmem(haystack, 6, "o", 2);
-  ASSERT(s == haystack + 4);
+	s = memmem(haystack, 6, "o", 2);
+	ASSERT(s == haystack + 4);
 
-  /* Must not find needle that is right after end of haystack. */
+	/* Must not find needle that is right after end of haystack. */
 
-  s = memmem("helloX", 5, "X", 1);
-  ASSERT(s == NULL);
+	s = memmem("helloX", 5, "X", 1);
+	ASSERT(s == NULL);
 
-  /* Too long needle should return NULL. */
+	/* Too long needle should return NULL. */
 
-  s = memmem(haystack, 5, "hellohello", 10);
-  ASSERT(s == NULL);
+	s = memmem(haystack, 5, "hellohello", 10);
+	ASSERT(s == NULL);
 
-  /* Zero length needle is deemed to reside at start of haystack. */
+	/* Zero length needle is deemed to reside at start of haystack. */
 
-  s = memmem(haystack, 5, "", 0);
-  ASSERT(s == haystack);
+	s = memmem(haystack, 5, "", 0);
+	ASSERT(s == haystack);
 
-  return OK;
+	return OK;
 }

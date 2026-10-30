@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/ostest.h
+ * apps/testing/ostest/ostest.h
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -125,12 +125,6 @@ int setvbuf_test(void);
 
 #ifdef CONFIG_DEV_NULL
 int dev_null_test(void);
-#endif
-
-/* multiuser.c **************************************************************/
-
-#if defined(CONFIG_TESTING_OSTEST_MULTIUSER) && defined(CONFIG_SCHED_USER_IDENTITY)
-int multiuser_test(void);
 #endif
 
 /* fpu.c ********************************************************************/
@@ -302,14 +296,8 @@ void sched_lock_test(void);
 
 /* vfork.c ******************************************************************/
 
-#ifdef CONFIG_ARCH_HAVE_VFORK
+#if defined(CONFIG_ARCH_HAVE_FORK) && defined(CONFIG_SCHED_WAITPID)
 int vfork_test(void);
-#endif
-
-/* fork.c *******************************************************************/
-
-#ifdef CONFIG_ARCH_HAVE_FORK
-int fork_test(void);
 #endif
 
 /* setjmp.c *****************************************************************/
@@ -328,7 +316,7 @@ void spinlock_test(void);
 
 /* perf_gettime.c ***********************************************************/
 
-#if defined(CONFIG_ARCH_HAVE_PERF_EVENTS) && defined(CONFIG_BUILD_FLAT)
+#ifdef CONFIG_ARCH_HAVE_PERF_EVENTS
 void perf_gettime_test(void);
 #endif
 

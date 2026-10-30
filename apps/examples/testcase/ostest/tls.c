@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/tls.c
+ * apps/testing/ostest/tls.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -73,53 +73,49 @@ static struct tls_info_s g_save_info;
 
 static void get_tls_info(FAR struct tls_info_s *info)
 {
-  copy_tls_info(info, tls_get_info());
+	copy_tls_info(info, tls_get_info());
 }
 
 static void put_tls_info(FAR const struct tls_info_s *info)
 {
-  copy_tls_info(tls_get_info(), info);
+	copy_tls_info(tls_get_info(), info);
 }
 
 static void set_tls_info(uintptr_t value)
 {
-  FAR struct tls_info_s *info = tls_get_info();
-  int i;
+	FAR struct tls_info_s *info = tls_get_info();
+	int i;
 
-  for (i = 0; i < CONFIG_TLS_NELEM; i++)
-    {
-      info->tl_elem[i] = value;
-    }
+	for (i = 0; i < CONFIG_TLS_NELEM; i++) {
+		info->tl_elem[i] = value;
+	}
 }
 
 static bool verify_tls_info(uintptr_t value)
 {
-  FAR struct tls_info_s *info = tls_get_info();
-  bool fail = false;
-  int i;
+	FAR struct tls_info_s *info = tls_get_info();
+	bool fail = false;
+	int i;
 
-  for (i = 0; i < CONFIG_TLS_NELEM; i++)
-    {
-      if (info->tl_elem[i] != value)
-        {
-          printf("tls: ERROR Element %d: Set %lx / read %lx\n",
-                 i, (unsigned long)value,
-                 (unsigned long)info->tl_elem[i]);
-          ASSERT(false);
-          fail = true;
-        }
-    }
+	for (i = 0; i < CONFIG_TLS_NELEM; i++) {
+		if (info->tl_elem[i] != value) {
+			printf("tls: ERROR Element %d: Set %lx / read %lx\n",
+			       i, (unsigned long)value,
+			       (unsigned long)info->tl_elem[i]);
+			ASSERT(false);
+			fail = true;
+		}
+	}
 
-  return fail;
+	return fail;
 }
 
 static void do_tls_test(uintptr_t value)
 {
-  set_tls_info(value);
-  if (!verify_tls_info(value))
-    {
-      printf("tls: Successfully set %lx\n", (unsigned long)value);
-    }
+	set_tls_info(value);
+	if (!verify_tls_info(value)) {
+		printf("tls: Successfully set %lx\n", (unsigned long)value);
+	}
 }
 
 /****************************************************************************
@@ -128,12 +124,12 @@ static void do_tls_test(uintptr_t value)
 
 void tls_test(void)
 {
-  get_tls_info(&g_save_info);
-  do_tls_test(0);
-  do_tls_test(0xffffffff);
-  do_tls_test(0x55555555);
-  do_tls_test(0xaaaaaaaa);
-  put_tls_info(&g_save_info);
+	get_tls_info(&g_save_info);
+	do_tls_test(0);
+	do_tls_test(0xffffffff);
+	do_tls_test(0x55555555);
+	do_tls_test(0xaaaaaaaa);
+	put_tls_info(&g_save_info);
 }
 
 #endif /* CONFIG_TLS_NELEM > 0 */

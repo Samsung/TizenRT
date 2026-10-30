@@ -17,7 +17,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- * apps/examples/testcase/ostest/sighelper.c
+ * apps/testing/ostest/sighelper.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -55,5 +55,15 @@
 
 bool sigset_isequal(FAR const sigset_t *left, FAR const sigset_t *right)
 {
-  return *left == *right;
+	int ndx;
+
+	/* Check if all elements of the set are the same */
+
+	for (ndx = 0; ndx < _SIGSET_NELEM; ndx++) {
+		if (right->_elem[ndx] != left->_elem[ndx]) {
+			return false;
+		}
+	}
+
+	return true;
 }
