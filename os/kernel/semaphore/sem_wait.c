@@ -67,10 +67,6 @@
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
-#ifdef CONFIG_SEMAPHORE_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -180,9 +176,6 @@ int sem_wait(FAR sem_t *sem)
 			sem->semcount--;
 			sem_addholder(sem);
 			rtcb->waitsem = NULL;
-#ifdef CONFIG_SEMAPHORE_HISTORY
-			save_semaphore_history(sem, (void *)rtcb, SEM_ACQUIRE);
-#endif
 			ret = OK;
 		}
 
@@ -204,10 +197,6 @@ int sem_wait(FAR sem_t *sem)
 			/* Save the waited on semaphore in the TCB */
 
 			rtcb->waitsem = sem;
-
-#ifdef CONFIG_SEMAPHORE_HISTORY
-			save_semaphore_history(sem, (void *)rtcb, SEM_WAITING);
-#endif
 
 			/* If priority inheritance is enabled, then check the priority of
 			 * the holder of the semaphore.

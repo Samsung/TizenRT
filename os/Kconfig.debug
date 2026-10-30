@@ -1237,46 +1237,6 @@ config DEBUG_WLAN_API_INFO
 
 endif #DEBUG_WLAN
 
-comment "System Debug Options"
-
-config DEBUG_SYSTEM
-	bool "System debug"
-	default n
-	select DEBUG_ERROR
-	---help---
-		Enable the System debug Feature.
-
-if DEBUG_SYSTEM
-
-config IRQ_SCHED_HISTORY
-	bool "IRQ Scheduling history"
-	default n
-
-config SEMAPHORE_HISTORY
-	bool "Semaphore holder history"
-	default n
-
-config TASK_SCHED_HISTORY
-	bool "Task Scheduling history"
-	default n
-
-config DEBUG_IRQ_MAX_COUNT
-	hex "Maximum count for irq history"
-	default 0x20
-	depends on IRQ_SCHED_HISTORY
-
-config DEBUG_SEM_MAX_COUNT
-	hex "Maximum count for sem history"
-	default 0x20
-	depends on SEMAPHORE_HISTORY
-
-config DEBUG_TASK_MAX_COUNT
-	hex "Maximum count for task history"
-	default 0x20
-	depends on TASK_SCHED_HISTORY
-
-endif #DEBUG_SYSTEM
-
 endif #DEBUG
 
 comment "Stack Debug Options"

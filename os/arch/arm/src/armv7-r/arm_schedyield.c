@@ -25,9 +25,6 @@
 #include <sys/types.h>
 
 #include <tinyara/sched.h>
-#ifdef CONFIG_TASK_SCHED_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
 
 #include "sched/sched.h"
 #include "up_internal.h"
@@ -150,11 +147,6 @@ void up_schedyield(void)
 			 * of the g_readytorun task list.
 			 */
 
-	#ifdef CONFIG_TASK_SCHED_HISTORY
-			/* Save the task name which will be scheduled */
-
-			save_task_scheduling_status(ntcb);
-	#endif
 			/* Then switch contexts */
 
 			up_fullcontextrestore(ntcb->xcp.regs);

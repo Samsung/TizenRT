@@ -27,9 +27,6 @@
 #include <apps/shell/tash.h>
 #include <apps/system/utils.h>
 #endif
-#ifdef CONFIG_DEBUG_SYSTEM_APP
-#include <apps/system/sysdbgapp_init.h>
-#endif
 #ifdef CONFIG_BUILTIN_APPS
 #include <apps/builtin.h>
 #endif
@@ -99,10 +96,6 @@ static void tash_register_cmds(void)
 
 #ifdef CONFIG_SECURITY_LEVEL_CMDS
 	security_level_register_utilcmds();
-#endif
-
-#ifdef CONFIG_DEBUG_SYSTEM_APP
-	sysdbgapp_init();
 #endif
 }
 #endif							/* CONFIG_TASH */

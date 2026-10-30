@@ -61,10 +61,6 @@
 
 #include "semaphore/semaphore.h"
 
-#ifdef CONFIG_SEMAPHORE_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -161,11 +157,6 @@ void sem_recover(FAR struct tcb_s *tcb)
 		 */
 
 		tcb->waitsem = NULL;
-
-#ifdef CONFIG_SEMAPHORE_HISTORY
-		save_semaphore_history(sem, (void *)tcb, SEM_RELEASE);
-#endif
-
 	}
 
 	/* Release all semaphore holders for the task */

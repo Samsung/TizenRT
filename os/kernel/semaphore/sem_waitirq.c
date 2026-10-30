@@ -62,10 +62,6 @@
 
 #include "semaphore/semaphore.h"
 
-#ifdef CONFIG_SEMAPHORE_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -156,10 +152,6 @@ void sem_waitirq(FAR struct tcb_s *wtcb, int errcode)
 		/* Indicate that the semaphore wait is over. */
 
 		wtcb->waitsem = NULL;
-
-#ifdef CONFIG_SEMAPHORE_HISTORY
-		save_semaphore_history(sem, (void *)wtcb, SEM_ACQUIRE);
-#endif
 
 		/* Mark the errno value for the thread. */
 

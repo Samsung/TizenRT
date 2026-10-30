@@ -62,10 +62,6 @@
 #include <debug.h>
 #include <tinyara/arch.h>
 
-#ifdef CONFIG_SEMAPHORE_HISTORY
-#include <tinyara/debug/sysdbg.h>
-#endif
-
 #include "sched/sched.h"
 #include "semaphore/semaphore.h"
 
@@ -1015,10 +1011,6 @@ void sem_release_all(FAR struct tcb_s *htcb)
 				/* Let the task take the semaphore */
 
 				stcb->waitsem = NULL;
-
-#ifdef CONFIG_SEMAPHORE_HISTORY
-				save_semaphore_history(sem, (void *)stcb, SEM_ACQUIRE);
-#endif
 
 				/* Restart the waiting task. */
 
