@@ -15,16 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/math/lib_log.c
+/****************************************************************************
+ * libs/libm/libm/lib_log.c
  *
- * This file is a part of NuttX:
+ * SPDX-License-Identifier: ISC
+ * SPDX-FileCopyrightText: Copyright (C) 2012 Gregory Nutt.
+ * SPDX-FileContributor: Ported by: Darcy Gong
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Ported by: Darcy Gong
- *
- * It derives from the Rhombs OS math library by Nick Johnson which has
- * a compatibile, MIT-style license:
+ * It derives from the Rhombus OS math library by Nick Johnson which has
+ * a compatible, MIT-style license:
  *
  * Copyright (C) 2009, 2010 Nick Johnson <nickbjohnson4224 at gmail.com>
  *
@@ -40,33 +39,35 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <math.h>
 #include <float.h>
 
-/************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************/
+ ****************************************************************************/
 
-#define DBL_MAX_EXP_X           700.0
+#define DBL_MAX_EXP_X   700.0
 
-/* To avoid looping forever in particular corner cases, every LOGF_MAX_ITER
- * the error criteria is relaxed by a factor LOGF_RELAX_MULTIPLIER.
+/* To avoid looping forever in particular corner cases, every LOG_MAX_ITER
+ * the error criteria is relaxed by a factor LOG_RELAX_MULTIPLIER.
  * todo: might need to adjust the double floating point version too.
  */
 
-#define LOGF_MAX_ITER		10
-#define LOGF_RELAX_MULTIPLIER	2
-/************************************************************************
+#define LOG_MAX_ITER         400
+#define LOG_RELAX_MULTIPLIER 2.0
+
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
 /****************************************************************************
  * Name: log
@@ -79,27 +80,20 @@ double log(double x)
 	double y_old;
 	double ey;
 	double epsilon;
-	int relax_factor;
-	int iter;
-
-	if (isnan(x) || x < 0.0) {
-		return NAN;
-	}
-
-	if (x == 0.0) {
-		return -INFINITY;
-	}
+	double rf; /* epsilon relax factor */
+	int    iter;
 
 	y = 0.0;
 	y_old = 1.0;
 	epsilon = DBL_EPSILON;
+
 	iter = 0;
-	relax_factor = 1;
+	rf = 1.0;
 
 	while (y > y_old + epsilon || y < y_old - epsilon) {
 		y_old = y;
-		ey = exp(y);
-		y -= (ey - x) / ey;
+		ey    = exp(y);
+		y    -= (ey - x) / ey;
 
 		if (y > DBL_MAX_EXP_X) {
 			y = DBL_MAX_EXP_X;
@@ -109,15 +103,11 @@ double log(double x)
 			y = -DBL_MAX_EXP_X;
 		}
 
-		epsilon = (fabs(y) > 1.0) ? fabs(y) * DBL_EPSILON : DBL_EPSILON;
+		epsilon = ((fabs(y) > rf) ? fabs(y) : rf) * DBL_EPSILON;
 
-		if (++iter >= LOGF_MAX_ITER) {
-			relax_factor *= LOGF_RELAX_MULTIPLIER;
+		if (++iter >= LOG_MAX_ITER) {
+			rf *= LOG_RELAX_MULTIPLIER;
 			iter = 0;
-		}
-
-		if (relax_factor > 1) {
-			epsilon *= relax_factor;
 		}
 	}
 

@@ -1,0 +1,37 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+menuconfig LIBDSP
+	bool "Digital Signal Processing Library"
+	default n
+	---help---
+		Enable build for various DSP functions
+
+if LIBDSP
+
+config LIBDSP_DEBUG
+	bool "Libdsp debugging"
+	default n
+	---help---
+		Enable debugging for libdsp. This option enables additional parameters
+		checking. It can drastically reduce performance and be potentially
+		dangerous to hardware, so it should be used carefully (probably only
+		at an early stage of application development).
+
+config LIBDSP_PRECISION
+	int "Libdsp precision [0/1/2]"
+	default 0
+	---help---
+		With this option we can select libdsp precision for
+		some of calculations. There are 3 available options:
+		0 - the fastest calculation but the lowest precision,
+		1 - increased precision than for option 0 at the expense
+		    of a longer execution time,
+		2 - the most accuracte but the slowest one, use standard math functions.
+
+config LIBDSP_FOC_VABC
+	bool "Libdsp FOC includes voltage abc frame"
+
+endif # LIBDSP

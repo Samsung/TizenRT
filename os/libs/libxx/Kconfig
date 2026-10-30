@@ -5,14 +5,6 @@
 
 comment "Basic CXX Support"
 
-config C99_BOOL8
-	bool "sizeof(_Bool) is 8-bits"
-	default n
-	---help---
-		This setting means (1) your C++ compiler has sizeof(_Bool) == 8, (2)
-		your C compiler supports the C99 _Bool intrinsic type, and (2) that
-		the C99 _Bool type also has size 1.
-
 config HAVE_CXX
 	bool "Have C++ compiler"
 	default n
@@ -20,65 +12,150 @@ config HAVE_CXX
 		Toolchain supports C++ and CXX, CXXFLAGS, and COMPILEXX have been
 		defined in the configurations Make.defs file.
 
+config HAVE_CXXINITIALIZE
+	bool "Have C++ initialization"
+	default n
+	---help---
+		The platform-specific logic includes support for initialization
+		of static C++ instances for this architecture and for the selected
+		toolchain.
+
 if HAVE_CXX
 
-choice CXX_VERSION
-	prompt "c++version"
-	default CXX_VERSION_11
+choice
+	prompt "C++ Library"
+	default LIBCXXNONE
 
-config CXX_VERSION_11
-	bool "c++11"
+config LIBCXXNONE
+	bool "No default C++ Standard Template Library"
 
-config CXX_VERSION_14
-	bool "c++14"
+config LIBCXXTOOLCHAIN
+	bool "Toolchain C++ support"
+	select HAVE_CXXINITIALIZE
+	---help---
+		Use Standard C++ library from toolchain.
 
-config CXX_VERSION_17
-	bool "c++17"
+config LIBCXX
+	bool "LLVM libc++ C++ Standard Library"
+	select HAVE_CXXINITIALIZE
+	select PTHREAD_MUTEX_TYPES
+	depends on TLS_NELEM > 0
+	---help---
+		LLVM "libc++" C++ Standard Library
+		https://libcxx.llvm.org/
+
+config UCLIBCXX
+	bool "uClibc++ Standard C++ Library"
+	select HAVE_CXXINITIALIZE
+	depends on ALLOW_GPL_COMPONENTS
+	---help---
+		uClibc++ C++ library
+		https://cxx.uclibc.org/
 
 endchoice
 
-config CXX_NEWLONG
-	bool "size_t is type long"
-	default n
+config ETL
+	bool "Embedded Template Library (ETL)"
+	depends on ALLOW_MIT_COMPONENTS
 	---help---
-		size_t may be type long or type int.  This matters for some
-		C++ library routines because the TinyAra size_t might not have
-		the same underlying type as your toolchain's size_t.
+		ETL A C++ Template library for Embedded applications
+		Implements C++ templates such as containers, string
+		singleton math without C++ STL libraries
 
+choice
+	prompt "C++ low level library select"
+	default LIBMINIABI if LIBCXXNONE
+	default LIBSUPCXX_TOOLCHAIN
 
-comment "LLVM C++ Library (libcxx)"
-
-config LIBCXX
-	bool "Build LLVM libcxx"
-	default n
-	select HAVE_CXXINITIALIZE if BUILD_FLAT
-	select BINFMT_CONSTRUCTORS if APP_BINARY_SEPARATION
+config LIBMINIABI
+	bool "Basic C++ support"
 	---help---
-		LLVM libc++ can be built by selecting this option.
+		A fragmentary C++ library that will allow to build only
+		the simplest of C++ applications. Only contain basic C++
+		runtime support function.
 
-if LIBCXX
-
-config LIBCXX_EXCEPTION
-	bool "Enable Exception Suppport"
-	default y
+config LIBCXXABI
+	bool "LLVM low level C++ Library"
 	---help---
-		Enable exception support in libc++.
+		LLVM "libc++abi" C++ Standard Library
+		https://libcxxabi.llvm.org/
+		Select if your use libc++abi as lower level c++ library
 
-		NOTE: C++ exception support requires toolchain version 10.3.1. If you
-		are enabling C++ exception then use docker image version 2.0.0. Use
-		menuconfig (Build Setup -> Docker Image Version) to set CONFIG_DOCKER_VERSION=2.0.0
+config LIBSUPCXX
+	bool "GNU compile low level libsupc++"
+	---help---
+		Select if your compile libsupc++ and use libsupc++ as lower
+		level c++ library.
 
-config LIBCXX_IOSTREAM_BUFSIZE
-	int "IO Stream Buffer Size"
+config LIBSUPCXX_TOOLCHAIN
+	bool "GNU low level libsupc++"
+	---help---
+		Select if your toolchain provides libsupc++ and use toolchain libsupc++ as lower
+		level c++ library.
+
+endchoice
+
+config LIBCXXABI_VERSION
+	string "Select libcxxabi version"
+	depends on LIBCXXABI
+	default LIBCXX_VERSION if LIBCXX
+	default "17.0.6" if !LIBCXX
+
+config LIBSTDCXX_VERSION
+	string "Select libstdcxx version"
+	depends on LIBSUPCXX
+	default "14.2.0"
+
+config CXX_STANDARD
+	string "Language standard"
+	default "c++14"   if TRICORE_TOOLCHAIN_TASKING
+	default "gnu++20" if LIBCXX
+	default "gnu++17" if !LIBCXX
+	---help---
+		Possible values:
+		gnu++98/c++98, gnu++11/c++11, gnu++14/c++14, gnu++17/c++17 and gnu++20/c++20
+
+config CXX_EXCEPTION
+	bool "Enable Exception Support"
+
+config CXX_RTTI
+	bool "Enable RTTI Support"
+
+config CXX_WCHAR
+	bool "Enable Wide Character Support"
+
+choice
+	prompt "C++ Locale and Stream select"
+	default CXX_NO_LOCALIZATION
+
+config CXX_NO_LOCALIZATION
+	bool "No Locale and Stream Support"
+
+config CXX_MINI_LOCALIZATION
+	bool "Enable mini Locale and Stream Support"
+
+config CXX_LOCALIZATION
+	bool "Enable Locale and Stream Support"
+	depends on LIBC_LOCALE
+
+endchoice
+
+if UCLIBCXX
+
+config UCLIBCXX_BUFSIZE
+	int "IO Stream/Container Buffer Size"
 	default 32
 
-config LIBCXX_HAVE_LIBSUPCXX
-	bool "Have libsupc++ (required)"
-	default y
-	---help---
-		Select if your toolchain provides libsupc++.  This option is required
-		at present because the built-in libsupc++ support is incomplete.
-
 endif
+
+config LIBCXX_VERSION
+	string "Select libcxx version"
+	depends on LIBCXX
+	default "17.0.6"
+
+config LIBCXX_TEST
+	bool "LLVM Libcxx Library Test"
+	depends on LIBCXX && CXX_EXCEPTION
+	default n
 
 endif

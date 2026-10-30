@@ -1,10 +1,6 @@
-/Make.dep
-/.depend
-/*.asm
-/*.obj
-/*.rel
-/*.lst
-/*.sym
-/*.adb
-/*.lib
-/*.src
+*.xz
+*.bz2
+/libcxx/libcxx
+/libcxxabi/libcxxabi
+/uClibc++/uClibc++
+/libstdc++/

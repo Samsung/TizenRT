@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * libc/math/lib_truncl.c
+ * libs/libm/libm/lib_truncl.c
+ *
+ * SPDX-License-Identifier: MIT
  *
  * This implementation is derived from the musl library under the MIT License
  *
@@ -43,19 +45,20 @@
  *
  ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <stdint.h>
 #include <float.h>
 #include <math.h>
 
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 static const long double toint = 1 / LDBL_EPSILON;
@@ -72,7 +75,11 @@ union ldshape {
 
 long double truncl(long double x)
 {
-	union ldshape u = { x };
+	union ldshape u =
+	  {
+	    x
+	  };
+
 	int e = u.i.se & 0x7fff;
 	int s = u.i.se >> 15;
 	long double y;
@@ -86,7 +93,7 @@ long double truncl(long double x)
 		/* Force Eval */
 
 		__x = (x + 0x1p120f);
-		(void)__x;
+		UNUSED(__x);
 		return x * 0;
 	}
 

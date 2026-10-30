@@ -16,7 +16,9 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * lib/math/lib_erfcf.c
+ * libs/libm/libm/lib_erfcf.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -38,6 +40,9 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+
+#include <tinyara/config.h>
+#include <tinyara/compiler.h>
 
 #include <math.h>
 

@@ -15,16 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/math/lib_lol.c
+/****************************************************************************
+ * libs/libm/libm/lib_logl.c
  *
- * This file is a part of NuttX:
+ * SPDX-License-Identifier: ISC
+ * SPDX-FileCopyrightText: Copyright (C) 2012 Gregory Nutt.
+ * SPDX-FileContributor: Ported by: Darcy Gong
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Ported by: Darcy Gong
- *
- * It derives from the Rhombs OS math library by Nick Johnson which has
- * a compatibile, MIT-style license:
+ * It derives from the Rhombus OS math library by Nick Johnson which has
+ * a compatible, MIT-style license:
  *
  * Copyright (C) 2009, 2010 Nick Johnson <nickbjohnson4224 at gmail.com>
  *
@@ -40,32 +39,27 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
+#include <tinyara/config.h>
 #include <tinyara/compiler.h>
 
 #include <math.h>
 #include <float.h>
 
-/* To avoid looping forever in particular corner cases, every LOGF_MAX_ITER
- * the error criteria is relaxed by a factor LOGF_RELAX_MULTIPLIER.
- * todo: might need to adjust the double floating point version too.
-*/
-#define LOGF_MAX_ITER		10
-#define LOGF_RELAX_MULTIPLIER	2
-/************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************/
+ ****************************************************************************/
 
-#define DBL_MAX_EXP_X           700.0
+#define LDBL_MAX_EXP_X  700.0
 
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
 #ifdef CONFIG_HAVE_LONG_DOUBLE
 long double logl(long double x)
@@ -74,54 +68,33 @@ long double logl(long double x)
 	long double y_old;
 	long double ey;
 	long double epsilon;
-	int iter;
-	int relax_factor;
-
-	if (isnan(x) || x < 0.0) {
-		return NAN;
-	}
-
-	if (x == 0.0) {
-		return -INFINITY;
-	}
 
 	y = 0.0;
 	y_old = 1.0;
 	epsilon = LDBL_EPSILON;
-	iter = 0;
-	relax_factor = 1;
 
 	while (y > y_old + epsilon || y < y_old - epsilon) {
 		y_old = y;
-		ey = expl(y);
-		y -= (ey - x) / ey;
+		ey    = expl(y);
+		y    -= (ey - x) / ey;
 
-		if (y > DBL_MAX_EXP_X) {
-			y = DBL_MAX_EXP_X;
+		if (y > LDBL_MAX_EXP_X) {
+			y = LDBL_MAX_EXP_X;
 		}
 
-		if (y < -DBL_MAX_EXP_X) {
-			y = -DBL_MAX_EXP_X;
+		if (y < -LDBL_MAX_EXP_X) {
+			y = -LDBL_MAX_EXP_X;
 		}
 
-		epsilon = (fabs(y) > 1.0) ? fabs(y) * DBL_EPSILON : DBL_EPSILON;
-
-		if (++iter >= LOGF_MAX_ITER) {
-			relax_factor *= LOGF_RELAX_MULTIPLIER;
-			iter = 0;
-		}
-
-		if (relax_factor > 1) {
-			epsilon *= relax_factor;
-		}
+		epsilon = (fabsl(y) > 1.0) ? fabsl(y) * LDBL_EPSILON : LDBL_EPSILON;
 	}
 
-	if (y == DBL_MAX_EXP_X) {
-		return INFINITY;
+	if (y == LDBL_MAX_EXP_X) {
+		return INFINITY_L;
 	}
 
-	if (y == -DBL_MAX_EXP_X) {
-		return INFINITY;
+	if (y == -LDBL_MAX_EXP_X) {
+		return INFINITY_L;
 	}
 
 	return y;

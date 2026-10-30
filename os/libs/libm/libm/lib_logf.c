@@ -15,16 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/math/lib_logf.c
+/****************************************************************************
+ * libs/libm/libm/lib_logf.c
  *
- * This file is a part of NuttX:
+ * SPDX-License-Identifier: ISC
+ * SPDX-FileCopyrightText: Copyright (C) 2012 Gregory Nutt.
+ * SPDX-FileContributor: Ported by: Darcy Gong
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Ported by: Darcy Gong
- *
- * It derives from the Rhombs OS math library by Nick Johnson which has
- * a compatibile, MIT-style license:
+ * It derives from the Rhombus OS math library by Nick Johnson which has
+ * a compatible, MIT-style license:
  *
  * Copyright (C) 2009, 2010 Nick Johnson <nickbjohnson4224 at gmail.com>
  *
@@ -40,32 +39,36 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <math.h>
 #include <float.h>
 
-/************************************************************************
+/****************************************************************************
  * Pre-processor Definitions
- ************************************************************************/
+ ****************************************************************************/
 
-#define FLT_MAX_EXP_X         88.0F
+#define FLT_MAX_EXP_X   88.0F
 
 /* To avoid looping forever in particular corner cases, every LOGF_MAX_ITER
  * the error criteria is relaxed by a factor LOGF_RELAX_MULTIPLIER.
  * todo: might need to adjust the double floating point version too.
  */
 
-#define LOGF_MAX_ITER         10
-#define LOGF_RELAX_MULTIPLIER 2
+#define LOGF_MAX_ITER         400
+#define LOGF_RELAX_MULTIPLIER 2.0F
 
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: logf
+ ****************************************************************************/
 
 float logf(float x)
 {
@@ -73,28 +76,20 @@ float logf(float x)
 	float y_old;
 	float ey;
 	float epsilon;
-	int relax_factor;
-	int iter;
+	float rf; /* epsilon relax factor */
+	int   iter;
 
-	y = 0.0;
-	y_old = 1.0;
+	y = 0.0F;
+	y_old = 1.0F;
 	epsilon = FLT_EPSILON;
 
 	iter = 0;
-	relax_factor = 1;
-
-	if (isnan(x) || x < 0.0) {
-		return NAN;
-	}
-
-	if (x == 0.0) {
-		return -INFINITY;
-	}
+	rf = 1.0F;
 
 	while (y > y_old + epsilon || y < y_old - epsilon) {
 		y_old = y;
-		ey = expf(y);
-		y -= (ey - x) / ey;
+		ey    = expf(y);
+		y    -= (ey - x) / ey;
 
 		if (y > FLT_MAX_EXP_X) {
 			y = FLT_MAX_EXP_X;
@@ -103,24 +98,21 @@ float logf(float x)
 		if (y < -FLT_MAX_EXP_X) {
 			y = -FLT_MAX_EXP_X;
 		}
-		epsilon = (fabsf(y) > 1.0) ? fabsf(y) * FLT_EPSILON : FLT_EPSILON;
+
+		epsilon = ((fabsf(y) > rf) ? fabsf(y) : rf) * FLT_EPSILON;
 
 		if (++iter >= LOGF_MAX_ITER) {
-			relax_factor *= LOGF_RELAX_MULTIPLIER;
+			rf *= LOGF_RELAX_MULTIPLIER;
 			iter = 0;
-		}
-
-		if (relax_factor > 1) {
-			epsilon *= relax_factor;
 		}
 	}
 
 	if (y == FLT_MAX_EXP_X) {
-		return INFINITY;
+		return INFINITY_F;
 	}
 
 	if (y == -FLT_MAX_EXP_X) {
-		return INFINITY;
+		return INFINITY_F;
 	}
 
 	return y;

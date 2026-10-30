@@ -15,16 +15,15 @@
  * language governing permissions and limitations under the License.
  *
  ****************************************************************************/
-/************************************************************************
- * libc/math/lib_sinf.c
+/****************************************************************************
+ * libs/libm/libm/lib_sinf.c
  *
- * This file is a part of NuttX:
+ * SPDX-License-Identifier: ISC
+ * SPDX-FileCopyrightText: Copyright (C) 2012 Gregory Nutt.
+ * SPDX-FileContributor: Ported by: Darcy Gong
  *
- *   Copyright (C) 2012 Gregory Nutt. All rights reserved.
- *   Ported by: Darcy Gong
- *
- * It derives from the Rhombs OS math library by Nick Johnson which has
- * a compatibile, MIT-style license:
+ * It derives from the Rhombus OS math library by Nick Johnson which has
+ * a compatible, MIT-style license:
  *
  * Copyright (C) 2009-2011 Nick Johnson <nickbjohnson4224 at gmail.com>
  *
@@ -40,31 +39,32 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- ************************************************************************/
+ ****************************************************************************/
 
-/************************************************************************
+/****************************************************************************
  * Included Files
- ************************************************************************/
+ ****************************************************************************/
 
 #include <sys/types.h>
 #include <math.h>
 
-/************************************************************************
+/****************************************************************************
  * Private Data
- ************************************************************************/
+ ****************************************************************************/
 
-static float _flt_inv_fact[] = {
-	1.0 / 1.0,					/* 1 / 1! */
-	1.0 / 6.0,					/* 1 / 3! */
-	1.0 / 120.0,				/* 1 / 5! */
-	1.0 / 5040.0,				/* 1 / 7! */
-	1.0 / 362880.0,				/* 1 / 9! */
-	1.0 / 39916800.0,			/* 1 / 11! */
+static float _flt_inv_fact[] =
+{
+  1.0 / 1.0,                    /* 1 / 1! */
+  1.0 / 6.0,                    /* 1 / 3! */
+  1.0 / 120.0,                  /* 1 / 5! */
+  1.0 / 5040.0,                 /* 1 / 7! */
+  1.0 / 362880.0,               /* 1 / 9! */
+  1.0 / 39916800.0,             /* 1 / 11! */
 };
 
-/************************************************************************
+/****************************************************************************
  * Public Functions
- ************************************************************************/
+ ****************************************************************************/
 
 float sinf(float x)
 {
@@ -72,35 +72,29 @@ float sinf(float x)
 	float sin_x;
 	size_t i;
 
-	/* When x is INFINITY, -INFINITY and NAN  */
-	if (isnan(x) || x == INFINITY || x == -INFINITY) {
-
-		return NAN;
-	}
-
 	/* Move x to [-pi, pi) */
 
-	x = fmodf(x, 2 * M_PI);
-	if (x >= M_PI) {
-		x -= 2 * M_PI;
+	x = fmodf(x, 2 * M_PI_F);
+	if (x >= M_PI_F) {
+		x -= 2 * M_PI_F;
 	}
 
-	if (x < -M_PI) {
-		x += 2 * M_PI;
+	if (x < -M_PI_F) {
+		x += 2 * M_PI_F;
 	}
 
 	/* Move x to [-pi/2, pi/2) */
 
-	if (x >= M_PI_2) {
-		x = M_PI - x;
+	if (x >= M_PI_2_F) {
+		x = M_PI_F - x;
 	}
 
-	if (x < -M_PI_2) {
-		x = -M_PI - x;
+	if (x < -M_PI_2_F) {
+		x = -M_PI_F - x;
 	}
 
 	x_squared = x * x;
-	sin_x = 0.0;
+	sin_x = 0.0F;
 
 	/* Perform Taylor series approximation for sin(x) with six terms */
 
